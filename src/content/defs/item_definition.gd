@@ -42,8 +42,11 @@ enum Kind {
 }
 
 ## How rare an item is (v0.3.0 E): chests weight rare items higher. Appended, never renumbered. v0.6.0 MX4:
-## LEGENDARY, offered only by the boss's legendary tier (and a boss's core), never by altars, chests or shops.
-enum Rarity { COMMON, RARE, LEGENDARY }
+## LEGENDARY, the boss's tier. v0.8.0 RR (owner O33; docs/roadmap/v0.8.0/evidence/RARITY.md): EPIC appended, so the
+## four tiers read Common < Rare < Epic < Legendary (ItemTable.tier maps this enum onto that order). Every tier's
+## weight in an altar's, a chest's and the shop's draw is RewardsDefinition's; a Legendary card is mostly the boss's
+## (LegendaryDefinition.card_permille), rarely an altar's or a chest's.
+enum Rarity { COMMON, RARE, LEGENDARY, EPIC }
 
 ## v0.6.0 MX1: the kinds whose attack effects live in their modifiers (each must name at least one).
 const MODIFIER_KINDS: Array[Kind] = [
@@ -88,6 +91,12 @@ const TAGS: Array[StringName] = [
 	&"venom",
 	&"trigger",  # v0.6.5 WN1: a wand trigger card (Kind.TRIGGER)
 	&"wand",  # v0.6.5 WN3: a wand card that levels up 1–5 (CardLevels)
+	&"mutation",  # v0.8.0 RM (owner O91): a rare mutation card (its own category; offer_weight_permille keeps it rare)
+]
+
+## v0.8.0 FL: the pacing categories, in LootPacing.Category's order (ItemTable.loot_category is the index).
+const LOOT_CATEGORIES: Array[StringName] = [
+	&"other", &"form", &"element", &"advanced", &"trigger", &"mutation"
 ]
 
 @export var kind := Kind.LONG_EDGE
@@ -197,6 +206,19 @@ const TAGS: Array[StringName] = [
 ## same face on both weapons. Both or neither.
 @export var name_key_gun: StringName = &""
 @export var desc_key_gun: StringName = &""
+## v0.8.0 BL (saves name items by index): 0 for every card that shipped before v0.8.0. A card added later takes the
+## next wave (v0.8.0 BL's Blade Storm and Riposte Chain: 1); its index comes after every earlier wave's
+## (ModifierCompiler.item_defs), so no index an older save holds moves.
+@export var index_wave := 0
+## v0.8.0 RM (owner O91: mutations "exceptionally rare"): the card's draw weight × this per mille in an altar's, a
+## chest's and the shop's draw (ItemPool.card_weight); a card under 1000 never fills the boss's legendary chance slot
+## (Offers.legendary_cards). The floor pacing step (FL) tunes when such a card is eligible. 1000 = as its tier.
+@export var offer_weight_permille := 1000
+## v0.8.0 FL (owner O91; docs/roadmap/v0.8.0/BALANCE_PASS.md "FL"): the card's pacing category, one of
+## LOOT_CATEGORIES (empty = other): `form` changes the attack's shape or path on its own, `element` is a shared status
+## card (S1–S7), `advanced` multiplies, repeats or builds on other cards (and the legendary ×2 triggers), `trigger` is
+## T1–T4, `mutation` a mutation. Every wand card and trigger card names one; LootPacing weighs its draws by the floor.
+@export var loot_category: StringName = &""
 
 
 func category() -> StringName:
@@ -209,9 +231,22 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"missing", resource_path, "name_key and desc_key are required")
 		)
-	if rarity < Rarity.COMMON or rarity > Rarity.LEGENDARY:
+	if offer_weight_permille < 0 or offer_weight_permille > 10000:  # v0.8.0 RM
 		issues.append(
-			ValidationIssue.new(&"range", resource_path, "rarity is common, rare or legendary")
+			ValidationIssue.new(&"range", resource_path, "offer_weight_permille 0..10000")
+		)
+	if tags.has("mutation") and offer_weight_permille >= 1000:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "a mutation weighs under 1000 per mille")
+		)
+	_check_loot_category(issues)  # v0.8.0 FL
+	if index_wave < 0 or index_wave > 64:
+		issues.append(ValidationIssue.new(&"range", resource_path, "index_wave is 0..64"))
+	if rarity < Rarity.COMMON or rarity > Rarity.EPIC:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "rarity is common, rare, epic or legendary"
+			)
 		)
 	if not requires_utility in [&"", &"guard", &"blink"]:
 		issues.append(
@@ -219,7 +254,7 @@ func validate() -> Array[ValidationIssue]:
 				&"range", resource_path, "requires_utility is empty, guard or blink"
 			)
 		)
-	if not requires_weapon in [&"", &"blade", &"gun"]:
+	if requires_weapon != &"" and not BuildDefinition.WEAPON_IDS.has(requires_weapon):
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "requires_weapon is empty, blade or gun")
 		)
@@ -439,6 +474,37 @@ func _check_bleed_engine(issues: Array[ValidationIssue]) -> void:
 	check_positive(issues, "bleed_seconds", bleed_seconds)
 	check_duration(issues, "bleed_seconds", bleed_seconds)
 	check_positive(issues, "bleed_max_stacks", bleed_max_stacks)
+
+
+## v0.8.0 FL: a known category; every wand card and trigger card names one (not other); a mutation is tagged so and
+## only it; a trigger card is a trigger (T1–T4) or, legendary (the ×2 triggers), advanced, and only a trigger card is.
+func _check_loot_category(issues: Array[ValidationIssue]) -> void:
+	if loot_category != &"" and not loot_category in LOOT_CATEGORIES:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "unknown loot_category %s" % loot_category)
+		)
+		return
+	var named := loot_category != &"" and loot_category != &"other"
+	if (tags.has("wand") or kind == Kind.TRIGGER) and not named:
+		issues.append(
+			ValidationIssue.new(
+				&"missing", resource_path, "a wand or trigger card names a category"
+			)
+		)
+	if tags.has("mutation") != (loot_category == &"mutation"):
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "a mutation, and only it, is a mutation")
+		)
+	if kind == Kind.TRIGGER and named:
+		var want := &"advanced" if rarity == Rarity.LEGENDARY else &"trigger"
+		if loot_category != want:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "this trigger card is %s" % want)
+			)
+	elif loot_category == &"trigger":
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "only a trigger card is a trigger")
+		)
 
 
 ## v0.6.5 WN5a: the moving bleed is shorter than the standing one; a Gun face has both keys.

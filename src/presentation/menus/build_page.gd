@@ -1,10 +1,9 @@
 class_name BuildPage
 extends Control
 ## The pause menu's Build page (v0.6.5 WN2; docs/design/WAND.md rule 4: "Moving cards between slots is free and
-## immediate"). Cold glass (MenuStyle) over the blurred game: the title, the wand as a row of slots (WandRow: each
-## card's frame colour, icon, name and level, the trigger cards cutting the row with "cast on hit →"), and under it
-## the plain-words read-back (Wand.describe / render through WorldReader, en + es).
-## Moving a card:
+## immediate"). Ember stone (MenuStyle, v0.8.0 MU) over the blurred game: the title, the wand as a row of slots
+## (WandRow: each card's frame colour, icon, name and level, the trigger cards cutting the row with "cast on hit →"),
+## and under it the plain-words read-back (Wand.describe / render through WorldReader, en + es). Moving a card:
 ## - keyboard: ←/→ (↑/↓) or 1–8 choose a card, Enter picks it up, ←/→ carry it, Enter puts it down (Esc puts it back);
 ## - mouse: drag a card onto a slot, or click a card then click its new slot;
 ## - pad: d-pad (or the left stick) chooses, A picks up, the d-pad carries, A drops (B puts it back).
@@ -17,6 +16,8 @@ extends Control
 signal back_pressed
 
 ## The read-back's width at most (px at the 1920 x 1080 base) and its type size.
+## Key repeats (PanelInput.Echo): Enter and Esc don't repeat; the arrows carry on.
+const ECHO := PanelInput.Echo.CONFIRM_ONCE
 const READ_W := 1180.0
 const READ_SIZE := 22
 
@@ -220,49 +221,27 @@ func _on_hover(k: int) -> void:
 func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
 		return
-	var handled := true
-	if event is InputEventKey and event.pressed:
-		match event.physical_keycode:
-			KEY_LEFT, KEY_UP:
-				_carry(-1)
-			KEY_RIGHT, KEY_DOWN:
-				_carry(1)
-			KEY_ENTER, KEY_KP_ENTER:
-				if not event.echo:
-					_toggle_hold()
-			KEY_ESCAPE:
-				if not event.echo:
-					_cancel_or_back()
-			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8:
-				var k: int = event.physical_keycode - KEY_1
-				if row.held < 0 and k < card_count():
-					row.focus = k
-					row.refresh_marks()
-			_:
-				handled = false
-	elif event is InputEventJoypadButton and event.pressed:
-		match event.button_index:
-			JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_UP:
-				_carry(-1)
-			JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_DOWN:
-				_carry(1)
-			JOY_BUTTON_A:
-				_toggle_hold()
-			JOY_BUTTON_B, JOY_BUTTON_START:
-				_cancel_or_back()
-			_:
-				handled = false
-	elif event is InputEventJoypadMotion:
-		if event.is_action_pressed(&"ui_left") or event.is_action_pressed(&"ui_up"):
-			_carry(-1)
-		elif event.is_action_pressed(&"ui_right") or event.is_action_pressed(&"ui_down"):
-			_carry(1)
-		else:
-			handled = false
-	else:
-		handled = false
-	if handled:
-		get_viewport().set_input_as_handled()
+	var d := PanelInput.decode(event, 8, ECHO)
+	match d.kind:
+		PanelInput.Kind.SWALLOW:
+			pass
+		PanelInput.Kind.STEP:
+			_carry(d.line())
+		PanelInput.Kind.CONFIRM:
+			_toggle_hold()
+		PanelInput.Kind.CANCEL:
+			_cancel_or_back()
+		PanelInput.Kind.DIGIT:
+			if row.held < 0 and d.digit < card_count():
+				row.focus = d.digit
+				row.refresh_marks()
+		PanelInput.Kind.BUTTON:
+			if d.code != JOY_BUTTON_START:
+				return
+			_cancel_or_back()
+		_:
+			return
+	get_viewport().set_input_as_handled()
 
 
 func _notification(what: int) -> void:

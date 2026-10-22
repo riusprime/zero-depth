@@ -19,6 +19,7 @@ damage = 28
 [resource]
 script = ExtResource("2_enm")
 name_key = &"ENEMY_SNIPER"
+desc_key = &"ENEMY_SNIPER_DESC"
 behaviour_id = &"sniper"
 behaviour_params = {
 "attack_range_m": 18.0,

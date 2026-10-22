@@ -22,13 +22,10 @@ var _quiet: Array = []
 
 
 func _initialize() -> void:
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("hits="):
-			_n = int(arg.trim_prefix("hits="))
-		if arg.begins_with("period="):
-			_period = int(arg.trim_prefix("period="))
-		if arg.begins_with("target="):
-			_target = arg.trim_prefix("target=")
+	var args := ScriptArgs.parse()
+	_n = int(args.get("hits", _n))
+	_period = int(args.get("period", _period))
+	_target = args.get("target", _target)
 	for k in 4:
 		_after.append([])
 	ProfileStore.use_shared(ProfileStore.new(""))

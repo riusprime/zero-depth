@@ -14,9 +14,9 @@ value = 1.0
 script = ExtResource("2_op")
 op = 4
 stage = 3
-field = &"damage"
-value = 1000.0
-per_level = 100.0
+field = &"share_permille"
+value = 600.0
+per_level = 50.0
 
 [resource]
 script = ExtResource("1_mod")

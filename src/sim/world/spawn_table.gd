@@ -30,6 +30,8 @@ var packs := PackedInt32Array()
 ## v0.4.0 TU (owner D1–D3): the floor's difficulty curve (null = SC's plain 30 s tiers, as before). With a curve,
 ## floor time picks a phase: the danger tier, the cap and the interval follow it, and the mix opens by phase.
 var curve: CurveTable
+## v0.8.0 N5 (owner O58): the intensity director's numbers (null = off: packs come as before; Intensity).
+var intensity: IntensityTable
 
 
 func tier_at(run_ticks: int) -> int:
@@ -91,11 +93,6 @@ func pack_cap_now(run_ticks: int) -> int:
 	return curve.pack_cap_at(run_ticks) if curve != null else 0
 
 
-## How far `run_ticks` is through its tier, 0 .. <1 (v0.3.0 UI: the HUD's danger meter, L23).
-func tier_progress(run_ticks: int) -> float:
-	return float(run_ticks % maxi(1, tier_ticks)) / maxi(1, tier_ticks)
-
-
 ## The alive cap on floor `floor_index` (1-based) at `tier`.
 func cap(floor_index: int, tier: int) -> int:
 	return mini(per_floor(cap_by_floor, floor_index) + cap_per_tier * tier, cap_max)
@@ -126,18 +123,23 @@ func pack_max(floor_index: int) -> int:
 	return per_floor(pack_max_by_floor, floor_index)
 
 
+## Entry i of a table authored one entry per floor or tier: the last entry repeats past the end, the first stands
+## before it, and `fallback` answers for an empty table. The one home of that rule (per_floor, per_tier,
+## ArenaTable.size_on and CatchUpTable.at_floor read through it).
+static func at(a: PackedInt32Array, i: int, fallback: int) -> int:
+	if a.is_empty():
+		return fallback
+	return a[clampi(i, 0, a.size() - 1)]
+
+
 ## Entry floor − 1 of a per-floor array (the last past its end; 0 when empty).
 static func per_floor(a: PackedInt32Array, floor_index: int) -> int:
-	if a.is_empty():
-		return 0
-	return a[clampi(floor_index - 1, 0, a.size() - 1)]
+	return at(a, floor_index - 1, 0)
 
 
 ## Entry `tier` of a per-mille tier table (the last past its end: the tier cap; 1000 when empty).
 static func per_tier(a: PackedInt32Array, tier: int) -> int:
-	if a.is_empty():
-		return 1000
-	return a[clampi(tier, 0, a.size() - 1)]
+	return at(a, tier, 1000)
 
 
 ## value × permille / 1000, rounded half up (integer math).

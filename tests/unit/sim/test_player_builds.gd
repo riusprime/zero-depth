@@ -131,7 +131,7 @@ func test_blade_damage_is_up_15_percent_exactly_on_average() -> void:
 
 func test_gun_damage_is_the_bolts_own() -> void:  # owner 2026-10-08: the Gun's -15 % is gone
 	var w := _world(&"gun", Vector2(2.0, 0), 5000)
-	for i in 7 * 10:
+	for i in w.player.shot_period_ticks * 10:
 		w.step(_f(S))
 	_idle(w, 20)
 	var got := _hits(w, SimEvent.TAG_PROJECTILE)
@@ -139,9 +139,9 @@ func test_gun_damage_is_the_bolts_own() -> void:  # owner 2026-10-08: the Gun's 
 	var total := 0
 	for v in got:
 		total += v
-	assert_eq(total, 40, "4 x 1.00 x 10 = 40")
+	assert_eq(total, 50, "5 x 1.00 x 10 = 50 (v0.8.0 GF1: the bolt is 5)")
 	for v in got:
-		assert_eq(v, 4)
+		assert_eq(v, 5)
 
 
 func test_full_damage_without_a_build() -> void:
@@ -214,6 +214,7 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 		blade,
 		[
 			"blade_orbit",  # v0.6.5 WN4: the Blade pool B1–B16 (WAND.md) is Blade-only
+			"blade_storm",  # v0.8.0 BL (BLADE_AUDIT B4)
 			"bulwark",
 			"chain_cut",
 			"conductor",
@@ -234,6 +235,7 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 			"overcharge",
 			"parry_edge",
 			"rearguard",  # v0.6.5 WN3: on the Gun, G15 Backfire / G14 Echo / G8 Homing do their job
+			"riposte_chain",  # v0.8.0 BL (BLADE_AUDIT B4)
 			"seeker",
 			"serrated_edge",
 			"split_wave",
@@ -260,8 +262,11 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 			"gun_pierce",
 			"gun_rapid_fire",
 			"gun_ricochet",
+			"gun_ring",  # v0.8.0 AO: the order rule's Ring and Swirl
 			"gun_spiral",
 			"gun_spread",
+			"gun_swirl",
+			"gun_threadline",  # v0.8.0 RM
 			"gun_twin",
 			"halo_shot",
 			"orbit_rounds",

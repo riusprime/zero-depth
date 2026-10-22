@@ -17,6 +17,15 @@ extends RefCounted
 ##   every gameplay phase is frozen while the tick count runs on. A pick takes that card (a chest's price is paid
 ##   then), consumes the reward and returns the other cards to the pool; a cancel keeps the reward and its
 ##   rolled offer for later, so reopening shows the same cards.
+## - v0.8.0 N7 (owner O61, "chest will give you a random object, and you can only chose in altars"; D48): a chest
+##   rolls one card (Offers.CHEST_CARDS) by the chest's odds and deals it on the open (deal: the reward is DEALT)
+##   while the world waits for the panel, which shows it with its numbers before and after; the next pick input of
+##   any value (the panel's confirm, a click, a cancel) takes it, paid then, and closes the chest. No choice. Taken
+##   on that answer, not on the open, so the card's forecast reads the state before the take (EI-07). A cursed chest
+##   (Curses) still asks: its curse card or its one card, as before (D49: T rises only by the player's choice). A
+##   card that needs the swap (every wand slot full) opens the swap on the answer; a skip shows the card again and a
+##   cancel then leaves the chest shut, unpaid, its card kept. An older save's chest rolled with three cards deals
+##   its first card.
 
 
 ## Shards a kill of `kind` pays now (0 for kinds without a table or without shards).
@@ -114,13 +123,7 @@ static func start_first(layout: FloorLayout, order: PackedInt32Array) -> PackedI
 		var hops := layout.hops[layout.item_rooms[order[k]]]
 		if best < 0 or hops < layout.hops[layout.item_rooms[order[best]]]:
 			best = k
-	if best <= 0:
-		return order
-	var out := PackedInt32Array([order[best]])
-	for k in order.size():
-		if k != best:
-			out.append(order[k])
-	return out
+	return Routes.to_front(order, best)
 
 
 ## Item spot indices in fill order: each room's first spot (in room order), then the second spots.
@@ -175,10 +178,29 @@ static func interact(w: World) -> bool:
 		w.rewards.set_offer(i, Offers.roll(w, i))  # v0.4.0 BS: abilities, stat cards and mods
 		Curses.on_offer_rolled(w, i)  # v0.5.0 EV: a chest may turn cursed
 	if w.rewards.offer_of(i).is_empty():
+		w.rewards.rolled[i] = 0  # an empty roll isn't kept: a later press rolls again (audit G-1)
 		_deny(w, i)
 		return false
 	w.choosing = w.rewards.ids[i]
+	if deals(w, i):
+		deal(w, i)  # v0.8.0 N7
 	return true
+
+
+## v0.8.0 N7: reward i is a chest that deals its card (no choice): a chest not cursed (a cursed one still asks).
+static func deals(w: World, i: int) -> bool:
+	return (
+		w.rewards.kind[i] == RewardStore.Kind.CHEST
+		and not w.ev.cursed_ids.has(w.rewards.ids[i])
+		and not w.rewards.offer_of(i).is_empty()
+	)
+
+
+## v0.8.0 N7 (D48): deals chest i's card: its first card (an older save's three-card offer keeps only it); the chest
+## is DEALT: the next pick input of any value takes it (Rewards.choose).
+static func deal(w: World, i: int) -> void:
+	w.rewards.set_offer(i, PackedInt32Array([w.rewards.offer_of(i)[0]]))
+	w.rewards.rolled[i] = RewardStore.DEALT
 
 
 ## While choosing: a pick takes that card, a cancel closes the choice; anything else waits. v0.6.0 MX2 (owner B7):
@@ -202,6 +224,13 @@ static func choose(w: World, frame: InputFrame) -> void:
 		if s < 0:
 			return  # skipped: back to the cards
 		replace = s
+	elif w.rewards.rolled[i] == RewardStore.DEALT:  # v0.8.0 N7: any answer takes the dealt card
+		if frame.pick == InputFrame.PICK_NONE:
+			return
+		if frame.pick == InputFrame.PICK_CANCEL and BuildSlots.needs_swap(w, offer[0]):
+			_resume(w)  # a card that needs the swap may wait: the chest stays shut, unpaid
+			return
+		k = 0
 	elif frame.pick == InputFrame.PICK_CANCEL:
 		_resume(w)
 		return
@@ -210,18 +239,24 @@ static func choose(w: World, frame: InputFrame) -> void:
 	if replace < 0 and BuildSlots.needs_swap(w, offer[k]):
 		BuildSlots.open_swap(w, offer[k], BuildSlots.Source.REWARD, k)
 		return
+	_take(w, i, k, replace)
+	if not BossReward.another_pick(w, i):  # v0.8.0 RR: a later loop's boss altar gives more picks
+		w.rewards.remove_at(i)
+	_resume(w)
+
+
+## Card k of reward i's offer is taken: the price paid, the PICKUP event, the card applied (into wand slot `replace`
+## when the swap named one) and the cursed card's curse (v0.8.0 FL: no legendary level-5 rule any more).
+static func _take(w: World, i: int, k: int, replace: int) -> void:
 	w.shards -= price_of(w, i)
-	var idx := offer[k]
+	var idx := w.rewards.offer_of(i)[k]
 	var at := w.rewards.pos(i)
 	var e := w.emit_event(
 		SimEvent.Kind.PICKUP, w.rewards.ids[i], w.actors.ids[0], w.actors.ids[0], at
 	)
 	e.amount = idx
 	Offers.apply(w, idx, replace)  # v0.4.0 BS: an item (mod), an ability or a stat card
-	BossReward.on_pick(w, i, idx)  # v0.6.5 WN5b: the legendary tier's level-5 wand card
 	Curses.on_pick(w, w.rewards.ids[i], k)  # v0.5.0 EV: the cursed card brings its curse
-	w.rewards.remove_at(i)
-	_resume(w)
 
 
 ## Back to play: no choice open, and nothing pressed during the choice fires afterwards.

@@ -29,7 +29,8 @@ op = 1
 stage = 5
 field = &"rate_bonus_permille"
 value = -300.0
-per_level = 25.0
+per_level = 100.0
+per_level_after = 2
 
 [resource]
 script = ExtResource("1_mod")

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 2
+look = &"arc_plasma"
+speed_mps = 4.0
+radius_m = 0.18
+range_m = 13.0
+safe_radius_m = 1.2
+count = 3
+spread_degrees = 30.0
+id = &"arc_caster_plasma_fan"

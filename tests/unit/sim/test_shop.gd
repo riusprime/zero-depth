@@ -68,7 +68,7 @@ func _code_of_type(w: World, type: int) -> int:
 func test_the_data_compiles_to_the_starting_values() -> void:
 	assert_eq(_repo.count(&"shop"), 1)
 	assert_eq(_shop.offer_size, 4)
-	assert_eq(_shop.rarity_prices, PackedInt32Array([30, 55, 90]))
+	assert_eq(_shop.rarity_prices, PackedInt32Array([30, 55, 90, 150]), "v0.8.0 RR: + legendary")
 	assert_eq([_shop.heal_permille, _shop.heal_price, _shop.reroll_price], [300, 40, 20])
 	assert_eq([_shop.sell_permille, _shop.ability_refund_per_level], [400, 10])
 

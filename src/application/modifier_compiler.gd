@@ -3,64 +3,6 @@ extends RefCounted
 ## v0.6.0 MX1 (docs/design/MODIFIER_ENGINE.md; CONTENT_SCHEMA "Modifiers"): ModifierDefinition → ModifierTable in sim
 ## units. ContentCompiler.compile_item compiles an item's modifiers with it.
 
-## Content field (ModifierOpDefinition.FIELD_STAGE) -> the AttackSpec field it changes, and how its value converts
-## to sim units: "" as is, "ticks" seconds to ticks, "half_turns" a full width in degrees to a half width in 1/4096
-## turns, "turns" degrees to 1/4096 turns, "per_tick" metres per second to metres per tick.
-const MODIFIER_FIELDS := {
-	&"count": [&"count", ""],
-	&"spread_degrees": [&"spread", "turns"],
-	&"repeat_delay_seconds": [&"repeat_delay_ticks", "ticks"],
-	&"repeat_damage_permille": [&"repeat_damage_permille", ""],
-	&"bounces": [&"bounces", ""],
-	&"pierce": [&"pierce", ""],
-	&"damage": [&"damage", ""],
-	&"damage_permille": [&"damage_permille", ""],
-	&"nth_every": [&"nth_every", ""],
-	&"nth_damage_permille": [&"nth_damage_permille", ""],
-	&"hitstop_seconds": [&"hitstop_ticks", "ticks"],
-	&"arc_degrees": [&"half_arc", "half_turns"],
-	&"reach_m": [&"reach_m", ""],
-	&"reach_bonus_permille": [&"reach_bonus_permille", ""],
-	&"radius_m": [&"radius_m", ""],
-	&"speed_mps": [&"speed", "per_tick"],
-	&"life_seconds": [&"life_ticks", "ticks"],
-	&"period_seconds": [&"period_ticks", "ticks"],
-	&"rate_bonus_permille": [&"rate_bonus_permille", ""],
-	# v0.6.0 MX4 (AttackSpec names each; "turn_rate" degrees per second to 1/4096 turns per tick; "range" is the
-	# virtual field Modifiers scales per form).
-	&"mirror": [&"mirror", ""],
-	&"directions": [&"directions", ""],
-	&"back_damage_permille": [&"back_permille", ""],
-	&"aim_offset_degrees": [&"aim_offset", "turns"],
-	&"chains": [&"chains", ""],
-	&"homing_dps": [&"homing", "turn_rate"],
-	&"returns": [&"returns", ""],
-	&"orbit_seconds": [&"orbit_ticks", "ticks"],
-	&"intangible": [&"intangible", ""],
-	&"pull_m": [&"pull_m", ""],
-	&"barrier_seconds": [&"barrier_ticks", "ticks"],
-	&"charge_seconds": [&"charge_ticks", "ticks"],
-	&"charge_permille": [&"charge_permille", ""],
-	&"resonance_permille": [&"resonance_permille", ""],
-	&"heat_rate_permille": [&"heat_rate_permille", ""],
-	&"range": [&"range", ""],
-	# v0.6.5 WN3 (the Gun pool; AttackSpec names each)
-	&"twin": [&"twin", ""],
-	&"spiral_degrees": [&"spiral", "turns"],
-	&"mine_seconds": [&"mine_ticks", "ticks"],
-	&"hold_seconds": [&"hold_ticks", "ticks"],
-	&"hold_permille": [&"hold_permille", ""],
-	# v0.6.5 WN4 (the Blade pool; AttackSpec names each)
-	&"motion": [&"motion", ""],
-	&"echo_mirror": [&"echo_mirror", ""],
-	&"step_m": [&"step_m", ""],
-	&"parry": [&"parry", ""],
-	&"counter_seconds": [&"counter_ticks", "ticks"],
-	&"counter_permille": [&"counter_permille", ""],
-	&"carry": [&"carry", ""],
-	&"knockback_m": [&"knockback_m", ""],
-	&"line_m": [&"line_m", ""],
-}
 ## v0.6.5 WN3/WN4: the wand pools in the order they shipped (ItemDefinition.requires_weapon): their cards take item
 ## indices pool by pool, so a later pool never moves an earlier one's indices. A new pool appends its weapon here.
 const WAND_POOL_ORDER: Array[StringName] = [&"gun", &"blade", &""]
@@ -77,6 +19,8 @@ static func compile_modifier(def: ModifierDefinition) -> ModifierTable:
 	t.target = def.target.duplicate()
 	t.stage = int(def.stage)
 	t.overlay = def.overlay
+	t.order_kind = int(def.order_kind)  # v0.8.0 AO
+	t.alt_target = def.alt_target.duplicate()  # v0.8.0 MR
 	for d: ModifierOpDefinition in def.ops:
 		t.ops.append(compile_op(d, d.stage_in(def.stage)))
 	return t
@@ -104,19 +48,59 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 	o.when = int(d.hook_when)
 	o.trigger_gun = d.hook_trigger_gun  # v0.6.5 WN1
 	o.casts = d.hook_casts  # v0.6.5 WN5b
+	o.per_level_after = d.per_level_after  # v0.8.0 BL (B2)
+	o.alt = d.alt  # v0.8.0 MR
 	for r: Resource in d.hook_ops:
 		var c := r as ModifierOpDefinition
 		if c != null:
 			o.child_ops.append(compile_op(c, c.stage_in(stage)))
-	if d.op == ModifierOpDefinition.Op.HOOK:
+	if d.op == ModifierOpDefinition.Op.HOOK or d.op == ModifierOpDefinition.Op.REMNANT:
 		o.per_level = d.per_level  # v0.6.5 WN3: per mille of the hook's damage share
-	if d.is_numeric() and MODIFIER_FIELDS.has(d.field):
-		var map: Array = MODIFIER_FIELDS[d.field]
-		o.field = map[0]
+	if d.op == ModifierOpDefinition.Op.REMNANT:
+		o.remnant = compile_remnant(d)  # v0.8.0 RM
+	if d.is_numeric() and ModifierOpDefinition.FIELD_STAGE.has(d.field):
+		var map: Array = ModifierOpDefinition.FIELD_STAGE[d.field]  # [stage, sim field, unit]
+		o.field = map[1]
 		o.value = _units(d, map, d.value)
 		if d.per_level != 0.0:  # v0.6.5 WN3: the step per level, in the same units
 			o.per_level = _units(d, map, d.value + d.per_level) - o.value
+			if d.op == ModifierOpDefinition.Op.MUL_PERMILLE:
+				o.per_level = d.per_level  # v0.8.0 BL: per mille as is (Flurry's 250 / 3), rounded per level
+			elif String(map[2]) == "" and AttackSpec.is_int_field(map[1]):
+				o.per_level = d.per_level  # v0.8.0 MR: a whole field's step as is, rounded per level (Flurry's ½)
 	return o
+
+
+## v0.8.0 RM (owner O91; Remnants): a REMNANT op's remnant in sim units (seconds to ticks, m/s and degrees/s to a
+## tick's step, degrees to 1/4096 turns).
+static func compile_remnant(d: ModifierOpDefinition) -> RemnantRule:
+	var r := RemnantRule.new()
+	r.kind = int(d.remnant_kind)
+	r.spawn = int(d.remnant_spawn)
+	r.activate = int(d.remnant_activate)
+	r.life_ticks = SimTick.seconds_to_ticks(d.remnant_seconds)
+	r.life_per_level = SimTick.seconds_to_ticks(d.remnant_seconds_per_level)
+	r.max_alive = d.remnant_max
+	r.max_per_level = d.remnant_max_per_level
+	r.gap_ticks = SimTick.seconds_to_ticks(d.remnant_hit_gap_seconds)
+	r.charges = d.remnant_charges
+	r.length_m = d.remnant_length_m
+	r.width_m = d.remnant_width_m
+	r.link_ticks = SimTick.seconds_to_ticks(d.remnant_link_seconds)
+	r.pull_radius_m = d.remnant_pull_radius_m
+	r.pull_step_m = d.remnant_pull_mps / SimTick.TICKS_PER_SECOND
+	r.bend_radius_m = d.remnant_bend_radius_m
+	r.bend_step = roundi(
+		d.remnant_bend_dps * SimTick.ANGLE_UNITS / 360.0 / SimTick.TICKS_PER_SECOND
+	)
+	r.turn_units = ContentCompiler.degrees_to_units(d.remnant_turn_degrees)
+	r.delay_ticks = SimTick.seconds_to_ticks(d.remnant_delay_seconds)
+	r.stack_max = d.remnant_stack_max
+	r.stack_per_level = d.remnant_stack_per_level
+	r.period_ticks = SimTick.seconds_to_ticks(d.remnant_period_seconds)
+	r.release_max = d.remnant_release_max
+	r.stagger = d.remnant_stagger
+	return r
 
 
 ## A numeric op's content value `v` in sim units (its field's conversion; MUL_PERMILLE stays per mille; an int
@@ -124,7 +108,7 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 static func _units(d: ModifierOpDefinition, map: Array, v: float) -> float:
 	var out := v
 	if d.op != ModifierOpDefinition.Op.MUL_PERMILLE:
-		match String(map[1]):
+		match String(map[2]):
 			"ticks":
 				out = SimTick.seconds_to_ticks(v)
 			"half_turns":
@@ -135,7 +119,7 @@ static func _units(d: ModifierOpDefinition, map: Array, v: float) -> float:
 				out = v / SimTick.TICKS_PER_SECOND
 			"turn_rate":
 				out = ContentCompiler.degrees_to_units(v) / float(SimTick.TICKS_PER_SECOND)
-	if map[0] in AttackSpec.INT_FIELDS:
+	if AttackSpec.is_int_field(map[1]):
 		out = roundi(out)
 	return out
 
@@ -145,7 +129,25 @@ static func _units(d: ModifierOpDefinition, map: Array, v: float) -> float:
 ## then the wand's trigger cards (Kind.TRIGGER) in id order; v0.6.5 WN3/WN4: then the wand's pool cards (Kind.WAND),
 ## pool by pool in WAND_POOL_ORDER (the Gun's G cards, then the Blade's B cards), each in id order, so every earlier
 ## index still names the same card. v0.6.5 WN5b: the legendary trigger cards (Kind.TRIGGER, rarity LEGENDARY) last.
+## v0.8.0 BL: then the cards of each later index wave (ItemDefinition.index_wave 1, 2, ...), wave by wave, each in id
+## order, whatever their kind or pool: a card added to a pool later never moves an index a save holds.
 static func item_defs(repo: ContentRepository) -> Array:
+	var waves := {}
+	for def: ItemDefinition in repo.all_of(&"items"):
+		if def.index_wave > 0:
+			if not waves.has(def.index_wave):
+				waves[def.index_wave] = []
+			waves[def.index_wave].append(def)
+	var late := []
+	var keys := waves.keys()
+	keys.sort()
+	for k: int in keys:
+		late += waves[k]
+	return _wave_zero(repo) + late
+
+
+## The cards of index wave 0 (every card before v0.8.0) in their order (item_defs).
+static func _wave_zero(repo: ContentRepository) -> Array:
 	var old := []
 	var cards := []
 	var triggers := []
@@ -154,6 +156,8 @@ static func item_defs(repo: ContentRepository) -> Array:
 	for _p in WAND_POOL_ORDER:
 		pools.append([])
 	for def: ItemDefinition in repo.all_of(&"items"):
+		if def.index_wave > 0:
+			continue  # v0.8.0 BL: a later wave's card (item_defs)
 		match def.kind:
 			ItemDefinition.Kind.MODIFIER:
 				cards.append(def)
@@ -185,6 +189,8 @@ static func compile_item_extras(def: ItemDefinition, t: ItemTable) -> void:
 	t.bleed_move_period_ticks = SimTick.seconds_to_ticks(def.bleed_move_period_seconds)  # v0.6.5 WN5a
 	t.name_key_gun = def.name_key_gun
 	t.desc_key_gun = def.desc_key_gun
+	t.offer_weight_permille = def.offer_weight_permille  # v0.8.0 RM: a mutation's low weight
+	t.loot_category = maxi(0, ItemDefinition.LOOT_CATEGORIES.find(def.loot_category))  # v0.8.0 FL
 
 
 ## Every modifier in a repository, compiled, in id order (the combinatorial smoke test and the views' tests use it).

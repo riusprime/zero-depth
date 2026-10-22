@@ -45,9 +45,9 @@ func sync(reader: WorldReader) -> void:
 	_prompt.visible = k >= 0
 	if k >= 0:
 		_prompt.text = tr("UI_EVENT_OPEN") % tr(reader.event_name_key(k))
-		_prompt.add_theme_color_override(
-			"font_color", EventPedestalViews.GLOW.lerp(Color.WHITE, 0.6)
-		)
+		if k == reader.event_curse_altar():  # v0.8.0 N17 (O75): its name shows only once you open it
+			_prompt.text = tr("UI_CURSE_ALTAR_OPEN")
+		HudStyle.font_color(_prompt, EventPedestalViews.GLOW.lerp(Color.WHITE, 0.6))
 	_sync_status(reader)
 	threat.visible = reader.threat() > 0 or not reader.curses_owned().is_empty()
 	threat.sync(reader)
@@ -67,7 +67,7 @@ func _sync_status(reader: WorldReader) -> void:
 	if reader.event_ambush() >= 0:
 		_status.visible = true
 		_status.text = tr("UI_EVENT_AMBUSH") % reader.event_ambush_left()
-		_status.add_theme_color_override("font_color", EventPedestalViews.FIGHT)
+		HudStyle.font_color(_status, EventPedestalViews.FIGHT)
 	elif reader.event_defend() >= 0:
 		var k := reader.event_defend()
 		var away := (
@@ -79,6 +79,4 @@ func _sync_status(reader: WorldReader) -> void:
 			if away
 			else tr("UI_EVENT_DEFEND") % int(reader.event_defend_progress() * 100.0)
 		)
-		_status.add_theme_color_override(
-			"font_color", HudStyle.WARN if away else EventPedestalViews.GUARD
-		)
+		HudStyle.font_color(_status, HudStyle.WARN if away else EventPedestalViews.GUARD)

@@ -11,6 +11,9 @@ const DENSITY_MESH_CAP := {"low": 384, "medium": 640, "high": 1024}
 const MAX_ATTACK_MESHES := 1024
 const MAX_PARTICLES := 1200
 const MAX_EFFECTS := 256
+## v0.8.0 PF (owner O9): at most this many of the player's live bolts get the element rim and trail a frame; the rest
+## fly as their plain dart (ActorViews). A level-5 Spread + Split build keeps 200-800 bolts alive.
+const LIVE_BOLTS_MAX := 96
 const POOL_CAP := 384
 const PARTICLE_POOL_CAP := 600
 const PARTICLE_KINDS: Array[StringName] = [&"sparks", &"crackle", &"shards", &"drip", &"smear"]
@@ -25,6 +28,7 @@ const TAIL_SEGMENTS := 4
 const STREAK_SEGMENTS := 9
 const ORBIT_TURN := 0.09
 const HOME_TURN := 0.035
+const TRAVEL_FADE_FROM := 0.8  # v0.8.0 N3: a travelling ring fades out over its flight's last fifth
 ## v0.6.5 WN3: a waiting mine's ground ring (metres; G12 Mine).
 const MINE_RING_M := 0.45
 const RING_STAGGER := 4.0
@@ -73,6 +77,10 @@ const PARTICLE_MESH := {
 
 ## How long a landing lasts when the VfxLayer draws it (the smoke needs time to rise).
 const VFX_LANDING_TICKS := 70.0
+## v0.8.0 HV (O89): a culled effect's reach past its size: a burst's light (VfxLayer: to 3r + 2 m), a ring's (r + 3).
+const CULL_BURST_X := 3.0
+const CULL_PAD_M := 3.0
+
 ## Element -> VfxLayer kind, first match wins when an attack carries several (fire over storm over frost ...).
 const VFX_KINDS := [
 	["ember", &"fire"],
@@ -88,12 +96,17 @@ var density := "high"
 ## new look, WorldViewRoot hands the canvas a VfxLayer. Fire and electric then draw as real flames and lightning, and
 ## bomb landings as explosions, instead of flat ground shapes; without it the canvas draws as before.
 var vfx: VfxLayer = null
+## v0.8.0 HV (O89): the camera's view (null: all draw); off-screen live bolts, flashes, landings, rings, patches skip.
+var cull: ScreenCull
 var pools := {}
 var particle_pools := {}
 ## v0.6.5 WN5a (AttackFormView._sync_casts): what was drawn of the wand's casts (read by the tests): the trigger casts'
 ## sigils, and the cast forms by name.
 var casts_drawn := 0
 var cast_forms := {}
+## v0.8.0 PF: VfxLayer bursts merged into a live one, and the oldest dropped (BurstBudget), since the view began.
+var bursts_merged := 0
+var bursts_dropped := 0
 ## Live effects: {look, origin, angle, start, life, to, seed, own, kind, size, color}.
 var _effects: Array[Dictionary] = []
 ## The player's live bolts that carry a layer this frame: {id, pos, vel, look, trail: PackedVector2Array}.
@@ -113,6 +126,9 @@ var _last_chain := -1
 var _last_seq := 0
 var _player := Vector2.ZERO
 var _looks := {}
+## v0.8.0 PF: the digest and tier _looks holds looks for, and whether this sync has checked it.
+var _looks_sig := ""
+var _looks_checked := false
 ## MX2's live lingering forms this frame ({kind: ring / zone / lob / orbit, look, the sim's numbers}).
 var _live_forms: Array[Dictionary] = []
 var _bomb_looks := {}
@@ -122,6 +138,13 @@ var _orbit_look := {}
 ## v0.6.5 WN5a (AttackFormView._sync_casts): the newest cast mark drawn (its tick, and how many of that tick).
 var _cast_tick := -1
 var _cast_n := 0
+## v0.8.0 HV: pools as lists, the live bolt's pools, the kept effects (swapped, not rebuilt), a live bolt's points.
+var _pool_list: Array[AttackFormPool] = []
+var _particle_list: Array[AttackFormPool] = []
+var _bolt_edge: AttackFormPool
+var _bolt_core: AttackFormPool
+var _keep: Array[Dictionary] = []
+var _pts: Array[Vector3] = []
 
 
 func _init() -> void:
@@ -131,6 +154,7 @@ func _init() -> void:
 		var mat: Material = AttackFormMeshes.lit() if l[1] else AttackFormMeshes.glow()
 		var p := AttackFormPool.new(id, AttackFormMeshes.mesh(l[0]), mat, POOL_CAP)
 		pools[id] = p
+		_pool_list.append(p)
 		add_child(p)
 	for kind in PARTICLE_KINDS:
 		var p := AttackFormPool.new(
@@ -140,7 +164,10 @@ func _init() -> void:
 			PARTICLE_POOL_CAP
 		)
 		particle_pools[kind] = p
+		_particle_list.append(p)
 		add_child(p)
+	_bolt_edge = pools[&"bolt_edge"]
+	_bolt_core = pools[&"bolt_core"]
 
 
 # --- Settings and budget --------------------------------------------------------------------------------------
@@ -188,12 +215,17 @@ func particle_pool(kind: StringName) -> AttackFormPool:
 # --- Spawning (constructed specs, the live wiring, MX stage 2's runners) ---------------------------------------
 ## Starts drawing `spec` (WorldReader.attack_spec's shape) from `origin` aimed at `angle` (radians, sim plane).
 ## `opts`: start (tick, default the last synced), tier (heat tier, default the hero's), crit, weight, to (a beam's
-## end), own (the attacker's radius), and overrides of the look's sizes (half_angle, reach, radius, length, life).
+## end), own (the attacker's radius), overrides of the look's sizes (half_angle, reach, radius, length, life), and
+## look (v0.8.0 PF: a look composed already, copied; `spec` is then not read).
 ## Returns the effect (its "look" is AttackFormLooks.compose's).
 func spawn(
 	spec: Dictionary, origin: Vector2, angle: float = 0.0, opts: Dictionary = {}
 ) -> Dictionary:
-	var look := AttackFormLooks.compose(spec, int(opts.get("tier", _tier)), opts)
+	var look: Dictionary
+	if opts.has("look"):  # v0.8.0 PF: a look composed already (shared: copied before an override)
+		look = (opts["look"] as Dictionary).duplicate()
+	else:
+		look = AttackFormLooks.compose(spec, int(opts.get("tier", _tier)), opts)
 	for k: String in ["half_angle", "reach", "radius", "length", "life"]:
 		if opts.has(k):
 			look[k] = opts[k]
@@ -243,6 +275,8 @@ func clear() -> void:
 func _push(e: Dictionary) -> void:
 	if vfx != null and e.get("kind") == &"landing":
 		e["life"] = maxf(float(e["life"]), VFX_LANDING_TICKS)
+		if not _admit_burst(e):
+			return
 	elif vfx != null and e.get("kind") == &"form" and int(e["look"]["form"]) == AttackFormLooks.LOB:
 		var flight := float(e["life"]) * 0.75
 		e["flight"] = flight
@@ -252,9 +286,24 @@ func _push(e: Dictionary) -> void:
 	):
 		if _vfx_kind(e["look"]) != &"":
 			e["life"] = maxf(float(e["life"]), VFX_LANDING_TICKS)
+			if not _admit_burst(e):
+				return
 	_effects.append(e)
 	while _effects.size() > MAX_EFFECTS:
 		_effects.pop_front()
+
+
+## v0.8.0 PF (owner O9): whether a VfxLayer burst `e` joins the live effects (BurstBudget: merged, or the oldest goes).
+func _admit_burst(e: Dictionary) -> bool:
+	var k := BurstBudget.admit(_effects, e)
+	if k == BurstBudget.MERGED:
+		bursts_merged += 1
+		return false
+	if k >= 0:
+		_effects.remove_at(k)
+		bursts_dropped += 1
+	e["vfx_burst"] = true
+	return true
 
 
 func _next_seed() -> int:
@@ -269,53 +318,75 @@ func _process(_delta: float) -> void:
 
 ## Lays every pool out for the frame at sim time `now` (ticks, fractional between ticks).
 func draw_at(now: float) -> void:
-	for p: AttackFormPool in pools.values():
+	for p in _pool_list:
 		p.begin()
-	for p: AttackFormPool in particle_pools.values():
+	for p in _particle_list:
 		p.begin()
 	_mesh_left = mesh_cap()
 	_part_left = particle_cap()
 	if vfx != null:
 		vfx.density = particle_scale()
 		vfx.begin(now)
+	var bolts := 0
 	for b in _live:
-		_draw_live_bolt(b, now)
+		# v0.8.0 PF: past LIVE_BOLTS_MAX a bolt keeps only its dart (ActorViews); the charging orb (id -1) always draws
+		if int(b["id"]) >= 0:
+			if bolts >= LIVE_BOLTS_MAX or _mesh_left <= 0:
+				continue
+			bolts += 1  # v0.8.0 HV: an off-screen bolt still counts, so the same bolts get their rims
+			if LiveBoltLook.off_screen(cull, b, LiveBoltLook.of(b["look"], self)):
+				continue
+		LiveBoltLook.draw(self, b, LiveBoltLook.of(b["look"], self), now)  # v0.8.0 HV: read once, typed
 	for f in _live_forms:
 		_draw_live_form(f, now)
-	var keep: Array[Dictionary] = []
+	_keep.clear()
 	for i in range(_effects.size() - 1, -1, -1):
 		var e := _effects[i]
 		var age := now - float(e["start"])
 		if age > float(e["life"]) + 0.001:
 			continue
-		keep.append(e)
+		_keep.append(e)
 		if age < 0.0:
 			continue
 		if e["kind"] == &"flash":
-			_draw_flash(e, age)
+			if not _off_screen(e["origin"], float(e["size"]) + CULL_PAD_M):  # v0.8.0 HV
+				_draw_flash(e, age)
 		elif e["kind"] == &"landing":
+			if _off_screen(e["origin"], float(e["radius"]) * CULL_BURST_X + CULL_PAD_M):  # v0.8.0 HV
+				continue
 			var pts: Array[Vector3] = []
 			var u := clampf(age / float(e["life"]), 0.0, 1.0)
 			_landing_at(e["origin"], float(e["radius"]), u, e["look"], pts, int(e["seed"]))
 			_emit(e, e["look"], pts, age, 1.0 - u)
 		else:
 			_draw_form(e, age)
-	keep.reverse()
-	_effects = keep
+	_keep.reverse()
+	var spent := _effects  # v0.8.0 HV: swapped, not rebuilt
+	_effects = _keep
+	_keep = spent
 	if vfx != null:
 		vfx.finish()
 	_drawn_meshes = mesh_cap() - _mesh_left
 	_drawn_particles = particle_cap() - _part_left
-	for p: AttackFormPool in pools.values():
+	for p in _pool_list:
 		p.finish()
-	for p: AttackFormPool in particle_pools.values():
+	for p in _particle_list:
 		p.finish()
+
+
+## v0.8.0 HV (O89): whether a thing at `at` reaching `reach` m is wholly out of the picture (false: no camera).
+func _off_screen(at: Vector2, reach: float) -> bool:
+	return cull != null and cull.active and not cull.shows(SimPlane.to_3d(at), reach)
 
 
 func _put(layer: StringName, xf: Transform3D, c: Color) -> bool:
+	return _put_in(pools[layer], xf, c)
+
+
+func _put_in(p: AttackFormPool, xf: Transform3D, c: Color) -> bool:
 	if _mesh_left <= 0:
 		return false
-	if not (pools[layer] as AttackFormPool).add(xf, c):
+	if not p.add(xf, c):
 		return false
 	_mesh_left -= 1
 	return true
@@ -351,6 +422,16 @@ func _vfx_kind(look: Dictionary) -> StringName:
 	return &""
 
 
+## v0.8.0 PF2: whether `look` draws only form meshes: no particles of its own (_emit), no VfxLayer element (its
+## rings, lines, fields, bursts) and not a bomb (the VfxLayer draws its fuse and landing).
+func _meshes_only(look: Dictionary) -> bool:
+	return (
+		(look["particles"] as Array).is_empty()
+		and _vfx_kind(look) == &""
+		and int(look["form"]) != AttackFormLooks.LOB
+	)
+
+
 static func _dir(a: float) -> Vector2:
 	return Vector2(cos(a), sin(a))
 
@@ -364,6 +445,8 @@ static func segment(a: Vector3, b: Vector3, width: float) -> Transform3D:
 
 func _draw_form(e: Dictionary, age: float) -> void:
 	var look: Dictionary = e["look"]
+	if _mesh_left <= 0 and _meshes_only(look):
+		return  # v0.8.0 PF2: the frame's meshes are spent and it draws nothing else: none of it would show
 	match int(look["form"]):
 		AttackFormLooks.ARC:
 			_draw_arc(e, look, age)
@@ -490,51 +573,6 @@ func _tail(
 			segment(b, a, w * (0.5 + 0.5 * f)),
 			lit_color(look["edge"], 0.6 * f * fade, look["energy"])
 		)
-
-
-func _draw_live_bolt(b: Dictionary, now: float) -> void:
-	var look: Dictionary = b["look"]
-	var trail: PackedVector2Array = b["trail"]
-	var cues: Array = look["cues"]
-	var segs := mini(trail.size() - 1, STREAK_SEGMENTS if cues.has(&"streak") else TAIL_SEGMENTS)
-	var size := float(b.get("scale", 1.0))  # v0.6.5 WN3: a charged shot, the charging orb
-	var w: float = float(look["thick"]) * 2.2 * size
-	var n := trail.size()
-	for j in segs:
-		var a := SimPlane.to_3d(trail[n - 1 - j], BOLT_H)
-		var c := SimPlane.to_3d(trail[n - 2 - j], BOLT_H)
-		var f := 1.0 - float(j) / maxi(segs, 1)
-		_put(
-			&"bolt_edge",
-			segment(c, a, w * (0.5 + 0.5 * f)),
-			lit_color(look["edge"], 0.6 * f, look["energy"])
-		)
-	var at := SimPlane.to_3d(b["pos"], BOLT_H)
-	# The v0.5 dart (ActorViews) is the core; the element rim glows round it.
-	var heading := (b["vel"] as Vector2).angle()
-	_put(
-		&"bolt_core",
-		Transform3D(
-			(
-				Basis(Vector3.UP, heading)
-				* Basis.from_scale(
-					Vector3(look["length"] * 1.25, look["thick"] * 1.8, look["thick"] * 1.8) * size
-				)
-			),
-			at
-		),
-		lit_color(look["rim"], 0.45, look["energy"])
-	)
-	if cues.has(&"tether"):
-		_put(
-			&"cue",
-			segment(SimPlane.to_3d(_player, BOLT_H), at, 0.035),
-			lit_color(look["edge"], 0.4, 1.4)
-		)
-	var pts: Array[Vector3] = [at]
-	if cues.has(&"mine") and (b["vel"] as Vector2).length() < 0.0001:  # v0.6.5 WN3: a waiting mine
-		_ring_at(SimPlane.to_3d(b["pos"], GROUND_H), MINE_RING_M, look, 0.6, pts)
-	_emit({"seed": int(b["id"]), "look": look}, look, pts, now, 1.0)
 
 
 func _draw_ring(e: Dictionary, look: Dictionary, age: float) -> void:
@@ -849,11 +887,18 @@ func _emit(
 		return
 	if _vfx_kind(look) != &"":
 		return  # the VfxLayer draws this element's embers and sparks
+	var sd: int = e["seed"]
+	_emit_parts(sd, look, parts, points, age, fade)
+
+
+## _emit's particles from seed `sd` (v0.8.0 HV: split out so a live bolt passes its id, not a new Dictionary).
+func _emit_parts(
+	sd: int, look: Dictionary, parts: Array, points: Array[Vector3], age: float, fade: float
+) -> void:
 	var total := int(
 		round(PARTICLES[int(look["form"])] * particle_scale() * maxf(1.0, points.size() / 4.0))
 	)
 	total = mini(total, 64)
-	var sd: int = e["seed"]
 	for pk: Array in parts:
 		var kind: StringName = pk[0]
 		var col: Color = pk[1]
@@ -927,11 +972,19 @@ func _draw_live_form(f: Dictionary, now: float) -> void:
 	var fade := 1.0
 	match f["kind"]:
 		&"ring":
+			if now < float(f["start"]):
+				return  # v0.8.0 AO: a pulse or a thrown ring that hasn't started (WandRings)
 			var life := maxf(1.0, float(f["end"]) - float(f["start"]))
 			var t := clampf((now - float(f["start"])) / life, 0.0, 1.0)
-			fade = 1.0 - t * t * t
-			_ring_at(SimPlane.to_3d(f["pos"], GROUND_H), float(f["radius"]) * t, look, fade, pts)
+			var go := int(f.get("pulses", 0)) > 0  # v0.8.0 N3: a travelling ring, where the sim puts it now
+			var at: Array = WorldReader.ring_place(f, now) if go else [f["pos"], f["radius"] * t]
+			if _off_screen(at[0], float(at[1]) + CULL_PAD_M):  # v0.8.0 HV: wholly off screen
+				return
+			fade = 1.0 - (smoothstep(TRAVEL_FADE_FROM, 1.0, t) if go else t * t * t)
+			_ring_at(SimPlane.to_3d(at[0], GROUND_H), float(at[1]), look, fade, pts)
 		&"zone":
+			if _off_screen(f["pos"], float(f["radius"]) + CULL_PAD_M):  # v0.8.0 HV
+				return
 			fade = f["fade"]
 			var c := SimPlane.to_3d(f["pos"], GROUND_H)
 			_zone_at(c, float(f["radius"]), look, fade, now, int(f["seed"]), pts)

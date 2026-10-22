@@ -20,7 +20,11 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 		var off := Kin.angle_diff(to_attacker, a.facing[target])
 		var lifted := bt.weak_drops_armour and w.bosses.exposed_t[BossAi.entry_of(w, target)] > 0
 		if bt.front_half_arc > 0 and off <= bt.front_half_arc and not lifted:  # v0.4.0 BO: shield up
-			return [bt.front_mult_permille, SimEvent.TAG_ARMOURED]
+			# v0.8.0 BS1 (owner O5, S2): a 0 multiplier is a shield that blocks the hit outright (the Warlord's).
+			var tag := (
+				SimEvent.TAG_BLOCKED if bt.front_mult_permille == 0 else SimEvent.TAG_ARMOURED
+			)
+			return [bt.front_mult_permille, tag]
 		if bt.rear_half_arc > 0 and off >= 2048 - bt.rear_half_arc:
 			return [bt.rear_mult_permille, SimEvent.TAG_WEAK_SPOT]
 	elif EnemyAi.armoured(a.kinds[target]) and from != a.pos(target):
@@ -86,6 +90,9 @@ static func hit(
 	h.ancestry = w.engine_chain.duplicate()
 	if amount <= 0 or a.invuln[target] > 0 or (target == 0 and w.dash_iframes_active()):
 		return 0
+	if owner_id != 0 and target != 0 and BossDodge.shielded(w, target):  # v0.7.5 BF1: it sparks off the shield
+		h.tags |= SimEvent.TAG_BLOCKED
+		return 0
 	if target == 0 and owner_id != a.ids[0] and Curses.dodges(w, owner_id, at):  # v0.6.0 CU: Rooted
 		return 0
 	if target == 0 and owner_id != a.ids[0] and ModifierRuntime.absorb(w):  # v0.6.0 MX4: Aether Shell
@@ -96,8 +103,11 @@ static func hit(
 		m = [m[0] * c[0] / 1000, m[1] | c[1]]
 	h.tags |= m[1]
 	var scaled := amount * m[0] / 1000
-	if target == 0 and scaled > 0 and Stats.armour_permille(w) != 1000:  # v0.4.0 BS: armour
-		scaled = maxi(1, (scaled * Stats.armour_permille(w) + 500) / 1000)
+	if target == 0 and scaled > 0:
+		# v0.4.0 BS: armour; v0.8.0 N1 (D39): times the held weapon's damage taken (the Blade's -25 %), one rounding.
+		var taken := Stats.armour_permille(w) * PlayerBuild.taken_permille(w) / 1000
+		if taken != 1000:
+			scaled = maxi(1, (scaled * taken + 500) / 1000)
 	var got := 0
 	if scaled > 0:
 		got = _apply(
@@ -123,6 +133,8 @@ static func tick_dot(
 ) -> int:
 	var a := w.actors
 	if a.dead[target] == 1 or a.invuln[target] > 0 or amount <= 0:
+		return 0
+	if owner_id != 0 and target != 0 and BossDodge.shielded(w, target):  # v0.7.5 BF1: the shield holds
 		return 0
 	if owner_id == a.ids[0] and target != 0:
 		amount = Stats.dot(w, amount)  # v0.4.0 BS: the damage stat (a DoT tick never crits)
@@ -162,6 +174,8 @@ static func _apply(
 	var applied := mini(BossGates.clamp_damage(w, target, scaled, owner_id), a.hp[target])
 	a.hp[target] -= applied
 	PlayerRegen.note_combat(w, target, owner_id)  # Builds: combat stops the out-of-combat regen (L25).
+	if w.final_fight != null and target != 0 and owner_id == a.ids[0]:
+		FinalBoss.note_damage(w, scaled)  # v0.8.0 FB2 (F7): the final fight's damage meter
 	var d := w.emit_event(SimEvent.Kind.DAMAGE, source_id, owner_id, target_id, at)
 	d.root_id = root_id
 	d.parent_seq = parent_seq

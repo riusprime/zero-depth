@@ -38,3 +38,30 @@ func test_two_focus_points_one_hidden() -> void:
 	assert_eq(Occlusion.select(TO_CAM, 35.26, focus, walls), PackedInt32Array([0]))
 	focus = [Vector2.ZERO]
 	assert_eq(Occlusion.select(TO_CAM, 35.26, focus, walls).size(), 0)
+
+
+## v0.8.0 P3 (owner O32): select_in through build_index answers exactly what select answers, over a scattered floor of
+## walls (long and short, every height) and focus groups anywhere on it, one point or many.
+func test_the_index_selects_the_same_walls() -> void:
+	var rng := RngStream.derive(7, "occ_index")
+	var walls := []
+	for k in 300:
+		var c := Vector2(rng.range_int(-6000, 6000), rng.range_int(-6000, 6000)) / 100.0
+		var half := Vector2(rng.range_int(20, 1600), rng.range_int(10, 80)) / 100.0
+		walls.append([c, half, rng.range_int(0, 628) / 100.0, rng.range_int(50, 400) / 100.0])
+	var index := Occlusion.build_index(35.26, walls)
+	assert_eq(index["count"], 300)
+	var hits := 0
+	for trial in 40:
+		var centre := Vector2(rng.range_int(-6000, 6000), rng.range_int(-6000, 6000)) / 100.0
+		var focus: Array[Vector2] = []
+		for k in 1 + trial % 25:
+			focus.append(
+				centre + Vector2(rng.range_int(-1000, 1000), rng.range_int(-1000, 1000)) / 100.0
+			)
+		var want := Occlusion.select(TO_CAM, 35.26, focus, walls)
+		assert_eq(Occlusion.select_in(TO_CAM, index, focus, walls), want, "trial %d" % trial)
+		hits += want.size()
+	assert_gt(hits, 0, "some walls hide some points")
+	var none: Array[Vector2] = []
+	assert_eq(Occlusion.select_in(TO_CAM, index, none, walls).size(), 0, "no focus, no walls")

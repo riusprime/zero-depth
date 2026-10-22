@@ -79,6 +79,31 @@ func test_a_damaged_body_fails_its_checksum() -> void:
 	assert_string_contains(s.last_error, "checksum")
 
 
+## v0.7.0 audit A-16: the uncompressed-size field is outside the checksum; a damaged one (0, or up to 4 GB) is
+## refused before any allocation, and the file goes the same way as any unreadable save (ignored, kept aside).
+func test_a_damaged_size_field_is_refused_before_decompressing() -> void:
+	for size in [0xFFFFFFFF, RunSaveStore.MAX_RAW_BYTES + 1, 0]:
+		var bytes := RunSaveStore.encode(_payload())
+		bytes.encode_u32(8, size)
+		var r := RunSaveStore.decode(bytes)
+		assert_eq(r[0], {}, "size %d" % size)
+		assert_string_contains(r[1], "can't decompress")
+	var s := _store()
+	s.write(_payload())
+	var bytes := FileAccess.get_file_as_bytes(s.path)
+	bytes.encode_u32(8, 0xFFFFFFFF)
+	var f := FileAccess.open(s.path, FileAccess.WRITE)
+	f.store_buffer(bytes)
+	f.close()
+	assert_eq(s.read(), {}, "nothing to continue from")
+	assert_string_contains(s.last_error, "can't decompress")
+	assert_false(FileAccess.file_exists(s.path), "moved aside")
+	var kept := Array(DirAccess.get_files_at(_dir)).filter(
+		func(n: String) -> bool: return n.begins_with("run.bad.")
+	)
+	assert_eq(kept.size(), 1, "kept on disk as run.bad.*.save")
+
+
 func test_another_save_version_is_ignored() -> void:
 	var bytes := RunSaveStore.encode(_payload())
 	bytes.encode_u32(4, RunSaveStore.SAVE_VERSION + 1)

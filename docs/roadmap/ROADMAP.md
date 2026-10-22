@@ -1,9 +1,7 @@
 # Roadmap
 
-> **Status (2026-10-07):** **Active version: v0.3.5 "Feedback pass"** ([plan](v0.3.5/PLAN.md)), the owner's notes
-> on the v0.3.0 "Three Floors" finishing build ([plan](v0.3.0/PLAN.md), built and played). Next: v0.4.0 "Run Depth"
-> with the owner's build direction ([plan](v0.4.0/PLAN.md)). Earlier: v0.2.0, v0.1.0 and v0.0.1 built and played;
-> the bench's stress miss is still open.
+> **Status (2026-10-14):** **Active version: v0.8.0 "Fights and feel"** ([plan](v0.8.0/PLAN.md)), the owner's
+> v0.7.5 playtest. v0.7.5 is built and played (PR riusprime/zero-depth#6, not merged yet); `main` holds v0.7.0.
 
 This is the development guide for the game: how a session picks the work up, how versions are numbered and
 released, what each version must prove, and who checks it. Gates replace dates. A version ends when its exit gate
@@ -149,6 +147,7 @@ add a row here and a change-log row in
 |---|---|---|---|
 | Exit gates and bands checked by **sims** (bot policies) | §4, SCORECARD | Bot balance sims are not run; balance is checked by the **owner** (owner: "From now on not run bot tests, because they do not represent reality") | 2026-10-08, v0.5.5 |
 | Waves of at most 4 agents | v0.3.5 PLAN | At most 3 agents at once | 2026-10-08, v0.5.5 |
+| One full suite per wave, by the lead (2026-10-09) | CLAUDE.md | No local full suite: the seams (`scripts/ci/seams.sh`) after a merge; the full suite once per version on the PR into `main`, sharded on GitHub | 2026-10-13, v0.7.5 |
 
 ---
 
@@ -174,9 +173,11 @@ M4b. Exit gates name who checks each item:
 | v0.5.9 | Embers | art | (Owner-directed 2026-10-08, [`v0.5.9/PLAN.md`](v0.5.9/PLAN.md), DRAFT.) The look pass: biome lighting moods (SSAO, SSIL, warm light sources, AgX, fog), a modular `.glb` kit made by the owner ([`../art/KIT_REQUESTS.md`](../art/KIT_REQUESTS.md)) placed by seeded dressing rules, a G2 look pick (optional pixel filter). Own branch, cut after v0.5.0 merges. Pulls the visual part of v0.8.0 forward | G2 look pick and a verified build (**owner**). Readability contrast ≥ 3:1 lit (**test** + **shots**). Goldens unchanged (**test**) | Draft; starts after v0.5.0 |
 | **v0.6.0** | Balance Alpha | M5 | A paired-seed sim program. 8–12 human sessions run by the owner. Revisions. Pruning the 40–50 card pool built in v0.5.0. The slot-cap decision (PD-08). A gap-analysis report ([`../balance/SCORECARD.md`](../balance/SCORECARD.md) §6) | No archetype is excluded, no pickup is universally dominant, no starter is dead (**sims** + **humans**) | — |
 | **v0.7.0** (planned as v0.6.5) | The Wand | — | (Owner-directed 2026-10-12, [`v0.7.0/PLAN.md`](v0.7.0/PLAN.md); "yeah go ahead for v0.7 naming".) The owner's v0.6.1 playtest: every pickup modifies the basic attack in a wand read left to right (Blade, Gun and shared pools, triggers that cast child spells, levels 1–5, rearranged on the Build page and the Swap panel, 4 → 6 → 8 slots), the old cards migrated, the legendary tier; the Siege Engine's room 3×3; merged with `claude/keen-volta-ht74pz` (the F10 dev panel, the lighting pass). The old v0.7.0+ rows below are provisional and shift one minor step | Owner playtest (**owner**) | In progress |
-| **v0.7.5** | New Ground and the small things | — | (Owner-directed 2026-10-12, [`v0.7.5/PLAN.md`](v0.7.5/PLAN.md).) Biome 4 Frozen Shore and a 5th cosmic biome; the Ascension portal (end the run or loop endlessly); the Codex; local achievements; onboarding and other small launch items; floors up to 20 rooms with bigger rooms; a curse and a shop every two floors; 20 % fewer challenge rooms. No second character | Owner playtest (**owner**) | Planned |
+| **v0.7.5** | New Ground and the small things | — | (Owner-directed 2026-10-12, [`v0.7.5/PLAN.md`](v0.7.5/PLAN.md).) Biome 4 Frozen Shore and a 5th cosmic biome; the Ascension portal (end the run or loop endlessly); the Codex; local achievements; onboarding and other small launch items; floors up to 20 rooms with bigger rooms; a curse and a shop every two floors; 20 % fewer challenge rooms. No second character | Owner playtest (**owner**) | Built and played by the owner (2026-10-14); feedback → v0.8.0 |
 | ~~v0.7.x~~ (moved into v0.7.5) | New Ground | balance | 4th biome, Frozen Shore (water edges and ice props), plus any others the owner picks. Added as balance and variety tests of the generator | No biome shifts a floor's death hazard by more than 10 percentage points (**sims**) | — |
-| **v0.8.0** | Content Beta | M6 | 60–80 items if the evidence justifies them. A second kit or character. Meta unlocks (alternatives, information, cosmetics). A journal/codex. The final visual and audio language (the visual look starts in v0.5.9). Full onboarding | New content adds variety without reopening any P0 failure (**sims** + **owner**) | — |
+| **v0.8.0** | Fights and feel | — | (Owner-directed 2026-10-14, [`v0.8.0/PLAN.md`](v0.8.0/PLAN.md); "this is going to be V0.8".) The owner's v0.7.5 playtest: enemy colours and models, no red wind-up marks on melee enemies, one signature mechanic per boss, boss animations, 3D attack visuals (stone spikes, 3D orbs), the lag of stacked Gun builds, Blade combinations, Ascension loop scaling (HP far faster than damage). The old provisional v0.8.0+ rows shift one minor step | Owner playtest (**owner**) | Built and played by the owner (2026-10-22); released through PR riusprime/zero-depth#7 (with v0.7.5); feedback → v0.9.0 |
+| **v0.9.0** | The owner's v0.8.0 feedback | — | (Owner-directed 2026-10-22, O92: "move into the next version that is coming with feedback and much more to develop".) The owner's v0.8.0 playtest feedback, plus UC (the utility cards) and the rest of EM (enemy models) carried from v0.8.0. PLAN written from the feedback (Phase 0) | Owner playtest (**owner**) | Planned |
+| v0.8.x (planned as v0.8.0) | Content Beta | M6 | 60–80 items if the evidence justifies them. A second kit or character. Meta unlocks (alternatives, information, cosmetics). A journal/codex. The final visual and audio language (the visual look starts in v0.5.9). Full onboarding | New content adds variety without reopening any P0 failure (**sims** + **owner**) | — |
 | v0.9.x | Launch line | — | Final credits and licenses, local achievements, an accessibility pass, a Steam build, trailer moments | The owner's launch list (**owner**) | — |
 
 - A minor version starts only after the previous one's playtest (§0.3).
@@ -234,3 +235,6 @@ M4b. Exit gates name who checks each item:
   O3 (`main`), O4 (credit line) and the owner's Windows playtest. No PR to `main` until O3.
 - 2026-10-06 — The owner played v0.0.1 (too bare to judge) and answered v0.1.0's design questions. v0.1.0
   "Combat Lab" is active, fight first.
+- 2026-10-22 — The owner played v0.8.0 (O92) and asked to release it and move on: the release step on
+  `claude/perf-graphics-v080`, PR riusprime/zero-depth#7 into `main` (v0.7.5 inside it; its PR #6 closed), the
+  screenshot tour skipped, UC and the rest of EM moved to v0.9.0. v0.9.0 is next, from the owner's feedback.

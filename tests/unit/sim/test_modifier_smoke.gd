@@ -68,8 +68,12 @@ func _run(
 				if (
 					e.effect_id == Attacks.EFFECT_LAUNCH_CAP
 					or e.amount == Engines.MAX_EVENTS_PER_TICK
+					or e.effect_id == WandRings.EFFECT_RING_CAP
+					or e.effect_id == Attacks.EFFECT_ALIVE_CAP
 				):
-					capped += 1  # the launch cap or the per-tick event watchdog holding
+					# the launch cap or the per-tick event watchdog holding; v0.8.0 AO: with every card at once the
+					# Ring makes order-rule rings, and their cap and their shards' alive cap hold too
+					capped += 1
 	return {
 		"digest": h.finish_hex(),
 		"hash": w.state_hash(),
@@ -94,12 +98,14 @@ func _check(label: String, r: Dictionary, cap_ok: bool = false) -> void:
 func test_every_modifier_is_shipped_and_compiled() -> void:
 	assert_eq(
 		_mods.size(),
-		84,
+		95,
 		(
 			"the 14 migrated attack items (MX1), Frost Nova's frost, Razor Orbit (MX2); MX4: the M-list's"
 			+ " 29 new, 3 legendary, Cluster Payload, Overclocked Drone, Afterimage; v0.6.5 WN1: 4 triggers;"
 			+ " v0.6.5 WN3: the Gun pool's 12 new; WN4: the Blade pool's 12 new; WN5a: the shared pool's 2"
-			+ " new (Bleed, Explosive); WN5b: 3 legendary triggers"
+			+ " new (Bleed, Explosive); WN5b: 3 legendary triggers; v0.8.0 BL: Blade Storm, Riposte Chain;"
+			+ " v0.8.0 AO: Ring, Swirl; v0.8.0 RR: Chain Blast; v0.8.0 RM: Threadline, Faultline, Gravity Stitch,"
+			+ " Stress Mark, Double Exposure, Grand Finale"
 		)
 	)
 

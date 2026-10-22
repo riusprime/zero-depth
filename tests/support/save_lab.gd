@@ -27,7 +27,8 @@ static func floor_world(run_seed: int, floor_index: int, build: StringName = &"b
 	return build_floor(run_state(run_seed, floor_index, build))
 
 
-static func build_floor(run: RunState) -> World:
+## `biome` (v0.8.0 SR, shots only): the shop room's biome when not the run's own (&"": the run's, as Main).
+static func build_floor(run: RunState, biome_id: StringName = &"") -> World:
 	var repo := ContentRepository.load_all()
 	var table := ContentCompiler.compile_player(repo.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(table, repo.get_def(&"build", run.build_id))
@@ -36,11 +37,8 @@ static func build_floor(run: RunState) -> World:
 	var bosses := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(bosses)
 	var boss := run.pick_boss(ContentCompiler.compile_boss_pool(repo, run.floor_index))
-	var arena := (
-		BossArenaSpec.make(bosses[boss].arena_cells, bosses[boss].arena_template, boss)
-		if boss >= 0
-		else null
-	)
+	var arena := RunSaver.boss_arena(run, bosses, boss)  # v0.7.5 BF1 (N18): an older save's room
+	var rules := RunSaver.floor_tables(run, repo)  # v0.7.5 MG, as Main
 	var w := FloorScenario.build(
 		run.floor_seed(),
 		table,
@@ -53,9 +51,15 @@ static func build_floor(run: RunState) -> World:
 		run,
 		ContentCompiler.compile_combos(repo),
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine")),
-		RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))  # v0.5.5 AR, as Main
+		rules[&"arena"],  # v0.5.5 AR, as Main
+		rules[&"map"]  # v0.7.5 MG, as Main
 	)
-	FloorScenario.add_shop(w, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH, as Main
+	var biome: BiomeDefinition = repo.get_def(
+		&"biomes", (repo.get_def(&"run", RUN_ID) as RunDefinition).biomes[run.biome_of()]
+	)
+	var shop_biome := biome.id if biome_id == &"" else biome_id
+	FloorScenario.add_shop(w, rules[&"shop"], shop_biome, rules[&"map"])  # v0.5.0 SH, v0.8.0 SR, as Main
+	IcePatches.place(w, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2, as Main: ice or starglow
 	w.set_boss_tables(bosses)
 	w.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1, as Main
 	w.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4, as Main
@@ -65,12 +69,14 @@ static func build_floor(run: RunState) -> World:
 	w.legendary_table = RunContentCompiler.compile_legendary(
 		repo.get_def(&"legendary", &"boss"), w.stat_tables, w.item_tables  # v0.5.5 AR (X1b), as Main
 	)
+	w.loot_pacing = RunContentCompiler.compile_loot_pacing(repo.get_def(&"loot_pacing", &"pacing"))  # v0.8.0 FL
 	Abilities.grant_start(w)
 	Abilities.start_floor(w)
-	if w.boss_flow != null:
+	if w.boss_flow != null:  # v0.8.0 N11: floor 1's arrival left out here (Main lands on it; test_arrival covers it)
 		w.boss_flow.set_transit(false, run.floor_index > 1)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))
-	EventCompiler.setup(w, repo)  # v0.5.0 EV, as Main: event rooms and curses after the heat
+	# v0.5.0 EV, as Main: event rooms and curses after the heat (v0.8.0 N17: an older save's floor keeps its rooms)
+	EventCompiler.setup(w, repo, FloorScenario.curse_room_rules_of(run))
 	w.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))  # v0.5.5 DS
 	CatchUp.start_floor(w)
 	return w

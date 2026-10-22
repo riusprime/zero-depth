@@ -9,10 +9,7 @@ var seeds := 300
 
 
 func _initialize() -> void:
-	for arg in OS.get_cmdline_user_args():
-		var kv := arg.split("=")
-		if kv.size() == 2 and kv[0] == "seeds":
-			seeds = int(kv[1])
+	seeds = int(ScriptArgs.parse().get("seeds", seeds))
 	var repo := ContentRepository.load_all()
 	var lines := PackedStringArray()
 	var bad := 0

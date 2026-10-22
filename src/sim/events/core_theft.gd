@@ -13,8 +13,9 @@ extends RefCounted
 ##   resets. A boss staggers by its own meter (BossAi, read here, never changed). A stagger that the hit also kills
 ##   opens nothing: the window needs the target alive.
 ## - The window lasts rules.core_window_ticks from the stagger (a new stagger restarts it).
-## - A core whose card no longer applies when it drops (a mod you took meanwhile, a stat at its cap) is redrawn
-##   from the same pool on `loot:event`.
+## - A core whose card no longer applies when it drops (a mod you took meanwhile, a stat at its cap; v0.8.0 FL: a
+##   wand card that reached the floor's level ceiling meanwhile, Shop.can_apply) is redrawn from the same pool on
+##   `loot:event`. v0.8.0 FL: an elite's mod weighs core_mod_weight × the floor stage's category multiplier.
 ## - Marked (C8): a killed elite also drops a free rare card (loot:event), stolen or not.
 ## Cores exist only in worlds with the event rules (World.ev.rng_elite), so older worlds keep their hashes.
 
@@ -49,15 +50,18 @@ static func on_boss(w: World, i: int) -> void:
 static func draw_card(w: World, rng: RngStream, rarity: int) -> int:
 	var codes := PackedInt32Array()
 	var weights := PackedInt32Array()
+	var paced := w.loot_pacing != null  # v0.8.0 FL: × the floor stage's category multiplier (per mille)
+	var stat_scale := 1000 if paced else 1
 	for idx in ItemPool.available(w):
 		codes.append(idx)
-		weights.append(w.ev.rules.core_mod_weight)
+		var base := w.ev.rules.core_mod_weight
+		weights.append(LootPacing.weigh(w, idx, base * 1000) if paced else base)
 	for s in w.stat_tables.size():
 		var t := w.stat_tables[s]
 		if t == null or t.weight <= 0 or Stats.at_cap(w, s):
 			continue
 		codes.append(Offers.stat_code(s, rarity))
-		weights.append(t.weight)
+		weights.append(t.weight * stat_scale)
 	var k := Offers.pick(rng, weights)
 	return codes[k] if k >= 0 else -1
 
@@ -162,7 +166,7 @@ static func on_death(w: World, i: int) -> void:
 	if k >= 0 and w.cores.window_t[k] > 0:
 		var code := w.cores.card[k]
 		var boss := w.cores.boss[k] == 1
-		if not applies(w, code):
+		if not Shop.can_apply(w, code):  # the shop's rule, the one rule (audit G-6)
 			code = (
 				draw_legendary(w, w.ev.rng) if boss else draw_card(w, w.ev.rng, Stats.Rarity.RARE)
 			)
@@ -179,16 +183,6 @@ static func on_death(w: World, i: int) -> void:
 		var rare := draw_card(w, w.ev.rng, Stats.Rarity.RARE)
 		if rare >= 0:
 			grant(w, rare, a.pos(i), CoreState.Drop.ELITE_CARD)
-
-
-## A card would still do something (a mod you don't hold, a stat under its cap).
-static func applies(w: World, code: int) -> bool:
-	match Offers.type_of(code):
-		Offers.STAT:
-			return not Stats.at_cap(w, Offers.stat_of(code))
-		Offers.MOD:
-			return CardLevels.can_take(w, code)  # v0.6.5 WN3
-	return true
 
 
 ## THE grant (one function, so Step MX's 6-slot Swap replaces only this): a free one-card drop of `code` near `at`

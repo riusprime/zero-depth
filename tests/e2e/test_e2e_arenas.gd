@@ -140,6 +140,7 @@ func test_the_boss_leaves_a_legendary_pick() -> void:
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
 	await e.tap(KEY_QUOTELEFT)
+	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(
 		e, f.boss_door_inside(2.0), func() -> bool: return w.boss_flow.door_sealed(), into
@@ -165,25 +166,40 @@ func test_the_boss_leaves_a_legendary_pick() -> void:
 	assert_eq(w.choosing, w.legendary_id, "E opens it")
 	var panel := hud.pick_panel()
 	assert_true(panel.is_open())
-	assert_eq(panel.title_text(), tr("PICK_TITLE_LEGENDARY"), "Pick a legendary card")
+	assert_true(
+		panel.title_text() in [tr("PICK_TITLE_BOSS"), tr("PICK_TITLE_BOSS_LEGENDARY")],
+		"the boss's reward (v0.8.0 RR)"
+	)
 	assert_eq(panel.card_count(), 3, "three cards")
 	assert_true(panel.is_legendary())
+	var words := []
+	for key in ["RARITY_COMMON", "RARITY_RARE", "RARITY_EPIC", "RARITY_LEGENDARY"]:
+		words.append(tr(key))
 	for k in panel.card_count():
 		var s := panel.slot(k)
-		assert_eq(s.tier, CardFrames.LEGENDARY_TIER, "card %d is legendary" % k)
-		assert_eq(s.frame_id(), &"gold", "in the gold frame")
-		assert_true(s.card.tier_text().ends_with(tr("RARITY_LEGENDARY")))
+		var code := w.rewards.offer_of(r)[k]
+		var tier := int(main.driver.reader.card_info(code)["rarity"])
+		# v0.8.0 RR (owner O33): every card wears its own tier: a Legendary one (and a legendary stat card) the gold
+		if tier == Offers.LEGENDARY:
+			assert_eq(s.tier, CardFrames.LEGENDARY_TIER, "card %d is legendary" % k)
+			assert_eq(s.colour_id(), &"gold", "in the gold colour")
+		else:
+			assert_ne(s.tier, CardFrames.LEGENDARY_TIER, "card %d keeps its own tier" % k)
+		assert_true(s.card.tier_text().ends_with(words[tier]), "its tier's word")
 	var before := w.stat_cards.size() + w.items_owned.size()
-	var first := w.rewards.offer_of(r)[0]  # v0.6.5 WN5b: a wand card is its level-5 version
+	var first := w.rewards.offer_of(r)[0]
 	var wand := bool(main.driver.reader.card_info(first).get("wand", false))
-	if wand:
-		assert_string_contains(panel.slot(0).card.tier_text(), tr("UI_CARD_ABILITY_LEVEL") % 5)
+	# v0.8.0 FL (owner O91): no level-5 version; the boss's upgrade is a held card one level up
+	var upgrade := wand and w.items_owned.has(first)
+	var lvl := CardLevels.level(w, first) + 1 if upgrade else 1
 	await e.tap(KEY_ENTER)
 	await e.frames(3)
 	assert_eq(w.choosing, -1, "Enter took the focused card")
 	assert_eq(
-		w.stat_cards.size() + w.items_owned.size(), before + 1, "a legendary card joined the build"
+		w.stat_cards.size() + w.items_owned.size(),
+		before + (0 if upgrade else 1),
+		"a card joined the build (or a held one rose)"
 	)
 	if wand:
-		assert_eq(CardLevels.level(w, first), 5, "the wand card at level 5")
+		assert_eq(CardLevels.level(w, first), lvl, "the wand card one level up (1 when new)")
 	assert_eq(w.rewards.index_of(w.legendary_id), -1)

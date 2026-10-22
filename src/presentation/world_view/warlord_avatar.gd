@@ -1,13 +1,19 @@
 class_name WarlordAvatar
 extends BossAvatar
-## The Warlord (v0.4.0 BO, floor 1's second boss; prompt in docs/art/BOSSES_2.md, code-built until the owner's
-## sheet): a shielded knight in the enemy style. A grey faceted armoured body over short armoured legs, a red tabard
-## and red pauldrons, a closed grey helm with a glowing red T-slot visor under a crest of red crystal blades, a tall
-## red tower shield on its left arm with a grey rim and a glowing emblem, and a long grey spear with a red head in its
-## right hand. Moves: it braces behind the shield and bashes with it (the sweep), raises the spear and plants it to
-## send spear lines through the floor (the flood), couches the spear for the lunge (the charge) and draws it back to
-## throw for the javelin rain (the barrage). While its weak point is open the shield is lifted up and aside, baring
-## the gold core on its chest (the sim drops its front armour then); staggered, it reels with both arms low.
+## The Warlord (v0.4.0 BO, floor 1's second boss; prompt in docs/art/BOSSES_2.md): a shielded knight in the enemy
+## style. A grey faceted armoured body over short armoured legs, a red tabard and red pauldrons, a closed grey helm
+## with a glowing red T-slot visor under a crest of red crystal blades, a tall red tower shield on its left arm with a
+## grey rim and a glowing emblem, and a long grey spear with a red head in its right hand. Moves: it braces behind the
+## shield and bashes with it (the sweep), raises the spear and plants it to send spear lines through the floor (the
+## flood), couches the spear for the lunge (the charge) and draws it back to throw for the javelin rain (the
+## barrage). While its weak point is open the shield is lifted up and aside, baring the gold core on its chest (the
+## sim drops its front armour then); staggered, it reels with both arms low.
+## v0.7.5 BM: the owner's model (assets/models/bosses/warlord.glb, rigged by the owner: a 41-joint Tripo skeleton)
+## replaces the code-built body, which stays as the fallback when the file is missing. It is posed from its bones,
+## one function per layer (_pose_rig): breath and sway, a walk cycle from its speed (legs, knees, counter-swinging
+## arms), the shield carried in front and lifted aside while the weak point is open, the spear raised and planted,
+## couched and thrust, drawn back and thrown, a lunge lean, a flinch when hit, the stagger's reel, a fall when it
+## dies, and the "shielded" hook (braced low behind the shield).
 
 const HEIGHT := 2.7
 const WALK_SPEED := 2.1
@@ -22,6 +28,11 @@ const RED := Color("#D23E35")
 const RED_DARK := Color("#A9322B")
 const VISOR := Color("#FF2A22")
 const EMBLEM := Color("#FF3A26")
+## v0.7.5 BM: points on the owner's model at rest (metres, model frame; evidence/BOSS_MODELS.md) and the bones they
+## ride on: the chest's core, the spear's tip (right hand) and the shield's face (left forearm).
+const MODEL_WEAK := Vector3(0.42, 1.35, 0)
+const MODEL_SPEAR_TIP := Vector3(0.53, 2.7, 0.81)
+const MODEL_SHIELD := Vector3(0.08, 0.75, -0.93)
 
 var torso := Node3D.new()
 var helm := Node3D.new()
@@ -35,23 +46,48 @@ var legs: Array[Node3D] = []
 var _lift := 0.0
 
 
-## Its imported model, when the owner sends one: assets/models/bosses/warlord.glb (whole-body motion).
+## The owner's model: assets/models/bosses/warlord.glb (posed from its own bones).
 func model_id() -> StringName:
 	return &"warlord"
 
 
 func _code_nodes() -> Array[Node]:
-	return [torso]
+	return [torso, helm, shield_arm, spear_arm, shield, spear]
 
 
 ## The weak point sits on the chest, behind where the shield normally hangs.
 func _weak_point_at() -> Vector3:
-	return Vector3(0.5, 1.75, 0)
+	return MODEL_WEAK if imported != null else Vector3(0.5, 1.75, 0)
+
+
+func _weak_bone() -> StringName:
+	return &"Spine01"
 
 
 ## 0..1: how far the shield is lifted (tests).
 func shield_lift() -> float:
 	return _lift
+
+
+func anchor_names() -> Array[StringName]:
+	return [&"weak", &"spear_tip", &"shield"]
+
+
+func _anchor(point: StringName) -> Vector3:
+	match point:
+		&"spear_tip":
+			return (
+				_on_bone(&"R_Hand", MODEL_SPEAR_TIP)
+				if imported != null
+				else model.to_local(spear.to_global(Vector3(2.4, 0, 0)))
+			)
+		&"shield":
+			return (
+				_on_bone(&"L_ForearmTwist02", MODEL_SHIELD)
+				if imported != null
+				else model.to_local(shield.global_position)
+			)
+	return weak_core.position
 
 
 func _build() -> void:
@@ -244,3 +280,33 @@ func _pose(dt: float) -> void:
 		var sgn := -1.0 if k == 0 else 1.0
 		legs[k].rotation = Vector3(0, 0, s * 0.4 * walk * sgn + couch * 0.2 * sgn)
 		legs[k].position.y = HIP_Y + maxf(0.0, s * sgn) * 0.07 * walk
+
+
+# --- The owner's model (v0.7.5 BM), posed from its bones -------------------------------------------------------
+# v0.8.0 BA: its keyframed clips (WarlordClips) do the moves; this adds the shield's lift while the weak point is
+# open (the sim drops its front armour then), a layer the clips don't know about. Turns are in the model frame: +Z
+# swings a hanging limb forward (and tips the torso back), +X swings it out to the left (-Z), +Y turns it to its left.
+
+
+func _clip_library() -> Dictionary:
+	return WarlordClips.library()
+
+
+func _walk_speed() -> float:
+	return WALK_SPEED
+
+
+func _stride() -> float:
+	return STRIDE
+
+
+func _pose_rig(dt: float) -> void:
+	_lift = lerpf(_lift, _weak_shown, _rate(8.0, dt))
+	var k := _lift * (1.0 - maxf(_stagger, _death))
+	if k <= 0.001:
+		return
+	# Lifted up and aside, from the carry: out to the left, turned outward, raised, the forearm up.
+	poser.turn(&"L_Upperarm", Vector3.UP, 0.7 * k)
+	poser.turn(&"L_Upperarm", Vector3.RIGHT, 1.55 * k)
+	poser.turn(&"L_Upperarm", Vector3.BACK, 0.25 * k)
+	poser.turn(&"L_Forearm", Vector3.BACK, 0.35 * k)

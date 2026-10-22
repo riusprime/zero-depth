@@ -5,3 +5,11 @@
 [resource]
 script = ExtResource("1_tun")
 id = &"sim"
+player_shots_max = 256
+arrival_first_seconds = 1.6
+arrival_seconds = 0.8
+arrival_calm_seconds = 0.3
+attack_speed_knee_permille = 500
+attack_speed_knee2_permille = 1500
+attack_speed_slope_permille = 500
+attack_speed_slope2_permille = 250

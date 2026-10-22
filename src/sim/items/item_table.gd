@@ -41,16 +41,22 @@ enum Kind {
 	WAND,  # v0.6.5 WN3: a wand card of a weapon's pool (CardLevels)
 }
 
-## ItemDefinition.Rarity (v0.3.0 E; v0.6.0 MX4 LEGENDARY: the boss's tier only).
+## ItemDefinition.Rarity (v0.3.0 E; v0.6.0 MX4 LEGENDARY: the boss's tier; v0.8.0 RR EPIC, appended).
 const COMMON := 0
 const RARE := 1
 const LEGENDARY := 2
+const EPIC := 3
+## v0.8.0 RR (owner O33): the card tiers in order (Offers.info's "rarity": 0 common, 1 rare, 2 epic, 3 legendary).
+const TIER_COMMON := 0
+const TIER_RARE := 1
+const TIER_EPIC := 2
+const TIER_LEGENDARY := 3
 
 var id := &""
 var kind := Kind.LONG_EDGE
 var name_key := &""
 var desc_key := &""
-## COMMON or RARE (chests weight rare items higher).
+## COMMON, RARE, EPIC or LEGENDARY (ItemDefinition.Rarity's values; tier() gives the tier's order).
 var rarity := COMMON
 ## The PlayerTable.Utility the item needs, or -1 for any (rewards never offer it otherwise).
 var requires_utility := -1
@@ -65,6 +71,12 @@ var modifiers: Array[ModifierTable] = []
 ## v0.6.5 WN5b (WAND.md "What happens to the v0.6 cards"): a retired v0.6 card. Never offered (ItemPool); kept so
 ## old saves and item indices still resolve; a held one maps onto its new card on load (WandMigration).
 var retired := false
+## v0.8.0 RM (owner O91: mutations): the card's draw weight × this per mille (ItemPool.card_weight; under 1000 it never
+## fills the boss's chance slot, Offers.legendary_cards). 1000 = as its tier.
+var offer_weight_permille := 1000
+## v0.8.0 FL (owner O91; LootPacing.Category): the card's pacing category (ItemDefinition.loot_category): OTHER 0,
+## FORM 1, ELEMENT 2, ADVANCED 3, TRIGGER 4, MUTATION 5. Its draw weight × the floor stage's multiplier for it.
+var loot_category := 0
 ## Ember Edge (the burn engine's numbers).
 var burn_damage := 0
 var burn_period_ticks := 1
@@ -133,3 +145,20 @@ var poison_spread_m := 0.0
 var bleed_move_period_ticks := 0
 var name_key_gun := &""
 var desc_key_gun := &""
+
+
+## v0.8.0 RR: this card's tier, in order (TIER_*: common 0, rare 1, epic 2, legendary 3).
+func tier() -> int:
+	return tier_of(rarity)
+
+
+## v0.8.0 RR: ItemDefinition.Rarity `r` as a tier in order (TIER_*).
+static func tier_of(r: int) -> int:
+	match r:
+		RARE:
+			return TIER_RARE
+		EPIC:
+			return TIER_EPIC
+		LEGENDARY:
+			return TIER_LEGENDARY
+	return TIER_COMMON

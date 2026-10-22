@@ -1,7 +1,8 @@
 extends GutTest
 ## A named combo through real input (v0.3.0 G, L8; v0.3.0 E moved items onto altars and chests): on the first
-## floor, walk (left stick only) to every altar and chest, open it with pad X and leave it with B, which keeps its
-## three cards for later. Then go back to the two whose cards hold a combo pair and take those cards (d-pad, A).
+## floor, walk (left stick only) to every altar and chest, open it with pad X and leave it with B, which keeps an
+## altar's three cards for later. v0.8.0 N7 (owner O61): a chest deals its one card and any answer, B too, takes it.
+## Then go back to the altars whose cards complete a combo pair and take those cards (d-pad, A).
 ## Taking the second item unlocks the combo: the combo card names it and the HUD gains its badge.
 
 
@@ -46,18 +47,27 @@ func test_pick_a_combo_pair_from_altars_and_chests() -> void:
 	for k in held:
 		CardLevels.set_level(w, k, CardLevels.MAX_LEVEL)
 	var left := Array(w.rewards.ids)
+	var taken := PackedInt32Array()  # v0.8.0 N7: the cards the chests dealt (B took them)
 	while not left.is_empty() and not w.player_dead():
 		var id: int = _nearest(w, left)
 		left.erase(id)
 		assert_true(await _open(e, id), "opened reward %d" % id)
-		offers[id] = w.rewards.offer_of(w.rewards.index_of(id))
+		var offer := w.rewards.offer_of(w.rewards.index_of(id))
 		await _press(e, JOY_BUTTON_B)
-		assert_eq(w.choosing, -1, "B left it for later")
-	var plan := _pair(w, offers)
-	assert_false(plan.is_empty(), "the floor's cards hold a combo pair in two rewards")
+		if w.rewards.index_of(id) < 0:
+			taken.append_array(offer)  # a chest's card: B took it
+		else:
+			offers[id] = offer  # an altar's cards, or a chest's card that needs the swap (B left it)
+		assert_eq(w.choosing, -1, "B left it for later (or took the chest's card)")
+	var plan := _pair(w, offers, taken)
+	assert_false(plan.is_empty(), "the floor's cards hold a combo pair")
 	if plan.is_empty():
 		return
-	for step: Array in [[plan[1], plan[2]], [plan[3], plan[4]]]:
+	var steps := []
+	for at in [1, 3]:
+		if int(plan[at]) >= 0:
+			steps.append([plan[at], plan[at + 1]])
+	for step: Array in steps:
 		assert_true(await _open(e, step[0]), "reopened reward %d" % step[0])
 		assert_eq(w.rewards.offer_of(w.rewards.index_of(step[0])), offers[step[0]], "same cards")
 		for k in step[1]:
@@ -114,13 +124,15 @@ func _nearest(w: World, ids: Array) -> int:
 
 
 ## [combo, reward a, card a, reward b, card b] for the first combo whose two items sit in two different rewards'
-## cards, or [].
-func _pair(w: World, offers: Dictionary) -> Array:
+## cards, or (v0.8.0 N7) one of them already taken from a chest (its reward -1), or [].
+func _pair(w: World, offers: Dictionary, taken: PackedInt32Array) -> Array:
 	for c in w.combo_tables.size():
 		var t := w.combo_tables[c]
-		var a := _find(offers, t.item_a)
-		var b := _find(offers, t.item_b)
-		if not a.is_empty() and not b.is_empty() and a[0] != b[0]:
+		if taken.has(t.item_a) and taken.has(t.item_b):
+			return [c, -1, 0, -1, 0]
+		var a := [-1, 0] if taken.has(t.item_a) else _find(offers, t.item_a)
+		var b := [-1, 0] if taken.has(t.item_b) else _find(offers, t.item_b)
+		if not a.is_empty() and not b.is_empty() and (a[0] != b[0] or a[0] == -1):
 			return [c, a[0], a[1], b[0], b[1]]
 	return []
 

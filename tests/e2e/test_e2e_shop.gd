@@ -1,9 +1,10 @@
 extends GutTest
 ## The shop through real input (v0.5.0 SH): start a run (God and Bomb Lobber from the dev panel, clicked with the
 ## mouse: the dev route, so the walk is safe and there is an ability to salvage), walk with the left stick to the
-## floor's shop terminal (in a side room, on the minimap once seen), see the prompt, press E: the shop panel opens
-## with four priced cards and the world waits. Buy a card with the keyboard (arrows, Enter): it applies as a picked
-## card and its slot reads Sold. Move down to the salvage list and salvage Bomb Lobber with the pad (d-pad, A): 25
+## floor's shop (in a side room, on the minimap once seen; v0.8.0 SR: the biome's tent stall, its vendor behind the
+## counter turning to you as you come up to it), see the prompt, press E: the shop panel opens with four priced cards
+## and the world waits. Buy a card with the keyboard (arrows, Enter): it applies as a picked card, its slot reads Sold
+## and the vendor nods. Move down to the salvage list and salvage Bomb Lobber with the pad (d-pad, A): 25
 ## shards per level back, the slot is free. B closes the shop and play resumes.
 
 
@@ -33,7 +34,15 @@ func test_walk_to_the_shop_buy_a_card_and_salvage_an_ability() -> void:
 	var layout := w.floor_layout
 	assert_true(w.shop.present(), "the floor has a shop")
 	assert_true(ShopPlacement.allowed(layout, w.shop.room), "in a side room")
-	assert_not_null(main.view.shop_terminal, "the terminal is drawn")
+	# v0.8.0 SR (O13): the shop is the biome's tent stall with its vendor, not the terminal.
+	assert_true(main.driver.reader.shop_stall(), "the shop room has its stall")
+	assert_eq(
+		layout.shop_layout, StringName("shop_%s" % main.run_biome_id()), "the biome's shop room"
+	)
+	var stall: ShopStallView = main.view.shop_stall
+	assert_not_null(stall, "the stall is drawn")
+	assert_null(main.view.shop_terminal, "no terminal")
+	assert_eq(stall.vendor.biome, main.run_biome_id(), "the biome's vendor")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
 	while w.ability_tables[main.driver.debug.ability_choice].id != &"bomb_lobber":
@@ -43,11 +52,13 @@ func test_walk_to_the_shop_buy_a_card_and_salvage_an_ability() -> void:
 	await e.tap(KEY_QUOTELEFT)
 	var bomb := Abilities.index_of_kind(w, AbilityTable.Kind.BOMB_LOBBER)
 	assert_true(Abilities.owned(w, bomb), "Bomb Lobber in slot 2")
-	assert_true(await e.walk_to(ShopPlacement.front(layout), 0.4), "walked to the terminal")
-	await e.frames(2)
+	assert_true(await e.walk_to(ShopPlacement.front(layout), 0.4), "walked up to the counter")
+	await e.frames(40)
 	assert_true(hud.minimap.state.is_discovered(w.shop.room), "its room is on the minimap")
-	assert_eq(hud.shop.prompt_text(), tr("SHOP_PROMPT"), "the prompt by the terminal")
-	assert_true(main.view.shop_terminal.hot(), "the terminal lights up in reach")
+	assert_eq(hud.shop.prompt_text(), tr("SHOP_PROMPT"), "the prompt by the counter")
+	assert_true(stall.hot(), "the stall's lantern brightens in reach")
+	assert_true(stall.vendor.has_target(), "the vendor looks at you")
+	assert_true(stall.vendor.facing_target(), "and has turned to face you")
 	# TEST HELPER (labelled): grant the shards directly. Earning them by input is test_e2e_rewards'
 	# test_kills_earn_shards; this test is about spending them.
 	w.shards = 400
@@ -87,6 +98,7 @@ func test_walk_to_the_shop_buy_a_card_and_salvage_an_ability() -> void:
 	for ev in w.events_since(seq):
 		picked = picked or (ev.kind == SimEvent.Kind.PICKUP and ev.amount == code)
 	assert_true(picked, "it applied as a picked card")
+	assert_true(stall.vendor.nodding(), "the vendor nods at the sale")
 	gut.p("bought %s for %d" % [Offers.info(w, code)["id"], cost])
 	# Salvage Bomb Lobber with the pad: down to the salvage list, along to it, A.
 	await _pad(e, JOY_BUTTON_DPAD_DOWN)
@@ -147,7 +159,9 @@ func test_rerolls_keep_sold_slots_and_four_buys_per_floor() -> void:
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
 	await e.tap(KEY_QUOTELEFT)
-	assert_true(await e.walk_to(ShopPlacement.front(w.floor_layout), 0.4), "walked to the terminal")
+	assert_true(
+		await e.walk_to(ShopPlacement.front(w.floor_layout), 0.4), "walked up to the counter"
+	)
 	# TEST HELPER (labelled): grant the shards directly, as in the test above.
 	w.shards = 5000
 	await e.tap(KEY_E)
@@ -199,6 +213,73 @@ func test_rerolls_keep_sold_slots_and_four_buys_per_floor() -> void:
 	await e.tap(KEY_ENTER)
 	await e.frames(2)
 	assert_eq([w.shards, w.shop.rerolls], [before, rolls], "nothing happens")
+	await e.tap(KEY_ESCAPE)
+	await e.frames(2)
+	assert_false(w.shop.open, "Esc closes the shop")
+
+
+## Audit P-12, real input only: holding Enter on Reroll rerolls once (the OS key-repeat echoes act on nothing), two
+## presses inside one tick send one action, and the arrows still repeat.
+func test_held_enter_on_reroll_rerolls_once() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu()
+	var w := e.world()
+	var hud: Hud = main.get_node("UI/Hud")
+	await e.tap(KEY_QUOTELEFT)
+	await _click(e, main, "God")
+	await e.tap(KEY_QUOTELEFT)
+	assert_true(
+		await e.walk_to(ShopPlacement.front(w.floor_layout), 0.4), "walked up to the counter"
+	)
+	# TEST HELPER (labelled): grant the shards directly, as in the tests above.
+	w.shards = 5000
+	await e.tap(KEY_E)
+	await e.frames(2)
+	var panel := hud.shop.panel
+	assert_true(panel.is_open(), "the shop is open")
+	var r := panel.index_of_value(InputFrame.PICK_SHOP_REROLL)
+	await _focus_to(e, panel, r)
+	assert_eq(panel.focus_index(), r, "Reroll focused")
+	var rolls := w.shop.rerolls
+	# Hold Enter: one press, then the OS's key-repeat echoes over many frames.
+	e.key(KEY_ENTER, true)
+	await e.frames(2)
+	for i in 12:
+		var ev := InputEventKey.new()
+		ev.physical_keycode = KEY_ENTER
+		ev.keycode = KEY_ENTER
+		ev.pressed = true
+		ev.echo = true
+		e.send(ev)
+		await e.frames(2)
+	e.key(KEY_ENTER, false)
+	await e.frames(2)
+	assert_eq(w.shop.rerolls, rolls + 1, "a held Enter rerolls once")
+	# Two separate presses inside one frame: one action.
+	await e.tap(KEY_ENTER)
+	await e.frames(2)
+	assert_eq(w.shop.rerolls, rolls + 2, "a fresh press rerolls again")
+	e.key(KEY_ENTER, true)
+	e.key(KEY_ENTER, false)
+	e.key(KEY_ENTER, true)
+	e.key(KEY_ENTER, false)
+	await e.frames(3)
+	assert_eq(w.shop.rerolls, rolls + 3, "two presses in one tick send one action")
+	# The arrows still repeat: a held Left's echoes move the focus.
+	var f := panel.focus_index()
+	e.key(KEY_LEFT, true)
+	await e.frames(1)
+	var echo := InputEventKey.new()
+	echo.physical_keycode = KEY_LEFT
+	echo.keycode = KEY_LEFT
+	echo.pressed = true
+	echo.echo = true
+	e.send(echo)
+	await e.frames(1)
+	e.key(KEY_LEFT, false)
+	await e.frames(1)
+	assert_eq(panel.focus_index(), f - 2, "the arrow's echo moved the focus too")
 	await e.tap(KEY_ESCAPE)
 	await e.frames(2)
 	assert_false(w.shop.open, "Esc closes the shop")

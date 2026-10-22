@@ -244,6 +244,18 @@ func _check_thickness(f: FloorLayout, tag: String) -> void:
 	assert_true(
 		f.boss_door_wall.bounds().encloses(f.door_rect(d).grow(-0.01)), tag + ": the seal fills it"
 	)
+	# Audit G-4: 5 cm deeper on each wall face (through the wall), no wider than the passage; the arena rule.
+	var seal := f.boss_door_wall.bounds()
+	var door := f.door_rect(d)
+	var through_x := f.door_angles[d] % 2048 == 0
+	var deeper := (seal.size.x - door.size.x) if through_x else (seal.size.y - door.size.y)
+	var wider := (seal.size.y - door.size.y) if through_x else (seal.size.x - door.size.x)
+	assert_almost_eq(deeper, 0.1, 0.001, tag + ": the seal overlaps both wall faces")
+	assert_almost_eq(wider, 0.0, 0.001, tag + ": the seal is the passage's width")
+	assert_true(
+		seal.is_equal_approx(ArenaRooms.barrier(f, d).bounds()),
+		tag + ": as an arena seals a doorway"
+	)
 
 
 func _gate(f: FloorLayout) -> Obb:

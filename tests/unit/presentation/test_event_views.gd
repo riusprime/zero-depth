@@ -1,5 +1,5 @@
 extends GutTest
-## v0.5.0 EV views: the pedestals (glow and state change no shader; the name floats when near), the drone's ring
+## v0.5.0 EV views: the pedestals (glow and state change no shader; v0.8.0 N17: no floating name), the drone's ring
 ## and the elite crowns; the event panel's cards for all eight events (cost, reward, curse mark, refusals, Leave)
 ## in the pick cards' look; the cursed chest card's mark; the threat panel; the recap line; and every event and
 ## curse string in en and es with matching placeholders.
@@ -26,11 +26,9 @@ func test_pedestals_glow_and_go_dark_without_changing_a_shader() -> void:
 	assert_eq(view.pedestal_count(), w.ev.size())
 	var before := DamageFlashKeys.of(view)
 	assert_gt(before.size(), 4, "the pedestal has its pieces")
-	assert_false(view.name_label(0).visible, "far: no name")
 	w.actors.set_pos(0, w.ev.pos(0))
 	view.sync(reader)
-	assert_true(view.name_label(0).visible, "near: its name floats")
-	assert_eq(view.name_label(0).text, tr(Events.table(w, 0).name_key))
+	assert_eq(view.label_count(), 0, "v0.8.0 N17 (O75): no name floats over it, even near")
 	view._process(0.1)
 	var lit := view.glyph_energy(0)
 	EventLab.set_event(w, &"scrap_heap")
@@ -40,7 +38,6 @@ func test_pedestals_glow_and_go_dark_without_changing_a_shader() -> void:
 	view.sync(reader)
 	view._process(0.1)
 	assert_lt(view.glyph_energy(0), lit * 0.2, "spent: it goes dark")
-	assert_false(view.name_label(0).visible, "and its name with it")
 	assert_eq(DamageFlashKeys.of(view), before, "no shader changed")
 
 

@@ -29,13 +29,6 @@ func try_mark(root: int, code: int, target: int, tick: int) -> bool:
 	return true
 
 
-func has(root: int, code: int, target: int) -> bool:
-	for k in roots.size():
-		if roots[k] == root and codes[k] == code and targets[k] == target:
-			return true
-	return false
-
-
 ## Drops records older than KEEP_TICKS (they are in tick order, so the old ones are at the front).
 func prune(tick: int) -> void:
 	var n := 0

@@ -21,7 +21,9 @@ func _run(
 	var p := from
 	for k in ticks:
 		p += vel / 60.0
-		a.apply_state({"tick": t0 + k + 1, "pos": p, "state": state})
+		# v0.8.0 P1: a windup's progress rises over 48 ticks (the sim's telegraph progress drives the raise).
+		var w := clampf(float(k + 1) / 48.0, 0.0, 1.0) if state == WorldReader.STATE_WINDUP else 0.0
+		a.apply_state({"tick": t0 + k + 1, "pos": p, "state": state, "windup": w})
 		a.advance(DT)
 	return p
 
@@ -41,16 +43,31 @@ func test_builds_hood_visor_and_four_clawed_legs() -> void:
 	assert_not_null(a.body, "body")
 	assert_not_null(a.visor, "visor")
 	assert_eq(a.legs.size(), 4, "four legs")
-	var vm := a.visor.material_override as StandardMaterial3D
-	assert_true(vm.emission_enabled, "the visor glows")
-	assert_gt(a.body_materials.size(), 6, "hood, mantle, body and leg pieces flash with the body")
-	assert_false(a.body_materials.has(vm), "a hit flash never turns the visor's own glow off")
-	for m in a.body_materials:
-		assert_eq(
-			m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "outlined like the other actors"
-		)
-		assert_true(m.emission_enabled, "built flashable: a hit changes energy, never the shader")
-		assert_eq(m.emission_energy_multiplier, 0.0, "and dark until hit")
+	# v0.8.0 HR (O89): EnemyLooks' shared materials; the flash is an instance uniform on the body pieces only.
+	var vm := a.visor.material_override
+	assert_false(
+		EnemyLooks.is_body(vm), "the visor is an accent: a hit flash never turns its glow off"
+	)
+	assert_gt(a.visor_energy(), 0.0, "the visor glows")
+	assert_eq(a.hit_pieces().size(), 13, "the body and the twelve leg segments flash with the body")
+	assert_false(a.hit_pieces().has(a.visor))
+	assert_eq(a.hit_look(), EnemyLooks.HIT_OFF, "dark until hit")
+	var looks := a.body_looks()
+	assert_gt(looks.size(), 4, "hood, mantle, core and leg colours")
+	for m: ShaderMaterial in looks:
+		assert_eq(m.get_shader_parameter("emission_energy"), 0.0, "no glow outside ActorViews")
+		assert_ne(m.next_pass, EnemyLooks.xray_of(m), "outlined like the other actors")
+		assert_not_null(m.next_pass, "outlined like the other actors")
+	var body_piece := a.hit_pieces()[0] as MeshInstance3D
+	assert_not_null(
+		EnemyLooks.xray_of(body_piece.get_surface_override_material(0)),
+		"the body seen through walls"
+	)
+	var leg_piece := a.hit_pieces()[1] as MeshInstance3D
+	assert_null(
+		EnemyLooks.xray_of(leg_piece.get_surface_override_material(0)), "the thin legs: none"
+	)
+	assert_eq(a.find_children("*", "MeshInstance3D", true, false).size(), 15, "no twin node")
 	var tips := a.leg_tips()
 	for k in tips.size():
 		assert_lt(absf(tips[k].y), 0.08, "talon %d stands near the ground" % k)
@@ -123,11 +140,7 @@ func test_actor_views_uses_it_for_the_charger() -> void:
 	assert_true(node.has_meta(&"enemy_avatar"), "the hook finds the avatar")
 	var avatar: ChargerAvatar = node.get_meta(&"enemy_avatar")
 	assert_eq(avatar.get_parent(), node.get_meta(&"facing"), "it turns with the actor's facing")
-	assert_eq(
-		(node.get_meta(&"mats") as Array).size(),
-		avatar.body_materials.size(),
-		"hit flash reaches it"
-	)
+	assert_eq(node.get_meta(&"hit_look"), avatar, "hit flash reaches it (v0.8.0 HR: per piece)")
 	assert_true(node.has_meta(&"dazed"), "the dazed ring stays")
 	var bar: Node3D = node.get_meta(&"bar")
 	assert_gt(

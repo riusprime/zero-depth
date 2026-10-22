@@ -31,6 +31,36 @@ extends ContentDef
 ## boss room seals.
 @export var boss_ease_floor_permille := PackedInt32Array([800, 1000, 1000])
 @export var boss_room_heal_floor_permille := PackedInt32Array([1000, 0, 0])
+## v0.7.5 AP (owner N4, the Ascension loop): after the last floor's boss the Ascension portal ends the run or starts a
+## new loop of `floors` floors with the build carried. Each loop past the first makes the run harder (starting values
+## the owner tunes; integers, so the scaling stays deterministic, EI-02):
+## - normal enemies' HP and damage, and bosses' HP and attack damage, × these per mille once per loop past the first,
+##   compounding (loop 3 = the factor twice), never past loop_scale_cap_permille; on top of the floor's own scaling;
+## - threat T + loop_threat per loop past the first (Curses.threat: the curses' and Deep's threat, shown as T);
+## - the hidden catch-up's caps (enemies' and the boss's) + loop_catch_up_cap_permille per loop past the first.
+## v0.8.0 LS (owner Q6, "HP ×6, dmg ×1.2"): enemies and bosses alike, HP ×6 and damage ×1.2 per loop (was enemy
+## HP ×4 / damage ×2, boss HP ×2 / damage ×1.5), so HP outgrows the player's build and damage only a little.
+@export var loop_enemy_hp_permille := 6000
+@export var loop_enemy_damage_permille := 1200
+@export var loop_boss_hp_permille := 6000
+@export var loop_boss_damage_permille := 1200
+@export var loop_scale_cap_permille := 100000
+@export var loop_threat := 2
+@export var loop_catch_up_cap_permille := 500
+## v0.8.0 P3 (owner O35, "Reduce the difficulty of this specific combination (second loop + Purple Portal) by
+## approximately 10%"): a Deep floor (the Purple Portal's route) past loop 1 eases its enemies' and bosses' HP and
+## damage × this per mille, on top of the floor's, the Deep and the loop factors; a Deep floor on loop 1 and a normal
+## floor on loop 2 keep theirs. 1000 = no ease. Starting value 900.
+@export var loop_deep_ease_permille := 1000
+## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F1-F3): the final boss. End the run at the Ascension portal (any loop)
+## leads to it: one fight in its own arena (final_arena, a FinalArenaDefinition id), its bodies in order
+## (final_bosses: FinalBossDefinition ids, the Colossus, the Prism, the Nemesis), shown as one boss named
+## final_name_key; between two bodies the last one shatters for final_shatter_seconds. Empty final_bosses: End the run
+## ends the run at once (as before FB1).
+@export var final_bosses: Array[StringName] = []
+@export var final_name_key: StringName
+@export var final_arena: StringName
+@export var final_shatter_seconds := 1.5
 
 
 func category() -> StringName:
@@ -40,6 +70,17 @@ func category() -> StringName:
 func validate() -> Array[ValidationIssue]:
 	var issues := super.validate()
 	check_positive(issues, "floors", floors)
+	if not final_bosses.is_empty():  # v0.8.0 FB1: a final boss has its name, its arena and a real shatter
+		if String(final_name_key).is_empty() or String(final_arena).is_empty():
+			issues.append(
+				ValidationIssue.new(
+					&"missing", resource_path, "final_bosses need final_name_key and final_arena"
+				)
+			)
+		if int(round(final_shatter_seconds * 60.0)) < 1:
+			issues.append(
+				ValidationIssue.new(&"duration", resource_path, "final_shatter_seconds < a tick")
+			)
 	if biomes.is_empty():
 		issues.append(ValidationIssue.new(&"missing", resource_path, "biomes is empty"))
 	for b in biomes:
@@ -81,4 +122,28 @@ func validate() -> Array[ValidationIssue]:
 					&"range", resource_path, "boss_room_heal_floor_permille: 0..1000"
 				)
 			)
+	for pair: Array in [  # v0.7.5 AP: a loop never makes anything weaker
+		["loop_enemy_hp_permille", loop_enemy_hp_permille],
+		["loop_enemy_damage_permille", loop_enemy_damage_permille],
+		["loop_boss_hp_permille", loop_boss_hp_permille],
+		["loop_boss_damage_permille", loop_boss_damage_permille],
+	]:
+		if int(pair[1]) < 1000 or int(pair[1]) > loop_scale_cap_permille:
+			issues.append(
+				ValidationIssue.new(
+					&"range", resource_path, "%s: 1000..loop_scale_cap_permille" % pair[0]
+				)
+			)
+	if loop_deep_ease_permille < 1 or loop_deep_ease_permille > 1000:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "loop_deep_ease_permille: 1..1000")
+		)
+	if loop_threat < 0:
+		issues.append(ValidationIssue.new(&"negative", resource_path, "loop_threat is negative"))
+	if loop_catch_up_cap_permille < 0:
+		issues.append(
+			ValidationIssue.new(
+				&"negative", resource_path, "loop_catch_up_cap_permille is negative"
+			)
+		)
 	return issues

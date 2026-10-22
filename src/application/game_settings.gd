@@ -22,6 +22,10 @@ const RENDER_SCALES: Array[String] = ["50", "67", "75", "85", "100"]
 const COLOUR_MODES: Array[String] = ["off", "protanopia", "deuteranopia", "tritanopia"]
 ## v0.6.0 MX3: the attack effects' density (ViewPrefs.effects_density, AttackFormView).
 const EFFECTS_DENSITIES: Array[String] = ["low", "medium", "high"]
+## v0.7.5 SM (N8, accessibility): the interface scale (%): every menu, the HUD and their text grow or shrink with it
+## (the window's content scale; the 3D view is not scaled). Layouts are built for 1920×1080 at 100; 110 is the most the
+## pick panel takes at 1280×720 (at 125 its column overflows the 864 px it is given: v0.7.5 evidence/SMALL_THINGS.md).
+const UI_SCALES: Array[String] = ["90", "100", "110"]
 ## Starting values (v0.3.0 O); the shipped look stays the default.
 const DEFAULTS := {
 	"audio/master": 80,
@@ -39,6 +43,9 @@ const DEFAULTS := {
 	"effects_density": "high",
 	"frame_cap": "off",
 	"language": "en",
+	"hints": "on",  # v0.7.5 SM: the first-run hints (HintStore)
+	"ui_scale": "100",  # v0.7.5 SM: UI_SCALES
+	"hit_stop": "on",  # v0.8.0 GF3: the Blade's hit-stop, a look only (read by the view)
 }
 
 
@@ -81,6 +88,10 @@ static func apply_one(profile: ProfileStore, key: String) -> void:
 				)
 		"language":
 			TranslationServer.set_locale(String(v))
+		"ui_scale":
+			var tree := Engine.get_main_loop() as SceneTree
+			if tree != null:
+				tree.root.content_scale_factor = clampf(float(v) / 100.0, 0.5, 2.0)
 		"frame_cap":
 			Engine.max_fps = 0 if String(v) == "off" else int(v)
 		"vsync":

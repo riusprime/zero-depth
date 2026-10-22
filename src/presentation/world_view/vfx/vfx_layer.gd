@@ -16,6 +16,9 @@ const VOID_GLOW := Color(0.62, 0.32, 1.0)
 const VOID_TENDRIL := Color(0.5, 0.26, 0.9)
 const BLOOD := Color(0.58, 0.05, 0.09)
 const SCORCH := Color(0.05, 0.04, 0.035, 0.85)
+## v0.8.0 P3 (owner O31, less glow on barrels and torches): the fire props' flame sprites (were 2.2, 1.8, 1.4): the
+## same warm hue, bright enough to read as fire, no longer blooming over the room.
+const PROP_FIRE_COLOR := Color(1.6, 1.32, 1.04, 1.0)
 const FROST_MARK := Color(0.78, 0.93, 1.0, 0.8)
 const VENOM_MARK := Color(0.2, 0.55, 0.12, 0.85)
 const BLOOD_MARK := Color(0.32, 0.02, 0.04, 0.9)
@@ -25,6 +28,16 @@ const VOID_MARK := Color(0.12, 0.04, 0.2, 0.85)
 const FLAME_SPACING := 0.8
 ## Mark keys: an effect's seed times MARK_KINDS plus its kind, so two marks of one effect never collide.
 const MARK_KINDS := 8
+## v0.8.0 PF (owner O9: Spread + Split + Explosive "goes two FPS … maybe we can stop applying some effects"): the
+## bursts' frame budget. The first BURST_FULL bursts of a frame draw as before (each with its light); past them a
+## burst within BURST_MERGE_M of one already drawn this frame is merged into it (not drawn), the rest draw thinned
+## (BURST_THIN of the density, no light of their own), and past BURST_MAX none is drawn. The canvas draws the newest
+## effects first, so the fresh blasts keep their full look and the older smoke thins. Starting values (the probe:
+## docs/roadmap/v0.8.0/evidence/PERF.md); the pools (VfxCore.POOLS) saturate at about 21 full explosions anyway.
+const BURST_FULL := 12
+const BURST_MAX := 32
+const BURST_MERGE_M := 1.2
+const BURST_THIN := 0.3
 
 
 # --- Public: one call per form ----------------------------------------------------------------------------------
@@ -87,6 +100,25 @@ func line(kind: StringName, a: Vector3, b: Vector3, fade: float, age: float, sd:
 
 ## A burst of radius `r` at `c` (ground), `u` (0..1) through its life: a bomb landing or a blast.
 func burst(kind: StringName, c: Vector3, r: float, u: float, sd: int) -> void:
+	bursts_asked += 1
+	var full := bursts_drawn < BURST_FULL
+	if not _claim(&"burst", c, BURST_MERGE_M) and not full:
+		bursts_merged += 1
+		return
+	if bursts_drawn >= BURST_MAX:
+		bursts_skipped += 1
+		return
+	bursts_drawn += 1
+	var base := density
+	if not full:
+		density = base * BURST_THIN
+		_lights_off = true
+	_burst_kind(kind, c, r, u, sd)
+	density = base
+	_lights_off = false
+
+
+func _burst_kind(kind: StringName, c: Vector3, r: float, u: float, sd: int) -> void:
 	match kind:
 		&"storm":
 			_storm_burst(c, r, u, sd)
@@ -127,7 +159,8 @@ func status(p: Vector3, r: float, on: Dictionary, sd: int, top: float = 0.9) -> 
 				h(sd, k) * 10.0
 			)
 		_embers(p + Vector3(0, top, 0), age, sd, 2, 1.0)
-		_light(p + Vector3(0, top + 0.4, 0), WARM, 0.7 + 0.1 * burn, 3.0)
+		# v0.8.0 FV: a status light (merged, the brightest few: VfxCore.STATUS_LIGHTS_MAX).
+		_light_status(p + Vector3(0, top + 0.4, 0), WARM, 0.7 + 0.1 * burn, 3.0)
 	var shock: int = on.get(&"shock", 0)
 	if shock > 0 and (int(age / 3.0) + sd) % 3 != 0:
 		var strike := int(age / 3.0)
@@ -159,7 +192,7 @@ func status(p: Vector3, r: float, on: Dictionary, sd: int, top: float = 0.9) -> 
 		for k in mini(4, 1 + poison / 2):
 			_bubble(p + Vector3(0, top * 0.8, 0), r * 0.6, age, sd + 9 * k, 0.2, 1.0, 40.0, VENOM)
 	var frozen := on.has(&"frozen")
-	var frost: int = 6 if frozen else mini(on.get(&"frost", 0), 4)
+	var frost := _thin(&"ice", 6 if frozen else mini(on.get(&"frost", 0), 4))
 	for k in frost:
 		var a := TAU * k / maxf(frost, 1) + h(sd, k + 20)
 		var out := Vector3(cos(a), 0, sin(a))
@@ -182,12 +215,7 @@ func prop_fire(p: Vector3, sd: int) -> void:
 		var hgt := (0.62 if k == 0 else 0.42 + 0.12 * h(sd + 3, k)) * beat
 		var cell := (k + int(age / (8.0 + 4.0 * h(sd, k + 40)))) % 4
 		_put(
-			&"flame",
-			_facing(q, hgt * 0.7, hgt, false),
-			Color(2.2, 1.8, 1.4, 1.0),
-			cell,
-			0.0,
-			h(sd, k) * 10.0
+			&"flame", _facing(q, hgt * 0.7, hgt, false), PROP_FIRE_COLOR, cell, 0.0, h(sd, k) * 10.0
 		)
 	_embers(p, age, sd, 2, 1.0)
 
@@ -272,7 +300,7 @@ func _fire_line(a: Vector3, b: Vector3, fade: float, age: float, sd: int) -> voi
 
 ## Rising embers from `p`: `n` sparks on short cycles.
 func _embers(p: Vector3, age: float, sd: int, n: int, fade: float) -> void:
-	for j in n:
+	for j in _thin(&"spark", n):
 		var period := 34.0 + 20.0 * h(sd, j)
 		var u := fposmod(age + h(sd + 1, j) * period, period) / period
 		var a := TAU * h(sd + 2, j)
@@ -324,7 +352,7 @@ func _explosion(c: Vector3, r: float, u: float, sd: int) -> void:
 				0.0,
 				h(sd, k)
 			)
-	var nd := int(round(4 * density))
+	var nd := _thin(&"debris", int(round(4 * density)))
 	for k in nd:
 		var a := TAU * (k + h(sd + 4, k)) / maxf(nd, 1)
 		var sp := r * (0.9 + 0.8 * h(sd + 5, k))
@@ -347,7 +375,7 @@ func _explosion(c: Vector3, r: float, u: float, sd: int) -> void:
 			0.0
 		)
 	# The smoke takes over as the fireball goes: a cloud that rises and spreads, light grey so it reads on dark floors.
-	for k in int(round(5 * density)):
+	for k in _thin(&"smoke", int(round(5 * density))):
 		var a := TAU * h(sd + 8, k)
 		var q := c + Vector3(cos(a) * r * 0.45, 0.5 + 1.6 * u, sin(a) * r * 0.45)
 		var s := r * (0.8 + 1.0 * u) * (0.8 + 0.4 * h(sd + 11, k))
@@ -360,7 +388,7 @@ func _explosion(c: Vector3, r: float, u: float, sd: int) -> void:
 			0.0,
 			h(sd, k + 9)
 		)
-	for k in int(round(10 * density)):
+	for k in _thin(&"spark", int(round(10 * density))):
 		var a := TAU * h(sd + 10, k)
 		var t := clampf(u * 2.2, 0.0, 1.0)
 		var q := (
@@ -409,7 +437,7 @@ func _lightning(
 			0.0
 		)
 		prev = nxt
-	for j in 3:
+	for j in _thin(&"spark", 3):
 		var q := (
 			b
 			+ (
@@ -454,7 +482,7 @@ func _storm_field(c: Vector3, r: float, fade: float, age: float, sd: int) -> voi
 
 ## A shock ring: lightning running round its edge at waist height, no ground fill.
 func _storm_ring(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
-	var n := clampi(int(r * 3.0), 6, 18)
+	var n := clampi(int(r * 3.0 * density), 6, 18)  # P-13: Effects density, as its siblings
 	var y := Vector3(0, 0.35, 0)
 	for k in n:
 		var a0 := TAU * k / n
@@ -500,7 +528,7 @@ func _storm_burst(c: Vector3, r: float, u: float, sd: int) -> void:
 ## Frost over a patch: ice crystals grown out of the floor, a low cold mist, glints, frost on the floor.
 func _frost_field(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
 	var grow := clampf(age / 10.0, 0.0, 1.0)
-	var n := clampi(int(round((3.0 + r * r * 2.0) * density)), 3, 16)
+	var n := _thin(&"ice", clampi(int(round((3.0 + r * r * 2.0) * density)), 3, 16))
 	for k in n:
 		var a := TAU * h(sd, k)
 		var d := sqrt(h(sd + 1, k)) * r * 0.85
@@ -515,7 +543,7 @@ func _frost_field(c: Vector3, r: float, fade: float, age: float, sd: int) -> voi
 		)
 		if k < 4:
 			_glint(c + out * d + Vector3(0, hgt, 0), age, sd + k, fade)
-	for k in 2:
+	for k in _thin(&"smoke", 2):
 		_smoke(
 			c + Vector3(0, 0.1, 0),
 			age,
@@ -531,7 +559,7 @@ func _frost_field(c: Vector3, r: float, fade: float, age: float, sd: int) -> voi
 
 ## A ring of ice spikes erupting along the ring's front.
 func _frost_ring(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
-	var n := clampi(int(r * 4.0 * density), 8, 24)
+	var n := _thin(&"ice", clampi(int(r * 4.0 * density), 8, 24))
 	for k in n:
 		var a := TAU * (k + 0.4 * h(sd, k)) / n
 		var out := Vector3(cos(a), 0, sin(a))
@@ -548,7 +576,7 @@ func _frost_line(a: Vector3, b: Vector3, fade: float, age: float, sd: int) -> vo
 	var g1 := Vector3(b.x, 0.0, b.z)
 	var dir := (g1 - g0).normalized()
 	var side := dir.cross(Vector3.UP)
-	var n := clampi(int(g0.distance_to(g1) / 0.5), 2, 28)
+	var n := _thin(&"ice", clampi(int(g0.distance_to(g1) / 0.5), 2, 28))
 	for k in n:
 		var t := (k + 0.5) / n
 		var s := 1.0 if k % 2 == 0 else -1.0
@@ -565,14 +593,14 @@ func _frost_line(a: Vector3, b: Vector3, fade: float, age: float, sd: int) -> vo
 func _frost_burst(c: Vector3, r: float, u: float, sd: int) -> void:
 	var rise := clampf(u / 0.12, 0.0, 1.0)
 	var sink := clampf((u - 0.6) / 0.4, 0.0, 1.0)
-	var n := clampi(int(round((6.0 + r * 4.0) * density)), 6, 20)
+	var n := _thin(&"ice", clampi(int(round((6.0 + r * 4.0) * density)), 6, 20))
 	for k in n:
 		var a := TAU * (k + h(sd, k)) / n
 		var d := r * (0.25 + 0.65 * h(sd + 1, k))
 		var out := Vector3(cos(a), 0, sin(a))
 		var hgt := (0.5 + 0.7 * h(sd + 2, k)) * (1.0 - 0.4 * d / r) * rise * (1.0 - sink)
 		_crystal(c + out * d, Vector3.UP + out * (0.3 + 0.5 * h(sd + 3, k)), hgt, 0.26, ICE)
-	for k in int(round(10 * density)):
+	for k in _thin(&"spark", int(round(10 * density))):
 		var a := TAU * h(sd + 5, k)
 		var t := clampf(u * 2.5, 0.0, 1.0)
 		var q := (

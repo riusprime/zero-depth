@@ -7,6 +7,13 @@ extends BossAvatar
 ## the grate flares and it tips forward to pour (the flood: molten lanes), the chimneys kick (the slag mortar), it
 ## crouches and blows its vents (the vent ring), and the launcher tilts and kicks (launching Bomb Drones). While its
 ## weak point is open the grate's door hangs open on a gold core; staggered, it lurches and its fire dims.
+## v0.7.5 BM: the owner's model (assets/models/bosses/foundry.glb, one static mesh) replaces the code-built body,
+## which stays as the fallback when the file is missing. Its legs are cut from the mesh in code (BossRig: four legs
+## and the body; owner N14) and it is posed from those bones, one function per layer (_pose_rig): the legs step in
+## diagonal pairs from its speed and the body bobs and rolls; it tips forward to pour, squats and kicks for the
+## mortar, crouches and blows for the vent ring, rocks back for the launch, flinches, lurches when staggered, and the
+## "shielded" hook hunkers it down on splayed legs. The grate's glow is a light at the door (its energy follows the
+## heat and the open door); the door, the chimneys and the launcher are anchors.
 
 const HEIGHT := 2.6
 const WALK_SPEED := 1.5
@@ -19,6 +26,12 @@ const FRAME := Color("#2B2C31")
 const RED := Color("#D23E35")
 const HOT := Color("#FF5A26")
 const GLOW := Color("#FF3A26")
+## v0.7.5 BM: points on the owner's model at rest (metres, model frame; evidence/BOSS_MODELS.md): the grate behind
+## the door (the weak point's core), the two chimney tops and the launcher's mouth.
+const MODEL_DOOR := Vector3(0.95, 0.9, 0)
+const MODEL_CHIMNEYS := [Vector3(-0.55, 2.55, -0.27), Vector3(-0.58, 2.5, 0.26)]
+const MODEL_LAUNCHER := Vector3(0.53, 2.45, -0.16)
+const GRATE_ENERGY := 1.4
 
 var body := Node3D.new()
 var grate: MeshInstance3D
@@ -26,22 +39,72 @@ var door := Node3D.new()
 var chimneys: Array[Node3D] = []
 var launcher := Node3D.new()
 var legs: Array[Node3D] = []
+## v0.7.5 BM: the light in the model's grate (the code body's grate glows by emission instead).
+var grate_light: OmniLight3D
 var _chimney_glow: Array[MeshInstance3D] = []
 var _launcher_glow: MeshInstance3D
 var _door_open := 0.0
 
 
-## Its imported model, when the owner sends one: assets/models/bosses/foundry.glb (whole-body motion).
+## v0.7.5 BF3: its dodge-first moves pose as the old ones: the Molten Flood's tracked rows as its pour, the Slag
+## Fountain and the Furnace Waves as its chimneys' mortar glow and kick (the fountain's shut door is the shielded
+## pose, from WorldReader.boss_shielded).
+func apply_state(s: Dictionary) -> void:
+	super(s)
+	match _move:
+		WorldReader.MOVE_ROW_FLOOD, WorldReader.MOVE_MELT:  # v0.8.0 BS2: the meltdown pours too
+			_move = WorldReader.MOVE_FLOOD
+		WorldReader.MOVE_PATTERN:
+			_move = WorldReader.MOVE_BARRAGE
+
+
+## The owner's model: assets/models/bosses/foundry.glb (its legs cut in code, BossRig).
 func model_id() -> StringName:
 	return &"foundry"
 
 
 func _code_nodes() -> Array[Node]:
-	return [body, launcher]
+	return [body, door, launcher]
 
 
 func _weak_point_at() -> Vector3:
-	return Vector3(1.05, BODY_Y - 0.05, 0)
+	return MODEL_DOOR if imported != null else Vector3(1.05, BODY_Y - 0.05, 0)
+
+
+func _weak_bone() -> StringName:
+	return &"body"
+
+
+## The model's grate gets a warm light at the door.
+func _build_body() -> void:
+	super()
+	if imported == null:
+		return
+	grate_light = OmniLight3D.new()
+	grate_light.name = "GrateLight"
+	grate_light.light_color = HOT
+	grate_light.light_energy = GRATE_ENERGY
+	grate_light.omni_range = 2.4
+	grate_light.shadow_enabled = false
+	grate_light.position = MODEL_DOOR + Vector3(0.25, 0, 0)
+	model.add_child(grate_light)
+
+
+func anchor_names() -> Array[StringName]:
+	return [&"weak", &"door", &"chimney_l", &"chimney_r", &"launcher"]
+
+
+func _anchor(point: StringName) -> Vector3:
+	if imported == null:
+		var code := {&"door": door.position + body.position, &"launcher": launcher.position}
+		return code.get(point, weak_core.position)
+	var rest: Dictionary = {
+		&"door": MODEL_DOOR,
+		&"chimney_l": MODEL_CHIMNEYS[0],
+		&"chimney_r": MODEL_CHIMNEYS[1],
+		&"launcher": MODEL_LAUNCHER,
+	}
+	return _on_bone(&"body", rest[point]) if rest.has(point) else weak_core.position
 
 
 ## 0..1: how far the grate's door hangs open (tests).
@@ -195,3 +258,62 @@ func _pose(dt: float) -> void:
 		var diag := 1.0 if j == 0 or j == 3 else -1.0
 		var lift := maxf(0.0, sin(_phase) * diag) * 0.18 * walk
 		legs[j].position.y = BODY_Y - 0.75 + lift - crouch * 0.15
+
+
+# --- The owner's model (v0.7.5 BM), posed from the bones cut in code (BossRig) --------------------------------
+# Turns are in the model frame: +Z swings a leg's foot forward (and tips the body back), +X swings a foot out to the
+# left (-Z).
+
+
+## v0.8.0 BA: the owner's model plays its keyframed clips (FoundryClips); the legs follow the clips' leg parameters,
+## and the grate's light follows their heat and the open door.
+func _clip_library() -> Dictionary:
+	return FoundryClips.library()
+
+
+func _walk_speed() -> float:
+	return WALK_SPEED
+
+
+func _stride() -> float:
+	return STRIDE
+
+
+func _idle_seconds() -> float:
+	return 2.4
+
+
+func _pose_rig(dt: float) -> void:
+	var an := animator
+	_door_open = lerpf(_door_open, _weak_shown, _rate(8.0, dt))
+	_pose_legs(poser, an)
+	if grate_light != null:
+		var heat := maxf(0.0, 1.0 + 0.6 * an.param(&"heat") + _door_open + 0.6 * _late)
+		grate_light.light_energy = GRATE_ENERGY * heat * (1.0 - 0.7 * _stagger)
+		grate_light.position = _on_bone(&"body", MODEL_DOOR) + Vector3(0.25, 0, 0)
+
+
+## Each leg from the clips' parameters: its diagonal pair's lift and swing (front left with back right), the front
+## pair's lift and either pair folding under it, and the feet sliding out to each side.
+func _pose_legs(p: BonePoser, an: BossAnimator) -> void:
+	var lift_a := an.param(&"gait_a_lift")
+	var lift_b := an.param(&"gait_b_lift")
+	var swing_a := an.param(&"gait_a_swing")
+	var swing_b := an.param(&"gait_b_swing")
+	var front_lift := an.param(&"front_lift")
+	var front_kneel := an.param(&"front_kneel")
+	var back_kneel := an.param(&"back_kneel")
+	var splay := an.param(&"splay")
+	for k in BossRig.FOUNDRY_LEGS.size():
+		var leg := BossRig.FOUNDRY_LEGS[k]
+		var front := k < 2
+		var a := k == 0 or k == 3
+		var lift := (lift_a if a else lift_b) + (front_lift if front else 0.0)
+		var fold := front_kneel if front else -back_kneel
+		p.turn(
+			leg,
+			Vector3.BACK,
+			(swing_a if a else swing_b) + fold * 0.35 + lift * (0.8 if front else 0.0)
+		)
+		p.shift(leg, Vector3(0, lift + absf(fold) * 0.12, 0))
+		p.turn(leg, Vector3.RIGHT, splay if k % 2 == 0 else -splay)

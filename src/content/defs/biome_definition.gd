@@ -8,12 +8,18 @@ const PALETTE_KEYS: Array[String] = [
 const MIN_OUTLINE_CONTRAST := 3.0
 
 @export var name_key: StringName
+## v0.7.5 CX: the Codex's line about this biome (a locale key; empty shows no line).
+@export var desc_key: StringName
 ## Exactly PALETTE_KEYS (docs/art/ART_DIRECTION.md §2): token -> Color.
 @export var palette: Dictionary = {}
 @export var hazard_flavour: StringName
 @export var template_tags: PackedStringArray
 ## Its lighting mood (v0.5.9 Step 1): what StageView lights the floor with.
 @export var mood: BiomeMood
+## v0.7.5 NB1: ground that plays differently (Frozen Shore's ice); null for none. Mild flavour (PD-04).
+@export var surface: BiomeSurface
+## v0.7.5 NB1: the biome's own dressing, edge and enemy cast; null keeps the hand-written look (the first three).
+@export var look: BiomeLook
 
 
 func category() -> StringName:
@@ -47,6 +53,12 @@ func validate() -> Array[ValidationIssue]:
 	else:
 		for p in mood.problems():
 			issues.append(ValidationIssue.new(&"mood_invalid", resource_path, "mood " + p))
+	if surface != null:
+		for p in surface.problems():
+			issues.append(ValidationIssue.new(&"surface_invalid", resource_path, "surface " + p))
+	if look != null:
+		for p in look.problems():
+			issues.append(ValidationIssue.new(&"look_invalid", resource_path, "look " + p))
 	if palette.has("ground") and palette.has("outline"):
 		var ratio := contrast(palette["ground"], palette["outline"])
 		if ratio < MIN_OUTLINE_CONTRAST:

@@ -32,23 +32,338 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | N5 | "we are gonna not create a second character yet" | No second character in v0.7.5 | Decided | — |
 | N6 | "you're gonna do the journal of codex cards" | **The Codex**: a journal of every card, enemy, boss and biome; an entry unlocks the first time you meet it and shows its art, text and your counts (taken, kills, deaths to). Reachable from the main menu and the pause menu. Kept in the profile, not the run | Decided | CX |
 | N7 | "you're gonna work also on the local achievements" | **Local achievements**: a list in the profile (no platform API yet), a toast when one unlocks, a page in the Codex/menu. Starting set drawn from the run (clear a floor, beat each boss, win, Ascend N times, a wand of 8, a level-5 card, each biome, no-hit room…) | Decided | AC |
-| N8 | "go for the small things that are left … let's just try to leave the game for almost ready … just the things that need my feedback are gonna be left basically the gameplay" | Also in v0.7.5 (ROADMAP v0.8.0/v0.9.x items that need no owner taste): onboarding (first-run hints for move, attack, dash, the wand and the Build page), the card level on pick cards and wand pips, credits and licences filled from the manifests, an accessibility pass of the options already there. Not in v0.7.5: a second character, the final audio, Steam, trailers, balance | Decided | SM |
-| N9 | "you're gonna make maps bigger the rooms maybe we could add maybe even bigger rooms at some point and we will add up to 20 rooms" | Floors grow to **up to 20 rooms** (from today's count), with larger room sizes in the generator's mix, including a new extra-large room size | Decided | MG |
-| N10 | "the curse appear too often we're gonna have one every two floors" | Cursed chests: **at most one every two floors** | Decided | MG |
-| N11 | "we're gonna reduce the amount of challenge rooms … like 20% less" | Challenge rooms (the sealed arenas and Overrun rooms): **20 % fewer** | Decided | MG |
-| N12 | "the shop is also gonna be there every two … floors" | **The shop appears every two floors** | Decided | MG |
+| N8 | "go for the small things that are left … let's just try to leave the game for almost ready … just the things that need my feedback are gonna be left basically the gameplay" | Also in v0.7.5 (ROADMAP v0.8.0/v0.9.x items that need no owner taste): onboarding (first-run hints for move, attack, dash, the wand and the Build page), the card level on pick cards and wand pips, credits and licences filled from the manifests, an accessibility pass of the options already there. Not in v0.7.5: a second character, the final audio, Steam, trailers, balance | Done (SM) | SM |
+| N9 | "you're gonna make maps bigger the rooms maybe we could add maybe even bigger rooms at some point and we will add up to 20 rooms" | Floors grow to **up to 20 rooms** (from today's count), with larger room sizes in the generator's mix, including a new extra-large room size. MG: 15-19 rooms plus the boss room (16-20; was 11-13), more weight on big footprints, new 4×3, 3×4 and the extra-large 4×4, span 11 cells; all in `data/map/floor.tres` (F10) | Done (MG) | MG |
+| N10 | "the curse appear too often we're gonna have one every two floors" | Cursed chests: **at most one every two floors**. MG (lead's reading): chests roll the curse (25 %, unchanged) only on floors 1, 3, 5 … and at most once a floor (`data/event_rules`: first floor 1, every 2, per floor 1). Counted by the run's floor number, so an endless loop keeps the rhythm | Done (MG) | MG |
+| N11 | "we're gonna reduce the amount of challenge rooms … like 20% less" | Challenge rooms (the sealed arenas and Overrun rooms): **20 % fewer**. MG: counted per floor; arena share 0.33 → 0.11; 3.23 → 2.42 a floor (−25 %) on the bigger floors | Done (MG) | MG |
+| N12 | "the shop is also gonna be there every two … floors" | **The shop appears every two floors**. MG (lead's reading): floors 1, 3, 5 … (a 3-floor run has two), by the run's floor number (`data/shop`: first floor 1, every 2) | Done (MG) | MG |
 | N13 | "I'll keep balancing the game while playing with the menu" | The owner balances v0.7.0 with the F10 dev panel; v0.7.5 doesn't retune numbers the owner is tuning. Values the owner sends ("Copy changes") are applied as data when they arrive | Decided | — |
+| N14 | "Warlord and Hive lens are rigged so you can animate, you will have to slice foundry's legs for animations" (with the three models) | The owner's Warlord, Hive Lens and Foundry models replace the code bodies; Warlord and Hive Lens animated in code from their bones; Foundry's legs cut into parts in code | Done (BM) | BM |
+| N15 | "change how boss fights are, they will have more HP, and their attacks will be most oriented in dodging … tdlr: slower fights, centered around dodging spells, and make each fight different for each boss" (verbatim in [`../../design/BOSS_FIGHTS.md`](../../design/BOSS_FIGHTS.md)) | Picks: "About 1.5×"; "Track, then lock 0.8 s"; "Shielded during big patterns". Per-boss design in BOSS_FIGHTS.md, G1 "Approve all" (2026-10-13) | Decided | BF |
+| N16 | "All normal enemies, besides the turrets and snipers should change into this kind of attacks, not bullets going fast but slower attacks, make them look like fireballs, but different for each enemy/boss, and the ones that change don't have the trayectory drawn in the ground anymore, only the turrets, the melee enemies keep the red thingy" | Arc Caster, Lens Drone and Bomb Drone fire slow fireball patterns with no ground line; Needle and Sniper unchanged; melee telegraphs unchanged (BOSS_FIGHTS.md "Normal enemies"), G1 "Approve all" | Decided | EF |
+| N17 | "there is a branch claude/sharp-lovelace-74ii7v that you should start from, because we fixed some code bugs from there" | The audit branch (79 commits of v0.7.0 fixes) merged into this branch, both kept (`01c1e2f`) | Done | — |
+| N18 | "Bosses could be a bit bigger so we could see the model better and always put them in the big rooms" | Every boss about **1.3×** bigger: its model height and its body radius together, so what you see is what hits (starting value). Every boss fights in a **4×4** room, the new extra-large size (was 2×2 to 3×3). Both are data the owner can tune in F10 | Decided (lead's reading) | BM, BF1 |
+| N19 | "Can you before the final push remove the stroke outline around the bosses model, it is ugly" | The owner's boss models (all six) draw no outline: the outline stencil stays at zero thickness so the X-ray twin behind walls is unchanged. Code-built fallback bodies and normal enemies keep theirs | Done | — |
+| N20 | "playtest like a playground where I have the creative mode as in Minecraft … dummies I can spawn and delete … a DPS meter … spawn the bosses … a big 4x4 room and I can change between biomes" (verbatim in [`../../tools/PLAYGROUND.md`](../../tools/PLAYGROUND.md)) | **The Playground**: a main-menu row into one 4×4 room; any card at any level, dummies (∞ or a set HP) placed and deleted by click, any boss or enemy, a DPS meter by source, five biomes. Picks: "Main menu row", "Never die + optional HP", "Total + per-source", "Dev-tool style, no mockups" (2026-10-13) | Decided | PG |
 
 ## Steps
 | Step | Scope | Rows | Status |
 |---|---|---|---|
-| MG | Map generation: up to 20 rooms, bigger rooms; curse, challenge-room and shop frequencies | N9–N12 | |
-| NB1 | Biome 4: Frozen Shore | N2 | |
-| NB2 | Biome 5: the cosmic biome | N3 | |
-| AP | The Ascension portal and the endless loop | N4 | |
-| CX | The Codex | N6 | |
-| AC | Local achievements | N7 | |
-| SM | Small things: onboarding, card levels shown, credits and licences, accessibility pass | N8 | |
+| NB1 | Biome 4: Frozen Shore | N2 | Done ([evidence](evidence/FROZEN_SHORE.md)) |
+| MG | Map generation: up to 20 rooms, bigger rooms; curse, challenge-room and shop frequencies | N9–N12 | Done ([`evidence/MAPS.md`](evidence/MAPS.md)) |
+| NB2 | Biome 5: the cosmic biome | N3 | Done ([evidence](evidence/STARFALL.md)) |
+| AP | The Ascension portal and the endless loop | N4 | Done ([evidence](evidence/ASCENSION.md)) |
+| CX | The Codex | N6 | Done |
+| AC | Local achievements | N7 | Done ([evidence](evidence/ACHIEVEMENTS.md)) |
+| SM | Small things: onboarding, card levels shown, credits and licences, accessibility pass | N8 | Done ([evidence](evidence/SMALL_THINGS.md)) |
+| BM | The owner's Warlord, Hive Lens and Foundry models in game, animated; every boss drawn 1.3× | N14, N18 | Done ([evidence](evidence/BOSS_MODELS.md)) |
+| BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | Done: BF1 (the engine, the Gatekeeper and the Warlord; [evidence](evidence/BOSS_FIGHTS_1.md)); BF2 (the Brood Mother and the Hive Lens; [evidence](evidence/BOSS_FIGHTS_2.md)); BF3 (the Siege Engine and the Foundry; [evidence](evidence/BOSS_FIGHTS_3.md)) |
+| EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | Done ([evidence](evidence/ENEMY_FIREBALLS.md)) |
+| PG | The Playground (branch `claude/playground`; design and steps PG1-PG5 in [`../../tools/PLAYGROUND.md`](../../tools/PLAYGROUND.md)) | N20 | Done ([evidence](evidence/PLAYGROUND.md)) |
+| EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | |
+
+### CX: the Codex (lead's readings, 2026-10-12; the owner corrects them at the playtest)
+- **Where:** a Codex row on the main menu (after Credits) and on the pause menu (after Options); full-screen Cold
+  glass, four pages: Cards, Enemies, Bosses, Biomes. No G2 round (the owner asked for no interventions); built in the
+  owner's Cold glass and crystal-card looks.
+- **Cards** by pool: Gun, Blade, shared, triggers, legendary (the unique triggers), then stat cards, utilities (Blink,
+  Aegis) and passives (the v0.5 items outside the wand that are still offered). The cards `data/wand/migration.tres`
+  retires, the starting weapons and curse cards are not listed.
+- **An entry unlocks** the first time you meet it: a card when a pick, the shop or an event shows it, or you take it;
+  an enemy when a living one stands within 18 m of you (about the camera's view); a boss once it has risen near you;
+  a biome when a floor of it starts. Locked entries are dark silhouettes named "???".
+- **Counts** (the profile, outside the run): cards offered / taken / highest level (wand cards and abilities);
+  enemies killed / times it killed you; bosses fought / killed / times it killed you; biomes floors entered. A run
+  with the dev panel's balance tweaks records nothing (the owner's "tweaked runs don't count").
+- **Text:** cards use the game's own keys; enemies, bosses and biomes had no description, so each gets a Codex line
+  (`desc_key`, en + es, written by the agent; the owner may rewrite any).
+- **Art:** an enemy's or boss's emblem and a biome's landscape are drawn in code; the wand cards that have no symbol
+  of their own yet show the card gem in their frame colour, as in the game (an art request, not a blocker).
+
+### AC: local achievements (lead's readings, 2026-10-13; the owner corrects them at the playtest)
+- **What:** 37 local achievements from 29 definitions (`data/achievements/*.tres`, `AchievementDefinition`; the
+  full list is in [`evidence/ACHIEVEMENTS.md`](evidence/ACHIEVEMENTS.md)): clear floors 1 and 2, win (any, Gun,
+  Blade, 5 times), beat each boss and every boss, enter each biome and every biome, a full wand of 8, a card at level
+  5, child-spell kills (1, 100), kills (1, 100, 1,000), a sealed room without losing HP, 10 sealed rooms, an Overrun
+  cleared, a cursed chest's card, a core stolen, 500 shards spent in shops, every Gun / Blade / trigger card and
+  every enemy seen in the Codex, Ascend once and 5 times. Names and sentences in en and es written by the agent.
+- **From the data:** "each boss" and "each biome" are one definition each that expands to one achievement per Codex
+  entry, so NB2's biome (and any new boss) gets its own and joins "every biome" with no new file.
+- **Kept in the profile** (`achievements` section with its own `version`; an old profile reads as none unlocked),
+  no platform API. Conditions are evaluated by the app layer from the Codex's counters and run counters the
+  tracker records from `WorldReader` and `SimEvent`s; no sim change. What the profile already meets (an older
+  Codex) unlocks at the next floor's start.
+- **Locked vs hidden:** a locked achievement is shown **dimmed with its name, sentence and progress** (the page says
+  what to aim for); only the two Ascension ones are **hidden** ("???" and a hidden line) until they unlock, so the
+  page doesn't spoil the loop before the player has seen the portal.
+- **The toast:** an Ember-stone slab under the corner minimap, 4 s, queued, never blocking (no mouse, no focus).
+  **The page:** a fifth Codex tab, Achievements, after Biomes (so from the main and pause menus through the Codex;
+  Q E / LB RB, a tab click).
+- **Tweaked runs:** a run with the dev panel's balance tweaks records and unlocks nothing (the Codex's rule).
+- **Ascension hook (for AP):** `runs:ascended` is a run counter nothing in AC writes; AP calls
+  `main.achievement_tracker.report(&"runs:ascended")` once per Ascend. A won run is the floor's outcome 1; if AP's
+  "End the run" ends a run some other way, AP reports `runs:won` (and `runs:won_<weapon>`) the same way.
+- **"A trigger chain":** read as a kill by a hook's attack (`HIT.proc_pct` under 100): a trigger card's child spell,
+  and also a split or an echo; the sim's events don't say which card made a hook.
+### AP: the Ascension portal and the endless loop (lead's readings, 2026-10-13; the owner corrects them at the playtest)
+- **Where it stands:** on the run's last floor of every loop (floor 3 today) the boss room's gate *is* the Ascension
+  portal: the same spot, footprint and walk-in opening as the gate, no blue gate and no Deep gate on that floor. The
+  owner's line reads as one portal whose job is "end the run or start over", so it replaces the last floor's winning
+  gate rather than standing beside a second winning gate. Floors 1-2 keep the blue gate (and the Deep gate) as before.
+- **The look (its own, the blue gate untouched):** a hexagonal pale dais, a gold-white crystal spire over the gate's
+  footprint between two lavender obelisks, and a tall additive column of golden-white light with lavender edges and
+  climbing bands, rising motes and circling fragments. Dormant (no column, dim shards) while the boss lives; when the
+  portal opens the column rises from the dais over 1.4 s with a flare (reduced motion: there at once). The way in
+  flashes gold instead of the visor blue. No G2 round (the owner asked for no interventions).
+- **The choice:** walking into the light opens a panel (the world waits, like the event panel): **End the run**
+  (gold plaque; a victory: the existing recap), **Ascend** (violet plaque; "Loop N: new biomes, stronger enemies, more
+  threat. Your wand, cards, levels and stats come with you."), **Not yet** (silver; step back: the panel stays shut
+  until you leave the light and walk in again). Keys 1-3 / arrows, Enter, Esc = Not yet; pad A/B; mouse.
+- **Ascend:** floor 1 of the next loop, the build carried exactly as through any portal (abilities and levels, wand
+  and card levels, items, stats, curses, half the shards, a 40 % heal), new biomes drawn from every biome in the run's
+  data (a new shuffle per loop; the loop never opens on the biome it left), new floor seeds and bosses (by the run's
+  floor number). The loop's floor 1 is not eased (the D9 ease and the boss-room heal are the run's first floor only).
+- **Harder each loop (data, `data/run/three_floors.tres`, starting values):** per loop past the first, compounding:
+  enemies' HP ×4.0 and damage ×2.0, bosses' HP ×2.0 and damage ×1.5 (capped at ×100); threat T +2; the hidden
+  catch-up's caps +0.5. Loop 2's floor 1 then sits a little above loop 1's floor 3 (enemy HP 4.0× vs 3.61×). Endless:
+  nothing ends the loop but a death or End the run. These numbers are the owner's to tune (F10, `run`).
+- **Floor numbers:** the floor within the loop drives the floor tables (curves, boss pools, prices, rewards); the
+  run's floor counted across loops drives the floor seeds, bosses, routes, biome order, the shop and cursed-chest
+  cadence (MG: run floors 1, 3, 5 …, so loop 2's shop is on its floor 2 after loop 1's floor 3) and the wand's slots
+  (never shrink). The HUD, pause line and recap say "Loop 2 · Floor 1" from loop 2 on; a run that never ascended reads
+  as before. The recap adds "Loops cleared: N" (End the run counts the loop it ends).
+- **Saves:** the payload gains `loop` and `loop_floors` without a version bump; an older payload is loop 1, and an
+  older save on floor 3 resumes with the Ascension portal. Continue resumes mid-loop.
+- **Achievements hook (AC):** through the Codex store's counter API (`Main.codex`): page `runs`, entry `ascended`,
+  counter `times` (+1 per Ascend) and entry `loop`, counter `best` (the highest loop reached). A tweaked run records
+  nothing. "runs" is not a Codex page you browse (CodexStore.PAGES is unchanged).
+
+### BM: the owner's three boss models (lead's readings, 2026-10-13; the owner corrects them at the playtest)
+- **Installed as the first three were:** `assets/models/bosses/{warlord,hive_lens,foundry}.glb`, the textures the
+  import extracted (kept as delivered), manifest rows with sha256. Each faces +X as delivered (yaw 0, from the raw
+  renders, `scripts/shots/boss_models.gd mode=raw`).
+- **Sizes (SPECS, before N18's scale):** Warlord 2.7 m to its spear's tip; Hive Lens 1.9 m across its two side pods
+  (2.08 m tall), its sphere's centre 1.75 m up (read "1.9 m across" as the model's whole width, which is also the sim
+  body's 2 m: the sphere alone at 1.9 m would put the cable tails under the floor); Foundry 2.6 m. N18 then draws
+  every boss 1.3× (`BossModels.SIZE_SCALE`, the one place): Warlord 3.5 m, Hive Lens 2.5 m across with its centre
+  2.3 m up, Foundry 3.4 m, Sentinel 3.8 m, Queen 3.1 m, Turret 3.25 m.
+- **Rigged models kept as delivered:** the Warlord's 41 and the Hive Lens's 23 Tripo joints and skins are instanced
+  as they are, under a node that turns, scales and lifts them; poses go through `BonePoser`, turns in the model frame
+  whatever the bones' own axes. The Foundry is one mesh: `BossRig` cuts four legs (below the belly, outside its
+  middle in x and z, blended over a hip band) and the body.
+- **Poses, one function per layer** (idle, walk, attack moves, guard/open, flinch, stagger, death), from the read
+  state the code bodies used plus three reads: the HP (a drop flinches), the player's bearing (the Hive Lens's eye
+  turns to it) and the facing (the local velocity the tails trail). **A `shielded` hook** (`apply_state`'s
+  "shielded", not read from the sim yet) poses each: the Warlord braced behind its shield, the Hive Lens closed (the
+  crown folds over the eye, the tails curl), the Foundry hunkered; BF reads the sim's shield into it.
+- **The Warlord falls when it dies:** the sim removes a boss the tick it dies, so `ActorViews` keeps the Warlord's
+  node 1.6 s for its fall (`BossAvatar.die()`), then frees it; the others go at once as before.
+- **Anchors:** `BossAvatar.anchor(name)` gives points on the posed body (the core; the Warlord's spear tip and
+  shield; the Hive Lens's eye; the Foundry's door, chimneys and launcher) for BF's markers and fireballs. The code
+  bodies had no telegraph anchors before; telegraphs are still drawn from the sim.
+- **Reduced motion:** the Hive Lens's idle roll, crown spin and tail sway stop (the existing boss avatars had no
+  reduced-motion handling); the moves still pose.
+
+### BF1: the dodge-first engine, the Gatekeeper and the Warlord (agent's readings, 2026-10-13; the owner corrects them at the playtest)
+Owner N15 (verbatim in [`BOSS_FIGHTS.md`](../../design/BOSS_FIGHTS.md), "Approve all"); evidence and the "how to add a
+boss's patterns" guide in [`evidence/BOSS_FIGHTS_1.md`](evidence/BOSS_FIGHTS_1.md).
+- **The engine is data:** `BulletPatternDefinition` (`data/bullet_patterns`, in the F10 panel's Bosses page) with
+  seven kinds (ring, spiral, fan, cross, wall, flower, burst-on-land); a boss attack fires one with move `pattern`
+  (`pattern_id`). Markers that track then lock are the attack field `lock_seconds` (0.8 s) on any aimed move, plus
+  two new moves, `marks` (circles in turn) and `row_lanes` (the player's row and column). `shielded` marks the
+  signature.
+- **Kept melee answers:** the design table lists no melee; the Gatekeeper keeps its Sweep and the Warlord its Shield
+  Bash (red telegraphs, close range only), so standing inside a boss during its open window isn't free. Dropped: the
+  Gatekeeper's charge, vortex and spike ring (the pull move stays in code, tested on a fixture, for later bosses).
+- **Punish and gap-closer:** the Gatekeeper punishes staying far with its Shock Lanes and has no gap-closer (a tracked
+  circle as gap-closer repeated forever on a far player); the Warlord keeps the Lunge as its gap-closer and Javelin
+  Rain as its punish (both tracked and locked now).
+- **The open window:** the signature patterns (Rock Rings, Shield Wall) open the weak point when they end, so "between
+  patterns" is when hits count double up close.
+- **Fireballs ignore no fairness rule but one reading:** a shot that would spawn within 1.4 m (+ the hero's radius) of
+  the hero is left out, so hugging the boss thins a ring near you; the Sweep / Bash answer that.
+- **Looks:** Gatekeeper ember stones (pale orange core, dark stone edge, an orange-brown trail), Warlord spear embers
+  (salmon-red core stretched into a tip, a wine edge, a crimson trail); the crystal shell in the boss's colour. A test
+  keeps every hostile core 0.2+ (RGB) from the hero's cyan and heat colours. Effects density Low: every other trail,
+  shorter.
+
+### EF: enemy fireballs (agent's readings, 2026-10-13; the owner corrects them at the playtest)
+Owner N16 (verbatim above; [`BOSS_FIGHTS.md`](../../design/BOSS_FIGHTS.md) "Normal enemies", "Approve all"); evidence in
+[`evidence/ENEMY_FIREBALLS.md`](evidence/ENEMY_FIREBALLS.md). Every number is a starting value (F10, the Bosses page
+lists `data/bullet_patterns`).
+- **Arc Caster:** both of its fast lined shots change, since both drew a trajectory: the bolt is a fan of 3 plasma
+  balls over 30 deg at 4 m/s, the spread a wider fan of 3 over 56 deg at 3.5 m/s (same weights 3 : 2, same 0.5 s
+  windup, tracked as before). The **rune stays**: a circle that erupts under you is an area marker, not a trajectory,
+  and the design table names only the bolt.
+- **Lens Drone:** a ring of 6 red orbs at 3.5 m/s, evenly round with one flying at you (a RING of 12 with 6 one-shot
+  gaps: the validation wants a gap, and every gap is about 3.9 m wide 4 m out), one wave. It still flies the Needle's
+  walk; wherever it appears (the Hive Lens's split) it fires the same.
+- **Bomb Drone:** a lobbed fireball (0.6 s in the air, drawn as a ball of its look on an arc) that lands where you
+  stood when its windup committed (your exact position, no lead, tracked like the aimed shots until 12 ticks before
+  the throw) and bursts into an X of 4 cinders at 45 deg to the throw, 4 m/s. The landing itself hurts within 0.5 m
+  (the falling fireball is the cue: no circle). The X spawns no cinder within 0.6 m (+ the hero's radius) of you, so
+  a hero hit by the landing is not hit by the X too; one who stepped out meets the X.
+- **No ground line:** the three draw nothing on the ground; their windup is the body's cue (the caster's crystal, the
+  drones' glow) and the readable-cause check counts it. Needle and Sniper keep their lines; the melee kinds (Charger,
+  Warden, Splitter, Splitling, Shield Bearer, Swarmer, Hatchling) their red telegraphs; Mine Layer and Mender are
+  unchanged.
+- **Damage:** each fireball (and the drone's landing) deals the attack's damage as before (12 / 8 / 16), scaled per
+  floor and loop by RunState and by the danger tier and the hidden catch-up (`EnemyAi.powered`), like every enemy hit.
+- **Elites:** an elite is its kind's AI, so elite Arc Casters, Lens Drones and Bomb Drones (the Ambush Cache, Marked)
+  fire the same new patterns; no other elite changes.
+- **Looks** (each its own, off the hero's colours and the bosses'): Arc Caster `arc_plasma` (blue-white core, a navy
+  edge, a cold blue trail, slightly long); Lens Drone `lens_orb` (small, a rose-white core, a near-black red edge, a
+  short crimson trail); Bomb Drone `bomb_cinder` (violet fuse-fire: a lavender core, a dark plum edge, a purple trail;
+  the lobbed ball the same look, bigger).
+- **Not done (open for the owner):** no shadow under the lobbed fireball (a shadow is a mark on the ground; the owner
+  said "no ground circle"); the colour-blind modes don't recolour the looks (as BF1's).
+### BF2: the Brood Mother and the Hive Lens (agent's readings, 2026-10-13; the owner corrects them at the playtest)
+Owner N15 (verbatim in [`BOSS_FIGHTS.md`](../../design/BOSS_FIGHTS.md), "Approve all"); built on BF1's engine;
+evidence in [`evidence/BOSS_FIGHTS_2.md`](evidence/BOSS_FIGHTS_2.md).
+- **Egg Storm is tracked circles that become eggs.** The design's "eggs land on tracked circles and each bursts into
+  an 8-point star" is the `marks` move with a BURST pattern (an optional `pattern_id`): each circle follows you, locks
+  for 0.8 s while its egg flies onto it, then lands (the circle hurts) and bursts into 8 acid globs aimed so you stand
+  in a gap (the star is turned half a step off the line to you). 3 eggs, 0.45 s apart; 5 eggs with a second star in
+  phases 2–3. It is the shielded signature. A later egg may still be locking when an earlier one bursts: that is the
+  Egg Storm itself (rule 5's "that boss's named combo").
+- **Burrow's "tracked eruption ring".** The eruption circle (not the boss's ripple) sits on your exact position while
+  she tracks underground, locks for 0.8 s (she burrows to it), erupts there, and a ring of 14 globs bursts out of it
+  with its gap toward you (two rings, turned 90°, in phase 3). The Leap, the Leap chain and the Pounce chain (her
+  punish) track you exactly and lock 0.8 s on each leap.
+- **Web Spiral:** 2 arms of slow globs turning one way, reversing at 1.5 s; phase 3's is faster and turns the other
+  way. The Hatchling summons stay as they were.
+- **The Hive Lens's sweeps are gone.** Its rail sweeps and prism bolt fans became the design's patterns: the Prism
+  Spiral (3 arms reversing halfway, shielded: the model's eye-closed pose reads `WorldReader.boss_shielded`), the
+  Petal Bloom (a 5-petal flower, three blooms turned 36° each), the Glare Ring (rings of 20 with 2 gaps, turned 30° a
+  ring), and the Focus Beam, a single line (`lanes`) that tracks you and locks 0.8 s (3 lines in phase 3; also its
+  punish on a far player). Its close Glare slam ring stays as `lens_flare` (a melee answer, like BF1's Sweep and
+  Bash), and the dive stays its gap-closer, now tracked and locked. The Lens Drones still break off at the 66 % gate
+  (their own attack is EF's).
+- **HP ×1.25 from v0.7.0:** Brood Mother 1600 → 2000, Hive Lens 1650 → 2063 (2062.5, rounded up). The 66 / 33 % gates
+  stay; phase 2 adds (eggs, the fast rings), phase 3 the hardest mix (the fast web or spiral, two-ring eruptions,
+  the fast bloom, three focus lines). N18's radius and 4×4 room stay as BF1 set them.
+- **Looks:** the Brood Mother's sickly green acid globs (`acid_glob`: a pale lime core, a near-black green edge, a
+  short trail) and her eggs (a pale shell glowing green); the Hive Lens's magenta-red prism orbs (`prism_orb`: a pink
+  core, a wine edge, a long trail). Both kept off the hero's colours (BF1's test) and apart from the other looks.
+### BF3: the Siege Engine and the Foundry (agent's readings, 2026-10-13; the owner corrects them at the playtest)
+Owner N15 (the design table in [`BOSS_FIGHTS.md`](../../design/BOSS_FIGHTS.md), "Approve all"); evidence in
+[`evidence/BOSS_FIGHTS_3.md`](evidence/BOSS_FIGHTS_3.md). Built on BF1's engine; two new moves and one pattern field.
+- **Turret Cross** (Siege signature, shielded "while it braces"): a 4-arm cross of cannon embers turning 30°/s
+  (phase 2: 42°/s the other way, more waves; phase 3: a cross that turns back halfway, a SPIRAL with 4 arms). The
+  shots fly straight once fired, so the turning arms trail as spirals you walk round with them.
+- **Mortar Grid, "alternating twice"** read as two strikes: the board's two colours one after the other (the first
+  holds your square, so you step to a neighbouring square, then back). Phase 3 strikes three times (A, B, A).
+  A 5 × 5 board of 1.1 m circles 2.4 m apart (new move `grid`): the board follows you, locks 0.8 s, and each later
+  colour shows only for its own 0.8 s lock, so one colour flashes at a time. The corners between circles are always
+  safe.
+- **Barrage**: `marks`, 3 circles 0.6 s apart (phase 3: 0.45 s). **Rail**: a tracked lane (`lanes`, one lane fired
+  down your exact position in 0.2 s; phase 3: three lanes 28° apart). The v0.7.0 scattered barrage, rail sweep and
+  fast bolt fan are gone from the Siege Engine (their moves stay in code, tested on fixtures, `BossLab.siege_v070_def`).
+- **Kept:** the needle deploy as phase 2's entry ("keep its drone deploy"), the shockwave (inner 4.4 m, outer 50 m)
+  as the punish and in phase 3.
+- **Slag Fountain** (Foundry signature, door shut = shielded, the model's hunkered pose): read as molten drops thrown
+  up from the body that land in a 6-petal flower around it (petal tips 2.6 m out, valleys nearer) and roll on outward
+  as slow drops; 4 waves turning half a petal (phase 2 and 3: 6 waves, faster). New pattern field `rain_seconds` /
+  `rain_m` on FLOWER: in the air (0.7 s) the drops are only drawn, on an arc, and hurt nothing; a drop that would land
+  on you (or in a wall) is left out, as every BF1 pattern.
+- **Furnace Waves**: rings of 20 with two gaps of three; each ring turns 1.5 shot-steps, so its shots sit between the
+  last ring's ("alternating") and the gaps shift a step and a half a ring. Phase 3: 6 rings, faster, shifting the other
+  way.
+- **Molten Flood, "track your row"**: new move `row_flood`: 3 molten lanes along the room's rows (x), 3 m apart,
+  centred on your row (the middle one on you), following you and locking for 0.8 s, then standing 1.6 s and burning
+  every 0.5 s like the old flood; phase 2 and 3: five rows 2.8 m apart. Between two lanes is safe (1.6 m clear).
+- **Kept:** the Vent Blast (close range, BF1's 4.65 m ring) as the melee answer like the Gatekeeper's Sweep; the
+  Bomb Drones (`bomb_launch`, unchanged; EF changes the drone's own attack); the Firestorm (7 flood lanes) as the
+  punish and in phase 3, now tracked then locked (0.8 s) and its lanes 1.4 m wide (was 2.0: with 2.6 m centres that
+  left 0.6 m between lanes, narrower than the hero; now 1.2 m). Dropped: the Slag Mortar (not in the design table).
+- **Gap-closers kept** (the anti-kite tests require one): the Siege Engine's Barrage, the Foundry's Molten Flood
+  (both tracked, so they reach a far player). A player who stays far keeps seeing them and the punish; up close
+  the patterns come.
+- **HP ×1.25:** Siege Engine 1800 → 2250, Foundry 1900 → 2375. Gates 66 / 33 % kept; BF1's N18 radius, rooms,
+  shockwave and vent values kept. Fireball damage 14 (the Warlord's), markers 20–26 as before.
+- **Looks:** Siege `cannon_ember` (an amber-orange core #D79000, a dark edge, a grey smoke trail that doesn't glow,
+  bigger balls); Foundry `molten_drop` (a white-yellow core #FFF07A, a dark edge, a short gold trail). Both keep
+  0.2+ (RGB) off the hero's cyan and heat colours (the BF1 test covers every look). The avatars pose the new moves
+  as their old ones (Siege: the cross as its cannon volleys, the grid and barrage as its mortars, the rail lane as its
+  rail; Foundry: the floods as its pour, the patterns as its chimneys).
+
+### SM: the small things (lead's readings, 2026-10-13; the owner corrects them at the playtest)
+Owner N8 (verbatim in the table above); evidence in [`evidence/SMALL_THINGS.md`](evidence/SMALL_THINGS.md).
+- **Card levels shown.** A card that levels (a wand card, 1–5, and an ability card) wears a small badge just above
+  its text panel on every pick card (altar, chest, shop, events, the Swap, the legendary altar): "Lv 1" when not
+  held, "Lv N → N+1" when taking it levels a held card, "Lv N → 5" on the legendary altar (its level-5 version;
+  "Lv 5" when not held). The rarity line stays as it was. The HUD's wand pips and the Build page's tiles show a wand
+  card's level as they already showed an ability modifier's. Spanish "Nv" (nivel), as the Build page already had.
+- **Onboarding: ten first-run hints**, each once (the profile's `hints` section): move and aim, attack, dash at the
+  first run's start (each closes when you do it); vent when the heat first reads Hot; the first card pick ("the wand
+  reads left to right"); the Build page (pause → Build) after the first card joins the wand; the first trigger card;
+  the first shop; the first open portal; the Codex (pause → Codex) at the second floor's start (lead's reading of
+  "the Codex": when the player has met enough to fill it). One small Ember-stone slab with a cold top line at the
+  top centre (low, over the heat meter, while a pick, shop or event panel is open, so it never covers the panel),
+  never blocking (no mouse, no focus, no pause), a hint about a moment first, at least 2 s and at most
+  9 s up, the keys of the device used last from the live bindings. **Skippable** = Options → Accessibility "Show
+  hints" (on by default; off hides one at once) and "Reset hints" (all show again); no dismiss key, since every
+  key is already a game key and a hint closes on its own.
+- **Credits and licences.** The credits gain a generated licence list (`data/credits/licences.tres`, written by
+  `scripts/content/build_credits.gd` from every asset manifest's licence line, the font licences and the addon
+  licences; a test fails while the copy differs from a fresh build) and the app icon beside the title.
+  `assets/models/manifest.json` had no licence line: it now cites the docs that say whose the models are
+  (ART_DIRECTION §5.2 "owner-supplied", KIT_REQUESTS / VFX_REQUESTS "made / generated by the owner"). The owner's
+  own credit line (`CREDITS_OWNER`, "…" since v0.0.1, owner action O4) stays the owner's to write.
+- **Accessibility pass** (findings in the evidence): the achievement toast's slide and the build picker's card rise
+  now honour reduced motion; the Codex's enemy emblems follow the colour-blind mode; a new **Interface size** option
+  (90 / 100 / 110 %, the window's content scale) was missing and is added under Accessibility; 125 % was tried and
+  dropped: the pick panel, built for 1080 px, overflows the 864 px it gets (screenshot in the evidence); a bigger
+  size needs the 1080-built panels to adapt (open).
+- **Release checklist, the code part.** The dev panels have one switch, `DevGate` (`game/dev/panel_enabled`, ON):
+  an export preset with the custom feature `public_release` ships them locked (project.godot's override) and ignores
+  a saved tuning file. No preset has it; the owner's playtest builds keep F10 (owner, 2026-10-12: "All builds, hidden
+  key"). The rest of ROADMAP §0.4 is the lead's at the PR; its status is in the evidence.
 
 At most 3 agents at once; one full suite per wave by the lead (CLAUDE.md). The PR into `main` with a version bump and
 a playtest sheet when every step is Done.
+
+## NB1 decisions (lead's readings, 2026-10-12; the owner corrects them at the playtest)
+- **Gameplay touch: ice that slides, nothing that hurts.** Frozen Shore floors get ice patches (45 % of rooms, 1-2
+  patches of 2.5-5 m each; never in the start hall, the boss room, the portal's room or the shop's room). On ice the
+  hero takes 0.35 s to speed up and 0.6 s to stop (0.1 s and 0.083 s on dry ground): a slide. The dash, skills and
+  enemies are unchanged on ice, so a fair escape always exists. Data: `BiomeSurface` in
+  `data/biomes/frozen_shore.tres` (PD-04: mild flavour, no difficulty table changes).
+- **Frozen-water edges are a look, not a hazard.** The floor's edge is already impassable (its outer walls); past it
+  the void becomes a frozen sea with floes and a snow bank (`BiomeLook.edge`). Nothing hurts, so nothing needs a
+  telegraph.
+- **The biome draw:** three floors drawn from four biomes, never the same biome twice in a run. Frozen Shore is
+  appended last in `three_floors.tres`, so a save's stored biome order keeps its biomes.
+- **`map:ice`**, a sub-stream of `map` like `map:overrun` (SIM_CONTRACTS §5). EI-05's list in LOCKED_DECISIONS names
+  neither; flagged here for the owner rather than changing a locked row.
+- **Enemy tint:** the enemies' grey and bone parts take a cold cast; the enemy red, rings, outlines and bars never
+  change (PRESENTATION §3).
+- **Art:** built from the kit plus code-made pieces; the pieces the kit lacks are requested in
+  [`../../art/requests/v0.7.5_frozen_shore.md`](../../art/requests/v0.7.5_frozen_shore.md).
+
+## NB2 decisions (agent's readings, 2026-10-13; the owner corrects them at the playtest)
+Owner N3, verbatim: "a fifth one. That's gonna be kind of like a cosmic or universe feel with different stars and
+things like that".
+- **Name:** "Starfall" / es "Caída Estelar" (`BIOME_STARFALL`; a string, the owner may rename it). Id `starfall`.
+- **The look, from the line:** "cosmic or universe feel" read as a floor floating in space: a near-black violet void
+  full of twinkling stars and soft nebula clouds (violet, teal, magenta), the floor itself a floating island (dark
+  star stone and hanging spikes under its rim), small rock and crystal islands drifting around it. "Different stars"
+  read as stars of several colours and sizes, each twinkling at its own rate. Look only: the edge stays impassable
+  (the floor's outer walls), and everything in the void stays under the ground's level and clear of the floor.
+- **Gameplay touch: starglow pools that speed you up.** Starfall floors get starglow pools (40 % of rooms, 1-2 pools
+  of 2-4 m; never in the start hall, the boss room, the portal's room or the shop's room). On a pool the hero's top
+  walking speed is ×1.25 and they ease 0.1 s up / 0.2 s down (a short drift, not a slide). Nothing hurts, so no
+  telegraph; the dash, skills and enemies are unchanged. It reuses NB1's surface machinery (`BiomeSurface` kind
+  `starglow`, `IcePatches` placement) on its own sub-stream `map:starglow`. Starting values (PD-04: mild flavour,
+  no difficulty table changes); the owner may turn it off by removing the surface from `starfall.tres`.
+- **No fog on Starfall:** a fog washed the void into flat violet in the first shots; the mood has fog 0 so the stars
+  read. Light: a pale lavender starlight, violet flames on the fire props, a grade toward teal shadows and
+  magenta-white highlights.
+- **The biome draw:** three floors drawn from five biomes, never the same biome twice in a run. Starfall is appended
+  last in `three_floors.tres` (saves keep their indices). Every run's draw changes with a fifth biome (the shuffle
+  is over five now); a save's stored order still resolves to the same biomes.
+- **`map:starglow`**, a sub-stream of `map` like `map:ice`; flagged with it for the owner (EI-05).
+- **Crystals and enemies:** room crystals take a nebula magenta-pink (off the player-core cyan and the Deep violet);
+  enemies' grey and bone parts a violet cast (the red, rings, outlines and bars never change).
+- **Art:** built from the kit plus code-made pieces (star crystals, meteorites, star monoliths, the void); the pieces
+  the kit lacks are requested in [`../../art/requests/v0.7.5_starfall.md`](../../art/requests/v0.7.5_starfall.md).

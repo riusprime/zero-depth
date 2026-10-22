@@ -3,7 +3,7 @@ extends MenuPanel
 ## Shown when the fight ends (PLAN v0.1.0 Step 5): "You died" with what killed you, or "Arena cleared". Restart has
 ## focus. On a run (v0.3.0 B) it is the run recap: "Run complete" or "You died", the floor reached, the run's time,
 ## kills, shards (only when the run counts them), the items you held and the killing cause.
-## v0.5.5 A5 (Cold glass, MenuStyle): the game blurred behind, the title, recap and buttons left-aligned.
+## v0.5.5 A5; v0.8.0 MU (Ember stone, MenuStyle): the game blurred behind, the title, recap and buttons on a stone slab.
 
 signal restart_pressed
 signal main_menu_pressed
@@ -26,7 +26,9 @@ const CAUSES := {
 
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted
 ## when the run has no shards), "items" (Array of item name keys), "routes" (v0.5.0 RT: each floor's route, floor 1
-## first, as WorldReader.ROUTE_* ints), "threat" and "threat_peak" (ints; v0.5.0 EV).
+## first, as WorldReader.ROUTE_* ints), "threat" and "threat_peak" (ints; v0.5.0 EV), "loop" and "loops_cleared"
+## (ints; v0.7.5 AP: the floor line says "Loop N · " past the first loop, and a line counts the loops cleared),
+## "true_ending" (bool; v0.8.0 FB1: the final boss was beaten, its line first).
 var recap := {}
 
 
@@ -64,8 +66,18 @@ func recap_line(line_name: String) -> String:
 
 
 func _add_recap() -> void:
+	if bool(recap.get("true_ending", false)):  # v0.8.0 FB1 (F1): the final boss beaten
+		_line("TrueEnding", tr("UI_RECAP_TRUE_ENDING"), 24)
 	if recap.has("floor"):
-		_line("Floor", tr("UI_RECAP_FLOOR") % [recap["floor"], recap.get("floors", recap["floor"])])
+		_line(
+			"Floor",
+			(
+				Hud.loop_prefix(self, int(recap.get("loop", 1)))
+				+ tr("UI_RECAP_FLOOR") % [recap["floor"], recap.get("floors", recap["floor"])]
+			)
+		)
+	if recap.has("loops_cleared"):  # v0.7.5 AP: the Ascension loop
+		_line("Loops", tr("UI_RECAP_LOOPS") % recap["loops_cleared"])
 	if recap.has("seconds"):
 		var secs := int(recap["seconds"])
 		_line("Time", tr("UI_RECAP_TIME") % [secs / 60, secs % 60])

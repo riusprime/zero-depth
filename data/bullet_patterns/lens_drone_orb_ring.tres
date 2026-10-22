@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 0
+look = &"lens_orb"
+speed_mps = 3.5
+radius_m = 0.13
+range_m = 10.0
+aim_offset_degrees = 30.0
+safe_radius_m = 1.0
+count = 12
+gap_count = 6
+gap_width = 1
+id = &"lens_drone_orb_ring"

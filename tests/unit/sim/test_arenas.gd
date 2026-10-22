@@ -1,12 +1,16 @@
 extends GutTest
-## v0.5.5 AR (PLAN D2, X1 "open floor, sealed arenas", X1b): where the arenas go (a property over many floor seeds:
-## about a third of the combat rooms, never the start, boss, shop, event or shrine rooms, always skippable), the
+## v0.5.5 AR (PLAN D2, X1 "open floor, sealed arenas", X1b): where the arenas go (a property over many floor seeds: the
+## data's share of the combat rooms (v0.7.5 MG, owner N11: 0.11, was a third; with the Overrun room 20 % fewer challenge
+## rooms a floor than v0.7.0's 3.231), never the start, boss, shop, event or shrine rooms, always skippable), the
 ## rewards they hold (placed there first, locked until the clear, S1's two-altar cap kept), in play the seal (barriers,
 ## the horde paused, no blink out), the waves inside at the floor's sizes, the clear; saves at the arena's entry; and
 ## the boss's legendary altar (a pick of 3 from the legendary tier only). No bots: mechanics only (owner P1).
 
 const SEEDS := 300
 const STEPS_AFTER := 600
+## v0.7.5 MG (N11): v0.7.0's challenge rooms a floor (the Overrun room and the arenas), per mille, measured over 1,000
+## seeds by scripts/checks/map_stats.gd (docs/roadmap/v0.7.5/evidence/MAPS.md). The floors now have 20 % fewer.
+const CHALLENGE_BEFORE_PERMILLE := 3231
 
 
 func _arena_floor(run_seed: int, floor_index: int = 1) -> World:
@@ -42,14 +46,15 @@ func _kill_inside(w: World) -> void:
 
 
 # --- Generation ---------------------------------------------------------------------------------------------------
-func test_about_a_third_of_the_combat_rooms_are_skippable_arenas() -> void:
+func test_the_share_of_the_combat_rooms_are_skippable_arenas() -> void:
 	var share := RunContentCompiler.compile_arena(
 		ContentRepository.load_all().get_def(&"arena", &"arena")
 	)
-	assert_eq(share.share_permille, 330, "the data's starting share")
+	assert_eq(share.share_permille, 110, "the data's starting share (v0.7.5 MG, N11: was 330)")
 	var none := 0
 	var total := 0
 	var combat := 0
+	var challenge := 0
 	for s in range(1, SEEDS + 1):
 		var f := FloorGenerator.generate(s)
 		BossRoomBuilder.attach(f)
@@ -58,6 +63,7 @@ func test_about_a_third_of_the_combat_rooms_are_skippable_arenas() -> void:
 		var cands := ArenaRooms.candidates(f)
 		combat += cands.size()
 		total += rooms.size()
+		challenge += rooms.size() + (1 if f.overrun_room >= 0 else 0)
 		if rooms.is_empty():
 			none += 1
 		var target := maxi(1, (cands.size() * share.share_permille + 500) / 1000)
@@ -91,12 +97,17 @@ func test_about_a_third_of_the_combat_rooms_are_skippable_arenas() -> void:
 		)
 	gut.p(
 		(
-			"arenas over %d seeds: %d in %d combat rooms, %d floors without"
-			% [SEEDS, total, combat, none]
+			"arenas over %d seeds: %d in %d combat rooms, %d floors without; challenge rooms %d"
+			% [SEEDS, total, combat, none, challenge]
 		)
 	)
 	assert_lt(none, SEEDS / 10, "nearly every floor has one")
-	assert_gt(total * 1000 / combat, 200, "about a third (fewer where it would cut the floor)")
+	assert_gt(total * 1000 / combat, 70, "about the share (fewer where it would cut the floor)")
+	assert_lte(
+		challenge * 1000 / SEEDS,
+		CHALLENGE_BEFORE_PERMILLE * 8 / 10,
+		"N11: at least 20 % fewer challenge rooms a floor than v0.7.0"
+	)
 
 
 func test_the_pick_is_deterministic_and_leaves_the_layout_alone() -> void:
@@ -198,7 +209,8 @@ func test_waves_spawn_inside_one_after_another_then_the_doors_open() -> void:
 	var w := _floor_with_arena(1)
 	var f := w.floor_layout
 	var room := f.arena_rooms[0]
-	var walls := w.walls.size()
+	# v0.8.0 BD: the shut boss door's collider joins the walls on the first tick and stays (no press here).
+	var walls := w.walls.size() + (1 if w.boss_flow.door == BossFlow.Door.SET else 0)
 	var locked := PackedInt32Array()
 	for i in w.rewards.size():
 		if f.room_of(w.rewards.pos(i)) == room:
@@ -372,7 +384,10 @@ func test_legendary_stat_cards_are_stronger_than_epic() -> void:
 	var w := _arena_floor(3)
 	assert_not_null(w.legendary_table)
 	assert_false(w.legendary_table.stats.is_empty())
-	assert_false(w.legendary_table.mods.is_empty())
+	assert_true(
+		w.legendary_table.mods.is_empty(), "v0.8.0 RR: the Legendary cards come by the chance"
+	)
+	assert_gt(w.legendary_table.card_permille, 0)
 	for s in w.legendary_table.stats:
 		var t := w.stat_tables[s]
 		assert_eq(t.amounts.size(), 4, "%s: four rarities" % t.id)

@@ -25,15 +25,16 @@ static func swing_reach_m(w: World, step: int = -1) -> float:
 	return Attacks.arc_reach_m(w, Modifiers.step(w, s))
 
 
-## Ticks between bolts while shooting: the bolt spec's period, with its rate bonus (Rapid Coil) applied (never under
-## 2 ticks once shortened), then attack speed.
+## Ticks between bolts while shooting (v0.8.0 SG, owner O91): the bolt spec's period at one rate, the attack speed
+## stat plus its wand rate bonus (Rapid Fire, Rapid Coil ...; a negative one counts) through the curve, then Heavy
+## Hands (AttackRate.rate), rounded half up; never under AttackRate.MIN_SHOT_TICKS once changed.
 static func shot_period_ticks(w: World) -> int:
 	var spec := Modifiers.bolt(w)
 	var base := spec.period_ticks
-	var bonus := spec.rate_bonus_permille
-	if bonus <= 0:
-		return Stats.period(w, base)  # v0.4.0 BS: attack speed
-	return Stats.period(w, maxi(2, int(round(base * 1000.0 / (1000 + bonus)))))
+	var r := AttackRate.rate(w, spec.rate_bonus_permille + FireRhythm.shot_bonus(w, spec))  # v0.8.0 MR: the ramp
+	if r == 1000:
+		return base
+	return maxi(mini(base, AttackRate.MIN_SHOT_TICKS), AttackRate.scaled(base, r))
 
 
 ## Damage of each bolt in a shot: the full bolt, or a Splinter share (rounded down, at least 1).
@@ -85,6 +86,7 @@ static func after_swing(w: World, base: int, dmg: int) -> void:
 		w.overcharge_tick = w.tick
 		wave = Attacks.on_nth(w, spec, base, w.swing_root)
 	if spec.repeat_delay_ticks > 0:
+		ModifierRuntime.queue_echoes(w, spec, w.swing_angle, w.swing_root, dmg)  # v0.8.0 BL
 		w.echo_t = spec.repeat_delay_ticks
 		w.echo_angle = w.swing_angle
 		w.echo_step = w.combo_step
@@ -100,7 +102,7 @@ static func shockwave(w: World, dmg: int, root: int, effect: StringName) -> void
 	var a := w.actors
 	var center := w.player_pos()
 	var radius := Modifiers.nth_burst_radius_m(w)
-	for i in range(1, a.size()):
+	for i in w.aoe_candidates(center, radius):  # v0.8.0 HS: a superset, ascending (was every actor)
 		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
 			continue
 		if not AttackShapes.disc_touches(center, radius, a.pos(i), a.radius[i]):

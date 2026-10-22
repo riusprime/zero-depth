@@ -4,9 +4,10 @@ extends RefCounted
 ## pieces in groups (a group is one obstacle: a pillar, a slab, an L of two slabs); FloorGenerator keeps a group
 ## only if it keeps its distance, leaves doorways, the start and the gate clear, and leaves the room one region. So
 ## a template never blocks a door or splits a room; at worst it loses a piece. Each template draws its own
-## parameters (counts, spacing, sizes, which way it turns or mirrors). Pieces are axis-aligned except the
-## diagonals' (angles that are multiples of 512). Pure sim code: draws from the `map` stream, floats from whole
-## centimetres, no trig. SCATTER (random slabs) is placed by FloorGenerator itself, slab by slab.
+## parameters (counts, spacing, sizes, which way it turns or mirrors). Pieces are axis-aligned. Pure sim code:
+## draws from the `map` stream, floats from whole centimetres, no trig. SCATTER (random slabs) is placed by
+## BossRoomBuilder itself, slab by slab. COLONNADE and DIAGONALS are never drawn (weight 0, and no boss arena may name
+## them: BossSchemas.ARENA_TEMPLATES), so they have no generator (audit G-8); their enum entries stay.
 
 ## Free space from a wall face to a piece's edge: the generator's gap plus a margin.
 const EDGE := 2.6
@@ -73,10 +74,6 @@ static func groups(template: int, r: Rect2, rng: RngStream, p: FloorParams, hall
 			return _lines(r, rng, p)
 		T.BUNKERS:
 			return _bunkers(r, rng, p)
-		T.COLONNADE:
-			return _colonnade(r, rng, p)
-		T.DIAGONALS:
-			return _diagonals(r, rng, p)
 	return []
 
 
@@ -236,59 +233,4 @@ static func _bunkers(r: Rect2, rng: RngStream, p: FloorParams) -> Array:
 		var arm_x := _box(Vector2(wall.x - sx * EDGE, k.y - t), Vector2(k.x - sx * t, k.y + t))
 		var arm_y := _box(Vector2(k.x - t, wall.y - sy * EDGE), Vector2(k.x + t, k.y + sy * t))
 		out.append([_fix(arm_x), _fix(arm_y)])
-	return out
-
-
-## COLONNADE (v0.3.0): two rows of pillars along the room's long axis, an aisle between them and a walkway
-## behind each. Drawn: the pillar size and spacing, how far the rows stand from the long walls, and whether the
-## second row is staggered by half a spacing.
-static func _colonnade(r: Rect2, rng: RngStream, p: FloorParams) -> Array:
-	var along_x := r.size.x >= r.size.y
-	var long := r.size.x if along_x else r.size.y
-	var short := r.size.y if along_x else r.size.x
-	var half := _draw(rng, 0.4, 0.6)
-	var pitch := _draw(rng, 4.0, 5.5)
-	var inset := EDGE + half + _draw(rng, 0.0, 1.5)
-	inset = minf(inset, short * 0.5 - half - p.slab_gap * 0.5 - 0.5)
-	var stagger := rng.chance_permille(p.template_flip_permille)
-	var n := maxi(1, int((long - (EDGE + half) * 2.0) / pitch) + 1)
-	var out := []
-	for row in 2:
-		var across := inset if row == 0 else short - inset
-		var shift := pitch * 0.5 if stagger and row == 1 else 0.0
-		for i in n:
-			var along := long * 0.5 + (i - (n - 1) * 0.5) * pitch + shift
-			if along - half < EDGE or along + half > long - EDGE:
-				continue
-			var q := Vector2(along, across) if along_x else Vector2(across, along)
-			q += r.position
-			out.append([_box(q - Vector2(half, half), q + Vector2(half, half))])
-	return out
-
-
-## DIAGONALS (v0.3.0): slabs turned an eighth of a turn, on a staggered grid. Drawn: the slab length, the
-## spacing, which way they lean (mirrored), and whether every other row leans the other way (a herringbone).
-static func _diagonals(r: Rect2, rng: RngStream, p: FloorParams) -> Array:
-	var half_len := _draw(rng, 1.2, 1.8)
-	var pitch := _draw(rng, 5.5, 7.0)
-	var lean := 512 if rng.chance_permille(p.template_flip_permille) else 1536
-	var herring := rng.chance_permille(p.template_flip_permille)
-	var reach := (half_len + p.slab_half_thickness) * 0.75  # an eighth turn's half-extent, rounded up
-	var span := r.size - Vector2(EDGE + reach, EDGE + reach) * 2.0
-	var n := Vector2i(maxi(1, int(span.x / pitch) + 1), maxi(1, int(span.y / pitch) + 1))
-	var c := r.get_center()
-	var out := []
-	for j in n.y:
-		var angle := lean
-		if herring and j % 2 == 1:
-			angle = 2048 - lean
-		var shift := pitch * 0.5 if j % 2 == 1 and n.x > 1 else 0.0
-		for i in n.x:
-			var q := (
-				c + Vector2((i - (n.x - 1) * 0.5) * pitch + shift, (j - (n.y - 1) * 0.5) * pitch)
-			)
-			if q.x + reach > r.end.x - EDGE:
-				continue
-			q = Vector2(_cm(q.x), _cm(q.y))
-			out.append([Obb.make(q, Vector2(half_len, p.slab_half_thickness), angle)])
 	return out

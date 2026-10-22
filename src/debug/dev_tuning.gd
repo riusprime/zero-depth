@@ -81,6 +81,8 @@ func reset_all() -> void:
 
 ## Writes the overrides into the loaded definitions, and the shipped values back where an override went.
 func apply() -> void:
+	if not (_restore.is_empty() and overrides.is_empty()):
+		ContentRepository.recheck()  # edited definitions: the next load validates (and logs) them again
 	for k: String in _restore:
 		if _shipped.has(k):
 			_write(k, _shipped[k])

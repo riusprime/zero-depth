@@ -146,26 +146,40 @@ func test_every_wand_card_name_fits_its_tile_in_both_languages() -> void:
 		keys.append(Offers.info(w, WandLab.code(w, id))["name_key"])
 	for id: StringName in ABILITY_MODS:
 		keys.append(Offers.info(w, WandLab.code(w, id))["name_key"])
+	# v0.8.0 N18 (owner O76: "Shrink long words to fit"): each name is checked at the size its tile draws it (NAME_SIZE,
+	# or smaller when a word is too long, never under TextFit.WORD_FLOOR of it), the size the row's label is given.
 	var font := HudStyle.font(true)
 	var width := WandRow.TILE.x - 16.0
-	var line_h := font.get_height(WandRow.NAME_SIZE)
+	var lowest := ceili(WandRow.NAME_SIZE * TextFit.WORD_FLOOR)
+	var label := WandRow.make_label(WandRow.NAME_SIZE, true, MenuStyle.TEXT)
+	add_child_autofree(label)
 	var checked := 0
 	for lang in LANGS:
 		TranslationServer.set_locale(lang)
 		for key: StringName in keys:
 			var text := tr(key)
+			label.text = text
+			var s := TextFit.fit_label_words(label, width, WandRow.NAME_SIZE)
+			assert_eq(label.get_theme_font_size("font_size"), s, "the label wears the fitted size")
+			assert_true(s >= lowest, "%s: '%s' stays legible (%d px)" % [lang, text, s])
 			for word in text.split(" ", false):
-				var ww := (
-					font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, WandRow.NAME_SIZE).x
-				)
+				var ww := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x
 				assert_true(
-					ww <= width, "%s: '%s' of '%s' is %d px (%d)" % [lang, word, text, ww, width]
+					ww <= width,
+					"%s: '%s' of '%s' is %d px at %d px (%d)" % [lang, word, text, ww, s, width]
 				)
-			var sz := font.get_multiline_string_size(
-				text, HORIZONTAL_ALIGNMENT_CENTER, width, WandRow.NAME_SIZE
+			var sz := font.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, width, s)
+			assert_true(
+				sz.y <= font.get_height(s) * 2.0 + 1.0, "%s: '%s' fits in two lines" % [lang, text]
 			)
-			assert_true(sz.y <= line_h * 2.0 + 1.0, "%s: '%s' fits in two lines" % [lang, text])
 			checked += 1
+	TranslationServer.set_locale("es")
+	label.text = tr(&"ABILITY_ARC_FIELD")
+	assert_eq(label.text, "Electromagnetismo", "the long word the owner approved shrinking for")
+	assert_lt(
+		TextFit.fit_label_words(label, width, WandRow.NAME_SIZE), WandRow.NAME_SIZE, "it shrinks"
+	)
+	TranslationServer.set_locale("en")
 	assert_gt(checked, 100, "every slot card, both languages")
 	assert_true(WandRow.NAME_SIZE >= 13 and WandRow.SMALL_SIZE >= 12, "legible at 1280 x 720")
 

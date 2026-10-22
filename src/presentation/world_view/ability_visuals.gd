@@ -28,7 +28,7 @@ var forms_drawn := false
 var _drones: Array[Node3D] = []
 var _blades: Array[MeshInstance3D] = []
 var _bombs: Array[Node3D] = []
-var _fx: Array = []
+var _fx := FxFade.new()
 var _fx_template := SkillVisuals._make_template()
 var _blade_mesh := PrismMesh.new()
 var _blade_mat := StandardMaterial3D.new()
@@ -107,25 +107,14 @@ func _sync_echo(fx: Dictionary) -> void:
 
 
 # --- Reads (tests) ------------------------------------------------------------------------------------------
-func drone_count() -> int:
-	return _drones.filter(func(d: Node3D) -> bool: return d.visible).size()
-
-
-func blade_count() -> int:
-	return _blades.filter(func(b: MeshInstance3D) -> bool: return b.visible).size()
 
 
 func bomb_count() -> int:
 	return _bombs.filter(func(b: Node3D) -> bool: return b.visible).size()
 
 
-## The ground circle's radius of bomb k as drawn (the sim's bomb radius).
-func bomb_ring_radius(k: int) -> float:
-	return ((_bombs[k].get_node("Ring") as MeshInstance3D).mesh as TorusMesh).outer_radius
-
-
 func fx_count_of(kind: StringName) -> int:
-	return _fx.filter(func(f: Array) -> bool: return f[4] == kind).size()
+	return _fx.count_of(kind)
 
 
 # --- Drones -------------------------------------------------------------------------------------------------
@@ -346,21 +335,9 @@ func _line(from: Vector2, to: Vector2) -> void:
 
 
 func _add(n: MeshInstance3D, c: Color, alpha: float, kind: StringName) -> void:
-	var m := _fx_template.duplicate() as StandardMaterial3D
-	m.albedo_color = Color(c, alpha)
-	n.material_override = m
-	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	n.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	add_child(n)
-	_fx.append([n, m, FX_FRAMES, FX_FRAMES, kind, alpha])
+	_fx.add(self, n, _fx_template, c, alpha, kind, FX_FRAMES)
 
 
 func _process(delta: float) -> void:
 	_t += delta
-	for k in range(_fx.size() - 1, -1, -1):
-		var fx: Array = _fx[k]
-		fx[2] -= 1
-		(fx[1] as StandardMaterial3D).albedo_color.a = fx[5] * float(fx[2]) / fx[3]
-		if fx[2] <= 0:
-			(fx[0] as Node).queue_free()
-			_fx.remove_at(k)
+	_fx.step(1)

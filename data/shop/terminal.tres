@@ -6,7 +6,7 @@
 script = ExtResource("1_shp")
 id = &"terminal"
 offer_size = 4
-rarity_prices = PackedInt32Array(30, 55, 90)
+rarity_prices = PackedInt32Array(30, 55, 90, 150)
 floor_price_step = 0.5
 late_floor_price = 1.5
 max_buys = 4
@@ -17,3 +17,5 @@ reroll_step = 0.5
 sell_share = 0.4
 ability_refund_per_level = 10
 interact_radius_m = 1.8
+first_floor = 1
+every_floors = 2

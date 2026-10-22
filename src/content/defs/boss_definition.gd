@@ -6,6 +6,8 @@ extends ContentDef
 ## floor generator reads). Every number is a starting value the owner tunes after playing.
 
 @export var name_key: StringName
+## v0.7.5 CX: the Codex's line about this boss (a locale key; empty shows no line).
+@export var desc_key: StringName
 @export var hp := 1000
 @export var radius_m := 1.2
 @export var move_speed_mps := 1.5
@@ -13,7 +15,9 @@ extends ContentDef
 @export var turn_rate_dps := 0.0
 ## Pursuit stops this far from the player (0 = walks into melee).
 @export var keep_distance_m := 0.0
-## Armour by the direction a hit comes from (0 arcs = none): as the Warden (CONTENT_SCHEMA §3).
+## Armour by the direction a hit comes from (0 arcs = none): as the Warden (CONTENT_SCHEMA §3). v0.8.0 BS1 (owner O5,
+## S2): front_mult_permille 0 is a shield that blocks every hit from the front arc (the Warlord's; Damage tags it
+## BLOCKED, the hit sparks).
 @export var front_arc_degrees := 0.0
 @export var front_mult_permille := 1000
 @export var rear_arc_degrees := 0.0
@@ -28,6 +32,9 @@ extends ContentDef
 @export var arena_cells := Vector2i(2, 2)
 @export_enum("open", "scatter", "pillars", "centre", "cross", "lines", "bunkers")
 var arena_template := 0
+## v0.7.5 BF1 (owner N18): the room size before every boss moved to the big room; a floor resumed from a save made
+## before then (RunState.legacy_boss_room) is rebuilt with it, so it is the floor it was saved on. (0, 0) = arena_cells.
+@export var legacy_arena_cells := Vector2i.ZERO
 ## Boss challenge (v0.3.0 BX, PLAN L17 and L26). Distances are from the boss's edge to the player.
 ## Ranged armour: the player's hits deal full damage up to ranged_full_m away, falling linearly to
 ## ranged_far_permille at ranged_far_m and beyond (1000 = no ranged armour).
@@ -188,8 +195,8 @@ func _check_armour(issues: Array[ValidationIssue]) -> void:
 			issues.append(ValidationIssue.new(&"armour", p, "%s must be within 0..360" % pair[0]))
 	if front_arc_degrees + rear_arc_degrees > 360.0:
 		issues.append(ValidationIssue.new(&"armour", p, "the armour arcs overlap"))
-	if front_mult_permille < 1 or front_mult_permille > 1000:
-		issues.append(ValidationIssue.new(&"armour", p, "front_mult_permille must be 1..1000"))
+	if front_mult_permille < 0 or front_mult_permille > 1000:
+		issues.append(ValidationIssue.new(&"armour", p, "front_mult_permille must be 0..1000"))
 	if rear_mult_permille < 1000 or rear_mult_permille > 3000:
 		issues.append(ValidationIssue.new(&"armour", p, "rear_mult_permille must be 1000..3000"))
 
@@ -254,6 +261,16 @@ func _check_challenge(issues: Array[ValidationIssue]) -> void:
 		if gap_close_distance_m <= 0.0 or int(round(gap_close_seconds * 60.0)) < 1:
 			issues.append(
 				ValidationIssue.new(&"challenge", p, "gap-close distance and time must be > 0")
+			)
+	for a in attacks:  # v0.8.0 BP (owner O27): a big attack's punish window, after recovery_permille
+		if a == null or a.hit_class != &"big":
+			continue
+		var rec := int(round(a.recovery_seconds * 60.0)) * recovery_permille / 1000
+		if rec < BossSchemas.PUNISH_MIN_TICKS or rec > BossSchemas.PUNISH_MAX_TICKS:
+			issues.append(
+				ValidationIssue.new(
+					&"punish", p, "attack %s: a big attack recovers 0.6..0.9 s (its window)" % a.id
+				)
 			)
 	for a in attacks:
 		if a == null or String(a.follow_up).is_empty():

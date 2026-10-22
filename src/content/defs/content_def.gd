@@ -2,6 +2,9 @@ class_name ContentDef
 extends Resource
 ## Base for every content definition (CONTENT_SCHEMA §0): a stable id, a category, and validate().
 
+## The id pattern, compiled once per process (validate() runs for every definition on every check).
+static var _id_re := RegEx.create_from_string("^[a-z][a-z0-9_]*$")
+
 @export var id: StringName
 
 
@@ -14,7 +17,7 @@ func validate() -> Array[ValidationIssue]:
 	var issues: Array[ValidationIssue] = []
 	if String(id).is_empty():
 		issues.append(ValidationIssue.new(&"id_empty", resource_path, "id is empty"))
-	elif not RegEx.create_from_string("^[a-z][a-z0-9_]*$").search(String(id)):
+	elif not _id_re.search(String(id)):
 		issues.append(
 			ValidationIssue.new(&"id_format", resource_path, "id must be snake_case: %s" % id)
 		)

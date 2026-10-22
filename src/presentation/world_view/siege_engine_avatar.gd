@@ -18,6 +18,10 @@ const METAL_COLOR := Color("#6A6462")
 const METAL_DARK := Color("#4C4847")
 const EYE_COLOR := Color("#FF2A22")
 const GLOW_COLOR := Color("#FF3A26")
+## v0.8.0 BA: the model's legs (BossRig), front left, front right, back left, back right.
+const LEG_TAGS: Array[StringName] = [&"fl", &"fr", &"bl", &"br"]
+const LEG_THIGHS: Array[StringName] = [&"thigh_fl", &"thigh_fr", &"thigh_bl", &"thigh_br"]
+const LEG_SHINS: Array[StringName] = [&"shin_fl", &"shin_fr", &"shin_bl", &"shin_br"]
 
 var hull := Node3D.new()
 var cannon := Node3D.new()
@@ -26,6 +30,19 @@ var eyes: Array[MeshInstance3D] = []
 var mortars: Array[Node3D] = []
 var legs: Array[Node3D] = []
 var _mortar_glow: Array[MeshInstance3D] = []
+
+
+## v0.7.5 BF3: its dodge-first moves pose as the old ones: the Turret Cross as its cannon's volleys (it recoils), the
+## Mortar Grid and the Barrage's tracked circles as its mortar tubes, the Rail lane as its rail's charge.
+func apply_state(s: Dictionary) -> void:
+	super(s)
+	match _move:
+		WorldReader.MOVE_PATTERN:
+			_move = WorldReader.MOVE_BOLT_FAN
+		WorldReader.MOVE_GRID, WorldReader.MOVE_MARKS:
+			_move = WorldReader.MOVE_BARRAGE
+		WorldReader.MOVE_LANES:
+			_move = WorldReader.MOVE_RAIL
 
 
 ## The sheet's name for this boss: its imported model would be fortress_turret.glb.
@@ -217,53 +234,44 @@ func _pose(dt: float) -> void:
 		(leg.get_meta(&"knee") as Node3D).rotation = Vector3(0, 0, cos(_phase) * diag * 0.15 * walk)
 
 
-## The owner's model, rigged in code (BossRig): the four legs step in diagonal pairs, the cannon recoils with
-## each volley and lifts as the rail charges, the mortar tubes tilt up and kick for a barrage, the hull squats to
-## deploy and stays low once planted (the last phase), and staggered it lurches.
+## v0.8.0 BA: the owner's model (rigged in code, BossRig) plays its keyframed clips (SiegeEngineClips); the legs
+## follow the clips' leg parameters, and in its last phase it stays a little lower, planted.
+func _clip_library() -> Dictionary:
+	return SiegeEngineClips.library()
+
+
+func _walk_speed() -> float:
+	return WALK_SPEED
+
+
+func _stride() -> float:
+	return STRIDE
+
+
+func _idle_seconds() -> float:
+	return 2.2
+
+
 func _pose_rig(_dt: float) -> void:
-	var walk := _walk
-	var windup := _state == WorldReader.STATE_WINDUP
-	var fade := _act_fade()
-	var mortar := 0.0
-	var kick := 0.0
-	var charge := 0.0
-	var squat := _late * 0.6
-	match _move:
-		WorldReader.MOVE_BARRAGE:
-			mortar = _wind if windup else 0.0
-		WorldReader.MOVE_RAIL:
-			charge = _wind if windup else fade
-		WorldReader.MOVE_DEPLOY:
-			squat = maxf(squat, _wind if windup else fade)
-	if not windup and (_move == WorldReader.MOVE_BOLT_FAN or _move == WorldReader.MOVE_RAIL):
-		kick = _hit
-	var tube_kick := _hit if not windup and _move == WorldReader.MOVE_BARRAGE else 0.0
-	var stag := _stagger
-	for fb in [1, -1]:
-		for side in [-1, 1]:
-			var lt := "%s%s" % ["f" if fb > 0 else "b", "l" if side < 0 else "r"]
-			var diag := float(fb * side)
-			var lift := maxf(0.0, sin(_phase) * diag) * 0.3 * walk
-			var stride := cos(_phase) * diag * 0.16 * walk
-			# Squatting: the thighs splay out and the shins bend back under the lowered hull.
-			bone_q(
-				StringName("thigh_" + lt),
-				(
-					Quaternion(Vector3(1, 0, 0), -side * (squat * 0.25 + stag * 0.08))
-					* Quaternion(Vector3(0, 0, 1), stride + lift * 0.6)
-				)
-			)
-			bone(StringName("shin_" + lt), Vector3(0, 0, 1), -lift * 0.9 + side * 0.0)
-	bone_q(
-		&"hull",
-		Quaternion(Vector3(0, 0, 1), -charge * 0.04 + sin(_t * 10.0) * 0.05 * stag),
-		Vector3(0, -squat * 0.28 - charge * 0.05, 0)
-	)
-	bone(&"cannon", Vector3(0, 0, 1), charge * 0.06, Vector3(-kick * 0.4, 0, 0))
-	for side in [-1, 1]:
-		bone(
-			StringName("mortar_" + ("l" if side < 0 else "r")),
-			Vector3(0, 0, 1),
-			-mortar * 0.25,
-			Vector3(tube_kick * -0.15, -tube_kick * 0.12, 0)
-		)
+	var an := animator
+	var p := poser
+	var squat := an.param(&"squat") + 0.35 * _late
+	var lift_a := an.param(&"gait_a_lift")
+	var lift_b := an.param(&"gait_b_lift")
+	var swing_a := an.param(&"gait_a_swing")
+	var swing_b := an.param(&"gait_b_swing")
+	var front_kneel := an.param(&"front_kneel")
+	var back_kneel := an.param(&"back_kneel")
+	var front_lift := an.param(&"front_lift")
+	for j in LEG_TAGS.size():
+		var fb := 1 if j < 2 else -1
+		var side := -1 if j % 2 == 0 else 1
+		# The diagonal pairs: front left with back right (a), front right with back left (b).
+		var a := fb * side < 0
+		var lift := (lift_a if a else lift_b) + (front_lift if fb > 0 else 0.0)
+		var kneel := front_kneel if fb > 0 else back_kneel
+		var stride := (swing_a if a else swing_b) + kneel * 0.35 * fb
+		p.turn(LEG_THIGHS[j], Vector3(0, 0, 1), stride + lift * 0.6)
+		p.turn(LEG_THIGHS[j], Vector3(1, 0, 0), -side * squat * 0.26)
+		p.turn(LEG_SHINS[j], Vector3(0, 0, 1), -lift * 0.9 - kneel * 0.8 * fb)
+	p.shift(&"hull", Vector3(0, -0.1 * _late, 0))

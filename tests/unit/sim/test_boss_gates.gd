@@ -51,6 +51,7 @@ func test_a_burst_stops_at_each_gate_and_the_gate_cannot_be_hurt() -> void:
 		assert_eq(w.actors.state[i], BossAi.GATE, "%s: the gate" % id)
 		assert_eq(_burst(w, i), 0, "%s: invulnerable in the gate" % id)
 		BossLab.through_gate(w, aid)
+		BossLab.until_open(w, aid)  # v0.7.5 BF1: a shielded entry pattern runs first
 		i = w.actors.index_of(aid)
 		assert_eq(w.bosses.phase[BossAi.entry_of(w, i)], 1)
 		w.actors.invuln[i] = 0
@@ -58,6 +59,7 @@ func test_a_burst_stops_at_each_gate_and_the_gate_cannot_be_hurt() -> void:
 		assert_eq(w.actors.hp[i], max_hp * 330 / 1000, "%s: the next burst stops at 33 %%" % id)
 		w.step(InputFrame.new())
 		BossLab.through_gate(w, aid)
+		BossLab.until_open(w, aid)
 		i = w.actors.index_of(aid)
 		assert_eq(w.bosses.phase[BossAi.entry_of(w, i)], 2, "%s: the last phase" % id)
 		w.actors.invuln[i] = 0
@@ -140,6 +142,7 @@ func _gate_adds(f: int) -> Array:
 		assert_gte(rising, added, "they rise with the spawn-in (no acting, no damage)")
 		out.append(added)
 		BossLab.through_gate(w, aid)
+		BossLab.until_open(w, aid)  # v0.7.5 BF1: a shielded entry pattern runs first
 		w.actors.invuln[w.actors.index_of(aid)] = 0
 	return out
 

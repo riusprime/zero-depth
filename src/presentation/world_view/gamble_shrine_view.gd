@@ -12,6 +12,8 @@ extends Node3D
 ## use), the crystal's light brightens in reach, the body flashes on the landing and shakes on a refusal, the price
 ## floats above. A missing model draws the code-built obelisk (L15). Presentation only: the sim's spot and footprint
 ## are unchanged.
+## v0.8.0 N14 (owner O72): a failed use cracks and fizzles (the core flickers out to red, the body jolts, sparks of
+## light die off); a spent shrine (its wins given) goes dim, its shards slow, and the price above it reads "Spent".
 
 const CORE := Color("#3FF2D0")
 const METAL := Color("#3B4250")
@@ -26,6 +28,10 @@ const CORE_ENERGY := 2.4
 const LIGHT_ENERGY := 1.1
 const SHAKE_S := 0.35
 const LAND_FLASH_S := 0.35
+## v0.8.0 N14: a failed use's crack and fizzle (s), and a spent shrine's glow (a share of its core's).
+const FIZZLE_S := 0.6
+const SPENT_GLOW := 0.15
+const PRICE_SPENT := Color("#8A8F99")
 ## The owner's model (KitModels id) and its look.
 const MODEL_ID := &"gamble_shrine"
 ## The model's front (its slot window, glTF +Z) turned to the iso camera (IsoRig.YAW_DEG), which also lines its
@@ -52,6 +58,9 @@ var _metal_mats: Array[StandardMaterial3D] = []
 var _t := 0.0
 var _seen_tick := -1
 var _denied_tick := -1
+var _fail_tick := -1
+var _fizzle_left := 0.0
+var _spent := false
 var _spin_left := 0.0
 var _flash_left := 0.0
 var _shake_left := 0.0
@@ -91,12 +100,25 @@ func sync(reader: WorldReader) -> void:
 		return
 	var p := reader.player_pos()
 	_hot = reader.gamble_in_reach()
-	price_label.text = str(reader.gamble_price())
-	var ok := reader.gamble_affordable() and not reader.gamble_exhausted()
-	price_label.modulate = PRICE_OK if ok else PRICE_POOR
+	_spent = reader.gamble_spent()  # v0.8.0 N14: dimmed, "Spent" above it
+	var gem := price_label.get_child(0) as Node3D
+	if _spent:
+		price_label.text = tr("UI_GAMBLE_SPENT_TAG")
+		price_label.modulate = PRICE_SPENT
+		gem.visible = false
+	else:
+		price_label.text = str(reader.gamble_price())
+		var ok := reader.gamble_affordable() and not reader.gamble_exhausted()
+		price_label.modulate = PRICE_OK if ok else PRICE_POOR
+		gem.visible = true
 	price_label.visible = (
-		reader.gamble_pos().distance_to(p) <= PRICE_NEAR_M and not reader.gamble_exhausted()
+		reader.gamble_pos().distance_to(p) <= PRICE_NEAR_M
+		and (_spent or not reader.gamble_exhausted())
 	)
+	if reader.gamble_fail_tick() != _fail_tick:
+		_fail_tick = reader.gamble_fail_tick()
+		if _fail_tick >= 0:
+			_fizzle_left = FIZZLE_S
 	if reader.gamble_tick() != _seen_tick:
 		_seen_tick = reader.gamble_tick()
 		if _seen_tick >= 0:
@@ -114,6 +136,16 @@ func spinning() -> bool:
 
 func shaking() -> bool:
 	return _shake_left > 0.0
+
+
+## v0.8.0 N14: a failed use's crack and fizzle is playing.
+func fizzling() -> bool:
+	return _fizzle_left > 0.0
+
+
+## v0.8.0 N14: the shrine is spent and drawn dim.
+func dimmed() -> bool:
+	return _spent
 
 
 ## The glowing materials and the flashable body materials (tests check they keep their shader).
@@ -139,6 +171,9 @@ func _process(delta: float) -> void:
 	_t += delta
 	var energy := CORE_ENERGY * (1.35 if _hot else 1.0)
 	var turn := 0.8 if not _hot else 1.4
+	if _spent:  # v0.8.0 N14: its wins given, the shrine sleeps
+		energy = CORE_ENERGY * SPENT_GLOW
+		turn = 0.15
 	if _spin_left > 0.0:
 		var before := _spin_left
 		_spin_left = maxf(0.0, _spin_left - delta)
@@ -160,10 +195,20 @@ func _process(delta: float) -> void:
 		_shake_left = maxf(0.0, _shake_left - delta)
 		var s := _shake_left / SHAKE_S
 		_body.position.x = sin(_shake_left * 70.0) * 0.07 * s
+		_body.position.y = 0.0
 		energy = CORE_ENERGY * (1.0 - 0.7 * s)
 		_light.light_color = _glow.lerp(DENY, s)
+	elif _fizzle_left > 0.0:  # v0.8.0 N14: the crack and fizzle of a failed use
+		_fizzle_left = maxf(0.0, _fizzle_left - delta)
+		var f := _fizzle_left / FIZZLE_S
+		var flicker := 0.5 + 0.5 * signf(sin(_t * 90.0))
+		_body.position.x = 0.0
+		_body.position.y = -0.04 * f * flicker
+		energy = CORE_ENERGY * (0.15 + 1.2 * f * flicker)
+		_light.light_color = DENY.lerp(_glow, 1.0 - f)
 	else:
 		_body.position.x = 0.0
+		_body.position.y = 0.0
 		_light.light_color = _glow
 	_core_mat.emission_energy_multiplier = energy
 	_light.light_energy = LIGHT_ENERGY * energy / CORE_ENERGY

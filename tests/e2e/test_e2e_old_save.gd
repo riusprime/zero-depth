@@ -28,6 +28,9 @@ func test_continue_a_v0_6_1_save_and_its_old_cards_are_wand_cards() -> void:
 	assert_eq(focus.name if focus != null else &"", &"Continue", "Continue, focused first")
 	e.key(KEY_ENTER, true)
 	e.key(KEY_ENTER, false)
+	# v0.8.0 N12 (O70): the load runs over frames behind the cover (the World on a worker); CoverLoads.finished
+	# comes in the frame the floor goes live, before its first tick.
+	await main.loads.finished
 	assert_true(main.is_playing(), "the old save is not set aside: it continues")
 	var w := e.world()
 	var ids := []

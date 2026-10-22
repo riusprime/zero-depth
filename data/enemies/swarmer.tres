@@ -20,6 +20,7 @@ damage = 5
 [resource]
 script = ExtResource("2_enm")
 name_key = &"ENEMY_SWARMER"
+desc_key = &"ENEMY_SWARMER_DESC"
 behaviour_id = &"swarmer"
 behaviour_params = {
 "attack_range_m": 2.6,

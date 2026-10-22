@@ -49,6 +49,11 @@ static func level_of(w: World, idx: int) -> int:
 	return w.ability_levels[s] if s >= 0 else 0
 
 
+## v0.8.0 N8: ability `idx`'s level after one more card (1 when new; grant's step, Offers.info and CardForecast).
+static func level_after(w: World, idx: int) -> int:
+	return mini(level_of(w, idx) + 1, AbilityTable.MAX_LEVEL)
+
+
 ## The compiled index of the first ability of `kind`, or -1.
 static func index_of_kind(w: World, kind: int) -> int:
 	for k in w.ability_tables.size():
@@ -96,7 +101,7 @@ static func grant(w: World, idx: int) -> bool:
 	if s >= 0:
 		if w.ability_levels[s] >= AbilityTable.MAX_LEVEL:
 			return false
-		w.ability_levels[s] += 1
+		w.ability_levels[s] = level_after(w, idx)
 	else:
 		if t.is_modifier() and BuildSlots.full(w):
 			return false
@@ -126,7 +131,7 @@ static func grant_start(w: World) -> void:
 
 
 ## v0.6.0 MX2: ability slot `s` (World.ability_owned order) leaves the build: its level, cooldown and its own floor
-## state go; the combos it completed go too, and the build refreshes (BuildSlots.drop, Shop.salvage_ability).
+## state go; the combos it completed go too, and the build refreshes (BuildSlots.drop, Shop.sell).
 static func remove_slot(w: World, s: int) -> void:
 	var t := w.ability_tables[w.ability_owned[s]]
 	w.ability_owned.remove_at(s)
@@ -164,6 +169,7 @@ static func start_floor(w: World) -> void:
 	else:
 		BuildSlots.sync(w)
 	WandMigration.run(w)  # v0.6.5 WN5b: an old save's retired cards become their wand cards (or shards)
+	Stats.migrate_rules(w)  # v0.8.0 SG: a carry from before SG (RunCarry.apply) rebuilds damage and attack speed
 	w.ab = AbilityState.new()
 	for s in w.ability_owned.size():
 		w.ab.cd.append(0)
@@ -528,9 +534,9 @@ static func _land_bombs(w: World) -> void:
 		var spec := Modifiers.book(w).find(key) if key != "" else null
 		var bomb := spec == null or spec.has_tag(&"bomb")
 		var effect := EFFECT_BOMB if split else AbilityMods.EFFECT_CLUSTER
-		if spec != null and (not spec.has_tag(&"bomb") or not split) and spec.effect_id != &"":
-			effect = spec.effect_id  # v0.6.0 MX4: a hook's bomb names its own (Bomb Rounds, the bomblets)
-		elif spec != null and not spec.has_tag(&"bomb"):
+		# v0.6.0 MX4: a hook's bomb names its own (Bomb Rounds, the bomblets): any non-bomb spec's (even none), or a
+		# bomb spec's own when it isn't splitting.
+		if spec != null and (not spec.has_tag(&"bomb") or (not split and spec.effect_id != &"")):
 			effect = spec.effect_id
 		if spec != null:
 			Attacks.land_lob(w, spec, at, r, dmg, root, depth, proc, effect)

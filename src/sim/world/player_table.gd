@@ -41,16 +41,21 @@ var blink_iframe_ticks := 6
 ## starts over. Shooting: bolts. Distances in metres, speeds in metres per tick.
 var combo: Array[SwingStep] = default_combo()
 var combo_window_ticks := 12
-## Shooting: a bolt every shot_period_ticks while held, bolt_damage each.
-var shot_period_ticks := 7
-var bolt_damage := 4
-var bolt_speed := 18.0 / 60.0
-var bolt_radius_m := 0.16
-var bolt_life_ticks := 36
+## Shooting: a bolt every shot_period_ticks while held, bolt_damage each. v0.8.0 GF1 (owner O18): bigger, slower to
+## fire, harder-hitting, a little slower in flight (was 7 ticks, 4, 18 m/s, 0.16 m, 36 ticks); the range stays 10.8 m.
+## The same numbers as data/player/runner.tres.
+var shot_period_ticks := 9
+var bolt_damage := 5
+var bolt_speed := 16.2 / 60.0
+var bolt_radius_m := 0.2
+var bolt_life_ticks := 40
 ## Builds (v0.3.0 L15, L16; ContentCompiler.apply_build): the weapons this run may use (WEAPON_* bits; both outside
 ## a run's build, so the kernel and lab worlds keep both), and each weapon's damage in per mille.
 var weapons := WEAPONS_ALL
 var melee_damage_permille := 1000
+## v0.8.0 N1 (D39): the damage the hero takes while the build's weapon is held, per mille (the build's
+## damage_taken_permille; the Blade 750). 1000 in the kernel worlds (starting_values), so their goldens keep.
+var damage_taken_permille := 1000
 var bolt_damage_permille := 1000
 ## Out-of-combat regen (v0.3.0 L25; PlayerRegen): after regen_delay_ticks without dealing or taking damage, heal
 ## regen_permille of max HP per second (World.regen_bonus_permille adds to it).
@@ -81,13 +86,14 @@ static func starting_values() -> PlayerTable:
 
 ## The v0.3.0 four-slash combo (PLAN L11, starting values): a horizontal slash right to left, a backhand left to
 ## right, a forward thrust (narrow, longer, a slight step) and a heavy spinning finisher (all around, more damage
-## and hit-stop, a longer recovery, a small lunge). The same numbers as data/player/runner.tres.
+## and hit-stop, a longer recovery, a small lunge). The same numbers as data/player/runner.tres. v0.8.0 N1 (owner
+## O48): the hit-stop 3,3,4,7 -> 4,4,5,8 ticks (about 20 % more).
 static func default_combo() -> Array[SwingStep]:
 	var out: Array[SwingStep] = [
-		SwingStep.make(SwingStep.Motion.SLASH_RIGHT_TO_LEFT, 2, 11, 683, 1.6, 10, 3, 0.0, 5),
-		SwingStep.make(SwingStep.Motion.SLASH_LEFT_TO_RIGHT, 3, 11, 683, 1.6, 10, 3, 0.0, 5),
-		SwingStep.make(SwingStep.Motion.THRUST, 4, 12, 228, 2.3, 12, 4, 0.35, 4),
-		SwingStep.make(SwingStep.Motion.SPIN, 7, 24, 2048, 1.9, 24, 7, 0.6, 9),
+		SwingStep.make(SwingStep.Motion.SLASH_RIGHT_TO_LEFT, 2, 11, 683, 1.6, 10, 4, 0.0, 5),
+		SwingStep.make(SwingStep.Motion.SLASH_LEFT_TO_RIGHT, 3, 11, 683, 1.6, 10, 4, 0.0, 5),
+		SwingStep.make(SwingStep.Motion.THRUST, 4, 12, 228, 2.3, 12, 5, 0.35, 4),
+		SwingStep.make(SwingStep.Motion.SPIN, 7, 24, 2048, 1.9, 24, 8, 0.6, 9),
 	]
 	return out
 

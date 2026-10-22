@@ -1,0 +1,311 @@
+[gd_resource type="Resource" script_class="FinalBossDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/boss_attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/boss_phase_definition.gd" id="2_ph"]
+[ext_resource type="Script" path="res://src/content/defs/final_boss_definition.gd" id="3_boss"]
+
+[sub_resource type="Resource" id="A_nemesis_combo"]
+script = ExtResource("1_atk")
+id = &"nemesis_combo"
+shape = 1
+shape_params = {
+"arc_degrees": 120.0,
+"count": 3,
+"reach_m": 1.8,
+"speed_mps": 6.0,
+"stagger_seconds": 0.5,
+"weapon": "blade"
+}
+telegraph_seconds = 0.7
+active_seconds = 0.0167
+recovery_seconds = 0.5
+damage = 30
+hit_class = &"medium"
+move = &"mimic_combo"
+min_range_m = 0.0
+max_range_m = 3.5
+weight = 4
+cooldown_seconds = 0.35
+cause_key = &"CAUSE_NEMESIS_SLASH"
+lock_seconds = 0.4
+
+[sub_resource type="Resource" id="A_nemesis_crescents"]
+script = ExtResource("1_atk")
+id = &"nemesis_crescents"
+shape = 4
+shape_params = {
+"count": 3,
+"gap_seconds": 0.35,
+"spread_degrees": 18.0,
+"volleys": 2,
+"weapon": "blade"
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 0.5
+damage = 22
+hit_class = &"small"
+move = &"mimic_shots"
+min_range_m = 3.5
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.5
+cause_key = &"CAUSE_NEMESIS_CRESCENTS"
+lock_seconds = 0.4
+
+[sub_resource type="Resource" id="A_nemesis_volley"]
+script = ExtResource("1_atk")
+id = &"nemesis_volley"
+shape = 4
+shape_params = {
+"count": 1,
+"gap_seconds": 0.25,
+"spread_degrees": 0.0,
+"volleys": 3,
+"weapon": "gun"
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 0.5
+damage = 22
+hit_class = &"small"
+move = &"mimic_shots"
+min_range_m = 3.0
+max_range_m = 99.0
+weight = 4
+cooldown_seconds = 0.5
+cause_key = &"CAUSE_NEMESIS_SHOTS"
+lock_seconds = 0.4
+
+[sub_resource type="Resource" id="A_nemesis_point_blank"]
+script = ExtResource("1_atk")
+id = &"nemesis_point_blank"
+shape = 4
+shape_params = {
+"count": 1,
+"gap_seconds": 0.2,
+"spread_degrees": 0.0,
+"volleys": 2,
+"weapon": "gun"
+}
+telegraph_seconds = 0.65
+active_seconds = 0.0167
+recovery_seconds = 0.5
+damage = 34
+hit_class = &"medium"
+move = &"mimic_shots"
+min_range_m = 0.0
+max_range_m = 3.0
+weight = 3
+cooldown_seconds = 0.4
+cause_key = &"CAUSE_NEMESIS_SHOTS"
+lock_seconds = 0.4
+
+[sub_resource type="Resource" id="A_nemesis_card_1"]
+script = ExtResource("1_atk")
+id = &"nemesis_card_1"
+shape = 0
+shape_params = {
+"card": 0,
+"stagger_seconds": 0.2
+}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 0.7
+damage = 50
+hit_class = &"big"
+move = &"card_cast"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.5
+cause_key = &"CAUSE_NEMESIS_CARD"
+opens_weak_point = true
+lock_seconds = 0.5
+
+[sub_resource type="Resource" id="A_nemesis_card_2"]
+script = ExtResource("1_atk")
+id = &"nemesis_card_2"
+shape = 0
+shape_params = {
+"card": 1,
+"stagger_seconds": 0.2
+}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 0.7
+damage = 50
+hit_class = &"big"
+move = &"card_cast"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 2
+cooldown_seconds = 0.5
+cause_key = &"CAUSE_NEMESIS_CARD"
+opens_weak_point = true
+lock_seconds = 0.5
+
+[sub_resource type="Resource" id="A_nemesis_card_3"]
+script = ExtResource("1_atk")
+id = &"nemesis_card_3"
+shape = 0
+shape_params = {
+"card": 2,
+"stagger_seconds": 0.2
+}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 0.7
+damage = 50
+hit_class = &"big"
+move = &"card_cast"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 2
+cooldown_seconds = 0.5
+cause_key = &"CAUSE_NEMESIS_CARD"
+opens_weak_point = true
+lock_seconds = 0.5
+
+[sub_resource type="Resource" id="A_fallen_storm"]
+script = ExtResource("1_atk")
+id = &"fallen_storm"
+shape = 4
+shape_params = {
+"count": 7,
+"gap_seconds": 0.3,
+"radius_m": 0.35,
+"speed_mps": 8.0,
+"spread_degrees": 20.0,
+"volleys": 3,
+"weapon": "own"
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 0.5
+damage = 22
+hit_class = &"small"
+move = &"mimic_shots"
+min_range_m = 3.0
+max_range_m = 99.0
+weight = 4
+cooldown_seconds = 0.5
+cause_key = &"CAUSE_NEMESIS_CRESCENTS"
+lock_seconds = 0.4
+
+[sub_resource type="Resource" id="A_fallen_rush"]
+script = ExtResource("1_atk")
+id = &"fallen_rush"
+shape = 1
+shape_params = {
+"arc_degrees": 140.0,
+"count": 4,
+"reach_m": 2.2,
+"speed_mps": 7.0,
+"stagger_seconds": 0.3,
+"weapon": "own"
+}
+telegraph_seconds = 0.55
+active_seconds = 0.0167
+recovery_seconds = 0.5
+damage = 30
+hit_class = &"medium"
+move = &"mimic_combo"
+min_range_m = 0.0
+max_range_m = 4.0
+weight = 4
+cooldown_seconds = 0.35
+cause_key = &"CAUSE_NEMESIS_SLASH"
+lock_seconds = 0.4
+
+[sub_resource type="Resource" id="P_0"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 1000
+attack_ids = PackedStringArray("nemesis_combo", "nemesis_crescents", "nemesis_volley", "nemesis_point_blank", "nemesis_card_1", "nemesis_card_2", "nemesis_card_3", "fallen_storm", "fallen_rush")
+entry_attack = &""
+speed_permille = 1000
+cooldown_permille = 1000
+
+[resource]
+script = ExtResource("3_boss")
+dps_measure_seconds = 20
+dps_min_measured_seconds = 5
+dps_target_seconds = 12.0
+dps_hp_min = 400
+dps_hp_max = 5000000
+pace = true
+pace_ref_dps = 30
+pace_ref_seconds = 120.0
+pace_min_seconds = 60.0
+pace_max_seconds = 180.0
+pace_burst_seconds = 10.0
+mimic_window_seconds = 7.0
+mimic_every_seconds = 20.0
+mimic_first_seconds = 12.0
+mimic_warn_seconds = 1.5
+mimic_nerf_min_permille = 100
+mimic = true
+echo_seconds = 0.5
+dash_reaction_seconds = 0.25
+stance_seconds = 1.5
+stance_weights = PackedInt32Array(3, 2, 2, 2)
+back_off_m = 6.0
+card_casts = 3
+hp_from_build = false
+build_hp_permille = 2500
+build_damage_permille = 1500
+build_damage_min = 8
+build_damage_cap_permille = 500
+shot_speed_min_mps = 7.0
+shot_speed_max_mps = 13.0
+shot_radius_min_m = 0.15
+shot_radius_max_m = 0.5
+shot_range_m = 14.0
+shots_max = 12
+reach_max_m = 4.5
+blast_min_m = 1.0
+blast_max_m = 3.0
+name_key = &"BOSS_NEMESIS"
+desc_key = &"BOSS_NEMESIS_DESC"
+hp = 860
+radius_m = 0.7
+move_speed_mps = 5.2
+turn_rate_dps = 0.0
+keep_distance_m = 0.0
+front_arc_degrees = 0.0
+front_mult_permille = 1000
+rear_arc_degrees = 0.0
+rear_mult_permille = 1000
+stagger_size = 200
+stagger_decay_per_second = 14.0
+stagger_seconds = 1.5
+arena_cells = Vector2i(4, 4)
+arena_template = 0
+ranged_full_m = 5.0
+ranged_far_m = 12.0
+ranged_far_permille = 1000
+punish_distance_m = 10.0
+punish_seconds = 2.5
+punish_attack = &""
+weak_point_seconds = 1.5
+weak_point_range_m = 2.5
+weak_point_mult_permille = 1500
+weak_point_stagger_permille = 1500
+arena_close_phase = -1
+arena_close_after_seconds = 0.0
+arena_close_step_seconds = 6.0
+arena_close_step_m = 0.0
+arena_close_warn_seconds = 1.5
+arena_safe_half_m = 5.0
+arena_hazard_damage = 0
+arena_hazard_seconds = 0.5
+recovery_permille = 1000
+lead_seconds = 0.0
+track_commit_seconds = 0.15
+dash_read_seconds = 0.0
+gap_close_attack = &""
+gap_close_distance_m = 5.0
+gap_close_seconds = 2.0
+attacks = Array[ExtResource("1_atk")]([SubResource("A_nemesis_combo"), SubResource("A_nemesis_crescents"), SubResource("A_nemesis_volley"), SubResource("A_nemesis_point_blank"), SubResource("A_nemesis_card_1"), SubResource("A_nemesis_card_2"), SubResource("A_nemesis_card_3"), SubResource("A_fallen_storm"), SubResource("A_fallen_rush")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0")])
+id = &"nemesis"

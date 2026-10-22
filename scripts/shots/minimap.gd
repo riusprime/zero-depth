@@ -29,9 +29,7 @@ var _out := ""
 
 
 func _initialize() -> void:
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("lang="):
-			_lang = arg.trim_prefix("lang=")
+	_lang = ScriptArgs.parse().get("lang", _lang)
 	_out = "res://build/shots/v0.3.0/minimap/%s/" % _lang
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_out))
 	var profile := ProfileStore.new("")

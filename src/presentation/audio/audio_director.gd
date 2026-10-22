@@ -7,8 +7,6 @@ extends Node
 ## A file named like a cue in user://audio_override/ or res://assets/audio/override/ (.wav or .ogg) replaces the
 ## shipped one (docs/audio/README.md).
 
-signal played(id: StringName)
-
 const CUES_DIR := "res://data/audio/cues"
 const OVERRIDE_DIRS: Array[String] = ["user://audio_override", "res://assets/audio/override"]
 const BUS_NAMES := {&"sfx": "SFX", &"ui": "UI", &"ambience": "Ambience"}
@@ -152,7 +150,6 @@ func play(id: StringName, pos: Variant = null, pitch: float = 1.0) -> bool:
 	played_log.append(id)
 	if played_log.size() > LOG_MAX:
 		played_log = played_log.slice(played_log.size() - LOG_MAX)
-	played.emit(id)
 	if stream != null and is_inside_tree():
 		_start_voice(cue, stream, ps, pos, seconds)
 	return true

@@ -27,6 +27,14 @@ Status: **built 2026-10-12** (Steps 1–7: `f26b541`, `713aaa3`, `00b3a04`, `daa
   before (the goldens don't change).
 - **EI-10:** the panel's labels go through `tr()` like every visible string.
 
+## The release switch (v0.7.5 SM)
+
+One switch locks the panels for a public release (ROADMAP §0.4): `DevGate` reads the project setting
+`game/dev/panel_enabled`, which is **true** (every build keeps F10, as the owner chose). project.godot also holds
+`game/dev/panel_enabled.public_release=false`: adding the custom feature `public_release` to an export preset ships
+that build with F10 and the debug ` panel locked, and it ignores any saved `user://dev_tuning.json`. No preset has the
+feature today.
+
 ## What it covers ("add everything")
 
 The knob inventory (2026-10-12) found these sources. Every one gets a page in the panel.
@@ -59,6 +67,8 @@ Each step is one commit, with tests of the folders it touches; one full suite at
 2. **The panel (F10).** A full-screen overlay in all builds: groups on the left (above), a search box, the selected
    source's fields built from its exported properties (numbers, arrays, dictionaries, nested resources), each with
    its shipped value and a reset. Buttons: Restart floor, Reset all, Copy changes. Pauses the game while open.
+   v0.8.0 N6 (owner O60): off a run (on the main menu) the top bar also has **Playground**, the only way into the
+   Playground (docs/tools/PLAYGROUND.md); it shuts the panel and opens the weapon pick.
    The old debug buttons also appear on a Tools page; the backtick panel stays (debug builds, many e2e tests drive
    it). e2e: F10 opens it from `main.tscn`.
 3. **Lighting live.** `StageView.apply_mood()` re-applies the environment, the grade, the fire and hero lights

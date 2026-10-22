@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 5
+look = &"molten_drop"
+speed_mps = 3.3
+radius_m = 0.22
+range_m = 16.0
+waves = 6
+wave_gap_seconds = 0.55
+turn_per_wave_degrees = 30.0
+count = 36
+petals = 6
+petal_min_permille = 450
+petal_cut_permille = 300
+rain_seconds = 0.7
+rain_m = 2.6
+id = &"foundry_slag_fountain_2"

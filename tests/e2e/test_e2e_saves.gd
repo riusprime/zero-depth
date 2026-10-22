@@ -44,7 +44,7 @@ func _walk(e: E2e, target: Vector2, done: Callable) -> bool:
 
 func _to_main_menu(e: E2e) -> void:
 	await e.tap(KEY_ESCAPE)
-	for k in 4:  # Resume -> Build (v0.6.5 WN2) -> Restart run -> Options -> Main menu
+	for k in 5:  # Resume -> Build (v0.6.5 WN2) -> Restart run -> Options -> Codex (v0.7.5 CX) -> Main menu
 		await e.tap(KEY_DOWN)
 	await e.tap(KEY_ENTER)
 	await e.frames(2)
@@ -92,9 +92,14 @@ func test_quit_mid_room_and_continue_at_its_entry() -> void:
 		_focused(main).name, &"Continue", "Continue shows, focused first, while a save exists"
 	)
 	assert_eq(tr("UI_CONTINUE"), "Continue")  # v0.5.5 A5: plain sentence case
-	# Enter on Continue: read the resumed world before its first tick.
+	# Enter on Continue: read the resumed world before its first tick. v0.8.0 N3 (O45): the load waits a frame or two
+	# behind the loading cover; the world is read in the frame it is built (before any physics tick).
 	e.key(KEY_ENTER, true)
 	e.key(KEY_ENTER, false)
+	assert_true(main.loads.cover.is_covered(), "Continue covers the screen first")
+	# v0.8.0 N12 (O70): the load runs over frames behind the cover (the World on a worker); CoverLoads.finished
+	# comes in the frame the floor goes live, before its first tick.
+	await main.loads.finished
 	assert_true(main.is_playing(), "Continue starts the saved run")
 	var r := e.world()
 	assert_ne(r, w, "a new world")

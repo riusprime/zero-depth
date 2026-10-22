@@ -111,6 +111,8 @@ func _count_xray(n: Node) -> int:
 			var m := (child as MeshInstance3D).material_override as StandardMaterial3D
 			if m != null and m.stencil_mode == BaseMaterial3D.STENCIL_MODE_XRAY:
 				c += 1
+			elif m != null and EnemyLooks.xray_of(m) != null:  # v0.8.0 HR: a pass of its own material
+				c += 1
 		c += _count_xray(child)
 	return c
 
@@ -135,11 +137,13 @@ func test_visor_faces_the_movement_and_turns_to_swing() -> void:
 		a.advance(DT)
 		w.step(InputFrame.make(Vector2i.ZERO, 1024, 300, 0, 0))
 	var swing := SimPlane.yaw_of(reader.swing_angle())
+	# v0.8.0 GF3 (owner O22): eight ticks in, the follow-through carries the head on past the arc's end by up to
+	# FOLLOW_TWIST on top of the slash's own twist.
 	assert_almost_eq(
 		wrapf(_horizontal_yaw(a.visor) - swing, -PI, PI),
 		0.0,
-		0.6,
-		"a swing turns it to the swing (the twist of the slash adds its own turn)"
+		0.6 + PlayerAvatar.FOLLOW_TWIST,
+		"a swing turns it to the swing (the twist of the slash and its follow-through add their own turn)"
 	)
 
 

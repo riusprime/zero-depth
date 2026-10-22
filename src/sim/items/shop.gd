@@ -182,7 +182,8 @@ static func heal_amount(w: World) -> int:
 	return maxi(0, mini(add, a.max_hp[0] - a.hp[0]))
 
 
-## Card `code` would do something if bought now.
+## Card `code` would do something if taken now: the one rule for the shop, an event's cards and a core's drop
+## (Events.block, CoreTheft.on_death; audit G-6).
 static func can_apply(w: World, code: int) -> bool:
 	if code < 0:
 		return false
@@ -205,12 +206,14 @@ static func buy(w: World, k: int, replace: int = -1) -> bool:
 		return _deny(w)
 	if buys_left(w) == 0:
 		return _deny(w, ShopState.Deny.LIMIT)  # v0.5.5 EC (S3)
-	if not can_apply(w, code) or w.shards < price(w, code):
+	if not can_apply(w, code):
+		return _deny(w)
+	var cost := price(w, code)  # once (audit G-16)
+	if w.shards < cost:
 		return _deny(w)
 	if replace < 0 and BuildSlots.needs_swap(w, code):
 		BuildSlots.open_swap(w, code, BuildSlots.Source.SHOP, k)
 		return false
-	var cost := price(w, code)
 	w.shards -= cost
 	w.shop.offer[k] = ShopState.SOLD
 	w.shop.bought += 1
@@ -310,7 +313,7 @@ static func sell(w: World, n: int) -> bool:
 		SELL_STAT:
 			remove_stat_card(w, code)
 		SELL_ABILITY:
-			salvage_ability(w, entry[1])
+			Abilities.remove_slot(w, entry[1])  # its level, cooldown and floor state go
 	w.shards += entry[3]
 	var pid := w.actors.ids[0]
 	var e := w.emit_event(SimEvent.Kind.SHOP_SALVAGE, w.shop.id, pid, code, w.shop.pos)
@@ -328,6 +331,7 @@ static func remove_item(w: World, idx: int) -> void:
 	var owned := w.items_owned.duplicate()
 	owned.remove_at(owned.find(idx))
 	var still := Engines.combos_for(w.combo_tables, owned)
+	still.append_array(AbilityCombos.earned(w))  # as Abilities.remove_slot: an ability combo keeps its place (G-23)
 	var keep := PackedInt32Array()
 	for c in w.combos_owned:
 		if still.has(c):
@@ -363,12 +367,6 @@ static func rebuild_stats(w: World, cards: PackedInt32Array) -> void:
 	w.actors.hp[0] = clampi(hp, 1, w.actors.max_hp[0])
 
 
-## Frees ability `s` (World.ability_owned order; never the weapon): its level, cooldown and its own floor state go
-## (v0.6.0 MX2: a modifier's slot frees; Abilities.remove_slot).
-static func salvage_ability(w: World, s: int) -> void:
-	Abilities.remove_slot(w, s)
-
-
 # --- Read (WorldReader.shop) ------------------------------------------------------------------------------------
 ## Plain data for the views: the terminal, the stock with prices, the heal and reroll, the sell list.
 static func read(w: World) -> Dictionary:
@@ -382,6 +380,7 @@ static func read(w: World) -> Dictionary:
 			c["can_apply"] = can_apply(w, code)
 			c["affordable"] = w.shards >= c["price"]
 		stock.append(c)
+	var latest := _latest_curse(w)  # once (audit G-16)
 	var sells: Array[Dictionary] = []
 	for e in sell_list(w):
 		sells.append({"kind": e[0], "ref": e[1], "code": e[2], "refund": e[3]})
@@ -393,9 +392,8 @@ static func read(w: World) -> Dictionary:
 		"heal_used": w.shop.heal_used,
 		"reroll_price": reroll_price(w),
 		"cleanse_price": cleanse_price(w),  # v0.5.0 EV
-		"cleanse_curse": _latest_curse(w),
-		"cleanse_name_key":
-		w.ev.curses[_latest_curse(w)].name_key if _latest_curse(w) >= 0 else &"",
+		"cleanse_curse": latest,
+		"cleanse_name_key": w.ev.curses[latest].name_key if latest >= 0 else &"",
 		"rerolls": w.shop.rerolls,
 		"unsold": unsold(w),  # v0.5.5 EC (S2)
 		"bought": w.shop.bought,  # v0.5.5 EC (S3)

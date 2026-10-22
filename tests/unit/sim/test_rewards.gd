@@ -77,6 +77,9 @@ func test_the_shipped_data() -> void:
 	assert_eq([_rewards.altars_min, _rewards.altars_max], [2, 3])
 	assert_eq([_rewards.chests_min, _rewards.chests_max], [2, 3])
 	assert_eq(_rewards.rare_weight_chest, 3)
+	assert_eq(
+		_rewards.own_weapon_card_permille, 1500, "v0.8.0 BL (B5): the run's own wand cards ×1.5"
+	)
 	assert_eq(_rewards.shard_tier_bonus_permille, 250)
 	var rare := []
 	var rare_cards := []
@@ -96,12 +99,18 @@ func test_the_shipped_data() -> void:
 			"cluster_payload",
 			"cold_snap",
 			"conductor",
+			"finisher_plus",  # v0.8.0 RM: Fracture Bank, rare
+			"gun_ring",  # v0.8.0 AO: the order rule's Ring and Swirl, rare
+			"gun_swirl",
+			"gun_threadline",  # v0.8.0 RM: the remnant cards, rare
 			"meltdown",
 			"overclocked_drone",
 			"razor_orbit",
+			"shared_faultline",
+			"shared_gravity_stitch",
 			"wildfire"
 		],
-		"the rare items (lead, 2026-10-07; Meltdown, v0.3.0 L18; the ability mods, v0.5.0 CP)"
+		"the rare items (lead, 2026-10-07; Meltdown, v0.3.0 L18; the ability mods, v0.5.0 CP; v0.8.0 RR: Blade Storm is Epic)"
 	)
 	rare_cards.sort()
 	assert_eq(
@@ -114,8 +123,7 @@ func test_the_shipped_data() -> void:
 			"boomerang",
 			"halo_shot",
 			"heat_sink_rounds",
-			"long_shadow",
-			"meltdown_edge",
+			"meltdown_edge",  # v0.8.0 RM: Long Shadow is Dodge Imprint, common
 			"mirror_drone",
 			"orbit_rounds",
 			"phase_dash",
@@ -306,17 +314,43 @@ func test_a_chest_you_cant_afford_stays_shut() -> void:
 	assert_eq(w.shards, 39)
 
 
-func test_buying_a_chest_pays_on_the_pick() -> void:
+## v0.8.0 N7 (owner O61, D48): a chest deals one card by its odds; the world waits while the panel shows it (its
+## numbers before the take), and any pick input (here a cancel) takes it, paid then, and closes the chest.
+func test_a_chest_deals_one_card_and_any_answer_takes_it() -> void:
 	var w := _world()
 	w.add_reward(RewardStore.Kind.CHEST, Vector2(1.0, 0), 40)
 	w.shards = 55
 	_press(w, I)
-	assert_eq(w.shards, 55, "opening is free; cancel costs nothing")
 	var offer := w.rewards.offer_of(0)
-	_pick(w, 3)
+	assert_eq(offer.size(), 1, "one card")
+	assert_eq(w.rewards.rolled[0], RewardStore.DEALT)
+	assert_ne(w.choosing, -1, "the world waits while the card shows")
+	assert_eq(w.shards, 55, "nothing paid yet")
+	assert_true(w.items_owned.is_empty(), "nothing taken yet")
+	var t := w.tick
+	_press(w, 0)
+	assert_ne(w.choosing, -1, "no answer: still showing")
+	assert_eq(w.tick, t + 1, "the tick still counts")
+	_pick(w, InputFrame.PICK_CANCEL)
+	assert_eq(w.choosing, -1, "any answer closes it")
 	assert_eq(w.shards, 15, "40 paid")
-	assert_eq(w.items_owned, PackedInt32Array([offer[2]]))
+	assert_eq(w.items_owned, PackedInt32Array([offer[0]]), "and the card taken: no choice")
 	assert_eq(w.rewards.size(), 0, "the chest is consumed")
+
+
+## v0.8.0 N7: an older save's chest, rolled with three cards before N7, deals its first card.
+func test_an_old_three_card_chest_deals_its_first_card() -> void:
+	var w := _world()
+	w.add_reward(RewardStore.Kind.CHEST, Vector2(1.0, 0), 40)
+	w.shards = 40
+	var old := Offers.draw(w, true, 3)
+	w.rewards.set_offer(0, old)
+	_press(w, I)
+	assert_eq(w.rewards.offer_of(0), PackedInt32Array([old[0]]), "its first card only")
+	_pick(w, 3)
+	assert_eq(w.items_owned, PackedInt32Array([old[0]]), "any answer takes that card")
+	assert_eq(w.shards, 0)
+	assert_eq(w.rewards.size(), 0)
 
 
 func test_an_out_of_range_pick_waits() -> void:
@@ -397,6 +431,28 @@ func test_an_empty_pool_doesnt_open() -> void:
 	_press(w, I)
 	assert_eq(w.choosing, -1)
 	assert_eq(w.reward_denied_id, id)
+
+
+## Audit G-1: an empty roll doesn't brick the altar; once a card is back in the pool, the next press opens it.
+func test_an_empty_roll_rolls_again_on_a_later_press() -> void:
+	var w := _world()
+	for k in _items.size():
+		w.add_item(k)
+		CardLevels.set_level(w, k, CardLevels.MAX_LEVEL)
+	var id := w.add_reward(RewardStore.Kind.ALTAR, Vector2(1.0, 0), 0)
+	_press(w, I)
+	assert_eq(w.choosing, -1, "nothing to offer yet")
+	assert_eq(w.rewards.rolled[0], 0, "the empty roll is not kept")
+	var freed := -1
+	for k in _items.size():
+		if _items[k].rarity != ItemTable.LEGENDARY and ItemPool.usable(w, k):
+			freed = k
+			break
+	Shop.remove_item(w, freed)
+	assert_eq(ItemPool.available(w), PackedInt32Array([freed]), "one card back in the pool")
+	_press(w, I)
+	assert_eq(w.choosing, id, "the freed card is offered now")
+	assert_false(w.rewards.offer_of(0).is_empty())
 
 
 func test_chests_weight_rare_items() -> void:

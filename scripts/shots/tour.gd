@@ -11,9 +11,7 @@ var _script: Array = []
 
 
 func _initialize() -> void:
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("lang="):
-			_lang = arg.trim_prefix("lang=")
+	_lang = ScriptArgs.parse().get("lang", _lang)
 	_dir = "res://build/shots/%s/%s/" % [GameVersion.label(), _lang]
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	var profile := ProfileStore.new("")

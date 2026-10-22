@@ -27,6 +27,10 @@ Numbers marked **starting value** are defaults to tune, usually at a G2 gate or 
 - Godot's 3D physics interpolation (`physics/common/physics_interpolation = true`, 4.4+) smooths those
   transforms between ticks. A view calls `reset_physics_interpolation()` when an actor spawns or teleports, so it
   doesn't streak across the room.
+- A view that lays its pieces out on frame time (ticks plus the interpolation fraction, in `_process`), above all a
+  pool whose slots change hands between frames (MultiMesh instances, pooled lights, decals), sets
+  `physics_interpolation_mode = OFF`: interpolated, a re-used slot is drawn between two unrelated places for a frame
+  (v0.8.0 N1: the fire sprites flashing across the screen, `evidence/N1_FIXES.md`).
 - The **aim reticle** is drawn in `_process` from the live cursor or stick position, not from the last tick. Aim
   must feel instant even though the sim reads it at 60 Hz.
 - **Frame budget** (**target**): 60 fps at 1080p on the owner's lowest-spec GPU, with the presentation stress
@@ -69,6 +73,31 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   attack shape.
 - **No damage without a readable cause.** Every `DAMAGE` event against the player maps to a telegraph, a visible
   projectile, a visible field or a status icon. v0.1.0's exit gate tests this from the event log.
+- **Body cues instead of ground marks** (owner, v0.7.5 N16 and v0.8.0 O4 / Q3, 2026-10-14: "only things landing at
+  range"). Among normal enemies only the Arc Caster's rune and the Mine Layer's armed mines are drawn on the ground.
+  Every other normal enemy's telegraph (the fireball casters' `cast` / `lob`; since v0.8.0 TG the Charger / Hatchling
+  / Swarmer lanes, the Splitter / Splitling disc, the Shield Bearer's bash, the Warden's slam, the Sniper's line and
+  the Needle's lanes) carries `"ground": false`: it keeps its shape and timing for the forecasts, the parity tests and
+  the readable-cause check, and its avatar tells the windup (AvatarBase `tell_crouch` / `tell_glow`: a crouch that
+  deepens with the progress, an accent glow that climbs and flashes over the last fifth, steady under reduced
+  motion; the body faces the locked attack). Elites follow their kind; the bosses' markers are unchanged.
+  `tests/unit/sim/test_enemy_ground_marks.gd` lists the ground marks per kind.
+- **Boss ground attacks in 3D** (v0.8.0 AV, owner O7). The Gatekeeper's shock lanes (a `row_lanes` marks telegraph,
+  `TelegraphViews.is_cracked`) are drawn as cracked ground on the exact lane quads (a procedural crack shader, still
+  unshaded and over shadows): faint glowing cracks under the dull outline while they track, charred ground with wide
+  hot cracks that pulse under the bright edge once locked (steady with reduced motion). On the strike tick (the lanes
+  marker shows locked at progress 1000, `BossDodge.mark_state` 2) `StoneSpikeViews` raises stone spikes along the same
+  lanes; they sink back within 0.6 s. Drawn, never decided: the hit is the sim's, the spikes only follow it.
+- **The other bosses' ground attacks in 3D** (v0.8.0 AV part 2, owner O7). Every boss ground attack has a look
+  (`BossStrikeLooks`, per boss kind and move; a test derives the move list from `data/bosses`). Its marker keeps the
+  dull outline and no fill while it tracks and the bright edge once locked (the lock flash stays the dodge cue), but
+  its fill is a ground pattern in the look's colours instead of flat red (stone cracks, steel scratches, bubbling acid,
+  shimmering light, hazard stripes, molten seams), burning hot and pulsing once locked (steady with reduced motion);
+  an untracked windup's fill warms as it fills. `BossStrikeViews` draws the strike on the tick the sim strikes, read
+  from WorldReader only: a marker or grid circle locked at progress 1000, a windup turning active (the hit resolves on
+  that tick), a leap at `boss_leap` 1.0, a burrow when `boss_hidden` turns false; the geometry is the telegraph's.
+  Sustained strikes (spears, beams, molten and burning lanes, a charge's skid) last while the boss stays active in
+  that move. The Gatekeeper's shock lanes stay `StoneSpikeViews`'.
 
 - **The player's attacks are drawn from their final specs** (v0.6.0 MX1; design
   [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) §4): `AttackView` reads `WorldReader.attack_spec`
@@ -87,7 +116,8 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   by sim ticks. **Ground marks never take a hostile hue:** a zone's patch, a lob's landing circle and the flat fill of
   a ring or burst pass through `AttackFormLooks.ground_safe`, which leans a colour in the telegraphs' red-orange /
   red / magenta band toward the player's cool core; only light that rises off the floor carries the heat edge.
-  Plain attacks (no element, cue or weight) add nothing over the v0.5 blade and dart.
+  Plain attacks (no element, cue or weight) add nothing over the v0.5 blade and the hero's shot (since v0.8.0 GF1 a
+  blue pulse, HeroPulseViews, in place of the dart).
 - **The ability modifiers' attacks** (v0.6.0 MX2) draw through the existing ability views from sim numbers: bombs and
   their ground circles (`AbilityVisuals`), the drones and orbit blades, the patches by kind (`ElementVisuals`: fire
   orange, Napalm red, Arc Field's shock field pale blue, a hook's zone pale white) and each growing ring (the RING
@@ -144,6 +174,24 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   effects; every pool has a fixed size (384 per layer, 600 per particle kind) and at most 256 effects live. Options >
   Display > **Effects density** (low / medium / high, `ViewPrefs.effects_density`; default high) scales the particles
   (× 0.25 / 0.55 / 1) and the mesh cap (384 / 640 / 1,024); a pattern's own copies are never thinned below the cap.
+- **Hostile fireballs and stone spikes (v0.8.0 AV):** each fireball look is three MultiMeshes (core, edge, trail; one
+  draw each) whatever the count; Low density draws every other trail, shorter and narrower (the balls stay). Lights
+  come only from VfxCore's pool (`LIGHTS`, the brightest requests win): one per lobbed fireball or raining drop, at
+  most `FireballViews.SIGNATURE_LIGHTS` for a boss's signature shots, one flash per spike strike. The spikes are one
+  MultiMesh of at most `StoneSpikeViews.MAX_SPIKES` (512), at most `MAX_STRIKES` (8) strikes alive; their debris and
+  dust come out of VfxCore's sprite pools (inside the 2,000) and scale with the density, their crack marks out of its
+  64 decals.
+- **Boss strikes (v0.8.0 AV part 2):** `BossStrikeViews` is six MultiMeshes with fixed caps (rocks 384, blades 384,
+  glowing bands 64, dust bands 48, beams 32, ground quads 160; one draw each) and two rebuilt arc meshes, at most
+  `MAX_STRIKES` (24) strikes alive. Its sprites come out of VfxCore's pools, its lights out of the 10-light pool
+  (merged per strike), its marks out of the 64 decals, its explosions and acid splats through `VfxLayer.burst` (the
+  frame's burst budget) and `BurstBudget.admit` for the live ones. Effects density thins the rocks and the sprites (not
+  the blades or the ground marks, which show where it hit); reduced motion stills the tumbling, the overshoot and the
+  shaders' flow. It adds no camera shake.
+- **Blade forms (v0.8.0 PF2, owner O9):** `BladeFormView`'s crescents and ghost slashes are MultiMesh instances of baked
+  shapes (`BakedMeshPools`: one mesh per shape, the same 14-segment band, colours and height the ImmediateMesh drew; a
+  ghost's shape is its age in ticks too), at most 256 instances of a shape and 96 shapes (then all are rebuilt), one
+  draw each. The cracks, eruptions, sparks, rings and orbiting blades stay in the one ImmediateMesh.
 
 - **Starting values**, confirmed by the stress scene in v0.1.0:
   - at most 2,000 live GPU particles in total;
@@ -165,6 +213,8 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
 | Captions for sounds | v0.1.0 | Every gameplay SFX has a caption key ([`../audio/SFX_NEEDS.md`](../audio/SFX_NEEDS.md)). |
 | Text size floor | v0.0.1 | Body text is at least 18 px at 1080p (**starting value**). |
 | Flash safety | v0.1.0 | No full-screen flash more than 3 times per second. |
+| Interface size | v0.7.5 SM | Options → Accessibility "Interface size" 90 / 100 / 110 % (`ui_scale`): the window's content scale, so every menu, the HUD and their text grow or shrink together; the 3D view is not scaled. 110 % is the most the 1080-built pick panel takes at 1280×720. |
+| First-run hints | v0.7.5 SM | Options → Accessibility "Show hints" (on by default) and "Reset hints". A hint never blocks: no mouse, no focus, no pause; the keys it names follow the last-used device and the live bindings. |
 
 **Palette test** (`tests/unit/presentation/test_palette_contrast.gd`). For each colour-blind mode, it simulates
 the mode's colour vision on the tokens and asserts:
@@ -210,6 +260,83 @@ the mode's colour vision on the tokens and asserts:
   (`MenuBackdrop`, a screen-texture shader), a left-aligned title and list, plain type, the focused row lit by a
   thin cold-glass wash and hairline with a glass diamond beside it, small notes and key hints under the list; **no
   build cards beside the menu** (owner: not needed). The pick cards keep `CrystalCard`.
+- **v0.8.0 MU restyle (owner O14 "we're just throwing away the shard cards"; G2 pick "menu style B", 2026-10-14;
+  [`../roadmap/v0.8.0/evidence/MENU_G2.md`](../roadmap/v0.8.0/evidence/MENU_G2.md)):** the cards and the menus are
+  **"Ember stone"**, drawn in code. One style box, `StoneBox` (`src/presentation/theme/`, tokens in `EmberStone`):
+  a dark carved slab with chipped edges, the ember glow under it (`under`, `focus`), a grain, cracks, a warm lower
+  bevel, and optional inlays (a glowing groove line, a ring round a socket, a gold rim). Every **pick card** (altar,
+  chest, shop stock, the Swap's card, the Codex's card) is a `StoneCard` (replaces `CrystalCard`): the icon in an
+  `InlaySocket` ringed in the element's colour, the title in the family's colour (`CardFrames`, now a colour table
+  only) over a groove, the sentence, the carved rarity gem (`CardMark`) over the rarity words, a gold rim when epic or
+  legendary, the level badge top right; text steps down (`TextFit`) and a sentence too long at the smallest size
+  reflows the card (a smaller socket), so it never runs into the gem (`test_card_frames.gd`, en and es, every scale).
+  The **plaques** (`PlaqueBox`: item, combo, gamble, event, ascension, shop, banner) are stone slabs with a groove in
+  their colour; the **wand tiles** (`WandRow`), **pips** (`BuildHud`), **Codex tiles**, **achievement rows** and
+  **toast**, the **Swap** tiles and the **build picker** (stone tablets with the weapon's symbol in a socket, a stone
+  title plaque) share it. **Every menu** (`MenuStyle`; main menu, pause, Options, credits, Codex, Build page, run
+  recap, build picker) puts its list on a slab, the focused or pressed row an ember-lit slab with a groove and an
+  ember diamond beside it (`EmberMarker`; a hovered row half lit), warm type; behind it `MenuBackdrop`: the game
+  blurred into a warm dark with a low ember glow, or with nothing behind (the main menu, `own_scene`) its own
+  ember-lit stone floor; sparks drift up from below; **reduced motion stops its clock** (no sparks moving, no
+  flicker). The ember `#EBAE72` is kept apart from the Hot heat colour by saturation (`test_ember_stone.gd`). The
+  owner's crystal frames, plaques and build-picker art are retired (assets, manifests, crop scripts removed).
+- **The Codex** (v0.7.5 CX, owner N6; Ember stone since v0.8.0 MU): `CodexView`, a full-screen menu from the main menu (a row after
+  Credits) and the pause menu (a row after Options). Four pages (Cards by pool, Enemies, Bosses, Biomes) of
+  `CodexTile`s, and the focused entry beside them: a card as its stone tablet (`StoneCard`, its family's colour) or
+  an emblem (`CodexGlyphs`: an enemy by its behaviour, a boss by its id, a biome as a landscape in its palette), the
+  game's own name and sentence keys, and the profile's counts. An entry not met is a dark silhouette named "???".
+  Keyboard arrows / Q E / Esc, pad d-pad / LB RB / B, mouse hover, tab click and Back. It reads `CodexCatalog` and
+  `CodexStore` only; it fits the 1920×1080 base in en and es (`test_codex_view.gd`). It was built straight in the
+  owner's Cold glass look without a G2 round (v0.7.5: the owner asked for no interventions); the owner corrects it
+  at the playtest.
+- **The achievements** (v0.7.5 AC, owner N7): a fifth Codex page, **Achievements** (`AchievementsPage` in
+  `CodexView`, after Biomes; Q E / LB RB, the tab by mouse), the achievements in their groups, two
+  `AchievementRow`s a line: a code-drawn glyph (`AchievementGlyphs`), the name, the sentence and the state. An
+  unlocked one is lit in gold with "Unlocked"; a **locked one is dimmed but keeps its name, its sentence and its
+  progress** ("2 / 5"), so the page says what to aim for; a **hidden** one (today the two Ascension ones) is "???"
+  with the hidden line until it unlocks. The unlock **toast** (`AchievementToast`) is a small Ember-stone slab under
+  the corner minimap (top 404, right 28 at the 1920×1080 base): "ACHIEVEMENT UNLOCKED", the glyph, the name and the
+  sentence, 4 s with a short slide and fade, more unlocks queued; it ignores the mouse and the focus (never
+  blocks), lives on the UI layer outside the HUD so it outlives a floor change, and reads its clock from the frame
+  (a look, never an outcome). Both fit the 1920×1080 base in en and es for every achievement
+  (`test_achievements_view.gd`). Built straight in the owner's looks without a G2 round (v0.7.5: no
+  interventions); the owner corrects it at the playtest.
+- **Card levels** (v0.7.5 SM, owner N8): a card that levels (a wand card, 1–5, and an ability card) wears a small
+  badge (v0.8.0 MU: top right on the stone tablet) on every pick card (`StoneCard` via `PickPanel.card_face`, so the altar
+  and chest pick, the shop's stock, the event panel and the Swap): "Lv 1" when not held, "Lv N → N+1" when taking it
+  levels a held card, and on the boss's legendary altar "Lv N → 5" (its level-5 version; "Lv 5" when not held). The
+  rarity line is unchanged. The HUD's wand pips (`BuildHud`) and the Build page's tiles (`WandRow`) show a wand
+  card's level as they show an ability modifier's. The badge fits on the card at the pick's and the shop's scales
+  in en and es (`test_card_level_views.gd`).
+- **The reward cards** (v0.8.0 N8, owner O62, D48; [`../roadmap/v0.8.0/evidence/REWARD_CARDS.md`](../roadmap/v0.8.0/evidence/REWARD_CARDS.md)):
+  every pick card (`StoneCard`: the altars, the boss's altar, the epic altar, a chest's one card, the shop's stock,
+  the Swap, the Codex) reads top to bottom: the **name**, the **big icon** (its element or star glyph badge kept), the
+  **gain line** (old → new: `CardGain`, its numbers the sim's own `WorldReader.card_forecast` → `CardForecast`, the
+  steps the take runs: a stat's value, max HP, an ability's or a wand card's level), the sentence, the gem and the
+  **rarity's word**. The **whole card is painted in its rarity's colour** (`CardPaint`: the stone face and back tinted
+  dark toward it, its frame line and glow in it; the text keeps ≥ 4.5:1 contrast). The pick panel **deals** them
+  (`CardDeal`, read each frame, deciding nothing): face down from below the screen into a fan, flipped one by one
+  (the width to 0, the face swapped halfway); an **Epic or Legendary** card is dealt last: its back glows, the
+  background darkens, and it flips with a punch, a flash and light rays rising behind it (`CardFx`; the rays on one
+  layer under every card); a **Legendary** card keeps a looping holographic shine. The focused card **tilts** toward
+  the cursor (a fixed tilt when focused by key or pad) and **sinks** a little, its gain counting up from the old value.
+  On a pick its icon **flies** to the HUD slot it landed in (`CardFlights`/`CardFly`: an ability's slot, a wand pip,
+  the carried row, else the HP plate) and the cards not picked **burn** (a dissolve shader with an ember edge); a
+  cancel just closes. A press during the deal ends it at once and still counts (no input lost or held back).
+  **Reduced motion:** no deal, flip, tilt or flight; the cards fade in face up, the shine holds still, the panel fades
+  out on a pick. The shop's cards wear the same face, paint and gain line, without the deal.
+- **First-run hints** (v0.7.5 SM, owner N8): `OnboardingHints`, one small Ember-stone slab with a cold top line at
+  the top centre (top 150 at the 1920×1080 base, 720 wide, "TIP" and one line); while a centre panel is open (a pick, the
+  Swap, the shop, an event) it sits low instead (its bottom 82 px above the screen's, between the panel's key line and
+  the heat meter), so it never covers the panel's title or cards. Each hint shows once
+  (`HintStore`, the profile's `hints` section): move and aim, attack, dash at a first run's start (each closes when
+  you do it); vent when the heat first reads Hot; the Build page (pause → Build) after the first card joins the wand;
+  the Codex (pause → Codex) at the second floor's start (v0.8.0 N18, owner O76: the hints that explained a thing, the
+  first pick, the first trigger card, the first shop and the first open portal, are gone; the hints name controls
+  only). A hint about a moment (vent) comes before a waiting first-run step; a hint stays at least 2 s and at most 9 s, fades in and out (no slide), and
+  waits under the pause menu, Options, the Build page, the Codex and the run recap. Its clock is the frame's (a look,
+  never an outcome); it reads `WorldReader` only. Built straight in the HUD's look without a G2 round (v0.7.5: no
+  interventions); the owner corrects it at the playtest.
 - **New screens go through gate G2** (2–3 mockups, the owner picks; see
   [`../process/OWNER_GATES.md`](../process/OWNER_GATES.md) §3).
   - **Exemption:** v0.0.1's functional stubs (main menu, pause, options stub, credits, dev panel) use the default

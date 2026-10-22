@@ -90,6 +90,11 @@ var portal_angle := 0
 var has_deep_portal := false
 var deep_portal_pos := Vector2.ZERO
 var deep_portal_angle := 0
+## v0.8.0 P2 (owner O28): the Loop device on a loop's last floor (Ascension.place_loop_device; FloorScenario), a pad
+## beside the Ascension portal: its centre and the way it faces. has_loop_device is false until it is placed.
+var has_loop_device := false
+var loop_pos := Vector2.ZERO
+var loop_angle := 0
 ## Item spots: 1 in a 1 x 1 room, 1-2 in bigger rooms, none in the start hall. Grouped by room in room order;
 ## item_rooms[i] is spot i's room.
 var item_spots := PackedVector2Array()
@@ -97,6 +102,19 @@ var item_spots := PackedVector2Array()
 ## only: the sim never reads it.
 var piece_tags := {}
 var item_rooms := PackedInt32Array()
+## v0.8.0 RT (owner O12): each room's designed layout (RoomLayoutTable.id; &"" for a rule-built room), its quarter
+## turn and whether it is mirrored (FloorGenerator, RoomLayouts). Plain data for tools and tests; the walls already
+## hold its blockers.
+var room_layout: Array[StringName] = []
+var room_turn := PackedInt32Array()
+var room_mirror := PackedInt32Array()
+## v0.8.0 RT: a designed room's drawn-only pieces, presentation only (the sim never reads them): [piece, centre:
+## Vector2, angle (1/4096), size: Vector2 (m), height (m; 0 = the kit's own), the piece_key of the blocker it stands on
+## or "" for decoration on open floor].
+var layout_props: Array = []
+## v0.8.0 RT: a designed room's blockers, keyed by piece_key: their drawn height (m; 0 = the kit's own). Presentation
+## only; a wall listed here is a designed room's piece (the biome's swap rules apply to it, StageDresser).
+var piece_heights := {}
 ## Open spots per room (index = room).
 var spawn_points: Array[PackedVector2Array] = []
 ## Doorway hops from the start room, per room.
@@ -127,6 +145,20 @@ var arena_rooms := PackedInt32Array()
 var shop_room := -1
 var shop_pos := Vector2.ZERO
 var shop_angle := 0
+## v0.8.0 SR (owner O13): the shop room's layout (ShopRoomTable.id; &"" for the terminal of a floor built before SR,
+## or when the stall found no spot). With one, shop_pos is the counter's centre and shop_angle the way its front
+## faces; shop_solids are the stall's footprints (and any shop_* solid of the dressing), walls the world adds
+## (FloorScenario.add_shop) and the dresser never draws; shop_props are every shop_* piece for ShopStallView, as
+## [piece, centre: Vector2, angle (1/4096), size: Vector2 (m, x along the angle), height (m; 0 = its own), solid,
+## the piece a drawn one stands on (&"" for none), that piece's height (m; 0 = the kit's own; -1 for none)].
+var shop_layout := &""
+var shop_solids: Array[Obb] = []
+var shop_props: Array = []
+## v0.8.0 N19 (owner O80): the curse room as a room type of its own (CurseRoom.furnish, from Events.place; -1 on a
+## floor without one, or one built under older rules, whose curse room kept its interior): its room, and the solids
+## the world adds as walls: the altar's footprint first, then each crystal cluster's (CurseRoomView draws them).
+var curse_room := -1
+var curse_solids: Array[Obb] = []
 ## The floor's footprint, for drawing ground: each room's cells (interior, walls and doorways up to its grid
 ## lines), then the outer half of each outer wall.
 var ground: Array[Rect2] = []
@@ -159,6 +191,54 @@ func neighbours(room: int) -> PackedInt32Array:
 ## How many grid cells a room covers.
 func room_cell_count(room: int) -> int:
 	return room_cells[room].size.x * room_cells[room].size.y
+
+
+## Metres in whole centimetres (the generators' draws).
+static func cm(metres: float) -> int:
+	return roundi(metres * 100.0)
+
+
+## A room's cells in metres, grid line to grid line.
+func cell_rect(cells: Rect2i) -> Rect2:
+	var a := grid_origin + Vector2(cells.position) * cell_pitch
+	var b := grid_origin + Vector2(cells.end) * cell_pitch
+	return Rect2(a, b - a)
+
+
+## The walls that can touch a room: its partitions and outer walls, and the pieces inside it (walls order).
+func room_walls(room: int) -> Array[Obb]:
+	var near := rooms[room].grow(1.0)
+	var out: Array[Obb] = []
+	for w in walls:
+		if w.bounds().intersects(near):
+			out.append(w)
+	return out
+
+
+## A room's doorways as points `m` metres in from the wall face (doorway order).
+func door_approaches(room: int, m: float = 1.0) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for d in door_rooms.size():
+		var into := 0
+		if door_rooms[d].x == room:
+			into = -1  # the doorway points from x to y: into x is backwards
+		elif door_rooms[d].y == room:
+			into = 1
+		else:
+			continue
+		var step := Kin.dir(door_angles[d]) * float(into)
+		out.append(door_centers[d] + step * (door_depths[d] * 0.5 + m))
+	return out
+
+
+## The gate's footprint, its clear front square and a margin: kept free of interior pieces and spots.
+func gate_zone() -> Rect2:
+	var n := portal_facing()
+	var t := Vector2(-n.y, n.x)
+	var face := portal_pos - n * GATE_HALF_DEPTH
+	var half_w := GATE_WIDTH * 0.5 + 1.0
+	var depth := GATE_HALF_DEPTH * 2.0 + GATE_FRONT + 1.0
+	return Rect2(face + t * half_w, Vector2.ZERO).expand(face - t * half_w + n * depth)
 
 
 ## The open passage of doorway i through the wall, from one room's face to the other's.
@@ -223,3 +303,13 @@ static func piece_key(o: Obb) -> String:
 ## The kit piece wall `o` is drawn with (&"" when it names none).
 func piece_tag(o: Obb) -> StringName:
 	return piece_tags.get(piece_key(o), &"")
+
+
+## v0.8.0 RT: a designed room's blocker's drawn height (m; 0 = the kit's own), or -1.0 for any other wall.
+func piece_height(o: Obb) -> float:
+	return float(piece_heights.get(piece_key(o), -1.0))
+
+
+## v0.8.0 RT: room `room`'s designed layout id (&"" for none, or a room added after the generator, like the boss's).
+func layout_of(room: int) -> StringName:
+	return room_layout[room] if room >= 0 and room < room_layout.size() else &""

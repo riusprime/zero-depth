@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 4
+look = &"spear_ember"
+speed_mps = 3.2
+radius_m = 0.18
+range_m = 20.0
+waves = 3
+wave_gap_seconds = 1.0
+wall_length_m = 20.0
+spacing_m = 0.55
+gap_m = 2.4
+gap_offset_m = 0.0
+gap_shift_m = 3.0
+id = &"warlord_shield_wall"

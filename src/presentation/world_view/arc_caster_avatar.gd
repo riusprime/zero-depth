@@ -1,5 +1,5 @@
 class_name ArcCasterAvatar
-extends Node3D
+extends AvatarBase
 ## The Arc Caster (v0.3.5 AI, owner F5): a low-poly spellcaster in the enemy sheet's red and grey. A tall faceted red
 ## robe (an octagonal frustum) under grey pauldrons, a dark hood with a glowing red slit visor, a grey staff held out
 ## in front with a hostile-yellow arc crystal at its tip, and three red rune shards that orbit the hood. The staff
@@ -21,28 +21,23 @@ const CRYSTAL := 0.11
 const WINDUP_TICKS := 30
 const OUTLINE_M := 0.02
 
-const RED := Color("#D8433A")
-const RED_DARK := Color("#A9302B")
-const GREY := Color("#5F5551")
+## v0.8.0 EC: the robe and cowl (body), the hem (trim), the pauldrons and staff (grey) and the visor and rune shards
+## (eye) come from EnemyPalettes.
+const KIND := WorldReader.KIND_ARC_CASTER
 const DARK := Color("#24272D")
-const EYE := Color("#FF2A22")
 
 ## Parts, read by tests and by ActorViews (flash materials; the visor, crystal and shards glow on their own).
 var body: Node3D
 var staff: Node3D
 var crystal: MeshInstance3D
 var shards: Array[Node3D] = []
-var body_materials: Array[StandardMaterial3D] = []
 
 var _eye_mat := StandardMaterial3D.new()
 var _glow_mat := StandardMaterial3D.new()
 var _orbit := Node3D.new()
-var _fresh := true
-var _last_tick := -1
 var _state := WorldReader.STATE_SPAWN
 var _state_tick := 0
 var _ticks_in := 0
-var _t := 0.0
 var _rise := 0.0
 var _charge := 0.0
 var _kick := 0.0
@@ -51,13 +46,15 @@ var _kick := 0.0
 func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var team := ThemePalette.color(&"enemy_body")
+	var red := EnemyPalettes.color(KIND, &"body")
+	var grey := EnemyPalettes.color(KIND, &"grey")
 	body = Node3D.new()
 	add_child(body)
 	_piece(
 		body,
 		_frustum(HEM_R, SHOULDER_R, ROBE_H, 8),
 		Vector3.ZERO,
-		RED,
+		red,
 		outline_color,
 		team,
 		technique
@@ -67,7 +64,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 		body,
 		_frustum(HEM_R + 0.02, HEM_R - 0.03, 0.12, 8),
 		Vector3.ZERO,
-		RED_DARK,
+		EnemyPalettes.color(KIND, &"trim"),
 		outline_color,
 		team,
 		&"outline"
@@ -78,7 +75,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 			body,
 			pauldron,
 			Vector3(0.0, ROBE_H - 0.02, side * 0.2),
-			GREY,
+			grey,
 			outline_color,
 			team,
 			technique
@@ -101,16 +98,17 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 		hood,
 		_frustum(0.17, 0.02, 0.24, 6),
 		Vector3(-0.03, 0.04, 0.0),
-		RED,
+		red,
 		outline_color,
 		team,
 		&"outline"
 	)
-	_eye_mat.albedo_color = EYE
+	var eye := EnemyPalettes.color(KIND, &"eye")
+	_eye_mat.albedo_color = eye
 	_eye_mat.emission_enabled = true
-	_eye_mat.emission = EYE
+	_eye_mat.emission = eye
 	_eye_mat.emission_energy_multiplier = 2.0
-	NeedleAvatar._write_stencil(_eye_mat)
+	write_stencil(_eye_mat)
 	var slit := MeshInstance3D.new()
 	var sb := BoxMesh.new()
 	sb.size = Vector3(0.01, 0.035, 0.15)
@@ -127,7 +125,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 		staff,
 		NeedleAvatar._chamfer_box(Vector3(0.05, STAFF_LEN, 0.05), 0.01),
 		Vector3(0, STAFF_LEN * 0.3, 0),
-		GREY,
+		grey,
 		outline_color,
 		team,
 		&"outline"
@@ -183,10 +181,6 @@ func apply_state(s: Dictionary) -> void:
 		_pose(0.0)
 
 
-func _process(delta: float) -> void:
-	advance(delta)
-
-
 func advance(delta: float) -> void:
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0 or body == null:
@@ -234,30 +228,7 @@ func _piece(
 	team: Color,
 	technique: StringName
 ) -> void:
-	var piece := MeshInstance3D.new()
-	piece.mesh = mesh
-	piece.position = at
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = c
-	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = outline
-	mat.stencil_outline_thickness = OUTLINE_M
-	piece.material_override = mat
-	parent.add_child(piece)
-	body_materials.append(ActorViews.flashable(mat))
-	if technique == &"xray":
-		var ghost := MeshInstance3D.new()
-		ghost.mesh = mesh
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = c
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		gm.stencil_color = Color(team, 0.85)
-		ghost.material_override = gm
-		ghost.position = at
-		ghost.scale = Vector3.ONE * 0.96
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(ghost)
+	_outlined(parent, mesh, at, c, outline, team, technique, OUTLINE_M)
 
 
 ## A flat-shaded `sides`-sided frustum standing on the origin: radius r0 at the bottom, r1 at height h.
@@ -275,7 +246,7 @@ static func _frustum(r0: float, r1: float, h: float, sides: int) -> ArrayMesh:
 		tris.append([b0, t1, t0])
 		tris.append([Vector3.ZERO, b1, b0])
 		tris.append([Vector3(0, h, 0), t0, t1])
-	return _mesh_around(tris, c)
+	return flat_mesh(tris, c)
 
 
 ## A flat-shaded octahedron of half-size r (the crystal and the shards).
@@ -287,32 +258,4 @@ static func _octahedron(r: float) -> ArrayMesh:
 		var b: Vector3 = pts[(k + 1) % 4]
 		tris.append([a, b, Vector3(0, r * 1.4, 0)])
 		tris.append([a, b, Vector3(0, -r * 1.4, 0)])
-	return _mesh_around(tris, Vector3.ZERO)
-
-
-## Flat-shaded triangles of a convex solid around `c`, each turned to face away from it.
-static func _mesh_around(tris: Array, c: Vector3) -> ArrayMesh:
-	var verts := PackedVector3Array()
-	var normals := PackedVector3Array()
-	for t: Array in tris:
-		var a: Vector3 = t[0]
-		var b: Vector3 = t[1]
-		var d: Vector3 = t[2]
-		var n := (b - a).cross(d - a)
-		if n.length_squared() < 1e-12:
-			continue
-		if n.dot((a + b + d) / 3.0 - c) < 0.0:
-			var tmp := b
-			b = d
-			d = tmp
-			n = -n
-		n = n.normalized()
-		verts.append_array([a, d, b])
-		normals.append_array([n, n, n])
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = verts
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	var m := ArrayMesh.new()
-	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return m
+	return flat_mesh(tris, Vector3.ZERO)

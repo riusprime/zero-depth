@@ -1,17 +1,20 @@
 class_name PickSlot
 extends VBoxContainer
-## One card of the 3-card pick and of the shop's stock (v0.3.0 E; v0.5.5 A4: the owner's crystal frames). The card
-## (CrystalCard) wears the frame of its family (CardFrames; a cursed offer wears the curse frame, an epic card the
-## epic frame) with the title, the sentence, the rarity and two icons inside; under it the card's number key and,
-## on a cursed offer, the curse's line. The rarity reads as the rarity line, the gem icon's colour and the glow
-## behind the frame. The focused card lifts, its frame brightens and its glow grows. A mouse click or hover reports
-## itself; the panel decides what happens.
+## One card of the 3-card pick and of the shop's stock (v0.3.0 E; v0.8.0 MU: a carved stone tablet, StoneCard, in
+## place of v0.5.5 A4's crystal frames). The card wears its family's colour (CardFrames; a cursed offer the curse
+## violet, an epic card the epic gold) on its title and inlay groove, its element's colour on the icon's inlay ring,
+## the rarity on the carved gem and the rarity words; under it the card's number key and, on a cursed offer, the
+## curse's line. The rarity also reads as the ember glow under the tablet (and a gold rim on epic and legendary). The
+## focused card lifts, its glow grows and its lower edge lights up. A mouse click or hover reports itself; the panel
+## decides what happens.
 
 signal clicked(slot: int)
 signal hovered(slot: int)
 
 const COMMON := Color("#9AA4B2")
-const RARE := Color("#F0B840")
+## v0.8.0 RR (owner O33, four tiers each with its colour): rare is blue (was the amber #F0B840, too close to the
+## legendary gold); the tier's word is always on the card too, so no tier reads by colour alone.
+const RARE := Color("#4AA8F0")
 ## v0.4.0 BS: an epic stat card, and an ability card (the hero's cyan).
 const EPIC := Color("#C77DFF")
 const ABILITY := Color("#2BC4E2")
@@ -23,7 +26,7 @@ const TIERS: Array[Color] = [COMMON, RARE, EPIC, ABILITY, LEGENDARY]
 const PICK_SCALE := 1.2
 
 var index := 0
-var card: CrystalCard
+var card: StoneCard
 var focused := false
 var rare := false
 ## v0.4.0 BS: 0 common, 1 rare, 2 epic, 3 an ability card, 4 (v0.5.5 AR) a legendary card (TIERS).
@@ -40,7 +43,7 @@ func _init(p_index: int, p_scale: float = PICK_SCALE) -> void:
 	name = "PickSlot%d" % (p_index + 1)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	add_theme_constant_override("separation", 2)
-	card = CrystalCard.new(p_scale)
+	card = StoneCard.new(p_scale)
 	add_child(card)
 	_key.text = str(p_index + 1)
 	_key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -80,7 +83,7 @@ func show_card(face: Dictionary) -> void:
 
 
 ## v0.5.0 EV: marks the card cursed with `line` (CurseLook.line), or clean with "". A cursed card wears the curse
-## frame (v0.5.5 A4).
+## colour (v0.5.5 A4).
 func show_curse(line: String) -> void:
 	_curse_text.text = line
 	_curse.visible = not line.is_empty()
@@ -92,13 +95,18 @@ func curse_text() -> String:
 	return _curse_text.text if _curse.visible else ""
 
 
-## The card's family (CardFrames.family) and frame colour id.
+## The card's family (CardFrames.family) and its colour id (CardFrames.frame_of).
 func family() -> StringName:
 	return card.family
 
 
-func frame_id() -> StringName:
-	return card.frame_id
+func colour_id() -> StringName:
+	return card.colour_id
+
+
+## v0.8.0 RR: the shown card's type (WorldReader.CARD_*; -1 for a face without one).
+func face_type() -> int:
+	return int(_face.get("type", -1))
 
 
 func set_focused(on: bool) -> void:
@@ -106,13 +114,13 @@ func set_focused(on: bool) -> void:
 	_apply()
 
 
-## The rarity's colour: the gem's colour and the glow's.
+## The rarity's colour: the gem's colour and the rarity words'.
 func rarity_color() -> Color:
 	return TIERS[clampi(tier, 0, TIERS.size() - 1)]
 
 
-## The text panel inside the frame (FACET corners, no shadow, no side bar).
-func panel_box() -> StyleBoxFlat:
+## The card's stone tablet (StoneBox).
+func panel_box() -> StoneBox:
 	return card.panel_box()
 
 
@@ -126,8 +134,11 @@ func _render() -> void:
 		fam,
 		tier,
 		rarity_color(),
-		_face.get("tier_text", "")
+		_face.get("tier_text", ""),
+		_face.get("level_text", ""),  # v0.7.5 SM: the level badge
+		_face.get("color", Color(0, 0, 0, 0))  # v0.8.0 MU: the element's colour on the inlay ring
 	)
+	card.show_gain(_face.get("gain", {}))  # v0.8.0 N8: what gets better, old → new
 	_apply()
 
 
@@ -144,7 +155,7 @@ func _build_curse(s: float) -> void:
 	_curse_text.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_curse_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_curse_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_curse_text.custom_minimum_size = Vector2(CardFrames.SIZE.x * s - 30.0, 0)
+	_curse_text.custom_minimum_size = Vector2(StoneCard.SIZE.x * s - 30.0, 0)
 	_curse.add_child(_curse_text)
 	_curse.visible = false
 	add_child(_curse)

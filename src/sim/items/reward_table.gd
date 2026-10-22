@@ -15,6 +15,14 @@ var chest_prices := PackedInt32Array([40, 60, 80])
 var floor_price_step_permille := 500
 var rare_weight_chest := 3
 var rare_weight_altar := 1
+## v0.8.0 RR (owner O33): an epic and a legendary mod's draw weight, per mille of a common one's (ItemPool.card_weight).
+## A world without reward data draws no legendary.
+var epic_permille_chest := 1500
+var epic_permille_altar := 500
+var legendary_permille_chest := 0
+var legendary_permille_altar := 0
+## v0.8.0 BL (BLADE_AUDIT B5): the run's own weapon's wand cards weigh this per mille against a shared card's 1000.
+var own_weapon_card_permille := 1500
 var offer_size := 3
 var interact_radius_m := 1.6
 ## A kill's shards × (1000 + bonus × tier) / 1000, rounded half up.

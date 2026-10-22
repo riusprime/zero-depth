@@ -12,6 +12,12 @@ extends ContentDef
 @export var reward_gap_m := 3.0
 ## The share of chest offers that are cursed (v0.6.0 CU, owner S6: one card becomes a trade-off curse card).
 @export var cursed_chest_chance := 25.0
+## v0.7.5 MG (owner N10, "one every two floors"): chests roll that chance only on curse floors: the first, then every
+## cursed_chest_every_floors floors (1, 3, 5 ... as shipped; the floor count keeps going past the run's last floor);
+## at most cursed_chests_per_floor cursed chest offers on one floor.
+@export var cursed_chest_first_floor := 1
+@export var cursed_chest_every_floors := 2
+@export var cursed_chests_per_floor := 1
 ## An elite: +this % HP (Ambush Cache packs, and spawns under an elite curse).
 @export var elite_hp_bonus := 100.0
 ## Ambush Cache: the pack arrives at least this far from you, inside the room.
@@ -32,6 +38,13 @@ extends ContentDef
 ## far from the next drop at the same spot.
 @export var hunt_range_m := 16.0
 @export var drop_offset_m := 0.9
+## v0.8.0 N17 (owner O75: "they need to appear once max per floor and 40% of floors not all the time"): the chance a
+## floor has a curse room (one combat room holding the curse altar and the floor's curse event), in per mille (400:
+## 40 % of floors).
+@export var curse_room_floor_chance_permille := 400
+## v0.8.0 N19 (owner O80: "Should Whispering Deep move into the curse room? yes"): the chance on a Deep floor, in
+## per mille (1000: every Deep floor has a curse room, so S5's Whispering Deep on every Deep floor holds).
+@export var curse_room_deep_chance_permille := 1000
 
 
 func category() -> StringName:
@@ -57,6 +70,26 @@ func validate() -> Array[ValidationIssue]:
 		check_positive(issues, f[0], f[1])
 	if cursed_chest_chance < 0.0 or cursed_chest_chance > 100.0:
 		issues.append(ValidationIssue.new(&"range", resource_path, "cursed_chest_chance 0..100"))
+	if cursed_chest_first_floor < 1 or cursed_chest_every_floors < 1 or cursed_chests_per_floor < 0:
+		issues.append(
+			ValidationIssue.new(
+				&"range",
+				resource_path,
+				"cursed_chest_first_floor and _every_floors >= 1, _per_floor >= 0"
+			)
+		)
+	if curse_room_floor_chance_permille < 0 or curse_room_floor_chance_permille > 1000:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "curse_room_floor_chance_permille is outside 0..1000"
+			)
+		)
+	if curse_room_deep_chance_permille < 0 or curse_room_deep_chance_permille > 1000:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "curse_room_deep_chance_permille is outside 0..1000"
+			)
+		)
 	if cleanse_price <= 0:
 		issues.append(ValidationIssue.new(&"range", resource_path, "cleanse_price must be > 0"))
 	if core_mod_weight < 0:

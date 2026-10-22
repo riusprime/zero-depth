@@ -53,6 +53,37 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
    cards (elements and statuses) appear in both.
 9. **The difficulty catch-up reads the wand** through `CatchUp.power`. A strong wand raises the hidden scaling up to
    its cap, so a broken wand still melts the floor but a normal one meets a fair fight.
+10. **Extra projectiles share the damage** (v0.8.0 MR, owner O91: "Extra projectiles must not each duplicate full
+    damage and full-strength effects"). A multiplying card sets each projectile's share of the shot (Twin 60 %,
+    Spread 55 %, Halo 40 %; `share_permille`), and the shares multiply down the wand. Its projectiles past the first
+    (Twin's second lane, the bolts past Spread's centre one or Halo's first), Echo's repeat and Double Slash's repeats
+    are **secondary**: they run at `secondary_proc_permille` (50 %, `data/wand/wand.tres`). Their status stacks,
+    their hooks' statuses (the children's proc) and their trigger casts' damage are halved. Stacks are whole, so a
+    halved feed rounds down and carries the rest to the next one (`SecondaryProc`): exact on average. A hook child of
+    a secondary is not secondary itself, so nothing halves twice.
+11. **A repeat never repeats** (v0.8.0 MR, O91: "Prevent repeats repeating themselves"). An attack launched as a
+    repeat (Echo's repeat, a Double Slash echo, a trigger's later cast: the second of ×2, a slash hit's second)
+    never queues a repeat or a later cast of any kind. The guards stay: lineage, `once_per_line`, depth ≤ 2, 256
+    launches a tick, the player-shot cap. A card that can't act where it sits is flagged on its tile and left out of
+    the read-back: Echo, Double Slash and Charge right of a trigger ("Does nothing after a trigger"), any card past
+    the third trigger ("Too deep to cast").
+12. **Remnants** (v0.8.0 RM, owner O91: "Build reusable remnants, connections and events—not hardcoded modifier-pair
+    scripts"; [`BALANCE_PASS.md`](../roadmap/v0.8.0/BALANCE_PASS.md) "RM"). A remnant card leaves a small object
+    behind (a **segment** between two points, an **anchor** that pulls, a **mark** on an enemy with a direction, a
+    **fragment** count on an enemy) that a later attack, or time, activates. Its activation is a spell the card
+    casts, built like a trigger's child: by the card and the **cards to its right** (a Big right of Faultline makes
+    its eruptions bigger, one left of it doesn't). A remnant keeps the hook level of the attack that left it (its
+    cast is that attack's child: one level deeper, half the proc; an attack at the deepest level leaves none), and
+    its own cast never leaves the same remnant (lineage). Every card's rule is its kind and its numbers in
+    `data/modifiers/` (`RemnantRule`): how long it lasts, how many of the card's stand (the oldest replaced), the
+    least time between two of its hits on one enemy, how many activations it has. Limits for all
+    (`data/wand/wand.tres`): 96 alive, a cap per kind, 64 activations a tick (then one LIMIT event), and every
+    activation's cast counts toward the 256 launches a tick. The cards are in the pools below (G17, S8–S10, B12, B14)
+    and the mutations.
+13. **Thermal Break** (v0.8.0 RM, owner O91: "Make Fire+Frost's Thermal Break a natural elemental reaction"). An enemy
+    that is both burning and chilled or frozen breaks, whichever came second: its burn and frost are consumed (a
+    freeze ends) into one hit of 6 + 4 per burn stack (× the damage stat; a damage-over-time hit: never a crit, it
+    sets nothing off), with a short shatter. One rule in the status engine, so Fire and Frost from any source react.
 
 ## The pools (G1: the owner keeps, cuts or edits rows)
 
@@ -60,9 +91,9 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
 | # | Card | Changes the spell | You see |
 |---|---|---|---|
 | G1 | Big Shot | ×2 size, ×1.6 damage, −25 % speed | a fat slow orb |
-| G2 | Rapid Fire | ×0.6 size, +60 % fire rate, −30 % damage | a stream of small bolts |
-| G3 | Twin | fires the spell twice, side by side | paired bolts |
-| G4 | Spread | becomes a 3-shot fan (+2 per level) | a fan |
+| G2 | Rapid Fire | ×0.6 size, +60 % fire rate, −30 % damage; v0.8.0 MR: sustained fire: ×0.7 size, ×0.85 damage, +30 % rate, and holding fire ramps +10 % a shot up to +60 % (+15 % a level), reset after 0.4 s without a shot | a stream of small bolts |
+| G3 | Twin | fires the spell twice, side by side; v0.8.0 MR: each lane 60 % (+5 % a level), the second lane secondary | paired bolts |
+| G4 | Spread | becomes a 3-shot fan (+2 per level); v0.8.0 MR: +1 a level after the first, each bolt 55 % (+3 % a level), the bolts past the centre one secondary | a fan |
 | G5 | Split | on its first hit, splits into 3 at half size | a burst of shards at the hit |
 | G6 | Pierce | passes through 2 enemies (+1 per level) | a streak through the line |
 | G7 | Ricochet | bounces off walls twice | angled bounces |
@@ -71,30 +102,33 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
 | G10 | Orbit | circles you once before it flies out | a ring of shots, then a volley |
 | G11 | Spiral | travels in a corkscrew | a helix |
 | G12 | Mine | stops at its range and waits 3 s, exploding on contact | a field of mines |
-| G13 | Charge | hold to grow it, up to ×3 size and damage | it swells in the barrel |
-| G14 | Echo | fires again 0.3 s later at 60 % | a trailing ghost volley |
+| G13 | Charge | hold to grow it, up to ×3 size and damage; v0.8.0 MR: does nothing right of a trigger (flagged) | it swells in the barrel |
+| G14 | Echo | fires again 0.3 s later at 60 %; v0.8.0 MR: at 50 % (+5 % a level), secondary; does nothing right of a trigger (flagged) | a trailing ghost volley |
 | G15 | Backfire | also fires behind you | shots in both directions |
-| G16 | Halo | the spell fires in a full ring, ×0.5 range | a ring of shots |
+| G16 | Halo | the spell fires in a full ring, ×0.5 range; v0.8.0 MR: each ring bolt 40 % (+5 % a level), the bolts past the first secondary | a ring of shots |
+| G17 | Threadline (v0.8.0 RM, rare) | consecutive projectiles of a volley, or of two shots 0.4 s apart, connect for 0.5 s with a thread; an enemy crossing it takes 25 % of a bolt (at most once each 0.25 s per thread), cast through the cards to its right; up to 6 threads (+2 a level) | cyan threads between the shots |
 
 ### Blade pool: what the slash does
 | # | Card | Changes the spell | You see |
 |---|---|---|---|
 | B1 | Wide Arc | +60° arc, +30 % reach | a huge sweep |
-| B2 | Wave | the slash flies on as a crescent (the shooting sword) | a flying crescent |
-| B3 | Split Wave | needs a flying slash: on hit, splits into 3 small crescents | crescents fanning out |
+| B2 | Wave | the slash flies on as a crescent (the shooting sword); v0.8.0 BL: +1 crescent a level | a flying crescent |
+| B3 | Split Wave | needs a flying slash: on hit, splits into 3 small crescents (+1 a level); v0.8.0 MR: without one, each slash hit throws 2 small crescents outward (+1 a level) at 40 % (+5 %) | crescents fanning out |
 | B4 | Whirl | every slash becomes a 360° spin | a full spin |
-| B5 | Double Slash | every slash repeats, mirrored, 0.15 s later | a criss-cross |
-| B6 | Thrust | narrow and long: reach ×2, arc ×0.4, +30 % damage | a long stab line |
-| B7 | Heavy | ×1.7 damage and big knockback, −30 % swing speed | slow, crushing arcs |
-| B8 | Flurry | +50 % swing speed, −25 % damage | a blur of slashes |
+| B5 | Double Slash | every slash repeats, mirrored, 0.15 s later; v0.8.0 BL: +1 repeat a level, each 70 %; v0.8.0 MR: each 60 %, secondary; does nothing right of a trigger (flagged) | a criss-cross |
+| B6 | Thrust | narrow and long: reach ×2, arc ×0.4, +30 % damage; v0.8.0 BL: the arc widens from level 3 (×1 at 5) | a long stab line |
+| B7 | Heavy | ×1.7 damage and big knockback, −30 % swing speed; v0.8.0 BL: 10 % less slow a level from level 3 (none at 5) | slow, crushing arcs |
+| B8 | Flurry | +50 % swing speed, −25 % damage; v0.8.0 BL: the loss shrinks from level 3, none at 5; v0.8.0 MR: a burst: the first 3 swings after a 0.6 s pause +80 % rate (+1 swing at levels 3 and 5), the rest at the base rate; ×0.85 damage at every level | a blur of slashes |
 | B9 | Fissure | the slash cracks the ground ahead in a line that erupts | a crack line, then an eruption |
 | B10 | Chain Cut | a hit leaps to the next enemy within 4 m (+1 per level) | the slash jumping between enemies |
 | B11 | Parry Edge | the slash destroys enemy shots it touches | sparks off the bullets it cuts |
-| B12 | Afterimage | dashing leaves a copy that repeats your last slash | a ghost slash |
+| B12 | Dodge Imprint (v0.8.0 RM; was Afterimage, same id `long_shadow`; common) | for 1.5 s after a dash, your next attack is cast from where the dash began, +10 % damage a level (the ghost copy is gone) | a faint ring where the dash began |
 | B13 | Lunge Step | each slash steps you 1 m forward | you drive into the crowd |
-| B14 | Finisher+ | the 4th hit's shockwave doubles and carries every card | a big shockwave |
+| B14 | Fracture Bank (v0.8.0 RM; was Finisher+, same id `finisher_plus`; rare) | combo hits (not the finisher) lodge a fragment in the enemy hit, at most 4 (+1 a level), each 4 s; the finisher's hit extracts every fragment in the enemies it hits: one burst of 40 % (+5 % a level) of the finisher's damage per fragment, cast through the cards to its right | crimson gems over the enemies, a flash as they come out |
 | B15 | Orbit Blades | each slash throws off a blade that circles you for 3 s | blades orbiting you |
 | B16 | Counter | a slash within 0.5 s of a dash deals ×2 and is a flying wave | a dash-slash wave |
+| B17 | Blade Storm (v0.8.0 BL) | each slash throws 2 spinning blades that fly out and back (+1 a level) | blades looping out and back |
+| B18 | Riposte Chain (v0.8.0 BL) | a slash that kills slashes again at the next enemy within 4 m: 2 in a chain (+1 a level) | the cut leaping on from a kill |
 
 ### Shared pool: works the same on both
 | # | Card | Effect | You see |
@@ -106,6 +140,18 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
 | S5 | Bleed | bleed stacks that tick faster when you move | red streaks |
 | S6 | Void | hits pull nearby enemies in | a violet smear and a pull |
 | S7 | Explosive | the spell explodes where it ends | a blast at the end |
+| S8 | Faultline (v0.8.0 RM, rare) | a slash's contact or a projectile's impact leaves a 1.6 m crack along the attack for 3 s (6 at most, +1 a level); a later attack crossing it erupts it: a 1.2 m burst at 80 % of the crossing hit (+10 % a level), cast through the cards to its right; the crack is spent | ember cracks, an eruption |
+| S9 | Gravity Stitch (v0.8.0 RM, rare) | a hit leaves an anchor for 1.2 s (4 at most; +0.3 s and +1 a level) that pulls enemies within 2.5 m gently in and bends your projectiles within 3 m toward it | violet rings on the floor |
+| S10 | Stress Mark (v0.8.0 RM, common) | a hit marks the enemy with its direction for 3 s (one an enemy); a later hit from 90° or more away breaks it: +100 % of that hit (+20 % a level), cast through the cards to its right, and a short stagger | an amber gem over the enemy, a flash as it breaks |
+
+### Mutations (v0.8.0 RM): rare, shared
+Tag `mutation`, the legendary tier at a low weight (`offer_weight_permille` 150; never the boss's legendary chance slot;
+the floor pacing step FL decides when they are offered).
+
+| # | Card | Effect | You see |
+|---|---|---|---|
+| M1 | Double Exposure | 0.6 s after an attack, its path (a bolt's flown line, a slash's arc) hurts each enemy on it once more at 40 %; its replay never replays | a pale path, then a flash |
+| M2 | Grand Finale | every 4 s it consumes the remnants made by the cards to its **left** in its own trigger section, each releasing a 1.5 m burst at 60 % of the hit that made it (at most 12 a release), cast through the cards to its right | the remnants flash as they go |
 
 ### Triggers: they cut the wand, and both weapons get them
 | # | Card | The cards to its right cast… |
@@ -114,6 +160,11 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
 | T2 | On Kill | …where an enemy dies |
 | T3 | On End | …where the spell ends (its range, a wall, or the end of the slash) |
 | T4 | On Finisher (Blade) / On Crit (Gun) | …on the combo's 4th hit / on a critical hit |
+
+**v0.8.0 BL** ([`../roadmap/v0.8.0/BLADE_AUDIT.md`](../roadmap/v0.8.0/BLADE_AUDIT.md), owner 2026-10-14): on a Blade run a
+slash's hit triggers (On Hit, On Kill, On Finisher) cast twice; a wand-card offer weighs the run's own weapon's cards
+×1.5 against the shared ones; Split's splits (and anything cast from Split or Explosive) neither split nor explode
+again, and past 8 Explosive blasts in one tick an overlapping one merges into a blast already set off.
 
 ## Combinations it makes (no hand-made pairs)
 - **Gun:** Spread · Homing · ON HIT · Explosive. A fan of seeking bolts, each exploding on hit.
@@ -132,7 +183,7 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
   - The Drone retires: its side attack is what the owner doesn't want.
 - Old saves load: each held card maps to its new card, in pick order. A card without a match is refunded as shards.
 - The legendary tier offers level-5 versions and a few unique triggers (for example "On Hit ×2": the cast repeats
-  twice).
+  twice). v0.8.0 FL: the level-5 versions are gone ("The legendary tier" below).
 
 ### The mapping (v0.6.5 WN5b)
 The data is one table, [`data/wand/migration.tres`](../../data/wand/migration.tres) (CONTENT_SCHEMA "the wand"). A
@@ -212,14 +263,29 @@ Explosive `shared_explosive` (new cards of WN5a).
   passives outside the wand, like stat cards, and stay offered: WAND.md says nothing about them, and pruning them is the
   owner's call (PROGRESS v0.6.5 "Gates").
 
-### The legendary tier (v0.6.5 WN5b)
-- **Level-5 versions:** the boss's legendary altar offers every wand card of the run's pool (Gun runs G1–G16, Blade
-  runs B1–B16; S1–S7 once merged) besides the legendary stat cards. A wand card picked there is taken at level 5 (a
-  held one rises to 5). Its card reads "Mod · Level 5 · Legendary".
+### The legendary tier (v0.6.5 WN5b; v0.8.0 FL)
+- **v0.8.0 FL (owner O91: "boss offers an upgrade or advanced choice; remove automatic level-5 grants"):** no more
+  level-5 versions. The boss's legendary altar offers three choices: an **upgrade** (a held wand card one level up, up
+  to the next floor's level ceiling), an **advanced or trigger card** (its place goes to the Legendary card when the
+  boss's Legendary chance hits), and a **legendary stat card**. A wand card taken there levels as anywhere ("Lv N →
+  N+1"). Data: `data/legendary/boss.tres` (`upgrade_choice`, `card_categories`; `wand_level` retired, 0).
+- ~~Level-5 versions~~ (v0.6.5 WN5b, superseded by FL): the altar offered every wand card of the run's pool and took a
+  pick to level 5.
 - **Unique triggers:** On Hit ×2, On Kill ×2, On End ×2 (`trigger_on_*_twice`). They cut the wand like T1–T3, and the
   cards to their right cast twice each time, the second cast 0.15 s after the first. They are legendary only (the
   boss's altar, a boss's core).
-- The pick stays one of three, 60 % stat cards / 40 % mods by weight (data `data/legendary/boss.tres`).
+- The pick stays one of three (v0.8.0 FL: the upgrade, the advanced or trigger card, then legendary stat cards by the
+  60 / 40 stat / mod weights; data `data/legendary/boss.tres`).
+
+### Floor-paced loot (v0.8.0 FL)
+Every card has a pacing category (`loot_category`: form, element, advanced, trigger, mutation; stat cards their own).
+One table (`data/rewards/pacing.tres`, the dev panel's economy group) weighs each category per stage and caps the level
+a held card is offered up to: floor 1 level 2 (forms and elements favoured, advanced and triggers rarer, mutations
+almost never), floor 2 level 3, floor 3 and the Deep floors and later loops level 5. A held card at the ceiling isn't
+offered as a duplicate by any source (altars, chests, the shop and its rerolls, events, stolen cores); higher
+duplicates come on later floors. Floor 1's first two altars each show a card that changes your attack. A rare jackpot
+(1.5 % of altar and chest offers) lifts one held card one level past the ceiling or lets a mutation in; its card reads
+"Jackpot". SIM_CONTRACTS §8m.
 
 ## How it's built (after G1)
 1. **The wand compiler.**

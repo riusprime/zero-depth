@@ -21,7 +21,8 @@ func test_take_hits_die_and_restart_with_no_errors_or_growth() -> void:
 	await e.start_from_menu()
 	await e.frames(5)
 	# The stage (ground tiles, props, walls) differs from floor to floor, and a restart rolls a new floor, so the
-	# leak check counts every node outside the stage.
+	# leak check counts every node outside the stage. v0.8.0 SR: so does the shop stall's dressing (25-218 nodes by
+	# floor; docs/roadmap/v0.8.0/evidence/SHOP.md "Soak"), so it is left out the same way.
 	var start_nodes := _nodes_outside_stage(main)
 	var hits := 0
 	var frames := 0
@@ -88,7 +89,9 @@ func test_take_hits_die_and_restart_with_no_errors_or_growth() -> void:
 
 func _nodes_outside_stage(main: Main) -> int:
 	var total := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
-	return total - _subtree_size(main.view.stage)
+	var stall: Node = main.view.shop_stall
+	var stall_nodes := _subtree_size(stall) if is_instance_valid(stall) else 0
+	return total - _subtree_size(main.view.stage) - stall_nodes
 
 
 func _subtree_size(n: Node) -> int:

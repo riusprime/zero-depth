@@ -37,3 +37,16 @@ var fire_hit_ticks := ElementAbilities.FIRE_HIT_TICKS
 var fire_trail_spacing_m := ElementAbilities.TRAIL_SPACING_M
 ## The shortest throw of a shot's field (Arc Field and the like).
 var field_min_m := ModifierAbilities.FIELD_MIN_M
+## v0.8.0 PF (owner O9): the player's projectiles alive at once, at most (Attacks._shot_room).
+var player_shots_max := Attacks.MAX_PLAYER_SHOTS
+## v0.8.0 N11 (owner O69): the hero's arrival on the floor's receiver (BossFlow.arrival_length): floor 1 of a run, a
+## later floor, and either with reduced motion. Nothing spawns and nothing acts until it ends.
+var arrival_first_ticks := BossFlow.ARRIVE_FIRST_TICKS
+var arrival_ticks := BossFlow.ARRIVE_TICKS
+var arrival_calm_ticks := BossFlow.ARRIVE_TICKS_CALM
+## v0.8.0 SG (owner O91): the attack-speed curve (AttackRate.curve): full up to the knee, then slope, then slope2
+## past knee2, per mille.
+var attack_speed_knee_permille := AttackRate.KNEE
+var attack_speed_knee2_permille := AttackRate.KNEE2
+var attack_speed_slope_permille := AttackRate.SLOPE
+var attack_speed_slope2_permille := AttackRate.SLOPE2

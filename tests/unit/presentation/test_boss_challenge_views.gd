@@ -26,9 +26,15 @@ func test_the_boss_bar_fills_over_exactly_the_rise() -> void:
 	assert_almost_eq(hud.boss_bar.hp_fraction(), 1.0, 0.001, "full the tick it acts")
 	assert_ne(w.actors.state[w.actors.index_of(id)], EnemyAi.State.SPAWN)
 	var i := w.actors.index_of(id)
-	Damage.hit(w, i, 280, 1, 1, 1, 0, Vector2(6, 5), w.actors.pos(i))
+	Damage.hit(w, i, 350, 1, 1, 1, 0, Vector2(6, 5), w.actors.pos(i))  # v0.7.5 BF1: 20 % of 1750
 	hud.sync(reader)
-	assert_almost_eq(hud.boss_bar.hp_fraction(), 0.8, 0.01, "then its real HP")
+	assert_almost_eq(
+		hud.boss_bar.hp_fraction(),
+		reader.boss_phase_permille(i) / 1000.0,
+		0.001,
+		"then its real HP (v0.8.0 N4: within its first phase, 1750 .. 66 %)"
+	)
+	assert_almost_eq(hud.boss_bar.hp_fraction(), (1400.0 - 1155.0) / (1750.0 - 1155.0), 0.002)
 
 
 func test_the_weak_point_glows_on_the_model_by_energy_only() -> void:
@@ -118,6 +124,7 @@ func test_the_band_the_vortex_and_the_dissolve_are_drawn() -> void:
 	assert_gt((view.band_mesh.mesh as ImmediateMesh).get_surface_count(), 0, "the band that hurts")
 	assert_gt((view.warn_mesh.mesh as ImmediateMesh).get_surface_count(), 0, "the next step marked")
 	w.actors.set_pos(0, Vector2(10, 0))
+	BossLab.with_attack(w, &"gatekeeper", BossLab.vortex_def())  # v0.7.5 BF1: the pull, kept as a fixture
 	BossLab.start(w, i, &"vortex_slam")
 	view.sync(reader)
 	assert_eq(view.vortex_count(), 1, "the vortex turns while the pull winds up")

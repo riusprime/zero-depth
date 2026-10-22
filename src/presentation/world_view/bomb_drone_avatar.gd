@@ -1,5 +1,5 @@
 class_name BombDroneAvatar
-extends Node3D
+extends AvatarBase
 ## The Bomb Drone (v0.3.5 AI, owner F6): a low-poly quad-rotor in the enemy sheet's red and grey, hovering
 ## HOVER_Y up with a soft bob. A faceted red hull with a red slit eye in front, four grey arms with spinning rotor
 ## blades, and a dark bomb slung under its belly whose fuse glows. The bomb drops away as the drone lobs it (the
@@ -20,10 +20,9 @@ const ROTOR_R := 0.17
 const SHADOW_R := 0.42
 const OUTLINE_M := 0.02
 
-const RED := Color("#D8433A")
-const GREY := Color("#5F5551")
+## v0.8.0 EC: the hull (body), the cap (trim), the arms (grey) and the eye slit (eye) come from EnemyPalettes.
+const KIND := WorldReader.KIND_BOMB_DRONE
 const DARK := Color("#24272D")
-const EYE := Color("#FF2A22")
 const BOMB := Color("#1B1C20")
 
 ## Parts, read by tests and by ActorViews (flash materials; the eye, fuse and shadow are their own).
@@ -31,15 +30,12 @@ var hull: Node3D
 var bomb: Node3D
 var shadow: MeshInstance3D
 var rotors: Array[Node3D] = []
-var body_materials: Array[StandardMaterial3D] = []
 
 var _eye_mat := StandardMaterial3D.new()
 var _fuse_mat := StandardMaterial3D.new()
-var _fresh := true
 var _state := WorldReader.STATE_SPAWN
 var _state_tick := 0
 var _ticks_in := 0
-var _t := 0.0
 var _rise := 0.0
 var _armed := 1.0
 var _fuse := 0.0
@@ -67,14 +63,18 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	hull = Node3D.new()
 	add_child(hull)
 	var body := NeedleAvatar._chamfer_box(Vector3(0.42, 0.18, 0.36), 0.06, 0.02)
-	_piece(hull, body, Vector3.ZERO, RED, outline_color, team, technique)
+	_piece(
+		hull, body, Vector3.ZERO, EnemyPalettes.color(KIND, &"body"), outline_color, team, technique
+	)
 	var cap := NeedleAvatar._chamfer_box(Vector3(0.24, 0.08, 0.22), 0.03, 0.01)
-	_piece(hull, cap, Vector3(-0.02, 0.12, 0), GREY, outline_color, team, &"outline")
-	_eye_mat.albedo_color = EYE
+	var trim := EnemyPalettes.color(KIND, &"trim")
+	_piece(hull, cap, Vector3(-0.02, 0.12, 0), trim, outline_color, team, &"outline")
+	var eye := EnemyPalettes.color(KIND, &"eye")
+	_eye_mat.albedo_color = eye
 	_eye_mat.emission_enabled = true
-	_eye_mat.emission = EYE
+	_eye_mat.emission = eye
 	_eye_mat.emission_energy_multiplier = 2.2
-	NeedleAvatar._write_stencil(_eye_mat)
+	write_stencil(_eye_mat)
 	var slit := MeshInstance3D.new()
 	var sb := BoxMesh.new()
 	sb.size = Vector3(0.01, 0.04, 0.2)
@@ -96,7 +96,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 			holder,
 			arm,
 			Vector3(ARM_LEN * 0.5 + 0.1, 0.02, 0),
-			GREY,
+			EnemyPalettes.color(KIND, &"grey"),
 			outline_color,
 			team,
 			&"outline"
@@ -155,10 +155,6 @@ func apply_state(s: Dictionary) -> void:
 		_pose()
 
 
-func _process(delta: float) -> void:
-	advance(delta)
-
-
 func advance(delta: float) -> void:
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0 or hull == null:
@@ -173,6 +169,11 @@ func advance(delta: float) -> void:
 	for k in rotors.size():
 		rotors[k].rotation.y = _t * (34.0 if k % 2 == 0 else -34.0)
 	_pose()
+
+
+## v0.8.0 GF2: the flinch leans the hull about itself, not about the ground under it.
+func _flinch_pivot() -> float:
+	return HOVER_Y
 
 
 ## The hull's current height above the ground (the hover plus the bob).
@@ -205,27 +206,4 @@ func _piece(
 	team: Color,
 	technique: StringName
 ) -> void:
-	var piece := MeshInstance3D.new()
-	piece.mesh = mesh
-	piece.position = at
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = c
-	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = outline
-	mat.stencil_outline_thickness = OUTLINE_M
-	piece.material_override = mat
-	parent.add_child(piece)
-	body_materials.append(ActorViews.flashable(mat))
-	if technique == &"xray":
-		var ghost := MeshInstance3D.new()
-		ghost.mesh = mesh
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = c
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		gm.stencil_color = Color(team, 0.85)
-		ghost.material_override = gm
-		ghost.position = at
-		ghost.scale = Vector3.ONE * 0.96
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(ghost)
+	_outlined(parent, mesh, at, c, outline, team, technique, OUTLINE_M)

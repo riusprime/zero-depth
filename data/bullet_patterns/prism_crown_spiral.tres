@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 1
+look = &"crown_orb"
+speed_mps = 3.0
+radius_m = 0.2
+range_m = 13.0
+waves = 16
+wave_gap_seconds = 0.15
+arms = 10
+spin_dps = 45.0
+reverse_at_seconds = 1.2
+id = &"prism_crown_spiral"

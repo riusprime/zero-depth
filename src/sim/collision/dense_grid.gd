@@ -184,10 +184,14 @@ func any_in_rect(rect: Rect2) -> bool:
 
 ## Box mode: indices of the boxes whose cells the segment from `a` to `b`, thickened by `r`, passes through
 ## (ascending, no duplicates; a superset of the boxes it touches). Walks the grid a column at a time, so a long
-## line of sight visits about twice its length in cells, not its bounding box's area.
+## line of sight visits about twice its length in cells, not its bounding box's area. Box mode only: a circle-mode
+## grid (the actors) refuses with an error and returns nothing (its de-duplication stamps are box mode's).
 func query_segment(a: Vector2, b: Vector2, r: float) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	if _count == 0:
+		return out
+	if _pad >= 0.0:
+		push_error("DenseGrid.query_segment: box mode only (this grid holds circles)")
 		return out
 	if b.x < a.x:
 		var t := a

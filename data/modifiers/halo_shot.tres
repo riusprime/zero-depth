@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
 [ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
@@ -23,11 +23,20 @@ stage = 5
 field = &"range"
 value = 500.0
 
+[sub_resource type="Resource" id="Op_4"]
+script = ExtResource("2_op")
+op = 4
+stage = 3
+field = &"share_permille"
+value = 400.0
+per_level = 50.0
+
 [resource]
 script = ExtResource("1_mod")
 family = &"trinket"
 rarity = 1
 target = PackedStringArray("projectile")
 stage = 1
-ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2"), SubResource("Op_3")])
+ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2"), SubResource("Op_3"), SubResource("Op_4")])
+order_kind = 2
 id = &"halo_shot"

@@ -2,7 +2,7 @@
   "generator": "scripts/audio/generate_sfx.py",
   "generator_version": 2,
   "format": "wav mono 44100 Hz 16-bit",
-  "licence": "Original work generated for this project by scripts/audio/generate_sfx.py (no third-party audio)",
+  "licence": "Original work generated for this project by scripts/audio/generate_sfx.py (no third-party audio); the boss door's opening and impact supplied by the owner (Rius; prepared by scripts/audio/bd_audio_prep.py)",
   "sounds": [
     {
       "id": "blade_slash_1",
@@ -873,6 +873,48 @@
       "peak_dbfs": -6.0,
       "rms_dbfs": -16.69,
       "loop": true
+    },
+    {
+      "id": "frozen_shore",
+      "kind": "ambience",
+      "path": "assets/audio/ambience/frozen_shore.wav",
+      "sha256": "4b5382742a08501c817bf888e1762704d4dc0e190e046989452d52146f643432",
+      "seconds": 10.0,
+      "peak_dbfs": -6.0,
+      "rms_dbfs": -19.04,
+      "loop": true
+    },
+    {
+      "id": "starfall",
+      "kind": "ambience",
+      "path": "assets/audio/ambience/starfall.wav",
+      "sha256": "18652b16d84309428b1613a2ba00de817bac057458bc754870cbd3c4966c7e6d",
+      "seconds": 10.0,
+      "peak_dbfs": -6.0,
+      "rms_dbfs": -19.49,
+      "loop": true
+    },
+    {
+      "id": "boss_door_opening",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/boss_door_opening.wav",
+      "sha256": "06094087d59376616cd7def418cf9dc0b0bd71480d4b2486230cc368830dc06e",
+      "seconds": 2.713,
+      "peak_dbfs": -10.63,
+      "rms_dbfs": -22.53,
+      "loop": false,
+      "source": "owner"
+    },
+    {
+      "id": "boss_door_impact",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/boss_door_impact.wav",
+      "sha256": "b9e4bff4e63fdaa7d132767a6e680bb263f888bfd53e427ad951ed56f0c8c98c",
+      "seconds": 2.95,
+      "peak_dbfs": -8.33,
+      "rms_dbfs": -21.12,
+      "loop": false,
+      "source": "owner"
     }
   ]
 }

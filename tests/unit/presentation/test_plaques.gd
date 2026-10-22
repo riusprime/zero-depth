@@ -1,6 +1,7 @@
 extends GutTest
-## The owner's crystal plaques in use (v0.6.1 R1) and the build picker's art (R2b): the plaque is a nine-slice whose
-## corners keep the crystals' shape and whose middle stretches; its colour comes from the card frames' one family
+## The plaques in use (v0.6.1 R1; v0.8.0 MU: carved Ember stone slabs, PlaqueBox, in place of the owner's crystal
+## plaques) and the build picker (R2b; v0.8.0 MU: stone tablets): a plaque is a stone slab of any size with a glowing
+## groove in its colour, its margins keep the text clear of it; its colour comes from the card colours' one family
 ## table; every text drawn on a plaque or a build card fits in English and Spanish (the layout is the 1920 x 1080
 ## base, stretched as a whole to 1280 x 720 by the project's canvas_items stretch mode, so one check covers both).
 
@@ -48,30 +49,20 @@ func _sentence(r: Resource) -> String:
 	return s
 
 
-func test_the_nine_slice_keeps_the_crystals_and_stretches_the_middle() -> void:
+func test_a_plaque_is_a_carved_stone_slab_with_its_colours_groove() -> void:
 	var box := Plaques.box(&"blue", 100.0)
-	var s := 100.0 / Plaques.SIZE.y
-	assert_almost_eq(box.scale_factor, s, 0.0001)
-	var rect := Rect2(10, 20, 900, 100)
-	var p := box.pieces(rect)
-	assert_eq(p.size(), 9)
-	var m := box.slice_margins()
-	assert_almost_eq(m.x, Plaques.SLICE_LEFT * s, 0.01, "left margin over the left cluster")
-	assert_almost_eq(m.z, Plaques.SLICE_RIGHT * s, 0.01, "right margin over the right cluster")
-	for k in [0, 2, 6, 8]:  # the corners: drawn at the plaque's own scale, both axes
-		var dst: Rect2 = p[k][0]
-		var src: Rect2 = p[k][1]
-		assert_almost_eq(dst.size.x / src.size.x, s, 0.001, "corner %d keeps its width" % k)
-		assert_almost_eq(dst.size.y / src.size.y, s, 0.001, "corner %d keeps its height" % k)
-	for k in [3, 5]:  # the clusters' middle rows: the same scale across
-		assert_almost_eq((p[k][0] as Rect2).size.x / (p[k][1] as Rect2).size.x, s, 0.001)
-	var mid: Rect2 = p[4][0]
-	assert_almost_eq(mid.size.x, rect.size.x - m.x - m.z, 0.01, "the middle takes the rest")
-	assert_gt(mid.size.x / (p[4][1] as Rect2).size.x, s * 2.0, "the middle stretches")
-	assert_eq((p[8][0] as Rect2).end, rect.end, "the pieces fill the rect")
-	assert_eq(box.texture.resource_path, Plaques.path(&"blue"))
-	assert_gt(box.content_margin_left, 0.0)
-	assert_lt(box.content_margin_left, m.x, "text starts inside the dark panel, before the stretch")
+	assert_true(box is StoneBox, "Ember stone, not a crystal texture")
+	assert_eq(box.inlay, CardFrames.tint(&"blue"), "the groove in the plaque's colour")
+	assert_gt(box.inlay_y, 0.0, "along its foot")
+	var m := PlaqueBox.margins(100.0)
+	assert_eq(box.content_margin_left, m.x)
+	assert_eq(box.content_margin_bottom, m.w)
+	assert_gt(box.content_margin_bottom, box.inlay_y, "the text stays above the groove")
+	assert_eq(box.rim.a, 0.0, "no rim on a plain plaque")
+	assert_eq(Plaques.box(&"gold", 100.0).rim, EmberStone.GOLD, "the gold plaque's rim inlay")
+	var c := Plaques.content_size(100.0, 600.0, 4.0)
+	assert_almost_eq(c.x, 600.0 - m.x - m.z - 8.0, 0.01)
+	assert_almost_eq(c.y, 100.0 - m.y - m.w, 0.01)
 
 
 func test_a_plaque_draws_in_a_panel_at_its_natural_size() -> void:
@@ -81,12 +72,14 @@ func test_a_plaque_draws_in_a_panel_at_its_natural_size() -> void:
 	panel.custom_minimum_size = box.natural_size()
 	add_child_autofree(panel)
 	await wait_process_frames(2)
-	assert_almost_eq(panel.size.x, Plaques.SIZE.x * 120.0 / Plaques.SIZE.y, 0.5)
 	assert_almost_eq(panel.size.y, 120.0, 0.5)
+	assert_gte(panel.size.x, 120.0 * 2.0 - 0.5)
 	box.set_focused(false)
 	assert_eq(box.tint(), Plaques.IDLE, "unfocused: dimmer")
+	assert_eq(box.focus, 0.0)
 	box.set_focused(true)
-	assert_eq(box.tint(), Color.WHITE)
+	assert_eq(box.tint(), 1.0)
+	assert_eq(box.focus, 1.0, "focused: lit")
 
 
 func test_plaque_colours_come_from_the_card_frames_table() -> void:
@@ -222,9 +215,11 @@ func test_build_cards_and_title_fit_in_english_and_spanish() -> void:
 		var w := (
 			bold.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, BuildPicker.TITLE_FONT).x
 		)
-		var box := BuildArt.TITLE_BOX.size * BuildArt.TITLE_SCALE
-		assert_lt(w, box.x, "%s: the title fits the plaque's panel" % lang)
-		assert_lt(bold.get_height(BuildPicker.TITLE_FONT), box.y)
+		var box := Plaques.content_size(
+			BuildPicker.TITLE_PLAQUE.y, BuildPicker.TITLE_PLAQUE.x, 10.0
+		)
+		assert_lt(w, box.x, "%s: the title fits its plaque" % lang)
+		assert_lt(bold.get_height(BuildPicker.TITLE_FONT), box.y + 12.0)
 	TranslationServer.set_locale(_locale)
 
 
@@ -237,20 +232,25 @@ func test_the_build_picker_title_is_choose_your_weapon() -> void:
 	TranslationServer.set_locale(_locale)
 
 
-func test_the_build_picker_wears_the_owners_art_and_no_glitch() -> void:
+func test_the_build_picker_is_carved_stone_with_no_crystal_art() -> void:
 	var picker := BuildPicker.new(_defs(["res://data/builds"]), &"blade")
 	add_child_autofree(picker)
 	picker.settle()
-	assert_not_null(
-		picker.find_child("MenuBackdrop", true, false), "the Cold-glass backdrop behind"
-	)
+	assert_not_null(picker.find_child("MenuBackdrop", true, false), "the ember backdrop behind")
 	assert_eq(picker.theme, MenuStyle.theme(), "the menus' theme")
-	assert_eq(BuildArt.frame(0).resource_path, BuildArt.path("frame_blade"))
-	assert_eq(BuildArt.frame(1).resource_path, BuildArt.path("frame_gun"))
-	assert_eq(BuildArt.emblem(1).resource_path, BuildArt.path("emblem_gun"))
 	assert_eq(picker.title_label().text, "UI_CHOOSE_BUILD")
+	assert_true(picker.title_plaque().get_theme_stylebox("panel") is PlaqueBox, "a stone plaque")
+	assert_eq(picker.find_children("*", "TextureRect", true, false).size(), 0, "no crystal art")
 	assert_eq(picker.cards[0].custom_minimum_size, BuildCard.SIZE)
-	var frame := Rect2(Vector2.ZERO, BuildArt.FRAME_SIZE)
-	assert_true(frame.encloses(BuildArt.EMBLEM_BOX) and frame.encloses(BuildArt.TEXT_BOX))
-	var h := BuildCard.SIZE.y + BuildArt.TITLE_SIZE.y * BuildArt.TITLE_SCALE + 200.0
+	for c in picker.cards:
+		assert_true(c.panel_box() is StoneBox, "%s: a stone tablet" % c.name)
+	var card := Rect2(Vector2.ZERO, BuildCard.SIZE)
+	assert_true(card.encloses(BuildCard.emblem_rect()) and card.encloses(BuildCard.text_rect()))
+	assert_lt(BuildCard.emblem_rect().end.y, BuildCard.text_rect().position.y, "symbol above text")
+	var h := BuildCard.SIZE.y + BuildPicker.TITLE_PLAQUE.y + 200.0
 	assert_lt(h, 1080.0, "title, cards, hint and Back fit 1080 px")
+	picker.cards[0].grab_focus()
+	picker.cards[0].seek(5.0)
+	assert_eq(picker.cards[0].panel_box().focus, 0.0, "the box reads the focus on draw")
+	await wait_process_frames(2)
+	assert_gt(picker.cards[0].panel_box().focus, 0.0, "the focused card lights up")

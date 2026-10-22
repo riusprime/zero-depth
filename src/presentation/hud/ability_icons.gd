@@ -71,7 +71,7 @@ static func shapes(id: StringName) -> Array:
 				),
 				_line([Vector2(0.12, 0.62), Vector2(0.38, 0.88)], 0.07),
 				_line([Vector2(0.24, 0.76), Vector2(0.1, 0.9)], 0.08),
-				_arc(Vector2(0.5, 0.5), 0.42, 150.0, 300.0, 0.05),
+				ItemIcons._arc(Vector2(0.5, 0.5), 0.42, 150.0, 300.0, 0.05),
 			]
 		&"pulse_gun":
 			return [
@@ -263,12 +263,3 @@ static func _poly(pts: Array, dark := false) -> Dictionary:
 
 static func _circle(c: Vector2, r: float, w: float, dark := false) -> Dictionary:
 	return {"t": "circle", "c": c, "r": r, "w": w, "dark": dark}
-
-
-## An arc as a polyline (degrees, y down: -90 is up).
-static func _arc(c: Vector2, r: float, from_deg: float, to_deg: float, w: float) -> Dictionary:
-	var pts := []
-	for k in 13:
-		var a := deg_to_rad(lerpf(from_deg, to_deg, k / 12.0))
-		pts.append(c + Vector2(cos(a), sin(a)) * r)
-	return _line(pts, w)

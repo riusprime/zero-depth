@@ -32,7 +32,7 @@ static func curse_amount(effect: StringName, amount: float) -> int:
 	if CurseDefinition.COUNTS.has(effect):
 		return int(round(amount))
 	if CurseDefinition.SECONDS.has(effect):
-		return int(round(amount * SimTick.TICKS_PER_SECOND))
+		return SimTick.seconds_to_ticks(amount)
 	return int(round(amount * 10.0))
 
 
@@ -50,6 +50,7 @@ static func compile_events(repo: ContentRepository) -> Array[EventTable]:
 		t.min_floor = def.min_floor
 		t.requires = EventDefinition.REQUIRES.find(def.requires)
 		t.deep_only = def.deep_only  # v0.5.5 DS (S5)
+		t.curse_room = def.curse_room  # v0.8.0 N17 (O75)
 		for c in def.choices:
 			t.labels.append(c.label_key)
 			var cost := EventChoiceDefinition.COSTS.find(c.cost)
@@ -74,7 +75,7 @@ static func _cost_amount(cost: int, amount: float) -> int:
 		Events.Cost.HP, Events.Cost.MAX_HP:
 			return int(round(amount * 10.0))
 		Events.Cost.DEFEND:
-			return int(round(amount * SimTick.TICKS_PER_SECOND))
+			return SimTick.seconds_to_ticks(amount)
 	return int(round(amount))
 
 
@@ -88,24 +89,34 @@ static func compile_rules(def: EventRulesDefinition) -> EventRules:
 	t.clear_radius_m = def.clear_radius_m
 	t.reward_gap_m = def.reward_gap_m
 	t.cursed_chest_permille = int(round(def.cursed_chest_chance * 10.0))
+	t.cursed_chest_first_floor = def.cursed_chest_first_floor  # v0.7.5 MG (N10)
+	t.cursed_chest_every_floors = def.cursed_chest_every_floors
+	t.cursed_chests_per_floor = def.cursed_chests_per_floor
 	t.elite_hp_bonus_permille = int(round(def.elite_hp_bonus * 10.0))
 	t.ambush_min_distance_m = def.ambush_min_distance_m
 	t.defend_radius_m = def.defend_radius_m
 	t.cleanse_price = def.cleanse_price
 	t.core_stagger_permille = int(round(def.core_stagger_share * 10.0))  # v0.6.0 CU: core theft
-	t.core_stagger_ticks = int(round(def.core_stagger_seconds * SimTick.TICKS_PER_SECOND))
-	t.core_window_ticks = int(round(def.core_window_seconds * SimTick.TICKS_PER_SECOND))
+	t.core_stagger_ticks = SimTick.seconds_to_ticks(def.core_stagger_seconds)
+	t.core_window_ticks = SimTick.seconds_to_ticks(def.core_window_seconds)
 	t.core_mod_weight = def.core_mod_weight
 	t.hunt_range_m = def.hunt_range_m
 	t.drop_offset_m = def.drop_offset_m
+	t.curse_room_floor_chance_permille = def.curse_room_floor_chance_permille  # v0.8.0 N17 (O75)
+	t.curse_room_deep_chance_permille = def.curse_room_deep_chance_permille  # v0.8.0 N19 (O80)
 	return t
 
 
-## Sets up a built floor's event rooms from the repository (Main, the shot scripts and the tests).
-static func setup(w: World, repo: ContentRepository) -> void:
+## Sets up a built floor's event rooms from the repository (Main, the shot scripts and the tests). `curse_rules`
+## (v0.8.0 N17, N19; Events.CURSE_RULES_*): a floor saved under older floor rules keeps its event rooms as they were
+## (FloorScenario.curse_room_rules_of).
+static func setup(
+	w: World, repo: ContentRepository, curse_rules: int = Events.CURSE_RULES_N19
+) -> void:
 	Events.setup(
 		w,
 		compile_events(repo),
 		compile_curses(repo),
-		compile_rules(repo.get_def(&"event_rules", &"floor"))
+		compile_rules(repo.get_def(&"event_rules", &"floor")),
+		curse_rules
 	)

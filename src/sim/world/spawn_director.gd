@@ -18,6 +18,9 @@ extends RefCounted
 ## - each arrives with its max HP and damage scaled by the tier (SpawnTable; the floor scaling is already in the
 ##   compiled enemy tables, RunState.scale_enemies), then (v0.5.5 DS, D4) the floor's hidden catch-up (CatchUp).
 ## With no anchor far enough, that pack is skipped and the interval starts again.
+## v0.8.0 N5 (owner O58): with the intensity director (SpawnTable.intensity) packs come only while it builds up or
+## peaks (Intensity.sending); pulling back and quiet hold them (the interval clock runs down and waits at 0). It
+## gates only when: the kind, size, tier and scaling above are untouched.
 
 ## Distance between the rings of a pack's spots, and their count per ring.
 const PACK_STEP_M := 1.1
@@ -35,7 +38,10 @@ static func advance(w: World) -> void:
 	w.run_ticks += 1
 	if w.spawn_cd > 0:
 		w.spawn_cd = maxi(0, w.spawn_cd - 1 - Events.spawn_haste(w))  # v0.5.0 EV: Wandering Drone
+	Intensity.advance(w)  # v0.8.0 N5 (owner O58): intensity and the build-up / peak / pull back / quiet rhythm
 	if w.spawn_cd > 0:
+		return
+	if not Intensity.sending(w):  # v0.8.0 N5: pulling back or quiet: no new packs (the enemies out stay)
 		return
 	# v0.4.0 TU: the cap and the interval follow the floor's difficulty curve (SpawnTable.cap_now, interval_now).
 	# v0.5.5 AR: no Overrun multiplier any more: a sealed arena (the Overrun too) pauses this director (Arenas).
@@ -43,7 +49,7 @@ static func advance(w: World) -> void:
 	var room := t.cap_now(w.floor_index, ticks) - WaveDirector.enemies_alive(w)
 	if room <= 0:
 		return
-	w.spawn_cd = t.interval_now(ticks)
+	w.spawn_cd = Intensity.interval(w, t.interval_now(ticks))  # v0.8.0 N5: the build-up's ramp
 	_spawn_pack(w, t, ticks, room)
 
 

@@ -1,5 +1,5 @@
 class_name ChargerAvatar
-extends Node3D
+extends AvatarBase
 ## The Charger (v0.2.0 L17; docs/art/enemies_visual_reference.png, first creature): a long red hood with a ridged,
 ## faceted roof that peaks over a dark shield-shaped face with a glowing red gem visor, a back flap that juts out
 ## behind, and a charcoal body under it, carried spider-like on four grey segmented legs: a big front pair that
@@ -7,6 +7,12 @@ extends Node3D
 ## Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance() animates in frame
 ## time, and nothing here feeds back into the sim. ActorViews puts it under the actor's facing node, so +X is the
 ## front and +Z the right; it never turns itself.
+## v0.8.0 TG (owner O4, Q3): no lane on the ground any more; the windup reads from the body (AvatarBase "tell"): it
+## sinks into a crouch and draws back as the windup's progress climbs, the visor brightens and flashes just before
+## the charge, and the body holds the locked facing (the sim's) the whole time.
+## v0.8.0 P1 (owner O26): the talons rise and hold by STRIKE_RAISE_BY of the windup's progress (AvatarBase.strike_raise,
+## the sim's progress, not a timer), then the charge's start (the sim's ACTIVE) throws them out ahead in STRIKE_SNAP_S
+## (strike_swing), held through the run, and they come back after it.
 
 ## The legs, right side (the left mirrors it): the hip, then per segment (femur, tibia, talon) its length, its yaw
 ## (0 is the front, negative turns toward +Z, the right) and its pitch (0 is level, negative points down). Each
@@ -33,40 +39,41 @@ const TELEPORT_SPEED := 40.0
 const RISE_TIME := 0.35
 const OUTLINE_M := 0.018
 
-## Colours sampled from the reference sheet (its lit and shaded tones, as albedo under the game's light).
-const HOOD_COLOR := Color("#D8433A")
-const FLAP_COLOR := Color("#C63B34")
+## Colours sampled from the reference sheet (its lit and shaded tones, as albedo under the game's light). v0.8.0 EC: the
+## hood (body), the back flap (trim), the front legs (grey) and the visor (eye) come from EnemyPalettes per kind.
 const FACE_COLOR := Color("#16181D")
 const CORE_COLOR := Color("#24272D")
-const LEG_COLOR := Color("#6E605D")
 ## The back legs sit in the body's shadow on the sheet: a darker grey.
 const BACK_LEG_COLOR := Color("#4A4446")
 const JOINT_COLOR := Color("#34363C")
 const TALON_COLOR := Color("#E6B596")
-const VISOR_COLOR := Color("#FF2A22")
 const VISOR_ENERGY := 1.4
 
+## v0.8.0 FV (owner O87, the horde lag): the body and leg meshes (geometry only: every colour is a per-instance
+## material), built once and shared by every Charger and Hatchling, as the Warden's are. A horde respawning a few
+## Chargers a second rebuilt about 20 SurfaceTool meshes for each.
+static var _meshes := {}
+## v0.8.0 HR: the face's material, one for every Charger.
+static var _face_mat: StandardMaterial3D
+
 ## Parts, read by tests and by ActorViews (flash materials; the visor's glow is its own).
+## The kind this model draws (the Charger, or the Brood Mother's Hatchling at two thirds of the size): its colours.
+var kind := WorldReader.KIND_CHARGER
 var body: Node3D
 var visor: MeshInstance3D
 ## Hip nodes, front right, front left, back right, back left.
 var legs: Array[Node3D] = []
-var body_materials: Array[StandardMaterial3D] = []
 
-var _visor_mat := StandardMaterial3D.new()
+## v0.8.0 HR (O89): the visor's shared accent (EnemyLooks.accent), its energy this Charger's GLOW (last set: _visor_e).
+var _visor_mat: ShaderMaterial
 # Everything hangs from this node, which sinks into the ground before the rise; this node itself is never moved.
 var _model := Node3D.new()
 var _femurs: Array[Node3D] = []
 var _tibias: Array[Node3D] = []
 var _talons: Array[Node3D] = []
 # Sim state from the last sync.
-var _fresh := true
-var _last_tick := -1
-var _last_pos := Vector2.ZERO
-var _vel := Vector2.ZERO
 var _state := WorldReader.STATE_MOVE
 # Smoothed animation state.
-var _t := 0.0
 var _speed := 0.0
 var _walk := 0.0
 var _phase := 0.0
@@ -74,36 +81,39 @@ var _wind := 0.0
 var _lunge := 0.0
 var _daze := 0.0
 var _rise := 1.0
+# v0.8.0 TG: the windup's progress (0..1) from the last sync.
+var _tell_p := 0.0
+# v0.8.0 HV: the body's position this pose (the legs' hips follow it) and the visor energy last written.
+var _body_pos := Vector3.ZERO
+var _visor_e := VISOR_ENERGY
 
 
 ## Builds the model. technique "xray" adds an enemy-coloured silhouette twin to the hood and the body, as
-## ActorViews does for its body pieces; the thin legs have none.
-func setup(outline_color: Color, technique: StringName = &"xray") -> void:
+## ActorViews does for its body pieces; the thin legs have none. `p_kind` picks the colours (EnemyPalettes).
+func setup(
+	outline_color: Color, technique: StringName = &"xray", p_kind := WorldReader.KIND_CHARGER
+) -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	kind = p_kind
 	var team := ThemePalette.color(&"enemy_body")
 	add_child(_model)
 	body = Node3D.new()
 	_model.add_child(body)
 	var shell := [
-		[_hood_mesh(), HOOD_COLOR], [_flap_mesh(), FLAP_COLOR], [_core_mesh(), CORE_COLOR]
+		[_hood_mesh(), EnemyPalettes.color(kind, &"body")],
+		[_flap_mesh(), EnemyPalettes.color(kind, &"trim")],
+		[_core_mesh(), CORE_COLOR]
 	]
 	_piece(body, shell, outline_color, team, technique)
 	var face := MeshInstance3D.new()
 	face.mesh = _face_mesh()
-	var fm := StandardMaterial3D.new()
-	fm.albedo_color = FACE_COLOR
-	fm.roughness = 1.0
-	_write_stencil(fm)
-	face.material_override = fm
+	face.material_override = _face_material()  # v0.8.0 HR: one for every Charger
 	face.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(face)
 	visor = MeshInstance3D.new()
 	visor.mesh = _visor_mesh()
-	_visor_mat.albedo_color = VISOR_COLOR
-	_visor_mat.emission_enabled = true
-	_visor_mat.emission = VISOR_COLOR
-	_visor_mat.emission_energy_multiplier = VISOR_ENERGY
-	_write_stencil(_visor_mat)
+	var eye := EnemyPalettes.color(kind, &"eye")
+	_visor_mat = EnemyLooks.accent(eye, eye, VISOR_ENERGY, null)  # v0.8.0 HR: shared, GLOW per Charger
 	visor.material_override = _visor_mat
 	visor.position = Vector3(0.155, 0.51, 0)
 	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -117,31 +127,31 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 
 ## Reads the actor's state after a sim tick.
 func sync(reader: WorldReader, i: int) -> void:
-	apply_state({"tick": reader.tick(), "pos": reader.actor_pos(i), "state": reader.actor_state(i)})
+	apply_state(
+		{
+			"tick": reader.tick(),
+			"pos": reader.actor_pos(i),
+			"state": reader.actor_state(i),
+			"windup": windup_progress(reader, i),
+		}
+	)
 
 
-## The same as sync(), from plain values (tests drive the avatar with this).
+## The same as sync(), from plain values (tests drive the avatar with this); "windup" (0..1, optional) is the
+## windup's progress.
 func apply_state(s: Dictionary) -> void:
 	var tick: int = s["tick"]
 	var pos: Vector2 = s["pos"]
-	if not _fresh and tick > _last_tick:
-		var v := (pos - _last_pos) * (60.0 / float(tick - _last_tick))
-		_vel = v if v.length() <= TELEPORT_SPEED and tick - _last_tick <= 30 else Vector2.ZERO
-	elif tick < _last_tick:
-		_vel = Vector2.ZERO
-	_last_tick = tick
-	_last_pos = pos
+	_tell_p = clampf(float(s.get("windup", 0.0)), 0.0, 1.0)
+	_track_motion(tick, pos, TELEPORT_SPEED)
 	var prev := _state
 	_state = s["state"]
+	strike_note(_state)  # v0.8.0 P1: the charge's start throws the talons out
 	if _state == WorldReader.STATE_SPAWN:
 		_rise = 0.0
 	elif _fresh and prev != WorldReader.STATE_SPAWN:
 		_rise = 1.0
 	_fresh = false
-
-
-func _process(delta: float) -> void:
-	advance(delta)
 
 
 ## Advances the animation by `delta` seconds of frame time.
@@ -152,8 +162,11 @@ func advance(delta: float) -> void:
 	_t += dt
 	_speed = lerpf(_speed, _vel.length(), _rate(12.0, dt))
 	var st := _state
-	_wind = move_toward(_wind, 1.0 if st == WorldReader.STATE_WINDUP else 0.0, dt * 6.0)
-	_lunge = move_toward(_lunge, 1.0 if st == WorldReader.STATE_ACTIVE else 0.0, dt * 12.0)
+	strike_advance(dt)
+	_wind = strike_raised(
+		st == WorldReader.STATE_WINDUP, _tell_p, move_toward(_wind, 0.0, dt * 6.0)
+	)
+	_lunge = strike_swing()
 	_daze = move_toward(_daze, 1.0 if st == WorldReader.STATE_RECOVER else 0.0, dt * 4.0)
 	if st != WorldReader.STATE_SPAWN:
 		_rise = move_toward(_rise, 1.0, dt / RISE_TIME)
@@ -169,8 +182,13 @@ func windup_amount() -> float:
 	return _wind
 
 
+## v0.8.0 TG: 0..1 how deep the windup crouch is (from the windup's progress).
+func crouch_amount() -> float:
+	return tell_crouch(_tell_p) if _state == WorldReader.STATE_WINDUP else 0.0
+
+
 func visor_energy() -> float:
-	return _visor_mat.emission_energy_multiplier
+	return _visor_e
 
 
 ## The talon tips in this node's frame, front right, front left, back right, back left.
@@ -193,10 +211,6 @@ func body_lift() -> float:
 	return _model.position.y + body.position.y
 
 
-func _rate(per_second: float, dt: float) -> float:
-	return 1.0 - exp(-per_second * dt)
-
-
 func _pose() -> void:
 	var rise := smoothstep(0.0, 1.0, _rise)
 	var lunge := _lunge * (1.0 - _daze)
@@ -204,31 +218,46 @@ func _pose() -> void:
 	# shove forward on the lunge, slump and list to one side when dazed.
 	var bob := absf(sin(_phase * 2.0)) * 0.02 * _walk
 	var breath := sin(_t * 2.4) * 0.008 * (1.0 - _walk)
-	var tremble := sin(_t * 47.0) * 0.006 * _wind
-	var drop := _daze * 0.09 - _wind * 0.05 + lunge * 0.07
+	var calm := ViewPrefs.reduced_motion
+	var tremble := 0.0 if calm else sin(_t * 47.0) * 0.006 * _wind
+	var crouch := crouch_amount()
+	var drop := _daze * 0.09 - _wind * 0.05 + lunge * 0.07 + crouch * 0.09
 	var y := bob + breath + tremble - drop
-	_model.position = Vector3(0, -(1.0 - rise) * 0.45, 0)
+	var sink := Vector3(0, -(1.0 - rise) * 0.45, 0)
+	if _model.position != sink:  # v0.8.0 HV: still once risen (moving it re-dirties the whole model)
+		_model.position = sink
 	# The lunge throws the whole hood forward, nose down and stretched long, so it reads from above.
-	body.position = Vector3(-_wind * 0.06 + lunge * 0.16, y, 0)
-	body.rotation = Vector3(_daze * 0.16, 0, _wind * 0.3 - lunge * 0.3 - _daze * 0.1)
-	body.scale = Vector3(1.0 + lunge * 0.14, 1.0 - lunge * 0.06, 1.0 - lunge * 0.04)
+	# v0.8.0 HV: one transform write (rotation then scale, as Node3D composes them) instead of three.
+	_body_pos = Vector3(-_wind * 0.06 - crouch * 0.07 + lunge * 0.16, y, 0)
+	var rot := Vector3(_daze * 0.16, 0, _wind * 0.3 - lunge * 0.3 - _daze * 0.1)
+	var scl := Vector3(1.0 + lunge * 0.14, 1.0 - lunge * 0.06, 1.0 - lunge * 0.04)
+	body.transform = Transform3D(Basis.from_euler(rot) * Basis.from_scale(scl), _body_pos)
+	var shimmer := 0.0 if calm else 0.5 * sin(_t * 30.0)
+	var tell := tell_glow(_tell_p, _t, calm) if _state == WorldReader.STATE_WINDUP else 1.0
 	var glow := (
-		VISOR_ENERGY
-		* (1.0 + _wind * (1.6 + 0.5 * sin(_t * 30.0)) + lunge * 1.2)
-		* (1.0 - _daze * 0.7)
+		VISOR_ENERGY * (1.0 + _wind * (1.6 + shimmer) + lunge * 1.2) * tell * (1.0 - _daze * 0.7)
 	)
-	_visor_mat.emission_energy_multiplier = glow
+	set_visor_energy(glow)  # v0.8.0 HV: written on a change only (v0.8.0 HR: the visor's GLOW)
 	for k in legs.size():
 		_pose_leg(k, y, lunge, rise)
 
 
+## v0.8.0 HV (owner O89, the horde lag): the same maths as before in plain floats, no Array built (it made about 40
+## Arrays per Charger a frame), and one transform write per segment (tests/unit/presentation/
+## test_charger_pose_hv.gd compares it with the old formula).
 func _pose_leg(k: int, body_y: float, lunge: float, rise: float) -> void:
 	var front := k < 2
 	var side := 1.0 if k % 2 == 0 else -1.0
 	var hip: Vector3 = FRONT_HIP if front else BACK_HIP
-	var lens: Array = FRONT_LEN if front else BACK_LEN
-	var yaw: Array = (FRONT_YAW if front else BACK_YAW).duplicate()
-	var pitch: Array = (FRONT_PITCH if front else BACK_PITCH).duplicate()
+	var l0: float = FRONT_LEN[0] if front else BACK_LEN[0]
+	var l1: float = FRONT_LEN[1] if front else BACK_LEN[1]
+	var l2: float = FRONT_LEN[2] if front else BACK_LEN[2]
+	var y0: float = FRONT_YAW[0] if front else BACK_YAW[0]
+	var y1: float = FRONT_YAW[1] if front else BACK_YAW[1]
+	var y2: float = FRONT_YAW[2] if front else BACK_YAW[2]
+	var p0: float = FRONT_PITCH[0] if front else BACK_PITCH[0]
+	var p1: float = FRONT_PITCH[1] if front else BACK_PITCH[1]
+	var p2: float = FRONT_PITCH[2] if front else BACK_PITCH[2]
 	# Diagonal pairs step together: front right with back left, front left with back right.
 	var off := 0.0 if (k == 0 or k == 3) else PI
 	var lift := maxf(0.0, cos(_phase + off)) * 0.45 * _walk
@@ -238,50 +267,60 @@ func _pose_leg(k: int, body_y: float, lunge: float, rise: float) -> void:
 	)
 	var sweep := sin(_phase + off) * 0.3 * _walk
 	# Hips follow the body; the femur tips to keep the feet near the ground (a cheap stand-in for IK).
-	var hold := clampf(-body_y / float(lens[0]), -0.6, 0.6)
-	# Toward the front is +yaw on the right side (the left mirrors it).
-	var add_yaw := [sweep, sweep, sweep]
-	var add_pitch := [lift + fidget + hold, lift * 0.5, 0.0]
+	var hold := clampf(-body_y / l0, -0.6, 0.6)
+	# Toward the front is +yaw on the right side (the left mirrors it). Each sum adds its terms in the old order.
+	var ay0 := sweep
+	var ay1 := sweep
+	var ay2 := sweep
+	var ap0 := lift + fidget + hold
+	var ap1 := lift * 0.5
+	var ap2 := 0.0
 	if front:
 		# Wind-up: claws raised high and pointed forward. Lunge: the arms thrown out ahead, talons forward.
-		add_yaw = _plus(
-			add_yaw, [_wind * 0.3 + lunge * 0.55, _wind * 0.2 + lunge * 0.2, -lunge * 0.5]
-		)
-		add_pitch = _plus(
-			add_pitch,
-			[_wind * 0.9 + lunge * 0.55, _wind * 1.7 + lunge * 1.1, _wind * 1.5 + lunge * 0.7]
-		)
+		ay0 = ay0 + (_wind * 0.3 + lunge * 0.55)
+		ay1 = ay1 + (_wind * 0.2 + lunge * 0.2)
+		ay2 = ay2 + -lunge * 0.5
+		ap0 = ap0 + (_wind * 0.9 + lunge * 0.55)
+		ap1 = ap1 + (_wind * 1.7 + lunge * 1.1)
+		ap2 = ap2 + (_wind * 1.5 + lunge * 0.7)
 	else:
 		# Back legs brace on the wind-up and kick out behind on the lunge.
-		add_yaw = _plus(add_yaw, [-_wind * 0.15 - lunge * 0.35, -lunge * 0.3, -lunge * 0.3])
-		add_pitch = _plus(add_pitch, [-_wind * 0.1 + lunge * 0.3, lunge * 0.5, lunge * 0.3])
+		ay0 = ay0 + (-_wind * 0.15 - lunge * 0.35)
+		ay1 = ay1 + -lunge * 0.3
+		ay2 = ay2 + -lunge * 0.3
+		ap0 = ap0 + (-_wind * 0.1 + lunge * 0.3)
+		ap1 = ap1 + lunge * 0.5
+		ap2 = ap2 + lunge * 0.3
 	# Dazed: legs splay, the talons go limp and twitch.
 	var twitch := sin(_t * 9.0 + k) * 0.05 * _daze
-	add_yaw = _plus(add_yaw, [-_daze * 0.15, -_daze * 0.15, -_daze * 0.2])
-	add_pitch = _plus(add_pitch, [_daze * 0.3, 0.0, _daze * 0.35 + twitch])
+	ay0 = ay0 + -_daze * 0.15
+	ay1 = ay1 + -_daze * 0.15
+	ay2 = ay2 + -_daze * 0.2
+	ap0 = ap0 + _daze * 0.3
+	ap1 = ap1 + 0.0
+	ap2 = ap2 + (_daze * 0.35 + twitch)
 	# Rising out of the ground the legs start folded up against the body.
-	add_pitch = _plus(add_pitch, [(1.0 - rise) * 1.2, (1.0 - rise) * 1.4, (1.0 - rise) * 1.0])
-	legs[k].position = Vector3(hip.x + body.position.x, hip.y + body_y, hip.z * side)
+	ap0 = ap0 + (1.0 - rise) * 1.2
+	ap1 = ap1 + (1.0 - rise) * 1.4
+	ap2 = ap2 + (1.0 - rise) * 1.0
+	legs[k].position = Vector3(hip.x + _body_pos.x, hip.y + body_y, hip.z * side)
 	var at := Vector3.ZERO
-	var segs: Array[Node3D] = [_femurs[k], _tibias[k], _talons[k]]
-	for j in 3:
-		var y: float = (yaw[j] + add_yaw[j]) * side
-		var p: float = pitch[j] + add_pitch[j]
-		segs[j].position = at
-		segs[j].rotation = Vector3(0, y, p)
-		var reach: float = lens[j]
-		at += Vector3(cos(p) * cos(y), sin(p), -cos(p) * sin(y)) * reach
+	at = _pose_seg(_femurs[k], at, (y0 + ay0) * side, p0 + ap0, l0)
+	at = _pose_seg(_tibias[k], at, (y1 + ay1) * side, p1 + ap1, l1)
+	_pose_seg(_talons[k], at, (y2 + ay2) * side, p2 + ap2, l2)
 
 
-static func _plus(a: Array, b: Array) -> Array:
-	return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+## One leg segment at `at`, turned (yaw y, pitch p), in one transform write; returns where the next one starts.
+static func _pose_seg(seg: Node3D, at: Vector3, y: float, p: float, reach: float) -> Vector3:
+	seg.transform = Transform3D(Basis.from_euler(Vector3(0, y, p)), at)
+	return at + Vector3(cos(p) * cos(y), sin(p), -cos(p) * sin(y)) * reach
 
 
 func _build_leg(
 	hip: Vector3, lens: Array, side: float, front: bool, outline: Color, team: Color
 ) -> void:
 	var s := 1.0 if front else 0.8
-	var c := LEG_COLOR if front else BACK_LEG_COLOR
+	var c := EnemyPalettes.color(kind, &"grey") if front else BACK_LEG_COLOR
 	var root := Node3D.new()
 	root.position = Vector3(hip.x, hip.y, hip.z * side)
 	_model.add_child(root)
@@ -348,6 +387,13 @@ static func _ring(x: float, peak: float, sh: Vector3, fl: Vector3, hem: Vector3)
 
 ## The hood: a ridged roof from the face's arch back to a sharp corner that juts out behind the ridge.
 static func _hood_mesh() -> ArrayMesh:
+	var key: String = "hood"
+	if not _meshes.has(key):
+		_meshes[key] = _build_hood_mesh()
+	return _meshes[key]
+
+
+static func _build_hood_mesh() -> ArrayMesh:
 	var rings := _crumple(_hood_rings(), 1)
 	var tris := _shell(rings)
 	var back: Array = rings[rings.size() - 1]
@@ -357,7 +403,7 @@ static func _hood_mesh() -> ArrayMesh:
 		tris.append([back[k], back[k + 1], tail])
 	tris.append([back[0], low, tail])
 	tris.append([back[back.size() - 1], tail, low])
-	return _mesh_from(tris, Vector3(-0.08, 0.6, 0))
+	return flat_mesh(tris, Vector3(-0.08, 0.6, 0))
 
 
 ## Key rings with `n` in-between rings after each, each point pushed in or out a little: the cloth crumples into
@@ -408,6 +454,13 @@ static func _shell(rings: Array) -> Array:
 ## A second, lower layer under the roof: a mantle whose hem runs level from the face to the back, so it shows
 ## below the roof's rising lower edge and juts out to a corner behind and at the back sides.
 static func _flap_mesh() -> ArrayMesh:
+	var key: String = "flap"
+	if not _meshes.has(key):
+		_meshes[key] = _build_flap_mesh()
+	return _meshes[key]
+
+
+static func _build_flap_mesh() -> ArrayMesh:
 	var key := [
 		_ring(
 			0.04,
@@ -437,11 +490,18 @@ static func _flap_mesh() -> ArrayMesh:
 	var tail := Vector3(-0.64, 0.5, 0)
 	for k in back.size() - 1:
 		tris.append([back[k], back[k + 1], tail])
-	return _mesh_from(tris, Vector3(-0.2, 0.62, 0))
+	return flat_mesh(tris, Vector3(-0.2, 0.62, 0))
 
 
 ## The dark body under the hood: a squat faceted lump that closes the hood's open bottom.
 static func _core_mesh() -> ArrayMesh:
+	var key: String = "core"
+	if not _meshes.has(key):
+		_meshes[key] = _build_core_mesh()
+	return _meshes[key]
+
+
+static func _build_core_mesh() -> ArrayMesh:
 	var sm := SphereMesh.new()
 	sm.radius = 0.2
 	sm.height = 0.24
@@ -457,12 +517,19 @@ static func _core_mesh() -> ArrayMesh:
 	var tris := []
 	for k in range(0, idx.size(), 3):
 		tris.append([verts[idx[k]], verts[idx[k + 1]], verts[idx[k + 2]]])
-	return _mesh_from(tris, Vector3(-0.1, 0.46, 0))
+	return flat_mesh(tris, Vector3(-0.1, 0.46, 0))
 
 
 ## The face: the roof's front arch set back into the hood, a dark collar joining the two, and a chin point under
 ## the visor.
 static func _face_mesh() -> ArrayMesh:
+	var key: String = "face"
+	if not _meshes.has(key):
+		_meshes[key] = _build_face_mesh()
+	return _meshes[key]
+
+
+static func _build_face_mesh() -> ArrayMesh:
 	var rim: Array = _hood_rings()[0]
 	var inner := []
 	var mid := Vector3(0.15, 0.52, 0)
@@ -480,11 +547,18 @@ static func _face_mesh() -> ArrayMesh:
 	for k in n:
 		tris.append([inner[k], inner[(k + 1) % n], centre])
 	tris.append([rim[0], inner[n - 1], rim[rim.size() - 1]])
-	return _mesh_from(tris, Vector3(-0.2, 0.52, 0))
+	return flat_mesh(tris, Vector3(-0.2, 0.52, 0))
 
 
 ## The visor: a tall hexagonal gem, its point toward the front.
 static func _visor_mesh() -> ArrayMesh:
+	var key: String = "visor"
+	if not _meshes.has(key):
+		_meshes[key] = _build_visor_mesh()
+	return _meshes[key]
+
+
+static func _build_visor_mesh() -> ArrayMesh:
 	var w := 0.032
 	var h := 0.062
 	var ring := [
@@ -503,12 +577,19 @@ static func _visor_mesh() -> ArrayMesh:
 		var b: Vector3 = ring[(k + 1) % ring.size()]
 		tris.append([a, b, tip])
 		tris.append([a, back, b])
-	return _mesh_from(tris, Vector3.ZERO)
+	return flat_mesh(tris, Vector3.ZERO)
 
 
 ## An armoured limb segment along +X: a six-sided plate, uneven round its sides, narrow at the joint, swelling to
 ## its widest three quarters down and bevelled in at the far end, with a raised ridge along its back.
 static func _plate(length: float, r0: float, r1: float) -> ArrayMesh:
+	var key: String = "plate %s %s %s" % [length, r0, r1]
+	if not _meshes.has(key):
+		_meshes[key] = _build_plate(length, r0, r1)
+	return _meshes[key]
+
+
+static func _build_plate(length: float, r0: float, r1: float) -> ArrayMesh:
 	var shape := [1.25, 0.95, 0.85, 1.05, 0.85, 0.95]
 	var stations := [
 		[0.0, r0 * 0.75],
@@ -537,11 +618,18 @@ static func _plate(length: float, r0: float, r1: float) -> ArrayMesh:
 	for k in 6:
 		tris.append([rings[0][k], e0, rings[0][(k + 1) % 6]])
 		tris.append([rings[3][k], rings[3][(k + 1) % 6], e1])
-	return _mesh_from(tris, Vector3(length * 0.5, 0, 0))
+	return flat_mesh(tris, Vector3(length * 0.5, 0, 0))
 
 
 ## A low-poly joint knuckle at the pivot.
 static func _ball(r: float) -> ArrayMesh:
+	var key: String = "ball %s" % r
+	if not _meshes.has(key):
+		_meshes[key] = _build_ball(r)
+	return _meshes[key]
+
+
+static func _build_ball(r: float) -> ArrayMesh:
 	var sm := SphereMesh.new()
 	sm.radius = r
 	sm.height = r * 2.0
@@ -555,11 +643,18 @@ static func _ball(r: float) -> ArrayMesh:
 	var tris := []
 	for k in range(0, idx.size(), 3):
 		tris.append([verts[idx[k]], verts[idx[k + 1]], verts[idx[k + 2]]])
-	return _mesh_from(tris, Vector3.ZERO)
+	return flat_mesh(tris, Vector3.ZERO)
 
 
 ## A talon along +X that curls toward -Y: a five-sided base, a bent middle ring and a sharp point.
 static func _talon_mesh(length: float, r: float) -> ArrayMesh:
+	var key: String = "talon %s %s" % [length, r]
+	if not _meshes.has(key):
+		_meshes[key] = _build_talon_mesh(length, r)
+	return _meshes[key]
+
+
+static func _build_talon_mesh(length: float, r: float) -> ArrayMesh:
 	var n := 5
 	var rings := []
 	var spine := [
@@ -589,77 +684,53 @@ static func _talon_mesh(length: float, r: float) -> ArrayMesh:
 	for k in n:
 		tris.append([last[k], last[(k + 1) % n], tip])
 		tris.append([rings[0][k], base, rings[0][(k + 1) % n]])
-	return _mesh_from(tris, Vector3(length * 0.4, -0.01, 0))
+	return flat_mesh(tris, Vector3(length * 0.4, -0.01, 0))
 
 
-## Flat-shaded triangles, each wound to face away from `centre`.
-static func _mesh_from(tris: Array, centre: Vector3) -> ArrayMesh:
-	var verts := PackedVector3Array()
-	var normals := PackedVector3Array()
-	for t: Array in tris:
-		var a: Vector3 = t[0]
-		var b: Vector3 = t[1]
-		var c: Vector3 = t[2]
-		var n := (b - a).cross(c - a)
-		if n.length_squared() < 1e-12:
-			continue
-		if n.dot((a + b + c) / 3.0 - centre) < 0.0:
-			var tmp := b
-			b = c
-			c = tmp
-			n = -n
-		n = n.normalized()
-		# Godot's front faces wind clockwise.
-		verts.append_array([a, c, b])
-		normals.append_array([n, n, n])
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = verts
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	var m := ArrayMesh.new()
-	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return m
+## v0.8.0 HR: the visor's glow on this Charger's visor (its GLOW), set only when it changes (v0.8.0 HV: by more
+## than 1e-4; the shared accent starts at VISOR_ENERGY, as _visor_e does).
+func set_visor_energy(e: float) -> void:
+	if absf(e - _visor_e) <= 1e-4 or visor == null:
+		return
+	_visor_e = e
+	visor.set_instance_shader_parameter(EnemyLooks.GLOW, e)
 
 
-## The face and visor mark the stencil like the body pieces do, so the hood's X-ray twin behind them stays hidden.
-static func _write_stencil(m: StandardMaterial3D) -> void:
-	m.stencil_mode = BaseMaterial3D.STENCIL_MODE_CUSTOM
-	m.stencil_flags = BaseMaterial3D.STENCIL_FLAG_WRITE
-	m.stencil_compare = BaseMaterial3D.STENCIL_COMPARE_ALWAYS
-	m.stencil_reference = 1
+## v0.8.0 HR: the face's material (it writes the stencil like the body), made once.
+static func _face_material() -> StandardMaterial3D:
+	if _face_mat == null:
+		_face_mat = StandardMaterial3D.new()
+		_face_mat.albedo_color = FACE_COLOR
+		_face_mat.roughness = 1.0
+		write_stencil(_face_mat)
+	return _face_mat
 
 
-## One mesh node from several [mesh, colour] parts, a surface each with its own outlined, flashable material;
-## technique "xray" adds one silhouette twin for the whole node.
+## One mesh node from several [mesh, colour] parts, a surface each on a shared, two-sided, outlined body plate
+## (v0.8.0 HR: EnemyLooks, the flash this Charger's HIT); technique "xray" adds the X-ray pass to each plate (it was
+## one silhouette twin node for the whole node, shrunk EnemyLooks.XRAY_SHRINK as the pass is).
 func _piece(
 	parent: Node3D, parts: Array, outline: Color, team: Color, technique: StringName
 ) -> MeshInstance3D:
-	var merged := ArrayMesh.new()
+	var key := "piece"
 	for part: Array in parts:
-		var m: ArrayMesh = part[0]
-		merged.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, m.surface_get_arrays(0))
+		key += " %d" % (part[0] as Object).get_instance_id()
+	var merged: ArrayMesh = _meshes.get(key)
+	if merged == null:  # v0.8.0 FV: one merged mesh per set of parts, shared
+		merged = ArrayMesh.new()
+		for part: Array in parts:
+			var m: ArrayMesh = part[0]
+			merged.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, m.surface_get_arrays(0))
+		_meshes[key] = merged
 	var mi := MeshInstance3D.new()
 	mi.mesh = merged
+	var xray: Material = (
+		EnemyLooks.xray(team, EnemyLooks.XRAY_SHRINK, 0.0) if technique == &"xray" else null
+	)
 	for k in parts.size():
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = parts[k][1]
-		mat.roughness = 1.0
-		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-		mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-		mat.stencil_color = outline
-		mat.stencil_outline_thickness = OUTLINE_M
-		mi.set_surface_override_material(k, mat)
-		body_materials.append(ActorViews.flashable(mat))
+		mi.set_surface_override_material(
+			k, shared_body(kind, parts[k][1], null, outline, OUTLINE_M, xray, true)
+		)
 	parent.add_child(mi)
-	if technique == &"xray":
-		var ghost := MeshInstance3D.new()
-		ghost.mesh = merged
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = parts[0][1]
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		gm.stencil_color = Color(team, 0.85)
-		ghost.material_override = gm
-		ghost.scale = Vector3.ONE * 0.96
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(ghost)
+	_hit_pieces.append(mi)
 	return mi

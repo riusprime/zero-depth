@@ -4,7 +4,7 @@ extends RefCounted
 ## entry. Movements: pursuit (MOVE), an attack (WINDUP -> ACTIVE) and recovery (RECOVER, the punish window). Hits
 ## fill a stagger meter; a full meter staggers it (STAGGERED) and resets. Phases start at HP thresholds; a phase may
 ## open with an entry attack. think() runs in tick phase 3, move() in 5, resolve() in 6.
-## Every attack's area comes from one function here (ring_of, lane_of, arc_of, charge_lane, leap_disc,
+## Every attack's area comes from one function here (ring_of, lane_of, arc_of, EnemyAi.charge_lane, leap_disc,
 ## burrow_disc, spots_of, rail_of, fan_lane_of, flood_lane_of), which telegraph() hands the view and resolve() hits
 ## with (EI-07).
 ## Randomness only from the ai stream.
@@ -13,6 +13,26 @@ extends RefCounted
 ## the player during its windup, and the closing band hurts in phase 6.
 ## v0.5.5 DS (D7): each phase after the first opens with a gate (BossGates: a short invulnerable transition, the HP
 ## can't fall past it in one burst, adds rise); the hidden catch-up scales the boss (CatchUp.on_boss, powered).
+## v0.7.5 BF1 (owner N15; BOSS_FIGHTS.md; SIM_CONTRACTS §10d): dodge-first fights. A `pattern` attack fires a bullet
+## pattern (BulletPatterns) over its active time; `marks` and `row_lanes` lay ground markers that follow the player's
+## exact position, lock for the attack's lock_ticks and strike (mark_of, row_lanes_of); any aimed attack with a lock
+## tracks the exact position the same way (no lead) and its telegraph says when it locked; a shielded attack (the
+## signature pattern) keeps the boss shielded while it runs (BossDodge: hits spark off, Damage).
+## v0.7.5 BF2: a burrow with a lock lays its eruption circle on the player's exact position while it tracks, locks it,
+## burrows to it and may burst a ring of shots from it; a `marks` attack with a pattern bursts it from each circle
+## as it strikes (eggs; BossDodge.burst_mark).
+## v0.7.5 BF3: `grid` (a checkerboard of tracked circles struck in alternating colours) and `row_flood` (molten
+## lanes along the player's row, tracked then locked, standing like a flood): BossDodge.grid_discs, row_flood_of.
+## v0.8.0 BS1 (owner O5): each boss's signature mechanic (BossSignatures): the Gatekeeper's pillars, the Warlord's
+## recalled javelins, the Brood Mother's eggs. v0.8.0 BS2: `gaze` (the Hive Lens's sweeping beam, BossGaze) and
+## `melt` (the Foundry's meltdown, BossLava); the Siege Engine's ricochets (BossRicochet) and the Foundry's lava are
+## params on `pattern`, `deploy` and `row_flood`.
+## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F3-F4): the final boss's bodies are bosses (is_boss_kind); the Colossus's
+## `combo`, `spike_chase` and `spike_burst` (BossColossus), and a `leap` with a pattern fires it where it lands. A body
+## whose segment ran out shatters (FinalBoss.SHATTER): it stands still, invulnerable, until FinalBoss replaces it.
+## v0.8.0 FB2 (FINAL_BOSS.md F5, F7): the Prism's `cross` (BossPrism: the turning beams, her shards' orbs and bolts, the
+## window between spins); a body with a Cross floats home instead of pursuing (BossPrism.drift).
+## v0.8.0 FB3 (FINAL_BOSS.md F6, F7): a mimic body (the Nemesis) is BossNemesis's: its dash, stance and three moves.
 
 ## Appended after EnemyAi.State (SPAWN, MOVE, WINDUP, ACTIVE, RECOVER).
 const STAGGERED := 5
@@ -37,6 +57,9 @@ const TRACKING_MOVES: Array[int] = [
 	BossAttackTable.Move.RAIL,
 	BossAttackTable.Move.BOLT_FAN,
 	BossAttackTable.Move.FLOOD,
+	BossAttackTable.Move.PATTERN,  # v0.7.5 BF1: a pattern's aim (and a burst's landing) follows until it commits
+	BossAttackTable.Move.GRID,  # v0.7.5 BF3: the board's centre, then the flood's row, follow until they lock
+	BossAttackTable.Move.ROW_FLOOD,
 ]
 
 
@@ -45,8 +68,9 @@ static func is_boss_kind(kind: int) -> bool:
 		kind == ActorStore.Kind.GATEKEEPER
 		or kind == ActorStore.Kind.BROOD_MOTHER
 		or kind == ActorStore.Kind.SIEGE_ENGINE
-		or (kind >= ActorStore.Kind.WARLORD and kind <= ActorStore.Kind.FOUNDRY)
-	)  # v0.4.0 BO
+		or (kind >= ActorStore.Kind.WARLORD and kind <= ActorStore.Kind.FOUNDRY)  # v0.4.0 BO
+		or (kind >= ActorStore.Kind.COLOSSUS and kind <= ActorStore.Kind.NEMESIS)
+	)  # v0.8.0 FB1
 
 
 ## The BossStore entry of actor i (-1 if it isn't a boss).
@@ -77,24 +101,28 @@ static func think(w: World, i: int) -> void:
 	a.state_t[i] += 1
 	if a.cd[i] > 0:
 		a.cd[i] -= 1
-	if a.state[i] != GATE and a.dead[i] == 0:  # v0.5.5 DS: a boss killed between ticks opens no gate
-		_update_phase(w, i, b, t)
+	if a.state[i] != GATE and a.state[i] != FinalBoss.SHATTER and a.dead[i] == 0:
+		_update_phase(w, i, b, t)  # v0.5.5 DS: a boss killed between ticks opens no gate (FB1: nor a shattering one)
 	BossChallenge.think(w, i, b, t)
 	if a.state[i] != STAGGERED:
 		bs.meter[b] = maxi(0, bs.meter[b] - t.stagger_decay_milli)
+	if t.mimic and w.final_fight != null:  # v0.8.0 FB3: the build read, a dash due, the stance's clock
+		BossNemesis.think(w, i, t)
 	var to_player := w.player_pos() - a.pos(i)
 	var aim := Kin.angle_of(to_player)
 	match a.state[i]:
 		S.SPAWN:
 			if a.state_t[i] >= w.tuning.boss_intro_ticks:
-				_enter(a, i, S.MOVE)
+				EnemyAi.enter_state(a, i, S.MOVE)
 		GATE:
 			BossGates.advance(w, i, b)
+		FinalBoss.SHATTER:
+			pass  # v0.8.0 FB1: FinalBoss runs the shatter (tick phase 9)
 		STAGGERED:
 			bs.stagger_t[b] -= 1
 			if bs.stagger_t[b] <= 0:
 				bs.stagger_t[b] = 0
-				_enter(a, i, S.MOVE)
+				EnemyAi.enter_state(a, i, S.MOVE)
 				a.cd[i] = maxi(a.cd[i], w.tuning.boss_after_stagger_cd)
 		S.MOVE:
 			a.facing[i] = (
@@ -108,27 +136,57 @@ static func think(w: World, i: int) -> void:
 			elif gap >= 0:
 				start_attack(w, i, gap)
 				bs.gap_t[b] = 0
-			elif not w.player_dead() and a.cd[i] == 0:
-				var k := _choose(w, b, t, Kin.length(to_player))
+			elif not w.player_dead() and a.cd[i] == 0 and not BossNemesis.dashing(w, i):
+				# v0.8.0 PR (O84): the Prism casts her spells in a fixed rotation, one at a time
+				var k := (
+					BossPrism.next_spell(w, i, b, t)
+					if t.rotation
+					else _choose(w, b, t, Kin.length(to_player))
+				)
 				if k >= 0:
 					start_attack(w, i, k)
 		S.WINDUP:
 			var atk: BossAttackTable = t.attacks[bs.attack[b]]
-			if tracking(w, i, t, atk):  # v0.3.5 AI (F3): aim follows the player until it commits
+			if BossDodge.is_marker_move(atk.move):  # v0.7.5 BF1: each marker tracks, then locks
+				BossDodge.track_marks(w, b, atk, a.state_t[i])
+			elif atk.move == M.GAZE:  # v0.8.0 BS2 (S4): it starts aimed away from you, wherever you go
+				BossGaze.keep_away(w, i)
+			elif atk.move == M.CROSS:  # v0.8.0 FB2: the arms keep you between two of them
+				BossPrism.keep_away(w, i)
+			elif atk.move == M.COMBO:  # v0.8.0 FB1: the swing follows you until it locks
+				BossColossus.combo_think(w, i, atk, a.state_t[i])
+			elif atk.move == M.SPIKE_CHASE:  # v0.8.0 FB1: the chasing spikes are laid
+				BossColossus.chase_think(w, i, b, atk, a.state_t[i])
+			elif BossNemesis.is_move(atk.move):  # v0.8.0 FB3: its swing, lines and card follow, then lock
+				BossNemesis.think_attack(w, i, b, atk, a.state_t[i])
+			elif tracking(w, i, t, atk):  # v0.3.5 AI (F3): aim follows the player until it commits
 				_track(w, i, b, atk)
 			if a.state_t[i] >= atk.windup_ticks:
-				_enter(a, i, S.ACTIVE)
+				EnemyAi.enter_state(a, i, S.ACTIVE)
 				a.fire_cd[i] = 0
 				if atk.move == M.LEAP or atk.move == M.BURROW:
 					a.invuln[i] = maxi(a.invuln[i], 2)
+				if BossDodge.tracked_burrow(atk):  # v0.7.5 BF2: its eruption circle starts on you
+					bs.set_pt(b, 0, w.player_pos())
 		S.ACTIVE:
-			_think_active(w, i, b, t.attacks[bs.attack[b]])
+			var atk: BossAttackTable = t.attacks[bs.attack[b]]
+			if BossDodge.is_marker_move(atk.move):  # v0.7.5 BF1: the later markers keep tracking
+				BossDodge.track_marks(w, b, atk, atk.windup_ticks + a.state_t[i])
+			elif atk.move == M.COMBO:  # v0.8.0 FB1: each later swing (and the slam) follows, then locks
+				BossColossus.combo_think(w, i, atk, atk.windup_ticks + a.state_t[i])
+			elif atk.move == M.SPIKE_CHASE:
+				BossColossus.chase_think(w, i, b, atk, atk.windup_ticks + a.state_t[i])
+			elif BossNemesis.is_move(atk.move):  # v0.8.0 FB3: each later swing follows, then locks
+				BossNemesis.think_attack(w, i, b, atk, atk.windup_ticks + a.state_t[i])
+			_think_active(w, i, b, atk)
 		S.RECOVER:
 			var atk: BossAttackTable = t.attacks[bs.attack[b]]
+			BossColossus.leap_late_waves(w, i, atk, a.state_t[i])  # v0.8.0 N2: a ring's later waves
 			if a.state_t[i] >= atk.recover_ticks:
-				_enter(a, i, S.MOVE)
+				EnemyAi.enter_state(a, i, S.MOVE)
 				a.cd[i] = atk.cooldown_ticks * t.phase_cd_permille[bs.phase[b]] / 1000
 				bs.attack[b] = -1
+				BossNemesis.after_attack(w, i, atk)  # v0.8.0 FB3: after a combo it backs off
 
 
 static func _think_active(w: World, i: int, b: int, atk: BossAttackTable) -> void:
@@ -144,7 +202,7 @@ static func _think_active(w: World, i: int, b: int, atk: BossAttackTable) -> voi
 				if bs.step[b] + 1 < atk.chain and not w.player_dead():
 					bs.step[b] += 1
 					bs.hit[b] = 0
-					_enter(a, i, S.WINDUP)
+					EnemyAi.enter_state(a, i, S.WINDUP)
 					_lock(w, i, b, atk)
 				else:
 					a.invuln[i] = 0
@@ -152,23 +210,36 @@ static func _think_active(w: World, i: int, b: int, atk: BossAttackTable) -> voi
 		M.BURROW:
 			if bs.step[b] < 2:
 				a.invuln[i] = maxi(a.invuln[i], 2)  # underground
+			var tracked := BossDodge.tracked_burrow(atk)
+			if tracked and bs.step[b] == 0 and not w.player_dead():
+				bs.set_pt(b, 0, w.player_pos())  # v0.7.5 BF2: the eruption circle is on you
 			if bs.step[b] == 0 and a.state_t[i] >= atk.track_ticks:
 				bs.step[b] = 1
 				a.state_t[i] = 0
-				a.lock_x[i] = a.pos_x[i]
-				a.lock_y[i] = a.pos_y[i]
+				var at := bs.pt(b, 0) if tracked else a.pos(i)
+				a.lock_x[i] = at.x
+				a.lock_y[i] = at.y
 			elif bs.step[b] == 1 and a.state_t[i] >= atk.erupt_ticks:
 				bs.step[b] = 2
 				a.state_t[i] = 0
 				a.invuln[i] = 0
-			elif bs.step[b] == 2:
-				_finish(w, i, b, atk)
+			elif bs.step[b] == 2 and a.state_t[i] >= BossDodge.eruption_ticks(atk):
+				_finish(w, i, b, atk)  # v0.7.5 BF2: after its eruption's burst
 		M.RAIL:
 			a.facing[i] = rail_angle(w, i, mini(a.state_t[i] + 1, atk.active_ticks)) & 4095
 			if a.state_t[i] >= atk.active_ticks:
 				_finish(w, i, b, atk)
 		M.BOLT_FAN:
 			if bs.step[b] >= atk.volleys and a.state_t[i] >= atk.active_ticks:
+				_finish(w, i, b, atk)
+		M.GAZE:  # v0.8.0 BS2 (S4): the eye looks along its beam
+			a.facing[i] = BossGaze.angle_at(w, i, mini(a.state_t[i] + 1, atk.active_ticks - 1))
+			if a.state_t[i] >= atk.active_ticks:
+				_finish(w, i, b, atk)
+		M.CROSS:  # v0.8.0 FB2: she watches the player while her Cross turns
+			if not w.player_dead():
+				a.facing[i] = Kin.angle_of(w.player_pos() - a.pos(i))
+			if a.state_t[i] >= atk.active_ticks:
 				_finish(w, i, b, atk)
 		_:
 			if a.state_t[i] >= atk.active_ticks:
@@ -193,7 +264,7 @@ static func _finish(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 			start_attack(w, i, atk.follow_up)
 			bs.chained[b] = 1
 			return
-	_enter(a, i, S.RECOVER)
+	EnemyAi.enter_state(a, i, S.RECOVER)
 	if atk.opens_weak and t.weak_ticks > 0:
 		bs.exposed_t[b] = t.weak_ticks
 
@@ -228,6 +299,8 @@ static func _choose(w: World, b: int, t: BossTable, dist: float) -> int:
 			continue
 		if atk.move == M.BROOD and _alive_of(w, atk.enemy_kind) >= atk.max_alive:
 			continue
+		if t.mimic and not BossNemesis.allowed(w, atk):  # v0.8.0 FB3: the run's weapon, the cards held
+			continue
 		open.append(k)
 	if open.size() > 1 and open.has(bs.last_attack[b]):
 		open.remove_at(open.find(bs.last_attack[b]))
@@ -246,7 +319,7 @@ static func start_attack(w: World, i: int, k: int) -> void:
 	var bs := w.bosses
 	var b := entry_of(w, i)
 	var atk: BossAttackTable = w.boss_tables[bs.table[b]].attacks[k]
-	_enter(a, i, S.WINDUP)
+	EnemyAi.enter_state(a, i, S.WINDUP)
 	bs.attack[b] = k
 	bs.last_attack[b] = k
 	bs.step[b] = 0
@@ -260,7 +333,7 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 	var a := w.actors
 	var bs := w.bosses
 	var at := a.pos(i)
-	var target := BossChallenge.aim_point(w, b, atk.move)  # BX (L26): aimed moves lead the player.
+	var target := _target(w, b, atk)  # BX (L26): aimed moves lead the player (v0.7.5 BF1: not a locked one).
 	var aim := Kin.angle_of(target - at)
 	a.lock_x[i] = at.x
 	a.lock_y[i] = at.y
@@ -272,23 +345,23 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 			for k in atk.count:
 				var ang := lane_angle(atk, aim, k)
 				var start := at + Kin.dir(ang) * a.radius[i]
-				bs.pts_x[b * BossStore.MAX_PTS + k] = clear_run(
+				bs.pts_x[b * BossStore.MAX_PTS + k] = EnemyAi.clear_run(
 					w, start, ang, atk.length_m, atk.half_width_m
 				)
 		M.FLOOD:  # v0.4.0 BO: each parallel lane's length, cut short by walls.
 			for k in atk.count:
-				bs.pts_x[b * BossStore.MAX_PTS + k] = clear_run(
+				bs.pts_x[b * BossStore.MAX_PTS + k] = EnemyAi.clear_run(
 					w, _flood_start(w, i, atk, aim, k), aim, atk.length_m, atk.half_width_m
 				)
 		M.BOLT_FAN:
 			for k in atk.count:
 				var ang := lane_angle(atk, aim, k)
 				var start := at + Kin.dir(ang) * (a.radius[i] + atk.radius_m + 0.05)
-				bs.pts_x[b * BossStore.MAX_PTS + k] = clear_run(
+				bs.pts_x[b * BossStore.MAX_PTS + k] = EnemyAi.clear_run(
 					w, start, ang, atk.speed * atk.bolt_life_ticks, atk.radius_m
 				)
 		M.CHARGE:
-			a.lock_len[i] = clear_run(w, at, aim, atk.length_m, a.radius[i])
+			a.lock_len[i] = EnemyAi.clear_run(w, at, aim, atk.length_m, a.radius[i])
 		M.LEAP:
 			var to := target - at
 			var d := Kin.length(to)
@@ -298,7 +371,7 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 		M.BROOD, M.DEPLOY:
 			var base := aim + 1024 if atk.move == M.DEPLOY else aim + 2048 / atk.count
 			for k in atk.count:
-				bs.set_pt(b, k, _spot(w, at, base + k * 4096 / atk.count, atk.distance_m))
+				bs.set_pt(b, k, spot(w, at, base + k * 4096 / atk.count, atk.distance_m))
 		M.BARRAGE:
 			bs.set_pt(b, 0, target)
 			var s := int(atk.spread_m * 100.0)
@@ -310,16 +383,38 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 			a.lock_a[i] = (aim - dir * atk.half_arc) & 4095
 			a.facing[i] = a.lock_a[i]
 			bs.span[b] = dir * atk.half_arc * 2
+		M.PATTERN, M.GRID, M.ROW_FLOOD:  # v0.7.5 BF1/BF3: a burst's landing, a board's or a row's centre
+			bs.set_pt(b, 0, target)
+			if atk.fixed_aim >= 0:  # v0.8.0 PR (O84): the same spell opens the same way, wherever you stand
+				a.lock_a[i] = atk.fixed_aim
+		M.MARKS, M.ROW_LANES:  # v0.7.5 BF1: every marker starts on the player
+			for k in atk.count:
+				bs.set_pt(b, k, w.player_pos())
+		M.GAZE:  # v0.8.0 BS2 (S4): aimed away from the player; the way it turns
+			BossGaze.lock(w, i, b)
+		M.CROSS:  # v0.8.0 FB2: its way (the other way from her last), its speed (her HP), off the player
+			BossPrism.lock(w, i, b)
+		M.SPIKE_CHASE, M.SPIKE_BURST:  # v0.8.0 FB1: no chase line has stopped yet
+			BossColossus.spikes_lock(w, b)
+		M.MIMIC_COMBO, M.MIMIC_SHOTS, M.CARD_CAST:  # v0.8.0 FB3: at the player; a card's blast on them
+			BossNemesis.lock(w, i, b, atk)
 
 
 ## True while boss i's windup still follows the player (v0.3.5 AI, F3): an aimed move, before its last
 ## commit_ticks.
 static func tracking(w: World, i: int, t: BossTable, atk: BossAttackTable) -> bool:
-	if t.commit_ticks <= 0 or w.player_dead() or w.actors.state[i] != S.WINDUP:
+	var commit := atk.lock_ticks if atk.lock_ticks > 0 else t.commit_ticks  # v0.7.5 BF1: the attack's lock
+	if commit <= 0 or w.player_dead() or w.actors.state[i] != S.WINDUP:
 		return false
-	if w.actors.state_t[i] >= atk.windup_ticks - t.commit_ticks:
+	if w.actors.state_t[i] >= atk.windup_ticks - commit:
 		return false
 	return TRACKING_MOVES.has(atk.move)
+
+
+## v0.7.5 BF1: where an attack aims: the player's exact position for a locked attack (owner N15: "follow exact
+## position of the player"), else BossChallenge.aim_point (the lead and the dash read).
+static func _target(w: World, b: int, atk: BossAttackTable) -> Vector2:
+	return w.player_pos() if atk.lock_ticks > 0 else BossChallenge.aim_point(w, b, atk.move)
 
 
 ## Re-aims the windup in progress at the player (aim_point), keeping what was drawn at random: a barrage's
@@ -329,11 +424,11 @@ static func _track(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 	var bs := w.bosses
 	match atk.move:
 		M.BARRAGE:
-			var shift := BossChallenge.aim_point(w, b, atk.move) - bs.pt(b, 0)
+			var shift := _target(w, b, atk) - bs.pt(b, 0)
 			for k in atk.count:
 				bs.set_pt(b, k, bs.pt(b, k) + shift)
 		M.RAIL:
-			var aim := Kin.angle_of(BossChallenge.aim_point(w, b, atk.move) - a.pos(i))
+			var aim := Kin.angle_of(_target(w, b, atk) - a.pos(i))
 			var dir := 1 if bs.span[b] > 0 else -1
 			a.lock_a[i] = (aim - dir * atk.half_arc) & 4095
 			a.facing[i] = a.lock_a[i]
@@ -342,27 +437,23 @@ static func _track(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 
 
 ## v0.5.5 DS (D4, D7): an attack's damage under boss i's hidden catch-up (ActorStore.power, per mille; CatchUp.on_boss
-## sets it, 0 = unscaled).
+## sets it, 0 = unscaled). The enemies' rule, rounded half up (audit G-12).
 static func powered(w: World, i: int, amount: int) -> int:
-	var pm := w.actors.power[i]
-	return amount if pm <= 0 or pm == 1000 else amount * pm / 1000
+	return EnemyAi.powered(w, i, amount)
 
 
-## A spawn spot `dist` from `at` along `angle`, pulled in until it is clear of walls (public: BossGates' adds).
+## v0.8.0 BP (owner O27): the damage of each orb or shot attack `atk`'s bullet pattern fires (its orb_damage when set,
+## else its damage), under boss i's catch-up.
+static func orb_damage(w: World, i: int, atk: BossAttackTable) -> int:
+	return powered(w, i, atk.orb_damage if atk.orb_damage > 0 else atk.damage)
+
+
+## A spawn spot `dist` from `at` along `angle`, pulled in until it is clear of walls (or `at` itself). Public:
+## BossGates' adds use it too.
 static func spot(w: World, at: Vector2, angle: int, dist: float) -> Vector2:
-	return _spot(w, at, angle, dist)
-
-
-## A spawn spot `dist` from `at` along `angle`, pulled in until it is clear of walls (or `at` itself).
-static func _spot(w: World, at: Vector2, angle: int, dist: float) -> Vector2:
 	for k in 4:
 		var p := at + Kin.dir(angle) * (dist * (4 - k) / 4.0)
-		var clear := true
-		for wall in w.walls:
-			if Collide.circle_vs_obb(p, SPOT_CLEARANCE, wall) != Vector2.ZERO:
-				clear = false
-				break
-		if clear:
+		if EnemyAi.clear_of_walls(w, p, SPOT_CLEARANCE):
 			return p
 	return at
 
@@ -374,6 +465,11 @@ static func move(w: World, i: int) -> void:
 	var a := w.actors
 	var at := a.pos(i)
 	var slow := ItemProcs.slow_factor(w, i)
+	if BossPrism.floats(w, i):  # v0.8.0 FB2: the Prism floats home, whatever she does
+		BossPrism.drift(w, i, slow)
+		return
+	if BossNemesis.moves(w, i, slow):  # v0.8.0 FB3: its dash, its stance, its combo's steps in
+		return
 	match a.state[i]:
 		S.MOVE:
 			var b := entry_of(w, i)
@@ -386,13 +482,19 @@ static func move(w: World, i: int) -> void:
 			if dist <= maxf(t.keep_distance_m, t.radius_m + w.player.radius_m + 0.1):
 				return
 			a.set_pos(i, at + EnemyAi.steer(w, at, to / dist, t.radius_m) * speed)
+			if not w.bosses.melt_boss.is_empty():  # v0.8.0 BS2 (S6): the Foundry keeps to cool ground
+				BossLava.keep_on_ground(w, i)
 		S.WINDUP:
 			var atk := attack_of(w, i)
 			if atk != null and atk.move == M.PULL:
 				BossChallenge.drag(w, i, atk)  # BX (L17): the vortex drags the player in.
+			elif atk != null and atk.move == M.COMBO:  # v0.8.0 FB1: it steps in as the swing follows
+				BossColossus.combo_move(w, i, atk, slow)
 		S.ACTIVE:
 			var atk := attack_of(w, i)
 			match atk.move:
+				M.COMBO:  # v0.8.0 FB1
+					BossColossus.combo_move(w, i, atk, slow)
 				M.CHARGE:
 					if a.lock_len[i] > 0.0:
 						var step := minf(atk.speed * slow, a.lock_len[i])
@@ -403,7 +505,13 @@ static func move(w: World, i: int) -> void:
 					var f := minf(1.0, float(a.state_t[i] + 1) / atk.active_ticks)
 					a.set_pos(i, from + (leap_disc(w, i)[0] - from) * f)
 				M.BURROW:
-					if w.bosses.step[entry_of(w, i)] == 0 and not w.player_dead():
+					var step := w.bosses.step[entry_of(w, i)]
+					if step == 1 and BossDodge.tracked_burrow(atk):  # v0.7.5 BF2: to its locked eruption
+						var to := Vector2(a.lock_x[i], a.lock_y[i]) - at
+						var dist := Kin.length(to)
+						if dist > 0.0001:
+							a.set_pos(i, at + to * (minf(atk.speed * slow, dist) / dist))
+					elif step == 0 and not w.player_dead():
 						var to := w.player_pos() - at
 						var dist := Kin.length(to)
 						if dist > 0.0001:
@@ -450,36 +558,40 @@ static func resolve(w: World, i: int) -> void:
 		M.SLAM_RING, M.PULL:
 			var r := ring_of(w, i)
 			if st == 0 and AttackShapes.ring_touches(r[0], r[1], r[2], p, pr):
-				_hit_player(w, i, atk, SimEvent.TAG_AREA, r[0])
+				hit_player(w, i, atk, SimEvent.TAG_AREA, r[0])
 		M.LANES:
 			if st < atk.active_ticks:
 				for k in atk.count:
 					var s := lane_slice(w, i, k, st)
 					if s != null and Collide.circle_vs_obb(p, pr, s) != Vector2.ZERO:
-						_hit_player(w, i, atk, SimEvent.TAG_AREA, a.pos(i))
+						hit_player(w, i, atk, SimEvent.TAG_AREA, a.pos(i))
 						break
 		M.SWEEP:
 			var c := arc_of(w, i)
 			if st == 0 and AttackShapes.arc_touches(c[0], c[1], c[2], c[3], c[4], p, pr):
-				_hit_player(w, i, atk, SimEvent.TAG_MELEE, c[0])
+				hit_player(w, i, atk, SimEvent.TAG_MELEE, c[0])
 		M.CHARGE:
 			# v0.3.5 AI: within a contact slop, because phase 5 has already pushed the bodies exactly apart.
 			if Kin.length(p - a.pos(i)) <= a.radius[i] + pr + EnemyAi.CONTACT_SLOP_M:
-				_hit_player(w, i, atk, SimEvent.TAG_MELEE, a.pos(i))
+				hit_player(w, i, atk, SimEvent.TAG_MELEE, a.pos(i))
 		M.LEAP:
 			var d := leap_disc(w, i)
 			if st == atk.active_ticks - 1 and AttackShapes.disc_touches(d[0], d[1], p, pr):
-				_hit_player(w, i, atk, SimEvent.TAG_AREA, d[0])
+				hit_player(w, i, atk, SimEvent.TAG_AREA, d[0])
+			if st == atk.active_ticks - 1 and atk.pattern != null:  # v0.8.0 FB1: its shockwave ring
+				BossColossus.leap_wave(w, i, atk, d[0])
 		M.BURROW:
 			var d := burrow_disc(w, i)
 			if w.bosses.step[b] == 2 and st == 0 and AttackShapes.disc_touches(d[0], d[1], p, pr):
-				_hit_player(w, i, atk, SimEvent.TAG_AREA, d[0])
+				hit_player(w, i, atk, SimEvent.TAG_AREA, d[0])
+			if w.bosses.step[b] == 2:  # v0.7.5 BF2: its ring of globs bursts out of the eruption
+				BossDodge.burst_eruption(w, i, atk, d[0], st)
 		M.BROOD, M.DEPLOY, M.BARRAGE:
 			if st == 0:
 				var spots := spots_of(w, i)
 				for c: Vector2 in spots:
 					if AttackShapes.disc_touches(c, atk.radius_m, p, pr):
-						_hit_player(w, i, atk, SimEvent.TAG_AREA, c)
+						hit_player(w, i, atk, SimEvent.TAG_AREA, c)
 						break
 				if atk.move != M.BARRAGE:
 					_hatch(w, atk, spots)
@@ -489,19 +601,45 @@ static func resolve(w: World, i: int) -> void:
 				var a0 := rail_angle(w, i, st)
 				var a1 := rail_angle(w, i, st + 1)
 				if AttackShapes.span_touches(r[0], r[1], a0, a1 - a0, r[4], p, pr):
-					_hit_player(w, i, atk, SimEvent.TAG_AREA, r[0])
-		M.FLOOD:  # v0.4.0 BO: the lanes stay for the active time and hurt again every burn_ticks.
+					hit_player(w, i, atk, SimEvent.TAG_AREA, r[0])
+		M.FLOOD, M.ROW_FLOOD:  # v0.4.0 BO: the lanes stay for the active time and hurt every burn_ticks.
 			if st < atk.active_ticks:
 				if st % atk.burn_ticks == 0:
 					w.bosses.hit[b] = 0
 				for k in atk.count:
-					if Collide.circle_vs_obb(p, pr, flood_lane_of(w, i, k)) != Vector2.ZERO:
-						_hit_player(w, i, atk, SimEvent.TAG_AREA, a.pos(i))
+					var o := (
+						flood_lane_of(w, i, k)
+						if atk.move == M.FLOOD
+						else BossDodge.row_flood_of(w, i, k)
+					)
+					if Collide.circle_vs_obb(p, pr, o) != Vector2.ZERO:
+						hit_player(w, i, atk, SimEvent.TAG_AREA, a.pos(i))
 						break
+				if st == atk.active_ticks - 1 and atk.lava_ticks > 0:  # v0.8.0 BS2 (S6): it stays molten
+					BossLava.lay(w, i, atk)
 		M.BOLT_FAN:
 			if w.bosses.step[b] < atk.volleys and st % atk.gap_ticks == 0:
 				w.bosses.step[b] += 1
 				_fire_fan(w, i, b, atk)
+		M.PATTERN:  # v0.7.5 BF1
+			BossDodge.resolve_pattern(w, i, b, atk, st)
+		M.MARKS, M.ROW_LANES:  # v0.7.5 BF1: each marker strikes once, where it locked
+			BossDodge.resolve_marks(w, i, b, atk, st)
+		M.GRID:  # v0.7.5 BF3: each volley strikes its colour of the locked board
+			BossDodge.resolve_grid(w, i, b, atk, st)
+		M.GAZE:  # v0.8.0 BS2 (S4): the beam turns round the room; its orbs fly
+			BossGaze.resolve(w, i, b, atk, st)
+		M.CROSS:  # v0.8.0 FB2: the Cross turns, the orbs fly, the bolts aim and fire
+			BossPrism.resolve(w, i, b, atk, st)
+		M.MELT:  # v0.8.0 BS2 (S6): the outer ring melts for good
+			if st == 0:
+				BossLava.begin_melt(w, i)
+		M.COMBO:  # v0.8.0 FB1: each swing, then the slam, where it locked
+			BossColossus.combo_resolve(w, i, b, atk, st)
+		M.SPIKE_CHASE, M.SPIKE_BURST:  # v0.8.0 FB1: the spikes due erupt
+			BossColossus.spikes_resolve(w, i, b, atk, st)
+		M.MIMIC_COMBO, M.MIMIC_SHOTS, M.CARD_CAST:  # v0.8.0 FB3: its swings, volleys and cards
+			BossNemesis.resolve(w, i, b, atk, st)
 
 
 static func _fire_fan(w: World, i: int, b: int, atk: BossAttackTable) -> void:
@@ -534,6 +672,11 @@ static func _hatch(w: World, atk: BossAttackTable, spots: PackedVector2Array) ->
 		w.queue_enemy(atk.enemy_kind, spots[k])
 
 
+## v0.8.0 BS1: actors of `kind` alive or arriving this tick (eggs count; BossSignatures caps its eggs with it).
+static func alive_of(w: World, kind: int) -> int:
+	return _alive_of(w, kind)
+
+
 static func _alive_of(w: World, kind: int) -> int:
 	var n := w.pending_enemies_of(kind)
 	for i in range(1, w.actors.size()):
@@ -542,7 +685,8 @@ static func _alive_of(w: World, kind: int) -> int:
 	return n
 
 
-static func _hit_player(w: World, i: int, atk: BossAttackTable, tags: int, from: Vector2) -> void:
+## Hits the player with boss i's attack, once per attack (BossStore.hit); public for BossDodge (v0.7.5 BF1).
+static func hit_player(w: World, i: int, atk: BossAttackTable, tags: int, from: Vector2) -> void:
 	var b := entry_of(w, i)
 	if w.bosses.hit[b] == 1:
 		return
@@ -565,6 +709,8 @@ static func on_damage(w: World, i: int, applied: int, tags: int = 0) -> void:
 		return
 	if a.state[i] == STAGGERED or a.state[i] == S.SPAWN or a.state[i] == GATE:
 		return
+	if a.state[i] == FinalBoss.SHATTER:  # v0.8.0 FB1
+		return
 	var b := entry_of(w, i)
 	var t: BossTable = w.boss_tables[w.bosses.table[b]]
 	w.bosses.meter[b] += applied * BossChallenge.stagger_permille(w, i, tags)  # BX: the weak point
@@ -574,7 +720,7 @@ static func on_damage(w: World, i: int, applied: int, tags: int = 0) -> void:
 	w.bosses.stagger_t[b] = t.stagger_ticks
 	w.bosses.attack[b] = -1
 	a.lock_len[i] = 0.0
-	_enter(a, i, STAGGERED)
+	EnemyAi.enter_state(a, i, STAGGERED)
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[i], a.ids[0], a.ids[i], a.pos(i))
 	e.effect_id = &"boss_stagger"
 	e.amount = t.stagger_ticks
@@ -629,17 +775,6 @@ static func arc_of(w: World, i: int) -> Array:
 	var a := w.actors
 	var atk := attack_of(w, i)
 	return [Vector2(a.lock_x[i], a.lock_y[i]), a.radius[i], a.lock_a[i], atk.half_arc, atk.reach_m]
-
-
-## The lane a charge runs: the body's path to its front at the end of the run (as EnemyAi.charge_lane).
-static func charge_lane(w: World, i: int) -> Obb:
-	var a := w.actors
-	return AttackShapes.lane(
-		Vector2(a.lock_x[i], a.lock_y[i]),
-		a.lock_a[i],
-		maxf(a.lock_len[i], 0.0) + a.radius[i],
-		a.radius[i]
-	)
 
 
 ## [center, radius] where a leap lands.
@@ -700,7 +835,7 @@ static func _flood_start(w: World, i: int, atk: BossAttackTable, aim: int, k: in
 	return Vector2(w.actors.lock_x[i], w.actors.lock_y[i]) + d * w.actors.radius[i] + side
 
 
-## Flood lane k, whole (v0.4.0 BO): parallel to the aim, as long as clear_run allowed when it locked.
+## Flood lane k, whole (v0.4.0 BO): parallel to the aim, as long as EnemyAi.clear_run allowed when it locked.
 static func flood_lane_of(w: World, i: int, k: int) -> Obb:
 	var a := w.actors
 	var atk := attack_of(w, i)
@@ -716,6 +851,11 @@ static func flood_lane_of(w: World, i: int, k: int) -> Obb:
 ## &"ripple" (center, radius) that marks a burrowing boss; a flood (v0.4.0 BO) draws &"lanes", and while its lanes
 ## stand a "style" (&"spears" or &"molten"). A pull (BX) draws a &"ring" with "pull_m", the vortex's
 ## reach from the boss's centre. "move" names the attack's move (BossAttackTable.Move).
+## v0.7.5 BF1: a locked attack's telegraph carries "tracked" (true) and "locked" (it stopped following and flashes);
+## marker moves draw &"marks": "items", one {"shape" (&"disc" with center and radius, or &"lanes" with obbs),
+## "locked", "progress"} per marker showing now; a burst pattern draws its landing &"disc" (tracked, then locked)
+## and, while its shell flies, "lob" {from, to, progress}. Other patterns draw nothing on the ground (owner: "Shots
+## draw no line on the ground"): v0.7.5 BF2: their windup and firing are a &"cast" with "ground": false (BossDodge).
 static func telegraph(w: World, i: int) -> Dictionary:
 	var a := w.actors
 	var atk := attack_of(w, i)
@@ -725,6 +865,23 @@ static func telegraph(w: World, i: int) -> Dictionary:
 	var windup := a.state[i] == S.WINDUP
 	var progress := clampi(a.state_t[i] * 1000 / maxi(1, atk.windup_ticks), 0, 1000)
 	var out := {}
+	if BossDodge.is_marker_move(atk.move):
+		return BossDodge.marks_telegraph(w, i, atk)
+	if atk.move == M.PATTERN:
+		return BossDodge.pattern_telegraph(w, i, b, atk, windup, progress)
+	if atk.move == M.GRID:
+		return BossDodge.grid_telegraph(w, i, atk)
+	if atk.move == M.COMBO:  # v0.8.0 FB1: the swing (or the slam) pending
+		return BossColossus.combo_telegraph(w, i, atk)
+	if atk.move == M.SPIKE_CHASE or atk.move == M.SPIKE_BURST:  # v0.8.0 FB1: the spikes showing
+		return BossColossus.spikes_telegraph(w, i, b, atk)
+	if BossNemesis.is_move(atk.move):  # v0.8.0 FB3: a swing, a volley's lines, a card's parts
+		return BossNemesis.telegraph(w, i, b, atk)
+	if atk.move == M.GAZE or atk.move == M.MELT or atk.move == M.CROSS:
+		# v0.8.0 BS2: nothing on the ground here; the eye, its aim line and the beam, and the glowing ring, are drawn
+		# from WorldReader.boss_gaze / boss_melts (BossSignatureViews); v0.8.0 FB2: the Cross from boss_cross
+		# (PrismViews).
+		return {"shape": &"signature", "ground": false, "progress": progress, "move": atk.move}
 	match atk.move:
 		M.SLAM_RING, M.PULL:
 			var r := ring_of(w, i)
@@ -747,7 +904,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 				"reach": c[4]
 			}
 		M.CHARGE:
-			out = {"shape": &"lane", "obb": charge_lane(w, i)}
+			out = {"shape": &"lane", "obb": EnemyAi.charge_lane(w, i)}
 		M.LEAP:
 			var d := leap_disc(w, i)
 			out = {"shape": &"disc", "center": d[0], "radius": d[1]}
@@ -755,6 +912,27 @@ static func telegraph(w: World, i: int) -> Dictionary:
 				progress = 1000
 				windup = true
 		M.BURROW:
+			if not windup and BossDodge.tracked_burrow(atk) and w.bosses.step[b] < 2:
+				# v0.7.5 BF2: the eruption circle on the player (dull), then locked where it will erupt.
+				var tracking_now := w.bosses.step[b] == 0
+				return {
+					"shape": &"disc",
+					"center": w.bosses.pt(b, 0) if tracking_now else burrow_disc(w, i)[0],
+					"radius": atk.radius_m,
+					"progress":
+					clampi(
+						(
+							a.state_t[i]
+							* 1000
+							/ maxi(1, atk.track_ticks if tracking_now else atk.erupt_ticks)
+						),
+						0,
+						1000
+					),
+					"move": atk.move,
+					"tracked": true,
+					"locked": not tracking_now
+				}
 			if windup or w.bosses.step[b] == 0:
 				return {
 					"shape": &"ripple",
@@ -769,16 +947,22 @@ static func telegraph(w: World, i: int) -> Dictionary:
 					"shape": &"disc",
 					"center": d[0],
 					"radius": d[1],
-					"progress": clampi(a.state_t[i] * 1000 / atk.erupt_ticks, 0, 1000),
+					"progress": clampi(a.state_t[i] * 1000 / maxi(1, atk.erupt_ticks), 0, 1000),  # audit G-20
 					"move": atk.move
 				}
 			return {}
 		M.BROOD, M.DEPLOY, M.BARRAGE:
 			out = {"shape": &"discs", "centers": spots_of(w, i), "radius": atk.radius_m}
-		M.FLOOD:  # v0.4.0 BO: marked for the windup, then standing (spears, molten floor) while active.
+		M.FLOOD, M.ROW_FLOOD:  # v0.4.0 BO: marked for the windup, then standing (spears, molten floor).
 			var obbs: Array[Obb] = []
 			for k in atk.count:
-				obbs.append(flood_lane_of(w, i, k))
+				obbs.append(
+					(
+						flood_lane_of(w, i, k)
+						if atk.move == M.FLOOD
+						else BossDodge.row_flood_of(w, i, k)
+					)
+				)
 			out = {"shape": &"lanes", "obbs": obbs}
 			if not windup:
 				out["style"] = &"spears" if a.kinds[i] == ActorStore.Kind.WARLORD else &"molten"
@@ -803,36 +987,14 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return {}
 	out["progress"] = progress
 	out["move"] = atk.move
+	if atk.lock_ticks > 0:  # v0.7.5 BF1: dull while it tracks, bright once it locks
+		out["tracked"] = true
+		out["locked"] = (
+			a.state[i] != S.WINDUP or a.state_t[i] >= atk.windup_ticks - atk.lock_ticks
+		)
 	return out
 
 
-## The death recap line for a boss kill: the attack that landed it (World.killer_attack), else the boss's projectile
-## attack for a bolt, else &"".
+## The death recap line for a boss kill (BossCauses.key; v0.8.0 FB3 moved it there, this file's length).
 static func cause_key(w: World) -> StringName:
-	var t := w.boss_table_of_kind(w.killer_kind)
-	if t == null:
-		return &""
-	if w.killer_attack == BossChallenge.ARENA_ATTACK:
-		return &"CAUSE_BOSS_ARENA"  # BX: the closing band
-	if w.killer_attack >= 0 and w.killer_attack < t.attacks.size():
-		return t.attacks[w.killer_attack].cause_key
-	for atk in t.attacks:
-		if atk.move == M.BOLT_FAN and w.killer_tags & SimEvent.TAG_PROJECTILE:
-			return atk.cause_key
-	return t.attacks[0].cause_key if not t.attacks.is_empty() else &""
-
-
-## How far a circle of radius r can travel from `from` along `angle` (up to `length`) before a wall.
-static func clear_run(w: World, from: Vector2, angle: int, length: float, r: float) -> float:
-	var to := from + Kin.dir(angle) * length
-	var best := 1.0
-	for wall in w.walls:
-		var hit := Collide.sweep_vs_obb(from, to, r, wall)
-		if hit >= 0.0 and hit < best:
-			best = hit
-	return length * best
-
-
-static func _enter(a: ActorStore, i: int, s: int) -> void:
-	a.state[i] = s
-	a.state_t[i] = 0
+	return BossCauses.key(w)

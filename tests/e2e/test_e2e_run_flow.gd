@@ -78,8 +78,27 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	# v0.4.0 BS: an altar's first (focused) card is a new ability while a slot is free.
 	assert_eq(w.ability_owned.size(), 2, "took the card: a second ability slot")
 	var item := w.ability_owned[1] if w.ability_owned.size() > 1 else -1
-	# Leg 2: through the boss door.
+	# Leg 2: through the boss door. v0.8.0 BD (owner O83): it stays shut until E opens it.
 	var into := Kin.dir(f.boss_door_angle)
+	var shut_walls := w.walls.size()
+	await e.walk_to(f.boss_door_outside(0.9), 0.5)
+	assert_eq(w.boss_flow.door, BossFlow.Door.SHUT, "the boss door is shut")
+	assert_eq(hud.boss_door.prompt_text(), tr("BOSS_DOOR_PROMPT"), "its prompt shows by it")
+	for k in 60:
+		e.stick_toward(into)
+		await e.frames(1)
+	e.stick_toward(Vector2.ZERO)
+	await e.frames(2)
+	assert_lt(f.boss_door_depth(w.player_pos()), 0.0, "walking into it: it blocks the way")
+	assert_eq(main.view.boss_door.open_amount, 0.0, "its slab is up")
+	await e.tap(KEY_E)
+	assert_eq(w.boss_flow.door, BossFlow.Door.OPENING, "E opens it")
+	assert_eq(hud.boss_door.prompt_text(), "", "no prompt while it opens")
+	await e.frames(BossFlow.DOOR_OPEN_TICKS / 2)
+	assert_between(main.view.boss_door.open_amount, 0.2, 0.8, "the slab slides down with the sim")
+	await e.frames(BossFlow.DOOR_OPEN_TICKS / 2 + 10)
+	assert_eq(w.boss_flow.door, BossFlow.Door.OPEN, "open")
+	assert_eq(w.walls.size(), shut_walls - 1, "the passage is clear")
 	var walls_before := w.walls.size()
 	var sealed: bool = await _walk(
 		e, f.boss_door_inside(2.0), func() -> bool: return w.boss_flow.door_sealed(), into
@@ -110,12 +129,8 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_false(w.boss_alive(), "Kill boss killed it")
 	assert_true(main.driver.reader.portal_active(), "the boss's death opens the portal")
 	assert_false(main.view.gate.is_sealed(), "the gate lights up")
-	assert_true(
-		hud.gate_text().begins_with(tr("HUD_PORTALS_OPEN")), "v0.5.0 RT: floor 1 opens both portals"
-	)
-	assert_true(
-		hud.gate_text().ends_with(tr("HUD_EXPLORE_AFTER_BOSS")), "v0.5.0 PB: and you may explore"
-	)
+	# v0.8.0 N18 (owner O76): PB's "explore the rest of the floor" line is gone
+	assert_eq(hud.gate_text(), tr("HUD_PORTALS_OPEN"), "v0.5.0 RT: floor 1 opens both portals")
 	var hp_before := w.actors.hp[0]
 	var owned := w.ability_owned.duplicate()
 	var levels := w.ability_levels.duplicate()
@@ -132,6 +147,7 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_true(gone, "walking into the portal goes down")
 	if not gone:
 		return
+	await e.loaded()  # v0.8.0 N12: floor 2 builds over frames behind the portal's cover
 	await e.frames(2)
 	var w2 := e.world()
 	assert_ne(w2, w, "a new floor")
@@ -156,7 +172,10 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_true(hud2.floor_card_showing(), "floor 2's card")
 	assert_eq(hud2.item_icon_count(), items.size(), "the carried items' icons")
 	assert_eq(hud2.ability_hud.filled_count(), owned.size(), "the ability slots")
-	assert_true(main.get_node("UI/Fade").visible, "the floor fades in")
+	assert_true(
+		main.get_node("UI/LoadingCover").visible,
+		"the floor opens from the portal's cover (v0.8.0 N3)"
+	)
 	assert_eq(get_errors().size(), 0, "no engine or script error")
 
 
@@ -187,9 +206,11 @@ func test_restart_run_from_the_pause_menu() -> void:
 	await e.tap(KEY_DOWN)  # Resume -> Build (v0.6.5 WN2)
 	await e.tap(KEY_DOWN)  # -> Restart run
 	await e.tap(KEY_ENTER)
+	await e.loaded()  # v0.8.0 N12: the new run builds over frames behind the cover
 	await e.frames(3)
 	assert_null(main.get_node_or_null("UI/PauseMenu"), "the pause menu closed")
 	assert_ne(e.world(), w, "a fresh run")
 	assert_eq(main.run.run_seed, run_seed + 1, "with the next seed")
 	assert_eq(main.run.floor_index, 1)
+	await e.landed()  # v0.8.0 N11: the hero lands on the receiver first
 	assert_gt(e.world().tick, 0, "and it runs")

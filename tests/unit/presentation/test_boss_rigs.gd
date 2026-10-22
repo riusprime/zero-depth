@@ -93,7 +93,7 @@ func test_the_slam_raises_the_fists() -> void:
 	_run(
 		a,
 		40,
-		{"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_SLAM_RING, "windup": 0.9},
+		{"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_MARKS, "windup": 0.9},
 		10
 	)
 	var up := a.skeleton.get_bone_pose_rotation(arm)
@@ -122,8 +122,7 @@ func test_the_turret_cannon_recoils() -> void:
 	var a := _avatar(SiegeEngineAvatar)
 	var gun := a.skeleton.find_bone("cannon")
 	var rest := a.skeleton.get_bone_rest(gun).origin
-	_run(
-		a, 5, {"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_BOLT_FAN, "windup": 0.9}
-	)
-	_run(a, 2, {"state": WorldReader.STATE_ACTIVE, "move": WorldReader.MOVE_BOLT_FAN}, 5)
+	# v0.8.0 BA: its Turret Cross (a pattern) kicks the cannon back on the strike.
+	_run(a, 5, {"state": WorldReader.STATE_WINDUP, "move": WorldReader.MOVE_PATTERN, "windup": 0.9})
+	_run(a, 2, {"state": WorldReader.STATE_ACTIVE, "move": WorldReader.MOVE_PATTERN}, 5)
 	assert_lt(a.skeleton.get_bone_pose_position(gun).x, rest.x - 0.2, "the cannon kicks back")

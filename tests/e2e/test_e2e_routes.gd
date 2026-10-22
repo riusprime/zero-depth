@@ -50,6 +50,7 @@ func test_into_the_deep_portal_and_floor_two_is_deep() -> void:
 	assert_false(main.run.is_deep(), "floor 1 is normal")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
+	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(
 		e, f.boss_door_inside(2.0), func() -> bool: return w.boss_flow.door_sealed(), into

@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="IntensityDirectorDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/intensity_director_definition.gd" id="1_int"]
+
+[resource]
+script = ExtResource("1_int")
+close_radius_m = 3.0
+hit_full_hp_gain = 1000
+close_kill_gain = 25
+close_gain_per_second = 30
+drain_per_second = 60
+calm_seconds = 2.0
+peak_intensity = 750
+peak_seconds_min = 3.0
+peak_seconds_max = 5.0
+pull_back_radius_m = 8.0
+pull_back_enemies = 2
+pull_back_max_seconds = 4.0
+quiet_seconds_min = 10.0
+quiet_seconds_max = 20.0
+relax_intensity = 400
+build_interval_permille = 400
+id = &"director"

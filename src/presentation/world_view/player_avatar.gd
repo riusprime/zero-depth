@@ -1,5 +1,5 @@
 class_name PlayerAvatar
-extends Node3D
+extends AvatarBase
 ## The player's hooded wanderer (owner, 2026-10-07; docs/art/main-character-sheet.png, the primary reference): a
 ## forward-tipped hood that tapers from a wide, square back to a shield-shaped front (flat top, a point at the
 ## chin), a recessed black face of the same shape with a centred landscape cyan visor; a diamond poncho (its hem
@@ -67,6 +67,33 @@ const CLEAVE_WIND := -1.15
 const CLEAVE_WHIP := 1.05
 const LUNGE_LEAN := 0.34
 const RECOIL_LEAN := 0.3
+## v0.8.0 GF1 (owner O19: a light cast on every shot): the body's accent, a quick kick back from the aim and a flick
+## of the head toward the casting side, gone in about CAST_SECONDS; reduced motion drops it (HeroCastFx keeps the
+## spark). Shots faster than that keep it up instead of stacking (it is set, never added).
+const CAST_SECONDS := 0.13
+const CAST_LEAN := 0.07
+const CAST_TWIST := 0.14
+const CAST_HOOD := 0.09
+## v0.8.0 GF3 (owner O22: the Blade gets the Gun's treatment; the swing itself stays as the owner likes it): an accent
+## on every combo step, timed to the sim's swing ticks (the hit on its active tick, the blade's sweep, the recovery)
+## and run on in frame time between syncs: a wind-up (the hips drop, the body draws back and the head and poncho wind
+## further back) up to the hit, the swing (the body drives into the aim, the hood pitches in, the visor flares) from
+## the hit through the sweep, and a follow-through (the head carries on past the arc's end, then settles) over the
+## recovery. The finisher's is ACCENT_FINISHER bigger. Reduced motion: no follow-through (no overshoot). Added on top
+## of the existing swing pose (radians and metres at full). Starting values.
+const WIND_CROUCH := 0.05
+const WIND_LEAN := 0.12
+const WIND_TWIST := 0.32
+const WIND_HOOD := 0.12
+const STRIKE_LEAN := 0.2
+const STRIKE_HOOD := 0.16
+const STRIKE_VISOR := 0.8
+## v0.8.0 P3 (owner O31, "Glow intensity is still excessive … particularly on … the main character"): the visor's
+## resting emission (was 2.4): it still reads as lit, and blooms less over the hood and the poncho.
+const VISOR_ENERGY := 1.4
+const FOLLOW_TWIST := 0.36
+const FOLLOW_LEAN := 0.06
+const ACCENT_FINISHER := 1.6
 ## Faster than this between two ticks is a teleport (blink, a new floor), not motion: the dash is ~27 m/s.
 const TELEPORT_SPEED := 40.0
 
@@ -86,7 +113,6 @@ var visor: MeshInstance3D
 var face: MeshInstance3D
 var cloak: MeshInstance3D
 var legs: Array[Node3D] = []
-var body_materials: Array[StandardMaterial3D] = []
 
 var _pelvis := Node3D.new()
 var _head_yaw := Node3D.new()
@@ -102,10 +128,6 @@ var _spring_pos: Array[Vector3] = []
 var _spring_vel: Array[Vector3] = []
 var _spring_target: Array[Vector3] = []
 # Sim state from the last sync.
-var _fresh := true
-var _last_tick := -1
-var _last_pos := Vector2.ZERO
-var _vel := Vector2.ZERO
 var _aim_yaw := 0.0
 var _dashing := false
 var _swing := 0.0
@@ -127,7 +149,6 @@ var _cleave_p := -1.0
 var _brace_target := 0.0
 var _recoil_target := 0.0
 # Smoothed animation state.
-var _t := 0.0
 var _vel_s := Vector3.ZERO
 var _body_yaw := 0.0
 var _leg_yaw := 0.0
@@ -143,6 +164,17 @@ var _lean := Vector3.ZERO
 var _lunge := 0.0
 var _brace := 0.0
 var _recoil := 0.0
+## v0.8.0 GF1: the cast accent (1 on a shot, easing to 0).
+var _cast := 0.0
+## v0.8.0 GF3: the swing accent's clock (swing ticks, run on in frame time up to one tick past the last sync's), the
+## step's hit tick, sweep and length, whether it is the finisher, and the accent now: (wind, strike, follow), 0..1.
+var _acc_clock := 0.0
+var _acc_tick := 0
+var _acc_active := 2
+var _acc_sweep := 5
+var _acc_ticks := 14
+var _acc_fin := false
+var _accent := Vector3.ZERO
 
 
 ## Builds the model. technique "xray" adds a team-coloured silhouette twin to the hood and the cloak (as
@@ -163,7 +195,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	var fm := StandardMaterial3D.new()
 	fm.albedo_color = FACE_COLOR
 	fm.roughness = 1.0
-	_write_stencil(fm)
+	write_stencil(fm)
 	face.material_override = fm
 	face.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	hood.add_child(face)
@@ -174,8 +206,8 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	_visor_mat.albedo_color = team
 	_visor_mat.emission_enabled = true
 	_visor_mat.emission = team
-	_visor_mat.emission_energy_multiplier = 2.4
-	_write_stencil(_visor_mat)
+	_visor_mat.emission_energy_multiplier = VISOR_ENERGY
+	write_stencil(_visor_mat)
 	visor.material_override = _visor_mat
 	visor.position = Vector3(FACE_X + 0.006, 0.0, 0)
 	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -240,6 +272,9 @@ func sync(reader: WorldReader) -> void:
 			"dead": reader.player_dead(),
 			"gun": reader.weapon_id() == &"pulse_gun",
 			"shooting": reader.shooting(),
+			"shot": reader.shot_fired(),  # v0.8.0 GF1: the cast accent
+			"active_tick": reader.swing_active_tick(),  # v0.8.0 GF3: the swing accent
+			"finisher": reader.is_finisher(),
 			"swing_form": reader.blade_swing(),  # v0.6.5 WN4: Lunge Step drives in, Heavy braces
 		}
 	)
@@ -249,13 +284,7 @@ func sync(reader: WorldReader) -> void:
 func apply_state(s: Dictionary) -> void:
 	var tick: int = s["tick"]
 	var pos: Vector2 = s["pos"]
-	if not _fresh and tick > _last_tick:
-		var v := (pos - _last_pos) * (60.0 / float(tick - _last_tick))
-		_vel = v if v.length() <= TELEPORT_SPEED and tick - _last_tick <= 30 else Vector2.ZERO
-	elif tick < _last_tick:
-		_vel = Vector2.ZERO
-	_last_tick = tick
-	_last_pos = pos
+	_track_motion(tick, pos, TELEPORT_SPEED)
 	_aim_yaw = SimPlane.yaw_of(s["aim"])
 	_dashing = s["dashing"]
 	_guarding = s["guarding"]
@@ -263,6 +292,8 @@ func apply_state(s: Dictionary) -> void:
 	_gun = s.get("gun", false)
 	if s.get("shooting", false):
 		_last_shot_tick = tick
+	if s.get("shot", false) and not ViewPrefs.reduced_motion:
+		_cast = 1.0
 	var st: int = s["swing_t"]
 	_swing = 0.0
 	_sweep = 0.0
@@ -273,6 +304,7 @@ func apply_state(s: Dictionary) -> void:
 		_swing_dir = -1.0 if _motion == WorldReader.MOTION_SLASH_LEFT_TO_RIGHT else 1.0
 		var sweep := clampf(float(st - 1) / maxf(1.0, float(s.get("sweep_ticks", 5))), 0.0, 1.0)
 		_sweep = 1.0 - (1.0 - sweep) * (1.0 - sweep)
+	_set_accent_clock(s, st)
 	if _motion == WorldReader.MOTION_SPIN and st > 0:
 		_spin_target = TAU * _sweep
 	else:
@@ -291,6 +323,50 @@ func apply_state(s: Dictionary) -> void:
 		_leg_yaw = _aim_yaw
 		_pose(0.0)
 		_reset_springs()
+
+
+## v0.8.0 GF3: the swing accent's timing from a sync (swing tick `st`; 0: no swing).
+func _set_accent_clock(s: Dictionary, st: int) -> void:
+	if st <= 0 or _dead:
+		_acc_tick = 0
+		_acc_clock = 0.0
+		return
+	if st != _acc_tick:
+		_acc_clock = float(st)
+	_acc_tick = st
+	_acc_active = int(s.get("active_tick", 2))
+	_acc_sweep = int(s.get("sweep_ticks", 5))
+	_acc_ticks = int(s["swing_ticks"])
+	_acc_fin = bool(s.get("finisher", false))
+
+
+## v0.8.0 GF3: the swing accent at swing time `tf` (ticks, fractional) of a step hitting on `active`, sweeping
+## `sweep` ticks and `ticks` long: (wind-up, swing, follow-through), each 0..1; `calm` (reduced motion) drops the
+## follow-through. Before the swing and after it: zero.
+static func swing_accent(tf: float, active: int, sweep: int, ticks: int, calm: bool) -> Vector3:
+	if tf <= 0.0 or tf > float(ticks) + 1.0:
+		return Vector3.ZERO
+	var a := float(active)
+	var e := float(sweep + 1)  # the blade reaches the arc's end
+	var wind := 0.0
+	if tf < a:
+		wind = smoothstep(0.0, maxf(a - 0.5, 0.5), tf)
+	else:
+		wind = clampf(1.0 - (tf - a), 0.0, 1.0)
+	var strike := smoothstep(a - 1.0, a + 0.5, tf) * (1.0 - smoothstep(a + 1.0, e + 2.0, tf))
+	var follow := 0.0
+	if not calm:
+		follow = smoothstep(e - 1.0, e + 2.0, tf) * (1.0 - smoothstep(e + 2.0, float(ticks), tf))
+	return Vector3(wind, strike, follow)
+
+
+## v0.8.0 GF3: the swing accent now (wind-up, swing, follow-through), and its size (the finisher's bigger).
+func swing_accent_now() -> Vector3:
+	return _accent
+
+
+func accent_scale() -> float:
+	return ACCENT_FINISHER if _acc_fin else 1.0
 
 
 ## v0.6.5 WN4: the Blade cards that change the swing itself (WorldReader.blade_swing): Lunge Step leans into the
@@ -337,10 +413,6 @@ func _apply_skill(s: Dictionary, tick: int) -> bool:
 	return false
 
 
-func _process(delta: float) -> void:
-	advance(delta)
-
-
 ## Advances the animation and the cloak springs by `delta` seconds of frame time.
 func advance(delta: float) -> void:
 	var dt := clampf(delta, 0.0, 0.05)
@@ -355,6 +427,14 @@ func advance(delta: float) -> void:
 	_dash = move_toward(_dash, 1.0 if _dashing else 0.0, dt * (14.0 if _dashing else 4.0))
 	_crouch = lerpf(_crouch, 1.0 if _guarding else 0.0, _rate(12.0, dt))
 	_slump = move_toward(_slump, 1.0 if _dead else 0.0, dt * (2.2 if _dead else 4.0))
+	_cast = move_toward(_cast, 0.0, dt / CAST_SECONDS)
+	if _acc_tick > 0:  # v0.8.0 GF3: the accent runs on between syncs, at most a tick past the last one
+		_acc_clock = minf(_acc_clock + dt * 60.0, float(_acc_tick) + 1.0)
+	_accent = (
+		swing_accent(_acc_clock, _acc_active, _acc_sweep, _acc_ticks, ViewPrefs.reduced_motion)
+		if _acc_tick > 0
+		else Vector3.ZERO
+	)
 	_pose(dt)
 	_step_springs(dt, accel)
 	_rebuild_cloak()
@@ -407,7 +487,18 @@ func slump_amount() -> float:
 
 ## The head's current yaw (radians, SimPlane.yaw_of convention), where the visor looks.
 func body_yaw() -> float:
-	return _body_yaw + _twist + _spin
+	return _body_yaw + _twist + _spin + _cast * CAST_TWIST + _accent_twist()
+
+
+## v0.8.0 GF3: the head's extra twist from the swing accent: wound further back, then carried on past the arc's end
+## (the swing's own way; a thrust winds and follows a little to its slash side, a spin the spin's way).
+func _accent_twist() -> float:
+	var way := _swing_dir
+	if _motion == WorldReader.MOTION_SPIN:
+		way = 1.0
+	elif _motion == WorldReader.MOTION_THRUST:
+		way = 0.5
+	return way * (-_accent.x * WIND_TWIST + _accent.z * FOLLOW_TWIST) * accent_scale()
 
 
 ## The finisher's spin so far (radians, 0..TAU), and how far the body leans into a thrust or a lunge (0..1).
@@ -433,12 +524,13 @@ func twist_amount() -> float:
 	return _twist
 
 
+## v0.8.0 GF1: the cast accent now (0..1).
+func cast_amount() -> float:
+	return _cast
+
+
 func stab_amount() -> float:
 	return _stab
-
-
-func _rate(per_second: float, dt: float) -> float:
-	return 1.0 - exp(-per_second * dt)
 
 
 func _turn_toward(from: float, to: float, k: float) -> float:
@@ -500,6 +592,7 @@ func _pose(dt: float) -> void:
 		- _stab * 0.05
 		- _lunge * 0.09
 		- _brace * 0.06
+		- _accent.x * WIND_CROUCH * accent_scale()
 	)
 	_pelvis.position = Vector3(0, hip, 0)
 	# Lean: into the movement (hard on a dash), forward when guarding or collapsing, a slow idle sway.
@@ -509,21 +602,45 @@ func _pose(dt: float) -> void:
 	var lean_target := (
 		move_dir * (0.16 * clampf(speed / WALK_SPEED, 0.0, 1.0) * (1.0 - _dash) + 0.32 * _dash)
 		+ face_dir * (_crouch * 0.12 + _slump * 0.22 + _stab * 0.22 + _lunge * LUNGE_LEAN)
-		- face_dir * (_recoil * RECOIL_LEAN)
+		- face_dir * (_recoil * RECOIL_LEAN + _cast * CAST_LEAN)
 		+ side * sin(_t * 1.1) * 0.02 * (1.0 - _walk)
 	)
 	_lean = _lean.lerp(lean_target, _rate(9.0, dt))
+	# v0.8.0 GF3: the swing accent leans the body at once (it is already smooth; the lean's ease would blur it).
+	var acc_k := accent_scale()
+	var lean := (
+		_lean
+		+ (
+			face_dir
+			* ((_accent.y * STRIKE_LEAN + _accent.z * FOLLOW_LEAN - _accent.x * WIND_LEAN) * acc_k)
+		)
+	)
 	var b := Basis.IDENTITY
-	if _lean.length() > 0.0001:
-		b = Basis(Vector3.UP.cross(_lean.normalized()), _lean.length())
+	if lean.length() > 0.0001:
+		b = Basis(Vector3.UP.cross(lean.normalized()), lean.length())
 	_pelvis.basis = b
-	_head_yaw.rotation = Vector3(0, _body_yaw + _twist + _spin, 0)
+	_head_yaw.rotation = Vector3(0, body_yaw(), 0)
 	# Dead: the hood droops forward and rolls to one side on top of the pooled cloak.
 	# Skills: the lunge pitches the hood down into it, the recoil throws it back.
 	hood.rotation = Vector3(
-		_slump * 0.15, 0, -HOOD_TILT - _slump * 0.2 - _crouch * 0.08 - _lunge * 0.12 + _recoil * 0.3
+		_slump * 0.15,
+		0,
+		(
+			-HOOD_TILT
+			- _slump * 0.2
+			- _crouch * 0.08
+			- _lunge * 0.12
+			+ _recoil * 0.3
+			+ _cast * CAST_HOOD
+			+ (_accent.x * WIND_HOOD - _accent.y * STRIKE_HOOD) * acc_k
+		)
 	)
-	_visor_mat.emission_energy_multiplier = lerpf(2.4, 0.35, _slump) * (1.0 + 0.7 * _heat_amount)
+	_visor_mat.emission_energy_multiplier = (
+		lerpf(VISOR_ENERGY, 0.35, _slump)
+		* (1.0 + 0.7 * _heat_amount)
+		* (1.0 + 0.5 * _cast)
+		* (1.0 + STRIKE_VISOR * _accent.y * acc_k)
+	)
 	# Legs: alternate stride, tucked on a dash, stretched forward when sitting dead, splayed when the hips drop
 	# below what the swung leg can reach.
 	_leg_root.position.y = hip
@@ -699,26 +816,6 @@ static func _tri2(
 		colors.append(NECK_SHADE if at_neck else UNDER_COLOR)
 
 
-## Appends one flat-shaded triangle facing away from `centre` (Godot's front faces wind clockwise).
-static func _tri(
-	verts: PackedVector3Array,
-	normals: PackedVector3Array,
-	a: Vector3,
-	b: Vector3,
-	c: Vector3,
-	centre: Vector3
-) -> void:
-	var n := (b - a).cross(c - a)
-	if n.dot((a + b + c) / 3.0 - centre) < 0.0:
-		var t := b
-		b = c
-		c = t
-		n = -n
-	n = n.normalized()
-	verts.append_array([a, c, b])
-	normals.append_array([n, n, n])
-
-
 static func _mesh_from(tris: Array, centre: Vector3) -> ArrayMesh:
 	var verts := PackedVector3Array()
 	var normals := PackedVector3Array()
@@ -789,38 +886,7 @@ static func _face_mesh() -> ArrayMesh:
 	return mesh
 
 
-## The face and visor mark the stencil like the body pieces do, so the hood's X-ray twin behind them stays hidden.
-static func _write_stencil(m: StandardMaterial3D) -> void:
-	m.stencil_mode = BaseMaterial3D.STENCIL_MODE_CUSTOM
-	m.stencil_flags = BaseMaterial3D.STENCIL_FLAG_WRITE
-	m.stencil_compare = BaseMaterial3D.STENCIL_COMPARE_ALWAYS
-	m.stencil_reference = 1
-
-
 func _mesh_piece(
 	parent: Node3D, mesh: Mesh, c: Color, outline: Color, team: Color, technique: StringName
 ) -> MeshInstance3D:
-	var body := MeshInstance3D.new()
-	body.mesh = mesh
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = c
-	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = outline
-	mat.stencil_outline_thickness = OUTLINE_M
-	ActorViews.flashable(mat)  # the hit flash changes only parameters, never the shader
-	body.material_override = mat
-	parent.add_child(body)
-	body_materials.append(mat)
-	if technique == &"xray":
-		var ghost := MeshInstance3D.new()
-		ghost.mesh = mesh
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = c
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		gm.stencil_color = Color(team, 0.85)
-		ghost.material_override = gm
-		ghost.scale = Vector3.ONE * 0.96
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(ghost)
-	return body
+	return _outlined(parent, mesh, Vector3.ZERO, c, outline, team, technique, OUTLINE_M)

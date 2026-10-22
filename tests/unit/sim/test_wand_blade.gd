@@ -96,7 +96,10 @@ func test_b2_wave_throws_a_flying_crescent() -> void:
 
 func test_b3_split_wave_needs_a_flying_slash_and_splits_it() -> void:
 	var alone := _fight([&"split_wave"])
-	assert_null(_hook(_step(alone), &"split_wave"), "no flying slash: nothing to split")
+	# v0.8.0 MR (O91): without a flying slash the slash's hits throw small crescents (test_mr_modifiers.gd)
+	var own := _hook(_step(alone), &"split_wave")
+	assert_not_null(own, "no flying slash: the slash throws its own crescents")
+	assert_eq(own.child.count, 2)
 	var w := _fight([&"echo_slash", &"split_wave"])
 	var crescent := _hook(_step(w), &"echo_slash").child
 	var split := _hook(crescent, &"split_wave")
@@ -122,7 +125,8 @@ func test_b4_whirl_spins_every_slash() -> void:
 func test_b5_double_slash_repeats_mirrored() -> void:
 	var w := _fight([&"double_slash"])
 	assert_eq(_step(w).repeat_delay_ticks, 9, "0.15 s later")
-	assert_eq(_step(w).repeat_damage_permille, 600)
+	assert_eq(_step(w).repeat_damage_permille, 600, "v0.8.0 MR: each repeat 60 % (BL: 70 %)")
+	assert_eq(_step(w).repeats, 1, "level 1: one repeat (B1: +1 a level, test_blade_combos.gd)")
 	assert_eq(_step(w).echo_mirror, 1, "mirrored")
 	var r := _run(w)
 	assert_gt(int(r["effects"].get(ItemEffects.EFFECT_TWIN_ARC, 0)), 0, "the repeat lands")
@@ -156,11 +160,19 @@ func test_b7_heavy_is_slow_and_crushing() -> void:
 
 
 func test_b8_flurry_swings_faster_for_less() -> void:
+	# v0.8.0 MR (O91): a burst, the first 3 swings after a pause (FireRhythm; test_mr_modifiers.gd)
 	var plain := _fight([])
 	var w := _fight([&"flurry"])
-	assert_lt(BladeForms.step(w, 0).ticks, BladeForms.step(plain, 0).ticks, "a faster swing")
-	assert_eq(_step(w).damage, _step(plain).damage * 750 / 1000, "−25 % damage")
-	assert_gt(_run(w)["hits"], _run(plain)["hits"], "more slashes land")
+	assert_eq(
+		BladeForms.step(w, 0).ticks, BladeForms.step(plain, 0).ticks, "no swing yet: the base"
+	)
+	w.mx.burst_n = 1
+	assert_lt(
+		BladeForms.step(w, 0).ticks, BladeForms.step(plain, 0).ticks, "a burst swing is faster"
+	)
+	w.mx.burst_n = 0
+	assert_eq(_step(w).damage, _step(plain).damage * 850 / 1000, "−15 % damage")
+	assert_ne(_run(w)["hash"], _run(plain)["hash"], "it changes the fight")
 
 
 func test_b9_fissure_cracks_then_erupts_in_a_line() -> void:
@@ -195,14 +207,14 @@ func test_b11_parry_edge_cuts_enemy_shots() -> void:
 	assert_gt(int(r["marks"].get(BladeForms.FX_PARRY, 0)), 0, "sparks where they were cut")
 
 
-func test_b12_afterimage_repeats_the_last_slash_on_a_dash() -> void:
+## v0.8.0 RM (owner O91): B12 is Dodge Imprint (the same id, long_shadow): no ghost copy; for 1.5 s after a dash the
+## next attack is cast from where the dash began (test_remnant_cards.gd plays it).
+func test_b12_dodge_imprint_marks_the_dash() -> void:
 	var w := _fight([&"long_shadow"])
-	var k := _hook(Modifiers.dash(w), &"long_shadow")
-	assert_not_null(k, "the dash leaves a copy")
-	assert_eq(k.child.form, AttackSpec.Form.WEAPON, "of your last slash")
+	assert_null(_hook(Modifiers.dash(w), &"long_shadow"), "no ghost copy")
+	assert_eq([Modifiers.dash(w).imprint_ticks, Modifiers.dash(w).imprint_permille], [90, 1100])
 	var r := _run(w)
-	assert_gt(int(r["effects"].get(&"long_shadow", 0)), 0, "the ghost slash lands")
-	assert_gt(int(r["marks"].get(BladeForms.FX_ARC, 0)), 0, "the view's ghost slash")
+	assert_eq(int(r["effects"].get(&"long_shadow", 0)), 0, "it adds no hit of its own")
 
 
 func test_b13_lunge_step_drives_you_forward() -> void:
@@ -219,20 +231,20 @@ func test_b13_lunge_step_drives_you_forward() -> void:
 	assert_almost_eq(_step(_fight([&"lunge_step"])).step_m, 1.0, 0.001)
 
 
-func test_b14_finisher_plus_shockwave_carries_every_card() -> void:
+## v0.8.0 RM (owner O91: "Rework Finisher+ into Fracture Bank"): the same id; every combo step carries its fragment
+## hook, the finisher's extracts (test_remnants.gd, test_remnant_cards.gd).
+func test_b14_fracture_bank_lodges_and_the_finisher_extracts() -> void:
 	var w := _fight([&"finisher_plus", &"ember_edge"])
 	var last := w.player.combo.size() - 1
-	assert_null(_hook(_step(w, 0), &"finisher_plus"), "only the 4th hit")
+	var lodge := _hook(_step(w, 0), &"finisher_plus")
+	assert_not_null(lodge, "a combo step lodges")
+	assert_false(lodge.extract)
 	var k := _hook(_step(w, last), &"finisher_plus")
-	assert_not_null(k, "the finisher's shockwave")
+	assert_true(k.extract, "the finisher extracts")
 	assert_eq(k.child.form, AttackSpec.Form.BURST)
-	assert_almost_eq(k.child.radius_m, 3.0, 0.001, "a big one")
-	assert_eq(k.damage_permille, 2000, "doubled")
-	assert_true(
-		k.child.has_status(&"burn"),
-		"Ember Edge sits right of it and still burns the shockwave (carry)"
-	)
-	assert_gt(int(_run(w)["effects"].get(&"finisher_plus", 0)), 0, "the shockwave lands")
+	assert_eq(k.damage_permille, 400, "40 % of the finisher a fragment")
+	var r := _run(w)
+	assert_gt(int(r["effects"].get(&"finisher_plus", 0)), 0, "the extraction lands")
 
 
 func test_b15_orbit_blades_circle_you() -> void:

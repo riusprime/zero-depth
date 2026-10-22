@@ -45,11 +45,11 @@ the order is part of the contract:
 | # | Phase | Notes |
 |---|---|---|
 | 1 | **Freeze check** | If `world.freeze_ticks > 0`: decrement it, add the frame's `pressed` bits to the input buffer (§3), increment `world.tick`, publish cues and **stop**. Nothing moves, no status ticks, and **the input buffer doesn't age** during hit-stop. |
-| 1b | **Choosing** (v0.3.0 E) | If an altar's or chest's 3-card choice is open (`world.choosing >= 0`): apply only the frame's `pick` (take a card, or cancel), increment `world.tick` and **stop**. Every gameplay phase waits (no AI, movement, hits, statuses, spawns, run time); presses made during the choice are dropped when it closes. |
+| 1b | **Choosing** (v0.3.0 E) | If an altar's or chest's 3-card choice is open (`world.choosing >= 0`): apply only the frame's `pick` (take a card, or cancel; v0.8.0 N7: on a chest's dealt card any pick value takes it), increment `world.tick` and **stop**. Every gameplay phase waits (no AI, movement, hits, statuses, spawns, run time); presses made during the choice are dropped when it closes. |
 | 1b′ | **Shopping** (v0.5.0 SH) | If the floor's shop is open (`world.shop.open`): apply only the frame's `pick` as a shop action (`Shop.choose`: buy card 1..4, `PICK_SHOP_HEAL`, `PICK_SHOP_REROLL`, `PICK_SHOP_SELL + n`, or `PICK_CANCEL` to close), increment `world.tick` and **stop**. Every gameplay phase waits, as for an altar's choice; presses made while it is open are dropped when it closes. v0.5.0 EV: next, an open event panel (`world.ev.open >= 0`) holds the world the same way; only its `pick` applies (`Events.choose`: 1..n takes that choice, cancel is "Leave"). |
-| 1c | **Run-flow hold** (v0.3.0 B; v0.3.5 PT) | If the floor is over (`BossFlow` `EXITED`), the hero is going into the portal (`ENTERING`, `enter_ticks`: 60, or 24 with reduced motion) or arriving on a floor after the first (`arrive_left > 0`, `arrive_ticks`: 48, or 18): advance only that countdown (`BossFlow.advance_transit`: the way in turns `EXITED` after `enter_ticks`), increment `world.tick` and **stop**. The frame is ignored (no buffering), nothing moves, run time doesn't count. The run flow sets both lengths at setup (`set_transit`); views read the progress (`WorldReader.portal_enter_progress`, `arrival_progress`). `FLOOR_EXIT` is emitted once, as the portal takes the hero. |
+| 1c | **Run-flow hold** (v0.3.0 B; v0.3.5 PT) | If the floor is over (`BossFlow` `EXITED`), the hero is going into the portal (`ENTERING`, `enter_ticks`: 60, or 24 with reduced motion) or arriving on a floor after the first (`arrive_left > 0`, `arrive_ticks`: 48, or 18): advance only that countdown (`BossFlow.advance_transit`: the way in turns `EXITED` after `enter_ticks`), increment `world.tick` and **stop**. The frame is ignored (no buffering), nothing moves, run time doesn't count. The run flow sets both lengths at setup (`set_transit`); views read the progress (`WorldReader.portal_enter_progress`, `arrival_progress`). `FLOOR_EXIT` is emitted once, as the portal takes the hero. v0.8.0 N11 (O69): every run floor opens with the arrival (the hero landing on the floor's receiver), its length data (`SimTuning.arrival_first_ticks` 96 on floor 1 of a run, `arrival_ticks` 48 later, `arrival_calm_ticks` 18 with reduced motion; `BossFlow.arrival_length`): nothing spawns, nothing acts and the hero can't be hit until it ends. The app holds the first tick until the loading cover has opened (`SimDriver.hold`). v0.8.0 fix (2026-10-17): the arrival's countdown runs ahead of phase 1b, so a Swap or choice opened while the hero arrives (the dev panel's grant lands between ticks) waits for the landing and never stops the arrival; the HUD (hidden until the landing) takes no Swap answer meanwhile. |
 | 2 | **Input** | Apply the `InputFrame` to the player: move intent, aim, held buttons, and new presses into the 6-tick buffer. |
-| 2b | **Interact** (v0.3.0 E) | A buffered `INTERACT` press within reach of an altar or chest opens it (`Rewards.interact`): a chest you can't afford stays shut; otherwise its offer is rolled once (loot stream) and the choice opens. If it opened, increment `world.tick` and stop. Otherwise (v0.5.0 EV) a press within reach of a ready event pedestal (`Events.interact`) opens its panel (its choices' cards and curses rolled once, on `loot:event`); if it opened, increment `world.tick` and stop. Otherwise a press still buffered within reach of the shop terminal (v0.5.0 SH, `Shop.interact`) opens the shop (its stock drawn on the first open, from `loot`, by a chest's rules: `Offers.draw`); if it opened, increment `world.tick` and stop. Otherwise a press still buffered within reach of the gamble shrine (v0.3.0 L19, `Gamble.interact`) pays its price and grants one stat at once (loot stream, weighted over the stats under their cap), or records a refusal; the tick goes on. |
+| 2b | **Interact** (v0.3.0 E) | A buffered `INTERACT` press within reach of an altar or chest opens it (`Rewards.interact`): a chest you can't afford stays shut; otherwise its offer is rolled once (loot stream) and the choice opens. v0.8.0 N7 (owner O61): a chest rolls one card (`Offers.CHEST_CARDS`) and deals it (`Rewards.deal`: the reward is `RewardStore.DEALT` while the world waits); phase 1b takes it on the next pick of any value (its price paid, its `PICKUP`, the card applied), so the panel's forecast reads the state before the take; a cursed chest (its curse card before its one card) is a choice as before. If it opened, increment `world.tick` and stop. Otherwise (v0.5.0 EV) a press within reach of a ready event pedestal (`Events.interact`) opens its panel (its choices' cards and curses rolled once, on `loot:event`); if it opened, increment `world.tick` and stop. Otherwise a press still buffered within reach of the shop terminal (v0.5.0 SH, `Shop.interact`) opens the shop (its stock drawn on the first open, from `loot`, by a chest's rules: `Offers.draw`); if it opened, increment `world.tick` and stop. Otherwise a press still buffered within reach of the gamble shrine (v0.3.0 L19, `Gamble.interact`) pays its price and grants one stat at once (loot stream, weighted over the stats under their cap), or records a refusal; the tick goes on. v0.8.0 N14 (owner O72): a paid use first rolls its failure (`fail_permille`, 300, on `loot:shrine:<use>`, one stream per paid use from the floor seed): a failed use is paid, grants nothing, emits `GAMBLE_FAIL` and sets `gamble_fail_tick`; every paid use steps the price up; a win counts toward `max_wins` (3), after which the shrine is spent and refuses. `gamble_wins` and `gamble_fail_tick` are saved and hashed (in the shrine's block, only once they differ from a shrine that never failed); a floor has a shrine with `floor_chance_permille` (400, on `map:shrine`), in a combat room that is not the start hall, the boss room or its host, the portal, Overrun or shop room or an arena (`Gamble.site`); a floor saved before N14 keeps its start-hall shrine. |
 | 3 | **AI** | Enemies think in ascending entity id. Expensive thinking (path queries, target scoring) is staggered: an enemy with id `n` runs its heavy pass only when `(tick + n) % AI_HEAVY_PERIOD == 0` (**starting value** `AI_HEAVY_PERIOD = 6`). Light steering runs every tick. |
 | 4 | **Action states** | Each actor's current action advances through `WINDUP → ACTIVE → RECOVERY` by tick counts. A buffered press starts a new action only when the current one allows cancelling. |
 | 5 | **Move and collide** | Actors move, then resolve against walls and each other (§6). Projectiles sweep (§6). |
@@ -165,23 +165,59 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   tables (§10).
 - **v0.4.0 BS** adds two named streams, derived the same way: `crit` (one roll per direct player hit while the crit
   chance is above 0; `Stats.outgoing`) and `ability` (the auto abilities' randomness: a spare bomb's scatter;
-  `Abilities`). Offers still draw only `loot`. Both states join the hash with the build block (§10).
+  `Abilities`; v0.8.0 P2: Void's black-hole roll, one draw per shot or landing slash of a spec with
+  `hole_permille` > 0, `BlackHoles.roll`, so a build without Void draws nothing new). Offers still draw only `loot`. Both states join the hash with the build block (§10).
 - **v0.5.0 EV** adds three sub-streams, derived the same way, so no older draw moves: `map:event` (which rooms hold
   an event; drawn fresh from the run seed by `Events.pick_rooms`, a pure function of layout and seed), `loot:event`
   (`World.ev.rng`: the event drawn per pedestal, each panel's cards and curses on its first open, an ambush's kinds
   and spots, the cursed-chest roll and its card and curse) and `ai:elite` (`World.ev.rng_elite`: one roll per spawn
   while an elite curse is held). They are sub-streams of `map`, `loot` and `ai` like `ai:enemy`; EI-05 lists them
   (owner approval 2026-10-08). Both world states join the hash with the event block (§10).
+- **v0.8.0 N17** (owner O75) adds the sub-stream `map:curse_room`, derived from the floor seed like `map:shrine` (its
+  first draw dropped, `Gamble.stream`): whether the floor has a curse room (`curse_room_floor_chance_permille`, 400)
+  and which allowed combat room (a drawn order of `Events.curse_rooms`, minus the shrine's room), a pure function of
+  layout, rules and seed (`Events.curse_site`). The altar's event is then drawn on `loot:event` after the common
+  rooms' draws, from the curse events only; the common rooms draw from the others. `EventState.curse_k` (the
+  altar's pedestal) is saved and hashed once >= 0. A floor saved under floor rules 1-6 draws as before (no room).
+- **v0.8.0 N19** (owner O80) keeps the same `map:curse_room` draws (the chance, then the drawn order) and adds no
+  stream: on a Deep floor the chance is `curse_room_deep_chance_permille` (1000); the drawn order is then grouped,
+  keeping the drawn order inside each group (small rooms, interior <= `Events.SMALL_ROOM_M2` 170 m², holding no reward;
+  other rooms holding none; small rooms holding one; the rest), and the first with an altar spot (`Events.curse_spot`)
+  wins. `CurseRoom.furnish` (pure, no draw) then clears the room's interior, puts the altar's footprint and the crystal
+  clusters into the world's walls and drops the room's spawn points. Whispering Deep is a curse event (drawn only for
+  the altar; on a Deep floor first, as before); Echo Mirror needs `stat_raised` (`Need.STAT_RAISED`). Floor rules 8; a
+  floor saved under rules 7 is rebuilt with N17's room, draw and look (`Events.CURSE_RULES_N17`).
 - **v0.6.0 CU** draws only on named streams that already exist: `combat` (Rooted's dodge: one draw per enemy hit that
   would land on the player, only while a dodge chance is held; `Curses.dodges`), `ai:elite` (core theft: the card an
   elite's or a boss's core holds, drawn when it becomes an elite (`Curses.make_elite`) or rises (`World.spawn_boss`);
   `CoreTheft.on_elite`, `on_boss`) and `loot:event` (the cursed chest's roll and its trade-off curse; a core redrawn at
   its drop when its card no longer applies; Marked's rare card from a slain elite). Cores exist only in worlds with
   the event streams (`World.ev.rng_elite`), so older worlds draw nothing new.
+- **v0.7.5 NB1** adds the sub-stream `map:ice`, derived the same way from the floor seed (`World.seed_value`), like
+  `map:overrun` and `map:event`: Frozen Shore's ice patches (`IcePatches.lay`, a pure function of the layout, the
+  walls and the seed; every room draws its chance and count, so skipping one room never shifts another). No other
+  stream draws more, and floors of other biomes draw nothing. The ice (`World.ice`, an `IceField`) is loadout: laid
+  at setup, never written in play, kept from the base on restore (`WorldSnapshot.WORLD_KEPT`) and not hashed (like
+  the layout); its effect is: while the hero's position at the start of the move is on a patch, the hero eases with
+  the ice's `accel_permille` / `decel_permille` instead of the player's own (a slide). The dash, skills and enemies
+  are unchanged on ice. EI-05's list names the streams of LOCKED_DECISIONS; `map:ice` is a sub-stream of `map` the
+  way `map:overrun` is (flagged for the owner in the v0.7.5 PLAN).
+- **v0.7.5 NB2** adds the sub-stream `map:starglow` the same way (`IcePatches.stream_of(kind)`: `map:<kind>`; ice
+  keeps `map:ice`): Starfall's starglow pools, laid by the same `IcePatches.lay` rules into the same `World.ice`
+  (an `IceField` whose `kind` is `&"starglow"`; a floor has one surface at most). Its effect: while the hero's
+  position at the start of the move is on a pool, the hero's target walking velocity is scaled by the field's
+  `speed_permille` (1250: a quarter faster) and they ease with its `accel_permille` / `decel_permille` (Starfall:
+  0.1 s up, 0.2 s down, a short drift). Ice's `speed_permille` is 1000, and at 1000 the scale is skipped, so the
+  target is untouched and Frozen Shore plays exactly as in NB1. Loadout, not hashed, kept on restore, like the ice; dash, skills and enemies
+  unchanged. Not in EI-05's list either (flagged with `map:ice`).
 - **Per-room streams.** Each room derives its own `combat:room:k` and `ai:room:k` streams from the run seed and
   the room's index `k`. Re-entering a room after a resume therefore replays its randomness exactly, whatever
   happened earlier. First used in v0.5.5 AR by the sealed arenas' waves (`Arenas`): derived at each seal from the
   floor's seed (`World.seed_value`, which the run seed derives per floor), so room `k` on each floor has its own.
+- **The intensity director's cycles (v0.8.0 N5).** `Intensity` derives `ai:intensity:<cycle>` from the floor's seed
+  (`World.seed_value`) when a build-up reaches its peak, and draws two numbers from it: the peak's length, then the
+  quiet's. No stream is stored (the cycle count is state), so the draws replay exactly after a resume and never move
+  any other stream. A sub-stream of `ai` like `ai:room:k`; not in EI-05's list either (flagged with `map:ice`, D13).
 - **Per-room generation seeds.** `FloorGenerator` derives one sub-seed per room from the `map` stream, so changing
   one room's template never shifts any other room.
 - The `cosmetic` stream lives in presentation (particle jitter, camera shake noise, pitch jitter). It is derived
@@ -244,7 +280,7 @@ Every gameplay consequence is a `SimEvent`:
 |---|---|---|
 | `seq` | int | Global sequence number in this `World`, monotonic |
 | `tick` | int | Tick it happened on |
-| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`, then appended: `PICKUP` (v0.2.0; v0.3.0 E: also a card taken from an altar or chest), `COMBO_UNLOCKED` (v0.3.0 G), `BOSS_DEFEATED` (v0.3.0 C: once per boss, after its `KILL`; `amount` = its boss table index) and `SHARDS` (v0.3.0 E: a kill paid `amount` shards at `pos`), …, then (v0.3.5 K) `SKILL_USED` (the build skill started; `amount` = `SkillTable.Kind`, `root_id` = the skill's root, which all its hits share), `VENT` (the Vent button vented `amount` heat) and `VENT_COLD` (the Vent button under Hot: nothing vented). Then (v0.5.0 SH) `SHOP_BUY` (shards spent at the shop: `amount` = the price, `effect_id` = the card's id or `shop_heal` / `shop_reroll`; a bought card also emits `PICKUP` from the terminal, the heal a `HEAL` with `effect_id` `shop_heal`) and `SHOP_SALVAGE` (shards back: `amount` = the refund, `effect_id` = what was sold, `target_id` = its card code). The first nine were declared in v0.0.1, even though early versions emit only some kinds. New kinds are appended, never inserted, because kinds are hashed |
+| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`, then appended: `PICKUP` (v0.2.0; v0.3.0 E: also a card taken from an altar or chest), `COMBO_UNLOCKED` (v0.3.0 G), `BOSS_DEFEATED` (v0.3.0 C: once per boss, after its `KILL`; `amount` = its boss table index) and `SHARDS` (v0.3.0 E: a kill paid `amount` shards at `pos`), …, then (v0.3.5 K) `SKILL_USED` (the build skill started; `amount` = `SkillTable.Kind`, `root_id` = the skill's root, which all its hits share), `VENT` (the Vent button vented `amount` heat) and `VENT_COLD` (the Vent button under Hot: nothing vented). Then (v0.5.0 SH) `SHOP_BUY` (shards spent at the shop: `amount` = the price, `effect_id` = the card's id or `shop_heal` / `shop_reroll`; a bought card also emits `PICKUP` from the terminal, the heal a `HEAL` with `effect_id` `shop_heal`) and `SHOP_SALVAGE` (shards back: `amount` = the refund, `effect_id` = what was sold, `target_id` = its card code). The first nine were declared in v0.0.1, even though early versions emit only some kinds. v0.8.0 RM appends `REMNANT_SPAWN`, `REMNANT_ACTIVATE` and `REMNANT_END` (§8l). New kinds are appended, never inserted, because kinds are hashed |
 | `root_id` | int | The chain this event belongs to. A player action, an enemy attack or a status tick opens a new root |
 | `parent_seq` | int | The event that caused this one (−1 for a root) |
 | `depth` | int | 0 for a root; parent depth + 1 otherwise |
@@ -299,8 +335,18 @@ with `TAG_CRIT` (bit 16, reserved since v0.0.1). This sits before step 2's attac
 every player source alike: swings, bolts, skills, abilities, vents and item payoffs (chains, shockwaves, thorns).
 DoT ticks the player owns take the damage stat but never crit. A hit the player takes is cut by armour after the
 target multipliers (`× armour / 1000`, at least 1). Cards stack multiplicatively per card in per mille (two +10 % =
-1210) within their caps; the other stats are read where the sim computes them (cooldowns: dash, skill, blink, bombs;
-attack speed: shot period, drone period, a swing's recovery; area: swing and cleave reach, vent radius, ability
+1210) within their caps, except an `additive` card (**v0.8.0 SG**, owner O91: damage, attack speed and Glass Cannon;
+two +10 % = 1200). The damage multiplier is one additive bucket, `(DAMAGE + ONRUSH while moving + Hoarder's bonus) ×
+GLASS_CANNON` (`Stats.damage_permille`); the curses (Blood Price, Glass Heart, Heavy Hands) stay explicit multipliers.
+Attack speed has one rule (`AttackRate`): the raw bonus = `ATTACK_SPEED − 1000` + the attack's wand
+`rate_bonus_permille` (a negative one counts); the effective bonus counts it in full up to `attack_speed_knee`
+(500), at `attack_speed_slope` (500 ‰) up to `attack_speed_knee2` (1500), at `attack_speed_slope2` (250 ‰) above
+(`SimTuning`, `data/tuning/sim.tres`); the rate `1000 + effective` (at least 1) then takes Heavy Hands' cut. The Gun's
+period is `base × 1000 / rate` half up (at least 2 ticks once changed), the Blade's whole swing (hit tick, sweep,
+recovery) scales by the same rate (at least `rate_min`), the drone's period reads the stat alone. A save made before
+SG (`World.stat_rules` 0) rebuilds DAMAGE, ATTACK_SPEED and GLASS_CANNON from `stat_cards` and the gamble stacks on
+load (`Stats.migrate_rules`). The other stats are read where the sim computes them (cooldowns: dash, skill, blink,
+bombs; attack speed: shot period, drone period, the Blade's swing; area: swing and cleave reach, vent radius, ability
 radii; move speed; shard gain; pickup range: reward, shrine and pickup reach; regen: per mille of max HP per second,
 in and out of combat). Worlds whose player has no crit and no cards (the kernel goldens) never roll.
 
@@ -448,7 +494,8 @@ swap is a choice the world waits on, like an altar's pick: `World.swap_code` (th
 (`BuildSlots.Source`: `REWARD` the altar or chest pick, `SHOP` a buy, `GRANT` a card with no panel: an event's card,
 a floor pickup, the dev panel), `swap_ref` (its offer index). `InputFrame.pick` answers it: `PICK_SWAP_BASE + n`
 (30..35) replaces slot n, `PICK_SWAP_SKIP` (39) or `PICK_CANCEL` skips. A skip at an altar or the shop goes back to its
-cards (nothing paid; a chest's price and a shop's price are paid only when the swap is answered); a skipped grant
+cards (nothing paid; a chest's price and a shop's price are paid only when the swap is answered; v0.8.0 N7: a chest's
+dealt card that needs the swap opens it on the answer; a skip shows the card again, a cancel leaves the chest shut with its card); a skipped grant
 leaves the card. A `GRANT` swap runs in `World.step` before the altar's pick (only the answer runs; the tick counts).
 `World.add_item` and `Abilities.grant` stay uncapped for tests and labs (the scenario worlds of MX1 hold up to 11
 attack items); every player-facing path caps. Hash: `mod_slots` and the swap fields once touched (worlds without a
@@ -572,8 +619,16 @@ for `barrier_ticks`, the next enemy hit on the player is absorbed (HIT emitted, 
 player with effect `aether_shell`) and combat starts again; Resonance, an attacker multiplier in `Damage.hit` after
 Cold Snap's: + `resonance_permille` per status on the enemy (burning, shocked, bleeding, chilled or frozen, slowed,
 poisoned). Phase Dash: `World.dash_iframes_active` holds for the whole dash and the player skips body collisions.
-Gravity Well: a burst with `pull_m` moves every enemy it touches (not a boss, not spawning) up to that far toward its
-centre before its hits; walls push them out in the next collision pass.
+Gravity Well's pull (a burst with `pull_m`) is retired (v0.8.0 P2, owner O24): no card sets `pull_m` (kept in the hash
+order). **Void's black holes** (`BlackHoles`, v0.8.0 P2): a spec with `hole_permille` > 0 rolls once on the `ability`
+stream where a projectile of it ends (`Attacks.on_projectile_end`, a projectile with its own spec key) and where a
+slash of it first lands (`Attacks._arc`); on success a hole opens there (`World.mx.hole_pos` / `hole_from` /
+`hole_dmg`; the pulse = the shot's damage × `hole_damage_permille`, rounded, at least 1). Past `WandTable.hole_max` (3)
+the oldest closes first. Tick phase 6 (`ModifierRuntime.advance`): holes whose age reaches `hole_ticks` (120) close;
+each then (oldest first) moves every enemy within `hole_pull_radius_m` (3.5 m; not a boss, not spawning) by
+`hole_pull_step_m` (0.05 m a tick) toward its centre, stopping `BlackHoles.CORE_GAP_M` (0.3 m) short, and every
+`hole_period_ticks` (12) of its age pulses `Damage.tick_dot` (TAG_DOT, proc 0, effect `void_hole`) on each enemy
+within `hole_radius_m` (1.4 m). Hashed (`ModifierState`) only while a hole stands; snapshotted (`ADDED_SINCE_V05`).
 
 **Venom** (`Venom`, M4): status `poison` (`ModifierOpDefinition.STATUSES`), stacks capped at `poison_max_stacks`, each
 new stack refreshing `poison_ticks`; every `poison_period_ticks` the DoT deals `poison_damage` × stacks (its own root,
@@ -803,7 +858,8 @@ cards (§8e) are offered too.
 burst 1.5 m at 60 %), S2 Lightning `storm_core` (storm; an `ON_HIT` seeking beam within 4 m at 50 % that jumps once
 more: 2 more enemies), S3 Frost `frost_core` (slow, frost 1, frost element: the frost engine's threshold 3 freezes
 for 1 s), S4 Venom `venom_core` (poison 1, venom; the poison spreads on death, §8d), S5 Bleed `shared_bleed` (bleed
-1, bleed element), S6 Void `gravity_well` (void on the spell; an `ON_HIT` burst 2.5 m at 20 % that pulls 0.8 m), S7
+1, bleed element), S6 Void `gravity_well` (void on the spell; v0.8.0 P2: `hole_permille` 80 + 30 a level, `hole_damage_permille` 300:
+black holes, §8b), S7
 Explosive `shared_explosive` (an `ON_END` burst 1.4 m at 60 % where the spell ends: an arc's tip, a projectile's end,
 a burst; its child drawn ember). Each levels 1–5 (§8f's `CardLevels`). Everything else is the v0.3 / v0.6 engines.
 
@@ -876,6 +932,198 @@ rises, never falls). The tier's `mods` are three legendary triggers: `ModifierOp
 `trigger_on_kill_twice`, `trigger_on_end_twice`): `WandCompile._cut` files the child spell `casts` times as hooks of
 the same trigger, the n-th with `delay_ticks` × n (0.15 s: the later casts go through the launch queue, §8d). The pick
 of 3 is unchanged. `WorldReader.legendary_card_level(i)` tells the pick panel the level ("Mod · Level 5 · Legendary").
+**Superseded by v0.8.0 FL** (§8m): the level-5 grant is gone (`BossReward.on_pick`, `BossReward.level_after` and
+`WorldReader.legendary_card_level` were removed; `LegendaryTable.wand_level` is retired and the content must hold 0).
+
+## 8j. Blade combinations and the Gun's top end (v0.8.0 BL)
+
+G1: [`../roadmap/v0.8.0/BLADE_AUDIT.md`](../roadmap/v0.8.0/BLADE_AUDIT.md) (owner, 2026-10-14: rows B1–B7 as
+proposed). Evidence: [`../roadmap/v0.8.0/evidence/BLADE.md`](../roadmap/v0.8.0/evidence/BLADE.md).
+- **Levels that start late (B2).** `ModifierOp.per_level_after` (content `ModifierOpDefinition.per_level_after`, 1..4,
+  default 1): the op's `per_level` counts only for the levels above it (`at_level`: value + per_level × max(0, level −
+  per_level_after)). A `MUL_PERMILLE` op's `per_level` is kept as a float and rounded per level (Flurry's 250 / 3).
+- **Repeats (B1).** `AttackSpec.repeats` (a `LATE_INT_FIELDS` field: hashed with its name only when not 0, so a spec
+  without it hashes as before): a root attack with `repeat_delay_ticks` repeats `max(1, repeats)` times, the first
+  `repeat_delay_ticks` after it, each next one `ModifierRuntime.REPEAT_GAP_TICKS` (5) after the one before. A combo
+  step's first repeat stays its echo (`World.echo_*`); the others go through the launch queue (§8d,
+  `ModifierRuntime.queue_echoes`: from where the player is then, the echo's effect id), so the next swing never
+  cancels them. Double Slash sets `repeats` = its level at 70 %.
+- **A slash hit casts twice (B3).** On a Blade run (`PlayerBuild.has_blade`, a combo), `WandCompile._cut` files an
+  `ON_HIT` / `ON_KILL` / `ON_FINISHER` cut on an `ARC` spec `WandTable.blade_hit_casts` (2) times its casts, the n-th
+  with `delay_ticks` = n × (the trigger's own delay, or `blade_cast_gap_ticks`: 6). `ON_END`, `ON_CRIT`, the Gun and
+  every non-arc spec are unchanged.
+- **Once per line (B6).** `WandTable.once_per_line` (data: `split_shot`, `shared_explosive`): a HOOK op of one of these
+  cards is not added to a spec whose `lineage` already holds one of them (`WandCompile.once_more`), so Split's splits,
+  Explosive's blast and anything cast from them neither split nor explode; the first shot does both.
+- **Blast merge (B6).** `Attacks.merged`, in `run_hook` before an undelayed child launches: for a hook in
+  `WandTable.blast_merge_ids` (Explosive), past `blast_merge_after` (8) such blasts set off in one tick, one within its
+  child's `radius_m` of a blast already set off that tick does not go off (`World.blast_merged` counts it); one farther
+  away still does. `World.blast_tick` / `blast_pos` / `blast_merged` are per-tick, not hashed, and in
+  `WorldSnapshot.ADDED_SINCE_V05`.
+- **Offer weight (B5).** `ItemPool.card_weight`: a mod draw (`ItemPool.draw_weighted`, `Offers.draw`'s mods) weighs a
+  card its rarity weight × `RewardTable.own_weapon_card_permille` (data 1500) when it is a wand card of the run's own
+  weapon, × 1000 otherwise. The loot stream is drawn the same number of times.
+- **New cards (B4).** Blade Storm (`blade_storm`, rare: an `ON_LAUNCH` hook of 1 + level returning bolts, 45 %) and
+  Riposte Chain (`riposte_chain`: an `ON_KILL` seeking beam, reach 4 m, `chains` = level, 80 %). Their items have
+  `index_wave` 1: `ModifierCompiler.item_defs` puts every wave-0 card first in its v0.6.5 order, then wave 1, so no
+  saved item index moves.
+- **The Blade Storm build's cost (v0.8.0 PF2, owner O9).** Evidence: [`../roadmap/v0.8.0/evidence/PERF.md`](
+  ../roadmap/v0.8.0/evidence/PERF.md) "PF2". Two rules, both data:
+  - *Cast-free line.* `WandTable.cast_free_lines` (data: `blade_storm`): `WandCompile._cut` files no trigger cut on a
+    spec whose `lineage` holds one of these cards (`WandCompile.cast_free`); the trigger still ends that spec (the cards
+    to its right don't rewrite it). A Blade Storm blade's hits cast no trigger's spell; the slash, Wave's crescents and
+    every other spec cast as before.
+  - *A cap of its own.* `AttackSpec.alive_max` (a `LATE_INT_FIELDS` field; content op field `alive_max`, PATTERN):
+    `Attacks._bolts` launches a bolt of such a spec only while `World.player_projectiles_of(spec.id)` (its projectiles
+    alive and queued, every key of that id, counted on demand at the launch) is under it; a launch cut short throws the
+    bolts that fit, in pattern order, and leaves one `LIMIT` event (`effect_id` `attack_alive_cap`, `amount` the cap).
+    Blade Storm's child sets it to 36 (6 slashes × 6 blades: a level-5 Double Slash swing). Nothing is stored per tick
+    (no `WorldSnapshot` field); a spec without it hashes as before. `SimTuning.player_shots_max` still holds.
+
+## 8k. Shared damage, repeats and rhythms (v0.8.0 MR)
+
+Owner O91; spec [`../roadmap/v0.8.0/BALANCE_PASS.md`](../roadmap/v0.8.0/BALANCE_PASS.md) "MR" (starting values);
+WAND.md rules 10–11. Evidence: [`../roadmap/v0.8.0/evidence/BALANCE_MR.md`](../roadmap/v0.8.0/evidence/BALANCE_MR.md).
+- **Shares.** `AttackSpec.share_permille` (`LATE_INT_FIELDS`; content op field `share_permille`, PAYLOAD; 0 = whole):
+  `Modifiers.numeric` reads 0 as 1000, so a card's `MUL_PERMILLE` multiplies down the wand (Twin 600, Spread 550, Halo
+  400; each `+per_level`), and the view's `damage_mul_permille` takes the same factor. `Attacks._shared_form` runs the
+  form with the launch's `damage` and `base_damage` at that share (its hooks' shares are of it); `ON_LAUNCH`, the back
+  copy and the repeat queue keep the whole. A Ring's `take_in` of a count drops the share (its pulses take
+  `ring_share_permille`). Spread's count is +2 at level 1, +1 a level after; Echo repeats at 500 (+50); Double Slash
+  at 600.
+- **Secondary proc.** `WandTable.secondary_proc_permille` (data 500; `SecondaryProc`). Secondary: a sharing spec's bolts
+  past its primary one (`Attacks._bolts`: the centre offset's first lane, a circle's first), every bolt of a secondary
+  launch, the Echo repeat (`ModifierState.FLAG_SECONDARY` on `queue_repeat`), Double Slash's echoes (`queue_echoes`;
+  the first echo: `PlayerKit.swing_arc` with `EFFECT_TWIN_ARC`, now also a repeat). A bolt carries it in
+  `ProjectileStore.second` (bits `SECONDARY` 1, `REPEAT` 2; a lazy column: empty, unhashed, absent from older saves
+  until the first such bolt). A secondary hit sets `World.hit_proc_permille` (transient; `Attacks._hit`, the projectile
+  sweep) and its feeds scale: `Engines.on_hit`, `_landed`'s burn, `_feed`. A secondary's hook child launches at
+  `proc_pct` × the proc (its statuses), and a `TAG_CAST` child at that share of its damage (`run_hook`); the child is
+  not secondary itself. Stacks: rounded down, the remainder (per mille) carried in `ModifierState.sec_carry`.
+- **Repeats never repeat.** `AttackSpec.recast` (`LATE_INT_FIELDS`): `WandCompile._cut` sets it on a trigger's n ≥ 1
+  cast (×2 legendaries, a slash hit's second) and on everything built from it (`_hook`, `_cut`, `_layer`'s copy); a
+  spec with it casts each trigger once. A repeat's context (`AttackContext.repeat`, not a back copy; inherited by its
+  children, `FLAG_REPEAT` on its queued hooks, `ProjectileStore.REPEAT` on its bolts) never launches a hook whose child
+  has `recast` (`run_hook`). The depth, lineage, `once_per_line`, 256-a-tick and shot caps are unchanged.
+- **Rhythms.** `FireRhythm` returns an extra rate bonus counted into the attack's raw bonus
+  (`ItemEffects.shot_period_ticks`, `BladeForms.step`). Rapid Fire: `ramp_permille` 100 × (streak − 1), at most
+  `ramp_cap_permille` (600 +150), the streak reset after `ramp_reset_ticks` (24) without a shot
+  (`PlayerKit._fire_bolt` → `on_shot`); base +300, radius × 0.7, damage × 0.85. Flurry: the first `burst_swings` (3;
+  4 at level 3, 5 at level 5: per_level 0.5 from level 3, rounded) swings that start `burst_pause_ticks` (36) or more
+  after the last swing ended come `burst_permille` (800) faster (`on_swing` at the swing's start, which records its
+  end tick); damage × 0.85. State: `ModifierState.ramp_n`, `ramp_tick`, `burst_n`, `burst_free` (hashed only when
+  set; `ADDED_SINCE_V05`). A whole-number op field without a unit keeps its `per_level` as is (`ModifierCompiler`), so
+  ½ a level rounds per level.
+- **Split Wave without Wave.** `ModifierDefinition.alt_target` / `ModifierOpDefinition.alt`: on a spec of the
+  alt target (not of the target) with no hook child of the target yet, the card's `alt` ops run instead
+  (`WandCompile.alt_reading`): a slash with no flying slash throws 2 crescents (+1) at 400 (+50) on each hit.
+- **Placement flags.** `Wand.flags(read)`: `UI_WAND_DEAD_TRIGGER` for a card in `WandTable.after_trigger_dead`
+  (`gun_echo`, `double_slash`, `gun_charge`) right of a trigger, `UI_WAND_DEAD_DEEP` past the third trigger. `describe`
+  leaves the first out of its spell and lists them (`WAND_READ_DEAD`); `WandRow` dims the tile and shows the reason.
+
+## 8l. Remnants, Dodge Imprint and Thermal Break (v0.8.0 RM)
+
+Owner O91 ("Build reusable remnants, connections and events—not hardcoded modifier-pair scripts. Define inheritance,
+lifetimes, hit intervals and activation limits"); spec [`../roadmap/v0.8.0/BALANCE_PASS.md`](../roadmap/v0.8.0/BALANCE_PASS.md)
+"RM" and MR 4 (starting values); WAND.md rules 12–13. Evidence: [`../roadmap/v0.8.0/evidence/BALANCE_RM.md`](../roadmap/v0.8.0/evidence/BALANCE_RM.md).
+- **Compile.** `ModifierOpDefinition.Op.REMNANT` (10) with the `remnant_*` fields → `ModifierOp.remnant`
+  (`RemnantRule`: kind SEGMENT / ANCHOR / MARK / FRAGMENT, spawn LINK / CONTACT / HIT / PATH / NONE, activate
+  ENEMY_CROSS / ATTACK_CROSS / PULL / TURN / FINISHER / DELAY / CONSUME, life, own cap, gap, charges, lengths, pull,
+  bend, turn, delay, stacks, period, releases; `at_level` grows life, cap and stacks). `WandCompile.apply` builds it
+  as a hook (the HOOK guards: depth, lineage, `once_per_line`; its child built by the card and the cards to its right)
+  that carries the rule, the card's slot and trigger section (`section_of`: trigger cards left of it) and, on a
+  FINISHER remnant, `extract` (the spec is the combo's finisher). A CONTACT or HIT remnant is an `ON_HIT` hook; a
+  LINK, PATH or NONE one is `AttackSpec.Trigger.ON_REMNANT` (8, appended), which no moment fires. `AttackBook`
+  indexes the remnant hooks by their child's key (`remnant_hook`) and lists the consumers. `AttackHook.hash_into`
+  adds the rule, slot, section and extract only for a remnant hook; `AttackSpec.imprint_ticks` / `imprint_permille`
+  are `LATE_INT_FIELDS`. A build without a remnant card compiles and hashes as before.
+- **Left.** `Attacks.run_hook` hands a remnant hook to `Remnants.on_hook` (no launch): CONTACT, a crack of
+  `length_m` along the attack's way centred on the hit (one per card per root a tick); HIT, an anchor at the hit
+  (likewise), a mark on the enemy (its direction: from the attack's origin to the enemy, or the attack's way when it
+  hit where it is), a fragment on the enemy (+1, at most `stack_max`, its life refreshed). LINK: `Attacks._bolts`
+  marks each bolt it queues (`World.set_pending_link`, pending column 13); `World._apply_spawns` calls
+  `Remnants.on_link`, which links the bolt to the last one marked with the same key within `link_ticks` (the thread's
+  ends ride the two projectiles while they fly: `rem_target`, `rem_target2` are their ids). PATH: `Remnants.on_arc`
+  (a slash: `ARC_CHORDS` chords at `PATH_REACH` of its reach, one path) and `on_bolt_end` (a bolt: the line it flew).
+  Nothing is left by an attack at the deepest hook level or while the card's id is on `World.hook_chain`.
+- **Inheritance.** A remnant stores its activation's level: depth + 1 and half the proc of the attack that left it
+  (`rem_depth`, `rem_proc`), its root, its damage basis (that hit's base damage), its slot and section. Its cast is
+  the remnant hook's child (a break or an extraction casts the hitting spec's own hook's child), launched through
+  `Attacks.launch` with the card's id pushed on `hook_chain`; a DELAY cast is a repeat (`AttackContext.repeat`).
+- **Limits** (`WandTable`, `data/wand/wand.tres`): each card's `max_alive`, `remnant_kind_max` per kind (48, 16, 48,
+  48), `remnant_max` (96) in all: past a cap the oldest goes (`REMNANT_END`, `END_REPLACED`). `remnant_activations_max`
+  (64) a tick, then one `LIMIT` event (`effect_id` `remnant_cap`, `amount` the cap); every cast also passes
+  `Attacks._count` (256 launches a tick). A remnant's `gap_ticks` per enemy, per path (`rem_group`; `gap_*`); its
+  charges (`-1`: until its life).
+- **Tick phase 6** (`ModifierRuntime.advance`, after the launch queue, before the black holes): `Remnants.advance`
+  ends the remnants past their life (`END_EXPIRED`), whose cast left the build or whose enemy is gone (`END_GONE`);
+  threads and marks follow; then, in store order by uid: ENEMY_CROSS (each enemy touching the segment, its half
+  width, takes the cast), ATTACK_CROSS by a player projectile of another root whose move this tick crosses it (a
+  slash crosses in `on_arc`), PULL (enemies within `pull_radius_m` move `pull_step_m` toward it, not a boss, stopping
+  0.3 m short; player projectiles within `bend_radius_m` turn `bend_step` toward it, an orbiting one excepted), DELAY
+  (after `delay_ticks`, each enemy touching the path once, then spent); then the consumers: every `period_ticks` since
+  the last release (`finale_tick`), the remnants of the consumer's section with a slot left of its own, oldest first,
+  at most `release_max`, each releasing the consumer's cast at its basis where it is (`END_CONSUMED`). No randomness.
+- **Events** (appended to `SimEvent.Kind`): `REMNANT_SPAWN` (effect = card, amount = kind), `REMNANT_ACTIVATE` (effect
+  = card, amount = the cast's damage), `REMNANT_END` (effect = card, amount = `Remnants.END_*`).
+- **Dodge Imprint** (`long_shadow`, same id): the dash spec's `imprint_ticks`; `Remnants.on_dash_start` keeps the start
+  (`imprint_at`) until the dash's end + `imprint_ticks` (`imprint_until`); the next root weapon attack
+  (`Attacks.launch`, depth 0, not a repeat or a back copy) launches from there at × `imprint_permille` and spends it
+  (one `REMNANT_ACTIVATE`).
+- **Thermal Break** (`Engines.thermal_break`, from `add_burn` and `add_frost`): an enemy with burn stacks and frost
+  stacks or a freeze, whichever came second, inside `Engines.begin`: burn and frost (and a freeze) consumed, one
+  `STATUS_APPLY` (`thermal_break`, amount = the burn stacks; the view's shatter), one `Damage.tick_dot` of
+  `WandTable.thermal_base` + `thermal_per_burn` × stacks (6, 4: × the damage stat, TAG_DOT, proc 0). Fire and Frost
+  from any source react; it never feeds a status, so it can't chain itself.
+- **State, hash, saves.** `ModifierState.rem_*` (struct of arrays, oldest first), `gap_*`, `rem_act_tick` / `_n`,
+  `link_*`, `finale_tick`, `imprint_at` / `_until`: copied by `WorldSnapshot`, listed in `ADDED_SINCE_V05` (an older
+  save has none), hashed (`ModifierState._hash_remnants`) only once `remnants_touched()` (a remnant card acted), so no
+  older digest moves. The view reads `WorldReader.remnants()` / `remnant_cast_radius` (`RemnantViews`, pooled).
+- **Mutations.** Item tag `mutation`; `ItemDefinition.offer_weight_permille` (`ItemTable`; 1000 = as its tier)
+  multiplies `ItemPool.card_weight`; a card under 1000 never fills the boss's legendary chance slot
+  (`Offers.legendary_cards`). Double Exposure and Grand Finale: legendary tier, 150.
+
+## 8m. Floor-paced loot (v0.8.0 FL)
+
+Owner O91 ([`../roadmap/v0.8.0/BALANCE_PASS.md`](../roadmap/v0.8.0/BALANCE_PASS.md) "FL"); evidence
+[`../roadmap/v0.8.0/evidence/BALANCE_FL.md`](../roadmap/v0.8.0/evidence/BALANCE_FL.md). `LootPacing` is the one rule
+every card source draws through; `World.loot_pacing` (`LootPacingTable`, loadout, not hashed) holds the numbers, and a
+world without it (labs, the older scenarios) draws exactly as before FL (no multiplier, ceiling 5, no guarantee and no
+extra draw on `loot`).
+- **Stage.** `LootPacing.stage`: `DEEP` on a Deep floor (`Routes.is_deep`) or any floor of loop ≥ 2, else
+  `FLOOR_1..FLOOR_3` by `World.floor_index` (3 and past it: `FLOOR_3`). `next_stage` is one later, at most `DEEP`.
+- **Categories.** `ItemTable.loot_category` (`LootPacing.Category`: OTHER, FORM, ELEMENT, ADVANCED, TRIGGER,
+  MUTATION). Stat cards are their own category (an `Offers` STAT code) and keep their weights.
+- **Weights.** `ItemPool.card_weight` ends × the stage's per-mille multiplier for the card's category
+  (`LootPacing.weigh`, integer, rounded down; OTHER × 1). The events' mod draw (`Events._mod`) and an elite's core
+  (`CoreTheft.draw_card`) weigh their mods the same way (their old weight × 1000 × the multiplier / 1000; the core's
+  stat cards × 1000 so the ratio holds).
+- **Ceiling.** `CardLevels.can_take(w, idx, ceiling = -1)`: a held wand card is takeable from a source only below
+  `LootPacing.ceiling` (or the given ceiling, at most 5). So `ItemPool.available` (altars, chests, the shop's restock and
+  reroll, events, cores, the boss's card) never offers a held card at the ceiling, and `Shop.can_apply` (buying, an
+  event's block, a stolen core's re-check at its drop, which then redraws) refuses it. `CardLevels.level_up` itself has
+  no ceiling: a jackpot and the boss's upgrade pass it. The dev panel's grant passes `MAX_LEVEL` (exempt).
+- **Guarantee.** `Offers.roll` of a regular altar (not a chest, the shop, the epic or the boss's altar): while
+  `World.loot_guaranteed` < the stage's `guaranteed_altars` it counts one, and an offer holding no `LootPacing.compatible`
+  card has one card replaced (`_slot`: the last card, never an altar's leading fresh ability) by one drawn from
+  `ItemPool.available` by the altar's weights (one `loot` draw). Compatible: a usable wand card of category form, element
+  or advanced that would act where it lands (a new card at the wand's end, a held one where it sits): not past
+  `WandCompile.MAX_DEPTH` triggers, not a `WandTable.after_trigger_dead` card right of a trigger.
+- **Jackpot.** `Offers.roll` of a regular altar or a chest: one `loot` draw (0..999) against `jackpot_permille`; on a
+  hit one card (`_slot`, never the only compatible card) becomes a jackpot card uniformly from `LootPacing.jackpot_pool`
+  (a held wand card exactly at the ceiling, below 5, or a mutation; `ItemPool.available(w, true, ceiling + 1)`), one
+  more draw. The pair (reward id, card) is appended to `World.loot_jackpots`; `WorldReader.choice_jackpot(k)` reads it
+  and the pick card's line starts "Jackpot" (`PickPanel.jackpot_face`, `PICK_JACKPOT`).
+- **The boss's altar** (`Offers.roll_legendary`, replacing the level-5 grant of §8i): the Legendary chance's draw as
+  before; then with `LegendaryTable.upgrade` one held wand card below `LootPacing.next_ceiling`
+  (`Offers.boss_upgrades`, uniform; taking it raises it one level as anywhere); then with `card_categories` (data
+  advanced, trigger) and no Legendary card, one card of those categories from `ItemPool.available(w)` (weight 1000 × the
+  stage's multiplier; never a Legendary card nor a mutation, so the ×2 triggers stay the chance's); the rest legendary
+  stat cards (and `mods`) by the tier's weights as before. The loop's extra picks are unchanged.
+- **State.** `World.loot_guaranteed` (hashed once above 0) and `World.loot_jackpots` (hashed once not empty) are per
+  floor, in `WorldSnapshot.ADDED_SINCE_V05` (an older save: 0 and none). Economy unchanged: reward counts, prices and
+  shards. The Overrun's ability cards and the Deep epic altar's ability level-ups and epic stat cards hold no wand card,
+  so pacing does not reach them.
 
 ## 9. What presentation receives
 
@@ -939,7 +1187,9 @@ Presentation sees the sim only through `WorldReader`, a read-only facade over `W
 - **Not copied, by name** (`WORLD_KEPT`, each with its reason): the loadout tables (content compiled at setup, kept
   from the base world), the event log (not state; `_event_seq` is copied), the wall grid (rebuilt from the walls), the
   pending boss door and its prepared flow field (only whether they are still pending), and the flow field (rebuilt
-  from the walls; its last flood is copied). Objects of a `LOADOUT_CLASSES` class are kept wherever they appear.
+  from the walls; its last flood is copied, and v0.8.0 NF its last flood's work and a build in progress as
+  `NavField.build_state()`: goal cell, bound, targets, budget, slices run; restore runs the same slices again, a save
+  from before NF has none). Objects of a `LOADOUT_CLASSES` class are kept wherever they appear.
 - **An object of an unclassified class is an error naming its path** (`take(w, errors)`), never a silent skip.
 - **`World.from_snapshot(snap, base)`** writes the snapshot into `base`, a world built from the same generation inputs
   (run seed, floor, build, content) at any tick. It checks the base's generated walls start the snapshot's (else the
@@ -981,7 +1231,13 @@ Starting values; `EnemyAi` and `BossAi` hold the rules, `data/enemies` and `data
 - **The flow field (v0.4.0 SC).** One flood a `NavField.PERIOD` (10 ticks) from the player for every enemy, stopped
   `NavField.WORLD_FLOOD_STEPS` (160 half-metre steps, ~80 m of path) out, and skipped when the player is still in
   the cell of the last flood (the walls don't change between builds, so the result would be the same). An enemy past
-  the bound walks straight until it is back in reach.
+  the bound walks straight until it is back in reach. **v0.8.0 NF (owner O90, "A then"):** the periodic flood is
+  built over `NavField.SLICES` (3) ticks into a back field (`begin_build` on the flood tick, `advance` that tick and
+  the next two; slices before the last stop between buckets once the build's work, the cells taken from the buckets,
+  reaches a third of the last flood's work, at least `SLICE_MIN`; the last finishes) and swapped in when done, so
+  enemies follow a field up to 2 ticks older; the finished field and key equal `flood()`'s from the same goal and
+  targets. Floods that follow a wall change stay at once and drop a build in progress: `add_wall_now`,
+  `remove_wall_now`, `set_nav_extra`, and a field's first flood since its build.
 - **The gap-closer.** A boss whose player stays beyond `gap_close_distance_m` (from its edge) for
   `gap_close_seconds` performs `gap_close_attack` (Gatekeeper: charge; Brood Mother: leap; Siege Engine: bolt fan).
   The punish attack (`punish_*`, BX) keeps its priority.
@@ -1025,6 +1281,355 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   projectile). After recovering it walks at 1.5x speed to a spot 45-90 deg around the player (the side and angle
   from `rng_enemy`) in the middle of its band (`pick` = 1), and shoots again only once there (within 0.5 m) or after
   150 ticks.
+
+## 10d. Dodge-first boss fights (v0.7.5 BF1; owner N15, [`BOSS_FIGHTS.md`](../design/BOSS_FIGHTS.md))
+
+Starting values; `BulletPatterns`, `BossDodge` and `BossAi` hold the rules, `data/bullet_patterns` and
+`data/bosses` the numbers.
+- **Bullet patterns.** A `pattern` attack fires its `BulletPatternTable` over its active time from the boss's body
+  (`BossDodge.resolve_pattern`, tick phase 6). On each wave tick (`BulletPatterns.wave_at`: the lob, then every
+  `wave_gap_ticks`), `BulletPatterns.wave_shots(pattern, wave, origin, aim, origin_r)` gives the wave's spawn points
+  and velocities: a pure function of its arguments (no stream is drawn; angles in 1/4096 turns through `Kin`, a
+  flower's rose a `Kin.dir` lookup), so the shape a test or view computes is the shape fired. Kinds: ring (count,
+  gaps, turn per wave), spiral (arms, spin, reverse), fan (count, spread, alternate offset), cross (arms, spin), wall
+  (a marching line with a bouncing gap; crossing), flower (petal speeds, cut gaps) and burst (a lobbed shell that
+  lands on the attack's locked target as a hurting disc, then a star). The aim is the attack's `lock_a`, tracked
+  until it commits like any aimed attack.
+- **Fair.** A shot whose spawn point is within `safe_radius_m` + the player's radius of the player, or touches a wall,
+  is left out. Shots are ordinary hostile projectiles (`World.queue_projectile`, TAG_PROJECTILE, the attack's damage
+  × the boss's power, no bounces), so they stop at walls and hit once. At most `MAX_SHOTS_PER_TICK` (160) are queued
+  in a tick (`World.pending_projectiles`) and `MAX_ALIVE` (900) projectiles live; past either the wave's other shots
+  are dropped with one `LIMIT` event (`effect_id` `bullet_cap`). Every shipped pattern keeps a gap the hero fits
+  (the content validation and `test_bullet_patterns.gd`). One attack at a time per boss, so a pattern never starts
+  while that boss's marker is locking.
+- **Fireball looks.** Each shot carries its pattern's `look` (`ProjectileStore.look`, `WorldReader.projectile_look`;
+  the column fills the first time a fireball flies and is hashed only then, so a world that never fired one hashes
+  as before). An old save lacks it: none.
+- **Tracked, then locked.** An attack with `lock_ticks` (from `lock_seconds`) aims at the player's exact position
+  (`BossAi._target`, no lead and no dash read) and tracks until its windup's last `lock_ticks`, then holds. The
+  `marks` and `row_lanes` moves lay `count` markers `mark_gap_ticks` apart: marker k starts at k × gap, sits on the
+  player's position (BossStore points, set in phase 3 from the position before this tick's move) until
+  k × gap + windup − lock, holds, and strikes once at k × gap + windup (active tick k × gap), where it locked
+  (`BossDodge.mark_of`, `row_lanes_of`: one shape function each, drawn and hit alike). Each marker may hit (the
+  hurt iframes still apply). A telegraph with a lock carries `tracked` and `locked` (the view: a dull outline, then a
+  bright flash). Applied to the Gatekeeper's Fist Slam (1/2/3 circles by phase) and Shock Lanes (row and column) and
+  the Warlord's Spear Lines (flood), Lunge (charge) and Javelin Rain (barrage); 0.8 s each. v0.7.5 BF3: the Siege
+  Engine's Barrage (marks), Mortar Grid (grid) and Rail (lanes), the Foundry's Molten Flood (row_flood) and Firestorm
+  (flood).
+- **Shielded signature.** While a `shielded` attack winds up or runs (`BossDodge.shielded`,
+  `WorldReader.boss_shielded`), a hit on the boss emits its `HIT` with `TAG_BLOCKED` and deals nothing; damage over
+  time does nothing; the world's own hits (owner 0, the dev panel's Kill boss) pass. It opens between patterns (the
+  Gatekeeper's Rock Rings and the Warlord's Shield Wall open the weak point when they end). The 66 / 33 % gates stay.
+- **Reads for the views and avatars.** `WorldReader.boss_shielded(i)`, `boss_pattern(i)` (`{}` or id, kind, look,
+  shielded, winding, progress), `projectile_look(i)`, `MOVE_PATTERN` / `MOVE_MARKS` / `MOVE_ROW_LANES`.
+- **Big boss rooms (owner N18).** Every boss's room is 4 x 4 and its body 1.3x (data). `RunState.FLOOR_RULES` is 3;
+  a floor resumed from a payload with rules 1 or 2 rebuilds its boss room at `legacy_arena_cells`
+  (`RunState.legacy_boss_room`, `RunSaver.boss_arena`), so the snapshot fits the floor it was saved on.
+- **Hashing.** The patterns and the lock add no state: markers use the BossStore points, patterns the attack's clock;
+  only the fireballs' look column is new (above). The kernel replay golden is boss-free.
+- **v0.7.5 BF2: eggs and a tracked burrow.** A `marks` attack with a pattern (the Brood Mother's Egg Storm) fires it
+  from each circle as it strikes (`BossDodge.burst_mark`): `local` ticks after circle k struck, wave
+  `wave_at(pattern, local + lob)` fires from the circle's centre, `egg_r` (half its radius) out, aimed at the
+  player's position then (the pattern's aim offset puts the player in a gap), under the same fairness and caps. While
+  a circle is locked its telegraph item carries `lob` (from the boss to the circle; the view's egg). A `burrow` with
+  a lock (`BossDodge.tracked_burrow`) keeps BossStore point 0 on the player's exact position from its windup's end
+  through `track_ticks` (the telegraph: a tracked `disc`), then locks it (`lock_x/y`), burrows to it at its speed while
+  the circle is locked for `erupt_ticks`, erupts there (the disc), and fires its pattern from it over
+  `BossDodge.eruption_ticks` before it finishes. No new state: the points, the lock and the attack's clock.
+  The Hive Lens's Focus Beam is `lanes` with a lock (no new rule).
+- **v0.7.5 BF2 fix: readable patterns and their recap.** A pattern attack's telegraph is its cast for its whole
+  windup and firing (`BossDodge.cast_telegraph`: `{"shape": &"cast", "ground": false, "progress", "move", "look"}`;
+  a burst's landing disc until it lands, then the cast). Nothing is drawn on the ground; the avatar poses from it. So
+  every wave's shots come from a cast visible for at least the windup (>= `MIN_TELEGRAPH_TICKS`), which the
+  readable-cause check reads. A boss's fireball carries the attack that fired it (`ProjectileStore.cause`, filled
+  the first time a boss's fireball flies and hashed only then; -1 for others); a shot that kills the player sets
+  `World.killer_attack` to it, so the recap names that pattern, not the boss's attack at the time of death.
+
+## 10e. Enemy fireballs (v0.7.5 EF; owner N16, [`BOSS_FIGHTS.md`](../design/BOSS_FIGHTS.md) "Normal enemies")
+
+Starting values in `data/bullet_patterns` (CONTENT_SCHEMA §3); `EnemyAi` holds the rules.
+- **Who.** The Arc Caster's bolt and spread (a fan of 3 slow plasma balls, narrow and wide), the Lens Drone's attack
+  (a ring of 6 orbs; it still flies the Needle's walk) and the Bomb Drone's bomb (a lobbed fireball that bursts into an
+  X of 4). The Needle's burst, the Sniper's line, the melee kinds' attacks, the Arc Caster's rune, the Mine Layer and
+  the Mender are unchanged. Elites of the three kinds (the Ambush Cache, Marked) fire the same patterns: an elite is
+  its kind's AI.
+- **How.** `EnemyAi.pattern_of(w, i)` is the pattern in play (`EnemyTable.patterns`: the Arc Caster's by its spell,
+  the others' first; null otherwise). The windup aims as before (tracked, committing `ai_commit_ticks` before it
+  fires), led at the pattern's own speed; the Bomb Drone's landing is the player's exact position (no lead), tracked
+  the same way, its X turned to the throw (`lock_a`). In ACTIVE, `_resolve_pattern` (tick phase 6) fires each wave on
+  `BulletPatterns.wave_at` ticks through `BulletPatterns.fire` (the caps, no spawn on the player or in a wall, shots
+  stop at walls), from the body, or for the BURST from the landing point once it has flown `lob_ticks`, where the
+  landing itself hurts within `land_radius_m` (TAG_AREA). ACTIVE lasts until the pattern's last wave. No stream is
+  drawn by a pattern (the windup's length draw is the same as before).
+- **Damage and scaling.** Each fireball (and the landing) deals the attack's `damage` (RunState's per-floor and loop
+  scaling of `EnemyTable.damage`), powered by the danger tier and the hidden catch-up (`EnemyAi.powered`,
+  `ActorStore.power`), as every enemy hit.
+- **Nothing on the ground.** Their `telegraph()` is `{"shape": &"cast", "ground": false, "progress", "look"}` in the
+  windup and, for the Bomb Drone in the air, `{"shape": &"lob", "ground": false, "from", "to", "progress", "look"}`.
+  TelegraphViews draws no `ground: false` telegraph; the bodies' own windups (the caster's crystal, the drones' glow)
+  and FireballViews' lobbed ball are the cues. The readable-cause check counts the windup (the shots then fly
+  slowly on screen).
+- **v0.8.0 TG (owner O4, Q3): the melee kinds, the Sniper and the Needle off the ground too.** Their telegraphs keep
+  every field (shape, `obb` / `obbs` / `center` + `radius`, `progress`, `style`) and gain `"ground": false`: the
+  Charger / Hatchling / Swarmer windup lane and running lane, the Splitter / Splitling disc, the Shield Bearer's
+  `bash` lane, the Warden's slam disc, the Sniper's `snipe` line, the Needle's lanes. Only the Arc Caster's rune and
+  the Mine Layer's mines stay on the ground among normal enemies. `telegraph()` is computed, never stored or hashed:
+  no state, stream, golden or save changes.
+- **Hashing.** No new state: the patterns use the actor's own clock and lock fields; the fireballs' look column
+  (§10d) fills the first time one flies. `tests/golden` is unchanged (its replays have no Arc Caster, Lens Drone or
+  Bomb Drone shot).
+- **v0.7.5 BF3: the board, the molten rows and the rain.** `grid`: the board's centre (BossStore point 0) tracks the
+  player's exact position like any locked attack and holds at windup − lock; volley k strikes once at active tick
+  k × `mark_gap_ticks` on the circles of `BossDodge.grid_discs(w, i, k)` (the cells whose (x + y) parity is k's,
+  centred cells' centres clear of walls; drawn and hit alike), each volley may hit; the telegraph (`&"marks"`, one
+  disc item per circle) shows volley 0 for the whole windup and each later one only for its lock
+  (`BossDodge.grid_state`). `row_flood`: `BossDodge.row_flood_of(w, i, k)` (lanes along x through point 0, offset
+  `gap_m` in y, cut by walls) tracked then locked, then standing and burning like `flood` (`burn_ticks`). A raining
+  flower (`BulletPatternTable.rain_ticks` > 0, also its `lob_ticks`): wave k's drops are thrown at active tick
+  k × `wave_gap_ticks` and land (`fire()`, with its fairness rules: none on the player or in a wall) `rain_ticks`
+  later at `wave_shots`' points, `rain_m` × the petal's share out from the body's edge; in the air they are only a
+  read (`BossDodge.rain_drops`, `WorldReader.boss_rain(i)`: from, to, progress) and hurt nothing. No new state is
+  hashed. `MOVE_GRID` / `MOVE_ROW_FLOOD` for the views.
+
+## 10f. Boss signature mechanics (v0.8.0 BS1, BS2; owner O5, [`BOSS_SIGNATURES.md`](../roadmap/v0.8.0/BOSS_SIGNATURES.md) S1-S6)
+
+Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; all in the F10 Bosses page);
+`BossSignatures` holds the rules. Pure: no stream is drawn.
+- **S1, the Gatekeeper's pillars.** The tick after marker k of a `row_lanes` attack with `pillar_ticks` struck (tick
+  phase 6; so the strike's own lanes, drawn and hit on its tick, are never cut by its pillars; the attack stays
+  active a tick longer for its last cross), pillars (squares `pillar_m` a side, axis-aligned) rise along its two lanes every `pillar_step_m` out
+  from the crossing each way (the crossing stays open), as far as each lane ran. A pillar rises only where it touches
+  no living body (plus `BODY_MARGIN_M` 0.3) and keeps 2 × the player's radius + `PASS_SLACK_M` (0.15) from every
+  wall, the door and every other pillar (`BossSignatures.fits`: the corners of both boxes and the inscribed circle).
+  So each pillar is an island in the hero's free space: it never splits it, never closes a way, never seals anyone
+  in. A pillar is a wall while it stands: `World.add_barrier` (collision, shots, sight, `EnemyAi.clear_run`), and the
+  flow field goes round it through `NavField.set_extra` (its cells blocked on top of the walls' build, the flood
+  rerun at once). It sinks on `pillar_until` (`BossSignatures.advance`, phase 6, before the projectile sweep):
+  `World.remove_barriers`, the field reopened. Its boss gone, its pillars go. State: `BossStore.pillar_*` (centre,
+  half side, the tick it rose and sinks, its boss), hashed only while any stands, besides the walls (hashed already).
+- **S2, the Warlord's shield and javelins.** A boss whose `front_mult_permille` is 0 blocks every hit from its front
+  arc (`Damage.target_mult`: `HIT` with `TAG_BLOCKED`, nothing applied; damage over time ignores armour as before);
+  the Warlord's arc is 120° (±60°); its sides take ×1, its back (100°) ×1.25; while its weak point is open the shield
+  is down (`weak_point_drops_armour`). A `pattern` attack with `recall_ticks`: each of its shots that ends on a wall or
+  at its range (not on a body) sticks there (`BossSignatures.on_shot_end`, from `World._projectile_hits`, for a
+  projectile with a cause): the point, the angle it flew, its boss and attack, the tick it stuck and the tick it
+  flies back: the tick the attack's active time began + `recall_at` (the pattern's duration + its shots' life +
+  `recall_ticks`), so every javelin of a throw flies back on one tick. Then (phase 6) each is queued as a hostile
+  shot from where it stuck, back along the line it came (its angle + 180°), at the pattern's speed and radius, the
+  attack's damage × the boss's power, living until the boss's edge; a javelin within the pattern's safe radius of the
+  player crumbles instead (no shot spawns on top of you). The attack stays active until they are home
+  (`recall_at` + the shots' life). State: `BossStore.jav_*`, hashed only while any stands.
+- **S3, the Brood Mother's eggs.** A `marks` attack with `egg_ticks` doesn't burst at the landing: each circle as it
+  strikes (after its hit) queues an egg (`World.queue_egg`), unless `max_alive` of `enemy_kind` are alive or coming
+  (eggs count). In phase 9 the egg arrives as an actor of that kind (a Hatchling), scaled as any arrival, then made an
+  egg (`BossSignatures.make_egg`): state `EGG` (7), HP `egg_hp` at the kind's base HP (scaled as its own HP was),
+  hittable at once, still (no walk, no attack); its EnemyAi fields hold its ticks (`windup`), the HP it hatches with
+  (`pick`) and the attack that laid it (`lock_a`). In phase 3 (`EnemyAi.think`, after its clock): its boss gone, it
+  crumbles; its time up, it hatches (its kind's HP, state SPAWN, the spawn-in) or, from its boss's phase
+  `burst_phase` on, bursts (`EGG_BURST`, 8): its attack's pattern fires from where it lies over the pattern's waves
+  (phase 6, `EnemyAi.resolve`), aimed at the player, through `BulletPatterns.fire` (the fairness and caps), then it is
+  gone. A crumbled or burst egg leaves with state `EGG_GONE` (9): no kill, no shards, no heal orb
+  (`World._remove_dead`). A broken egg is a kill like any. No new hashed fields: the actor columns.
+- **Readable cause.** A returning javelin or an egg's burst carries `BossSignatures.LATE_CAUSE` (4096) + its attack as
+  its cause (`ProjectileStore.cause`); the recap reads that attack's `late_cause_key` (`CAUSE_WARLORD_RECALL`,
+  `CAUSE_BROOD_EGG_BURST`). `BulletPatterns.fire` takes an explicit cause for it.
+- **Reads.** `WorldReader.boss_pillars()`, `boss_javelins(i)`, `boss_recall_permille(i)`, `actor_egg_permille(i)`,
+  `STATE_EGG` / `STATE_EGG_BURST`.
+- **Saves.** The new `BossStore` lists are in `WorldSnapshot.ADDED_SINCE_V05` (an older save has none). A snapshot with
+  pillars standing restores them as walls the way play added them (the door first, then the barriers and pillars:
+  only the wall grid is rebuilt, never the flow field) and sets the field's extra cells again before its last flood
+  is copied, so a restored fight steps exactly as the uninterrupted one (`test_boss_signatures.gd`).
+- **S4, the Hive Lens's Gaze (v0.8.0 BS2; `BossGaze`).** A new move, `gaze` (`BossAttackTable.Move.GAZE`, appended).
+  As its windup begins the beam's start angle is the angle to the player + 2048 (straight away; `actors.lock_a`) and
+  the ai stream picks the way it will turn (`BossStore.span`, ±1); every windup tick the start re-aims straight away
+  from the player, so on its first active tick the beam points away from where the player stands (it never starts
+  on you). Active tick `st`: its angle is `lock_a + way × along × 1024 / quarter_ticks` with `along` a triangle wave
+  of period `reverse_ticks` (`st % reverse` out, then back: integer maths), so it turns a quarter turn every
+  `quarter_ticks` and reverses every `reverse_ticks`. The beam is a lane from the boss's edge along that angle, as
+  long as `length_m` unless `EnemyAi.clear_run` (radius `half_width_m`) stops it on a wall (walls, pillars, the
+  door); it hurts a player it touches once every `burn_ticks` (`BossStore.hit` resets on each burn tick; the hurt
+  iframes apply). Its `pattern` (the orbs) fires again every `orb_every_ticks` from that tick on, from the body,
+  aimed at the player through `BulletPatterns.fire`, carrying `LATE_CAUSE` + the attack (the recap reads its
+  `late_cause_key`). The boss faces along the beam. No new state: the actor's lock and `BossStore.span`.
+- **S5, the Siege Engine's ricochets (BS2; `BossRicochet`).** A `pattern` attack with `bounces` (1) queues its shots
+  with that many wall bounces (`World.set_pending_bounces`); a `deploy` attack with `bounce_phase` makes the shots of
+  turrets of its `enemy_kind`, from that phase index on (the live boss's), bounce once too, carrying that attack as
+  their cause (`EnemyAi` after a turret's shot). The bounce is the projectile sweep's own (`World._projectile_hits`,
+  `ItemEffects.bounce`: reflected on the face normal of the wall hit, `v − 2(v·n)n`, an exact component flip for
+  axis-aligned walls). Fair: a hostile shot does not bounce when its reflected path over `SAFE_TICKS` (30, 0.5 s)
+  would touch the player (`BossRicochet.may_bounce`, a swept circle); it breaks on the wall instead. After a bounce
+  its cause becomes `LATE_CAUSE` + its attack (the recap names the ricochet; a turret's resolves through the live
+  boss's table). Bounces are the existing `ProjectileStore.bounces` column: no new state.
+- **S6, the Foundry's lava and meltdown (BS2; `BossLava`).** A `row_flood` attack with `lava_ticks`: on its last
+  standing tick (phase 6) each lane is cut by fords `ford_m` wide (at the boss's x, and where the line from the
+  room's centre to its exit crosses the lane, or the exit's x) and the pieces stay molten from the next tick for
+  `lava_ticks`, but only if `BossLava.fair` passes: with all molten floor down, a flood over the flow field's free
+  cells that keep the hero's radius from it, inside the room, joins the boss's edge to the player (within their
+  radius + 1.6 m) and to the exit (the boss door's inside, `FloorLayout.boss_door_inside(1.0)`; a room without one
+  checks the boss and the player only). Otherwise none of it is laid. A `melt` attack (`Move.MELT`) on its first
+  active tick melts the room for good (one meltdown per boss): beyond `r0` = the room's inscribed radius −
+  `melt_ring_m` (24 m − ring without a room) from its centre (the sealed boss room's, or the boss's spot); every
+  `melt_step_ticks` the radius drops `melt_step_m`, never under `melt_min_m`; a bridge `ford_m` wide from the centre
+  to the exit stays cool. Each step glows `melt_warn_ticks` before it (`BossLava.melt_warn`; the attack's windup is
+  the first ring's glow). Molten floor under the player's centre burns (phase 6, `BossLava.advance`, one clock
+  `BossStore.burn_cd`): lava `lava_damage` every `lava_burn_ticks` (cause `LATE_CAUSE` + its attack), the melt its
+  attack's `damage` every `burn_ticks` (cause its attack), as `Damage.tick_dot` × the boss's power. The flow field
+  goes round both (`NavField.set_extra` boxes + melt shapes, `BossSignatures.set_nav_extra`), refreshed when lava is
+  laid or cools and when a melt steps in. While its melt stands the Foundry keeps to cool ground (its centre its
+  radius inside the edge, `BossLava.keep_on_ground` after it walks). Its boss gone, its lava and melt go. State:
+  `BossStore.lava_*`, `melt_*`, `burn_cd` (hashed only while any is down; in `ADDED_SINCE_V05`).
+- **Reads (BS2).** `WorldReader.boss_gaze(i)`, `boss_lava()`, `boss_melts()`, `MOVE_GAZE`, `MOVE_MELT`, `TEAM_ENEMY`;
+  `BossAi.telegraph` draws nothing on the ground for `gaze` and `melt` (`"ground": false`).
+
+## 10g. The final boss's Prism (v0.8.0 FB2; owner O17, [`FINAL_BOSS.md`](../roadmap/v0.8.0/FINAL_BOSS.md) F5, F7)
+
+- **The body (`BossPrism`).** A body whose table has a `cross` attack floats: it glides to the fight's centre
+  (`FinalFight.home`, where the first body rose) at its speed in every state but its rise, a gate and the shatter, and
+  never pursues. Its shards (`BossTable.shard_count`, `shard_orbit_m`, `shard_turn_milli`) are points
+  `shard_pos(k, tick)` on a ring round it, turning with the world's tick (no state); they are what fires.
+- **The Cross (`cross`, `BossAttackTable.Move.CROSS`, appended).** `count` beams in a plus from her edge
+  (`EnemyAi.clear_run`: stopped by walls), one shape function (`beam_at`), drawn and hit alike. The windup (the
+  spin-up) re-aims the arms every tick to `aim + 2048 / count` (the player midway between two arms; never on one).
+  `_lock` sets the way (`BossStore.span`: the opposite of her last Cross's; the first one's from the ai stream) and the
+  quarter `q = fast + (slow − fast) × hp / max_hp` (integer, stored in point 7). Arm 0's angle `st` ticks into the
+  spin is the Gaze's triangle wave (`lock_a + span × along × 1024 / q`, reversing every `reverse_ticks`). For
+  `spin_ticks` a beam touching the player hurts once per `burn_ticks` window; the rest of the active time is the
+  window. `BossDodge.shielded` is true through the windup and the spin and false in the window (and in the two
+  ticks of recovery and choice after it): the Prism can be hurt only then.
+- **Orbs.** While the beams turn, from `orb_every_ticks` on, volley `v` fires the attack's pattern from shard
+  `v % shards` (each wave aimed at the player from the shard), through `BulletPatterns.fire` (its fairness and caps),
+  carrying `BossSignatures.LATE_CAUSE + attack` (the recap's orb line).
+- **Fast bolts.** Every `bolt_every_ticks` over the whole active time (spin and window), shard `(st / every) % shards`
+  locks an aim line (its place in point 0, its angle and start tick in point 1) at the player's position; after the
+  bolt attack's `lock_ticks` (0.4 s) a bolt flies down it (that attack's speed, radius, range and damage, look
+  `crown_bolt`, cause = that attack). It doesn't track; none fires while the player is within 1.0 m (+ radius) of the
+  shard.
+- **The HP from the measured DPS (owner F7).** `FinalFight` holds a meter: a ring of 60 one-second buckets of the
+  damage the player dealt (`Damage._apply`: `scaled`, the hit's damage before the HP and gate clamps, any target but
+  the player) while the fight is measured (`FinalBoss.measuring`: not won, the player alive, the body neither rising,
+  gated nor shattering, and not itself a `dps_hp` body). As a `dps_hp` body rises (`FinalBoss._spawn`) its HP is set:
+  with `n` = min(its `dps_seconds`, the seconds closed) ≥ `dps_min_seconds`,
+  `hp = Σ(last n seconds) × dps_target_ticks × window_permille / (n × 60 × 1000)`, else its table's `hp`; clamped to
+  `dps_hp_min..dps_hp_max`. `window_permille` (compiled) is Σ window / Σ (windup + active + recovery + cooldown) over
+  its Crosses. Integer maths: the same meter gives the same HP. Loops and the hidden catch-up don't change it (their
+  damage scaling still applies).
+- **State and saves.** `FinalFight.home`, `dps_secs`, `dps_head`, `dps_closed`, `dps_acc`, `dps_t` are hashed with the
+  fight and listed in `WorldSnapshot.ADDED_SINCE_V05` (an FB1 save restores with a fresh meter and the centre).
+- **Reads (FB2).** `WorldReader.boss_cross(i)` (`BossPrism.state`: winding, window, progress, arms, angle,
+  half_width, way, quarter, speed, bolt; FB2's orb_shard is gone with the Cross's orbs, PR), `boss_shards(i)`,
+  `final_dps(seconds)`, `MOVE_CROSS`. `BossAi.telegraph` draws nothing on the ground for `cross` (`"ground": false`).
+- **One spell at a time (v0.8.0 PR, owner O84).** Supersedes "Orbs" above and the bolts' "whole active time":
+  - **The rotation.** A body with `BossTable.rotation` (`FinalBossDefinition.spell_rotation`) never draws its next
+    attack: in MOVE with no cooldown left, `BossPrism.next_spell` takes the attack after `BossStore.last_attack` in
+    the phase's list (the first when none), and waits (-1) while any shot it fired is in the air or queued
+    (`BossPrism.shots_alive`: projectiles whose owner is its id, plus `World.pending_projectiles_of`). The Prism's
+    list: `cross_ring`, `crown_ring`, `cross_spiral`, `crown_spiral`, `cross_flower`, `crown_flower`.
+  - **A Cross fires no orbs** (validation: no `pattern_id` on a `cross`). Its bolts start only in the window:
+    `BOLT_LEAD_TICKS` (18) after the spin ends, then every `bolt_every_ticks`, while one can still fire before the
+    active time ends (`BossPrism.bolt_starting`; the shard is the bolt's order in the window % shards).
+  - **The orb spells** are `pattern` attacks with `BossAttackTable.fixed_aim` (shape param `aim_degrees`): `_lock` sets
+    `lock_a` to it, so every wave fires from her centre at that angle plus the pattern's own turn, wherever the player
+    is. In a rotation body an orb spell's active time is at least its pattern's duration plus its shots' life
+    (`FinalBodyCompiler`), so she is shielded until its last orb is gone.
+  - So: no shot of hers is in the air while a beam is aimed (the windup) or burning (the spin); orbs fly only in an orb
+    spell and never with a bolt. `window_permille` for a rotation body is the open part of one rotation (each Cross's
+    window, every recovery and cooldown, the active time of an attack that isn't shielded) over its length.
+
+## 10h. The final boss's Nemesis (v0.8.0 FB3; owner F6 "Weapon + dash + 2-3 cards", F7, [`FINAL_BOSS.md`](../roadmap/v0.8.0/FINAL_BOSS.md))
+
+- **A mimic body (`BossTable.mimic`; `BossNemesis`, `NemesisBuild`).** As it rises (`FinalBoss._spawn`) the fight
+  reads the build once (`NemesisBuild.prepare`) into `FinalFight`: the run's weapon (a Gun without the Blade is the
+  Gun, anything else the Blade), its hit and cap, a Blade run's combo arcs (`Modifiers.step(k)`: `half_arc`,
+  `Attacks.arc_reach_m`, clamped), its ranged form (`shot`: a Gun run's `Modifiers.bolt` as a volley; a Blade run's
+  thrown crescents when the wand throws any) and the hostile copies of the strongest cards (`casts`). A card taken
+  later changes nothing mid-duel. An FB2 save (no mimic state) reads it at the Nemesis's next tick (`ready` false),
+  its HP as saved.
+- **The record (tick phase 9).** While a mimic body fights (not shattering), `FinalBoss.advance` calls
+  `BossNemesis.record`: the player's position into the echo ring (`ECHO_MAX` = 120 ticks) and, on the tick a dash
+  begins (`dash_ticks_left == dash_ticks`), `dash_due = tick + dash_react_ticks` and its unit direction.
+- **The dash (phase 3 and 5).** On `dash_due` the Nemesis dashes if it is free (MOVE or RECOVER, not dashing): the
+  player's own dash (`dash_distance_m / dash_ticks` a tick for `dash_ticks`, `dash_iframe_ticks` invulnerable), the
+  player's way, the opposite way in the mirror stance; a due dash in any other state is dropped. It never hurts; no
+  attack starts while it dashes; a stagger, gate or shatter ends it. One `STATUS_APPLY` (`nemesis_dash`).
+- **The stance (phase 3 and 5, MOVE only).** `ECHO` walks to `echo_at(echo_ticks)` (the player's place that many ticks
+  ago), `MIRROR` to `home × 2 − player`, `CLOSE` to the player, `BACK` to `back_off_m` from the player away from it;
+  at its speed (`EnemyAi.steer`), stopping 0.3 m short. Every `stance_ticks` in MOVE a new stance is drawn from the
+  ai stream (`pick_weighted(stance_weights)`); a finished `mimic_combo` sets `BACK`.
+- **The moves (appended: `MIMIC_COMBO`, `MIMIC_SHOTS`, `CARD_CAST`).** The pick (`BossAi._choose`) leaves out an attack
+  whose `weapon` isn't the run's and a `card_cast` whose `card` the build doesn't hold. Each tracks the player
+  (aim and place; a card's blast point, BossStore point 0) until its last `lock_ticks`, then holds.
+  - `mimic_combo`: swing k lands at `windup + k × mark_gap_ticks` (k < `count`), the player's combo step `k mod n`'s
+    arc where it locked; each swing follows (stepping in at the attack's speed) until `lock_ticks` before it lands.
+  - `mimic_shots`: volley v at active tick `v × gap_ticks` (v < `volleys`) of `FinalFight.shot` (or `count` crescents
+    `spread` apart), down the locked aim, from the locked place.
+  - `card_cast`: on its first active tick its volley and its blast (a disc of `blast_m` on the locked point); its arc at
+    active ticks `k × mark_gap_ticks` (k < `arc_strikes`).
+- **Hostile copies (`NemesisCast`).** Card `c` at level `l` is compiled alone on the run's weapon
+  (`WandCompile.for_world(w, [its modifiers at l]).spec(base_bolt or base_step(0))`) and copied: an ARC root → an arc
+  (`half_arc`, reach clamped to `reach_max_m`, 1 + min(repeats, 2) strikes); a BOLT root → a volley (`count × (1 +
+  twin)` ≤ `shots_max`, `spread`, a ring for `directions = circle`, a back shot for `back_permille`; speed and radius
+  clamped; flight ≤ `shot_range_m`); first-level hooks only: a BOLT child → the thrown volley (an ARC root) or splits
+  fanned from each shot (a BOLT root; total ≤ `shots_max`); a BURST, ZONE, RING or LOB child → the blast (radius
+  clamped). Deeper hooks and trigger cuts are never copied: a hostile shot runs no spec (`spec_key` ""), so nothing
+  splits, explodes or casts again (BL's once-per-line, PF2's cast-free). Damage weight: `spec.damage × 1000 /
+  base.damage`, 500..2000.
+- **Fair.** No volley shot is queued within 1.0 m (+ the player's radius) of the player or in a wall; each goes
+  through `BulletPatterns.room` (160 a tick, 900 alive; past it one `LIMIT` `bullet_cap`). Looks: `nemesis_bolt`,
+  `nemesis_crescent`; each shot carries its attack (the recap's line).
+- **HP and damage from the build (owner F7).** `hp = max_hp × build_hp_permille / 1000 + (with n ≥ dps_min_seconds
+  measured of the last dps_seconds) Σ damage × dps_target_ticks / (n × 60)`, clamped to `dps_hp_min..dps_hp_max`
+  (the meter of §10g; integer maths). `cap = max(1, max_hp × damage_cap_permille / 1000)` (< 1000: never a
+  one-shot); `hit = min(max(weapon_damage × build_damage_permille / 1000, damage_min), cap)` with
+  `Modifiers.weapon_damage`; an attack deals `hit × damage / 100 × weight / 1000`, clamped to 1..cap. Loops
+  (`RunState.scale_bosses` skips a mimic table) and the hidden catch-up don't scale it: the build carries them.
+- **State and saves.** `FinalFight.ready`, `weapon`, `hit`, `hit_cap`, `combo_half`, `combo_reach`, `shot`, `casts`
+  (`NemesisCast`, a state class), `echo_x`, `echo_y`, `echo_head`, `echo_n`, `dash_due`, `dash_dir`, `dash_t`,
+  `dash_vel`, `stance`, `stance_t`: hashed once a mimic body has fought (an earlier fight hashes as before) and listed
+  in `WorldSnapshot.ADDED_SINCE_V05`.
+- **Reads (FB3).** `WorldReader.nemesis(i)` (`BossNemesis.state`: weapon, stance, dashing, dash_dir, echo, mirror,
+  hit, hit_cap, cards, casting, cast_progress), `MOVE_MIMIC_COMBO`, `MOVE_MIMIC_SHOTS`, `MOVE_CARD_CAST`,
+  `STANCE_*`, `EFFECT_NEMESIS_DASH`, `EFFECT_NEMESIS_CAST`. `BossAi.telegraph`: a swing as an `&"arc"` (tracked,
+  locked, striking), a volley's lines as `&"lanes"`, a card as `&"marks"` (items: `&"arc"`, `&"lanes"`, `&"disc"`;
+  `card`, `card_index`, `striking`, `strike_items`). `BossAi.cause_key` moved to `BossCauses.key` (unchanged rules).
+
+
+## 10i. The final boss's pace and The Fallen's windows (v0.8.0 N2; owner O41, O42, O52, [`FINAL_BOSS.md`](../roadmap/v0.8.0/FINAL_BOSS.md) "N2")
+
+Supersedes §10g's HP formula (for a paced body), §10h's "HP and damage from the build" (The Fallen is paced; its hits
+below) and FB3's cap of a fifth of max HP (D36).
+- **The pace (`FinalPace`, `BossTable.pace`).** `dps_milli = Σ damage × 1000 / n` over the meter's last
+  `dps_seconds` (n ≥ `dps_min_seconds`, else 0). `time = clamp(pace_ref_ticks × isqrt(pace_ref_dps × 10⁹ / dps_milli)
+  / 1000, pace_min_ticks, pace_max_ticks)`; `hp = clamp(dps_milli × time × window_permille / (60 × 10⁶), dps_hp_min,
+  dps_hp_max)` (`CatchUp.isqrt`, 64-bit ints). Set in `FinalBoss._spawn` (`FinalPace.rise`) when the meter holds
+  enough, else in tick phase 9 (`FinalPace.advance`) the first tick it does; `hp` keeps its fill (`hp × fill / 1000`,
+  at least 1). `FinalFight.paced`, `pace_dps` record it. `FinalBoss.dps_hp_of` returns it for a paced table.
+- **The rate cap.** Tick phase 9, each tick a paced body is not rising, shattering or dead: `pace_budget +=
+  rate = max(1, max_hp × 1000 / pace_min_ticks)`, at most `rate × pace_burst_ticks`. `Damage._apply` →
+  `BossGates.clamp_damage` → `FinalBoss.clamp_damage(…, owner_id)`: the 1-HP floor of a body before the last, then
+  `FinalPace.cap_hit`: owner 0 (the world's own hit) passes; else, in a mimic window, `× nerf_permille`; then
+  `min(amount, pace_budget / 1000)`, paid from the bucket. The meter (§10g `note_damage`) still records the hit's
+  damage before the clamp.
+- **The Fallen's windows (`BossTable.window_ticks` > 0).** `u = tick − phase_tick − boss_intro_ticks −
+  window_first_ticks + window_warn_ticks`; OFF for u < 0; else `c = u mod window_every_ticks`: WARN for c <
+  `window_warn_ticks`, ON for c < warn + `window_ticks`, else OFF; OFF while shattering, rising, dead or won. No state
+  of its own (a function of the tick and the rise). One `STATUS_APPLY` on the tick each state begins (`fallen_warn`,
+  `fallen_open`, `fallen_close`; amount = the state).
+- **In a window** (`FinalPace.copies`): `BossNemesis.allowed` keeps §10h's rule (the run's weapon, the cards held)
+  and leaves out `weapon = own`; a due dash is answered; stances are drawn from all four weights. `BossNemesis.lock`
+  sets `FinalFight.copying` at each attack's start, kept to its end: a copying combo swings the player's steps, a
+  copying `mimic_shots` fires `FinalFight.shot`, a card is cast only while copying. The player: `nerf_permille =
+  clamp(pace_ref_dps × 10⁶ / pace_dps, nerf_min_permille, 1000)` on their hits on it; `Stats.move_permille` at most
+  1000 (`FinalPace.move_cap`).
+- **Outside a window:** every non-card attack may be picked (whatever the run's weapon; `weapon = own` too), no card,
+  no dash answer, stances only CLOSE and BACK; combos swing the attack's own arc, shots are the attack's own crescents.
+- **Its hits.** `NemesisBuild.damage_of(w, atk, weight)`: `own = max(1, max_hp × atk.damage / 100)` (the data's
+  `damage` is a per cent of the player's max HP, by `hit_class`); not copying → `min(own, cap)`; copying →
+  `clamp(max(own, hit × weight / 1000), 1, cap)`, `cap = max_hp × damage_cap_permille / 1000` (500).
+- **State and saves.** `FinalFight.paced`, `pace_dps`, `pace_budget`, `copying`: hashed with the fight (always, after
+  the meter) and listed in `WorldSnapshot.ADDED_SINCE_V05` (an older save: unpaced, an empty bucket).
+- **Reads (N2).** `WorldReader.final_pace()` (`FinalPace.state` + `capped`: paced, dps, seconds, budget, capped,
+  window, window_left, window_len, nerf, copying), `WorldReader.fallen_window()`, `FALLEN_OFF`, `FALLEN_WARN`,
+  `FALLEN_ON`.
 
 ## 11. Scaling and threat
 
@@ -1083,10 +1688,13 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
 - **The hidden catch-up (v0.5.5 DS, owner D3-D7, D10, B1: "regular scaling + multiplier based on how much you
   grew", "Yes, but hidden").** Everything above stays the regular scaling; `CatchUp` multiplies on top of it. The
   build's power `P` (per mille of a fresh build, `CatchUp.power`, the one function a later term such as the modifier
-  engine's slots joins) is a pure function of the loadout: `weapon_permille(weapon level) × DAMAGE × GLASS_CANNON ×
-  (1000 + ONRUSH) × expected_crit(chance, mult) / expected_crit(base) × ATTACK_SPEED × (1000 + ability_level ×
+  engine's slots joins) is a pure function of the loadout: `weapon_permille(weapon level) × (DAMAGE + ONRUSH) ×
+  GLASS_CANNON × expected_crit(chance, mult) / expected_crit(base) × rate × (1000 + ability_level ×
   levels of the non-weapon abilities + item × items held + combo × combos owned)`, each step `/ 1000` in integers;
-  nothing about how the run is played (HP, shards, kills, position) enters. `m = clamp(isqrt(P × 10⁶ / E), 1000,
+  v0.8.0 SG: `(DAMAGE + ONRUSH)` is the additive bucket (Onrush always counted, Hoarder never) and `rate` is
+  `1000 + AttackRate.curve(ATTACK_SPEED − 1000 + the held cards' rate_bonus_permille ADD ops at their levels)`
+  (`CatchUp.rate_permille`, `wand_rate_bonus`: summed whatever the order, so a reorder still never changes P; no
+  curse, as before); nothing about how the run is played (HP, shards, kills, position) enters. `m = clamp(isqrt(P × 10⁶ / E), 1000,
   cap)` per mille with an integer square root (no float, no `pow`). At floor entry (`CatchUp.start_floor`, after the
   carry, the abilities, the heat and the events are set up; `Main._start_floor`) `E = expected_power[f − 1]` and
   `cap = cap[f − 1] + threat_cap × T` (`Curses.threat`: curses held and Deep floors taken); `m` is then fixed for the
@@ -1100,6 +1708,31 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   (`data/scaling/catch_up.tres`): E = 1000 / 2000 / 4000, cap ×1.5 / ×2 / ×2.5, boss E = 2000 / 4000 / 7000, boss cap
   ×2 / ×3 / ×4, +0.25 per T, 120 per ability level, 80 per item, 150 per combo. It is never shown to the player: no
   `WorldReader` accessor exists (a test checks); the dev panel reads the world directly.
+- **The intensity director (v0.8.0 N5, owner O58, Left 4 Dead's director: "It doesn't change how hard the game hits.
+  It changes when.").** On a run floor `ContentCompiler.compile_floor_spawning` hangs `SpawnTable.intensity` (an
+  `IntensityTable`, loadout) from `data/spawning/intensity.tres`; a spawner without it (labs, kernel, a hand-built
+  `compile_spawning`) runs and hashes as before. `Intensity.advance` runs at the top of `SpawnDirector.advance`
+  (tick phase 9), so only on ordinary floor spawning: a sealed arena, the Overrun, the boss room, the encounters and
+  the final arena never run it (it is frozen there). `World.intensity` (an `IntensityState`: `level` = intensity ×
+  1000, 0..1000000, `mode`, `timer`, `quiet_len`, `cycle`, `calm`, `last_hp`, `seen_tick`; hashed only with the
+  table; snapshotted; `ADDED_SINCE_V05`: an older save's floor starts in `BUILD_UP` at 0). Each tick it runs:
+  **hit**: the hero's HP fell since the tick before (only if the director ran that tick: `seen_tick = tick − 1`; any
+  HP loss counts) → `+ lost × hit_full_hp_gain / max HP`; **close**: an alive enemy within `close_radius_m` →
+  `+ close_gain_per_tick`; **kill**: `World._remove_dead` → `Intensity.on_death`, an enemy dying within
+  `close_radius_m` → `+ close_kill_gain` (only while the director ran the tick before); **drain**: `calm` counts the
+  ticks with no hit and no close enemy; from `calm_ticks` on, `− drain_per_tick`; clamped to 0..1000000. Then the
+  state: `BUILD_UP` → `PEAK` at `peak_level` (one stream `ai:intensity:<cycle>` derived from the world's seed draws
+  the peak's length in `peak_ticks_min..max`, then the quiet's in `quiet_ticks_min..max`); `PEAK` → `PULL_BACK` when
+  its timer ends (timer = `pull_back_max_ticks`); `PULL_BACK` → `QUIET` once at most `pull_back_enemies` alive enemies
+  are within `pull_back_radius_m`, or on its timeout; `QUIET` → `BUILD_UP` (`cycle + 1`) once its drawn length has
+  passed and `level ≤ relax_level`, or at the latest `quiet_ticks_max` after it began (then `level` drops to
+  `relax_level`). Gate: in `PULL_BACK` and `QUIET` `SpawnDirector.advance` sends no pack (`Intensity.sending`; the
+  interval clock runs down to 0 and waits; the enemies out stay); in `BUILD_UP` the next interval is the curve's ×
+  `build_interval_permille` (`Intensity.interval`, the ramp toward the peak); `PEAK` keeps the curve's. The cap, the
+  mix, the pack, the tier, the curve, the curses, Deep and the catch-up are untouched: the director changes when, not
+  what or how strong. The player gets no cue (owner: "the enemies are the real indicator"); `WorldReader.
+  has_intensity`, `intensity` (0..1000), `intensity_mode`, `intensity_timer` exist for the dev panel (F10's Tools page:
+  `DevPanel.intensity_text`).
 - **Boss phase gates (v0.5.5 DS, owner D7: mechanics HP can't skip).** Every boss has three phases at 1000 / 660 /
   330 ‰ of max HP (data). Damage on a boss stops at the next phase's threshold (`BossGates.clamp_damage` in
   `Damage._apply`, so a hit, a DoT tick or a burst all stop there; only the world's own hits, owner 0 such as the dev
@@ -1170,7 +1803,7 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   Overrun enemy, and the altar and bonus come after the last wave.
 - **Sealed arenas (v0.5.5 AR; PLAN D2, X1 "open floor, sealed arenas"; `ArenaRooms`, `Arenas`).** With an arena
   table, `ArenaRooms.mark` (after the Overrun room, before the rewards) makes `round(combat rooms × share)` rooms
-  arenas: combat rooms are all but the hall (shrine), the boss room and its host, the portal room, the Overrun and the
+  arenas: combat rooms are all but the hall (the arrival receiver), the boss room and its host, the portal room, the Overrun and the
   shop's room; event rooms are picked afterwards among the rest. No draw: candidates are taken in a fixed order
   (fewest doorways, most hops from the hall, lower index), each only if every non-arena room stays reachable from
   the hall with every arena and the Overrun shut (an arena is always skippable), and only with at least 3 spawn
@@ -1187,11 +1820,118 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   (`Rewards.arena_first`); a reward in an uncleared arena is locked (`Arenas.locked`; `Rewards.nearest` skips it).
   `ArenaState` is hashed once an arena sealed and is snapshotted (STATE_CLASSES); a restore rebuilds only the wall
   grid for the barriers.
+- **Floor rules (v0.7.5 MG; owner N9-N12).** A floor is 15-19 rooms before the boss room (16-20 with it; was 10-12),
+  footprints up to the extra-large 4×4, on a span of 11 cells (`FloorParams`, from `data/map` through
+  `RunContentCompiler.compile_map`; the same `map` stream draws, in the same order). The arena share is 0.11 (was
+  0.33): with the Overrun room a floor averages 2.4 challenge rooms (was 3.2). Two features follow a floor cadence,
+  `FloorCadence.on(floor, first, every)`: a pure function of the run's floor number (counted from 1, and on past the
+  run's last floor for an endless loop), no draw. The shop stands on `ShopTable.on_floor` floors (1, 3, 5 …;
+  `FloorScenario.add_shop` places nothing on the others). Chests roll the cursed offer only on
+  `EventRules.curse_floor` floors (1, 3, 5 …) and while `EventState.cursed_rolled` (hashed with the event state,
+  snapshotted; a pre-MG snapshot restores it as 0) is under `cursed_chests_per_floor` (1): at most one cursed chest
+  every two floors; the 25 % draw on `loot:event` is taken first, so the stream only moves where a chest is refused.
+  A floor resumed from a save made before v0.7.5 is rebuilt with v0.7.0's rules (`RunState.floor_rules`).
+- **Designed rooms (v0.8.0 RT; owner O12).** With layouts (`FloorParams.room_layouts`, from `data/room_layouts`), after
+  the room templates are drawn, each room in order except the start hall and the portal room whose size has layouts
+  draws, from the `map` stream, a layout (by weight), a quarter turn (any for a square room; for a long room the two
+  that keep the layout's long side along the room's) and a mirror (`RoomLayouts.draw`). No draw then moves the turn
+  and mirror to whichever allowed way round puts the fewest of the layout's blockers in a doorway's box (the drawn way
+  first; `FloorGenerator._settle_orientation`). The room is furnished from it instead of its template: each group,
+  in the layout's order, placed in metres (`RoomLayouts.place_group`: anchors scale with the room, pieces keep their
+  metres, everything axis-aligned, whole centimetres) is kept whole or dropped whole: dropped when a blocker would
+  leave the room, stand in a doorway's box (the doorway's width plus 1 m either side, 3 m deep from the wall face),
+  or fail a vignette's checks (doorways, start and gate clear; flush with a wall or the slab gap from it and from
+  every other piece; the room one region holding every doorway approach). Drawn-only pieces go with their group
+  (decoration in a doorway's box is left out) into `FloorLayout.layout_props`, presentation only; blockers carry their
+  kit piece (`piece_tags`) and drawn height (`piece_heights`). Rooms of a size without layouts, the start hall and the
+  portal room keep their rule-built interiors; the boss room, the shop, the arenas and the Overrun room are chosen
+  afterwards as before. Every room size has layouts since RT2 (24); a room whose doorways drop most of its groups is
+  still a whole room (checked over many floors in `test_room_layouts.gd`). Floor rules 5 (`RunState.FLOOR_RULES`,
+  RT2): a floor saved under rules 1-3 is rebuilt without layouts and makes none of these draws; one saved under rules
+  4 (RT1) is rebuilt with RT1's three layouts only (`RunSaver.rt1_layouts`), so its 1×1, 2×1, 3×1, 4×3 and 4×4 rooms
+  draw nothing, as then; either way it is the floor it was saved on. Nothing new is hashed or saved (the floor
+  is rebuilt from its seed and rules; the snapshot's walls must match it).
+- **Shop rooms (v0.8.0 SR; owner O13; `ShopRoom`, `FloorScenario.add_shop`).** After `ShopPlacement.pick` (its rule
+  unchanged, so the room, the arenas and the routes stay put), on a floor whose shop table has a shop room for the
+  floor's biome (`ShopTable.room_for`), `ShopRoom.furnish` replaces that room's interior (every piece from `slab_first`
+  inside it, and its drawn pieces) with the biome's layout. No draw. The frame is the quarter turn whose -y points from
+  the room's centre toward its first doorway's approach (the farther axis; ties to x). The stall stands at the first
+  of its spots where it fits, pushed flush to a side or the back within the slab gap; it fits when it passes a
+  designed group's checks (`FloorGenerator.vignette_fits`) and no doorway's box, its approach box (clipped to the
+  room) keeps its full depth across the counter's width, every item spot of the room keeps the item clearance from it
+  and stays out of the approach, and the room stays one region (enemy clearance) holding the doorways' approaches, the
+  item spots and a point 1.8 m in front of the counter. The dressing's groups are kept or dropped whole by the same
+  checks and never stand in the approach. Kit solids join `FloorLayout.walls` (drawn by the dresser); the stall and
+  any `shop_*` solid go to `FloorLayout.shop_solids`, which `add_shop` appends to the world's walls after the layout's
+  walls and the gate's, the Deep gate's and the shrine's footprints (never drawn as walls; `ShopStallView` draws them);
+  `shop_pos` is the counter's centre (the shop's interaction point, `Shop.pos`), `shop_angle` its facing; the room's
+  spawn points keep those clear of the new pieces (spawn clearance), out of the approach and 1.6 m from the counter.
+  When no spot fits, nothing changes and the terminal stands as before (none over the 120 run floors of
+  `tests/unit/sim/test_shop_rooms.gd`, which bounds it at 3 %; one in 30 other floors probed, a 12.8 × 8.9 m room
+  whose reward stood in the walk-up lane). Floor rules 5: a floor saved under rules 1-4 has no shop rooms in its tables
+  and is rebuilt with its terminal. Nothing new is hashed or saved.
+- **v0.8.0 P2 (owner O28): two devices, no choice.** On an Ascension floor in state `OPEN`, standing in the portal's
+  opening (`BossFlow.in_portal`) calls `enter_ascension(Choice.ASCENSION)` (1, v0.7.5's END) and standing within
+  `Ascension.LOOP_RADIUS_M` (0.9 m) of `FloorLayout.loop_pos` calls `enter_ascension(Choice.LOOP)` (2, v0.7.5's ASCEND).
+  The Loop device is placed at setup (`FloorScenario.build`, a loop's last floor: `Ascension.place_loop_device`, a pure
+  function of the layout: the centre of the clear front square of the first spot `Routes.fits` without clearing, else
+  `boss_spawn`); nothing solid is added. Nothing waits on a pick (`World.step` lost the Ascension wait; `ascend_open`
+  and `ascend_declined` stay false and are still hashed and saved). The paragraph below is v0.7.5's, kept for the
+  history: read END as the portal (to the final boss, FB1) and ASCEND as the Loop device; `Ascension.ascended` is
+  `looped`, `ended` is `took_portal`.
+- **The Ascension portal and the endless loop (v0.7.5 AP, owner N4; `Ascension`, `BossFlow`, `RunState`).** On a
+  run's last floor of a loop (`RunState.is_last_floor`, loop-local) `RunState.prepare` sets `BossFlow.ascension`: the
+  boss room's gate is the Ascension portal (the gate's own footprint, opening and `in_portal`; no Deep gate on that
+  floor). It opens with the boss's death like any gate (`PORTAL_OPENED`). In state `OPEN`, standing in its opening sets
+  `BossFlow.ascend_open` unless `ascend_declined`; leaving the opening clears `ascend_declined`. While `ascend_open`
+  the world waits (`World.step`, beside the shop's and the event panel's waits: only the pick runs, the tick counts).
+  The pick (`InputFrame.pick`): `Ascension.PICK_END` (1) or `PICK_ASCEND` (2) call `BossFlow.enter_ascension`
+  (`ascend_choice` = `Ascension.Choice.END` 1 / `ASCEND` 2, state `ENTERING`, `route_taken` `NORMAL`, `FLOOR_EXIT`
+  amount 0, then the usual transit); `PICK_CANCEL` is Not yet (`ascend_open` false, `ascend_declined` true); any
+  other pick is ignored. `WorldReader.outcome` on an exited Ascension floor: 1 (won) for End, 3 (next floor) for
+  Ascend. `BossFlow` hashes `1, ascend_open, ascend_declined, ascend_choice` after its RT fields only when
+  `ascension` (every other floor hashes as before).
+  - **Floor numbers.** `RunState.floor_index` stays the floor within the loop (1..`floors`): the per-floor tables,
+    boss pools, curves, arena wave sizes, prices and reward scaling read it (`World.floor_index`).
+    `RunState.run_floor(f) = loop_floors + f` counts the run's floors across loops: the floor seeds
+    (`floor_<run floor>`), the boss drawn (`boss_<run floor>`), `routes` (one entry per run floor) and Deep, the biome
+    order (one entry per run floor), the boss's floor-1 ease and the boss-room heal (only the run's first floor), and,
+    through `World.run_floor` / `run_floor_index()` (0 outside a run: `floor_index`), `FloorCadence`'s shop
+    (`FloorScenario.add_shop`) and cursed-chest floors (`Curses.curse_floor_open`) and `Wand.slots`. So shops and
+    curses keep "every two floors" across a loop's seam (run floors 1, 3, 5 …: loop 2's floor 2 when floors = 3) and a
+    wand never shrinks.
+  - **Ascend** (`RunState.finish_floor` when `Ascension.ascended(w)`): totals and the carry as through any portal
+    (`RunCarry`: the build, the 40 % heal, half the shards), then `loop_floors += floor_index`, `loop += 1`,
+    `floor_index = 1`, and the next loop's biomes are drawn: every biome of the run's list shuffled from the stream
+    `biomes_loop_<loop>` (a sub-stream of the run seed like `biomes`), appended for the loop's floors; its first floor
+    never repeats the floor before it (swap with the second when it would).
+  - **Harder each loop** (data, `RunDefinition` → `RunTable`): `RunState.loop_permille(step)` = 1000 × (step / 1000)
+    ^ (loop − 1), computed by repeated integer multiplication and capped at `loop_scale_cap_permille` (EI-02: no
+    `pow`). Normal enemies' HP and damage per mille × `loop_enemy_hp_permille` / `loop_enemy_damage_permille`'s loop
+    factor (`scale_enemies`, after the floor and Deep factors: one more `SpawnTable.scale` each); bosses' HP and
+    attack damage × `loop_boss_hp_permille` / `loop_boss_damage_permille`'s (`scale_bosses`, integer division).
+    v0.8.0 P3 (owner O35): on a Deep floor past loop 1 both then × `loop_deep_ease_permille` (900; one more
+    `SpawnTable.scale` for enemies, one more integer step for bosses, before the floor-1 ease); nowhere else.
+    `prepare` sets `World.loop`, `World.run_floor`, `World.loop_threat` = `loop_threat` × (loop − 1) (added to
+    `Curses.threat`, so it shows as T and raises the catch-up caps through `threat_cap`) and `World.loop_cap_permille`
+    = `loop_catch_up_cap_permille` × (loop − 1), added to both catch-up caps (`CatchUp.start_floor`, `on_boss`).
+    World hashes `loop, run_floor, loop_threat, loop_cap_permille` (after the run-flow fields) only when loop > 1.
+  - **Saves.** `WorldSnapshot` copies the new World and BossFlow fields; a snapshot without them (any save before AP)
+    keeps the base world's (`ADDED_SINCE_V05`: loop 1, or the Ascension portal on an old save's last floor, from
+    `prepare`). The run payload's `loop` / `loop_floors` (ARCHITECTURE §10) default to 1 / 0.
 - **The boss's legendary altar (v0.5.5 AR, owner X1b; `BossReward`).** Tick phase 9 after the boss flow: the tick
   `BossFlow.opened_tick` is set (the boss died) and the loadout has a `LegendaryTable`, a free
   `RewardStore.Kind.LEGENDARY` reward appears at `FloorLayout.boss_spawn` (`World.legendary_id`, hashed once set; it
   stays set after the pick). Its offer (`Offers.roll_legendary`, loot stream, on the first open) is up to 3 cards from
   the tier only: legendary stat cards (`Offers.LEGENDARY` = rarity 3) and the pool's mods.
+  v0.8.0 RR (owner O33; `docs/roadmap/v0.8.0/evidence/RARITY.md`): the roll first draws `range_int(0, 999)` against
+  `LegendaryTable.chance(World.loop)` (only when the chance is between 0 and 1000); under it the first card is a
+  Legendary card (an item of rarity `LEGENDARY` still in the pool, uniform, one more draw), and no Legendary card is a
+  pool mod otherwise. The death sets `World.legendary_picks` = `LegendaryTable.extra_picks(loop)`; a pick at the altar
+  while it is above 0 uses one, clears the offer (`rolled` 0) and keeps the altar (`BossReward.another_pick`); it is
+  hashed only while above 0 and saved (`WorldSnapshot.ADDED_SINCE_V05`). Altars', chests' and the shop's mod draws
+  weigh each tier (`ItemPool.card_weight`: per mille of a common card, × the weapon's own ×1.5 / 1000); a legendary
+  card enters their pool only while its source's weight is above 0.
 - There is no enrage timer. The danger tier is the floor's own clock (it restarts on every floor and counts only
   while the player lives), not a global one; the owner asked for scaling over time (F10, v0.4.0 PLAN).
 - All scaling is integer `‰` tables. A formula that needs `pow` or `exp` is authored as a table instead.

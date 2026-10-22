@@ -316,20 +316,8 @@ static func _base_vent(w: World) -> AttackSpec:
 	return s
 
 
-## `base` rewritten by `mods` in slot order (v0.6.5 WN1: WandCompile, left to right; a fresh spec, `base` is not
-## written). Without a world a trigger card still ends the spell but casts nothing (no basic attack to copy).
-static func compile_spec(base: AttackSpec, mods: Array[ModifierTable]) -> AttackSpec:
-	var c := WandCompile.new()
-	c.mods = mods
-	return c.spec(base)
-
-
 ## One numeric op on `s` (SET, ADD, MAX, MIN, MUL_PERMILLE on an AttackSpec field, or the virtual `range`).
 static func numeric(s: AttackSpec, op: ModifierOp) -> void:
-	_numeric(s, op)
-
-
-static func _numeric(s: AttackSpec, op: ModifierOp) -> void:
 	if op.field == &"range":  # v0.6.0 MX4: the form's own range field (SpecForms.range_of)
 		if op.op == ModifierOp.Op.MUL_PERMILLE:
 			SpecForms.scale_range(s, op.value)
@@ -352,6 +340,10 @@ static func _numeric(s: AttackSpec, op: ModifierOp) -> void:
 		return
 	var c: int = s.get(op.field)
 	var iv := int(op.value)
+	if op.field == &"share_permille":  # v0.8.0 MR (O91): shares multiply down the wand (0 = whole)
+		c = c if c > 0 else 1000
+		if op.op == ModifierOp.Op.MUL_PERMILLE:
+			s.damage_mul_permille = s.damage_mul_permille * iv / 1000  # the view's weight is each bolt's
 	match op.op:
 		ModifierOp.Op.SET:
 			c = iv

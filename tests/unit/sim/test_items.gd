@@ -123,7 +123,9 @@ func test_ember_stacks_cap_at_five_and_scale_the_tick() -> void:
 	assert_eq(w.actors.burn_stacks[1], 5)
 	assert_eq(WorldReader.new(w).burn_stacks(1), 5)
 	var after := w.last_event_seq()
-	_idle(w, 31)
+	# v0.8.0 N1 (O48): one burn period exactly (30 ticks), so one tick falls in it whatever phase the swings' longer
+	# hit-stop left the burn in (31 caught two once the hit-stop grew).
+	_idle(w, 30)
 	var dots := w.events_since(after).filter(
 		func(e: SimEvent) -> bool: return e.kind == SimEvent.Kind.DAMAGE
 	)
@@ -144,7 +146,7 @@ func test_splinter_fires_three_bolts_in_a_fan_at_sixty_percent() -> void:
 	assert_eq(w.projectiles.size(), 3)
 	var angles := []
 	for k in 3:
-		assert_eq(w.projectiles.damage[k], 2, "4 x 0.6 = 2.4, rounded down")
+		assert_eq(w.projectiles.damage[k], 3, "5 x 0.6 = 3 (v0.8.0 GF1: the bolt is 5)")
 		var a := Kin.angle_of(Vector2(w.projectiles.vel_x[k], w.projectiles.vel_y[k]))
 		angles.append(a if a < 2048 else a - 4096)
 	angles.sort()
@@ -159,9 +161,9 @@ func test_rapid_coil_shortens_the_shot_period() -> void:
 	for i in 25:
 		plain.step(_f(InputFrame.SHOOT))
 		w.step(_f(InputFrame.SHOOT))
-	assert_eq(plain.projectiles.size(), 4, "every 7 ticks")
-	assert_eq(w.projectiles.size(), 5, "every 5 ticks: 7 / 1.4")
-	assert_eq(WorldReader.new(w).shot_period_ticks(), 5)
+	assert_eq(plain.projectiles.size(), 3, "every 9 ticks (v0.8.0 GF1)")
+	assert_eq(w.projectiles.size(), 5, "every 6 ticks: 9 / 1.4 = 6.4, rounded")
+	assert_eq(WorldReader.new(w).shot_period_ticks(), 6)
 
 
 func _walled(kinds: Array) -> World:
@@ -268,7 +270,7 @@ func test_items_stack() -> void:
 	assert_eq(w.projectiles.size(), 3)
 	for k in 3:
 		assert_eq(w.projectiles.bounces[k], 1)
-	assert_eq(ItemEffects.shot_period_ticks(w), 5)
+	assert_eq(ItemEffects.shot_period_ticks(w), 6, "9 / 1.4 (v0.8.0 GF1)")
 	var r := WorldReader.new(w)
 	assert_eq(r.item_count(), 3)
 	assert_true(r.has_item_kind(WorldReader.ITEM_RICOCHET_CORE))
@@ -312,18 +314,19 @@ func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 	var all := ItemPool.draw(w, 100)
 	assert_eq(
 		all.size(),
-		53,
+		61,
 		(
 			"the v0.3.0 pool of 24 + the M-list's 24 usable here (v0.6.0 MX4: no heat, no ability, no legendary)"
 			+ " + the Gun pool's 12 new (v0.6.5 WN3) + v0.6.5 WN4: the Blade pool's 12 new cards and Blade"
 			+ " Orbit (no longer an ability merge) = 73; v0.6.5 WN5a: + the 4 triggers, offered now, and the"
-			+ " shared pool's 2 new cards; v0.6.5 WN5b: − the 26 retired v0.6 cards usable here"
+			+ " shared pool's 2 new cards; v0.6.5 WN5b: − the 26 retired v0.6 cards usable here; v0.8.0 BL: + 2"
+			+ "; v0.8.0 AO: + Ring and Swirl; v0.8.0 RM: + Threadline, Faultline, Gravity Stitch, Stress Mark"
 		)
 	)
 	var seen := {}
 	for i in all:
 		seen[i] = true
-	assert_eq(seen.size(), 53, "no repeats")
+	assert_eq(seen.size(), 61, "no repeats")
 	var v := _world([], [])
 	v.player.utility = PlayerTable.Utility.GUARD
 	var first := ItemPool.available(v)  # v0.5.0 CP: index 0 may be an ability mod, never drawn here
@@ -336,7 +339,7 @@ func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 		assert_false(i in held)
 		v.add_pickup(i, Vector2(5, 5))
 	var rest := ItemPool.draw(v, 100)
-	assert_eq(rest.size(), 48, "53 - owned - 4 placed")
+	assert_eq(rest.size(), 56, "61 - owned - 4 placed")
 	for i in rest:
 		assert_false(i in some or i in held)
 

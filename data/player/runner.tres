@@ -17,7 +17,7 @@ recovery_seconds = 0.1833333
 arc_degrees = 120.0
 reach_m = 1.6
 damage = 10
-hitstop_seconds = 0.05
+hitstop_seconds = 0.0666667
 lunge_m = 0.0
 sweep_seconds = 0.0833333
 
@@ -29,7 +29,7 @@ recovery_seconds = 0.1833333
 arc_degrees = 120.0
 reach_m = 1.6
 damage = 10
-hitstop_seconds = 0.05
+hitstop_seconds = 0.0666667
 lunge_m = 0.0
 sweep_seconds = 0.0833333
 
@@ -41,7 +41,7 @@ recovery_seconds = 0.2
 arc_degrees = 40.0
 reach_m = 2.3
 damage = 12
-hitstop_seconds = 0.0666667
+hitstop_seconds = 0.0833333
 lunge_m = 0.35
 sweep_seconds = 0.0666667
 
@@ -53,13 +53,18 @@ recovery_seconds = 0.4
 arc_degrees = 360.0
 reach_m = 1.9
 damage = 24
-hitstop_seconds = 0.1166667
+hitstop_seconds = 0.1333333
 lunge_m = 0.6
 sweep_seconds = 0.15
 
 [sub_resource type="Resource" id="Resource_prim1"]
 script = ExtResource("3_prim1")
 combo = Array[ExtResource("4_step1")]([SubResource("Swing_slash"), SubResource("Swing_backhand"), SubResource("Swing_thrust"), SubResource("Swing_spin")])
+shot_period_seconds = 0.15
+bolt_damage = 5
+bolt_speed_mps = 16.2
+bolt_radius_m = 0.2
+bolt_life_seconds = 0.6666667
 
 [resource]
 script = ExtResource("2_gn6h3")

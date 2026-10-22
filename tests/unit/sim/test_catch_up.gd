@@ -129,6 +129,15 @@ func test_a_boss_takes_its_own_m_with_the_boss_cap() -> void:
 	assert_eq(BossAi.powered(n, ni, 20), 20)
 
 
+## Audit G-12: a boss's scaled damage rounds half up, as an enemy's does (SpawnTable.scale).
+func test_a_boss_scales_damage_by_the_enemies_rounding() -> void:
+	var w := SaveLab.floor_world(35, 1)
+	var i := w.actors.index_of(w.spawn_boss(0, w.player_pos() + Vector2(8, 0)))
+	w.actors.power[i] = 1200  # test setup
+	assert_eq(BossAi.powered(w, i, 14), 17, "16.8 rounds to 17")
+	assert_eq(BossAi.powered(w, i, 14), EnemyAi.powered(w, i, 14))
+
+
 func test_the_boss_cap_grows_by_floor_and_threat() -> void:
 	var w := SaveLab.build_floor(SaveLab.run_state(36, 3, &"blade", Routes.Route.DEEP))
 	_stats_at_base(w)

@@ -85,7 +85,8 @@ static func build(tables: Array[ItemTable], owned: PackedInt32Array) -> ItemMods
 		match t.kind:
 			ItemTable.Kind.EMBER_EDGE, ItemTable.Kind.CINDER_SHOT, ItemTable.Kind.WILDFIRE:
 				m.burn_damage = maxi(m.burn_damage, t.burn_damage)
-				m.burn_period_ticks = maxi(1, t.burn_period_ticks)
+				# fold_engine's rule (audit G-21): every shipped burn item burns every 0.5 s, so it is unchanged
+				m.burn_period_ticks = maxi(m.burn_period_ticks, maxi(1, t.burn_period_ticks))
 				m.burn_duration_ticks = maxi(m.burn_duration_ticks, t.burn_duration_ticks)
 				m.burn_max_stacks = maxi(m.burn_max_stacks, t.burn_max_stacks)
 			ItemTable.Kind.TWIN_ARC, ItemTable.Kind.SPLINTER_SHOT, ItemTable.Kind.OVERCHARGE:

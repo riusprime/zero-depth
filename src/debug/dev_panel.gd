@@ -14,6 +14,7 @@ var _enemy := Label.new()
 var _ability := Label.new()
 var _mod := Label.new()  # v0.6.0 MX4: the modifier card GrantMod gives
 var _catch_up := Label.new()
+var _intensity := Label.new()  # v0.8.0 N5: the intensity director's readout
 
 
 static func unlocked(debug_build: bool = OS.is_debug_build()) -> bool:
@@ -76,6 +77,9 @@ func _init(p_api: DebugApi) -> void:
 	_catch_up.name = "CatchUp"
 	_catch_up.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	col.add_child(_catch_up)
+	_intensity.name = "Intensity"
+	_intensity.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	col.add_child(_intensity)
 
 
 func _process(_delta: float) -> void:
@@ -107,6 +111,7 @@ func _process(_delta: float) -> void:
 	var mc := api.mod_choice
 	_mod.text = tr(w.item_tables[mc].name_key) if mc >= 0 and mc < w.item_tables.size() else ""
 	_catch_up.text = catch_up_text(w)
+	_intensity.text = intensity_text(WorldReader.new(w))
 
 
 ## v0.5.5 DS: "m ×1.41 (P 2000 / E 1000, cap ×1.75) · boss ×1.20 (P … / E …, cap …)", or "" without the table.
@@ -122,4 +127,15 @@ static func catch_up_text(w: World) -> String:
 			"  boss x%.2f (P %d / E %d, cap x%.2f)"
 			% [s.boss / 1000.0, s.boss_power, s.boss_expected, s.boss_cap / 1000.0]
 		)
+	return out
+
+
+## v0.8.0 N5: "intensity 512 PEAK 3.2 s", or "" without the director (developers only; the player sees no cue).
+static func intensity_text(r: WorldReader) -> String:
+	if not r.has_intensity():
+		return ""
+	var mode: String = IntensityState.Mode.keys()[r.intensity_mode()]
+	var out := "intensity %d %s" % [r.intensity(), mode]
+	if r.intensity_timer() > 0:
+		out += " %.1f s" % (r.intensity_timer() / float(SimTick.TICKS_PER_SECOND))
 	return out

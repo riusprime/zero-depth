@@ -1,34 +1,154 @@
 class_name Gamble
 extends RefCounted
-## The gamble shrine (v0.3.0 PLAN L19): one per floor, in the start hall, so it is always reachable and you can come
-## back to it.
+## The gamble shrine (v0.3.0 PLAN L19). v0.8.0 N14 (owner O72: "shrine should also me rarer, not at the start of every
+## floor, and have a cap of 3 upgrades with a 30% chance of failing, cost still goes up if it misses, at 3 upgrades it
+## gets blocked"): some floors only, in a combat room away from the start hall (site); a floor resumed from a save made
+## before N14 keeps its shrine in the start hall (spot; RunState.rare_shrine).
 ## - Price: GambleTable.price(uses on this floor, floor number): 25 shards on floor 1, then × 1.5 per use (rounded
-##   half up: 25, 38, 57, 86, 129 ...). The count of uses resets on each floor (it is not carried), and a later
-##   floor's base is raised like the chests' (× 1.5 on floor 2, × 2 on floor 3).
-## - The interact button within reach pays and grants one stat at once: a weighted draw from the loot stream over the
-##   stats still under their cap. You can't afford it, or every stat is capped: the world records the refusal (for
-##   the view) and nothing is paid. An altar or chest in reach takes the press first (Rewards.interact).
+##   half up: 25, 38, 57, 86, 129 ...). Every paid use counts, a failed one too. The count of uses resets on each
+##   floor (it is not carried), and a later floor's base is raised like the chests' (× 1.5 on floor 2, × 2 on floor 3).
+## - The interact button within reach pays, then rolls the failure (fail_permille, on `loot:shrine:<use>`): a failed
+##   use grants nothing (World.gamble_fail_tick, a GAMBLE_FAIL event); otherwise one stat at once, a weighted draw
+##   from the loot stream over the stats still under their cap, and one win (World.gamble_wins). After max_wins wins
+##   the shrine is spent. Too poor, spent, or every stat capped: the world records the refusal (for the view) and
+##   nothing is paid. An altar or chest in reach takes the press first (Rewards.interact).
 ## - The stats won (World.gamble_stacks, wins per GambleTable.Stat) last the whole run (RunCarry) and are hashed.
 ##   Each stat's hook reads bonus(): max HP (raised at once, and healed by the same amount), melee and shot damage,
 ##   move speed, the dash cooldown, the shards a kill pays; REGEN and HEAT are exposed for the regen (P) and heat (H)
 ##   workstreams through regen_bonus_permille() and heat_capacity_bonus_permille().
 
+## v0.8.0 N14: the floor's draw (does it have a shrine, and in which room) and each use's failure roll (one stream per
+## use, derived from the floor seed, so a resumed save rolls what the first try rolled).
+const STREAM := "map:shrine"
+const FAIL_STREAM := "loot:shrine"
+## v0.8.0 N14: a shrine away from the start hall keeps this far from the room's doorway approaches and item spots.
+const DOOR_GAP_M := 2.5
+const ITEM_GAP_M := 2.5
+## Where you stand to use it, from its centre (the e2e walks there; reachability is checked through it).
+const FRONT_M := 1.2
+const _DOOR_APPROACH := 1.0
+
 ## Half the side of the shrine's square footprint (turned 45°, under the plinth's 0.78 m hexagon).
 const FOOTPRINT_HALF_M := 0.5
 
 
-## Places the floor's shrine (setup, after the rewards). Returns its id.
-static func place(w: World, layout: FloorLayout) -> int:
-	w.gamble_pos = spot(layout, w.gamble_table)
+## Places the floor's shrine at `at` (setup, after the rewards; site() chose the spot). Returns its id.
+static func place(w: World, at: Vector2) -> int:
+	w.gamble_pos = at
 	w.gamble_id = w.take_root()
 	w.emit_event(SimEvent.Kind.SPAWN, w.gamble_id, w.gamble_id, w.gamble_id, w.gamble_pos)
 	return w.gamble_id
 
 
-## Where the shrine stands (a pure function of the layout and the rules; no stream is drawn):
-## spot_distance_m from the start point, first on the side of the hall away from its exit, then turning by 45° steps
-## (left before right) until the spot is inside the hall and clear of every wall by clear_radius_m. Without one: the
-## hall's spawn point nearest the start that is clear, then the same in the rooms next to the hall, then the start.
+## v0.8.0 N14 (O72): where the floor's shrine stands, or [] for a floor without one. `legacy` (a floor saved before
+## N14): always, in the start hall (spot). Otherwise a draw on STREAM, from the floor seed: a shrine with
+## floor_chance_permille; then the candidate rooms (rooms()) in an order drawn from the same stream, the first with a
+## spot (room_spot) wins. Pure: a function of the layout, the rules and the floor seed.
+static func site(
+	layout: FloorLayout, t: GambleTable, legacy: bool, params: FloorParams = null
+) -> PackedVector2Array:
+	if legacy:
+		return PackedVector2Array([spot(layout, t)])
+	var rng := stream(layout.seed_value, STREAM)
+	if not rng.chance_permille(t.floor_chance_permille):
+		return PackedVector2Array()
+	var order := rooms(layout)
+	for k in range(order.size() - 1, 0, -1):
+		var j := rng.range_int(0, k)
+		var swap := order[k]
+		order[k] = order[j]
+		order[j] = swap
+	var p := params if params != null else FloorParams.defaults()
+	for room in order:
+		var at := room_spot(layout, room, t, p)
+		if not at.is_empty():
+			return at
+	return PackedVector2Array()
+
+
+## v0.8.0 N14: the rooms a shrine may stand in, ascending: combat rooms (ArenaRooms.candidates: not the start hall,
+## the boss room or its host, the portal room, the Overrun room or the shop's room) that are not sealed arenas.
+static func rooms(layout: FloorLayout) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for r in ArenaRooms.candidates(layout):
+		if not layout.arena_rooms.has(r) and r < layout.hops.size() and layout.hops[r] > 0:
+			out.append(r)
+	return out
+
+
+## v0.8.0 N14: the shrine's spot in `room` ([] when none): the room's centre, then its spawn points nearest the
+## centre; the first inside the room and clear of every wall by clear_radius_m, DOOR_GAP_M from its doorway
+## approaches and ITEM_GAP_M from every item spot, where, with the shrine's footprint as a wall, the room's open floor
+## stays one region holding every doorway approach, every item spot and the shrine's front (at the enemies'
+## clearance, like the shop: ShopPlacement).
+static func room_spot(
+	layout: FloorLayout, room: int, t: GambleTable, p: FloorParams
+) -> PackedVector2Array:
+	var r := layout.rooms[room]
+	var approaches := layout.door_approaches(room, _DOOR_APPROACH)
+	if approaches.is_empty():
+		return PackedVector2Array()
+	var centre := r.get_center()
+	var tries := [centre]
+	var pts := (
+		layout.spawn_points[room] if room < layout.spawn_points.size() else PackedVector2Array()
+	)
+	var order := Array(pts)
+	order.sort_custom(
+		func(a: Vector2, b: Vector2) -> bool:
+			var da := Kin.length(a - centre)
+			var db := Kin.length(b - centre)
+			return da < db or (da == db and (a.x < b.x or (a.x == b.x and a.y < b.y)))
+	)
+	tries.append_array(order)
+	var walls := layout.room_walls(room)
+	for q: Vector2 in tries:
+		if not _clear(layout, room, q, t.clear_radius_m):
+			continue
+		var near := false
+		for a in approaches:
+			near = near or Kin.length(a - q) < DOOR_GAP_M
+		for s in layout.item_spots:
+			near = near or Kin.length(s - q) < ITEM_GAP_M
+		if near:
+			continue
+		var with: Array[Obb] = walls.duplicate()
+		with.append(collider(q))
+		var must := approaches.duplicate()
+		must.append(front(q, approaches[0]))
+		for i in layout.item_spots.size():
+			if layout.item_rooms[i] == room:
+				must.append(layout.item_spots[i])
+		if FloorReach.whole(r, with, p.nav_clearance, must):
+			return PackedVector2Array([q])
+	return PackedVector2Array()
+
+
+## v0.8.0 N14: `points` without those within clear_radius_m + FOOTPRINT_HALF_M of a shrine at `at` (no enemy spawns
+## in or against its footprint).
+static func free_spawns(
+	points: PackedVector2Array, at: Vector2, t: GambleTable
+) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for q in points:
+		if Kin.length(q - at) >= t.clear_radius_m + FOOTPRINT_HALF_M:
+			out.append(q)
+	return out
+
+
+## Where you stand to use a shrine at `at`: FRONT_M toward `toward` (the room's first doorway approach).
+static func front(at: Vector2, toward: Vector2) -> Vector2:
+	var d := toward - at
+	if Kin.length(d) <= 0.0:
+		return at + Vector2(FRONT_M, 0.0)
+	return at + d / Kin.length(d) * FRONT_M
+
+
+## Where the shrine of a floor saved before N14 stands, in the start hall (a pure function of the layout and the
+## rules; no stream is drawn): spot_distance_m from the start point, first on the side of the hall away from its exit,
+## then turning by 45° steps (left before right) until the spot is inside the hall and clear of every wall by
+## clear_radius_m. Without one: the hall's spawn point nearest the start that is clear, then the same in the rooms next
+## to the hall, then the start.
 static func spot(layout: FloorLayout, t: GambleTable) -> Vector2:
 	var hall := layout.start_room
 	var start := layout.start_pos
@@ -123,6 +243,42 @@ static func weights(w: World) -> PackedInt32Array:
 	return out
 
 
+## v0.8.0 N14 (O72): the shrine's wins on this floor, how many it grants, and the chance a use fails (per mille).
+static func wins(w: World) -> int:
+	return w.gamble_wins
+
+
+static func max_wins(w: World) -> int:
+	return w.gamble_table.max_wins
+
+
+static func fail_permille(w: World) -> int:
+	return w.gamble_table.fail_permille
+
+
+## v0.8.0 N14 (O72): the shrine gave its max_wins stats: it is blocked.
+static func spent(w: World) -> bool:
+	return w.gamble_table.max_wins > 0 and w.gamble_wins >= w.gamble_table.max_wins
+
+
+## v0.8.0 N14 (O72): whether paid use number `use` (0-based, this floor) fails: one draw on its own stream
+## (FAIL_STREAM:<use>, from the floor seed), so the outcome of each try is fixed by the floor.
+static func fails(w: World, use: int) -> bool:
+	var p := w.gamble_table.fail_permille
+	if p <= 0:
+		return false
+	return stream(w.seed_value, "%s:%d" % [FAIL_STREAM, use]).chance_permille(p)
+
+
+## v0.8.0 N14: the named stream `stream_name` of floor seed `seed_value`, its first draw dropped: the first output of
+## a freshly derived state follows nearby seeds too closely for a single yes/no (measured over 4,000 seeds 1..4000:
+## 416 per mille for a 400 chance, 395 with the first draw dropped).
+static func stream(seed_value: int, stream_name: String) -> RngStream:
+	var rng := RngStream.derive(seed_value, stream_name)
+	rng.next_u32()
+	return rng
+
+
 ## Every stat is at its cap: the shrine has nothing left to give.
 static func exhausted(w: World) -> bool:
 	for v in weights(w):
@@ -131,19 +287,25 @@ static func exhausted(w: World) -> bool:
 	return true
 
 
-## Tick phase 2b, after Rewards.interact: a buffered interact press by the shrine pays and grants a stat. True if
-## it granted one.
+## Tick phase 2b, after Rewards.interact: a buffered interact press by the shrine pays, then fails (fail_permille:
+## nothing granted, the price still steps up) or grants a stat and counts a win. True if it granted one.
 static func interact(w: World) -> bool:
 	if w.player_dead() or w.buffered(InputFrame.INTERACT) == 0 or not in_reach(w):
 		return false
 	w.consume_buffered(InputFrame.INTERACT)
-	if not can_afford(w) or exhausted(w):
+	if not can_afford(w) or spent(w) or exhausted(w):
 		w.gamble_denied_tick = w.tick
 		return false
 	w.shards -= price(w)
+	var failed := fails(w, w.gamble_uses)
+	w.gamble_uses += 1
+	if failed:  # v0.8.0 N14 (O72): paid, no stat
+		w.gamble_fail_tick = w.tick
+		w.emit_event(SimEvent.Kind.GAMBLE_FAIL, w.gamble_id, w.gamble_id, w.gamble_id, w.gamble_pos)
+		return false
 	var stat := draw(w)
 	grant(w, stat)
-	w.gamble_uses += 1
+	w.gamble_wins += 1
 	w.gamble_last_stat = stat
 	w.gamble_tick = w.tick
 	return true

@@ -197,11 +197,11 @@ func test_the_arc_caster_casts_all_three_spells_with_their_telegraphs() -> void:
 		var i := _i(w, id)
 		var tg := EnemyAi.telegraph(w, i)
 		match w.actors.pick[i]:
-			EnemyAi.Spell.BOLT:
-				assert_eq([tg["shape"], tg["style"]], [&"lane", &"bolt"])
-				assert_eq(w.actors.windup[i], 30, "a 30-tick line first")
+			EnemyAi.Spell.BOLT:  # v0.7.5 EF: a fan of plasma balls, no ground line (test_enemy_fireballs)
+				assert_eq([tg["shape"], tg["ground"]], [&"cast", false])
+				assert_eq(w.actors.windup[i], 30, "a 30-tick windup first")
 			EnemyAi.Spell.SPREAD:
-				assert_eq([tg["shape"], (tg["obbs"] as Array).size()], [&"lanes", 3])
+				assert_eq([tg["shape"], tg["ground"]], [&"cast", false])
 				assert_eq(w.actors.windup[i], 30)
 			EnemyAi.Spell.RUNE:
 				assert_eq(
@@ -215,7 +215,8 @@ func test_the_arc_caster_casts_all_three_spells_with_their_telegraphs() -> void:
 	assert_eq(seen.size(), 3, "bolt, spread and rune all came up")
 
 
-func test_the_arc_bolt_flies_at_22_metres_a_second() -> void:
+## v0.7.5 EF (owner N16): the bolt is a fan of 3 slow plasma balls (was one 22 m/s bolt).
+func test_the_arc_bolt_is_three_plasma_balls_at_4_metres_a_second() -> void:
 	var w := CombatLab.world()
 	_tough(w)
 	var id := w.add_enemy(K.ARC_CASTER, Vector2(8, 0))
@@ -226,9 +227,9 @@ func test_the_arc_bolt_flies_at_22_metres_a_second() -> void:
 		_until_state(w, id, S.MOVE)
 	assert_eq(w.actors.pick[_i(w, id)], EnemyAi.Spell.BOLT)
 	_until_state(w, id, S.RECOVER)
-	assert_eq(w.projectiles.size(), 1)
+	assert_eq(w.projectiles.size(), 3)
 	var v := Vector2(w.projectiles.vel_x[0], w.projectiles.vel_y[0])
-	assert_almost_eq(Kin.length(v) * 60.0, 22.0, 0.01)
+	assert_almost_eq(Kin.length(v) * 60.0, 4.0, 0.01)
 
 
 func test_the_rune_hits_a_player_who_stays_and_misses_one_who_walks_out() -> void:
@@ -254,26 +255,28 @@ func test_the_rune_hits_a_player_who_stays_and_misses_one_who_walks_out() -> voi
 # --- F6: the Bomb Drone ------------------------------------------------------------------------------------------
 
 
-func test_the_bomb_circle_fills_for_48_ticks_then_explodes_for_16() -> void:
+## v0.7.5 EF (owner N16): the bomb is a lobbed fireball with no ground circle (test_enemy_fireballs has its flight,
+## landing and X); the drone still winds up for 48 ticks, its body's cue.
+func test_the_bomb_drone_winds_up_for_48_ticks_then_its_fireball_lands_for_16() -> void:
 	var w := CombatLab.world()
 	_tough(w)
 	var id := w.add_enemy(K.BOMB_DRONE, Vector2(7, 0))
 	_until_state(w, id, S.WINDUP)
 	var i := _i(w, id)
 	var tg := EnemyAi.telegraph(w, i)
-	assert_eq([tg["shape"], tg["style"], tg["radius"]], [&"disc", &"bomb", 1.8])
-	assert_eq(tg["center"], w.player_pos(), "lobbed at where the player stands")
+	assert_eq([tg["shape"], tg["ground"]], [&"cast", false], "no circle on the ground")
 	assert_eq(w.actors.windup[i], 48)
 	var progress := []
 	while _state(w, id) == S.WINDUP:
 		progress.append(EnemyAi.telegraph(w, _i(w, id))["progress"])
 		w.step(InputFrame.new())
-	assert_eq(progress.size(), 48, "the circle shows for its whole fuse")
+	assert_eq(progress.size(), 48, "the windup shows for its whole fuse")
 	assert_eq(progress[0], 0)
-	assert_gt(progress[-1], 950, "full just before it lands")
+	assert_gt(progress[-1], 950)
 	for k in range(1, progress.size()):
 		assert_gte(progress[k], progress[k - 1], "it only fills")
-	assert_eq(CombatLab.player_damage(w), [16])
+	_until_state(w, id, S.RECOVER)
+	assert_eq(CombatLab.player_damage(w), [16], "the fireball lands on a player who stood still")
 
 
 func test_the_drone_keeps_hovering_while_its_bomb_is_in_the_air() -> void:

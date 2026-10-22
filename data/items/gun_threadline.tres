@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+kind = 33
+rarity = 1
+name_key = &"ITEM_GUN_THREADLINE"
+desc_key = &"ITEM_GUN_THREADLINE_DESC"
+requires_weapon = &"gun"
+tags = PackedStringArray("bolt", "wand")
+modifiers = Array[StringName]([&"gun_threadline"])
+index_wave = 3
+loot_category = &"advanced"
+id = &"gun_threadline"

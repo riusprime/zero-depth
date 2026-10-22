@@ -17,6 +17,7 @@ const SHOTS := [
 	["biome_night_rocks", &"night_rocks", 35.26, &"xray", true],
 	["biome_red_canyon", &"red_canyon", 35.26, &"xray", true],
 	["biome_frozen_shore", &"frozen_shore", 35.26, &"xray", true],
+	["biome_starfall", &"starfall", 35.26, &"xray", true],
 ]
 
 var _index := -1
@@ -29,9 +30,7 @@ var _only := ""
 func _initialize() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	_suffix = "_" + RenderingServer.get_current_rendering_method()
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("only="):
-			_only = arg.trim_prefix("only=")
+	_only = ScriptArgs.parse().get("only", _only)
 	print(
 		(
 			"galleries: renderer=%s device=%s"

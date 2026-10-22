@@ -51,10 +51,6 @@ func finish() -> void:
 	visible = used > 0
 
 
-func room() -> int:
-	return capacity - used
-
-
 ## The instance's transform and colour as last added (tests).
 func instance_transform(i: int) -> Transform3D:
 	return _xfs[i]

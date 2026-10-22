@@ -1,11 +1,25 @@
-[gd_resource type="Resource" script_class="BiomeDefinition" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="BiomeDefinition" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://src/content/defs/biome_definition.gd" id="1_pvo31"]
 
 [ext_resource type="Script" path="res://src/content/defs/biome_mood.gd" id="2_mood"]
 
+[ext_resource type="Script" path="res://src/content/defs/biome_look.gd" id="4_look"]
+
 [sub_resource type="Resource" id="Resource_mood"]
 script = ExtResource("2_mood")
+wall_texture_m = 5.0
+wall_top_texture_m = 5.5
+wall_detail = 0.55
+wall_face_contrast = 0.7
+wall_top_contrast = 0.75
+wall_stone_scale = 1.3
+wall_breakage = 0.6
+wall_jitter = 0.6
+wall_fill_lump_m = 1.6
+wall_fill_noise = 0.6
+wall_tint_noise = 0.6
+wall_fill_shade = 0.76
 sun_color = Color(0.55, 0.68, 1, 1)
 sun_energy = 0.5
 sun_pitch_deg = -50.0
@@ -23,25 +37,83 @@ ssil_enabled = true
 ssil_intensity = 1.0
 fog_density = 0.003
 fog_color = Color(0.08, 0.1, 0.16, 1)
-glow_intensity = 1.2
+fog_height = 0.0
+fog_height_density = 0.15
+volumetric_enabled = true
+volumetric_density = 0.03
+volumetric_albedo = Color(0.92, 0.86, 0.8, 1)
+volumetric_height = 3.5
+volumetric_light_energy = 1.0
+volumetric_sun_energy = 0.0
+glow_intensity = 0.45
 warm_light_color = Color(1.0, 0.6, 0.3, 1)
-warm_light_energy = 7.0
-warm_light_range = 9.0
+warm_light_energy = 4.5
+warm_light_range = 7.5
 vignette = 0.55
 hero_light_energy = 1.8
 hero_light_range = 5.0
-glow_threshold = 0.8
-glow_bloom = 0.04
+glow_threshold = 1.0
+glow_bloom = 0.0
 grade_shadows = Color(0.18, 0.35, 0.65, 1)
 grade_highlights = Color(1, 0.62, 0.32, 1)
 grade_strength = 0.7
 contrast = 1.18
 saturation = 1.08
-glow_spread = 0.7
+glow_spread = 0.25
+
+[sub_resource type="Resource" id="Resource_look"]
+script = ExtResource("4_look")
+pools = {
+&"cover_square": {
+&"rock_large": 3,
+&"rock_spire": 2,
+&"dead_tree": 1
+},
+&"cover_block": {
+&"rock_large": 1
+},
+&"cover_long": {
+&"rock_large": 1
+},
+&"cover_wall": {
+&"rock_large": 1
+},
+&"cover_post": {
+&"rock_spire": 2,
+&"dead_tree": 1
+},
+&"cover_deep": {
+&"stone_arch": 1,
+&"rock_large": 2
+},
+&"landmark": {
+&"stone_arch": 2,
+&"rock_large": 1
+},
+&"decor_grass": {
+&"grass_tuft": 3,
+&"mushroom_cluster": 1
+},
+&"decor_rubble": {
+&"boulder_small": 2,
+&"rubble_small": 1
+},
+&"decor_debris": {
+&"bone_pile": 1
+},
+&"void_island": {
+&"floating_island_moss": 1
+}
+}
+max_per_floor = {
+&"stone_arch": 2
+}
+edge = &"islands"
 
 [resource]
 script = ExtResource("1_pvo31")
 name_key = &"BIOME_NIGHT_ROCKS"
+desc_key = &"BIOME_NIGHT_ROCKS_DESC"
 palette = {
 "accent": Color(0.23529412, 0.22745098, 0.26666667, 1),
 "ambient": Color(0.72156863, 0.78431373, 0.94117647, 1),
@@ -54,3 +126,4 @@ palette = {
 template_tags = PackedStringArray("night_rocks")
 id = &"night_rocks"
 mood = SubResource("Resource_mood")
+look = SubResource("Resource_look")

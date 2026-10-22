@@ -4,6 +4,10 @@ extends ContentDef
 ## have a random stat increase"). One per floor, in the start hall. Each use costs more than the last on that floor;
 ## the price resets on a new floor, whose base price is raised like the chests'. A use grants one stat from the
 ## weighted pool, never past its cap; the stats won last for the whole run. Starting values the owner tunes.
+## v0.8.0 N14 (owner O72: "shrine should also me rarer, not at the start of every floor, and have a cap of 3 upgrades
+## with a 30% chance of failing, cost still goes up if it misses, at 3 upgrades it gets blocked"): a floor has a
+## shrine with floor_chance_permille, in a combat room away from the start hall; each shrine grants at most max_wins
+## stats, then it is spent; each paid use fails with fail_permille (paid, no stat), and the price still steps up.
 
 ## Shards for the first use on floor 1.
 @export var base_price := 25
@@ -18,6 +22,12 @@ extends ContentDef
 ## spot, at the hall's nearest clear spawn point, then at the nearest clear spawn point of a room next to the hall.
 @export var spot_distance_m := 2.6
 @export var clear_radius_m := 0.9
+## v0.8.0 N14 (O72): the chance a floor has a shrine, in per mille (400: 40 % of floors).
+@export var floor_chance_permille := 400
+## v0.8.0 N14 (O72): the stats one shrine grants before it is spent (a failed use doesn't count).
+@export var max_wins := 3
+## v0.8.0 N14 (O72): the chance a paid use fails, in per mille (300: 30 %): paid, no stat, the price still rises.
+@export var fail_permille := 300
 @export var stats: Array[GambleStatEntry] = []
 
 
@@ -37,6 +47,15 @@ func validate() -> Array[ValidationIssue]:
 	check_positive(issues, "interact_radius_m", interact_radius_m)
 	check_positive(issues, "spot_distance_m", spot_distance_m)
 	check_positive(issues, "clear_radius_m", clear_radius_m)
+	check_positive(issues, "max_wins", max_wins)
+	for f: String in ["floor_chance_permille", "fail_permille"]:
+		var v: int = get(f)
+		if v < 0 or v > 1000:
+			issues.append(ValidationIssue.new(&"range", resource_path, "%s is outside 0..1000" % f))
+	if fail_permille >= 1000:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "fail_permille 1000 never grants a stat")
+		)
 	if stats.is_empty():
 		issues.append(ValidationIssue.new(&"missing", resource_path, "the stat pool is empty"))
 	var seen := {}
@@ -59,7 +78,7 @@ func validate() -> Array[ValidationIssue]:
 		check_positive(issues, "stats[%d].amount" % k, e.amount)
 		check_positive(issues, "stats[%d].weight" % k, e.weight)
 		check_positive(issues, "stats[%d].max_stacks" % k, e.max_stacks)
-		if not e.requires_weapon in [&"", &"blade", &"gun"]:
+		if e.requires_weapon != &"" and not BuildDefinition.WEAPON_IDS.has(e.requires_weapon):
 			issues.append(
 				ValidationIssue.new(
 					&"range", resource_path, "stats[%d].requires_weapon is empty, blade or gun" % k

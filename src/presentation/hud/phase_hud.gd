@@ -7,7 +7,7 @@ extends VBoxContainer
 ## floor without a curve.
 ## v0.6.0 UP: the queue and the line on screen keep translation keys, not text, and are translated again on every
 ## sync, so a language switch while "New: Charger" shows turns it into "Nuevo: Cargador" at once.
-## v0.6.1 R1: the announcement sits in one of the owner's crystal plaques (the banner's gold, Plaques.USE_FAMILY); the
+## v0.6.1 R1: the announcement sits in a stone plaque (v0.8.0 MU; the banner's gold, Plaques.USE_FAMILY); the
 ## plaque's plain middle stretches to the line's width.
 
 const ANNOUNCE_SECONDS := 4.0
@@ -57,7 +57,8 @@ func _init() -> void:
 
 
 func sync(reader: WorldReader) -> void:
-	if not reader.has_curve() or not reader.has_floor():
+	# v0.8.0 N19 (N17's shots): hidden while an event panel is open, whose title sits where its line would show
+	if not reader.has_curve() or not reader.has_floor() or reader.event_open():
 		visible = false
 		return
 	visible = true

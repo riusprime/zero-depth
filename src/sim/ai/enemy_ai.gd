@@ -4,8 +4,7 @@ extends RefCounted
 ## walks: once it starts a slam it is committed, so baiting the slam opens its back (the way to flank it).
 ## Each enemy is a small state machine in ActorStore (state, state_t, facing, lock_*, cd, fire_cd, windup, pick).
 ## think() runs in tick phase 3, move() in phase 5, resolve() in phase 6. Every attack's area comes from one function
-## here, which the telegraph view also draws (EI-07): charge_lane, slam_disc, burst_lines, bolt_lanes, rune_disc,
-## bomb_disc.
+## here, which the telegraph view also draws (EI-07): charge_lane, locked_disc, burst_lines, bolt_lanes, rune_disc.
 ## v0.3.5 AI (owner F4-F6): each windup's length is drawn per attack (the ai:enemy stream); aimed shots lead the
 ## player by its velocity and keep tracking until the last COMMIT_TICKS of the windup; a charge turns toward the
 ## player at a limited rate; the Needle's burst fans out; enemies spread around the player instead of stacking.
@@ -15,7 +14,16 @@ extends RefCounted
 ## disc ahead of it; dies into Splitlings, which swipe too and never split), the Shield Bearer (blocks from the front,
 ## turns slowly, bashes a short lane), the Mender (keeps away and heals hurt allies through a beam, no attack), the
 ## Mine Layer (drops mines; Mines) and the Sniper (a 60-tick line, a hit down it, then a walk to a new spot). Their
-## shapes: swipe_disc, bash_lane, snipe_lane, Mines.telegraph.
+## shapes: locked_disc, bash_lane, snipe_lane, Mines.telegraph.
+## v0.7.5 EF (owner N16; docs/design/BOSS_FIGHTS.md "Normal enemies"): the Arc Caster's bolt and spread, the Lens
+## Drone's burst and the Bomb Drone's bomb become slow fireball patterns (EnemyTable.patterns, fired by BulletPatterns
+## with its caps and fairness rules): a fan of 3 plasma balls (narrow or wide), a ring of 6 orbs, a lobbed fireball
+## that bursts into an X of 4. They draw no line or circle on the ground: their windup is a body cue only ("cast",
+## and the Bomb Drone's flying fireball "lob", both "ground": false). The Needle, the Sniper, the melee kinds, the
+## Arc Caster's rune, the Mine Layer and the Mender are unchanged.
+## v0.8.0 TG (owner O4, Q3): the Needle, the Sniper and the melee kinds keep their shapes but go "ground": false too.
+## v0.8.0 P1 (owner O25, playtest 2: "The large ground-smashing enemy no longer displays its red circular attack
+## warning"): the Warden's slam disc is drawn on the ground again, the third exception with the rune and the mines.
 
 enum State { SPAWN, MOVE, WINDUP, ACTIVE, RECOVER }
 
@@ -110,14 +118,19 @@ static func tracking(w: World, i: int) -> bool:
 		sniper
 		or behaviour_of(a.kinds[i]) == ActorStore.Kind.NEEDLE
 		or (a.kinds[i] == ActorStore.Kind.ARC_CASTER and a.pick[i] != Spell.RUNE)
-	)
+		or a.kinds[i] == ActorStore.Kind.BOMB_DRONE
+	)  # v0.7.5 EF: its landing follows you until it commits
 
 
 static func think(w: World, i: int) -> void:
 	var a := w.actors
 	var planning := plans_now(w, i)
 	if planning:  # v0.4.0 SC: the staggered plan (before the frozen check: a thawed enemy has a fresh one)
+		if w.phase_probe != null:  # v0.8.0 HS: the perf probe's phase timer (null in play)
+			w.phase_probe.begin(&"ai.plan")
 		plan(w, i)
+		if w.phase_probe != null:
+			w.phase_probe.end(&"ai.plan")
 	if a.frozen_t[i] > 0:  # Engines (Engines.frozen): a frozen enemy holds still, its state paused.
 		return
 	if CoreTheft.staggered(w, i):  # v0.6.0 CU: a staggered elite stands
@@ -126,11 +139,14 @@ static func think(w: World, i: int) -> void:
 	a.state_t[i] += 1
 	if a.cd[i] > 0:
 		a.cd[i] -= 1
+	if a.state[i] >= BossSignatures.EGG:  # v0.8.0 BS1 (S3): an egg waits, hatches or bursts
+		BossSignatures.egg_think(w, i)
+		return
 	var alive := not w.player_dead()
 	match a.state[i]:
 		State.SPAWN:
 			if a.state_t[i] >= w.tuning.spawn_in_ticks:
-				_enter(a, i, State.MOVE)
+				enter_state(a, i, State.MOVE)
 		State.MOVE:
 			var to_player := w.player_pos() - a.pos(i)
 			var dist := Kin.length(to_player)
@@ -156,10 +172,15 @@ static func think(w: World, i: int) -> void:
 			if tracking(w, i) and alive:
 				_aim(w, i)
 			if a.state_t[i] >= a.windup[i]:
-				_enter(a, i, State.ACTIVE)
+				enter_state(a, i, State.ACTIVE)
 				a.fire_cd[i] = 0
 		State.ACTIVE:
 			var done := false
+			var pat := pattern_of(w, i)
+			if pat != null:  # v0.7.5 EF: a pattern attack runs until its last wave
+				if a.state_t[i] >= maxi(t.active_ticks, pat.duration_ticks()):
+					enter_state(a, i, State.RECOVER)
+				return
 			match behaviour_of(a.kinds[i]):
 				ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
 					done = a.lock_len[i] <= 0.0
@@ -168,10 +189,10 @@ static func think(w: World, i: int) -> void:
 				_:
 					done = a.state_t[i] >= t.active_ticks
 			if done:
-				_enter(a, i, State.RECOVER)
+				enter_state(a, i, State.RECOVER)
 		State.RECOVER:
 			if a.state_t[i] >= t.recover_ticks:
-				_enter(a, i, State.MOVE)
+				enter_state(a, i, State.MOVE)
 				a.cd[i] = t.cooldown_ticks
 				if a.kinds[i] == ActorStore.Kind.SNIPER:
 					_plan_relocation(w, i)
@@ -424,11 +445,18 @@ static func _unit(v: Vector2) -> Vector2:
 
 static func resolve(w: World, i: int) -> void:
 	var a := w.actors
+	if a.state[i] == BossSignatures.EGG_BURST and not Engines.frozen(w, i):
+		BossSignatures.egg_burst(w, i)  # v0.8.0 BS1 (S3): a phase-3 egg bursts into its acid star
+		return
 	if a.state[i] != State.ACTIVE or w.player_dead() or Engines.frozen(w, i):
 		return
 	var t := w.enemy_table(a.kinds[i])
 	var p := w.player_pos()
 	var pr := w.player.radius_m
+	var pat := pattern_of(w, i)
+	if pat != null:  # v0.7.5 EF
+		_resolve_pattern(w, i, t, pat)
+		return
 	match behaviour_of(a.kinds[i]):
 		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
 			var reach := t.radius_m + pr + CONTACT_SLOP_M
@@ -437,7 +465,7 @@ static func resolve(w: World, i: int) -> void:
 				_hit_player(w, i, t.damage, SimEvent.TAG_MELEE)
 		ActorStore.Kind.WARDEN:
 			if a.state_t[i] == 0:
-				var disc := slam_disc(w, i)
+				var disc := locked_disc(w, i)
 				if AttackShapes.disc_touches(disc[0], disc[1], p, pr):
 					_hit_player(w, i, t.damage, SimEvent.TAG_AREA)
 		ActorStore.Kind.NEEDLE:
@@ -446,39 +474,10 @@ static func resolve(w: World, i: int) -> void:
 				a.fire_cd[i] += 1
 				var ang := burst_angle(t, a.lock_a[i], k)
 				_fire(w, i, ang, t.bolt_speed, t.bolt_radius_m, t.bolt_life_ticks, t.damage)
-		ActorStore.Kind.ARC_CASTER:
-			if a.state_t[i] != 0:
-				return
-			match a.pick[i]:
-				Spell.BOLT:
-					_fire(
-						w,
-						i,
-						a.lock_a[i],
-						t.bolt_speed,
-						t.bolt_radius_m,
-						t.bolt_life_ticks,
-						t.damage
-					)
-				Spell.SPREAD:
-					for k in t.spread_count:
-						var ang := fan_angle(a.lock_a[i], k, t.spread_count, t.spread_angle)
-						_fire(
-							w,
-							i,
-							ang,
-							t.spread_speed,
-							t.spread_radius_m,
-							t.spread_life_ticks,
-							t.damage
-						)
-				Spell.RUNE:
-					var d := rune_disc(w, i)
-					if AttackShapes.disc_touches(d[0], d[1], p, pr):
-						_hit_player(w, i, t.damage, SimEvent.TAG_AREA, d[0])
-		ActorStore.Kind.BOMB_DRONE:
-			if a.state_t[i] == 0:
-				var d := bomb_disc(w, i)
+				BossRicochet.arm_turret(w, i)  # v0.8.0 BS2 (S5): phase 3's turrets ricochet too
+		ActorStore.Kind.ARC_CASTER:  # the rune (its bolt and spread are patterns, above)
+			if a.state_t[i] == 0 and a.pick[i] == Spell.RUNE:
+				var d := rune_disc(w, i)
 				if AttackShapes.disc_touches(d[0], d[1], p, pr):
 					_hit_player(w, i, t.damage, SimEvent.TAG_AREA, d[0])
 		_:
@@ -486,11 +485,42 @@ static func resolve(w: World, i: int) -> void:
 				_resolve_horde(w, i, t, p, pr)
 
 
+## v0.7.5 EF (owner N16): the pattern enemy i is firing now (EnemyTable.patterns: the Arc Caster's by its spell,
+## the others' first), or null (every other kind, and the Arc Caster's rune).
+static func pattern_of(w: World, i: int) -> BulletPatternTable:
+	var a := w.actors
+	var t := w.enemy_table(a.kinds[i])
+	if t == null or t.patterns.is_empty():
+		return null
+	var k := a.pick[i] if a.kinds[i] == ActorStore.Kind.ARC_CASTER else 0
+	return t.patterns[k] if k >= 0 and k < t.patterns.size() else null
+
+
+## v0.7.5 EF: a pattern attack's active tick st. Each wave tick fires its wave toward the locked aim: from the body
+## (the fans, the ring), or, for a lobbed BURST, from where it lands (lock_x / lock_y) once it has flown lob_ticks;
+## the landing fireball itself hurts within land_radius_m (no circle is drawn for it: the flying fireball is the
+## cue, "lob"). Damage is the attack's (floor-scaled by RunState), powered by the danger tier and the catch-up.
+static func _resolve_pattern(w: World, i: int, t: EnemyTable, pat: BulletPatternTable) -> void:
+	var a := w.actors
+	var st := a.state_t[i]
+	var burst := pat.kind == BulletPatternTable.Kind.BURST
+	var target := Vector2(a.lock_x[i], a.lock_y[i])
+	if burst and st == pat.lob_ticks:
+		if AttackShapes.disc_touches(target, pat.land_radius_m, w.player_pos(), w.player.radius_m):
+			_hit_player(w, i, t.damage, SimEvent.TAG_AREA, target)
+	var k := BulletPatterns.wave_at(pat, st)
+	if k < 0:
+		return
+	var origin := target if burst else a.pos(i)
+	var r := 0.0 if burst else a.radius[i] + pat.radius_m + BulletPatterns.MUZZLE_M
+	BulletPatterns.fire(w, i, pat, k, origin, a.lock_a[i], r, powered(w, i, t.damage))
+
+
 ## The horde kinds' hits (v0.4.0 EN), on their active tick.
 static func _resolve_horde(w: World, i: int, t: EnemyTable, p: Vector2, pr: float) -> void:
 	match w.actors.kinds[i]:
 		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
-			var d := swipe_disc(w, i)
+			var d := locked_disc(w, i)
 			if AttackShapes.disc_touches(d[0], d[1], p, pr):
 				_hit_player(w, i, t.damage, SimEvent.TAG_MELEE)
 		ActorStore.Kind.SHIELD_BEARER:
@@ -562,8 +592,10 @@ static func running_lane(w: World, i: int) -> Obb:
 	return AttackShapes.lane(a.pos(i), a.lock_a[i], a.lock_len[i] + a.radius[i], a.radius[i])
 
 
-## [center, radius] of a Warden's slam.
-static func slam_disc(w: World, i: int) -> Array:
+## [center, radius] of a locked disc: where enemy i locked its attack, slam_radius_m wide. A Warden's slam and a
+## Splitter's or Splitling's swipe (v0.4.0 EN: reach_m ahead of it when it wound up) are this disc (the Bomb Drone's
+## bomb was too, until v0.7.5 EF made it a lobbed fireball).
+static func locked_disc(w: World, i: int) -> Array:
 	var a := w.actors
 	return [Vector2(a.lock_x[i], a.lock_y[i]), w.enemy_table(a.kinds[i]).slam_radius_m]
 
@@ -594,7 +626,8 @@ static func burst_lines(w: World, i: int) -> Array[Obb]:
 	return out
 
 
-## The Arc Caster's bolt line, or its spread's lines (v0.3.5 AI), cut short by walls.
+## The Arc Caster's bolt line, or its spread's lines (v0.3.5 AI), cut short by walls. v0.7.5 EF: no longer drawn
+## or fired (its bolt and spread are slow fireball fans with no ground line); kept for tools that read the lanes.
 static func bolt_lanes(w: World, i: int) -> Array[Obb]:
 	var a := w.actors
 	var t := w.enemy_table(a.kinds[i])
@@ -613,25 +646,13 @@ static func bolt_lanes(w: World, i: int) -> Array[Obb]:
 static func _shot_lane(w: World, i: int, angle: int, length: float, r: float) -> Obb:
 	var a := w.actors
 	var start := Vector2(a.lock_x[i], a.lock_y[i]) + Kin.dir(angle) * a.radius[i]
-	return AttackShapes.lane(start, angle, maxf(_clear_run(w, start, angle, length, r), 0.01), r)
+	return AttackShapes.lane(start, angle, maxf(clear_run(w, start, angle, length, r), 0.01), r)
 
 
 ## [center, radius] of the Arc Caster's rune (v0.3.5 AI): where the player stood when it was cast.
 static func rune_disc(w: World, i: int) -> Array:
 	var a := w.actors
 	return [Vector2(a.lock_x[i], a.lock_y[i]), w.enemy_table(a.kinds[i]).rune_radius_m]
-
-
-## [center, radius] of the Bomb Drone's bomb (v0.3.5 AI): where the player stood when it was lobbed.
-static func bomb_disc(w: World, i: int) -> Array:
-	var a := w.actors
-	return [Vector2(a.lock_x[i], a.lock_y[i]), w.enemy_table(a.kinds[i]).slam_radius_m]
-
-
-## [center, radius] of a Splitter's (or Splitling's) swipe (v0.4.0 EN): reach_m ahead of it when it wound up.
-static func swipe_disc(w: World, i: int) -> Array:
-	var a := w.actors
-	return [Vector2(a.lock_x[i], a.lock_y[i]), w.enemy_table(a.kinds[i]).slam_radius_m]
 
 
 ## A Shield Bearer's bash (v0.4.0 EN): a lane from its centre along its locked facing, reach_m past its body.
@@ -650,7 +671,16 @@ static func snipe_lane(w: World, i: int) -> Obb:
 
 
 ## What the view draws for actor i: {} or {"shape": &"lane"|&"lanes"|&"disc", ..., "progress": 0..1000}. The new
-## kinds (v0.3.5 AI) add "style": &"bolt", &"rune" or &"bomb", and a bomb its "from" (the drone).
+## kinds (v0.3.5 AI) add "style": &"bolt" or &"rune".
+## v0.7.5 EF (owner N16): a pattern enemy's windup is {"shape": &"cast", "ground": false, "progress", "look"} (its body
+## winds up; nothing on the ground), and a Bomb Drone's fireball in the air {"shape": &"lob", "ground": false, "from",
+## "to", "progress" (0..1000 of the flight), "look"}. TelegraphViews draws no "ground": false telegraph.
+## v0.8.0 TG (owner O4, Q3 "only things landing at range"): the melee kinds' lanes and discs (Charger / Hatchling /
+## Swarmer windup and running lane, Splitter / Splitling disc, Shield Bearer bash, Warden slam), the Sniper's line and
+## the Needle's lanes keep their shape and timings (forecasts, parity, the readable-cause recap) but are "ground":
+## false: the avatar's body shows the windup. Only the Arc Caster's rune and the Mine Layer's mines stay on the
+## ground among normal enemies (elites too: the rule is by kind). Bosses are BossAi's and unchanged.
+## v0.8.0 P1 (owner O25): and the Warden's slam disc ("ground": true), which its body also tells (the overhead slam).
 static func telegraph(w: World, i: int) -> Dictionary:
 	var a := w.actors
 	if BossAi.is_boss_kind(a.kinds[i]):
@@ -658,31 +688,60 @@ static func telegraph(w: World, i: int) -> Dictionary:
 	if not is_enemy_kind(a.kinds[i]):
 		return {}
 	if a.state[i] == State.ACTIVE and _charges(a.kinds[i]) and a.lock_len[i] > 0.0:
-		return {"shape": &"lane", "obb": running_lane(w, i), "progress": 1000}
+		return {"shape": &"lane", "ground": false, "obb": running_lane(w, i), "progress": 1000}
 	if a.kinds[i] == ActorStore.Kind.MINE_LAYER:
 		return Mines.telegraph(w, a.ids[i])  # v0.4.0 EN: its armed mines; the drop itself hurts nobody
+	if a.state[i] == State.ACTIVE:
+		return lob_telegraph(w, i)
 	if a.state[i] != State.WINDUP:
 		return {}
 	var progress := clampi(a.state_t[i] * 1000 / maxi(1, a.windup[i]), 0, 1000)
+	var pat := pattern_of(w, i)
+	if pat != null:  # v0.7.5 EF: no ground line; the body's own windup
+		return {"shape": &"cast", "ground": false, "progress": progress, "look": pat.look}
 	match behaviour_of(a.kinds[i]):
 		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
-			return {"shape": &"lane", "obb": charge_lane(w, i), "progress": progress}
+			return {
+				"shape": &"lane", "ground": false, "obb": charge_lane(w, i), "progress": progress
+			}
 		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
-			var s := swipe_disc(w, i)
-			return {"shape": &"disc", "center": s[0], "radius": s[1], "progress": progress}
+			var s := locked_disc(w, i)
+			return {
+				"shape": &"disc",
+				"ground": false,
+				"center": s[0],
+				"radius": s[1],
+				"progress": progress
+			}
 		ActorStore.Kind.SHIELD_BEARER:
 			return {
-				"shape": &"lane", "obb": bash_lane(w, i), "progress": progress, "style": &"bash"
+				"shape": &"lane",
+				"ground": false,
+				"obb": bash_lane(w, i),
+				"progress": progress,
+				"style": &"bash"
 			}
 		ActorStore.Kind.SNIPER:
 			return {
-				"shape": &"lane", "obb": snipe_lane(w, i), "progress": progress, "style": &"snipe"
+				"shape": &"lane",
+				"ground": false,
+				"obb": snipe_lane(w, i),
+				"progress": progress,
+				"style": &"snipe"
 			}
-		ActorStore.Kind.WARDEN:
-			var d := slam_disc(w, i)
-			return {"shape": &"disc", "center": d[0], "radius": d[1], "progress": progress}
+		ActorStore.Kind.WARDEN:  # v0.8.0 P1 (owner O25): its red circle is back on the ground
+			var d := locked_disc(w, i)
+			return {
+				"shape": &"disc",
+				"ground": true,
+				"center": d[0],
+				"radius": d[1],
+				"progress": progress
+			}
 		ActorStore.Kind.NEEDLE:
-			return {"shape": &"lanes", "obbs": burst_lines(w, i), "progress": progress}
+			return {
+				"shape": &"lanes", "ground": false, "obbs": burst_lines(w, i), "progress": progress
+			}
 		ActorStore.Kind.ARC_CASTER:
 			if a.pick[i] == Spell.RUNE:
 				var r := rune_disc(w, i)
@@ -693,27 +752,29 @@ static func telegraph(w: World, i: int) -> Dictionary:
 					"progress": progress,
 					"style": &"rune"
 				}
-			var lanes := bolt_lanes(w, i)
-			if lanes.size() == 1:
-				return {"shape": &"lane", "obb": lanes[0], "progress": progress, "style": &"bolt"}
-			return {"shape": &"lanes", "obbs": lanes, "progress": progress, "style": &"bolt"}
-		ActorStore.Kind.BOMB_DRONE:
-			var b := bomb_disc(w, i)
-			return {
-				"shape": &"disc",
-				"center": b[0],
-				"radius": b[1],
-				"progress": progress,
-				"style": &"bomb",
-				"from": a.pos(i)
-			}
 	return {}
+
+
+## v0.7.5 EF: a lobbed fireball in the air (a BURST pattern's flight, until it lands), else {}.
+static func lob_telegraph(w: World, i: int) -> Dictionary:
+	var a := w.actors
+	var pat := pattern_of(w, i)
+	if pat == null or pat.kind != BulletPatternTable.Kind.BURST or a.state_t[i] > pat.lob_ticks:
+		return {}
+	return {
+		"shape": &"lob",
+		"ground": false,
+		"from": a.pos(i),
+		"to": Vector2(a.lock_x[i], a.lock_y[i]),
+		"progress": clampi(a.state_t[i] * 1000 / maxi(1, pat.lob_ticks), 0, 1000),
+		"look": pat.look
+	}
 
 
 static func _start_windup(w: World, i: int, aim: int) -> void:
 	var a := w.actors
 	var t := w.enemy_table(a.kinds[i])
-	_enter(a, i, State.WINDUP)
+	enter_state(a, i, State.WINDUP)
 	a.lock_x[i] = a.pos_x[i]
 	a.lock_y[i] = a.pos_y[i]
 	a.lock_a[i] = aim
@@ -725,7 +786,7 @@ static func _start_windup(w: World, i: int, aim: int) -> void:
 		a.windup[i] = w.rng_enemy.range_int(t.windup_ticks, t.windup_max_ticks)
 	match behaviour_of(a.kinds[i]):
 		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
-			a.lock_len[i] = _clear_run(w, a.pos(i), aim, t.charge_distance_m, t.radius_m)
+			a.lock_len[i] = clear_run(w, a.pos(i), aim, t.charge_distance_m, t.radius_m)
 		ActorStore.Kind.NEEDLE, ActorStore.Kind.SNIPER:
 			_aim(w, i)
 		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
@@ -743,16 +804,27 @@ static func _start_windup(w: World, i: int, aim: int) -> void:
 			else:
 				_aim(w, i)
 		ActorStore.Kind.BOMB_DRONE:
-			a.lock_x[i] = w.player_pos().x
-			a.lock_y[i] = w.player_pos().y
+			_aim(w, i)  # v0.7.5 EF: the landing follows the player until it commits
 
 
 ## Points actor i's shot at where the player will be when it arrives (v0.3.5 AI): the player's position plus its
 ## velocity for the shot's flight time, capped at lead_max_ticks; or where a dash in progress ends.
+## v0.7.5 EF: a pattern is led at its own (slow) speed; a Bomb Drone's lob lands where the player stands (no lead,
+## as the bosses' tracked markers), its X turned to the line of the throw.
 static func _aim(w: World, i: int) -> void:
 	var a := w.actors
 	var t := w.enemy_table(a.kinds[i])
+	if a.kinds[i] == ActorStore.Kind.BOMB_DRONE:
+		var p := w.player_pos()
+		a.lock_x[i] = p.x
+		a.lock_y[i] = p.y
+		a.lock_a[i] = Kin.angle_of(p - a.pos(i))
+		a.facing[i] = a.lock_a[i]
+		return
+	var pat := pattern_of(w, i)
 	var speed := t.spread_speed if a.pick[i] == Spell.SPREAD else t.bolt_speed
+	if pat != null:
+		speed = pat.speed
 	a.lock_a[i] = lead_angle(w, a.pos(i), speed, t.lead_max_ticks)
 	a.facing[i] = a.lock_a[i]
 
@@ -769,8 +841,9 @@ static func lead_angle(w: World, from: Vector2, speed: float, max_ticks: int) ->
 	return Kin.angle_of(p + w.vel * ticks - from)
 
 
-## How far a circle of radius r can travel from `from` along `angle` (up to `length`) before a wall.
-static func _clear_run(w: World, from: Vector2, angle: int, length: float, r: float) -> float:
+## How far a circle of radius r can travel from `from` along `angle` (up to `length`) before a wall: the one rule
+## for the enemies' and the bosses' lanes (audit G-10).
+static func clear_run(w: World, from: Vector2, angle: int, length: float, r: float) -> float:
 	var to := from + Kin.dir(angle) * length
 	var best := 1.0
 	for k in w.walls_along(from, to, r):  # v0.4.0 SC: the grid cells along the run, not every wall
@@ -778,6 +851,15 @@ static func _clear_run(w: World, from: Vector2, angle: int, length: float, r: fl
 		if hit >= 0.0 and hit < best:
 			best = hit
 	return length * best
+
+
+## True when a circle of radius r at `at` touches no wall. The wall grid gives an ascending superset of the walls that
+## can touch it (rebuilt on every wall change), so this is the every-wall test without the sweep (audit G-10).
+static func clear_of_walls(w: World, at: Vector2, r: float) -> bool:
+	for k in w.walls_near(Rect2(at.x - r, at.y - r, r * 2.0, r * 2.0)):
+		if Collide.circle_vs_obb(at, r, w.walls[k]) != Vector2.ZERO:
+			return false
+	return true
 
 
 static func _hit_player(w: World, i: int, amount: int, tags: int, from := Vector2.INF) -> void:
@@ -794,6 +876,7 @@ static func powered(w: World, i: int, amount: int) -> int:
 	return amount if pm == 1000 or pm <= 0 else SpawnTable.scale(amount, pm)
 
 
-static func _enter(a: ActorStore, i: int, s: int) -> void:
+## Actor i enters state s (its state clock restarts); the bosses' too (BossAi).
+static func enter_state(a: ActorStore, i: int, s: int) -> void:
 	a.state[i] = s
 	a.state_t[i] = 0

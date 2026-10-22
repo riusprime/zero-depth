@@ -1,11 +1,15 @@
-[gd_resource type="Resource" script_class="BiomeDefinition" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="BiomeDefinition" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://src/content/defs/biome_definition.gd" id="1_pvo31"]
 
 [ext_resource type="Script" path="res://src/content/defs/biome_mood.gd" id="2_mood"]
 
+[ext_resource type="Script" path="res://src/content/defs/biome_look.gd" id="4_look"]
+
 [sub_resource type="Resource" id="Resource_mood"]
 script = ExtResource("2_mood")
+wall_texture_m = 5.0
+wall_top_texture_m = 5.0
 sun_color = Color(1, 0.6, 0.38, 1)
 sun_energy = 0.65
 sun_pitch_deg = -22.0
@@ -23,25 +27,83 @@ ssil_enabled = true
 ssil_intensity = 1.0
 fog_density = 0.0025
 fog_color = Color(0.3, 0.15, 0.1, 1)
-glow_intensity = 1.2
+fog_height = 0.0
+fog_height_density = 0.12
+volumetric_enabled = true
+volumetric_density = 0.03
+volumetric_albedo = Color(1, 0.8, 0.62, 1)
+volumetric_height = 3.5
+volumetric_light_energy = 1.5
+volumetric_sun_energy = 0.0
+glow_intensity = 0.45
 warm_light_color = Color(1.0, 0.6, 0.3, 1)
-warm_light_energy = 7.0
-warm_light_range = 9.0
+warm_light_energy = 4.5
+warm_light_range = 7.5
 vignette = 0.5
 hero_light_energy = 1.8
 hero_light_range = 5.0
-glow_threshold = 0.8
-glow_bloom = 0.04
+glow_threshold = 1.0
+glow_bloom = 0.0
 grade_shadows = Color(0.3, 0.35, 0.55, 1)
 grade_highlights = Color(1, 0.6, 0.3, 1)
 grade_strength = 0.55
 contrast = 1.15
 saturation = 1.06
-glow_spread = 0.7
+glow_spread = 0.25
+
+[sub_resource type="Resource" id="Resource_look"]
+script = ExtResource("4_look")
+pools = {
+&"cover_square": {
+&"mesa_chunk": 3,
+&"rock_large": 1,
+&"cactus": 1
+},
+&"cover_block": {
+&"mesa_chunk": 1
+},
+&"cover_long": {
+&"mesa_chunk": 1
+},
+&"cover_wall": {
+&"mesa_chunk": 1
+},
+&"cover_post": {
+&"cactus": 2,
+&"cattle_skull_post": 1
+},
+&"cover_deep": {
+&"wagon_wreck": 3,
+&"mesa_chunk": 1
+},
+&"landmark": {
+&"wagon_wreck": 1,
+&"mesa_chunk": 1
+},
+&"wall_prop": {
+&"cattle_skull_post": 1
+},
+&"decor_grass": {
+&"dry_shrub": 1
+},
+&"decor_rubble": {
+&"rubble_small": 1
+},
+&"decor_debris": {
+&"dry_shrub": 1,
+&"rubble_small": 1
+}
+}
+max_per_floor = {
+&"wagon_wreck": 3
+}
+wall_props_per_room = 1
+wall_prop_chance = 0.4
 
 [resource]
 script = ExtResource("1_pvo31")
 name_key = &"BIOME_RED_CANYON"
+desc_key = &"BIOME_RED_CANYON_DESC"
 palette = {
 "accent": Color(0.61568627, 0.41960784, 0.29803922, 1),
 "ambient": Color(1, 0.82352941, 0.75294118, 1),
@@ -54,3 +116,4 @@ palette = {
 template_tags = PackedStringArray("red_canyon")
 id = &"red_canyon"
 mood = SubResource("Resource_mood")
+look = SubResource("Resource_look")

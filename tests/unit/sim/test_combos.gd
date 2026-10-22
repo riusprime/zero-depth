@@ -165,6 +165,23 @@ func test_plasma_arc_shocking_a_burning_enemy_arcs_fire() -> void:
 	assert_eq(_events(w, SimEvent.Kind.DAMAGE, &"plasma_arc").size(), 1, "not burning: no arc")
 
 
+## Audit G-5: a shock with nobody in reach doesn't spend the chain's arc; a later shock on that chain still arcs.
+func test_plasma_arc_with_no_target_keeps_its_one_arc() -> void:
+	var w := _world([K.EMBER_EDGE, K.CONDUCTOR], [Vector2(1.2, 0), Vector2(1.2, 20)])
+	var a := w.actors
+	a.burn_stacks[1] = 2
+	a.burn_t[1] = 100
+	var root := w.take_root()
+	Engines.add_shock(w, 1, 1, root)
+	assert_eq(_events(w, SimEvent.Kind.DAMAGE, &"plasma_arc").size(), 0, "nobody in reach")
+	a.set_pos(2, Vector2(2.2, 1.5))
+	Engines.add_shock(w, 1, 1, root)
+	var arc := _events(w, SimEvent.Kind.DAMAGE, &"plasma_arc")
+	assert_eq(arc.size(), 1, "the same chain arcs once someone is in reach")
+	if arc.size() == 1:
+		assert_eq(arc[0].target_id, a.ids[2])
+
+
 func test_shatter_dash_breaks_a_frozen_enemy() -> void:
 	var w := _world([K.FROST_CORE, K.KINETIC_DASH], [Vector2(2.0, 0)])
 	var a := w.actors

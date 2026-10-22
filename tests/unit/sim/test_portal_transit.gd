@@ -132,11 +132,13 @@ func test_reduced_motion_shortens_both() -> void:
 	assert_eq(w.boss_flow.exit_tick - start, BossFlow.ENTER_TICKS_CALM, "the short way in")
 
 
-func test_the_first_floor_has_no_arrival_and_the_lengths_are_about_a_second() -> void:
+## v0.8.0 N11: Main now gives floor 1 its arrival too (test_arrival); set without one, a floor starts at once.
+func test_a_floor_set_without_the_arrival_starts_at_once_and_the_lengths_are_about_a_second(
+) -> void:
 	var w := _floor_world(44)
 	assert_false(w.boss_flow.holds_world(), "a floor built without set_transit starts at once")
 	w.boss_flow.set_transit(false, false)
-	assert_false(w.boss_flow.holds_world(), "the run's first floor starts at once")
+	assert_false(w.boss_flow.holds_world(), "set without the arrival, it starts at once")
 	assert_eq(w.boss_flow.enter_ticks, BossFlow.ENTER_TICKS)
 	assert_almost_eq(float(BossFlow.ENTER_TICKS) / SimTick.TICKS_PER_SECOND, 1.0, 0.1, "~1.0 s in")
 	assert_almost_eq(

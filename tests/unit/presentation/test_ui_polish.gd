@@ -1,8 +1,9 @@
 extends GutTest
 ## v0.6.0 Step UP (UI polish on the A5 restyle): every ability slot's key name fits its 52 px slot in English and
 ## Spanish (short names for mouse and pad bindings: "LMB" / "Clic izq."; long key names shrink); the shrine stats and
-## threat panels wear the HUD's Ember stone on the HUD and the menus' Cold glass on the pause screen; the floor card
-## and the boss name follow a language switch; the Options "Back" row is left-aligned like the categories.
+## threat panels wear the HUD's Ember stone on the HUD and the menus' stone slab (v0.8.0 MU) on the pause screen;
+## the floor card and the boss name follow a language switch; the Options "Back" row is left-aligned like the
+## categories.
 
 const LANGS := ["en", "es"]
 ## Keyboard keys beyond the letters, digits and F keys (the engine names them; the long ones have short names).
@@ -162,25 +163,26 @@ func test_the_shrine_stats_panel_wears_the_menu_style_in_the_pause_menu() -> voi
 	pause.add_child(stats)
 	stats.place_top_right(84)
 	assert_true(stats.in_menu, "in the pause menu")
-	_assert_glass(stats.get_theme_stylebox("panel"), "shrine stats")
+	_assert_stone(stats.get_theme_stylebox("panel"), "shrine stats")
 	var threat := ThreatPanel.new()
 	pause.add_child(threat)
 	assert_true(threat.in_menu)
-	_assert_glass(threat.get_theme_stylebox("panel"), "threat")
+	_assert_stone(threat.get_theme_stylebox("panel"), "threat")
 	var hud_threat := ThreatPanel.new()
 	add_child_autofree(hud_threat)
 	assert_false(hud_threat.in_menu)
 	assert_true(hud_threat.get_theme_stylebox("panel") is StyleBoxEmpty)
 
 
-func _assert_glass(box: StyleBox, what: String) -> void:
-	assert_true(box is StyleBoxFlat, "%s: a glass panel" % what)
-	if box is StyleBoxFlat:
-		var flat := box as StyleBoxFlat
-		var glass := MenuStyle.theme().get_stylebox("panel", "PanelContainer") as StyleBoxFlat
-		assert_eq(flat.bg_color, glass.bg_color, "%s: the menus' glass fill" % what)
-		assert_eq(flat.border_color, glass.border_color, "%s: the cold top edge" % what)
-		assert_eq(flat.border_width_top, glass.border_width_top)
+## v0.8.0 MU: in a menu a side panel is the menus' carved stone slab (Ember stone).
+func _assert_stone(box: StyleBox, what: String) -> void:
+	assert_true(box is StoneBox, "%s: a stone slab" % what)
+	if box is StoneBox:
+		var stone := box as StoneBox
+		var panel := MenuStyle.theme().get_stylebox("panel", "PanelContainer") as StoneBox
+		assert_eq(stone.fill, panel.fill, "%s: the menus' stone" % what)
+		assert_eq(stone.under, panel.under, "%s: the menus' ember glow" % what)
+		assert_gt(stone.content_margin_left, 0.0, "%s: padded" % what)
 
 
 func test_the_floor_card_follows_a_language_switch() -> void:
@@ -270,29 +272,39 @@ func test_the_build_row_sits_on_an_ember_slab_and_fits_in_both_languages() -> vo
 		assert_lt(row, 700.0, "%s: the build row stays on the left (%d px)" % [lang, int(row)])
 
 
-func test_the_swap_panel_wears_cold_glass_and_its_names_fit_the_tiles() -> void:
+func test_the_swap_panel_wears_ember_stone_and_its_names_fit_the_tiles() -> void:
 	var swap := SwapPanel.new()
 	add_child_autofree(swap)
 	assert_true(swap.get_child(0) is MenuBackdrop, "the game blurred and dimmed behind")
 	assert_eq((swap.get_child(0) as Control).mouse_filter, Control.MOUSE_FILTER_STOP)
 	swap.call("_set_focus", SwapPanel.SKIP)
-	var off := swap.tile(0).get_theme_stylebox("panel") as StyleBoxFlat
-	var on := swap.tile(SwapPanel.SKIP).get_theme_stylebox("panel") as StyleBoxFlat
-	assert_not_null(off)
+	var off := swap.tile(0).get_theme_stylebox("panel") as StoneBox
+	var on := swap.tile(SwapPanel.SKIP).get_theme_stylebox("panel") as StoneBox
+	assert_not_null(off, "a stone tile")
 	assert_not_null(on)
 	if off != null and on != null:
-		assert_eq(off.bg_color, MenuStyle.PANEL, "a glass tile")
-		assert_eq(on.border_color, MenuStyle.GLASS, "the focused tile's cold rim")
-	# Tile names wrap by word; every word of every slot name fits a tile, in both languages.
+		assert_eq(off.focus, 0.0, "an unfocused tile is unlit")
+		assert_eq(on.focus, 1.0, "the focused tile is ember-lit")
+		assert_gt(on.dim, off.dim, "and brighter")
+	# Tile names wrap by word; every word of every slot name fits a tile, in both languages. v0.8.0 N18 (owner O76:
+	# "Shrink long words to fit"): at the size the tile draws it (WandRow.NAME_SIZE, or smaller for a word too long,
+	# never under TextFit.WORD_FLOOR of it).
 	var f := HudStyle.font(true)
 	var inner := SwapPanel.TILE.x - 16.0
+	var lowest := ceili(WandRow.NAME_SIZE * TextFit.WORD_FLOOR)
 	assert_gt(_slot_name_keys().size(), 20, "the abilities' and items' names")
+	var shrunk := 0
 	for lang: String in LANGS:
 		TranslationServer.set_locale(lang)
 		for k: String in _slot_name_keys():
+			var s := TextFit.word_fit_size(f, tr(k), inner, WandRow.NAME_SIZE)
+			assert_gte(s, lowest, "%s: %s stays legible (%d px)" % [lang, k, s])
+			if s < WandRow.NAME_SIZE:
+				shrunk += 1
 			for word in tr(k).split(" ", false):
-				var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
-				assert_lte(w, inner, "%s: '%s' (%s) fits a swap tile" % [lang, word, k])
+				var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x
+				assert_lte(w, inner, "%s: '%s' (%s) fits a swap tile at %d px" % [lang, word, k, s])
+	gut.p("slot names drawn smaller to fit (both languages): %d" % shrunk)
 
 
 func test_the_options_binding_cells_follow_a_language_switch() -> void:

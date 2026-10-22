@@ -165,6 +165,10 @@ docs/ (this kit)
 - one remap-safe `ContentScanner` on `ResourceLoader.list_directory`;
 - a manifest hash checked inside the exported pack;
 - definitions compiled into plain tables at encounter start.
+- generated definitions are written by a script from the repo, never by hand, and a test fails while the committed
+  copy differs from a fresh build: the patch notes (`scripts/content/build_patch_notes.gd`) and, since v0.7.5 SM, the
+  credits' licence list (`data/credits/licences.tres`, `LicenceListDefinition`, from every `assets/**/manifest.json`
+  licence line, the font licences and the addon licences, by `scripts/content/build_credits.gd`).
 
 ## 9. Floor generation
 
@@ -205,7 +209,12 @@ the whole `World`.
   room's entry. A death or a win deletes the save; a new run overwrites it. `RunSaver` (`src/application/`) decides.
 - **What** (a payload, `RunSaver.PAYLOAD_VERSION`):
   - the run: `RunState`'s seed, floor, biome order, carry, totals and build, plus the stage seed (the `RunTable` is
-    compiled again from content);
+    compiled again from content); v0.7.5 MG: `floor_rules` (`RunState.FLOOR_RULES`, the rules the floor was built
+    with). A payload without it was saved on a v0.7.0 floor: Continue rebuilds that floor with v0.7.0's rules
+    (`RunSaver.floor_tables`: `FloorParams.v070()`, a third of the combat rooms as arenas, a shop on every floor), so
+    a save made before the update still fits; the floors after it are built with today's rules; v0.7.5 AP: `loop`
+    and `loop_floors` (the Ascension loop, `RunState`), no version bump: a payload without them is loop 1 (every
+    older save), and Continue resumes a later loop at its saved room entry;
   - the rooms entered on this floor (the minimap's discovery comes back with them);
   - the tick, and the world's canonical snapshot (`WorldSnapshot`, [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10a).
 - **Load (Continue).** The main menu shows **Continue** (first, focused) while a save reads. Continue rebuilds the run
@@ -226,6 +235,31 @@ the whole `World`.
   A "Can't load this save" message in the menu is not built (v0.4.0 SV open item).
 - **Profile.** Port `ProfileStore`: atomic writes, per-section merge on load, and a corrupt file renamed to
   `profile.bad.json`. It holds settings, bindings, unlocks and seen hints.
+  - **The Codex** (v0.7.5 CX) is the profile's `codex` section, `{version, cards, enemies, bosses, biomes}`, each
+    page `{id: {counter: n}}` (an entry exists once met). `CodexStore` (application) owns it; `CodexRecorder`
+    (application) fills it from each floor's `WorldReader` and `SimEvent`s after every tick (Main wires it), and
+    `CodexCatalog` lists the entries from the content. None of it is in `RunState`, a save or a hash; a run with
+    the dev panel's balance tweaks records nothing. A profile without the section reads as an empty Codex. Main
+    saves the profile at the end of every floor when the Codex changed.
+  - **The achievements** (v0.7.5 AC, owner N7; local, no platform API) are the profile's `achievements` section,
+    `{version, unlocked: {id: n}, stats: {key: value}}` (`n` the unlock's place in the order; `stats` the run
+    counters the Codex doesn't keep). `AchievementStore` (application) owns it; `AchievementBook` lists every
+    achievement from `data/achievements/` (one per boss and per biome expanded from the Codex's entries) and
+    evaluates each condition from `CodexStore` and the stats; `AchievementTracker` records the stats from each
+    floor's `WorldReader` and `SimEvent`s after every tick, listens to the Codex's writes and unlocks (Main wires
+    it beside `CodexRecorder`, and its `achieved` signal to the HUD toast). A tweaked dev-panel run records and
+    unlocks nothing. Other steps report a counter through `AchievementTracker.report(key)`: the Ascension portal
+    (AP) reports `runs:ascended`. A profile without the section reads as none unlocked; Main saves the profile at
+    the end of every floor when either changed.
+
+  - **The first-run hints** (v0.7.5 SM, owner N8) are the profile's `hints` section, `{seen: [id]}` (there since
+    v0.0.1, first used here); `HintStore` (application) owns it and the `hints` setting ("Show hints"). Main wires
+    `OnboardingHints` (presentation) on the UI layer beside the achievement toast, tells it when a floor begins and
+    ends and when a menu covers the game, and saves the profile at a floor's end when a hint was marked.
+  - **The dev panels' release switch** (v0.7.5 SM, ROADMAP §0.4): `DevGate` (application) reads the project setting
+    `game/dev/panel_enabled` (ON). project.godot holds `game/dev/panel_enabled.public_release=false`, so an export
+    preset with the custom feature `public_release` ships with F10 and the debug ` panel locked and ignores a saved
+    `user://dev_tuning.json`. No preset has the feature yet (the owner's playtest builds keep F10).
 
 ## 11. Localization, renderer, CI
 

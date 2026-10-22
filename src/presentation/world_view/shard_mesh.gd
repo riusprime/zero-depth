@@ -29,6 +29,9 @@ const SIDE_TONES := [1.0, 0.66, 0.86, 0.58, 0.94, 0.7, 0.8]
 const TIP_TONES := [1.0, 0.84]
 const STONE := Color("#5B5550")
 const STONE_TOP := Color("#736C66")
+## v0.8.0 GX (owner O86, graphics feedback §5): crystals glint under the fire props (a little metallic, a low
+## roughness) against the matte stone; every crystal material takes this metallic.
+const CRYSTAL_METALLIC := 0.2
 
 static var _outline_mat: StandardMaterial3D
 static var _glow_tex: GradientTexture2D
@@ -115,6 +118,7 @@ static func crystal_material(c: Color, energy: float = 0.45) -> StandardMaterial
 	m.albedo_color = c
 	m.vertex_color_use_as_albedo = true
 	m.roughness = 0.24
+	m.metallic = CRYSTAL_METALLIC
 	m.metallic_specular = 0.85
 	m.rim_enabled = true
 	m.rim = 0.55

@@ -6,7 +6,8 @@ extends ContentDef
 
 ## Cards in the stock.
 @export var offer_size := 4
-## A card's price on floor 1 by rarity: common, rare, epic (a mod or ability card is common or rare).
+## A card's price on floor 1 by rarity: common, rare, epic and (v0.8.0 RR, optional) legendary; without a fourth, a
+## legendary card costs the epic price. Salvage always refunds at most the epic price (ShopTable.sell_price).
 @export var rarity_prices := PackedInt32Array([30, 55, 90])
 ## Each floor after the first raises every price but the reroll by this share of the floor-1 price (x 1, 1.5, 2).
 @export var floor_price_step := 0.5
@@ -28,6 +29,11 @@ extends ContentDef
 @export var ability_refund_per_level := 10
 ## The interact button opens the shop within this distance of the terminal.
 @export var interact_radius_m := 1.8
+## v0.7.5 MG (owner N12, "the shop is also gonna be there every two … floors"): the floors with a shop are
+## first_floor, then every every_floors floors (1, 3, 5 ... as shipped; every_floors 1 = every floor). The floor count
+## keeps going past the run's last floor, so an endless loop keeps the rhythm.
+@export var first_floor := 1
+@export var every_floors := 2
 
 
 func category() -> StringName:
@@ -39,9 +45,11 @@ func validate() -> Array[ValidationIssue]:
 	check_positive(issues, "offer_size", offer_size)
 	if offer_size > 9:
 		issues.append(ValidationIssue.new(&"range", resource_path, "offer_size is at most 9"))
-	if rarity_prices.size() != 3:
+	if rarity_prices.size() < 3 or rarity_prices.size() > 4:  # v0.8.0 RR: + legendary
 		issues.append(
-			ValidationIssue.new(&"range", resource_path, "rarity_prices has common, rare and epic")
+			ValidationIssue.new(
+				&"range", resource_path, "rarity_prices has common, rare, epic (and legendary)"
+			)
 		)
 	for k in rarity_prices.size():
 		check_positive(issues, "rarity_prices[%d]" % k, rarity_prices[k])
@@ -58,4 +66,6 @@ func validate() -> Array[ValidationIssue]:
 	check_positive(issues, "reroll_price", reroll_price)
 	check_positive(issues, "ability_refund_per_level", ability_refund_per_level)
 	check_positive(issues, "interact_radius_m", interact_radius_m)
+	check_positive(issues, "first_floor", first_floor)
+	check_positive(issues, "every_floors", every_floors)
 	return issues

@@ -27,6 +27,23 @@ var sell_permille := 400
 var ability_refund_per_level := 10
 ## The interact button opens the shop within this distance of the terminal.
 var interact_radius_m := 1.8
+## v0.7.5 MG (owner N12, "the shop is also gonna be there every two … floors"): the shop stands on floor `first_floor`
+## and every `every_floors` floors after it (FloorCadence: 1, 3, 5 ... as shipped; a 3-floor run has two).
+var first_floor := 1
+var every_floors := 2
+## v0.8.0 SR (owner O13): the biomes' shop rooms, biome id -> ShopRoomTable (RunContentCompiler.compile_shop_rooms).
+## Empty on a floor saved before SR (RunState.shop_rooms; RunSaver.floor_tables), whose shop is the terminal.
+var rooms := {}
+
+
+## v0.8.0 SR: the shop room of biome `biome` (null: none, so the terminal).
+func room_for(biome: StringName) -> ShopRoomTable:
+	return rooms.get(biome, null)
+
+
+## Whether floor `floor_index` (the run's floor number, counted on past the run's last floor) has the shop.
+func on_floor(floor_index: int) -> bool:
+	return FloorCadence.on(floor_index, first_floor, every_floors)
 
 
 ## The floor's price multiplier, per mille (1000 on floor 1): the floor step, and from floor 2 the late-floor
@@ -65,6 +82,6 @@ func reroll_cost(uses: int) -> int:
 
 ## What a card of `rarity` sells for on floor `floor_index` (its price under the floor step alone).
 func sell_price(rarity: int, floor_index: int) -> int:
-	var r := clampi(rarity, 0, rarity_prices.size() - 1)
+	var r := clampi(rarity, 0, mini(rarity_prices.size() - 1, 2))  # v0.8.0 RR: a legendary sells as an epic
 	var base := maxi(1, scaled(rarity_prices[r], sell_step_permille(floor_index)))
 	return scaled(base, sell_permille)

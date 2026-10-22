@@ -73,6 +73,7 @@ func test_pick_gun_with_the_pad_then_melee_does_nothing_and_shooting_works() -> 
 	await _press(e, JOY_BUTTON_A)  # Gun: v0.4.0 BS (F11) has no utility pick, the run starts
 	assert_true(main.is_playing())
 	var w := e.world()
+	await e.landed()  # v0.8.0 N11: the hero lands on the receiver first
 	assert_eq(w.player.weapons, PlayerTable.WEAPON_GUN, "a Gun run")
 	assert_eq(main.run.build_id, &"gun", "the run holds the build")
 	assert_eq(main.profile.section("loadout")["build"], "gun", "remembered")
@@ -82,10 +83,14 @@ func test_pick_gun_with_the_pad_then_melee_does_nothing_and_shooting_works() -> 
 	await e.frames(10)
 	assert_eq(w.swing_t, 0, "a Gun run never swings, even on the shared trigger")
 	assert_eq(w.combo_step, 0)
+	# v0.8.0: aim with the right stick into the open floor west of the spawn (a wall stands 1.6 m east, where an
+	# untouched stick aims). Before N3's loading cover the run started inside the A press and two ticks of the headless
+	# mouse at (0, 0) happened to aim west; the run now starts behind the cover, after the press, with no such ticks.
+	_stick(e, JOY_AXIS_RIGHT_X, JOY_AXIS_RIGHT_Y, Vector2.LEFT)
 	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 1.0)
 	await e.frames(20)
 	assert_gte(_player_bolts(w), 2, "the right trigger shoots")
-	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
+	_sticks_off(e)
 
 
 func test_pick_blade_with_the_keyboard_then_shooting_does_nothing() -> void:
@@ -101,6 +106,7 @@ func test_pick_blade_with_the_keyboard_then_shooting_does_nothing() -> void:
 	await e.tap(KEY_ENTER)  # Blade, and the run (no utility pick since v0.4.0 BS)
 	await e.frames(2)
 	var w := e.world()
+	await e.landed()  # v0.8.0 N11: the hero lands on the receiver first
 	assert_eq(w.player.weapons, PlayerTable.WEAPON_BLADE, "a Blade run")
 	assert_eq(w.player.melee_damage_permille, 1150, "with the Blade's damage factor")
 	e.mouse_button(MOUSE_BUTTON_RIGHT, true)

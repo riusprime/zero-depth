@@ -16,7 +16,17 @@ const GROUPS := [
 	],
 	["enemies", "UI_DEVM_G_ENEMIES", ["res://data/enemies"], ""],
 	["sim", "UI_DEVM_G_SIM", ["res://data/tuning"], ""],
-	["bosses", "UI_DEVM_G_BOSSES", ["res://data/bosses", "res://data/boss_pools"], ""],
+	[
+		"bosses",
+		"UI_DEVM_G_BOSSES",
+		[
+			"res://data/bosses",
+			"res://data/boss_pools",
+			"res://data/bullet_patterns",
+			"res://data/final_boss",  # v0.8.0 FB1: the final boss's bodies and its arena
+		],
+		"",
+	],
 	[
 		"difficulty",
 		"UI_DEVM_G_DIFFICULTY",
@@ -27,6 +37,7 @@ const GROUPS := [
 			"res://data/scaling",
 			"res://data/arenas",
 			"res://data/overrun",
+			"res://data/map",
 		],
 		"",
 	],

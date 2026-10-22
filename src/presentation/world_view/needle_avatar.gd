@@ -1,5 +1,5 @@
 class_name NeedleAvatar
-extends Node3D
+extends AvatarBase
 ## The Needle (owner, v0.2.0 L17; docs/art/enemies_visual_reference.png, middle row): a walking turret. A red
 ## faceted cube body (each face a shallow pyramid) with grey octagonal pods on its flanks, a dark collar on its
 ## front with a red slit eye on each side, a square grey cannon barrel pointing forward, and four grey mechanical
@@ -8,6 +8,9 @@ extends Node3D
 ## back into the sim. The legs are solved by two-bone IK toward foot targets on the ground, so the feet stay planted
 ## while the body bobs, crouches or recoils. +X is the front (the cannon) and +Z the right; ActorViews parents this
 ## under the actor's facing node.
+## v0.8.0 TG (owner O4, Q3): its burst lanes are no longer drawn on the ground; the windup reads from the body
+## (AvatarBase "tell"): the cube squats and tips its nose down the aim as the windup's progress climbs, the eyes and
+## the muzzle charge up and flash just before the burst. The aim is the facing (the sim's, held through the windup).
 
 ## The cube body: edge length, centre height, edge bevel and how far each face's centre stands out (the facets).
 const BODY := 0.4
@@ -43,20 +46,18 @@ const BURST_COUNT := 3
 const TELEPORT_SPEED := 20.0
 const OUTLINE_M := 0.022
 
-## Colours sampled from the reference sheet (the lit faces), as albedo under the game's light.
-const RED := Color("#E03C30")
-const GREY := Color("#5F5551")
+## Colours sampled from the reference sheet (the lit faces), as albedo under the game's light. v0.8.0 EC: the cube
+## (body), the flank pods (trim), the barrel and legs (grey) and the eye slits (eye) come from EnemyPalettes.
+const KIND := WorldReader.KIND_NEEDLE
 const GREY_LIGHT := Color("#6D625C")
 const DARK := Color("#3A383C")
 const HOLE := Color("#141417")
-const EYE := Color("#FF2A22")
 
 ## Parts, read by tests and by ActorViews (flash materials).
 var body: Node3D
 var barrel: Node3D
 var legs: Array[Node3D] = []
 var feet: Array[Node3D] = []
-var body_materials: Array[StandardMaterial3D] = []
 
 var _eye_mat := StandardMaterial3D.new()
 var _hole_mat := StandardMaterial3D.new()
@@ -66,16 +67,11 @@ var _ankles: Array[Node3D] = []
 var _hips: Array[Vector3] = []
 var _rests: Array[Vector3] = []
 # Sim state from the last sync.
-var _fresh := true
-var _last_tick := -1
-var _last_pos := Vector2.ZERO
-var _vel := Vector2.ZERO
 var _state := WorldReader.STATE_SPAWN
 var _state_tick := 0
 var _ticks_in := 0
 var _shots := 0
 # Smoothed animation state.
-var _t := 0.0
 var _vel_s := Vector3.ZERO
 var _phase := 0.0
 var _walk := 0.0
@@ -84,6 +80,8 @@ var _brace := 0.0
 var _charge := 0.0
 var _heat := 0.0
 var _kick := 0.0
+# v0.8.0 TG: the windup's progress (0..1) from the last sync; -1 when the caller gave none.
+var _tell_p := -1.0
 
 
 ## Builds the model. technique "xray" adds a team-coloured silhouette twin to the cube, the pods and the barrel
@@ -94,7 +92,8 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	body = Node3D.new()
 	add_child(body)
 	var cube := _chamfer_box(Vector3.ONE * BODY, BODY_BEVEL, BODY_BULGE)
-	_piece(body, cube, Vector3(0, BODY_Y, 0), RED, outline_color, team, technique)
+	var red := EnemyPalettes.color(KIND, &"body")
+	_piece(body, cube, Vector3(0, BODY_Y, 0), red, outline_color, team, technique)
 	# The chassis under the cube, which the hips hang from.
 	var chassis := _chamfer_box(Vector3(0.3, 0.07, 0.3), 0.015)
 	_piece(body, chassis, Vector3(0, HIP.y + 0.02, 0), DARK, outline_color, team, &"outline")
@@ -102,18 +101,19 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	var pod := _chamfer_box(Vector3(0.24, 0.26, 0.1), 0.06, 0.012)
 	for side in [-1.0, 1.0]:
 		var at := Vector3(-0.03, 0.46, side * (BODY * 0.5 + 0.045))
-		_piece(body, pod, at, GREY, outline_color, team, technique)
+		_piece(body, pod, at, EnemyPalettes.color(KIND, &"trim"), outline_color, team, technique)
 	# The collar on the front face that the barrel comes out of, with a red slit eye on each flank.
 	var collar := _chamfer_box(Vector3(0.12, 0.25, 0.2), 0.02)
 	var collar_x := BODY * 0.5 + 0.03
 	_piece(
 		body, collar, Vector3(collar_x, BARREL_Y - 0.01, 0), DARK, outline_color, team, &"outline"
 	)
-	_eye_mat.albedo_color = EYE
+	var glow := EnemyPalettes.color(KIND, &"eye")
+	_eye_mat.albedo_color = glow
 	_eye_mat.emission_enabled = true
-	_eye_mat.emission = EYE
+	_eye_mat.emission = glow
 	_eye_mat.emission_energy_multiplier = 2.0
-	_write_stencil(_eye_mat)
+	write_stencil(_eye_mat)
 	var slit := BoxMesh.new()
 	slit.size = Vector3(0.035, 0.11, 0.01)
 	for side in [-1.0, 1.0]:
@@ -131,21 +131,24 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 
 ## Reads the Needle's state after a sim tick.
 func sync(reader: WorldReader, i: int) -> void:
-	apply_state({"tick": reader.tick(), "pos": reader.actor_pos(i), "state": reader.actor_state(i)})
+	apply_state(
+		{
+			"tick": reader.tick(),
+			"pos": reader.actor_pos(i),
+			"state": reader.actor_state(i),
+			"windup": windup_progress(reader, i),
+		}
+	)
 
 
-## The same as sync(), from plain values (tests drive the avatar with this).
+## The same as sync(), from plain values (tests drive the avatar with this); "windup" (0..1, optional) is the
+## windup's progress (without it the glow paces itself on WINDUP_TICKS).
 func apply_state(s: Dictionary) -> void:
 	var tick: int = s["tick"]
 	var pos: Vector2 = s["pos"]
 	var state: int = s["state"]
-	if not _fresh and tick > _last_tick:
-		var v := (pos - _last_pos) * (60.0 / float(tick - _last_tick))
-		_vel = v if v.length() <= TELEPORT_SPEED and tick - _last_tick <= 30 else Vector2.ZERO
-	elif tick < _last_tick:
-		_vel = Vector2.ZERO
-	_last_tick = tick
-	_last_pos = pos
+	_tell_p = clampf(float(s.get("windup", -1.0)), -1.0, 1.0)
+	_track_motion(tick, pos, TELEPORT_SPEED)
 	if _fresh or state != _state:
 		_state = state
 		_state_tick = tick
@@ -163,10 +166,6 @@ func apply_state(s: Dictionary) -> void:
 		_pose(0.0)
 
 
-func _process(delta: float) -> void:
-	advance(delta)
-
-
 ## Advances the animation by `delta` seconds of frame time.
 func advance(delta: float) -> void:
 	var dt := clampf(delta, 0.0, 0.05)
@@ -181,6 +180,8 @@ func advance(delta: float) -> void:
 	var charge_target := 0.0
 	if _state == WorldReader.STATE_WINDUP:
 		charge_target = clampf(float(_ticks_in) / WINDUP_TICKS, 0.0, 1.0)
+		if _tell_p >= 0.0:
+			charge_target = _tell_p
 	elif _state == WorldReader.STATE_ACTIVE:
 		charge_target = 1.0
 	_charge = lerpf(_charge, charge_target, _rate(14.0 if charge_target > _charge else 3.0, dt))
@@ -212,8 +213,16 @@ func foot_positions() -> Array[Vector3]:
 	return out
 
 
-func _rate(per_second: float, dt: float) -> float:
-	return 1.0 - exp(-per_second * dt)
+## v0.8.0 TG: the windup's progress the tell reads (the sim's, else paced on WINDUP_TICKS); 0 outside the windup.
+func tell_progress() -> float:
+	if _state != WorldReader.STATE_WINDUP:
+		return 0.0
+	return _tell_p if _tell_p >= 0.0 else clampf(float(_ticks_in) / WINDUP_TICKS, 0.0, 1.0)
+
+
+## v0.8.0 TG: 0..1 how deep the windup crouch is.
+func crouch_amount() -> float:
+	return tell_crouch(tell_progress()) if _state == WorldReader.STATE_WINDUP else 0.0
 
 
 ## Recoil curve: a sharp kick back, then an eased return.
@@ -238,25 +247,32 @@ func _pose(dt: float) -> void:
 	# The body: an idle hum, a bob on each step, the crouch of the brace, the rise-in, the recoil.
 	var hum := sin(_t * 9.0) * 0.003 + sin(_t * 1.7) * 0.01 * (1.0 - _walk)
 	var bob := cos(_phase * TAU * 2.0) * 0.012 * _walk
-	var y := hum + bob - _brace * 0.06 - (1.0 - _rise) * 0.24 + kick * 0.01
+	# v0.8.0 TG: the windup squats the cube lower and tips its nose down along the aim (no ground lines any more).
+	var calm := ViewPrefs.reduced_motion
+	var crouch := crouch_amount()
+	var y := hum + bob - _brace * 0.06 - crouch * 0.06 - (1.0 - _rise) * 0.24 + kick * 0.01
 	# Lean into the walk; brace leans back a little; each shot rocks the nose up.
 	var lean := (
 		Basis(Vector3.UP.cross(move_dir).normalized(), 0.07 * _walk) if _walk > 0.001 else Basis()
 	)
-	var pitch := Basis(Vector3.BACK, _brace * 0.05 + kick * 0.12 - (1.0 - _rise) * 0.2)
+	var pitch := Basis(
+		Vector3.BACK, _brace * 0.05 - crouch * 0.1 + kick * 0.12 - (1.0 - _rise) * 0.2
+	)
 	# Pivot about the hips, so a pitch rocks the cube instead of swinging it about the ground.
 	var b := lean * pitch
 	var pivot := Vector3(0, HIP.y, 0)
-	var at := Vector3(-kick * 0.035 - _brace * 0.015, y, 0)
+	var at := Vector3(-kick * 0.035 - _brace * 0.015 - crouch * 0.04, y, 0)
 	body.transform = Transform3D(b, at + pivot - b * pivot)
 	barrel.position.x = BODY * 0.5 + 0.06 - kick * 0.09
 	# Glow: the eyes and the muzzle brighten through the wind-up, flare on each shot, cool down after.
 	var cool := 1.0 if _state == WorldReader.STATE_RECOVER else 0.0
-	var pulse := 0.15 * sin(_t * 3.0)
+	var pulse := 0.0 if calm else 0.15 * sin(_t * 3.0)
+	var winding := _state == WorldReader.STATE_WINDUP
+	var tell := tell_glow(tell_progress(), _t, calm) if winding else 1.0
 	_eye_mat.emission_energy_multiplier = (
-		(2.0 + pulse + _charge * 4.0 + kick * 3.0 - cool * 0.8) * lerpf(0.2, 1.0, _rise)
+		((2.0 + pulse + _charge * 4.0) * tell + kick * 3.0 - cool * 0.8) * lerpf(0.2, 1.0, _rise)
 	)
-	_hole_mat.emission_energy_multiplier = maxf(_charge * 3.5, _heat * 2.0) + kick * 6.0
+	_hole_mat.emission_energy_multiplier = maxf(_charge * 3.5 * tell, _heat * 2.0) + kick * 6.0
 	# The legs: each foot steps around its rest spot, then IK from the hip (on the moving body) to the foot.
 	for k in legs.size():
 		var p := fposmod(_phase + (0.5 if k % 2 == 1 else 0.0), 1.0)
@@ -294,17 +310,33 @@ func _build_barrel(outline_color: Color, team: Color, technique: StringName) -> 
 	barrel.position = Vector3(BODY * 0.5 + 0.06, BARREL_Y, 0)
 	body.add_child(barrel)
 	var tube := _chamfer_box(Vector3(BARREL_LEN, BARREL_W, BARREL_W), 0.012)
-	_piece(barrel, tube, Vector3(BARREL_LEN * 0.5, 0, 0), GREY, outline_color, team, technique)
+	_piece(
+		barrel,
+		tube,
+		Vector3(BARREL_LEN * 0.5, 0, 0),
+		EnemyPalettes.color(KIND, &"grey"),
+		outline_color,
+		team,
+		technique
+	)
 	# A slightly wider sleeve at the muzzle, as on the sheet's side view.
 	var sleeve := _chamfer_box(Vector3(0.07, BARREL_W + 0.012, BARREL_W + 0.012), 0.012)
-	_piece(barrel, sleeve, Vector3(BARREL_LEN - 0.035, 0, 0), GREY, outline_color, team, &"outline")
+	_piece(
+		barrel,
+		sleeve,
+		Vector3(BARREL_LEN - 0.035, 0, 0),
+		EnemyPalettes.color(KIND, &"grey"),
+		outline_color,
+		team,
+		&"outline"
+	)
 	# The square bore: dark when cold; it glows the hostile-shot colour while charging and firing.
 	var shot := ThemePalette.color(&"proj_hostile")
 	_hole_mat.albedo_color = HOLE
 	_hole_mat.emission_enabled = true
 	_hole_mat.emission = shot
 	_hole_mat.emission_energy_multiplier = 0.0
-	_write_stencil(_hole_mat)
+	write_stencil(_hole_mat)
 	var hole := MeshInstance3D.new()
 	var hb := BoxMesh.new()
 	hb.size = Vector3(0.01, BARREL_W * 0.72, BARREL_W * 0.72)
@@ -331,14 +363,30 @@ func _build_leg(k: int, outline_color: Color, team: Color) -> void:
 	root.add_child(thigh)
 	_thighs.append(thigh)
 	var tm := _chamfer_box(Vector3(THIGH_LEN, 0.075, 0.07), 0.014)
-	_piece(thigh, tm, Vector3(THIGH_LEN * 0.5, 0, 0), GREY, outline_color, team, &"outline")
+	_piece(
+		thigh,
+		tm,
+		Vector3(THIGH_LEN * 0.5, 0, 0),
+		EnemyPalettes.color(KIND, &"grey"),
+		outline_color,
+		team,
+		&"outline"
+	)
 	var knee := Node3D.new()
 	knee.position.x = THIGH_LEN
 	thigh.add_child(knee)
 	_knees.append(knee)
 	_piece(knee, _prism(0.042, 0.1, 8), Vector3.ZERO, GREY_LIGHT, outline_color, team, &"outline")
 	var sm := _chamfer_box(Vector3(SHIN_LEN, 0.085, 0.08), 0.016)
-	_piece(knee, sm, Vector3(SHIN_LEN * 0.5, 0, 0), GREY, outline_color, team, &"outline")
+	_piece(
+		knee,
+		sm,
+		Vector3(SHIN_LEN * 0.5, 0, 0),
+		EnemyPalettes.color(KIND, &"grey"),
+		outline_color,
+		team,
+		&"outline"
+	)
 	var ankle := Node3D.new()
 	ankle.position.x = SHIN_LEN
 	knee.add_child(ankle)
@@ -352,14 +400,6 @@ func _build_leg(k: int, outline_color: Color, team: Color) -> void:
 	feet.append(foot)
 
 
-## The eyes and the bore mark the stencil like the body pieces do, so the X-ray twins behind them stay hidden.
-static func _write_stencil(m: StandardMaterial3D) -> void:
-	m.stencil_mode = BaseMaterial3D.STENCIL_MODE_CUSTOM
-	m.stencil_flags = BaseMaterial3D.STENCIL_FLAG_WRITE
-	m.stencil_compare = BaseMaterial3D.STENCIL_COMPARE_ALWAYS
-	m.stencil_reference = 1
-
-
 func _piece(
 	parent: Node3D,
 	mesh: Mesh,
@@ -369,31 +409,7 @@ func _piece(
 	team: Color,
 	technique: StringName
 ) -> MeshInstance3D:
-	var piece := MeshInstance3D.new()
-	piece.mesh = mesh
-	piece.position = at
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = c
-	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = outline
-	mat.stencil_outline_thickness = OUTLINE_M
-	piece.material_override = mat
-	parent.add_child(piece)
-	body_materials.append(ActorViews.flashable(mat))
-	if technique == &"xray":
-		var ghost := MeshInstance3D.new()
-		ghost.mesh = mesh
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = c
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		gm.stencil_color = Color(team, 0.85)
-		ghost.material_override = gm
-		ghost.position = at
-		ghost.scale = Vector3.ONE * 0.96
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(ghost)
-	return piece
+	return _outlined(parent, mesh, at, c, outline, team, technique, OUTLINE_M)
 
 
 ## A box with bevelled edges and cut corners, centred on the origin, flat-shaded. With `bulge` each of the six faces

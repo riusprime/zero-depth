@@ -10,4 +10,5 @@ desc_key = &"STAT_ATTACK_SPEED_DESC"
 amounts = PackedFloat32Array(6, 12, 18)
 cap = 2.5
 weight = 10
+additive = true
 id = &"attack_speed"

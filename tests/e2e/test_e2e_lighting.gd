@@ -37,6 +37,10 @@ func test_the_floor_is_lit_by_its_mood_and_options_lower_the_lighting() -> void:
 	assert_not_null(stage.mood, "the floor's biome gives the stage its mood")
 	assert_eq(stage.environment.tonemap_mode, Environment.TONE_MAPPER_AGX)
 	assert_true(stage.environment.ssao_enabled, "High by default: contact shadow on")
+	# v0.8.0 GX (owner O86): the floor's air on High: volumetric fog, and the embers and dust over the kit.
+	assert_true(stage.environment.volumetric_fog_enabled, "High: volumetric fog on")
+	assert_not_null(stage.atmosphere, "the kit floor has its atmosphere")
+	assert_true(stage.atmosphere.visible and stage.atmosphere.dust.emitting, "High: dust drifts")
 	await _press(e, JOY_BUTTON_START)
 	assert_true(await _pad_to(e, main, JOY_BUTTON_DPAD_DOWN, &"Options"), "d-pad to Options")
 	await _press(e, JOY_BUTTON_A)
@@ -49,4 +53,8 @@ func test_the_floor_is_lit_by_its_mood_and_options_lower_the_lighting() -> void:
 	assert_eq(GameSettings.get_value(main.profile, "lighting"), "low", "pad A steps High -> Low")
 	assert_false(stage.environment.ssao_enabled, "the running floor drops SSAO at once")
 	assert_false(stage.environment.ssil_enabled, "and SSIL")
+	assert_false(stage.environment.volumetric_fog_enabled, "Low: no volumetric fog")
+	assert_false(
+		stage.atmosphere.visible or stage.atmosphere.dust.emitting, "Low: no embers or dust"
+	)
 	assert_eq(get_errors().size(), 0, "no engine or script error")

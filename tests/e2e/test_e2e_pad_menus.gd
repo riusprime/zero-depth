@@ -63,6 +63,8 @@ func test_pad_a_plays_and_pause_goes_home() -> void:
 	await _press(e, JOY_BUTTON_DPAD_DOWN)
 	assert_eq(_focused(main).name, &"Options", "then Options (v0.3.0 O)")
 	await _press(e, JOY_BUTTON_DPAD_DOWN)
+	assert_eq(_focused(main).name, &"Codex", "then the Codex (v0.7.5 CX)")
+	await _press(e, JOY_BUTTON_DPAD_DOWN)
 	assert_eq(_focused(main).name, &"MainMenu", "and on to Main menu")
 	await _press(e, JOY_BUTTON_A)
 	await e.frames(2)
@@ -75,6 +77,8 @@ func test_pad_a_resumes_from_pause() -> void:
 	var main: Main = await e.boot()
 	for k in 2:  # Play, Blade
 		await _press(e, JOY_BUTTON_A)
+	# v0.8.0 N11: the world holds at tick 0 under the loading cover until the hero lands, so pause once landed.
+	assert_true(await e.landed(), "the hero landed")
 	await _press(e, JOY_BUTTON_START)
 	assert_not_null(main.get_node_or_null("UI/PauseMenu"))
 	await _press(e, JOY_BUTTON_A)  # Resume has focus

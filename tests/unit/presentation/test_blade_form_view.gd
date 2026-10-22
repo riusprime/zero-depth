@@ -36,8 +36,8 @@ func test_whirl_wave_draws_a_ring_of_crescents() -> void:
 	assert_gte(int(_drawn([&"whirl", &"echo_slash"]).get(&"crescent", 0)), BladeForms.CRESCENT_RING)
 
 
-func test_afterimage_and_double_slash_draw_ghost_slashes() -> void:
-	assert_gt(int(_drawn([&"long_shadow"]).get(&"ghost", 0)), 0, "a ghost slash where you dashed")
+func test_double_slash_draws_ghost_slashes() -> void:
+	# v0.8.0 RM: Afterimage is Dodge Imprint (no ghost copy; RemnantViews marks its point)
 	assert_gt(int(_drawn([&"double_slash"]).get(&"ghost", 0)), 0, "the mirrored echo")
 
 
@@ -55,7 +55,7 @@ func test_orbit_blades_and_counter_and_finisher() -> void:
 	assert_gt(int(_drawn([&"blade_orbit"]).get(&"blade", 0)), 1, "blades orbiting you")
 	assert_gt(int(_drawn([&"counter"]).get(&"ring", 0)), 0, "the counter's flash")
 	assert_gt(int(_drawn([&"counter"]).get(&"crescent", 0)), 0, "the dash-slash wave")
-	assert_gt(int(_drawn([&"finisher_plus"]).get(&"ring", 0)), 0, "the big shockwave")
+	# v0.8.0 RM: Finisher+ is Fracture Bank (its extraction flashes in RemnantViews)
 
 
 func test_the_swing_itself_changes_on_the_blade_and_the_hero() -> void:
@@ -111,3 +111,28 @@ func test_looks_carry_the_blade_cues() -> void:
 	assert_has(AttackFormLooks.cues_of(r.attack_spec(Modifiers.step_id(0))), &"spin")
 	var t := WorldReader.new(WandLab.fight(&"blade", [&"thrust"]))
 	assert_has(AttackFormLooks.cues_of(t.attack_spec(Modifiers.step_id(0))), &"stab")
+
+
+## v0.8.0 PF2 (owner O9): the crescents and the ghost slashes are instances of baked shapes (BakedMeshPools), each the
+## band the ImmediateMesh drew (14 segments, 84 vertices), so a crowd of them costs a transform each.
+func test_crescents_and_ghosts_are_baked_instances() -> void:
+	var w := WandLab.fight(&"blade", [&"double_slash", &"echo_slash"])
+	var r := WorldReader.new(w)
+	var view: BladeFormView = add_child_autofree(BladeFormView.new())
+	var most := 0
+	var counted := 0
+	for t in TICKS:
+		w.step(AttackScenario.frame(t))
+		view.sync(r)
+		most = maxi(most, view.baked_drawn())
+		counted = maxi(
+			counted, int(view.drawn.get(&"crescent", 0)) + int(view.drawn.get(&"ghost", 0))
+		)
+	assert_gt(most, 1, "crescents and ghosts laid out as instances")
+	assert_eq(most, counted, "each one counted is an instance")
+	var mesh: ArrayMesh = view._bake(Vector4(BladeFormView.SHAPE_CRESCENT, 0.6, 0.8, 0.0))
+	var arrays := mesh.surface_get_arrays(0)
+	assert_eq(
+		(arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size(), 84, "the band's 14 segments"
+	)
+	assert_eq((arrays[Mesh.ARRAY_COLOR] as PackedColorArray).size(), 84, "its colours baked in")

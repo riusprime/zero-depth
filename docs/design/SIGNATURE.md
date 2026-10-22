@@ -19,7 +19,7 @@ a blink vented; they no longer do.
 | Rule | Starting value | Where |
 |---|---|---|
 | Heat range | 0–100 points (the overheat point is 100) | `data/heat/overclock.tres` `max_heat` |
-| Gain per landed attack | combo step +2.5, finisher +5, bolt +0.9 (a swing adds once however many it hits) | `gain_swing`, `gain_finisher`, `gain_bolt` |
+| Gain per landed attack | combo step +2.5, finisher +5, bolt +1.157 (v0.8.0 GF1: was +0.9; ×9/7 with the Gun's slower fire, so it heats as fast a second; a swing adds once however many it hits) | `gain_swing`, `gain_finisher`, `gain_bolt` |
 | What never adds heat | payoffs (vent, Meltdown, shock discharge…), DoT ticks, Twin Arc echoes, chain jumps, dash bodies, thorn rings, shrapnel, whiffs | `Heat.is_attack` |
 | Decay | after 1 s without a landed attack, −15/s | `decay_delay_seconds`, `decay_per_second` |
 | **Hot** (≥ 40) | blade reach +20 %; each bolt pierces one enemy | `hot_threshold`, `hot_reach_bonus` |

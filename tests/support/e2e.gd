@@ -5,6 +5,8 @@ extends RefCounted
 
 ## walk_to's budget (frames of stick input).
 const WALK_FRAMES := 2400
+## v0.8.0 N12: the longest a load behind the cover may take (wall clock) before loaded() gives up.
+const LOAD_MS := 120000
 
 var test: GutTest
 var main: Main
@@ -15,8 +17,14 @@ func _init(p_test: GutTest) -> void:
 
 
 ## Boots main.tscn with a memory-only profile (optionally pre-filled) and waits for the menu. v0.6.5 WN5b: `saves`, a
-## memory-only run save store already holding a save (an old one to Continue), else an empty one.
-func boot(profile: ProfileStore = null, saves: RunSaveStore = null) -> Main:
+## memory-only run save store already holding a save (an old one to Continue), else an empty one. v0.8.0 N1 (O53):
+## `seed`, the seed mode (Main.fixed_seed): the e2e keep the fixed STAGE_SEED order on purpose (the first new run takes
+## it, each later one the next); RunSeeds.RANDOM plays as the game does.
+func boot(
+	profile: ProfileStore = null, saves: RunSaveStore = null, seed: int = Main.STAGE_SEED
+) -> Main:
+	Main.fixed_seed = seed
+	center_sticks()  # v0.8.0 fix: no stick an earlier test left pushed
 	ProfileStore.use_shared(profile if profile != null else ProfileStore.new(""))
 	RunSaveStore.use_shared(saves if saves != null else RunSaveStore.new(""))  # v0.4.0 SV: none from an earlier test
 	main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
@@ -25,9 +33,24 @@ func boot(profile: ProfileStore = null, saves: RunSaveStore = null) -> Main:
 	return main
 
 
+## v0.8.0 N12 (owner O70): `n` frames of play. A load behind the cover (a new run, Continue, Restart, a portal) now
+## runs over many frames; those are not counted: when one is running, this waits until its floor is live (wall
+## clock, at most LOAD_MS), so a test's frame counts stay frames of play. test_e2e_loading_cover watches the load's
+## own frames with the tree's physics_frame directly.
 func frames(n: int) -> void:
 	for i in n:
 		await test.get_tree().physics_frame
+		await _through_load()
+
+
+func _through_load() -> void:
+	if main == null or not is_instance_valid(main) or not main.loads.busy():
+		return
+	var from := Time.get_ticks_msec()
+	while main.loads.busy() and Time.get_ticks_msec() - from < LOAD_MS:
+		await test.get_tree().physics_frame
+	if main.loads.busy():
+		test.fail_test("a load behind the cover took over %d ms" % LOAD_MS)
 
 
 func send(ev: InputEvent) -> void:
@@ -94,14 +117,53 @@ func _mouse_scale() -> Vector2:
 
 ## Play from the main menu with the keyboard: the Play button has focus, then the build screen's last pick (Blade on
 ## a fresh profile; Right moves to Gun). v0.4.0 BS (F11): no utility pick; the run starts with weapon, dash, skill
-## and vent.
-func start_from_menu(build: StringName = &"blade") -> void:
+## and vent. v0.8.0 N11: then waits for the hero to land on the receiver (`land` false: returns as the floor opens).
+func start_from_menu(build: StringName = &"blade", land: bool = true) -> void:
 	await tap(KEY_ENTER)
 	await frames(2)
 	if build == &"gun":
 		await tap(KEY_RIGHT)
 	await tap(KEY_ENTER)
+	await loaded()  # v0.8.0 N12: the run's first floor builds over frames behind the cover
 	await frames(4)
+	if land:
+		await landed()
+
+
+## v0.8.0 N11 (owner O69): waits (reading only) until the floor's arrival is over and play is on, `limit` frames at
+## most (the cover's fade, then the arrival: floor 1's ~1.6 s). True when it was.
+func landed(limit: int = 600) -> bool:
+	for k in limit:
+		if main.driver != null and not main.driver.reader.arriving():
+			return true
+		await frames(1)
+	return false
+
+
+## v0.8.0 N12 (owner O70): a load behind the cover (a new run, Continue, Restart, a portal) builds its floor over
+## frames, the World on a worker thread; headless frames take microseconds, so this waits on the wall clock (at most
+## LOAD_MS) until the load is done (frames() does too). Returns at once when no load runs.
+func loaded() -> void:
+	await _through_load()
+
+
+## v0.8.0 N6 (owner O60): the Playground from the main menu through the dev tools: F10, then Enter on the panel's
+## Playground button (GUT's output window lies over the panel's top bar in a test run, so it gets focus directly;
+## the press is a real key event). Leaves the Playground's weapon pick open, on the Gun.
+func open_playground_picker() -> void:
+	await tap(KEY_F10)
+	var panel := main.get_node_or_null("UI/DevMasterPanel")
+	test.assert_not_null(panel, "F10 opens the master dev panel")
+	if panel == null:
+		return
+	var b := panel.find_child("Playground", true, false) as Button
+	test.assert_not_null(b, "the panel's Playground button")
+	if b == null:
+		return
+	b.grab_focus()
+	await frames(1)
+	await tap(KEY_ENTER)
+	await frames(2)
 
 
 func world() -> World:
@@ -128,6 +190,19 @@ func stick_toward(dir: Vector2) -> void:
 	var c := InputLatch.C45
 	joy_axis(JOY_AXIS_LEFT_X, (dir.x + dir.y) * c)
 	joy_axis(JOY_AXIS_LEFT_Y, -(dir.y - dir.x) * c)
+
+
+## v0.8.0 fix: lets go of both sticks (Input keeps an axis where the last motion left it, across tests). A stick
+## still pushed when a test ends rode into the next file: Godot's LineEdit then doesn't start editing on focus, so
+## test_e2e_dev_master_panel's typing went nowhere after test_e2e_difficulty. boot() calls it (and difficulty's
+## after_each).
+static func center_sticks() -> void:
+	for axis: JoyAxis in [JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, JOY_AXIS_RIGHT_X, JOY_AXIS_RIGHT_Y]:
+		var ev := InputEventJoypadMotion.new()
+		ev.axis = axis
+		ev.axis_value = 0.0
+		Input.parse_input_event(ev)
+	Input.flush_buffered_events()
 
 
 ## The reward (RewardStore.Kind) nearest the player (v0.3.0 E), or -1. A read, not an action.
@@ -212,3 +287,22 @@ func walk_to(target: Vector2, within: float) -> bool:
 	joy_axis(JOY_AXIS_LEFT_Y, 0.0)
 	await frames(12)
 	return ok
+
+
+## v0.8.0 BD (owner O83): walks up to the shut boss door, presses interact (E) and waits until it is open. True when
+## it is open (at once on a floor without the press, or once it already opened or the fight began).
+func open_boss_door() -> bool:
+	var w := world()
+	var bf := w.boss_flow
+	if bf == null or w.floor_layout == null or w.floor_layout.boss_room < 0:
+		return true
+	if bf.door == BossFlow.Door.PASSAGE or bf.door == BossFlow.Door.OPEN:
+		return true
+	await walk_to(w.floor_layout.boss_door_outside(0.9), 0.5)
+	if bf.door == BossFlow.Door.SHUT:
+		await tap(KEY_E)
+	for k in BossFlow.DOOR_OPEN_TICKS + 30:
+		if bf.door == BossFlow.Door.OPEN or w.player_dead():
+			break
+		await frames(1)
+	return bf.door == BossFlow.Door.OPEN

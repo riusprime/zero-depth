@@ -21,6 +21,11 @@ const BOSS_FLAVOUR := {
 	WorldReader.KIND_WARLORD: &"boss_telegraph_warlord",
 	WorldReader.KIND_HIVE_LENS: &"boss_telegraph_hive_lens",
 	WorldReader.KIND_FOUNDRY: &"boss_telegraph_foundry",
+	# v0.8.0 FB1 (FINAL_BOSS.md F9: the existing boss sounds until audio is made): the stone one, the light one, the
+	# blade one.
+	WorldReader.KIND_COLOSSUS: &"boss_telegraph_gatekeeper",
+	WorldReader.KIND_PRISM: &"boss_telegraph_hive_lens",
+	WorldReader.KIND_NEMESIS: &"boss_telegraph_warlord",
 }
 const DEATHS := {
 	WorldReader.KIND_CHARGER: &"enemy_death_charger",
@@ -182,6 +187,10 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"shard_collect", e.pos, 1.0])
 			SimEvent.Kind.BOSS_ROOM_SEALED:
 				out.append([&"boss_door_seal", null, 1.0])
+			SimEvent.Kind.BOSS_DOOR_OPENING:  # v0.8.0 BD (O83): the owner's sounds, at the door
+				out.append([&"boss_door_opening", e.pos, 1.0])
+			SimEvent.Kind.BOSS_DOOR_OPENED:
+				out.append([&"boss_door_impact", e.pos, 1.0])
 			SimEvent.Kind.PORTAL_OPENED:
 				out.append([&"portal_open", null, 1.0])
 				if e.amount == 1:  # v0.5.0 RT: the Deep gate opened beside it
@@ -196,9 +205,14 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"shop_buy", null, 1.0])
 			SimEvent.Kind.SHOP_SALVAGE:  # v0.5.0 SH: a sale or an ability salvaged
 				out.append([&"shop_sell", null, 1.0])
+			SimEvent.Kind.GAMBLE_FAIL:  # v0.8.0 N14 (O72): the shrine's fizzle (Vent's cold click, lower)
+				out.append([&"vent_cold", e.pos, 0.8])
 			SimEvent.Kind.HEAL:  # v0.4.0 EN: a Mender's beam lands a heal on an ally
 				if e.target_id != player_id:
 					out.append([&"mender_heal", e.pos, 1.0])
+			SimEvent.Kind.STATUS_APPLY:  # v0.8.0 FB3: the Nemesis dashes with the hero's dash cue, lower
+				if e.effect_id == WorldReader.EFFECT_NEMESIS_DASH:
+					out.append([&"dash", e.pos, 0.8])
 
 
 ## Mines (v0.4.0 EN): a beep as one arms, the blast when an armed one goes off the floor.
@@ -271,8 +285,8 @@ func _enemy_cue(reader: WorldReader, i: int, kind: int, st: int, at: Vector2, ou
 	elif st == WorldReader.STATE_ACTIVE:
 		var target: Vector2 = _targets.get(reader.actor_id(i), at)
 		_targets.erase(reader.actor_id(i))
-		if kind == WorldReader.KIND_BOMB_DRONE:
-			out.append([&"bomb_blast", target, 1.0])
+		if kind == WorldReader.KIND_BOMB_DRONE:  # v0.7.5 EF: the fireball's throw, toward where it lands
+			out.append([&"bomb_blast", reader.telegraph(i).get("to", target), 1.0])
 		elif kind == WorldReader.KIND_ARC_CASTER:
 			var rune := reader.actor_spell(i) == WorldReader.SPELL_RUNE
 			out.append([&"rune_erupt" if rune else &"arc_bolt", target if rune else at, 1.0])
@@ -293,6 +307,22 @@ static func attack_cue(move: int) -> StringName:
 			return &"boss_mortar"
 		WorldReader.MOVE_FLOOD:  # v0.4.0 BO: spears or molten floor bursting up along the lanes.
 			return &"boss_floor_burst"
+		WorldReader.MOVE_MARKS:  # v0.7.5 BF1: the tracked circle strikes; the lanes crack; the pattern fires
+			return &"boss_slam"
+		WorldReader.MOVE_ROW_LANES:
+			return &"boss_laser"
+		WorldReader.MOVE_PATTERN:
+			return &"boss_mortar"
+		WorldReader.MOVE_GRID:  # v0.7.5 BF3: the board's shells land; the molten rows burst up
+			return &"boss_mortar"
+		WorldReader.MOVE_ROW_FLOOD:
+			return &"boss_floor_burst"
+		WorldReader.MOVE_GAZE:  # v0.8.0 BS2: the beam opens; the ring melts
+			return &"boss_laser"
+		WorldReader.MOVE_MELT:
+			return &"boss_floor_burst"
+		WorldReader.MOVE_CROSS:  # v0.8.0 FB2: the Prism's Cross opens
+			return &"boss_laser"
 	return &""
 
 

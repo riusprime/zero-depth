@@ -8,12 +8,7 @@ script = ExtResource("1_atk")
 id = &"pulse"
 shape = 4
 shape_params = {
-"count": 2,
-"gap_seconds": 0.12,
-"radius_m": 0.14,
-"range_m": 12.0,
-"speed_mps": 10.0,
-"spread_degrees": 8.0
+"pattern_id": "lens_drone_orb_ring"
 }
 telegraph_seconds = 0.5
 telegraph_max_seconds = 0.6667
@@ -24,6 +19,7 @@ damage = 8
 [resource]
 script = ExtResource("2_enm")
 name_key = &"ENEMY_LENS_DRONE"
+desc_key = &"ENEMY_LENS_DRONE_DESC"
 behaviour_id = &"lens_drone"
 behaviour_params = {
 "attack_range_m": 11.0,

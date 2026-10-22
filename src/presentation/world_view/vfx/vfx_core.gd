@@ -21,6 +21,11 @@ const POOLS := {
 	&"bubble": ["fx_bubbles", Vector2(2, 2), false, 0.0, 192, "fx_fire_noise"],
 	&"tendril": ["fx_void_tendrils", Vector2(2, 2), false, 0.08, 160, "fx_void_noise"],
 	&"rift": ["fx_void_rift", Vector2(2, 2), true, 0.03, 48, "fx_void_noise"],
+	# v0.8.0 TX2: the owner's rock bursts (slams, eruptions), steam puffs (the Foundry's vent) and crystal shatter
+	# bursts (the final boss between bodies).
+	&"rockburst": ["fx_rock_burst", Vector2(2, 2), false, 0.0, 48, "fx_fire_noise"],
+	&"steam": ["fx_steam_puffs", Vector2(2, 2), false, 0.04, 96, "fx_fire_noise"],
+	&"shatter": ["fx_crystal_shatter", Vector2(2, 2), true, 0.0, 32, "fx_fire_noise"],
 }
 ## Floor-mark textures: the texture and its atlas cell (-1: the whole texture; the splatter sheet is 2 x 2).
 const MARK_TEX := {
@@ -31,14 +36,36 @@ const MARK_TEX := {
 	&"splat1": ["fx_splatter_mark", 1],
 	&"splat2": ["fx_splatter_mark", 2],
 	&"splat3": ["fx_splatter_mark", 3],
+	# v0.8.0 TX2: the cracks a slam, a spike row or a crater leaves (one cell: one kind, so overlapping ones merge).
+	&"cracks": ["fx_ground_cracks", 0],
 }
 const DIR := "res://assets/textures/vfx/"
 const LIGHTS := 10
 const DECALS := 64
 const ICE_CAP := 256
+## P-20: every pool's pieces together a frame (the pools' own caps sum to 2,656), PRESENTATION §7's 2,000 live
+## particles; past it the last pieces of the frame drop, as the attack-form canvas's MAX_PARTICLES does.
+const MAX_SPRITES := 2000
 ## How long a floor mark stays (ticks) and how long it fades at the end.
 const MARK_TICKS := 420.0
 const MARK_FADE := 90.0
+## v0.8.0 FV (owner O86, feedback 2026-10-19 Part 3: "every other effect requests unmerged lights"): every effect's
+## light joins a light of its own colour within LIGHT_MERGE_M (the fire patches' 2.5 m since the lighting pass), so
+## near-simultaneous effects (Twin pairs, chains, overlapping blasts) share one light instead of each taking a slot.
+## A lone effect's light is unchanged. Each merge brightens the shared light by LIGHT_MERGE_BOOST, at most
+## LIGHT_MERGE_BOOST_MAX times its brightest member (a burning horde no longer stacks ×1.08 per enemy). Starting values.
+const LIGHT_MERGE_M := 2.5
+const LIGHT_MERGE_BOOST := 1.08
+const LIGHT_MERGE_BOOST_MAX := 1.3
+## v0.8.0 FV: the enemy statuses' lights (burning enemies: the term that grows with the horde) are gathered over the
+## frame, the brightest first, merged within LIGHT_MERGE_M; at most STATUS_LIGHTS_MAX new lights come from them, the
+## rest only join a light already there or are dropped. Starting value (the pool holds LIGHTS).
+const STATUS_LIGHTS_MAX := 4
+## v0.8.0 FV: pressure thinning. While a pool is past PRESSURE of its cap (or the frame's pieces past PRESSURE of
+## MAX_SPRITES), an effect's debris, smoke, sparks and ice crystals are halved (rounded up); its blast and flash stay.
+## The cap then thins the effects gradually instead of cutting the frame's last ones off. Deterministic: it reads only
+## this frame's counts, in the callers' fixed draw order. Starting value.
+const PRESSURE := 0.7
 
 const SHADER := """
 shader_type spatial;
@@ -72,6 +99,12 @@ void fragment() {
 }
 """
 
+static var _has_tex := {}
+## v0.8.0 N12 (owner O70): the floor marks' cut textures and the two sprite shaders, made once per run of the game
+## and shared by every floor's layer (each floor made them again: ~30 ms of a load's frame).
+static var _mark_cache := {}
+static var _shader_cache := {}
+
 ## Sprite and ice pools: id -> {node, mm, used, cap}.
 var pools := {}
 var lights: Array[OmniLight3D] = []
@@ -79,8 +112,30 @@ var decals: Array[Decal] = []
 var density := 1.0
 ## Drawn into each frame before it ends (StatusVisuals' enemy statuses): func(layer: VfxCore).
 var drawers: Array[Callable] = []
+## This frame's counts (the perf probe and the tests): sprites asked for; bursts asked for, drawn, merged into one
+## drawn nearby and skipped past the budget (VfxLayer.burst, v0.8.0 PF).
+var sprites_asked := 0
+var bursts_asked := 0
+var bursts_drawn := 0
+var bursts_merged := 0
+var bursts_skipped := 0
+## v0.8.0 FV: this frame's light requests folded into a light already asked for (_light_merged); the status lights
+## asked for and those dropped past STATUS_LIGHTS_MAX; the pieces left out by pressure thinning (_thin).
+var lights_merged := 0
+var status_lights_asked := 0
+var status_lights_dropped := 0
+var pieces_thinned := 0
+## v0.8.0 N1: with `record` on (the light-walk probe, tests), the places of this frame's flame sprites (their
+## centres), since a headless renderer keeps no instance transforms to read back.
+var record := false
+var placed_flames := PackedVector3Array()
+## The same pools in a list (begin and finish walk it every frame without allocating).
+var _pool_list: Array[Dictionary] = []
 var _cam_basis := Basis()
+## Light requests: [position, colour, energy, range, brightest member's energy].
 var _light_wants: Array = []
+## v0.8.0 FV: this frame's status light requests, laid in at finish (_flush_status_lights): [p, colour, energy, range].
+var _status_wants: Array = []
 ## Floor marks: [key, texture id, position, radius, start tick, turn, colour].
 var _marks: Array = []
 var _mark_keys := {}
@@ -89,10 +144,22 @@ var _now := 0.0
 var _shaders := {}
 ## This frame's taken spots, per kind: kind -> {grid cell (Vector2i) -> [[Vector3, owner]]} (see _claim).
 var _spots := {}
+## P-20: pieces left under MAX_SPRITES this frame.
+var _sprite_left := MAX_SPRITES
+## While true, light requests are dropped (a thinned burst asks for none: VfxLayer.burst).
+var _lights_off := false
 
 
 func _init() -> void:
 	name = "Vfx"
+	# v0.8.0 N1 (owner O46/O55: "fire drawings popping randomly in position and timing through the whole screen"):
+	# every piece here (the pools' instances, the pooled lights, the floor marks) is laid out again each frame, and a
+	# pool slot holds a different effect from one frame to the next (a fire light hid, another effect's flames came
+	# first). Under the project's physics interpolation the renderer drew each slot between its last two physics
+	# ticks' places, so for a frame a flame or an ember stood halfway between two fires, and a pooled light slid.
+	# The pieces are placed on frame time already (sim ticks plus the fraction): no interpolation, as every other
+	# per-frame pool (AttackFormPool, BakedMeshPools, BossStrikeViews ...). The children inherit it.
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	for id: StringName in POOLS:
 		var spec: Array = POOLS[id]
 		var mat := ShaderMaterial.new()
@@ -138,15 +205,30 @@ func _pool(id: StringName, mesh: Mesh, mat: Material, cap: int) -> void:
 	node.extra_cull_margin = 16384.0
 	add_child(node)
 	pools[id] = {"node": node, "mm": mm, "used": 0, "cap": cap}
+	_pool_list.append(pools[id])
 
 
 func _shader(additive: bool) -> Shader:
 	var key := additive
 	if not _shaders.has(key):
-		var s := Shader.new()
-		s.code = SHADER % ("blend_add" if additive else "blend_mix")
-		_shaders[key] = s
+		if not _shader_cache.has(key):
+			var s := Shader.new()
+			s.code = SHADER % ("blend_add" if additive else "blend_mix")
+			_shader_cache[key] = s
+		_shaders[key] = _shader_cache[key]
 	return _shaders[key]
+
+
+## v0.8.0 N12 (O70): reads the sprite sheets and cuts the floor marks once, ahead of a floor's first layer
+## (ViewWarmup, on a worker while the loading cover shows).
+static func warm() -> void:
+	if not available():
+		return
+	for id: StringName in POOLS:
+		_tex(POOLS[id][0])
+		_tex(POOLS[id][5])
+	for id: StringName in MARK_TEX:
+		_mark_texture(MARK_TEX[id][0], int(MARK_TEX[id][1]))
 
 
 static func _tex(id: String) -> Texture2D:
@@ -156,6 +238,13 @@ static func _tex(id: String) -> Texture2D:
 
 ## A floor-mark texture: the whole texture, or one cell of a 2 x 2 sheet cut out (a decal takes no atlas cell).
 static func _mark_texture(id: String, cell: int) -> Texture2D:
+	var key := "%s/%d" % [id, cell]
+	if not _mark_cache.has(key):
+		_mark_cache[key] = _cut_mark(id, cell)
+	return _mark_cache[key]
+
+
+static func _cut_mark(id: String, cell: int) -> Texture2D:
 	var t := _tex(id)
 	if t == null or cell < 0:
 		return t
@@ -206,6 +295,13 @@ static func _ice_material() -> StandardMaterial3D:
 	return m
 
 
+## v0.8.0 TX2: true when texture `id` of DIR is installed (cached; a drawer keeps its code look without it).
+static func has_tex(id: String) -> bool:
+	if not _has_tex.has(id):
+		_has_tex[id] = ResourceLoader.exists(DIR + id + ".png")
+	return _has_tex[id]
+
+
 ## True when the owner's textures are installed (otherwise the canvas keeps its flat look).
 static func available() -> bool:
 	return ResourceLoader.exists(DIR + "fx_flame_shapes.png")
@@ -218,10 +314,24 @@ func begin(now: float) -> void:
 	var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
 	if cam != null:
 		_cam_basis = cam.global_transform.basis
-	for p: Dictionary in pools.values():
+	for p: Dictionary in _pool_list:
 		p["used"] = 0
+	_sprite_left = MAX_SPRITES
+	sprites_asked = 0
+	bursts_asked = 0
+	bursts_drawn = 0
+	bursts_merged = 0
+	bursts_skipped = 0
+	lights_merged = 0
+	status_lights_asked = 0
+	status_lights_dropped = 0
+	pieces_thinned = 0
+	_lights_off = false
 	_light_wants.clear()
+	_status_wants.clear()
 	_spots.clear()
+	if record:
+		placed_flames.clear()
 
 
 ## Ends the frame: lets the drawers add theirs, shows the used pieces, gives the lights to the brightest requests,
@@ -230,9 +340,10 @@ func finish() -> void:
 	for d in drawers:
 		if d.is_valid():
 			d.call(self)
-	for p: Dictionary in pools.values():
+	_flush_status_lights()
+	for p: Dictionary in _pool_list:
 		(p["mm"] as MultiMesh).visible_instance_count = int(p["used"])
-	_light_wants.sort_custom(func(a: Array, b: Array) -> bool: return a[2] > b[2])
+	_light_wants.sort_custom(_brighter)
 	for k in lights.size():
 		var l := lights[k]
 		if k < _light_wants.size():
@@ -247,6 +358,11 @@ func finish() -> void:
 	_lay_marks()
 
 
+## The light sort: the brighter request first.
+static func _brighter(a: Array, b: Array) -> bool:
+	return a[2] > b[2]
+
+
 func now() -> float:
 	return _now
 
@@ -254,15 +370,19 @@ func now() -> float:
 func _put(
 	pool: StringName, xf: Transform3D, c: Color, cell: int, dissolve: float, sd: float
 ) -> bool:
+	sprites_asked += 1
 	var p: Dictionary = pools[pool]
 	var i: int = p["used"]
-	if i >= int(p["cap"]):
+	if i >= int(p["cap"]) or _sprite_left <= 0:
 		return false
+	_sprite_left -= 1
 	var mm: MultiMesh = p["mm"]
 	mm.set_instance_transform(i, xf)
 	mm.set_instance_color(i, c)
 	mm.set_instance_custom_data(i, Color(float(cell), clampf(dissolve, 0.0, 1.0), sd, 0.0))
 	p["used"] = i + 1
+	if record and pool == &"flame":
+		placed_flames.append(xf.origin)
 	return true
 
 
@@ -306,23 +426,87 @@ func _ribbon_tall(a: Vector3, b: Vector3, w: float) -> Transform3D:
 	return Transform3D(Basis(xf.basis.y, xf.basis.x, -xf.basis.z), xf.origin)
 
 
+## An effect's light: merged into a light of the same colour within LIGHT_MERGE_M (v0.8.0 FV; a lone one as before).
 func _light(p: Vector3, c: Color, energy: float, rng: float) -> void:
-	if energy > 0.02:
-		_light_wants.append([p, c, energy, rng])
+	_light_merged(p, c, energy, rng, LIGHT_MERGE_M)
 
 
 ## One light for a cluster: when a light of colour `c` already stands within `merge` m, it takes the stronger
 ## energy and the wider range instead of a second light (overlapping fire patches light the room once, not once
-## each: owner, 2026-10-12, "that's too much fire").
+## each: owner, 2026-10-12, "that's too much fire"). Only the same colour merges (a cold flash never joins a fire).
 func _light_merged(p: Vector3, c: Color, energy: float, rng: float, merge: float) -> void:
-	if energy <= 0.02:
+	if energy <= 0.02 or _lights_off:
 		return
+	if not _merge_into(p, c, energy, rng, merge):
+		_light_wants.append([p, c, energy, rng, energy])
+
+
+## Folds a request into a light of colour `c` already asked for within `merge` m; false when there is none.
+func _merge_into(p: Vector3, c: Color, energy: float, rng: float, merge: float) -> bool:
 	for w: Array in _light_wants:
 		if (w[1] as Color).is_equal_approx(c) and (w[0] as Vector3).distance_to(p) < merge:
-			w[2] = maxf(float(w[2]), energy) * 1.08
+			w[4] = maxf(float(w[4]), energy)
+			w[2] = minf(
+				maxf(float(w[2]), energy) * LIGHT_MERGE_BOOST, float(w[4]) * LIGHT_MERGE_BOOST_MAX
+			)
 			w[3] = maxf(float(w[3]), rng)
-			return
-	_light_wants.append([p, c, energy, rng])
+			lights_merged += 1
+			return true
+	return false
+
+
+## v0.8.0 FV: an enemy status's light, gathered for _flush_status_lights (the brightest few get slots).
+func _light_status(p: Vector3, c: Color, energy: float, rng: float) -> void:
+	if energy > 0.02 and not _lights_off:
+		status_lights_asked += 1
+		_status_wants.append([p, c, energy, rng])
+
+
+## Lays the frame's status lights in, the brightest first: each merges into a light of its colour within
+## LIGHT_MERGE_M (an effect's or an earlier status's); past STATUS_LIGHTS_MAX new ones, the rest are dropped.
+func _flush_status_lights() -> void:
+	if _status_wants.is_empty():
+		return
+	_status_wants.sort_custom(_status_first)
+	var opened := 0
+	for w: Array in _status_wants:
+		if _merge_into(w[0], w[1], w[2], w[3], LIGHT_MERGE_M):
+			continue
+		if opened >= STATUS_LIGHTS_MAX:
+			status_lights_dropped += 1
+			continue
+		opened += 1
+		_light_wants.append([w[0], w[1], w[2], w[3], w[2]])
+	_status_wants.clear()
+
+
+## The status-light order: the brighter first, ties by place (x, then z), so a frame always picks the same ones.
+static func _status_first(a: Array, b: Array) -> bool:
+	if float(a[2]) != float(b[2]):
+		return float(a[2]) > float(b[2])
+	var pa: Vector3 = a[0]
+	var pb: Vector3 = b[0]
+	if pa.x != pb.x:
+		return pa.x < pb.x
+	return pa.z < pb.z
+
+
+## v0.8.0 FV: `n` pieces of pool `pool` for one effect, halved (rounded up) under pressure (PRESSURE).
+func _thin(pool: StringName, n: int) -> int:
+	if n <= 1 or not _pressed(pool):
+		return n
+	var keep := (n + 1) / 2
+	pieces_thinned += n - keep
+	return keep
+
+
+## True while pool `pool` is past PRESSURE of its cap, or the frame's pieces past PRESSURE of MAX_SPRITES.
+func _pressed(pool: StringName) -> bool:
+	var p: Dictionary = pools[pool]
+	return (
+		int(p["used"]) >= int(float(p["cap"]) * PRESSURE)
+		or MAX_SPRITES - _sprite_left >= int(MAX_SPRITES * PRESSURE)
+	)
 
 
 ## Takes the spot `p` for `kind` this frame unless a piece of that kind from another effect (`owner`) already
@@ -377,6 +561,13 @@ func clear_marks() -> void:
 
 
 func _lay_marks() -> void:
+	# P-8: a mark suppressed by an overlapping one keeps its key here but never joins _marks, the list keys are erased
+	# through, so on a long floor the keys pile up; past a few times the cap the cache is rebuilt from the live marks
+	# (a still-overlapping key is suppressed again by the same test on its next call).
+	if _mark_keys.size() > DECALS * 4:
+		_mark_keys.clear()
+		for s: Array in _marks:
+			_mark_keys[s[0]] = true
 	var keep: Array = []
 	for s: Array in _marks:
 		if _now - float(s[4]) < MARK_TICKS:
@@ -414,6 +605,11 @@ func used(pool: StringName) -> int:
 	return int((pools[pool] as Dictionary)["used"])
 
 
+## The light requests this frame (before the LIGHTS brightest are kept).
+func lights_asked() -> int:
+	return _light_wants.size()
+
+
 func lights_on() -> int:
 	var n := 0
 	for l in lights:
@@ -433,3 +629,23 @@ func marks_of(tex: StringName) -> int:
 		if s[1] == tex:
 			n += 1
 	return n
+
+
+# --- v0.8.0 AV: helpers for the attack views' drawers (FireballViews, StoneSpikeViews) -----------------------------
+## A light request merged into a cluster (_light_merged), for a drawer outside this class.
+func light_merged(p: Vector3, c: Color, energy: float, rng: float, merge: float) -> void:
+	_light_merged(p, c, energy, rng, merge)
+
+
+## One camera-facing sprite of pool `pool` (POOLS) centred at `p`, `s` across, turned `roll`, atlas cell `cell`.
+## False when the pool or the frame's sprite budget is full.
+func sprite(pool: StringName, p: Vector3, s: float, c: Color, cell: int, roll: float) -> bool:
+	return _put(pool, _facing(p, s, s, true, roll), c, cell, 0.0, 0.0)
+
+
+## v0.8.0 GF2: a camera-facing streak of pool `pool` from `a` to `b`, `w` wide (a spark drawn along its path), atlas
+## cell `cell`. False when the pool or the frame's sprite budget is full.
+func streak(pool: StringName, a: Vector3, b: Vector3, w: float, c: Color, cell: int) -> bool:
+	if a.distance_squared_to(b) < 1e-6:
+		return _put(pool, _facing(a, w, w, true), c, cell, 0.0, 0.0)
+	return _put(pool, _ribbon(a, b, w), c, cell, 0.0, 0.0)

@@ -3,9 +3,10 @@
 # migration cut; quarantine keeps every bad file (timestamped) instead of overwriting profile.bad.json.
 class_name ProfileStore
 extends RefCounted
-## The player profile: settings, key bindings, unlocks and seen hints in one `user://profile.json`. Never part of
-## a run's state or any sim hash. Headless runs (tests, sims, CI) keep it in memory only. Saves are atomic
-## (write a .tmp, then rename). A corrupt file is kept as profile.bad.<time>.json and a fresh profile starts.
+## The player profile: settings, key bindings, unlocks, seen hints, (v0.7.5 CX) the Codex and (AC) the achievements
+## in one `user://profile.json`. Never part of a run's state or any sim hash. Headless runs (tests, sims, CI) keep it in
+## memory only. Saves are atomic (write a .tmp, then rename). A corrupt file is kept as profile.bad.<time>.json and
+## a fresh profile starts.
 
 const PLAYER_PATH := "user://profile.json"
 const PROFILE_VERSION := 1
@@ -14,7 +15,6 @@ static var _shared: ProfileStore = null
 
 var path := ""
 var data := {}
-var _unsaved := false
 
 
 func _init(p_path: String = "") -> void:
@@ -53,6 +53,8 @@ static func fresh() -> Dictionary:
 		"bindings": {},
 		"unlocks": {},
 		"hints": {"seen": []},
+		"codex": CodexStore.fresh(),  # v0.7.5 CX: the Codex's unlocks and counters (its own version inside)
+		"achievements": AchievementStore.fresh(),  # v0.7.5 AC: unlocks and run counters (its own version)
 	}
 
 
@@ -97,10 +99,6 @@ func _quarantine() -> void:
 	push_warning("ProfileStore: %s was unreadable; kept as %s and started fresh." % [path, bad])
 
 
-func has_unsaved() -> bool:
-	return _unsaved
-
-
 ## Writes the profile atomically. Memory-only profiles return false.
 func save_file() -> bool:
 	if path.is_empty():
@@ -112,7 +110,6 @@ func save_file() -> bool:
 	var tmp := path + ".tmp"
 	var file := FileAccess.open(tmp, FileAccess.WRITE)
 	if file == null:
-		_unsaved = true
 		push_warning(
 			(
 				"ProfileStore: could not write %s (%s)."
@@ -123,7 +120,5 @@ func save_file() -> bool:
 	file.store_string(JSON.stringify(data, "\t"))
 	file.close()
 	if DirAccess.rename_absolute(tmp, path) != OK:
-		_unsaved = true
 		return false
-	_unsaved = false
 	return true

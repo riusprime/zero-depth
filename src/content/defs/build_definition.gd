@@ -19,6 +19,9 @@ const MAX_DAMAGE_PERMILLE := 5000
 @export var damage_permille := 1000
 ## The build's second ability on the Skill button (v0.3.5 K, owner F18): one per build, of its weapon's kind.
 @export var skill: SkillDefinition
+## v0.8.0 N1 (owner O43, D39 "go for D39": the Blade fights close, so it takes less): the damage the hero takes while
+## this build's weapon is held, per mille (1000 = full; the Blade 750, -25 %). It stacks with Armour (multiplied).
+@export var damage_taken_permille := 1000
 
 
 func category() -> StringName:
@@ -43,6 +46,12 @@ func validate() -> Array[ValidationIssue]:
 				&"range",
 				resource_path,
 				"damage_permille is %d..%d" % [MIN_DAMAGE_PERMILLE, MAX_DAMAGE_PERMILLE]
+			)
+		)
+	if damage_taken_permille < MIN_DAMAGE_PERMILLE or damage_taken_permille > 1000:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "damage_taken_permille is %d..1000" % MIN_DAMAGE_PERMILLE
 			)
 		)
 	if skill == null:

@@ -36,6 +36,9 @@ const EFFECT_BLOOD_HARVEST := &"blood_harvest"
 const EFFECT_SPIKED_PHASE := &"spiked_phase"
 const EFFECT_SLIPSTREAM := &"slipstream"
 const EFFECT_FROZEN_BASTION := &"frozen_bastion"
+## v0.8.0 RM (owner O91: "Make Fire+Frost's Thermal Break a natural elemental reaction"): an enemy both burning and
+## chilled or frozen breaks (thermal_break): its DAMAGE event's and its shatter's (STATUS_APPLY) effect id.
+const EFFECT_THERMAL_BREAK := &"thermal_break"
 
 ## Payoff hits: they never add stacks (so no engine feeds itself or another through its own payoff).
 const PAYOFFS: Array[StringName] = [
@@ -73,6 +76,9 @@ const SRC_CHAIN := 3
 const SRC_WAVE := 4
 ## v0.5.0 CP: an Orbit Blades touch (Razor Orbit feeds bleed from it).
 const SRC_ORBIT := 5
+
+## v0.8.0 RM: the wand's numbers in a lab world without World.wand_table (Thermal Break's; they mirror wand.tres).
+static var _wand_defaults := WandTable.new()
 
 
 # --- Combos ---------------------------------------------------------------------------------------------------
@@ -154,17 +160,19 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 			poison = sp.stacks_of(&"poison")
 		SRC_BOLT:
 			var b := hs if hs != null else Modifiers.bolt(w)  # v0.6.0 MX2: the projectile's own spec
-			var fed := 0
-			for st: StringName in [&"burn", &"shock", &"bleed", &"frost", &"poison"]:
-				fed += b.stacks_of(st)
-			if fed > 0:
+			var b_burn := b.stacks_of(&"burn")  # each read once (audit G-16)
+			var b_shock := b.stacks_of(&"shock")
+			var b_bleed := b.stacks_of(&"bleed")
+			var b_frost := b.stacks_of(&"frost")
+			var b_poison := b.stacks_of(&"poison")
+			if b_burn + b_shock + b_bleed + b_frost + b_poison > 0:
 				w.engine_bolt_hits += 1
 				var n := w.engine_bolt_hits
-				burn = b.stacks_of(&"burn") if _every(n, b.every_of(&"burn")) else 0
-				shock = b.stacks_of(&"shock") if _every(n, b.every_of(&"shock")) else 0
-				bleed = b.stacks_of(&"bleed") if _every(n, b.every_of(&"bleed")) else 0
-				frost = b.stacks_of(&"frost") if _every(n, b.every_of(&"frost")) else 0
-				poison = b.stacks_of(&"poison") if _every(n, b.every_of(&"poison")) else 0
+				burn = b_burn if _every(n, b.every_of(&"burn")) else 0
+				shock = b_shock if _every(n, b.every_of(&"shock")) else 0
+				bleed = b_bleed if _every(n, b.every_of(&"bleed")) else 0
+				frost = b_frost if _every(n, b.every_of(&"frost")) else 0
+				poison = b_poison if _every(n, b.every_of(&"poison")) else 0
 		SRC_CHAIN:
 			shock = m.shock_chain
 		SRC_WAVE:
@@ -172,16 +180,17 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 		SRC_ORBIT:
 			bleed = m.bleed_orbit
 	var id := a.ids[i]
+	var pm := w.hit_proc_permille  # v0.8.0 MR (O91): a secondary attack's hit feeds at its proc (SecondaryProc)
 	if burn > 0 and w.proc_ledger.try_mark(root, CODE_FEED_BURN + src, id, w.tick):
-		add_burn(w, i, burn, root, EFFECT_CINDER_SHOT)
+		add_burn(w, i, SecondaryProc.stacks(w, burn, pm), root, EFFECT_CINDER_SHOT)
 	if bleed > 0 and w.proc_ledger.try_mark(root, CODE_FEED_BLEED + src, id, w.tick):
-		add_bleed(w, i, bleed, root)
+		add_bleed(w, i, SecondaryProc.stacks(w, bleed, pm), root)
 	if frost > 0 and w.proc_ledger.try_mark(root, CODE_FEED_FROST + src, id, w.tick):
-		add_frost(w, i, frost, root, EFFECT_FROST)
+		add_frost(w, i, SecondaryProc.stacks(w, frost, pm), root, EFFECT_FROST)
 	if shock > 0 and w.proc_ledger.try_mark(root, CODE_FEED_SHOCK + src, id, w.tick):
-		add_shock(w, i, shock, root)
+		add_shock(w, i, SecondaryProc.stacks(w, shock, pm), root)
 	if poison > 0 and w.proc_ledger.try_mark(root, CODE_FEED_POISON + src, id, w.tick):
-		Venom.add(w, i, poison, root)
+		Venom.add(w, i, SecondaryProc.stacks(w, poison, pm), root)
 
 
 static func source_of(tags: int, effect_id: StringName) -> int:
@@ -216,6 +225,7 @@ static func add_burn(w: World, i: int, n: int, root: int, effect: StringName) ->
 	a.burn_stacks[i] = mini(a.burn_stacks[i] + n, m.burn_max_stacks)
 	a.burn_t[i] = m.burn_duration_ticks
 	_status(w, i, root, a.burn_stacks[i], effect)
+	thermal_break(w, i, root)  # v0.8.0 RM: fire on a chilled enemy
 
 
 ## Adds shock stacks (capped at the threshold, refreshed). Plasma Arc: shocking a burning enemy arcs. At the
@@ -295,8 +305,40 @@ static func add_frost(w: World, i: int, n: int, root: int, effect: StringName) -
 			a.frost_t[i] = 0
 			a.frozen_t[i] = m.freeze_ticks
 			_status(w, i, root, m.freeze_ticks, EFFECT_FREEZE)
+			thermal_break(w, i, root)  # v0.8.0 RM: frost on a burning enemy
 			return
 	_status(w, i, root, a.frost_stacks[i], effect)
+	thermal_break(w, i, root)  # v0.8.0 RM: frost on a burning enemy
+
+
+## v0.8.0 RM (owner O91; WAND.md "Thermal Break"; SIM_CONTRACTS §8l): enemy `i` is both burning and chilled (frost
+## stacks) or frozen, whichever came second: it breaks. Its burn and its frost are consumed (a freeze ends), then it
+## takes one hit of WandTable.thermal_base + thermal_per_burn × the burn stacks it had, as a damage-over-time hit
+## (Damage.tick_dot: × the damage stat, never a crit, proc 0: it sets nothing off, so it can't chain itself), after a
+## STATUS_APPLY (EFFECT_THERMAL_BREAK, amount = the burn stacks) the view shows as a short shatter. Fire and Frost from
+## any source react; the engine guard (begin) holds it to once in a chain.
+static func thermal_break(w: World, i: int, root: int) -> void:
+	var a := w.actors
+	if a.dead[i] == 1 or a.burn_stacks[i] <= 0:
+		return
+	if a.frost_stacks[i] <= 0 and a.frozen_t[i] <= 0:
+		return
+	if not begin(w, EFFECT_THERMAL_BREAK):
+		return
+	var t := w.wand_table if w.wand_table != null else _wand_defaults
+	var stacks := a.burn_stacks[i]
+	a.burn_stacks[i] = 0
+	a.burn_t[i] = 0
+	a.burn_cd[i] = 0
+	a.frost_stacks[i] = 0
+	a.frost_t[i] = 0
+	a.frozen_t[i] = 0
+	_status(w, i, root, stacks, EFFECT_THERMAL_BREAK)
+	var pid := a.ids[0]
+	Damage.tick_dot(
+		w, i, t.thermal_base + t.thermal_per_burn * stacks, pid, pid, EFFECT_THERMAL_BREAK
+	)
+	end(w)
 
 
 ## Actor i is frozen (EnemyAi skips it; ItemProcs.slow_factor is 0).
@@ -369,7 +411,7 @@ static func nearest_enemies(
 	var a := w.actors
 	var picked := PackedInt32Array()
 	var dists := PackedFloat32Array()
-	for j in range(1, a.size()):
+	for j in w.aoe_candidates(at, reach):  # v0.8.0 HS: a superset, ascending (was every actor)
 		if j == skip or a.teams[j] == ActorStore.TEAM_PLAYER or a.dead[j] == 1:
 			continue
 		var d := Kin.length(a.pos(j) - at)
@@ -500,7 +542,7 @@ static func on_kill(w: World, kill: SimEvent, i: int, tags: int) -> void:
 			var at := a.pos(i)
 			w.wildfire_tick = w.tick
 			w.wildfire_pos = at
-			for j in range(1, a.size()):
+			for j in w.aoe_candidates(at, m.wildfire_radius_m):  # v0.8.0 HS: a superset, ascending
 				if j == i or a.teams[j] == ActorStore.TEAM_PLAYER or a.dead[j] == 1:
 					continue
 				if AttackShapes.disc_touches(at, m.wildfire_radius_m, a.pos(j), a.radius[j]):
@@ -518,7 +560,7 @@ static func on_kill(w: World, kill: SimEvent, i: int, tags: int) -> void:
 	var pid := a.ids[0]
 	w.harvest_tick = w.tick
 	w.harvest_pos = center
-	for j in range(1, a.size()):
+	for j in w.aoe_candidates(center, c.radius_m):  # v0.8.0 HS: a superset, ascending
 		if j == i or a.teams[j] == ActorStore.TEAM_PLAYER or a.dead[j] == 1:
 			continue
 		if AttackShapes.disc_touches(center, c.radius_m, a.pos(j), a.radius[j]):
@@ -541,19 +583,10 @@ static func on_kill(w: World, kill: SimEvent, i: int, tags: int) -> void:
 ## Blood Harvest's heal, inside Vampiric Core's per-window cap (the same ledger as its kill heal). The HEAL event
 ## logs the request and what was applied.
 static func _harvest_heal(w: World, heal: int, kill: SimEvent) -> void:
-	var m := w.item_mods
 	var a := w.actors
 	if w.player_dead():
 		return
-	if w.heal_window_start < 0 or w.tick - w.heal_window_start >= m.heal_window_ticks:
-		w.heal_window_start = w.tick
-		w.heal_window_used = 0
-	var cap_left := maxi(0, m.heal_cap - w.heal_window_used)
-	var applied := maxi(0, mini(heal, mini(cap_left, a.max_hp[0] - a.hp[0])))
-	a.hp[0] += applied
-	w.heal_window_used += applied
-	if applied > 0:
-		w.heal_tick = w.tick
+	var applied := ItemProcs.heal_in_window(w, heal)  # the one window rule (audit G-17)
 	var h := w.emit_event(SimEvent.Kind.HEAL, a.ids[0], a.ids[0], a.ids[0], w.player_pos())
 	h.root_id = kill.root_id
 	h.parent_seq = kill.seq
@@ -569,10 +602,12 @@ static func _harvest_heal(w: World, heal: int, kill: SimEvent) -> void:
 static func plasma_arc(w: World, i: int, root: int) -> void:
 	var a := w.actors
 	var c := combo(w, ComboTable.Effect.PLASMA_ARC)
+	var to := nearest_enemies(w, i, a.pos(i), c.radius_m, 1)
+	if to.is_empty():
+		return  # nobody in reach: the chain keeps its arc for a later shock (audit G-5)
 	if not w.proc_ledger.try_mark(root, CODE_PLASMA, a.ids[i], w.tick):
 		return
-	var to := nearest_enemies(w, i, a.pos(i), c.radius_m, 1)
-	if to.is_empty() or not begin(w, EFFECT_PLASMA_ARC):
+	if not begin(w, EFFECT_PLASMA_ARC):
 		return
 	var j := to[0]
 	var pid := a.ids[0]

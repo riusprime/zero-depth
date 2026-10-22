@@ -92,6 +92,7 @@ serves. The reward-schedule rules (PD-07) read pools; they don't live in them.
 class_name EnemyDefinition extends Resource
 @export var id: StringName
 @export var name_key: StringName
+@export var desc_key: StringName          # v0.7.5 CX: the Codex's line about it (a locale key; empty = no line)
 @export var behaviour_id: StringName      # selects a behaviour script in src/sim/ai/
 @export var behaviour_params: Dictionary  # checked against the behaviour's param schema
 @export var hp: int
@@ -137,6 +138,17 @@ class_name AttackDefinition extends Resource
   Caster HP 40, damage 12, 4 shards, bolt 22 m/s after a 0.5 s line, rune after 0.6 s; Bomb Drone HP 30, damage 16,
   4 shards, circle 1.8 m over 0.8 s. The spawner adds the Arc Caster from danger tier 1 and the Bomb Drone from
   tier 2 (`data/spawning/floor_1.tres`, weight 2 each).
+- **v0.7.5 EF (owner N16) — the fireball enemies.** The Arc Caster's `bolt` and `spread`, the Lens Drone's attack and
+  the Bomb Drone's `bomb` are PROJECTILE attacks whose only shape param is `pattern_id`, a `BulletPatternDefinition`
+  id (§4b); `ContentCompiler.compile_enemy(def, repo)` resolves it into `EnemyTable.patterns` (one per attack, null
+  where none: the rune) through `PatternCompiler.compile_enemy_patterns`, and the attack is active until the
+  pattern's last wave. The old bolt/burst/circle params are gone from those schemas. The attack's `damage` is each
+  fireball's (and the Bomb Drone's landing's). **Starting values** (`data/bullet_patterns/`):
+  `arc_caster_plasma_fan` (FAN 3 over 30 deg, 4 m/s, r 0.18, 13 m, look `arc_plasma`), `arc_caster_plasma_fan_wide`
+  (FAN 3 over 56 deg, 3.5 m/s), `lens_drone_orb_ring` (RING 12 with 6 one-shot gaps = 6 orbs, offset 30 deg so one
+  flies at the player, 3.5 m/s, r 0.13, 10 m, look `lens_orb`), `bomb_drone_fire_x` (BURST 4 at 45 deg to the throw
+  = an X, lob 0.6 s, landing radius 0.5 m, 4 m/s, r 0.15, 7 m, safe radius 0.6 m, look `bomb_cinder`). Windups,
+  cooldowns, HP, damage and shards are unchanged.
 - **v0.4.0 EN horde behaviours and params** (starting values, `data/enemies/<id>.tres`):
   - `swarmer` (as `charger`; one LINE `bite`, `length_m`/`speed_mps`): HP 8 (one sword slash), damage 5, 1 shard,
     4.6 m/s, a 2 m lunge at 12 m/s after a 24-30 tick lane.
@@ -164,13 +176,18 @@ class_name AttackDefinition extends Resource
 - **v0.4.0 BO:** `lens_drone` takes the `needle` schema (`attack_range_m`, `cooldown_seconds`, `keep_distance_m`,
   `flee_distance_m`; one PROJECTILE burst) and flies the Needle's behaviour under its own actor kind
   (`EnemyAi.behaviour_of`). It is the Hive Lens's split, never spawned by a floor. **Starting values:** HP 45,
-  damage 8, 3 shards, 2 pulses 10 m/s after a 0.5-0.67 s line, keeps 6 m.
+  damage 8, 3 shards, 2 pulses 10 m/s after a 0.5-0.67 s line, keeps 6 m. v0.7.5 EF: its attack is a pattern (a ring
+  of 6 slow orbs, `pattern_id` only; above), its windup still 0.5-0.67 s, with no line drawn.
 - `stress_tags` feed the enemy × archetype stress matrix in [`../balance/SCORECARD.md`](../balance/SCORECARD.md).
 - **Shards** (v0.3.0 E): `@export var shards: int` (>= 0; Charger 3, Needle 4, Warden 6) is what a kill pays,
   × (1 + `shard_tier_bonus` × danger tier) rounded half up (v0.4.0 TU: the floor's plain 30 s tier, so shards keep
   growing after the difficulty curve holds at its peak; owner D7). `@export var shards_by_floor: bool` (bosses) pays
   `shards` × the floor number instead, with no tier scaling.
 
+**Item rarity** (v0.8.0 RR, owner O33; [`RARITY.md`](../roadmap/v0.8.0/evidence/RARITY.md)): four tiers, `COMMON`,
+`RARE`, `LEGENDARY` (2) and `EPIC` (3, appended: the enum is never renumbered; `ItemTable.tier()` reads them in the order
+Common < Rare < Epic < Legendary, the order `Offers.info`'s `rarity` and the card frames use). Every tier has a draw weight
+per source in `RewardsDefinition` (below); a Legendary card is mostly the boss's (`LegendaryDefinition`).
 **Item rarity** (v0.3.0 E): the shipped `ItemDefinition` has `@export var rarity: Rarity` (`COMMON`, `RARE`;
 default `COMMON`). Chests weight rare items higher (`RewardsDefinition.rare_weight_chest`). `@export var requires_utility: StringName` (empty, `guard` or `blink`) keeps an item out of every offer unless the
 player chose that utility (Bulwark: `guard`).
@@ -248,7 +265,8 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   `rate_bonus_permille`. `SET_FORM` runs in FORM, `STATUS` and `ELEMENT` in PAYLOAD, `HOOK` in HOOK. v0.6.0 MX4
   (SIM_CONTRACTS §8d): FORM `mirror`; PATTERN `directions` (0 forward, 1 circle), `back_damage_permille`,
   `aim_offset_degrees`; BEHAVIOUR `chains`, `homing_dps` (degrees per second), `returns`, `orbit_seconds`,
-  `intangible`; PAYLOAD `pull_m`, `barrier_seconds`, `charge_seconds`, `charge_permille`, `resonance_permille`; SCALE
+  `intangible`; PAYLOAD `barrier_seconds` (v0.8.0 P2: `pull_m` retired; `hole_chance_permille`,
+  `hole_damage_permille` added: Void's black holes), `charge_seconds`, `charge_permille`, `resonance_permille`; SCALE
   `heat_rate_permille`, and the virtual `range` (`MUL_PERMILLE` on whichever field is the form's range).
 - **Validation** (`ERROR`): id; a known family; rarity; known target tags, none twice; at least one op; each op a
   known kind and, for a numeric op, a known field; each op's effective stage equal to the stage its kind or field
@@ -358,7 +376,8 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   kinds and item indices and become the shared cards: S1 Fire `ember_core` (its kill burst + 10 % a level), S2
   Lightning `storm_core` (its chain + 10 % a level), S3 Frost `frost_core` (a new `MUL_PERMILLE damage 1000`,
   + 50 ‰ a level), S4 Venom `venom_core` (the same), S6 Void `gravity_well` (a new `ELEMENT void` on the spell; its
-  pull + 10 % a level); their names became Fire / Fuego, Lightning / Rayo, Frost / Escarcha, Venom / Veneno, Void /
+  pull + 10 % a level; v0.8.0 P2, owner O24: the pull is gone, `ADD hole_chance_permille 80` + 30 a level and
+  `ADD hole_damage_permille 300`: black holes); their names became Fire / Fuego, Lightning / Rayo, Frost / Escarcha, Venom / Veneno, Void /
   Vacío. Two new `WAND` items and modifiers: S5 `shared_bleed` (`STATUS bleed 1`, `ELEMENT bleed`,
   `MUL_PERMILLE damage 1000` + 50 ‰ a level; the bleed 1 a stack every 0.5 s, 0.25 s while moving, 4 s, 8 stacks;
   Bleed / Sangrado) and S7 `shared_explosive` (a `HOOK ON_END BURST` 1.4 m at 600 ‰, + 100 ‰ a level, effect
@@ -412,13 +431,62 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   `ELEMENT storm`; Serrated Edge `STATUS bleed 1`, `ELEMENT bleed`; Barbed Bolts `STATUS bleed 1 every 2`,
   `ELEMENT bleed`; Glacial Edge `STATUS frost 1`, `ELEMENT frost`; Ember Edge `STATUS burn 1`, `ELEMENT ember`.
   Melee ones target `[weapon, melee]`, bolt ones `[weapon, projectile]`, so none touches the Skills (as in v0.5).
+- **v0.8.0 BL: Blade combinations** (G1 [`../roadmap/v0.8.0/BLADE_AUDIT.md`](../roadmap/v0.8.0/BLADE_AUDIT.md); sim side
+  [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8j). `ModifierOpDefinition.per_level_after: int` (default 1, 1..4 else
+  `range`): `per_level` counts only for the levels above it (2: from level 3 on; Heavy's slowdown, Flurry's damage loss,
+  Thrust's arc). New op field `repeats` (PATTERN; Double Slash: its level). `WandDefinition`: `blade_hit_casts` (2,
+  1..3), `blade_cast_gap_seconds` (0.1, 0..1), `once_per_line` (`split_shot`, `shared_explosive`), `blast_merge_after`
+  (8, 0..256), `blast_merge_ids` (`shared_explosive`); v0.8.0 P2 (Void's black holes): `hole_seconds` (2.0, 0.1..10),
+  `hole_max` (3, 1..16), `hole_pull_radius_m` (3.5), `hole_pull_mps` (3.0), `hole_radius_m` (1.4; each 0..20),
+  `hole_period_seconds` (0.2, 1/60..`hole_seconds`). `RewardsDefinition.own_weapon_card_permille` (1500, positive).
+  `ItemDefinition.index_wave: int` (0..64, default 0): the cards of a later wave index after every earlier wave's
+  (`ModifierCompiler.item_defs`), so a card added to a pool never moves a saved index. Shipped: `blade_storm` (rare)
+  and `riposte_chain`, `WAND` items of the Blade pool, `index_wave` 1. 86 modifiers, 98 items. Every number is a
+  starting value.
+- **v0.8.0 PF2: the Blade Storm build's cost** (owner O9; [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8j). New op field
+  `alive_max` (PATTERN, a whole number: the bolt hook's projectiles alive at once, at most; 0 = none of its own):
+  `blade_storm`'s child sets 36. `WandDefinition.cast_free_lines: Array[StringName]` (data: `blade_storm`): the hook
+  cards whose children cast no trigger's spell. Starting values.
+- **v0.8.0 MR: shares, rhythms, Split Wave's other reading** (owner O91; [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8k).
+  New op fields: `share_permille` (PAYLOAD, a `MUL_PERMILLE` share each projectile deals; Twin 600 +50, Spread 550 +30,
+  Halo 400 +50), `ramp_permille`, `ramp_cap_permille`, `ramp_reset_seconds`, `burst_permille`, `burst_swings`,
+  `burst_pause_seconds` (SCALE; Rapid Fire 100 / 600 +150 / 0.4, Flurry 800 / 3 +½ from level 3 / 0.6). A whole-number
+  field without a unit keeps its `per_level` as is and rounds per level. `ModifierDefinition.alt_target` (tags) and
+  `ModifierOpDefinition.alt` (bool): the ops of the card's other reading (an `alt` op needs an `alt_target`, else
+  `alt`): Split Wave's crescents from a slash with no flying slash. `WandDefinition.secondary_proc_permille` (500,
+  0..1000) and `after_trigger_dead: Array[StringName]` (`gun_echo`, `double_slash`, `gun_charge`). Starting values.
+- **v0.8.0 RM: remnants, Dodge Imprint, mutations, Thermal Break** (owner O91; [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md)
+  §8l). `ModifierOpDefinition.Op.REMNANT` (10, HOOK stage): a hook whose child (`form`, the `hook_*` fields,
+  `hook_ops`, `per_level` on `hook_damage_permille`) is its remnant's cast, with `remnant_kind` (SEGMENT, ANCHOR,
+  MARK, FRAGMENT), `remnant_spawn` (LINK, CONTACT, HIT, PATH, NONE), `remnant_activate` (ENEMY_CROSS, ATTACK_CROSS,
+  PULL, TURN, FINISHER, DELAY, CONSUME), `remnant_seconds` (+ `_per_level`), `remnant_max` (1..64, + `_per_level`),
+  `remnant_hit_gap_seconds`, `remnant_charges` (0 = until its life), `remnant_length_m`, `remnant_width_m`,
+  `remnant_link_seconds`, `remnant_pull_radius_m`, `remnant_pull_mps`, `remnant_bend_radius_m`, `remnant_bend_dps`,
+  `remnant_turn_degrees` (0..180), `remnant_delay_seconds`, `remnant_stack_max` (1..16, + `remnant_stack_per_level`),
+  `remnant_period_seconds`, `remnant_release_max` (1..64), `remnant_stagger`. Validation: a consumer (CONSUME) and
+  only it spawns NONE; a link or a path is a segment; a mark or a fragment is left by a hit; CONTACT needs a length,
+  LINK a link time, PULL a reach, DELAY a delay, CONSUME a period and a release cap; every cast but a pull's is
+  checked as a hook's child. New op fields `imprint_seconds` / `imprint_permille` (PAYLOAD; Dodge Imprint 1.5 / 1100
+  +100). `ItemDefinition.offer_weight_permille` (0..10000, default 1000; a `mutation`-tagged card is under 1000) and
+  the item tag `mutation`. v0.8.0 FL: `ItemDefinition.loot_category` (one of `LOOT_CATEGORIES`: `other`, `form`,
+  `element`, `advanced`, `trigger`, `mutation`; empty = other): every wand card and trigger card names one (not other);
+  a `mutation`-tagged card, and only it, is `mutation`; a trigger card is `trigger` (T1–T4) or, legendary (the ×2
+  triggers), `advanced`; only a trigger card is `trigger`. The shipped mapping is in
+  [`BALANCE_FL.md`](../roadmap/v0.8.0/evidence/BALANCE_FL.md). `WandDefinition.remnant_max` (96, 1..256), `remnant_kind_max` (48, 16, 48, 48; 4 entries,
+  each 1..`remnant_max`), `remnant_activations_max` (64, 1..256), `thermal_base` (6), `thermal_per_burn` (4; together
+  > 0), `thermal_shatter_seconds` (0.3, 0..2). Shipped (`index_wave` 3): `gun_threadline` (Gun, rare),
+  `shared_faultline`, `shared_gravity_stitch` (rare), `shared_stress_mark` (common), `mut_double_exposure`,
+  `mut_grand_finale` (legendary tier, weight 150); reworked in place: `long_shadow` (Dodge Imprint, common),
+  `finisher_plus` (Fracture Bank, rare). 95 modifiers, 107 items. Every number is a starting value.
 - No modifier has a `name_key`: in MX1 the card is still the item. Modifier cards, slots and Swap are MX stage 2.
 
 **Rewards** (v0.3.0 E, category `rewards`, `data/rewards/floor.tres`): `RewardsDefinition` holds the floor's
 altar and chest counts (inclusive ranges), `chest_prices` by chest order on floor 1, `floor_price_step` (each
-later floor adds that share of the floor-1 price), `rare_weight_chest` / `rare_weight_altar`, `offer_size` (1..3),
+later floor adds that share of the floor-1 price), `rare_weight_chest` / `rare_weight_altar`, `offer_size` (1..3; v0.8.0 N7: an altar's cards only, a chest deals one, `Offers.CHEST_CARDS`),
 `interact_radius_m` and `shard_tier_bonus`. Validation: ranges ordered and non-negative, prices positive, weights
-and the radius positive. v0.4.0 TU (owner D8): `heal_orb_chance` (0.1: a normal enemy's kill drops a heal orb, one
+and the radius positive. v0.8.0 RR: `epic_weight_chest` / `epic_weight_altar` (data 1.5 / 0.5) and `legendary_weight_chest` /
+`legendary_weight_altar` (data 0.05 / 0.02): an epic and a legendary mod's draw weight against a common one's 1 (0..10;
+0 = never; a chest's weights serve the shop). The common and rare weights draw exactly as before. v0.4.0 TU (owner D8): `heal_orb_chance` (0.1: a normal enemy's kill drops a heal orb, one
 loot-stream roll), `heal_orb_heal` (0.25 of max HP) and `heal_orb_reach_m` (0.9 m, × the pickup-range stat); both
 shares within 0..1 (`range`), the reach positive. v0.5.5 EC: `heal_orb_chance` is a base under the Lifesprout stat
 card and ships 0 (owner D9: orbs only with the card); `altars_cap` (2, owner S1: the floor's placed altars past it
@@ -444,8 +512,8 @@ max HP per second; `weight`; `max_stacks`, the cap). Validation: prices, radii, 
 steps non-negative, every stat known and listed once, the pool not empty.
 
 **Shop** (v0.5.0 SH, PLAN R1, R2; category `shop`, `data/shop/terminal.tres`): `ShopDefinition` holds `offer_size`
-(cards in the stock, 4), `rarity_prices` (floor 1's price for a common, rare and epic card: 30 / 55 / 90; a mod or
-an ability card is common or rare), `floor_price_step` (each later floor raises every price but the reroll by this
+(cards in the stock, 4), `rarity_prices` (floor 1's price for a common, rare and epic card: 30 / 55 / 90; v0.8.0 RR:
+an optional fourth for a legendary one, data 150; salvage refunds at most the epic price), `floor_price_step` (each later floor raises every price but the reroll by this
 share of floor 1's: × 1, 1.5, 2), `heal_share` (0.3 of max HP, once per shop) and `heal_price` (40 × the floor
 step), `reroll_price` and `reroll_step` (20, then × 1.5 per use at that shop, rounded half up: 20, 30, 45, 68),
 `sell_share` (a mod or stat card sells for 0.4 of its shop price; a stat card one stack, the stat values rebuilt from
@@ -458,7 +526,12 @@ ends first. Validation: prices, the heal and reroll prices, the refund and the r
 the steps non-negative; the shares in (0, 1]; `offer_size` 1–9. v0.5.5 EC: a reroll draws only the unsold slots (a
 bought slot stays sold for the floor, owner S2); `max_buys` (4, owner S3: cards bought at the floor's shop, the heal
 and rerolls don't count; 0 = no limit; ≥ 0); `late_floor_price` (1.5, owner S4: floors 2+ multiply the floor step
-by this: × 1, 2.25, 3; salvage refunds stay on the floor step alone; ≥ 1).
+by this: × 1, 2.25, 3; salvage refunds stay on the floor step alone; ≥ 1). v0.7.5 MG (owner N12, "the shop is
+also gonna be there every two … floors"): `first_floor` (1) and `every_floors` (2), both > 0: the shop stands on
+floor `first_floor` and every `every_floors` floors after it (`FloorCadence.on`, `ShopTable.on_floor`: floors 1, 3,
+5 …; a 3-floor run has two). The floor number keeps counting past the run's last floor, so an endless loop keeps
+the rhythm. On a floor without the shop, `FloorScenario.add_shop` places nothing; the room `ShopPlacement` would take
+stays an ordinary room (still never an arena, so the floor's other picks don't move).
 
 ## 4. Encounters and bosses
 
@@ -476,6 +549,7 @@ class_name EncounterDefinition extends Resource
 class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3.0 C)
 @export var id: StringName                         # one of BossSchemas.KINDS: each boss has its own actor kind and model
 @export var name_key: StringName
+@export var desc_key: StringName                   # v0.7.5 CX: the Codex's line about it (empty = no line)
 @export var hp: int
 @export var radius_m: float
 @export var move_speed_mps: float
@@ -493,6 +567,8 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
                                                    # v0.5.5 DS: every shipped boss has 1000 / 660 / 330 (each later phase opens with a gate)
 @export var arena_cells: Vector2i                  # the boss room's size in cells
 @export var arena_template: int                    # its interior (FloorLayout.Template; BossSchemas.ARENA_TEMPLATES)
+@export var legacy_arena_cells: Vector2i           # v0.7.5 BF1 (N18): the room before every boss went 4 x 4; a floor of an
+                                                   # older save (floor rules 1-2) is rebuilt with it ((0, 0) = arena_cells)
 # Boss challenge (v0.3.0 BX, PLAN L17/L26). Distances run from the boss's edge to the player.
 @export var ranged_full_m: float                   # ranged armour: full damage up to here...
 @export var ranged_far_m: float                    # ...falling linearly to ranged_far_permille here and beyond
@@ -533,6 +609,181 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   spears, the Foundry's molten floor) and hurt a player in them at most once every `burn_seconds` (at least a tick).
   `count` is at most 8, as every count.
 
+- **v0.7.5 BF1 (owner N15, dodge-first fights; [`BOSS_FIGHTS.md`](../design/BOSS_FIGHTS.md)).** Boss attacks also
+  take `lock_seconds: float` (0 = as before) and `shielded: bool`. With a lock, the marker follows the player's exact
+  position (no lead) for `telegraph_seconds - lock_seconds`, then holds and flashes for `lock_seconds` (at least
+  `MIN_TELEGRAPH_TICKS`, and under the telegraph) before it strikes. `shielded` (the signature pattern) keeps the boss
+  shielded through its windup and active time. Three new moves:
+  - `pattern` (PROJECTILE): `pattern_id`, a `BulletPatternDefinition` id (§4b). The attack is active for the
+    pattern's whole duration (`active_seconds` is a floor). `damage` is each fireball's.
+  - `marks` (CIRCLE): `count` ground circles of `radius_m`, `stagger_seconds` apart, each tracked then locked
+    (`lock_seconds` required). Active until the last strikes.
+  - `row_lanes` (LINE): `count` crosses of two lanes (the player's row and column), `length_m` long, `width_m` wide,
+    `stagger_seconds` apart, tracked then locked like `marks`; cut short by walls.
+- **v0.7.5 BF2 (the Brood Mother and the Hive Lens).** A move may take optional params (`BossSchemas.MOVES[move]
+  ["optional"]`; any other unknown key is still an `ERROR`):
+  - `marks` + `pattern_id` (a BURST, §4b): each circle is an egg's landing; while it is locked an egg flies onto it,
+    and as it strikes the pattern's waves burst from it (the pattern's lob is the circle's lock; `land_radius_m` is
+    unused, the circle's `radius_m` is the landing). Active until the last egg's burst has fired.
+  - `burrow` + `pattern_id` (a RING): a ring of shots bursts from the eruption, its gap on the player. A `burrow`
+    with `lock_seconds` lays its eruption circle on the player's exact position while the ripple tracks
+    (`track_seconds`), then holds it for `erupt_seconds` (set it to the lock, 0.8 s) and erupts there.
+  - The Hive Lens's Focus Beam is a `lanes` attack (count 1, or 3 in phase 3) with `lock_seconds`.
+- **v0.7.5 BF3 (the Siege Engine and the Foundry).** Two more moves, both needing `lock_seconds`:
+  - `grid` (CIRCLE): `count` (odd) × `count` circles of `radius_m`, `cell_m` apart centre to centre (`cell_m` >=
+    2 × `radius_m`, so neighbours never overlap), centred on the player's exact position until the lock; `volleys`
+    strikes `stagger_seconds` apart alternate the checkerboard's two colours (the first holds the player's square);
+    each later colour shows only for its own lock before it strikes. A cell whose centre is in a wall is left out.
+    Active until the last volley strikes.
+  - `row_flood` (LINE): `count` lanes along the room's rows (x), `gap_m` apart centre to centre and centred on the
+    player's row, `length_m` long centred on the player (cut short by walls), `width_m` wide; tracked then locked,
+    then standing for `active_seconds` and hurting at most once every `burn_seconds`, like `flood` (drawn molten).
+- **v0.8.0 BS1 (owner O5, one signature mechanic per boss; SIM_CONTRACTS §10f).** More optional params, and
+  `late_cause_key: StringName` on a boss attack (the recap line of its late part; required with a recall or a
+  bursting egg, empty otherwise):
+  - `row_lanes` + `pillar_seconds`, `pillar_m`, `pillar_step_m` (all > 0, the step > the side): stone pillars along
+    the struck lanes that stand as walls (the Gatekeeper's Shock Lanes: 6.0 s, 1.0 m, 2.2 m).
+  - `pattern` + `recall_seconds` (>= the telegraph minimum): the shots stick where they stop and fly back along
+    their lines that long after the last could have landed (the Warlord's Javelin Fan: 1.0 s).
+  - `marks` + `egg_seconds` (>= the telegraph minimum), `egg_hp` (>= 1), `enemy_id`, optional `max_alive` and
+    `burst_phase` (1-based): each landing lays an egg of that enemy that hatches after `egg_seconds`, or from phase
+    `burst_phase` on bursts into the attack's `pattern_id` (the Brood Mother's Egg Storm: 3.0 s, 20 HP, Hatchlings,
+    at most 8, bursting from phase 3).
+  - `BossDefinition.front_mult_permille` may be 0 (0..1000): a shield that blocks every hit from the front arc (the
+    Warlord's tower shield, 120°).
+- **v0.8.0 BS2 (owner O5; SIM_CONTRACTS §10f S4-S6).** Two moves and more optional params (`late_cause_key` is
+  required with `bounces`, `bounce_phase`, `lava_seconds`, and a `gaze` with a `pattern_id`):
+  - `gaze` (LINE): `length_m`, `width_m`, `quarter_seconds`, `reverse_seconds`, `burn_seconds` (all > 0), optional
+    `pattern_id` and `orb_every_seconds`: the Hive Lens's sweeping beam (2.0 s a quarter turn, reversing every
+    8.0 s, 30 m, 0.9 m wide, a burn every 0.5 s, 12 s long; the Petal Bloom's orbs every 3.0 s; `gaze_fast` in
+    phase 3: 1.6 s, 6.4 s, every 2.6 s).
+  - `melt` (RING): `ring_m`, `min_radius_m` (> 0), `step_m`, `step_seconds` (> 0), `warn_seconds` (>= the
+    telegraph minimum, < `step_seconds`), `burn_seconds`, `ford_m` (>= 1.2): the Foundry's meltdown (4.0 m, 7.0 m,
+    2.0 m every 8.0 s, warned 2.0 s, 8 damage every 0.5 s, a 2.0 m bridge; its windup 2.0 s).
+  - `pattern` + `bounces` (1): its shots bounce off a wall once (the Siege Engine's Turret Cross, both).
+  - `deploy` + `bounce_phase` (1-based): its turrets' shots bounce once from that phase (the Siege Engine: 3).
+  - `row_flood` + `lava_seconds` (>= the telegraph minimum), `lava_damage` (>= 1), `lava_burn_seconds`, `ford_m`
+    (>= 1.2): the lanes stay molten that long (the Foundry's Molten Flood, both: 5.0 s, 6 every 0.5 s, 2.0 m fords).
+
+- **v0.8.0 FB2 (owner O17, F7; SIM_CONTRACTS §10g).** One move, and the final body's own fields:
+  - `cross` (LINE): `count` (2..8 arms), `length_m`, `width_m`, `quarter_seconds`, `fast_quarter_seconds`
+    (≤ `quarter_seconds`), `reverse_seconds`, `burn_seconds`, `spin_seconds` and `window_seconds` (each ≥ the
+    telegraph minimum; `active_seconds` ≥ both together); optional `pattern_id` with `orb_every_seconds` (then
+    `late_cause_key` is required) and `bolt_attack` (a `bolt_fan` of the same boss with `lock_seconds`: the aim line)
+    with `bolt_every_seconds` (over the bolt's lock). Must be `shielded`. The Prism's three (ring, spiral, flower):
+    4 arms, 40 m, 0.9 m wide, a quarter turn every 2.4 s at full HP down to 1.2 s at none, reversing every 3.0 s,
+    14 damage every 0.5 s, a 1.0 s spin-up, 5.0 s of spin, a 2.5 s window; orbs every 1.6 s; a bolt every 1.1 s
+    (`prism_bolt`: 22 m/s, 0.22 m, 32 m, 12 damage, a 0.4 s aim line).
+  - `FinalBossDefinition`: `hp_from_dps` (needs a `cross`), `dps_measure_seconds` (1..60), `dps_min_measured_seconds`
+    (1..measure), `dps_target_seconds` (> 0), `dps_hp_min` ≤ `dps_hp_max`; `shard_count` (0..12), `shard_orbit_m`
+    (> `radius_m` when it has shards), `shard_turn_dps` (≥ 0). The Prism: 20 s measured, at least 5, 60 s, 600..250,000
+    HP; 6 shards 2.3 m out turning 50°/s. A `cross` that fires (orbs or bolts) needs `shard_count` ≥ 1.
+  - **v0.8.0 PR (owner O84).** A `cross` takes no `pattern_id` / `orb_every_seconds` (code `orbs_with_beams`: never
+    orbs with the beams); its bolts fire only in its window. The Prism's three Crosses turn 15 % slower: a quarter
+    every 2.824 s at full HP down to 1.412 s at none, reversing every 3.529 s (was 2.4, 1.2, 3.0); the spin-up, spin,
+    window and burn unchanged. A `pattern` attack may take `aim_degrees` (0..<360: every wave from that fixed angle,
+    not at the player). `FinalBossDefinition.spell_rotation` (bool): the phase's attacks are cast in their listed
+    order, one at a time, each after her last shot is gone (each listed once). The Prism's orb spells `crown_ring`,
+    `crown_spiral`, `crown_flower` (`pattern`, `aim_degrees` 0, 0.8 s telegraph, shielded, 22 damage, 0.5 s
+    cooldown) fire `prism_crown_ring` (4 rings of 32 less 4 gaps of 2, 0.8 s apart, every other one turned 33.75°),
+    `prism_crown_spiral` (10 arms, 16 waves 0.15 s apart, 45°/s reversing at 1.2 s) and `prism_crown_flower` (4
+    petals of 64 cut under 500, 4 waves 0.9 s apart, each turned 33.75°), all 3.0 m/s, 0.2 m, 13 m.
+    `prism_crown_weave`, `cross_weave` and `prism_bolt_fan` are gone. A SPIRAL may have 1..12 arms (was 1..8).
+
+- **v0.8.0 FB3 (owner F6, F7; SIM_CONTRACTS §10h).** Three moves (each needs `lock_seconds`; an optional `weapon`,
+  `"any"` (the default), `"blade"` or `"gun"`, keeps it to that weapon's runs; never `shielded`); for a mimic body
+  an attack's `damage` is **per cent of the Nemesis's hit** (100 = its hit):
+  - `mimic_combo` (CONE): `count` swings of the player's combo steps, `arc_degrees` and `reach_m` (without a combo),
+    `speed_mps` (its step in while a swing follows), `stagger_seconds` (≥ a tick) between swings. The Nemesis's
+    `nemesis_combo` (Blade): 3 swings 0.5 s apart, 6 m/s, 0.7 s windup, 0.4 s lock, 100 %, 0..3.5 m.
+  - `mimic_shots` (PROJECTILE): `volleys` of the run's ranged form `gap_seconds` apart; `count` crescents
+    `spread_degrees` apart when a Blade build throws none (optional `speed_mps`, `radius_m`). `nemesis_crescents`
+    (Blade, 3 × 18°, 2 volleys 0.35 s apart, 70 %, 3.5 m+), `nemesis_volley` (Gun, 3 volleys 0.25 s apart, 80 %,
+    3 m+), `nemesis_point_blank` (Gun, 2 volleys 0.2 s apart, 100 %, 0..3 m); 0.4 s locks.
+  - `card_cast` (CIRCLE): `card` (0..2: the strongest card held, then the next two), `stagger_seconds` (an arc's
+    repeats). `nemesis_card_1..3`: 1.0 s windup, 0.5 s lock, 120 %, any range, weights 3, 2, 2.
+  - `FinalBossDefinition` (a mimic body): `mimic`, `echo_seconds` (0..2; 0.5), `dash_reaction_seconds` (≥ 0.1;
+    0.25), `stance_seconds` (> 0; 1.5), `stance_weights` (4 weights ≥ 0, one > 0: echo, mirror, close, back; 3, 2, 2,
+    2), `back_off_m` (> 0; 6.0), `card_casts` (0..3; 3); `hp_from_build` (needs `mimic`) with `build_hp_permille`
+    (2500) and the meter's `dps_measure_seconds` (20), `dps_min_measured_seconds` (5), `dps_target_seconds` (12),
+    `dps_hp_min` (400) ≤ `dps_hp_max` (150,000); `build_damage_permille` (1500), `build_damage_min` (8),
+    `build_damage_cap_permille` (1..999; 200); its copies' clamps `shot_speed_min_mps` / `_max_mps` (7, 13),
+    `shot_radius_min_m` / `_max_m` (0.15, 0.5), `shot_range_m` (14), `shots_max` (1..24; 12), `reach_max_m` (4.5),
+    `blast_min_m` / `blast_max_m` (1.0, 3.0). A mimic table is not scaled by the floor or the loop
+    (`RunState.scale_bosses`).
+
+- **v0.8.0 N2 (owner O41, O42, O52; SIM_CONTRACTS §10i).** Supersedes FB3's "per cent of the Nemesis's hit": a
+  mimic body's attack `damage` is **per cent of the player's max HP** with a `hit_class` (22 small, 30/34 medium, 50
+  big), and in a mimic window the build's hit when more; `build_damage_cap_permille` 500. `weapon` may also be
+  `"own"` (only outside its windows): The Fallen's `fallen_storm` (7 crescents 20° apart, 3 volleys 0.3 s apart,
+  8 m/s, 0.4 s lock, 22) and `fallen_rush` (4 swings 0.3 s apart, 140°, 2.2 m, 7 m/s, 0.4 s lock, 30).
+  `FinalBossDefinition`: `pace` with `pace_ref_dps` (≥ 1; 30), `pace_ref_seconds` (120), `pace_min_seconds` (≥ 30;
+  60), `pace_max_seconds` (180; min ≤ ref ≤ max), `pace_burst_seconds` (0..min; 10) and the meter's
+  `dps_measure_seconds` / `dps_min_measured_seconds` / `dps_hp_min` / `dps_hp_max` (5,000,000 on all three bodies);
+  `mimic_window_seconds` (≥ 0; 7; 0 = copies all the time, needs `mimic`), `mimic_every_seconds` (> window +
+  warning + 1 s; 20), `mimic_first_seconds` (≥ the warning; 12), `mimic_warn_seconds` (≥ 0.5; 1.5),
+  `mimic_nerf_min_permille` (1..1000; 100). New attacks: the Colossus's `leap_slam_3` (pattern
+  `colossus_quake_double`: a 28-stone ring, two 2-stone gaps, twice 0.45 s apart turned 90°) and `spike_chase_3`
+  (2 lines 30° apart, 0.15 s, 14 spikes), both in its second phase; the Prism's `cross_weave` (pattern
+  `prism_crown_weave`: 6 spiral arms reversing at 0.7 s; bolts every 0.8 s from `prism_bolt_fan`: 3 bolts 30° apart,
+  2 volleys 0.2 s apart; removed in PR, owner O84).
+
+- **v0.8.0 BP (owner O27).** Two optional fields on a boss attack:
+  - `hit_class: StringName`: `&"small"` (orbs, shots, javelins), `&"medium"` (strikes, lanes, beams) or `&"big"`
+    (leaps, charges, slams), or empty (not a hit of its own: the meltdown, the Nemesis's build-made hits). The hits
+    of its `damage` that kill the base hero (`data/player/runner.tres` HP, loop 1, before the floor, Deep, catch-up
+    and loop factors) are `BossSchemas.HIT_CLASSES`: small 4-5, medium 3-4, big 2 (a content test). A `big` attack
+    has no `follow_up`, and its recovery after the boss's `recovery_permille` is its punish window,
+    `BossSchemas.PUNISH_MIN_TICKS`..`PUNISH_MAX_TICKS` (36..54 ticks, 0.6..0.9 s; `BossDefinition` checks it).
+  - `orb_damage: int` (≥ 0; only with a `pattern_id`): each orb or shot of the attack's pattern deals it (a small hit
+    beside a bigger one: a leap's quake ring, a burrow's eruption, an egg's burst, the gaze's and the Cross's orbs;
+    the recalled javelins); 0 = `damage`. Scaled with `damage` by `RunState.scale_bosses`.
+
+### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
+
+```gdscript
+class_name BulletPatternDefinition extends ContentDef   # category bullet_patterns; in the F10 panel's Bosses page
+enum Kind { RING, SPIRAL, FAN, CROSS, WALL, FLOWER, BURST }
+@export var kind: Kind
+@export var look: StringName            # the fireball's look key (FireballViews.LOOKS; required): each boss/enemy its own
+@export var speed_mps: float            # 1.5..7 ("slow": about 3-5)
+@export var radius_m: float             # each shot's radius
+@export var range_m: float              # how far a shot flies (life = range / speed); shots stop at walls
+@export var waves: int                  # >= 1 ...
+@export var wave_gap_seconds: float     # ... this far apart (>= a tick when waves > 1)
+@export var turn_per_wave_degrees: float  # each wave turns by this from the last ...
+@export var alternate: bool             # ... or, set, every other wave only (a fan's "offset each wave")
+@export var aim_offset_degrees: float   # the first wave's base angle from the aim at the player
+@export var safe_radius_m: float        # no shot spawns within this (+ the player's radius) of the player (>= 0.5)
+@export var count: int                  # RING / FAN / FLOWER / BURST: shots a wave (1..64; a burst's star <= 16)
+@export var gap_count: int              # RING: gaps (>= 1) ...
+@export var gap_width: int              # ... each this many shots left out; the gap must be >= 1 m wide 4 m out
+@export var spread_degrees: float       # FAN: 0 < spread <= 300
+@export var arms: int                   # SPIRAL / CROSS: streams (1..8)
+@export var spin_dps: float             # SPIRAL / CROSS: their turn (degrees a second; negative = clockwise)
+@export var reverse_at_seconds: float   # SPIRAL: the turn reverses this long after the first wave (0 = never)
+@export var wall_length_m: float        # WALL: shots spacing_m apart across the aim, marching along it ...
+@export var spacing_m: float            #   (<= 64 shots a wall)
+@export var gap_m: float                # ... with a gap (>= 1 m) gap_offset_m off the aim line, moving
+@export var gap_offset_m: float         #   gap_shift_m a wave and bouncing between the wall's ends
+@export var gap_shift_m: float
+@export var crossing: bool              # WALL: a second wall at right angles (the Warlord's phase 3)
+@export var petals: int                 # FLOWER: speed follows |cos(petals × angle / 2)| (a table lookup), 2..12 ...
+@export var petal_min_permille: int     # ... from this share of the speed in a valley ...
+@export var petal_cut_permille: int     # ... and shots under this are left out (100..900): the gaps between petals
+@export var lob_seconds: float          # BURST: the shell flies this long to the attack's locked target ...
+@export var land_radius_m: float        # ... lands as a marker of this radius (it hurts), and bursts into its star
+@export var rain_seconds: float         # FLOWER (v0.7.5 BF3; 0 = none): each wave's drops are thrown up and land this
+@export var rain_m: float               #   long later, rain_m x the petal's speed share out from the body's edge (a
+                                        #   flower round it), then roll on as the shots; in the air they don't hurt
+```
+
+v0.7.5 EF: enemies fire patterns too (§3, "the fireball enemies"): an enemy attack names one with `pattern_id`. A
+Bomb Drone's BURST draws no landing marker (owner N16): its flying fireball is the cue.
+
+Compiled by `PatternCompiler.compile_pattern` into a `BulletPatternTable` (sim units) that the boss attack carries
+(`BossAttackTable.pattern`); `BulletPatterns` fires it (SIM_CONTRACTS §10d). Every number is a starting value (F10).
+
 - Phases are ordered by descending `hp_threshold_permille`. The first phase starts at 1000.
 - Each attack's `move` has a param schema in `src/content/boss_schemas.gd` (the shape and the `shape_params` keys);
   missing or unknown keys are `ERROR`s. Every attack's `telegraph_seconds`, and a burrow's `erupt_seconds` (the
@@ -570,20 +821,83 @@ class_name RoomTemplate extends Resource
   6 m to any entry. The generator's own checks are in
   [`ARCHITECTURE.md`](ARCHITECTURE.md) §9.
 
+### Floor generation (`data/map/floor.tres`, v0.7.5 MG)
+
+`MapDefinition` (category `map`; owner N9, "make maps bigger the rooms … even bigger rooms … up to 20 rooms"): the
+generator's room numbers, compiled by `RunContentCompiler.compile_map` over `FloorParams.defaults()` (whose values
+equal the file's; a test keeps them equal, so a floor built without content is the floor the run builds).
+`rooms_min` / `rooms_max` (15 / 19: rooms before the boss room, the start hall included; the boss room makes 16-20),
+`footprint_x` / `footprint_y` / `footprint_weights` (parallel arrays: footprint k is x × y cells, drawn with its
+weight; 1×1 22, 2×1 14, 1×2 14, 3×1 8, 1×3 8, 2×2 12, 3×2 7, 2×3 7, 3×3 5, 4×3 2, 3×4 2 and the extra-large 4×4 2),
+`max_span` (11 cells: the floor's extent either way, the boss room aside) and `place_attempts` (600). The rest of
+`FloorParams` (cell size, walls, doorways, spots) stays code. Validation: 2 ≤ min ≤ max ≤ 19, the three arrays the
+same non-empty length, footprints 1-4 cells a side, weights ≥ 0 with a positive sum, span 5-16, attempts > 0.
+A floor resumed from a save made before v0.7.5 is rebuilt with v0.7.0's numbers (`FloorParams.v070()`, an arena share
+of 330 per mille and a shop on every floor; `RunState.floor_rules`, `RunSaver.floor_tables`), so its snapshot fits.
+
+### Designed rooms (`data/room_layouts/<x>x<y>_<n>.tres`, v0.8.0 RT)
+
+`RoomLayoutDefinition` (category `room_layout`; owner O12, "design maybe two, three rooms of each size … procedural
+generation to place them as templates … a room that could be in different directions"): a hand-designed interior for
+rooms of `cells` (x ≥ y: the long side first; 3 per size, 24 in all since RT2: 1×1, 2×1, 3×1, 2×2, 3×2, 3×3, 4×3, 4×4). Drawn in its own frame: x along the
+room's long side, the room's corner at (0, 0). `groups: Array[RoomLayoutGroup]`, each an `anchor` (a fraction of the
+room, 0..1 each way: groups spread with the room's size) and `pieces: Array[RoomLayoutPiece]`: `piece` (a kit id,
+`RoomLayoutDefinition.KIT`), `at` and `size` in metres from the anchor, `solid` (a sim blocker, axis-aligned, drawn
+filling its footprint), `yaw` (degrees; drawn-only pieces), `height` (m; 0 = the kit's). `weight` (draw weight among
+its size's layouts) and `keep_clear: Array[Rect2i]` (open lanes, per mille of the room). Validation: cells
+1 ≤ y ≤ x ≤ 4; weight > 0; at least one group, each with a piece and its anchor in 0..1; known kit pieces; sizes
+0..12 m, heights 0..4 m; a solid is never decoration (grass, rubble, debris), never turned, 0.3 m+; a drawn piece
+taller than decoration stands inside one of its group's solids ("looks solid = is solid"); no slit in a group (two
+solids facing each other are at most 0.6 m apart, shut to the player, or at least 2.0 m, open to enemies on the 0.5 m
+walkability grid, unless the group's other solids fill the gap); lanes inside 0..1000.
+`RunContentCompiler.compile_room_layouts` turns them into `RoomLayoutTable`s (cm, per mille, 1/4096 turns) keyed by
+`RoomLayouts.key(cells)` into `FloorParams.room_layouts`; `RunSaver.floor_tables` adds them unless the floor was saved
+before RT (`RunState.designed_rooms`, floor rules < 4), which is rebuilt with its rule-built rooms; a floor saved
+under RT1 (floor rules 4, `RunState.rt1_rooms`) gets RT1's three layouts only (`RunSaver.RT1_LAYOUTS`:
+`room_2x2_1`, `room_3x2_1`, `room_3x3_1`, unchanged since). The files are written by
+`scripts/content/room_layouts.py` (never edited by hand). The F10 dev panel
+does not list the folder (geometry, not balance).
+
+### Shop rooms (`data/shop_rooms/<biome>.tres`, v0.8.0 SR)
+
+`ShopRoomDefinition` (category `shop_room`, extends `RoomLayoutDefinition`; owner O13, "this shop room that is gonna be
+designed in a way for each biome that will have like its own vendor … in a tent shop"): the shop room of `biome` (one
+per biome). Written by `scripts/content/shop_rooms.py` (its prefabs use `room_layouts.py`'s helpers). Drawn in the
+shop frame: y = 0 the room's way in (its first doorway's side), y = 1 its back; never mirrored. `stall:
+RoomLayoutGroup` (anchor unused): pieces in metres from the stall's centre, its front toward -y: exactly one solid
+`shop_counter` in front of one solid `shop_tent`, together `STALL_SIZE` (4.0 across × 3.4 deep, the owner's desert
+stall at its in-game scale) round the centre, and
+drawn goods and sacks standing on them. `stall_spots: Array[Vector2]` (the stall's candidate centres, fractions of
+the room, tried in order), `approach: Vector2` (the box kept clear in front of the counter: width ≥ the stall's,
+depth ≥ 1.5 m; 6 × 3 m as shipped) and `groups` (RoomLayoutDefinition's dressing groups at fractions of the room). The
+kit is `RoomLayoutDefinition.KIT` plus `SHOP_KIT` (`shop_counter`, `shop_tent`, `shop_wares`, `shop_sack`,
+`shop_lantern`; a designed room may not name them). Validation: RoomLayoutDefinition's rules on every group and on the
+stall, plus a biome, the stall's two solids and size, spots in 0..1, the approach's size, and no counter or tent in
+the dressing. `RunContentCompiler.compile_shop_rooms` → `ShopRoomTable` per biome into `ShopTable.rooms`;
+`RunSaver.floor_tables` adds them unless the floor was saved before SR (`RunState.shop_rooms`, floor rules < 5), whose
+shop is the terminal. The F10 dev panel does not list the folder (geometry, not balance).
+
 ## 6. Biomes
 
 ```gdscript
 class_name BiomeDefinition extends Resource
-@export var id: StringName                # ruins, night_rocks, red_canyon, frozen_shore, …
+@export var id: StringName                # ruins, night_rocks, red_canyon, frozen_shore, starfall, …
 @export var name_key: StringName
+@export var desc_key: StringName          # v0.7.5 CX: the Codex's line about it (empty = no line)
 @export var palette: Dictionary           # token -> Color; keys from docs/art/ART_DIRECTION.md §2
 @export var props: Array[PropDefinition]  # rocks, grass, trees, fences, barrels; mesh + placement rules
 @export var enemy_weights: Dictionary     # enemy_id -> weight for this biome's encounter fill
 @export var hazard_flavour: StringName    # mild flavour only, e.g. &"ice_edge"; never a difficulty step
 @export var template_tags: PackedStringArray
 @export var mood: BiomeMood               # v0.5.9: the lighting mood StageView lights the floor with
+@export var surface: BiomeSurface         # v0.7.5 NB1/NB2: ground that plays differently (ice, starglow); null for none
+@export var look: BiomeLook               # v0.7.5 NB1: own dressing, edge and enemy cast; null = hand-written look
 ```
 
+- **The Codex (v0.7.5 CX)** lists every biome definition on its Biomes page (`CodexCatalog`), drawn as a small
+  landscape in the biome's `palette`, so a new biome shows there with no code. Its `desc_key` (`BIOME_<ID>_DESC`,
+  en and es) is the page's line; the shipped biomes, enemies and bosses each have one
+  (`tests/content/test_codex_content.gd`).
 - `BiomeMood` (v0.5.9 Step 1, `src/content/defs/biome_mood.gd`) holds presentation only, never read by the sim:
   - sun colour, energy and angle;
   - ambient colour and energy;
@@ -593,11 +907,57 @@ class_name BiomeDefinition extends Resource
   - the warm light colour, energy and range that fire props use;
   - the hero light's energy and range;
   - the grade: shadow and highlight colours and strength (a split tone), contrast and saturation (the lighting pass
-    after v0.6.1, [`docs/art/LIGHTING_PASS.md`](../art/LIGHTING_PASS.md)).
+    after v0.6.1, [`docs/art/LIGHTING_PASS.md`](../art/LIGHTING_PASS.md));
+  - v0.8.0 N10 (O68): `wall_texture_m` and `wall_top_texture_m`, the metres of wall one tile of the procedural walls'
+    face and top textures covers (0.5-16).
+  - v0.8.0 GX (O86), all on the "high" lighting tier only: the haze's height falloff `fog_height` (m, -20..10) and
+    `fog_height_density` (0-4; 0 off); volumetric fog `volumetric_enabled`, `volumetric_density` (0-0.2, a low layer
+    that follows the view), `volumetric_albedo`, `volumetric_height` (the layer's top, 0.5-12 m),
+    `volumetric_light_energy` (how much the fire props light it, 0-16) and `volumetric_sun_energy` (0-4).
 
   A missing mood is a `mood_missing` `ERROR`. A value outside its range, or a sun that doesn't point down, is a
   `mood_invalid` `ERROR`.
 
+- `BiomeSurface` (v0.7.5 NB1, `src/content/defs/biome_surface.gd`; Frozen Shore's ice) is the one biome field the
+  sim reads, compiled by `BiomeCompiler.compile_ice` into an `IceField` and laid per floor by `IcePatches` from the
+  `map:ice` sub-stream (SIM_CONTRACTS §5):
+  - `kind` (`&"ice"`, the only kind);
+  - `room_share_permille`: the share of rooms that get patches (never the start hall, the boss room, the portal's
+    room or the shop's room); `patches_min`..`patches_max` per chosen room;
+  - `size_min_m`..`size_max_m`: a patch's sides (0.5 m steps); `clearance_m`: kept from walls, doorways, item spots,
+    the start and the gates;
+  - `accel_seconds`, `stop_seconds`: the hero's easing on ice (seconds to 90 %), in place of the player's own.
+
+  A value out of range is a `surface_invalid` `ERROR`. Mild flavour only (PD-04): ice never hurts and the dash is
+  unchanged on it.
+
+  v0.7.5 NB2 adds a second kind and one field:
+  - `kind` is one of `BiomeSurface.KINDS`: `&"ice"` (Frozen Shore) or `&"starglow"` (Starfall's starglow pools);
+  - `speed_scale` (0.5..1.5, default 1.0): the hero's top walking speed on the surface, times their own (Starfall
+    1.25; ice keeps 1.0, so Frozen Shore plays exactly as in NB1).
+
+  `BiomeCompiler.compile_surface` compiles any kind into an `IceField` (its `kind` and `speed_permille` set);
+  `compile_ice` still answers for ice only. `IcePatches` draws each kind from its own sub-stream, `map:<kind>`
+  (`map:ice`, `map:starglow`; SIM_CONTRACTS §5). Starglow only helps (never hurts), and the dash is unchanged on it.
+- `BiomeLook` (v0.7.5 NB1, `src/content/defs/biome_look.gd`) is presentation only, never read by the sim:
+  - `square_cover`: kit piece id -> int weight, what square cover footprints are drawn with (empty: the dresser's
+    own rule);
+  - `decor_swap`: kit decoration piece -> the piece drawn instead (a kit piece or a code-made `CodeProps` piece);
+  - `edge`: what lies past the floor's edge (`&""` the void, `&"water"` the frozen sea, v0.7.5 NB2 `&"stars"` the
+    starry void with floating islands; `BiomeLook.EDGES`, drawn by `BiomeEdge`, the stars' pieces in `StarVoid`);
+  - v0.7.5 NB2: a `square_cover` piece may be a code-made `CodeProps` piece of role cover (Starfall's
+    `star_monolith`), drawn at its own height;
+  - `enemy_tint`: the cast enemies' grey parts take (alpha = strength, at most 0.8; red parts, rings and bars never
+    change).
+
+  A value out of range or an unknown edge is a `look_invalid` `ERROR`; that every named piece resolves is a
+  presentation test (`tests/unit/presentation/test_frozen_shore.gd`, `test_starfall.gd`). A biome without a look
+  keeps its hand-written look (Ruins, Night Rocks, Red Canyon).
+- A new biome is: `data/biomes/<id>.tres` (palette, mood, optional surface and look), its id appended to
+  `data/run/three_floors.tres` `biomes` (last: saves store indices), an ambience cue `data/audio/cues/<id>.tres` and
+  its loop (`scripts/audio/generate_sfx.py`), `BIOME_<ID>` and `BIOME_<ID>_DESC` locale keys (en and es), and
+  optionally a `ShardCluster.TINTS` row and a `BiomeEdge` style. Shipped (v0.7.5): `ruins`, `night_rocks`,
+  `red_canyon`, `frozen_shore` (NB1), `starfall` (NB2; a working name, the owner may rename it).
 - A biome never changes the difficulty tables (PD-04). The validator rejects an `enemy_weights` table that adds an
   enemy outside the floor's allowed list.
 - `palette` must define exactly the seven biome tokens listed in
@@ -647,6 +1007,15 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
 - **`RunDefinition`, v0.5.5 EC (owner Q-S4, "Keep half"):** `shard_carry` (0.5: the share of unspent shards a
   portal carries to the next floor, rounded down; the rest is shown as left behind on the arrival card; 0..1,
   `range`).
+- **`RunDefinition`, v0.7.5 AP (owner N4, the Ascension loop; starting values, the owner tunes):** each loop past the
+  first multiplies, compounding per loop, normal enemies' HP and damage by `loop_enemy_hp_permille` (6000) and
+  `loop_enemy_damage_permille` (1200), bosses' HP and attack damage by `loop_boss_hp_permille` (6000) and
+  `loop_boss_damage_permille` (1200; v0.8.0 LS, owner Q6: was 4000 / 2000 / 2000 / 1500), each 1000..`loop_scale_cap_permille` (`range`), the factor never past
+  `loop_scale_cap_permille` (100000, × 100); and adds `loop_threat` (2, threat T, ≥ 0, `negative`) and
+  `loop_catch_up_cap_permille` (500, to both hidden catch-up caps, ≥ 0, `negative`). `floors` is a loop's length.
+  v0.8.0 P3 (owner O35): `loop_deep_ease_permille` (900; 1..1000, `range`; 1000 = none): a Deep floor (the Purple
+  Portal's route) past loop 1 multiplies its enemies' and bosses' HP and damage by it, on top of the floor, Deep and
+  loop factors; a Deep floor on loop 1 and a normal floor on loop 2 keep theirs.
 - **`DifficultyCurveDefinition`** (v0.4.0 TU, owner 2026-10-08 D1–D4; `data/curves/floor_1.tres` .. `floor_3.tres`,
   category `curve`, one per floor by `floor_index`): `phases`, an ordered list of **`DifficultyPhase`**:
   `start_seconds` (floor time; the first at 0), `name_key` (the HUD's name, en + es), `tier_permille` (the danger tier
@@ -674,6 +1043,20 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   cap above `cap_max` is `cap_range`; a pack range whose max is under its min, or whose arrays differ in length, is
   `pack_range`; a negative `pack` is `mix_entry`; a negative `edge_band_m` is `negative`.
 
+- **`IntensityDirectorDefinition`** (v0.8.0 N5, owner O58; `data/spawning/intensity.tres`, category `intensity`, id
+  `director`; in the dev panel's Difficulty group with `data/spawning`): the intensity director's numbers
+  ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §11), starting values the owner tunes: `close_radius_m` (3), `hit_full_hp_gain`
+  (1000: the intensity a hit of the whole max HP adds; 10 % of max HP adds 100), `close_kill_gain` (25),
+  `close_gain_per_second` (30), `drain_per_second` (60), `calm_seconds` (2), `peak_intensity` (750),
+  `peak_seconds_min` / `max` (3 / 5), `pull_back_radius_m` (8), `pull_back_enemies` (2), `pull_back_max_seconds` (4),
+  `quiet_seconds_min` / `max` (10 / 20), `relax_intensity` (400), `build_interval_permille` (400: while building up
+  the packs come at 0.4 × the curve's interval). Intensity runs 0..1000. Validation: the radii > 0 (`not_positive`);
+  gains 0..100000 / 0..1000, drain 1..1000, the thresholds 1..1000 / 0..1000, `pull_back_enemies` 0..1000,
+  `build_interval_permille` 100..1000 (`range`); `relax_intensity` below `peak_intensity` (`intensity_order`); every
+  duration > 0 and at least a tick (`not_positive`, `duration_zero_ticks`); each min not above its max
+  (`duration_range`). Compiled by `IntensityCompiler.compile` (ticks; intensity × 1000, per-second rates
+  / 60) onto the run floors' `SpawnTable.intensity`.
+
 - **`CatchUpDefinition`** (v0.5.5 DS, owner D4 and D7; `data/scaling/catch_up.tres`, category `scaling`, id
   `catch_up`): the hidden catch-up's numbers, all per mille ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §11):
   `expected_power_permille` (E at floor entry, `[1000, 2000, 4000]`), `cap_permille` (`[1500, 2000, 2500]`),
@@ -694,7 +1077,7 @@ class_name EventDefinition extends ContentDef          # data/events/*.tres, cat
 @export var desc_key: StringName
 @export var weight := 10                               # draw weight among the floor's events
 @export var min_floor := 1
-@export var requires: StringName = &""                 # "", "curse", "heat", "stat_card", "ability"
+@export var requires: StringName = &""                 # "", "curse", "heat", "stat_card", "ability", "stat_raised" (v0.8.0 N19)
 @export var deep_only := false                         # v0.5.5 DS (S5): Deep floors only, drawn first there
 @export var choices: Array[EventChoiceDefinition]      # 1..2; the panel always adds "Leave it"
 
@@ -725,8 +1108,16 @@ class_name EventRulesDefinition extends ContentDef     # data/event_rules/floor.
 # rooms_min/max (1-2 per floor), interact_radius_m, clear_radius_m, reward_gap_m (the pedestal's clearance from
 # walls and from altar and chest spots), cursed_chest_chance (%), elite_hp_bonus (%), ambush_min_distance_m,
 # defend_radius_m; v0.6.0 CU: core_stagger_share (%), core_stagger_seconds, core_window_seconds, core_mod_weight,
-# hunt_range_m, drop_offset_m
+# hunt_range_m, drop_offset_m; v0.7.5 MG: cursed_chest_first_floor (1), cursed_chest_every_floors (2),
+# cursed_chests_per_floor (1)
 ```
+
+v0.7.5 MG (owner N10, "the curse appear too often we're gonna have one every two floors"): a chest's offer rolls
+`cursed_chest_chance` only on a curse floor (`EventRules.curse_floor`, `FloorCadence.on`: `cursed_chest_first_floor`,
+then every `cursed_chest_every_floors` floors: 1, 3, 5 …), and only while the floor's cursed offers are under
+`cursed_chests_per_floor` (`EventState.cursed_rolled`, snapshotted). So at most one cursed chest every two floors.
+The chance is still drawn from `loot:event` on every floor before the check, so the stream moves as before until a
+chest is refused. Validation: first and every ≥ 1, per floor ≥ 0. The dev route (`force_curse`) skips the rule.
 
 Validation: known costs, rewards, effects and requirements; amounts where a cost or reward needs one (an HP cost
 below 100 %); a chest reward only after a fight; a choice that costs nothing must carry a curse; 1-2 choices;
@@ -822,7 +1213,8 @@ and `wave_sizes` (one positive size per floor, the last repeats; data 4, 8, 12).
 `ContentCompiler.compile_overrun` into `OverrunTable` (per mille).
 
 `ArenaDefinition` (v0.5.5 AR, PLAN D2 / X1; `data/arenas/arena.tres`, category `arena`): the sealed arenas. `share`
-(0..1; data 0.33: the share of a floor's combat rooms that are arenas), `waves_min` / `waves_max` (data 2 / 3),
+(0..1; data 0.11, was 0.33 until v0.7.5 MG, owner N11 "reduce the amount of challenge rooms … like 20% less": the
+share of a floor's combat rooms that are arenas; with the Overrun room a floor averages 2.4 challenge rooms, was 3.2), `waves_min` / `waves_max` (data 2 / 3),
 `wave_sizes` (per floor; data 3, 5, 7), `first_wave_seconds` (data 0.75), `wave_gap_seconds` (data 1.0) and
 `min_spawn_distance` (m; data 3.0). Compiled by `ContentCompiler.compile_arena` into `ArenaTable` (ticks, per mille).
 Without the definition a floor has no regular arenas (the Overrun still seals).
@@ -840,6 +1232,27 @@ data 5): with it every wand card (an item tagged `wand`, of the run's pool) is a
 boss's legendary altar takes it at that level (a held one rises to it; `BossReward.on_pick`); `mods` are now the three
 legendary triggers (the MX4 legendary versions and trinkets were retired or are wand cards). The pool needs cards:
 `stat_cards`, `mods` or `wand_level` (`missing`).
+v0.8.0 RR (owner O33; [`RARITY.md`](../roadmap/v0.8.0/evidence/RARITY.md)): `legendary_chance` and
+`legendary_chance_per_loop` (0..1; data 0.125 and 0.05): the chance a boss altar's offer holds one Legendary card (an item
+of rarity `LEGENDARY`; its first card), and what each loop past the first adds (capped at 1); `extra_picks_per_loop`
+and `extra_picks_max` (0..8; data 1 and 3): the picks a boss altar gives past the first on loop L
+(`min(max, per_loop × (L − 1))`; the altar stays after a pick, its offer cleared, `World.legendary_picks`). `mods` is
+empty in the data: the three legendary triggers and Chain Blast come only by that chance (and rarely from altars, chests
+and the shop), so a boss's core gives legendary stat cards only.
+v0.8.0 FL (owner O91; SIM_CONTRACTS §8m): `wand_level` is retired (validation: it must be 0; the level-5 grant is
+gone). `upgrade_choice` (bool; data true): the altar offers one held wand card one level up, up to the next floor's
+level ceiling. `card_categories` (`ItemDefinition.LOOT_CATEGORIES` but `other`; data `advanced`, `trigger`): one card of
+those categories (never a Legendary card nor a mutation; the Legendary chance's card takes its place). The pool needs
+cards: `stat_cards`, `mods`, `upgrade_choice` or `card_categories` (`missing`).
+
+`LootPacingDefinition` (v0.8.0 FL, owner O91; `data/rewards/pacing.tres`, category `loot_pacing`, id `pacing`; the dev
+panel's economy group): one table every card source reads (SIM_CONTRACTS §8m). Per stage (floor 1, floor 2, floor 3,
+Deep floors and loops ≥ 2): `floor_1_weights_permille`, `floor_2_weights_permille`, `floor_3_weights_permille`,
+`deep_weights_permille` (five each, 0..10000: [form, element, advanced, trigger, mutation]; data 1400/1400/400/600/20,
+1000/1000/1000/1200/100, 900/900/1200/1200/300, 800/800/1300/1200/600), `level_ceilings` (four, 1..5, never falling;
+data 2/3/5/5), `guaranteed_altars` (four, 0..8; data 2/0/0/0: the floor's first N regular altars show a card compatible
+with the wand), and `jackpot_permille` (0..1000; data 15). Compiled by `RunContentCompiler.compile_loot_pacing` into
+`LootPacingTable`; without the file, no pacing.
 
 `StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
 `max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,
@@ -854,6 +1267,9 @@ and `hoarder` (the most shards that count)); any other stat must leave both empt
 A stat card's `desc_key` takes a second `%s` for `side` when it has one. Rules: `Stats` (src/sim/abilities).
 v0.5.5 EC (owner D9) appends `lifesprout` (SIDED): the only source of heal orbs. The first card sets a kill's orb
 chance to its `amounts` (10 %), every further card adds its `side` (+5 %), read capped at `cap` (30 percent points).
+v0.8.0 SG (owner O91) adds `additive` (bool, default false; only for the multiplier stats `max_hp`, `damage`,
+`attack_speed`, `area`, `move_speed`, `shard_gain`, `pickup_range`, `glass_cannon`, else `range`): the cards add
+their amounts instead of compounding. Shipped on `damage`, `attack_speed` and `glass_cannon`.
 
 `RewardsDefinition` (v0.4.0 BS) gains `altar_card_weights` and `chest_card_weights` ([ability, stat, mod]) and
 `altar_rarity_weights` and `chest_rarity_weights` ([common, rare, epic]): 3 weights ≥ 0, not all 0.
@@ -862,7 +1278,9 @@ chance to its `amounts` (10 %), every further card adds its `side` (+5 %), read 
 
 `BuildDefinition` (v0.3.0 L15, L16; `data/builds/`): `id`, `weapon` (`BLADE` or `GUN`), `name_key`, `desc_key`,
 `damage_permille` (100–5000, the weapon's damage factor) and, since v0.3.5 K (owner F18), `skill`, a required
-`SkillDefinition` sub-resource: the build's second ability on the Skill button. Its fields:
+`SkillDefinition` sub-resource: the build's second ability on the Skill button. v0.8.0 N1 (D39):
+`damage_taken_permille` (100–1000, default 1000), the share of every hit the hero takes while the build's weapon is
+held (the Blade 750), multiplied with Armour in `Damage.hit`. The skill's fields:
 
 | Field | Kinds | Rule |
 |---|---|---|
@@ -891,10 +1309,39 @@ Windows check.
 `SimTuningDefinition` (category `tuning`, id `sim`) holds the designer numbers the sim once kept as constants:
 spawn-in, a boss's rise and post-stagger wait, phase-gate length, adds and ring, enemy AI commit, strafe, flank,
 spread, Sniper relocation and Mender scan, the heal-orb cap, the pickup radius, the fire-patch cap, hit rate and
-Flame Trail spacing, the shortest field throw. Seconds, metres and per mille; `RunContentCompiler.compile_sim_tuning`
+Flame Trail spacing, the shortest field throw, and (v0.8.0 SG) the attack-speed curve:
+`attack_speed_knee_permille` (500), `attack_speed_knee2_permille` (1500, at least the knee),
+`attack_speed_slope_permille` (500) and `attack_speed_slope2_permille` (250), slopes 0..1000 (`AttackRate`). Seconds, metres and per mille; `RunContentCompiler.compile_sim_tuning`
 turns it into `SimTuning` on `World.tuning`. The shipped file equals the old constants (a test checks), which stay
 as `SimTuning`'s defaults. A value that must be positive and isn't, or `gate_adds_max < gate_adds_min`, is a
 `range` `ERROR`. Map generation (`FloorParams`) is not in it yet.
+
+### Achievements (`data/achievements/*.tres`, v0.7.5 AC)
+
+`AchievementDefinition` (category `achievements`) is one local achievement, read by the app layer only (the sim
+never sees it):
+
+```gdscript
+@export var name_key: StringName   # ACH_<ID>_NAME; a CODEX_EACH one has a %s for the entry's name
+@export var desc_key: StringName   # ACH_<ID>_DESC; the same %s rule
+@export var glyph: StringName      # a code-drawn picture (AchievementDefinition.GLYPHS)
+@export var group: StringName      # the page's section (GROUPS: run, bosses, biomes, build, combat, risk, codex, ascension)
+@export var order := 0             # its place in the group
+@export var hidden := false        # "???" until unlocked
+@export var kind: Kind             # STAT, CODEX_TOTAL, CODEX_MAX, CODEX_EACH, CODEX_EVERY
+@export var stat: StringName       # STAT: a run counter from AchievementDefinition.STATS (e.g. runs:won, runs:ascended)
+@export var page: StringName       # CODEX_*: cards / enemies / bosses / biomes
+@export var section: StringName    # CODEX_EACH / CODEX_EVERY: one section of the page (e.g. the Gun pool), or all
+@export var counter: StringName    # CODEX_*: the page's counter (empty for EACH / EVERY: the entry is met)
+@export var target := 1
+```
+
+- `CODEX_EACH` expands into one achievement per Codex entry of its page or section, id `<id>_<entry id>`
+  (`boss_warlord`, `biome_frozen_shore`), so a new boss or biome in the data has its own with no new file;
+  `CODEX_EVERY` needs every entry of its scope (the scope grows with the data).
+- `ERROR`s (`achievement`): a missing key, an unknown glyph, group, stat, page or counter, a target under 1, a
+  section on a kind that reads none. `tests/content/test_achievement_content.gd` also checks the keys in en and es
+  (with the `%s` exactly on the per-entry ones) and that the pages and counters match `CodexStore`.
 
 ## 9. Compiled tables
 
@@ -908,7 +1355,8 @@ The sim reads these compiled tables, never `Resource`s. In v0.0.1 the compiler h
 
 - `locale/strings.csv` has the columns `keys,en,es`. Godot imports it as two `Translation`s, which are listed in
   `project.godot` under `internationalization/locale/translations` and ship with the export.
-- Keys are `UPPER_SNAKE` with a domain prefix: `UI_`, `ITEM_`, `ENEMY_`, `BIOME_`, `HINT_`, `CREDITS_`.
+- Keys are `UPPER_SNAKE` with a domain prefix: `UI_`, `ITEM_`, `ENEMY_`, `BIOME_`, `HINT_`, `CREDITS_`
+  (v0.7.5 AC: `ACH_` for the achievements' names and sentences).
 - `tests/content/test_locale_coverage.gd` fails if:
   - a `*_key` in any definition is missing from the CSV;
   - a CSV row has an empty `en` or `es` cell;

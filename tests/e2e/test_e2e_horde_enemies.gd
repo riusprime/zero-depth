@@ -2,8 +2,9 @@ extends GutTest
 ## The six horde kinds reach the real game (v0.4.0 EN). On a run they join the spawner's mix from danger tiers 1-3
 ## (tests/content/test_spawning_validation.gd); here the dev panel, opened with backtick and clicked with the mouse,
 ## brings each one in at once and the test watches it act through the real loop: its model is drawn, its telegraph
-## shows and its attack reaches the player (a HIT event; God mode, also clicked, keeps the player standing). The Mine
-## Layer's mine is walked onto with the left stick; the Mender heals an ally the player has shot.
+## shows (v0.8.0 TG: on the body; only the mines keep a ground mark) and its attack reaches the player (a HIT event;
+## God mode, also clicked, keeps the player standing). The Mine Layer's mine is walked onto with the left stick; the
+## Mender heals an ally the player has shot.
 
 ## How close the player stays to a Shield Bearer it stands up to (m): inside its bash's reach.
 const FACE_M := 1.4
@@ -54,12 +55,13 @@ func _watch(e: E2e, main: Main, id: int, styles: Array, frames: int, face_it := 
 			var to := w.actors.pos(i) - w.player_pos()
 			e.stick_toward(to.normalized() if to.length() > FACE_M else Vector2.ZERO)
 		var tg := main.driver.reader.telegraph(i)
-		if (
-			not tg.is_empty()
-			and styles.has(tg.get("style", &""))
-			and main.view.telegraphs.count() > 0
-		):
-			styled = true
+		if not tg.is_empty() and styles.has(tg.get("style", &"")):
+			# v0.8.0 TG (owner O4, Q3): a ground mark is drawn (the mines); a body cue makes the model crouch.
+			if tg.get("ground", true):
+				styled = styled or main.view.telegraphs.count() > 0
+			else:
+				var avatar: HordeAvatar = main.view.actors.actor_node(id).get_meta(&"enemy_avatar")
+				styled = styled or avatar.crouch_amount() > 0.0
 		for ev in w.events_since(seq):
 			seq = ev.seq
 			if ev.kind == SimEvent.Kind.HIT and ev.target_id == w.actors.ids[0]:
@@ -89,7 +91,7 @@ func test_the_dev_panel_brings_in_each_horde_kind_and_it_acts() -> void:
 		var id: int = await _spawn(e, main, spec[0], spec[1])
 		var bearer: bool = spec[0] == ActorStore.Kind.SHIELD_BEARER
 		var got: Array = await _watch(e, main, id, spec[2], 900, bearer)
-		assert_true(got[0], "%s: its telegraph is drawn" % spec[1])
+		assert_true(got[0], "%s: its telegraph shows (its body tells it)" % spec[1])
 		assert_true(got[1], "%s: its attack reached the player" % spec[1])
 	# The Mine Layer drops a mine; walking onto it arms it (its circle fills) and it blows on the player.
 	var layer: int = await _spawn(e, main, ActorStore.Kind.MINE_LAYER, "ENEMY_MINE_LAYER")

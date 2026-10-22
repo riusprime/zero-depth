@@ -13,8 +13,12 @@ extends RefCounted
 ## - the body's rules: Ascension (after charge_ticks without a root attack, the next one deals × charge_permille),
 ##   Aether Shell (out of combat barrier_ticks, the next enemy hit is absorbed, and combat starts again) and
 ##   Resonance (each status on an enemy adds resonance_permille to the player's damage on it);
-## - Gravity Well's pull.
-## Every function draws no randomness (EI-05) and runs on the one clock.
+## - v0.8.0 P2: Void's black holes (BlackHoles; Gravity Well's pull on every hit is gone, owner O24).
+## Every function here draws no randomness (EI-05; a black hole's roll is BlackHoles') and runs on the one clock.
+
+## v0.8.0 BL (B1): a spec with `repeats` > 1 repeats again this many ticks after each repeat (a starting value: 0.08 s,
+## so Double Slash's five repeats at level 5 come within 0.5 s of the swing).
+const REPEAT_GAP_TICKS := 5
 
 
 ## Counter `key` + 1, returned (an EVERY_NTH hook's launches; a form's hits for an every-N status).
@@ -43,15 +47,35 @@ static func queue_repeat(w: World, spec: AttackSpec, ctx: AttackContext) -> void
 	c.muzzle_m = ctx.muzzle_m
 	c.target = ctx.target
 	c.has_target = ctx.has_target
-	var flags := ModifierState.FLAG_REPEAT
+	var flags := ModifierState.FLAG_REPEAT | ModifierState.FLAG_SECONDARY  # v0.8.0 MR: at the secondary proc
 	if ctx.origin == w.player_pos():  # the player's own attack comes again from where the player is then
 		flags |= ModifierState.FLAG_AT_PLAYER
-	_queue(w, spec.key, w.tick + spec.repeat_delay_ticks, c, flags, "")
+	for n in maxi(1, spec.repeats):  # v0.8.0 BL (B1): each further repeat REPEAT_GAP_TICKS after the one before
+		_queue(w, spec.key, w.tick + spec.repeat_delay_ticks + n * REPEAT_GAP_TICKS, c, flags, "")
+
+
+## v0.8.0 BL (BLADE_AUDIT B1, Double Slash +1 repeat a level): a combo step's spec repeats `spec.repeats` times.
+## The first repeat stays the step's own echo (ItemEffects.after_swing, World.echo_*); the others are queued here, each
+## REPEAT_GAP_TICKS after the one before, from where the player is then, at repeat_damage_permille of `dmg`, as the
+## echo's slash (its effect id and mirror). A queued repeat is not cancelled by the next swing.
+static func queue_echoes(w: World, spec: AttackSpec, angle: int, root: int, dmg: int) -> void:
+	if spec.repeats <= 1:
+		return
+	var share := maxi(1, dmg * spec.repeat_damage_permille / 1000)
+	var c := AttackContext.make(
+		w.player_pos(), angle, share, root, SimEvent.TAG_MELEE, ItemEffects.EFFECT_TWIN_ARC
+	)
+	var flags := ModifierState.FLAG_REPEAT | ModifierState.FLAG_AT_PLAYER
+	flags |= ModifierState.FLAG_SECONDARY  # v0.8.0 MR (O91): the echoes at the secondary proc
+	for n in range(1, spec.repeats):
+		_queue(w, spec.key, w.tick + spec.repeat_delay_ticks + n * REPEAT_GAP_TICKS, c, flags, "")
 
 
 ## A hook's child that waits (AttackHook.delay_ticks): `c` is its launch context, built when it triggered.
+## v0.8.0 MR (O91): a repeat's child waits as a repeat's (it launches no trigger's later cast either).
 static func queue_hook(w: World, k: AttackHook, c: AttackContext) -> void:
-	_queue(w, k.child.key, w.tick + k.delay_ticks, c, 0, String(k.id))
+	var flags := ModifierState.FLAG_REPEAT if c.repeat else 0
+	_queue(w, k.child.key, w.tick + k.delay_ticks, c, flags, String(k.id))
 
 
 static func _queue(
@@ -104,6 +128,7 @@ static func advance(w: World) -> void:
 		if spec == null or w.player_dead():
 			continue
 		c.repeat = (flags & ModifierState.FLAG_REPEAT) != 0
+		c.secondary = (flags & ModifierState.FLAG_SECONDARY) != 0  # v0.8.0 MR (O91; SecondaryProc)
 		if flags & ModifierState.FLAG_AT_PLAYER:
 			c.origin = w.player_pos()
 		if hook != "":
@@ -113,6 +138,8 @@ static func advance(w: World) -> void:
 		Attacks.launch(w, spec, c)
 		if hook != "":
 			w.hook_chain.remove_at(w.hook_chain.size() - 1)
+	Remnants.advance(w)  # v0.8.0 RM (O91): the remnants end, follow and activate
+	BlackHoles.advance(w)  # v0.8.0 P2 (O24): Void's black holes pull and pulse
 	_walk(w)
 	BladeForms.advance(w)  # v0.6.5 WN4: Heavy's push, Orbit Blades, Parry Edge through the swing
 
@@ -120,7 +147,7 @@ static func advance(w: World) -> void:
 # --- The moments ----------------------------------------------------------------------------------------------------
 ## The dash just started (World phase 4): its ON_LAUNCH hooks from where it starts (Long Shadow).
 static func on_dash_start(w: World) -> void:
-	w.mx.dash_from = w.player_pos()
+	Remnants.on_dash_start(w)  # v0.8.0 RM: Dodge Imprint keeps where it began
 	_moment(w, Modifiers.dash(w), AttackSpec.Trigger.ON_LAUNCH, w.player_pos())
 
 
@@ -228,33 +255,14 @@ static func resonance_mult(w: World, target: int, owner_id: int) -> int:
 	if b == null or b.resonance_permille <= 0:
 		return 1000
 	var a := w.actors
-	var n := 0
-	for on: bool in [
-		a.burn_stacks[target] > 0,
-		a.shock_stacks[target] > 0,
-		a.bleed_stacks[target] > 0,
-		a.frost_stacks[target] > 0 or a.frozen_t[target] > 0,
-		a.slow_t[target] > 0,
-		a.poison_stacks[target] > 0,
-	]:
-		if on:
-			n += 1
+	var n := 0  # counted without a per-hit array (audit G-16)
+	n += 1 if a.burn_stacks[target] > 0 else 0
+	n += 1 if a.shock_stacks[target] > 0 else 0
+	n += 1 if a.bleed_stacks[target] > 0 else 0
+	n += 1 if a.frost_stacks[target] > 0 or a.frozen_t[target] > 0 else 0
+	n += 1 if a.slow_t[target] > 0 else 0
+	n += 1 if a.poison_stacks[target] > 0 else 0
 	return 1000 + n * b.resonance_permille
-
-
-# --- Gravity Well ----------------------------------------------------------------------------------------------------
-## Pulls every enemy (not a boss, not spawning in) touching the disc (`at`, `r`) up to `d` metres toward its centre,
-## never past it. Walls push them out again in the next collision pass.
-static func pull(w: World, at: Vector2, r: float, d: float) -> void:
-	var a := w.actors
-	for i in w.enemies_near(at, r):
-		if a.invuln[i] > 0 or BossAi.is_boss_kind(a.kinds[i]):
-			continue
-		var to := at - a.pos(i)
-		var dist := Kin.length(to)
-		var step := minf(d, maxf(0.0, dist - a.radius[i]))
-		if dist > 0.0 and step > 0.0:
-			a.set_pos(i, a.pos(i) + to * (step / dist))
 
 
 # --- Hash ---------------------------------------------------------------------------------------------------------

@@ -60,10 +60,10 @@ func test_a_short_telegraph_is_rejected() -> void:
 
 func test_moves_and_params_are_checked() -> void:
 	var d := _def()
-	d.attacks[0].shape_params.erase("radius_m")
-	d.attacks[0].shape_params["mystery"] = 1
-	d.attacks[1].move = &"dragon_breath"
-	d.attacks[2].shape = AttackDefinition.Shape.PROJECTILE
+	d.attack(&"fist_slam").shape_params.erase("radius_m")
+	d.attack(&"fist_slam").shape_params["mystery"] = 1
+	d.attack(&"rock_rings").move = &"dragon_breath"
+	d.attack(&"shock_lanes").shape = AttackDefinition.Shape.PROJECTILE
 	var codes := _codes(d)
 	assert_has(codes, &"param_missing")
 	assert_has(codes, &"param_unknown")
@@ -86,7 +86,7 @@ func test_phases_are_checked() -> void:
 
 func test_armour_stagger_and_basics_are_checked() -> void:
 	var d := _def()
-	d.front_mult_permille = 0
+	d.front_mult_permille = -1  # v0.8.0 BS1: 0 is a valid shield (the Warlord's); below it is not
 	d.rear_mult_permille = 900
 	d.stagger_size = 0
 	d.hp = 0
@@ -119,3 +119,111 @@ func test_the_boss_challenge_numbers_are_checked() -> void:
 	d = _def()
 	d.attacks[0].follow_up_permille = 1001
 	assert_has(_codes(d), &"range")
+
+
+## v0.8.0 BS1 (owner O5; BOSS_SIGNATURES.md S1-S3): the signature params are checked: pillars need a size and a step
+## wider than it, a recall and an egg at least the telegraph minimum, an egg its enemy and HP, a late part its line.
+func test_the_signature_params_are_checked() -> void:
+	for id in ["gatekeeper", "warlord", "brood_mother"]:
+		assert_eq(_codes(_def(id)), [], "%s ships valid" % id)
+	var g := _def("gatekeeper")
+	g.attack(&"shock_lanes").shape_params["pillar_step_m"] = 0.5
+	assert_has(_codes(g), &"no_gap", "pillars need a gap between them")
+	g = _def("gatekeeper")
+	g.attack(&"shock_lanes").shape_params["pillar_m"] = 0.0
+	assert_has(_codes(g), &"not_positive")
+	var w := _def("warlord")
+	w.attack(&"javelin_fan").shape_params["recall_seconds"] = 0.1
+	assert_has(_codes(w), &"telegraph_short", "the way back is warned")
+	w = _def("warlord")
+	w.attack(&"javelin_fan").late_cause_key = &""
+	assert_has(_codes(w), &"missing", "the javelins coming back name their death line")
+	var b := _def("brood_mother")
+	b.attack(&"egg_storm").shape_params.erase("enemy_id")
+	assert_has(_codes(b), &"missing", "an egg names what hatches")
+	b = _def("brood_mother")
+	b.attack(&"egg_storm").shape_params["burst_phase"] = 0
+	assert_has(_codes(b), &"range", "burst_phase is 1-based")
+	b = _def("brood_mother")
+	b.attack(&"egg_storm").shape_params["egg_seconds"] = 0.2
+	assert_has(_codes(b), &"telegraph_short", "an egg sits long enough to be seen")
+	b = _def("brood_mother")
+	b.attack(&"egg_storm").shape_params["mystery"] = 1
+	assert_has(_codes(b), &"param_unknown", "other keys still fail")
+
+
+## v0.8.0 BS2 (owner O5; BOSS_SIGNATURES.md S4-S6): the Gaze's turn, the ricochets and the lava and melt are checked.
+func test_the_signature_params_of_part_2_are_checked() -> void:
+	for id in ["hive_lens", "siege_engine", "foundry"]:
+		assert_eq(_codes(_def(id)), [], "%s ships valid" % id)
+	var h := _def("hive_lens")
+	h.attack(&"gaze").shape_params["quarter_seconds"] = 0.0
+	assert_has(_codes(h), &"not_positive", "the beam turns")
+	h = _def("hive_lens")
+	h.attack(&"gaze").late_cause_key = &""
+	assert_has(_codes(h), &"missing", "its orbs name their death line")
+	var s := _def("siege_engine")
+	s.attack(&"turret_cross").shape_params["bounces"] = 2
+	assert_has(_codes(s), &"range", "a shell bounces once")
+	s = _def("siege_engine")
+	s.attack(&"deploy").shape_params["bounce_phase"] = 0
+	assert_has(_codes(s), &"range", "bounce_phase is 1-based")
+	var f := _def("foundry")
+	f.attack(&"molten_flood").shape_params["lava_seconds"] = 0.1
+	assert_has(_codes(f), &"telegraph_short", "lava stays long enough to be seen")
+	f = _def("foundry")
+	f.attack(&"molten_flood").shape_params["ford_m"] = 0.5
+	assert_has(_codes(f), &"range", "a ford the hero fits through")
+	f = _def("foundry")
+	f.attack(&"meltdown").shape_params["warn_seconds"] = 9.0
+	assert_has(_codes(f), &"telegraph_short", "each step warned, within its step")
+	f = _def("foundry")
+	f.attack(&"meltdown").shape_params["min_radius_m"] = 0.0
+	assert_has(_codes(f), &"not_positive", "a minimum radius")
+
+
+## v0.8.0 FB2 (FINAL_BOSS.md F5, F7): the Prism's Cross and her DPS-based HP are checked.
+func test_the_prism_cross_and_dps_hp_are_checked() -> void:
+	var fresh := func() -> FinalBossDefinition:
+		return (load("res://data/final_boss/prism.tres") as FinalBossDefinition).duplicate(true)
+	assert_eq(_codes(fresh.call()), [], "the Prism ships valid")
+	var p: FinalBossDefinition = fresh.call()
+	p.attack(&"cross_ring").shape_params["fast_quarter_seconds"] = 3.0
+	assert_has(_codes(p), &"range", "it speeds up, never slows")
+	p = fresh.call()
+	p.attack(&"cross_ring").shape_params["window_seconds"] = 0.1
+	assert_has(_codes(p), &"telegraph_short", "a window you can see")
+	p = fresh.call()
+	p.attack(&"cross_ring").active_seconds = 3.0
+	assert_has(_codes(p), &"duration", "the spin and the window fit its active time")
+	p = fresh.call()
+	p.attack(&"cross_ring").shielded = false
+	assert_has(_codes(p), &"missing", "shielded but for its window")
+	p = fresh.call()
+	p.attack(&"cross_ring").shape_params["bolt_attack"] = "cross_spiral"
+	assert_has(_codes(p), &"unknown_attack", "its bolts are a bolt_fan with a lock")
+	p = fresh.call()
+	p.attack(&"cross_ring").shape_params["bolt_every_seconds"] = 0.3
+	assert_has(_codes(p), &"duration", "a bolt aims before the next one")
+	p = fresh.call()
+	p.dps_hp_max = 10
+	assert_has(_codes(p), &"range", "her clamps hold min <= max")
+	p = fresh.call()
+	p.dps_measure_seconds = 90
+	assert_has(_codes(p), &"range", "the meter holds 60 s")
+	p = fresh.call()
+	p.shard_orbit_m = 1.0
+	assert_has(_codes(p), &"range", "the shards orbit outside her body")
+	# v0.8.0 PR (owner O84): no orbs with the beams; a fixed aim is a pattern's; the rotation lists each spell once
+	p = fresh.call()
+	p.attack(&"cross_ring").shape_params["pattern_id"] = "prism_crown_ring"
+	assert_has(_codes(p), &"orbs_with_beams", "a Cross fires no orbs")
+	p = fresh.call()
+	p.attack(&"crown_ring").shape_params["aim_degrees"] = 400.0
+	assert_has(_codes(p), &"range", "a fixed aim is 0..<360")
+	p = fresh.call()
+	p.attack(&"cross_ring").shape_params["aim_degrees"] = 0.0
+	assert_has(_codes(p), &"range", "only a pattern has a fixed aim")
+	p = fresh.call()
+	p.phases[0].attack_ids.append("cross_ring")
+	assert_has(_codes(p), &"range", "a rotation lists each spell once")

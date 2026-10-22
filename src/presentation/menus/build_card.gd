@@ -1,14 +1,23 @@
 class_name BuildCard
 extends Button
-## One card of the build screen (v0.3.0 L15; v0.6.1 R2b: the owner's art): the weapon's crystal frame (BuildArt), its
-## emblem in the top half of the dark panel, and below it the build's name, a hairline, its one-line description and
-## its damage factor, drawn by the game (en and es; each line steps down in size until it fits). A Button, so focus,
-## hover, click, Enter and pad A work like every menu.
-## Appear: after `delay` the card rises into place with an ease-out and fades in. Focus: the card lifts, its frame and
-## emblem brighten and the emblem grows a little. No glitch, no colour split.
+## One card of the build screen (v0.3.0 L15; v0.8.0 MU, owner O14: a carved Ember stone tablet, StoneBox, in place of
+## v0.6.1 R2b's crystal frame and emblem): the weapon's symbol (ItemIcons: the Blade's sword, the Gun's pistol) in a
+## large socket with a glowing inlay ring in the weapon's accent, and below it the build's name, a glowing groove, its
+## one-line description and its damage factor, drawn by the game (en and es; each line steps down in size until it
+## fits). A Button, so focus, hover, click, Enter and pad A work like every menu.
+## Appear: after `delay` the card rises into place with an ease-out and fades in (reduced motion: in place). Focus:
+## the card lifts, the ember glow under it grows, its lower edge and the ring light up and the symbol grows a little.
 
-const SCALE := BuildArt.CARD_SCALE
-const SIZE := BuildArt.FRAME_SIZE * SCALE
+const SIZE := Vector2(400, 560)
+## The symbol's socket (centre and radius) and the text box (px on the card).
+const SOCKET_C := Vector2(200, 170)
+const SOCKET_R := 100.0
+const TEXT_BOX := Rect2(40, 300, 320, 220)
+## BuildDefinition.Weapon → its symbol (an ItemIcons id) and accent (0 Blade, 1 Gun).
+const WEAPON := {
+	0: {"icon": &"combo_sword", "accent": Color("#8FE3FF")},
+	1: {"icon": &"pulse_gun", "accent": Color("#FFB85A")},
+}
 const APPEAR_S := 0.55
 const RISE_PX := 120.0
 const LIFT_PX := 12.0
@@ -18,21 +27,23 @@ const NAME_SIZES := [40, 36, 32, 28, 24]
 const DESC_SIZES := [19, 18, 17, 16, 15, 14, 13]
 const DAMAGE_SIZE := 18
 const DESC_LINES := 3
-## An unfocused card's frame is drawn this bright; a focused one overbright.
-const IDLE := Color(0.78, 0.78, 0.8)
-const FOCUS := Color(1.12, 1.12, 1.12)
+## An unfocused card is drawn this bright.
+const IDLE := 0.82
 
-## BuildDefinition.Weapon: which frame and emblem (BuildArt.WEAPON).
+## BuildDefinition.Weapon: which symbol and accent (WEAPON).
 var weapon := 0
 var title_key := &""
 var desc_key := &""
 var damage_permille := 1000
+## v0.8.0 N1 (D39): the build's damage taken, per mille (1000 draws no line; the Blade's 750 reads "-25 %").
+var taken_permille := 1000
 var delay := 0.0
 ## Sizes picked by the last draw (tests check the text fits).
 var name_size := 0
 var desc_size := 0
 var _t := 0.0
 var _focus_glow := 0.0
+var _box := StoneBox.new()
 
 
 func _init(
@@ -46,7 +57,10 @@ func _init(
 	custom_minimum_size = SIZE
 	focus_mode = Control.FOCUS_ALL
 	flat = true
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	_box.pattern = 17 + p_weapon * 29
+	_box.cut = 22.0
+	_box.chip = 4.0
+	_box.cracks = 3
 	for s in ["normal", "hover", "pressed", "focus", "disabled", "hover_pressed"]:
 		add_theme_stylebox_override(s, StyleBoxEmpty.new())
 	mouse_entered.connect(grab_focus)
@@ -77,11 +91,23 @@ func _process(delta: float) -> void:
 
 ## The text box on the card (px): where the name, the description and the damage line go.
 static func text_rect() -> Rect2:
-	return Rect2(BuildArt.TEXT_BOX.position * SCALE, BuildArt.TEXT_BOX.size * SCALE)
+	return TEXT_BOX
 
 
+## The symbol's square (inside the socket).
 static func emblem_rect() -> Rect2:
-	return Rect2(BuildArt.EMBLEM_BOX.position * SCALE, BuildArt.EMBLEM_BOX.size * SCALE)
+	var r := SOCKET_R * 0.62
+	return Rect2(SOCKET_C - Vector2(r, r), Vector2(r, r) * 2.0)
+
+
+## The weapon's accent (the ring, the damage line).
+static func accent(p_weapon: int) -> Color:
+	return WEAPON.get(p_weapon, WEAPON[0])["accent"]
+
+
+## The card's stone tablet (tests).
+func panel_box() -> StoneBox:
+	return _box
 
 
 ## The name and description sizes that fit the text box (largest first), for `name_text` and `desc_text`.
@@ -89,13 +115,9 @@ static func fit_sizes(name_text: String, desc_text: String) -> Vector2i:
 	var r := text_rect()
 	var bold := HudStyle.font(true)
 	var regular := HudStyle.font(false)
-	var ns: int = NAME_SIZES[NAME_SIZES.size() - 1]
-	for s: int in NAME_SIZES:
-		if bold.get_string_size(name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x <= r.size.x:
-			ns = s
-			break
+	var ns := TextFit.fit_width(bold, name_text, r.size.x, NAME_SIZES)
 	var room := r.size.y - bold.get_height(ns) - 12.0 - regular.get_height(DAMAGE_SIZE) - 8.0
-	var ds := CrystalCard.fit_size(regular, desc_text, r.size.x, room, DESC_SIZES, DESC_LINES)
+	var ds := TextFit.fit_size(regular, desc_text, r.size.x, room, DESC_SIZES, DESC_LINES)
 	return Vector2i(ns, ds)
 
 
@@ -109,7 +131,7 @@ static func fits(name_text: String, desc_text: String) -> bool:
 	var h := (
 		bold.get_height(sz.x)
 		+ 12.0
-		+ CrystalCard.text_height(regular, desc_text, r.size.x, sz.y)
+		+ TextFit.text_height(regular, desc_text, r.size.x, sz.y)
 		+ 8.0
 		+ regular.get_height(DAMAGE_SIZE)
 	)
@@ -119,21 +141,27 @@ static func fits(name_text: String, desc_text: String) -> bool:
 func _draw() -> void:
 	var p := appear()
 	if p <= 0.0:
+		self_modulate.a = 0.0
 		return
 	var e := 1.0 - pow(1.0 - p, 3.0)
 	var off := Vector2(0, RISE_PX * (1.0 - e) - LIFT_PX * _focus_glow)
 	var alpha := clampf(p * 1.6, 0.0, 1.0)
-	var lit := IDLE.lerp(FOCUS, _focus_glow)
-	draw_texture_rect(BuildArt.frame(weapon), Rect2(off, SIZE), false, Color(lit, alpha))
+	var lit := lerpf(IDLE, 1.0, _focus_glow)
+	self_modulate = Color(lit, lit, lit, alpha)
+	var acc := accent(weapon)
+	_box.focus = _focus_glow
+	_box.under = 0.45
+	_box.draw(get_canvas_item(), Rect2(off, SIZE))
+	var k := 1.0 + 0.04 * _focus_glow
+	InlaySocket.draw_socket(get_canvas_item(), SOCKET_C + off, SOCKET_R, acc, _focus_glow, 1.4)
 	var em := emblem_rect()
-	var grow := em.size * (0.06 * _focus_glow)
-	draw_texture_rect(
-		BuildArt.emblem(weapon),
+	var grow := em.size * (k - 1.0)
+	ItemIcons.draw(
+		self,
+		WEAPON.get(weapon, WEAPON[0])["icon"],
 		Rect2(em.position + off - grow * 0.5, em.size + grow),
-		false,
-		Color(lit, alpha)
+		acc.lerp(Color.WHITE, 0.2)
 	)
-	var accent := BuildArt.accent(weapon)
 	var r := text_rect()
 	r.position += off
 	var name_text := tr(title_key)
@@ -144,22 +172,17 @@ func _draw() -> void:
 	var bold := HudStyle.font(true)
 	var regular := HudStyle.font(false)
 	var y := r.position.y + bold.get_ascent(name_size)
-	draw_string(
-		bold,
-		Vector2(r.position.x, y),
-		name_text,
-		HORIZONTAL_ALIGNMENT_CENTER,
-		r.size.x,
-		name_size,
-		Color(TEXT, alpha)
+	var at := Vector2(r.position.x, y)
+	var shade := Color(0, 0, 0, 0.55)
+	draw_string_outline(
+		bold, at, name_text, HORIZONTAL_ALIGNMENT_CENTER, r.size.x, name_size, 5, shade
 	)
+	draw_string(bold, at, name_text, HORIZONTAL_ALIGNMENT_CENTER, r.size.x, name_size, TEXT)
 	y += bold.get_descent(name_size) + 6.0
-	draw_line(
-		Vector2(r.position.x + r.size.x * 0.25, y),
-		Vector2(r.end.x - r.size.x * 0.25, y),
-		Color(accent, 0.7 * alpha),
-		2.0
-	)
+	var a := Vector2(r.position.x + r.size.x * 0.2, y)
+	var b := Vector2(r.end.x - r.size.x * 0.2, y)
+	draw_line(a, b, Color(MenuStyle.EMBER, 0.2), 7.0)
+	draw_line(a, b, Color(MenuStyle.EMBER, 0.9), 2.0)
 	y += 6.0 + regular.get_ascent(desc_size)
 	draw_multiline_string(
 		regular,
@@ -169,7 +192,7 @@ func _draw() -> void:
 		r.size.x,
 		desc_size,
 		DESC_LINES,
-		Color(TEXT_DIM, alpha)
+		TEXT_DIM
 	)
 	draw_string(
 		bold,
@@ -178,8 +201,24 @@ func _draw() -> void:
 		HORIZONTAL_ALIGNMENT_CENTER,
 		r.size.x,
 		DAMAGE_SIZE,
-		Color(accent, 0.95 * alpha)
+		Color(acc, 0.95)
 	)
+	if taken_permille != 1000:  # v0.8.0 N1 (D39): the line above the damage factor
+		draw_string(
+			bold,
+			Vector2(r.position.x, r.end.y - regular.get_descent(DAMAGE_SIZE) - DAMAGE_SIZE - 8.0),
+			tr("BUILD_TAKEN") % taken_text(),
+			HORIZONTAL_ALIGNMENT_CENTER,
+			r.size.x,
+			DAMAGE_SIZE,
+			Color(acc, 0.95)
+		)
+
+
+## v0.8.0 N1: "-25 %" from the build's damage taken per mille.
+func taken_text() -> String:
+	var pct := int(round((taken_permille - 1000) / 10.0))
+	return ("+%d %%" % pct) if pct >= 0 else ("-%d %%" % -pct)
 
 
 ## "+15 %" / "-15 %" from the data's per mille.

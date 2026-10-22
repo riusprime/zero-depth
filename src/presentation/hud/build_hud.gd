@@ -7,6 +7,8 @@ extends Control
 ## HUD); reads WorldReader only (EI-07).
 ## v0.6.0 UP: the row sits on a small Ember stone slab (HudFrame) like the HUD's other plates; a filled pip is its
 ## family's colour inside a dark stone rim, an empty pip a dim stone chip (as an empty ability slot).
+## v0.8.0 MU (Ember stone, owner O14): a pip is a small carved stone chip; a filled one holds a glowing inlay ring in
+## its family's colour round its level (InlaySocket's ring), an empty one is an unlit chip.
 ## v0.6.5 WN2: the pips are the wand's slots in order (left to right, as the wand reads); a trigger card's pip wears a
 ## small "›" and a thin ember cut stands after it (the cards to its right are what it casts).
 
@@ -26,6 +28,8 @@ var _row := HBoxContainer.new()
 var _weapon := HudStyle.label(14, true)
 var _utility := HudStyle.label(14)
 var _pips: Array[Panel] = []
+## P-3: each pip's own StoneBox, set once; sync recolours it (a bound StyleBox redraws its panel itself).
+var _boxes: Array[StoneBox] = []
 var _levels: Array[Label] = []
 ## v0.6.5 WN2: the cut after each pip (shown after a trigger card's).
 var _cuts: Array[ColorRect] = []
@@ -50,6 +54,16 @@ func _init() -> void:
 		p.name = "ModPip%d" % (k + 1)
 		p.custom_minimum_size = Vector2(PIP, PIP)
 		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var box := StoneBox.new()
+		box.pattern = 3 + k * 5
+		box.cut = 4.0
+		box.chip = 1.0
+		box.cracks = 0
+		box.under = 0.0
+		box.shadow = false
+		box.ring = Rect2(Vector2(2.5, 2.5), Vector2(PIP - 5.0, PIP - 5.0))
+		p.add_theme_stylebox_override("panel", box)
+		_boxes.append(box)
 		var lv := HudStyle.label(12, true)
 		lv.set_anchors_preset(Control.PRESET_FULL_RECT)
 		lv.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -73,11 +87,12 @@ func _init() -> void:
 
 func sync(reader: WorldReader) -> void:
 	var weapon := reader.weapon_id()
-	visible = weapon != &"" or not reader.abilities().is_empty()
+	var abilities := reader.abilities()
+	visible = weapon != &"" or not abilities.is_empty()
 	if not visible:
 		return
 	var names := {}
-	for a: Dictionary in reader.abilities():
+	for a: Dictionary in abilities:
 		names[a["id"]] = a["name_key"]
 	_weapon.text = tr(names.get(weapon, &"")) if weapon != &"" else ""
 	var util := reader.utility_id()
@@ -90,24 +105,24 @@ func sync(reader: WorldReader) -> void:
 	var cuts: PackedInt32Array = reader.wand()["cuts"]  # v0.6.5 WN2: the trigger cards' slots
 	for k in _pips.size():
 		_pips[k].visible = k < shown
-		var box := StyleBoxFlat.new()
-		box.set_border_width_all(1)
+		var box := _boxes[k]
 		if k < slots.size():
 			var s: Dictionary = slots[k]
 			var tint := CardFrames.tint(
 				CardFrames.frame_of(CardFrames.family(s["id"], int(s["type"])))
 			)
-			box.bg_color = Color(tint, 0.85)
-			box.border_color = HudStyle.STONE_EDGE
+			box.ring_color = tint
+			box.dim = 1.0
 			var ability := int(s["type"]) == WorldReader.CARD_ABILITY
-			_levels[k].text = str(int(s["level"])) if ability else ""
+			# v0.7.5 SM (N8): a wand card shows its level (1–5) on its pip too
+			var levels := ability or bool(reader.card_info(int(s["code"])).get("wand", false))
+			_levels[k].text = str(int(s["level"])) if levels else ""
 			if k in cuts:
 				_levels[k].text = TRIGGER_MARK
 		else:
-			box.bg_color = Color(HudStyle.STONE_EDGE, 0.55)
-			box.border_color = Color(HudStyle.EMBER_TEXT, 0.22)
+			box.ring_color = Color(0, 0, 0, 0)
+			box.dim = 0.55
 			_levels[k].text = ""
-		_pips[k].add_theme_stylebox_override("panel", box)
 		_cuts[k].visible = k in cuts and k < shown - 1
 	_place()
 
@@ -120,14 +135,19 @@ func _place() -> void:
 	_plate.global_position = origin - Vector2(0, (_plate.size.y - PIP) * 0.5)
 
 
-## The slab's rect on screen (tests: it stays inside the left part of the HUD in every language).
-func plate_rect() -> Rect2:
-	return _plate.get_global_rect()
-
-
 # --- Reads (tests) ------------------------------------------------------------------------------------------
 func filled_pips() -> int:
 	return _filled
+
+
+## v0.8.0 MU: pip k's stone chip (its ring is its family's colour).
+func pip_box(k: int) -> StoneBox:
+	return _boxes[k]
+
+
+## v0.8.0 N8: pip k's rect (global px): a picked card's icon flies to it (CardFlights).
+func pip_rect(k: int) -> Rect2:
+	return _pips[k].get_global_rect()
 
 
 func pip_level_text(k: int) -> String:
@@ -141,7 +161,3 @@ func cut_slots() -> PackedInt32Array:
 		if _cuts[k].visible:
 			out.append(k)
 	return out
-
-
-func weapon_text() -> String:
-	return _weapon.text

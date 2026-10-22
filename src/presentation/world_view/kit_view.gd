@@ -26,6 +26,13 @@ extends Node3D
 ##                blade stops matching what hits.
 ##   width_scale  multiplies the core and glow thickness and the trail's inner width.
 ##   trail_count  how many ticks of blade positions the trail keeps (0 hides the trail).
+##
+## v0.8.0 GF3 (owner O22, the Blade gets the Gun's treatment; the owner keeps the swing as it is: "sword animation stays
+## as is for now I like it"): layered on the trail, a bright slash edge along the tip's path (EDGE_IN..EDGE_OUT of the
+## blade's span) in the hero's blue-white, tinted by the step's first element (its spec's, AttackFormLooks) and by the
+## heat tier from Hot up; one ImmediateMesh built once and rebuilt with the trail. And the hit-stop (HitStop.hold):
+## the blade and its trail hold still for a moment of frame time; the syncs that fall inside it are caught up when it
+## ends.
 
 ## Height of the blade above the ground (the cube's middle).
 const BLADE_HEIGHT := 0.45
@@ -51,6 +58,11 @@ const SPIN_SUBSTEPS := 8
 ## and a faster swing (Flurry) keeps this many more trail samples: a blur of slashes.
 const HEAVY_WIDTH_MAX := 1.8
 const FLURRY_TRAIL := 5
+## v0.8.0 GF3: the slash edge: across this share of the blade's span at the tip, its peak opacity, and the finisher's.
+const EDGE_IN := 0.84
+const EDGE_OUT := 1.03
+const EDGE_ALPHA := 0.95
+const EDGE_FINISHER := 1.25
 
 var color := ThemePalette.color(&"player_core")
 var length_scale := 1.0
@@ -83,6 +95,17 @@ var _pivot_base := Vector3.ZERO
 ## v0.6.5 WN4: the current swing's weight and speed bonus as drawn (WorldReader.blade_swing).
 var _form_weight := 1.0
 var _form_rate := 0
+## v0.8.0 GF3: the slash edge's layer, its colour's element tint (alpha 0: none) and the cache key it was read for.
+var _edge := MeshInstance3D.new()
+var _edge_mesh := ImmediateMesh.new()
+var _edge_mat := StandardMaterial3D.new()
+var _edge_element := Color(0, 0, 0, 0)
+var _edge_key := ""
+## v0.8.0 GF3: the hit-stop's hold (frame seconds left), and the last sync it skipped (caught up when it ends).
+var _hold := 0.0
+var _held_reader: WorldReader
+var _edge_drawn := 0
+var _finisher := false
 
 
 func _init() -> void:
@@ -120,6 +143,19 @@ func _init() -> void:
 	_trail.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_trail.extra_cull_margin = 16.0
 	add_child(_trail)
+	_edge_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_edge_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_edge_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_edge_mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	_edge_mat.vertex_color_use_as_albedo = true
+	_edge.name = "BladeEdge"
+	_edge.mesh = _edge_mesh
+	_edge.material_override = _edge_mat
+	_edge.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_edge.top_level = true
+	_edge.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	_edge.extra_cull_margin = 16.0
+	add_child(_edge)
 	_apply_look()
 
 
@@ -203,12 +239,45 @@ func motion() -> int:
 	return _motion
 
 
+## v0.8.0 GF3: the slash edge's colour: the step's element (lightened) if it has one, the heat tier's from Hot up,
+## else the hero's blue-white.
+func edge_color() -> Color:
+	if heat_tier != HeatLooks.TIER_COOL:
+		return hue().lerp(Color.WHITE, 0.35)
+	if _edge_element.a > 0.0:
+		return _edge_element.lerp(Color.WHITE, 0.3)
+	return ImpactFx.HERO
+
+
+## v0.8.0 GF3: how many quads the slash edge drew last (tests), and whether a hit-stop holds the blade now.
+func edge_segments() -> int:
+	return _edge_drawn
+
+
+func holding() -> bool:
+	return _hold > 0.0
+
+
+## v0.8.0 GF3: the blade's tip as drawn this frame (world space; BladeSwingFx's edge spark sits on it).
+func blade_tip_point() -> Vector3:
+	var xf := _pivot.get_global_transform_interpolated() if is_inside_tree() else _pivot.transform
+	return xf * Vector3(_span.y, 0, 0)
+
+
+## v0.8.0 GF3 (HitStop): holds the blade and its trail still for `seconds` of frame time (the longer, never stacked).
+func hold(seconds: float) -> void:
+	_hold = maxf(_hold, seconds)
+
+
 ## The core's glow (emission energy) as of the last sync: brighter on the finisher, flaring when it hits.
 func blade_energy() -> float:
 	return _core_mat.emission_energy_multiplier
 
 
 func sync(reader: WorldReader) -> void:
+	if _hold > 0.0:  # v0.8.0 GF3: held by the hit-stop: caught up when it ends
+		_held_reader = reader
+		return
 	set_heat_tier(HeatLooks.tier_of(reader.heat_state()))
 	var shape := reader.swing_shape()
 	if shape != _shape:
@@ -221,8 +290,12 @@ func sync(reader: WorldReader) -> void:
 		_last_t = 0
 		_history.clear()
 		_trail_mesh.clear_surfaces()
+		_edge_mesh.clear_surfaces()
+		_edge_drawn = 0
 		return
+	_read_edge_element(reader)
 	var finisher := reader.is_finisher()
+	_finisher = finisher
 	var form := reader.blade_swing()
 	_form_weight = clampf(float(form.get("weight", 1.0)), 1.0, HEAVY_WIDTH_MAX)
 	_form_rate = int(form.get("rate", 0))
@@ -280,7 +353,16 @@ func sync(reader: WorldReader) -> void:
 
 ## Rebuilds the trail every drawn frame so its head sits on the blade as drawn (interpolated between ticks);
 ## built from the tick samples alone, the trail would run up to a tick ahead of the blade.
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if _hold > 0.0:  # v0.8.0 GF3: the hit-stop holds the trail where it is
+		_hold -= delta
+		if _hold > 0.0:
+			return
+		_hold = 0.0
+		if _held_reader != null:
+			var r := _held_reader
+			_held_reader = null
+			sync(r)
 	if _pivot.visible and _history.size() >= 2 and _motion != WorldReader.MOTION_THRUST:
 		_build_trail(_head())
 
@@ -318,10 +400,13 @@ func _size_blade() -> void:
 ## the one before.
 func _build_trail(head: Array) -> void:
 	_trail_mesh.clear_surfaces()
+	_edge_mesh.clear_surfaces()
+	_edge_drawn = 0
 	if trail_count == 0:
 		return
 	if _motion == WorldReader.MOTION_THRUST:
 		_build_streak()
+		_build_edge_streak()
 		return
 	if _history.size() < 2:
 		return
@@ -349,6 +434,77 @@ func _build_trail(head: Array) -> void:
 		_trail_mesh.surface_set_color(Color(tip_color, minf(0.95 * pow(age, 1.3) * strength, 1.0)))
 		_trail_mesh.surface_add_vertex(centre + out * r_out)
 	_trail_mesh.surface_end()
+	_build_edge(pts, sub)
+
+
+## v0.8.0 GF3: the slash edge over the same samples as the trail: a narrow bright band along the tip's path (the
+## trail's look stays under it), fading toward the oldest sample; the finisher's brighter.
+func _build_edge(pts: Array, sub: int) -> void:
+	var n := pts.size()
+	if n < 2:
+		return
+	var c := edge_color()
+	var boost := EDGE_FINISHER if _finisher else 1.0
+	var r0 := _span.y * EDGE_IN
+	var r1 := _span.y * EDGE_OUT
+	_edge_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
+	var total := (n - 1) * sub
+	for k in total + 1:
+		var seg := mini(floori(float(k) / sub), n - 2)
+		var f := float(k - seg * sub) / sub
+		var a: Array = pts[seg]
+		var b: Array = pts[seg + 1]
+		var centre: Vector3 = (a[0] as Vector3).lerp(b[0], f)
+		var yaw: float = lerpf(a[1], b[1], f)
+		var strength: float = lerpf(a[2], b[2], f)
+		var age := float(k) / float(total)
+		var out := Vector3(cos(yaw), 0, -sin(yaw))
+		var alpha := minf(EDGE_ALPHA * boost * age * age * strength, 1.0)
+		_edge_mesh.surface_set_color(Color(c, alpha * 0.35))
+		_edge_mesh.surface_add_vertex(centre + out * r0 + Vector3(0, 0.01, 0))
+		_edge_mesh.surface_set_color(Color(c.lerp(Color.WHITE, 0.4), alpha))
+		_edge_mesh.surface_add_vertex(centre + out * r1 + Vector3(0, 0.01, 0))
+	_edge_mesh.surface_end()
+	_edge_drawn = total
+
+
+## v0.8.0 GF3: the thrust's edge: a bright narrow fan along the aim at the tip.
+func _build_edge_streak() -> void:
+	var strength: float = _streak[2]
+	if strength <= 0.01:
+		return
+	var aim: float = _streak[0]
+	var half: float = _streak[1] * 0.35
+	var centre := _pivot_base
+	var c := edge_color()
+	var r0 := _span.y * EDGE_IN
+	var r1 := _span.y * EDGE_OUT
+	_edge_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
+	for k in STREAK_SEGMENTS + 1:
+		var f := -1.0 + 2.0 * k / STREAK_SEGMENTS
+		var y: float = aim + half * f
+		var edge := 1.0 - absf(f)
+		var out := Vector3(cos(y), 0, -sin(y))
+		var alpha := minf(EDGE_ALPHA * strength * edge * (EDGE_FINISHER if _finisher else 1.0), 1.0)
+		_edge_mesh.surface_set_color(Color(c, alpha * 0.35))
+		_edge_mesh.surface_add_vertex(centre + out * r0)
+		_edge_mesh.surface_set_color(Color(c.lerp(Color.WHITE, 0.4), alpha))
+		_edge_mesh.surface_add_vertex(centre + out * r1)
+	_edge_mesh.surface_end()
+	_edge_drawn = STREAK_SEGMENTS
+
+
+## v0.8.0 GF3: the step's first element colour (its spec's; none: alpha 0), read once a build and step.
+func _read_edge_element(reader: WorldReader) -> void:
+	var id := reader.step_attack_id()
+	var key := reader.attack_digest() + ":" + String(id)
+	if key == _edge_key:
+		return
+	_edge_key = key
+	_edge_element = Color(0, 0, 0, 0)
+	var els: Array = Array(reader.attack_spec(id).get("elements", PackedStringArray()))
+	if not els.is_empty():
+		_edge_element = AttackFormLooks.element_color(StringName(els[0]))
 
 
 ## The thrust's streak: a thin fan over the step's arc around the aim, from the trail's inner radius out to the

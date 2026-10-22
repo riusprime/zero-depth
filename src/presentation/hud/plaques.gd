@@ -1,28 +1,10 @@
 class_name Plaques
 extends RefCounted
-## The owner's wide crystal plaques (v0.6.1 R1, owner: "does this fit the arts missing for the old card look?"). The
-## 12 plaques are the owner's art, cropped by scripts/art/crop_plaques.py into assets/ui/plaques/ (manifest.json lists
-## each with its hash, size, dark panel, text box and nine-slice margins).
-##
-## A plaque is drawn as a nine-slice (PlaqueBox): the crystal end-clusters keep their shape at the plaque's scale and
-## only the plain middle stretches, so one plaque fits any width. Text sits in the dark inner panel (CONTENT).
-## **Colour comes from the card frames' table** (CardFrames.FRAME: family → colour; the plaque of a colour is the frame
-## of that colour). USE_FAMILY says which family a plaque that is not a card wears (the shop's services, Leave, the
-## banner); a card's plaque uses CardFrames.family like its frame. Presentation only (EI-07): nothing here changes an
-## outcome.
-
-const DIR := "res://assets/ui/plaques/"
-## Every plaque's size in the PNGs (px).
-const SIZE := Vector2(488, 201)
-## Nine-slice margins (plaque px), one set for all twelve: left and right cover every plaque's end-clusters and loose
-## gems, top and bottom leave a plain band inside every plaque's dark panel (the manifest's per-plaque `nine_slice`
-## are all inside these; tests/content/test_plaque_assets.gd checks it).
-const SLICE_LEFT := 167
-const SLICE_TOP := 101
-const SLICE_RIGHT := 144
-const SLICE_BOTTOM := 94
-## Where text sits, in plaque px at scale 1: inside every plaque's clear dark panel (the manifest's `text` boxes).
-const CONTENT := Rect2(162, 58, 175, 92)
+## The wide plaques (v0.6.1 R1, first the owner's crystal plaques; v0.8.0 MU, owner O14 "we're just throwing away the
+## shard cards": carved Ember stone slabs, PlaqueBox). A plaque fits any width; text sits inside its margins, clear of
+## the glowing groove along its foot. **Colour comes from the card colours' table** (CardFrames.FRAME: family → colour
+## id). USE_FAMILY says which family a plaque that is not a card wears (the shop's services, Leave, the banner); a
+## card's plaque uses CardFrames.family like its card. Presentation only (EI-07): nothing here changes an outcome.
 
 ## What a plaque that is not a card wears (a family of CardFrames.FRAME).
 const USE_FAMILY := {
@@ -47,13 +29,11 @@ const GAMBLE_FAMILY := {
 	&"heat_capacity": &"fire",
 	&"shard_gain": &"economy",
 }
-## An unfocused plaque is drawn a little dimmer (CardFrames.frame_modulate).
-const IDLE := Color(0.8, 0.8, 0.82)
-
-static var _cache := {}
+## An unfocused plaque is drawn a little dimmer (the face's brightness).
+const IDLE := 0.84
 
 
-## The plaque (a colour id) a family wears: the card frames' table.
+## The plaque (a colour id) a family wears: the card colours' table.
 static func of_family(fam: StringName) -> StringName:
 	return CardFrames.frame_of(fam)
 
@@ -91,35 +71,17 @@ static func nearest(c: Color) -> StringName:
 	return best
 
 
-## The plaque's tint (its title colour): the card frame tint of the same colour.
+## The plaque's tint (its inlay and title colour): the card colour of the same id.
 static func tint(plaque: StringName) -> Color:
 	return CardFrames.tint(plaque)
 
 
-static func path(plaque: StringName) -> String:
-	return DIR + "plaque_%s.png" % plaque
-
-
-## The plaque's texture (loaded once).
-static func texture(plaque: StringName) -> Texture2D:
-	if not _cache.has(plaque):
-		_cache[plaque] = load(path(plaque))
-	return _cache[plaque]
-
-
-## A plaque style box `height` px tall at its natural size (the scale is height / SIZE.y); `pad` adds px inside the
-## text box on the left and right.
+## A plaque style box `height` px tall; `pad` adds px inside its margins on the left and right.
 static func box(plaque: StringName, height: float, pad: float = 0.0) -> PlaqueBox:
-	return PlaqueBox.new(plaque, height / SIZE.y, pad)
+	return PlaqueBox.new(plaque, height, pad)
 
 
 ## The text box's size (px) of a plaque `height` px tall and `width` px wide.
 static func content_size(height: float, width: float, pad: float = 0.0) -> Vector2:
-	var s := height / SIZE.y
-	return Vector2(width - (SIZE.x - CONTENT.size.x) * s - pad * 2.0, CONTENT.size.y * s)
-
-
-## The narrowest plaque (px) whose text box is `content_w` wide at `height`.
-static func width_for(content_w: float, height: float, pad: float = 0.0) -> float:
-	var s := height / SIZE.y
-	return maxf(SIZE.x * s, content_w + (SIZE.x - CONTENT.size.x) * s + pad * 2.0)
+	var m := PlaqueBox.margins(height, pad)
+	return Vector2(width - m.x - m.z, height - m.y - m.w)

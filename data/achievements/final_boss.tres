@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/achievement_definition.gd" id="1_ach"]
+
+[resource]
+script = ExtResource("1_ach")
+id = &"final_boss"
+name_key = &"ACH_FINAL_BOSS_NAME"
+desc_key = &"ACH_FINAL_BOSS_DESC"
+glyph = &"crown"
+group = &"bosses"
+order = 3
+hidden = false
+stat = &"final:won"

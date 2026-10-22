@@ -14,6 +14,8 @@ var min_floor := 1
 var requires := 0
 ## v0.5.5 DS (S5): only on Deep floors (and first there).
 var deep_only := false
+## v0.8.0 N17 (O75): only in the floor's curse room.
+var curse_room := false
 var labels: Array[StringName] = []
 var cost := PackedInt32Array()
 var cost_amount := PackedInt32Array()

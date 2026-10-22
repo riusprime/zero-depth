@@ -25,12 +25,25 @@ extends RefCounted
 const MAX_HOOK_DEPTH := 2
 const MAX_LAUNCHES_PER_TICK := 256
 const EFFECT_LAUNCH_CAP := &"attack_launch_cap"
+## v0.8.0 PF (owner O9: Spread + Split + Explosive "goes two FPS"): the player's projectiles alive at once, at most
+## (SimTuning.player_shots_max, data/tuning/sim.tres; this is its shipped value). A bolt past it is not launched, and
+## the tick's first such bolt leaves one LIMIT event (EFFECT_SHOT_CAP). Starting value from the probe
+## (docs/roadmap/v0.8.0/evidence/PERF.md): a level-5 Spread + Split build kept up to 264 alive, with Twin 874.
+const MAX_PLAYER_SHOTS := 256
+const EFFECT_SHOT_CAP := &"player_shot_cap"
+## v0.8.0 PF2 (owner O9; docs/roadmap/v0.8.0/evidence/PERF.md PF2): a bolt attack with AttackSpec.alive_max keeps at
+## most that many of its projectiles alive (Blade Storm's blades: 36, data/modifiers/blade_storm.tres). A launch it
+## cuts short throws the bolts that fit (in pattern order) and leaves one LIMIT event (this effect id, amount: the cap).
+const EFFECT_ALIVE_CAP := &"attack_alive_cap"
 ## ProcLedger codes for a hook attack's own status feeds (Engines' codes end at 40; appended, never renumbered).
 const CODE_HOOK_FEED := 48
 ## The ledger code of each status a hook attack feeds: CODE_HOOK_FEED + its index here.
 const FEED_ORDER: Array[StringName] = [&"burn", &"shock", &"bleed", &"frost", &"slow", &"poison"]
 ## A bolt leaves the muzzle this far past the player's and its own edge.
 const MUZZLE_GAP_M := 0.05
+## v0.8.0 BL: the wand's numbers in a world without World.wand_table (a lab): WandTable's defaults (they mirror
+## data/wand/wand.tres).
+static var _wand_defaults := WandTable.new()
 
 
 ## Runs `spec` with `ctx`. Returns true if it landed a hit (a bolt: true once queued; its hits come in phase 9).
@@ -47,15 +60,34 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		return true
 	if ctx.depth == 0 and not ctx.repeat and not ctx.back:
 		ModifierRuntime.on_root_launch(w, spec, ctx)
+		Remnants.imprint(w, spec, ctx)  # v0.8.0 RM: Dodge Imprint, from where the dash began
 	if spec.homing > 0 and spec.form == AttackSpec.Form.ARC:
 		ctx.angle = ProjectileMoves.snap_angle(w, ctx.origin, ctx.angle, arc_reach_m(w, spec) + 2.0)
-	var landed := _form(w, spec, ctx)
+	var landed := _shared_form(w, spec, ctx)
 	if not spec.hooks.is_empty():
 		_run(w, spec, AttackSpec.Trigger.ON_LAUNCH, ctx, ctx.origin, -1, 0)
 	if ctx.depth == 0 and not ctx.back and spec.back_permille > 0:
 		_back(w, spec, ctx)
 	if ctx.depth == 0 and not ctx.repeat and ctx.step < 0 and spec.repeat_delay_ticks > 0:
 		ModifierRuntime.queue_repeat(w, spec, ctx)
+	return landed
+
+
+## v0.8.0 MR (owner O91: "Extra projectiles must not each duplicate full damage"): the form runs with each of its
+## projectiles (or hits) at the spec's share_permille of the launch's damage and base damage (its hooks' shares are
+## of that; v0.8.0 RM lead fix: rounded half up, at least 1); the launch's moments after it (ON_LAUNCH, the back copy,
+## a repeat) keep the whole.
+static func _shared_form(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
+	var share := spec.share_permille
+	if share <= 0:
+		return _form(w, spec, ctx)
+	var d0 := ctx.damage
+	var b0 := ctx.base_damage
+	ctx.damage = maxi(1, (d0 * share + 500) / 1000)
+	ctx.base_damage = maxi(1, (b0 * share + 500) / 1000)
+	var landed := _form(w, spec, ctx)
+	ctx.damage = d0
+	ctx.base_damage = b0
 	return landed
 
 
@@ -205,11 +237,12 @@ static func shot_offsets(spec: AttackSpec) -> PackedInt32Array:
 	return out
 
 
-## Each bolt's base damage: the spec's, or its damage_permille share when the shot splits (at least 1).
+## Each bolt's base damage: the spec's, or its damage_permille share when the shot splits (rounded half up, v0.8.0 RM
+## lead fix; at least 1).
 static func bolt_base_damage(spec: AttackSpec) -> int:
 	if spec.count <= 1:
 		return spec.damage
-	return maxi(1, spec.damage * spec.damage_permille / 1000)
+	return maxi(1, (spec.damage * spec.damage_permille + 500) / 1000)
 
 
 # --- Runners ------------------------------------------------------------------------------------------------
@@ -217,10 +250,16 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var a := w.actors
 	var landed := false
 	var hits := 0
+	# Measured once (audit G-2): a hit that tips Hot mid-loop must not stretch this swing for the actors after it.
+	var reach := arc_reach_m(w, spec)
+	var edge := w.player.radius_m
+	var first := Vector2.ZERO  # v0.8.0 P2: where the slash first landed (Void's black hole)
 	for i in range(1, a.size()):
 		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
 			continue
-		if not arc_touches(w, spec, ctx.origin, ctx.angle, a.pos(i), a.radius[i]):
+		if not AttackShapes.arc_touches(
+			ctx.origin, edge, ctx.angle, spec.half_arc, reach, a.pos(i), a.radius[i]
+		):
 			continue
 		var before := w.hit_spec
 		if spec.depth > 0:  # v0.6.5 WN5a: a child slash feeds its own statuses (_feed), not the combo step's
@@ -230,9 +269,15 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		if got > 0:
 			landed = true
 			hits += 1
+			if hits == 1:
+				first = a.pos(i)
 			_landed(w, spec, ctx, i, a.pos(i), hits)
 			BladeForms.on_arc_hit(w, spec, ctx, i)  # v0.6.5 WN4: Heavy's push
 	BladeForms.on_arc(w, spec, ctx)  # v0.6.5 WN4: Parry Edge, the view's ghost slashes
+	if landed and spec.hole_permille > 0:  # v0.8.0 P2 (O24): Void's black hole where it first landed
+		BlackHoles.roll(w, spec, first, ctx.damage)
+	if not w.mx.rem_uid.is_empty() or not spec.hooks.is_empty():  # v0.8.0 RM: cracks it crosses, its path
+		Remnants.on_arc(w, spec, ctx, reach)
 	if not spec.hooks.is_empty():
 		var tip := ctx.origin + Kin.dir(ctx.angle) * (w.player.radius_m + arc_reach_m(w, spec))
 		_run(w, spec, AttackSpec.Trigger.ON_END, ctx, tip, -1, 0)
@@ -244,12 +289,30 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var offsets := shot_offsets(spec)
 	if spec.has_tag(&"weapon"):
 		offsets = Abilities.shot_offsets(w, offsets)  # Pulse Gun L5: twin bolts (the weapon's own shots)
+	if spec.swirl > 0:
+		offsets = WandRings.swirl_offsets(w, offsets)  # v0.8.0 AO: Swirl, each bolt at a random angle
 	var r := spec.radius_m * ctx.size_permille / 1000.0  # v0.6.5 WN3: a charged shot (G13)
 	var gap := t.radius_m + r + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
 	var lanes := GunForms.lanes(spec, r)  # v0.6.5 WN3: G3 Twin, side by side
-	for off in offsets:
+	var room := _alive_room(w, spec)  # v0.8.0 PF2
+	# v0.8.0 MR (O91; SecondaryProc): a secondary launch's bolts are all secondary (a repeat's carry that too); a
+	# sharing spec's bolts past its primary one (the centre bolt's first lane; a circle's first) are secondary.
+	var kind0 := ProjectileStore.SECONDARY if ctx.secondary else 0
+	if ctx.repeat and not ctx.back:
+		kind0 |= ProjectileStore.REPEAT
+	var centre := 0 if spec.directions == AttackSpec.DIR_CIRCLE else (offsets.size() - 1) / 2
+	var link := Remnants.link_of(spec) if not spec.hooks.is_empty() else null  # v0.8.0 RM: Threadline
+	for oi in offsets.size():
+		var off := offsets[oi]
 		var dir := Kin.dir(ctx.angle + off)
-		for side in lanes:
+		for li in lanes.size():
+			var side := lanes[li]
+			if room == 0:
+				_alive_capped(w, spec)
+				return
+			room -= 1
+			if not _shot_room(w):
+				return
 			var muzzle := ctx.origin + dir * gap + Vector2(-dir.y, dir.x) * side
 			w.queue_projectile(
 				w.actors.ids[0],
@@ -263,6 +326,49 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				spec.bounces,
 				spec.key
 			)
+			var kind := kind0
+			if spec.share_permille > 0 and (oi != centre or li != 0):
+				kind |= ProjectileStore.SECONDARY
+			if kind != 0:
+				w.set_pending_second(kind)
+			if link != null:
+				w.set_pending_link(link.child.key)
+
+
+## v0.8.0 PF2: how many more of `spec`'s bolts may launch now under its alive_max (-1: no cap of its own).
+static func _alive_room(w: World, spec: AttackSpec) -> int:
+	if spec.alive_max <= 0:
+		return -1
+	return maxi(0, spec.alive_max - w.player_projectiles_of(spec.id))
+
+
+## v0.8.0 PF2: a launch of `spec` cut short by its alive_max: one LIMIT event (EFFECT_ALIVE_CAP, amount = the cap).
+static func _alive_capped(w: World, spec: AttackSpec) -> void:
+	var pid := w.actors.ids[0]
+	var lim := w.emit_event(SimEvent.Kind.LIMIT, pid, pid, pid, w.player_pos())
+	lim.effect_id = EFFECT_ALIVE_CAP
+	lim.amount = spec.alive_max
+	lim.ancestry = w.hook_chain.duplicate()
+
+
+## v0.8.0 PF: whether one more player bolt fits under SimTuning.player_shots_max this tick (counting it); the first
+## that doesn't leaves a LIMIT event.
+static func _shot_room(w: World) -> bool:
+	if w.shot_tick != w.tick:
+		w.shot_tick = w.tick
+		w.shot_count = w.player_projectiles()
+	var cap := w.tuning.player_shots_max
+	if w.shot_count < cap:
+		w.shot_count += 1
+		return true
+	if w.shot_count == cap:
+		w.shot_count += 1
+		var pid := w.actors.ids[0]
+		var lim := w.emit_event(SimEvent.Kind.LIMIT, pid, pid, pid, w.player_pos())
+		lim.effect_id = EFFECT_SHOT_CAP
+		lim.amount = cap
+		lim.ancestry = w.hook_chain.duplicate()
+	return false
 
 
 static func _burst(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
@@ -273,9 +379,7 @@ static func _burst(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var hits := 0
 	var r := ctx.radius_m if ctx.radius_m > 0.0 else spec.radius_m  # v0.6.0 MX4: Vent's, an echo's
 	BladeForms.on_burst(w, spec, ctx.origin, r)  # v0.6.5 WN4: Finisher+'s shockwave, for the view
-	if spec.pull_m > 0.0:  # v0.6.0 MX4: Gravity Well
-		ModifierRuntime.pull(w, ctx.origin, r, spec.pull_m)
-	for i in range(1, a.size()):
+	for i in w.aoe_candidates(ctx.origin, r):  # v0.8.0 HS: a superset, ascending (was every actor)
 		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
 			continue
 		if not AttackShapes.disc_touches(ctx.origin, r, a.pos(i), a.radius[i]):
@@ -294,7 +398,7 @@ static func _seek(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var a := w.actors
 	var best := -1
 	var best_d := spec.reach_m
-	for j in range(1, a.size()):
+	for j in w.aoe_candidates(ctx.origin, spec.reach_m):  # v0.8.0 HS: a superset, ascending
 		if j == ctx.exclude or a.teams[j] == ActorStore.TEAM_PLAYER or a.dead[j] == 1:
 			continue
 		var d := Kin.length(a.pos(j) - ctx.origin)
@@ -357,8 +461,8 @@ static func _rays(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		var to := from + dir * spec.reach_m
 		var best := 2.0
 		var target := -1
-		for wall in w.walls:
-			var s := Collide.sweep_vs_obb(from, to, spec.radius_m, wall)
+		for k in w.walls_along(from, to, spec.radius_m):  # the grid's superset of the walls (audit G-10)
+			var s := Collide.sweep_vs_obb(from, to, spec.radius_m, w.walls[k])
 			if s >= 0.0 and s < best:
 				best = s
 		for i in range(1, a.size()):
@@ -387,9 +491,13 @@ static func _rays(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 
 static func _hit(w: World, i: int, ctx: AttackContext, from: Vector2, at: Vector2) -> int:
 	var pid := w.actors.ids[0]
-	return Damage.hit(
+	var pm0 := w.hit_proc_permille  # v0.8.0 MR (O91): a secondary attack's hit feeds at its proc
+	w.hit_proc_permille = SecondaryProc.of_ctx(w, ctx)
+	var got := Damage.hit(
 		w, i, ctx.damage, pid, pid, ctx.root, ctx.tags, from, at, ctx.effect_id, ctx.proc_pct
 	)
+	w.hit_proc_permille = pm0
+	return got
 
 
 ## v0.6.0 MX2: one hit of `spec` on actor `i` at `at` from `from` (an orbiter's touch, a patch's, a ring's, a bomb's
@@ -464,8 +572,12 @@ static func _zone(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	ElementAbilities.add_zone(w, ctx.origin, area_radius(w, spec), life, spec, ctx)
 
 
-## A ring from ctx.origin (ModifierAbilities grows it, phase 6).
+## A ring from ctx.origin (ModifierAbilities grows it, phase 6). v0.8.0 AO: a ring a SHAPE card made lays its rings
+## by the order rule (WandRings: several, pulsing, thrown).
 static func _ring(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
+	if spec.ring_layout > 0:
+		WandRings.launch(w, spec, ctx)
+		return
 	ModifierAbilities.add_ring(w, ctx.origin, area_radius(w, spec), spec, ctx)
 
 
@@ -499,9 +611,11 @@ static func _landed(
 	w: World, spec: AttackSpec, ctx: AttackContext, i: int, at: Vector2, nth: int
 ) -> void:
 	var crit := w.last_hit_crit  # v0.6.5 WN1: this hit's (read before a status or a hook hits again)
-	if spec.depth == 0 and spec.form == AttackSpec.Form.ARC and spec.has_status(&"burn"):
-		if spec.has_tag(&"weapon"):
-			ItemEffects.on_melee_hit(w, i, ctx.root, spec.stacks_of(&"burn"))
+	var arc := spec.depth == 0 and spec.form == AttackSpec.Form.ARC
+	if arc and spec.has_status(&"burn") and spec.has_tag(&"weapon"):
+		var burn := SecondaryProc.stacks(w, spec.stacks_of(&"burn"), SecondaryProc.of_ctx(w, ctx))
+		if burn > 0:  # v0.8.0 MR (O91): a Double Slash echo burns at the secondary proc
+			ItemEffects.on_melee_hit(w, i, ctx.root, burn)
 	var direct := (
 		spec.form == AttackSpec.Form.ARC
 		or spec.form == AttackSpec.Form.BOLT
@@ -538,6 +652,7 @@ static func _feed(w: World, spec: AttackSpec, ctx: AttackContext, i: int) -> voi
 			continue  # v0.6.0 MX4: an inherited every-N status counts this form's own hits
 		if not w.proc_ledger.try_mark(ctx.root, code, a.ids[i], w.tick):
 			continue
+		n = SecondaryProc.stacks(w, n, SecondaryProc.of_ctx(w, ctx))  # v0.8.0 MR: a secondary's
 		match st:
 			&"burn":
 				Engines.add_burn(w, i, n, ctx.root, spec.id)
@@ -588,18 +703,30 @@ static func fire(w: World, spec: AttackSpec, trigger: int, ctx: AttackContext, a
 static func run_hook(
 	w: World, k: AttackHook, parent: AttackContext, at: Vector2, exclude: int
 ) -> bool:
+	if k.remnant != null:  # v0.8.0 RM: a remnant hook leaves (or activates) its remnant instead
+		return Remnants.on_hook(w, k, parent, at, exclude)
 	if parent.depth + 1 > MAX_HOOK_DEPTH or k.child.depth > MAX_HOOK_DEPTH:
 		return false
+	if parent.repeat and not parent.back and k.child.recast != 0:
+		return false  # v0.8.0 MR (O91): a repeat never casts a trigger's later cast
 	if w.hook_chain.has(String(k.id)):
 		return false
 	if k.when == AttackHook.WHEN_OVERCLOCK and not Heat.overclocked(w):
 		return false  # v0.6.0 MX4: Heat Sink Rounds
 	if k.when == AttackHook.WHEN_COUNTER and not BladeForms.countering(w):
 		return false  # v0.6.5 WN4: Counter's wave
+	if k.delay_ticks <= 0 and merged(w, k, at):
+		return false  # v0.8.0 BL (B6): Explosive's blasts past 8 a tick merge
 	var dmg := k.damage_for(parent.base_damage)
 	if k.child.form == AttackSpec.Form.WEAPON and k.damage <= 0:  # v0.6.0 MX4: a share of the weapon's
 		dmg = maxi(1, Modifiers.weapon_damage(w) * k.damage_permille / 1000)
 	var c := parent.child(at, dmg, tags_of(k.child), k.child.effect_id)
+	if parent.secondary:  # v0.8.0 MR (O91; SecondaryProc): a secondary's hook at its proc, its cast at its damage
+		var pm := SecondaryProc.permille(w)
+		c.proc_pct = maxi(1, c.proc_pct * pm / 1000)
+		if k.child.has_tag(WandCasts.TAG_CAST):
+			c.damage = maxi(1, c.damage * pm / 1000)
+			c.base_damage = c.damage
 	c.exclude = exclude
 	if k.child.form == AttackSpec.Form.BOLT and exclude >= 0:  # v0.6.0 MX4: from past the enemy it hit
 		c.muzzle_m = w.actors.radius[exclude] + k.child.radius_m + MUZZLE_GAP_M
@@ -614,6 +741,29 @@ static func run_hook(
 	var landed := launch(w, k.child, c)
 	w.hook_chain.remove_at(w.hook_chain.size() - 1)
 	return landed
+
+
+## v0.8.0 BL (docs/roadmap/v0.8.0/BLADE_AUDIT.md B6, owner O9 / O11): hook `k` is a merge-tracked blast
+## (WandTable.blast_merge_ids: Explosive's) about to go off at `at`. Past WandTable.blast_merge_after of them this tick,
+## one within its radius of a blast already set off this tick merges into it: it doesn't go off (true; counted in
+## World.blast_merged). A volley's blasts land together, so the 9th and later that overlap add nothing; one farther
+## away still goes off. Below the count nothing changes.
+static func merged(w: World, k: AttackHook, at: Vector2) -> bool:
+	var t := w.wand_table if w.wand_table != null else _wand_defaults
+	if t.blast_merge_after <= 0 or not t.blast_merge_ids.has(k.id):
+		return false
+	if w.blast_tick != w.tick:
+		w.blast_tick = w.tick
+		w.blast_pos = PackedVector2Array()
+		w.blast_merged = 0
+	if w.blast_pos.size() >= t.blast_merge_after:
+		var r2 := k.child.radius_m * k.child.radius_m
+		for p in w.blast_pos:
+			if (p - at).length_squared() <= r2:
+				w.blast_merged += 1
+				return true
+	w.blast_pos.append(at)
+	return false
 
 
 ## The SimEvent tag bits a hook's child carries: a burst is area, a seeking beam a chain, an arc melee, a bolt or a
@@ -691,16 +841,16 @@ static func on_projectile_hit(w: World, i: int, pi: int, at: Vector2) -> void:
 	if hooks.is_empty():
 		return
 	var root := w.projectiles.root_id[pi]
-	var counted := false
 	for k in hooks:
-		if k.every > 0 and not counted:
-			w.chain_count += 1
-			counted = true
+		if k.every > 0:
+			w.chain_count += 1  # once per landed bolt, however many counted hooks
+			break
 	var p := w.projectiles
 	var ang := Kin.angle_of(Vector2(p.vel_x[pi], p.vel_y[pi]))  # v0.6.0 MX4: a hook's slash, split, way
 	var ctx := AttackContext.make(at, ang, p.damage[pi], root, p.tags[pi], &"")
 	ctx.depth = spec.depth
 	ctx.proc_pct = maxi(1, 100 >> spec.depth)
+	_second_of(w, pi, ctx)  # v0.8.0 MR
 	for k in hooks:
 		if k.every > 0 and (w.chain_count % k.every != 0 or w.chain_root == root):
 			continue
@@ -719,8 +869,20 @@ static func on_projectile_end(w: World, pi: int, at: Vector2) -> void:
 		var ctx := AttackContext.make(at, ang, p.damage[pi], p.root_id[pi], p.tags[pi], &"")
 		ctx.depth = spec.depth
 		ctx.proc_pct = maxi(1, 100 >> spec.depth)
+		_second_of(w, pi, ctx)  # v0.8.0 MR
 		_run(w, spec, AttackSpec.Trigger.ON_END, ctx, at, -1, 0)
+		Remnants.on_bolt_end(w, spec, pi, at)  # v0.8.0 RM: Double Exposure's path
+	var own := pi < w.projectiles.spec_key.size() and w.projectiles.spec_key[pi] != ""
+	if own and spec != null and spec.hole_permille > 0:  # v0.8.0 P2 (O24): Void's black hole where it ends
+		BlackHoles.roll(w, spec, at, w.projectiles.damage[pi])
 	ModifierAbilities.on_projectile_end(w, at)
+
+
+## v0.8.0 MR (O91): projectile `pi`'s hit or end carries what the bolt was: secondary, a repeat's (ProjectileStore).
+static func _second_of(w: World, pi: int, ctx: AttackContext) -> void:
+	var kind := w.projectiles.second_of(pi)
+	ctx.secondary = (kind & ProjectileStore.SECONDARY) != 0
+	ctx.repeat = (kind & ProjectileStore.REPEAT) != 0
 
 
 ## The next landed bolt fires the bolt's first every-N ON_HIT hook (Static Chain's "ready" mark).

@@ -11,12 +11,16 @@ extends PanelContainer
 signal changed(key: String)
 signal restart_requested
 signal close_requested
+## v0.8.0 N6 (owner O60): the Playground opens from here (off a run only), not from the main menu.
+signal playground_requested
 
 const ROW_H := 26.0
 
 var tuning: DevTuning
 ## The old debug panel's buttons (pause, step, spawn, god mode …), shown on the Tools page when in a run.
 var tools: Control
+## Whether the top bar has the Playground button (Main: only off a run).
+var show_playground := false
 var _tree := Tree.new()
 var _search := LineEdit.new()
 var _fields := VBoxContainer.new()
@@ -28,10 +32,11 @@ var _filter := ""
 var _editors := {}
 
 
-func _init(p_tuning: DevTuning, p_tools: Control = null) -> void:
+func _init(p_tuning: DevTuning, p_tools: Control = null, p_playground: bool = false) -> void:
 	name = "DevMasterPanel"
 	tuning = p_tuning
 	tools = p_tools
+	show_playground = p_playground
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	offset_left = 24
@@ -82,6 +87,12 @@ func _top_bar() -> Control:
 	bar.add_child(t)
 	_status.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	bar.add_child(_status)
+	if show_playground:  # v0.8.0 N6 (O60)
+		var pg := Button.new()
+		pg.name = "Playground"
+		pg.text = "UI_PLAYGROUND"
+		pg.pressed.connect(func() -> void: playground_requested.emit())
+		bar.add_child(pg)
 	for spec: Array in [
 		["UI_DEVM_RESTART", func() -> void: restart_requested.emit()],
 		["UI_DEVM_RESET_ALL", reset_all],
@@ -137,11 +148,20 @@ func _on_pick() -> void:
 	show_source(meta[0], meta[1])
 
 
+## The Tools page is built by Main for this panel; freed with it whether or not it was ever shown (v0.7.5: it was
+## left as an orphan when the panel closed without visiting Tools).
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and is_instance_valid(tools) and tools.get_parent() == null:
+		tools.free()
+
+
 ## Shows the fields of the content file `path` (only those under `filter`, "" = all), or the Tools page.
 func show_source(path: String, filter: String = "") -> void:
 	_source = path
 	_filter = filter
 	_editors.clear()
+	if tools != null and tools.get_parent() == _fields:
+		_fields.remove_child(tools)  # the Tools page is kept for the next visit, not freed with the rows
 	for c in _fields.get_children():
 		c.queue_free()
 	if path == "tools":

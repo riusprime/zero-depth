@@ -3,7 +3,8 @@ extends GutTest
 ## dev panel (backtick, mouse clicks: God mode for the long walk, Kill boss) stands in for the fight as in
 ## test_e2e_run_flow; the left stick walks through the boss door and into the open portal. The way in plays (the
 ## world holds, the stick does nothing, the hero shrinks into light), then floor 2 loads exactly once and opens on
-## the arrival (held, the hero grows in its column) before the stick moves the hero again.
+## the arrival (held; v0.8.0 N11: the hero rises out of floor 2's receiver, after the portal's cover opened) before
+## the stick moves the hero again.
 ## v0.5.5 EC (owner Q-S4, "Keep half"): the portal carries half the unspent shards (rounded down) and floor 2's
 ## arrival card says how many it kept.
 
@@ -47,10 +48,13 @@ func test_into_the_portal_and_out_on_floor_two() -> void:
 	await e.start_from_menu()
 	var w := e.world()
 	var f := w.floor_layout
-	assert_eq(main.view.transit.phase, PortalTransitView.Phase.NONE, "floor 1 starts at once")
+	assert_eq(
+		main.view.transit.phase, PortalTransitView.Phase.NONE, "floor 1's arrival is over (N11)"
+	)
 	assert_false(main.driver.reader.transit_holds())
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
+	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(
 		e, f.boss_door_inside(2.0), func() -> bool: return w.boss_flow.door_sealed(), into
@@ -116,14 +120,16 @@ func test_into_the_portal_and_out_on_floor_two() -> void:
 	assert_true(main.driver.reader.transit_holds())
 	var start := w2.player_pos()
 	var arrive_frames := 0
-	var column := false
-	while main.driver.reader.transit_holds() and arrive_frames < 200:
+	var flare := 0.0
+	while main.driver.reader.transit_holds() and arrive_frames < 300:
 		assert_eq(w2.player_pos(), start, "no control while the hero materialises")
-		column = column or main.view.transit.column.visible
+		flare = maxf(flare, main.view.receiver.charge)
 		arrive_frames += 1
 		await e.frames(1)
-	assert_true(column, "a light-blue column")
-	assert_almost_eq(arrive_frames, BossFlow.ARRIVE_TICKS, 3, "about ARRIVE_TICKS ticks")
+	assert_gt(flare, 0.5, "v0.8.0 N11: the receiver flares")
+	assert_almost_eq(
+		w2.tick, BossFlow.ARRIVE_TICKS, 1, "about ARRIVE_TICKS ticks (after the cover opened)"
+	)
 	await e.frames(20)
 	e.stick_toward(Vector2.ZERO)
 	assert_ne(w2.player_pos(), start, "control returns: the stick moves the hero")

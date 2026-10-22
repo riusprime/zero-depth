@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
 [ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
@@ -16,6 +16,20 @@ field = &"life_seconds"
 value = 0.5
 per_level = 0.1
 
+[sub_resource type="Resource" id="Child_3"]
+script = ExtResource("2_op")
+op = 1
+field = &"count"
+value = 0.0
+per_level = 1.0
+
+[sub_resource type="Resource" id="Child_4"]
+script = ExtResource("2_op")
+op = 1
+field = &"spread_degrees"
+value = 0.0
+per_level = 15.0
+
 [sub_resource type="Resource" id="Op_1"]
 script = ExtResource("2_op")
 op = 8
@@ -27,7 +41,7 @@ hook_radius_m = 0.35
 hook_reach_m = 7.0
 hook_damage_permille = 600
 hook_effect = &"echo_slash"
-hook_ops = Array[Resource]([SubResource("Child_1"), SubResource("Child_2")])
+hook_ops = Array[Resource]([SubResource("Child_1"), SubResource("Child_2"), SubResource("Child_3"), SubResource("Child_4")])
 per_level = 100.0
 
 [resource]

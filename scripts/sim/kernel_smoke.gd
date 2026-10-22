@@ -5,11 +5,7 @@ extends SceneTree
 
 
 func _initialize() -> void:
-	var args := {}
-	for arg in OS.get_cmdline_user_args():
-		var kv := arg.split("=", true, 1)
-		if kv.size() == 2:
-			args[kv[0]] = kv[1]
+	var args := ScriptArgs.parse()
 	var bounds: PackedStringArray = String(args.get("seeds", "1..20")).split("..")
 	var out_path: String = args.get("out", "build/kernel_smoke.jsonl")
 	var lines := PackedStringArray()

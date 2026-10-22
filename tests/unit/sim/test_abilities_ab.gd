@@ -325,6 +325,30 @@ func test_combos_carry_and_rebuild_on_a_new_floor() -> void:
 	assert_eq(v.item_mods.frost_threshold, 4, "and the borrowed engine")
 
 
+## Audit G-23: selling a mod keeps the run's combos in the order they were earned (an ability combo too).
+func test_selling_a_mod_keeps_the_combo_order() -> void:
+	var w := _world()
+	var items := ContentCompiler.compile_items(_repo)
+	w.set_item_tables(items)
+	_grant(w, &"orbit_blades", 3)
+	_grant(w, &"frost_nova", 3)
+	var ring := w.combos_owned.duplicate()
+	assert_eq(ring.size(), 1, "Glacier Ring first")
+	var by_id := {}
+	for k in items.size():
+		by_id[items[k].id] = k
+	w.add_item(by_id[&"ember_edge"])
+	w.add_item(by_id[&"conductor"])
+	var order := w.combos_owned.duplicate()
+	assert_eq(order.size(), 2, "then Plasma Arc")
+	var spare := 0
+	while spare in w.items_owned:
+		spare += 1
+	w.add_item(spare)
+	Shop.remove_item(w, spare)
+	assert_eq(w.combos_owned, order, "the same combos, in the order earned")
+
+
 # --- Ability combos: the effects ----------------------------------------------------------------------------------
 func test_storm_bombs_chain_lightning_from_each_blast() -> void:
 	var w := _world(&"blade", [Vector2(5, 0), Vector2(5.5, 0.4), Vector2(8.5, 0), Vector2(9, 2)])

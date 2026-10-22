@@ -11,9 +11,11 @@ copies what worked in the owner's previous game, Deathventory ("DV"). The rules 
 ## Start every session here
 
 1. Read this file, then [`docs/roadmap/ROADMAP.md`](docs/roadmap/ROADMAP.md) §0 (the pickup protocol).
-2. Open the active version's `docs/roadmap/vX.Y.Z/PLAN.md` and `PROGRESS.md`. Continue from the first step that
-   isn't Done.
-3. If there's no PLAN for the active version, you're its lead: do Phase 0 (ROADMAP §0.2), write the PLAN, and
+2. Open the active version's `docs/roadmap/vX.Y.Z/PLAN.md` and `PROGRESS.md`. Start from PROGRESS's
+   "Where we are" block (the SessionStart hook prints it), then continue from the first step that isn't Done.
+3. If you lead (merge agents' work, talk to the owner), follow
+   [`docs/process/LEAD_PLAYBOOK.md`](docs/process/LEAD_PLAYBOOK.md).
+4. If there's no PLAN for the active version, you're its lead: do Phase 0 (ROADMAP §0.2), write the PLAN, and
    commit it before any code.
 
 ## Authority
@@ -89,19 +91,55 @@ Deathventory once shipped an agent-written "human playtest" and a smoke test wit
 |---|---|
 | Only docs, or scripts that write only under `docs/` | Nothing local; CI covers it |
 | Installed assets or manifests (`assets/`) | The asset tests |
-| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead: **one** full suite per wave, on the merged result of the wave's agents, from a clean worktree |
+| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead, after merging agents' branches: `bash scripts/ci/seams.sh` (the seams, about 10 min: 260 tests in 619 s on 2026-10-13), then push. **No local full suite** |
 
-**One full run per wave** (owner, 2026-10-09: "i like the testing workflow so we ensure everything works but I think
-we are having too many, and double checking overall"; pick "One run per wave"). Agents don't run the full suite; the
-lead runs it once after merging a wave (up to 3 agents), fixes what breaks, and pushes. The PR into `main` runs it
-once more on GitHub; the lead doesn't run it locally again before opening the PR. A release runs everything
-(ROADMAP §0.4).
+**The full suite runs once per version, on GitHub** (owner, 2026-10-13: "does the full run suite make sense for every
+change? … just testing what the changes need to be tested right?"; then "make those changes statement so every
+session on this proyect gets them"):
+- **Agents** test what they changed: lint, the test folders they touched, and the e2e that reach their change.
+- **The lead**, after merging branches, runs `scripts/ci/seams.sh` from a clean worktree, fixes what breaks, and
+  pushes. The seams are the tests where separate changes meet: content, arch, goldens, application, debug (the dev
+  panel's folder list), old saves, the every-card soak, and the run/save/menu/dev-panel e2e. When a cross-step bug
+  gets past the seams, add the test that caught it to `seams.sh`.
+- **The PR into `main`** runs the full suite once on GitHub, as parallel shards (`scripts/ci/gut_shard.sh`; every
+  test file is in exactly one shard, and the `verify` job sums them against `tests/MIN_TEST_COUNT`). A red shard is
+  fixed on the branch, and only that shard's files are re-run locally before the push.
+- **`tests/MIN_TEST_COUNT`** is raised from the green `verify` total of the PR.
+- **A release** runs everything (ROADMAP §0.4).
+
+Supersedes the "one full run per wave" rule (owner, 2026-10-09).
+
+### Keep steps fast (owner, 2026-10-18)
+
+The owner: "lately subagents take very long … is everything that they are doing necessary"; then "Yes let's do it,
+they are taking way too long". Cloud machines have 4 CPUs and Godot runs at half speed when they're crowded. So:
+- **One heavy job at a time.** At most one agent runs Godot tests or shots at a time. The lead runs `seams.sh` only
+  when no agent is testing. Other agents can read, write code and lint meanwhile.
+- **Small steps.** One owner request is one step. Split a big request (many models, several systems) into steps that
+  each report back, rather than one long step.
+- **Test only what the change reaches.** Run the touched tests first and the e2e that reach the change. The slow
+  seed-loop tests (for example `tests/unit/sim/test_curse_room.gd`, about 14 min) run only when the step changes
+  that system. Otherwise GitHub runs them.
+- **Few shots.** One shot per biome, or per thing the owner will look at. Before/after pairs only when asked.
+- **No timing on a busy machine.** Frame times and load probes here are noise. Run a probe once to catch a gross stall,
+  and mark the target `NOT YET RUN (owner hardware)` rather than re-running it.
+- **No re-runs to "be sure".** If a run is killed by a limit or memory, re-run only the files that didn't finish.
+- **No baseline copies.** Don't check out and import an old tree for before/after shots or probes unless the owner asks.
+- **Wait, don't poll.** Start long runs with `run_in_background` and wait for the completion notice. No `until … sleep`
+  loops: each check is another full turn.
+- **Read small.** Find a file's lines with `grep -n`, then read just that range. Don't `cat` whole large files or docs
+  (`OWNER_TODO.md`, `PLAN.md`, 1000-line scripts). Only look at the shots you need to check; each image costs tokens on
+  every later turn.
+- **Hand back early.** Report when the step is done, and leave polish for the owner to ask for. The lead starts a fresh
+  agent for a follow-up rather than resuming one with a very long history.
 
 ## Commands
 
 ```bash
 godot --headless --path . --editor --import --quit                     # import (after clone / new class_name)
 bash scripts/verify.sh                                                 # import + full suite + CI guards
+bash scripts/ci/seams.sh                                               # the lead's check after a merge (no full suite locally)
+bash scripts/ci/gut_shard.sh <sim_a|sim_b|sim_c|e2e|presentation|rest> # one shard of the full suite, as GitHub runs it
 godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
 godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit/sim -ginclude_subdirs -gexit   # one folder
 godot --headless --path . -s scripts/checks/hitch_probe.gd             # real-time hitch rule
@@ -112,6 +150,24 @@ gdformat --check src scripts tests && gdlint src scripts tests         # lint (p
 
 Also: `godot --headless --path . -s scripts/content/build_patch_notes.gd` (after editing patch notes) and
 `bash scripts/ci/export_smoke.sh` (export + smoke, run from outside the project folder).
+
+## The owner's PC (local sessions)
+
+The owner also runs Claude Code on their own PC (i7-10700K, RTX 3060), from the latest pull of the session branch.
+- **Setup, once:** Godot `4.7.2` (the version `scripts/setup_toolchain.sh` pins) on the `PATH` as `godot`, Python 3,
+  `pip install -r requirements-dev.txt`. For model prep, also `pip install meshoptimizer==0.2.30a0 xatlas==0.0.11 scipy`.
+- **Windows:** run the bash scripts from Git Bash, and Godot natively, not in WSL, so it uses the GPU.
+  `scripts/verify.ps1` and `scripts/export_windows.ps1` are the PowerShell scripts.
+- **Several heavy jobs at once** (owner, 2026-10-22: "since we dont have the limitations of the cloud session in my PC you
+  can run multiple at a time"): the "one heavy job at a time" rule is for cloud machines. Here, run test shards and shots
+  in parallel, each with its own `APPDATA` folder (Windows keeps `user://` there) so saves don't collide.
+- **Shots** render on the GPU: drop the `xvfb-run` wrapper. **Timing** measured here is real evidence; name the
+  machine.
+- **`.claude/settings.json`** (tracked) allows the project's own commands without a prompt: godot, lint, `scripts/`,
+  git on `claude/` branches. It denies force-push, pushing to `main` and `reset --hard`. Personal settings go in
+  `.claude/settings.local.json`, which is not tracked.
+- **Before switching machines,** the lead pushes everything and updates "Where we are". Agent branches and worktrees
+  stay on the machine that made them.
 
 ## Toolchain in a cloud session
 
@@ -145,6 +201,7 @@ Also: `godot --headless --path . -s scripts/content/build_patch_notes.gd` (after
 | The five design pillars (the audit framework) | [`docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md`](docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md) |
 | Palettes, shapes, lighting, art requests | [`docs/art/ART_DIRECTION.md`](docs/art/ART_DIRECTION.md) |
 | PLAN, PROGRESS, evidence, patch-note templates | [`docs/process/TEMPLATES.md`](docs/process/TEMPLATES.md) |
+| Everything waiting on the owner (art, decisions, tests); keep it current | [`docs/OWNER_TODO.md`](docs/OWNER_TODO.md) |
 
 ## Glossary
 
