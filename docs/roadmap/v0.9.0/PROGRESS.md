@@ -7,9 +7,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
 
 - **Phase 0 done; the PLAN is a DRAFT.** Both owner documents are in `feedback/`, every line has a row (C1–C90,
   W1–W78, E1–E2), and the live code is audited. `tests/MIN_TEST_COUNT` is 2676 (PR #7's green `verify` total).
-- **Answered 2026-10-22:** Q1–Q14 (scope: everything; the attack system) and the attack-forms G1 (all ten forms).
-- **Waiting on the owner:** design questions Q15–Q30 in the PLAN (portals, altar, camera, final approach, door; the
-  world; the hub and progression; UC), the G1 list [`UTILITY_CARDS.md`](UTILITY_CARDS.md), and the altar model (prompt in
+- **Answered 2026-10-22:** Q1–Q14 (scope: everything; the attack system), the attack-forms G1 (all ten forms) and
+  Q15–Q19 (oval portals, the floor-1 altar, the camera, the final approach, the door boom).
+- **Waiting on the owner:** design questions Q20–Q30 in the PLAN (the world; the hub and progression; UC), the G1 list [`UTILITY_CARDS.md`](UTILITY_CARDS.md), and the altar model (prompt in
   `docs/art/requests/v0.9.0_altars_portals.md`). The enemy models for Swarmer, Mine Layer and Sniper are still
   waiting too (EM).
 - **Next:** record the answers in the PLAN's "Owner decisions", rewrite Steps from them, mark the PLAN approved, then
@@ -35,7 +35,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
 | Q1–Q14 | [PLAN](PLAN.md) "Design questions" | answered | 2026-10-22 |
-| Q15–Q30 | [PLAN](PLAN.md) "Design questions" | pending | |
+| Q15–Q19 | [PLAN](PLAN.md) "Design questions" | answered | 2026-10-22 |
+| Q20–Q30 | [PLAN](PLAN.md) "Design questions" | pending | |
 | G1 attack forms | [ATTACK_FORMS.md](ATTACK_FORMS.md) | F1–F10 approved; Twin and Spread merged | 2026-10-22 |
 | G1 utility cards (D23) | [UTILITY_CARDS.md](UTILITY_CARDS.md) | pending | |
 
@@ -52,3 +53,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
   the altar and portal art request. Next: the owner's answers.
 - 2026-10-22 — The owner answered Q1–Q14 and the attack-forms G1 (recorded in the PLAN, ATTACK_FORMS and
   LOCKED_DECISIONS). Next: Q15–Q30 and the UC list.
+- 2026-10-22 — The owner answered Q15–Q19 (recorded in the PLAN; the art request now asks for the altar only). Next:
+  Q20–Q30 and the UC list.
