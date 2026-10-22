@@ -98,6 +98,9 @@ const TAGS: Array[StringName] = [
 const LOOT_CATEGORIES: Array[StringName] = [
 	&"other", &"form", &"element", &"advanced", &"trigger", &"mutation"
 ]
+## v0.9.0 AS (owner Q2–Q4, PLAN C37–C45): the wand's slot categories, in AttackSlots' order (ItemTable.slot_category is
+## the index; empty = free). Not loot_category (that only paces loot, and its "form" means something else).
+const SLOT_CATEGORIES: Array[StringName] = [&"free", &"form", &"pattern", &"secondary", &"element"]
 
 @export var kind := Kind.LONG_EDGE
 @export var rarity := Rarity.COMMON
@@ -219,6 +222,11 @@ const LOOT_CATEGORIES: Array[StringName] = [
 ## card (S1–S7), `advanced` multiplies, repeats or builds on other cards (and the legendary ×2 triggers), `trigger` is
 ## T1–T4, `mutation` a mutation. Every wand card and trigger card names one; LootPacing weighs its draws by the floor.
 @export var loot_category: StringName = &""
+## v0.9.0 AS (owner Q2: "1 Form and 1 Pattern (a new one replaces the old), N Secondary, M Elements; trigger, mutation
+## and stat cards stay free"): the card's wand slot category, one of SLOT_CATEGORIES (empty = free). The limits per
+## category and the form × card compatibility table are data/wand/attack_slots.tres (AttackSlotsDefinition, whose
+## cross_check makes every live slot card name one). A trigger card and a mutation are free.
+@export var slot_category: StringName = &""
 
 
 func category() -> StringName:
@@ -240,6 +248,14 @@ func validate() -> Array[ValidationIssue]:
 			ValidationIssue.new(&"range", resource_path, "a mutation weighs under 1000 per mille")
 		)
 	_check_loot_category(issues)  # v0.8.0 FL
+	if slot_category != &"" and not slot_category in SLOT_CATEGORIES:  # v0.9.0 AS
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "unknown slot_category %s" % slot_category)
+		)
+	if (kind == Kind.TRIGGER or tags.has("mutation")) and not slot_category in [&"", &"free"]:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "a trigger or mutation card is free")
+		)
 	if index_wave < 0 or index_wave > 64:
 		issues.append(ValidationIssue.new(&"range", resource_path, "index_wave is 0..64"))
 	if rarity < Rarity.COMMON or rarity > Rarity.EPIC:

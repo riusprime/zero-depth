@@ -213,6 +213,14 @@ const ABILITY_SLOTS := 2 + BuildSlots.SLOTS
 ## wand ever has (it grows 4 → 6 → 8; build()["max"] is the count now), and the reorder's pick values
 ## (PICK_WAND_MOVE_BASE + from × WAND_MOVE_STRIDE + to).
 const MOD_SLOTS := Wand.MAX_SLOTS
+## v0.9.0 AS (owner Q2–Q5, Q14; AttackSlots): a card's slot tag (card_info()["slot"], wand()["cards"][n]["slot"]; NONE
+## for a card without one on this run) and each tag's translation key; the forms' name keys (wand()["form"]).
+const SLOT_NONE := AttackSlots.FREE
+const SLOT_FORM := AttackSlots.FORM
+const SLOT_PATTERN := AttackSlots.PATTERN
+const SLOT_SECONDARY := AttackSlots.SECONDARY
+const SLOT_ELEMENT := AttackSlots.ELEMENT
+const SLOT_TAG_KEYS := AttackSlots.TAG_KEYS
 const PICK_WAND_MOVE_BASE := InputFrame.PICK_WAND_MOVE_BASE
 const WAND_MOVE_STRIDE := InputFrame.WAND_MOVE_STRIDE
 ## v0.6.5 WN1: the triggers a wand card cuts on (wand()["cards"][n]["trigger"]; -1 for a card of rewrites).

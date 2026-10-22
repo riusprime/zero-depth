@@ -6,19 +6,21 @@ extends GutTest
 ## not be a circle that spawns where you aim"; evidence/N3_RING_AND_LOADING.md): the Ring is the shot itself, a
 ## lightning ring flying the shot's flight that hits and shocks what it passes over. The five orders compile and fight
 ## differently; each flies as WandRings says; the caps hold; the old cards' own results don't move. Mechanics only:
-## no bot, no balance (the DPS table is the evidence's).
+## no bot, no balance (the DPS table is the evidence's). v0.9.0 AS (owner Q3: Twin, Halo, Ring and Backfire are
+## Patterns, one at a time; Spiral and Swirl ride on any of them; "D45's Ring · Spread · Swirl storm goes"): a count
+## can't stand beside the Ring in a legal wand, so the orders left are Ring, Ring · Swirl and Swirl · Ring; the
+## count's pulses, the storm's one-after-another rings and the spinning group are gone (a lab spec with a count still
+## lays that many rings).
 
 const W := preload("res://tests/support/mx4_world.gd")
 const RING := &"gun_ring"
 const SPREAD := &"gun_spread"
 const SWIRL := &"gun_swirl"
-## The lead's five orders (and the plain Ring), by name.
+## v0.9.0 AS: the orders a legal wand holds (one Pattern), by name.
 const ORDERS := {
 	"ring": [RING],
-	"ring_spread": [RING, SPREAD],
-	"spread_ring": [SPREAD, RING],
-	"ring_spread_swirl": [RING, SPREAD, SWIRL],
-	"swirl_ring_spread": [SWIRL, RING, SPREAD],
+	"ring_swirl": [RING, SWIRL],
+	"swirl_ring": [SWIRL, RING],
 }
 const RADIUS := 1.4
 
@@ -83,7 +85,7 @@ func test_ring_alone_is_the_shot_turned_into_a_shocking_ring_with_its_flight() -
 	var plain := _bolt([])
 	var s := _bolt([RING])
 	assert_eq(s.form, AttackSpec.Form.RING, "the shot becomes a ring")
-	assert_eq([s.ring_layout, s.count, s.ring_pulses, s.swirl, s.swirl_group], [1, 1, 0, 0, 0])
+	assert_eq([s.ring_layout, s.count, s.swirl, s.swirl_group], [1, 1, 0, 0])
 	assert_almost_eq(s.radius_m, RADIUS, 1e-5, "the card's radius")
 	assert_eq(s.ring_flight, plain.life_ticks, "N3: it flies the shot's flight")
 	assert_almost_eq(s.speed, plain.speed, 1e-6, "at the shot's speed")
@@ -93,37 +95,24 @@ func test_ring_alone_is_the_shot_turned_into_a_shocking_ring_with_its_flight() -
 
 
 # --- The order rule (compile) ------------------------------------------------------------------------------------
-func test_ring_then_spread_is_three_ring_shots_spread_then_ring_is_one_ring_of_three_pulses(
-) -> void:
-	var a := _bolt([RING, SPREAD])
-	var b := _bolt([SPREAD, RING])
-	assert_eq([a.count, a.ring_pulses], [3, 0], "Ring · Spread: three ring shots")
-	assert_gt(a.spread, 0, "in a fan")
-	assert_eq(
-		[b.count, b.ring_pulses, b.spread],
-		[1, 3, 0],
-		"Spread · Ring: one ring shot, three pulses, no fan"
-	)
-	assert_eq(_bolt([SPREAD]).count, 3, "Spread alone is still a 3-shot fan")
-	assert_eq(_bolt([SPREAD]).ring_layout, 0)
-
-
-func test_swirl_right_of_the_rings_scatters_each_left_of_the_ring_spins_the_group() -> void:
-	var a := _bolt([RING, SPREAD, SWIRL])
-	var b := _bolt([SWIRL, RING, SPREAD])
-	assert_eq([a.count, a.swirl, a.swirl_group], [3, 1, 0], "Ring · Spread · Swirl: the storm")
-	assert_eq(
-		[b.count, b.swirl, b.swirl_group], [3, 0, 1], "Swirl · Ring · Spread: one spinning group"
-	)
+func test_swirl_right_of_the_ring_throws_it_left_of_the_ring_makes_it_wobble() -> void:
+	var a := _bolt([RING, SWIRL])
+	var b := _bolt([SWIRL, RING])
+	assert_eq([a.count, a.swirl, a.swirl_group], [1, 1, 0], "Ring · Swirl: one ring, thrown")
+	assert_eq([b.count, b.swirl, b.swirl_group], [1, 0, 1], "Swirl · Ring: one ring, wobbling")
 	var bolt := _bolt([SWIRL])
 	assert_eq(
 		[bolt.form, bolt.swirl],
 		[AttackSpec.Form.BOLT, 1],
 		"Swirl alone: a bolt that leaves at random"
 	)
+	var lab := _bolt([SPREAD, RING])  # a lab's count left of the Ring (no legal wand holds it): not taken in
+	assert_eq(
+		[lab.form, lab.count], [AttackSpec.Form.RING, 3], "v0.9.0 AS: no pulses, the count stays"
+	)
 
 
-func test_the_five_orders_compile_and_fight_differently_and_replay() -> void:
+func test_the_orders_compile_and_fight_differently_and_replay() -> void:
 	var seen := {}
 	for name: String in ORDERS:
 		var f := WandLab.run(WandLab.fight(&"gun", ORDERS[name]), 360)
@@ -176,85 +165,24 @@ func test_the_ring_hits_what_it_passes_once_with_the_whole_hit() -> void:
 	assert_eq(hits[0].amount, whole, "one ring: the whole hit (share 1000)")
 
 
-func test_ring_spread_is_a_fan_of_three_ring_shots_at_the_multi_share() -> void:
-	var w := _shot([RING, SPREAD])
+func test_ring_swirl_throws_the_ring_its_own_random_way_and_replays() -> void:
+	var r := _rings(_shot([RING, SWIRL]))
+	assert_eq(r.size(), 1, "one ring")
+	var plain := _rings(_shot([RING]))
+	assert_ne(Kin.angle_of(r[0][4]), Kin.angle_of(plain[0][4]), "off the aim, its own way")
+	assert_eq(_rings(_shot([RING, SWIRL])), r, "replays from the seed (the named stream)")
+
+
+func test_swirl_left_of_the_ring_flies_it_along_the_aim_wobbling() -> void:
+	var w := _shot([SWIRL, RING])
 	var r := _rings(w)
-	assert_eq(r.size(), 3, "three ring shots")
-	var spec := Modifiers.bolt(w)
-	var offsets := Attacks.shot_offsets(spec)
-	var whole := PlayerBuild.bolt_damage(w, Attacks.bolt_base_damage(spec))
-	for k in 3:
-		var v: Vector2 = r[k][4]
-		assert_almost_eq(Kin.angle_of(v), offsets[k] & 4095, 2, "ring %d on the fan's line" % k)
-		assert_eq(r[k][2], r[0][2], "together")
-		# v0.8.0 MR (O91): each ring shot Spread throws is a share too (its 55 %), then the multi share
-		var each := maxi(1, whole * spec.share_permille / 1000)
-		assert_eq(r[k][3], maxi(1, each * WandRings.MULTI_PERMILLE / 1000), "each the multi share")
-		assert_eq(r[k][5], r[0][5], "one root for the launch")
-	assert_ne(r[0][4], r[2][4], "apart")
-
-
-func test_spread_ring_is_one_bigger_ring_shot_that_pulses_three_times() -> void:
-	var w := _shot([SPREAD, RING])
-	assert_eq(w.ab.ring_pos.size(), 1, "one ring shot")
-	assert_eq(w.ab.ring_pulse[0], 3, "of three pulses")
-	var big := RADIUS * (1000 + WandRings.PULSE_GROW_PERMILLE * 2) / 1000.0
-	assert_almost_eq(w.ab.ring_r[0], big, 1e-4, "bigger per pulse")
-	var life := w.ab.ring_end[0] - w.ab.ring_start[0]
-	var seg := life / 3
-	var t0 := w.ab.ring_start[0]
-	var late := ModifierAbilities.ring_radius(w, 0, t0 + seg - 1)
-	assert_almost_eq(late, big, 1e-4, "the first pulse grew to the whole")
-	assert_lt(ModifierAbilities.ring_radius(w, 0, t0 + seg), late, "the next grows out again")
-
-
-func test_a_pulsing_ring_hits_what_it_carries_once_per_pulse() -> void:
-	var dummy := [[Vector2(4.0, 0.0), 5000]]
-	var one := W.world(&"gun", [RING], dummy)
-	W.run(one, 1, 0, W.S)
-	W.run(one, Modifiers.bolt(one).ring_flight + 2)
-	assert_eq(W.damage(one, &"").size(), 1, "a plain ring: once")
-	var three := W.world(&"gun", [SPREAD, RING], dummy)
-	W.run(three, 1, 0, W.S)
-	W.run(three, Modifiers.bolt(three).ring_flight + 2)
-	var n := W.damage(three, &"").size()
-	assert_between(n, 2, 3, "a three-pulse ring: once per pulse it covers the dummy (%d)" % n)
-
-
-func test_the_storm_sends_each_ring_its_own_random_way_one_after_another() -> void:
-	var w := _shot([RING, SPREAD, SWIRL])
-	var r := _rings(w)
-	assert_eq(r.size(), 3)
-	var angles := {}
-	for k in 3:
-		assert_eq(r[k][2] - r[0][2], k * WandRings.SWIRL_GAP_TICKS, "one after the other")
-		angles[Kin.angle_of(r[k][4])] = true
-	assert_eq(angles.size(), 3, "each its own way")
-	var again := _rings(_shot([RING, SPREAD, SWIRL]))
-	assert_eq(again, r, "the storm replays from the seed (the named stream)")
-
-
-func test_swirl_left_of_the_ring_spins_the_group_round_one_travelling_centre() -> void:
-	var w := _shot([SWIRL, RING, SPREAD])
-	var r := _rings(w)
-	assert_eq(r.size(), 3)
-	var orb := RADIUS * WandRings.GROUP_ORBIT_PERMILLE / 1000.0
-	for e: Array in r:
-		assert_eq(e[2], r[0][2], "together")
-		assert_eq(e[0], r[0][0], "from one spot")
-		assert_eq(e[4], r[0][4], "one velocity: along the aim")
-	for t in [0, 7, 15]:
-		var c := Vector2.ZERO
-		var cs := []
-		for k in 3:
-			cs.append(ModifierAbilities.ring_centre(w, k, w.tick + t))
-			c += cs[k]
-		c /= 3.0
-		for p: Vector2 in cs:
-			assert_almost_eq((p - c).length(), orb, 0.01, "round the centre at tick +%d" % t)
+	assert_eq(r.size(), 1)
+	assert_almost_eq(Kin.angle_of(r[0][4]), 0, 2, "along the aim")
+	var orb := RADIUS * WandRings.WOBBLE_PERMILLE / 1000.0
+	assert_almost_eq(w.ab.ring_orb[0], orb, 1e-4, "round its line, half a radius out")
 	var a := ModifierAbilities.ring_centre(w, 0, w.tick)
 	var b := ModifierAbilities.ring_centre(w, 0, w.tick + 5)
-	assert_ne(a, b, "spinning")
+	assert_ne(a, b, "moving")
 
 
 func test_a_wall_cuts_the_rings_flight() -> void:
@@ -269,7 +197,7 @@ func test_a_wall_cuts_the_rings_flight() -> void:
 
 
 func test_the_launchs_rings_share_a_root_and_the_next_launch_takes_a_new_one() -> void:
-	var w := W.world(&"gun", [RING, SPREAD])
+	var w := W.world(&"gun", [RING])
 	W.run(w, 1, 0, W.S)
 	var first := w.ab.ring_root[0]
 	for k in w.ab.ring_root.size():
@@ -296,22 +224,6 @@ func test_the_ring_cap_holds_and_leaves_a_limit_event() -> void:
 	assert_gt(
 		W.events(w, SimEvent.Kind.LIMIT, WandRings.EFFECT_RING_CAP).size(), 0, "and it says so"
 	)
-	var p := _bolt_world([SPREAD, RING], 5)
-	assert_eq(
-		Modifiers.bolt(p).ring_pulses,
-		7,
-		"a level-5 Spread left of the Ring: 7 shots taken in (MR: +1 a level)"
-	)
-	W.run(p, 1, 0, W.S)
-	assert_eq(p.ab.ring_pulse[0], WandRings.PULSES_MAX, "but one ring pulses 5 times at most")
-
-
-func _bolt_world(ids: Array, level: int) -> World:
-	var w := W.world(&"gun", ids)
-	for id: StringName in ids:
-		CardLevels.set_level(w, W.item(w, id), level)
-	Modifiers.invalidate(w)
-	return w
 
 
 func test_a_rings_shards_are_capped_split_left_of_the_ring_makes_ring_shards() -> void:
@@ -351,10 +263,7 @@ func test_the_old_cards_results_dont_move() -> void:
 	# Spread and Halo are COUNT cards now, but without a Ring nothing reads that: their bolts are as before.
 	for ids: Array in [[SPREAD], [&"halo_shot"], [SPREAD, &"halo_shot"], [&"halo_shot", SPREAD]]:
 		var s := _bolt(ids)
-		assert_eq(
-			[s.form, s.ring_layout, s.ring_pulses, s.swirl, s.ring_flight],
-			[AttackSpec.Form.BOLT, 0, 0, 0, 0]
-		)
+		assert_eq([s.form, s.ring_layout, s.swirl, s.ring_flight], [AttackSpec.Form.BOLT, 0, 0, 0])
 	assert_eq(_bolt([&"halo_shot", SPREAD]).count, 5, "Halo · Spread: 3 + 2")
 	assert_eq(_bolt([SPREAD, &"halo_shot"]).count, 9, "Spread · Halo: 3 × 3")
 

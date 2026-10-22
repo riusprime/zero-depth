@@ -96,7 +96,7 @@ static func build_modifiers(w: World) -> Array[ModifierTable]:
 			var idx := Offers.ability_of(code)
 			if idx < w.ability_tables.size():
 				out.append_array(w.ability_tables[idx].modifiers)
-		elif code < w.item_tables.size():
+		elif code < w.item_tables.size() and AttackSlots.compiles(w, code):  # v0.9.0 AS: the form's table
 			var lvl := CardLevels.level(w, code)  # v0.6.5 WN3: a wand card at its level
 			for m in w.item_tables[code].modifiers:
 				out.append(m.at(lvl))

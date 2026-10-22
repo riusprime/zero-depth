@@ -1152,3 +1152,10 @@ ITEM_MUT_DOUBLE_EXPOSURE,Double Exposure,Doble Exposición
 ITEM_MUT_DOUBLE_EXPOSURE_DESC,Mutation: an attack's path strikes again a moment later.,Mutación: el trazo de un ataque golpea otra vez al poco.
 ITEM_MUT_GRAND_FINALE,Grand Finale,Gran Final
 ITEM_MUT_GRAND_FINALE_DESC,Mutation: the remnants of cards to its left burst.,Mutación: estallan los restos de las cartas a su izquierda.
+UI_SLOT_FORM,Form,Forma
+UI_SLOT_PATTERN,Pattern,Patrón
+UI_SLOT_SECONDARY,Secondary,Secundaria
+UI_SLOT_ELEMENT,Element,Elemento
+UI_SLOT_REPLACES,Replaces %s,Reemplaza a %s
+UI_FORM_ORBS,Orbs,Orbes
+UI_BUILD_FORM,Form: %s,Forma: %s

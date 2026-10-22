@@ -78,7 +78,6 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	&"hole_damage_permille",
 	# v0.8.0 AO (owner O37: the order rule; WandCompile, WandRings)
 	&"ring_layout",
-	&"ring_pulses",
 	&"ring_share_permille",
 	&"swirl",
 	&"swirl_group",
@@ -143,13 +142,11 @@ var alive_max := 0
 
 ## v0.8.0 AO (owner O37; docs/roadmap/v0.8.0/evidence/ATTACK_ORDER.md): the order rule's ring. ring_layout 1: a
 ## ring a SHAPE card made (Ring), run by WandRings. v0.8.0 N3 (owner O47): the shot itself, a ring that flies: `count`
-## ring shots laid as bolts are (a fan, a circle), each pulsing `ring_pulses` times as it flies (the count that stood
-## left of the Ring; 0 = once), each dealing ring_share_permille of the hit (0 = whole; WandRings.MULTI_PERMILLE of
-## that when there is more than one ring or pulse). swirl 1 (Swirl, a MOTION card): every ring flies off in its own
+## ring shots laid as bolts are (v0.9.0 AS: one in a legal wand), each dealing ring_share_permille of the hit (0 =
+## whole). swirl 1 (Swirl, a MOTION card): every ring flies off in its own
 ## random direction (a bolt: each leaves at a random angle); swirl_group 1 (a Swirl left of the Ring, taken in by it):
 ## the group flies the aim as one, its rings spinning round its centre. Randomness: WandRings' named stream.
 var ring_layout := 0
-var ring_pulses := 0
 var ring_share_permille := 0
 var swirl := 0
 var swirl_group := 0
@@ -462,7 +459,6 @@ func read() -> Dictionary:
 		"hole_permille": hole_permille,  # v0.8.0 P2
 		# v0.8.0 AO: the order rule's ring and Swirl (the views' lightning circles, shock arcs and storm)
 		"ring_layout": ring_layout,
-		"ring_pulses": ring_pulses,
 		"ring_share_permille": ring_share_permille,
 		"swirl": swirl,
 		"swirl_group": swirl_group,

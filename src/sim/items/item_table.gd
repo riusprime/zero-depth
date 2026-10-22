@@ -77,6 +77,9 @@ var offer_weight_permille := 1000
 ## v0.8.0 FL (owner O91; LootPacing.Category): the card's pacing category (ItemDefinition.loot_category): OTHER 0,
 ## FORM 1, ELEMENT 2, ADVANCED 3, TRIGGER 4, MUTATION 5. Its draw weight × the floor stage's multiplier for it.
 var loot_category := 0
+## v0.9.0 AS (owner Q2; AttackSlots): the card's wand slot category (ItemDefinition.slot_category's index in
+## SLOT_CATEGORIES): FREE 0, FORM 1, PATTERN 2, SECONDARY 3, ELEMENT 4 (AttackSlots' constants).
+var slot_category := 0
 ## Ember Edge (the burn engine's numbers).
 var burn_damage := 0
 var burn_period_ticks := 1

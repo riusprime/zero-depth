@@ -79,3 +79,38 @@ static func retire_abilities(
 		for t in abilities:
 			t.retired = def.old_ids.has(t.id)
 	return abilities
+
+
+## v0.9.0 AS (owner Q2–Q5, Q13): the slot limits, the projectile caps and the form × card compatibility table
+## (data/wand/attack_slots.tres) against `items` (World.item_tables: its ids become item indices), or null without the
+## data (a lab: no limits).
+static func slots(repo: ContentRepository, items: Array[ItemTable]) -> SlotTable:
+	return compile_slots(repo.get_def(&"wand", &"attack_slots") as AttackSlotsDefinition, items)
+
+
+static func compile_slots(def: AttackSlotsDefinition, items: Array[ItemTable]) -> SlotTable:
+	if def == null:
+		return null
+	var t := SlotTable.new()
+	t.gun_limits = def.gun_limits.duplicate()
+	t.blade_limits = def.blade_limits.duplicate()
+	t.shots_per_attack_max = def.shots_per_attack_max
+	t.shots_per_second_max = def.shots_per_second_max
+	t.merge_radius_max_permille = def.merge_radius_max_permille
+	var index := {}
+	for k in items.size():
+		index[items[k].id] = k
+	for r in def.forms:
+		t.form_ids.append(r.id)
+		t.form_cards.append(int(index.get(r.card, -1)) if not String(r.card).is_empty() else -1)
+		var cells := {}
+		for id in r.allowed:
+			if index.has(id):
+				cells[int(index[id])] = SlotTable.CELL_ON
+		for id in r.ruled:
+			if index.has(id):
+				cells[int(index[id])] = SlotTable.CELL_RULED
+		t.form_cells.append(cells)
+		if String(r.card).is_empty() and t.default_form < 0:
+			t.default_form = t.form_ids.size() - 1
+	return t

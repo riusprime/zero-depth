@@ -15,4 +15,5 @@ frost_seconds = 3.0
 freeze_seconds = 1.0
 modifiers = Array[StringName]([&"frost_core"])
 loot_category = &"element"
+slot_category = &"element"
 id = &"frost_core"

@@ -126,6 +126,11 @@ var shot_count := 0
 var blast_tick := -1
 var blast_pos := PackedVector2Array()
 var blast_merged := 0
+## v0.9.0 AS (owner Q13, ShotCap): the player projectiles a Gun run launched in each of the last 60 ticks (indexed
+## tick % 60; shot_window_tick the last tick written): the per-second budget. Snapshotted with the world; not hashed (it
+## only changes an outcome past the budget, and no golden build reaches it).
+var shot_window := PackedInt32Array()
+var shot_window_tick := -1
 ## Item pickups lying on the floor.
 var pickups := PickupStore.new()
 ## Twin Arc: ticks until the pending echo (0 = none), its angle, combo step (its shape), root and damage, and the
@@ -371,6 +376,9 @@ var mx := ModifierState.new()
 var blade := BladeState.new()
 ## v0.6.5 WN4: the Blade pool's runner numbers (loadout, not hashed; null = a lab world: BladeTable's defaults).
 var blade_table: BladeTable
+## v0.9.0 AS (owner Q2–Q5, Q13; AttackSlots): the wand's slot limits, projectile caps and form × card table (loadout,
+## not hashed; null = a lab world: no limits, no table, no caps).
+var slot_table: SlotTable
 ## v0.5.5 DS (D4, D7): the hidden catch-up's numbers (loadout, not hashed; null = off) and the floor's m (CatchUp),
 ## hashed only with the table. S5: the rooms of a Deep floor whose first pack already brought its elite (hashed once
 ## one did).

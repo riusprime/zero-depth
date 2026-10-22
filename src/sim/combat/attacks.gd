@@ -306,9 +306,28 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 		kind0 |= ProjectileStore.REPEAT
 	var centre := 0 if spec.directions == AttackSpec.DIR_CIRCLE else (offsets.size() - 1) / 2
 	var link := Remnants.link_of(spec) if not spec.hooks.is_empty() else null  # v0.8.0 RM: Threadline
+	# v0.9.0 AS (owner Q13; ShotCap): at most so many shots a volley and a second on a Gun run; the rest merge into
+	# the shots that fire (evenly picked, the centre first), each carrying the damage of the copies it took in.
+	var want := offsets.size() * lanes.size()
+	var fit := want
+	if ShotCap.per_attack(w) > 0:
+		fit = mini(want, ShotCap.per_attack(w))
+	var root := ctx.depth == 0 and not ctx.repeat and not ctx.back  # the player's own shot (ShotCap)
+	fit = ShotCap.room(w, fit, root)
+	if fit <= 0:
+		return
+	var dmg := ctx.damage if fit >= want else maxi(1, (ctx.damage * want + fit / 2) / fit)
+	if fit < want and w.slot_table != null:
+		r = r * ShotCap.grow_permille(want, fit, w.slot_table.merge_radius_max_permille) / 1000.0
+	var q := -1
+	var picked := 0
 	for oi in offsets.size():
 		var off := offsets[oi]
 		for li in lanes.size():
+			q += 1
+			if fit < want and q != (2 * picked + 1) * want / (2 * fit):
+				continue
+			picked += 1
 			var dir := Kin.dir(ctx.angle + off + turns[li])
 			var side := lanes[li]
 			if room == 0:
@@ -323,13 +342,17 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				ActorStore.TEAM_PLAYER,
 				muzzle,
 				dir * spec.speed,
-				ctx.damage,
+				dmg,
 				r,
 				maxi(1, spec.life_ticks),
 				ctx.tags,
 				spec.bounces,
 				spec.key
 			)
+			if root:
+				root = false  # the volley's first shot is the player's own; the rest are extras
+			else:
+				ShotCap.spend(w, 1)  # v0.9.0 AS
 			var kind := kind0
 			if spec.share_permille > 0 and (oi != centre or li != lane_c):
 				kind |= ProjectileStore.SECONDARY
