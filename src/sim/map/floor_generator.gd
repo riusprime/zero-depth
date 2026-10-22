@@ -68,6 +68,7 @@ static func generate(seed_value: int, params: FloorParams = null) -> FloorLayout
 	var rng := RngStream.derive(seed_value, "map")
 	var f := FloorLayout.new()
 	f.seed_value = seed_value
+	f.legacy_gate = p.legacy_gate  # v0.9.0 PT
 	f.cell_size = Vector2(
 		rng.range_int(FloorLayout.cm(p.cell_size_min.x), FloorLayout.cm(p.cell_size_max.x)) / 100.0,
 		rng.range_int(FloorLayout.cm(p.cell_size_min.y), FloorLayout.cm(p.cell_size_max.y)) / 100.0
@@ -107,6 +108,7 @@ static func one_room(seed_value: int, cells: Vector2i, params: FloorParams = nul
 	var rng := RngStream.derive(seed_value, "map")
 	var f := FloorLayout.new()
 	f.seed_value = seed_value
+	f.legacy_gate = p.legacy_gate  # v0.9.0 PT
 	f.cell_size = Vector2(
 		rng.range_int(FloorLayout.cm(p.cell_size_min.x), FloorLayout.cm(p.cell_size_max.x)) / 100.0,
 		rng.range_int(FloorLayout.cm(p.cell_size_min.y), FloorLayout.cm(p.cell_size_max.y)) / 100.0
@@ -386,7 +388,7 @@ static func _place_portal(f: FloorLayout, rng: RngStream) -> void:
 						if absf(along[a] - (at.y if side % 2 == 0 else at.x)) < keep[a]:
 							ok = false
 					f.portal_angle = _SIDE_ANGLES[side]
-					f.portal_pos = at + f.portal_facing() * FloorLayout.GATE_WALL_CLEAR  # v0.9.0 PT
+					f.portal_pos = at + f.portal_facing() * GateClearance.wall_offset(f)  # v0.9.0 PT
 					if ok and _gate_fits(f):
 						return
 	assert(false, "no wall of the portal room fits the gate")
@@ -404,7 +406,7 @@ static func _gate_fits(f: FloorLayout) -> bool:
 	return (
 		r.encloses(Rect2(f.portal_pos - half, half * 2.0))
 		and r.encloses(f.portal_front())
-		and r.encloses(FloorLayout.oval_clear_rect(f.portal_pos, f.portal_angle))
+		and GateClearance.oval_fits(f, r, f.portal_pos, f.portal_angle)
 	)  # v0.9.0 PT
 
 

@@ -38,6 +38,8 @@ const GATE_WALL_CLEAR := 1.5
 const OVAL_HALF_W := 0.8
 ## How far the gate's zone reaches either side of its centre line (the oval's clearance; at least the old 2.2 m).
 const GATE_ZONE_HALF_W := OVAL_HALF_W + GATE_WALL_CLEAR
+## v0.9.0 PT: before PT a gate's zone reached this far past its frame's sides (GATE_WIDTH / 2 + 1.0 = 2.2 m).
+const LEGACY_ZONE_SIDE := 1.0
 
 ## How many templates there are, and their names (for tools and evidence).
 const TEMPLATE_COUNT := 13
@@ -92,6 +94,9 @@ var portal_room := 0
 var start_pos := Vector2.ZERO
 ## The centre of the gate's footprint; the gate faces portal_angle (into the room).
 var portal_pos := Vector2.ZERO
+## v0.9.0 PT: a floor built under floor rules 1-9 (saved before v0.9.0) keeps its gates against the wall, as it was
+## saved (FloorParams.legacy_gate); otherwise they stand GATE_WALL_CLEAR out from it.
+var legacy_gate := false
 var portal_angle := 0
 ## v0.5.0 RT: the Deep gate (Routes.place_deep_gate; only on a run's floors before the last), beside the gate in the
 ## boss room. has_deep_portal is false until it is placed.
@@ -258,12 +263,7 @@ func door_approaches(room: int, m: float = 1.0) -> PackedVector2Array:
 
 ## The gate's footprint, its clear front square and a margin: kept free of interior pieces and spots.
 func gate_zone() -> Rect2:
-	var n := portal_facing()
-	var t := Vector2(-n.y, n.x)
-	var face := portal_pos - n * GATE_WALL_CLEAR  # v0.9.0 PT: from the wall face, the gap behind the oval included
-	var half_w := GATE_ZONE_HALF_W
-	var depth := GATE_WALL_CLEAR + GATE_HALF_DEPTH + GATE_FRONT + 1.0
-	return Rect2(face + t * half_w, Vector2.ZERO).expand(face - t * half_w + n * depth)
+	return GateClearance.zone(self, portal_pos, portal_angle)
 
 
 ## v0.9.0 PT: the rectangle that must stay free of walls round a gate's oval at `pos` facing `angle` (the oval's

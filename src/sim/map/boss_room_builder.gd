@@ -458,7 +458,7 @@ static func _place_gate(f: FloorLayout, r: Rect2, side: int) -> void:
 			face = Vector2(c.x, r.position.y)
 	f.portal_room = f.boss_room
 	f.portal_angle = _SIDE_ANGLES[side]
-	f.portal_pos = face + f.portal_facing() * FloorLayout.GATE_WALL_CLEAR  # v0.9.0 PT: clear of the wall
+	f.portal_pos = face + f.portal_facing() * GateClearance.wall_offset(f)  # v0.9.0 PT: clear of the wall
 
 
 ## The door's approach point just inside the boss room.
