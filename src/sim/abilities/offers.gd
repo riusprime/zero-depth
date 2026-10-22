@@ -77,8 +77,8 @@ static func rarity_of(code: int) -> int:
 ## Rolls reward i's offer (Rewards.interact, on its first open). v0.8.0 FL (LootPacing): a regular altar's offer
 ## keeps the floor's compatible-card guarantee, then a regular altar's or chest's offer draws its jackpot.
 static func roll(w: World, i: int) -> PackedInt32Array:
-	if Routes.is_epic_altar(w, i):
-		return roll_epic(w)  # v0.5.0 RT
+	if Routes.is_epic_altar(w, i) or TimedDoor.is_epic(w, i):
+		return roll_epic(w)  # v0.5.0 RT; v0.9.0 TD: the secret room's epic altar
 	if BossReward.is_legendary(w, i):
 		return roll_legendary(w)  # v0.5.5 AR
 	var out: PackedInt32Array

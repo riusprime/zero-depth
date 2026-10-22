@@ -179,6 +179,14 @@ var altar_pos := Vector2.ZERO
 var causeway_foot := Vector2.ZERO
 var causeway_top := Vector2.ZERO
 var causeway_half_w := 0.0
+## v0.9.0 TD (owner W §2, Q20, Q23; TimedDoorRooms.mark, -1 / empty on a floor without one): the secret room behind the
+## timed door, the room before it (the host, which holds the two switches), the door (an index into the doorway arrays),
+## the switches' spots and the slab that shuts the doorway (TimedDoor adds it as a barrier in play).
+var timed_room := -1
+var timed_host := -1
+var timed_door := -1
+var timed_switches := PackedVector2Array()
+var timed_door_wall: Obb
 
 
 func room_count() -> int:

@@ -875,6 +875,16 @@
       "loop": false
     },
     {
+      "id": "timer_beep",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/timer_beep.wav",
+      "sha256": "fd1cf7255c42224553818731cce8843fe20dc67707820dd33b6c448f2b0ecedd",
+      "seconds": 0.09,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -11.22,
+      "loop": false
+    },
+    {
       "id": "ruins",
       "kind": "ambience",
       "path": "assets/audio/ambience/ruins.wav",

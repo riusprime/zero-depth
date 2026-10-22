@@ -13,9 +13,9 @@ extends RefCounted
 ## - FIGHT: the buildup ended: the walls of light (FloorLayout.light_walls) close the plateau's ring (a hero still out
 ##   on the causeway is set back inside first, at the plateau's edge by the causeway's top), and the Colossus rises
 ##   from the altar (FinalBoss.begin): today's fight, unchanged.
-## The interact press is slotted into World.step's fixed order after the boss door's (Rewards, Events, Shop, Gamble,
-## the boss door, the pylons), with its own reach and its own HUD prompt (FinalApproachHud), written so the shared
-## interactable (PLAN step IX) can absorb it: in_reach() is the only reach rule, interact() the only press.
+## v0.9.0 IX: the pylons are entries of the shared interactable registry (Interactables, Kind.PYLON, ref k, reach
+## PYLON_REACH_M; register()): the registry's slot in World.step's order (after the boss door's) picks the press and
+## calls press(); the HUD's shared prompt shows APPROACH_PYLON_PROMPT by an unlit one. A lit pylon's entry is disabled.
 ## Pure: no stream is drawn.
 
 enum State { WALK, BUILDUP, FIGHT }
@@ -59,33 +59,45 @@ func lit_count() -> int:
 	return n
 
 
-## The pylon (0 or 1) an unlit one in reach of `p` on `f`'s plateau, or -1: the nearer when both are.
-func in_reach(f: FloorLayout, p: Vector2) -> int:
-	if state != State.WALK or f == null:
-		return -1
-	var best := -1
-	var best_d := PYLON_REACH_M
+## Registers the pylons into `w`'s interactable registry (setup, after create; FinalArenaScenario).
+func register(w: World) -> void:
+	var f := w.floor_layout
 	for k in f.pylons.size():
-		var d := Kin.length(f.pylons[k] - p)
-		if lit[k] == 0 and d <= best_d:
-			best = k
-			best_d = d
-	return best
+		w.interactables.add(Interactables.Kind.PYLON, f.pylons[k], PYLON_REACH_M, k)
+	sync_registry(w)
 
 
-## The press (World.step's interact order): a pylon in reach switches on; the second starts the buildup.
-func interact(w: World) -> void:
-	if w.player_dead() or w.buffered(InputFrame.INTERACT) == 0:
+## The registry's pylon entries follow `lit` (a lit one is on and takes no press; none takes one past WALK). A restore
+## of a save from before IX (no registry) runs it once.
+func sync_registry(w: World) -> void:
+	var r := w.interactables
+	for k in lit.size():
+		var i := r.find(Interactables.Kind.PYLON, k)
+		if i >= 0:
+			r.state[i] = lit[k]
+			r.enabled[i] = 1 if lit[k] == 0 and state == State.WALK else 0
+
+
+## The pylon (0 or 1) the interact press would switch on now from `w`'s hero, or -1 (the registry's pick).
+func in_reach(w: World) -> int:
+	if state != State.WALK or w.floor_layout == null:
+		return -1
+	var i := w.interactables.in_reach(w.player_pos())
+	if i < 0 or w.interactables.kind[i] != Interactables.Kind.PYLON:
+		return -1
+	return w.interactables.ref[i]
+
+
+## The press on pylon k (Interactables.handle): it switches on; the second starts the buildup.
+func press(w: World, k: int) -> void:
+	if state != State.WALK or lit[k] == 1:
 		return
-	var k := in_reach(w.floor_layout, w.player_pos())
-	if k < 0:
-		return
-	w.consume_buffered(InputFrame.INTERACT)
 	lit[k] = 1
 	lit_tick[k] = w.tick
 	if lit_count() >= lit.size():
 		state = State.BUILDUP
 		buildup_tick = w.tick
+	sync_registry(w)
 
 
 ## Tick phase 9 (before FinalBoss.advance): the buildup's end raises the walls and begins the fight.

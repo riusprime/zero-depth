@@ -100,6 +100,11 @@ var room_layouts := {}
 var layout_door_side := 1.0
 var layout_door_depth := 3.0
 
+## v0.9.0 TD (owner W §2, Q20): the share of floors with a timed door and its secret room (per mille; starting value
+## 35 %), and the door's timer in ticks (15 s at 60 Hz). MapDefinition's numbers.
+var timed_door_permille := 350
+var timed_door_ticks := 900
+
 
 static func defaults() -> FloorParams:
 	return FloorParams.new()

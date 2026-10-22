@@ -9,6 +9,13 @@ const KIND_PLAYER := ActorStore.Kind.PLAYER
 const APPROACH_WALK := FinalApproach.State.WALK
 const APPROACH_BUILDUP := FinalApproach.State.BUILDUP
 const APPROACH_FIGHT := FinalApproach.State.FIGHT
+## v0.9.0 IX: the shared interactables' kinds (interactable_kind).
+const INTERACT_PYLON := Interactables.Kind.PYLON
+const INTERACT_TIMED_SWITCH := Interactables.Kind.TIMED_SWITCH
+## v0.9.0 TD: the timed door's states (timed_door_state).
+const TIMED_SHUT := TimedDoor.State.SHUT
+const TIMED_OPEN := TimedDoor.State.OPEN
+const TIMED_HELD := TimedDoor.State.HELD
 ## v0.8.0 RM: the remnant kinds, activations and Thermal Break's effect id, for the views (the layer rule).
 const REMNANT_SEGMENT := RemnantRule.Kind.SEGMENT
 const REMNANT_ANCHOR := RemnantRule.Kind.ANCHOR
@@ -1333,7 +1340,7 @@ func floor_is_deep() -> bool:
 
 ## Reward i is the Deep floor's epic altar.
 func reward_is_epic(i: int) -> bool:
-	return Routes.is_epic_altar(_w, i)
+	return Routes.is_epic_altar(_w, i) or TimedDoor.is_epic(_w, i)  # v0.9.0 TD: the secret room's
 
 
 ## v0.5.5 AR (X1b): reward i is the boss's legendary altar.
@@ -1780,7 +1787,7 @@ func approach_pylon_tick(k: int) -> int:
 func approach_pylon_in_reach() -> int:
 	if _w.approach == null or _w.player_dead():
 		return -1
-	return _w.approach.in_reach(_w.floor_layout, player_pos())
+	return _w.approach.in_reach(_w)
 
 
 ## 0..1 through the buildup (after the second pylon), -1 outside it.
@@ -2824,3 +2831,151 @@ func shop_denied_tick() -> int:
 ## amount, used), reroll (price, rerolls), sell (kind SHOP_SELL_*, ref, code, refund) and the last action / refusal.
 func shop() -> Dictionary:
 	return Shop.read(_w)
+
+
+# --- The shared interactables (v0.9.0 IX; Interactables) ---------------------------------------------------
+## The registry's entry the interact press would go to now, or -1: none in reach, the hero dead, a choice open, or a
+## system earlier in World.step's order (a reward, an event, the shop, the shrine, the boss door) takes the press.
+func interactable_in_reach() -> int:
+	if _w.player_dead() or choosing():
+		return -1
+	if reward_in_reach() >= 0 or event_in_reach() >= 0 or shop_in_reach() or gamble_in_reach():
+		return -1
+	if boss_door_in_reach():
+		return -1
+	return _w.interactables.in_reach(player_pos())
+
+
+## The shared prompt's string key (&"" when the press would reach no interactable).
+func interact_prompt_key() -> StringName:
+	var i := interactable_in_reach()
+	if i < 0:
+		return &""
+	return Interactables.PROMPT_KEYS[_w.interactables.kind[i]]
+
+
+func interactable_count() -> int:
+	return _w.interactables.size()
+
+
+func interactable_kind(i: int) -> int:
+	return _w.interactables.kind[i]
+
+
+func interactable_pos(i: int) -> Vector2:
+	return _w.interactables.pos[i]
+
+
+## Entry i's state (a switch: 0 off, 1 on).
+func interactable_state(i: int) -> int:
+	return _w.interactables.state[i]
+
+
+func interactable_enabled(i: int) -> bool:
+	return _w.interactables.enabled[i] == 1
+
+
+## The tick entry i was last pressed (-1 never).
+func interactable_press_tick(i: int) -> int:
+	return _w.interactables.press_tick[i]
+
+
+# --- The timed door (v0.9.0 TD; TimedDoor) -----------------------------------------------------------------
+## The floor has a timed door to a secret room.
+func has_timed_door() -> bool:
+	return _w.timed != null
+
+
+## Its state (TIMED_*; -1 without one).
+func timed_door_state() -> int:
+	return _w.timed.state if _w.timed != null else -1
+
+
+## The doorway it shuts: its centre, the direction from the host into the secret room (1/4096 turns), its slab.
+func timed_door_center() -> Vector2:
+	return _w.floor_layout.door_centers[_w.floor_layout.timed_door]
+
+
+func timed_door_angle() -> int:
+	var f := _w.floor_layout
+	var a := f.door_angles[f.timed_door]
+	return a if f.door_rooms[f.timed_door].x == f.timed_host else (a + 2048) % 4096
+
+
+func timed_door_slab() -> Obb:
+	return _w.floor_layout.timed_door_wall
+
+
+func timed_door_width() -> float:
+	return _w.floor_layout.door_widths[_w.floor_layout.timed_door]
+
+
+func timed_door_depth() -> float:
+	return _w.floor_layout.door_depths[_w.floor_layout.timed_door]
+
+
+## The ticks the door opened and shut last (-1 not yet), its timer and the ticks left on it (0 unless open).
+func timed_open_tick() -> int:
+	return _w.timed.open_tick if _w.timed != null else -1
+
+
+func timed_shut_tick() -> int:
+	return _w.timed.shut_tick if _w.timed != null else -1
+
+
+func timed_timer_ticks() -> int:
+	return _w.timed.timer_ticks if _w.timed != null else 0
+
+
+func timed_ticks_left() -> int:
+	return _w.timed.ticks_left(_w.tick) if _w.timed != null else 0
+
+
+## How many times the door has opened (0: never, the secret room still unseen).
+func timed_opened() -> int:
+	return _w.timed.opened if _w.timed != null else 0
+
+
+## The door's switches: their count and each one's registry entry (interactable_pos, interactable_state).
+func timed_switch_count() -> int:
+	return _w.timed.switches.size() if _w.timed != null else 0
+
+
+func timed_switch_entry(k: int) -> int:
+	return _w.timed.switches[k]
+
+
+## The secret room and the room before it (the switches' room), -1 without a door.
+func timed_room() -> int:
+	return _w.floor_layout.timed_room if _w.timed != null else -1
+
+
+func timed_host() -> int:
+	return _w.floor_layout.timed_host if _w.timed != null else -1
+
+
+## v0.9.0 TD (owner Q23: "hidden room should not appear or be visible until you open it"): the room not drawn, lit or
+## shown on the minimap yet (-1 none): the secret room until its door first opens.
+func hidden_room() -> int:
+	if _w.timed == null or _w.timed.opened > 0:
+		return -1
+	return _w.floor_layout.timed_room
+
+
+## The hidden room's cells in metres, grid line to grid line (Rect2() for none).
+func hidden_room_cells() -> Rect2:
+	var room := hidden_room()
+	if room < 0:
+		return Rect2()
+	return _w.floor_layout.cell_rect(_w.floor_layout.room_cells[room])
+
+
+## Reward i stands in the hidden room (not drawn yet).
+func reward_hidden(i: int) -> bool:
+	var room := hidden_room()
+	return room >= 0 and _w.floor_layout.room_of(_w.rewards.pos(i)) == room
+
+
+## Puzzle calm (Q22): the hero stands in an unsolved puzzle's room (new packs at a quarter of the rate).
+func puzzle_calm() -> bool:
+	return Interactables.calm_now(_w)

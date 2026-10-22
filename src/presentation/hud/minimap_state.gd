@@ -13,6 +13,9 @@ var current := -1
 var revision := 0
 ## v0.4.0 SV: rooms already entered on a resumed floor (one byte per room), taken when the floor is first read.
 var preset := PackedByteArray()
+## v0.9.0 TD (owner Q23): the room the map doesn't show at all yet (WorldReader.hidden_room; -1 none): no fill, no
+## doorway, no stub into it, and the full map is fitted without it.
+var hidden := -1
 
 var _floor_key := ""
 var _rewards_key := ""
@@ -48,6 +51,9 @@ func update(reader: WorldReader) -> bool:
 	if room >= 0 and discovered[room] == 0:
 		discovered[room] = 1
 		changed = true
+	if reader.hidden_room() != hidden:  # v0.9.0 TD: the secret room's door first opened
+		hidden = reader.hidden_room()
+		changed = true
 	var rewards := _rewards_signature(reader)
 	if rewards != _rewards_key:
 		_rewards_key = rewards
@@ -70,13 +76,19 @@ func discovered_count() -> int:
 ## Door i leads from a room you know into one you don't: the map draws it as an open stub (unexplored space).
 func door_to_unknown(reader: WorldReader, i: int) -> bool:
 	var d := reader.floor_door_rooms(i)
-	return is_discovered(d.x) != is_discovered(d.y)
+	return is_discovered(d.x) != is_discovered(d.y) and not door_hidden(reader, i)
 
 
 ## Door i is drawn at all: at least one of its rooms is known.
 func door_known(reader: WorldReader, i: int) -> bool:
 	var d := reader.floor_door_rooms(i)
-	return is_discovered(d.x) or is_discovered(d.y)
+	return (is_discovered(d.x) or is_discovered(d.y)) and not door_hidden(reader, i)
+
+
+## v0.9.0 TD: door i leads into the hidden room (drawn as plain wall until it opens).
+func door_hidden(reader: WorldReader, i: int) -> bool:
+	var d := reader.floor_door_rooms(i)
+	return hidden >= 0 and (d.x == hidden or d.y == hidden)
 
 
 ## Indices of doorways that lead into rooms you haven't entered yet.

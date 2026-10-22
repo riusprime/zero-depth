@@ -178,6 +178,11 @@ var boss_id := -1
 var final_fight: FinalFight
 ## v0.9.0 FA (owner C §3, Q18; FinalApproach): the final approach's pylons, buildup and walls; null elsewhere.
 var approach: FinalApproach
+## v0.9.0 IX (owner W34; Interactables): the shared interactables (the pylons, the timed doors' switches) and the
+## puzzles' calm rooms; empty in most worlds (hashed only when it holds one).
+var interactables := Interactables.new()
+## v0.9.0 TD (owner W §2, Q20; TimedDoor): the floor's timed door and its secret room; null on a floor without one.
+var timed: TimedDoor
 # --- end Bosses ---------------------------------------------------------------------------------------------
 # --- Rewards (v0.3.0 E; Rewards) ----------------------------------------------------------------------------
 ## The floor's reward rules (part of the loadout, like item_tables; not hashed).
@@ -616,8 +621,8 @@ func step(frame: InputFrame) -> void:
 	Gamble.interact(self)  # Gamble shrine (v0.3.0 L19): the press goes to an altar or chest in reach first.
 	if boss_flow != null:  # v0.8.0 BD (O83): the press by the shut boss door opens it
 		boss_flow.interact(self)
-	if approach != null:  # v0.9.0 FA (Q18): the press by a rune pylon switches it on
-		approach.interact(self)
+	# v0.9.0 IX: the shared interactables' slot (the FA pylons): the nearest enabled one in reach takes the press
+	Interactables.interact(self)
 	# 3. AI (the flow field refreshes on fixed ticks).
 	var pp := phase_probe  # v0.8.0 HS: the perf probe's phase timer (null in play)
 	# v0.8.0 NF (owner O90): the flood starts on those ticks and is built over NavField.SLICES ticks, then swapped in.
@@ -679,6 +684,8 @@ func step(frame: InputFrame) -> void:
 	# 9. Deaths and spawns (the wave director adds enemies here).
 	if approach != null:
 		approach.advance(self)  # v0.9.0 FA: the buildup's end: the walls of light, the Colossus rises
+	if timed != null:
+		TimedDoor.advance(self)  # v0.9.0 TD: the slab, the timer, the shut once the hero is clear
 	if final_fight != null:
 		FinalBoss.advance(self)  # v0.8.0 FB1: the shatter, the next body, the win (before the dead leave)
 	_remove_dead()
@@ -1275,6 +1282,7 @@ func state_hash() -> String:
 		h.add_ints(deep_elite_rooms)
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
+		# v0.9.0 TD fix: FA's approach block had split these off the boss flow's (normal floors stopped hashing them)
 		for v in [floor_index, floor_count]:
 			h.add_int(v)
 		if loop > 1:  # v0.7.5 AP: only past the first loop, so every loop-1 floor hashes as before
@@ -1282,6 +1290,10 @@ func state_hash() -> String:
 				h.add_int(v)
 	if approach != null:  # v0.9.0 FA: only the final approach carries it
 		approach.hash_into(h)
+	if not interactables.is_empty():  # v0.9.0 IX: only worlds holding an interactable or a calm room
+		interactables.hash_into(h)
+	if timed != null:  # v0.9.0 TD: only floors with a timed door
+		timed.hash_into(h)
 	if final_fight != null:  # v0.8.0 FB1: only the worlds that hold the final fight
 		final_fight.hash_into(h)
 	actors.hash_into(h)

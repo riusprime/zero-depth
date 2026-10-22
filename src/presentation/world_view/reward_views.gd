@@ -95,6 +95,7 @@ func sync(reader: WorldReader) -> void:
 			add_child(n)
 			n.reset_physics_interpolation()
 			_nodes[id] = n
+		n.visible = not reader.reward_hidden(i)  # v0.9.0 TD (Q23): unseen in the hidden room until it opens
 		(n.get_meta(&"seal") as Node3D).visible = reader.reward_locked(i)  # v0.5.5 AR
 		var label: Label3D = n.get_meta(&"price") if n.has_meta(&"price") else null
 		if label != null:
