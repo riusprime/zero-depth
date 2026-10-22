@@ -12,9 +12,10 @@ shelf, discovery condition) and is recorded once in a new `collectibles` section
 version 2, migrated with nothing lost; W39). A run never depends on them. Each shows on a shelf of the Rune Archive
 in the hub (HB): uncollected ones show as a dark silhouette with "?" and no hint text beyond the shelf name.
 
-**Where the sources stand.** Several rows depend on Wave 3–4 systems that are planned in PLAN (DX hidden rooms and
-cracked walls, RA rune alignment, TD timed doors, LK lockdowns, SH shrines, HF healing fountains, DP the Purple Portal);
-the Crown shelf uses the final boss's three bodies, which exist today (`data/final_boss/`). This draft does not claim any of them is built; each row names the step it rides on.
+**Where the sources stand (the lead, 2026-10-23).** DX (hidden rooms, cracked walls), RA (rune alignment), TD (timed
+doors), LK (Lockdowns) and DP (the Purple Portal) are merged on the session branch; SH (shrines) and HF (healing
+fountains) are being built. The Crown shelf uses the final boss's three bodies, which exist today
+(`data/final_boss/`). Each row names the step it rides on.
 
 **Style.** One short line, no numbers, like the Codex lines (`BOSS_FOUNDRY_DESC` "A walking furnace.",
 `BOSS_BROOD_MOTHER_DESC` "Mother of the swarm."). Boss names stay in English in `es`, as in `locale/strings.csv`.
