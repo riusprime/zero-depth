@@ -63,6 +63,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
   Portal, the hub menu, two unlockable forms, shrines, fountains, robes and affinities). Steps rewritten in six waves.
   Next: the owner's go for Wave 1.
 - 2026-10-22 — Wave 1 started (owner: "Start the development phase with Wave 1"). Toolchain on this PC: Godot 4.7.2 from
-  Downloads and gdtoolkit 4.5.0 in a scratch venv (nothing installed system-wide). DS (`15a1bac2`): test_door_boom 2/2,
-  test_boss_door_view + test_audio_director + arch 26/26 total, e2e run_flow 3/3. CV (`ce7ffad7`): 43/43 presentation
+  Downloads and gdtoolkit 4.5.0 in a scratch venv (nothing installed system-wide). DS (`15a1bac2`): test_door_boom +
+  test_boss_door_view + test_audio_director 22/22, then test_door_boom + arch layering/purity 6/6, e2e run_flow 3/3. CV (`ce7ffad7`): 43/43 presentation
   and arch, e2e arrival + ascension 4/4, audio + portal 3/3. PT and SA/FA handed to two agents in worktrees.
