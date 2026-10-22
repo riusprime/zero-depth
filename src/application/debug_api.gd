@@ -198,6 +198,7 @@ func go_arena() -> void:
 
 
 ## v0.5.5 AR (dev runs only): kills every enemy inside the sealed arena at the next tick boundary (one wave).
+## v0.9.0 LK: a sealed Lockdown's fighters too (one formation).
 func clear_wave() -> void:
 	_clear_wave = true
 
@@ -274,6 +275,11 @@ func _apply_commands() -> void:
 				):
 					world.actors.invuln[i] = 0
 					Damage.hit(world, i, world.actors.hp[i] * 10, 0, 0, world.take_root(), 0, p, p)
+		if Lockdowns.holds_spawns(world):  # v0.9.0 LK: a sealed Lockdown's fighters (one formation)
+			for i in Lockdowns.fighters(world):
+				var p := world.actors.pos(i)
+				world.actors.invuln[i] = 0
+				Damage.hit(world, i, world.actors.hp[i] * 10, 0, 0, world.take_root(), 0, p, p)
 	if _to_overrun:
 		_to_overrun = false
 		var at := overrun_door_outside(world, 1.5)

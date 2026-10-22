@@ -19,6 +19,28 @@ static func compile_arena(def: ArenaDefinition) -> ArenaTable:
 	return t
 
 
+## v0.9.0 LK (owner Q21): the Lockdowns' numbers (null without a definition: no Lockdowns).
+static func compile_lockdown(def: LockdownDefinition) -> LockdownTable:
+	if def == null:
+		return null
+	var t := LockdownTable.new()
+	t.rooms_min = def.rooms_min
+	t.rooms_max = def.rooms_max
+	t.kind_weights = def.kind_weights.duplicate()
+	t.kind_floor_min = def.kind_floor_min.duplicate()
+	t.waves = def.waves
+	t.wave_sizes = def.wave_sizes.duplicate()
+	t.first_wave_ticks = SimTick.seconds_to_ticks(def.first_wave_seconds)
+	t.wave_gap_ticks = SimTick.seconds_to_ticks(def.wave_gap_seconds)
+	t.stuck_ticks = maxi(1, SimTick.seconds_to_ticks(def.stuck_seconds))
+	t.cap_ticks = maxi(1, SimTick.seconds_to_ticks(def.cap_seconds))
+	t.hazard_every_ticks = maxi(1, SimTick.seconds_to_ticks(def.hazard_every_seconds))
+	t.hazard_warn_ticks = SimTick.seconds_to_ticks(def.hazard_warn_seconds)
+	t.hazard_radius_m = def.hazard_radius
+	t.hazard_damage = def.hazard_damage
+	return t
+
+
 ## v0.5.5 AR (X1b): the boss-only legendary tier, its ids resolved against the compiled stat cards and items.
 static func compile_legendary(
 	def: LegendaryDefinition, stats: Array[StatTable], items: Array[ItemTable]

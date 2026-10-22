@@ -45,7 +45,9 @@ extends RefCounted
 ## v0.9.0 DP (owner Q26b): 12 is today's: the Purple Portal is earned (a purple-rune room on some floors,
 ## PurpleRunes.setup; the Deep gate opens only on a floor whose runes were awakened). A floor saved under rules 1-11
 ## keeps the Deep gate on every floor before the last, as it was saved (PurpleRunes.legacy_deep_gate).
-const FLOOR_RULES := 12
+## v0.9.0 LK (owner Q21): 13 is today's: 1-2 Lockdown rooms a floor (Lockdowns.setup). A floor saved under rules 1-12
+## is rebuilt without any, as it was saved (FloorPlan).
+const FLOOR_RULES := 13
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
@@ -57,6 +59,7 @@ const FLOOR_RULES_V080_N19 := 8
 const FLOOR_RULES_V080_BD := 9
 const FLOOR_RULES_V090_TD := 10
 const FLOOR_RULES_V090_RA := 11
+const FLOOR_RULES_V090_DP := 12
 
 var run_seed := 0
 var table: RunTable

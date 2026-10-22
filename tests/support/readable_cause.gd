@@ -112,6 +112,9 @@ func _check(w: World, e: SimEvent) -> void:
 	if e.effect_id == Breakables.EFFECT:  # v0.9.0 DX: an explosive barrel's blast
 		_barrel_hit(w, e)
 		return
+	if e.effect_id == Lockdowns.HAZARD_EFFECT:  # v0.9.0 LK: a Hazard Lockdown's strike
+		_hazard_hit(w, e)
+		return
 	if _birth.has(e.source_id):
 		var b: Array = _birth[e.source_id]
 		age = e.tick - int(b[0])
@@ -213,6 +216,28 @@ func _barrel_hit(w: World, e: SimEvent) -> void:
 	var problems := PackedStringArray()
 	if w.breakables == null or w.breakables.fuse_ticks < SimTick.MIN_TELEGRAPH_TICKS:
 		problems.append("a barrel's fuse shorter than the telegraph minimum")
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		problems.append("cause %s missing en or es" % key)
+	if problems.is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
+	violations.append(v)
+
+
+## v0.9.0 LK (Q21): a Hazard Lockdown's strike is no actor's attack: its warning is its own ground mark (seen for
+## LockdownTable.hazard_warn_ticks, at least the telegraph minimum), its recap line CAUSE_LOCKDOWN_HAZARD.
+func _hazard_hit(w: World, e: SimEvent) -> void:
+	var key := String(Lockdowns.CAUSE_KEY)
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	var problems := PackedStringArray()
+	if w.lockdown == null or w.lockdown.table.hazard_warn_ticks < SimTick.MIN_TELEGRAPH_TICKS:
+		problems.append("a hazard's warning shorter than the telegraph minimum")
 	if (
 		not _locale.has(key)
 		or String(_locale[key][0]).is_empty()
