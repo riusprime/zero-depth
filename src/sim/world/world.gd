@@ -185,6 +185,9 @@ var interactables := Interactables.new()
 var timed: TimedDoor
 ## v0.9.0 RA (owner W §4 A, Q22; RuneAlignment): the floor's rune puzzle and its hidden room; null without one.
 var runes: RuneAlignment
+## v0.9.0 DX (owner W §4 C, §5, Q23; Breakables): the cracked wall, the containers and the explosive barrels; null
+## on a floor with none.
+var breakables: Breakables
 # --- end Bosses ---------------------------------------------------------------------------------------------
 # --- Rewards (v0.3.0 E; Rewards) ----------------------------------------------------------------------------
 ## The floor's reward rules (part of the loadout, like item_tables; not hashed).
@@ -690,6 +693,8 @@ func step(frame: InputFrame) -> void:
 		TimedDoor.advance(self)  # v0.9.0 TD: the slab, the timer, the shut once the hero is clear
 	if runes != null:
 		RuneAlignment.advance(self)  # v0.9.0 RA: the slab stands until the pillars are aligned
+	if breakables != null:
+		Breakables.advance(self)  # v0.9.0 DX: the cracked wall, shots through props, the barrels' blasts
 	if final_fight != null:
 		FinalBoss.advance(self)  # v0.8.0 FB1: the shatter, the next body, the win (before the dead leave)
 	_remove_dead()
@@ -1300,6 +1305,8 @@ func state_hash() -> String:
 		timed.hash_into(h)
 	if runes != null:  # v0.9.0 RA: only floors with a rune puzzle
 		runes.hash_into(h)
+	if breakables != null:  # v0.9.0 DX: only floors with destructibles
+		breakables.hash_into(h)
 	if final_fight != null:  # v0.8.0 FB1: only the worlds that hold the final fight
 		final_fight.hash_into(h)
 	actors.hash_into(h)

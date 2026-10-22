@@ -189,6 +189,13 @@ var rune_pillars := PackedVector2Array()
 var rune_target := PackedInt32Array()
 var rune_start := PackedInt32Array()
 var rune_door_wall: Obb
+## v0.9.0 DX (owner W §4 C, Q23; CrackedRooms.mark, -1 / null on a floor without one): the hidden room behind the
+## cracked wall, the room before it, the doorway the wall fills and the wall itself (Breakables adds it as a barrier
+## in play).
+var crack_room := -1
+var crack_host := -1
+var crack_door := -1
+var crack_wall: Obb
 
 
 func room_count() -> int:

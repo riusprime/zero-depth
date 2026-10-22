@@ -3,7 +3,7 @@ extends RefCounted
 ## v0.9.0 RA (owner Q23: "hidden room should not appear or be visible until you open it"; W75 "Secret and Collectible
 ## Manager"): what the floor's secrets share, so each puzzle stays its own file:
 ## - the secret rooms not seen yet (hidden_rooms): the timed door's until it first opens (TD), the rune puzzle's until
-##   it is solved (RA);
+##   it is solved (RA), the cracked wall's until it breaks (DX);
 ## - a secret room's reward (place_reward): an epic altar or a chest (priced as the floor's next chest), drawn from the
 ##   puzzle's own loot sub-stream, on the room's first item spot (else its spawn spot nearest its centre, else its
 ##   centre), as TD's; is_epic says which rewards are the secrets' epic altars (Offers.roll: epic stat cards);
@@ -81,7 +81,10 @@ static func is_epic(w: World, i: int) -> bool:
 	var id := w.rewards.ids[i]
 	if w.timed != null and w.timed.reward_epic == 1 and w.timed.reward_id == id:
 		return true
-	return w.runes != null and w.runes.reward_epic == 1 and w.runes.reward_id == id
+	if w.runes != null and w.runes.reward_epic == 1 and w.runes.reward_id == id:
+		return true
+	var b := w.breakables  # v0.9.0 DX: the cracked wall's room
+	return b != null and b.has_crack() and b.crack_reward_epic == 1 and b.crack_reward_id == id
 
 
 ## The secret rooms not seen yet, ascending by kind (the timed door's, the rune puzzle's).
@@ -91,6 +94,8 @@ static func hidden_rooms(w: World) -> PackedInt32Array:
 		out.append(w.floor_layout.timed_room)
 	if w.runes != null and w.runes.solved == 0:
 		out.append(w.floor_layout.rune_room)
+	if w.breakables != null and w.breakables.has_crack() and w.breakables.crack_broken == 0:
+		out.append(w.floor_layout.crack_room)  # v0.9.0 DX
 	return out
 
 
@@ -104,6 +109,8 @@ static func slabs(w: World) -> Array[Obb]:
 		out.append(f.timed_door_wall)
 	if f.rune_door_wall != null:
 		out.append(f.rune_door_wall)
+	if f.crack_wall != null:  # v0.9.0 DX
+		out.append(f.crack_wall)
 	return out
 
 
@@ -114,4 +121,6 @@ static func slabs_up(w: World) -> int:
 		n += w.timed.wall_up
 	if w.runes != null:
 		n += w.runes.wall_up
+	if w.breakables != null:  # v0.9.0 DX
+		n += w.breakables.crack_up
 	return n

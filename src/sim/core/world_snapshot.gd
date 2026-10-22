@@ -140,6 +140,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"Interactables",  # v0.9.0 IX: the shared interactables and the puzzles' calm rooms
 	&"TimedDoor",  # v0.9.0 TD: the timed door (its state, timer and reward)
 	&"RuneAlignment",  # v0.9.0 RA: the rune puzzle (its pillars, solved, slab and reward)
+	&"Breakables",  # v0.9.0 DX: the cracked wall, the containers and the explosive barrels
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -175,6 +176,7 @@ const ADDED_SINCE_V05 := {
 		&"interactables",  # v0.9.0 IX: a save from before IX keeps the base's registry (apply re-syncs the pylons)
 		&"timed",  # v0.9.0 TD: a floor saved before TD has none (built under floor rules 1-9: none in the base either)
 		&"runes",  # v0.9.0 RA: a floor saved before RA has none (built under floor rules 1-10: none in the base either)
+		&"breakables",  # v0.9.0 DX: the same (floor rules 1-10 build none)
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
 		&"loot_guaranteed",  # v0.8.0 FL: an older save's floor used no guarantee (0) and holds no jackpot
 		&"loot_jackpots",
@@ -701,6 +703,12 @@ static func _make(cls: StringName) -> Object:
 	match cls:
 		&"Obb":
 			return Obb.new()
+		&"TimedDoor":  # v0.9.0 TD, RA, DX: a base built without its floor's secrets (a lab)
+			return TimedDoor.new()
+		&"RuneAlignment":
+			return RuneAlignment.new()
+		&"Breakables":
+			return Breakables.new()
 		&"RngStream":
 			return RngStream.new()
 		&"ActorStore":

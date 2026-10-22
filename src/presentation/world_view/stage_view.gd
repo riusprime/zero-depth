@@ -850,6 +850,10 @@ func _build_shards(
 		special.append(reader.floor_room(reader.rune_room()).get_center())
 		for k in reader.rune_pillar_count():
 			clear.append(reader.interactable_pos(reader.rune_pillar_entry(k)))
+	if reader.has_cracked_wall():  # v0.9.0 DX: none in the room behind the cracked wall
+		special.append(reader.floor_room(reader.crack_room()).get_center())
+	for k in reader.breakable_count():  # nor on a container or a barrel
+		clear.append(reader.breakable_pos(k))
 	var blocked: Array = doors.duplicate()
 	blocked.append_array(reader.arena_barriers())
 	_shard_input = {

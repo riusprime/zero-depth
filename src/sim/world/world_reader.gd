@@ -13,6 +13,11 @@ const APPROACH_FIGHT := FinalApproach.State.FIGHT
 const INTERACT_PYLON := Interactables.Kind.PYLON
 const INTERACT_TIMED_SWITCH := Interactables.Kind.TIMED_SWITCH
 const INTERACT_RUNE_PILLAR := Interactables.Kind.RUNE_PILLAR  # v0.9.0 RA
+## v0.9.0 DX: the destructible props' kinds (breakable_kind).
+const BREAKABLE_CRATE := Breakables.Kind.CRATE
+const BREAKABLE_URN := Breakables.Kind.URN
+const BREAKABLE_BARREL := Breakables.Kind.BARREL
+const BREAKABLE_EXPLOSIVE := Breakables.Kind.EXPLOSIVE
 ## v0.9.0 TD: the timed door's states (timed_door_state).
 const TIMED_SHUT := TimedDoor.State.SHUT
 const TIMED_OPEN := TimedDoor.State.OPEN
@@ -3038,6 +3043,123 @@ func rune_door_width() -> float:
 
 func rune_door_depth() -> float:
 	return _w.floor_layout.door_depths[_w.floor_layout.rune_door]
+
+
+# --- The destructibles (v0.9.0 DX; Breakables) -----------------------------------------------------------------
+## The floor has a cracked wall before a dead end.
+func has_cracked_wall() -> bool:
+	return _w.breakables != null and _w.breakables.has_crack()
+
+
+## Its hidden room and the room before it (-1 without one).
+func crack_room() -> int:
+	return _w.floor_layout.crack_room if has_cracked_wall() else -1
+
+
+func crack_host() -> int:
+	return _w.floor_layout.crack_host if has_cracked_wall() else -1
+
+
+## The doorway the wall fills: its centre, the direction from the host into the hidden room, width, depth.
+func crack_door_center() -> Vector2:
+	return _w.floor_layout.door_centers[_w.floor_layout.crack_door]
+
+
+func crack_door_angle() -> int:
+	var f := _w.floor_layout
+	var a := f.door_angles[f.crack_door]
+	return a if f.door_rooms[f.crack_door].x == f.crack_host else (a + 2048) % 4096
+
+
+func crack_door_width() -> float:
+	return _w.floor_layout.door_widths[_w.floor_layout.crack_door]
+
+
+func crack_door_depth() -> float:
+	return _w.floor_layout.door_depths[_w.floor_layout.crack_door]
+
+
+## The Skill hits it has left and takes in all, whether it broke, its last hit's and its break's ticks (-1 not yet).
+func crack_hp() -> int:
+	return _w.breakables.crack_hp if has_cracked_wall() else 0
+
+
+func crack_max() -> int:
+	return _w.breakables.crack_max if has_cracked_wall() else 0
+
+
+func crack_broken() -> bool:
+	return has_cracked_wall() and _w.breakables.crack_broken == 1
+
+
+func crack_hit_tick() -> int:
+	return _w.breakables.crack_hit_tick if has_cracked_wall() else -1
+
+
+func crack_break_tick() -> int:
+	return _w.breakables.crack_break_tick if has_cracked_wall() else -1
+
+
+## The props (containers and explosive barrels): their count, where each stands, its kind (BREAKABLE_*), whether it
+## broke (or blew) and when, and a barrel's fuse (lit tick, -1 not; burning now).
+func breakable_count() -> int:
+	return _w.breakables.pos.size() if _w.breakables != null else 0
+
+
+func breakable_pos(i: int) -> Vector2:
+	return _w.breakables.pos[i]
+
+
+func breakable_kind(i: int) -> int:
+	return _w.breakables.kind[i]
+
+
+func breakable_broken(i: int) -> bool:
+	return _w.breakables.broken[i] == 1
+
+
+func breakable_break_tick(i: int) -> int:
+	return _w.breakables.break_tick[i]
+
+
+func breakable_fuse_tick(i: int) -> int:
+	return _w.breakables.fuse_tick[i]
+
+
+func breakable_fusing(i: int) -> bool:
+	return _w.breakables.fusing(i)
+
+
+## The barrels' fuse (ticks) and blast radius (m).
+func barrel_fuse_ticks() -> int:
+	return _w.breakables.fuse_ticks if _w.breakables != null else 0
+
+
+func barrel_radius() -> float:
+	return _w.breakables.radius_m if _w.breakables != null else 0.0
+
+
+## v0.9.0 DX (Q29b, hidden rune markings): every secret's doorway (the timed door's, the rune puzzle's, the cracked
+## wall's), each {center, angle (from the room before it into the secret room), width, depth}.
+func secret_doors() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if has_timed_door():
+		out.append(_door_of(_w.floor_layout.timed_door, timed_door_angle()))
+	if has_rune_puzzle():
+		out.append(_door_of(_w.floor_layout.rune_door, rune_door_angle()))
+	if has_cracked_wall():
+		out.append(_door_of(_w.floor_layout.crack_door, crack_door_angle()))
+	return out
+
+
+func _door_of(d: int, angle: int) -> Dictionary:
+	var f := _w.floor_layout
+	return {
+		"center": f.door_centers[d],
+		"angle": angle,
+		"width": f.door_widths[d],
+		"depth": f.door_depths[d]
+	}
 
 
 ## Puzzle calm (Q22): the hero stands in an unsolved puzzle's room (new packs at a quarter of the rate).

@@ -151,7 +151,9 @@ func test_rewards_fill_the_arenas_first_and_keep_two_altars() -> void:
 				arena_spots += 1
 		var in_arena := 0
 		for i in w.rewards.size():
-			altars += 1 if w.rewards.kind[i] == RewardStore.Kind.ALTAR else 0
+			# v0.9.0 DX: a secret room's epic altar is an extra, outside S1's cap (the save lab builds them now)
+			if w.rewards.kind[i] == RewardStore.Kind.ALTAR and not Secrets.is_epic(w, i):
+				altars += 1
 			if f.arena_rooms.has(f.room_of(w.rewards.pos(i))):
 				in_arena += 1
 				assert_true(Arenas.locked(w, i), "seed %d: an arena's reward is locked" % s)

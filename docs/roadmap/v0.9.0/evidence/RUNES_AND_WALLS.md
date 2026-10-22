@@ -110,3 +110,129 @@ without a floor). Lint: gdformat and gdlint on every touched .gd: "Success: no p
 - Run seed 20261009's floor 1 (one of the e2e's fixed stage seeds) now holds a rune puzzle; 20261006-08, 20261010 and
   20261022 do not (a floor-plan scan).
 - The shot is NOT YET RUN.
+
+## Step DX: what changed
+
+- **Cracked walls** (`CrackedRooms.mark`, `src/sim/map/cracked_rooms.gd`; `Breakables`, `src/sim/world/breakables.gd`,
+  `World.breakables`):
+  - On `crack_permille` = 250 of floors (`data/secrets/secrets.tres`; the `map:cracked_wall` stream), a dead end by
+    the timed door's rules, never the timed door's or the rune puzzle's room or host (and its host is none of them),
+    has its one doorway filled by a cracked wall section (the doorway's footprint), a barrier from the floor's first
+    tick. Floor rules stay 11: RA and DX land together (a floor saved under 1-10 is rebuilt with neither).
+  - Only the Skill wears it down: `PlayerSkill` calls `Breakables.on_skill` after the Lunge Cleave's fan (the fan
+    touching the wall's nearest point) and after a Scatter Blast (a pellet ending on the wall). One hit a use,
+    `crack_hits` = 3 uses. No other attack reaches a wall, and no text says so.
+  - Broken: the barrier goes for good; the room behind (an epic altar or a chest from `loot:cracked_wall`, no enemy
+    spawns) is seen.
+- **Containers** (crates, urns, barrels): placed at setup from `map:containers` in every room but the start hall, the
+  boss room, the portal room, the shop's, the curse room and the secret rooms, 0..`containers_max` (2) a room, on
+  spawn spots 2 m from doorway approaches, 2.5 m from rewards, pedestals, the shrine, the shop and the puzzles'
+  pieces, 1.5 m apart. Not solid. One hit from any of the hero's attacks breaks one: a one-line hook in
+  `Attacks.launch` (`Breakables.on_attack`: arcs, bursts, rays) and a sweep of the hero's projectiles each tick. Each
+  has a drop rolled at setup from `loot:containers`: `container_drop_permille` = 150, half a heal orb (Lifesprout's
+  `HealOrbs` orb, 25 % of max HP), half 2-5 shards.
+- **Explosive barrels:** with `barrel_room_permille` = 200 a room gets one (at most `barrels_max` = 1). Any hit lights a
+  60-tick fuse; then a 2.0 m blast hurts every enemy (40) and the hero (15, before armour) in it, breaks containers and
+  lights barrels in reach. The damage is `Damage.hit` from no actor with effect `explosive_barrel`; a kill of the hero
+  sets `World.killer_attack` to `Breakables.KILL_CAUSE`, which `BossCauses.key` turns into `CAUSE_EXPLOSIVE_BARREL`
+  ("An explosive barrel" / "Un barril explosivo"). `ReadableCause` (tests/support) books such a hit to that line and
+  checks the fuse is at least the telegraph minimum.
+- **Hidden rune markings** (`RuneMarkingsView`): a faint flat rune (a `RuneGlyphs` symbol at 22 % alpha, or the owner's
+  `rune_marking` PNG as a decal once installed at `assets/textures/decals/rune_marking.png`) on the floor beside each
+  secret's doorway, on the near side (`WorldReader.secret_doors`: the timed door, the rune puzzle, the cracked wall).
+- **Presentation** (`BreakablesView`): code stand-ins with model ids in `ShopModels.SPECS` (`cracked_wall`,
+  `cracked_wall_broken`, `container_crate`, `container_urn`, `container_barrel`, `explosive_barrel`). The wall is a stone
+  section with a faint web of cracks that darkens with each Skill hit; broken, a jagged frame and rubble, and the room
+  shows with a warm light. Containers break into chips. A lit barrel's red light blinks faster; the blast is a flash
+  and a ball of fire its reach wide, with a camera thud.
+- **Sounds** (placeholders, pure-Python render as RA's): `wall_break` (the break), `container_break` (a container, and
+  each Skill hit on the wall), `barrel_fuse`, `barrel_blast`.
+- **Saves:** `Breakables` is in `STATE_CLASSES`, `breakables` in `ADDED_SINCE_V05`; the cracked wall is one of the
+  secret slabs; `WorldSnapshot._make` can now make a `TimedDoor`, `RuneAlignment` or `Breakables` (a base built without
+  them).
+- **Shared files touched:** `src/sim/combat/attacks.gd` (one line in `launch`), `src/sim/combat/player_skill.gd` (two
+  lines), `src/sim/ai/boss_causes.gd` (two lines). `FloorPlan.add_secrets` now builds the timed door, the rune puzzle
+  and the destructibles, and `tests/support/save_lab.gd` calls it, so the save lab builds floors as Main does (TD's
+  floors were missing there; `test_e2e_wand_build`'s replay failed with "World.breakables: can't make a Breakables"
+  before this). `test_arenas`' "S1's cap" now leaves the secret rooms' epic altars out of its count.
+
+## Step DX: commands and raw summary lines
+
+Same command as RA.
+
+DX generation, the 1,000-seed property test (the timed door and the rune puzzle forced on every floor first):
+```
+    CRACKED_WALLS| seeds=1000 placed_when_tried=555 with_timed_and_runes=305 natural_25pct=268 bad=0
+Tests                 2
+Passing Tests         2
+Asserts               8
+```
+DX sim (first run: 7/8, "by the hero's share" got 11 for 15: the Blade takes 25 % less; the assertion now allows
+armour), then test_breakables, test_rune_alignment, test_timed_door, test_interactables:
+```
+    CONTAINERS| floor_props=19 containers=16 with_drop=4 heals=2
+Tests                22
+Passing Tests        22
+Asserts             958
+```
+The full e2e folder (`-gdir=res://tests/e2e`), before the save-lab change:
+```
+Tests               163
+Passing Tests       161
+Failing Tests         2
+Asserts           8479/8484
+```
+The two: `test_e2e_achievements` ("its toast shows"; it fails the same way on `ba7df04d`, checked in a throwaway
+worktree of that commit: `Tests 1, Passing Tests none, Failing Tests 1`) and `test_e2e_wand_build` ("World.breakables:
+can't make a Breakables": the save lab built floors without their secrets; fixed, see above).
+Every test file that uses `SaveLab` (35 files, in four jobs), after the fix:
+```
+sl1 (wand_build, achievements, application and presentation):  Tests 99, Passing 98, Failing 1 (test_e2e_achievements)
+sl2 (sim):  Tests 135, Passing 133, Failing 2 (test_arenas' S1 cap, fixed and re-run below; test_deep_bite's
+            "Abismo susurrante" expected "Whispering Deep", the Spanish OS locale)
+sl3 (sim):  Tests 172, Passing 172, Asserts 86814
+sl4 (test_curse_room):  Tests 12, Passing 12, Asserts 2612
+```
+test_e2e_achievements and test_arenas after the cap fix:
+```
+Tests                15
+Passing Tests        14
+Failing Tests         1
+Asserts           2172/2174
+```
+(the one: test_e2e_achievements, as on `ba7df04d`.) test_frozen_shore and test_starfall passed here.
+
+Final, after every change: test_breakables, test_breakables_view, test_rune_alignment_view, test_timed_door_view,
+test_rune_alignment, test_timed_door, test_replay_ground_plane (golden), test_state_hasher, test_modifier_equivalence,
+test_world_snapshot, test_old_saves, test_readable_cause, test_layering, test_sim_purity, test_content_valid:
+```
+Tests                72
+Passing Tests        72
+Asserts           20794
+```
+e2e: test_e2e_cracked_wall (run seed 41), test_e2e_rune_alignment (6), test_e2e_timed_door (3), test_e2e_old_save,
+test_e2e_saves, test_e2e_run_flow:
+```
+    CRACK_E2E| seed=41 uses=3
+    RUNES_E2E| seed=6 presses=5 solve_ticks=217
+    TIMED_E2E| seed=3 walk_in_ticks=206 timer=900
+Tests                 9
+Passing Tests         9
+Asserts             152
+```
+Content (before the save-lab change): test_content_valid, test_locale_coverage, test_audio_assets,
+test_credits_licences, test_model_manifest, test_layering, test_sim_purity: `Tests 33, Passing Tests 33, Asserts
+19323`. Lint: gdformat and gdlint on every touched .gd: "Success: no problems found".
+
+No golden or hash moved. The e2e's fixed stage seeds now hold props on floor 1 (20261006: 11, 20261007: 21,
+20261008: 16, 20261009: 21, 20261010: 21, 20261022: 19); none has a cracked wall.
+
+## Step DX: notes
+
+- The four sounds were rendered like `pillar_turn` (pure Python, no numpy).
+- Decided here (the simplest reading): containers and barrels are not solid; "any attack" is the hero's arcs, bursts,
+  rays and projectiles (lingering zones and rings do not break props); one Skill use counts once on the wall; the
+  heal is Lifesprout's orb as it is (25 % of max HP); the shards are paid at once with a SHARDS event; the barrel's
+  blast hurts the hero for 15 and enemies for 40 (starting values); a Skill hit on the wall plays `container_break`.
+- The shot is NOT YET RUN.
+

@@ -895,6 +895,46 @@
       "loop": false
     },
     {
+      "id": "wall_break",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/wall_break.wav",
+      "sha256": "fe61cd78c5beac475b7b9adc2785f8775db63e43361ab90f4c001a4a3de0f257",
+      "seconds": 0.9,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -17.52,
+      "loop": false
+    },
+    {
+      "id": "container_break",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/container_break.wav",
+      "sha256": "8dcba6a431dbccb3294b82f47b73c7efe0d2367c742d06a639ed79e93570d66e",
+      "seconds": 0.3,
+      "peak_dbfs": -1.76,
+      "rms_dbfs": -22.08,
+      "loop": false
+    },
+    {
+      "id": "barrel_fuse",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/barrel_fuse.wav",
+      "sha256": "f03238997eaf2327c82cb776f3e6ef8dea16aad78022cfb96fe1a95f7e59315d",
+      "seconds": 1.0,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -16.98,
+      "loop": false
+    },
+    {
+      "id": "barrel_blast",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/barrel_blast.wav",
+      "sha256": "11b015c8c48347d43d3a35f93b7f28ea33bb96d26398f08258223b70f8b0aee8",
+      "seconds": 1.0,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -16.89,
+      "loop": false
+    },
+    {
       "id": "ruins",
       "kind": "ambience",
       "path": "assets/audio/ambience/ruins.wav",

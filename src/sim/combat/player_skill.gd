@@ -138,6 +138,7 @@ static func _cleave(w: World, _t: SkillTable) -> void:
 	var ctx := AttackContext.make(center, k.skill_angle, dmg, k.skill_root, TAGS_CLEAVE, &"")
 	if Attacks.launch(w, spec, ctx):
 		w.add_freeze(spec.hitstop_ticks)
+	Breakables.on_skill(w, center, k.skill_angle, true)  # v0.9.0 DX (Q23): only the Skill wears a cracked wall
 
 
 # --- Scatter Blast ------------------------------------------------------------------------------------------
@@ -161,6 +162,7 @@ static func _blast(w: World, t: SkillTable) -> void:
 	ctx.on_ray = func(end: Vector2) -> void: k.pellet_ends.append(end)
 	ctx.on_landed = func(target: int) -> void: _knock(w, target, origin, t)
 	Attacks.launch(w, spec, ctx)
+	Breakables.on_skill(w, origin, k.skill_angle, false)  # v0.9.0 DX (Q23): a pellet ending on a cracked wall
 
 
 ## Twin: BladeForms._knock / _advance_knock (the Heavy card's push, BladeState.k_*). Kept apart on purpose (audit
