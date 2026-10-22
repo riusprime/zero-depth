@@ -106,6 +106,11 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	# v0.9.0 AF1 (owner Q7: the Lance and Scatter forms; Lance, Scatter)
 	&"lance",
 	&"pellets",
+	# v0.9.0 AF3 (owner Q7: the Wave and Wisps forms; WaveShots, Wisps)
+	&"wave_mm",
+	&"wisps",
+	&"wisp_ticks",
+	&"wisp_permille",
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"reach_m",
@@ -218,6 +223,15 @@ var lance := 0
 ## v0.9.0 AF1 (owner Q7, F6; Scatter): pellets, the bolts are the Scatter's pellets (the view draws them as a cone of
 ## pellets); their numbers are the plain bolt fields (count, spread, life, speed, share_permille).
 var pellets := 0
+## v0.9.0 AF3 (owner Q7, ATTACK_FORMS F9; WaveShots): wave_mm, the bolt is the Wave: a band wave_mm wide (the area stat
+## scales it) that passes through enemies (only a wall or the end of its flight ends it), hitting each enemy it rolls
+## over once.
+var wave_mm := 0
+## v0.9.0 AF3 (owner Q7, F10; Wisps): wisps, that many wisps circle the hero; each fires one orb of the Gun's shot at
+## wisp_permille of its damage at the nearest enemy every wisp_ticks, on its own, while the hero shoots as before.
+var wisps := 0
+var wisp_ticks := 0
+var wisp_permille := 0
 
 # --- payload
 ## Damage per hit (a share `damage_permille` of it when the shot splits into count > 1 bolts, rounded down, at least
@@ -522,4 +536,6 @@ func read() -> Dictionary:
 		"void_pull_mm": void_pull_mm,
 		"lance": lance,  # v0.9.0 AF1
 		"pellets": pellets,
+		"wave_mm": wave_mm,  # v0.9.0 AF3
+		"wisps": wisps,
 	}

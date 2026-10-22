@@ -273,6 +273,8 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 			"gun_threadline",  # v0.8.0 RM
 			"gun_twin",
 			"gun_void",  # v0.9.0 VP
+			"gun_wave",  # v0.9.0 AF3
+			"gun_wisps",  # v0.9.0 AF3
 			"halo_shot",
 			"orbit_rounds",
 			"rapid_coil",

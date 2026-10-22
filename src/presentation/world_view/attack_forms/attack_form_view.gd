@@ -133,6 +133,7 @@ func _sync_bolts(reader: WorldReader) -> void:
 			break  # v0.8.0 PF: the rest fly as their plain darts (draw_at's budget); their trails start when drawn
 		if (
 			reader.projectile_team(i) != 0
+			or reader.projectile_is_wave(i)  # v0.9.0 AF3: WaveView draws the Wave shots
 			or reader.projectile_is_shard(i)
 			or reader.projectile_is_bomb(i)
 			or reader.projectile_is_void(i)

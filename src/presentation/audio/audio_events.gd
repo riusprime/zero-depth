@@ -621,12 +621,15 @@ func _scan_projectiles(reader: WorldReader, out: Array) -> void:
 	var seen := {}
 	var fired := false
 	var hostile := false
+	var wisp := false  # v0.9.0 AF3: a wisp's own shot chirps, not the Gun's cue
 	for i in reader.projectile_count():
 		var id := reader.projectile_id(i)
 		seen[id] = true
 		if _projectiles.has(id):
 			continue
-		if reader.projectile_team(i) == 0:
+		if reader.projectile_team(i) == 0 and reader.projectile_is_wisp(i):
+			wisp = true
+		elif reader.projectile_team(i) == 0:
 			fired = fired or not reader.projectile_is_shard(i)
 		else:
 			hostile = true
@@ -637,9 +640,13 @@ func _scan_projectiles(reader: WorldReader, out: Array) -> void:
 			cue = &"bomb_throw"
 		elif reader.void_active():
 			cue = &"void_hum"
+		elif reader.wave_active():  # v0.9.0 AF3: the Wave's rolling whoosh
+			cue = &"wave_fire"
 		elif reader.scatter_active():  # v0.9.0 AF1: the Scatter's bark (Scatter Blast's cue until its own sound)
 			cue = &"skill_scatter_blast"
 		out.append([cue, reader.player_pos(), 1.0])
+	if wisp:
+		out.append([&"wisp_fire", reader.player_pos(), 1.0])
 	if hostile:
 		out.append([&"enemy_fire", null, 1.0])
 

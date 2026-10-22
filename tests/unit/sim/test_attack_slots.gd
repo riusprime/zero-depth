@@ -55,7 +55,10 @@ func test_the_data_holds_the_owners_limits_caps_and_the_orbs_row() -> void:
 	assert_eq([t.shots_per_attack_max, t.shots_per_second_max], [12, 40], "Q13")
 	assert_eq(
 		t.form_ids,
-		[&"orbs", &"laser", &"bomb", &"void", &"lance", &"scatter"] as Array[StringName],
+		(
+			[&"orbs", &"laser", &"bomb", &"void", &"lance", &"scatter", &"wave", &"wisps"]
+			as Array[StringName]
+		),
 		"Q7: Orbs, and the forms built so far (LZ)"
 	)
 	assert_eq(t.default_form, 0)

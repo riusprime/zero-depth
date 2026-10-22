@@ -108,6 +108,8 @@ func test_the_shipped_data() -> void:
 			"gun_swirl",
 			"gun_threadline",  # v0.8.0 RM: the remnant cards, rare
 			"gun_void",  # v0.9.0 VP: the Void form, rare
+			"gun_wave",  # v0.9.0 AF3: the Wave form, rare
+			"gun_wisps",  # v0.9.0 AF3: the Wisps form, rare
 			"meltdown",
 			"overclocked_drone",
 			"razor_orbit",

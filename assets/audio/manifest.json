@@ -905,6 +905,26 @@
       "loop": false
     },
     {
+      "id": "wave_fire",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/wave_fire.wav",
+      "sha256": "d89fa29d30787d48db3273e5b3f7a113f670ebd1420f6e4b013a3b8d209592d1",
+      "seconds": 0.75,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -15.39,
+      "loop": false
+    },
+    {
+      "id": "wisp_fire",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/wisp_fire.wav",
+      "sha256": "1c8f574627a12a7c73616f5f6f15836c83d568c9210b2efd2d49c67b4f004242",
+      "seconds": 0.14,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -12.38,
+      "loop": false
+    },
+    {
       "id": "laser_loop",
       "kind": "sfx",
       "path": "assets/audio/sfx/laser_loop.wav",

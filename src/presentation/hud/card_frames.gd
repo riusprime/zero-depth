@@ -135,6 +135,8 @@ const FAMILY_OF := {
 	&"gun_laser": &"projectile",  # v0.9.0 LZ: the Laser form
 	&"gun_bomb": &"area",  # v0.9.0 BM: the Bomb form
 	&"gun_void": &"dash",  # v0.9.0 VP: the Void form (the retired Void card's family)
+	&"gun_wave": &"area",  # v0.9.0 AF3: the Wave form
+	&"gun_wisps": &"trinket",  # v0.9.0 AF3: the Wisps form (Orbit Rounds' family)
 	&"gun_lance": &"crit",  # v0.9.0 AF1: the Lance form (the retired Charge card's family)
 	&"gun_scatter": &"projectile",  # v0.9.0 AF1: the Scatter form
 	&"gun_swirl": &"trinket",

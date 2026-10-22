@@ -793,6 +793,10 @@ ITEM_GUN_LANCE,Lance,Lanza
 ITEM_GUN_LANCE_DESC,"Hold to charge, release a piercing line.","Mantén para cargar, suelta una línea perforante."
 ITEM_GUN_SCATTER,Scatter,Metralla
 ITEM_GUN_SCATTER_DESC,"A cone of pellets, brutal up close.","Un cono de perdigones, brutal de cerca."
+ITEM_GUN_WAVE,Wave,Oleada
+ITEM_GUN_WAVE_DESC,A wide slow wave that rolls through everything.,Una ola ancha y lenta que lo atraviesa todo.
+ITEM_GUN_WISPS,Wisps,Fuegos fatuos
+ITEM_GUN_WISPS_DESC,Three wisps circle you and fire at the nearest foe.,Tres fuegos fatuos te rodean y disparan al más cercano.
 ITEM_GUN_SWIRL,Swirl,Remolino
 ITEM_GUN_SWIRL_DESC,Your shots swirl at random.,Tus disparos giran al azar.
 ITEM_GUN_PIERCE,Pierce,Perforación

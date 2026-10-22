@@ -100,7 +100,7 @@ func _check(label: String, r: Dictionary, cap_ok: bool = false) -> void:
 func test_every_modifier_is_shipped_and_compiled() -> void:
 	assert_eq(
 		_mods.size(),
-		100,
+		102,
 		(
 			"the 14 migrated attack items (MX1), Frost Nova's frost, Razor Orbit (MX2); MX4: the M-list's"
 			+ " 29 new, 3 legendary, Cluster Payload, Overclocked Drone, Afterimage; v0.6.5 WN1: 4 triggers;"
@@ -108,7 +108,7 @@ func test_every_modifier_is_shipped_and_compiled() -> void:
 			+ " new (Bleed, Explosive); WN5b: 3 legendary triggers; v0.8.0 BL: Blade Storm, Riposte Chain;"
 			+ " v0.8.0 AO: Ring, Swirl; v0.8.0 RR: Chain Blast; v0.8.0 RM: Threadline, Faultline, Gravity Stitch,"
 			+ " Stress Mark, Double Exposure, Grand Finale; v0.9.0 LZ, BM, VP, AF1: Laser, Bomb, Void, Lance,"
-			+ " Scatter"
+			+ " Scatter; v0.9.0 AF3: Wave, Wisps"
 		)
 	)
 

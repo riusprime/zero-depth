@@ -458,6 +458,30 @@ func void_active() -> bool:
 	return VoidShots.active(_w)
 
 
+## v0.9.0 AF3 (owner Q7, F9, F10): player projectile `i` is a Wave shot (WaveView draws it, not the pulses); the Wave
+## shots in flight (WaveShots.read: id, pos, dir, half width, depth); the run's Gun shot is the Wave; the wisps round
+## the hero (Wisps.read: pos, angle, wait, period; empty without the Wisps card).
+func projectile_is_wave(i: int) -> bool:
+	return WaveShots.is_wave_projectile(_w, i)
+
+
+func wave_shots() -> Array[Dictionary]:
+	return WaveShots.read(_w)
+
+
+func wave_active() -> bool:
+	return WaveShots.active(_w)
+
+
+func wisps() -> Array[Dictionary]:
+	return Wisps.read(_w)
+
+
+## v0.9.0 AF3: player projectile `i` is a wisp's orb (its own chirp).
+func projectile_is_wisp(i: int) -> bool:
+	return Wisps.is_wisp_shot(_w, i)
+
+
 ## v0.9.0 LZ: the Laser fires now (its hum, the view).
 func beam_firing() -> bool:
 	return Laser.firing(_w)

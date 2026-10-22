@@ -106,6 +106,7 @@ func sync(reader: WorldReader) -> void:
 	for i in reader.projectile_count():
 		if (
 			reader.projectile_team(i) != 0
+			or reader.projectile_is_wave(i)  # v0.9.0 AF3: WaveView draws the Wave shots
 			or reader.projectile_look(i) != ""
 			or reader.projectile_is_shard(i)
 			or reader.projectile_is_bomb(i)
