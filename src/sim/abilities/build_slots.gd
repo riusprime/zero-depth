@@ -68,11 +68,24 @@ static func level_at(w: World, s: int) -> int:
 
 
 ## Taking `code` now needs a swap: a modifier you don't hold, with every slot full. v0.9.0 AS: never when it replaces a
-## card of its own slot category (AttackSlots.replaces: that card's slot is the one it takes).
+## card of its own slot category (AttackSlots.replaces: that card's slot is the one it takes). v0.9.0 AS2 (owner "Let
+## me choose"): always when its Secondary or Element category is full (AttackSlots.choices: the swap is limited to
+## those slots), full wand or not.
 static func needs_swap(w: World, code: int) -> bool:
-	return (
-		is_modifier(w, code) and not held(w, code) and full(w) and AttackSlots.replaces(w, code) < 0
-	)
+	if not is_modifier(w, code) or held(w, code):
+		return false
+	if AttackSlots.choice_category(w, code) != AttackSlots.FREE:
+		return true
+	return full(w) and AttackSlots.replaces(w, code) < 0
+
+
+## Slot `s` is a legal swap answer for `code`: a held slot, and (AS2) one of its category's when the choice is
+## limited (AttackSlots.choices).
+static func can_replace(w: World, code: int, s: int) -> bool:
+	if s < 0 or s >= w.mod_slots.size():
+		return false
+	var only := AttackSlots.choices(w, code)
+	return only.is_empty() or only.has(s)
 
 
 # --- Keeping the slots ------------------------------------------------------------------------------------------
@@ -138,14 +151,15 @@ static func drop(w: World, s: int) -> void:
 ## slot full replaces slot `replace` (its card leaves; the new one takes its place in the order); without a valid
 ## `replace` nothing changes and false comes back. Everything else (a level-up, the weapon, the utility, an item
 ## without a slot, a stat card) applies as before.
-## v0.9.0 AS (owner Q5): a card of a slot category at its limit replaces that category's card (AttackSlots.replaces) in
-## its slot, whatever `replace` says (the pick card said so: Offers.info "replaces").
+## v0.9.0 AS (owner Q5): a Form or Pattern card at its limit replaces that category's card (AttackSlots.replaces) in
+## its slot, whatever `replace` says (the pick card said so: Offers.info "replaces"). v0.9.0 AS2: a Secondary or
+## Element card at its limit needs `replace` to be one of its category's slots (can_replace).
 static func take(w: World, code: int, replace: int = -1) -> bool:
 	var cat_slot := AttackSlots.replaces(w, code)
 	if cat_slot >= 0:
 		return _replace(w, code, cat_slot)
 	if needs_swap(w, code):
-		if replace < 0 or replace >= w.mod_slots.size():
+		if not can_replace(w, code, replace):
 			return false
 		return _replace(w, code, replace)
 	_apply(w, code)
@@ -198,14 +212,15 @@ static func swapping(w: World) -> bool:
 	return w.swap_code >= 0
 
 
-## The swap answer in `frame`: the slot to replace (0..Wand.MAX_SLOTS-1, a held one), -1 to skip (PICK_SWAP_SKIP or
-## PICK_CANCEL), -2 for no answer yet.
+## The swap answer in `frame`: the slot to replace (0..Wand.MAX_SLOTS-1, a held one; v0.9.0 AS2: one of the card's
+## category's when the choice is limited, can_replace), -1 to skip (PICK_SWAP_SKIP or PICK_CANCEL), -2 for no answer
+## yet (an illegal slot is no answer).
 static func swap_answer(w: World, frame: InputFrame) -> int:
 	var v := frame.pick
 	if v == InputFrame.PICK_SWAP_SKIP or v == InputFrame.PICK_CANCEL:
 		return -1
 	var s := v - InputFrame.PICK_SWAP_BASE
-	if s >= 0 and s < Wand.MAX_SLOTS and s < w.mod_slots.size():
+	if s >= 0 and s < Wand.MAX_SLOTS and can_replace(w, w.swap_code, s):
 		return s
 	return -2
 

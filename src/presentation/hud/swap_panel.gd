@@ -17,6 +17,9 @@ extends ModalPanel
 ## v0.6.0 UP: a modal choice, so it wears the menus' look (v0.8.0 MU: Ember stone, MenuStyle): the game blurred and
 ## sunk into the warm dark behind (MenuBackdrop), warm type, stone tablets with their family's colour as the glowing
 ## groove at the foot, the focused tile ember-lit. The incoming card keeps the pick cards' look (StoneCard).
+## v0.9.0 AS2 (owner "Let me choose"; G2 AS = B): the slot pips over the wand (SlotPips), and a Swap for a full
+## Secondary or Element slot (the wand read's "swap_slot") is limited to that slot's cards: the others are dimmed and
+## can't be chosen, Insert is off, the title says which slot; the sim takes only those answers (BuildSlots.swap_answer).
 
 signal moved(value: int)
 
@@ -32,6 +35,9 @@ const SKIP_TILE := Vector2(140, 52)
 const SKIP := WorldReader.MOD_SLOTS
 
 var row := WandRow.new()
+## v0.9.0 AS2: the slot pips over the wand, and the category a limited Swap chooses in (0: any card).
+var pips := SlotPips.new()
+var _only := 0
 var _dim := MenuBackdrop.new()
 var _title := Label.new()
 var _hint := Label.new()
@@ -92,6 +98,10 @@ func _init() -> void:
 	var row_box := CenterContainer.new()
 	row_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row_box.add_child(row)
+	var pips_box := CenterContainer.new()
+	pips_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pips_box.add_child(pips)
+	col.add_child(pips_box)
 	col.add_child(row_box)
 	col.add_child(_read_back)
 	var foot := HBoxContainer.new()
@@ -147,10 +157,13 @@ func sync(reader: WorldReader) -> void:
 	_card.show_card(PickPanel.card_face(self, reader, code))
 	_wand = reader.wand()
 	_count = (_wand["cards"] as Array).size()
+	_only = int(_wand.get("swap_slot", 0))
+	row.only_slot = _only
+	pips.show_wand(_wand)
 	_mode = Mode.CHOOSE
 	_from = -1
 	_place = -1
-	_set_focus(0)
+	_set_focus(_step_from(-1, 1))
 
 
 func _notification(what: int) -> void:
@@ -173,6 +186,26 @@ func slot_count() -> int:
 
 func mode() -> int:
 	return _mode
+
+
+## The title as shown (tests).
+func title_text() -> String:
+	return _title.text
+
+
+## v0.9.0 AS2: the held slots this Swap may replace (all of them, or a full Secondary or Element slot's cards).
+func choices() -> Array[int]:
+	var out: Array[int] = []
+	for k in _count:
+		if _allowed(k):
+			out.append(k)
+	return out
+
+
+func _allowed(k: int) -> bool:
+	if k < 0 or k >= _count:
+		return false
+	return _only == 0 or int((_wand["cards"][k] as Dictionary).get("slot", 0)) == _only
 
 
 ## The tile of held slot k (SKIP: the Skip tile), for tests.
@@ -247,6 +280,8 @@ func _refresh() -> void:
 		Mode.CARRY:
 			title_key = "UI_SWAP_CARRY"
 	_title.text = tr(title_key) % _count if title_key == "UI_SWAP_TITLE" else tr(title_key)
+	if _only != 0 and _mode == Mode.CHOOSE:
+		_title.text = tr("UI_SWAP_TITLE_SLOT") % tr(WorldReader.SLOT_TAG_KEYS[_only])
 	_hint.text = tr("UI_SWAP_HINT")
 	_hint2.text = tr("UI_SWAP_HINT_MORE")
 	_style_skip(_focus == SKIP)
@@ -316,14 +351,17 @@ func _step(step: int) -> void:
 func _step_from(k: int, step: int) -> int:
 	var order: Array[int] = []
 	for n in _count:
-		order.append(n)
+		if _allowed(n):  # v0.9.0 AS2: a limited Swap steps over the other slots' cards
+			order.append(n)
 	order.append(SKIP)
-	var at := maxi(0, order.find(k))
+	var at := order.find(k)
+	if at < 0:
+		return order[0] if step > 0 else order[order.size() - 1]
 	return order[clampi(at + step, 0, order.size() - 1)]
 
 
 func _set_focus(k: int) -> void:
-	if k != SKIP and (k < 0 or k >= _count):
+	if k != SKIP and not _allowed(k):
 		return
 	_focus = k
 	_refresh()
@@ -384,7 +422,7 @@ func _carry_toggle() -> void:
 
 
 func _start_place(at: int = -1) -> void:
-	if _mode != Mode.CHOOSE and _mode != Mode.PLACE:
+	if (_mode != Mode.CHOOSE and _mode != Mode.PLACE) or _only != 0:  # v0.9.0 AS2: a limited Swap only replaces
 		return
 	_mode = Mode.PLACE
 	_place = clampi(at if at >= 0 else (_focus if _focus != SKIP else _count), 0, _count)
@@ -480,7 +518,7 @@ func _on_skip_input(event: InputEvent) -> void:
 func _answer(k: int) -> void:
 	if not _open or not input_enabled or _sent:
 		return
-	if k != SKIP and (k < 0 or k >= _count):
+	if k != SKIP and not _allowed(k):
 		return
 	if k == SKIP:
 		_send_picks(PackedInt32Array([WorldReader.PICK_SWAP_SKIP]))

@@ -53,6 +53,9 @@ var focus := -1
 var held := -1
 var leaving := -1
 var fresh := -1
+## v0.9.0 AS2 (owner "Let me choose"): the slot category a limited Swap chooses in (WorldReader.SLOT_*; 0: any): the
+## other cards' tiles are dimmed and can't be chosen (selectable).
+var only_slot := 0
 
 var _wand := {}
 var _slots := 0
@@ -152,6 +155,13 @@ func show_wand(wand: Dictionary, slots: int) -> void:
 
 func card_count() -> int:
 	return (_wand.get("cards", []) as Array).size()
+
+
+## v0.9.0 AS2: card k may be chosen (a held card, of only_slot's category when it is set).
+func selectable(k: int) -> bool:
+	if k < 0 or k >= card_count():
+		return false
+	return only_slot == 0 or int((_wand["cards"][k] as Dictionary).get("slot", 0)) == only_slot
 
 
 func slot_count() -> int:
@@ -326,6 +336,8 @@ func _style(k: int) -> void:
 	t.modulate = Color(1, 1, 1, 0.42) if k == leaving else Color.WHITE
 	if k != leaving and dead_reason(k) != &"":  # v0.8.0 MR (O91): a card that can't act here is dimmed
 		t.modulate = Color(0.62, 0.6, 0.58, 0.78)
+	if only_slot != 0 and k < card_count() and k != fresh and not selectable(k):  # v0.9.0 AS2: not a choice
+		t.modulate = Color(0.5, 0.47, 0.45, 0.5)
 
 
 ## The tile's stone tablet (tests: the look, the focus).

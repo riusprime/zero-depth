@@ -5,11 +5,14 @@ extends RefCounted
 ## spells); every card has a slot category (ItemTable.slot_category, data) and some categories hold a limited number
 ## of cards (World.slot_table, data/wand/attack_slots.tres: on a Gun run Form 1, Pattern 1, Secondary 2, Element 2; on a
 ## Blade run only Pattern 1, Q6). Free cards (triggers, mutations, the rest) never have a limit.
-## - Replace (Q5 "Marked, old one burns"; and the same rule for a full Secondary or Element slot): taking a card of a
-##   category already at its limit replaces the leftmost held card of that category (replaces()): the old card leaves
-##   the build (its level with it) and the new one takes its place in the wand order. The card says so before it is
-##   taken (Offers.info "replaces", the pick card's "Replaces <card>"), and the wand being full doesn't ask for the Swap
-##   then (BuildSlots.needs_swap). Taking a card you hold levels it up as before.
+## - Replace (Q5 "Marked, old one burns"): taking a Form or Pattern card while that category is at its limit replaces
+##   the held card of that category (replaces()): the old card leaves the build (its level with it) and the new one
+##   takes its place in the wand order. The card says so before it is taken (Offers.info "replaces", the pick card's
+##   "Replaces <card>"), and the wand being full doesn't ask for the Swap then (BuildSlots.needs_swap).
+## - Choose (v0.9.0 AS2, owner "Let me choose"): taking a Secondary or Element card while that category is full asks
+##   the player which card of it goes (choices(): the Swap panel, limited to those slots; BuildSlots.needs_swap and
+##   swap_answer); the chosen one leaves and the new one takes its slot. Skipping leaves the card un-taken.
+##   Taking a card you hold levels it up as before.
 ## - The form × card table (C60–C66): the run's form is the held Form card's row, else the default row (Orbs, the Gun's
 ##   own shot). A Pattern, Secondary or Element card whose cell is off for that form is never offered (usable(), read by
 ##   ItemPool.usable) and, if held, never compiled (compiles(), read by Modifiers.build_modifiers). The table is the
@@ -67,16 +70,42 @@ static func held_of(w: World, cat: int) -> PackedInt32Array:
 	return out
 
 
-## The wand slot whose card taking `code` would replace (class doc), or -1: `code` is a modifier card not held, of a
-## category already holding its limit (the leftmost held card of it). A limit of 0 replaces nothing (usable() keeps
-## such a card out of the offers).
-static func replaces(w: World, code: int) -> int:
+## The category of `code` when taking it meets a full slot category: a modifier card not held, of a category already
+## holding its limit (FREE otherwise). A limit of 0 is never full (usable() keeps such a card out of the offers).
+static func full_category(w: World, code: int) -> int:
 	var cat := category(w, code)
 	var lim := limit(w, cat)
 	if lim <= 0 or not BuildSlots.is_modifier(w, code) or BuildSlots.held(w, code):
+		return FREE
+	return cat if held_of(w, cat).size() >= lim else FREE
+
+
+## The player chooses which card of category `cat` goes when it is full (AS2: Secondary and Element); Form and
+## Pattern replace their card.
+static func chosen(cat: int) -> bool:
+	return cat == SECONDARY or cat == ELEMENT
+
+
+## The wand slot whose card taking `code` would replace (class doc), or -1: `code` meets its full Form or Pattern
+## category (the leftmost held card of it). A full Secondary or Element category asks instead (choices()).
+static func replaces(w: World, code: int) -> int:
+	var cat := full_category(w, code)
+	if cat == FREE or chosen(cat):
 		return -1
-	var at := held_of(w, cat)
-	return at[0] if at.size() >= lim else -1
+	return held_of(w, cat)[0]
+
+
+## v0.9.0 AS2: the wand slots the player chooses from when taking `code` meets its full Secondary or Element
+## category (its held cards of that category, left to right); empty when no such choice applies.
+static func choices(w: World, code: int) -> PackedInt32Array:
+	var cat := full_category(w, code)
+	return held_of(w, cat) if chosen(cat) else PackedInt32Array()
+
+
+## v0.9.0 AS2: the category a choice for `code` is limited to (SECONDARY or ELEMENT), or FREE (any slot).
+static func choice_category(w: World, code: int) -> int:
+	var cat := full_category(w, code)
+	return cat if chosen(cat) else FREE
 
 
 ## The card code `replaces(w, code)` would remove, or -1.

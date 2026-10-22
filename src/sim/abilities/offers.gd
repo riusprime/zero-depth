@@ -384,6 +384,8 @@ static func info(w: World, code: int) -> Dictionary:
 		# card taking it replaces (its code, -1 for none; AttackSlots.replaces)
 		"slot": AttackSlots.tag(w, code),
 		"replaces": AttackSlots.replaced_code(w, code),
+		# v0.9.0 AS2 (owner "Let me choose"): its Secondary or Element slot is full: taking it asks which card goes
+		"chooses": AttackSlots.choice_category(w, code) != AttackSlots.FREE,
 	}
 
 

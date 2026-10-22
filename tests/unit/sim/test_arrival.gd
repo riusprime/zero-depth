@@ -174,7 +174,8 @@ func test_the_arrival_is_hashed_and_deterministic() -> void:
 func test_a_swap_opened_mid_arrival_waits_for_the_landing() -> void:
 	var w := _arriving(1)
 	var cards: Array[int] = []
-	for id: StringName in [&"heavy", &"whirl", &"flurry", &"thrust", &"wide_arc"]:
+	# free cards (since AS a second Pattern replaces the first instead of filling a slot)
+	for id: StringName in [&"heavy", &"echo_slash", &"flurry", &"chain_cut", &"wide_arc"]:
 		cards.append(WandLab.code(w, id))
 	for k in Wand.slots(w):
 		assert_true(BuildSlots.take(w, cards[k]), "fills slot %d" % (k + 1))

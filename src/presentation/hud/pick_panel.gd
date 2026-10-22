@@ -241,21 +241,25 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 
 
 ## v0.9.0 AS (owner Q5, Q14: "Short line + slot tag"; C67, C87): a Form, Pattern, Secondary or Element card's slot tag
-## ("Pattern"), and when its slot is full the card taking it replaces ("Replaces Twin", that card's id and colour):
-## the pick card's slot line (PickSlot) shows them, and the replaced card burns when this one is picked.
+## ("Pattern"), and when its slot is full the card taking it replaces ("Replaces Twin", that card's id and colour).
+## AS2 (G2 AS = B): the tag leads the rarity line ("Pattern · Modifier · Rare") and the pick card's ribbon (PickSlot)
+## says "Replaces Twin", or "Choose one to replace" for a full Secondary or Element slot (the Swap panel asks).
 static func slot_face(ci: Object, reader: WorldReader, info: Dictionary, face: Dictionary) -> void:
 	var slot := int(info.get("slot", WorldReader.SLOT_NONE))
 	if slot == WorldReader.SLOT_NONE:
 		return
 	face["slot"] = slot
 	face["slot_text"] = ci.tr(WorldReader.SLOT_TAG_KEYS[slot])
+	face["tier_text"] = "%s · %s" % [face["slot_text"], face.get("tier_text", "")]
+	if info.get("chooses", false):
+		face["replaces_text"] = ci.tr("UI_SLOT_CHOOSE")
+		return
 	var old := int(info.get("replaces", -1))
 	if old < 0:
 		return
 	var o := reader.card_info(old)
 	face["replaces_id"] = o["id"]
 	face["replaces_text"] = ci.tr("UI_SLOT_REPLACES") % ci.tr(o["name_key"])
-	face["replaces_color"] = ItemLooks.color_of_id(o["id"])
 
 
 ## v0.7.5 SM (N8): the level of card `code` in the wand now (BuildSlots' slots), or 0 when it isn't held.

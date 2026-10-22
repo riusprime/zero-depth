@@ -206,6 +206,8 @@ static func read(w: World) -> Dictionary:
 		# v0.9.0 AS: the form fired now (&"" on a Blade run) and per limited slot category [category, held, limit]
 		"form": AttackSlots.form_id(w),
 		"slot_counts": AttackSlots.counts(w),
+		# v0.9.0 AS2: the slot category the waiting swap is limited to (AttackSlots.choice_category; 0: any slot)
+		"swap_slot": AttackSlots.choice_category(w, w.swap_code) if BuildSlots.swapping(w) else 0,
 	}
 
 

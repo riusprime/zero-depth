@@ -1167,3 +1167,5 @@ UI_SLOT_ELEMENT,Element,Elemento
 UI_SLOT_REPLACES,Replaces %s,Reemplaza a %s
 UI_FORM_ORBS,Orbs,Orbes
 UI_BUILD_FORM,Form: %s,Forma: %s
+UI_SLOT_CHOOSE,Choose one to replace,Elige cuál reemplazar
+UI_SWAP_TITLE_SLOT,Your %s slots are full: choose one to replace,Tus huecos de %s están llenos: elige cuál reemplazar
