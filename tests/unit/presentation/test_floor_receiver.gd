@@ -72,9 +72,15 @@ func test_never_in_the_final_arena_or_the_playground() -> void:
 
 
 func test_it_looks_unlike_every_portal() -> void:
+	# v0.9.0 MI2: the owner's floor_receiver is listed (manifest only: no floor uses the receiver since PT); the
+	# stand-in is read without it.
+	ShopModels.manifest = "res://no_such_manifest.json"
+	ShopModels.clear_cache()
 	var r := FloorReceiver.new()
 	add_child_autofree(r)
-	assert_false(r.uses_model, "no floor_receiver model listed yet: the stand-in")
+	ShopModels.manifest = ShopModels.MANIFEST
+	ShopModels.clear_cache()
+	assert_false(r.uses_model, "without the manifest: the stand-in")
 	assert_eq(r.arms.size(), 4, "four arms")
 	assert_lt(FloorReceiver.PALE.s, 0.25, "pale")
 	for c: Color in [

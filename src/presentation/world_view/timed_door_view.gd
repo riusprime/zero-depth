@@ -31,6 +31,10 @@ const BEEP_FAST := 6
 const FLASH_TICKS := 8
 const MODEL_DOOR := &"timed_door"
 const MODEL_SWITCH := &"rune_switch"
+## v0.9.0 MI2: on the owner's switch (1.3 m, its slanted top falling toward the door) the lit rune disc lies on the
+## middle of the slant: its centre (m, the switch's frame) and its tilt (rad), measured from the prepared model.
+const MODEL_RUNE_AT := Vector3(0.0, 1.2, 0.0)
+const MODEL_RUNE_TILT := 0.58
 
 static var _schedules := {}
 
@@ -41,6 +45,8 @@ var switch_glow := PackedFloat32Array()
 var flash := 0.0
 var slab: Node3D
 var uses_model := false
+## v0.9.0 MI2: the switches are the owner's model (tests read it).
+var switch_uses_model := false
 var revealed := false
 var _reader: WorldReader
 var _stage: StageView
@@ -261,6 +267,7 @@ func _build_switch(k: int, at: Vector2, toward: Vector2) -> void:
 	_switch_mats.append(rune)
 	var model := ShopModels.get_model(MODEL_SWITCH)
 	if not model.is_empty():
+		switch_uses_model = true
 		var mi := MeshInstance3D.new()
 		mi.name = "Model"
 		mi.mesh = model["mesh"]
@@ -292,6 +299,9 @@ func _build_switch(k: int, at: Vector2, toward: Vector2) -> void:
 	disc.material_override = rune
 	disc.position = Vector3(0, SWITCH_H + 0.04, 0.04)
 	disc.rotation.x = 0.45  # the slanted top, toward the door
+	if switch_uses_model:
+		disc.position = MODEL_RUNE_AT
+		disc.rotation.x = MODEL_RUNE_TILT
 	disc.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(disc)
 

@@ -13,7 +13,9 @@ extends Node3D
 ## return to the pool when it ends. Ticks are the sim's (WorldReader.tick plus the interpolation fraction), so the
 ## spikes pause with the game. Reduced motion: no overshoot on the thrust.
 ## The mesh is code-made (spike_mesh); an owner model `stone_spike` listed in assets/models/manifest.json at
-## MODEL_PATH replaces it (normalised to the same unit spike), as BossModels and KitModels do (L15).
+## MODEL_PATH replaces it (one unit tall, its own proportions), as BossModels and KitModels do (L15). v0.9.0 MI2: the
+## owner's spike (delivered 2026-10-22, the tallest of his three clusters, scripts/assets/mi2_prep.py) is drawn in its
+## own colour map, its red crystal veins (the map's red) the hot cracks that glow on the strike.
 ## v0.8.0 FB1 (FINAL_BOSS.md F4: "the Gatekeeper's stone spikes, bigger"): the Colossus's chasing spike lines and
 ## radial bursts (`spike_chase`, `spike_burst`: a marks telegraph of disc items) erupt the same way, read the same way
 ## (an item locked at progress 1000 is its strike tick): each disc throws up a cluster of DISC_SPIKES spikes, the tall
@@ -58,6 +60,8 @@ uniform float energy = 4.0;
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
 uniform sampler2D stone_tex : source_color, filter_linear_mipmap, repeat_enable;
 uniform float stone_on = 0.0;
+uniform sampler2D model_tex : source_color, filter_linear_mipmap;
+uniform float model_on = 0.0;
 
 varying float heat;
 varying float seed;
@@ -79,6 +83,11 @@ void fragment() {
 		ALBEDO = s.rgb * (1.0 - s.a * 0.6) * 1.15;
 		veins = s.a;
 	}
+	if (model_on > 0.5) {  // v0.9.0 MI2: the owner's spike in its own colours, its red veins the hot cracks
+		vec3 m = texture(model_tex, UV).rgb;
+		ALBEDO = m;
+		veins = clamp((m.r - max(m.g, m.b)) * 3.0, 0.0, 1.0);
+	}
 	float g = veins * heat * mix(0.35, 1.0, low);
 	EMISSION = hot.rgb * (energy * g + 0.5 * heat * low * low);
 	ROUGHNESS = 0.9;
@@ -90,6 +99,8 @@ void fragment() {
 static var model_path := MODEL_PATH
 static var _mesh: Mesh
 static var _from_model := false
+## v0.9.0 MI2: the owner's spike's colour map (null with the code spike).
+static var _model_tex: Texture2D
 
 ## The effects layer for the debris, dust, light and floor marks (WorldViewRoot sets it with the new look).
 var vfx: VfxCore
@@ -127,6 +138,8 @@ func _init() -> void:
 	var stone := BossStrikeMeshes.texture("tex_stone_spike")  # v0.8.0 TX2: the owner's spike stone
 	_mat.set_shader_parameter("stone_tex", stone)
 	_mat.set_shader_parameter("stone_on", 1.0 if stone != null else 0.0)
+	_mat.set_shader_parameter("model_tex", _model_tex)
+	_mat.set_shader_parameter("model_on", 1.0 if _from_model and _model_tex != null else 0.0)
 	_node.material_override = _mat
 	_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	_node.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
@@ -221,6 +234,7 @@ static func spike_mesh() -> Mesh:
 static func clear_cache() -> void:
 	_mesh = null
 	_from_model = false
+	_model_tex = null
 
 
 ## A faceted five-sided stone spike: a jagged base ring, a twisted waist and an off-centre point.
@@ -248,8 +262,9 @@ static func _code_mesh() -> ArrayMesh:
 	return AvatarBase.flat_mesh(tris, Vector3(0, 0.35, 0))
 
 
-## The owner's spike (stone_spike.glb), normalised to the code spike's unit size, or null when it isn't listed in
-## the manifest or isn't on disk.
+## The owner's spike (stone_spike.glb), one unit tall like the code spike, its width in its own proportion (v0.9.0
+## MI2: a spike, not squashed into the code spike's unit width), or null when it isn't listed in the manifest or isn't
+## on disk. Keeps its colour map for the shader (_model_tex).
 static func _model_mesh() -> Mesh:
 	if not _listed() or not ResourceLoader.exists(model_path):
 		return null
@@ -264,11 +279,12 @@ static func _model_mesh() -> Mesh:
 		lo = lo.min(v)
 		hi = hi.max(v)
 	var ext := (hi - lo).max(Vector3(0.0001, 0.0001, 0.0001))
-	var across := maxf(ext.x, ext.z)
 	for k in verts.size():
-		var v := verts[k] - Vector3((lo.x + hi.x) * 0.5, lo.y, (lo.z + hi.z) * 0.5)
-		verts[k] = Vector3(v.x / across, v.y / ext.y, v.z / across)
+		verts[k] = (verts[k] - Vector3((lo.x + hi.x) * 0.5, lo.y, (lo.z + hi.z) * 0.5)) / ext.y
 	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_TANGENT] = null
+	var mat := surface["material"] as StandardMaterial3D
+	_model_tex = mat.albedo_texture if mat != null else null
 	var m := ArrayMesh.new()
 	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return m

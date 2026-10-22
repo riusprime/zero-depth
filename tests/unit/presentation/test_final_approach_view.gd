@@ -114,7 +114,15 @@ func test_the_stage_draws_the_causeway_with_its_gap_clear() -> void:
 	var stage := FinalArenaStage.new()
 	add_child_autofree(stage)
 	stage.build(reader, def.palette, reader.final_arena_radius(), reader.seed_value())
-	assert_eq(stage.treads.size(), FinalArenaStage.CAUSEWAY_STEPS, "the stair treads")
+	# v0.9.0 MI2: the owner's stair flights (approach_stairs) replace the code treads, each climbing toward the ring.
+	assert_gt(stage.flights.size(), 0, "the owner's stair flights")
+	assert_eq(stage.treads.size(), 0, "no code treads under them")
+	assert_has(stage.models_used, &"approach_stairs")
+	var head := SimPlane.to_3d(reader.approach_causeway_top())
+	var axis := (SimPlane.to_3d(reader.approach_causeway_foot()) - head).normalized()
+	for f in stage.flights:
+		assert_lt(f.basis.x.dot(axis), -0.99, "%s climbs toward the ring" % f.name)
+		assert_lt(f.position.y, 0.0, "%s sits low (the sim is flat)" % f.name)
 	var top := SimPlane.to_3d(reader.approach_causeway_top())
 	var gap := atan2(top.z, top.x)
 	for n in stage.get_children():

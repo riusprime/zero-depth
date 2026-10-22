@@ -40,7 +40,10 @@ func test_the_door_the_switches_and_the_hidden_room() -> void:
 	var t := v.timed_door
 	assert_not_null(t, "the view is built")
 	assert_eq(t.switch_count(), 2, "two rune switches")
-	assert_false(t.uses_model, "the code stand-in until the owner's model is listed")
+	# v0.9.0 MI2: the owner's door (a gate of iron bars, the whole of it sinks) and switches are listed.
+	assert_true(t.uses_model, "the owner's timed_door")
+	assert_true(t.switch_uses_model, "the owner's rune_switch")
+	assert_not_null(t.slab.find_child("Model", false, false), "his gate is the slab that sinks")
 	assert_true(t.slab.visible, "shut: the slab stands")
 	assert_false(t.revealed, "the secret room unseen")
 	assert_gt(v.stage.hidden_nodes.size(), 0, "its ground and walls are held back")

@@ -325,6 +325,23 @@ func test_the_strike_throws_debris_and_dust_flashes_and_cracks_the_floor() -> vo
 	assert_lt(layer.used(&"debris"), high, "thinned with the density")
 
 
+## v0.9.0 MI2: the owner's stone_spike is listed: one unit tall, in its own proportions (a spike, narrower than the
+## code one), drawn in its own colour map.
+func test_the_owners_spike_is_drawn_when_listed() -> void:
+	StoneSpikeViews.model_path = StoneSpikeViews.MODEL_PATH
+	StoneSpikeViews.clear_cache()
+	assert_true(StoneSpikeViews.from_model(), "stone_spike is listed")
+	var box := StoneSpikeViews.spike_mesh().get_aabb()
+	assert_almost_eq(box.size.y, 1.0, 0.01, "one unit tall")
+	assert_lt(maxf(box.size.x, box.size.z), 0.9, "a spike, not squashed to the unit width")
+	var spikes := StoneSpikeViews.new()
+	add_child_autofree(spikes)
+	var mat := spikes.get_child(0) as MultiMeshInstance3D
+	var sm := mat.material_override as ShaderMaterial
+	assert_eq(sm.get_shader_parameter("model_on"), 1.0, "his colour map")
+	assert_not_null(sm.get_shader_parameter("model_tex"))
+
+
 func test_the_spike_is_code_made_until_the_owners_model_is_listed() -> void:
 	StoneSpikeViews.model_path = "res://assets/models/fx/no_such_spike.glb"
 	StoneSpikeViews.clear_cache()

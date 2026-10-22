@@ -13,7 +13,9 @@ extends Node3D
 ## across (3 × the 2.2 m receiver, C7), four low faceted stone steps to a 4.4 m top, carved rune panels inlaid in the
 ## top, a landing circle, and jewel sockets on the second step. The floating runes (fx_cast_sigils cells on the sigil
 ## material, FxTextures; plain glowing diamonds without the sheet) and the jewels are separate objects so each lights on
-## its own and the runes orbit (C10, C24); the owner's model replaces only the stone.
+## its own and the runes orbit (C10, C24); the owner's model replaces only the stone. v0.9.0 MI2: the owner's altar
+## (delivered 2026-10-22, scripts/assets/mi2_prep.py) is listed: his stone, his six jewel sockets holding the code
+## jewels (MODEL_SOCKETS), the landing on his top; on the final approach his stone tinted purple (Look.model_tint).
 ## The timeline (fractions of the trigger's progress 0..1, Look): idle (the empty altar) → the runes and jewels light
 ## one after another → the runes orbit, speeding up → the buildup (particles drawn in, a centre swirl, the glow and
 ## light climbing) → the pop (pop_at: the burst ring, the dust) → the release (the runes slow, the energy fades). The
@@ -43,6 +45,13 @@ const LANDING_R := 0.7
 const BURST_REACH := 2.2
 const LIGHT_IDLE := 0.0
 const LIGHT_PEAK := 7.0
+## v0.9.0 MI2: the owner's altar as prepared (it fills ShopModels' 6.6 x 0.45 x 6.6 m box): its top (m), and its six
+## cup sockets on the second step, measured from the prepared model: their angles (degrees, atan2(z, x) on the 3D
+## floor), their ring's radius (m) and the height a jewel stands at in them (m).
+const MODEL_TOP := 0.45
+const MODEL_SOCKETS: Array[float] = [-146.0, -83.0, -17.0, 35.0, 97.0, 161.0]
+const MODEL_SOCKET_R := 2.4
+const MODEL_JEWEL_Y := 0.46
 ## The runes' slow bob (m, Hz) on the presentation's clock.
 const BOB := 0.06
 const BOB_HZ := 0.35
@@ -54,6 +63,8 @@ class Look:
 	var color := BLUE
 	var core := BLUE_CORE
 	var stone := STONE
+	## v0.9.0 MI2: the owner's stone's tint (white: as delivered, neutral grey).
+	var model_tint := Color.WHITE
 	var runes := 10
 	var rune_radius := 2.75
 	var rune_height := 1.25
@@ -125,6 +136,7 @@ static func final() -> Look:
 	l.color = VIOLET
 	l.core = VIOLET_CORE
 	l.stone = Color("#3B3442")
+	l.model_tint = Color("#9A86B8")
 	l.runes = 12
 	l.rune_radius = 2.8
 	l.jewels = 6
@@ -351,10 +363,15 @@ func _build() -> void:
 	if not model.is_empty():
 		uses_model = true
 		var mi := _mesh("Model", model["mesh"], null, Vector3.ZERO, body)
-		mi.set_surface_override_material(0, model["material"])
+		var mat := model["material"] as StandardMaterial3D
+		if mat != null and look.model_tint != Color.WHITE:
+			mat = mat.duplicate() as StandardMaterial3D
+			mat.albedo_color = look.model_tint
+		mi.set_surface_override_material(0, mat)
+		look.jewels = MODEL_SOCKETS.size()  # a jewel in each of his sockets
 	else:
 		_build_stand_in()
-	var top := STEPS * STEP_H
+	var top := MODEL_TOP if uses_model else STEPS * STEP_H
 	var lm := CylinderMesh.new()
 	lm.top_radius = LANDING_R
 	lm.bottom_radius = LANDING_R
@@ -492,13 +509,15 @@ func _build_jewels() -> void:
 	var fm := faceted(gem)
 	for j in look.jewels:
 		var a := TAU * (j + 0.5) / maxf(1.0, look.jewels)
+		var at := Vector3(cos(a) * socket_r, STEP_H + 0.24, sin(a) * socket_r)
+		if uses_model:
+			a = deg_to_rad(MODEL_SOCKETS[j])
+			at = Vector3(cos(a) * MODEL_SOCKET_R, MODEL_JEWEL_Y, sin(a) * MODEL_SOCKET_R)
 		var m := StandardMaterial3D.new()
 		_emissive(m, look.color)
 		m.metallic = 0.2
 		_jewel_mats.append(m)
-		var g := _mesh(
-			"Jewel%d" % j, fm, m, Vector3(cos(a) * socket_r, STEP_H + 0.24, sin(a) * socket_r), self
-		)
+		var g := _mesh("Jewel%d" % j, fm, m, at, self)
 		g.rotation.y = a
 		jewels.append(g)
 	_jewel_glow.resize(look.jewels)

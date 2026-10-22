@@ -23,6 +23,8 @@ const GROUND_TEXTURES := {
 	&"": "res://assets/textures/kit/ground_b.png",
 	&"night_rocks": "res://assets/textures/kit/ground_b.png",
 	&"red_canyon": "res://assets/textures/kit/ground_b.png",
+	# v0.9.0 MI2: Frozen Shore's snow is the owner's ground_snow (delivered 2026-10-22).
+	&"frozen_shore": "res://assets/textures/kit/ground_snow.png",
 }
 const GROUND_TEXTURE_M := 4.0
 ## v0.8.0 N10 (owners O66, O67), N13 (owner O71, D50 = A everywhere): every biome's structural walls are the
