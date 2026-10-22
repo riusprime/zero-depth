@@ -20,7 +20,8 @@ extends SceneTree
 ## Writes only under build/ (build/perf/perf_probe.txt) and prints the same report.
 ##   godot --headless --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd [-- --twin] [-- --seconds=10]
 ##   [-- --dummies=6] [-- --level=5] [-- --sim-only] [-- --cap=N] [-- --weapon=blade] [-- --cards=a,b,c]
-##   [-- --tag=name] [-- --on-aim]
+##   [-- --tag=name] [-- --on-aim] [-- --release=N]
+## v0.9.0 AF1: --release=N lets go of Shoot for one tick every N ticks (the Lance form fires on the release).
 ## v0.8.0 FV (owner O87: "when a visual op build hits a horde of enemies the game lags"): --horde[=N] fills the room
 ## with N (default HORDE_DEFAULT) live Chargers that chase the hero, topped back up as they die (at most
 ## HORDE_REFILL a tick, at fixed places round the hero), grants HORDE_CARDS (Twin, Split, Explosive, a burn, chain
@@ -66,6 +67,7 @@ var _cards: Array[StringName] = []
 var _tag := ""
 ## v0.8.0 GF1: --on-aim puts the dummies on the aim line (4 m out, then 1.5 m apart), so one dummy takes every shot.
 var _on_aim := false
+var _release := 0  # v0.9.0 AF1: --release=N
 ## v0.8.0 FV: --horde's enemy count (0: off) and how many it has placed (its next spawn spot).
 var _horde := 0
 var _placed := 0
@@ -110,6 +112,8 @@ func _initialize() -> void:
 		elif a.begins_with("--cards="):
 			for id in a.get_slice("=", 1).split(",", false):
 				_cards.append(StringName(id))
+		elif a.begins_with("--release="):
+			_release = int(a.get_slice("=", 1))
 		elif a == "--on-aim":
 			_on_aim = true
 		elif a.begins_with("--tag="):
@@ -210,6 +214,8 @@ func _process(delta: float) -> bool:
 	_world.step(_frame_in)
 	var t1 := Time.get_ticks_usec()
 	var held := InputFrame.SHOOT if _weapon != &"blade" else 0
+	if _release > 0 and _tick_n % _release == _release - 1:
+		held = 0  # v0.9.0 AF1: the Lance's release
 	var pressed := InputFrame.PRIMARY if _weapon == &"blade" else 0
 	var aim := (_tick_n * 16) & 4095 if _horde > 0 else 0  # v0.8.0 FV: round the horde
 	_frame_in = InputFrame.make(Vector2i.ZERO, aim, 600, held, pressed)

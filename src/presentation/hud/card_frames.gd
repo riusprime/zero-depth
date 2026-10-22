@@ -135,6 +135,8 @@ const FAMILY_OF := {
 	&"gun_laser": &"projectile",  # v0.9.0 LZ: the Laser form
 	&"gun_bomb": &"area",  # v0.9.0 BM: the Bomb form
 	&"gun_void": &"dash",  # v0.9.0 VP: the Void form (the retired Void card's family)
+	&"gun_lance": &"crit",  # v0.9.0 AF1: the Lance form (the retired Charge card's family)
+	&"gun_scatter": &"projectile",  # v0.9.0 AF1: the Scatter form
 	&"gun_swirl": &"trinket",
 	# v0.6.5 WN4: the Blade pool's new cards (B3–B16; Wide Arc, Wave, Afterimage and Orbit Blades keep theirs above)
 	&"chain_cut": &"damage",

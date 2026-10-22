@@ -110,7 +110,8 @@ func sync(reader: WorldReader) -> void:
 			or reader.projectile_is_shard(i)
 			or reader.projectile_is_bomb(i)
 			or reader.projectile_is_void(i)
-		):  # v0.9.0 BM: BombView draws the bombs; v0.9.0 VP: VoidView the Void shots
+			or reader.projectile_is_pellet(i)
+		):  # v0.9.0 BM: BombView draws the bombs; v0.9.0 VP: VoidView the Void shots; AF1: ScatterView the pellets
 			continue
 		var id := reader.projectile_id(i)
 		var p := reader.projectile_pos(i)

@@ -13,7 +13,8 @@ extends RefCounted
 ##   touches it (its hit ends it, so its ON_END hooks fire there: the card's blast) or the wait runs out;
 ## - charge (G13 Charge): with a charging bolt the Gun no longer fires on its period while SHOOT is held: holding it
 ##   charges (World.mx.hold_t, up to hold_ticks), and the shot fires on release or at full charge, its size and
-##   damage × 1000 + (hold_permille − 1000) × held / hold_ticks per mille (a tap: a plain shot).
+##   damage × 1000 + (hold_permille − 1000) × held / hold_ticks per mille (a tap: a plain shot). v0.9.0 AF1: the
+##   Lance form (Lance) charges the same way, but a full Lance waits for the release instead of firing by itself.
 ## Pure: no randomness (EI-05), no trig (Kin's tables), one clock (ticks).
 
 ## The corkscrew's period (ticks per full swing) and a twin bolt's gap, in its own radii (starting values).
@@ -66,7 +67,7 @@ static func hold(w: World, can_fire: bool, fire: Callable) -> void:
 	var held := PlayerKit.shooting(w) and can_fire and w.swing_t == 0
 	if held and w.shot_cd == 0:
 		w.mx.hold_t = mini(w.mx.hold_t + 1, spec.hold_ticks)
-		if w.mx.hold_t < spec.hold_ticks:
+		if w.mx.hold_t < spec.hold_ticks or Lance.is_lance(spec):  # v0.9.0 AF1: a full Lance waits
 			return
 	elif w.mx.hold_t <= 0:
 		return

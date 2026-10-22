@@ -41,6 +41,8 @@ static var parts: Array[GDScript] = [
 	LaserView,  # v0.9.0 LZ
 	BombView,  # v0.9.0 BM
 	VoidView,  # v0.9.0 VP
+	LanceView,  # v0.9.0 AF1
+	ScatterView,  # v0.9.0 AF1
 	ModifierOverlays,
 	BladeFormView,
 	FireballViews,
@@ -135,6 +137,9 @@ var laser: LaserView = _part(LaserView)
 var bombs: BombView = _part(BombView)
 ## v0.9.0 VP (owner C §6.4): the Void shots in flight, travelling lensing spheres, and the enemies leaning into them.
 var voids: VoidView = _part(VoidView)
+## v0.9.0 AF1 (owner Q7): the Lance's charge glow and aim line, its release flash; the Scatter's pellets and cone.
+var lances: LanceView = _part(LanceView)
+var scatter: ScatterView = _part(ScatterView)
 ## v0.6.0 MX4: the shell, the charge, the phase, poison, queued attacks.
 var modifier_marks: ModifierOverlays = _part(ModifierOverlays)
 ## v0.6.5 WN4: crescents, ghost slashes, fissures, sparks, orbiting blades.
@@ -280,6 +285,8 @@ func _setup_views(palette: Dictionary) -> void:
 	add_child(laser)  # v0.9.0 LZ
 	add_child(bombs)  # v0.9.0 BM
 	add_child(voids)  # v0.9.0 VP
+	add_child(lances)  # v0.9.0 AF1
+	add_child(scatter)  # v0.9.0 AF1
 
 
 ## The effects layer (real fire, explosions, lightning) and the views drawn into it or after it.
@@ -301,6 +308,7 @@ func _setup_effects() -> void:
 		layer.drawers.append(laser.draw_fx)
 		bombs.vfx = layer  # v0.9.0 BM: the blasts' element bursts
 		layer.drawers.append(bombs.draw_fx)
+		layer.drawers.append(lances.draw_fx)  # v0.9.0 AF1: the release's element accent and sparks
 	element_fx.forms_drawn = true  # MX3 draws the spec forms (rings, spec patches, bombs)
 	ability_fx.forms_drawn = true
 	add_child(modifier_marks)  # v0.6.0 MX4
@@ -475,6 +483,8 @@ func sync() -> void:
 	_sync_view(&"laser", laser)  # v0.9.0 LZ
 	_sync_view(&"bombs", bombs)  # v0.9.0 BM
 	_sync_view(&"voids", voids)  # v0.9.0 VP
+	_sync_view(&"lances", lances)  # v0.9.0 AF1
+	_sync_view(&"scatter", scatter)  # v0.9.0 AF1
 	_sync_view(&"modifier_marks", modifier_marks)  # v0.6.0 MX4
 	_sync_view(&"blade_forms", blade_forms)  # v0.6.5 WN4
 	_sync_view(&"fireballs", fireballs)  # v0.7.5 BF1

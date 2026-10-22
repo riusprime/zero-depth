@@ -103,6 +103,9 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	&"void_tick_ticks",
 	&"void_pull_mm",
 	&"void_pull_mmps",
+	# v0.9.0 AF1 (owner Q7: the Lance and Scatter forms; Lance, Scatter)
+	&"lance",
+	&"pellets",
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"reach_m",
@@ -208,6 +211,13 @@ var void_mm := 0
 var void_tick_ticks := 0
 var void_pull_mm := 0
 var void_pull_mmps := 0
+## v0.9.0 AF1 (owner Q7, ATTACK_FORMS F5; Lance): lance, the shot is the Lance: the Gun charges it while SHOOT is held
+## (hold_ticks, × hold_permille at full; GunForms) and its release is one line along the aim, reach_m long and
+## radius_m wide, stopped only by a wall, hitting every enemy on it once (no projectile).
+var lance := 0
+## v0.9.0 AF1 (owner Q7, F6; Scatter): pellets, the bolts are the Scatter's pellets (the view draws them as a cone of
+## pellets); their numbers are the plain bolt fields (count, spread, life, speed, share_permille).
+var pellets := 0
 
 # --- payload
 ## Damage per hit (a share `damage_permille` of it when the shot splits into count > 1 bolts, rounded down, at least
@@ -510,4 +520,6 @@ func read() -> Dictionary:
 		"blast_mm": blast_mm,  # v0.9.0 BM
 		"void_mm": void_mm,  # v0.9.0 VP
 		"void_pull_mm": void_pull_mm,
+		"lance": lance,  # v0.9.0 AF1
+		"pellets": pellets,
 	}
