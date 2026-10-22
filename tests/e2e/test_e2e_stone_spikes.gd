@@ -1,7 +1,8 @@
 extends GutTest
 ## v0.8.0 AV (owner O7): the Gatekeeper's shock lanes reach the real game as cracked ground, then stone spikes.
 ## Through main.tscn with real input only (Input.parse_input_event): backtick opens the dev panel, clicks pick the
-## Gatekeeper and summon it (God keeps the player standing), backtick closes it. When the boss lays its shock lanes,
+## Gatekeeper and summon it (God keeps the player standing; the panel stays open through the fight, as closing it drops
+## God: v0.8.0 BP), backtick closes it at the end. When the boss lays its shock lanes,
 ## TelegraphViews draws them as cracked ground, and on their strike StoneSpikeViews raises spikes along them, which
 ## sink back into the pool. v0.8.0 BS1: some stay standing as pillars (walls) for their time, then sink too.
 
@@ -29,8 +30,7 @@ func test_the_gatekeepers_shock_lanes_crack_the_ground_and_strike_as_spikes() ->
 	assert_eq(choice.text, name)
 	await _click(e, main, "SpawnBoss")
 	await e.frames(2)
-	await e.tap(KEY_QUOTELEFT)
-	assert_false(main.is_dev_panel_open())
+	assert_true(main.is_dev_panel_open(), "open through the fight, so God stays on")
 	var reader := main.driver.reader
 	var bid := reader.actor_id(reader.boss_index())
 	var cracked := false
@@ -59,3 +59,5 @@ func test_the_gatekeepers_shock_lanes_crack_the_ground_and_strike_as_spikes() ->
 	assert_eq(main.view.spikes.spike_count(), 0, "which sank back")
 	assert_eq(main.view.spikes.pooled(), 0, "into the pool")
 	assert_eq(w.bosses.pillar_x.size(), 0, "and the sim's pillars are gone with them")
+	await e.tap(KEY_QUOTELEFT)
+	assert_false(main.is_dev_panel_open())

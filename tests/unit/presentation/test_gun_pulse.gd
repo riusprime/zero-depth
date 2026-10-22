@@ -272,6 +272,10 @@ func test_every_shot_casts_a_pooled_flourish() -> void:
 
 func test_rapid_shots_merge_into_one_flourish() -> void:
 	var w := _world([&"gun_rapid_fire", &"rapid_coil"])
+	# v0.8.0 SG: the attack-speed curve now holds these two cards at 6 ticks (MERGE_TICKS); with the knee lifted for
+	# this world only, they fire fast enough to merge, which is what this test is about.
+	w.tuning.attack_speed_knee_permille = 5000
+	w.tuning.attack_speed_knee2_permille = 5000
 	var r := WorldReader.new(w)
 	assert_lt(r.shot_period_ticks(), HeroCastFx.MERGE_TICKS, "fast enough to merge")
 	var fx := HeroCastFx.new()

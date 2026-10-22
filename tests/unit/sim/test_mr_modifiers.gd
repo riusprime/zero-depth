@@ -95,7 +95,8 @@ func test_spread_is_two_more_then_one_a_level_each_bolt_a_share() -> void:
 	assert_eq(m.size(), 3)
 	var kinds := []
 	for i in m:
-		assert_eq(w.projectiles.damage[i], maxi(1, d * 550 / 1000), "each bolt 55 %")
+		# v0.8.0 RM lead fix: a share rounds half up (Attacks._shared_form).
+		assert_eq(w.projectiles.damage[i], maxi(1, (d * 550 + 500) / 1000), "each bolt 55 %")
 		kinds.append(w.projectiles.second_of(i))
 	assert_eq(kinds, [1, 0, 1], "only the centre bolt is primary")
 
