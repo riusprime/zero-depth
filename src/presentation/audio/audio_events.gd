@@ -13,6 +13,9 @@ const HEARTBEAT_TICKS := 54
 const BOSS_PITCH := 0.8
 ## A crit's hit is pitched up, so it rings sharper (v0.4.0 BS).
 const CRIT_PITCH := 1.6
+## v0.9.0 DS (owner C35, Q19): `boss_door_impact.wav` peaks about 0.3 s in, so its cue starts this many ticks before
+## the slab touches down (WorldReader.boss_door_open_ticks), and the boom lands with the slab.
+const DOOR_IMPACT_LEAD_TICKS := 18
 
 const BOSS_FLAVOUR := {
 	WorldReader.KIND_GATEKEEPER: &"boss_telegraph_gatekeeper",
@@ -84,6 +87,8 @@ var _done_tick := -1
 var _overrun := [false, false]
 ## v0.5.5 AR: the sealed arena's last state (sealed room, arenas cleared).
 var _arena := [-1, 0]
+## v0.9.0 DS: the boss door's last opening progress (-1 when it isn't opening), for the impact cue's edge.
+var _door_progress := -1.0
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -103,6 +108,7 @@ func prime(reader: WorldReader) -> void:
 	_overrun = [o["inside"], o["cleared"]]
 	var a := reader.arenas()
 	_arena = [int(a["sealed"]), (a["cleared"] as PackedInt32Array).size()]
+	_door_progress = reader.boss_door_progress()
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -127,7 +133,24 @@ func collect(reader: WorldReader) -> Array:
 	_heat(reader, out)
 	_event_rooms(reader, out)  # v0.5.0 EV
 	_overrun_edges(reader, out)
+	_door_impact(reader, out)
 	return out
+
+
+## v0.9.0 DS: the door's impact plays DOOR_IMPACT_LEAD_TICKS before the slab is down, so the file's peak meets the
+## touchdown (the camera's thud stays on the touchdown, WorldViewRoot).
+func _door_impact(reader: WorldReader, out: Array) -> void:
+	var progress := reader.boss_door_progress()
+	var at := door_impact_at(reader)
+	if progress >= at and _door_progress >= 0.0 and _door_progress < at:
+		out.append([&"boss_door_impact", reader.boss_door_center(), 1.0])
+	_door_progress = progress
+
+
+## The share of the door's opening at which its impact cue starts.
+static func door_impact_at(reader: WorldReader) -> float:
+	var ticks := reader.boss_door_open_ticks()
+	return float(ticks - DOOR_IMPACT_LEAD_TICKS) / float(ticks)
 
 
 ## v0.4.0 AB: walking into the Overrun room sounds its alarm; clearing it, its fanfare.
@@ -189,8 +212,6 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"boss_door_seal", null, 1.0])
 			SimEvent.Kind.BOSS_DOOR_OPENING:  # v0.8.0 BD (O83): the owner's sounds, at the door
 				out.append([&"boss_door_opening", e.pos, 1.0])
-			SimEvent.Kind.BOSS_DOOR_OPENED:
-				out.append([&"boss_door_impact", e.pos, 1.0])
 			SimEvent.Kind.PORTAL_OPENED:
 				out.append([&"portal_open", null, 1.0])
 				if e.amount == 1:  # v0.5.0 RT: the Deep gate opened beside it

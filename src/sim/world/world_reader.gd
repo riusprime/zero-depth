@@ -1224,6 +1224,11 @@ func boss_door_progress() -> float:
 	return _w.boss_flow.door_progress(_w.tick) if _w.boss_flow != null else -1.0
 
 
+## v0.9.0 DS: how long the boss door takes to open, in ticks (the impact cue leads the touchdown).
+func boss_door_open_ticks() -> int:
+	return BossFlow.DOOR_OPEN_TICKS
+
+
 ## v0.8.0 BD (O83): the interact press would open the boss door now (the prompt).
 func boss_door_in_reach() -> bool:
 	return (
