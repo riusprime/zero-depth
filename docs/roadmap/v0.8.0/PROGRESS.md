@@ -4,24 +4,20 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`, fast-forwarded
 not in `main` yet).
 
 ## Where we are
-(The lead keeps this block current at every push; the SessionStart hook prints it. Updated 2026-10-18.)
+(The lead keeps this block current at every push; the SessionStart hook prints it. Updated 2026-10-22.)
 
-- **Pushed on `claude/lucid-fermat-9wv2tf`:** N1–N19, TX, the owner's 34 models (MI), the load fix (LD), the curse
-  room as its own room (N19), the Prism's fair second phase (PR), the five biome boss doors with press-to-open and the
-  owner's sounds (BD), the doors as tunnels through thick walls (BW, O85). PR + BD were pushed on the owner's word ("push it then") while their seams ran; seams then
-  passed 469/469 (see History).
-- **Next:** the owner's playtest of v0.8.0; the quick-shot tool (one launch, a chosen floor or room, every biome),
-  proposed in the agent cost review and waiting for the owner's yes.
-- **Waiting on the owner:** D58 (models), D59 (curse room), D60 (the Prism), D61 (wand rounding), and the rest of `OWNER_TODO.md` §2.
-- **Branch `claude/perf-graphics-v080`** (owner O86, 2026-10-19: "create a new branch for this do not modify the actual
-  branch"), cut from `claude/lucid-fermat-9wv2tf` at `89e3937`, which stays untouched: FS, FV, GX (O86-O88) and HV, HR,
-  HS (O89: every fps candidate) and NF (O90: the flow field over 3 ticks) merged; seams 477/477. HR's look changes are switches in
-  `src/presentation/world_view/render_switches.gd` (the render thread one off). Next: the owner plays and measures on
-  their PC, says which switches to discard; D61.
-
-- **Branch `claude/balance-pass-v080`** (owner O91, 2026-10-20: the build and loot balance pass), cut from
-  `claude/perf-graphics-v080` at `ae4f136`: the plan is [`BALANCE_PASS.md`](BALANCE_PASS.md), five steps in the
-  owner's order (SG stats → MR modifiers → RM remnants → FL floor loot → BV validation); starting values D64-D68.
+- **Releasing v0.8.0** (owner O92, 2026-10-22): the owner played it ("I played it and we made adjustments on the
+  balance part"), so the playtest is done and their feedback opens v0.9.0. The release step is on
+  `claude/perf-graphics-v080` (version 0.8.0, patch notes en/es, docs) and ships through PR riusprime/zero-depth#7
+  into `main`; the screenshot tour is skipped on the owner's word. PR riusprime/zero-depth#6 (v0.7.5) is closed:
+  v0.8.0 contains it.
+- **Moved to v0.9.0:** UC (the utility cards, G1 still waiting) and the rest of EM (enemy models).
+- **Branches:** `claude/balance-pass-v080` and `claude/perf-graphics-v080` hold the same files (PR #8 merged the
+  first into the second); `claude/lucid-fermat-9wv2tf` is inside both. HR's look switches
+  (`src/presentation/world_view/render_switches.gd`) go to `main` as they are.
+- **Next:** PR #7 green, `tests/MIN_TEST_COUNT` from its `verify` total, the owner merges; then v0.9.0's Phase 0
+  from the owner's feedback.
+- **Waiting on the owner:** the rest of `OWNER_TODO.md` §2.
 
 ## Done
 | Step | What (player-facing) | Commit |
@@ -475,4 +471,5 @@ not in `main` yet).
 - 2026-10-20: RM (agent, branch `v080-rm`, `7107051c` SG + final MR merged in): tests run, fixed (RemnantRule `digest_into` + `LOADOUT_CLASSES`, card sentences ≤ 60, content counts 107 / 95, gravity test), equivalence golden re-recorded (3 cases); lead fix: `Attacks._shared_form` and `bolt_base_damage` round half up (noted in BALANCE_MR). Totals in [BALANCE_RM](evidence/BALANCE_RM.md): last run 188/188 (content, presentation, e2e incl. the new `test_e2e_remnants`).
 - 2026-10-20: FL (agent) phase 2: merged `claude/balance-pass-v080` at `67e42a30` (PLAN/PROGRESS by union, rows deduplicated); import; FL's 20 new tests pass; item-count tests updated for RM's six cards; failing from the base and left for the owner/lead: `test_card_pool_reach` pool size 66/65 > 63, and `tests/arch/test_layering.gd` (`remnant_views.gd` uses `RemnantRule`, `Engines`). `rarity_odds` (shipped and `pacing=0`) and `card_pool` run, output in the evidence. Not run locally: seams, the full suite.
 - 2026-10-20 (lead): SG, MR, RM, FL, BV merged on `claude/balance-pass-v080` (`d0cb0f64`); `bash scripts/ci/seams.sh` on `d0cb0f64`: `Tests 482`, `Passing Tests 480`, `Failing Tests 2`, `Time 1243.992s`. Both cross-step: `test_modifier_smoke` counted 89 modifiers (RM's six new: 95, the count updated) and `test_e2e_codex` "Common, Rare, Epic and Legendary cards each say their tier" saw 3 tiers: the mutations made the Codex's legendary section two rows, and right from a row's end jumped to another section's tile, skipping cards. Fixed in the game (`CodexView._stop_at_row_ends`: left and right stop at a row's ends) and in the test's walk (each row swept both ways). Re-run: `test_e2e_codex` + `test_codex_view` 6/6; the other Codex users (achievements, ascension e2e; achievements, ember stone, onboarding hints, rarity views; modifier smoke) 33/33.
+- 2026-10-22 (lead, the owner's PC: i7-10700K, RTX 3060, Windows 11; Godot `4.7.2.stable.official.ed1daf0bf`): the v0.8.0 release (owner O92) on `claude/perf-graphics-v080` at `c722ed5e`. PR riusprime/zero-depth#7's CI on `c722ed5` was red in three shards (signed-out logs are hidden, so each shard was run here with `bash scripts/ci/gut_shard.sh <shard>`): presentation `Tests 838, Passing 837, Failing 1`, sim_b `Tests 612, Passing 611, Failing 1`, e2e `Tests 159, Passing 158, Failing 1`. Each was a test behind a step, fixed in the test: `test_gun_pulse.gd::test_rapid_shots_merge_into_one_flourish` (SG's attack-speed curve holds its two cards at 6 ticks, the merge window; the knee is lifted in that test's world only; 14/14), `test_mr_modifiers.gd::test_spread_is_two_more_then_one_a_level_each_bolt_a_share` (RM's lead fix rounds a share half up; 15/15), `test_e2e_stone_spikes.gd` (closing the dev panel drops God since BP, so the hero died before the pillars' tick; the panel stays open through the fight, as `test_e2e_boss_strikes.gd` does; 1/1). The release: version 0.8.0 (`project.godot`, `export_presets.cfg`), patch notes `docs/patch-notes/v0.8.0.md` + `.es.md` and the What's New copy (`test_patch_notes.gd` 2/2, `test_game_version.gd` 3/3), ROADMAP, README, OWNER_TODO; UC and the rest of EM moved to v0.9.0; the screenshot tour skipped (owner). Not run locally: lint (no gdtoolkit here), the other three shards (green on GitHub at `c722ed5`), export smoke and the hitch probe (GitHub). `tests/MIN_TEST_COUNT` waits for PR #7's green `verify` total.
 

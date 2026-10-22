@@ -55,7 +55,7 @@ with your biggest builds; bugs (what you did, saw, expected; a screenshot); anyt
 | D13 | Add the map sub-streams `map:ice`, `map:starglow`, `map:overrun`, the shrine's `map:shrine` and `loot:shrine:<use>` (N14), the curse room's `map:curse_room` (N17) (and Ring/Swirl's stream, if it stays after the Ring change) to the engineering rule's locked list? A bookkeeping call: nothing in play changes | kept, unlisted | LOCKED_DECISIONS EI-05 |
 | D20 | Void's black holes: 8 % a shot +3 % a level (20 % at 5), 2 s, at most 3, pull 3.5 m, every 0.2 s 30 % of the shot's damage. OK? (after you try it) | as built | VOID_AND_PORTALS.md |
 | D22 | The Purple Portal 10 % ease on loop 2 **and every later loop**, or loop 2 only? (after you try it) | loop 2 and later | BIOME_PERF_AND_LIGHT.md |
-| D23 | **Utility cards:** 22 mechanic cards; mark each row Yes / No / Change. Nothing on that list is built until you do | — | [`UTILITY_CARDS.md`](roadmap/v0.8.0/UTILITY_CARDS.md) |
+| D23 | **Utility cards (moved to v0.9.0, O92):** 22 mechanic cards; mark each row Yes / No / Change. Nothing on that list is built until you do | — | [`UTILITY_CARDS.md`](roadmap/v0.8.0/UTILITY_CARDS.md) |
 | D28 | Which other cards should care about order (like Ring, Spread, Halo, Swirl)? Twin, Boomerang, Orbit, Spiral, Homing are order-free today | as built | ATTACK_ORDER.md |
 | D31 | Rare cards are **blue** (were amber, too close to Legendary gold); every card says its tier in words. OK? | blue | RARITY.md |
 | D32 | A boss's stolen **core** gives only legendary stat cards (no ×2 triggers), so every Legendary card goes through the odds. OK, or let cores give Legendary cards too? | stats only | RARITY.md |

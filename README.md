@@ -4,9 +4,9 @@ A real-time action roguelike in low-poly isometric 3D. Move and aim freely; figh
 skill (guard or a mobile skill) and a dash. Build item **engines** (bleed, guard and more) that change how you
 play. Push through procedural floors across distinct biomes, where danger rises only when you choose it.
 
-**Status:** v0.0.1 "Ground Plane" built: a cube moves, aims and dashes on a test stage, menus in English and
-Spanish, every CI guard live. Waiting on the owner's playtest ([plan](docs/roadmap/v0.0.1/PLAN.md),
-[playtest](docs/roadmap/v0.0.1/PLAYTEST.md)). Windows, mouse+keyboard and gamepad. English and Spanish.
+**Status:** v0.8.0 "Fights and Feel" released ([plan](docs/roadmap/v0.8.0/PLAN.md),
+[patch notes](docs/patch-notes/v0.8.0.md)), played by the owner; v0.9.0 is next, from their feedback. Windows,
+mouse+keyboard and gamepad. English and Spanish.
 
 ## Run and test
 

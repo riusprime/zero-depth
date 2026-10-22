@@ -158,6 +158,9 @@ The owner also runs Claude Code on their own PC (i7-10700K, RTX 3060), from the 
   `pip install -r requirements-dev.txt`. For model prep, also `pip install meshoptimizer==0.2.30a0 xatlas==0.0.11 scipy`.
 - **Windows:** run the bash scripts from Git Bash, and Godot natively, not in WSL, so it uses the GPU.
   `scripts/verify.ps1` and `scripts/export_windows.ps1` are the PowerShell scripts.
+- **Several heavy jobs at once** (owner, 2026-10-22: "since we dont have the limitations of the cloud session in my PC you
+  can run multiple at a time"): the "one heavy job at a time" rule is for cloud machines. Here, run test shards and shots
+  in parallel, each with its own `APPDATA` folder (Windows keeps `user://` there) so saves don't collide.
 - **Shots** render on the GPU: drop the `xvfb-run` wrapper. **Timing** measured here is real evidence; name the
   machine.
 - **`.claude/settings.json`** (tracked) allows the project's own commands without a prompt: godot, lint, `scripts/`,
