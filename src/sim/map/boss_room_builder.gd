@@ -442,7 +442,8 @@ static func _room_at(f: FloorLayout, cell: Vector2i) -> int:
 	return _NONE
 
 
-## The gate against the middle of the wall opposite the door, facing into the room.
+## The gate in front of the middle of the wall opposite the door (v0.9.0 PT: GATE_WALL_CLEAR out from it), facing into
+## the room.
 static func _place_gate(f: FloorLayout, r: Rect2, side: int) -> void:
 	var c := r.get_center()
 	var face := c
@@ -457,7 +458,7 @@ static func _place_gate(f: FloorLayout, r: Rect2, side: int) -> void:
 			face = Vector2(c.x, r.position.y)
 	f.portal_room = f.boss_room
 	f.portal_angle = _SIDE_ANGLES[side]
-	f.portal_pos = face + f.portal_facing() * FloorLayout.GATE_HALF_DEPTH
+	f.portal_pos = face + f.portal_facing() * FloorLayout.GATE_WALL_CLEAR  # v0.9.0 PT: clear of the wall
 
 
 ## The door's approach point just inside the boss room.

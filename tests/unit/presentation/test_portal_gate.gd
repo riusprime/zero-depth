@@ -1,16 +1,19 @@
 extends GutTest
-## The portal gate (v0.2.0 PLAN step D, L8; the visor's light blue since v0.3.5 PT): placement on the sim plane,
-## the portal shader, its colour and the sealed state.
+## The portal gate (v0.2.0 PLAN step D, L8; the visor's light blue since v0.3.5 PT; v0.9.0 PT a frameless oval):
+## placement on the sim plane, the portal shader, its colour and the sealed state. The oval's growth and collapse:
+## test_portal_oval.gd.
 
 const UNIFORMS := [
-	"opening_size",
+	"quad_size",
+	"half_now",
 	"color_deep",
 	"color_mid",
 	"color_light",
-	"veil_color",
+	"edge_color",
 	"swirl_speed",
 	"energy",
-	"sealed",
+	"burn",
+	"fade",
 	"rim_color"
 ]
 
@@ -33,19 +36,18 @@ func test_setup_places_and_turns_the_gate() -> void:
 	assert_almost_eq(front, Vector2(0, 1), Vector2.ONE * 1e-5)
 
 
-func test_opening_is_clear_and_portal_fills_it() -> void:
+## v0.9.0 PT (C1, Q15): no stone frame; the swirl is drawn on a quad round a tall, narrow oval standing on the floor.
+func test_the_oval_has_no_frame_and_stands_on_the_floor() -> void:
 	var g := _gate()
 	var quad := g.portal.mesh as QuadMesh
-	assert_eq(quad.size, Vector2(PortalGate.OPENING_W, PortalGate.OPENING_H))
-	assert_almost_eq(g.portal.position.y, PortalGate.OPENING_H * 0.5, 1e-5)
-	assert_gt(g.stone_blocks.size(), 8, "pillars, lintel and keystone are stacked blocks")
-	for b in g.stone_blocks:
-		var half := (b.mesh as BoxMesh).size.z * 0.5
-		if b.position.y < PortalGate.OPENING_H:
-			assert_true(
-				absf(b.position.z) - half >= PortalGate.OPENING_W * 0.5 - 0.02,
-				"block at %s stays out of the opening" % b.position
-			)
+	assert_eq(quad.size, Vector2(PortalGate.OVAL_W, PortalGate.OVAL_H) * PortalGate.QUAD_MARGIN)
+	assert_almost_eq(g.portal.position.y, PortalGate.OVAL_Y, 1e-5)
+	assert_gt(PortalGate.OVAL_Y - PortalGate.OVAL_H * 0.5, 0.0, "its foot above the floor")
+	assert_lt(PortalGate.OVAL_Y - PortalGate.OVAL_H * 0.5, 0.15, "and close to it")
+	assert_gt(PortalGate.OVAL_H, PortalGate.OVAL_W * 1.8, "tall and narrow")
+	for n in g.find_children("*", "MeshInstance3D", true, false):
+		assert_false((n as MeshInstance3D).mesh is BoxMesh, "no stone blocks: %s" % n.name)
+	assert_false("stone_blocks" in g, "the frame is gone")
 
 
 func test_portal_shader_has_the_expected_uniforms() -> void:
@@ -83,21 +85,20 @@ func test_the_portal_is_the_visors_light_blue() -> void:
 	avatar.setup(Color.BLACK)
 	assert_eq(avatar.visor_color(), visor, "the colour the visor glows")
 	avatar.free()
-	for key in ["color_deep", "color_mid", "color_light", "veil_color"]:
+	for key in ["color_deep", "color_mid", "color_light", "edge_color"]:
 		assert_true(g.portal_material.shader.code.contains(key), key)
 
 
-func test_sealed_is_the_default_and_toggles_the_uniform() -> void:
+func test_sealed_and_hidden_is_the_default_and_opening_shows_its_growth() -> void:
 	var g := _gate()
 	assert_true(g.is_sealed())
-	assert_eq(g.portal_material.get_shader_parameter("sealed"), 1.0)
-	var dim := g.light.light_energy
+	assert_false(g.visible, "nothing stands while sealed")
 	g.set_sealed(false)
 	assert_false(g.is_sealed())
-	assert_eq(g.portal_material.get_shader_parameter("sealed"), 0.0)
-	assert_gt(g.light.light_energy, dim, "open is brighter")
-	g.set_sealed(true)
-	assert_eq(g.portal_material.get_shader_parameter("sealed"), 1.0)
+	assert_false(g.visible, "not before it grows")
+	g.set_growth(1.0)
+	assert_true(g.visible)
+	assert_almost_eq(g.light.light_energy, PortalGate.LIGHT_ENERGY_OPEN, 1e-4, "open and lit")
 
 
 func test_gate_strings_exist_in_both_languages() -> void:

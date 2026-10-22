@@ -3,8 +3,9 @@ extends GutTest
 ## middle of its first room, at the hero's start, on open floor; the final arena and the Playground have none. It is
 ## low, round, pale (unlike every portal's colour) and draws its stand-in until the manifest lists `floor_receiver`.
 ## The arrival's view (PortalTransitView on a receiver): floor 1 charges, trembles, wobbles and zooms with no hero, then
-## the hero pops in (an overshoot, a burst, a kick) and the view settles; a later floor's hero rises out of it; reduced
-## motion has no shake, wobble, zoom or rise. Presentation only (EI-07): it reads the sim's arrival progress.
+## the hero pops in (an overshoot, a burst, a kick) and the view settles; a later floor's hero steps out of the portal
+## taken (v0.9.0 PT); reduced motion has no shake, wobble, zoom or rise. Presentation only (EI-07): it reads the
+## sim's arrival progress.
 
 const SEED := 20261017
 const LONG := 1 << 24
@@ -171,30 +172,49 @@ func test_floor_one_charges_trembles_zooms_then_pops_the_hero_in() -> void:
 	assert_false(receiver.shock.visible)
 
 
-func test_a_later_floor_steps_the_hero_out_of_the_receiver() -> void:
-	var w := _floor(2)
-	var reader := WorldReader.new(w)
-	var v := _views(reader)
-	var transit: PortalTransitView = v[1]
-	var rig: IsoRig = v[3]
-	_sync(reader, v)
-	assert_false(transit.first, "the step-out")
-	var av := _avatar(reader, v)
-	var lowest := 0.0
-	var burst := false
-	while reader.arriving():
-		w.step(InputFrame.new())
+## v0.9.0 PT (owner Q16: "the rest of the floor spawn the same portal that you take at the end of the floor, character
+## comes out of it and then it vanishes"): a later floor has no receiver; the portal taken (the Deep gate's violet on
+## a Deep floor) grows behind the hero's spot, the hero steps out of it with a thud, and it collapses into a point.
+func test_a_later_floor_steps_the_hero_out_of_the_portal_taken() -> void:
+	for route in [0, Routes.Route.DEEP]:
+		var w := _floor(2, route)
+		var reader := WorldReader.new(w)
+		var v := _views(reader)
+		var transit: PortalTransitView = v[1]
+		var rig: IsoRig = v[3]
+		transit.receiver = null
+		var gate := PortalGate.new()
+		if reader.floor_is_deep():
+			gate.set_deep()
+		gate.set_arrival()
+		add_child_autofree(gate)
+		transit.arrival_gate = gate
 		_sync(reader, v)
-		if transit.phase != PortalTransitView.Phase.ARRIVE:
-			break
-		if av.visible:
-			lowest = minf(lowest, av.position.y)
-		burst = burst or (v[2] as FloorReceiver).shock.visible
-		assert_eq(rig.flourish_roll, 0.0, "no wobble on a later floor")
-	assert_lt(lowest, -0.3, "it rises out of the receiver")
-	assert_true(burst, "a small burst")
-	assert_eq(av.position, Vector3.ZERO)
-	assert_eq(av.scale, Vector3.ONE)
+		assert_false(transit.first, "the step-out")
+		var want := (
+			PortalGate.DEEP_VIOLET if route == Routes.Route.DEEP else PortalGate.visor_blue()
+		)
+		assert_eq(gate.portal_color(), want, "the portal taken (route %d)" % route)
+		var av := _avatar(reader, v)
+		var farthest := 0.0
+		var grown := 0.0
+		var thudded := false
+		while reader.arriving():
+			w.step(InputFrame.new())
+			_sync(reader, v)
+			if transit.phase != PortalTransitView.Phase.ARRIVE:
+				break
+			grown = maxf(grown, gate.form())
+			if av.visible:
+				farthest = maxf(farthest, av.position.length())
+			thudded = thudded or rig.vibration_level() > 0.0
+			assert_eq(rig.flourish_roll, 0.0, "no wobble on a later floor")
+		assert_gt(grown, 0.99, "the portal grew whole")
+		assert_gt(farthest, 0.4, "the hero stepped out of it")
+		assert_true(thudded, "a thud as the hero comes through")
+		assert_false(gate.visible, "it collapsed into a point")
+		assert_eq(av.position, Vector3.ZERO)
+		assert_eq(av.scale, Vector3.ONE)
 
 
 func test_reduced_motion_has_no_shake_wobble_zoom_or_rise() -> void:

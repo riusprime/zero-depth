@@ -1,6 +1,6 @@
 extends GutTest
-## Optional routes, shown (v0.5.0 RT, R5): the Deep gate reads apart from the gate at a glance (violet swirl, red rim
-## and frame vs the visor's light blue), it opens with the gate and each closes when the other is taken; the floor
+## Optional routes, shown (v0.5.0 RT, R5): the Deep gate reads apart from the gate at a glance (violet swirl and red
+## rim vs the visor's light blue), it opens with the gate and each closes when the other is taken; the floor
 ## card and the HUD's floor label name a Deep floor; the recap lists the route per floor; the epic altar glows
 ## violet and says so; the Deep gate's opening has its own sound and caption; every new string has en and es.
 ## Presentation only (EI-07): the views read WorldReader.
@@ -56,8 +56,10 @@ func test_the_deep_gate_reads_apart_from_the_gate() -> void:
 	add_child_autofree(d)
 	d.set_deep()
 	assert_true(d.deep)
-	assert_eq(d.rim_strips.size(), 3, "a red frame: two sides and the top")
-	assert_eq(g.rim_strips.size(), 0, "the gate keeps its plain stone")
+	# v0.9.0 PT: no frames any more (frameless ovals); the swirl's red rim and violet set it apart.
+	assert_eq(d.get_child_count(), g.get_child_count(), "the same oval, no red frame strips")
+	var edge: Color = d.portal_material.get_shader_parameter("edge_color")
+	assert_gt(edge.r, edge.b, "its burning edge is red-hot")
 	var mid: Color = d.portal_material.get_shader_parameter("color_mid")
 	var blue: Color = g.portal_material.get_shader_parameter("color_mid")
 	assert_gt(absf(mid.h - blue.h), 0.1, "a different hue (violet vs light blue)")

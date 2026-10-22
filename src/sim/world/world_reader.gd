@@ -1292,6 +1292,14 @@ func gate_open(route: int) -> bool:
 	return _w.boss_flow != null and _w.boss_flow.gate_open(route)
 
 
+## v0.9.0 PT (owner C4, Q15): 0..1 through gate `route`'s forming after the boss died (0 while it is closed: before
+## the boss died, or once the other gate was taken); the hero can walk in once it is 1 (BossFlow.PORTAL_FORM_TICKS).
+func portal_form_progress(route: int) -> float:
+	if not gate_open(route):
+		return 0.0
+	return _w.boss_flow.portal_form_progress(_w.tick)
+
+
 ## The route walked into on this floor (Routes.Route; -1 = none yet).
 func route_taken() -> int:
 	return _w.boss_flow.route_taken if _w.boss_flow != null else -1
