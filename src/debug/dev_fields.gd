@@ -39,6 +39,7 @@ const GROUPS := [
 			"res://data/overrun",
 			"res://data/map",
 			"res://data/secrets",  # v0.9.0 RA/DX: rune puzzles, cracked walls, containers, barrels
+			"res://data/lockdowns",  # v0.9.0 LK: Lockdown rooms
 		],
 		"",
 	],
