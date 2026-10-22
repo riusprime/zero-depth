@@ -1,6 +1,7 @@
 extends SceneTree
 ## v0.9.0 LZ / BM (owner C §6.2, §6.3; docs/roadmap/v0.9.0/evidence/LASER_BOMB.md): renders the Laser's beam once per
-## element look (default energy, Fire, Lightning, Frost, Venom, Bleed) held at a dummy, in the real game view
+## element look (default energy, Fire, Lightning, Frost, Venom, Bleed) held at a dummy, and a bomb in flight and its
+## blast (default, Fire), in the real game view
 ## (WorldViewRoot on the Ruins stage, the iso camera) of a real World with the data's Gun and cards, Shoot held. Needs a
 ## renderer (no --headless):
 ##   godot --path . --audio-driver Dummy --resolution 1280x720 -s scripts/shots/laser_bomb.gd
@@ -14,6 +15,9 @@ const PLAN := [
 	["laser_frost", [&"gun_laser", &"frost_core"], 9.0, 20, 3],
 	["laser_venom", [&"gun_laser", &"venom_core"], 9.0, 20, 3],
 	["laser_bleed", [&"gun_laser", &"shared_bleed"], 9.0, 20, 3],
+	["bomb_flight", [&"gun_bomb"], 9.0, 10, 3],
+	["bomb_blast", [&"gun_bomb"], 9.0, 24, 3],
+	["bomb_blast_fire", [&"gun_bomb", &"ember_core"], 9.0, 24, 3],
 ]
 const SIZE := Vector2i(1280, 720)
 ## The target ahead on the aim, and a few to the sides.
@@ -105,7 +109,19 @@ func _process(_delta: float) -> bool:
 	img.convert(Image.FORMAT_RGB8)
 	var path := _dir + "%d_%s.jpg" % [_k + 1, spec[0]]
 	img.save_jpg(path, 0.88)
-	print("laser_bomb: ", path, " (tick ", _ticks, ", beams ", _view.laser.shown, ")")
+	print(
+		"laser_bomb: ",
+		path,
+		" (tick ",
+		_ticks,
+		", beams ",
+		_view.laser.shown,
+		", bombs ",
+		_view.bombs.bombs,
+		", blasts ",
+		_view.bombs.blasts,
+		")"
+	)
 	_k += 1
 	if _k >= PLAN.size():
 		return true

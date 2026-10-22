@@ -144,6 +144,8 @@ const FIELD_STAGE := {
 	&"beam_permille": [3, &"beam_permille", ""],
 	&"rate_scale_permille": [5, &"rate_scale_permille", ""],
 	&"move_permille": [3, &"move_permille", ""],
+	# v0.9.0 BM (owner Q9): the Bomb form's blast radius (mm)
+	&"blast_radius_mm": [3, &"blast_mm", ""],
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).

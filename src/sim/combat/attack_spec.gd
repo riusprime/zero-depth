@@ -99,6 +99,7 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	&"beam_permille",
 	&"rate_scale_permille",
 	&"move_permille",
+	&"blast_mm",  # v0.9.0 BM (owner Q9: the Bomb form; Bomb)
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"reach_m",
@@ -193,6 +194,9 @@ var beam_hold := 0
 var beam_permille := 0
 var rate_scale_permille := 0
 var move_permille := 0
+## v0.9.0 BM (owner Q9; Bomb): blast_mm, the bolt is a bomb: its touch deals nothing, and where it ends (the first
+## enemy, a wall, the end of its flight) it bursts with this radius (mm; the area stat scales it) at its damage.
+var blast_mm := 0
 
 # --- payload
 ## Damage per hit (a share `damage_permille` of it when the shot splits into count > 1 bolts, rounded down, at least
@@ -498,4 +502,5 @@ func read() -> Dictionary:
 		"step_m": step_m,
 		# v0.9.0 LZ (the beam view)
 		"beam_hold": beam_hold,
+		"blast_mm": blast_mm,  # v0.9.0 BM
 	}

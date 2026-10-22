@@ -131,7 +131,11 @@ func _sync_bolts(reader: WorldReader) -> void:
 	for i in reader.projectile_count():
 		if _live.size() >= LIVE_BOLTS_MAX:
 			break  # v0.8.0 PF: the rest fly as their plain darts (draw_at's budget); their trails start when drawn
-		if reader.projectile_team(i) != 0 or reader.projectile_is_shard(i):
+		if (
+			reader.projectile_team(i) != 0
+			or reader.projectile_is_shard(i)
+			or reader.projectile_is_bomb(i)
+		):
 			continue
 		var look := _projectile_look(reader, i)
 		# v0.8.0 (owner bug 2026-10-17): a shot still flying when Ring is picked has a spec whose look is now a ring;

@@ -395,6 +395,16 @@ func beams() -> Array[Dictionary]:
 	return Laser.trace(_w, Modifiers.bolt(_w), _w.player_pos(), _w.aim_angle)
 
 
+## v0.9.0 BM: player projectile `i` is a bomb (the Bomb form's shot; BombView draws it, not the pulses).
+func projectile_is_bomb(i: int) -> bool:
+	return Bomb.touches(_w, i)
+
+
+## v0.9.0 BM: the run's Gun shot is the Bomb (its throw's sound).
+func bomb_active() -> bool:
+	return Bomb.active(_w)
+
+
 ## v0.9.0 LZ: the Laser fires now (its hum, the view).
 func beam_firing() -> bool:
 	return Laser.firing(_w)

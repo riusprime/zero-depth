@@ -108,7 +108,8 @@ func sync(reader: WorldReader) -> void:
 			reader.projectile_team(i) != 0
 			or reader.projectile_look(i) != ""
 			or reader.projectile_is_shard(i)
-		):
+			or reader.projectile_is_bomb(i)
+		):  # v0.9.0 BM: BombView draws the bombs
 			continue
 		var id := reader.projectile_id(i)
 		var p := reader.projectile_pos(i)

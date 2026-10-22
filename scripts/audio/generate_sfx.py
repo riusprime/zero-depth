@@ -942,6 +942,16 @@ def s_laser_loop(r):
     return (hum + buzz) * (0.8 + 0.2 * np.sin(2.0 * np.pi * 8.0 * t))
 
 
+def s_bomb_throw(r):
+    """v0.9.0 BM (the lead's placeholder for docs/art/requests/v0.9.0_ART_LIST.md §6 `bomb_throw`: "a bomb toss"; the
+    blast reuses `bomb_blast`): 0.26 s, a short airy whoosh rising 500 to 1800 Hz and the soft thump of the toss."""
+    n = n_of(0.26)
+    wh = bandpass(noise(r, n), curve(500.0, 1800.0, n), 2.5) * env(n, 0.02, 0.1) * 0.9
+    m = n_of(0.07)
+    thump = osc(curve(180.0, 70.0, m), "sine", m) * env(m, 0.001, 0.03) * 0.8
+    return mix(wh, thump)
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -1030,6 +1040,7 @@ SFX = [
     ("arrival_altar", s_arrival_altar),
     ("pylon_lock", s_pylon_lock),
     ("final_altar", s_final_altar),
+    ("bomb_throw", s_bomb_throw),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------

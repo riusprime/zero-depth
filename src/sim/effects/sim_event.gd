@@ -58,6 +58,7 @@ enum Kind {
 	REMNANT_SPAWN,
 	REMNANT_ACTIVATE,
 	REMNANT_END,
+	BLAST,  # v0.9.0 BM: a bomb burst (Bomb.blast: pos, amount = radius in mm, effect_id = the bomb's spec key)
 }
 
 const TAG_MELEE := 1

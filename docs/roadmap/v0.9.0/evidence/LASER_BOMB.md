@@ -82,4 +82,69 @@ Gun and rare lists). `data/credits/licences.tres` rebuilt (`scripts/content/buil
 
 ## BM: the Bomb
 
-NOT YET BUILT (Step BM, the next commit).
+### What was built
+
+- **Card.** `gun_bomb` (Bomb / Bomba, "Throw bombs that burst." / "Lanza bombas que estallan."): Rare, Gun only, slot
+  Form. Its modifier (`data/modifiers/gun_bomb.tres`) keeps the Gun's shot a bolt and makes it a bomb: `blast_mm`
+  2200, damage × 4.5 (+0.225 a level; 5 → 22, rounded down by the multiply), one a second (period 1.0 s), 12 m/s for
+  0.667 s (8 m), radius 0.3 m, `rate_scale_permille` 500.
+- **Compatibility row** (ATTACK_FORMS F3): Twin and the five elements on; Halo, Ring, Backfire, Spiral, Swirl and every
+  Secondary off; Void off (as the Laser's).
+- **Sim** (`src/sim/combat/bomb.gd`). World's projectile pass skips a bomb's hit on touch (`Bomb.touches`); the bomb
+  ends there (or on a wall, or at the end of its 8 m), and `Attacks.on_projectile_end` bursts it (`Bomb.blast`): every
+  enemy within the radius (the area stat scales it) takes the bomb's damage once, under its spec (its elements'
+  statuses per enemy as a projectile hit, On Hit / On Kill hooks per enemy), with one `BLAST` event (SimEvent.Kind,
+  appended). `Attacks.merged` is split into `merged_at`, the existing 8-a-tick blast budget, which the bomb uses. The
+  new AttackSpec field is a LATE_INT_FIELD (no golden moves).
+- **View** (`bomb_view.gd`): a low-poly faceted iron bomb with a brass fuse cap, tumbling as it flies, and a flickering
+  fuse spark in the element's colours (HeroPulseViews and AttackFormView leave bombs to it); each `BLAST` a flat ring
+  sweeping out to the blast's radius and fading, in the element's look (BeamLooks' colours), with the owner's
+  `blast_ring` PNG when installed (else a code band), plus VfxLayer's burst of the element (the fire explosion for Fire
+  and the default).
+- **Sound.** `bomb_throw` (new placeholder, 0.26 s whoosh and thump; pure-Python render as LZ's, recipe
+  `s_bomb_throw` in `generate_sfx.py`) replaces the orb's `bolt_fire` on a Bomb run; the blast plays the existing
+  `bomb_blast` (the retired Bomb Lobber's sound, kept as the id the art list names).
+
+### Rules decided (simplest reading; listed for the owner)
+
+| Question | Rule |
+|---|---|
+| Flight (Q9 "Straight") | A straight bolt; bursts on the first enemy touched, on a wall, or at 8 m. Its touch deals nothing; only the blast hurts (the enemy touched is in the blast). |
+| Damage | 4.5 × the orb's 5 = 22.5, rounded down to 22 by the card's multiply (4.4 ×). |
+| Blast | 2.2 m, every enemy in it once (centre to the enemy's edge), area stat scales it. |
+| Attack speed | Half its bonus (as the Laser). |
+| Twin | 2 bombs side by side at Lv 1–4, 3 fanned at Lv 5, each at Twin's share (Lv 1: 13 each; two blasts land apart, so the pair is not double on one target). The extra bombs feed statuses at the secondary proc. |
+| Elements | On the blast, per enemy in it (Venom and Fire tested on three). Fire's burning ground still comes from a burning enemy's death (XP); the blast is the only explosion. |
+| Overlap | Past 8 blasts a tick, one within its radius of a blast already set off merges into it (the existing budget, now `Attacks.merged_at`). |
+| Replace | A Bomb card replaces the Laser and a Laser card the Bomb (one Form). |
+| Caps | Bombs are projectiles: they go through ShotCap like any shot (a Twin volley is 2–3, far under 12 an attack and 40 a second). |
+
+### Tests (raw summary lines; final code)
+
+| Run | Summary |
+|---|---|
+| `tests/unit/sim/test_bomb.gd` (11: card, 1 a second bursting on the first enemy with only the blast hurting, wall and 8 m, the blast hits all in 2.2 m once, attack speed at half, Twin 2/3 at its share, elements on the blast, the 8-a-tick merge, the row and never Ring, Bomb ↔ Laser) | in the sim run below |
+| sim: the LZ list + test_bomb, test_mx4_modifiers, test_mx4_modifiers_2, test_modifier_abilities | `Tests 299 / Passing Tests 299 / Asserts 5703` |
+| goldens + arch (as LZ) | `Tests 13 / Passing Tests 13 / Asserts 13234` (no golden moved) |
+| test_modifier_smoke (the every-card soak) | `Tests 8 / Passing Tests 8 / Asserts 12946` |
+| tests/content (whole folder) | `Tests 138 / Passing Tests 138 / Asserts 10016` |
+| presentation: the LZ list + test_bomb_view | `Tests 62 / Passing Tests 62 / Asserts 8017` |
+| e2e: test_e2e_laser, test_e2e_bomb, test_e2e_attack_slots, test_e2e_audio, test_e2e_gun_pool | `Tests 6 / Passing Tests 6 / Asserts 68` |
+
+The e2e (`test_e2e_bomb`, the altar's Bomb card, right click held on a group of three dummies): `BM e2e: 3 of 3
+dummies hurt after 90 frames held`. After BM's bomb-view tweak (its colour and the spark on top) test_bomb_view was
+re-run: `Tests 3 / Passing Tests 3`.
+
+Card counts raised again by one with a "v0.9.0 LZ, BM" note (items 109, modifiers 96 → 97, the pool 61);
+`data/credits/licences.tres` rebuilt (95 → 96 sounds).
+
+### Shots
+
+Same command → `7_bomb_flight` (tick 10), `8_bomb_blast` (tick 24, the default ring), `9_bomb_blast_fire` (Fire) in
+[`lzbm_shots/`](lzbm_shots/).
+
+### Not run here
+
+The four old-save tests failing on the base (`World.walls: the snapshot's floor differs…`, test_old_saves ×2,
+test_e2e_old_save, test_ascension_saves `test_an_older_payload_is_loop_one`) and the Spanish-locale ones
+(test_frozen_shore, test_starfall) were not run (known on `effd030a`, not these steps).

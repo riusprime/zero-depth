@@ -875,6 +875,16 @@
       "loop": false
     },
     {
+      "id": "bomb_throw",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/bomb_throw.wav",
+      "sha256": "dc7670a6520ecc148e00c035fef33ab7cb6ef03756d0b0c0a696932984aeb203",
+      "seconds": 0.26,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -16.58,
+      "loop": false
+    },
+    {
       "id": "laser_loop",
       "kind": "sfx",
       "path": "assets/audio/sfx/laser_loop.wav",

@@ -1703,7 +1703,7 @@ func _projectile_hits() -> void:
 		if pp != null:
 			pp.end(&"proj.sweep")
 		if best_t <= 1.0:
-			if best_actor >= 0:
+			if best_actor >= 0 and not Bomb.touches(self, i):  # v0.9.0 BM: a bomb's touch bursts it, no hit
 				if pp != null:
 					pp.begin(&"proj.damage")
 				hit_spec = Attacks.projectile_spec(self, i)  # v0.6.0 MX2: the bolt's own spec feeds
@@ -1738,7 +1738,8 @@ func _projectile_hits() -> void:
 				if ProjectileMoves.pierce(self, i, best_actor, a):  # v0.6.0 MX4: Edge Rounds, Boomerang
 					continue
 			elif (
-				projectiles.bounces[i] > 0
+				best_wall >= 0
+				and projectiles.bounces[i] > 0
 				and BossRicochet.may_bounce(self, i, a + v * best_t, walls[best_wall])
 			):
 				# Items: Ricochet Core reflects the bolt off the wall instead of ending it. v0.8.0 BS2 (S5): so do the

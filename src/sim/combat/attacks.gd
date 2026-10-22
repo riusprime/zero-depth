@@ -782,14 +782,23 @@ static func run_hook(
 ## away still goes off. Below the count nothing changes.
 static func merged(w: World, k: AttackHook, at: Vector2) -> bool:
 	var t := w.wand_table if w.wand_table != null else _wand_defaults
-	if t.blast_merge_after <= 0 or not t.blast_merge_ids.has(k.id):
+	if not t.blast_merge_ids.has(k.id):
+		return false
+	return merged_at(w, at, k.child.radius_m)
+
+
+## v0.9.0 BM: merged()'s budget for any blast of radius `r` at `at` (the Bomb's): past blast_merge_after blasts this
+## tick, one within `r` of a blast already set off merges into it (true); else it is counted and goes off.
+static func merged_at(w: World, at: Vector2, r: float) -> bool:
+	var t := w.wand_table if w.wand_table != null else _wand_defaults
+	if t.blast_merge_after <= 0:
 		return false
 	if w.blast_tick != w.tick:
 		w.blast_tick = w.tick
 		w.blast_pos = PackedVector2Array()
 		w.blast_merged = 0
 	if w.blast_pos.size() >= t.blast_merge_after:
-		var r2 := k.child.radius_m * k.child.radius_m
+		var r2 := r * r
 		for p in w.blast_pos:
 			if (p - at).length_squared() <= r2:
 				w.blast_merged += 1
@@ -895,6 +904,8 @@ static func on_projectile_end(w: World, pi: int, at: Vector2) -> void:
 	if w.projectiles.team[pi] != ActorStore.TEAM_PLAYER:
 		return
 	var spec := projectile_spec(w, pi)
+	if Bomb.is_bomb(spec) and Bomb.touches(w, pi):
+		Bomb.blast(w, spec, pi, at)  # v0.9.0 BM: the bomb bursts where it ends
 	if spec != null and not spec.hooks.is_empty():
 		var p := w.projectiles
 		var ang := Kin.angle_of(Vector2(p.vel_x[pi], p.vel_y[pi]))

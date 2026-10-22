@@ -773,6 +773,8 @@ ITEM_GUN_RING,Ring,Anillo
 ITEM_GUN_RING_DESC,Your shot becomes a lightning ring.,Tu disparo se vuelve un anillo de rayos.
 ITEM_GUN_LASER,Laser,Láser
 ITEM_GUN_LASER_DESC,Hold to burn a beam.,Mantén para quemar con un rayo.
+ITEM_GUN_BOMB,Bomb,Bomba
+ITEM_GUN_BOMB_DESC,Throw bombs that burst.,Lanza bombas que estallan.
 ITEM_GUN_SWIRL,Swirl,Remolino
 ITEM_GUN_SWIRL_DESC,Your shots swirl at random.,Tus disparos giran al azar.
 ITEM_GUN_PIERCE,Pierce,Perforación
