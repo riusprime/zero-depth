@@ -4,7 +4,7 @@ extends GutTest
 ## WorldReader.portal_form_progress, so it is whole the tick the hero may walk in); the oval is taller than wide; the
 ## portal taken collapses into a point at the end of the way in and the other one collapses as it closes; motes in the
 ## portal's colour drift off the rim once formed; reduced motion fades the full oval in, with no motes. A later floor
-## has the arrival portal and no receiver; floor 1 keeps the receiver. Presentation only (EI-07).
+## has the arrival portal and no receiver; floor 1 lands on the altar (v0.9.0 SA). Presentation only (EI-07).
 
 const LONG := 1 << 24
 const SEED := 20261017
@@ -207,15 +207,16 @@ func test_motes_wear_the_portals_colour() -> void:
 
 
 ## v0.9.0 PT (Q16): a later floor's world view has the arrival portal (the Deep gate's violet on a Deep floor) and no
-## receiver; floor 1 keeps the receiver (another step replaces it) and has no arrival portal.
-func test_a_later_floor_arrives_through_the_portal_floor_one_on_the_receiver() -> void:
+## receiver; floor 1 lands on the altar (v0.9.0 SA) and has no arrival portal.
+func test_a_later_floor_arrives_through_the_portal_floor_one_on_the_altar() -> void:
 	for c: Array in [[1, 0], [2, 0], [2, Routes.Route.DEEP]]:
 		var w := SaveLab.build_floor(SaveLab.run_state(SEED, c[0], &"blade", c[1]))
 		w.boss_flow.set_transit(false, true)
 		var v := _view(w)
 		var tag := "floor %d route %d" % c
 		if c[0] == 1:
-			assert_not_null(v.receiver, tag)
+			assert_not_null(v.altar, tag)
+			assert_null(v.receiver, tag)
 			assert_null(v.transit.arrival_gate, tag)
 			continue
 		assert_null(v.receiver, "%s: no receiver" % tag)

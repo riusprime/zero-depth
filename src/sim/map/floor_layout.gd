@@ -170,6 +170,15 @@ var curse_solids: Array[Obb] = []
 ## The floor's footprint, for drawing ground: each room's cells (interior, walls and doorways up to its grid
 ## lines), then the outer half of each outer wall.
 var ground: Array[Rect2] = []
+## v0.9.0 FA (owner C §3, Q18): the final approach (FinalArena.approach_layout; empty elsewhere): the walls of light
+## that close the plateau when the buildup ends (World adds them then), the two rune pylons and the altar at the
+## plateau's centre, the causeway's foot and its top (where it meets the plateau's ring).
+var light_walls: Array[Obb] = []
+var pylons := PackedVector2Array()
+var altar_pos := Vector2.ZERO
+var causeway_foot := Vector2.ZERO
+var causeway_top := Vector2.ZERO
+var causeway_half_w := 0.0
 
 
 func room_count() -> int:

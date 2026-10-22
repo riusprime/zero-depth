@@ -119,6 +119,12 @@ the lead animates parts in code.
 > text, letters, logo, watermark, background scenery, ground, base, pedestal, baked shadows, strong rim light,
 > smooth organic skin, realistic photo, clean plastic look, many tiny details
 
+### v0.9.0: the new list (2026-10-22)
+Everything v0.9.0 needs (the arrival altar, the final approach's pylons, the three elites, the puzzle and secret props,
+lockdown bars and hazards, shrines, the hub's landmarks, sounds and optional effect textures), with prompts and sizes:
+[`art/requests/v0.9.0_ART_LIST.md`](art/requests/v0.9.0_ART_LIST.md). The four new bosses and the 16 collectibles get
+their prompts there after their G1 lists.
+
 ### 3.0 Delivered 2026-10-18 (installed in v0.8.0 MI)
 Your 34 models and the ground_star texture: each prepared offline (sized, simplified to a triangle budget, re-textured)
 by `scripts/assets/mi_prep.py`, listed in `assets/models/manifest.json`, and placed only in the biome it fits (your

@@ -290,6 +290,7 @@ func test_beating_the_nemesis_on_a_later_loop_is_the_true_ending() -> void:
 	await _e.frames(3)
 	assert_true(main.driver.reader.final_arena(), "the final arena")
 	assert_eq(main.driver.reader.loop(), 2, "on the second loop")
+	assert_true(await _e.awaken_final_altar(), "v0.9.0 FA: the pylons woke the altar")
 	await _e.tap(KEY_QUOTELEFT)
 	await _click(main, "God")
 	await _e.frames(150)

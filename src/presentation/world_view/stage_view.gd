@@ -100,6 +100,9 @@ var _dressing := {}
 var _placements: Array = []
 ## v0.8.0 N19: the furnished curse room (Rect2() for none), whose loose decoration and wall lights are left out.
 var _curse_rect := Rect2()
+## v0.9.0 SA: floor 1's arrival altar (its centre; radius 0 for none): no loose decoration on it.
+var _altar_at := Vector2.ZERO
+var _altar_r := 0.0
 var _proc_input := {}
 var _proc := {}
 
@@ -640,6 +643,8 @@ func _build_kit(reader: WorldReader) -> void:
 	_curse_rect = (
 		reader.floor_room(reader.event_curse_room()) if reader.curse_room_furnished() else Rect2()
 	)
+	_altar_at = reader.floor_start_pos()
+	_altar_r = AltarStage.RADIUS + 0.2 if reader.arrival_altar() else 0.0
 	_proc_input = {
 		"walls": walls,
 		"rooms": rooms,
@@ -655,6 +660,7 @@ func _build_kit(reader: WorldReader) -> void:
 
 func _dress() -> void:
 	_placements = CurseRoomView.strip(StageDresser.dress(_dressing), _curse_rect)
+	_placements = AltarStage.clear_decor(_placements, _altar_at, _altar_r)  # v0.9.0 SA
 	_proc = {}
 	var t0 := Time.get_ticks_usec()  # v0.8.0 N10 (option A; N15, D53: the only wall style)
 	_proc_input["cuts"] = StageDresser.niches(_placements)

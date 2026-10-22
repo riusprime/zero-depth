@@ -112,7 +112,8 @@ func _build_world() -> void:
 			ContentCompiler.compile_items(repo),
 			ContentCompiler.compile_combos(repo),
 			bosses,
-			finals
+			finals,
+			approach_of(resume)  # v0.9.0 FA: the final approach first
 		)
 	else:
 		w = _floor_world(table, enemies, bosses, biome.id)
@@ -141,14 +142,27 @@ func _build_world() -> void:
 		w.boss_flow.set_transit(
 			calm, true, BossFlow.arrival_length(w.tuning, calm, run.run_floor() == 1)  # AP: run_floor() counts across loops
 		)
-	if arena_def != null:  # v0.8.0 FB1: the first body rises (after the loadout: its hidden catch-up counts)
-		FinalArenaScenario.begin(w, run, finals.size())
+	if arena_def != null and w.approach == null:  # v0.8.0 FB1: the first body rises (after the loadout: its hidden
+		FinalArenaScenario.begin(w, run, finals.size())  # catch-up counts); v0.9.0 FA: the approach begins it later
 	if not resume.is_empty():  # v0.4.0 SV: back to the saved room entry
 		err = WorldSnapshot.apply(w, resume["world"])
 		if err != "":
 			return
 		WandMigration.run(w)  # v0.6.5 WN5b: a save that still holds retired v0.6 cards
 	world = w
+
+
+## v0.9.0 FA: whether the final arena opens on the final approach: a fresh arrival, or a save made on the approach or
+## in its fight (its world holds `approach`). A save made in the final arena before FA holds none: its ring arena and
+## its fight are rebuilt bare, as they were.
+static func approach_of(save: Dictionary) -> bool:
+	if save.is_empty():
+		return true
+	var world: Variant = (save.get("world", {}) as Dictionary).get("world", {})
+	if not world is Dictionary:
+		return true
+	var d := world as Dictionary
+	return d.get(&"approach", d.get("approach")) != null
 
 
 ## A floor of the run (FloorScenario): its boss drawn from the floor's pool, its room, the floor's tables and its shop.

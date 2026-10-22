@@ -19,6 +19,11 @@ extends Node3D
 ## An owner model `<id>.glb` in assets/models/arena/, listed in assets/models/manifest.json, replaces a code piece
 ## (scaled to the piece's size); none is delivered yet. Presentation only: the sim's walls are the ring whatever is
 ## drawn. The cosmetic stream (seeded from the floor) places the broken bits; nothing here reads or writes the sim.
+## v0.9.0 FA (owner C §3: "a separate, quieter environment … stairs and a clear path leading toward a large altar";
+## Q18 "Stair causeway"): on the final approach the ring is open on the hero's side and a stair causeway runs down
+## from the gap (WorldReader.approach_causeway_*): CAUSEWAY_STEPS treads of worn stone, each edged by a faint violet
+## line (the sim is flat: the steps read by their edges and their alternating shades), over a spine of rock into the
+## void; no pillar or brazier stands in the gap. FinalApproachView draws the altar, the pylons and the walls of light.
 
 const MODEL_DIR := "res://assets/models/arena/"
 const MANIFEST := "res://assets/models/manifest.json"
@@ -44,6 +49,9 @@ const STONE_DARK := Color("#251E33")
 const VEIN := Color("#FF2E4A")
 const STAR_FIRE := Color("#B46BFF")
 const SEAL := Color("#FF3050")
+## v0.9.0 FA: the causeway's treads, and how wide (radians) the gap is kept clear of pillars and braziers.
+const CAUSEWAY_STEPS := 14
+const GAP_CLEAR := 0.42
 
 const GROUND_SHADER := """
 shader_type spatial;
@@ -97,6 +105,10 @@ var brazier_count := 0
 var seat_count := 0
 var gate: Node3D
 var ground: MeshInstance3D
+## v0.9.0 FA: the causeway's treads (empty off the approach), and the gap's angle (radians, the 3D floor's x-z
+## plane; NAN off the approach).
+var treads: Array[MeshInstance3D] = []
+var _gap_a := NAN
 var _flames: Array[MeshInstance3D] = []
 var _shards: Array[Node3D] = []
 var _t := 0.0
@@ -109,6 +121,10 @@ func build(reader: WorldReader, palette: Dictionary, radius: float, seed_value: 
 	rng.seed = seed_value * 7919 + 4409  # the cosmetic stream: presentation only
 	_build_ground(palette, radius)
 	_build_walls(reader)
+	if reader.final_approach():  # v0.9.0 FA
+		var top := SimPlane.to_3d(reader.approach_causeway_top())
+		_gap_a = atan2(top.z, top.x)
+		_build_causeway(reader, rng)
 	var gate_at := reader.portal_pos()
 	var gate_dir := SimPlane.to_3d(gate_at).normalized()
 	_build_seating(radius, gate_dir, rng)
@@ -217,9 +233,14 @@ func _build_walls(reader: WorldReader) -> void:
 		)
 		node.name = "Wall%d" % i
 		wall_nodes.append(node)
+		var along_x := w.half.x > w.half.y  # v0.9.0 FA: the causeway's long walls run along their x
 		var strip := _box(
 			node,
-			Vector3(w.half.x * 0.6, 0.06, w.half.y * 2.0),
+			(
+				Vector3(w.half.x * 2.0, 0.06, w.half.y * 0.6)
+				if along_x
+				else Vector3(w.half.x * 0.6, 0.06, w.half.y * 2.0)
+			),
 			Vector3(0, WALL_H * 0.5, 0),
 			0.0,
 			vein
@@ -264,6 +285,8 @@ func _build_pillars(radius: float, gate_dir: Vector3, rng: RandomNumberGenerator
 	for k in PILLARS:
 		var a := TAU * (k + 0.5) / PILLARS
 		var far := absf(wrapf(a - gate_a, -PI, PI)) <= SEAT_ARC
+		if _in_gap(a):
+			continue
 		var at := Vector3(cos(a), 0, sin(a)) * (radius + 1.6)
 		var root := Node3D.new()
 		root.name = "Pillar%d" % k
@@ -301,6 +324,8 @@ func _build_braziers(radius: float) -> void:
 	var model := _owner_piece(&"arena_brazier")
 	for k in BRAZIERS:
 		var a := TAU * k / BRAZIERS
+		if _in_gap(a):
+			continue
 		var root := Node3D.new()
 		root.name = "Brazier%d" % k
 		root.position = Vector3(cos(a), 0, sin(a)) * (radius + 0.6) + Vector3(0, WALL_H, 0)
@@ -339,6 +364,57 @@ func _build_braziers(radius: float) -> void:
 		light.shadow_enabled = false
 		light.position = Vector3(0, 1.4, 0)
 		root.add_child(light)
+
+
+## v0.9.0 FA: angle `a` (radians on the 3D floor) falls in the approach's gap.
+func _in_gap(a: float) -> bool:
+	return not is_nan(_gap_a) and absf(wrapf(a - _gap_a, -PI, PI)) <= GAP_CLEAR
+
+
+## v0.9.0 FA: the stair causeway from the ring's gap down to the foot: worn treads with lit edges over a rock spine.
+func _build_causeway(reader: WorldReader, rng: RandomNumberGenerator) -> void:
+	var top := SimPlane.to_3d(reader.approach_causeway_top())
+	var foot := SimPlane.to_3d(reader.approach_causeway_foot())
+	var axis := (foot - top).normalized()
+	var length := top.distance_to(foot) + 3.6
+	var width := reader.approach_causeway_half_width() * 2.0
+	var yaw := atan2(-axis.z, axis.x)
+	var root := Node3D.new()
+	root.name = "Causeway"
+	add_child(root)
+	var light_stone := _mat(STONE.lightened(0.08))
+	var dark_stone := _mat(STONE.darkened(0.1))
+	var edge := _mat(STONE_DARK, STAR_FIRE, 1.4)
+	var tread := length / CAUSEWAY_STEPS
+	for k in CAUSEWAY_STEPS:
+		var at := top + axis * (tread * (k + 0.5) - 1.2)
+		var h := 0.3 + 0.05 * rng.randf()
+		var t := _box(
+			root,
+			Vector3(tread - 0.04, h, width + 0.3),
+			at + Vector3(0, -h * 0.5, 0),
+			yaw,
+			light_stone if k % 2 == 0 else dark_stone
+		)
+		t.name = "Tread%d" % k
+		treads.append(t)
+		var line := _box(
+			root,
+			Vector3(0.06, 0.02, width),
+			at - axis * (tread * 0.5 - 0.05) + Vector3(0, 0.005, 0),
+			yaw,
+			edge
+		)
+		line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var spine := _box(
+		root,
+		Vector3(length, 5.0, width * 0.7),
+		top + axis * (length * 0.5 - 1.2) + Vector3(0, -2.9, 0),
+		yaw,
+		StarVoid.rock_material(Color("#1A1426"))
+	)
+	spine.name = "Spine"
+	spine.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
 ## The sealed great gate in the ring: two columns, an arch and a glowing crystal portcullis, facing the centre.

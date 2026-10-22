@@ -5,6 +5,10 @@ extends RefCounted
 ## It is a wide facade on purpose: one read method per thing a view needs.
 
 const KIND_PLAYER := ActorStore.Kind.PLAYER
+## v0.9.0 FA: the final approach's states (approach_state).
+const APPROACH_WALK := FinalApproach.State.WALK
+const APPROACH_BUILDUP := FinalApproach.State.BUILDUP
+const APPROACH_FIGHT := FinalApproach.State.FIGHT
 ## v0.8.0 RM: the remnant kinds, activations and Thermal Break's effect id, for the views (the layer rule).
 const REMNANT_SEGMENT := RemnantRule.Kind.SEGMENT
 const REMNANT_ANCHOR := RemnantRule.Kind.ANCHOR
@@ -973,7 +977,12 @@ func has_floor() -> bool:
 
 ## The floor has the run's gate (its boss flow; v0.7.5 PG: the Playground's room has a floor and no gate).
 func has_gate() -> bool:
-	return _w.floor_layout != null and _w.boss_flow != null and _w.final_fight == null  # FB1: not the arena
+	return (
+		_w.floor_layout != null
+		and _w.boss_flow != null
+		and _w.final_fight == null  # FB1: not the arena
+		and _w.approach == null
+	)  # v0.9.0 FA: nor its approach
 
 
 func floor_bounds() -> Rect2:
@@ -1266,6 +1275,18 @@ func floor_receiver() -> bool:
 ## v0.8.0 N11: the arrival playing now is floor 1 of a run's (the big landing; a later floor's is the step-out).
 func arrival_first() -> bool:
 	return _w.run_floor_index() == 1
+
+
+## v0.9.0 SA (owner Q16: "only floor 1"): floor 1 of a run arrives on the altar (AltarStage) instead of the receiver,
+## at floor_start_pos; the start hall keeps its cover and spawn spots FloorParams.start_clear_radius (3.5 m) away,
+## outside the altar's 3.3 m.
+func arrival_altar() -> bool:
+	return floor_receiver() and arrival_first()
+
+
+## v0.9.0 SA: the arrival's whole length in ticks (0 when the floor opens without one).
+func arrival_ticks() -> int:
+	return _w.boss_flow.arrive_ticks if _w.boss_flow != null else 0
 
 
 ## v0.8.0 N11: the hero is still arriving (the world holds; nothing spawns, nothing acts, the hero isn't there yet).
@@ -1669,9 +1690,9 @@ func final_fight() -> bool:
 	return _w.final_fight != null
 
 
-## The world is the final arena (the run's last world: the fight and its arrival).
+## The world is the final arena (the run's last world: the fight and its arrival; v0.9.0 FA: and its approach).
 func final_arena() -> bool:
-	return _w.final_fight != null and _w.boss_flow != null
+	return (_w.final_fight != null or _w.approach != null) and _w.boss_flow != null
 
 
 ## The fight's name key (the boss bar's title over its segments; RunTable.final_name_key), &"" without one.
@@ -1719,6 +1740,93 @@ func final_won() -> bool:
 ## The final arena's radius (m, the wall ring's inner face; 0 elsewhere).
 func final_arena_radius() -> float:
 	return FinalArena.radius_of(_w.floor_layout) if final_arena() else 0.0
+
+
+# --- The final approach (v0.9.0 FA; FinalApproach) ---------------------------------------------------------------
+## The world is the final approach (the stair causeway, the plateau, the pylons; the fight once the buildup ended).
+func final_approach() -> bool:
+	return _w.approach != null
+
+
+## Its state (APPROACH_*; -1 without one).
+func approach_state() -> int:
+	return _w.approach.state if _w.approach != null else -1
+
+
+func approach_pylon_count() -> int:
+	return _w.floor_layout.pylons.size() if _w.approach != null else 0
+
+
+func approach_pylon_pos(k: int) -> Vector2:
+	return _w.floor_layout.pylons[k]
+
+
+## Pylon k is switched on.
+func approach_pylon_lit(k: int) -> bool:
+	return _w.approach != null and _w.approach.lit[k] == 1
+
+
+## How many pylons are on.
+func approach_pylons_lit() -> int:
+	return _w.approach.lit_count() if _w.approach != null else 0
+
+
+## The tick pylon k was switched on (-1 not yet).
+func approach_pylon_tick(k: int) -> int:
+	return _w.approach.lit_tick[k] if _w.approach != null else -1
+
+
+## The unlit pylon the interact press would switch on now, or -1 (the HUD's prompt).
+func approach_pylon_in_reach() -> int:
+	if _w.approach == null or _w.player_dead():
+		return -1
+	return _w.approach.in_reach(_w.floor_layout, player_pos())
+
+
+## 0..1 through the buildup (after the second pylon), -1 outside it.
+func approach_buildup_progress() -> float:
+	return _w.approach.buildup_progress(_w.tick) if _w.approach != null else -1.0
+
+
+## The buildup's length in ticks.
+func approach_buildup_ticks() -> int:
+	return _w.approach.buildup_ticks if _w.approach != null else 0
+
+
+## The walls of light stand (the buildup ended and the fight began).
+func approach_walls_up() -> bool:
+	return _w.approach != null and _w.approach.state == FinalApproach.State.FIGHT
+
+
+## The tick the walls rose and the fight began (-1 not yet).
+func approach_fight_tick() -> int:
+	return _w.approach.fight_tick if _w.approach != null else -1
+
+
+func approach_light_wall_count() -> int:
+	return _w.floor_layout.light_walls.size() if _w.approach != null else 0
+
+
+func approach_light_wall(k: int) -> Obb:
+	return _w.floor_layout.light_walls[k]
+
+
+## The altar at the plateau's centre (where the boss rises), the causeway's foot and top.
+func approach_altar_pos() -> Vector2:
+	return _w.floor_layout.altar_pos if _w.approach != null else Vector2.ZERO
+
+
+func approach_causeway_foot() -> Vector2:
+	return _w.floor_layout.causeway_foot if _w.approach != null else Vector2.ZERO
+
+
+func approach_causeway_top() -> Vector2:
+	return _w.floor_layout.causeway_top if _w.approach != null else Vector2.ZERO
+
+
+## Half the causeway's width (m, wall face to wall face).
+func approach_causeway_half_width() -> float:
+	return _w.floor_layout.causeway_half_w if _w.approach != null else 0.0
 
 
 ## The tick the current body began (its rise).
