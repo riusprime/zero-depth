@@ -51,11 +51,12 @@ var cast_key := PackedStringArray()
 var cast_pos := PackedVector2Array()
 var cast_angle := PackedInt32Array()
 var cast_flag := PackedInt32Array()
-## v0.8.0 P2 (owner O24, Void; BlackHoles): the black holes standing, oldest first (parallel arrays): where, the tick it
-## opened, and each pulse's damage. Hashed only while one stands (older digests unchanged).
-var hole_pos := PackedVector2Array()
-var hole_from := PackedInt32Array()
-var hole_dmg := PackedInt32Array()
+## v0.9.0 VP (owner Q10, the Void form; VoidShots): an enemy a Void shot's aura hit waits for its next tick of that
+## shot (parallel arrays: the shot's projectile id, the enemy's actor id, the first tick it may be hit again). An entry
+## leaves once its tick comes. Hashed only while one waits (older digests unchanged).
+var void_shot := PackedInt32Array()
+var void_foe := PackedInt32Array()
+var void_next := PackedInt32Array()
 ## v0.8.0 MR (owner O91; FireRhythm): Rapid Fire's ramp (the consecutive shots so far, the tick of the last shot) and
 ## Flurry's burst (the swing's place in its burst, 1 = the first after a pause; the tick its last swing ends); and
 ## SecondaryProc's carry (per mille of a status stack a secondary hit owes, so halved stacks are exact on average).
@@ -122,7 +123,7 @@ func touched() -> bool:
 		or shell_tick != -1
 		or trail_tick != -1
 		or hold_t != 0
-		or not hole_pos.is_empty()
+		or not void_shot.is_empty()
 		or ramp_n != 0
 		or burst_n != 0
 		or sec_carry != 0
@@ -178,14 +179,11 @@ func hash_into(h: StateHasher) -> void:
 		h.add_int(v)
 	if hold_t != 0:  # v0.6.5 WN3: only while a shot charges (older digests unchanged)
 		h.add_int(hold_t)
-	if not hole_pos.is_empty():  # v0.8.0 P2: only while a black hole stands (older digests unchanged)
-		h.add_string("holes")
-		h.add_int(hole_pos.size())
-		for p in hole_pos:
-			h.add_f32(p.x)
-			h.add_f32(p.y)
-		h.add_ints(hole_from)
-		h.add_ints(hole_dmg)
+	if not void_shot.is_empty():  # v0.9.0 VP: only while a Void shot's aura waits on an enemy
+		h.add_string("void")
+		h.add_ints(void_shot)
+		h.add_ints(void_foe)
+		h.add_ints(void_next)
 	if ramp_n != 0 or burst_n != 0 or sec_carry != 0:  # v0.8.0 MR: only once a rhythm or a carry is set
 		h.add_string("mr")
 		for v in [ramp_n, ramp_tick, burst_n, burst_free, sec_carry]:

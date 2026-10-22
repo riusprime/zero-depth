@@ -1708,7 +1708,13 @@ func _projectile_hits() -> void:
 			if t >= 0.0 and t < best_t:
 				best_t = t
 				best_wall = w
-		for k in _actor_grid.query_rect(span):
+		# v0.9.0 VP: a Void shot passes through bodies (its aura hurts them, VoidShots); only walls end it.
+		var bodies := (
+			PackedInt32Array()
+			if VoidShots.is_void_projectile(self, i)
+			else _actor_grid.query_rect(span)
+		)
+		for k in bodies:
 			if actors.teams[k] == projectiles.team[i] or actors.dead[k] == 1:
 				continue
 			# v0.4.0 SC: a body clearly outside the segment's box can't be hit; skip the sweep (same result).

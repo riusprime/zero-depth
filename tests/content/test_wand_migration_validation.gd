@@ -15,10 +15,11 @@ const KEPT: Array[StringName] = [
 	&"long_shadow",
 	&"blade_orbit",
 ]
-## The v0.6 cards WN5a kept as the shared pool's S cards (S1 Fire, S2 Lightning, S3 Frost, S4 Venom, S6 Void; lead,
-## 2026-10-12): never retired, and targets of the table. They become wand cards with WN5a's merge.
+## The v0.6 cards WN5a kept as the shared pool's S cards (S1 Fire, S2 Lightning, S3 Frost, S4 Venom; lead,
+## 2026-10-12): never retired, and targets of the table. They become wand cards with WN5a's merge. (S6 Void,
+## gravity_well, was retired by v0.9.0 VP: it has a row.)
 const KEPT_AS_SHARED: Array[StringName] = [
-	&"ember_core", &"storm_core", &"frost_core", &"venom_core", &"gravity_well"
+	&"ember_core", &"storm_core", &"frost_core", &"venom_core"
 ]
 const SIX: Array[StringName] = [
 	&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field", &"frost_nova", &"flame_trail"
@@ -44,10 +45,10 @@ func test_the_shipped_table_is_discovered_and_valid() -> void:
 	assert_eq(WandMigrationDefinition.cross_check(defs), [])
 	assert_eq(
 		m.old_ids.size(),
-		45,
+		46,
 		(
 			"the v0.6 cards it retires: 13 + 4 + 17 + 3 + 6 (WAND.md table); v0.9.0: Spread (into Twin),"
-			+ " Explosive (into Fire)"
+			+ " Explosive (into Fire), the old Void (into the Void form; refunded on the Blade)"
 		)
 	)
 

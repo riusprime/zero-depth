@@ -895,6 +895,16 @@
       "loop": false
     },
     {
+      "id": "void_hum",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/void_hum.wav",
+      "sha256": "1aecd88e45f5849112af18c78143fd9f798d28f3bf7e00e0e837e522227767d0",
+      "seconds": 0.42,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -13.35,
+      "loop": false
+    },
+    {
       "id": "laser_loop",
       "kind": "sfx",
       "path": "assets/audio/sfx/laser_loop.wav",

@@ -74,8 +74,6 @@ const INT_FIELDS: Array[StringName] = [
 const LATE_INT_FIELDS: Array[StringName] = [
 	&"repeats",
 	&"alive_max",  # v0.8.0 PF2
-	&"hole_permille",  # v0.8.0 P2 (O24: Void's black holes)
-	&"hole_damage_permille",
 	# v0.8.0 AO (owner O37: the order rule; WandCompile, WandRings)
 	&"ring_layout",
 	&"ring_share_permille",
@@ -100,6 +98,11 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	&"rate_scale_permille",
 	&"move_permille",
 	&"blast_mm",  # v0.9.0 BM (owner Q9: the Bomb form; Bomb)
+	# v0.9.0 VP (owner Q10: the Void form; VoidShots)
+	&"void_mm",
+	&"void_tick_ticks",
+	&"void_pull_mm",
+	&"void_pull_mmps",
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"reach_m",
@@ -197,6 +200,14 @@ var move_permille := 0
 ## v0.9.0 BM (owner Q9; Bomb): blast_mm, the bolt is a bomb: its touch deals nothing, and where it ends (the first
 ## enemy, a wall, the end of its flight) it bursts with this radius (mm; the area stat scales it) at its damage.
 var blast_mm := 0
+## v0.9.0 VP (owner Q10; VoidShots): void_mm, the bolt is a Void shot: it passes through enemies (only a wall or the end
+## of its flight ends it); every enemy within void_mm (its aura, mm; the area stat scales it) takes the shot's damage
+## when it comes in and every void_tick_ticks while it stays in; enemies within void_pull_mm are drawn toward its path
+## at most void_pull_mmps (mm a second; never stacking across voids).
+var void_mm := 0
+var void_tick_ticks := 0
+var void_pull_mm := 0
+var void_pull_mmps := 0
 
 # --- payload
 ## Damage per hit (a share `damage_permille` of it when the shot splits into count > 1 bolts, rounded down, at least
@@ -252,11 +263,6 @@ var mirror := 0
 ## Payload: a burst pulls the enemies it touches this far toward its centre (v0.6.0 MX4's Gravity Well; v0.8.0 P2:
 ## retired with Void's pull, no card sets it; kept for the hash order).
 var pull_m := 0.0
-## v0.8.0 P2 (owner O24, Void): each shot (a projectile where it ends) or landing slash of this spec leaves a black hole
-## with this chance (per mille, one draw on the `ability` stream; 0 = never); its pulses deal this share of the shot's
-## damage (BlackHoles).
-var hole_permille := 0
-var hole_damage_permille := 0
 ## The body spec's rules (never launched): out of combat this long, a barrier absorbs one hit (Aether Shell); after
 ## this long without attacking the next attack deals × charge_permille (Ascension); each status on an enemy adds
 ## this to the damage it takes (Resonance).
@@ -474,7 +480,6 @@ func read() -> Dictionary:
 		"intangible": intangible,
 		"mirror": mirror,
 		"pull_m": pull_m,
-		"hole_permille": hole_permille,  # v0.8.0 P2
 		# v0.8.0 AO: the order rule's ring and Swirl (the views' lightning circles, shock arcs and storm)
 		"ring_layout": ring_layout,
 		"ring_share_permille": ring_share_permille,
@@ -503,4 +508,6 @@ func read() -> Dictionary:
 		# v0.9.0 LZ (the beam view)
 		"beam_hold": beam_hold,
 		"blast_mm": blast_mm,  # v0.9.0 BM
+		"void_mm": void_mm,  # v0.9.0 VP
+		"void_pull_mm": void_pull_mm,
 	}

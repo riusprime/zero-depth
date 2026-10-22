@@ -54,7 +54,7 @@ func test_the_data_holds_the_owners_limits_caps_and_the_orbs_row() -> void:
 	assert_eq([t.shots_per_attack_max, t.shots_per_second_max], [12, 40], "Q13")
 	assert_eq(
 		t.form_ids,
-		[&"orbs", &"laser", &"bomb"] as Array[StringName],
+		[&"orbs", &"laser", &"bomb", &"void"] as Array[StringName],
 		"Q7: Orbs, and the forms built so far (LZ)"
 	)
 	assert_eq(t.default_form, 0)
@@ -99,15 +99,9 @@ func test_every_live_card_has_the_slot_the_owner_gave_it() -> void:
 			&"gun_spiral",
 			&"gun_swirl"
 		],
+		# v0.9.0 VP: the old Void (gravity_well) is retired
 		AttackSlots.ELEMENT:
-		[
-			&"ember_core",
-			&"storm_core",
-			&"frost_core",
-			&"venom_core",
-			&"shared_bleed",
-			&"gravity_well"
-		],
+		[&"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"],
 		AttackSlots.FREE:
 		[
 			&"trigger_on_hit",

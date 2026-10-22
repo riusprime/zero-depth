@@ -2,12 +2,12 @@ extends SceneTree
 ## v0.7.5 AP shots: the Ascension portal on a real run's last floor (floor 3), drawn by the game's own WorldViewRoot
 ## with the floor's biome: dormant while the boss lives, open (the column risen), and floor 1's blue gate open for
 ## comparison. v0.8.0 P2 (owner O28, O24): the choice panel is gone; the open shot frames the Ascension portal and the
-## Loop device beside it, a close shot the Loop device, and two shots Void's black holes (three set standing, with
-## enemies round them). The world is never stepped: the portal's state and the holes are set for the view (the sim's
-## own paths are tests/unit/sim/test_ascension.gd, test_black_holes.gd and the e2e tests).
+## Loop device beside it, a close shot the Loop device (v0.9.0 VP: the black-hole shots went with the floor black hole).
+## The world is never stepped: the portal's state is set for the view (the sim's own paths are
+## tests/unit/sim/test_ascension.gd and the e2e tests).
 ## Needs a renderer:
 ##   xvfb-run -a godot --path . --audio-driver Dummy --resolution 1600x900 -s scripts/shots/ascension.gd -- lang=en
-## Options after `--`: seed=<run seed> (default 20261013), lang=<en|es> (default en), holes (only the black-hole shots).
+## Options after `--`: seed=<run seed> (default 20261013), lang=<en|es> (default en).
 ## Writes build/shots/<version>/ascension/<lang>/. Quits on every path.
 
 const SETTLE := 20
@@ -23,7 +23,6 @@ var _layer: CanvasLayer
 var _frame := 0
 var _wait := 0
 var _step := -1
-var _holes_only := false
 
 
 func _initialize() -> void:
@@ -32,8 +31,6 @@ func _initialize() -> void:
 			_seed = int(a.trim_prefix("seed="))
 		elif a.begins_with("lang="):
 			_lang = a.trim_prefix("lang=")
-		elif a == "holes":
-			_holes_only = true
 	TranslationServer.set_locale(_lang)
 	_dir = "res://build/shots/%s/ascension/%s/" % [GameVersion.label(), _lang]
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
@@ -106,16 +103,11 @@ func _process(_delta: float) -> bool:
 	return false
 
 
-## The next shot: dormant, open (after the rise; both devices), the Loop device close, the black holes, then floor 1's
-## blue gate.
+## The next shot: dormant, open (after the rise; both devices), the Loop device close, then floor 1's blue gate.
 func _advance() -> void:
 	match _step:
 		0:
 			_wait = SETTLE
-			if _holes_only:
-				_world.boss_flow.state = BossFlow.State.OPEN
-				_holes()
-				_step = 4
 		1:
 			if _shot("1_dormant"):
 				_world.boss_flow.state = BossFlow.State.OPEN  # the view's state only: the boss is dead
@@ -137,20 +129,11 @@ func _advance() -> void:
 				_wait = SETTLE
 		4:
 			if _shot("3b_ascension_portal_close"):
-				_holes()
-				_wait = SETTLE
-		5:
-			if _shot("4_black_holes"):
-				_view.rig.view_size = 6.0
-				_view.rig.snap_to(SimPlane.to_3d(_world.mx.hole_pos[1]))
-				_wait = SETTLE
-		6:
-			if _shot("5_black_hole_close"):
 				_floor(1)
 				_world.boss_flow.state = BossFlow.State.OPEN
 				_view.sync()
 				_wait = SETTLE * 3
-		7:
+		5:
 			if _shot("6_blue_gate_floor1"):
 				quit(0)
 
@@ -162,20 +145,3 @@ func _frame_devices(size: float) -> void:
 	_view.rig.view_size = size
 	_view.rig.snap_to(SimPlane.to_3d(mid))
 	print("ascension: portal %s loop device %s" % [_reader.portal_pos(), _reader.loop_device_pos()])
-
-
-## v0.8.0 P2: three black holes set standing in the boss room's middle (ages 30, 60 and 90 ticks of 120), with standing
-## enemies round them (state set for the view only).
-func _holes() -> void:
-	var c := _world.floor_layout.boss_spawn
-	var at: Array[Vector2] = [c + Vector2(-3.0, 1.0), c + Vector2(0.0, -1.0), c + Vector2(3.0, 1.5)]
-	for k in 3:
-		BlackHoles.open(_world, at[k], 1)
-		_world.mx.hole_from[k] = _world.tick - 30 * (k + 1)
-	for q: Vector2 in [
-		Vector2(1.2, 0.8), Vector2(-1.4, 0.3), Vector2(0.4, -1.6), Vector2(2.0, -0.6)
-	]:
-		_world.add_dummy(at[1] + q, 0.35, 100)
-	_view.rig.view_size = 11.0
-	_view.rig.snap_to(SimPlane.to_3d(c))
-	_view.sync()

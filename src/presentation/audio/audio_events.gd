@@ -593,10 +593,13 @@ func _scan_projectiles(reader: WorldReader, out: Array) -> void:
 		else:
 			hostile = true
 	_projectiles = seen
-	if fired:  # v0.9.0 BM: the Bomb form's throw has its own toss
-		out.append(
-			[&"bomb_throw" if reader.bomb_active() else &"bolt_fire", reader.player_pos(), 1.0]
-		)
+	if fired:  # v0.9.0 BM: the Bomb form's throw has its own toss; v0.9.0 VP: the Void's shot its hum
+		var cue := &"bolt_fire"
+		if reader.bomb_active():
+			cue = &"bomb_throw"
+		elif reader.void_active():
+			cue = &"void_hum"
+		out.append([cue, reader.player_pos(), 1.0])
 	if hostile:
 		out.append([&"enemy_fire", null, 1.0])
 

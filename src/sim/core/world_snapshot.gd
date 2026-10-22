@@ -297,9 +297,9 @@ const ADDED_SINCE_V05 := {
 		&"cast_pos",
 		&"cast_angle",
 		&"cast_flag",
-		&"hole_pos",  # v0.8.0 P2 (Void's black holes: an older save has none)
-		&"hole_from",
-		&"hole_dmg",
+		&"void_shot",  # v0.9.0 VP (the Void form's aura waits; an older save has none: its black holes are dropped)
+		&"void_foe",
+		&"void_next",
 		&"ramp_n",  # v0.8.0 MR (FireRhythm, SecondaryProc: an older save has no ramp, no burst, no carry)
 		&"ramp_tick",
 		&"burst_n",

@@ -1018,6 +1018,18 @@ def s_barrel_blast(r):
     return mix(burst, boom * 1.2)
 
 
+def s_void_hum(r):
+    """v0.9.0 VP (the lead's placeholder for docs/art/requests/v0.9.0_ART_LIST.md §6 `void_hum`: "a low warping hum for
+    the void shot"): 0.42 s, a low sine falling 92 to 58 Hz whose pitch warps with a slow 7 Hz bend, a soft FM growl
+    under it and a dark airy swirl of noise sinking 420 to 160 Hz, swelling in and fading out."""
+    m = n_of(0.42)
+    bend = curve(92.0, 58.0, m) * (1.0 + 0.06 * np.sin(2.0 * np.pi * 7.0 * np.arange(m) / RATE))
+    hum = osc(bend, "sine") * env(m, 0.04, 0.22) * 0.9
+    growl = one_pole_lp(fm(bend * 2.0, 0.5, 1.6, m), 600) * env(m, 0.06, 0.18) * 0.35
+    swirl = bandpass(noise(r, m), curve(420.0, 160.0, m), 3.0) * env(m, 0.08, 0.16) * 0.5
+    return mix(hum, growl, swirl)
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -1108,6 +1120,7 @@ SFX = [
     ("final_altar", s_final_altar),
     ("timer_beep", s_timer_beep),
     ("bomb_throw", s_bomb_throw),
+    ("void_hum", s_void_hum),
     ("pillar_turn", s_pillar_turn),
     ("wall_break", s_wall_break),
     ("container_break", s_container_break),

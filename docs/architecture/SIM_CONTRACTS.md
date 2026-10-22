@@ -620,15 +620,18 @@ player with effect `aether_shell`) and combat starts again; Resonance, an attack
 Cold Snap's: + `resonance_permille` per status on the enemy (burning, shocked, bleeding, chilled or frozen, slowed,
 poisoned). Phase Dash: `World.dash_iframes_active` holds for the whole dash and the player skips body collisions.
 Gravity Well's pull (a burst with `pull_m`) is retired (v0.8.0 P2, owner O24): no card sets `pull_m` (kept in the hash
-order). **Void's black holes** (`BlackHoles`, v0.8.0 P2): a spec with `hole_permille` > 0 rolls once on the `ability`
-stream where a projectile of it ends (`Attacks.on_projectile_end`, a projectile with its own spec key) and where a
-slash of it first lands (`Attacks._arc`); on success a hole opens there (`World.mx.hole_pos` / `hole_from` /
-`hole_dmg`; the pulse = the shot's damage × `hole_damage_permille`, rounded, at least 1). Past `WandTable.hole_max` (3)
-the oldest closes first. Tick phase 6 (`ModifierRuntime.advance`): holes whose age reaches `hole_ticks` (120) close;
-each then (oldest first) moves every enemy within `hole_pull_radius_m` (3.5 m; not a boss, not spawning) by
-`hole_pull_step_m` (0.05 m a tick) toward its centre, stopping `BlackHoles.CORE_GAP_M` (0.3 m) short, and every
-`hole_period_ticks` (12) of its age pulses `Damage.tick_dot` (TAG_DOT, proc 0, effect `void_hole`) on each enemy
-within `hole_radius_m` (1.4 m). Hashed (`ModifierState`) only while a hole stands; snapshotted (`ADDED_SINCE_V05`).
+order). **Void's black holes** (v0.8.0 P2) are deleted (v0.9.0 VP, owner C §6.4): the card `gravity_well` is retired
+(`migration.tres`: a Gun run's becomes the Void form card, a Blade run's is refunded), `BlackHoles`, `hole_*` and its
+state are gone; an older snapshot's `hole_*` are ignored on restore. **The Void form** (`VoidShots`, v0.9.0 VP, Q10):
+a bolt with `void_mm` > 0 passes through bodies (World's projectile pass); tick phase 6 (`ModifierRuntime.advance`):
+each player Void shot hits every enemy within `void_mm` (the area stat on it) as it comes in and every
+`void_tick_ticks` (12) while it stays (`World.mx.void_shot` / `void_foe` / `void_next`, a wait per shot and enemy,
+hashed only while one waits, snapshotted `ADDED_SINCE_V05`), each tick of a shot its own root, `Attacks.land` with
+the Laser's feeding rule; then each enemy within `void_pull_mm` (3 m) is stepped toward the shot's path (the line it
+flies along), at most `void_pull_mmps` (1 m/s, weaker with distance), the pulls of all shots on one enemy summed and
+capped at the strongest one's top step (no stacking), with a separation push from neighbours within 0.3 m of its
+edge; heavies (radius ≥ 0.5 m) half, bosses, elites and spawning enemies none (`VoidShots.steps`, pure: the view's
+lean reads it).
 
 **Venom** (`Venom`, M4): status `poison` (`ModifierOpDefinition.STATUSES`), stacks capped at `poison_max_stacks`, each
 new stack refreshing `poison_ticks`; every `poison_period_ticks` the DoT deals `poison_damage` × stacks (its own root,

@@ -281,10 +281,10 @@ func test_m14_wide_arc_widens_arcs_and_grows_projectiles() -> void:
 	assert_almost_eq(Modifiers.bolt(w).radius_m, Modifiers.bolt(plain).radius_m, 1e-5, "Blade-only")
 
 
-## v0.8.0 P2 (owner O24): Void no longer pulls on every hit; its shots leave black holes by chance
-## (test_black_holes.gd).
-func test_m15_gravity_well_leaves_black_holes_instead_of_a_pull_on_every_hit() -> void:
+## v0.8.0 P2 (owner O24): Void no longer pulls on every hit. v0.9.0 VP (owner C §6.4): its floor black holes are gone
+## too and the card is retired; the Void form (test_void.gd) replaces it.
+func test_m15_the_old_void_pulls_nothing_and_leaves_no_black_hole() -> void:
 	var w := W.world(&"gun", [&"gravity_well"])
 	assert_null(W.hook_of(Modifiers.bolt(w), &"gravity_well"), "no pull burst")
 	assert_eq(Modifiers.bolt(w).pull_m, 0.0)
-	assert_eq(Modifiers.bolt(w).hole_permille, 80, "a black hole's chance")
+	assert_false(VoidShots.is_void(Modifiers.bolt(w)), "not the Void form")

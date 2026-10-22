@@ -270,6 +270,7 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 			"gun_swirl",
 			"gun_threadline",  # v0.8.0 RM
 			"gun_twin",
+			"gun_void",  # v0.9.0 VP
 			"halo_shot",
 			"orbit_rounds",
 			"rapid_coil",

@@ -15,6 +15,9 @@ const PROJECTILE_POOL_MAX := 400
 ## v0.4.0 SC: enemy models farther than this from the hero (off screen) stop their frame-time animation. v0.8.0 HV:
 ## only without a camera (`cull` unset: a view built alone, as the unit tests do); the game uses the camera's view.
 const ANIMATE_RADIUS_M := 24.0
+## v0.9.0 VP (owner C56: "enemies in range lean into it"): an enemy a Void shot pulls tilts toward the pull, this much
+## (radians) at the pull's top speed.
+const LEAN_RAD := 0.35
 ## v0.7.5 NB1: body colours under this saturation count as grey (stone, metal, bone) for the biome's enemy cast.
 const GREY_SATURATION := 0.3
 ## A body material's rest emission without a role glow: [colour, energy] (flashable's dark white).
@@ -83,6 +86,7 @@ func sync(reader: WorldReader) -> void:
 		add_child(bar_chunks)
 	var alive := {}
 	var hero := reader.player_pos()
+	var leans := reader.void_leans()  # v0.9.0 VP: empty unless a Void shot pulls someone
 	for i in reader.actor_count():
 		var id := reader.actor_id(i)
 		alive[id] = true
@@ -99,6 +103,8 @@ func sync(reader: WorldReader) -> void:
 				role_glow(node, reader.actor_kind(i), role_glow_energy)  # v0.8.0 N1 (O39)
 		node.position = SimPlane.to_3d(reader.actor_pos(i))
 		_update_actor(node, reader, i)
+		if not leans.is_empty() and leans.has(id):
+			_lean(node, leans[id])
 		if node.has_meta(&"enemy_avatar"):  # v0.4.0 SC: off-screen crowds don't animate
 			_animate_if_seen(node, id, reader.actor_pos(i), hero)
 		if fresh:
@@ -157,6 +163,18 @@ func _animate_if_seen(node: Node3D, id: int, pos: Vector2, hero: Vector2) -> voi
 	if on and not was and avatar.has_method(&"advance"):
 		for k in 4:
 			avatar.call(&"advance", 0.05)
+
+
+## v0.9.0 VP: tilts the body (its facing node, turned this frame by _update_actor) toward the Void's pull `step` (m a
+## tick): LEAN_RAD at the top speed (1 m/s), less as it weakens.
+func _lean(node: Node3D, step: Vector2) -> void:
+	var d3 := SimPlane.to_3d(step)
+	var axis := Vector3.UP.cross(d3)
+	if axis.length_squared() <= 0.0:
+		return
+	var facing: Node3D = node.get_meta(&"facing")
+	var amt := clampf(step.length() * SimTick.TICKS_PER_SECOND, 0.0, 1.0) * LEAN_RAD
+	facing.basis = Basis(axis.normalized(), amt) * facing.basis
 
 
 ## Re-applies the mood to the hero's carried light (the dev panel's lighting page).

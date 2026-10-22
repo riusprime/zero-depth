@@ -258,7 +258,6 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	# Measured once (audit G-2): a hit that tips Hot mid-loop must not stretch this swing for the actors after it.
 	var reach := arc_reach_m(w, spec)
 	var edge := w.player.radius_m
-	var first := Vector2.ZERO  # v0.8.0 P2: where the slash first landed (Void's black hole)
 	for i in range(1, a.size()):
 		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
 			continue
@@ -274,13 +273,9 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		if got > 0:
 			landed = true
 			hits += 1
-			if hits == 1:
-				first = a.pos(i)
 			_landed(w, spec, ctx, i, a.pos(i), hits)
 			BladeForms.on_arc_hit(w, spec, ctx, i)  # v0.6.5 WN4: Heavy's push
 	BladeForms.on_arc(w, spec, ctx)  # v0.6.5 WN4: Parry Edge, the view's ghost slashes
-	if landed and spec.hole_permille > 0:  # v0.8.0 P2 (O24): Void's black hole where it first landed
-		BlackHoles.roll(w, spec, first, ctx.damage)
 	if not w.mx.rem_uid.is_empty() or not spec.hooks.is_empty():  # v0.8.0 RM: cracks it crosses, its path
 		Remnants.on_arc(w, spec, ctx, reach)
 	if not spec.hooks.is_empty():
@@ -916,9 +911,6 @@ static func on_projectile_end(w: World, pi: int, at: Vector2) -> void:
 		_second_of(w, pi, ctx)  # v0.8.0 MR
 		_run(w, spec, AttackSpec.Trigger.ON_END, ctx, at, -1, 0)
 		Remnants.on_bolt_end(w, spec, pi, at)  # v0.8.0 RM: Double Exposure's path
-	var own := pi < w.projectiles.spec_key.size() and w.projectiles.spec_key[pi] != ""
-	if own and spec != null and spec.hole_permille > 0:  # v0.8.0 P2 (O24): Void's black hole where it ends
-		BlackHoles.roll(w, spec, at, w.projectiles.damage[pi])
 	ModifierAbilities.on_projectile_end(w, at)
 
 
