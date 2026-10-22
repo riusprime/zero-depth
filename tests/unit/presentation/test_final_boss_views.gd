@@ -237,6 +237,23 @@ func test_the_arena_is_drawn_round_from_the_sims_ring() -> void:
 		)
 	assert_eq(stage.pillar_count, FinalArenaStage.PILLARS)
 	assert_eq(stage.brazier_count, FinalArenaStage.BRAZIERS)
+	# v0.9.0 MI2: the owner's pieces are drawn (his wall segment on every ring block, in the walls' own faded and
+	# solid materials so the occlusion still fades it; his far pillars, braziers and gate).
+	for id in [&"arena_wall_segment", &"arena_pillar", &"arena_brazier", &"arena_gate"]:
+		assert_has(stage.models_used, id)
+	for k in stage.wall_nodes.size():
+		var n := stage.wall_nodes[k]
+		assert_false(n.mesh is BoxMesh, "Wall%d is his segment" % k)
+		assert_eq(n.material_override, stage.wall_material)
+		var out := Vector3(n.position.x, 0.0, n.position.z).normalized()
+		var box := n.mesh.get_aabb()
+		assert_almost_eq(
+			box.size.y, FinalArenaStage.PIECES[&"arena_wall_segment"].y, 0.05, "his height"
+		)
+		# His arena face (the model's -X) toward the centre: the node's +X points out.
+		assert_gt(n.basis.x.dot(out), 0.9, "Wall%d faces the arena" % k)
+	assert_not_null(stage.wall_material.albedo_texture, "his texture")
+	assert_eq(stage.wall_faded.albedo_texture, stage.wall_material.albedo_texture, "faded the same")
 	assert_gt(stage.seat_count, 20, "tiered seating")
 	assert_not_null(stage.gate)
 	var gate := SimPlane.to_sim(stage.gate.position)

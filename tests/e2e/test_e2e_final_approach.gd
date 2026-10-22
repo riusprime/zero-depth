@@ -110,7 +110,11 @@ func test_the_ascension_portal_opens_the_approach_and_two_pylons_wake_the_coloss
 	assert_eq(main.view.approach_view.pylons.size(), 2, "two pylons")
 	assert_null(main.view.gate, "no run gate")
 	assert_null(main.view.receiver, "no floor receiver")
-	assert_gt(main.view.stage.final_arena.treads.size(), 0, "the stair causeway")
+	assert_gt(
+		main.view.stage.final_arena.flights.size(),
+		0,
+		"the stair causeway (v0.9.0 MI2: the owner's flights)"
+	)
 	assert_true(await e.landed(), "the hero lands")
 	var t0 := w.tick
 	assert_eq(w.player_pos(), w.floor_layout.causeway_foot, "at the causeway's foot")

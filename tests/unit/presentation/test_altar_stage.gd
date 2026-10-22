@@ -25,8 +25,12 @@ func _altar(look: AltarStage.Look = null) -> AltarStage:
 
 
 func test_the_stand_in_is_a_big_round_stepped_dais() -> void:
+	ShopModels.manifest = "res://no_such_manifest.json"  # v0.9.0 MI2: the owner's altar is listed; the fallback
+	ShopModels.clear_cache()
 	var a := _altar()
-	assert_false(a.uses_model, "no arrival_altar model listed yet: the stand-in")
+	ShopModels.manifest = ShopModels.MANIFEST
+	ShopModels.clear_cache()
+	assert_false(a.uses_model, "without the manifest: the stand-in")
 	var steps := a.body.find_children("Step*", "MeshInstance3D", true, false)
 	assert_between(steps.size(), 3, 4, "three or four steps")
 	var bottom := steps[0] as MeshInstance3D  # the widest, laid unturned
@@ -135,6 +139,29 @@ func test_reduced_motion_lights_the_runes_without_moving_them() -> void:
 	a.pose(0.5)
 	for i in a.runes.size():
 		assert_gt(a.rune_glow_now(i), 0.5, "rune %d lit" % i)
+
+
+## v0.9.0 MI2: the owner's altar (delivered 2026-10-22) is drawn: his stone in its 6.6 x 0.45 m box, a code jewel in
+## each of his six sockets, the floating runes still code objects; on the final approach his stone is tinted purple.
+func test_the_owners_altar_holds_the_code_jewels_and_runes() -> void:
+	var a := _altar()
+	assert_true(a.uses_model, "arrival_altar is listed")
+	var model := a.body.find_child("Model", false, false) as MeshInstance3D
+	assert_not_null(model)
+	var box := model.get_aabb()
+	assert_almost_eq(box.size.x, 6.6, 0.05, "6.6 m across")
+	assert_almost_eq(box.size.y, AltarStage.MODEL_TOP, 0.02, "low")
+	assert_eq(a.jewels.size(), AltarStage.MODEL_SOCKETS.size(), "a jewel per socket")
+	for j in a.jewels.size():
+		var p := a.jewels[j].position
+		assert_almost_eq(Vector2(p.x, p.z).length(), AltarStage.MODEL_SOCKET_R, 0.01)
+	assert_between(a.runes.size(), 8, 12, "floating runes")
+	assert_eq(a.panels.size(), 0, "his carved panels, no code ones")
+	var f := _altar(AltarStage.final())
+	var fm := f.body.find_child("Model", false, false) as MeshInstance3D
+	var mat := fm.get_surface_override_material(0) as StandardMaterial3D
+	assert_eq(mat.albedo_color, AltarStage.final().model_tint, "purple stone on the approach")
+	assert_gt(mat.albedo_color.b, mat.albedo_color.g)
 
 
 func test_the_final_altar_is_the_same_scene_in_purple() -> void:
