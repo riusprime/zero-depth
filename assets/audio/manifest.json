@@ -845,6 +845,16 @@
       "loop": false
     },
     {
+      "id": "arrival_altar",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/arrival_altar.wav",
+      "sha256": "ac15ac2c84510e2b7f0cc7d701b4727c465e13ffc48fc5ca193bde8b847bae84",
+      "seconds": 2.8,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -20.36,
+      "loop": false
+    },
+    {
       "id": "ruins",
       "kind": "ambience",
       "path": "assets/audio/ambience/ruins.wav",

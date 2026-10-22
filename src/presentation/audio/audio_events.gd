@@ -89,6 +89,8 @@ var _overrun := [false, false]
 var _arena := [-1, 0]
 ## v0.9.0 DS: the boss door's last opening progress (-1 when it isn't opening), for the impact cue's edge.
 var _door_progress := -1.0
+## v0.9.0 SA: the arrival's last progress (-1 when none plays), for the altar cue's edge.
+var _arrive_progress := -1.0
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -109,6 +111,7 @@ func prime(reader: WorldReader) -> void:
 	var a := reader.arenas()
 	_arena = [int(a["sealed"]), (a["cleared"] as PackedInt32Array).size()]
 	_door_progress = reader.boss_door_progress()
+	_arrive_progress = reader.arrival_progress()
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -134,7 +137,27 @@ func collect(reader: WorldReader) -> Array:
 	_event_rooms(reader, out)  # v0.5.0 EV
 	_overrun_edges(reader, out)
 	_door_impact(reader, out)
+	_arrival(reader, out)
 	return out
+
+
+## v0.9.0 SA (owner Q16: "Your model, my sound": the lead's placeholder, `arrival_altar`): floor 1's altar hum and pop
+## start so the file's peak (AltarStage.Look.cue_peak_s in) lands on the altar's pop (C18: "synchronized with the main
+## audio cue"). An arrival shorter than the hum (reduced motion's fade-in) plays none.
+func _arrival(reader: WorldReader, out: Array) -> void:
+	var p := reader.arrival_progress()
+	var at := arrival_cue_at(reader)
+	if reader.arrival_altar() and at >= 0.0 and p >= at and _arrive_progress < at:
+		out.append([AltarStage.arrival().cue, null, 1.0])
+	_arrive_progress = p
+
+
+## The share of the arrival at which the altar's cue starts (-1: the arrival is too short for it).
+static func arrival_cue_at(reader: WorldReader) -> float:
+	var l := AltarStage.arrival()
+	var seconds := float(reader.arrival_ticks()) / SimTick.TICKS_PER_SECOND
+	var lead := l.cue_peak_s / maxf(seconds, 0.001)
+	return l.pop_at - lead if lead <= l.pop_at else -1.0
 
 
 ## v0.9.0 DS: the door's impact plays DOOR_IMPACT_LEAD_TICKS before the slab is down, so the file's peak meets the

@@ -1268,6 +1268,18 @@ func arrival_first() -> bool:
 	return _w.run_floor_index() == 1
 
 
+## v0.9.0 SA (owner Q16: "only floor 1"): floor 1 of a run arrives on the altar (AltarStage) instead of the receiver,
+## at floor_start_pos; the start hall keeps its cover and spawn spots FloorParams.start_clear_radius (3.5 m) away,
+## outside the altar's 3.3 m.
+func arrival_altar() -> bool:
+	return floor_receiver() and arrival_first()
+
+
+## v0.9.0 SA: the arrival's whole length in ticks (0 when the floor opens without one).
+func arrival_ticks() -> int:
+	return _w.boss_flow.arrive_ticks if _w.boss_flow != null else 0
+
+
 ## v0.8.0 N11: the hero is still arriving (the world holds; nothing spawns, nothing acts, the hero isn't there yet).
 func arriving() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.arrive_left > 0

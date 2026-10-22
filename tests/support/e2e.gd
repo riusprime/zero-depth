@@ -131,8 +131,8 @@ func start_from_menu(build: StringName = &"blade", land: bool = true) -> void:
 
 
 ## v0.8.0 N11 (owner O69): waits (reading only) until the floor's arrival is over and play is on, `limit` frames at
-## most (the cover's fade, then the arrival: floor 1's ~1.6 s). True when it was.
-func landed(limit: int = 600) -> bool:
+## most (the cover's fade, then the arrival: floor 1's 4.0 s, v0.9.0 SA). True when it was.
+func landed(limit: int = 900) -> bool:
 	for k in limit:
 		if main.driver != null and not main.driver.reader.arriving():
 			return true

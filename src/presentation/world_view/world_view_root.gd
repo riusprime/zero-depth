@@ -91,6 +91,8 @@ var remnants: RemnantViews = _part(RemnantViews)
 var transit: PortalTransitView = _part(PortalTransitView)
 ## v0.8.0 N11 (owner O69): the receiver the hero arrives on, in the middle of the first room (null without one).
 var receiver: FloorReceiver
+## v0.9.0 SA (owner Q16): floor 1 of a run's arrival altar, there instead of the receiver (null elsewhere).
+var altar: AltarStage
 ## Run flow (v0.3.0 B): the boss door (null without a boss room).
 var boss_door: BossDoorView
 ## The gamble shrine (v0.3.0 L19; null on a floor without one).
@@ -344,13 +346,18 @@ func _setup_devices(palette: Dictionary) -> void:
 		shop_terminal = ShopTerminalView.new()
 		add_child(shop_terminal)
 		shop_terminal.setup(reader.shop_pos(), reader.shop_angle())
-	if reader.floor_receiver():  # v0.8.0 N11: every run floor (not the final arena or the Playground)
+	if reader.arrival_altar():  # v0.9.0 SA (Q16): floor 1 of a run lands on the altar
+		altar = AltarStage.new(AltarStage.arrival())
+		add_child(altar)
+		altar.setup(reader.floor_start_pos())
+	elif reader.floor_receiver():  # v0.8.0 N11: every run floor (not the final arena or the Playground)
 		receiver = FloorReceiver.new()
 		add_child(receiver)
 		receiver.setup(reader.floor_start_pos())
 	add_child(transit)
 	transit.setup(actors, gate)
 	transit.receiver = receiver
+	transit.altar = altar
 	transit.rig = rig
 	transit.deep_gate = deep_gate
 	transit.ascension = ascension  # v0.7.5 AP

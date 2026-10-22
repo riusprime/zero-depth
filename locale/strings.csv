@@ -204,6 +204,7 @@ CAPTION_DOOR_SEAL,[The boss door slams shut],[La puerta del jefe se cierra de go
 CAPTION_DOOR_OPENING,[The boss door grinds open],[La puerta del jefe se abre chirriando]
 CAPTION_DOOR_IMPACT,[The boss door thuds down],[La puerta del jefe cae con un golpe sordo]
 CAPTION_PORTAL_OPEN,[The portal hums open],[El portal se abre con un zumbido]
+CAPTION_ARRIVAL_ALTAR,[The altar hums and flares],[El altar zumba y destella]
 CAPTION_LOW_HP,[Heartbeat: low health],[Latido: poca vida]
 ITEM_HEAT_SINK,Heat Sink,Disipador
 ITEM_HEAT_SINK_DESC,Your vents hit harder and farther.,Tus purgas golpean más fuerte y más lejos.

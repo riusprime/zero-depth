@@ -881,6 +881,25 @@ def s_overrun_clear(r):
     return echo(mix(x, at(shimmer, 0.15)), 120, 0.4, 0.3, 5000, 0.4)
 
 
+def s_arrival_altar(r):
+    """v0.9.0 SA (owner Q16: "Your model, my sound": the lead's placeholder until the owner sends one): floor 1's altar.
+    A hum that climbs in pitch and swells for 2.3 s (a detuned FM drone, a rising shimmer, a pulse that speeds up), then
+    the pop at 2.3 s (AltarStage.Look.cue_peak_s, the file's peak): a bright thump, a burst of noise and a glassy chime
+    that ring out."""
+    rise = 2.3
+    n = n_of(rise)
+    swell = np.linspace(0.0, 1.0, n) ** 2.2
+    hum = sum(fm(f * curve(1.0, 2.0, n), 2.0, 0.6 + 1.4 * swell, n) for f in (110.0, 110.8, 165.0)) * 0.12
+    pulse = 0.75 + 0.25 * np.sin(phase(curve(3.0, 14.0, n)))
+    shimmer = bandpass(noise(r, n), curve(1500, 6500, n), 9.0) * 0.4
+    build = one_pole_lp(hum * pulse, 2400) * swell + shimmer * swell
+    m = n_of(0.5)
+    thump = osc(curve(180, 45, m), "sine") * env(m, 0.002, 0.12)
+    burst = one_pole_lp(noise(r, m), 5000) * env(m, 0.001, 0.05)
+    chime = sum(osc(f, "sine", m) for f in (880.0, 1318.5, 1760.0)) * env(m, 0.002, 0.16) * 0.22
+    return mix(build, at(mix(thump, burst * 0.6, chime), rise))
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -966,6 +985,7 @@ SFX = [
     ("flame_trail", s_flame_trail),
     ("overrun_enter", s_overrun_enter),
     ("overrun_clear", s_overrun_clear),
+    ("arrival_altar", s_arrival_altar),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------
