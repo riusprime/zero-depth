@@ -12,7 +12,8 @@ extends RefCounted
 ## wall. v0.8.0 N14 (owner O72): on some floors only, in a combat room away from the start hall (Gamble.site; the
 ## spawn points under it dropped); a floor saved before N14 (legacy_shrine) keeps it in the start hall.
 ## v0.5.0 RT: on a run's floor before the last, the Deep gate beside the gate (Routes.place_deep_gate; its footprint
-## a wall); on a Deep floor, the extra chest and the epic altar (Routes.place_deep_rewards, after the shrine).
+## a wall); on a Deep floor, the extra chest and the epic altar (Routes.place_deep_rewards, after the shrine). v0.9.0
+## DP (owner Q26b): its spot only; it stands once the floor's purple runes are awakened (PurpleRunes, FloorPlan).
 ## v0.8.0 P2 (owner O28): on a loop's last floor, the Loop device beside the Ascension portal
 ## (Ascension.place_loop_device; nothing solid, so the walls are unchanged).
 ## v0.5.5 AR: with an arena table, the sealed arenas (ArenaRooms.mark, after the Overrun room), whose item spots the
@@ -51,12 +52,15 @@ static func build(
 	if arenas != null:  # v0.5.5 AR: the sealed arenas, before the rewards that fill them first
 		ArenaRooms.mark(layout, arenas.share_permille)
 	var routes := Routes.offers_choice(run) and Routes.place_deep_gate(layout)  # v0.5.0 RT
+	# v0.9.0 DP (owner Q26b): the Deep gate's spot is placed as before, but it stands and opens only once the floor's
+	# purple runes are awakened (PurpleRunes.earn); a floor saved before DP keeps it on every floor before the last.
+	var deep_now := routes and (run == null or PurpleRunes.legacy_deep_gate(run))
 	if run != null and run.is_last_floor():  # v0.8.0 P2 (O28): the Loop device beside the Ascension portal
 		Ascension.place_loop_device(layout)
 	var w := World.new(seed_value, player, layout.start_pos)
 	var walls: Array[Obb] = layout.walls.duplicate()
 	walls.append(gate_collider(layout))
-	if routes:
+	if deep_now:
 		walls.append(Routes.deep_gate_collider(layout))
 	var legacy_shrine := legacy_shrine_of(run)  # v0.8.0 N14: an older save's floor
 	var shrine := PackedVector2Array()
@@ -75,7 +79,7 @@ static func build(
 	w.set_item_tables(items)
 	w.set_combo_tables(combos)  # v0.3.0 G: named combos, set before the run's carry restores the owned ones.
 	w.boss_flow = BossFlow.create(spec.boss_index)
-	w.boss_flow.routes = routes
+	w.boss_flow.routes = deep_now
 	if rewards != null:
 		w.reward_table = rewards
 		if not sized:  # v0.9.0 FV: counts by room band on sized floors only (the 3-floor shape keeps v0.8.0's)

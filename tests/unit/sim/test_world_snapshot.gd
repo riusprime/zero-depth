@@ -91,9 +91,18 @@ func test_round_trip_on_a_deep_floor_and_after_the_deep_gate() -> void:
 		SaveLab.build_floor(SaveLab.run_state(88, 2, &"blade", Routes.Route.DEEP)),
 		"Deep floor 2"
 	)
-	var w := SaveLab.floor_world(88, 1)
+	# v0.9.0 DP (owner Q26b): the Deep gate is earned: a floor 2 whose purple runes the hero awakens first.
+	var seed_value := 1
+	while SaveLab.floor_world(seed_value, 2).purple == null and seed_value < 40:
+		seed_value += 1
+	var w := SaveLab.floor_world(seed_value, 2)
 	w.actors.invuln[0] = 1 << 24
+	w.boss_flow.arrive_left = 0
 	var f := w.floor_layout
+	w.actors.set_pos(0, f.purple_pos)
+	w.step(InputFrame.new())
+	w.step(InputFrame.make(Vector2i.ZERO, 0, 1000, InputFrame.INTERACT, InputFrame.INTERACT))
+	assert_true(PurpleRunes.earned(w), "the runes awakened")
 	w.actors.set_pos(0, f.boss_door_inside(1.5))
 	CombatLab.idle(w, 4)
 	var bi := w.actors.index_of(w.boss_id)
@@ -111,7 +120,7 @@ func test_round_trip_on_a_deep_floor_and_after_the_deep_gate() -> void:
 	assert_eq(w.boss_flow.route_taken, Routes.Route.DEEP)
 	var snap := WorldSnapshot.take(w, PackedStringArray())
 	var restored := World.from_snapshot(
-		bytes_to_var(var_to_bytes(snap)), SaveLab.floor_world(88, 1)
+		bytes_to_var(var_to_bytes(snap)), SaveLab.floor_world(seed_value, 2)
 	)
 	assert_not_null(restored)
 	if restored != null:

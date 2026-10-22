@@ -15,14 +15,18 @@ extends RefCounted
 ##   of its rate (calm_now). Enemies already out keep fighting. solve_calm ends it for good; leaving the room ends it
 ##   while you are away.
 ## Users: the final approach's rune pylons (FinalApproach, v0.9.0 FA), the timed door's switches (TimedDoor, TD), the
-## rune puzzle's pillars (RuneAlignment, RA).
+## rune puzzle's pillars (RuneAlignment, RA), the purple-rune dais (PurpleRunes, DP).
 ## Pure: no stream is drawn.
 
-enum Kind { PYLON, TIMED_SWITCH, RUNE_PILLAR }
+enum Kind { PYLON, TIMED_SWITCH, RUNE_PILLAR, PURPLE_DAIS }
 
-## Each kind's prompt (a string key in locale/strings.csv), for the shared prompt view.
+## Each kind's prompt (a string key in locale/strings.csv), for the shared prompt view. v0.9.0 DP: the purple dais
+## (PurpleRunes) reads FA's pylons' "Awaken".
 const PROMPT_KEYS: Array[StringName] = [
-	&"APPROACH_PYLON_PROMPT", &"TIMED_SWITCH_PROMPT", &"RUNE_PILLAR_PROMPT"
+	&"APPROACH_PYLON_PROMPT",
+	&"TIMED_SWITCH_PROMPT",
+	&"RUNE_PILLAR_PROMPT",
+	&"APPROACH_PYLON_PROMPT"
 ]
 ## Puzzle calm: the spawn clock runs one tick in CALM_DIVISOR (a quarter of the rate).
 const CALM_DIVISOR := 4
@@ -112,6 +116,8 @@ static func handle(w: World, i: int) -> void:
 			TimedDoor.press(w, i)
 		Kind.RUNE_PILLAR:
 			RuneAlignment.press(w, i)
+		Kind.PURPLE_DAIS:
+			PurpleRunes.press(w, i)
 
 
 ## Registers `room` as a puzzle's calm room (setup). Returns its index.

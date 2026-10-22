@@ -61,6 +61,10 @@ const SPECS := {
 	&"container_urn": {"size": Vector3(0.5, 0.8, 0.5), "yaw": 0.0},
 	&"container_barrel": {"size": Vector3(0.6, 0.9, 0.6), "yaw": 0.0},
 	&"explosive_barrel": {"size": Vector3(0.7, 1.0, 0.7), "yaw": 0.0},
+	# v0.9.0 DP (owner Q26b; PurpleRuneView): the purple-rune dais, round, so no turn: its stone fills a 1.7 x 0.55 x
+	# 1.7 m box in the room's middle (the floating crystal stays a code object). Listed in assets/models/manifest.json
+	# when the owner's file is prepared; until then the code stand-in draws it.
+	&"purple_rune_dais": {"size": Vector3(1.7, 0.55, 1.7), "yaw": 0.0},
 }
 
 ## Where the manifest is read (tests point it at their own).

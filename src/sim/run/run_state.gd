@@ -42,7 +42,10 @@ extends RefCounted
 ## v0.9.0 RA (owner W §4 A, Q22): 11 is today's: on some floors a rune puzzle seals a dead end (RuneAlignment.setup).
 ## A floor saved under rules 1-10 is rebuilt without one, as it was saved (FloorPlan). v0.9.0 DX (owner W §4 C, Q23)
 ## rides the same rule (both land together): cracked walls, containers and explosive barrels (Breakables.setup).
-const FLOOR_RULES := 11
+## v0.9.0 DP (owner Q26b): 12 is today's: the Purple Portal is earned (a purple-rune room on some floors,
+## PurpleRunes.setup; the Deep gate opens only on a floor whose runes were awakened). A floor saved under rules 1-11
+## keeps the Deep gate on every floor before the last, as it was saved (PurpleRunes.legacy_deep_gate).
+const FLOOR_RULES := 12
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
@@ -53,6 +56,7 @@ const FLOOR_RULES_V080_N17 := 7
 const FLOOR_RULES_V080_N19 := 8
 const FLOOR_RULES_V080_BD := 9
 const FLOOR_RULES_V090_TD := 10
+const FLOOR_RULES_V090_RA := 11
 
 var run_seed := 0
 var table: RunTable
@@ -83,6 +87,9 @@ var loop_floors := 0
 ## world is the final arena (FinalArenaScenario), on the loop's last floor (floor_index stays). Saved (RunSaver; an
 ## older payload has none).
 var final_fight := false
+## v0.9.0 DP (owner Q26b): the run's floors (run_floor(), across loops) that held a purple-rune room, so a loop holds
+## one at most (PurpleRunes.chance). Saved (RunSaver; an older payload has none).
+var purple_floors := PackedInt32Array()
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:
@@ -285,6 +292,8 @@ func finish_floor(w: World) -> void:
 	ticks_done += w.run_ticks
 	kills_done += w.kills
 	threat_by_floor.append(Curses.threat(w))
+	if w.purple != null and not purple_floors.has(run_floor()):  # v0.9.0 DP: one purple room a loop
+		purple_floors.append(run_floor())
 	carry = RunCarry.take(w, table.heal_permille, table.shard_carry_permille)
 	if Ascension.took_portal(w) and _has_final():  # FB1; v0.8.0 P2: the Ascension portal: the final arena
 		final_fight = true

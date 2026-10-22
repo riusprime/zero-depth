@@ -209,6 +209,10 @@ var crack_room := -1
 var crack_host := -1
 var crack_door := -1
 var crack_wall: Obb
+## v0.9.0 DP (owner Q26b; PurpleRooms.mark, -1 on a floor without one): the purple-rune room (a big room off the
+## way) and its dais's spot.
+var purple_room := -1
+var purple_pos := Vector2.ZERO
 
 
 func room_count() -> int:

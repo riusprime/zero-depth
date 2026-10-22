@@ -1,9 +1,10 @@
 extends GutTest
 ## Optional routes (v0.5.0 RT, R5) through main.tscn with real input only: the dev panel (backtick, mouse clicks:
 ## God mode for the walk, Kill boss) stands in for the fight as in test_e2e_portal; the left stick walks through the
-## boss door, the boss dies, and two portals open: the gate and the violet Deep gate. The stick walks into the Deep
-## gate: the gate closes, the way in plays, and floor 2 starts once as a Deep floor (its card and floor label say
-## so, its enemies are scaled ×1.25 on top of the floor, and it has the epic altar and an extra chest).
+## boss door and the boss dies. v0.9.0 DP (owner Q26b: "the purple portal should be linked to one of the new puzzles
+## or events, not be there as default"; "never in floor 1"): floor 1 has no purple runes, so its boss opens the gate
+## alone: no Deep gate is built, the HUD names one portal and the minimap has none. Earning it and taking it into a
+## Deep floor (the card, the ×1.25, the epic altar) is test_e2e_purple_portal's.
 
 const LEG_FRAMES := 7000
 
@@ -39,15 +40,16 @@ func _click(e: E2e, main: Main, button: String) -> void:
 	await e.click_at(b.get_global_rect().get_center())
 
 
-func test_into_the_deep_portal_and_floor_two_is_deep() -> void:
+func test_floor_one_opens_the_gate_alone() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
 	var w := e.world()
 	var f := w.floor_layout
-	assert_true(main.driver.reader.has_deep_portal(), "floor 1 of 3 has the Deep gate")
-	assert_not_null(main.view.deep_gate, "and shows it")
-	assert_false(main.run.is_deep(), "floor 1 is normal")
+	var reader := main.driver.reader
+	assert_false(reader.has_deep_portal(), "floor 1 has no Deep gate")
+	assert_null(w.purple, "and no purple runes to earn one")
+	assert_null(main.view.deep_gate, "none is built")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
 	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
@@ -62,66 +64,10 @@ func test_into_the_deep_portal_and_floor_two_is_deep() -> void:
 	await e.frames(30)
 	await _click(e, main, "KillBoss")
 	await e.frames(3)
-	var reader := main.driver.reader
 	assert_true(reader.gate_open(WorldReader.ROUTE_NORMAL), "the gate is open")
-	assert_true(reader.gate_open(WorldReader.ROUTE_DEEP), "and the Deep gate beside it")
-	assert_false(main.view.gate.is_sealed())
-	assert_false(main.view.deep_gate.is_sealed())
+	assert_false(reader.gate_open(WorldReader.ROUTE_DEEP), "alone")
 	assert_true(
-		(main.get_node("UI/Hud") as Hud).gate_text().begins_with(tr("HUD_PORTALS_OPEN")),
-		"the HUD names both"
+		(main.get_node("UI/Hud") as Hud).gate_text().begins_with(tr("HUD_PORTAL_OPEN")),
+		"the HUD names one portal"
 	)
-	var floors_started := [0]
-	main.child_entered_tree.connect(
-		func(n: Node) -> void:
-			if n is SimDriver:
-				floors_started[0] += 1
-	)
-	var facing := Kin.dir(f.deep_portal_angle)
-	var entered: bool = await _walk(
-		e,
-		f.deep_portal_pos + facing * 1.0,
-		func() -> bool: return w.boss_flow.state == BossFlow.State.ENTERING,
-		-facing
-	)
-	assert_true(entered, "the Deep gate takes the hero")
-	if not entered:
-		return
-	assert_eq(w.boss_flow.route_taken, Routes.Route.DEEP, "the Deep route")
-	await e.frames(1)
-	assert_true(main.view.gate.is_sealed(), "the other gate closes")
-	var held := 0
-	while main.run.floor_index == 1 and held < 200:
-		held += 1
-		await e.frames(1)
-	assert_eq(main.run.floor_index, 2, "floor 2 started")
-	assert_eq(floors_started[0], 1, "exactly once")
-	var w2 := e.world()
-	assert_true(main.run.is_deep(), "the run took the Deep route")
-	assert_eq(main.run.routes, PackedInt32Array([Routes.Route.NORMAL, Routes.Route.DEEP]))
-	assert_true(Routes.is_deep(w2), "floor 2 is Deep")
-	assert_true(
-		(main.get_node("UI/Hud") as Hud).floor_card_text().begins_with(
-			tr("HUD_FLOOR_CARD_DEEP") % 2
-		),
-		"the card says so"
-	)
-	await e.frames(2)
-	assert_true(
-		(main.get_node("UI/Hud") as Hud).floor_text().begins_with(
-			tr("HUD_FLOOR_DEEP").split("%s")[0] % 2
-		),
-		"the label too"
-	)
-	assert_gte(w2.boss_flow.epic_altar_id, 0, "the epic altar stands on the floor")
-	var t := main.run.table
-	var hp_pm := SpawnTable.scale(SpawnTable.per_floor(t.enemy_hp_floor_permille, 2), 1250)
-	var base := ContentCompiler.compile_enemies(ContentRepository.load_all())
-	for b in base:
-		assert_eq(
-			w2.enemy_table(b.kind).hp, maxi(1, SpawnTable.scale(b.hp, hp_pm)), "×1.25 on the floor"
-		)
-	assert_true(main.driver.reader.has_deep_portal(), "floor 2 of 3 offers the choice again")
-	var recap := main.run_recap()
-	assert_eq(recap["routes"], PackedInt32Array([0, 1]), "the recap carries the routes")
 	assert_eq(get_errors().size(), 0, "no engine or script error")

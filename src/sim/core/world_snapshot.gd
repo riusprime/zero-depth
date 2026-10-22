@@ -143,6 +143,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"TimedDoor",  # v0.9.0 TD: the timed door (its state, timer and reward)
 	&"RuneAlignment",  # v0.9.0 RA: the rune puzzle (its pillars, solved, slab and reward)
 	&"Breakables",  # v0.9.0 DX: the cracked wall, the containers and the explosive barrels
+	&"PurpleRunes",  # v0.9.0 DP: the purple-rune dais (awakened, the Deep gate's footprint)
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -181,6 +182,7 @@ const ADDED_SINCE_V05 := {
 		&"timed",  # v0.9.0 TD: a floor saved before TD has none (built under floor rules 1-9: none in the base either)
 		&"runes",  # v0.9.0 RA: a floor saved before RA has none (built under floor rules 1-10: none in the base either)
 		&"breakables",  # v0.9.0 DX: the same (floor rules 1-10 build none)
+		&"purple",  # v0.9.0 DP: a floor saved before DP has none (built under floor rules 1-11: none in the base either)
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
 		&"loot_guaranteed",  # v0.8.0 FL: an older save's floor used no guarantee (0) and holds no jackpot
 		&"loot_jackpots",
@@ -410,7 +412,7 @@ static func apply(base: World, snap: Dictionary) -> String:
 	# v0.8.0 BS1: the Gatekeeper's standing pillars are walls added in play too (barriers, never in the flow field).
 	var pillars := _saved_pillars(data)
 	# v0.9.0 TD: the timed door's slab is a barrier added in play (before or after the boss door): left out here;
-	# v0.9.0 RA: the rune puzzle's slab too (Secrets.slabs).
+	# v0.9.0 RA: the rune puzzle's slab too (Secrets.slabs); v0.9.0 DP: the Deep gate's footprint once earned.
 	var plain := _without_slab(base, saved_c, walls_before)
 	# The boss door sealed in play: add it the way play did (its prepared flow field swaps in, no rebuild).
 	# v0.9.0 FV: found among every wall play added, so a sealed arena's barriers (added on the same tick, before or
@@ -716,6 +718,8 @@ static func _make(cls: StringName) -> Object:
 			return RuneAlignment.new()
 		&"Breakables":
 			return Breakables.new()
+		&"PurpleRunes":  # v0.9.0 DP
+			return PurpleRunes.new()
 		&"RngStream":
 			return RngStream.new()
 		&"ActorStore":

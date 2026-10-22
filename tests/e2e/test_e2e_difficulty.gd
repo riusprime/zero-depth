@@ -3,9 +3,9 @@ extends GutTest
 ## stands in for a run's cards: God mode for the walk, then three abilities granted to level 5 (a strong build). The
 ## left stick walks through the boss door: the boss spawns with its hidden catch-up (HP × its m, the boss cap) and
 ## its three phases (gates at 66 % and 33 % on the bar); the player's HUD shows no catch-up, the dev panel does. Kill
-## boss, then the stick walks into the Deep gate: floor 2 is Deep: its m is read from the carried build at entry, its
-## cap is raised by the Deep floor's threat, the stage wears the violet haze over its mood, and the Deep-only event
-## stands in one of its event rooms.
+## boss, then the stick walks into the gate: floor 2's m is read from the carried build at entry. v0.9.0 DP (owner
+## Q26b): floor 1 has no Deep gate any more (it is earned on floor 2 or 3), so the Deep floor's bite moved to
+## test_e2e_purple_portal and test_deep_bite.
 
 const LEG_FRAMES := 7000
 
@@ -61,7 +61,7 @@ func _texts(node: Node) -> PackedStringArray:
 	return out
 
 
-func test_a_strong_build_meets_the_hidden_catch_up_boss_gates_and_a_deep_floor_that_bites() -> void:
+func test_a_strong_build_meets_the_hidden_catch_up_and_the_boss_gates() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
@@ -107,15 +107,18 @@ func test_a_strong_build_meets_the_hidden_catch_up_boss_gates_and_a_deep_floor_t
 	assert_true(readout.contains("boss x"), "the dev panel does: %s" % readout)
 	await _click(e, main, "KillBoss")
 	await e.frames(3)
-	assert_true(reader.gate_open(WorldReader.ROUTE_DEEP), "the Deep gate opens")
-	var facing := Kin.dir(f.deep_portal_angle)
+	# v0.9.0 DP (owner Q26b): floor 1 never earns the Purple Portal: the gate alone opens; the Deep floor's bite
+	# (T + 1, the raised cap, the violet haze) is test_e2e_purple_portal's and test_deep_bite's.
+	assert_false(reader.gate_open(WorldReader.ROUTE_DEEP), "no Deep gate on floor 1")
+	await e.frames(BossFlow.PORTAL_FORM_TICKS + 5)
+	var facing := f.portal_facing()
 	var entered: bool = await _walk(
 		e,
-		f.deep_portal_pos + facing * 1.0,
+		f.portal_pos + facing * 1.0,
 		func() -> bool: return w.boss_flow.state == BossFlow.State.ENTERING,
 		-facing
 	)
-	assert_true(entered, "the Deep gate takes the hero")
+	assert_true(entered, "the gate takes the hero")
 	if not entered:
 		return
 	var held := 0
@@ -124,16 +127,9 @@ func test_a_strong_build_meets_the_hidden_catch_up_boss_gates_and_a_deep_floor_t
 		await e.frames(1)
 	assert_eq(main.run.floor_index, 2, "floor 2 started")
 	var w2 := e.world()
-	assert_true(Routes.is_deep(w2), "floor 2 is Deep")
-	assert_eq(Curses.threat(w2), 1, "T + 1")
-	assert_eq(w2.catch_up.cap, 2250, "cap(2) + 0.25 for the Deep floor")
+	assert_false(Routes.is_deep(w2), "floor 2 is normal")
+	assert_eq(w2.catch_up.cap, 2000, "cap(2)")
 	assert_eq(w2.catch_up.power, CatchUp.power(w2), "read from the carried build at entry")
-	assert_eq(w2.catch_up.enemy, CatchUp.multiplier(w2.catch_up.power, 2000, 2250), "m on floor 2")
+	assert_eq(w2.catch_up.enemy, CatchUp.multiplier(w2.catch_up.power, 2000, 2000), "m on floor 2")
 	assert_gt(w2.catch_up.enemy, 1000)
-	assert_true(main.view.stage.deep, "the violet haze")
-	assert_true(main.view.stage.environment.fog_enabled)
-	var has_event := false
-	for k in w2.ev.ids.size():
-		has_event = has_event or w2.ev.events[w2.ev.event[k]].id == &"whispering_deep"
-	assert_true(has_event or w2.ev.ids.is_empty(), "the Deep-only event stands on the floor")
 	assert_eq(get_errors().size(), 0, "no engine or script error")

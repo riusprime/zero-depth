@@ -1,8 +1,8 @@
 extends GutTest
-## v0.5.5 Step DS (owner S5, "Used deep portals but I felt like nothing changed"): Deep floors bite. An elite in every
-## combat room (the first pack in each room), +1 threat T (which raises the hidden catch-up's caps), the epic altar at
-## the floor's end (the free spot nearest the boss door), and a Deep-only event on every Deep floor (never on a normal
-## one). The violet look is the view's (tests/unit/presentation/test_deep_look.gd).
+## v0.5.5 Step DS (owner S5, "Used deep portals but I felt like nothing changed"): Deep floors bite (v0.9.0 DP, owner
+## Q24: no longer with an elite in every combat room): +1 threat T (which raises the hidden catch-up's caps), the epic
+## altar at the floor's end (the free spot nearest the boss door), and a Deep-only event on every Deep floor (never on
+## a normal one). The violet look is the view's (tests/unit/presentation/test_deep_look.gd).
 
 const LONG := 1 << 24
 
@@ -22,35 +22,19 @@ func _room_of_event(w: World, id: StringName) -> int:
 	return -1
 
 
-func test_the_first_pack_in_each_room_of_a_deep_floor_brings_an_elite() -> void:
-	var w := _deep(51)
-	var f := w.floor_layout
-	var kind := w.spawner.kinds[0]
-	var a := f.rooms[1].get_center()
-	var b := f.rooms[2].get_center()
-	w.add_enemy(kind, a)
-	assert_true(SpawnDirector.deep_elite(w, w.actors.size() - 1, a), "room 1's first")
-	assert_true(Curses.is_elite(w, w.actors.ids[w.actors.size() - 1]))
-	w.add_enemy(kind, a)
-	assert_false(SpawnDirector.deep_elite(w, w.actors.size() - 1, a), "one per room")
-	w.add_enemy(kind, b)
-	assert_true(SpawnDirector.deep_elite(w, w.actors.size() - 1, b), "room 2's first")
-	assert_eq(w.deep_elite_rooms, PackedInt32Array([1, 2]))
-	var n := _normal(51)
-	n.add_enemy(kind, a)
-	assert_false(SpawnDirector.deep_elite(n, n.actors.size() - 1, a), "a normal floor has none")
-
-
-func test_on_a_deep_floor_the_spawns_bring_their_elites() -> void:
+## v0.9.0 DP (owner Q24, Q26b): a Deep floor's rooms no longer bring an elite (elites come from floors 4-5 and Elite
+## Lockdowns, Step EL): its packs arrive as on a normal floor.
+func test_a_deep_floors_packs_bring_no_elite() -> void:
 	var w := _deep(52)
 	w.actors.invuln[0] = LONG
-	var b := FightBot.new(3)
-	SaveLab.run(w, b, 1500)
-	assert_false(w.deep_elite_rooms.is_empty(), "packs arrived and their rooms had an elite")
-	var n := _normal(52)
-	n.actors.invuln[0] = LONG
-	SaveLab.run(n, FightBot.new(3), 1500)
-	assert_true(n.deep_elite_rooms.is_empty())
+	SaveLab.run(w, FightBot.new(3), 1500)
+	var arrived := 0
+	for i in range(1, w.actors.size()):
+		if EnemyAi.is_enemy_kind(w.actors.kinds[i]):
+			arrived += 1
+			assert_false(Curses.is_elite(w, w.actors.ids[i]), "no Deep elite")
+	assert_gt(arrived, 0, "packs arrived")
+	assert_true(w.deep_elite_rooms.is_empty(), "no room brought one")
 
 
 func test_a_deep_floor_is_one_threat_higher_and_its_caps_follow() -> void:
