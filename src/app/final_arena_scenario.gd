@@ -55,6 +55,7 @@ static func build(
 		w.approach = FinalApproach.create(
 			body_tables(w, finals.size()), run.table.final_shatter_ticks, run.table.final_name_key
 		)
+		w.approach.register(w)  # v0.9.0 IX: the pylons are shared interactables
 	return w
 
 

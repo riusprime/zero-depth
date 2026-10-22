@@ -178,6 +178,9 @@ var boss_id := -1
 var final_fight: FinalFight
 ## v0.9.0 FA (owner C §3, Q18; FinalApproach): the final approach's pylons, buildup and walls; null elsewhere.
 var approach: FinalApproach
+## v0.9.0 IX (owner W34; Interactables): the shared interactables (the pylons, the timed doors' switches) and the
+## puzzles' calm rooms; empty in most worlds (hashed only when it holds one).
+var interactables := Interactables.new()
 # --- end Bosses ---------------------------------------------------------------------------------------------
 # --- Rewards (v0.3.0 E; Rewards) ----------------------------------------------------------------------------
 ## The floor's reward rules (part of the loadout, like item_tables; not hashed).
@@ -616,8 +619,8 @@ func step(frame: InputFrame) -> void:
 	Gamble.interact(self)  # Gamble shrine (v0.3.0 L19): the press goes to an altar or chest in reach first.
 	if boss_flow != null:  # v0.8.0 BD (O83): the press by the shut boss door opens it
 		boss_flow.interact(self)
-	if approach != null:  # v0.9.0 FA (Q18): the press by a rune pylon switches it on
-		approach.interact(self)
+	# v0.9.0 IX: the shared interactables' slot (the FA pylons): the nearest enabled one in reach takes the press
+	Interactables.interact(self)
 	# 3. AI (the flow field refreshes on fixed ticks).
 	var pp := phase_probe  # v0.8.0 HS: the perf probe's phase timer (null in play)
 	# v0.8.0 NF (owner O90): the flood starts on those ticks and is built over NavField.SLICES ticks, then swapped in.
@@ -1277,6 +1280,8 @@ func state_hash() -> String:
 		boss_flow.hash_into(h)
 	if approach != null:  # v0.9.0 FA: only the final approach carries it
 		approach.hash_into(h)
+	if not interactables.is_empty():  # v0.9.0 IX: only worlds holding an interactable or a calm room
+		interactables.hash_into(h)
 		for v in [floor_index, floor_count]:
 			h.add_int(v)
 		if loop > 1:  # v0.7.5 AP: only past the first loop, so every loop-1 floor hashes as before

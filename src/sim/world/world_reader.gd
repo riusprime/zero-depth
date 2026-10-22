@@ -9,6 +9,8 @@ const KIND_PLAYER := ActorStore.Kind.PLAYER
 const APPROACH_WALK := FinalApproach.State.WALK
 const APPROACH_BUILDUP := FinalApproach.State.BUILDUP
 const APPROACH_FIGHT := FinalApproach.State.FIGHT
+## v0.9.0 IX: the shared interactables' kinds (interactable_kind).
+const INTERACT_PYLON := Interactables.Kind.PYLON
 ## v0.8.0 RM: the remnant kinds, activations and Thermal Break's effect id, for the views (the layer rule).
 const REMNANT_SEGMENT := RemnantRule.Kind.SEGMENT
 const REMNANT_ANCHOR := RemnantRule.Kind.ANCHOR
@@ -1772,7 +1774,7 @@ func approach_pylon_tick(k: int) -> int:
 func approach_pylon_in_reach() -> int:
 	if _w.approach == null or _w.player_dead():
 		return -1
-	return _w.approach.in_reach(_w.floor_layout, player_pos())
+	return _w.approach.in_reach(_w)
 
 
 ## 0..1 through the buildup (after the second pylon), -1 outside it.
@@ -2816,3 +2818,50 @@ func shop_denied_tick() -> int:
 ## amount, used), reroll (price, rerolls), sell (kind SHOP_SELL_*, ref, code, refund) and the last action / refusal.
 func shop() -> Dictionary:
 	return Shop.read(_w)
+
+
+# --- The shared interactables (v0.9.0 IX; Interactables) ---------------------------------------------------
+## The registry's entry the interact press would go to now, or -1: none in reach, the hero dead, a choice open, or a
+## system earlier in World.step's order (a reward, an event, the shop, the shrine, the boss door) takes the press.
+func interactable_in_reach() -> int:
+	if _w.player_dead() or choosing():
+		return -1
+	if reward_in_reach() >= 0 or event_in_reach() >= 0 or shop_in_reach() or gamble_in_reach():
+		return -1
+	if boss_door_in_reach():
+		return -1
+	return _w.interactables.in_reach(player_pos())
+
+
+## The shared prompt's string key (&"" when the press would reach no interactable).
+func interact_prompt_key() -> StringName:
+	var i := interactable_in_reach()
+	if i < 0:
+		return &""
+	return Interactables.PROMPT_KEYS[_w.interactables.kind[i]]
+
+
+func interactable_count() -> int:
+	return _w.interactables.size()
+
+
+func interactable_kind(i: int) -> int:
+	return _w.interactables.kind[i]
+
+
+func interactable_pos(i: int) -> Vector2:
+	return _w.interactables.pos[i]
+
+
+## Entry i's state (a switch: 0 off, 1 on).
+func interactable_state(i: int) -> int:
+	return _w.interactables.state[i]
+
+
+func interactable_enabled(i: int) -> bool:
+	return _w.interactables.enabled[i] == 1
+
+
+## The tick entry i was last pressed (-1 never).
+func interactable_press_tick(i: int) -> int:
+	return _w.interactables.press_tick[i]

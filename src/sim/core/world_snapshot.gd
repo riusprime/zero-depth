@@ -137,6 +137,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"NemesisCast",  # v0.8.0 FB3: the Nemesis's hostile copies of the player's shot and cards (FinalFight)
 	&"IntensityState",  # v0.8.0 N5: the intensity director's state
 	&"FinalApproach",  # v0.9.0 FA: the final approach (the pylons, the buildup, the walls of light)
+	&"Interactables",  # v0.9.0 IX: the shared interactables and the puzzles' calm rooms
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -169,6 +170,7 @@ const ADDED_SINCE_V05 := {
 		&"loop_cap_permille",
 		&"final_fight",  # v0.8.0 FB1: the final boss's fight (a save from before FB1 holds none: null, as the base's)
 		&"approach",  # v0.9.0 FA: the final approach (a save from before FA holds none: FloorPlan builds that one bare)
+		&"interactables",  # v0.9.0 IX: a save from before IX keeps the base's registry (apply re-syncs the pylons)
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
 		&"loot_guaranteed",  # v0.8.0 FL: an older save's floor used no guarantee (0) and holds no jackpot
 		&"loot_jackpots",
@@ -420,6 +422,8 @@ static func apply(base: World, snap: Dictionary) -> String:
 	var ev_data: Variant = data.get(&"ev", {})
 	if typeof(ev_data) == TYPE_DICTIONARY and not (ev_data as Dictionary).has(&"curse_k"):
 		base.ev.curse_k = -1  # v0.8.0 N17 (O75): a floor saved before the curse room has none
+	if not data.has(&"interactables") and base.approach != null:  # v0.9.0 IX: the pylons follow the saved lit ones
+		base.approach.sync_registry(base)
 	if not data.has(&"mod_slots"):  # v0.6.0 MX2: a v0.5 build into the six slots
 		base.mod_slots = PackedInt32Array()
 		BuildSlots.migrate(base)
