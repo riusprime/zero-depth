@@ -74,9 +74,7 @@ static func blink_target(w: World) -> Vector2:
 static func advance(w: World) -> void:
 	Heat.advance(w)  # Overclock heat: the decay and the overheat stall run first.
 	var t := w.player
-	var can_attack := not w.guarding() and not w.is_dashing() and Heat.can_attack(w)  # Heat: the stall
-	can_attack = can_attack and not Curses.stunned(w)  # v0.6.0 CU: Brittle
-	can_attack = can_attack and not PlayerSkill.busy(w)  # Kit (v0.3.5 K): a skill commits
+	var can_attack := armed(w)
 	ItemEffects.advance_echo(w)
 	# Swing in progress: hit on its step's active tick, then end and open the combo window (none after the last
 	# step: the combo starts over).
@@ -113,6 +111,14 @@ static func advance(w: World) -> void:
 		_fire_bolt(w)
 		w.shot_cd = ItemEffects.shot_period_ticks(w)
 	ItemProcs.advance_momentum(w)
+
+
+## The hero may attack now: not guarding or dashing, not in the overheat stall (Heat), not stunned (v0.6.0 CU:
+## Brittle), no skill committing (Kit, v0.3.5 K). v0.9.0 LZ: public, the Laser's beam reads it (Laser.firing).
+static func armed(w: World) -> bool:
+	var ok := not w.guarding() and not w.is_dashing() and Heat.can_attack(w)
+	ok = ok and not Curses.stunned(w)
+	return ok and not PlayerSkill.busy(w)
 
 
 ## SHOOT is held, alive, and the build has the gun (a Blade run never shoots, L15).

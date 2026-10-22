@@ -94,6 +94,11 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	# v0.8.0 RM (owner O91: Dodge Imprint, a dash spec's; Remnants.imprint)
 	&"imprint_ticks",
 	&"imprint_permille",
+	# v0.9.0 LZ (owner Q8: the Laser form; Laser)
+	&"beam_hold",
+	&"beam_permille",
+	&"rate_scale_permille",
+	&"move_permille",
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"reach_m",
@@ -179,6 +184,15 @@ var burst_pause_ticks := 0
 ## cast from where the dash began at × imprint_permille (0 = none; Remnants.imprint).
 var imprint_ticks := 0
 var imprint_permille := 0
+## v0.9.0 LZ (owner Q8; Laser): beam_hold 1, the beam is the Laser form: held, it deals a damage tick every
+## period_ticks to what it touches along reach_m (the first enemy, or pierce + 1 of them; a wall stops it), each tick
+## beam_permille of the shot's damage. rate_scale_permille: attack speed counts at this share of its bonus on the
+## period (500: half, the Laser's and the Bomb's; 0 = whole). move_permille: the hero moves at this share of the speed
+## while the beam fires (0 = no slow).
+var beam_hold := 0
+var beam_permille := 0
+var rate_scale_permille := 0
+var move_permille := 0
 
 # --- payload
 ## Damage per hit (a share `damage_permille` of it when the shot splits into count > 1 bolts, rounded down, at least
@@ -482,4 +496,6 @@ func read() -> Dictionary:
 		"knockback_m": knockback_m,
 		"line_m": line_m,
 		"step_m": step_m,
+		# v0.9.0 LZ (the beam view)
+		"beam_hold": beam_hold,
 	}

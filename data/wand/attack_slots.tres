@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="AttackSlotsDefinition" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="AttackSlotsDefinition" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://src/content/defs/attack_slots_definition.gd" id="1_slots"]
 [ext_resource type="Script" path="res://src/content/defs/attack_form_row.gd" id="2_row"]
@@ -10,6 +10,13 @@ card = &""
 allowed = Array[StringName]([&"gun_twin", &"halo_shot", &"gun_ring", &"gun_backfire", &"gun_pierce", &"gun_ricochet", &"gun_homing", &"gun_echo", &"gun_big_shot", &"gun_rapid_fire", &"split_shot", &"gun_mine", &"gun_charge", &"orbit_rounds", &"boomerang", &"gun_threadline", &"gun_spiral", &"gun_swirl", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed", &"gravity_well"])
 ruled = Array[StringName]([])
 
+[sub_resource type="Resource" id="Form_laser"]
+script = ExtResource("2_row")
+id = &"laser"
+card = &"gun_laser"
+allowed = Array[StringName]([&"gun_twin", &"gun_pierce", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
+ruled = Array[StringName]([])
+
 [resource]
 script = ExtResource("1_slots")
 gun_limits = PackedInt32Array(1, 1, 2, 2)
@@ -17,5 +24,5 @@ blade_limits = PackedInt32Array(-1, 1, -1, -1)
 shots_per_attack_max = 12
 shots_per_second_max = 40
 merge_radius_max_permille = 2000
-forms = Array[ExtResource("2_row")]([SubResource("Form_orbs")])
+forms = Array[ExtResource("2_row")]([SubResource("Form_orbs"), SubResource("Form_laser")])
 id = &"attack_slots"

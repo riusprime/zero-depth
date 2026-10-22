@@ -132,6 +132,7 @@ const FAMILY_OF := {
 	&"gun_spread": &"projectile",
 	&"gun_twin": &"time",
 	&"gun_ring": &"area",  # v0.8.0 AO (owner O37): the order rule's Ring and Swirl
+	&"gun_laser": &"projectile",  # v0.9.0 LZ: the Laser form
 	&"gun_swirl": &"trinket",
 	# v0.6.5 WN4: the Blade pool's new cards (B3–B16; Wide Arc, Wave, Afterimage and Orbit Blades keep theirs above)
 	&"chain_cut": &"damage",

@@ -387,6 +387,24 @@ func shooting() -> bool:
 	return PlayerKit.shooting(_w)
 
 
+## v0.9.0 LZ (owner Q8): the Laser's beams now, empty while it isn't firing: Laser.trace from the hero along the aim,
+## the geometry the tick's hits use (EI-07). Each {from, to, hits (actor indices), at (their points), wall}.
+func beams() -> Array[Dictionary]:
+	if not Laser.firing(_w):
+		return []
+	return Laser.trace(_w, Modifiers.bolt(_w), _w.player_pos(), _w.aim_angle)
+
+
+## v0.9.0 LZ: the Laser fires now (its hum, the view).
+func beam_firing() -> bool:
+	return Laser.firing(_w)
+
+
+## v0.9.0 LZ: the Laser's elements (the Gun shot's, in the order the cards added them; empty: the default energy).
+func beam_elements() -> PackedStringArray:
+	return Modifiers.bolt(_w).elements.duplicate() if Laser.active(_w) else PackedStringArray()
+
+
 ## v0.8.0 GF1 (owner O19): whether the Gun fired a shot in the last tick (the cooldown was just set to the full
 ## period: PlayerKit and GunForms set it on every shot, and it only counts down after). The hero's cast flourish.
 func shot_fired() -> bool:

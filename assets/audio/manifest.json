@@ -875,6 +875,16 @@
       "loop": false
     },
     {
+      "id": "laser_loop",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/laser_loop.wav",
+      "sha256": "dfb74ffc4b877bff13c8bb8680c62303f5be0b0292c10f4ae9c5fa357b6961d3",
+      "seconds": 0.5,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -9.36,
+      "loop": true
+    },
+    {
       "id": "ruins",
       "kind": "ambience",
       "path": "assets/audio/ambience/ruins.wav",

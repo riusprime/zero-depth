@@ -1499,6 +1499,7 @@ func _move_and_collide() -> void:
 				mv /= len
 			var speed := ItemProcs.move_speed(self) * Heat.move_factor(self)  # Swift Feet; the overheat stall.
 			speed *= Curses.move_factor(self)  # v0.6.0 CU: Brittle (the stun, + move speed)
+			speed *= Laser.move_factor(self)  # v0.9.0 LZ (Q8): 75 % while the beam fires
 			if guarding():
 				speed = speed * player.guard_move_permille / 1000.0
 			target = mv * speed

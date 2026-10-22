@@ -80,6 +80,8 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 ## of that; v0.8.0 RM lead fix: rounded half up, at least 1); the launch's moments after it (ON_LAUNCH, the back copy,
 ## a repeat) keep the whole.
 static func _shared_form(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
+	if Laser.held(spec):  # v0.9.0 LZ: the Laser's tick shares its damage per beam itself (dithered)
+		return Laser.fire(w, spec, ctx)
 	var share := spec.share_permille
 	if share <= 0:
 		return _form(w, spec, ctx)

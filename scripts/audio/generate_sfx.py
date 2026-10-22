@@ -930,6 +930,18 @@ def s_final_altar(r):
     return mix(build, at(mix(boom, growl, rumble), rise))
 
 
+def s_laser_loop(r):
+    """v0.9.0 LZ (the lead's placeholder for docs/art/requests/v0.9.0_ART_LIST.md §6 `laser_loop`: "the beam's
+    sustained hum (loopable)"): 0.5 s that loops seamlessly while the beam is held (AudioDirector.hold). Every partial,
+    the FM buzz and the 8 Hz wobble complete whole cycles over the loop, so the last sample runs into the first: a low
+    hum on 110 Hz with its harmonics, a thin FM buzz on top."""
+    t = np.arange(n_of(0.5)) / RATE
+    partials = ((110, 0.5), (220, 0.35), (330, 0.18), (880, 0.12), (1760, 0.05))
+    hum = sum(a * np.sin(2.0 * np.pi * f * t) for f, a in partials)
+    buzz = np.sin(2.0 * np.pi * 440.0 * t + 1.5 * np.sin(2.0 * np.pi * 660.0 * t)) * 0.12
+    return (hum + buzz) * (0.8 + 0.2 * np.sin(2.0 * np.pi * 8.0 * t))
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -1125,6 +1137,12 @@ def a_starfall(r):
     return loop_echo(chord * breath * 0.4 + shimmer + void + chimes, 0.73, 0.5)
 
 
+# v0.9.0 LZ: seamless SFX loops (held sounds): normalised like the ambience (no fades, no filters: a loop has no
+# start or end to click), at the SFX peak, with the loop chunk.
+SFX_LOOPS = [
+    ("laser_loop", s_laser_loop),
+]
+
 AMBIENCE = [
     ("ruins", a_ruins),
     ("night_rocks", a_night_rocks),
@@ -1185,6 +1203,9 @@ def render_all():
         x = master_sfx(fn(rng_for(sid)))
         pcm = to_pcm16(x)
         out.append(("sfx", sid, os.path.join(OUT_SFX, sid + ".wav"), pcm, wav_bytes(pcm)))
+    for sid, fn in SFX_LOOPS:
+        pcm = to_pcm16(normalise(fn(rng_for(sid)), SFX_PEAK))
+        out.append(("sfx", sid, os.path.join(OUT_SFX, sid + ".wav"), pcm, wav_bytes(pcm, loop=True)))
     for bid, fn in AMBIENCE:
         x = normalise(fn(rng_for("ambience_" + bid)), AMB_PEAK)
         pcm = to_pcm16(x)
@@ -1205,7 +1226,7 @@ def manifest_for(rendered):
                 "seconds": round(len(pcm) / RATE, 4),
                 "peak_dbfs": round(20 * np.log10(np.max(np.abs(x)) + 1e-12), 2),
                 "rms_dbfs": round(20 * np.log10(np.sqrt(np.mean(x * x)) + 1e-12), 2),
-                "loop": kind == "ambience",
+                "loop": kind == "ambience" or sid in dict(SFX_LOOPS),
             }
         )
     # v0.8.0 BD: the owner's sounds (rows marked "source": "owner", prepared by bd_audio_prep.py) are kept as listed.

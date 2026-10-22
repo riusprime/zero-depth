@@ -771,6 +771,8 @@ ITEM_GUN_SPREAD,Spread,Abanico
 ITEM_GUN_SPREAD_DESC,Fire in a fan.,Disparas en abanico.
 ITEM_GUN_RING,Ring,Anillo
 ITEM_GUN_RING_DESC,Your shot becomes a lightning ring.,Tu disparo se vuelve un anillo de rayos.
+ITEM_GUN_LASER,Laser,Láser
+ITEM_GUN_LASER_DESC,Hold to burn a beam.,Mantén para quemar con un rayo.
 ITEM_GUN_SWIRL,Swirl,Remolino
 ITEM_GUN_SWIRL_DESC,Your shots swirl at random.,Tus disparos giran al azar.
 ITEM_GUN_PIERCE,Pierce,Perforación

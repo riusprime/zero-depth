@@ -103,6 +103,7 @@ static func reserve(w: World) -> int:
 	var spec := Modifiers.bolt(w)
 	var base := maxi(1, spec.period_ticks)
 	var r := AttackRate.rate(w, spec.rate_bonus_permille + maxi(0, spec.ramp_cap_permille))
+	r = AttackRate.form_rate(spec, r)  # v0.9.0 LZ: ItemEffects.shot_period_ticks' rule
 	var p := base
 	if r != 1000:
 		p = maxi(mini(base, AttackRate.MIN_SHOT_TICKS), AttackRate.scaled(base, r))

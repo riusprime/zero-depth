@@ -100,6 +100,7 @@ func test_the_shipped_data() -> void:
 			"cold_snap",
 			"conductor",
 			"finisher_plus",  # v0.8.0 RM: Fracture Bank, rare
+			"gun_laser",  # v0.9.0 LZ: the Laser form, rare
 			"gun_ring",  # v0.8.0 AO: the order rule's Ring and Swirl, rare
 			"gun_swirl",
 			"gun_threadline",  # v0.8.0 RM: the remnant cards, rare

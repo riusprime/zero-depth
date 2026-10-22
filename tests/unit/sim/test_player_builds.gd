@@ -258,6 +258,7 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 			"gun_charge",
 			"gun_echo",
 			"gun_homing",
+			"gun_laser",  # v0.9.0 LZ
 			"gun_mine",
 			"gun_pierce",
 			"gun_rapid_fire",
