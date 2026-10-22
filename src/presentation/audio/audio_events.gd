@@ -348,6 +348,8 @@ func _events(reader: WorldReader, out: Array) -> void:
 			SimEvent.Kind.STATUS_APPLY:  # v0.8.0 FB3: the Nemesis dashes with the hero's dash cue, lower
 				if e.effect_id == WorldReader.EFFECT_NEMESIS_DASH:
 					out.append([&"dash", e.pos, 0.8])
+			SimEvent.Kind.BLAST:  # v0.9.0 BM: a bomb bursts
+				out.append([&"bomb_blast", e.pos, 1.0])
 
 
 ## Mines (v0.4.0 EN): a beep as one arms, the blast when an armed one goes off the floor.
@@ -520,8 +522,10 @@ func _scan_projectiles(reader: WorldReader, out: Array) -> void:
 		else:
 			hostile = true
 	_projectiles = seen
-	if fired:
-		out.append([&"bolt_fire", reader.player_pos(), 1.0])
+	if fired:  # v0.9.0 BM: the Bomb form's throw has its own toss
+		out.append(
+			[&"bomb_throw" if reader.bomb_active() else &"bolt_fire", reader.player_pos(), 1.0]
+		)
 	if hostile:
 		out.append([&"enemy_fire", null, 1.0])
 

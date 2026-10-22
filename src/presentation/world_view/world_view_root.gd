@@ -39,6 +39,8 @@ static var parts: Array[GDScript] = [
 	EventPedestalViews,
 	CoreViews,
 	AttackFormView,
+	LaserView,  # v0.9.0 LZ
+	BombView,  # v0.9.0 BM
 	ModifierOverlays,
 	BladeFormView,
 	FireballViews,
@@ -123,6 +125,10 @@ var events: EventPedestalViews = _part(EventPedestalViews)  # v0.5.0 EV: event p
 var cores: CoreViews = _part(CoreViews)  # v0.6.0 CU: cores on elites and bosses, the steal window, dodge and stun cues
 ## v0.6.0 MX3: the attack forms drawn from their final specs (element core, heat edge, motion cues), pooled.
 var attack_forms: AttackFormView = _part(AttackFormView)
+## v0.9.0 LZ (owner C §6.2): the Laser's beams, per element.
+var laser: LaserView = _part(LaserView)
+## v0.9.0 BM (owner C §6.3): the bombs in flight and their blasts, per element.
+var bombs: BombView = _part(BombView)
 ## v0.6.0 MX4: the shell, the charge, the phase, poison, queued attacks.
 var modifier_marks: ModifierOverlays = _part(ModifierOverlays)
 ## v0.6.5 WN4: crescents, ghost slashes, fissures, sparks, orbiting blades.
@@ -265,6 +271,8 @@ func _setup_views(palette: Dictionary) -> void:
 	events.setup(reader)
 	add_child(cores)  # v0.6.0 CU
 	add_child(attack_forms)  # v0.6.0 MX3
+	add_child(laser)  # v0.9.0 LZ
+	add_child(bombs)  # v0.9.0 BM
 
 
 ## The effects layer (real fire, explosions, lightning) and the views drawn into it or after it.
@@ -282,6 +290,10 @@ func _setup_effects() -> void:
 		strikes.vfx = layer  # v0.8.0 AV part 2: the strikes' sprites, lights, marks and explosions
 		layer.drawers.append(strikes.draw_fx)
 		layer.drawers.append(final_views.draw_fx)  # v0.8.0 TX2: the shatter's crystal burst
+		laser.vfx = layer  # v0.9.0 LZ: the beam's element accent, the impact's sparks and light
+		layer.drawers.append(laser.draw_fx)
+		bombs.vfx = layer  # v0.9.0 BM: the blasts' element bursts
+		layer.drawers.append(bombs.draw_fx)
 	element_fx.forms_drawn = true  # MX3 draws the spec forms (rings, spec patches, bombs)
 	ability_fx.forms_drawn = true
 	add_child(modifier_marks)  # v0.6.0 MX4
@@ -442,6 +454,8 @@ func sync() -> void:
 	_sync_view(&"events", events)  # v0.5.0 EV
 	_sync_view(&"cores", cores)  # v0.6.0 CU
 	_sync_view(&"attack_forms", attack_forms)  # v0.6.0 MX3
+	_sync_view(&"laser", laser)  # v0.9.0 LZ
+	_sync_view(&"bombs", bombs)  # v0.9.0 BM
 	_sync_view(&"modifier_marks", modifier_marks)  # v0.6.0 MX4
 	_sync_view(&"blade_forms", blade_forms)  # v0.6.5 WN4
 	_sync_view(&"fireballs", fireballs)  # v0.7.5 BF1

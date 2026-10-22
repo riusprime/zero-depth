@@ -51,7 +51,11 @@ func test_the_data_holds_the_owners_limits_caps_and_the_orbs_row() -> void:
 		"Q6: the Blade, the one-pattern rule only"
 	)
 	assert_eq([t.shots_per_attack_max, t.shots_per_second_max], [12, 40], "Q13")
-	assert_eq(t.form_ids, [&"orbs"] as Array[StringName], "Q7: one live form, Orbs")
+	assert_eq(
+		t.form_ids,
+		[&"orbs", &"laser", &"bomb"] as Array[StringName],
+		"Q7: Orbs, and the forms built so far (LZ)"
+	)
 	assert_eq(t.default_form, 0)
 	assert_eq(t.form_cards[0], -1, "Orbs is the Gun's own shot, no card")
 	assert_eq(AttackSlots.form_id(w), &"orbs")

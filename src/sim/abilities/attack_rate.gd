@@ -57,6 +57,15 @@ static func rate_at(w: World, stat_v: int, wand: int) -> int:
 	return Curses.attack_speed(w, r)  # v0.6.0 CU: Heavy Hands multiplies the rate
 
 
+## v0.9.0 LZ (owner Q8: "attack speed raises the tick rate at half its value"; Q9 the same for the Bomb): rate `r` of
+## an attack whose form counts attack speed at a share (AttackSpec.rate_scale_permille; 0 = whole): its bonus over (or
+## under) 1000 times that share, rounded down, at least 1.
+static func form_rate(spec: AttackSpec, r: int) -> int:
+	if spec == null or spec.rate_scale_permille <= 0 or r == 1000:
+		return r
+	return maxi(1, 1000 + (r - 1000) * spec.rate_scale_permille / 1000)
+
+
 ## `ticks` at rate `r` per mille: ticks × 1000 / r, rounded half up.
 static func scaled(ticks: int, r: int) -> int:
 	return (ticks * 1000 + r / 2) / maxi(1, r)
