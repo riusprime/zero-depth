@@ -18,26 +18,31 @@ Blade gets forms is Q6 in the [PLAN](PLAN.md).
 The columns are the patterns from Q3 (b), with Spiral and Swirl as motion cards that ride on a pattern. If you pick
 Q3 (a), Spiral and Swirl become pattern columns.
 
-| # | Form | What it does in play | Starting values | Twin | Spread | Halo | Ring | Backfire | Spiral / Swirl | Elements | Closest existing | Owner |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| F1 | **Orbs** (default) | Today's blue pulse | as today | yes | yes | yes | yes | yes | yes | all | — | (yours: §6.1) |
-| F2 | **Laser** | Hold to fire a beam that follows your aim | Q8 | yes (2 beams, 60 %) | yes (3 thin, 40 %) | off | off | off | off | all: per-element beam look | the BEAM chains | (yours: §6.2) |
-| F3 | **Bomb** | A thrown bomb that bursts in an area | Q9 | yes (2 bombs, 65 %) | Q9 | off | off | off | off | all: on the blast | retired Bomb Lobber, Explosive | (yours: §6.3) |
-| F4 | **Void** | A slow black hole that tugs enemies toward its path | Q10 | yes | off (test) | off | off | off | off (test) | all except Frost's freeze on bosses | the floor black hole it replaces | (yours: §6.4) |
-| F5 | **Lance** | Hold to charge, release one piercing line shot; longer charge, more damage | up to 1.2 s, ×1 → ×5 damage, pierces all | yes | off | off | off | off | off | all: along the line | the Charge card (retired if Yes) | |
-| F6 | **Scatter** | A short-range cone of pellets: brutal up close, weak at range | 6 pellets, 25°, 5 m range, every 0.55 s | yes | off (it is a spread) | off | off | yes | off | all: per pellet, at a lower chance | Spread | |
-| F7 | **Glaive** | A spinning disc that flies out and returns, hitting on both ways | 7 m out, ×1.6 damage per pass, every 0.7 s | yes | yes | off | off | off | Spiral off, Swirl yes | all | the Boomerang card (retired if Yes) | |
-| F8 | **Seekers** | Three small darts that curve to the nearest enemies | 3 × 45 % a shot, every 0.3 s, homing 360 °/s | off | off | off | off | off | off | all: lower status chance per dart | the Homing card | |
-| F9 | **Wave** | A wide slow wave that rolls forward through everything | 3 m wide, 6 m/s, pierces, every 0.9 s | yes | yes (3 waves) | off | off | yes | off | all | the Blade's Wave (Echo Slash) | |
-| F10 | **Wisps** | Orbs circle you and fire on their own at the nearest enemy while you aim and fire too | 3 wisps, each a 40 % orb every 0.6 s | off | off | off | off | off | off | all | Orbit, Blade Orbit | |
+**Updated after the owner's answers (2026-10-22):** Twin and Spread are now **one** Pattern card for every form (Q8):
+2 copies at Lv 1–4 (60 / 70 / 80 / 90 % each), 3 at Lv 5 (70 % each); two fly side by side, three fan about 15°. The
+"Twin" column below is that merged card, on wherever the old Twin cell was yes. Explosive is deleted and Fire loses its
+kill blast (Q11), so the elements are Fire, Lightning, Frost, Venom and Bleed.
 
-**Secondaries** (Pierce, Ricochet, Homing, Echo, Big Shot, Rapid Fire, Split, Mine, Charge, Orbit, Boomerang,
-Threadline, and Explosive if Q11 (a)) get one compatibility row per form once the forms are chosen. Until then, every
-secondary is **off** for F2–F10.
+| # | Form | What it does in play | Starting values | Twin (merged) | Halo | Ring | Backfire | Spiral / Swirl | Elements | Closest existing | Owner |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| F1 | **Orbs** (default) | Today's blue pulse | as today | yes | yes | yes | yes | yes | all | — | (yours: §6.1) |
+| F2 | **Laser** | Hold to fire a beam that follows your aim | Q8: 10 ticks/s at 18 % of an orb hit, 9 m, stops at the first enemy unless Pierce, 75 % move speed while firing | yes (2 or 3 beams) | off | off | off | off | all: per-element beam look | the BEAM chains | Yes (§6.2, Q8) |
+| F3 | **Bomb** | A thrown bomb that bursts in an area | Q9: straight, bursts on contact or at 8 m, 1 a second, 2.2 m at 4.5 × an orb hit | yes (2 or 3 bombs) | off | off | off | off | all: on the blast | retired Bomb Lobber | Yes (§6.3, Q9) |
+| F4 | **Void** | A slow black hole that tugs enemies toward its path | Q10: every 0.6 s, 0.6 × orb speed, 1.0 m aura, pull 3 m at most 1.0 m/s; no pull on bosses and elites | yes | off | off | off | off (test) | all except Frost's freeze on bosses | the floor black hole it replaces | Yes (§6.4, Q10) |
+| F5 | **Lance** | Hold to charge, release one piercing line shot; longer charge, more damage | up to 1.2 s, ×1 → ×5 damage, pierces all | yes | off | off | off | off | all: along the line | the Charge card (retired) | Yes (Q7) |
+| F6 | **Scatter** | A short-range cone of pellets: brutal up close, weak at range | 6 pellets, 25°, 5 m range, every 0.55 s | yes | off | off | yes | off | all: per pellet, at a lower chance | the old Spread | Yes (Q7) |
+| F7 | **Glaive** | A spinning disc that flies out and returns, hitting on both ways | 7 m out, ×1.6 damage per pass, every 0.7 s | yes | off | off | off | Spiral off, Swirl yes | all | the Boomerang card (retired) | Yes (Q7) |
+| F8 | **Seekers** | Three small darts that curve to the nearest enemies | 3 × 45 % a shot, every 0.3 s, homing 360 °/s | off | off | off | off | off | all: lower status chance per dart | the Homing card | Yes (Q7) |
+| F9 | **Wave** | A wide slow wave that rolls forward through everything | 3 m wide, 6 m/s, pierces, every 0.9 s | yes | off | off | yes | off | all | the Blade's Wave (Echo Slash) | Yes (Q7) |
+| F10 | **Wisps** | Orbs circle you and fire on their own at the nearest enemy while you aim and fire too | 3 wisps, each a 40 % orb every 0.6 s | off | off | off | off | off | all | Orbit, Blade Orbit | Yes (Q7) |
 
-If you want another form, add a row at the bottom with its name and what it does in play.
+**Secondaries** (Pierce, Ricochet, Homing, Echo, Big Shot, Rapid Fire, Split, Mine, Orbit, Threadline, plus Spiral and
+Swirl as motion cards) get one compatibility row per form in the AS step. Until a cell is approved, every secondary is
+**off** for F2–F10.
 
-## Decisions (owner, date)
+## Decisions (owner, 2026-10-22)
 | Row | Answer | Built in |
 |---|---|---|
-| — | | |
+| F1–F4 | The owner's own forms; values from Q8–Q10 | |
+| F5–F10 | "F5 Lance, F6 Scatter, F7 Glaive"; "F8 Seekers, F9 Wave, F10 Wisps" (all six, cells as proposed) | |
+| Twin + Spread | Merged into one Pattern for every form (Q8) | |

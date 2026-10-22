@@ -31,7 +31,7 @@ the wand, like today's utility cards.
 | 11 | Last Stand | More damage the lower your health | up to +50 % below 25 % HP | Rare | New, small: an HP factor in the damage chain (the mirror of Executioner) | |
 | 12 | Magnet | Shards and pickups fly to you from further away | ×3 pickup range | Common | **Duplicate**: the live Pickup Range stat card (`data/stat_cards/pickup_range.tres`) | |
 | 13 ⚔ | Rebound | Shots and slashes that kill bounce to one more enemy | 1 bounce, 70 % damage | Rare | **Duplicate for the Blade** (Riposte Chain, Chain Cut); for the Gun, On Kill + a card already does it | |
-| 14 ⚔ | Volatile | Enemies you kill explode | 40 % of their max HP, 1.5 m | Epic | Overlaps Fire's kill blast and Overkill's splash; the %-of-max-HP blast is new | |
+| 14 ⚔ | Volatile | Enemies you kill explode | 40 % of their max HP, 1.5 m | Epic | Overlaps Overkill's splash; the %-of-max-HP blast is new. **Note:** your Q11 answer (2026-10-22: "I don't want to have the enemies exploding after they die that's broken") deleted Fire's kill blast and the Explosive card, so this row probably goes the same way | |
 | 15 | Hunter's Mark | The first enemy you hit in each room is marked and takes more damage from everything | +50 %, until it dies | Common | New: a mark per enemy and a reset per room | |
 | 16 | Ghost Step | Dashing makes you untouchable a little longer and you pass through enemies | +0.15 s invulnerable | Rare | **The retired Phase Dash**: its pass-through code is still there (`world.gd:1122-1128, 1560`); this re-enables it | |
 | 17 | Backstab | Hits from behind an enemy deal more | +60 % | Rare | New, small: enemy facing and the rear-arc test exist (`damage.gd:11-29`) | |

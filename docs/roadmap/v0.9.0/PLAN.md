@@ -2,8 +2,9 @@
 
 Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.md`](PROGRESS.md).
 
-**DRAFT:** written in Phase 0, before any code. The owner-lines table is complete, but most of the decision column
-reads **Decide: Qn**. Nothing except the direct fixes is built until the owner answers the design questions below
+**DRAFT:** written in Phase 0, before any code. **Q1–Q14 answered 2026-10-22** (see "Owner decisions"; they win over
+the decision column where the two differ); Q15–Q30 are pending. The owner-lines table is complete, but much of the
+decision column reads **Decide: Qn**. Nothing except the direct fixes is built until the owner answers the design questions below
 (owner, 2026-10-22: "Ask me the design questions and gates before building anything that isn't a direct fix … the
 idea is that we go through all new feedback together before the full plan"). The Steps section is the lead's draft
 order. It is rewritten once the answers are in, and then the PLAN is marked owner-approved.
@@ -471,7 +472,20 @@ the retired Phase Dash) and the six rows the AS slot rules would touch (6, 9, 13
 ## Owner decisions
 | Q | Answer (the owner's pick, verbatim) | What it means | Date |
 |---|---|---|---|
-| — | (none yet) | | |
+| Q1 | "Everything" | Both documents in full go into v0.9.0, the hub and meta progression (W Phases 3–5) included. Q27–Q29 now apply. The Steps' "Later" block moves into this version | 2026-10-22 |
+| Q2 | "Keep it, add limits (Recommended)" | The wand stays (4 → 6 → 8 slots, left to right, triggers). Inside it: 1 Form and 1 Pattern (a new one replaces the old), N Secondary, M Elements; trigger, mutation and stat cards stay free. Order still matters for triggers and secondaries | 2026-10-22 |
+| Q3 | "Spiral/Swirl ride along (Recommended)" | Patterns (one at a time): Twin (merged with Spread, see Q8), Halo, Ring, Backfire. Spiral and Swirl are motion secondaries that ride on any pattern, so Ring + Swirl is allowed; D45's Ring · Spread · Swirl storm goes | 2026-10-22 |
+| Q4 | "1 / 1 / 2 sec / 2 elem (Recommended)" | Starting limits: Form 1, Pattern 1, Secondary 2, Elements 2 (data, `wand.tres`) | 2026-10-22 |
+| Q5 | "Marked, old one burns (Recommended)" | A Form or Pattern card for a full slot reads "Replaces <card>" with its slot icon; picking it burns the old card | 2026-10-22 |
+| Q6 | "Gun only for now (Recommended)" | Forms are Gun forms. The Blade keeps its pool and gets only the one-pattern rule for its shaping cards | 2026-10-22 |
+| Q7 | "F5 Lance, F6 Scatter, F7 Glaive"; "F8 Seekers, F9 Wave, F10 Wisps" | All ten forms in [`ATTACK_FORMS.md`](ATTACK_FORMS.md) are approved with the compatibility cells as proposed (Twin and Spread now one column, Q8). Lance replaces the Charge card and Glaive the Boomerang card (both retired through `migration.tres`) | 2026-10-22 |
+| Q8 | "as proposed, but we should also rework twin and spread, merge them into 1, the amount of double attacks should depend on that rarity of it level 5 its maximun for example 3 beams is level 5 and 2 beams is level from 1 - 3 and we add a bit of damage increase betwen levels that dont get"; then "Every form (Recommended)", "Side by side, fan at 3 (Recommended)", "+10 % per level (Recommended)" | **Laser** as proposed: 10 ticks/s at 18 % of an orb hit, 9 m, stops at the first enemy unless Pierce, 75 % move speed while firing, attack speed at half value on the tick rate; Ring, Spiral, Swirl off. **Twin and Spread merge into one Pattern card for every form** (working name Twin; `gun_spread` retired): 2 copies at Lv 1–3, 2 at Lv 4, 3 at Lv 5; damage per copy 60 / 70 / 80 / 90 %, then 70 % each at Lv 5 (the third copy comes in). Two copies fly side by side; at three, the middle one goes straight and the outer two fan about 15°. This replaces the per-form Twin and Spread values proposed in Q8–Q10 | 2026-10-22 |
+| Q9 | "Straight, no Spread (Recommended)" | Bomb: thrown straight, bursts on the first enemy or wall or at 8 m; 1 a second; 2.2 m blast at 4.5 × an orb hit; attack speed at half value. With Spread merged into Twin (Q8, every form), the bomb takes the merged card: 2 bombs at Lv 1–4, 3 at Lv 5 | 2026-10-22 |
+| Q10 | "No pull on them (Recommended)" | Void: 1 shot every 0.6 s at 0.6 × orb speed; 1.0 m aura, 5 damage ticks a second; pull 3 m, at most 1.0 m/s toward the path, no stacking, a separation push; heavies half; **bosses and elites none**. The merged Twin on; Spiral and Swirl off until tested; Ring off | 2026-10-22 |
+| Q11 | "I don't want to have the enemies exploding after they die that's broken lets swap for something different and delete it"; then "Both", "Burning ground on kill" | **Fire's kill blast is deleted** (`ember_core` ON_KILL, 1.5 m at 60 %): a burning enemy that dies leaves a burning patch instead (starting values 1.2 m, 2 s), and no burst. **The Explosive card is deleted** (`shared_explosive`, retired through `migration.tres`). Elements: Fire, Lightning, Frost, Venom, Bleed (five). Explosions come only from the Bomb form | 2026-10-22 |
+| Q12 | "Power/Haste ×1.3 (Recommended)" | Legendary Power +40 % → +32.5 %, Haste +28.8 % → +23.4 % (multiplier 1.6 → 1.3 for those two only); other legendary stat cards stay × 1.6 | 2026-10-22 |
+| Q13 | "12 per attack (Recommended)" | At most 12 projectiles per attack (pattern × Twin × Split children); extra copies merge into bigger shots that keep the damage; a regression test fails above 40 projectiles a second for the worst legal build. Data values | 2026-10-22 |
+| Q14 | "Short line + slot tag" | O74's style stays: short lines, no numbers or mechanics on wand cards. Each Form, Pattern, Secondary and Element card adds only its slot tag and, when the slot is full, "replaces <card>". C86's "numerical descriptions" and C89 apply where numbers already show (stat cards' `%s`) | 2026-10-22 |
 
 ## Steps (DRAFT: the lead's order, rewritten after the answers)
 
@@ -527,8 +541,10 @@ a push" says. On this PC, test shards run in parallel, each with its own `APPDAT
 - **UC** (after Q30): one step per batch of approved rows.
 - **EM**: when the owner's files arrive.
 
-### Later (next version if Q1 (b)): HB hub, MP Rune Fragments, RB robes and affinities, CL collectibles, shrines, the
-other puzzles (B, D, E, F), more elites.
+### Wave 4: the hub and progression (in v0.9.0 by Q1 "Everything")
+- HB hub, MP Rune Fragments, RB robes and affinities, CL collectibles, shrines, the other puzzles (B, D, E, F), more
+  elites, after Q27–Q29 and their G1s and G2s. W27's rule still holds: the other puzzles are built only after the
+  owner's verdict on TD, RA and DX.
 
 ### R. Release
 - Version 0.9.0 in `project.godot`, patch notes en + es, What's New, the ROADMAP row and History, the README status line,
