@@ -179,6 +179,16 @@ var timed_host := -1
 var timed_door := -1
 var timed_switches := PackedVector2Array()
 var timed_door_wall: Obb
+## v0.9.0 RA (owner W §4 A, Q22; RuneRooms.mark, -1 / empty on a floor without one): the rune puzzle's hidden room, the
+## room before it (the host: the three pillars and the carving), its sealed doorway (a doorway index) and the slab that
+## seals it, the pillars' spots, the faces to match (0..3 each, the carving's symbols) and the faces they start on.
+var rune_room := -1
+var rune_host := -1
+var rune_door := -1
+var rune_pillars := PackedVector2Array()
+var rune_target := PackedInt32Array()
+var rune_start := PackedInt32Array()
+var rune_door_wall: Obb
 
 
 func room_count() -> int:

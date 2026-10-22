@@ -99,6 +99,9 @@ var _approach := -1
 var _timed := -1
 var _timed_beeps := 0
 var _timed_switches := 0
+## v0.9.0 RA: the rune pillars' last press ticks and whether the puzzle was solved, for their cues' edges.
+var _rune_presses := PackedInt32Array()
+var _rune_solved := false
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -126,6 +129,8 @@ func prime(reader: WorldReader) -> void:
 	_timed = reader.timed_door_state()
 	_timed_beeps = TimedDoorView.beeps_now(reader)
 	_timed_switches = switch_mask(reader)
+	_rune_presses = rune_presses(reader)
+	_rune_solved = reader.rune_solved()
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -154,6 +159,30 @@ func collect(reader: WorldReader) -> Array:
 	_arrival(reader, out)
 	_final_approach(reader, out)
 	_timed_door(reader, out)
+	_rune_puzzle(reader, out)
+	return out
+
+
+## v0.9.0 RA (owner Q22; "the pillar turns with a grind"): a pillar turning a quarter (`pillar_turn`, at it), and the
+## slab sinking once all three match (the boss door's `boss_door_opening`, at the doorway).
+func _rune_puzzle(reader: WorldReader, out: Array) -> void:
+	if not reader.has_rune_puzzle():
+		return
+	var presses := rune_presses(reader)
+	for k in presses.size():
+		if k < _rune_presses.size() and presses[k] != _rune_presses[k]:
+			out.append([&"pillar_turn", reader.interactable_pos(reader.rune_pillar_entry(k)), 1.0])
+	_rune_presses = presses
+	if reader.rune_solved() and not _rune_solved:
+		out.append([&"boss_door_opening", reader.rune_door_center(), 1.0])
+	_rune_solved = reader.rune_solved()
+
+
+## Each rune pillar's last press tick (pillar k at k).
+static func rune_presses(reader: WorldReader) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for k in reader.rune_pillar_count():
+		out.append(reader.interactable_press_tick(reader.rune_pillar_entry(k)))
 	return out
 
 

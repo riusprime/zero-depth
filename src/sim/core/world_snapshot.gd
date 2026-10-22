@@ -139,6 +139,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"FinalApproach",  # v0.9.0 FA: the final approach (the pylons, the buildup, the walls of light)
 	&"Interactables",  # v0.9.0 IX: the shared interactables and the puzzles' calm rooms
 	&"TimedDoor",  # v0.9.0 TD: the timed door (its state, timer and reward)
+	&"RuneAlignment",  # v0.9.0 RA: the rune puzzle (its pillars, solved, slab and reward)
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -173,6 +174,7 @@ const ADDED_SINCE_V05 := {
 		&"approach",  # v0.9.0 FA: the final approach (a save from before FA holds none: FloorPlan builds that one bare)
 		&"interactables",  # v0.9.0 IX: a save from before IX keeps the base's registry (apply re-syncs the pylons)
 		&"timed",  # v0.9.0 TD: a floor saved before TD has none (built under floor rules 1-9: none in the base either)
+		&"runes",  # v0.9.0 RA: a floor saved before RA has none (built under floor rules 1-10: none in the base either)
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
 		&"loot_guaranteed",  # v0.8.0 FL: an older save's floor used no guarantee (0) and holds no jackpot
 		&"loot_jackpots",
@@ -401,7 +403,8 @@ static func apply(base: World, snap: Dictionary) -> String:
 		return "World.walls: the snapshot's floor differs from the one generated from its inputs"
 	# v0.8.0 BS1: the Gatekeeper's standing pillars are walls added in play too (barriers, never in the flow field).
 	var pillars := _saved_pillars(data)
-	# v0.9.0 TD: the timed door's slab is a barrier added in play (before or after the boss door): left out here.
+	# v0.9.0 TD: the timed door's slab is a barrier added in play (before or after the boss door): left out here;
+	# v0.9.0 RA: the rune puzzle's slab too (Secrets.slabs).
 	var plain := _without_slab(base, saved_c, walls_before)
 	# The boss door sealed in play: add it the way play did (its prepared flow field swaps in, no rebuild).
 	var door: Obb = base.get(&"_wall_next")
@@ -436,8 +439,7 @@ static func apply(base: World, snap: Dictionary) -> String:
 	# v0.5.5 AR: a sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
 	# so only the wall grid is rebuilt for them.
 	var barriers := base.arenas.barriers.size() + base.bosses.pillar_x.size()  # v0.8.0 BS1: pillars too
-	if base.timed != null:  # v0.9.0 TD: the timed door's slab while it stands
-		barriers += base.timed.wall_up
+	barriers += Secrets.slabs_up(base)  # v0.9.0 TD, RA: the secret rooms' slabs while they stand
 	if base.walls.size() == walls_before + barriers and barriers > 0:
 		base.rebuild_wall_grid()
 	elif base.walls.size() != walls_before:  # any other wall added in play: the grid and field are rebuilt
@@ -462,19 +464,19 @@ static func apply(base: World, snap: Dictionary) -> String:
 	return ""
 
 
-## v0.9.0 TD: the saved walls' centres without the timed door's slab (a barrier past the floor's walls), as saved.
+## v0.9.0 TD: the saved walls' centres without the secret rooms' slabs (barriers past the floor's walls; v0.9.0 RA:
+## every slab of Secrets.slabs), as saved.
 static func _without_slab(
 	base: World, saved_c: PackedVector2Array, walls_before: int
 ) -> PackedVector2Array:
-	if base.floor_layout == null or base.floor_layout.timed_door_wall == null:
-		return saved_c
-	var at := base.floor_layout.timed_door_wall.center
-	for k in range(walls_before, saved_c.size()):
-		if saved_c[k] == at:
-			var out := saved_c.duplicate()
-			out.remove_at(k)
-			return out
-	return saved_c
+	var out := saved_c
+	for slab in Secrets.slabs(base):
+		for k in range(walls_before, out.size()):
+			if out[k] == slab.center:
+				out = out.duplicate()
+				out.remove_at(k)
+				break
+	return out
 
 
 ## v0.8.0 BS1: how many of the Gatekeeper's pillars stood in the snapshot (0 for an older save).

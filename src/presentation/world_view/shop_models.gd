@@ -49,6 +49,10 @@ const SPECS := {
 	# Listed in assets/models/manifest.json when the owner's files arrive; until then the code stand-ins draw them.
 	&"timed_door": {"size": Vector3(0.8, 3.0, 3.0), "yaw": 0.0},
 	&"rune_switch": {"size": Vector3(0.7, 1.3, 0.7), "yaw": 0.0},
+	# v0.9.0 RA (the same list; RuneAlignmentView): the turning pillar, 0.9 x 2.2 x 0.9 m, and the carving, 2.4 m
+	# across, 1.6 m high, 0.3 m deep (on the sealed doorway's slab). Code stand-ins until the owner's files arrive.
+	&"rune_pillar": {"size": Vector3(0.9, 2.2, 0.9), "yaw": 0.0},
+	&"rune_mural": {"size": Vector3(2.4, 1.6, 0.3), "yaw": 0.0},
 }
 
 ## Where the manifest is read (tests point it at their own).

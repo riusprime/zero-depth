@@ -885,6 +885,16 @@
       "loop": false
     },
     {
+      "id": "pillar_turn",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/pillar_turn.wav",
+      "sha256": "3ca0c1c6b3ce1cdd15cc7770f52eee4ff781783042351dab2c72eb0567166417",
+      "seconds": 0.45,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -16.81,
+      "loop": false
+    },
+    {
       "id": "ruins",
       "kind": "ambience",
       "path": "assets/audio/ambience/ruins.wav",

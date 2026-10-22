@@ -602,6 +602,7 @@ SHOP_PROMPT,[E / X] Open the shop,[E / X] Abrir la tienda
 BOSS_DOOR_PROMPT,[E / X] Open the door,[E / X] Abrir la puerta
 APPROACH_PYLON_PROMPT,[E / X] Awaken,[E / X] Despertar
 TIMED_SWITCH_PROMPT,[E / X] Activate,[E / X] Activar
+RUNE_PILLAR_PROMPT,[E / X] Turn,[E / X] Girar
 SHOP_TITLE,Shop,Tienda
 SHOP_SOLD,Sold,Vendido
 SHOP_CANT_USE,Can't use now,No se puede usar ahora

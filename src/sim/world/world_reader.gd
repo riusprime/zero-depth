@@ -12,6 +12,7 @@ const APPROACH_FIGHT := FinalApproach.State.FIGHT
 ## v0.9.0 IX: the shared interactables' kinds (interactable_kind).
 const INTERACT_PYLON := Interactables.Kind.PYLON
 const INTERACT_TIMED_SWITCH := Interactables.Kind.TIMED_SWITCH
+const INTERACT_RUNE_PILLAR := Interactables.Kind.RUNE_PILLAR  # v0.9.0 RA
 ## v0.9.0 TD: the timed door's states (timed_door_state).
 const TIMED_SHUT := TimedDoor.State.SHUT
 const TIMED_OPEN := TimedDoor.State.OPEN
@@ -2956,16 +2957,87 @@ func hidden_room() -> int:
 
 ## The hidden room's cells in metres, grid line to grid line (Rect2() for none).
 func hidden_room_cells() -> Rect2:
-	var room := hidden_room()
+	return room_cells_rect(hidden_room())
+
+
+## v0.9.0 RA (Q23; Secrets.hidden_rooms): every secret room not drawn, lit or shown on the minimap yet (the timed door's
+## until it first opens, the rune puzzle's until it is solved), ascending by kind.
+func hidden_rooms() -> PackedInt32Array:
+	return Secrets.hidden_rooms(_w)
+
+
+## Room `room`'s cells in metres, grid line to grid line (Rect2() for -1).
+func room_cells_rect(room: int) -> Rect2:
 	if room < 0:
 		return Rect2()
 	return _w.floor_layout.cell_rect(_w.floor_layout.room_cells[room])
 
 
-## Reward i stands in the hidden room (not drawn yet).
+## Reward i stands in a hidden room (not drawn yet).
 func reward_hidden(i: int) -> bool:
-	var room := hidden_room()
-	return room >= 0 and _w.floor_layout.room_of(_w.rewards.pos(i)) == room
+	var rooms := hidden_rooms()
+	return not rooms.is_empty() and rooms.has(_w.floor_layout.room_of(_w.rewards.pos(i)))
+
+
+# --- The rune puzzle (v0.9.0 RA; RuneAlignment) ----------------------------------------------------------------
+## The floor has a rune puzzle.
+func has_rune_puzzle() -> bool:
+	return _w.runes != null
+
+
+## Its hidden room and the room before it (the pillars' room), -1 without one.
+func rune_room() -> int:
+	return _w.floor_layout.rune_room if _w.runes != null else -1
+
+
+func rune_host() -> int:
+	return _w.floor_layout.rune_host if _w.runes != null else -1
+
+
+## The pillars: their count, each one's registry entry (interactable_pos, interactable_press_tick), the face it shows
+## (0..3) and the face the carving asks of it.
+func rune_pillar_count() -> int:
+	return _w.runes.pillars.size() if _w.runes != null else 0
+
+
+func rune_pillar_entry(k: int) -> int:
+	return _w.runes.pillars[k]
+
+
+func rune_face(k: int) -> int:
+	return _w.interactables.state[_w.runes.pillars[k]]
+
+
+func rune_target(k: int) -> int:
+	return _w.runes.target[k]
+
+
+## Solved (every pillar on its target), and the tick it was (-1 not yet).
+func rune_solved() -> bool:
+	return _w.runes != null and _w.runes.solved == 1
+
+
+func rune_solve_tick() -> int:
+	return _w.runes.solve_tick if _w.runes != null else -1
+
+
+## The sealed doorway: its centre, the direction from the host into the hidden room (1/4096 turns), width, depth.
+func rune_door_center() -> Vector2:
+	return _w.floor_layout.door_centers[_w.floor_layout.rune_door]
+
+
+func rune_door_angle() -> int:
+	var f := _w.floor_layout
+	var a := f.door_angles[f.rune_door]
+	return a if f.door_rooms[f.rune_door].x == f.rune_host else (a + 2048) % 4096
+
+
+func rune_door_width() -> float:
+	return _w.floor_layout.door_widths[_w.floor_layout.rune_door]
+
+
+func rune_door_depth() -> float:
+	return _w.floor_layout.door_depths[_w.floor_layout.rune_door]
 
 
 ## Puzzle calm (Q22): the hero stands in an unsolved puzzle's room (new packs at a quarter of the rate).

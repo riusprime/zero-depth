@@ -138,6 +138,10 @@ func _build_world() -> void:
 	if arena_def == null and run.floor_rules > RunState.FLOOR_RULES_V080_BD:
 		var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
 		TimedDoor.setup(w, map.timed_door_permille, map.timed_door_ticks, table.move_speed)
+	# v0.9.0 RA: after the timed door (never its rooms); a floor saved before RA (floor rules 1-10) has none
+	if arena_def == null and run.floor_rules > RunState.FLOOR_RULES_V090_TD:
+		var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
+		RuneAlignment.setup(w, secrets.rune_permille if secrets != null else 0)
 	# v0.5.5 DS (D4): the hidden catch-up, read from the whole build once everything above is set up.
 	w.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))
 	CatchUp.start_floor(w)

@@ -939,6 +939,21 @@ def s_timer_beep(r):
     return tone * env(m, 0.002, 0.07) * 0.8
 
 
+def s_pillar_turn(r):
+    """v0.9.0 RA (owner Q22; the lead's placeholder for docs/art/requests/v0.9.0_ART_LIST.md `pillar_turn`): a stone
+    drum grinding a quarter round, 0.45 s: band-passed grit wobbling round 260 Hz over a low saw rumble, ending on a
+    soft clunk as it locks. (This machine had no numpy: the committed file was rendered by a pure-Python copy of this
+    recipe whose noise differs, so a numpy run re-renders it slightly differently.)"""
+    n = n_of(0.45)
+    t = np.arange(n) / RATE
+    grit = bandpass(noise(r, n), 260.0 + 120.0 * np.sin(2 * np.pi * 7.0 * t), 2.0)
+    rumble = one_pole_lp(osc(curve(70.0, 55.0, n), "saw", n) * 0.35, 400.0)
+    body = (grit + rumble) * env(n, 0.03, 0.25) * (0.75 + 0.25 * np.sin(2 * np.pi * 11.0 * t))
+    m = n_of(0.12)
+    clunk = at(osc(curve(140.0, 60.0, m), "sine", m) * env(m, 0.002, 0.04), 0.33)
+    return mix(body, clunk * 0.9)
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -1028,6 +1043,7 @@ SFX = [
     ("pylon_lock", s_pylon_lock),
     ("final_altar", s_final_altar),
     ("timer_beep", s_timer_beep),
+    ("pillar_turn", s_pillar_turn),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------

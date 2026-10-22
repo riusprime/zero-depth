@@ -52,7 +52,7 @@ func test_the_door_the_switches_and_the_hidden_room() -> void:
 	assert_false(reward.visible, "its reward unseen")
 	var st := MinimapState.new()
 	st.update(reader)
-	assert_eq(st.hidden, w.floor_layout.timed_room, "the minimap leaves it out")
+	assert_true(st.hidden.has(w.floor_layout.timed_room), "the minimap leaves it out")
 	assert_false(st.door_known(reader, w.floor_layout.timed_door), "no doorway drawn into it")
 	var cues := AudioEvents.new()
 	cues.prime(reader)
@@ -75,7 +75,9 @@ func test_the_door_the_switches_and_the_hidden_room() -> void:
 	assert_true(reward.visible, "its reward too")
 	assert_false(reader.reward_hidden(i))
 	st.update(reader)
-	assert_eq(st.hidden, -1, "and the minimap may show it once you go in")
+	assert_false(
+		st.hidden.has(w.floor_layout.timed_room), "and the minimap may show it once you go in"
+	)
 	assert_gt(t.flash, 0.5, "the beep flashes the runes")
 	t._process(TimedDoorView.SINK_S + 0.1)
 	assert_false(t.slab.visible, "the slab sank into the floor")

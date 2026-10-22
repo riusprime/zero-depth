@@ -141,7 +141,7 @@ func _reveal_if_open() -> void:
 	revealed = true
 	_room_light.visible = true
 	if _stage != null:
-		_stage.reveal_hidden()
+		_stage.reveal_hidden(_reader.timed_room())  # v0.9.0 RA: only its own room
 
 
 ## The ticks (from the door opening) each beep falls on, for a timer of `timer` ticks: the gap is BEEP_SLOW at the start

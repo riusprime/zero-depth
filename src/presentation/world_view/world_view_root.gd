@@ -99,6 +99,8 @@ var approach_view: FinalApproachView
 var boss_door: BossDoorView
 ## v0.9.0 TD: the timed door, its rune switches and the secret room's reveal (null on a floor without one).
 var timed_door: TimedDoorView
+## v0.9.0 RA: the rune puzzle's pillars, its carved slab and its hidden room's reveal (null on a floor without one).
+var rune_view: RuneAlignmentView
 ## The gamble shrine (v0.3.0 L19; null on a floor without one).
 var gamble_shrine: GambleShrineView
 ## The shop terminal (v0.5.0 SH; null on a floor without one, or whose shop is a stall).
@@ -341,6 +343,10 @@ func _setup_devices(palette: Dictionary) -> void:
 		timed_door = TimedDoorView.new()
 		add_child(timed_door)
 		timed_door.setup(reader, stage, palette["cover"])
+	if reader.has_rune_puzzle():  # v0.9.0 RA
+		rune_view = RuneAlignmentView.new()
+		add_child(rune_view)
+		rune_view.setup(reader, stage, palette["cover"])
 	if reader.has_gamble():
 		gamble_shrine = GambleShrineView.new()
 		gamble_shrine.kit_model = stage.mood != null  # v0.6.0 Step SR: the owner's shrine with the new look
@@ -447,6 +453,8 @@ func sync() -> void:
 	_sync_view(&"nemesis_views", nemesis_views)  # v0.8.0 FB3
 	_sync_view(&"black_holes", black_holes)  # v0.8.0 P2
 	_sync_view(&"remnants", remnants)  # v0.8.0 RM
+	if rune_view != null:  # v0.9.0 RA
+		rune_view.sync(reader)
 	if timed_door != null:  # v0.9.0 TD
 		timed_door.sync(reader)
 		if timed_door.slammed:
