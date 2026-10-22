@@ -38,6 +38,7 @@ const GROUPS := [
 			"res://data/arenas",
 			"res://data/overrun",
 			"res://data/map",
+			"res://data/secrets",  # v0.9.0 RA/DX: rune puzzles, cracked walls, containers, barrels
 		],
 		"",
 	],
