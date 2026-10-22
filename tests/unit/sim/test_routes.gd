@@ -31,8 +31,10 @@ func _run_on(f: int, route: int = Routes.Route.NORMAL, seed_value: int = 7) -> R
 
 
 ## A real floor (the app's FloorScenario) on the run's current floor, with an invulnerable player, the build's
-## abilities and the stat cards (as Main sets them up).
-func _floor(run: RunState, seed_value: int = -1) -> World:
+## abilities and the stat cards (as Main sets them up). v0.9.0 DP (owner Q26b): the Deep gate is earned by the floor's
+## purple runes; `earned` (TEST HELPER) earns it as their awakening does (PurpleRunes.earn), so these route tests keep
+## their gate; test_purple_runes covers the runes themselves.
+func _floor(run: RunState, seed_value: int = -1, earned: bool = true) -> World:
 	var t := ContentCompiler.compile_player(_repo.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(t, _repo.get_def(&"build", &"blade"))
 	var enemies := ContentCompiler.compile_enemies(_repo)
@@ -58,6 +60,8 @@ func _floor(run: RunState, seed_value: int = -1) -> World:
 	Abilities.grant_start(w)
 	Abilities.start_floor(w)
 	w.actors.invuln[0] = LONG
+	if earned and w.floor_layout.has_deep_portal:
+		PurpleRunes.earn(w)
 	return w
 
 
@@ -121,11 +125,15 @@ func test_the_run_data_has_the_deep_numbers() -> void:
 	)
 
 
-## v0.9.0 FV: five floors, the Deep gate on floors 1-4 (every floor before the last).
+## v0.9.0 FV: five floors, the Deep gate on floors 1-4 (every floor before the last); v0.9.0 DP: once earned.
 func test_two_gates_only_after_the_bosses_of_floors_one_to_four() -> void:
 	for f: int in [1, 2, 3, 4, 5]:
 		var run := _run_on(f)
 		assert_eq(Routes.offers_choice(run), f < 5, "floor %d" % f)
+		assert_false(
+			WorldReader.new(_floor(run, -1, false)).has_deep_portal(),
+			"floor %d: no Deep gate unless earned (v0.9.0 DP)" % f
+		)
 		var w := _floor(run)
 		var reader := WorldReader.new(w)
 		assert_eq(

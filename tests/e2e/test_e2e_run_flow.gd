@@ -130,7 +130,8 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_true(main.driver.reader.portal_active(), "the boss's death opens the portal")
 	assert_false(main.view.gate.is_sealed(), "the gate lights up")
 	# v0.8.0 N18 (owner O76): PB's "explore the rest of the floor" line is gone
-	assert_eq(hud.gate_text(), tr("HUD_PORTALS_OPEN"), "v0.5.0 RT: floor 1 opens both portals")
+	# v0.9.0 DP (owner Q26b): floor 1 never earns the Purple Portal, so its boss opens the gate alone
+	assert_eq(hud.gate_text(), tr("HUD_PORTAL_OPEN"), "floor 1 opens one portal")
 	var hp_before := w.actors.hp[0]
 	var owned := w.ability_owned.duplicate()
 	var levels := w.ability_levels.duplicate()

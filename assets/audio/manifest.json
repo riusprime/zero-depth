@@ -965,6 +965,16 @@
       "loop": false
     },
     {
+      "id": "purple_runes",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/purple_runes.wav",
+      "sha256": "85b111f0f66acabddfbc7faeb938fb6278247dfa022ef94c35c4e0cc161f772b",
+      "seconds": 2.0,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -15.93,
+      "loop": false
+    },
+    {
       "id": "ruins",
       "kind": "ambience",
       "path": "assets/audio/ambience/ruins.wav",

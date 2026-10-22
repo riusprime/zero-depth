@@ -23,6 +23,8 @@ const KEYS := [
 func _world() -> World:
 	var w := FightLab.floor_world(51, 1)
 	w.actors.invuln[0] = LONG
+	# v0.9.0 DP (owner Q26b): the Deep gate is earned; TEST HELPER: as if this floor's purple runes were awakened
+	PurpleRunes.earn(w)
 	return w
 
 

@@ -26,6 +26,8 @@ extends RefCounted
 ## with) the same way: a payload without it is a v0.8.0 run (or older) and resumes in its 3-floor shape
 ## (LEGACY_RUN_ID: 3 floors, v0.8.0's scaling, 15-19 rooms a floor, the wand's 4 → 6 → 8), so its floor rebuilds as
 ## it was saved and it ends on its floor 3.
+## v0.9.0 DP (owner Q26b) adds `run.purple_floors` (the run's floors that held a purple-rune room) the same way: a
+## payload without it has had none.
 const PAYLOAD_VERSION := 4
 const PAYLOAD_VERSIONS_READ: Array[int] = [2, 3, 4]
 ## v0.9.0 FV: today's run (Main) and the shape a payload without `run_id` resumes in.
@@ -187,6 +189,7 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	run.loop = maxi(1, int(r.get("loop", 1)))  # v0.7.5 AP: an older payload is loop 1
 	run.loop_floors = maxi(0, int(r.get("loop_floors", 0)))
 	run.final_fight = bool(r.get("final", false))  # v0.8.0 FB1: an older payload is before the final arena
+	run.purple_floors = PackedInt32Array(r.get("purple_floors", PackedInt32Array()))  # v0.9.0 DP: older: none
 	return run
 
 
@@ -221,6 +224,7 @@ static func payload_of(
 			"loop": run.loop,  # v0.7.5 AP: the Ascension loop
 			"loop_floors": run.loop_floors,
 			"final": run.final_fight,  # v0.8.0 FB1: the final arena
+			"purple_floors": run.purple_floors.duplicate(),  # v0.9.0 DP: the floors that held purple runes
 			"run_id": String(run.table.id),  # v0.9.0 FV: the run's shape (saved_run_id)
 		},
 		"rooms": p_rooms.duplicate(),

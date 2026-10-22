@@ -3104,6 +3104,40 @@ func rune_door_depth() -> float:
 	return _w.floor_layout.door_depths[_w.floor_layout.rune_door]
 
 
+# --- The purple runes (v0.9.0 DP; PurpleRunes) ----------------------------------------------------------------
+## The floor has a purple-rune room: its room, its dais's spot and registry entry, whether awakened and when.
+func has_purple_runes() -> bool:
+	return _w.purple != null
+
+
+func purple_room() -> int:
+	return _w.floor_layout.purple_room if _w.purple != null else -1
+
+
+func purple_dais_pos() -> Vector2:
+	return _w.floor_layout.purple_pos if _w.purple != null else Vector2.ZERO
+
+
+func purple_dais_entry() -> int:
+	return _w.purple.entry if _w.purple != null else -1
+
+
+func purple_lit() -> bool:
+	return _w.purple != null and _w.purple.lit == 1
+
+
+func purple_lit_tick() -> int:
+	return _w.purple.lit_tick if _w.purple != null else -1
+
+
+## The boss room may show the Deep gate on this floor: it has it now (has_deep_portal), or its purple runes may still
+## earn it (its spot is placed). The views build the gate up front; it stands sealed (unseen) until it opens.
+func deep_portal_site() -> bool:
+	if has_deep_portal():
+		return true
+	return _w.purple != null and _w.floor_layout != null and _w.floor_layout.has_deep_portal
+
+
 # --- The destructibles (v0.9.0 DX; Breakables) -----------------------------------------------------------------
 ## The floor has a cracked wall before a dead end.
 func has_cracked_wall() -> bool:

@@ -106,6 +106,8 @@ var _rune_solved := false
 var _crack_hit := -1
 var _crack_broken := false
 var _props := PackedInt32Array()
+## v0.9.0 DP: whether the purple runes were awake, for their cue's edge.
+var _purple_lit := false
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -138,6 +140,7 @@ func prime(reader: WorldReader) -> void:
 	_crack_hit = reader.crack_hit_tick()
 	_crack_broken = reader.crack_broken()
 	_props = prop_marks(reader)
+	_purple_lit = reader.purple_lit()
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -167,6 +170,7 @@ func collect(reader: WorldReader) -> Array:
 	_final_approach(reader, out)
 	_timed_door(reader, out)
 	_rune_puzzle(reader, out)
+	_purple_runes(reader, out)  # v0.9.0 DP
 	_breakables(reader, out)
 	return out
 
@@ -218,6 +222,13 @@ func _rune_puzzle(reader: WorldReader, out: Array) -> void:
 	if reader.rune_solved() and not _rune_solved:
 		out.append([&"boss_door_opening", reader.rune_door_center(), 1.0])
 	_rune_solved = reader.rune_solved()
+
+
+## v0.9.0 DP (owner Q26b): the purple runes awakening (`purple_runes`, at the dais), once.
+func _purple_runes(reader: WorldReader, out: Array) -> void:
+	if reader.purple_lit() and not _purple_lit:
+		out.append([&"purple_runes", reader.purple_dais_pos(), 1.0])
+	_purple_lit = reader.purple_lit()
 
 
 ## Each rune pillar's last press tick (pillar k at k).

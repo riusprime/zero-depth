@@ -685,6 +685,8 @@ func _build_kit(reader: WorldReader) -> void:
 		keep.append(reader.shop_front())
 	if reader.event_curse_altar() >= 0:  # v0.8.0 N17: nothing stands on the curse altar
 		keep.append(reader.event_pos(reader.event_curse_altar()))
+	if reader.has_purple_runes():  # v0.9.0 DP: nothing stands on the purple dais
+		keep.append(reader.purple_dais_pos())
 	var dressing := {
 		"walls": walls,
 		"rooms": rooms,
@@ -833,8 +835,10 @@ func _build_shards(
 	for p: Dictionary in placements:
 		if p["kind"] == &"light":
 			clear.append(SimPlane.to_sim((p["xform"] as Transform3D).origin))
-	if reader.has_deep_portal():
+	if reader.deep_portal_site():  # v0.9.0 DP: where the Deep gate may still open
 		clear.append(reader.deep_portal_pos())
+	if reader.has_purple_runes():  # v0.9.0 DP: none on the purple dais
+		clear.append(reader.purple_dais_pos())
 	if reader.has_shop():
 		clear.append(reader.shop_pos())
 		special.append(reader.shop_pos())

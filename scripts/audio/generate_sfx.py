@@ -1030,6 +1030,28 @@ def s_void_hum(r):
     return mix(hum, growl, swirl)
 
 
+def s_purple_runes(r):
+    """v0.9.0 DP (owner Q26b; the lead's placeholder for the purple runes awakening): 1.7 s: six glassy FM chimes
+    rising one every 0.15 s (as the ring of runes lights, PurpleRuneView.STEP_S) over a swelling violet drone, then a
+    deep resonant thump with a short echo as the last rune lands (the camera's thud)."""
+    n = n_of(1.3)
+    t = np.arange(n) / RATE
+    swell = np.minimum(1.0, t / 0.9) ** 1.5
+    drone = one_pole_lp(osc(curve(55.0, 62.0, n), "saw", n), 500.0) * 0.35
+    air = bandpass(noise(r, n), curve(400.0, 1600.0, n), 3.0) * 0.25
+    body = (drone + air) * swell * env(n, 0.02, 0.6)
+    chimes = []
+    for k, f in enumerate([330.0, 392.0, 440.0, 523.0, 587.0, 698.0]):
+        m = n_of(0.5)
+        ping = fm(f, 2.0, 1.4 * np.exp(-np.arange(m) / RATE / 0.12), m) * env(m, 0.002, 0.16)
+        chimes.append(at(ping * 0.45, 0.15 * k))
+    b = n_of(0.8)
+    thump = osc(curve(80.0, 34.0, b), "sine", b) * env(b, 0.003, 0.28)
+    ring = fm(curve(196.0, 180.0, b), 1.5, 0.8, b) * env(b, 0.004, 0.25) * 0.25
+    land = echo(mix(thump, ring), delay_ms=120.0, feedback=0.3, mix=0.3, tail=0.3)
+    return mix(body, *chimes, at(land, 0.9))
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -1126,6 +1148,7 @@ SFX = [
     ("container_break", s_container_break),
     ("barrel_fuse", s_barrel_fuse),
     ("barrel_blast", s_barrel_blast),
+    ("purple_runes", s_purple_runes),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------

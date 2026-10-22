@@ -8,7 +8,7 @@ extends RefCounted
 ##   puzzle's own loot sub-stream, on the room's first item spot (else its spawn spot nearest its centre, else its
 ##   centre), as TD's; is_epic says which rewards are the secrets' epic altars (Offers.roll: epic stat cards);
 ## - the slabs (barriers added in play) that seal a secret room while it is shut, for the save's wall check (slabs,
-##   slabs_up).
+##   slabs_up); v0.9.0 DP: with them, the Deep gate's footprint the purple runes add (PurpleRunes.earn).
 ## Pure.
 
 ## The share of the secret rooms' rewards that are epic altars (per mille; the rest chests), as TD's.
@@ -111,6 +111,8 @@ static func slabs(w: World) -> Array[Obb]:
 		out.append(f.rune_door_wall)
 	if f.crack_wall != null:  # v0.9.0 DX
 		out.append(f.crack_wall)
+	if w.purple != null:  # v0.9.0 DP: the Deep gate's footprint, a barrier once the runes are awakened
+		out.append(Routes.deep_gate_collider(f))
 	return out
 
 
@@ -123,4 +125,6 @@ static func slabs_up(w: World) -> int:
 		n += w.runes.wall_up
 	if w.breakables != null:  # v0.9.0 DX
 		n += w.breakables.crack_up
+	if w.purple != null:  # v0.9.0 DP
+		n += w.purple.wall_up
 	return n

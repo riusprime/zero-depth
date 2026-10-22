@@ -178,6 +178,7 @@ func _build_world() -> void:
 ## v0.9.0 TD, RA, DX: a floor's secrets, after every room kind (the save lab builds floors with it too). TD: a floor
 ## saved before TD (floor rules 1-9) has no timed door; RA, DX: one saved before them (1-10) has no rune puzzle and no
 ## destructibles. The rune puzzle comes after the timed door, the destructibles after both (never their rooms).
+## v0.9.0 DP: the purple-rune room comes last (never a secret's room; one saved before DP, rules 1-11, has none).
 static func add_secrets(
 	w: World, repo: ContentRepository, run: RunState, move_speed: float
 ) -> void:
@@ -188,6 +189,10 @@ static func add_secrets(
 		var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
 		RuneAlignment.setup(w, secrets.rune_permille if secrets != null else 0)
 		Breakables.setup(w, secret_rules(secrets))
+	if run.floor_rules > RunState.FLOOR_RULES_V090_RA:  # v0.9.0 DP (owner Q26b): last, never a secret's room
+		var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
+		var chances := secrets.purple_floor_permille if secrets != null else PackedInt32Array()
+		PurpleRunes.setup(w, PurpleRunes.chance(run, chances))
 
 
 ## v0.9.0 DX: the destructibles' numbers from the data (SecretRules' defaults without it).

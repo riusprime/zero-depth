@@ -101,6 +101,8 @@ var boss_door: BossDoorView
 var timed_door: TimedDoorView
 ## v0.9.0 RA: the rune puzzle's pillars, its carved slab and its hidden room's reveal (null on a floor without one).
 var rune_view: RuneAlignmentView
+## v0.9.0 DP: the purple-rune room's dais and runes (null on a floor without one).
+var purple: PurpleRuneView
 ## v0.9.0 DX: the cracked wall, the containers and the explosive barrels (null on a floor with none), and the faint rune
 ## markings by every secret's doorway (null without a secret).
 var breakables: BreakablesView
@@ -338,7 +340,7 @@ func _setup_devices(palette: Dictionary) -> void:
 		gate = PortalGate.new()
 		add_child(gate)
 		gate.setup(reader.portal_pos(), reader.portal_angle())
-	if reader.has_deep_portal():
+	if reader.deep_portal_site():  # v0.9.0 DP: also where the purple runes may still earn it (sealed: unseen)
 		deep_gate = PortalGate.new()
 		deep_gate.name = "DeepGate"
 		add_child(deep_gate)
@@ -363,6 +365,10 @@ func _setup_devices(palette: Dictionary) -> void:
 		rune_view = RuneAlignmentView.new()
 		add_child(rune_view)
 		rune_view.setup(reader, stage, palette["cover"])
+	if reader.has_purple_runes():  # v0.9.0 DP
+		purple = PurpleRuneView.new()
+		add_child(purple)
+		purple.setup(reader, palette["cover"])
 	if reader.has_cracked_wall() or reader.breakable_count() > 0:  # v0.9.0 DX
 		breakables = BreakablesView.new()
 		add_child(breakables)
@@ -489,6 +495,12 @@ func sync() -> void:
 	_sync_view(&"remnants", remnants)  # v0.8.0 RM
 	if rune_view != null:  # v0.9.0 RA
 		rune_view.sync(reader)
+	if purple != null:  # v0.9.0 DP (owner Q17, Q26b): the runes' vibration builds, then lands in a thud
+		purple.sync(reader)
+		if purple.vibration > 0.0:
+			rig.vibrate_to(purple.vibration)
+		if purple.take_thud():
+			rig.thud(PurpleRuneView.THUD)
 	if breakables != null:  # v0.9.0 DX
 		breakables.sync(reader)
 		if breakables.blasted:

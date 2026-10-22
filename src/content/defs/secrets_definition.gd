@@ -22,6 +22,10 @@ extends ContentDef
 @export var barrel_radius_m := 2.0
 @export var barrel_damage := 40
 @export var barrel_hero_damage := 15
+## v0.9.0 DP (owner Q26b: "never in floor 1, 50% of appearing in floor 2 if does not appear, then warrantee on the
+## next floor"): each floor's chance (per mille, floor 1 first, within a loop) of the purple-rune room while the loop
+## has had none (PurpleRunes.chance; the lead's reading: none on floors 4-5).
+@export var purple_floor_permille := PackedInt32Array([0, 500, 1000, 0, 0])
 
 
 func category() -> StringName:
@@ -31,6 +35,8 @@ func category() -> StringName:
 func validate() -> Array[ValidationIssue]:
 	var issues := super.validate()
 	_check_permille(issues, "rune_permille", rune_permille)
+	for v in purple_floor_permille:
+		_check_permille(issues, "purple_floor_permille", v)
 	for f in [
 		"crack_permille",
 		"container_drop_permille",

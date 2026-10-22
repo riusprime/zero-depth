@@ -172,23 +172,10 @@ static func _spawn_pack(w: World, t: SpawnTable, ticks: int, room: int) -> void:
 		w.add_enemy(kind, spots[k])
 		var i := w.actors.size() - 1
 		scale_arrival(w, i, ticks)
-		if k == 0 and deep_elite(w, i, anchor):  # v0.5.5 DS (S5): a Deep room's elite
-			continue
+		# v0.9.0 DP (owner Q24, Q26b): a Deep floor's room no longer brings an elite in its first pack (v0.5.5 DS's
+		# deep_elite is gone; elites come from floors 4-5 and Elite Lockdowns, Step EL). World.deep_elite_rooms stays
+		# for the saves that hold it.
 		Curses.maybe_elite(w, i)  # v0.5.0 EV curse (Marked Hunt): x2 on that HP
-
-
-## v0.5.5 DS (owner S5, "Deep floors must feel different"): on a Deep floor the first pack that arrives in each room
-## brings an elite (its first member; Curses.make_elite: the rules' HP bonus, the crown), so every combat room has
-## one. Pure: no stream is drawn, so a Deep floor's spawns stay where they were. Returns true when actor i became it.
-static func deep_elite(w: World, i: int, anchor: Vector2) -> bool:
-	if not Routes.is_deep(w) or w.floor_layout == null:
-		return false
-	var r := w.floor_layout.room_of(anchor)
-	if r < 0 or w.deep_elite_rooms.has(r):
-		return false
-	w.deep_elite_rooms.append(r)
-	Curses.make_elite(w, i)
-	return true
 
 
 ## An enemy arriving now (actor i, just added): max HP and damage scaled by the danger tier (SpawnTable; the floor

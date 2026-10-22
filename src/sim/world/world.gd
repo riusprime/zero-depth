@@ -193,6 +193,8 @@ var runes: RuneAlignment
 ## v0.9.0 DX (owner W §4 C, §5, Q23; Breakables): the cracked wall, the containers and the explosive barrels; null
 ## on a floor with none.
 var breakables: Breakables
+## v0.9.0 DP (owner Q26b; PurpleRunes): the floor's purple-rune room (its dais awakens the Purple Portal); null without.
+var purple: PurpleRunes
 # --- end Bosses ---------------------------------------------------------------------------------------------
 # --- Rewards (v0.3.0 E; Rewards) ----------------------------------------------------------------------------
 ## The floor's reward rules (part of the loadout, like item_tables; not hashed).
@@ -1315,6 +1317,8 @@ func state_hash() -> String:
 		runes.hash_into(h)
 	if breakables != null:  # v0.9.0 DX: only floors with destructibles
 		breakables.hash_into(h)
+	if purple != null:  # v0.9.0 DP: only floors with a purple-rune room
+		purple.hash_into(h)
 	if final_fight != null:  # v0.8.0 FB1: only the worlds that hold the final fight
 		final_fight.hash_into(h)
 	actors.hash_into(h)
