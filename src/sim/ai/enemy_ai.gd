@@ -48,6 +48,8 @@ const SPREAD_WEIGHT := 1.2
 const FLANK_RANGE_M := 6.0
 const FLANK_MIN_M := 2.0
 const FLANK_PERMILLE := 450
+## v0.9.0: the sight line's half-width (sees_player): thin, so a doorway's edge does not hide a player in the opening.
+const SIGHT_R_M := 0.05
 ## A charge touches the player within this much of contact: the collision pass (phase 5) has already pushed the
 ## two bodies exactly apart before the hit check (phase 6), so an exact test missed by a rounding error (v0.3.5 AI).
 const CONTACT_SLOP_M := 0.02
@@ -155,6 +157,9 @@ static func think(w: World, i: int) -> void:
 				behaviour_of(a.kinds[i]) == ActorStore.Kind.NEEDLE and dist < t.flee_distance_m
 			)
 			var attack := alive and a.cd[i] == 0 and dist <= t.attack_range_m and not too_close
+			# v0.9.0 (owner 2026-10-23: "when there are closed rooms the enemies can attack from outside, that should not
+			# happen"): no attack starts without a clear line to the player (walls, sealed doorways' barriers).
+			attack = attack and sees_player(w, a.pos(i))
 			# v0.4.0 SC: a walker faces the player on its plan ticks and as it attacks; the slow turners (Warden,
 			# Shield Bearer) turn every tick (their facing is their armour).
 			if _turns_slowly(a.kinds[i]):
@@ -862,9 +867,21 @@ static func clear_of_walls(w: World, at: Vector2, r: float) -> bool:
 	return true
 
 
+## v0.9.0 (owner 2026-10-23, think): whether a thin line from `at` to the player crosses no wall. Sealed doorways'
+## barriers are walls (World.add_barrier), so an enemy outside a shut room neither starts an attack nor lands one.
+static func sees_player(w: World, at: Vector2) -> bool:
+	var p := w.player_pos()
+	for k in w.walls_along(at, p, SIGHT_R_M):
+		if Collide.sweep_vs_obb(at, p, SIGHT_R_M, w.walls[k]) >= 0.0:
+			return false
+	return true
+
+
 static func _hit_player(w: World, i: int, amount: int, tags: int, from := Vector2.INF) -> void:
 	var a := w.actors
 	var at := a.pos(i) if from == Vector2.INF else from
+	if not sees_player(w, at):  # v0.9.0: a swing or slam begun before a doorway shut stops on it
+		return
 	Damage.hit(
 		w, 0, powered(w, i, amount), a.ids[i], a.ids[i], w.take_root(), tags, at, w.player_pos()
 	)
