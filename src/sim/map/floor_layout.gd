@@ -213,6 +213,10 @@ var crack_wall: Obb
 ## way) and its dais's spot.
 var purple_room := -1
 var purple_pos := Vector2.ZERO
+## v0.9.0 LK (owner Q21; LockdownRooms.mark, empty on a floor without any): the Lockdown rooms, in the order taken,
+## and each one's kind (LockdownTable.Kind).
+var lockdown_rooms := PackedInt32Array()
+var lockdown_kinds := PackedInt32Array()
 
 
 func room_count() -> int:

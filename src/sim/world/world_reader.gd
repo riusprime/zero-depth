@@ -22,6 +22,10 @@ const BREAKABLE_EXPLOSIVE := Breakables.Kind.EXPLOSIVE
 const TIMED_SHUT := TimedDoor.State.SHUT
 const TIMED_OPEN := TimedDoor.State.OPEN
 const TIMED_HELD := TimedDoor.State.HELD
+## v0.9.0 LK: the Lockdown kinds (lockdown()["kinds"], ["kind"]).
+const LOCKDOWN_NORMAL := LockdownTable.Kind.NORMAL
+const LOCKDOWN_HAZARD := LockdownTable.Kind.HAZARD
+const LOCKDOWN_ELITE := LockdownTable.Kind.ELITE
 ## v0.8.0 RM: the remnant kinds, activations and Thermal Break's effect id, for the views (the layer rule).
 const REMNANT_SEGMENT := RemnantRule.Kind.SEGMENT
 const REMNANT_ANCHOR := RemnantRule.Kind.ANCHOR
@@ -3253,6 +3257,27 @@ func _door_of(d: int, angle: int) -> Dictionary:
 		"width": f.door_widths[d],
 		"depth": f.door_depths[d]
 	}
+
+
+# --- The Lockdowns (v0.9.0 LK; Lockdowns) --------------------------------------------------------------------
+## The floor has Lockdown rooms.
+func has_lockdowns() -> bool:
+	return _w.lockdown != null
+
+
+## The Lockdowns now (Lockdowns.read: rooms, kinds, the sealed one, its formations, the strikes, those opened).
+func lockdown() -> Dictionary:
+	return Lockdowns.read(_w)
+
+
+## Room `room`'s doorways (each {center, angle, width, depth}), for the bars.
+func lockdown_doors(room: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if _w.floor_layout == null:
+		return out
+	for d in ArenaRooms.doors_of(_w.floor_layout, room):
+		out.append(_door_of(d, _w.floor_layout.door_angles[d]))
+	return out
 
 
 ## Puzzle calm (Q22): the hero stands in an unsolved puzzle's room (new packs at a quarter of the rate).

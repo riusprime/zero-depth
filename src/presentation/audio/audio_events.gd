@@ -108,6 +108,8 @@ var _crack_broken := false
 var _props := PackedInt32Array()
 ## v0.9.0 DP: whether the purple runes were awake, for their cue's edge.
 var _purple_lit := false
+## v0.9.0 LK: the Lockdown sealed and the count opened, and the last strike's landing tick, for their cues' edges.
+var _lock := [-1, 0, -1]
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -141,6 +143,7 @@ func prime(reader: WorldReader) -> void:
 	_crack_broken = reader.crack_broken()
 	_props = prop_marks(reader)
 	_purple_lit = reader.purple_lit()
+	_lock = lockdown_marks(reader)
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -172,7 +175,29 @@ func collect(reader: WorldReader) -> Array:
 	_rune_puzzle(reader, out)
 	_purple_runes(reader, out)  # v0.9.0 DP
 	_breakables(reader, out)
+	_lockdown(reader, out)  # v0.9.0 LK
 	return out
+
+
+## v0.9.0 LK (owner Q21: "a visible seal with a sound"): the bars dropping (`lockdown_close`), grinding up on the open
+## (`lockdown_open`), and a hazard strike landing (`container_break`, at it).
+func _lockdown(reader: WorldReader, out: Array) -> void:
+	var now := lockdown_marks(reader)
+	if now[0] >= 0 and now[0] != _lock[0]:
+		out.append([&"lockdown_close", null, 1.0])
+	if now[1] > _lock[1]:
+		out.append([&"lockdown_open", null, 1.0])
+	if now[2] >= 0 and now[2] != _lock[2]:
+		out.append([&"container_break", reader.lockdown()["landed_pos"], 1.0])
+	_lock = now
+
+
+## [the Lockdown sealed now (-1 none), how many opened, the last strike's landing tick].
+static func lockdown_marks(reader: WorldReader) -> Array:
+	if not reader.has_lockdowns():
+		return [-1, 0, -1]
+	var d := reader.lockdown()
+	return [int(d["sealed"]), (d["cleared"] as PackedInt32Array).size(), int(d["landed_tick"])]
 
 
 ## v0.9.0 DX (owner W §4 C, §5; Q23): a Skill hit on the cracked wall (`container_break`, at it) and its break

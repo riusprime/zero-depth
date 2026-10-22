@@ -975,6 +975,26 @@
       "loop": false
     },
     {
+      "id": "lockdown_close",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/lockdown_close.wav",
+      "sha256": "18439417ed9201e616b5dd704414e8696de20e08a1db378b0fedf0ff3af0231f",
+      "seconds": 1.07,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -17.94,
+      "loop": false
+    },
+    {
+      "id": "lockdown_open",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/lockdown_open.wav",
+      "sha256": "f77234156df30c07dfb3a8d640edbbafb895ea0da9771ed85084f73d4f9093ea",
+      "seconds": 1.35,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -17.04,
+      "loop": false
+    },
+    {
       "id": "ruins",
       "kind": "ambience",
       "path": "assets/audio/ambience/ruins.wav",

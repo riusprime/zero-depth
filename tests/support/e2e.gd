@@ -256,6 +256,14 @@ static func walk_walls(w: World, target: Vector2) -> Array[Obb]:
 			continue
 		for d in ArenaRooms.doors_of(f, room):
 			out.append(ArenaRooms.barrier(f, d))
+	# v0.9.0 LK: the Lockdowns the same way (skippable as arenas; a walk only enters the one it goes to)
+	for room in f.lockdown_rooms:
+		if Lockdowns.is_open(w, room) or f.room_of(target) == room:
+			continue
+		if w.lockdown != null and w.lockdown.room == room:
+			continue
+		for d in ArenaRooms.doors_of(f, room):
+			out.append(ArenaRooms.barrier(f, d))
 	return out
 
 

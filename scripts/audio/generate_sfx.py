@@ -1052,6 +1052,33 @@ def s_purple_runes(r):
     return mix(body, *chimes, at(land, 0.9))
 
 
+def s_lockdown_close(r):
+    """v0.9.0 LK (owner Q21: "a visible seal with a sound"; the lead's placeholder for `lockdown_close`): 0.9 s: the
+    iron bars drop (a short falling scrape, 0.25 s) and slam home: a heavy low clank with a metallic ring and a short
+    echo, so the room reads as locked."""
+    d = n_of(0.25)
+    scrape = bandpass(noise(r, d), curve(2400.0, 900.0, d), 6.0) * env(d, 0.01, 0.2) * 0.35
+    n = n_of(0.55)
+    clank = one_pole_lp(osc(curve(120.0, 45.0, n), "square", n), 1100.0) * env(n, 0.002, 0.12)
+    ring = sum(fm(f, 1.41, 2.2, n) for f in (310.0, 467.0, 701.0)) * env(n, 0.002, 0.22) * 0.18
+    body = echo(mix(clank, ring), delay_ms=140.0, feedback=0.35, mix=0.3, damp=2500.0, tail=0.3)
+    return mix(scrape, at(body, 0.22))
+
+
+def s_lockdown_open(r):
+    """v0.9.0 LK (the lead's placeholder for `lockdown_open`): 1.4 s: the bars grind up: a rising chain-and-gear
+    rattle (filtered noise ticking at 18 Hz) over a low motor groan, ending in a light clack as they lock up."""
+    n = n_of(1.2)
+    t = np.arange(n) / RATE
+    ticks = (np.sin(2.0 * np.pi * 18.0 * t) > 0.6).astype(float)
+    rattle = bandpass(noise(r, n), curve(700.0, 1600.0, n), 5.0) * (0.3 + 0.7 * ticks) * 0.35
+    groan = one_pole_lp(osc(curve(55.0, 80.0, n), "saw", n), 400.0) * 0.4
+    body = (rattle + groan) * env(n, 0.05, 1.0)
+    c = n_of(0.2)
+    clack = one_pole_lp(osc(curve(240.0, 120.0, c), "square", c), 1500.0) * env(c, 0.001, 0.05) * 0.7
+    return mix(body, at(clack, 1.15))
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -1149,6 +1176,8 @@ SFX = [
     ("barrel_fuse", s_barrel_fuse),
     ("barrel_blast", s_barrel_blast),
     ("purple_runes", s_purple_runes),
+    ("lockdown_close", s_lockdown_close),
+    ("lockdown_open", s_lockdown_open),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------

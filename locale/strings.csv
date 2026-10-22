@@ -207,6 +207,8 @@ CAPTION_PORTAL_OPEN,[The portal hums open],[El portal se abre con un zumbido]
 CAPTION_ARRIVAL_ALTAR,[The altar hums and flares],[El altar zumba y destella]
 CAPTION_PYLON_LOCK,[A rune pylon locks in],[Un pilar rúnico se enciende]
 CAPTION_TIMER_BEEP,[Beeping],[Pitidos]
+CAPTION_LOCKDOWN_CLOSE,[Bars slam shut],[Los barrotes caen de golpe]
+CAPTION_LOCKDOWN_OPEN,[Bars grind open],[Los barrotes se alzan chirriando]
 CAPTION_FINAL_ALTAR,[The altar roars awake],[El altar despierta con un rugido]
 CAPTION_LOW_HP,[Heartbeat: low health],[Latido: poca vida]
 ITEM_HEAT_SINK,Heat Sink,Disipador
@@ -604,6 +606,12 @@ APPROACH_PYLON_PROMPT,[E / X] Awaken,[E / X] Despertar
 TIMED_SWITCH_PROMPT,[E / X] Activate,[E / X] Activar
 RUNE_PILLAR_PROMPT,[E / X] Turn,[E / X] Girar
 CAUSE_EXPLOSIVE_BARREL,An explosive barrel,Un barril explosivo
+CAUSE_LOCKDOWN_HAZARD,A Lockdown's hazard,Un peligro del Bloqueo
+HUD_LOCKDOWN,LOCKDOWN,BLOQUEO
+HUD_LOCKDOWN_HAZARD,HAZARD LOCKDOWN,BLOQUEO PELIGROSO
+HUD_LOCKDOWN_LEFT,Formation %d / %d · %d left,Formación %d / %d · quedan %d
+HUD_LOCKDOWN_CLEARED,Lockdown cleared · the exits are open,Bloqueo superado · las salidas se abren
+HUD_LOCKDOWN_FORCED,The bars give way · the exits are open,Los barrotes ceden · las salidas se abren
 SHOP_TITLE,Shop,Tienda
 SHOP_SOLD,Sold,Vendido
 SHOP_CANT_USE,Can't use now,No se puede usar ahora

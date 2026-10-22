@@ -84,6 +84,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"OverrunTable",  # v0.4.0 AB
 	&"ShopTable",  # v0.5.0 SH
 	&"ArenaTable",  # v0.5.5 AR
+	&"LockdownTable",  # v0.9.0 LK: the Lockdowns' numbers (LockdownState.table)
 	&"CurveTable",  # v0.4.0 TU's difficulty curve (SpawnTable.curve); the save lab builds floors with it, as Main
 	&"LegendaryTable",
 	&"LootPacingTable",  # v0.8.0 FL
@@ -144,6 +145,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"RuneAlignment",  # v0.9.0 RA: the rune puzzle (its pillars, solved, slab and reward)
 	&"Breakables",  # v0.9.0 DX: the cracked wall, the containers and the explosive barrels
 	&"PurpleRunes",  # v0.9.0 DP: the purple-rune dais (awakened, the Deep gate's footprint)
+	&"LockdownState",  # v0.9.0 LK: the Lockdown sealed, its formations, the safety, the strikes; those opened
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -183,6 +185,7 @@ const ADDED_SINCE_V05 := {
 		&"runes",  # v0.9.0 RA: a floor saved before RA has none (built under floor rules 1-10: none in the base either)
 		&"breakables",  # v0.9.0 DX: the same (floor rules 1-10 build none)
 		&"purple",  # v0.9.0 DP: a floor saved before DP has none (built under floor rules 1-11: none in the base either)
+		&"lockdown",  # v0.9.0 LK: a floor saved before LK has none (built under floor rules 1-12: none in the base either)
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
 		&"loot_guaranteed",  # v0.8.0 FL: an older save's floor used no guarantee (0) and holds no jackpot
 		&"loot_jackpots",
@@ -451,6 +454,8 @@ static func apply(base: World, snap: Dictionary) -> String:
 	# so only the wall grid is rebuilt for them.
 	var barriers := base.arenas.barriers.size() + base.bosses.pillar_x.size()  # v0.8.0 BS1: pillars too
 	barriers += Secrets.slabs_up(base)  # v0.9.0 TD, RA: the secret rooms' slabs while they stand
+	if base.lockdown != null:  # v0.9.0 LK: a sealed Lockdown's bars, as an arena's
+		barriers += base.lockdown.barriers.size()
 	if base.walls.size() == walls_before + barriers and barriers > 0:
 		base.rebuild_wall_grid()
 	elif base.walls.size() != walls_before:  # any other wall added in play: the grid and field are rebuilt
@@ -720,6 +725,8 @@ static func _make(cls: StringName) -> Object:
 			return Breakables.new()
 		&"PurpleRunes":  # v0.9.0 DP
 			return PurpleRunes.new()
+		&"LockdownState":  # v0.9.0 LK
+			return LockdownState.new()
 		&"RngStream":
 			return RngStream.new()
 		&"ActorStore":

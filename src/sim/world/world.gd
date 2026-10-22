@@ -195,6 +195,8 @@ var runes: RuneAlignment
 var breakables: Breakables
 ## v0.9.0 DP (owner Q26b; PurpleRunes): the floor's purple-rune room (its dais awakens the Purple Portal); null without.
 var purple: PurpleRunes
+## v0.9.0 LK (owner Q21; Lockdowns): the floor's Lockdowns in play; null on a floor without any.
+var lockdown: LockdownState
 # --- end Bosses ---------------------------------------------------------------------------------------------
 # --- Rewards (v0.3.0 E; Rewards) ----------------------------------------------------------------------------
 ## The floor's reward rules (part of the loadout, like item_tables; not hashed).
@@ -714,11 +716,13 @@ func step(frame: InputFrame) -> void:
 	Events.advance(self)  # v0.5.0 EV: ambush cleared, defence held, elites alive.
 	CoreTheft.advance(self)  # v0.6.0 CU: the gone carriers, staggers and steal windows, drops taken
 	Arenas.advance(self)  # v0.5.5 AR: sealed arenas (the Overrun too): the seal, the waves, the clear
+	if lockdown != null:
+		Lockdowns.advance(self)  # v0.9.0 LK: the seal, the formations, the safety, the cap, the open
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
 	HealOrbs.advance(self)  # v0.4.0 TU (D8): walking over a heal orb heals
 	WaveDirector.advance(self)
 	if spawner != null:
-		if Arenas.holds_spawns(self):
+		if Arenas.holds_spawns(self) or Lockdowns.holds_spawns(self):  # v0.9.0 LK: a Lockdown too
 			Arenas.count_time(self)  # v0.5.5 AR: sealed in an arena, the horde waits; the clock runs on
 		elif boss_flow == null or boss_flow.spawns_open(self):
 			SpawnDirector.advance(self)
@@ -867,6 +871,8 @@ func add_pickup(item_index: int, pos: Vector2) -> int:
 ## Whether a blink from `from` may land at `at`: the boss room's door rules (BossFlow.blink_may_land).
 func blink_may_land(from: Vector2, at: Vector2) -> bool:
 	if not Arenas.blink_may_land(self, at):  # v0.5.5 AR: never out of a sealed arena
+		return false
+	if not Lockdowns.blink_may_land(self, at):  # v0.9.0 LK: never out of a sealed Lockdown
 		return false
 	return boss_flow == null or boss_flow.blink_may_land(self, from, at)
 
@@ -1319,6 +1325,8 @@ func state_hash() -> String:
 		breakables.hash_into(h)
 	if purple != null:  # v0.9.0 DP: only floors with a purple-rune room
 		purple.hash_into(h)
+	if lockdown != null:  # v0.9.0 LK: only floors with a Lockdown
+		lockdown.hash_into(h)
 	if final_fight != null:  # v0.8.0 FB1: only the worlds that hold the final fight
 		final_fight.hash_into(h)
 	actors.hash_into(h)

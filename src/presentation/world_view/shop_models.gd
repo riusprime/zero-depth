@@ -69,6 +69,13 @@ const SPECS := {
 	# 1.7 m box in the room's middle (the floating crystal stays a code object). Listed in assets/models/manifest.json
 	# when the owner's file is prepared; until then the code stand-in draws it.
 	&"purple_rune_dais": {"size": Vector3(1.7, 0.55, 1.7), "yaw": 0.0},
+	# v0.9.0 LK (owner Q21; docs/art/requests/v0.9.0_ART_LIST.md; LockdownView): the Hazard Lockdowns' props, one per
+	# biome, each filling the box of its code stand-in. Not delivered yet: the stand-ins draw them until they are listed.
+	&"hazard_cable": {"size": Vector3(0.6, 1.6, 0.6), "yaw": 0.0},
+	&"hazard_rock": {"size": Vector3(1.1, 1.0, 1.1), "yaw": 0.0},
+	&"hazard_vent": {"size": Vector3(1.4, 2.2, 1.4), "yaw": 0.0},
+	&"hazard_ice": {"size": Vector3(1.6, 0.9, 1.6), "yaw": 0.0},
+	&"hazard_star": {"size": Vector3(0.8, 0.8, 0.8), "yaw": 0.0},
 }
 
 ## Where the manifest is read (tests point it at their own).

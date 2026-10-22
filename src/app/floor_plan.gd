@@ -179,6 +179,7 @@ func _build_world() -> void:
 ## saved before TD (floor rules 1-9) has no timed door; RA, DX: one saved before them (1-10) has no rune puzzle and no
 ## destructibles. The rune puzzle comes after the timed door, the destructibles after both (never their rooms).
 ## v0.9.0 DP: the purple-rune room comes last (never a secret's room; one saved before DP, rules 1-11, has none).
+## v0.9.0 LK: the Lockdown rooms after it (never a secret's or the purple room; one saved before LK, 1-12, has none).
 static func add_secrets(
 	w: World, repo: ContentRepository, run: RunState, move_speed: float
 ) -> void:
@@ -193,6 +194,9 @@ static func add_secrets(
 		var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
 		var chances := secrets.purple_floor_permille if secrets != null else PackedInt32Array()
 		PurpleRunes.setup(w, PurpleRunes.chance(run, chances))
+	if run.floor_rules > RunState.FLOOR_RULES_V090_DP:  # v0.9.0 LK (owner Q21): last, never another kind's room
+		var lockdown := RunContentCompiler.compile_lockdown(repo.get_def(&"lockdown", &"lockdown"))
+		Lockdowns.setup(w, lockdown, run.floor_index)
 
 
 ## v0.9.0 DX: the destructibles' numbers from the data (SecretRules' defaults without it).
