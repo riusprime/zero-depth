@@ -66,6 +66,7 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	if spec.homing > 0 and spec.form == AttackSpec.Form.ARC:
 		ctx.angle = ProjectileMoves.snap_angle(w, ctx.origin, ctx.angle, arc_reach_m(w, spec) + 2.0)
 	var landed := _shared_form(w, spec, ctx)
+	Breakables.on_attack(w, spec, ctx)  # v0.9.0 DX: a container or an explosive barrel it reaches
 	if not spec.hooks.is_empty():
 		_run(w, spec, AttackSpec.Trigger.ON_LAUNCH, ctx, ctx.origin, -1, 0)
 	if ctx.depth == 0 and not ctx.back and spec.back_permille > 0:

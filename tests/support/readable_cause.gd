@@ -109,6 +109,9 @@ func _check(w: World, e: SimEvent) -> void:
 	if e.effect_id == &"molten_floor":  # v0.8.0 BS2: lava or the meltdown
 		_molten_hit(w, e)
 		return
+	if e.effect_id == Breakables.EFFECT:  # v0.9.0 DX: an explosive barrel's blast
+		_barrel_hit(w, e)
+		return
 	if _birth.has(e.source_id):
 		var b: Array = _birth[e.source_id]
 		age = e.tick - int(b[0])
@@ -198,6 +201,28 @@ func _molten_hit(w: World, e: SimEvent) -> void:
 		return
 	var v := context.duplicate()
 	v.merge({"tick": e.tick, "cause": key, "problems": "molten floor without a recap line"})
+	violations.append(v)
+
+
+## v0.9.0 DX (Q23): an explosive barrel's blast is no actor's attack: its warning is its own lit fuse (seen and heard
+## for Breakables.fuse_ticks, at least the telegraph minimum), its recap line CAUSE_EXPLOSIVE_BARREL.
+func _barrel_hit(w: World, e: SimEvent) -> void:
+	var key := String(Breakables.CAUSE_KEY)
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	var problems := PackedStringArray()
+	if w.breakables == null or w.breakables.fuse_ticks < SimTick.MIN_TELEGRAPH_TICKS:
+		problems.append("a barrel's fuse shorter than the telegraph minimum")
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		problems.append("cause %s missing en or es" % key)
+	if problems.is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
 	violations.append(v)
 
 

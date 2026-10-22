@@ -15,6 +15,23 @@ extends RefCounted
 ## `build_id`). CONTINUE: the saved run first (RunSaver.run_from `resume`, the save's payload), at its room entry.
 enum Mode { FLOOR, NEW_RUN, CONTINUE }
 
+## v0.9.0 DX: the SecretsDefinition numbers copied into SecretRules (same names).
+const RULE_FIELDS: Array[String] = [
+	"crack_permille",
+	"crack_hits",
+	"containers_max",
+	"container_drop_permille",
+	"container_heal_permille",
+	"container_shards_min",
+	"container_shards_max",
+	"barrel_room_permille",
+	"barrels_max",
+	"barrel_fuse_ticks",
+	"barrel_radius_m",
+	"barrel_damage",
+	"barrel_hero_damage",
+]
+
 var mode := Mode.FLOOR
 ## The content (null: build() reads it, ContentRepository.load_all).
 var repo: ContentRepository
@@ -135,10 +152,8 @@ func _build_world() -> void:
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
 	# v0.5.0 EV: event rooms and curses, after the carry and the heat; v0.8.0 N17, N19: an old save keeps its rooms
 	EventCompiler.setup(w, repo, FloorScenario.curse_room_rules_of(run))
-	# v0.9.0 TD: after every room kind; a floor saved before TD (floor rules 1-9) has none
-	if arena_def == null and run.floor_rules > RunState.FLOOR_RULES_V080_BD:
-		var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
-		TimedDoor.setup(w, map.timed_door_permille, map.timed_door_ticks, table.move_speed)
+	if arena_def == null:
+		add_secrets(w, repo, run, table.move_speed)  # v0.9.0 TD, RA, DX
 	# v0.5.5 DS (D4): the hidden catch-up, read from the whole build once everything above is set up.
 	w.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))
 	CatchUp.start_floor(w)
@@ -156,6 +171,31 @@ func _build_world() -> void:
 		WandMigration.run(w)  # v0.6.5 WN5b: a save that still holds retired v0.6 cards
 		AttackSlots.trim(w)  # v0.9.0 AS: a save from before the slot categories (AttackSlots.trim)
 	world = w
+
+
+## v0.9.0 TD, RA, DX: a floor's secrets, after every room kind (the save lab builds floors with it too). TD: a floor
+## saved before TD (floor rules 1-9) has no timed door; RA, DX: one saved before them (1-10) has no rune puzzle and no
+## destructibles. The rune puzzle comes after the timed door, the destructibles after both (never their rooms).
+static func add_secrets(
+	w: World, repo: ContentRepository, run: RunState, move_speed: float
+) -> void:
+	if run.floor_rules > RunState.FLOOR_RULES_V080_BD:
+		var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
+		TimedDoor.setup(w, map.timed_door_permille, map.timed_door_ticks, move_speed)
+	if run.floor_rules > RunState.FLOOR_RULES_V090_TD:
+		var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
+		RuneAlignment.setup(w, secrets.rune_permille if secrets != null else 0)
+		Breakables.setup(w, secret_rules(secrets))
+
+
+## v0.9.0 DX: the destructibles' numbers from the data (SecretRules' defaults without it).
+static func secret_rules(def: SecretsDefinition) -> SecretRules:
+	var r := SecretRules.new()
+	if def == null:
+		return r
+	for f in RULE_FIELDS:
+		r.set(f, def.get(f))
+	return r
 
 
 ## v0.9.0 FA: whether the final arena opens on the final approach: a fresh arrival, or a save made on the approach or

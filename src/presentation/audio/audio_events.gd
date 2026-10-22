@@ -99,6 +99,13 @@ var _approach := -1
 var _timed := -1
 var _timed_beeps := 0
 var _timed_switches := 0
+## v0.9.0 RA: the rune pillars' last press ticks and whether the puzzle was solved, for their cues' edges.
+var _rune_presses := PackedInt32Array()
+var _rune_solved := false
+## v0.9.0 DX: the cracked wall's last hit and break, and each prop's broken / fuse marks, for their cues' edges.
+var _crack_hit := -1
+var _crack_broken := false
+var _props := PackedInt32Array()
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -126,6 +133,11 @@ func prime(reader: WorldReader) -> void:
 	_timed = reader.timed_door_state()
 	_timed_beeps = TimedDoorView.beeps_now(reader)
 	_timed_switches = switch_mask(reader)
+	_rune_presses = rune_presses(reader)
+	_rune_solved = reader.rune_solved()
+	_crack_hit = reader.crack_hit_tick()
+	_crack_broken = reader.crack_broken()
+	_props = prop_marks(reader)
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -154,6 +166,65 @@ func collect(reader: WorldReader) -> Array:
 	_arrival(reader, out)
 	_final_approach(reader, out)
 	_timed_door(reader, out)
+	_rune_puzzle(reader, out)
+	_breakables(reader, out)
+	return out
+
+
+## v0.9.0 DX (owner W §4 C, §5; Q23): a Skill hit on the cracked wall (`container_break`, at it) and its break
+## (`wall_break`); a container breaking (`container_break`); a barrel's fuse lit (`barrel_fuse`) and its blast
+## (`barrel_blast`).
+func _breakables(reader: WorldReader, out: Array) -> void:
+	if reader.has_cracked_wall():
+		var at := reader.crack_door_center()
+		if reader.crack_broken() and not _crack_broken:
+			out.append([&"wall_break", at, 1.0])
+		elif reader.crack_hit_tick() != _crack_hit:
+			out.append([&"container_break", at, 1.0])
+		_crack_hit = reader.crack_hit_tick()
+		_crack_broken = reader.crack_broken()
+	var marks := prop_marks(reader)
+	for i in marks.size():
+		var was := _props[i] if i < _props.size() else 0
+		if marks[i] == was:
+			continue
+		var at := reader.breakable_pos(i)
+		var barrel := reader.breakable_kind(i) == WorldReader.BREAKABLE_EXPLOSIVE
+		if marks[i] == 2:
+			out.append([&"barrel_blast" if barrel else &"container_break", at, 1.0])
+		elif marks[i] == 1:
+			out.append([&"barrel_fuse", at, 1.0])
+	_props = marks
+
+
+## Each prop's mark: 0 whole, 1 its fuse burning, 2 broken (or blown).
+static func prop_marks(reader: WorldReader) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for i in reader.breakable_count():
+		out.append(2 if reader.breakable_broken(i) else (1 if reader.breakable_fusing(i) else 0))
+	return out
+
+
+## v0.9.0 RA (owner Q22; "the pillar turns with a grind"): a pillar turning a quarter (`pillar_turn`, at it), and the
+## slab sinking once all three match (the boss door's `boss_door_opening`, at the doorway).
+func _rune_puzzle(reader: WorldReader, out: Array) -> void:
+	if not reader.has_rune_puzzle():
+		return
+	var presses := rune_presses(reader)
+	for k in presses.size():
+		if k < _rune_presses.size() and presses[k] != _rune_presses[k]:
+			out.append([&"pillar_turn", reader.interactable_pos(reader.rune_pillar_entry(k)), 1.0])
+	_rune_presses = presses
+	if reader.rune_solved() and not _rune_solved:
+		out.append([&"boss_door_opening", reader.rune_door_center(), 1.0])
+	_rune_solved = reader.rune_solved()
+
+
+## Each rune pillar's last press tick (pillar k at k).
+static func rune_presses(reader: WorldReader) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for k in reader.rune_pillar_count():
+		out.append(reader.interactable_press_tick(reader.rune_pillar_entry(k)))
 	return out
 
 

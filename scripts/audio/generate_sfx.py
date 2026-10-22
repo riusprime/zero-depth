@@ -961,6 +961,63 @@ def s_bomb_throw(r):
     return mix(wh, thump)
 
 
+def s_pillar_turn(r):
+    """v0.9.0 RA (owner Q22; the lead's placeholder for docs/art/requests/v0.9.0_ART_LIST.md `pillar_turn`): a stone
+    drum grinding a quarter round, 0.45 s: band-passed grit wobbling round 260 Hz over a low saw rumble, ending on a
+    soft clunk as it locks. (This machine had no numpy: the committed file was rendered by a pure-Python copy of this
+    recipe whose noise differs, so a numpy run re-renders it slightly differently.)"""
+    n = n_of(0.45)
+    t = np.arange(n) / RATE
+    grit = bandpass(noise(r, n), 260.0 + 120.0 * np.sin(2 * np.pi * 7.0 * t), 2.0)
+    rumble = one_pole_lp(osc(curve(70.0, 55.0, n), "saw", n) * 0.35, 400.0)
+    body = (grit + rumble) * env(n, 0.03, 0.25) * (0.75 + 0.25 * np.sin(2 * np.pi * 11.0 * t))
+    m = n_of(0.12)
+    clunk = at(osc(curve(140.0, 60.0, m), "sine", m) * env(m, 0.002, 0.04), 0.33)
+    return mix(body, clunk * 0.9)
+
+
+def s_wall_break(r):
+    """v0.9.0 DX (the lead's placeholder for the art list's `wall_break`; rendered like `pillar_turn`, without numpy):
+    a cracked wall giving way, 0.9 s: a sharp crack, a deep falling boom and a crumble of stone darkening as it
+    settles."""
+    n = n_of(0.9)
+    c = n_of(0.05)
+    crack = one_pole_hp(noise(r, c), 1500.0) * env(c, 0.001, 0.015)
+    b = n_of(0.5)
+    boom = osc(curve(90.0, 38.0, b), "sine", b) * env(b, 0.003, 0.18)
+    crumble = one_pole_lp(noise(r, n), curve(2400.0, 300.0, n)) * env(n, 0.02, 0.35) * 0.7
+    return mix(crack * 0.8, boom, crumble)
+
+
+def s_container_break(r):
+    """v0.9.0 DX (`container_break`; the same render): a crate or an urn smashing, 0.3 s: a band-passed snap sweeping
+    down with a short hollow knock."""
+    n = n_of(0.3)
+    snap = bandpass(noise(r, n), curve(2600.0, 900.0, n), 3.0) * env(n, 0.001, 0.07)
+    m = n_of(0.1)
+    knock = osc(curve(220.0, 120.0, m), "sine", m) * env(m, 0.001, 0.03)
+    return mix(snap, knock * 0.6)
+
+
+def s_barrel_fuse(r):
+    """v0.9.0 DX (`barrel_fuse`; the same render): an explosive barrel's lit fuse, 1.0 s (the fuse's length): a
+    fluttering high hiss over a thin rising whine."""
+    n = n_of(1.0)
+    t = np.arange(n) / RATE
+    hiss = one_pole_hp(noise(r, n), 3000.0) * (0.6 + 0.4 * np.sin(2 * np.pi * 23.0 * t))
+    rise = osc(curve(600.0, 1400.0, n), "sine", n) * 0.12
+    return (hiss + rise) * env(n, 0.02, 2.0)
+
+
+def s_barrel_blast(r):
+    """v0.9.0 DX (`barrel_blast`; the same render): the barrel's blast, 1.0 s: a noise burst closing from bright to
+    dark over a deep falling boom."""
+    n = n_of(1.0)
+    burst = one_pole_lp(noise(r, n), curve(5000.0, 200.0, n)) * env(n, 0.002, 0.25)
+    boom = osc(curve(110.0, 30.0, n), "sine", n) * env(n, 0.003, 0.3)
+    return mix(burst, boom * 1.2)
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -1051,6 +1108,11 @@ SFX = [
     ("final_altar", s_final_altar),
     ("timer_beep", s_timer_beep),
     ("bomb_throw", s_bomb_throw),
+    ("pillar_turn", s_pillar_turn),
+    ("wall_break", s_wall_break),
+    ("container_break", s_container_break),
+    ("barrel_fuse", s_barrel_fuse),
+    ("barrel_blast", s_barrel_blast),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------

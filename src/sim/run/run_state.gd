@@ -39,7 +39,10 @@ extends RefCounted
 ## (BossFlow.Door, set in prepare). A floor saved under rules 1-8 keeps its open doorway, as it was saved.
 ## v0.9.0 TD (owner W §2, Q20): 10 is today's: on some floors a dead end is a secret room behind a timed door
 ## (TimedDoor.setup). A floor saved under rules 1-9 is rebuilt without one, as it was saved (FloorPlan).
-const FLOOR_RULES := 10
+## v0.9.0 RA (owner W §4 A, Q22): 11 is today's: on some floors a rune puzzle seals a dead end (RuneAlignment.setup).
+## A floor saved under rules 1-10 is rebuilt without one, as it was saved (FloorPlan). v0.9.0 DX (owner W §4 C, Q23)
+## rides the same rule (both land together): cracked walls, containers and explosive barrels (Breakables.setup).
+const FLOOR_RULES := 11
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
@@ -49,6 +52,7 @@ const FLOOR_RULES_V080_N14 := 6
 const FLOOR_RULES_V080_N17 := 7
 const FLOOR_RULES_V080_N19 := 8
 const FLOOR_RULES_V080_BD := 9
+const FLOOR_RULES_V090_TD := 10
 
 var run_seed := 0
 var table: RunTable

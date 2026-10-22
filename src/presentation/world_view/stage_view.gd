@@ -108,9 +108,12 @@ var _altar_at := Vector2.ZERO
 var _altar_r := 0.0
 var _proc_input := {}
 var _proc := {}
-var _hidden_ground: Array[Rect2] = []
-var _hidden_rect := Rect2()
+## v0.9.0 TD, RA: per hidden room its ground rects; the hidden rooms' interiors; their own walls (wall index -> room);
+## the nodes held back per room.
+var _hidden_ground := {}
+var _hidden_rects: Array[Rect2] = []
 var _hidden_walls := {}
+var _hidden_by := {}
 
 
 func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> void:
@@ -153,10 +156,10 @@ func _build_floor_ground(reader: WorldReader, arena_half: float) -> void:
 		for i in reader.wall_count():
 			if reader.wall_class(i) == 0:
 				_add_ground(reader.wall(i).bounds())
-		_hidden_ground = HiddenRoom.split(reader, _ground_rects)  # v0.9.0 TD (Q23)
+		for room in reader.hidden_rooms():  # v0.9.0 TD (Q23); RA: every hidden room
+			_hidden_ground[room] = HiddenRoom.split(reader, _ground_rects, room)
+			_hidden_rects.append(reader.floor_room(room))
 		_hidden_walls = HiddenRoom.walls(reader)
-		if reader.hidden_room() >= 0:
-			_hidden_rect = reader.floor_room(reader.hidden_room())
 	if _ground_rects.is_empty():
 		_build_ground(arena_half)
 	else:
@@ -442,12 +445,12 @@ func _build_room_ground() -> void:
 	if mats[0] == mats[1]:
 		cells = [cells[0] + cells[1], []]
 	_add_ground_tiles(cells, mats)
-	if not _hidden_ground.is_empty():  # v0.9.0 TD: the hidden room's ground, out of sight until it opens
-		var hid := room_ground_cells(_hidden_ground)
+	for room: int in _hidden_ground:  # v0.9.0 TD, RA: a hidden room's ground, out of sight until it opens
+		var hid := room_ground_cells(_hidden_ground[room])
 		if mats[0] == mats[1]:
 			hid = [hid[0] + hid[1], []]
-		for node in _add_ground_tiles(hid, mats, "HiddenGround"):
-			_hide(node)
+		for node in _add_ground_tiles(hid, mats, "HiddenGround%d_" % room):
+			_hide(node, room)
 
 
 ## The room ground's tiles: the global TILE_M grid clipped to each rect, as [even cells, odd cells] (the checker's two
@@ -499,19 +502,29 @@ func _add_ground_tiles(cells: Array, mats: Array, prefix := "Ground") -> Array[N
 	return made
 
 
-## v0.9.0 TD: `node` out of sight until reveal_hidden().
-func _hide(node: Node3D) -> void:
+## v0.9.0 TD: `node` (hidden room `room`'s) out of sight until reveal_hidden().
+func _hide(node: Node3D, room: int) -> void:
 	node.visible = false
 	hidden_nodes.append(node)
+	if not _hidden_by.has(room):
+		_hidden_by[room] = []
+	(_hidden_by[room] as Array).append(node)
 
 
-## v0.9.0 TD (Q23): the hidden room comes into sight (its door first opened). Idempotent.
-func reveal_hidden() -> void:
-	for n in hidden_nodes:
-		if is_instance_valid(n):
-			n.visible = true
-	hidden_nodes.clear()
-	_hidden_walls = {}
+## v0.9.0 TD (Q23): hidden room `room` comes into sight (its door first opened; RA: its puzzle solved); -1: every
+## hidden room. Idempotent.
+func reveal_hidden(room := -1) -> void:
+	for r: int in _hidden_by.keys():
+		if room >= 0 and r != room:
+			continue
+		for n in _hidden_by[r]:
+			if is_instance_valid(n):
+				n.visible = true
+			hidden_nodes.erase(n)
+		_hidden_by.erase(r)
+	for i: int in _hidden_walls.keys():
+		if room < 0 or _hidden_walls[i] == room:
+			_hidden_walls.erase(i)
 
 
 ## v0.9.0 TD: StageKit's pieces of the hidden room's own walls, out of sight (after the kit's nodes are built).
@@ -521,7 +534,7 @@ func _hide_kit_walls() -> void:
 	for i: int in _hidden_walls:
 		if i < kit.wall_pieces.size():
 			for n: Node3D in kit.wall_pieces[i]:
-				_hide(n)
+				_hide(n, _hidden_walls[i])
 
 
 ## A ground tile's transform: the unit plane scaled to `size` (m, on x and z) at `at`.
@@ -583,7 +596,7 @@ func _build_walls(reader: WorldReader, draw := true) -> void:
 		add_child(node)
 		_wall_nodes.append(node)
 		if _hidden_walls.has(i):  # v0.9.0 TD
-			_hide(node)
+			_hide(node, _hidden_walls[i])
 
 
 func _build_props(seed_value: int, arena_half: float) -> void:
@@ -706,7 +719,8 @@ func _build_kit(reader: WorldReader) -> void:
 
 func _dress() -> void:
 	_placements = CurseRoomView.strip(StageDresser.dress(_dressing), _curse_rect)
-	_placements = CurseRoomView.strip(_placements, _hidden_rect)  # v0.9.0 TD: no decor or light in the hidden room
+	for r in _hidden_rects:  # v0.9.0 TD, RA: no decor or light in a hidden room
+		_placements = CurseRoomView.strip(_placements, r)
 	_placements = AltarStage.clear_decor(_placements, _altar_at, _altar_r)  # v0.9.0 SA
 	_proc = {}
 	var t0 := Time.get_ticks_usec()  # v0.8.0 N10 (option A; N15, D53: the only wall style)
@@ -832,6 +846,14 @@ func _build_shards(
 		special.append(reader.floor_room(reader.timed_room()).get_center())
 		for k in reader.timed_switch_count():
 			clear.append(reader.interactable_pos(reader.timed_switch_entry(k)))
+	if reader.has_rune_puzzle():  # v0.9.0 RA: none in its hidden room or round the pillars
+		special.append(reader.floor_room(reader.rune_room()).get_center())
+		for k in reader.rune_pillar_count():
+			clear.append(reader.interactable_pos(reader.rune_pillar_entry(k)))
+	if reader.has_cracked_wall():  # v0.9.0 DX: none in the room behind the cracked wall
+		special.append(reader.floor_room(reader.crack_room()).get_center())
+	for k in reader.breakable_count():  # nor on a container or a barrel
+		clear.append(reader.breakable_pos(k))
 	var blocked: Array = doors.duplicate()
 	blocked.append_array(reader.arena_barriers())
 	_shard_input = {

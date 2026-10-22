@@ -25,8 +25,6 @@ enum State { SHUT, OPEN, HELD }
 
 ## How near a switch (m) the press reaches.
 const SWITCH_REACH_M := 1.8
-## The share of the secret room's rewards that are epic altars (per mille; the rest chests).
-const EPIC_PERMILLE := 500
 const REWARD_STREAM := "loot:timed_door"
 
 var state := State.SHUT
@@ -84,34 +82,9 @@ static func setup(w: World, chance_permille: int, ticks: int, speed: float) -> v
 
 
 static func _place_reward(w: World, t: TimedDoor) -> void:
-	var f := w.floor_layout
-	var room := f.timed_room
-	var at := f.rooms[room].get_center()
-	var found := false
-	for k in f.item_spots.size():
-		if f.item_rooms[k] == room:
-			at = f.item_spots[k]
-			found = true
-			break
-	if not found:
-		var best := -1.0
-		for q in f.spawn_points[room]:
-			var d := Kin.length(q - f.rooms[room].get_center())
-			if best < 0.0 or d < best:
-				best = d
-				at = q
-	var rng := RngStream.derive(f.seed_value, REWARD_STREAM)
-	if rng.chance_permille(EPIC_PERMILLE):
-		t.reward_epic = 1
-		t.reward_id = w.add_reward(RewardStore.Kind.ALTAR, at, 0)
-		return
-	var chests := 0
-	for i in w.rewards.size():
-		if w.rewards.kind[i] == RewardStore.Kind.CHEST:
-			chests += 1
-	t.reward_id = w.add_reward(
-		RewardStore.Kind.CHEST, at, w.reward_table.chest_price(chests, w.floor_index)
-	)
+	var got := Secrets.place_reward(w, w.floor_layout.timed_room, REWARD_STREAM)  # v0.9.0 RA: shared
+	t.reward_id = got.x
+	t.reward_epic = got.y
 
 
 ## The press on registry entry i (Interactables.handle): switch on; the second opens the door.
@@ -176,14 +149,10 @@ static func hero_inside(w: World) -> bool:
 	return Collide.circle_vs_obb(p, w.player.radius_m + 0.05, f.timed_door_wall) != Vector2.ZERO
 
 
-## Whether reward i is the secret room's epic altar (Offers.roll: epic stat cards, as a Deep floor's).
+## Whether reward i is a secret room's epic altar (Offers.roll: epic stat cards, as a Deep floor's). v0.9.0 RA: any
+## secret room's (Secrets.is_epic: the timed door's, the rune puzzle's).
 static func is_epic(w: World, i: int) -> bool:
-	return (
-		w.timed != null
-		and w.timed.reward_epic == 1
-		and w.timed.reward_id >= 0
-		and w.rewards.ids[i] == w.timed.reward_id
-	)
+	return Secrets.is_epic(w, i)
 
 
 ## Ticks left on the timer while open (0 when shut or held).
