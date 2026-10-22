@@ -259,12 +259,14 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 			"gun_charge",
 			"gun_echo",
 			"gun_homing",
+			"gun_lance",  # v0.9.0 AF1
 			"gun_laser",  # v0.9.0 LZ
 			"gun_mine",
 			"gun_pierce",
 			"gun_rapid_fire",
 			"gun_ricochet",
 			"gun_ring",  # v0.8.0 AO: the order rule's Ring and Swirl
+			"gun_scatter",  # v0.9.0 AF1
 			"gun_spiral",
 			"gun_spread",
 			"gun_swirl",

@@ -632,6 +632,15 @@ flies along), at most `void_pull_mmps` (1 m/s, weaker with distance), the pulls 
 capped at the strongest one's top step (no stacking), with a separation push from neighbours within 0.3 m of its
 edge; heavies (radius ≥ 0.5 m) half, bosses, elites and spawning enemies none (`VoidShots.steps`, pure: the view's
 lean reads it).
+**The Lance form** (`Lance`, v0.9.0 AF1, Q7 F5): a BEAM spec with `lance` > 0 charges as G13 Charge did
+(`GunForms.hold`, `World.mx.hold_t`, `hold_ticks` 72, `hold_permille` 5000) except that a full charge waits for the
+release; the release (`Attacks._form` → `Lance.fire`) traces one line per Twin lane from the hero's edge, `reach_m`
+(10.8) long and `radius_m` (0.25) wide, ended only by a wall, and lands one hit (`Attacks.land`, the spec's statuses
+and hooks) on every enemy it crosses; no projectile; one `SimEvent.Kind.LANCE` a line (pos = start, amount = length
+mm, amount_applied = angle, proc_pct = the charge ‰). The card `gun_charge` is retired into it (`migration.tres`).
+**The Scatter form** (`Scatter`, v0.9.0 AF1, Q7 F6): a BOLT spec with `pellets` > 0 (the Gun's own bolt runner:
+`count` 6 over `spread` 25°, 5 m, `share_permille` 1000 so the pellets past the centre are secondary); `pellets` only
+marks them for the view. No new state.
 
 **Venom** (`Venom`, M4): status `poison` (`ModifierOpDefinition.STATUSES`), stacks capped at `poison_max_stacks`, each
 new stack refreshing `poison_ticks`; every `poison_period_ticks` the DoT deals `poison_damage` × stacks (its own root,

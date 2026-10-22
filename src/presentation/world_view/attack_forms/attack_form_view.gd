@@ -136,7 +136,8 @@ func _sync_bolts(reader: WorldReader) -> void:
 			or reader.projectile_is_shard(i)
 			or reader.projectile_is_bomb(i)
 			or reader.projectile_is_void(i)
-		):  # v0.9.0 VP: VoidView draws the Void shots
+			or reader.projectile_is_pellet(i)
+		):  # v0.9.0 VP: VoidView draws the Void shots; v0.9.0 AF1: ScatterView the pellets
 			continue
 		var look := _projectile_look(reader, i)
 		# v0.8.0 (owner bug 2026-10-17): a shot still flying when Ring is picked has a spec whose look is now a ring;
@@ -175,7 +176,7 @@ static func live_scale(look: Dictionary, radius: float) -> float:
 ## grows from the bolt's size to its full charge (the sim's GunForms numbers, read; nothing decided here).
 func _sync_charge(reader: WorldReader) -> void:
 	var frac := reader.gun_charge()
-	if frac <= 0.0 or reader.player_dead():
+	if frac <= 0.0 or reader.player_dead() or reader.lance_active():  # v0.9.0 AF1: LanceView's glow
 		return
 	var spec := reader.attack_spec(WorldReader.ATTACK_BOLT)
 	var look := _look_of(reader, String(WorldReader.ATTACK_BOLT))

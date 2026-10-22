@@ -148,6 +148,9 @@ const FIELD_STAGE := {
 	&"void_tick_seconds": [3, &"void_tick_ticks", "ticks"],
 	&"void_pull_mm": [3, &"void_pull_mm", ""],
 	&"void_pull_mmps": [3, &"void_pull_mmps", ""],
+	# v0.9.0 AF1 (owner Q7): the Lance form's line (Lance) and the Scatter form's pellets (Scatter)
+	&"lance": [0, &"lance", ""],
+	&"pellets": [0, &"pellets", ""],
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).

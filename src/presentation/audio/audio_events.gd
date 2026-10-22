@@ -432,6 +432,8 @@ func _events(reader: WorldReader, out: Array) -> void:
 					out.append([&"dash", e.pos, 0.8])
 			SimEvent.Kind.BLAST:  # v0.9.0 BM: a bomb bursts
 				out.append([&"bomb_blast", e.pos, 1.0])
+			SimEvent.Kind.LANCE:  # v0.9.0 AF1: a Lance released (the Gun's shot cue until its own sound comes)
+				out.append([&"bolt_fire", e.pos, 1.0])
 
 
 ## Mines (v0.4.0 EN): a beep as one arms, the blast when an armed one goes off the floor.
@@ -610,6 +612,8 @@ func _scan_projectiles(reader: WorldReader, out: Array) -> void:
 			cue = &"bomb_throw"
 		elif reader.void_active():
 			cue = &"void_hum"
+		elif reader.scatter_active():  # v0.9.0 AF1: the Scatter's bark (Scatter Blast's cue until its own sound)
+			cue = &"skill_scatter_blast"
 		out.append([cue, reader.player_pos(), 1.0])
 	if hostile:
 		out.append([&"enemy_fire", null, 1.0])
