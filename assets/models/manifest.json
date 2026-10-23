@@ -54,7 +54,7 @@
     {
       "id": "boss_twin_warden_amber",
       "path": "assets/models/bosses/boss_twin_warden_amber.glb",
-      "sha256": "335072ae3094f6de78591ae7806c2fc4a157805620565bf5800846ae0b69507f"
+      "sha256": "ed2cdf3fd5c6cf1681dba288468bec6aeb44cc9a7e7937e7b93f59d05f94ee56"
     },
     {
       "id": "boss_twin_warden_violet",
@@ -64,7 +64,7 @@
     {
       "id": "boss_clockwork_judge",
       "path": "assets/models/bosses/boss_clockwork_judge.glb",
-      "sha256": "d73d2f10c979d1fa1e9742a8a29de0058593da7194fdf4bfa0fe8e72fd2b0906"
+      "sha256": "54562507105ddbb0bce42c9693d18ceb1635fd132860088d2fa07139797c2080"
     },
     {
       "id": "boss_lantern_shade",

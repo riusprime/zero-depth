@@ -48,8 +48,9 @@ const NB_PARTS := {
 	&"boss_tidecaller": ["ArmL", "Bell", "Body", "Shell", "Staff"],
 	&"boss_twin_warden_violet": ["Body", "Helm", "Shield", "Sword"],
 	&"boss_lantern_shade": ["ArmL", "ArmR", "Body", "HandLantern"],
+	&"boss_clockwork_judge": ["ArmL", "ArmR", "Body", "Gears", "HandHour", "HandMinute"],
 }
-const NB_RIGGED := {&"boss_twin_warden_amber": 52, &"boss_clockwork_judge": 49}
+const NB_RIGGED := {&"boss_twin_warden_amber": 52}
 
 
 func _manifest() -> Array:
@@ -167,7 +168,8 @@ func test_the_elites_are_cut_into_named_parts() -> void:
 ## v0.9.0 NB1 (owner 2026-10-23: "you will have to animate the bosses like with the other ones"): the four new bosses'
 ## five files (scripts/assets/nb_prep.py) are listed, each a boss's triangles (the art list's 15-20k, nothing
 ## simplified) with its three maps at 1024 px; the static ones are cut into the parts the art list names (the Lantern
-## Shade's file has no lantern cage, so only its arms and held lantern), the rigged ones keep their Mixamo skeleton.
+## Shade's file has no lantern cage, so only its arms and held lantern), the amber Warden keeps its Mixamo skeleton (its
+## joints' rest rebuilt from their binds); the Judge's skin is unusable (its binds are not matrices), so it is cut too.
 func test_the_v090_bosses_are_listed_cut_or_rigged() -> void:
 	var paths := {}
 	for m: Dictionary in _manifest():
@@ -203,5 +205,12 @@ func test_the_v090_bosses_are_listed_cut_or_rigged() -> void:
 			if skel != null:
 				# Every skin joint is a bone (Godot adds the end nodes too, and spells "mixamorig:" with "_").
 				assert_gte(skel.get_bone_count(), NB_RIGGED[id], "%s's joints" % id)
-				assert_gt(skel.find_bone("mixamorig_Hips"), -1, "%s: the Mixamo hips" % id)
+				var hips := skel.find_bone("mixamorig_Hips")
+				assert_gt(hips, -1, "%s: the Mixamo hips" % id)
+				if hips >= 0:
+					assert_gt(
+						skel.get_bone_global_rest(hips).origin.y,
+						0.1,
+						"%s: its rest stands (not every joint at the origin)" % id
+					)
 		root.free()

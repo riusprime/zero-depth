@@ -15,8 +15,9 @@ Per model (SPECS):
 3. a static model (the Tidecaller, the violet Warden, the Lantern Shade) is cut into the parts the art list names
    (PARTS: triangles by region of the figure, measured on renders of the raw files), each part one glTF node with its
    origin at its pivot, so the avatar can swing it in code (BossModels rigs each part as one bone);
-4. a rigged model keeps its skeleton and skin exactly as delivered, under a new root node that does the centring and
-   the scale (no vertex moves), so the avatar can drive its bones in code.
+4. a rigged model keeps its skeleton, skin and vertices as delivered, under a new root node that does the centring and
+   the scale; its joints' rest transforms, missing from the files (every joint at the origin), are rebuilt from their
+   inverse bind matrices (repair_joints), so the rest pose matches the mesh and the avatar can drive its bones in code.
 
 It prints one JSON line per model (raw triangles and size, the parts and their triangles and pivots, the size in
 metres, the file written, its size and sha256: pasted into assets/models/manifest.json and the evidence by hand).
@@ -45,7 +46,11 @@ SPECS = {
     "boss_tidecaller": {"height": 3.2, "parts": "tidecaller"},
     "boss_twin_warden_amber": {"height": 2.2, "rigged": True},
     "boss_twin_warden_violet": {"height": 2.2, "parts": "warden_violet"},
-    "boss_clockwork_judge": {"height": 3.6, "rigged": True},
+    # The Judge's file carries a Mixamo skin (49 joints) but its inverse bind matrices are not matrices (the bytes at
+    # their buffer view decode to values up to 1e32; Godot imports it with the mesh collapsed out of sight) and its
+    # joints have no transforms: no rest pose can be recovered, so the skin is left out and it is cut into the art
+    # list's parts like the static ones (its vertices are the bind pose, the shape the renders show).
+    "boss_clockwork_judge": {"height": 3.6, "parts": "clockwork_judge"},
     "boss_lantern_shade": {"height": 3.4, "parts": "lantern_shade"},
 }
 
@@ -66,7 +71,7 @@ def accessor(j, blob, i):
     a = j["accessors"][i]
     bv = j["bufferViews"][a["bufferView"]]
     dt = {5126: np.float32, 5125: np.uint32, 5123: np.uint16, 5121: np.uint8}[a["componentType"]]
-    k = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}[a["type"]]
+    k = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4, "MAT4": 16}[a["type"]]
     o = bv.get("byteOffset", 0) + a.get("byteOffset", 0)
     stride = bv.get("byteStride", 0)
     if stride and stride != np.dtype(dt).itemsize * k:
@@ -178,7 +183,43 @@ def lantern_shade_parts(c, H):
     return lab, piv
 
 
+def clockwork_judge_parts(c, H):
+    """The Clockwork Judge (front +Z; its left at +X). Its file's skin can't be used (see SPECS), so it is cut like the
+    static ones: the two pendulum arms with their gavels from the shoulder, the gear cage at the waist, the clock's two
+    hands (the triangles standing proud of the face, split by side; the longer is the minute hand); the rest `Body`."""
+    x, y, z = c[:, 0] / H, c[:, 1] / H, c[:, 2] / H
+    lab = np.array(["Body"] * len(c), dtype=object)
+    piv = {"Body": np.array([0.0, 0.0, 0.0])}
+
+    def take(mask, name, pivot):
+        mask = mask & (lab == "Body")
+        if mask.any():
+            lab[mask] = name
+            piv[name] = np.array(pivot, float) * H
+
+    arm = ((np.abs(x) > 0.255) & (y > 0.09) & (y < 0.68)) | ((np.abs(x) > 0.17) & (y > 0.11) & (y < 0.34))
+    take(arm & (x > 0), "ArmL", [0.27, 0.68, 0.0])
+    take(arm & (x < 0), "ArmR", [-0.27, 0.68, 0.0])
+    take((np.abs(x) < 0.075) & (y > 0.3) & (y < 0.56) & (z > 0.0), "Gears", [0.0, 0.43, 0.06])
+    centre = np.array([0.0, 0.645])
+    d = np.hypot(x - centre[0], y - centre[1])
+    face = (d < 0.09) & (lab == "Body")
+    if face.any():
+        front = np.percentile(z[face], 60)
+        proud = face & (z > front + 0.006) & (d > 0.008)
+        reach = {}
+        for side, name in ((x < 0, "a"), (x >= 0, "b")):
+            m = proud & side
+            reach[name] = (m, d[m].max() if m.any() else 0.0)
+        longer = "a" if reach["a"][1] >= reach["b"][1] else "b"
+        for key, (m, _r) in reach.items():
+            hand = "HandMinute" if key == longer else "HandHour"
+            take(m, hand, [0.0, 0.645, front])
+    return lab, piv
+
+
 PARTS = {
+    "clockwork_judge": clockwork_judge_parts,
     "tidecaller": tidecaller_parts,
     "warden_violet": warden_violet_parts,
     "lantern_shade": lantern_shade_parts,
@@ -289,9 +330,63 @@ def prepare_static(rid, spec, j, blob, maps):
     return dst, len(I), parts, (G.max(0) - G.min(0)), lab
 
 
+def repair_joints(j, blob):
+    """The owner's two rigged files carry their joints' inverse bind matrices but no joint transforms (every joint
+    node sits at the origin, unturned), so the rest pose the file describes folds the mesh up. Each joint's rest is
+    rebuilt from its bind: its global transform is the inverse of its inverse bind matrix (the mesh is in the
+    skeleton's space), its local one that relative to its parent joint's. Returns how many joints were set."""
+    sk = j["skins"][0]
+    ibm = accessor(j, blob, sk["inverseBindMatrices"]).reshape(-1, 4, 4).astype(np.float64)
+    parent = {c: p for p, n in enumerate(j["nodes"]) for c in n.get("children", [])}
+    glob = {}
+    # Parents first (the joint list is in hierarchy order); a degenerate bind (an unweighted end joint whose matrix
+    # can't be inverted) takes its parent's transform.
+    for k, node in enumerate(sk["joints"]):
+        m = ibm[k].T
+        if abs(np.linalg.det(m[:3, :3])) > 1e-6:
+            glob[node] = np.linalg.inv(m)
+        else:
+            glob[node] = glob.get(parent.get(node), np.eye(4))
+    for node, g in glob.items():
+        p = parent.get(node)
+        local = np.linalg.inv(glob[p]) @ g if p in glob else g
+        n = j["nodes"][node]
+        for k in ("translation", "rotation", "scale", "matrix"):
+            n.pop(k, None)
+        # The binds are stored to 3 decimals: the turn is made exactly orthonormal again (SVD), the scale dropped.
+        u, _sv, vt = np.linalg.svd(local[:3, :3])
+        r = u @ vt
+        if np.linalg.det(r) < 0.0 or not np.isfinite(r).all():
+            r = np.eye(3)
+        n["translation"] = [float(v) for v in local[:3, 3]]
+        n["rotation"] = quat_of(r)
+    return len(glob)
+
+
+def quat_of(r):
+    """A rotation matrix's quaternion [x, y, z, w] (glTF order)."""
+    t = np.trace(r)
+    if t > 0.0:
+        s = np.sqrt(t + 1.0) * 2.0
+        q = [(r[2, 1] - r[1, 2]) / s, (r[0, 2] - r[2, 0]) / s, (r[1, 0] - r[0, 1]) / s, 0.25 * s]
+    elif r[0, 0] > r[1, 1] and r[0, 0] > r[2, 2]:
+        s = np.sqrt(1.0 + r[0, 0] - r[1, 1] - r[2, 2]) * 2.0
+        q = [0.25 * s, (r[0, 1] + r[1, 0]) / s, (r[0, 2] + r[2, 0]) / s, (r[2, 1] - r[1, 2]) / s]
+    elif r[1, 1] > r[2, 2]:
+        s = np.sqrt(1.0 + r[1, 1] - r[0, 0] - r[2, 2]) * 2.0
+        q = [(r[0, 1] + r[1, 0]) / s, 0.25 * s, (r[1, 2] + r[2, 1]) / s, (r[0, 2] - r[2, 0]) / s]
+    else:
+        s = np.sqrt(1.0 + r[2, 2] - r[0, 0] - r[1, 1]) * 2.0
+        q = [(r[0, 2] + r[2, 0]) / s, (r[1, 2] + r[2, 1]) / s, 0.25 * s, (r[1, 0] - r[0, 1]) / s]
+    q = np.array(q)
+    return [float(v) for v in q / np.linalg.norm(q)]
+
+
 def prepare_rigged(rid, spec, j, blob, maps):
-    """Keeps the skeleton, the skin and every vertex as delivered; a new root node centres and scales it, and the
+    """Keeps the skeleton, the skin and every vertex as delivered (the joints' rest rebuilt: repair_joints); a new root
+    node centres and scales it, and the
     three maps are swapped for the reduced ones (the buffer rebuilt view by view)."""
+    repaired = repair_joints(j, blob)  # before the buffer is rebuilt (it reads the bind matrices)
     prim = j["meshes"][0]["primitives"][0]
     P = accessor(j, blob, prim["attributes"]["POSITION"]).astype(np.float64)
     tris = sum(j["accessors"][p["indices"]]["count"] // 3 for m in j["meshes"] for p in m["primitives"])
@@ -328,7 +423,7 @@ def prepare_rigged(rid, spec, j, blob, maps):
     dst = os.path.join(OUT, rid + ".glb")
     write(dst, j, bytes(out))
     joints = len(j["skins"][0]["joints"]) if j.get("skins") else 0
-    return dst, tris, joints, (P.max(0) - P.min(0)) * s
+    return dst, tris, joints, (P.max(0) - P.min(0)) * s, repaired
 
 
 def prepare(rid):
@@ -339,8 +434,8 @@ def prepare(rid):
     os.makedirs(OUT, exist_ok=True)
     row = {"id": rid, "raw_bytes": os.path.getsize(src), "raw_maps_px": raw_px}
     if spec.get("rigged"):
-        dst, tris, joints, size = prepare_rigged(rid, spec, j, blob, maps)
-        row.update({"tris": tris, "joints": joints})
+        dst, tris, joints, size, repaired = prepare_rigged(rid, spec, j, blob, maps)
+        row.update({"tris": tris, "joints": joints, "joints_rest_rebuilt": repaired})
     else:
         dst, tris, parts, size, _lab = prepare_static(rid, spec, j, blob, maps)
         row.update({"tris": tris, "parts": parts})

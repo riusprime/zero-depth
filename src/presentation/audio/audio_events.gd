@@ -31,6 +31,7 @@ const BOSS_FLAVOUR := {
 	WorldReader.KIND_COLOSSUS: &"boss_telegraph_gatekeeper",
 	WorldReader.KIND_PRISM: &"boss_telegraph_hive_lens",
 	WorldReader.KIND_NEMESIS: &"boss_telegraph_warlord",
+	WorldReader.KIND_TIDECALLER: &"boss_telegraph_tidecaller",  # v0.9.0 NB1: its bell tolls
 }
 const DEATHS := {
 	WorldReader.KIND_CHARGER: &"enemy_death_charger",
@@ -601,6 +602,8 @@ static func attack_cue(move: int) -> StringName:
 			return &"boss_floor_burst"
 		WorldReader.MOVE_CROSS:  # v0.8.0 FB2: the Prism's Cross opens
 			return &"boss_laser"
+		WorldReader.MOVE_TIDE:  # v0.9.0 NB1: the Tidecaller's Pull surges in
+			return &"boss_tide_pull"
 	return &""
 
 

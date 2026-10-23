@@ -52,7 +52,15 @@ func test_the_floors_boss_indices_stay_as_they_were() -> void:
 		ids.append(b.id)
 	assert_eq(
 		ids,
-		[&"brood_mother", &"foundry", &"gatekeeper", &"hive_lens", &"siege_engine", &"warlord"],
+		[
+			&"brood_mother",
+			&"foundry",
+			&"gatekeeper",
+			&"hive_lens",
+			&"siege_engine",
+			&"warlord",
+			&"tidecaller",  # v0.9.0 NB1: after the six (BossOrder), so their indices stay
+		],
 		"the final bodies are in their own category, so every saved boss index means what it did"
 	)
 

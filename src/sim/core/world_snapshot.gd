@@ -243,6 +243,8 @@ const ADDED_SINCE_V05 := {
 		&"melt_ey",
 		&"melt_exit",
 		&"burn_cd",
+		&"sig_boss",  # v0.9.0 NB1: the Tidecaller's Pull cadence (an older save has no Tidecaller: none)
+		&"sig_due",
 	],
 	&"ProjectileStore":
 	[

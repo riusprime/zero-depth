@@ -18,21 +18,11 @@ extends RefCounted
 ## exact position, lock for the attack's lock_ticks and strike (mark_of, row_lanes_of); any aimed attack with a lock
 ## tracks the exact position the same way (no lead) and its telegraph says when it locked; a shielded attack (the
 ## signature pattern) keeps the boss shielded while it runs (BossDodge: hits spark off, Damage).
-## v0.7.5 BF2: a burrow with a lock lays its eruption circle on the player's exact position while it tracks, locks it,
-## burrows to it and may burst a ring of shots from it; a `marks` attack with a pattern bursts it from each circle
-## as it strikes (eggs; BossDodge.burst_mark).
-## v0.7.5 BF3: `grid` (a checkerboard of tracked circles struck in alternating colours) and `row_flood` (molten
-## lanes along the player's row, tracked then locked, standing like a flood): BossDodge.grid_discs, row_flood_of.
-## v0.8.0 BS1 (owner O5): each boss's signature mechanic (BossSignatures): the Gatekeeper's pillars, the Warlord's
-## recalled javelins, the Brood Mother's eggs. v0.8.0 BS2: `gaze` (the Hive Lens's sweeping beam, BossGaze) and
-## `melt` (the Foundry's meltdown, BossLava); the Siege Engine's ricochets (BossRicochet) and the Foundry's lava are
-## params on `pattern`, `deploy` and `row_flood`.
-## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F3-F4): the final boss's bodies are bosses (is_boss_kind); the Colossus's
-## `combo`, `spike_chase` and `spike_burst` (BossColossus), and a `leap` with a pattern fires it where it lands. A body
-## whose segment ran out shatters (FinalBoss.SHATTER): it stands still, invulnerable, until FinalBoss replaces it.
-## v0.8.0 FB2 (FINAL_BOSS.md F5, F7): the Prism's `cross` (BossPrism: the turning beams, her shards' orbs and bolts, the
-## window between spins); a body with a Cross floats home instead of pursuing (BossPrism.drift).
-## v0.8.0 FB3 (FINAL_BOSS.md F6, F7): a mimic body (the Nemesis) is BossNemesis's: its dash, stance and three moves.
+## v0.7.5 BF2-BF3: tracked burrows, eggs bursting from `marks`, `grid` and `row_flood` (BossDodge's header).
+## v0.8.0 BS1-BS2 (owner O5): each boss's signature mechanic (BossSignatures, BossGaze, BossLava, BossRicochet).
+## v0.8.0 FB1-FB3 (FINAL_BOSS.md): the final boss's bodies are bosses: the Colossus's moves (BossColossus), the
+## Prism's `cross` (BossPrism), the Nemesis's mimicry (BossNemesis); a spent body shatters (FinalBoss.SHATTER).
+## v0.9.0 NB1 (BOSSES_4_5.md N1): the Tidecaller's `tide` (BossTide: the Pull on a cadence, the Undertow's drag).
 
 ## Appended after EnemyAi.State (SPAWN, MOVE, WINDUP, ACTIVE, RECOVER).
 const STAGGERED := 5
@@ -69,8 +59,8 @@ static func is_boss_kind(kind: int) -> bool:
 		or kind == ActorStore.Kind.BROOD_MOTHER
 		or kind == ActorStore.Kind.SIEGE_ENGINE
 		or (kind >= ActorStore.Kind.WARLORD and kind <= ActorStore.Kind.FOUNDRY)  # v0.4.0 BO
-		or (kind >= ActorStore.Kind.COLOSSUS and kind <= ActorStore.Kind.NEMESIS)
-	)  # v0.8.0 FB1
+		or (kind >= ActorStore.Kind.COLOSSUS and kind <= ActorStore.Kind.TIDECALLER)
+	)  # v0.8.0 FB1; v0.9.0 NB1: the Tidecaller
 
 
 ## The BossStore entry of actor i (-1 if it isn't a boss).
@@ -130,7 +120,10 @@ static func think(w: World, i: int) -> void:
 			)
 			var punish := BossChallenge.punish_due(w, b, t)
 			var gap := BossChallenge.gap_close_due(w, b, t)  # v0.3.5 AI (F3): the gap-closer
-			if punish >= 0:
+			var sig := BossTide.due(w, i, b, t) if a.cd[i] == 0 else -1  # v0.9.0 NB1: the Pull's cadence
+			if sig >= 0:
+				start_attack(w, i, sig)
+			elif punish >= 0:
 				start_attack(w, i, punish)
 				bs.far_t[b] = 0
 			elif gap >= 0:
@@ -299,6 +292,8 @@ static func _choose(w: World, b: int, t: BossTable, dist: float) -> int:
 			continue
 		if atk.move == M.BROOD and _alive_of(w, atk.enemy_kind) >= atk.max_alive:
 			continue
+		if BossTide.on_cadence(t, atk):  # v0.9.0 NB1: the Pull comes on its cadence only
+			continue
 		if t.mimic and not BossNemesis.allowed(w, atk):  # v0.8.0 FB3: the run's weapon, the cards held
 			continue
 		open.append(k)
@@ -325,6 +320,7 @@ static func start_attack(w: World, i: int, k: int) -> void:
 	bs.step[b] = 0
 	bs.hit[b] = 0
 	bs.chained[b] = 0
+	BossTide.on_start(w, i, atk)  # v0.9.0 NB1: the next Pull's due tick
 	_lock(w, i, b, atk)
 
 
@@ -493,6 +489,8 @@ static func move(w: World, i: int) -> void:
 		S.ACTIVE:
 			var atk := attack_of(w, i)
 			match atk.move:
+				M.TIDE:  # v0.9.0 NB1: the room pulls the player in, then pushes out
+					BossTide.move(w, i, atk)
 				M.COMBO:  # v0.8.0 FB1
 					BossColossus.combo_move(w, i, atk, slow)
 				M.CHARGE:
@@ -623,6 +621,8 @@ static func resolve(w: World, i: int) -> void:
 				_fire_fan(w, i, b, atk)
 		M.PATTERN:  # v0.7.5 BF1
 			BossDodge.resolve_pattern(w, i, b, atk, st)
+		M.TIDE:  # v0.9.0 NB1: the Tide Rings, only in the pull
+			BossTide.resolve(w, i, b, atk, st)
 		M.MARKS, M.ROW_LANES:  # v0.7.5 BF1: each marker strikes once, where it locked
 			BossDodge.resolve_marks(w, i, b, atk, st)
 		M.GRID:  # v0.7.5 BF3: each volley strikes its colour of the locked board
@@ -877,7 +877,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return BossColossus.spikes_telegraph(w, i, b, atk)
 	if BossNemesis.is_move(atk.move):  # v0.8.0 FB3: a swing, a volley's lines, a card's parts
 		return BossNemesis.telegraph(w, i, b, atk)
-	if atk.move == M.GAZE or atk.move == M.MELT or atk.move == M.CROSS:
+	if atk.move in [M.GAZE, M.MELT, M.CROSS, M.TIDE]:  # v0.9.0 NB1: the tide (WorldReader.boss_tide)
 		# v0.8.0 BS2: nothing on the ground here; the eye, its aim line and the beam, and the glowing ring, are drawn
 		# from WorldReader.boss_gaze / boss_melts (BossSignatureViews); v0.8.0 FB2: the Cross from boss_cross
 		# (PrismViews).

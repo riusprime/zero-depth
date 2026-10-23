@@ -9,7 +9,8 @@ extends RefCounted
 
 ## Marker patterns (the MARK_SHADER's `pattern`).
 ## v0.8.0 FB3: VOID, the Nemesis's (dark rifts, a violet-red glow).
-enum Pattern { STONE, BLADE, ACID, LIGHT, HAZARD, MOLTEN, VOID }
+## v0.9.0 NB1: WATER, the Tidecaller's (swirling caustics and foam, sea green).
+enum Pattern { STONE, BLADE, ACID, LIGHT, HAZARD, MOLTEN, VOID, WATER }
 
 ## Strike kinds BossStrikeViews draws, by the geometry they take: discs (a marker's circles, a leap's landing, a
 ## burrow's eruption, a spawn's circles), a ring, an arc, lanes, and a charge's lane.
@@ -30,6 +31,7 @@ const PATTERN_COLORS := {
 	Pattern.HAZARD: [Color(0.09, 0.07, 0.03), Color(1.0, 0.7, 0.12)],
 	Pattern.MOLTEN: [Color(0.1, 0.035, 0.02), Color(1.0, 0.55, 0.1)],
 	Pattern.VOID: [Color(0.05, 0.02, 0.08), Color(0.8, 0.25, 1.0)],
+	Pattern.WATER: [Color(0.02, 0.07, 0.07), Color(0.42, 1.0, 0.72)],
 }
 
 ## v0.8.0 TX2: per pattern, the owner's texture that replaces the code pattern: [texture id, world scale (repeats a
@@ -80,6 +82,10 @@ const LOOKS := {
 	# colours, a card's blast flashes as a burst; its volleys are fireballs (FireballViews' nemesis looks).
 	&"nm_slash": {"pattern": Pattern.VOID, "strike": &"steel_arc"},
 	&"nm_cast": {"pattern": Pattern.VOID, "strike": &"light_burst"},
+	# v0.9.0 NB1: the Tidecaller. The Undertow's circle erupts as a burst of spray, the Shell Slam blows a ring of steam
+	# off the water, both over swirling water.
+	&"tc_undertow": {"pattern": Pattern.WATER, "strike": &"eruption"},
+	&"tc_slam": {"pattern": Pattern.WATER, "strike": &"steam_ring"},
 }
 
 ## Boss kind -> move -> look. The Gatekeeper's row_lanes are StoneSpikeViews' (cracked ground, then spikes).
@@ -138,6 +144,11 @@ const BY_KIND := {
 	{
 		WorldReader.MOVE_MIMIC_COMBO: &"nm_slash",
 		WorldReader.MOVE_CARD_CAST: &"nm_cast",
+	},
+	WorldReader.KIND_TIDECALLER:  # v0.9.0 NB1
+	{
+		WorldReader.MOVE_MARKS: &"tc_undertow",
+		WorldReader.MOVE_SLAM_RING: &"tc_slam",
 	},
 }
 
@@ -221,6 +232,12 @@ void fragment() {
 		vec2 c = cells(p * 1.1 + vec2(t * 0.25, t * 0.1));
 		m = 1.0 - smoothstep(0.06, 0.2 + 0.15 * heat, c.y - c.x);
 		m = max(m, smoothstep(0.55, 0.8, n) * heat);
+	} else if (pattern == 7) {  // water (v0.9.0 NB1, the Tidecaller): caustic ripples swirling round, foam flecks
+		vec2 c = cells(p * 1.3 + vec2(sin(t * 0.6), cos(t * 0.5)) * 0.4);
+		float caustic = 1.0 - smoothstep(0.04, 0.16 + 0.1 * heat, c.y - c.x);
+		float swirl = sin(length(fract(p / 5.0) - 0.5) * 30.0 - t * 5.0 + n * 4.0) * 0.5 + 0.5;
+		m = max(caustic * 0.9, smoothstep(0.75, 1.0, swirl) * 0.7);
+		m = max(m, smoothstep(0.7, 0.9, n) * 0.5 * heat);
 	} else {  // void (v0.8.0 FB3, the Nemesis): thin rifts torn across the ground, a slow swirl in the dark
 		float a = abs(fract((p.x * 0.8 - p.y * 0.6) * 1.3 + n * 1.4 + t * 0.1) - 0.5);
 		m = 1.0 - smoothstep(0.02, 0.07 + 0.05 * heat, a);

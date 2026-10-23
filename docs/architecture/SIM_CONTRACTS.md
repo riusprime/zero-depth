@@ -1671,6 +1671,30 @@ below) and FB3's cap of a fifth of max HP (D36).
   window, window_left, window_len, nerf, copying), `WorldReader.fallen_window()`, `FALLEN_OFF`, `FALLEN_WARN`,
   `FALLEN_ON`.
 
+## 10j. The Tidecaller's Pull and Undertow (v0.9.0 NB1; owner Q24, [`BOSSES_4_5.md`](../roadmap/v0.9.0/BOSSES_4_5.md) N1)
+
+- **Kind.** `ActorStore.Kind.TIDECALLER` (appended), a boss kind (`BossAi.is_boss_kind`); floor 4's pool
+  (`data/boss_pools/floor_4.tres`).
+- **The Pull (`tide` move, `BossTide`).** Shielded. Windup (the bell), then an active time of `tide_pull_ticks` +
+  `tide_push_ticks`. In tick phase 5 (`BossAi.move`, after the player's own step, before walls resolve) the player is
+  moved by `drift_of`: toward the boss at `tide_pull` per tick in the pull, away at `tide_push` in the push, each capped
+  at `BossSchemas.TIDE_MAX_MPS` (1.5 m/s) / 60; the pull stops `BODY_GAP_M` short of the body; none while dashing or
+  dead. **Wall rule (`shift`):** a step is taken only if it doesn't press the player deeper toward a wall: `press(p)`
+  is the deepest penetration of a circle of the player's radius + `WALL_MARGIN_M` (0.6 m) into any wall; the whole
+  step, else its x part, else its y part, is taken when its `press` is 0 or no more than now, else none (so never into
+  a corner, never pinned on a wall). In the pull every live shot of the boss turns toward it by `tide_bend` (1/4096
+  turns a tick, `Kin.turn_toward`, speed kept). Its pattern fires (`BossDodge.resolve_pattern`) only while
+  `state_t < tide_pull_ticks`; none in the push (content: the pattern's duration is under the pull).
+- **Cadence.** `BossTable.sig_every_ticks` > 0: in MOVE with no cooldown, `BossTide.due` starts the phase's first
+  `tide` attack once `tick >= due`; `on_start` (any `tide` start, a phase's entry too) sets `due = tick +
+  sig_every_ticks`; the first is `sig_first_ticks` after the boss's first think in MOVE. The weighted pick leaves cadence
+  attacks out. State: `BossStore.sig_boss` / `sig_due` (lists, one entry per such boss, removed when it dies), hashed
+  after a `-2` sentinel only while non-empty; `WorldSnapshot.ADDED_SINCE_V05` (an older save has none).
+- **The Undertow.** A `marks` attack with `drag_m` > 0: when a circle strikes, a player within `drag_reach_m` of its
+  centre is moved `min(drag_m, distance)` toward it by the same wall rule (not while dashing).
+- **Reads.** `WorldReader.boss_tide(i)` (`BossTide.state`: phase `TIDE_NONE` / `TIDE_PULL` / `TIDE_PUSH`, windup,
+  progress ‰, speed m/s, centre), `KIND_TIDECALLER`, `MOVE_TIDE`, `TIDE_MAX_MPS`.
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×

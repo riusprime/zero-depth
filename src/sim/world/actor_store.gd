@@ -34,6 +34,7 @@ enum Kind {
 	COLOSSUS,  # v0.8.0 FB1: the final boss's three bodies (FinalBoss), one kind each
 	PRISM,
 	NEMESIS,
+	TIDECALLER,  # v0.9.0 NB1: floor 4's first new boss (BOSSES_4_5.md N1)
 }
 
 const TEAM_PLAYER := 0

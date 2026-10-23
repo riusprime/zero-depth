@@ -67,6 +67,8 @@ const KIND_LENS_DRONE := ActorStore.Kind.LENS_DRONE
 const KIND_COLOSSUS := ActorStore.Kind.COLOSSUS
 const KIND_PRISM := ActorStore.Kind.PRISM
 const KIND_NEMESIS := ActorStore.Kind.NEMESIS
+## v0.9.0 NB1: floor 4's first new boss.
+const KIND_TIDECALLER := ActorStore.Kind.TIDECALLER
 ## v0.8.0 N2: The Fallen's mimic window states (final_pace "window", fallen_window), for the presentation.
 const FALLEN_OFF := FinalPace.Mimic.OFF
 const FALLEN_WARN := FinalPace.Mimic.WARN
@@ -170,6 +172,12 @@ const MOVE_CROSS := BossAttackTable.Move.CROSS  # v0.8.0 FB2 (the Prism)
 const MOVE_MIMIC_COMBO := BossAttackTable.Move.MIMIC_COMBO  # v0.8.0 FB3 (the Nemesis)
 const MOVE_MIMIC_SHOTS := BossAttackTable.Move.MIMIC_SHOTS
 const MOVE_CARD_CAST := BossAttackTable.Move.CARD_CAST
+const MOVE_TIDE := BossAttackTable.Move.TIDE  # v0.9.0 NB1 (the Tidecaller's Pull)
+## v0.9.0 NB1: boss_tide's "phase".
+const TIDE_NONE := BossTide.NONE
+const TIDE_PULL := BossTide.PULL
+const TIDE_PUSH := BossTide.PUSH
+const TIDE_MAX_MPS := BossTide.MAX_MPS
 ## v0.8.0 FB3: the Nemesis's stances (BossTable.STANCE_*) and the effect ids of its dash and its card casts.
 const STANCE_ECHO := BossTable.STANCE_ECHO
 const STANCE_MIRROR := BossTable.STANCE_MIRROR
@@ -1750,6 +1758,12 @@ func actor_egg_permille(i: int) -> int:
 ## "way", "hit"} (BossGaze.state): the eye brightening and its thin aim line in the windup, then the beam.
 func boss_gaze(i: int) -> Dictionary:
 	return BossGaze.state(_w, i)
+
+
+## v0.9.0 NB1 (BOSSES_4_5.md N1): boss i's tide: {} or {"phase" (TIDE_NONE while its bell rings in the windup,
+## TIDE_PULL, TIDE_PUSH), "windup", "progress" (0..1000 of that part), "speed" (m/s), "centre"} (BossTide.state).
+func boss_tide(i: int) -> Dictionary:
+	return BossTide.state(_w, i)
 
 
 ## v0.8.0 FB2 (FINAL_BOSS.md F5): boss i's Cross: {} or {"winding", "window", "progress", "arms" ([from, to, hit] per
