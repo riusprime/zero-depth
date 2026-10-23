@@ -687,6 +687,8 @@ func _build_kit(reader: WorldReader) -> void:
 		keep.append(reader.event_pos(reader.event_curse_altar()))
 	if reader.has_purple_runes():  # v0.9.0 DP: nothing stands on the purple dais
 		keep.append(reader.purple_dais_pos())
+	if reader.has_shrines() and reader.shrine()["has_fountain"]:  # v0.9.0 HF: nor on the fountain
+		keep.append(reader.shrine()["fountain_pos"])
 	var dressing := {
 		"walls": walls,
 		"rooms": rooms,
@@ -842,9 +844,12 @@ func _build_shards(
 	if reader.has_shop():
 		clear.append(reader.shop_pos())
 		special.append(reader.shop_pos())
-	if reader.has_gamble():
+	if reader.has_shrine_site():  # v0.9.0 SH: any shrine kind stands on the gamble shrine's site
 		clear.append(reader.gamble_pos())
 		special.append(reader.gamble_pos())
+	if reader.has_shrines() and reader.shrine()["has_fountain"]:  # v0.9.0 HF
+		clear.append(reader.shrine()["fountain_pos"])
+		special.append(reader.shrine()["fountain_pos"])
 	for k in reader.event_count():
 		clear.append(reader.event_pos(k))
 		special.append(reader.event_pos(k))

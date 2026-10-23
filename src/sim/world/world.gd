@@ -197,6 +197,9 @@ var breakables: Breakables
 var purple: PurpleRunes
 ## v0.9.0 LK (owner Q21; Lockdowns): the floor's Lockdowns in play; null on a floor without any.
 var lockdown: LockdownState
+## v0.9.0 SH, HF (owner Q29b, W36; Shrines): the floor's Blood or Chaos shrine and its healing fountain; null without
+## either (a Fortune shrine is the gamble shrine below).
+var shrine: ShrineState
 # --- end Bosses ---------------------------------------------------------------------------------------------
 # --- Rewards (v0.3.0 E; Rewards) ----------------------------------------------------------------------------
 ## The floor's reward rules (part of the loadout, like item_tables; not hashed).
@@ -718,6 +721,8 @@ func step(frame: InputFrame) -> void:
 	Arenas.advance(self)  # v0.5.5 AR: sealed arenas (the Overrun too): the seal, the waves, the clear
 	if lockdown != null:
 		Lockdowns.advance(self)  # v0.9.0 LK: the seal, the formations, the safety, the cap, the open
+	if shrine != null:
+		Shrines.advance(self)  # v0.9.0 SH: a Chaos challenge cleared raises its altar
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
 	HealOrbs.advance(self)  # v0.4.0 TU (D8): walking over a heal orb heals
 	WaveDirector.advance(self)
@@ -1327,6 +1332,8 @@ func state_hash() -> String:
 		purple.hash_into(h)
 	if lockdown != null:  # v0.9.0 LK: only floors with a Lockdown
 		lockdown.hash_into(h)
+	if shrine != null:  # v0.9.0 SH, HF: only floors with a Blood or Chaos shrine or a fountain
+		shrine.hash_into(h)
 	if final_fight != null:  # v0.8.0 FB1: only the worlds that hold the final fight
 		final_fight.hash_into(h)
 	actors.hash_into(h)

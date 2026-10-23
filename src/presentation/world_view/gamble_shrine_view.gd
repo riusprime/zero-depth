@@ -44,6 +44,13 @@ const MODEL_CRYSTAL := Vector3(0.07, 0.86, -0.2)
 const MODEL_GLOW := Color("#D46BFF")
 ## How far the shards orbit the model's crystal (m).
 const MODEL_ORBIT_M := 0.3
+## v0.9.0 SH (owner Q29b: "Today's gamble shrine becomes the Fortune Shrine"): the owner's Fortune Shrine model
+## (ShopModels id, assets/models/devices/shrine_fortune.glb, 2.0 m tall as scripts/assets/mi2_prep.py prepares it), its
+## front (+Z) turned to the camera like the gamble shrine's; the shards orbit FORTUNE_GLOW_Y of its height up, in its
+## golden light. Without it, the v0.6.0 gamble shrine model, then the code-built obelisk.
+const FORTUNE_ID := &"shrine_fortune"
+const FORTUNE_GLOW := Color("#FFC94A")
+const FORTUNE_GLOW_Y := 0.78
 
 var root: Node3D
 var price_label: Label3D
@@ -85,7 +92,11 @@ func _init() -> void:
 ## Builds the shrine at its sim position (once; the shrine never moves).
 func setup(at: Vector2) -> void:
 	root = null
-	if kit_model:
+	if kit_model:  # v0.9.0 SH: the owner's Fortune Shrine first, then his v0.6.0 gamble shrine
+		var fortune := ShopModels.get_model(FORTUNE_ID)
+		if not fortune.is_empty():
+			root = _make_fortune(fortune)
+	if kit_model and root == null:
 		var piece := KitModels.get_piece(MODEL_ID)
 		if not piece.is_empty():
 			root = _make_model(piece)
@@ -299,6 +310,48 @@ func _make_model(piece: Dictionary) -> Node3D:
 		var a := TAU * k / 3.0
 		var bit := _mesh(RewardViews.bipyramid(3, 0.045, 0.08, 0.08), _core_mat)
 		bit.position = Vector3(cos(a) * MODEL_ORBIT_M, 0.0, sin(a) * MODEL_ORBIT_M)
+		bit.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_core.add_child(bit)
+	_light = OmniLight3D.new()
+	_light.light_color = _glow
+	_light.light_energy = LIGHT_ENERGY
+	_light.omni_range = 4.0
+	_light.position = crystal
+	n.add_child(_light)
+	_add_price(n)
+	return n
+
+
+## v0.9.0 SH: the owner's Fortune Shrine (ShopModels: already in metres, bottom on the floor, centred), turned to the
+## camera; the same cues as _make_model, in its golden light.
+func _make_fortune(piece: Dictionary) -> Node3D:
+	_glow = FORTUNE_GLOW
+	for m in [_core_mat, _strip_mat]:
+		m.albedo_color = _glow
+		m.emission = _glow
+	var n := Node3D.new()
+	_body = Node3D.new()
+	_body.rotation.y = MODEL_YAW
+	n.add_child(_body)
+	var mat := (piece["material"] as Material).duplicate() as StandardMaterial3D
+	if mat == null:
+		mat = StandardMaterial3D.new()
+	ActorViews.flashable(mat)
+	mat.emission = _glow.lerp(Color.WHITE, 0.6)
+	_metal_mats.append(mat)
+	_model = _mesh(piece["mesh"], mat)
+	_model.name = "Model"
+	_body.add_child(_model)
+	var box: AABB = piece["aabb"]
+	var crystal := Vector3(0.0, box.end.y * FORTUNE_GLOW_Y, 0.0)
+	_core_y = crystal.y
+	_core = Node3D.new()
+	_core.position = crystal
+	n.add_child(_core)
+	for k in 3:
+		var a := TAU * k / 3.0
+		var bit := _mesh(RewardViews.bipyramid(3, 0.045, 0.08, 0.08), _core_mat)
+		bit.position = Vector3(cos(a), 0.0, sin(a)) * (maxf(box.size.x, box.size.z) * 0.5 + 0.1)
 		bit.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		_core.add_child(bit)
 	_light = OmniLight3D.new()

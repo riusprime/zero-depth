@@ -28,11 +28,15 @@ var wall_up := 0
 ## Sets up `w`'s purple-rune room (setup, after every other room kind and secret): marks the layout
 ## (PurpleRooms.mark at `chance_permille`, from chance()) and registers the dais. No-op on a floor that gets none, or
 ## one without a Deep gate spot.
-static func setup(w: World, chance_permille: int) -> void:
+## v0.9.0 SH, HF: `taken`, rooms it never takes (the shrine's and the fountain's, Shrines.site_rooms; none on a floor
+## saved before SH, as it was built).
+static func setup(
+	w: World, chance_permille: int, taken: PackedInt32Array = PackedInt32Array()
+) -> void:
 	var f := w.floor_layout
 	if f == null or not f.has_deep_portal or w.boss_flow == null:
 		return
-	if PurpleRooms.mark(f, chance_permille, PackedInt32Array(), avoid_spots(w)) < 0:
+	if PurpleRooms.mark(f, chance_permille, taken, avoid_spots(w)) < 0:
 		return
 	var p := PurpleRunes.new()
 	p.entry = w.interactables.add(Interactables.Kind.PURPLE_DAIS, f.purple_pos, DAIS_REACH_M, 0)

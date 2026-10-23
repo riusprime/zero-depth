@@ -107,6 +107,8 @@ var rune_view: RuneAlignmentView
 var purple: PurpleRuneView
 ## v0.9.0 LK: the Lockdowns' bars and the Hazard Lockdowns' warnings (null on a floor without any).
 var lockdowns: LockdownView
+## v0.9.0 SH, HF: the Blood or Chaos shrine and the healing fountain (null on a floor with neither).
+var shrines: ShrinesView
 ## v0.9.0 DX: the cracked wall, the containers and the explosive barrels (null on a floor with none), and the faint rune
 ## markings by every secret's doorway (null without a secret).
 var breakables: BreakablesView
@@ -383,6 +385,10 @@ func _setup_devices(palette: Dictionary) -> void:
 		lockdowns = LockdownView.new()
 		add_child(lockdowns)
 		lockdowns.setup(reader, stage.prop_style)
+	if reader.has_shrines():  # v0.9.0 SH, HF
+		shrines = ShrinesView.new()
+		add_child(shrines)
+		shrines.setup(reader, palette["cover"])
 	if reader.has_cracked_wall() or reader.breakable_count() > 0:  # v0.9.0 DX
 		breakables = BreakablesView.new()
 		add_child(breakables)
@@ -517,6 +523,8 @@ func sync() -> void:
 			rig.vibrate_to(purple.vibration)
 		if purple.take_thud():
 			rig.thud(PurpleRuneView.THUD)
+	if shrines != null:  # v0.9.0 SH, HF
+		shrines.sync(reader)
 	if lockdowns != null:  # v0.9.0 LK: the bars land with a thud
 		lockdowns.sync(reader)
 		if lockdowns.take_thud():

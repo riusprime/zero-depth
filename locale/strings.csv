@@ -231,14 +231,14 @@ HUD_HEAT_OVERCLOCK,OVERCLOCK,SOBRECARGA
 HUD_HEAT_OVERHEAT,OVERHEAT,SOBRECALENTADO
 HUD_HEAT_VENT,VENT READY,PURGA LISTA
 HUD_HEAT_VENT_BLINK,VENT READY,PURGA LISTA
-UI_GAMBLE_USE,[E / X] Gamble · %d shards,[E / X] Apostar · %d fragmentos
+UI_GAMBLE_USE,[E / X] Tempt fortune · %d shards,[E / X] Tentar a la fortuna · %d fragmentos
 UI_GAMBLE_SPENT,Spent,Agotado
 UI_GAMBLE_BLOCKED,Spent,Agotado
 UI_GAMBLE_SPENT_TAG,Spent,Agotado
 UI_GAMBLE_FAILED,It failed,Falló
-UI_GAMBLE_CARD,Gamble shrine,Santuario de apuestas
-UI_GAMBLE_STATS,Shrine stats,Estadísticas del santuario
-UI_GAMBLE_STATS_NONE,No shrine stats yet,Aún no tienes estadísticas del santuario
+UI_GAMBLE_CARD,Fortune Shrine,Santuario de la Fortuna
+UI_GAMBLE_STATS,Fortune Shrine stats,Estadísticas del Santuario de la Fortuna
+UI_GAMBLE_STATS_NONE,No Fortune Shrine stats yet,Aún no tienes estadísticas del Santuario de la Fortuna
 UI_GAMBLE_MAX_HP,+%d max HP,+%d PV máximos
 UI_GAMBLE_MELEE_DAMAGE,+%s %% melee damage,+%s %% de daño cuerpo a cuerpo
 UI_GAMBLE_SHOT_DAMAGE,+%s %% shot damage,+%s %% de daño de disparo
@@ -346,7 +346,7 @@ MAP_LEGEND_CHEST,Chest (dim: can't pay yet),Cofre (tenue: aún no te alcanza)
 MAP_LEGEND_BOSS,Boss door,Puerta del jefe
 MAP_LEGEND_PORTAL,Portal (blue: open),Portal (azul: abierto)
 MAP_ROOMS,Rooms found: %d / %d,Salas halladas: %d / %d
-MAP_LEGEND_SHRINE,Gamble shrine,Santuario de apuestas
+MAP_LEGEND_SHRINE,Shrine,Santuario
 UI_ACTION_VENT,Vent,Purgar
 UI_ACTION_SKILL,Skill,Técnica
 HUD_KEY_HINT,[%s] %s,[%s] %s
@@ -1183,3 +1183,20 @@ UI_FORM_ORBS,Orbs,Orbes
 UI_BUILD_FORM,Form: %s,Forma: %s
 UI_SLOT_CHOOSE,Choose one to replace,Elige cuál reemplazar
 UI_SWAP_TITLE_SLOT,Your %s slots are full: choose one to replace,Tus huecos de %s están llenos: elige cuál reemplazar
+SHRINE_BLOOD_NAME,Blood Shrine,Santuario de Sangre
+SHRINE_CHAOS_NAME,Chaos Shrine,Santuario del Caos
+FOUNTAIN_NAME,Healing Fountain,Fuente curativa
+SHRINE_BLOOD_PROMPT,[E / X] Blood Shrine · give %d HP for an upgrade,[E / X] Santuario de Sangre · da %d PV por una mejora
+SHRINE_BLOOD_LOW,Blood Shrine · too weak (needs %d HP),Santuario de Sangre · demasiado débil (necesitas %d PV)
+SHRINE_CHAOS_PROMPT,[E / X] Chaos Shrine · fight %d enemies for an upgrade,[E / X] Santuario del Caos · lucha contra %d enemigos por una mejora
+FOUNTAIN_PROMPT,[E / X] Healing Fountain · drink (+%d HP · one use),[E / X] Fuente curativa · beber (+%d PV · un solo uso)
+FOUNTAIN_FULL,Healing Fountain · you are at full health,Fuente curativa · tienes la salud al máximo
+SHRINE_BLOOD_DONE,−%d HP · an upgrade rises,−%d PV · surge una mejora
+SHRINE_BLOOD_DENIED,Too weak to bleed,Demasiado débil para sangrar
+SHRINE_CHAOS_LEFT,Survive the challenge · %d left,Supera el desafío · quedan %d
+SHRINE_CHAOS_DONE,Chaos tamed · an upgrade rises,Caos domado · surge una mejora
+FOUNTAIN_DONE,+%d HP · the fountain runs dry,+%d PV · la fuente se seca
+FOUNTAIN_DENIED,Already at full health,Ya tienes la salud al máximo
+CAPTION_SHRINE_BLOOD,[Blood drains into the shrine],[La sangre fluye al santuario]
+CAPTION_SHRINE_CHAOS,[Chaos roars awake],[El caos despierta rugiendo]
+CAPTION_FOUNTAIN,[Water splashes],[El agua salpica]

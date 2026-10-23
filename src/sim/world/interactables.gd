@@ -15,10 +15,11 @@ extends RefCounted
 ##   of its rate (calm_now). Enemies already out keep fighting. solve_calm ends it for good; leaving the room ends it
 ##   while you are away.
 ## Users: the final approach's rune pylons (FinalApproach, v0.9.0 FA), the timed door's switches (TimedDoor, TD), the
-## rune puzzle's pillars (RuneAlignment, RA), the purple-rune dais (PurpleRunes, DP).
+## rune puzzle's pillars (RuneAlignment, RA), the purple-rune dais (PurpleRunes, DP), the Blood and Chaos shrines and
+## the healing fountain (Shrines, SH and HF: their prompts carry their cost or effect, prompt_key and prompt_args).
 ## Pure: no stream is drawn.
 
-enum Kind { PYLON, TIMED_SWITCH, RUNE_PILLAR, PURPLE_DAIS }
+enum Kind { PYLON, TIMED_SWITCH, RUNE_PILLAR, PURPLE_DAIS, SHRINE, FOUNTAIN }
 
 ## Each kind's prompt (a string key in locale/strings.csv), for the shared prompt view. v0.9.0 DP: the purple dais
 ## (PurpleRunes) reads FA's pylons' "Awaken".
@@ -26,7 +27,9 @@ const PROMPT_KEYS: Array[StringName] = [
 	&"APPROACH_PYLON_PROMPT",
 	&"TIMED_SWITCH_PROMPT",
 	&"RUNE_PILLAR_PROMPT",
-	&"APPROACH_PYLON_PROMPT"
+	&"APPROACH_PYLON_PROMPT",
+	&"SHRINE_CHAOS_PROMPT",
+	&"FOUNTAIN_PROMPT"
 ]
 ## Puzzle calm: the spawn clock runs one tick in CALM_DIVISOR (a quarter of the rate).
 const CALM_DIVISOR := 4
@@ -118,6 +121,27 @@ static func handle(w: World, i: int) -> void:
 			RuneAlignment.press(w, i)
 		Kind.PURPLE_DAIS:
 			PurpleRunes.press(w, i)
+		Kind.SHRINE:
+			Shrines.press_shrine(w, i)
+		Kind.FOUNTAIN:
+			Shrines.press_fountain(w, i)
+
+
+## Entry i's prompt (a string key): its kind's, or (v0.9.0 SH, HF) a shrine's or the fountain's with its cost or
+## effect now (Shrines.prompt_key).
+static func prompt_key(w: World, i: int) -> StringName:
+	var k := w.interactables.kind[i]
+	if (k == Kind.SHRINE or k == Kind.FOUNTAIN) and w.shrine != null:
+		return Shrines.prompt_key(w, i)
+	return PROMPT_KEYS[k]
+
+
+## The numbers formatted into entry i's prompt ([] for none).
+static func prompt_args(w: World, i: int) -> Array:
+	var k := w.interactables.kind[i]
+	if (k == Kind.SHRINE or k == Kind.FOUNTAIN) and w.shrine != null:
+		return Shrines.prompt_args(w, i)
+	return []
 
 
 ## Registers `room` as a puzzle's calm room (setup). Returns its index.

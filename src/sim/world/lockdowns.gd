@@ -68,6 +68,7 @@ static func taken_rooms(w: World) -> PackedInt32Array:
 		out.append(w.ev.room[k])
 	if w.gamble_id >= 0:
 		out.append(w.floor_layout.room_of(w.gamble_pos))
+	out.append_array(Shrines.taken_rooms(w))  # v0.9.0 HF: the fountain's room
 	return out
 
 

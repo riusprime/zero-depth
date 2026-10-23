@@ -331,8 +331,9 @@ func _draw_icons() -> void:
 			draw_icon(&"altar", p, k)
 		else:
 			draw_icon(&"chest" if reader.reward_affordable(i) else &"chest_poor", p, k)
-	if reader.has_gamble() and state.is_discovered(reader.floor_room_of(reader.gamble_pos())):
-		draw_icon(&"shrine", to_map(reader.gamble_pos()), k)  # v0.3.0 L19: the gamble shrine
+	# v0.3.0 L19: the gamble shrine; v0.9.0 SH: any shrine kind (Fortune, Blood, Chaos)
+	if reader.has_shrine_site() and state.is_discovered(reader.floor_room_of(reader.gamble_pos())):
+		draw_icon(&"shrine", to_map(reader.gamble_pos()), k)
 	for e in reader.event_count():  # v0.5.0 EV: event pedestals in rooms you have seen
 		if state.is_discovered(reader.event_room(e)):
 			var spent := reader.event_state(e) == WorldReader.EVENT_DONE

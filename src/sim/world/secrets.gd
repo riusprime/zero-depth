@@ -25,6 +25,7 @@ static func taken_rooms(w: World) -> PackedInt32Array:
 		out.append(w.ev.room[k])
 	if w.gamble_id >= 0:
 		out.append(f.room_of(w.gamble_pos))
+	out.append_array(Shrines.taken_rooms(w))  # v0.9.0 HF: the fountain's room
 	return out
 
 
@@ -36,6 +37,7 @@ static func avoid_spots(w: World) -> PackedVector2Array:
 		out.append(Vector2(w.ev.pos_x[k], w.ev.pos_y[k]))
 	if w.gamble_id >= 0:
 		out.append(w.gamble_pos)
+	out.append_array(Shrines.avoid_spots(w))  # v0.9.0 HF: the fountain
 	return out
 
 

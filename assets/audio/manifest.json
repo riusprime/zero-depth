@@ -995,6 +995,36 @@
       "loop": false
     },
     {
+      "id": "shrine_blood",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/shrine_blood.wav",
+      "sha256": "87063dd882f88a7fc8559c1bc75216ee5c3ce44ebdd2d889dabe58fceed6602c",
+      "seconds": 1.0,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -15.99,
+      "loop": false
+    },
+    {
+      "id": "shrine_chaos",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/shrine_chaos.wav",
+      "sha256": "8f185451a1be028d9152dea48f96ce62ad72bc434e03bc1f85ada1d6627c6719",
+      "seconds": 1.2,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -17.89,
+      "loop": false
+    },
+    {
+      "id": "fountain_heal",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/fountain_heal.wav",
+      "sha256": "f8b5aef8ebe3688a48c615b56ec2f12a4a401149a2b9de92bc3bc0310b8cceb7",
+      "seconds": 1.09,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -13.09,
+      "loop": false
+    },
+    {
       "id": "ruins",
       "kind": "ambience",
       "path": "assets/audio/ambience/ruins.wav",

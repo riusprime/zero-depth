@@ -49,6 +49,7 @@ const GROUPS := [
 			"res://data/rewards",
 			"res://data/shop",
 			"res://data/gamble",
+			"res://data/shrines",  # v0.9.0 SH, HF: Blood, Chaos and Fortune shrines, healing fountains
 			"res://data/legendary",
 			"res://data/event_rules",
 			"res://data/events",

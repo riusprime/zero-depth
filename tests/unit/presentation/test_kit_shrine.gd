@@ -6,9 +6,18 @@ extends GutTest
 ## the same with either body.
 
 
+## v0.9.0 SH: the owner's Fortune Shrine model comes first when listed (test_shrines_view); these check the v0.6.0
+## model and the obelisk behind it, so the manifest the Fortune model is read from is pointed away.
+func before_each() -> void:
+	ShopModels.manifest = "res://no_such_manifest.json"
+	ShopModels.clear_cache()
+
+
 func after_each() -> void:
 	KitModels.dir = KitModels.DIR
 	KitModels.clear_cache()
+	ShopModels.manifest = ShopModels.MANIFEST
+	ShopModels.clear_cache()
 
 
 func _world() -> World:

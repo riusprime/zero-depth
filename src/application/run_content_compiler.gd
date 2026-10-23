@@ -41,6 +41,27 @@ static func compile_lockdown(def: LockdownDefinition) -> LockdownTable:
 	return t
 
 
+## v0.9.0 SH, HF (owner Q29b, W36): the shrines' and the fountain's numbers (null without a definition: every shrine
+## stays a Fortune shrine and no floor has a fountain).
+static func compile_shrines(def: ShrineDefinition) -> ShrineTable:
+	if def == null:
+		return null
+	var t := ShrineTable.new()
+	t.kind_weights = def.kind_weights.duplicate()
+	t.kind_floor_min = def.kind_floor_min.duplicate()
+	t.blood_cost_permille = def.blood_cost_permille
+	t.blood_min_permille = def.blood_min_permille
+	t.blood_altars = def.blood_altars
+	t.chaos_sizes = def.chaos_sizes.duplicate()
+	t.chaos_elite_permille = def.chaos_elite_permille
+	t.chaos_altars = def.chaos_altars
+	t.fountain_permille = def.fountain_permille
+	t.fountain_floor_min = def.fountain_floor_min
+	t.fountain_heal_permille = def.fountain_heal_permille
+	t.reach_m = def.reach
+	return t
+
+
 ## v0.5.5 AR (X1b): the boss-only legendary tier, its ids resolved against the compiled stat cards and items.
 static func compile_legendary(
 	def: LegendaryDefinition, stats: Array[StatTable], items: Array[ItemTable]

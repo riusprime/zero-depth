@@ -4,6 +4,9 @@ extends RefCounted
 ## floor, and have a cap of 3 upgrades with a 30% chance of failing, cost still goes up if it misses, at 3 upgrades it
 ## gets blocked"): some floors only, in a combat room away from the start hall (site); a floor resumed from a save made
 ## before N14 keeps its shrine in the start hall (spot; RunState.rare_shrine).
+## v0.9.0 SH (owner Q29b): the player knows it as the Fortune Shrine, one of the floor's three shrine kinds (Shrines
+## draws the kind for the site chosen here); its rules below are unchanged. A floor saved before SH (floor rules
+## 1-13) keeps it as it was: every shrine there is a Fortune Shrine.
 ## - Price: GambleTable.price(uses on this floor, floor number): 25 shards on floor 1, then × 1.5 per use (rounded
 ##   half up: 25, 38, 57, 86, 129 ...). Every paid use counts, a failed one too. The count of uses resets on each
 ##   floor (it is not carried), and a later floor's base is raised like the chests' (× 1.5 on floor 2, × 2 on floor 3).
@@ -196,8 +199,11 @@ static func _clear(layout: FloorLayout, room: int, p: Vector2, r: float) -> bool
 	return true
 
 
+## v0.9.0 SH (owner Q29b: "Today's gamble shrine becomes the Fortune Shrine"): the floor's shrine is this one only
+## when its kind is Fortune (a Blood or Chaos shrine stands on the same site instead: Shrines; gamble_id and
+## gamble_pos stay the site every other room kind keeps away from).
 static func present(w: World) -> bool:
-	return w.gamble_id >= 0
+	return w.gamble_id >= 0 and (w.shrine == null or w.shrine.kind == ShrineTable.Kind.FORTUNE)
 
 
 ## The player stands within the shrine's interact radius.

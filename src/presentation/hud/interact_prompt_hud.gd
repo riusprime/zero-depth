@@ -31,7 +31,8 @@ func sync(reader: WorldReader) -> void:
 	var key := reader.interact_prompt_key()
 	_prompt.visible = key != &""
 	if _prompt.visible:
-		_prompt.text = tr(key)
+		var args := reader.interact_prompt_args()  # v0.9.0 SH, HF: a shrine's cost, the fountain's heal
+		_prompt.text = tr(key) % args if not args.is_empty() else tr(key)
 
 
 ## The prompt shown now ("" when none).
