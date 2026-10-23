@@ -711,13 +711,14 @@ func _reseed(seed_value: int) -> void:
 func open_pause() -> void:
 	driver.paused = true
 	hints.set_covered(true)  # v0.7.5 SM: a hint waits under the pause menu
-	_pause = PauseMenu.new()
+	_pause = PauseMenu.new(playground == null)  # v0.9.0 HB: a run leaves to the hub, the Playground to the menu
 	_pause.resume_pressed.connect(close_pause)
 	_pause.options_pressed.connect(open_pause_options)
 	_pause.build_pressed.connect(_open_pause_build)
 	_pause.codex_pressed.connect(_open_pause_codex)
 	_pause.restart_pressed.connect(restart)
 	_pause.main_menu_pressed.connect(show_main_menu)
+	_pause.hub_pressed.connect(_show_hub)  # v0.9.0 HB (owner 2026-10-23): the run stays saved; Continue resumes it
 	var recap := run_recap()  # v0.5.5 A5: the run's line under the pause list
 	if not recap.is_empty():
 		_pause.show_run(

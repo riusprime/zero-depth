@@ -17,6 +17,29 @@ func enter() -> bool:
 	return e.main.hub != null
 
 
+## v0.9.0 HB (owner 2026-10-23, "To the hub (Recommended)"): in a run, Esc, then the pause menu's last row (Resume ->
+## Build -> Restart run -> Options -> Codex -> To the Rune Ring) with the keys: the run saved, the hub. True when the
+## hub runs.
+func from_run() -> bool:
+	await e.tap(KEY_ESCAPE)
+	for k in 5:
+		await e.tap(KEY_DOWN)
+	await e.tap(KEY_ENTER)
+	await e.frames(2)
+	return e.main.hub != null and e.main.driver == null
+
+
+## v0.9.0 HB: the hub's pause (Resume -> Options -> Main menu) to the main menu. True when it shows.
+func to_main_menu() -> bool:
+	await e.tap(KEY_ESCAPE)
+	await e.frames(1)
+	await e.tap(KEY_DOWN)
+	await e.tap(KEY_DOWN)
+	await e.tap(KEY_ENTER)
+	await e.frames(2)
+	return e.main.get_node_or_null("UI/MainMenu") != null and e.main.hub == null
+
+
 ## Walks the hero until it stands at station `id` (HubSession.at; the machine is &"portal"), at most `limit` frames,
 ## the stick let go after. Steers round the machine's dais. True when it stands there.
 func walk_to(id: StringName, limit: int = 900) -> bool:
