@@ -255,6 +255,12 @@ const ADDED_SINCE_V05 := {
 		&"twin_angry",
 		&"twin_anger_t",
 		&"twin_burn_cd",
+		&"echo_boss",  # v0.9.0 NB3: the Clockwork Judge's echo (an older save has no Judge: none)
+		&"echo_x",
+		&"echo_y",
+		&"path_x",
+		&"path_y",
+		&"path_k",
 	],
 	&"ProjectileStore":
 	[

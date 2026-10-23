@@ -1,0 +1,196 @@
+[gd_resource type="Resource" script_class="BossDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/boss_attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/boss_phase_definition.gd" id="2_ph"]
+[ext_resource type="Script" path="res://src/content/defs/boss_definition.gd" id="3_boss"]
+
+[sub_resource type="Resource" id="A_the_echo"]
+script = ExtResource("1_atk")
+id = &"the_echo"
+shape = 4
+shape_params = {
+"radius_m": 0.9,
+"record_seconds": 3.0,
+"safe_m": 0.3,
+"step_seconds": 0.25
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.2
+damage = 20
+hit_class = &"small"
+move = &"echo"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_JUDGE_ECHO"
+opens_weak_point = true
+shielded = true
+
+[sub_resource type="Resource" id="A_gear_spiral"]
+script = ExtResource("1_atk")
+id = &"gear_spiral"
+shape = 4
+shape_params = {
+"pattern_id": "clockwork_gear_spiral"
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.2
+damage = 22
+hit_class = &"small"
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_JUDGE_SPIRAL"
+
+[sub_resource type="Resource" id="A_gear_spiral_2"]
+script = ExtResource("1_atk")
+id = &"gear_spiral_2"
+shape = 4
+shape_params = {
+"pattern_id": "clockwork_gear_spiral_2"
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.1
+damage = 22
+hit_class = &"small"
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_JUDGE_SPIRAL"
+
+[sub_resource type="Resource" id="A_gear_spiral_3"]
+script = ExtResource("1_atk")
+id = &"gear_spiral_3"
+shape = 4
+shape_params = {
+"pattern_id": "clockwork_gear_spiral_3"
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.0
+damage = 22
+hit_class = &"small"
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_JUDGE_SPIRAL"
+
+[sub_resource type="Resource" id="A_verdict"]
+script = ExtResource("1_atk")
+id = &"verdict"
+shape = 2
+shape_params = {
+"half_m": 1.5
+}
+telegraph_seconds = 1.6
+active_seconds = 0.0167
+recovery_seconds = 1.0
+damage = 30
+hit_class = &"medium"
+move = &"verdict"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_JUDGE_VERDICT"
+lock_seconds = 0.8
+
+[sub_resource type="Resource" id="A_gavel_slam"]
+script = ExtResource("1_atk")
+id = &"gavel_slam"
+shape = 3
+shape_params = {
+"inner_radius_m": 0.0,
+"radius_m": 4.0
+}
+telegraph_seconds = 0.7
+active_seconds = 0.0167
+recovery_seconds = 1.3
+damage = 50
+hit_class = &"big"
+move = &"slam_ring"
+min_range_m = 0.0
+max_range_m = 4.2
+weight = 3
+cooldown_seconds = 0.7
+cause_key = &"CAUSE_JUDGE_GAVEL"
+opens_weak_point = true
+
+[sub_resource type="Resource" id="P_0"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 1000
+attack_ids = PackedStringArray("the_echo", "gear_spiral", "verdict", "gavel_slam")
+entry_attack = &""
+speed_permille = 1000
+cooldown_permille = 1000
+
+[sub_resource type="Resource" id="P_1"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 660
+attack_ids = PackedStringArray("the_echo", "gear_spiral_2", "verdict", "gavel_slam")
+entry_attack = &"gear_spiral_2"
+speed_permille = 900
+cooldown_permille = 650
+
+[sub_resource type="Resource" id="P_2"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 330
+attack_ids = PackedStringArray("the_echo", "gear_spiral_3", "verdict", "gavel_slam")
+entry_attack = &"gear_spiral_3"
+speed_permille = 990
+cooldown_permille = 487
+
+[resource]
+script = ExtResource("3_boss")
+name_key = &"BOSS_CLOCKWORK_JUDGE"
+desc_key = &"BOSS_CLOCKWORK_JUDGE_DESC"
+hp = 2500
+radius_m = 1.4
+move_speed_mps = 1.3
+turn_rate_dps = 60.0
+keep_distance_m = 0.0
+front_arc_degrees = 0.0
+front_mult_permille = 1000
+rear_arc_degrees = 0.0
+rear_mult_permille = 1000
+stagger_size = 280
+stagger_decay_per_second = 15.0
+stagger_seconds = 2.5
+attacks = Array[ExtResource("1_atk")]([SubResource("A_the_echo"), SubResource("A_gear_spiral"), SubResource("A_gear_spiral_2"), SubResource("A_gear_spiral_3"), SubResource("A_verdict"), SubResource("A_gavel_slam")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
+arena_cells = Vector2i(4, 4)
+legacy_arena_cells = Vector2i(4, 4)
+arena_template = 0
+ranged_full_m = 5.0
+ranged_far_m = 12.0
+ranged_far_permille = 400
+punish_distance_m = 9.0
+punish_seconds = 4.0
+punish_attack = &"verdict"
+weak_point_seconds = 2.0
+weak_point_range_m = 2.5
+weak_point_mult_permille = 2000
+weak_point_stagger_permille = 2000
+arena_close_phase = -1
+arena_close_after_seconds = 0.0
+recovery_permille = 600
+lead_seconds = 0.3
+track_commit_seconds = 0.2
+dash_read_seconds = 0.5
+gap_close_attack = &"verdict"
+gap_close_distance_m = 10.0
+gap_close_seconds = 2.0
+signature_every_seconds = 10.0
+signature_first_seconds = 4.0
+save_order = 3
+id = &"clockwork_judge"

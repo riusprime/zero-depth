@@ -1,22 +1,13 @@
 class_name BossAi
 extends RefCounted
-## The boss framework (PLAN v0.3.0 C; BLUEPRINT §F). A boss is an actor (its own ActorStore kind) with a BossStore
-## entry. Movements: pursuit (MOVE), an attack (WINDUP -> ACTIVE) and recovery (RECOVER, the punish window). Hits
-## fill a stagger meter; a full meter staggers it (STAGGERED) and resets. Phases start at HP thresholds; a phase may
-## open with an entry attack. think() runs in tick phase 3, move() in 5, resolve() in 6.
-## Every attack's area comes from one function here (ring_of, lane_of, arc_of, EnemyAi.charge_lane, leap_disc,
-## burrow_disc, spots_of, rail_of, fan_lane_of, flood_lane_of), which telegraph() hands the view and resolve() hits
-## with (EI-07).
-## Randomness only from the ai stream.
-## v0.3.0 BX (BossChallenge): punish, follow-ups, the weak point, leading aims, a pull's drag, the closing band.
-## v0.5.5 DS (D7): phase gates (BossGates: invulnerable, HP can't skip them, adds); the catch-up (CatchUp, powered).
-## v0.7.5 BF1-BF3 (owner N15; BOSS_FIGHTS.md; SIM_CONTRACTS §10d): dodge-first fights: bullet patterns, markers that
-## track the exact position then lock (mark_of, row_lanes_of), a shielded signature (BossDodge: hits spark off).
-## v0.8.0 BS1-BS2 (owner O5): each boss's signature mechanic (BossSignatures, BossGaze, BossLava, BossRicochet).
-## v0.8.0 FB1-FB3 (FINAL_BOSS.md): the final boss's bodies are bosses: the Colossus's moves (BossColossus), the
-## Prism's `cross` (BossPrism), the Nemesis's mimicry (BossNemesis); a spent body shatters (FinalBoss.SHATTER).
-## v0.9.0 NB1 (BOSSES_4_5.md N1): the Tidecaller's `tide` (BossTide: the Pull on a cadence, the Undertow's drag).
-## v0.9.0 NB2 (BOSSES_4_5.md N2): the Twin Wardens, one boss in two bodies (BossTwin: the twin, chain, Crossfire).
+## The boss framework (PLAN v0.3.0 C; BLUEPRINT §F): an actor of a boss kind with a BossStore entry; it pursues (MOVE),
+## attacks (WINDUP -> ACTIVE), recovers (RECOVER, the punish window); hits fill a stagger meter (STAGGERED); phases
+## start at HP thresholds, maybe with an entry attack. think() in tick phase 3, move() in 5, resolve() in 6. Every
+## attack's area comes from one function (ring_of, lane_of, arc_of, …) that telegraph() and resolve() share (EI-07).
+## Randomness only from the ai stream. Since: BX's challenge (BossChallenge), DS's gates (BossGates, CatchUp), BF's
+## dodge-first markers and patterns (BossDodge; SIM_CONTRACTS §10d), BS's signatures (BossSignatures, BossGaze,
+## BossLava, BossRicochet), FB's final bodies (BossColossus, BossPrism, BossNemesis, FinalBoss.SHATTER), v0.9.0 NB's
+## floor 4-5 bosses (BOSSES_4_5.md: BossTide, BossTwin, BossJudge: the Clockwork Judge's echo and Verdict).
 
 ## Appended after EnemyAi.State (SPAWN, MOVE, WINDUP, ACTIVE, RECOVER).
 const STAGGERED := 5
@@ -55,7 +46,8 @@ static func is_boss_kind(kind: int) -> bool:
 		or (kind >= ActorStore.Kind.WARLORD and kind <= ActorStore.Kind.FOUNDRY)  # v0.4.0 BO
 		or (kind >= ActorStore.Kind.COLOSSUS and kind <= ActorStore.Kind.TIDECALLER)
 		or BossTwin.is_twin_kind(kind)
-	)  # v0.8.0 FB1; v0.9.0 NB1: the Tidecaller; NB2: the Twin Wardens' two bodies
+		or kind == ActorStore.Kind.CLOCKWORK_JUDGE
+	)  # v0.8.0 FB1; v0.9.0 NB1: the Tidecaller; NB2: the Twin Wardens' two bodies; NB3: the Clockwork Judge
 
 
 ## The BossStore entry of actor i (-1 if it isn't a boss).
@@ -93,6 +85,7 @@ static func think(w: World, i: int) -> void:
 		bs.meter[b] = maxi(0, bs.meter[b] - t.stagger_decay_milli)
 	if t.mimic and w.final_fight != null:  # v0.8.0 FB3: the build read, a dash due, the stance's clock
 		BossNemesis.think(w, i, t)
+	BossJudge.record(w, i, t)  # v0.9.0 NB3: the Clockwork Judge keeps your last 3 s for its echo
 	var to_player := w.player_pos() - a.pos(i)
 	var aim := Kin.angle_of(to_player)
 	if BossTwin.think(w, i, aim):  # v0.9.0 NB2: the pair's clocks; the twin never picks (it follows its boss)
@@ -117,13 +110,13 @@ static func think(w: World, i: int) -> void:
 			)
 			var punish := BossChallenge.punish_due(w, b, t)
 			var gap := BossChallenge.gap_close_due(w, b, t)  # v0.3.5 AI (F3): the gap-closer
-			var sig := BossTide.due(w, i, b, t) if a.cd[i] == 0 else -1  # v0.9.0 NB1: the Pull's cadence
+			var sig := BossTide.due(w, i, b, t, a.cd[i])  # v0.9.0 NB1: the cadence (NB3: -2 holds the rest)
 			if sig >= 0:
 				start_attack(w, i, sig)
-			elif punish >= 0:
+			elif punish >= 0 and sig != BossTide.HOLD:
 				start_attack(w, i, punish)
 				bs.far_t[b] = 0
-			elif gap >= 0:
+			elif gap >= 0 and sig != BossTide.HOLD:
 				start_attack(w, i, gap)
 				bs.gap_t[b] = 0
 			elif not w.player_dead() and a.cd[i] == 0 and not BossNemesis.dashing(w, i):
@@ -151,6 +144,8 @@ static func think(w: World, i: int) -> void:
 				BossNemesis.think_attack(w, i, b, atk, a.state_t[i])
 			elif atk.move == M.CHAIN_SWEEP:  # v0.9.0 NB2: the chain's line follows, then locks
 				BossTwin.track_sweep(w, i, atk)
+			elif atk.move == M.VERDICT:  # v0.9.0 NB3: the square follows, then locks
+				BossJudge.track_verdict(w, i, b, atk)
 			elif tracking(w, i, t, atk):  # v0.3.5 AI (F3): aim follows the player until it commits
 				_track(w, i, b, atk)
 			if a.state_t[i] >= atk.windup_ticks:
@@ -322,6 +317,7 @@ static func start_attack(w: World, i: int, k: int) -> void:
 	BossTide.on_start(w, i, atk)  # v0.9.0 NB1: the next Pull's due tick
 	_lock(w, i, b, atk)
 	BossTwin.on_start(w, i, k)  # v0.9.0 NB2: the twin starts it too; Crossfire's safe spot
+	BossJudge.on_start(w, i, atk)  # v0.9.0 NB3: the echo's path locks; the Verdict's square starts on you
 
 
 ## Locks where the attack goes, from where the boss and the player are now.
@@ -627,6 +623,8 @@ static func resolve(w: World, i: int) -> void:
 			BossDodge.resolve_pattern(w, i, b, atk, st)
 		M.TIDE:  # v0.9.0 NB1: the Tide Rings, only in the pull
 			BossTide.resolve(w, i, b, atk, st)
+		M.ECHO, M.VERDICT:  # v0.9.0 NB3: the echo's ghost strikes, the Verdict's pendulum
+			BossJudge.resolve(w, i, b, atk, st)
 		M.MARKS, M.ROW_LANES:  # v0.7.5 BF1: each marker strikes once, where it locked
 			BossDodge.resolve_marks(w, i, b, atk, st)
 		M.GRID:  # v0.7.5 BF3: each volley strikes its colour of the locked board
@@ -879,6 +877,8 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return BossNemesis.telegraph(w, i, b, atk)
 	if BossTwin.is_move(atk.move):  # v0.9.0 NB2: the lash's lane (tracked, locked); Crossfire's off the ground
 		return BossTwin.telegraph(w, i, atk, progress)
+	if BossJudge.is_move(atk.move):  # v0.9.0 NB3: the Verdict's square (tracked, locked); the echo's off the ground
+		return BossJudge.telegraph(w, i, atk, progress)
 	if atk.move in [M.GAZE, M.MELT, M.CROSS, M.TIDE]:  # v0.9.0 NB1: the tide (WorldReader.boss_tide)
 		# v0.8.0 BS2: nothing on the ground; drawn from WorldReader.boss_gaze / boss_melts / boss_cross.
 		return {"shape": &"signature", "ground": false, "progress": progress, "move": atk.move}

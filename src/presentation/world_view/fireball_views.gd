@@ -301,6 +301,26 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.5,
 	},
+	## v0.9.0 NB3: the Clockwork Judge's Gear Spiral: hot brass gear-sparks, a bright brass core in a dark bronze rim
+	## (the rock skin cut like a cog), spinning fast, a short bright trail of filings.
+	&"gear_spark":
+	{
+		"core": Color("#FFEF40"),
+		"edge": Color("#2A1A04"),
+		"trail": Color("#D99A20"),
+		"size": 1.0,
+		"tip": 1.0,
+		"trail_m": 0.5,
+		"mesh": &"rock",
+		"body": Color("#5A4416"),
+		"energy": 3.2,
+		"crack": 0.9,
+		"swirl": 0.8,
+		"spin": 2.4,
+		"tumble": 0.3,
+		"trail_style": &"glow",
+		"tail": 0.45,
+	},
 	&"warden_violet_ember":
 	{
 		"core": Color("#BB99CC"),
@@ -348,6 +368,7 @@ const TEX_CORES := {
 	&"cannon_ember": ["fx_orb_cores_2", 1, 0.0],
 	&"warden_amber_ember": ["fx_orb_cores_2", 1, 0.0],  # v0.9.0 NB2: the cannon ember painting, tinted
 	&"warden_violet_ember": ["fx_orb_cores_2", 1, 0.0],
+	&"gear_spark": ["fx_orb_cores_2", 1, 0.0],  # v0.9.0 NB3: the cannon ember painting, tinted brass
 	&"arc_plasma": ["fx_orb_cores_2", 2, 0.0],
 	&"bomb_cinder": ["fx_orb_cores_2", 3, 0.0],
 	&"crown_orb": ["fx_orb_cores_final", 1, 0.0],

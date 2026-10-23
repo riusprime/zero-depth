@@ -39,6 +39,9 @@ const SPECS := {
 	# skeleton (NB1 rebuilt its joint rests; nearly every vertex weighs on the hips), the violet one is cut into parts.
 	&"boss_twin_warden_amber": {"yaw": PI * 0.5, "height": 2.2, "skinned": true},
 	&"boss_twin_warden_violet": {"yaw": PI * 0.5, "height": 2.2, "parts": true},
+	# v0.9.0 NB3 (PLAN NB: "can you ignore the skeleton?"): the Clockwork Judge, front +Z as prepared, 3.6 m (the art
+	# list's), cut into parts in the file (its skin unusable): body, both pendulum arms, the gears, the two hands.
+	&"boss_clockwork_judge": {"yaw": PI * 0.5, "height": 3.6, "parts": true},
 }
 
 ## v0.7.5 BM (owner N18, 2026-10-13: "Bosses could be a bit bigger so we could see the model better"): every boss

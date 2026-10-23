@@ -386,6 +386,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 		set_nav_extra(w)
 	BossTide.on_boss_gone(w, boss_id)  # v0.9.0 NB1: its Pull's cadence
 	BossTwin.on_boss_gone(w, boss_id)  # v0.9.0 NB2: the Wardens' pair
+	BossJudge.on_boss_gone(w, boss_id)  # v0.9.0 NB3: the Clockwork Judge's echo
 
 
 ## The recap's death line for a cause past LATE_CAUSE (a late part): its attack's late_cause_key (its own cause_key

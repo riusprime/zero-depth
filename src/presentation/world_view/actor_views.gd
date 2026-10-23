@@ -594,6 +594,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 					WorldReader.KIND_TIDECALLER: TidecallerAvatar,  # v0.9.0 NB1
 					WorldReader.KIND_TWIN_WARDEN: TwinWardenAvatar,  # v0.9.0 NB2: the amber body
 					WorldReader.KIND_TWIN_WARDEN_VIOLET: TwinWardenVioletAvatar,  # its twin
+					WorldReader.KIND_CLOCKWORK_JUDGE: ClockworkJudgeAvatar,  # v0.9.0 NB3
 				}[kind]
 				. new()
 			)

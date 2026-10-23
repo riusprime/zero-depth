@@ -132,6 +132,17 @@ var twin_body := PackedInt32Array()
 var twin_angry := PackedInt32Array()
 var twin_anger_t := PackedInt32Array()
 var twin_burn_cd := PackedInt32Array()
+## v0.9.0 NB3 (BossJudge): the Clockwork Judge's echo. echo_boss is the actor id of the Judge recording (-1 = none);
+## echo_x/echo_y the player's last positions, oldest first (one every echo_gap_ticks, at most echo_points); path_x,
+## path_y the echo locked as it started (the points left after the safe spot) and path_k each one's step (it strikes
+## on active tick path_k × echo_gap_ticks). Hashed only while a Judge records (WorldSnapshot.ADDED_SINCE_V05: an
+## older save has none).
+var echo_boss := -1
+var echo_x := PackedFloat32Array()
+var echo_y := PackedFloat32Array()
+var path_x := PackedFloat32Array()
+var path_y := PackedFloat32Array()
+var path_k := PackedInt32Array()
 
 
 func size() -> int:
@@ -205,6 +216,24 @@ func hash_into(h: StateHasher) -> void:
 		h.add_int(-3)
 		for f: StringName in TWIN_FIELDS:
 			h.add_ints(get(f))
+	if echo_boss >= 0:  # v0.9.0 NB3: only while a Clockwork Judge records
+		h.add_int(-4)
+		h.add_int(echo_boss)
+		h.add_f32s(echo_x)
+		h.add_f32s(echo_y)
+		h.add_f32s(path_x)
+		h.add_f32s(path_y)
+		h.add_ints(path_k)
+
+
+## v0.9.0 NB3: forgets the Clockwork Judge's echo (its boss gone).
+func clear_echo() -> void:
+	echo_boss = -1
+	echo_x = PackedFloat32Array()
+	echo_y = PackedFloat32Array()
+	path_x = PackedFloat32Array()
+	path_y = PackedFloat32Array()
+	path_k = PackedInt32Array()
 
 
 ## v0.8.0 BS2 (S6): the lava, the meltdown and the burn clock.

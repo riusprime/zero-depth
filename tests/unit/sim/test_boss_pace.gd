@@ -127,7 +127,9 @@ func test_a_big_attack_is_followed_by_a_still_punish_window() -> void:
 			if a.hit_class == &"big":
 				bigs[[def.id, a.id]] = true
 	assert_eq(
-		bigs.size(), 13, "v0.9.0 NB1: the Tidecaller's Shell Slam; NB2: the Wardens' Shield Bash"
+		bigs.size(),
+		14,
+		"v0.9.0 NB1: the Tidecaller's Shell Slam; NB2: the Wardens' Shield Bash; NB3: the Gavel"
 	)
 	for key: Array in bigs:
 		var w := _world()

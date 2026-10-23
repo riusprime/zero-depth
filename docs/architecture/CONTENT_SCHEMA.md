@@ -627,6 +627,11 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   width at the safe spot), `distance_m` (> 0: the safe spot off the chain's middle), optional `twin_look` (the twin's
   shots' look). `chain_sweep` (LINE, needs `lock_seconds` and a twin; the boss's def needs one with a
   `late_cause_key`, the chain's burn): `width_m` (> 0), `reach_m` (>= 0: how far past the player the line runs).
+- v0.9.0 NB3: `echo` (PROJECTILE, shielded; a cadence move like `tide`: `signature_every_seconds` must exceed its
+  telegraph + `record_seconds`): `radius_m` (> 0: each ghost strike), `record_seconds` and `step_seconds` (a step of
+  at least a tick, at most `BossSchemas.ECHO_MAX_POINTS` = 24 points), `safe_m` (>= 0: the margin round where the
+  player stands as it starts): the Clockwork Judge's echo (3.0 s, 0.25 s, 0.9 m, 0.3 m; 20 a strike; every 10 s).
+  `verdict` (LINE, needs `lock_seconds`): `half_m` (> 0: the tracked square's half side, 1.5 m).
 
 - Boss attacks (v0.3.0 BX) also take `opens_weak_point: bool`, and `follow_up: StringName` (another attack of the
   boss) with `follow_up_permille` (0..1000): the chance it starts at once instead of the recovery (a follow-up never

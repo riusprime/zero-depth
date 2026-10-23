@@ -149,7 +149,8 @@ func validate() -> Array[ValidationIssue]:
 
 
 ## v0.9.0 NB1: a cadence needs a `tide` attack in every phase, a first one at least the intro away, and a period
-## longer than each phase's tide (its windup, pull and push).
+## longer than each phase's tide (its windup, pull and push). v0.9.0 NB3: or an `echo` (the Clockwork Judge's), the
+## period longer than its windup and its replay (as long as its recording).
 func _check_cadence(issues: Array[ValidationIssue]) -> void:
 	if signature_every_seconds == 0.0:
 		return
@@ -160,7 +161,7 @@ func _check_cadence(issues: Array[ValidationIssue]) -> void:
 		var tide: BossAttackDefinition = null
 		for aid in ph.attack_ids:
 			var a := attack(StringName(aid))
-			if a != null and a.move == &"tide":
+			if a != null and (a.move == &"tide" or a.move == &"echo"):
 				tide = a
 				break
 		if tide == null:
@@ -172,6 +173,7 @@ func _check_cadence(issues: Array[ValidationIssue]) -> void:
 			tide.telegraph_seconds
 			+ float(tide.shape_params.get("pull_seconds", 0.0))
 			+ float(tide.shape_params.get("push_seconds", 0.0))
+			+ float(tide.shape_params.get("record_seconds", 0.0))
 		)
 		if signature_every_seconds <= span:
 			issues.append(

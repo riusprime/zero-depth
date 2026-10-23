@@ -90,6 +90,10 @@ const LOOKS := {
 	# TwinViews'), the Shield Bash cracks a shock ring out of the stone.
 	&"tw_sweep": {"pattern": Pattern.MOLTEN, "strike": &"skid"},
 	&"tw_bash": {"pattern": Pattern.STONE, "strike": &"shock_ring"},
+	# v0.9.0 NB3: the Clockwork Judge. The Verdict's square takes a column of gold light where the pendulum drops (the
+	# pendulum itself is JudgeViews'); the Gavel Slam rings a light shockwave out over the floor.
+	&"cj_verdict": {"pattern": Pattern.LIGHT, "strike": &"beam"},
+	&"cj_gavel": {"pattern": Pattern.LIGHT, "strike": &"light_ring"},
 }
 
 ## Boss kind -> move -> look. The Gatekeeper's row_lanes are StoneSpikeViews' (cracked ground, then spikes).
@@ -163,6 +167,11 @@ const BY_KIND := {
 	{
 		WorldReader.MOVE_CHAIN_SWEEP: &"tw_sweep",
 		WorldReader.MOVE_SLAM_RING: &"tw_bash",
+	},
+	WorldReader.KIND_CLOCKWORK_JUDGE:  # v0.9.0 NB3
+	{
+		WorldReader.MOVE_VERDICT: &"cj_verdict",
+		WorldReader.MOVE_SLAM_RING: &"cj_gavel",
 	},
 }
 
