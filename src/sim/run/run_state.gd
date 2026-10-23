@@ -103,6 +103,9 @@ var final_fight := false
 ## v0.9.0 DP (owner Q26b): the run's floors (run_floor(), across loops) that held a purple-rune room, so a loop holds
 ## one at most (PurpleRunes.chance). Saved (RunSaver; an older payload has none).
 var purple_floors := PackedInt32Array()
+## v0.9.0 RB (owner: "locked once a run starts"): the rune affinity picked at the Wardrobe before the run (an
+## AffinityDefinition id; &"" or &"none" = None), the same on every floor. Saved (RunSaver; an older payload: None).
+var affinity := &""
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:

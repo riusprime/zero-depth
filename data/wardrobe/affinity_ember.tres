@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="AffinityDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/affinity_definition.gd" id="1_aff"]
+
+[resource]
+script = ExtResource("1_aff")
+order = 1
+name_key = &"AFFINITY_EMBER"
+desc_key = &"AFFINITY_EMBER_DESC"
+cost_key = &"AFFINITY_EMBER_COST"
+color = Color(1, 0.666667, 0.2, 1)
+glyph = 1
+burn_duration_permille = 1500
+favoured_cards = Array[StringName]([&"ember_core", &"cinder_shot", &"ember_edge", &"ember_trail", &"inferno_core", &"wildfire", &"chain_blast", &"shared_explosive"])
+favoured_permille = 1300
+disfavoured_cards = Array[StringName]([&"frost_core", &"cold_snap", &"glacial_edge", &"shatter"])
+disfavoured_permille = 700
+id = &"ember"

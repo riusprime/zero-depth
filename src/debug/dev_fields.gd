@@ -11,7 +11,8 @@ const GROUPS := [
 	[
 		"player",
 		"UI_DEVM_G_PLAYER",
-		["res://data/player", "res://data/builds", "res://data/heat"],
+		# v0.9.0 RB: the Wardrobe's rune affinities and robe colours
+		["res://data/player", "res://data/builds", "res://data/heat", "res://data/wardrobe"],
 		""
 	],
 	# v0.9.0 EL: the elite archetypes and their rules beside the enemies

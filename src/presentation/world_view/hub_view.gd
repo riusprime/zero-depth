@@ -144,7 +144,17 @@ func show_collected(count: int) -> void:
 		(slots[i] as MeshInstance3D).set_meta(&"lit", on)
 
 
-## RB hook: the Wardrobe's cloak colour.
+## v0.9.0 RB: the hero wears the Wardrobe's choice in the hub (a Wardrobe.look: the robe's colours and the chosen
+## affinity's rune), and the Wardrobe's stand-in robe takes the cloak's colour.
+func set_look(look: Dictionary) -> void:
+	if look.is_empty():
+		return
+	avatar.set_look(look)
+	set_robe(look["cloak"])
+
+
+## RB hook: the Wardrobe's cloak colour (the stand-in's robe; with the owner's wardrobe model the robe is part of his
+## mesh, so nothing recolours until the art list's `hub_wardrobe_robe` arrives).
 func set_robe(c: Color) -> void:
 	var robe: MeshInstance3D = stations.get(&"wardrobe", {}).get("robe")
 	if robe != null:

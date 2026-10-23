@@ -1260,3 +1260,32 @@ CAPTION_ELITE_RIFT,[A rift tears open],[Se abre una grieta]
 CAPTION_ELITE_SLASH,[Blades slash],[Cuchillas cortan]
 CAPTION_ELITE_CHARGE,[A beam charges],[Un rayo se carga]
 CAPTION_ELITE_BEAM,[The beam fires],[El rayo dispara]
+WARDROBE_ROBE,Robe,Túnica
+WARDROBE_AFFINITY,Rune affinity,Afinidad rúnica
+WARDROBE_LOCKED,locked,bloqueada
+WARDROBE_LOCKED_NOTE,Bought with Rune Fragments. Not worn yet.,Se compra con Fragmentos de Runa. Aún no la llevas.
+ROBE_CREAM,Cream,Crema
+ROBE_ASH,Ash,Ceniza
+ROBE_NIGHT,Night,Noche
+ROBE_CANYON,Canyon,Cañón
+ROBE_FROST,Frost,Escarcha
+ROBE_MOSS,Moss,Musgo
+AFFINITY_NONE,None,Ninguna
+AFFINITY_NONE_DESC,The plain game: no rune on the robe.,El juego sin más: ninguna runa en la túnica.
+AFFINITY_NONE_COST,Card offers unweighted.,Las cartas se ofrecen sin sesgo.
+AFFINITY_EMBER,Ember,Brasa
+AFFINITY_EMBER_DESC,Your burns last 50% longer. Fire cards are offered more often.,Tus quemaduras duran un 50 % más. Las cartas de fuego se ofrecen más a menudo.
+AFFINITY_EMBER_COST,Frost cards are offered less often.,Las cartas de escarcha se ofrecen menos a menudo.
+AFFINITY_STORM,Storm,Tormenta
+AFFINITY_STORM_DESC,"Your dash crackles: enemies within 1 m of its path gain a shock stack. Lightning cards are offered more often.","Tu esprint chisporrotea: los enemigos a 1 m de su recorrido quedan electrocutados (una carga). Las cartas de rayo se ofrecen más a menudo."
+AFFINITY_STORM_COST,"Dash cooldown 1.4 s → 1.7 s. Venom cards are offered less often.","Recarga del esprint 1,4 s → 1,7 s. Las cartas de veneno se ofrecen menos a menudo."
+AFFINITY_VENOM,Venom,Veneno
+AFFINITY_VENOM_DESC,"When a poisoned enemy dies, its poison jumps to the nearest enemy within 3 m. Venom cards are offered more often.","Cuando muere un enemigo envenenado, su veneno salta al enemigo más cercano a 3 m. Las cartas de veneno se ofrecen más a menudo."
+AFFINITY_VENOM_COST,Fire cards are offered less often.,Las cartas de fuego se ofrecen menos a menudo.
+AFFINITY_ASTRAL,Astral,Astral
+AFFINITY_ASTRAL_DESC,"Secrets within 8 m pulse faintly, and the map marks a room holding one once you enter it. Void cards are offered more often.","Los secretos a 8 m laten débilmente y el mapa marca la sala que guarda uno cuando entras en ella. Las cartas de vacío se ofrecen más a menudo."
+AFFINITY_ASTRAL_COST,No combat effect at all.,Ningún efecto en combate.
+AFFINITY_GUARDIAN,Guardian,Guardián
+AFFINITY_GUARDIAN_DESC,A ward blocks the next hit that would damage you. It refills at the start of each floor.,Una guarda bloquea el siguiente golpe que te haría daño. Se recarga al empezar cada piso.
+AFFINITY_GUARDIAN_COST,You pick up 20% fewer run shards.,Recoges un 20 % menos de fragmentos en la partida.
+MAP_LEGEND_SECRET,Secret (Astral),Secreto (Astral)

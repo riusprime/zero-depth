@@ -57,6 +57,7 @@ static func on_kill(w: World, i: int) -> void:
 	amount = Stats.shards(w, amount)  # v0.4.0 BS: the shard gain stat
 	Overrun.on_kill(w, i, amount)  # v0.4.0 AB: an Overrun kill counts toward the clear
 	HealOrbs.on_kill(w, i)  # v0.4.0 TU (D8): maybe a heal orb
+	amount = Affinities.shards(w, amount)  # v0.9.0 RB: A5 Guardian picks up fewer
 	if amount <= 0:
 		return
 	w.shards += amount

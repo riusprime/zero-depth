@@ -135,7 +135,7 @@ static func on_melee_hit(w: World, i: int, root: int, stacks: int = 1) -> void:
 	if a.burn_stacks[i] == 0:
 		a.burn_cd[i] = m.burn_period_ticks
 	a.burn_stacks[i] = mini(a.burn_stacks[i] + stacks, m.burn_max_stacks)
-	a.burn_t[i] = m.burn_duration_ticks
+	a.burn_t[i] = Affinities.burn_ticks(w, m.burn_duration_ticks)  # v0.9.0 RB: A1 Ember
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[0], a.ids[0], a.ids[i], a.pos(i))
 	e.root_id = root
 	e.amount = a.burn_stacks[i]
