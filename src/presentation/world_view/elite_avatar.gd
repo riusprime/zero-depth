@@ -295,19 +295,13 @@ func _build_model(m: Dictionary) -> void:
 		mi.name = "Mesh"
 		mi.mesh = part["mesh"]
 		mi.extra_cull_margin = 1.0  # poses move parts past the rest bounds
+		# The owner (2026-10-23): "Dont put the yellow strokes on elites, it looks ugly, show the model as is": every
+		# surface, the bright accents too, keeps the model's own texture (no gold glow material over them).
 		var surfaces: Array = part["surfaces"]
-		var plates := false
-		var glows := false
 		for s in surfaces.size():
-			var glow: bool = surfaces[s] == &"glow"
-			glows = glows or glow
-			plates = plates or not glow
-			mi.set_surface_override_material(s, _glow_mat if glow else base)
+			mi.set_surface_override_material(s, base)
 		pivot.add_child(mi)
-		if plates:
-			_hit_pieces.append(mi)
-		if glows:
-			_glow_pieces.append(mi)
+		_hit_pieces.append(mi)
 		parts[String(pname)] = pivot
 		_rest[String(pname)] = pivot.position
 
