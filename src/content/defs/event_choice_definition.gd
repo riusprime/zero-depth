@@ -6,8 +6,8 @@ extends Resource
 ## What the choice costs (Events.Cost mirrors the order; appended, never renumbered):
 ## none; hp (lose `cost_amount` % of max HP now, never below 1 HP); max_hp (the max HP stat falls by `cost_amount` %
 ## for the run); shards (`cost_amount` x the floor number); overheat (Overclock heat jumps to max: the stall);
-## fight (an elite pack of `cost_amount` enemies arrives in the room); defend (stay within the rules' defend radius
-## for `cost_amount` seconds while spawns come twice as fast).
+## fight (retired in v0.9.0 EL with the Ambush Cache: no choice may use it); defend (stay within the rules' defend
+## radius for `cost_amount` seconds while spawns come twice as fast).
 const COSTS: Array[StringName] = [
 	&"none", &"hp", &"max_hp", &"shards", &"overheat", &"fight", &"defend"
 ]
@@ -51,6 +51,8 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 		issues.append(ValidationIssue.new(&"range", path, "an HP cost is below 100 %"))
 	if reward in [&"overclock", &"shards"] and reward_amount <= 0.0:
 		issues.append(ValidationIssue.new(&"range", path, "reward %s needs an amount" % reward))
+	if cost == &"fight":  # v0.9.0 EL (owner Q25): retired with the Ambush Cache
+		issues.append(ValidationIssue.new(&"unknown", path, "cost fight is retired"))
 	if reward == &"chest" and cost != &"fight":
 		issues.append(ValidationIssue.new(&"range", path, "a chest reward follows a fight"))
 	if cost == &"none" and String(curse).is_empty():

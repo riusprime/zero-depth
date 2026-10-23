@@ -200,6 +200,10 @@ var lockdown: LockdownState
 ## v0.9.0 SH, HF (owner Q29b, W36; Shrines): the floor's Blood or Chaos shrine and its healing fountain; null without
 ## either (a Fortune shrine is the gamble shrine below).
 var shrine: ShrineState
+## v0.9.0 EL (owner Q24-Q26; Elites, EliteAi): the floor's elites (its elite rooms, those alive); null on a floor that
+## never had one. elite_rules: their numbers (content, like reward_table; not hashed, not snapshotted).
+var elites: EliteState
+var elite_rules: EliteRules
 # --- end Bosses ---------------------------------------------------------------------------------------------
 # --- Rewards (v0.3.0 E; Rewards) ----------------------------------------------------------------------------
 ## The floor's reward rules (part of the loadout, like item_tables; not hashed).
@@ -716,13 +720,15 @@ func step(frame: InputFrame) -> void:
 	if pp != null:
 		pp.end(&"remove_dead")
 		pp.begin(&"after")
-	Events.advance(self)  # v0.5.0 EV: ambush cleared, defence held, elites alive.
+	Events.advance(self)  # v0.5.0 EV: a defence held.
 	CoreTheft.advance(self)  # v0.6.0 CU: the gone carriers, staggers and steal windows, drops taken
 	Arenas.advance(self)  # v0.5.5 AR: sealed arenas (the Overrun too): the seal, the waves, the clear
 	if lockdown != null:
 		Lockdowns.advance(self)  # v0.9.0 LK: the seal, the formations, the safety, the cap, the open
 	if shrine != null:
 		Shrines.advance(self)  # v0.9.0 SH: a Chaos challenge cleared raises its altar
+	if elites != null:
+		Elites.advance(self)  # v0.9.0 EL: the elites gone, an elite room's elite arriving
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
 	HealOrbs.advance(self)  # v0.4.0 TU (D8): walking over a heal orb heals
 	WaveDirector.advance(self)
@@ -1334,6 +1340,8 @@ func state_hash() -> String:
 		lockdown.hash_into(h)
 	if shrine != null:  # v0.9.0 SH, HF: only floors with a Blood or Chaos shrine or a fountain
 		shrine.hash_into(h)
+	if elites != null:  # v0.9.0 EL: only floors that had an elite
+		elites.hash_into(h)
 	if final_fight != null:  # v0.8.0 FB1: only the worlds that hold the final fight
 		final_fight.hash_into(h)
 	actors.hash_into(h)
@@ -1862,7 +1870,9 @@ func _remove_dead() -> void:
 				if boss_id == actors.ids[i]:
 					boss_id = -1
 			Rewards.on_kill(self, i)  # Rewards: shards.
-			CoreTheft.on_death(self, i)  # v0.6.0 CU: a core stolen in its window, Marked's rare card
+			CoreTheft.on_death(self, i)  # v0.6.0 CU: a boss's core stolen in its window
+			if EliteAi.is_elite_kind(actors.kinds[i]):
+				Elites.on_death(self, i)  # v0.9.0 EL (Q25): 30 % its core's card
 	actors.remove_sorted(gone)
 
 

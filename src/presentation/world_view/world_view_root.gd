@@ -55,6 +55,7 @@ static var parts: Array[GDScript] = [
 	BossShieldView,
 	StoneSpikeViews,
 	BossSignatureViews,
+	TideViews,  # v0.9.0 NB1
 	BossStrikeViews,
 	FinalBossViews,
 	PrismViews,
@@ -139,6 +140,8 @@ var arenas: ArenaViews = _part(ArenaViews)
 var horde_fx: HordeVisuals = _part(HordeVisuals)
 var events: EventPedestalViews = _part(EventPedestalViews)  # v0.5.0 EV: event pedestals, the drone's ring, elite crowns
 var cores: CoreViews = _part(CoreViews)  # v0.6.0 CU: cores on elites and bosses, the steal window, dodge and stun cues
+## v0.9.0 EL: the elites' arrival sigil, the Rift Hunter's rift, the Conduit's beam, the Breaker's dust ring.
+var elite_fx: EliteViews = _part(EliteViews)
 ## v0.6.0 MX3: the attack forms drawn from their final specs (element core, heat edge, motion cues), pooled.
 var attack_forms: AttackFormView = _part(AttackFormView)
 ## v0.9.0 LZ (owner C §6.2): the Laser's beams, per element.
@@ -172,6 +175,8 @@ var boss_shields: BossShieldView = _part(BossShieldView)
 var spikes: StoneSpikeViews = _part(StoneSpikeViews)
 ## v0.8.0 BS1 (owner O5): the Warlord's javelins stuck in the floor and the Brood Mother's eggs.
 var signatures: BossSignatureViews = _part(BossSignatureViews)
+## v0.9.0 NB1: the Tidecaller's Pull (the moving water, the bell's toll, the push's swell).
+var tides: TideViews = _part(TideViews)
 
 ## v0.8.0 AV part 2 (owner O7): every other boss ground attack strikes as a 3D effect.
 var strikes: BossStrikeViews = _part(BossStrikeViews)
@@ -297,6 +302,7 @@ func _setup_views(palette: Dictionary) -> void:
 	add_child(events)  # v0.5.0 EV
 	events.setup(reader)
 	add_child(cores)  # v0.6.0 CU
+	add_child(elite_fx)  # v0.9.0 EL
 	add_child(attack_forms)  # v0.6.0 MX3
 	add_child(laser)  # v0.9.0 LZ
 	add_child(bombs)  # v0.9.0 BM
@@ -346,6 +352,7 @@ func _setup_effects() -> void:
 	add_child(boss_shields)
 	add_child(spikes)  # v0.8.0 AV
 	add_child(signatures)  # v0.8.0 BS1
+	add_child(tides)  # v0.9.0 NB1
 
 	add_child(strikes)  # v0.8.0 AV part 2
 	add_child(final_views)  # v0.8.0 FB1
@@ -519,6 +526,9 @@ func sync() -> void:
 	_sync_view(&"horde_fx", horde_fx)  # v0.4.0 EN
 	_sync_view(&"events", events)  # v0.5.0 EV
 	_sync_view(&"cores", cores)  # v0.6.0 CU
+	_sync_view(&"elite_fx", elite_fx)  # v0.9.0 EL
+	if elite_fx.take_thud():  # v0.9.0 EL: the Breaker's slam near the hero (none with reduced motion)
+		rig.thud(EliteViews.THUD)
 	_sync_view(&"attack_forms", attack_forms)  # v0.6.0 MX3
 	_sync_view(&"laser", laser)  # v0.9.0 LZ
 	_sync_view(&"bombs", bombs)  # v0.9.0 BM
@@ -535,6 +545,7 @@ func sync() -> void:
 	_sync_view(&"boss_shields", boss_shields)
 	_sync_view(&"spikes", spikes)  # v0.8.0 AV
 	_sync_view(&"signatures", signatures)  # v0.8.0 BS1
+	_sync_view(&"tides", tides)  # v0.9.0 NB1
 
 	_sync_view(&"strikes", strikes)  # v0.8.0 AV part 2
 	_sync_view(&"final_views", final_views)  # v0.8.0 FB1

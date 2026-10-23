@@ -18,25 +18,17 @@ extends ContentDef
 @export var cursed_chest_first_floor := 1
 @export var cursed_chest_every_floors := 2
 @export var cursed_chests_per_floor := 1
-## An elite: +this % HP (Ambush Cache packs, and spawns under an elite curse).
-@export var elite_hp_bonus := 100.0
-## Ambush Cache: the pack arrives at least this far from you, inside the room.
-@export var ambush_min_distance_m := 4.0
 ## Wandering Drone: stay within this distance of the pedestal.
 @export var defend_radius_m := 4.5
 ## The shop's cleanse: lifting the latest curse costs this many shards x the floor (SH's terminal).
 @export var cleanse_price := 60
-## v0.6.0 CU core theft (PLAN v0.5.5 X2; SIGNATURE.md): an elite staggers once it took this % of its max HP in
-## direct damage since its last stagger, and stands staggered for core_stagger_seconds; a stagger (an elite's, or a
-## boss's own) opens a steal window of core_window_seconds. An elite's core is a mod (each weighs core_mod_weight)
-## or a rare stat card (its card weight).
-@export var core_stagger_share := 30.0
-@export var core_stagger_seconds := 0.75
+## v0.6.0 CU core theft (PLAN v0.5.5 X2; SIGNATURE.md): a boss's own stagger opens a steal window of
+## core_window_seconds. An elite's core is a mod (each weighs core_mod_weight) or a rare stat card (its card weight).
+## v0.9.0 EL (owner Q25): an elite no longer staggers (its 30 % drop: data/elites/rules.tres); the elite HP bonus,
+## the Ambush Cache's distance and Marked's hunt range went with them.
 @export var core_window_seconds := 2.0
 @export var core_mod_weight := 10
-## v0.6.0 CU, Marked (C8): elites within this distance hunt you. A drop (a stolen core, Marked's rare card) lands this
-## far from the next drop at the same spot.
-@export var hunt_range_m := 16.0
+## A drop (a core's card) lands this far from the next drop at the same spot.
 @export var drop_offset_m := 0.9
 ## v0.8.0 N17 (owner O75: "they need to appear once max per floor and 40% of floors not all the time"): the chance a
 ## floor has a curse room (one combat room holding the curse altar and the floor's curse event), in per mille (400:
@@ -59,12 +51,8 @@ func validate() -> Array[ValidationIssue]:
 		["interact_radius_m", interact_radius_m],
 		["clear_radius_m", clear_radius_m],
 		["reward_gap_m", reward_gap_m],
-		["ambush_min_distance_m", ambush_min_distance_m],
 		["defend_radius_m", defend_radius_m],
-		["core_stagger_share", core_stagger_share],
-		["core_stagger_seconds", core_stagger_seconds],
 		["core_window_seconds", core_window_seconds],
-		["hunt_range_m", hunt_range_m],
 		["drop_offset_m", drop_offset_m],
 	]:
 		check_positive(issues, f[0], f[1])
@@ -96,6 +84,4 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"negative", resource_path, "core_mod_weight is negative")
 		)
-	if elite_hp_bonus < 0.0:
-		issues.append(ValidationIssue.new(&"negative", resource_path, "elite_hp_bonus is negative"))
 	return issues

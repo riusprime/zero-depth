@@ -114,6 +114,11 @@ var melt_ey := PackedFloat32Array()
 var melt_exit := PackedInt32Array()
 ## S6: ticks until molten floor (lava or the melt) may burn the player again (0 while none is down).
 var burn_cd := 0
+## v0.9.0 NB1 (BossTide): the signature's cadence, one entry per live boss that has one (the Tidecaller): its actor
+## id and the tick its signature is next due. Empty for every other boss, and hashed only while an entry exists
+## (WorldSnapshot.ADDED_SINCE_V05: an older save has none).
+var sig_boss := PackedInt32Array()
+var sig_due := PackedInt32Array()
 
 
 func size() -> int:
@@ -179,6 +184,10 @@ func hash_into(h: StateHasher) -> void:
 		_hash_signatures(h)
 	if lava_x.size() + melt_boss.size() > 0:  # v0.8.0 BS2: only while molten floor is down
 		_hash_molten(h)
+	if not sig_boss.is_empty():  # v0.9.0 NB1: only while a boss with a cadence lives
+		h.add_int(-2)
+		h.add_ints(sig_boss)
+		h.add_ints(sig_due)
 
 
 ## v0.8.0 BS2 (S6): the lava, the meltdown and the burn clock.
@@ -241,6 +250,17 @@ func remove_melt(k: int) -> void:
 		var ai: PackedInt32Array = get(f)
 		ai.remove_at(k)
 		set(f, ai)
+
+
+## v0.9.0 NB1: the cadence entry of boss `boss_id`, or -1.
+func sig_of(boss_id: int) -> int:
+	return sig_boss.find(boss_id)
+
+
+## v0.9.0 NB1: removes cadence entry k.
+func remove_sig(k: int) -> void:
+	sig_boss.remove_at(k)
+	sig_due.remove_at(k)
 
 
 ## v0.8.0 BS1: removes javelin k.

@@ -34,8 +34,9 @@ var _steps := 0
 var _boss_pending := -1
 var _enemy_pending := -1
 var _curse_chest := false
-## v0.6.0 CU (TEST HELPER, dev runs only): the chosen enemy spawns as an elite carrying a core.
-var _elite_pending := false
+## v0.6.0 CU (TEST HELPER, dev runs only); v0.9.0 EL: the next elite archetype to spawn (-1 none), and the one after.
+var _elite_pending := -1
+var _elite_next := 0
 
 
 func _init(p_world: World) -> void:
@@ -97,7 +98,11 @@ func request_boss() -> void:
 func enemy_kinds() -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for k in range(ActorStore.Kind.CHARGER, ActorStore.Kind.size()):
-		if world.enemy_table(k) != null and not BossAi.is_boss_kind(k):
+		if (
+			world.enemy_table(k) != null
+			and not BossAi.is_boss_kind(k)
+			and not EliteAi.is_elite_kind(k)
+		):
 			out.append(k)
 	return out
 
@@ -115,12 +120,13 @@ func request_enemy() -> void:
 		_enemy_pending = enemy_choice % enemy_kinds().size()
 
 
-## v0.6.0 CU, TEST HELPER (dev runs only): queues the chosen enemy to spawn as an elite (with its core) about 6 m
-## from the player at the next tick boundary, so core theft can be seen without waiting for an elite.
+## v0.6.0 CU, TEST HELPER (dev runs only); v0.9.0 EL: queues the next elite archetype (Breaker, Rift Hunter, Conduit
+## in turn) to spawn, with its core, about 6 m from the player at the next tick boundary.
 func request_elite() -> void:
-	if not enemy_kinds().is_empty():
-		_enemy_pending = enemy_choice % enemy_kinds().size()
-		_elite_pending = true
+	var kind: int = Elites.KINDS[_elite_next % Elites.KINDS.size()]
+	if world.enemy_table(kind) != null:
+		_elite_pending = kind
+		_elite_next += 1
 
 
 ## Applies queued commands between ticks. Returns the spawned boss's actor id, or -1.
@@ -129,9 +135,10 @@ func apply_pending() -> int:
 		var kind := enemy_kinds()[_enemy_pending]
 		_enemy_pending = -1
 		world.add_enemy(kind, boss_spot(world, world.enemy_table(kind).radius_m))
-		if _elite_pending:
-			_elite_pending = false
-			Curses.make_elite(world, world.actors.size() - 1)
+	if _elite_pending >= 0:
+		var ek := _elite_pending
+		_elite_pending = -1
+		Elites.spawn(world, ek, boss_spot(world, world.enemy_table(ek).radius_m), Elites.Source.DEV)
 	if _boss_pending < 0:
 		return -1
 	var k := _boss_pending

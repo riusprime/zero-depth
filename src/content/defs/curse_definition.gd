@@ -43,6 +43,8 @@ const EFFECTS: Array[StringName] = [
 	&"elite_hunt",
 	&"elite_rare_drop",
 ]
+## v0.9.0 EL (owner Q25): the Marked curse's effects, retired with it (their places above stay; no curse may use them).
+const RETIRED: Array[StringName] = [&"elite_chance", &"elite_hunt", &"elite_rare_drop"]
 ## Effects whose amount is a count (or an on/off flag of 1), not a percent.
 const COUNTS: Array[StringName] = [&"extra_enemy", &"no_dash", &"no_minimap", &"elite_rare_drop"]
 ## Effects whose amount is in seconds.
@@ -101,6 +103,8 @@ func validate() -> Array[ValidationIssue]:
 func _check_effect(issues: Array[ValidationIssue], e: StringName, a: float) -> void:
 	if not EFFECTS.has(e):
 		issues.append(ValidationIssue.new(&"unknown", resource_path, "unknown effect %s" % e))
+	elif RETIRED.has(e):
+		issues.append(ValidationIssue.new(&"unknown", resource_path, "effect %s is retired" % e))
 	check_positive(issues, "amount", a)
 	if e == &"regen" and a > 100.0:
 		issues.append(ValidationIssue.new(&"range", resource_path, "regen cut is at most 100 %"))

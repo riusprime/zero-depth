@@ -1,11 +1,11 @@
 extends GutTest
 ## v0.5.0 EV views: the pedestals (glow and state change no shader; v0.8.0 N17: no floating name), the drone's ring
-## and the elite crowns; the event panel's cards for all eight events (cost, reward, curse mark, refusals, Leave)
+## and the elite crowns; the event panel's cards for all seven events (cost, reward, curse mark, refusals, Leave)
 ## in the pick cards' look; the cursed chest card's mark; the threat panel; the recap line; and every event and
 ## curse string in en and es with matching placeholders.
 
+## v0.9.0 EL (owner Q25): the Ambush Cache is deleted.
 const EVENTS: Array[StringName] = [
-	&"ambush_cache",
 	&"blood_price",
 	&"cleansing_font",
 	&"echo_mirror",
@@ -57,11 +57,10 @@ func test_the_drone_ring_and_elite_crowns_follow_the_sim() -> void:
 	var crowns := EventPedestalViews.new()
 	add_child_autofree(crowns)
 	crowns.setup(rv)
-	EventLab.set_event(v, &"ambush_cache")
-	EventLab.open(v)
-	EventLab.pick(v, 1)
+	for k in 2:  # v0.9.0 EL: two elite archetypes (the dev route's spawn)
+		Elites.spawn(v, Elites.KINDS[k], v.player_pos() + Vector2(4 + k * 2, 0), Elites.Source.DEV)
 	crowns.sync(rv)
-	assert_eq(crowns.crown_count(), 3, "a crown under each elite")
+	assert_eq(crowns.crown_count(), 2, "a crown under each elite")
 	assert_false(crowns.ring_visible())
 
 
@@ -148,7 +147,8 @@ func test_every_event_and_curse_string_is_in_both_languages() -> void:
 		if d.is_trade_off():
 			keys.append(String(d.up_desc_key))  # v0.6.0 CU: the upside's sentence
 	# v0.5.5 DS: Whispering Deep and its two choices; v0.6.0 CU: 13 curses, 8 of them with an upside
-	assert_eq(keys.size(), 9 * 2 + 14 + 13 * 2 + 8)
+	# v0.9.0 EL: the Ambush Cache (2 keys and its choice) and Marked (3) deleted
+	assert_eq(keys.size(), 8 * 2 + 13 + 12 * 2 + 7)
 	for k in keys:
 		assert_true(rows.has(k), "%s is in strings.csv" % k)
 		if rows.has(k):

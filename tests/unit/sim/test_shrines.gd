@@ -178,6 +178,7 @@ func test_chaos_spawns_its_challenge_and_clearing_it_rewards() -> void:
 	assert_eq(reader.interact_prompt_key(), &"SHRINE_CHAOS_PROMPT")
 	assert_eq(reader.interact_prompt_args(), [size], "the prompt names the challenge")
 	var rewards := w.rewards.size()
+	w.shrine.table.chaos_elite_permille = 0  # v0.9.0 EL: the plain challenge (its elite: the test below)
 	ShrineLab.press(w)
 	var s := w.shrine
 	assert_eq(s.chaos_phase, 1, "the challenge began")
@@ -187,9 +188,8 @@ func test_chaos_spawns_its_challenge_and_clearing_it_rewards() -> void:
 		var i := w.actors.index_of(id)
 		assert_eq(w.floor_layout.room_of(w.actors.pos(i)), room, "spawned in the shrine's room")
 		assert_true(
-			w.spawner.kinds.has(w.actors.kinds[i]), "a horde kind (no elite: EL's hook is 0)"
+			w.spawner.kinds.has(w.actors.kinds[i]), "a horde kind (the elite's chance set to 0)"
 		)
-	assert_eq(s.table.chaos_elite_permille, 0, "EL's hook waits")
 	assert_eq(w.rewards.size(), rewards, "no reward yet")
 	for k in 10:
 		w.step(InputFrame.new())
@@ -207,6 +207,34 @@ func test_chaos_spawns_its_challenge_and_clearing_it_rewards() -> void:
 	assert_eq(s.chaos_phase, 2, "cleared")
 	assert_eq(w.rewards.size(), rewards + 1, "a free altar rose: the extra upgrade")
 	assert_eq(w.rewards.price[w.rewards.size() - 1], 0)
+
+
+## v0.9.0 EL (owner Q29b: "the Chaos challenge may bring an elite, a designed exception"): with its chance (250 per
+## mille as shipped; forced to 1000 here) the challenge also brings one elite archetype, which counts as a member.
+func test_chaos_may_bring_an_elite() -> void:
+	var w := ShrineLab.with_kind(ShrineTable.Kind.CHAOS)
+	assert_not_null(w, "a Chaos shrine within 80 seeds")
+	if w == null:
+		return
+	assert_eq(w.shrine.table.chaos_elite_permille, 250, "the starting value")
+	w.shrine.table.chaos_elite_permille = 1000
+	ShrineLab.stand_by(w, w.shrine.pos)
+	var size := w.shrine.table.chaos_size(w.floor_index)
+	ShrineLab.press(w)
+	var s := w.shrine
+	assert_eq(s.members.size(), size + 1, "the challenge and one elite")
+	var elites := 0
+	for id in s.members:
+		var i := w.actors.index_of(id)
+		if EliteAi.is_elite_kind(w.actors.kinds[i]):
+			elites += 1
+			assert_eq(
+				w.floor_layout.room_of(w.actors.pos(i)),
+				w.floor_layout.room_of(s.pos),
+				"in the room"
+			)
+	assert_eq(elites, 1, "exactly one elite")
+	assert_eq(Elites.alive(w), 1, "it counts as the floor's elite alive")
 
 
 func test_fortune_is_the_gamble_shrine() -> void:

@@ -112,31 +112,37 @@ func test_scrap_heap_buys_or_digs_up_a_mod() -> void:
 	assert_eq(hp - v.actors.hp[0], v.actors.max_hp[0] * 150 / 1000, "Dig costs 15 % HP")
 
 
-func test_ambush_cache_brings_an_elite_pack_and_a_chest_once_it_falls() -> void:
-	var w := _world(&"ambush_cache")
-	EventLab.open(w)
-	var rewards := w.rewards.size()
-	EventLab.pick(w, 1)
-	assert_eq(w.ev.state[0], Events.State.ACTIVE, "the fight is on")
-	assert_eq(w.ev.ambush_ids.size(), 3, "three elites")
-	for id in w.ev.ambush_ids:
-		var i := w.actors.index_of(id)
-		assert_true(Curses.is_elite(w, id))
-		assert_gt(w.actors.invuln[i], 0, "each spawns in like any enemy (readable)")
-		assert_eq(w.floor_layout.room_of(w.actors.pos(i)), w.ev.room[0], "in the event room")
-		var base := w.enemy_table(w.actors.kinds[i]).hp
-		assert_gte(w.actors.max_hp[i], base * 2, "elite HP")
-	assert_eq(Events.block(w, 0, 0), Events.NEED_BUSY, "one ambush at a time")
-	for id in w.ev.ambush_ids:
-		_kill(w, id)
-	EventLab.idle(w, 1)
-	assert_eq(w.ev.state[0], Events.State.DONE)
-	assert_eq(w.ev.ambush, -1)
-	assert_eq(w.rewards.size(), rewards + 1, "a chest appeared")
-	var c := w.rewards.size() - 1
-	assert_eq(w.rewards.kind[c], RewardStore.Kind.CHEST)
-	assert_eq(w.rewards.price[c], 0, "free")
-	assert_almost_eq(w.rewards.pos(c).distance_to(w.ev.pos(0)), Events.CHEST_OFFSET_M, 0.01)
+## v0.9.0 EL (owner Q25, "Remove it"): the Ambush Cache is deleted. Its place in the event table stays retired (never
+## drawn on a floor built today); a save made before EL whose floor held its pedestal (or a Marked curse, or a ×2 HP
+## elite with its core) loads: the pedestal is closed, the curse dropped, the plain enemy's core dropped.
+func test_an_old_saves_ambush_marked_curse_and_elite_core_are_dropped_on_load() -> void:
+	var w := _world(&"unstable_core")
+	var ambush := EventLab.event_index(w, &"ambush_cache")
+	assert_gte(ambush, 0, "the retired event keeps its place")
+	assert_true(w.ev.events[ambush].retired)
+	assert_eq(w.ev.events[ambush].weight, 0, "never drawn today")
+	EventLab.set_event(w, &"ambush_cache")  # test setup: the pedestal an old save's floor holds
+	var marked := EventLab.curse_index(w, &"marked_hunt")
+	w.curses_owned = PackedInt32Array([marked, EventLab.curse_index(w, &"swift_foes")])
+	var id := w.add_enemy(ActorStore.Kind.WARDEN, w.player_pos() + Vector2(4, 0))
+	w.cores.add(id, 0, false)  # test setup: an old ×2 HP elite's core
+	var snap := w.to_snapshot()
+	var base := _world(&"unstable_core")
+	assert_eq(WorldSnapshot.apply(base, snap), "", "the old save loads")
+	assert_eq(base.ev.state[0], Events.State.DONE, "its Ambush Cache pedestal is closed")
+	assert_eq(
+		base.curses_owned,
+		PackedInt32Array([EventLab.curse_index(base, &"swift_foes")]),
+		"Marked is dropped, the rest kept"
+	)
+	assert_eq(base.cores.size(), 0, "the plain enemy's core is dropped")
+	assert_gte(base.actors.index_of(id), 0, "the enemy itself stays")
+	var legacy := EventCompiler.compile_events(EventLab.repo(), true)
+	assert_eq(
+		legacy[ambush].weight,
+		10,
+		"a floor saved before EL rebuilds with its old weight (its draws as saved)"
+	)
 
 
 func test_overclock_vent_overheats_now_for_more_overclock_damage() -> void:
@@ -254,14 +260,14 @@ func test_the_press_goes_to_an_altar_or_chest_first() -> void:
 	assert_gte(w.choosing, 0)
 
 
-func test_a_save_mid_ambush_with_a_curse_restores_the_same_world() -> void:
-	var w := _world(&"ambush_cache", [&"marked_hunt"])
+func test_a_save_mid_defence_with_a_curse_restores_the_same_world() -> void:
+	var w := _world(&"wandering_drone", [&"swift_foes"])
 	EventLab.open(w)
 	EventLab.pick(w, 1)
 	EventLab.idle(w, 30)
 	var snap := w.to_snapshot()
-	var base := EventLab.world(SEED, 1, &"blade", [&"marked_hunt"])
-	EventLab.set_event(base, &"ambush_cache")
+	var base := EventLab.world(SEED, 1, &"blade", [&"swift_foes"])
+	EventLab.set_event(base, &"wandering_drone")
 	assert_eq(WorldSnapshot.apply(base, snap), "", "the snapshot applies")
 	assert_eq(base.state_hash(), w.state_hash(), "the same world, events and curses included")
 	assert_eq(base.ev.events.size(), w.ev.events.size(), "its event tables are kept")

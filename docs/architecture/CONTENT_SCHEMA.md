@@ -603,7 +603,15 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
 @export var gap_close_attack: StringName           # an attack id (empty = none), done when out of reach...
 @export var gap_close_distance_m: float            # ...beyond this from the boss's edge...
 @export var gap_close_seconds: float               # ...for this long
+# v0.9.0 NB1 (BOSSES_4_5.md N1): the Tidecaller's Pull on a cadence (0 = none; every phase then holds a `tide`).
+@export var signature_every_seconds: float         # the phase's first `tide` attack every this long, start to start
+@export var signature_first_seconds: float         # the first one this long after the boss starts fighting
 ```
+
+- v0.9.0 NB1: `tide` (PROJECTILE, shielded): `pattern_id`, `pull_mps` and `push_mps` (> 0, at most 1.5),
+  `pull_seconds` and `push_seconds` (each >= the telegraph minimum), `bend_dps` (>= 0): the Tidecaller's Pull (1.2 /
+  1.0 m/s for 3 s / 2 s, rings bending 25 °/s; phase 3's 1.5 / 1.2, 30 °/s). `marks` + `drag_m` (0..2) and
+  `drag_reach_m` (>= `radius_m`): the Undertow (1.0 m from within 3.0 m).
 
 - Boss attacks (v0.3.0 BX) also take `opens_weak_point: bool`, and `follow_up: StringName` (another attack of the
   boss) with `follow_up_permille` (0..1000): the chance it starts at once instead of the recovery (a follow-up never

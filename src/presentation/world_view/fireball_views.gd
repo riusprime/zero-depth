@@ -261,6 +261,25 @@ const LOOKS := {
 		"trail_style": &"drips",
 		"tail": 0.5,
 	},
+	## v0.9.0 NB1: the Tidecaller: sea-green bubbles (a translucent wobbling skin round a bright core, a dark teal
+	## rim, a trail of droplets; greener than the hero's cyan).
+	&"tide_bubble":
+	{
+		"core": Color("#46D6B0"),
+		"edge": Color("#082624"),
+		"trail": Color("#3FA88A"),
+		"size": 1.05,
+		"tip": 1.0,
+		"trail_m": 0.4,
+		"mesh": &"glob",
+		"body": Color("#1E5A50"),
+		"energy": 2.0,
+		"swirl": 1.2,
+		"wobble": 0.16,
+		"opacity": 0.7,
+		"trail_style": &"drips",
+		"tail": 0.45,
+	},
 }
 const DEFAULT_LOOK := {
 	"core": Color("#F0A890"),
@@ -285,6 +304,7 @@ const TEX_CORES := {
 	&"acid_glob": ["fx_orb_cores", 1, 0.0],
 	&"prism_orb": ["fx_orb_cores", 2, 0.0],
 	&"molten_drop": ["fx_orb_cores", 3, 0.0],
+	&"tide_bubble": ["fx_orb_cores", 1, 0.0],  # v0.9.0 NB1: the glob painting, tinted seafoam
 	&"spear_ember": ["fx_orb_cores_2", 0, SPEAR_TURN],
 	&"cannon_ember": ["fx_orb_cores_2", 1, 0.0],
 	&"arc_plasma": ["fx_orb_cores_2", 2, 0.0],

@@ -64,11 +64,7 @@ func status_text() -> String:
 
 func _sync_status(reader: WorldReader) -> void:
 	_status.visible = false
-	if reader.event_ambush() >= 0:
-		_status.visible = true
-		_status.text = tr("UI_EVENT_AMBUSH") % reader.event_ambush_left()
-		HudStyle.font_color(_status, EventPedestalViews.FIGHT)
-	elif reader.event_defend() >= 0:
+	if reader.event_defend() >= 0:  # v0.9.0 EL: the Ambush Cache's count went with it (owner Q25)
 		var k := reader.event_defend()
 		var away := (
 			reader.player_pos().distance_to(reader.event_pos(k)) > reader.event_defend_radius_m()

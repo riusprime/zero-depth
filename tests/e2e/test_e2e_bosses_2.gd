@@ -16,7 +16,12 @@ func _reach(id: StringName, kind: int, avatar_class: String) -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
-	assert_eq(e.world().boss_tables.size(), 6, "the run carries all six compiled bosses")
+	var n := ContentRepository.load_all().count(&"bosses")
+	assert_eq(
+		e.world().boss_tables.size(),
+		n,
+		"the run carries every compiled boss (v0.9.0 NB: the six and the new ones)"
+	)
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(main.is_dev_panel_open())
 	await _click(e, main, "God")

@@ -44,6 +44,7 @@ const WORLD_KEPT := {
 	&"wand_table": "loadout",  # v0.6.5 WN1
 	&"blade_table": "loadout",  # v0.6.5 WN4
 	&"slot_table": "loadout",  # v0.9.0 AS
+	&"elite_rules": "loadout",  # v0.9.0 EL
 	&"ice": "loadout (v0.7.5 NB1: IcePatches lays it from the floor seed)",
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
@@ -103,6 +104,8 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"IntensityTable",  # v0.8.0 N5: the intensity director's numbers (SpawnTable.intensity)
 	&"BulletPatternTable",  # v0.7.5 BF1: a boss attack's bullet pattern (BossAttackTable.pattern)
 	&"SlotTable",  # v0.9.0 AS: the wand's slot limits, caps and form × card table (content, read in play)
+	&"EliteTable",  # v0.9.0 EL: an elite archetype's ability and plain attack (EnemyTable.elite)
+	&"EliteRules",  # v0.9.0 EL: where elites appear and the core drop (EliteState.rules)
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [
@@ -126,7 +129,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"Obb",
 	&"OverrunState",  # v0.4.0 AB
 	&"ShopState",  # v0.5.0 SH
-	&"EventState",  # v0.5.0 EV: pedestals, rolls, ambush, defence, elites, cursed offers (its tables are loadout)
+	&"EventState",  # v0.5.0 EV: pedestals, rolls, defence, cursed offers (its tables are loadout)
 	&"CatchUpState",  # v0.5.5 DS: the floor's hidden catch-up
 	&"ArenaState",  # v0.5.5 AR: the sealed arena, its waves, streams and barriers; the arenas cleared
 	# v0.6.0 MX1: the compiled specs (World.attack_book is kept out and compiled again on restore; listed so the
@@ -148,6 +151,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"PurpleRunes",  # v0.9.0 DP: the purple-rune dais (awakened, the Deep gate's footprint)
 	&"LockdownState",  # v0.9.0 LK: the Lockdown sealed, its formations, the safety, the strikes; those opened
 	&"ShrineState",  # v0.9.0 SH, HF: the Blood or Chaos shrine (used, the challenge, its altars) and the fountain
+	&"EliteState",  # v0.9.0 EL: the floor's elite rooms, the elites alive, their contact clocks, the escort
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -189,6 +193,7 @@ const ADDED_SINCE_V05 := {
 		&"purple",  # v0.9.0 DP: a floor saved before DP has none (built under floor rules 1-11: none in the base either)
 		&"lockdown",  # v0.9.0 LK: a floor saved before LK has none (built under floor rules 1-12: none in the base either)
 		&"shrine",  # v0.9.0 SH, HF: a floor saved before SH has none (floor rules 1-13 build none in the base either)
+		&"elites",  # v0.9.0 EL: a floor saved before EL has no elite rooms (floor rules 1-14 build none either)
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
 		&"loot_guaranteed",  # v0.8.0 FL: an older save's floor used no guarantee (0) and holds no jackpot
 		&"loot_jackpots",
@@ -243,6 +248,8 @@ const ADDED_SINCE_V05 := {
 		&"melt_ey",
 		&"melt_exit",
 		&"burn_cd",
+		&"sig_boss",  # v0.9.0 NB1: the Tidecaller's Pull cadence (an older save has no Tidecaller: none)
+		&"sig_due",
 	],
 	&"ProjectileStore":
 	[
@@ -454,6 +461,8 @@ static func apply(base: World, snap: Dictionary) -> String:
 		base.mod_slots = PackedInt32Array()
 		BuildSlots.migrate(base)
 	Modifiers.invalidate(base)  # v0.6.0 MX1: the restored build's specs compile on their next read
+	Events.drop_retired(base)  # v0.9.0 EL (Q25): an Ambush Cache pedestal closes, a held Marked curse goes
+	CoreTheft.drop_plain(base)  # v0.9.0 EL: a pre-EL elite's core (a normal enemy's) goes; it drops nothing now
 	Curses.invalidate(base)  # v0.7.0 audit C-12: the curse sums are summed again from what was restored
 	# v0.5.5 AR: a sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
 	# so only the wall grid is rebuilt for them.
@@ -734,6 +743,8 @@ static func _make(cls: StringName) -> Object:
 			return LockdownState.new()
 		&"ShrineState":  # v0.9.0 SH, HF
 			return ShrineState.new()
+		&"EliteState":  # v0.9.0 EL: a base whose floor had no elite before play brought one
+			return EliteState.new()
 		&"RngStream":
 			return RngStream.new()
 		&"ActorStore":

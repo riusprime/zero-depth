@@ -18,6 +18,11 @@ const SPECS := {
 	&"shield_bearer": {"height": 1.25},
 	&"splitter": {"height": 0.95},
 	&"lens_drone": {"height": 0.5},
+	# v0.9.0 EL: the owner's elites (prepared by scripts/assets/mi2_prep.py: parts, `base` and `glow`), at the art
+	# list's heights (EliteAvatar poses them).
+	&"elite_breaker": {"height": 2.6},
+	&"elite_rift_hunter": {"height": 2.1},
+	&"elite_conduit": {"height": 2.3},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 

@@ -81,6 +81,11 @@ var dash_read_ticks := 0
 var gap_distance_m := 0.0
 var gap_ticks := 0
 var gap_attack := -1
+## v0.9.0 NB1 (BOSSES_4_5.md N1; BossTide): a boss with sig_every_ticks > 0 performs its phase's signature (its first
+## `tide` attack) on a cadence, every sig_every_ticks from one start to the next, the first sig_first_ticks after it
+## rises, instead of by the weighted pick (0 = no cadence: every other boss).
+var sig_every_ticks := 0
+var sig_first_ticks := 0
 ## v0.8.0 FB2 (owner F7, "Phase-by-phase mix"; FINAL_BOSS.md F5, F7; BossPrism): a body whose HP is set as it rises
 ## from the player's measured damage per second (FinalFight's meter: the last dps_seconds closed seconds, at least
 ## dps_min_seconds of them, else its own hp): hp = dps × dps_target_ticks / 60 × window_permille / 1000, clamped to

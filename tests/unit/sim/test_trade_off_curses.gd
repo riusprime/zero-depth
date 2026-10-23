@@ -1,8 +1,9 @@
 # gdlint: disable=max-public-methods
 extends GutTest
-## v0.6.0 CU (PLAN v0.5.5 S7, C1-C8, G1 approved): every trade-off curse's drawback and upside apply where the sim
-## computes them, each raises threat T by 1, and the cleanse lifts both halves. Real floors (EventLab, built as Main);
-## the curses are held from the floor's start (a carry) unless the test takes them in play.
+## v0.6.0 CU (PLAN v0.5.5 S7, C1-C7, G1 approved; v0.9.0 EL: C8 Marked deleted, owner Q25): every trade-off curse's
+## drawback and upside apply where the sim computes them, each raises threat T by 1, and the cleanse lifts both
+## halves. Real floors (EventLab, built as Main); the curses are held from the floor's start (a carry) unless the test
+## takes them in play.
 
 const SEED := 616
 const TRADE_OFFS: Array[StringName] = [
@@ -13,7 +14,6 @@ const TRADE_OFFS: Array[StringName] = [
 	&"fevered",
 	&"tunnel_vision",
 	&"brittle",
-	&"marked_hunt",
 ]
 ## A source id that isn't the player: an enemy's hit.
 const ENEMY := 999999
@@ -263,73 +263,4 @@ func test_c7_brittle_a_hit_stuns_and_you_move_faster() -> void:
 	_enemy_hit(v, 3)
 	assert_eq(v.cs.stun_t, 0, "no stun without the curse")
 
-
-func test_c8_marked_elites_hunt_you_and_drop_a_rare_card() -> void:
-	var w := _world([&"marked_hunt"])
-	assert_eq(
-		Curses.total(w, Curses.Effect.ELITE_CHANCE), 120, "12 % elite chance, as Marked Hunt had"
-	)
-	var near := w.add_enemy(ActorStore.Kind.CHARGER, w.player_pos() + Vector2(4, 0))
-	var far := w.add_enemy(ActorStore.Kind.CHARGER, w.player_pos() + Vector2(40, 0))
-	var plain := w.add_enemy(ActorStore.Kind.CHARGER, w.player_pos() + Vector2(0, 4))
-	Curses.make_elite(w, w.actors.index_of(near))
-	Curses.make_elite(w, w.actors.index_of(far))
-	assert_almost_eq(
-		Curses.hunt_factor(w, w.actors.index_of(near)), 1.3, 0.001, "an elite in range: +30 %"
-	)
-	assert_eq(Curses.hunt_factor(w, w.actors.index_of(far)), 1.0, "out of range")
-	assert_eq(Curses.hunt_factor(w, w.actors.index_of(plain)), 1.0, "not an elite")
-	var i := w.actors.index_of(near)
-	var at := w.actors.pos(i)
-	w.actors.invuln[i] = 0
-	var drops := w.rewards.size()
-	Damage.hit(
-		w, i, 1000000, w.actors.ids[0], w.actors.ids[0], w.take_root(), 0, w.player_pos(), at
-	)
-	w.step(InputFrame.new())
-	var found := -1
-	for r in w.rewards.size():
-		if CoreTheft.drop_kind(w, w.rewards.ids[r]) == CoreState.Drop.ELITE_CARD:
-			found = r
-	assert_gte(found, 0, "the elite dropped Marked's card")
-	assert_eq(w.rewards.size(), drops + 1, "only that (killed in one blow: no window, no core)")
-	var card := w.rewards.offer_of(found)[0]
-	if Offers.type_of(card) == Offers.STAT:
-		assert_eq(Offers.rarity_of(card), Stats.Rarity.RARE, "a rare card")
-	else:
-		assert_eq(Offers.type_of(card), Offers.MOD, "or a mod")
-	var v := _world()
-	var id := v.add_enemy(ActorStore.Kind.CHARGER, v.player_pos() + Vector2(4, 0))
-	var j := v.actors.index_of(id)
-	Curses.make_elite(v, j)
-	v.actors.invuln[j] = 0
-	var before := v.rewards.size()
-	Damage.hit(
-		v,
-		j,
-		1000000,
-		v.actors.ids[0],
-		v.actors.ids[0],
-		v.take_root(),
-		0,
-		v.player_pos(),
-		v.actors.pos(j)
-	)
-	v.step(InputFrame.new())
-	assert_eq(v.rewards.size(), before, "no card without Marked")
-
-
-func test_c8_marked_elites_close_in_faster() -> void:
-	var walked := []
-	for curses in [[], [&"marked_hunt"]]:
-		var w := _world(curses)
-		w.actors.invuln[0] = 1 << 20
-		var id := w.add_enemy(ActorStore.Kind.WARDEN, w.player_pos() + Vector2(8, 0))
-		Curses.make_elite(w, w.actors.index_of(id))
-		CombatLab.idle(w, SimTick.SPAWN_IN_TICKS + 4)
-		var a := w.actors.pos(w.actors.index_of(id))
-		CombatLab.idle(w, 10)
-		walked.append(w.actors.pos(w.actors.index_of(id)).distance_to(a))
-	gut.p("an elite Warden walks %.3f m in 10 ticks, %.3f m Marked" % walked)
-	assert_gt(walked[0], 0.05, "it walked")
-	assert_almost_eq(walked[1] / walked[0], 1.3, 0.03, "x1.3")
+## v0.9.0 EL (owner Q25): C8 Marked is deleted with its tests (its place stays retired: test_curses.gd).

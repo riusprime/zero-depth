@@ -5,8 +5,9 @@ extends GutTest
 ##    trade-off curse card (the curse's name, its upside on the face, rare; its drawback under it); take it with A:
 ##    the curse is held, T shows 1 and the HUD lists drawback and upside; the curse's effect shows in play;
 ## 2. the dev panel's TEST HELPER spawns an elite carrying a core (the crystal glows its card family's colour); walk
-##    up and swing (right trigger) until it staggers: the steal ring shows; keep swinging and kill it inside the
-##    window: its core drops; walk to it, E opens the pick ("Stolen core"), Enter takes it and the card is yours.
+##    up and swing (right trigger) until it falls: v0.9.0 EL (owner Q25) its core drops with the elite rules' chance
+##    (30 %; made certain here, test setup) with no stagger window; walk to it, E opens the pick ("Stolen core"),
+##    Enter takes it and the card is yours.
 
 const MAX_FRAMES := 3600
 const CLOSE_M := 1.4
@@ -112,8 +113,6 @@ func _feel(e: E2e, main: Main, w: World, c: int) -> void:
 			assert_eq(Curses.overclock_bonus(w), 400)
 		&"brittle":
 			assert_almost_eq(Curses.move_factor(w), 1.2, 0.001)
-		&"marked_hunt":
-			assert_true(Curses.elite_drops(w))
 		_:
 			fail_test("an unknown trade-off: %s" % w.ev.curses[c].id)
 
@@ -126,11 +125,13 @@ func test_steal_a_core_from_an_elite() -> void:
 	var r := WorldReader.new(w)
 	var hud: Hud = main.get_node("UI/Hud")
 	await _dev(e, main, "God")
-	var before := w.ev.elite_ids.size()
+	if w.elite_rules == null:
+		w.elite_rules = EliteRules.new()
+	w.elite_rules.core_drop_permille = 1000  # test setup: the 30 % made certain
 	await _dev(e, main, "SpawnElite")  # TEST HELPER: an elite with a core, 6 m away
 	await e.frames(2)
-	assert_eq(w.ev.elite_ids.size(), before + 1, "an elite arrived")
-	var id := w.ev.elite_ids[w.ev.elite_ids.size() - 1]
+	assert_eq(Elites.alive(w), 1, "an elite arrived")
+	var id := w.elites.ids[0]
 	var k := CoreTheft.entry_of(w, id)
 	assert_gte(k, 0, "it carries a core")
 	var card := w.cores.card[k]
@@ -140,7 +141,6 @@ func test_steal_a_core_from_an_elite() -> void:
 	assert_eq(
 		main.view.cores.core_color_of(id), CoreViews.card_color(r, card), "in its family's colour"
 	)
-	var saw_ring := false
 	var trigger := false
 	for f in MAX_FRAMES:
 		var i := w.actors.index_of(id)
@@ -158,17 +158,13 @@ func test_steal_a_core_from_an_elite() -> void:
 			e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 1.0)
 			trigger = true
 		await e.frames(1)
-		var j := w.actors.index_of(id)
-		if j >= 0 and CoreTheft.window_open(w, j):
-			saw_ring = saw_ring or main.view.cores.ring_count() == 1
 	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
 	_stick(e, JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, Vector2.ZERO)
 	_stick(e, JOY_AXIS_RIGHT_X, JOY_AXIS_RIGHT_Y, Vector2.ZERO)
 	await e.frames(3)
 	assert_eq(w.actors.index_of(id), -1, "the elite fell to the swings")
-	assert_true(saw_ring, "the steal ring showed while its window was open")
-	gut.p("stolen at tick %d" % w.cores.steal_tick)
-	assert_true(w.cores.steal_tick >= 0, "killed inside the window: the core was stolen")
+	gut.p("dropped at tick %d" % w.cores.steal_tick)
+	assert_true(w.cores.steal_tick >= 0, "killed: its core dropped (no window: Q25)")
 	var drop := -1
 	for q in w.rewards.size():
 		if CoreTheft.drop_kind(w, w.rewards.ids[q]) == CoreState.Drop.CORE:

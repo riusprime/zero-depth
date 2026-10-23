@@ -110,6 +110,7 @@ func test_actor_views_pick_each_boss_model() -> void:
 		ActorStore.Kind.WARLORD: "WarlordAvatar",
 		ActorStore.Kind.HIVE_LENS: "HiveLensAvatar",
 		ActorStore.Kind.FOUNDRY: "FoundryAvatar",
+		ActorStore.Kind.TIDECALLER: "TidecallerAvatar",  # v0.9.0 NB1
 	}
 	for id in ids:
 		var i := w.actors.index_of(id)

@@ -8,15 +8,15 @@ extends RefCounted
 ## - An elite's core: a mod still in the pool (each weighs rules.core_mod_weight) or a rare stat card under its cap
 ##   (its card weight). A boss's core: a card of the legendary tier (LegendaryTable: a legendary stat card or a pool
 ##   mod, by the tier's [stat, mod] weights).
-## - An elite staggers once it took rules.core_stagger_permille of its max HP in direct damage (never DoT) since its
-##   last stagger: it stands for rules.core_stagger_ticks (its attack is cancelled, it doesn't move) and the meter
-##   resets. A boss staggers by its own meter (BossAi, read here, never changed). A stagger that the hit also kills
-##   opens nothing: the window needs the target alive.
-## - The window lasts rules.core_window_ticks from the stagger (a new stagger restarts it).
+## - A boss staggers by its own meter (BossAi, read here, never changed). A stagger that the hit also kills opens
+##   nothing: the window needs the target alive. The window lasts rules.core_window_ticks from the stagger (a new
+##   stagger restarts it).
+## - v0.9.0 EL (owner Q25: "you have a 30% chance of dropping the core"; "no stagger window"): an elite (an archetype,
+##   Elites) no longer staggers and has no window: killed, it drops its core's card with the elite rules' chance
+##   (Elites.on_death). Marked (C8) and its rare card are gone with the curse.
 ## - A core whose card no longer applies when it drops (a mod you took meanwhile, a stat at its cap; v0.8.0 FL: a
 ##   wand card that reached the floor's level ceiling meanwhile, Shop.can_apply) is redrawn from the same pool on
 ##   `loot:event`. v0.8.0 FL: an elite's mod weighs core_mod_weight × the floor stage's category multiplier.
-## - Marked (C8): a killed elite also drops a free rare card (loot:event), stolen or not.
 ## Cores exist only in worlds with the event rules (World.ev.rng_elite), so older worlds keep their hashes.
 
 const EFFECT_STAGGER := &"core_stagger"
@@ -27,7 +27,7 @@ static func enabled(w: World) -> bool:
 	return w.ev.rng_elite != null
 
 
-## Curses.make_elite: elite actor i takes a core.
+## Elites.spawn (v0.9.0 EL): elite actor i takes a core.
 static func on_elite(w: World, i: int) -> void:
 	if not enabled(w) or w.cores.ids.has(w.actors.ids[i]):
 		return
@@ -95,6 +95,16 @@ static func draw_legendary(w: World, rng: RngStream) -> int:
 	return mods[rng.range_int(0, mods.size() - 1)]
 
 
+## v0.9.0 EL (old saves, WorldSnapshot.apply): a core on an actor that is neither a boss nor an elite archetype (a
+## ×2 HP elite of a save made before EL: a normal enemy now, its extra HP kept) is dropped, with its stagger and window.
+static func drop_plain(w: World) -> void:
+	var s := w.cores
+	for k in range(s.size() - 1, -1, -1):
+		var i := w.actors.index_of(s.ids[k])
+		if s.boss[k] == 0 and (i < 0 or not EliteAi.is_elite_kind(w.actors.kinds[i])):
+			s.remove_at(k)
+
+
 ## The core entry of actor `id`, or -1.
 static func entry_of(w: World, id: int) -> int:
 	return w.cores.ids.find(id) if not w.cores.ids.is_empty() else -1
@@ -117,37 +127,18 @@ static func window_open(w: World, i: int) -> bool:
 	return k >= 0 and w.cores.window_t[k] > 0
 
 
-## Damage._apply, after the boss's own stagger meter (BossAi.on_damage): direct damage on a core carrier fills an
-## elite's meter, and a fresh stagger (an elite's, or a boss's) opens the steal window while it lives.
+## Damage._apply, after the boss's own stagger meter (BossAi.on_damage): a boss's fresh stagger opens the steal window
+## while it lives. v0.9.0 EL: an elite's core has no meter and no window (Q25).
 static func on_damage(w: World, target: int, applied: int, tags: int) -> void:
 	if w.cores.ids.is_empty() or tags & SimEvent.TAG_DOT or applied <= 0:
 		return
 	var a := w.actors
 	var k := entry_of(w, a.ids[target])
-	if k < 0 or a.dead[target] == 1:
+	if k < 0 or a.dead[target] == 1 or w.cores.boss[k] == 0:
 		return
-	var s := w.cores
-	if s.boss[k] == 1:
-		var b := w.bosses.index_of(a.ids[target])
-		if b >= 0 and w.bosses.stagger_t[b] == BossAi.table_of(w, target).stagger_ticks:
-			_open(w, k, target)
-		return
-	if s.stagger_t[k] > 0:
-		return
-	s.meter[k] += applied
-	if s.meter[k] * 1000 < a.max_hp[target] * w.ev.rules.core_stagger_permille:
-		return
-	s.meter[k] = 0
-	s.stagger_t[k] = w.ev.rules.core_stagger_ticks
-	a.state[target] = EnemyAi.State.MOVE  # the attack it was making is cancelled
-	a.state_t[target] = 0
-	a.lock_len[target] = 0.0
-	var e := w.emit_event(
-		SimEvent.Kind.STATUS_APPLY, a.ids[0], a.ids[0], a.ids[target], a.pos(target)
-	)
-	e.effect_id = EFFECT_STAGGER
-	e.amount = s.stagger_t[k]
-	_open(w, k, target)
+	var b := w.bosses.index_of(a.ids[target])
+	if b >= 0 and w.bosses.stagger_t[b] == BossAi.table_of(w, target).stagger_ticks:
+		_open(w, k, target)
 
 
 static func _open(w: World, k: int, target: int) -> void:
@@ -156,8 +147,8 @@ static func _open(w: World, k: int, target: int) -> void:
 	w.cores.window_id = w.actors.ids[target]
 
 
-## World._remove_dead (tick phase 9), as actor i leaves: inside its window its core drops (grant); Marked drops a
-## rare card from any elite.
+## World._remove_dead (tick phase 9), as actor i leaves: inside its window a boss's core drops (grant). v0.9.0 EL:
+## an elite's chance is Elites.on_death's.
 static func on_death(w: World, i: int) -> void:
 	if not enabled(w):
 		return
@@ -179,10 +170,6 @@ static func on_death(w: World, i: int) -> void:
 			)
 			e.effect_id = EFFECT_STEAL
 			e.amount = code
-	if Curses.is_elite(w, a.ids[i]) and Curses.elite_drops(w):
-		var rare := draw_card(w, w.ev.rng, Stats.Rarity.RARE)
-		if rare >= 0:
-			grant(w, rare, a.pos(i), CoreState.Drop.ELITE_CARD)
 
 
 ## THE grant (one function, so Step MX's 6-slot Swap replaces only this): a free one-card drop of `code` near `at`
