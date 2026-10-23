@@ -1198,6 +1198,77 @@ def s_fountain_heal(r):
     return body
 
 
+def s_elite_arrive(r):
+    """v0.9.0 EL (ELITES.md E0, art list `elite_arrive`; the agent's placeholder): 0.8 s, a short heavy burst for an
+    elite rising: a low sub thump with a rising noise swell under it, then a bright metallic gold ring with a short
+    echo, so it reads as a miniboss without a fanfare."""
+    n = n_of(0.35)
+    thump = one_pole_lp(osc(curve(110.0, 38.0, n), "sine", n), 300.0) * env(n, 0.003, 0.3)
+    s = n_of(0.3)
+    swell = bandpass(noise(r, s), curve(300.0, 1800.0, s), 3.0) * env(s, 0.25, 0.05) * 0.4
+    m = n_of(0.6)
+    ring = sum(fm(f, 1.5, 1.6, m) for f in (523.0, 784.0, 1046.0)) * env(m, 0.002, 0.45) * 0.14
+    body = echo(mix(thump, at(ring, 0.12)), delay_ms=120.0, feedback=0.3, mix=0.25, damp=2600.0, tail=0.2)
+    return mix(swell, at(body, 0.2))
+
+
+def s_elite_slam(r):
+    """v0.9.0 EL (E1, the Breaker's Ground Slam; the agent's placeholder): 0.9 s, the stone fist hitting the ground: a
+    deep falling boom, a crack of rubble noise and a long low rumble of dust settling."""
+    n = n_of(0.6)
+    boom = one_pole_lp(osc(curve(80.0, 30.0, n), "sine", n), 220.0) * env(n, 0.002, 0.5)
+    c = n_of(0.15)
+    crack = one_pole_hp(noise(r, c), 900.0) * env(c, 0.001, 0.08) * 0.7
+    d = n_of(0.8)
+    rumble = one_pole_lp(noise(r, d), 260.0) * env(d, 0.05, 0.7) * 0.5
+    return mix(boom, crack, at(rumble, 0.05))
+
+
+def s_elite_rift(r):
+    """v0.9.0 EL (E2, the Rift Hunter's mark; the agent's placeholder): 0.9 s, a rift tearing open on the floor: a
+    thin rising violet whine (an FM tone sweeping up) over a breathy noise tear, cut short as it locks."""
+    n = n_of(0.85)
+    whine = fm(curve(380.0, 1150.0, n), 1.97, 1.4, n) * env(n, 0.08, 0.15) * 0.3
+    tear = bandpass(noise(r, n), curve(1200.0, 3400.0, n), 4.0) * env(n, 0.2, 0.2) * 0.35
+    return mix(whine, tear)
+
+
+def s_elite_slash(r):
+    """v0.9.0 EL (E2, the Rift Hunter reappearing and slashing; the agent's placeholder): 0.4 s, a pop of air as it
+    reappears, then two quick blade swishes and a short metallic scrape."""
+    p = n_of(0.08)
+    pop = one_pole_lp(osc(curve(220.0, 90.0, p), "sine", p), 600.0) * env(p, 0.001, 0.06) * 0.7
+    swishes = []
+    for k in range(2):
+        s = n_of(0.16)
+        swishes.append(at(bandpass(noise(r, s), curve(900.0, 4200.0, s), 2.5) * env(s, 0.01, 0.1) * 0.6, 0.05 + 0.09 * k))
+    scrape = metal_ping(0.25, 1750.0, ratio=1.41, index=2.0, decay=0.08) * 0.2
+    return mix(pop, *swishes, at(scrape, 0.12))
+
+
+def s_elite_charge(r):
+    """v0.9.0 EL (E3, the Conduit charging its beam; the agent's placeholder): 1.4 s, a crystal hum rising in pitch and
+    brightness (an FM drone sweeping up, its index growing) with a soft electric crackle, so the charge's length is
+    heard."""
+    n = n_of(1.4)
+    t = np.arange(n) / RATE
+    idx = np.linspace(0.5, 3.5, n)
+    hum = fm(curve(160.0, 640.0, n), 2.0, idx, n) * env(n, 0.15, 0.08) * 0.35
+    crackle = one_pole_hp(noise(r, n), 3000.0) * (np.sin(2.0 * np.pi * 23.0 * t) > 0.7) * np.linspace(0.05, 0.3, n)
+    return mix(hum, crackle)
+
+
+def s_elite_beam(r):
+    """v0.9.0 EL (E3, the Conduit's beam firing; the agent's placeholder): 0.6 s, a bright zap: a fast downward FM
+    sweep with a white-noise burst, then a short humming tail."""
+    n = n_of(0.5)
+    zap = fm(curve(2400.0, 300.0, n), 1.5, 3.0, n) * env(n, 0.002, 0.35) * 0.45
+    b = n_of(0.12)
+    burst = one_pole_hp(noise(r, b), 1500.0) * env(b, 0.001, 0.08) * 0.5
+    tail = fm(220.0, 2.0, 1.0, n_of(0.6)) * env(n_of(0.6), 0.02, 0.5) * 0.15
+    return mix(zap, burst, at(tail, 0.05))
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -1306,6 +1377,12 @@ SFX = [
     ("shrine_blood", s_shrine_blood),
     ("shrine_chaos", s_shrine_chaos),
     ("fountain_heal", s_fountain_heal),
+    ("elite_arrive", s_elite_arrive),  # v0.9.0 EL
+    ("elite_slam", s_elite_slam),
+    ("elite_rift", s_elite_rift),
+    ("elite_slash", s_elite_slash),
+    ("elite_charge", s_elite_charge),
+    ("elite_beam", s_elite_beam),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------

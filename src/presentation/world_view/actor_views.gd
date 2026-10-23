@@ -98,6 +98,8 @@ func sync(reader: WorldReader) -> void:
 			)
 			_actors[id] = node
 			add_child(node)
+			if node.has_meta(&"elite"):  # v0.9.0 EL: its own framed bar with its name (EliteBar)
+				_add_elite_bar(node, tr(reader.elite_name_key(i)))
 			if reader.actor_team(i) != 0:
 				tint_greys(node, enemy_tint)
 				role_glow(node, reader.actor_kind(i), role_glow_energy)  # v0.8.0 N1 (O39)
@@ -292,6 +294,11 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
 	var bar: Node3D = node.get_meta(&"bar")
 	var hurt := reader.actor_hp(i) < reader.actor_max_hp(i) or reader.actor_team(i) == 0
 	bar.visible = not spawning and not node.has_meta(&"boss") and hurt
+	if node.has_meta(&"elite_bar"):  # v0.9.0 EL: the elite's bar shows while it is out (gone while it has vanished)
+		bar.visible = false
+		var eb := node.get_meta(&"elite_bar") as EliteBar
+		eb.visible = not spawning and not reader.elite_vanished(i)
+		eb.set_fraction(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)))
 	if bar.visible:  # v0.8.0 N4 (O57): its chunk and refill (BarChunks scales the bar to the trail's fill)
 		var frac := clampf(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)), 0.0, 1.0)
 		bar_chunks.feed(reader.actor_id(i), bar, frac, reader.actor_team(i) == 0)
@@ -343,6 +350,13 @@ func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 			if boss is BossAvatar and is_inside_tree() and (boss as BossAvatar).die():
 				(boss as Node).set_process(true)
 				get_tree().create_timer(BossAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
+			elif boss is EliteAvatar and is_inside_tree() and (boss as EliteAvatar).die():
+				# v0.9.0 EL: an elite topples a moment, its bars gone.
+				(boss as Node).set_process(true)
+				for m: StringName in [&"bar", &"elite_bar"]:
+					if node.has_meta(m):
+						(node.get_meta(m) as Node3D).visible = false
+				get_tree().create_timer(EliteAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
 			elif boss is HordeAvatar and is_inside_tree() and (boss as HordeAvatar).die():
 				# v0.8.0 MI: an owner's enemy model falls (the Splitter's halves part) a moment, its bar gone.
 				(boss as Node).set_process(true)
@@ -586,6 +600,18 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"enemy_avatar", boss)
 			root.set_meta(&"boss", true)
 			root.set_meta(&"mats", boss.body_materials.duplicate())
+		_ when EliteAvatar.is_elite_kind(kind):
+			# v0.9.0 EL: the owner's elite models, posed in code; their own bar (EliteBar, added by sync()).
+			var elite := EliteAvatar.new()
+			elite.enemy_tint = enemy_tint  # they pick its shared materials
+			elite.role_glow = role_glow_energy
+			elite.setup(kind, outline_color, technique)
+			facing.add_child(elite)
+			height = elite.height
+			root.set_meta(&"enemy_avatar", elite)
+			root.set_meta(&"mats", elite.body_materials.duplicate())
+			root.set_meta(&"hit_look", elite)
+			root.set_meta(&"elite", true)
 		_ when HordeAvatar.is_horde_kind(kind):
 			# The horde kinds (v0.4.0 EN): one code-built model per kind.
 			var horde := HordeAvatar.new()
@@ -635,6 +661,18 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 	bar_root.add_child(pivot)
 	root.set_meta(&"bar", pivot)
 	return root
+
+
+## v0.9.0 EL: the elite's framed bar and name (EliteBar), above its head on the actor's root (it never turns with
+## the facing).
+func _add_elite_bar(root: Node3D, name_text: String) -> void:
+	var eb := EliteBar.new()
+	eb.name = "EliteBar"
+	var bar: Node3D = root.get_meta(&"bar")
+	eb.position = (bar.get_parent() as Node3D).position + Vector3(0, 0.25, 0)
+	eb.setup(name_text)
+	root.add_child(eb)
+	root.set_meta(&"elite_bar", eb)
 
 
 func _add_core_panels(root: Node3D, size: float) -> void:
