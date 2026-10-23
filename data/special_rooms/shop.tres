@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SpecialRoomDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/special_room_definition.gd" id="1_spr"]
+
+[resource]
+script = ExtResource("1_spr")
+code = "ShopPlacement.pick"
+order = 4
+stream = &"shop_room"
+optional = false
+placement = 4
+every_floors = 2
+avoid = Array[StringName]([&"start", &"boss", &"boss_host", &"overrun"])
+sources = {
+"every_floors": "shop/terminal:every_floors",
+"floor_min": "shop/terminal:first_floor"
+}
+id = &"shop"

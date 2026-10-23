@@ -883,6 +883,29 @@ the dressing. `RunContentCompiler.compile_shop_rooms` → `ShopRoomTable` per bi
 `RunSaver.floor_tables` adds them unless the floor was saved before SR (`RunState.shop_rooms`, floor rules < 5), whose
 shop is the terminal. The F10 dev panel does not list the folder (geometry, not balance).
 
+### Special rooms (`data/special_rooms/<kind>.tres`, v0.9.0 RG)
+
+`SpecialRoomDefinition` (category `special_rooms`, PLAN W73/W74): one file per special room kind the floor places,
+the id the kind's name: `overrun`, `arena`, `shrine`, `shop`, `curse`, `event`, `fountain`, `timed_door`,
+`rune_puzzle`, `cracked_wall`, `purple_runes`, `lockdown`. It **describes** the placement code and drives no draw:
+`band` (W72: `special_combat`, `puzzle_secret`, `service_event`), `code` (the placing function), `order` (the floor's
+order; a later kind keeps out of the earlier ones' rooms), `stream` (its floor-seed sub-stream, EI-05; empty for a pure
+function of the layout), `optional`, `entry` (`open`, `sealed_on_entry`, `red_frame`, `timed_door`, `rune_slab`,
+`cracked_wall`), `seals`, `biomes` (empty: all), `floor_min`/`floor_max` (within a loop; 0 no top), `placement`
+(`CHANCE` + `chance_permille`, `FLOOR_CHANCE` + `floor_chance_permille`, `COUNT` + `count_min..count_max`, `SHARE` +
+`share_permille`, `EVERY_FLOORS` + `every_floors`, `ALWAYS`), `count_max` (at most a floor; 0 no fixed cap), the room's
+needs (`dead_end`, `uses_host`, `min_spawn_spots`, `min_cells`, `skippable`: the boss room reached with it shut,
+`keeps_every_room`: every room reached before still reached, `off_critical_path`, `never_adjacent_to_same`) and
+`avoid`/`host_avoid` (the rooms it and its host never are: the fixed rooms `start`, `boss`, `boss_host`, `portal`,
+`reward`, the hosts `*_host`, and the kinds). `sources` maps a field to where its number lives
+(`"category/id:field"`, a 0..1 share read as per mille): the floor reads that file, and `ContentValidator` fails
+(`special_room_source`) when the two disagree, so a tuning change goes there and is copied here. The dev panel does not
+list the folder (it repeats numbers tuned elsewhere). `test_special_room_schema` checks the code's constants (streams,
+spawn spots, cells) against the files; `test_special_room_rules` checks 1,000 floors as Main builds them against
+every rule here (without the flow field, `NavField.skip_build`, which no placement reads, and with one loaded
+repository: about 10 minutes on the owner's PC, so it runs when the placement changes and otherwise on GitHub).
+`scripts/balance/room_pacing.gd` prints the pacing report (evidence `ROOM_PACING.md`).
+
 ## 6. Biomes
 
 ```gdscript
