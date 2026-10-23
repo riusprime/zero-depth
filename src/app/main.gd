@@ -46,8 +46,7 @@ var playground: PlaygroundSession
 ## v0.9.0 HB (owner Q27): the hub while it runs (null otherwise: the menu, a run, the Playground).
 var hub: HubSession
 
-## The dev panel's tuning (docs/tools/DEV_PANEL.md): the owner's saved overrides, written into the content before
-## every run and floor is compiled.
+## The dev panel's tuning (docs/tools/DEV_PANEL.md): the owner's saved overrides, put in the content before compiling.
 ## v0.7.5 SM: a build with the panel locked (DevGate) ignores any tuning file left on the PC.
 var tuning := DevTuning.load_saved() if DevGate.enabled() else DevTuning.new()
 var _menu: Control
@@ -227,7 +226,11 @@ func show_build_picker() -> void:
 		func(id: StringName) -> void:
 			profile.section("loadout")["build"] = String(id)
 			_stage_seed = _seeds.next()  # v0.8.0 N1 (O53): every new run its own seed
-			loads.behind(get_tree(), ui, _covered_start, FADE_SECONDS)  # v0.8.0 N3 (O45)
+			var go := func() -> void: loads.behind(get_tree(), ui, _covered_start, FADE_SECONDS)  # N3
+			if hub == null:
+				go.call()
+			else:  # v0.9.0 HB2: the hero walks up the machine's steps into the portal first
+				hub.walk_into_portal(go, _set_menu.bind(null))
 	)
 	p.back_pressed.connect(_close_station if hub != null else show_main_menu)
 	_set_menu(p)
@@ -302,8 +305,7 @@ func codex_catalog(repo: ContentRepository = null) -> CodexCatalog:
 	return _codex_catalog
 
 
-## v0.7.5 AC: every achievement (the content's definitions, the Codex's entries for the per-boss and per-biome
-## ones), built once.
+## v0.7.5 AC: every achievement (the content's definitions, the Codex's per-boss and per-biome entries), built once.
 func _achievements_book(repo: ContentRepository = null) -> AchievementBook:
 	if _achievement_book == null:
 		if repo == null:
@@ -577,8 +579,7 @@ func run_biome_id() -> StringName:
 	return _run_biomes[run.biome_of()] if run != null else &""
 
 
-## A new run with a new seed (v0.8.0 N1: random, or the next one under a fixed mode) and the same build. v0.8.0 N3
-## (O45): behind the loading cover.
+## A new run with a new seed (v0.8.0 N1: random, or the next under a fixed mode), the same build, behind the cover (N3).
 func restart() -> void:
 	if playground != null:  # v0.7.5 PG: the pause menu's Restart rebuilds the room
 		_end_stage()
@@ -686,8 +687,7 @@ func _tweaked_run_check() -> void:
 	_dev_mark.visible = tweaked
 
 
-## A dev panel edit: applied live where it can be (Steps 3-4 of docs/tools/DEV_PANEL.md); the rest waits for the
-## next spawns or Restart floor.
+## A dev panel edit: live where it can be (docs/tools/DEV_PANEL.md Steps 3-4), else at the next spawns or floor restart.
 func _on_tuning_changed(key: String) -> void:
 	if DevTuning.is_lighting(key) and view != null and _biome_path != "":  # Step 3: live
 		# The store writes into the loaded biome it holds; the stage takes that biome's mood and re-applies it.

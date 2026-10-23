@@ -47,7 +47,15 @@ func frames(n: int) -> void:
 
 
 func _through_load() -> void:
-	if main == null or not is_instance_valid(main) or not main.loads.busy():
+	if main == null or not is_instance_valid(main):
+		return
+	# v0.9.0 HB2: the hero's walk into the portal leads into the run's load: waited through like it (a test that
+	# watches the walk steps raw frames: HubWalk.through_portal).
+	var walk_frames := 0
+	while main.hub != null and main.hub.walking and not main.loads.busy() and walk_frames < 600:
+		walk_frames += 1
+		await test.get_tree().physics_frame
+	if not main.loads.busy():
 		return
 	var from := Time.get_ticks_msec()
 	while main.loads.busy() and Time.get_ticks_msec() - from < LOAD_MS:
@@ -134,6 +142,7 @@ func start_from_menu(build: StringName = &"blade", land: bool = true) -> void:
 	if build == &"gun":
 		await tap(KEY_RIGHT)
 	await tap(KEY_ENTER)
+	await walk.through_portal()  # v0.9.0 HB2: the hero walks up into the portal first
 	await loaded()  # v0.8.0 N12: the run's first floor builds over frames behind the cover
 	await frames(4)
 	if land:

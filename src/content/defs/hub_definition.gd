@@ -20,6 +20,15 @@ extends ContentDef
 @export var rune_count := 16
 @export var rune_ring_m := 5.4
 @export var rune_flag := "count:collectibles:%d"
+## v0.9.0 HB3: where each rune stands on its ring (plan degrees, counter-clockwise from east, rune 0 first): the owner's
+## centre medallion's 16 sockets (scripts/assets/hb3_prep.py measures them). Empty: evenly round from due south.
+@export var rune_angles := PackedFloat32Array()
+## v0.9.0 HB3: the pillar braziers (plan points, m; each a solid square of pillar_half_m) and the dressing props
+## ({"id": the owner's model, "at": plan point, "half": its footprint's half size}; each turned to face the plaza's
+## middle like the stations, and solid).
+@export var pillars := PackedVector2Array()
+@export var pillar_half_m := 0.7
+@export var props: Array[Dictionary] = []
 ## The sealed gate in the north rim (its gap in the wall, m) and the alcove past it (centre, radius).
 @export var gate_half_m := 1.6
 @export var alcove_at := Vector2(0.0, 15.2)
@@ -70,10 +79,15 @@ func validate() -> Array[ValidationIssue]:
 			issues.append(
 				ValidationIssue.new(&"hub_keys", resource_path, "%s needs its keys" % s.id)
 			)
-		if (s.at.abs() + s.half).length() > radius_m - wall_m:  # its farthest corner
+		if s.at.length() + s.half.length() > radius_m - wall_m:  # its farthest corner, however it turns
 			issues.append(
 				ValidationIssue.new(&"hub_station_out", resource_path, "%s is past the rim" % s.id)
 			)
+	if not rune_angles.is_empty() and rune_angles.size() != rune_count:
+		issues.append(ValidationIssue.new(&"hub_runes", resource_path, "rune_angles: one per rune"))
+	for p: Dictionary in props:
+		if String(p.get("id", "")).is_empty() or not p.get("at") is Vector2:
+			issues.append(ValidationIssue.new(&"hub_prop", resource_path, "a prop needs id and at"))
 	var state_ids := {}
 	for st in states:
 		if st == null or state_ids.has(st.id) or not HubStateDefinition.flag_ok(st.flag):

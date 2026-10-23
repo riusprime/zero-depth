@@ -34,6 +34,9 @@ var at := &""
 ## A panel or menu of Main's is over the hub (Main sets it), or one of this node's (`overlay`).
 var held := false
 var overlay: MenuPanel
+## v0.9.0 HB2: the hero is walking into the portal (the hub holds; input is ignored but for a press that skips it).
+var walking := false
+var _after_walk: Callable
 
 
 ## Builds the hub from the content and the profile (read only): `stores` = [CodexStore, AchievementStore,
@@ -95,6 +98,11 @@ func _on_tick() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if walking:  # v0.9.0 HB2: every input is the walk's; a press of interact or accept skips it
+		get_viewport().set_input_as_handled()
+		if event.is_action_pressed(&"interact") or event.is_action_pressed(&"ui_accept"):
+			view.finish_walk()
+		return
 	if held or overlay != null:
 		return
 	if event.is_action_pressed(&"pause"):
@@ -107,6 +115,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			_open_stand_in(at)
 		else:
 			station_used.emit(at, panel)
+
+
+## v0.9.0 HB2 (owner: "click, choose weapon and then the character walks upstairs towards the portal and crosses it"):
+## the weapon is picked; `before` (Main's: the build pick closes) runs, the hero walks up the machine's steps and
+## through its ring (HubView.walk_into_portal, about 2-3 s, a press skips it), then `done` (Main's: the run's load
+## behind the cover, as before). The hub holds through it all (the World doesn't step). Returns the walk's length (s).
+func walk_into_portal(done: Callable, before: Callable = Callable()) -> float:
+	walking = true
+	_after_walk = done
+	_sync_hold()
+	if before.is_valid():
+		before.call()
+	view.walk_finished.connect(func() -> void: _after_walk.call(), CONNECT_ONE_SHOT)
+	return view.walk_into_portal()
 
 
 ## Main's panel or menu over the hub (true) or gone; the hero holds while anything is over it.
@@ -152,7 +174,7 @@ func close_overlay() -> void:
 
 
 func _sync_hold() -> void:
-	var on := held or overlay != null
+	var on := held or overlay != null or walking
 	driver.paused = on
 	driver.latch.drop_presses()
 	hud.visible = not on

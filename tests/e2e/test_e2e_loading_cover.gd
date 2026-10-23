@@ -70,6 +70,9 @@ func test_a_run_starts_behind_the_black_cover_and_a_portal_covers_in_its_colours
 	await e.frames(2)
 	e.key(KEY_ENTER, true)  # the build picker's pick (Blade)
 	e.key(KEY_ENTER, false)
+	assert_true(
+		await HubWalk.new(e).through_portal(), "v0.9.0 HB2: the hero walks into the portal first"
+	)
 	assert_true(cover.is_covered(), "the screen is covered at once")
 	assert_eq(cover.style, LoadingCover.Style.BLACK, "in black")
 	assert_true(cover.mark.visible, "with the loading mark")

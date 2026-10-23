@@ -86,8 +86,33 @@ func walls() -> Array[Obb]:
 	# The machine's base: a plan square (the owner's model's ring and steps stand on about 4 m).
 	out.append(_plan_box(Vector2.ZERO, Vector2.ONE * hub.machine_core_m, 0.0))
 	for s in hub.stations:
-		out.append(_plan_box(s.at, s.half, 0.0))
+		out.append(_plan_box(s.at, s.half, facing(s.at)))
+	# v0.9.0 HB3: the pillar braziers and the dressing props stand solid.
+	for p in hub.pillars:
+		out.append(_plan_box(p, Vector2.ONE * hub.pillar_half_m, facing(p)))
+	for d: Dictionary in hub.props:
+		out.append(_plan_box(d["at"], d.get("half", Vector2.ONE * 0.5), facing(d["at"])))
 	return out
+
+
+## v0.9.0 HB3 (owner: "looking into the middle, not all looking down"): how far a thing standing at plan point `at` is
+## turned (radians, counter-clockwise on the plan) so its front, the plan's south when unturned, faces the plaza's
+## middle.
+static func facing(at: Vector2) -> float:
+	if at.length() < 0.001:
+		return 0.0
+	var d := -at.normalized()
+	return atan2(d.x, -d.y)
+
+
+## v0.9.0 HB3: the point before station `id`'s front, `out` m from its footprint (the plan; the machine's: due south).
+func front_of(id: StringName, out: float = 0.6) -> Vector2:
+	if id == MACHINE:
+		return Vector2(0.0, -(hub.machine_core_m + out))
+	var s := station(id)
+	if s == null:
+		return Vector2.ZERO
+	return s.at + Vector2(0.0, -(s.half.y + out)).rotated(facing(s.at))
 
 
 ## The station the hero at sim `pos` stands at (its prompt shows, the interact opens it), or &"": the machine when
@@ -99,7 +124,7 @@ func station_at(pos: Vector2) -> StringName:
 	var best := &""
 	var best_d := INF
 	for s in hub.stations:
-		var d := _box_gap(p, s.at, s.half)
+		var d := _box_gap((p - s.at).rotated(-facing(s.at)) + s.at, s.at, s.half)
 		if d <= s.reach_m and d < best_d:
 			best = s.id
 			best_d = d
@@ -125,11 +150,14 @@ func panel_of(id: StringName) -> StringName:
 	return s.panel if s != null else &""
 
 
-## Where the floor runes stand on the plan, in order (rune 0 due south of the machine, then clockwise from above).
+## Where the floor runes stand on the plan, in order (rune 0 due south of the machine, then clockwise from above;
+## v0.9.0 HB3: on the medallion's sockets, `rune_angles`, when the hub lists them).
 func rune_points() -> Array[Vector2]:
 	var out: Array[Vector2] = []
 	for i in hub.rune_count:
 		var a := -PI * 0.5 - TAU * i / float(hub.rune_count)
+		if hub.rune_angles.size() == hub.rune_count:
+			a = deg_to_rad(hub.rune_angles[i])
 		out.append(Vector2(cos(a), sin(a)) * hub.rune_ring_m)
 	return out
 

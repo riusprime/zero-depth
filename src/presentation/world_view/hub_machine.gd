@@ -19,6 +19,13 @@ const PYLON_X := 1.55
 const MODEL_RING_Y := 0.53
 const MODEL_RING_R := 0.25
 const MODEL_RING_Z := 0.0
+## v0.9.0 HB2: the climb to the owner's ring (plan m, measured on his model drawn 4.6 m tall): the foot of its front
+## steps, their top (the dais, MODEL_DAIS_H m up) and the ring's plane (the dais runs through it).
+const MODEL_STEPS_FOOT := -2.75
+const MODEL_STEPS_TOP := -1.0
+const MODEL_DAIS_H := 1.28
+## How far past the ring the hero is gone (m).
+const THROUGH := 0.6
 ## How fast the altar's runes turn (rad/s) at rest and with the hero at the machine.
 const TURN_IDLE := 0.25
 const TURN_FOCUS := 0.9
@@ -32,6 +39,11 @@ var outer: MeshInstance3D
 var core_glow: Dictionary
 var looped := false
 var focus := 0.0
+## v0.9.0 HB2: the portal's flare as the hero crosses it (0 rest .. 1 full), and its burst of light motes.
+var flare := 0.0
+var burst: CPUParticles3D
+var ring_height := 0.0
+var _dais_h := MODEL_DAIS_H
 var _focus_shown := 0.0
 var _t := 0.0
 
@@ -90,6 +102,23 @@ func _init() -> void:
 	)
 	outer.rotation.x = PI * 0.5
 	outer.visible = false
+	ring_height = ring_y
+	if model == null:
+		_dais_h = ring_y - RING_R  # the stand-in's ring sits on its dais
+	burst = HubProps.motes(
+		self, "Burst", HubProps.BLUE_CORE, Vector3(0, ring_y, ring_z), ring_r, 40
+	)
+	burst.one_shot = true
+	burst.explosiveness = 0.85
+	burst.preprocess = 0.0
+	burst.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	burst.emission_sphere_radius = ring_r * 0.6
+	burst.direction = Vector3(0, 0, 1)
+	burst.spread = 70.0
+	burst.initial_velocity_min = 1.5
+	burst.initial_velocity_max = 3.5
+	burst.lifetime = 1.0
+	burst.emitting = false
 	_apply_focus()
 
 
@@ -137,6 +166,25 @@ func _build_stand_in() -> float:
 	return top + RING_Y
 
 
+## v0.9.0 HB2: the hero's climb into the ring, as plan points with their height (x, y: plan m; z: m over the floor):
+## the steps' foot, their top, the ring's plane and just past it.
+func walk_points() -> Array[Vector3]:
+	return [
+		Vector3(0.0, MODEL_STEPS_FOOT, 0.0),
+		Vector3(0.0, MODEL_STEPS_TOP, _dais_h),
+		Vector3(0.0, 0.0, _dais_h),
+		Vector3(0.0, THROUGH, _dais_h),
+	]
+
+
+## v0.9.0 HB2: the portal flares as the hero crosses it (k 0..1); its burst of motes fires once as it starts.
+func set_flare(k: float) -> void:
+	if k > 0.0 and flare <= 0.0 and burst.visible:
+		burst.restart()
+	flare = k
+	_apply_focus()
+
+
 func set_looped(on: bool) -> void:
 	looped = on
 	outer.visible = on
@@ -157,7 +205,7 @@ func _process(delta: float) -> void:
 
 
 func _apply_focus() -> void:
-	HubProps.set_glow(core_glow, 0.85 + 0.6 * _focus_shown, 1.6)
+	HubProps.set_glow(core_glow, 0.85 + 0.6 * _focus_shown + 1.6 * flare, 1.6)
 	(portal.material_override as ShaderMaterial).set_shader_parameter(
-		&"strength", 0.9 + 0.5 * _focus_shown
+		&"strength", 0.9 + 0.5 * _focus_shown + 1.8 * flare
 	)

@@ -95,6 +95,18 @@ const SPECS := {
 	&"hub_trophy_pedestal": {"height": 0.9, "yaw": 0.0},
 	&"hub_collectible_pedestal": {"height": 1.0, "yaw": 0.0},
 	&"hub_collectible_pedestal_b": {"height": 1.0, "yaw": 0.0},
+	# v0.9.0 HB3: the owner's eight hub pieces (delivered 2026-10-23, art list §4b; scripts/assets/hb3_prep.py), written
+	# at their size in the game: "as_is" keeps the file's frame (no turn, no centring, no scale). The wall segment is
+	# in the plaza's frame (re-bent onto its ring, centre at the origin), the gate and its doors in the whole gate's.
+	&"hub_wall_segment": {"as_is": true},
+	&"hub_pillar_brazier": {"as_is": true},
+	&"hub_floor_rune": {"as_is": true},
+	&"hub_sealed_gate": {"as_is": true},
+	&"hub_sealed_gate_doors": {"as_is": true},
+	&"hub_credits_stone": {"as_is": true},
+	&"hub_trophy_wall": {"as_is": true},
+	&"hub_crates": {"as_is": true},
+	&"hub_crystal_planter": {"as_is": true},
 }
 
 ## Where the manifest is read (tests point it at their own).
@@ -148,7 +160,8 @@ static func _convert(surface: Dictionary, spec: Dictionary) -> Dictionary:
 		return {}
 	var arrays: Array = surface["arrays"]
 	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-	var turn := Basis(Vector3.UP, float(spec.get("yaw", FRONT_YAW)))
+	var as_is: bool = spec.get("as_is", false)  # v0.9.0 HB3: prepared in the game's frame and size
+	var turn := Basis(Vector3.UP, 0.0 if as_is else float(spec.get("yaw", FRONT_YAW)))
 	var lo := Vector3.INF
 	var hi := -Vector3.INF
 	for k in verts.size():
@@ -161,6 +174,9 @@ static func _convert(surface: Dictionary, spec: Dictionary) -> Dictionary:
 		var size: Vector3 = spec["size"]
 		scale = Vector3(size.x / ext.x, size.y / ext.y, size.z / ext.z)
 	var base := Vector3((lo.x + hi.x) * 0.5, lo.y, (lo.z + hi.z) * 0.5)
+	if as_is:
+		scale = Vector3.ONE
+		base = Vector3.ZERO
 	var lift := float(spec.get("lift", 0.0))
 	for k in verts.size():
 		verts[k] = (verts[k] - base) * scale + Vector3(0, lift, 0)

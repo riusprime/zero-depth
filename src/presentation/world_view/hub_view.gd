@@ -3,22 +3,49 @@ extends Node3D
 ## v0.9.0 HB (owner Q27; HUB_MOCKUPS option A, the Rune Ring): the hub drawn from its plan (HubLayout) and the hero
 ## walking it, read from the hub's World through WorldReader once per tick (EI-07). One round plaza in one iso view:
 ## the Portal Machine in the centre (HubMachine), the 16 floor runes ringing it (lit per collectible: set_runes, CL),
-## the stations on the rim (HubStations: the Rune Archive, the Trophy Area, the Wardrobe, the Progression Station, the
-## Credits stone), the sealed north gate and the alcove past it (set_gate), braziers and a low rim wall of the kit's
-## pieces. The camera stays near the plaza's centre (it leans a third of the way toward the hero), so every station
-## is in view from the spawn. The evolving states (HubFlags) arrive as plain values; no toast (W46).
+## the stations (HubStations: the Rune Archive, the Trophy Area, the Wardrobe, the Progression Station, the Credits
+## stone), the sealed north gate and the alcove past it (set_gate). The evolving states (HubFlags) arrive as plain
+## values; no toast (W46).
+## v0.9.0 HB3 (owner: "a bit bigger … separate the runes a bit from the portal … use the top part of the hub to place
+## all the interactive things, looking into the middle … decoration, floor … different walls"): a 16 m plaza, the
+## runes on the centre medallion's sockets 7.8 m out, every station along the top half turned to the middle, and the
+## owner's floor, walls, pillar braziers, gate and props (HubDressing). The camera sees more (VIEW_SIZE) and leans a
+## little more toward the hero.
+## v0.9.0 HB2 (owner: "click, choose weapon and then the character walks upstairs towards the portal and crosses
+## it"): walk_into_portal() moves the hero up the machine's steps and through its ring (HubPortalWalk), the portal
+## flaring and the camera easing in; `walk_finished` when the hero is through (HubSession starts the run's load).
 ## The hooks other steps fill: show_collected (CL: the Archive's shelf slots and pedestals), set_runes (CL), set_gate
 ## (CL's Keystone room), set_robe (RB: the Wardrobe's cloak and its rune circle).
 
+signal walk_finished
+
 ## How far the camera leans from the plaza's centre toward the hero (0: fixed on the centre, 1: on the hero).
 const CAMERA_LEAN := 0.25
-## The point the camera leans from (plan m): with the hero at the spawn the view centres on the machine, so the north
-## gate and the south rim both show.
-const CAMERA_BIAS := Vector2(0.0, 3.4)
+## The point the camera leans from (plan m): with the hero at the spawn the view holds the machine, the stations
+## along the top and the spawn.
+const CAMERA_BIAS := Vector2(0.0, 4.4)
+## v0.9.0 HB3: the hub's view height (m; the run's 17 m showed a 25 m plaza, this one is 32 m).
+const VIEW_SIZE := 22.5
+## v0.9.0 HB2: during the walk the camera eases toward the machine's ring and closes in this much (1: none).
+const WALK_ZOOM := 1.18
 ## A soft fill from the camera's side (no shadows), so the stations' fronts read against the mood's back light.
 const FILL_ENERGY := 0.45
-const RIM_H := 0.9
 const RUNE_R := 0.38
+## v0.9.0 HB3: a lit rune: the owner's stone with its carved grooves glowing (the albedo's dark grooves -> `glow`).
+const RUNE_SHADER := """
+shader_type spatial;
+uniform sampler2D albedo_tex : source_color, filter_linear_mipmap;
+uniform vec4 glow : source_color = vec4(0.17, 0.77, 0.89, 1.0);
+uniform float energy = 3.2;
+void fragment() {
+	vec3 c = texture(albedo_tex, UV).rgb;
+	float lum = dot(c, vec3(0.299, 0.587, 0.114));
+	float groove = 1.0 - smoothstep(0.1, 0.24, lum);
+	ALBEDO = mix(c, glow.rgb * 0.35, groove * 0.7);
+	EMISSION = glow.rgb * groove * energy;
+	ROUGHNESS = 0.85;
+}
+"""
 
 var reader: WorldReader
 var layout: HubLayout
@@ -37,8 +64,18 @@ var rune_glows: Array[Dictionary] = []
 var gate: Node3D
 var gate_seal: Node3D
 var alcove: Node3D
+## v0.9.0 HB3: the pillar braziers' fires (their lights flicker).
+var fires: Array[Dictionary] = []
 ## The station the hero stands at (brightened).
 var focused := &""
+## v0.9.0 HB2: the walk into the portal (null: none) and what it started from.
+var walk: HubPortalWalk
+var _walk_tick := 0
+var _walk_cam := Vector3.ZERO
+var _walk_told := false
+var _rune_dark: Material
+var _rune_lit: ShaderMaterial
+var _t := 0.0
 
 
 ## Builds the hub: `states` from HubFlags.states (state id -> bool, &"runes" -> Array[bool]), `trophies` one bool per
@@ -71,8 +108,10 @@ func setup(
 	plan.name = "Plan"
 	plan.rotation.y = PI * 0.25  # HubLayout.to_sim's 45°, on the 3D floor
 	add_child(plan)
-	_build_ground()
-	_build_rim()
+	HubDressing.ground(plan, layout.hub)  # v0.9.0 HB3: the owner's floor, walls, pillars, props
+	HubDressing.walls(plan, layout.hub)
+	fires = HubDressing.pillars(plan, layout.hub)
+	HubDressing.props(plan, layout.hub)
 	_build_gate(bool(states.get(&"gate_open", false)))
 	plan.add_child(machine)
 	machine.set_looped(bool(states.get(&"machine_looped", false)))
@@ -83,6 +122,10 @@ func setup(
 	_set_trophy_states(
 		bool(states.get(&"trophy_lit", false)), bool(states.get(&"trophy_crown", false))
 	)
+	var spawn_ring := HubProps.floor_pool(
+		plan, "SpawnMark", HubProps.BLUE, _p(layout.hub.spawn, 0.03), 1.6
+	)
+	(spawn_ring.material_override as ShaderMaterial).set_shader_parameter(&"strength", 0.6)
 	hero.name = "Hero"
 	add_child(hero)
 	avatar.setup(palette.get("outline", Color("#1A1A22")))
@@ -90,6 +133,7 @@ func setup(
 	var hl := StageKit.hero_light(mood)
 	if hl != null:
 		hero.add_child(hl)
+	rig.view_size = VIEW_SIZE
 	add_child(rig)
 	rig.camera.add_child(ink)
 	ink.position = Vector3(0, 0, -1)
@@ -97,13 +141,81 @@ func setup(
 	rig.snap_to(rig.target)
 
 
-## After every hub tick: the hero and the camera.
+## After every hub tick: the hero and the camera (v0.9.0 HB2: not while the hero walks into the portal).
 func sync() -> void:
+	if walk != null:
+		return
 	var pos := reader.player_pos()
 	hero.position = SimPlane.to_3d(pos)
 	avatar.sync(reader)
 	var look := HubLayout.to_sim(CAMERA_BIAS).lerp(pos, CAMERA_LEAN)
 	rig.target = SimPlane.to_3d(look)
+
+
+## v0.9.0 HB2: the hero walks from where it stands up the machine's steps and through its ring (HubPortalWalk);
+## `walk_finished` once it is through. Its length (s).
+func walk_into_portal() -> float:
+	walk = HubPortalWalk.new(HubLayout.to_plan(reader.player_pos()), machine.walk_points())
+	_walk_tick = reader.tick()
+	_walk_cam = rig.target
+	_walk_told = false
+	_advance_walk(0.0)
+	return walk.duration()
+
+
+## v0.9.0 HB2: a press skips the rest of the walk (the hero is through at once).
+func finish_walk() -> void:
+	if walk != null:
+		walk.t = walk.duration()
+		_advance_walk(0.0)
+
+
+func _process(delta: float) -> void:
+	_t += delta
+	for i in fires.size():
+		HubProps.flicker(fires[i], _t, float(i) * 1.7)
+	if walk != null:
+		_advance_walk(delta)
+
+
+## The walk's frame: the hero's node along the path (its height up the steps, shrinking into the ring), the avatar
+## told it walks (a tick per 1/60 s of the walk, so its legs stride as in play), the portal's flare and the camera.
+func _advance_walk(delta: float) -> void:
+	walk.t += delta
+	var plan_at := walk.plan_point()
+	var sim := HubLayout.to_sim(plan_at)
+	hero.position = SimPlane.to_3d(sim, walk.height())
+	var s := maxf(0.001, 1.0 - walk.shrink())
+	hero.scale = Vector3.ONE * s
+	hero.visible = walk.shrink() < 0.999
+	var dir := HubLayout.to_sim(walk.heading())
+	var tick := _walk_tick + 1 + int(walk.t * 60.0)
+	(
+		avatar
+		. apply_state(
+			{
+				"tick": tick,
+				"pos": sim,
+				"aim": int(round(atan2(dir.y, dir.x) / TAU * 4096.0)),
+				"dashing": false,
+				"swing_t": 0,
+				"swing_ticks": 1,
+				"swing_angle": 0,
+				"combo": 0,
+				"guarding": false,
+				"dead": false,
+				"gun": false,
+			}
+		)
+	)
+	machine.set_flare(walk.flare())
+	var k := walk.ease_k()
+	var ring := SimPlane.to_3d(HubLayout.to_sim(Vector2.ZERO))
+	rig.target = _walk_cam.lerp(ring, k)
+	rig.set_flourish(0.0, lerpf(1.0, WALK_ZOOM, k))
+	if walk.done() and not _walk_told:
+		_walk_told = true
+		walk_finished.emit()
 
 
 ## Brightens station `id`'s glow (the hero stands at it; &"": none).
@@ -122,9 +234,12 @@ func set_runes(lit: Array) -> void:
 	for i in runes.size():
 		var on := i < lit.size() and bool(lit[i])
 		runes[i].set_meta(&"lit", on)
-		(runes[i].material_override as StandardMaterial3D).emission_energy_multiplier = (
-			2.6 if on else 0.0
-		)
+		if _rune_lit != null:  # v0.9.0 HB3: the owner's stone, its grooves glowing
+			runes[i].material_override = _rune_lit if on else _rune_dark
+		else:
+			(runes[i].material_override as StandardMaterial3D).emission_energy_multiplier = (
+				2.6 if on else 0.0
+			)
 		HubProps.set_glow(rune_glows[i], 1.0 if on else 0.0, 0.5)
 
 
@@ -168,140 +283,37 @@ func _p(plan_xy: Vector2, h: float = 0.0) -> Vector3:
 	return Vector3(plan_xy.x, h, -plan_xy.y)
 
 
-func _build_ground() -> void:
-	var hub := layout.hub
-	var outer := CylinderMesh.new()
-	outer.top_radius = hub.radius_m + 9.0
-	outer.bottom_radius = hub.radius_m + 9.0
-	outer.height = 0.1
-	outer.radial_segments = 48
-	var edge := HubProps.ground_material(HubProps.PLAZA_SEAM.darkened(0.45))
-	HubProps.mesh(plan, "Outer", outer, edge, Vector3(0, -0.07, 0))
-	var disc := CylinderMesh.new()
-	disc.top_radius = hub.radius_m
-	disc.bottom_radius = hub.radius_m
-	disc.height = 0.1
-	disc.radial_segments = 64
-	HubProps.mesh(
-		plan, "Plaza", disc, HubProps.ground_material(HubProps.PLAZA), Vector3(0, -0.05, 0)
-	)
-	# Carved rings in the flagstones: around the machine's dais and along the rune ring.
-	for r: float in [hub.rune_ring_m - 0.75, hub.rune_ring_m + 0.75, hub.radius_m - 1.2]:
-		var t := TorusMesh.new()
-		t.inner_radius = r - 0.06
-		t.outer_radius = r + 0.06
-		t.rings = 64
-		t.ring_segments = 3
-		var ring := HubProps.mesh(
-			plan, "Groove", t, HubProps.stone(HubProps.PLAZA_SEAM), Vector3(0, -0.035, 0)
-		)
-		ring.scale.y = 0.2
-	# The walk line from the spawn to the machine: worn flagstones.
-	var lane := HubProps.box(
-		plan,
-		"Lane",
-		Vector3(1.6, 0.02, hub.spawn.length() - hub.machine_reach_m + 0.6),
-		HubProps.stone(HubProps.PLAZA.darkened(0.08)),
-		_p(Vector2(0, (hub.spawn.y + -hub.machine_reach_m) * 0.5), 0.0)
-	)
-	lane.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var spawn_ring := HubProps.floor_pool(
-		plan, "SpawnMark", HubProps.BLUE, _p(hub.spawn, 0.03), 1.6
-	)
-	(spawn_ring.material_override as ShaderMaterial).set_shader_parameter(&"strength", 0.6)
-
-
-## A low rim of the kit's wall pieces round the plaza, columns at even steps, braziers either side of the gate and on
-## the south rim's shoulders; the south rim stays low (nothing tall between the camera and the hero).
-func _build_rim() -> void:
-	var hub := layout.hub
-	var n := maxi(8, hub.wall_pieces)
-	var r := hub.radius_m + hub.wall_m * 0.5
-	var piece := TAU * r / n
-	for k in n:
-		var a := TAU * (k + 0.5) / n
-		var c := Vector2(cos(a), sin(a)) * r
-		if absf(c.x) < hub.gate_half_m + piece * 0.5 and c.y > 0.0:
-			continue
-		var south := c.y < -hub.radius_m * 0.4
-		var h := RIM_H * (0.7 if south else 1.0)
-		var id := &"wall_broken" if k % 5 == 2 else &"wall_2m"
-		HubProps.kit_piece(
-			plan,
-			"Rim%d" % k,
-			id,
-			Vector3(piece + 0.08, h, hub.wall_m),
-			_p(c),
-			a + PI * 0.5,
-			HubProps.STONE
-		)
-		if k % 3 == 0 and not south:
-			HubProps.kit_piece(
-				plan,
-				"Column%d" % k,
-				&"column_broken",
-				Vector3(0.9, 1.9, 0.9),
-				_p(c * 1.01),
-				a,
-				HubProps.STONE_LIT
-			)
-	for spot: Vector2 in [
-		Vector2(-3.2, hub.radius_m - 0.9),
-		Vector2(3.2, hub.radius_m - 0.9),
-		Vector2(-10.6, -6.4),
-		Vector2(10.6, -6.4)
-	]:
-		HubProps.kit_piece(
-			plan,
-			"Brazier",
-			&"brazier_pole",
-			Vector3(0.6, 1.8, 0.6),
-			_p(spot),
-			0.0,
-			HubProps.STONE_DARK
-		)
-		HubProps.glow(plan, "BrazierFire", HubProps.FIRE, HubProps.GOLD_CORE, _p(spot, 1.95), 1.5)
-		HubProps.motes(plan, "Embers", HubProps.FIRE, _p(spot, 1.9), 0.15, 8)
-
-
-## The north gate: the kit's stone arch over the rim's gap, a sealed slab with a violet sigil while closed, and the
-## alcove past it (a small round room with a pedestal and a hidden glow: CL's Keystone).
+## The north gate (HubDressing.gate: the owner's gateway, its doors apart; or the kit's arch and a code slab), a violet
+## sigil glowing on it while sealed, and the alcove past it (a small round room with a pedestal and a hidden glow:
+## CL's Keystone).
 func _build_gate(open: bool) -> void:
 	var hub := layout.hub
 	var gy := hub.radius_m + hub.wall_m * 0.5
-	gate = HubProps.kit_piece(
-		plan,
-		"Gate",
-		&"stone_arch",
-		Vector3(hub.gate_half_m * 2.0 + 1.2, 2.6, hub.wall_m + 0.2),
-		_p(Vector2(0, gy)),
-		0.0,
-		HubProps.STONE
-	)
-	gate_seal = Node3D.new()
-	gate_seal.name = "Seal"
-	gate_seal.position = _p(Vector2(0, gy))
-	plan.add_child(gate_seal)
-	HubProps.box(
-		gate_seal,
-		"Slab",
-		Vector3(hub.gate_half_m * 2.0, 2.1, 0.3),
-		HubProps.stone(HubProps.STONE_DARK),
-		Vector3(0, 1.05, 0)
-	)
+	var g := HubDressing.gate(plan, hub, gy)
+	gate = g["frame"]
+	gate_seal = g["doors"]
 	var sig := FxTextures.sigil_material(HubProps.VIOLET, 2)
 	var q := QuadMesh.new()
-	q.size = Vector2.ONE * 1.2
+	q.size = Vector2.ONE * (1.6 if g["model"] else 1.2)
+	var front := hub.wall_m * 0.5 + 0.2
+	if g["model"]:
+		var doors_aabb: AABB = ShopModels.get_model(&"hub_sealed_gate_doors")["aabb"]
+		front = doors_aabb.end.z + 0.03
 	var sigil := HubProps.mesh(
 		gate_seal,
 		"Sigil",
 		q,
 		sig if sig != null else HubProps.emissive(HubProps.VIOLET, 2.0),
-		Vector3(0, 1.15, 0.17)
+		Vector3(0, 1.7 if g["model"] else 1.15, front)
 	)
 	sigil.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	HubProps.glow(
-		gate_seal, "Glow", HubProps.VIOLET, HubProps.VIOLET_CORE, Vector3(0, 1.15, 0.5), 1.6
+		gate_seal,
+		"Glow",
+		HubProps.VIOLET,
+		HubProps.VIOLET_CORE,
+		Vector3(0, 1.7 if g["model"] else 1.15, front + 0.35),
+		1.8
 	)
 	alcove = Node3D.new()
 	alcove.name = "Alcove"
@@ -316,8 +328,8 @@ func _build_gate(open: bool) -> void:
 		alcove,
 		"Floor",
 		floor_disc,
-		HubProps.ground_material(HubProps.PLAZA.darkened(0.25)),
-		Vector3(0, -0.05, 0)
+		HubDressing.paving(HubProps.PLAZA.darkened(0.25)),
+		Vector3(0, -0.03, 0)
 	)
 	HubProps.cylinder(
 		alcove, "Pedestal", 0.35, 0.45, 0.9, HubProps.stone(HubProps.STONE), Vector3(0, 0.45, 0)
@@ -329,29 +341,45 @@ func _build_gate(open: bool) -> void:
 	set_gate(open)
 
 
-## The 16 floor runes on their ring: dark slate discs with a carved glyph; a lit one glows (an emissive glyph, its
-## sigil on the floor and a small light).
+## The 16 floor runes on the medallion's sockets (HubLayout.rune_points): the owner's rune stone (v0.9.0 HB3), or a
+## dark slate disc with a carved cross; a lit one's grooves glow blue (RUNE_SHADER on his stone, an emissive glyph on
+## the stand-in), with its sigil's glow on the floor and a small light.
 func _build_runes() -> void:
 	var points := layout.rune_points()
+	var model := ShopModels.get_model(&"hub_floor_rune")
 	var slate := HubProps.stone(HubProps.STONE_DARK)
+	if not model.is_empty():
+		_rune_dark = model["material"]
+		_rune_lit = ShaderMaterial.new()
+		_rune_lit.shader = HubProps._shader(RUNE_SHADER)
+		var mat := model["material"] as BaseMaterial3D
+		if mat != null and mat.albedo_texture != null:
+			_rune_lit.set_shader_parameter(&"albedo_tex", mat.albedo_texture)
+		_rune_lit.set_shader_parameter(&"glow", HubProps.BLUE)
 	for i in points.size():
 		var p: Vector2 = points[i]
-		HubProps.cylinder(
-			plan, "RuneStone%d" % i, RUNE_R, RUNE_R + 0.05, 0.08, slate, _p(p, 0.04), 8
-		)
-		var glyph := BoxMesh.new()
-		glyph.size = Vector3(0.36, 0.02, 0.08)
-		var m := HubProps.emissive(HubProps.BLUE, 0.0)
-		m.albedo_color = HubProps.STONE_DARK.lightened(0.15)
-		var g := HubProps.mesh(plan, "Rune%d" % i, glyph, m, _p(p, 0.09))
-		g.rotation.y = -TAU * i / float(points.size())
-		var cross := HubProps.mesh(g, "Cross", glyph, m, Vector3.ZERO)
-		cross.rotation.y = PI * 0.5
-		cross.scale = Vector3(0.6, 1.0, 1.0)
+		var g: MeshInstance3D
+		if not model.is_empty():
+			g = HubProps.mesh(plan, "Rune%d" % i, model["mesh"], _rune_dark, _p(p, 0.0))
+			g.rotation.y = HubLayout.facing(p)  # the glyph reads from the plaza's middle
+			g.set_meta(&"model_id", &"hub_floor_rune")
+		else:
+			HubProps.cylinder(
+				plan, "RuneStone%d" % i, RUNE_R, RUNE_R + 0.05, 0.08, slate, _p(p, 0.04), 8
+			)
+			var glyph := BoxMesh.new()
+			glyph.size = Vector3(0.36, 0.02, 0.08)
+			var m := HubProps.emissive(HubProps.BLUE, 0.0)
+			m.albedo_color = HubProps.STONE_DARK.lightened(0.15)
+			g = HubProps.mesh(plan, "Rune%d" % i, glyph, m, _p(p, 0.09))
+			g.rotation.y = -TAU * i / float(points.size())
+			var cross := HubProps.mesh(g, "Cross", glyph, m, Vector3.ZERO)
+			cross.rotation.y = PI * 0.5
+			cross.scale = Vector3(0.6, 1.0, 1.0)
 		runes.append(g)
 		rune_glows.append(
 			HubProps.glow(
-				plan, "RuneGlow%d" % i, HubProps.BLUE, HubProps.BLUE_CORE, _p(p, 0.25), 0.9
+				plan, "RuneGlow%d" % i, HubProps.BLUE, HubProps.BLUE_CORE, _p(p, 0.3), 1.0
 			)
 		)
 
@@ -361,6 +389,7 @@ func _build_stations(trophies: Array[bool]) -> void:
 		var root := Node3D.new()
 		root.name = "Station_%s" % s.id
 		root.position = _p(s.at)
+		root.rotation.y = HubLayout.facing(s.at)  # v0.9.0 HB3: its front to the plaza's middle
 		plan.add_child(root)
 		var parts := {}
 		match s.panel:

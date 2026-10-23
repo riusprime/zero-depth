@@ -25,7 +25,7 @@ func test_the_rune_ring_is_valid_content() -> void:
 func test_a_broken_hub_is_caught() -> void:
 	var bad := _hub.duplicate(true) as HubDefinition
 	bad.stations[0].panel = &"nowhere"
-	bad.stations[1].at = Vector2(12.0, 0.0)
+	bad.stations[1].at = Vector2(14.0, 0.0)
 	bad.rune_flag = "count:collectibles"
 	var codes := []
 	for i in bad.validate():
@@ -63,11 +63,17 @@ func test_stations_are_found_where_the_hero_stands() -> void:
 	assert_eq(
 		l.station_at(HubLayout.to_sim(Vector2(0, -3.0))), HubLayout.MACHINE, "the machine's ring"
 	)
-	assert_eq(l.station_at(HubLayout.to_sim(Vector2(-7.4, 2.4))), &"archive", "before the Archive")
-	assert_eq(l.station_at(HubLayout.to_sim(Vector2(7.4, 2.4))), &"trophy")
-	assert_eq(l.station_at(HubLayout.to_sim(Vector2(-6.8, -3.4))), &"wardrobe")
-	assert_eq(l.station_at(HubLayout.to_sim(Vector2(6.8, -3.4))), &"progression")
-	assert_eq(l.station_at(HubLayout.to_sim(Vector2(-5.4, -7.0))), &"credits")
+	for id: StringName in [&"archive", &"trophy", &"wardrobe", &"progression", &"credits"]:
+		assert_eq(l.station_at(HubLayout.to_sim(l.front_of(id))), id, "before the %s" % id)
+	# v0.9.0 HB3: the stations stand along the top half, each turned to face the plaza's middle.
+	for s in _hub.stations:
+		assert_gt(s.at.y, 0.0, "%s stands in the top (north) half" % s.id)
+		var front := Vector2(0, -1).rotated(HubLayout.facing(s.at))
+		assert_almost_eq(
+			front, -s.at.normalized(), Vector2.ONE * 1e-4, "%s faces the middle" % s.id
+		)
+	assert_lt(_hub.spawn.y, 0.0, "the spawn on the bottom half")
+	assert_gt(_hub.radius_m, 15.0, "the plaza grew (12.5 -> 16 m)")
 	assert_eq(l.panel_of(&"archive"), &"codex")
 	assert_eq(l.panel_of(HubLayout.MACHINE), &"portal")
 	assert_eq(l.keys_of(&"trophy"), [&"HUB_TROPHY", &"HUB_PROMPT_TROPHY"] as Array[StringName])
@@ -75,6 +81,9 @@ func test_stations_are_found_where_the_hero_stands() -> void:
 	assert_almost_eq(
 		l.rune_points()[0], Vector2(0, -_hub.rune_ring_m), Vector2.ONE * 1e-4, "rune 0 due south"
 	)
+	# v0.9.0 HB3: the runes stand clear of the machine (its 4.6 m ring hides about 6.5 m of floor north of it).
+	for p in l.rune_points():
+		assert_gt(p.length(), _hub.machine_reach_m + 3.0, "a rune clear of the machine")
 
 
 func test_the_gate_is_a_wall_until_it_opens() -> void:
@@ -129,6 +138,31 @@ func test_the_hub_world_walks_the_hero_and_holds_it_in() -> void:
 
 
 ## One tick's frame moving toward a plan direction (the screen's: the latch turns it onto the sim plane).
+## v0.9.0 HB3: walking times on the bigger plaza stay short: from the spawn, the hero walking straight (round the
+## machine where it is in the way) reaches the machine and every station in a few seconds of play (60 ticks a second).
+func test_walking_times_from_the_spawn_stay_short() -> void:
+	var l := HubLayout.new(_hub)
+	var line := []
+	for id: StringName in [
+		&"portal", &"wardrobe", &"progression", &"archive", &"trophy", &"credits"
+	]:
+		var w := HubScenario.build(_repo, l, &"blade")
+		var goal := l.front_of(id, 0.2)
+		var ticks := 0
+		while l.station_at(w.player_pos()) != id and ticks < 900:
+			var p := HubLayout.to_plan(w.player_pos())
+			var to := goal - p
+			if id != HubLayout.MACHINE and HubWalk._gap_to_centre(p, goal) < 3.9:
+				var side := p + goal
+				to = side.normalized() * 4.8 - p
+			w.step(_frame_toward(to.normalized()))
+			ticks += 1
+		assert_eq(l.station_at(w.player_pos()), id, "the hero reaches the %s" % id)
+		assert_lt(ticks, 6 * 60, "%s within 6 s" % id)
+		line.append("%s %.2f s" % [id, ticks / 60.0])
+	gut.p("HB3 walking times from the spawn: %s" % ", ".join(line))
+
+
 func _frame_toward(plan_dir: Vector2) -> InputFrame:
 	var latch := InputLatch.new()
 	return latch.close_frame(plan_dir, Vector2.RIGHT, 1.0)

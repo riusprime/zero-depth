@@ -10,6 +10,11 @@ extends RefCounted
 
 ## The Rune Archive's shelf slots for the collectibles (CL).
 const SLOTS := 16
+## v0.9.0 HB3: the owner's trophy wall's depth (m; hb3_prep.py: 3.8 m wide, 2.04 m deep with its shelf).
+const TROPHY_WALL_D := 2.04
+## v0.9.0 HB3: the stations' low plinths (the Archive's ledge, the Trophy Area's step) in the owner's paving, a
+## little darker than the plaza (they were flat dark boxes).
+const LEDGE := Color(0.62, 0.6, 0.57)
 
 
 ## The Rune Archive (opens the Codex): the owner's bookcase niche (or a stone shelf of three tiers), blue rune plaques,
@@ -32,7 +37,13 @@ static func archive(root: Node3D, half: Vector2, h: float) -> Dictionary:
 			Vector3(0, y, -0.05)
 		)
 	var model := HubProps.owner_model(root, &"hub_archive", Vector3(0, 0, -d * 0.18), body)
-	HubProps.box(root, "Ledge", Vector3(w + 0.2, 0.3, d * 0.35), dark, Vector3(0, 0.15, d * 0.3))
+	HubProps.box(
+		root,
+		"Ledge",
+		Vector3(w + 0.2, 0.3, d * 0.35),
+		HubDressing.paving(LEDGE),
+		Vector3(0, 0.15, d * 0.3)
+	)
 	var slots: Array[MeshInstance3D] = []
 	for k in SLOTS:
 		var x := (k - (SLOTS - 1) * 0.5) * (w - 0.2) / SLOTS
@@ -69,11 +80,19 @@ static func trophy(root: Node3D, half: Vector2, h: float, bosses: Array[bool]) -
 	var dark := HubProps.stone(HubProps.STONE_DARK)
 	var w := half.x * 2.0
 	var d := half.y * 2.0
-	HubProps.box(root, "Wall", Vector3(w, h, d * 0.4), stone, Vector3(0, h * 0.5, -d * 0.3))
+	# v0.9.0 HB3: the owner's carved trophy wall (hub_trophy_wall) behind the pedestals, or a code wall and alcove.
+	var back := HubProps.stand_in(root)
+	HubProps.box(back, "Wall", Vector3(w, h, d * 0.4), stone, Vector3(0, h * 0.5, -d * 0.3))
 	HubProps.box(
-		root, "Alcove", Vector3(w * 0.45, h * 0.6, 0.06), dark, Vector3(0, h * 0.42, -d * 0.09)
+		back, "Alcove", Vector3(w * 0.45, h * 0.6, 0.06), dark, Vector3(0, h * 0.42, -d * 0.09)
 	)
-	HubProps.box(root, "Step", Vector3(w + 0.2, 0.25, d), dark, Vector3(0, 0.125, 0))
+	var wall_z := -d * 0.5 + TROPHY_WALL_D * 0.5 - 0.15
+	var wall := HubProps.owner_model(root, &"hub_trophy_wall", Vector3(0, 0, wall_z), back)
+	if wall != null:
+		h = maxf(h, (ShopModels.get_model(&"hub_trophy_wall")["aabb"] as AABB).size.y)
+	HubProps.box(
+		root, "Step", Vector3(w + 0.2, 0.25, d), HubDressing.paving(LEDGE), Vector3(0, 0.125, 0)
+	)
 	var plaques: Array[MeshInstance3D] = []
 	var n := bosses.size()
 	var step := minf(0.7, (w - 0.2) / maxf(1.0, n))
@@ -233,15 +252,18 @@ static func progression(root: Node3D, half: Vector2, h: float) -> Dictionary:
 	return {"glow": g, "crystal": crystal, "model": model}
 
 
-## The Credits stone: a low engraved slab, its carved lines faintly lit (no model asked: a code piece).
+## The Credits stone: the owner's tablet of carved names on its plinth (v0.9.0 HB3, hub_credits_stone), or a low
+## engraved slab with its carved lines faintly lit.
 static func credits(root: Node3D, half: Vector2, h: float) -> Dictionary:
 	var stone := HubProps.stone(HubProps.STONE)
+	var body := HubProps.stand_in(root)
 	HubProps.box(
-		root, "Slab", Vector3(half.x * 2.0, h, half.y * 2.0), stone, Vector3(0, h * 0.5, 0)
+		body, "Slab", Vector3(half.x * 2.0, h, half.y * 2.0), stone, Vector3(0, h * 0.5, 0)
 	)
-	for k in 3:
+	var model := HubProps.owner_model(root, &"hub_credits_stone", Vector3.ZERO, body)
+	for k in 3 if model == null else 0:
 		HubProps.box(
-			root,
+			body,
 			"Line%d" % k,
 			Vector3(half.x * (1.4 - k * 0.3), 0.02, 0.05),
 			HubProps.emissive(HubProps.GOLD.darkened(0.2), 1.4),
@@ -250,4 +272,4 @@ static func credits(root: Node3D, half: Vector2, h: float) -> Dictionary:
 	var g := HubProps.glow(
 		root, "Glow", HubProps.GOLD, HubProps.GOLD_CORE, Vector3(0, h + 0.3, 0.0), 1.4
 	)
-	return {"glow": g}
+	return {"glow": g, "model": model}
