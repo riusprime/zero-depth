@@ -945,8 +945,6 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	return RunContentCompiler.add_run_shape(t, def)  # v0.9.0 FV: its id, floor sizes and wand slots
 
 
-## Overclock heat (v0.3.0 L18) in sim units: heat in milli-points, seconds in ticks. Null without a definition
-## (Heat.enable then leaves heat off).
 ## v0.4.0 AB: the Overrun branch's numbers (null without a definition: no Overrun).
 static func compile_overrun(def: OverrunDefinition) -> OverrunTable:
 	if def == null:
