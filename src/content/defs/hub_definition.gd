@@ -26,7 +26,7 @@ extends ContentDef
 ## v0.9.0 HB3: the pillar braziers (plan points, m; each a solid square of pillar_half_m) and the dressing props
 ## ({"id": the owner's model, "at": plan point, "half": its footprint's half size}; each turned to face the plaza's
 ## middle like the stations, and solid).
-@export var pillars := PackedVector2Array()
+@export var pillars: Array[Vector2] = []
 @export var pillar_half_m := 0.7
 @export var props: Array[Dictionary] = []
 ## The sealed gate in the north rim (its gap in the wall, m) and the alcove past it (centre, radius).

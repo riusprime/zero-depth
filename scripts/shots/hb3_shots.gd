@@ -1,9 +1,9 @@
 extends SceneTree
-## v0.9.0 HB2 / HB3 (owner: the walk into the portal; the bigger Rune Ring, its stations along the top facing the middle,
-## the owner's eight hub pieces): the real main.tscn on a memory-only profile, in English. Shots: the hub from the
-## spawn (Play, an Enter press), the top half seen from above (a tool view: the camera lifted and pitched down, over
-## the stations), then the hero placed before the Portal Machine, E, Enter on the Blade: the walk up the steps
-## (mid-climb) and the crossing (the portal's flare). `--lit` also lights six runes for a check shot (not evidence).
+## v0.9.0 HB2 / HB3 (owner: the walk into the portal; the bigger Rune Ring, its stations along the top facing the
+## middle, the owner's eight hub pieces): the real main.tscn on a memory-only profile, in English. Shots: the hub
+## from the spawn (Play, an Enter press), the top half seen from above (a tool view: the camera lifted and pitched
+## down, over the stations), then the hero placed before the Portal Machine, E, Enter on the Blade: the walk up the
+## steps (mid-climb) and the crossing (the portal's flare). `--lit` lights six runes for a check shot (not evidence).
 ## Needs a renderer (the GPU on the owner's PC):
 ##   godot --path . --audio-driver Dummy --resolution 1920x1080 -s scripts/shots/hb3_shots.gd
 ## Writes build/shots/v0.9.0/hb3/<shot>.png (copy the ones the owner looks at into the evidence by hand).

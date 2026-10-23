@@ -37,10 +37,10 @@ var held := false
 var overlay: MenuPanel
 ## v0.9.0 HB2: the hero is walking into the portal (the hub holds; input is ignored but for a press that skips it).
 var walking := false
-var _after_walk: Callable
 ## v0.9.0 RB: the content and the profile the Wardrobe reads and writes (its robe and affinity).
 var repo: ContentRepository
 var profile: ProfileStore
+var _after_walk: Callable
 
 
 ## Builds the hub from the content and the profile (read only): `stores` = [CodexStore, AchievementStore,
