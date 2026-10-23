@@ -56,6 +56,9 @@ ruled = Array[StringName]([])
 script = ExtResource("2_row")
 id = &"seekers"
 card = &"gun_seekers"
+allowed = Array[StringName]([&"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
+ruled = Array[StringName]([])
+
 [sub_resource type="Resource" id="Form_wave"]
 script = ExtResource("2_row")
 id = &"wave"
