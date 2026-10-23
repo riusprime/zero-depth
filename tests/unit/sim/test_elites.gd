@@ -71,13 +71,13 @@ func test_the_numbers_are_the_approved_rows() -> void:
 	assert_eq(by.size(), 3, "three archetypes")
 	var b: EnemyTable = by[K.BREAKER]
 	assert_eq(
-		[b.hp, b.elite.contact_damage, b.elite.damage, b.elite.basic_damage], [600, 30, 32, 25]
+		[b.hp, b.elite.contact_damage, b.elite.damage, b.elite.basic_damage], [600, 0, 32, 25]
 	)
 	assert_eq([b.elite.windup_ticks, b.elite.recover_ticks, b.elite.every_ticks], [60, 90, 360])
 	assert_eq([b.elite.radius_m, b.elite.vulnerable_permille], [3.0, 1500])
 	assert_almost_eq(b.speed * 60.0, 1.3, 0.001)
 	var r: EnemyTable = by[K.RIFT_HUNTER]
-	assert_eq([r.hp, r.elite.contact_damage, r.elite.damage], [450, 25, 30])
+	assert_eq([r.hp, r.elite.contact_damage, r.elite.damage], [450, 0, 30])  # owner: no contact damage
 	assert_eq(
 		[r.elite.windup_ticks, r.elite.track_ticks, r.elite.recover_ticks, r.elite.every_ticks],
 		[54, 30, 60, 270]
@@ -162,7 +162,8 @@ func test_breaker_punch_reaches_1_5_m_for_25() -> void:
 	assert_eq(_hurt(w) - hurt, 25)
 
 
-func test_breaker_contact_hurts_30_at_most_once_a_second() -> void:
+## v0.9.0 EL (owner 2026-10-23: "Drop contact damage"): touching an elite never hurts; only its telegraphed attacks do.
+func test_touching_an_elite_never_hurts() -> void:
 	var w := _world()
 	var id := _elite(w, K.BREAKER, Vector2(1.2, 0), false)
 	var i := _i(w, id)
@@ -175,7 +176,7 @@ func test_breaker_contact_hurts_30_at_most_once_a_second() -> void:
 		w.actors.set_pos(0, e - Vector2(touch, 0))
 		w.actors.invuln[0] = 0
 		w.step(InputFrame.new())
-	assert_eq(_hurt(w) - hurt, 60, "two touches in 2 s, 30 each (the spawn-in first)")
+	assert_eq(_hurt(w) - hurt, 0, "two seconds of touching: no damage")
 
 
 # --- E2 the Rift Hunter ---------------------------------------------------------------------------------------------

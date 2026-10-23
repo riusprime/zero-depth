@@ -218,6 +218,8 @@ func test_chaos_may_bring_an_elite() -> void:
 		return
 	assert_eq(w.shrine.table.chaos_elite_permille, 250, "the starting value")
 	w.shrine.table.chaos_elite_permille = 1000
+	# The owner (2026-10-23): a Chaos elite only on floors 4-5. This floor's number set to 4 (TEST HELPER).
+	w.floor_index = 4
 	ShrineLab.stand_by(w, w.shrine.pos)
 	var size := w.shrine.table.chaos_size(w.floor_index)
 	ShrineLab.press(w)
@@ -334,3 +336,19 @@ func test_a_floor_saved_before_sh_is_rebuilt_as_it_was() -> void:
 		if now.shrine != null:
 			today += 1
 	assert_gt(today, 0, "today's floors have Blood or Chaos shrines or fountains")
+
+
+## v0.9.0 EL (owner 2026-10-23: "Floors 4-5 only"): on floors 1-3 a Chaos challenge brings no elite, whatever
+## its chance.
+func test_chaos_brings_no_elite_before_floor_4() -> void:
+	var w := ShrineLab.with_kind(ShrineTable.Kind.CHAOS)
+	assert_not_null(w, "a Chaos shrine within 80 seeds")
+	if w == null:
+		return
+	w.shrine.table.chaos_elite_permille = 1000
+	w.floor_index = 3
+	ShrineLab.stand_by(w, w.shrine.pos)
+	var size := w.shrine.table.chaos_size(w.floor_index)
+	ShrineLab.press(w)
+	assert_eq(w.shrine.members.size(), size, "the challenge only")
+	assert_eq(Elites.alive(w), 0, "no elite")
