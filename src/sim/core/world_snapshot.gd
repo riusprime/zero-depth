@@ -25,6 +25,8 @@ const WORLD_KEPT := {
 	&"spawner": "loadout",
 	&"floor_layout": "loadout (generated from the floor seed)",
 	&"item_tables": "loadout",
+	&"locked_items":
+	"loadout (v0.9.0 MP): FloorPlan resolves the run's locked cards (RunState.locked_cards)",
 	&"boss_tables": "loadout",
 	&"reward_table": "loadout",
 	&"gamble_table": "loadout",

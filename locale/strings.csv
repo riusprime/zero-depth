@@ -1290,3 +1290,16 @@ AFFINITY_GUARDIAN,Guardian,Guardián
 AFFINITY_GUARDIAN_DESC,A ward blocks the next hit that would damage you. It refills at the start of each floor.,Una guarda bloquea el siguiente golpe que te haría daño. Se recarga al empezar cada piso.
 AFFINITY_GUARDIAN_COST,You pick up 20% fewer run shards.,Recoges un 20 % menos de fragmentos en la partida.
 MAP_LEGEND_SECRET,Secret (Astral),Secreto (Astral)
+UI_RECAP_FRAGMENTS,Rune Fragments: +%d (now %d),Fragmentos de Runa: +%d (ahora %d)
+UI_UNLOCK_TOAST,FORM UNLOCKED,FORMA DESBLOQUEADA
+UNLOCK_VOID_NAME,The Void,El Vacío
+UNLOCK_VOID_DESC,You travelled through the purple Deep portal. The Void form now joins the offers.,Cruzaste el portal profundo púrpura. La forma Vacío ya aparece en las ofertas.
+PROGRESSION_BALANCE,Rune Fragments: %d,Fragmentos de Runa: %d
+PROGRESSION_ROBES_INTRO,Robes for the hero's cloak. A colour only: no robe changes a run.,Túnicas para la capa del héroe. Solo un color: ninguna cambia la partida.
+PROGRESSION_PRICE,%d fragments,%d fragmentos
+PROGRESSION_OWNED,owned,tuya
+PROGRESSION_VOID_LOCKED,The Void form: travel through the purple Deep portal to unlock it.,La forma Vacío: cruza el portal profundo púrpura para desbloquearla.
+PROGRESSION_VOID_OPEN,The Void form: unlocked.,La forma Vacío: desbloqueada.
+PROGRESSION_BOUGHT,%s bought. Wear it at the Wardrobe.,Túnica %s comprada. Póntela en el Vestidor.
+PROGRESSION_SHORT,Not enough Rune Fragments for %s.,No tienes Fragmentos de Runa suficientes para la túnica %s.
+PROGRESSION_ALREADY,%s is already yours.,La túnica %s ya es tuya.

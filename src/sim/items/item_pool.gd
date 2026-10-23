@@ -92,6 +92,8 @@ static func usable(w: World, idx: int) -> bool:
 	# v0.6.5 WN5a: the wand's trigger cards (WAND.md T1–T4) are offered in both weapons' runs.
 	if it.retired:
 		return false  # v0.6.5 WN5b: a retired v0.6 card (WAND.md; data/wand/migration.tres)
+	if w.locked_items.has(idx):
+		return false  # v0.9.0 MP: a card the profile hasn't unlocked yet (the Void before a Purple Portal)
 	if it.requires_heat and w.heat == null:
 		return false
 	var need := it.requires_utility

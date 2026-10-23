@@ -103,6 +103,9 @@ var nav := NavField.new()
 # --- Items (v0.2.0 E) ---------------------------------------------------------------------------------------
 ## Compiled items (part of the loadout, like enemy_tables); items_owned and pickups hold indices into it.
 var item_tables: Array[ItemTable] = []
+## v0.9.0 MP (owner: "void unlocked when traveling through a purple portal"): items no offer may draw (indices into
+## item_tables, ascending), from the run's locked cards (RunState.locked_cards; FloorPlan). Empty: nothing locked.
+var locked_items := PackedInt32Array()
 ## Items the player holds, in pickup order (indices into item_tables, no duplicates).
 var items_owned := PackedInt32Array()
 ## The owned items folded into modifiers (derived from items_owned, so not hashed).
@@ -1360,6 +1363,8 @@ func state_hash() -> String:
 		elites.hash_into(h)
 	if affinity != null:  # v0.9.0 RB: only runs with an affinity (None: null)
 		affinity.hash_into(h)
+	if not locked_items.is_empty():  # v0.9.0 MP: only runs with a card still locked (none: hashed as before)
+		h.add_ints(locked_items)
 	if final_fight != null:  # v0.8.0 FB1: only the worlds that hold the final fight
 		final_fight.hash_into(h)
 	actors.hash_into(h)

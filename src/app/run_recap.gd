@@ -22,6 +22,7 @@ static func of(run: RunState, driver: SimDriver) -> Dictionary:
 		"loops_cleared": run.loops_cleared(w),
 		"true_ending": run.final_fight and driver.reader.final_won(),  # v0.8.0 FB1: the final boss beaten
 		"final_reached": run.final_fight,
+		"fragments": RuneFragments.total(run, w),  # v0.9.0 MP: Rune Fragments (the end panel banks them)
 	}
 	if &"shards" in w:
 		out["shards"] = int(w.get(&"shards"))

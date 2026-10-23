@@ -6,7 +6,7 @@ extends RefCounted
 ## reads as Cream and None (no profile version change: missing keys fall back here). The robe is cosmetic; the
 ## affinity is copied into the run when it starts (RunState.affinity) and stays locked for that run.
 ## Locked robes: a robe that isn't `free` is worn only once its id is in the profile's `unlocks.robes` list. MP (Rune
-## Fragments) is the step that buys them: it calls unlock_robe; until then Night, Canyon, Frost and Moss stay locked.
+## Fragments): the Progression Station buys Night, Canyon, Frost and Moss (MetaProgress.buy_robe calls unlock_robe).
 
 const NONE := &"none"
 const DEFAULT_ROBE := &"cream"

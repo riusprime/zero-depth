@@ -97,7 +97,7 @@ func _next() -> void:
 func _word() -> void:
 	if _current.is_empty():
 		return
-	header.text = tr("UI_ACH_TOAST")
+	header.text = tr(_current.get("header_key", &"UI_ACH_TOAST"))  # v0.9.0 MP: an unlock names itself
 	name_label.text = AchievementsPage.title_of(self, _current)
 	desc_label.text = AchievementsPage.desc_of(self, _current)
 	_fit.call_deferred()

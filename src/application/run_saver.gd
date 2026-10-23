@@ -28,6 +28,9 @@ extends RefCounted
 ## it was saved and it ends on its floor 3.
 ## v0.9.0 DP (owner Q26b) adds `run.purple_floors` (the run's floors that held a purple-rune room) the same way: a
 ## payload without it has had none.
+## v0.9.0 MP adds `run.fragments` (the Rune Fragments the finished floors earned) and `run.locked` (the card ids still
+## locked for the run: the Void before a Purple Portal) the same way, only when not 0 or empty: a payload without them
+## has earned none and locks nothing (an old run in progress keeps every form in its pool).
 const PAYLOAD_VERSION := 4
 const PAYLOAD_VERSIONS_READ: Array[int] = [2, 3, 4]
 ## v0.9.0 FV: today's run (Main) and the shape a payload without `run_id` resumes in.
@@ -197,6 +200,9 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	run.final_fight = bool(r.get("final", false))  # v0.8.0 FB1: an older payload is before the final arena
 	run.purple_floors = PackedInt32Array(r.get("purple_floors", PackedInt32Array()))  # v0.9.0 DP: older: none
 	run.affinity = StringName(String(r.get("affinity", "")))  # v0.9.0 RB: an older payload is a run without one
+	run.fragments_done = maxi(0, int(r.get("fragments", 0)))  # v0.9.0 MP: an older payload earned none
+	for id: Variant in r.get("locked", []):  # v0.9.0 MP: an older payload locks nothing
+		run.locked_cards.append(StringName(String(id)))
 	return run
 
 
@@ -240,6 +246,13 @@ static func payload_of(
 	}
 	if Wardrobe.has_affinity(run.affinity):  # v0.9.0 RB: the run's locked rune affinity (None: no key, as before)
 		out["run"]["affinity"] = String(run.affinity)
+	if run.fragments_done > 0:  # v0.9.0 MP: the run's Rune Fragments so far (none: no key, as before)
+		out["run"]["fragments"] = run.fragments_done
+	if not run.locked_cards.is_empty():  # v0.9.0 MP: the cards still locked (none: no key, as before)
+		var ids := PackedStringArray()
+		for id in run.locked_cards:
+			ids.append(String(id))
+		out["run"]["locked"] = ids
 	return out
 
 

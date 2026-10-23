@@ -175,16 +175,14 @@ func test_each_station_opens_its_panel() -> void:
 	await e.frames(2)
 	assert_null(main.get_node_or_null("UI/WardrobePanel"), "Esc closes it")
 	assert_false(main.hub.driver.paused)
-	# The Progression Station: its stand-in.
-	for id: StringName in [&"progression"]:
-		await walk.use(id)
-		var p := main.get_node_or_null("UI/HubPanel_%s" % id) as HubStationPanel
-		assert_not_null(p, "the %s opens its panel" % id)
-		assert_true(main.hub.driver.paused, "the hub holds under it")
-		await e.tap(KEY_ENTER)  # Back has focus
-		await e.frames(2)
-		assert_null(main.get_node_or_null("UI/HubPanel_%s" % id), "Back closes it")
-		assert_false(main.hub.driver.paused)
+	# v0.9.0 MP: the Progression Station's own panel (test_e2e_rune_fragments buys there); Esc closes it.
+	await walk.use(&"progression")
+	assert_not_null(main.get_node_or_null("UI/ProgressionPanel"), "the station opens its panel")
+	assert_true(main.hub.driver.paused, "the hub holds under it")
+	await e.tap(KEY_ESCAPE)
+	await e.frames(2)
+	assert_null(main.get_node_or_null("UI/ProgressionPanel"), "Esc closes it")
+	assert_false(main.hub.driver.paused)
 	# The Credits stone.
 	await walk.use(&"credits")
 	assert_not_null(main.get_node_or_null("UI/CreditsView"), "the Credits stone opens the credits")
