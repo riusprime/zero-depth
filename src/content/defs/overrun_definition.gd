@@ -16,6 +16,12 @@ extends ContentDef
 @export var wave_sizes := PackedInt32Array([4, 8, 12])
 ## What the clear pays on the shards those kills paid (2.0 = they count twice).
 @export var shard_multiplier := 2.0
+## v0.9.0 CF (owner: "lets never make it a 1x1 ... the enemies that spawn at the same time should be proportional to
+## the room size"): the fight never takes a room of fewer than min_cells grid cells (2: never a 1 x 1), and holds at
+## most its floor area / area_per_enemy_m2 enemies at once (an elite counts EliteRulesDefinition.elite_weight); the
+## rest come in as earlier ones die (ClosedFights). Starting values.
+@export var min_cells := 2
+@export var area_per_enemy_m2 := 30.0
 
 
 func category() -> StringName:
@@ -37,4 +43,7 @@ func validate() -> Array[ValidationIssue]:
 	if waves_max < waves_min:
 		issues.append(ValidationIssue.new(&"range", resource_path, "waves_max >= waves_min"))
 	issues.append_array(ArenaDefinition.wave_size_issues(resource_path, wave_sizes))
+	issues.append_array(
+		ArenaDefinition.closed_fight_issues(resource_path, min_cells, area_per_enemy_m2)
+	)
 	return issues

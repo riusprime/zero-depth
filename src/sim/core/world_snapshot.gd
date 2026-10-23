@@ -356,6 +356,10 @@ const ADDED_SINCE_V05 := {
 		&"imprint_at",
 		&"imprint_until",
 	],
+	# v0.9.0 CF: a closed fight's members waiting to come in (an older save's fight has none: the base's, empty)
+	&"ArenaState": [&"later_kinds", &"later_pos"],
+	&"LockdownState": [&"later_kinds", &"later_pos"],
+	&"ShrineState": [&"later_kinds", &"later_pos"],
 	&"ItemMods": [&"bleed_move_period_ticks"],  # v0.6.5 WN5a (S5 Bleed: an older save has the base's)
 	# v0.7.5 MG (N10: an older save's floor counts its cursed chests from 0); v0.8.0 N17: the curse room's altar (an
 	# older save's floor has none: -1, apply)

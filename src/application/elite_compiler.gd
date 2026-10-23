@@ -68,4 +68,5 @@ static func compile_rules(def: EliteRulesDefinition) -> EliteRules:
 	t.core_drop_permille = def.core_drop_permille
 	t.kind_weights = def.kind_weights.duplicate()
 	t.lockdown_escort = def.lockdown_escort
+	t.elite_weight = def.elite_weight  # v0.9.0 CF
 	return t

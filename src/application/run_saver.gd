@@ -120,6 +120,12 @@ static func floor_tables(run: RunState, repo: ContentRepository) -> Dictionary:
 	var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
 	var arena := RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))
 	var shop := ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal"))
+	var overrun := ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))
+	if ClosedFights.legacy_rooms(run):  # v0.9.0 CF: a floor saved before CF keeps its rooms
+		if arena != null:
+			arena.min_cells = 0
+		if overrun != null:
+			overrun.min_cells = 0
 	if run == null or run.designed_rooms():  # v0.8.0 RT: a floor saved before RT keeps its rule-built rooms
 		map.room_layouts = RunContentCompiler.compile_room_layouts(repo)
 		if run != null and run.rt1_rooms():  # v0.8.0 RT2: a floor saved under RT1 keeps RT1's three layouts
@@ -136,7 +142,7 @@ static func floor_tables(run: RunState, repo: ContentRepository) -> Dictionary:
 		if shop != null:
 			shop.first_floor = 1
 			shop.every_floors = 1
-	return {&"map": map, &"arena": arena, &"shop": shop}
+	return {&"map": map, &"arena": arena, &"shop": shop, &"overrun": overrun}
 
 
 ## v0.8.0 RT2: the designed layouts a floor saved under floor rules 4 (RT1) was built with: RT1_LAYOUTS out of

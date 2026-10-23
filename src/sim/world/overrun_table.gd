@@ -10,3 +10,7 @@ var shard_permille := 2000
 var waves_min := 3
 var waves_max := 5
 var wave_sizes := PackedInt32Array([4, 8, 12])
+## v0.9.0 CF: the least grid cells the Overrun room has (OverrunRooms.mark; 0: any room, a floor saved before CF), and
+## the room's floor area (m2) an enemy needs at once (ClosedFights.cap; 0: no cap).
+var min_cells := 2
+var area_per_enemy_m2 := 30.0

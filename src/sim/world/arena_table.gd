@@ -18,6 +18,10 @@ var first_wave_ticks := 45
 var wave_gap_ticks := 60
 ## A wave's members spawn at least this far from the player (m) when the room has such spots.
 var min_spawn_distance_m := 3.0
+## v0.9.0 CF: the least grid cells an arena's room has (ArenaRooms.mark; 0: any room, a floor saved before CF), and
+## the room's floor area (m2) an enemy needs at once (ClosedFights.cap; 0: no cap).
+var min_cells := 2
+var area_per_enemy_m2 := 30.0
 
 
 ## The wave size on floor `floor_index` from `sizes` (1-based; the last repeats).

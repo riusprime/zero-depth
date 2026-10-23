@@ -18,6 +18,11 @@ extends RefCounted
 ##   `combat:chaos` stream of the floor seed). When none of them is left alive (advance), it raises chaos_altars free
 ##   altars. v0.9.0 EL: with chaos_elite_permille (then drawn on the same stream, after the enemies) the challenge
 ##   also brings one elite archetype (Elites.spawn), unless as many elites as the rules allow are already alive.
+##   v0.9.0 CF (owner: "the enemies that spawn at the same time should be proportional to the room size"): the Chaos
+##   kind is never drawn for a shrine in a room of fewer than chaos_min_cells grid cells (setup), and only as many of
+##   the challenge as the room holds at once (at_once: its floor area over chaos_area_per_enemy_m2, an elite counting
+##   EliteRules.elite_weight; ClosedFights) come out together; the rest come in as earlier ones die (advance), the
+##   same members drawn as before. It is won when none is left alive and none waits.
 ## - The healing fountain: on fountain_permille of floors from fountain_floor_min (the `map:fountain` sub-stream), in
 ##   a free spot of a combat room (Gamble.room_spot, as the shrine), never the shrine's room, an event's or the curse
 ##   room; the secrets and Lockdowns placed after keep out of its room (taken_rooms). Its footprint is a wall. One
@@ -48,7 +53,10 @@ static func setup(w: World, t: ShrineTable, floor_index: int, map: FloorParams =
 		return
 	var kind: int = ShrineTable.Kind.FORTUNE
 	if w.gamble_id >= 0:
-		kind = draw_kind(f.seed_value, t, floor_index)
+		var room := f.room_of(w.gamble_pos)
+		kind = draw_kind(
+			f.seed_value, t, floor_index, ClosedFights.fits(f, room, t.chaos_min_cells)
+		)
 	var gt := w.gamble_table if w.gamble_table != null else GambleTable.new()
 	var at := fountain_site(w, t, floor_index, gt, map)
 	if kind == ShrineTable.Kind.FORTUNE and at.is_empty():
@@ -72,8 +80,16 @@ static func setup(w: World, t: ShrineTable, floor_index: int, map: FloorParams =
 
 ## The floor's shrine kind (ShrineTable.Kind): one weighted draw on KIND_STREAM of the floor seed (its first draw
 ## dropped, as Gamble.stream), among the kinds allowed on floor `floor_index`; FORTUNE when none has a weight.
-static func draw_kind(seed_value: int, t: ShrineTable, floor_index: int) -> int:
-	var k := Offers.pick(Gamble.stream(seed_value, KIND_STREAM), kind_weights(t, floor_index))
+## v0.9.0 CF (owner: "lets never make it a 1x1"): without `chaos_fits` (the shrine's room has fewer than
+## chaos_min_cells grid cells) Chaos weighs 0, so the same draw picks Fortune or Blood (a bigger room's draw is as
+## before).
+static func draw_kind(
+	seed_value: int, t: ShrineTable, floor_index: int, chaos_fits: bool = true
+) -> int:
+	var weights := kind_weights(t, floor_index)
+	if not chaos_fits and ShrineTable.Kind.CHAOS < weights.size():
+		weights[ShrineTable.Kind.CHAOS] = 0
+	var k := Offers.pick(Gamble.stream(seed_value, KIND_STREAM), weights)
 	return k if k >= 0 else ShrineTable.Kind.FORTUNE
 
 
@@ -207,7 +223,7 @@ static func press_shrine(w: World, i: int) -> void:
 		_spend(w, i)
 		s.chaos_phase = 1
 		_spawn_challenge(w)
-		if alive(w) == 0:  # nothing could spawn: the challenge is won at once
+		if alive(w) == 0 and s.later_kinds.is_empty():  # nothing could spawn: the challenge is won at once
 			_clear(w)
 
 
@@ -249,8 +265,63 @@ static func _spend(w: World, i: int) -> void:
 ## Tick phase 9b (World.step, after the Lockdowns): a Chaos challenge whose enemies are all down is cleared.
 static func advance(w: World) -> void:
 	var s := w.shrine
-	if s.chaos_phase == 1 and alive(w) == 0 and not w.has_pending_enemies():
+	if s.chaos_phase != 1:
+		return
+	if not s.later_kinds.is_empty():  # v0.9.0 CF: the rest comes in as earlier ones die
+		_refill(w)
+		return
+	if alive(w) == 0 and not w.has_pending_enemies():
 		_clear(w)
+
+
+## v0.9.0 CF: how many of the challenge (by weight) the shrine's room holds at once.
+static func at_once(w: World) -> int:
+	var s := w.shrine
+	return ClosedFights.cap(
+		w.floor_layout, w.floor_layout.room_of(s.pos), s.table.chaos_area_per_enemy_m2
+	)
+
+
+## v0.9.0 CF: the challenge's out weight now (its living members; an elite counts more).
+static func alive_weight(w: World) -> int:
+	var n := 0
+	for id in w.shrine.members:
+		var i := w.actors.index_of(id)
+		if i >= 0 and w.actors.dead[i] == 0:
+			n += ClosedFights.weight(w, i)
+	return n
+
+
+static func _refill(w: World) -> void:
+	if w.has_pending_enemies():  # a Splitling's halves count once they stand
+		return
+	var s := w.shrine
+	var out := alive_weight(w)
+	var limit := at_once(w)
+	var room := w.floor_layout.room_of(s.pos)
+	while not s.later_kinds.is_empty():
+		var kind := s.later_kinds[0]
+		var wt := ClosedFights.queued_weight(w, kind)
+		if not ClosedFights.may_add(out, wt, limit):
+			return
+		var q := ClosedFights.refill_spot(w, room, s.later_pos[0])
+		s.later_kinds.remove_at(0)
+		s.later_pos.remove_at(0)
+		_member(w, kind, q, w.run_ticks)
+		out += wt
+
+
+## One challenge member of `kind` (an elite's as -1 - its kind) at `q`.
+static func _member(w: World, kind: int, q: Vector2, ticks: int) -> void:
+	var s := w.shrine
+	if kind < 0:
+		var eid := Elites.spawn(w, -1 - kind, q, Elites.Source.CHAOS)
+		if eid >= 0:
+			s.members.append(eid)
+		return
+	var id := w.add_enemy(kind, q)
+	SpawnDirector.scale_arrival(w, w.actors.size() - 1, ticks)
+	s.members.append(id)
 
 
 ## The challenge's enemies still alive.
@@ -275,15 +346,31 @@ static func _spawn_challenge(w: World) -> void:
 	for k in open:
 		weights.append(w.spawner.weights[k])
 	var rng := RngStream.derive(w.seed_value, CHAOS_STREAM)
+	var kinds := PackedInt32Array()  # v0.9.0 CF: drawn first, in order, as before (an elite's as -1 - its kind)
+	var spots := PackedVector2Array()
 	for q in challenge_spots(w, rng, s.table.chaos_size(w.floor_index)):
 		var pick := Offers.pick(rng, weights)
 		if pick < 0:
 			break
-		var id := w.add_enemy(w.spawner.kinds[open[pick]], q)
-		SpawnDirector.scale_arrival(w, w.actors.size() - 1, ticks)
-		s.members.append(id)
-	# v0.9.0 EL (owner Q29b: "the Chaos challenge may bring an elite, a designed exception"): drawn last from the same
-	# stream (no draw above moves), and only while no elite is out of the rooms' limit.
+		kinds.append(w.spawner.kinds[open[pick]])
+		spots.append(q)
+	_elite(w, rng, kinds, spots)
+	# v0.9.0 CF: as many as the room holds at once (in a big room all of them); the rest wait (advance)
+	var now := ClosedFights.first_batch(w, kinds, at_once(w))
+	for k in kinds.size():
+		if k < now:
+			_member(w, kinds[k], spots[k], ticks)
+		else:
+			s.later_kinds.append(kinds[k])
+			s.later_pos.append(spots[k])
+
+
+## v0.9.0 EL (owner Q29b: "the Chaos challenge may bring an elite, a designed exception"): drawn last from the same
+## stream (no draw above moves), and only while no elite is out of the rooms' limit; added to `kinds` and `spots`.
+static func _elite(
+	w: World, rng: RngStream, kinds: PackedInt32Array, spots: PackedVector2Array
+) -> void:
+	var s := w.shrine
 	var chance := s.table.chaos_elite_permille
 	# The owner (2026-10-23): a Chaos elite only on floors 4-5, as every elite (Q25).
 	if chance <= 0 or w.floor_index < 4 or Elites.alive(w) >= Elites.max_alive(w):
@@ -292,9 +379,8 @@ static func _spawn_challenge(w: World) -> void:
 		return
 	var at := challenge_spots(w, rng, 1)
 	if not at.is_empty():
-		var eid := Elites.spawn(w, Elites.draw_kind(rng, w.elite_rules), at[0], Elites.Source.CHAOS)
-		if eid >= 0:
-			s.members.append(eid)
+		kinds.append(-1 - Elites.draw_kind(rng, w.elite_rules))
+		spots.append(at[0])
 
 
 ## `count` spots for the challenge: the shrine room's spawn points clear of its footprint and MIN_HERO_M from the
@@ -408,7 +494,8 @@ static func read(w: World) -> Dictionary:
 		"paid": s.paid,
 		"chaos_phase": s.chaos_phase,
 		"chaos_alive": alive(w) if s.chaos_phase == 1 else 0,
-		"chaos_count": s.members.size(),
+		"chaos_count": s.members.size() + s.later_kinds.size(),  # v0.9.0 CF: with those still to come in
+		"chaos_waiting": s.later_kinds.size(),
 		"clear_tick": s.clear_tick,
 		"has_fountain": s.has_fountain(),
 		"fountain_pos": s.fountain_pos,

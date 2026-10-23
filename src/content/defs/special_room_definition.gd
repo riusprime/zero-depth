@@ -87,7 +87,9 @@ const _SOURCE_PATTERN := "^[a-z_]+/[a-z0-9_]+:[a-z0-9_]+$"
 @export var share_permille := 0
 @export var every_floors := 0
 ## Room needs: a dead end (one doorway); a host (its pieces stand in the room before it); at least this many enemy
-## spawn spots; at least this many grid cells (a preference: the biggest that fit when none is that big).
+## spawn spots; at least this many grid cells (a preference for a kind that doesn't seal: the biggest that fit when
+## none is that big; v0.9.0 CF, owner "lets never make it a 1x1": a need for a kind that seals, the closed fights,
+## none placed when no room fits).
 @export var dead_end := false
 @export var uses_host := false
 @export var min_spawn_spots := 0

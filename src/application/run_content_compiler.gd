@@ -16,6 +16,8 @@ static func compile_arena(def: ArenaDefinition) -> ArenaTable:
 	t.first_wave_ticks = SimTick.seconds_to_ticks(def.first_wave_seconds)
 	t.wave_gap_ticks = SimTick.seconds_to_ticks(def.wave_gap_seconds)
 	t.min_spawn_distance_m = def.min_spawn_distance
+	t.min_cells = def.min_cells  # v0.9.0 CF
+	t.area_per_enemy_m2 = def.area_per_enemy_m2
 	return t
 
 
@@ -38,6 +40,8 @@ static func compile_lockdown(def: LockdownDefinition) -> LockdownTable:
 	t.hazard_warn_ticks = SimTick.seconds_to_ticks(def.hazard_warn_seconds)
 	t.hazard_radius_m = def.hazard_radius
 	t.hazard_damage = def.hazard_damage
+	t.min_cells = def.min_cells  # v0.9.0 CF
+	t.area_per_enemy_m2 = def.area_per_enemy_m2
 	return t
 
 
@@ -55,6 +59,8 @@ static func compile_shrines(def: ShrineDefinition) -> ShrineTable:
 	t.chaos_sizes = def.chaos_sizes.duplicate()
 	t.chaos_elite_permille = def.chaos_elite_permille
 	t.chaos_altars = def.chaos_altars
+	t.chaos_min_cells = def.chaos_min_cells  # v0.9.0 CF
+	t.chaos_area_per_enemy_m2 = def.chaos_area_per_enemy_m2
 	t.fountain_permille = def.fountain_permille
 	t.fountain_floor_min = def.fountain_floor_min
 	t.fountain_heal_permille = def.fountain_heal_permille

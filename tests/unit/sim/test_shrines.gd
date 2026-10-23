@@ -330,7 +330,11 @@ func test_a_floor_saved_before_sh_is_rebuilt_as_it_was() -> void:
 		var old := ShrineLab.build(r)
 		assert_null(old.shrine, "seed %d: no Blood or Chaos shrine, no fountain under rules 13" % s)
 		assert_eq(Gamble.present(old), old.gamble_id >= 0, "its shrine is the gamble shrine")
-		var now := ShrineLab.floor_world(s, 2)
+		# v0.9.0 CF moved the arenas (never a 1 x 1), and so the shrine's site with them: SH's own rules are compared
+		# under the last floor rules before CF (15)
+		var r15 := ShrineLab.run_state(s, 2)
+		r15.floor_rules = RunState.FLOOR_RULES_V090_EL
+		var now := ShrineLab.build(r15)
 		assert_eq(now.gamble_id >= 0, old.gamble_id >= 0, "the shrine's site is drawn as before")
 		assert_eq(now.gamble_pos, old.gamble_pos)
 		if now.shrine != null:

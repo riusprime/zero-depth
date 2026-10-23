@@ -25,6 +25,13 @@ const KIND_COUNT := 3
 @export var chaos_sizes := PackedInt32Array([5, 6, 6, 7, 7])
 @export var chaos_elite_permille := 250
 @export var chaos_altars := 1
+## v0.9.0 CF (owner: "lets never make it a 1x1 ... the enemies that spawn at the same time should be proportional to
+## the room size"): the Chaos kind is never drawn for a shrine in a room of fewer than chaos_min_cells grid cells (2:
+## never a 1 x 1; Fortune or Blood instead), and its challenge holds at most the room's floor area /
+## chaos_area_per_enemy_m2 enemies at once (an elite counts EliteRulesDefinition.elite_weight); the rest come in as
+## earlier ones die (ClosedFights). Starting values.
+@export var chaos_min_cells := 2
+@export var chaos_area_per_enemy_m2 := 30.0
 ## The healing fountain: the chance a floor has one (per mille), the first floor it may appear on, and its one heal
 ## (per mille of max HP).
 @export var fountain_permille := 250
@@ -65,4 +72,7 @@ func validate() -> Array[ValidationIssue]:
 	if fountain_floor_min < 1:
 		issues.append(ValidationIssue.new(&"range", p, "fountain_floor_min >= 1"))
 	issues.append_array(ArenaDefinition.wave_size_issues(p, chaos_sizes))
+	issues.append_array(
+		ArenaDefinition.closed_fight_issues(p, chaos_min_cells, chaos_area_per_enemy_m2)
+	)
 	return issues

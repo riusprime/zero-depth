@@ -18,6 +18,12 @@ extends ContentDef
 @export var wave_gap_seconds := 1.0
 ## A wave's enemies spawn at least this far from you (m) where the room allows.
 @export var min_spawn_distance := 3.0
+## v0.9.0 CF (owner: "lets never make it a 1x1 ... the enemies that spawn at the same time should be proportional to
+## the room size"): the fight never takes a room of fewer than min_cells grid cells (2: never a 1 x 1), and holds at
+## most its floor area / area_per_enemy_m2 enemies at once (an elite counts EliteRulesDefinition.elite_weight); the
+## rest come in as earlier ones die (ClosedFights). Starting values.
+@export var min_cells := 2
+@export var area_per_enemy_m2 := 30.0
 
 
 func category() -> StringName:
@@ -34,7 +40,17 @@ func validate() -> Array[ValidationIssue]:
 	issues.append_array(wave_size_issues(resource_path, wave_sizes))
 	if first_wave_seconds < 0.0 or wave_gap_seconds < 0.0 or min_spawn_distance < 0.0:
 		issues.append(ValidationIssue.new(&"range", resource_path, "times and distances are >= 0"))
+	issues.append_array(closed_fight_issues(resource_path, min_cells, area_per_enemy_m2))
 	return issues
+
+
+## v0.9.0 CF, shared with the Overrun, Lockdown and shrine definitions: a room need >= 1 cell, a budget >= 0 m2
+## (0: no cap).
+static func closed_fight_issues(path: String, cells: int, per_m2: float) -> Array[ValidationIssue]:
+	var out: Array[ValidationIssue] = []
+	if cells < 1 or per_m2 < 0.0:
+		out.append(ValidationIssue.new(&"range", path, "min_cells >= 1, area_per_enemy_m2 >= 0"))
+	return out
 
 
 ## Shared with OverrunDefinition: at least one size, each positive.

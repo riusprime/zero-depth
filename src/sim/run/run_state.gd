@@ -55,7 +55,10 @@ extends RefCounted
 ## may be drawn there, and the retired Ambush Cache is never drawn. A floor saved under rules 1-14 is rebuilt as it was
 ## saved: no elite rooms, no Elite Lockdown, the Ambush Cache's old weight in the event draw (its pedestal then closes
 ## on load: Events.drop_retired).
-const FLOOR_RULES := 15
+## v0.9.0 CF (owner: "lets never make it a 1x1"): 16 is today's: no closed fight (an arena, the Overrun room, a
+## Lockdown, the Chaos shrine) in a room of fewer than its kind's min_cells grid cells. A floor saved under rules 1-15
+## is rebuilt with the rooms it had (the min_cells read as 0: RunSaver.floor_tables, FloorPlan.add_secrets).
+const FLOOR_RULES := 16
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
@@ -70,6 +73,7 @@ const FLOOR_RULES_V090_RA := 11
 const FLOOR_RULES_V090_DP := 12
 const FLOOR_RULES_V090_LK := 13
 const FLOOR_RULES_V090_SH := 14
+const FLOOR_RULES_V090_EL := 15
 
 var run_seed := 0
 var table: RunTable

@@ -141,6 +141,7 @@ func test_event_rooms_and_the_shop_stay_out_of_arenas() -> void:
 
 func test_rewards_fill_the_arenas_first_and_keep_two_altars() -> void:
 	var with_reward := 0
+	var with_arena := 0
 	for s in range(1, 41):
 		var w := _arena_floor(s)
 		var f := w.floor_layout
@@ -162,7 +163,11 @@ func test_rewards_fill_the_arenas_first_and_keep_two_altars() -> void:
 			in_arena, mini(arena_spots, w.rewards.size()), "seed %d: arena spots fill first" % s
 		)
 		with_reward += 1 if in_arena > 0 else 0
-	assert_gt(with_reward, 30, "nearly every floor's arenas hold rewards")
+		with_arena += 1 if not f.arena_rooms.is_empty() else 0
+	# v0.9.0 CF (owner: "lets never make it a 1x1"): a floor 1 whose only fitting rooms are 1 x 1 has no arena now
+	# (29 of these 40 have one, was 39)
+	assert_eq(with_reward, with_arena, "every floor's arenas hold rewards")
+	assert_gt(with_arena, 25, "most floors have an arena")
 
 
 # --- In play ------------------------------------------------------------------------------------------------------

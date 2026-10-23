@@ -18,4 +18,6 @@ hazard_every_seconds = 2.0
 hazard_warn_seconds = 1.0
 hazard_radius = 1.3
 hazard_damage = 12
+min_cells = 2
+area_per_enemy_m2 = 30.0
 id = &"lockdown"

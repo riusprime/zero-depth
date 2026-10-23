@@ -22,6 +22,8 @@ extends RefCounted
 ## FloorParams' defaults, the same numbers); the shop stands only on the floors its table names (ShopTable.on_floor,
 ## owner N12: every two floors). v0.9.0 FV (owner Q24): on a run, the room range is the run's for the floor
 ## (FloorShape.size_floor: about 10, 13, 15, 17 and 19 rooms), written over `map`.
+## v0.9.0 CF (owner: "lets never make it a 1x1"): the Overrun room and the arenas take rooms of at least their tables'
+## min_cells grid cells (`overrun`: null, any room; RunSaver.floor_tables reads 0 for a floor saved before CF).
 
 
 static func build(
@@ -37,7 +39,8 @@ static func build(
 	combos: Array[ComboTable] = [],
 	gamble: GambleTable = null,
 	arenas: ArenaTable = null,
-	map: FloorParams = null
+	map: FloorParams = null,
+	overrun: OverrunTable = null
 ) -> World:
 	var params := map
 	var sized := FloorShape.sized(run)  # v0.9.0 FV (Q24): the run's floor size (none in the 3-floor shape)
@@ -48,9 +51,10 @@ static func build(
 	var layout := FloorGenerator.generate(seed_value, params)
 	var spec := arena if arena != null else BossArenaSpec.new()
 	BossRoomBuilder.attach(layout, spec)
-	OverrunRooms.mark(layout)  # v0.4.0 AB: the floor's optional Overrun room (no wall or draw changes)
+	# v0.4.0 AB: the floor's optional Overrun room (no wall or draw changes); v0.9.0 CF: never a small room
+	OverrunRooms.mark(layout, overrun.min_cells if overrun != null else 0)
 	if arenas != null:  # v0.5.5 AR: the sealed arenas, before the rewards that fill them first
-		ArenaRooms.mark(layout, arenas.share_permille)
+		ArenaRooms.mark(layout, arenas.share_permille, arenas.min_cells)
 	var routes := Routes.offers_choice(run) and Routes.place_deep_gate(layout)  # v0.5.0 RT
 	# v0.9.0 DP (owner Q26b): the Deep gate's spot is placed as before, but it stands and opens only once the floor's
 	# purple runes are awakened (PurpleRunes.earn); a floor saved before DP keeps it on every floor before the last.
