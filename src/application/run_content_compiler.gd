@@ -251,6 +251,8 @@ static func add_run_shape(t: RunTable, def: RunDefinition) -> RunTable:
 	t.rooms_min_by_floor = def.rooms_min_by_floor.duplicate()
 	t.rooms_max_by_floor = def.rooms_max_by_floor.duplicate()
 	t.wand_slots_per_floor = def.wand_slots_per_floor.duplicate()
+	t.max_hp_per_floor = def.max_hp_per_floor  # v0.9.0 SV: the hero grows each floor
+	t.max_hp_floor_cap = def.max_hp_floor_cap
 	return t
 
 

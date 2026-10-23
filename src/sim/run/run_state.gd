@@ -274,8 +274,17 @@ func prepare(w: World) -> void:
 			w.boss_flow.door = BossFlow.Door.SET
 		w.boss_flow.final_next = is_last_floor() and _has_final()  # v0.8.0 FB1: End leads to the final boss
 	w.deep_threat = routes.count(Routes.Route.DEEP)  # v0.5.0 RT + EV: +1 threat T per Deep floor taken
+	w.floor_hp_bonus = _hp_bonus()  # v0.9.0 SV: before the carry, so its max HP includes it
 	if not carry.is_empty():
 		RunCarry.apply(w, carry)
+	elif w.floor_hp_bonus > 0:
+		Gamble.after_carry(w)
+		w.actors.hp[0] = w.actors.max_hp[0]
+
+
+## v0.9.0 SV: the floors' max HP growth on the current floor (RunCarry.floor_hp_bonus).
+func _hp_bonus() -> int:
+	return RunCarry.floor_hp_bonus(table, run_floor())
 
 
 ## v0.7.5 MG: whether the current floor is a v0.7.0 floor resumed from an older save.
@@ -310,6 +319,7 @@ func finish_floor(w: World) -> void:
 	if w.purple != null and not purple_floors.has(run_floor()):  # v0.9.0 DP: one purple room a loop
 		purple_floors.append(run_floor())
 	carry = RunCarry.take(w, table.heal_permille, table.shard_carry_permille)
+	var grown_from := _hp_bonus()
 	if Ascension.took_portal(w) and _has_final():  # FB1; v0.8.0 P2: the Ascension portal: the final arena
 		final_fight = true
 	elif Ascension.looped(w):  # v0.8.0 P2 (O28): the Loop device
@@ -320,6 +330,7 @@ func finish_floor(w: World) -> void:
 	else:
 		floor_index += 1
 	floor_rules = FLOOR_RULES  # v0.7.5 MG: a new floor, always on today's rules
+	RunCarry.grow(w, carry, grown_from, _hp_bonus())  # v0.9.0 SV: the new max HP arrives filled
 	var taken := w.boss_flow.route_taken if w.boss_flow != null else -1
 	routes.resize(run_floor() - 1)  # v0.5.0 RT: the next floor's route, the one walked into
 	routes.append(taken if taken >= 0 else Routes.Route.NORMAL)

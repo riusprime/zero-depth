@@ -59,6 +59,7 @@ const WORLD_KEPT := {
 	&"_hit_grid": "transient within a tick (v0.8.0 HS): built inside _projectile_hits only",
 	&"_hit_grid_state": "transient within a tick (v0.8.0 HS): 0 between ticks",
 	&"_every_index": "derived (v0.8.0 HS): 1 .. n - 1, rebuilt from the actor count",
+	&"floor_hp_bonus": "rebuilt (v0.9.0 SV): RunState.prepare derives it from the run's floor",
 }
 ## Content tables: compiled from content at setup, read-only in play (the guard test checks they don't change).
 const LOADOUT_CLASSES: Array[StringName] = [

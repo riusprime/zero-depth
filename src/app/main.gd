@@ -354,8 +354,7 @@ func continue_run() -> void:
 
 ## Builds the run's current floor: its seed, biome and enemy scaling from the run, the carry applied. `resume`: a
 ## save's payload (v0.4.0 SV), whose world snapshot is then written into the fresh floor; returns why it didn't fit.
-## All in this frame (the dev panel's Restart floor, the tools); a portal builds the next floor over frames
-## (_next_floor).
+## All in this frame (the dev panel's Restart floor, the tools); a portal builds it over frames (_next_floor).
 func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> String:
 	var plan := FloorPlan.next_floor(run, _run_biomes, resume, ViewPrefs.reduced_motion)
 	plan.repo = repo if repo != null else _content()
@@ -490,7 +489,8 @@ func _floor_live(nodes: Dictionary) -> void:
 		String(biome.name_key),
 		run.is_deep(),  # v0.5.0 RT: "Floor 2 · Deep"
 		driver.reader.shards_left_behind() if resume.is_empty() else 0,  # v0.5.5 EC (Q-S4)
-		run.loop  # v0.7.5 AP: "Loop 2 · Floor 1"
+		run.loop,  # v0.7.5 AP: "Loop 2 · Floor 1"
+		RunCarry.hp_grown(run) if resume.is_empty() else 0  # v0.9.0 SV: "Max HP +15"
 	)
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))

@@ -31,7 +31,7 @@ func test_the_run_is_five_floors_with_the_stretched_curve() -> void:
 	assert_eq(t.boss_damage_per_floor_permille, 100, "boss +10 % damage a floor: 1.4 on 5")
 	assert_eq(t.rooms_min_by_floor, PackedInt32Array(ROOMS_MIN))
 	assert_eq(t.rooms_max_by_floor, PackedInt32Array(ROOMS_MAX))
-	assert_eq(t.heal_permille, 400)
+	assert_eq(t.heal_permille, 600, "v0.9.0 SV: 60 % between floors (was 40 %)")
 	assert_eq(t.shard_carry_permille, 500)
 	assert_eq(t.final_arena, &"hollow_arena", "the final arena stays")
 	var old := _table(RunSaver.LEGACY_RUN_ID)

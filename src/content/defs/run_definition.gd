@@ -70,6 +70,12 @@ extends ContentDef
 ## v0.9.0 FV: the wand's slots on each floor, over data/wand's slots_per_floor (empty: the wand's). The v0.8.0 run
 ## shape keeps its 4 → 6 → 8, so a 3-floor run resumed from a v0.8.0 save grows as it did.
 @export var wand_slots_per_floor := PackedInt32Array()
+## v0.9.0 SV (owner: "Hero grows each floor"): each floor cleared raises the hero's max HP by this much, before the
+## max HP stat (so the stat cards, Fortune and the curses stack with it), and heals by as much on arrival. Counted on
+## the run's floor across loops (a loop keeps growing it); at most max_hp_floor_cap in all (0: no cap). 0: no growth
+## (the v0.8.0 run shape, three_floors).
+@export var max_hp_per_floor := 0
+@export var max_hp_floor_cap := 0
 
 
 func category() -> StringName:

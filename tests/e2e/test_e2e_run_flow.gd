@@ -162,7 +162,9 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 		w2.player.weapons, PlayerTable.WEAPON_BLADE, "the run's build came along (v0.3.0 L15)"
 	)
 	assert_eq(w2.floor_index, 2, "chest prices and boss shards read floor 2")
-	assert_eq(w2.actors.hp[0], mini(100, hp_before + 40), "healed 40 % of max HP")
+	# v0.9.0 SV: healed 60 % of floor 1's max HP, then the floor's +15 max HP arrives filled
+	assert_eq(w2.actors.max_hp[0], 115, "the hero grew 15 max HP")
+	assert_eq(w2.actors.hp[0], mini(100, hp_before + 60) + 15, "healed 60 % of max HP, then the 15")
 	assert_lt(w2.run_ticks, 30, "the danger clock restarts")
 	assert_eq(w2.seed_value, main.run.floor_seed(2), "with floor 2's seed")
 	var hud2: Hud = main.get_node("UI/Hud")
@@ -171,6 +173,7 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	)
 	assert_eq(hud2.floor_text(), tr("HUD_FLOOR") % [2, tr(biome_2.name_key)])
 	assert_true(hud2.floor_card_showing(), "floor 2's card")
+	assert_string_contains(hud2.floor_card_text(), tr("HUD_MAX_HP_GROWN") % 15, false)
 	assert_eq(hud2.item_icon_count(), items.size(), "the carried items' icons")
 	assert_eq(hud2.ability_hud.filled_count(), owned.size(), "the ability slots")
 	assert_true(
