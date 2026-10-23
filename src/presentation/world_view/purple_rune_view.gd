@@ -12,6 +12,8 @@ extends Node3D
 ##   at: IsoRig.vibrate_to) and lands in a thud once the last one is lit (`thudded`, one frame: IsoRig.thud); the
 ##   `purple_runes` sound is AudioEvents'. A floor resumed with the runes already awake shows them lit, with no
 ##   vibration. Then they glow slowly for good.
+## - v0.9.0 BV (W71): per biome (InteractionLooks; set `biome` before setup): the owner's dais tinted and the biome's
+##   accent round its foot. The runes, the crystal and the light keep their violet in every biome (the Deep gate's).
 
 const SIGIL := Color("#A86BFF")
 const CRYSTAL := Color("#C68BFF")
@@ -50,6 +52,8 @@ var vibration := 0.0
 var thudded := false
 var crystal: MeshInstance3D
 var light := OmniLight3D.new()
+## v0.9.0 BV: the floor's biome (WorldViewRoot sets it).
+var biome := &""
 var _crystal_mat := StandardMaterial3D.new()
 var _stone := StandardMaterial3D.new()
 ## Seconds since the sequence began (-1: not begun; past the sequence: all lit).
@@ -164,11 +168,12 @@ func _build_dais() -> void:
 		var mi := MeshInstance3D.new()
 		mi.name = "Model"
 		mi.mesh = model["mesh"]
-		mi.set_surface_override_material(0, model["material"])
+		mi.set_surface_override_material(0, InteractionLooks.tinted(model["material"], biome))
 		add_child(mi)
 	else:
 		_tier("Base", BASE_R, BASE_H, BASE_H * 0.5)
 		_tier("Top", TOP_R, TOP_H, BASE_H + TOP_H * 0.5)
+	InteractionLooks.add_accent(self, biome, BASE_R + 0.35, BASE_H + TOP_H)
 	_crystal_mat.albedo_color = CRYSTAL.darkened(0.4)
 	_crystal_mat.metallic = 0.3
 	_crystal_mat.roughness = 0.2

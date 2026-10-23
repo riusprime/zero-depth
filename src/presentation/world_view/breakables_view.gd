@@ -13,6 +13,11 @@ extends Node3D
 ## - Explosive barrels (`explosive_barrel`): a battered red barrel with a fuse cap; lit, a red light on it blinks faster
 ##   and faster until it blows (the `barrel_fuse` sound is AudioEvents'); the blast is a flash and a ball of fire the
 ##   size of its reach (BLAST_S), and `blasted` asks the camera for a thud.
+## - v0.9.0 BV (W71): per biome (InteractionLooks, the stage's prop_style): the owner's wall models tinted, the room's
+##   light, the biome's accent at the wall's feet; the containers' wood, clay and hoops and their chips (Ruins brown
+##   wood and clay, Night Rocks blue-grey, Red Canyon bleached wood and terracotta, Frozen Shore frosted grey under a
+##   snow cap, Starfall violet); the explosive barrel's red body and band (dark with a yellow band on Red Canyon's red
+##   ground, so it still reads).
 
 const STONE := Color("#5A544C")
 const CRACK := Color("#2A2622")
@@ -39,6 +44,10 @@ var props: Array[Node3D] = []
 ## How dark the cracks are now (CRACK_BASE .. 1) and each barrel's fuse light (0 / 1; others 0); tests read them.
 var crack_shade := 0.0
 var fuse_glow := PackedFloat32Array()
+## v0.9.0 BV: the biome whose look is drawn, and its container materials (wood, clay, hoop, keg, band), made once.
+var biome := &""
+var _accent_biome := &""
+var _mats := {}
 var _reader: WorldReader
 var _stage: StageView
 var _stone := StandardMaterial3D.new()
@@ -53,6 +62,8 @@ func setup(reader: WorldReader, stage: StageView, cover: Color) -> void:
 	name = "Breakables"
 	_reader = reader
 	_stage = stage
+	_accent_biome = InteractionLooks.of_stage(stage)
+	biome = InteractionLooks.resolve(_accent_biome)
 	_stone.albedo_color = cover.darkened(0.15) if cover != Color() else STONE
 	_stone.roughness = 1.0
 	_crack_mat.albedo_color = CRACK
@@ -149,6 +160,12 @@ func _build_wall(reader: WorldReader) -> void:
 			bar.rotation.x = ang
 			bar.position += Vector3(0, sin(ang) * -0.3, cos(ang) * 0.3)
 			bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for side in [-1.0, 1.0]:  # v0.9.0 BV: the biome's touch at the wall's feet, on both sides
+		var foot := Node3D.new()
+		foot.name = "Foot"
+		foot.position = Vector3(-side * (depth * 0.5 + 0.45), 0, side * width * 0.4)
+		root.add_child(foot)
+		InteractionLooks.add_accent(foot, _accent_biome, 0.3, 0.0)
 	rubble = Node3D.new()
 	rubble.name = "Broken"
 	rubble.visible = false
@@ -174,7 +191,7 @@ func _build_wall(reader: WorldReader) -> void:
 				chunk.rotation.y = 0.5 * k
 	_room_light = OmniLight3D.new()
 	_room_light.name = "RoomLight"
-	_room_light.light_color = Color("#FFE7B8")
+	_room_light.light_color = InteractionLooks.color(biome, "room")
 	_room_light.omni_range = 9.0
 	_room_light.light_energy = 1.6
 	_room_light.shadow_enabled = false
@@ -195,20 +212,37 @@ func _build_prop(i: int, kind: int, at: Vector2) -> void:
 	if not model.is_empty():
 		_model(root, model, Vector3.ONE)
 	else:
+		var top := 0.7
 		match kind:
 			WorldReader.BREAKABLE_CRATE:
-				_box(root, Vector3(0.7, 0.7, 0.7), Vector3(0, 0.35, 0), _mat(WOOD))
+				_box(root, Vector3(0.7, 0.7, 0.7), Vector3(0, 0.35, 0), _look_mat("wood"))
 			WorldReader.BREAKABLE_URN:
-				_cyl(root, 0.18, 0.26, 0.75, Vector3(0, 0.375, 0), _mat(CLAY))
-				_cyl(root, 0.2, 0.2, 0.08, Vector3(0, 0.76, 0), _mat(CLAY.darkened(0.2)))
+				_cyl(root, 0.18, 0.26, 0.75, Vector3(0, 0.375, 0), _look_mat("clay"))
+				_cyl(root, 0.2, 0.2, 0.08, Vector3(0, 0.76, 0), _look_mat("clay_rim"))
+				top = 0.8
 			WorldReader.BREAKABLE_BARREL:
-				_cyl(root, 0.3, 0.3, 0.9, Vector3(0, 0.45, 0), _mat(WOOD.darkened(0.1)))
+				_cyl(root, 0.3, 0.3, 0.9, Vector3(0, 0.45, 0), _look_mat("stave"))
 				for y in [0.2, 0.7]:
-					_cyl(root, 0.31, 0.31, 0.05, Vector3(0, y, 0), _mat(Color("#3A3633")))
+					_cyl(root, 0.31, 0.31, 0.05, Vector3(0, y, 0), _look_mat("hoop"))
+				top = 0.9
 			_:
-				_cyl(root, 0.32, 0.32, 1.0, Vector3(0, 0.5, 0), _mat(RED))
-				_cyl(root, 0.33, 0.33, 0.1, Vector3(0, 0.62, 0), _mat(Color("#C8A23A")))
-				_cyl(root, 0.06, 0.06, 0.12, Vector3(0.12, 1.06, 0), _mat(Color("#2E2B29")))
+				_cyl(root, 0.32, 0.32, 1.0, Vector3(0, 0.5, 0), _look_mat("keg"))
+				_cyl(root, 0.33, 0.33, 0.1, Vector3(0, 0.62, 0), _look_mat("keg_band"))
+				_cyl(root, 0.06, 0.06, 0.12, Vector3(0.12, 1.06, 0), _look_mat("metal"))
+				top = 0.0  # its top stays clear: the fuse cap and the blinking light
+		if _accent_biome == &"frozen_shore" and top > 0.0:  # v0.9.0 BV: snow on the container's top
+			var cap := MeshInstance3D.new()
+			cap.name = "Snow"
+			var c := CylinderMesh.new()
+			c.top_radius = 0.24
+			c.bottom_radius = 0.3
+			c.height = 0.07
+			c.radial_segments = 10
+			cap.mesh = c
+			cap.material_override = InteractionLooks.accent_material(&"frozen_shore_snow")
+			cap.position.y = top + 0.035
+			cap.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			root.add_child(cap)
 	if kind == WorldReader.BREAKABLE_EXPLOSIVE:
 		light = OmniLight3D.new()
 		light.name = "Fuse"
@@ -223,9 +257,9 @@ func _build_prop(i: int, kind: int, at: Vector2) -> void:
 
 
 func _debris(at: Vector2, kind: int) -> void:
-	var col := CLAY if kind == WorldReader.BREAKABLE_URN else WOOD
+	var col := _look_mat("clay" if kind == WorldReader.BREAKABLE_URN else "wood")
 	for k in 5:
-		var chip := _box(self, Vector3(0.14, 0.1, 0.12), SimPlane.to_3d(at, 0.4), _mat(col))
+		var chip := _box(self, Vector3(0.14, 0.1, 0.12), SimPlane.to_3d(at, 0.4), col)
 		var ang := TAU * k / 5.0
 		_fx.append([chip, 0.0, DEBRIS_S, 0, Vector3(cos(ang) * 1.6, 3.0, sin(ang) * 1.6)])
 
@@ -266,11 +300,30 @@ func _mat(c: Color) -> StandardMaterial3D:
 	return m
 
 
+## v0.9.0 BV: the biome's material for one container part (shared by every prop and chip of this floor).
+func _look_mat(part: String) -> StandardMaterial3D:
+	if _mats.has(part):
+		return _mats[part]
+	var c: Color
+	match part:
+		"clay_rim":
+			c = InteractionLooks.color(biome, "clay").darkened(0.2)
+		"stave":
+			c = InteractionLooks.color(biome, "wood").darkened(0.1)
+		"hoop":
+			c = InteractionLooks.color(biome, "metal").lightened(0.06)
+		_:
+			c = InteractionLooks.color(biome, part)
+	var m := _mat(c)
+	_mats[part] = m
+	return m
+
+
 func _model(parent: Node3D, model: Dictionary, scale_by: Vector3) -> void:
 	var mi := MeshInstance3D.new()
 	mi.name = "Model"
 	mi.mesh = model["mesh"]
-	mi.set_surface_override_material(0, model["material"])
+	mi.set_surface_override_material(0, InteractionLooks.tinted(model["material"], biome))
 	mi.scale = scale_by
 	parent.add_child(mi)
 

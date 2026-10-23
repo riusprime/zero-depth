@@ -11,6 +11,10 @@ extends Node3D
 ##   water light, then dry for good: its water is gone (the stand-in's water disc hidden, the model darkened) and its
 ##   light out (`dry`). A floor resumed after a use shows the spent or dry look at once.
 ## The prompt (with the cost) is the HUD's shared one; the result lines are ShrineHud's; the sounds AudioEvents'.
+## v0.9.0 BV (W71): per biome (InteractionLooks; set `biome` before setup): the owner's models tinted, the fountain's
+## water and light in the biome's water (Ruins clear blue, Night Rocks moon-teal, Red Canyon oasis teal, Frozen Shore
+## pale ice, Starfall star-lilac), and the biome's accent round each foot. Blood keeps its red and Chaos its violet
+## (what they cost and do) in every biome.
 
 const BLOOD := Color("#E0263C")
 const CHAOS := Color("#A15CFF")
@@ -33,6 +37,10 @@ var fountain_light := OmniLight3D.new()
 var shrine_model := false
 var fountain_model := false
 var water: MeshInstance3D
+## v0.9.0 BV: the floor's biome (WorldViewRoot sets it), the water colour drawn, and the fountain body's lit albedo.
+var biome := &""
+var water_color := WATER
+var _wet := Color.WHITE
 var _kind := -1
 var _glow := BLOOD
 var _shrine_mat: StandardMaterial3D
@@ -57,6 +65,7 @@ func setup(reader: WorldReader, cover: Color = Color()) -> void:
 	if d.is_empty():
 		return
 	var stone := cover.darkened(0.2) if cover != Color() else STONE
+	water_color = InteractionLooks.color(biome, "water")
 	if d["has_shrine"]:
 		_kind = int(d["kind"])
 		_glow = BLOOD if _kind == WorldReader.SHRINE_BLOOD else CHAOS
@@ -68,14 +77,18 @@ func setup(reader: WorldReader, cover: Color = Color()) -> void:
 		_shrine_mat = _body(shrine_root, id, stone, _glow)
 		shrine_model = shrine_root.has_node("Model")
 		_add_light(shrine_root, shrine_light, _glow, float(STANDIN_H[id]) * 0.8)
+		InteractionLooks.add_accent(shrine_root, biome, 0.95, 0.0)
 	if d["has_fountain"]:
 		fountain_root = Node3D.new()
 		fountain_root.name = "Fountain"
 		fountain_root.position = SimPlane.to_3d(d["fountain_pos"])
 		add_child(fountain_root)
-		_fountain_mat = _body(fountain_root, &"healing_fountain", stone, WATER)
+		_fountain_mat = _body(fountain_root, &"healing_fountain", stone, water_color)
 		fountain_model = fountain_root.has_node("Model")
-		_add_light(fountain_root, fountain_light, WATER, 1.1)
+		if _fountain_mat != null:
+			_wet = _fountain_mat.albedo_color
+		_add_light(fountain_root, fountain_light, water_color, 1.1)
+		InteractionLooks.add_accent(fountain_root, biome, 0.9, 0.0)
 	_seen = _marks(d)
 	_spent = int(d["used_tick"]) >= 0 and int(d["chaos_phase"]) != 1
 	_dry = int(d["fountain_tick"]) >= 0
@@ -148,7 +161,7 @@ func _apply() -> void:
 			water.visible = not _dry or _fountain_flash > 0.0
 		if _fountain_mat != null:
 			_fountain_mat.emission_energy_multiplier = 0.5 * f
-			_fountain_mat.albedo_color = Color(0.55, 0.55, 0.6) if _dry else Color.WHITE
+			_fountain_mat.albedo_color = _wet * Color(0.55, 0.55, 0.6) if _dry else _wet
 
 
 ## The body: the owner's model (named "Model") or the stand-in. Returns the material whose glow changes.
@@ -164,6 +177,7 @@ func _body(n: Node3D, id: StringName, stone: Color, glow: Color) -> StandardMate
 			mat = StandardMaterial3D.new()
 		mat.emission_enabled = true
 		mat.emission = glow.darkened(0.3)
+		InteractionLooks.tint_in_place(mat, biome)  # v0.9.0 BV
 		mi.material_override = mat
 		n.add_child(mi)
 		return mat
