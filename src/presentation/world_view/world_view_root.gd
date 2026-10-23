@@ -119,6 +119,8 @@ var shrines: ShrinesView
 ## markings by every secret's doorway (null without a secret).
 var breakables: BreakablesView
 var markings: RuneMarkingsView
+## v0.9.0 RB: A4 Astral's sense, the secrets near the hero pulsing (null without Astral or without a secret).
+var astral: AstralSenseView
 ## The gamble shrine (v0.3.0 L19; null on a floor without one).
 var gamble_shrine: GambleShrineView
 ## The shop terminal (v0.5.0 SH; null on a floor without one, or whose shop is a stall).
@@ -429,6 +431,10 @@ func _setup_devices(palette: Dictionary) -> void:
 		markings.biome = stage.prop_style  # v0.9.0 BV
 		add_child(markings)
 		markings.setup(reader)
+	if reader.affinity_sense_m() > 0.0 and not reader.secret_spots().is_empty():  # v0.9.0 RB: A4 Astral
+		astral = AstralSenseView.new()
+		add_child(astral)
+		astral.setup(reader, markings.spots if markings != null else PackedVector2Array())
 	if reader.has_gamble():
 		gamble_shrine = GambleShrineView.new()
 		gamble_shrine.kit_model = stage.mood != null  # v0.6.0 Step SR: the owner's shrine with the new look
@@ -567,6 +573,8 @@ func sync() -> void:
 			rig.thud(PurpleRuneView.THUD)
 	if shrines != null:  # v0.9.0 SH, HF
 		shrines.sync(reader)
+	if astral != null:  # v0.9.0 RB: A4 Astral
+		astral.sync(reader)
 	if lockdowns != null:  # v0.9.0 LK: the bars land with a thud
 		lockdowns.sync(reader)
 		if lockdowns.take_thud():

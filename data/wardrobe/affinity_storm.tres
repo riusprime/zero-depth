@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="AffinityDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/affinity_definition.gd" id="1_aff"]
+
+[resource]
+script = ExtResource("1_aff")
+order = 2
+name_key = &"AFFINITY_STORM"
+desc_key = &"AFFINITY_STORM_DESC"
+cost_key = &"AFFINITY_STORM_COST"
+color = Color(0.498039, 0.698039, 1, 1)
+glyph = 2
+dash_shock_radius_m = 1.0
+dash_shock_stacks = 1
+dash_cooldown_add_seconds = 0.3
+favoured_cards = Array[StringName]([&"storm_core", &"aftershock", &"conductor", &"overcharge", &"shock_circles", &"static_chain", &"tempest_core"])
+favoured_permille = 1300
+disfavoured_cards = Array[StringName]([&"venom_core"])
+disfavoured_permille = 700
+id = &"storm"

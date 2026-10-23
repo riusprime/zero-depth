@@ -223,7 +223,7 @@ static func add_burn(w: World, i: int, n: int, root: int, effect: StringName) ->
 	if a.burn_stacks[i] == 0:
 		a.burn_cd[i] = m.burn_period_ticks
 	a.burn_stacks[i] = mini(a.burn_stacks[i] + n, m.burn_max_stacks)
-	a.burn_t[i] = m.burn_duration_ticks
+	a.burn_t[i] = Affinities.burn_ticks(w, m.burn_duration_ticks)  # v0.9.0 RB: A1 Ember
 	_status(w, i, root, a.burn_stacks[i], effect)
 	thermal_break(w, i, root)  # v0.8.0 RM: fire on a chilled enemy
 

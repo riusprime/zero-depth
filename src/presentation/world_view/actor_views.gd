@@ -51,6 +51,8 @@ var heat_tier := HeatLooks.TIER_COOL
 var enemy_tint := Color(0, 0, 0, 0)
 ## v0.8.0 N4 (owner O57): the damage chunks on the bars over enemies and the hero (one MultiMesh for all).
 var bar_chunks := BarChunks.new(BAR_W)
+## v0.9.0 RB: the hero's robe and rune (a Wardrobe.look dictionary; {}: Cream, no rune), set before the hero shows.
+var hero_look := {}
 ## v0.8.0 HV (owner O89): the camera's view (WorldViewRoot refreshes it each tick): an enemy model animates unless it
 ## is wholly out of the picture (ScreenCull.keeps, past its largest radius + the margin, with hysteresis).
 var cull: ScreenCull
@@ -631,6 +633,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			height = 1.0
 			var avatar := PlayerAvatar.new()
 			avatar.setup(outline_color, technique)
+			avatar.set_look(hero_look)  # v0.9.0 RB: the Wardrobe's robe and the run's rune
 			root.add_child(avatar)
 			root.set_meta(&"avatar", avatar)
 			root.set_meta(&"mats", avatar.body_materials.duplicate())

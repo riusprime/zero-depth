@@ -204,6 +204,9 @@ var shrine: ShrineState
 ## never had one. elite_rules: their numbers (content, like reward_table; not hashed, not snapshotted).
 var elites: EliteState
 var elite_rules: EliteRules
+## v0.9.0 RB (AFFINITIES.md; Affinities): the run's rune affinity on this floor; null for None (no effect, not
+## hashed: a run without one hashes as before RB).
+var affinity: AffinityState
 # --- end Bosses ---------------------------------------------------------------------------------------------
 # --- Rewards (v0.3.0 E; Rewards) ----------------------------------------------------------------------------
 ## The floor's reward rules (part of the loadout, like item_tables; not hashed).
@@ -698,6 +701,8 @@ func step(frame: InputFrame) -> void:
 		pp.end(&"proj")
 		pp.begin(&"dash_abilities")
 	ItemEffects.dash_hits(self, before_move)  # Items: Kinetic Dash.
+	if affinity != null:
+		Affinities.dash_shock(self, before_move)  # v0.9.0 RB: A2 Storm's crackle
 	Abilities.advance(self)  # v0.4.0 BS: auto abilities, the blink shock, stat regen.
 	if pp != null:
 		pp.end(&"dash_abilities")
@@ -1349,6 +1354,8 @@ func state_hash() -> String:
 		shrine.hash_into(h)
 	if elites != null:  # v0.9.0 EL: only floors that had an elite
 		elites.hash_into(h)
+	if affinity != null:  # v0.9.0 RB: only runs with an affinity (None: null)
+		affinity.hash_into(h)
 	if final_fight != null:  # v0.8.0 FB1: only the worlds that hold the final fight
 		final_fight.hash_into(h)
 	actors.hash_into(h)

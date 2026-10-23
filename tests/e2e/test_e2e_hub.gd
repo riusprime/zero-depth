@@ -108,8 +108,16 @@ func test_each_station_opens_its_panel() -> void:
 		assert_eq(codex.page, CodexView.ACHIEVEMENTS, "on the Achievements page")
 	await e.tap(KEY_ESCAPE)
 	await e.frames(2)
-	# The Wardrobe and the Progression Station: their stand-ins.
-	for id: StringName in [&"wardrobe", &"progression"]:
+	# v0.9.0 RB: the Wardrobe's own panel (test_e2e_wardrobe picks there); Esc closes it.
+	await walk.use(&"wardrobe")
+	assert_not_null(main.get_node_or_null("UI/WardrobePanel"), "the wardrobe opens its panel")
+	assert_true(main.hub.driver.paused, "the hub holds under it")
+	await e.tap(KEY_ESCAPE)
+	await e.frames(2)
+	assert_null(main.get_node_or_null("UI/WardrobePanel"), "Esc closes it")
+	assert_false(main.hub.driver.paused)
+	# The Progression Station: its stand-in.
+	for id: StringName in [&"progression"]:
 		await walk.use(id)
 		var p := main.get_node_or_null("UI/HubPanel_%s" % id) as HubStationPanel
 		assert_not_null(p, "the %s opens its panel" % id)

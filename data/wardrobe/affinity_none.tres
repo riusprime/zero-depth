@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AffinityDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/affinity_definition.gd" id="1_aff"]
+
+[resource]
+script = ExtResource("1_aff")
+order = 0
+name_key = &"AFFINITY_NONE"
+desc_key = &"AFFINITY_NONE_DESC"
+cost_key = &"AFFINITY_NONE_COST"
+color = Color(0.819608, 0.819608, 0.858824, 1)
+glyph = 0
+id = &"none"

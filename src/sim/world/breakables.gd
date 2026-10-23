@@ -223,9 +223,10 @@ static func hit(w: World, i: int) -> void:
 	var me := w.actors.ids[0]
 	match b.drop[i]:
 		Drop.SHARDS:
-			w.shards += b.drop_amount[i]
+			var got := Affinities.shards(w, b.drop_amount[i])  # v0.9.0 RB: A5 Guardian picks up fewer
+			w.shards += got
 			var e := w.emit_event(SimEvent.Kind.SHARDS, 0, me, me, b.pos[i])
-			e.amount = b.drop_amount[i]
+			e.amount = got
 		Drop.HEAL:
 			if w.orbs.size() >= w.tuning.heal_orbs_max:
 				w.orbs.remove_at(0)
