@@ -13,9 +13,11 @@ placement = 3
 count_max = 0
 share_permille = 110
 min_spawn_spots = 3
+min_cells = 2
 keeps_every_room = true
 avoid = Array[StringName]([&"start", &"boss", &"boss_host", &"portal", &"overrun", &"shop"])
 sources = {
+"min_cells": "arena/arena:min_cells",
 "share_permille": "arena/arena:share"
 }
 id = &"arena"

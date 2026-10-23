@@ -10,6 +10,7 @@ extends ContentDef
 ## - kind_weights: Breaker, Rift Hunter, Conduit (EliteDefinition.ARCHETYPES order), for each elite drawn.
 ## - lockdown_escort: the normal enemies standing with an Elite Lockdown's elite (owner Q21: "an elite plus a small
 ##   escort").
+## - elite_weight (v0.9.0 CF): how many enemies an elite counts as in a closed fight's at-once cap (ClosedFights).
 
 @export var room_permille := PackedInt32Array([0, 0, 0, 150, 250])
 @export var min_gap_rooms := 2
@@ -17,6 +18,7 @@ extends ContentDef
 @export var core_drop_permille := 300
 @export var kind_weights := PackedInt32Array([1, 1, 1])
 @export var lockdown_escort := 3
+@export var elite_weight := 3
 
 
 func category() -> StringName:
@@ -49,4 +51,6 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(ValidationIssue.new(&"range", p, "some elite needs a weight"))
 	if lockdown_escort < 0:
 		issues.append(ValidationIssue.new(&"range", p, "lockdown_escort >= 0"))
+	if elite_weight < 1:
+		issues.append(ValidationIssue.new(&"range", p, "elite_weight >= 1"))
 	return issues

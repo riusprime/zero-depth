@@ -11,4 +11,6 @@ wave_sizes = PackedInt32Array(3, 5, 7)
 first_wave_seconds = 0.75
 wave_gap_seconds = 1.0
 min_spawn_distance = 3.0
+min_cells = 2
+area_per_enemy_m2 = 30.0
 id = &"arena"

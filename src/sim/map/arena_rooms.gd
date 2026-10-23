@@ -8,7 +8,9 @@ extends RefCounted
 ##   the portal room, the Overrun room (the hardest arena, marked on its own) or the room the shop takes
 ##   (ShopPlacement is a pure function of the layout); event rooms are picked later among the rooms left
 ##   (Events.pick_rooms keeps arenas out);
-## - a candidate needs at least MIN_SPOTS spawn points (its waves spawn inside);
+## - a candidate needs at least MIN_SPOTS spawn points (its waves spawn inside), and (v0.9.0 CF, owner: "lets never
+##   make it a 1x1") at least `min_cells` grid cells (ArenaTable; 0, a floor saved before CF: any room); the target
+##   still counts every candidate;
 ## - the target is round(combat rooms x share_permille / 1000), at least 1 when there is a candidate;
 ## - the candidates are taken in a fixed order (fewest doorways first, then the most doorway hops from the start hall,
 ##   then the lower room) while the target lasts, each only if, with every arena taken so far and the Overrun room
@@ -21,7 +23,7 @@ const MIN_SPOTS := 3
 
 
 ## Marks `f`'s arenas (FloorLayout.arena_rooms, ascending). Returns them.
-static func mark(f: FloorLayout, share_permille: int) -> PackedInt32Array:
+static func mark(f: FloorLayout, share_permille: int, min_cells: int = 0) -> PackedInt32Array:
 	f.arena_rooms = PackedInt32Array()
 	if share_permille <= 0 or f.room_count() == 0:
 		return f.arena_rooms
@@ -39,6 +41,8 @@ static func mark(f: FloorLayout, share_permille: int) -> PackedInt32Array:
 		if out.size() >= target:
 			break
 		if r >= f.spawn_points.size() or f.spawn_points[r].size() < MIN_SPOTS:
+			continue
+		if not ClosedFights.fits(f, r, min_cells):
 			continue
 		var trial := shut.duplicate()
 		trial.append_array(out)

@@ -8,8 +8,8 @@ extends GutTest
 ## every floor (RoomCensus reads the rooms):
 ## - (d) no special room in a room its `avoid` names, no host in a room its `host_avoid` names, so none overlaps another
 ##   it must avoid or sits in the start hall, the boss room or its host, the shop, the curse room, the portal or an
-##   event's room where its rule says so; its floors, its cap a floor, dead ends, spawn spots, never side by side, off
-##   the critical path;
+##   event's room where its rule says so; its floors, its cap a floor, dead ends, spawn spots, a sealed kind's least
+##   grid cells (v0.9.0 CF: never a 1 x 1), never side by side, off the critical path;
 ## - (c) the boss room and the exit (the portal room) are reached from the start hall with every sealed thing shut
 ##   (the arenas, the Overrun room, the Lockdowns, the timed door's, rune puzzle's and cracked wall's rooms), and a
 ##   kind that keeps every room (arenas, Lockdowns) cuts none off;
@@ -129,6 +129,10 @@ func _check_kinds(
 				_bad(bad, "room", "%s: %s room %d has %d doorways" % [where, k, r, _doors(f, r)])
 			if d.min_spawn_spots > 0 and f.spawn_points[r].size() < d.min_spawn_spots:
 				_bad(bad, "room", "%s: %s room %d has too few spawn spots" % [where, k, r])
+			if d.seals and d.min_cells > 0 and f.room_cell_count(r) < d.min_cells:  # v0.9.0 CF
+				_bad(
+					bad, "room", "%s: %s room %d has %d cells" % [where, k, r, f.room_cell_count(r)]
+				)
 			if d.never_adjacent_to_same:
 				for nb in f.neighbours(r):
 					if rooms.has(nb):

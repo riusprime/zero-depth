@@ -958,6 +958,8 @@ static func compile_overrun(def: OverrunDefinition) -> OverrunTable:
 	t.waves_min = def.waves_min  # v0.5.5 AR (S8)
 	t.waves_max = def.waves_max
 	t.wave_sizes = def.wave_sizes.duplicate()
+	t.min_cells = def.min_cells  # v0.9.0 CF
+	t.area_per_enemy_m2 = def.area_per_enemy_m2
 	return t
 
 

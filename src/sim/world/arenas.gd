@@ -14,6 +14,10 @@ extends RefCounted
 ##   spots), each scaled on arrival like any spawn (SpawnDirector.scale_arrival: tier HP and power, the Overrun's x1.5),
 ##   (v0.9.0 EL: no elite roll any more: the Marked curse is gone). The next wave is due wave_gap_ticks after no
 ##   enemy is left alive in the room (Splitlings still waiting to arrive count as alive).
+## - v0.9.0 CF (owner: "the enemies that spawn at the same time should be proportional to the room size"): a wave's
+##   members are drawn as above, but only as many as the room holds at once (at_once: its floor area over the table's
+##   area_per_enemy_m2, ClosedFights) come out together; the rest wait and come in as earlier ones die (_refill), so
+##   the wave's total stays. The next wave waits for the whole wave. A big room holds every wave: as before.
 ## - Clear: after the last wave, the barriers leave the walls, the room joins `cleared` (it stays open), its rewards
 ##   unlock; the Overrun's clear also leaves its altar and its shard bonus (Overrun.on_clear).
 ## Saves: the seal is at the first tick in the room, which is the room's entry save (RunSaver), so a resume replays the
@@ -70,6 +74,9 @@ static func advance(w: World) -> void:
 		if w.tick >= s.next_wave_tick:
 			_spawn_wave(w)
 		return
+	if not s.later_kinds.is_empty():  # v0.9.0 CF: the wave's rest comes in as earlier ones die
+		_refill(w)
+		return
 	if alive_in_room(w) > 0 or w.has_pending_enemies():
 		return
 	if s.wave < s.waves:
@@ -80,6 +87,15 @@ static func advance(w: World) -> void:
 
 ## Living enemies inside the sealed room.
 static func alive_in_room(w: World) -> int:
+	return _in_room(w, false)
+
+
+## v0.9.0 CF: the living enemies inside the sealed room, by weight (ClosedFights.weight: an elite counts more).
+static func weight_in_room(w: World) -> int:
+	return _in_room(w, true)
+
+
+static func _in_room(w: World, weighed: bool) -> int:
 	var s := w.arenas
 	if not s.sealed():
 		return 0
@@ -91,8 +107,18 @@ static func alive_in_room(w: World) -> int:
 		if not EnemyAi.is_enemy_kind(w.actors.kinds[i]):
 			continue
 		if rect.has_point(w.actors.pos(i)):
-			n += 1
+			n += ClosedFights.weight(w, i) if weighed else 1
 	return n
+
+
+## v0.9.0 CF: how many enemies (by weight) the sealed room holds at once: its floor area over the arena's (or the
+## Overrun's) area_per_enemy_m2.
+static func at_once(w: World) -> int:
+	var s := w.arenas
+	var per := _table(w).area_per_enemy_m2
+	if s.sealed() and _is_overrun(w, s.room):
+		per = w.overrun_table.area_per_enemy_m2
+	return ClosedFights.cap(w.floor_layout, s.room, per)
 
 
 ## Whether reward i is locked: it stands in an arena that isn't cleared (Rewards.nearest skips it).
@@ -125,6 +151,8 @@ static func _seal(w: World, room: int) -> void:
 	s.sealed_tick = w.tick
 	s.wave = 0
 	s.spawned = 0
+	s.later_kinds = PackedInt32Array()
+	s.later_pos = PackedVector2Array()
 	s.rng_combat = RngStream.derive(w.seed_value, "combat:room:%d" % room)
 	s.rng_ai = RngStream.derive(w.seed_value, "ai:room:%d" % room)
 	var lo := t.waves_min
@@ -164,13 +192,45 @@ static func _spawn_wave(w: World) -> void:
 	for k in open:
 		weights.append(w.spawner.weights[k])
 	var spots := wave_spots(w, wave_size(w))
+	var kinds := PackedInt32Array()
 	for q in spots:
 		var pick := Offers.pick(s.rng_ai, weights)
 		if pick < 0:
 			break
-		w.add_enemy(w.spawner.kinds[open[pick]], q)
-		SpawnDirector.scale_arrival(w, w.actors.size() - 1, ticks)
-		s.spawned += 1
+		kinds.append(w.spawner.kinds[open[pick]])
+	# v0.9.0 CF: as many as the room holds at once (in a big room the whole wave); the rest wait (_refill)
+	var now := ClosedFights.first_batch(w, kinds, at_once(w))
+	for k in kinds.size():
+		if k < now:
+			_add(w, kinds[k], spots[k], ticks)
+		else:
+			s.later_kinds.append(kinds[k])
+			s.later_pos.append(spots[k])
+
+
+## v0.9.0 CF: the wave's waiting members come in, in order, while the room holds them (ClosedFights).
+static func _refill(w: World) -> void:
+	if w.has_pending_enemies():  # a Splitling's halves count once they stand
+		return
+	var s := w.arenas
+	var out := weight_in_room(w)
+	var limit := at_once(w)
+	while not s.later_kinds.is_empty():
+		var kind := s.later_kinds[0]
+		var wt := ClosedFights.queued_weight(w, kind)
+		if not ClosedFights.may_add(out, wt, limit):
+			return
+		var q := ClosedFights.refill_spot(w, s.room, s.later_pos[0])
+		s.later_kinds.remove_at(0)
+		s.later_pos.remove_at(0)
+		_add(w, kind, q, w.run_ticks)
+		out += wt
+
+
+static func _add(w: World, kind: int, q: Vector2, ticks: int) -> void:
+	w.add_enemy(kind, q)
+	SpawnDirector.scale_arrival(w, w.actors.size() - 1, ticks)
+	w.arenas.spawned += 1
 
 
 ## `count` spots in the sealed room: its spawn points (those at least min_spawn_distance_m from the player, or all
@@ -228,6 +288,8 @@ static func _clear(w: World) -> void:
 	s.clear_tick = w.tick
 	s.room = -1
 	s.next_wave_tick = -1
+	s.later_kinds = PackedInt32Array()
+	s.later_pos = PackedVector2Array()
 	s.rng_combat = null
 	s.rng_ai = null
 	if _is_overrun(w, room):
@@ -253,6 +315,7 @@ static func read(w: World) -> Dictionary:
 		"wave": s.wave,
 		"waves": s.waves,
 		"alive": alive_in_room(w),
+		"waiting": s.later_kinds.size(),  # v0.9.0 CF: the wave's members still to come in
 		"next_wave_tick": s.next_wave_tick,
 		"sealed_tick": s.sealed_tick,
 		"clear_tick": s.clear_tick,

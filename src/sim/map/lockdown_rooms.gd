@@ -6,7 +6,8 @@ extends RefCounted
 ## - a candidate is never the start hall, the boss room or its host, the portal room, the Overrun room, the shop's
 ##   room (ShopPlacement's pick, on any floor), the curse room, an arena, a secret room (the timed door's, the rune
 ##   puzzle's, the cracked wall's) or a secret's host, the purple-rune room, or a room in `taken` (an event's, the
-##   gamble shrine's); it needs at least MIN_SPOTS spawn points (its formations stand inside);
+##   gamble shrine's); it needs at least MIN_SPOTS spawn points (its formations stand inside) and (v0.9.0 CF, owner:
+##   "lets never make it a 1x1") at least the table's min_cells grid cells (0, a floor saved before CF: any room);
 ## - the count is drawn in rooms_min..rooms_max from the `map:lockdowns` sub-stream of the floor seed, the candidates
 ##   are shuffled from it and taken in that order, rooms off the main path (start hall to boss room) first;
 ## - each is taken only if, with every Lockdown taken so far, the arenas and the Overrun room shut, every room reached
@@ -32,7 +33,7 @@ static func mark(
 		return f.lockdown_rooms
 	var rng := RngStream.derive(f.seed_value, STREAM)
 	var want := rng.range_int(mini(t.rooms_min, t.rooms_max), maxi(t.rooms_min, t.rooms_max))
-	var cands := candidates(f, taken)
+	var cands := candidates(f, taken, t.min_cells)
 	for k in range(cands.size() - 1, 0, -1):
 		var j := rng.range_int(0, k)
 		var swap := cands[k]
@@ -75,7 +76,9 @@ static func kind_weights(t: LockdownTable, floor_index: int) -> PackedInt32Array
 
 
 ## Rooms that may be Lockdowns, ascending.
-static func candidates(f: FloorLayout, taken: PackedInt32Array) -> PackedInt32Array:
+static func candidates(
+	f: FloorLayout, taken: PackedInt32Array, min_cells: int = 0
+) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	var never := [f.start_room, f.boss_room, f.boss_host_room, f.portal_room, f.overrun_room]
 	never.append_array([f.shop_room, Routes.shop_room_of(f), f.curse_room, f.purple_room])
@@ -86,6 +89,8 @@ static func candidates(f: FloorLayout, taken: PackedInt32Array) -> PackedInt32Ar
 		if r in never or f.arena_rooms.has(r) or taken.has(r):
 			continue
 		if r >= f.spawn_points.size() or f.spawn_points[r].size() < MIN_SPOTS:
+			continue
+		if not ClosedFights.fits(f, r, min_cells):
 			continue
 		out.append(r)
 	return out

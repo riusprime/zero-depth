@@ -30,6 +30,10 @@ var hazard_every_ticks := 120
 var hazard_warn_ticks := 60
 var hazard_radius_m := 1.3
 var hazard_damage := 12
+## v0.9.0 CF: the least grid cells a Lockdown's room has (LockdownRooms.mark; 0: any room, a floor saved before CF),
+## and the room's floor area (m2) an enemy needs at once (ClosedFights.cap; 0: no cap).
+var min_cells := 2
+var area_per_enemy_m2 := 30.0
 
 
 ## The formation size on floor `floor_index` (1-based; the last repeats).

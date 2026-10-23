@@ -15,6 +15,8 @@ var core_drop_permille := 300
 var kind_weights := PackedInt32Array([1, 1, 1])
 ## The normal enemies with an Elite Lockdown's elite.
 var lockdown_escort := 3
+## v0.9.0 CF: how many enemies an elite counts as in a closed fight's at-once cap (ClosedFights.weight).
+var elite_weight := 3
 
 
 ## The rooms' share on floor `floor_index` (1-based, within the loop; the last entry repeats).

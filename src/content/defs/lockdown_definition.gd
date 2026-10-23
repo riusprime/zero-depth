@@ -35,6 +35,12 @@ const MIN_WARN_SECONDS := 0.4
 @export var hazard_warn_seconds := 1.0
 @export var hazard_radius := 1.3
 @export var hazard_damage := 12
+## v0.9.0 CF (owner: "lets never make it a 1x1 ... the enemies that spawn at the same time should be proportional to
+## the room size"): the fight never takes a room of fewer than min_cells grid cells (2: never a 1 x 1), and holds at
+## most its floor area / area_per_enemy_m2 enemies at once (an elite counts EliteRulesDefinition.elite_weight); the
+## rest come in as earlier ones die (ClosedFights). Starting values.
+@export var min_cells := 2
+@export var area_per_enemy_m2 := 30.0
 
 
 func category() -> StringName:
@@ -72,4 +78,5 @@ func validate() -> Array[ValidationIssue]:
 		)
 	if cap_seconds <= stuck_seconds:
 		issues.append(ValidationIssue.new(&"range", p, "cap_seconds > stuck_seconds"))
+	issues.append_array(ArenaDefinition.closed_fight_issues(p, min_cells, area_per_enemy_m2))
 	return issues

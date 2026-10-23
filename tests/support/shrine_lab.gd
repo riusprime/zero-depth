@@ -52,7 +52,8 @@ static func build(run: RunState) -> World:
 		ContentCompiler.compile_combos(r),
 		ContentCompiler.compile_gamble(r.get_def(&"gamble", &"shrine")),
 		rules[&"arena"],
-		rules[&"map"]
+		rules[&"map"],
+		rules[&"overrun"]  # v0.9.0 CF
 	)
 	var biome: BiomeDefinition = r.get_def(
 		&"biomes", (r.get_def(&"run", run.table.id) as RunDefinition).biomes[run.biome_of()]

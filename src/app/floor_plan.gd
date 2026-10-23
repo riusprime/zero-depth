@@ -221,6 +221,8 @@ static func add_secrets(
 ) -> void:
 	if run.floor_rules > RunState.FLOOR_RULES_V090_LK:  # v0.9.0 SH, HF (owner Q29b)
 		var shrines := RunContentCompiler.compile_shrines(repo.get_def(&"shrines", &"shrines"))
+		if shrines != null and ClosedFights.legacy_rooms(run):  # v0.9.0 CF: a floor saved before CF
+			shrines.chaos_min_cells = 0
 		var rules := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
 		Shrines.setup(w, shrines, run.floor_index, rules)
 	if run.floor_rules > RunState.FLOOR_RULES_V080_BD:
@@ -241,6 +243,8 @@ static func add_secrets(
 		var lockdown := RunContentCompiler.compile_lockdown(repo.get_def(&"lockdown", &"lockdown"))
 		if lockdown != null and run.floor_rules <= RunState.FLOOR_RULES_V090_SH:
 			lockdown.kind_weights[LockdownTable.Kind.ELITE] = 0  # v0.9.0 EL: a floor saved before EL had none
+		if lockdown != null and ClosedFights.legacy_rooms(run):  # v0.9.0 CF: a floor saved before CF keeps its rooms
+			lockdown.min_cells = 0
 		Lockdowns.setup(w, lockdown, run.floor_index)
 	# v0.9.0 EL (owner Q24): the elite rooms, after the Lockdowns (never one, never next to an Elite Lockdown); a
 	# floor saved before EL (rules 1-14) has none. The rules are set on every floor (an elite's 30 % core drop).
@@ -297,7 +301,8 @@ func _floor_world(
 		ContentCompiler.compile_combos(repo),  # v0.3.0 G: named combos.
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine")),  # v0.3.0 L19: the gamble shrine.
 		rules[&"arena"],  # v0.5.5 AR: the sealed arenas
-		rules[&"map"]  # v0.7.5 MG: rooms, footprints (N9)
+		rules[&"map"],  # v0.7.5 MG: rooms, footprints (N9)
+		rules[&"overrun"]  # v0.9.0 CF: the Overrun room's least cells
 	)
 	# v0.5.0 SH; v0.7.5 MG: every two floors (N12); v0.8.0 SR: in the biome's shop room (O13)
 	FloorScenario.add_shop(w, rules[&"shop"], biome_id, rules[&"map"])

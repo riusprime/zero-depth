@@ -12,6 +12,10 @@ entry = &"red_frame"
 seals = true
 placement = 5
 count_max = 1
+min_cells = 2
 off_critical_path = true
 avoid = Array[StringName]([&"start", &"boss", &"boss_host", &"portal"])
+sources = {
+"min_cells": "overrun/overrun:min_cells"
+}
 id = &"overrun"

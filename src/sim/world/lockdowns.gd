@@ -17,6 +17,11 @@ extends RefCounted
 ## - v0.9.0 EL (owner Q21: Elite, floors 4-5 only, "an elite plus a small escort"): an Elite Lockdown fights one
 ##   formation: an elite archetype at its head (Elites.draw_kind from the room's stream; Elites.spawn) and
 ##   EliteRules.lockdown_escort enemies drawn as above.
+## - v0.9.0 CF (owner: "the enemies that spawn at the same time should be proportional to the room size"): a
+##   formation's members are drawn as above, but only as many as the room holds at once (at_once: its floor area over
+##   the table's area_per_enemy_m2, an elite counting EliteRules.elite_weight; ClosedFights) stand in it, a formation
+##   of that many; the rest wait and come in as earlier ones die (_refill), so the encounter's total stays. A big room
+##   holds every formation: as before.
 ## - The stuck-enemy safety (W26): a fighter outside the room, or on a cell the flow field doesn't reach, for
 ##   stuck_ticks in a row (3 s) is pulled back to the room's spawn point nearest its middle (clear of the hero). And
 ##   cap_ticks (90 s) after the seal the exits open whatever is left (`forced`).
@@ -111,6 +116,9 @@ static func advance(w: World) -> void:
 		if w.tick >= s.next_wave_tick:
 			_spawn_wave(w)
 		return
+	if not s.later_kinds.is_empty():  # v0.9.0 CF: the formation's rest comes in as earlier ones die
+		_refill(w)
+		return
 	if fighters(w).size() > 0 or w.has_pending_enemies():
 		return
 	if s.wave < s.waves:
@@ -130,6 +138,8 @@ static func _seal(w: World, room: int) -> void:
 	if s.kind == LockdownTable.Kind.ELITE:  # v0.9.0 EL (Q21): one formation, the elite and its escort
 		s.waves = 1
 	s.members = PackedInt32Array()
+	s.later_kinds = PackedInt32Array()
+	s.later_pos = PackedVector2Array()
 	s.stuck_ids = PackedInt32Array()
 	s.stuck_ticks = PackedInt32Array()
 	s.rng = RngStream.derive(w.seed_value, STREAM % room)
@@ -167,20 +177,67 @@ static func _spawn_wave(w: World) -> void:
 	var elite := s.kind == LockdownTable.Kind.ELITE
 	if elite:  # v0.9.0 EL (owner Q21: "an elite plus a small escort"): the elite at the formation's head
 		size = 1 + (w.elite_rules.lockdown_escort if w.elite_rules != null else 3)
-	for q in formation_spots(w, shape, size):
+	var spots := formation_spots(w, shape, size)
+	var kinds := PackedInt32Array()  # in order (an elite's as -1 - its kind), the draws as before CF
+	for q in spots:
 		if elite:
 			elite = false
-			var ek := Elites.draw_kind(s.rng, w.elite_rules)
-			var eid := Elites.spawn(w, ek, q, Elites.Source.LOCKDOWN)
-			if eid >= 0:
-				s.members.append(eid)
+			kinds.append(-1 - Elites.draw_kind(s.rng, w.elite_rules))
 			continue
 		var pick := Offers.pick(s.rng, weights)
 		if pick < 0:
 			break
-		var id := w.add_enemy(w.spawner.kinds[open[pick]], q)
-		SpawnDirector.scale_arrival(w, w.actors.size() - 1, ticks)
-		s.members.append(id)
+		kinds.append(w.spawner.kinds[open[pick]])
+	# v0.9.0 CF: as many as the room holds at once stand in a formation of that many; the rest wait (_refill)
+	var now := ClosedFights.first_batch(w, kinds, at_once(w))
+	var first := spots if now >= kinds.size() else formation_spots(w, shape, now)
+	for k in kinds.size():
+		if k < now:
+			_member(w, kinds[k], first[k], ticks)
+		else:
+			s.later_kinds.append(kinds[k])
+			s.later_pos.append(spots[k])
+
+
+## v0.9.0 CF: how many enemies (by weight) the sealed room holds at once: its floor area over area_per_enemy_m2.
+static func at_once(w: World) -> int:
+	var s := w.lockdown
+	return ClosedFights.cap(w.floor_layout, s.room, s.table.area_per_enemy_m2)
+
+
+## v0.9.0 CF: the formation's waiting members come in, in order, while the room holds them (ClosedFights), each at
+## its formation spot (or the room's spawn point nearest it when the hero stands there).
+static func _refill(w: World) -> void:
+	if w.has_pending_enemies():  # a Splitling's halves count once they stand
+		return
+	var s := w.lockdown
+	var out := 0
+	for i in fighters(w):
+		out += ClosedFights.weight(w, i)
+	var limit := at_once(w)
+	while not s.later_kinds.is_empty():
+		var kind := s.later_kinds[0]
+		var wt := ClosedFights.queued_weight(w, kind)
+		if not ClosedFights.may_add(out, wt, limit):
+			return
+		var q := _fit(w, ClosedFights.refill_spot(w, s.room, s.later_pos[0]))
+		s.later_kinds.remove_at(0)
+		s.later_pos.remove_at(0)
+		_member(w, kind, q, w.run_ticks)
+		out += wt
+
+
+## One encounter member of `kind` (an elite's as -1 - its kind) at `q`.
+static func _member(w: World, kind: int, q: Vector2, ticks: int) -> void:
+	var s := w.lockdown
+	if kind < 0:
+		var eid := Elites.spawn(w, -1 - kind, q, Elites.Source.LOCKDOWN)
+		if eid >= 0:
+			s.members.append(eid)
+		return
+	var id := w.add_enemy(kind, q)
+	SpawnDirector.scale_arrival(w, w.actors.size() - 1, ticks)
+	s.members.append(id)
 
 
 ## `count` spots of formation `shape` in the sealed room, turned to face the hero (the room's middle `c`, the way from
@@ -353,6 +410,8 @@ static func _open(w: World, forced: bool) -> void:
 	s.strike_tick = PackedInt32Array()
 	s.stuck_ids = PackedInt32Array()
 	s.stuck_ticks = PackedInt32Array()
+	s.later_kinds = PackedInt32Array()  # v0.9.0 CF: the cap opens it with members still waiting: they never come
+	s.later_pos = PackedVector2Array()
 	s.rng = null
 	s.reward_ids.append(w.add_reward(RewardStore.Kind.ALTAR, reward_spot(w.floor_layout, room), 0))
 
@@ -393,6 +452,7 @@ static func read(w: World) -> Dictionary:
 		"wave": s.wave,
 		"waves": s.waves,
 		"alive": fighters(w).size(),
+		"waiting": s.later_kinds.size(),  # v0.9.0 CF: the members still to come in
 		"cleared": s.cleared.duplicate(),
 		"forced": s.forced.duplicate(),
 		"clear_tick": s.clear_tick,
