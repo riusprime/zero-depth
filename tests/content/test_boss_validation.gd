@@ -13,8 +13,8 @@ func _codes(d: BossDefinition) -> Array:
 
 func test_the_shipped_bosses_are_valid_and_compile() -> void:
 	var repo := ContentRepository.load_all()
-	assert_eq(repo.count(&"bosses"), 6, "two per pool (v0.4.0 BO)")
-	assert_eq(repo.count(&"boss_pools"), 3)
+	assert_eq(repo.count(&"bosses"), 7, "two per pool (v0.4.0 BO), and v0.9.0 NB1's Tidecaller")
+	assert_eq(repo.count(&"boss_pools"), 4, "v0.9.0 NB1: floor 4's")
 	for def: BossDefinition in repo.all_of(&"bosses"):
 		assert_eq(def.validate(), [], String(def.id))
 		var t := ContentCompiler.compile_boss(def, repo)

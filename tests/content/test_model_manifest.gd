@@ -43,6 +43,14 @@ const ELITE_PARTS := {
 	&"elite_rift_hunter": ["blade_l", "blade_r", "body", "head", "leg_l", "leg_r", "shards"],
 	&"elite_conduit": ["body", "head", "ring", "shards", "staff"],
 }
+## v0.9.0 NB1: the new bosses' parts (static) and skin joints (rigged; test_the_v090_bosses_are_listed_cut_or_rigged).
+const NB_PARTS := {
+	&"boss_tidecaller": ["ArmL", "Bell", "Body", "Shell", "Staff"],
+	&"boss_twin_warden_violet": ["Body", "Helm", "Shield", "Sword"],
+	&"boss_lantern_shade": ["ArmL", "ArmR", "Body", "HandLantern"],
+	&"boss_clockwork_judge": ["ArmL", "ArmR", "Body", "Gears", "HandHour", "HandMinute"],
+}
+const NB_RIGGED := {&"boss_twin_warden_amber": 52}
 
 
 func _manifest() -> Array:
@@ -155,3 +163,54 @@ func test_the_elites_are_cut_into_named_parts() -> void:
 		root.free()
 		names.sort()
 		assert_eq(names, ELITE_PARTS[id], "%s's parts" % id)
+
+
+## v0.9.0 NB1 (owner 2026-10-23: "you will have to animate the bosses like with the other ones"): the four new bosses'
+## five files (scripts/assets/nb_prep.py) are listed, each a boss's triangles (the art list's 15-20k, nothing
+## simplified) with its three maps at 1024 px; the static ones are cut into the parts the art list names (the Lantern
+## Shade's file has no lantern cage, so only its arms and held lantern), the amber Warden keeps its Mixamo skeleton (its
+## joints' rest rebuilt from their binds); the Judge's skin is unusable (its binds are not matrices), so it is cut too.
+func test_the_v090_bosses_are_listed_cut_or_rigged() -> void:
+	var paths := {}
+	for m: Dictionary in _manifest():
+		paths[StringName(m["id"])] = "res://" + String(m["path"])
+	for id: StringName in NB_PARTS.keys() + NB_RIGGED.keys():
+		assert_true(paths.has(id), "%s is listed" % id)
+		if not paths.has(id):
+			continue
+		var root := (load(paths[id]) as PackedScene).instantiate()
+		var tris := 0
+		var names := []
+		var skel: Skeleton3D = null
+		for mi: MeshInstance3D in root.find_children("*", "MeshInstance3D", true, false):
+			names.append(String(mi.name))
+			for s in mi.mesh.get_surface_count():
+				tris += mi.mesh.surface_get_array_index_len(s) / 3
+				var mat := mi.mesh.surface_get_material(s) as StandardMaterial3D
+				assert_not_null(mat, "%s has its material" % id)
+				if mat != null:
+					assert_eq(
+						mat.albedo_texture.get_width(), 1024, "%s: the colour map at 1024" % id
+					)
+					assert_true(mat.normal_enabled, "%s keeps its normal map" % id)
+		for n: Node in root.find_children("*", "Skeleton3D", true, false):
+			skel = n
+		assert_between(tris, 15000, 20000, "%s: %d triangles" % [id, tris])
+		if NB_PARTS.has(id):
+			names.sort()
+			assert_eq(names, NB_PARTS[id], "%s's parts" % id)
+			assert_null(skel, "%s is static" % id)
+		else:
+			assert_not_null(skel, "%s keeps its skeleton" % id)
+			if skel != null:
+				# Every skin joint is a bone (Godot adds the end nodes too, and spells "mixamorig:" with "_").
+				assert_gte(skel.get_bone_count(), NB_RIGGED[id], "%s's joints" % id)
+				var hips := skel.find_bone("mixamorig_Hips")
+				assert_gt(hips, -1, "%s: the Mixamo hips" % id)
+				if hips >= 0:
+					assert_gt(
+						skel.get_bone_global_rest(hips).origin.y,
+						0.1,
+						"%s: its rest stands (not every joint at the origin)" % id
+					)
+		root.free()

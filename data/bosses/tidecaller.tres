@@ -1,0 +1,233 @@
+[gd_resource type="Resource" script_class="BossDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/boss_attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/boss_phase_definition.gd" id="2_ph"]
+[ext_resource type="Script" path="res://src/content/defs/boss_definition.gd" id="3_boss"]
+
+[sub_resource type="Resource" id="A_the_pull"]
+script = ExtResource("1_atk")
+id = &"the_pull"
+shape = 4
+shape_params = {
+"bend_dps": 25.0,
+"pattern_id": "tidecaller_pull_rings",
+"pull_mps": 1.2,
+"pull_seconds": 3.0,
+"push_mps": 1.0,
+"push_seconds": 2.0
+}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 1.4
+damage = 22
+hit_class = &"small"
+move = &"tide"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_TIDECALLER_PULL"
+opens_weak_point = true
+shielded = true
+
+[sub_resource type="Resource" id="A_the_pull_3"]
+script = ExtResource("1_atk")
+id = &"the_pull_3"
+shape = 4
+shape_params = {
+"bend_dps": 30.0,
+"pattern_id": "tidecaller_pull_rings_3",
+"pull_mps": 1.5,
+"pull_seconds": 3.0,
+"push_mps": 1.2,
+"push_seconds": 2.0
+}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 1.3
+damage = 22
+hit_class = &"small"
+move = &"tide"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.7
+cause_key = &"CAUSE_TIDECALLER_PULL"
+opens_weak_point = true
+shielded = true
+
+[sub_resource type="Resource" id="A_tide_rings"]
+script = ExtResource("1_atk")
+id = &"tide_rings"
+shape = 4
+shape_params = {
+"pattern_id": "tidecaller_tide_rings"
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.2
+damage = 22
+hit_class = &"small"
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_TIDECALLER_RINGS"
+
+[sub_resource type="Resource" id="A_tide_rings_fast"]
+script = ExtResource("1_atk")
+id = &"tide_rings_fast"
+shape = 4
+shape_params = {
+"pattern_id": "tidecaller_tide_rings_fast"
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.1
+damage = 22
+hit_class = &"small"
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_TIDECALLER_RINGS"
+
+[sub_resource type="Resource" id="A_undertow"]
+script = ExtResource("1_atk")
+id = &"undertow"
+shape = 0
+shape_params = {
+"count": 1,
+"drag_m": 1.0,
+"drag_reach_m": 3.0,
+"radius_m": 1.6,
+"stagger_seconds": 0.6
+}
+telegraph_seconds = 1.6
+active_seconds = 0.0167
+recovery_seconds = 1.0
+damage = 30
+hit_class = &"medium"
+move = &"marks"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_TIDECALLER_UNDERTOW"
+lock_seconds = 0.8
+
+[sub_resource type="Resource" id="A_undertow_2"]
+script = ExtResource("1_atk")
+id = &"undertow_2"
+shape = 0
+shape_params = {
+"count": 2,
+"drag_m": 1.0,
+"drag_reach_m": 3.0,
+"radius_m": 1.6,
+"stagger_seconds": 0.6
+}
+telegraph_seconds = 1.6
+active_seconds = 0.0167
+recovery_seconds = 0.9
+damage = 30
+hit_class = &"medium"
+move = &"marks"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_TIDECALLER_UNDERTOW"
+lock_seconds = 0.8
+
+[sub_resource type="Resource" id="A_shell_slam"]
+script = ExtResource("1_atk")
+id = &"shell_slam"
+shape = 3
+shape_params = {
+"inner_radius_m": 0.0,
+"radius_m": 4.2
+}
+telegraph_seconds = 0.7
+active_seconds = 0.0167
+recovery_seconds = 1.3
+damage = 50
+hit_class = &"big"
+move = &"slam_ring"
+min_range_m = 0.0
+max_range_m = 4.4
+weight = 3
+cooldown_seconds = 0.7
+cause_key = &"CAUSE_TIDECALLER_SLAM"
+opens_weak_point = true
+
+[sub_resource type="Resource" id="P_0"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 1000
+attack_ids = PackedStringArray("the_pull", "tide_rings", "undertow", "shell_slam")
+entry_attack = &""
+speed_permille = 1000
+cooldown_permille = 1000
+
+[sub_resource type="Resource" id="P_1"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 660
+attack_ids = PackedStringArray("the_pull", "tide_rings", "undertow_2", "shell_slam")
+entry_attack = &"the_pull"
+speed_permille = 900
+cooldown_permille = 650
+
+[sub_resource type="Resource" id="P_2"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 330
+attack_ids = PackedStringArray("the_pull_3", "tide_rings_fast", "undertow_2", "shell_slam")
+entry_attack = &"the_pull_3"
+speed_permille = 990
+cooldown_permille = 487
+
+[resource]
+script = ExtResource("3_boss")
+name_key = &"BOSS_TIDECALLER"
+desc_key = &"BOSS_TIDECALLER_DESC"
+hp = 2500
+radius_m = 1.6
+move_speed_mps = 1.4
+turn_rate_dps = 60.0
+keep_distance_m = 0.0
+front_arc_degrees = 0.0
+front_mult_permille = 1000
+rear_arc_degrees = 0.0
+rear_mult_permille = 1000
+stagger_size = 280
+stagger_decay_per_second = 15.0
+stagger_seconds = 2.5
+attacks = Array[ExtResource("1_atk")]([SubResource("A_the_pull"), SubResource("A_the_pull_3"), SubResource("A_tide_rings"), SubResource("A_tide_rings_fast"), SubResource("A_undertow"), SubResource("A_undertow_2"), SubResource("A_shell_slam")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
+arena_cells = Vector2i(4, 4)
+legacy_arena_cells = Vector2i(4, 4)
+arena_template = 0
+ranged_full_m = 5.0
+ranged_far_m = 12.0
+ranged_far_permille = 400
+punish_distance_m = 9.0
+punish_seconds = 4.0
+punish_attack = &"undertow"
+weak_point_seconds = 2.0
+weak_point_range_m = 2.5
+weak_point_mult_permille = 2000
+weak_point_stagger_permille = 2000
+arena_close_phase = -1
+arena_close_after_seconds = 0.0
+recovery_permille = 600
+lead_seconds = 0.3
+track_commit_seconds = 0.2
+dash_read_seconds = 0.5
+gap_close_attack = &"undertow"
+gap_close_distance_m = 10.0
+gap_close_seconds = 2.0
+signature_every_seconds = 9.0
+signature_first_seconds = 3.0
+save_order = 1
+id = &"tidecaller"

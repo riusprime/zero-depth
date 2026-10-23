@@ -16,6 +16,7 @@ const KINDS: Array[StringName] = [
 	&"colossus",
 	&"prism",
 	&"nemesis",
+	&"tidecaller",  # v0.9.0 NB1: floor 4 (BOSSES_4_5.md N1)
 ]
 
 ## Arena interior templates, in FloorLayout.Template order (a test pins the match).
@@ -99,7 +100,17 @@ const MOVES := {
 	{
 		"shape": 0,
 		"params": ["count", "radius_m", "stagger_seconds"],
-		"optional": ["pattern_id", "egg_seconds", "egg_hp", "enemy_id", "max_alive", "burst_phase"],
+		"optional":
+		[
+			"pattern_id",
+			"egg_seconds",
+			"egg_hp",
+			"enemy_id",
+			"max_alive",
+			"burst_phase",
+			"drag_m",  # v0.9.0 NB1: the Undertow (BossTide)
+			"drag_reach_m",
+		],
 	},
 	## v0.7.5 BF1: `count` crosses of two lanes (the player's row and column, length_m long), stagger_seconds apart,
 	## tracked then locked like `marks`; cut short by walls.
@@ -226,6 +237,18 @@ const MOVES := {
 	## The player's card `card` (0 = the strongest held, then 1, 2) as the Nemesis's own attack: its arc (repeats
 	## stagger_seconds apart), its volley and its blast, tracked then locked.
 	&"card_cast": {"shape": 0, "params": ["card", "stagger_seconds"], "optional": ["weapon"]},
+	## v0.9.0 NB1 (BOSSES_4_5.md N1; BossTide): the Tidecaller's Pull, its shielded signature. After its windup (the bell
+	## rings) the room pulls the player toward it at pull_mps for pull_seconds (its pattern, the Tide Rings, fires
+	## inside the pull, and its shots bend toward it at bend_dps), then pushes them out at push_mps for push_seconds
+	## (no ring spawns); its active time is the two. Never faster than TIDE_MAX_MPS, never pressing the player toward
+	## a wall. (A `marks` attack with drag_m, the Undertow, drags a player within drag_reach_m of each struck circle
+	## drag_m toward its centre.)
+	&"tide":
+	{
+		"shape": 4,
+		"params":
+		["pattern_id", "pull_mps", "push_mps", "pull_seconds", "push_seconds", "bend_dps"],
+	},
 }
 ## v0.8.0 FB3: the runs an attack's `weapon` may name.
 ## v0.8.0 N2 (owner O52): "own" is The Fallen's own kit, only outside its mimic windows.
@@ -260,6 +283,8 @@ const HIT_CLASSES := {&"small": [4, 5], &"medium": [3, 4], &"big": [2, 2]}
 ## this window (ticks, after its recovery_permille): starting values 0.6..0.9 s.
 const PUNISH_MIN_TICKS := 36
 const PUNISH_MAX_TICKS := 54
+## v0.9.0 NB1 (BOSSES_4_5.md N1: "the pull never moves you more than 1.5 m/s"): the fastest a tide moves the player.
+const TIDE_MAX_MPS := 1.5
 ## v0.7.5 BF1: params that name a bullet pattern (resolved by the compiler; a content test checks they exist).
 const PATTERN_PARAMS: Array[String] = ["pattern_id"]
 

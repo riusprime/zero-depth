@@ -384,6 +384,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 			bs.remove_javelin(k)
 	if BossLava.on_boss_gone(w, boss_id):  # v0.8.0 BS2: its lava and melt cool at once
 		set_nav_extra(w)
+	BossTide.on_boss_gone(w, boss_id)  # v0.9.0 NB1: its Pull's cadence
 
 
 ## The recap's death line for a cause past LATE_CAUSE (a late part): its attack's late_cause_key (its own cause_key

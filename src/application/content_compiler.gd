@@ -21,8 +21,7 @@ const ENEMY_KINDS := {
 	&"sniper": ActorStore.Kind.SNIPER,
 	&"lens_drone": ActorStore.Kind.LENS_DRONE,
 }
-## Bosses (v0.3.0 C): boss ids to actor kinds, move names to BossAttackTable moves (BossSchemas.KINDS and MOVES;
-## a test checks the key sets match).
+## Bosses (v0.3.0 C): ids to actor kinds, move names to BossAttackTable moves (a test matches BossSchemas' sets).
 const BOSS_KINDS := {
 	&"gatekeeper": ActorStore.Kind.GATEKEEPER,
 	&"brood_mother": ActorStore.Kind.BROOD_MOTHER,
@@ -33,6 +32,7 @@ const BOSS_KINDS := {
 	&"colossus": ActorStore.Kind.COLOSSUS,  # v0.8.0 FB1: the final boss's bodies (data/final_boss)
 	&"prism": ActorStore.Kind.PRISM,
 	&"nemesis": ActorStore.Kind.NEMESIS,
+	&"tidecaller": ActorStore.Kind.TIDECALLER,  # v0.9.0 NB1
 }
 const BOSS_MOVES := {
 	&"slam_ring": BossAttackTable.Move.SLAM_RING,
@@ -62,6 +62,7 @@ const BOSS_MOVES := {
 	&"mimic_combo": BossAttackTable.Move.MIMIC_COMBO,  # v0.8.0 FB3 (the Nemesis)
 	&"mimic_shots": BossAttackTable.Move.MIMIC_SHOTS,
 	&"card_cast": BossAttackTable.Move.CARD_CAST,
+	&"tide": BossAttackTable.Move.TIDE,  # v0.9.0 NB1 (the Tidecaller)
 }
 ## v0.8.0 FB3: a Nemesis attack's `weapon`.
 const ATTACK_WEAPONS := {
@@ -526,7 +527,7 @@ static func compile_items(repo: ContentRepository) -> Array[ItemTable]:
 ## world with World.set_boss_tables.
 static func compile_bosses(repo: ContentRepository) -> Array[BossTable]:
 	var out: Array[BossTable] = []
-	for def: BossDefinition in repo.all_of(&"bosses"):
+	for def: BossDefinition in BossOrder.defs(repo):  # v0.9.0 NB1: saved indices stay
 		out.append(compile_boss(def, repo))
 	return out
 
@@ -546,7 +547,7 @@ static func compile_final_bosses(repo: ContentRepository, run: RunTable) -> Arra
 
 ## A floor's boss pool as indices into compile_bosses (empty if the floor has no pool).
 static func compile_boss_pool(repo: ContentRepository, floor_index: int) -> PackedInt32Array:
-	var ids: Array = repo.all_of(&"bosses").map(func(d: BossDefinition) -> StringName: return d.id)
+	var ids: Array = BossOrder.defs(repo).map(func(d: BossDefinition) -> StringName: return d.id)
 	var out := PackedInt32Array()
 	for pool: BossPoolDefinition in repo.all_of(&"boss_pools"):
 		if pool.floor_index != floor_index:
@@ -636,6 +637,7 @@ static func _compile_boss_challenge(def: BossDefinition, t: BossTable) -> void:
 	t.gap_attack = (
 		t.attack_index(def.gap_close_attack) if not String(def.gap_close_attack).is_empty() else -1
 	)
+	PatternCompiler.compile_cadence(def, t)  # v0.9.0 NB1: the Tidecaller's Pull
 	for k in def.attacks.size():
 		var a := def.attacks[k]
 		var at := t.attacks[k]
@@ -692,10 +694,6 @@ static func compile_boss_attack(
 	t.gap_m = float(sp.get("gap_m", 0.0))  # v0.4.0 BO: a flood's lanes
 	t.burn_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("burn_seconds", 0.0))))
 	t.cell_m = float(sp.get("cell_m", 0.0))  # v0.7.5 BF3: a grid's cells
-	t.steps = int(sp.get("steps", 1))  # v0.8.0 FB1: the Colossus's spikes
-	t.step_m = float(sp.get("step_m", 0.0))
-	t.weapon = ATTACK_WEAPONS.get(String(sp.get("weapon", "any")), BossAttackTable.WEAPON_ANY)  # FB3
-	t.card = int(sp.get("card", -1))
 	PatternCompiler.compile_boss_attack(def, repo, t)  # v0.7.5 BF1
 	return t
 

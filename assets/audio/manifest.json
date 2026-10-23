@@ -575,6 +575,26 @@
       "loop": false
     },
     {
+      "id": "boss_telegraph_tidecaller",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/boss_telegraph_tidecaller.wav",
+      "sha256": "89fd1f3cb1e13befa20c5156a102492697d78012ded4f2f9cc2264128c6687c7",
+      "seconds": 1.45,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -17.81,
+      "loop": false
+    },
+    {
+      "id": "boss_tide_pull",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/boss_tide_pull.wav",
+      "sha256": "508802938f2c38fb6862db8d04f8248551fe846a9393ae1ccd152047e83d9322",
+      "seconds": 1.6,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -16.63,
+      "loop": false
+    },
+    {
       "id": "boss_floor_burst",
       "kind": "sfx",
       "path": "assets/audio/sfx/boss_floor_burst.wav",

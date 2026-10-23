@@ -132,6 +132,7 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	_validate_colossus(issues, path, where)
 	_validate_cross(issues, path, where)
 	_validate_nemesis(issues, path, where)
+	_validate_tide(issues, path, where)
 
 
 ## v0.8.0 BP (owner O27): a known hit class; a big attack never chains (its punish window follows it); orb_damage only
@@ -413,3 +414,40 @@ func _validate_nemesis(issues: Array[ValidationIssue], path: String, where: Stri
 			issues.append(ValidationIssue.new(&"not_positive", path, where + "%s must be > 0" % k))
 	if shielded:
 		issues.append(ValidationIssue.new(&"range", path, where + "the Nemesis is never shielded"))
+
+
+## v0.9.0 NB1 (BOSSES_4_5.md N1; BossTide): a tide pulls and pushes at real speeds no faster than the fair cap, each
+## part at least the telegraph minimum long, its rings bending by a non-negative rate; it is the shielded signature. An
+## Undertow's drag is a real distance (at most 2 m) from a reach that holds its circle.
+func _validate_tide(issues: Array[ValidationIssue], path: String, where: String) -> void:
+	var sp := shape_params
+	if move == &"tide":
+		for k in ["pull_mps", "push_mps"]:
+			var v := float(sp.get(k, 0.0))
+			if v <= 0.0 or v > BossSchemas.TIDE_MAX_MPS:
+				issues.append(
+					ValidationIssue.new(
+						&"range",
+						path,
+						where + "%s: over 0, at most %.1f m/s" % [k, BossSchemas.TIDE_MAX_MPS]
+					)
+				)
+		for k in ["pull_seconds", "push_seconds"]:
+			if int(round(float(sp.get(k, 0.0)) * 60.0)) < BehaviourSchemas.MIN_TELEGRAPH_TICKS:
+				issues.append(
+					ValidationIssue.new(
+						&"telegraph_short", path, where + "%s is under the telegraph minimum" % k
+					)
+				)
+		if float(sp.get("bend_dps", 0.0)) < 0.0:
+			issues.append(ValidationIssue.new(&"range", path, where + "bend_dps must be >= 0"))
+		if not shielded:
+			issues.append(ValidationIssue.new(&"missing", path, where + "a tide is shielded"))
+	if sp.has("drag_m") or sp.has("drag_reach_m"):
+		var drag := float(sp.get("drag_m", 0.0))
+		if move != &"marks" or drag <= 0.0 or drag > 2.0:
+			issues.append(ValidationIssue.new(&"range", path, where + "drag_m: a mark's, 0..2 m"))
+		if float(sp.get("drag_reach_m", 0.0)) < float(sp.get("radius_m", 0.0)):
+			issues.append(
+				ValidationIssue.new(&"range", path, where + "drag_reach_m must hold the circle")
+			)

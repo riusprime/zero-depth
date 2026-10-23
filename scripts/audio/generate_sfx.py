@@ -647,6 +647,28 @@ def s_boss_telegraph_foundry(r):
     return echo(x, 150, 0.35, 0.3, 1800, 0.35)
 
 
+def s_boss_telegraph_tidecaller(r):
+    """v0.9.0 NB1: the Tidecaller's bell tolling under water: a struck bronze bell with a wobbling, muffled tail."""
+    n = n_of(1.0)
+    t = np.arange(n) / RATE
+    bell = metal_ping(1.0, 196, 2.76, 2.2, 0.45) * 0.8
+    wobble = 0.7 + 0.3 * np.sin(2 * np.pi * 5.5 * t)
+    hum = osc(98.0, "sine", n) * env(n, 0.01, 0.6) * 0.35
+    x = one_pole_lp(mix(pad_to(bell, n), hum) * wobble, curve(4000, 900, n))
+    return echo(x, 170, 0.45, 0.35, 1600, 0.45)
+
+
+def s_boss_tide_pull(r):
+    """v0.9.0 NB1: the Pull: a deep water surge rising in, bubbles fizzing through it."""
+    n = n_of(1.2)
+    t = np.arange(n) / RATE
+    surge = one_pole_lp(noise(r, n), curve(180, 900, n)) * (0.6 + 0.4 * np.sin(2 * np.pi * 1.6 * t))
+    fizz = bandpass(noise(r, n), 2600, 6.0) * (np.sin(2 * np.pi * 23 * t) > 0.6) * 0.3
+    low = osc(curve(55, 70, n), "sine") * 0.4
+    x = soft_clip(mix(surge * 1.3, fizz, low), 1.4) * env(n, 0.35, 0.5)
+    return echo(x, 160, 0.4, 0.3, 1400, 0.4)
+
+
 def s_boss_floor_burst(r):
     """v0.4.0 BO: a flood's lanes bursting up (spears through the floor, molten metal): a crack and a hiss."""
     n = n_of(0.7)
@@ -1256,6 +1278,8 @@ SFX = [
     ("boss_telegraph_warlord", s_boss_telegraph_warlord),
     ("boss_telegraph_hive_lens", s_boss_telegraph_hive_lens),
     ("boss_telegraph_foundry", s_boss_telegraph_foundry),
+    ("boss_telegraph_tidecaller", s_boss_telegraph_tidecaller),  # v0.9.0 NB1
+    ("boss_tide_pull", s_boss_tide_pull),
     ("boss_floor_burst", s_boss_floor_burst),
     ("boss_slam", s_boss_slam),
     ("boss_laser", s_boss_laser),

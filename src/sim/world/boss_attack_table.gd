@@ -30,6 +30,7 @@ enum Move {
 	MIMIC_COMBO,  # v0.8.0 FB3 (FINAL_BOSS.md F6): the Nemesis's moves (BossNemesis)
 	MIMIC_SHOTS,
 	CARD_CAST,
+	TIDE,  # v0.9.0 NB1 (BOSSES_4_5.md N1): the Tidecaller's Pull (BossTide)
 }
 
 ## v0.8.0 FB3: the runs a Nemesis attack answers to (`weapon` below).
@@ -177,3 +178,15 @@ var bolt_every_ticks := 0
 ## them `spread` apart when the build throws none) gap_ticks apart down the lines it locked.
 var weapon := WEAPON_ANY
 var card := -1
+## v0.9.0 NB1 (BOSSES_4_5.md N1; BossTide): a `tide` attack's Pull: for tide_pull_ticks of its active time the player
+## drifts toward the boss at tide_pull (metres per tick), then for tide_push_ticks away from it at tide_push; its
+## pattern (the Tide Rings) fires only inside the pull, and the boss's shots turn toward it by tide_bend (1/4096 turns
+## a tick) while the pull is on. A `marks` attack with drag_m > 0 (the Undertow) drags a player within drag_reach_m
+## of each struck circle drag_m toward its centre.
+var tide_pull := 0.0
+var tide_push := 0.0
+var tide_pull_ticks := 0
+var tide_push_ticks := 0
+var tide_bend := 0
+var drag_m := 0.0
+var drag_reach_m := 0.0

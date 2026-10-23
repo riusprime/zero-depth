@@ -13,6 +13,12 @@ static func compile_boss_attack(
 	def: BossAttackDefinition, repo: ContentRepository, t: BossAttackTable
 ) -> void:
 	var sp := def.shape_params
+	t.steps = int(sp.get("steps", 1))  # v0.8.0 FB1: the Colossus's spikes (moved here in v0.9.0 NB1)
+	t.step_m = float(sp.get("step_m", 0.0))
+	t.weapon = ContentCompiler.ATTACK_WEAPONS.get(
+		String(sp.get("weapon", "any")), BossAttackTable.WEAPON_ANY
+	)  # v0.8.0 FB3
+	t.card = int(sp.get("card", -1))
 	t.lock_ticks = SimTick.seconds_to_ticks(def.lock_seconds)
 	t.shielded = def.shielded
 	if sp.has("aim_degrees"):  # v0.8.0 PR (O84): a fixed aim, 1/4096 turns
@@ -39,6 +45,7 @@ static func compile_boss_attack(
 		t.fast_quarter_ticks = SimTick.seconds_to_ticks(float(sp.get("fast_quarter_seconds", 0.0)))
 		t.bolt_every_ticks = SimTick.seconds_to_ticks(float(sp.get("bolt_every_seconds", 0.0)))
 	_compile_signature(def, t)
+	_compile_tide(def, t)
 	if t.pillar_ticks > 0:  # v0.8.0 BS1 (S1): the last cross's pillars rise the tick after it strikes
 		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 2)
 	if sp.has("pattern_id"):
@@ -98,6 +105,32 @@ static func _compile_signature(def: BossAttackDefinition, t: BossAttackTable) ->
 	t.melt_step_m = float(sp.get("step_m", 0.0))
 	t.melt_step_ticks = SimTick.seconds_to_ticks(float(sp.get("step_seconds", 0.0)))
 	t.melt_warn_ticks = SimTick.seconds_to_ticks(float(sp.get("warn_seconds", 0.0)))
+
+
+## v0.9.0 NB1 (BOSSES_4_5.md N1; BossTide): a `tide` attack's pull and push (speeds in metres per tick, times in
+## ticks; its active time is the two) and the rings' bend (1/4096 turns a tick, at least 1 when it bends at all); a
+## `marks` attack's Undertow drag.
+static func _compile_tide(def: BossAttackDefinition, t: BossAttackTable) -> void:
+	var sp := def.shape_params
+	t.drag_m = float(sp.get("drag_m", 0.0))
+	t.drag_reach_m = float(sp.get("drag_reach_m", 0.0))
+	if t.move != BossAttackTable.Move.TIDE:
+		return
+	t.tide_pull = float(sp.get("pull_mps", 0.0)) / SimTick.TICKS_PER_SECOND
+	t.tide_push = float(sp.get("push_mps", 0.0)) / SimTick.TICKS_PER_SECOND
+	t.tide_pull_ticks = SimTick.seconds_to_ticks(float(sp.get("pull_seconds", 0.0)))
+	t.tide_push_ticks = SimTick.seconds_to_ticks(float(sp.get("push_seconds", 0.0)))
+	var bend := float(sp.get("bend_dps", 0.0))
+	t.tide_bend = (
+		0 if bend <= 0.0 else maxi(1, int(round(bend * 4096.0 / 360.0 / SimTick.TICKS_PER_SECOND)))
+	)
+	t.active_ticks = maxi(t.active_ticks, t.tide_pull_ticks + t.tide_push_ticks)
+
+
+## v0.9.0 NB1: a boss's signature cadence (BossTable.sig_every_ticks; 0 = none).
+static func compile_cadence(def: BossDefinition, t: BossTable) -> void:
+	t.sig_every_ticks = SimTick.seconds_to_ticks(def.signature_every_seconds)
+	t.sig_first_ticks = SimTick.seconds_to_ticks(def.signature_first_seconds)
 
 
 ## v0.7.5 EF (owner N16): an enemy's patterns, one per attack in order (null where an attack names none): the Arc

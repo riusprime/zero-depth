@@ -77,6 +77,14 @@ var arena_template := 0
 @export var gap_close_attack: StringName
 @export var gap_close_distance_m := 5.0
 @export var gap_close_seconds := 2.0
+## v0.9.0 NB1 (BOSSES_4_5.md N1, "every 9 s"; BossTide): > 0 makes the boss perform its phase's signature (the phase's
+## first `tide` attack) every signature_every_seconds from one start to the next, the first signature_first_seconds
+## after it rises, and never by the weighted pick (0 = none). Every phase then holds a `tide` attack.
+@export var signature_every_seconds := 0.0
+@export var signature_first_seconds := 3.0
+## v0.9.0 NB1: where the boss compiles among the floor bosses (BossOrder): 0 for the six before v0.9.0 (by id), 1 and
+## on for the bosses added since, after them, so a saved boss index never moves.
+@export var save_order := 0
 
 
 func category() -> StringName:
@@ -106,6 +114,7 @@ func validate() -> Array[ValidationIssue]:
 	_check_attacks(issues)
 	_check_phases(issues)
 	_check_challenge(issues)
+	_check_cadence(issues)
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1
@@ -122,6 +131,37 @@ func validate() -> Array[ValidationIssue]:
 			ValidationIssue.new(&"arena", p, "unknown arena_template %d" % arena_template)
 		)
 	return issues
+
+
+## v0.9.0 NB1: a cadence needs a `tide` attack in every phase, a first one at least the intro away, and a period
+## longer than each phase's tide (its windup, pull and push).
+func _check_cadence(issues: Array[ValidationIssue]) -> void:
+	if signature_every_seconds == 0.0:
+		return
+	var p := resource_path
+	if signature_every_seconds < 0.0 or signature_first_seconds < 0.0:
+		issues.append(ValidationIssue.new(&"negative", p, "the signature's cadence is >= 0"))
+	for ph in phases:
+		var tide: BossAttackDefinition = null
+		for aid in ph.attack_ids:
+			var a := attack(StringName(aid))
+			if a != null and a.move == &"tide":
+				tide = a
+				break
+		if tide == null:
+			issues.append(
+				ValidationIssue.new(&"attacks", p, "a cadence needs a tide in every phase")
+			)
+			continue
+		var span := (
+			tide.telegraph_seconds
+			+ float(tide.shape_params.get("pull_seconds", 0.0))
+			+ float(tide.shape_params.get("push_seconds", 0.0))
+		)
+		if signature_every_seconds <= span:
+			issues.append(
+				ValidationIssue.new(&"duration", p, "signature_every_seconds must exceed its tide")
+			)
 
 
 ## The attack with this id, or null.

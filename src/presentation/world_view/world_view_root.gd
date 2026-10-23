@@ -55,6 +55,7 @@ static var parts: Array[GDScript] = [
 	BossShieldView,
 	StoneSpikeViews,
 	BossSignatureViews,
+	TideViews,  # v0.9.0 NB1
 	BossStrikeViews,
 	FinalBossViews,
 	PrismViews,
@@ -172,6 +173,8 @@ var boss_shields: BossShieldView = _part(BossShieldView)
 var spikes: StoneSpikeViews = _part(StoneSpikeViews)
 ## v0.8.0 BS1 (owner O5): the Warlord's javelins stuck in the floor and the Brood Mother's eggs.
 var signatures: BossSignatureViews = _part(BossSignatureViews)
+## v0.9.0 NB1: the Tidecaller's Pull (the moving water, the bell's toll, the push's swell).
+var tides: TideViews = _part(TideViews)
 
 ## v0.8.0 AV part 2 (owner O7): every other boss ground attack strikes as a 3D effect.
 var strikes: BossStrikeViews = _part(BossStrikeViews)
@@ -346,6 +349,7 @@ func _setup_effects() -> void:
 	add_child(boss_shields)
 	add_child(spikes)  # v0.8.0 AV
 	add_child(signatures)  # v0.8.0 BS1
+	add_child(tides)  # v0.9.0 NB1
 
 	add_child(strikes)  # v0.8.0 AV part 2
 	add_child(final_views)  # v0.8.0 FB1
@@ -535,6 +539,7 @@ func sync() -> void:
 	_sync_view(&"boss_shields", boss_shields)
 	_sync_view(&"spikes", spikes)  # v0.8.0 AV
 	_sync_view(&"signatures", signatures)  # v0.8.0 BS1
+	_sync_view(&"tides", tides)  # v0.9.0 NB1
 
 	_sync_view(&"strikes", strikes)  # v0.8.0 AV part 2
 	_sync_view(&"final_views", final_views)  # v0.8.0 FB1
