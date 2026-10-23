@@ -51,25 +51,32 @@ static func accent(
 		return
 	var age := layer.now()
 	var col := ElementLooks.core(element)
-	layer.sprite(&"glow", p, 0.75 * s, _lit(col, 1.1, 0.32), 0, 0.0)
-	var n := 1 if layer.density < 0.7 else 2
+	var halo := col.lerp(ElementLooks.hot(element), 0.35)
+	layer.sprite(&"glow", p, 1.15 * s, _lit(halo, 1.5, 0.55), 0, 0.0)
+	if kind == &"fire" and dir != Vector3.ZERO:
+		_tongue(layer, p, dir, age, sd, s)
+	if (kind == &"venom" or kind == &"bleed") and dir != Vector3.ZERO:
+		_spray_trail(layer, p, dir, age, sd, s, kind)
+	var n := 3 if layer.density >= 0.9 else 2
 	for j in n:
 		var period := 16.0 + 8.0 * _h(sd, j)
 		var u := fposmod(age + _h(sd + 1, j) * period, period) / period
 		var back := p - dir * (0.25 + 0.55 * u) * s
 		match kind:
 			&"fire":
-				_ember(layer, back + Vector3(0, 0.25 * u, 0), u, sd + j, 0.16 * s)
+				_ember(layer, back + Vector3(0, 0.3 * u, 0), u, sd + j, 0.22 * s)
 				if j == 0 and _h(sd + int(age / period), 7) < 0.5:
 					_wisp(layer, back, u, sd + j, 0.3 * s)
 			&"storm":
-				_crackle(layer, p, age, sd + j * 17, 0.38 * s, col)
+				if j < 2:
+					_crackle(layer, p, age, sd + j * 17, 0.48 * s, col)
 			&"frost":
-				_shard(layer, back + Vector3(0, -0.15 * u, 0), dir, u, sd + j, 0.16 * s)
+				_shard(layer, back + Vector3(0, -0.15 * u, 0), dir, u, sd + j, 0.22 * s)
 				if j == 0:
-					_glint(layer, p + dir * 0.1, age, sd, 0.26 * s)
+					_glint(layer, p + dir * 0.1, age, sd, 0.36 * s)
+					_mist(layer, back, u, sd, 0.4 * s)
 			&"venom", &"bleed":
-				_drop(layer, back + Vector3(0, -0.45 * u * u, 0), u, sd + j, 0.13 * s, kind)
+				_drop(layer, back + Vector3(0, -0.45 * u * u, 0), u, sd + j, 0.17 * s, kind)
 			&"void":
 				layer.sprite(
 					&"tendril",
@@ -102,6 +109,64 @@ static func mote(
 			_drop(layer, q, u, sd, 0.12, kind)
 		&"void":
 			layer.sprite(&"tendril", q, 0.35, Color(0.5, 0.26, 0.9, f), sd % 4, 0.0)
+
+
+## Fire's flame body behind a shot at `p` flying along `dir`: a flame tongue (the owner's flame sheet) licking back
+## from it along its flight on the screen, swapping shape as it burns.
+static func _tongue(
+	layer: VfxCore, p: Vector3, dir: Vector3, age: float, sd: int, s: float
+) -> void:
+	var roll := _roll(layer, -dir) - PI * 0.5
+	var beat := 0.85 + 0.15 * sin(age * 0.9 + float(sd))
+	var h := 0.95 * s * beat
+	var c := p - dir * h * 0.42
+	var cell := (sd + int(age / 5.0)) % 4
+	layer._put(
+		&"flame",
+		layer._facing(c, h * 0.62, h, true, roll),
+		Color(1.9, 1.5, 1.15, 1.0),
+		cell,
+		0.0,
+		0.0
+	)
+	# The fireball's own streak (the owner's comet ember, cell 1, its head drawn toward the flight): coloured, so it
+	# reads on light and dark floors alike.
+	var head := _roll(layer, dir) - PI * 0.25
+	var cs := 1.05 * s
+	layer.sprite(&"ember", p - dir * cs * 0.3, cs, Color(1.5, 1.3, 1.15, 0.95), 1, head)
+
+
+## The screen-plane angle of world direction `d` (0: the camera's right, PI/2 its up), for a sprite's roll.
+static func _roll(layer: VfxCore, d: Vector3) -> float:
+	var cb := layer._cam_basis
+	return atan2(d.dot(cb.y), d.dot(cb.x))
+
+
+## A liquid shot's trailing spray (the splash sheet's sideways spray, cell 1, thrown back along the flight): Venom
+## green, Bleed a glossy dark red lit a little from inside.
+static func _spray_trail(
+	layer: VfxCore, p: Vector3, dir: Vector3, age: float, sd: int, s: float, kind: StringName
+) -> void:
+	var c := _liquid(kind)
+	var beat := 0.9 + 0.1 * sin(age * 0.7 + float(sd))
+	var sz := 0.95 * s * beat
+	var roll := _roll(layer, -dir)
+	layer.sprite(&"splash", p - dir * sz * 0.62, sz, Color(c, 1.0), 1, roll)
+
+
+## A liquid's glossy colour: Venom's green, Bleed's dark red from its hot tone, both a little over 1 (lit inside).
+static func _liquid(kind: StringName) -> Color:
+	if kind == &"bleed":
+		return ElementLooks.hot(&"bleed").lerp(ElementLooks.core(&"bleed"), 0.55) * 1.3
+	return ElementLooks.core(&"venom").lerp(Color.WHITE, 0.1) * 1.25
+
+
+## A cold mist puff drifting behind a Frost shot (lit matter, a pale cyan).
+static func _mist(layer: VfxCore, q: Vector3, u: float, sd: int, size: float) -> void:
+	var c := Color(0.82, 0.95, 1.0, 0.3 * sin(PI * u))
+	layer.sprite(
+		&"smoke", q + Vector3(0, -0.1 * u, 0), size * (0.6 + 0.8 * u), c, sd % 4, _h(sd, 4) * TAU
+	)
 
 
 ## A rising ember at `q`, `u` through its life.
@@ -164,11 +229,12 @@ static func _drop(
 	layer: VfxCore, q: Vector3, u: float, sd: int, size: float, kind: StringName
 ) -> void:
 	var col := ElementLooks.core(&"bleed" if kind == &"bleed" else &"venom")
-	var gloss := col.lerp(Color.WHITE, 0.12) if kind == &"bleed" else col.lightened(0.15)
+	# Glossy and lit from inside a little (over 1), so a dark red drop still reads on a dark floor.
+	var gloss := _liquid(kind).lerp(Color(1.6, 1.6, 1.6), 0.08)
 	if layer.has_pool(&"drop"):
 		layer.sprite(&"drop", q, size * 2.2, Color(gloss, 1.0 - u * 0.4), sd % 4, 0.0)
 		return
-	layer.sprite(&"bubble", q, size, Color(gloss, 1.0 - u * 0.4), 1, 0.0)
+	layer.sprite(&"bubble", q, size, Color(gloss, 1.0 - u * 0.4), 0, 0.0)
 	layer.sprite(&"splash", q + Vector3(0, 0.08, 0), size * 1.6, Color(col, 0.9 - u * 0.5), 3, 0.0)
 
 
@@ -192,6 +258,10 @@ static func spray(
 		return
 	var t := 1.0 - (1.0 - u) * (1.0 - u)
 	var yaw := atan2(-dir.z, dir.x)
+	var col := ElementLooks.core(element).lerp(ElementLooks.hot(element), 0.3)
+	layer.sprite(
+		&"glow", o + dir * reach * 0.35, reach * 0.9, _lit(col, 1.5, 0.45 * (1.0 - u)), 0, 0.0
+	)
 	if kind == &"storm" and int(u * 9.0) % 3 != 2:
 		var a0 := yaw - half * 0.8
 		var a1 := yaw + half * 0.8
@@ -209,17 +279,17 @@ static func spray(
 		var q := o + d * reach * (0.25 + 0.75 * t * (0.6 + 0.4 * _h(sd, j + 7)))
 		match kind:
 			&"fire":
-				_ember(layer, q + Vector3(0, 0.3 * t, 0), u, sd + j, 0.2)
+				_ember(layer, q + Vector3(0, 0.3 * t, 0), u, sd + j, 0.3)
 			&"storm":
 				layer.sprite(&"spark", q, 0.16 * (1.0 - u), _lit(COLD, 2.2, 1.0 - u), 0, a)
 			&"frost":
-				_shard(layer, q, d, u, sd + j, 0.15)
+				_shard(layer, q, d, u, sd + j, 0.21)
 				if j % 2 == 0 and u < 0.5:
 					layer.sprite(
 						&"spark", q, 0.25 * sin(PI * u / 0.5), Color(1.7, 2.0, 2.1, 1.0), 0, 0.3
 					)
 			&"venom", &"bleed":
-				_drop(layer, q + Vector3(0, -0.4 * u * u, 0), u, sd + j, 0.13, kind)
+				_drop(layer, q + Vector3(0, -0.4 * u * u, 0), u, sd + j, 0.18, kind)
 			&"void":
 				layer.sprite(&"tendril", q, 0.5, Color(0.5, 0.26, 0.9, 1.0 - u), j % 4, 0.0)
 
@@ -254,7 +324,7 @@ static func impact(
 					var pool := &"fork" if layer.has_pool(&"fork") else &"bolt"
 					layer.streak(pool, p, mid, 0.2 * s, c, (sd + j) % 4)
 					layer.streak(pool, mid, q, 0.16 * s, c, (sd + j + 1) % 4)
-			layer.sprite(&"glow", p, 1.0 * s, _lit(COLD, 1.6, 0.5 * (1.0 - u)), 0, 0.0)
+			layer.sprite(&"glow", p, 0.75 * s, _lit(COLD, 1.4, 0.3 * (1.0 - u)), 0, 0.0)
 		&"frost":
 			var frost := _lit(Color(0.8, 1.0, 0.95), 1.6, 1.0 - u)
 			layer.sprite(&"flake", p, (0.5 + 0.6 * t) * s, frost, 0, _h(sd, 4) * TAU)

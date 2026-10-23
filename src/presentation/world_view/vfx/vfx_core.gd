@@ -33,7 +33,8 @@ const POOLS := {
 	# to the pools above without them).
 	&"glow": ["fx_soft_glow", Vector2(1, 1), true, 0.0, 256, "fx_fire_noise"],
 	&"ring": ["fx_energy_ring", Vector2(1, 1), true, 0.0, 64, "fx_fire_noise"],
-	&"ember": ["fx_ember_sparks", Vector2(2, 2), true, 0.0, 192, "fx_fire_noise"],
+	# The ember art is coloured: drawn as unshaded colour over 1 (it blooms), not added, so it reads on light floors too.
+	&"ember": ["fx_ember_sparks", Vector2(2, 2), false, 0.0, 192, "fx_fire_noise"],
 	&"flake": ["fx_frost_burst", Vector2(1, 1), true, 0.0, 48, "fx_fire_noise"],
 	&"shard": ["fx_frost_shards", Vector2(2, 2), true, 0.0, 128, "fx_fire_noise"],
 	&"drop": ["fx_blood_drops", Vector2(2, 2), false, 0.0, 128, "fx_fire_noise"],

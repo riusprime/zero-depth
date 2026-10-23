@@ -16,6 +16,8 @@ var edge := ElementLooks.DEFAULT_CORE
 var element := &""
 var kind := &""
 var deep := ElementLooks.DEFAULT_DEEP
+## The outer glow's tone (the edge element's deep tone lifted toward its colour, so additive light still shows it).
+var glow := ElementLooks.DEFAULT_DEEP.lerp(ElementLooks.DEFAULT_CORE, 0.35)
 ## AttackFormLooks.DIR_* of the shot's pattern, and its count and spread (1/4096 turns).
 var directions := AttackFormLooks.DIR_FORWARD
 var count := 1
@@ -47,3 +49,6 @@ func set_elements(els: PackedStringArray) -> void:
 	element = ElementLooks.first(els)
 	kind = ElementLooks.kind(element)
 	deep = ElementLooks.deep(element)
+	var b := ElementLooks.second(els)
+	var outer := b if b != &"" else element
+	glow = ElementLooks.deep(outer).lerp(ElementLooks.core(outer), 0.35)

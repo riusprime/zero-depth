@@ -24,6 +24,7 @@ render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabl
 uniform sampler2D strip : source_color, repeat_enable, filter_linear;
 uniform vec4 core : source_color = vec4(1.0);
 uniform vec4 edge : source_color = vec4(0.3, 0.6, 1.0, 1.0);
+uniform vec4 deep : source_color = vec4(0.1, 0.3, 0.8, 1.0);
 uniform float length_m = 1.0;
 uniform float tiles = 0.6;
 uniform float scroll = 2.0;
@@ -32,7 +33,9 @@ void fragment() {
 	vec2 uv = vec2(UV.x * length_m * tiles - TIME * scroll, UV.y);
 	vec4 t = texture(strip, uv);
 	float ends = smoothstep(0.0, 0.04, UV.x) * smoothstep(1.0, 0.97, UV.x);
-	ALBEDO = mix(edge.rgb, core.rgb, t.r) * t.a * energy * ends;
+	// v0.9.0 VX: three tones, the outer glow in the element's deep tone, the body its colour, the centre white-hot.
+	vec3 body = mix(deep.rgb, edge.rgb, smoothstep(0.0, 0.35, t.r));
+	ALBEDO = mix(body, core.rgb, smoothstep(0.35, 1.0, t.r)) * t.a * energy * ends;
 }
 """
 const IMPACT_SHADER := """
@@ -190,6 +193,7 @@ func _set_look(l: StringName) -> void:
 		bm.set_shader_parameter(&"strip", tex)
 		bm.set_shader_parameter(&"core", _form.core)
 		bm.set_shader_parameter(&"edge", _form.edge)
+		bm.set_shader_parameter(&"deep", _form.glow)
 		bm.set_shader_parameter(&"scroll", BeamLooks.scroll(l))
 		bm.set_shader_parameter(&"tiles", TILES_PER_M)
 		for m: ShaderMaterial in [_impact_mat[k], _muzzle.material_override as ShaderMaterial]:

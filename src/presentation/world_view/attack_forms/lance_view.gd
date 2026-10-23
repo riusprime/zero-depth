@@ -276,7 +276,7 @@ static func _wall_ahead(reader: WorldReader, p: Vector2, r: float) -> bool:
 
 
 static func _glow(c: Color, f: float) -> Color:
-	return Color(c.r * 1.5, c.g * 1.5, c.b * 1.5, clampf(0.5 * f, 0.0, 1.0))
+	return Color(c.r * 1.5, c.g * 1.5, c.b * 1.5, clampf(0.35 * f, 0.0, 1.0))
 
 
 ## VfxLayer's drawer (WorldViewRoot appends it): each young burst's sparks thrown outward, its glow and a light; each
@@ -296,7 +296,7 @@ func draw_fx(layer: VfxCore) -> void:
 			var p := at + Vector3(cos(a) * reach, 0.15 * u, sin(a) * reach)
 			var c := Color(col.r * 2.0, col.g * 2.0, col.b * 2.0, 1.0 - u)
 			layer.sprite(&"spark", p, 0.28 * (1.0 - u), c, j % 4, 0.0)
-		var gs := float(f[3]) * BURST_RADII * 1.6 * (0.6 + u)
+		var gs := float(f[3]) * BURST_RADII * 0.8 * (0.6 + u)
 		layer.sprite(&"glow", at, gs, _glow(col, 1.0 - u), 0, 0.0)
 		layer.light_merged(at + Vector3(0, 0.4, 0), col, 2.2 * (1.0 - u), 3.0, 1.5)
 	for k in _walls.size():
