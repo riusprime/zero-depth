@@ -10,6 +10,10 @@ extends GutTest
 
 const MAX_FRAMES := 3600
 const CLOSE_M := 1.4
+## v0.9.0 FV: floor 1 holds 1-2 chests (loot scales with its rooms), and the floor's sealed arena is filled first
+## (v0.5.5 AR), so on Main.STAGE_SEED its one chest is locked in the arena. CHEST_SEED's floor 1 has two chests
+## outside it.
+const CHEST_SEED := 20261007
 
 
 func after_each() -> void:
@@ -43,7 +47,7 @@ func _pad_tap(e: E2e, button: JoyButton) -> void:
 
 func test_take_a_cursed_chest_card_and_feel_its_trade_off() -> void:
 	var e := E2e.new(self)
-	var main: Main = await e.boot()
+	var main: Main = await e.boot(null, null, CHEST_SEED)
 	await e.start_from_menu()
 	var w := e.world()
 	var hud: Hud = main.get_node("UI/Hud")
@@ -51,6 +55,8 @@ func test_take_a_cursed_chest_card_and_feel_its_trade_off() -> void:
 	await _dev(e, main, "CurseChest")
 	var chest := E2e.nearest_reward(w, RewardStore.Kind.CHEST)
 	assert_gte(chest, 0, "a chest on the floor")
+	if chest < 0:
+		return
 	# TEST HELPER (labelled): grant the shards directly; earning them is test_e2e_rewards' job.
 	w.shards = 500
 	assert_true(await e.walk_to(w.rewards.pos(chest), 0.6), "walked to the chest")

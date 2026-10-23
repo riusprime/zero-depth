@@ -26,7 +26,8 @@ func test_die_see_the_cause_and_restart() -> void:
 	assert_eq((panel.find_child("Title", true, false) as Label).text, "UI_YOU_DIED")
 	assert_not_null(panel.find_child("Cause", true, false), "the cause is shown")
 	# v0.3.0 B: the run recap.
-	assert_eq(panel.recap_line("Floor"), tr("UI_RECAP_FLOOR") % [1, 3], "the floor reached")
+	# v0.9.0 FV: a run is five floors.
+	assert_eq(panel.recap_line("Floor"), tr("UI_RECAP_FLOOR") % [1, 5], "the floor reached")
 	assert_ne(panel.recap_line("Time"), "", "the run's time")
 	assert_eq(panel.recap_line("Kills"), tr("UI_RECAP_KILLS") % e.world().kills, "the kills")
 	assert_ne(panel.recap_line("Items"), "", "the items held")

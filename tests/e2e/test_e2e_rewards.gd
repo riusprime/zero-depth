@@ -3,6 +3,11 @@ extends GutTest
 ## shows them); a chest you can't afford shows its price in red and stays shut; with enough shards, E opens it.
 ## v0.8.0 N7 (owner O61): the chest deals one card; Enter takes it (no choice), paid then.
 
+## v0.9.0 FV: floor 1 holds 1-2 chests (loot scales with its rooms), and the floor's sealed arena is filled first
+## (v0.5.5 AR), so on Main.STAGE_SEED its one chest is locked in the arena. CHEST_SEED's floor 1 has two chests
+## outside it.
+const CHEST_SEED := 20261007
+
 
 func after_each() -> void:
 	for a in [&"move_up", &"move_down", &"move_left", &"move_right", &"shoot"]:
@@ -48,11 +53,14 @@ func test_kills_earn_shards() -> void:
 
 func test_a_chest_is_shut_until_you_can_pay_then_it_deals_one_card() -> void:
 	var e := E2e.new(self)
-	var main: Main = await e.boot()
+	var main: Main = await e.boot(null, null, CHEST_SEED)
 	await e.start_from_menu()
 	var w := e.world()
 	var hud: Hud = main.get_node("UI/Hud")
 	var target_i := E2e.nearest_reward(w, RewardStore.Kind.CHEST)
+	assert_gte(target_i, 0, "an open chest on the floor")
+	if target_i < 0:
+		return
 	var chest_id := w.rewards.ids[target_i]
 	var price := w.rewards.price[target_i]
 	var reached: bool = await e.walk_to(

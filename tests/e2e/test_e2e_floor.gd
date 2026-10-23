@@ -1,9 +1,10 @@
 extends GutTest
-## The floor through real input (PLAN v0.2.0 F; v0.3.0 E replaced the pedestals): it has 2-3 free altars and 2-3
-## shard chests on the item spots (one per room, none in the start hall) and the sealed gate. Walking (left stick
-## only) to the nearest altar shows the interact prompt; pad X opens it, the 3-card pick appears, d-pad right and
-## A take the 2nd card: the item is owned, the altar is gone, the HUD card names the item and the icon row gains
-## one.
+## The floor through real input (PLAN v0.2.0 F; v0.3.0 E replaced the pedestals): it has free altars and shard
+## chests on the item spots (v0.9.0 FV: as many as its room band gives, floor 1 two altars and 1-2 chests; one
+## per room outside the sealed arena, which is filled first; none in the start hall) and the sealed gate. Walking
+## (left stick only) to the nearest altar shows the interact prompt; pad X opens it, the 3-card pick appears, d-pad
+## right and A take the 2nd card: the item is owned, the altar is gone, the HUD card names the item and the icon row
+## gains one.
 
 
 func after_each() -> void:
@@ -25,14 +26,25 @@ func test_the_floor_has_altars_chests_and_a_gate() -> void:
 	for i in w.rewards.size():
 		var room := layout.room_of(w.rewards.pos(i))
 		assert_ne(room, layout.start_room, "no altar or chest in the start hall")
-		assert_false(rooms.has(room), "one per room")
+		# v0.5.5 AR: the sealed arenas' spots are filled first (all of them) and stay locked until cleared; every
+		# other room holds one.
+		if layout.arena_rooms.has(room):
+			assert_true(Arenas.locked(w, i), "a reward in the sealed arena is locked")
+		else:
+			assert_false(rooms.has(room), "one per room outside the arenas")
 		rooms[room] = true
 		if w.rewards.kind[i] == RewardStore.Kind.ALTAR:
 			altars += 1
 		else:
 			chests += 1
-	assert_between(altars, 2, 3, "2-3 free altars")
-	assert_between(chests, 2, 3, "2-3 chests")
+	# v0.9.0 FV (owner Q24, "Scale with floor size"): the counts are the floor's room band's (floor 1: 2 altars,
+	# 1-2 chests; the boss room not counted).
+	var counts := w.reward_table.counts_for(
+		layout.room_count() - (1 if layout.boss_room >= 0 else 0)
+	)
+	assert_eq(counts, PackedInt32Array([2, 2, 1, 2]), "floor 1's band")
+	assert_between(altars, counts[0], counts[1], "the band's free altars")
+	assert_between(chests, counts[2], counts[3], "the band's chests")
 	assert_eq(main.view.rewards.count(), w.rewards.size(), "each one is drawn")
 	assert_true(main.view.stage.covers_ground(layout.start_pos), "ground under the start")
 	var b := layout.bounds

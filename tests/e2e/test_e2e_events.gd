@@ -7,6 +7,11 @@ extends GutTest
 ## X, the first card is marked cursed; take it with A: the curse is held, threat T shows 1 on the HUD and in the
 ## pause menu.
 
+## v0.9.0 FV: floor 1 holds 1-2 chests (loot scales with its rooms), and the floor's sealed arena is filled first
+## (v0.5.5 AR), so on Main.STAGE_SEED its one chest is locked in the arena. CHEST_SEED's floor 1 has an event room
+## and two chests outside the arena.
+const CHEST_SEED := 20261007
+
 
 func after_each() -> void:
 	for a in [&"move_up", &"move_down", &"move_left", &"move_right"]:
@@ -20,7 +25,7 @@ func _click(e: E2e, main: Main, button: String) -> void:
 
 func test_take_an_event_choice_and_a_cursed_chest_card() -> void:
 	var e := E2e.new(self)
-	var main: Main = await e.boot()
+	var main: Main = await e.boot(null, null, CHEST_SEED)
 	await e.start_from_menu()
 	var w := e.world()
 	var hud: Hud = main.get_node("UI/Hud")
@@ -72,6 +77,8 @@ func test_take_an_event_choice_and_a_cursed_chest_card() -> void:
 	await e.tap(KEY_QUOTELEFT)
 	var chest := E2e.nearest_reward(w, RewardStore.Kind.CHEST)
 	assert_gte(chest, 0, "a chest on the floor")
+	if chest < 0:
+		return
 	# TEST HELPER (labelled): grant the shards directly; earning them is test_e2e_rewards' job.
 	w.shards = 500
 	assert_true(await e.walk_to(w.rewards.pos(chest), 0.6), "walked to the chest")
