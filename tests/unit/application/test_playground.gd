@@ -139,8 +139,13 @@ func test_any_enemy_and_any_boss_spawn_at_a_point() -> void:
 		# Two columns (v0.8.0 FB1: the final boss's bodies are on the list too).
 		var spot := w.player_pos() + Vector2(-10 + (b % 2) * 5, -12 + (b / 2) * 5)
 		assert_true(pg.place_boss_now(b, spot), "boss %d" % b)
-	assert_eq(w.bosses.size(), w.boss_tables.size(), "every boss, side by side")
-	assert_eq(w.actors.size(), 2 + w.boss_tables.size(), "a boss doesn't clear the room")
+	# v0.9.0 NB2: the Twin Wardens are one boss in two bodies (BossTwin), so their table places two.
+	var bodies := w.boss_tables.size()
+	for t in w.boss_tables:
+		if t.id == &"twin_wardens":
+			bodies += 1
+	assert_eq(w.bosses.size(), bodies, "every boss, side by side")
+	assert_eq(w.actors.size(), 2 + bodies, "a boss doesn't clear the room")
 
 
 func test_delete_removes_what_is_under_the_point_never_the_player() -> void:
