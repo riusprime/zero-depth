@@ -180,9 +180,15 @@ func _build_world() -> void:
 ## destructibles. The rune puzzle comes after the timed door, the destructibles after both (never their rooms).
 ## v0.9.0 DP: the purple-rune room comes last (never a secret's room; one saved before DP, rules 1-11, has none).
 ## v0.9.0 LK: the Lockdown rooms after it (never a secret's or the purple room; one saved before LK, 1-12, has none).
+## v0.9.0 SH, HF: first, the floor's shrine kind (on the gamble shrine's site) and its healing fountain, which the
+## secrets and Lockdowns then keep out of (one saved before SH, rules 1-13, has a Fortune shrine and no fountain).
 static func add_secrets(
 	w: World, repo: ContentRepository, run: RunState, move_speed: float
 ) -> void:
+	if run.floor_rules > RunState.FLOOR_RULES_V090_LK:  # v0.9.0 SH, HF (owner Q29b)
+		var shrines := RunContentCompiler.compile_shrines(repo.get_def(&"shrines", &"shrines"))
+		var rules := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
+		Shrines.setup(w, shrines, run.floor_index, rules)
 	if run.floor_rules > RunState.FLOOR_RULES_V080_BD:
 		var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
 		TimedDoor.setup(w, map.timed_door_permille, map.timed_door_ticks, move_speed)
@@ -193,7 +199,10 @@ static func add_secrets(
 	if run.floor_rules > RunState.FLOOR_RULES_V090_RA:  # v0.9.0 DP (owner Q26b): last, never a secret's room
 		var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
 		var chances := secrets.purple_floor_permille if secrets != null else PackedInt32Array()
-		PurpleRunes.setup(w, PurpleRunes.chance(run, chances))
+		var taken := PackedInt32Array()
+		if run.floor_rules > RunState.FLOOR_RULES_V090_LK:  # v0.9.0 SH, HF: never a shrine's or fountain's room
+			taken = Shrines.site_rooms(w)
+		PurpleRunes.setup(w, PurpleRunes.chance(run, chances), taken)
 	if run.floor_rules > RunState.FLOOR_RULES_V090_DP:  # v0.9.0 LK (owner Q21): last, never another kind's room
 		var lockdown := RunContentCompiler.compile_lockdown(repo.get_def(&"lockdown", &"lockdown"))
 		Lockdowns.setup(w, lockdown, run.floor_index)

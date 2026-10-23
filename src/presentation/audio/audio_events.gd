@@ -114,6 +114,8 @@ var _purple_lit := false
 var _lock := [-1, 0, -1]
 ## v0.9.0 AF1b: the Lance's charge hum has played for the charge running (it starts once the charge passes this).
 var _lance_hum := false
+## v0.9.0 SH, HF: the shrine's use tick and the fountain's heal tick, for their cues' edges.
+var _shrine := [-1, -1]
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -149,6 +151,7 @@ func prime(reader: WorldReader) -> void:
 	_purple_lit = reader.purple_lit()
 	_lock = lockdown_marks(reader)
 	_lance_hum = reader.lance_charge() >= LANCE_HUM_AT
+	_shrine = shrine_marks(reader)
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -181,7 +184,31 @@ func collect(reader: WorldReader) -> Array:
 	_purple_runes(reader, out)  # v0.9.0 DP
 	_breakables(reader, out)
 	_lockdown(reader, out)  # v0.9.0 LK
+	_shrines(reader, out)  # v0.9.0 SH, HF
 	return out
+
+
+## v0.9.0 SH, HF: Blood taking its price (`shrine_blood`) or Chaos waking its challenge (`shrine_chaos`), at the
+## shrine; the fountain's heal (`fountain_heal`, at it).
+func _shrines(reader: WorldReader, out: Array) -> void:
+	var now := shrine_marks(reader)
+	if now[0] >= 0 and now[0] != _shrine[0]:
+		var d := reader.shrine()
+		var cue := (
+			&"shrine_blood" if int(d["kind"]) == WorldReader.SHRINE_BLOOD else &"shrine_chaos"
+		)
+		out.append([cue, d["pos"], 1.0])
+	if now[1] >= 0 and now[1] != _shrine[1]:
+		out.append([&"fountain_heal", reader.shrine()["fountain_pos"], 1.0])
+	_shrine = now
+
+
+## [the shrine's use tick, the fountain's heal tick] (-1: none yet, or no shrine state on the floor).
+static func shrine_marks(reader: WorldReader) -> Array:
+	if not reader.has_shrines():
+		return [-1, -1]
+	var d := reader.shrine()
+	return [int(d["used_tick"]), int(d["fountain_tick"])]
 
 
 ## v0.9.0 LK (owner Q21: "a visible seal with a sound"): the bars dropping (`lockdown_close`), grinding up on the open

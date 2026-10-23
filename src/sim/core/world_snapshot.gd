@@ -85,6 +85,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"ShopTable",  # v0.5.0 SH
 	&"ArenaTable",  # v0.5.5 AR
 	&"LockdownTable",  # v0.9.0 LK: the Lockdowns' numbers (LockdownState.table)
+	&"ShrineTable",  # v0.9.0 SH, HF: the shrines' and the fountain's numbers (ShrineState.table)
 	&"CurveTable",  # v0.4.0 TU's difficulty curve (SpawnTable.curve); the save lab builds floors with it, as Main
 	&"LegendaryTable",
 	&"LootPacingTable",  # v0.8.0 FL
@@ -146,6 +147,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"Breakables",  # v0.9.0 DX: the cracked wall, the containers and the explosive barrels
 	&"PurpleRunes",  # v0.9.0 DP: the purple-rune dais (awakened, the Deep gate's footprint)
 	&"LockdownState",  # v0.9.0 LK: the Lockdown sealed, its formations, the safety, the strikes; those opened
+	&"ShrineState",  # v0.9.0 SH, HF: the Blood or Chaos shrine (used, the challenge, its altars) and the fountain
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -186,6 +188,7 @@ const ADDED_SINCE_V05 := {
 		&"breakables",  # v0.9.0 DX: the same (floor rules 1-10 build none)
 		&"purple",  # v0.9.0 DP: a floor saved before DP has none (built under floor rules 1-11: none in the base either)
 		&"lockdown",  # v0.9.0 LK: a floor saved before LK has none (built under floor rules 1-12: none in the base either)
+		&"shrine",  # v0.9.0 SH, HF: a floor saved before SH has none (floor rules 1-13 build none in the base either)
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
 		&"loot_guaranteed",  # v0.8.0 FL: an older save's floor used no guarantee (0) and holds no jackpot
 		&"loot_jackpots",
@@ -729,6 +732,8 @@ static func _make(cls: StringName) -> Object:
 			return PurpleRunes.new()
 		&"LockdownState":  # v0.9.0 LK
 			return LockdownState.new()
+		&"ShrineState":  # v0.9.0 SH, HF
+			return ShrineState.new()
 		&"RngStream":
 			return RngStream.new()
 		&"ActorStore":

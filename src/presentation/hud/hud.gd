@@ -54,6 +54,8 @@ var events := EventHud.new()
 var overrun_hud := OverrunHud.new()
 ## v0.9.0 LK: the Lockdown banner (sealed: its formations and enemies left; then the exits open).
 var lockdown_hud := LockdownHud.new()
+## v0.9.0 SH, HF: the Blood and Chaos shrines' and the fountain's result lines (the Chaos challenge's enemies left).
+var shrine_hud := ShrineHud.new()
 ## v0.4.0 TU: the difficulty phase's name, and the line announcing a new phase or a new enemy kind.
 var phase_hud := PhaseHud.new()
 ## v0.5.0 SH: the shop's prompt and panel.
@@ -173,6 +175,7 @@ func _init() -> void:
 	add_child(ability_hud)  # v0.4.0 BS
 	add_child(overrun_hud)  # v0.4.0 AB
 	add_child(lockdown_hud)  # v0.9.0 LK
+	add_child(shrine_hud)  # v0.9.0 SH, HF
 	add_child(phase_hud)  # v0.4.0 TU
 	ability_hud.anchor = _hp_frame
 	for c in find_children("*", "Control", true, false):
@@ -268,6 +271,7 @@ func sync(reader: WorldReader) -> void:
 	events.sync(reader)  # v0.5.0 EV
 	overrun_hud.sync(reader)  # v0.4.0 AB
 	lockdown_hud.sync(reader)  # v0.9.0 LK
+	shrine_hud.sync(reader)  # v0.9.0 SH, HF
 	phase_hud.sync(reader)  # v0.4.0 TU
 	shop.sync(reader)  # v0.5.0 SH
 	boss_door.sync(reader)  # v0.8.0 BD

@@ -76,6 +76,15 @@ const SPECS := {
 	&"hazard_vent": {"size": Vector3(1.4, 2.2, 1.4), "yaw": 0.0},
 	&"hazard_ice": {"size": Vector3(1.6, 0.9, 1.6), "yaw": 0.0},
 	&"hazard_star": {"size": Vector3(0.8, 0.8, 0.8), "yaw": 0.0},
+	# v0.9.0 SH, HF (owner Q29b; GambleShrineView, ShrinesView): the shrines and the healing fountain, front +Z kept
+	# (the views turn them to the camera), scaled uniformly. Prepared by scripts/assets/mi2_prep.py to these heights
+	# (measured: Fortune 1.33 x 2.0 x 1.16 m, Blood 2.72 x 2.0 x 2.13, Chaos 1.83 x 2.2 x 1.78, the fountain
+	# 1.19 x 1.4 x 1.13), over the shrine's 1 m footprint turned 45 degrees (1.41 m corner to corner). Blood's wide
+	# basin is drawn at 1.5 m tall (2.04 x 1.6 m across) and Chaos's at 1.8 m (1.5 x 1.46 m) so they stay near it.
+	&"shrine_fortune": {"height": 2.0, "yaw": 0.0},
+	&"shrine_blood": {"height": 1.5, "yaw": 0.0},
+	&"shrine_chaos": {"height": 1.8, "yaw": 0.0},
+	&"healing_fountain": {"height": 1.4, "yaw": 0.0},
 }
 
 ## Where the manifest is read (tests point it at their own).

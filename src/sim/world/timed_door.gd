@@ -61,6 +61,8 @@ static func setup(w: World, chance_permille: int, ticks: int, speed: float) -> v
 	if w.gamble_id >= 0:
 		avoid.append(w.gamble_pos)
 		taken.append(f.room_of(w.gamble_pos))
+	avoid.append_array(Shrines.avoid_spots(w))  # v0.9.0 HF: the fountain and its room
+	taken.append_array(Shrines.taken_rooms(w))
 	if TimedDoorRooms.mark(f, chance_permille, ticks, speed, taken, avoid) < 0:
 		return
 	var t := TimedDoor.new()

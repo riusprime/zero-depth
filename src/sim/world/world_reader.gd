@@ -25,6 +25,12 @@ const TIMED_HELD := TimedDoor.State.HELD
 ## v0.9.0 LK: the Lockdown kinds (lockdown()["kinds"], ["kind"]).
 const LOCKDOWN_NORMAL := LockdownTable.Kind.NORMAL
 const LOCKDOWN_HAZARD := LockdownTable.Kind.HAZARD
+## v0.9.0 SH, HF: the shrine kinds (shrine_kind) and the interactables the shrines and the fountain use.
+const SHRINE_FORTUNE := ShrineTable.Kind.FORTUNE
+const SHRINE_BLOOD := ShrineTable.Kind.BLOOD
+const SHRINE_CHAOS := ShrineTable.Kind.CHAOS
+const INTERACT_SHRINE := Interactables.Kind.SHRINE
+const INTERACT_FOUNTAIN := Interactables.Kind.FOUNTAIN
 const LOCKDOWN_ELITE := LockdownTable.Kind.ELITE
 ## v0.8.0 RM: the remnant kinds, activations and Thermal Break's effect id, for the views (the layer rule).
 const REMNANT_SEGMENT := RemnantRule.Kind.SEGMENT
@@ -2985,7 +2991,15 @@ func interact_prompt_key() -> StringName:
 	var i := interactable_in_reach()
 	if i < 0:
 		return &""
-	return Interactables.PROMPT_KEYS[_w.interactables.kind[i]]
+	return Interactables.prompt_key(_w, i)
+
+
+## v0.9.0 SH, HF: the numbers formatted into the shared prompt (a shrine's cost, the fountain's heal); [] for none.
+func interact_prompt_args() -> Array:
+	var i := interactable_in_reach()
+	if i < 0:
+		return []
+	return Interactables.prompt_args(_w, i)
 
 
 func interactable_count() -> int:
@@ -3336,6 +3350,27 @@ func _door_of(d: int, angle: int) -> Dictionary:
 ## The floor has Lockdown rooms.
 func has_lockdowns() -> bool:
 	return _w.lockdown != null
+
+
+# --- Shrines and the healing fountain (v0.9.0 SH, HF; Shrines) ------------------------------------------------
+## The floor has a shrine of any kind (Fortune is the gamble shrine; Blood and Chaos stand on its site).
+func has_shrine_site() -> bool:
+	return _w.gamble_id >= 0
+
+
+## The floor has a Blood or Chaos shrine or a healing fountain (World.shrine).
+func has_shrines() -> bool:
+	return _w.shrine != null
+
+
+## The floor's shrine kind (SHRINE_FORTUNE, SHRINE_BLOOD, SHRINE_CHAOS; Fortune also when there is none).
+func shrine_kind() -> int:
+	return Shrines.kind_of(_w)
+
+
+## The Blood or Chaos shrine and the fountain now (Shrines.read); {} without either.
+func shrine() -> Dictionary:
+	return Shrines.read(_w) if _w.shrine != null else {}
 
 
 ## The Lockdowns now (Lockdowns.read: rooms, kinds, the sealed one, its formations, the strikes, those opened).

@@ -1157,6 +1157,47 @@ def s_seekers_fire(r):
     return mix(air, *chirps)
 
 
+def s_shrine_blood(r):
+    """v0.9.0 SH (owner Q29b, W36; the lead's placeholder for `shrine_blood`): 1.0 s: the Blood Shrine takes its
+    price: two low heartbeat thumps, then a dark wet drain (low-passed noise sweeping down) under a minor-second
+    shimmer, so paying HP reads as a cost."""
+    beats = []
+    for k, t0 in enumerate((0.0, 0.28)):
+        n = n_of(0.18)
+        thump = one_pole_lp(osc(curve(90.0 - 15.0 * k, 40.0, n), "sine", n), 400.0) * env(n, 0.004, 0.14)
+        beats.append(at(thump * (0.9 - 0.2 * k), t0))
+    d = n_of(0.6)
+    drain = one_pole_lp(noise(r, d), 900.0) * env(d, 0.08, 0.5) * 0.35
+    drain = bandpass(drain, curve(800.0, 220.0, d), 3.0)
+    shimmer = (fm(311.0, 1.06, 1.5, d) + fm(330.0, 1.06, 1.5, d)) * env(d, 0.1, 0.45) * 0.08
+    return mix(*beats, at(mix(drain, shimmer), 0.4))
+
+
+def s_shrine_chaos(r):
+    """v0.9.0 SH (the lead's placeholder for `shrine_chaos`): 1.2 s: the Chaos Shrine wakes its challenge: a
+    distorted rising roar (a saw sweep through a resonant band, with a noise rush) cut by a gong-like FM strike, so the room
+    knows a fight is coming."""
+    n = n_of(0.9)
+    roar = bandpass(osc(curve(70.0, 160.0, n), "saw", n), curve(400.0, 1400.0, n), 4.0) * env(n, 0.05, 0.6)
+    roar = roar + bandpass(noise(r, n), curve(500.0, 2000.0, n), 3.0) * env(n, 0.1, 0.6) * 0.3
+    g = n_of(1.0)
+    gong = sum(fm(f, 1.4, 3.0, g) for f in (98.0, 147.0, 233.0)) * env(g, 0.002, 0.8) * 0.25
+    return mix(roar * 0.6, at(gong, 0.2))
+
+
+def s_fountain_heal(r):
+    """v0.9.0 HF (owner Q29b: "Healing fountains (rare, one use)"; the lead's placeholder for `fountain_heal`): 0.9 s:
+    a splash of filtered noise, then three rising bell chimes (a major triad) with a short echo: water that heals."""
+    s = n_of(0.35)
+    splash = bandpass(noise(r, s), curve(2500.0, 900.0, s), 2.0) * env(s, 0.005, 0.3) * 0.4
+    chimes = []
+    for k, f in enumerate((660.0, 831.0, 988.0)):
+        c = n_of(0.5)
+        chimes.append(at(fm(f, 2.0, 1.2, c) * env(c, 0.003, 0.4) * 0.22, 0.12 + 0.11 * k))
+    body = echo(mix(splash, *chimes), delay_ms=110.0, feedback=0.3, mix=0.25, damp=3000.0, tail=0.25)
+    return body
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -1262,6 +1303,9 @@ SFX = [
     ("lance_release", s_lance_release),
     ("glaive_throw", s_glaive_throw),
     ("seekers_fire", s_seekers_fire),
+    ("shrine_blood", s_shrine_blood),
+    ("shrine_chaos", s_shrine_chaos),
+    ("fountain_heal", s_fountain_heal),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------
