@@ -134,6 +134,7 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	_validate_nemesis(issues, path, where)
 	_validate_tide(issues, path, where)
 	_validate_twin(issues, path, where)
+	_validate_judge(issues, path, where)
 
 
 ## v0.8.0 BP (owner O27): a known hit class; a big attack never chains (its punish window follows it); orb_damage only
@@ -470,3 +471,28 @@ func _validate_twin(issues: Array[ValidationIssue], path: String, where: String)
 			issues.append(ValidationIssue.new(&"not_positive", path, where + "width_m must be > 0"))
 		if float(sp.get("reach_m", 0.0)) < 0.0:
 			issues.append(ValidationIssue.new(&"range", path, where + "reach_m must be >= 0"))
+
+
+## v0.9.0 NB3 (BOSSES_4_5.md N3; BossJudge): an echo is shielded (the signature) and records a real path: a step of at
+## least a tick, at most ECHO_MAX_POINTS points, a real strike and a safe spot >= 0; a Verdict's square is real.
+func _validate_judge(issues: Array[ValidationIssue], path: String, where: String) -> void:
+	var sp := shape_params
+	if move == &"echo":
+		var rec := float(sp.get("record_seconds", 0.0))
+		var step := float(sp.get("step_seconds", 0.0))
+		if (
+			int(round(step * 60.0)) < 1
+			or rec < step
+			or int(round(rec / maxf(step, 0.001))) > BossSchemas.ECHO_MAX_POINTS
+		):
+			issues.append(
+				ValidationIssue.new(
+					&"range", path, where + "an echo records 1..24 steps of >= 1 tick"
+				)
+			)
+		if float(sp.get("radius_m", 0.0)) <= 0.0 or float(sp.get("safe_m", -1.0)) < 0.0:
+			issues.append(ValidationIssue.new(&"range", path, where + "radius_m > 0, safe_m >= 0"))
+		if not shielded:
+			issues.append(ValidationIssue.new(&"missing", path, where + "an echo is shielded"))
+	if move == &"verdict" and float(sp.get("half_m", 0.0)) <= 0.0:
+		issues.append(ValidationIssue.new(&"not_positive", path, where + "half_m must be > 0"))

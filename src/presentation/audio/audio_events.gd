@@ -34,6 +34,7 @@ const BOSS_FLAVOUR := {
 	WorldReader.KIND_TIDECALLER: &"boss_telegraph_tidecaller",  # v0.9.0 NB1: its bell tolls
 	WorldReader.KIND_TWIN_WARDEN: &"boss_telegraph_twin_wardens",  # v0.9.0 NB2: their chain rattles
 	WorldReader.KIND_TWIN_WARDEN_VIOLET: &"boss_telegraph_twin_wardens",
+	WorldReader.KIND_CLOCKWORK_JUDGE: &"boss_telegraph_clockwork_judge",  # v0.9.0 NB3: its clock ticks
 }
 const DEATHS := {
 	WorldReader.KIND_CHARGER: &"enemy_death_charger",
@@ -67,6 +68,8 @@ var _last_seq := 0
 var _kinds := {}
 var _states := {}
 var _phases := {}
+## v0.9.0 NB3: per Clockwork Judge, the echo tick whose ghost strikes last sounded (each strikes once).
+var _echo_t := {}
 var _projectiles := {}
 ## v0.3.5 AI: where each enemy's area spell (a rune, a bomb) is aimed, from its telegraph at the windup.
 var _targets := {}
@@ -539,6 +542,8 @@ func _scan_actors(reader: WorldReader, out: Array) -> void:
 		var phase := reader.boss_phase(i) if boss else 0
 		var was_phase: int = _phases.get(id, phase)
 		_phases[id] = phase
+		if kind == WorldReader.KIND_CLOCKWORK_JUDGE:  # v0.9.0 NB3: each ghost strike of its echo chimes
+			_echo_strikes(reader, i, id, out)
 		if st == was:
 			if boss and phase > was_phase:
 				out.append([&"boss_phase", null, 1.0])
@@ -558,6 +563,20 @@ func _scan_actors(reader: WorldReader, out: Array) -> void:
 			out.append([&"boss_stagger", null, 1.0])
 		if phase > was_phase:
 			out.append([&"boss_phase", null, 1.0])
+
+
+## v0.9.0 NB3: the Clockwork Judge's echo: a ghost strike landing this tick chimes where it lands.
+func _echo_strikes(reader: WorldReader, i: int, id: int, out: Array) -> void:
+	var e := reader.boss_echo(i)
+	if int(e.get("phase", WorldReader.ECHO_NONE)) != WorldReader.ECHO_REPLAY:
+		return
+	var now := int(e["t"])
+	if int(_echo_t.get(id, -1)) == now:
+		return
+	_echo_t[id] = now
+	for p: Dictionary in e["path"]:
+		if int(p["at"]) == now:
+			out.append([&"boss_judge_echo", p["pos"], 0.8])
 
 
 ## v0.9.0 EL: an elite arriving (`elite_arrive`, at it: a short heavy burst, no fanfare).
@@ -658,6 +677,10 @@ static func attack_cue(move: int) -> StringName:
 			return &"boss_mortar"
 		WorldReader.MOVE_CHAIN_SWEEP:  # the chain lashes
 			return &"boss_twin_chain"
+		WorldReader.MOVE_ECHO:  # v0.9.0 NB3: the Judge's echo begins to replay
+			return &"boss_judge_echo"
+		WorldReader.MOVE_VERDICT:  # its pendulum drops
+			return &"boss_slam"
 	return &""
 
 

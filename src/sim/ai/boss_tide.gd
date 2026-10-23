@@ -27,13 +27,20 @@ const BODY_GAP_M := 0.3
 const NONE := 0
 const PULL := 1
 const PUSH := 2
+## v0.9.0 NB3: due() while the signature is due but the boss's cooldown still runs.
+const HOLD := -2
 
 const M := BossAttackTable.Move
 
 
 ## True for an attack the cadence starts (so the weighted pick leaves it out).
 static func on_cadence(t: BossTable, atk: BossAttackTable) -> bool:
-	return t.sig_every_ticks > 0 and atk.move == M.TIDE
+	return t.sig_every_ticks > 0 and is_cadence_move(atk.move)
+
+
+## v0.9.0 NB3: the moves a cadence starts: the Tidecaller's Pull and the Clockwork Judge's echo (BossJudge).
+static func is_cadence_move(move: int) -> bool:
+	return move == M.TIDE or move == M.ECHO
 
 
 ## The phase's signature: its first `tide` attack (an index into the table's attacks), or -1.
@@ -41,14 +48,15 @@ static func signature_of(t: BossTable, phase: int) -> int:
 	if phase < 0 or phase >= t.phase_attacks.size():
 		return -1
 	for k in t.phase_attacks[phase]:
-		if t.attacks[k].move == M.TIDE:
+		if is_cadence_move(t.attacks[k].move):
 			return k
 	return -1
 
 
-## Tick phase 3, boss i pursuing with no cooldown: its signature's index when the cadence says it is due now, else
-## -1. The first call starts the clock (the first one sig_first_ticks on).
-static func due(w: World, i: int, b: int, t: BossTable) -> int:
+## Tick phase 3, boss i pursuing: its signature's index when the cadence says it is due now and its cooldown `cd` is
+## over, else -1. The first call starts the clock (the first one sig_first_ticks on). v0.9.0 NB3: HOLD when it is
+## due but the cooldown still runs: the punish and the gap-closer wait for it (a far player can't starve the cadence).
+static func due(w: World, i: int, b: int, t: BossTable, cd: int = 0) -> int:
 	if t.sig_every_ticks <= 0 or w.player_dead():
 		return -1
 	var bs := w.bosses
@@ -60,12 +68,14 @@ static func due(w: World, i: int, b: int, t: BossTable) -> int:
 		k = bs.sig_boss.size() - 1
 	if w.tick < bs.sig_due[k]:
 		return -1
-	return signature_of(t, bs.phase[b])
+	var sig := signature_of(t, bs.phase[b])
+	return HOLD if sig >= 0 and cd > 0 else sig
 
 
-## BossAi.start_attack: a `tide` attack starting (by the cadence or as a phase's entry) sets the next one's due tick.
+## BossAi.start_attack: a `tide` attack starting (by the cadence or as a phase's entry) sets the next one's due tick
+## (v0.9.0 NB3: an `echo` too).
 static func on_start(w: World, i: int, atk: BossAttackTable) -> void:
-	if atk.move != M.TIDE:
+	if not is_cadence_move(atk.move):
 		return
 	var t := BossAi.table_of(w, i)
 	var k := w.bosses.sig_of(w.actors.ids[i])

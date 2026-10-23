@@ -101,6 +101,10 @@ var chain_half_m := 0.0
 var flank_m := 0.0
 var anger_permille := 1000
 var anger_ticks := 0
+## v0.9.0 NB3 (BOSSES_4_5.md N3; BossJudge): a boss with echo_points > 0 (the Clockwork Judge) keeps the player's last
+## echo_points positions, one every echo_gap_ticks (its echo attacks'), for its echo to replay (0 = none).
+var echo_points := 0
+var echo_gap_ticks := 1
 ## v0.8.0 FB2 (owner F7, "Phase-by-phase mix"; FINAL_BOSS.md F5, F7; BossPrism): a body whose HP is set as it rises
 ## from the player's measured damage per second (FinalFight's meter: the last dps_seconds closed seconds, at least
 ## dps_min_seconds of them, else its own hp): hp = dps × dps_target_ticks / 60 × window_permille / 1000, clamped to

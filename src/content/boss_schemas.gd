@@ -18,6 +18,7 @@ const KINDS: Array[StringName] = [
 	&"nemesis",
 	&"tidecaller",  # v0.9.0 NB1: floor 4 (BOSSES_4_5.md N1)
 	&"twin_wardens",  # v0.9.0 NB2: floor 4 (BOSSES_4_5.md N2): the amber body's kind (its twin's: BossDefinition)
+	&"clockwork_judge",  # v0.9.0 NB3: floor 5 (BOSSES_4_5.md N3)
 ]
 
 ## Arena interior templates, in FloorLayout.Template order (a test pins the match).
@@ -260,6 +261,15 @@ const MOVES := {
 	{"shape": 4, "params": ["pattern_id", "gap_m", "distance_m"], "optional": ["twin_look"]},
 	## it; the twin swings to the line's end. A lock is required; its late_cause_key names the chain's burn.
 	&"chain_sweep": {"shape": 2, "params": ["width_m", "reach_m"]},
+	## v0.9.0 NB3 (BOSSES_4_5.md N3; BossJudge): the Clockwork Judge's echo, its shielded signature on its cadence. The
+	## Judge records where the player walked, a point every step_seconds over the last record_seconds; as the echo
+	## starts the path locks and shows for its windup, then a ghost strike lands on each point in the order walked,
+	## step_seconds apart (radius_m each). A point within radius_m + the player's radius + safe_m of where the player
+	## stands as it starts is left out.
+	&"echo": {"shape": 4, "params": ["radius_m", "record_seconds", "step_seconds", "safe_m"]},
+	## v0.9.0 NB3: the Verdict: a square half_m each way from its centre (not a circle) follows the player, locks, and a
+	## pendulum strike drops on it. A lock is required.
+	&"verdict": {"shape": 2, "params": ["half_m"]},
 }
 ## v0.8.0 FB3: the runs an attack's `weapon` may name.
 ## v0.8.0 N2 (owner O52): "own" is The Fallen's own kit, only outside its mimic windows.
@@ -282,6 +292,7 @@ const LOCKED_MOVES: Array[StringName] = [
 	&"mimic_shots",
 	&"card_cast",
 	&"chain_sweep",  # v0.9.0 NB2
+	&"verdict",  # v0.9.0 NB3
 ]
 ## v0.8.0 FB1: the most spikes a line or a ray lays (steps).
 const MAX_STEPS := 16
@@ -304,6 +315,8 @@ const TWIN_KINDS: Array[StringName] = [&"twin_warden_violet"]
 const TWIN_CHAIN_MIN_M := 3.0
 const TWIN_CHAIN_MAX_M := 9.0
 const TWIN_ANGER_MAX_PERMILLE := 2000
+## v0.9.0 NB3 (BOSSES_4_5.md N3): the most points an echo records (record_seconds / step_seconds).
+const ECHO_MAX_POINTS := 24
 ## v0.7.5 BF1: params that name a bullet pattern (resolved by the compiler; a content test checks they exist).
 const PATTERN_PARAMS: Array[String] = ["pattern_id"]
 

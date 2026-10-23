@@ -509,6 +509,14 @@ CAUSE_TWIN_CHAIN,The Twin Wardens' burning chain seared you.,La cadena ardiente 
 CAUSE_TWIN_BASH,A Twin Warden's shield crushed you.,El escudo de un Twin Warden te aplastó.
 CAPTION_TELEGRAPH_TWIN_WARDENS,[Warning: the Wardens' chain rattles],[Aviso: la cadena de The Twin Wardens resuena]
 CAPTION_TWIN_CHAIN_BURN,[Chain sizzles],[La cadena chisporrotea]
+BOSS_CLOCKWORK_JUDGE,The Clockwork Judge,The Clockwork Judge
+BOSS_CLOCKWORK_JUDGE_DESC,A brass judge that sentences your own footsteps.,Un juez de latón que condena tus propios pasos.
+CAUSE_JUDGE_ECHO,The Clockwork Judge's verdict caught your old steps.,El veredicto de The Clockwork Judge alcanzó tus viejos pasos.
+CAUSE_JUDGE_SPIRAL,The Clockwork Judge's gear-sparks spun into you.,Las chispas de engranaje de The Clockwork Judge giraron hasta alcanzarte.
+CAUSE_JUDGE_VERDICT,The Clockwork Judge's pendulum fell on you.,El péndulo de The Clockwork Judge cayó sobre ti.
+CAUSE_JUDGE_GAVEL,The Clockwork Judge's gavel came down on you.,El mazo de The Clockwork Judge cayó sobre ti.
+CAPTION_TELEGRAPH_CLOCKWORK_JUDGE,[Warning: the Judge's clock ticks],[Aviso: el reloj de The Clockwork Judge marca el tiempo]
+CAPTION_JUDGE_ECHO,[Your echo strikes],[Tu eco golpea]
 EVENT_UNSTABLE_CORE,Unstable Core,Núcleo inestable
 EVENT_UNSTABLE_CORE_DESC,A cracked power core hums with stolen strength.,Un núcleo agrietado zumba con fuerza robada.
 EVENT_UNSTABLE_CORE_DRAW,Draw the power out,Extraer la energía

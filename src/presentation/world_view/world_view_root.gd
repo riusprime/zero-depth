@@ -57,6 +57,7 @@ static var parts: Array[GDScript] = [
 	BossSignatureViews,
 	TideViews,  # v0.9.0 NB1
 	TwinViews,  # v0.9.0 NB2
+	JudgeViews,  # v0.9.0 NB3
 	BossStrikeViews,
 	FinalBossViews,
 	PrismViews,
@@ -180,6 +181,8 @@ var signatures: BossSignatureViews = _part(BossSignatureViews)
 var tides: TideViews = _part(TideViews)
 ## v0.9.0 NB2: the Twin Wardens' burning chain, Crossfire's gap lanes and safe spot, the Chain Sweep's lash.
 var twins: TwinViews = _part(TwinViews)
+## v0.9.0 NB3: the Clockwork Judge's echo (its recording, path and ghost trail) and its Verdict's pendulum.
+var judges: JudgeViews = _part(JudgeViews)
 
 ## v0.8.0 AV part 2 (owner O7): every other boss ground attack strikes as a 3D effect.
 var strikes: BossStrikeViews = _part(BossStrikeViews)
@@ -357,6 +360,7 @@ func _setup_effects() -> void:
 	add_child(signatures)  # v0.8.0 BS1
 	add_child(tides)  # v0.9.0 NB1
 	add_child(twins)  # v0.9.0 NB2
+	add_child(judges)  # v0.9.0 NB3
 
 	add_child(strikes)  # v0.8.0 AV part 2
 	add_child(final_views)  # v0.8.0 FB1
@@ -551,6 +555,7 @@ func sync() -> void:
 	_sync_view(&"signatures", signatures)  # v0.8.0 BS1
 	_sync_view(&"tides", tides)  # v0.9.0 NB1
 	_sync_view(&"twins", twins)  # v0.9.0 NB2
+	_sync_view(&"judges", judges)  # v0.9.0 NB3
 
 	_sync_view(&"strikes", strikes)  # v0.8.0 AV part 2
 	_sync_view(&"final_views", final_views)  # v0.8.0 FB1

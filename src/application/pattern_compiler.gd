@@ -49,6 +49,7 @@ static func compile_boss_attack(
 		t.bolt_every_ticks = SimTick.seconds_to_ticks(float(sp.get("bolt_every_seconds", 0.0)))
 	_compile_signature(def, t)
 	_compile_tide(def, t)
+	_compile_judge(def, t)
 	if t.pillar_ticks > 0:  # v0.8.0 BS1 (S1): the last cross's pillars rise the tick after it strikes
 		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 2)
 	if sp.has("pattern_id"):
@@ -136,6 +137,34 @@ static func compile_cadence(def: BossDefinition, t: BossTable) -> void:
 	t.sig_every_ticks = SimTick.seconds_to_ticks(def.signature_every_seconds)
 	t.sig_first_ticks = SimTick.seconds_to_ticks(def.signature_first_seconds)
 	_compile_twin(def, t)
+	for a in def.attacks:  # v0.9.0 NB3: the Clockwork Judge records for its echo (its first echo's numbers)
+		if a != null and a.move == &"echo":
+			t.echo_gap_ticks = echo_gap(a)
+			t.echo_points = echo_points(a)
+			break
+
+
+## v0.9.0 NB3 (BOSSES_4_5.md N3; BossJudge): an echo's step (ticks) and its points (record over step).
+static func echo_gap(a: BossAttackDefinition) -> int:
+	return maxi(1, SimTick.seconds_to_ticks(float(a.shape_params.get("step_seconds", 0.0))))
+
+
+static func echo_points(a: BossAttackDefinition) -> int:
+	var ticks := SimTick.seconds_to_ticks(float(a.shape_params.get("record_seconds", 0.0)))
+	return clampi(ticks / echo_gap(a), 1, BossSchemas.ECHO_MAX_POINTS)
+
+
+## v0.9.0 NB3: an echo's points and spacing (its active time: until its last point strikes) and its safe margin; a
+## Verdict's square.
+static func _compile_judge(def: BossAttackDefinition, t: BossAttackTable) -> void:
+	var sp := def.shape_params
+	t.square_half_m = float(sp.get("half_m", 0.0))
+	if t.move != BossAttackTable.Move.ECHO:
+		return
+	t.echo_gap_ticks = echo_gap(def)
+	t.echo_points = echo_points(def)
+	t.echo_safe_m = float(sp.get("safe_m", 0.0))
+	t.active_ticks = maxi(t.active_ticks, (t.echo_points - 1) * t.echo_gap_ticks + 1)
 
 
 ## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): a twin boss's second body (its kind), its chain and its anger.

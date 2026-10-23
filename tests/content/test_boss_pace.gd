@@ -19,6 +19,7 @@ const KEPT_SLOW := {
 	&"prism": [[&"cross_ring", 1.0]],
 	&"tidecaller": [[&"tide_rings", 0.8], [&"undertow", 1.6]],  # v0.9.0 NB1: built at BP's pace
 	&"twin_wardens": [[&"crossfire", 1.2], [&"chain_sweep", 1.6]],  # v0.9.0 NB2: built at BP's pace
+	&"clockwork_judge": [[&"gear_spiral", 0.8], [&"verdict", 1.6]],  # v0.9.0 NB3: built at BP's pace
 }
 ## Per boss, the attacks BP sped up: [id, telegraph seconds before BP, after].
 const SPED_UP := {
@@ -72,7 +73,7 @@ func test_every_boss_hit_kills_the_base_hero_in_its_class_hits() -> void:
 			seen += 1
 	assert_eq(
 		seen,
-		95,  # v0.9.0 NB1: the Tidecaller's 7; NB2: the Twin Wardens' 5
+		101,  # v0.9.0 NB1: the Tidecaller's 7; NB2: the Twin Wardens' 5; NB3: the Judge's 6
 		(
 			"every classed attack of the six bosses and the final boss's three bodies (N2: 4 new, The Fallen's 9;"
 			+ " PR: the Prism's 3 orb spells in, cross_weave and prism_bolt_fan out)"
@@ -118,8 +119,11 @@ func test_a_big_attack_is_followed_by_its_punish_window() -> void:
 			assert_between(rec, BossSchemas.PUNISH_MIN_TICKS, BossSchemas.PUNISH_MAX_TICKS, where)
 	assert_eq(
 		bigs,
-		19,
-		"N2: the Colossus's leap_slam_3, The Fallen's three card casts; NB1: the Shell Slam; NB2: the Shield Bash"
+		20,
+		(
+			"N2: the Colossus's leap_slam_3, The Fallen's three card casts; NB1: the Shell Slam;"
+			+ " NB2: the Shield Bash; NB3: the Gavel Slam"
+		)
 	)
 
 

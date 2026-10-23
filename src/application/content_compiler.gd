@@ -34,6 +34,7 @@ const BOSS_KINDS := {
 	&"nemesis": ActorStore.Kind.NEMESIS,
 	&"tidecaller": ActorStore.Kind.TIDECALLER,  # v0.9.0 NB1
 	&"twin_wardens": ActorStore.Kind.TWIN_WARDEN,  # v0.9.0 NB2 (its twin's: PatternCompiler)
+	&"clockwork_judge": ActorStore.Kind.CLOCKWORK_JUDGE,  # v0.9.0 NB3
 }
 const BOSS_MOVES := {
 	&"slam_ring": BossAttackTable.Move.SLAM_RING,
@@ -66,6 +67,8 @@ const BOSS_MOVES := {
 	&"tide": BossAttackTable.Move.TIDE,  # v0.9.0 NB1 (the Tidecaller)
 	&"crossfire": BossAttackTable.Move.CROSSFIRE,  # v0.9.0 NB2 (the Twin Wardens)
 	&"chain_sweep": BossAttackTable.Move.CHAIN_SWEEP,
+	&"echo": BossAttackTable.Move.ECHO,  # v0.9.0 NB3 (the Clockwork Judge)
+	&"verdict": BossAttackTable.Move.VERDICT,
 }
 ## v0.8.0 FB3: a Nemesis attack's `weapon`.
 const ATTACK_WEAPONS := {
@@ -552,12 +555,9 @@ static func compile_boss_pool(repo: ContentRepository, floor_index: int) -> Pack
 	var ids: Array = BossOrder.defs(repo).map(func(d: BossDefinition) -> StringName: return d.id)
 	var out := PackedInt32Array()
 	for pool: BossPoolDefinition in repo.all_of(&"boss_pools"):
-		if pool.floor_index != floor_index:
-			continue
-		for bid in pool.boss_ids:
-			var k := ids.find(StringName(bid))
-			if k >= 0:
-				out.append(k)
+		for bid in pool.boss_ids if pool.floor_index == floor_index else PackedStringArray():
+			if ids.has(StringName(bid)):
+				out.append(ids.find(StringName(bid)))
 	return out
 
 

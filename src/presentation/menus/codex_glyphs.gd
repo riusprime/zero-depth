@@ -170,6 +170,13 @@ static func _boss(id: StringName) -> Array:
 				_circle(Vector2(0.5, 0.5), 0.05, 0.0, false),
 				_circle(Vector2(0.58, 0.5), 0.05, 0.0, false),
 			]
+		&"clockwork_judge":  # v0.9.0 NB3: a clock face, its two hands, a gear beneath
+			return [
+				_circle(Vector2(0.5, 0.4), 0.3, 0.0, false),
+				_line([[0.5, 0.4], [0.5, 0.18]], 0.05),
+				_line([[0.5, 0.4], [0.66, 0.48]], 0.05),
+				_circle(Vector2(0.5, 0.84), 0.1, 0.0, false),
+			]
 	return [  # any other boss: a crown
 		_poly(
 			[

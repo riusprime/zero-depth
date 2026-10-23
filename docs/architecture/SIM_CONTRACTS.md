@@ -1743,6 +1743,40 @@ below) and FB3's cap of a fifth of max HP (D36).
   struck), `KIND_TWIN_WARDEN`, `KIND_TWIN_WARDEN_VIOLET`, `MOVE_CROSSFIRE`, `MOVE_CHAIN_SWEEP`, `EFFECT_TWIN_ANGER`,
   `EFFECT_TWIN_CHAIN`.
 
+## 10l. The Clockwork Judge: your echo (v0.9.0 NB3; owner Q24, [`BOSSES_4_5.md`](../roadmap/v0.9.0/BOSSES_4_5.md) N3)
+
+- **Kind.** `CLOCKWORK_JUDGE`, appended after `TWIN_WARDEN_VIOLET`; a boss kind. Floor 5's pool
+  (`data/boss_pools/floor_5.tres`) holds the Judge only until NB4 adds the Lantern Shade (`clockwork_judge`,
+  `save_order` 3: compiled after the Wardens, every saved boss index unchanged).
+- **The recording (`BossJudge.record`, tick phase 3, every live boss).** A boss whose table has `echo_points` > 0
+  (compiled from its first `echo` attack: `record_seconds` / `step_seconds`, 12 = 3.0 / 0.25) owns the echo
+  (`BossStore.echo_boss`, its actor id; the first Judge to think, one at a time) and, on every tick that is a multiple
+  of `echo_gap_ticks` (15) while the player lives, appends the player's position to `echo_x` / `echo_y`, keeping the
+  last `echo_points`, oldest first.
+- **The echo (`echo`, shielded, on the cadence).** `BossTide.due` treats `echo` as a cadence move (`is_cadence_move`:
+  `tide` or `echo`): the phase's first one every `sig_every_ticks` (600) start to start, the first `sig_first_ticks`
+  (240) after the clock starts, never by the pick. On start (`BossJudge.on_start`, after the lock) the recording locks
+  into the path (`path_x`, `path_y`, `path_k` = each point's index in the recording), every point within `radius_m` +
+  the player's radius + `echo_safe_m` (0.9 + 0.35 + 0.3) of the player's position then left out (it never strikes
+  where you stand at its start). The windup (48 ticks) shows the whole path; on active tick `path_k × echo_gap_ticks`
+  each point strikes a disc of `radius_m` (`hit_player`, its own hit each: `bosses.hit` cleared per point), so the
+  strikes come in the order walked, 0.25 s apart; the active time is `(echo_points − 1) × echo_gap_ticks + 1`. A new
+  attack by the Judge clears the path; one echo at a time (one attack at a time, the cadence 10 s).
+- **The cadence holds (`BossTide.HOLD`).** `due(…, cd)` returns `HOLD` (−2) when the signature is due but the boss's
+  cooldown still runs; the punish and the gap-closer then wait, so a player keeping far away can't starve the
+  cadence (the Tidecaller's Pull too).
+- **The Verdict (`verdict`, locked).** Its square (`square_half_m` each way, axis-aligned: `AttackShapes.lane` from
+  `c − (half, 0)` along +x) starts on the player (`on_start`), follows their exact position through the windup until
+  its last `lock_ticks` (`track_verdict`), then holds; on its first active tick a player whose circle touches the
+  square is hit once. Its telegraph is a `&"lanes"` with the one square, `tracked`, `locked`.
+- **State.** `echo_boss`, `echo_x`, `echo_y`, `path_x`, `path_y`, `path_k` in `BossStore`, hashed after a `-4` sentinel
+  only while a Judge records (`echo_boss >= 0`), in `WorldSnapshot.ADDED_SINCE_V05` (an older save has none: the Judge
+  records again from its next think); `BossSignatures.on_boss_gone` → `BossJudge.on_boss_gone` clears them.
+- **Reads.** `WorldReader.boss_echo(i)` (`BossJudge.state`: recording ‰ of the window before the next due tick, the
+  trail, the phase `ECHO_NONE` / `ECHO_SHOW` / `ECHO_REPLAY`, and while one runs progress, t, windup, gap, radius and
+  the path `[{pos, k, at, struck}]`; a winding Verdict's centre, half, locked, progress), `KIND_CLOCKWORK_JUDGE`,
+  `MOVE_ECHO`, `MOVE_VERDICT`.
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×

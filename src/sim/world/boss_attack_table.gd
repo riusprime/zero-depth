@@ -33,6 +33,8 @@ enum Move {
 	TIDE,  # v0.9.0 NB1 (BOSSES_4_5.md N1): the Tidecaller's Pull (BossTide)
 	CROSSFIRE,  # v0.9.0 NB2 (BOSSES_4_5.md N2): the Twin Wardens' fans whose gaps meet between them (BossTwin)
 	CHAIN_SWEEP,  # v0.9.0 NB2: their chain's line tracks the player, locks and lashes (BossTwin)
+	ECHO,  # v0.9.0 NB3 (BOSSES_4_5.md N3): the Clockwork Judge's echo of the player's path (BossJudge)
+	VERDICT,  # v0.9.0 NB3: its tracked square, locked, a pendulum strike dropping on it (BossJudge)
 }
 
 ## v0.8.0 FB3: the runs a Nemesis attack answers to (`weapon` below).
@@ -198,3 +200,11 @@ var drag_reach_m := 0.0
 ## from the body through the player and reach_m past them. The twin's Crossfire shots take twin_look ("" = the
 ## pattern's own).
 var twin_look := &""
+## v0.9.0 NB3 (BOSSES_4_5.md N3; BossJudge): an `echo` replays the path its boss recorded (echo_points points,
+## echo_gap_ticks apart): point k strikes a disc radius_m wide on active tick k × echo_gap_ticks; a point within
+## radius_m + the player's radius + echo_safe_m of where the player stood as it started is left out. A `verdict`'s
+## square reaches square_half_m each way from its tracked centre.
+var echo_points := 0
+var echo_gap_ticks := 1
+var echo_safe_m := 0.0
+var square_half_m := 0.0

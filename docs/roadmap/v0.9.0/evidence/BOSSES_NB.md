@@ -221,3 +221,98 @@ copied by hand):
   into its firing on the Ruins stage; the script printed: "tick 123 hero (-0.4, -0.8) hero hp lost 0 chain
   [(-2.8, 1.2), (2.0, 1.2)] hot true safe (-0.4, -0.8) links 17 shots 38" (the hero standing on the safe spot took
   nothing). Both owner models shielded, the burning chain between them, amber and violet embers, the safe spot's ring.
+
+# NB3: The Clockwork Judge (v0.9.0 Step NB3)
+
+- **Status:** RUN (agent, on the owner's PC: Windows 11, i7-10700K, RTX 3060; Godot `4.7.2.stable.official.ed1daf0bf`;
+  the shot on the GPU, Vulkan Forward+). How the fight feels and how the model moves: **OWNER ONLY**.
+- **Build:** branch `v090-nb3` from `claude/world-combat-v090` at `6ea476e1`; the step's commit SHA is in the report
+  and PROGRESS.
+- **Date:** 2026-10-23
+- **Who ran it:** agent
+
+Owner (OWNER_QUESTIONS 1, 2026-10-23): "ok go for those" (BOSSES_4_5.md row N3); PLAN NB: "can you ignore the
+skeleton?" (the Judge moves as cut parts).
+
+## 8. The fight as built (BOSSES_4_5.md N3)
+`data/bosses/clockwork_judge.tres` (`save_order` 3: compiled after the Wardens, every saved boss index unchanged);
+floor 5's pool is new (`data/boss_pools/floor_5.tres`): the Judge only, until NB4 adds the Shade. Kind
+`CLOCKWORK_JUDGE`, appended after `TWIN_WARDEN_VIOLET`. SIM_CONTRACTS §10l, CONTENT_SCHEMA (two moves).
+
+- **Your echo** (`the_echo`, move `echo`, shielded; `BossJudge`): while the Judge lives it keeps the hero's last 3 s,
+  a point every 0.25 s (12 points, sim state: `BossStore.echo_*`, snapshotted and hashed). Every 10 s start to start
+  (the first 4 s in; never by the pick; the Tidecaller's cadence, `BossTide`, now takes `tide` or `echo`) the
+  recording locks into the path, the points within 0.9 + 0.35 + 0.3 m of where the hero stands left out (it never
+  strikes where you stand at its start); the whole path shows for 0.8 s (the windup); then a ghost strike (a 0.9 m
+  disc, 20) lands on each point in the order walked, 0.25 s apart. Standing still through its start: no point
+  strikes. Looping on the echo's lag: struck. One echo at a time (one attack at a time; 10 s cadence).
+- **Gear Spiral** (`gear_spiral`, pattern): two arms of gear-sparks turning (`clockwork_gear_spiral`, +80 °/s, 30
+  waves 0.12 s apart, 3.0 m/s); phase 2 opens with `gear_spiral_2` (−85 °/s, reversed), phase 3 with `gear_spiral_3`
+  (+100 °/s, reversed again, 3.4 m/s).
+- **Verdict** (`verdict`, move `verdict`): a 3 m square (`half_m` 1.5; not a circle: its corner is struck) tracks the
+  hero's exact position, locks for its last 0.8 s of a 1.6 s windup, and the pendulum drops (30, medium); also its
+  punish and gap-closer.
+- **Gavel Slam** (`gavel_slam`, big, a 4.0 m ring when close, 50; its punish window).
+- **The cadence holds (a fix found by the e2e):** the first e2e run failed ("the echo came and replayed" false): with
+  the hero circling far, the punish and the gap-closer (both the Verdict) started during every cooldown, so the boss
+  was never free with no cooldown and the echo never came. `BossTide.due` now returns `HOLD` when the signature is
+  due but the cooldown runs, and those two wait for it. This changes the Tidecaller's timing the same way (its tests
+  pass, below).
+- HP 2500 (before the floor's scaling), radius 1.4 m, 1.3 m/s, stagger 2.5 s; phases at 66 % and 33 %. Starting values.
+- en/es: the name, a description, four death lines ("The Clockwork Judge's verdict caught your old steps." for the
+  echo; the spiral, the pendulum, the gavel), two captions.
+
+**Looks.** `ClockworkJudgeAvatar` on the owner's model cut into parts (`BossModels` `parts`, 3.6 m: body, arm_l,
+arm_r, gears, hand_hour, hand_minute; the broken skeleton ignored) plays `ClockworkJudgeClips` (the stiff walk with
+the pendulum arms counter-swinging, the echo's arms spread wide, the Gear Spiral's brace, the Verdict's gavel hauled
+up and swung down, the two-gavel slam, roar, stall, rise, collapse); on top the sim drives it: the clock hands sweep
+faster as the echo's recording window fills and race through the replay, the gears turn (whirring in the echo), the
+arms keep a slow pendulum sway that stills while the Verdict locks; a gold light at the clock face. A code stand-in of
+the same parts when the file is missing. `JudgeViews`: the recording's gold glints over the points kept (halved on
+Low); the path as clock-gear markers (a shader: turning toothed rim, twelve ticks, a sweeping hand, a hot core filling
+as its strike nears) joined in order by a hot ribbon over a soft halo; at each strike a translucent gold afterimage of
+the hero with a rim and an inner glow rising, a light ring, gear filings (halved on Low) and a light flash; the
+Verdict's brass pendulum hanging over the square, hauled to its apex as it locks, swinging down with a shockwave.
+Strike looks: the Verdict's square takes a gold beam (LIGHT), the slam a light ring; brass shield; `gear_spark`
+fireballs (core #FFEF40, probed against every hero colour and every other look's core: the first pick #FFF2A0 was
+0.194 from hero #D2FFB0 and 0.149 from `molten_drop`, both red in the view run below). Sounds (placeholders,
+`generate_sfx.py`): `boss_telegraph_clockwork_judge` (ticks speeding over a ratchet, a brass chime) and
+`boss_judge_echo` (a glassy chime over a swelling whoosh: each ghost strike). Codex glyph: a clock face and a gear.
+
+**Sounds and credits.** `python -I scripts/audio/generate_sfx.py` (the venv): "125 files, 13572832 bytes, generator
+v2"; six files not ours came out different (barrel_blast, barrel_fuse, bomb_throw, container_break, pillar_turn,
+wall_break) and were restored from git, with the manifest; only our two wavs and their two manifest rows are
+committed. `godot --headless --path . -s scripts/content/build_credits.gd`: "wrote res://data/credits/licences.tres
+(5 entries)".
+
+## 9. Tests (NB3)
+Lint: `gdformat --check` / `gdlint` on the 51 changed or new .gd files: "51 files would be left unchanged", "Success:
+no problems found".
+
+Each run: `godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gexit -gtest=<files>` (own APPDATA, one
+Godot at a time).
+
+| run | files | result |
+|---|---|---|
+| the Judge's sim | tests/unit/sim/test_clockwork_judge.gd | 16/16, 165 asserts (the data, bad numbers, the recording (12 points, oldest first), the replay's timing and spacing (each strike on its tick, 0.8 s then 0.25 s apart, in order, 20 each), never where you stand at its start, standing still never struck, looping struck and stepping off safe, shielded through it, every 10 s and never by the pick, a far player can't starve it, the Verdict's square tracking, locking, its corner struck and past its edge safe, the phases opening with the reversed spiral, determinism and a mid-echo save, an older save, no echo state without a Judge, the echo going with the Judge, the death lines) |
+| boss sims, saves, arch | test_clockwork_judge, test_tidecaller, test_twin_wardens, test_bosses, test_bosses_2, test_boss_gates, test_boss_pace, test_final_boss, test_boss_fights, _2, _3, test_boss_signatures, _2, test_world_snapshot, test_state_hasher, test_old_saves, test_layering, test_sim_purity | 221/221, 81,194 asserts, 1180.7 s |
+| view (1) | test_attack_visuals, _2, test_audio_director, test_boss_animations, test_boss_challenge_parity, test_boss_challenge_views, test_boss_fight_views, test_boss_fight_views_3, … | the process stopped with no error inside test_boss_fight_views_3 after 7 files (72/72 passed); that file alone: 7/7 |
+| view (2) | test_boss_fights_2_views, test_boss_models, _2, test_boss_rigs, test_boss_signature_views, _2, test_boss_telegraph_parity, test_boss_views, test_bosses_2_views, test_codex_view, test_enemy_fireball_views, test_final_boss_views, test_telegraph_parity, test_tidecaller_views, test_twin_warden_views, test_clockwork_judge_views, test_vx_looks | 128/130: the gear-spark colour (above); recoloured: the colour files 39/39; test_clockwork_judge_views 5/5 (with the sim file after the last edits: 21/21) |
+| content, debug, arch | tests/content, tests/unit/debug, tests/arch | 170/170, 27,775 asserts |
+| e2e | test_e2e_clockwork_judge, test_e2e_bosses, test_e2e_bosses_2, test_e2e_run_flow, test_e2e_old_save, test_e2e_tidecaller, test_e2e_twin_wardens | 11/11, 172 asserts, 172.4 s |
+
+The e2e: a floor-5 save (seed 1; floor 5 draws only the Judge) continued with Enter, God clicked, E opens the door,
+the stick walks in, the door seals, the owner's model rises named "The Clockwork Judge"; the stick circles while it
+records; its echo comes, shielded, its path's markers drawn before the first strike, ghosts rising as it replays;
+then the stick walks to it and the mouse's attacks land.
+
+Not run here (GitHub's shards): the rest of the suite.
+
+## 10. Shot (NB3)
+`godot --path . --audio-driver Dummy --resolution 1280x720 -s scripts/shots/nb_clockwork_judge.gd` (written to build/,
+copied by hand):
+- [`nb_shots/4_clockwork_judge_echo_replay.jpg`](nb_shots/4_clockwork_judge_echo_replay.jpg): the echo 62 ticks into
+  its replay on the Ruins stage; the script printed: "tick 310 phase 2 echo t 110 path 12 struck 5 markers 7 ribbon 7
+  ghosts 5 shielded true hero hp lost 0". The owner's model shielded, the first five ghosts risen with their rings,
+  the seven points left as clock-gear markers joined by the ribbon. Seen in the shot: a translucent grey rectangle
+  round the hero, present with JudgeViews hidden too (a diagnostic render), so not this step's; left for the lead.

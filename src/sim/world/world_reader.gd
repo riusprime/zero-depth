@@ -78,6 +78,11 @@ const ELITE_ABILITY := EliteAi.Attack.ABILITY
 ## v0.9.0 NB2: floor 4's Twin Wardens, the amber body (the boss) and the violet one (its twin).
 const KIND_TWIN_WARDEN := ActorStore.Kind.TWIN_WARDEN
 const KIND_TWIN_WARDEN_VIOLET := ActorStore.Kind.TWIN_WARDEN_VIOLET
+## v0.9.0 NB3: floor 5's Clockwork Judge, and boss_echo's "phase" (no echo, the path showing, the ghosts striking).
+const KIND_CLOCKWORK_JUDGE := ActorStore.Kind.CLOCKWORK_JUDGE
+const ECHO_NONE := BossJudge.NONE
+const ECHO_SHOW := BossJudge.SHOW
+const ECHO_REPLAY := BossJudge.REPLAY
 ## v0.9.0 NB2: a Warden turning angry (STATUS_APPLY's effect) and the chain's burn (its DAMAGE's effect).
 const EFFECT_TWIN_ANGER := BossTwin.EFFECT_ANGER
 const EFFECT_TWIN_CHAIN := BossTwin.EFFECT_BURN
@@ -187,6 +192,8 @@ const MOVE_CARD_CAST := BossAttackTable.Move.CARD_CAST
 const MOVE_TIDE := BossAttackTable.Move.TIDE  # v0.9.0 NB1 (the Tidecaller's Pull)
 const MOVE_CROSSFIRE := BossAttackTable.Move.CROSSFIRE  # v0.9.0 NB2 (the Twin Wardens)
 const MOVE_CHAIN_SWEEP := BossAttackTable.Move.CHAIN_SWEEP
+const MOVE_ECHO := BossAttackTable.Move.ECHO  # v0.9.0 NB3 (the Clockwork Judge)
+const MOVE_VERDICT := BossAttackTable.Move.VERDICT
 ## v0.9.0 NB1: boss_tide's "phase".
 const TIDE_NONE := BossTide.NONE
 const TIDE_PULL := BossTide.PULL
@@ -1789,6 +1796,16 @@ func boss_twin(i: int) -> Dictionary:
 	if i <= 0 or i >= _w.actors.size():
 		return {}
 	return BossTwin.state(_w, i)
+
+
+## v0.9.0 NB3 (BOSSES_4_5.md N3): the Clockwork Judge i's echo: {} for any other actor; else "recording" (0..1000),
+## "trail" (the points recorded), "phase" (ECHO_NONE, ECHO_SHOW, ECHO_REPLAY), and while an echo runs "progress",
+## "t", "windup", "gap", "radius", "path" ([{pos, k, at, struck}]); a Verdict winding up "verdict" {center, half,
+## locked, progress} (BossJudge.state).
+func boss_echo(i: int) -> Dictionary:
+	if i <= 0 or i >= _w.actors.size() or _w.actors.kinds[i] != KIND_CLOCKWORK_JUDGE:
+		return {}
+	return BossJudge.state(_w, i)
 
 
 ## v0.8.0 FB2 (FINAL_BOSS.md F5): boss i's Cross: {} or {"winding", "window", "progress", "arms" ([from, to, hit] per

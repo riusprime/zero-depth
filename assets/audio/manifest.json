@@ -615,6 +615,26 @@
       "loop": false
     },
     {
+      "id": "boss_telegraph_clockwork_judge",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/boss_telegraph_clockwork_judge.wav",
+      "sha256": "291106cd59e25d283586739d63476c27af27e75ba6fb1077d54250a794456798",
+      "seconds": 1.5,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -16.68,
+      "loop": false
+    },
+    {
+      "id": "boss_judge_echo",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/boss_judge_echo.wav",
+      "sha256": "c17ac4dc3f2d86d7daf8a312ac4bc7a4aad25931a52a080306a9c4421f7b0dfa",
+      "seconds": 1.1,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -18.21,
+      "loop": false
+    },
+    {
       "id": "boss_floor_burst",
       "kind": "sfx",
       "path": "assets/audio/sfx/boss_floor_burst.wav",

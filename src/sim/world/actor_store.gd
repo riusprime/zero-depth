@@ -40,6 +40,7 @@ enum Kind {
 	CONDUIT,
 	TWIN_WARDEN,  # v0.9.0 NB2 (BOSSES_4_5.md N2): the Twin Wardens' amber body, the boss (its bar, its defeat)
 	TWIN_WARDEN_VIOLET,  # v0.9.0 NB2: the violet body, its twin (BossTwin: one shared HP, linked by the chain)
+	CLOCKWORK_JUDGE,  # v0.9.0 NB3 (BOSSES_4_5.md N3): floor 5's first new boss (BossJudge: your echo)
 }
 
 const TEAM_PLAYER := 0

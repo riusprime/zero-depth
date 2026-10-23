@@ -695,6 +695,29 @@ def s_boss_twin_chain(r):
     return echo(x, 110, 0.3, 0.25, 2500, 0.3)
 
 
+def s_boss_telegraph_clockwork_judge(r):
+    """v0.9.0 NB3: the Clockwork Judge: a clock's ticks speeding up over a gear ratchet, then a low brass chime."""
+    n = n_of(1.1)
+    ticks = np.zeros(n)
+    for k, tk in enumerate([0.02, 0.15, 0.26, 0.35, 0.42, 0.48, 0.53]):
+        ping = metal_ping(0.06, 2400 + 80 * k, 2.7, 1.2, 0.01) * (0.45 + 0.05 * k)
+        ticks = mix(ticks, at(ping, tk, n))
+    ratchet = bandpass(noise(r, n), curve(1800, 900, n), 2.0) * env(n, 0.02, 0.5) * 0.25
+    chime = at(metal_ping(0.55, 330, 2.0, 2.6, 0.08), 0.6, n)
+    x = soft_clip(mix(ticks, ratchet, chime * 0.9), 1.25)
+    return echo(x, 150, 0.35, 0.3, 2200, 0.35)
+
+
+def s_boss_judge_echo(r):
+    """v0.9.0 NB3: an echo's ghost strike: a soft glassy chime over a breathy whoosh that swells, then a thump."""
+    n = n_of(0.7)
+    swell = bandpass(noise(r, n), curve(600, 2600, n), 1.6) * env(n, 0.18, 0.2) * 0.45
+    chime = metal_ping(0.4, 990, 2.4, 2.0, 0.05) * 0.5
+    thump = at(metal_ping(0.25, 120, 1.6, 4.0, 0.08), 0.18, n)
+    x = soft_clip(mix(swell, chime, thump * 0.8), 1.2)
+    return echo(x, 90, 0.4, 0.3, 3000, 0.4)
+
+
 def s_boss_floor_burst(r):
     """v0.4.0 BO: a flood's lanes bursting up (spears through the floor, molten metal): a crack and a hiss."""
     n = n_of(0.7)
@@ -1379,6 +1402,8 @@ SFX = [
     ("boss_tide_pull", s_boss_tide_pull),
     ("boss_telegraph_twin_wardens", s_boss_telegraph_twin_wardens),  # v0.9.0 NB2
     ("boss_twin_chain", s_boss_twin_chain),
+    ("boss_telegraph_clockwork_judge", s_boss_telegraph_clockwork_judge),  # v0.9.0 NB3
+    ("boss_judge_echo", s_boss_judge_echo),
     ("boss_floor_burst", s_boss_floor_burst),
     ("boss_slam", s_boss_slam),
     ("boss_laser", s_boss_laser),
