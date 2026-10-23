@@ -37,6 +37,16 @@ const V090_BUDGETS := {
 	&"hub_trophy_pedestal": 1000,
 	&"hub_collectible_pedestal": 1000,
 	&"hub_collectible_pedestal_b": 1000,
+	# v0.9.0 HB3: the owner's eight hub pieces (art list §4b; scripts/assets/hb3_prep.py).
+	&"hub_wall_segment": 3000,
+	&"hub_pillar_brazier": 1800,
+	&"hub_floor_rune": 450,
+	&"hub_sealed_gate": 2600,
+	&"hub_sealed_gate_doors": 600,
+	&"hub_credits_stone": 1500,
+	&"hub_trophy_wall": 1500,
+	&"hub_crates": 1500,
+	&"hub_crystal_planter": 1500,
 }
 const ELITE_PARTS := {
 	&"elite_breaker": ["arm_l", "arm_r", "back_slab", "body", "head", "leg_l", "leg_r"],
@@ -106,7 +116,10 @@ func test_every_kit_texture_is_listed_with_its_hash() -> void:
 		assert_eq(FileAccess.get_sha256(path), t["sha256"], "%s matches its hash" % t["id"])
 		listed[path] = true
 	for dir in [
-		"res://assets/textures/kit", "res://assets/textures/vfx", "res://assets/textures/ui"
+		"res://assets/textures/kit",
+		"res://assets/textures/vfx",
+		"res://assets/textures/ui",
+		"res://assets/textures/hub",  # v0.9.0 HB3
 	]:
 		for f in DirAccess.get_files_at(dir):
 			if f.ends_with(".png"):
@@ -150,7 +163,14 @@ func test_the_v090_models_are_listed_within_their_budgets() -> void:
 	var tex := []
 	for t: Dictionary in data.get("textures", []):
 		tex.append(StringName(t["id"]))
-	for id in [&"ground_arena", &"ground_snow", &"rune_marking"]:
+	for id in [
+		&"ground_arena",
+		&"ground_snow",
+		&"rune_marking",
+		&"hub_ground",
+		&"hub_ground_path",
+		&"hub_ground_centre",
+	]:
 		assert_has(tex, id, "%s is listed" % id)
 
 

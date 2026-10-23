@@ -106,6 +106,19 @@ func _keys(keys: Dictionary, d: Vector2) -> void:
 		e.key(keys[action], want[action])
 
 
+## v0.9.0 HB2: after the weapon pick, waits (reading only) while the hero walks up into the portal, until the run's
+## load has begun behind the cover (or no hub runs), `limit` frames at most. True when the walk happened and ended.
+func through_portal(limit: int = 600) -> bool:
+	var hub := e.main.hub
+	if hub == null or not hub.walking:
+		return false
+	for k in limit:
+		if e.main.hub == null or e.main.loads.busy():
+			return true
+		await e.test.get_tree().physics_frame  # raw frames: E2e.frames would wait the walk out
+	return false
+
+
 ## Play, then the Portal Machine: its build screen opens (what Play alone did before the hub). True when it did.
 func to_build_screen() -> bool:
 	await enter()

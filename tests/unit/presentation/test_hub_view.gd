@@ -108,6 +108,61 @@ func test_the_owners_models_are_drawn() -> void:
 	assert_eq(pedestals.size(), 2, "a hub_trophy_pedestal per floor boss")
 
 
+## v0.9.0 HB3: the owner's eight hub pieces (delivered 2026-10-23) dress the Rune Ring: his wall round the plaza (11
+## segments, the north slot the gate's), his pillar braziers each with a layered fire, his gate (its doors apart, hidden
+## when it opens), his 16 floor runes, the crates and planters, the trophy wall and the credits stone; the floor is his
+## paving, medallion and walkway; every station faces the plaza's middle.
+func test_the_owners_hub_pieces_dress_the_ring() -> void:
+	var v := _view({})
+	var ids := {}
+	for n: Node in v.plan.find_children("*", "MeshInstance3D", true, false):
+		var id: StringName = n.get_meta(&"model_id", &"")
+		if id != &"":
+			ids[id] = int(ids.get(id, 0)) + 1
+	assert_eq(ids.get(&"hub_wall_segment", 0), 11, "11 wall segments")
+	assert_eq(ids.get(&"hub_pillar_brazier", 0), _hub.pillars.size(), "a pillar per spot")
+	assert_eq(ids.get(&"hub_floor_rune", 0), 16, "16 floor runes")
+	assert_eq(ids.get(&"hub_sealed_gate", 0), 1, "the gate")
+	assert_eq(ids.get(&"hub_sealed_gate_doors", 0), 1, "its doors")
+	assert_eq(ids.get(&"hub_crates", 0) + ids.get(&"hub_crystal_planter", 0), _hub.props.size())
+	assert_eq(ids.get(&"hub_trophy_wall", 0), 1, "the trophy wall behind the pedestals")
+	assert_eq(ids.get(&"hub_credits_stone", 0), 1, "the credits stone")
+	assert_eq(v.fires.size(), _hub.pillars.size(), "a fire per pillar")
+	for f: Dictionary in v.fires:
+		assert_true(
+			f.has("halo") and f.has("pool") and f.has("light") and f.has("flames"),
+			"a fire is layered: flames, halo, floor pool, light"
+		)
+	assert_not_null(v.plan.get_node_or_null("Medallion"), "the centre medallion")
+	assert_not_null(v.plan.get_node_or_null("Paths/Ring"), "the walkway round it")
+	for s in _hub.stations:
+		var root := v.stations[s.id]["root"] as Node3D
+		assert_almost_eq(
+			root.rotation.y, HubLayout.facing(s.at), 1e-4, "%s faces the middle" % s.id
+		)
+	var open := _view({&"gate_open": true})
+	assert_false(open.gate_seal.visible, "open: the doors are gone")
+
+
+## v0.9.0 HB2: the walk into the portal: the hero climbs the steps (its node rises), the portal flares, the hero
+## shrinks into the ring, and walk_finished fires once, in about 2-3 s; the World is never stepped by it.
+func test_the_walk_into_the_portal() -> void:
+	var v := _view({})
+	watch_signals(v)
+	var tick := v.reader.tick()
+	var length := v.walk_into_portal()
+	assert_between(length, 1.8, 3.2, "about 2-3 s")
+	var top := 0.0
+	for k in int(length * 60.0) + 2:
+		v._advance_walk(1.0 / 60.0)
+		top = maxf(top, v.hero.position.y)
+	assert_gt(top, 1.0, "up the machine's steps")
+	assert_gt(v.machine.flare, 0.9, "the portal flares")
+	assert_false(v.hero.visible, "the hero is through the ring")
+	assert_signal_emit_count(v, "walk_finished", 1)
+	assert_eq(v.reader.tick(), tick, "the World holds")
+
+
 func test_the_small_menu_and_the_end_panel_rows() -> void:
 	var m := MainMenu.new("v", false)
 	add_child_autofree(m)

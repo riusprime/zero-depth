@@ -273,6 +273,77 @@ static func motes(
 	return p
 
 
+## v0.9.0 HB3 (the VX bar: layered, never flat): a brazier's fire at `at` under `parent`, `size` m across: flame licks
+## from the owner's flame sheet (fx_flame_shapes, 2 x 2: a random lick each, rising and shrinking, white-gold at the
+## root to deep orange, gone in smoke-red), a hot halo, a warm pool on the floor, a real light (HubView flickers it:
+## flicker()) and embers drifting up. Returns HubProps.glow's pieces plus {"flames", "embers"}.
+static func fire(parent: Node3D, n: String, at: Vector3, size: float) -> Dictionary:
+	var g := glow(parent, n, FIRE, GOLD_CORE, at + Vector3(0, size * 0.35, 0), size * 1.9)
+	(g["light"] as OmniLight3D).omni_range = size * 7.0
+	var p := CPUParticles3D.new()
+	p.name = n + "Flames"
+	p.position = at
+	p.amount = 16
+	p.lifetime = 0.75
+	p.preprocess = 0.75
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = size * 0.22
+	p.direction = Vector3.UP
+	p.spread = 8.0
+	p.gravity = Vector3(0, size * 1.6, 0)
+	p.initial_velocity_min = size * 0.5
+	p.initial_velocity_max = size * 1.0
+	p.scale_amount_min = 0.75
+	p.scale_amount_max = 1.15
+	p.angle_min = -12.0
+	p.angle_max = 12.0
+	p.anim_offset_max = 1.0
+	var curve := Curve.new()
+	curve.add_point(Vector2(0.0, 0.55))
+	curve.add_point(Vector2(0.25, 1.0))
+	curve.add_point(Vector2(1.0, 0.15))
+	p.scale_amount_curve = curve
+	var ramp := Gradient.new()
+	ramp.set_color(0, Color(1.0, 0.93, 0.7, 1.0))
+	ramp.set_color(1, Color(0.55, 0.08, 0.02, 0.0))
+	ramp.add_point(0.35, Color(1.0, 0.6, 0.18, 0.95))
+	ramp.add_point(0.75, Color(0.85, 0.22, 0.05, 0.55))
+	p.color_ramp = ramp
+	var q := QuadMesh.new()
+	q.size = Vector2.ONE * size * 0.95
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.vertex_color_use_as_albedo = true
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var sheet := FxTextures.get_tex("fx_flame_shapes")
+	if sheet != null:
+		m.albedo_texture = sheet
+		m.particles_anim_h_frames = 2
+		m.particles_anim_v_frames = 2
+		m.particles_anim_loop = false
+	q.material = m
+	p.mesh = q
+	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(p)
+	g["flames"] = p
+	g["embers"] = motes(parent, n + "Embers", FIRE, at + Vector3(0, size * 0.3, 0), size * 0.25, 10)
+	return g
+
+
+## A fire's light flickering at time `t` (s): a sum of three incommensurate sines round its rest energy (a look only).
+static func flicker(g: Dictionary, t: float, seed_value: float) -> void:
+	var k := (
+		1.0
+		+ 0.12 * sin(t * 9.1 + seed_value)
+		+ 0.07 * sin(t * 15.7 + seed_value * 2.3)
+		+ 0.05 * sin(t * 23.3 + seed_value * 0.7)
+	)
+	(g["light"] as OmniLight3D).light_energy = 1.4 * k
+
+
 ## The portal disc's material (the machine's swirl).
 static func portal_material() -> ShaderMaterial:
 	var m := ShaderMaterial.new()

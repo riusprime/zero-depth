@@ -121,3 +121,129 @@ Owner fields: how the hub feels, the machine's size, the camera: **OWNER ONLY**.
   says Continue resumes the saved run. Built per HUB_MOCKUPS (Continue resumes the run directly). Flagged, not decided.
 - The pause menu in a run still offers Main menu (not the hub).
 - `hub_portal_machine` at 4.6 m instead of the art list's 6.0 m (starting value).
+
+# v0.9.0 HB2: the walk into the portal
+
+Owner (PLAN `| HB2 |`): "there is no animation when taking the portal, you should click, choose weapon and then the
+character walks upstairs towards the portal and crosses it". Built by an agent on branch `v090-hb3` (owner's PC:
+i7-10700K, RTX 3060, Godot 4.7.2, Windows 11).
+
+- At the Portal Machine: E, then the weapon pick (the build screen as before). The build screen closes and the hero
+  walks from where it stands (round the machine's side first if it stood north of the steps) to the foot of the
+  machine's front steps, climbs them (its node rises to the dais, 1.28 m) and walks into the ring; the portal flares
+  as it nears (the swirl and the core glow brighten, a burst of light motes fires once), the hero shrinks into the
+  light while crossing, the camera eases toward the ring and closes in a little (zoom 1.18; none with shake off or
+  reduced motion). Then the run's load behind the cover and floor 1's arrival, as before.
+- Length: the walk at 2.6 m/s (faster when far round the machine: the walk never takes more than 2.2 s) + 0.35 s
+  crossing + 0.35 s hold. From the machine's prompt south of it: **126 frames, 2.10 s** (test_e2e_hub, below).
+- Input is ignored during it (the hub's World is held: nothing steps); a press of E / accept skips the rest.
+- Presentation and app flow only: `HubPortalWalk` (the path, sampled in frame time), `HubView.walk_into_portal`
+  (moves the hero's node, feeds the avatar walk states, the flare, the camera), `HubMachine.walk_points/set_flare`,
+  `HubSession.walk_into_portal(done, before)` (holds the hub; `done` is Main's old load call). The sim is untouched.
+- Tests: `E2e.frames()` / `loaded()` wait a walk out like a load (so every e2e that picks a weapon is unchanged);
+  `HubWalk.through_portal()` watches it on raw frames. New: test_e2e_hub `test_the_pick_walks_the_hero_up_into_the_portal`,
+  `test_a_press_skips_the_walk`; test_hub_view `test_the_walk_into_the_portal`; test_e2e_loading_cover waits the walk
+  before its "covered at once".
+
+Raw output (test_e2e_hub):
+
+```
+    HB2: the walk into the portal took 126 frames (2.10 s)
+```
+
+# v0.9.0 HB3: a bigger, rearranged, dressed Rune Ring
+
+Owner (PLAN `| HB3 |`): "a bit bigger and separate the runes a bit from the portal … use the top part of the hub to
+place all the interactive things, looking into the middle, not all loking down … decoration, floor … different
+walls"; the eight pieces of art list §4b, delivered 2026-10-23.
+
+## The layout (data/hub/rune_ring.tres, plan metres, +y north = the screen's top)
+
+| | HB | HB3 |
+|---|---|---|
+| Plaza radius | 12.5 | **16.0** |
+| Rune ring | 5.4, even | **7.8**, on the medallion's 16 sockets (`rune_angles`, measured by the prep) |
+| Spawn | (0, -10.4) | (0, -13.2) |
+| Rune Archive | (-7.4, 4.4) | 12.5 m at 135°: (-8.84, 8.84) |
+| Trophy Area | (7.4, 4.4) | 12.5 m at 45°: (8.84, 8.84) |
+| Wardrobe | (-8.8, -3.4) | 12.6 m at 165°: (-12.17, 3.26) |
+| Progression | (8.8, -3.4) | 12.6 m at 15°: (12.17, 3.26) |
+| Credits stone | (-5.4, -8.4) | 12.8 m at 70°: (4.38, 12.03), footprint 2.2 x 2.0 |
+| Alcove | (0, 15.2) | (0, 19.8) |
+| Camera | view 17 m, lean 0.25 from (0, 3.4) | view 22.5 m, lean 0.25 from (0, 4.4) |
+
+Every station stands in the top half, turned to face the plaza's middle (`HubLayout.facing`: its footprint, its
+prompt reach and its drawing turn together). Pillar braziers at 8 spots (two flanking the gate, the rest round the
+ring), 5 props (3 crate clusters, 2 crystal planters near the spawn), all solid. The north gate stays at the top,
+reachable along the gate lane; every hook stays (runes per collectible, `gate_open`, `set_robe` / RB's `set_look`,
+the Wardrobe panel, the Archive slots, the trophy states).
+
+Walking times from the spawn (test_hub `test_walking_times_from_the_spawn_stay_short`, the hub's World stepped at 60
+Hz, the hero steered straight, round the machine where it is in the way), raw output:
+
+```
+    HB3 walking times from the spawn: portal 1.62 s, wardrobe 2.97 s, progression 2.97 s, archive 3.55 s, trophy 3.55 s, credits 3.97 s
+```
+
+## The owner's eight pieces (scripts/assets/hb3_prep.py; mi2_prep's weld, Godot's simplifier, atlas, bake)
+
+Command: `GODOT=<godot> python -I scripts/assets/hb3_prep.py` (the venv with numpy, Pillow, xatlas, scipy; backend
+`godot`, scripts/assets/gd_simplify.gd). Raw triangles -> installed (budget), size in game:
+
+| Piece | Raw tris | Installed | Map | Size (m) | How |
+|---|---|---|---|---|---|
+| `hub_wall_segment` | 18,517 | 2,975 (3,000) | 1024 | 9.39 x 4.6 x 2.36 | re-bent onto the plaza's ring (its own curve was about 6 m radius): scaled to 30° of a 16 m ring, straightened on a fitted quadratic, wrapped; written in the plaza's frame; 11 copies (the north slot is the gate's); the 5 south ones sunk to show 1.5 m (the low south rim, nothing tall before the camera) |
+| `hub_pillar_brazier` | 19,036 | 1,798 (1,800) | 1024 | 1.65 x 3.6 x 1.54 | 8 placed; the game's fire in its bowl |
+| `hub_floor_rune` | 19,764 | 448 (450) | 512 | 1.25 x 0.14 x 1.25 | 16, on the sockets, glyph to the middle; lit: its carved grooves glow blue (a shader on its own map) + the halo, floor pool and light |
+| `hub_sealed_gate` | 18,987 (14,062 kept) | 2,598 (2,600) | 1024 | 6.4 x 5.05 x 2.22 | cut by region from its doors, both in the whole gate's frame |
+| `hub_sealed_gate_doors` | 4,925 of the gate | 597 (600) | 1024 | 2.66 x 3.93 x 0.88 | hidden when the gate opens; the violet sigil and glow on it |
+| `hub_credits_stone` | 3,998 of hub_props | 1,500 (1,500) | 1024 | 2.2 x 1.68 x 2.05 | the Credits station |
+| `hub_trophy_wall` | 7,525 of hub_props | 1,499 (1,500) | 1024 | 3.8 x 2.86 x 2.04 | behind the Trophy pedestals (the code wall is its stand-in) |
+| `hub_crates` | 4,740 of hub_props (2 pieces) | 1,498 (1,500) | 1024 | 1.9 x 1.23 x 2.30 | 3 placed at the edges |
+| `hub_crystal_planter` | 3,210 of hub_props | 1,496 (1,500) | 1024 | 1.45 x 2.4 x 1.29 | 2 placed by the spawn |
+| `hub_ground.png` | 1254² | 1024² | | tiled every 6 m | the plaza's paving |
+| `hub_ground_path.png` | 1536 x 1024 | 1024 x 683 | | 2.4 m wide | the walkway: spawn lane, a ring past the stations' fronts, the gate lane, a band along the walls |
+| `hub_ground_centre.png` | 1254² | 1024² (alpha) | | 20.2 m across | the medallion: it had 14 sockets (none at 3 and 9 o'clock); the prep found them, fitted their circle (socket ring 0.7729 of its radius) and copied the top socket, turned, to 3 and 9 o'clock: 16 |
+
+hub_props was cut by its connected pieces' centres (raw x): the credits stone, the trophy wall, the crates/barrel/
+scrolls (two pieces), the planter. All listed in assets/models/manifest.json with their sha256; the credits list
+rebuilt (`scripts/content/build_credits.gd`). `ShopModels` reads the nine with `as_is` (prepared at game size and
+frame). Every piece keeps a code stand-in when it isn't installed (L15).
+
+**Fire (VX bar):** each pillar's fire is layered: flame licks from the owner's `fx_flame_shapes` sheet (16 particles,
+rising and shrinking, white-gold to deep orange), a hot halo, a warm pool on the floor, a flickering light, embers.
+
+## Tests (Git Bash, the owner's PC, own APPDATA, one Godot process at a time)
+
+```
+godot --headless --path . --editor --import --quit
+gdformat --check src scripts tests && gdlint src scripts tests      # Success: no problems found
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests/content -gtest=<test_hub, test_hub_view> -ginclude_subdirs -gexit
+godot ... -gtest=<tests/e2e, the first 54 files by name> -gexit ; then the other 53
+```
+
+| Run | Build | Result |
+|---|---|---|
+| tests/content + test_hub + test_hub_view | 94b4c18c (merged with claude/world-combat-v090 at 67bc60a8, RB) | 32 scripts, 172 tests, 172 passing (an earlier run: 3 red, fixed: the pillar list as a PackedVector2Array didn't hash (CanonicalValue), the credits list not rebuilt) |
+| tests/e2e, first half (54 files) | 94b4c18c | 87 tests, 86 passing; 1 red: `test_e2e_damage_soak` "no orphan nodes" 17 vs 0 in the batch (HB's known batch red); **alone: 1/1 passing** |
+| tests/e2e, second half (53 files) | 94b4c18c | 105 tests, 103 passing; 2 red, fixed after: test_e2e_hub's new walk test asserted the closed build screen gone in its own frame (it is queued for deletion; now checked so); test_e2e_wardrobe (RB's) still looked for the run pause's Main menu row, which HB made "To the Rune Ring" (now `HubWalk.from_run`). Re-run `test_e2e_hub.gd` + `test_e2e_wardrobe.gd`: 10 tests, 10 passing |
+
+test_e2e_run_flow, test_e2e_saves, test_e2e_pad_menus and every e2e using `start_from_menu` are in the two halves
+(green). Not run here: the full GitHub suite; timing (none measured).
+
+## Shots
+
+`godot --path . --audio-driver Dummy --resolution 1920x1080 -s scripts/shots/hb3_shots.gd` (RTX 3060, Vulkan
+Forward+), written to `build/shots/v0.9.0/hb3/`, copied by hand into `hb_shots/`:
+
+- `en_hb3_1_hub_spawn.png`: the hub from the spawn (the whole ring in view, the gate at the top);
+- `en_hb3_2_hub_top_half.png`: a tool view from above the top half (camera pitched to 52°): the stations facing in;
+- `en_hb3_3_walk_up_the_steps.png`, `en_hb3_4_walk_through_the_portal.png`: the walk, mid-climb and crossing.
+
+Owner fields: how the walk and the new hub feel, the sizes, the camera: **OWNER ONLY**.
+
+## Open points for the lead
+
+- The medallion had 14 sockets; two were added by the prep (copied from its top socket) so the 16 runes each sit in
+  one. The spacing round the ring is the owner's image's (not even).
+- The stations' plinths (the Archive's ledge, the Trophy step) now wear the paving; they are still code boxes.
