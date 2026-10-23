@@ -72,7 +72,9 @@ func _init() -> void:
 func sync(reader: WorldReader) -> void:
 	var spec := reader.attack_spec(WorldReader.ATTACK_BOLT)
 	look = BeamLooks.look_of(PackedStringArray(spec.get("elements", [])))
-	var ws := reader.wisps() if not reader.player_dead() else []
+	var ws: Array[Dictionary] = []  # dead: none (an untyped [] in a ternary fails the typed assignment)
+	if not reader.player_dead():
+		ws = reader.wisps()
 	wisps = mini(ws.size(), WISPS_MAX)
 	places.clear()
 	for k in WISPS_MAX:
