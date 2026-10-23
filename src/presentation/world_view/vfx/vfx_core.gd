@@ -26,7 +26,24 @@ const POOLS := {
 	&"rockburst": ["fx_rock_burst", Vector2(2, 2), false, 0.0, 48, "fx_fire_noise"],
 	&"steam": ["fx_steam_puffs", Vector2(2, 2), false, 0.04, 96, "fx_fire_noise"],
 	&"shatter": ["fx_crystal_shatter", Vector2(2, 2), true, 0.0, 32, "fx_fire_noise"],
+	# v0.9.0 VX (VFX_AUDIT.md; owner: "every VFX has a high quality layered effect"): the layers the hero's element
+	# effects add. A soft glow halo and an energy ring (made in code, CODE_TEX, until the owner's PNG of that id is
+	# installed), the owner's ember sparks and frost burst drawn as additive light, and the VX texture requests
+	# (docs/art/requests/v0.9.0_ART_LIST.md §7c), whose pools exist only once their PNG is installed (VfxLayer falls back
+	# to the pools above without them).
+	&"glow": ["fx_soft_glow", Vector2(1, 1), true, 0.0, 256, "fx_fire_noise"],
+	&"ring": ["fx_energy_ring", Vector2(1, 1), true, 0.0, 64, "fx_fire_noise"],
+	&"ember": ["fx_ember_sparks", Vector2(2, 2), true, 0.0, 192, "fx_fire_noise"],
+	&"flake": ["fx_frost_burst", Vector2(1, 1), true, 0.0, 48, "fx_fire_noise"],
+	&"shard": ["fx_frost_shards", Vector2(2, 2), true, 0.0, 128, "fx_fire_noise"],
+	&"drop": ["fx_blood_drops", Vector2(2, 2), false, 0.0, 128, "fx_fire_noise"],
+	&"fork": ["fx_lightning_fork", Vector2(2, 2), true, 0.0, 96, "fx_fire_noise"],
+	&"muzzle": ["fx_muzzle_flash", Vector2(2, 2), true, 0.0, 48, "fx_fire_noise"],
 }
+## v0.9.0 VX: the sheets made in code when the owner's PNG isn't installed (V45's manifest: "fallback": "code").
+const CODE_TEX: Array[String] = ["fx_soft_glow", "fx_energy_ring"]
+## v0.9.0 VX: the pools whose sheet is a texture request: they are made only once it is installed.
+const OPTIONAL_POOLS: Array[StringName] = [&"shard", &"drop", &"fork", &"muzzle"]
 ## Floor-mark textures: the texture and its atlas cell (-1: the whole texture; the splatter sheet is 2 x 2).
 const MARK_TEX := {
 	&"scorch": ["fx_scorch_mark", -1],
@@ -38,6 +55,8 @@ const MARK_TEX := {
 	&"splat3": ["fx_splatter_mark", 3],
 	# v0.8.0 TX2: the cracks a slam, a spike row or a crater leaves (one cell: one kind, so overlapping ones merge).
 	&"cracks": ["fx_ground_cracks", 0],
+	# v0.9.0 VX V43: Fire's burning ground under its flames, once the owner's fire_patch is installed (else none).
+	&"fire_patch": ["fire_patch", -1],
 }
 const DIR := "res://assets/textures/vfx/"
 const LIGHTS := 10
@@ -66,6 +85,8 @@ const STATUS_LIGHTS_MAX := 4
 ## The cap then thins the effects gradually instead of cutting the frame's last ones off. Deterministic: it reads only
 ## this frame's counts, in the callers' fixed draw order. Starting value.
 const PRESSURE := 0.7
+## v0.9.0 VX: what a missing pool reads as (_put, _pressed).
+const NO_POOL := {}
 
 const SHADER := """
 shader_type spatial;
@@ -162,6 +183,8 @@ func _init() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	for id: StringName in POOLS:
 		var spec: Array = POOLS[id]
+		if id in OPTIONAL_POOLS and not has_tex(spec[0]):
+			continue  # v0.9.0 VX: a texture request not delivered yet (VfxLayer uses its fallback)
 		var mat := ShaderMaterial.new()
 		mat.shader = _shader(bool(spec[2]))
 		mat.set_shader_parameter("atlas", _tex(spec[0]))
@@ -233,7 +256,39 @@ static func warm() -> void:
 
 static func _tex(id: String) -> Texture2D:
 	var path := DIR + id + ".png"
-	return load(path) if ResourceLoader.exists(path) else null
+	if ResourceLoader.exists(path):
+		return load(path)
+	return _code_tex(id) if id in CODE_TEX else null
+
+
+## v0.9.0 VX: the code-made sheet of `id` (CODE_TEX), made once per run: white, the shape in its alpha.
+## - fx_soft_glow: a soft round halo falling off smoothly to nothing at its edge;
+## - fx_energy_ring: a bright thin ring with a softer glow either side and faint wisps breaking it up.
+static func _code_tex(id: String) -> Texture2D:
+	var key := "code/" + id
+	if _mark_cache.has(key):
+		return _mark_cache[key]
+	var n := 64 if id == "fx_soft_glow" else 128
+	var img := Image.create(n, n, true, Image.FORMAT_RGBA8)
+	for y in n:
+		for x in n:
+			var d := Vector2((x + 0.5) / n * 2.0 - 1.0, (y + 0.5) / n * 2.0 - 1.0)
+			var r := d.length()
+			var a := 0.0
+			if id == "fx_soft_glow":
+				a = clampf(1.0 - r, 0.0, 1.0)
+				a = a * a * (3.0 - 2.0 * a) * clampf(1.0 - r * r, 0.0, 1.0)
+			else:
+				var ang := d.angle()
+				var wisp := 0.75 + 0.25 * sin(ang * 7.0 + sin(ang * 3.0) * 2.0)
+				var band := clampf(1.0 - absf(r - 0.78) / 0.05, 0.0, 1.0)
+				var soft := clampf(1.0 - absf(r - 0.76) / 0.2, 0.0, 1.0)
+				a = clampf(band * wisp + soft * soft * 0.45 * wisp, 0.0, 1.0) * float(r < 1.0)
+			img.set_pixel(x, y, Color(1, 1, 1, a))
+	img.generate_mipmaps()
+	var t := ImageTexture.create_from_image(img)
+	_mark_cache[key] = t
+	return t
 
 
 ## A floor-mark texture: the whole texture, or one cell of a 2 x 2 sheet cut out (a decal takes no atlas cell).
@@ -371,7 +426,9 @@ func _put(
 	pool: StringName, xf: Transform3D, c: Color, cell: int, dissolve: float, sd: float
 ) -> bool:
 	sprites_asked += 1
-	var p: Dictionary = pools[pool]
+	var p: Dictionary = pools.get(pool, NO_POOL)  # v0.9.0 VX: a texture request's pool may not exist
+	if p.is_empty():
+		return false
 	var i: int = p["used"]
 	if i >= int(p["cap"]) or _sprite_left <= 0:
 		return false
@@ -408,6 +465,18 @@ func _facing(base: Vector3, w: float, h: float, centred: bool, roll: float = 0.0
 	var b := Basis(right * w, up * h, _cam_basis.z)
 	var o := base if centred else base + up * (h * 0.5)
 	return Transform3D(b, o)
+
+
+## v0.9.0 VX: a sprite lying flat on the floor at `p`, `w` across, turned `roll` radians about the vertical.
+static func _flat(p: Vector3, w: float, roll: float = 0.0) -> Transform3D:
+	var x := Vector3(cos(roll), 0.0, -sin(roll)) * w
+	var y := Vector3(sin(roll), 0.0, cos(roll)) * -w
+	return Transform3D(Basis(x, y, Vector3.UP), p)
+
+
+## v0.9.0 VX: whether pool `id` exists (a texture request's pool only once its PNG is installed).
+func has_pool(id: StringName) -> bool:
+	return pools.has(id)
 
 
 ## A ribbon from `a` to `b` `w` wide, facing the camera, the texture's width along it (lightning).
@@ -502,7 +571,9 @@ func _thin(pool: StringName, n: int) -> int:
 
 ## True while pool `pool` is past PRESSURE of its cap, or the frame's pieces past PRESSURE of MAX_SPRITES.
 func _pressed(pool: StringName) -> bool:
-	var p: Dictionary = pools[pool]
+	var p: Dictionary = pools.get(pool, NO_POOL)
+	if p.is_empty():
+		return false
 	return (
 		int(p["used"]) >= int(float(p["cap"]) * PRESSURE)
 		or MAX_SPRITES - _sprite_left >= int(MAX_SPRITES * PRESSURE)
@@ -602,7 +673,7 @@ func _lay_marks() -> void:
 # --- Counts (tests and the bench) ------------------------------------------------------------------------------
 ## How many pieces a pool drew this frame.
 func used(pool: StringName) -> int:
-	return int((pools[pool] as Dictionary)["used"])
+	return int((pools[pool] as Dictionary)["used"]) if pools.has(pool) else 0
 
 
 ## The light requests this frame (before the LIGHTS brightest are kept).
@@ -632,6 +703,11 @@ func marks_of(tex: StringName) -> int:
 
 
 # --- v0.8.0 AV: helpers for the attack views' drawers (FireballViews, StoneSpikeViews) -----------------------------
+## v0.9.0 VX: one sprite of pool `pool` lying flat on the floor at `p`, `s` across (a ground ring); false when full.
+func flat_sprite(pool: StringName, p: Vector3, s: float, c: Color, cell: int, roll: float) -> bool:
+	return _put(pool, _flat(p, s, roll), c, cell, 0.0, 0.0)
+
+
 ## A light request merged into a cluster (_light_merged), for a drawer outside this class.
 func light_merged(p: Vector3, c: Color, energy: float, rng: float, merge: float) -> void:
 	_light_merged(p, c, energy, rng, merge)

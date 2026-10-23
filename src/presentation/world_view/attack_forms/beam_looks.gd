@@ -15,15 +15,21 @@ extends RefCounted
 ## - venom: toxic green, a thick core with bubbles along its edges;
 ## - bleed: dark red, heavy, streaked darker.
 
+## v0.9.0 VX V1/V2 (VFX_AUDIT.md): the colours come from the one element palette (ElementLooks: a look's core is its
+## element's hot centre, its edge the element's own colour; Bleed dark red), and a beam carrying two elements takes the
+## first one's look and centre and the second one's edge (ElementLooks.pair), as the Orbs do (ART_DIRECTION §4), no
+## longer a fixed precedence that dropped the second.
+
 const LOOKS: Array[StringName] = [&"default", &"fire", &"lightning", &"frost", &"venom", &"bleed"]
-## Spec element -> look, first match wins when the beam carries two (fire over lightning over frost ...).
-const OF_ELEMENT := [
-	["ember", &"fire"],
-	["storm", &"lightning"],
-	["frost", &"frost"],
-	["venom", &"venom"],
-	["bleed", &"bleed"],
-]
+## Look -> its element (ElementLooks; &"" the Gun's energy blue).
+const ELEMENT := {
+	&"default": &"",
+	&"fire": &"ember",
+	&"lightning": &"storm",
+	&"frost": &"frost",
+	&"venom": &"venom",
+	&"bleed": &"bleed",
+}
 ## Look -> VfxLayer kind for the beam's element accent (VfxLayer.line) and its impact (&"" = none).
 const VFX_KIND := {
 	&"default": &"",
@@ -33,14 +39,14 @@ const VFX_KIND := {
 	&"venom": &"venom",
 	&"bleed": &"bleed",
 }
-## [core, edge, scroll (tiles a second), width (m), impact spikes, impact softness, impact flicker (Hz)].
+## [scroll (tiles a second), width (m), impact spikes, impact softness, impact flicker (Hz)].
 const STYLE := {
-	&"default": [Color("#E8F6FF"), Color("#3E8BFF"), 2.2, 0.30, 4, 0.55, 9.0],
-	&"fire": [Color("#FFE7A6"), Color("#FF6A1A"), 1.6, 0.42, 0, 0.9, 7.0],
-	&"lightning": [Color("#F4F8FF"), Color("#7FB2FF"), 4.5, 0.30, 6, 0.35, 17.0],
-	&"frost": [Color("#F6FEFF"), Color("#9FE9FF"), 1.1, 0.32, 4, 0.25, 4.0],
-	&"venom": [Color("#DDFF9E"), Color("#46D22A"), 1.3, 0.38, 0, 0.8, 5.0],
-	&"bleed": [Color("#FF7080"), Color("#8E0A1C"), 1.0, 0.40, 3, 0.7, 4.5],
+	&"default": [2.2, 0.30, 4, 0.55, 9.0],
+	&"fire": [1.6, 0.42, 0, 0.9, 7.0],
+	&"lightning": [4.5, 0.30, 6, 0.35, 17.0],
+	&"frost": [1.1, 0.32, 4, 0.25, 4.0],
+	&"venom": [1.3, 0.38, 0, 0.8, 5.0],
+	&"bleed": [1.0, 0.40, 3, 0.7, 4.5],
 }
 ## The code strip's size (pixels): tileable along X.
 const TEX_W := 256
@@ -50,33 +56,37 @@ const TEX_PREFIX := "beam_core_"
 static var _made := {}
 
 
-## The look of a beam carrying `elements` (AttackSpec.elements order).
+## The look of a beam carrying `elements`: its first element's (AttackSpec.elements order, V2).
 static func look_of(elements: PackedStringArray) -> StringName:
-	for pair: Array in OF_ELEMENT:
-		if elements.has(pair[0]):
-			return pair[1]
-	return &"default"
+	return ElementLooks.LOOK.get(ElementLooks.first(elements), &"default")
 
 
+## A look's white-hot centre (one element: ElementLooks.hot).
 static func core(look: StringName) -> Color:
-	return STYLE[look][0]
+	return ElementLooks.hot(ELEMENT.get(look, &""))
 
 
+## A look's edge: its element's own colour (never darker than luminance 0.15: the hero's shots have no dark edge).
 static func edge(look: StringName) -> Color:
-	return STYLE[look][1]
+	return ElementLooks.core(ELEMENT.get(look, &""))
+
+
+## V2: the [centre, edge] colours of a form carrying `elements` (the first's centre, the second's edge).
+static func colors(elements: PackedStringArray) -> Array[Color]:
+	return ElementLooks.pair(elements)
 
 
 static func scroll(look: StringName) -> float:
-	return STYLE[look][2]
+	return STYLE[look][0]
 
 
 static func width(look: StringName) -> float:
-	return STYLE[look][3]
+	return STYLE[look][1]
 
 
 ## The impact's [spikes, softness, flicker].
 static func impact(look: StringName) -> Array:
-	return [STYLE[look][4], STYLE[look][5], STYLE[look][6]]
+	return [STYLE[look][2], STYLE[look][3], STYLE[look][4]]
 
 
 ## The strip of `look`: the owner's beam_core_<look> PNG when installed, else the code-made one (cached).

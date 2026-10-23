@@ -329,6 +329,10 @@ func _setup_effects() -> void:
 		bombs.vfx = layer  # v0.9.0 BM: the blasts' element bursts
 		layer.drawers.append(bombs.draw_fx)
 		layer.drawers.append(lances.draw_fx)  # v0.9.0 AF1: the release's element accent and sparks
+		# v0.9.0 VX: the forms' element accents, launches, catches and collapses (HeroFx, VFX_AUDIT.md)
+		for v: Node in [voids, scatter, glaives, seekers, waves, wisps]:
+			layer.drawers.append(Callable(v, &"draw_fx"))
+		seekers.vfx_on = true  # V29: the trail motes become the element's own sprites
 	element_fx.forms_drawn = true  # MX3 draws the spec forms (rings, spec patches, bombs)
 	ability_fx.forms_drawn = true
 	add_child(modifier_marks)  # v0.6.0 MX4
@@ -449,7 +453,6 @@ func _setup_devices(palette: Dictionary) -> void:
 	transit.arrival_gate = arrival_gate
 	transit.altar = altar
 	transit.rig = rig
-	lances.rig = rig  # v0.9.0 AF1b: the release's camera kick
 	transit.deep_gate = deep_gate
 	transit.ascension = ascension  # v0.7.5 AP
 	transit.loop_device = loop_device  # v0.8.0 P2

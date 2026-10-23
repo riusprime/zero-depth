@@ -14,6 +14,9 @@ const IMPACT_SIZE := 0.9
 const MUZZLE_SIZE := 0.55
 ## The strip tiles this many times a metre along the beam.
 const TILES_PER_M := 0.6
+## v0.9.0 VX V8: the impact's element extra plays every EXTRA_EVERY ticks (twice a second) for EXTRA_TICKS.
+const EXTRA_EVERY := 30.0
+const EXTRA_TICKS := 18.0
 
 const BEAM_SHADER := """
 shader_type spatial;
@@ -73,6 +76,7 @@ var _beam_mat: Array[ShaderMaterial] = []
 var _impact_mat: Array[ShaderMaterial] = []
 var _beams: Array[Dictionary] = []
 var _look_set := &""
+var _form := FormLook.new()
 
 
 func _init() -> void:
@@ -116,11 +120,15 @@ static func _shader(code: String) -> Shader:
 	return _shaders[code]
 
 
-## Each tick: the beams now and their look.
+## Each tick: the beams now and their look (v0.9.0 VX V48: read again only when the build changes).
 func sync(reader: WorldReader) -> void:
 	_beams = reader.beams()
-	look = BeamLooks.look_of(reader.beam_elements())
-	if look != _look_set:
+	var d := reader.attack_digest()
+	if not _form.read_once or d != _form.digest:
+		_form.read_once = true
+		_form.digest = d
+		_form.set_elements(reader.beam_elements())
+		look = _form.look
 		_set_look(look)
 	shown = mini(_beams.size(), BEAMS_MAX)
 	impacts = 0
@@ -171,6 +179,8 @@ func _place_ribbons() -> void:
 		_beam_mat[k].set_shader_parameter(&"length_m", len)
 
 
+## The look's strip, scroll and impact shape (its first element), in the V2 colours (the first element's centre, the
+## second's edge: FormLook).
 func _set_look(l: StringName) -> void:
 	_look_set = l
 	var tex := BeamLooks.texture(l)
@@ -178,13 +188,13 @@ func _set_look(l: StringName) -> void:
 	for k in BEAMS_MAX:
 		var bm := _beam_mat[k]
 		bm.set_shader_parameter(&"strip", tex)
-		bm.set_shader_parameter(&"core", BeamLooks.core(l))
-		bm.set_shader_parameter(&"edge", BeamLooks.edge(l))
+		bm.set_shader_parameter(&"core", _form.core)
+		bm.set_shader_parameter(&"edge", _form.edge)
 		bm.set_shader_parameter(&"scroll", BeamLooks.scroll(l))
 		bm.set_shader_parameter(&"tiles", TILES_PER_M)
 		for m: ShaderMaterial in [_impact_mat[k], _muzzle.material_override as ShaderMaterial]:
-			m.set_shader_parameter(&"core", BeamLooks.core(l))
-			m.set_shader_parameter(&"edge", BeamLooks.edge(l))
+			m.set_shader_parameter(&"core", _form.core)
+			m.set_shader_parameter(&"edge", _form.edge)
 			m.set_shader_parameter(&"spikes", float(imp[0]))
 			m.set_shader_parameter(&"soft", float(imp[1]))
 			m.set_shader_parameter(&"flicker", float(imp[2]))
@@ -198,7 +208,7 @@ func draw_fx(layer: VfxCore) -> void:
 	var fx := layer as VfxLayer
 	var kind: StringName = BeamLooks.VFX_KIND[look]
 	var now := layer.now()
-	var col := BeamLooks.edge(look)
+	var col := _form.edge
 	for k in shown:
 		var b: Dictionary = _beams[k]
 		var a := SimPlane.to_3d(b["from"], HEIGHT)
@@ -216,3 +226,10 @@ func draw_fx(layer: VfxCore) -> void:
 			var c := Color(col.r * 2.0, col.g * 2.0, col.b * 2.0, 1.0 - t)
 			layer.sprite(&"spark", e + off, 0.22 * (1.0 - t), c, j % 4, 0.0)
 		layer.light_merged(e + Vector3(0, 0.4, 0), col, 1.6, 3.0, 1.5)
+		# v0.9.0 VX V8: the element's extra at the beam's end (HeroFx.impact, V4's), at most twice a second per beam,
+		# never on every damage tick: one plays every EXTRA_EVERY ticks and lasts EXTRA_TICKS.
+		var u := fposmod(now + k * 7.0, EXTRA_EVERY) / EXTRA_TICKS
+		if u < 1.0:
+			var dir := (e - a).normalized()
+			var cyc := int((now + k * 7.0) / EXTRA_EVERY)
+			HeroFx.impact(layer, _form.kind, e, dir, u, sd + cyc * 31, 0.9)

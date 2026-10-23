@@ -37,8 +37,20 @@ extends AttackFormCanvas
 const RING_ARCS_MAX := 12
 const RING_THROW_TICKS := 6.0
 
+## v0.9.0 VX: a muzzle spark's and a Halo ring's life (ticks), and the Seekers' fan between darts (radians).
+const MUZZLE_TICKS := 6.0
+const HALO_TICKS := 8.0
+const SEEKER_FAN := 0.55
+## A muzzle spark this far out along the aim (m); a Halo volley's ground ring this wide (radius, m).
+const MUZZLE_M := 0.55
+const HALO_RING_M := 0.8
+
 ## v0.8.0 AO: the shock arcs and storm strikes laid since the view began, one per arc per sync (for the tests).
 var ring_arcs_drawn := 0
+## v0.9.0 VX: the volley cues (muzzle sparks, Halo rings) started since the view began (the tests).
+var volley_cues := 0
+## v0.9.0 VX V48: the Gun shot's look, read once per build.
+var _form := FormLook.new()
 
 
 # --- Live wiring ----------------------------------------------------------------------------------------------
@@ -56,6 +68,7 @@ func sync(reader: WorldReader) -> void:
 	_sync_crits(reader)
 	_sync_mx2_forms(reader)
 	_sync_casts(reader)  # v0.6.5 WN5a: the wand's small spells where they are cast
+	_sync_volley(reader)  # v0.9.0 VX V3, V27, V33, V35
 
 
 ## A look adds something over the v0.5 blade or dart only with an element, a cue or a damage weight.
@@ -471,6 +484,71 @@ static func hook_child(spec: Dictionary, trigger: int, form: int) -> Dictionary:
 		if int(h.get("trigger", -1)) == trigger and int(c.get("form", -1)) == form:
 			return c
 	return {}
+
+
+# --- v0.9.0 VX: the volley cues -------------------------------------------------------------------------------
+## Each Gun volley (WorldReader.shot_fired: the sim fired one this tick) gets its launch cue, drawn by the effects
+## layer (HeroFx), one per volley, never one per copy: a muzzle spark in the element's colours at the hero's aim (V3:
+## the Orbs), fanned three ways for the Seekers' three darts (V27), and at the back too when Backfire mirrors the shot
+## (V35); a Halo volley (copies evenly all round) gets a quick ground ring instead, in a ground-safe colour (V33, V49).
+## The other forms draw their own launch (the Lance's burst, the Scatter's cone, the Laser's muzzle, the Bomb, the Void,
+## the Wave, the Glaive). None at Low (HeroFx.LOW).
+func _sync_volley(reader: WorldReader) -> void:
+	if vfx == null or not reader.shot_fired() or reader.player_dead():
+		return
+	if (
+		reader.lance_active()
+		or reader.scatter_active()
+		or reader.glaive_active()
+		or reader.bomb_active()
+		or reader.void_active()
+		or reader.wave_active()
+		or reader.beam_firing()
+	):
+		return
+	_form.refresh(reader)
+	var aim := Kin.dir(reader.aim_angle()).angle()
+	if _form.directions == AttackFormLooks.DIR_CIRCLE:
+		_push_cue(&"halo", aim, HALO_TICKS)
+		return
+	if reader.seekers_active():
+		for k in 3:
+			_push_cue(&"muzzle", aim + SEEKER_FAN * (k - 1), MUZZLE_TICKS)
+		return
+	_push_cue(&"muzzle", aim, MUZZLE_TICKS)
+	if _form.directions == AttackFormLooks.DIR_BACK:
+		_push_cue(&"muzzle", aim + PI, MUZZLE_TICKS)
+
+
+## A volley cue `age` ticks in: the muzzle spark MUZZLE_M out along its aim, or the Halo ring at the hero's feet.
+func _draw_cue(e: Dictionary, age: float) -> void:
+	if vfx == null:
+		return
+	var u := clampf(age / maxf(float(e["life"]), 1.0), 0.0, 1.0)
+	var o: Vector2 = e["origin"]
+	if e["kind"] == &"halo":
+		var g := AttackFormLooks.ground_safe(e["color"])
+		HeroFx.ground_ring(vfx, SimPlane.to_3d(o, 0.0), HALO_RING_M, g, u, int(e["seed"]))
+		return
+	var d := _dir(float(e["angle"]))
+	var p := SimPlane.to_3d(o + d * MUZZLE_M, BOLT_H)
+	HeroFx.muzzle(vfx, p, SimPlane.to_3d(d, 0.0), e["hot"], e["color"], u, int(e["seed"]))
+
+
+func _push_cue(kind: StringName, angle: float, life: float) -> void:
+	volley_cues += 1
+	_push(
+		{
+			"kind": kind,
+			"origin": _player,
+			"angle": angle,
+			"start": float(_tick),
+			"life": life,
+			"seed": _next_seed(),
+			"hot": _form.core,
+			"color": _form.edge,
+		}
+	)
 
 
 # --- v0.6.5 WN5a: the wand's casts ----------------------------------------------------------------------------

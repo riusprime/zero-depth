@@ -23,6 +23,8 @@ const FROST_MARK := Color(0.78, 0.93, 1.0, 0.8)
 const VENOM_MARK := Color(0.2, 0.55, 0.12, 0.85)
 const BLOOD_MARK := Color(0.32, 0.02, 0.04, 0.9)
 const VOID_MARK := Color(0.12, 0.04, 0.2, 0.85)
+## v0.9.0 VX V43: the fire_patch decal's tint (Fire's core, ground-safe: AttackFormLooks.ground_safe keeps it).
+const FIRE_PATCH_TINT := Color(1.0, 0.667, 0.2, 0.9)
 ## The closest two flames of different patches stand in one frame (m): overlapping patches (a dash's Flame Trail)
 ## thin out to about one layer of flames (owner, 2026-10-12: "that's too much fire").
 const FLAME_SPACING := 0.8
@@ -258,6 +260,10 @@ func _fire(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
 		2.5
 	)
 	mark(sd * MARK_KINDS, &"scorch", c, r * 1.1, SCORCH)
+	# v0.9.0 VX V43: the owner's fire_patch under the flames once installed (the flames alone are the fallback), tinted
+	# Fire's own colour, which keeps out of the telegraphs' hostile hues (V49: ground_safe leaves it as it is).
+	if has_tex("fire_patch"):
+		mark(sd * MARK_KINDS + 5, &"fire_patch", c, r, FIRE_PATCH_TINT)
 
 
 ## A flame at `p`, unless one already burns within FLAME_SPACING this frame; true when drawn.
