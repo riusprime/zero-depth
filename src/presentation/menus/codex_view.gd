@@ -231,6 +231,12 @@ func open(p: StringName) -> void:
 	focus_first()
 
 
+## v0.9.0 HB: shows page `p` before the view is in the tree (the hub's Trophy Area opens on the Achievements); its
+## first focus comes with focus_first, so no scroll of the page it replaced is left waiting.
+func start_on(p: StringName) -> void:
+	_set_page(p)
+
+
 func focus_first() -> void:
 	if page == ACHIEVEMENTS and achievements_page != null and not achievements_page.rows.is_empty():
 		achievements_page.focus_first()

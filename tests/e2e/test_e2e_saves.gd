@@ -14,9 +14,11 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
+## The main menu's Continue while it is offered (v0.9.0 HB: without a save it is greyed out), else null.
 func _continue_button(main: Main) -> Node:
 	var menu := main.get_node_or_null("UI/MainMenu")
-	return menu.find_child("Continue", true, false) if menu != null else null
+	var b := menu.find_child("Continue", true, false) as Button if menu != null else null
+	return b if b != null and not b.disabled else null
 
 
 func _focused(main: Main) -> Control:
@@ -126,6 +128,12 @@ func test_a_death_deletes_the_save() -> void:
 			break
 	assert_not_null(panel, "standing still, you die")
 	assert_false(main.saves.store.has_save(), "the death deleted the save")
+	await e.tap(KEY_DOWN)
+	await e.tap(KEY_ENTER)  # v0.9.0 HB: the end panel's Hub, then the hub's pause -> Main menu
+	await e.frames(2)
+	assert_not_null(main.hub)
+	await e.tap(KEY_ESCAPE)
+	await e.tap(KEY_DOWN)
 	await e.tap(KEY_DOWN)
 	await e.tap(KEY_ENTER)
 	await e.frames(2)
