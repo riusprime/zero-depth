@@ -26,7 +26,7 @@ const FLASH_SECONDS := 0.5
 
 const SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
+render_mode unshaded, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 
 uniform vec4 tint : source_color = vec4(1.0, 0.67, 0.2, 1.0);
 uniform int glyph = 1;
@@ -102,7 +102,7 @@ float hash(float n) {
 vec3 stroke(float d, float w, float glow_w) {
 	float core = 1.0 - smoothstep(w * 0.4, w, d);
 	float glow = exp(-d / glow_w);
-	return mix(tint.rgb * glow * 0.9, vec3(1.0, 0.97, 0.9), core * 0.65) + tint.rgb * core;
+	return mix(tint.rgb * glow * 0.9, vec3(1.0, 0.97, 0.9), core * 0.3) + tint.rgb * core;
 }
 
 void fragment() {
@@ -156,7 +156,12 @@ void fragment() {
 		col += tint.rgb * exp(-r * 3.0) * 0.12;
 		col *= pulse * (1.0 - smoothstep(0.97, 1.0, r));
 	}
-	ALBEDO = col * strength;
+	// Over the floor as a coloured glow (mixed, not added, so it keeps its hue on light ground): the brightest
+	// channel is its cover, the colour its hue at full strength.
+	vec3 c = col * strength;
+	float a = clamp(max(max(c.r, c.g), c.b), 0.0, 1.0);
+	ALBEDO = c / max(a, 0.001);
+	ALPHA = a;
 }
 """
 

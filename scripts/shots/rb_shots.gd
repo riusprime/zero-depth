@@ -127,6 +127,9 @@ func _dress(h: Array) -> void:
 	w.actors.facing[0] = AWAY
 	hub.view.set_look(Wardrobe.look(_repo, _repo.get_def(&"robe", h[1]), h[0]))
 	hub.view.sync()
+	# Standing still keeps the last facing (PlayerAvatar): turn the body and legs away from the camera.
+	hub.view.avatar.set("_body_yaw", SimPlane.yaw_of(AWAY))
+	hub.view.avatar.set("_leg_yaw", SimPlane.yaw_of(AWAY))
 	var at := SimPlane.to_3d(w.player_pos())
 	hub.view.rig.flourish_zoom = 3.0
 	hub.view.rig.snap_to(at)

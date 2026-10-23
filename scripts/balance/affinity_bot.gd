@@ -37,6 +37,10 @@ const BOSS_TICKS := 3600
 const PICKS := 2
 
 var _repo: ContentRepository
+## Per form x affinity, summed over its seeds: ticks survived, kills, deaths in a boss room.
+var _ticks := 0
+var _kills := 0
+var _died_boss := 0
 
 
 func _initialize() -> void:
@@ -65,8 +69,14 @@ func _initialize() -> void:
 			)
 		)
 	)
-	lines.append(
-		"form | affinity | floor reached (mean) | clear rate % | floors cleared / possible | deaths"
+	(
+		lines
+		. append(
+			(
+				"form | affinity | floor reached (mean) | clear rate % | floors cleared / possible | deaths"
+				+ " (in a boss room) | seconds survived (mean) | kills (mean)"
+			)
+		)
 	)
 	var clear := {}  # form -> affinity -> clear rate
 	for f: Array in FORMS:
@@ -75,6 +85,9 @@ func _initialize() -> void:
 			var reached := 0
 			var cleared := 0
 			var deaths := 0
+			_ticks = 0
+			_kills = 0
+			_died_boss = 0
 			for k in seeds:
 				var r := _run(SEEDS[k], f[1], aff)
 				reached += r[0]
@@ -82,18 +95,24 @@ func _initialize() -> void:
 				deaths += r[2]
 			var rate := 100.0 * float(cleared) / float(seeds * FLOORS)
 			clear[f[0]][aff] = rate
-			lines.append(
-				(
-					"%s | %s | %.2f | %.1f | %d / %d | %d"
-					% [
-						f[0],
-						aff,
-						float(reached) / float(seeds),
-						rate,
-						cleared,
-						seeds * FLOORS,
-						deaths
-					]
+			(
+				lines
+				. append(
+					(
+						"%s | %s | %.2f | %.1f | %d / %d | %d (%d) | %.1f | %.1f"
+						% [
+							f[0],
+							aff,
+							float(reached) / float(seeds),
+							rate,
+							cleared,
+							seeds * FLOORS,
+							deaths,
+							_died_boss,
+							float(_ticks) / 60.0 / float(seeds),
+							float(_kills) / float(seeds),
+						]
+					)
 				)
 			)
 			print(lines[lines.size() - 1])
@@ -119,7 +138,7 @@ func _run(seed_value: int, form: StringName, aff: StringName) -> Array:
 	var w := plan.world
 	if form != &"":
 		BuildSlots.take(w, AttackScenario.item_index(w.item_tables, form))
-	var bot := FightBot.new(seed_value * 31 + AFFINITIES.find(aff))
+	var bot := FightBot.new(seed_value * 31)  # the same bot stream for every affinity
 	var cleared := 0
 	for f in range(1, FLOORS + 1):
 		if f > 1:
@@ -148,7 +167,15 @@ func _pick(w: World) -> void:
 
 
 ## The floor then its boss: 1 cleared, -1 the hero died, 0 the boss outlasted the bot.
+## Also counts the ticks survived, the kills, and where a death came (_died_boss).
 func _floor(w: World, bot: FightBot) -> int:
+	var out := _play(w, bot)
+	_ticks += w.tick
+	_kills += w.kills
+	return out
+
+
+func _play(w: World, bot: FightBot) -> int:
 	for t in FLOOR_TICKS:
 		w.step(SaveLab.frame(w, bot))
 		if w.player_dead():
@@ -158,6 +185,7 @@ func _floor(w: World, bot: FightBot) -> int:
 	for t in BOSS_TICKS:
 		w.step(SaveLab.frame(w, bot))
 		if w.player_dead():
+			_died_boss += 1
 			return -1
 		seen = seen or w.boss_id >= 0
 		if seen and not w.boss_alive():
