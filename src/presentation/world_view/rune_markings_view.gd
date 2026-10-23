@@ -10,7 +10,8 @@ extends Node3D
 ## on Ruins' sand, a faint mint glow on Night Rocks, soot on Red Canyon, dark blue on Frozen Shore's snow (where a pale
 ## one vanished), a faint violet glow on Starfall. Still faint: the same ALPHA.
 
-const TEXTURE := "res://assets/textures/decals/rune_marking.png"
+# v0.9.0: MI2 installed the owner's texture in kit/ (the old decals/ path never existed, so it never drew).
+const TEXTURE := "res://assets/textures/kit/rune_marking.png"
 const AWAY_M := 1.0
 const SIDE_M := 0.7
 const SIZE_M := 0.6

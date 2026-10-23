@@ -346,3 +346,9 @@ func test_a_floor_view_hands_its_biome_to_every_interaction() -> void:
 	]:
 		if view != null:
 			assert_eq(view.get(&"biome"), &"starfall", "%s draws Starfall's look" % view.name)
+
+
+## v0.9.0: the markings view loads the owner's rune_marking from where MI2 installed it (its old decals/ path never
+## existed, so the code glyph always drew instead).
+func test_the_owners_rune_marking_texture_is_where_the_view_loads_it() -> void:
+	assert_true(ResourceLoader.exists(RuneMarkingsView.TEXTURE), RuneMarkingsView.TEXTURE)
