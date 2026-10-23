@@ -33,6 +33,7 @@ const BOSS_KINDS := {
 	&"prism": ActorStore.Kind.PRISM,
 	&"nemesis": ActorStore.Kind.NEMESIS,
 	&"tidecaller": ActorStore.Kind.TIDECALLER,  # v0.9.0 NB1
+	&"twin_wardens": ActorStore.Kind.TWIN_WARDEN,  # v0.9.0 NB2 (its twin's: PatternCompiler)
 }
 const BOSS_MOVES := {
 	&"slam_ring": BossAttackTable.Move.SLAM_RING,
@@ -63,6 +64,8 @@ const BOSS_MOVES := {
 	&"mimic_shots": BossAttackTable.Move.MIMIC_SHOTS,
 	&"card_cast": BossAttackTable.Move.CARD_CAST,
 	&"tide": BossAttackTable.Move.TIDE,  # v0.9.0 NB1 (the Tidecaller)
+	&"crossfire": BossAttackTable.Move.CROSSFIRE,  # v0.9.0 NB2 (the Twin Wardens)
+	&"chain_sweep": BossAttackTable.Move.CHAIN_SWEEP,
 }
 ## v0.8.0 FB3: a Nemesis attack's `weapon`.
 const ATTACK_WEAPONS := {
@@ -523,8 +526,7 @@ static func compile_items(repo: ContentRepository) -> Array[ItemTable]:
 
 
 # --- Bosses (v0.3.0 C) --------------------------------------------------------------------------------------
-## Every boss in a repository, compiled, in id order (the order of boss indices: World.spawn_boss). Give it to the
-## world with World.set_boss_tables.
+## Every boss in a repository, compiled in BossOrder (boss indices: World.spawn_boss; World.set_boss_tables).
 static func compile_bosses(repo: ContentRepository) -> Array[BossTable]:
 	var out: Array[BossTable] = []
 	for def: BossDefinition in BossOrder.defs(repo):  # v0.9.0 NB1: saved indices stay

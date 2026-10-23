@@ -75,6 +75,12 @@ const KIND_RIFT_HUNTER := ActorStore.Kind.RIFT_HUNTER
 const KIND_CONDUIT := ActorStore.Kind.CONDUIT
 const ELITE_BASIC := EliteAi.Attack.BASIC
 const ELITE_ABILITY := EliteAi.Attack.ABILITY
+## v0.9.0 NB2: floor 4's Twin Wardens, the amber body (the boss) and the violet one (its twin).
+const KIND_TWIN_WARDEN := ActorStore.Kind.TWIN_WARDEN
+const KIND_TWIN_WARDEN_VIOLET := ActorStore.Kind.TWIN_WARDEN_VIOLET
+## v0.9.0 NB2: a Warden turning angry (STATUS_APPLY's effect) and the chain's burn (its DAMAGE's effect).
+const EFFECT_TWIN_ANGER := BossTwin.EFFECT_ANGER
+const EFFECT_TWIN_CHAIN := BossTwin.EFFECT_BURN
 ## v0.8.0 N2: The Fallen's mimic window states (final_pace "window", fallen_window), for the presentation.
 const FALLEN_OFF := FinalPace.Mimic.OFF
 const FALLEN_WARN := FinalPace.Mimic.WARN
@@ -179,6 +185,8 @@ const MOVE_MIMIC_COMBO := BossAttackTable.Move.MIMIC_COMBO  # v0.8.0 FB3 (the Ne
 const MOVE_MIMIC_SHOTS := BossAttackTable.Move.MIMIC_SHOTS
 const MOVE_CARD_CAST := BossAttackTable.Move.CARD_CAST
 const MOVE_TIDE := BossAttackTable.Move.TIDE  # v0.9.0 NB1 (the Tidecaller's Pull)
+const MOVE_CROSSFIRE := BossAttackTable.Move.CROSSFIRE  # v0.9.0 NB2 (the Twin Wardens)
+const MOVE_CHAIN_SWEEP := BossAttackTable.Move.CHAIN_SWEEP
 ## v0.9.0 NB1: boss_tide's "phase".
 const TIDE_NONE := BossTide.NONE
 const TIDE_PULL := BossTide.PULL
@@ -1770,6 +1778,17 @@ func boss_gaze(i: int) -> Dictionary:
 ## TIDE_PULL, TIDE_PUSH), "windup", "progress" (0..1000 of that part), "speed" (m/s), "centre"} (BossTide.state).
 func boss_tide(i: int) -> Dictionary:
 	return BossTide.state(_w, i)
+
+
+## v0.9.0 NB2 (BOSSES_4_5.md N2): Warden body i's pair: {} for any other actor; else "lead" (the boss's body),
+## "partner" (the other's index), "angry", "anger" (0..1000 left), "chain" ([] or [from, to]), "hot" (it burns),
+## "lifted" (the Chain Sweep has it), "burned" (ticks since it last burned the player, -1 none); in a Crossfire "safe",
+## "gap" ([from, to]), "progress", "firing"; the boss's Chain Sweep "sweep" {from, to, half_width, locked, progress,
+## struck} (BossTwin.state).
+func boss_twin(i: int) -> Dictionary:
+	if i <= 0 or i >= _w.actors.size():
+		return {}
+	return BossTwin.state(_w, i)
 
 
 ## v0.8.0 FB2 (FINAL_BOSS.md F5): boss i's Cross: {} or {"winding", "window", "progress", "arms" ([from, to, hit] per

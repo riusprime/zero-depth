@@ -162,6 +162,14 @@ static func _boss(id: StringName) -> Array:
 				_line([[0.1, 0.7], [0.3, 0.62], [0.5, 0.7], [0.7, 0.62], [0.9, 0.7]], 0.05),
 				_line([[0.1, 0.86], [0.3, 0.78], [0.5, 0.86], [0.7, 0.78], [0.9, 0.86]], 0.05),
 			]
+		&"twin_wardens":  # v0.9.0 NB2: two tower shields joined by a chain
+			return [
+				_poly([[0.08, 0.2], [0.34, 0.2], [0.34, 0.7], [0.21, 0.86], [0.08, 0.7]]),
+				_poly([[0.66, 0.2], [0.92, 0.2], [0.92, 0.7], [0.79, 0.86], [0.66, 0.7]]),
+				_circle(Vector2(0.42, 0.5), 0.05, 0.0, false),
+				_circle(Vector2(0.5, 0.5), 0.05, 0.0, false),
+				_circle(Vector2(0.58, 0.5), 0.05, 0.0, false),
+			]
 	return [  # any other boss: a crown
 		_poly(
 			[

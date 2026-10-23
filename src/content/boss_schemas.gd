@@ -17,6 +17,7 @@ const KINDS: Array[StringName] = [
 	&"prism",
 	&"nemesis",
 	&"tidecaller",  # v0.9.0 NB1: floor 4 (BOSSES_4_5.md N1)
+	&"twin_wardens",  # v0.9.0 NB2: floor 4 (BOSSES_4_5.md N2): the amber body's kind (its twin's: BossDefinition)
 ]
 
 ## Arena interior templates, in FloorLayout.Template order (a test pins the match).
@@ -249,6 +250,16 @@ const MOVES := {
 		"params":
 		["pattern_id", "pull_mps", "push_mps", "pull_seconds", "push_seconds", "bend_dps"],
 	},
+	## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): the Twin Wardens' Crossfire, their shielded signature pattern. Each body
+	## fires its pattern (a fan) at a safe spot distance_m off the middle of their chain on the player's side, leaving
+	## out the shots within gap_m of the spot there, so the two gaps cross only at the spot, between them. twin_look:
+	## the look of the twin's shots (its own colour; the pattern's look is the boss's).
+	&"crossfire":
+	## v0.9.0 NB2: the Chain Sweep: the boss's line from its body through the player and reach_m past them (held to the
+	## chain's lengths, cut short by walls) tracks them until the lock, then the chain lashes a lane width_m wide along
+	{"shape": 4, "params": ["pattern_id", "gap_m", "distance_m"], "optional": ["twin_look"]},
+	## it; the twin swings to the line's end. A lock is required; its late_cause_key names the chain's burn.
+	&"chain_sweep": {"shape": 2, "params": ["width_m", "reach_m"]},
 }
 ## v0.8.0 FB3: the runs an attack's `weapon` may name.
 ## v0.8.0 N2 (owner O52): "own" is The Fallen's own kit, only outside its mimic windows.
@@ -270,6 +281,7 @@ const LOCKED_MOVES: Array[StringName] = [
 	&"mimic_combo",
 	&"mimic_shots",
 	&"card_cast",
+	&"chain_sweep",  # v0.9.0 NB2
 ]
 ## v0.8.0 FB1: the most spikes a line or a ray lays (steps).
 const MAX_STEPS := 16
@@ -285,6 +297,13 @@ const PUNISH_MIN_TICKS := 36
 const PUNISH_MAX_TICKS := 54
 ## v0.9.0 NB1 (BOSSES_4_5.md N1: "the pull never moves you more than 1.5 m/s"): the fastest a tide moves the player.
 const TIDE_MAX_MPS := 1.5
+## v0.9.0 NB2 (BOSSES_4_5.md N2: "the chain is never shorter than 3 m or longer than 9 m"): the bounds a twin boss's
+## chain lengths keep, and the most its anger may speed a body (per mille).
+## The twins a boss may rise with (BossDefinition.twin_kind_id; PatternCompiler maps each to its actor kind).
+const TWIN_KINDS: Array[StringName] = [&"twin_warden_violet"]
+const TWIN_CHAIN_MIN_M := 3.0
+const TWIN_CHAIN_MAX_M := 9.0
+const TWIN_ANGER_MAX_PERMILLE := 2000
 ## v0.7.5 BF1: params that name a bullet pattern (resolved by the compiler; a content test checks they exist).
 const PATTERN_PARAMS: Array[String] = ["pattern_id"]
 

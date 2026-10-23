@@ -86,6 +86,21 @@ var gap_attack := -1
 ## rises, instead of by the weighted pick (0 = no cadence: every other boss).
 var sig_every_ticks := 0
 var sig_first_ticks := 0
+## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): a boss with twin_kind >= 0 rises as two bodies, itself and a twin of that
+## actor kind twin_m away, sharing one HP and joined by a chain held between chain_min_m and chain_max_m long that
+## burns a touching player chain_burn every chain_burn_ticks (a strip chain_half_m each side of its line); the twin
+## keeps flank_m from the player beside it. A hit on one body angers the other for anger_ticks, its speed × anger
+## permille / 1000 (-1 = no twin: every other boss).
+var twin_kind := -1
+var twin_m := 0.0
+var chain_min_m := 0.0
+var chain_max_m := 0.0
+var chain_burn := 0
+var chain_burn_ticks := 1
+var chain_half_m := 0.0
+var flank_m := 0.0
+var anger_permille := 1000
+var anger_ticks := 0
 ## v0.8.0 FB2 (owner F7, "Phase-by-phase mix"; FINAL_BOSS.md F5, F7; BossPrism): a body whose HP is set as it rises
 ## from the player's measured damage per second (FinalFight's meter: the last dps_seconds closed seconds, at least
 ## dps_min_seconds of them, else its own hp): hp = dps × dps_target_ticks / 60 × window_permille / 1000, clamped to

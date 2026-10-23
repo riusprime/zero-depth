@@ -38,6 +38,8 @@ enum Kind {
 	BREAKER,  # v0.9.0 EL: the three elite archetypes (EliteAi; ELITES.md E1-E3)
 	RIFT_HUNTER,
 	CONDUIT,
+	TWIN_WARDEN,  # v0.9.0 NB2 (BOSSES_4_5.md N2): the Twin Wardens' amber body, the boss (its bar, its defeat)
+	TWIN_WARDEN_VIOLET,  # v0.9.0 NB2: the violet body, its twin (BossTwin: one shared HP, linked by the chain)
 }
 
 const TEAM_PLAYER := 0

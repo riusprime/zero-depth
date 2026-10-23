@@ -34,7 +34,11 @@ const SPECS := {
 	# list's), cut into parts in the file: each part is one bone (its node's origin the pivot), the bell hanging from
 	# the staff.
 	&"boss_tidecaller":
+	# v0.9.0 NB2: the Twin Wardens, front +Z as prepared, 2.2 m each (the art list's): the amber one keeps its Mixamo
 	{"yaw": PI * 0.5, "height": 3.2, "parts": true, "parents": {&"bell": &"staff"}},
+	# skeleton (NB1 rebuilt its joint rests; nearly every vertex weighs on the hips), the violet one is cut into parts.
+	&"boss_twin_warden_amber": {"yaw": PI * 0.5, "height": 2.2, "skinned": true},
+	&"boss_twin_warden_violet": {"yaw": PI * 0.5, "height": 2.2, "parts": true},
 }
 
 ## v0.7.5 BM (owner N18, 2026-10-13: "Bosses could be a bit bigger so we could see the model better"): every boss

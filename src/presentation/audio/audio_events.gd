@@ -32,6 +32,8 @@ const BOSS_FLAVOUR := {
 	WorldReader.KIND_PRISM: &"boss_telegraph_hive_lens",
 	WorldReader.KIND_NEMESIS: &"boss_telegraph_warlord",
 	WorldReader.KIND_TIDECALLER: &"boss_telegraph_tidecaller",  # v0.9.0 NB1: its bell tolls
+	WorldReader.KIND_TWIN_WARDEN: &"boss_telegraph_twin_wardens",  # v0.9.0 NB2: their chain rattles
+	WorldReader.KIND_TWIN_WARDEN_VIOLET: &"boss_telegraph_twin_wardens",
 }
 const DEATHS := {
 	WorldReader.KIND_CHARGER: &"enemy_death_charger",
@@ -437,6 +439,8 @@ func _events(reader: WorldReader, out: Array) -> void:
 		match e.kind:
 			SimEvent.Kind.DAMAGE:
 				if e.tags & SimEvent.TAG_DOT:
+					if e.effect_id == WorldReader.EFFECT_TWIN_CHAIN:  # v0.9.0 NB2: the chain's burn sizzles
+						out.append([&"boss_twin_chain", e.pos, 1.2])
 					continue  # ticks are silent (SFX_NEEDS)
 				if ELEMENT_CUES.has(e.effect_id):  # v0.4.0 AB: the element's own sound
 					out.append([ELEMENT_CUES[e.effect_id], e.pos, 1.0])
@@ -491,6 +495,8 @@ func _events(reader: WorldReader, out: Array) -> void:
 			SimEvent.Kind.STATUS_APPLY:  # v0.8.0 FB3: the Nemesis dashes with the hero's dash cue, lower
 				if e.effect_id == WorldReader.EFFECT_NEMESIS_DASH:
 					out.append([&"dash", e.pos, 0.8])
+				elif e.effect_id == WorldReader.EFFECT_TWIN_ANGER:  # v0.9.0 NB2: a Warden's chain jerks taut
+					out.append([&"boss_twin_chain", e.pos, 0.75])
 			SimEvent.Kind.BLAST:  # v0.9.0 BM: a bomb bursts
 				out.append([&"bomb_blast", e.pos, 1.0])
 			SimEvent.Kind.LANCE:  # v0.9.0 AF1b: a Lance released, its whoosh
@@ -648,6 +654,10 @@ static func attack_cue(move: int) -> StringName:
 			return &"boss_laser"
 		WorldReader.MOVE_TIDE:  # v0.9.0 NB1: the Tidecaller's Pull surges in
 			return &"boss_tide_pull"
+		WorldReader.MOVE_CROSSFIRE:  # v0.9.0 NB2: the Wardens' fans
+			return &"boss_mortar"
+		WorldReader.MOVE_CHAIN_SWEEP:  # the chain lashes
+			return &"boss_twin_chain"
 	return &""
 
 

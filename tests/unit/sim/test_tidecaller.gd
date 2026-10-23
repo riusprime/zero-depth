@@ -84,7 +84,7 @@ func test_the_data_is_the_approved_row() -> void:
 	assert_gt(under.lock_ticks, 0, "tracked, then locked")
 	var pool := ContentCompiler.compile_boss_pool(repo, 4)
 	var ids := BossLab.tables().map(func(x: BossTable) -> StringName: return x.id)
-	assert_eq(pool.size(), 1, "floor 4's pool")
+	assert_eq(pool.size(), 2, "floor 4's pool (v0.9.0 NB2: with the Twin Wardens)")
 	assert_eq(ids[pool[0]], &"tidecaller")
 
 

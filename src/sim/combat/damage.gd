@@ -177,6 +177,7 @@ static func _apply(
 	# v0.5.5 DS (D7): a boss's HP stops at its next phase gate (BossGates).
 	var applied := mini(BossGates.clamp_damage(w, target, scaled, owner_id), a.hp[target])
 	a.hp[target] -= applied
+	BossTwin.share_hp(w, target)  # v0.9.0 NB2: the Twin Wardens' one HP: the twin holds what this body holds
 	PlayerRegen.note_combat(w, target, owner_id)  # Builds: combat stops the out-of-combat regen (L25).
 	if w.final_fight != null and target != 0 and owner_id == a.ids[0]:
 		FinalBoss.note_damage(w, scaled)  # v0.8.0 FB2 (F7): the final fight's damage meter
@@ -208,8 +209,10 @@ static func _apply(
 			Engines.on_kill(w, k, target, tags)  # Engines: Wildfire, Blood Harvest.
 			ModifierAbilities.on_kill(w)  # v0.6.0 MX2: Frost Nova's kill streak
 			Venom.on_kill(w, target, root_id)  # v0.6.0 MX4: Venom Core's spread
+		BossTwin.fall_together(w, target, k)  # v0.9.0 NB2: its twin falls with it (its own KILL)
 	if target != 0 and not (tags & SimEvent.TAG_DOT):
 		BossAi.on_damage(w, target, applied, tags)  # Bosses (v0.3.0 C): hits fill the stagger meter.
+		BossTwin.on_hit(w, target, applied, owner_id)  # v0.9.0 NB2: a hit on one Warden angers the other
 		CoreTheft.on_damage(w, target, applied, tags)  # v0.6.0 CU: a stagger opens the steal window
 	if target == 0:
 		ItemProcs.on_player_hurt(w)  # Items: Thorn Mantle.

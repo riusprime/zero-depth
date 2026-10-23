@@ -31,6 +31,8 @@ enum Move {
 	MIMIC_SHOTS,
 	CARD_CAST,
 	TIDE,  # v0.9.0 NB1 (BOSSES_4_5.md N1): the Tidecaller's Pull (BossTide)
+	CROSSFIRE,  # v0.9.0 NB2 (BOSSES_4_5.md N2): the Twin Wardens' fans whose gaps meet between them (BossTwin)
+	CHAIN_SWEEP,  # v0.9.0 NB2: their chain's line tracks the player, locks and lashes (BossTwin)
 }
 
 ## v0.8.0 FB3: the runs a Nemesis attack answers to (`weapon` below).
@@ -190,3 +192,9 @@ var tide_push_ticks := 0
 var tide_bend := 0
 var drag_m := 0.0
 var drag_reach_m := 0.0
+## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): a `crossfire` attack's safe spot stands distance_m off the middle of the
+## chain, on the player's side, and each body's fan (its pattern, aimed at the spot) leaves out the shots within gap_m
+## of it there (gap_m, distance_m above). A `chain_sweep` lashes a lane half_width_m each side of its line, which runs
+## from the body through the player and reach_m past them. The twin's Crossfire shots take twin_look ("" = the
+## pattern's own).
+var twin_look := &""

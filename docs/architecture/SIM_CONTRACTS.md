@@ -1695,6 +1695,54 @@ below) and FB3's cap of a fifth of max HP (D36).
 - **Reads.** `WorldReader.boss_tide(i)` (`BossTide.state`: phase `TIDE_NONE` / `TIDE_PULL` / `TIDE_PUSH`, windup,
   progress ‰, speed m/s, centre), `KIND_TIDECALLER`, `MOVE_TIDE`, `TIDE_MAX_MPS`.
 
+## 10k. The Twin Wardens: one boss in two bodies (v0.9.0 NB2; owner Q24, [`BOSSES_4_5.md`](../roadmap/v0.9.0/BOSSES_4_5.md) N2)
+
+- **Kinds.** `TWIN_WARDEN` (the amber body: the boss) and `TWIN_WARDEN_VIOLET` (its twin), appended after `CONDUIT`;
+  both boss kinds (`BossTwin.is_twin_kind`). Floor 4's pool holds the Tidecaller and the Wardens (`twin_wardens`,
+  `save_order` 2: compiled after the Tidecaller, every saved boss index unchanged).
+- **Two linked actors (`BossTwin`).** `World.spawn_boss` makes the boss; `BossTwin.on_spawn` adds its twin
+  (`BossTable.twin_kind`) `twin_m` to the side (the first clear side, at least `chain_min_m` away) with the boss's HP,
+  max HP, `power`, intro invulnerability and freeze immunity, a `BossStore` entry of the same table, and the pair in
+  `BossStore.twin_*` (`twin_lead`, `twin_body`, `twin_angry`, `twin_anger_t`, `twin_burn_cd`; hashed after a `-3`
+  sentinel only while non-empty; `WorldSnapshot.ADDED_SINCE_V05`). Each body runs the boss framework (windup, markers,
+  shield, its own stagger meter); the boss is the bar (`WorldReader.boss_index`, the first live boss), `World.boss_id`,
+  the codex's fight, the only `BOSS_DEFEATED`, reward, kill count and legendary core (`BossTwin.leaves` in
+  `World._remove_dead`: the twin's entry goes with no defeat, shards, kill or core); only the boss's gate brings adds.
+  `World.boss_table_of_kind` answers the twin's kind with its boss's table (the death recap).
+- **One HP.** `Damage._apply` → `share_hp`: after a body's HP changes the twin's equals it (so both cross the 66 % and
+  33 % gates on the same think); `fall_together`: a body killed kills the other at once with its own `KILL` (the same
+  hit's child, no on-kill procs).
+- **One mind.** The twin never picks (`BossTwin.think` returns early for it in MOVE, turning it to the player); when
+  the boss starts attack k (`BossAi.start_attack` → `on_start`) the twin starts k the same tick if it is in MOVE.
+- **Steps (`BossTwin.moves`, phase 5).** The boss pursues as any boss; the twin walks to its flank, `flank_m` from the
+  player at a right angle from its boss on its own side; each × `anger_permille` / 1000 while angry; in a Chain Sweep
+  the twin swings to the line's end at `SWING_MULT` (4) × its speed. **Chain length (`_tether`)**, after the steps
+  and again in phase 6 (after walls and bodies push): the twin is put at `clamp(d, chain_min_m, chain_max_m)` along the
+  line from its boss; if a wall stands there the boss gives way along the line instead, else both share the move.
+- **The chain's burn (phase 6, the boss's resolve).** A player whose centre is within `player.radius_m +
+  chain_half_m` of the segment between the two centres takes `chain_burn` (× catch-up power) as damage over time
+  (`Damage.tick_dot`, effect `twin_chain`; hurt iframes apply) when `twin_burn_cd` is 0, which then becomes
+  `chain_burn_ticks` (counted down in the boss's think, so the hit-stop pauses it). Never while dashing, never while
+  `BossTide.press(p) > 0` (against a wall: it can't pin the player), never while either body rises or is in a gate,
+  never while the boss's Chain Sweep runs (`lifted`). The chain is not solid. A kill by it names the first
+  `chain_sweep` attack's late cause (`LATE_CAUSE + k`, its `late_cause_key`).
+- **Anger.** `Damage._apply` → `on_hit` (non-DoT, applied > 0, from the player): the other body is angry for
+  `anger_ticks` (`twin_angry` its id, `twin_anger_t`); one at a time; `STATUS_APPLY` (effect `twin_anger`) when it
+  turns.
+- **Crossfire (`crossfire`, shielded).** On start the safe spot `S` = the chain's midpoint + `distance_m` along the
+  chain's normal toward the player (0.75, then 0.5 of it if a wall stands there), stored as each body's `pt(b, 0)`;
+  each body's `lock_a` aims at `S`. Each wave of its pattern (a fan centred on `S`) leaves out every shot whose heading
+  is within `angle_of(Vector2(|S − body|, gap_m))` of `lock_a` (`BulletPatterns.fire`'s `gap`), so the two gaps cross
+  only at `S`; the twin's shots take `twin_look`.
+- **Chain Sweep (`chain_sweep`, locked).** Through the windup until its last `lock_ticks` the boss's line tracks:
+  `lock_a` = the angle to the player, `lock_len` = `clamp(dist + reach_m, chain_min_m, chain_max_m)` cut by
+  `EnemyAi.clear_run`; on its first active tick a player touching the lane (`AttackShapes.lane` from the boss's lock
+  point, `half_width_m`) is hit once (`hit_player`). The twin's copy draws and strikes nothing.
+- **Reads.** `WorldReader.boss_twin(i)` (`BossTwin.state`: lead, partner, angry, anger ‰, chain ends, hot, lifted,
+  burned; Crossfire's safe spot, gap lane, progress, firing; the Chain Sweep's from, to, half width, locked, progress,
+  struck), `KIND_TWIN_WARDEN`, `KIND_TWIN_WARDEN_VIOLET`, `MOVE_CROSSFIRE`, `MOVE_CHAIN_SWEEP`, `EFFECT_TWIN_ANGER`,
+  `EFFECT_TWIN_CHAIN`.
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×

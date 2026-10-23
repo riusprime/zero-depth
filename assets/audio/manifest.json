@@ -595,6 +595,26 @@
       "loop": false
     },
     {
+      "id": "boss_telegraph_twin_wardens",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/boss_telegraph_twin_wardens.wav",
+      "sha256": "21b2126a581b268c573d02d6f6be41fab9278f640ec8266ec72dff6e6c1a6d5d",
+      "seconds": 1.53,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -13.42,
+      "loop": false
+    },
+    {
+      "id": "boss_twin_chain",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/boss_twin_chain.wav",
+      "sha256": "f213c5089613b3fc64fa523633b6525d0595941b94b1e4f6dad0ad28b6a24ad6",
+      "seconds": 1.1,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -17.61,
+      "loop": false
+    },
+    {
       "id": "boss_floor_burst",
       "kind": "sfx",
       "path": "assets/audio/sfx/boss_floor_burst.wav",

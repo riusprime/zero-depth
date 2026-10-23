@@ -669,6 +669,32 @@ def s_boss_tide_pull(r):
     return echo(x, 160, 0.4, 0.3, 1400, 0.4)
 
 
+def s_boss_telegraph_twin_wardens(r):
+    """v0.9.0 NB2: the Twin Wardens: a heavy chain rattling taut over a low stone grind, two clanks a beat apart."""
+    n = n_of(1.0)
+    links = np.zeros(n)
+    for k, tk in enumerate([0.05, 0.13, 0.2, 0.26, 0.31, 0.35, 0.39]):
+        ping = metal_ping(0.18, 820 + 60 * k, 2.3, 1.8, 0.04) * (0.5 + 0.06 * k)
+        links = mix(links, at(ping, tk, n))
+    grind = one_pole_lp(noise(r, n), curve(500, 220, n)) * env(n, 0.05, 0.7) * 0.5
+    clank_a = at(metal_ping(0.5, 180, 1.9, 3.0, 0.12), 0.45, n)
+    clank_b = at(metal_ping(0.5, 150, 1.9, 3.0, 0.12), 0.68, n)
+    x = soft_clip(mix(links * 0.7, grind, clank_a * 0.8, clank_b * 0.8), 1.3)
+    return echo(x, 140, 0.35, 0.3, 2000, 0.35)
+
+
+def s_boss_twin_chain(r):
+    """v0.9.0 NB2: the burning chain: a whip crack of links, then a hot hiss and sizzle."""
+    n = n_of(0.8)
+    crack = bandpass(noise(r, n), curve(4000, 900, n), 1.4) * env(n, 0.001, 0.05)
+    rattle = np.zeros(n)
+    for k, tk in enumerate([0.02, 0.05, 0.08, 0.11, 0.14]):
+        rattle = mix(rattle, at(metal_ping(0.12, 1100 - 90 * k, 2.1, 1.5, 0.03) * 0.5, tk, n))
+    hiss = one_pole_hp(noise(r, n), 2500) * env(n, 0.04, 0.45) * 0.35
+    x = soft_clip(mix(crack * 1.4, rattle, hiss), 1.3)
+    return echo(x, 110, 0.3, 0.25, 2500, 0.3)
+
+
 def s_boss_floor_burst(r):
     """v0.4.0 BO: a flood's lanes bursting up (spears through the floor, molten metal): a crack and a hiss."""
     n = n_of(0.7)
@@ -1351,6 +1377,8 @@ SFX = [
     ("boss_telegraph_foundry", s_boss_telegraph_foundry),
     ("boss_telegraph_tidecaller", s_boss_telegraph_tidecaller),  # v0.9.0 NB1
     ("boss_tide_pull", s_boss_tide_pull),
+    ("boss_telegraph_twin_wardens", s_boss_telegraph_twin_wardens),  # v0.9.0 NB2
+    ("boss_twin_chain", s_boss_twin_chain),
     ("boss_floor_burst", s_boss_floor_burst),
     ("boss_slam", s_boss_slam),
     ("boss_laser", s_boss_laser),

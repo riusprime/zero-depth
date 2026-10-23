@@ -60,6 +60,7 @@ func test_the_floors_boss_indices_stay_as_they_were() -> void:
 			&"siege_engine",
 			&"warlord",
 			&"tidecaller",  # v0.9.0 NB1: after the six (BossOrder), so their indices stay
+			&"twin_wardens",  # v0.9.0 NB2: after the Tidecaller (save_order 2)
 		],
 		"the final bodies are in their own category, so every saved boss index means what it did"
 	)

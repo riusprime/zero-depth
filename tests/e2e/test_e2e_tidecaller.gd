@@ -39,7 +39,8 @@ func _walk(e: E2e, target: Vector2, done: Callable) -> bool:
 
 
 func test_continue_floor_4_and_fight_the_tidecaller_through_its_pull() -> void:
-	var run_seed := 1
+	# v0.9.0 NB2: floor 4 draws the Tidecaller or the Twin Wardens: the first seed that draws the Tidecaller.
+	var run_seed: int = preload("res://tests/e2e/test_e2e_twin_wardens.gd").seed_for(&"tidecaller")
 	var e := E2e.new(self)
 	var run := SaveLab.run_state(run_seed, FLOOR, &"blade")
 	var saved := SaveLab.build_floor(run)
