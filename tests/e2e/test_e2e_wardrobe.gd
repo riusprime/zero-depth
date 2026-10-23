@@ -69,19 +69,8 @@ func test_pick_a_robe_and_an_affinity_then_run_with_them() -> void:
 		&"tint"
 	)
 	assert_eq(tint, guardian.color, "in Guardian's gold")
-	# Back to the hub: the pause's Main menu, then Play (Continue is focused once a save exists).
-	await e.tap(KEY_ESCAPE)
-	await e.frames(2)
-	for k in 8:
-		if _focused(main) != null and _focused(main).name == &"MainMenu":
-			break
-		await e.tap(KEY_DOWN)
-	assert_eq(_focused(main).name, &"MainMenu")
-	await e.tap(KEY_ENTER)
-	await e.frames(3)
-	if _focused(main) != null and _focused(main).name == &"Continue":
-		await e.tap(KEY_DOWN)
-	assert_true(await walk.enter(), "Play: the hub again")
+	# Back to the hub: the pause menu's last row leads there (owner 2026-10-23, the PLAN's HB row).
+	assert_true(await walk.from_run(), "the pause menu: to the Rune Ring")
 	assert_eq(main.hub.view.avatar.cloak_color, ash.cloak, "the hub remembers the robe")
 	assert_eq(main.hub.view.avatar.runes.glyph, guardian.glyph, "and the affinity")
 	await walk.use(&"wardrobe")
