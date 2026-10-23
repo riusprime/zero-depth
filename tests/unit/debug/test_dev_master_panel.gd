@@ -8,7 +8,9 @@ extends GutTest
 ## v0.8.0 RT: room_layouts, the designed rooms, are geometry drawn in their files, not numbers to tune; v0.8.0 SR:
 ## so are shop_rooms, the biomes' shop rooms. v0.9.0 RG: special_rooms describes the placement and repeats numbers
 ## that live (and are tuned) in other folders (SpecialRoomDefinition.sources): an edit there would drive nothing.
+## v0.9.0 HB: hub, the hub's plan (geometry and profile flags; no run reads it).
 const NOT_BALANCE := [
+	"hub",
 	"audio",
 	"credits",
 	"patch_notes",

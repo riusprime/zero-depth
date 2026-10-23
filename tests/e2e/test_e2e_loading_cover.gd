@@ -66,7 +66,7 @@ func test_a_run_starts_behind_the_black_cover_and_a_portal_covers_in_its_colours
 	var main: Main = await e.boot()
 	var cover := main.loads.cover
 	assert_false(cover.showing(), "no cover on the menu")
-	await e.tap(KEY_ENTER)  # Play
+	await HubWalk.new(e).to_build_screen()  # v0.9.0 HB: Play, then the Portal Machine
 	await e.frames(2)
 	e.key(KEY_ENTER, true)  # the build picker's pick (Blade)
 	e.key(KEY_ENTER, false)

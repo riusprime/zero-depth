@@ -25,7 +25,7 @@ func after_each() -> void:
 func test_a_pad_shot_before_the_right_stick_goes_the_way_the_hero_walked() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
-	await _press(e, JOY_BUTTON_A)  # Play
+	await HubWalk.new(e).to_build_screen()  # v0.9.0 HB: Play, then the Portal Machine
 	var picker := main.get_node_or_null("UI/BuildPicker") as BuildPicker
 	assert_not_null(picker)
 	await _press(e, JOY_BUTTON_DPAD_RIGHT)

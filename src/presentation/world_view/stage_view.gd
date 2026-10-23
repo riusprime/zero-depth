@@ -149,6 +149,11 @@ func _build_environment_and_light() -> void:
 	_build_light()
 
 
+## v0.9.0 HB: only the mood's environment, grade, vignette and sun (the hub draws its own ground and props).
+func build_lighting_only() -> void:
+	_build_environment_and_light()
+
+
 func _build_floor_ground(reader: WorldReader, arena_half: float) -> void:
 	_ground_rects.clear()
 	if reader.has_floor():

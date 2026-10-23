@@ -207,6 +207,8 @@ func test_the_owners_stall_is_the_tent() -> void:
 	assert_almost_eq(box.get_center().x, 0.0, 0.01, "centred")
 	assert_almost_eq(box.position.y, 0.0, 0.01, "on the floor")
 	for id: StringName in ShopModels.SPECS:
+		if String(id).begins_with("hub_"):
+			continue  # v0.9.0 HB: the owner's hub pieces (test_hub_view)
 		if id != &"shop_tent" and id != &"curse_altar":  # v0.8.0 N17: the owner's altar (test_curse_room_view)
 			assert_eq(
 				ShopModels.listed_path(id), "", "%s: the stand-in until the owner's file" % id

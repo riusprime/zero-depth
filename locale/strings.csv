@@ -1208,6 +1208,23 @@ FOUNTAIN_DENIED,Already at full health,Ya tienes la salud al máximo
 CAPTION_SHRINE_BLOOD,[Blood drains into the shrine],[La sangre fluye al santuario]
 CAPTION_SHRINE_CHAOS,[Chaos roars awake],[El caos despierta rugiendo]
 CAPTION_FOUNTAIN,[Water splashes],[El agua salpica]
+HUB_TITLE,The Rune Ring,El Anillo de Runas
+UI_TO_HUB,To the Rune Ring,Al Anillo de Runas
+HUB_HINT,Walk to a station · [E / X] to use it · Esc / Start: menu,Camina hasta una estación · [E / X] para usarla · Esc / Start: menú
+HUB_PORTAL_MACHINE,Portal Machine,Máquina de Portales
+HUB_PROMPT_PORTAL,[E / X] Start a run,[E / X] Empezar una partida
+HUB_ARCHIVE,Rune Archive,Archivo de Runas
+HUB_PROMPT_ARCHIVE,[E / X] Open the Codex,[E / X] Abrir el Códice
+HUB_TROPHY,Trophy Area,Sala de Trofeos
+HUB_PROMPT_TROPHY,[E / X] See the achievements,[E / X] Ver los logros
+HUB_WARDROBE,Wardrobe,Vestidor
+HUB_PROMPT_WARDROBE,[E / X] Open the wardrobe,[E / X] Abrir el vestidor
+HUB_PROGRESSION,Progression Station,Estación de Progreso
+HUB_PROMPT_PROGRESSION,[E / X] Use the station,[E / X] Usar la estación
+HUB_CREDITS,Credits Stone,Piedra de los Créditos
+HUB_PROMPT_CREDITS,[E / X] Read the credits,[E / X] Leer los créditos
+HUB_WARDROBE_SOON,Robes and rune affinities will hang here. Nothing to wear yet.,Aquí colgarán las túnicas y las afinidades rúnicas. Aún no hay nada que ponerse.
+HUB_PROGRESSION_SOON,Rune Fragments will be spent here. The console is still dark.,Aquí se gastarán los Fragmentos de Runa. La consola sigue apagada.
 ELITE_BREAKER,The Breaker,El Quebrantador
 ELITE_BREAKER_DESC,"A slow armoured brute. Step out of its slam, then hit it while its fist is stuck.","Un bruto acorazado y lento. Sal de su golpe al suelo y pégale mientras tiene el puño atascado."
 ELITE_RIFT_HUNTER,The Rift Hunter,El Cazador de Grietas

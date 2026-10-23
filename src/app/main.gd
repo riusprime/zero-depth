@@ -43,6 +43,8 @@ var hints := OnboardingHints.new()
 var loads := CoverLoads.new()
 ## v0.7.5 PG (owner N20, docs/tools/PLAYGROUND.md): the Playground while it runs (null otherwise).
 var playground: PlaygroundSession
+## v0.9.0 HB (owner Q27): the hub while it runs (null otherwise: the menu, a run, the Playground).
+var hub: HubSession
 
 ## The dev panel's tuning (docs/tools/DEV_PANEL.md): the owner's saved overrides, written into the content before
 ## every run and floor is compiled.
@@ -157,29 +159,66 @@ func is_playing() -> bool:
 	return driver != null
 
 
+## v0.9.0 HB (owner Q27): the small menu: Continue (the saved run, straight in), Play (the hub), Options, Quit.
 func show_main_menu() -> void:
 	saves.close()  # v0.4.0 SV: leaving a run (pause -> Main menu) keeps its last room entry
 	_end_stage()
+	_end_hub()
 	loads.cover.unveil(FADE_SECONDS)  # v0.8.0 N3: a cover left up by a run that was left (none: nothing)
 	audio.set_ambience(&"")
-	var m := MainMenu.new(GameVersion.label(), OS.is_debug_build(), saves.store.has_save())
+	var m := MainMenu.new(GameVersion.label(), saves.store.has_save())
 	m.continue_pressed.connect(
 		func() -> void: loads.behind(get_tree(), ui, _covered_continue, FADE_SECONDS)  # v0.8.0 N3 (O45)
 	)
-	m.play_pressed.connect(show_build_picker)
+	m.play_pressed.connect(_show_hub)
 	m.options_pressed.connect(show_options)
-	m.credits_pressed.connect(show_credits)
-	m.codex_pressed.connect(show_codex)
-	m.galleries_pressed.connect(show_gallery)
 	m.quit_pressed.connect(
 		func() -> void: get_tree().root.propagate_notification(NOTIFICATION_WM_CLOSE_REQUEST)
 	)
 	_set_menu(m)
 
 
-## Play -> pick the build (v0.3.0 L15: Blade or Gun) -> the run. The pick is remembered in the profile; the build is
-## the run's (RunState.build_id) and holds on every floor. v0.4.0 BS (owner F11, PD-01 flipped): there is no utility
-## pick any more; Blink and Aegis are ability cards found in the run.
+## v0.9.0 HB (owner Q27; HUB_MOCKUPS option A): the hub, from Play or the end panel. A station's interact opens its
+## panel (_open_station; Back returns to the hub). It reads the profile, never the run's save.
+func _show_hub() -> void:
+	saves.close()
+	_end_stage()
+	_end_hub()
+	_set_menu(null)
+	var repo := _content()
+	hub = HubSession.new()
+	add_child(hub)
+	hub.setup(repo, profile, [codex, achievements, codex_catalog(repo)], ui)
+	hub.station_used.connect(_open_station)
+	hub.options_requested.connect(show_options.bind(hub.open_pause))
+	hub.main_menu_requested.connect(show_main_menu)
+	loads.cover.unveil(FADE_SECONDS)
+	audio.set_ambience(HubSession.BIOME)
+
+
+func _open_station(_id: StringName, panel: StringName) -> void:
+	match panel:
+		&"portal":
+			show_build_picker()
+		&"codex", &"achievements":
+			show_codex(CodexView.ACHIEVEMENTS if panel == &"achievements" else &"")
+		&"credits":
+			show_credits()
+
+
+func _close_station() -> void:
+	_set_menu(null)
+
+
+func _end_hub() -> void:
+	if hub != null:
+		_drop(hub)
+		hub = null
+
+
+## The hub's Portal Machine (v0.9.0 HB) -> pick the build (v0.3.0 L15: Blade or Gun) -> the run. The pick is
+## remembered in the profile; the build is the run's (RunState.build_id) and holds on every floor. v0.4.0 BS (F11): no
+## utility pick; Blink and Aegis are ability cards found in the run.
 func show_build_picker() -> void:
 	var defs := ContentRepository.load_all().all_of(&"build")
 	var last := StringName(profile.section("loadout").get("build", "blade"))
@@ -190,13 +229,18 @@ func show_build_picker() -> void:
 			_stage_seed = _seeds.next()  # v0.8.0 N1 (O53): every new run its own seed
 			loads.behind(get_tree(), ui, _covered_start, FADE_SECONDS)  # v0.8.0 N3 (O45)
 	)
-	p.back_pressed.connect(show_main_menu)
+	p.back_pressed.connect(_close_station if hub != null else show_main_menu)
 	_set_menu(p)
 
 
-func show_options() -> void:
+## Options from the main menu, or (v0.9.0 HB) from the hub's pause: `back` (null: the main menu).
+func show_options(back: Callable = Callable()) -> void:
 	var o := OptionsMenu.new(profile)
-	o.back_pressed.connect(show_main_menu)
+	o.back_pressed.connect(
+		func() -> void:
+			_set_menu(null)
+			(back if back.is_valid() else show_main_menu).call()
+	)
 	o.setting_changed.connect(_on_setting_changed)
 	_set_menu(o)
 
@@ -225,6 +269,8 @@ func close_pause_options() -> void:
 ## A setting changed in Options: what lives in the view follows at once (GameSettings already applied the engine's).
 func _on_setting_changed(_key: String) -> void:
 	ViewPrefs.apply_settings(profile)
+	if hub != null:  # v0.9.0 HB: Options from the hub's pause
+		hub.apply_settings(profile)
 	if view != null:
 		view.rig.shake_enabled = GameSettings.get_value(profile, "shake") == "on"
 		view.ink.set_style(InkPass.style_from_setting(GameSettings.get_value(profile, "outline")))
@@ -235,19 +281,17 @@ func show_credits() -> void:
 	var repo := ContentRepository.load_all()
 	var credits: CreditsDefinition = repo.get_def(&"credits", &"main")
 	var c := CreditsView.new(credits, repo.get_def(&"licences", &"generated"))  # v0.7.5 SM: with the licence list
-	c.back_pressed.connect(show_main_menu)
+	c.back_pressed.connect(_close_station if hub != null else show_main_menu)  # v0.9.0 HB: the Credits stone
 	_set_menu(c)
 
 
-## v0.7.5 CX: the Codex from the main menu; Back returns to the menu with the Codex row focused. v0.7.5 AC: with the
-## Achievements page.
-func show_codex() -> void:
+## v0.7.5 CX: the Codex; v0.7.5 AC: with the Achievements page. v0.9.0 HB: from the hub's Rune Archive (`page` empty)
+## and its Trophy Area (`page` the Achievements); Back returns to the hub (the main menu when no hub runs: the tools).
+func show_codex(page: StringName = &"") -> void:
 	var c := CodexView.new(codex_catalog(), codex, _achievements_book())
-	c.back_pressed.connect(
-		func() -> void:
-			show_main_menu()
-			(_menu as MainMenu).box.get_node("Codex").grab_focus()
-	)
+	c.back_pressed.connect(_close_station if hub != null else show_main_menu)
+	if page != &"":
+		c.start_on(page)
 	_set_menu(c)
 
 
@@ -269,6 +313,8 @@ func _achievements_book(repo: ContentRepository = null) -> AchievementBook:
 
 
 func show_gallery() -> void:
+	_close_master_panel()
+	_end_hub()
 	_set_menu(null)
 	var g := Gallery.new()
 	g.name = "Gallery"
@@ -279,6 +325,7 @@ func show_gallery() -> void:
 ## Starts a run (v0.3.0 B) with the run seed _stage_seed, on its first floor, all in this frame (the tools and the
 ## tests; the game's Play builds it behind the cover over frames: _covered_start).
 func start_stage() -> void:
+	_end_hub()
 	_set_menu(null)
 	var plan := _new_run_plan()
 	plan.repo = _content()
@@ -292,6 +339,7 @@ func continue_run() -> void:
 	var save := _usable_save()
 	if save.is_empty():
 		return
+	_end_hub()
 	_set_menu(null)
 	var plan := FloorPlan.continued(RUN_ID, save, ViewPrefs.reduced_motion)
 	plan.repo = _content()
@@ -514,37 +562,14 @@ func show_end_panel(won: bool) -> void:
 		won, driver.reader.killer_kind(), driver.reader.killer_cause_key(), run_recap()
 	)
 	_end.restart_pressed.connect(restart)
-	_end.main_menu_pressed.connect(show_main_menu)
+	_end.hub_pressed.connect(_show_hub)  # v0.9.0 HB (Q27, W48): Restart in one press, or the hub
 	ui.add_child(_end)
 	_end.focus_first()
 
 
-## The run recap's numbers (EndPanel): floor reached, run time and kills over every floor, shards when the world
-## counts them, and the items held.
+## The run recap's numbers (EndPanel; RunRecap).
 func run_recap() -> Dictionary:
-	if run == null or driver == null:
-		return {}
-	var w := driver.world
-	var names: Array[String] = []
-	for idx in driver.reader.items_owned():
-		names.append(String(driver.reader.item_name_key(idx)))
-	var out := {
-		"floor": run.floor_index,
-		"floors": run.table.floors,
-		"seconds": float(run.total_ticks(w)) / SimTick.TICKS_PER_SECOND,
-		"kills": run.total_kills(w),
-		"items": names,
-		"routes": run.routes.duplicate(),  # v0.5.0 RT: the route of each floor reached
-		"loop": run.loop,  # v0.7.5 AP: the loop reached and the loops cleared
-		"loops_cleared": run.loops_cleared(w),
-		"true_ending": run.final_fight and driver.reader.final_won(),  # v0.8.0 FB1: the final boss beaten
-		"final_reached": run.final_fight,
-	}
-	if &"shards" in w:
-		out["shards"] = int(w.get(&"shards"))
-	out["threat"] = driver.reader.threat()  # v0.5.0 EV: threat T now, and the run's peak
-	out["threat_peak"] = driver.reader.threat_peak()
-	return out
+	return RunRecap.of(run, driver)
 
 
 ## The current floor's biome id.
@@ -567,6 +592,7 @@ func restart() -> void:
 
 ## v0.8.0 N3 (O45): the loads CoverLoads runs behind its cover (Play, Continue, Restart).
 func _covered_start() -> void:
+	_end_hub()  # v0.9.0 HB: the Portal Machine's run starts behind the cover
 	_set_menu(null)
 	await _load_plan(_new_run_plan())
 
@@ -575,6 +601,7 @@ func _covered_continue() -> void:
 	var save := _usable_save()
 	if save.is_empty():
 		return
+	_end_hub()
 	_set_menu(null)
 	var err := await _load_plan(FloorPlan.continued(RUN_ID, save, ViewPrefs.reduced_motion))
 	if err != "":
@@ -615,9 +642,11 @@ func _toggle_master_panel() -> void:
 	_devm = DevMasterPanel.new(tuning, tools, driver == null)  # v0.8.0 N6: Playground off a run only
 	_devm.changed.connect(_on_tuning_changed)
 	_devm.playground_requested.connect(_open_playground_from_panel)
+	_devm.galleries_requested.connect(show_gallery)  # v0.9.0 HB: off the main menu, onto F10 (off a run)
 	_devm.restart_requested.connect(_restart_floor)
 	_devm.close_requested.connect(_close_master_panel)
 	ui.add_child(_devm)
+	_sync_pause()  # v0.9.0 HB: the hub holds under it
 
 
 func _close_master_panel() -> void:
@@ -652,13 +681,7 @@ func _tweaked_run_check() -> void:
 	if achievement_tracker != null:
 		achievement_tracker.enabled = not tweaked  # v0.7.5 AC: and unlocks no achievement
 	if _dev_mark == null:
-		_dev_mark = Label.new()
-		_dev_mark.name = "DevMark"
-		_dev_mark.text = "UI_DEVM_MARK"
-		_dev_mark.add_theme_color_override("font_color", Color(1.0, 0.55, 0.2))
-		_dev_mark.set_anchors_preset(Control.PRESET_CENTER_TOP)
-		_dev_mark.position.y = 4
-		_dev_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_dev_mark = DevMasterPanel.mark_label()
 		ui.add_child(_dev_mark)
 	_dev_mark.visible = tweaked
 
@@ -802,6 +825,8 @@ func _queue_build_moves() -> void:
 
 ## Holds the sim while a menu or panel is over it (the pause menu, F10, the Playground's panel), else lets it run.
 func _sync_pause() -> void:
+	if hub != null:  # v0.9.0 HB
+		hub.set_held(_menu != null or _devm != null)
 	if driver != null:
 		driver.paused = (
 			_pause != null or _devm != null or (playground != null and playground.is_panel_open())
@@ -829,6 +854,7 @@ func _show_playground_picker() -> void:
 
 ## The Playground's room with weapon `build_id` in biome `biome_id`: no run, save, Codex, achievements or hints.
 func _start_playground(build_id: StringName, biome_id: StringName) -> void:
+	_end_hub()
 	_set_menu(null)
 	_end_stage()
 	_pg_build = build_id
@@ -840,7 +866,7 @@ func _start_playground(build_id: StringName, biome_id: StringName) -> void:
 	driver.setup(PlaygroundScenario.build(repo, build_id, biome))
 	add_child(driver)
 	playground = PlaygroundSession.new(
-		driver, ui, _playground_biomes(repo), biome_id, _playground_names(repo)
+		driver, ui, PlaygroundScenario.biomes(repo), biome_id, PlaygroundScenario.source_names(repo)
 	)
 	playground.on_pause_change = _sync_pause
 	var run_table := PlaygroundScenario.final_run(repo)  # v0.8.0 FB1: the final boss's summon
@@ -909,34 +935,6 @@ func _on_playground_tick() -> void:
 		_hud.sync(driver.reader)
 
 
-## The biomes the Playground offers: the run's, in its order, with their names.
-func _playground_biomes(repo: ContentRepository) -> Array:
-	var out := []
-	var run_def: RunDefinition = repo.get_def(&"run", RUN_ID)
-	for id: StringName in run_def.biomes:
-		out.append(
-			{"id": id, "name_key": (repo.get_def(&"biomes", id) as BiomeDefinition).name_key}
-		)
-	return out
-
-
-## The DPS meter's source names: an effect id -> the name key of the card, ability, combo or curse with that id, and
-## the statuses' own names.
-static func _playground_names(repo: ContentRepository) -> Dictionary:
-	var out := {
-		&"bleed": &"UI_PG_SRC_BLEED",
-		&"bleed_burst": &"UI_PG_SRC_BLEED",
-		&"shock": &"UI_PG_SRC_SHOCK",
-		&"frost": &"UI_PG_SRC_FROST",
-		&"venom": &"UI_PG_SRC_POISON",
-	}
-	for cat: StringName in [&"items", &"ability", &"combos", &"curses"]:
-		for d: Resource in repo.all_of(cat):
-			if &"id" in d and &"name_key" in d and not out.has(d.get(&"id")):
-				out[d.get(&"id")] = d.get(&"name_key")
-	return out
-
-
 func _set_menu(m: Control) -> void:
 	if _menu != null:
 		_menu.queue_free()
@@ -945,6 +943,7 @@ func _set_menu(m: Control) -> void:
 		ui.add_child(m)
 		if m.has_method("focus_first"):
 			m.call("focus_first")
+	_sync_pause()  # v0.9.0 HB: the hub holds while a panel or menu is over it
 
 
 func _end_stage() -> void:

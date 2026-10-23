@@ -1,0 +1,100 @@
+[gd_resource type="Resource" script_class="HubDefinition" load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/hub_station_definition.gd" id="1_st"]
+[ext_resource type="Script" path="res://src/content/defs/hub_state_definition.gd" id="2_sa"]
+[ext_resource type="Script" path="res://src/content/defs/hub_definition.gd" id="3_hub"]
+
+[sub_resource type="Resource" id="S_archive"]
+script = ExtResource("1_st")
+id = &"archive"
+name_key = &"HUB_ARCHIVE"
+prompt_key = &"HUB_PROMPT_ARCHIVE"
+panel = &"codex"
+at = Vector2(-7.4, 4.4)
+half = Vector2(2.1, 1.4)
+height_m = 2.6
+reach_m = 1.4
+
+[sub_resource type="Resource" id="S_trophy"]
+script = ExtResource("1_st")
+id = &"trophy"
+name_key = &"HUB_TROPHY"
+prompt_key = &"HUB_PROMPT_TROPHY"
+panel = &"achievements"
+at = Vector2(7.4, 4.4)
+half = Vector2(2.1, 1.4)
+height_m = 2.4
+reach_m = 1.4
+
+[sub_resource type="Resource" id="S_wardrobe"]
+script = ExtResource("1_st")
+id = &"wardrobe"
+name_key = &"HUB_WARDROBE"
+prompt_key = &"HUB_PROMPT_WARDROBE"
+panel = &"wardrobe"
+at = Vector2(-8.8, -3.4)
+half = Vector2(1.3, 1.6)
+height_m = 2.2
+reach_m = 1.4
+
+[sub_resource type="Resource" id="S_progression"]
+script = ExtResource("1_st")
+id = &"progression"
+name_key = &"HUB_PROGRESSION"
+prompt_key = &"HUB_PROMPT_PROGRESSION"
+panel = &"progression"
+at = Vector2(8.8, -3.4)
+half = Vector2(1.3, 1.6)
+height_m = 1.8
+reach_m = 1.4
+
+[sub_resource type="Resource" id="S_credits"]
+script = ExtResource("1_st")
+id = &"credits"
+name_key = &"HUB_CREDITS"
+prompt_key = &"HUB_PROMPT_CREDITS"
+panel = &"credits"
+at = Vector2(-5.4, -8.4)
+half = Vector2(1.4, 0.7)
+height_m = 1.1
+reach_m = 1.4
+
+[sub_resource type="Resource" id="T_gate"]
+script = ExtResource("2_sa")
+id = &"gate_open"
+flag = "count:collectibles:12"
+
+[sub_resource type="Resource" id="T_looped"]
+script = ExtResource("2_sa")
+id = &"machine_looped"
+flag = "achievement:ascend_1"
+
+[sub_resource type="Resource" id="T_trophy"]
+script = ExtResource("2_sa")
+id = &"trophy_lit"
+flag = "codex_total:bosses:kills:1"
+
+[sub_resource type="Resource" id="T_crown"]
+script = ExtResource("2_sa")
+id = &"trophy_crown"
+flag = "achievement:final_boss"
+
+[resource]
+script = ExtResource("3_hub")
+radius_m = 12.5
+wall_m = 0.8
+wall_pieces = 36
+spawn = Vector2(0, -10.4)
+machine_core_m = 2.0
+machine_reach_m = 3.8
+machine_name_key = &"HUB_PORTAL_MACHINE"
+machine_prompt_key = &"HUB_PROMPT_PORTAL"
+rune_count = 16
+rune_ring_m = 5.4
+rune_flag = "count:collectibles:%d"
+gate_half_m = 1.6
+alcove_at = Vector2(0, 15.2)
+alcove_r = 2.2
+stations = Array[ExtResource("1_st")]([SubResource("S_archive"), SubResource("S_trophy"), SubResource("S_wardrobe"), SubResource("S_progression"), SubResource("S_credits")])
+states = Array[ExtResource("2_sa")]([SubResource("T_gate"), SubResource("T_looped"), SubResource("T_trophy"), SubResource("T_crown")])
+id = &"rune_ring"

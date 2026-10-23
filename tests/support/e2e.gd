@@ -125,9 +125,12 @@ func _mouse_scale() -> Vector2:
 ## Play from the main menu with the keyboard: the Play button has focus, then the build screen's last pick (Blade on
 ## a fresh profile; Right moves to Gun). v0.4.0 BS (F11): no utility pick; the run starts with weapon, dash, skill
 ## and vent. v0.8.0 N11: then waits for the hero to land on the receiver (`land` false: returns as the floor opens).
+## v0.9.0 HB (owner Q27): Play goes to the hub; the hero walks (the left stick) to the Portal Machine and presses E,
+## and its build screen starts the run as before.
 func start_from_menu(build: StringName = &"blade", land: bool = true) -> void:
-	await tap(KEY_ENTER)
-	await frames(2)
+	var walk := HubWalk.new(self)
+	await walk.enter()
+	await walk.use(&"portal")
 	if build == &"gun":
 		await tap(KEY_RIGHT)
 	await tap(KEY_ENTER)

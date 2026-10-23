@@ -85,6 +85,16 @@ const SPECS := {
 	&"shrine_blood": {"height": 1.5, "yaw": 0.0},
 	&"shrine_chaos": {"height": 1.8, "yaw": 0.0},
 	&"healing_fountain": {"height": 1.4, "yaw": 0.0},
+	# v0.9.0 HB: the owner's hub pieces (delivered 2026-10-22, scripts/assets/mi2_prep.py: front kept on +Z, the hub's
+	# stations face the camera's side). The machine is drawn at 4.6 m tall (the art list's 6.0 m filled the plaza's
+	# centre; starting value), the rest at the art list's heights; the pedestals a little lower so six fit a station.
+	&"hub_portal_machine": {"height": 4.6, "yaw": 0.0},
+	&"hub_archive": {"height": 3.2, "yaw": 0.0},
+	&"hub_wardrobe": {"height": 2.4, "yaw": 0.0},
+	&"hub_station": {"height": 1.6, "yaw": 0.0},
+	&"hub_trophy_pedestal": {"height": 0.9, "yaw": 0.0},
+	&"hub_collectible_pedestal": {"height": 1.0, "yaw": 0.0},
+	&"hub_collectible_pedestal_b": {"height": 1.0, "yaw": 0.0},
 }
 
 ## Where the manifest is read (tests point it at their own).

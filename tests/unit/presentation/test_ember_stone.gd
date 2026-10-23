@@ -217,7 +217,7 @@ func test_the_screens_fit_at_interface_size_110() -> void:
 	var need := col.get_combined_minimum_size()
 	assert_lt(need.x, visible.x, "the three cards fit across (%d px)" % need.x)
 	assert_lt(need.y, visible.y, "and down (%d px)" % need.y)
-	var main := MainMenu.new("v", true, true)
+	var main := MainMenu.new("v", true)
 	add_child_autofree(main)
 	var slab := main.slab.get_combined_minimum_size()
 	assert_lt(slab.y, visible.y, "the longest main menu fits (%d px)" % slab.y)
