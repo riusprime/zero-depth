@@ -10,6 +10,9 @@ const CP_STATS: Array[StringName] = [
 const CP_MODS: Array[StringName] = [
 	&"cluster_payload", &"overclocked_drone", &"razor_orbit", &"afterimage"
 ]
+## v0.9.0 FV: floor 1 holds two altars (loot scales with its rooms), and neither of Main.STAGE_SEED's offers a CP
+## card; CP_SEED's first altar does (found with this walk over the seeds after it).
+const CP_SEED := 20261012
 
 
 func after_each() -> void:
@@ -46,7 +49,7 @@ static func _cp_card(w: World, offer: PackedInt32Array) -> int:
 
 func test_open_altars_until_a_new_card_is_offered_and_take_it() -> void:
 	var e := E2e.new(self)
-	var main: Main = await e.boot()
+	var main: Main = await e.boot(null, null, CP_SEED)
 	await e.start_from_menu()
 	var w := e.world()
 	var hud: Hud = main.get_node("UI/Hud")
