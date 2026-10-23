@@ -53,6 +53,15 @@ func _init() -> void:
 
 
 func setup(reader: WorldReader, cover: Color = Color()) -> void:
+	_setup(reader, cover)
+	# A light whose shrine or fountain this floor lacks never joins the tree: free it, or it stays an orphan node
+	# (test_e2e_damage_soak). Every later use is behind its root's null check.
+	for l: OmniLight3D in [shrine_light, fountain_light]:
+		if l.get_parent() == null:
+			l.free()
+
+
+func _setup(reader: WorldReader, cover: Color) -> void:
 	var d := reader.shrine()
 	if d.is_empty():
 		return
