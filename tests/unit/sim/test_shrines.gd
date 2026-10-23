@@ -212,8 +212,18 @@ func test_chaos_spawns_its_challenge_and_clearing_it_rewards() -> void:
 ## v0.9.0 EL (owner Q29b: "the Chaos challenge may bring an elite, a designed exception"): with its chance (250 per
 ## mille as shipped; forced to 1000 here) the challenge also brings one elite archetype, which counts as a member.
 func test_chaos_may_bring_an_elite() -> void:
-	var w := ShrineLab.with_kind(ShrineTable.Kind.CHAOS)
-	assert_not_null(w, "a Chaos shrine within 80 seeds")
+	# v0.9.0 CF2: a Chaos shrine whose room holds the whole challenge and the elite at once (the Lockdowns now take
+	# their rooms first, so the first Chaos shrine stands in a smaller room; the small room is test_closed_fights')
+	var w: World = null
+	for s in range(1, 201):
+		var c := ShrineLab.with_kind(ShrineTable.Kind.CHAOS, 2, s, 1)
+		if c == null:
+			continue
+		var need := c.shrine.table.chaos_size(4) + c.elite_rules.elite_weight
+		if Shrines.at_once(c) >= need:
+			w = c
+			break
+	assert_not_null(w, "a Chaos shrine within 200 seeds whose room holds the challenge at once")
 	if w == null:
 		return
 	assert_eq(w.shrine.table.chaos_elite_permille, 250, "the starting value")

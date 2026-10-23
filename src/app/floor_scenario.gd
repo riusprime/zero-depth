@@ -24,6 +24,10 @@ extends RefCounted
 ## (FloorShape.size_floor: about 10, 13, 15, 17 and 19 rooms), written over `map`.
 ## v0.9.0 CF (owner: "lets never make it a 1x1"): the Overrun room and the arenas take rooms of at least their tables'
 ## min_cells grid cells (`overrun`: null, any room; RunSaver.floor_tables reads 0 for a floor saved before CF).
+## v0.9.0 CF2 (owner: "Lockdowns get rooms first"): with `lockdown_first` (floor rules 17), the Lockdowns' rooms are
+## marked right after the arenas (LockdownRooms.mark, nothing else taken yet), so the shrine, the fountain, the events,
+## the curse room and the secrets take the rooms left (each keeps out of FloorLayout.lockdown_rooms); null (a floor
+## saved under rules 1-16), FloorPlan.add_secrets marks them last, as before.
 
 
 static func build(
@@ -40,7 +44,8 @@ static func build(
 	gamble: GambleTable = null,
 	arenas: ArenaTable = null,
 	map: FloorParams = null,
-	overrun: OverrunTable = null
+	overrun: OverrunTable = null,
+	lockdown_first: LockdownTable = null
 ) -> World:
 	var params := map
 	var sized := FloorShape.sized(run)  # v0.9.0 FV (Q24): the run's floor size (none in the 3-floor shape)
@@ -55,6 +60,8 @@ static func build(
 	OverrunRooms.mark(layout, overrun.min_cells if overrun != null else 0)
 	if arenas != null:  # v0.5.5 AR: the sealed arenas, before the rewards that fill them first
 		ArenaRooms.mark(layout, arenas.share_permille, arenas.min_cells)
+	if lockdown_first != null:  # v0.9.0 CF2: the Lockdowns next, before the shrine, events and secrets
+		LockdownRooms.mark(layout, lockdown_first, floor_index, PackedInt32Array())
 	var routes := Routes.offers_choice(run) and Routes.place_deep_gate(layout)  # v0.5.0 RT
 	# v0.9.0 DP (owner Q26b): the Deep gate's spot is placed as before, but it stands and opens only once the floor's
 	# purple runes are awakened (PurpleRunes.earn); a floor saved before DP keeps it on every floor before the last.

@@ -285,6 +285,7 @@ static func pick_rooms(
 			or r == layout.overrun_room
 			or r == layout.shop_room
 			or layout.arena_rooms.has(r)  # v0.5.5 AR: arenas are combat rooms
+			or layout.lockdown_rooms.has(r)  # v0.9.0 CF2: marked first from floor rules 17
 			or taken.has(r)
 		):
 			continue

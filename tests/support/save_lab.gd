@@ -76,7 +76,8 @@ static func build_floor(
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine")),
 		rules[&"arena"],  # v0.5.5 AR, as Main
 		rules[&"map"],  # v0.7.5 MG, as Main
-		rules[&"overrun"]  # v0.9.0 CF, as Main
+		rules[&"overrun"],  # v0.9.0 CF, as Main
+		rules[&"lockdown_first"]  # v0.9.0 CF2, as Main
 	)
 	var biome: BiomeDefinition = repo.get_def(
 		&"biomes", (repo.get_def(&"run", run.table.id) as RunDefinition).biomes[run.biome_of()]

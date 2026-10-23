@@ -16,6 +16,9 @@ extends RefCounted
 ##   (never two in a row);
 ## - each one's kind is drawn from the same stream by the kinds' weights among those allowed on the floor (the Elite
 ##   kind is step EL's hook, weight 0 in the data).
+## v0.9.0 CF2 (owner: "Lockdowns get rooms first"): from floor rules 17 mark runs right after the arenas and the
+## Overrun room (FloorScenario.build, `taken` empty, no event, shrine, curse room or secret placed yet), and those
+## kinds keep out of lockdown_rooms (and a secret's host is never one); the rules above are unchanged.
 ## Pure sim code: integers, BFS over the doorway graph.
 
 const STREAM := "map:lockdowns"

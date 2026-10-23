@@ -62,6 +62,16 @@ static func setup(w: World, t: LockdownTable, floor_index: int) -> void:
 		return
 	if LockdownRooms.mark(f, t, floor_index, taken_rooms(w)).is_empty():
 		return
+	begin(w, t)
+
+
+## v0.9.0 CF2 (owner: "Lockdowns get rooms first"): sets up `w`'s Lockdowns in the rooms its layout already marks
+## (FloorScenario.build marked them before the other kinds, from floor rules 17), as setup does after marking. No-op
+## without a table or a marked room.
+static func begin(w: World, t: LockdownTable) -> void:
+	var f := w.floor_layout
+	if f == null or t == null or f.lockdown_rooms.is_empty():
+		return
 	var s := LockdownState.new()
 	s.table = t
 	w.lockdown = s

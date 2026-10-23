@@ -6,6 +6,8 @@ extends SceneTree
 ##   one, and the floors holding one in a 1 x 1-cell room.
 ## - Per room footprint seen in a closed fight: its rooms' mean floor area (m2), and per kind the at-once cap there
 ##   (ClosedFights.cap at that mean area, the kind's data) next to today's at-once count on floor 5 (the whole wave).
+## - v0.9.0 CF2: per floor, the floors with 0, 1 and 2 Lockdowns (any kind), and the runs with a purple-rune room on
+##   floor 2 or 3 (`rules=16` is the order before CF2).
 ## `rules=15` builds every floor under the floor rules before CF (the rooms a floor saved then rebuilds with:
 ## ClosedFights.legacy_rooms): the before; the default is today's. Prints the tables and writes
 ## build/balance/closed_fights_rules_<rules>.txt; copy the printed output into evidence by hand.
@@ -33,8 +35,14 @@ func _initialize() -> void:
 		tiny[k] = 0
 	var areas := {}  # footprint -> [sum of m2, rooms]
 	var floors := 0
+	var per_count := {}  # v0.9.0 CF2: Lockdowns (any kind) a floor -> floors
+	var per_floor := []  # v0.9.0 CF2: per floor index, Lockdowns a floor -> floors
+	for fi in FLOORS:
+		per_floor.append({})
+	var purple_23 := 0  # v0.9.0 CF2: runs with a purple-rune room on floor 2 or 3
 	for s in range(1, seeds + 1):
 		var purple := PackedInt32Array()
+		var mid := false
 		for floor_index in range(1, FLOORS + 1):
 			var run := Lab.run_state(s, floor_index, &"blade", 0, repo)
 			run.purple_floors = purple.duplicate()
@@ -42,7 +50,12 @@ func _initialize() -> void:
 			var w := Lab.build_floor(run, &"", repo)
 			if w.purple != null and not purple.has(run.run_floor()):
 				purple.append(run.run_floor())
+			if w.purple != null and floor_index in [2, 3]:
+				mid = true
 			floors += 1
+			var n := w.floor_layout.lockdown_rooms.size()
+			per_count[n] = int(per_count.get(n, 0)) + 1
+			per_floor[floor_index - 1][n] = int(per_floor[floor_index - 1].get(n, 0)) + 1
 			var rooms := _rooms(w)
 			for k: StringName in KINDS:
 				var list: PackedInt32Array = rooms[k]
@@ -59,6 +72,8 @@ func _initialize() -> void:
 					areas[key] = acc
 				if small:
 					tiny[k] += 1
+		if mid:
+			purple_23 += 1
 	var lines := PackedStringArray()
 	lines.append(
 		(
@@ -71,6 +86,18 @@ func _initialize() -> void:
 	lines.append("|---|---|---|")
 	for k: StringName in KINDS:
 		lines.append("| %s | %d | %d |" % [k, with[k], tiny[k]])
+	lines.append("")
+	lines.append("Lockdowns (any kind) a floor: floors with 0 / 1 / 2 (CF2)")
+	lines.append("| floor | 0 | 1 | 2 |")
+	lines.append("|---|---|---|---|")
+	for fi in FLOORS:
+		var d: Dictionary = per_floor[fi]
+		lines.append("| %d | %d | %d | %d |" % [fi + 1, d.get(0, 0), d.get(1, 0), d.get(2, 0)])
+	lines.append(
+		"| all | %d | %d | %d |" % [per_count.get(0, 0), per_count.get(1, 0), per_count.get(2, 0)]
+	)
+	lines.append("")
+	lines.append("runs with a purple-rune room on floor 2 or 3: %d of %d" % [purple_23, seeds])
 	lines.append("")
 	_caps(lines, repo, areas)
 	var text := "\n".join(lines)

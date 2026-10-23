@@ -142,7 +142,23 @@ static func floor_tables(run: RunState, repo: ContentRepository) -> Dictionary:
 		if shop != null:
 			shop.first_floor = 1
 			shop.every_floors = 1
-	return {&"map": map, &"arena": arena, &"shop": shop, &"overrun": overrun}
+	var first: LockdownTable = null  # v0.9.0 CF2: a floor built under rules 17 marks its Lockdowns first
+	if run != null and run.floor_rules > RunState.FLOOR_RULES_V090_CF:
+		first = lockdown_table(run, repo)
+	return {
+		&"map": map, &"arena": arena, &"shop": shop, &"overrun": overrun, &"lockdown_first": first
+	}
+
+
+## v0.9.0 LK, EL, CF: the Lockdowns' table a floor of `run` is built with: no Elite Lockdown on a floor saved before
+## EL (rules 1-14), any room size on one saved before CF (1-15). Null without the data.
+static func lockdown_table(run: RunState, repo: ContentRepository) -> LockdownTable:
+	var t := RunContentCompiler.compile_lockdown(repo.get_def(&"lockdown", &"lockdown"))
+	if t != null and run != null and run.floor_rules <= RunState.FLOOR_RULES_V090_SH:
+		t.kind_weights[LockdownTable.Kind.ELITE] = 0  # v0.9.0 EL: a floor saved before EL had none
+	if t != null and ClosedFights.legacy_rooms(run):  # v0.9.0 CF: a floor saved before CF keeps its rooms
+		t.min_cells = 0
+	return t
 
 
 ## v0.8.0 RT2: the designed layouts a floor saved under floor rules 4 (RT1) was built with: RT1_LAYOUTS out of

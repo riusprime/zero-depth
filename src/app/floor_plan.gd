@@ -216,6 +216,9 @@ static func affinity_def(repo: ContentRepository, run: RunState) -> AffinityDefi
 ## Lockdown either).
 ## v0.9.0 SH, HF: first, the floor's shrine kind (on the gamble shrine's site) and its healing fountain, which the
 ## secrets and Lockdowns then keep out of (one saved before SH, rules 1-13, has a Fortune shrine and no fountain).
+## v0.9.0 CF2 (owner: "Lockdowns get rooms first"): from rules 17 the Lockdowns' rooms are marked in
+## FloorScenario.build, right after the arenas and the Overrun room, and every kind here keeps out of them; here they
+## only begin (Lockdowns.begin). A floor saved under rules 13-16 marks them here, last, as it was built.
 static func add_secrets(
 	w: World, repo: ContentRepository, run: RunState, move_speed: float
 ) -> void:
@@ -239,13 +242,10 @@ static func add_secrets(
 		if run.floor_rules > RunState.FLOOR_RULES_V090_LK:  # v0.9.0 SH, HF: never a shrine's or fountain's room
 			taken = Shrines.site_rooms(w)
 		PurpleRunes.setup(w, PurpleRunes.chance(run, chances), taken)
-	if run.floor_rules > RunState.FLOOR_RULES_V090_DP:  # v0.9.0 LK (owner Q21): last, never another kind's room
-		var lockdown := RunContentCompiler.compile_lockdown(repo.get_def(&"lockdown", &"lockdown"))
-		if lockdown != null and run.floor_rules <= RunState.FLOOR_RULES_V090_SH:
-			lockdown.kind_weights[LockdownTable.Kind.ELITE] = 0  # v0.9.0 EL: a floor saved before EL had none
-		if lockdown != null and ClosedFights.legacy_rooms(run):  # v0.9.0 CF: a floor saved before CF keeps its rooms
-			lockdown.min_cells = 0
-		Lockdowns.setup(w, lockdown, run.floor_index)
+	if run.floor_rules > RunState.FLOOR_RULES_V090_CF:  # v0.9.0 CF2: rooms marked first (FloorScenario.build)
+		Lockdowns.begin(w, RunSaver.lockdown_table(run, repo))
+	elif run.floor_rules > RunState.FLOOR_RULES_V090_DP:  # v0.9.0 LK (owner Q21): last, never another kind's room
+		Lockdowns.setup(w, RunSaver.lockdown_table(run, repo), run.floor_index)
 	# v0.9.0 EL (owner Q24): the elite rooms, after the Lockdowns (never one, never next to an Elite Lockdown); a
 	# floor saved before EL (rules 1-14) has none. The rules are set on every floor (an elite's 30 % core drop).
 	var elite_rules := EliteCompiler.compile_rules(repo.get_def(&"elite_rules", &"rules"))
@@ -302,7 +302,8 @@ func _floor_world(
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine")),  # v0.3.0 L19: the gamble shrine.
 		rules[&"arena"],  # v0.5.5 AR: the sealed arenas
 		rules[&"map"],  # v0.7.5 MG: rooms, footprints (N9)
-		rules[&"overrun"]  # v0.9.0 CF: the Overrun room's least cells
+		rules[&"overrun"],  # v0.9.0 CF: the Overrun room's least cells
+		rules[&"lockdown_first"]  # v0.9.0 CF2: the Lockdowns' rooms first (null for rules 1-16)
 	)
 	# v0.5.0 SH; v0.7.5 MG: every two floors (N12); v0.8.0 SR: in the biome's shop room (O13)
 	FloorScenario.add_shop(w, rules[&"shop"], biome_id, rules[&"map"])
