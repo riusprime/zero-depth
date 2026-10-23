@@ -105,6 +105,12 @@ static func fountain_site(
 		order[j] = swap
 	var p := map if map != null else FloorParams.defaults()
 	for room in order:
+		# v0.9.0 RG: never the shop's own room. Gamble.rooms keeps out the room ShopPlacement would pick, but the shop
+		# already stands here and its room is furnished, so that pick can name another room (run seed 107 floor 5: the
+		# fountain stood in the shop's room; the no-softlock property test found it). Skipped after the draw, so no
+		# other floor's fountain moves.
+		if room == f.shop_room:
+			continue
 		var at := Gamble.room_spot(f, room, gt, p)
 		if not at.is_empty():
 			return at
