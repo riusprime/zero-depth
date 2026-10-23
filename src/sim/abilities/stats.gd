@@ -201,7 +201,7 @@ static func max_hp(w: World) -> int:
 
 ## v0.8.0 N8: max_hp() with the max HP stat at `v` (CardForecast's after-card number).
 static func max_hp_at(w: World, v: int) -> int:
-	var base := (w.player.hp * v + 500) / 1000
+	var base := ((w.player.hp + w.floor_hp_bonus) * v + 500) / 1000  # v0.9.0 SV: the floors' growth
 	var cut := Curses.max_hp_permille(w)  # v0.6.0 CU: Glass Heart
 	if cut != 1000:
 		base = maxi(1, (base * cut + 500) / 1000)

@@ -491,7 +491,8 @@ func _floor_live(nodes: Dictionary) -> void:
 		String(biome.name_key),
 		run.is_deep(),  # v0.5.0 RT: "Floor 2 · Deep"
 		driver.reader.shards_left_behind() if resume.is_empty() else 0,  # v0.5.5 EC (Q-S4)
-		run.loop  # v0.7.5 AP: "Loop 2 · Floor 1"
+		run.loop,  # v0.7.5 AP: "Loop 2 · Floor 1"
+		RunCarry.hp_grown(run) if resume.is_empty() else 0  # v0.9.0 SV: "Max HP +15"
 	)
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))

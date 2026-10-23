@@ -648,6 +648,7 @@ MAP_LEGEND_SHOP,Shop,Tienda
 HUD_FLOOR_DEEP,Floor %d · Deep · %s,Piso %d · Profundo · %s
 HUD_FLOOR_CARD_DEEP,Floor %d · Deep,Piso %d · Profundo
 HUD_SHARDS_HALVED,-%d shards,-%d fragmentos
+HUD_MAX_HP_GROWN,Max HP +%d,Vida máxima +%d
 HUD_PORTALS_OPEN,Two portals are open.,Hay dos portales abiertos.
 REWARD_OPEN_EPIC_ALTAR,[E / X] Open the epic altar,[E / X] Abrir el altar épico
 REWARD_OPEN_DROP,[E / X] Take the card,[E / X] Tomar la carta

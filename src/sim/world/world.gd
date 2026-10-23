@@ -306,6 +306,10 @@ var loop := 1
 var run_floor := 0
 var loop_threat := 0
 var loop_cap_permille := 0
+## v0.9.0 SV (owner: "Hero grows each floor"): the max HP the floors cleared so far add before the max HP stat
+## (Stats.max_hp_at). RunState.prepare sets it from the run's floor (RunState.floor_hp_bonus), so it is not saved: a
+## resumed floor derives it again. 0 outside a run.
+var floor_hp_bonus := 0
 # --- end Run flow ------------------------------------------------------------------------------------------
 var build_state := PlayerBuildState.new()  # v0.3.0 P: facing, damage remainders, combat and regen (PlayerBuild).
 var regen_bonus_permille := 0  # v0.3.0 L25 hook: extra per mille of max HP a second out of combat (PlayerRegen).
