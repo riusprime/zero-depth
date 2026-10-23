@@ -69,6 +69,12 @@ const KIND_PRISM := ActorStore.Kind.PRISM
 const KIND_NEMESIS := ActorStore.Kind.NEMESIS
 ## v0.9.0 NB1: floor 4's first new boss.
 const KIND_TIDECALLER := ActorStore.Kind.TIDECALLER
+## v0.9.0 EL: the elite archetypes, and their two attacks (elite_attack).
+const KIND_BREAKER := ActorStore.Kind.BREAKER
+const KIND_RIFT_HUNTER := ActorStore.Kind.RIFT_HUNTER
+const KIND_CONDUIT := ActorStore.Kind.CONDUIT
+const ELITE_BASIC := EliteAi.Attack.BASIC
+const ELITE_ABILITY := EliteAi.Attack.ABILITY
 ## v0.8.0 N2: The Fallen's mimic window states (final_pace "window", fallen_window), for the presentation.
 const FALLEN_OFF := FinalPace.Mimic.OFF
 const FALLEN_WARN := FinalPace.Mimic.WARN
@@ -2746,18 +2752,6 @@ func event_done_tick() -> int:
 	return _w.ev.done_tick
 
 
-## The pedestal of the ambush fighting now (-1 none) and its elites left.
-func event_ambush() -> int:
-	return _w.ev.ambush
-
-
-func event_ambush_left() -> int:
-	var n := 0
-	for id in _w.ev.ambush_ids:
-		n += 1 if _w.actors.index_of(id) >= 0 else 0
-	return n
-
-
 ## The pedestal being defended (-1 none), the share held (0..1) and the ring's radius.
 func event_defend() -> int:
 	return _w.ev.defend
@@ -2771,9 +2765,9 @@ func event_defend_radius_m() -> float:
 	return _w.ev.rules.defend_radius_m
 
 
-## Actor i is an elite (an ambush pack or an elite curse's spawn).
+## Actor i is an elite (v0.9.0 EL: one of the three archetypes).
 func actor_elite(i: int) -> bool:
-	return Curses.is_elite(_w, _w.actors.ids[i])
+	return EliteAi.is_elite_kind(_w.actors.kinds[i])
 
 
 # --- v0.6.0 CU: core theft and the trade-off curses ---------------------------------------------------------------
@@ -2859,8 +2853,6 @@ func curse_up_value_text(c: int) -> String:
 static func _effect_text(effect: int, amount: int) -> String:
 	match effect:
 		Curses.Effect.EXTRA_ENEMY, Curses.Effect.NO_DASH, Curses.Effect.NO_MINIMAP:
-			return str(amount)
-		Curses.Effect.ELITE_RARE_DROP:
 			return str(amount)
 		Curses.Effect.HIT_STUN:
 			return str(snappedf(float(amount) / SimTick.TICKS_PER_SECOND, 0.01))
@@ -3405,3 +3397,56 @@ func lockdown_doors(room: int) -> Array[Dictionary]:
 ## Puzzle calm (Q22): the hero stands in an unsolved puzzle's room (new packs at a quarter of the rate).
 func puzzle_calm() -> bool:
 	return Interactables.calm_now(_w)
+
+
+# --- The elites (v0.9.0 EL; Elites, EliteAi) ----------------------------------------------------------------------
+## Actor `kind` is an elite archetype (the Breaker, the Rift Hunter, the Conduit).
+static func is_elite_kind(kind: int) -> bool:
+	return EliteAi.is_elite_kind(kind)
+
+
+## The elite actor i's name (a locale key: its bar's label), else &"".
+func elite_name_key(i: int) -> StringName:
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	return t.name_key if t != null and t.elite != null else &""
+
+
+## Which attack elite actor i is making or last made: ELITE_ABILITY or ELITE_BASIC.
+func elite_attack(i: int) -> int:
+	return _w.actors.pick[i]
+
+
+## The Rift Hunter i has vanished (no body until it reappears on its mark).
+func elite_vanished(i: int) -> bool:
+	return EliteAi.vanished(_w, i)
+
+
+## Elite actor i is in its punish window (stuck, overloaded): its hits take more.
+func elite_vulnerable(i: int) -> bool:
+	return EliteAi.vulnerable(_w, i)
+
+
+## The Conduit i's beam while it fires (and a moment after), else null.
+func elite_beam(i: int) -> Obb:
+	return EliteAi.beam_now(_w, i)
+
+
+## The floor's elites now: {"active": false} on a floor that never had one, else the elite rooms (and which arrived),
+## the elites alive, the last arrival (tick, id, pos) and the last kill (tick, pos, whether its card dropped).
+func elites() -> Dictionary:
+	var s := _w.elites
+	if s == null:
+		return {"active": false}
+	return {
+		"active": true,
+		"rooms": s.rooms.duplicate(),
+		"spawned": s.room_spawned.duplicate(),
+		"ids": s.ids.duplicate(),
+		"alive": s.size(),
+		"arrive_tick": s.arrive_tick,
+		"arrive_id": s.arrive_id,
+		"arrive_pos": s.arrive_pos,
+		"kill_tick": s.kill_tick,
+		"kill_pos": s.kill_pos,
+		"kill_dropped": s.kill_dropped,
+	}

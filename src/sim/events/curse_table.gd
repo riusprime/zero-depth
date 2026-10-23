@@ -17,6 +17,9 @@ var up_amount := 0
 var up_desc_key := &""
 var threat := 1
 var weight := 0
+## v0.9.0 EL: a retired curse's place (its content deleted: Marked, owner Q25): never drawn (weight 0), no effect, no
+## threat; a save still holding it drops it (Curses.drop_retired).
+var retired := false
 
 
 func is_trade_off() -> bool:

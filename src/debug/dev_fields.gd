@@ -14,7 +14,8 @@ const GROUPS := [
 		["res://data/player", "res://data/builds", "res://data/heat"],
 		""
 	],
-	["enemies", "UI_DEVM_G_ENEMIES", ["res://data/enemies"], ""],
+	# v0.9.0 EL: the elite archetypes and their rules beside the enemies
+	["enemies", "UI_DEVM_G_ENEMIES", ["res://data/enemies", "res://data/elites"], ""],
 	["sim", "UI_DEVM_G_SIM", ["res://data/tuning"], ""],
 	[
 		"bosses",

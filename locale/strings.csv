@@ -513,9 +513,6 @@ EVENT_SCRAP_HEAP,Scrap Heap,Montón de chatarra
 EVENT_SCRAP_HEAP_DESC,Something useful is buried in the wreckage.,Hay algo útil enterrado entre los restos.
 EVENT_SCRAP_HEAP_BUY,Pay a scavenger,Pagar a un chatarrero
 EVENT_SCRAP_HEAP_DIG,Dig with bare hands,Cavar con las manos
-EVENT_AMBUSH_CACHE,Ambush Cache,Alijo emboscado
-EVENT_AMBUSH_CACHE_DESC,A sealed cache. Its guardians are close.,Un alijo sellado. Sus guardianes están cerca.
-EVENT_AMBUSH_CACHE_OPEN,Break the seal,Romper el sello
 EVENT_OVERCLOCK_VENT,Overclock Vent,Respiradero de sobrecarga
 EVENT_OVERCLOCK_VENT_DESC,Raw heat pours from the vent.,Calor puro sale del respiradero.
 EVENT_OVERCLOCK_VENT_VENT,Breathe in the heat,Respirar el calor
@@ -543,9 +540,6 @@ CURSE_SWARM_CALL,Swarm Call,Llamada del enjambre
 CURSE_SWARM_CALL_DESC,More enemies in every pack,Más enemigos en cada grupo
 CURSE_PRICE_GOUGE,Price Gouge,Precios abusivos
 CURSE_PRICE_GOUGE_DESC,Everything costs more,Todo cuesta más
-CURSE_MARKED,Marked,Marcado
-CURSE_MARKED_DESC,"Elites hunt you, and there are more of them","Las élites te cazan, y hay más"
-CURSE_MARKED_UP,Slain elites drop a free rare card,Las élites abatidas sueltan una carta rara
 CURSE_ROOTED,Rooted,Enraizado
 CURSE_ROOTED_DESC,You can't dash,No puedes esprintar
 CURSE_ROOTED_UP,Sometimes dodge a hit,A veces esquivas un golpe
@@ -573,7 +567,7 @@ HUD_DODGE,DODGE,ESQUIVA
 HUD_STUNNED,STUNNED,ATURDIDO
 PICK_TITLE_CORE,Stolen core · take it,Núcleo robado · tómalo
 PICK_TITLE_ELITE_DROP,Elite's card · take it,Carta de élite · tómala
-UI_DEV_SPAWN_ELITE,Spawn elite (core),Invocar élite (núcleo)
+UI_DEV_SPAWN_ELITE,Spawn the next elite,Invocar la siguiente élite
 UI_EVENT_OPEN,[E / X] Inspect: %s,[E / X] Examinar: %s
 UI_EVENT_HINT,←/→ or 1-3 to choose · Enter or A to take · Esc or B to leave,←/→ o 1-3 para elegir · Intro o A para aceptar · Esc o B para irte
 UI_EVENT_COST,Cost,Coste
@@ -594,7 +588,6 @@ UI_EVENT_REWARD_CLEANSE,Lift your latest curse: %s,Quita tu última maldición: 
 UI_EVENT_BLOCK_SHARDS,Not enough shards,No tienes fragmentos suficientes
 UI_EVENT_BLOCK_NOTHING,Nothing to gain now,Ahora no hay nada que ganar
 UI_EVENT_BLOCK_BUSY,Not now,Ahora no
-UI_EVENT_AMBUSH,Ambush · %d elites left,Emboscada · quedan %d élites
 UI_EVENT_DEFEND,Guarding the drone · %d %%,Protegiendo el dron · %d %%
 UI_EVENT_DEFEND_AWAY,Get back to the drone!,¡Vuelve junto al dron!
 UI_CURSED,Cursed,Maldito
@@ -1215,3 +1208,22 @@ FOUNTAIN_DENIED,Already at full health,Ya tienes la salud al máximo
 CAPTION_SHRINE_BLOOD,[Blood drains into the shrine],[La sangre fluye al santuario]
 CAPTION_SHRINE_CHAOS,[Chaos roars awake],[El caos despierta rugiendo]
 CAPTION_FOUNTAIN,[Water splashes],[El agua salpica]
+ELITE_BREAKER,The Breaker,El Quebrantador
+ELITE_BREAKER_DESC,"A slow armoured brute. Step out of its slam, then hit it while its fist is stuck.","Un bruto acorazado y lento. Sal de su golpe al suelo y pégale mientras tiene el puño atascado."
+ELITE_RIFT_HUNTER,The Rift Hunter,El Cazador de Grietas
+ELITE_RIFT_HUNTER_DESC,"It marks where you stand and steps out of the rift there. Keep moving, then strike during its pause.","Marca donde estás y sale de la grieta allí. Sigue moviéndote y golpéale durante su pausa."
+ELITE_CONDUIT,The Conduit,El Conducto
+ELITE_CONDUIT_DESC,"A floating caster. Sidestep its locked beam, then close in while it lies overloaded.","Un lanzador flotante. Esquiva su rayo fijado y acércate mientras yace sobrecargado."
+CAUSE_ELITE_BREAKER_CONTACT,You ran into the Breaker.,Chocaste contra el Quebrantador.
+CAUSE_ELITE_BREAKER_PUNCH,The Breaker's stone fist knocked you down.,El puño de piedra del Quebrantador te derribó.
+CAUSE_ELITE_BREAKER_SLAM,The Breaker's slam crushed you.,El golpe al suelo del Quebrantador te aplastó.
+CAUSE_ELITE_RIFT_HUNTER_CONTACT,You ran into the Rift Hunter's blades.,Chocaste contra las cuchillas del Cazador de Grietas.
+CAUSE_ELITE_RIFT_HUNTER_SLASH,The Rift Hunter stepped out of its rift and cut you down.,El Cazador de Grietas salió de su grieta y te abatió.
+CAUSE_ELITE_CONDUIT_ORBS,The Conduit's orbs caught you.,Los orbes del Conducto te alcanzaron.
+CAUSE_ELITE_CONDUIT_BEAM,The Conduit's beam burned through you.,El rayo del Conducto te atravesó.
+CAPTION_ELITE_ARRIVE,[An elite arrives],[Llega una élite]
+CAPTION_ELITE_SLAM,[A heavy slam],[Un golpe pesado]
+CAPTION_ELITE_RIFT,[A rift tears open],[Se abre una grieta]
+CAPTION_ELITE_SLASH,[Blades slash],[Cuchillas cortan]
+CAPTION_ELITE_CHARGE,[A beam charges],[Un rayo se carga]
+CAPTION_ELITE_BEAM,[The beam fires],[El rayo dispara]

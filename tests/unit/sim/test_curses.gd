@@ -2,10 +2,11 @@
 extends GutTest
 ## v0.5.0 EV (PLAN R4; PD-05): the plain curses, each one's effect where the sim computes it; threat T (one per curse,
 ## its peak, the carry to the next floor, the run's record per floor); cursed chest offers (how many, what they hold,
-## taking the cursed card takes the curse, the other cards are clean); the shop's cleanse hook; and the Ambush Cache
-## fight, plus an elite curse floor, pass the readable-cause check with the same bars as test_readable_cause.gd.
-## v0.6.0 CU (owner S6): a cursed offer's card is a trade-off curse card (no epic stat card); the eight trade-off
-## curses themselves are tested in test_trade_off_curses.gd. Marked Hunt became C8 Marked (same id, same elite chance).
+## taking the cursed card takes the curse, the other cards are clean); the shop's cleanse hook; and (v0.9.0 EL) the
+## three elite archetypes' fights pass the readable-cause check with the same bars as test_readable_cause.gd.
+## v0.6.0 CU (owner S6): a cursed offer's card is a trade-off curse card (no epic stat card); the trade-off curses
+## themselves are tested in test_trade_off_curses.gd. v0.9.0 EL (owner Q25): Marked (C8) and the Ambush Cache are
+## deleted; their places in the tables stay retired (EventCompiler), never drawn, and a save holding them drops them.
 
 const SEED := 515
 
@@ -18,6 +19,13 @@ func test_the_shipped_curses() -> void:
 	var w := _world()
 	var ids := []
 	for c in w.ev.curses:
+		if c.retired:  # v0.9.0 EL: Marked's place, kept for the saves' indices
+			assert_eq(
+				[c.weight, c.threat, c.effect],
+				[0, 0, -1],
+				"%s is retired: never drawn, no effect" % c.id
+			)
+			continue
 		ids.append(String(c.id))
 		assert_eq(c.threat, 1, "%s raises T by 1" % c.id)
 	ids.sort()
@@ -30,7 +38,6 @@ func test_the_shipped_curses() -> void:
 			"glass_heart",
 			"heavy_hands",
 			"leaky_core",
-			"marked_hunt",
 			"price_gouge",
 			"rooted",
 			"swarm_call",
@@ -38,11 +45,11 @@ func test_the_shipped_curses() -> void:
 			"tunnel_vision",
 			"withering",
 		],
-		"five plain curses and the eight trade-offs (v0.6.0 CU)"
+		"five plain curses and the seven trade-offs (v0.6.0 CU; v0.9.0 EL: Marked deleted)"
 	)
 	var plain := []
 	for c in w.ev.curses:
-		if not c.is_trade_off():
+		if not c.is_trade_off() and not c.retired:
 			plain.append(String(c.id))
 	plain.sort()
 	assert_eq(plain, ["leaky_core", "price_gouge", "swarm_call", "swift_foes", "withering"])
@@ -153,23 +160,25 @@ func test_the_shop_prices_under_price_gouge_and_sells_a_cleanse() -> void:
 	assert_eq(Curses.threat(w), 1)
 
 
-func test_marked_hunt_makes_about_12_percent_of_spawns_elite() -> void:
-	var w := _world([&"marked_hunt"])
-	var elites := 0
-	var n := 3000
-	for k in n:
-		var id := w.add_enemy(ActorStore.Kind.CHARGER, Vector2(k % 7, 0))
-		var i := w.actors.index_of(id)
-		var hp := w.actors.max_hp[i]
-		Curses.maybe_elite(w, i)
-		if Curses.is_elite(w, id):
-			elites += 1
-			assert_eq(w.actors.max_hp[i], hp * 2, "an elite has double HP")
-	assert_between(elites, 290, 430, "about 12 % of 3000")
-	var v := _world()
-	var id := v.add_enemy(ActorStore.Kind.CHARGER, Vector2.ZERO)
-	Curses.maybe_elite(v, v.actors.index_of(id))
-	assert_false(Curses.is_elite(v, id), "no elites without the curse")
+## v0.9.0 EL (owner Q25): Marked is deleted. Its place in the curse table stays (a save's indices still name the same
+## curses), retired: never drawn by an event or a cursed chest, and a carried one is dropped at the floor's setup.
+func test_the_marked_curse_is_retired() -> void:
+	var w := _world()
+	var k := EventLab.curse_index(w, &"marked_hunt")
+	assert_gte(k, 0, "its place is kept")
+	assert_true(w.ev.curses[k].retired)
+	for n in 200:
+		var c := Curses.roll(w)
+		assert_ne(c, k, "never drawn")
+	var carried := _world()
+	carried.curses_owned = PackedInt32Array([k, EventLab.curse_index(carried, &"swift_foes")])
+	Curses.drop_retired(carried)
+	assert_eq(
+		carried.curses_owned,
+		PackedInt32Array([EventLab.curse_index(carried, &"swift_foes")]),
+		"a held Marked curse goes, the others stay"
+	)
+	assert_eq(Curses.threat(carried), 1)
 
 
 func test_threat_counts_curses_and_carries_to_the_next_floor() -> void:
@@ -325,22 +334,21 @@ func test_taking_the_cursed_card_takes_its_curse_and_the_others_are_clean() -> v
 		assert_true(w.ev.cursed_ids.is_empty(), "the chest is gone, and its mark")
 
 
-func test_ambush_cache_and_elite_spawns_are_readable() -> void:
+## v0.9.0 EL: the three elites (one at a time, beside the floor's horde) hit only through telegraphed attacks or a touch
+## of their visible body, each with its own recap line.
+func test_elite_fights_are_readable() -> void:
 	var damage := 0
+	var causes := {}
 	var jobs := [
-		[4242, 1, []],
-		[4242, 2, []],
-		[77, 2, [&"marked_hunt", &"swift_foes"]],
-		[78, 3, [&"swarm_call", &"marked_hunt"]],
+		[4242, 4, ActorStore.Kind.BREAKER, []],
+		[4243, 5, ActorStore.Kind.RIFT_HUNTER, [&"swift_foes"]],
+		[4244, 4, ActorStore.Kind.CONDUIT, [&"swarm_call"]],
 	]
 	for job: Array in jobs:
-		var w := EventLab.world(job[0], job[1], &"blade", job[2])
-		EventLab.set_event(w, &"ambush_cache")
+		var w := EventLab.world(job[0], job[1], &"blade", job[3])
 		var check := ReadableCause.new(w)
-		check.context = {"seed": job[0], "floor": job[1], "curses": job[2]}
-		EventLab.open(w)
-		EventLab.pick(w, 1)
-		assert_eq(w.ev.ambush_ids.size(), 3)
+		check.context = {"seed": job[0], "floor": job[1], "elite": job[2]}
+		Elites.spawn(w, job[2], w.player_pos() + Vector2(5, 0), Elites.Source.DEV)
 		var bot := FightBot.new(job[0])
 		for t in 3000:
 			w.step(bot.frame(w))
@@ -348,7 +356,14 @@ func test_ambush_cache_and_elite_spawns_are_readable() -> void:
 			if not w.player_dead():
 				w.actors.hp[0] = w.actors.max_hp[0]  # test-side top-up, as CauseRun
 		damage += check.damage_count
+		causes.merge(check.by_cause)
 		for v: Dictionary in check.violations:
 			fail_test("unreadable hit: %s" % JSON.stringify(v))
-	gut.p("hits taken in the ambush runs: %d" % damage)
+	gut.p("hits taken in the elite runs: %d %s" % [damage, causes])
+	for key in ["CAUSE_ELITE_BREAKER_SLAM", "CAUSE_ELITE_RIFT_HUNTER_SLASH"]:
+		assert_true(causes.has(key), "%s landed in the runs" % key)
+	assert_true(
+		causes.has("CAUSE_ELITE_CONDUIT_BEAM") or causes.has("CAUSE_ELITE_CONDUIT_ORBS"),
+		"the Conduit landed something (the bot sidesteps its locked beam)"
+	)
 	assert_gt(damage, 20, "the bot was hit often enough for the check to mean something")

@@ -16,7 +16,8 @@ extends RefCounted
 ## - Chaos: one press begins the challenge: chaos_size(floor) enemies at once on the room's spawn points (kinds
 ##   weighted as the spawn director's at the curve's level now, scaled on arrival like any spawn, from the
 ##   `combat:chaos` stream of the floor seed). When none of them is left alive (advance), it raises chaos_altars free
-##   altars. chaos_elite_permille is EL's hook (0: no elite now).
+##   altars. v0.9.0 EL: with chaos_elite_permille (then drawn on the same stream, after the enemies) the challenge
+##   also brings one elite archetype (Elites.spawn), unless as many elites as the rules allow are already alive.
 ## - The healing fountain: on fountain_permille of floors from fountain_floor_min (the `map:fountain` sub-stream), in
 ##   a free spot of a combat room (Gamble.room_spot, as the shrine), never the shrine's room, an event's or the curse
 ##   room; the secrets and Lockdowns placed after keep out of its room (taken_rooms). Its footprint is a wall. One
@@ -281,6 +282,16 @@ static func _spawn_challenge(w: World) -> void:
 		var id := w.add_enemy(w.spawner.kinds[open[pick]], q)
 		SpawnDirector.scale_arrival(w, w.actors.size() - 1, ticks)
 		s.members.append(id)
+	# v0.9.0 EL (owner Q29b: "the Chaos challenge may bring an elite, a designed exception"): drawn last from the same
+	# stream (no draw above moves), and only while no elite is out of the rooms' limit.
+	var chance := s.table.chaos_elite_permille
+	if chance <= 0 or Elites.alive(w) >= Elites.max_alive(w) or not rng.chance_permille(chance):
+		return
+	var at := challenge_spots(w, rng, 1)
+	if not at.is_empty():
+		var eid := Elites.spawn(w, Elites.draw_kind(rng, w.elite_rules), at[0], Elites.Source.CHAOS)
+		if eid >= 0:
+			s.members.append(eid)
 
 
 ## `count` spots for the challenge: the shrine room's spawn points clear of its footprint and MIN_HERO_M from the

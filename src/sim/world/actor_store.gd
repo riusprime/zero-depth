@@ -35,6 +35,9 @@ enum Kind {
 	PRISM,
 	NEMESIS,
 	TIDECALLER,  # v0.9.0 NB1: floor 4's first new boss (BOSSES_4_5.md N1)
+	BREAKER,  # v0.9.0 EL: the three elite archetypes (EliteAi; ELITES.md E1-E3)
+	RIFT_HUNTER,
+	CONDUIT,
 }
 
 const TEAM_PLAYER := 0

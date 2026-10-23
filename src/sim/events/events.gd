@@ -12,9 +12,10 @@ extends RefCounted
 ## - A pick (InputFrame.pick 1..n) pays the cost, adds the curse (Curses) and gives the reward; "Leave" (the cancel)
 ##   closes the panel and keeps the event for later. A choice whose cost can't be paid or whose reward can't apply
 ##   is refused (the view greys it out and names why). The pedestal goes dark once a choice is taken.
-## - Ambush Cache (cost FIGHT) brings an elite pack into the room (each a normal enemy kind with its own telegraphs,
-##   spawning in like any enemy); the chest appears when the last one falls. Wandering Drone (cost DEFEND) counts
-##   the ticks you stand within the ring, spawns arriving twice as fast meanwhile, and pays its shards when done.
+## - Wandering Drone (cost DEFEND) counts the ticks you stand within the ring, spawns arriving twice as fast
+##   meanwhile, and pays its shards when done. (v0.9.0 EL, owner Q25 "Remove it": the Ambush Cache and its cost FIGHT
+##   are gone; a retired event keeps its place in the tables, EventCompiler, and a save's pedestal of it closes on
+##   load: drop_retired.)
 ## - v0.8.0 N17 (owner O75: "we need to create a room for this that looks dark and uses the glyphs symbols around it
 ##   with a new model, and they need to appear once max per floor and 40% of floors not all the time"): the curse room.
 ##   On rules.curse_room_floor_chance_permille of floors (`map:curse_room`, from the floor seed: curse_site) one combat
@@ -42,8 +43,6 @@ const OK := 0
 const NEED_SHARDS := 1
 const NEED_NOTHING_TO_GAIN := 2
 const NEED_BUSY := 3
-## The chest an ambush leaves stands this far from the pedestal, toward the room's centre.
-const CHEST_OFFSET_M := 1.4
 ## v0.8.0 N17: the curse room's draw (does the floor have one, and which room).
 const CURSE_STREAM := "map:curse_room"
 ## v0.8.0 N17: which events a draw takes (draw_event).
@@ -79,6 +78,7 @@ static func setup(
 		return
 	s.rng = RngStream.derive(w.seed_value, "loot:event")
 	s.rng_elite = RngStream.derive(w.seed_value, "ai:elite")
+	Curses.drop_retired(w)  # v0.9.0 EL: a carried Marked curse (owner Q25) is gone
 	Curses.after_setup(w)  # v0.6.0 CU: a held Glass Heart cuts the fresh floor's max HP
 	if w.floor_layout != null and not events.is_empty():
 		place(w, w.floor_layout, PackedInt32Array(), curse_rules)
@@ -514,9 +514,8 @@ static func _cost_block(w: World, k: int, c: int) -> int:
 			why = OK if Stats.enabled(w) else NEED_NOTHING_TO_GAIN
 		Cost.OVERHEAT:
 			why = NEED_BUSY if w.heat == null or Heat.stalled(w) else OK
-		Cost.FIGHT:
-			var cant := w.ev.ambush >= 0 or w.spawner == null or w.floor_layout == null
-			why = NEED_BUSY if cant else OK
+		Cost.FIGHT:  # v0.9.0 EL: retired with the Ambush Cache
+			why = NEED_BUSY
 		Cost.DEFEND:
 			why = NEED_BUSY if w.ev.defend >= 0 else OK
 	return why
@@ -567,9 +566,6 @@ static func take(w: World, k: int, c: int) -> void:
 			w.shards -= shard_cost(w, k, c)
 		Cost.OVERHEAT:
 			Heat.add(w, w.heat.table.max_milli() * 4)  # past any shrine heat capacity: the overheat
-		Cost.FIGHT:
-			_ambush(w, k, amount)
-			s.state[k] = State.ACTIVE
 		Cost.DEFEND:
 			s.defend = k
 			s.defend_ticks = 0
@@ -611,73 +607,11 @@ static func cut_max_hp(w: World, permille: int) -> void:
 	w.actors.hp[0] = clampi(w.actors.hp[0], 1, w.actors.max_hp[0])
 
 
-## Ambush Cache: `n` elites of the kinds the floor spawns now (loot:event picks kind and spot), at the room's spawn
-## points at least ambush_min_distance_m from you (else any of the room's), HP scaled to the danger tier like the
-## spawn director's (HP and power), then raised as elites.
-static func _ambush(w: World, k: int, n: int) -> void:
-	var s := w.ev
-	var t := w.spawner
-	var tier := t.tier_at(w.run_ticks)
-	var open := SpawnDirector.unlocked(w, t, tier)
-	var pts := PackedVector2Array()
-	var all: PackedVector2Array = (
-		w.floor_layout.spawn_points[s.room[k]]
-		if s.room[k] < w.floor_layout.spawn_points.size()
-		else PackedVector2Array()
-	)
-	for p in all:
-		if Kin.length(p - w.player_pos()) >= s.rules.ambush_min_distance_m:
-			pts.append(p)
-	if pts.is_empty():
-		pts = all
-	if pts.is_empty() or open.is_empty():
-		pts = PackedVector2Array([s.pos(k) + Vector2(s.rules.ambush_min_distance_m, 0)])
-	s.ambush = k
-	s.ambush_ids = PackedInt32Array()
-	var first := s.rng.range_int(0, pts.size() - 1)
-	for m in n:
-		var kind := ActorStore.Kind.CHARGER
-		if not open.is_empty():
-			var weights := PackedInt32Array()
-			for j in open:
-				weights.append(t.weights[j])
-			var pick := Offers.pick(s.rng, weights)
-			kind = t.kinds[open[maxi(pick, 0)]]
-		if w.enemy_table(kind) == null:
-			continue
-		var id := w.add_enemy(kind, pts[(first + m) % pts.size()])
-		var i := w.actors.size() - 1
-		var hp := t.scaled_hp(w.enemy_table(kind).hp, tier)
-		w.actors.hp[i] = hp
-		w.actors.max_hp[i] = hp
-		w.actors.power[i] = t.damage_permille(tier)  # v0.4.0 SC: the tier's damage, like a spawn
-		CatchUp.on_enemy(w, i)  # v0.5.5 DS (D4): the floor's hidden catch-up, like a spawn
-		Curses.make_elite(w, i)
-		s.ambush_ids.append(id)
-
-
-## Tick phase 9, after the dead are removed: the elites still alive, an ambush cleared (its chest), a defence held
-## (its shards).
+## Tick phase 9, after the dead are removed: a defence held (its shards).
 static func advance(w: World) -> void:
 	var s := w.ev
 	if s.rng == null:
 		return
-	if not s.elite_ids.is_empty():
-		var alive := PackedInt32Array()
-		for id in s.elite_ids:
-			if w.actors.index_of(id) >= 0:
-				alive.append(id)
-		s.elite_ids = alive
-	if s.ambush >= 0:
-		var left := 0
-		for id in s.ambush_ids:
-			if w.actors.index_of(id) >= 0:
-				left += 1
-		if left == 0:
-			_finish(w, s.ambush)
-			w.add_reward(RewardStore.Kind.CHEST, chest_spot(w, s.ambush), 0)
-			s.ambush = -1
-			s.ambush_ids = PackedInt32Array()
 	if s.defend >= 0 and not w.player_dead():
 		if Kin.length(w.player_pos() - s.pos(s.defend)) <= s.rules.defend_radius_m:
 			s.defend_ticks += 1
@@ -686,6 +620,17 @@ static func advance(w: World) -> void:
 			pay_shards(w, k, s.defend_reward)
 			_finish(w, k)
 			s.defend = -1
+
+
+## v0.9.0 EL (owner Q25): a restored floor's pedestal of a retired event (the Ambush Cache) is closed; the curses a
+## save still holds that are retired go (Curses.drop_retired). WorldSnapshot.apply calls it.
+static func drop_retired(w: World) -> void:
+	var s := w.ev
+	for k in s.size():
+		var e := s.event[k]
+		if e >= 0 and e < s.events.size() and s.events[e].retired and s.state[k] != State.DONE:
+			s.state[k] = State.DONE
+	Curses.drop_retired(w)
 
 
 ## Pays `per_floor` x the floor number shards (under the shard gain stat) from pedestal k, with a SHARDS event.
@@ -701,17 +646,6 @@ static func _finish(w: World, k: int) -> void:
 	w.ev.state[k] = State.DONE
 	w.ev.done_tick = w.tick
 	w.ev.done_pedestal = k
-
-
-## Where an ambush's chest appears: CHEST_OFFSET_M from the pedestal toward its room's centre (the pedestal itself
-## when it is the centre).
-static func chest_spot(w: World, k: int) -> Vector2:
-	var at := w.ev.pos(k)
-	var c := w.floor_layout.rooms[w.ev.room[k]].get_center() if w.floor_layout != null else at
-	var d := Kin.length(c - at)
-	if d < 0.01:
-		return at + Vector2(CHEST_OFFSET_M, 0)
-	return at + (c - at) * (CHEST_OFFSET_M / d)
 
 
 ## Wandering Drone: while a defence runs, the spawn director's clock runs this many ticks extra per tick.

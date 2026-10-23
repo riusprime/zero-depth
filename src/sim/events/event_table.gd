@@ -22,6 +22,11 @@ var cost_amount := PackedInt32Array()
 var reward := PackedInt32Array()
 var reward_amount := PackedInt32Array()
 var curse := PackedInt32Array()
+## v0.9.0 EL: a retired event's place (its content deleted: Ambush Cache, owner Q25), never drawn on a floor built
+## today. `legacy_weight`: its old weight, drawn only when a floor saved before EL is rebuilt (so the rebuilt floor's
+## draws are the ones it was saved with; its pedestal is then closed on load: Events.drop_retired).
+var retired := false
+var legacy_weight := 0
 
 
 func choice_count() -> int:

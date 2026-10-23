@@ -1,20 +1,26 @@
 extends GutTest
-## v0.6.0 CU core theft (PLAN v0.5.5 X2; SIGNATURE.md): elites and bosses carry a core drawn on `ai:elite`; a
-## stagger opens the steal window; a kill inside it drops the core as a free pick (through the pick), a kill outside
-## gives only the normal drops; a boss's core is from the legendary tier. Real floors (EventLab, built as Main).
+## v0.6.0 CU core theft (PLAN v0.5.5 X2; SIGNATURE.md): elites and bosses carry a core drawn on `ai:elite`; a boss's
+## stagger opens the steal window and a kill inside it drops the core as a free pick (through the pick); a boss's core
+## is from the legendary tier. v0.9.0 EL (owner Q25: "you have a 30% chance of dropping the core"; no stagger window):
+## an elite (an archetype) never staggers and has no window; killed, it drops its core's card 30 % of the time (on
+## `ai:elite`). Real floors (EventLab, built as Main).
 
 const SEED := 717
 
 
 func _world() -> World:
-	return EventLab.world(SEED, 1, &"blade")
+	var w := EventLab.world(SEED, 1, &"blade")
+	if w.elite_rules == null:
+		w.elite_rules = EliteRules.new()
+	return w
 
 
-## A fresh elite `m` metres from the player (spawned in, not acting yet), as its actor index.
+## A fresh elite `m` metres from the player (a Breaker: spawned in, not acting yet), as its actor index.
 func _elite(w: World, m: float = 3.0) -> int:
-	var id := w.add_enemy(ActorStore.Kind.WARDEN, w.player_pos() + Vector2(m, 0))
+	var id := Elites.spawn(
+		w, ActorStore.Kind.BREAKER, w.player_pos() + Vector2(m, 0), Elites.Source.DEV
+	)
 	var i := w.actors.index_of(id)
-	Curses.make_elite(w, i)
 	w.actors.invuln[i] = 0
 	return i
 
@@ -52,35 +58,19 @@ func test_an_elite_carries_a_deterministic_core() -> void:
 	assert_false(CoreTheft.has_core(v, v.actors.index_of(id)), "a plain enemy carries none")
 
 
-func test_a_stagger_opens_the_window_and_the_elite_stands() -> void:
+func test_an_elite_never_staggers_and_opens_no_window() -> void:
 	var w := _world()
 	var i := _elite(w)
-	var id := w.actors.ids[i]
-	var share := w.actors.max_hp[i] * w.ev.rules.core_stagger_permille / 1000
-	_hit(w, i, share / 2)
-	assert_false(CoreTheft.window_open(w, i), "under 30 % of its HP: no stagger yet")
-	_hit(w, i, share)
-	assert_true(CoreTheft.staggered(w, i), "past 30 %: staggered")
-	assert_true(CoreTheft.window_open(w, i), "the steal window opens")
-	assert_eq(w.cores.window_t[CoreTheft.entry_of(w, id)], 120, "2 s")
-	w.actors.invuln[0] = 1 << 20
-	CombatLab.idle(w, 1)  # the first collision pass may push the fresh body clear of a wall
-	var at := w.actors.pos(w.actors.index_of(id))
-	CombatLab.idle(w, 20)
-	i = w.actors.index_of(id)
-	assert_eq(w.actors.pos(i), at, "a staggered elite doesn't move")
-	CombatLab.idle(w, 120)
-	i = w.actors.index_of(id)
-	assert_false(CoreTheft.window_open(w, i), "the window shuts after 2 s")
-	assert_false(CoreTheft.staggered(w, i), "and the stagger is over")
+	_hit(w, i, w.actors.max_hp[i] * 400 / 1000)
+	assert_false(CoreTheft.staggered(w, i), "no stagger (Q25)")
+	assert_false(CoreTheft.window_open(w, i), "no steal window")
 
 
-func test_a_kill_inside_the_window_drops_the_core_as_a_free_pick() -> void:
+func test_a_kill_drops_the_core_as_a_free_pick_when_the_chance_hits() -> void:
 	var w := _world()
+	w.elite_rules.core_drop_permille = 1000  # test setup: the 30 % made certain
 	var i := _elite(w)
 	var card := w.cores.card[CoreTheft.entry_of(w, w.actors.ids[i])]
-	_hit(w, i, w.actors.max_hp[i] * 400 / 1000)
-	assert_true(CoreTheft.window_open(w, i))
 	_hit(w, i, w.actors.max_hp[i] * 10)
 	w.step(InputFrame.new())
 	var drops := _drops(w, CoreState.Drop.CORE)
@@ -89,6 +79,7 @@ func test_a_kill_inside_the_window_drops_the_core_as_a_free_pick() -> void:
 	assert_eq(w.rewards.offer_of(r), PackedInt32Array([card]), "holding the core's card")
 	assert_eq(w.rewards.price[r], 0, "free")
 	assert_eq(w.cores.steal_card, card)
+	assert_eq(w.elites.kill_dropped, 1, "the views know it dropped")
 	var hash_before := w.state_hash()
 	w.actors.set_pos(0, w.rewards.pos(r))
 	w.vel = Vector2.ZERO
@@ -107,28 +98,33 @@ func test_a_kill_inside_the_window_drops_the_core_as_a_free_pick() -> void:
 	assert_true(_drops(w, CoreState.Drop.CORE).is_empty(), "the drop is gone")
 
 
-func test_a_kill_outside_the_window_gives_the_normal_drop() -> void:
+func test_a_kill_without_the_chance_gives_the_normal_drop() -> void:
 	var w := _world()
+	w.elite_rules.core_drop_permille = 0
 	var i := _elite(w)
 	var rewards := w.rewards.size()
 	var shards := w.shards
-	_hit(w, i, w.actors.max_hp[i] * 10)  # one blow: never staggered while alive
+	_hit(w, i, w.actors.max_hp[i] * 10)
 	w.step(InputFrame.new())
 	assert_eq(w.rewards.size(), rewards, "no core")
 	assert_gt(w.shards, shards, "the shards, as any kill")
-	var v := _world()
-	var j := _elite(v)
-	var id := v.actors.ids[j]
-	_hit(v, j, v.actors.max_hp[j] * 400 / 1000)
-	v.actors.invuln[0] = 1 << 20
-	CombatLab.idle(v, 125)
-	j = v.actors.index_of(id)
-	assert_false(CoreTheft.window_open(v, j), "the window shut")
-	rewards = v.rewards.size()
-	v.actors.invuln[j] = 0
-	_hit(v, j, v.actors.max_hp[j] * 10)
-	v.step(InputFrame.new())
-	assert_eq(v.rewards.size(), rewards, "too late: no core")
+
+
+## Q25: a 30 % chance. Over KILLS elites killed in one floor, the drops land within 25-35 %.
+func test_the_core_drops_30_percent_of_the_time() -> void:
+	const KILLS := 600
+	var w := _world()
+	assert_eq(w.elite_rules.core_drop_permille, 300, "the data's chance")
+	w.actors.invuln[0] = 1 << 20
+	var dropped := 0
+	for k in KILLS:
+		var i := _elite(w)
+		_hit(w, i, w.actors.max_hp[i] * 10)
+		w.step(InputFrame.new())
+		dropped += w.elites.kill_dropped
+	var rate := float(dropped) / KILLS
+	gut.p("EL_CORE_DROP| kills=%d dropped=%d rate=%.3f" % [KILLS, dropped, rate])
+	assert_between(rate, 0.25, 0.35, "about 30 %")
 
 
 func test_a_boss_core_is_legendary_and_its_own_stagger_opens_the_window() -> void:
@@ -180,7 +176,7 @@ func test_a_core_mod_that_no_longer_works_is_redrawn() -> void:
 	assert_gte(dead, 0, "a mod this build can't use (e.g. its ability was sold)")
 	w.cores.card[CoreTheft.entry_of(w, w.actors.ids[i])] = dead  # test setup: e.g. its ability was sold since
 	assert_false(Shop.can_apply(w, dead))
-	_hit(w, i, w.actors.max_hp[i] * 400 / 1000)
+	w.elite_rules.core_drop_permille = 1000  # test setup: the 30 % made certain
 	_hit(w, i, w.actors.max_hp[i] * 10)
 	w.step(InputFrame.new())
 	var drops := _drops(w, CoreState.Drop.CORE)

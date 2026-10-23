@@ -4,7 +4,8 @@ extends GutTest
 ##   room, the arenas, the Deep gate's spot and the three secrets at the data's chances): 1-2 a floor where rooms fit;
 ##   never the start hall, boss room, its host, portal, Overrun, shop, curse, arena, secret, secret host or purple
 ##   room; always skippable (every other room reached with the Lockdowns, arenas and Overrun shut); never two side by
-##   side; Normal only on floor 1, no Elite (EL's hook, weight 0); the counts and kinds printed (LK_PLACEMENT).
+##   side; Normal only on floor 1, Elite only on floors 4-5 (v0.9.0 EL); the counts and kinds printed
+##   (LK_PLACEMENT).
 ## - On a real floor (FloorPlan): the seal drops bars in every doorway, the horde waits, the formations spawn inside,
 ##   the clear opens the bars and leaves a free altar; a stuck enemy is pulled back after 3 s; the 90 s cap opens the
 ##   exits with enemies left; a Hazard Lockdown marks a strike on the ground before it lands and hurts; a save while
@@ -109,8 +110,8 @@ func test_placement_over_many_seeds() -> void:
 				gut.p("a room cut off on seed %d floor %d" % [s, floor_index])
 			if floor_index == 1 and (f.lockdown_kinds.has(1) or f.lockdown_kinds.has(2)):
 				bad += 1
-			if f.lockdown_kinds.has(LockdownTable.Kind.ELITE):
-				bad += 1
+			if floor_index < 4 and f.lockdown_kinds.has(LockdownTable.Kind.ELITE):
+				bad += 1  # v0.9.0 EL (Q21): floors 4-5 only
 		(
 			lines
 			. append(
@@ -136,6 +137,8 @@ func test_placement_over_many_seeds() -> void:
 				SEEDS * 8 / 10,
 				"floor %d: most floors hold one" % floor_index
 			)
+		if floor_index >= 4:  # v0.9.0 EL: the Elite kind's weight is on from floor 4
+			assert_gt(kinds[2], 0, "floor %d draws Elite Lockdowns" % floor_index)
 	for l in lines:
 		gut.p(l)
 	assert_eq(bad, 0, "never a forbidden room, never cut off, never side by side, kinds by floor")

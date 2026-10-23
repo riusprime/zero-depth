@@ -18,10 +18,10 @@ var blood_cost_permille := 300
 var blood_min_permille := 250
 var blood_altars := 1
 ## Chaos: the challenge's enemies on floors 1-5 (the last repeats), spawned at once round the shrine's room; clearing
-## them raises chaos_altars free altars. chaos_elite_permille is step EL's hook (owner Q29b: "the Chaos challenge may
-## bring an elite, a designed exception"): 0, so no elite, until the owner's ELITES.md G1.
+## them raises chaos_altars free altars. chaos_elite_permille (v0.9.0 EL; owner Q29b: "the Chaos challenge may bring an
+## elite, a designed exception"): the chance the challenge also brings one elite (a starting value).
 var chaos_sizes := PackedInt32Array([5, 6, 6, 7, 7])
-var chaos_elite_permille := 0
+var chaos_elite_permille := 250
 var chaos_altars := 1
 ## The healing fountain: the chance a floor has one (per mille), from fountain_floor_min; one press heals
 ## fountain_heal_permille of max HP (rounded half up, to full at most), then it is dry.

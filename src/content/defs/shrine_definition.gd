@@ -19,10 +19,11 @@ const KIND_COUNT := 3
 @export var blood_cost_permille := 300
 @export var blood_min_permille := 250
 @export var blood_altars := 1
-## Chaos: the challenge's enemies on floors 1-5 (the last repeats), the elite hook (step EL: 0 until the owner's
-## ELITES.md G1) and the free altars clearing it raises.
+## Chaos: the challenge's enemies on floors 1-5 (the last repeats), the chance (per mille) it also brings an elite
+## archetype (v0.9.0 EL, owner Q29b: "a designed exception"; a starting value, on any floor) and the free altars
+## clearing it raises.
 @export var chaos_sizes := PackedInt32Array([5, 6, 6, 7, 7])
-@export var chaos_elite_permille := 0
+@export var chaos_elite_permille := 250
 @export var chaos_altars := 1
 ## The healing fountain: the chance a floor has one (per mille), the first floor it may appear on, and its one heal
 ## (per mille of max HP).
@@ -57,11 +58,9 @@ func validate() -> Array[ValidationIssue]:
 			issues.append(ValidationIssue.new(&"range", p, "%s is per mille (0..1000)" % f))
 	if blood_altars < 1 or chaos_altars < 1:
 		issues.append(ValidationIssue.new(&"range", p, "a shrine raises at least one altar"))
-	if chaos_elite_permille != 0:
+	if chaos_elite_permille < 0 or chaos_elite_permille > 1000:
 		issues.append(
-			ValidationIssue.new(
-				&"range", p, "chaos_elite_permille waits for step EL (0 until then)"
-			)
+			ValidationIssue.new(&"range", p, "chaos_elite_permille is per mille (0..1000)")
 		)
 	if fountain_floor_min < 1:
 		issues.append(ValidationIssue.new(&"range", p, "fountain_floor_min >= 1"))

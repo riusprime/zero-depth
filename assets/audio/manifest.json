@@ -925,26 +925,6 @@
       "loop": false
     },
     {
-      "id": "lance_charge",
-      "kind": "sfx",
-      "path": "assets/audio/sfx/lance_charge.wav",
-      "sha256": "b3376f6fb4438536a6359e171e446cef01d99444565d53cb09b73eddf462702b",
-      "seconds": 1.37,
-      "peak_dbfs": -1.0,
-      "rms_dbfs": -12.28,
-      "loop": false
-    },
-    {
-      "id": "lance_release",
-      "kind": "sfx",
-      "path": "assets/audio/sfx/lance_release.wav",
-      "sha256": "10f60502edadd2b3cf79cc4b01cdb47dcf5a3cb060d322ca4b79d7917ed8889b",
-      "seconds": 0.52,
-      "peak_dbfs": -1.0,
-      "rms_dbfs": -20.16,
-      "loop": false
-    },
-    {
       "id": "wave_fire",
       "kind": "sfx",
       "path": "assets/audio/sfx/wave_fire.wav",
@@ -963,16 +943,6 @@
       "peak_dbfs": -1.0,
       "rms_dbfs": -12.38,
       "loop": false
-    },
-    {
-      "id": "laser_loop",
-      "kind": "sfx",
-      "path": "assets/audio/sfx/laser_loop.wav",
-      "sha256": "dfb74ffc4b877bff13c8bb8680c62303f5be0b0292c10f4ae9c5fa357b6961d3",
-      "seconds": 0.5,
-      "peak_dbfs": -1.0,
-      "rms_dbfs": -9.36,
-      "loop": true
     },
     {
       "id": "pillar_turn",
@@ -1055,6 +1025,26 @@
       "loop": false
     },
     {
+      "id": "lance_charge",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/lance_charge.wav",
+      "sha256": "b3376f6fb4438536a6359e171e446cef01d99444565d53cb09b73eddf462702b",
+      "seconds": 1.37,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -12.28,
+      "loop": false
+    },
+    {
+      "id": "lance_release",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/lance_release.wav",
+      "sha256": "10f60502edadd2b3cf79cc4b01cdb47dcf5a3cb060d322ca4b79d7917ed8889b",
+      "seconds": 0.52,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -20.16,
+      "loop": false
+    },
+    {
       "id": "glaive_throw",
       "kind": "sfx",
       "path": "assets/audio/sfx/glaive_throw.wav",
@@ -1103,6 +1093,76 @@
       "peak_dbfs": -1.0,
       "rms_dbfs": -13.09,
       "loop": false
+    },
+    {
+      "id": "elite_arrive",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/elite_arrive.wav",
+      "sha256": "529d4030eccf12a14f26e6b41ddcd3f49652cf6cad1ce359d2ddc2e5ab19b19c",
+      "seconds": 1.12,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -15.72,
+      "loop": false
+    },
+    {
+      "id": "elite_slam",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/elite_slam.wav",
+      "sha256": "3095e46227b86f3e00a0b27ff130f6cfe446c6aecf5caa2f942a8b5293bf1be5",
+      "seconds": 0.85,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -16.18,
+      "loop": false
+    },
+    {
+      "id": "elite_rift",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/elite_rift.wav",
+      "sha256": "fb993ca4beb324eada896a5adf65a16b0edcfdf88211f0478cf1992fb2f79349",
+      "seconds": 0.85,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -18.43,
+      "loop": false
+    },
+    {
+      "id": "elite_slash",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/elite_slash.wav",
+      "sha256": "be22f9872a380319038aefeaa18a53f1f7cc770e7125e54ea408f0bd6625bd27",
+      "seconds": 0.37,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -15.53,
+      "loop": false
+    },
+    {
+      "id": "elite_charge",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/elite_charge.wav",
+      "sha256": "9e9894cf28fb7ba0a7a9ffb8f7b6370110f059fcf169832b68f099079f356175",
+      "seconds": 1.4,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -15.16,
+      "loop": false
+    },
+    {
+      "id": "elite_beam",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/elite_beam.wav",
+      "sha256": "32213db2f12a40ae438adb8d0c4d51b3f64ef69f8ddbfe85692b7c26e153aeac",
+      "seconds": 0.65,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -16.06,
+      "loop": false
+    },
+    {
+      "id": "laser_loop",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/laser_loop.wav",
+      "sha256": "dfb74ffc4b877bff13c8bb8680c62303f5be0b0292c10f4ae9c5fa357b6961d3",
+      "seconds": 0.5,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -9.36,
+      "loop": true
     },
     {
       "id": "ruins",

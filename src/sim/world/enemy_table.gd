@@ -76,3 +76,5 @@ var fuse_ticks := 24
 ## none; empty for kinds with none): the Arc Caster's bolt and spread (fans of plasma balls), the Lens Drone's ring
 ## of orbs, the Bomb Drone's lobbed fireball that bursts into an X. EnemyAi.pattern_of picks the one in play.
 var patterns: Array[BulletPatternTable] = []
+## v0.9.0 EL: an elite archetype's ability and plain attack (EliteAi); null for every other kind.
+var elite: EliteTable

@@ -51,7 +51,11 @@ extends RefCounted
 ## Chaos, and some floors from floor 2 have a healing fountain (Shrines.setup). A floor saved under rules 1-13 is
 ## rebuilt as it was saved: its shrine is the gamble shrine (Fortune), and it has no Blood or Chaos shrine and no
 ## fountain (FloorPlan).
-const FLOOR_RULES := 14
+## v0.9.0 EL (owner Q24, Q25, Q21): 15 is today's: floors 4-5 mark their elite rooms (Elites.setup), an Elite Lockdown
+## may be drawn there, and the retired Ambush Cache is never drawn. A floor saved under rules 1-14 is rebuilt as it was
+## saved: no elite rooms, no Elite Lockdown, the Ambush Cache's old weight in the event draw (its pedestal then closes
+## on load: Events.drop_retired).
+const FLOOR_RULES := 15
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
@@ -65,6 +69,7 @@ const FLOOR_RULES_V090_TD := 10
 const FLOOR_RULES_V090_RA := 11
 const FLOOR_RULES_V090_DP := 12
 const FLOOR_RULES_V090_LK := 13
+const FLOOR_RULES_V090_SH := 14
 
 var run_seed := 0
 var table: RunTable
@@ -212,6 +217,8 @@ func scale_enemies(tables: Array[EnemyTable], f: int = floor_index) -> void:
 	for t in tables:
 		t.hp = maxi(1, SpawnTable.scale(t.hp, hp_pm))
 		t.damage = SpawnTable.scale(t.damage, dmg_pm)
+		if t.elite != null:  # v0.9.0 EL: an elite's ability, plain attack and contact, by the same factor
+			t.elite.scale_damage(dmg_pm)
 
 
 ## Scales freshly compiled boss tables for floor f by the bosses' own factors (not the enemies' tables, so nothing

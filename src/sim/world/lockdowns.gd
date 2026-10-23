@@ -14,6 +14,9 @@ extends RefCounted
 ##   a wedge); a spot off the floor or against a wall falls back to the room's nearest spawn point. The next formation
 ##   (the next shape) is due wave_gap_ticks after no fighter is left: an encounter enemy alive anywhere, or any enemy
 ##   alive in the room (Splitlings still waiting to arrive count too).
+## - v0.9.0 EL (owner Q21: Elite, floors 4-5 only, "an elite plus a small escort"): an Elite Lockdown fights one
+##   formation: an elite archetype at its head (Elites.draw_kind from the room's stream; Elites.spawn) and
+##   EliteRules.lockdown_escort enemies drawn as above.
 ## - The stuck-enemy safety (W26): a fighter outside the room, or on a cell the flow field doesn't reach, for
 ##   stuck_ticks in a row (3 s) is pulled back to the room's spawn point nearest its middle (clear of the hero). And
 ##   cap_ticks (90 s) after the seal the exits open whatever is left (`forced`).
@@ -124,6 +127,8 @@ static func _seal(w: World, room: int) -> void:
 	s.sealed_tick = w.tick
 	s.wave = 0
 	s.waves = maxi(1, t.waves)
+	if s.kind == LockdownTable.Kind.ELITE:  # v0.9.0 EL (Q21): one formation, the elite and its escort
+		s.waves = 1
 	s.members = PackedInt32Array()
 	s.stuck_ids = PackedInt32Array()
 	s.stuck_ticks = PackedInt32Array()
@@ -158,7 +163,18 @@ static func _spawn_wave(w: World) -> void:
 	for k in open:
 		weights.append(w.spawner.weights[k])
 	var shape := (s.formation + s.wave - 1) % Formation.size()
-	for q in formation_spots(w, shape, s.table.size_on(w.floor_index)):
+	var size := s.table.size_on(w.floor_index)
+	var elite := s.kind == LockdownTable.Kind.ELITE
+	if elite:  # v0.9.0 EL (owner Q21: "an elite plus a small escort"): the elite at the formation's head
+		size = 1 + (w.elite_rules.lockdown_escort if w.elite_rules != null else 3)
+	for q in formation_spots(w, shape, size):
+		if elite:
+			elite = false
+			var ek := Elites.draw_kind(s.rng, w.elite_rules)
+			var eid := Elites.spawn(w, ek, q, Elites.Source.LOCKDOWN)
+			if eid >= 0:
+				s.members.append(eid)
+			continue
 		var pick := Offers.pick(s.rng, weights)
 		if pick < 0:
 			break
