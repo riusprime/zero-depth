@@ -207,14 +207,13 @@ func test_the_codex_fills_in_a_run_and_opens_from_both_menus() -> void:
 	assert_true((main.get_node("UI/PauseMenu") as Control).visible, "back to the pause menu")
 	assert_eq(_focused(main).name, &"Codex")
 	assert_true(main.driver.paused, "still paused")
-	# Main menu, then the hub's Rune Archive (v0.9.0 HB): the Codex there still holds the run's finds.
+	# To the hub (v0.9.0 HB, owner 2026-10-23), then its Rune Archive: the Codex there still holds the run's finds.
 	await e.tap(KEY_DOWN)
 	await e.tap(KEY_ENTER)
 	await e.frames(2)
-	assert_false(main.is_playing(), "Main menu ends the run")
-	await e.tap(KEY_DOWN)  # Continue (the run's save) -> Play
+	assert_false(main.is_playing(), "leaving ends the run")
+	assert_not_null(main.hub, "to the hub")
 	walk = HubWalk.new(e)
-	await walk.enter()
 	await walk.use(&"archive")
 	codex = main.get_node_or_null("UI/CodexView") as CodexView
 	assert_not_null(codex)

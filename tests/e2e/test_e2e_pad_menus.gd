@@ -77,11 +77,12 @@ func test_pad_a_plays_and_pause_goes_home() -> void:
 	await _press(e, JOY_BUTTON_DPAD_DOWN)
 	assert_eq(_focused(main).name, &"Codex", "then the Codex (v0.7.5 CX)")
 	await _press(e, JOY_BUTTON_DPAD_DOWN)
-	assert_eq(_focused(main).name, &"MainMenu", "and on to Main menu")
+	assert_eq(_focused(main).name, &"Hub", "and on to the Rune Ring (v0.9.0 HB, owner 2026-10-23)")
 	await _press(e, JOY_BUTTON_A)
 	await e.frames(2)
-	assert_false(main.is_playing(), "pad A on Main menu ends the stage")
-	assert_not_null(main.get_node_or_null("UI/MainMenu"))
+	assert_false(main.is_playing(), "pad A on it ends the stage")
+	assert_not_null(main.hub, "back in the hub")
+	assert_null(main.get_node_or_null("UI/MainMenu"))
 
 
 func test_pad_a_resumes_from_pause() -> void:

@@ -167,14 +167,11 @@ func test_the_loop_device_carries_the_build_into_loop_two() -> void:
 	assert_true(hud.floor_card_text().begins_with(tr("HUD_LOOP") % 2), "and so does the card")
 	assert_eq(main.codex.count(&"runs", &"ascended", &"times"), 1, "the Codex counts the loop")
 	assert_eq(main.codex.count(&"runs", &"loop", &"best"), 2, "and the loop reached")
-	# Continue mid-loop: Esc -> Main menu, then Continue (focused) resumes loop 2's floor 1.
+	# Continue mid-loop: Esc -> to the hub (v0.9.0 HB) -> its pause's Main menu, then Continue (focused) resumes loop
+	# 2's floor 1.
 	await e.frames(90)  # past the arrival and the start hall's save
-	await e.tap(KEY_ESCAPE)
-	for k in 5:  # Resume -> Build -> Restart run -> Options -> Codex -> Main menu
-		await e.tap(KEY_DOWN)
-	await e.tap(KEY_ENTER)
-	await e.frames(3)
-	assert_not_null(main.get_node_or_null("UI/MainMenu"), "back on the main menu")
+	assert_true(await HubWalk.new(e).from_run(), "the pause menu leaves to the hub")
+	assert_true(await HubWalk.new(e).to_main_menu(), "back on the main menu")
 	await e.tap(KEY_ENTER)  # Continue has focus
 	await e.frames(4)
 	assert_true(main.is_playing(), "Continue resumed the run")
