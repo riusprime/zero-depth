@@ -606,12 +606,27 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
 # v0.9.0 NB1 (BOSSES_4_5.md N1): the Tidecaller's Pull on a cadence (0 = none; every phase then holds a `tide`).
 @export var signature_every_seconds: float         # the phase's first `tide` attack every this long, start to start
 @export var signature_first_seconds: float         # the first one this long after the boss starts fighting
+# v0.9.0 NB2 (BOSSES_4_5.md N2): a boss in two bodies (BossTwin; "" = one body).
+@export var twin_kind_id: StringName                # BossSchemas.TWIN_KINDS ("twin_warden_violet")
+@export var twin_distance_m: float                 # the twin rises this far to the side (within the chain's lengths)
+@export var chain_min_m: float                     # the chain's length, held within these (3 <= min < max <= 9)
+@export var chain_max_m: float
+@export var chain_burn: int                        # it burns a touching player this much (> 0)...
+@export var chain_burn_seconds: float              # ...every this long (>= a tick)
+@export var chain_width_m: float                   # the strip it burns (> 0)
+@export var flank_m: float                         # the twin keeps this far from the player beside it
+@export var anger_speed_permille: int              # a hit on one body speeds the other to this (1000..2000)...
+@export var anger_seconds: float                   # ...for this long
 ```
 
 - v0.9.0 NB1: `tide` (PROJECTILE, shielded): `pattern_id`, `pull_mps` and `push_mps` (> 0, at most 1.5),
   `pull_seconds` and `push_seconds` (each >= the telegraph minimum), `bend_dps` (>= 0): the Tidecaller's Pull (1.2 /
   1.0 m/s for 3 s / 2 s, rings bending 25 °/s; phase 3's 1.5 / 1.2, 30 °/s). `marks` + `drag_m` (0..2) and
   `drag_reach_m` (>= `radius_m`): the Undertow (1.0 m from within 3.0 m).
+- v0.9.0 NB2: `crossfire` (PROJECTILE, shielded; needs a twin): `pattern_id` (a fan), `gap_m` (> 0: the gap's half
+  width at the safe spot), `distance_m` (> 0: the safe spot off the chain's middle), optional `twin_look` (the twin's
+  shots' look). `chain_sweep` (LINE, needs `lock_seconds` and a twin; the boss's def needs one with a
+  `late_cause_key`, the chain's burn): `width_m` (> 0), `reach_m` (>= 0: how far past the player the line runs).
 
 - Boss attacks (v0.3.0 BX) also take `opens_weak_point: bool`, and `follow_up: StringName` (another attack of the
   boss) with `follow_up_permille` (0..1000): the chance it starts at once instead of the recovery (a follow-up never

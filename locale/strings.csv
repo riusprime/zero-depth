@@ -501,6 +501,14 @@ CAUSE_TIDECALLER_RINGS,The Tidecaller's bubble rings closed over you.,Los anillo
 CAUSE_TIDECALLER_UNDERTOW,The Tidecaller's undertow pulled you under.,La resaca de The Tidecaller te hundió.
 CAUSE_TIDECALLER_SLAM,The Tidecaller's shell crushed you.,El caparazón de The Tidecaller te aplastó.
 CAPTION_TELEGRAPH_TIDECALLER,[Warning: the Tidecaller's bell tolls],[Aviso: la campana de The Tidecaller tañe]
+BOSS_TWIN_WARDENS,The Twin Wardens,The Twin Wardens
+BOSS_TWIN_WARDENS_DESC,"Two stone knights, one life, one burning chain.","Dos caballeros de piedra, una sola vida, una cadena ardiente."
+CAUSE_TWIN_CROSSFIRE,The Twin Wardens' crossfire caught you between them.,El fuego cruzado de The Twin Wardens te atrapó entre ellos.
+CAUSE_TWIN_SWEEP,The Twin Wardens' chain lashed you down.,La cadena de The Twin Wardens te derribó de un latigazo.
+CAUSE_TWIN_CHAIN,The Twin Wardens' burning chain seared you.,La cadena ardiente de The Twin Wardens te abrasó.
+CAUSE_TWIN_BASH,A Twin Warden's shield crushed you.,El escudo de un Twin Warden te aplastó.
+CAPTION_TELEGRAPH_TWIN_WARDENS,[Warning: the Wardens' chain rattles],[Aviso: la cadena de The Twin Wardens resuena]
+CAPTION_TWIN_CHAIN_BURN,[Chain sizzles],[La cadena chisporrotea]
 EVENT_UNSTABLE_CORE,Unstable Core,Núcleo inestable
 EVENT_UNSTABLE_CORE_DESC,A cracked power core hums with stolen strength.,Un núcleo agrietado zumba con fuerza robada.
 EVENT_UNSTABLE_CORE_DRAW,Draw the power out,Extraer la energía

@@ -4,6 +4,9 @@ extends RefCounted
 ## (which calls it for every boss attack): a bullet pattern (BulletPatternDefinition -> BulletPatternTable), and a
 ## boss attack's lock, shield, marker spacing and pattern. Enemies (v0.7.5 EF) compile their patterns here too.
 
+## v0.9.0 NB2: a twin boss's second body, by BossDefinition.twin_kind_id (BossSchemas.TWIN_KINDS).
+const TWIN_KINDS := {&"twin_warden_violet": ActorStore.Kind.TWIN_WARDEN_VIOLET}
+
 
 ## v0.7.5 BF1: the tracked lock, the shield, the markers' spacing and the bullet pattern. A `marks` or `row_lanes`
 ## attack is active until its last marker strikes; a `pattern` attack for its pattern's whole duration (the data's
@@ -114,6 +117,7 @@ static func _compile_tide(def: BossAttackDefinition, t: BossAttackTable) -> void
 	var sp := def.shape_params
 	t.drag_m = float(sp.get("drag_m", 0.0))
 	t.drag_reach_m = float(sp.get("drag_reach_m", 0.0))
+	t.twin_look = StringName(sp.get("twin_look", ""))  # v0.9.0 NB2: the twin's Crossfire embers
 	if t.move != BossAttackTable.Move.TIDE:
 		return
 	t.tide_pull = float(sp.get("pull_mps", 0.0)) / SimTick.TICKS_PER_SECOND
@@ -131,6 +135,23 @@ static func _compile_tide(def: BossAttackDefinition, t: BossAttackTable) -> void
 static func compile_cadence(def: BossDefinition, t: BossTable) -> void:
 	t.sig_every_ticks = SimTick.seconds_to_ticks(def.signature_every_seconds)
 	t.sig_first_ticks = SimTick.seconds_to_ticks(def.signature_first_seconds)
+	_compile_twin(def, t)
+
+
+## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): a twin boss's second body (its kind), its chain and its anger.
+static func _compile_twin(def: BossDefinition, t: BossTable) -> void:
+	t.twin_kind = TWIN_KINDS.get(def.twin_kind_id, -1)
+	if t.twin_kind < 0:
+		return
+	t.twin_m = def.twin_distance_m
+	t.chain_min_m = def.chain_min_m
+	t.chain_max_m = def.chain_max_m
+	t.chain_burn = def.chain_burn
+	t.chain_burn_ticks = maxi(1, SimTick.seconds_to_ticks(def.chain_burn_seconds))
+	t.chain_half_m = def.chain_width_m * 0.5
+	t.flank_m = def.flank_m
+	t.anger_permille = def.anger_speed_permille
+	t.anger_ticks = SimTick.seconds_to_ticks(def.anger_seconds)
 
 
 ## v0.7.5 EF (owner N16): an enemy's patterns, one per attack in order (null where an attack names none): the Arc

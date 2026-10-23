@@ -21,6 +21,8 @@ const COLORS := {
 	WorldReader.KIND_PRISM: Color("#FF4A6A"),
 	WorldReader.KIND_NEMESIS: Color("#B070FF"),
 	WorldReader.KIND_TIDECALLER: Color("#5FE0A8"),  # v0.9.0 NB1: sea green (not the hero's cyan)
+	WorldReader.KIND_TWIN_WARDEN: Color("#FFB347"),  # v0.9.0 NB2: amber
+	WorldReader.KIND_TWIN_WARDEN_VIOLET: Color("#B98CFF"),  # and violet
 }
 const DEFAULT_COLOR := Color("#E6E0FF")
 const SHOW_S := 0.15

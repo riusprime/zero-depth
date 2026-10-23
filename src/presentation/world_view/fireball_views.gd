@@ -280,6 +280,45 @@ const LOOKS := {
 		"trail_style": &"drips",
 		"tail": 0.45,
 	},
+	## v0.9.0 NB2: the Twin Wardens' Crossfire: cracked stone embers glowing from inside, gold-amber from the boss, pale
+	## violet from its twin (a rock skin over a hot core, a trail in each body's colour; cores clear of the hero's
+	## colours and of the other bosses' looks).
+	&"warden_amber_ember":
+	{
+		"core": Color("#FFDD00"),
+		"edge": Color("#2A1606"),
+		"trail": Color("#E07A1E"),
+		"size": 1.1,
+		"tip": 1.1,
+		"trail_m": 0.6,
+		"mesh": &"rock",
+		"body": Color("#4A3826"),
+		"energy": 3.0,
+		"crack": 0.7,
+		"swirl": 1.1,
+		"spin": 1.0,
+		"tumble": 0.6,
+		"trail_style": &"glow",
+		"tail": 0.5,
+	},
+	&"warden_violet_ember":
+	{
+		"core": Color("#BB99CC"),
+		"edge": Color("#160A26"),
+		"trail": Color("#7A3ADB"),
+		"size": 1.1,
+		"tip": 1.1,
+		"trail_m": 0.6,
+		"mesh": &"rock",
+		"body": Color("#3A3046"),
+		"energy": 3.0,
+		"crack": 0.7,
+		"swirl": 1.1,
+		"spin": 1.0,
+		"tumble": 0.6,
+		"trail_style": &"glow",
+		"tail": 0.5,
+	},
 }
 const DEFAULT_LOOK := {
 	"core": Color("#F0A890"),
@@ -307,6 +346,8 @@ const TEX_CORES := {
 	&"tide_bubble": ["fx_orb_cores", 1, 0.0],  # v0.9.0 NB1: the glob painting, tinted seafoam
 	&"spear_ember": ["fx_orb_cores_2", 0, SPEAR_TURN],
 	&"cannon_ember": ["fx_orb_cores_2", 1, 0.0],
+	&"warden_amber_ember": ["fx_orb_cores_2", 1, 0.0],  # v0.9.0 NB2: the cannon ember painting, tinted
+	&"warden_violet_ember": ["fx_orb_cores_2", 1, 0.0],
 	&"arc_plasma": ["fx_orb_cores_2", 2, 0.0],
 	&"bomb_cinder": ["fx_orb_cores_2", 3, 0.0],
 	&"crown_orb": ["fx_orb_cores_final", 1, 0.0],

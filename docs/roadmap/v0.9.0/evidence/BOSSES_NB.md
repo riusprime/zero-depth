@@ -111,3 +111,113 @@ by hand):
 - [`nb_shots/2_tidecaller_mid_pull.jpg`](nb_shots/2_tidecaller_mid_pull.jpg): the Pull 75 ticks in (the script
   printed: hero from (-6.5, 4.5) to (-5.19, 3.73), tide phase 1, progress 416 ‰, 1.2 m/s), its shield up, its rings
   bending, the water drawn round it.
+
+---
+
+# NB2: The Twin Wardens (v0.9.0 Step NB2)
+
+- **Status:** RUN (agent, on the owner's PC: Windows 11, i7-10700K, RTX 3060; Godot `4.7.2.stable.official.ed1daf0bf`;
+  the shot on the GPU, Vulkan Forward+). How the fight feels and how the two models move: **OWNER ONLY**.
+- **Build:** branch `v090-nb2` rebased on `claude/world-combat-v090` at `14bd36f9` (EL merged); the step's commit SHA
+  is in the report and PROGRESS.
+- **Date:** 2026-10-23
+- **Who ran it:** agent
+
+Owner (OWNER_QUESTIONS 1, 2026-10-23): "ok go for those" (BOSSES_4_5.md row N2).
+
+## 5. The fight as built (BOSSES_4_5.md N2)
+`data/bosses/twin_wardens.tres` (`save_order` 2: compiled after the Tidecaller, every saved boss index unchanged);
+floor 4's pool is now the Tidecaller and the Wardens (`data/boss_pools/floor_4.tres`). Kinds `TWIN_WARDEN` and
+`TWIN_WARDEN_VIOLET`, appended after EL's `CONDUIT`. SIM_CONTRACTS §10k, CONTENT_SCHEMA (boss fields, two moves).
+
+**Two bodies: two linked actors (`BossTwin`), not one actor with a drawn twin.** Why: the twin has to be hit by every
+player weapon (blade arcs, bolts, Seekers, bombs, Void pulls, DoTs), immune like a boss (knockback, freezes, executes,
+Remnants, heal orbs) and able to wind up, shield, telegraph and stagger. All of that already works for an actor of a
+boss kind with a BossStore entry, through about 40 `is_boss_kind` checks; a drawn body would need every one of those
+paths taught about it. So both bodies are boss-kind actors with their own BossStore entry (same table), and
+`BossTwin` makes them one boss:
+- the amber body is the boss: the HUD bar (`boss_index`, the first live boss), `World.boss_id`, the codex's fight, the
+  single `BOSS_DEFEATED`, the reward, the kill count and the legendary core; the twin rises beside it (`on_spawn`,
+  5 m to a clear side) with its HP, max HP, catch-up and intro, and leaves with no defeat, shards, kill or core of its
+  own (`leaves`); only the boss's phase gate brings adds;
+- one HP (`Damage._apply` → `share_hp`, `fall_together`): both cross 66 % and 33 % on the same tick and fall on the
+  same hit (the twin's own KILL, for its death in the views);
+- one mind: the twin never picks an attack; it starts the boss's attack on the same tick (`on_start`) when free;
+- the door/arena flow is the boss flow's (`boss_alive` turns false when both are gone); the death recap names the pair
+  for either body's attack (`boss_table_of_kind` answers the twin's kind); save/restore is the five `BossStore.twin_*`
+  lists (hashed after a sentinel only while a pair lives; `ADDED_SINCE_V05`, so an older save loads).
+
+Mechanics (starting values):
+- **The chain:** held 3..9 m (the twin is drawn in or out along it after the steps and again after walls and bodies
+  push; if a wall stands there the boss gives way); not solid, so it never pins; burns a touching player 12 every
+  0.5 s (damage over time; the hurt iframes and the hurt hit-stop apply: in sim ticks the gap is 30 + the 4-tick
+  hit-stop), never while dashing, never while the player stands against a wall, never while a body rises or is in a
+  gate, and not while the Chain Sweep holds it; a kill by it reads "The Twin Wardens' burning chain seared you."
+- **Anger:** a hit from the player on one body angers the other for 3 s at +40 % speed; one angry at a time.
+- **Steps:** the boss pursues (1.6 m/s, keeps 2 m); the twin keeps 4.5 m from the player at a right angle from its
+  boss, so the chain runs past the player, not through them.
+- **Crossfire** (`crossfire`, shielded: the signature pattern): the safe spot stands 2 m off the chain's middle on the
+  player's side; each body fires a fan (17 shots over 150°, 3 waves 0.7 s apart, 3.0 m/s) centred on the spot with no
+  shot within 1.2 m of it there, so the two gaps cross only at the spot; phase 3 `crossfire_3` (19 over 160°, 4 waves,
+  3.3 m/s, gap 1.1 m). Embers: gold-amber from the boss, pale violet from the twin.
+- **Chain Sweep** (`chain_sweep`): the boss's line from its body through the player and 2.5 m on (3..9 m, cut by
+  walls) tracks through the 1.6 s windup and locks for its last 0.8 s; the twin swings to its end; the lash hits a
+  1.2 m lane (30); the boss's punish and gap-closer; phase 3 `chain_sweep_fast` (1.4 s).
+- **Shield Bash** (`shield_bash`, big): each body's 2.6 m ring when close (50); the punish window.
+- **"Shielded during the signature":** the signature *mechanic* (two bodies, one life) is passive, so both bodies are
+  shielded through Crossfire, the signature *pattern* (BOSS_FIGHTS.md rule 3). Lead/owner may say otherwise.
+- HP 2500 shared (before the floor's scaling), radius 1.0 m each, stagger 2.5 s; phases at 66 % (opens with
+  Crossfire) and 33 % (opens with `crossfire_3`).
+- en/es: the name ("The Twin Wardens"), a description, four death lines (crossfire, sweep, chain, bash), two captions.
+
+**Looks.** `TwinWardenAvatar` / `TwinWardenVioletAvatar` play one clip library (`TwinWardenClips`) so they move as a
+pair. Finding: the amber file's skeleton (52 joints, rests rebuilt in NB1) weights almost every vertex to
+`mixamorig:Hips` (a weight count over the file's JOINTS_0/WEIGHTS_0: Hips 12,889 vertices, the next joint 15), so its
+shield, sword and helm cannot move apart from the body. Both models are therefore posed through the whole figure
+(the clips' BODY channel: bob, roll, lean, lunge, squash), identically; the violet's cut parts add small accents only
+(helm turn, shield set, sword raise). Matching the amber's arms would need the file cut into parts like the violet:
+**owner's call.** An angry Warden leans in and its crack light flares. `TwinViews` draws the chain (lit iron links
+each turned a quarter, a hot core per link fading amber to violet along it, a soft halo, rising embers halved on
+Low, a light; dim when cooled, white-hot at the angry body's half), a burn flash where it touched, Crossfire's two gap
+lanes and its gold safe-spot ring, and the Chain Sweep's white-hot lash. Strike looks: the sweep's lane scorches
+(MOLTEN, skid), the bash cracks a stone ring; shield colours amber and violet; sounds (placeholders,
+`generate_sfx.py`): `boss_telegraph_twin_wardens` (a chain rattling taut over a stone grind) and `boss_twin_chain` (a
+link whip and a hiss: the lash, a burn, a Warden turning angry). Codex glyph: two shields and a chain.
+
+**Sounds and credits.** `python -I scripts/audio/generate_sfx.py` (the venv) rendered every file; on this machine six
+files not ours came out different (barrel_blast, barrel_fuse, bomb_throw, container_break, pillar_turn, wall_break),
+so those were restored from git and only our two wavs and their two manifest rows are committed. Then
+`godot --headless --path . -s scripts/content/build_credits.gd`: "wrote res://data/credits/licences.tres (5 entries)"
+(audio 123 → 125 files).
+
+## 6. Tests (NB2)
+Lint: `gdformat --check` / `gdlint` on the 46 changed or new .gd files: "46 files would be left unchanged",
+"Success: no problems found".
+
+Each run: `godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gexit -gtest=<files>` (own APPDATA, one
+Godot at a time).
+
+| run | files | result |
+|---|---|---|
+| the Wardens' sim | tests/unit/sim/test_twin_wardens.gd | 17/17, 165 asserts (data, bad numbers, one HP and one bar, one defeat / kill / reward, gates on both at once, the chain 3..9 m over 40 s in the open and in a 9 m room plus forced 20 m and 0.5 m, the burn 12 every 0.5 s (+ hit-stop) and not solid, no burn dashing / against a wall / rising, anger one at a time and +40 %, Crossfire's gaps meeting only at the spot (no damage there, damage off it) and the twin's violet embers, the Chain Sweep tracking, locking, lashing on the line and missing off it, the twin never picking, determinism and a mid-fight save, an older save, the death lines, a chain kill's line) |
+| boss sims, saves | test_twin_wardens, test_tidecaller, test_final_boss, test_boss_pace, test_boss_gates, test_boss_pressure, test_boss_markers, test_bosses, test_bosses_2, test_boss_fights, test_boss_fights_2, test_boss_fights_3, test_boss_signatures, test_boss_signatures_2, test_boss_challenge, test_world_snapshot, test_state_hasher, test_old_saves | 243/243, 66,247 asserts, 1201 s |
+| (before it) | the first boss run (8 files) | 75/81: the expected counts (bosses 7 → 8, classed attacks 90 → 95, big attacks 18 → 19 and 12 → 13, the boss order with `twin_wardens`, KEPT_SLOW) and the PLAN's 2.5 s stagger (the data had 2.0, set to 2.5); fixed, inside the 243 |
+| view | 23 presentation files (test_attack_visuals, _2, test_audio_director, test_boss_animations, test_boss_challenge_parity, test_boss_challenge_views, test_boss_fight_views, _3, test_boss_fights_2_views, test_boss_models, _2, test_boss_rigs, test_boss_signature_views, _2, test_boss_telegraph_parity, test_boss_views, test_bosses_2_views, test_codex_view, test_enemy_fireball_views, test_final_boss_views, test_telegraph_parity, test_tidecaller_views, test_vx_looks) | 194/199: the embers' first colours sat near a hero colour (#FFB347 vs #FFAA33) and near the Nemesis's (#C08CFF); a test's boss-kind map and the strike-shape map lacked the new kind and move. Colours moved to #FFDD00 / #BB99CC (a probe over every hero colour and every other look's core), maps added: those five files 47/47 |
+| the Wardens' views | tests/unit/presentation/test_twin_warden_views.gd | 5/5 (both models at 2.2 m, the violet's four bones, driven alike they hold the same pose, the angry one's light, both stand-ins, the chain view: links, heat, embers High/Low, sag, both lanes and the spot in Crossfire, cooled in the sweep, the lash, the burn flash); with test_twin_wardens after the last edits: 22/22 |
+| content, debug, arch | tests/content, tests/unit/debug, tests/arch | 169/170: test_credits_licences (the audio count) → credits rebuilt → 4/4 |
+| e2e | test_e2e_twin_wardens, test_e2e_tidecaller, test_e2e_run_flow, test_e2e_old_save | 6/6, 111 asserts, 111.6 s |
+
+The e2e: a floor-4 save (the first seed whose floor 4 draws the Wardens; `test_e2e_tidecaller` now picks the first
+that draws the Tidecaller, since floor 4 has two) continued with Enter, God clicked, E opens the door, the stick walks
+in, the door seals, both owner models rise under one bar named "The Twin Wardens", the chain is drawn, the stick walks
+to the violet twin and the mouse's attacks land: the shared HP drops on both bodies and a Warden turns angry.
+
+Not run here (GitHub's shards): the rest of the suite.
+
+## 7. Shot (NB2)
+`godot --path . --audio-driver Dummy --resolution 1280x720 -s scripts/shots/nb_twin_wardens.gd` (written to build/,
+copied by hand):
+- [`nb_shots/3_twin_wardens_crossfire_chain.jpg`](nb_shots/3_twin_wardens_crossfire_chain.jpg): Crossfire 50 ticks
+  into its firing on the Ruins stage; the script printed: "tick 123 hero (-0.4, -0.8) hero hp lost 0 chain
+  [(-2.8, 1.2), (2.0, 1.2)] hot true safe (-0.4, -0.8) links 17 shots 38" (the hero standing on the safe spot took
+  nothing). Both owner models shielded, the burning chain between them, amber and violet embers, the safe spot's ring.

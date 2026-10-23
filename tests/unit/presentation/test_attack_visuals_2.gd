@@ -16,6 +16,7 @@ const NOT_GROUND := [
 	WorldReader.MOVE_GAZE,
 	WorldReader.MOVE_MELT,
 	WorldReader.MOVE_TIDE,  # v0.9.0 NB1: the Pull is the whole room's current (TideViews), not a marker
+	WorldReader.MOVE_CROSSFIRE,  # v0.9.0 NB2: the Wardens' fans (their gaps: TwinViews), not a marker
 ]
 
 
@@ -96,6 +97,7 @@ func test_every_boss_ground_attack_in_the_content_has_a_look() -> void:
 		WorldReader.MOVE_FLOOD: BossStrikeLooks.LANE_STRIKES,
 		WorldReader.MOVE_ROW_FLOOD: BossStrikeLooks.LANE_STRIKES,
 		WorldReader.MOVE_CHARGE: BossStrikeLooks.CHARGE_STRIKES,
+		WorldReader.MOVE_CHAIN_SWEEP: BossStrikeLooks.CHARGE_STRIKES,  # v0.9.0 NB2: a lane, scorched like a charge
 	}
 	for a: Array in attacks:
 		var look := BossStrikeLooks.look_for(a[2], a[3])

@@ -532,6 +532,12 @@ func set_pending_look(look: StringName) -> void:
 	_pending_projectiles[-1][10] = look
 
 
+## v0.9.0 NB2: the last n projectiles queued take look `look` (the Wardens' twin's embers).
+func relook_pending(n: int, look: StringName) -> void:
+	for k in range(maxi(0, _pending_projectiles.size() - n), _pending_projectiles.size()):
+		_pending_projectiles[k][10] = look
+
+
 ## v0.7.5 BF2: the projectile queued last was fired by its boss's attack `attack` (the recap's cause, BulletPatterns).
 func set_pending_cause(attack: int) -> void:
 	_pending_projectiles[-1][11] = attack
@@ -1042,7 +1048,7 @@ func set_boss_tables(tables: Array[BossTable]) -> void:
 ## The first boss table of an actor kind, or null.
 func boss_table_of_kind(kind: int) -> BossTable:
 	for t in boss_tables:
-		if t.kind == kind:
+		if t.kind == kind or (t.twin_kind >= 0 and t.twin_kind == kind):  # v0.9.0 NB2: a twin's is its boss's
 			return t
 	return null
 
@@ -1061,6 +1067,7 @@ func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
 	boss_id = id
 	CoreTheft.on_boss(self, i)  # v0.6.0 CU: the boss's legendary core
 	CatchUp.on_boss(self, i)  # v0.5.5 DS (D7): the boss's own hidden catch-up, fixed for the fight
+	BossTwin.on_spawn(self, i)  # v0.9.0 NB2: the Twin Wardens' second body rises beside it, sharing its HP
 	return id
 
 
@@ -1851,6 +1858,8 @@ func _remove_dead() -> void:
 				and EnemyAi.is_enemy_kind(actors.kinds[i])
 			):
 				continue  # v0.8.0 BS1 (S3): an egg that burst or crumbled leaves without a kill
+			if BossTwin.leaves(self, i):
+				continue  # v0.9.0 NB2: a Warden's twin goes with its boss: one defeat, one kill, one reward
 			if EnemyAi.is_enemy_kind(actors.kinds[i]):
 				kills += 1
 				EnemyAi.on_death(self, i)  # v0.4.0 EN: a Splitter splits.

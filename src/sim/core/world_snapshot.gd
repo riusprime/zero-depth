@@ -250,6 +250,11 @@ const ADDED_SINCE_V05 := {
 		&"burn_cd",
 		&"sig_boss",  # v0.9.0 NB1: the Tidecaller's Pull cadence (an older save has no Tidecaller: none)
 		&"sig_due",
+		&"twin_lead",  # v0.9.0 NB2: the Twin Wardens' pair (an older save has no Wardens: none)
+		&"twin_body",
+		&"twin_angry",
+		&"twin_anger_t",
+		&"twin_burn_cd",
 	],
 	&"ProjectileStore":
 	[

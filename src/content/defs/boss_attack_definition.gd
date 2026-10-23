@@ -133,6 +133,7 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	_validate_cross(issues, path, where)
 	_validate_nemesis(issues, path, where)
 	_validate_tide(issues, path, where)
+	_validate_twin(issues, path, where)
 
 
 ## v0.8.0 BP (owner O27): a known hit class; a big attack never chains (its punish window follows it); orb_damage only
@@ -451,3 +452,21 @@ func _validate_tide(issues: Array[ValidationIssue], path: String, where: String)
 			issues.append(
 				ValidationIssue.new(&"range", path, where + "drag_reach_m must hold the circle")
 			)
+
+
+## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): Crossfire is the shielded signature, its safe spot a real distance off the
+## chain and its gap a real width; a Chain Sweep's lane has a width and reaches on past the player (>= 0).
+func _validate_twin(issues: Array[ValidationIssue], path: String, where: String) -> void:
+	var sp := shape_params
+	if move == &"crossfire":
+		if float(sp.get("distance_m", 0.0)) <= 0.0:
+			issues.append(
+				ValidationIssue.new(&"not_positive", path, where + "distance_m must be > 0")
+			)
+		if not shielded:
+			issues.append(ValidationIssue.new(&"missing", path, where + "a Crossfire is shielded"))
+	if move == &"chain_sweep":
+		if float(sp.get("width_m", 0.0)) <= 0.0:
+			issues.append(ValidationIssue.new(&"not_positive", path, where + "width_m must be > 0"))
+		if float(sp.get("reach_m", 0.0)) < 0.0:
+			issues.append(ValidationIssue.new(&"range", path, where + "reach_m must be >= 0"))

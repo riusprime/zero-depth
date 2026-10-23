@@ -86,6 +86,10 @@ const LOOKS := {
 	# off the water, both over swirling water.
 	&"tc_undertow": {"pattern": Pattern.WATER, "strike": &"eruption"},
 	&"tc_slam": {"pattern": Pattern.WATER, "strike": &"steam_ring"},
+	# v0.9.0 NB2: the Twin Wardens. The Chain Sweep's lane scorches where the burning chain lashed (the chain itself is
+	# TwinViews'), the Shield Bash cracks a shock ring out of the stone.
+	&"tw_sweep": {"pattern": Pattern.MOLTEN, "strike": &"skid"},
+	&"tw_bash": {"pattern": Pattern.STONE, "strike": &"shock_ring"},
 }
 
 ## Boss kind -> move -> look. The Gatekeeper's row_lanes are StoneSpikeViews' (cracked ground, then spikes).
@@ -149,6 +153,16 @@ const BY_KIND := {
 	{
 		WorldReader.MOVE_MARKS: &"tc_undertow",
 		WorldReader.MOVE_SLAM_RING: &"tc_slam",
+	},
+	WorldReader.KIND_TWIN_WARDEN:  # v0.9.0 NB2: the amber Warden (the boss) and its violet twin alike
+	{
+		WorldReader.MOVE_CHAIN_SWEEP: &"tw_sweep",
+		WorldReader.MOVE_SLAM_RING: &"tw_bash",
+	},
+	WorldReader.KIND_TWIN_WARDEN_VIOLET:
+	{
+		WorldReader.MOVE_CHAIN_SWEEP: &"tw_sweep",
+		WorldReader.MOVE_SLAM_RING: &"tw_bash",
 	},
 }
 

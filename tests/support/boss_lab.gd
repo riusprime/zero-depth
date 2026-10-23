@@ -27,10 +27,13 @@ static func table_index(w: World, id: StringName) -> int:
 static func ready_boss(w: World, id: StringName, pos: Vector2 = Vector2.ZERO) -> int:
 	var aid := w.spawn_boss(table_index(w, id), pos)
 	var i := w.actors.index_of(aid)
-	w.actors.state[i] = EnemyAi.State.MOVE
-	w.actors.state_t[i] = 0
-	w.actors.invuln[i] = 0
-	w.actors.facing[i] = 0
+	for j in [i, BossTwin.partner_of(w, i)]:  # v0.9.0 NB2: the Twin Wardens' twin rises with it
+		if j < 0:
+			continue
+		w.actors.state[j] = EnemyAi.State.MOVE
+		w.actors.state_t[j] = 0
+		w.actors.invuln[j] = 0
+		w.actors.facing[j] = 0
 	return i
 
 

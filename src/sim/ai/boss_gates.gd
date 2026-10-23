@@ -69,6 +69,8 @@ static func begin(w: World, i: int, b: int, gate: int) -> void:
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[i], a.ids[i], a.ids[i], a.pos(i))
 	e.effect_id = EFFECT
 	e.amount = gate
+	if BossTwin.is_twin(w, i):
+		return  # v0.9.0 NB2: one boss, one set of adds (its boss's gate brings them)
 	var kinds := add_kinds(w)
 	if kinds.is_empty():
 		return
