@@ -11,16 +11,22 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
 - **Biggest changes decided:** a run is 5 floors (PD-03 changed); ten Gun forms with Form / Pattern / Secondary /
   Element limits; Twin and Spread merged; no death explosions; elites only as archetypes on floors 4–5; the Purple
   Portal earned through a purple-rune room; the hub replaces most of the menu.
-- **Merged and green (seams, bar the owner's accepted red test_final_pace):** Wave 1 (DS, CV, PT, SA, FA), TW, XP,
-  LG, IX, TD, AS and AS2 (look B, the Swap panel, straight edges), RA, DX, LZ, BM, FV (five floors), MI2 (the owner's
-  29 models and 3 textures), VP (Void a Gun form; floor black hole retired), DP (the Purple Portal earned), AF1 (Lance
-  and Scatter; merged `7881d345`, seams running). Pushed: `31fd095f`.
-- **Owner answers since:** final pace stays red; the bar gate is `lockdown_seal`; secrets start on floor 2; the Lance's
-  full charge is tuned to about 1.0× the orbs on one target (to do on `7881d345`: `hold_permille` 5000 → ~11000).
-- **Agents working:** LK (Lockdowns; branch `v090-lk` from `31fd095f`), AF2 (Glaive + Seekers; `v090-af2` from
-  `7881d345`). Next free slot: AF3 (Wave + Wisps). Then BR, VX (G1), NB (G1), SH, HF, BV, TX, RG.
-- **Waiting on the owner:** ELITES.md (G1, blocks EL and the Elite Lockdown); the pylon, containers, barrel, hazard
-  models and a stone `timed_door` (art list); Swarmer, Mine Layer and Sniper (EM).
+- **Merged, seams green (bar the owner's accepted red test_final_pace), pushed `b312a751`:** Wave 1 (DS, CV, PT, SA,
+  FA), TW, XP, LG, IX, TD, AS, AS2, RA, DX, LZ, BM, FV (five floors), MI2 (the owner's models), VP (Void), DP (the
+  Purple Portal earned), LK (Lockdowns), all ten Gun forms (AF1 Lance + Scatter, AF1b the Lance as the owner's charged
+  energy ball, AF2 Glaive + Seekers, AF3 Wave + Wisps), SH + HF (Fortune/Blood/Chaos shrines, healing fountains), BR
+  (the shots-a-second test over every form; `evidence/FORMS_DPS.md`). Lead fixes: enemies never attack through a shut
+  doorway or wall (owner 2026-10-23); the Wisps view's death error; the shrines view's orphan lights.
+- **Owner answers since 2026-10-22:** final pace stays red; the bar gate is `lockdown_seal`; secrets start on floor 2;
+  the Lance is a charged ball at about 1.0× the orbs; questions while the owner is away go to
+  [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (11 open).
+- **Agents working:** RG (special-room schema, pacing report, no-softlock tests; `v090-rg` from `d5867aa2`), BV (biome
+  looks for the Wave 4 interactions; `v090-bv` from `d5867aa2`). The lead: the e2e mouse helper measures its scale once
+  (it aimed every mouse_to at (100, 100) for a frame).
+- **Waiting on the owner (all in OWNER_QUESTIONS):** the floor 4–5 bosses (NB G1), the hub layout (HB G2), collectibles
+  (CL G1), affinities (RB G1), the VFX audit (VX G1), the forms' tuning (3, 5, 11), Lockdown length, shrine values;
+  plus ELITES.md (EL) and the art still wanted.
+- **Next:** merge RG and BV; then what the owner's answers unblock (NB, VX, HB, MP, RB, CL, EL).
 - **Known:** Void with Twin Lv 5 averaged 13.5 ms (budget 12) on the horde probe; floor 1 never fits a secret (intended).
 
 ## Owner decisions (2026-10-22)
@@ -43,6 +49,19 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
 | IX | One shared interactable and one prompt (the final approach's pylons first) | `8c77e190`, merge `38f2e207` |
 | TD | Timed secret doors: two switches open a dead end's door for 15 s of quickening beeps, to a hidden room with an epic altar or a chest; spawns ease to a quarter in the switches' room | `ba7df04d`, merge `38f2e207` |
 | AS | Attack slots: Form 1, Pattern 1, Secondary 2, Element 2 inside the wand; a full Form/Pattern slot's new card replaces and burns the old; one compatibility table; 12 projectiles per attack and 40 a second; old saves trimmed | `a45eeb3f`, merge `6cce8a51` |
+| RA, DX | Rune pillars to turn until they match a carving; cracked walls only the Skill breaks, hidden rooms unseen until open; containers; explosive barrels; faint rune markings by secrets | `9c338674` |
+| LZ, BM | The Laser (a held beam) and the Bomb (a lobbed blast) Gun forms | `c8d41c90` |
+| FV | A run is five floors (about 10–19 rooms each), all five biomes, the curves stretched; v0.8.0 runs resume in their 3-floor shape | `897725f7` |
+| AS2 | The owner's look B: the "Replaces" ribbon and slot pips; a Swap panel when a Secondary or Element slot is full; straight UI edges | `e7ef1309` |
+| MI2 | The owner's 29 models and 3 textures installed (two split, Godot simplifier); the bar gate is the Lockdown seal | `54623c07`, `7c0278fb` |
+| VP | Void is a Gun form: slow black holes that pass through foes and tug the crowd; the floor black hole retired | `a4a7590d` |
+| DP | The Purple Portal is earned: a purple-rune room on floor 2 or 3 whose dais lets that floor's boss open it | `31fd095f` |
+| AF1, AF1b | The Lance (hold to charge a swirling energy circle, release a piercing ball that grows, a small recoil; about 1.0× the orbs at full) and the Scatter (a pellet cone) | `7881d345`, `12089362` |
+| LK | Lockdown rooms, 1–2 a floor: the owner's bars seal the doorways for three formations (Hazard Lockdowns from floor 2); stuck enemies pulled back, exits open at 90 s | `52cac58c` |
+| — | Enemies never attack through a shut doorway or wall (owner 2026-10-23) | `8652b06e` |
+| AF2, AF3 | The Glaive (a disc out and back), Seekers (three homing darts), Wave (a wide band through everything) and Wisps (three orbiting wisps) Gun forms | `77bb1c87`, `6c4b06e5` |
+| SH, HF | Fortune, Blood and Chaos shrines (one a floor at most, the cost shown first); healing fountains | `b37942de` |
+| BR | Every form and pattern stays within 12 an attack and 40 a second (a test); the forms' DPS sheet (Wave and Void the strongest) | `d5867aa2` |
 | 0 | Plan, G1 lists, art request; the owner's answers | `54f40318`, `74fca543`, `1ae81240`, this commit |
 
 ## Goldens changed on purpose
