@@ -13,6 +13,9 @@ extends Node3D
 ## - While the timer runs, every beep (beep_ticks: slow at first, faster and faster, very fast at the end; the same
 ##   schedule AudioEvents plays) flashes the seal, the frame's notches and the switches' runes: the beep seen.
 ## - The secret room (StageView.reveal_hidden) comes into sight when the door first opens, with a warm light inside.
+## - v0.9.0 BV (W71): per biome (InteractionLooks, the stage's prop_style): the seal's, notches' and switches' rune
+##   colour (Ruins amber, Night Rocks mint, Red Canyon copper, Frozen Shore ice, Starfall magenta), the bolts' metal,
+##   the room's light, the owner's switch model tinted, and the biome's accent at the jambs' and switches' feet.
 
 const AMBER := Color("#FFB347")
 const AMBER_CORE := Color("#FFE7B8")
@@ -48,6 +51,9 @@ var uses_model := false
 ## v0.9.0 MI2: the switches are the owner's model (tests read it).
 var switch_uses_model := false
 var revealed := false
+## v0.9.0 BV: the biome whose look is drawn (InteractionLooks.resolve) and its rune colour.
+var biome := &""
+var rune_color := AMBER
 var _reader: WorldReader
 var _stage: StageView
 var _switch_roots: Array[Node3D] = []
@@ -65,11 +71,14 @@ func setup(reader: WorldReader, stage: StageView, cover: Color) -> void:
 	name = "TimedDoor"
 	_reader = reader
 	_stage = stage
+	var raw := InteractionLooks.of_stage(stage)
+	biome = InteractionLooks.resolve(raw)
+	rune_color = InteractionLooks.color(biome, "rune")
 	_stone.albedo_color = cover.darkened(0.2) if cover != Color() else STONE
 	_stone.roughness = 1.0
-	_seal_mat.albedo_color = AMBER.darkened(0.6)
+	_seal_mat.albedo_color = rune_color.darkened(0.6)
 	_seal_mat.emission_enabled = true
-	_seal_mat.emission = AMBER
+	_seal_mat.emission = rune_color
 	_seal_mat.emission_energy_multiplier = 0.2
 	var door := Node3D.new()
 	door.name = "Door"
@@ -77,13 +86,24 @@ func setup(reader: WorldReader, stage: StageView, cover: Color) -> void:
 	door.rotation.y = SimPlane.yaw_of(reader.timed_door_angle())
 	add_child(door)
 	_build_door(door, reader.timed_door_width(), reader.timed_door_depth())
+	for side in [-1.0, 1.0]:  # v0.9.0 BV: the biome's touch at each jamb's foot, on the side you come from
+		var foot := Node3D.new()
+		foot.name = "Foot"
+		foot.position = Vector3(
+			-maxf(reader.timed_door_depth(), 0.6) * 0.5 - 0.5,
+			0,
+			side * (reader.timed_door_width() * 0.5 + FRAME_W * 0.5)
+		)
+		door.add_child(foot)
+		InteractionLooks.add_accent(foot, raw, 0.35, 0.0)
 	for k in reader.timed_switch_count():
 		_build_switch(
 			k, reader.interactable_pos(reader.timed_switch_entry(k)), reader.timed_door_center()
 		)
+		InteractionLooks.add_accent(_switch_roots[k], raw, 0.55, SWITCH_H)
 	_room_light = OmniLight3D.new()
 	_room_light.name = "RoomLight"
-	_room_light.light_color = AMBER_CORE
+	_room_light.light_color = InteractionLooks.color(biome, "room")  # Ruins: AMBER_CORE
 	_room_light.omni_range = 9.0
 	_room_light.light_energy = 1.6
 	_room_light.shadow_enabled = false
@@ -117,7 +137,7 @@ func sync(reader: WorldReader) -> void:
 		switch_glow[k] = 1.0 if on else 0.0
 		var m := _switch_mats[k]
 		m.emission_energy_multiplier = (0.1 + 2.6 * switch_glow[k]) + 3.0 * flash
-		m.albedo_color = AMBER.darkened(0.75 - 0.5 * maxf(switch_glow[k], flash))
+		m.albedo_color = rune_color.darkened(0.75 - 0.5 * maxf(switch_glow[k], flash))
 	_seal_mat.emission_energy_multiplier = (
 		(0.25 if st == WorldReader.TIMED_SHUT else 0.8) + 4.0 * flash
 	)
@@ -233,7 +253,7 @@ func _build_door(door: Node3D, width: float, depth: float) -> void:
 				Vector3(0, SLAB_H * 0.5 + bolt, 0),
 				_stone
 			)
-			b.material_override = _iron()
+			b.material_override = _iron(InteractionLooks.color(biome, "metal"))
 	for face in [-1.0, 1.0]:  # the round rune seal, on both faces
 		var cyl := CylinderMesh.new()
 		cyl.top_radius = 0.5
@@ -260,9 +280,9 @@ func _build_switch(k: int, at: Vector2, toward: Vector2) -> void:
 	add_child(root)
 	_switch_roots.append(root)
 	var rune := StandardMaterial3D.new()
-	rune.albedo_color = AMBER.darkened(0.75)
+	rune.albedo_color = rune_color.darkened(0.75)
 	rune.emission_enabled = true
-	rune.emission = AMBER
+	rune.emission = rune_color
 	rune.emission_energy_multiplier = 0.1
 	_switch_mats.append(rune)
 	var model := ShopModels.get_model(MODEL_SWITCH)
@@ -271,7 +291,7 @@ func _build_switch(k: int, at: Vector2, toward: Vector2) -> void:
 		var mi := MeshInstance3D.new()
 		mi.name = "Model"
 		mi.mesh = model["mesh"]
-		mi.set_surface_override_material(0, model["material"])
+		mi.set_surface_override_material(0, InteractionLooks.tinted(model["material"], biome))
 		root.add_child(mi)
 	else:
 		var col := CylinderMesh.new()
@@ -310,9 +330,9 @@ func switch_count() -> int:
 	return _switch_roots.size()
 
 
-func _iron() -> StandardMaterial3D:
+func _iron(c: Color) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
-	m.albedo_color = Color("#2E2B29")
+	m.albedo_color = c
 	m.metallic = 0.6
 	m.roughness = 0.6
 	return m

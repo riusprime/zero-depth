@@ -393,6 +393,7 @@ func _setup_devices(palette: Dictionary) -> void:
 		rune_view.setup(reader, stage, palette["cover"])
 	if reader.has_purple_runes():  # v0.9.0 DP
 		purple = PurpleRuneView.new()
+		purple.biome = stage.prop_style  # v0.9.0 BV: the biome's look
 		add_child(purple)
 		purple.setup(reader, palette["cover"])
 	if reader.has_lockdowns():  # v0.9.0 LK
@@ -401,6 +402,7 @@ func _setup_devices(palette: Dictionary) -> void:
 		lockdowns.setup(reader, stage.prop_style)
 	if reader.has_shrines():  # v0.9.0 SH, HF
 		shrines = ShrinesView.new()
+		shrines.biome = stage.prop_style  # v0.9.0 BV
 		add_child(shrines)
 		shrines.setup(reader, palette["cover"])
 	if reader.has_cracked_wall() or reader.breakable_count() > 0:  # v0.9.0 DX
@@ -409,11 +411,13 @@ func _setup_devices(palette: Dictionary) -> void:
 		breakables.setup(reader, stage, palette["cover"])
 	if not reader.secret_doors().is_empty():  # v0.9.0 DX (Q29b): hidden rune markings
 		markings = RuneMarkingsView.new()
+		markings.biome = stage.prop_style  # v0.9.0 BV
 		add_child(markings)
 		markings.setup(reader)
 	if reader.has_gamble():
 		gamble_shrine = GambleShrineView.new()
 		gamble_shrine.kit_model = stage.mood != null  # v0.6.0 Step SR: the owner's shrine with the new look
+		gamble_shrine.biome = stage.prop_style  # v0.9.0 BV
 		add_child(gamble_shrine)
 		gamble_shrine.setup(reader.gamble_pos())
 	if reader.shop_stall():  # v0.8.0 SR: the biome's tent stall and vendor

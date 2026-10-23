@@ -14,6 +14,8 @@ extends Node3D
 ## are unchanged.
 ## v0.8.0 N14 (owner O72): a failed use cracks and fizzles (the core flickers out to red, the body jolts, sparks of
 ## light die off); a spent shrine (its wins given) goes dim, its shards slow, and the price above it reads "Spent".
+## v0.9.0 BV (W71): per biome (InteractionLooks; set `biome` before setup): the owner's model (Fortune, or the gamble
+## shrine) tinted and the biome's accent round its foot. Its golden (or magenta) glow is the same in every biome.
 
 const CORE := Color("#3FF2D0")
 const METAL := Color("#3B4250")
@@ -56,6 +58,8 @@ var root: Node3D
 var price_label: Label3D
 ## Use the owner's model (set before setup; WorldViewRoot turns it on with the v0.5.9 look).
 var kit_model := false
+## v0.9.0 BV: the floor's biome (set before setup; WorldViewRoot sets it).
+var biome := &""
 var _body: Node3D
 var _core: Node3D
 var _light: OmniLight3D
@@ -102,6 +106,7 @@ func setup(at: Vector2) -> void:
 			root = _make_model(piece)
 	if root == null:
 		root = make_shrine()
+	InteractionLooks.add_accent(root, biome, 0.95, 0.0)  # v0.9.0 BV
 	root.position = SimPlane.to_3d(at)
 	add_child(root)
 
@@ -230,8 +235,9 @@ func make_shrine() -> Node3D:
 	var n := Node3D.new()
 	_body = Node3D.new()
 	n.add_child(_body)
-	var metal := _metal(METAL)
-	var top := _metal(METAL_TOP)
+	var tint: Color = InteractionLooks.look(biome)["tint"]  # v0.9.0 BV (Ruins: white)
+	var metal := _metal(METAL * tint)
+	var top := _metal(METAL_TOP * tint)
 	_body.add_child(_mesh(RewardViews.prism(6, 0.78, 0.7, 0.18, 0.0, 0.0, 3), metal))
 	_body.add_child(_mesh(RewardViews.prism(4, 0.56, 0.5, 0.2, 0.18, 0.0, 5), top))
 	_body.add_child(_mesh(RewardViews.prism(4, 0.42, 0.33, 0.9, 0.38, 0.0, 7), metal))
@@ -296,6 +302,7 @@ func _make_model(piece: Dictionary) -> Node3D:
 	var mat := (piece["material"] as StandardMaterial3D).duplicate() as StandardMaterial3D
 	ActorViews.flashable(mat)
 	mat.emission = _glow.lerp(Color.WHITE, 0.6)
+	InteractionLooks.tint_in_place(mat, biome)  # v0.9.0 BV
 	_metal_mats.append(mat)
 	_model = _mesh(piece["mesh"], mat)
 	_model.name = "Model"
@@ -338,6 +345,7 @@ func _make_fortune(piece: Dictionary) -> Node3D:
 		mat = StandardMaterial3D.new()
 	ActorViews.flashable(mat)
 	mat.emission = _glow.lerp(Color.WHITE, 0.6)
+	InteractionLooks.tint_in_place(mat, biome)  # v0.9.0 BV
 	_metal_mats.append(mat)
 	_model = _mesh(piece["mesh"], mat)
 	_model.name = "Model"

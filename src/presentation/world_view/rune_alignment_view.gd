@@ -14,6 +14,9 @@ extends Node3D
 ##   show it.
 ## - Solved: all three faces and the carving flare (FLARE_S), the slab sinks into the floor (SINK_S) and the hidden
 ##   room (StageView.reveal_hidden) comes into sight with a warm light inside.
+## - v0.9.0 BV (W71): per biome (InteractionLooks, the stage's prop_style): the matched face's colour (`rune_color`)
+##   and the shown face's (`glyph_color`), the room's light, the owner's pillar and carving tinted, and the biome's
+##   accent at each pillar's foot. The pillars' own colours (red, green, blue: the clue) are the same everywhere.
 
 const AMBER := Color("#FFB347")
 const GLYPH := Color("#9FD8FF")
@@ -39,6 +42,11 @@ var uses_model := false
 var shown := PackedInt32Array()
 var glow := PackedFloat32Array()
 var flare := 0.0
+## v0.9.0 BV: the biome whose look is drawn, its matched and shown glyph colours.
+var biome := &""
+var rune_color := AMBER
+var glyph_color := GLYPH
+var _accent_biome := &""
 var _reader: WorldReader
 var _stage: StageView
 var _drums: Array[Node3D] = []
@@ -55,6 +63,10 @@ func setup(reader: WorldReader, stage: StageView, cover: Color) -> void:
 	name = "RuneAlignment"
 	_reader = reader
 	_stage = stage
+	_accent_biome = InteractionLooks.of_stage(stage)
+	biome = InteractionLooks.resolve(_accent_biome)
+	rune_color = InteractionLooks.color(biome, "rune")
+	glyph_color = InteractionLooks.color(biome, "glyph")
 	_stone.albedo_color = cover.darkened(0.2) if cover != Color() else STONE
 	_stone.roughness = 1.0
 	var door := Node3D.new()
@@ -67,7 +79,7 @@ func setup(reader: WorldReader, stage: StageView, cover: Color) -> void:
 		_build_pillar(k, reader.interactable_pos(reader.rune_pillar_entry(k)))
 	_room_light = OmniLight3D.new()
 	_room_light.name = "RoomLight"
-	_room_light.light_color = Color("#FFE7B8")
+	_room_light.light_color = InteractionLooks.color(biome, "room")
 	_room_light.omni_range = 9.0
 	_room_light.light_energy = 1.6
 	_room_light.shadow_enabled = false
@@ -98,7 +110,7 @@ func sync(reader: WorldReader) -> void:
 		for f in mats.size():
 			var m: StandardMaterial3D = mats[f]
 			var lit := glow[k] if f == face else 0.0
-			m.emission = AMBER if matched and f == face else GLYPH
+			m.emission = rune_color if matched and f == face else glyph_color
 			m.emission_energy_multiplier = 0.05 + 2.4 * lit + 4.0 * flare
 	if solved and _flare_t < 0.0:
 		_flare_t = 0.0 if reader.tick() - reader.rune_solve_tick() < 30 else FLARE_S
@@ -163,7 +175,7 @@ func _build_slab(door: Node3D, width: float) -> void:
 		var mi := MeshInstance3D.new()
 		mi.name = "Model"
 		mi.mesh = model["mesh"]
-		mi.set_surface_override_material(0, model["material"])
+		mi.set_surface_override_material(0, InteractionLooks.tinted(model["material"], biome))
 		mural.add_child(mi)
 	else:
 		_box(mural, Vector3(minf(2.4, width - 0.2), 1.6, 0.12), Vector3.ZERO, _stone)
@@ -220,7 +232,7 @@ func _build_pillar(k: int, at: Vector2) -> void:
 		var mi := MeshInstance3D.new()
 		mi.name = "Model"
 		mi.mesh = model["mesh"]
-		mi.set_surface_override_material(0, model["material"])
+		mi.set_surface_override_material(0, InteractionLooks.tinted(model["material"], biome))
 		mi.position.y = -BASE_H
 		drum_node.add_child(mi)
 	else:
@@ -228,9 +240,9 @@ func _build_pillar(k: int, at: Vector2) -> void:
 	var mats := []
 	for f in RuneGlyphs.COUNT:
 		var m := StandardMaterial3D.new()
-		m.albedo_color = GLYPH.darkened(0.7)
+		m.albedo_color = glyph_color.darkened(0.7)
 		m.emission_enabled = true
-		m.emission = GLYPH
+		m.emission = glyph_color
 		m.emission_energy_multiplier = 0.05
 		mats.append(m)
 		var side := Node3D.new()
@@ -247,6 +259,7 @@ func _build_pillar(k: int, at: Vector2) -> void:
 	cap_mat.emission_energy_multiplier = 0.5
 	var top := BASE_H + DRUM_H
 	_box(root, Vector3(DRUM_W + 0.16, 0.22, DRUM_W + 0.16), Vector3(0, top + 0.11, 0), cap_mat)
+	InteractionLooks.add_accent(root, _accent_biome, 0.75, top + 0.22)  # v0.9.0 BV
 	for j in k + 1:  # its notches, on the capstone's front
 		_box(
 			root,

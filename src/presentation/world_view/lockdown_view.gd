@@ -11,6 +11,12 @@ extends Node3D
 ##   then the biome's hazard (Ruins sparking cables `hazard_cable`, Night Rocks a falling rock `hazard_rock`, Red
 ##   Canyon a heat vent `hazard_vent`, Frozen Shore cracking ice `hazard_ice`, Starfall a falling star `hazard_star`;
 ##   through ShopModels by those ids, code stand-ins until the owner's files arrive) bursts or falls there for IMPACT_S.
+## - v0.9.0 BV (W71): per biome (InteractionLooks): the owner's bars tinted (the stand-in rods in the biome's metal) and
+##   each warning disc ringed by a dark band (`warn_rim`; ART_DIRECTION's hazard "orange with a dark band") so the
+##   hostile orange reads on Red Canyon's red ground too. The hazard stand-ins read against their own ground and stay
+##   out of the hero's attack colours: Ruins a dark cable post with a hostile-yellow spark (it was storm blue), Night
+##   Rocks a dark faceted rock (it was grey on blue), Red Canyon a dark basalt vent under a hot plume, Frozen Shore a
+##   deep-blue ice spike cluster (it was near-white on snow, and frost's hue), Starfall a pale-gold falling star.
 
 const MODEL_SEAL := &"lockdown_seal"
 ## The biomes' hazard props (docs/art/requests/v0.9.0_ART_LIST.md), and the ones that fall from the sky.
@@ -30,11 +36,24 @@ const RISE_S := 1.3
 const ROD_GAP := 0.32
 const WARN := Color("#FF5A1F")
 const IMPACT_S := 0.6
+## v0.9.0 BV: the hazard stand-ins' bodies (dark against their ground; Frozen Shore's deep ice, Starfall's pale-gold
+## star) and the hot parts (the cable's hostile-yellow spark, the vent's plume): none in the hero's attack colours.
+const STAND_IN_BODY := {
+	&"hazard_cable": Color("#2E2B29"),
+	&"hazard_rock": Color("#2C3040"),
+	&"hazard_vent": Color("#3A2420"),
+	&"hazard_ice": Color("#3F6E9C"),
+	&"hazard_star": Color("#FFF2A8"),
+}
+const SPARK := Color("#FFE066")
+const PLUME := Color("#FF4E1A")
 const THUD := 0.35
 
 var uses_model := false
 var hazard_id := &""
 var hazard_uses_model := false
+## v0.9.0 BV: the biome whose look is drawn (InteractionLooks.resolve).
+var biome := &""
 ## The bars came down since the last take_thud (the camera's thud).
 var _thud := false
 ## Each Lockdown room's bars (one root a doorway) and how far down they are (0 up, unseen .. 1 in the doorway).
@@ -48,11 +67,14 @@ var _iron := StandardMaterial3D.new()
 var _impact: Node3D
 var _impact_left := 0.0
 var _landed := -1
+## v0.9.0 BV: the warnings' dark band.
+var _rim_mat := StandardMaterial3D.new()
 
 
-func setup(reader: WorldReader, biome: StringName) -> void:
+func setup(reader: WorldReader, p_biome: StringName) -> void:
 	name = "Lockdowns"
-	_iron.albedo_color = Color("#2E2B29")
+	biome = InteractionLooks.resolve(p_biome)
+	_iron.albedo_color = InteractionLooks.color(biome, "metal")
 	_iron.metallic = 0.6
 	_iron.roughness = 0.55
 	var d := reader.lockdown()
@@ -70,7 +92,7 @@ func setup(reader: WorldReader, biome: StringName) -> void:
 		if k < kinds.size() and kinds[k] == WorldReader.LOCKDOWN_HAZARD:
 			any_hazard = true
 	if any_hazard:
-		_build_hazard(biome)
+		_build_hazard(p_biome)
 	_sealed = int(d["sealed"])
 	if _sealed >= 0:  # a floor resumed sealed: the bars already stand
 		_down[_sealed] = 1.0
@@ -194,7 +216,7 @@ func _build_bars(room: int, door: Dictionary) -> Node3D:
 		var mi := MeshInstance3D.new()
 		mi.name = "Model"
 		mi.mesh = model["mesh"]
-		mi.set_surface_override_material(0, model["material"])
+		mi.set_surface_override_material(0, InteractionLooks.tinted(model["material"], biome))
 		mi.scale = Vector3(1.0, 1.0, width / 3.0)
 		bars.add_child(mi)
 		return root
@@ -223,12 +245,20 @@ func _build_bars(room: int, door: Dictionary) -> Node3D:
 
 
 ## The warnings' pool and the biome's hazard prop (its model, else a stand-in).
-func _build_hazard(biome: StringName) -> void:
-	hazard_id = HAZARDS.get(biome, &"hazard_cable")
+func _build_hazard(p_biome: StringName) -> void:
+	hazard_id = HAZARDS.get(p_biome, &"hazard_cable")
 	_mark_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_mark_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_mark_mat.albedo_color = Color(WARN, 0.5)
 	_mark_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_rim_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_rim_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_rim_mat.albedo_color = Color(InteractionLooks.color(biome, "warn_rim"), 0.75)
+	var rim_mesh := TorusMesh.new()  # the dark band round the disc (scaled with it)
+	rim_mesh.inner_radius = 0.93
+	rim_mesh.outer_radius = 1.05
+	rim_mesh.rings = 24
+	rim_mesh.ring_segments = 4
 	for k in 3:
 		var c := CylinderMesh.new()
 		c.top_radius = 1.0
@@ -241,6 +271,13 @@ func _build_hazard(biome: StringName) -> void:
 		m.material_override = _mark_mat
 		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		m.visible = false
+		var rim := MeshInstance3D.new()
+		rim.name = "Rim"
+		rim.mesh = rim_mesh
+		rim.material_override = _rim_mat
+		rim.scale = Vector3(1.0, 0.25, 1.0)
+		rim.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		m.add_child(rim)
 		add_child(m)
 		_marks.append(m)
 	_impact = Node3D.new()
@@ -257,6 +294,7 @@ func _build_hazard(biome: StringName) -> void:
 	else:
 		mi.mesh = _stand_in(hazard_id)
 		mi.material_override = _stand_in_mat(hazard_id)
+		_stand_in_detail(mi, hazard_id)
 	_impact.add_child(mi)
 
 
@@ -294,7 +332,7 @@ static func _stand_in(id: StringName) -> Mesh:
 			return c
 		&"hazard_ice":
 			var p := PrismMesh.new()
-			p.size = Vector3(1.4, 0.9, 1.4)
+			p.size = Vector3(0.8, 0.9, 0.8)
 			return p
 		_:
 			var b := BoxMesh.new()
@@ -303,17 +341,55 @@ static func _stand_in(id: StringName) -> Mesh:
 
 
 static func _stand_in_mat(id: StringName) -> StandardMaterial3D:
-	var colors := {
-		&"hazard_cable": Color("#7FD8FF"),
-		&"hazard_rock": Color("#5C5A66"),
-		&"hazard_vent": Color("#FF7A2A"),
-		&"hazard_ice": Color("#CDEFFF"),
-		&"hazard_star": Color("#FFF2A8"),
-	}
 	var m := StandardMaterial3D.new()
-	var c: Color = colors.get(id, WARN)
+	var c: Color = STAND_IN_BODY.get(id, WARN)
 	m.albedo_color = c
-	m.emission_enabled = id != &"hazard_rock"
+	m.roughness = 0.85
+	m.emission_enabled = id == &"hazard_star" or id == &"hazard_ice"
 	m.emission = c
-	m.emission_energy_multiplier = 2.0
+	m.emission_energy_multiplier = 2.0 if id == &"hazard_star" else 0.35
 	return m
+
+
+## v0.9.0 BV: the stand-in's hot part, a child of its body (it moves with it): the cable's spark, the vent's plume, the
+## ice's two smaller spikes; none on the rock and the star.
+static func _stand_in_detail(body: MeshInstance3D, id: StringName) -> void:
+	var glow := StandardMaterial3D.new()
+	glow.emission_enabled = true
+	glow.emission_energy_multiplier = 2.2
+	match id:
+		&"hazard_cable":
+			glow.albedo_color = SPARK
+			glow.emission = SPARK
+			var spark := MeshInstance3D.new()
+			spark.name = "Spark"
+			spark.mesh = RewardViews.bipyramid(4, 0.2, 0.25, 0.25)
+			spark.material_override = glow
+			spark.position.y = 0.85
+			body.add_child(spark)
+		&"hazard_vent":
+			glow.albedo_color = Color(PLUME, 0.7)
+			glow.emission = PLUME
+			glow.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			var plume := MeshInstance3D.new()
+			plume.name = "Plume"
+			var c := CylinderMesh.new()
+			c.top_radius = 0.45
+			c.bottom_radius = 0.18
+			c.height = 1.2
+			plume.mesh = c
+			plume.material_override = glow
+			plume.position.y = 1.6
+			plume.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			body.add_child(plume)
+		&"hazard_ice":
+			for k in 2:
+				var spike := MeshInstance3D.new()
+				spike.name = "Spike%d" % k
+				var p := PrismMesh.new()
+				p.size = Vector3(0.5, 0.6, 0.5)
+				spike.mesh = p
+				spike.material_override = body.material_override
+				spike.position = Vector3(0.55 if k == 0 else -0.45, -0.15, 0.3 if k == 0 else -0.35)
+				spike.rotation.z = 0.3 if k == 0 else -0.3
+				body.add_child(spike)
