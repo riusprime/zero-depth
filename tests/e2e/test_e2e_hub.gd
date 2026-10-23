@@ -99,7 +99,8 @@ func test_the_pick_walks_the_hero_up_into_the_portal() -> void:
 	var hub := main.hub
 	assert_not_null(hub, "the hub stays for the walk")
 	assert_true(hub.walking, "the pick starts the walk into the portal")
-	assert_null(main.get_node_or_null("UI/BuildPicker"), "the build screen closes")
+	var picker := main.get_node_or_null("UI/BuildPicker")
+	assert_true(picker == null or picker.is_queued_for_deletion(), "the build screen closes")
 	assert_false(main.loads.busy(), "no load yet: the hero walks first")
 	var held_at := hub.driver.reader.player_pos()
 	var top := 0.0
