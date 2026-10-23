@@ -153,7 +153,9 @@ func _build_world() -> void:
 	Abilities.start_floor(w)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
 	# v0.5.0 EV: event rooms and curses, after the carry and the heat; v0.8.0 N17, N19: an old save keeps its rooms
-	EventCompiler.setup(w, repo, FloorScenario.curse_room_rules_of(run))
+	EventCompiler.setup(
+		w, repo, FloorScenario.curse_room_rules_of(run), FloorScenario.retired_events_of(run)
+	)
 	if arena_def == null:
 		add_secrets(w, repo, run, table.move_speed)  # v0.9.0 TD, RA, DX
 	# v0.5.5 DS (D4): the hidden catch-up, read from the whole build once everything above is set up.
@@ -180,6 +182,8 @@ func _build_world() -> void:
 ## destructibles. The rune puzzle comes after the timed door, the destructibles after both (never their rooms).
 ## v0.9.0 DP: the purple-rune room comes last (never a secret's room; one saved before DP, rules 1-11, has none).
 ## v0.9.0 LK: the Lockdown rooms after it (never a secret's or the purple room; one saved before LK, 1-12, has none).
+## v0.9.0 EL: the elite rooms come after the Lockdowns (one saved before EL, rules 1-14, has none, and no Elite
+## Lockdown either).
 ## v0.9.0 SH, HF: first, the floor's shrine kind (on the gamble shrine's site) and its healing fountain, which the
 ## secrets and Lockdowns then keep out of (one saved before SH, rules 1-13, has a Fortune shrine and no fountain).
 static func add_secrets(
@@ -205,7 +209,16 @@ static func add_secrets(
 		PurpleRunes.setup(w, PurpleRunes.chance(run, chances), taken)
 	if run.floor_rules > RunState.FLOOR_RULES_V090_DP:  # v0.9.0 LK (owner Q21): last, never another kind's room
 		var lockdown := RunContentCompiler.compile_lockdown(repo.get_def(&"lockdown", &"lockdown"))
+		if lockdown != null and run.floor_rules <= RunState.FLOOR_RULES_V090_SH:
+			lockdown.kind_weights[LockdownTable.Kind.ELITE] = 0  # v0.9.0 EL: a floor saved before EL had none
 		Lockdowns.setup(w, lockdown, run.floor_index)
+	# v0.9.0 EL (owner Q24): the elite rooms, after the Lockdowns (never one, never next to an Elite Lockdown); a
+	# floor saved before EL (rules 1-14) has none. The rules are set on every floor (an elite's 30 % core drop).
+	var elite_rules := EliteCompiler.compile_rules(repo.get_def(&"elite_rules", &"rules"))
+	if run.floor_rules > RunState.FLOOR_RULES_V090_SH:
+		Elites.setup(w, elite_rules, run.floor_index)
+	else:
+		w.elite_rules = elite_rules
 
 
 ## v0.9.0 DX: the destructibles' numbers from the data (SecretRules' defaults without it).

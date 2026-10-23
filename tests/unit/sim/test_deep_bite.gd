@@ -32,7 +32,7 @@ func test_a_deep_floors_packs_bring_no_elite() -> void:
 	for i in range(1, w.actors.size()):
 		if EnemyAi.is_enemy_kind(w.actors.kinds[i]):
 			arrived += 1
-			assert_false(Curses.is_elite(w, w.actors.ids[i]), "no Deep elite")
+			assert_false(EliteAi.is_elite_kind(w.actors.kinds[i]), "no Deep elite")
 	assert_gt(arrived, 0, "packs arrived")
 	assert_true(w.deep_elite_rooms.is_empty(), "no room brought one")
 

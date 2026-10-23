@@ -12,8 +12,8 @@ extends RefCounted
 ##   current level (SpawnDirector.unlocked; `ai:room:k`), spots among the room's spawn points at least
 ##   min_spawn_distance_m from the player (shuffled from `combat:room:k`; rings around them when the room has fewer
 ##   spots), each scaled on arrival like any spawn (SpawnDirector.scale_arrival: tier HP and power, the Overrun's x1.5),
-##   and an elite roll under an elite curse. The next wave is due wave_gap_ticks after no enemy is left alive in the
-##   room (Splitlings still waiting to arrive count as alive).
+##   (v0.9.0 EL: no elite roll any more: the Marked curse is gone). The next wave is due wave_gap_ticks after no
+##   enemy is left alive in the room (Splitlings still waiting to arrive count as alive).
 ## - Clear: after the last wave, the barriers leave the walls, the room joins `cleared` (it stays open), its rewards
 ##   unlock; the Overrun's clear also leaves its altar and its shard bonus (Overrun.on_clear).
 ## Saves: the seal is at the first tick in the room, which is the room's entry save (RunSaver), so a resume replays the
@@ -169,9 +169,7 @@ static func _spawn_wave(w: World) -> void:
 		if pick < 0:
 			break
 		w.add_enemy(w.spawner.kinds[open[pick]], q)
-		var i := w.actors.size() - 1
-		SpawnDirector.scale_arrival(w, i, ticks)
-		Curses.maybe_elite(w, i)
+		SpawnDirector.scale_arrival(w, w.actors.size() - 1, ticks)
 		s.spawned += 1
 
 

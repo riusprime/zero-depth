@@ -135,7 +135,7 @@ func _process(delta: float) -> void:
 		var turn := 0.9
 		match state:
 			WorldReader.EVENT_ACTIVE:
-				c = FIGHT if _reader.event_ambush() == k else GUARD
+				c = GUARD  # v0.9.0 EL: a defence (the Ambush Cache's fight is gone)
 				energy = GLYPH_ENERGY * (1.0 + 0.6 * absf(sin(_t * 5.0)))
 				turn = 2.4
 			WorldReader.EVENT_DONE:

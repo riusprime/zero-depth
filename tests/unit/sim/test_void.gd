@@ -91,7 +91,8 @@ func test_it_passes_through_enemies_and_its_aura_hits_twice_in_a_pass() -> void:
 
 func test_the_aura_reaches_one_metre_from_its_centre_to_an_enemy_edge() -> void:
 	var w := _world([], [Vector2(4.0, 1.25), Vector2(5.0, -1.45)])
-	w.ev.elite_ids.append_array([w.actors.ids[1], w.actors.ids[2]])  # no pull, so they stand where they are
+	for i in [1, 2]:  # no pull, so they stand where they are (v0.9.0 EL: an elite kind)
+		w.actors.kinds[i] = ActorStore.Kind.BREAKER
 	W.run(w, 1, 0, W.S)
 	W.run(w, 60, 0, 0)
 	assert_gt(_dealt(w, 1)[0], 0, "1.25 m off the path (0.9 m to its edge): hit")
@@ -200,7 +201,7 @@ func test_heavies_take_half_the_pull() -> void:
 
 func test_bosses_and_elites_feel_no_pull() -> void:
 	var w := _world([], [Vector2(3.0, 2.0), Vector2(3.0, -2.0)])
-	w.ev.elite_ids.append(w.actors.ids[2])
+	w.actors.kinds[2] = ActorStore.Kind.BREAKER  # v0.9.0 EL: an elite archetype
 	W.run(w, 1, 0, W.S)
 	W.run(w, 30, 0, 0)
 	assert_almost_eq(w.actors.pos(2).y, -2.0, 0.0001, "an elite: none")

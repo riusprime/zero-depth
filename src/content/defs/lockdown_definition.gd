@@ -15,8 +15,9 @@ const MIN_WARN_SECONDS := 0.4
 @export var rooms_min := 1
 @export var rooms_max := 2
 ## Each kind's weight, in LockdownTable.Kind order (Normal, Hazard, Elite), and the first floor each may appear on.
-## Elite is step EL's hook (owner Q21: floors 4-5 only, under the elite rules): weight 0 until ELITES.md's G1.
-@export var kind_weights := PackedInt32Array([750, 250, 0])
+## Elite (v0.9.0 EL; owner Q21: floors 4-5 only, under the elite rules): an elite and a small escort
+## (data/elites/rules.tres lockdown_escort). Its weight is a starting value (300: about 23 % of floors 4-5's Lockdowns).
+@export var kind_weights := PackedInt32Array([750, 250, 300])
 @export var kind_floor_min := PackedInt32Array([1, 2, 4])
 ## Formations per Lockdown, and each formation's size on floors 1-5 (the last repeats).
 @export var waves := 3

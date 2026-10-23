@@ -4,15 +4,15 @@ extends RefCounted
 ## LockdownDefinition, data/lockdowns/lockdown.tres). The defaults equal the data's starting values. Content: read in
 ## play, never written (WorldSnapshot keeps it as loadout).
 
-## The kinds (LockdownDefinition.kind_weights is indexed by them). ELITE is step EL's hook: weight 0 until the owner's
-## ELITES.md G1, and only from elite_floor_min.
+## The kinds (LockdownDefinition.kind_weights is indexed by them). ELITE (v0.9.0 EL, owner Q21): an elite and its
+## escort, only from its first floor (4).
 enum Kind { NORMAL, HAZARD, ELITE }
 
 ## Lockdowns a floor, drawn in rooms_min..rooms_max (fewer when the floor has fewer rooms that fit).
 var rooms_min := 1
 var rooms_max := 2
 ## Each kind's weight (per Kind), and the first floor (1-based, within a loop) each may appear on.
-var kind_weights := PackedInt32Array([750, 250, 0])
+var kind_weights := PackedInt32Array([750, 250, 300])
 var kind_floor_min := PackedInt32Array([1, 2, 4])
 ## The encounter: `waves` formations, each wave_sizes[floor] enemies (1-based; the last repeats).
 var waves := 3

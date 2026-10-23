@@ -61,7 +61,9 @@ static func build(run: RunState) -> World:
 	w.set_boss_tables(bosses)
 	w.ability_tables = ContentCompiler.compile_abilities(r)
 	w.stat_tables = ContentCompiler.compile_stat_cards(r)
-	EventCompiler.setup(w, r, FloorScenario.curse_room_rules_of(run))
+	EventCompiler.setup(
+		w, r, FloorScenario.curse_room_rules_of(run), FloorScenario.retired_events_of(run)
+	)
 	FloorPlan.add_secrets(w, r, run, table.move_speed)
 	return w
 

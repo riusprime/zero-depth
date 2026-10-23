@@ -7,9 +7,14 @@ extends RefCounted
 ## "Visible" is what the view is handed: WorldReader.telegraph (the same function that resolves the hit, EI-07).
 ## The harmless burrow ripple marks where a boss is, not the area it hits, so it doesn't count as a telegraph.
 ## Call observe(w) after every World.step. A read-only observer: it never changes the world.
+## v0.9.0 EL: an elite's hit is booked to the attack it was making at the last observe (its ability, its plain attack,
+## or, while it walked, a touch of its body: ELITE_CONTACT, readable by the body itself, no telegraph needed); its line
+## is EliteAi's.
 
 ## A projectile on screen this long is readable by itself (starting value: the telegraph minimum, 0.4 s).
 const PROJECTILE_MIN_TICKS := SimTick.MIN_TELEGRAPH_TICKS
+## v0.9.0 EL: _attack's value for an elite that was walking (its touch).
+const ELITE_CONTACT := -100
 
 ## Every DAMAGE to the player seen, and the ones that failed (each a Dictionary describing the hit).
 var damage_count := 0
@@ -61,6 +66,13 @@ func observe(w: World) -> void:
 ## an attack's late part, BossSignatures.LATE_CAUSE + the attack, reads its late_cause_key, a turret's ricochet
 ## through the live boss's table, as BossAi.cause_key).
 static func cause_key(w: World, kind: int, attack: int, tags: int) -> String:
+	if EliteAi.is_elite_kind(kind):  # v0.9.0 EL
+		var keys: Array = EliteAi.CAUSE_KEYS[kind]
+		if tags & SimEvent.TAG_PROJECTILE or attack == EliteAi.Attack.BASIC:
+			return String(keys[EliteAi.CAUSE_BASIC])
+		return String(
+			keys[EliteAi.CAUSE_CONTACT if attack == ELITE_CONTACT else EliteAi.CAUSE_ABILITY]
+		)
 	var bt := w.boss_table_of_kind(kind)
 	if attack >= BossSignatures.LATE_CAUSE:
 		if bt == null:
@@ -126,7 +138,7 @@ func _check(w: World, e: SimEvent) -> void:
 			problems.append(
 				"projectile on screen %d ticks, fired after a %d-tick telegraph" % [age, shown]
 			)
-	else:
+	elif attack != ELITE_CONTACT or not EliteAi.is_elite_kind(kind):
 		shown = _telegraphed(e.owner_id)
 		if shown < SimTick.MIN_TELEGRAPH_TICKS:
 			problems.append("telegraph visible %d ticks" % shown)
@@ -269,6 +281,8 @@ func _update_streaks(w: World) -> void:
 		if BossAi.is_boss_kind(a.kinds[i]):
 			var b := BossAi.entry_of(w, i)
 			_attack[id] = w.bosses.attack[b] if b >= 0 else -1
+		elif EliteAi.is_elite_kind(a.kinds[i]):  # v0.9.0 EL: walking (a touch) or the attack it makes
+			_attack[id] = ELITE_CONTACT if a.state[i] == EnemyAi.State.MOVE else a.pick[i]
 		var tel: Dictionary = _reader.telegraph(i) if a.dead[i] == 0 else {}
 		var visible: bool = not tel.is_empty() and tel.get("shape", &"") != &"ripple"
 		if visible:

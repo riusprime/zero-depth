@@ -34,6 +34,9 @@ enum Kind {
 	COLOSSUS,  # v0.8.0 FB1: the final boss's three bodies (FinalBoss), one kind each
 	PRISM,
 	NEMESIS,
+	BREAKER,  # v0.9.0 EL: the three elite archetypes (EliteAi; ELITES.md E1-E3)
+	RIFT_HUNTER,
+	CONDUIT,
 }
 
 const TEAM_PLAYER := 0

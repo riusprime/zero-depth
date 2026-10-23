@@ -151,6 +151,12 @@ static func legacy_curse_room_of(run: RunState) -> bool:
 	return run != null and run.floor_rules <= RunState.FLOOR_RULES_V080_N14
 
 
+## v0.9.0 EL (owner Q25): whether run `run`'s current floor was saved before EL (floor rules 1-14): its event draw
+## keeps the retired Ambush Cache's weight (EventCompiler.setup's `legacy`); false for today's floors and no run.
+static func retired_events_of(run: RunState) -> bool:
+	return run != null and run.floor_rules <= RunState.FLOOR_RULES_V090_SH
+
+
 ## v0.8.0 N19 (O80): the curse-room rules run `run`'s current floor was built under (Events.CURSE_RULES_*): before
 ## N17 for floor rules 1-6, N17's for 7 (a combat room keeping its interior), today's for a new floor or no run.
 static func curse_room_rules_of(run: RunState) -> int:

@@ -49,7 +49,10 @@ func floor_world() -> World:
 	Abilities.grant_start(w)
 	Abilities.start_floor(w)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))
-	EventCompiler.setup(w, repo, FloorScenario.curse_room_rules_of(run))  # v0.5.0 EV, as Main (N17, N19)
+	# v0.5.0 EV, as Main (N17, N19; v0.9.0 EL)
+	EventCompiler.setup(
+		w, repo, FloorScenario.curse_room_rules_of(run), FloorScenario.retired_events_of(run)
+	)
 	return w
 
 

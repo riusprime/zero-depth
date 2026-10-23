@@ -27,6 +27,10 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 			return [bt.front_mult_permille, tag]
 		if bt.rear_half_arc > 0 and off >= 2048 - bt.rear_half_arc:
 			return [bt.rear_mult_permille, SimEvent.TAG_WEAK_SPOT]
+	elif EliteAi.is_elite_kind(a.kinds[target]):
+		# v0.9.0 EL (ELITES.md E1, E3): the Breaker stuck and the Conduit overloaded take +50 % (the punish window).
+		if EliteAi.vulnerable(w, target):
+			return [EliteAi.vulnerable_permille(w, target), SimEvent.TAG_WEAK_SPOT]
 	elif EnemyAi.armoured(a.kinds[target]) and from != a.pos(target):
 		var def := w.enemy_table(a.kinds[target])
 		if def != null:

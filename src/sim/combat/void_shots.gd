@@ -78,7 +78,7 @@ static func pull_permille(w: World, i: int) -> int:
 	var a := w.actors
 	if a.invuln[i] > 0 or BossAi.is_boss_kind(a.kinds[i]):
 		return 0
-	if w.ev != null and Curses.is_elite(w, a.ids[i]):
+	if EliteAi.is_elite_kind(a.kinds[i]):  # v0.9.0 EL: an elite archetype
 		return 0
 	return HEAVY_PERMILLE if a.radius[i] >= HEAVY_RADIUS_M else 1000
 

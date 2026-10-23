@@ -118,8 +118,7 @@ static func compile_swing_step(sd: SwingStepDefinition) -> SwingStep:
 	)
 
 
-## An enemy's numbers in sim units. The behaviour id picks the actor kind. v0.7.5 EF: with `repo`, the slow
-## fireball patterns its attacks name (shape_params "pattern_id") are resolved too (PatternCompiler).
+## An enemy's numbers in sim units (its behaviour id picks the kind); v0.7.5 EF: with `repo`, its patterns too.
 static func compile_enemy(def: EnemyDefinition, repo: ContentRepository = null) -> EnemyTable:
 	var t := _compile_enemy_numbers(def)
 	if repo != null:
@@ -343,11 +342,12 @@ static func compile_curve(
 	return c
 
 
-## Every enemy in a repository, compiled.
+## Every enemy in a repository, compiled; v0.9.0 EL: then the elite archetypes (ELITES.md).
 static func compile_enemies(repo: ContentRepository) -> Array[EnemyTable]:
 	var out: Array[EnemyTable] = []
 	for def: EnemyDefinition in repo.all_of(&"enemies"):
 		out.append(compile_enemy(def, repo))
+	out.append_array(EliteCompiler.compile_elites(repo))
 	return out
 
 

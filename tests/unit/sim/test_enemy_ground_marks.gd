@@ -3,7 +3,8 @@ extends GutTest
 ## on the ground ("ground" missing or true in EnemyAi.telegraph). Only the Arc Caster's rune and the Mine Layer's
 ## armed mines, and since v0.8.0 P1 (owner O25) the Warden's slam circle; every other kind still hands the view a
 ## telegraph (shape and timing, for the forecasts, the parity tests and the readable-cause recap), marked "ground":
-## false so its body tells the windup. Elites follow their kind.
+## false so its body tells the windup. v0.9.0 EL: the elite archetypes mark their ability's area on the ground (the
+## Breaker's slam circle, the Rift Hunter's mark, the Conduit's beam line); their plain attacks are body cues.
 
 const K := ActorStore.Kind
 const TICKS := 1800
@@ -29,14 +30,11 @@ const TABLE := [
 
 ## Runs one enemy of `kind` against a player that can't die (walking onto any mine so it arms) and returns
 ## [ground marks seen ("shape/style"), every shape seen].
-func _marks(kind: int, at: Vector2, elite: bool) -> Array:
+func _marks(kind: int, at: Vector2) -> Array:
 	var w := CombatLab.world()
 	w.actors.hp[0] = 1 << 20
 	w.actors.max_hp[0] = 1 << 20
 	var id := w.add_enemy(kind, at)
-	if elite:
-		Curses.make_elite(w, w.actors.index_of(id))
-		assert_true(Curses.is_elite(w, id), "kind %d made elite" % kind)
 	var ground := {}
 	var shapes := {}
 	for t in TICKS:
@@ -58,7 +56,7 @@ func _marks(kind: int, at: Vector2, elite: bool) -> Array:
 
 func test_only_the_rune_the_mines_and_the_wardens_slam_mark_the_ground() -> void:
 	for spec: Array in TABLE:
-		var got := _marks(spec[0], spec[1], false)
+		var got := _marks(spec[0], spec[1])
 		var ground: Array = got[0]
 		ground.sort()
 		assert_eq(ground, spec[2], "kind %d: its ground marks" % spec[0])
@@ -66,12 +64,15 @@ func test_only_the_rune_the_mines_and_the_wardens_slam_mark_the_ground() -> void
 			assert_true((got[1] as Dictionary).has(spec[3]), "kind %d still telegraphs" % spec[0])
 
 
-func test_elites_follow_their_kind() -> void:
-	for spec: Array in TABLE:
-		if (spec[2].is_empty() or spec[0] == K.WARDEN) and spec[3] != &"":
-			var got := _marks(spec[0], spec[1], true)
-			assert_eq(got[0], spec[2], "elite kind %d: its kind's ground marks" % spec[0])
-			assert_true((got[1] as Dictionary).has(spec[3]), "elite kind %d telegraphs" % spec[0])
+func test_the_elites_mark_their_ability_on_the_ground() -> void:
+	for spec: Array in [
+		[K.BREAKER, Vector2(2.5, 0), ["disc/"], &"lane"],
+		[K.RIFT_HUNTER, Vector2(5, 0), ["disc/"], &"disc"],
+		[K.CONDUIT, Vector2(8, 0), ["lane/"], &"cast"],
+	]:
+		var got := _marks(spec[0], spec[1])
+		assert_eq(got[0], spec[2], "elite kind %d: its ability's ground mark" % spec[0])
+		assert_true((got[1] as Dictionary).has(spec[3]), "elite kind %d telegraphs" % spec[0])
 
 
 func test_the_body_cue_kinds_keep_the_shape_and_timing_the_hit_uses() -> void:

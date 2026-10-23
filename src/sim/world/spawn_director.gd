@@ -12,9 +12,8 @@ extends RefCounted
 ##   the floor's range, never past the cap;
 ## - its members stand on a ring around the anchor (anchor first, then 6 spots at PACK_STEP_M, then 12 at twice
 ##   that), each in the anchor's room, clear of walls and at least min_distance_m from the player;
-## - v0.5.0 EV curses: Swarm Call adds to every pack's size (still under the cap), Marked Hunt may raise a member to
-##   an elite (its tier HP x2); a Wandering Drone defence runs the interval clock twice as fast;
-## - v0.5.5 DS (S5): on a Deep floor the first pack in each room brings an elite (deep_elite);
+## - v0.5.0 EV curses: Swarm Call adds to every pack's size (still under the cap); a Wandering Drone defence runs the
+##   interval clock twice as fast; v0.9.0 EL: the first pack after a room's elite arrived is one smaller (Elites);
 ## - each arrives with its max HP and damage scaled by the tier (SpawnTable; the floor scaling is already in the
 ##   compiled enemy tables, RunState.scale_enemies), then (v0.5.5 DS, D4) the floor's hidden catch-up (CatchUp).
 ## With no anchor far enough, that pack is skipped and the interval starts again.
@@ -167,15 +166,14 @@ static func _spawn_pack(w: World, t: SpawnTable, ticks: int, room: int) -> void:
 	if t.pack_cap_now(ticks) > 0:  # v0.4.0 TU: the phase's largest pack
 		size = mini(size, t.pack_cap_now(ticks))
 	size += Curses.extra_enemies(w)  # v0.5.0 EV curse (Swarm Call): one more in every pack, under the cap
+	size = Elites.escort_size(w, size)  # v0.9.0 EL (ELITES.md E0): one smaller beside a room's elite
 	var spots := pack_spots(w, anchor, mini(size, room))
 	for k in spots.size():
 		w.add_enemy(kind, spots[k])
-		var i := w.actors.size() - 1
-		scale_arrival(w, i, ticks)
+		scale_arrival(w, w.actors.size() - 1, ticks)
 		# v0.9.0 DP (owner Q24, Q26b): a Deep floor's room no longer brings an elite in its first pack (v0.5.5 DS's
-		# deep_elite is gone; elites come from floors 4-5 and Elite Lockdowns, Step EL). World.deep_elite_rooms stays
-		# for the saves that hold it.
-		Curses.maybe_elite(w, i)  # v0.5.0 EV curse (Marked Hunt): x2 on that HP
+		# deep_elite is gone). World.deep_elite_rooms stays for the saves that hold it. v0.9.0 EL: no spawn becomes an
+		# elite any more (the Marked curse is gone); elites come from elite rooms (Elites).
 
 
 ## An enemy arriving now (actor i, just added): max HP and damage scaled by the danger tier (SpawnTable; the floor

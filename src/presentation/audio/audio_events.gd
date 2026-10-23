@@ -80,9 +80,8 @@ var _shop_denied := -1
 var _heartbeat_left := 0
 ## Overclock heat edges (v0.3.0 H): the last threshold-cross, overheat and vent ticks seen.
 var _heat_ticks := [-1, -1, -1, 0]
-## v0.5.0 EV: the event panel open, the ambush on, and the last curse and payout ticks seen.
+## v0.5.0 EV: the event panel open, and the last curse and payout ticks seen.
 var _event_open := false
-var _ambush := false
 var _curse_tick := -1
 var _done_tick := -1
 ## v0.4.0 AB: the Overrun room's last state (inside, cleared).
@@ -116,6 +115,8 @@ var _lock := [-1, 0, -1]
 var _lance_hum := false
 ## v0.9.0 SH, HF: the shrine's use tick and the fountain's heal tick, for their cues' edges.
 var _shrine := [-1, -1]
+## v0.9.0 EL: the last elite arrival's tick, for its cue's edge.
+var _elite_arrive := -1
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -152,6 +153,7 @@ func prime(reader: WorldReader) -> void:
 	_lock = lockdown_marks(reader)
 	_lance_hum = reader.lance_charge() >= LANCE_HUM_AT
 	_shrine = shrine_marks(reader)
+	_elite_arrive = elite_arrive_tick(reader)
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -185,6 +187,7 @@ func collect(reader: WorldReader) -> Array:
 	_breakables(reader, out)
 	_lockdown(reader, out)  # v0.9.0 LK
 	_shrines(reader, out)  # v0.9.0 SH, HF
+	_elite_arrival(reader, out)  # v0.9.0 EL
 	return out
 
 
@@ -550,9 +553,50 @@ func _scan_actors(reader: WorldReader, out: Array) -> void:
 			out.append([&"boss_phase", null, 1.0])
 
 
+## v0.9.0 EL: an elite arriving (`elite_arrive`, at it: a short heavy burst, no fanfare).
+func _elite_arrival(reader: WorldReader, out: Array) -> void:
+	var now := elite_arrive_tick(reader)
+	if now >= 0 and now != _elite_arrive:
+		out.append([&"elite_arrive", reader.elites()["arrive_pos"], 1.0])
+	_elite_arrive = now
+
+
+## The last elite arrival's tick (-1: none, or no elite on the floor).
+static func elite_arrive_tick(reader: WorldReader) -> int:
+	var d := reader.elites()
+	return int(d["arrive_tick"]) if bool(d.get("active", false)) else -1
+
+
+## v0.9.0 EL: an elite's own sounds: each ability's tell and strike (the Breaker's raise is the enemy windup, its slam
+## `elite_slam`; the Rift Hunter's mark `elite_rift`, its slash `elite_slash`; the Conduit's charge `elite_charge`, its
+## beam `elite_beam`), the punch (`shield_bash`) and the orb fan (`arc_bolt`).
+static func elite_cue(kind: int, st: int, ability: bool) -> StringName:
+	if st == WorldReader.STATE_WINDUP:
+		if ability and kind == WorldReader.KIND_RIFT_HUNTER:
+			return &"elite_rift"
+		if ability and kind == WorldReader.KIND_CONDUIT:
+			return &"elite_charge"
+		return &"enemy_windup"
+	if st != WorldReader.STATE_ACTIVE:
+		return &""
+	if not ability:
+		return &"arc_bolt" if kind == WorldReader.KIND_CONDUIT else &"shield_bash"
+	match kind:
+		WorldReader.KIND_BREAKER:
+			return &"elite_slam"
+		WorldReader.KIND_RIFT_HUNTER:
+			return &"elite_slash"
+	return &"elite_beam"
+
+
 ## A normal enemy's windup; the new kinds' own sounds (v0.3.5 AI): the Bomb Drone's lob and blast (at the circle),
 ## the Arc Caster's bolt and rune.
 func _enemy_cue(reader: WorldReader, i: int, kind: int, st: int, at: Vector2, out: Array) -> void:
+	if WorldReader.is_elite_kind(kind):  # v0.9.0 EL
+		var cue := elite_cue(kind, st, reader.elite_attack(i) == WorldReader.ELITE_ABILITY)
+		if cue != &"":
+			out.append([cue, at, 1.0])
+		return
 	if st == WorldReader.STATE_WINDUP:
 		out.append(
 			[&"bomb_lob" if kind == WorldReader.KIND_BOMB_DRONE else &"enemy_windup", at, 1.0]
@@ -752,10 +796,6 @@ func _event_rooms(reader: WorldReader, out: Array) -> void:
 	if open and not _event_open:
 		out.append([&"event_open", null, 1.0])
 	_event_open = open
-	var ambush := reader.event_ambush() >= 0
-	if ambush and not _ambush:
-		out.append([&"ambush_start", null, 1.0])
-	_ambush = ambush
 	if reader.curse_tick() != _curse_tick:
 		if reader.curse_tick() >= 0:
 			out.append([&"curse_gain", null, 1.0])
