@@ -26,7 +26,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
 - **Waiting on the owner (all in OWNER_QUESTIONS):** the floor 4–5 bosses (NB G1), the hub layout (HB G2), collectibles
   (CL G1), affinities (RB G1), the VFX audit (VX G1), the forms' tuning (3, 5, 11), Lockdown length, shrine values;
   plus ELITES.md (EL) and the art still wanted.
-- **Next:** merge NB1, EL, HB as they report; **CF** (owner 2026-10-23: closed fights never in a 1×1 room, spawns at once scale with the room) starts when EL is merged (same Lockdown and spawn code); then NB2–NB4, MP, RB, CL.
+- **Next:** **SV first** (owner 2026-10-23: +15 max HP a floor cleared, 60 % heal between floors; he can't reach the final boss), then merge NB1, EL, HB as they report; **CF** (owner 2026-10-23: closed fights never in a 1×1 room, spawns at once scale with the room) starts when EL is merged (same Lockdown and spawn code); then NB2–NB4, MP, RB, CL.
 - **Known:** Void with Twin Lv 5 averaged 13.5 ms (budget 12) on the horde probe; floor 1 never fits a secret (intended).
 
 ## Owner decisions (2026-10-22)
