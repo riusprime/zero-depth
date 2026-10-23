@@ -10,6 +10,9 @@ const LOAD_MS := 120000
 
 var test: GutTest
 var main: Main
+## v0.9.0: the window's mouse scale, measured once (the probe move it takes aimed the hero at (100, 100) for a
+## frame on every mouse_to; AF2, AF3 found shots firing at it).
+var _scale := Vector2.ZERO
 
 
 func _init(p_test: GutTest) -> void:
@@ -106,13 +109,17 @@ func mouse_to(pos: Vector2) -> void:
 
 
 func _mouse_scale() -> Vector2:
+	if _scale != Vector2.ZERO:
+		await frames(1)  # the probe's frame, kept so a test's frame counts stay as they were
+		return _scale
 	var probe := InputEventMouseMotion.new()
 	probe.position = Vector2(100, 100)
 	probe.global_position = probe.position
 	send(probe)
 	await frames(1)
 	var got := main.get_viewport().get_mouse_position()
-	return got / 100.0 if got.x > 0.0 and got.y > 0.0 else Vector2.ONE
+	_scale = got / 100.0 if got.x > 0.0 and got.y > 0.0 else Vector2.ONE
+	return _scale
 
 
 ## Play from the main menu with the keyboard: the Play button has focus, then the build screen's last pick (Blade on
