@@ -517,6 +517,15 @@ CAUSE_JUDGE_VERDICT,The Clockwork Judge's pendulum fell on you.,El péndulo de T
 CAUSE_JUDGE_GAVEL,The Clockwork Judge's gavel came down on you.,El mazo de The Clockwork Judge cayó sobre ti.
 CAPTION_TELEGRAPH_CLOCKWORK_JUDGE,[Warning: the Judge's clock ticks],[Aviso: el reloj de The Clockwork Judge marca el tiempo]
 CAPTION_JUDGE_ECHO,[Your echo strikes],[Tu eco golpea]
+BOSS_LANTERN_SHADE,The Lantern Shade,The Lantern Shade
+BOSS_LANTERN_SHADE_DESC,"A hooded wraith that snuffs the light. Keep the lanterns burning: it can only be hurt in the light.","Un espectro encapuchado que apaga la luz. Mantén los faroles encendidos: solo se le puede herir en la luz."
+CAUSE_SHADE_DARK,The Lantern Shade found you in the dark.,The Lantern Shade te encontró en la oscuridad.
+CAUSE_SHADE_BLOOM,The Lantern Shade's wisps bloomed around you.,Los fuegos fatuos de The Lantern Shade florecieron a tu alrededor.
+CAUSE_SHADE_SNUFF,The Lantern Shade snuffed you out.,The Lantern Shade te apagó como a una vela.
+CAUSE_SHADE_SWEEP,The Lantern Shade's lantern swung into you.,El farol de The Lantern Shade te golpeó al balancearse.
+CAPTION_TELEGRAPH_LANTERN_SHADE,[Warning: the Shade's lantern flares],[Aviso: el farol de The Lantern Shade se aviva]
+CAPTION_SHADE_SNUFF,[A light goes out],[Una luz se apaga]
+CAPTION_SHADE_RELIGHT,[A lantern relights],[Un farol se vuelve a encender]
 EVENT_UNSTABLE_CORE,Unstable Core,Núcleo inestable
 EVENT_UNSTABLE_CORE_DESC,A cracked power core hums with stolen strength.,Un núcleo agrietado zumba con fuerza robada.
 EVENT_UNSTABLE_CORE_DRAW,Draw the power out,Extraer la energía

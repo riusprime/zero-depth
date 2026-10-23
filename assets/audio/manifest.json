@@ -635,6 +635,36 @@
       "loop": false
     },
     {
+      "id": "boss_telegraph_lantern_shade",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/boss_telegraph_lantern_shade.wav",
+      "sha256": "a414f102950a60d73422b3b9aeaea19955d868f2f6fec791377b5dc5071e06e7",
+      "seconds": 1.7,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -14.75,
+      "loop": false
+    },
+    {
+      "id": "boss_shade_snuff",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/boss_shade_snuff.wav",
+      "sha256": "aec1553ceaa51047234d7deda842a151e619eca046db548e9918cfb7f17a7b69",
+      "seconds": 1.25,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -15.99,
+      "loop": false
+    },
+    {
+      "id": "boss_shade_relight",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/boss_shade_relight.wav",
+      "sha256": "80427e51e0df06050a3cb4788834adebed2fdb932cee0f4a7173df4a4d866f7f",
+      "seconds": 1.1,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -20.73,
+      "loop": false
+    },
+    {
       "id": "boss_floor_burst",
       "kind": "sfx",
       "path": "assets/audio/sfx/boss_floor_burst.wav",

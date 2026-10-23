@@ -46,8 +46,8 @@ static func is_boss_kind(kind: int) -> bool:
 		or (kind >= ActorStore.Kind.WARLORD and kind <= ActorStore.Kind.FOUNDRY)  # v0.4.0 BO
 		or (kind >= ActorStore.Kind.COLOSSUS and kind <= ActorStore.Kind.TIDECALLER)
 		or BossTwin.is_twin_kind(kind)
-		or kind == ActorStore.Kind.CLOCKWORK_JUDGE
-	)  # v0.8.0 FB1; v0.9.0 NB1: the Tidecaller; NB2: the Twin Wardens' two bodies; NB3: the Clockwork Judge
+		or kind in [ActorStore.Kind.CLOCKWORK_JUDGE, ActorStore.Kind.LANTERN_SHADE]
+	)  # v0.8.0 FB1; v0.9.0 NB1: the Tidecaller; NB2: the Twin Wardens; NB3: the Judge; NB4: the Lantern Shade
 
 
 ## The BossStore entry of actor i (-1 if it isn't a boss).

@@ -35,7 +35,7 @@ const M := BossAttackTable.Move
 
 ## True for an attack the cadence starts (so the weighted pick leaves it out).
 static func on_cadence(t: BossTable, atk: BossAttackTable) -> bool:
-	return t.sig_every_ticks > 0 and is_cadence_move(atk.move)
+	return t.sig_every_ticks > 0 and is_cadence(atk)
 
 
 ## v0.9.0 NB3: the moves a cadence starts: the Tidecaller's Pull and the Clockwork Judge's echo (BossJudge).
@@ -43,12 +43,18 @@ static func is_cadence_move(move: int) -> bool:
 	return move == M.TIDE or move == M.ECHO
 
 
+## v0.9.0 NB4: the attacks a cadence starts: those moves, and the Lantern Shade's Lights Out (a pattern with
+## dark_ticks: BossShade).
+static func is_cadence(atk: BossAttackTable) -> bool:
+	return atk != null and (is_cadence_move(atk.move) or atk.dark_ticks > 0)
+
+
 ## The phase's signature: its first `tide` attack (an index into the table's attacks), or -1.
 static func signature_of(t: BossTable, phase: int) -> int:
 	if phase < 0 or phase >= t.phase_attacks.size():
 		return -1
 	for k in t.phase_attacks[phase]:
-		if is_cadence_move(t.attacks[k].move):
+		if is_cadence(t.attacks[k]):
 			return k
 	return -1
 
@@ -75,7 +81,8 @@ static func due(w: World, i: int, b: int, t: BossTable, cd: int = 0) -> int:
 ## BossAi.start_attack: a `tide` attack starting (by the cadence or as a phase's entry) sets the next one's due tick
 ## (v0.9.0 NB3: an `echo` too).
 static func on_start(w: World, i: int, atk: BossAttackTable) -> void:
-	if not is_cadence_move(atk.move):
+	BossShade.on_start(w, i, atk)  # v0.9.0 NB4: a Lights Out sets when the dark falls
+	if not is_cadence(atk):
 		return
 	var t := BossAi.table_of(w, i)
 	var k := w.bosses.sig_of(w.actors.ids[i])

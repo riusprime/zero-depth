@@ -19,6 +19,7 @@ const KINDS: Array[StringName] = [
 	&"tidecaller",  # v0.9.0 NB1: floor 4 (BOSSES_4_5.md N1)
 	&"twin_wardens",  # v0.9.0 NB2: floor 4 (BOSSES_4_5.md N2): the amber body's kind (its twin's: BossDefinition)
 	&"clockwork_judge",  # v0.9.0 NB3: floor 5 (BOSSES_4_5.md N3)
+	&"lantern_shade",  # v0.9.0 NB4: floor 5 (BOSSES_4_5.md N4)
 ]
 
 ## Arena interior templates, in FloorLayout.Template order (a test pins the match).
@@ -90,7 +91,19 @@ const MOVES := {
 	{
 		"shape": 4,
 		"params": ["pattern_id"],
-		"optional": ["recall_seconds", "bounces", "aim_degrees"]
+		"optional":
+		[
+			"recall_seconds",
+			"bounces",
+			"aim_degrees",
+			"dark_seconds",  # v0.9.0 NB4: the Lantern Shade's Lights Out (ShadeRules.LIGHT_PARAMS)
+			"light_m",
+			"lamps",
+			"lamp_m",
+			"lamp_seconds",
+			"relight_m",
+			"inset_m",
+		]
 	},
 	## v0.7.5 BF1: `count` ground circles, stagger_seconds apart, each following the player's exact position until
 	## the attack's lock_seconds, then locked and flashing until it strikes (BOSS_FIGHTS.md rule 1).
@@ -112,6 +125,7 @@ const MOVES := {
 			"burst_phase",
 			"drag_m",  # v0.9.0 NB1: the Undertow (BossTide)
 			"drag_reach_m",
+			"snuff",  # v0.9.0 NB4: the Snuff puts out the nearest lantern (BossShade)
 		],
 	},
 	## v0.7.5 BF1: `count` crosses of two lanes (the player's row and column, length_m long), stagger_seconds apart,

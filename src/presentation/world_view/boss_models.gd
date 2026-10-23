@@ -42,6 +42,17 @@ const SPECS := {
 	# v0.9.0 NB3 (PLAN NB: "can you ignore the skeleton?"): the Clockwork Judge, front +Z as prepared, 3.6 m (the art
 	# list's), cut into parts in the file (its skin unusable): body, both pendulum arms, the gears, the two hands.
 	&"boss_clockwork_judge": {"yaw": PI * 0.5, "height": 3.6, "parts": true},
+	# v0.9.0 NB4 (PLAN NB: "Keep the empty hood"): the Lantern Shade, front +Z as prepared, 3.4 m (the art list's),
+	# cut into parts in the file: body (the cloak and empty hood), both arms, the held lantern hanging from the right
+	# arm; it floats (lift: its ragged hem off the ground).
+	&"boss_lantern_shade":
+	{
+		"yaw": PI * 0.5,
+		"height": 3.4,
+		"lift": 0.3,
+		"parts": true,
+		"parents": {&"hand_lantern": &"arm_r"},
+	},
 }
 
 ## v0.7.5 BM (owner N18, 2026-10-13: "Bosses could be a bit bigger so we could see the model better"): every boss

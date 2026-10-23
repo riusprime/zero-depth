@@ -93,7 +93,7 @@ func test_the_data_is_the_approved_row() -> void:
 	assert_eq(t.phase_entry[2], t.attack_index(&"gear_spiral_3"), "phase 3 reverses again")
 	var pool := ContentCompiler.compile_boss_pool(repo, 5)
 	var ids := BossLab.tables().map(func(x: BossTable) -> StringName: return x.id)
-	assert_eq(pool.size(), 1, "floor 5 draws only the Judge (until NB4's Shade)")
+	assert_eq(pool.size(), 2, "floor 5 draws the Judge or (v0.9.0 NB4) the Lantern Shade")
 	assert_eq(ids[pool[0]], &"clockwork_judge")
 
 

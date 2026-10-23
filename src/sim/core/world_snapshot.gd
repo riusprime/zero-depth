@@ -264,6 +264,13 @@ const ADDED_SINCE_V05 := {
 		&"path_x",
 		&"path_y",
 		&"path_k",
+		&"shade_boss",  # v0.9.0 NB4: the Lantern Shade's light (an older save has no Shade: none)
+		&"shade_dark",
+		&"shade_at",
+		&"shade_from",
+		&"lamp_x",
+		&"lamp_y",
+		&"lamp_t",
 	],
 	&"ProjectileStore":
 	[

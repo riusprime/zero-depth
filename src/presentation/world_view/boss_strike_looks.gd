@@ -94,6 +94,10 @@ const LOOKS := {
 	# pendulum itself is JudgeViews'); the Gavel Slam rings a light shockwave out over the floor.
 	&"cj_verdict": {"pattern": Pattern.LIGHT, "strike": &"beam"},
 	&"cj_gavel": {"pattern": Pattern.LIGHT, "strike": &"light_ring"},
+	# v0.9.0 NB4: the Lantern Shade. The Snuff's circle closes like a hand of shadow (a void burst over the swirling
+	# dark); the Lantern Sweep rings a light shockwave out where the lantern swung.
+	&"ls_snuff": {"pattern": Pattern.VOID, "strike": &"light_burst"},
+	&"ls_sweep": {"pattern": Pattern.VOID, "strike": &"light_ring"},
 }
 
 ## Boss kind -> move -> look. The Gatekeeper's row_lanes are StoneSpikeViews' (cracked ground, then spikes).
@@ -172,6 +176,11 @@ const BY_KIND := {
 	{
 		WorldReader.MOVE_VERDICT: &"cj_verdict",
 		WorldReader.MOVE_SLAM_RING: &"cj_gavel",
+	},
+	WorldReader.KIND_LANTERN_SHADE:  # v0.9.0 NB4
+	{
+		WorldReader.MOVE_MARKS: &"ls_snuff",
+		WorldReader.MOVE_SLAM_RING: &"ls_sweep",
 	},
 }
 

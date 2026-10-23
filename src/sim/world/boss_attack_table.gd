@@ -208,3 +208,8 @@ var echo_points := 0
 var echo_gap_ticks := 1
 var echo_safe_m := 0.0
 var square_half_m := 0.0
+## v0.9.0 NB4 (BOSSES_4_5.md N4; BossShade): a `pattern` with dark_ticks > 0 is the Lantern Shade's Lights Out (its
+## signature on the cadence): dark_ticks after it starts the room goes dark and the lanterns are lit afresh. A `marks`
+## attack with snuff puts out the lit lantern nearest each struck circle (the Snuff).
+var dark_ticks := 0
+var snuff := false

@@ -105,6 +105,16 @@ var anger_ticks := 0
 ## echo_points positions, one every echo_gap_ticks (its echo attacks'), for its echo to replay (0 = none).
 var echo_points := 0
 var echo_gap_ticks := 1
+## v0.9.0 NB4 (BOSSES_4_5.md N4; BossShade): a boss with lamp_count > 0 (the Lantern Shade) puts lamp_count lanterns
+## on its room's edge (lamp_inset_m in from each wall's middle). Once its Lights Out snuffs the room only light_m round
+## the player and lamp_m round each lit lantern stay lit; a lantern burns lamp_ticks after it was lit, and the player
+## passing within relight_m relights it (from its Lights Out attacks).
+var lamp_count := 0
+var lamp_inset_m := 0.0
+var light_m := 0.0
+var lamp_m := 0.0
+var lamp_ticks := 0
+var relight_m := 0.0
 ## v0.8.0 FB2 (owner F7, "Phase-by-phase mix"; FINAL_BOSS.md F5, F7; BossPrism): a body whose HP is set as it rises
 ## from the player's measured damage per second (FinalFight's meter: the last dps_seconds closed seconds, at least
 ## dps_min_seconds of them, else its own hp): hp = dps × dps_target_ticks / 60 × window_permille / 1000, clamped to

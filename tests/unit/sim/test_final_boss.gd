@@ -62,6 +62,7 @@ func test_the_floors_boss_indices_stay_as_they_were() -> void:
 			&"tidecaller",  # v0.9.0 NB1: after the six (BossOrder), so their indices stay
 			&"twin_wardens",  # v0.9.0 NB2: after the Tidecaller (save_order 2)
 			&"clockwork_judge",  # v0.9.0 NB3: after the Wardens (save_order 3)
+			&"lantern_shade",  # v0.9.0 NB4: after the Judge (save_order 4)
 		],
 		"the final bodies are in their own category, so every saved boss index means what it did"
 	)

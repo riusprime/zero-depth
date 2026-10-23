@@ -50,6 +50,7 @@ static func compile_boss_attack(
 	_compile_signature(def, t)
 	_compile_tide(def, t)
 	_compile_judge(def, t)
+	ShadeCompiler.compile_attack(def, t)  # v0.9.0 NB4: Lights Out's dark, the Snuff
 	if t.pillar_ticks > 0:  # v0.8.0 BS1 (S1): the last cross's pillars rise the tick after it strikes
 		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 2)
 	if sp.has("pattern_id"):
@@ -137,6 +138,7 @@ static func compile_cadence(def: BossDefinition, t: BossTable) -> void:
 	t.sig_every_ticks = SimTick.seconds_to_ticks(def.signature_every_seconds)
 	t.sig_first_ticks = SimTick.seconds_to_ticks(def.signature_first_seconds)
 	_compile_twin(def, t)
+	ShadeCompiler.compile_boss(def, t)  # v0.9.0 NB4: the Lantern Shade's room light
 	for a in def.attacks:  # v0.9.0 NB3: the Clockwork Judge records for its echo (its first echo's numbers)
 		if a != null and a.move == &"echo":
 			t.echo_gap_ticks = echo_gap(a)

@@ -177,6 +177,14 @@ static func _boss(id: StringName) -> Array:
 				_line([[0.5, 0.4], [0.66, 0.48]], 0.05),
 				_circle(Vector2(0.5, 0.84), 0.1, 0.0, false),
 			]
+		&"lantern_shade":  # v0.9.0 NB4: an empty hood over a hanging lantern
+			return [
+				_poly([[0.5, 0.06], [0.78, 0.3], [0.74, 0.62], [0.26, 0.62], [0.22, 0.3]]),
+				_poly([[0.5, 0.2], [0.64, 0.34], [0.6, 0.54], [0.4, 0.54], [0.36, 0.34]], true),
+				_line([[0.5, 0.62], [0.5, 0.72]], 0.03),
+				_poly([[0.42, 0.72], [0.58, 0.72], [0.6, 0.94], [0.4, 0.94]]),
+				_circle(Vector2(0.5, 0.83), 0.05, 0.0, true),
+			]
 	return [  # any other boss: a crown
 		_poly(
 			[

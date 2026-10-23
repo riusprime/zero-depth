@@ -1777,6 +1777,44 @@ below) and FB3's cap of a fifth of max HP (D36).
   the path `[{pos, k, at, struck}]`; a winding Verdict's centre, half, locked, progress), `KIND_CLOCKWORK_JUDGE`,
   `MOVE_ECHO`, `MOVE_VERDICT`.
 
+## 10m. The Lantern Shade: lights out (v0.9.0 NB4; owner Q24, [`BOSSES_4_5.md`](../roadmap/v0.9.0/BOSSES_4_5.md) N4)
+
+PLAN NB: "Keep the empty hood" (no head lanterns: the room's edge lanterns and the one in its hand carry the fight).
+
+- **Kind.** `LANTERN_SHADE`, appended after `CLOCKWORK_JUDGE`; a boss kind (`BossKinds.ALL`: the boss-kind table
+  moved out of `ContentCompiler`, unchanged, for its line limit). Floor 5's pool draws the Judge or the Shade
+  (`lantern_shade`, `save_order` 4: compiled after the Judge, every saved boss index unchanged).
+- **The lanterns (`BossShade`, tick phase 6 through `BossSignatures.advance`).** A boss whose table has
+  `lamp_count` > 0 (compiled from its first Lights Out: `ShadeCompiler`) owns the room's light (`BossStore.shade_boss`,
+  one Shade at a time) and puts `lamp_count` (4) lanterns `lamp_inset_m` (1.5 m) in from the middle of each wall of
+  the sealed room (`BossStore.arena`, re-read every tick; without one, round where the Shade stood, 7 m each way),
+  all lit (`lamp_t` = `lamp_ticks`, 360). Before the first Lights Out the room is lit and their clocks don't run.
+- **Lights Out (a shielded `pattern` with `dark_ticks`, on the cadence).** `BossTide.is_cadence(atk)` takes `tide`,
+  `echo` or a pattern with `dark_ticks` > 0: the phase's first one every `sig_every_ticks` (720) start to start, the
+  first `sig_first_ticks` (180) in, never by the pick; phases 2 and 3 open with it. On start (`BossShade.on_start`,
+  through `BossTide.on_start`) `shade_at` = now + `dark_ticks` (240) and `shade_from` = now. Its windup (60) and
+  active time (180: its slow wisp rings) are shielded, so the shield drops as the dark falls. At `shade_at`
+  `shade_dark` = 1 for the rest of the fight and every lantern is lit afresh (`lamp_ticks`).
+- **The light.** `BossShade.lit(w, p, r)`: always before the dark; in the dark, a disc of radius r at p touches the
+  light when it is within `light_m` (3.5) + r of the living player or `lamp_m` (3.0) + r of a lantern with
+  `lamp_t` > 0. Each tick in the dark a lantern within `relight_m` (1.2) + the player's radius of the living player is
+  set to `lamp_ticks` (passing relights it for 6 s), else it burns down by one.
+- **Hittable only when lit.** `BossShade.unlit(w, i)`: the Shade in the dark whose body (its radius) touches no
+  light. `Damage.hit` and `Damage.tick_dot` treat it like a shield (`Damage._blocked`: `BossDodge.shielded` or
+  `unlit`): the HIT shows with `TAG_BLOCKED`, no HP lost; `WorldReader.boss_invulnerable` says so for the bar.
+- **The Snuff (`marks` with `snuff`).** A tracked circle (it follows the player's exact position, locks 0.8 s); on
+  its strike (`BossDodge.resolve_marks` → `BossShade.snuff`) the lit lantern nearest its centre goes out (`lamp_t` 0),
+  in the dark only. Phase 3's Snuff lays two.
+- **State.** `shade_boss`, `shade_dark`, `shade_at`, `shade_from`, `lamp_x`, `lamp_y`, `lamp_t` in `BossStore`,
+  hashed after a `-5` sentinel only while a Shade owns the light (`shade_boss >= 0`), in
+  `WorldSnapshot.ADDED_SINCE_V05` (an older save has none: the Shade takes the light again on its next tick, the room
+  lit until its next Lights Out); `BossSignatures.on_boss_gone` → `BossShade.on_boss_gone` clears them (the room
+  relights).
+- **Reads.** `WorldReader.boss_light()` (`BossShade.state`: dark, falling ‰ toward the next dark (-1 none), light_m,
+  lamp_m, lamp_ticks, the lanterns `[{pos, lit, left, frac}]`, the Shade's index and whether it is lit),
+  `KIND_LANTERN_SHADE`. The darkness drawn is the view's (`ShadeViews`); the dark never hides a marker (the dark
+  pass draws before every see-through thing), and a Shade wisp within 4 m of the player always shows its outline.
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×

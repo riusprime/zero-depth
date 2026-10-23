@@ -150,7 +150,8 @@ func validate() -> Array[ValidationIssue]:
 
 ## v0.9.0 NB1: a cadence needs a `tide` attack in every phase, a first one at least the intro away, and a period
 ## longer than each phase's tide (its windup, pull and push). v0.9.0 NB3: or an `echo` (the Clockwork Judge's), the
-## period longer than its windup and its replay (as long as its recording).
+## period longer than its windup and its replay (as long as its recording). v0.9.0 NB4: or a Lights Out (the Lantern
+## Shade's), the period longer than its windup and its time to the dark.
 func _check_cadence(issues: Array[ValidationIssue]) -> void:
 	if signature_every_seconds == 0.0:
 		return
@@ -161,7 +162,10 @@ func _check_cadence(issues: Array[ValidationIssue]) -> void:
 		var tide: BossAttackDefinition = null
 		for aid in ph.attack_ids:
 			var a := attack(StringName(aid))
-			if a != null and (a.move == &"tide" or a.move == &"echo"):
+			if (
+				a != null
+				and (a.move == &"tide" or a.move == &"echo" or ShadeRules.is_lights_out(a))
+			):
 				tide = a
 				break
 		if tide == null:
@@ -174,7 +178,8 @@ func _check_cadence(issues: Array[ValidationIssue]) -> void:
 			+ float(tide.shape_params.get("pull_seconds", 0.0))
 			+ float(tide.shape_params.get("push_seconds", 0.0))
 			+ float(tide.shape_params.get("record_seconds", 0.0))
-		)
+			+ float(tide.shape_params.get("dark_seconds", 0.0))
+		)  # v0.9.0 NB4: Lights Out to its dark
 		if signature_every_seconds <= span:
 			issues.append(
 				ValidationIssue.new(&"duration", p, "signature_every_seconds must exceed its tide")

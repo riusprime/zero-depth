@@ -718,6 +718,39 @@ def s_boss_judge_echo(r):
     return echo(x, 90, 0.4, 0.3, 3000, 0.4)
 
 
+def s_boss_telegraph_lantern_shade(r):
+    """v0.9.0 NB4: the Lantern Shade: a lantern's chain creaking, a breathy inhale as the flame flares, a low hum."""
+    n = n_of(1.3)
+    creak = bandpass(noise(r, n), curve(500, 900, n), 4.0) * env(n, 0.05, 0.35) * 0.3
+    inhale = bandpass(noise(r, n), curve(400, 1800, n), 1.4) * env(n, 0.5, 0.25) * 0.5
+    hum = osc(curve(110, 92, n), "sine") * env(n, 0.3, 0.6) * 0.35
+    chime = at(metal_ping(0.5, 660, 2.2, 2.4, 0.06) * 0.45, 0.62, n)
+    x = soft_clip(mix(creak, inhale, hum, chime), 1.2)
+    return echo(x, 170, 0.4, 0.3, 2000, 0.4)
+
+
+def s_boss_shade_snuff(r):
+    """v0.9.0 NB4: a light going out: a soft pinched puff, the flame's hiss dying, a hollow low thump."""
+    n = n_of(0.9)
+    puff = bandpass(noise(r, n), curve(2400, 300, n), 1.2) * env(n, 0.005, 0.18) * 0.7
+    hiss = one_pole_hp(noise(r, n), 3000) * env(n, 0.01, 0.35) * 0.18
+    m = n_of(0.8)
+    thump = at(osc(curve(90, 45, m), "sine") * env(m, 0.004, 0.25) * 0.6, 0.03, n)
+    x = soft_clip(mix(puff, hiss, thump), 1.2)
+    return echo(x, 130, 0.35, 0.3, 1800, 0.35)
+
+
+def s_boss_shade_relight(r):
+    """v0.9.0 NB4: a lantern relit: a match-strike scratch, the flame catching with a warm whoomph, a glass ting."""
+    n = n_of(0.8)
+    scratch = bandpass(noise(r, n), 3500, 2.0) * env(n, 0.002, 0.06) * 0.5
+    m = n_of(0.7)
+    whoomph = at(bandpass(noise(r, m), curve(300, 1200, m), 1.0) * env(m, 0.06, 0.3) * 0.6, 0.05, n)
+    ting = at(metal_ping(0.35, 1760, 2.6, 1.8, 0.03) * 0.35, 0.1, n)
+    x = soft_clip(mix(scratch, whoomph, ting), 1.2)
+    return echo(x, 90, 0.3, 0.25, 3000, 0.3)
+
+
 def s_boss_floor_burst(r):
     """v0.4.0 BO: a flood's lanes bursting up (spears through the floor, molten metal): a crack and a hiss."""
     n = n_of(0.7)
@@ -1404,6 +1437,9 @@ SFX = [
     ("boss_twin_chain", s_boss_twin_chain),
     ("boss_telegraph_clockwork_judge", s_boss_telegraph_clockwork_judge),  # v0.9.0 NB3
     ("boss_judge_echo", s_boss_judge_echo),
+    ("boss_telegraph_lantern_shade", s_boss_telegraph_lantern_shade),  # v0.9.0 NB4
+    ("boss_shade_snuff", s_boss_shade_snuff),
+    ("boss_shade_relight", s_boss_shade_relight),
     ("boss_floor_burst", s_boss_floor_burst),
     ("boss_slam", s_boss_slam),
     ("boss_laser", s_boss_laser),

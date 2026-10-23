@@ -58,6 +58,7 @@ static var parts: Array[GDScript] = [
 	TideViews,  # v0.9.0 NB1
 	TwinViews,  # v0.9.0 NB2
 	JudgeViews,  # v0.9.0 NB3
+	ShadeViews,  # v0.9.0 NB4
 	BossStrikeViews,
 	FinalBossViews,
 	PrismViews,
@@ -185,6 +186,8 @@ var tides: TideViews = _part(TideViews)
 var twins: TwinViews = _part(TwinViews)
 ## v0.9.0 NB3: the Clockwork Judge's echo (its recording, path and ghost trail) and its Verdict's pendulum.
 var judges: JudgeViews = _part(JudgeViews)
+## v0.9.0 NB4: the Lantern Shade's dark (a layered darkness pass), the room's lanterns and their pools, your light.
+var shades: ShadeViews = _part(ShadeViews)
 
 ## v0.8.0 AV part 2 (owner O7): every other boss ground attack strikes as a 3D effect.
 var strikes: BossStrikeViews = _part(BossStrikeViews)
@@ -363,6 +366,8 @@ func _setup_effects() -> void:
 	add_child(tides)  # v0.9.0 NB1
 	add_child(twins)  # v0.9.0 NB2
 	add_child(judges)  # v0.9.0 NB3
+	add_child(shades)  # v0.9.0 NB4 (it dims the stage's sun with the dark)
+	shades.stage = stage
 
 	add_child(strikes)  # v0.8.0 AV part 2
 	add_child(final_views)  # v0.8.0 FB1
@@ -562,6 +567,7 @@ func sync() -> void:
 	_sync_view(&"tides", tides)  # v0.9.0 NB1
 	_sync_view(&"twins", twins)  # v0.9.0 NB2
 	_sync_view(&"judges", judges)  # v0.9.0 NB3
+	_sync_view(&"shades", shades)  # v0.9.0 NB4
 
 	_sync_view(&"strikes", strikes)  # v0.8.0 AV part 2
 	_sync_view(&"final_views", final_views)  # v0.8.0 FB1

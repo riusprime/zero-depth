@@ -316,3 +316,110 @@ copied by hand):
   ghosts 5 shielded true hero hp lost 0". The owner's model shielded, the first five ghosts risen with their rings,
   the seven points left as clock-gear markers joined by the ribbon. Seen in the shot: a translucent grey rectangle
   round the hero, present with JudgeViews hidden too (a diagnostic render), so not this step's; left for the lead.
+
+
+# NB4: The Lantern Shade (v0.9.0 Step NB4)
+
+- **Status:** RUN (agent, on the owner's PC: Windows 11, i7-10700K, RTX 3060; Godot `4.7.2.stable.official.ed1daf0bf`;
+  the shot on the GPU, Vulkan Forward+). How the fight feels, how dark is dark enough and how the model moves:
+  **OWNER ONLY**.
+- **Build:** branch `v090-nb4` from `claude/world-combat-v090` at `5f24f9d5`; the step's commit SHA is in the report.
+- **Date:** 2026-10-23
+- **Who ran it:** agent
+
+Owner (OWNER_QUESTIONS 1, 2026-10-23): "ok go for those" (BOSSES_4_5.md row N4); PLAN NB: "Keep the empty hood" (no
+head lanterns: the room's edge lanterns and the one in its hand carry the fight).
+
+## 11. The fight as built (BOSSES_4_5.md N4)
+`data/bosses/lantern_shade.tres` (`save_order` 4: compiled after the Judge, every saved boss index unchanged); floor
+5's pool now draws the Judge or the Shade. Kind `LANTERN_SHADE`, appended after `CLOCKWORK_JUDGE`. SIM_CONTRACTS
+§10m, CONTENT_SCHEMA (`ShadeRules`). The row's starting value "dark 4 s after the signature starts" is read as: the
+room goes dark 4 s after each Lights Out starts (its windup and shielded wisps), and stays dark while the Shade lives.
+
+- **Lights Out** (`lights_out` / `lights_out_3`: a shielded `pattern` with `dark_seconds`; `BossShade`): on the
+  cadence every 12 s start to start (the first 3 s in, never by the pick; phases 2 and 3 open with it). Windup 1.0 s,
+  then 3.0 s of slow wisp rings with two gaps (`shade_lights_out_wisps`, 12 a ring, 2.4 m/s; phase 3: 14, 2.7 m/s);
+  the shield drops as the dark falls, 4.0 s after the start. As the dark falls every lantern is lit afresh.
+- **The light (sim state):** four lanterns 1.5 m in from the middle of each wall of the sealed room. In the dark only
+  3.5 m round the hero and 3.0 m round each lit lantern are lit. A lantern burns 6 s; the hero passing within
+  1.2 m (+ their radius) relights it for 6 s (the lit area widens). `BossStore.shade_*`, `lamp_*`: snapshotted, hashed
+  only while a Shade lives; older saves load (the Shade takes the light on its next tick). The Shade gone, the room
+  relights.
+- **Hittable only when lit:** in the dark a hit on the Shade whose body touches no light sparks off like a shield
+  (`Damage._blocked`: `TAG_BLOCKED`, no HP lost); the boss bar shows it invulnerable then.
+- **Wisp Bloom** (`wisp_bloom`, `_2`, `_3`: FLOWER patterns of `shade_wisp`, 5-6 petals, 2.2-2.6 m/s, 20 a wisp).
+- **Snuff** (`snuff`, `snuff_3`: a `marks` circle 1.8 m, tracked, locked 0.8 s of a 1.6 s windup, 30; phase 3 two):
+  its strike puts out the lit lantern nearest its centre. Also its punish and gap-closer.
+- **Lantern Sweep** (`lantern_sweep`, big, a 3.6 m ring, 50; its punish window).
+- HP 2400 (before the floor's scaling), radius 1.2 m, 1.4 m/s, stagger 2.5 s; phases at 66 % and 33 %. Starting values.
+  Lights Out's wisps 22 (5 hits: small); content tests first flagged 18 (6 hits) and a 45 sweep (3 hits: not big), both
+  retuned to the class rules.
+- en/es: the name, a description, four death lines ("The Lantern Shade found you in the dark." for Lights Out; the
+  bloom, the Snuff, the sweep), three captions.
+
+**Looks.** `LanternShadeAvatar` on the owner's model cut into parts (`BossModels` `parts`, 3.4 m, lifted 0.3 m:
+body, arm_l, arm_r, hand_lantern hanging from arm_r; the empty hood kept) plays `LanternShadeClips` (a hover, a glide
+with the cloak trailing; Lights Out lifts the lantern high and spreads the free arm; Wisp Bloom holds it out; the
+Snuff's two long arms reach to the circle and close; the sweep swings the lantern round; flinch, sag, a silent scream
+at the gates, a rise out of smoke, a fold into its cloak); on top: a floating bob, the cloak's sway, the lantern
+swinging on its chain (a damped pendulum kicked by the glide and the clips), and its light (a hot core and soft halo
+drawn over the dark, a pale gold light) flaring for Lights Out and the Snuff and burning low in the dark, so the
+Shade is always found by its lantern. A code stand-in of the same parts when the file is missing. `ShadeViews` (the
+VX quality bar: layered): the dark is a full-screen pass that reads the depth buffer for each pixel's place on the
+floor and uses the sim's light circles: a multiply layer to a violet-black night (an alpha blend only dimmed the HDR
+floor: the first shot read flat brown), deepest at the screen's corners and in the fog's darker swirls, and an
+additive layer of drifting violet mist with warm rims at the lanterns' light and a cool one at the hero's; it ramps in
+over Lights Out's 4 s; the stage's sun and ambient dim with it (so walls and their see-through cutaways go dark too).
+It draws before every see-through thing, so markers, telegraphs, bars and strike effects always draw over it; solid
+bodies and the wisps' cores are darkened outside light. Four iron lantern posts with caged glass, a flickering flame,
+a warm light, a warm pool over the dark and a burn ring that empties over its 6 s (flickering in its last second);
+an out lantern shows cold glass and a dashed violet ring (where to relight it), puffs smoke going out and sparks
+relighting. Every Shade wisp within 4 m of the hero shows an outline over the dark (never thinned by Effects density)
+and a glow brightening as it nears. `shade_wisp` fireballs (core #C38CFF; the first pick #8F5CFF failed the "bright
+core" luminance rule, below), pale gold shield, strike looks (the Snuff a void burst, the sweep a light ring), codex
+glyph (an empty hood over a hanging lantern). Sounds (placeholders, `generate_sfx.py`): `boss_telegraph_lantern_shade`
+(a chain creak, an inhale, a hum, a chime), `boss_shade_snuff` (the dark falling, a lantern out), `boss_shade_relight`
+(a lantern relit).
+
+**Code limits.** `src/sim/ai/boss_ai.gd` stays at 1000 lines (one line changed: the boss-kind list);
+`ContentCompiler.BOSS_KINDS` now points at `BossKinds.ALL` (the same table in its own file, with the Shade), so
+`content_compiler.gd` is 987 lines. The Shade's compile and validation live in `ShadeCompiler` and `ShadeRules`.
+
+**Sounds and credits.** `python -I scripts/audio/generate_sfx.py` (the venv): "128 files, 13930174 bytes, generator
+v2"; six files not ours came out different (barrel_blast, barrel_fuse, bomb_throw, container_break, pillar_turn,
+wall_break) and were restored from git; the manifest was restored and only our three rows added. `godot --headless
+--path . -s scripts/content/build_credits.gd`: "wrote res://data/credits/licences.tres (5 entries)".
+
+## 12. Tests (NB4)
+Lint: `gdformat --check` / `gdlint` on every changed or new .gd file: no problems (`content_compiler.gd` and
+`boss_ai.gd` pass the 1000-line rule).
+
+Each run: `godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gexit -gtest=<files>` (own APPDATA, one
+Godot at a time).
+
+| run | files | result |
+|---|---|---|
+| the Shade's sim | tests/unit/sim/test_lantern_shade.gd | 16/16, 119 asserts (the data, bad numbers, four lanterns at the walls' middles and the room lit before Lights Out, shielded while the light drains and the dark falling 240 ticks after its start with every lantern lit afresh, the 3.5 m circle and 3.0 m lantern pools, a lantern burning out in 6 s and relit by passing, hittable only when lit (blocked in the dark with TAG_BLOCKED, the bar invulnerable; lit by the hero's light or a lit lantern: hit), the Snuff putting out the lantern nearest its strike and its marker drawn in the dark, the marker the same lit or dark, every 12 s and never by the pick, the phases opening with Lights Out, determinism and a mid-dark save, an older save, no light state without a Shade, the room relighting with the Shade gone, the death lines) |
+| boss sims, saves, arch | test_lantern_shade, test_clockwork_judge, test_tidecaller, test_twin_wardens, test_bosses, _2, test_boss_gates, test_boss_pace, test_final_boss, test_boss_fights, _2, _3, test_boss_signatures, _2, test_world_snapshot, test_state_hasher, test_old_saves, test_layering, test_sim_purity | 235/237, 81,760 asserts, 1193.4 s: the two reds were counts this step changes (big attacks 14 → 15; the compiled boss order now ends with the Shade); fixed, those two files: 26/26 |
+| views | test_lantern_shade_views, test_attack_visuals, _2, test_audio_director, test_boss_animations, test_boss_challenge_parity, test_boss_challenge_views, test_boss_fight_views, test_boss_fights_2_views, test_boss_models, _2, test_boss_rigs, test_boss_signature_views, _2, test_boss_telegraph_parity, test_boss_views, test_bosses_2_views, test_codex_view, test_enemy_fireball_views, test_final_boss_views, test_telegraph_parity, test_tidecaller_views, test_twin_warden_views, test_clockwork_judge_views, test_vx_looks | 206/207, 44,222 asserts, 502.3 s: "shade_wisp: a bright core" (luminance 0.449 < 0.55); recoloured, the colour files (test_boss_fight_views, _3, test_enemy_fireball_views, test_vx_looks, test_gun_pulse, test_lantern_shade_views): 53/53 |
+| content, debug, arch | tests/content, tests/unit/debug, tests/arch | 175/175, 28,606 asserts |
+| e2e | test_e2e_lantern_shade, test_e2e_clockwork_judge, test_e2e_bosses, test_e2e_bosses_2, test_e2e_run_flow, test_e2e_old_save, test_e2e_tidecaller, test_e2e_twin_wardens | 12/12, 193 asserts, 208.1 s |
+
+The e2e: a floor-5 save (seed 1: floor 5 now draws the Shade; the Judge's e2e moves to seed 2, which draws the Judge)
+continued with Enter, God clicked, E opens the door, the stick walks in, the door seals, the owner's model rises named
+"The Lantern Shade"; the stick circles; Lights Out comes, shielded; the room goes dark (ShadeViews' dark at full,
+four lanterns); the stick waits out a lantern's burn, walks to the nearest out lantern and relights it by passing;
+then walks to the Shade, which stands in the hero's light, and the mouse's attacks land.
+
+Not run here (GitHub's shards): the rest of the suite.
+
+## 13. Shot (NB4)
+`godot --path . --audio-driver Dummy --resolution 1280x720 -s scripts/shots/nb_lantern_shade.gd` (written to build/,
+copied by hand):
+- [`nb_shots/5_lantern_shade_dark.jpg`](nb_shots/5_lantern_shade_dark.jpg): the dark on the Ruins stage; the script
+  printed: "tick 384 dark true lamps left [0, 0, 218, 218] boss lit true dark strength 1.0 lights 3 wisps outlined 5
+  telegraph marks hero hp lost 0". Two lanterns lit with their warm pools and burn rings, two out (dashed rings), the
+  hero's cool-rimmed circle, a Wisp Bloom with the wisps near the hero outlined, the Snuff's circle on the hero, the
+  Shade at a lantern's pool edge with its held lantern glowing. Looked at and fixed: the first renders read flat
+  (only dimmed: the light circles never reached the shader, and an alpha blend over the HDR floor stayed brown); the
+  dark became a multiply night with mist, the stage's sun dims with it, the hero's light brightened.

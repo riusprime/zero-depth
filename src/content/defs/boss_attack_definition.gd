@@ -135,6 +135,7 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	_validate_tide(issues, path, where)
 	_validate_twin(issues, path, where)
 	_validate_judge(issues, path, where)
+	ShadeRules.validate(self, issues, path, where)  # v0.9.0 NB4: Lights Out, the Snuff
 
 
 ## v0.8.0 BP (owner O27): a known hit class; a big attack never chains (its punish window follows it); orb_damage only

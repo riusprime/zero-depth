@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 5
+look = &"shade_wisp"
+speed_mps = 2.6
+radius_m = 0.24
+range_m = 16.0
+waves = 4
+wave_gap_seconds = 0.7
+turn_per_wave_degrees = 30.0
+count = 36
+petals = 6
+petal_min_permille = 500
+petal_cut_permille = 400
+id = &"shade_wisp_bloom_3"
