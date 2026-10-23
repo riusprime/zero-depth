@@ -285,7 +285,10 @@ static func _spawn_challenge(w: World) -> void:
 	# v0.9.0 EL (owner Q29b: "the Chaos challenge may bring an elite, a designed exception"): drawn last from the same
 	# stream (no draw above moves), and only while no elite is out of the rooms' limit.
 	var chance := s.table.chaos_elite_permille
-	if chance <= 0 or Elites.alive(w) >= Elites.max_alive(w) or not rng.chance_permille(chance):
+	# The owner (2026-10-23): a Chaos elite only on floors 4-5, as every elite (Q25).
+	if chance <= 0 or w.floor_index < 4 or Elites.alive(w) >= Elites.max_alive(w):
+		return
+	if not rng.chance_permille(chance):
 		return
 	var at := challenge_spots(w, rng, 1)
 	if not at.is_empty():
