@@ -14,7 +14,8 @@ const NOT_GROUND := [
 	WorldReader.MOVE_PULL,
 	WorldReader.MOVE_ROW_LANES,
 	WorldReader.MOVE_GAZE,
-	WorldReader.MOVE_MELT
+	WorldReader.MOVE_MELT,
+	WorldReader.MOVE_TIDE,  # v0.9.0 NB1: the Pull is the whole room's current (TideViews), not a marker
 ]
 
 

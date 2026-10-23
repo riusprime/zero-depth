@@ -31,7 +31,7 @@ const PATTERN_COLORS := {
 	Pattern.HAZARD: [Color(0.09, 0.07, 0.03), Color(1.0, 0.7, 0.12)],
 	Pattern.MOLTEN: [Color(0.1, 0.035, 0.02), Color(1.0, 0.55, 0.1)],
 	Pattern.VOID: [Color(0.05, 0.02, 0.08), Color(0.8, 0.25, 1.0)],
-	Pattern.WATER: [Color(0.02, 0.07, 0.07), Color(0.42, 1.0, 0.72)],
+	Pattern.WATER: [Color(0.02, 0.07, 0.05), Color(0.52, 1.0, 0.42)],  # sea-green, 80° from the hero's cyan
 }
 
 ## v0.8.0 TX2: per pattern, the owner's texture that replaces the code pattern: [texture id, world scale (repeats a
