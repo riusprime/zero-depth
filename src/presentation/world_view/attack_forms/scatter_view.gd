@@ -5,6 +5,9 @@ extends Node3D
 ## colours (BeamLooks: default energy, Fire, Lightning, Frost, Venom, Bleed); each volley (a pellet that wasn't there
 ## last sync) opens a muzzle cone at the hero, a fan as wide as the shot's spread that flares and fades in CONE_TICKS,
 ## so the short reach reads at a glance.
+## v0.9.0 VX (VFX_AUDIT.md): V2 the colours of the first element's centre and the second's edge; V22 the element's
+## accent on the cone (HeroFx.spray: an ember spray, a crackle across the fan, frost shards, droplets; 5 sprites a
+## volley, none at Low); V48 the look read once per build and the buffers reused.
 ## Presentation only (EI-07): it reads the reader, never writes; a cone's life is sim ticks.
 
 const PELLETS_MAX := 24
@@ -62,6 +65,8 @@ var _slug_mat: Array[ShaderMaterial] = []
 var _cone_nodes: Array[MeshInstance3D] = []
 var _cone_mat: Array[ShaderMaterial] = []
 var _seen := {}
+var _seen_now := {}
+var _form := FormLook.new()
 ## Each live cone: [origin (Vector2), angle (1/4096 turns), half spread (1/4096 turns), tick (float)].
 var _live: Array = []
 var _tick := 0.0
@@ -129,11 +134,12 @@ static func fan_mesh() -> ArrayMesh:
 ## Each tick: the pellets in flight and the volleys since the last sync.
 func sync(reader: WorldReader) -> void:
 	_tick = reader.tick()
-	var spec := reader.attack_spec(WorldReader.ATTACK_BOLT)
-	look = BeamLooks.look_of(PackedStringArray(spec.get("elements", [])))
+	var changed := _form.refresh(reader)
+	look = _form.look
 	_pellet_pos.clear()
 	_pellet_vel.clear()
-	var now := {}
+	var now := _seen_now
+	now.clear()
 	var fresh := false
 	for i in reader.projectile_count():
 		if reader.projectile_team(i) != 0 or not reader.projectile_is_pellet(i):
@@ -145,24 +151,22 @@ func sync(reader: WorldReader) -> void:
 		if _pellet_pos.size() < PELLETS_MAX:
 			_pellet_pos.append(reader.projectile_pos(i))
 			_pellet_vel.append(reader.projectile_vel(i))
+	_seen_now = _seen
 	_seen = now
 	if fresh and not reader.player_dead():
-		var half := maxi(16, int(spec.get("spread", 0)) / 2)
+		var half := maxi(16, _form.spread / 2)
 		_live.append([reader.player_pos(), reader.aim_angle(), half, _tick])
 	while _live.size() > CONES_MAX:
 		_live.pop_front()
-	var keep: Array = []
-	for c: Array in _live:
-		if _tick - float(c[3]) < CONE_TICKS:
-			keep.append(c)
-	_live = keep
+	while not _live.is_empty() and _tick - float(_live[0][3]) >= CONE_TICKS:
+		_live.pop_front()
 	pellets = _pellet_pos.size()
 	cones = _live.size()
 	for k in PELLETS_MAX:
 		_slugs[k].visible = k < pellets
-		if k < pellets:
-			_slug_mat[k].set_shader_parameter(&"core", BeamLooks.core(look))
-			_slug_mat[k].set_shader_parameter(&"edge", BeamLooks.edge(look))
+		if changed:
+			_slug_mat[k].set_shader_parameter(&"core", _form.core)
+			_slug_mat[k].set_shader_parameter(&"edge", _form.edge)
 	for k in CONES_MAX:
 		_cone_nodes[k].visible = k < cones
 		if k < cones:
@@ -188,8 +192,8 @@ func _place_cone(k: int) -> void:
 	_cone_nodes[k].transform = Transform3D(Basis(x * reach, Vector3.UP, z * width), o)
 	var m := _cone_mat[k]
 	m.set_shader_parameter(&"u", u)
-	m.set_shader_parameter(&"core", BeamLooks.core(look))
-	m.set_shader_parameter(&"edge", BeamLooks.edge(look))
+	m.set_shader_parameter(&"core", _form.core)
+	m.set_shader_parameter(&"edge", _form.edge)
 
 
 ## The slugs face the camera, stretched along their flight (each frame: the camera moves between ticks).
@@ -206,3 +210,20 @@ func _place_slugs() -> void:
 		var n := x.cross(y).normalized()
 		var at := SimPlane.to_3d(_pellet_pos[k], HEIGHT) - x * (SLUG.x * 0.35)
 		_slugs[k].transform = Transform3D(Basis(x * SLUG.x, y * SLUG.y, n), at)
+
+
+## The effects layer's drawer (WorldViewRoot appends it): V22's element spray over each live cone.
+func draw_fx(layer: VfxCore) -> void:
+	if _form.kind == &"":
+		return
+	for k in _live.size():
+		var c: Array = _live[k]
+		var u := clampf((layer.now() - float(c[3])) / CONE_TICKS, 0.0, 1.0)
+		var dir := Kin.dir(int(c[1]) & 4095)
+		var across := Kin.dir(int(c[2]) & 4095)
+		var half := atan2(across.y, across.x)
+		var o := SimPlane.to_3d(c[0] + dir * 0.35, HEIGHT)
+		var sd := int(float(c[3])) * 31 + 7
+		HeroFx.spray(
+			layer, _form.kind, _form.element, o, SimPlane.to_3d(dir, 0.0), half, CONE_LEN, u, sd
+		)

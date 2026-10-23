@@ -6,6 +6,9 @@ extends Node3D
 ## in the element's colours (BeamLooks: default energy, Fire, Lightning, Frost, Venom, Bleed), with the owner's
 ## `blast_ring` PNG (assets/textures/vfx/, white on transparent, tinted) when installed, else a code-made band. With the
 ## effects layer each blast also draws VfxLayer's burst of its element (the fire explosion for Fire and the default).
+## v0.9.0 VX (VFX_AUDIT.md): V2 the first element's centre and the second's edge; V10 the blast ring lies on the floor,
+## so its colours go through AttackFormLooks.ground_safe (V49: never a telegraph's hostile hue); V11 (owner "Keep fire
+## blast") a no-element bomb keeps the fire explosion; each fuse sheds its element's sparks.
 ## Presentation only (EI-07): it reads the reader, never writes; a blast's life is sim ticks.
 
 const BOMBS_MAX := 16
@@ -77,6 +80,7 @@ var _live: Array = []
 var _last_seq := 0
 var _tick := 0
 var _primed := false
+var _form := FormLook.new()
 
 
 func _init() -> void:
@@ -177,8 +181,11 @@ func sync(reader: WorldReader) -> void:
 		for e in reader.events_since(0):
 			_last_seq = e.seq  # attaching mid-run draws nothing that already happened
 	bombs = 0
-	var els: Array = reader.attack_spec(WorldReader.ATTACK_BOLT).get("elements", [])
-	var look := BeamLooks.look_of(PackedStringArray(els))
+	if _form.refresh(reader):  # v0.9.0 VX V48: the Gun shot's look once per build (V2 colours)
+		for spark in _sparks:
+			var sm := spark.material_override as ShaderMaterial
+			sm.set_shader_parameter(&"core", _form.core)
+			sm.set_shader_parameter(&"edge", _form.edge)
 	for i in reader.projectile_count():
 		if bombs >= BOMBS_MAX:
 			break
@@ -201,9 +208,6 @@ func sync(reader: WorldReader) -> void:
 		spark.visible = true
 		spark.position = at + Vector3.UP * (0.62 * s)
 		spark.scale = Vector3.ONE * SPARK_SIZE
-		var sm := spark.material_override as ShaderMaterial
-		sm.set_shader_parameter(&"core", BeamLooks.core(look))
-		sm.set_shader_parameter(&"edge", BeamLooks.edge(look))
 		bombs += 1
 	for k in range(bombs, BOMBS_MAX):
 		_bomb_nodes[k].visible = false
@@ -213,8 +217,14 @@ func sync(reader: WorldReader) -> void:
 		if e.kind != SimEvent.Kind.BLAST:
 			continue
 		var spec := reader.attack_spec_at(String(e.effect_id))
-		var l := BeamLooks.look_of(PackedStringArray(spec.get("elements", [])))
-		_live.append([e.pos, e.amount / 1000.0, float(e.tick), l])
+		var els := PackedStringArray(spec.get("elements", []))
+		var l := BeamLooks.look_of(els)
+		# v0.9.0 VX V2, V10, V49: the first element's centre and the second's edge, kept out of the telegraphs' hostile
+		# hues: the ring lies flat on the floor, a player ground mark (Fire leans to amber, Bleed to a cool crimson).
+		var cols := BeamLooks.colors(els)
+		var g0 := AttackFormLooks.ground_safe(cols[0])
+		var g1 := AttackFormLooks.ground_safe(cols[1])
+		_live.append([e.pos, e.amount / 1000.0, float(e.tick), l, g0, g1])
 		last_look = l
 	while _live.size() > BLASTS_MAX:
 		_live.pop_front()
@@ -241,8 +251,8 @@ func _draw_rings() -> void:
 		)
 		var m := _ring_mat[k]
 		m.set_shader_parameter(&"u", u)
-		m.set_shader_parameter(&"core", BeamLooks.core(b[3]))
-		m.set_shader_parameter(&"edge", BeamLooks.edge(b[3]))
+		m.set_shader_parameter(&"core", b[4])
+		m.set_shader_parameter(&"edge", b[5])
 
 
 ## VfxLayer's drawer (WorldViewRoot appends it): each young blast's burst in its element.
@@ -250,6 +260,11 @@ func draw_fx(layer: VfxCore) -> void:
 	var fx := layer as VfxLayer
 	if fx == null:
 		return
+	# v0.9.0 VX: each fuse sheds its element's sparks (a no-element bomb's fuse: embers, as its fire blast, V11).
+	var fuse := _form.kind if _form.kind != &"" else &"fire"
+	var element := _form.element if _form.element != &"" else &"ember"
+	for k in bombs:
+		HeroFx.accent(layer, fuse, element, _sparks[k].position, Vector3.DOWN, 9301 + k * 11, 0.6)
 	for k in _live.size():
 		var b: Array = _live[k]
 		var u := clampf((layer.now() - float(b[2])) / BLAST_TICKS, 0.0, 1.0)

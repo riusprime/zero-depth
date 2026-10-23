@@ -24,7 +24,14 @@ func test_the_effect_layer_is_never_interpolated() -> void:
 	assert_true(parent.is_physics_interpolated(), "the parent is")
 	assert_eq(layer.physics_interpolation_mode, Node.PHYSICS_INTERPOLATION_MODE_OFF)
 	assert_eq(_interpolated(layer), [] as Array[String], "no pool, light or mark is interpolated")
-	assert_eq(layer.pools.size(), VfxCore.POOLS.size() + 1, "every pool was checked (the ice too)")
+	var missing := 0  # v0.9.0 VX: a texture request's pool exists only once its PNG is installed
+	for id: StringName in VfxCore.OPTIONAL_POOLS:
+		missing += 0 if VfxCore.has_tex(VfxCore.POOLS[id][0]) else 1
+	assert_eq(
+		layer.pools.size(),
+		VfxCore.POOLS.size() + 1 - missing,
+		"every pool was checked (the ice too)"
+	)
 
 
 func test_the_frame_time_boss_views_are_never_interpolated() -> void:
