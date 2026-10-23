@@ -11,8 +11,8 @@ extends ContentDef
 @export var wall_pieces := 36
 ## Where the hero appears (the plan's south, on the walk line to the machine).
 @export var spawn := Vector2(0.0, -10.4)
-## The machine: its solid core's radius (m), the radius the hero must be inside for its prompt (m).
-@export var machine_core_m := 1.1
+## The machine: its solid base's half size (a plan square, m), the radius the hero must be inside for its prompt (m).
+@export var machine_core_m := 2.0
 @export var machine_reach_m := 3.8
 @export var machine_name_key: StringName = &"HUB_PORTAL_MACHINE"
 @export var machine_prompt_key: StringName = &"HUB_PROMPT_PORTAL"

@@ -27,7 +27,7 @@ func test_every_station_and_the_machine_are_drawn() -> void:
 	for id: StringName in [&"archive", &"trophy", &"wardrobe", &"progression", &"credits"]:
 		assert_true(v.stations.has(id), "%s is drawn" % id)
 		assert_not_null(v.plan.get_node_or_null("Station_%s" % id))
-	assert_not_null(v.machine.altar, "the machine stands on SA's altar")
+	assert_not_null(v.machine.altar, "the stand-in machine stands on SA's altar")
 	assert_eq(v.runes.size(), 16, "16 floor runes")
 	assert_false(v.gate_open(), "the north gate is sealed")
 	assert_eq((v.stations[&"trophy"]["plaques"] as Array).size(), 2, "a plinth per floor boss")
@@ -82,11 +82,30 @@ func test_the_states_and_hooks_change_the_hub() -> void:
 	var slots: Array = v.stations[&"archive"]["slots"]
 	assert_eq(slots.size(), 16, "the Archive's 16 shelf slots")
 	assert_true(bool(slots[4].get_meta(&"lit")) and not bool(slots[5].get_meta(&"lit", false)))
-	v.set_robe(Color("#3A4A6B"))
+	v.set_robe(Color("#3A4A6B"))  # RB's hook: a no-op while the robe is part of the owner's wardrobe mesh
 	var robe := v.stations[&"wardrobe"]["robe"] as MeshInstance3D
-	assert_eq(
-		(robe.material_override as StandardMaterial3D).albedo_color, Color("#3A4A6B"), "RB's hook"
+	if robe != null:
+		assert_eq((robe.material_override as StandardMaterial3D).albedo_color, Color("#3A4A6B"))
+	else:
+		assert_not_null(v.stations[&"wardrobe"]["model"], "the owner's wardrobe draws the robe")
+
+
+## The owner's hub models (delivered 2026-10-22, listed in assets/models/manifest.json) draw the machine and the
+## stations; their code stand-ins hide; the code's glows stay on them.
+func test_the_owners_models_are_drawn() -> void:
+	var v := _view({})
+	assert_not_null(v.machine.model, "hub_portal_machine")
+	assert_false(v.machine.stand_in.visible, "the stand-in altar and ring hide")
+	assert_not_null(v.machine.portal, "the code's portal fills his ring")
+	for id: StringName in [&"archive", &"wardrobe", &"progression"]:
+		assert_not_null(v.stations[id]["model"], "%s: the owner's model" % id)
+		var si := (v.stations[id]["root"] as Node3D).get_node_or_null("StandIn") as Node3D
+		assert_false(si.visible, "%s: its stand-in hides" % id)
+	var trophy_root := v.stations[&"trophy"]["root"] as Node3D
+	var pedestals := trophy_root.get_children().filter(
+		func(n: Node) -> bool: return n.get_meta(&"model_id", &"") == &"hub_trophy_pedestal"
 	)
+	assert_eq(pedestals.size(), 2, "a hub_trophy_pedestal per floor boss")
 
 
 func test_the_small_menu_and_the_end_panel_rows() -> void:

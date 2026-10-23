@@ -284,6 +284,29 @@ static func portal_material() -> ShaderMaterial:
 	return m
 
 
+## The owner's hub model `id` (ShopModels: listed in assets/models/manifest.json, front +Z kept) at `at` under `parent`,
+## or null when it isn't installed (the caller's code stand-in stays). `stand_in` (optional) is hidden when it is.
+static func owner_model(
+	parent: Node3D, id: StringName, at: Vector3, stand_in: Node3D = null
+) -> MeshInstance3D:
+	var m := ShopModels.get_model(id)
+	if m.is_empty():
+		return null
+	var mi := mesh(parent, "Model", m["mesh"], m["material"], at)
+	mi.set_meta(&"model_id", id)
+	if stand_in != null:
+		stand_in.visible = false
+	return mi
+
+
+## A node to hold a station's code stand-in (hidden when the owner's model draws instead).
+static func stand_in(parent: Node3D) -> Node3D:
+	var n := Node3D.new()
+	n.name = "StandIn"
+	parent.add_child(n)
+	return n
+
+
 ## A kit piece (KitModels: the owner's model, normalised to a unit box) scaled to `size` and turned `yaw`, or the
 ## stand-in box in `fallback` when the piece isn't installed.
 static func kit_piece(

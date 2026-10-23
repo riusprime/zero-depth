@@ -83,8 +83,8 @@ func walls() -> Array[Obb]:
 		if c.y < ac.y - hub.alcove_r * 0.6 and absf(c.x - ac.x) < hub.gate_half_m + 0.3:
 			continue  # its doorway onto the corridor
 		out.append(_plan_box(c, Vector2(0.3, TAU * ar / 24.0 + 0.1), a))
-	# The machine's core: an octagon of boxes would be rounder, but one turned square reads the same at this size.
-	out.append(_plan_box(Vector2.ZERO, Vector2.ONE * hub.machine_core_m, PI * 0.25))
+	# The machine's base: a plan square (the owner's model's ring and steps stand on about 4 m).
+	out.append(_plan_box(Vector2.ZERO, Vector2.ONE * hub.machine_core_m, 0.0))
 	for s in hub.stations:
 		out.append(_plan_box(s.at, s.half, 0.0))
 	return out

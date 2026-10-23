@@ -35,13 +35,13 @@ func walk_to(id: StringName, limit: int = 900) -> bool:
 			break
 		var p := HubLayout.to_plan(hub.driver.reader.player_pos())
 		var to := goal - p
-		# Round the machine: aim beside it while the straight line would cut across its dais.
-		if (
-			id != HubLayout.MACHINE
-			and p.length() < 4.5
-			and to.normalized().dot(-p.normalized()) > 0.5
-		):
-			to = Vector2(signf(goal.x) if goal.x != 0.0 else 1.0, 0.0) * 4.5 - p
+		# Round the machine: while the straight line passes near its base, aim at a point beside it (the way between
+		# here and the goal, pushed out to 4.8 m from the centre).
+		if id != HubLayout.MACHINE and _gap_to_centre(p, goal) < 3.9:
+			var side := p + goal
+			if side.length() < 0.5:
+				side = Vector2(-p.y, p.x)
+			to = side.normalized() * 4.8 - p
 		var d := to.normalized()
 		e.joy_axis(JOY_AXIS_LEFT_X, d.x)
 		e.joy_axis(JOY_AXIS_LEFT_Y, -d.y)
@@ -66,3 +66,10 @@ func use(id: StringName) -> bool:
 	await e.tap(KEY_E)
 	await e.frames(2)
 	return there
+
+
+## How near the segment from `a` to `b` (plan m) passes to the plaza's centre.
+static func _gap_to_centre(a: Vector2, b: Vector2) -> float:
+	var ab := b - a
+	var t := clampf(-a.dot(ab) / maxf(ab.length_squared(), 0.0001), 0.0, 1.0)
+	return (a + ab * t).length()

@@ -1,22 +1,32 @@
 class_name HubMachine
 extends Node3D
 ## v0.9.0 HB (PLAN W42: "the hub portal sends the player into the run; the blue altar is their arrival point"): the
-## Portal Machine in the hub's centre. It reuses SA's altar (AltarStage.arrival(): the stepped dais, the floating blue
-## runes and the jewels, lit at rest) so the hub's machine and floor 1's altar read as one network, and stands an
-## upright rune ring on it: two stone pylons, the ring's emissive band, a swirling portal inside, and the layered glow
-## of the VX bar (the core, a soft halo, a pool of light on the dais, a real light, motes rising). When the hero stands
-## at it (focus) it brightens and its runes turn faster. `looped` (the hub state machine_looped: an Ascension taken)
-## adds a violet outer ring that turns the other way. Presentation only (EI-07); the clock is a look, never an outcome.
+## Portal Machine in the hub's centre. The owner's model (`hub_portal_machine`, delivered 2026-10-22: a tall upright
+## stone ring on a stepped platform, "no glow, nothing inside the ring") draws the machine; the code fills its ring.
+## Without the model, the stand-in reuses SA's altar (AltarStage.arrival(): the stepped dais, the floating blue runes
+## and the jewels, lit at rest) under an upright rune ring on two stone pylons. Either way the ring holds the layered
+## glow of the VX bar: a swirling portal, an emissive inlay, a soft halo with a white-hot centre, a pool of light, a
+## real light and motes rising. When the hero stands at it (focus) it brightens (and the altar's runes turn faster).
+## `looped` (the hub state machine_looped: an Ascension taken) adds a violet outer ring turning the other way.
+## Presentation only (EI-07); the clock is a look, never an outcome.
 
+## The stand-in's ring (m): its radius and its centre's height over the dais; the pylons' spread.
 const RING_R := 1.3
 const RING_Y := 1.95
 const PYLON_X := 1.55
+## The owner's ring, as shares of his model's height (measured off the 1920 x 1080 shots; starting values): the
+## ring's centre height and its opening's radius, and how far in front of the model's middle its face is (m).
+const MODEL_RING_Y := 0.53
+const MODEL_RING_R := 0.25
+const MODEL_RING_Z := 0.0
 ## How fast the altar's runes turn (rad/s) at rest and with the hero at the machine.
 const TURN_IDLE := 0.25
 const TURN_FOCUS := 0.9
 
 var altar := AltarStage.new(AltarStage.arrival())
-var ring_band: MeshInstance3D
+var stand_in: Node3D
+## The owner's model (null: the stand-in draws).
+var model: MeshInstance3D
 var portal: MeshInstance3D
 var outer: MeshInstance3D
 var core_glow: Dictionary
@@ -28,30 +38,84 @@ var _t := 0.0
 
 func _init() -> void:
 	name = "PortalMachine"
-	add_child(altar)
+	stand_in = HubProps.stand_in(self)
+	var ring_y := _build_stand_in()
+	var ring_r := RING_R
+	var ring_z := 0.0
+	model = HubProps.owner_model(self, &"hub_portal_machine", Vector3.ZERO, stand_in)
+	if model != null:
+		var h := model.mesh.get_aabb().size.y
+		ring_y = h * MODEL_RING_Y
+		ring_r = h * MODEL_RING_R
+		ring_z = MODEL_RING_Z
+	var inlay := TorusMesh.new()
+	inlay.inner_radius = ring_r - 0.05
+	inlay.outer_radius = ring_r + 0.03
+	inlay.rings = 48
+	inlay.ring_segments = 6
+	var band_glow := HubProps.mesh(
+		self,
+		"RingGlow",
+		inlay,
+		HubProps.emissive(HubProps.BLUE, 3.5),
+		Vector3(0, ring_y, ring_z + 0.08)
+	)
+	band_glow.rotation.x = PI * 0.5
+	var q := QuadMesh.new()
+	q.size = Vector2.ONE * (ring_r * 2.0 - 0.1)
+	portal = HubProps.mesh(
+		self, "Portal", q, HubProps.portal_material(), Vector3(0, ring_y, ring_z)
+	)
+	portal.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	core_glow = HubProps.glow(
+		self,
+		"CoreGlow",
+		HubProps.BLUE,
+		HubProps.BLUE_CORE,
+		Vector3(0, ring_y, ring_z + 0.3),
+		ring_r * 2.5
+	)
+	HubProps.motes(self, "Motes", HubProps.BLUE, Vector3(0, 0.3, 0), 2.0, 26)
+	var o := TorusMesh.new()
+	o.inner_radius = ring_r + 0.32
+	o.outer_radius = ring_r + 0.4
+	o.rings = 48
+	o.ring_segments = 6
+	outer = HubProps.mesh(
+		self,
+		"LoopRing",
+		o,
+		HubProps.emissive(HubProps.VIOLET, 3.0),
+		Vector3(0, ring_y, ring_z + 0.15)
+	)
+	outer.rotation.x = PI * 0.5
+	outer.visible = false
+	_apply_focus()
+
+
+## The code stand-in (SA's altar, two pylons, the ring's stone band) under `stand_in`; returns the ring's height.
+func _build_stand_in() -> float:
+	stand_in.add_child(altar)
 	altar.pose(-1.0, 1.0)  # every rune lit at rest
 	var top := AltarStage.MODEL_TOP if altar.uses_model else AltarStage.STEPS * AltarStage.STEP_H
 	var stone := HubProps.stone(HubProps.STONE_DARK)
-	var lit_stone := HubProps.stone(HubProps.STONE)
 	for side in [-1.0, 1.0]:
-		var p := HubProps.box(
-			self,
+		HubProps.box(
+			stand_in,
 			"Pylon",
 			Vector3(0.42, RING_Y + 0.4, 0.55),
 			stone,
 			Vector3(side * PYLON_X, top + (RING_Y + 0.4) * 0.5, 0)
 		)
-		p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		HubProps.box(
-			self,
+			stand_in,
 			"PylonCap",
 			Vector3(0.6, 0.18, 0.7),
-			lit_stone,
+			HubProps.stone(HubProps.STONE),
 			Vector3(side * PYLON_X, top + RING_Y + 0.5, 0)
 		)
-		# A rune strip down each pylon's face (emissive, the network's blue).
 		HubProps.box(
-			self,
+			stand_in,
 			"PylonRune",
 			Vector3(0.1, RING_Y * 0.7, 0.03),
 			HubProps.emissive(HubProps.BLUE, 2.2),
@@ -62,49 +126,15 @@ func _init() -> void:
 	t.outer_radius = RING_R + 0.13
 	t.rings = 32
 	t.ring_segments = 8
-	ring_band = HubProps.mesh(
-		self, "RingBand", t, HubProps.stone(HubProps.STONE_LIT, 0.6), Vector3(0, top + RING_Y, 0)
+	var band := HubProps.mesh(
+		stand_in,
+		"RingBand",
+		t,
+		HubProps.stone(HubProps.STONE_LIT, 0.6),
+		Vector3(0, top + RING_Y, 0)
 	)
-	ring_band.rotation.x = PI * 0.5  # upright, facing south (the camera)
-	ring_band.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	var inlay := TorusMesh.new()
-	inlay.inner_radius = RING_R - 0.05
-	inlay.outer_radius = RING_R + 0.03
-	inlay.rings = 48
-	inlay.ring_segments = 6
-	var band_glow := HubProps.mesh(
-		self,
-		"RingGlow",
-		inlay,
-		HubProps.emissive(HubProps.BLUE, 3.5),
-		Vector3(0, top + RING_Y, 0.1)
-	)
-	band_glow.rotation.x = PI * 0.5
-	var q := QuadMesh.new()
-	q.size = Vector2.ONE * (RING_R * 2.0 - 0.1)
-	portal = HubProps.mesh(
-		self, "Portal", q, HubProps.portal_material(), Vector3(0, top + RING_Y, 0.02)
-	)
-	portal.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	core_glow = HubProps.glow(
-		self, "CoreGlow", HubProps.BLUE, HubProps.BLUE_CORE, Vector3(0, top + RING_Y, 0.3), 3.2
-	)
-	HubProps.motes(self, "Motes", HubProps.BLUE, Vector3(0, top + 0.1, 0), 2.0, 26)
-	var o := TorusMesh.new()
-	o.inner_radius = RING_R + 0.32
-	o.outer_radius = RING_R + 0.4
-	o.rings = 48
-	o.ring_segments = 6
-	outer = HubProps.mesh(
-		self,
-		"LoopRing",
-		o,
-		HubProps.emissive(HubProps.VIOLET, 3.0),
-		Vector3(0, top + RING_Y, -0.05)
-	)
-	outer.rotation.x = PI * 0.5
-	outer.visible = false
-	_apply_focus()
+	band.rotation.x = PI * 0.5  # upright, facing south (the camera)
+	return top + RING_Y
 
 
 func set_looped(on: bool) -> void:
