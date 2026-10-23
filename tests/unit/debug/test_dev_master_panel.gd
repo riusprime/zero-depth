@@ -6,7 +6,8 @@ extends GutTest
 
 ## Folders that hold no balance: sounds, text, and two legacy folders the run never reads (the knob inventory).
 ## v0.8.0 RT: room_layouts, the designed rooms, are geometry drawn in their files, not numbers to tune; v0.8.0 SR:
-## so are shop_rooms, the biomes' shop rooms.
+## so are shop_rooms, the biomes' shop rooms. v0.9.0 RG: special_rooms describes the placement and repeats numbers
+## that live (and are tuned) in other folders (SpecialRoomDefinition.sources): an edit there would drive nothing.
 const NOT_BALANCE := [
 	"audio",
 	"credits",
@@ -16,6 +17,7 @@ const NOT_BALANCE := [
 	"achievements",
 	"room_layouts",
 	"shop_rooms",
+	"special_rooms",
 ]
 const ENEMY := "res://data/enemies/arc_caster.tres"
 const SAVE := "user://test_dev_master_panel.json"

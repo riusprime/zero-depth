@@ -51,6 +51,10 @@ const STEPS: Array[Vector2i] = [
 ## a bucket holds one distance, and a cell enters it at most once) and the target marks. Derived, never hashed.
 static var _ring := PackedInt32Array()
 static var _want := PackedByteArray()
+## v0.9.0 RG: for the floor censuses only (the special-room property tests and scripts/balance/room_pacing.gd, which
+## build thousands of floors and never step them): true makes build() leave an empty field, as with no walls. No
+## placement reads the field (test_special_room_rules proves the rooms match with it on). Never set by the game.
+static var skip_build := false
 
 var origin := Vector2.ZERO
 var size := Vector2i.ZERO
@@ -111,7 +115,7 @@ func build(walls: Array[Obb]) -> void:
 	_flooded = Vector3i(-1, -1, -1)
 	extra = PackedByteArray()
 	_walls = walls.duplicate()
-	if walls.is_empty():
+	if walls.is_empty() or skip_build:
 		size = Vector2i.ZERO
 		return
 	var r := walls[0].bounds()

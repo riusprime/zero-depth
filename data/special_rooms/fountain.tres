@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SpecialRoomDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/special_room_definition.gd" id="1_spr"]
+
+[resource]
+script = ExtResource("1_spr")
+code = "Shrines.fountain_site"
+order = 7
+stream = &"map:fountain"
+floor_min = 2
+placement = 0
+chance_permille = 250
+avoid = Array[StringName]([&"start", &"boss", &"boss_host", &"portal", &"overrun", &"shop", &"arena", &"shrine", &"curse", &"event"])
+sources = {
+"chance_permille": "shrines/shrines:fountain_permille",
+"floor_min": "shrines/shrines:fountain_floor_min"
+}
+id = &"fountain"

@@ -22,10 +22,15 @@ static func run_from(payload: Dictionary) -> RunState:
 
 
 ## `route` (v0.5.0 RT): the route taken into every floor after the first (Routes.Route; DEEP makes them Deep floors).
+## `content` (v0.9.0 RG): an already loaded repository, for callers building thousands of floors (null: load it).
 static func run_state(
-	run_seed: int, floor_index: int, build: StringName = &"blade", route: int = 0
+	run_seed: int,
+	floor_index: int,
+	build: StringName = &"blade",
+	route: int = 0,
+	content: ContentRepository = null
 ) -> RunState:
-	var repo := ContentRepository.load_all()
+	var repo := content if content != null else ContentRepository.load_all()
 	var run := RunState.start(
 		run_seed, ContentCompiler.compile_run(repo.get_def(&"run", RUN_ID)), build
 	)
@@ -41,8 +46,11 @@ static func floor_world(run_seed: int, floor_index: int, build: StringName = &"b
 
 
 ## `biome` (v0.8.0 SR, shots only): the shop room's biome when not the run's own (&"": the run's, as Main).
-static func build_floor(run: RunState, biome_id: StringName = &"") -> World:
-	var repo := ContentRepository.load_all()
+## `content` (v0.9.0 RG): as run_state's.
+static func build_floor(
+	run: RunState, biome_id: StringName = &"", content: ContentRepository = null
+) -> World:
+	var repo := content if content != null else ContentRepository.load_all()
 	var table := ContentCompiler.compile_player(repo.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(table, repo.get_def(&"build", run.build_id))
 	var enemies := ContentCompiler.compile_enemies(repo)

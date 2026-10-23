@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SpecialRoomDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/special_room_definition.gd" id="1_spr"]
+
+[resource]
+script = ExtResource("1_spr")
+band = &"puzzle_secret"
+code = "PurpleRooms.mark"
+order = 11
+stream = &"map:purple_runes"
+floor_min = 2
+floor_max = 3
+placement = 1
+floor_chance_permille = PackedInt32Array(0, 500, 1000, 0, 0)
+min_cells = 4
+avoid = Array[StringName]([&"start", &"boss", &"portal", &"overrun", &"shop", &"curse", &"arena", &"shrine", &"fountain", &"timed_door", &"timed_door_host", &"rune_puzzle", &"rune_puzzle_host", &"cracked_wall", &"cracked_wall_host"])
+sources = {
+"floor_chance_permille": "secrets/secrets:purple_floor_permille"
+}
+id = &"purple_runes"

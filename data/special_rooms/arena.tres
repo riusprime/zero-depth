@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SpecialRoomDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/special_room_definition.gd" id="1_spr"]
+
+[resource]
+script = ExtResource("1_spr")
+band = &"special_combat"
+code = "ArenaRooms.mark"
+order = 2
+entry = &"sealed_on_entry"
+seals = true
+placement = 3
+count_max = 0
+share_permille = 110
+min_spawn_spots = 3
+keeps_every_room = true
+avoid = Array[StringName]([&"start", &"boss", &"boss_host", &"portal", &"overrun", &"shop"])
+sources = {
+"share_permille": "arena/arena:share"
+}
+id = &"arena"

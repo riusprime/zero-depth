@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SpecialRoomDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/special_room_definition.gd" id="1_spr"]
+
+[resource]
+script = ExtResource("1_spr")
+code = "Events.curse_site"
+order = 5
+stream = &"map:curse_room"
+placement = 0
+chance_permille = 400
+avoid = Array[StringName]([&"start", &"boss", &"boss_host", &"portal", &"overrun", &"shop", &"arena", &"shrine"])
+sources = {
+"chance_permille": "event_rules/floor:curse_room_floor_chance_permille"
+}
+id = &"curse"
