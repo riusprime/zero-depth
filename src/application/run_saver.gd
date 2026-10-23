@@ -190,6 +190,7 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	run.loop_floors = maxi(0, int(r.get("loop_floors", 0)))
 	run.final_fight = bool(r.get("final", false))  # v0.8.0 FB1: an older payload is before the final arena
 	run.purple_floors = PackedInt32Array(r.get("purple_floors", PackedInt32Array()))  # v0.9.0 DP: older: none
+	run.affinity = StringName(String(r.get("affinity", "")))  # v0.9.0 RB: an older payload is a run without one
 	return run
 
 
@@ -206,7 +207,7 @@ static func is_usable(payload: Dictionary) -> bool:
 static func payload_of(
 	w: World, run: RunState, stage_seed: int, p_rooms: PackedByteArray
 ) -> Dictionary:
-	return {
+	var out := {
 		"version": PAYLOAD_VERSION,
 		"run":
 		{
@@ -231,6 +232,9 @@ static func payload_of(
 		"tick": w.tick,
 		"world": w.to_snapshot(),
 	}
+	if Wardrobe.has_affinity(run.affinity):  # v0.9.0 RB: the run's locked rune affinity (None: no key, as before)
+		out["run"]["affinity"] = String(run.affinity)
+	return out
 
 
 func _save(w: World, run: RunState, stage_seed: int) -> void:

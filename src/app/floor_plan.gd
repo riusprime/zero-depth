@@ -40,6 +40,8 @@ var run: RunState
 var run_biomes: Array[StringName] = []
 var stage_seed := 0
 var build_id := &"blade"
+## v0.9.0 RB: a NEW_RUN's rune affinity (the Wardrobe's pick; locked into RunState.affinity for the run).
+var affinity := &""
 ## A save's payload (CONTINUE, or a FLOOR resumed from a save): its world snapshot is written into the fresh floor.
 var resume := {}
 ## ViewPrefs.reduced_motion, read on the main thread (the portal's way in and the arrival).
@@ -55,7 +57,11 @@ var err := ""
 
 ## A new run's first floor.
 static func new_run(
-	p_run_id: StringName, seed_value: int, p_build: StringName, p_calm: bool
+	p_run_id: StringName,
+	seed_value: int,
+	p_build: StringName,
+	p_calm: bool,
+	p_affinity: StringName = &""
 ) -> FloorPlan:
 	var plan := FloorPlan.new()
 	plan.mode = Mode.NEW_RUN
@@ -63,7 +69,18 @@ static func new_run(
 	plan.stage_seed = seed_value
 	plan.build_id = p_build
 	plan.calm = p_calm
+	plan.affinity = p_affinity
 	return plan
+
+
+## v0.9.0 RB: a new run from the profile's loadout: the build last picked and the Wardrobe's rune affinity, which the
+## run locks here (RunState.affinity; an id the content lacks plays as None).
+static func of_profile(
+	p_run_id: StringName, seed_value: int, profile: ProfileStore, p_calm: bool
+) -> FloorPlan:
+	return new_run(
+		p_run_id, seed_value, Wardrobe.build_of(profile), p_calm, Wardrobe.affinity_of(profile)
+	)
 
 
 ## The saved run `save` (a RunSaver payload) at its room entry.
@@ -98,6 +115,7 @@ func build() -> void:
 		run_biomes = run_def.biomes.duplicate()
 		if mode == Mode.NEW_RUN:
 			run = RunState.start(stage_seed, ContentCompiler.compile_run(run_def), build_id)
+			run.affinity = affinity  # v0.9.0 RB: locked for the run
 		else:
 			stage_seed = int(resume["run"]["stage_seed"])
 			run = RunSaver.run_from(resume, ContentCompiler.compile_run(run_def))
@@ -114,6 +132,9 @@ func _build_world() -> void:
 			biome = arena_def
 	var table := ContentCompiler.compile_player(def)  # v0.4.0 BS (F11): no utility at the start
 	ContentCompiler.apply_build(table, repo.get_def(&"build", run.build_id))  # v0.3.0 L15: the run's build.
+	var aff_def := affinity_def(repo, run)  # v0.9.0 RB: A2 Storm's slower dash is the hero's own table
+	if aff_def != null and not aff_def.is_none():
+		table.dash_cooldown_ticks += SimTick.seconds_to_ticks(aff_def.dash_cooldown_add_seconds)
 	var enemies := ContentCompiler.compile_enemies(repo)
 	run.scale_enemies(enemies)
 	# The floor's boss (v0.3.0 C): drawn from its floor's pool, scaled like the enemies; its arena sizes the room.
@@ -149,6 +170,8 @@ func _build_world() -> void:
 	)
 	# v0.8.0 FL: floor-paced loot (LootPacing)
 	w.loot_pacing = RunContentCompiler.compile_loot_pacing(repo.get_def(&"loot_pacing", &"pacing"))
+	# v0.9.0 RB: the run's rune affinity, its ward full again on every floor (None: no state)
+	Affinities.setup(w, RunContentCompiler.compile_affinity(aff_def, w.item_tables))
 	Abilities.grant_start(w)  # slot 1 = the build's weapon (floor 1; later floors carry it)
 	Abilities.start_floor(w)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
@@ -175,6 +198,13 @@ func _build_world() -> void:
 		WandMigration.run(w)  # v0.6.5 WN5b: a save that still holds retired v0.6 cards
 		AttackSlots.trim(w)  # v0.9.0 AS: a save from before the slot categories (AttackSlots.trim)
 	world = w
+
+
+## v0.9.0 RB: the run's rune affinity's definition (null for None or an id the content no longer has).
+static func affinity_def(repo: ContentRepository, run: RunState) -> AffinityDefinition:
+	if not Wardrobe.has_affinity(run.affinity):
+		return null
+	return repo.get_def(&"affinity", run.affinity) as AffinityDefinition
 
 
 ## v0.9.0 TD, RA, DX: a floor's secrets, after every room kind (the save lab builds floors with it too). TD: a floor

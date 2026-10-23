@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="AffinityDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/affinity_definition.gd" id="1_aff"]
+
+[resource]
+script = ExtResource("1_aff")
+order = 3
+name_key = &"AFFINITY_VENOM"
+desc_key = &"AFFINITY_VENOM_DESC"
+cost_key = &"AFFINITY_VENOM_COST"
+color = Color(0.372549, 0.878431, 0.235294, 1)
+glyph = 3
+poison_jump_m = 3.0
+favoured_cards = Array[StringName]([&"venom_core"])
+favoured_permille = 1300
+disfavoured_cards = Array[StringName]([&"ember_core", &"cinder_shot", &"ember_edge", &"ember_trail", &"inferno_core", &"wildfire", &"chain_blast", &"shared_explosive"])
+disfavoured_permille = 700
+id = &"venom"

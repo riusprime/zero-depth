@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AffinityDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/affinity_definition.gd" id="1_aff"]
+
+[resource]
+script = ExtResource("1_aff")
+order = 5
+name_key = &"AFFINITY_GUARDIAN"
+desc_key = &"AFFINITY_GUARDIAN_DESC"
+cost_key = &"AFFINITY_GUARDIAN_COST"
+color = Color(0.909804, 0.784314, 0.439216, 1)
+glyph = 5
+ward_charges = 1
+shard_permille = 800
+id = &"guardian"

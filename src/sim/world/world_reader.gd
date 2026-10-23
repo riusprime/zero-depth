@@ -3388,6 +3388,64 @@ func _door_of(d: int, angle: int) -> Dictionary:
 	}
 
 
+# --- The rune affinity (v0.9.0 RB; Affinities) ------------------------------------------------------------------
+## The run's rune affinity's id (&"" for None).
+func affinity_id() -> StringName:
+	return _w.affinity.table.id if _w.affinity != null else &""
+
+
+## A5 Guardian: the wards a floor starts with (0: the affinity has none), those still up, and the tick the last one
+## broke (-1: none yet).
+func affinity_ward_charges() -> int:
+	return _w.affinity.table.ward_charges if _w.affinity != null else 0
+
+
+func affinity_ward() -> int:
+	return _w.affinity.ward if _w.affinity != null else 0
+
+
+func affinity_ward_tick() -> int:
+	return _w.affinity.ward_tick if _w.affinity != null else -1
+
+
+## A2 Storm and A3 Venom: the dash shocks given and the poison jumps made on this floor.
+func affinity_shocks() -> int:
+	return _w.affinity.shocks if _w.affinity != null else 0
+
+
+func affinity_jumps() -> int:
+	return _w.affinity.jumps if _w.affinity != null else 0
+
+
+## A4 Astral: how near (m) a secret pulses (0: off), and whether the minimap marks a secret's room once entered.
+func affinity_sense_m() -> float:
+	return _w.affinity.table.secret_sense_m if _w.affinity != null else 0.0
+
+
+func affinity_maps_secrets() -> bool:
+	return _w.affinity != null and _w.affinity.table.map_secrets
+
+
+## A4 Astral: every secret on the floor as {pos (its doorway's centre), room (the room that holds its way in), found
+## (opened, solved or broken)}: the timed door's, the rune puzzle's, the cracked wall's.
+func secret_spots() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var f := _w.floor_layout
+	if has_timed_door():
+		out.append(
+			{"pos": f.door_centers[f.timed_door], "room": timed_host(), "found": timed_opened() > 0}
+		)
+	if has_rune_puzzle():
+		out.append(
+			{"pos": f.door_centers[f.rune_door], "room": rune_host(), "found": rune_solved()}
+		)
+	if has_cracked_wall():
+		out.append(
+			{"pos": f.door_centers[f.crack_door], "room": crack_host(), "found": crack_broken()}
+		)
+	return out
+
+
 # --- The Lockdowns (v0.9.0 LK; Lockdowns) --------------------------------------------------------------------
 ## The floor has Lockdown rooms.
 func has_lockdowns() -> bool:

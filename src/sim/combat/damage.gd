@@ -112,6 +112,9 @@ static func hit(
 		var taken := Stats.armour_permille(w) * PlayerBuild.taken_permille(w) / 1000
 		if taken != 1000:
 			scaled = maxi(1, (scaled * taken + 500) / 1000)
+		if w.affinity != null and owner_id != a.ids[0] and Affinities.ward_blocks(w):
+			h.tags |= SimEvent.TAG_BLOCKED  # v0.9.0 RB: A5 Guardian's ward takes the hit
+			return 0
 	var got := 0
 	if scaled > 0:
 		got = _apply(

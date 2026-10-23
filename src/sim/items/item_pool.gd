@@ -57,6 +57,8 @@ static func card_weight(
 	var out := base * (w.reward_table.own_weapon_card_permille if own else 1000) / 1000
 	if it.offer_weight_permille != 1000:  # v0.8.0 RM: a mutation's low weight (the others' integers unchanged)
 		out = out * it.offer_weight_permille / 1000
+	if w.affinity != null:  # v0.9.0 RB: the rune affinity's offer bias (none: the integers unchanged)
+		out = out * Affinities.card_permille(w, idx) / 1000
 	return LootPacing.weigh(w, idx, out)  # v0.8.0 FL: × the floor stage's multiplier for its category
 
 

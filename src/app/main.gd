@@ -355,9 +355,8 @@ func continue_run() -> void:
 
 
 ## Builds the run's current floor: its seed, biome and enemy scaling from the run, the carry applied. `resume`: a
-## save's payload (v0.4.0 SV), whose world snapshot is then written into the fresh floor; returns why it didn't fit.
-## All in this frame (the dev panel's Restart floor, the tools); a portal builds the next floor over frames
-## (_next_floor).
+## save's payload (v0.4.0 SV), whose world snapshot is then written into the fresh floor; returns why it didn't fit. All
+## in this frame (the dev panel's Restart floor, the tools); a portal builds the next floor over frames (_next_floor).
 func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> String:
 	var plan := FloorPlan.next_floor(run, _run_biomes, resume, ViewPrefs.reduced_motion)
 	plan.repo = repo if repo != null else _content()
@@ -399,8 +398,7 @@ func _usable_save() -> Dictionary:
 
 
 func _new_run_plan() -> FloorPlan:
-	var build := StringName(profile.section("loadout").get("build", "blade"))
-	return FloorPlan.new_run(RUN_ID, _stage_seed, build, ViewPrefs.reduced_motion)
+	return FloorPlan.of_profile(RUN_ID, _stage_seed, profile, ViewPrefs.reduced_motion)  # v0.9.0 RB
 
 
 ## A new or continued run's plan made the run: it is Main's now.
@@ -443,6 +441,7 @@ func _floor_nodes(plan: FloorPlan) -> Dictionary:
 	v.stage.look = biome.look  # v0.7.5 NB1: the biome's own dressing and edge (null: the hand-written look)
 	if biome.look != null:
 		v.actors.enemy_tint = biome.look.enemy_tint
+	v.actors.hero_look = Wardrobe.hero_look(repo, profile, run.affinity)  # v0.9.0 RB: robe and locked rune
 	_biome_path = biome.resource_path
 	v.stage.lighting = GameSettings.get_value(profile, "lighting")
 	v.process_mode = Node.PROCESS_MODE_DISABLED  # v0.8.0 N12: nothing in it runs until it is built (_floor_live),

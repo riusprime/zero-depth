@@ -41,6 +41,32 @@ static func compile_lockdown(def: LockdownDefinition) -> LockdownTable:
 	return t
 
 
+## v0.9.0 RB (AFFINITIES.md): the run's rune affinity, its offer bias resolved against the compiled `items` (one per
+## mille per item index). Null for None (or no definition): the run builds no affinity state.
+static func compile_affinity(def: AffinityDefinition, items: Array[ItemTable]) -> AffinityTable:
+	if def == null or def.is_none():
+		return null
+	var t := AffinityTable.new()
+	t.id = def.id
+	t.burn_duration_permille = def.burn_duration_permille
+	t.dash_shock_radius_m = def.dash_shock_radius_m
+	t.dash_shock_stacks = def.dash_shock_stacks
+	t.poison_jump_m = def.poison_jump_m
+	t.secret_sense_m = def.secret_sense_m
+	t.map_secrets = def.map_secrets
+	t.ward_charges = def.ward_charges
+	t.shard_permille = def.shard_permille
+	t.card_permille.resize(items.size())
+	for i in items.size():
+		var p := 1000
+		if def.favoured_cards.has(items[i].id):
+			p = def.favoured_permille
+		elif def.disfavoured_cards.has(items[i].id):
+			p = def.disfavoured_permille
+		t.card_permille[i] = p
+	return t
+
+
 ## v0.9.0 SH, HF (owner Q29b, W36): the shrines' and the fountain's numbers (null without a definition: every shrine
 ## stays a Fortune shrine and no floor has a fountain).
 static func compile_shrines(def: ShrineDefinition) -> ShrineTable:

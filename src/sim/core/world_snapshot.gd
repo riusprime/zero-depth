@@ -106,6 +106,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"SlotTable",  # v0.9.0 AS: the wand's slot limits, caps and form × card table (content, read in play)
 	&"EliteTable",  # v0.9.0 EL: an elite archetype's ability and plain attack (EnemyTable.elite)
 	&"EliteRules",  # v0.9.0 EL: where elites appear and the core drop (EliteState.rules)
+	&"AffinityTable",  # v0.9.0 RB: the run's rune affinity's numbers (AffinityState.table)
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [
@@ -152,6 +153,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"LockdownState",  # v0.9.0 LK: the Lockdown sealed, its formations, the safety, the strikes; those opened
 	&"ShrineState",  # v0.9.0 SH, HF: the Blood or Chaos shrine (used, the challenge, its altars) and the fountain
 	&"EliteState",  # v0.9.0 EL: the floor's elite rooms, the elites alive, their contact clocks, the escort
+	&"AffinityState",  # v0.9.0 RB: the rune affinity's ward and dash crackle on this floor
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -194,6 +196,7 @@ const ADDED_SINCE_V05 := {
 		&"lockdown",  # v0.9.0 LK: a floor saved before LK has none (built under floor rules 1-12: none in the base either)
 		&"shrine",  # v0.9.0 SH, HF: a floor saved before SH has none (floor rules 1-13 build none in the base either)
 		&"elites",  # v0.9.0 EL: a floor saved before EL has no elite rooms (floor rules 1-14 build none either)
+		&"affinity",  # v0.9.0 RB: a save from before RB is a run without one (None: null in the base too)
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
 		&"loot_guaranteed",  # v0.8.0 FL: an older save's floor used no guarantee (0) and holds no jackpot
 		&"loot_jackpots",

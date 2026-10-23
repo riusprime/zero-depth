@@ -18,7 +18,8 @@ signal main_menu_requested
 const HUB_ID := &"rune_ring"
 ## The light the hub is drawn in (its biome's mood and palette).
 const BIOME := &"ruins"
-## The stations whose panels are this node's stand-ins (RB and MP replace them).
+## The stations whose panels are this node's own: the Wardrobe's (v0.9.0 RB, WardrobePanel) and the stand-in MP
+## replaces.
 const STAND_INS: Array[StringName] = [&"wardrobe", &"progression"]
 
 var hub: HubDefinition
@@ -37,15 +38,20 @@ var overlay: MenuPanel
 ## v0.9.0 HB2: the hero is walking into the portal (the hub holds; input is ignored but for a press that skips it).
 var walking := false
 var _after_walk: Callable
+## v0.9.0 RB: the content and the profile the Wardrobe reads and writes (its robe and affinity).
+var repo: ContentRepository
+var profile: ProfileStore
 
 
 ## Builds the hub from the content and the profile (read only): `stores` = [CodexStore, AchievementStore,
 ## CodexCatalog].
 func setup(
-	repo: ContentRepository, profile: ProfileStore, stores: Array, p_ui: CanvasLayer
+	p_repo: ContentRepository, p_profile: ProfileStore, stores: Array, p_ui: CanvasLayer
 ) -> void:
 	name = "Hub"
 	ui = p_ui
+	repo = p_repo
+	profile = p_profile
 	hub = repo.get_def(&"hub", HUB_ID)
 	flags = HubFlags.new(profile, stores[0], stores[1])
 	var states := flags.states(hub)
@@ -71,6 +77,7 @@ func setup(
 		biome.palette,
 		lighting
 	)
+	view.set_look(look())  # v0.9.0 RB: the hero wears the Wardrobe's choice
 	apply_settings(profile)
 	player_input = PlayerInput.new(view.rig, driver.reader)
 	player_input.name = "PlayerInput"
@@ -150,8 +157,45 @@ func open_pause() -> void:
 	_show_overlay(m)
 
 
-## A stand-in station's panel (the Wardrobe until RB, the Progression Station until MP).
+## v0.9.0 RB: the hero's look from the profile's Wardrobe choice (Wardrobe.look).
+func look() -> Dictionary:
+	return Wardrobe.look(
+		repo, Wardrobe.worn_robe(repo, profile), Wardrobe.chosen_affinity(repo, profile)
+	)
+
+
+## v0.9.0 RB: the Wardrobe's panel; each pick is worn at once and kept in the profile (written when it closes).
+func open_wardrobe() -> void:
+	var robes := Wardrobe.robes(repo)
+	var unlocked: Array[bool] = []
+	for r: RobeDefinition in robes:
+		unlocked.append(Wardrobe.robe_unlocked(profile, r))
+	var p := WardrobePanel.new(
+		robes,
+		unlocked,
+		Wardrobe.worn_robe(repo, profile).id,
+		Wardrobe.affinities(repo),
+		Wardrobe.chosen_affinity(repo, profile)
+	)
+	p.picked.connect(
+		func(robe: StringName, affinity: StringName) -> void:
+			Wardrobe.set_robe(profile, robe)
+			Wardrobe.set_affinity(profile, affinity)
+			view.set_look(look())
+	)
+	p.back_pressed.connect(
+		func() -> void:
+			profile.save_file()
+			close_overlay()
+	)
+	_show_overlay(p)
+
+
+## A stand-in station's panel (the Progression Station until MP; v0.9.0 RB: the Wardrobe has its own).
 func _open_stand_in(id: StringName) -> void:
+	if id == &"wardrobe":
+		open_wardrobe()
+		return
 	var keys := layout.keys_of(id)
 	var p := HubStationPanel.new(id, String(keys[0]), "HUB_%s_SOON" % String(id).to_upper())
 	p.back_pressed.connect(close_overlay)
