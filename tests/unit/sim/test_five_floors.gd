@@ -115,7 +115,9 @@ func test_every_run_visits_all_five_biomes_once() -> void:
 func test_a_run_never_meets_a_boss_twice() -> void:
 	var pools := RunContentCompiler.compile_boss_pools(_repo, 5)
 	assert_eq(pools.size(), 5)
-	assert_true(pools[3].is_empty() and pools[4].is_empty(), "floors 4 and 5 have no pool yet")
+	# v0.9.0 NB: floors 4 and 5 have their own pools now (the Tidecaller and the Twin Wardens; the Clockwork Judge and
+	# the Lantern Shade), so every floor draws from its own.
+	assert_false(pools[3].is_empty() or pools[4].is_empty(), "floors 4 and 5 have their pools")
 	var on_four := {}
 	for s in 300:
 		var r := RunState.start(50 + s, _table())
@@ -123,13 +125,13 @@ func test_a_run_never_meets_a_boss_twice() -> void:
 		for f in range(1, 6):
 			var b := FloorShape.boss(r, pools, f)
 			assert_gte(b, 0, "seed %d floor %d has a boss" % [s, f])
+			assert_true(pools[f - 1].has(b), "floor %d: its own pool" % f)
 			if f <= 3:
-				assert_true(pools[f - 1].has(b), "floor %d: its own pool" % f)
 				assert_eq(b, r.pick_boss(pools[f - 1], f), "floor %d: the same draw as before" % f)
 			assert_false(b in met, "seed %d floor %d: not met before" % [s, f])
 			met.append(b)
 		on_four[met[3]] = true
-	assert_eq(on_four.size(), 6, "floor 4 can meet any of the six")
+	assert_eq(on_four.size(), pools[3].size(), "floor 4 can meet any boss of its pool")
 
 
 ## Generation over 1,000 seeds for every floor: the room count in the floor's range, a whole tree of doorways from
