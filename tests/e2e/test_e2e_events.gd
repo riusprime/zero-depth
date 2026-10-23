@@ -9,8 +9,11 @@ extends GutTest
 
 ## v0.9.0 FV: floor 1 holds 1-2 chests (loot scales with its rooms), and the floor's sealed arena is filled first
 ## (v0.5.5 AR), so on Main.STAGE_SEED its one chest is locked in the arena. CHEST_SEED's floor 1 has an event room
-## and two chests outside the arena.
-const CHEST_SEED := 20261007
+## and two chests outside the arena. v0.9.0 EL retired the Ambush Cache (weight 0), which moved the floors' event
+## draws: 20261007's first event became the Scrap Heap, whose first choice costs 35 shards (not affordable at the
+## run's start, so Enter couldn't take it). 20261032's floor 1 (probed as Main builds it, SaveLab) has Blood Price
+## (first choice: max HP, affordable) and two open chests.
+const CHEST_SEED := 20261032
 
 
 func after_each() -> void:
