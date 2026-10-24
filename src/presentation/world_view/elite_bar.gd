@@ -22,8 +22,9 @@ const CHUNK := Color("#FFD9B0")
 const NAME_PX := 28
 const NAME_M := 0.18
 
-var _fill := MeshInstance3D.new()
-var _chunk := MeshInstance3D.new()
+## Built in setup (v0.9.0 CI: two up-front ones, replaced there, were left orphaned).
+var _fill: MeshInstance3D
+var _chunk: MeshInstance3D
 var _name := Label3D.new()
 var _frac := 1.0
 var _shown := 1.0

@@ -112,9 +112,12 @@ func test_into_the_portal_and_out_on_floor_two() -> void:
 	assert_eq(w2.shards, 20, "Q-S4: half of 41 shards carried, rounded down")
 	var hud := main.get_node("UI/Hud") as Hud
 	assert_true(hud.floor_card_showing(), "the arrival card shows")
+	# v0.9.0 SV (owner): the hero's max HP grows 15 a floor (data/run/five_floors.tres), said after the shards.
 	assert_true(
-		hud.floor_card_text().ends_with(tr("HUD_SHARDS_HALVED") % 21),
-		"it says the portal kept 21 shards: %s" % hud.floor_card_text()
+		hud.floor_card_text().ends_with(
+			"%s %s" % [tr("HUD_SHARDS_HALVED") % 21, tr("HUD_MAX_HP_GROWN") % 15]
+		),
+		"it says the portal kept 21 shards, then the max HP grown: %s" % hud.floor_card_text()
 	)
 	assert_eq(main.view.transit.phase, PortalTransitView.Phase.ARRIVE, "the arrival plays")
 	assert_true(main.driver.reader.transit_holds())
