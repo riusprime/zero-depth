@@ -1280,6 +1280,10 @@ ROBE_NIGHT,Night,Noche
 ROBE_CANYON,Canyon,Cañón
 ROBE_FROST,Frost,Escarcha
 ROBE_MOSS,Moss,Musgo
+ROBE_FALLEN,The Fallen's Regalia,Regalía de The Fallen
+ROBE_DIVINE,Divine Hollow Crown,Hollow Crown divina
+ROBE_HIDDEN,???,???
+ROBE_EPIC_TAG,epic,épica
 AFFINITY_NONE,None,Ninguna
 AFFINITY_NONE_DESC,The plain game: no rune on the robe.,El juego sin más: ninguna runa en la túnica.
 AFFINITY_NONE_COST,Card offers unweighted.,Las cartas se ofrecen sin sesgo.
@@ -1304,7 +1308,7 @@ UI_UNLOCK_TOAST,FORM UNLOCKED,FORMA DESBLOQUEADA
 UNLOCK_VOID_NAME,The Void,El Vacío
 UNLOCK_VOID_DESC,You travelled through the purple Deep portal. The Void form now joins the offers.,Cruzaste el portal profundo púrpura. La forma Vacío ya aparece en las ofertas.
 PROGRESSION_BALANCE,Rune Fragments: %d,Fragmentos de Runa: %d
-PROGRESSION_ROBES_INTRO,Robes for the hero's cloak. A colour only: no robe changes a run.,Túnicas para la capa del héroe. Solo un color: ninguna cambia la partida.
+PROGRESSION_ROBES_INTRO,Robes for the hero's cloak. A look only: no robe changes a run.,Túnicas para la capa del héroe. Solo el aspecto: ninguna cambia la partida.
 PROGRESSION_PRICE,%d fragments,%d fragmentos
 PROGRESSION_OWNED,owned,tuya
 PROGRESSION_VOID_LOCKED,The Void form: travel through the purple Deep portal to unlock it.,La forma Vacío: cruza el portal profundo púrpura para desbloquearla.
@@ -1350,3 +1354,4 @@ COLLECTIBLE_SHELF_CROWN,Crown shelf,Estante de la Corona
 COLLECTIBLE_SHELF_HUB,Rune Ring shelf,Estante del Anillo
 COLLECTIBLE_TOAST,ADDED TO THE RUNE ARCHIVE,AÑADIDO AL ARCHIVO DE RUNAS
 UI_CODEX_TAB_COLLECTIBLES,Collectibles,Coleccionables
+PROGRESSION_REVEALED,Revealed: %s. Wear it at the Wardrobe.,Revelada: %s. Póntela en el Vestidor.

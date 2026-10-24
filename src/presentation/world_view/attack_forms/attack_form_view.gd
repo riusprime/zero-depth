@@ -77,7 +77,7 @@ static func adds_layer(look: Dictionary) -> bool:
 		not (look["particles"] as Array).is_empty()
 		or not (look["cues"] as Array).is_empty()
 		or absf(float(look["width"]) - 1.0) > 0.001
-		or look["core"] != ThemePalette.color(&"player_core")
+		or look["core"] != ElementLooks.player_energy()
 	)
 
 
@@ -119,7 +119,7 @@ func _look_of(reader: WorldReader, key: String) -> Dictionary:
 		return {}
 	if not _looks_checked:
 		_looks_checked = true
-		var sig := "%s|%d" % [reader.attack_digest(), _tier]
+		var sig := "%s|%d" % [reader.attack_digest() + String(ElementLooks.energy_style), _tier]
 		if sig != _looks_sig:
 			_looks_sig = sig
 			_looks.clear()
@@ -403,8 +403,8 @@ func _sync_orbit(reader: WorldReader, ab: Dictionary) -> void:
 	var blades: PackedVector2Array = ab["blades"]
 	if blades.is_empty():
 		return
-	if _orbit_sig != reader.attack_digest() + str(_tier):
-		_orbit_sig = reader.attack_digest() + str(_tier)
+	if _orbit_sig != reader.attack_digest() + String(ElementLooks.energy_style) + str(_tier):
+		_orbit_sig = reader.attack_digest() + String(ElementLooks.energy_style) + str(_tier)
 		_orbit_look = {}
 		for id in reader.attack_ids():
 			var spec := reader.attack_spec(StringName(id))

@@ -83,8 +83,26 @@ func test_the_six_robes() -> void:
 		for c: Color in [r.cloak, r.underside]:
 			assert_gt(_dist(c, ENEMY_RED), 0.2, "%s is not the enemy red" % r.id)
 			assert_gt(_dist(c, HOSTILE_YELLOW), 0.2, "%s is not the hostile yellow" % r.id)
-	assert_eq(ids, [&"cream", &"ash", &"night", &"canyon", &"frost", &"moss"], "R1-R6")
+	assert_eq(
+		ids,
+		[&"cream", &"ash", &"night", &"canyon", &"frost", &"moss", &"fallen", &"divine"],
+		"R1-R6 and MP2's two epic robes"
+	)
 	assert_eq(free, [&"cream", &"ash"], "Cream and Ash free; the rest for Rune Fragments")
 	var cream: RobeDefinition = _repo.get_def(&"robe", &"cream")
 	assert_lt(_dist(cream.cloak, Color("#EBDCCB")), 0.01, "Cream is today's cloak")
 	assert_lt(_dist(cream.underside, Color("#C9B8A6")), 0.01)
+
+
+## MP2 (owner, PLAN "Owner decisions" MP2): the four robes on the 75 + 25 ladder; the two epic robes at 250, styled, the
+## first hidden ("???").
+func test_the_robe_prices_and_the_epic_robes() -> void:
+	for id: StringName in [&"night", &"canyon", &"frost", &"moss"]:
+		var r: RobeDefinition = _repo.get_def(&"robe", id)
+		assert_eq(
+			[r.price, r.price_step, r.epic], [75, 25, false], "%s: 75, +25 a robe bought" % id
+		)
+	var f: RobeDefinition = _repo.get_def(&"robe", &"fallen")
+	var d: RobeDefinition = _repo.get_def(&"robe", &"divine")
+	assert_eq([f.price, f.price_step, f.epic, f.hidden, f.style], [250, 0, true, true, &"fallen"])
+	assert_eq([d.price, d.price_step, d.epic, d.hidden, d.style], [250, 0, true, false, &"divine"])

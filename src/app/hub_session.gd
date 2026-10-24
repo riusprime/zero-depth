@@ -246,31 +246,36 @@ func open_wardrobe() -> void:
 
 ## v0.9.0 MP: the Progression Station's panel: the robes Rune Fragments buy (MetaProgress.buy_robe, which calls
 ## Wardrobe.unlock_robe); each buy is written to the profile at once. A bought robe is then worn at the Wardrobe.
+## MP2: every row shows its price now (MetaProgress.price_of); buying the "???" robe reveals its name.
 func open_progression() -> void:
 	var wares := MetaProgress.wares(repo)
 	var p := ProgressionPanel.new(
 		wares,
 		_owned(wares),
 		MetaProgress.fragments(profile),
-		MetaProgress.portal_travelled(profile)
+		MetaProgress.portal_travelled(profile),
+		_prices(wares)
 	)
 	p.buy_requested.connect(
 		func(id: StringName) -> void:
 			var def: RobeDefinition = repo.get_def(&"robe", id)
 			if def == null:
 				return
+			var masked := Wardrobe.shown_name(profile, def)
 			if Wardrobe.robe_unlocked(profile, def):
 				p.show_status(&"PROGRESSION_ALREADY", String(def.name_key))
-			elif MetaProgress.buy_robe(profile, def):
+			elif MetaProgress.buy_robe(repo, profile, def):
 				profile.save_file()
 				p.show_state(
 					_owned(wares),
 					MetaProgress.fragments(profile),
-					MetaProgress.portal_travelled(profile)
+					MetaProgress.portal_travelled(profile),
+					_prices(wares)
 				)
-				p.show_status(&"PROGRESSION_BOUGHT", String(def.name_key))
+				var key := &"PROGRESSION_REVEALED" if def.hidden else &"PROGRESSION_BOUGHT"
+				p.show_status(key, String(def.name_key))
 			else:
-				p.show_status(&"PROGRESSION_SHORT", String(def.name_key))
+				p.show_status(&"PROGRESSION_SHORT", String(masked))
 	)
 	p.back_pressed.connect(close_overlay)
 	_show_overlay(p)
@@ -280,6 +285,14 @@ func _owned(wares: Array) -> Array[bool]:
 	var out: Array[bool] = []
 	for r: RobeDefinition in wares:
 		out.append(Wardrobe.robe_unlocked(profile, r))
+	return out
+
+
+## MP2: each ware's price now (MetaProgress.price_of).
+func _prices(wares: Array) -> Array[int]:
+	var out: Array[int] = []
+	for r: RobeDefinition in wares:
+		out.append(MetaProgress.price_of(repo, profile, r))
 	return out
 
 

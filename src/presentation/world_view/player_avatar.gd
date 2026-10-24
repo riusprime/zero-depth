@@ -120,6 +120,11 @@ var legs: Array[Node3D] = []
 var cloak_color := CLOAK_COLOR
 var under_color := UNDER_COLOR
 var runes: AffinityRunes
+## v0.9.0 MP2: an epic robe's pieces (EpicRobeView: The Fallen's or the divine; null for a colour robe).
+var epic: EpicRobeView
+var _style := &""
+var _outline := Color.BLACK
+var _technique := &"xray"
 var _hood_mat: StandardMaterial3D
 
 var _pelvis := Node3D.new()
@@ -189,6 +194,8 @@ var _accent := Vector3.ZERO
 ## ActorViews does for its body pieces); the legs, mostly under the cloak, have none.
 func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	_outline = outline_color
+	_technique = technique
 	var team := ThemePalette.color(&"player_core")
 	_pelvis.position.y = HIP_Y
 	add_child(_pelvis)
@@ -258,6 +265,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	add_child(runes.back)
 	_pose(0.0)
 	_rebuild_cloak()
+	_set_epic(_style)
 
 
 ## v0.9.0 RB: robe and rune from a Wardrobe.look dictionary ({} keeps Cream and no rune): the robe's colours (the
@@ -273,6 +281,32 @@ func set_look(look: Dictionary) -> void:
 		_rebuild_cloak()
 	if runes != null:
 		runes.set_rune(int(look["glyph"]), look["rune"])
+	_set_epic(StringName(look.get("style", &"")))
+
+
+## v0.9.0 MP2: builds (or drops) the epic robe's pieces for `style` (&"": none) once the model exists.
+func _set_epic(style: StringName) -> void:
+	_style = style
+	ElementLooks.set_energy(style)  # The Fallen's robe turns the plain shots violet
+	if hood == null or (epic != null and epic.style == style):
+		return
+	if epic != null:
+		epic.dispose()
+		remove_child(epic)
+		epic.free()
+		epic = null
+		cloak.visible = true  # the epic robe drew in the poncho's place
+		visor.visible = true  # (The Fallen's eyes hid the blue face square)
+	if EpicRobeView.STYLES.has(style):
+		epic = EpicRobeView.new()
+		add_child(epic)
+		epic.build(self, style, _outline, _technique)
+
+
+## v0.9.0 MP2: what the epic robe's cloth follows: [the cloak frame, the poncho's hem springs (not a copy), the body's
+## smoothed velocity, the dash and the slump].
+func cloth_drive() -> Array:
+	return [_cloak_frame(), _spring_pos, _vel_s, _dash, _slump]
 
 
 ## Reads the player's state after a sim tick.
@@ -469,6 +503,8 @@ func advance(delta: float) -> void:
 	_pose(dt)
 	_step_springs(dt, accel)
 	_rebuild_cloak()
+	if epic != null:
+		epic.advance(dt)
 	if runes != null:
 		runes.advance(dt)
 		runes.circle.visible = not _dead  # the circle goes out with the hero

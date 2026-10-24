@@ -60,7 +60,7 @@ static func blade_look(spec: Dictionary, charged: bool) -> Dictionary:
 ## The bolt's look from the bolt spec: {size, color, energy} (ActorViews applies it to new player bolts).
 static func bolt_look(spec: Dictionary) -> Dictionary:
 	var look := {
-		"size": PLAIN_BOLT_SIZE, "color": ThemePalette.color(&"player_core"), "energy": BOLT_ENERGY
+		"size": PLAIN_BOLT_SIZE, "color": ElementLooks.player_energy(), "energy": BOLT_ENERGY
 	}
 	if int(spec.get("rate_bonus_permille", 0)) > 0:
 		look["size"] = FAST_BOLT_SIZE

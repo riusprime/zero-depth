@@ -120,7 +120,7 @@ static func compose(
 ## The core colour: the first element's, or the player's own (no element: the plain v0.5 cyan).
 static func core_of(elements: Array) -> Color:
 	if elements.is_empty():
-		return ThemePalette.color(&"player_core")
+		return ElementLooks.player_energy()  # v0.9.0 MP2: violet under The Fallen's robe
 	return element_color(StringName(elements[0]))
 
 
@@ -132,7 +132,7 @@ static func rim_of(elements: Array) -> Color:
 
 
 static func element_color(element: StringName) -> Color:
-	return ELEMENT_CORE.get(element, ThemePalette.color(&"player_core"))
+	return ELEMENT_CORE.get(element, ElementLooks.player_energy())
 
 
 ## v0.9.0 VX V1 (owner "Dark red"): the bleed element's core, the shared palette's dark red (was MX1's tinted cyan).

@@ -58,6 +58,39 @@ const LOOK := {
 const DEFAULT_HOT := Color("#F4FCFF")
 const DEFAULT_CORE := Color("#3E8BFF")
 const DEFAULT_DEEP := Color("#2050C8")
+## v0.9.0 MP2 (owner, 2026-10-24: "the black one should also modify the attack color to a purle violet kind of
+## attack"): while The Fallen's dark epic robe is worn, the plain energy (no element) is a purple-violet, layered as the
+## blue is: a hot pale-violet centre, the violet, a deep violet. Kept apart from the hostile looks (V46: the violet
+## fireball's #E9B8FF core and #9A4AE0 trail; the Chaos shrine's #A15CFF; The Fallen's own #C23CFF edge): every
+## RGB distance over 0.2 (tests/unit/presentation/test_epic_robes.gd). The elements keep their own colours.
+const FALLEN_HOT := Color("#FFF0FF")
+const FALLEN_CORE := Color("#B526C8")
+const FALLEN_DEEP := Color("#5A1680")
+
+## The robe style whose energy the hero's plain shots wear (&"fallen" or none; PlayerAvatar._set_epic sets it).
+static var energy_style := &""
+
+
+## v0.9.0 MP2: the hero's plain energy follows the worn robe (`style`: &"fallen" turns it violet; anything else blue).
+static func set_energy(style: StringName) -> void:
+	energy_style = style if style == &"fallen" else &""
+
+
+static func energy_hot() -> Color:
+	return FALLEN_HOT if energy_style == &"fallen" else DEFAULT_HOT
+
+
+static func energy_core() -> Color:
+	return FALLEN_CORE if energy_style == &"fallen" else DEFAULT_CORE
+
+
+static func energy_deep() -> Color:
+	return FALLEN_DEEP if energy_style == &"fallen" else DEFAULT_DEEP
+
+
+## The plain bolt's colour (no element): the player's cyan core, or The Fallen's violet.
+static func player_energy() -> Color:
+	return FALLEN_CORE if energy_style == &"fallen" else ThemePalette.color(&"player_core")
 
 
 static func has(e: StringName) -> bool:
@@ -65,15 +98,15 @@ static func has(e: StringName) -> bool:
 
 
 static func hot(e: StringName) -> Color:
-	return HOT.get(e, DEFAULT_HOT)
+	return HOT.get(e, energy_hot())
 
 
 static func core(e: StringName) -> Color:
-	return CORE.get(e, DEFAULT_CORE)
+	return CORE.get(e, energy_core())
 
 
 static func deep(e: StringName) -> Color:
-	return DEEP.get(e, DEFAULT_DEEP)
+	return DEEP.get(e, energy_deep())
 
 
 ## The effects layer's kind for element `e` (&"" for none).
@@ -109,7 +142,7 @@ static func second(elements: PackedStringArray) -> StringName:
 static func pair(elements: PackedStringArray) -> Array[Color]:
 	var a := first(elements)
 	if a == &"":
-		return [DEFAULT_HOT, DEFAULT_CORE]
+		return [energy_hot(), energy_core()]
 	var b := second(elements)
 	if b == &"":
 		return [hot(a), core(a)]

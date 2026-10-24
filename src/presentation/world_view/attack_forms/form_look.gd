@@ -10,14 +10,14 @@ var digest := ""
 var read_once := false
 var elements := PackedStringArray()
 var look := &"default"
-var core := ElementLooks.DEFAULT_HOT
-var edge := ElementLooks.DEFAULT_CORE
+var core := ElementLooks.energy_hot()
+var edge := ElementLooks.energy_core()
 ## The first element (&"" for none), its effects-layer kind (&"" for none) and its deep tone.
 var element := &""
 var kind := &""
-var deep := ElementLooks.DEFAULT_DEEP
+var deep := ElementLooks.energy_deep()
 ## The outer glow's tone (the edge element's deep tone lifted toward its colour, so additive light still shows it).
-var glow := ElementLooks.DEFAULT_DEEP.lerp(ElementLooks.DEFAULT_CORE, 0.35)
+var glow := ElementLooks.energy_deep().lerp(ElementLooks.energy_core(), 0.35)
 ## AttackFormLooks.DIR_* of the shot's pattern, and its count and spread (1/4096 turns).
 var directions := AttackFormLooks.DIR_FORWARD
 var count := 1
@@ -26,7 +26,7 @@ var spread := 0
 
 ## Reads the Gun shot's look again when the build changed (true when it did).
 func refresh(reader: WorldReader) -> bool:
-	var d := reader.attack_digest()
+	var d := reader.attack_digest() + String(ElementLooks.energy_style)  # MP2: the robe's energy too
 	if read_once and d == digest:
 		return false
 	read_once = true

@@ -7,7 +7,7 @@ extends RefCounted
 ##   portal, lance is unlocked by default"): until then RuneFragmentsDefinition.portal_unlocks (the Void) is out of
 ##   every offer of a new run (RunState.locked_cards -> World.locked_items).
 ## A run earns fragments in the sim (RunState.total_fragments); the run's end banks them here (MetaHooks). The
-## Progression Station spends them on the robes (RobeDefinition.price; Wardrobe.unlock_robe). Nothing here is a stat.
+## Progression Station spends them on the robes (price_of; Wardrobe.unlock_robe). Nothing here is a stat.
 
 const DEF_ID := &"rune_fragments"
 
@@ -91,15 +91,34 @@ static func locked_items(ids: Array[StringName], items: Array[ItemTable]) -> Pac
 	return out
 
 
-## What the Progression Station sells: the robes not free, in Wardrobe order (PD-06: nothing that is a stat).
+## What the Progression Station sells: the robes not free, in Wardrobe order (the four, then the two epic robes;
+## PD-06: nothing that is a stat).
 static func wares(repo: ContentRepository) -> Array:
 	return Wardrobe.robes(repo).filter(func(r: RobeDefinition) -> bool: return not r.free)
 
 
-## Buys robe `def` with fragments: false when it is free, already owned or too dear.
-static func buy_robe(profile: ProfileStore, def: RobeDefinition) -> bool:
-	if def == null or Wardrobe.robe_unlocked(profile, def) or fragments(profile) < def.price:
+## v0.9.0 MP2 (owner, PLAN "Owner decisions" MP2: "ascending cost starting from 75 and 25 more each one, then 250 the
+## epic robe"): what robe `def` costs now: its `price`, plus its `price_step` for each robe of the ladder (a robe with
+## a step) the profile already owns. The four robes cost 75, 100, 125, 150 in the order bought; the epic robes 250.
+static func price_of(repo: ContentRepository, profile: ProfileStore, def: RobeDefinition) -> int:
+	if def == null:
+		return 0
+	if def.price_step <= 0:
+		return def.price
+	var bought := 0
+	for r: RobeDefinition in wares(repo):
+		if r.price_step > 0 and Wardrobe.robe_unlocked(profile, r):
+			bought += 1
+	return def.price + def.price_step * bought
+
+
+## Buys robe `def` with fragments at its price now (price_of): false when it is free, already owned or too dear.
+static func buy_robe(repo: ContentRepository, profile: ProfileStore, def: RobeDefinition) -> bool:
+	if def == null or Wardrobe.robe_unlocked(profile, def):
 		return false
-	profile.section("progress")["fragments"] = fragments(profile) - def.price
+	var cost := price_of(repo, profile, def)
+	if fragments(profile) < cost:
+		return false
+	profile.section("progress")["fragments"] = fragments(profile) - cost
 	Wardrobe.unlock_robe(profile, def.id)
 	return true
