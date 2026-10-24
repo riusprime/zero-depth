@@ -81,13 +81,15 @@ static func candidates(f: FloorLayout, taken: PackedInt32Array) -> PackedInt32Ar
 	for room in f.room_count():
 		if room in never or f.arena_rooms.has(room) or taken.has(room):
 			continue
+		if f.lockdown_rooms.has(room):  # v0.9.0 CF2: marked first from floor rules 17
+			continue
 		var door := only_door(f, room)
 		if door < 0:
 			continue
 		var host := f.door_rooms[door].x if f.door_rooms[door].y == room else f.door_rooms[door].y
 		if host in [f.start_room, f.boss_room, f.overrun_room, f.shop_room, f.curse_room]:
 			continue
-		if f.arena_rooms.has(host) or host >= f.spawn_points.size():
+		if f.arena_rooms.has(host) or f.lockdown_rooms.has(host) or host >= f.spawn_points.size():
 			continue
 		out.append(room)
 	return out

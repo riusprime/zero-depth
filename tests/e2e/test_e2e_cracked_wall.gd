@@ -6,7 +6,9 @@ extends GutTest
 ## it breaks, the hidden room comes into sight and the hero walks in to its reward.
 
 ## Run seed SEED: floor 1 holds a cracked wall (found with the floor plan, asserted below).
-const SEED := 22  # v0.9.0 FV: five floors made floor 1 smaller (10-12 rooms; 2 of seeds 1-120 hold one)
+## v0.9.0 FV: five floors made floor 1 smaller (10-12 rooms; 2 of seeds 1-120 hold one): seed 22; v0.9.0 CF2: the
+## Lockdowns take their rooms first, seed 40.
+const SEED := 40
 
 
 func after_each() -> void:

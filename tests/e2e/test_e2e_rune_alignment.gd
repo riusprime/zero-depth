@@ -8,8 +8,8 @@ extends GutTest
 
 ## Run seed SEED: floor 2 holds a rune puzzle (found with SaveLab, as Main builds floors; asserted below). v0.9.0 FV:
 ## five floors made floor 1 10-12 rooms, its dead ends all taken (no rune puzzle in 160 seeds), so the run is saved on
-## floor 2 and continued, as a player's would be.
-const SEED := 28
+## floor 2 and continued, as a player's would be. v0.9.0 CF2: seed 34 (28 before; the Lockdowns take their rooms first).
+const SEED := 34
 const FLOOR := 2
 
 

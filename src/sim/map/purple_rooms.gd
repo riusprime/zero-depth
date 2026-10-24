@@ -66,6 +66,8 @@ static func candidates(f: FloorLayout, taken: PackedInt32Array) -> PackedInt32Ar
 	for room in f.room_count():
 		if room in never or f.arena_rooms.has(room) or taken.has(room):
 			continue
+		if f.lockdown_rooms.has(room):  # v0.9.0 CF2: marked first from floor rules 17
+			continue
 		if room >= f.spawn_points.size() or room >= f.room_cells.size():
 			continue
 		if not main_path_open(f, room):

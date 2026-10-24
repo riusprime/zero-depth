@@ -8,8 +8,8 @@ extends GutTest
 ## hero is inside.
 
 ## Run seed SEED: floor 1 holds a timed door (found with the floor plan, asserted below; v0.9.0 FV: 2 on the
-## five-floor run, seed 3 before).
-const SEED := 2
+## five-floor run, seed 3 before; v0.9.0 CF2: 147, the Lockdowns now take their rooms first).
+const SEED := 147
 
 
 func after_each() -> void:

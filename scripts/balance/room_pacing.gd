@@ -8,8 +8,9 @@ extends SceneTree
 ## path (the shortest doorway path from the start hall to the boss room): each special room is counted at the path
 ## room nearest it (doorway hops, the earlier on a tie); "gap" is the path rooms between two such points in a row,
 ## "dry" the longest run of path rooms with none.
-## Prints the tables and writes build/balance/room_pacing.txt; copy the printed output into evidence by hand.
-##   godot --headless --path . -s scripts/balance/room_pacing.gd -- seeds=1000
+## Prints the tables and writes build/balance/room_pacing_rules_<rules>.txt; copy the printed output into evidence by
+## hand. v0.9.0 CF2: `rules=16` builds every floor under the floor rules before CF2 (the Lockdowns placed last).
+##   godot --headless --path . -s scripts/balance/room_pacing.gd -- seeds=1000 [rules=16]
 
 const Census := preload("res://tests/support/room_census.gd")
 const Lab := preload("res://tests/support/save_lab.gd")
@@ -24,9 +25,12 @@ const ROWS: Array[StringName] = [&"any_secret"]
 
 func _initialize() -> void:
 	var seeds := 1000
+	var rules := RunState.FLOOR_RULES  # v0.9.0 CF2: `rules=16` builds the floors in the order before CF2
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("seeds="):
 			seeds = int(a.trim_prefix("seeds="))
+		if a.begins_with("rules="):
+			rules = int(a.trim_prefix("rules="))
 	var t0 := Time.get_ticks_msec()
 	var repo := ContentRepository.load_all()
 	NavField.skip_build = true  # no placement reads the flow field (test_special_room_rules)
@@ -58,15 +62,19 @@ func _initialize() -> void:
 		for floor_index in range(1, FLOORS + 1):
 			var run := Lab.run_state(s, floor_index, &"blade", 0, repo)
 			run.purple_floors = purple.duplicate()
+			run.floor_rules = rules
 			var w := Lab.build_floor(run, &"", repo)
 			if w.purple != null and not purple.has(run.run_floor()):
 				purple.append(run.run_floor())
 			_count(stats[floor_index - 1], w)
 	var lines := PackedStringArray()
-	lines.append(
-		(
-			"ROOM_PACING| seeds=%d floors=1-%d (each run's floors in order, as Main builds them)"
-			% [seeds, FLOORS]
+	(
+		lines
+		. append(
+			(
+				"ROOM_PACING| seeds=%d floors=1-%d (each run's floors in order, as Main builds them) floor_rules=%d"
+				% [seeds, FLOORS, rules]
+			)
 		)
 	)
 	lines.append("")
@@ -149,7 +157,9 @@ func _initialize() -> void:
 	var text := "\n".join(lines)
 	print(text)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://build/balance"))
-	var out := FileAccess.open("res://build/balance/room_pacing.txt", FileAccess.WRITE)
+	var out := FileAccess.open(
+		"res://build/balance/room_pacing_rules_%d.txt" % rules, FileAccess.WRITE
+	)
 	if out != null:
 		out.store_string(text + "\n")
 	quit(0)

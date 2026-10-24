@@ -71,9 +71,12 @@ static func site(
 
 ## v0.8.0 N14: the rooms a shrine may stand in, ascending: combat rooms (ArenaRooms.candidates: not the start hall,
 ## the boss room or its host, the portal room, the Overrun room or the shop's room) that are not sealed arenas.
+## v0.9.0 CF2: nor a Lockdown (marked first from floor rules 17; none marked yet on an older floor's rules).
 static func rooms(layout: FloorLayout) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for r in ArenaRooms.candidates(layout):
+		if layout.lockdown_rooms.has(r):
+			continue
 		if not layout.arena_rooms.has(r) and r < layout.hops.size() and layout.hops[r] > 0:
 			out.append(r)
 	return out
