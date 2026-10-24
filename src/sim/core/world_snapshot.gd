@@ -271,6 +271,7 @@ const ADDED_SINCE_V05 := {
 		&"shade_dark",
 		&"shade_at",
 		&"shade_from",
+		&"shade_until",  # v0.9.0 NB4b: the dark comes and goes
 		&"lamp_x",
 		&"lamp_y",
 		&"lamp_t",

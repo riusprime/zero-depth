@@ -1812,8 +1812,9 @@ func boss_echo(i: int) -> Dictionary:
 
 
 ## v0.9.0 NB4 (BOSSES_4_5.md N4): the Lantern Shade's light: {} with no Shade; else "dark", "falling" (0..1000 to
-## the next Lights Out's dark, -1 none), "light_m" (the player's circle), "lamp_m", "lamp_ticks", "lamps" ([{pos, lit,
-## left, frac}]), "boss" (its actor index) and "boss_lit" (hittable) (BossShade.state).
+## the next Lights Out's dark, -1 none), "dark_left" (NB4b: ticks until the dark lifts, -1 none), "light_m" (the
+## player's circle), "lamp_m", "lamp_ticks", "lamps" ([{pos, lit, left, frac}]), "boss" (its actor index) and
+## "boss_lit" (hittable) (BossShade.state).
 func boss_light() -> Dictionary:
 	return BossShade.state(_w)
 

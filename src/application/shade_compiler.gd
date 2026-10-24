@@ -13,7 +13,8 @@ static func compile_attack(def: BossAttackDefinition, t: BossAttackTable) -> voi
 		t.dark_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("dark_seconds", 0.0))))
 
 
-## PatternCompiler.compile_cadence: the room's light, from the boss's first Lights Out (none: no lanterns).
+## PatternCompiler.compile_cadence: the room's light and (NB4b) how long its dark lasts, from the boss's first Lights
+## Out (none: no lanterns).
 static func compile_boss(def: BossDefinition, t: BossTable) -> void:
 	for a in def.attacks:
 		if not ShadeRules.is_lights_out(a):
@@ -25,4 +26,5 @@ static func compile_boss(def: BossDefinition, t: BossTable) -> void:
 		t.lamp_m = float(sp.get("lamp_m", 0.0))
 		t.lamp_ticks = SimTick.seconds_to_ticks(float(sp.get("lamp_seconds", 0.0)))
 		t.relight_m = float(sp.get("relight_m", 0.0))
+		t.dark_hold_ticks = SimTick.seconds_to_ticks(float(sp.get("dark_lasts_seconds", 0.0)))
 		return

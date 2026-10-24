@@ -9,6 +9,7 @@ script = ExtResource("1_atk")
 id = &"lights_out"
 shape = 4
 shape_params = {
+"dark_lasts_seconds": 8.0,
 "dark_seconds": 4.0,
 "inset_m": 1.5,
 "lamp_m": 3.0,
@@ -37,6 +38,7 @@ script = ExtResource("1_atk")
 id = &"lights_out_3"
 shape = 4
 shape_params = {
+"dark_lasts_seconds": 8.0,
 "dark_seconds": 4.0,
 "inset_m": 1.5,
 "lamp_m": 3.0,

@@ -335,6 +335,8 @@ head lanterns: the room's edge lanterns and the one in its hand carry the fight)
 5's pool now draws the Judge or the Shade. Kind `LANTERN_SHADE`, appended after `CLOCKWORK_JUDGE`. SIM_CONTRACTS
 §10m, CONTENT_SCHEMA (`ShadeRules`). The row's starting value "dark 4 s after the signature starts" is read as: the
 room goes dark 4 s after each Lights Out starts (its windup and shielded wisps), and stays dark while the Shade lives.
+**Superseded by NB4b** (owner, PLAN "Owner decisions" NB4: "Dark comes and goes (Recommended)"): each dark lasts 8 s,
+then the light comes back until the next Lights Out's dark (§13b).
 
 - **Lights Out** (`lights_out` / `lights_out_3`: a shielded `pattern` with `dark_seconds`; `BossShade`): on the
   cadence every 12 s start to start (the first 3 s in, never by the pick; phases 2 and 3 open with it). Windup 1.0 s,
@@ -423,3 +425,56 @@ copied by hand):
   Shade at a lantern's pool edge with its held lantern glowing. Looked at and fixed: the first renders read flat
   (only dimmed: the light circles never reached the shader, and an alpha blend over the HDR floor stayed brown); the
   dark became a multiply night with mist, the stage's sun dims with it, the hero's light brightened.
+
+## 13b. NB4b: the dark comes and goes (v0.9.0 Step NB4b)
+- **Status:** RUN (agent, on the owner's PC: Windows 11, i7-10700K, RTX 3060; Godot `4.7.2.stable.official.ed1daf0bf`).
+  How long the dark should last and how the lift feels: **OWNER ONLY**.
+- **Build:** branch `v090-nb4b` from the local `claude/world-combat-v090` at `2f8f0c87`; the step's commit SHA is in the
+  report.
+- **Date:** 2026-10-24
+- **Who ran it:** agent
+
+Owner (PLAN "Owner decisions" NB4, 2026-10-24): "Dark comes and goes (Recommended)": each Lights Out darkens the room
+for a stretch (starting value 8 s), then the light comes back until the next one (every 12 s); hittable only in
+light while it's dark.
+
+- **Data:** `dark_lasts_seconds` 8.0 on both Lights Outs (`ShadeRules.LIGHT_PARAMS`: required; > 0; less than the
+  boss's `signature_every_seconds`, checked in `BossDefinition._check_cadence` → `ShadeRules.check_cadence`). Compiled
+  from the first Lights Out to `BossTable.dark_hold_ticks` (480).
+- **Sim:** as the dark falls (4 s after Lights Out starts, as before; every lantern lit afresh) `BossStore.shade_until`
+  = now + 480; on the first tick at or after it the dark lifts (`shade_dark` 0): the room is lit, the Shade is
+  hittable anywhere, the lanterns' clocks stop and a Snuff puts none out, until the next Lights Out's dark. A Lights
+  Out whose dark falls mid-dark starts a fresh 8 s. `shade_until` is snapshotted (`ADDED_SINCE_V05`) and hashed with
+  the rest of the light while a Shade lives. `WorldReader.boss_light()` adds `dark_left` (ticks to the lift, -1 none).
+  With the 12 s cadence the room is dark 8 s and lit 4 s of each cycle (more when the boss's busy pushes a Lights Out
+  later). Counted on `w.tick`, so a hit's freeze can hold the lift a few ticks (seen: 483 in the cadence test).
+- **Views:** `ShadeViews` ramps the dark in as before and lifts it in 0.4 s (`LIFT_RATE` 2.5/s); the lit lanterns'
+  pools and their light circles stay on through the fade instead of popping off under a still-dark screen. Every fair
+  rule kept: markers draw over the dark; wisps within 4 m outlined.
+
+Lint: `gdformat --check` / `gdlint` on the 13 changed .gd files: "13 files would be left unchanged", "Success: no
+problems found".
+
+Each run: `godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gexit -gtest=<files>` (own APPDATA, one
+Godot at a time), after `godot --headless --path . --editor --import --quit` (exit 0).
+
+| run | files | result |
+|---|---|---|
+| unit, content, saves | test_lantern_shade, test_lantern_shade_views, tests/content/test_boss_validation, tests/content/test_boss_pace, tests/unit/sim/test_boss_pace, test_world_snapshot, test_state_hasher, test_old_saves | 72/72, 7898 asserts, 539.4 s |
+| e2e | test_e2e_lantern_shade, test_e2e_bosses | 2/2, 37 asserts, 50.0 s |
+
+First run of test_lantern_shade: 17/18, "[483] expected to equal [480]: each dark lasts 8 s" in the 40 s cadence test
+(the second dark's lift held 3 ticks by a hit's freeze: `shade_until` 1747, lifted at tick 1750); the assert now
+takes 480..492, the isolated stretch test stays exact (480).
+
+New and changed tests: the data (`dark_hold_ticks` 480); bad numbers (`dark_lasts_seconds` 12 → `duration`, 0 →
+`not_positive`, missing → `missing`); the dark lasting 480 ticks then lifting (`dark_left` counting down, lit
+everywhere, the Shade hit far from any light, the lanterns not burning, a Snuff putting none out), the next Lights
+Out's dark falling 240 ticks after its start with every lantern relit and the Shade again hittable only in light; a
+mid-dark Lights Out starting a fresh stretch; the 40 s cadence run seeing the dark come and go each cycle;
+`shade_until` in the hash and the older-save test. Views: still full just before 8 s, fading 12 frames after the lift
+with the lit lantern's pool kept, gone within 0.4 s. The e2e now waits out a lantern's burn just outside its reach and
+steps in to relight it (inside the 8 s dark), sees the dark lift (drawn at 0, the Shade lit), the next Lights Out
+bring it back, and lands its hits in that dark with the Shade inside the hero's light.
+
+Not run here (GitHub's shards): the rest of the suite. No shot taken (the dark looks as in §13; the lift is a fade).

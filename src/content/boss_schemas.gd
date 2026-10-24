@@ -97,6 +97,7 @@ const MOVES := {
 			"bounces",
 			"aim_degrees",
 			"dark_seconds",  # v0.9.0 NB4: the Lantern Shade's Lights Out (ShadeRules.LIGHT_PARAMS)
+			"dark_lasts_seconds",  # v0.9.0 NB4b: how long its dark lasts
 			"light_m",
 			"lamps",
 			"lamp_m",

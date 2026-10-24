@@ -158,6 +158,8 @@ func _check_cadence(issues: Array[ValidationIssue]) -> void:
 	var p := resource_path
 	if signature_every_seconds < 0.0 or signature_first_seconds < 0.0:
 		issues.append(ValidationIssue.new(&"negative", p, "the signature's cadence is >= 0"))
+	for a in attacks:
+		ShadeRules.check_cadence(a, signature_every_seconds, issues, p)  # v0.9.0 NB4b: the dark lifts in time
 	for ph in phases:
 		var tide: BossAttackDefinition = null
 		for aid in ph.attack_ids:

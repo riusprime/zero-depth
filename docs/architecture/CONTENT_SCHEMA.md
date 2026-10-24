@@ -634,7 +634,9 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   `verdict` (LINE, needs `lock_seconds`): `half_m` (> 0: the tracked square's half side, 1.5 m).
 - v0.9.0 NB4 (`ShadeRules`): a `pattern` with `dark_seconds` is a Lights Out (shielded; a cadence move:
   `signature_every_seconds` must exceed its telegraph + `dark_seconds`) and then needs all of `dark_seconds` (> 0: from
-  its start to the room's dark), `light_m` (> 0: the player's light), `lamps` (1..8: the room's lanterns), `lamp_m`
+  its start to the room's dark), `dark_lasts_seconds` (v0.9.0 NB4b: > 0 and less than `signature_every_seconds`: how
+  long each dark lasts before the light comes back; the boss's first Lights Out's is compiled, 8.0 s),
+  `light_m` (> 0: the player's light), `lamps` (1..8: the room's lanterns), `lamp_m`
   (> 0: a lit lantern's light), `lamp_seconds` (> 0: a lantern's burn), `relight_m` (> 0: passing within it relights
   one), `inset_m` (>= 0: in from each wall's middle): the Lantern Shade's (4.0 s, 3.5 m, 4, 3.0 m, 6.0 s, 1.2 m,
   1.5 m; every 12 s). A `marks` attack may take `snuff` (0 or 1): each struck circle puts out the lit lantern nearest
