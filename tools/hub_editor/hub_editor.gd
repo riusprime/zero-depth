@@ -179,46 +179,142 @@ static func plan_point(h: Node3D) -> Vector2:
 	return Vector2(snappedf(h.position.x, 0.001), snappedf(-h.position.z, 0.001))
 
 
-## Writes every handle's plan point into the hub (its positions only) and saves it to `path` (default: the hub file).
-## Returns the ResourceSaver error.
+## Writes every handle's plan point into the hub file at `path` (default: hub_path) by patching its text: only the
+## position values that moved change (`spawn`, `alcove_at`, `pillars`, each station's `at`, each prop's `at`); every
+## other byte stays. Writes nothing and returns an error when a line it expects isn't there. Then reloads the hub.
 func save_to_data(path: String = "") -> Error:
 	if hub == null:
 		push_error("Hub editor: nothing loaded")
 		return ERR_UNCONFIGURED
-	apply_to(hub)
 	var to := hub_path if path.is_empty() else path
-	var err := ResourceSaver.save(hub, to)
-	if err == OK:
-		print("Hub editor: saved the positions to %s" % to)
-	else:
-		push_error("Hub editor: could not save %s (error %d)" % [to, err])
+	if not FileAccess.file_exists(to):
+		push_error("Hub editor: %s not found; nothing saved" % to)
+		return ERR_FILE_NOT_FOUND
+	var problems := PackedStringArray()
+	var text := patch_text(FileAccess.get_file_as_string(to), points(), problems)
+	if not problems.is_empty():
+		for p in problems:
+			push_error("Hub editor: " + p)
+		push_error("Hub editor: nothing saved to %s" % to)
+		return ERR_PARSE_ERROR
+	var f := FileAccess.open(to, FileAccess.WRITE)
+	if f == null:
+		push_error("Hub editor: could not write %s (error %d)" % [to, FileAccess.get_open_error()])
+		return FileAccess.get_open_error()
+	f.store_string(text)
+	f.close()
+	var res := ResourceLoader.load(to, "", ResourceLoader.CACHE_MODE_REPLACE)
+	if res is HubDefinition:
+		hub = res
+	print("Hub editor: saved the positions to %s" % to)
 	check()
-	return err
+	return OK
 
 
-## Copies every handle's plan point into `h` (stations' and props' `at`, the pillars, the spawn, the alcove).
-func apply_to(h: HubDefinition) -> void:
-	var pillars := h.pillars.duplicate()
-	var props: Array[Dictionary] = []
-	for d in h.props:
-		props.append(d.duplicate())
+## Every handle's plan point: {"spawn", "alcove_at": Vector2, "pillars", "props": Array (in order), "stations":
+## {id: Vector2}}.
+func points() -> Dictionary:
+	var pillars := Array(hub.pillars)
+	var props := []
+	for d in hub.props:
+		props.append(d["at"])
+	var out := {"spawn": hub.spawn, "alcove_at": hub.alcove_at, "stations": {}}
 	for node in handles():
 		var p := plan_point(node)
 		var n := String(node.name)
 		if n.begins_with(STATION):
-			for s in h.stations:
-				if STATION + String(s.id) == n:
-					s.at = p
+			out["stations"][StringName(n.trim_prefix(STATION))] = p
 		elif n.begins_with(PILLAR):
 			pillars[int(n.trim_prefix(PILLAR))] = p
 		elif n.begins_with(PROP):
-			props[int(n.trim_prefix(PROP).get_slice("_", 0))]["at"] = p
-		elif n == SPAWN:
-			h.spawn = p
-		elif n == ALCOVE:
-			h.alcove_at = p
-	h.pillars = pillars
-	h.props = props
+			props[int(n.trim_prefix(PROP).get_slice("_", 0))] = p
+		elif n == SPAWN or n == ALCOVE:
+			out["spawn" if n == SPAWN else "alcove_at"] = p
+	out["pillars"] = pillars
+	out["props"] = props
+	return out
+
+
+## The hub file's `text` with the positions in `pts` (points()) written in; what can't be found goes to `problems`.
+static func patch_text(text: String, pts: Dictionary, problems: PackedStringArray) -> String:
+	var lines := text.split("\n")
+	var vec := RegEx.create_from_string("Vector2\\(([-+0-9.e]+), ([-+0-9.e]+)\\)")
+	var prop_at := RegEx.create_from_string('"at": Vector2\\(([-+0-9.e]+), ([-+0-9.e]+)\\)')
+	var top := {}  # field -> line index, in the [resource] section
+	var section := ""
+	var sec_id := {}  # section's first line index -> its id
+	var sec_at := {}  # section's first line index -> its `at` line index
+	var sec_start := -1
+	for i in lines.size():
+		var line := lines[i]
+		if line.begins_with("["):
+			section = line
+			sec_start = i
+			continue
+		if section.begins_with("[resource]"):
+			for field in ["spawn", "alcove_at", "pillars", "props"]:
+				if line.begins_with(field + " = "):
+					top[field] = i
+		elif section.begins_with("[sub_resource"):
+			if line.begins_with('id = &"'):
+				sec_id[sec_start] = line.trim_prefix('id = &"').trim_suffix("\r").trim_suffix('"')
+			elif line.begins_with("at = Vector2("):
+				sec_at[sec_start] = i
+	var edits := {}  # line index -> [regex, values]
+	for field in ["spawn", "alcove_at"]:
+		edits[field] = [vec, [pts[field]]]
+	edits["pillars"] = [vec, pts["pillars"]]
+	edits["props"] = [prop_at, pts["props"]]
+	for field: String in edits:
+		if not top.has(field):
+			problems.append("no `%s = ` line in [resource]" % field)
+			continue
+		var i: int = top[field]
+		lines[i] = _patch(lines[i], edits[field][0], edits[field][1], field, problems)
+	var stations: Dictionary = pts["stations"]
+	for id: StringName in stations:
+		var found := []
+		for s: int in sec_at:
+			if sec_id.get(s, "") == String(id):
+				found.append(sec_at[s])
+		if found.size() != 1:
+			problems.append("station %s: %d `at = ` lines, expected 1" % [id, found.size()])
+			continue
+		var i: int = found[0]
+		lines[i] = _patch(lines[i], vec, [stations[id]], "station %s" % id, problems)
+	return "\n".join(lines)
+
+
+## `line` with the Vector2s `re` matches (groups 1 and 2: its numbers) set to `values` in order; only the ones that
+## moved are rewritten. A count that doesn't match goes to `problems`.
+static func _patch(
+	line: String, re: RegEx, values: Array, what: String, problems: PackedStringArray
+) -> String:
+	var found := re.search_all(line)
+	if found.size() != values.size():
+		problems.append(
+			"%s: %d values in the file, %d pieces" % [what, found.size(), values.size()]
+		)
+		return line
+	var out := line
+	for k in range(found.size() - 1, -1, -1):  # from the end, so the earlier offsets hold
+		var m := found[k]
+		var p: Vector2 = values[k]
+		if Vector2(float(m.get_string(1)), float(m.get_string(2))).distance_to(p) < 0.0005:
+			continue
+		out = (
+			out.substr(0, m.get_start(1))
+			+ "%s, %s" % [_num(p.x), _num(p.y)]
+			+ out.substr(m.get_end(2))
+		)
+	return out
+
+
+## A number as the hub file writes it (3 decimals at most, no trailing zeros, no "-0").
+static func _num(f: float) -> String:
+	if absf(f - roundf(f)) < 0.0005:
+		return str(int(roundf(f)))  # whole numbers as "2", as Godot writes them
+	return String.num(f, 3)
 
 
 ## Editor only: keeps each dragged handle on the floor, turned to the middle, and warns about overlaps once it moves.

@@ -7,6 +7,6 @@ the 3D view, or pick it in the Scene dock, and move it with the move gizmo; it s
 the middle like it does in game. When you're happy, select the `HubEditor` root and press **Save to data** in the
 Inspector: the new places are written to the hub file (3 decimals). **Reload from data** throws away moves you haven't
 saved. The Output panel warns when a piece overlaps another piece or the machine, or sits past the wall. You don't
-need to save the scene itself. Saving rewrites the file in Godot's own layout (the values are the same; fields equal to
-their defaults are left out), so the first save shows a bigger diff than the moves. The scene is never in the game
-export.
+need to save the scene itself. Saving changes only the numbers of the pieces you moved and leaves the rest of the file
+exactly as it was, so the diff shows just your moves; if the file doesn't have a line the editor expects, it saves
+nothing and says why in the Output panel. The scene is never in the game export.
