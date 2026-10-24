@@ -75,7 +75,10 @@ func test_the_run_data_compiles() -> void:
 	)
 	assert_eq(t.boss_hp_per_floor_permille, 200, "bosses keep their own scaling (FV: +20 %)")
 	assert_eq(t.boss_damage_per_floor_permille, 100)
-	assert_eq(t.heal_permille, 400)
+	assert_eq(
+		t.heal_permille, 600, "v0.9.0 SV (owner 2026-10-23): the heal between floors 40 % -> 60 %"
+	)
+	assert_eq(t.max_hp_per_floor, 15, "v0.9.0 SV: +15 max HP per floor cleared")
 	var def: RunDefinition = _repo().get_def(&"run", RunSaver.RUN_ID)
 	for id in def.biomes:
 		assert_not_null(_repo().get_def(&"biomes", id), "biome %s exists" % id)
@@ -134,7 +137,7 @@ func test_enemies_scale_with_the_floor() -> void:
 			)
 
 
-func test_the_carry_keeps_items_and_heals_forty_percent() -> void:
+func test_the_carry_keeps_items_and_heals_between_floors() -> void:
 	var r := RunState.start(7, _run_table())
 	var w := _floor_world(r.floor_seed(), r)
 	w.add_item(0)
@@ -145,13 +148,16 @@ func test_the_carry_keeps_items_and_heals_forty_percent() -> void:
 	w.shards = 30
 	r.finish_floor(w)
 	assert_eq(r.floor_index, 2)
-	assert_eq(r.carry[RunCarry.HP], 10 + 40, "heal 40 % of 100")
+	# v0.9.0 SV: heal_permille of the finished floor's max HP, then the floor's growth fills the new max HP
+	var t := _run_table()
+	var healed := 10 + 100 * t.heal_permille / 1000 + t.max_hp_per_floor
+	assert_eq(r.carry[RunCarry.HP], healed, "heal 60 % of 100, plus SV's +15 growth")
 	assert_eq(r.ticks_done, 600)
 	assert_eq(r.kills_done, 5)
 	var w2 := _floor_world(r.floor_seed(), r)
 	assert_eq(w2.items_owned, PackedInt32Array([0, 3]), "items carried in order")
 	assert_true(w2.item_mods.has(w2.item_tables[0].kind), "their modifiers are live")
-	assert_eq(w2.actors.hp[0], 50)
+	assert_eq(w2.actors.hp[0], healed)
 	assert_eq(w2.floor_index, 2)
 	assert_eq(w2.shards, 15, "shards carry (E), half of them (v0.5.5 Q-S4: keep half)")
 	assert_eq(w2.shards_left_behind, 15, "the portal kept the other half")
@@ -162,7 +168,11 @@ func test_the_carry_keeps_items_and_heals_forty_percent() -> void:
 		for item in w2.rewards.offer_of(i):
 			assert_false(item in [0, 3], "a floor never offers an item you hold")
 	w2.actors.hp[0] = 90
-	assert_eq(RunCarry.take(w2, 400)[RunCarry.HP], 100, "the heal stops at max HP")
+	assert_eq(
+		RunCarry.take(w2, t.heal_permille)[RunCarry.HP],
+		100 + t.max_hp_per_floor,
+		"the heal stops at max HP (v0.9.0 SV: floor 2's max HP is 100 + 15)"
+	)
 
 
 func test_a_combo_owned_on_floor_one_is_active_on_floor_two() -> void:
