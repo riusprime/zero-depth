@@ -628,6 +628,13 @@ run one after another; the waves below are the order, and steps inside a wave ca
 ### R. Release
 - Version 0.9.0 in `project.godot`, patch notes en + es, What's New, the ROADMAP row and History, the README status
   line, CLAUDE.md re-checked, PROGRESS final, PLAYTEST.md, the full suite on the PR into `main`.
+- [x] Version 0.9.0 (`project.godot`, `export_presets.cfg`); patch notes `docs/patch-notes/v0.9.0.md` + `.es.md`,
+  the README index row, What's New (`data/patch_notes/v0.9.0.tres`); the ROADMAP row, status and History; the README
+  status line; CLAUDE.md re-read (nothing out of date); PROGRESS; [`PLAYTEST.md`](PLAYTEST.md); OWNER_TODO's playtest
+  item (2026-10-24). The release comes **before** the owner's playtest: the PR into `main` carries the build to it.
+- [ ] The screenshot tour in en and es: NOT RUN (its key script walks the v0.8.0 menu; see PROGRESS History,
+  2026-10-24).
+- [ ] The full suite on the PR into `main` (GitHub), then `tests/MIN_TEST_COUNT` from its green `verify` total.
 
 ## Audit (live code, 2026-10-22)
 
