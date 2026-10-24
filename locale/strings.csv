@@ -1240,7 +1240,7 @@ HUB_HINT,Walk to a station · [E / X] to use it · Esc / Start: menu,Camina hast
 HUB_PORTAL_MACHINE,Portal Machine,Máquina de Portales
 HUB_PROMPT_PORTAL,[E / X] Start a run,[E / X] Empezar una partida
 HUB_ARCHIVE,Rune Archive,Archivo de Runas
-HUB_PROMPT_ARCHIVE,[E / X] Open the Codex,[E / X] Abrir el Códice
+HUB_PROMPT_ARCHIVE,[E / X] Open the Archive,[E / X] Abrir el Archivo
 HUB_TROPHY,Trophy Area,Sala de Trofeos
 HUB_PROMPT_TROPHY,[E / X] See the achievements,[E / X] Ver los logros
 HUB_WARDROBE,Wardrobe,Vestidor
@@ -1312,3 +1312,41 @@ PROGRESSION_VOID_OPEN,The Void form: unlocked.,La forma Vacío: desbloqueada.
 PROGRESSION_BOUGHT,%s bought. Wear it at the Wardrobe.,Túnica %s comprada. Póntela en el Vestidor.
 PROGRESSION_SHORT,Not enough Rune Fragments for %s.,No tienes Fragmentos de Runa suficientes para la túnica %s.
 PROGRESSION_ALREADY,%s is already yours.,La túnica %s ya es tuya.
+COLLECTIBLE_COLD_LANTERN,Cold Lantern,Farol Frío
+COLLECTIBLE_COLD_LANTERN_LORE,It still lights halls that fell long ago.,Aún alumbra salones que cayeron hace mucho.
+COLLECTIBLE_STARLESS_MAP,Starless Map,Mapa sin Estrellas
+COLLECTIBLE_STARLESS_MAP_LORE,Someone charted the dark and found nothing.,Alguien trazó la oscuridad y no halló nada.
+COLLECTIBLE_SUNBAKED_IDOL,Sunbaked Idol,Ídolo Tostado
+COLLECTIBLE_SUNBAKED_IDOL_LORE,It smiles at the heat.,Sonríe al calor.
+COLLECTIBLE_FROZEN_BELL,Frozen Bell,Campana Helada
+COLLECTIBLE_FROZEN_BELL_LORE,It rang once. The sea froze to listen.,Sonó una vez. El mar se heló para escuchar.
+COLLECTIBLE_STAR_SPLINTER,Star Splinter,Astilla de Estrella
+COLLECTIBLE_STAR_SPLINTER_LORE,Still warm from the fall.,Aún tibia de la caída.
+COLLECTIBLE_ALIGNED_KEY,Aligned Key,Llave Alineada
+COLLECTIBLE_ALIGNED_KEY_LORE,Turn it right and the walls remember.,Gírala bien y los muros recuerdan.
+COLLECTIBLE_SAND_SHELL,Sand Shell,Concha de Arena
+COLLECTIBLE_SAND_SHELL_LORE,"It runs out, then starts again.",Se agota y vuelve a empezar.
+COLLECTIBLE_BROKEN_SHACKLE,Broken Shackle,Grillete Roto
+COLLECTIBLE_BROKEN_SHACKLE_LORE,The bars gave way. So did this.,Los barrotes cedieron. Esto también.
+COLLECTIBLE_VIOLET_EYE,Violet Eye,Ojo Violeta
+COLLECTIBLE_VIOLET_EYE_LORE,It saw the deep road before you did.,Vio el camino profundo antes que tú.
+COLLECTIBLE_BLOOD_COIN,Blood Coin,Moneda de Sangre
+COLLECTIBLE_BLOOD_COIN_LORE,Paid in full. Paid in you.,Pagada entera. Pagada contigo.
+COLLECTIBLE_DRY_CHALICE,Dry Chalice,Cáliz Seco
+COLLECTIBLE_DRY_CHALICE_LORE,The last drink was yours.,El último trago fue tuyo.
+COLLECTIBLE_RUNE_RUBBING,Rune Rubbing,Calco de Runas
+COLLECTIBLE_RUNE_RUBBING_LORE,Old marks. Someone wanted them found.,Marcas viejas. Alguien quería que las hallaras.
+COLLECTIBLE_COLOSSUS_TOOTH,Colossus Tooth,Diente del Colossus
+COLLECTIBLE_COLOSSUS_TOOTH_LORE,Bigger than your head. Still hungry.,Más grande que tu cabeza. Aún con hambre.
+COLLECTIBLE_PRISM_SHARD,Prism Shard,Esquirla del Prism
+COLLECTIBLE_PRISM_SHARD_LORE,"Every colour, none of them kind.","Todos los colores, ninguno amable."
+COLLECTIBLE_MIRROR_MASK,Mirror Mask,Máscara Espejo
+COLLECTIBLE_MIRROR_MASK_LORE,It wears your face better than you.,Lleva tu cara mejor que tú.
+COLLECTIBLE_KEYSTONE,Keystone,Piedra Angular
+COLLECTIBLE_KEYSTONE_LORE,The first stone. It waited for the rest.,La primera piedra. Esperaba a las demás.
+COLLECTIBLE_SHELF_STONE,Stone shelf,Estante de Piedra
+COLLECTIBLE_SHELF_SEALED,Sealed shelf,Estante Sellado
+COLLECTIBLE_SHELF_CROWN,Crown shelf,Estante de la Corona
+COLLECTIBLE_SHELF_HUB,Rune Ring shelf,Estante del Anillo
+COLLECTIBLE_TOAST,ADDED TO THE RUNE ARCHIVE,AÑADIDO AL ARCHIVO DE RUNAS
+UI_CODEX_TAB_COLLECTIBLES,Collectibles,Coleccionables

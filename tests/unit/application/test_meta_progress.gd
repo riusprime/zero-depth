@@ -49,7 +49,7 @@ func test_the_content_is_valid_and_sideways() -> void:
 
 func test_a_fresh_profile_has_nothing_and_the_void_locked() -> void:
 	var p := ProfileStore.new("")
-	assert_eq(int(p.data["profile_version"]), 2)
+	assert_eq(int(p.data["profile_version"]), ProfileStore.PROFILE_VERSION)  # v0.9.0 CL: 3
 	assert_eq(MetaProgress.fragments(p), 0)
 	assert_false(MetaProgress.portal_travelled(p))
 	assert_eq(MetaProgress.locked_cards(_repo, p), [&"gun_void"] as Array[StringName])

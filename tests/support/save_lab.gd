@@ -107,6 +107,7 @@ static func build_floor(
 		w, repo, FloorScenario.curse_room_rules_of(run), FloorScenario.retired_events_of(run)
 	)
 	FloorPlan.add_secrets(w, repo, run, table.move_speed)  # v0.9.0 TD, RA, DX, as Main
+	CollectibleBook.arm(w, run, CollectibleBook.defs(repo), biome.id)  # v0.9.0 CL, as Main
 	w.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))  # v0.5.5 DS
 	CatchUp.start_floor(w)
 	return w

@@ -121,6 +121,8 @@ var shrines: ShrinesView
 ## markings by every secret's doorway (null without a secret).
 var breakables: BreakablesView
 var markings: RuneMarkingsView
+## v0.9.0 CL: the floor's collectibles (null on a floor that holds none).
+var collectibles: CollectibleView
 ## v0.9.0 RB: A4 Astral's sense, the secrets near the hero pulsing (null without Astral or without a secret).
 var astral: AstralSenseView
 ## The gamble shrine (v0.3.0 L19; null on a floor without one).
@@ -440,6 +442,10 @@ func _setup_devices(palette: Dictionary) -> void:
 		markings.biome = stage.prop_style  # v0.9.0 BV
 		add_child(markings)
 		markings.setup(reader)
+	if reader.has_collectibles():  # v0.9.0 CL: the pickups, as their sources give them
+		collectibles = CollectibleView.new()
+		add_child(collectibles)
+		collectibles.setup(reader, CollectibleBook.colors())
 	if reader.affinity_sense_m() > 0.0 and not reader.secret_spots().is_empty():  # v0.9.0 RB: A4 Astral
 		astral = AstralSenseView.new()
 		add_child(astral)
@@ -584,6 +590,8 @@ func sync() -> void:
 			rig.thud(PurpleRuneView.THUD)
 	if shrines != null:  # v0.9.0 SH, HF
 		shrines.sync(reader)
+	if collectibles != null:  # v0.9.0 CL
+		collectibles.sync(reader)
 	if astral != null:  # v0.9.0 RB: A4 Astral
 		astral.sync(reader)
 	if lockdowns != null:  # v0.9.0 LK: the bars land with a thud

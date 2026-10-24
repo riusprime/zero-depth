@@ -90,6 +90,34 @@ func test_the_states_and_hooks_change_the_hub() -> void:
 		assert_not_null(v.stations[&"wardrobe"]["model"], "the owner's wardrobe draws the robe")
 
 
+## v0.9.0 CL: the Archive's niches light per collectible found, in its colour; the Keystone on the alcove's pedestal is
+## layered (a faceted stone, a core, a halo, a floor glow, a light, motes) and goes when taken.
+func test_the_shelf_lights_each_find_and_the_keystone_waits() -> void:
+	var v := _view({&"gate_open": true})
+	var found: Array[bool] = []
+	var colors: Array[Color] = []
+	for k in 16:
+		found.append(k == 2 or k == 9)
+		colors.append(Color(1, 0.2, 0.2))
+	v.show_found(found, colors)
+	var slots: Array = v.stations[&"archive"]["slots"]
+	assert_true(bool(slots[2].get_meta(&"lit")) and bool(slots[9].get_meta(&"lit")))
+	assert_false(bool(slots[3].get_meta(&"lit")), "the rest stay dark")
+	var m := (slots[9] as MeshInstance3D).material_override as StandardMaterial3D
+	assert_eq(m.emission, Color(1, 0.2, 0.2), "in its own colour")
+	assert_false(v.keystone_shown(), "nothing on the pedestal until set")
+	v.set_keystone(true, Color(0.6, 0.8, 1))
+	assert_true(v.keystone_shown())
+	var g := v.keystone as CollectibleLooks
+	assert_not_null(g.stone, "a faceted stone")
+	assert_not_null(g.core, "a hot core")
+	for part: String in ["halo", "pool", "light"]:
+		assert_not_null(g.glow.get(part), "its glow's %s" % part)
+	assert_not_null(g.motes, "motes")
+	v.set_keystone(false)
+	assert_false(v.keystone_shown(), "taken: gone")
+
+
 ## The owner's hub models (delivered 2026-10-22, listed in assets/models/manifest.json) draw the machine and the
 ## stations; their code stand-ins hide; the code's glows stay on them.
 func test_the_owners_models_are_drawn() -> void:

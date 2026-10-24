@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CollectibleDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/collectible_definition.gd" id="1_col"]
+
+[resource]
+script = ExtResource("1_col")
+order = 3
+shelf = &"stone"
+source = &"hidden_room"
+name_key = &"COLLECTIBLE_SUNBAKED_IDOL"
+lore_key = &"COLLECTIBLE_SUNBAKED_IDOL_LORE"
+biome = &"red_canyon"
+color = Color(1, 0.48, 0.25, 1)
+id = &"sunbaked_idol"

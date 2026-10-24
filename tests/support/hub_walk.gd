@@ -126,6 +126,31 @@ func to_build_screen() -> bool:
 	return e.main.get_node_or_null("UI/BuildPicker") != null
 
 
+## v0.9.0 CL: walks the hero (the stick) through plan points `points` in turn, each until within `within` m, at most
+## `limit` frames each, the stick let go after. True when it reached the last.
+func walk_through(points: Array[Vector2], within: float = 0.8, limit: int = 900) -> bool:
+	var hub := e.main.hub
+	if hub == null:
+		return false
+	var ok := true
+	for goal in points:
+		var there := false
+		for k in limit:
+			var p := HubLayout.to_plan(hub.driver.reader.player_pos())
+			if p.distance_to(goal) <= within:
+				there = true
+				break
+			var d := (goal - p).normalized()
+			e.joy_axis(JOY_AXIS_LEFT_X, d.x)
+			e.joy_axis(JOY_AXIS_LEFT_Y, -d.y)
+			await e.frames(1)
+		ok = ok and there
+	e.joy_axis(JOY_AXIS_LEFT_X, 0.0)
+	e.joy_axis(JOY_AXIS_LEFT_Y, 0.0)
+	await e.frames(2)
+	return ok
+
+
 ## Walks to station `id` and presses interact (E): its panel opens over the hub. True when the hero got there.
 func use(id: StringName) -> bool:
 	var there := await walk_to(id)

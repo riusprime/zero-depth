@@ -157,6 +157,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"ShrineState",  # v0.9.0 SH, HF: the Blood or Chaos shrine (used, the challenge, its altars) and the fountain
 	&"EliteState",  # v0.9.0 EL: the floor's elite rooms, the elites alive, their contact clocks, the escort
 	&"AffinityState",  # v0.9.0 RB: the rune affinity's ward and dash crackle on this floor
+	&"CollectState",  # v0.9.0 CL: the floor's collectibles (armed, shown, taken)
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -200,6 +201,7 @@ const ADDED_SINCE_V05 := {
 		&"shrine",  # v0.9.0 SH, HF: a floor saved before SH has none (floor rules 1-13 build none in the base either)
 		&"elites",  # v0.9.0 EL: a floor saved before EL has no elite rooms (floor rules 1-14 build none either)
 		&"affinity",  # v0.9.0 RB: a save from before RB is a run without one (None: null in the base too)
+		&"collect",  # v0.9.0 CL: a save from before CL keeps the base's (the collectibles armed again, none shown)
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
 		&"loot_guaranteed",  # v0.8.0 FL: an older save's floor used no guarantee (0) and holds no jackpot
 		&"loot_jackpots",
@@ -773,6 +775,8 @@ static func _make(cls: StringName) -> Object:
 			return ShrineState.new()
 		&"EliteState":  # v0.9.0 EL: a base whose floor had no elite before play brought one
 			return EliteState.new()
+		&"CollectState":  # v0.9.0 CL: a base built without the collectibles armed (a lab)
+			return CollectState.new()
 		&"RngStream":
 			return RngStream.new()
 		&"ActorStore":

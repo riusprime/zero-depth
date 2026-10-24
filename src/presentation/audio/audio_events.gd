@@ -508,6 +508,8 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"bomb_blast", e.pos, 1.0])
 			SimEvent.Kind.LANCE:  # v0.9.0 AF1b: a Lance released, its whoosh
 				out.append([&"lance_release", e.pos, 1.0])
+			SimEvent.Kind.COLLECTIBLE:  # v0.9.0 CL: a collectible taken (the combo unlock's chime, a placeholder)
+				out.append([&"combo_unlock", null, 1.0])
 
 
 ## Mines (v0.4.0 EN): a beep as one arms, the blast when an armed one goes off the floor.

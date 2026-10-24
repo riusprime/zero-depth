@@ -44,6 +44,8 @@ var build_id := &"blade"
 var affinity := &""
 ## v0.9.0 MP: a NEW_RUN from a profile that hasn't travelled through a Purple Portal locks its forms (the Void).
 var lock_portal_forms := false
+## v0.9.0 CL: a NEW_RUN's collectibles the profile has found (no floor of the run arms them again).
+var collected: Array[StringName] = []
 ## A save's payload (CONTINUE, or a FLOOR resumed from a save): its world snapshot is written into the fresh floor.
 var resume := {}
 ## ViewPrefs.reduced_motion, read on the main thread (the portal's way in and the arrival).
@@ -84,6 +86,7 @@ static func of_profile(
 		p_run_id, seed_value, Wardrobe.build_of(profile), p_calm, Wardrobe.affinity_of(profile)
 	)
 	plan.lock_portal_forms = not MetaProgress.portal_travelled(profile)  # v0.9.0 MP
+	plan.collected = CollectibleBook.found_ids(profile)  # v0.9.0 CL: found once per profile
 	return plan
 
 
@@ -122,6 +125,7 @@ func build() -> void:
 			run.affinity = affinity  # v0.9.0 RB: locked for the run
 			if lock_portal_forms:  # v0.9.0 MP: the Void stays out of the offers until a Purple Portal
 				run.locked_cards = MetaProgress.portal_cards(repo)
+			run.collected = collected.duplicate()  # v0.9.0 CL
 		else:
 			stage_seed = int(resume["run"]["stage_seed"])
 			run = RunSaver.run_from(resume, ContentCompiler.compile_run(run_def))
@@ -199,6 +203,8 @@ func _build_world() -> void:
 		)
 	if arena_def != null and w.approach == null:  # v0.8.0 FB1: the first body rises (after the loadout: its hidden
 		FinalArenaScenario.begin(w, run, finals.size())  # catch-up counts); v0.9.0 FA: the approach begins it later
+	# v0.9.0 CL: the collectibles this floor can hold (the run's not yet collected), after every source is set up
+	CollectibleBook.arm(w, run, CollectibleBook.defs(repo), biome.id if arena_def == null else &"")
 	if not resume.is_empty():  # v0.4.0 SV: back to the saved room entry
 		err = WorldSnapshot.apply(w, resume["world"])
 		if err != "":

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CollectibleDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/collectible_definition.gd" id="1_col"]
+
+[resource]
+script = ExtResource("1_col")
+order = 2
+shelf = &"stone"
+source = &"hidden_room"
+name_key = &"COLLECTIBLE_STARLESS_MAP"
+lore_key = &"COLLECTIBLE_STARLESS_MAP_LORE"
+biome = &"night_rocks"
+color = Color(0.55, 0.62, 1, 1)
+id = &"starless_map"

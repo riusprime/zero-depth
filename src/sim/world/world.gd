@@ -210,6 +210,9 @@ var elite_rules: EliteRules
 ## v0.9.0 RB (AFFINITIES.md; Affinities): the run's rune affinity on this floor; null for None (no effect, not
 ## hashed: a run without one hashes as before RB).
 var affinity: AffinityState
+## v0.9.0 CL (COLLECTIBLES.md; Collectibles): the collectibles this floor can hold (armed at setup by the app); null on
+## a floor that holds none (every world before CL, goldens, sims: hashed only when it exists).
+var collect: CollectState
 # --- end Bosses ---------------------------------------------------------------------------------------------
 # --- Rewards (v0.3.0 E; Rewards) ----------------------------------------------------------------------------
 ## The floor's reward rules (part of the loadout, like item_tables; not hashed).
@@ -747,6 +750,8 @@ func step(frame: InputFrame) -> void:
 		Shrines.advance(self)  # v0.9.0 SH: a Chaos challenge cleared raises its altar
 	if elites != null:
 		Elites.advance(self)  # v0.9.0 EL: the elites gone, an elite room's elite arriving
+	if collect != null:
+		Collectibles.advance(self)  # v0.9.0 CL: a source gives its collectible; the hero takes those in reach
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
 	HealOrbs.advance(self)  # v0.4.0 TU (D8): walking over a heal orb heals
 	WaveDirector.advance(self)
@@ -1365,6 +1370,8 @@ func state_hash() -> String:
 		affinity.hash_into(h)
 	if not locked_items.is_empty():  # v0.9.0 MP: only runs with a card still locked (none: hashed as before)
 		h.add_ints(locked_items)
+	if collect != null:  # v0.9.0 CL: only floors armed with a collectible
+		collect.hash_into(h)
 	if final_fight != null:  # v0.8.0 FB1: only the worlds that hold the final fight
 		final_fight.hash_into(h)
 	actors.hash_into(h)
