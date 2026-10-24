@@ -43,7 +43,9 @@ func test_the_page_is_the_codexs_fifth_tab_with_lit_dim_and_hidden_rows() -> voi
 	book.store.add_stat(&"runs:won", 2)
 	var v := _view(book)
 	await wait_physics_frames(2)
-	assert_eq(v.pages.back(), CodexView.ACHIEVEMENTS, "after the four Codex pages")
+	var order: Array[StringName] = CodexStore.PAGES.duplicate()
+	order.append_array([CodexView.ACHIEVEMENTS, CodexView.COLLECTIBLES])
+	assert_eq(v.pages, order, "after the four Codex pages, before v0.9.0 CL's Collectibles")
 	assert_true(v.tabs.has(CodexView.ACHIEVEMENTS))
 	v.open(CodexView.ACHIEVEMENTS)
 	await wait_physics_frames(2)
@@ -88,7 +90,9 @@ func test_a_codex_without_a_book_has_its_four_pages() -> void:
 	var v := CodexView.new(book.catalog, book.codex)
 	_screen().add_child(v)
 	await wait_physics_frames(1)
-	assert_eq(v.pages, CodexStore.PAGES, "no Achievements tab without a book")
+	var order: Array[StringName] = CodexStore.PAGES.duplicate()
+	order.append(CodexView.COLLECTIBLES)
+	assert_eq(v.pages, order, "no Achievements tab without a book (CL's Collectibles stays)")
 	assert_null(v.achievements_page)
 
 

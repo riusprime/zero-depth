@@ -74,7 +74,7 @@ func model_id() -> StringName:
 
 
 func _code_nodes() -> Array[Node]:
-	return [body, arm_l, arm_r]
+	return [body, arm_l, arm_r, lantern]
 
 
 func _weak_point_at() -> Vector3:
