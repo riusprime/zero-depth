@@ -3,31 +3,24 @@
 Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` at `aeef604a` (v0.8.0).
 
 ## Where we are
-(The lead keeps this block current at every push; the SessionStart hook prints it. Updated 2026-10-23.)
+(The lead keeps this block current at every push; the SessionStart hook prints it. Updated 2026-10-24.)
 
-- **Phase 0 and the owner's answers are done.** Every line of both documents has a row (C1–C90, W1–W78, E1–E2); all
-  30 design questions, the attack-forms G1 and the utility-cards G1 are answered (the PLAN's "Owner decisions"). The
-  Steps are rewritten from them in six waves. `tests/MIN_TEST_COUNT` is 2676.
-- **Biggest changes decided:** a run is 5 floors (PD-03 changed); ten Gun forms with Form / Pattern / Secondary /
-  Element limits; Twin and Spread merged; no death explosions; elites only as archetypes on floors 4–5; the Purple
-  Portal earned through a purple-rune room; the hub replaces most of the menu.
-- **Merged, seams green (bar the owner's accepted red test_final_pace), pushed `b312a751`:** Wave 1 (DS, CV, PT, SA,
-  FA), TW, XP, LG, IX, TD, AS, AS2, RA, DX, LZ, BM, FV (five floors), MI2 (the owner's models), VP (Void), DP (the
-  Purple Portal earned), LK (Lockdowns), all ten Gun forms (AF1 Lance + Scatter, AF1b the Lance as the owner's charged
-  energy ball, AF2 Glaive + Seekers, AF3 Wave + Wisps), SH + HF (Fortune/Blood/Chaos shrines, healing fountains), BR
-  (the shots-a-second test over every form; `evidence/FORMS_DPS.md`). Lead fixes: enemies never attack through a shut
-  doorway or wall (owner 2026-10-23); the Wisps view's death error; the shrines view's orphan lights.
-- **Owner answers since 2026-10-22:** final pace stays red; the bar gate is `lockdown_seal`; secrets start on floor 2;
-  the Lance is a charged ball at about 1.0× the orbs; questions while the owner is away go to
-  [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (11 open).
-- **Agents working:** RG (special-room schema, pacing report, no-softlock tests; `v090-rg` from `d5867aa2`), BV (biome
-  looks for the Wave 4 interactions; `v090-bv` from `d5867aa2`). The lead: the e2e mouse helper measures its scale once
-  (it aimed every mouse_to at (100, 100) for a frame).
-- **Waiting on the owner (all in OWNER_QUESTIONS):** the floor 4–5 bosses (NB G1), the hub layout (HB G2), collectibles
-  (CL G1), affinities (RB G1), the VFX audit (VX G1), the forms' tuning (3, 5, 11), Lockdown length, shrine values;
-  plus ELITES.md (EL) and the art still wanted.
-- **Next:** **SV first** (owner 2026-10-23: +15 max HP a floor cleared, 60 % heal between floors; the owner can't reach the final boss), then **HB2** (owner: the hero walks up the Portal Machine's steps and through the portal after the weapon pick), then merge NB1, EL, HB as they report; **CF** (owner 2026-10-23: closed fights never in a 1×1 room, spawns at once scale with the room) starts when EL is merged (same Lockdown and spawn code); then NB2–NB4, MP, RB, CL.
-- **Known:** Void with Twin Lv 5 averaged 13.5 ms (budget 12) on the horde probe; floor 1 never fits a secret (intended).
+- **Every build step of Waves 1–5 is merged and pushed (`100d9b2a`), seams green bar the owner's accepted red
+  `test_final_pace` (534/535).** Wave 1 (DS, CV, PT, SA, FA); the ten Gun forms (AS, AS2, TW, XP, LG, VP, LZ, BM,
+  AF1–AF3, BR, VX); five floors (FV, NB1–NB4b the four new bosses, DP); the world (IX, TD, RA, DX, LK, RG, EL, CF, CF2,
+  SH, HF, BV, SV); the hub and progression (HB, HB2, HB3, MP, MP2, RB, CL); plus HE (the hub editor scene,
+  `tools/hub_editor/`), the replay fix (MP's locked cards now travel with the snapshot) and the lead's fixes.
+- **Owner answers 2026-10-24:** the Void stays locked for every profile until a Purple Portal, the Wave open from the
+  start (MP3); robes 75–150 and two epic robes at 250 (MP2); the black epic robe hides the blue face square and turns
+  the plain attack violet, the white one keeps both (MP2b); a hub editor scene to drag the hub's pieces (HE).
+- **Agents working:** none.
+- **Waiting on the owner:** whether the black robe's violet should be bluer (it reads pink-violet to stay clear of a
+  hostile trail colour); the Blood Coin gem may be small; the rest of [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) is
+  FYI, kept as built until the playtest.
+- **Next:** **R, the release** (version 0.9.0, patch notes en + es, What's New, ROADMAP row, README, PLAYTEST.md, the
+  full suite on the PR into `main`), then the owner's playtest. Wave 6 (PZ, UC, EM) comes after it, by plan.
+- **Known:** Void with Twin Lv 5 averaged 13.5 ms (budget 12) on the horde probe; floor 1 never fits a secret
+  (intended); `test_e2e_damage_soak` counts orphans in a big batch but passes alone.
 
 ## Owner decisions (2026-10-22)
 - Q1–Q30, ATTACK_FORMS and UTILITY_CARDS, verbatim in the PLAN's "Owner decisions". LOCKED_DECISIONS change log: six
@@ -62,6 +55,13 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
 | AF2, AF3 | The Glaive (a disc out and back), Seekers (three homing darts), Wave (a wide band through everything) and Wisps (three orbiting wisps) Gun forms | `77bb1c87`, `6c4b06e5` |
 | SH, HF | Fortune, Blood and Chaos shrines (one a floor at most, the cost shown first); healing fountains | `b37942de` |
 | BR | Every form and pattern stays within 12 an attack and 40 a second (a test); the forms' DPS sheet (Wave and Void the strongest) | `d5867aa2` |
+| NB1–NB4b | Four new floor 4–5 bosses: the Tidecaller, the Twin Wardens, the Clockwork Judge, the Lantern Shade (its dark comes and goes) | merges to `dcb0fb2e` |
+| EL, CF, CF2, SV | Elites (no contact damage, Chaos elite floors 4–5); closed fights never in a 1×1 room, spawns scale with the room; Lockdowns pick rooms first (rules 17); +15 max HP a floor and a 60 % heal between floors | merges to `dcb0fb2e` |
+| HB, HB2, HB3 | The hub (option A, the Rune Ring); the walk up into the portal; a 16 m ring, stations along the top, the owner's eight pieces | merges to `0595c566` |
+| RB, MP, MP2 | Robes and affinities; Rune Fragments and the Progression Station, the Void unlocked by the Purple Portal; robes 75–150 and two epic robes at 250 | `c4242e46` |
+| CL | The 16 collectibles: pickups in runs, the hub's runes, the Archive page, the Keystone past the gate | `f7f7a7ca` |
+| HE | A hub editor scene: drag the hub's pieces in Godot, save their places back into the data | `6d34aac3` |
+| — | Replays stay exact with MP's locked cards (the snapshot carries them) | `deccb280` |
 | 0 | Plan, G1 lists, art request; the owner's answers | `54f40318`, `74fca543`, `1ae81240`, this commit |
 
 ## Goldens changed on purpose
