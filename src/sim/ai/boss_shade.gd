@@ -6,11 +6,14 @@ extends RefCounted
 ##   each wall of the sealed room, BossStore.arena; without one, round where the Shade stood, FALLBACK_HALF_M each way).
 ##   Before the first Lights Out the room is lit and they only stand there.
 ## - Lights Out (a shielded `pattern` with dark_ticks, on the boss's cadence: BossTide.due): dark_ticks after it starts
-##   the room goes dark for the rest of the fight and every lantern is lit afresh (lamp_ticks). In the dark only
-##   light_m round the player and lamp_m round each lit lantern are lit; a lantern burns down, and the player passing
-##   within relight_m (plus their radius) relights it to lamp_ticks.
+##   the room goes dark and every lantern is lit afresh (lamp_ticks). In the dark only light_m round the player and
+##   lamp_m round each lit lantern are lit; a lantern burns down, and the player passing within relight_m (plus their
+##   radius) relights it to lamp_ticks.
+## - NB4b (owner, PLAN "Owner decisions" NB4: "Dark comes and goes"): the dark lasts the table's dark_hold_ticks, then
+##   lifts and the whole room is lit until the next Lights Out's dark (the lanterns stand, unburnt, meanwhile). A table
+##   with no dark_hold_ticks keeps the dark until the Shade dies.
 ## - Hittable only when lit: in the dark a hit on the Shade sparks off (Damage, like a shield) unless its body touches
-##   the light (unlit()).
+##   the light (unlit()); in the light it is hittable anywhere.
 ## - The Snuff (a `marks` attack with snuff): each struck circle puts out the lit lantern nearest its centre.
 ## - The dark is sim state (BossStore.shade_* and lamp_*, snapshotted and hashed while a Shade lives); the darkness
 ##   drawn is the view reading it (WorldReader.boss_light). The Shade gone, the room relights.
@@ -39,8 +42,8 @@ static func on_start(w: World, i: int, atk: BossAttackTable) -> void:
 	w.bosses.shade_from = w.tick
 
 
-## Tick phase 6 (BossSignatures.advance): finds the Shade (its lanterns placed), lets the dark fall when due, burns the
-## lanterns down and relights the ones the player passes.
+## Tick phase 6 (BossSignatures.advance): finds the Shade (its lanterns placed), lets the dark fall when due and lift
+## when its stretch is over (NB4b), burns the lanterns down and relights the ones the player passes.
 static func advance(w: World) -> void:
 	var bs := w.bosses
 	if bs.shade_boss < 0:
@@ -63,12 +66,17 @@ static func advance(w: World) -> void:
 	if bs.shade_at >= 0 and w.tick >= bs.shade_at:
 		bs.shade_dark = 1
 		bs.shade_at = -1
+		bs.shade_until = w.tick + t.dark_hold_ticks if t.dark_hold_ticks > 0 else -1
 		var lit := PackedInt32Array()
 		lit.resize(bs.lamp_x.size())
 		lit.fill(t.lamp_ticks)
 		bs.lamp_t = lit
 		return
 	if bs.shade_dark == 0:
+		return
+	if bs.shade_until >= 0 and w.tick >= bs.shade_until:
+		bs.shade_dark = 0  # NB4b: the dark's stretch is over, the room is lit until the next Lights Out
+		bs.shade_until = -1
 		return
 	var p := w.player_pos()
 	var reach := t.relight_m + w.player.radius_m
@@ -175,7 +183,8 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 
 
 ## The view's read (WorldReader.boss_light): {} with no Shade; else "dark" (the room snuffed), "falling" (0..1000:
-## how far the next Lights Out is to its dark, -1 with none coming), "light_m" (the player's circle), "lamp_m",
+## how far the next Lights Out is to its dark, -1 with none coming), "dark_left" (NB4b: ticks until the dark lifts, -1
+## when not dark or dark until the Shade dies), "light_m" (the player's circle), "lamp_m",
 ## "lamp_ticks", "lamps" (one {"pos", "lit", "left" (ticks), "frac" (0..1 of its burn left)} per lantern), "boss"
 ## (the Shade's actor index) and "boss_lit" (its body touches the light: hittable).
 static func state(w: World) -> Dictionary:
@@ -207,6 +216,8 @@ static func state(w: World) -> Dictionary:
 	return {
 		"dark": bs.shade_dark == 1,
 		"falling": falling,
+		"dark_left":
+		maxi(0, bs.shade_until - w.tick) if bs.shade_dark == 1 and bs.shade_until >= 0 else -1,
 		"light_m": t.light_m,
 		"lamp_m": t.lamp_m,
 		"lamp_ticks": t.lamp_ticks,

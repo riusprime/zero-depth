@@ -143,15 +143,17 @@ var echo_y := PackedFloat32Array()
 var path_x := PackedFloat32Array()
 var path_y := PackedFloat32Array()
 var path_k := PackedInt32Array()
-## v0.9.0 NB4 (BossShade): the Lantern Shade's light. shade_boss is the Shade's actor id (-1 = none); shade_dark 1 once
-## its Lights Out has snuffed the room (until it dies); shade_at the tick its next Lights Out snuffs the room and
-## relights the lanterns (-1 = none pending) and shade_from the tick that Lights Out began; lamp_x/lamp_y the room's
-## edge lanterns and lamp_t each one's lit ticks left (0 = out). Hashed only while a Shade lives
-## (WorldSnapshot.ADDED_SINCE_V05: an older save has none).
+## v0.9.0 NB4 (BossShade): the Lantern Shade's light. shade_boss is the Shade's actor id (-1 = none); shade_dark 1 while
+## a Lights Out has the room snuffed; shade_at the tick its next Lights Out snuffs the room and relights the lanterns
+## (-1 = none pending) and shade_from the tick that Lights Out began; NB4b: shade_until the tick the dark lifts (-1 =
+## not dark, or a table with no dark_hold_ticks: dark until the Shade dies); lamp_x/lamp_y the room's edge lanterns
+## and lamp_t each one's lit ticks left (0 = out). Hashed only while a Shade lives (WorldSnapshot.ADDED_SINCE_V05: an
+## older save has none).
 var shade_boss := -1
 var shade_dark := 0
 var shade_at := -1
 var shade_from := -1
+var shade_until := -1
 var lamp_x := PackedFloat32Array()
 var lamp_y := PackedFloat32Array()
 var lamp_t := PackedInt32Array()
@@ -238,7 +240,7 @@ func hash_into(h: StateHasher) -> void:
 		h.add_ints(path_k)
 	if shade_boss >= 0:  # v0.9.0 NB4: only while a Lantern Shade lives
 		h.add_int(-5)
-		h.add_ints(PackedInt32Array([shade_boss, shade_dark, shade_at, shade_from]))
+		h.add_ints(PackedInt32Array([shade_boss, shade_dark, shade_at, shade_from, shade_until]))
 		h.add_f32s(lamp_x)
 		h.add_f32s(lamp_y)
 		h.add_ints(lamp_t)
@@ -250,6 +252,7 @@ func clear_shade() -> void:
 	shade_dark = 0
 	shade_at = -1
 	shade_from = -1
+	shade_until = -1
 	lamp_x = PackedFloat32Array()
 	lamp_y = PackedFloat32Array()
 	lamp_t = PackedInt32Array()

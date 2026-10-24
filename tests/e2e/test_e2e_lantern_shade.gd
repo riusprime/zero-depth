@@ -3,9 +3,10 @@ extends GutTest
 ## floor-5 save (seed 1: floor 5's pool draws the Shade; built with SaveLab as Main builds floors) continued from the
 ## menu (Enter); God from the dev panel (clicked); the stick walks to the boss door, E opens it, the stick walks in and
 ## the door seals; the Shade rises (its model, its name on the boss bar) and its Lights Out comes, shielded: the room
-## goes dark (ShadeViews' dark at full, four lanterns lit on the room's edge); the stick waits out a lantern's burn,
-## then walks to an out lantern and relights it by passing; then the hero closes in, inside its own light, and the
-## mouse's attack lands hits on the lit Shade.
+## goes dark (ShadeViews' dark at full, four lanterns lit on the room's edge); the stick waits out a lantern's burn
+## beside it, then steps in and relights it by passing. NB4b (owner: "Dark comes and goes"): the dark lifts 8 s after
+## it fell (drawn lit again, the Shade hittable anywhere); the next Lights Out brings it back, and in that dark the hero
+## closes in, inside its own light, and the mouse's attack lands hits on the lit Shade.
 
 const FLOOR := 5
 const LEG_FRAMES := 900
@@ -37,6 +38,83 @@ func _walk(e: E2e, target: Vector2, done: Callable) -> bool:
 		await e.frames(1)
 	e.stick_toward(Vector2.ZERO)
 	return done.call()
+
+
+## Walks to just outside the nearest lantern's reach, waits out its 6 s burn there (inside the 8 s dark), then steps
+## in: passing relights it.
+func _relight_a_lantern(e: E2e, w: World, reader: WorldReader, shades: ShadeViews) -> bool:
+	var lamps0: Array = reader.boss_light().get("lamps", [])
+	var out_k := -1
+	var out_at := Vector2.INF
+	var mid := Vector2.ZERO
+	for m in lamps0.size():
+		mid += (lamps0[m]["pos"] as Vector2) / float(lamps0.size())
+		var d := (lamps0[m]["pos"] as Vector2).distance_to(w.player_pos())
+		if out_k < 0 or d < out_at.distance_to(w.player_pos()):
+			out_k = m
+			out_at = lamps0[m]["pos"]
+	assert_gte(out_k, 0, "a lantern to relight")
+	if out_k < 0:
+		return false
+	var lamp_out := func() -> bool:
+		var ls: Array = reader.boss_light().get("lamps", [])
+		return out_k < ls.size() and not bool(ls[out_k]["lit"])
+	await _walk(e, out_at + (mid - out_at).normalized() * 3.0, lamp_out)
+	for k in 60 * 7:
+		if lamp_out.call():
+			break
+		await e.frames(1)
+	assert_true(lamp_out.call(), "the lantern burnt out")
+	assert_true(bool(reader.boss_light().get("dark", false)), "still dark as it does")
+	if not lamp_out.call():
+		return false
+	var relit: bool = await _walk(
+		e,
+		out_at,
+		func() -> bool:
+			var ls: Array = reader.boss_light().get("lamps", [])
+			return (
+				out_k < ls.size()
+				and bool(ls[out_k]["lit"])
+				and w.player_pos().distance_to(out_at) < 2.0
+			)
+	)
+	assert_true(relit, "passing the out lantern relit it")
+	assert_gte(shades.lamps_lit(), 1, "its flame and pool drawn again")
+	return relit
+
+
+## NB4b (owner: "Dark comes and goes"): the dark lifts 8 s after it fell and the light comes back (drawn lit, the
+## Shade hittable anywhere); the next Lights Out brings the dark back.
+func _dark_lifts_and_returns(
+	e: E2e, w: World, reader: WorldReader, shades: ShadeViews, bid: int
+) -> bool:
+	var lifted := false
+	for k in 60 * 6:
+		await e.frames(1)
+		if not bool(reader.boss_light().get("dark", true)):
+			lifted = true
+			break
+	assert_true(lifted, "the dark lifted")
+	if not lifted:
+		return false
+	for k in 40:  # the lift's short fade
+		await e.frames(1)
+	assert_almost_eq(shades.dark_strength(), 0.0, 0.01, "the room drawn lit again")
+	assert_true(bool(reader.boss_light().get("boss_lit", false)), "the Shade hittable anywhere")
+	var again := false
+	for k in 60 * 14:
+		var a := TAU * float(k) / 150.0
+		e.stick_toward(Vector2(cos(a), sin(a)) * 0.5)
+		await e.frames(1)
+		if w.actors.index_of(bid) < 0:
+			break
+		if bool(reader.boss_light().get("dark", false)):
+			again = true
+			break
+	e.stick_toward(Vector2.ZERO)
+	assert_true(again, "the dark came back with the next Lights Out")
+	return again
 
 
 func test_continue_floor_5_and_fight_the_shade_in_the_dark() -> void:
@@ -110,41 +188,11 @@ func test_continue_floor_5_and_fight_the_shade_in_the_dark() -> void:
 	assert_almost_eq(shades.dark_strength(), 1.0, 0.01, "the dark drawn at full")
 	assert_eq(shades.lamps_shown(), 4, "four lanterns on the room's edge")
 	assert_true(hud.boss_bar.visible, "its bar")
-	# Wait out a lantern's 6 s burn (circling), then walk to the nearest out lantern: passing relights it.
-	var out_at := Vector2.INF
-	var out_k := -1
-	for k in 60 * 10:
-		var a := TAU * float(k) / 150.0
-		e.stick_toward(Vector2(cos(a), sin(a)))
-		await e.frames(1)
-		var lamps: Array = reader.boss_light().get("lamps", [])
-		var best := INF
-		for m in lamps.size():
-			var d := (lamps[m]["pos"] as Vector2).distance_to(w.player_pos())
-			if not bool(lamps[m]["lit"]) and d < best:
-				best = d
-				out_k = m
-				out_at = lamps[m]["pos"]
-		if out_k >= 0:
-			break
-	e.stick_toward(Vector2.ZERO)
-	assert_gte(out_k, 0, "a lantern burnt out")
-	if out_k < 0:
+	if not await _relight_a_lantern(e, w, reader, shades):
 		return
-	var relit: bool = await _walk(
-		e,
-		out_at,
-		func() -> bool:
-			var ls: Array = reader.boss_light().get("lamps", [])
-			return (
-				out_k < ls.size()
-				and bool(ls[out_k]["lit"])
-				and w.player_pos().distance_to(out_at) < 2.0
-			)
-	)
-	assert_true(relit, "passing the out lantern relit it")
-	assert_gte(shades.lamps_lit(), 1, "its flame and pool drawn again")
-	# The hero closes in: the Shade inside the hero's light (and its shield down) is hittable.
+	if not await _dark_lifts_and_returns(e, w, reader, shades, bid):
+		return
+	# The hero closes in: in the dark, the Shade inside the hero's light (and its shield down) is hittable.
 	for k in 400:
 		var j0 := w.actors.index_of(bid)
 		if j0 < 0 or not reader.boss_shielded(j0):
@@ -158,16 +206,21 @@ func test_continue_floor_5_and_fight_the_shade_in_the_dark() -> void:
 			return j < 0 or w.player_pos().distance_to(w.actors.pos(j)) < w.actors.radius[j] + 1.2
 	)
 	var j1 := w.actors.index_of(bid)
+	assert_true(bool(reader.boss_light()["dark"]), "still dark as the hero closes in")
 	if j1 >= 0:
 		assert_true(bool(reader.boss_light()["boss_lit"]), "the Shade stands in the hero's light")
 	var hp0 := w.actors.hp[j1] if j1 >= 0 else 0
-	for k in 20:  # (a later Lights Out's shield may come up meanwhile: swing until a hit lands)
+	var hit_in_dark := false
+	for k in 20:
 		await e.mouse_button(MOUSE_BUTTON_LEFT, true)
 		await e.frames(10)
 		await e.mouse_button(MOUSE_BUTTON_LEFT, false)
 		await e.frames(10)
 		var jk := w.actors.index_of(bid)
 		if jk < 0 or w.actors.hp[jk] < hp0:
+			# Dark since before the swings and still dark now: the hit landed in the dark, in the hero's light.
+			hit_in_dark = bool(reader.boss_light().get("dark", false))
 			break
 	var j := w.actors.index_of(bid)
 	assert_true(j < 0 or w.actors.hp[j] < hp0, "the hero's hits landed on the lit Shade")
+	assert_true(hit_in_dark, "in the dark, inside the hero's light")

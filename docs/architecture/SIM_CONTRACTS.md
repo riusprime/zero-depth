@@ -1794,7 +1794,12 @@ PLAN NB: "Keep the empty hood" (no head lanterns: the room's edge lanterns and t
   first `sig_first_ticks` (180) in, never by the pick; phases 2 and 3 open with it. On start (`BossShade.on_start`,
   through `BossTide.on_start`) `shade_at` = now + `dark_ticks` (240) and `shade_from` = now. Its windup (60) and
   active time (180: its slow wisp rings) are shielded, so the shield drops as the dark falls. At `shade_at`
-  `shade_dark` = 1 for the rest of the fight and every lantern is lit afresh (`lamp_ticks`).
+  `shade_dark` = 1 and every lantern is lit afresh (`lamp_ticks`). v0.9.0 NB4b (owner: "Dark comes and goes"):
+  `shade_until` = now + the table's `dark_hold_ticks` (480); on the first tick at or after it `shade_dark` = 0 and
+  `shade_until` = -1: the whole room is lit (the Shade hittable anywhere, the lanterns' clocks stopped, a Snuff puts
+  none out) until the next Lights Out's dark. A Lights Out whose dark falls while it is dark starts a fresh stretch.
+  A table with no `dark_hold_ticks` keeps the dark until the Shade dies (`shade_until` -1). Counted on `w.tick`, so a
+  hit's freeze (which holds the phases) can hold the lift a few ticks.
 - **The light.** `BossShade.lit(w, p, r)`: always before the dark; in the dark, a disc of radius r at p touches the
   light when it is within `light_m` (3.5) + r of the living player or `lamp_m` (3.0) + r of a lantern with
   `lamp_t` > 0. Each tick in the dark a lantern within `relight_m` (1.2) + the player's radius of the living player is
@@ -1805,7 +1810,7 @@ PLAN NB: "Keep the empty hood" (no head lanterns: the room's edge lanterns and t
 - **The Snuff (`marks` with `snuff`).** A tracked circle (it follows the player's exact position, locks 0.8 s); on
   its strike (`BossDodge.resolve_marks` → `BossShade.snuff`) the lit lantern nearest its centre goes out (`lamp_t` 0),
   in the dark only. Phase 3's Snuff lays two.
-- **State.** `shade_boss`, `shade_dark`, `shade_at`, `shade_from`, `lamp_x`, `lamp_y`, `lamp_t` in `BossStore`,
+- **State.** `shade_boss`, `shade_dark`, `shade_at`, `shade_from`, `shade_until` (NB4b), `lamp_x`, `lamp_y`, `lamp_t` in `BossStore`,
   hashed after a `-5` sentinel only while a Shade owns the light (`shade_boss >= 0`), in
   `WorldSnapshot.ADDED_SINCE_V05` (an older save has none: the Shade takes the light again on its next tick, the room
   lit until its next Lights Out); `BossSignatures.on_boss_gone` → `BossShade.on_boss_gone` clears them (the room

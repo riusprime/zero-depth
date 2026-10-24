@@ -7,9 +7,9 @@ extends Node3D
 ##   lays a violet-black over it, except inside the sim's light (your 3.5 m circle, each lit lantern's pool). Layered:
 ##   two drifting fog octaves break the dark and fray the light's edges, a vignette deepens the screen's corners, a
 ##   faint haze hangs inside the light, the lanterns' edges glow warm and yours cool. It ramps in over Lights Out's
-##   4 s and stays while the Shade lives. It is drawn first of the see-through things: every marker, telegraph, bar and
-##   strike effect draws over it (the dark never hides a marker), while the floor, the bodies and the wisps' solid
-##   cores are darkened (the wisps glow only inside light).
+##   4 s, stays its stretch (8 s) and lifts with a 0.4 s fade (NB4b: the dark comes and goes). It is drawn first of
+##   the see-through things: every marker, telegraph, bar and strike effect draws over it (the dark never hides a
+##   marker), while the floor, the bodies and the wisps' solid cores are darkened (the wisps glow only inside light).
 ## - The lanterns: four iron lantern posts on the room's edge, each with a caged glass, a flickering flame, a warm
 ##   light, a warm pool of light on the floor (lamp_m wide, over the dark) and a burn ring that empties as its 6 s run
 ##   down (flickering in its last second). An out lantern is cold glass with an ember and a dashed violet ring on the
@@ -34,6 +34,8 @@ const WISP := Color(0.78, 0.66, 1.0)
 const IRON := Color("#1C1822")
 const LAMP_ENERGY := 2.4
 const HERO_ENERGY := 2.2
+## NB4b: the dark lifts from full in 1 / LIFT_RATE s (0.4 s), the lanterns' pools staying on until it has.
+const LIFT_RATE := 2.5
 
 ## The dark pass's shared part: each pixel's place on the floor (from the depth buffer), the drifting fog, how lit it
 ## is (the sim's light circles, their edges frayed by the fog) and the lanterns' warm and your cool rims. Two layers
@@ -219,6 +221,8 @@ var _wisps := MultiMeshInstance3D.new()
 var _wisp_pos: Array[Vector3] = []
 var _player := Vector2.ZERO
 var _used := 0
+## NB4b: the dark drawn last frame (held through the lift's fade).
+var _shown_dark := false
 ## The stage's sun and ambient levels before the dark, restored when it lifts.
 var _sun_base := -1.0
 var _ambient_base := -1.0
@@ -527,7 +531,9 @@ func advance(delta: float) -> void:
 			target = 1.0
 		elif int(_light["falling"]) >= 0:
 			target = smoothstep(0.15, 1.0, float(_light["falling"]) / 1000.0)
-	_strength = move_toward(_strength, target, delta * 1.5)
+	# NB4b: the dark ramps in over Lights Out's fall and lifts with a short fade (LIFT_RATE) when its stretch ends.
+	var rate := 1.5 if target >= _strength else LIFT_RATE
+	_strength = move_toward(_strength, target, delta * rate)
 	dark_quad.visible = _strength > 0.002
 	_dim_stage()
 	_set_dark("strength", _strength)
@@ -577,7 +583,9 @@ func lights_used() -> int:
 ## relights), its pool over the dark, its burn ring, its out ring; the lit ones join the dark pass's lights.
 func _draw_lamps(delta: float, lights: PackedVector4Array) -> PackedVector4Array:
 	var r := float(_light.get("lamp_m", 3.0))
-	var dark := bool(_light.get("dark", false))
+	# NB4b: as the dark lifts the lanterns' pools fade with it rather than going out under a still-dark screen.
+	var dark := bool(_light.get("dark", false)) or (_shown_dark and _strength > 0.002)
+	_shown_dark = dark
 	for k in _lamps.size():
 		var lamp: Dictionary = _lamps[k]
 		if not (lamp["root"] as Node3D).visible:

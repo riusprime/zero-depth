@@ -156,6 +156,16 @@ func test_the_dark_falls_over_lights_out_and_the_lanterns_burn() -> void:
 	_step(w, view, r, Vector2(4.5, 0), 2)
 	assert_eq(view.lamps_lit(), 1, "the east lantern relit as you pass")
 	assert_eq(view.lights_used(), 2)
+	# NB4b (owner: "Dark comes and goes"): 8 s after it fell (step 721 here) the dark lifts with a short fade.
+	_step(w, view, r, Vector2(4.5, 0), 58)
+	assert_almost_eq(view.dark_strength(), 1.0, 0.001, "still dark just before 8 s")
+	_step(w, view, r, Vector2(4.5, 0), 12)
+	assert_false(bool(r.boss_light()["dark"]), "the sim's dark has lifted")
+	assert_between(view.dark_strength(), 0.05, 0.95, "the dark fading out")
+	assert_eq(view.lights_used(), 2, "the lit lantern's pool fades with it")
+	_step(w, view, r, Vector2(4.5, 0), 24)
+	assert_almost_eq(view.dark_strength(), 0.0, 0.001, "the room lit again within 0.4 s")
+	assert_false(view.dark_quad.visible)
 
 
 func test_wisps_near_you_always_show_their_outline() -> void:
