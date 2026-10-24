@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="RobeDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/robe_definition.gd" id="1_robe"]
+
+[resource]
+script = ExtResource("1_robe")
+order = 7
+name_key = &"ROBE_DIVINE"
+cloak = Color(0.952941, 0.937255, 0.909804, 1)
+underside = Color(0.85098, 0.807843, 0.709804, 1)
+free = false
+price = 250
+epic = true
+style = &"divine"
+id = &"divine"

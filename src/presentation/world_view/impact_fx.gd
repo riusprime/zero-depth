@@ -188,7 +188,7 @@ func track(reader: WorldReader) -> void:
 
 
 func _check_build(reader: WorldReader) -> void:
-	var d := reader.attack_digest()
+	var d := reader.attack_digest() + String(ElementLooks.energy_style)
 	if d != _digest:
 		_digest = d
 		_colors.clear()

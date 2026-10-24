@@ -126,7 +126,7 @@ static func _shader(code: String) -> Shader:
 ## Each tick: the beams now and their look (v0.9.0 VX V48: read again only when the build changes).
 func sync(reader: WorldReader) -> void:
 	_beams = reader.beams()
-	var d := reader.attack_digest()
+	var d := reader.attack_digest() + String(ElementLooks.energy_style)
 	if not _form.read_once or d != _form.digest:
 		_form.read_once = true
 		_form.digest = d

@@ -89,7 +89,7 @@ func test_a_run_banks_fragments_and_the_station_sells_a_robe() -> void:
 	if station == null:
 		return
 	assert_true(main.hub.driver.paused, "the hub holds under it")
-	assert_eq(station.rows.size(), 4, "the four robes, nothing else")
+	assert_eq(station.rows.size(), 6, "the four robes and the two epic robes (MP2), nothing else")
 	assert_eq(station.balance.text, tr("PROGRESSION_BALANCE") % (before + earned))
 	assert_eq(_focused(main), station.rows[0], "Night has focus")
 	assert_true(station.rows[0].text.ends_with(tr("PROGRESSION_PRICE") % night.price), "its price")
@@ -98,6 +98,8 @@ func test_a_run_banks_fragments_and_the_station_sells_a_robe() -> void:
 	assert_eq(MetaProgress.fragments(profile), before + earned - night.price, "the price spent")
 	assert_true(station.rows[0].text.ends_with(tr("PROGRESSION_OWNED")), "owned")
 	assert_eq(station.status.text, tr("PROGRESSION_BOUGHT") % tr("ROBE_NIGHT"))
+	var next := tr("PROGRESSION_PRICE") % (night.price + night.price_step)
+	assert_true(station.rows[1].text.ends_with(next), "MP2: the next robe costs 25 more")
 	await e.tap(KEY_DOWN)
 	await e.tap(KEY_ENTER)  # Canyon: too dear now
 	assert_false(

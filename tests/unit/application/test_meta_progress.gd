@@ -39,8 +39,8 @@ func test_the_content_is_valid_and_sideways() -> void:
 	var ids: Array = wares.map(func(r: RobeDefinition) -> StringName: return r.id)
 	assert_eq(
 		ids,
-		[&"night", &"canyon", &"frost", &"moss"],
-		"the station sells the four robes, nothing else"
+		[&"night", &"canyon", &"frost", &"moss", &"fallen", &"divine"],
+		"the station sells the four robes and the two epic robes (MP2), nothing else"
 	)
 	for r: RobeDefinition in wares:
 		assert_gt(r.price, 0, "%s has a price" % r.id)
@@ -62,20 +62,20 @@ func test_banking_and_buying_a_robe() -> void:
 	var p := ProfileStore.new("")
 	var night: RobeDefinition = _repo.get_def(&"robe", &"night")
 	var ash: RobeDefinition = _repo.get_def(&"robe", &"ash")
-	assert_false(MetaProgress.buy_robe(p, night), "too dear with 0")
+	assert_false(MetaProgress.buy_robe(_repo, p, night), "too dear with 0")
 	assert_false(Wardrobe.robe_unlocked(p, night))
 	MetaProgress.bank(p, night.price - 1)
-	assert_false(MetaProgress.buy_robe(p, night), "one short")
+	assert_false(MetaProgress.buy_robe(_repo, p, night), "one short")
 	MetaProgress.bank(p, 0)
 	MetaProgress.bank(p, -5)
 	assert_eq(MetaProgress.fragments(p), night.price - 1, "0 and negatives bank nothing")
 	MetaProgress.bank(p, 3)
-	assert_true(MetaProgress.buy_robe(p, night), "bought")
+	assert_true(MetaProgress.buy_robe(_repo, p, night), "bought")
 	assert_true(Wardrobe.robe_unlocked(p, night), "through Wardrobe.unlock_robe")
 	assert_eq(MetaProgress.fragments(p), 2, "the price spent")
 	assert_eq(MetaProgress.earned(p), night.price + 2, "the lifetime count keeps everything banked")
-	assert_false(MetaProgress.buy_robe(p, night), "never twice")
-	assert_false(MetaProgress.buy_robe(p, ash), "a free robe isn't sold")
+	assert_false(MetaProgress.buy_robe(_repo, p, night), "never twice")
+	assert_false(MetaProgress.buy_robe(_repo, p, ash), "a free robe isn't sold")
 	assert_eq(MetaProgress.fragments(p), 2)
 
 
@@ -175,3 +175,65 @@ func test_the_run_save_keeps_the_tally_and_the_locks() -> void:
 	var old := SaveLab.run_from(bare)
 	assert_eq(old.fragments_done, 0, "an older payload earned none")
 	assert_eq(old.locked_cards.size(), 0, "and locks nothing")
+
+
+## MP2 (owner: "ascending cost starting from 75 and 25 more each one, then 250 the epic robe"): the four robes cost
+## 75, 100, 125, 150 in the order bought, whichever is bought first; every unbought one shows the next price; the epic
+## robes 250 each, outside the ladder.
+func test_robe_prices_climb_in_buying_order() -> void:
+	var p := ProfileStore.new("")
+	var ladder: Array[StringName] = [&"frost", &"night", &"moss", &"canyon"]
+	var want := [75, 100, 125, 150]
+	MetaProgress.bank(p, 2000)
+	for k in ladder.size():
+		for id: StringName in ladder.slice(k):
+			var r: RobeDefinition = _repo.get_def(&"robe", id)
+			assert_eq(
+				MetaProgress.price_of(_repo, p, r), want[k], "%s costs %d now" % [id, want[k]]
+			)
+		var before := MetaProgress.fragments(p)
+		assert_true(MetaProgress.buy_robe(_repo, p, _repo.get_def(&"robe", ladder[k])))
+		assert_eq(MetaProgress.fragments(p), before - want[k], "paid %d" % want[k])
+	for id: StringName in [&"fallen", &"divine"]:
+		var e: RobeDefinition = _repo.get_def(&"robe", id)
+		assert_true(e.epic, "%s is epic" % id)
+		assert_eq(MetaProgress.price_of(_repo, p, e), 250, "%s costs 250" % id)
+
+
+func test_the_epic_robes_cost_250_whatever_was_bought() -> void:
+	var p := ProfileStore.new("")
+	var fallen: RobeDefinition = _repo.get_def(&"robe", &"fallen")
+	assert_eq(MetaProgress.price_of(_repo, p, fallen), 250)
+	MetaProgress.bank(p, 249)
+	assert_false(MetaProgress.buy_robe(_repo, p, fallen), "one short")
+	MetaProgress.bank(p, 1)
+	assert_true(MetaProgress.buy_robe(_repo, p, fallen), "bought at 250")
+	assert_eq(MetaProgress.fragments(p), 0)
+	assert_true(Wardrobe.robe_unlocked(p, fallen))
+	var night: RobeDefinition = _repo.get_def(&"robe", &"night")
+	assert_eq(MetaProgress.price_of(_repo, p, night), 75, "an epic robe doesn't climb the ladder")
+
+
+func test_the_hidden_robe_is_revealed_when_bought() -> void:
+	var p := ProfileStore.new("")
+	var fallen: RobeDefinition = _repo.get_def(&"robe", &"fallen")
+	var divine: RobeDefinition = _repo.get_def(&"robe", &"divine")
+	assert_true(fallen.hidden, "The Fallen's robe is the ??? one")
+	assert_eq(Wardrobe.shown_name(p, fallen), &"ROBE_HIDDEN", "??? until bought")
+	assert_eq(Wardrobe.shown_name(p, divine), &"ROBE_DIVINE", "the divine one shows its name")
+	Wardrobe.unlock_robe(p, &"fallen")
+	assert_eq(Wardrobe.shown_name(p, fallen), &"ROBE_FALLEN", "revealed")
+
+
+func test_an_old_profile_keeps_its_robes() -> void:
+	var p := ProfileStore.new("")
+	p.section("unlocks")["robes"] = ["night", "moss"]
+	p.section("loadout")["robe"] = "moss"
+	assert_true(Wardrobe.robe_unlocked(p, _repo.get_def(&"robe", &"night")))
+	assert_eq(Wardrobe.worn_robe(_repo, p).id, &"moss", "still worn")
+	assert_eq(
+		MetaProgress.price_of(_repo, p, _repo.get_def(&"robe", &"frost")),
+		125,
+		"two owned: the third costs 125"
+	)
+	assert_false(Wardrobe.robe_unlocked(p, _repo.get_def(&"robe", &"fallen")), "no epic robe given")

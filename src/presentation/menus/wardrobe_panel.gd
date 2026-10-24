@@ -4,8 +4,9 @@ extends MenuPanel
 ## choices, picked apart (W53): the robe's colour and the rune affinity, each a cycler (left / right, or press to step;
 ## keyboard, mouse and pad through the focus, as every menu), a line on the affinity's gain and its trade-off, and Back.
 ## The hero in the hub wears the choice at once (HubSession). A robe not yet bought (Rune Fragments, MP) is shown with
-## "locked" and isn't worn: the hero keeps the last robe that is. The affinity is free and changes any time here; the
-## run locks it when it starts.
+## "locked" and isn't worn: the hero keeps the last robe that is. MP2: the epic robes are picked like the others once
+## owned; a hidden one not bought yet is listed as "???" (Wardrobe.HIDDEN_NAME), locked. The affinity is free and
+## changes any time here; the run locks it when it starts.
 
 signal picked(robe: StringName, affinity: StringName)
 signal back_pressed
@@ -38,9 +39,11 @@ func _init(
 	add_title("HUB_WARDROBE").name = "Title"
 	var ids: Array = []
 	var keys: Array = []
-	for r: RobeDefinition in robes:
+	for i in robes.size():
+		var r: RobeDefinition = robes[i]
 		ids.append(String(r.id))
-		keys.append(String(r.name_key))
+		var masked: bool = r.hidden and not (i < unlocked.size() and unlocked[i])
+		keys.append(String(Wardrobe.HIDDEN_NAME if masked else r.name_key))
 	robe_cycler = LockCycler.new(ids, keys, String(current_robe), unlocked)
 	robe_cycler.name = "Robe"
 	robe_cycler.changed.connect(_on_robe)

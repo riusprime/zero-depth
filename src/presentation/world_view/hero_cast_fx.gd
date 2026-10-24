@@ -96,7 +96,7 @@ func _build() -> void:
 		_swirl_shader = Shader.new()
 		_swirl_shader.code = SWIRL
 		_swirl_mesh = swirl_mesh()
-	var cols := HeroPulseViews.colors(ThemePalette.color(&"player_core"))
+	var cols := HeroPulseViews.colors(ElementLooks.player_energy())  # MP2: violet under The Fallen
 	var quad := QuadMesh.new()
 	quad.size = Vector2.ONE
 	for k in POOL:

@@ -6,10 +6,14 @@ extends RefCounted
 ## reads as Cream and None (no profile version change: missing keys fall back here). The robe is cosmetic; the
 ## affinity is copied into the run when it starts (RunState.affinity) and stays locked for that run.
 ## Locked robes: a robe that isn't `free` is worn only once its id is in the profile's `unlocks.robes` list. MP (Rune
-## Fragments): the Progression Station buys Night, Canyon, Frost and Moss (MetaProgress.buy_robe calls unlock_robe).
+## Fragments): the Progression Station buys Night, Canyon, Frost and Moss (MetaProgress.buy_robe calls unlock_robe);
+## MP2 adds the two epic robes (The Fallen's regalia, shown as "???" until bought, and the divine Hollow Crown). A
+## profile from before MP2 keeps every id it owns: the list only ever grows, so no migration.
 
 const NONE := &"none"
 const DEFAULT_ROBE := &"cream"
+## MP2: a hidden robe's name until it is bought.
+const HIDDEN_NAME := &"ROBE_HIDDEN"
 
 
 ## True for an affinity id that is not None (&"" or &"none").
@@ -80,6 +84,13 @@ static func unlock_robe(profile: ProfileStore, id: StringName) -> void:
 	u["robes"] = list
 
 
+## MP2: robe `def`'s name as shown: "???" (ROBE_HIDDEN) for a hidden robe not bought yet, else its own name key.
+static func shown_name(profile: ProfileStore, def: RobeDefinition) -> StringName:
+	if def != null and def.hidden and not robe_unlocked(profile, def):
+		return HIDDEN_NAME
+	return def.name_key if def != null else HIDDEN_NAME
+
+
 ## The robe the hero wears: the profile's, when it exists and is unlocked; else Cream.
 static func worn_robe(repo: ContentRepository, profile: ProfileStore) -> RobeDefinition:
 	var def: RobeDefinition = repo.get_def(&"robe", robe_of(profile))
@@ -94,12 +105,14 @@ static func chosen_affinity(repo: ContentRepository, profile: ProfileStore) -> S
 	return id if has_affinity(id) and repo.get_def(&"affinity", id) != null else NONE
 
 
-## The hero's look for the presentation: the robe's cloak and underside, and the rune's colour and glyph (glyph 0 and
-## no rune for None). `affinity` is the run's (locked) or, in the hub, the profile's choice.
+## The hero's look for the presentation: the robe's cloak and underside, its epic style (MP2: &"fallen", &"divine";
+## &"" for a colour robe; EpicRobeView builds it), and the rune's colour and glyph (glyph 0 and no rune for None).
+## `affinity` is the run's (locked) or, in the hub, the profile's choice.
 static func look(repo: ContentRepository, robe: RobeDefinition, affinity: StringName) -> Dictionary:
 	var out := {
 		"cloak": robe.cloak if robe != null else Color("#EBDCCB"),
 		"under": robe.underside if robe != null else Color("#C9B8A6"),
+		"style": robe.style if robe != null else &"",
 		"rune": Color.WHITE,
 		"glyph": 0,
 	}

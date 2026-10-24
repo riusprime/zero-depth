@@ -9,5 +9,6 @@ name_key = &"ROBE_MOSS"
 cloak = Color(0.435294, 0.498039, 0.305882, 1)
 underside = Color(0.333333, 0.388235, 0.231373, 1)
 free = false
-price = 25
+price = 75
+price_step = 25
 id = &"moss"
