@@ -1,6 +1,7 @@
 extends GutTest
 ## v0.9.0 NB3 (BOSSES_4_5.md N3): The Clockwork Judge reaches the real game. Through main.tscn with real input only: a
-## floor-5 save (floor 5's pool holds the Judge; built with SaveLab as Main builds floors) continued from the menu
+## floor-5 save (seed 2: floor 5's pool draws the Judge (v0.9.0 NB4: or the Shade); built with SaveLab as Main builds
+## floors) continued from the menu
 ## (Enter); God from the dev panel (clicked); the stick walks to the boss door, E opens it, the stick walks in and the
 ## door seals; the Judge rises (its model, its name on the boss bar) and fights: the stick circles while it records,
 ## then its echo comes: the whole path shows (JudgeViews' markers and ribbon), the ghosts strike along it, the Judge
@@ -39,7 +40,7 @@ func _walk(e: E2e, target: Vector2, done: Callable) -> bool:
 
 
 func test_continue_floor_5_and_fight_the_judge_through_its_echo() -> void:
-	var run_seed := 1
+	var run_seed := 2  # v0.9.0 NB4: seed 1's floor 5 now draws the Lantern Shade
 	var e := E2e.new(self)
 	var run := SaveLab.run_state(run_seed, FLOOR, &"blade")
 	var saved := SaveLab.build_floor(run)

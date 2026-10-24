@@ -35,6 +35,7 @@ const BOSS_FLAVOUR := {
 	WorldReader.KIND_TWIN_WARDEN: &"boss_telegraph_twin_wardens",  # v0.9.0 NB2: their chain rattles
 	WorldReader.KIND_TWIN_WARDEN_VIOLET: &"boss_telegraph_twin_wardens",
 	WorldReader.KIND_CLOCKWORK_JUDGE: &"boss_telegraph_clockwork_judge",  # v0.9.0 NB3: its clock ticks
+	WorldReader.KIND_LANTERN_SHADE: &"boss_telegraph_lantern_shade",  # v0.9.0 NB4: its lantern flares
 }
 const DEATHS := {
 	WorldReader.KIND_CHARGER: &"enemy_death_charger",
@@ -70,6 +71,9 @@ var _states := {}
 var _phases := {}
 ## v0.9.0 NB3: per Clockwork Judge, the echo tick whose ghost strikes last sounded (each strikes once).
 var _echo_t := {}
+## v0.9.0 NB4: the Lantern Shade's room as last heard: dark, and each lantern lit.
+var _shade_dark := false
+var _shade_lit: Array[bool] = []
 var _projectiles := {}
 ## v0.3.5 AI: where each enemy's area spell (a rune, a bomb) is aimed, from its telegraph at the windup.
 var _targets := {}
@@ -544,6 +548,8 @@ func _scan_actors(reader: WorldReader, out: Array) -> void:
 		_phases[id] = phase
 		if kind == WorldReader.KIND_CLOCKWORK_JUDGE:  # v0.9.0 NB3: each ghost strike of its echo chimes
 			_echo_strikes(reader, i, id, out)
+		if kind == WorldReader.KIND_LANTERN_SHADE:  # v0.9.0 NB4: the dark falling, a lantern out or relit
+			_shade_light(reader, out)
 		if st == was:
 			if boss and phase > was_phase:
 				out.append([&"boss_phase", null, 1.0])
@@ -577,6 +583,29 @@ func _echo_strikes(reader: WorldReader, i: int, id: int, out: Array) -> void:
 	for p: Dictionary in e["path"]:
 		if int(p["at"]) == now:
 			out.append([&"boss_judge_echo", p["pos"], 0.8])
+
+
+## v0.9.0 NB4: the Lantern Shade's light: the room snuffed as the dark falls, a lantern going out (a Snuff, or burnt
+## down) where it stands, a lantern relit where it stands.
+func _shade_light(reader: WorldReader, out: Array) -> void:
+	var l := reader.boss_light()
+	if l.is_empty():
+		return
+	var dark := bool(l["dark"])
+	var lamps: Array = l["lamps"]
+	if dark and not _shade_dark:
+		out.append([&"boss_shade_snuff", null, 1.0])
+	elif dark:
+		for k in mini(lamps.size(), _shade_lit.size()):
+			var lit := bool(lamps[k]["lit"])
+			if lit != _shade_lit[k]:
+				out.append(
+					[&"boss_shade_relight" if lit else &"boss_shade_snuff", lamps[k]["pos"], 0.8]
+				)
+	_shade_dark = dark
+	_shade_lit.clear()
+	for s: Dictionary in lamps:
+		_shade_lit.append(bool(s["lit"]))
 
 
 ## v0.9.0 EL: an elite arriving (`elite_arrive`, at it: a short heavy burst, no fanfare).

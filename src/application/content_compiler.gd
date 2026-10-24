@@ -22,20 +22,7 @@ const ENEMY_KINDS := {
 	&"lens_drone": ActorStore.Kind.LENS_DRONE,
 }
 ## Bosses (v0.3.0 C): ids to actor kinds, move names to BossAttackTable moves (a test matches BossSchemas' sets).
-const BOSS_KINDS := {
-	&"gatekeeper": ActorStore.Kind.GATEKEEPER,
-	&"brood_mother": ActorStore.Kind.BROOD_MOTHER,
-	&"siege_engine": ActorStore.Kind.SIEGE_ENGINE,
-	&"warlord": ActorStore.Kind.WARLORD,
-	&"hive_lens": ActorStore.Kind.HIVE_LENS,
-	&"foundry": ActorStore.Kind.FOUNDRY,
-	&"colossus": ActorStore.Kind.COLOSSUS,  # v0.8.0 FB1: the final boss's bodies (data/final_boss)
-	&"prism": ActorStore.Kind.PRISM,
-	&"nemesis": ActorStore.Kind.NEMESIS,
-	&"tidecaller": ActorStore.Kind.TIDECALLER,  # v0.9.0 NB1
-	&"twin_wardens": ActorStore.Kind.TWIN_WARDEN,  # v0.9.0 NB2 (its twin's: PatternCompiler)
-	&"clockwork_judge": ActorStore.Kind.CLOCKWORK_JUDGE,  # v0.9.0 NB3
-}
+const BOSS_KINDS := BossKinds.ALL  # v0.9.0 NB4: the table lives in BossKinds (this file's line limit)
 const BOSS_MOVES := {
 	&"slam_ring": BossAttackTable.Move.SLAM_RING,
 	&"lanes": BossAttackTable.Move.LANES,

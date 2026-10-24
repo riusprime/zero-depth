@@ -94,7 +94,7 @@ static func hit(
 	h.ancestry = w.engine_chain.duplicate()
 	if amount <= 0 or a.invuln[target] > 0 or (target == 0 and w.dash_iframes_active()):
 		return 0
-	if owner_id != 0 and target != 0 and BossDodge.shielded(w, target):  # v0.7.5 BF1: it sparks off the shield
+	if owner_id != 0 and target != 0 and _blocked(w, target):  # v0.7.5 BF1: it sparks off the shield
 		h.tags |= SimEvent.TAG_BLOCKED
 		return 0
 	if target == 0 and owner_id != a.ids[0] and Curses.dodges(w, owner_id, at):  # v0.6.0 CU: Rooted
@@ -141,7 +141,7 @@ static func tick_dot(
 	var a := w.actors
 	if a.dead[target] == 1 or a.invuln[target] > 0 or amount <= 0:
 		return 0
-	if owner_id != 0 and target != 0 and BossDodge.shielded(w, target):  # v0.7.5 BF1: the shield holds
+	if owner_id != 0 and target != 0 and _blocked(w, target):  # v0.7.5 BF1: the shield holds
 		return 0
 	if owner_id == a.ids[0] and target != 0:
 		amount = Stats.dot(w, amount)  # v0.4.0 BS: the damage stat (a DoT tick never crits)
@@ -222,3 +222,9 @@ static func _apply(
 		if applied > 0 and not (tags & SimEvent.TAG_DOT) and owner_id != a.ids[0]:
 			Curses.on_player_hit(w)  # v0.6.0 CU: Brittle
 	return applied
+
+
+## v0.7.5 BF1: a boss's signature shield holds; v0.9.0 NB4: so does the dark round a Lantern Shade standing unlit
+## (BossShade.unlit: it is only hittable when lit).
+static func _blocked(w: World, target: int) -> bool:
+	return BossDodge.shielded(w, target) or BossShade.unlit(w, target)

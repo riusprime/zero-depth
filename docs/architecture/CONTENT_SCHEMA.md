@@ -632,6 +632,13 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   at least a tick, at most `BossSchemas.ECHO_MAX_POINTS` = 24 points), `safe_m` (>= 0: the margin round where the
   player stands as it starts): the Clockwork Judge's echo (3.0 s, 0.25 s, 0.9 m, 0.3 m; 20 a strike; every 10 s).
   `verdict` (LINE, needs `lock_seconds`): `half_m` (> 0: the tracked square's half side, 1.5 m).
+- v0.9.0 NB4 (`ShadeRules`): a `pattern` with `dark_seconds` is a Lights Out (shielded; a cadence move:
+  `signature_every_seconds` must exceed its telegraph + `dark_seconds`) and then needs all of `dark_seconds` (> 0: from
+  its start to the room's dark), `light_m` (> 0: the player's light), `lamps` (1..8: the room's lanterns), `lamp_m`
+  (> 0: a lit lantern's light), `lamp_seconds` (> 0: a lantern's burn), `relight_m` (> 0: passing within it relights
+  one), `inset_m` (>= 0: in from each wall's middle): the Lantern Shade's (4.0 s, 3.5 m, 4, 3.0 m, 6.0 s, 1.2 m,
+  1.5 m; every 12 s). A `marks` attack may take `snuff` (0 or 1): each struck circle puts out the lit lantern nearest
+  it (the Snuff). The boss-id to actor-kind table is `BossKinds.ALL` (`ContentCompiler.BOSS_KINDS` points at it).
 
 - Boss attacks (v0.3.0 BX) also take `opens_weak_point: bool`, and `follow_up: StringName` (another attack of the
   boss) with `follow_up_permille` (0..1000): the chance it starts at once instead of the recovery (a follow-up never

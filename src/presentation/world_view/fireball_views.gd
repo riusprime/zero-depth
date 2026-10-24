@@ -321,6 +321,25 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.45,
 	},
+	## v0.9.0 NB4: the Lantern Shade's wisps: dim violet will-o'-wisps, a soft wobbling orb with a pale core, a thin
+	## dark smoke trail (they glow only inside light: ShadeViews' dark covers them; their outline is ShadeViews').
+	&"shade_wisp":
+	{
+		"core": Color("#C38CFF"),
+		"edge": Color("#10061E"),
+		"trail": Color("#2C1A46"),
+		"size": 1.0,
+		"tip": 1.0,
+		"trail_m": 0.4,
+		"mesh": &"orb",
+		"body": Color("#2A1648"),
+		"energy": 2.6,
+		"crack": 0.0,
+		"swirl": 1.6,
+		"wobble": 0.5,
+		"trail_style": &"smoke",
+		"tail": 0.4,
+	},
 	&"warden_violet_ember":
 	{
 		"core": Color("#BB99CC"),

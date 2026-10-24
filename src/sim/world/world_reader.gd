@@ -80,6 +80,8 @@ const KIND_TWIN_WARDEN := ActorStore.Kind.TWIN_WARDEN
 const KIND_TWIN_WARDEN_VIOLET := ActorStore.Kind.TWIN_WARDEN_VIOLET
 ## v0.9.0 NB3: floor 5's Clockwork Judge, and boss_echo's "phase" (no echo, the path showing, the ghosts striking).
 const KIND_CLOCKWORK_JUDGE := ActorStore.Kind.CLOCKWORK_JUDGE
+## v0.9.0 NB4: floor 5's Lantern Shade (its light: boss_light).
+const KIND_LANTERN_SHADE := ActorStore.Kind.LANTERN_SHADE
 const ECHO_NONE := BossJudge.NONE
 const ECHO_SHOW := BossJudge.SHOW
 const ECHO_REPLAY := BossJudge.REPLAY
@@ -1696,6 +1698,7 @@ func boss_invulnerable(i: int) -> bool:
 	return (
 		_w.actors.invuln[i] > 0
 		or BossDodge.shielded(_w, i)
+		or BossShade.unlit(_w, i)  # v0.9.0 NB4: a Lantern Shade in the dark
 		or s == BossAi.GATE
 		or s == FinalBoss.SHATTER
 	)
@@ -1806,6 +1809,13 @@ func boss_echo(i: int) -> Dictionary:
 	if i <= 0 or i >= _w.actors.size() or _w.actors.kinds[i] != KIND_CLOCKWORK_JUDGE:
 		return {}
 	return BossJudge.state(_w, i)
+
+
+## v0.9.0 NB4 (BOSSES_4_5.md N4): the Lantern Shade's light: {} with no Shade; else "dark", "falling" (0..1000 to
+## the next Lights Out's dark, -1 none), "light_m" (the player's circle), "lamp_m", "lamp_ticks", "lamps" ([{pos, lit,
+## left, frac}]), "boss" (its actor index) and "boss_lit" (hittable) (BossShade.state).
+func boss_light() -> Dictionary:
+	return BossShade.state(_w)
 
 
 ## v0.8.0 FB2 (FINAL_BOSS.md F5): boss i's Cross: {} or {"winding", "window", "progress", "arms" ([from, to, hit] per

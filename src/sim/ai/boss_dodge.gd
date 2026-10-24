@@ -226,6 +226,7 @@ static func resolve_marks(w: World, i: int, b: int, atk: BossAttackTable, st: in
 				BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, c)
 			BossSignatures.lay_egg(w, b, atk, c)  # v0.8.0 BS1 (S3): the egg stays, to pop or to hatch
 			BossTide.undertow(w, atk, c)  # v0.9.0 NB1: the Undertow drags the player toward it
+			BossShade.snuff(w, atk, c)  # v0.9.0 NB4: the Snuff puts out the lantern nearest it
 		else:
 			for o: Obb in row_lanes_of(w, i, k):
 				if Collide.circle_vs_obb(p, pr, o) != Vector2.ZERO:

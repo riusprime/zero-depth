@@ -114,6 +114,7 @@ func test_actor_views_pick_each_boss_model() -> void:
 		ActorStore.Kind.TWIN_WARDEN: "TwinWardenAvatar",  # v0.9.0 NB2 (and its twin)
 		ActorStore.Kind.TWIN_WARDEN_VIOLET: "TwinWardenVioletAvatar",
 		ActorStore.Kind.CLOCKWORK_JUDGE: "ClockworkJudgeAvatar",  # v0.9.0 NB3
+		ActorStore.Kind.LANTERN_SHADE: "LanternShadeAvatar",  # v0.9.0 NB4
 	}
 	for id in ids:
 		var i := w.actors.index_of(id)
