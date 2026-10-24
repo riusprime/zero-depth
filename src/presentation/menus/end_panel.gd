@@ -29,7 +29,8 @@ const CAUSES := {
 ## when the run has no shards), "items" (Array of item name keys), "routes" (v0.5.0 RT: each floor's route, floor 1
 ## first, as WorldReader.ROUTE_* ints), "threat" and "threat_peak" (ints; v0.5.0 EV), "loop" and "loops_cleared"
 ## (ints; v0.7.5 AP: the floor line says "Loop N · " past the first loop, and a line counts the loops cleared),
-## "true_ending" (bool; v0.8.0 FB1: the final boss was beaten, its line first).
+## "true_ending" (bool; v0.8.0 FB1: the final boss was beaten, its line first), "fragments" and "fragments_total"
+## (ints; v0.9.0 MP: the Rune Fragments the run banked and the profile's balance after it).
 var recap := {}
 
 
@@ -86,6 +87,14 @@ func _add_recap() -> void:
 		_line("Kills", tr("UI_RECAP_KILLS") % recap["kills"])
 	if recap.has("shards"):
 		_line("Shards", tr("UI_RECAP_SHARDS") % recap["shards"])
+	if recap.has("fragments"):  # v0.9.0 MP: banked when the run ended
+		_line(
+			"Fragments",
+			(
+				tr("UI_RECAP_FRAGMENTS")
+				% [recap["fragments"], recap.get("fragments_total", recap["fragments"])]
+			)
+		)
 	if recap.has("routes"):
 		_line("Route", tr("UI_RECAP_ROUTE") % route_text(self, recap["routes"]))
 	if recap.has("threat"):  # v0.5.0 EV: threat T now and the run's peak

@@ -42,6 +42,8 @@ var stage_seed := 0
 var build_id := &"blade"
 ## v0.9.0 RB: a NEW_RUN's rune affinity (the Wardrobe's pick; locked into RunState.affinity for the run).
 var affinity := &""
+## v0.9.0 MP: a NEW_RUN from a profile that hasn't travelled through a Purple Portal locks its forms (the Void).
+var lock_portal_forms := false
 ## A save's payload (CONTINUE, or a FLOOR resumed from a save): its world snapshot is written into the fresh floor.
 var resume := {}
 ## ViewPrefs.reduced_motion, read on the main thread (the portal's way in and the arrival).
@@ -78,9 +80,11 @@ static func new_run(
 static func of_profile(
 	p_run_id: StringName, seed_value: int, profile: ProfileStore, p_calm: bool
 ) -> FloorPlan:
-	return new_run(
+	var plan := new_run(
 		p_run_id, seed_value, Wardrobe.build_of(profile), p_calm, Wardrobe.affinity_of(profile)
 	)
+	plan.lock_portal_forms = not MetaProgress.portal_travelled(profile)  # v0.9.0 MP
+	return plan
 
 
 ## The saved run `save` (a RunSaver payload) at its room entry.
@@ -116,9 +120,12 @@ func build() -> void:
 		if mode == Mode.NEW_RUN:
 			run = RunState.start(stage_seed, ContentCompiler.compile_run(run_def), build_id)
 			run.affinity = affinity  # v0.9.0 RB: locked for the run
+			if lock_portal_forms:  # v0.9.0 MP: the Void stays out of the offers until a Purple Portal
+				run.locked_cards = MetaProgress.portal_cards(repo)
 		else:
 			stage_seed = int(resume["run"]["stage_seed"])
 			run = RunSaver.run_from(resume, ContentCompiler.compile_run(run_def))
+		run.fragment_table = MetaProgress.compile_table(repo)  # v0.9.0 MP: how the run earns Rune Fragments
 	_build_world()
 
 
@@ -159,6 +166,7 @@ func _build_world() -> void:
 		w = _floor_world(table, enemies, bosses, biome.id)
 		IcePatches.place(w, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2: ice or starglow
 		w.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
+	w.locked_items = MetaProgress.locked_items(run.locked_cards, w.item_tables)  # v0.9.0 MP: before any draw
 	w.wand_table = WandCompiler.for_run(repo, run.table)  # v0.6.5 WN1; v0.9.0 FV: 4 → 8 over five floors
 	w.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4: the Blade pool's runner numbers
 	w.slot_table = WandCompiler.slots(repo, w.item_tables)  # v0.9.0 AS: slot limits, caps, compatibility

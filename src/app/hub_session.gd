@@ -18,8 +18,8 @@ signal main_menu_requested
 const HUB_ID := &"rune_ring"
 ## The light the hub is drawn in (its biome's mood and palette).
 const BIOME := &"ruins"
-## The stations whose panels are this node's own: the Wardrobe's (v0.9.0 RB, WardrobePanel) and the stand-in MP
-## replaces.
+## The stations whose panels are this node's own: the Wardrobe's (v0.9.0 RB, WardrobePanel) and the Progression
+## Station's (v0.9.0 MP, ProgressionPanel).
 const STAND_INS: Array[StringName] = [&"wardrobe", &"progression"]
 
 var hub: HubDefinition
@@ -191,10 +191,52 @@ func open_wardrobe() -> void:
 	_show_overlay(p)
 
 
-## A stand-in station's panel (the Progression Station until MP; v0.9.0 RB: the Wardrobe has its own).
+## v0.9.0 MP: the Progression Station's panel: the robes Rune Fragments buy (MetaProgress.buy_robe, which calls
+## Wardrobe.unlock_robe); each buy is written to the profile at once. A bought robe is then worn at the Wardrobe.
+func open_progression() -> void:
+	var wares := MetaProgress.wares(repo)
+	var p := ProgressionPanel.new(
+		wares,
+		_owned(wares),
+		MetaProgress.fragments(profile),
+		MetaProgress.portal_travelled(profile)
+	)
+	p.buy_requested.connect(
+		func(id: StringName) -> void:
+			var def: RobeDefinition = repo.get_def(&"robe", id)
+			if def == null:
+				return
+			if Wardrobe.robe_unlocked(profile, def):
+				p.show_status(&"PROGRESSION_ALREADY", String(def.name_key))
+			elif MetaProgress.buy_robe(profile, def):
+				profile.save_file()
+				p.show_state(
+					_owned(wares),
+					MetaProgress.fragments(profile),
+					MetaProgress.portal_travelled(profile)
+				)
+				p.show_status(&"PROGRESSION_BOUGHT", String(def.name_key))
+			else:
+				p.show_status(&"PROGRESSION_SHORT", String(def.name_key))
+	)
+	p.back_pressed.connect(close_overlay)
+	_show_overlay(p)
+
+
+func _owned(wares: Array) -> Array[bool]:
+	var out: Array[bool] = []
+	for r: RobeDefinition in wares:
+		out.append(Wardrobe.robe_unlocked(profile, r))
+	return out
+
+
+## A stand-in station's panel (none left: v0.9.0 RB: the Wardrobe has its own; MP: the Progression Station too).
 func _open_stand_in(id: StringName) -> void:
 	if id == &"wardrobe":
 		open_wardrobe()
+		return
+	if id == &"progression":
+		open_progression()
 		return
 	var keys := layout.keys_of(id)
 	var p := HubStationPanel.new(id, String(keys[0]), "HUB_%s_SOON" % String(id).to_upper())

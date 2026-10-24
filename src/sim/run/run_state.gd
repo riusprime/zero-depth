@@ -115,6 +115,16 @@ var purple_floors := PackedInt32Array()
 ## v0.9.0 RB (owner: "locked once a run starts"): the rune affinity picked at the Wardrobe before the run (an
 ## AffinityDefinition id; &"" or &"none" = None), the same on every floor. Saved (RunSaver; an older payload: None).
 var affinity := &""
+## v0.9.0 MP (PLAN W49-W50): the Rune Fragments the finished floors earned (RuneFragments.of_floor; collectibles
+## through RuneFragments.add_collectibles), banked into the profile when the run ends (MetaProgress). Saved
+## (RunSaver; an older payload: 0).
+var fragments_done := 0
+## v0.9.0 MP: how fragments are earned (FragmentTable; FloorPlan sets it from content). Null: the run earns none.
+var fragment_table: FragmentTable
+## v0.9.0 MP (owner: "void unlocked when traveling through a purple portal"): the card ids no offer draws in this
+## run (the profile's locked forms when the run started; FloorPlan resolves them into World.locked_items). Emptied
+## when the run travels through a Purple Portal (app side). Saved (RunSaver; an older payload: none locked).
+var locked_cards: Array[StringName] = []
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:
@@ -328,6 +338,7 @@ func finish_floor(w: World) -> void:
 	ticks_done += w.run_ticks
 	kills_done += w.kills
 	threat_by_floor.append(Curses.threat(w))
+	fragments_done += RuneFragments.of_floor(w, fragment_table, true)  # v0.9.0 MP
 	if w.purple != null and not purple_floors.has(run_floor()):  # v0.9.0 DP: one purple room a loop
 		purple_floors.append(run_floor())
 	carry = RunCarry.take(w, table.heal_permille, table.shard_carry_permille)

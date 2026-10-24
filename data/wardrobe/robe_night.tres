@@ -9,4 +9,5 @@ name_key = &"ROBE_NIGHT"
 cloak = Color(0.27451, 0.376471, 0.54902, 1)
 underside = Color(0.203922, 0.290196, 0.431373, 1)
 free = false
+price = 25
 id = &"night"

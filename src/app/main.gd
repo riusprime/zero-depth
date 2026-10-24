@@ -534,7 +534,7 @@ func _on_tick(from: SimDriver) -> void:
 ## Codex counts it (_record_ascension).
 func _next_floor() -> void:
 	var looped := driver.reader.ascension_choice() == WorldReader.ASCEND_LOOP
-	run.finish_floor(driver.world)
+	MetaHooks.finish_floor(self)  # v0.9.0 MP: RunState.finish_floor, then the Purple Portal's unlock
 	if looped:
 		_record_ascension(run.loop)
 	var from := Time.get_ticks_usec()
@@ -561,7 +561,7 @@ func show_end_panel(won: bool) -> void:
 	close_pause()
 	hints.set_covered(true)  # v0.7.5 SM: the recap is over the game
 	_end = EndPanel.new(
-		won, driver.reader.killer_kind(), driver.reader.killer_cause_key(), run_recap()
+		won, driver.reader.killer_kind(), driver.reader.killer_cause_key(), MetaHooks.recap(self)
 	)
 	_end.restart_pressed.connect(restart)
 	_end.hub_pressed.connect(_show_hub)  # v0.9.0 HB (Q27, W48): Restart in one press, or the hub
