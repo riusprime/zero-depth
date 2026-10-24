@@ -14,6 +14,10 @@ Priority: **P1** changes the game most · **P2** worth doing soon · **P3** nice
 
 ## 1. Playtest: what you haven't tried yet
 
+- [ ] **The v0.9.0 playtest (2026-10-24):** the build, what to try and the questions are in
+  [`roadmap/v0.9.0/PLAYTEST.md`](roadmap/v0.9.0/PLAYTEST.md) (branch `claude/world-combat-v090`, then its PR into
+  `main`). The v0.8.0 items below are older.
+
 Get it: `git fetch origin && git switch claude/lucid-fermat-9wv2tf && git pull`, open in Godot 4.7.2, Play.
 Shortcut to every fight: Main menu → **F10** → **Playground** (top bar) → **F1**. Every number: **F10**.
 

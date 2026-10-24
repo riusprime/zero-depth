@@ -1,8 +1,8 @@
 # Roadmap
 
-> **Status (2026-10-22):** **Active version: v0.9.0 "World and weapons"** ([plan](v0.9.0/PLAN.md); the owner answered every
-> design question, and the Steps await the owner's go), the owner's v0.8.0 playtest feedback. `main` holds v0.8.0 (`aeef604a`, PR
-> riusprime/zero-depth#7).
+> **Status (2026-10-24):** **Active version: v0.9.0 "World and weapons"** ([plan](v0.9.0/PLAN.md)), the owner's v0.8.0
+> playtest feedback: built (Waves 1–5) and its release step done; the PR into `main` carries it to the owner's playtest
+> ([`v0.9.0/PLAYTEST.md`](v0.9.0/PLAYTEST.md)). `main` holds v0.8.0 (`aeef604a`, PR riusprime/zero-depth#7).
 
 This is the development guide for the game: how a session picks the work up, how versions are numbered and
 released, what each version must prove, and who checks it. Gates replace dates. A version ends when its exit gate
@@ -179,7 +179,7 @@ M4b. Exit gates name who checks each item:
 | **v0.7.5** | New Ground and the small things | — | (Owner-directed 2026-10-12, [`v0.7.5/PLAN.md`](v0.7.5/PLAN.md).) Biome 4 Frozen Shore and a 5th cosmic biome; the Ascension portal (end the run or loop endlessly); the Codex; local achievements; onboarding and other small launch items; floors up to 20 rooms with bigger rooms; a curse and a shop every two floors; 20 % fewer challenge rooms. No second character | Owner playtest (**owner**) | Built and played by the owner (2026-10-14); feedback → v0.8.0 |
 | ~~v0.7.x~~ (moved into v0.7.5) | New Ground | balance | 4th biome, Frozen Shore (water edges and ice props), plus any others the owner picks. Added as balance and variety tests of the generator | No biome shifts a floor's death hazard by more than 10 percentage points (**sims**) | — |
 | **v0.8.0** | Fights and feel | — | (Owner-directed 2026-10-14, [`v0.8.0/PLAN.md`](v0.8.0/PLAN.md); "this is going to be V0.8".) The owner's v0.7.5 playtest: enemy colours and models, no red wind-up marks on melee enemies, one signature mechanic per boss, boss animations, 3D attack visuals (stone spikes, 3D orbs), the lag of stacked Gun builds, Blade combinations, Ascension loop scaling (HP far faster than damage). The old provisional v0.8.0+ rows shift one minor step | Owner playtest (**owner**) | Built and played by the owner (2026-10-22); released through PR riusprime/zero-depth#7 (with v0.7.5); feedback → v0.9.0 |
-| **v0.9.0** | World and weapons | — | (Owner-directed 2026-10-22, O92: "move into the next version that is coming with feedback and much more to develop"; [`v0.9.0/PLAN.md`](v0.9.0/PLAN.md).) The owner's two v0.8.0 documents: tall floor portals, the arrival altar, the final approach, the door sound; attack forms (Orbs, Laser, Bomb, Void …) with one pattern and element slots, the legendary nerf, VFX, card text; timed doors, lockdowns, rune alignment, destructibles, elite archetypes; the hub and meta progression (scope Q1). Plus UC and the rest of EM carried from v0.8.0 | Owner playtest (**owner**) | Phase 0 done; Q1–Q30 answered (5 floors from now on); Steps await the owner's go |
+| **v0.9.0** | World and weapons | — | (Owner-directed 2026-10-22, O92: "move into the next version that is coming with feedback and much more to develop"; [`v0.9.0/PLAN.md`](v0.9.0/PLAN.md).) The owner's two v0.8.0 documents: tall floor portals, the arrival altar, the final approach, the door sound; attack forms (Orbs, Laser, Bomb, Void …) with one pattern and element slots, the legendary nerf, VFX, card text; timed doors, lockdowns, rune alignment, destructibles, elite archetypes; the hub and meta progression (scope Q1). Plus UC and the rest of EM carried from v0.8.0 | Owner playtest (**owner**) | Built 2026-10-24 (Waves 1–5; Wave 6, PZ, UC and EM, after the playtest by plan); PR into `main` for the owner's playtest ([`v0.9.0/PLAYTEST.md`](v0.9.0/PLAYTEST.md)) |
 | v0.8.x (planned as v0.8.0) | Content Beta | M6 | 60–80 items if the evidence justifies them. A second kit or character. Meta unlocks (alternatives, information, cosmetics). A journal/codex. The final visual and audio language (the visual look starts in v0.5.9). Full onboarding | New content adds variety without reopening any P0 failure (**sims** + **owner**) | — |
 | v0.9.x | Launch line | — | Final credits and licenses, local achievements, an accessibility pass, a Steam build, trailer moments | The owner's launch list (**owner**) | — |
 
@@ -241,3 +241,6 @@ M4b. Exit gates name who checks each item:
 - 2026-10-22 — The owner played v0.8.0 (O92) and asked to release it and move on: the release step on
   `claude/perf-graphics-v080`, PR riusprime/zero-depth#7 into `main` (v0.7.5 inside it; its PR #6 closed), the
   screenshot tour skipped, UC and the rest of EM moved to v0.9.0. v0.9.0 is next, from the owner's feedback.
+- 2026-10-24 — v0.9.0 "World and weapons" built (Waves 1–5 merged on `claude/world-combat-v090`) and its release
+  step done (version 0.9.0, patch notes en/es, [`v0.9.0/PLAYTEST.md`](v0.9.0/PLAYTEST.md)); the PR into `main`
+  carries the build to the owner's playtest. Wave 6 (PZ, UC, EM) comes after the playtest, by plan.

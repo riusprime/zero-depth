@@ -17,8 +17,10 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
 - **Waiting on the owner:** whether the black robe's violet should be bluer (it reads pink-violet to stay clear of a
   hostile trail colour); the Blood Coin gem may be small; the rest of [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) is
   FYI, kept as built until the playtest.
-- **Next:** **R, the release** (version 0.9.0, patch notes en + es, What's New, ROADMAP row, README, PLAYTEST.md, the
-  full suite on the PR into `main`), then the owner's playtest. Wave 6 (PZ, UC, EM) comes after it, by plan.
+- **R, the release step, is done** (branch `v090-release`; version 0.9.0, patch notes en + es, What's New, ROADMAP,
+  README, [`PLAYTEST.md`](PLAYTEST.md)).
+- **Next:** the PR into `main` (the full suite on GitHub, `tests/MIN_TEST_COUNT` from its green `verify` total), which
+  carries the build to the owner's playtest. Wave 6 (PZ, UC, EM) comes after it, by plan.
 - **Known:** Void with Twin Lv 5 averaged 13.5 ms (budget 12) on the horde probe; floor 1 never fits a secret
   (intended); `test_e2e_damage_soak` counts orphans in a big batch but passes alone.
 
@@ -63,6 +65,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
 | HE | A hub editor scene: drag the hub's pieces in Godot, save their places back into the data | `6d34aac3` |
 | — | Replays stay exact with MP's locked cards (the snapshot carries them) | `deccb280` |
 | 0 | Plan, G1 lists, art request; the owner's answers | `54f40318`, `74fca543`, `1ae81240`, this commit |
+| R | The release step: version 0.9.0, patch notes in English and Spanish and the in-game What's New, the build ready for the owner's playtest ([`PLAYTEST.md`](PLAYTEST.md)) | `v0.9.0 Release` commit on `v090-release` |
 
 ## Goldens changed on purpose
 - None.
@@ -107,3 +110,14 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
   textures (`163a8b42`); meshoptimizer has no Windows build, so prep goes through Godot (owner's pick). The lead's
   boss-scaling draft for five floors (+25 % / +12 %) overshot the owner's "stretch" rule; corrected to ≈ +18.3 % /
   +9.5 % in FV.
+- 2026-10-24 — R, the release step (agent, the owner's PC: i7-10700K, RTX 3060, Windows 11; Godot
+  `4.7.2.stable.official.ed1daf0bf`), branch `v090-release` from `claude/world-combat-v090` at `8698bd6a`: version
+  0.9.0 (`project.godot`, `export_presets.cfg`); patch notes `docs/patch-notes/v0.9.0.md` + `.es.md`, the index row and
+  the What's New copy (`build_patch_notes.gd`); ROADMAP row, status and History; README status; OWNER_TODO's playtest
+  item; [`PLAYTEST.md`](PLAYTEST.md). The release comes before the owner's playtest: the PR into `main` carries the
+  build to it. `test_game_version.gd`, `test_patch_notes.gd`, `test_locale_coverage.gd`: `Tests 10`, `Passing Tests
+  10`. The screenshot tour **NOT RUN** (en and es each saved only `build/shots/v0.9.0/<lang>/01_main_menu.png`, then
+  quit with exit 0: its scripted key presses walk the v0.8.0 main menu to Credits and Play, and HB's menu is now Play,
+  Continue, Options, Quit, with the Credits in the hub; the tour was not fixed in this step). Not run locally: lint (no
+  GDScript touched), the full suite, export smoke and the hitch probe (the PR's CI). `tests/MIN_TEST_COUNT` waits for
+  the PR's green `verify` total.
