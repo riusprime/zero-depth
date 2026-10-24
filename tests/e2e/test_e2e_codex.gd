@@ -105,6 +105,7 @@ func test_the_codex_says_each_cards_tier() -> void:
 	assert_not_null(codex)
 	if codex == null:
 		return
+	await e.tap(KEY_E)  # v0.9.0 CL: the Archive opens on its Collectibles; E: the Cards page
 	var seen := await _walk_met_mods(e, main, codex)
 	gut.p("tiers seen: %s" % [seen.keys()])
 	assert_eq(seen.keys().size(), 4, "Common, Rare, Epic and Legendary cards each say their tier")
@@ -119,6 +120,8 @@ func test_the_codex_fills_in_a_run_and_opens_from_both_menus() -> void:
 	await walk.use(&"archive")
 	var codex := main.get_node_or_null("UI/CodexView") as CodexView
 	assert_not_null(codex, "E at the Rune Archive opens it")
+	assert_eq(codex.page, CodexView.COLLECTIBLES, "v0.9.0 CL: on its Collectibles page")
+	await e.tap(KEY_E)  # its next page: the Cards (the first)
 	assert_eq(codex.page, &"cards", "on the Cards page")
 	assert_true(codex.tiles.all(func(t: CodexTile) -> bool: return t.locked), "nothing met yet")
 	assert_eq(codex.tiles[0].name_label.text, "???", "a silhouette")
@@ -217,6 +220,7 @@ func test_the_codex_fills_in_a_run_and_opens_from_both_menus() -> void:
 	await walk.use(&"archive")
 	codex = main.get_node_or_null("UI/CodexView") as CodexView
 	assert_not_null(codex)
+	await e.tap(KEY_E)  # v0.9.0 CL: from the Archive's Collectibles page to the Cards
 	assert_false(codex.tile(card_id).locked, "the card is still met: the profile, not the run")
 	var tab := codex.tabs[&"enemies"] as Button
 	await e.click_at(tab.get_global_rect().get_center())

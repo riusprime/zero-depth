@@ -3555,3 +3555,36 @@ func elites() -> Dictionary:
 		"kill_pos": s.kill_pos,
 		"kill_dropped": s.kill_dropped,
 	}
+
+
+## v0.9.0 CL: the floor holds collectibles (armed at setup; Collectibles).
+func has_collectibles() -> bool:
+	return _w.collect != null
+
+
+## v0.9.0 CL: the floor's collectibles, one per entry: {id, source (Collectibles.Source), pos, shown_tick, taken_tick}
+## (shown_tick -1: its source hasn't given it yet; taken_tick -1: not taken). Empty without any.
+func collectibles() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var c := _w.collect
+	if c == null:
+		return out
+	for k in c.size():
+		(
+			out
+			. append(
+				{
+					"id": StringName(c.ids[k]),
+					"source": c.source[k],
+					"pos": c.pos[k],
+					"shown_tick": c.shown_tick[k],
+					"taken_tick": c.taken_tick[k],
+				}
+			)
+		)
+	return out
+
+
+## v0.9.0 CL: the collectibles the hero took on this floor (their ids).
+func collectibles_taken() -> PackedStringArray:
+	return _w.collect.taken_ids() if _w.collect != null else PackedStringArray()

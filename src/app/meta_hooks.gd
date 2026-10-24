@@ -53,5 +53,35 @@ static func bank(main: Main, recap: Dictionary) -> Dictionary:
 	return recap
 
 
+## Main's _on_tick: the achievements read the tick (AchievementTracker.observe), then the collectibles (bank_finds).
+static func observe(main: Main) -> void:
+	main.achievement_tracker.observe(main.driver.reader)
+	bank_finds(main)
+
+
+## v0.9.0 CL (COLLECTIBLES.md; P3 "Added to the Rune Archive" the first time): each collectible the hero took on
+## this floor that the profile hasn't found is written to the profile at once (a death never loses it), joins the
+## run's collected ones (no later floor arms it), earns its fragment (RuneFragments.add_collectibles) and shows a toast.
+## One the profile already holds (a Continue from before its pickup) gives nothing more. A tweaked run records none.
+static func bank_finds(main: Main) -> void:
+	var taken := main.driver.reader.collectibles_taken()
+	if taken.is_empty() or _tweaked(main):
+		return
+	for s in taken:
+		var id := StringName(s)
+		if main.run.collected_run.has(id):
+			continue
+		main.run.collected_run.append(id)
+		if not main.run.collected.has(id):
+			main.run.collected.append(id)
+		if not CollectibleBook.record(main.profile, id, main.run.run_seed):
+			continue
+		RuneFragments.add_collectibles(main.run)
+		main.profile.save_file()
+		var def := main.codex_catalog().collectible(id)
+		if def != null:
+			main.toast.push(CollectibleBook.toast_of(def))
+
+
 static func _tweaked(main: Main) -> bool:
 	return main.tuning != null and main.tuning.balance_tweaked()

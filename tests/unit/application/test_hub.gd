@@ -102,7 +102,8 @@ func test_flags_read_the_profile_and_never_write_it() -> void:
 	assert_false(bool(s[&"gate_open"]), "sealed on a fresh profile")
 	assert_false(bool(s[&"trophy_lit"]))
 	assert_eq((s[&"runes"] as Array).count(true), 0, "every rune dark")
-	assert_false(profile.data.has("collectibles"), "a missing section is not created")
+	# v0.9.0 CL: a fresh profile (version 3) has the section, empty; the flags only read it
+	assert_eq(profile.data.get("collectibles"), {}, "the collectibles section stays as it was")
 	assert_eq(profile.data.keys(), keys_before)
 	codex.add(&"bosses", &"foundry", &"kills")
 	ach.unlock(&"ascend_1")

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CollectibleDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/collectible_definition.gd" id="1_col"]
+
+[resource]
+script = ExtResource("1_col")
+order = 7
+shelf = &"sealed"
+source = &"timed_door"
+name_key = &"COLLECTIBLE_SAND_SHELL"
+lore_key = &"COLLECTIBLE_SAND_SHELL_LORE"
+floor_min = 3
+color = Color(0.95, 0.82, 0.55, 1)
+id = &"sand_shell"

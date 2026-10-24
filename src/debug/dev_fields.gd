@@ -58,6 +58,7 @@ const GROUPS := [
 			"res://data/events",
 			"res://data/curses",
 			"res://data/meta",  # v0.9.0 MP: the Rune Fragments' sources and the locked forms
+			"res://data/collectibles",  # v0.9.0 CL: the Rune Archive's collectibles (where found, the look)
 		],
 		"",
 	],

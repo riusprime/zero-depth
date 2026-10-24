@@ -200,7 +200,7 @@ func _open_station(_id: StringName, panel: StringName) -> void:
 		&"portal":
 			show_build_picker()
 		&"codex", &"achievements":
-			show_codex(CodexView.ACHIEVEMENTS if panel == &"achievements" else &"")
+			show_codex(CodexView.page_of(panel))  # v0.9.0 CL: the Rune Archive opens on its collectibles
 		&"credits":
 			show_credits()
 
@@ -511,7 +511,7 @@ func _on_tick(from: SimDriver) -> void:
 		return  # a stage that already ended, ticking once more before it's freed
 	saves.after_tick(driver.world, run, _stage_seed)  # v0.4.0 SV: a first entry into a room saves
 	codex_recorder.observe(driver.reader)  # v0.7.5 CX
-	achievement_tracker.observe(driver.reader)  # v0.7.5 AC
+	MetaHooks.observe(self)  # v0.7.5 AC: the achievements; v0.9.0 CL: the collectibles taken, into the profile
 	_hud.sync(driver.reader)
 	hints.observe(driver.reader)  # v0.7.5 SM
 	var outcome := driver.reader.outcome()

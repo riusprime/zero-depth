@@ -10,6 +10,10 @@ extends Node
 ## The stations whose panels Main owns (the Portal Machine's build pick, the Codex, the achievements, the credits) go
 ## out as `station_used`; the stand-in panels (the Wardrobe, the Progression Station) and the hub's pause menu (Esc /
 ## Start: Resume, Options, Main menu) are this node's own (`overlay`).
+## v0.9.0 CL (COLLECTIBLES.md #16, W47): the Archive's shelf lights each collectible found (HubView.show_found); once
+## the north gate is open (12 on the shelves) the Keystone waits on the alcove's pedestal, and walking up to it takes
+## it: written to the profile at once with its Rune Fragment, its floor rune and niche light, and the hub's line says it
+## was added to the Rune Archive (no toast: the hub's changes stay silent, W46).
 
 signal station_used(id: StringName, panel: StringName)
 signal options_requested
@@ -21,6 +25,9 @@ const BIOME := &"ruins"
 ## The stations whose panels are this node's own: the Wardrobe's (v0.9.0 RB, WardrobePanel) and the Progression
 ## Station's (v0.9.0 MP, ProgressionPanel).
 const STAND_INS: Array[StringName] = [&"wardrobe", &"progression"]
+## v0.9.0 CL: how near the alcove's middle (m) the hero takes the Keystone, and how long the hub's line says so.
+const KEYSTONE_M := 1.6
+const FOUND_LINE_TICKS := 240
 
 var hub: HubDefinition
 var layout: HubLayout
@@ -40,7 +47,12 @@ var walking := false
 ## v0.9.0 RB: the content and the profile the Wardrobe reads and writes (its robe and affinity).
 var repo: ContentRepository
 var profile: ProfileStore
+## v0.9.0 CL: the collectibles in shelf order (the catalog's), the hub's own (the Keystone; null without one) and the
+## ticks left of the line that says it was found.
+var collectibles: Array[CollectibleDefinition] = []
+var keystone: CollectibleDefinition
 var _after_walk: Callable
+var _found_ticks := 0
 
 
 ## Builds the hub from the content and the profile (read only): `stores` = [CodexStore, AchievementStore,
@@ -78,6 +90,11 @@ func setup(
 		lighting
 	)
 	view.set_look(look())  # v0.9.0 RB: the hero wears the Wardrobe's choice
+	collectibles = (stores[2] as CodexCatalog).collectibles  # v0.9.0 CL
+	for d in collectibles:
+		if d.source == &"hub_keystone":
+			keystone = d
+	show_collectibles()
 	apply_settings(profile)
 	player_input = PlayerInput.new(view.rig, driver.reader)
 	player_input.name = "PlayerInput"
@@ -101,7 +118,43 @@ func _on_tick() -> void:
 	at = layout.station_at(driver.reader.player_pos())
 	view.focus(at)
 	var keys := layout.keys_of(at)
+	_take_keystone()
+	if _found_ticks > 0 and keystone != null:  # v0.9.0 CL: "Keystone · Added to the Rune Archive"
+		_found_ticks -= 1
+		keys = [keystone.name_key, CollectibleBook.HEADER_KEY]
 	hud.show_station(keys[0], keys[1])
+
+
+## v0.9.0 CL: the shelf's niches, the floor runes (one per collectible found) and the Keystone, from the profile.
+func show_collectibles() -> void:
+	var colors: Array[Color] = []
+	for d in collectibles:
+		colors.append(d.color)
+	view.show_found(CollectibleBook.found_flags(profile, collectibles), colors)
+	view.set_runes(flags.states(hub).get(&"runes", []))
+	var waits := (
+		keystone != null and layout.gate_open and not CollectibleBook.found(profile, keystone.id)
+	)
+	view.set_keystone(waits, keystone.color if keystone != null else HubProps.BLUE)
+
+
+## v0.9.0 CL: the hero walked up to the Keystone: the profile records it with its fragment, saved at once.
+func _take_keystone() -> void:
+	if not view.keystone_shown() or keystone == null:
+		return
+	var mid := HubLayout.to_sim(hub.alcove_at)
+	if Kin.length(driver.reader.player_pos() - mid) > KEYSTONE_M:
+		return
+	if CollectibleBook.record(profile, keystone.id):
+		var rules := MetaProgress.definition(repo)
+		MetaProgress.bank(profile, rules.collectible if rules != null else 0)
+		profile.save_file()
+	var g := view.keystone
+	view.keystone = null
+	if g is CollectibleLooks:
+		(g as CollectibleLooks).vanish()
+	_found_ticks = FOUND_LINE_TICKS
+	show_collectibles()
 
 
 func _unhandled_input(event: InputEvent) -> void:

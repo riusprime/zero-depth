@@ -64,6 +64,8 @@ var rune_glows: Array[Dictionary] = []
 var gate: Node3D
 var gate_seal: Node3D
 var alcove: Node3D
+## v0.9.0 CL: the Keystone on the alcove's pedestal (null until shown: set_keystone).
+var keystone: Node3D
 ## v0.9.0 HB3: the pillar braziers' fires (their lights flicker).
 var fires: Array[Dictionary] = []
 ## The station the hero stands at (brightened).
@@ -257,6 +259,33 @@ func show_collected(count: int) -> void:
 			HubProps.emissive(HubProps.BLUE, 1.6) if on else HubProps.stone(HubProps.STONE_DARK)
 		)
 		(slots[i] as MeshInstance3D).set_meta(&"lit", on)
+
+
+## v0.9.0 CL: the Archive's shelf, one niche per collectible in shelf order: a found one's niche glows in its own
+## colour (`colors[i]`), the rest stay dark stone.
+func show_found(found: Array[bool], colors: Array[Color]) -> void:
+	var slots: Array = stations.get(&"archive", {}).get("slots", [])
+	for i in slots.size():
+		var on := i < found.size() and found[i]
+		var c: Color = colors[i] if i < colors.size() else HubProps.BLUE
+		(slots[i] as MeshInstance3D).material_override = (
+			HubProps.emissive(c, 2.2) if on else HubProps.stone(HubProps.STONE_DARK)
+		)
+		(slots[i] as MeshInstance3D).set_meta(&"lit", on)
+
+
+## v0.9.0 CL: the Keystone on the alcove's pedestal (`c` its colour; shown: it waits there to be taken), drawn in
+## layers: a faceted stone turning slowly, a white-hot halo, a glow pooled on the pedestal, a light and motes.
+func set_keystone(shown: bool, c: Color = HubProps.BLUE) -> void:
+	if keystone == null and shown:
+		keystone = CollectibleLooks.gem(alcove, "Keystone", c, Vector3(0, 1.25, 0), 0.34)
+	if keystone != null:
+		keystone.visible = shown
+
+
+## v0.9.0 CL: whether the Keystone shows on its pedestal.
+func keystone_shown() -> bool:
+	return keystone != null and keystone.visible
 
 
 ## v0.9.0 RB: the hero wears the Wardrobe's choice in the hub (a Wardrobe.look: the robe's colours and the chosen

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CollectibleDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/collectible_definition.gd" id="1_col"]
+
+[resource]
+script = ExtResource("1_col")
+order = 9
+shelf = &"sealed"
+source = &"purple_portal"
+name_key = &"COLLECTIBLE_VIOLET_EYE"
+lore_key = &"COLLECTIBLE_VIOLET_EYE_LORE"
+color = Color(0.7, 0.4, 1, 1)
+id = &"violet_eye"

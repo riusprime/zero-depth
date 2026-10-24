@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CollectibleDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/collectible_definition.gd" id="1_col"]
+
+[resource]
+script = ExtResource("1_col")
+order = 4
+shelf = &"stone"
+source = &"hidden_room"
+name_key = &"COLLECTIBLE_FROZEN_BELL"
+lore_key = &"COLLECTIBLE_FROZEN_BELL_LORE"
+biome = &"frozen_shore"
+color = Color(0.55, 0.9, 1, 1)
+id = &"frozen_bell"

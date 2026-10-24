@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CollectibleDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/collectible_definition.gd" id="1_col"]
+
+[resource]
+script = ExtResource("1_col")
+order = 6
+shelf = &"sealed"
+source = &"rune_alignment"
+name_key = &"COLLECTIBLE_ALIGNED_KEY"
+lore_key = &"COLLECTIBLE_ALIGNED_KEY_LORE"
+floor_min = 4
+color = Color(1, 0.78, 0.3, 1)
+id = &"aligned_key"

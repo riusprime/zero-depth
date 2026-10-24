@@ -31,6 +31,8 @@ extends RefCounted
 ## v0.9.0 MP adds `run.fragments` (the Rune Fragments the finished floors earned) and `run.locked` (the card ids still
 ## locked for the run: the Void before a Purple Portal) the same way, only when not 0 or empty: a payload without them
 ## has earned none and locks nothing (an old run in progress keeps every form in its pool).
+## v0.9.0 CL adds `run.collected`, `run.collected_run` (collectible ids) and `run.marked` the same way: a payload
+## without them has found none (its floors arm every collectible the content has; the profile drops a found one).
 const PAYLOAD_VERSION := 4
 const PAYLOAD_VERSIONS_READ: Array[int] = [2, 3, 4]
 ## v0.9.0 FV: today's run (Main) and the shape a payload without `run_id` resumes in.
@@ -219,6 +221,11 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	run.fragments_done = maxi(0, int(r.get("fragments", 0)))  # v0.9.0 MP: an older payload earned none
 	for id: Variant in r.get("locked", []):  # v0.9.0 MP: an older payload locks nothing
 		run.locked_cards.append(StringName(String(id)))
+	for id: Variant in r.get("collected", []):  # v0.9.0 CL: an older payload found none
+		run.collected.append(StringName(String(id)))
+	for id: Variant in r.get("collected_run", []):
+		run.collected_run.append(StringName(String(id)))
+	run.marked_done = maxi(0, int(r.get("marked", 0)))
 	return run
 
 
@@ -269,6 +276,19 @@ static func payload_of(
 		for id in run.locked_cards:
 			ids.append(String(id))
 		out["run"]["locked"] = ids
+	if not run.collected.is_empty():  # v0.9.0 CL: the collectibles no floor arms again (none: no key, as before)
+		out["run"]["collected"] = _ids(run.collected)
+	if not run.collected_run.is_empty():  # v0.9.0 CL: those taken in this run
+		out["run"]["collected_run"] = _ids(run.collected_run)
+	if run.marked_done > 0:  # v0.9.0 CL: the marked secrets the finished floors found
+		out["run"]["marked"] = run.marked_done
+	return out
+
+
+static func _ids(ids: Array[StringName]) -> PackedStringArray:
+	var out := PackedStringArray()
+	for id in ids:
+		out.append(String(id))
 	return out
 
 

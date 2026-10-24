@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CollectibleDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/collectible_definition.gd" id="1_col"]
+
+[resource]
+script = ExtResource("1_col")
+order = 12
+shelf = &"sealed"
+source = &"rune_markings"
+name_key = &"COLLECTIBLE_RUNE_RUBBING"
+lore_key = &"COLLECTIBLE_RUNE_RUBBING_LORE"
+count = 3
+color = Color(0.6, 0.95, 0.75, 1)
+id = &"rune_rubbing"

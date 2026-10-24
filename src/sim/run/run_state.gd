@@ -125,6 +125,13 @@ var fragment_table: FragmentTable
 ## run (the profile's locked forms when the run started; FloorPlan resolves them into World.locked_items). Emptied
 ## when the run travels through a Purple Portal (app side). Saved (RunSaver; an older payload: none locked).
 var locked_cards: Array[StringName] = []
+## v0.9.0 CL (COLLECTIBLES.md): the collectibles no floor of this run arms again (the profile's found ones when the run
+## started, and each one taken in it: the app adds it), the ones taken in this run (one Stone a run), and the secrets
+## behind hidden rune markings the finished floors found (Collectibles.marked; the Rune Rubbing counts the run's).
+## Saved (RunSaver; an older payload: none).
+var collected: Array[StringName] = []
+var collected_run: Array[StringName] = []
+var marked_done := 0
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:
@@ -339,6 +346,7 @@ func finish_floor(w: World) -> void:
 	kills_done += w.kills
 	threat_by_floor.append(Curses.threat(w))
 	fragments_done += RuneFragments.of_floor(w, fragment_table, true)  # v0.9.0 MP
+	marked_done += Collectibles.marked(w)  # v0.9.0 CL: the Rune Rubbing counts the run's marked secrets
 	if w.purple != null and not purple_floors.has(run_floor()):  # v0.9.0 DP: one purple room a loop
 		purple_floors.append(run_floor())
 	carry = RunCarry.take(w, table.heal_permille, table.shard_carry_permille)
