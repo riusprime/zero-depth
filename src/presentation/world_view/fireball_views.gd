@@ -323,7 +323,7 @@ const LOOKS := {
 	},
 	## v0.9.0 NB4: the Lantern Shade's wisps: dim violet will-o'-wisps (BOSSES_4_5 N4), a soft wobbling orb, a thin
 	## dark smoke trail (they glow only inside light: ShadeViews' dark covers them; their outline is ShadeViews').
-	## The core is a pale ghost-violet (was #C38CFF, within 0.15 of the Nemesis' bolt and crescent): bright, and 0.18 from every look.
+	## The core is a pale ghost-violet (was #C38CFF, near the Nemesis' bolt and crescent): bright, 0.18 from every look.
 	&"shade_wisp":
 	{
 		"core": Color("#948CE4"),
