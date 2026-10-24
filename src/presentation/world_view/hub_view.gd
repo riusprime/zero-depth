@@ -430,21 +430,27 @@ func _build_stations(trophies: Array[bool]) -> void:
 		root.position = _p(s.at)
 		root.rotation.y = HubLayout.facing(s.at)  # v0.9.0 HB3: its front to the plaza's middle
 		plan.add_child(root)
-		var parts := {}
-		match s.panel:
-			&"codex":
-				parts = HubStations.archive(root, s.half, s.height_m)
-			&"achievements":
-				parts = HubStations.trophy(root, s.half, s.height_m, trophies)
-			&"wardrobe":
-				parts = HubStations.wardrobe(root, s.half, s.height_m)
-			&"progression":
-				parts = HubStations.progression(root, s.half, s.height_m)
-			_:
-				parts = HubStations.credits(root, s.half, s.height_m)
+		var parts := build_station(root, s, trophies)
 		parts["root"] = root
 		stations[s.id] = parts
 		HubProps.set_glow(parts["glow"], 0.75)
+
+
+## Station `s`'s look under `root` (HubStations, by its panel); returns its parts. v0.9.0 HE: the hub editor
+## (tools/hub_editor) draws the stations with it too.
+static func build_station(
+	root: Node3D, s: HubStationDefinition, trophies: Array[bool]
+) -> Dictionary:
+	match s.panel:
+		&"codex":
+			return HubStations.archive(root, s.half, s.height_m)
+		&"achievements":
+			return HubStations.trophy(root, s.half, s.height_m, trophies)
+		&"wardrobe":
+			return HubStations.wardrobe(root, s.half, s.height_m)
+		&"progression":
+			return HubStations.progression(root, s.half, s.height_m)
+	return HubStations.credits(root, s.half, s.height_m)
 
 
 func _set_trophy_states(lit: bool, crown: bool) -> void:
