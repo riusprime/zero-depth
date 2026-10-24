@@ -25,8 +25,6 @@ const WORLD_KEPT := {
 	&"spawner": "loadout",
 	&"floor_layout": "loadout (generated from the floor seed)",
 	&"item_tables": "loadout",
-	&"locked_items":
-	"loadout (v0.9.0 MP): FloorPlan resolves the run's locked cards (RunState.locked_cards)",
 	&"boss_tables": "loadout",
 	&"reward_table": "loadout",
 	&"gamble_table": "loadout",
@@ -200,6 +198,10 @@ const ADDED_SINCE_V05 := {
 		&"shrine",  # v0.9.0 SH, HF: a floor saved before SH has none (floor rules 1-13 build none in the base either)
 		&"elites",  # v0.9.0 EL: a floor saved before EL has no elite rooms (floor rules 1-14 build none either)
 		&"affinity",  # v0.9.0 RB: a save from before RB is a run without one (None: null in the base too)
+		# v0.9.0 MP: copied, not kept: the run's locked cards come from the profile when the run began, not from the
+		# floor's generation inputs, so a replay onto a base built without that profile stays exact. A save from
+		# before MP keeps the base's (FloorPlan resolves RunState.locked_cards; such a run has none)
+		&"locked_items",
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
 		&"loot_guaranteed",  # v0.8.0 FL: an older save's floor used no guarantee (0) and holds no jackpot
 		&"loot_jackpots",
