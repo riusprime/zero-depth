@@ -184,7 +184,11 @@ func test_a_floor_draws_its_pools_where_the_sim_has_them_and_the_starry_void() -
 			assert_eq(e.crystal_count, 0, "the owner's islands bring their own crystals")
 		else:
 			assert_gt(e.crystal_count, 0, "some carry crystals")
-		assert_gte(e.nebula_count, StarVoid.NEBULA_MIN, "nebula clouds")
+		# v0.9.5 BG: the nebula clouds are off (the Deep image carries the nebulae); the const switch puts them back.
+		if BiomeEdge.NEBULA_CLOUDS:
+			assert_gte(e.nebula_count, StarVoid.NEBULA_MIN, "nebula clouds")
+		else:
+			assert_eq(e.nebula_count, 0, "no code-made nebula clouds under the backdrop")
 		_assert_void_rules(reader.floor_ground(), reader.floor_bounds(), 400 + s)
 		assert_eq(reader.state_hash(), before, "drawing it never touches the sim")
 		v.queue_free()

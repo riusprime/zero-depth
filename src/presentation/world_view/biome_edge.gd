@@ -19,6 +19,9 @@ extends Node3D
 ## floating_island_starfall and void_spike); a missing one keeps the code-made piece. An island model carries its own
 ## crystals, so the code-made crystal clusters are left off with it.
 const STYLES: Array[StringName] = [&"water", &"stars", &"islands"]
+## v0.9.5 BG: the starry void's own nebula clouds are off now that bg_starfall_deep carries the nebulae (true puts
+## them back; they are still drawn from the rng, so the islands keep their places).
+const NEBULA_CLOUDS := false
 ## The sea's surface below the ground, the snow bank's foot, and how far the sea reaches past the floor (m).
 const WATER_Y := -0.45
 const BANK_FOOT := -0.6
@@ -40,6 +43,14 @@ render_mode cull_disabled;
 uniform vec4 deep : source_color = vec4(0.08, 0.16, 0.26, 1.0);
 uniform vec4 shallow : source_color = vec4(0.16, 0.3, 0.42, 1.0);
 uniform float motion = 1.0;
+// v0.9.5 BG: the biome's Deep image under the shimmer (BiomeBackdrop sets these; bd_mix 0 = the old sea).
+uniform sampler2D bd_tex : source_color, repeat_enable, filter_linear_mipmap;
+uniform vec2 bd_focus = vec2(0.0);
+uniform float bd_tile = 42.0;
+uniform float bd_parallax = 0.35;
+uniform vec2 bd_drift = vec2(0.0);
+uniform float bd_bright = 0.85;
+uniform float bd_mix = 0.0;
 
 varying vec3 world;
 
@@ -56,7 +67,9 @@ void fragment() {
 	float b = cos(p.x * 1.1 - t * 0.7) + cos(p.y * 0.8 + t * 0.6);
 	vec3 n = normalize(vec3(a * 0.035, 1.0, b * 0.035));
 	NORMAL = normalize((VIEW_MATRIX * vec4(n, 0.0)).xyz);
-	ALBEDO = mix(deep.rgb, shallow.rgb, clamp(0.5 + a * 0.12, 0.0, 1.0));
+	vec3 sea_col = mix(deep.rgb, shallow.rgb, clamp(0.5 + a * 0.12, 0.0, 1.0));
+	vec2 bd_uv = (world.xz - bd_focus * (1.0 - bd_parallax)) / bd_tile + bd_drift * TIME;
+	ALBEDO = mix(sea_col, texture(bd_tex, bd_uv).rgb * bd_bright, bd_mix);
 	ROUGHNESS = 0.3;
 	SPECULAR = 0.45;
 }
@@ -151,7 +164,8 @@ func _build_stars(
 	nebula = Node3D.new()
 	nebula.name = "Nebula"
 	add_child(nebula)
-	for cloud: Dictionary in StarVoid.nebula_clouds(bounds, rng):
+	var clouds := StarVoid.nebula_clouds(bounds, rng)  # always drawn: the islands after it keep their places
+	for cloud: Dictionary in clouds if NEBULA_CLOUDS else []:
 		var mi := MeshInstance3D.new()
 		var q := PlaneMesh.new()
 		q.size = Vector2.ONE * float(cloud["size"])

@@ -142,6 +142,7 @@ func queue_build(
 	q.add("kit", _build_dressing.bind(reader, arena_half))
 	q.add("ice", _build_ice.bind(reader))
 	q.add("edge", _build_edge.bind(reader))
+	q.add("backdrop", BiomeBackdrop.attach.bind(self))  # v0.9.5 BG
 
 
 func _build_environment_and_light() -> void:
@@ -152,6 +153,7 @@ func _build_environment_and_light() -> void:
 ## v0.9.0 HB: only the mood's environment, grade, vignette and sun (the hub draws its own ground and props).
 func build_lighting_only() -> void:
 	_build_environment_and_light()
+	BiomeBackdrop.attach(self)  # v0.9.5 BG
 
 
 func _build_floor_ground(reader: WorldReader, arena_half: float) -> void:
