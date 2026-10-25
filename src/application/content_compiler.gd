@@ -478,6 +478,7 @@ static func _compile_item_v2(def: ItemDefinition, t: ItemTable) -> void:
 ## Engines (v0.3.0 G).
 static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 	t.tags = def.tags.duplicate()
+	t.level_max = def.level_max  # v0.9.5 CLV
 	t.stacks_per_hit = def.stacks_per_hit
 	t.shock_threshold = def.shock_threshold
 	t.shock_ticks = SimTick.seconds_to_ticks(def.shock_seconds)
@@ -846,6 +847,7 @@ static func compile_ability(def: AbilityDefinition, repo: ContentRepository = nu
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
 	t.start_weapon = WEAPON_BITS.get(def.start_weapon, 0)
+	t.offered = def.offered  # v0.9.5 CLV
 	t.tags = PackedStringArray()
 	for tag in def.tags:
 		t.tags.append(String(tag))

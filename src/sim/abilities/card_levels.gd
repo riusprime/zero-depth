@@ -17,11 +17,20 @@ static func is_card(w: World, idx: int) -> bool:
 	return idx >= 0 and idx < w.item_tables.size() and w.item_tables[idx].tags.has(TAG)
 
 
+## v0.9.5 CLV (CARD_LEVELS.md): the most levels item `idx` has: its `level_max` (ItemTable; 0 = MAX_LEVEL). A card of 1
+## is offered once and never again while held. 1 for an index that is no item.
+static func max_level(w: World, idx: int) -> int:
+	if idx < 0 or idx >= w.item_tables.size():
+		return 1
+	var m := w.item_tables[idx].level_max
+	return MAX_LEVEL if m <= 0 else mini(m, MAX_LEVEL)
+
+
 ## The level of item `idx` (1 for an item that never levelled, and for one not held).
 static func level(w: World, idx: int) -> int:
 	if idx < 0 or idx >= w.card_levels.size() or not w.items_owned.has(idx):
 		return 1
-	return maxi(1, w.card_levels[idx])
+	return clampi(w.card_levels[idx], 1, max_level(w, idx))  # v0.9.5 CLV: an old save above the cap reads capped
 
 
 ## Item `idx` may be offered now: it isn't held, or it is a wand card below the floor's level ceiling (v0.8.0 FL:
@@ -31,14 +40,14 @@ static func level(w: World, idx: int) -> int:
 static func can_take(w: World, idx: int, ceiling: int = -1) -> bool:
 	if not w.items_owned.has(idx):
 		return true
-	var cap := mini(ceiling if ceiling > 0 else LootPacing.ceiling(w), MAX_LEVEL)
+	var cap := mini(ceiling if ceiling > 0 else LootPacing.ceiling(w), max_level(w, idx))
 	return is_card(w, idx) and level(w, idx) < cap
 
 
 ## A held wand card taken again: one level up (at most MAX_LEVEL); the build compiles again. False if `idx` isn't a
 ## held wand card below MAX_LEVEL.
 static func level_up(w: World, idx: int) -> bool:
-	if not w.items_owned.has(idx) or not is_card(w, idx) or level(w, idx) >= MAX_LEVEL:
+	if not w.items_owned.has(idx) or not is_card(w, idx) or level(w, idx) >= max_level(w, idx):
 		return false
 	_store(w, idx, level_after(w, idx))
 	Modifiers.invalidate(w)
@@ -50,7 +59,7 @@ static func level_up(w: World, idx: int) -> bool:
 static func level_after(w: World, idx: int) -> int:
 	if not w.items_owned.has(idx):
 		return 1
-	return mini(level(w, idx) + 1, MAX_LEVEL) if is_card(w, idx) else level(w, idx)
+	return mini(level(w, idx) + 1, max_level(w, idx)) if is_card(w, idx) else level(w, idx)
 
 
 ## Sets held wand card `idx` to `lvl` (1..MAX_LEVEL; the dev panel's TEST HELPER and the labs). False if `idx` isn't a
@@ -58,7 +67,7 @@ static func level_after(w: World, idx: int) -> int:
 static func set_level(w: World, idx: int, lvl: int) -> bool:
 	if not w.items_owned.has(idx) or not is_card(w, idx):
 		return false
-	_store(w, idx, clampi(lvl, 1, MAX_LEVEL))
+	_store(w, idx, clampi(lvl, 1, max_level(w, idx)))
 	Modifiers.invalidate(w)
 	return true
 

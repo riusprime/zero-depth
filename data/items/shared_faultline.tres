@@ -13,4 +13,5 @@ modifiers = Array[StringName]([&"shared_faultline"])
 index_wave = 3
 loot_category = &"advanced"
 slot_category = &"free"
+level_max = 1
 id = &"shared_faultline"

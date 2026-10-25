@@ -14,4 +14,5 @@ modifiers = Array[StringName]([&"gun_threadline"])
 index_wave = 3
 loot_category = &"advanced"
 slot_category = &"secondary"
+level_max = 1
 id = &"gun_threadline"

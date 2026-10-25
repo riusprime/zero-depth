@@ -29,6 +29,8 @@ var rare := false
 ## v0.6.5 WN5b: a retired ability modifier (WAND.md: the six old abilities map onto wand cards or retire): never
 ## offered (Abilities.can_take); a held one maps on load (WandMigration). The dev panel can still grant it.
 var retired := false
+## v0.9.5 CLV: false = never offered, not even as a level-up (Abilities.can_take; the Pulse Gun).
+var offered := true
 var name_key := &""
 var desc_key := &""
 ## The PlayerTable.WEAPON_* bit whose slot 1 this is (0 = an ability card).

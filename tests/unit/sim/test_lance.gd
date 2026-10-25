@@ -186,16 +186,16 @@ func test_releases_wait_the_period_then_charge_again() -> void:
 	assert_eq(W.events(w, SimEvent.Kind.LANCE).size(), 2)
 
 
-func test_twin_fires_two_balls_and_three_at_level_five_at_its_share() -> void:
+func test_twin_fires_two_balls_and_three_at_level_three_at_its_share() -> void:
 	var w := _world([&"gun_twin"], [Vector2(5.0, 0.0)], false, 1.2)
 	_charge_release(w, 72, 2)
 	assert_eq(w.projectiles.size(), 2, "Lv 1: two balls")
 	W.run(w, FLY, 0, 0)
-	assert_eq(_dealt(w, 1), [2, 70], "a wide enemy on both: 60 % of 58 each (rounded)")
+	assert_eq(_dealt(w, 1), [2, 82], "a wide enemy on both: 70 % of 58 each (rounded)")
 	var five := _world([&"gun_twin"], [])
-	CardLevels.set_level(five, W.item(five, &"gun_twin"), 5)
+	CardLevels.set_level(five, W.item(five, &"gun_twin"), 3)
 	_charge_release(five, 72, 2)
-	assert_eq(five.projectiles.size(), 3, "Lv 5: three balls")
+	assert_eq(five.projectiles.size(), 3, "Lv 3: three balls")
 	var vy := []
 	for k in 3:
 		vy.append(signf(snappedf(five.projectiles.vel_y[k], 0.001)))

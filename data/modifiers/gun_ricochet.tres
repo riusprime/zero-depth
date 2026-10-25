@@ -8,8 +8,7 @@ script = ExtResource("2_op")
 op = 1
 stage = 2
 field = &"bounces"
-value = 2.0
-per_level = 1.0
+value = 3.0
 
 [resource]
 script = ExtResource("1_mod")

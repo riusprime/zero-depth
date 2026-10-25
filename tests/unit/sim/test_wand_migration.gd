@@ -193,7 +193,11 @@ func test_a_carry_into_the_next_floor_migrates_at_its_start() -> void:
 	RunCarry.apply(w, carry)
 	Abilities.start_floor(w)
 	assert_eq(_ids(w), [&"gun_twin", &"gun_rapid_fire", &"gun_mine"], "v0.9.0 TW: Spread is Twin")
-	assert_eq(_levels(w), [1, 1, 2], "Bomb Lobber and its Cluster Payload: Mine at level 2")
+	assert_eq(
+		_levels(w),
+		[1, 1, 1],
+		"Bomb Lobber and its Cluster Payload: Mine has one level now (v0.9.5 CLV)"
+	)
 
 
 ## v0.9.0 TW (owner Q8: Twin and Spread merged into one card): Spread is retired; a held Spread becomes Twin in its
@@ -357,11 +361,11 @@ func test_the_legendary_tier_offers_advanced_and_trigger_cards_and_the_legendary
 ## v0.8.0 FL (owner O91: "remove automatic level-5 grants"): a wand card taken at the boss's altar levels as anywhere.
 func test_a_wand_card_taken_at_the_legendary_altar_is_one_level_up() -> void:
 	var w := _floor(&"gun")
-	var big := _it(w, &"gun_big_shot")
-	_take(w, [&"gun_big_shot"])
+	var big := _it(w, &"gun_twin")
+	_take(w, [&"gun_twin"])
 	var id := w.add_reward(RewardStore.Kind.LEGENDARY, w.player_pos() + Vector2(0.5, 0), 0)
 	var r := w.rewards.index_of(id)
-	w.rewards.set_offer(r, PackedInt32Array([big]))  # the roll is the loot stream's; this test needs Big Shot
+	w.rewards.set_offer(r, PackedInt32Array([big]))  # the roll is the loot stream's; this test needs Twin
 	var f := InputFrame.new()
 	f.pressed = InputFrame.INTERACT
 	w.step(f)

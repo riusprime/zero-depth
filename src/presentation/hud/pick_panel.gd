@@ -235,7 +235,9 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			face["tier_text"] = "%s · %s" % [ci.tr(kind_key), rarity] if run else rarity
 			if face["wand"]:  # v0.7.5 SM (N8): a wand card's level, and the level taking it gives
 				face["held_level"] = held_level(reader, code)
-				face["level_text"] = level_text(ci, face["held_level"], face["held_level"] + 1)
+				face["level_text"] = level_text(
+					ci, face["held_level"], face["held_level"] + 1, int(info.get("max_level", 5))
+				)
 			slot_face(ci, reader, info, face)  # v0.9.0 AS
 	return face
 
@@ -272,8 +274,10 @@ static func held_level(reader: WorldReader, code: int) -> int:
 
 ## v0.7.5 SM (N8): the level badge: "Lv N" for a card not held (N is the level it arrives at), "Lv N → M" when
 ## taking it raises a held card from N to M.
-static func level_text(ci: Object, held: int, to: int) -> String:
+static func level_text(ci: Object, held: int, to: int, cap: int = 5) -> String:
 	if held <= 0 or held >= to:
+		if cap < 5:  # v0.9.5 CLV: a card of 3 levels reads "Lv 1/3"
+			return ci.tr("UI_WAND_LEVEL_OF") % [maxi(held, to), cap]
 		return ci.tr("UI_WAND_LEVEL") % maxi(held, to)
 	return ci.tr("UI_CARD_LEVEL_UP") % [held, to]
 

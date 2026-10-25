@@ -261,7 +261,11 @@ func _refresh() -> void:
 			_keys[k].text = key_text(k, int(c.get("order", 0)))
 			var ability := int(c["type"]) == WorldReader.CARD_ABILITY
 			var levels := ability or bool(c.get("wand", false))  # v0.7.5 SM: a wand card shows its level too
-			_levels[k].text = tr("UI_WAND_LEVEL") % int(c["level"]) if levels else ""
+			var cap := int(c.get("max_level", 5))
+			if levels and cap < 5 and not ability:  # v0.9.5 CLV: "Lv 2/3"
+				_levels[k].text = tr("UI_WAND_LEVEL_OF") % [int(c["level"]), cap]
+			else:
+				_levels[k].text = tr("UI_WAND_LEVEL") % int(c["level"]) if levels else ""
 			var slot := int(c.get("slot", WorldReader.SLOT_NONE))  # v0.9.0 AS (Q14): the slot tag
 			if slot != WorldReader.SLOT_NONE:
 				var tag := tr(WorldReader.SLOT_TAG_KEYS[slot])
