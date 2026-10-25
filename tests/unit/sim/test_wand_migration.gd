@@ -57,9 +57,9 @@ func test_the_table_retires_43_cards_and_marks_them() -> void:
 		abilities += 1 if t.retired else 0
 	assert_eq(
 		[items, abilities],
-		[42, 6],
+		[52, 6],
 		(
-			"48 rows: 42 items (v0.9.0: Spread, Explosive, the old Void, Charge, Boomerang) and the six old"
+			"58 rows: 52 items (v0.9.0: Spread, Explosive, the old Void, Charge, Boomerang; v0.9.5: ten) and the six old"
 			+ " ability modifiers"
 		)
 	)
@@ -379,21 +379,43 @@ func test_a_wand_card_taken_at_the_legendary_altar_is_one_level_up() -> void:
 	assert_eq(CardLevels.level(alt, big), 1, "a fresh card is level 1")
 
 
-func test_the_legendary_triggers_cast_their_spell_twice() -> void:
-	var w := WandLab.fight(&"gun", [&"trigger_on_hit_twice"])
-	var hooks := []
-	for k in Modifiers.bolt(w).hooks:
-		if k.id == &"trigger_on_hit_twice":
-			hooks.append(k.delay_ticks)
-	assert_eq(hooks, [0, 9], "two casts per hit, the second 0.15 s later")
-	var once := WandLab.run(WandLab.fight(&"gun", [&"trigger_on_hit"]), 600)
-	var twice := WandLab.run(WandLab.fight(&"gun", [&"trigger_on_hit_twice"]), 600)
-	var n1 := int((once["hits_by_effect"] as Dictionary).get(&"trigger_on_hit", 0))
-	var n2 := int((twice["hits_by_effect"] as Dictionary).get(&"trigger_on_hit_twice", 0))
-	assert_gt(n1, 0)
-	assert_gt(n2, n1, "×2 lands more child hits than On Hit (%d vs %d)" % [n2, n1])
-	var again := WandLab.run(WandLab.fight(&"gun", [&"trigger_on_hit_twice"]), 600)
-	assert_eq([again["digest"], again["hash"]], [twice["digest"], twice["hash"]], "replays")
-	for id: StringName in [&"trigger_on_kill_twice", &"trigger_on_end_twice"]:
-		var r := WandLab.run(WandLab.fight(&"blade", [id]), 900)
-		assert_gt(int((r["hits_by_effect"] as Dictionary).get(id, 0)), 0, "%s casts" % id)
+## v0.9.5 RC (owner: "Gravity stich, double trail have to go ... the mutations one were not good" and "we are
+## removing all on end, on finisher, on hit, and on kill cards"): the ten cards are retired through migration.tres,
+## with no card in their place. A wand holding some of them loads with them gone, the slots closed up, the rest kept,
+## and their salvage price refunded; none is ever offered; no row lands on them.
+func test_the_trigger_cards_the_mutations_and_gravity_stitch_are_retired_and_dropped() -> void:
+	var gone: Array[StringName] = [
+		&"trigger_on_hit",
+		&"mut_double_exposure",
+		&"shared_gravity_stitch",
+		&"mut_grand_finale",
+		&"trigger_on_kill",
+		&"trigger_on_end",
+		&"trigger_on_finisher",
+		&"trigger_on_hit_twice",
+		&"trigger_on_kill_twice",
+		&"trigger_on_end_twice",
+	]
+	for weapon: StringName in [&"gun", &"blade"]:
+		var w := _floor(weapon)
+		for id in gone:
+			assert_true(w.item_tables[_it(w, id)].retired, "%s is retired (%s)" % [id, weapon])
+			assert_does_not_have(ItemPool.available(w), _it(w, id), "%s: never offered" % id)
+	var g := _floor(&"gun")
+	_take(g, [&"gun_homing", &"ember_core"])
+	for id: StringName in [&"trigger_on_hit", &"mut_double_exposure", &"shared_gravity_stitch"]:
+		g.add_item(_it(g, id))  # TEST HELPER: a save from before RC held them
+	BuildSlots.sync(g)
+	var expect := 0
+	for id: StringName in [&"trigger_on_hit", &"mut_double_exposure", &"shared_gravity_stitch"]:
+		expect += WandMigration.refund_of(g, _it(g, id))
+	var shards := g.shards
+	assert_eq(WandMigration.run(g), expect, "their salvage price comes back")
+	assert_eq(g.shards, shards + expect)
+	assert_eq(_ids(g), [&"gun_homing", &"ember_core"], "the rest kept, the slots closed up")
+	for id: StringName in gone:
+		assert_false(g.items_owned.has(_it(g, id)), "%s no longer held" % id)
+	assert_eq(WandMigration.run(g), 0, "idempotent")
+	var t := g.wand_table
+	for id: StringName in t.migrate_blade + t.migrate_gun:
+		assert_false(gone.has(id), "no row lands on %s" % id)

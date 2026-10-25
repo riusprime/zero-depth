@@ -34,49 +34,10 @@ const RECIPES := {
 			"chain_blast + split + spread|twin",
 			[["chain_blast"], ["split_shot"], ["gun_spread", "gun_twin"]]
 		],
-		[
-			"on_hit_x2 + explosive|chain + spread|twin|split",
-			[
-				["trigger_on_hit_twice"],
-				["shared_explosive", "chain_blast"],
-				["gun_spread", "gun_twin", "split_shot"]
-			]
-		],
-		[
-			"on_kill_x2 + explosive|chain",
-			[["trigger_on_kill_twice"], ["shared_explosive", "chain_blast"]]
-		],
-		[
-			"on_end_x2 + explosive|chain + spread|twin",
-			[
-				["trigger_on_end_twice"],
-				["shared_explosive", "chain_blast"],
-				["gun_spread", "gun_twin"]
-			]
-		],
 	],
 	&"blade":
 	[
-		[
-			"chain_blast + double_slash + on_hit|on_hit_x2",
-			[["chain_blast"], ["double_slash"], ["trigger_on_hit", "trigger_on_hit_twice"]]
-		],
-		[
-			"on_hit_x2 + explosive|chain + double_slash",
-			[["trigger_on_hit_twice"], ["shared_explosive", "chain_blast"], ["double_slash"]]
-		],
-		[
-			"on_kill_x2 + explosive|chain",
-			[["trigger_on_kill_twice"], ["shared_explosive", "chain_blast"]]
-		],
-		[
-			"on_end_x2 + explosive|chain + split_wave|double_slash",
-			[
-				["trigger_on_end_twice"],
-				["shared_explosive", "chain_blast"],
-				["split_wave", "double_slash"]
-			]
-		],
+		["chain_blast + double_slash", [["chain_blast"], ["double_slash"]]],
 	],
 }
 

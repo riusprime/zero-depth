@@ -17,10 +17,10 @@ const FOUR: Array = [&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_fiel
 ## (owner Q6): one Pattern on the Blade (Whirl), so Thrust and Wide Arc gave way to Parry Edge and Frost.
 const EIGHT: Array = [
 	&"heavy",
-	&"trigger_on_hit",
+	&"chain_blast",
 	&"whirl",
 	&"flurry",
-	&"trigger_on_kill",
+	&"shared_bleed",
 	&"parry_edge",
 	&"frost_core",
 	&"echo_slash",
@@ -278,7 +278,6 @@ func test_the_swap_at_eight_slots_fits_the_screen_and_inserts_with_the_pad() -> 
 	gut.p("swap at 8 slots: %s on %s" % [rect, screen])
 	assert_true(screen.encloses(rect), "the Swap at 8 slots fits the screen")
 	assert_true(rect.size.x <= 1920.0 and rect.size.y <= 1080.0, "inside the 1920 x 1080 base")
-	assert_eq(Array(hud.build_hud.cut_slots()), [1, 4], "the HUD's pips show the two cuts")
 	var before := w.mod_slots.duplicate()
 	var code := w.swap_code
 	# Insert: X puts the new card in the row at the focus (slot 1); d-pad right twice: before slot 3; A fixes it.

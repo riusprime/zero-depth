@@ -97,7 +97,6 @@ func test_a_jackpot_lifts_a_card_past_the_ceiling_and_says_so() -> void:
 	var big := _hold(w, &"gun_big_shot", 2)
 	var pool := LootPacing.jackpot_pool(w, PackedInt32Array())
 	assert_has(pool, big, "the held card at the ceiling")
-	assert_has(pool, _it(w, &"mut_grand_finale"), "a mutation")
 	for c in pool:
 		assert_true(
 			c == big or LootPacing.category(w, c) == LootPacing.Category.MUTATION, "only those"

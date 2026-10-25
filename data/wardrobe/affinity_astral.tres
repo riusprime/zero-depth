@@ -12,6 +12,6 @@ color = Color(0.545098, 0.333333, 1, 1)
 glyph = 4
 secret_sense_m = 8.0
 map_secrets = true
-favoured_cards = Array[StringName]([&"gun_void", &"gravity_well", &"shared_gravity_stitch"])
+favoured_cards = Array[StringName]([&"gun_void", &"gravity_well"])
 favoured_permille = 1300
 id = &"astral"

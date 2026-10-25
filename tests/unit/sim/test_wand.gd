@@ -87,7 +87,7 @@ func test_with_every_slot_full_a_new_card_opens_the_swap() -> void:
 
 func test_the_held_cards_keep_their_order_into_the_next_floor() -> void:
 	var w := _world(1)
-	_take(w, FOUR)
+	_take(w, [&"heavy", &"shared_bleed", &"wide_arc", &"double_slash"])
 	Wand.move(w, 3, 0)
 	var next := _world(2)
 	RunCarry.apply(next, RunCarry.take(w, 0))
