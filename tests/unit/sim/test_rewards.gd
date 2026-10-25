@@ -330,7 +330,7 @@ func test_a_chest_you_cant_afford_stays_shut() -> void:
 
 
 ## v0.8.0 N7 (owner O61, D48): a chest deals one card by its odds; the world waits while the panel shows it (its
-## numbers before the take), and any pick input (here a cancel) takes it, paid then, and closes the chest.
+## numbers before the take), and a pick input takes it, paid then, and closes the chest. v0.9.5 CD: a cancel leaves it.
 func test_a_chest_deals_one_card_and_any_answer_takes_it() -> void:
 	var w := _world()
 	w.add_reward(RewardStore.Kind.CHEST, Vector2(1.0, 0), 40)
@@ -347,9 +347,17 @@ func test_a_chest_deals_one_card_and_any_answer_takes_it() -> void:
 	assert_ne(w.choosing, -1, "no answer: still showing")
 	assert_eq(w.tick, t + 1, "the tick still counts")
 	_pick(w, InputFrame.PICK_CANCEL)
-	assert_eq(w.choosing, -1, "any answer closes it")
+	assert_eq(w.choosing, -1, "a cancel closes it")
+	assert_eq(w.shards, 55, "unpaid")
+	assert_true(w.items_owned.is_empty(), "the card refused")
+	assert_eq(w.rewards.offer_of(0), offer, "the chest keeps the same card for later")
+	_press(w, I)
+	assert_ne(w.choosing, -1, "opened again")
+	assert_eq(w.rewards.offer_of(0), offer, "no reroll")
+	_pick(w, 1)
+	assert_eq(w.choosing, -1, "a pick closes it")
 	assert_eq(w.shards, 15, "40 paid")
-	assert_eq(w.items_owned, PackedInt32Array([offer[0]]), "and the card taken: no choice")
+	assert_eq(w.items_owned, PackedInt32Array([offer[0]]), "and the card taken")
 	assert_eq(w.rewards.size(), 0, "the chest is consumed")
 
 

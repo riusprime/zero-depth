@@ -227,11 +227,11 @@ static func choose(w: World, frame: InputFrame) -> void:
 		if s < 0:
 			return  # skipped: back to the cards
 		replace = s
-	elif w.rewards.rolled[i] == RewardStore.DEALT:  # v0.8.0 N7: any answer takes the dealt card
+	elif w.rewards.rolled[i] == RewardStore.DEALT:  # v0.8.0 N7: any other answer takes the dealt card
 		if frame.pick == InputFrame.PICK_NONE:
 			return
-		if frame.pick == InputFrame.PICK_CANCEL and BuildSlots.needs_swap(w, offer[0]):
-			_resume(w)  # a card that needs the swap may wait: the chest stays shut, unpaid
+		if frame.pick == InputFrame.PICK_CANCEL:
+			_resume(w)  # v0.9.5 CD (owner: "you should be able to reject it"): the chest stays shut, unpaid, card kept
 			return
 		k = 0
 	elif frame.pick == InputFrame.PICK_CANCEL:
