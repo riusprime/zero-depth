@@ -79,6 +79,9 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	&"ring_share_permille",
 	&"swirl",
 	&"swirl_group",
+	# v0.9.5 FC0 (owner: Rune Explosion; RuneExplosion): the burst's radius (mm) and growth (ticks)
+	&"rune_mm",
+	&"rune_ticks",
 	&"ring_flight",  # v0.8.0 N3 (owner O47: the travelling ring's flight, ticks)
 	# v0.8.0 MR (owner O91: extra bolts share the damage; a repeat never repeats; Rapid Fire's and Flurry's rhythms)
 	&"share_permille",
@@ -241,6 +244,11 @@ var wave_mm := 0
 var wisps := 0
 var wisp_ticks := 0
 var wisp_permille := 0
+## v0.9.5 FC0 (owner: "a violet explosion that comes out of the player as an energy kind like shield that grown";
+## RuneExplosion): rune_mm, the Gun's shot is a rune burst centred on the hero that grows to rune_mm (the area stat
+## scales it) over rune_ticks, hitting each enemy once as its edge passes.
+var rune_mm := 0
+var rune_ticks := 0
 
 # --- payload
 ## Damage per hit (a share `damage_permille` of it when the shot splits into count > 1 bolts, rounded down, at least
@@ -549,4 +557,5 @@ func read() -> Dictionary:
 		"seekers": seekers,
 		"wave_mm": wave_mm,  # v0.9.0 AF3
 		"wisps": wisps,
+		"rune_mm": rune_mm,  # v0.9.5 FC0
 	}

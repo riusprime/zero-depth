@@ -499,6 +499,7 @@ func _sync_volley(reader: WorldReader) -> void:
 	if (
 		reader.lance_active()
 		or reader.scatter_active()
+		or reader.rune_active()  # v0.9.5 FC0: RuneExplosionView draws the burst
 		or reader.glaive_active()
 		or reader.bomb_active()
 		or reader.void_active()

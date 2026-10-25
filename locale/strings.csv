@@ -822,6 +822,9 @@ ITEM_GUN_LANCE,Lance,Lanza
 ITEM_GUN_LANCE_DESC,"Hold to charge, release a piercing energy ball.","Mantén para cargar, suelta una bola de energía perforante."
 ITEM_GUN_SCATTER,Scatter,Metralla
 ITEM_GUN_SCATTER_DESC,"A cone of pellets, brutal up close.","Un cono de perdigones, brutal de cerca."
+ITEM_GUN_RUNE_EXPLOSION,Rune Explosion,Explosión Rúnica
+ITEM_GUN_RUNE_EXPLOSION_DESC,A violet rune shield bursts out of you.,Un escudo rúnico violeta estalla a tu alrededor.
+CAPTION_RUNE_BURST,[rune burst],[estallido rúnico]
 ITEM_GUN_GLAIVE,Glaive,Disco
 ITEM_GUN_GLAIVE_DESC,A spinning disc that flies out and back.,Un disco giratorio que va y vuelve.
 ITEM_GUN_SEEKERS,Seekers,Buscadores

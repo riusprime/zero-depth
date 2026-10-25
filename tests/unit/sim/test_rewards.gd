@@ -111,6 +111,7 @@ func test_the_shipped_data() -> void:
 			"gun_lance",  # v0.9.0 AF1: the Lance form, rare
 			"gun_laser",  # v0.9.0 LZ: the Laser form, rare
 			"gun_ring",  # v0.8.0 AO: the order rule's Ring and Swirl, rare
+			"gun_rune_explosion",  # v0.9.5 FC0: the Rune Explosion form, rare
 			"gun_scatter",  # v0.9.0 AF1: the Scatter form, rare
 			"gun_seekers",  # v0.9.0 AF2: the Seekers form, rare
 			"gun_swirl",

@@ -45,6 +45,7 @@ static var parts: Array[GDScript] = [
 	WispsView,  # v0.9.0 AF3
 	LanceView,  # v0.9.0 AF1
 	ScatterView,  # v0.9.0 AF1
+	RuneExplosionView,  # v0.9.5 FC0
 	GlaiveView,  # v0.9.0 AF2
 	SeekersView,  # v0.9.0 AF2
 	ModifierOverlays,
@@ -163,6 +164,8 @@ var wisps: WispsView = _part(WispsView)
 ## v0.9.0 AF1 (owner Q7): the Lance's charge glow and aim line, its release flash; the Scatter's pellets and cone.
 var lances: LanceView = _part(LanceView)
 var scatter: ScatterView = _part(ScatterView)
+## v0.9.5 FC0 (owner): the Rune Explosion's violet dome and rune ring bursting from the hero.
+var runes: RuneExplosionView = _part(RuneExplosionView)
 ## v0.9.0 AF2 (owner Q7): the Glaive's spinning discs out and back; the Seekers' curving darts and their trails.
 var glaives: GlaiveView = _part(GlaiveView)
 var seekers: SeekersView = _part(SeekersView)
@@ -324,6 +327,7 @@ func _setup_views(palette: Dictionary) -> void:
 	add_child(wisps)  # v0.9.0 AF3
 	add_child(lances)  # v0.9.0 AF1
 	add_child(scatter)  # v0.9.0 AF1
+	add_child(runes)  # v0.9.5 FC0
 	add_child(glaives)  # v0.9.0 AF2
 	add_child(seekers)  # v0.9.0 AF2
 
@@ -349,7 +353,7 @@ func _setup_effects() -> void:
 		layer.drawers.append(bombs.draw_fx)
 		layer.drawers.append(lances.draw_fx)  # v0.9.0 AF1: the release's element accent and sparks
 		# v0.9.0 VX: the forms' element accents, launches, catches and collapses (HeroFx, VFX_AUDIT.md)
-		for v: Node in [voids, scatter, glaives, seekers, waves, wisps]:
+		for v: Node in [voids, scatter, runes, glaives, seekers, waves, wisps]:
 			layer.drawers.append(Callable(v, &"draw_fx"))
 		seekers.vfx_on = true  # V29: the trail motes become the element's own sprites
 	element_fx.forms_drawn = true  # MX3 draws the spec forms (rings, spec patches, bombs)
@@ -564,6 +568,7 @@ func sync() -> void:
 	_sync_view(&"wisps", wisps)  # v0.9.0 AF3
 	_sync_view(&"lances", lances)  # v0.9.0 AF1
 	_sync_view(&"scatter", scatter)  # v0.9.0 AF1
+	_sync_view(&"runes", runes)  # v0.9.5 FC0
 	_sync_view(&"glaives", glaives)  # v0.9.0 AF2
 	_sync_view(&"seekers", seekers)  # v0.9.0 AF2
 	_sync_view(&"modifier_marks", modifier_marks)  # v0.6.0 MX4

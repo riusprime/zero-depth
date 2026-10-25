@@ -23,6 +23,7 @@ const ONE_LEVEL: Array[StringName] = [
 	&"gun_bomb",
 	&"gun_void",
 	&"gun_lance",
+	&"gun_rune_explosion",
 	&"gun_scatter",
 	&"gun_glaive",
 	&"gun_seekers",

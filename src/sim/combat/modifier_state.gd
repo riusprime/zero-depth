@@ -61,6 +61,22 @@ var cast_flag := PackedInt32Array()
 var void_shot := PackedInt32Array()
 var void_foe := PackedInt32Array()
 var void_next := PackedInt32Array()
+## v0.9.5 FC0 (RuneExplosion): the rune bursts alive, oldest first (parallel arrays): a uid (from rune_next), the spec's
+## book key, the tick it starts, its full radius (m), its damage and root, SimEvent tags. The enemies each burst hit
+## (burst uid, actor id) and the enemies being shoved (actor id, direction, ticks left). Hashed only while any is set
+## (older digests unchanged).
+var rune_uid := PackedInt32Array()
+var rune_key := PackedStringArray()
+var rune_born := PackedInt32Array()
+var rune_radius := PackedFloat32Array()
+var rune_damage := PackedInt32Array()
+var rune_root := PackedInt32Array()
+var rune_next := 0
+var rune_hit_uid := PackedInt32Array()
+var rune_hit_foe := PackedInt32Array()
+var rune_push_id := PackedInt32Array()
+var rune_push_dir := PackedVector2Array()
+var rune_push_left := PackedInt32Array()
 ## v0.8.0 MR (owner O91; FireRhythm): Rapid Fire's ramp (the consecutive shots so far, the tick of the last shot) and
 ## Flurry's burst (the swing's place in its burst, 1 = the first after a pause; the tick its last swing ends); and
 ## SecondaryProc's carry (per mille of a status stack a secondary hit owes, so halved stacks are exact on average).
@@ -129,6 +145,8 @@ func touched() -> bool:
 		or hold_t != 0
 		or recoil_t != 0
 		or not void_shot.is_empty()
+		or not rune_uid.is_empty()
+		or not rune_push_id.is_empty()
 		or ramp_n != 0
 		or burst_n != 0
 		or sec_carry != 0
@@ -194,6 +212,25 @@ func hash_into(h: StateHasher) -> void:
 		h.add_ints(void_shot)
 		h.add_ints(void_foe)
 		h.add_ints(void_next)
+	if not rune_uid.is_empty() or not rune_push_id.is_empty():  # v0.9.5 FC0: only while a rune burst lives
+		h.add_string("rune")
+		h.add_string(",".join(rune_key))
+		for arr: PackedInt32Array in [
+			rune_uid,
+			rune_born,
+			rune_damage,
+			rune_root,
+			rune_hit_uid,
+			rune_hit_foe,
+			rune_push_id,
+			rune_push_left
+		]:
+			h.add_ints(arr)
+		h.add_f32s(rune_radius)
+		h.add_int(rune_next)
+		for d in rune_push_dir:
+			h.add_f32(d.x)
+			h.add_f32(d.y)
 	if ramp_n != 0 or burst_n != 0 or sec_carry != 0:  # v0.8.0 MR: only once a rhythm or a carry is set
 		h.add_string("mr")
 		for v in [ramp_n, ramp_tick, burst_n, burst_free, sec_carry]:

@@ -346,6 +346,18 @@ const ADDED_SINCE_V05 := {
 		&"void_shot",  # v0.9.0 VP (the Void form's aura waits; an older save has none: its black holes are dropped)
 		&"void_foe",
 		&"void_next",
+		&"rune_uid",  # v0.9.5 FC0 (the Rune Explosion's bursts, hits and shoves: an older save has none)
+		&"rune_key",
+		&"rune_born",
+		&"rune_radius",
+		&"rune_damage",
+		&"rune_root",
+		&"rune_next",
+		&"rune_hit_uid",
+		&"rune_hit_foe",
+		&"rune_push_id",
+		&"rune_push_dir",
+		&"rune_push_left",
 		&"ramp_n",  # v0.8.0 MR (FireRhythm, SecondaryProc: an older save has no ramp, no burst, no carry)
 		&"ramp_tick",
 		&"burst_n",

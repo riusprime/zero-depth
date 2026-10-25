@@ -139,6 +139,7 @@ const FAMILY_OF := {
 	&"gun_wisps": &"trinket",  # v0.9.0 AF3: the Wisps form (Orbit Rounds' family)
 	&"gun_lance": &"crit",  # v0.9.0 AF1: the Lance form (the retired Charge card's family)
 	&"gun_scatter": &"projectile",  # v0.9.0 AF1: the Scatter form
+	&"gun_rune_explosion": &"trinket",  # v0.9.5 FC0: the Rune Explosion form (replaces Scatter)
 	&"gun_glaive": &"trinket",  # v0.9.0 AF2: the Glaive form (the retired Boomerang card's family)
 	&"gun_seekers": &"projectile",  # v0.9.0 AF2: the Seekers form (the Homing card's family)
 	&"gun_swirl": &"trinket",

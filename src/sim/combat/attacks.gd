@@ -83,6 +83,8 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 static func _shared_form(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	if Laser.held(spec):  # v0.9.0 LZ: the Laser's tick shares its damage per beam itself (dithered)
 		return Laser.fire(w, spec, ctx)
+	if RuneExplosion.is_rune(spec):  # v0.9.5 FC0: the bursts take the whole shot; Twin's share is theirs
+		return RuneExplosion.fire(w, spec, ctx)
 	var share := spec.share_permille
 	if share <= 0:
 		return _form(w, spec, ctx)

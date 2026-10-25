@@ -4,8 +4,8 @@ extends GutTest
 ## - The Lance: holding the shoot button (right click) with the mouse on a row of enemies charges it (v0.9.0 AF1b: the
 ##   swirling circle drawn in front of the hero) and nothing fires; letting go fires one energy ball that pierces and
 ##   hurts every enemy in the row, its muzzle burst drawn, and pushes the hero back a small step.
-## - The Scatter: holding the shoot button on an enemy close by fires cones of pellets (drawn as slugs and a muzzle
-##   cone, heard) that hurt it, and one far past 5 m on the same line is never touched.
+## - v0.9.5 FC0, the Rune Explosion (it replaced the Scatter): holding the shoot button bursts a violet rune ring from
+##   the hero (drawn, heard) that hurts and shoves an enemy 2 m out; one 6 m out is never touched.
 ## The retired Charge card is never offered.
 
 const E2eVoid := preload("res://tests/e2e/test_e2e_void.gd")
@@ -138,43 +138,47 @@ func test_the_lance_charges_while_held_and_its_release_pierces_the_row() -> void
 	assert_gt(back, 0.3, "the hero was pushed back, away from the aim")
 
 
-func test_the_scatter_shreds_up_close_and_never_reaches_far() -> void:
+func test_the_rune_explosion_hurts_and_shoves_what_is_near_and_spares_what_is_far() -> void:
 	var e := E2e.new(self)
-	var main := await _boot_with(e, &"gun_scatter")
+	var main := await _boot_with(e, &"gun_rune_explosion")
 	var w := e.world()
-	assert_eq(AttackSlots.form_id(w), &"scatter", "the Gun's shot is the Scatter now")
-	# TEST HELPER (labelled): a standing dummy 2 m out and one 7 m out on the same clear line.
+	assert_eq(AttackSlots.form_id(w), &"rune_explosion", "the Gun's shot is the Rune Explosion now")
+	# TEST HELPER (labelled): a standing dummy 2 m out and one 6 m out on the same clear line.
 	var at: Vector2 = E2eVoid.clear_spot(w, 7.0)
 	assert_ne(at, Vector2.INF, "a clear line from the hero")
 	var hero := w.player_pos()
 	var dir := (at - hero).normalized()
 	w.dummy_speed = 0.0
 	var near := w.add_dummy(hero + dir * 2.0, 0.35, 5000)
-	var far := w.add_dummy(hero + dir * 7.0, 0.35, 5000)
+	var far := w.add_dummy(hero + dir * 6.0, 0.35, 5000)
+	var near_from := w.actors.pos(w.actors.index_of(near))
 	var cam := main.view.rig.camera
 	await e.mouse_to(cam.unproject_position(SimPlane.to_3d(at, SimPlane.CORE_HEIGHT)))
 	e.mouse_button(MOUSE_BUTTON_RIGHT, true)
-	var pellets := 0
-	var cones := 0
-	for k in 120:
+	var shown := 0
+	var widest := 0.0
+	for k in 100:
 		await e.mouse_to(cam.unproject_position(SimPlane.to_3d(at, SimPlane.CORE_HEIGHT)))
-		pellets = maxi(pellets, main.view.scatter.pellets)
-		cones = maxi(cones, main.view.scatter.cones)
+		shown = maxi(shown, main.view.runes.bursts)
+		for edge in main.view.runes.edges:
+			widest = maxf(widest, edge)
 	e.mouse_button(MOUSE_BUTTON_RIGHT, false)
 	var a := w.actors
 	var n := a.index_of(near)
 	var f := a.index_of(far)
+	var pushed := (a.pos(n) - near_from).length()
 	(
 		gut
 		. p(
 			(
-				"AF1 e2e Scatter: near (2 m) took %d, far (7 m) took %d; most pellets drawn %d, cones %d"
-				% [a.max_hp[n] - a.hp[n], a.max_hp[f] - a.hp[f], pellets, cones]
+				"FC0 e2e Rune Explosion: near (2 m) took %d, far (6 m) took %d; shoved %.2f m; bursts drawn %d, widest edge %.2f m"
+				% [a.max_hp[n] - a.hp[n], a.max_hp[f] - a.hp[f], pushed, shown, widest]
 			)
 		)
 	)
 	assert_lt(a.hp[n], a.max_hp[n], "the near one is hurt")
-	assert_eq(a.hp[f], a.max_hp[f], "the far one is past the pellets' 5 m")
-	assert_gt(pellets, 0, "the pellets are drawn")
-	assert_gt(cones, 0, "the muzzle cone is drawn")
-	assert_true(main.audio.played_log.has(&"skill_scatter_blast"), "its bark is heard")
+	assert_gt(pushed, 0.2, "and shoved outward")
+	assert_eq(a.hp[f], a.max_hp[f], "the far one is past the ring's 3.5 m")
+	assert_gt(shown, 0, "the rune ring is drawn")
+	assert_gt(widest, 3.0, "it grows to its full size")
+	assert_true(main.audio.played_log.has(&"rune_burst"), "its boom is heard")

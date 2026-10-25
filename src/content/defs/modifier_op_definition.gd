@@ -159,6 +159,9 @@ const FIELD_STAGE := {
 	&"wisps": [0, &"wisps", ""],
 	&"wisp_seconds": [3, &"wisp_ticks", "ticks"],
 	&"wisp_permille": [3, &"wisp_permille", ""],
+	# v0.9.5 FC0 (owner): the Rune Explosion form's radius (mm) and growth time (s)
+	&"rune_radius_mm": [3, &"rune_mm", ""],
+	&"rune_seconds": [3, &"rune_ticks", "ticks"],
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).

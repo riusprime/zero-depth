@@ -75,6 +75,8 @@ var _echo_t := {}
 var _shade_dark := false
 var _shade_lit: Array[bool] = []
 var _projectiles := {}
+## v0.9.5 FC0: the rune bursts heard so far (their uids).
+var _rune_seen := {}
 ## v0.3.5 AI: where each enemy's area spell (a rune, a bomb) is aimed, from its telegraph at the windup.
 var _targets := {}
 ## v0.4.0 EN: each mine's last fuse (-1 idle), so arming and blowing play once.
@@ -804,6 +806,15 @@ func _scan_projectiles(reader: WorldReader, out: Array) -> void:
 		out.append([cue, reader.player_pos(), 1.0])
 	if wisp:
 		out.append([&"wisp_fire", reader.player_pos(), 1.0])
+	# v0.9.5 FC0: each new rune burst booms once (the burst's own uid, so Twin's later ones sound too).
+	var bursts := {}
+	var burst_new := false
+	for b in reader.rune_bursts():
+		bursts[b["uid"]] = true
+		burst_new = burst_new or not _rune_seen.has(b["uid"])
+	_rune_seen = bursts
+	if burst_new:
+		out.append([&"rune_burst", reader.player_pos(), 1.0])
 	if hostile:
 		out.append([&"enemy_fire", null, 1.0])
 

@@ -1204,6 +1204,20 @@ def s_wisp_fire(r):
     return mix(blip, air)
 
 
+def s_rune_burst(r):
+    """v0.9.5 FC0 (owner: Rune Explosion, a violet shield bursting from the hero; the agent's placeholder): 0.5 s, a
+    soft low whoomp (a sine falling 120 to 55 Hz), a rising airy shimmer (noise swept 900 to 4200 Hz as the ring grows)
+    and a short glassy tail (two FM chimes) as it fades."""
+    n = n_of(0.5)
+    whoomp = osc(curve(120.0, 55.0, n), "sine", n) * env(n, 0.006, 0.22) * 0.9
+    shimmer = bandpass(noise(r, n), curve(900.0, 4200.0, n, "lin"), 3.0) * env(n, 0.12, 0.3) * 0.5
+    m = n_of(0.3)
+    chime = fm(1175.0, 2.0, 1.2 * np.exp(-np.arange(m) / RATE / 0.1), m) * env(m, 0.002, 0.14) * 0.22
+    chime2 = fm(1568.0, 2.0, 1.0 * np.exp(-np.arange(m) / RATE / 0.1), m) * env(m, 0.002, 0.12) * 0.15
+    tail = mix(at(chime, 0.2, n), at(chime2, 0.23, n))
+    return mix(whoomp, shimmer, tail)
+
+
 def s_purple_runes(r):
     """v0.9.0 DP (owner Q26b; the lead's placeholder for the purple runes awakening): 1.7 s: six glassy FM chimes
     rising one every 0.15 s (as the ring of runes lights, PurpleRuneView.STEP_S) over a swelling violet drone, then a
@@ -1499,6 +1513,7 @@ SFX = [
     ("void_hum", s_void_hum),
     ("wave_fire", s_wave_fire),  # v0.9.0 AF3
     ("wisp_fire", s_wisp_fire),
+    ("rune_burst", s_rune_burst),  # v0.9.5 FC0
     ("pillar_turn", s_pillar_turn),
     ("wall_break", s_wall_break),
     ("container_break", s_container_break),
