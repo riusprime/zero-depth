@@ -41,6 +41,7 @@ ENEMY_CHARGER,Charger,Embestidor
 ENEMY_WARDEN,Warden,Guardián
 ENEMY_NEEDLE,Needle,Aguja
 HUD_HP,HP %d / %d,PV %d / %d
+HUD_DANGER_TIER,×%d,×%d
 HUD_DASH,Dash,Esprint
 HUD_UTILITY,Utility,Habilidad
 HUD_WAVE,Wave %d / %d,Oleada %d / %d

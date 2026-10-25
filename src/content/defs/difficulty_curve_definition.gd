@@ -12,6 +12,18 @@ extends ContentDef
 ## The floor this curve runs on (1-based).
 @export var floor_index := 1
 @export var phases: Array[DifficultyPhase] = []
+## v0.9.5 DC (owner: "aim to a 10 minutes max per floor"): after the peak the danger tier keeps rising on a schedule of
+## floor time. overtime_seconds[i] is when tier 4 + i starts (ascending); past the last, +1 tier every
+## overtime_step_seconds up to overtime_max_tier. Each tier above 3 adds cap_per_tier_permille to the peak's cap and
+## takes interval_per_tier_permille off its interval (not below interval_min_seconds); pack_cap_bumps are the tiers
+## that add one to the largest pack. Empty overtime_seconds = none.
+@export var overtime_seconds := PackedInt32Array()
+@export var overtime_step_seconds := 30
+@export var overtime_max_tier := 20
+@export var cap_per_tier_permille := 0
+@export var interval_per_tier_permille := 0
+@export var interval_min_seconds := 0.8
+@export var pack_cap_bumps := PackedInt32Array()
 
 
 func category() -> StringName:
@@ -51,6 +63,7 @@ func validate() -> Array[ValidationIssue]:
 			issues.append(_issue(&"calm", "only the first phase may hold (the calm phase)"))
 		if k > 0 and phases[k - 1] != null:
 			_check_step(issues, k, phases[k - 1], p)
+	_check_overtime(issues)
 	var calm := phases[0]
 	if calm != null:
 		if calm.start_seconds != 0.0:
@@ -60,6 +73,32 @@ func validate() -> Array[ValidationIssue]:
 		if calm.kinds.is_empty():
 			issues.append(_issue(&"calm", "the first phase opens no kind"))
 	return issues
+
+
+func _check_overtime(issues: Array[ValidationIssue]) -> void:
+	if overtime_seconds.is_empty():
+		return
+	var peak := phases[phases.size() - 1]
+	for k in overtime_seconds.size():
+		if overtime_seconds[k] <= 0 or (k > 0 and overtime_seconds[k] <= overtime_seconds[k - 1]):
+			issues.append(_issue(&"overtime", "overtime_seconds must be positive and ascending"))
+			break
+	if peak != null and overtime_seconds[0] < peak.start_seconds:
+		issues.append(_issue(&"overtime", "the overtime starts before the peak phase"))
+	if overtime_step_seconds < 1 or interval_min_seconds <= 0.0:
+		issues.append(_issue(&"overtime", "step and interval floor must be positive"))
+	if overtime_max_tier < 3 + overtime_seconds.size():
+		issues.append(_issue(&"overtime", "overtime_max_tier is below the last scheduled tier"))
+	if (
+		cap_per_tier_permille < 0
+		or interval_per_tier_permille < 0
+		or interval_per_tier_permille > 100
+	):
+		issues.append(_issue(&"overtime", "the per-tier cap or interval share is out of range"))
+	for k in pack_cap_bumps.size():
+		if pack_cap_bumps[k] < 4 or (k > 0 and pack_cap_bumps[k] <= pack_cap_bumps[k - 1]):
+			issues.append(_issue(&"overtime", "pack_cap_bumps must be tiers above 3, ascending"))
+			break
 
 
 ## Every enemy id the curve names, in phase order.
