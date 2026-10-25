@@ -344,8 +344,8 @@ func test_the_overtime_grows_the_cap_and_shortens_the_interval() -> void:
 	var base_cap := SpawnTable.scale(t.cap(3, 10), t.curve.cap_permille_at(t10))
 	assert_eq(
 		t.cap_now(3, t10),
-		SpawnTable.scale(base_cap, 1000 + 80 * 7),
-		"cap x(1 + 0.08 x 7) at tier 10"
+		SpawnTable.scale(base_cap, 1400),
+		"cap x(1 + 0.08 x 7) at tier 10, held at the x1.4 ceiling (v0.9.5: tier 8 on)"
 	)
 	assert_gt(t.cap_now(3, t10), t.cap_now(3, SimTick.seconds_to_ticks(89.0)))
 	var base_iv := maxi(1, SpawnTable.scale(t.interval(10), t.curve.interval_permille_at(t10)))
@@ -358,6 +358,13 @@ func test_the_overtime_grows_the_cap_and_shortens_the_interval() -> void:
 	assert_eq(t.curve.overtime_interval(40, 20), 48, "the floor holds from tier 4 on")
 	assert_eq(t.curve.overtime_interval(1000, 3), 1000, "no change at tier 3")
 	assert_eq(t.curve.cap_bonus_permille(3), 1000)
+	assert_eq(t.curve.cap_bonus_permille(7), 1320, "x(1 + 0.08 x 4) under the ceiling")
+	assert_eq(t.curve.cap_bonus_permille(8), 1400, "the ceiling")
+	assert_eq(
+		t.curve.cap_bonus_permille(20),
+		1400,
+		"held: more danger comes from the tier tables, not more enemies"
+	)
 
 
 func test_the_overtime_bumps_the_pack_cap_at_tiers_6_10_and_15() -> void:

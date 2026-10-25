@@ -21,6 +21,9 @@ extends ContentDef
 @export var overtime_step_seconds := 30
 @export var overtime_max_tier := 20
 @export var cap_per_tier_permille := 0
+## v0.9.5 (lead, owner line 21: 10–20 enemies already lag): the cap's overtime growth stops here; past it the danger
+## comes from the tier tables (enemy HP and damage), not more enemies at once. 0 = no ceiling.
+@export var cap_bonus_max_permille := 0
 @export var interval_per_tier_permille := 0
 @export var interval_min_seconds := 0.8
 @export var pack_cap_bumps := PackedInt32Array()
@@ -91,6 +94,7 @@ func _check_overtime(issues: Array[ValidationIssue]) -> void:
 		issues.append(_issue(&"overtime", "overtime_max_tier is below the last scheduled tier"))
 	if (
 		cap_per_tier_permille < 0
+		or (cap_bonus_max_permille != 0 and cap_bonus_max_permille < 1000)
 		or interval_per_tier_permille < 0
 		or interval_per_tier_permille > 100
 	):

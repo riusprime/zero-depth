@@ -326,6 +326,7 @@ static func compile_curve(
 	c.overtime_step = SimTick.seconds_to_ticks(float(def.overtime_step_seconds))
 	c.overtime_max_tier = def.overtime_max_tier
 	c.cap_per_tier_permille = def.cap_per_tier_permille
+	c.cap_bonus_max_permille = def.cap_bonus_max_permille
 	c.interval_per_tier_permille = def.interval_per_tier_permille
 	c.interval_min_ticks = SimTick.seconds_to_ticks(def.interval_min_seconds)
 	c.pack_cap_bumps = def.pack_cap_bumps.duplicate()

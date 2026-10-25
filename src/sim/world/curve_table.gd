@@ -29,6 +29,7 @@ var overtime_starts := PackedInt32Array()
 var overtime_step := 1800
 var overtime_max_tier := 20
 var cap_per_tier_permille := 0
+var cap_bonus_max_permille := 0  # v0.9.5: the cap's overtime factor stops here (0 = none)
 var interval_per_tier_permille := 0
 var interval_min_ticks := 48
 var pack_cap_bumps := PackedInt32Array()
@@ -80,7 +81,8 @@ func extra_tiers(tier: int) -> int:
 
 ## v0.9.5 DC: the cap's overtime factor at `tier`, per mille.
 func cap_bonus_permille(tier: int) -> int:
-	return 1000 + cap_per_tier_permille * extra_tiers(tier)
+	var f := 1000 + cap_per_tier_permille * extra_tiers(tier)
+	return mini(f, cap_bonus_max_permille) if cap_bonus_max_permille > 0 else f
 
 
 ## v0.9.5 DC: `interval_ticks` (already scaled for the tier) shortened by the overtime, never below interval_min_ticks.

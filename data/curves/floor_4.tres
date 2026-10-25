@@ -63,6 +63,7 @@ overtime_seconds = PackedInt32Array(90, 150, 240, 330, 420, 510, 600)
 overtime_step_seconds = 30
 overtime_max_tier = 20
 cap_per_tier_permille = 80
+cap_bonus_max_permille = 1400
 interval_per_tier_permille = 40
 interval_min_seconds = 0.8
 pack_cap_bumps = PackedInt32Array(6, 10, 15)
