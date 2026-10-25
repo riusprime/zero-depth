@@ -11,10 +11,10 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ and CB merged.
-- **Agents working:** SB (solid bodies) and SS (the shrine) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB and SS merged.
+- **Agents working:** SB (solid bodies) and RC (retired cards) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner:** the G2 HUD pick, once HM's mockups are shared.
-- **Next:** RC, MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
+- **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
 ## Done
 | Step | What (player-facing) | Commit |
@@ -26,6 +26,7 @@ riusprime/zero-depth#9).
 | CD | Esc or B on a chest's dealt card closes it without taking it: unpaid, the same card waits for you (the hint says so, en + es) | `0511734c` |
 | SQ | Additive effects (portals, the laser's tip, sparks, motes) no longer show a lit square in foggy biomes: fog off on additive shaders, edge masks, soft dots on bare particle quads, lossless VFX textures ([evidence](evidence/SQ.md)) | `c50a9621`, merge `43d03d51` |
 | CB | The dash recharges in 10 s and blink in 15 s (14/13/12/11 s at its higher levels); Swift Feet, the Cooldowns stat and the shrine still cut them ([evidence](evidence/CB.md)) | `41abcd1d`, merge `5e3c789b` |
+| SS | A failing shrine flashes, gutters red, cracks and smokes with its own sound; a win floats the won stat's glyph over it with a gold pulse and a chime (both sounds synthesized; [evidence](evidence/SS.md)) | `4e5bfa1d`, merge `1ead6bc5` |
 
 ## Goldens changed on purpose
 - `tests/golden/fixtures/modifier_equivalence.json`: all 22 digests (CB; the scenarios dash every 97 ticks, so the
@@ -55,3 +56,8 @@ riusprime/zero-depth#9).
   then asked in chat, in batches; all Q1–Q19 and the five G1s were answered the same day (Q8 corrected to the event
   altars, Q16 to Double Exposure). CB (agent) merged: its listed files and re-runs green (50/50, 68/68, 87/87;
   [evidence](evidence/CB.md)); the HUD's 10 s / 15 s text is NOT YET RUN. SS (the shrine) started.
+- 2026-10-25 — SS (agent) merged (`1ead6bc5`; the translation conflict resolved by re-import, both new strings checked
+  in the compiled es file): 63/63 on its files ([evidence](evidence/SS.md)). Note from SS: re-rendering
+  `generate_sfx.py` rewrites six older wavs (barrel_blast, barrel_fuse, bomb_throw, container_break, pillar_turn,
+  wall_break) with unchanged recipes, so its `--check` would fail today; not caused by SS (left as found). The prize
+  glyph reads faint in the shot. RC started.
