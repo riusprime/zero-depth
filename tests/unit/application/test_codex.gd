@@ -114,9 +114,7 @@ func test_the_catalog_lists_the_content_by_pool_without_retired_cards() -> void:
 		&"wide_arc": &"blade",
 		&"ember_core": &"shared",
 		&"shared_bleed": &"shared",
-		&"trigger_on_hit": &"triggers",
-		&"trigger_on_finisher": &"triggers",
-		&"trigger_on_hit_twice": &"legendary",
+		&"chain_blast": &"legendary",
 		&"damage": &"stats",
 		&"glass_cannon": &"stats",
 		&"blink": &"utilities",
@@ -130,22 +128,12 @@ func test_the_catalog_lists_the_content_by_pool_without_retired_cards() -> void:
 		&"pulse_gun", &"combo_sword", &"long_edge", &"bomb_lobber", &"twin_cast"
 	]:
 		assert_false(c.has(&"cards", id), "%s is not a Codex card" % id)
-	assert_eq(c.entry(&"cards", &"trigger_on_finisher")["alt_name_key"], &"ITEM_TRIGGER_ON_CRIT")
 	assert_true(c.entry(&"cards", &"gun_twin")["leveled"], "a wand card levels")
 	assert_false(c.entry(&"cards", &"damage")["leveled"], "a stat card doesn't")
 	assert_eq(
 		c.sections(&"cards"),
 		(
-			[
-				&"gun",
-				&"blade",
-				&"shared",
-				&"triggers",
-				&"legendary",
-				&"stats",
-				&"utilities",
-				&"passives"
-			]
+			[&"gun", &"blade", &"shared", &"legendary", &"stats", &"utilities", &"passives"]
 			as Array[StringName]
 		),
 		"the pools in order (no other abilities today)"

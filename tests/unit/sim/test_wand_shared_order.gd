@@ -5,14 +5,10 @@ extends GutTest
 ## real with their final faces. The cast marks the views draw (WandCasts). Mechanics only: no bot, no balance (P1).
 
 const W := preload("res://tests/support/mx4_world.gd")
-const TRIG := AttackSpec.Trigger
 const FORM := AttackSpec.Form
 const WEAPONS: Array[StringName] = [&"blade", &"gun"]
 const FIRE_FIRST: Array[StringName] = [&"ember_core", &"trigger_on_hit", &"storm_core"]
 const HIT_FIRST: Array[StringName] = [&"trigger_on_hit", &"ember_core", &"storm_core"]
-const TRIGGERS: Array[StringName] = [
-	&"trigger_on_hit", &"trigger_on_kill", &"trigger_on_end", &"trigger_on_finisher"
-]
 
 
 func _spell(w: World, weapon: StringName) -> AttackSpec:
@@ -138,34 +134,6 @@ func test_a_child_slash_feeds_only_its_own_statuses() -> void:
 	assert_gt(W.damage(w, &"trigger_on_hit").size(), 0, "the child slash hits B")
 	assert_gt(w.actors.poison_stacks[1], 0, "A, hit by the slash, is poisoned")
 	assert_eq(w.actors.poison_stacks[2], 0, "B, hit by the plain child slash only, is not")
-
-
-# --- The triggers, offered with their final faces --------------------------------------------------------------
-func test_the_four_triggers_are_offered_on_both_weapons() -> void:
-	for weapon in WEAPONS:
-		var w := W.world(weapon)
-		var open := ItemPool.available(w)
-		for id in TRIGGERS:
-			var k := W.item(w, id)
-			assert_true(open.has(k), "%s is offered in a %s run" % [id, weapon])
-			assert_true(BuildSlots.is_slot_item(w.item_tables[k]), "%s takes a slot" % id)
-
-
-func test_t4_shows_on_finisher_with_the_blade_and_on_crit_with_the_gun() -> void:
-	var b := W.world(&"blade")
-	var g := W.world(&"gun")
-	var k := W.item(b, &"trigger_on_finisher")
-	assert_eq(Offers.info(b, k)["name_key"], &"ITEM_TRIGGER_ON_FINISHER")
-	assert_eq(Offers.info(g, k)["name_key"], &"ITEM_TRIGGER_ON_CRIT")
-	assert_eq(WorldReader.new(g).item_desc_key(k), &"ITEM_TRIGGER_ON_CRIT_DESC")
-	assert_eq(WorldReader.new(b).item_name_key(k), &"ITEM_TRIGGER_ON_FINISHER")
-	for id in [&"trigger_on_hit", &"trigger_on_kill", &"trigger_on_end"]:
-		var j := W.item(b, id)
-		assert_eq(Offers.info(b, j)["name_key"], Offers.info(g, j)["name_key"], "%s: one face" % id)
-	g.add_item(k)
-	var read: Dictionary = Wand.read(g)
-	assert_eq(read["cards"][0]["name_key"], &"ITEM_TRIGGER_ON_CRIT", "the wand reads its Gun face")
-	assert_eq(read["cards"][0]["trigger"], TRIG.ON_CRIT)
 
 
 # --- The casts the views draw ----------------------------------------------------------------------------------
