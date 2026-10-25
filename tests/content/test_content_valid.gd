@@ -23,7 +23,11 @@ func test_player_compiles_to_ticks() -> void:
 	var def: PlayerDefinition = ContentRepository.load_all().get_def(&"player", &"runner")
 	var t := ContentCompiler.compile_player(def)
 	assert_eq(t.dash_ticks, 9, "0.15 s at 60 Hz")
-	assert_eq(t.dash_cooldown_ticks, 84, "1.4 s at 60 Hz (v0.3.5 K, owner F12)")
+	assert_eq(
+		t.dash_cooldown_ticks,
+		600,
+		'10 s at 60 Hz (v0.9.5 CB, owner: "dash will have a 10s cooldown")'
+	)
 	assert_almost_eq(t.move_speed, 0.1, 1e-9, "6 m/s is 0.1 m per tick")
 
 
