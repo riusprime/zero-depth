@@ -102,6 +102,9 @@ low-poly; worn metal, concrete and stone; no baked lighting or shadows; no text,
 ground plane; readable from an isometric camera about 35° down. Rigged is always a bonus, never needed: without a rig
 the lead animates parts in code.
 
+**v0.9.5 (2026-10-25): the refreshed list of models still drawn by code** (10 enemies, 11 props, 6 shop pieces, 2 boss
+attack pieces, the wardrobe robe, optional collectibles) is [`art/requests/v0.9.5_MODEL_LIST.md`](art/requests/v0.9.5_MODEL_LIST.md).
+
 **Kit prefix** (props, room pieces, devices):
 > Low-poly faceted 3D game prop, stylised, chunky and slightly weathered, flat-shaded facets with crisp edges, a
 > single object centred on a plain white background, three-quarter view from above, soft even studio light, no
@@ -294,3 +297,4 @@ AnimationPlayer inside the `.glb`; yours replace the code ones.
 |---|---|---|---|
 | ☐ | `fx_rail_streak` (P2) | The Siege Engine's rail shot (the only texture missing from the zips) | in [`art/requests/v0.8.0_textures.md`](art/requests/v0.8.0_textures.md) |
 | ☐ | final-boss music (P3) | A track for the final arena; today it uses the boss sounds | — |
+| ☐ | `bg_<biome>_deep/mid` ×10 (v0.9.5 BG, Q5) | Two seamless 2048² background layers per biome (Deep opaque, Mid transparent), dark and top-down | in [`art/requests/v0.9.5_BACKGROUNDS.md`](art/requests/v0.9.5_BACKGROUNDS.md) |
