@@ -68,4 +68,4 @@ ability cards (Blink, Drone, …) and the stat cards: they keep their levels, be
 ## Decisions (owner, date)
 | ID | Answer | Built in |
 |---|---|---|
-| | | |
+| C1–C21 (C19 as written: the Pulse Gun leaves the offers) | Approved as written (owner, 2026-10-25, in chat) | |

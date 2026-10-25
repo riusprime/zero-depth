@@ -1,9 +1,9 @@
-# v0.9.5 — The v0.9.0 feedback pass: harder bosses, a cleaner Gun, a calmer world (plan, DRAFT 2026-10-25)
+# v0.9.5 — The v0.9.0 feedback pass: harder bosses, a cleaner Gun, a calmer world (plan, owner-approved 2026-10-25)
 
 Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.md`](PROGRESS.md).
 
-**DRAFT:** direct fixes are being built; everything else waits on the design questions and gates below (owner rule:
-"new features and changes on the game should be discuseed and questions asked").
+**Owner-approved 2026-10-25:** Q1–Q19 and the five G1s answered ("Owner decisions" below). The G2 HUD pick (HM) is the
+only gate left.
 
 ## Context
 - **`main`** is v0.9.0 at `d33bc82a` (PR riusprime/zero-depth#9, merged 2026-10-25).
@@ -217,6 +217,32 @@ the chest stays with that same card, and you can come back for it. Say if you'd 
 - each tier above 3 also adds +8 % to the room's enemy cap and −4 % to the spawn interval (at least 0.8 s);
 - the HUD shows the tier as a number past 4 chevrons.
 
+## Owner decisions (2026-10-25)
+Answered in chat on 2026-10-25, one batch at a time. They win over the decision column above where the two differ.
+
+| Q | Answer |
+|---|---|
+| Q1 | RUNIC_STONE approved as written (S1–S6, R1–R10) |
+| Q2 | (a) Boss HP read when the door starts to open; caps ×2.5 / 3.0 / 3.5 / 4.0 / 4.5 by floor; ±8 % per boss |
+| Q3 | (a) The core steal opens for 3 s at each phase change (the boss kneels 1 s) |
+| Q4 | BOSSES_HARD approved as written (H0–H2, B1–B10, T1–T4, HC1–HC7) |
+| Q5 | (a) Layered parallax planes under each biome; the owner generates one seamless 2048² image per layer from the lead's prompts; code stand-ins first |
+| Q6 | (a) Two sealed kinds. **Locked room** (Lockdown and Arena merged): one burst in 2 formations 1 s apart, a free reward when cleared. **Overrun** keeps its waves. Falling bars on every seal; Overrun's doorway has a small red floor rune instead of the glowing frame |
+| Q7 | (a) Timed-door switches 1–2 rooms from the door, on different sides; 20 s timer; a lever inside reopens the door for 5 s |
+| Q8 | **The owner meant the event altars** ("the ones that usually give you 2 options and a curse comes with them they have a name, not the cursed room and not the free cards or shrines"): Unstable Core, Echo Mirror, Scrap Heap, Overclock Vent, Blood Price, Wandering Drone, Cleansing Font, Whispering Deep. Today 1–2 every floor → 30 % of floors, at most 2 a run, never the same event twice in a run. Card altars, shrines and fountains unchanged |
+| Q9 | (a) Four squares bottom-right: Attack (RT), Skill (the Gun's Scatter Blast, moved from Y to **L2 / LT**), Dash (RB), Blink (LB); Vent beside the heat meter |
+| Q10 | (a) The prompt under the hero, the button drawn in code to match the pad in use (Xbox / PlayStation by name; a key cap on keyboard); a cost only when there is one |
+| Q11 | (a) Each finished loop (up to 3): final fight target time −12 %, its damage −8 %; "Looped ×3" mark on the run summary |
+| Q12 | (a) Heat per second of firing, the same for every form (~14 s to full); cools 1.0 s after you stop at 25/s; Vent needs ≥ 40 heat, 6 s cooldown |
+| Q13 | (a) Wisp shots 40 % → 80 % of an orb, pierce 1 |
+| Q14 | (a) Stress Mark per enemy within 6 m, a random screen side, ×2 once from within 45°, 8 s per enemy, bosses carry 4 marks; no levels |
+| Q15 | (a) The Blade locked for every profile; "Sword Unbound": beat the Hollow Crown with the Gun |
+| Q16 | **"Double trail" is Double Exposure** (owner: "the card that makes a line out of your shot's trajectory and then makes damage on that line"), already removed in RC. Threadline stays |
+| Q17 | (a) Breakables solid until broken; kept 1.5 m from doorways |
+| Q18 | FYI, built as written (CD) |
+| Q19 | FYI, built as written (DC) |
+| G1 | ELEMENTS, CARD_LEVELS (C19: the Pulse Gun leaves the offers) and FORM_COMBOS (all forms, every row) approved as written |
+
 ## Steps
 Every step is one commit, `v0.9.5 Step <ID>: <player-facing outcome>`. At most 2 agents at a time. Each step is
 tested as CLAUDE.md "Testing before a push" says.
@@ -255,10 +281,40 @@ tested as CLAUDE.md "Testing before a push" says.
 - **HM: the HUD mockups** (G2): three mockups of the bottom-right ability squares and the bigger HP plate,
   `scripts/shots/mock_hud.gd`, en + es, 1920×1080.
 
-### Waves C onward: after the answers
-- **Gun:** FC0 (Rune Explosion), FC1–FC9 (one per form), EE1–EE3, CLV, WB, SM, HT.
-- **Bosses:** BH1–BH6.
-- **World:** RS1–RS2, BG, DR, TS, AQ, PR, HU (the HUD built from the picked mockup), LP, SL.
+### Waves C–E: the answered features (rewritten from the owner's answers, 2026-10-25)
+The two agent slots run **one Gun step and one non-Gun step** at a time, because the Gun steps share files (the wand,
+offers, `attack_slots.tres`, the forms). The order inside each list is the build order.
+
+**Wave C: the Gun** (in order; each one after the last merges)
+1. **CLV:** card levels (CARD_LEVELS C1–C21), the Pulse Gun out of offers (C19), forms without levels. After RC.
+2. **FC0:** Rune Explosion replaces Scatter (R0, migration).
+3. **HT:** heat per second of firing (Q12).
+4. **WB:** Wisps 80 % with pierce 1 (Q13).
+5. **SM:** the new Stress Mark (Q14).
+6. **EE1–EE3:** element levels (Venom and Bleed; Fire, Lightning and Frost), then the 10 pairs.
+7. **FC1–FC9:** the combinations, one form per step, in this order: Laser, Bomb, Void, Lance, Rune Explosion, Glaive,
+   Seekers, Wave, Wisps.
+
+**Wave D: the bosses** (in order)
+1. **BH1:** no stagger (H0), the core window at phase changes (H1, Q3), HP read at the door with the new caps and
+   ±8 % (H2, Q2), and the loop ease (LP, Q11).
+2. **BH2:** B1–B5.
+3. **BH3:** B6, B8–B10.
+4. **BH4:** the Tidecaller (T1–T4).
+5. **BH5:** the Hollow Crown, phases 1–2 (HC1–HC3).
+6. **BH6:** the Hollow Crown, phase 3's interphases and movement (HC4–HC6).
+
+**Wave E: the world** (fills the non-Gun slot between boss steps)
+1. **DR:** locked rooms vs Overrun and the bars on every seal (Q6).
+2. **AQ:** event altars to 30 % of floors, at most 2 a run (Q8).
+3. **TS:** the timed-door switches spread, a 20 s timer, the inside lever (Q7).
+4. **BK:** breakables solid until broken (Q17).
+5. **PR:** short prompts under the hero with code-drawn buttons (Q10).
+6. **SL:** the Blade locked, "Sword Unbound" (Q15).
+7. **RS1, RS2:** the Runic Stone.
+8. **HU:** the HUD, from the picked HM mockup, with the Skill on L2 (Q9).
+9. **BG:** the biome background layers (code stand-ins), plus the owner's image prompts in
+   `docs/art/requests/v0.9.5_BACKGROUNDS.md` (Q5).
 
 ### PF. Performance (last, owner's order)
 - No enemy is drawn behind walls or floors: the X-ray silhouette pass goes (`ActorViews.technique = &"xray"`, a

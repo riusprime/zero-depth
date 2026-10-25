@@ -78,4 +78,4 @@ HC are the two fights the owner named. Numbers are starting values, checked in t
 ## Decisions (owner, date)
 | ID | Answer | Built in |
 |---|---|---|
-| | | |
+| H0–H2, B1–B10, T1–T4, HC1–HC7 | Approved as written (owner, 2026-10-25, in chat) | |

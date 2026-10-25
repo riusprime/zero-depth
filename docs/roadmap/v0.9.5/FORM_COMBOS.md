@@ -16,8 +16,8 @@ answers. "All yes" for a form is fine too.
 - **Orbs** (the Pulse Gun's plain shot) allow all 16 pattern and secondary cards. The other 9 forms allow only Twin
   (and Backfire on Scatter and Wave, Swirl on Glaive, Pierce on Laser). That is **10 of 144 cells on**.
 - Every form allows all five elements. Elements are a separate G1: [`ELEMENTS.md`](ELEMENTS.md).
-- Cards that may be removed: Threadline, if it is the "double trail" (Q16). It is marked † below and is off
-  everywhere until Q16 is answered.
+- Threadline (marked †) stays: Q16 found "double trail" was Double Exposure. It is off on every form but the Orbs, as
+  proposed.
 
 The 16 cards, as they read today:
 - Twin: fire twice side by side.
@@ -225,4 +225,4 @@ Every card stays on, as today. No change proposed.
 ## Decisions (owner, date)
 | ID | Answer | Built in |
 |---|---|---|
-| | | |
+| R0–R9, L1–L11, B1–B10, V1–V10, N1–N9, G1–G11, S1–S11, W1–W8, P1–P6 | Approved as written (owner, 2026-10-25, in chat) | |

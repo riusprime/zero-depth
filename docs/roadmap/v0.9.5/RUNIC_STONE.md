@@ -54,4 +54,4 @@ to the game that will build up from the stone in the hub."
 ## Decisions (owner, date)
 | ID | Answer | Built in |
 |---|---|---|
-| | | |
+| S1–S6, R1–R10 | Approved as written (owner, 2026-10-25, in chat) | |
