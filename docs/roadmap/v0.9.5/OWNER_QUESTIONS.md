@@ -13,6 +13,7 @@ by number; "as built" is fine.
 | N2 | The Fortune shrine's prize glyph (the won stat floating over the shrine) reads a little faint in the shot. Brighter or bigger? | as built | [`evidence/SS.md`](evidence/SS.md) |
 | N3 | The new shrine sounds (`gamble_fail`, a falling crackle; `gamble_win`, a two-note chime) are synthesized. Listen in game: keep them, or would you rather provide files? | synthesized | `assets/audio/sfx/gamble_*.wav` |
 | N4 | **The Pulse Gun's lost damage.** With the Pulse Gun out of the offers (CARD_LEVELS C19), a run that keeps the plain Orbs loses the ×1.12–1.48 its levels gave. I had proposed bringing the Damage stat card one room earlier, but the game has no per-card room gate (stat cards come by odds). Options: **(a)** nothing: stat cards make it up over a run; **(b)** the plain Orbs' base damage 5 → 6 (+20 %, about Pulse Gun Lv 2–3); **(c)** Damage stat cards weighted ×1.5 while you hold no form card | (a) for now | [`evidence/CLV.md`](evidence/CLV.md) |
+| N5 | **Rune Explosion's strength.** Measured against the plain orbs (dummies within reach): ×0.50 on one target, ×2.46 in a line, ×2.42 in a pack at ×3.75 damage (the agent's limit was +25 % over the planned ×3.0). The plan aimed at ×0.55 / ×3.0 in a pack. Raise it further (×4.5 ≈ ×2.9 pack), or try it first? | ×3.75, try it first | [`evidence/FC0.md`](evidence/FC0.md) |
 
 ## FYI (decided by the lead, say if you disagree)
 | # | Note | Where |
@@ -21,3 +22,4 @@ by number; "as built" is fine.
 | F2 | With the mutations gone, a jackpot can only lift a card you hold at the level ceiling (its mutation branch is now unused) | [`evidence/RC.md`](evidence/RC.md) |
 | F3 | Godot on your PC runs in Spanish, so a few tests that assert English names fail locally unless run with `--language en`; CI is English. Agents now pass `--language en` | — |
 | F4 | Difficulty past minute 10 (DC): the room's enemy cap grows only up to ×1.4 (reached at tier 8, minute 7). After that the danger comes from tougher enemies (the tier tables: about ×2.0 enemy HP at minute 10, ×5.2 at minute 15 on floor 3), not from more of them at once, because 10–20 enemies already lag (your line 21). Without the ceiling the agent's plan reached 78 enemies alive at minute 10 and 156 at minute 15 | [`evidence/DC.md`](evidence/DC.md) |
+| F5 | Rune Explosion's bursts aren't projectiles, so they don't count toward the 40-shots-a-second cap; the retired Scatter's row is gone (only the dev panel can still grant it) | [`evidence/FC0.md`](evidence/FC0.md) |

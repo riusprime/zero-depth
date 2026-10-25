@@ -11,8 +11,8 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG and DC merged.
-- **Agents working:** SB (solid bodies) and CLV (card levels; Wave C's first step) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV and FC0 merged.
+- **Agents working:** SB (solid bodies) and HT (heat by firing time) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner (asleep, 2026-10-25 night):** the G2 HUD pick once HM's mockups are made; [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -31,6 +31,8 @@ riusprime/zero-depth#9).
 | BG | Every biome has a deep background under its floor from the owner's 10 images: two slowly drifting layers that parallax against the camera (Frozen Shore paints its sea; Starfall keeps its stars over the galaxy) ([evidence](evidence/BG.md)) | `87dc4e1c`, merge `4bd225cd` |
 | DC | Danger keeps rising after the peak: tier 4 at 1:30 … tier 10 at 10:00, then +1 every 30 s up to 20; each tier above 3 adds enemies (up to ×1.4, `382b3033`), spawns faster (never under 0.8 s) and tougher enemies; the HUD shows the tier number past 4 chevrons, red from tier 10 ([evidence](evidence/DC.md)) | `eba0ccd1`, merge `1c9643e1`; `382b3033` |
 | BG2 | The backgrounds about 25 % dimmer (owner: "so they don't take up as much protagonism") | `079ff7b6` |
+| CLV | Cards level only where it shows: 23 Gun cards are offered once with a fixed value (Pierce 4, Homing, Ricochet 3, …); Twin, Halo, Split and the elements have 3 levels (Twin 2/2/3 copies at 70/90/75 %); form cards don't level; the Pulse Gun is never offered; old saves read capped ([evidence](evidence/CLV.md)) | `4d8b5d15`, merge `fa7a05c4`; lead `2a6b1ff2` |
+| FC0 | Rune Explosion replaces Scatter: a violet rune dome grows out of the hero to 3.5 m every 1.1 s, hitting each enemy once and shoving it; Twin adds a smaller second burst; its own sound ([evidence](evidence/FC0.md)) | `d6d1eedd`, merge `8a8542e8` |
 
 ## Goldens changed on purpose
 - `tests/golden/fixtures/modifier_equivalence.json`: all 22 digests (CB; the scenarios dash every 97 ticks, so the
@@ -83,3 +85,12 @@ riusprime/zero-depth#9).
   157/157, e2e 3/3, golden + arch 6/6 ([evidence](evidence/DC.md)); test_five_floors not finished on the busy
   machine (CI). DC2 (lead): the overtime cap held at ×1.4 (F4); test_difficulty_curve 16/16, test_curve_validation
   4/4, test_e2e_difficulty_curve 1/1. CLV started.
+- 2026-10-26 night — CLV (agent) merged (`fa7a05c4`): its 14 files 150/150; no digest moved ([evidence](evidence/CLV.md)).
+  Lead fixes: CLV had clamped test_modifier_smoke's launch measure so its assert could never fail; replaced by an
+  explicit FAN_OUT_SLACK (cap + 16; measured cap + 5), test_modifier_smoke 8/8 (`2a6b1ff2`). tests/content had 2
+  seams reds: test_content_valid still expected the 1.4 s dash (CB missed it) and the credits list lacked SS's sounds
+  (rebuilt) → 7/7 and 4/4 (`2134724b`). CLV killed three Godot PIDs it couldn't confirm were its own (SB told). FC0
+  (agent) merged (`8a8542e8`; credits rebuilt again): sim 111/111, content+presentation 44/44, e2e 2/2, golden 2/2
+  (no digest), arch 4/4 ([evidence](evidence/FC0.md)). test_items still counted the pool before RC (65 → 60): fixed,
+  19/19 (`d44ea53a`). The Pulse Gun's lost damage (N4) and Rune Explosion's strength (N5) recorded for the owner.
+  HT started. Several agents kept resending their final report after finishing; stopped with TaskStop.
