@@ -38,8 +38,6 @@ const FOG_HEIGHT_FALLOFF := 0.3
 ## How often (frames) the emitters follow their lights' visibility and the reduced-motion preference.
 const CHECK_EVERY := 10
 
-static var _dot: GradientTexture2D
-
 var enabled := false
 var fog_layer: FogVolume
 var dust: GPUParticles3D
@@ -232,26 +230,11 @@ static func _draw_mesh(size: float, tint: Color) -> QuadMesh:
 	mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
 	mat.vertex_color_use_as_albedo = true
 	mat.albedo_color = tint
-	mat.albedo_texture = _soft_dot()
+	mat.albedo_texture = FxTextures.soft_dot()
 	var q := QuadMesh.new()
 	q.size = Vector2(size, size)
 	q.material = mat
 	return q
-
-
-static func _soft_dot() -> GradientTexture2D:
-	if _dot == null:
-		var g := Gradient.new()
-		g.offsets = PackedFloat32Array([0.0, 0.35, 1.0])
-		g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0.6), Color(1, 1, 1, 0)])
-		_dot = GradientTexture2D.new()
-		_dot.gradient = g
-		_dot.fill = GradientTexture2D.FILL_RADIAL
-		_dot.fill_from = Vector2(0.5, 0.5)
-		_dot.fill_to = Vector2(1.0, 0.5)
-		_dot.width = 32
-		_dot.height = 32
-	return _dot
 
 
 ## The camera's focus on the ground (its ray onto y = 0) and its ortho size; [] without a camera (StageKit._focus).

@@ -22,7 +22,7 @@ const BAND := Color("#C9A86A")
 
 const RING_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 uniform sampler2D ring_tex : source_color, filter_linear;
 uniform float has_tex = 0.0;
 uniform vec4 core : source_color = vec4(1.0);
@@ -39,12 +39,12 @@ void fragment() {
 		vec2 uv = (UV - 0.5) / max(front, 0.05) + 0.5;
 		a = texture(ring_tex, clamp(uv, 0.0, 1.0)).a * step(r, front + 0.05) + fill;
 	}
-	ALBEDO = mix(edge.rgb, core.rgb, band) * a * (1.0 - u * u) * 2.2;
+	ALBEDO = mix(edge.rgb, core.rgb, band) * a * (1.0 - u * u) * 2.2 * (1.0 - smoothstep(0.8, 1.0, r));
 }
 """
 const SPARK_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 uniform vec4 core : source_color = vec4(1.0, 0.9, 0.6, 1.0);
 uniform vec4 edge : source_color = vec4(1.0, 0.5, 0.1, 1.0);
 void vertex() {
@@ -57,8 +57,9 @@ void fragment() {
 	float r = length(d);
 	float a = atan(d.y, d.x);
 	float flick = 0.7 + 0.3 * sin(TIME * 40.0 + a * 3.0);
-	float star = pow(abs(cos(a * 2.0 + TIME * 9.0)), 8.0) * (1.0 - r);
-	ALBEDO = (edge.rgb * (exp(-r * r * 6.0) + star) + core.rgb * exp(-r * r * 30.0) * 1.5) * flick * 1.6;
+	float star = pow(abs(cos(a * 2.0 + TIME * 9.0)), 8.0) * max(0.0, 1.0 - r);
+	vec3 c = edge.rgb * (exp(-r * r * 6.0) + star) + core.rgb * exp(-r * r * 30.0) * 1.5;
+	ALBEDO = c * flick * 1.6 * (1.0 - smoothstep(0.8, 1.0, r));
 }
 """
 

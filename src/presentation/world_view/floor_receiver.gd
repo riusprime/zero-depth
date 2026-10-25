@@ -238,6 +238,8 @@ func _build_dust() -> void:
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.vertex_color_use_as_albedo = true
 	mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	mat.albedo_texture = FxTextures.soft_dot()
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
 	var quad := QuadMesh.new()
 	quad.size = Vector2(0.22, 0.22)
 	quad.material = mat

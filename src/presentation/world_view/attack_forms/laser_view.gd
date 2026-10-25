@@ -20,7 +20,7 @@ const EXTRA_TICKS := 18.0
 
 const BEAM_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 uniform sampler2D strip : source_color, repeat_enable, filter_linear;
 uniform vec4 core : source_color = vec4(1.0);
 uniform vec4 edge : source_color = vec4(0.3, 0.6, 1.0, 1.0);
@@ -40,7 +40,7 @@ void fragment() {
 """
 const IMPACT_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 uniform vec4 core : source_color = vec4(1.0);
 uniform vec4 edge : source_color = vec4(0.3, 0.6, 1.0, 1.0);
 uniform float spikes = 4.0;
@@ -55,11 +55,15 @@ void fragment() {
 	vec2 d = UV * 2.0 - 1.0;
 	float r = length(d);
 	float a = atan(d.y, d.x) + TIME * 1.3;
-	float star = spikes > 0.5 ? pow(abs(cos(a * spikes * 0.5)), 6.0) * (1.0 - r) : 0.0;
+	if (r >= 1.0) {
+		discard;
+	}
+	float edge_mask = 1.0 - smoothstep(0.8, 1.0, r);
+	float star = spikes > 0.5 ? pow(abs(cos(a * spikes * 0.5)), 6.0) * max(0.0, 1.0 - r) : 0.0;
 	float pulse = 0.8 + 0.2 * sin(TIME * flicker * 6.2832);
 	float glow = exp(-r * r * (3.0 + 6.0 * (1.0 - soft)));
 	float hot = exp(-r * r * 22.0);
-	ALBEDO = (edge.rgb * (glow + star * 1.4) + core.rgb * hot * 1.6) * pulse * 1.5;
+	ALBEDO = (edge.rgb * (glow + star * 1.4) + core.rgb * hot * 1.6) * pulse * 1.5 * edge_mask;
 }
 """
 

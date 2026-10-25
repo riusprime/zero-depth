@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bdhypli8c3rf0"
-path.s3tc="res://.godot/imported/fx_debris_chunks.png-d9f0c06275b60032a2d0e2299b17ef2c.s3tc.ctex"
+path="res://.godot/imported/fx_debris_chunks.png-d9f0c06275b60032a2d0e2299b17ef2c.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/textures/vfx/fx_debris_chunks.png"
-dest_files=["res://.godot/imported/fx_debris_chunks.png-d9f0c06275b60032a2d0e2299b17ef2c.s3tc.ctex"]
+dest_files=["res://.godot/imported/fx_debris_chunks.png-d9f0c06275b60032a2d0e2299b17ef2c.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
