@@ -11,9 +11,9 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC and BG merged.
-- **Agents working:** SB (solid bodies) and DC (difficulty to minute 10) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
-- **Waiting on the owner:** the G2 HUD pick, once HM's mockups are shared.
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG and DC merged.
+- **Agents working:** SB (solid bodies) and CLV (card levels; Wave C's first step) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Waiting on the owner (asleep, 2026-10-25 night):** the G2 HUD pick once HM's mockups are made; [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
 ## Done
@@ -29,6 +29,8 @@ riusprime/zero-depth#9).
 | SS | A failing shrine flashes, gutters red, cracks and smokes with its own sound; a win floats the won stat's glyph over it with a gold pulse and a chime (both sounds synthesized; [evidence](evidence/SS.md)) | `4e5bfa1d`, merge `1ead6bc5` |
 | RC | Gravity Stitch, Double Exposure, Grand Finale and the seven trigger cards (On Hit, On Kill, On End, On Finisher and the ×2 variants) are never offered again; a save holding them drops them and refunds their salvage price ([evidence](evidence/RC.md)) | `6ddbd0ac`, merge `eff7ba59` |
 | BG | Every biome has a deep background under its floor from the owner's 10 images: two slowly drifting layers that parallax against the camera (Frozen Shore paints its sea; Starfall keeps its stars over the galaxy) ([evidence](evidence/BG.md)) | `87dc4e1c`, merge `4bd225cd` |
+| DC | Danger keeps rising after the peak: tier 4 at 1:30 … tier 10 at 10:00, then +1 every 30 s up to 20; each tier above 3 adds enemies (up to ×1.4, `382b3033`), spawns faster (never under 0.8 s) and tougher enemies; the HUD shows the tier number past 4 chevrons, red from tier 10 ([evidence](evidence/DC.md)) | `eba0ccd1`, merge `1c9643e1`; `382b3033` |
+| BG2 | The backgrounds about 25 % dimmer (owner: "so they don't take up as much protagonism") | `079ff7b6` |
 
 ## Goldens changed on purpose
 - `tests/golden/fixtures/modifier_equivalence.json`: all 22 digests (CB; the scenarios dash every 97 ticks, so the
@@ -74,3 +76,10 @@ riusprime/zero-depth#9).
   Shots of the 5 biomes sent to the owner; Night Rocks' clouds the brightest (owner to judge). Known limit: the Deep
   plane at −14 m meets the 100 m far plane if the view ever grows past ~22 m (today 17 m in runs, 19.1 m in the hub).
   Frame cost NOT YET RUN (PF measures it). DC started.
+- 2026-10-25 night — The owner went to sleep: "keep working on the plan as much as you can, if you have questions record
+  them … do as much as you can withou those answers." Questions go to [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md).
+  BG2 (lead): backgrounds ~25 % dimmer; test_biome_backdrop 9/9, test_frozen_shore 8/8, test_starfall 9/9
+  (`--language en`); shots retaken. DC (agent) merged (`1c9643e1`): test_difficulty_curve 16/16, tests/content
+  157/157, e2e 3/3, golden + arch 6/6 ([evidence](evidence/DC.md)); test_five_floors not finished on the busy
+  machine (CI). DC2 (lead): the overtime cap held at ×1.4 (F4); test_difficulty_curve 16/16, test_curve_validation
+  4/4, test_e2e_difficulty_curve 1/1. CLV started.
