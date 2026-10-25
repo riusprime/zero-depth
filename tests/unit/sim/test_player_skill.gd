@@ -273,13 +273,13 @@ func test_worlds_that_never_use_the_kit_hash_as_before_and_use_is_deterministic(
 
 
 # --- Dash (F12) ---------------------------------------------------------------------------------------------
-func test_the_dash_waits_1_4_seconds() -> void:
+func test_the_dash_waits_10_seconds() -> void:
 	var w := _world(&"blade")
 	w.step(_f(D))
-	assert_eq(w.dash_cooldown_left, 84, "1.4 s")
-	for k in 82:
+	assert_eq(w.dash_cooldown_left, 600, "10 s")
+	for k in 598:
 		w.step(_f())
 	w.step(_f(D))
 	assert_false(w.is_dashing(), "not ready a tick early")
 	w.step(_f())
-	assert_true(w.is_dashing(), "the buffered press dashes 84 ticks after the last dash")
+	assert_true(w.is_dashing(), "the buffered press dashes 600 ticks after the last dash")

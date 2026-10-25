@@ -275,6 +275,7 @@ func test_slipstream_a_momentum_hit_refunds_the_dash_once_per_window() -> void:
 	assert_eq(_events(w, SimEvent.Kind.STATUS_APPLY, &"slipstream").size(), 1, "within 1.5 s: no")
 	assert_gt(w.dash_cooldown_left, 0)
 	_idle(w, 100)
+	w.dash_cooldown_left = 0  # the test is about the window, not the 10 s recharge
 	_dash(w, 2048)
 	_swing(w, 2048)
 	assert_eq(_events(w, SimEvent.Kind.STATUS_APPLY, &"slipstream").size(), 2, "the window passed")

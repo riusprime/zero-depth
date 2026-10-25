@@ -109,6 +109,7 @@ func _dash_answered(main: Main, tries: int = 10) -> bool:
 	for t in tries:
 		if reader.fallen_window() != WorldReader.FALLEN_ON:
 			await _until_window(main, WorldReader.FALLEN_ON)
+		_e.world().dash_cooldown_left = 0  # the test is about the answer, not the 10 s wait
 		await _e.tap(KEY_SPACE)
 		for k in 50:
 			await _e.frames(1)

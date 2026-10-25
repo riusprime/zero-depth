@@ -79,10 +79,12 @@ func test_the_run_locks_its_affinity_and_builds_it_on_the_floor() -> void:
 	assert_eq(storm.run.affinity, &"storm", "locked into the run")
 	assert_eq(storm.world.affinity.table.id, &"storm")
 	assert_eq(
-		none.world.player.dash_cooldown_ticks, SimTick.seconds_to_ticks(1.4), "the plain dash"
+		none.world.player.dash_cooldown_ticks, SimTick.seconds_to_ticks(10.0), "the plain dash"
 	)
 	assert_eq(
-		storm.world.player.dash_cooldown_ticks, SimTick.seconds_to_ticks(1.7), "Storm: 1.4 -> 1.7 s"
+		storm.world.player.dash_cooldown_ticks,
+		SimTick.seconds_to_ticks(10.3),
+		"Storm: 10 -> 10.3 s"
 	)
 	var guard := _first_floor(&"guardian")
 	assert_eq(guard.world.affinity.ward, 1, "Guardian's ward up on floor 1")

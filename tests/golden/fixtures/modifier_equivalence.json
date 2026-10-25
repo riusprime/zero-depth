@@ -1,134 +1,134 @@
 {
   "blade_all": {
     "damage": 4160,
-    "digest": "d33041ce87e39442f485a40767f41afbb48a8ae18a97a2a6839eef439a789f27",
-    "hits": 122,
+    "digest": "897e1d0b70a22e24037cbd28e0ec6d9836fb7fe56d0c9a8f7795f30d5d2b9b08",
+    "hits": 128,
     "kills": 14
   },
   "blade_conductor": {
-    "damage": 3383,
-    "digest": "5362047bc9a50d4ab01e5cd0e3d5b442e2bfbeb494cfd4fa04dcf844f30b1da3",
-    "hits": 197,
-    "kills": 8
+    "damage": 4139,
+    "digest": "00f8e395df03a6ed62b909a6fb2a26318e9127af92baaba6b1fbb19b5d7a350b",
+    "hits": 238,
+    "kills": 13
   },
   "blade_ember_edge": {
-    "damage": 3430,
-    "digest": "5a6fe0d055a01079adcf079c1d33d74cf27e883b1dbb2890bc1a1e38e53fca6e",
-    "hits": 111,
-    "kills": 9
+    "damage": 4031,
+    "digest": "a9903c2e1615c232903eacf0edd0ed847acb2bc73e39ab9bfe21f36ec8419b25",
+    "hits": 133,
+    "kills": 13
   },
   "blade_glacial_edge": {
-    "damage": 2757,
-    "digest": "bee2ef5af2a9fe28eeb6f3f50bde8381f421049b352571f43fcb524b54cf714d",
-    "hits": 131,
-    "kills": 2
-  },
-  "blade_long_edge": {
-    "damage": 3473,
-    "digest": "ee437d2d2e9c811d7a360c92b1a04534bdaae2d9bb876c7eb3fe16d44d1792fb",
-    "hits": 162,
-    "kills": 3
-  },
-  "blade_overcharge": {
-    "damage": 3662,
-    "digest": "6f6293e6585b59ae2d7201d4ccaf0d02db2601bb4304f630ca0bedfcfdd82f7b",
-    "hits": 138,
+    "damage": 3809,
+    "digest": "30c55947fc528f2a811db256e9fed8df39a48d666920414ae48a3ed06ff72be1",
+    "hits": 185,
     "kills": 9
   },
+  "blade_long_edge": {
+    "damage": 4060,
+    "digest": "7989a52eac4bcb4103168b8018b3bcc7df5025d06246584aafbc1ad75e20a3d2",
+    "hits": 201,
+    "kills": 11
+  },
+  "blade_overcharge": {
+    "damage": 4160,
+    "digest": "200f37c3d31e5081f2f298dadcbcc4ab375bc9dddbb073a7e15d7a724f43f153",
+    "hits": 164,
+    "kills": 14
+  },
   "blade_plain": {
-    "damage": 2757,
-    "digest": "3f19781d46fa6571d9c4420830a7cbdd9662a23ffc0716e2e2d4b608e479b29b",
-    "hits": 131,
-    "kills": 2
+    "damage": 3809,
+    "digest": "0753493ad56683f24de5b924a058cfa453c27b46dec6db40a417c22fc4afb733",
+    "hits": 185,
+    "kills": 9
   },
   "blade_serrated_edge": {
-    "damage": 3350,
-    "digest": "2b77ea7f940d291ffa3fcf9c91db8c97a94ab4bcab4f59c63d53a6636899f790",
-    "hits": 131,
-    "kills": 8
+    "damage": 4119,
+    "digest": "10ec5451af1389d52328a928315da74534f0b73583c2dc442aa0682aa62e7ebe",
+    "hits": 157,
+    "kills": 13
   },
   "blade_twin_arc": {
-    "damage": 3485,
-    "digest": "e8c56c99fa66e79b08aa92f9f4f485c27baf12d44193627ed3198ddff4bb9047",
-    "hits": 235,
-    "kills": 10
+    "damage": 4160,
+    "digest": "53dc6694fe6b8471010e974864c3b95521b9cf68b06c2e7904546ffd7986368f",
+    "hits": 270,
+    "kills": 14
   },
   "blade_wildfire_rider": {
-    "damage": 3848,
-    "digest": "8d82940c5b2b978e424dee9772e7b35e24980887b3d08328fb8b95c9b64e98f8",
-    "hits": 111,
-    "kills": 10
+    "damage": 4097,
+    "digest": "ef8bbf45673a2923c40f2a49f70706db9843bdd8a11ea9c703731294fa2a499b",
+    "hits": 133,
+    "kills": 13
   },
   "both_all": {
     "damage": 4160,
-    "digest": "e9ce164275b6c085fddce27fb70d32119bced4f0aa57afee642995e286419079",
-    "hits": 193,
+    "digest": "7b49193f9a304121ee1e2b46282463f407f958b89b7d45f71cbd46b86855356e",
+    "hits": 194,
     "kills": 14
   },
   "both_plain": {
-    "damage": 2455,
-    "digest": "24611ab61bc50d4b2322e7196c2651ea365c40abbfd47260272460d41fdd5e58",
-    "hits": 140,
-    "kills": 1
+    "damage": 3647,
+    "digest": "2136761eb55e2fdf09fe7140229374536710b460b6cf9c99b099d42c05599b59",
+    "hits": 212,
+    "kills": 5
   },
   "gun_all": {
     "damage": 4160,
-    "digest": "ec2691d270fabb3f43f18aaf14e312c7327c8d304d0f60fa786336fac4ea64a2",
-    "hits": 380,
+    "digest": "017199d894fc44073d59b74ccbd65e8da0acddcb78c983598dbadea16beed033",
+    "hits": 377,
     "kills": 14
   },
   "gun_barbed_bolts": {
-    "damage": 601,
-    "digest": "29628f45e49ff685ff5bcc876caf448d5e3ee085e88cdb7a1526ddfa5cffb2e2",
-    "hits": 88,
+    "damage": 724,
+    "digest": "a8fef12512af8b157592e916ea2a8892be731b408eec592bbf0e8518e0af6cb2",
+    "hits": 71,
     "kills": 0
   },
   "gun_cinder_shot": {
-    "damage": 680,
-    "digest": "6e4f103b5a28f050766c0989b37e494968aceec244a659c3ab7c5d1dd3d1c93c",
-    "hits": 70,
+    "damage": 714,
+    "digest": "edce8c6ca8c575b57b32d427184254d72a5b790212007d32757ca578373d62d5",
+    "hits": 68,
     "kills": 0
   },
   "gun_frost_core": {
-    "damage": 388,
-    "digest": "29da95e9af47fcc08bc60e1bf47368f856d554a6b19266993c1f402b8a21cb52",
-    "hits": 70,
+    "damage": 368,
+    "digest": "12f7e6fa5c79c8f411c88709d6ba2245edd1cebebf0020cb09fa720c42046858",
+    "hits": 68,
     "kills": 0
   },
   "gun_glacial_rider": {
-    "damage": 434,
-    "digest": "f4367a833e706b0f4c28a03058269f6897a8b38575665cc9792203447fdc7360",
-    "hits": 70,
+    "damage": 383,
+    "digest": "586a3158aa716d7f0e2b3b2c0068d908c0f8ae564e65acccc781175a539d36e4",
+    "hits": 68,
     "kills": 0
   },
   "gun_plain": {
-    "damage": 388,
-    "digest": "548384b3fe42fe02f1600b4cdec55b023327656fc529c0eceb7c49c241db2962",
-    "hits": 70,
+    "damage": 368,
+    "digest": "983ddb292073cb60644a9f068794cc18d22f23e3c2ba35aa9c8e29f604e48cfd",
+    "hits": 68,
     "kills": 0
   },
   "gun_rapid_coil": {
-    "damage": 523,
-    "digest": "ac155d483ece757869e23fd01a8ee5e9c4240ef63a03a08db3c1c9fcd7ce2894",
-    "hits": 94,
+    "damage": 528,
+    "digest": "a32e18444ae1bcd25efac025c93c607555e4375d91a98190d3a6eae6b4b4da99",
+    "hits": 97,
     "kills": 0
   },
   "gun_ricochet_core": {
-    "damage": 414,
-    "digest": "4a60e5c56e1c50fdc6dd8d72855dc5d485161b39339856b724705952d85b057c",
-    "hits": 74,
+    "damage": 391,
+    "digest": "0ecaeac698bad2442b0e4c99723f88506e896e616092ee98c7c3ddad4d278b34",
+    "hits": 72,
     "kills": 0
   },
   "gun_splinter_shot": {
-    "damage": 583,
-    "digest": "bbb49804cbe59a37fdf1ea2f37eef55dacf1af8de81db91779f3efaf3b72313e",
-    "hits": 165,
+    "damage": 606,
+    "digest": "1a4d9f110a2ddd70a5ae651d4979c06aeaf59b9afc2b0489d791eaecf85cc2b3",
+    "hits": 182,
     "kills": 0
   },
   "gun_static_chain": {
-    "damage": 516,
-    "digest": "c7a8d790ee4af1839a1fd1306ca87d5f4a67630db65691c10125c1b756eefc71",
-    "hits": 89,
+    "damage": 628,
+    "digest": "131e2fce366839258ca0aa01a1edde47ae00154900df63a5a0995f639b04b362",
+    "hits": 99,
     "kills": 0
   }
 }
