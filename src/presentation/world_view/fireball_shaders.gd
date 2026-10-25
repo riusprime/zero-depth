@@ -130,7 +130,7 @@ void fragment() {
 
 const TRAIL := """
 shader_type spatial;
-render_mode unshaded, %s, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, %s, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 
 uniform vec4 tint : source_color = vec4(1.0);
 uniform vec4 head : source_color = vec4(1.0);

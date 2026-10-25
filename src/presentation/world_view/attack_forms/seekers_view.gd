@@ -20,7 +20,7 @@ const LOW_MOTES := 2
 
 const NEEDLE_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 uniform vec4 core : source_color = vec4(1.0);
 uniform vec4 edge : source_color = vec4(0.3, 0.6, 1.0, 1.0);
 void fragment() {
@@ -34,12 +34,12 @@ void fragment() {
 """
 const MOTE_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 uniform vec4 edge : source_color = vec4(0.3, 0.6, 1.0, 1.0);
 uniform float fade = 1.0;
 void fragment() {
 	vec2 d = UV * 2.0 - 1.0;
-	ALBEDO = edge.rgb * exp(-dot(d, d) * 4.0) * fade * 1.3;
+	ALBEDO = edge.rgb * exp(-dot(d, d) * 4.0) * fade * 1.3 * (1.0 - smoothstep(0.8, 1.0, length(d)));
 }
 """
 

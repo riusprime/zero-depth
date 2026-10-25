@@ -543,6 +543,8 @@ func _build_motes(top: float) -> void:
 	_additive(mat, Color.WHITE)
 	mat.vertex_color_use_as_albedo = true
 	mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	mat.albedo_texture = FxTextures.soft_dot()
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
 	var quad := QuadMesh.new()
 	quad.size = Vector2(0.1, 0.1)
 	quad.material = mat

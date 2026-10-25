@@ -47,7 +47,7 @@ const TRAIL_WIDTH := {"low": 0.55, "medium": 0.8, "high": 1.0}
 ## each shot's own seed (the pulse). `motion` 0 (reduced motion) holds it still.
 const GLOW := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_back, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_back, shadows_disabled, fog_disabled;
 
 uniform vec4 glow_color : source_color = vec4(0.2, 0.8, 0.9, 1.0);
 uniform float strength = 0.85;

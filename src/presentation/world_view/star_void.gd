@@ -83,7 +83,7 @@ const SPRITE_SCALE := 2.8
 
 const SPRITE_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 
 uniform float motion = 1.0;
 uniform sampler2D motes : source_color, filter_linear_mipmap;
@@ -115,7 +115,7 @@ void fragment() {
 
 const NEBULA_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 
 uniform vec4 tint : source_color = vec4(0.48, 0.24, 1.0, 1.0);
 uniform float seed_value = 0.0;

@@ -91,7 +91,7 @@ const NO_POOL := {}
 
 const SHADER := """
 shader_type spatial;
-render_mode unshaded, %s, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, %s, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 
 uniform sampler2D atlas : source_color, filter_linear_mipmap;
 uniform sampler2D noise : filter_linear_mipmap, repeat_enable;
