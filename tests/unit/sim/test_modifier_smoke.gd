@@ -11,6 +11,9 @@ extends GutTest
 const SOLO_TICKS := 300
 const PAIR_TICKS := 120
 const MAX_LIVE_PROJECTILES := 400
+## v0.9.5 CLV: how far launch attempts may pass the cap in the tick it holds (one attack's fan-out: the Gun's
+## shots_per_attack_max is 12; measured 261 = cap + 5 with every card at once).
+const FAN_OUT_SLACK := 16
 ## v0.6.0 MX2: the six ability modifiers (each a slot), held at level 3 in the runs that use them.
 const ABILITY_MODS: Array = [
 	&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field", &"frost_nova", &"flame_trail"
@@ -55,11 +58,7 @@ func _run(
 	for t in ticks:
 		w.step(AttackScenario.frame(t))
 		if w.launch_tick == w.tick - 1:
-			# v0.9.5 CLV: the launches that ran (launch_count also counts the attempts a fan-out loop makes after the cap
-			# holds, which grow with the shot counts; the cap itself is Attacks._count's)
-			max_launches = maxi(
-				max_launches, mini(w.launch_count, Attacks.MAX_LAUNCHES_PER_TICK + 1)
-			)
+			max_launches = maxi(max_launches, w.launch_count)
 		max_projectiles = maxi(max_projectiles, w.projectiles.size())
 		for e in w.events_since(seen):
 			seen = e.seq
@@ -95,8 +94,13 @@ func _check(label: String, r: Dictionary, cap_ok: bool = false) -> void:
 		assert_eq(r["limits"], 0, "%s: no LIMIT" % label)
 	else:  # v0.6.0 MX4: all 51 at once may reach the launch cap: the cap holding is one LIMIT a tick at most
 		assert_lte(r["limits"], r["capped_ticks"], "%s: only the launch cap's LIMIT" % label)
+	# v0.9.5 CLV: launch_count counts attempts; Attacks._count refuses every one past the cap, but the fan-out loop that
+	# crosses it still tries its remaining copies (at most one attack's worth, FAN_OUT_SLACK), so attempts may pass the
+	# cap by that much and no more.
 	assert_lte(
-		r["max_launches"], Attacks.MAX_LAUNCHES_PER_TICK + 1, "%s: launches per tick" % label
+		r["max_launches"],
+		Attacks.MAX_LAUNCHES_PER_TICK + FAN_OUT_SLACK,
+		"%s: launch attempts per tick" % label
 	)
 	assert_lte(r["max_projectiles"], MAX_LIVE_PROJECTILES, "%s: live projectiles" % label)
 
