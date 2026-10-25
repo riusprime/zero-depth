@@ -55,13 +55,18 @@ func test_the_table_retires_43_cards_and_marks_them() -> void:
 		items += 1 if t.retired else 0
 	for t in w.ability_tables:
 		abilities += 1 if t.retired else 0
-	assert_eq([items, abilities], [37, 6], "43 rows: 37 items and the six old ability modifiers")
+	assert_eq(
+		[items, abilities],
+		[42, 6],
+		(
+			"48 rows: 42 items (v0.9.0: Spread, Explosive, the old Void, Charge, Boomerang) and the six old"
+			+ " ability modifiers"
+		)
+	)
 	assert_eq(w.wand_table.migrate_ids.size(), items + abilities)
 	for id: StringName in [&"echo_slash", &"split_shot", &"wide_arc", &"blade_orbit"]:
 		assert_false(w.item_tables[_it(w, id)].retired, "%s kept its id as a wand card" % id)
-	for id: StringName in [
-		&"ember_core", &"storm_core", &"frost_core", &"venom_core", &"gravity_well"
-	]:
+	for id: StringName in [&"ember_core", &"storm_core", &"frost_core", &"venom_core"]:
 		assert_false(w.item_tables[_it(w, id)].retired, "%s kept as a shared-pool card (WN5a)" % id)
 
 
@@ -129,17 +134,11 @@ func test_a_gun_build_maps_onto_the_gun_pool() -> void:
 	var refund := WandMigration.run(w)
 	assert_eq(
 		_ids(w),
-		[
-			&"gun_homing",
-			&"gun_echo",
-			&"gun_backfire",
-			&"gun_charge",
-			&"gun_ricochet",
-			&"shared_explosive"
-		],
+		[&"gun_homing", &"gun_echo", &"gun_backfire", &"gun_lance", &"gun_ricochet", &"ember_core"],
 		(
-			"Seeker → G8, Twin Cast → G14, Rearguard → G15, Ascension → G13, Ricochet Core → G7,"
-			+ " Aftershock → S7 (WN5a's, merged)"
+			"Seeker → G8, Twin Cast → G14, Rearguard → G15, Ascension → the Lance (v0.9.0 AF1: G13"
+			+ " Charge retired into it), Ricochet Core → G7, Aftershock → S1 Fire (v0.9.0 XP: Explosive"
+			+ " retired)"
 		)
 	)
 	assert_eq(refund, 0, "every card has a Gun row")
@@ -193,8 +192,131 @@ func test_a_carry_into_the_next_floor_migrates_at_its_start() -> void:
 	var w := _floor(&"gun")
 	RunCarry.apply(w, carry)
 	Abilities.start_floor(w)
-	assert_eq(_ids(w), [&"gun_spread", &"gun_rapid_fire", &"gun_mine"])
+	assert_eq(_ids(w), [&"gun_twin", &"gun_rapid_fire", &"gun_mine"], "v0.9.0 TW: Spread is Twin")
 	assert_eq(_levels(w), [1, 1, 2], "Bomb Lobber and its Cluster Payload: Mine at level 2")
+
+
+## v0.9.0 TW (owner Q8: Twin and Spread merged into one card): Spread is retired; a held Spread becomes Twin in its
+## place (the table's rule: a card already held levels up by 1), and Spread is never offered again.
+func test_a_held_spread_becomes_twin_and_is_never_offered() -> void:
+	var w := _floor(&"gun")
+	var spread := _it(w, &"gun_spread")
+	assert_true(w.item_tables[spread].retired, "Spread is retired")
+	assert_does_not_have(ItemPool.available(w), spread, "never offered")
+	_take(w, [&"gun_homing", &"gun_spread"])
+	CardLevels.set_level(w, spread, 3)
+	WandMigration.run(w)
+	assert_eq(_ids(w), [&"gun_homing", &"gun_twin"], "in Spread's place")
+	assert_eq(_levels(w), [1, 1], "a new Twin at level 1, as every retired card")
+	var both := _floor(&"gun")
+	_take(both, [&"gun_twin", &"gun_spread"])
+	WandMigration.run(both)
+	assert_eq(_ids(both), [&"gun_twin"])
+	assert_eq(_levels(both), [2], "a Twin already held levels up")
+
+
+## v0.9.0 XP (owner Q11: "Both": Fire's kill blast and the Explosive card go): Explosive is retired, never offered on
+## either weapon; a held Explosive becomes Fire (the element it was closest to), as do the rows that pointed at it.
+func test_explosive_is_retired_never_offered_and_becomes_fire() -> void:
+	for weapon: StringName in [&"gun", &"blade"]:
+		var w := _floor(weapon)
+		var boom := _it(w, &"shared_explosive")
+		assert_true(w.item_tables[boom].retired, "Explosive is retired")
+		assert_does_not_have(ItemPool.available(w), boom, "never offered on a %s run" % weapon)
+		_take(w, [&"shared_explosive"])
+		WandMigration.run(w)
+		assert_eq(_ids(w), [&"ember_core"], "a held Explosive becomes Fire (%s)" % weapon)
+	var t := _floor(&"gun").wand_table
+	for id: StringName in t.migrate_blade + t.migrate_gun:
+		assert_ne(id, &"shared_explosive", "no row lands on Explosive")
+
+
+## v0.9.0 VP (owner C §6.4: "That specific ground-spawning gravity modifier should be deleted from the item pool and
+## associated attack behavior"; C54): the old Void (gravity_well, the floor black hole) is retired, never offered on
+## either weapon. The table's rule for a held one: on a Gun run it becomes the Void form card in its place (Lv 1, as
+## every retired card; a Void already held levels up); on a Blade run (the form is Gun only) it is refunded as shards
+## at the shop's salvage price. No row lands on it.
+func test_the_old_void_is_retired_becomes_the_void_form_on_the_gun_and_shards_on_the_blade(
+) -> void:
+	for weapon: StringName in [&"gun", &"blade"]:
+		var w := _floor(weapon)
+		var old := _it(w, &"gravity_well")
+		assert_true(w.item_tables[old].retired, "the old Void is retired")
+		assert_does_not_have(ItemPool.available(w), old, "never offered on a %s run" % weapon)
+	var g := _floor(&"gun")
+	_take(g, [&"gun_homing", &"gravity_well"])
+	CardLevels.set_level(g, _it(g, &"gravity_well"), 3)
+	assert_eq(WandMigration.run(g), 0, "no refund on the Gun")
+	assert_eq(_ids(g), [&"gun_homing", &"gun_void"], "the Void form in its place")
+	assert_eq(_levels(g), [1, 1])
+	assert_eq(AttackSlots.form_id(g), &"void")
+	var b := _floor(&"blade")
+	_take(b, [&"gravity_well"])
+	var expect := WandMigration.refund_of(b, _it(b, &"gravity_well"))
+	assert_gt(expect, 0)
+	assert_eq(WandMigration.run(b), expect, "refunded on the Blade")
+	assert_eq(_ids(b), [], "nothing in its place")
+	var t := g.wand_table
+	for id: StringName in t.migrate_blade + t.migrate_gun:
+		assert_ne(id, &"gravity_well", "no row lands on the old Void")
+
+
+## v0.9.0 AF1 (owner Q7: "Lance replaces the Charge card … retired through migration.tres"): the Charge card (G13,
+## gun_charge) is retired, never offered. A held one becomes the Lance form card in its place on a Gun run (Lv 1, as
+## every retired card); on a Blade run (Gun only) it is refunded as shards. Ascension, which became Charge, becomes
+## the Lance. No row lands on Charge.
+func test_charge_is_retired_and_becomes_the_lance_on_the_gun_and_shards_on_the_blade() -> void:
+	for weapon: StringName in [&"gun", &"blade"]:
+		var w := _floor(weapon)
+		var old := _it(w, &"gun_charge")
+		assert_true(w.item_tables[old].retired, "Charge is retired")
+		assert_does_not_have(ItemPool.available(w), old, "never offered on a %s run" % weapon)
+	var g := _floor(&"gun")
+	_take(g, [&"gun_homing", &"gun_charge"])
+	CardLevels.set_level(g, _it(g, &"gun_charge"), 3)
+	assert_eq(WandMigration.run(g), 0, "no refund on the Gun")
+	assert_eq(_ids(g), [&"gun_homing", &"gun_lance"], "the Lance in its place")
+	assert_eq(_levels(g), [1, 1])
+	assert_eq(AttackSlots.form_id(g), &"lance")
+	assert_true(Lance.is_lance(Modifiers.bolt(g)))
+	var b := _floor(&"blade")
+	_take(b, [&"gun_charge"])
+	var expect := WandMigration.refund_of(b, _it(b, &"gun_charge"))
+	assert_gt(expect, 0)
+	assert_eq(WandMigration.run(b), expect, "refunded on the Blade")
+	assert_eq(_ids(b), [], "nothing in its place")
+	var t := g.wand_table
+	for id: StringName in t.migrate_blade + t.migrate_gun:
+		assert_ne(id, &"gun_charge", "no row lands on Charge")
+
+
+## v0.9.0 AF2 (owner Q7: "Lance replaces the Charge card and Glaive the Boomerang card (both retired through
+## migration.tres)"): the Boomerang card (G9, boomerang) is retired, never offered. A held one becomes the Glaive form
+## card in its place on a Gun run (Lv 1, as every retired card); on a Blade run (Gun only) it is refunded as shards. No
+## row lands on Boomerang.
+func test_boomerang_is_retired_and_becomes_the_glaive_on_the_gun_and_shards_on_the_blade() -> void:
+	for weapon: StringName in [&"gun", &"blade"]:
+		var w := _floor(weapon)
+		var old := _it(w, &"boomerang")
+		assert_true(w.item_tables[old].retired, "Boomerang is retired")
+		assert_does_not_have(ItemPool.available(w), old, "never offered on a %s run" % weapon)
+	var g := _floor(&"gun")
+	_take(g, [&"gun_homing", &"boomerang"])
+	CardLevels.set_level(g, _it(g, &"boomerang"), 4)
+	assert_eq(WandMigration.run(g), 0, "no refund on the Gun")
+	assert_eq(_ids(g), [&"gun_homing", &"gun_glaive"], "the Glaive in its place")
+	assert_eq(_levels(g), [1, 1])
+	assert_eq(AttackSlots.form_id(g), &"glaive")
+	assert_true(Glaive.is_glaive(Modifiers.bolt(g)))
+	var b := _floor(&"blade")
+	_take(b, [&"boomerang"])
+	var expect := WandMigration.refund_of(b, _it(b, &"boomerang"))
+	assert_gt(expect, 0)
+	assert_eq(WandMigration.run(b), expect, "refunded on the Blade")
+	assert_eq(_ids(b), [], "nothing in its place")
+	var t := g.wand_table
+	for id: StringName in t.migrate_blade + t.migrate_gun:
+		assert_ne(id, &"boomerang", "no row lands on Boomerang")
 
 
 # --- The legendary tier --------------------------------------------------------------------------------------------

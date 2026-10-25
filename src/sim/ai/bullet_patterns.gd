@@ -89,7 +89,8 @@ static func spin_at(p: BulletPatternTable, t: int) -> int:
 
 ## Fires wave k of pattern p for actor `owner` (its id is the shots' owner): the shots that are fair and fit under
 ## the caps are queued for this tick's spawn phase. Returns how many were queued. `cause` (v0.8.0 BS1): the boss
-## attack the shots name (-2, the default: the owner boss's attack in progress).
+## attack the shots name (-2, the default: the owner boss's attack in progress). `gap` (v0.9.0 NB2, the Wardens'
+## Crossfire): (heading, half), the shots heading within half of it (1/4096 turns) are left out (half 0: none).
 static func fire(
 	w: World,
 	owner_i: int,
@@ -99,7 +100,8 @@ static func fire(
 	aim: int,
 	origin_r: float,
 	damage: int,
-	cause: int = -2
+	cause: int = -2,
+	gap := Vector2i.ZERO
 ) -> int:
 	var shots := wave_shots(p, k, origin, aim, origin_r)
 	var pos: PackedVector2Array = shots[0]
@@ -119,6 +121,8 @@ static func fire(
 			continue  # no shot spawns on top of the player
 		if not EnemyAi.clear_of_walls(w, pos[j], p.radius_m):
 			continue  # nor inside a wall
+		if gap.y > 0 and Kin.angle_diff(Kin.angle_of(vel[j]), gap.x) <= gap.y:
+			continue  # v0.9.0 NB2: the Crossfire's gap
 		if not room(w):
 			_limit(w, owner_i)
 			break

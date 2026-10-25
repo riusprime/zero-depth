@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 class_name PlayerAvatar
 extends AvatarBase
 ## The player's hooded wanderer (owner, 2026-10-07; docs/art/main-character-sheet.png, the primary reference): a
@@ -113,6 +114,18 @@ var visor: MeshInstance3D
 var face: MeshInstance3D
 var cloak: MeshInstance3D
 var legs: Array[Node3D] = []
+## v0.9.0 RB: the robe worn (the Wardrobe's colour; Cream by default), the hood the same colour; the blue core (the
+## visor) never changes. And the rune affinity's marks (AffinityRunes: the circle under the feet, the glyph on the
+## cloak's back; none for None).
+var cloak_color := CLOAK_COLOR
+var under_color := UNDER_COLOR
+var runes: AffinityRunes
+## v0.9.0 MP2: an epic robe's pieces (EpicRobeView: The Fallen's or the divine; null for a colour robe).
+var epic: EpicRobeView
+var _style := &""
+var _outline := Color.BLACK
+var _technique := &"xray"
+var _hood_mat: StandardMaterial3D
 
 var _pelvis := Node3D.new()
 var _head_yaw := Node3D.new()
@@ -181,6 +194,8 @@ var _accent := Vector3.ZERO
 ## ActorViews does for its body pieces); the legs, mostly under the cloak, have none.
 func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	_outline = outline_color
+	_technique = technique
 	var team := ThemePalette.color(&"player_core")
 	_pelvis.position.y = HIP_Y
 	add_child(_pelvis)
@@ -188,8 +203,9 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	hood = Node3D.new()
 	hood.position = Vector3(0.05, NECK_Y - HIP_Y, 0)
 	_head_yaw.add_child(hood)
-	var shell := _mesh_piece(hood, _hood_mesh(), HOOD_COLOR, outline_color, team, technique)
-	(shell.material_override as StandardMaterial3D).cull_mode = BaseMaterial3D.CULL_DISABLED
+	var shell := _mesh_piece(hood, _hood_mesh(), cloak_color, outline_color, team, technique)
+	_hood_mat = shell.material_override as StandardMaterial3D
+	_hood_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	face = MeshInstance3D.new()
 	face.mesh = _face_mesh()
 	var fm := StandardMaterial3D.new()
@@ -244,8 +260,53 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 		pivot.add_child(toe_at)
 		_mesh_piece(toe_at, toe, BOOT_COLOR, outline_color, team, &"outline")
 		legs.append(pivot)
+	runes = AffinityRunes.new()
+	add_child(runes)
+	add_child(runes.back)
 	_pose(0.0)
 	_rebuild_cloak()
+	_set_epic(_style)
+
+
+## v0.9.0 RB: robe and rune from a Wardrobe.look dictionary ({} keeps Cream and no rune): the robe's colours (the
+## cloak and hood outside, the cloak's underside) and the rune affinity's marks (glyph 0: none) in its colour.
+func set_look(look: Dictionary) -> void:
+	if look.is_empty():
+		return
+	cloak_color = look["cloak"]
+	under_color = look["under"]
+	if _hood_mat != null:
+		_hood_mat.albedo_color = cloak_color
+	if hood != null:
+		_rebuild_cloak()
+	if runes != null:
+		runes.set_rune(int(look["glyph"]), look["rune"])
+	_set_epic(StringName(look.get("style", &"")))
+
+
+## v0.9.0 MP2: builds (or drops) the epic robe's pieces for `style` (&"": none) once the model exists.
+func _set_epic(style: StringName) -> void:
+	_style = style
+	ElementLooks.set_energy(style)  # The Fallen's robe turns the plain shots violet
+	if hood == null or (epic != null and epic.style == style):
+		return
+	if epic != null:
+		epic.dispose()
+		remove_child(epic)
+		epic.free()
+		epic = null
+		cloak.visible = true  # the epic robe drew in the poncho's place
+		visor.visible = true  # (The Fallen's eyes hid the blue face square)
+	if EpicRobeView.STYLES.has(style):
+		epic = EpicRobeView.new()
+		add_child(epic)
+		epic.build(self, style, _outline, _technique)
+
+
+## v0.9.0 MP2: what the epic robe's cloth follows: [the cloak frame, the poncho's hem springs (not a copy), the body's
+## smoothed velocity, the dash and the slump].
+func cloth_drive() -> Array:
+	return [_cloak_frame(), _spring_pos, _vel_s, _dash, _slump]
 
 
 ## Reads the player's state after a sim tick.
@@ -278,6 +339,10 @@ func sync(reader: WorldReader) -> void:
 			"swing_form": reader.blade_swing(),  # v0.6.5 WN4: Lunge Step drives in, Heavy braces
 		}
 	)
+	if runes != null and runes.glyph > 0:  # v0.9.0 RB: A5 Guardian's ward dims and flashes the circle
+		runes.set_ward(
+			reader.affinity_ward_charges() > 0, reader.affinity_ward(), reader.affinity_ward_tick()
+		)
 
 
 ## The same as sync(), from plain values (tests drive the avatar with this).
@@ -438,6 +503,11 @@ func advance(delta: float) -> void:
 	_pose(dt)
 	_step_springs(dt, accel)
 	_rebuild_cloak()
+	if epic != null:
+		epic.advance(dt)
+	if runes != null:
+		runes.advance(dt)
+		runes.circle.visible = not _dead  # the circle goes out with the hero
 
 
 ## Overclock heat: the visor shifts from its own cyan toward `c` (orange, then white-hot) by `amount`, and burns
@@ -763,8 +833,20 @@ func _rebuild_cloak() -> void:
 	var colors := PackedColorArray()
 	for j in CLOAK_SIDES:
 		var j2 := (j + 1) % CLOAK_SIDES
-		_tri2(verts, normals, colors, [top[j], top[j2], ring[j]], 2, centre)
-		_tri2(verts, normals, colors, [top[j2], ring[j2], ring[j]], 1, centre)
+		_tri2(
+			verts, normals, colors, [top[j], top[j2], ring[j]], 2, centre, cloak_color, under_color
+		)
+		_tri2(
+			verts,
+			normals,
+			colors,
+			[top[j2], ring[j2], ring[j]],
+			1,
+			centre,
+			cloak_color,
+			under_color
+		)
+	_place_back_rune(xf, top[4], ring[4])
 	# A dark collar across the neck ring, both ways round: looking into the V-neck from a 3/4 view shows shadow,
 	# not the poncho's lit inside.
 	var mid := Vector3.ZERO
@@ -796,7 +878,9 @@ static func _tri2(
 	colors: PackedColorArray,
 	t: Array,
 	tops: int,
-	centre: Vector3
+	centre: Vector3,
+	outside: Color = CLOAK_COLOR,
+	under: Color = UNDER_COLOR
 ) -> void:
 	var n0 := verts.size()
 	_tri(verts, normals, t[0], t[1], t[2], centre)
@@ -808,12 +892,27 @@ static func _tri2(
 	var d := -n * 0.01
 	verts.append_array([a + d, c + d, b + d])
 	normals.append_array([-n, -n, -n])
-	colors.append_array([CLOAK_COLOR, CLOAK_COLOR, CLOAK_COLOR])
+	colors.append_array([outside, outside, outside])
 	for v in [a, c, b]:
 		var at_neck := false
 		for k in tops:
 			at_neck = at_neck or v.is_equal_approx(t[k])
-		colors.append(NECK_SHADE if at_neck else UNDER_COLOR)
+		colors.append(NECK_SHADE if at_neck else under)
+
+
+## v0.9.0 RB: the rune on the robe's back, flat on the back facet between the neck's back point `top` and the hem's
+## `hem` (the cloak's ring point 4), a little out from the cloth, upright along the back.
+func _place_back_rune(xf: Transform3D, top: Vector3, hem: Vector3) -> void:
+	if runes == null:
+		return
+	var down := hem - top
+	if down.length_squared() < 0.0001:
+		return
+	down = down.normalized()
+	var side := xf.basis.z.normalized()
+	var n := down.cross(side).normalized()  # out of the back, a little up
+	var at := top.lerp(hem, 0.42) + n * 0.014
+	runes.back.transform = Transform3D(Basis.looking_at(-n, -down), at)
 
 
 static func _mesh_from(tris: Array, centre: Vector3) -> ArrayMesh:

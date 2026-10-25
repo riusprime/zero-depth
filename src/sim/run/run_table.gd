@@ -5,13 +5,23 @@ extends RefCounted
 ## (v0.4.0 SC: 1.9^(f − 1), 1.4^(f − 1)); bosses' HP +400 and damage +200 per mille per floor after the first; heal
 ## 400 per mille of max HP between floors; Deep floors ×1.25 and one extra chest (v0.5.0 RT).
 
+## v0.9.0 FV: the RunDefinition id (a save records it, so a run resumes in its own shape; RunSaver).
+var id := &""
 var floors := 3
+## v0.9.0 FV (owner Q24): floor f's rooms (start hall included, boss room not), entry f − 1, the last past the end;
+## empty: the map's range (FloorShape.size_floor). And the wand's slots per floor over the wand's (empty: the wand's).
+var rooms_min_by_floor := PackedInt32Array()
+var rooms_max_by_floor := PackedInt32Array()
+var wand_slots_per_floor := PackedInt32Array()
 var biome_count := 1
 var enemy_hp_floor_permille := PackedInt32Array([1000, 1900, 3610])
 var enemy_damage_floor_permille := PackedInt32Array([1000, 1400, 1960])
 var boss_hp_per_floor_permille := 400
 var boss_damage_per_floor_permille := 200
 var heal_permille := 400
+## v0.9.0 SV: max HP per floor cleared (counted across loops) and its cap in all (0: none); RunState.floor_hp_bonus.
+var max_hp_per_floor := 0
+var max_hp_floor_cap := 0
 ## v0.5.5 EC (owner Q-S4, "Keep half"): per mille of the unspent shards a portal carries over (rounded down).
 var shard_carry_permille := 500
 ## v0.5.0 RT: a Deep floor's extra scaling (per mille, on top of the floor's) and extra chests.

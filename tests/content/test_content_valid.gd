@@ -72,7 +72,9 @@ func test_the_combo_compiles_to_the_four_slashes() -> void:
 
 func test_the_run_validates_and_catches_bad_values() -> void:
 	var repo := ContentRepository.load_all()
-	assert_eq(repo.count(&"run"), 1, "one run definition (v0.3.0 B)")
+	# v0.9.0 FV: five_floors, and the v0.8.0 shape kept for old saves
+	assert_eq(repo.count(&"run"), 2, "two run definitions (v0.3.0 B; v0.9.0 FV)")
+	assert_eq(repo.get_def(&"run", RunSaver.RUN_ID).validate().size(), 0)
 	var def: RunDefinition = (load("res://data/run/three_floors.tres") as RunDefinition).duplicate()
 	assert_eq(def.validate().size(), 0)
 	def.floors = 0

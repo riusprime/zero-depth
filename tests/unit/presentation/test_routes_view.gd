@@ -1,6 +1,6 @@
 extends GutTest
-## Optional routes, shown (v0.5.0 RT, R5): the Deep gate reads apart from the gate at a glance (violet swirl, red rim
-## and frame vs the visor's light blue), it opens with the gate and each closes when the other is taken; the floor
+## Optional routes, shown (v0.5.0 RT, R5): the Deep gate reads apart from the gate at a glance (violet swirl and red
+## rim vs the visor's light blue), it opens with the gate and each closes when the other is taken; the floor
 ## card and the HUD's floor label name a Deep floor; the recap lists the route per floor; the epic altar glows
 ## violet and says so; the Deep gate's opening has its own sound and caption; every new string has en and es.
 ## Presentation only (EI-07): the views read WorldReader.
@@ -23,6 +23,8 @@ const KEYS := [
 func _world() -> World:
 	var w := FightLab.floor_world(51, 1)
 	w.actors.invuln[0] = LONG
+	# v0.9.0 DP (owner Q26b): the Deep gate is earned; TEST HELPER: as if this floor's purple runes were awakened
+	PurpleRunes.earn(w)
 	return w
 
 
@@ -56,8 +58,10 @@ func test_the_deep_gate_reads_apart_from_the_gate() -> void:
 	add_child_autofree(d)
 	d.set_deep()
 	assert_true(d.deep)
-	assert_eq(d.rim_strips.size(), 3, "a red frame: two sides and the top")
-	assert_eq(g.rim_strips.size(), 0, "the gate keeps its plain stone")
+	# v0.9.0 PT: no frames any more (frameless ovals); the swirl's red rim and violet set it apart.
+	assert_eq(d.get_child_count(), g.get_child_count(), "the same oval, no red frame strips")
+	var edge: Color = d.portal_material.get_shader_parameter("edge_color")
+	assert_gt(edge.r, edge.b, "its burning edge is red-hot")
 	var mid: Color = d.portal_material.get_shader_parameter("color_mid")
 	var blue: Color = g.portal_material.get_shader_parameter("color_mid")
 	assert_gt(absf(mid.h - blue.h), 0.1, "a different hue (violet vs light blue)")
@@ -102,9 +106,9 @@ func test_the_view_builds_both_gates_and_closes_the_one_not_taken() -> void:
 
 
 func test_the_last_floor_has_one_gate() -> void:
-	var w := FightLab.floor_world(51, 3)
+	var w := FightLab.floor_world(51, 5)
 	var v := _view(w)
-	assert_null(v.deep_gate, "floor 3's boss still wins the run with one portal")
+	assert_null(v.deep_gate, "floor 5's boss still wins the run with one portal (v0.9.0 FV)")
 
 
 func test_the_floor_card_and_label_name_a_deep_floor() -> void:
@@ -193,7 +197,7 @@ func test_the_deep_gate_opening_has_its_sound() -> void:
 	assert_true(ResourceLoader.exists("res://data/audio/cues/deep_portal_open.tres"))
 	var cue: AudioCueDefinition = load("res://data/audio/cues/deep_portal_open.tres")
 	assert_eq(cue.caption_key, &"CAPTION_DEEP_PORTAL")
-	var single := FightLab.floor_world(51, 3)
+	var single := FightLab.floor_world(51, 5)
 	single.actors.invuln[0] = LONG
 	var r3 := WorldReader.new(single)
 	var ev3 := AudioEvents.new()

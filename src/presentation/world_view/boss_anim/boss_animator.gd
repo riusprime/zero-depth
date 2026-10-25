@@ -57,6 +57,11 @@ const MOVE_CLIPS := {
 	WorldReader.MOVE_MIMIC_COMBO: &"mimic_combo",  # v0.8.0 FB3: the Nemesis (a slash, a shot, a cast)
 	WorldReader.MOVE_MIMIC_SHOTS: &"mimic_shots",
 	WorldReader.MOVE_CARD_CAST: &"card_cast",
+	WorldReader.MOVE_TIDE: &"tide",  # v0.9.0 NB1: the Tidecaller's Pull
+	WorldReader.MOVE_CROSSFIRE: &"crossfire",  # v0.9.0 NB2: the Twin Wardens
+	WorldReader.MOVE_CHAIN_SWEEP: &"chain_sweep",
+	WorldReader.MOVE_ECHO: &"echo",  # v0.9.0 NB3: the Clockwork Judge
+	WorldReader.MOVE_VERDICT: &"verdict",
 }
 ## The clips every boss has besides its moves'.
 const COMMON: Array[StringName] = [

@@ -21,19 +21,8 @@ const ENEMY_KINDS := {
 	&"sniper": ActorStore.Kind.SNIPER,
 	&"lens_drone": ActorStore.Kind.LENS_DRONE,
 }
-## Bosses (v0.3.0 C): boss ids to actor kinds, move names to BossAttackTable moves (BossSchemas.KINDS and MOVES;
-## a test checks the key sets match).
-const BOSS_KINDS := {
-	&"gatekeeper": ActorStore.Kind.GATEKEEPER,
-	&"brood_mother": ActorStore.Kind.BROOD_MOTHER,
-	&"siege_engine": ActorStore.Kind.SIEGE_ENGINE,
-	&"warlord": ActorStore.Kind.WARLORD,
-	&"hive_lens": ActorStore.Kind.HIVE_LENS,
-	&"foundry": ActorStore.Kind.FOUNDRY,
-	&"colossus": ActorStore.Kind.COLOSSUS,  # v0.8.0 FB1: the final boss's bodies (data/final_boss)
-	&"prism": ActorStore.Kind.PRISM,
-	&"nemesis": ActorStore.Kind.NEMESIS,
-}
+## Bosses (v0.3.0 C): ids to actor kinds, move names to BossAttackTable moves (a test matches BossSchemas' sets).
+const BOSS_KINDS := BossKinds.ALL  # v0.9.0 NB4: the table lives in BossKinds (this file's line limit)
 const BOSS_MOVES := {
 	&"slam_ring": BossAttackTable.Move.SLAM_RING,
 	&"lanes": BossAttackTable.Move.LANES,
@@ -62,6 +51,11 @@ const BOSS_MOVES := {
 	&"mimic_combo": BossAttackTable.Move.MIMIC_COMBO,  # v0.8.0 FB3 (the Nemesis)
 	&"mimic_shots": BossAttackTable.Move.MIMIC_SHOTS,
 	&"card_cast": BossAttackTable.Move.CARD_CAST,
+	&"tide": BossAttackTable.Move.TIDE,  # v0.9.0 NB1 (the Tidecaller)
+	&"crossfire": BossAttackTable.Move.CROSSFIRE,  # v0.9.0 NB2 (the Twin Wardens)
+	&"chain_sweep": BossAttackTable.Move.CHAIN_SWEEP,
+	&"echo": BossAttackTable.Move.ECHO,  # v0.9.0 NB3 (the Clockwork Judge)
+	&"verdict": BossAttackTable.Move.VERDICT,
 }
 ## v0.8.0 FB3: a Nemesis attack's `weapon`.
 const ATTACK_WEAPONS := {
@@ -118,8 +112,7 @@ static func compile_swing_step(sd: SwingStepDefinition) -> SwingStep:
 	)
 
 
-## An enemy's numbers in sim units. The behaviour id picks the actor kind. v0.7.5 EF: with `repo`, the slow
-## fireball patterns its attacks name (shape_params "pattern_id") are resolved too (PatternCompiler).
+## An enemy's numbers in sim units (its behaviour id picks the kind); v0.7.5 EF: with `repo`, its patterns too.
 static func compile_enemy(def: EnemyDefinition, repo: ContentRepository = null) -> EnemyTable:
 	var t := _compile_enemy_numbers(def)
 	if repo != null:
@@ -343,11 +336,12 @@ static func compile_curve(
 	return c
 
 
-## Every enemy in a repository, compiled.
+## Every enemy in a repository, compiled; v0.9.0 EL: then the elite archetypes (ELITES.md).
 static func compile_enemies(repo: ContentRepository) -> Array[EnemyTable]:
 	var out: Array[EnemyTable] = []
 	for def: EnemyDefinition in repo.all_of(&"enemies"):
 		out.append(compile_enemy(def, repo))
+	out.append_array(EliteCompiler.compile_elites(repo))
 	return out
 
 
@@ -522,11 +516,10 @@ static func compile_items(repo: ContentRepository) -> Array[ItemTable]:
 
 
 # --- Bosses (v0.3.0 C) --------------------------------------------------------------------------------------
-## Every boss in a repository, compiled, in id order (the order of boss indices: World.spawn_boss). Give it to the
-## world with World.set_boss_tables.
+## Every boss in a repository, compiled in BossOrder (boss indices: World.spawn_boss; World.set_boss_tables).
 static func compile_bosses(repo: ContentRepository) -> Array[BossTable]:
 	var out: Array[BossTable] = []
-	for def: BossDefinition in repo.all_of(&"bosses"):
+	for def: BossDefinition in BossOrder.defs(repo):  # v0.9.0 NB1: saved indices stay
 		out.append(compile_boss(def, repo))
 	return out
 
@@ -546,15 +539,12 @@ static func compile_final_bosses(repo: ContentRepository, run: RunTable) -> Arra
 
 ## A floor's boss pool as indices into compile_bosses (empty if the floor has no pool).
 static func compile_boss_pool(repo: ContentRepository, floor_index: int) -> PackedInt32Array:
-	var ids: Array = repo.all_of(&"bosses").map(func(d: BossDefinition) -> StringName: return d.id)
+	var ids: Array = BossOrder.defs(repo).map(func(d: BossDefinition) -> StringName: return d.id)
 	var out := PackedInt32Array()
 	for pool: BossPoolDefinition in repo.all_of(&"boss_pools"):
-		if pool.floor_index != floor_index:
-			continue
-		for bid in pool.boss_ids:
-			var k := ids.find(StringName(bid))
-			if k >= 0:
-				out.append(k)
+		for bid in pool.boss_ids if pool.floor_index == floor_index else PackedStringArray():
+			if ids.has(StringName(bid)):
+				out.append(ids.find(StringName(bid)))
 	return out
 
 
@@ -636,6 +626,7 @@ static func _compile_boss_challenge(def: BossDefinition, t: BossTable) -> void:
 	t.gap_attack = (
 		t.attack_index(def.gap_close_attack) if not String(def.gap_close_attack).is_empty() else -1
 	)
+	PatternCompiler.compile_cadence(def, t)  # v0.9.0 NB1: the Tidecaller's Pull
 	for k in def.attacks.size():
 		var a := def.attacks[k]
 		var at := t.attacks[k]
@@ -692,10 +683,6 @@ static func compile_boss_attack(
 	t.gap_m = float(sp.get("gap_m", 0.0))  # v0.4.0 BO: a flood's lanes
 	t.burn_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("burn_seconds", 0.0))))
 	t.cell_m = float(sp.get("cell_m", 0.0))  # v0.7.5 BF3: a grid's cells
-	t.steps = int(sp.get("steps", 1))  # v0.8.0 FB1: the Colossus's spikes
-	t.step_m = float(sp.get("step_m", 0.0))
-	t.weapon = ATTACK_WEAPONS.get(String(sp.get("weapon", "any")), BossAttackTable.WEAPON_ANY)  # FB3
-	t.card = int(sp.get("card", -1))
 	PatternCompiler.compile_boss_attack(def, repo, t)  # v0.7.5 BF1
 	return t
 
@@ -731,7 +718,7 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.heal_orb_chance_permille = int(round(def.heal_orb_chance * 1000.0))  # v0.4.0 TU (D8)
 	t.heal_orb_heal_permille = int(round(def.heal_orb_heal * 1000.0))
 	t.heal_orb_reach_m = def.heal_orb_reach_m
-	return t
+	return RunContentCompiler.add_reward_bands(t, def)  # v0.9.0 FV: counts by the floor's rooms
 
 
 ## The gamble shrine (v0.3.0 L19): prices in per mille, each stat's amount (HP for max_hp, per mille of the data's
@@ -887,7 +874,6 @@ static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 	var out: Array[StatTable] = []
 	out.resize(Stats.COUNT)
 	var ld: LegendaryDefinition = repo.get_def(&"legendary", &"boss")  # v0.5.5 AR
-	var legend := int(round(ld.stat_multiplier * 1000.0)) if ld != null else 1600
 	for def: StatCardDefinition in repo.all_of(&"stat_card"):
 		var s := StatCardDefinition.STATS.find(def.stat)
 		if s < 0:
@@ -908,7 +894,8 @@ static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 			for k in StatCardDefinition.RARITIES:
 				t.side[k] = int(round(def.side[k] * 10.0))
 		t.limit_permille = int(round(def.limit * 1000.0))
-		# v0.5.5 AR (X1b): the legendary rarity, the epic numbers x the tier's stat multiplier.
+		# v0.5.5 AR (X1b): legendary = epic x the tier's stat multiplier (v0.9.0 LG: or the card's own, Power/Haste)
+		var legend := int(round(ld.multiplier_of(def.id) * 1000.0)) if ld != null else 1600
 		t.amounts.append((t.amounts[Stats.Rarity.EPIC] * legend + 500) / 1000)
 		t.side.append((t.side[Stats.Rarity.EPIC] * legend + 500) / 1000)
 		out[s] = t
@@ -942,11 +929,9 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	t.final_name_key = def.final_name_key
 	t.final_arena = def.final_arena
 	t.final_shatter_ticks = maxi(1, SimTick.seconds_to_ticks(def.final_shatter_seconds))
-	return t
+	return RunContentCompiler.add_run_shape(t, def)  # v0.9.0 FV: its id, floor sizes and wand slots
 
 
-## Overclock heat (v0.3.0 L18) in sim units: heat in milli-points, seconds in ticks. Null without a definition
-## (Heat.enable then leaves heat off).
 ## v0.4.0 AB: the Overrun branch's numbers (null without a definition: no Overrun).
 static func compile_overrun(def: OverrunDefinition) -> OverrunTable:
 	if def == null:
@@ -958,6 +943,8 @@ static func compile_overrun(def: OverrunDefinition) -> OverrunTable:
 	t.waves_min = def.waves_min  # v0.5.5 AR (S8)
 	t.waves_max = def.waves_max
 	t.wave_sizes = def.wave_sizes.duplicate()
+	t.min_cells = def.min_cells  # v0.9.0 CF
+	t.area_per_enemy_m2 = def.area_per_enemy_m2
 	return t
 
 

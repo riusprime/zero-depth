@@ -7,6 +7,11 @@ extends GutTest
 ##    the deal and takes the card; the icon flies to the HUD;
 ## 3. v0.8.0 FL: a jackpot card says "Jackpot" on its card.
 
+## v0.9.0 FV: floor 1 holds 1-2 chests (loot scales with its rooms), and the floor's sealed arena is filled first
+## (v0.5.5 AR), so on Main.STAGE_SEED its one chest is locked in the arena. CHEST_SEED's floor 1 has two chests
+## outside it.
+const CHEST_SEED := 20261007
+
 
 func after_each() -> void:
 	for a in [&"move_up", &"move_down", &"move_left", &"move_right"]:
@@ -73,12 +78,14 @@ func test_an_altar_deals_three_cards_and_the_pick_flies_to_the_hud() -> void:
 
 func test_a_chest_deals_one_card_and_a_press_takes_it() -> void:
 	var e := E2e.new(self)
-	var main: Main = await e.boot()
+	var main: Main = await e.boot(null, null, CHEST_SEED)
 	await e.start_from_menu(&"gun")
 	var w := e.world()
 	var hud: Hud = main.get_node("UI/Hud")
 	var i := E2e.nearest_reward(w, RewardStore.Kind.CHEST)
 	assert_gte(i, 0, "a chest on the floor")
+	if i < 0:
+		return
 	var id := w.rewards.ids[i]
 	var price := w.rewards.price[i]
 	# TEST HELPER (labelled): grant the shards directly; earning them is test_e2e_rewards' job.

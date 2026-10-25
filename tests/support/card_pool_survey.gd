@@ -35,8 +35,10 @@ const POOL_MIN := 40
 ## (PROGRESS v0.6.5 "Gates": the owner decides). v0.8.0 BL: + the Blade's 2 new cards the owner approved (BLADE_AUDIT
 ## B4: Blade Storm, Riposte Chain): Blade 63, Gun 59. v0.8.0 RM (owner O91's first batch: Threadline, Faultline,
 ## Gravity Stitch, Stress Mark and the two mutations): Blade 66, Gun 65. Raised in the open, not a balance target
-## (OWNER_TODO D69).
-const POOL_MAX := 66
+## (OWNER_TODO D69). v0.9.0 AF2: the owner's ten Gun forms (Q7) add cards and retire Charge, Boomerang and the
+## old Void: Gun 67 with Glaive + Seekers, 69 with Wave + Wisps (measured on the AF3 merge). Raised in the open, not
+## a balance target (OWNER_QUESTIONS 4).
+const POOL_MAX := 69
 ## The reachable states the survey rolls from: no card yet, then the four slots filled three ways (so every
 ## ability's mod and both utilities' items can come up).
 const STATES: Array = [

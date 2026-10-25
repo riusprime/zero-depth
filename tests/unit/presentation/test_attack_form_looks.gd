@@ -44,13 +44,7 @@ func test_two_elements_core_of_one_rim_of_the_other() -> void:
 	assert_eq(plain["core"], ThemePalette.color(&"player_core"), "no element: the plain cyan")
 	assert_true((plain["particles"] as Array).is_empty())
 	var bleed := AttackFormLooks.compose({"form": 0, "elements": PackedStringArray(["bleed"])})
-	assert_eq(
-		bleed["core"],
-		ThemePalette.color(&"player_core").lerp(
-			ItemLooks.color(WorldReader.ITEM_SERRATED_EDGE), 0.7
-		),
-		"bleed keeps MX1's tint"
-	)
+	assert_eq(bleed["core"], ElementLooks.core(&"bleed"), "v0.9.0 VX V1: bleed is dark red")
 
 
 func test_every_element_has_its_own_core_and_particles() -> void:

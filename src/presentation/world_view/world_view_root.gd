@@ -8,9 +8,9 @@ extends Node3D
 ## silhouettes still show the ones farther off).
 const OCCLUSION_RADIUS_M := 10.0
 const OCCLUSION_FOCUS_MAX := 24
-## v0.8.0 BD (O83): the camera shake as the boss door's slab lands (starting value; none with shake off or reduced
-## motion).
-const DOOR_LAND_SHAKE := 0.3
+## v0.8.0 BD (O83): the camera's thud as the boss door's slab lands (starting value; none with shake off or reduced
+## motion). v0.9.0 CV (owner Q17): a vibration, not a shake.
+const DOOR_LAND_THUD := 0.5
 ## v0.8.0 LD (owner O70: loads never freeze): the parts a view makes when it is made (about 16 ms of the main thread
 ## together, 23-55 ms on a busy machine, in one frame). A load behind the cover makes them ahead, a few a frame
 ## (prebuild()); the next WorldViewRoot takes them (_part()). Made the same way either way, so the view is the same.
@@ -25,7 +25,6 @@ static var parts: Array[GDScript] = [
 	RewardViews,
 	ShardViews,
 	HealOrbViews,
-	BlackHoleViews,
 	RemnantViews,  # v0.8.0 RM
 	PortalTransitView,
 	BossChallengeView,
@@ -39,6 +38,15 @@ static var parts: Array[GDScript] = [
 	EventPedestalViews,
 	CoreViews,
 	AttackFormView,
+	LaserView,  # v0.9.0 LZ
+	BombView,  # v0.9.0 BM
+	VoidView,  # v0.9.0 VP
+	WaveView,  # v0.9.0 AF3
+	WispsView,  # v0.9.0 AF3
+	LanceView,  # v0.9.0 AF1
+	ScatterView,  # v0.9.0 AF1
+	GlaiveView,  # v0.9.0 AF2
+	SeekersView,  # v0.9.0 AF2
 	ModifierOverlays,
 	BladeFormView,
 	FireballViews,
@@ -47,6 +55,10 @@ static var parts: Array[GDScript] = [
 	BossShieldView,
 	StoneSpikeViews,
 	BossSignatureViews,
+	TideViews,  # v0.9.0 NB1
+	TwinViews,  # v0.9.0 NB2
+	JudgeViews,  # v0.9.0 NB3
+	ShadeViews,  # v0.9.0 NB4
 	BossStrikeViews,
 	FinalBossViews,
 	PrismViews,
@@ -82,8 +94,6 @@ var deep_gate: PortalGate
 var ascension: AscensionPortal
 ## v0.8.0 P2 (owner O28): the Loop device beside it (null on other floors).
 var loop_device: LoopDevice
-## v0.8.0 P2 (owner O24): Void's black holes.
-var black_holes: BlackHoleViews = _part(BlackHoleViews)
 ## v0.8.0 RM (owner O91): the remnants (threads, cracks, anchors, marks, fragments, replay paths), their flashes and
 ## Thermal Break's shatter.
 var remnants: RemnantViews = _part(RemnantViews)
@@ -91,8 +101,30 @@ var remnants: RemnantViews = _part(RemnantViews)
 var transit: PortalTransitView = _part(PortalTransitView)
 ## v0.8.0 N11 (owner O69): the receiver the hero arrives on, in the middle of the first room (null without one).
 var receiver: FloorReceiver
+## v0.9.0 SA (owner Q16): floor 1 of a run's arrival altar, there instead of the receiver (null elsewhere).
+var altar: AltarStage
+## v0.9.0 FA (owner C §3, Q18): the final approach's altar, pylons and walls of light (null elsewhere).
+var approach_view: FinalApproachView
 ## Run flow (v0.3.0 B): the boss door (null without a boss room).
 var boss_door: BossDoorView
+## v0.9.0 TD: the timed door, its rune switches and the secret room's reveal (null on a floor without one).
+var timed_door: TimedDoorView
+## v0.9.0 RA: the rune puzzle's pillars, its carved slab and its hidden room's reveal (null on a floor without one).
+var rune_view: RuneAlignmentView
+## v0.9.0 DP: the purple-rune room's dais and runes (null on a floor without one).
+var purple: PurpleRuneView
+## v0.9.0 LK: the Lockdowns' bars and the Hazard Lockdowns' warnings (null on a floor without any).
+var lockdowns: LockdownView
+## v0.9.0 SH, HF: the Blood or Chaos shrine and the healing fountain (null on a floor with neither).
+var shrines: ShrinesView
+## v0.9.0 DX: the cracked wall, the containers and the explosive barrels (null on a floor with none), and the faint rune
+## markings by every secret's doorway (null without a secret).
+var breakables: BreakablesView
+var markings: RuneMarkingsView
+## v0.9.0 CL: the floor's collectibles (null on a floor that holds none).
+var collectibles: CollectibleView
+## v0.9.0 RB: A4 Astral's sense, the secrets near the hero pulsing (null without Astral or without a secret).
+var astral: AstralSenseView
 ## The gamble shrine (v0.3.0 L19; null on a floor without one).
 var gamble_shrine: GambleShrineView
 ## The shop terminal (v0.5.0 SH; null on a floor without one, or whose shop is a stall).
@@ -115,8 +147,25 @@ var arenas: ArenaViews = _part(ArenaViews)
 var horde_fx: HordeVisuals = _part(HordeVisuals)
 var events: EventPedestalViews = _part(EventPedestalViews)  # v0.5.0 EV: event pedestals, the drone's ring, elite crowns
 var cores: CoreViews = _part(CoreViews)  # v0.6.0 CU: cores on elites and bosses, the steal window, dodge and stun cues
+## v0.9.0 EL: the elites' arrival sigil, the Rift Hunter's rift, the Conduit's beam, the Breaker's dust ring.
+var elite_fx: EliteViews = _part(EliteViews)
 ## v0.6.0 MX3: the attack forms drawn from their final specs (element core, heat edge, motion cues), pooled.
 var attack_forms: AttackFormView = _part(AttackFormView)
+## v0.9.0 LZ (owner C §6.2): the Laser's beams, per element.
+var laser: LaserView = _part(LaserView)
+## v0.9.0 BM (owner C §6.3): the bombs in flight and their blasts, per element.
+var bombs: BombView = _part(BombView)
+## v0.9.0 VP (owner C §6.4): the Void shots in flight, travelling lensing spheres, and the enemies leaning into them.
+var voids: VoidView = _part(VoidView)
+## v0.9.0 AF3 (owner Q7): the Wave's rolling bands; the wisps circling the hero.
+var waves: WaveView = _part(WaveView)
+var wisps: WispsView = _part(WispsView)
+## v0.9.0 AF1 (owner Q7): the Lance's charge glow and aim line, its release flash; the Scatter's pellets and cone.
+var lances: LanceView = _part(LanceView)
+var scatter: ScatterView = _part(ScatterView)
+## v0.9.0 AF2 (owner Q7): the Glaive's spinning discs out and back; the Seekers' curving darts and their trails.
+var glaives: GlaiveView = _part(GlaiveView)
+var seekers: SeekersView = _part(SeekersView)
 ## v0.6.0 MX4: the shell, the charge, the phase, poison, queued attacks.
 var modifier_marks: ModifierOverlays = _part(ModifierOverlays)
 ## v0.6.5 WN4: crescents, ghost slashes, fissures, sparks, orbiting blades.
@@ -133,6 +182,14 @@ var boss_shields: BossShieldView = _part(BossShieldView)
 var spikes: StoneSpikeViews = _part(StoneSpikeViews)
 ## v0.8.0 BS1 (owner O5): the Warlord's javelins stuck in the floor and the Brood Mother's eggs.
 var signatures: BossSignatureViews = _part(BossSignatureViews)
+## v0.9.0 NB1: the Tidecaller's Pull (the moving water, the bell's toll, the push's swell).
+var tides: TideViews = _part(TideViews)
+## v0.9.0 NB2: the Twin Wardens' burning chain, Crossfire's gap lanes and safe spot, the Chain Sweep's lash.
+var twins: TwinViews = _part(TwinViews)
+## v0.9.0 NB3: the Clockwork Judge's echo (its recording, path and ghost trail) and its Verdict's pendulum.
+var judges: JudgeViews = _part(JudgeViews)
+## v0.9.0 NB4: the Lantern Shade's dark (a layered darkness pass), the room's lanterns and their pools, your light.
+var shades: ShadeViews = _part(ShadeViews)
 
 ## v0.8.0 AV part 2 (owner O7): every other boss ground attack strikes as a 3D effect.
 var strikes: BossStrikeViews = _part(BossStrikeViews)
@@ -258,7 +315,17 @@ func _setup_views(palette: Dictionary) -> void:
 	add_child(events)  # v0.5.0 EV
 	events.setup(reader)
 	add_child(cores)  # v0.6.0 CU
+	add_child(elite_fx)  # v0.9.0 EL
 	add_child(attack_forms)  # v0.6.0 MX3
+	add_child(laser)  # v0.9.0 LZ
+	add_child(bombs)  # v0.9.0 BM
+	add_child(voids)  # v0.9.0 VP
+	add_child(waves)  # v0.9.0 AF3
+	add_child(wisps)  # v0.9.0 AF3
+	add_child(lances)  # v0.9.0 AF1
+	add_child(scatter)  # v0.9.0 AF1
+	add_child(glaives)  # v0.9.0 AF2
+	add_child(seekers)  # v0.9.0 AF2
 
 
 ## The effects layer (real fire, explosions, lightning) and the views drawn into it or after it.
@@ -276,6 +343,15 @@ func _setup_effects() -> void:
 		strikes.vfx = layer  # v0.8.0 AV part 2: the strikes' sprites, lights, marks and explosions
 		layer.drawers.append(strikes.draw_fx)
 		layer.drawers.append(final_views.draw_fx)  # v0.8.0 TX2: the shatter's crystal burst
+		laser.vfx = layer  # v0.9.0 LZ: the beam's element accent, the impact's sparks and light
+		layer.drawers.append(laser.draw_fx)
+		bombs.vfx = layer  # v0.9.0 BM: the blasts' element bursts
+		layer.drawers.append(bombs.draw_fx)
+		layer.drawers.append(lances.draw_fx)  # v0.9.0 AF1: the release's element accent and sparks
+		# v0.9.0 VX: the forms' element accents, launches, catches and collapses (HeroFx, VFX_AUDIT.md)
+		for v: Node in [voids, scatter, glaives, seekers, waves, wisps]:
+			layer.drawers.append(Callable(v, &"draw_fx"))
+		seekers.vfx_on = true  # V29: the trail motes become the element's own sprites
 	element_fx.forms_drawn = true  # MX3 draws the spec forms (rings, spec patches, bombs)
 	ability_fx.forms_drawn = true
 	add_child(modifier_marks)  # v0.6.0 MX4
@@ -289,12 +365,16 @@ func _setup_effects() -> void:
 	add_child(boss_shields)
 	add_child(spikes)  # v0.8.0 AV
 	add_child(signatures)  # v0.8.0 BS1
+	add_child(tides)  # v0.9.0 NB1
+	add_child(twins)  # v0.9.0 NB2
+	add_child(judges)  # v0.9.0 NB3
+	add_child(shades)  # v0.9.0 NB4 (it dims the stage's sun with the dark)
+	shades.stage = stage
 
 	add_child(strikes)  # v0.8.0 AV part 2
 	add_child(final_views)  # v0.8.0 FB1
 	add_child(prism_views)  # v0.8.0 FB2
 	add_child(nemesis_views)  # v0.8.0 FB3
-	add_child(black_holes)  # v0.8.0 P2
 	add_child(remnants)  # v0.8.0 RM
 
 
@@ -314,7 +394,7 @@ func _setup_devices(palette: Dictionary) -> void:
 		gate = PortalGate.new()
 		add_child(gate)
 		gate.setup(reader.portal_pos(), reader.portal_angle())
-	if reader.has_deep_portal():
+	if reader.deep_portal_site():  # v0.9.0 DP: also where the purple runes may still earn it (sealed: unseen)
 		deep_gate = PortalGate.new()
 		deep_gate.name = "DeepGate"
 		add_child(deep_gate)
@@ -331,9 +411,49 @@ func _setup_devices(palette: Dictionary) -> void:
 			palette["cover"],
 			stage.prop_style  # v0.8.0 BD (O82): the biome's own door
 		)
+	if reader.has_timed_door():  # v0.9.0 TD
+		timed_door = TimedDoorView.new()
+		add_child(timed_door)
+		timed_door.setup(reader, stage, palette["cover"])
+	if reader.has_rune_puzzle():  # v0.9.0 RA
+		rune_view = RuneAlignmentView.new()
+		add_child(rune_view)
+		rune_view.setup(reader, stage, palette["cover"])
+	if reader.has_purple_runes():  # v0.9.0 DP
+		purple = PurpleRuneView.new()
+		purple.biome = stage.prop_style  # v0.9.0 BV: the biome's look
+		add_child(purple)
+		purple.setup(reader, palette["cover"])
+	if reader.has_lockdowns():  # v0.9.0 LK
+		lockdowns = LockdownView.new()
+		add_child(lockdowns)
+		lockdowns.setup(reader, stage.prop_style)
+	if reader.has_shrines():  # v0.9.0 SH, HF
+		shrines = ShrinesView.new()
+		shrines.biome = stage.prop_style  # v0.9.0 BV
+		add_child(shrines)
+		shrines.setup(reader, palette["cover"])
+	if reader.has_cracked_wall() or reader.breakable_count() > 0:  # v0.9.0 DX
+		breakables = BreakablesView.new()
+		add_child(breakables)
+		breakables.setup(reader, stage, palette["cover"])
+	if not reader.secret_doors().is_empty():  # v0.9.0 DX (Q29b): hidden rune markings
+		markings = RuneMarkingsView.new()
+		markings.biome = stage.prop_style  # v0.9.0 BV
+		add_child(markings)
+		markings.setup(reader)
+	if reader.has_collectibles():  # v0.9.0 CL: the pickups, as their sources give them
+		collectibles = CollectibleView.new()
+		add_child(collectibles)
+		collectibles.setup(reader, CollectibleBook.colors())
+	if reader.affinity_sense_m() > 0.0 and not reader.secret_spots().is_empty():  # v0.9.0 RB: A4 Astral
+		astral = AstralSenseView.new()
+		add_child(astral)
+		astral.setup(reader, markings.spots if markings != null else PackedVector2Array())
 	if reader.has_gamble():
 		gamble_shrine = GambleShrineView.new()
 		gamble_shrine.kit_model = stage.mood != null  # v0.6.0 Step SR: the owner's shrine with the new look
+		gamble_shrine.biome = stage.prop_style  # v0.9.0 BV
 		add_child(gamble_shrine)
 		gamble_shrine.setup(reader.gamble_pos())
 	if reader.shop_stall():  # v0.8.0 SR: the biome's tent stall and vendor
@@ -344,17 +464,34 @@ func _setup_devices(palette: Dictionary) -> void:
 		shop_terminal = ShopTerminalView.new()
 		add_child(shop_terminal)
 		shop_terminal.setup(reader.shop_pos(), reader.shop_angle())
-	if reader.floor_receiver():  # v0.8.0 N11: every run floor (not the final arena or the Playground)
-		receiver = FloorReceiver.new()
-		add_child(receiver)
-		receiver.setup(reader.floor_start_pos())
+	# v0.8.0 N11: every run floor (not the final arena or the Playground) has an arrival. v0.9.0 SA/PT (owner Q16: "only
+	# floor 1 the rest of the floor spawn the same portal that you take at the end of the floor"): floor 1 of a run
+	# lands on the altar; a later floor's hero steps out of the portal taken (the Deep gate's violet on a Deep floor).
+	var arrival_gate: PortalGate = null
+	if reader.arrival_altar():  # v0.9.0 SA (Q16): floor 1 of a run lands on the altar
+		altar = AltarStage.new(AltarStage.arrival())
+		add_child(altar)
+		altar.setup(reader.floor_start_pos())
+	elif reader.floor_receiver():
+		arrival_gate = PortalGate.new()
+		arrival_gate.name = "ArrivalGate"
+		if reader.floor_is_deep():
+			arrival_gate.set_deep()
+		arrival_gate.set_arrival()
+		add_child(arrival_gate)
 	add_child(transit)
 	transit.setup(actors, gate)
 	transit.receiver = receiver
+	transit.arrival_gate = arrival_gate
+	transit.altar = altar
 	transit.rig = rig
 	transit.deep_gate = deep_gate
 	transit.ascension = ascension  # v0.7.5 AP
 	transit.loop_device = loop_device  # v0.8.0 P2
+	if reader.final_approach():  # v0.9.0 FA
+		approach_view = FinalApproachView.new()
+		add_child(approach_view)
+		approach_view.setup(reader, rig)
 	rig.camera.add_child(ink)
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
@@ -403,6 +540,8 @@ func sync() -> void:
 	_sync_view(&"status_fx", status_fx)
 	_sync_view(&"heat_fx", heat_fx)
 	_sync_view(&"transit", transit)  # after the actors: it poses the hero's model
+	if approach_view != null:
+		_sync_view(&"approach", approach_view)  # v0.9.0 FA
 	_sync_view(&"skill_fx", skill_fx)  # v0.3.5 K
 	_sync_view(&"ability_fx", ability_fx)  # v0.4.0 BS
 	_sync_view(&"element_fx", element_fx)  # v0.4.0 AB
@@ -412,34 +551,78 @@ func sync() -> void:
 	_sync_view(&"horde_fx", horde_fx)  # v0.4.0 EN
 	_sync_view(&"events", events)  # v0.5.0 EV
 	_sync_view(&"cores", cores)  # v0.6.0 CU
+	_sync_view(&"elite_fx", elite_fx)  # v0.9.0 EL
+	if elite_fx.take_thud():  # v0.9.0 EL: the Breaker's slam near the hero (none with reduced motion)
+		rig.thud(EliteViews.THUD)
 	_sync_view(&"attack_forms", attack_forms)  # v0.6.0 MX3
+	_sync_view(&"laser", laser)  # v0.9.0 LZ
+	_sync_view(&"bombs", bombs)  # v0.9.0 BM
+	_sync_view(&"voids", voids)  # v0.9.0 VP
+	_sync_view(&"waves", waves)  # v0.9.0 AF3
+	_sync_view(&"wisps", wisps)  # v0.9.0 AF3
+	_sync_view(&"lances", lances)  # v0.9.0 AF1
+	_sync_view(&"scatter", scatter)  # v0.9.0 AF1
+	_sync_view(&"glaives", glaives)  # v0.9.0 AF2
+	_sync_view(&"seekers", seekers)  # v0.9.0 AF2
 	_sync_view(&"modifier_marks", modifier_marks)  # v0.6.0 MX4
 	_sync_view(&"blade_forms", blade_forms)  # v0.6.5 WN4
 	_sync_view(&"fireballs", fireballs)  # v0.7.5 BF1
 	_sync_view(&"boss_shields", boss_shields)
 	_sync_view(&"spikes", spikes)  # v0.8.0 AV
 	_sync_view(&"signatures", signatures)  # v0.8.0 BS1
+	_sync_view(&"tides", tides)  # v0.9.0 NB1
+	_sync_view(&"twins", twins)  # v0.9.0 NB2
+	_sync_view(&"judges", judges)  # v0.9.0 NB3
+	_sync_view(&"shades", shades)  # v0.9.0 NB4
 
 	_sync_view(&"strikes", strikes)  # v0.8.0 AV part 2
 	_sync_view(&"final_views", final_views)  # v0.8.0 FB1
 	_sync_view(&"prism_views", prism_views)  # v0.8.0 FB2
 	_sync_view(&"nemesis_views", nemesis_views)  # v0.8.0 FB3
-	_sync_view(&"black_holes", black_holes)  # v0.8.0 P2
 	_sync_view(&"remnants", remnants)  # v0.8.0 RM
+	if rune_view != null:  # v0.9.0 RA
+		rune_view.sync(reader)
+	if purple != null:  # v0.9.0 DP (owner Q17, Q26b): the runes' vibration builds, then lands in a thud
+		purple.sync(reader)
+		if purple.vibration > 0.0:
+			rig.vibrate_to(purple.vibration)
+		if purple.take_thud():
+			rig.thud(PurpleRuneView.THUD)
+	if shrines != null:  # v0.9.0 SH, HF
+		shrines.sync(reader)
+	if collectibles != null:  # v0.9.0 CL
+		collectibles.sync(reader)
+	if astral != null:  # v0.9.0 RB: A4 Astral
+		astral.sync(reader)
+	if lockdowns != null:  # v0.9.0 LK: the bars land with a thud
+		lockdowns.sync(reader)
+		if lockdowns.take_thud():
+			rig.thud(LockdownView.THUD)
+	if breakables != null:  # v0.9.0 DX
+		breakables.sync(reader)
+		if breakables.blasted:
+			rig.thud(DOOR_LAND_THUD)
+	if timed_door != null:  # v0.9.0 TD
+		timed_door.sync(reader)
+		if timed_door.slammed:
+			rig.thud(DOOR_LAND_THUD)
 	if boss_door != null:
 		boss_door.sync(reader)
-		if boss_door.landed:  # v0.8.0 BD (O83): the slab lands with a thud
-			rig.shake(DOOR_LAND_SHAKE)
+		if boss_door.landed:  # v0.8.0 BD (O83): the slab lands with a thud (v0.9.0 CV: a vibration)
+			rig.thud(DOOR_LAND_THUD)
 	if gamble_shrine != null:
 		gamble_shrine.sync(reader)
 	if shop_terminal != null:
 		shop_terminal.sync(reader)
 	if shop_stall != null:
 		shop_stall.sync(reader)
-	# v0.5.0 RT: each gate closes when the other one is taken.
+	# v0.5.0 RT: each gate closes when the other one is taken. v0.9.0 PT (C4, Q15): nothing stands before the boss
+	# dies; then each grows from a point as the sim forms it (portal_form_progress), and the one not taken collapses.
 	var open := reader.gate_open(WorldReader.ROUTE_NORMAL)
 	if gate != null and reader.has_boss_room() and gate.is_sealed() == open:
 		gate.set_sealed(not open)
+	if gate != null and open:
+		gate.set_growth(reader.portal_form_progress(WorldReader.ROUTE_NORMAL))
 	if ascension != null and ascension.is_sealed() == open:  # v0.7.5 AP: the column rises
 		ascension.set_sealed(not open)
 	if loop_device != null and loop_device.is_sealed() == open:  # v0.8.0 P2: and the Loop device lights
@@ -447,6 +630,8 @@ func sync() -> void:
 	var deep_open := reader.gate_open(WorldReader.ROUTE_DEEP)
 	if deep_gate != null and deep_gate.is_sealed() == deep_open:
 		deep_gate.set_sealed(not deep_open)
+	if deep_gate != null and deep_open:
+		deep_gate.set_growth(reader.portal_form_progress(WorldReader.ROUTE_DEEP))
 	rig.target = SimPlane.to_3d(reader.player_pos())
 	if occlusion_enabled:
 		var focus: Array[Vector2] = []

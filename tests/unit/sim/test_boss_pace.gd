@@ -45,7 +45,7 @@ static func _world(seed_value: int = 5) -> World:
 	var w := World.new(seed_value, t)
 	w.set_enemy_tables(ContentCompiler.compile_enemies(repo))
 	var bosses := ContentCompiler.compile_bosses(repo)
-	var run := ContentCompiler.compile_run(repo.get_def(&"run", &"three_floors"))
+	var run := ContentCompiler.compile_run(repo.get_def(&"run", RunSaver.RUN_ID))
 	bosses.append_array(ContentCompiler.compile_final_bosses(repo, run))  # the Colossus's moves on an open plane
 	w.set_boss_tables(bosses)
 	w.set_item_tables(ContentCompiler.compile_items(repo))
@@ -126,7 +126,14 @@ func test_a_big_attack_is_followed_by_a_still_punish_window() -> void:
 		for a in def.attacks:
 			if a.hit_class == &"big":
 				bigs[[def.id, a.id]] = true
-	assert_eq(bigs.size(), 11)
+	assert_eq(
+		bigs.size(),
+		15,
+		(
+			"v0.9.0 NB1: the Tidecaller's Shell Slam; NB2: the Wardens' Shield Bash; NB3: the Gavel;"
+			+ " NB4: the Lantern Sweep"
+		)
+	)
 	for key: Array in bigs:
 		var w := _world()
 		var i := BossLab.ready_boss(w, key[0])

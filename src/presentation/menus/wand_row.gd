@@ -5,9 +5,10 @@ extends Control
 ## family's colour (CardFrames) as the glowing groove at its foot, its icon in a socket with an inlay ring in its
 ## element's colour (InlaySocket), its name and its level; an empty slot is a dim, unlit tablet. A trigger card cuts
 ## the row: a glowing ember groove stands after it, and under the row a bracket per part of the wand says what it is
-## ("the shot you fire", then "cast on hit →" under the cards the trigger casts). It draws a wand read
-## (WorldReader.wand(), or a preview from WorldReader.wand_moved) and the page's marks (focus, the card held, a card
-## leaving, a new card); it decides nothing (EI-07). Mouse: a press on a tile and a release on another is a drag
+## ("the shot you fire", then "cast on hit →" under the cards the trigger casts). v0.9.0 AS (owner Q14): a Form,
+## Pattern, Secondary or Element card's tile adds its slot tag to its level line ("Lv 2 · Pattern"). It draws a wand
+## read (WorldReader.wand(), or a preview from WorldReader.wand_moved) and the page's marks (focus, the card held, a
+## card leaving, a new card); it decides nothing (EI-07). Mouse: a press on a tile and a release on another is a drag
 ## (`tile_dropped`); a press and release on the same tile is a click (`tile_clicked`); hovering a tile reports it
 ## (`tile_hovered`). The pages turn those into moves.
 
@@ -52,6 +53,9 @@ var focus := -1
 var held := -1
 var leaving := -1
 var fresh := -1
+## v0.9.0 AS2 (owner "Let me choose"): the slot category a limited Swap chooses in (WorldReader.SLOT_*; 0: any): the
+## other cards' tiles are dimmed and can't be chosen (selectable).
+var only_slot := 0
 
 var _wand := {}
 var _slots := 0
@@ -153,6 +157,13 @@ func card_count() -> int:
 	return (_wand.get("cards", []) as Array).size()
 
 
+## v0.9.0 AS2: card k may be chosen (a held card, of only_slot's category when it is set).
+func selectable(k: int) -> bool:
+	if k < 0 or k >= card_count():
+		return false
+	return only_slot == 0 or int((_wand["cards"][k] as Dictionary).get("slot", 0)) == only_slot
+
+
 func slot_count() -> int:
 	return _slots
 
@@ -181,6 +192,14 @@ func level_text(k: int) -> String:
 
 ## v0.8.0 MR (owner O91): why the card in slot `k` can't act where it sits (a translation key; &"": it acts). Its tile
 ## is dimmed and shows the reason in place of its level.
+## v0.9.0 AS: tile `k`'s slot tag (WorldReader.SLOT_*; NONE for a card without one, or an empty slot).
+func slot_of(k: int) -> int:
+	var cards: Array = _wand.get("cards", [])
+	return (
+		int((cards[k] as Dictionary).get("slot", 0)) if k < cards.size() else WorldReader.SLOT_NONE
+	)
+
+
 func dead_reason(k: int) -> StringName:
 	return _dead[k] if k < _dead.size() else &""
 
@@ -243,6 +262,12 @@ func _refresh() -> void:
 			var ability := int(c["type"]) == WorldReader.CARD_ABILITY
 			var levels := ability or bool(c.get("wand", false))  # v0.7.5 SM: a wand card shows its level too
 			_levels[k].text = tr("UI_WAND_LEVEL") % int(c["level"]) if levels else ""
+			var slot := int(c.get("slot", WorldReader.SLOT_NONE))  # v0.9.0 AS (Q14): the slot tag
+			if slot != WorldReader.SLOT_NONE:
+				var tag := tr(WorldReader.SLOT_TAG_KEYS[slot])
+				_levels[k].text = (
+					tag if _levels[k].text == "" else "%s · %s" % [_levels[k].text, tag]
+				)
 			if k == fresh:
 				_levels[k].text = tr("UI_WAND_NEW")
 			elif dead_reason(k) != &"":  # v0.8.0 MR: it does nothing here; the tile says why
@@ -311,6 +336,8 @@ func _style(k: int) -> void:
 	t.modulate = Color(1, 1, 1, 0.42) if k == leaving else Color.WHITE
 	if k != leaving and dead_reason(k) != &"":  # v0.8.0 MR (O91): a card that can't act here is dimmed
 		t.modulate = Color(0.62, 0.6, 0.58, 0.78)
+	if only_slot != 0 and k < card_count() and k != fresh and not selectable(k):  # v0.9.0 AS2: not a choice
+		t.modulate = Color(0.5, 0.47, 0.45, 0.5)
 
 
 ## The tile's stone tablet (tests: the look, the focus).

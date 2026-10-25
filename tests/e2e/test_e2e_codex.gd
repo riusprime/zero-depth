@@ -1,8 +1,8 @@
 extends GutTest
-## v0.7.5 CX (owner N6): the Codex through real input only. From the main menu (keyboard, then the pad's RB and B)
-## everything is still a silhouette; in a run you take an altar's card and shoot an enemy dead; the pause menu's Codex
-## row shows both met (the card's tile named, its "Taken: 1"; the enemy's kill on the Enemies page); back in the main
-## menu the Codex still has them (the profile, outside the run), and the mouse picks a page and leaves by Back.
+## v0.7.5 CX (owner N6): the Codex through real input only. From the hub's Rune Archive (v0.9.0 HB; keyboard, then
+## the pad's RB and B) everything is still a silhouette; in a run you take an altar's card and shoot an enemy dead; the
+## pause menu's Codex row shows both met (the card's tile named, its "Taken: 1"; the enemy's kill on the Enemies page);
+## back in the hub the Codex still has them (the profile, outside the run), and the mouse picks a page and leaves.
 
 
 func after_each() -> void:
@@ -96,17 +96,16 @@ func _note_tier(main: Main, codex: CodexView, at: Dictionary, seen: Dictionary) 
 func test_the_codex_says_each_cards_tier() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
-	for id in [&"shared_explosive", &"halo_shot", &"gun_twin", &"chain_blast"]:
+	for id in [&"gun_pierce", &"halo_shot", &"gun_twin", &"chain_blast"]:
 		main.codex.unlock(&"cards", id)
-	for k in 3:
-		await e.tap(KEY_DOWN)
-	assert_eq(_focused(main).name, &"Codex")
-	await e.tap(KEY_ENTER)
-	await e.frames(2)
+	var walk := HubWalk.new(e)  # v0.9.0 HB: the Codex is the hub's Rune Archive
+	await walk.enter()
+	await walk.use(&"archive")
 	var codex := main.get_node_or_null("UI/CodexView") as CodexView
 	assert_not_null(codex)
 	if codex == null:
 		return
+	await e.tap(KEY_E)  # v0.9.0 CL: the Archive opens on its Collectibles; E: the Cards page
 	var seen := await _walk_met_mods(e, main, codex)
 	gut.p("tiers seen: %s" % [seen.keys()])
 	assert_eq(seen.keys().size(), 4, "Common, Rare, Epic and Legendary cards each say their tier")
@@ -115,14 +114,14 @@ func test_the_codex_says_each_cards_tier() -> void:
 func test_the_codex_fills_in_a_run_and_opens_from_both_menus() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
-	# The main menu: Play, Options, Credits, Codex.
-	for k in 3:
-		await e.tap(KEY_DOWN)
-	assert_eq(_focused(main).name, &"Codex", "the Codex row is under Credits")
-	await e.tap(KEY_ENTER)
-	await e.frames(2)
+	# v0.9.0 HB: the hub's Rune Archive.
+	var walk := HubWalk.new(e)
+	await walk.enter()
+	await walk.use(&"archive")
 	var codex := main.get_node_or_null("UI/CodexView") as CodexView
-	assert_not_null(codex, "Enter on Codex opens it from the main menu")
+	assert_not_null(codex, "E at the Rune Archive opens it")
+	assert_eq(codex.page, CodexView.COLLECTIBLES, "v0.9.0 CL: on its Collectibles page")
+	await e.tap(KEY_E)  # its next page: the Cards (the first)
 	assert_eq(codex.page, &"cards", "on the Cards page")
 	assert_true(codex.tiles.all(func(t: CodexTile) -> bool: return t.locked), "nothing met yet")
 	assert_eq(codex.tiles[0].name_label.text, "???", "a silhouette")
@@ -130,12 +129,13 @@ func test_the_codex_fills_in_a_run_and_opens_from_both_menus() -> void:
 	assert_eq(codex.page, &"enemies", "RB turns to the Enemies page")
 	await _pad(e, JOY_BUTTON_B)
 	assert_null(main.get_node_or_null("UI/CodexView"), "pad B leaves the Codex")
-	assert_not_null(main.get_node_or_null("UI/MainMenu"))
-	assert_eq(_focused(main).name, &"Codex", "back on the Codex row")
-	for k in 3:
-		await e.tap(KEY_UP)
-	assert_eq(_focused(main).name, &"Play")
-	await e.start_from_menu(&"gun")
+	assert_not_null(main.hub, "back in the hub")
+	await walk.use(&"portal")
+	await e.tap(KEY_RIGHT)  # the Gun
+	await e.tap(KEY_ENTER)
+	await e.loaded()
+	await e.frames(4)
+	await e.landed()
 	assert_true(main.is_playing())
 	var biome := main.run_biome_id()
 	assert_eq(
@@ -210,18 +210,17 @@ func test_the_codex_fills_in_a_run_and_opens_from_both_menus() -> void:
 	assert_true((main.get_node("UI/PauseMenu") as Control).visible, "back to the pause menu")
 	assert_eq(_focused(main).name, &"Codex")
 	assert_true(main.driver.paused, "still paused")
-	# Main menu, and the Codex there still holds the run's finds.
+	# To the hub (v0.9.0 HB, owner 2026-10-23), then its Rune Archive: the Codex there still holds the run's finds.
 	await e.tap(KEY_DOWN)
 	await e.tap(KEY_ENTER)
 	await e.frames(2)
-	assert_false(main.is_playing(), "Main menu ends the run")
-	for k in 4:  # Continue (the run's save), Play, Options, Credits, Codex
-		await e.tap(KEY_DOWN)
-	assert_eq(_focused(main).name, &"Codex")
-	await e.tap(KEY_ENTER)
-	await e.frames(2)
+	assert_false(main.is_playing(), "leaving ends the run")
+	assert_not_null(main.hub, "to the hub")
+	walk = HubWalk.new(e)
+	await walk.use(&"archive")
 	codex = main.get_node_or_null("UI/CodexView") as CodexView
 	assert_not_null(codex)
+	await e.tap(KEY_E)  # v0.9.0 CL: from the Archive's Collectibles page to the Cards
 	assert_false(codex.tile(card_id).locked, "the card is still met: the profile, not the run")
 	var tab := codex.tabs[&"enemies"] as Button
 	await e.click_at(tab.get_global_rect().get_center())
@@ -234,4 +233,4 @@ func test_the_codex_fills_in_a_run_and_opens_from_both_menus() -> void:
 	await e.click_at(codex.back.get_global_rect().get_center())
 	await e.frames(2)
 	assert_null(main.get_node_or_null("UI/CodexView"), "a click on Back leaves")
-	assert_not_null(main.get_node_or_null("UI/MainMenu"))
+	assert_not_null(main.hub, "back in the hub")

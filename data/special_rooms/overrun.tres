@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SpecialRoomDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/special_room_definition.gd" id="1_spr"]
+
+[resource]
+script = ExtResource("1_spr")
+band = &"special_combat"
+code = "OverrunRooms.mark"
+order = 1
+stream = &"map:overrun"
+entry = &"red_frame"
+seals = true
+placement = 5
+count_max = 1
+min_cells = 2
+off_critical_path = true
+avoid = Array[StringName]([&"start", &"boss", &"boss_host", &"portal"])
+sources = {
+"min_cells": "overrun/overrun:min_cells"
+}
+id = &"overrun"

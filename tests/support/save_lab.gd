@@ -5,14 +5,32 @@ extends RefCounted
 ## and heat. The same call with the same arguments gives the same world: the base a snapshot is restored into.
 ## Test-side only.
 
-const RUN_ID := &"three_floors"
+const RUN_ID := RunSaver.RUN_ID
+
+
+## v0.9.0 FV: the run's floors (5).
+static func floors() -> int:
+	return ContentCompiler.compile_run(ContentRepository.load_all().get_def(&"run", RUN_ID)).floors
+
+
+## v0.9.0 FV: the run of a saved payload, compiled from the definition it names (RunSaver.saved_run_id; a v0.8.0 or
+## older payload: the 3-floor shape), as FloorPlan's Continue.
+static func run_from(payload: Dictionary) -> RunState:
+	var repo := ContentRepository.load_all()
+	var def := repo.get_def(&"run", RunSaver.saved_run_id(payload))
+	return RunSaver.run_from(payload, ContentCompiler.compile_run(def))
 
 
 ## `route` (v0.5.0 RT): the route taken into every floor after the first (Routes.Route; DEEP makes them Deep floors).
+## `content` (v0.9.0 RG): an already loaded repository, for callers building thousands of floors (null: load it).
 static func run_state(
-	run_seed: int, floor_index: int, build: StringName = &"blade", route: int = 0
+	run_seed: int,
+	floor_index: int,
+	build: StringName = &"blade",
+	route: int = 0,
+	content: ContentRepository = null
 ) -> RunState:
-	var repo := ContentRepository.load_all()
+	var repo := content if content != null else ContentRepository.load_all()
 	var run := RunState.start(
 		run_seed, ContentCompiler.compile_run(repo.get_def(&"run", RUN_ID)), build
 	)
@@ -28,15 +46,20 @@ static func floor_world(run_seed: int, floor_index: int, build: StringName = &"b
 
 
 ## `biome` (v0.8.0 SR, shots only): the shop room's biome when not the run's own (&"": the run's, as Main).
-static func build_floor(run: RunState, biome_id: StringName = &"") -> World:
-	var repo := ContentRepository.load_all()
+## `content` (v0.9.0 RG): as run_state's.
+static func build_floor(
+	run: RunState, biome_id: StringName = &"", content: ContentRepository = null
+) -> World:
+	var repo := content if content != null else ContentRepository.load_all()
 	var table := ContentCompiler.compile_player(repo.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(table, repo.get_def(&"build", run.build_id))
 	var enemies := ContentCompiler.compile_enemies(repo)
 	run.scale_enemies(enemies)
 	var bosses := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(bosses)
-	var boss := run.pick_boss(ContentCompiler.compile_boss_pool(repo, run.floor_index))
+	var boss := FloorShape.boss(
+		run, RunContentCompiler.compile_boss_pools(repo, run.table.floors), run.floor_index
+	)
 	var arena := RunSaver.boss_arena(run, bosses, boss)  # v0.7.5 BF1 (N18): an older save's room
 	var rules := RunSaver.floor_tables(run, repo)  # v0.7.5 MG, as Main
 	var w := FloorScenario.build(
@@ -52,17 +75,21 @@ static func build_floor(run: RunState, biome_id: StringName = &"") -> World:
 		ContentCompiler.compile_combos(repo),
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine")),
 		rules[&"arena"],  # v0.5.5 AR, as Main
-		rules[&"map"]  # v0.7.5 MG, as Main
+		rules[&"map"],  # v0.7.5 MG, as Main
+		rules[&"overrun"],  # v0.9.0 CF, as Main
+		rules[&"lockdown_first"]  # v0.9.0 CF2, as Main
 	)
 	var biome: BiomeDefinition = repo.get_def(
-		&"biomes", (repo.get_def(&"run", RUN_ID) as RunDefinition).biomes[run.biome_of()]
+		&"biomes", (repo.get_def(&"run", run.table.id) as RunDefinition).biomes[run.biome_of()]
 	)
 	var shop_biome := biome.id if biome_id == &"" else biome_id
 	FloorScenario.add_shop(w, rules[&"shop"], shop_biome, rules[&"map"])  # v0.5.0 SH, v0.8.0 SR, as Main
 	IcePatches.place(w, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2, as Main: ice or starglow
 	w.set_boss_tables(bosses)
-	w.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1, as Main
+	w.locked_items = MetaProgress.locked_items(run.locked_cards, w.item_tables)  # v0.9.0 MP, as Main
+	w.wand_table = WandCompiler.for_run(repo, run.table)  # v0.6.5 WN1, v0.9.0 FV, as Main
 	w.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4, as Main
+	w.slot_table = WandCompiler.slots(repo, w.item_tables)  # v0.9.0 AS, as Main
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)
 	w.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB, as Main
@@ -75,8 +102,13 @@ static func build_floor(run: RunState, biome_id: StringName = &"") -> World:
 	if w.boss_flow != null:  # v0.8.0 N11: floor 1's arrival left out here (Main lands on it; test_arrival covers it)
 		w.boss_flow.set_transit(false, run.floor_index > 1)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))
-	# v0.5.0 EV, as Main: event rooms and curses after the heat (v0.8.0 N17: an older save's floor keeps its rooms)
-	EventCompiler.setup(w, repo, FloorScenario.curse_room_rules_of(run))
+	# v0.5.0 EV, as Main: event rooms and curses after the heat (v0.8.0 N17: an older save's floor keeps its rooms;
+	# v0.9.0 EL: and the retired event's weight)
+	EventCompiler.setup(
+		w, repo, FloorScenario.curse_room_rules_of(run), FloorScenario.retired_events_of(run)
+	)
+	FloorPlan.add_secrets(w, repo, run, table.move_speed)  # v0.9.0 TD, RA, DX, as Main
+	CollectibleBook.arm(w, run, CollectibleBook.defs(repo), biome.id)  # v0.9.0 CL, as Main
 	w.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))  # v0.5.5 DS
 	CatchUp.start_floor(w)
 	return w

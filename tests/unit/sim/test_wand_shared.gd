@@ -15,9 +15,8 @@ const CARDS: Array = [
 	[&"frost_core", "frost", "Frost"],
 	[&"venom_core", "venom", "Venom"],
 	[&"shared_bleed", "bleed", "Bleed"],
-	[&"gravity_well", "void", "Void"],
-	[&"shared_explosive", "", "Explosive"],
-]
+]  # v0.9.0 XP (owner Q11): S7 Explosive is retired (never offered; test_s7 keeps its mechanics for old builds);
+# v0.9.0 VP (owner C §6.4): S6 Void (gravity_well) is retired, its floor black hole deleted (test_void.gd)
 
 
 ## Where the scenes stand their first enemy: in the slash's arc, or in the bolt's line.
@@ -68,6 +67,9 @@ func test_the_seven_are_shared_wand_cards_offered_on_both_weapons() -> void:
 			assert_true(BuildSlots.is_slot_item(t), "%s takes a wand slot" % c[0])
 			assert_true(open.has(k), "%s is offered in a %s run" % [c[0], weapon])
 			assert_eq(_name_en(t.name_key), String(c[2]), "%s is named %s" % [c[0], c[2]])
+		assert_false(
+			open.has(W.item(w, &"shared_explosive")), "v0.9.0 XP: Explosive is never offered"
+		)
 
 
 func test_each_card_shows_on_the_spell_of_both_weapons() -> void:
@@ -89,7 +91,7 @@ func test_each_card_shows_on_the_spell_of_both_weapons() -> void:
 
 
 # --- S1–S7, each on both weapons ----------------------------------------------------------------------------
-func test_s1_fire_burns_and_a_kill_bursts_into_flame() -> void:
+func test_s1_fire_burns_and_a_kill_leaves_burning_ground() -> void:
 	for weapon in WEAPONS:
 		var t := _target(weapon)
 		var w := W.world(weapon, [&"ember_core"], [[t, 2000]])
@@ -99,8 +101,11 @@ func test_s1_fire_burns_and_a_kill_bursts_into_flame() -> void:
 		var first := k.actors.ids[1]
 		_attack(k, weapon)
 		assert_has(_killed(k), first, "%s: the first enemy dies" % weapon)
-		var burst := W.damage(k, &"ember_core")
-		assert_gt(burst.size(), 0, "%s: its death bursts into flame" % weapon)
+		var patch := W.damage(k, &"ember_core")  # v0.9.0 XP: burning ground, no blast
+		assert_gt(patch.size(), 0, "%s: its death leaves burning ground" % weapon)
+		assert_true(
+			_killed(k).size() == 1 and k.ab.fire_pos.size() > 0, "%s: a patch, no burst" % weapon
+		)
 
 
 func test_s2_lightning_chains_to_two_more_enemies() -> void:
@@ -184,29 +189,6 @@ func test_s5_the_moving_period_is_the_cards() -> void:
 	)
 
 
-## v0.8.0 P2 (owner O24): Void's shots and slashes leave black holes by chance (level 5: 20 %), which pull the
-## enemies near them in (test_black_holes.gd has the numbers).
-func test_s6_void_leaves_black_holes_that_pull_nearby_enemies_in() -> void:
-	for weapon in WEAPONS:
-		var t := _target(weapon)
-		var w := W.world(weapon, [&"gravity_well"], [[t, 100000], [t + Vector2(0.0, 2.0), 100000]])
-		var k := W.item(w, &"gravity_well")
-		for n in 4:
-			Offers.apply(w, k)
-		var tries := 0
-		while w.mx.hole_pos.is_empty() and tries < 80:
-			_attack(w, weapon, 14)
-			tries += 1
-		assert_false(w.mx.hole_pos.is_empty(), "%s: an attack left a black hole" % weapon)
-		if w.mx.hole_pos.is_empty():
-			continue
-		var at := w.mx.hole_pos[0]
-		var before := w.actors.pos(2).distance_to(at)
-		W.run(w, 20)
-		var after := w.actors.pos(2).distance_to(at)
-		assert_lt(after, before - 0.3, "%s: the side enemy is pulled toward the hole" % weapon)
-
-
 func test_s7_explosive_blasts_where_the_spell_ends() -> void:
 	# The Blade: the slash's tip, with nothing hit; an enemy just past the reach takes the blast.
 	var b := W.world(&"blade", [&"shared_explosive"])
@@ -249,8 +231,8 @@ func test_each_shared_card_levels_up_without_a_slot_and_grows() -> void:
 		assert_eq(w.mod_slots.size(), slots, "%s: no new slot" % c[0])
 		assert_ne(Modifiers.book(w).digest, digest, "%s: the spell changed" % c[0])
 		var up := W.hook_of(Modifiers.bolt(w), c[0])
-		if c[0] == &"gravity_well":  # v0.8.0 P2: Void's level raises its black hole's chance
-			assert_eq(Modifiers.bolt(w).hole_permille, 110, "Void: +3 %% chance")
+		if c[0] == &"ember_core":  # v0.9.0 XP: Fire's burning patch, +5 % a level
+			assert_eq(up.damage_permille, share + 50, "Fire: its patch +5 %%")
 		elif hook != null:
 			assert_eq(up.damage_permille, share + 100, "%s: its hook +10 %%" % c[0])
 		else:

@@ -217,9 +217,32 @@ func test_the_screens_fit_at_interface_size_110() -> void:
 	var need := col.get_combined_minimum_size()
 	assert_lt(need.x, visible.x, "the three cards fit across (%d px)" % need.x)
 	assert_lt(need.y, visible.y, "and down (%d px)" % need.y)
-	var main := MainMenu.new("v", true, true)
+	var main := MainMenu.new("v", true)
 	add_child_autofree(main)
 	var slab := main.slab.get_combined_minimum_size()
 	assert_lt(slab.y, visible.y, "the longest main menu fits (%d px)" % slab.y)
 	assert_lt(MenuStyle.LIST_LEFT + slab.x, visible.x)
 	TranslationServer.set_locale(_locale)
+
+
+## v0.9.0 AS2 (owner: "make the edges of things straight and not the zigzags it has"): every slab's outline (a card's,
+## a card back's, a plaque's, a menu tile's) runs straight between its cut corners, whatever its chip and pattern.
+func test_the_slabs_edges_are_straight() -> void:
+	assert_true(EmberStone.STRAIGHT_EDGES)
+	var r := Rect2(10, 20, 330, 540)
+	for p in [0, 7, 431]:
+		var b := StoneBox.make(Vector2.ZERO, p)
+		b.chip = 4.2
+		b.cut = 19.2
+		var pts: PackedVector2Array = b.outline(r)[0]
+		assert_gt(
+			pts.size(), 8, "the outline still has its points (the glow and the bevel follow them)"
+		)
+		for q in pts:
+			var on_side := is_equal_approx(q.x, r.position.x) or is_equal_approx(q.x, r.end.x)
+			var on_top := is_equal_approx(q.y, r.position.y) or is_equal_approx(q.y, r.end.y)
+			var in_corner := (
+				(q.x < r.position.x + b.cut or q.x > r.end.x - b.cut)
+				and (q.y < r.position.y + b.cut or q.y > r.end.y - b.cut)
+			)
+			assert_true(on_side or on_top or in_corner, "pattern %d: %s is on an edge" % [p, q])

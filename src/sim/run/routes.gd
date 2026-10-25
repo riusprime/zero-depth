@@ -1,7 +1,8 @@
 class_name Routes
 extends RefCounted
 ## Optional routes (v0.5.0 PLAN R5, step RT). After the boss of a run's floor before the last, the boss room opens
-## two portals: the normal gate and a Deep gate beside it (Routes.place_deep_gate). Walking into one takes that
+## two portals: the normal gate and a Deep gate beside it (Routes.place_deep_gate; v0.9.0 DP, owner Q26b: only once
+## the floor's purple runes are awakened, PurpleRunes; a floor saved before DP: always). Walking into one takes that
 ## route (BossFlow.route_taken); the other closes. The next floor is then normal or Deep (RunState.routes):
 ## - Deep scaling: enemies' and bosses' HP and damage × RunTable.deep_scale_permille, composed into the floor's own
 ##   factors (RunState.scale_enemies / scale_bosses: one multiplication per table, never applied twice; the danger
@@ -9,7 +10,7 @@ extends RefCounted
 ## - one extra chest (RunTable.deep_extra_chests) and a curse-free epic altar (Offers.roll_epic: epic stat cards and
 ##   ability level-ups only), on item spots the floor's own rewards left free; v0.5.5 DS (S5) the epic altar on the
 ##   free spot nearest the boss door, the floor's end (end_first);
-## - v0.5.5 DS (S5): an elite in every combat room (SpawnDirector.deep_elite), a Deep-only event (Events.draw_event),
+## - v0.5.5 DS (S5): a Deep-only event (Events.draw_event) (its elite in every combat room went in v0.9.0 DP, Q24),
 ##   the violet look (StageView), and the extra threat raises the hidden catch-up's caps (CatchUp).
 ## - +1 threat T per Deep floor taken (World.deep_threat, set by RunState.prepare; Curses.threat adds it).
 ## Pure sim code: no stream is drawn here (placement is a pure function of the layout), so a Deep floor's loot and
@@ -22,8 +23,7 @@ enum Route { NORMAL, DEEP }
 const GATE_GAP := 4.8
 ## Further candidates step this far (m) along a wall.
 const STEP := 0.5
-## Side margin (m) of a gate's kept-clear zone, and its depth margin past the front square.
-const ZONE_SIDE := 1.0
+## The depth margin (m) of a gate's kept-clear zone past the front square (its side margin: GateClearance.zone_side).
 const ZONE_DEPTH := 1.0
 ## The Deep gate keeps this clear of where the boss appears (m), and of the boss door's passage.
 const SPAWN_CLEAR := 2.6
@@ -62,7 +62,7 @@ static func place_deep_gate(f: FloorLayout, params: FloorParams = null) -> bool:
 				f.deep_portal_angle = c[1]
 				f.has_deep_portal = true
 				if clearing:
-					_clear_zone(f, zone(c[0], c[1]))
+					_clear_zone(f, zone(f, c[0], c[1]))
 				return true
 	return false
 
@@ -86,16 +86,16 @@ static func candidates(f: FloorLayout) -> Array:
 	var off := GATE_GAP
 	while g - off > lo or g + off < hi:
 		for u in [g + off, g - off]:
-			out.append([_on_wall(r, back, u), _SIDE_ANGLES[back]])
+			out.append([_on_wall(f, r, back, u), _SIDE_ANGLES[back]])
 		off += STEP
 	# Side walls: from the back face toward the door.
 	var b := _face(r, back)
 	var toward := -1.0 if back < 2 else 1.0
 	var depth := r.size.x if along_y else r.size.y
-	var d := FloorLayout.GATE_WIDTH * 0.5 + ZONE_SIDE + 0.2
+	var d := FloorLayout.GATE_WIDTH * 0.5 + GateClearance.zone_side(f) + 0.2
 	while d < depth:
 		for s in [(back + 1) % 4, (back + 3) % 4]:
-			out.append([_on_wall(r, s, b + toward * d), _SIDE_ANGLES[s]])
+			out.append([_on_wall(f, r, s, b + toward * d), _SIDE_ANGLES[s]])
 		d += STEP
 	return out
 
@@ -109,8 +109,10 @@ static func fits(
 	var box := collider_at(pos, angle)
 	if not room.encloses(box.bounds()) or not room.encloses(_front(pos, angle)):
 		return false
-	var z := zone(pos, angle)
-	if z.intersects(zone(f.portal_pos, f.portal_angle)):
+	if not GateClearance.oval_fits(f, room, pos, angle):  # v0.9.0 PT: clear of the room's walls
+		return false
+	var z := zone(f, pos, angle)
+	if z.intersects(f.gate_zone()):
 		return false
 	if z.intersects(f.door_rect(f.boss_door_index).grow(DOOR_CLEAR)):
 		return false
@@ -151,13 +153,8 @@ static func deep_gate_collider(f: FloorLayout) -> Obb:
 
 
 ## A gate's footprint, its clear front and a margin (axis-aligned: gates face a grid axis).
-static func zone(pos: Vector2, angle: int) -> Rect2:
-	var n := Kin.dir(angle)
-	var t := Vector2(-n.y, n.x)
-	var face := pos - n * FloorLayout.GATE_HALF_DEPTH
-	var half_w := FloorLayout.GATE_WIDTH * 0.5 + ZONE_SIDE
-	var depth := FloorLayout.GATE_HALF_DEPTH * 2.0 + FloorLayout.GATE_FRONT + ZONE_DEPTH
-	return Rect2(face + t * half_w, Vector2.ZERO).expand(face - t * half_w + n * depth)
+static func zone(f: FloorLayout, pos: Vector2, angle: int) -> Rect2:
+	return GateClearance.zone(f, pos, angle)
 
 
 ## The clear square in front of a gate (FloorLayout.portal_front's shape).
@@ -185,9 +182,9 @@ static func _face(r: Rect2, s: int) -> float:
 
 
 ## A gate's centre on side s of r at coordinate u along that side.
-static func _on_wall(r: Rect2, s: int, u: float) -> Vector2:
+static func _on_wall(f: FloorLayout, r: Rect2, s: int, u: float) -> Vector2:
 	var face := Vector2(_face(r, s), u) if s % 2 == 0 else Vector2(u, _face(r, s))
-	return face + Kin.dir(_SIDE_ANGLES[s]) * FloorLayout.GATE_HALF_DEPTH
+	return face + Kin.dir(_SIDE_ANGLES[s]) * GateClearance.wall_offset(f)  # v0.9.0 PT: clear of the wall
 
 
 ## A Deep floor's extras (setup, after Rewards.place): the epic altar, then the extra chests, on the item spots the

@@ -53,12 +53,17 @@ const ENTER_TICKS := 60
 const ARRIVE_TICKS := 48
 const ENTER_TICKS_CALM := 24
 const ARRIVE_TICKS_CALM := 18
-## v0.8.0 N11 (O69; starting value): floor 1 of a run's arrival (~1.6 s), the big landing on the receiver.
-const ARRIVE_FIRST_TICKS := 96
+## v0.8.0 N11 (O69; starting value): floor 1 of a run's arrival, the big landing; v0.9.0 SA (owner Q16): 4.0 s on the
+## arrival altar.
+const ARRIVE_FIRST_TICKS := 240
 ## v0.8.0 BD (O83; starting values): the door's opening, press to open (~2.7 s, the owner's opening sound's
 ## length), and how near its outer face (m, in front of it and along it past its sides) the press reaches.
 const DOOR_OPEN_TICKS := 162
 const DOOR_REACH_M := 2.2
+## v0.9.0 PT (owner C4, Q15: "it should appear from a point and grow out of it"; starting value): the gates take
+## this long (~1.5 s) to form after the boss dies (PORTAL_OPENED); walking in is refused until then. The view draws the
+## growth from portal_form_progress, so the view and the sim agree (EI-03). Not the Ascension floor's devices.
+const PORTAL_FORM_TICKS := 90
 
 var state := State.WAITING
 ## Which compiled boss World.spawn_boss gets (BossArenaSpec.boss_index).
@@ -190,6 +195,14 @@ func exited() -> bool:
 	return state == State.EXITED
 
 
+## v0.9.0 PT: 0..1 through the gates' forming (0 before the boss died, 1 once formed, PORTAL_FORM_TICKS after they
+## opened: walking in works from then).
+func portal_form_progress(tick: int) -> float:
+	if not portal_active() or opened_tick < 0:
+		return 0.0
+	return clampf(float(tick - opened_tick) / float(PORTAL_FORM_TICKS), 0.0, 1.0)
+
+
 ## v0.5.0 RT: gate `route` (Routes.Route) is open: the portal is active and no route was taken, or this one was.
 func gate_open(route: int) -> bool:
 	if not portal_active() or (route == Routes.Route.DEEP and not routes):
@@ -298,6 +311,8 @@ func advance(w: World) -> void:
 					enter_ascension(w, Ascension.Choice.ASCENSION)
 				elif Ascension.on_loop_device(f, p):
 					enter_ascension(w, Ascension.Choice.LOOP)
+				return
+			if portal_form_progress(w.tick) < 1.0:  # v0.9.0 PT (C4): the gates are still forming
 				return
 			var route := -1
 			if in_portal(f, p):

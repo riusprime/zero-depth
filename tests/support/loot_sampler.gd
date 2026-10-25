@@ -39,7 +39,7 @@ var income := 200
 var cores := 1
 var rerolls := 2
 var shop_rank := 3
-var run_id := &"three_floors"
+var run_id := RunSaver.RUN_ID
 
 var _repo: ContentRepository
 

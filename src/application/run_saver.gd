@@ -22,8 +22,22 @@ extends RefCounted
 ## v0.8.0 FB1 adds `run.final` (End the run took the hero to the final boss; RunState.final_fight) the same way: a
 ## payload without it is a run before the final arena. In the final arena a save is also taken at each body's start
 ## (FinalFight.phase_tick: after_tick), so Continue resumes the fight at the current body's beginning.
+## v0.9.0 FV (owner Q24, PD-03 changed: a run is 5 floors) adds `run.run_id` (the RunDefinition the run was started
+## with) the same way: a payload without it is a v0.8.0 run (or older) and resumes in its 3-floor shape
+## (LEGACY_RUN_ID: 3 floors, v0.8.0's scaling, 15-19 rooms a floor, the wand's 4 → 6 → 8), so its floor rebuilds as
+## it was saved and it ends on its floor 3.
+## v0.9.0 DP (owner Q26b) adds `run.purple_floors` (the run's floors that held a purple-rune room) the same way: a
+## payload without it has had none.
+## v0.9.0 MP adds `run.fragments` (the Rune Fragments the finished floors earned) and `run.locked` (the card ids still
+## locked for the run: the Void before a Purple Portal) the same way, only when not 0 or empty: a payload without them
+## has earned none and locks nothing (an old run in progress keeps every form in its pool).
+## v0.9.0 CL adds `run.collected`, `run.collected_run` (collectible ids) and `run.marked` the same way: a payload
+## without them has found none (its floors arm every collectible the content has; the profile drops a found one).
 const PAYLOAD_VERSION := 4
 const PAYLOAD_VERSIONS_READ: Array[int] = [2, 3, 4]
+## v0.9.0 FV: today's run (Main) and the shape a payload without `run_id` resumes in.
+const RUN_ID := &"five_floors"
+const LEGACY_RUN_ID := &"three_floors"
 ## v0.8.0 RT2: the designed layouts of floor rules 4 (RT1: data/room_layouts as RT1 shipped them, unchanged since).
 const RT1_LAYOUTS: Array[StringName] = [&"room_2x2_1", &"room_3x2_1", &"room_3x3_1"]
 
@@ -111,20 +125,45 @@ static func floor_tables(run: RunState, repo: ContentRepository) -> Dictionary:
 	var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
 	var arena := RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))
 	var shop := ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal"))
+	var overrun := ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))
+	if ClosedFights.legacy_rooms(run):  # v0.9.0 CF: a floor saved before CF keeps its rooms
+		if arena != null:
+			arena.min_cells = 0
+		if overrun != null:
+			overrun.min_cells = 0
 	if run == null or run.designed_rooms():  # v0.8.0 RT: a floor saved before RT keeps its rule-built rooms
 		map.room_layouts = RunContentCompiler.compile_room_layouts(repo)
 		if run != null and run.rt1_rooms():  # v0.8.0 RT2: a floor saved under RT1 keeps RT1's three layouts
 			map.room_layouts = rt1_layouts(map.room_layouts)
 	if shop != null and (run == null or shop_rooms(run)):  # v0.8.0 SR: before SR, the terminal
 		shop.rooms = RunContentCompiler.compile_shop_rooms(repo)
+	# v0.9.0 PT: a floor saved before v0.9.0 (rules 1-9) keeps its gates against the wall, as it was built.
+	map.legacy_gate = run != null and run.floor_rules <= RunState.FLOOR_RULES_V080_BD
 	if run != null and run.v070_floor():
 		map = FloorParams.v070()
+		map.legacy_gate = true
 		if arena != null:
 			arena.share_permille = ArenaTable.V070_SHARE_PERMILLE
 		if shop != null:
 			shop.first_floor = 1
 			shop.every_floors = 1
-	return {&"map": map, &"arena": arena, &"shop": shop}
+	var first: LockdownTable = null  # v0.9.0 CF2: a floor built under rules 17 marks its Lockdowns first
+	if run != null and run.floor_rules > RunState.FLOOR_RULES_V090_CF:
+		first = lockdown_table(run, repo)
+	return {
+		&"map": map, &"arena": arena, &"shop": shop, &"overrun": overrun, &"lockdown_first": first
+	}
+
+
+## v0.9.0 LK, EL, CF: the Lockdowns' table a floor of `run` is built with: no Elite Lockdown on a floor saved before
+## EL (rules 1-14), any room size on one saved before CF (1-15). Null without the data.
+static func lockdown_table(run: RunState, repo: ContentRepository) -> LockdownTable:
+	var t := RunContentCompiler.compile_lockdown(repo.get_def(&"lockdown", &"lockdown"))
+	if t != null and run != null and run.floor_rules <= RunState.FLOOR_RULES_V090_SH:
+		t.kind_weights[LockdownTable.Kind.ELITE] = 0  # v0.9.0 EL: a floor saved before EL had none
+	if t != null and ClosedFights.legacy_rooms(run):  # v0.9.0 CF: a floor saved before CF keeps its rooms
+		t.min_cells = 0
+	return t
 
 
 ## v0.8.0 RT2: the designed layouts a floor saved under floor rules 4 (RT1) was built with: RT1_LAYOUTS out of
@@ -152,7 +191,16 @@ static func boss_arena(run: RunState, bosses: Array[BossTable], boss: int) -> Bo
 	return BossArenaSpec.make(cells, t.arena_template, boss)
 
 
-## Payload -> its run. `run_table` is the run's compiled RunTable (from content, like a new run's).
+## v0.9.0 FV: the RunDefinition id a payload's run was started with (LEGACY_RUN_ID for a payload without one: a
+## v0.8.0 run resumes in its 3-floor shape). Compile it for run_from.
+static func saved_run_id(payload: Dictionary) -> StringName:
+	var r: Variant = payload.get("run", {})
+	var id := String((r as Dictionary).get("run_id", "")) if r is Dictionary else ""
+	return LEGACY_RUN_ID if id.is_empty() else StringName(id)
+
+
+## Payload -> its run. `run_table` is the run's compiled RunTable (from content, like a new run's; v0.9.0 FV: the
+## definition saved_run_id names).
 static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	var r: Dictionary = payload.get("run", {})
 	var run := RunState.start(int(r["run_seed"]), run_table, StringName(r["build_id"]))
@@ -168,6 +216,16 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	run.loop = maxi(1, int(r.get("loop", 1)))  # v0.7.5 AP: an older payload is loop 1
 	run.loop_floors = maxi(0, int(r.get("loop_floors", 0)))
 	run.final_fight = bool(r.get("final", false))  # v0.8.0 FB1: an older payload is before the final arena
+	run.purple_floors = PackedInt32Array(r.get("purple_floors", PackedInt32Array()))  # v0.9.0 DP: older: none
+	run.affinity = StringName(String(r.get("affinity", "")))  # v0.9.0 RB: an older payload is a run without one
+	run.fragments_done = maxi(0, int(r.get("fragments", 0)))  # v0.9.0 MP: an older payload earned none
+	for id: Variant in r.get("locked", []):  # v0.9.0 MP: an older payload locks nothing
+		run.locked_cards.append(StringName(String(id)))
+	for id: Variant in r.get("collected", []):  # v0.9.0 CL: an older payload found none
+		run.collected.append(StringName(String(id)))
+	for id: Variant in r.get("collected_run", []):
+		run.collected_run.append(StringName(String(id)))
+	run.marked_done = maxi(0, int(r.get("marked", 0)))
 	return run
 
 
@@ -184,7 +242,7 @@ static func is_usable(payload: Dictionary) -> bool:
 static func payload_of(
 	w: World, run: RunState, stage_seed: int, p_rooms: PackedByteArray
 ) -> Dictionary:
-	return {
+	var out := {
 		"version": PAYLOAD_VERSION,
 		"run":
 		{
@@ -202,11 +260,36 @@ static func payload_of(
 			"loop": run.loop,  # v0.7.5 AP: the Ascension loop
 			"loop_floors": run.loop_floors,
 			"final": run.final_fight,  # v0.8.0 FB1: the final arena
+			"purple_floors": run.purple_floors.duplicate(),  # v0.9.0 DP: the floors that held purple runes
+			"run_id": String(run.table.id),  # v0.9.0 FV: the run's shape (saved_run_id)
 		},
 		"rooms": p_rooms.duplicate(),
 		"tick": w.tick,
 		"world": w.to_snapshot(),
 	}
+	if Wardrobe.has_affinity(run.affinity):  # v0.9.0 RB: the run's locked rune affinity (None: no key, as before)
+		out["run"]["affinity"] = String(run.affinity)
+	if run.fragments_done > 0:  # v0.9.0 MP: the run's Rune Fragments so far (none: no key, as before)
+		out["run"]["fragments"] = run.fragments_done
+	if not run.locked_cards.is_empty():  # v0.9.0 MP: the cards still locked (none: no key, as before)
+		var ids := PackedStringArray()
+		for id in run.locked_cards:
+			ids.append(String(id))
+		out["run"]["locked"] = ids
+	if not run.collected.is_empty():  # v0.9.0 CL: the collectibles no floor arms again (none: no key, as before)
+		out["run"]["collected"] = _ids(run.collected)
+	if not run.collected_run.is_empty():  # v0.9.0 CL: those taken in this run
+		out["run"]["collected_run"] = _ids(run.collected_run)
+	if run.marked_done > 0:  # v0.9.0 CL: the marked secrets the finished floors found
+		out["run"]["marked"] = run.marked_done
+	return out
+
+
+static func _ids(ids: Array[StringName]) -> PackedStringArray:
+	var out := PackedStringArray()
+	for id in ids:
+		out.append(String(id))
+	return out
 
 
 func _save(w: World, run: RunState, stage_seed: int) -> void:

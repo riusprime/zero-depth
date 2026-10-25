@@ -325,7 +325,7 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   ```gdscript
   class_name WandDefinition extends ContentDef
   const MAX_SLOTS := 8
-  @export var slots_per_floor := PackedInt32Array([4, 6, 8])   # the wand's slots on floor f (entry f − 1; last repeats)
+  @export var slots_per_floor := PackedInt32Array([4, 6, 8])   # the wand's slots on floor f (entry f − 1; last repeats; data: 4, 5, 6, 7, 8 since v0.9.0 FV)
   @export var child_size_permille := 600                       # a trigger's child spell: the basic attack's size (a
   @export var child_range_permille := 600                      #   bolt's radius, a slash's reach), a bolt's flight
   @export var child_damage_permille := 500                     #   and the share of the hit that set it off
@@ -491,7 +491,13 @@ loot-stream roll), `heal_orb_heal` (0.25 of max HP) and `heal_orb_reach_m` (0.9 
 shares within 0..1 (`range`), the reach positive. v0.5.5 EC: `heal_orb_chance` is a base under the Lifesprout stat
 card and ships 0 (owner D9: orbs only with the card); `altars_cap` (2, owner S1: the floor's placed altars past it
 become chests, the same draws and spots; 0 = no cap; ≥ 0) and `shard_scale` (0.7, owner S4: every kill's shards ×
-this, rounded half up; > 0).
+this, rounded half up; > 0). v0.9.0 FV (owner Q24, "Scale with floor size"): `count_rooms` (ascending room counts,
+start hall in, boss room out) with `altars_min_by_rooms`, `altars_max_by_rooms`, `chests_min_by_rooms` and
+`chests_max_by_rooms` (one entry each per band): a floor of at most `count_rooms[k]` rooms draws band k's ranges, a
+bigger floor the plain `altars_min`..`chests_max`. Shipped `[11, 14]`: up to 11 rooms 2 altars and 1-2 chests, up
+to 14 rooms 2 and 2, more rooms 2-3 and 2-3 (v0.8.0's; `altars_cap` 2 still holds, so the chests carry the scaling). Only a five-floor run's floors use the bands (a v0.8.0
+3-floor run resumed from a save keeps the plain counts). Validation: the arrays pair up, the bands ascend, each range
+ordered and non-negative.
 
 **Overclock heat** (v0.3.0 L18, category `heat`, `data/heat/overclock.tres`; design in
 [`../design/SIGNATURE.md`](../design/SIGNATURE.md)): `HeatDefinition` holds `max_heat` (the overheat point), the
@@ -597,7 +603,44 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
 @export var gap_close_attack: StringName           # an attack id (empty = none), done when out of reach...
 @export var gap_close_distance_m: float            # ...beyond this from the boss's edge...
 @export var gap_close_seconds: float               # ...for this long
+# v0.9.0 NB1 (BOSSES_4_5.md N1): the Tidecaller's Pull on a cadence (0 = none; every phase then holds a `tide`).
+@export var signature_every_seconds: float         # the phase's first `tide` attack every this long, start to start
+@export var signature_first_seconds: float         # the first one this long after the boss starts fighting
+# v0.9.0 NB2 (BOSSES_4_5.md N2): a boss in two bodies (BossTwin; "" = one body).
+@export var twin_kind_id: StringName                # BossSchemas.TWIN_KINDS ("twin_warden_violet")
+@export var twin_distance_m: float                 # the twin rises this far to the side (within the chain's lengths)
+@export var chain_min_m: float                     # the chain's length, held within these (3 <= min < max <= 9)
+@export var chain_max_m: float
+@export var chain_burn: int                        # it burns a touching player this much (> 0)...
+@export var chain_burn_seconds: float              # ...every this long (>= a tick)
+@export var chain_width_m: float                   # the strip it burns (> 0)
+@export var flank_m: float                         # the twin keeps this far from the player beside it
+@export var anger_speed_permille: int              # a hit on one body speeds the other to this (1000..2000)...
+@export var anger_seconds: float                   # ...for this long
 ```
+
+- v0.9.0 NB1: `tide` (PROJECTILE, shielded): `pattern_id`, `pull_mps` and `push_mps` (> 0, at most 1.5),
+  `pull_seconds` and `push_seconds` (each >= the telegraph minimum), `bend_dps` (>= 0): the Tidecaller's Pull (1.2 /
+  1.0 m/s for 3 s / 2 s, rings bending 25 °/s; phase 3's 1.5 / 1.2, 30 °/s). `marks` + `drag_m` (0..2) and
+  `drag_reach_m` (>= `radius_m`): the Undertow (1.0 m from within 3.0 m).
+- v0.9.0 NB2: `crossfire` (PROJECTILE, shielded; needs a twin): `pattern_id` (a fan), `gap_m` (> 0: the gap's half
+  width at the safe spot), `distance_m` (> 0: the safe spot off the chain's middle), optional `twin_look` (the twin's
+  shots' look). `chain_sweep` (LINE, needs `lock_seconds` and a twin; the boss's def needs one with a
+  `late_cause_key`, the chain's burn): `width_m` (> 0), `reach_m` (>= 0: how far past the player the line runs).
+- v0.9.0 NB3: `echo` (PROJECTILE, shielded; a cadence move like `tide`: `signature_every_seconds` must exceed its
+  telegraph + `record_seconds`): `radius_m` (> 0: each ghost strike), `record_seconds` and `step_seconds` (a step of
+  at least a tick, at most `BossSchemas.ECHO_MAX_POINTS` = 24 points), `safe_m` (>= 0: the margin round where the
+  player stands as it starts): the Clockwork Judge's echo (3.0 s, 0.25 s, 0.9 m, 0.3 m; 20 a strike; every 10 s).
+  `verdict` (LINE, needs `lock_seconds`): `half_m` (> 0: the tracked square's half side, 1.5 m).
+- v0.9.0 NB4 (`ShadeRules`): a `pattern` with `dark_seconds` is a Lights Out (shielded; a cadence move:
+  `signature_every_seconds` must exceed its telegraph + `dark_seconds`) and then needs all of `dark_seconds` (> 0: from
+  its start to the room's dark), `dark_lasts_seconds` (v0.9.0 NB4b: > 0 and less than `signature_every_seconds`: how
+  long each dark lasts before the light comes back; the boss's first Lights Out's is compiled, 8.0 s),
+  `light_m` (> 0: the player's light), `lamps` (1..8: the room's lanterns), `lamp_m`
+  (> 0: a lit lantern's light), `lamp_seconds` (> 0: a lantern's burn), `relight_m` (> 0: passing within it relights
+  one), `inset_m` (>= 0: in from each wall's middle): the Lantern Shade's (4.0 s, 3.5 m, 4, 3.0 m, 6.0 s, 1.2 m,
+  1.5 m; every 12 s). A `marks` attack may take `snuff` (0 or 1): each struck circle puts out the lit lantern nearest
+  it (the Snuff). The boss-id to actor-kind table is `BossKinds.ALL` (`ContentCompiler.BOSS_KINDS` points at it).
 
 - Boss attacks (v0.3.0 BX) also take `opens_weak_point: bool`, and `follow_up: StringName` (another attack of the
   boss) with `follow_up_permille` (0..1000): the chance it starts at once instead of the recovery (a follow-up never
@@ -877,6 +920,29 @@ the dressing. `RunContentCompiler.compile_shop_rooms` → `ShopRoomTable` per bi
 `RunSaver.floor_tables` adds them unless the floor was saved before SR (`RunState.shop_rooms`, floor rules < 5), whose
 shop is the terminal. The F10 dev panel does not list the folder (geometry, not balance).
 
+### Special rooms (`data/special_rooms/<kind>.tres`, v0.9.0 RG)
+
+`SpecialRoomDefinition` (category `special_rooms`, PLAN W73/W74): one file per special room kind the floor places,
+the id the kind's name: `overrun`, `arena`, `shrine`, `shop`, `curse`, `event`, `fountain`, `timed_door`,
+`rune_puzzle`, `cracked_wall`, `purple_runes`, `lockdown`. It **describes** the placement code and drives no draw:
+`band` (W72: `special_combat`, `puzzle_secret`, `service_event`), `code` (the placing function), `order` (the floor's
+order; a later kind keeps out of the earlier ones' rooms), `stream` (its floor-seed sub-stream, EI-05; empty for a pure
+function of the layout), `optional`, `entry` (`open`, `sealed_on_entry`, `red_frame`, `timed_door`, `rune_slab`,
+`cracked_wall`), `seals`, `biomes` (empty: all), `floor_min`/`floor_max` (within a loop; 0 no top), `placement`
+(`CHANCE` + `chance_permille`, `FLOOR_CHANCE` + `floor_chance_permille`, `COUNT` + `count_min..count_max`, `SHARE` +
+`share_permille`, `EVERY_FLOORS` + `every_floors`, `ALWAYS`), `count_max` (at most a floor; 0 no fixed cap), the room's
+needs (`dead_end`, `uses_host`, `min_spawn_spots`, `min_cells`, `skippable`: the boss room reached with it shut,
+`keeps_every_room`: every room reached before still reached, `off_critical_path`, `never_adjacent_to_same`) and
+`avoid`/`host_avoid` (the rooms it and its host never are: the fixed rooms `start`, `boss`, `boss_host`, `portal`,
+`reward`, the hosts `*_host`, and the kinds). `sources` maps a field to where its number lives
+(`"category/id:field"`, a 0..1 share read as per mille): the floor reads that file, and `ContentValidator` fails
+(`special_room_source`) when the two disagree, so a tuning change goes there and is copied here. The dev panel does not
+list the folder (it repeats numbers tuned elsewhere). `test_special_room_schema` checks the code's constants (streams,
+spawn spots, cells) against the files; `test_special_room_rules` checks 1,000 floors as Main builds them against
+every rule here (without the flow field, `NavField.skip_build`, which no placement reads, and with one loaded
+repository: about 10 minutes on the owner's PC, so it runs when the placement changes and otherwise on GitHub).
+`scripts/balance/room_pacing.gd` prints the pacing report (evidence `ROOM_PACING.md`).
+
 ## 6. Biomes
 
 ```gdscript
@@ -954,7 +1020,7 @@ class_name BiomeDefinition extends Resource
   presentation test (`tests/unit/presentation/test_frozen_shore.gd`, `test_starfall.gd`). A biome without a look
   keeps its hand-written look (Ruins, Night Rocks, Red Canyon).
 - A new biome is: `data/biomes/<id>.tres` (palette, mood, optional surface and look), its id appended to
-  `data/run/three_floors.tres` `biomes` (last: saves store indices), an ambience cue `data/audio/cues/<id>.tres` and
+  `data/run/five_floors.tres` and `three_floors.tres` `biomes` (last: saves store indices), an ambience cue `data/audio/cues/<id>.tres` and
   its loop (`scripts/audio/generate_sfx.py`), `BIOME_<ID>` and `BIOME_<ID>_DESC` locale keys (en and es), and
   optionally a `ShardCluster.TINTS` row and a `BiomeEdge` style. Shipped (v0.7.5): `ruins`, `night_rocks`,
   `red_canyon`, `frozen_shore` (NB1), `starfall` (NB2; a working name, the owner may rename it).
@@ -984,16 +1050,21 @@ class_name ThreatModifier extends Resource
 No formula in content uses `pow` or `exp`: growth is authored as integer `‰` tables. Since v0.4.0 SC (owner F7,
 F10) the tables live with the run and the spawner (there is no `data/threat/scaling.tres`):
 
-- **`RunDefinition`** (`data/run/three_floors.tres`): `enemy_hp_floor_permille` and `enemy_damage_floor_permille`,
-  one entry per floor (shipped `[1000, 1900, 3610]` and `[1000, 1400, 1960]`: 1.9^(f − 1), 1.4^(f − 1)); a floor
-  past the end uses the last entry. `boss_hp_per_floor` and `boss_damage_per_floor` (0.4, 0.2; they were
+- **`RunDefinition`** (`data/run/five_floors.tres`, the run since v0.9.0 FV; `three_floors.tres` stays as the v0.8.0
+  shape a save without `run_id` resumes in): `enemy_hp_floor_permille` and `enemy_damage_floor_permille`,
+  one entry per floor (shipped `[1000, 1380, 1900, 2620, 3610]` and `[1000, 1180, 1400, 1660, 1960]`: v0.8.0's
+  1.9^(f − 1), 1.4^(f − 1) over three floors stretched over five; three_floors keeps `[1000, 1900, 3610]` and
+  `[1000, 1400, 1960]`); a floor past the end uses the last entry. v0.9.0 FV: `rooms_min_by_floor` /
+  `rooms_max_by_floor` (shipped `[9, 12, 14, 16, 18]` / `[11, 14, 16, 18, 19]`; empty: `data/map`'s range; each
+  2..19, paired) and `wand_slots_per_floor` (empty: `data/wand`'s; three_floors keeps `[4, 6, 8]`). Five floors ship
+  `boss_hp_per_floor` 0.2 and `boss_damage_per_floor` 0.1 (floor 5's ×1.8 / ×1.4 = v0.8.0's floor 3). `boss_hp_per_floor` and `boss_damage_per_floor` (0.4, 0.2; they were
   `enemy_hp_per_floor`/`enemy_damage_per_floor`) scale bosses only: × (1 + value × (f − 1)), never with the
   enemies' tables. v0.5.0 RT: `deep_scale` (1.25, at least 1) multiplies both on a Deep floor, and
   `deep_extra_chests` (1, not negative) adds chests there ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §11).
 - **`SpawnDirectorDefinition`** (`data/spawning/floor_1.tres`, used on every floor): `tier_seconds` (30);
-  `cap_by_floor` (`[14, 30, 50]`), `cap_per_tier` (6), `cap_max` (120); `interval_start_seconds` (2.5),
+  `cap_by_floor` (`[14, 22, 30, 40, 50]`, v0.9.0 FV; was `[14, 30, 50]`), `cap_per_tier` (6), `cap_max` (120); `interval_start_seconds` (2.5),
   `interval_min_seconds` (0.4), `interval_tier_permille` (0.9^tier); `hp_tier_permille` (1.10^tier),
-  `damage_tier_permille` (1.05^tier); `pack_min_by_floor` (`[2, 3, 3]`), `pack_max_by_floor` (`[3, 4, 5]`);
+  `damage_tier_permille` (1.05^tier); `pack_min_by_floor` (`[2, 3, 3, 3, 3]`), `pack_max_by_floor` (`[3, 4, 4, 5, 5]`);
   `min_distance_m` (8), `edge_band_m` (3: a pack's anchor is a spawn point this close to its room's walls when the
   rooms offer one); `mix`. The three tier tables hold tiers 0-20 (ten minutes); a later tier uses the last entry.
 - **`SpawnMixEntry`**: `enemy_id`, `weight`, `unlock_tier` and `pack` — one rule since the v0.4.0 SC + EN merge:

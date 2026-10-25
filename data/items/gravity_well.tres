@@ -10,4 +10,5 @@ desc_key = &"ITEM_GRAVITY_WELL_DESC"
 tags = PackedStringArray("bolt", "wand")
 modifiers = Array[StringName]([&"gravity_well"])
 loot_category = &"element"
+slot_category = &"element"
 id = &"gravity_well"

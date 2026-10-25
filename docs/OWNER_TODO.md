@@ -14,6 +14,10 @@ Priority: **P1** changes the game most · **P2** worth doing soon · **P3** nice
 
 ## 1. Playtest: what you haven't tried yet
 
+- [ ] **The v0.9.0 playtest (2026-10-24):** the build, what to try and the questions are in
+  [`roadmap/v0.9.0/PLAYTEST.md`](roadmap/v0.9.0/PLAYTEST.md) (branch `claude/world-combat-v090`, then its PR into
+  `main`). The v0.8.0 items below are older.
+
 Get it: `git fetch origin && git switch claude/lucid-fermat-9wv2tf && git pull`, open in Godot 4.7.2, Play.
 Shortcut to every fight: Main menu → **F10** → **Playground** (top bar) → **F1**. Every number: **F10**.
 
@@ -118,6 +122,36 @@ the lead animates parts in code.
 **Negative prompt** (if the tool has one):
 > text, letters, logo, watermark, background scenery, ground, base, pedestal, baked shadows, strong rim light,
 > smooth organic skin, realistic photo, clean plastic look, many tiny details
+
+### v0.9.0: the new list (2026-10-22)
+Everything v0.9.0 needs (the arrival altar, the final approach's pylons, the three elites, the puzzle and secret props,
+lockdown bars and hazards, shrines, the hub's landmarks, sounds and optional effect textures), with prompts and sizes:
+[`art/requests/v0.9.0_ART_LIST.md`](art/requests/v0.9.0_ART_LIST.md). The four new bosses and the 16 collectibles get
+their prompts there after their G1 lists.
+
+### 3.0v Delivered 2026-10-22 (installed in v0.9.0 MI2)
+Your 27 files (29 models: the two "(2models)" files split in two) and 3 textures: each prepared offline by
+`scripts/assets/mi2_prep.py` (sized, simplified with Godot's simplifier as you chose, re-textured), listed in
+`assets/models/manifest.json`. Numbers, the elites' parts and the shots:
+[`roadmap/v0.9.0/evidence/MODELS_INSTALL_V090.md`](roadmap/v0.9.0/evidence/MODELS_INSTALL_V090.md).
+
+| ✓ | id | Where it went |
+|---|---|---|
+| ☑ 2026-10-22 | `arrival_altar` | Floor 1's arrival altar (a code jewel in each of your six sockets, the floating runes in code) and, purple, the final approach's |
+| ☑ 2026-10-22 | `approach_stairs` | The final approach's causeway: your flights down its length |
+| ☑ 2026-10-22 | `arena_wall_segment`, `arena_pillar`, `arena_brazier`, `arena_gate`, `ground_arena` | The final arena and the approach's plateau (the walls still fade when they hide the hero) |
+| ☑ 2026-10-22 | `rune_switch`; your bar gate as `lockdown_seal` | You said "Use it for Lockdowns": your iron-bar gate (sent as `timed_door`) is now the Lockdowns' doorway bars; the timed door is the code stone slab until you send a stone door |
+| ☑ 2026-10-22 | `stone_spike` | The Gatekeeper's (and the Colossus's) stone spikes: the tallest of your three clusters |
+| ☑ 2026-10-22 | `ground_snow` | Frozen Shore's ground |
+| ☑ 2026-10-22 | `elite_breaker`, `elite_rift_hunter`, `elite_conduit` | Cut into parts for code animation; shown when the elites step (EL) is built |
+| ☑ 2026-10-22 | `rune_pillar`, `rune_mural`, `cracked_wall`, `cracked_wall_broken`, `rune_marking`, `healing_fountain`, `shrine_blood`, `shrine_chaos`, `shrine_fortune`, `purple_rune_dais`, `hub_*` (the hub's six, with a second collectible pedestal `hub_collectible_pedestal_b`) | Prepared and listed; shown when their steps (RA/DX, HF, SH, DP, HB) are built |
+| ☑ 2026-10-22 | `floor_receiver` | Listed only: since the portals (PT) no floor uses the receiver |
+
+**Still not sent from the v0.9.0 list** ([`art/requests/v0.9.0_ART_LIST.md`](art/requests/v0.9.0_ART_LIST.md)):
+`approach_pylon`; the containers `container_crate`, `container_urn`, `container_barrel`; `explosive_barrel`;
+`timed_door` (a stone door; your bar gate became `lockdown_seal`); the hazards `hazard_cable`, `hazard_rock`, `hazard_vent`, `hazard_ice`, `hazard_star`; the four
+floor 4-5 bosses and the 16 collectibles (after their G1 lists); all the sounds and the optional effect textures; and
+from v0.8.0 the `swarmer`, `mine_layer` and `sniper` enemies.
 
 ### 3.0 Delivered 2026-10-18 (installed in v0.8.0 MI)
 Your 34 models and the ground_star texture: each prepared offline (sized, simplified to a triangle budget, re-textured)

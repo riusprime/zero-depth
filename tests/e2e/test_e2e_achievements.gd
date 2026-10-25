@@ -127,16 +127,14 @@ func test_an_achievement_unlocks_by_play_toasts_and_is_on_the_codex_page() -> vo
 	await e.frames(2)
 	assert_null(main.get_node_or_null("UI/CodexView"), "Esc leaves")
 	assert_true((main.get_node("UI/PauseMenu") as Control).visible, "back to the pause menu")
-	# Main menu: the Codex there, the Achievements tab by mouse.
+	# To the hub (v0.9.0 HB, owner 2026-10-23), then its Rune Archive: the Codex there, the Achievements tab by mouse.
 	await e.tap(KEY_DOWN)
 	await e.tap(KEY_ENTER)
 	await e.frames(2)
-	assert_false(main.is_playing(), "Main menu ends the run")
-	for k in 4:  # Continue (the run's save), Play, Options, Credits, Codex
-		await e.tap(KEY_DOWN)
-	assert_eq(_focused(main).name, &"Codex")
-	await e.tap(KEY_ENTER)
-	await e.frames(2)
+	assert_false(main.is_playing(), "leaving ends the run")
+	assert_not_null(main.hub, "to the hub")
+	var walk := HubWalk.new(e)
+	await walk.use(&"archive")
 	codex = main.get_node_or_null("UI/CodexView") as CodexView
 	assert_not_null(codex)
 	var tab := codex.tabs[CodexView.ACHIEVEMENTS] as Button
@@ -150,4 +148,4 @@ func test_an_achievement_unlocks_by_play_toasts_and_is_on_the_codex_page() -> vo
 	assert_eq(codex.page, CodexView.ACHIEVEMENTS, "RB to Achievements")
 	await _pad(e, JOY_BUTTON_B)
 	assert_null(main.get_node_or_null("UI/CodexView"), "pad B leaves")
-	assert_not_null(main.get_node_or_null("UI/MainMenu"))
+	assert_not_null(main.hub, "back in the hub")

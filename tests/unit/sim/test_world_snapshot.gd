@@ -91,9 +91,18 @@ func test_round_trip_on_a_deep_floor_and_after_the_deep_gate() -> void:
 		SaveLab.build_floor(SaveLab.run_state(88, 2, &"blade", Routes.Route.DEEP)),
 		"Deep floor 2"
 	)
-	var w := SaveLab.floor_world(88, 1)
+	# v0.9.0 DP (owner Q26b): the Deep gate is earned: a floor 2 whose purple runes the hero awakens first.
+	var seed_value := 1
+	while SaveLab.floor_world(seed_value, 2).purple == null and seed_value < 40:
+		seed_value += 1
+	var w := SaveLab.floor_world(seed_value, 2)
 	w.actors.invuln[0] = 1 << 24
+	w.boss_flow.arrive_left = 0
 	var f := w.floor_layout
+	w.actors.set_pos(0, f.purple_pos)
+	w.step(InputFrame.new())
+	w.step(InputFrame.make(Vector2i.ZERO, 0, 1000, InputFrame.INTERACT, InputFrame.INTERACT))
+	assert_true(PurpleRunes.earned(w), "the runes awakened")
 	w.actors.set_pos(0, f.boss_door_inside(1.5))
 	CombatLab.idle(w, 4)
 	var bi := w.actors.index_of(w.boss_id)
@@ -111,7 +120,7 @@ func test_round_trip_on_a_deep_floor_and_after_the_deep_gate() -> void:
 	assert_eq(w.boss_flow.route_taken, Routes.Route.DEEP)
 	var snap := WorldSnapshot.take(w, PackedStringArray())
 	var restored := World.from_snapshot(
-		bytes_to_var(var_to_bytes(snap)), SaveLab.floor_world(88, 1)
+		bytes_to_var(var_to_bytes(snap)), SaveLab.floor_world(seed_value, 2)
 	)
 	assert_not_null(restored)
 	if restored != null:
@@ -148,18 +157,22 @@ func test_round_trip_in_a_boss_fight() -> void:
 		_round_trip(w, _rich_floor(500 + f, f), "boss floor %d" % f)
 
 
-## v0.6.0 CU: trade-off curses held (Brittle's stun running, Heavy Hands' shot count), an elite carrying a core with
-## its steal window open, a boss with its legendary core, and a stolen core lying on the floor.
+## v0.6.0 CU: trade-off curses held (Brittle's stun running, Heavy Hands' shot count), elites carrying cores (v0.9.0
+## EL: archetypes, no window), a boss with its legendary core and its steal window open, and a core lying on the floor.
 func test_round_trip_with_trade_off_curses_and_core_theft() -> void:
 	var w := _rich_floor(88, 1)
 	SaveLab.run(w, FightBot.new(5), 120)
-	for id in [&"brittle", &"rooted", &"heavy_hands", &"glass_heart", &"marked_hunt"]:
+	for id in [&"brittle", &"rooted", &"heavy_hands", &"glass_heart"]:
 		assert_true(Curses.add(w, EventLab.curse_index(w, id)), "took %s" % id)
 	var p := w.player_pos()
+	if w.elite_rules == null:
+		w.elite_rules = EliteRules.new()
+	w.elite_rules.core_drop_permille = 1000  # test setup: the first elite's card drops
 	for k in 2:
-		var eid := w.add_enemy(K.CHARGER, p + Vector2(3.0 + k * 2.0, 1.0))
+		var eid := Elites.spawn(
+			w, Elites.KINDS[k], p + Vector2(3.0 + k * 2.0, 1.0), Elites.Source.DEV
+		)
 		var i := w.actors.index_of(eid)
-		Curses.make_elite(w, i)
 		w.actors.invuln[i] = 0
 		var hit := w.actors.max_hp[i] * 400 / 1000
 		Damage.hit(
@@ -171,6 +184,7 @@ func test_round_trip_with_trade_off_curses_and_core_theft() -> void:
 		w, si, 100000, w.actors.ids[0], w.actors.ids[0], w.take_root(), 0, p, w.actors.pos(si)
 	)
 	w.step(InputFrame.new())
+	w.elite_rules.core_drop_permille = EliteRules.new().core_drop_permille  # back to the base's (it plays on)
 	w.spawn_boss(0, p + Vector2(-6.0, 0.0))
 	w.actors.invuln[0] = 0
 	Damage.hit(w, 0, 3, 999999, 999999, w.take_root(), 0, p + Vector2(1, 0), p)
@@ -178,7 +192,9 @@ func test_round_trip_with_trade_off_curses_and_core_theft() -> void:
 	assert_gt(w.cs.stun_t + w.cs.dodges, 0, "Brittle stunned you (or Rooted dodged)")
 	assert_gt(w.cores.drop_ids.size(), 0, "a stolen core lies on the floor")
 	assert_gt(w.cores.size(), 1, "an elite and the boss carry cores")
-	assert_true(w.cores.window_t.has(w.ev.rules.core_window_ticks - 1), "a window is open")
+	assert_eq(
+		Elites.alive(w), 1, "the second elite still stands (v0.9.0 EL: no window, its core on it)"
+	)
 	_round_trip(w, _rich_floor(88, 1), "curses and cores")
 
 

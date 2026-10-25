@@ -22,6 +22,8 @@ static func validate(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 	issues.append_array(AbilityDefinition.cross_check(defs))  # v0.4.0 AB: engine items.
 	issues.append_array(ModifierDefinition.cross_check(defs))  # v0.6.0 MX1: item modifiers.
 	issues.append_array(WandMigrationDefinition.cross_check(defs))  # v0.6.5 WN5b: the old cards' map.
+	issues.append_array(AttackSlotsDefinition.cross_check(defs))  # v0.9.0 AS: slot categories, the table.
+	issues.append_array(SpecialRoomDefinition.cross_check(defs))  # v0.9.0 RG: the numbers it repeats
 	issues.sort_custom(
 		func(a: ValidationIssue, b: ValidationIssue) -> bool:
 			return [a.path, a.code, a.message] < [b.path, b.code, b.message]

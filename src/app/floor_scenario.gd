@@ -12,14 +12,22 @@ extends RefCounted
 ## wall. v0.8.0 N14 (owner O72): on some floors only, in a combat room away from the start hall (Gamble.site; the
 ## spawn points under it dropped); a floor saved before N14 (legacy_shrine) keeps it in the start hall.
 ## v0.5.0 RT: on a run's floor before the last, the Deep gate beside the gate (Routes.place_deep_gate; its footprint
-## a wall); on a Deep floor, the extra chest and the epic altar (Routes.place_deep_rewards, after the shrine).
+## a wall); on a Deep floor, the extra chest and the epic altar (Routes.place_deep_rewards, after the shrine). v0.9.0
+## DP (owner Q26b): its spot only; it stands once the floor's purple runes are awakened (PurpleRunes, FloorPlan).
 ## v0.8.0 P2 (owner O28): on a loop's last floor, the Loop device beside the Ascension portal
 ## (Ascension.place_loop_device; nothing solid, so the walls are unchanged).
 ## v0.5.5 AR: with an arena table, the sealed arenas (ArenaRooms.mark, after the Overrun room), whose item spots the
 ## rewards fill first.
 ## v0.7.5 MG: `map` (RunContentCompiler.compile_map, data/map) sets the generator's room counts and footprints (null:
 ## FloorParams' defaults, the same numbers); the shop stands only on the floors its table names (ShopTable.on_floor,
-## owner N12: every two floors).
+## owner N12: every two floors). v0.9.0 FV (owner Q24): on a run, the room range is the run's for the floor
+## (FloorShape.size_floor: about 10, 13, 15, 17 and 19 rooms), written over `map`.
+## v0.9.0 CF (owner: "lets never make it a 1x1"): the Overrun room and the arenas take rooms of at least their tables'
+## min_cells grid cells (`overrun`: null, any room; RunSaver.floor_tables reads 0 for a floor saved before CF).
+## v0.9.0 CF2 (owner: "Lockdowns get rooms first"): with `lockdown_first` (floor rules 17), the Lockdowns' rooms are
+## marked right after the arenas (LockdownRooms.mark, nothing else taken yet), so the shrine, the fountain, the events,
+## the curse room and the secrets take the rooms left (each keeps out of FloorLayout.lockdown_rooms); null (a floor
+## saved under rules 1-16), FloorPlan.add_secrets marks them last, as before.
 
 
 static func build(
@@ -35,21 +43,35 @@ static func build(
 	combos: Array[ComboTable] = [],
 	gamble: GambleTable = null,
 	arenas: ArenaTable = null,
-	map: FloorParams = null
+	map: FloorParams = null,
+	overrun: OverrunTable = null,
+	lockdown_first: LockdownTable = null
 ) -> World:
-	var layout := FloorGenerator.generate(seed_value, map)
+	var params := map
+	var sized := FloorShape.sized(run)  # v0.9.0 FV (Q24): the run's floor size (none in the 3-floor shape)
+	if sized:
+		params = FloorShape.size_floor(
+			run, map if map != null else FloorParams.defaults(), floor_index
+		)
+	var layout := FloorGenerator.generate(seed_value, params)
 	var spec := arena if arena != null else BossArenaSpec.new()
 	BossRoomBuilder.attach(layout, spec)
-	OverrunRooms.mark(layout)  # v0.4.0 AB: the floor's optional Overrun room (no wall or draw changes)
+	# v0.4.0 AB: the floor's optional Overrun room (no wall or draw changes); v0.9.0 CF: never a small room
+	OverrunRooms.mark(layout, overrun.min_cells if overrun != null else 0)
 	if arenas != null:  # v0.5.5 AR: the sealed arenas, before the rewards that fill them first
-		ArenaRooms.mark(layout, arenas.share_permille)
+		ArenaRooms.mark(layout, arenas.share_permille, arenas.min_cells)
+	if lockdown_first != null:  # v0.9.0 CF2: the Lockdowns next, before the shrine, events and secrets
+		LockdownRooms.mark(layout, lockdown_first, floor_index, PackedInt32Array())
 	var routes := Routes.offers_choice(run) and Routes.place_deep_gate(layout)  # v0.5.0 RT
+	# v0.9.0 DP (owner Q26b): the Deep gate's spot is placed as before, but it stands and opens only once the floor's
+	# purple runes are awakened (PurpleRunes.earn); a floor saved before DP keeps it on every floor before the last.
+	var deep_now := routes and (run == null or PurpleRunes.legacy_deep_gate(run))
 	if run != null and run.is_last_floor():  # v0.8.0 P2 (O28): the Loop device beside the Ascension portal
 		Ascension.place_loop_device(layout)
 	var w := World.new(seed_value, player, layout.start_pos)
 	var walls: Array[Obb] = layout.walls.duplicate()
 	walls.append(gate_collider(layout))
-	if routes:
+	if deep_now:
 		walls.append(Routes.deep_gate_collider(layout))
 	var legacy_shrine := legacy_shrine_of(run)  # v0.8.0 N14: an older save's floor
 	var shrine := PackedVector2Array()
@@ -68,9 +90,11 @@ static func build(
 	w.set_item_tables(items)
 	w.set_combo_tables(combos)  # v0.3.0 G: named combos, set before the run's carry restores the owned ones.
 	w.boss_flow = BossFlow.create(spec.boss_index)
-	w.boss_flow.routes = routes
+	w.boss_flow.routes = deep_now
 	if rewards != null:
 		w.reward_table = rewards
+		if not sized:  # v0.9.0 FV: counts by room band on sized floors only (the 3-floor shape keeps v0.8.0's)
+			rewards.count_rooms = PackedInt32Array()
 	w.floor_index = floor_index
 	if run != null:
 		run.prepare(w)
@@ -136,6 +160,12 @@ static func legacy_shrine_of(run: RunState) -> bool:
 ## floor resumed from a save made before N17, floor rules 1-6); false for today's floors and a floor without a run.
 static func legacy_curse_room_of(run: RunState) -> bool:
 	return run != null and run.floor_rules <= RunState.FLOOR_RULES_V080_N14
+
+
+## v0.9.0 EL (owner Q25): whether run `run`'s current floor was saved before EL (floor rules 1-14): its event draw
+## keeps the retired Ambush Cache's weight (EventCompiler.setup's `legacy`); false for today's floors and no run.
+static func retired_events_of(run: RunState) -> bool:
+	return run != null and run.floor_rules <= RunState.FLOOR_RULES_V090_SH
 
 
 ## v0.8.0 N19 (O80): the curse-room rules run `run`'s current floor was built under (Events.CURSE_RULES_*): before

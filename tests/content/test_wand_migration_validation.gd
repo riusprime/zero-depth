@@ -4,21 +4,22 @@ extends GutTest
 ## kept its id as a wand card (WN3/WN4) or has a row; every target is a card in the data or a pending shared-pool id;
 ## a bad table is reported.
 
-## WAND.md's "map directly" cards that kept their ids as wand cards (WN3, WN4): never in the table.
+## WAND.md's "map directly" cards that kept their ids as wand cards (WN3, WN4): never in the table. (v0.9.0 AF2:
+## Boomerang, one of them, is retired into the Glaive form: it has a row now.)
 const KEPT: Array[StringName] = [
 	&"echo_slash",
 	&"halo_shot",
-	&"boomerang",
 	&"orbit_rounds",
 	&"split_shot",
 	&"wide_arc",
 	&"long_shadow",
 	&"blade_orbit",
 ]
-## The v0.6 cards WN5a kept as the shared pool's S cards (S1 Fire, S2 Lightning, S3 Frost, S4 Venom, S6 Void; lead,
-## 2026-10-12): never retired, and targets of the table. They become wand cards with WN5a's merge.
+## The v0.6 cards WN5a kept as the shared pool's S cards (S1 Fire, S2 Lightning, S3 Frost, S4 Venom; lead,
+## 2026-10-12): never retired, and targets of the table. They become wand cards with WN5a's merge. (S6 Void,
+## gravity_well, was retired by v0.9.0 VP: it has a row.)
 const KEPT_AS_SHARED: Array[StringName] = [
-	&"ember_core", &"storm_core", &"frost_core", &"venom_core", &"gravity_well"
+	&"ember_core", &"storm_core", &"frost_core", &"venom_core"
 ]
 const SIX: Array[StringName] = [
 	&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field", &"frost_nova", &"flame_trail"
@@ -43,7 +44,13 @@ func test_the_shipped_table_is_discovered_and_valid() -> void:
 	defs.assign(_repo.all_of(&"wand") + _all())
 	assert_eq(WandMigrationDefinition.cross_check(defs), [])
 	assert_eq(
-		m.old_ids.size(), 43, "the v0.6 cards it retires: 13 + 4 + 17 + 3 + 6 (WAND.md table)"
+		m.old_ids.size(),
+		48,
+		(
+			"the v0.6 cards it retires: 13 + 4 + 17 + 3 + 6 (WAND.md table); v0.9.0: Spread (into Twin),"
+			+ " Explosive (into Fire), the old Void (into the Void form; refunded on the Blade), Charge (into"
+			+ " the Lance; refunded on the Blade), Boomerang (into the Glaive; refunded on the Blade)"
+		)
 	)
 
 

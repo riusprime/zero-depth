@@ -89,18 +89,23 @@ static func skill(w: World) -> AttackSpec:
 
 
 ## The build's modifiers in slot order (v0.6.0 MX2: World.mod_slots; each slot's card's modifiers in its order).
+## v0.9.0 LZ: a Form card's (the Laser) come first, wherever it sits, so it makes the Gun's shot itself, never a
+## trigger's cast, and every Pattern, Secondary and Element card shapes the form.
 static func build_modifiers(w: World) -> Array[ModifierTable]:
 	var out: Array[ModifierTable] = []
+	var form: Array[ModifierTable] = []  # v0.9.0 LZ: the Form card shapes the root shot wherever it sits
 	for code in w.mod_slots:
 		if Offers.type_of(code) == Offers.ABILITY:
 			var idx := Offers.ability_of(code)
 			if idx < w.ability_tables.size():
 				out.append_array(w.ability_tables[idx].modifiers)
-		elif code < w.item_tables.size():
+		elif code < w.item_tables.size() and AttackSlots.compiles(w, code):  # v0.9.0 AS: the form's table
 			var lvl := CardLevels.level(w, code)  # v0.6.5 WN3: a wand card at its level
+			var to := form if AttackSlots.category(w, code) == AttackSlots.FORM else out
 			for m in w.item_tables[code].modifiers:
-				out.append(m.at(lvl))
-	return out
+				to.append(m.at(lvl))
+	form.append_array(out)
+	return form
 
 
 ## v0.6.0 MX4: the moments' specs (never null once compiled: every book has them) and Vent's (null without heat).

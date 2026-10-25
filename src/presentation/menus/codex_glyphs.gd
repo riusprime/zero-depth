@@ -155,6 +155,36 @@ static func _boss(id: StringName) -> Array:
 				_poly([[0.5, 0.08], [0.7, 0.36], [0.62, 0.56], [0.38, 0.56], [0.3, 0.36]]),
 				_poly([[0.5, 0.3], [0.58, 0.44], [0.5, 0.54], [0.42, 0.44]], true),
 			]
+		&"tidecaller":  # v0.9.0 NB1: a bell over two waves
+			return [
+				_poly([[0.36, 0.14], [0.64, 0.14], [0.74, 0.5], [0.26, 0.5]]),
+				_circle(Vector2(0.5, 0.56), 0.06, 0.0, true),
+				_line([[0.1, 0.7], [0.3, 0.62], [0.5, 0.7], [0.7, 0.62], [0.9, 0.7]], 0.05),
+				_line([[0.1, 0.86], [0.3, 0.78], [0.5, 0.86], [0.7, 0.78], [0.9, 0.86]], 0.05),
+			]
+		&"twin_wardens":  # v0.9.0 NB2: two tower shields joined by a chain
+			return [
+				_poly([[0.08, 0.2], [0.34, 0.2], [0.34, 0.7], [0.21, 0.86], [0.08, 0.7]]),
+				_poly([[0.66, 0.2], [0.92, 0.2], [0.92, 0.7], [0.79, 0.86], [0.66, 0.7]]),
+				_circle(Vector2(0.42, 0.5), 0.05, 0.0, false),
+				_circle(Vector2(0.5, 0.5), 0.05, 0.0, false),
+				_circle(Vector2(0.58, 0.5), 0.05, 0.0, false),
+			]
+		&"clockwork_judge":  # v0.9.0 NB3: a clock face, its two hands, a gear beneath
+			return [
+				_circle(Vector2(0.5, 0.4), 0.3, 0.0, false),
+				_line([[0.5, 0.4], [0.5, 0.18]], 0.05),
+				_line([[0.5, 0.4], [0.66, 0.48]], 0.05),
+				_circle(Vector2(0.5, 0.84), 0.1, 0.0, false),
+			]
+		&"lantern_shade":  # v0.9.0 NB4: an empty hood over a hanging lantern
+			return [
+				_poly([[0.5, 0.06], [0.78, 0.3], [0.74, 0.62], [0.26, 0.62], [0.22, 0.3]]),
+				_poly([[0.5, 0.2], [0.64, 0.34], [0.6, 0.54], [0.4, 0.54], [0.36, 0.34]], true),
+				_line([[0.5, 0.62], [0.5, 0.72]], 0.03),
+				_poly([[0.42, 0.72], [0.58, 0.72], [0.6, 0.94], [0.4, 0.94]]),
+				_circle(Vector2(0.5, 0.83), 0.05, 0.0, true),
+			]
 	return [  # any other boss: a crown
 		_poly(
 			[

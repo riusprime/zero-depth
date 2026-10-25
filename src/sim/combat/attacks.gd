@@ -35,6 +35,8 @@ const EFFECT_SHOT_CAP := &"player_shot_cap"
 ## most that many of its projectiles alive (Blade Storm's blades: 36, data/modifiers/blade_storm.tres). A launch it
 ## cuts short throws the bolts that fit (in pattern order) and leaves one LIMIT event (this effect id, amount: the cap).
 const EFFECT_ALIVE_CAP := &"attack_alive_cap"
+## v0.9.0 XP: the tag of Fire's burning patch (data/modifiers/ember_core.tres; _feed).
+const TAG_GROUND := &"ground"
 ## ProcLedger codes for a hook attack's own status feeds (Engines' codes end at 40; appended, never renumbered).
 const CODE_HOOK_FEED := 48
 ## The ledger code of each status a hook attack feeds: CODE_HOOK_FEED + its index here.
@@ -64,6 +66,7 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	if spec.homing > 0 and spec.form == AttackSpec.Form.ARC:
 		ctx.angle = ProjectileMoves.snap_angle(w, ctx.origin, ctx.angle, arc_reach_m(w, spec) + 2.0)
 	var landed := _shared_form(w, spec, ctx)
+	Breakables.on_attack(w, spec, ctx)  # v0.9.0 DX: a container or an explosive barrel it reaches
 	if not spec.hooks.is_empty():
 		_run(w, spec, AttackSpec.Trigger.ON_LAUNCH, ctx, ctx.origin, -1, 0)
 	if ctx.depth == 0 and not ctx.back and spec.back_permille > 0:
@@ -78,6 +81,8 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 ## of that; v0.8.0 RM lead fix: rounded half up, at least 1); the launch's moments after it (ON_LAUNCH, the back copy,
 ## a repeat) keep the whole.
 static func _shared_form(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
+	if Laser.held(spec):  # v0.9.0 LZ: the Laser's tick shares its damage per beam itself (dithered)
+		return Laser.fire(w, spec, ctx)
 	var share := spec.share_permille
 	if share <= 0:
 		return _form(w, spec, ctx)
@@ -253,7 +258,6 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	# Measured once (audit G-2): a hit that tips Hot mid-loop must not stretch this swing for the actors after it.
 	var reach := arc_reach_m(w, spec)
 	var edge := w.player.radius_m
-	var first := Vector2.ZERO  # v0.8.0 P2: where the slash first landed (Void's black hole)
 	for i in range(1, a.size()):
 		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
 			continue
@@ -269,13 +273,9 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		if got > 0:
 			landed = true
 			hits += 1
-			if hits == 1:
-				first = a.pos(i)
 			_landed(w, spec, ctx, i, a.pos(i), hits)
 			BladeForms.on_arc_hit(w, spec, ctx, i)  # v0.6.5 WN4: Heavy's push
 	BladeForms.on_arc(w, spec, ctx)  # v0.6.5 WN4: Parry Edge, the view's ghost slashes
-	if landed and spec.hole_permille > 0:  # v0.8.0 P2 (O24): Void's black hole where it first landed
-		BlackHoles.roll(w, spec, first, ctx.damage)
 	if not w.mx.rem_uid.is_empty() or not spec.hooks.is_empty():  # v0.8.0 RM: cracks it crosses, its path
 		Remnants.on_arc(w, spec, ctx, reach)
 	if not spec.hooks.is_empty():
@@ -294,6 +294,8 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var r := spec.radius_m * ctx.size_permille / 1000.0  # v0.6.5 WN3: a charged shot (G13)
 	var gap := t.radius_m + r + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
 	var lanes := GunForms.lanes(spec, r)  # v0.6.5 WN3: G3 Twin, side by side
+	var turns := GunForms.lane_turns(spec)  # v0.9.0 TW: three copies fan
+	var lane_c := (lanes.size() - 1) / 2  # the primary lane: the first of two, the middle of three
 	var room := _alive_room(w, spec)  # v0.8.0 PF2
 	# v0.8.0 MR (O91; SecondaryProc): a secondary launch's bolts are all secondary (a repeat's carry that too); a
 	# sharing spec's bolts past its primary one (the centre bolt's first lane; a circle's first) are secondary.
@@ -302,13 +304,32 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 		kind0 |= ProjectileStore.REPEAT
 	var centre := 0 if spec.directions == AttackSpec.DIR_CIRCLE else (offsets.size() - 1) / 2
 	var link := Remnants.link_of(spec) if not spec.hooks.is_empty() else null  # v0.8.0 RM: Threadline
+	# v0.9.0 AS (owner Q13; ShotCap): at most so many shots a volley and a second on a Gun run; the rest merge into
+	# the shots that fire (evenly picked, the centre first), each carrying the damage of the copies it took in.
+	var want := offsets.size() * lanes.size()
+	var fit := want
+	if ShotCap.per_attack(w) > 0:
+		fit = mini(want, ShotCap.per_attack(w))
+	var root := ctx.depth == 0 and not ctx.repeat and not ctx.back  # the player's own shot (ShotCap)
+	fit = ShotCap.room(w, fit, root)
+	if fit <= 0:
+		return
+	var dmg := ctx.damage if fit >= want else maxi(1, (ctx.damage * want + fit / 2) / fit)
+	if fit < want and w.slot_table != null:
+		r = r * ShotCap.grow_permille(want, fit, w.slot_table.merge_radius_max_permille) / 1000.0
+	var q := -1
+	var picked := 0
 	for oi in offsets.size():
 		var off := offsets[oi]
-		var dir := Kin.dir(ctx.angle + off)
 		for li in lanes.size():
+			q += 1
+			if fit < want and q != (2 * picked + 1) * want / (2 * fit):
+				continue
+			picked += 1
+			var dir := Kin.dir(ctx.angle + off + turns[li])
 			var side := lanes[li]
 			if room == 0:
-				_alive_capped(w, spec)
+				alive_capped(w, spec)
 				return
 			room -= 1
 			if not _shot_room(w):
@@ -319,15 +340,19 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				ActorStore.TEAM_PLAYER,
 				muzzle,
 				dir * spec.speed,
-				ctx.damage,
+				dmg,
 				r,
 				maxi(1, spec.life_ticks),
 				ctx.tags,
 				spec.bounces,
 				spec.key
 			)
+			if root:
+				root = false  # the volley's first shot is the player's own; the rest are extras
+			else:
+				ShotCap.spend(w, 1)  # v0.9.0 AS
 			var kind := kind0
-			if spec.share_permille > 0 and (oi != centre or li != 0):
+			if spec.share_permille > 0 and (oi != centre or li != lane_c):
 				kind |= ProjectileStore.SECONDARY
 			if kind != 0:
 				w.set_pending_second(kind)
@@ -343,7 +368,8 @@ static func _alive_room(w: World, spec: AttackSpec) -> int:
 
 
 ## v0.8.0 PF2: a launch of `spec` cut short by its alive_max: one LIMIT event (EFFECT_ALIVE_CAP, amount = the cap).
-static func _alive_capped(w: World, spec: AttackSpec) -> void:
+## v0.9.0 XP: also a patch of a capped zone not lit (ElementAbilities.add_zone).
+static func alive_capped(w: World, spec: AttackSpec) -> void:
 	var pid := w.actors.ids[0]
 	var lim := w.emit_event(SimEvent.Kind.LIMIT, pid, pid, pid, w.player_pos())
 	lim.effect_id = EFFECT_ALIVE_CAP
@@ -639,6 +665,8 @@ static func _landed(
 static func _feed(w: World, spec: AttackSpec, ctx: AttackContext, i: int) -> void:
 	var a := w.actors
 	var cast := spec.has_tag(WandCasts.TAG_CAST)  # v0.6.5 WN5a: a trigger's child spell is a spell of its own
+	# v0.9.0 XP: Fire's burning ground (tag ground) burns whole too: it hits once a period, lit by a hit already halved
+	cast = cast or spec.has_tag(TAG_GROUND)
 	for k in spec.status_ids.size():
 		# A trigger's cast feeds its cards' stacks whole (as a cast bolt does through Engines.on_hit): ON HIT · Fire
 		# burns; its proc coefficient still halves what its hits set off (HIT.proc_pct).
@@ -750,14 +778,23 @@ static func run_hook(
 ## away still goes off. Below the count nothing changes.
 static func merged(w: World, k: AttackHook, at: Vector2) -> bool:
 	var t := w.wand_table if w.wand_table != null else _wand_defaults
-	if t.blast_merge_after <= 0 or not t.blast_merge_ids.has(k.id):
+	if not t.blast_merge_ids.has(k.id):
+		return false
+	return merged_at(w, at, k.child.radius_m)
+
+
+## v0.9.0 BM: merged()'s budget for any blast of radius `r` at `at` (the Bomb's): past blast_merge_after blasts this
+## tick, one within `r` of a blast already set off merges into it (true); else it is counted and goes off.
+static func merged_at(w: World, at: Vector2, r: float) -> bool:
+	var t := w.wand_table if w.wand_table != null else _wand_defaults
+	if t.blast_merge_after <= 0:
 		return false
 	if w.blast_tick != w.tick:
 		w.blast_tick = w.tick
 		w.blast_pos = PackedVector2Array()
 		w.blast_merged = 0
 	if w.blast_pos.size() >= t.blast_merge_after:
-		var r2 := k.child.radius_m * k.child.radius_m
+		var r2 := r * r
 		for p in w.blast_pos:
 			if (p - at).length_squared() <= r2:
 				w.blast_merged += 1
@@ -863,6 +900,8 @@ static func on_projectile_end(w: World, pi: int, at: Vector2) -> void:
 	if w.projectiles.team[pi] != ActorStore.TEAM_PLAYER:
 		return
 	var spec := projectile_spec(w, pi)
+	if Bomb.is_bomb(spec) and Bomb.touches(w, pi):
+		Bomb.blast(w, spec, pi, at)  # v0.9.0 BM: the bomb bursts where it ends
 	if spec != null and not spec.hooks.is_empty():
 		var p := w.projectiles
 		var ang := Kin.angle_of(Vector2(p.vel_x[pi], p.vel_y[pi]))
@@ -872,9 +911,6 @@ static func on_projectile_end(w: World, pi: int, at: Vector2) -> void:
 		_second_of(w, pi, ctx)  # v0.8.0 MR
 		_run(w, spec, AttackSpec.Trigger.ON_END, ctx, at, -1, 0)
 		Remnants.on_bolt_end(w, spec, pi, at)  # v0.8.0 RM: Double Exposure's path
-	var own := pi < w.projectiles.spec_key.size() and w.projectiles.spec_key[pi] != ""
-	if own and spec != null and spec.hole_permille > 0:  # v0.8.0 P2 (O24): Void's black hole where it ends
-		BlackHoles.roll(w, spec, at, w.projectiles.damage[pi])
 	ModifierAbilities.on_projectile_end(w, at)
 
 

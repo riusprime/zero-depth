@@ -74,9 +74,7 @@ static func blink_target(w: World) -> Vector2:
 static func advance(w: World) -> void:
 	Heat.advance(w)  # Overclock heat: the decay and the overheat stall run first.
 	var t := w.player
-	var can_attack := not w.guarding() and not w.is_dashing() and Heat.can_attack(w)  # Heat: the stall
-	can_attack = can_attack and not Curses.stunned(w)  # v0.6.0 CU: Brittle
-	can_attack = can_attack and not PlayerSkill.busy(w)  # Kit (v0.3.5 K): a skill commits
+	var can_attack := armed(w)
 	ItemEffects.advance_echo(w)
 	# Swing in progress: hit on its step's active tick, then end and open the combo window (none after the last
 	# step: the combo starts over).
@@ -113,6 +111,14 @@ static func advance(w: World) -> void:
 		_fire_bolt(w)
 		w.shot_cd = ItemEffects.shot_period_ticks(w)
 	ItemProcs.advance_momentum(w)
+
+
+## The hero may attack now: not guarding or dashing, not in the overheat stall (Heat), not stunned (v0.6.0 CU:
+## Brittle), no skill committing (Kit, v0.3.5 K). v0.9.0 LZ: public, the Laser's beam reads it (Laser.firing).
+static func armed(w: World) -> bool:
+	var ok := not w.guarding() and not w.is_dashing() and Heat.can_attack(w)
+	ok = ok and not Curses.stunned(w)
+	return ok and not PlayerSkill.busy(w)
 
 
 ## SHOOT is held, alive, and the build has the gun (a Blade run never shoots, L15).
@@ -186,7 +192,8 @@ static func swing_arc(
 
 ## One shot: the bolt spec launched along the aim (a Splinter fan, Ricochet's bounces: its spec's pattern and
 ## behaviour).
-## v0.6.5 WN3: `charge` (per mille) sizes a charged shot (G13 Charge: its damage and its bolts' radius).
+## v0.6.5 WN3: `charge` (per mille) sizes a charged shot (G13 Charge: its damage and its bolts' radius). v0.9.0 AF1b:
+## the Lance's ball is sized by Lance.size_permille instead, and its release pushes the hero back (Lance.on_release).
 static func _fire_bolt(w: World, charge: int = 1000) -> void:
 	var spec := Modifiers.bolt(w)
 	var dmg := PlayerBuild.bolt_damage(w, Attacks.bolt_base_damage(spec))  # Builds: the Gun's factor (L16).
@@ -200,5 +207,10 @@ static func _fire_bolt(w: World, charge: int = 1000) -> void:
 		ctx.damage = maxi(1, dmg * charge / 1000)
 		ctx.base_damage = ctx.damage
 		ctx.size_permille = charge
+	var lance := Lance.is_lance(spec)
+	if lance:  # v0.9.0 AF1b: the Lance's ball grows x 1 to x 2 while its damage grows x 1 to x 11.6
+		ctx.size_permille = Lance.size_permille(spec, charge)
 	Attacks.launch(w, spec, ctx)
+	if lance:
+		Lance.on_release(w, spec, charge, spec.radius_m * ctx.size_permille / 1000.0)
 	ModifierAbilities.on_attack(w, ModifierAbilities.shot_end(w, ModifierAbilities.field_range(w)))

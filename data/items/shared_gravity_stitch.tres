@@ -12,4 +12,5 @@ tags = PackedStringArray("wand")
 modifiers = Array[StringName]([&"shared_gravity_stitch"])
 index_wave = 3
 loot_category = &"advanced"
+slot_category = &"free"
 id = &"shared_gravity_stitch"

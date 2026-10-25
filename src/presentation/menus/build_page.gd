@@ -22,6 +22,8 @@ const READ_W := 1180.0
 const READ_SIZE := 22
 
 var row := WandRow.new()
+## v0.9.0 AS2 (G2 AS = B): the slot categories' pips over the wand.
+var pips := SlotPips.new()
 var _title := Label.new()
 var _note := Label.new()
 var _read_back := Label.new()
@@ -58,6 +60,7 @@ func _init() -> void:
 	_note.add_theme_font_size_override("font_size", MenuStyle.NOTE_SIZE)
 	_note.add_theme_color_override("font_color", MenuStyle.DIM)
 	col.add_child(_note)
+	col.add_child(pips)
 	col.add_child(row)
 	_read_back.name = "ReadBack"
 	_read_back.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
@@ -134,9 +137,14 @@ func content_rect() -> Rect2:
 func _refresh() -> void:
 	row.show_wand(_read, _slots)
 	_note.text = tr("UI_BUILD_SLOTS") % [card_count(), _slots]
+	pips.show_wand(_read)  # v0.9.0 AS2 (G2 AS = B; was A's counts in the note)
 	var lines := WorldReader.wand_describe(_read)
 	_read_back.text = WorldReader.wand_render(lines, func(k: StringName) -> String: return tr(k))
 	_read_back.custom_minimum_size.x = maxf(READ_W, row.row_width())
+
+
+func note_text() -> String:
+	return _note.text
 
 
 ## Moves the card in slot `from` to slot `to` in the preview (the sim's rule), true if it moved.

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SpecialRoomDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/special_room_definition.gd" id="1_spr"]
+
+[resource]
+script = ExtResource("1_spr")
+code = "Gamble.site"
+order = 3
+stream = &"map:shrine"
+placement = 0
+chance_permille = 400
+avoid = Array[StringName]([&"start", &"boss", &"boss_host", &"portal", &"overrun", &"shop", &"arena"])
+sources = {
+"chance_permille": "gamble/shrine:floor_chance_permille"
+}
+id = &"shrine"

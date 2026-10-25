@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 2
+look = &"warden_amber_ember"
+speed_mps = 3.0
+radius_m = 0.2
+range_m = 16.0
+waves = 3
+wave_gap_seconds = 0.7
+count = 17
+spread_degrees = 150.0
+id = &"twin_wardens_crossfire"

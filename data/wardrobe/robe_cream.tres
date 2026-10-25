@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="RobeDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/robe_definition.gd" id="1_robe"]
+
+[resource]
+script = ExtResource("1_robe")
+order = 0
+name_key = &"ROBE_CREAM"
+cloak = Color(0.921569, 0.862745, 0.796078, 1)
+underside = Color(0.788235, 0.721569, 0.65098, 1)
+free = true
+id = &"cream"

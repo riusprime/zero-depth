@@ -13,8 +13,9 @@ extends RefCounted
 ## - the body's rules: Ascension (after charge_ticks without a root attack, the next one deals × charge_permille),
 ##   Aether Shell (out of combat barrier_ticks, the next enemy hit is absorbed, and combat starts again) and
 ##   Resonance (each status on an enemy adds resonance_permille to the player's damage on it);
-## - v0.8.0 P2: Void's black holes (BlackHoles; Gravity Well's pull on every hit is gone, owner O24).
-## Every function here draws no randomness (EI-05; a black hole's roll is BlackHoles') and runs on the one clock.
+## - v0.9.0 VP: the Void form's shots, their aura and their pull (VoidShots; the v0.8.0 floor black hole is gone, owner
+##   C §6.4).
+## Every function here draws no randomness (EI-05) and runs on the one clock.
 
 ## v0.8.0 BL (B1): a spec with `repeats` > 1 repeats again this many ticks after each repeat (a starting value: 0.08 s,
 ## so Double Slash's five repeats at level 5 come within 0.5 s of the swing).
@@ -139,7 +140,9 @@ static func advance(w: World) -> void:
 		if hook != "":
 			w.hook_chain.remove_at(w.hook_chain.size() - 1)
 	Remnants.advance(w)  # v0.8.0 RM (O91): the remnants end, follow and activate
-	BlackHoles.advance(w)  # v0.8.0 P2 (O24): Void's black holes pull and pulse
+	VoidShots.advance(w)  # v0.9.0 VP (Q10): the Void shots' aura and pull
+	WaveShots.advance(w)  # v0.9.0 AF3: the Wave shots' bands (after the Void clears the waits that are over)
+	Wisps.advance(w)  # v0.9.0 AF3: the wisps' own shots
 	_walk(w)
 	BladeForms.advance(w)  # v0.6.5 WN4: Heavy's push, Orbit Blades, Parry Edge through the swing
 

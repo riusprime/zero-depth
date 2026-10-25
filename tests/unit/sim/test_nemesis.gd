@@ -10,12 +10,10 @@ extends GutTest
 ## one-shot); every strike locks before it lands; deaths named; determinism; saves mid-phase-3 (an FB3 snapshot, and an
 ## FB2 save whose fight has no mimic state).
 
-const BLADE_CARDS := [
-	[&"echo_slash", 3], [&"double_slash", 2], [&"whirl", 4], [&"shared_explosive", 1]
-]
-const GUN_CARDS := [
-	[&"gun_spread", 2], [&"split_shot", 5], [&"shared_explosive", 3], [&"halo_shot", 1]
-]
+# v0.9.0 XP: Fire in Explosive's place (Explosive is retired, never cast).
+const BLADE_CARDS := [[&"echo_slash", 3], [&"double_slash", 2], [&"whirl", 4], [&"ember_core", 1]]
+# v0.9.0 TW, XP: Twin and Fire in Spread's and Explosive's places (both retired, never cast).
+const GUN_CARDS := [[&"gun_twin", 2], [&"split_shot", 5], [&"ember_core", 3], [&"halo_shot", 1]]
 
 
 func _body(w: World) -> int:
@@ -258,14 +256,14 @@ func test_the_strongest_cards_are_picked_by_level_then_rarity_then_slot() -> voi
 		levels.append(c.level)
 	assert_eq(levels, [4, 3, 2] as Array[int])
 	var tie := NemesisLab.world(
-		313, &"gun", [[&"gun_spread", 2], [&"halo_shot", 2], [&"gun_twin", 2]]
+		313, &"gun", [[&"gun_pierce", 2], [&"halo_shot", 2], [&"gun_twin", 2]]
 	)
 	var tie_ids: Array[StringName] = []
 	for c in tie.final_fight.casts:
 		tie_ids.append(c.card_id)
 	assert_eq(
 		tie_ids,
-		[&"gun_twin", &"halo_shot", &"gun_spread"] as Array[StringName],
+		[&"gun_twin", &"halo_shot", &"gun_pierce"] as Array[StringName],
 		"a tie: the legendary first (Twin since v0.8.0 RR), then the rare, then the slot"
 	)
 
@@ -294,17 +292,17 @@ func test_each_card_is_compiled_into_a_hostile_copy() -> void:
 	var split: NemesisCast = by[&"split_shot"]
 	assert_true(split.has_volley(), "Split: a shot")
 	assert_gt(split.vol_split, 0, "that splits")
-	var boom: NemesisCast = by[&"shared_explosive"]
-	assert_true(boom.has_blast(), "Explosive: a blast")
-	assert_almost_eq(boom.blast_m, 1.4, 0.01, "its radius")
-	var spread: NemesisCast = by[&"gun_spread"]
-	var gun_spread := NemesisLab.card(g, &"gun_spread")
+	var fire: NemesisCast = by[&"ember_core"]
+	assert_true(fire.has_blast(), "Fire: its burning patch, a blast")
+	assert_almost_eq(fire.blast_m, 1.2, 0.01, "its radius")
+	var twin: NemesisCast = by[&"gun_twin"]
+	var gun_twin := NemesisLab.card(g, &"gun_twin")
 	var mods: Array[ModifierTable] = []
-	for m in g.item_tables[gun_spread].modifiers:
+	for m in g.item_tables[gun_twin].modifiers:
 		mods.append(m.at(2))
 	var spec := WandCompile.for_world(g, mods).spec(Modifiers.base_bolt(g))
-	assert_eq(spread.vol_count, spec.count, "Spread: the wand compiler's count")
-	assert_eq(spread.vol_spread, spec.spread, "and fan")
+	assert_eq(twin.vol_count, spec.count * (1 + spec.twin), "Twin: the wand compiler's copies")
+	assert_eq(twin.vol_spread, spec.spread + 128 * spec.twin, "and fan")
 	var b := NemesisLab.world(317, &"blade", BLADE_CARDS)
 	var bb := {}
 	for c in b.final_fight.casts:
@@ -322,7 +320,7 @@ func test_a_card_cast_locks_then_lands_its_parts() -> void:
 	w.actors.set_pos(0, w.actors.pos(i) + Vector2(6, 0))
 	var k := -1
 	for n in w.final_fight.casts.size():
-		if w.final_fight.casts[n].card_id == &"shared_explosive":
+		if w.final_fight.casts[n].card_id == &"ember_core":
 			k = n
 	var atk := NemesisLab.start(w, StringName("nemesis_card_%d" % (k + 1)))
 	var locked_at := -1
@@ -330,7 +328,7 @@ func test_a_card_cast_locks_then_lands_its_parts() -> void:
 	for t in atk.windup_ticks:
 		var tg := WorldReader.new(w).telegraph(i)
 		assert_eq(tg.get("shape"), &"marks")
-		assert_eq(tg.get("card"), &"shared_explosive", "the card it casts")
+		assert_eq(tg.get("card"), &"ember_core", "the card it casts")
 		if tg["locked"] and locked_at < 0:
 			locked_at = t
 			for item: Dictionary in tg["items"]:

@@ -8,8 +8,8 @@ extends RefCounted
 var events: Array[EventTable] = []
 var curses: Array[CurseTable] = []
 var rules := EventRules.new()
-## `loot:event` (rolls when a panel first opens, the cursed chest rolls, the ambush) and `ai:elite` (the elite
-## curse's roll per spawn): sub-streams of loot and ai (SIM_CONTRACTS §5), so no older draw moves.
+## `loot:event` (rolls when a panel first opens, the cursed chest rolls) and `ai:elite` (v0.9.0 EL: an elite's core
+## card and its 30 % drop): sub-streams of loot and ai (SIM_CONTRACTS §5), so no older draw moves.
 var rng: RngStream
 var rng_elite: RngStream
 
@@ -28,18 +28,14 @@ var roll_curse := PackedInt32Array()
 var curse_k := -1
 ## The pedestal whose panel is open (an index), or -1: while >= 0 the world waits.
 var open := -1
-## Ambush Cache in progress: its pedestal (-1 none) and the pack's actor ids. Wandering Drone: its pedestal, ticks
-## held inside the ring, ticks needed and the shards per floor it pays.
-var ambush := -1
-var ambush_ids := PackedInt32Array()
+## Wandering Drone: its pedestal, ticks held inside the ring, ticks needed and the shards per floor it pays. (v0.9.0
+## EL: the Ambush Cache's pedestal and pack, and the elite ids, went with it: an older save's are left unread.)
 var defend := -1
 var defend_ticks := 0
 var defend_total := 0
 var defend_reward := 0
 ## Overclock Vent's reward for this floor (per mille of Overclock damage).
 var overclock_bonus := 0
-## Elite actor ids alive (an Ambush pack, or spawns under an elite curse).
-var elite_ids := PackedInt32Array()
 ## Cursed chest offers: reward id, the cursed card's slot and its curse.
 var cursed_ids := PackedInt32Array()
 var cursed_slot := PackedInt32Array()
@@ -47,7 +43,7 @@ var cursed_curse := PackedInt32Array()
 ## v0.7.5 MG (N10): cursed chest offers rolled on this floor (EventRules.cursed_chests_per_floor caps it).
 var cursed_rolled := 0
 ## For the views: the last choice taken (tick, pedestal, choice), a refused pick, a curse gained (tick, curse), a
-## curse lifted (tick, curse) and an ambush or defence finished (tick, pedestal).
+## curse lifted (tick, curse) and a defence finished (tick, pedestal).
 var result_tick := -1
 var result_pedestal := -1
 var result_choice := -1
@@ -100,9 +96,9 @@ func hash_into(h: StateHasher) -> void:
 		h.add_ints(a)
 	h.add_f32s(pos_x)
 	h.add_f32s(pos_y)
-	for v in [open, ambush, defend, defend_ticks, defend_total, defend_reward, overclock_bonus]:
+	for v in [open, defend, defend_ticks, defend_total, defend_reward, overclock_bonus]:
 		h.add_int(v)
-	for a in [ambush_ids, elite_ids, cursed_ids, cursed_slot, cursed_curse]:
+	for a in [cursed_ids, cursed_slot, cursed_curse]:
 		h.add_ints(a)
 	for v in [result_tick, result_pedestal, result_choice, denied_tick, curse_tick, curse_last]:
 		h.add_int(v)

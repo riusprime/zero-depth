@@ -43,6 +43,8 @@ const WORLD_KEPT := {
 	&"hit_proc_permille": "transient within a hit (v0.8.0 MR): 1000 between hits",
 	&"wand_table": "loadout",  # v0.6.5 WN1
 	&"blade_table": "loadout",  # v0.6.5 WN4
+	&"slot_table": "loadout",  # v0.9.0 AS
+	&"elite_rules": "loadout",  # v0.9.0 EL
 	&"ice": "loadout (v0.7.5 NB1: IcePatches lays it from the floor seed)",
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
@@ -57,6 +59,7 @@ const WORLD_KEPT := {
 	&"_hit_grid": "transient within a tick (v0.8.0 HS): built inside _projectile_hits only",
 	&"_hit_grid_state": "transient within a tick (v0.8.0 HS): 0 between ticks",
 	&"_every_index": "derived (v0.8.0 HS): 1 .. n - 1, rebuilt from the actor count",
+	&"floor_hp_bonus": "rebuilt (v0.9.0 SV): RunState.prepare derives it from the run's floor",
 }
 ## Content tables: compiled from content at setup, read-only in play (the guard test checks they don't change).
 const LOADOUT_CLASSES: Array[StringName] = [
@@ -83,6 +86,8 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"OverrunTable",  # v0.4.0 AB
 	&"ShopTable",  # v0.5.0 SH
 	&"ArenaTable",  # v0.5.5 AR
+	&"LockdownTable",  # v0.9.0 LK: the Lockdowns' numbers (LockdownState.table)
+	&"ShrineTable",  # v0.9.0 SH, HF: the shrines' and the fountain's numbers (ShrineState.table)
 	&"CurveTable",  # v0.4.0 TU's difficulty curve (SpawnTable.curve); the save lab builds floors with it, as Main
 	&"LegendaryTable",
 	&"LootPacingTable",  # v0.8.0 FL
@@ -99,6 +104,10 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"IceField",  # v0.7.5 NB1: a floor's ice, laid from the floor seed at setup and never written in play
 	&"IntensityTable",  # v0.8.0 N5: the intensity director's numbers (SpawnTable.intensity)
 	&"BulletPatternTable",  # v0.7.5 BF1: a boss attack's bullet pattern (BossAttackTable.pattern)
+	&"SlotTable",  # v0.9.0 AS: the wand's slot limits, caps and form × card table (content, read in play)
+	&"EliteTable",  # v0.9.0 EL: an elite archetype's ability and plain attack (EnemyTable.elite)
+	&"EliteRules",  # v0.9.0 EL: where elites appear and the core drop (EliteState.rules)
+	&"AffinityTable",  # v0.9.0 RB: the run's rune affinity's numbers (AffinityState.table)
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [
@@ -122,7 +131,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"Obb",
 	&"OverrunState",  # v0.4.0 AB
 	&"ShopState",  # v0.5.0 SH
-	&"EventState",  # v0.5.0 EV: pedestals, rolls, ambush, defence, elites, cursed offers (its tables are loadout)
+	&"EventState",  # v0.5.0 EV: pedestals, rolls, defence, cursed offers (its tables are loadout)
 	&"CatchUpState",  # v0.5.5 DS: the floor's hidden catch-up
 	&"ArenaState",  # v0.5.5 AR: the sealed arena, its waves, streams and barriers; the arenas cleared
 	# v0.6.0 MX1: the compiled specs (World.attack_book is kept out and compiled again on restore; listed so the
@@ -136,6 +145,17 @@ const STATE_CLASSES: Array[StringName] = [
 	&"FinalFight",  # v0.8.0 FB1: the final boss's fight (its bodies, the phase, the shatter)
 	&"NemesisCast",  # v0.8.0 FB3: the Nemesis's hostile copies of the player's shot and cards (FinalFight)
 	&"IntensityState",  # v0.8.0 N5: the intensity director's state
+	&"FinalApproach",  # v0.9.0 FA: the final approach (the pylons, the buildup, the walls of light)
+	&"Interactables",  # v0.9.0 IX: the shared interactables and the puzzles' calm rooms
+	&"TimedDoor",  # v0.9.0 TD: the timed door (its state, timer and reward)
+	&"RuneAlignment",  # v0.9.0 RA: the rune puzzle (its pillars, solved, slab and reward)
+	&"Breakables",  # v0.9.0 DX: the cracked wall, the containers and the explosive barrels
+	&"PurpleRunes",  # v0.9.0 DP: the purple-rune dais (awakened, the Deep gate's footprint)
+	&"LockdownState",  # v0.9.0 LK: the Lockdown sealed, its formations, the safety, the strikes; those opened
+	&"ShrineState",  # v0.9.0 SH, HF: the Blood or Chaos shrine (used, the challenge, its altars) and the fountain
+	&"EliteState",  # v0.9.0 EL: the floor's elite rooms, the elites alive, their contact clocks, the escort
+	&"AffinityState",  # v0.9.0 RB: the rune affinity's ward and dash crackle on this floor
+	&"CollectState",  # v0.9.0 CL: the floor's collectibles (armed, shown, taken)
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -153,6 +173,8 @@ const ADDED_SINCE_V05 := {
 		&"blast_tick",  # v0.8.0 BL: the blast merge's per-tick marks
 		&"blast_pos",
 		&"blast_merged",
+		&"shot_window",  # v0.9.0 AS: the last second's player launches (a save from before AS: none)
+		&"shot_window_tick",
 		&"mod_slots",
 		&"swap_code",
 		&"swap_source",
@@ -167,6 +189,21 @@ const ADDED_SINCE_V05 := {
 		&"loop_threat",
 		&"loop_cap_permille",
 		&"final_fight",  # v0.8.0 FB1: the final boss's fight (a save from before FB1 holds none: null, as the base's)
+		&"approach",  # v0.9.0 FA: the final approach (a save from before FA holds none: FloorPlan builds that one bare)
+		&"interactables",  # v0.9.0 IX: a save from before IX keeps the base's registry (apply re-syncs the pylons)
+		&"timed",  # v0.9.0 TD: a floor saved before TD has none (built under floor rules 1-9: none in the base either)
+		&"runes",  # v0.9.0 RA: a floor saved before RA has none (built under floor rules 1-10: none in the base either)
+		&"breakables",  # v0.9.0 DX: the same (floor rules 1-10 build none)
+		&"purple",  # v0.9.0 DP: a floor saved before DP has none (built under floor rules 1-11: none in the base either)
+		&"lockdown",  # v0.9.0 LK: a floor saved before LK has none (built under floor rules 1-12: none in the base either)
+		&"shrine",  # v0.9.0 SH, HF: a floor saved before SH has none (floor rules 1-13 build none in the base either)
+		&"elites",  # v0.9.0 EL: a floor saved before EL has no elite rooms (floor rules 1-14 build none either)
+		&"affinity",  # v0.9.0 RB: a save from before RB is a run without one (None: null in the base too)
+		# v0.9.0 MP: copied, not kept: the run's locked cards come from the profile when the run began, not from the
+		# floor's generation inputs, so a replay onto a base built without that profile stays exact. A save from
+		# before MP keeps the base's (FloorPlan resolves RunState.locked_cards; such a run has none)
+		&"locked_items",
+		&"collect",  # v0.9.0 CL: a save from before CL keeps the base's (the collectibles armed again, none shown)
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
 		&"loot_guaranteed",  # v0.8.0 FL: an older save's floor used no guarantee (0) and holds no jackpot
 		&"loot_jackpots",
@@ -221,6 +258,27 @@ const ADDED_SINCE_V05 := {
 		&"melt_ey",
 		&"melt_exit",
 		&"burn_cd",
+		&"sig_boss",  # v0.9.0 NB1: the Tidecaller's Pull cadence (an older save has no Tidecaller: none)
+		&"sig_due",
+		&"twin_lead",  # v0.9.0 NB2: the Twin Wardens' pair (an older save has no Wardens: none)
+		&"twin_body",
+		&"twin_angry",
+		&"twin_anger_t",
+		&"twin_burn_cd",
+		&"echo_boss",  # v0.9.0 NB3: the Clockwork Judge's echo (an older save has no Judge: none)
+		&"echo_x",
+		&"echo_y",
+		&"path_x",
+		&"path_y",
+		&"path_k",
+		&"shade_boss",  # v0.9.0 NB4: the Lantern Shade's light (an older save has no Shade: none)
+		&"shade_dark",
+		&"shade_at",
+		&"shade_from",
+		&"shade_until",  # v0.9.0 NB4b: the dark comes and goes
+		&"lamp_x",
+		&"lamp_y",
+		&"lamp_t",
 	],
 	&"ProjectileStore":
 	[
@@ -278,14 +336,16 @@ const ADDED_SINCE_V05 := {
 	&"ModifierState":
 	[
 		&"hold_t",  # v0.6.5 WN3 (G13 Charge: an older save charges nothing)
+		&"recoil_t",  # v0.9.0 AF1b (the Lance's push back: an older save has none)
+		&"recoil_step",
 		&"cast_tick",  # v0.6.5 WN5a (WandCasts: view-only marks; an older save has none)
 		&"cast_key",
 		&"cast_pos",
 		&"cast_angle",
 		&"cast_flag",
-		&"hole_pos",  # v0.8.0 P2 (Void's black holes: an older save has none)
-		&"hole_from",
-		&"hole_dmg",
+		&"void_shot",  # v0.9.0 VP (the Void form's aura waits; an older save has none: its black holes are dropped)
+		&"void_foe",
+		&"void_next",
 		&"ramp_n",  # v0.8.0 MR (FireRhythm, SecondaryProc: an older save has no ramp, no burst, no carry)
 		&"ramp_tick",
 		&"burst_n",
@@ -325,6 +385,10 @@ const ADDED_SINCE_V05 := {
 		&"imprint_at",
 		&"imprint_until",
 	],
+	# v0.9.0 CF: a closed fight's members waiting to come in (an older save's fight has none: the base's, empty)
+	&"ArenaState": [&"later_kinds", &"later_pos"],
+	&"LockdownState": [&"later_kinds", &"later_pos"],
+	&"ShrineState": [&"later_kinds", &"later_pos"],
 	&"ItemMods": [&"bleed_move_period_ticks"],  # v0.6.5 WN5a (S5 Bleed: an older save has the base's)
 	# v0.7.5 MG (N10: an older save's floor counts its cursed chests from 0); v0.8.0 N17: the curse room's altar (an
 	# older save's floor has none: -1, apply)
@@ -395,12 +459,18 @@ static func apply(base: World, snap: Dictionary) -> String:
 		return "World.walls: the snapshot's floor differs from the one generated from its inputs"
 	# v0.8.0 BS1: the Gatekeeper's standing pillars are walls added in play too (barriers, never in the flow field).
 	var pillars := _saved_pillars(data)
+	# v0.9.0 TD: the timed door's slab is a barrier added in play (before or after the boss door): left out here;
+	# v0.9.0 RA: the rune puzzle's slab too (Secrets.slabs); v0.9.0 DP: the Deep gate's footprint once earned.
+	var plain := _without_slab(base, saved_c, walls_before)
 	# The boss door sealed in play: add it the way play did (its prepared flow field swaps in, no rebuild).
+	# v0.9.0 FV: found among every wall play added, so a sealed arena's barriers (added on the same tick, before or
+	# after it) don't hide it. Missed, the restored world kept no field from before the door (World._nav_open) and,
+	# once the door opened, rebuilt one where play swapped its kept field back: the two flow fields parted.
 	var door: Obb = base.get(&"_wall_next")
 	if (
 		door != null
-		and saved_c.size() == walls_before + 1 + pillars
-		and saved_c[walls_before] == door.center
+		and plain.size() >= walls_before + 1 + pillars
+		and plain.slice(walls_before).has(door.center)
 		and not bool(data.get(&"_wall_next", true))
 	):
 		base.add_wall_now(door)
@@ -418,14 +488,21 @@ static func apply(base: World, snap: Dictionary) -> String:
 	var ev_data: Variant = data.get(&"ev", {})
 	if typeof(ev_data) == TYPE_DICTIONARY and not (ev_data as Dictionary).has(&"curse_k"):
 		base.ev.curse_k = -1  # v0.8.0 N17 (O75): a floor saved before the curse room has none
+	if not data.has(&"interactables") and base.approach != null:  # v0.9.0 IX: the pylons follow the saved lit ones
+		base.approach.sync_registry(base)
 	if not data.has(&"mod_slots"):  # v0.6.0 MX2: a v0.5 build into the six slots
 		base.mod_slots = PackedInt32Array()
 		BuildSlots.migrate(base)
 	Modifiers.invalidate(base)  # v0.6.0 MX1: the restored build's specs compile on their next read
+	Events.drop_retired(base)  # v0.9.0 EL (Q25): an Ambush Cache pedestal closes, a held Marked curse goes
+	CoreTheft.drop_plain(base)  # v0.9.0 EL: a pre-EL elite's core (a normal enemy's) goes; it drops nothing now
 	Curses.invalidate(base)  # v0.7.0 audit C-12: the curse sums are summed again from what was restored
 	# v0.5.5 AR: a sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
 	# so only the wall grid is rebuilt for them.
 	var barriers := base.arenas.barriers.size() + base.bosses.pillar_x.size()  # v0.8.0 BS1: pillars too
+	barriers += Secrets.slabs_up(base)  # v0.9.0 TD, RA: the secret rooms' slabs while they stand
+	if base.lockdown != null:  # v0.9.0 LK: a sealed Lockdown's bars, as an arena's
+		barriers += base.lockdown.barriers.size()
 	if base.walls.size() == walls_before + barriers and barriers > 0:
 		base.rebuild_wall_grid()
 	elif base.walls.size() != walls_before:  # any other wall added in play: the grid and field are rebuilt
@@ -448,6 +525,21 @@ static func apply(base: World, snap: Dictionary) -> String:
 		elif base.get(f) == null:
 			return "World.%s: pending in the snapshot, missing in the base" % f
 	return ""
+
+
+## v0.9.0 TD: the saved walls' centres without the secret rooms' slabs (barriers past the floor's walls; v0.9.0 RA:
+## every slab of Secrets.slabs), as saved.
+static func _without_slab(
+	base: World, saved_c: PackedVector2Array, walls_before: int
+) -> PackedVector2Array:
+	var out := saved_c
+	for slab in Secrets.slabs(base):
+		for k in range(walls_before, out.size()):
+			if out[k] == slab.center:
+				out = out.duplicate()
+				out.remove_at(k)
+				break
+	return out
 
 
 ## v0.8.0 BS1: how many of the Gatekeeper's pillars stood in the snapshot (0 for an older save).
@@ -672,6 +764,22 @@ static func _make(cls: StringName) -> Object:
 	match cls:
 		&"Obb":
 			return Obb.new()
+		&"TimedDoor":  # v0.9.0 TD, RA, DX: a base built without its floor's secrets (a lab)
+			return TimedDoor.new()
+		&"RuneAlignment":
+			return RuneAlignment.new()
+		&"Breakables":
+			return Breakables.new()
+		&"PurpleRunes":  # v0.9.0 DP
+			return PurpleRunes.new()
+		&"LockdownState":  # v0.9.0 LK
+			return LockdownState.new()
+		&"ShrineState":  # v0.9.0 SH, HF
+			return ShrineState.new()
+		&"EliteState":  # v0.9.0 EL: a base whose floor had no elite before play brought one
+			return EliteState.new()
+		&"CollectState":  # v0.9.0 CL: a base built without the collectibles armed (a lab)
+			return CollectState.new()
 		&"RngStream":
 			return RngStream.new()
 		&"ActorStore":

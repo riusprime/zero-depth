@@ -9,7 +9,11 @@ extends RefCounted
 ## a fresh profile starts.
 
 const PLAYER_PATH := "user://profile.json"
-const PROFILE_VERSION := 1
+## v0.9.0 MP: 2 adds the `progress` section (Rune Fragments, the Purple Portal travelled; MetaProgress). A version-1
+## profile loads with 0 fragments and the portal not travelled (_migrate).
+## v0.9.0 CL: 3 adds the `collectibles` section (the Rune Archive's finds; CollectibleBook). An older profile loads with
+## none found (_migrate).
+const PROFILE_VERSION := 3
 
 static var _shared: ProfileStore = null
 
@@ -55,6 +59,8 @@ static func fresh() -> Dictionary:
 		"hints": {"seen": []},
 		"codex": CodexStore.fresh(),  # v0.7.5 CX: the Codex's unlocks and counters (its own version inside)
 		"achievements": AchievementStore.fresh(),  # v0.7.5 AC: unlocks and run counters (its own version)
+		"progress": MetaProgress.fresh(),  # v0.9.0 MP: Rune Fragments and the Purple Portal flag
+		"collectibles": CollectibleBook.fresh(),  # v0.9.0 CL: the collectibles found (id -> the run seed)
 	}
 
 
@@ -81,6 +87,7 @@ func load_file() -> bool:
 
 
 func _merge_loaded(loaded: Dictionary) -> void:
+	var from := int(loaded.get("profile_version", 1))
 	for key: Variant in loaded.keys():
 		var base: Variant = data.get(key)
 		if typeof(base) == TYPE_DICTIONARY and typeof(loaded[key]) == TYPE_DICTIONARY:
@@ -89,7 +96,17 @@ func _merge_loaded(loaded: Dictionary) -> void:
 			data[key] = merged
 		elif base == null or typeof(base) == typeof(loaded[key]):
 			data[key] = loaded[key]
+	_migrate(from)
 	data["profile_version"] = PROFILE_VERSION
+
+
+## v0.9.0 MP: a profile from before version 2 starts its `progress` fresh (0 Rune Fragments, the Purple Portal not
+## travelled: the Void stays locked until the player travels through one).
+func _migrate(from: int) -> void:
+	if from < 2:
+		data["progress"] = MetaProgress.fresh()
+	if from < 3:  # v0.9.0 CL: none found before the Rune Archive's collectibles
+		data["collectibles"] = CollectibleBook.fresh()
 
 
 func _quarantine() -> void:

@@ -61,6 +61,13 @@ func focus_first() -> void:
 	(find_child("Back", true, false) as Button).grab_focus()
 
 
+## v0.9.0 HB: Esc or pad B leaves, as the Codex does (the credits open from the hub's Credits stone).
+func _unhandled_input(event: InputEvent) -> void:
+	if is_visible_in_tree() and event.is_action_pressed(&"ui_cancel"):
+		get_viewport().set_input_as_handled()
+		back_pressed.emit()
+
+
 ## The project's icon (the window's and the export's), "" when none is set.
 static func app_icon_path() -> String:
 	return String(ProjectSettings.get_setting("application/config/icon", ""))

@@ -101,8 +101,10 @@ func test_a_gun_on_hit_cast_flies_with_its_cue() -> void:
 	assert_gt(_view.casts_drawn, 0, "the sigil where it fired")
 
 
-func test_a_fire_kill_burst_draws_as_fire() -> void:
+## v0.9.0 XP (owner Q11): Fire's kill leaves a burning patch, no burst.
+func test_a_fire_kill_leaves_a_patch_not_a_burst() -> void:
 	var w := W.world(&"gun", [&"ember_core"], [[Vector2(2.5, 0.0), 1]])
 	_play(w, &"gun", 20)
-	assert_gt(int(_view.cast_forms.get(&"burst", 0)), 0, "the burst where it died")
-	assert_eq(_view.casts_drawn, 0, "a card's burst, no trigger sigil")
+	assert_eq(int(_view.cast_forms.get(&"burst", 0)), 0, "no burst where it died")
+	assert_eq(w.ab.fire_pos.size(), 1, "a burning patch instead")
+	assert_eq(_view.casts_drawn, 0, "a card's patch, no trigger sigil")

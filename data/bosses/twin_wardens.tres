@@ -1,0 +1,195 @@
+[gd_resource type="Resource" script_class="BossDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/boss_attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/boss_phase_definition.gd" id="2_ph"]
+[ext_resource type="Script" path="res://src/content/defs/boss_definition.gd" id="3_boss"]
+
+[sub_resource type="Resource" id="A_crossfire"]
+script = ExtResource("1_atk")
+id = &"crossfire"
+shape = 4
+shape_params = {
+"distance_m": 2.0,
+"gap_m": 1.2,
+"pattern_id": "twin_wardens_crossfire",
+"twin_look": "warden_violet_ember"
+}
+telegraph_seconds = 1.2
+active_seconds = 0.0167
+recovery_seconds = 1.3
+damage = 22
+hit_class = &"small"
+move = &"crossfire"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_TWIN_CROSSFIRE"
+opens_weak_point = true
+shielded = true
+
+[sub_resource type="Resource" id="A_crossfire_3"]
+script = ExtResource("1_atk")
+id = &"crossfire_3"
+shape = 4
+shape_params = {
+"distance_m": 2.0,
+"gap_m": 1.1,
+"pattern_id": "twin_wardens_crossfire_3",
+"twin_look": "warden_violet_ember"
+}
+telegraph_seconds = 1.1
+active_seconds = 0.0167
+recovery_seconds = 1.2
+damage = 22
+hit_class = &"small"
+move = &"crossfire"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.7
+cause_key = &"CAUSE_TWIN_CROSSFIRE"
+opens_weak_point = true
+shielded = true
+
+[sub_resource type="Resource" id="A_chain_sweep"]
+script = ExtResource("1_atk")
+id = &"chain_sweep"
+shape = 2
+shape_params = {
+"reach_m": 2.5,
+"width_m": 1.2
+}
+telegraph_seconds = 1.6
+active_seconds = 0.0167
+recovery_seconds = 1.0
+damage = 30
+hit_class = &"medium"
+move = &"chain_sweep"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_TWIN_SWEEP"
+late_cause_key = &"CAUSE_TWIN_CHAIN"
+lock_seconds = 0.8
+
+[sub_resource type="Resource" id="A_chain_sweep_fast"]
+script = ExtResource("1_atk")
+id = &"chain_sweep_fast"
+shape = 2
+shape_params = {
+"reach_m": 2.5,
+"width_m": 1.3
+}
+telegraph_seconds = 1.4
+active_seconds = 0.0167
+recovery_seconds = 0.9
+damage = 30
+hit_class = &"medium"
+move = &"chain_sweep"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_TWIN_SWEEP"
+late_cause_key = &"CAUSE_TWIN_CHAIN"
+lock_seconds = 0.8
+
+[sub_resource type="Resource" id="A_shield_bash"]
+script = ExtResource("1_atk")
+id = &"shield_bash"
+shape = 3
+shape_params = {
+"inner_radius_m": 0.0,
+"radius_m": 2.6
+}
+telegraph_seconds = 0.7
+active_seconds = 0.0167
+recovery_seconds = 1.3
+damage = 50
+hit_class = &"big"
+move = &"slam_ring"
+min_range_m = 0.0
+max_range_m = 3.0
+weight = 3
+cooldown_seconds = 0.7
+cause_key = &"CAUSE_TWIN_BASH"
+opens_weak_point = true
+
+[sub_resource type="Resource" id="P_0"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 1000
+attack_ids = PackedStringArray("crossfire", "chain_sweep", "shield_bash")
+entry_attack = &""
+speed_permille = 1000
+cooldown_permille = 1000
+
+[sub_resource type="Resource" id="P_1"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 660
+attack_ids = PackedStringArray("crossfire", "chain_sweep", "shield_bash")
+entry_attack = &"crossfire"
+speed_permille = 900
+cooldown_permille = 650
+
+[sub_resource type="Resource" id="P_2"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 330
+attack_ids = PackedStringArray("crossfire_3", "chain_sweep_fast", "shield_bash")
+entry_attack = &"crossfire_3"
+speed_permille = 990
+cooldown_permille = 487
+
+[resource]
+script = ExtResource("3_boss")
+name_key = &"BOSS_TWIN_WARDENS"
+desc_key = &"BOSS_TWIN_WARDENS_DESC"
+hp = 2500
+radius_m = 1.0
+move_speed_mps = 1.6
+turn_rate_dps = 90.0
+keep_distance_m = 2.0
+front_arc_degrees = 0.0
+front_mult_permille = 1000
+rear_arc_degrees = 0.0
+rear_mult_permille = 1000
+stagger_size = 200
+stagger_decay_per_second = 15.0
+stagger_seconds = 2.5
+attacks = Array[ExtResource("1_atk")]([SubResource("A_crossfire"), SubResource("A_crossfire_3"), SubResource("A_chain_sweep"), SubResource("A_chain_sweep_fast"), SubResource("A_shield_bash")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
+arena_cells = Vector2i(4, 4)
+legacy_arena_cells = Vector2i(4, 4)
+arena_template = 0
+ranged_full_m = 5.0
+ranged_far_m = 12.0
+ranged_far_permille = 400
+punish_distance_m = 9.0
+punish_seconds = 4.0
+punish_attack = &"chain_sweep"
+weak_point_seconds = 2.0
+weak_point_range_m = 2.5
+weak_point_mult_permille = 2000
+weak_point_stagger_permille = 2000
+arena_close_phase = -1
+arena_close_after_seconds = 0.0
+recovery_permille = 600
+lead_seconds = 0.3
+track_commit_seconds = 0.2
+dash_read_seconds = 0.5
+gap_close_attack = &"chain_sweep"
+gap_close_distance_m = 6.5
+gap_close_seconds = 2.0
+save_order = 2
+twin_kind_id = &"twin_warden_violet"
+twin_distance_m = 5.0
+chain_min_m = 3.0
+chain_max_m = 9.0
+chain_burn = 12
+chain_burn_seconds = 0.5
+chain_width_m = 0.5
+flank_m = 4.5
+anger_speed_permille = 1400
+anger_seconds = 3.0
+id = &"twin_wardens"

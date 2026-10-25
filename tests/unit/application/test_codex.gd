@@ -43,14 +43,14 @@ func test_counters_unlock_add_and_keep_the_highest_level() -> void:
 	assert_eq(store.add(&"enemies", &"charger", &"kills", 2), 3)
 	assert_eq(store.add(&"enemies", &"needle", &"kills"), 1, "a count unlocks too")
 	assert_true(store.is_unlocked(&"enemies", &"needle"))
-	assert_eq(store.raise_to(&"cards", &"gun_spread", &"level", 3), 3)
-	assert_eq(store.raise_to(&"cards", &"gun_spread", &"level", 2), 3, "the highest level stays")
-	assert_eq(store.count(&"cards", &"gun_spread", &"level"), 3)
+	assert_eq(store.raise_to(&"cards", &"gun_twin", &"level", 3), 3)
+	assert_eq(store.raise_to(&"cards", &"gun_twin", &"level", 2), 3, "the highest level stays")
+	assert_eq(store.count(&"cards", &"gun_twin", &"level"), 3)
 	assert_eq(store.total(&"enemies", &"kills"), 4, "a page's total")
 	assert_eq(store.unlocked_ids(&"enemies"), [&"charger", &"needle"] as Array[StringName])
 	assert_eq(
 		unlocked,
-		[[&"enemies", &"charger"], [&"enemies", &"needle"], [&"cards", &"gun_spread"]],
+		[[&"enemies", &"charger"], [&"enemies", &"needle"], [&"cards", &"gun_twin"]],
 		"one unlocked signal per first meeting"
 	)
 	assert_eq(changes.size(), 4, "a changed signal per counter write that changed it")
@@ -108,7 +108,7 @@ func test_the_catalog_lists_the_content_by_pool_without_retired_cards() -> void:
 	for e: Dictionary in c.entries(&"cards"):
 		assert_false(retired.has(e["id"]), "%s is retired and not listed" % e["id"])
 	var want := {
-		&"gun_spread": &"gun",
+		&"gun_twin": &"gun",
 		&"halo_shot": &"gun",
 		&"heavy": &"blade",
 		&"wide_arc": &"blade",
@@ -131,7 +131,7 @@ func test_the_catalog_lists_the_content_by_pool_without_retired_cards() -> void:
 	]:
 		assert_false(c.has(&"cards", id), "%s is not a Codex card" % id)
 	assert_eq(c.entry(&"cards", &"trigger_on_finisher")["alt_name_key"], &"ITEM_TRIGGER_ON_CRIT")
-	assert_true(c.entry(&"cards", &"gun_spread")["leveled"], "a wand card levels")
+	assert_true(c.entry(&"cards", &"gun_twin")["leveled"], "a wand card levels")
 	assert_false(c.entry(&"cards", &"damage")["leveled"], "a stat card doesn't")
 	assert_eq(
 		c.sections(&"cards"),
@@ -237,7 +237,7 @@ func test_a_taken_card_counts_and_keeps_its_level() -> void:
 	var r: WorldReader = parts[2]
 	var idx := -1
 	for k in w.item_tables.size():
-		if w.item_tables[k].id == &"gun_spread":
+		if w.item_tables[k].id == &"gun_twin":
 			idx = k
 	assert_gt(idx, -1)
 	for n in 2:  # a pick's PICKUP, then the card goes in (as Rewards.choose does)
@@ -247,8 +247,8 @@ func test_a_taken_card_counts_and_keeps_its_level() -> void:
 		e.amount = idx
 		Offers.apply(w, idx)
 		rec.observe(r)
-	assert_eq(store.count(&"cards", &"gun_spread", &"taken"), 2)
-	assert_eq(store.count(&"cards", &"gun_spread", &"level"), 2, "taken twice: level 2 in the wand")
+	assert_eq(store.count(&"cards", &"gun_twin", &"taken"), 2)
+	assert_eq(store.count(&"cards", &"gun_twin", &"level"), 2, "taken twice: level 2 in the wand")
 	assert_false(
 		store.is_unlocked(&"cards", &"pulse_gun"), "the starting weapon is not a Codex card"
 	)

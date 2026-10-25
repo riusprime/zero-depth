@@ -74,11 +74,8 @@ const INT_FIELDS: Array[StringName] = [
 const LATE_INT_FIELDS: Array[StringName] = [
 	&"repeats",
 	&"alive_max",  # v0.8.0 PF2
-	&"hole_permille",  # v0.8.0 P2 (O24: Void's black holes)
-	&"hole_damage_permille",
 	# v0.8.0 AO (owner O37: the order rule; WandCompile, WandRings)
 	&"ring_layout",
-	&"ring_pulses",
 	&"ring_share_permille",
 	&"swirl",
 	&"swirl_group",
@@ -95,6 +92,28 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	# v0.8.0 RM (owner O91: Dodge Imprint, a dash spec's; Remnants.imprint)
 	&"imprint_ticks",
 	&"imprint_permille",
+	# v0.9.0 LZ (owner Q8: the Laser form; Laser)
+	&"beam_hold",
+	&"beam_permille",
+	&"rate_scale_permille",
+	&"move_permille",
+	&"blast_mm",  # v0.9.0 BM (owner Q9: the Bomb form; Bomb)
+	# v0.9.0 VP (owner Q10: the Void form; VoidShots)
+	&"void_mm",
+	&"void_tick_ticks",
+	&"void_pull_mm",
+	&"void_pull_mmps",
+	# v0.9.0 AF1 (owner Q7: the Lance and Scatter forms; Lance, Scatter)
+	&"lance",
+	&"pellets",
+	# v0.9.0 AF2 (owner Q7: the Glaive and Seekers forms; Glaive, Seekers)
+	&"glaive",
+	&"seekers",
+	# v0.9.0 AF3 (owner Q7: the Wave and Wisps forms; WaveShots, Wisps)
+	&"wave_mm",
+	&"wisps",
+	&"wisp_ticks",
+	&"wisp_permille",
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"reach_m",
@@ -143,13 +162,11 @@ var alive_max := 0
 
 ## v0.8.0 AO (owner O37; docs/roadmap/v0.8.0/evidence/ATTACK_ORDER.md): the order rule's ring. ring_layout 1: a
 ## ring a SHAPE card made (Ring), run by WandRings. v0.8.0 N3 (owner O47): the shot itself, a ring that flies: `count`
-## ring shots laid as bolts are (a fan, a circle), each pulsing `ring_pulses` times as it flies (the count that stood
-## left of the Ring; 0 = once), each dealing ring_share_permille of the hit (0 = whole; WandRings.MULTI_PERMILLE of
-## that when there is more than one ring or pulse). swirl 1 (Swirl, a MOTION card): every ring flies off in its own
+## ring shots laid as bolts are (v0.9.0 AS: one in a legal wand), each dealing ring_share_permille of the hit (0 =
+## whole). swirl 1 (Swirl, a MOTION card): every ring flies off in its own
 ## random direction (a bolt: each leaves at a random angle); swirl_group 1 (a Swirl left of the Ring, taken in by it):
 ## the group flies the aim as one, its rings spinning round its centre. Randomness: WandRings' named stream.
 var ring_layout := 0
-var ring_pulses := 0
 var ring_share_permille := 0
 var swirl := 0
 var swirl_group := 0
@@ -182,6 +199,48 @@ var burst_pause_ticks := 0
 ## cast from where the dash began at × imprint_permille (0 = none; Remnants.imprint).
 var imprint_ticks := 0
 var imprint_permille := 0
+## v0.9.0 LZ (owner Q8; Laser): beam_hold 1, the beam is the Laser form: held, it deals a damage tick every
+## period_ticks to what it touches along reach_m (the first enemy, or pierce + 1 of them; a wall stops it), each tick
+## beam_permille of the shot's damage. rate_scale_permille: attack speed counts at this share of its bonus on the
+## period (500: half, the Laser's and the Bomb's; 0 = whole). move_permille: the hero moves at this share of the speed
+## while the beam fires (0 = no slow).
+var beam_hold := 0
+var beam_permille := 0
+var rate_scale_permille := 0
+var move_permille := 0
+## v0.9.0 BM (owner Q9; Bomb): blast_mm, the bolt is a bomb: its touch deals nothing, and where it ends (the first
+## enemy, a wall, the end of its flight) it bursts with this radius (mm; the area stat scales it) at its damage.
+var blast_mm := 0
+## v0.9.0 VP (owner Q10; VoidShots): void_mm, the bolt is a Void shot: it passes through enemies (only a wall or the end
+## of its flight ends it); every enemy within void_mm (its aura, mm; the area stat scales it) takes the shot's damage
+## when it comes in and every void_tick_ticks while it stays in; enemies within void_pull_mm are drawn toward its path
+## at most void_pull_mmps (mm a second; never stacking across voids).
+var void_mm := 0
+var void_tick_ticks := 0
+var void_pull_mm := 0
+var void_pull_mmps := 0
+## v0.9.0 AF1 (owner Q7, ATTACK_FORMS F5; Lance): lance, the shot is the Lance: the Gun charges it while SHOOT is held
+## (hold_ticks, × hold_permille at full; GunForms) and its release is one line along the aim, reach_m long and
+## radius_m wide, stopped only by a wall, hitting every enemy on it once (no projectile).
+var lance := 0
+## v0.9.0 AF1 (owner Q7, F6; Scatter): pellets, the bolts are the Scatter's pellets (the view draws them as a cone of
+## pellets); their numbers are the plain bolt fields (count, spread, life, speed, share_permille).
+var pellets := 0
+## v0.9.0 AF2 (owner Q7, F7; Glaive): glaive, the bolt is the Glaive's spinning disc (the view draws it as one); it
+## flies out and comes back through the return rule (returns, ProjectileMoves), hitting every enemy on both passes.
+var glaive := 0
+## v0.9.0 AF2 (owner Q7, F8; Seekers): seekers, the bolts are the Seekers' darts: each homes on its own one of the
+## nearest enemies (Seekers.target) at the homing rate; the rest are the plain bolt fields.
+var seekers := 0
+## v0.9.0 AF3 (owner Q7, ATTACK_FORMS F9; WaveShots): wave_mm, the bolt is the Wave: a band wave_mm wide (the area stat
+## scales it) that passes through enemies (only a wall or the end of its flight ends it), hitting each enemy it rolls
+## over once.
+var wave_mm := 0
+## v0.9.0 AF3 (owner Q7, F10; Wisps): wisps, that many wisps circle the hero; each fires one orb of the Gun's shot at
+## wisp_permille of its damage at the nearest enemy every wisp_ticks, on its own, while the hero shoots as before.
+var wisps := 0
+var wisp_ticks := 0
+var wisp_permille := 0
 
 # --- payload
 ## Damage per hit (a share `damage_permille` of it when the shot splits into count > 1 bolts, rounded down, at least
@@ -237,11 +296,6 @@ var mirror := 0
 ## Payload: a burst pulls the enemies it touches this far toward its centre (v0.6.0 MX4's Gravity Well; v0.8.0 P2:
 ## retired with Void's pull, no card sets it; kept for the hash order).
 var pull_m := 0.0
-## v0.8.0 P2 (owner O24, Void): each shot (a projectile where it ends) or landing slash of this spec leaves a black hole
-## with this chance (per mille, one draw on the `ability` stream; 0 = never); its pulses deal this share of the shot's
-## damage (BlackHoles).
-var hole_permille := 0
-var hole_damage_permille := 0
 ## The body spec's rules (never launched): out of combat this long, a barrier absorbs one hit (Aether Shell); after
 ## this long without attacking the next attack deals × charge_permille (Ascension); each status on an enemy adds
 ## this to the damage it takes (Resonance).
@@ -459,10 +513,8 @@ func read() -> Dictionary:
 		"intangible": intangible,
 		"mirror": mirror,
 		"pull_m": pull_m,
-		"hole_permille": hole_permille,  # v0.8.0 P2
 		# v0.8.0 AO: the order rule's ring and Swirl (the views' lightning circles, shock arcs and storm)
 		"ring_layout": ring_layout,
-		"ring_pulses": ring_pulses,
 		"ring_share_permille": ring_share_permille,
 		"swirl": swirl,
 		"swirl_group": swirl_group,
@@ -486,4 +538,15 @@ func read() -> Dictionary:
 		"knockback_m": knockback_m,
 		"line_m": line_m,
 		"step_m": step_m,
+		# v0.9.0 LZ (the beam view)
+		"beam_hold": beam_hold,
+		"blast_mm": blast_mm,  # v0.9.0 BM
+		"void_mm": void_mm,  # v0.9.0 VP
+		"void_pull_mm": void_pull_mm,
+		"lance": lance,  # v0.9.0 AF1
+		"pellets": pellets,
+		"glaive": glaive,  # v0.9.0 AF2
+		"seekers": seekers,
+		"wave_mm": wave_mm,  # v0.9.0 AF3
+		"wisps": wisps,
 	}

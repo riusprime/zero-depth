@@ -106,9 +106,15 @@ func sync(reader: WorldReader) -> void:
 	for i in reader.projectile_count():
 		if (
 			reader.projectile_team(i) != 0
+			or reader.projectile_is_wave(i)  # v0.9.0 AF3: WaveView draws the Wave shots
 			or reader.projectile_look(i) != ""
 			or reader.projectile_is_shard(i)
-		):
+			or reader.projectile_is_bomb(i)
+			or reader.projectile_is_void(i)
+			or reader.projectile_is_pellet(i)
+			or reader.projectile_is_disc(i)  # v0.9.0 AF2: GlaiveView the discs, SeekersView the darts
+			or reader.projectile_is_dart(i)
+		):  # v0.9.0 BM: BombView draws the bombs; v0.9.0 VP: VoidView the Void shots; AF1: ScatterView the pellets
 			continue
 		var id := reader.projectile_id(i)
 		var p := reader.projectile_pos(i)

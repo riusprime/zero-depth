@@ -30,6 +30,11 @@ enum Move {
 	MIMIC_COMBO,  # v0.8.0 FB3 (FINAL_BOSS.md F6): the Nemesis's moves (BossNemesis)
 	MIMIC_SHOTS,
 	CARD_CAST,
+	TIDE,  # v0.9.0 NB1 (BOSSES_4_5.md N1): the Tidecaller's Pull (BossTide)
+	CROSSFIRE,  # v0.9.0 NB2 (BOSSES_4_5.md N2): the Twin Wardens' fans whose gaps meet between them (BossTwin)
+	CHAIN_SWEEP,  # v0.9.0 NB2: their chain's line tracks the player, locks and lashes (BossTwin)
+	ECHO,  # v0.9.0 NB3 (BOSSES_4_5.md N3): the Clockwork Judge's echo of the player's path (BossJudge)
+	VERDICT,  # v0.9.0 NB3: its tracked square, locked, a pendulum strike dropping on it (BossJudge)
 }
 
 ## v0.8.0 FB3: the runs a Nemesis attack answers to (`weapon` below).
@@ -177,3 +182,34 @@ var bolt_every_ticks := 0
 ## them `spread` apart when the build throws none) gap_ticks apart down the lines it locked.
 var weapon := WEAPON_ANY
 var card := -1
+## v0.9.0 NB1 (BOSSES_4_5.md N1; BossTide): a `tide` attack's Pull: for tide_pull_ticks of its active time the player
+## drifts toward the boss at tide_pull (metres per tick), then for tide_push_ticks away from it at tide_push; its
+## pattern (the Tide Rings) fires only inside the pull, and the boss's shots turn toward it by tide_bend (1/4096 turns
+## a tick) while the pull is on. A `marks` attack with drag_m > 0 (the Undertow) drags a player within drag_reach_m
+## of each struck circle drag_m toward its centre.
+var tide_pull := 0.0
+var tide_push := 0.0
+var tide_pull_ticks := 0
+var tide_push_ticks := 0
+var tide_bend := 0
+var drag_m := 0.0
+var drag_reach_m := 0.0
+## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): a `crossfire` attack's safe spot stands distance_m off the middle of the
+## chain, on the player's side, and each body's fan (its pattern, aimed at the spot) leaves out the shots within gap_m
+## of it there (gap_m, distance_m above). A `chain_sweep` lashes a lane half_width_m each side of its line, which runs
+## from the body through the player and reach_m past them. The twin's Crossfire shots take twin_look ("" = the
+## pattern's own).
+var twin_look := &""
+## v0.9.0 NB3 (BOSSES_4_5.md N3; BossJudge): an `echo` replays the path its boss recorded (echo_points points,
+## echo_gap_ticks apart): point k strikes a disc radius_m wide on active tick k × echo_gap_ticks; a point within
+## radius_m + the player's radius + echo_safe_m of where the player stood as it started is left out. A `verdict`'s
+## square reaches square_half_m each way from its tracked centre.
+var echo_points := 0
+var echo_gap_ticks := 1
+var echo_safe_m := 0.0
+var square_half_m := 0.0
+## v0.9.0 NB4 (BOSSES_4_5.md N4; BossShade): a `pattern` with dark_ticks > 0 is the Lantern Shade's Lights Out (its
+## signature on the cadence): dark_ticks after it starts the room goes dark and the lanterns are lit afresh. A `marks`
+## attack with snuff puts out the lit lantern nearest each struck circle (the Snuff).
+var dark_ticks := 0
+var snuff := false

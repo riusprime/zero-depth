@@ -12,15 +12,17 @@ extends RefCounted
 ##   the floor's range, never past the cap;
 ## - its members stand on a ring around the anchor (anchor first, then 6 spots at PACK_STEP_M, then 12 at twice
 ##   that), each in the anchor's room, clear of walls and at least min_distance_m from the player;
-## - v0.5.0 EV curses: Swarm Call adds to every pack's size (still under the cap), Marked Hunt may raise a member to
-##   an elite (its tier HP x2); a Wandering Drone defence runs the interval clock twice as fast;
-## - v0.5.5 DS (S5): on a Deep floor the first pack in each room brings an elite (deep_elite);
+## - v0.5.0 EV curses: Swarm Call adds to every pack's size (still under the cap); a Wandering Drone defence runs the
+##   interval clock twice as fast; v0.9.0 EL: the first pack after a room's elite arrived is one smaller (Elites);
 ## - each arrives with its max HP and damage scaled by the tier (SpawnTable; the floor scaling is already in the
 ##   compiled enemy tables, RunState.scale_enemies), then (v0.5.5 DS, D4) the floor's hidden catch-up (CatchUp).
 ## With no anchor far enough, that pack is skipped and the interval starts again.
 ## v0.8.0 N5 (owner O58): with the intensity director (SpawnTable.intensity) packs come only while it builds up or
 ## peaks (Intensity.sending); pulling back and quiet hold them (the interval clock runs down and waits at 0). It
 ## gates only when: the kind, size, tier and scaling above are untouched.
+## v0.9.0 TD (owner Q22: "A quarter of the rate"): while the hero stands in an unsolved puzzle's room (a calm room of
+## World.interactables) the interval clock runs one tick in four, so new packs come at a quarter of the rate; the
+## enemies already out keep fighting, and normal spawning resumes once it's solved or the hero leaves the room.
 
 ## Distance between the rings of a pack's spots, and their count per ring.
 const PACK_STEP_M := 1.1
@@ -37,7 +39,10 @@ static func advance(w: World) -> void:
 		w.spawn_cd = t.interval_now(0)
 	w.run_ticks += 1
 	if w.spawn_cd > 0:
-		w.spawn_cd = maxi(0, w.spawn_cd - 1 - Events.spawn_haste(w))  # v0.5.0 EV: Wandering Drone
+		# v0.9.0 TD (Q22, Interactables.spawn_clock_step): in an unsolved puzzle's room the clock runs at a quarter
+		var step := Interactables.spawn_clock_step(w)
+		if step > 0:
+			w.spawn_cd = maxi(0, w.spawn_cd - step - Events.spawn_haste(w))  # v0.5.0 EV: Wandering Drone
 	Intensity.advance(w)  # v0.8.0 N5 (owner O58): intensity and the build-up / peak / pull back / quiet rhythm
 	if w.spawn_cd > 0:
 		return
@@ -161,28 +166,14 @@ static func _spawn_pack(w: World, t: SpawnTable, ticks: int, room: int) -> void:
 	if t.pack_cap_now(ticks) > 0:  # v0.4.0 TU: the phase's largest pack
 		size = mini(size, t.pack_cap_now(ticks))
 	size += Curses.extra_enemies(w)  # v0.5.0 EV curse (Swarm Call): one more in every pack, under the cap
+	size = Elites.escort_size(w, size)  # v0.9.0 EL (ELITES.md E0): one smaller beside a room's elite
 	var spots := pack_spots(w, anchor, mini(size, room))
 	for k in spots.size():
 		w.add_enemy(kind, spots[k])
-		var i := w.actors.size() - 1
-		scale_arrival(w, i, ticks)
-		if k == 0 and deep_elite(w, i, anchor):  # v0.5.5 DS (S5): a Deep room's elite
-			continue
-		Curses.maybe_elite(w, i)  # v0.5.0 EV curse (Marked Hunt): x2 on that HP
-
-
-## v0.5.5 DS (owner S5, "Deep floors must feel different"): on a Deep floor the first pack that arrives in each room
-## brings an elite (its first member; Curses.make_elite: the rules' HP bonus, the crown), so every combat room has
-## one. Pure: no stream is drawn, so a Deep floor's spawns stay where they were. Returns true when actor i became it.
-static func deep_elite(w: World, i: int, anchor: Vector2) -> bool:
-	if not Routes.is_deep(w) or w.floor_layout == null:
-		return false
-	var r := w.floor_layout.room_of(anchor)
-	if r < 0 or w.deep_elite_rooms.has(r):
-		return false
-	w.deep_elite_rooms.append(r)
-	Curses.make_elite(w, i)
-	return true
+		scale_arrival(w, w.actors.size() - 1, ticks)
+		# v0.9.0 DP (owner Q24, Q26b): a Deep floor's room no longer brings an elite in its first pack (v0.5.5 DS's
+		# deep_elite is gone). World.deep_elite_rooms stays for the saves that hold it. v0.9.0 EL: no spawn becomes an
+		# elite any more (the Marked curse is gone); elites come from elite rooms (Elites).
 
 
 ## An enemy arriving now (actor i, just added): max HP and damage scaled by the danger tier (SpawnTable; the floor

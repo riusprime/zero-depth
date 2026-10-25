@@ -8,7 +8,8 @@ extends Control
 ## a landscape with its line, and your counts from the profile (CodexStore). An entry you haven't met is a silhouette,
 ## "???". Keyboard: arrows move, Q / E change the page, Esc goes back. Pad: d-pad or stick, LB / RB, B. Mouse: hover a
 ## tile, click a page, Back. It reads the catalog (the content) and the profile's counters; it changes nothing. v0.7.5
-## AC: given an AchievementBook, a fifth page, Achievements (AchievementsPage), follows the four.
+## AC: given an AchievementBook, a fifth page, Achievements (AchievementsPage), follows the four. v0.9.0 CL: the last
+## page, Collectibles (ArchivePage), is the Rune Archive's shelves (the hub's Archive opens on it: page_of).
 
 signal back_pressed
 
@@ -18,9 +19,12 @@ const TAB_KEYS := {
 	&"bosses": "UI_CODEX_TAB_BOSSES",
 	&"biomes": "UI_CODEX_TAB_BIOMES",
 	&"achievements": "UI_ACH_TAB",  # v0.7.5 AC
+	&"collectibles": "UI_CODEX_TAB_COLLECTIBLES",  # v0.9.0 CL
 }
 ## v0.7.5 AC: the Achievements page's id (not a CodexStore page: it reads the AchievementBook).
 const ACHIEVEMENTS := &"achievements"
+## v0.9.0 CL: the Collectibles page's id (not a CodexStore page: the catalog's collectibles and the profile's finds).
+const COLLECTIBLES := &"collectibles"
 const SECTION_KEYS := {
 	&"gun": "UI_CODEX_SECTION_GUN",
 	&"blade": "UI_CODEX_SECTION_BLADE",
@@ -61,6 +65,8 @@ var pages: Array[StringName] = []
 ## v0.7.5 AC: the achievements (null: no Achievements page) and their page.
 var achievements: AchievementBook
 var achievements_page: AchievementsPage
+## v0.9.0 CL: the Collectibles page (null when the content has no collectible).
+var archive_page: ArchivePage
 var tabs := {}
 var tiles: Array[CodexTile] = []
 var progress := Label.new()
@@ -89,6 +95,8 @@ func _init(
 	pages = CodexStore.PAGES.duplicate()
 	if achievements != null:
 		pages.append(ACHIEVEMENTS)
+	if not catalog.collectibles.is_empty():  # v0.9.0 CL
+		pages.append(COLLECTIBLES)
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	MenuStyle.apply(self)
 	add_child(MenuBackdrop.new())
@@ -117,6 +125,12 @@ func _init(
 		achievements_page = AchievementsPage.new(achievements)
 		achievements_page.visible = false
 		col.add_child(achievements_page)
+	if pages.has(COLLECTIBLES):  # v0.9.0 CL: shown in the body's place on its own page
+		archive_page = ArchivePage.new(
+			catalog.collectibles, CollectibleBook.found_flags(store.profile, catalog.collectibles)
+		)
+		archive_page.visible = false
+		col.add_child(archive_page)
 	_scroll.name = "Scroll"
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_scroll.follow_focus = true
@@ -231,9 +245,29 @@ func open(p: StringName) -> void:
 	focus_first()
 
 
+## v0.9.0 HB: shows page `p` before the view is in the tree (the hub's Trophy Area opens on the Achievements); its
+## first focus comes with focus_first, so no scroll of the page it replaced is left waiting.
+func start_on(p: StringName) -> void:
+	if pages.has(p):
+		_set_page(p)
+
+
+## v0.9.0 CL: the page a hub station's panel opens on: the Trophy Area's Achievements, the Rune Archive's Collectibles
+## (&"" for any other: the first page).
+static func page_of(panel: StringName) -> StringName:
+	match panel:
+		&"achievements":
+			return ACHIEVEMENTS
+		&"codex":
+			return COLLECTIBLES
+	return &""
+
+
 func focus_first() -> void:
 	if page == ACHIEVEMENTS and achievements_page != null and not achievements_page.rows.is_empty():
 		achievements_page.focus_first()
+	elif page == COLLECTIBLES and archive_page != null and not archive_page.tiles.is_empty():
+		archive_page.focus_first()
 	elif not tiles.is_empty():
 		tiles[0].grab_focus()
 	else:
@@ -264,6 +298,8 @@ func _set_page(p: StringName) -> void:
 		return
 	if p == page and p == ACHIEVEMENTS and not achievements_page.rows.is_empty():
 		return  # v0.7.5 AC: the Achievements page is already built
+	if p == page and p == COLLECTIBLES and not archive_page.tiles.is_empty():
+		return  # v0.9.0 CL: so is the Collectibles page
 	page = p
 	_build_page()
 
@@ -279,8 +315,13 @@ func _build_page() -> void:
 		c.queue_free()
 	tiles.clear()
 	_scroll.scroll_vertical = 0
+	if archive_page != null:
+		archive_page.visible = false
 	if page == ACHIEVEMENTS:
 		_build_achievements()
+		return
+	if page == COLLECTIBLES:
+		_build_archive()
 		return
 	_body.visible = true
 	if achievements_page != null:
@@ -378,6 +419,23 @@ func _build_achievements() -> void:
 	var first: Control = (
 		achievements_page.rows[0] if not achievements_page.rows.is_empty() else back
 	)
+	for p: StringName in tabs:
+		var b: Button = tabs[p]
+		b.focus_neighbor_bottom = b.get_path_to(first)
+		var lit := MenuStyle.EMBER.lerp(Color.WHITE, 0.35)
+		b.add_theme_color_override("font_color", lit if p == page else MenuStyle.DIM)
+
+
+## v0.9.0 CL: the Collectibles page in the body's place; up from its first shelf goes to its tab.
+func _build_archive() -> void:
+	_body.visible = false
+	if achievements_page != null:
+		achievements_page.visible = false
+	archive_page.visible = true
+	archive_page.top_neighbor = tabs[COLLECTIBLES]
+	archive_page.refresh()
+	progress.text = archive_page.progress_text()
+	var first: Control = archive_page.tiles[0] if not archive_page.tiles.is_empty() else back
 	for p: StringName in tabs:
 		var b: Button = tabs[p]
 		b.focus_neighbor_bottom = b.get_path_to(first)
@@ -507,6 +565,9 @@ func _unhandled_input(event: InputEvent) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED and catalog != null and is_inside_tree():
 		var at := tiles.find(get_viewport().gui_get_focus_owner() as CodexTile)
+		var shelf_at := -1  # v0.9.0 CL
+		if archive_page != null:
+			shelf_at = archive_page.tiles.find(get_viewport().gui_get_focus_owner() as ArchiveTile)
 		var row_at := -1
 		if achievements_page != null:
 			row_at = achievements_page.rows.find(
@@ -517,3 +578,5 @@ func _notification(what: int) -> void:
 			tiles[at].grab_focus()
 		elif row_at >= 0 and row_at < achievements_page.rows.size():
 			achievements_page.rows[row_at].grab_focus()
+		elif shelf_at >= 0 and shelf_at < archive_page.tiles.size():
+			archive_page.tiles[shelf_at].grab_focus()

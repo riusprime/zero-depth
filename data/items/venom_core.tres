@@ -15,4 +15,5 @@ poison_spread_m = 2.5
 tags = PackedStringArray("venom", "wand")
 modifiers = Array[StringName]([&"venom_core"])
 loot_category = &"element"
+slot_category = &"element"
 id = &"venom_core"

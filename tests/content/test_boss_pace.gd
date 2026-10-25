@@ -17,6 +17,10 @@ const KEPT_SLOW := {
 	&"foundry": [[&"slag_fountain", 1.0], [&"molten_flood", 1.6]],
 	&"colossus": [[&"spike_chase", 0.9], [&"fist_combo", 0.8]],
 	&"prism": [[&"cross_ring", 1.0]],
+	&"tidecaller": [[&"tide_rings", 0.8], [&"undertow", 1.6]],  # v0.9.0 NB1: built at BP's pace
+	&"twin_wardens": [[&"crossfire", 1.2], [&"chain_sweep", 1.6]],  # v0.9.0 NB2: built at BP's pace
+	&"clockwork_judge": [[&"gear_spiral", 0.8], [&"verdict", 1.6]],  # v0.9.0 NB3: built at BP's pace
+	&"lantern_shade": [[&"wisp_bloom", 0.8], [&"snuff", 1.6]],  # v0.9.0 NB4: built at BP's pace
 }
 ## Per boss, the attacks BP sped up: [id, telegraph seconds before BP, after].
 const SPED_UP := {
@@ -70,7 +74,7 @@ func test_every_boss_hit_kills_the_base_hero_in_its_class_hits() -> void:
 			seen += 1
 	assert_eq(
 		seen,
-		83,
+		109,  # v0.9.0 NB1: the Tidecaller's 7; NB2: the Twin Wardens' 5; NB3: the Judge's 6; NB4: the Shade's 8
 		(
 			"every classed attack of the six bosses and the final boss's three bodies (N2: 4 new, The Fallen's 9;"
 			+ " PR: the Prism's 3 orb spells in, cross_weave and prism_bolt_fan out)"
@@ -80,7 +84,7 @@ func test_every_boss_hit_kills_the_base_hero_in_its_class_hits() -> void:
 
 func test_loop_scaling_still_applies_on_top() -> void:
 	var repo := ContentRepository.load_all()
-	var run := RunState.start(7, ContentCompiler.compile_run(repo.get_def(&"run", &"three_floors")))
+	var run := RunState.start(7, ContentCompiler.compile_run(repo.get_def(&"run", RunSaver.RUN_ID)))
 	run.floor_index = 2
 	var base := ContentCompiler.compile_bosses(repo)
 	var one := ContentCompiler.compile_bosses(repo)
@@ -93,9 +97,10 @@ func test_loop_scaling_still_applies_on_top() -> void:
 			var a0 := base[b].attacks[k]
 			var a1 := one[b].attacks[k]
 			var a2 := two[b].attacks[k]
-			assert_eq(a1.damage, a0.damage * 1200 / 1000, "%s floor 2: ×1.2" % a0.id)
-			assert_eq(a2.damage, a0.damage * 1440 / 1000, "%s loop 2: ×1.2 more (O11)" % a0.id)
-			assert_eq(a2.orb_damage, a0.orb_damage * 1440 / 1000, "%s: its orbs too" % a0.id)
+			# v0.9.0 FV: +10 % a floor (was +20 %), the loop's ×1.2 on top
+			assert_eq(a1.damage, a0.damage * 1100 / 1000, "%s floor 2: ×1.1" % a0.id)
+			assert_eq(a2.damage, a0.damage * 1320 / 1000, "%s loop 2: ×1.2 more (O11)" % a0.id)
+			assert_eq(a2.orb_damage, a0.orb_damage * 1320 / 1000, "%s: its orbs too" % a0.id)
 
 
 func test_a_big_attack_is_followed_by_its_punish_window() -> void:
@@ -113,7 +118,14 @@ func test_a_big_attack_is_followed_by_its_punish_window() -> void:
 			assert_true(atk.opens_weak_point, where + ": its window opens the weak point")
 			var rec := t.attacks[k].recover_ticks
 			assert_between(rec, BossSchemas.PUNISH_MIN_TICKS, BossSchemas.PUNISH_MAX_TICKS, where)
-	assert_eq(bigs, 17, "N2: the Colossus's leap_slam_3, The Fallen's three card casts")
+	assert_eq(
+		bigs,
+		21,
+		(
+			"N2: the Colossus's leap_slam_3, The Fallen's three card casts; NB1: the Shell Slam;"
+			+ " NB2: the Shield Bash; NB3: the Gavel Slam; NB4: the Lantern Sweep"
+		)
+	)
 
 
 func test_the_javelins_come_and_go_faster() -> void:

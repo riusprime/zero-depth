@@ -15,6 +15,9 @@ const PROJECTILE_POOL_MAX := 400
 ## v0.4.0 SC: enemy models farther than this from the hero (off screen) stop their frame-time animation. v0.8.0 HV:
 ## only without a camera (`cull` unset: a view built alone, as the unit tests do); the game uses the camera's view.
 const ANIMATE_RADIUS_M := 24.0
+## v0.9.0 VP (owner C56: "enemies in range lean into it"): an enemy a Void shot pulls tilts toward the pull, this much
+## (radians) at the pull's top speed.
+const LEAN_RAD := 0.35
 ## v0.7.5 NB1: body colours under this saturation count as grey (stone, metal, bone) for the biome's enemy cast.
 const GREY_SATURATION := 0.3
 ## A body material's rest emission without a role glow: [colour, energy] (flashable's dark white).
@@ -48,6 +51,8 @@ var heat_tier := HeatLooks.TIER_COOL
 var enemy_tint := Color(0, 0, 0, 0)
 ## v0.8.0 N4 (owner O57): the damage chunks on the bars over enemies and the hero (one MultiMesh for all).
 var bar_chunks := BarChunks.new(BAR_W)
+## v0.9.0 RB: the hero's robe and rune (a Wardrobe.look dictionary; {}: Cream, no rune), set before the hero shows.
+var hero_look := {}
 ## v0.8.0 HV (owner O89): the camera's view (WorldViewRoot refreshes it each tick): an enemy model animates unless it
 ## is wholly out of the picture (ScreenCull.keeps, past its largest radius + the margin, with hysteresis).
 var cull: ScreenCull
@@ -83,6 +88,7 @@ func sync(reader: WorldReader) -> void:
 		add_child(bar_chunks)
 	var alive := {}
 	var hero := reader.player_pos()
+	var leans := reader.void_leans()  # v0.9.0 VP: empty unless a Void shot pulls someone
 	for i in reader.actor_count():
 		var id := reader.actor_id(i)
 		alive[id] = true
@@ -94,11 +100,15 @@ func sync(reader: WorldReader) -> void:
 			)
 			_actors[id] = node
 			add_child(node)
+			if node.has_meta(&"elite"):  # v0.9.0 EL: its own framed bar with its name (EliteBar)
+				_add_elite_bar(node, tr(reader.elite_name_key(i)))
 			if reader.actor_team(i) != 0:
 				tint_greys(node, enemy_tint)
 				role_glow(node, reader.actor_kind(i), role_glow_energy)  # v0.8.0 N1 (O39)
 		node.position = SimPlane.to_3d(reader.actor_pos(i))
 		_update_actor(node, reader, i)
+		if not leans.is_empty() and leans.has(id):
+			_lean(node, leans[id])
 		if node.has_meta(&"enemy_avatar"):  # v0.4.0 SC: off-screen crowds don't animate
 			_animate_if_seen(node, id, reader.actor_pos(i), hero)
 		if fresh:
@@ -157,6 +167,18 @@ func _animate_if_seen(node: Node3D, id: int, pos: Vector2, hero: Vector2) -> voi
 	if on and not was and avatar.has_method(&"advance"):
 		for k in 4:
 			avatar.call(&"advance", 0.05)
+
+
+## v0.9.0 VP: tilts the body (its facing node, turned this frame by _update_actor) toward the Void's pull `step` (m a
+## tick): LEAN_RAD at the top speed (1 m/s), less as it weakens.
+func _lean(node: Node3D, step: Vector2) -> void:
+	var d3 := SimPlane.to_3d(step)
+	var axis := Vector3.UP.cross(d3)
+	if axis.length_squared() <= 0.0:
+		return
+	var facing: Node3D = node.get_meta(&"facing")
+	var amt := clampf(step.length() * SimTick.TICKS_PER_SECOND, 0.0, 1.0) * LEAN_RAD
+	facing.basis = Basis(axis.normalized(), amt) * facing.basis
 
 
 ## Re-applies the mood to the hero's carried light (the dev panel's lighting page).
@@ -274,6 +296,11 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
 	var bar: Node3D = node.get_meta(&"bar")
 	var hurt := reader.actor_hp(i) < reader.actor_max_hp(i) or reader.actor_team(i) == 0
 	bar.visible = not spawning and not node.has_meta(&"boss") and hurt
+	if node.has_meta(&"elite_bar"):  # v0.9.0 EL: the elite's bar shows while it is out (gone while it has vanished)
+		bar.visible = false
+		var eb := node.get_meta(&"elite_bar") as EliteBar
+		eb.visible = not spawning and not reader.elite_vanished(i)
+		eb.set_fraction(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)))
 	if bar.visible:  # v0.8.0 N4 (O57): its chunk and refill (BarChunks scales the bar to the trail's fill)
 		var frac := clampf(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)), 0.0, 1.0)
 		bar_chunks.feed(reader.actor_id(i), bar, frac, reader.actor_team(i) == 0)
@@ -325,6 +352,13 @@ func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 			if boss is BossAvatar and is_inside_tree() and (boss as BossAvatar).die():
 				(boss as Node).set_process(true)
 				get_tree().create_timer(BossAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
+			elif boss is EliteAvatar and is_inside_tree() and (boss as EliteAvatar).die():
+				# v0.9.0 EL: an elite topples a moment, its bars gone.
+				(boss as Node).set_process(true)
+				for m: StringName in [&"bar", &"elite_bar"]:
+					if node.has_meta(m):
+						(node.get_meta(m) as Node3D).visible = false
+				get_tree().create_timer(EliteAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
 			elif boss is HordeAvatar and is_inside_tree() and (boss as HordeAvatar).die():
 				# v0.8.0 MI: an owner's enemy model falls (the Splitter's halves part) a moment, its bar gone.
 				(boss as Node).set_process(true)
@@ -559,6 +593,11 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 					WorldReader.KIND_COLOSSUS: ColossusAvatar,  # v0.8.0 FB1: the final boss's bodies
 					WorldReader.KIND_PRISM: PrismAvatar,
 					WorldReader.KIND_NEMESIS: NemesisAvatar,
+					WorldReader.KIND_TIDECALLER: TidecallerAvatar,  # v0.9.0 NB1
+					WorldReader.KIND_TWIN_WARDEN: TwinWardenAvatar,  # v0.9.0 NB2: the amber body
+					WorldReader.KIND_TWIN_WARDEN_VIOLET: TwinWardenVioletAvatar,  # its twin
+					WorldReader.KIND_CLOCKWORK_JUDGE: ClockworkJudgeAvatar,  # v0.9.0 NB3
+					WorldReader.KIND_LANTERN_SHADE: LanternShadeAvatar,  # v0.9.0 NB4
 				}[kind]
 				. new()
 			)
@@ -568,6 +607,18 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"enemy_avatar", boss)
 			root.set_meta(&"boss", true)
 			root.set_meta(&"mats", boss.body_materials.duplicate())
+		_ when EliteAvatar.is_elite_kind(kind):
+			# v0.9.0 EL: the owner's elite models, posed in code; their own bar (EliteBar, added by sync()).
+			var elite := EliteAvatar.new()
+			elite.enemy_tint = enemy_tint  # they pick its shared materials
+			elite.role_glow = role_glow_energy
+			elite.setup(kind, outline_color, technique)
+			facing.add_child(elite)
+			height = elite.height
+			root.set_meta(&"enemy_avatar", elite)
+			root.set_meta(&"mats", elite.body_materials.duplicate())
+			root.set_meta(&"hit_look", elite)
+			root.set_meta(&"elite", true)
 		_ when HordeAvatar.is_horde_kind(kind):
 			# The horde kinds (v0.4.0 EN): one code-built model per kind.
 			var horde := HordeAvatar.new()
@@ -584,6 +635,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			height = 1.0
 			var avatar := PlayerAvatar.new()
 			avatar.setup(outline_color, technique)
+			avatar.set_look(hero_look)  # v0.9.0 RB: the Wardrobe's robe and the run's rune
 			root.add_child(avatar)
 			root.set_meta(&"avatar", avatar)
 			root.set_meta(&"mats", avatar.body_materials.duplicate())
@@ -617,6 +669,18 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 	bar_root.add_child(pivot)
 	root.set_meta(&"bar", pivot)
 	return root
+
+
+## v0.9.0 EL: the elite's framed bar and name (EliteBar), above its head on the actor's root (it never turns with
+## the facing).
+func _add_elite_bar(root: Node3D, name_text: String) -> void:
+	var eb := EliteBar.new()
+	eb.name = "EliteBar"
+	var bar: Node3D = root.get_meta(&"bar")
+	eb.position = (bar.get_parent() as Node3D).position + Vector3(0, 0.25, 0)
+	eb.setup(name_text)
+	root.add_child(eb)
+	root.set_meta(&"elite_bar", eb)
 
 
 func _add_core_panels(root: Node3D, size: float) -> void:

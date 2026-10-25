@@ -27,6 +27,10 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 			return [bt.front_mult_permille, tag]
 		if bt.rear_half_arc > 0 and off >= 2048 - bt.rear_half_arc:
 			return [bt.rear_mult_permille, SimEvent.TAG_WEAK_SPOT]
+	elif EliteAi.is_elite_kind(a.kinds[target]):
+		# v0.9.0 EL (ELITES.md E1, E3): the Breaker stuck and the Conduit overloaded take +50 % (the punish window).
+		if EliteAi.vulnerable(w, target):
+			return [EliteAi.vulnerable_permille(w, target), SimEvent.TAG_WEAK_SPOT]
 	elif EnemyAi.armoured(a.kinds[target]) and from != a.pos(target):
 		var def := w.enemy_table(a.kinds[target])
 		if def != null:
@@ -90,7 +94,7 @@ static func hit(
 	h.ancestry = w.engine_chain.duplicate()
 	if amount <= 0 or a.invuln[target] > 0 or (target == 0 and w.dash_iframes_active()):
 		return 0
-	if owner_id != 0 and target != 0 and BossDodge.shielded(w, target):  # v0.7.5 BF1: it sparks off the shield
+	if owner_id != 0 and target != 0 and _blocked(w, target):  # v0.7.5 BF1: it sparks off the shield
 		h.tags |= SimEvent.TAG_BLOCKED
 		return 0
 	if target == 0 and owner_id != a.ids[0] and Curses.dodges(w, owner_id, at):  # v0.6.0 CU: Rooted
@@ -108,6 +112,9 @@ static func hit(
 		var taken := Stats.armour_permille(w) * PlayerBuild.taken_permille(w) / 1000
 		if taken != 1000:
 			scaled = maxi(1, (scaled * taken + 500) / 1000)
+		if w.affinity != null and owner_id != a.ids[0] and Affinities.ward_blocks(w):
+			h.tags |= SimEvent.TAG_BLOCKED  # v0.9.0 RB: A5 Guardian's ward takes the hit
+			return 0
 	var got := 0
 	if scaled > 0:
 		got = _apply(
@@ -134,7 +141,7 @@ static func tick_dot(
 	var a := w.actors
 	if a.dead[target] == 1 or a.invuln[target] > 0 or amount <= 0:
 		return 0
-	if owner_id != 0 and target != 0 and BossDodge.shielded(w, target):  # v0.7.5 BF1: the shield holds
+	if owner_id != 0 and target != 0 and _blocked(w, target):  # v0.7.5 BF1: the shield holds
 		return 0
 	if owner_id == a.ids[0] and target != 0:
 		amount = Stats.dot(w, amount)  # v0.4.0 BS: the damage stat (a DoT tick never crits)
@@ -173,6 +180,7 @@ static func _apply(
 	# v0.5.5 DS (D7): a boss's HP stops at its next phase gate (BossGates).
 	var applied := mini(BossGates.clamp_damage(w, target, scaled, owner_id), a.hp[target])
 	a.hp[target] -= applied
+	BossTwin.share_hp(w, target)  # v0.9.0 NB2: the Twin Wardens' one HP: the twin holds what this body holds
 	PlayerRegen.note_combat(w, target, owner_id)  # Builds: combat stops the out-of-combat regen (L25).
 	if w.final_fight != null and target != 0 and owner_id == a.ids[0]:
 		FinalBoss.note_damage(w, scaled)  # v0.8.0 FB2 (F7): the final fight's damage meter
@@ -204,11 +212,19 @@ static func _apply(
 			Engines.on_kill(w, k, target, tags)  # Engines: Wildfire, Blood Harvest.
 			ModifierAbilities.on_kill(w)  # v0.6.0 MX2: Frost Nova's kill streak
 			Venom.on_kill(w, target, root_id)  # v0.6.0 MX4: Venom Core's spread
+		BossTwin.fall_together(w, target, k)  # v0.9.0 NB2: its twin falls with it (its own KILL)
 	if target != 0 and not (tags & SimEvent.TAG_DOT):
 		BossAi.on_damage(w, target, applied, tags)  # Bosses (v0.3.0 C): hits fill the stagger meter.
+		BossTwin.on_hit(w, target, applied, owner_id)  # v0.9.0 NB2: a hit on one Warden angers the other
 		CoreTheft.on_damage(w, target, applied, tags)  # v0.6.0 CU: a stagger opens the steal window
 	if target == 0:
 		ItemProcs.on_player_hurt(w)  # Items: Thorn Mantle.
 		if applied > 0 and not (tags & SimEvent.TAG_DOT) and owner_id != a.ids[0]:
 			Curses.on_player_hit(w)  # v0.6.0 CU: Brittle
 	return applied
+
+
+## v0.7.5 BF1: a boss's signature shield holds; v0.9.0 NB4: so does the dark round a Lantern Shade standing unlit
+## (BossShade.unlit: it is only hittable when lit).
+static func _blocked(w: World, target: int) -> bool:
+	return BossDodge.shielded(w, target) or BossShade.unlit(w, target)

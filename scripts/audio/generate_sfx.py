@@ -647,6 +647,110 @@ def s_boss_telegraph_foundry(r):
     return echo(x, 150, 0.35, 0.3, 1800, 0.35)
 
 
+def s_boss_telegraph_tidecaller(r):
+    """v0.9.0 NB1: the Tidecaller's bell tolling under water: a struck bronze bell with a wobbling, muffled tail."""
+    n = n_of(1.0)
+    t = np.arange(n) / RATE
+    bell = metal_ping(1.0, 196, 2.76, 2.2, 0.45) * 0.8
+    wobble = 0.7 + 0.3 * np.sin(2 * np.pi * 5.5 * t)
+    hum = osc(98.0, "sine", n) * env(n, 0.01, 0.6) * 0.35
+    x = one_pole_lp(mix(pad_to(bell, n), hum) * wobble, curve(4000, 900, n))
+    return echo(x, 170, 0.45, 0.35, 1600, 0.45)
+
+
+def s_boss_tide_pull(r):
+    """v0.9.0 NB1: the Pull: a deep water surge rising in, bubbles fizzing through it."""
+    n = n_of(1.2)
+    t = np.arange(n) / RATE
+    surge = one_pole_lp(noise(r, n), curve(180, 900, n)) * (0.6 + 0.4 * np.sin(2 * np.pi * 1.6 * t))
+    fizz = bandpass(noise(r, n), 2600, 6.0) * (np.sin(2 * np.pi * 23 * t) > 0.6) * 0.3
+    low = osc(curve(55, 70, n), "sine") * 0.4
+    x = soft_clip(mix(surge * 1.3, fizz, low), 1.4) * env(n, 0.35, 0.5)
+    return echo(x, 160, 0.4, 0.3, 1400, 0.4)
+
+
+def s_boss_telegraph_twin_wardens(r):
+    """v0.9.0 NB2: the Twin Wardens: a heavy chain rattling taut over a low stone grind, two clanks a beat apart."""
+    n = n_of(1.0)
+    links = np.zeros(n)
+    for k, tk in enumerate([0.05, 0.13, 0.2, 0.26, 0.31, 0.35, 0.39]):
+        ping = metal_ping(0.18, 820 + 60 * k, 2.3, 1.8, 0.04) * (0.5 + 0.06 * k)
+        links = mix(links, at(ping, tk, n))
+    grind = one_pole_lp(noise(r, n), curve(500, 220, n)) * env(n, 0.05, 0.7) * 0.5
+    clank_a = at(metal_ping(0.5, 180, 1.9, 3.0, 0.12), 0.45, n)
+    clank_b = at(metal_ping(0.5, 150, 1.9, 3.0, 0.12), 0.68, n)
+    x = soft_clip(mix(links * 0.7, grind, clank_a * 0.8, clank_b * 0.8), 1.3)
+    return echo(x, 140, 0.35, 0.3, 2000, 0.35)
+
+
+def s_boss_twin_chain(r):
+    """v0.9.0 NB2: the burning chain: a whip crack of links, then a hot hiss and sizzle."""
+    n = n_of(0.8)
+    crack = bandpass(noise(r, n), curve(4000, 900, n), 1.4) * env(n, 0.001, 0.05)
+    rattle = np.zeros(n)
+    for k, tk in enumerate([0.02, 0.05, 0.08, 0.11, 0.14]):
+        rattle = mix(rattle, at(metal_ping(0.12, 1100 - 90 * k, 2.1, 1.5, 0.03) * 0.5, tk, n))
+    hiss = one_pole_hp(noise(r, n), 2500) * env(n, 0.04, 0.45) * 0.35
+    x = soft_clip(mix(crack * 1.4, rattle, hiss), 1.3)
+    return echo(x, 110, 0.3, 0.25, 2500, 0.3)
+
+
+def s_boss_telegraph_clockwork_judge(r):
+    """v0.9.0 NB3: the Clockwork Judge: a clock's ticks speeding up over a gear ratchet, then a low brass chime."""
+    n = n_of(1.1)
+    ticks = np.zeros(n)
+    for k, tk in enumerate([0.02, 0.15, 0.26, 0.35, 0.42, 0.48, 0.53]):
+        ping = metal_ping(0.06, 2400 + 80 * k, 2.7, 1.2, 0.01) * (0.45 + 0.05 * k)
+        ticks = mix(ticks, at(ping, tk, n))
+    ratchet = bandpass(noise(r, n), curve(1800, 900, n), 2.0) * env(n, 0.02, 0.5) * 0.25
+    chime = at(metal_ping(0.55, 330, 2.0, 2.6, 0.08), 0.6, n)
+    x = soft_clip(mix(ticks, ratchet, chime * 0.9), 1.25)
+    return echo(x, 150, 0.35, 0.3, 2200, 0.35)
+
+
+def s_boss_judge_echo(r):
+    """v0.9.0 NB3: an echo's ghost strike: a soft glassy chime over a breathy whoosh that swells, then a thump."""
+    n = n_of(0.7)
+    swell = bandpass(noise(r, n), curve(600, 2600, n), 1.6) * env(n, 0.18, 0.2) * 0.45
+    chime = metal_ping(0.4, 990, 2.4, 2.0, 0.05) * 0.5
+    thump = at(metal_ping(0.25, 120, 1.6, 4.0, 0.08), 0.18, n)
+    x = soft_clip(mix(swell, chime, thump * 0.8), 1.2)
+    return echo(x, 90, 0.4, 0.3, 3000, 0.4)
+
+
+def s_boss_telegraph_lantern_shade(r):
+    """v0.9.0 NB4: the Lantern Shade: a lantern's chain creaking, a breathy inhale as the flame flares, a low hum."""
+    n = n_of(1.3)
+    creak = bandpass(noise(r, n), curve(500, 900, n), 4.0) * env(n, 0.05, 0.35) * 0.3
+    inhale = bandpass(noise(r, n), curve(400, 1800, n), 1.4) * env(n, 0.5, 0.25) * 0.5
+    hum = osc(curve(110, 92, n), "sine") * env(n, 0.3, 0.6) * 0.35
+    chime = at(metal_ping(0.5, 660, 2.2, 2.4, 0.06) * 0.45, 0.62, n)
+    x = soft_clip(mix(creak, inhale, hum, chime), 1.2)
+    return echo(x, 170, 0.4, 0.3, 2000, 0.4)
+
+
+def s_boss_shade_snuff(r):
+    """v0.9.0 NB4: a light going out: a soft pinched puff, the flame's hiss dying, a hollow low thump."""
+    n = n_of(0.9)
+    puff = bandpass(noise(r, n), curve(2400, 300, n), 1.2) * env(n, 0.005, 0.18) * 0.7
+    hiss = one_pole_hp(noise(r, n), 3000) * env(n, 0.01, 0.35) * 0.18
+    m = n_of(0.8)
+    thump = at(osc(curve(90, 45, m), "sine") * env(m, 0.004, 0.25) * 0.6, 0.03, n)
+    x = soft_clip(mix(puff, hiss, thump), 1.2)
+    return echo(x, 130, 0.35, 0.3, 1800, 0.35)
+
+
+def s_boss_shade_relight(r):
+    """v0.9.0 NB4: a lantern relit: a match-strike scratch, the flame catching with a warm whoomph, a glass ting."""
+    n = n_of(0.8)
+    scratch = bandpass(noise(r, n), 3500, 2.0) * env(n, 0.002, 0.06) * 0.5
+    m = n_of(0.7)
+    whoomph = at(bandpass(noise(r, m), curve(300, 1200, m), 1.0) * env(m, 0.06, 0.3) * 0.6, 0.05, n)
+    ting = at(metal_ping(0.35, 1760, 2.6, 1.8, 0.03) * 0.35, 0.1, n)
+    x = soft_clip(mix(scratch, whoomph, ting), 1.2)
+    return echo(x, 90, 0.3, 0.25, 3000, 0.3)
+
+
 def s_boss_floor_burst(r):
     """v0.4.0 BO: a flood's lanes bursting up (spears through the floor, molten metal): a crack and a hiss."""
     n = n_of(0.7)
@@ -881,6 +985,394 @@ def s_overrun_clear(r):
     return echo(mix(x, at(shimmer, 0.15)), 120, 0.4, 0.3, 5000, 0.4)
 
 
+def s_arrival_altar(r):
+    """v0.9.0 SA (owner Q16: "Your model, my sound": the lead's placeholder until the owner sends one): floor 1's altar.
+    A hum that climbs in pitch and swells for 2.3 s (a detuned FM drone, a rising shimmer, a pulse that speeds up), then
+    the pop at 2.3 s (AltarStage.Look.cue_peak_s, the file's peak): a bright thump, a burst of noise and a glassy chime
+    that ring out."""
+    rise = 2.3
+    n = n_of(rise)
+    swell = np.linspace(0.0, 1.0, n) ** 2.2
+    hum = sum(fm(f * curve(1.0, 2.0, n), 2.0, 0.6 + 1.4 * swell, n) for f in (110.0, 110.8, 165.0)) * 0.12
+    pulse = 0.75 + 0.25 * np.sin(phase(curve(3.0, 14.0, n)))
+    shimmer = bandpass(noise(r, n), curve(1500, 6500, n), 9.0) * 0.4
+    build = one_pole_lp(hum * pulse, 2400) * swell + shimmer * swell
+    m = n_of(0.5)
+    thump = osc(curve(180, 45, m), "sine") * env(m, 0.002, 0.12)
+    burst = one_pole_lp(noise(r, m), 5000) * env(m, 0.001, 0.05)
+    chime = sum(osc(f, "sine", m) for f in (880.0, 1318.5, 1760.0)) * env(m, 0.002, 0.16) * 0.22
+    return mix(build, at(mix(thump, burst * 0.6, chime), rise))
+
+
+def s_pylon_lock(r):
+    """v0.9.0 FA (owner Q18: "it locks in with a sound"; the lead's placeholder): a rune pylon switching on. A heavy
+    stone clunk, then a violet glassy chord that rises and rings out."""
+    m = n_of(0.25)
+    clunk = osc(curve(120, 50, m), "sine") * env(m, 0.002, 0.06) + one_pole_lp(noise(r, m), 900) * env(m, 0.001, 0.03)
+    n = n_of(0.9)
+    chord = sum(fm(f * curve(0.97, 1.0, n), 2.0, 0.8, n) for f in (311.1, 392.0, 466.2, 622.3)) * 0.12
+    chord *= env(n, 0.06, 0.35)
+    shimmer = bandpass(noise(r, n), curve(2500, 6000, n), 9.0) * env(n, 0.08, 0.3) * 0.25
+    return echo(mix(clunk, at(mix(chord, shimmer), 0.06)), 150, 0.4, 0.35, 3500, 0.3)
+
+
+def s_final_altar(r):
+    """v0.9.0 FA (the lead's placeholder): the purple altar's buildup before the Colossus rises, darker than the
+    arrival's. A low detuned drone and a rising choir-like FM swell for 2.2 s, a pulse speeding up, then at 2.2 s
+    (AltarStage.final().cue_peak_s, the file's peak) a deep boom with a falling growl and a dark rumble."""
+    rise = 2.2
+    n = n_of(rise)
+    swell = np.linspace(0.0, 1.0, n) ** 2.0
+    drone = sum(fm(f * curve(1.0, 1.5, n), 1.5, 0.8 + 1.6 * swell, n) for f in (55.0, 55.6, 82.4, 110.0)) * 0.12
+    pulse = 0.7 + 0.3 * np.sin(phase(curve(2.0, 12.0, n)))
+    hiss = bandpass(noise(r, n), curve(800, 4000, n), 6.0) * 0.3
+    build = one_pole_lp(drone * pulse, 1400) * swell + hiss * swell
+    m = n_of(0.7)
+    boom = osc(curve(110, 30, m), "sine") * env(m, 0.002, 0.2)
+    growl = one_pole_lp(bitcrush(osc(curve(90, 40, m), "saw", m), 6, 3), 700) * env(m, 0.005, 0.25) * 0.4
+    rumble = one_pole_lp(noise(r, m), 300) * env(m, 0.001, 0.3) * 0.6
+    return mix(build, at(mix(boom, growl, rumble), rise))
+
+
+def s_timer_beep(r):
+    """v0.9.0 TD (owner W §2: "Slow beeps at first. Increasing frequency as time passes"; the lead's placeholder for
+    docs/art/requests/v0.9.0_ART_LIST.md §6 `timer_beep`): one short clean beep, 0.09 s; the game repeats it faster
+    and faster (TimedDoorView.beep_ticks). A sine at 1.9 kHz with a soft octave, a fast attack and a short ring."""
+    m = n_of(0.09)
+    tone = osc(1900.0, "sine", m) + osc(3800.0, "sine", m) * 0.15
+    return tone * env(m, 0.002, 0.07) * 0.8
+
+
+def s_laser_loop(r):
+    """v0.9.0 LZ (the lead's placeholder for docs/art/requests/v0.9.0_ART_LIST.md §6 `laser_loop`: "the beam's
+    sustained hum (loopable)"): 0.5 s that loops seamlessly while the beam is held (AudioDirector.hold). Every partial,
+    the FM buzz and the 8 Hz wobble complete whole cycles over the loop, so the last sample runs into the first: a low
+    hum on 110 Hz with its harmonics, a thin FM buzz on top."""
+    t = np.arange(n_of(0.5)) / RATE
+    partials = ((110, 0.5), (220, 0.35), (330, 0.18), (880, 0.12), (1760, 0.05))
+    hum = sum(a * np.sin(2.0 * np.pi * f * t) for f, a in partials)
+    buzz = np.sin(2.0 * np.pi * 440.0 * t + 1.5 * np.sin(2.0 * np.pi * 660.0 * t)) * 0.12
+    return (hum + buzz) * (0.8 + 0.2 * np.sin(2.0 * np.pi * 8.0 * t))
+
+
+def s_bomb_throw(r):
+    """v0.9.0 BM (the lead's placeholder for docs/art/requests/v0.9.0_ART_LIST.md §6 `bomb_throw`: "a bomb toss"; the
+    blast reuses `bomb_blast`): 0.26 s, a short airy whoosh rising 500 to 1800 Hz and the soft thump of the toss."""
+    n = n_of(0.26)
+    wh = bandpass(noise(r, n), curve(500.0, 1800.0, n), 2.5) * env(n, 0.02, 0.1) * 0.9
+    m = n_of(0.07)
+    thump = osc(curve(180.0, 70.0, m), "sine", m) * env(m, 0.001, 0.03) * 0.8
+    return mix(wh, thump)
+
+
+def s_pillar_turn(r):
+    """v0.9.0 RA (owner Q22; the lead's placeholder for docs/art/requests/v0.9.0_ART_LIST.md `pillar_turn`): a stone
+    drum grinding a quarter round, 0.45 s: band-passed grit wobbling round 260 Hz over a low saw rumble, ending on a
+    soft clunk as it locks. (This machine had no numpy: the committed file was rendered by a pure-Python copy of this
+    recipe whose noise differs, so a numpy run re-renders it slightly differently.)"""
+    n = n_of(0.45)
+    t = np.arange(n) / RATE
+    grit = bandpass(noise(r, n), 260.0 + 120.0 * np.sin(2 * np.pi * 7.0 * t), 2.0)
+    rumble = one_pole_lp(osc(curve(70.0, 55.0, n), "saw", n) * 0.35, 400.0)
+    body = (grit + rumble) * env(n, 0.03, 0.25) * (0.75 + 0.25 * np.sin(2 * np.pi * 11.0 * t))
+    m = n_of(0.12)
+    clunk = at(osc(curve(140.0, 60.0, m), "sine", m) * env(m, 0.002, 0.04), 0.33)
+    return mix(body, clunk * 0.9)
+
+
+def s_wall_break(r):
+    """v0.9.0 DX (the lead's placeholder for the art list's `wall_break`; rendered like `pillar_turn`, without numpy):
+    a cracked wall giving way, 0.9 s: a sharp crack, a deep falling boom and a crumble of stone darkening as it
+    settles."""
+    n = n_of(0.9)
+    c = n_of(0.05)
+    crack = one_pole_hp(noise(r, c), 1500.0) * env(c, 0.001, 0.015)
+    b = n_of(0.5)
+    boom = osc(curve(90.0, 38.0, b), "sine", b) * env(b, 0.003, 0.18)
+    crumble = one_pole_lp(noise(r, n), curve(2400.0, 300.0, n)) * env(n, 0.02, 0.35) * 0.7
+    return mix(crack * 0.8, boom, crumble)
+
+
+def s_container_break(r):
+    """v0.9.0 DX (`container_break`; the same render): a crate or an urn smashing, 0.3 s: a band-passed snap sweeping
+    down with a short hollow knock."""
+    n = n_of(0.3)
+    snap = bandpass(noise(r, n), curve(2600.0, 900.0, n), 3.0) * env(n, 0.001, 0.07)
+    m = n_of(0.1)
+    knock = osc(curve(220.0, 120.0, m), "sine", m) * env(m, 0.001, 0.03)
+    return mix(snap, knock * 0.6)
+
+
+def s_barrel_fuse(r):
+    """v0.9.0 DX (`barrel_fuse`; the same render): an explosive barrel's lit fuse, 1.0 s (the fuse's length): a
+    fluttering high hiss over a thin rising whine."""
+    n = n_of(1.0)
+    t = np.arange(n) / RATE
+    hiss = one_pole_hp(noise(r, n), 3000.0) * (0.6 + 0.4 * np.sin(2 * np.pi * 23.0 * t))
+    rise = osc(curve(600.0, 1400.0, n), "sine", n) * 0.12
+    return (hiss + rise) * env(n, 0.02, 2.0)
+
+
+def s_barrel_blast(r):
+    """v0.9.0 DX (`barrel_blast`; the same render): the barrel's blast, 1.0 s: a noise burst closing from bright to
+    dark over a deep falling boom."""
+    n = n_of(1.0)
+    burst = one_pole_lp(noise(r, n), curve(5000.0, 200.0, n)) * env(n, 0.002, 0.25)
+    boom = osc(curve(110.0, 30.0, n), "sine", n) * env(n, 0.003, 0.3)
+    return mix(burst, boom * 1.2)
+
+
+def s_void_hum(r):
+    """v0.9.0 VP (the lead's placeholder for docs/art/requests/v0.9.0_ART_LIST.md §6 `void_hum`: "a low warping hum for
+    the void shot"): 0.42 s, a low sine falling 92 to 58 Hz whose pitch warps with a slow 7 Hz bend, a soft FM growl
+    under it and a dark airy swirl of noise sinking 420 to 160 Hz, swelling in and fading out."""
+    m = n_of(0.42)
+    bend = curve(92.0, 58.0, m) * (1.0 + 0.06 * np.sin(2.0 * np.pi * 7.0 * np.arange(m) / RATE))
+    hum = osc(bend, "sine") * env(m, 0.04, 0.22) * 0.9
+    growl = one_pole_lp(fm(bend * 2.0, 0.5, 1.6, m), 600) * env(m, 0.06, 0.18) * 0.35
+    swirl = bandpass(noise(r, m), curve(420.0, 160.0, m), 3.0) * env(m, 0.08, 0.16) * 0.5
+    return mix(hum, growl, swirl)
+
+
+def s_lance_charge(r):
+    """v0.9.0 AF1b (owner: "a circle … that circles like a charging energy … like a lowkey haduoken"; the agent's
+    placeholder): 1.25 s, the Lance's charge-up: a hum rising 110 to 330 Hz with an FM shimmer an octave up, a
+    tremolo speeding up from 6 to 22 Hz as it fills, and a swirl of noise rising 400 to 2600 Hz, swelling in over the
+    1.2 s charge and held briefly at the top."""
+    m = n_of(1.25)
+    t = np.arange(m) / RATE
+    rise = curve(110.0, 330.0, m)
+    swell = np.minimum(1.0, np.linspace(0.15, 1.25, m)) * env(m, 0.01, 2.0)
+    trem_hz = curve(6.0, 22.0, m)
+    trem = 0.7 + 0.3 * np.sin(phase(trem_hz))
+    hum = osc(rise, "sine") * 0.8 + osc(rise * 2.0, "tri") * 0.2
+    shimmer = fm(rise * 2.0, 1.5, 1.2 + 1.5 * t / t[-1], m) * 0.3
+    swirl = bandpass(noise(r, m), curve(400.0, 2600.0, m), 4.0) * 0.4
+    return echo(mix(hum, shimmer, swirl) * trem * swell, 80, 0.25, 0.2, 3500, 0.12)
+
+
+def s_lance_release(r):
+    """v0.9.0 AF1b (the agent's placeholder for the Lance's release): 0.5 s, a whoosh of noise sweeping 3200 down to
+    500 Hz under a bright FM zap falling 880 to 140 Hz and a soft low thump (the push back), with a short echo."""
+    w = whoosh(r, 0.42, 3200, 500, 2.2, 0.16)
+    m = n_of(0.3)
+    zap = fm(curve(880.0, 140.0, m), 2.0, 2.5 * env(m, 0.001, 0.08), m) * env(m, 0.002, 0.1) * 0.6
+    k = n_of(0.2)
+    thump = osc(curve(120.0, 45.0, k), "sine", k) * env(k, 0.003, 0.07) * 0.8
+    return echo(mix(w, zap, thump), 75, 0.25, 0.22, 3000, 0.1)
+
+
+def s_wave_fire(r):
+    """v0.9.0 AF3 (owner Q7, ATTACK_FORMS F9; the agent's placeholder for the Gun's Wave): 0.55 s (0.75 s with its
+    echo), a wide rolling whoosh: noise swept up 300 to 1400 Hz as it swells and washes out, over a soft low swell
+    rising 70 to 110 Hz and a short glassy shimmer on top, so the slow band reads as a wave leaving."""
+    n = n_of(0.55)
+    wash = bandpass(noise(r, n), curve(300.0, 1400.0, n, "lin"), 2.0) * env(n, 0.09, 0.35) * 0.8
+    swell = osc(curve(70.0, 110.0, n), "sine", n) * env(n, 0.06, 0.3) * 0.6
+    shimmer = bandpass(noise(r, n), 3800.0, 6.0) * env(n, 0.02, 0.12) * 0.25
+    return echo(mix(wash, swell, shimmer), delay_ms=90.0, feedback=0.25, mix=0.25, tail=0.2)
+
+
+def s_wisp_fire(r):
+    """v0.9.0 AF3 (owner Q7, ATTACK_FORMS F10; the agent's placeholder for a wisp's shot): 0.14 s, a small airy chirp:
+    a soft FM blip falling 1500 to 900 Hz with a breath of high noise, lighter than the Gun's own shot."""
+    n = n_of(0.14)
+    blip = fm(curve(1500.0, 900.0, n), 2.0, 0.8, n) * env(n, 0.002, 0.07) * 0.7
+    air = bandpass(noise(r, n), 5000.0, 4.0) * env(n, 0.002, 0.04) * 0.2
+    return mix(blip, air)
+
+
+def s_purple_runes(r):
+    """v0.9.0 DP (owner Q26b; the lead's placeholder for the purple runes awakening): 1.7 s: six glassy FM chimes
+    rising one every 0.15 s (as the ring of runes lights, PurpleRuneView.STEP_S) over a swelling violet drone, then a
+    deep resonant thump with a short echo as the last rune lands (the camera's thud)."""
+    n = n_of(1.3)
+    t = np.arange(n) / RATE
+    swell = np.minimum(1.0, t / 0.9) ** 1.5
+    drone = one_pole_lp(osc(curve(55.0, 62.0, n), "saw", n), 500.0) * 0.35
+    air = bandpass(noise(r, n), curve(400.0, 1600.0, n), 3.0) * 0.25
+    body = (drone + air) * swell * env(n, 0.02, 0.6)
+    chimes = []
+    for k, f in enumerate([330.0, 392.0, 440.0, 523.0, 587.0, 698.0]):
+        m = n_of(0.5)
+        ping = fm(f, 2.0, 1.4 * np.exp(-np.arange(m) / RATE / 0.12), m) * env(m, 0.002, 0.16)
+        chimes.append(at(ping * 0.45, 0.15 * k))
+    b = n_of(0.8)
+    thump = osc(curve(80.0, 34.0, b), "sine", b) * env(b, 0.003, 0.28)
+    ring = fm(curve(196.0, 180.0, b), 1.5, 0.8, b) * env(b, 0.004, 0.25) * 0.25
+    land = echo(mix(thump, ring), delay_ms=120.0, feedback=0.3, mix=0.3, tail=0.3)
+    return mix(body, *chimes, at(land, 0.9))
+
+
+def s_lockdown_close(r):
+    """v0.9.0 LK (owner Q21: "a visible seal with a sound"; the lead's placeholder for `lockdown_close`): 0.9 s: the
+    iron bars drop (a short falling scrape, 0.25 s) and slam home: a heavy low clank with a metallic ring and a short
+    echo, so the room reads as locked."""
+    d = n_of(0.25)
+    scrape = bandpass(noise(r, d), curve(2400.0, 900.0, d), 6.0) * env(d, 0.01, 0.2) * 0.35
+    n = n_of(0.55)
+    clank = one_pole_lp(osc(curve(120.0, 45.0, n), "square", n), 1100.0) * env(n, 0.002, 0.12)
+    ring = sum(fm(f, 1.41, 2.2, n) for f in (310.0, 467.0, 701.0)) * env(n, 0.002, 0.22) * 0.18
+    body = echo(mix(clank, ring), delay_ms=140.0, feedback=0.35, mix=0.3, damp=2500.0, tail=0.3)
+    return mix(scrape, at(body, 0.22))
+
+
+def s_lockdown_open(r):
+    """v0.9.0 LK (the lead's placeholder for `lockdown_open`): 1.4 s: the bars grind up: a rising chain-and-gear
+    rattle (filtered noise ticking at 18 Hz) over a low motor groan, ending in a light clack as they lock up."""
+    n = n_of(1.2)
+    t = np.arange(n) / RATE
+    ticks = (np.sin(2.0 * np.pi * 18.0 * t) > 0.6).astype(float)
+    rattle = bandpass(noise(r, n), curve(700.0, 1600.0, n), 5.0) * (0.3 + 0.7 * ticks) * 0.35
+    groan = one_pole_lp(osc(curve(55.0, 80.0, n), "saw", n), 400.0) * 0.4
+    body = (rattle + groan) * env(n, 0.05, 1.0)
+    c = n_of(0.2)
+    clack = one_pole_lp(osc(curve(240.0, 120.0, c), "square", c), 1500.0) * env(c, 0.001, 0.05) * 0.7
+    return mix(body, at(clack, 1.15))
+
+
+def s_glaive_throw(r):
+    """v0.9.0 AF2 (the agent's placeholder for the Glaive form's throw, owner Q7 F7 "a spinning disc that flies out and
+    returns"): 0.38 s, an airy whir whose band rises 700 to 2400 Hz and falls back, chopped at a 22 Hz spin (the disc's
+    blades), over a thin metallic ring and the soft flick of the release."""
+    n = n_of(0.38)
+    t = np.arange(n) / RATE
+    band = np.concatenate([curve(700.0, 2400.0, n // 2), curve(2400.0, 900.0, n - n // 2)])
+    chop = 0.55 + 0.45 * np.sin(2.0 * np.pi * 22.0 * t) ** 2
+    whir = bandpass(noise(r, n), band, 3.0) * chop * env(n, 0.03, 0.16) * 0.9
+    ring = metal_ping(0.3, 1320.0, ratio=1.5, index=1.8, decay=0.09) * 0.25
+    m = n_of(0.05)
+    flick = one_pole_hp(noise(r, m), 2500.0) * env(m, 0.001, 0.015) * 0.6
+    return mix(whir, ring, flick)
+
+
+def s_seekers_fire(r):
+    """v0.9.0 AF2 (the agent's placeholder for the Seekers form's volley, owner Q7 F8 "three small darts that curve to
+    the nearest enemies"): 0.2 s, three quick glassy chirps 35 ms apart, each an FM ping sweeping up (1500 to 2600 Hz,
+    a little higher each), with a breath of high air under them."""
+    chirps = []
+    for k in range(3):
+        m = n_of(0.09)
+        f = curve(1500.0 + 150.0 * k, 2600.0 + 200.0 * k, m)
+        ping = fm(f, 2.0, 1.2 * np.exp(-np.arange(m) / RATE / 0.03), m) * env(m, 0.001, 0.035)
+        chirps.append(at(ping * 0.5, 0.035 * k))
+    n = n_of(0.2)
+    air = one_pole_hp(noise(r, n), 4000.0) * env(n, 0.005, 0.06) * 0.2
+    return mix(air, *chirps)
+
+
+def s_shrine_blood(r):
+    """v0.9.0 SH (owner Q29b, W36; the lead's placeholder for `shrine_blood`): 1.0 s: the Blood Shrine takes its
+    price: two low heartbeat thumps, then a dark wet drain (low-passed noise sweeping down) under a minor-second
+    shimmer, so paying HP reads as a cost."""
+    beats = []
+    for k, t0 in enumerate((0.0, 0.28)):
+        n = n_of(0.18)
+        thump = one_pole_lp(osc(curve(90.0 - 15.0 * k, 40.0, n), "sine", n), 400.0) * env(n, 0.004, 0.14)
+        beats.append(at(thump * (0.9 - 0.2 * k), t0))
+    d = n_of(0.6)
+    drain = one_pole_lp(noise(r, d), 900.0) * env(d, 0.08, 0.5) * 0.35
+    drain = bandpass(drain, curve(800.0, 220.0, d), 3.0)
+    shimmer = (fm(311.0, 1.06, 1.5, d) + fm(330.0, 1.06, 1.5, d)) * env(d, 0.1, 0.45) * 0.08
+    return mix(*beats, at(mix(drain, shimmer), 0.4))
+
+
+def s_shrine_chaos(r):
+    """v0.9.0 SH (the lead's placeholder for `shrine_chaos`): 1.2 s: the Chaos Shrine wakes its challenge: a
+    distorted rising roar (a saw sweep through a resonant band, with a noise rush) cut by a gong-like FM strike, so the room
+    knows a fight is coming."""
+    n = n_of(0.9)
+    roar = bandpass(osc(curve(70.0, 160.0, n), "saw", n), curve(400.0, 1400.0, n), 4.0) * env(n, 0.05, 0.6)
+    roar = roar + bandpass(noise(r, n), curve(500.0, 2000.0, n), 3.0) * env(n, 0.1, 0.6) * 0.3
+    g = n_of(1.0)
+    gong = sum(fm(f, 1.4, 3.0, g) for f in (98.0, 147.0, 233.0)) * env(g, 0.002, 0.8) * 0.25
+    return mix(roar * 0.6, at(gong, 0.2))
+
+
+def s_fountain_heal(r):
+    """v0.9.0 HF (owner Q29b: "Healing fountains (rare, one use)"; the lead's placeholder for `fountain_heal`): 0.9 s:
+    a splash of filtered noise, then three rising bell chimes (a major triad) with a short echo: water that heals."""
+    s = n_of(0.35)
+    splash = bandpass(noise(r, s), curve(2500.0, 900.0, s), 2.0) * env(s, 0.005, 0.3) * 0.4
+    chimes = []
+    for k, f in enumerate((660.0, 831.0, 988.0)):
+        c = n_of(0.5)
+        chimes.append(at(fm(f, 2.0, 1.2, c) * env(c, 0.003, 0.4) * 0.22, 0.12 + 0.11 * k))
+    body = echo(mix(splash, *chimes), delay_ms=110.0, feedback=0.3, mix=0.25, damp=3000.0, tail=0.25)
+    return body
+
+
+def s_elite_arrive(r):
+    """v0.9.0 EL (ELITES.md E0, art list `elite_arrive`; the agent's placeholder): 0.8 s, a short heavy burst for an
+    elite rising: a low sub thump with a rising noise swell under it, then a bright metallic gold ring with a short
+    echo, so it reads as a miniboss without a fanfare."""
+    n = n_of(0.35)
+    thump = one_pole_lp(osc(curve(110.0, 38.0, n), "sine", n), 300.0) * env(n, 0.003, 0.3)
+    s = n_of(0.3)
+    swell = bandpass(noise(r, s), curve(300.0, 1800.0, s), 3.0) * env(s, 0.25, 0.05) * 0.4
+    m = n_of(0.6)
+    ring = sum(fm(f, 1.5, 1.6, m) for f in (523.0, 784.0, 1046.0)) * env(m, 0.002, 0.45) * 0.14
+    body = echo(mix(thump, at(ring, 0.12)), delay_ms=120.0, feedback=0.3, mix=0.25, damp=2600.0, tail=0.2)
+    return mix(swell, at(body, 0.2))
+
+
+def s_elite_slam(r):
+    """v0.9.0 EL (E1, the Breaker's Ground Slam; the agent's placeholder): 0.9 s, the stone fist hitting the ground: a
+    deep falling boom, a crack of rubble noise and a long low rumble of dust settling."""
+    n = n_of(0.6)
+    boom = one_pole_lp(osc(curve(80.0, 30.0, n), "sine", n), 220.0) * env(n, 0.002, 0.5)
+    c = n_of(0.15)
+    crack = one_pole_hp(noise(r, c), 900.0) * env(c, 0.001, 0.08) * 0.7
+    d = n_of(0.8)
+    rumble = one_pole_lp(noise(r, d), 260.0) * env(d, 0.05, 0.7) * 0.5
+    return mix(boom, crack, at(rumble, 0.05))
+
+
+def s_elite_rift(r):
+    """v0.9.0 EL (E2, the Rift Hunter's mark; the agent's placeholder): 0.9 s, a rift tearing open on the floor: a
+    thin rising violet whine (an FM tone sweeping up) over a breathy noise tear, cut short as it locks."""
+    n = n_of(0.85)
+    whine = fm(curve(380.0, 1150.0, n), 1.97, 1.4, n) * env(n, 0.08, 0.15) * 0.3
+    tear = bandpass(noise(r, n), curve(1200.0, 3400.0, n), 4.0) * env(n, 0.2, 0.2) * 0.35
+    return mix(whine, tear)
+
+
+def s_elite_slash(r):
+    """v0.9.0 EL (E2, the Rift Hunter reappearing and slashing; the agent's placeholder): 0.4 s, a pop of air as it
+    reappears, then two quick blade swishes and a short metallic scrape."""
+    p = n_of(0.08)
+    pop = one_pole_lp(osc(curve(220.0, 90.0, p), "sine", p), 600.0) * env(p, 0.001, 0.06) * 0.7
+    swishes = []
+    for k in range(2):
+        s = n_of(0.16)
+        swishes.append(at(bandpass(noise(r, s), curve(900.0, 4200.0, s), 2.5) * env(s, 0.01, 0.1) * 0.6, 0.05 + 0.09 * k))
+    scrape = metal_ping(0.25, 1750.0, ratio=1.41, index=2.0, decay=0.08) * 0.2
+    return mix(pop, *swishes, at(scrape, 0.12))
+
+
+def s_elite_charge(r):
+    """v0.9.0 EL (E3, the Conduit charging its beam; the agent's placeholder): 1.4 s, a crystal hum rising in pitch and
+    brightness (an FM drone sweeping up, its index growing) with a soft electric crackle, so the charge's length is
+    heard."""
+    n = n_of(1.4)
+    t = np.arange(n) / RATE
+    idx = np.linspace(0.5, 3.5, n)
+    hum = fm(curve(160.0, 640.0, n), 2.0, idx, n) * env(n, 0.15, 0.08) * 0.35
+    crackle = one_pole_hp(noise(r, n), 3000.0) * (np.sin(2.0 * np.pi * 23.0 * t) > 0.7) * np.linspace(0.05, 0.3, n)
+    return mix(hum, crackle)
+
+
+def s_elite_beam(r):
+    """v0.9.0 EL (E3, the Conduit's beam firing; the agent's placeholder): 0.6 s, a bright zap: a fast downward FM
+    sweep with a white-noise burst, then a short humming tail."""
+    n = n_of(0.5)
+    zap = fm(curve(2400.0, 300.0, n), 1.5, 3.0, n) * env(n, 0.002, 0.35) * 0.45
+    b = n_of(0.12)
+    burst = one_pole_hp(noise(r, b), 1500.0) * env(b, 0.001, 0.08) * 0.5
+    tail = fm(220.0, 2.0, 1.0, n_of(0.6)) * env(n_of(0.6), 0.02, 0.5) * 0.15
+    return mix(zap, burst, at(tail, 0.05))
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -939,6 +1431,15 @@ SFX = [
     ("boss_telegraph_warlord", s_boss_telegraph_warlord),
     ("boss_telegraph_hive_lens", s_boss_telegraph_hive_lens),
     ("boss_telegraph_foundry", s_boss_telegraph_foundry),
+    ("boss_telegraph_tidecaller", s_boss_telegraph_tidecaller),  # v0.9.0 NB1
+    ("boss_tide_pull", s_boss_tide_pull),
+    ("boss_telegraph_twin_wardens", s_boss_telegraph_twin_wardens),  # v0.9.0 NB2
+    ("boss_twin_chain", s_boss_twin_chain),
+    ("boss_telegraph_clockwork_judge", s_boss_telegraph_clockwork_judge),  # v0.9.0 NB3
+    ("boss_judge_echo", s_boss_judge_echo),
+    ("boss_telegraph_lantern_shade", s_boss_telegraph_lantern_shade),  # v0.9.0 NB4
+    ("boss_shade_snuff", s_boss_shade_snuff),
+    ("boss_shade_relight", s_boss_shade_relight),
     ("boss_floor_burst", s_boss_floor_burst),
     ("boss_slam", s_boss_slam),
     ("boss_laser", s_boss_laser),
@@ -966,6 +1467,35 @@ SFX = [
     ("flame_trail", s_flame_trail),
     ("overrun_enter", s_overrun_enter),
     ("overrun_clear", s_overrun_clear),
+    ("arrival_altar", s_arrival_altar),
+    ("pylon_lock", s_pylon_lock),
+    ("final_altar", s_final_altar),
+    ("timer_beep", s_timer_beep),
+    ("bomb_throw", s_bomb_throw),
+    ("void_hum", s_void_hum),
+    ("wave_fire", s_wave_fire),  # v0.9.0 AF3
+    ("wisp_fire", s_wisp_fire),
+    ("pillar_turn", s_pillar_turn),
+    ("wall_break", s_wall_break),
+    ("container_break", s_container_break),
+    ("barrel_fuse", s_barrel_fuse),
+    ("barrel_blast", s_barrel_blast),
+    ("purple_runes", s_purple_runes),
+    ("lockdown_close", s_lockdown_close),
+    ("lockdown_open", s_lockdown_open),
+    ("lance_charge", s_lance_charge),
+    ("lance_release", s_lance_release),
+    ("glaive_throw", s_glaive_throw),
+    ("seekers_fire", s_seekers_fire),
+    ("shrine_blood", s_shrine_blood),
+    ("shrine_chaos", s_shrine_chaos),
+    ("fountain_heal", s_fountain_heal),
+    ("elite_arrive", s_elite_arrive),  # v0.9.0 EL
+    ("elite_slam", s_elite_slam),
+    ("elite_rift", s_elite_rift),
+    ("elite_slash", s_elite_slash),
+    ("elite_charge", s_elite_charge),
+    ("elite_beam", s_elite_beam),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------
@@ -1073,6 +1603,12 @@ def a_starfall(r):
     return loop_echo(chord * breath * 0.4 + shimmer + void + chimes, 0.73, 0.5)
 
 
+# v0.9.0 LZ: seamless SFX loops (held sounds): normalised like the ambience (no fades, no filters: a loop has no
+# start or end to click), at the SFX peak, with the loop chunk.
+SFX_LOOPS = [
+    ("laser_loop", s_laser_loop),
+]
+
 AMBIENCE = [
     ("ruins", a_ruins),
     ("night_rocks", a_night_rocks),
@@ -1133,6 +1669,9 @@ def render_all():
         x = master_sfx(fn(rng_for(sid)))
         pcm = to_pcm16(x)
         out.append(("sfx", sid, os.path.join(OUT_SFX, sid + ".wav"), pcm, wav_bytes(pcm)))
+    for sid, fn in SFX_LOOPS:
+        pcm = to_pcm16(normalise(fn(rng_for(sid)), SFX_PEAK))
+        out.append(("sfx", sid, os.path.join(OUT_SFX, sid + ".wav"), pcm, wav_bytes(pcm, loop=True)))
     for bid, fn in AMBIENCE:
         x = normalise(fn(rng_for("ambience_" + bid)), AMB_PEAK)
         pcm = to_pcm16(x)
@@ -1153,7 +1692,7 @@ def manifest_for(rendered):
                 "seconds": round(len(pcm) / RATE, 4),
                 "peak_dbfs": round(20 * np.log10(np.max(np.abs(x)) + 1e-12), 2),
                 "rms_dbfs": round(20 * np.log10(np.sqrt(np.mean(x * x)) + 1e-12), 2),
-                "loop": kind == "ambience",
+                "loop": kind == "ambience" or sid in dict(SFX_LOOPS),
             }
         )
     # v0.8.0 BD: the owner's sounds (rows marked "source": "owner", prepared by bd_audio_prep.py) are kept as listed.

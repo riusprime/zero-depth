@@ -4,9 +4,10 @@ extends MenuPanel
 ## focus. On a run (v0.3.0 B) it is the run recap: "Run complete" or "You died", the floor reached, the run's time,
 ## kills, shards (only when the run counts them), the items you held and the killing cause.
 ## v0.5.5 A5; v0.8.0 MU (Ember stone, MenuStyle): the game blurred behind, the title, recap and buttons on a stone slab.
+## v0.9.0 HB (owner Q27, W48): its second row goes to the hub (Restart stays one press, focused first).
 
 signal restart_pressed
-signal main_menu_pressed
+signal hub_pressed
 
 const CAUSES := {
 	WorldReader.KIND_CHARGER: "CAUSE_CHARGER",
@@ -28,7 +29,8 @@ const CAUSES := {
 ## when the run has no shards), "items" (Array of item name keys), "routes" (v0.5.0 RT: each floor's route, floor 1
 ## first, as WorldReader.ROUTE_* ints), "threat" and "threat_peak" (ints; v0.5.0 EV), "loop" and "loops_cleared"
 ## (ints; v0.7.5 AP: the floor line says "Loop N · " past the first loop, and a line counts the loops cleared),
-## "true_ending" (bool; v0.8.0 FB1: the final boss was beaten, its line first).
+## "true_ending" (bool; v0.8.0 FB1: the final boss was beaten, its line first), "fragments" and "fragments_total"
+## (ints; v0.9.0 MP: the Rune Fragments the run banked and the profile's balance after it).
 var recap := {}
 
 
@@ -55,7 +57,7 @@ func _init(
 	if not recap.is_empty():
 		_add_recap()
 	add_button("UI_RESTART", func() -> void: restart_pressed.emit()).name = "Restart"
-	add_button("UI_MAIN_MENU", func() -> void: main_menu_pressed.emit()).name = "MainMenu"
+	add_button("UI_TO_HUB", func() -> void: hub_pressed.emit()).name = "Hub"  # v0.9.0 HB (Q27, W48)
 	add_hint("UI_MENU_HINT")
 
 
@@ -85,6 +87,14 @@ func _add_recap() -> void:
 		_line("Kills", tr("UI_RECAP_KILLS") % recap["kills"])
 	if recap.has("shards"):
 		_line("Shards", tr("UI_RECAP_SHARDS") % recap["shards"])
+	if recap.has("fragments"):  # v0.9.0 MP: banked when the run ended
+		_line(
+			"Fragments",
+			(
+				tr("UI_RECAP_FRAGMENTS")
+				% [recap["fragments"], recap.get("fragments_total", recap["fragments"])]
+			)
+		)
 	if recap.has("routes"):
 		_line("Route", tr("UI_RECAP_ROUTE") % route_text(self, recap["routes"]))
 	if recap.has("threat"):  # v0.5.0 EV: threat T now and the run's peak

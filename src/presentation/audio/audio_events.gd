@@ -11,8 +11,13 @@ const LOW_HP_PERMILLE := 300
 const HEARTBEAT_TICKS := 54
 ## Boss hits and deaths are pitched down a little.
 const BOSS_PITCH := 0.8
+## v0.9.0 AF1b: the Lance's charge-up hum starts once a charge passes this (a tap stays quiet).
+const LANCE_HUM_AT := 0.1
 ## A crit's hit is pitched up, so it rings sharper (v0.4.0 BS).
 const CRIT_PITCH := 1.6
+## v0.9.0 DS (owner C35, Q19): `boss_door_impact.wav` peaks about 0.3 s in, so its cue starts this many ticks before
+## the slab touches down (WorldReader.boss_door_open_ticks), and the boom lands with the slab.
+const DOOR_IMPACT_LEAD_TICKS := 18
 
 const BOSS_FLAVOUR := {
 	WorldReader.KIND_GATEKEEPER: &"boss_telegraph_gatekeeper",
@@ -26,6 +31,11 @@ const BOSS_FLAVOUR := {
 	WorldReader.KIND_COLOSSUS: &"boss_telegraph_gatekeeper",
 	WorldReader.KIND_PRISM: &"boss_telegraph_hive_lens",
 	WorldReader.KIND_NEMESIS: &"boss_telegraph_warlord",
+	WorldReader.KIND_TIDECALLER: &"boss_telegraph_tidecaller",  # v0.9.0 NB1: its bell tolls
+	WorldReader.KIND_TWIN_WARDEN: &"boss_telegraph_twin_wardens",  # v0.9.0 NB2: their chain rattles
+	WorldReader.KIND_TWIN_WARDEN_VIOLET: &"boss_telegraph_twin_wardens",
+	WorldReader.KIND_CLOCKWORK_JUDGE: &"boss_telegraph_clockwork_judge",  # v0.9.0 NB3: its clock ticks
+	WorldReader.KIND_LANTERN_SHADE: &"boss_telegraph_lantern_shade",  # v0.9.0 NB4: its lantern flares
 }
 const DEATHS := {
 	WorldReader.KIND_CHARGER: &"enemy_death_charger",
@@ -59,6 +69,11 @@ var _last_seq := 0
 var _kinds := {}
 var _states := {}
 var _phases := {}
+## v0.9.0 NB3: per Clockwork Judge, the echo tick whose ghost strikes last sounded (each strikes once).
+var _echo_t := {}
+## v0.9.0 NB4: the Lantern Shade's room as last heard: dark, and each lantern lit.
+var _shade_dark := false
+var _shade_lit: Array[bool] = []
 var _projectiles := {}
 ## v0.3.5 AI: where each enemy's area spell (a rune, a bomb) is aimed, from its telegraph at the windup.
 var _targets := {}
@@ -75,15 +90,43 @@ var _shop_denied := -1
 var _heartbeat_left := 0
 ## Overclock heat edges (v0.3.0 H): the last threshold-cross, overheat and vent ticks seen.
 var _heat_ticks := [-1, -1, -1, 0]
-## v0.5.0 EV: the event panel open, the ambush on, and the last curse and payout ticks seen.
+## v0.5.0 EV: the event panel open, and the last curse and payout ticks seen.
 var _event_open := false
-var _ambush := false
 var _curse_tick := -1
 var _done_tick := -1
 ## v0.4.0 AB: the Overrun room's last state (inside, cleared).
 var _overrun := [false, false]
 ## v0.5.5 AR: the sealed arena's last state (sealed room, arenas cleared).
 var _arena := [-1, 0]
+## v0.9.0 DS: the boss door's last opening progress (-1 when it isn't opening), for the impact cue's edge.
+var _door_progress := -1.0
+## v0.9.0 SA: the arrival's last progress (-1 when none plays), for the altar cue's edge.
+var _arrive_progress := -1.0
+## v0.9.0 FA: the final approach's last lit pylons (bits), buildup progress and state, for their cues' edges.
+var _pylons := 0
+var _buildup := -1.0
+var _approach := -1
+## v0.9.0 TD: the timed door's last state, beeps heard and switches on (bits), for their cues' edges.
+var _timed := -1
+var _timed_beeps := 0
+var _timed_switches := 0
+## v0.9.0 RA: the rune pillars' last press ticks and whether the puzzle was solved, for their cues' edges.
+var _rune_presses := PackedInt32Array()
+var _rune_solved := false
+## v0.9.0 DX: the cracked wall's last hit and break, and each prop's broken / fuse marks, for their cues' edges.
+var _crack_hit := -1
+var _crack_broken := false
+var _props := PackedInt32Array()
+## v0.9.0 DP: whether the purple runes were awake, for their cue's edge.
+var _purple_lit := false
+## v0.9.0 LK: the Lockdown sealed and the count opened, and the last strike's landing tick, for their cues' edges.
+var _lock := [-1, 0, -1]
+## v0.9.0 AF1b: the Lance's charge hum has played for the charge running (it starts once the charge passes this).
+var _lance_hum := false
+## v0.9.0 SH, HF: the shrine's use tick and the fountain's heal tick, for their cues' edges.
+var _shrine := [-1, -1]
+## v0.9.0 EL: the last elite arrival's tick, for its cue's edge.
+var _elite_arrive := -1
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -103,6 +146,24 @@ func prime(reader: WorldReader) -> void:
 	_overrun = [o["inside"], o["cleared"]]
 	var a := reader.arenas()
 	_arena = [int(a["sealed"]), (a["cleared"] as PackedInt32Array).size()]
+	_door_progress = reader.boss_door_progress()
+	_arrive_progress = reader.arrival_progress()
+	_pylons = pylon_mask(reader)
+	_buildup = reader.approach_buildup_progress()
+	_approach = reader.approach_state()
+	_timed = reader.timed_door_state()
+	_timed_beeps = TimedDoorView.beeps_now(reader)
+	_timed_switches = switch_mask(reader)
+	_rune_presses = rune_presses(reader)
+	_rune_solved = reader.rune_solved()
+	_crack_hit = reader.crack_hit_tick()
+	_crack_broken = reader.crack_broken()
+	_props = prop_marks(reader)
+	_purple_lit = reader.purple_lit()
+	_lock = lockdown_marks(reader)
+	_lance_hum = reader.lance_charge() >= LANCE_HUM_AT
+	_shrine = shrine_marks(reader)
+	_elite_arrive = elite_arrive_tick(reader)
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -127,7 +188,235 @@ func collect(reader: WorldReader) -> Array:
 	_heat(reader, out)
 	_event_rooms(reader, out)  # v0.5.0 EV
 	_overrun_edges(reader, out)
+	_door_impact(reader, out)
+	_arrival(reader, out)
+	_final_approach(reader, out)
+	_timed_door(reader, out)
+	_rune_puzzle(reader, out)
+	_purple_runes(reader, out)  # v0.9.0 DP
+	_breakables(reader, out)
+	_lockdown(reader, out)  # v0.9.0 LK
+	_shrines(reader, out)  # v0.9.0 SH, HF
+	_elite_arrival(reader, out)  # v0.9.0 EL
 	return out
+
+
+## v0.9.0 SH, HF: Blood taking its price (`shrine_blood`) or Chaos waking its challenge (`shrine_chaos`), at the
+## shrine; the fountain's heal (`fountain_heal`, at it).
+func _shrines(reader: WorldReader, out: Array) -> void:
+	var now := shrine_marks(reader)
+	if now[0] >= 0 and now[0] != _shrine[0]:
+		var d := reader.shrine()
+		var cue := (
+			&"shrine_blood" if int(d["kind"]) == WorldReader.SHRINE_BLOOD else &"shrine_chaos"
+		)
+		out.append([cue, d["pos"], 1.0])
+	if now[1] >= 0 and now[1] != _shrine[1]:
+		out.append([&"fountain_heal", reader.shrine()["fountain_pos"], 1.0])
+	_shrine = now
+
+
+## [the shrine's use tick, the fountain's heal tick] (-1: none yet, or no shrine state on the floor).
+static func shrine_marks(reader: WorldReader) -> Array:
+	if not reader.has_shrines():
+		return [-1, -1]
+	var d := reader.shrine()
+	return [int(d["used_tick"]), int(d["fountain_tick"])]
+
+
+## v0.9.0 LK (owner Q21: "a visible seal with a sound"): the bars dropping (`lockdown_close`), grinding up on the open
+## (`lockdown_open`), and a hazard strike landing (`container_break`, at it).
+func _lockdown(reader: WorldReader, out: Array) -> void:
+	var now := lockdown_marks(reader)
+	if now[0] >= 0 and now[0] != _lock[0]:
+		out.append([&"lockdown_close", null, 1.0])
+	if now[1] > _lock[1]:
+		out.append([&"lockdown_open", null, 1.0])
+	if now[2] >= 0 and now[2] != _lock[2]:
+		out.append([&"container_break", reader.lockdown()["landed_pos"], 1.0])
+	_lock = now
+
+
+## [the Lockdown sealed now (-1 none), how many opened, the last strike's landing tick].
+static func lockdown_marks(reader: WorldReader) -> Array:
+	if not reader.has_lockdowns():
+		return [-1, 0, -1]
+	var d := reader.lockdown()
+	return [int(d["sealed"]), (d["cleared"] as PackedInt32Array).size(), int(d["landed_tick"])]
+
+
+## v0.9.0 DX (owner W §4 C, §5; Q23): a Skill hit on the cracked wall (`container_break`, at it) and its break
+## (`wall_break`); a container breaking (`container_break`); a barrel's fuse lit (`barrel_fuse`) and its blast
+## (`barrel_blast`).
+func _breakables(reader: WorldReader, out: Array) -> void:
+	if reader.has_cracked_wall():
+		var at := reader.crack_door_center()
+		if reader.crack_broken() and not _crack_broken:
+			out.append([&"wall_break", at, 1.0])
+		elif reader.crack_hit_tick() != _crack_hit:
+			out.append([&"container_break", at, 1.0])
+		_crack_hit = reader.crack_hit_tick()
+		_crack_broken = reader.crack_broken()
+	var marks := prop_marks(reader)
+	for i in marks.size():
+		var was := _props[i] if i < _props.size() else 0
+		if marks[i] == was:
+			continue
+		var at := reader.breakable_pos(i)
+		var barrel := reader.breakable_kind(i) == WorldReader.BREAKABLE_EXPLOSIVE
+		if marks[i] == 2:
+			out.append([&"barrel_blast" if barrel else &"container_break", at, 1.0])
+		elif marks[i] == 1:
+			out.append([&"barrel_fuse", at, 1.0])
+	_props = marks
+
+
+## Each prop's mark: 0 whole, 1 its fuse burning, 2 broken (or blown).
+static func prop_marks(reader: WorldReader) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for i in reader.breakable_count():
+		out.append(2 if reader.breakable_broken(i) else (1 if reader.breakable_fusing(i) else 0))
+	return out
+
+
+## v0.9.0 RA (owner Q22; "the pillar turns with a grind"): a pillar turning a quarter (`pillar_turn`, at it), and the
+## slab sinking once all three match (the boss door's `boss_door_opening`, at the doorway).
+func _rune_puzzle(reader: WorldReader, out: Array) -> void:
+	if not reader.has_rune_puzzle():
+		return
+	var presses := rune_presses(reader)
+	for k in presses.size():
+		if k < _rune_presses.size() and presses[k] != _rune_presses[k]:
+			out.append([&"pillar_turn", reader.interactable_pos(reader.rune_pillar_entry(k)), 1.0])
+	_rune_presses = presses
+	if reader.rune_solved() and not _rune_solved:
+		out.append([&"boss_door_opening", reader.rune_door_center(), 1.0])
+	_rune_solved = reader.rune_solved()
+
+
+## v0.9.0 DP (owner Q26b): the purple runes awakening (`purple_runes`, at the dais), once.
+func _purple_runes(reader: WorldReader, out: Array) -> void:
+	if reader.purple_lit() and not _purple_lit:
+		out.append([&"purple_runes", reader.purple_dais_pos(), 1.0])
+	_purple_lit = reader.purple_lit()
+
+
+## Each rune pillar's last press tick (pillar k at k).
+static func rune_presses(reader: WorldReader) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for k in reader.rune_pillar_count():
+		out.append(reader.interactable_press_tick(reader.rune_pillar_entry(k)))
+	return out
+
+
+## v0.9.0 TD (owner W §2, Q20: "the boss door's opening sound, accelerating beeps, the door's impact on the shut"): a
+## switch locking in (the pylons' lock-in), the door opening (`boss_door_opening`), each beep of the timer, faster as
+## it runs out (TimedDoorView.beep_ticks; `timer_beep`, captioned), and the slab's heavy shut (`boss_door_impact`).
+func _timed_door(reader: WorldReader, out: Array) -> void:
+	if not reader.has_timed_door():
+		return
+	var mask := switch_mask(reader)
+	for k in reader.timed_switch_count():
+		if (mask & (1 << k)) != 0 and (_timed_switches & (1 << k)) == 0:
+			out.append([&"pylon_lock", reader.interactable_pos(reader.timed_switch_entry(k)), 1.0])
+	_timed_switches = mask
+	var st := reader.timed_door_state()
+	var at := reader.timed_door_center()
+	if st == WorldReader.TIMED_OPEN and _timed == WorldReader.TIMED_SHUT:
+		out.append([&"boss_door_opening", at, 1.0])
+	elif st == WorldReader.TIMED_SHUT and _timed >= 0 and _timed != WorldReader.TIMED_SHUT:
+		out.append([&"boss_door_impact", at, 1.0])
+	var beeps := TimedDoorView.beeps_now(reader)
+	if st == WorldReader.TIMED_OPEN and beeps > _timed_beeps:
+		out.append([&"timer_beep", at, 1.0])
+	_timed_beeps = beeps
+	_timed = st
+
+
+## The timed door's switches that are on, as bits (switch k: 1 << k).
+static func switch_mask(reader: WorldReader) -> int:
+	var m := 0
+	for k in reader.timed_switch_count():
+		if reader.interactable_state(reader.timed_switch_entry(k)) == 1:
+			m |= 1 << k
+	return m
+
+
+## v0.9.0 FA (owner Q18: "it locks in with a sound"): a pylon switching on, the purple altar's buildup (its peak on the
+## buildup's end, as SA's arrival), the walls of light rising (the boss door's seal).
+func _final_approach(reader: WorldReader, out: Array) -> void:
+	if not reader.final_approach():
+		return
+	var lit := pylon_mask(reader)
+	for k in reader.approach_pylon_count():
+		if (lit & (1 << k)) != 0 and (_pylons & (1 << k)) == 0:
+			out.append([&"pylon_lock", reader.approach_pylon_pos(k), 1.0])
+	_pylons = lit
+	var b := reader.approach_buildup_progress()
+	var at := final_cue_at(reader)
+	if at >= 0.0 and b >= at and _buildup < at:
+		out.append([AltarStage.final().cue, null, 1.0])
+	_buildup = b
+	var st := reader.approach_state()
+	if (
+		st == WorldReader.APPROACH_FIGHT
+		and _approach != WorldReader.APPROACH_FIGHT
+		and _approach >= 0
+	):
+		out.append([&"boss_door_seal", null, 1.0])
+	_approach = st
+
+
+## The final approach's lit pylons as bits (pylon k: 1 << k).
+static func pylon_mask(reader: WorldReader) -> int:
+	var m := 0
+	for k in reader.approach_pylon_count():
+		if reader.approach_pylon_lit(k):
+			m |= 1 << k
+	return m
+
+
+## The share of the final approach's buildup at which the altar's cue starts, so its peak lands on the buildup's end
+## (-1: the buildup is shorter than the cue's lead).
+static func final_cue_at(reader: WorldReader) -> float:
+	var seconds := float(reader.approach_buildup_ticks()) / SimTick.TICKS_PER_SECOND
+	var lead := AltarStage.final().cue_peak_s / maxf(seconds, 0.001)
+	return 1.0 - lead if lead <= 1.0 else -1.0
+
+
+## v0.9.0 SA (owner Q16: "Your model, my sound": the lead's placeholder, `arrival_altar`): floor 1's altar hum and pop
+## start so the file's peak (AltarStage.Look.cue_peak_s in) lands on the altar's pop (C18: "synchronized with the main
+## audio cue"). An arrival shorter than the hum (reduced motion's fade-in) plays none.
+func _arrival(reader: WorldReader, out: Array) -> void:
+	var p := reader.arrival_progress()
+	var at := arrival_cue_at(reader)
+	if reader.arrival_altar() and at >= 0.0 and p >= at and _arrive_progress < at:
+		out.append([AltarStage.arrival().cue, null, 1.0])
+	_arrive_progress = p
+
+
+## The share of the arrival at which the altar's cue starts (-1: the arrival is too short for it).
+static func arrival_cue_at(reader: WorldReader) -> float:
+	var l := AltarStage.arrival()
+	var seconds := float(reader.arrival_ticks()) / SimTick.TICKS_PER_SECOND
+	var lead := l.cue_peak_s / maxf(seconds, 0.001)
+	return l.pop_at - lead if lead <= l.pop_at else -1.0
+
+
+## v0.9.0 DS: the door's impact plays DOOR_IMPACT_LEAD_TICKS before the slab is down, so the file's peak meets the
+## touchdown (the camera's thud stays on the touchdown, WorldViewRoot).
+func _door_impact(reader: WorldReader, out: Array) -> void:
+	var progress := reader.boss_door_progress()
+	var at := door_impact_at(reader)
+	if progress >= at and _door_progress >= 0.0 and _door_progress < at:
+		out.append([&"boss_door_impact", reader.boss_door_center(), 1.0])
+	_door_progress = progress
+
+
+## The share of the door's opening at which its impact cue starts.
+static func door_impact_at(reader: WorldReader) -> float:
+	var ticks := reader.boss_door_open_ticks()
+	return float(ticks - DOOR_IMPACT_LEAD_TICKS) / float(ticks)
 
 
 ## v0.4.0 AB: walking into the Overrun room sounds its alarm; clearing it, its fanfare.
@@ -157,6 +446,8 @@ func _events(reader: WorldReader, out: Array) -> void:
 		match e.kind:
 			SimEvent.Kind.DAMAGE:
 				if e.tags & SimEvent.TAG_DOT:
+					if e.effect_id == WorldReader.EFFECT_TWIN_CHAIN:  # v0.9.0 NB2: the chain's burn sizzles
+						out.append([&"boss_twin_chain", e.pos, 1.2])
 					continue  # ticks are silent (SFX_NEEDS)
 				if ELEMENT_CUES.has(e.effect_id):  # v0.4.0 AB: the element's own sound
 					out.append([ELEMENT_CUES[e.effect_id], e.pos, 1.0])
@@ -189,8 +480,6 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"boss_door_seal", null, 1.0])
 			SimEvent.Kind.BOSS_DOOR_OPENING:  # v0.8.0 BD (O83): the owner's sounds, at the door
 				out.append([&"boss_door_opening", e.pos, 1.0])
-			SimEvent.Kind.BOSS_DOOR_OPENED:
-				out.append([&"boss_door_impact", e.pos, 1.0])
 			SimEvent.Kind.PORTAL_OPENED:
 				out.append([&"portal_open", null, 1.0])
 				if e.amount == 1:  # v0.5.0 RT: the Deep gate opened beside it
@@ -213,6 +502,14 @@ func _events(reader: WorldReader, out: Array) -> void:
 			SimEvent.Kind.STATUS_APPLY:  # v0.8.0 FB3: the Nemesis dashes with the hero's dash cue, lower
 				if e.effect_id == WorldReader.EFFECT_NEMESIS_DASH:
 					out.append([&"dash", e.pos, 0.8])
+				elif e.effect_id == WorldReader.EFFECT_TWIN_ANGER:  # v0.9.0 NB2: a Warden's chain jerks taut
+					out.append([&"boss_twin_chain", e.pos, 0.75])
+			SimEvent.Kind.BLAST:  # v0.9.0 BM: a bomb bursts
+				out.append([&"bomb_blast", e.pos, 1.0])
+			SimEvent.Kind.LANCE:  # v0.9.0 AF1b: a Lance released, its whoosh
+				out.append([&"lance_release", e.pos, 1.0])
+			SimEvent.Kind.COLLECTIBLE:  # v0.9.0 CL: a collectible taken (the combo unlock's chime, a placeholder)
+				out.append([&"combo_unlock", null, 1.0])
 
 
 ## Mines (v0.4.0 EN): a beep as one arms, the blast when an armed one goes off the floor.
@@ -251,6 +548,10 @@ func _scan_actors(reader: WorldReader, out: Array) -> void:
 		var phase := reader.boss_phase(i) if boss else 0
 		var was_phase: int = _phases.get(id, phase)
 		_phases[id] = phase
+		if kind == WorldReader.KIND_CLOCKWORK_JUDGE:  # v0.9.0 NB3: each ghost strike of its echo chimes
+			_echo_strikes(reader, i, id, out)
+		if kind == WorldReader.KIND_LANTERN_SHADE:  # v0.9.0 NB4: the dark falling, a lantern out or relit
+			_shade_light(reader, out)
 		if st == was:
 			if boss and phase > was_phase:
 				out.append([&"boss_phase", null, 1.0])
@@ -272,9 +573,87 @@ func _scan_actors(reader: WorldReader, out: Array) -> void:
 			out.append([&"boss_phase", null, 1.0])
 
 
+## v0.9.0 NB3: the Clockwork Judge's echo: a ghost strike landing this tick chimes where it lands.
+func _echo_strikes(reader: WorldReader, i: int, id: int, out: Array) -> void:
+	var e := reader.boss_echo(i)
+	if int(e.get("phase", WorldReader.ECHO_NONE)) != WorldReader.ECHO_REPLAY:
+		return
+	var now := int(e["t"])
+	if int(_echo_t.get(id, -1)) == now:
+		return
+	_echo_t[id] = now
+	for p: Dictionary in e["path"]:
+		if int(p["at"]) == now:
+			out.append([&"boss_judge_echo", p["pos"], 0.8])
+
+
+## v0.9.0 NB4: the Lantern Shade's light: the room snuffed as the dark falls, a lantern going out (a Snuff, or burnt
+## down) where it stands, a lantern relit where it stands.
+func _shade_light(reader: WorldReader, out: Array) -> void:
+	var l := reader.boss_light()
+	if l.is_empty():
+		return
+	var dark := bool(l["dark"])
+	var lamps: Array = l["lamps"]
+	if dark and not _shade_dark:
+		out.append([&"boss_shade_snuff", null, 1.0])
+	elif dark:
+		for k in mini(lamps.size(), _shade_lit.size()):
+			var lit := bool(lamps[k]["lit"])
+			if lit != _shade_lit[k]:
+				out.append(
+					[&"boss_shade_relight" if lit else &"boss_shade_snuff", lamps[k]["pos"], 0.8]
+				)
+	_shade_dark = dark
+	_shade_lit.clear()
+	for s: Dictionary in lamps:
+		_shade_lit.append(bool(s["lit"]))
+
+
+## v0.9.0 EL: an elite arriving (`elite_arrive`, at it: a short heavy burst, no fanfare).
+func _elite_arrival(reader: WorldReader, out: Array) -> void:
+	var now := elite_arrive_tick(reader)
+	if now >= 0 and now != _elite_arrive:
+		out.append([&"elite_arrive", reader.elites()["arrive_pos"], 1.0])
+	_elite_arrive = now
+
+
+## The last elite arrival's tick (-1: none, or no elite on the floor).
+static func elite_arrive_tick(reader: WorldReader) -> int:
+	var d := reader.elites()
+	return int(d["arrive_tick"]) if bool(d.get("active", false)) else -1
+
+
+## v0.9.0 EL: an elite's own sounds: each ability's tell and strike (the Breaker's raise is the enemy windup, its slam
+## `elite_slam`; the Rift Hunter's mark `elite_rift`, its slash `elite_slash`; the Conduit's charge `elite_charge`, its
+## beam `elite_beam`), the punch (`shield_bash`) and the orb fan (`arc_bolt`).
+static func elite_cue(kind: int, st: int, ability: bool) -> StringName:
+	if st == WorldReader.STATE_WINDUP:
+		if ability and kind == WorldReader.KIND_RIFT_HUNTER:
+			return &"elite_rift"
+		if ability and kind == WorldReader.KIND_CONDUIT:
+			return &"elite_charge"
+		return &"enemy_windup"
+	if st != WorldReader.STATE_ACTIVE:
+		return &""
+	if not ability:
+		return &"arc_bolt" if kind == WorldReader.KIND_CONDUIT else &"shield_bash"
+	match kind:
+		WorldReader.KIND_BREAKER:
+			return &"elite_slam"
+		WorldReader.KIND_RIFT_HUNTER:
+			return &"elite_slash"
+	return &"elite_beam"
+
+
 ## A normal enemy's windup; the new kinds' own sounds (v0.3.5 AI): the Bomb Drone's lob and blast (at the circle),
 ## the Arc Caster's bolt and rune.
 func _enemy_cue(reader: WorldReader, i: int, kind: int, st: int, at: Vector2, out: Array) -> void:
+	if WorldReader.is_elite_kind(kind):  # v0.9.0 EL
+		var cue := elite_cue(kind, st, reader.elite_attack(i) == WorldReader.ELITE_ABILITY)
+		if cue != &"":
+			out.append([cue, at, 1.0])
+		return
 	if st == WorldReader.STATE_WINDUP:
 		out.append(
 			[&"bomb_lob" if kind == WorldReader.KIND_BOMB_DRONE else &"enemy_windup", at, 1.0]
@@ -323,6 +702,16 @@ static func attack_cue(move: int) -> StringName:
 			return &"boss_floor_burst"
 		WorldReader.MOVE_CROSS:  # v0.8.0 FB2: the Prism's Cross opens
 			return &"boss_laser"
+		WorldReader.MOVE_TIDE:  # v0.9.0 NB1: the Tidecaller's Pull surges in
+			return &"boss_tide_pull"
+		WorldReader.MOVE_CROSSFIRE:  # v0.9.0 NB2: the Wardens' fans
+			return &"boss_mortar"
+		WorldReader.MOVE_CHAIN_SWEEP:  # the chain lashes
+			return &"boss_twin_chain"
+		WorldReader.MOVE_ECHO:  # v0.9.0 NB3: the Judge's echo begins to replay
+			return &"boss_judge_echo"
+		WorldReader.MOVE_VERDICT:  # its pendulum drops
+			return &"boss_slam"
 	return &""
 
 
@@ -346,6 +735,11 @@ func _player(reader: WorldReader, out: Array) -> void:
 		out.append([&"blink_out", reader.blink_from(), 1.0])
 		out.append([&"blink_in", here, 1.0])
 	_blink_tick = bt
+	# v0.9.0 AF1b: the Lance's charge-up hum, once a charge passes LANCE_HUM_AT (a tap stays quiet).
+	var c := reader.lance_charge()
+	if c >= LANCE_HUM_AT and not _lance_hum:
+		out.append([&"lance_charge", here, 1.0])
+	_lance_hum = c >= LANCE_HUM_AT or (_lance_hum and c > 0.0)
 
 
 ## v0.3.5 K: the sound of a build skill (SkillUsed's amount).
@@ -375,18 +769,38 @@ func _scan_projectiles(reader: WorldReader, out: Array) -> void:
 	var seen := {}
 	var fired := false
 	var hostile := false
+	var wisp := false  # v0.9.0 AF3: a wisp's own shot chirps, not the Gun's cue
 	for i in reader.projectile_count():
 		var id := reader.projectile_id(i)
 		seen[id] = true
 		if _projectiles.has(id):
 			continue
-		if reader.projectile_team(i) == 0:
+		if reader.projectile_team(i) == 0 and reader.projectile_is_wisp(i):
+			wisp = true
+		elif reader.projectile_team(i) == 0:
 			fired = fired or not reader.projectile_is_shard(i)
 		else:
 			hostile = true
 	_projectiles = seen
-	if fired:
-		out.append([&"bolt_fire", reader.player_pos(), 1.0])
+	if fired and reader.lance_active():  # v0.9.0 AF1b: the Lance's ball sounds with its LANCE event (_events)
+		fired = false
+	if fired:  # v0.9.0 BM: the Bomb form's throw has its own toss; v0.9.0 VP: the Void's shot its hum
+		var cue := &"bolt_fire"
+		if reader.bomb_active():
+			cue = &"bomb_throw"
+		elif reader.void_active():
+			cue = &"void_hum"
+		elif reader.wave_active():  # v0.9.0 AF3: the Wave's rolling whoosh
+			cue = &"wave_fire"
+		elif reader.scatter_active():  # v0.9.0 AF1: the Scatter's bark (Scatter Blast's cue until its own sound)
+			cue = &"skill_scatter_blast"
+		elif reader.glaive_active():  # v0.9.0 AF2: the Glaive's spinning throw
+			cue = &"glaive_throw"
+		elif reader.seekers_active():  # v0.9.0 AF2: the Seekers' volley of chirps
+			cue = &"seekers_fire"
+		out.append([cue, reader.player_pos(), 1.0])
+	if wisp:
+		out.append([&"wisp_fire", reader.player_pos(), 1.0])
 	if hostile:
 		out.append([&"enemy_fire", null, 1.0])
 
@@ -449,10 +863,6 @@ func _event_rooms(reader: WorldReader, out: Array) -> void:
 	if open and not _event_open:
 		out.append([&"event_open", null, 1.0])
 	_event_open = open
-	var ambush := reader.event_ambush() >= 0
-	if ambush and not _ambush:
-		out.append([&"ambush_start", null, 1.0])
-	_ambush = ambush
 	if reader.curse_tick() != _curse_tick:
 		if reader.curse_tick() >= 0:
 			out.append([&"curse_gain", null, 1.0])

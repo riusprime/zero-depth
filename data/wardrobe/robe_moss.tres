@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RobeDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/robe_definition.gd" id="1_robe"]
+
+[resource]
+script = ExtResource("1_robe")
+order = 5
+name_key = &"ROBE_MOSS"
+cloak = Color(0.435294, 0.498039, 0.305882, 1)
+underside = Color(0.333333, 0.388235, 0.231373, 1)
+free = false
+price = 75
+price_step = 25
+id = &"moss"

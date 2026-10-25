@@ -9,6 +9,11 @@ extends RefCounted
 ## boss of the loop's last floor (RunState.scale_bosses: the loop's factor too, F7 for the Colossus; the Prism's and
 ## the Nemesis's own rules are FB2's and FB3's). begin() starts the fight once Main has set the loadout (the first
 ## body's rise counts the hidden catch-up).
+## v0.9.0 FA (owner C §3: "The player should no longer teleport directly into the final boss arena"; Q18): with
+## `approach` (the run's way in, FloorPlan) the floor is the final approach (FinalArena.approach_layout: the stair
+## causeway up to the plateau, which is the arena) and World.approach runs the pylons and the buildup; the fight begins
+## when the buildup ends (FinalApproach.advance), not at begin(). Without it (the tests' and tools' direct path, and a
+## save made in the final arena before FA) the ring arena with the fight from the start, as before.
 
 
 static func build(
@@ -19,10 +24,15 @@ static func build(
 	items: Array[ItemTable],
 	combos: Array[ComboTable],
 	bosses: Array[BossTable],
-	finals: Array[BossTable]
+	finals: Array[BossTable],
+	approach: bool = false
 ) -> World:
 	var seed_value := final_seed(run)
-	var layout := FinalArena.layout(seed_value, arena.radius_m, arena.segments)
+	var layout := (
+		FinalArena.approach_layout(seed_value, arena.radius_m, arena.segments)
+		if approach
+		else FinalArena.layout(seed_value, arena.radius_m, arena.segments)
+	)
 	var w := World.new(seed_value, player, layout.start_pos)
 	w.set_walls(layout.walls)
 	w.floor_layout = layout
@@ -41,6 +51,11 @@ static func build(
 	w.boss_flow.final_next = false
 	w.boss_flow.state = BossFlow.State.FIGHT  # no door to seal: the fight is the room
 	w.boss_flow.sealed_tick = 0
+	if approach:  # v0.9.0 FA: the pylons, then the buildup, then the fight
+		w.approach = FinalApproach.create(
+			body_tables(w, finals.size()), run.table.final_shatter_ticks, run.table.final_name_key
+		)
+		w.approach.register(w)  # v0.9.0 IX: the pylons are shared interactables
 	return w
 
 

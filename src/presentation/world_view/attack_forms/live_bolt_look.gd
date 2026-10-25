@@ -7,8 +7,16 @@ extends RefCounted
 ## AttackFormCanvas._draw_live_bolt did; off_screen() is the camera test for one (ScreenCull).
 
 const KEY := &"hv_live"
+## v0.9.0 VX V18: a live bolt drawn at least this much bigger than its look (the Lance's ball near full charge: Lance
+## grows it to 2x) takes the long trail.
+const FULL_CHARGE_SCALE := 1.8
 
 var streak := false
+## v0.9.0 VX V36: a Spiral bolt (the helix cue) takes the long trail too, so its corkscrew reads.
+var helix := false
+## v0.9.0 VX V6: the first element and its effects-layer kind (the accent the layer draws on a live Orb).
+var element := &""
+var accent := &""
 var tether := false
 var mine := false
 var thick := 0.0
@@ -40,6 +48,9 @@ static func _build(look: Dictionary) -> LiveBoltLook:
 	var info := LiveBoltLook.new()
 	var cues: Array = look["cues"]
 	info.streak = cues.has(&"streak")
+	info.helix = cues.has(&"helix")
+	info.element = ElementLooks.first(PackedStringArray(look["elements"]))
+	info.accent = ElementLooks.kind(info.element)
 	info.tether = cues.has(&"tether")
 	info.mine = cues.has(&"mine")
 	info.thick = float(look["thick"])
@@ -72,9 +83,11 @@ static func draw(c: AttackFormCanvas, b: Dictionary, info: LiveBoltLook, now: fl
 	var look: Dictionary = b["look"]
 	var h := AttackFormCanvas.BOLT_H
 	var trail: PackedVector2Array = b["trail"]
-	var cap := AttackFormCanvas.STREAK_SEGMENTS if info.streak else AttackFormCanvas.TAIL_SEGMENTS
-	var segs := mini(trail.size() - 1, cap)
 	var size := float(b.get("scale", 1.0))  # v0.6.5 WN3: a charged shot, the charging orb
+	# v0.9.0 VX V18 (a full-charge Lance ball reads heavier) and V36 (a Spiral bolt's corkscrew reads): the long trail.
+	var long := info.streak or info.helix or size >= FULL_CHARGE_SCALE
+	var cap := AttackFormCanvas.STREAK_SEGMENTS if long else AttackFormCanvas.TAIL_SEGMENTS
+	var segs := mini(trail.size() - 1, cap)
 	var w: float = info.thick * 2.2 * size
 	var n := trail.size()
 	for j in segs:
@@ -106,6 +119,15 @@ static func draw(c: AttackFormCanvas, b: Dictionary, info: LiveBoltLook, now: fl
 	if info.mine and (b["vel"] as Vector2).length() < 0.0001:  # v0.6.5 WN3: a waiting mine
 		var ground := SimPlane.to_3d(b["pos"], AttackFormCanvas.GROUND_H)
 		c._ring_at(ground, AttackFormCanvas.MINE_RING_M, look, 0.6, pts)
+	if info.accent != &"" and c.vfx != null and int(b["id"]) >= 0:
+		# v0.9.0 VX V6 (the element's particles never drew on a live Orb with the layer on): its accent from the
+		# layer's pools (Fire embers and smoke, a Lightning crackle, Frost shards and glints, Venom and Bleed drips);
+		# none at Low (HeroFx.LOW), the pulse and trail stay. LIVE_BOLTS_MAX caps the bolts that get it.
+		var v: Vector2 = b["vel"]
+		var dir := (
+			SimPlane.to_3d(v.normalized(), 0.0) if v.length_squared() > 1e-8 else Vector3.ZERO
+		)
+		HeroFx.accent(c.vfx, info.accent, info.element, at, dir, int(b["id"]) * 13 + 5, size)
 	if info.no_particles or info.kind != &"":
 		return  # _emit's own early outs: no particles, or the VfxLayer draws this element's
 	c._emit_parts(int(b["id"]), look, look["particles"], pts, now, 1.0)

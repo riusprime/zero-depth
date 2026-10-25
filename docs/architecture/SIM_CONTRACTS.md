@@ -620,15 +620,55 @@ player with effect `aether_shell`) and combat starts again; Resonance, an attack
 Cold Snap's: + `resonance_permille` per status on the enemy (burning, shocked, bleeding, chilled or frozen, slowed,
 poisoned). Phase Dash: `World.dash_iframes_active` holds for the whole dash and the player skips body collisions.
 Gravity Well's pull (a burst with `pull_m`) is retired (v0.8.0 P2, owner O24): no card sets `pull_m` (kept in the hash
-order). **Void's black holes** (`BlackHoles`, v0.8.0 P2): a spec with `hole_permille` > 0 rolls once on the `ability`
-stream where a projectile of it ends (`Attacks.on_projectile_end`, a projectile with its own spec key) and where a
-slash of it first lands (`Attacks._arc`); on success a hole opens there (`World.mx.hole_pos` / `hole_from` /
-`hole_dmg`; the pulse = the shot's damage × `hole_damage_permille`, rounded, at least 1). Past `WandTable.hole_max` (3)
-the oldest closes first. Tick phase 6 (`ModifierRuntime.advance`): holes whose age reaches `hole_ticks` (120) close;
-each then (oldest first) moves every enemy within `hole_pull_radius_m` (3.5 m; not a boss, not spawning) by
-`hole_pull_step_m` (0.05 m a tick) toward its centre, stopping `BlackHoles.CORE_GAP_M` (0.3 m) short, and every
-`hole_period_ticks` (12) of its age pulses `Damage.tick_dot` (TAG_DOT, proc 0, effect `void_hole`) on each enemy
-within `hole_radius_m` (1.4 m). Hashed (`ModifierState`) only while a hole stands; snapshotted (`ADDED_SINCE_V05`).
+order). **Void's black holes** (v0.8.0 P2) are deleted (v0.9.0 VP, owner C §6.4): the card `gravity_well` is retired
+(`migration.tres`: a Gun run's becomes the Void form card, a Blade run's is refunded), `BlackHoles`, `hole_*` and its
+state are gone; an older snapshot's `hole_*` are ignored on restore. **The Void form** (`VoidShots`, v0.9.0 VP, Q10):
+a bolt with `void_mm` > 0 passes through bodies (World's projectile pass); tick phase 6 (`ModifierRuntime.advance`):
+each player Void shot hits every enemy within `void_mm` (the area stat on it) as it comes in and every
+`void_tick_ticks` (12) while it stays (`World.mx.void_shot` / `void_foe` / `void_next`, a wait per shot and enemy,
+hashed only while one waits, snapshotted `ADDED_SINCE_V05`), each tick of a shot its own root, `Attacks.land` with
+the Laser's feeding rule; then each enemy within `void_pull_mm` (3 m) is stepped toward the shot's path (the line it
+flies along), at most `void_pull_mmps` (1 m/s, weaker with distance), the pulls of all shots on one enemy summed and
+capped at the strongest one's top step (no stacking), with a separation push from neighbours within 0.3 m of its
+edge; heavies (radius ≥ 0.5 m) half, bosses, elites and spawning enemies none (`VoidShots.steps`, pure: the view's
+lean reads it).
+**The Lance form** (`Lance`, v0.9.0 AF1, Q7 F5; AF1b, the owner's "low-key Hadouken"): a BOLT spec with `lance` > 0
+charges as G13 Charge did (`GunForms.hold`, `World.mx.hold_t`, `hold_ticks` 72, `hold_permille` 11600, +580 a level)
+except that a full charge waits for the release; the release (`PlayerKit._fire_bolt`) launches the Gun's own bolt (the
+orb's speed, life and look; Twin's lanes at its share) with `pierce` 999 (every enemy, once each; a wall ends it), its
+radius × `Lance.size_permille` (× 1 on a tap → × 2 at full) and its damage × the charge ‰; then `Lance.on_release`
+emits one `SimEvent.Kind.LANCE` (pos = the muzzle, amount = the ball's radius mm, amount_applied = the aim, proc_pct =
+the charge ‰) and starts the push back: `World.mx.recoil_t` = 6 ticks of `recoil_step` = 0.5 m × the charge fraction
+/ 6 against the aim, added to the walk in `World._move_and_collide` (walls resolve it); hashed and saved only while
+it runs. The card `gun_charge` is retired into it (`migration.tres`).
+**The Scatter form** (`Scatter`, v0.9.0 AF1, Q7 F6): a BOLT spec with `pellets` > 0 (the Gun's own bolt runner:
+`count` 6 over `spread` 25°, 5 m, `share_permille` 1000 so the pellets past the centre are secondary); `pellets` only
+marks them for the view. No new state.
+**The Glaive form** (`Glaive`, v0.9.0 AF2, Q7 F7): a BOLT spec with `glaive` > 0 and `returns` 1 (the retired
+Boomerang's rule, `ProjectileMoves`: it passes through every enemy, turns at half its life and ends at the hero; a
+disc's life never runs out on the way home, and going out a pierce's push spends the ticks its distance takes, so it
+turns 7 m out): one
+disc every 0.7 s at 14 m/s for 1.0 s (7 m out), `share_permille` 1600 (× 1.6 an orb hit a pass). `glaive` only marks it
+for the view. The card `boomerang` is retired into it (`migration.tres`). No new state.
+**The Seekers form** (`Seekers`, v0.9.0 AF2, Q7 F8): a BOLT spec with `seekers` > 0: `count` 3 over 40°, `homing`
+360 °/s, 10 m/s for 1 s, `share_permille` 450 (the darts past the centre are secondary). A dart's homing target is `Seekers.target`:
+the enemies within 10.8 m of the hero, nearest the hero first, taken at the dart's rank (its id modulo `count`), so one
+volley spreads over the three nearest; read from the world each tick. No new state.
+
+**The Wave form** (`WaveShots`, v0.9.0 AF3, Q7 F9): a BOLT spec with `wave_mm` > 0 (3000; the area stat scales it):
+one shot every 54 ticks (attack speed at half its bonus), 0.1 m a tick, 108 ticks (10.8 m), × 6 an orb hit (+5 % a
+level). World's projectile pass skips bodies for it (as the Void's); in tick phase 6 (`ModifierRuntime.advance`, after
+`VoidShots.advance`) each Wave shot's band (`wave_mm` wide square to its flight, `DEPTH_M` 0.5 deep) lands one hit
+(`Attacks.land`) on every enemy whose body it covers with no wall between, once per shot: the wait is kept in the Void's
+per-shot list (`ModifierState.void_shot / void_foe / void_next`, next = the shot's remaining life + 2), so no new state
+class and the hash and snapshot already cover it. Its card `gun_wave` is not the Blade's Wave (`echo_slash`) and has no
+`wave` tag.
+**The Wisps form** (`Wisps`, v0.9.0 AF3, Q7 F10): a bolt spec with `wisps` > 0 (3) keeps the orbs and adds wisps round
+the hero at `ORBIT_R_M` 1.1, a turn every 150 ticks, their places a function of `World.tick` (no state). In tick phase
+6 each wisp whose turn it is (every `wisp_ticks` 36, staggered evenly) launches the bolt spec from itself at the
+nearest enemy it can see within an orb's flight, at `wisp_permille` (400, +20 a level) of the shot's damage, as a
+repeat (`ctx.repeat`: no root moments, an extra under ShotCap's 40 a second; its projectile carries the REPEAT bit,
+which is how the view tells a wisp's orb), at 650 ‰ of the orb's size.
 
 **Venom** (`Venom`, M4): status `poison` (`ModifierOpDefinition.STATUSES`), stacks capped at `poison_max_stacks`, each
 new stack refreshing `poison_ticks`; every `poison_period_ticks` the DoT deals `poison_damage` × stacks (its own root,
@@ -1631,11 +1671,162 @@ below) and FB3's cap of a fifth of max HP (D36).
   window, window_left, window_len, nerf, copying), `WorldReader.fallen_window()`, `FALLEN_OFF`, `FALLEN_WARN`,
   `FALLEN_ON`.
 
+## 10j. The Tidecaller's Pull and Undertow (v0.9.0 NB1; owner Q24, [`BOSSES_4_5.md`](../roadmap/v0.9.0/BOSSES_4_5.md) N1)
+
+- **Kind.** `ActorStore.Kind.TIDECALLER` (appended), a boss kind (`BossAi.is_boss_kind`); floor 4's pool
+  (`data/boss_pools/floor_4.tres`).
+- **The Pull (`tide` move, `BossTide`).** Shielded. Windup (the bell), then an active time of `tide_pull_ticks` +
+  `tide_push_ticks`. In tick phase 5 (`BossAi.move`, after the player's own step, before walls resolve) the player is
+  moved by `drift_of`: toward the boss at `tide_pull` per tick in the pull, away at `tide_push` in the push, each capped
+  at `BossSchemas.TIDE_MAX_MPS` (1.5 m/s) / 60; the pull stops `BODY_GAP_M` short of the body; none while dashing or
+  dead. **Wall rule (`shift`):** a step is taken only if it doesn't press the player deeper toward a wall: `press(p)`
+  is the deepest penetration of a circle of the player's radius + `WALL_MARGIN_M` (0.6 m) into any wall; the whole
+  step, else its x part, else its y part, is taken when its `press` is 0 or no more than now, else none (so never into
+  a corner, never pinned on a wall). In the pull every live shot of the boss turns toward it by `tide_bend` (1/4096
+  turns a tick, `Kin.turn_toward`, speed kept). Its pattern fires (`BossDodge.resolve_pattern`) only while
+  `state_t < tide_pull_ticks`; none in the push (content: the pattern's duration is under the pull).
+- **Cadence.** `BossTable.sig_every_ticks` > 0: in MOVE with no cooldown, `BossTide.due` starts the phase's first
+  `tide` attack once `tick >= due`; `on_start` (any `tide` start, a phase's entry too) sets `due = tick +
+  sig_every_ticks`; the first is `sig_first_ticks` after the boss's first think in MOVE. The weighted pick leaves cadence
+  attacks out. State: `BossStore.sig_boss` / `sig_due` (lists, one entry per such boss, removed when it dies), hashed
+  after a `-2` sentinel only while non-empty; `WorldSnapshot.ADDED_SINCE_V05` (an older save has none).
+- **The Undertow.** A `marks` attack with `drag_m` > 0: when a circle strikes, a player within `drag_reach_m` of its
+  centre is moved `min(drag_m, distance)` toward it by the same wall rule (not while dashing).
+- **Reads.** `WorldReader.boss_tide(i)` (`BossTide.state`: phase `TIDE_NONE` / `TIDE_PULL` / `TIDE_PUSH`, windup,
+  progress ‰, speed m/s, centre), `KIND_TIDECALLER`, `MOVE_TIDE`, `TIDE_MAX_MPS`.
+
+## 10k. The Twin Wardens: one boss in two bodies (v0.9.0 NB2; owner Q24, [`BOSSES_4_5.md`](../roadmap/v0.9.0/BOSSES_4_5.md) N2)
+
+- **Kinds.** `TWIN_WARDEN` (the amber body: the boss) and `TWIN_WARDEN_VIOLET` (its twin), appended after `CONDUIT`;
+  both boss kinds (`BossTwin.is_twin_kind`). Floor 4's pool holds the Tidecaller and the Wardens (`twin_wardens`,
+  `save_order` 2: compiled after the Tidecaller, every saved boss index unchanged).
+- **Two linked actors (`BossTwin`).** `World.spawn_boss` makes the boss; `BossTwin.on_spawn` adds its twin
+  (`BossTable.twin_kind`) `twin_m` to the side (the first clear side, at least `chain_min_m` away) with the boss's HP,
+  max HP, `power`, intro invulnerability and freeze immunity, a `BossStore` entry of the same table, and the pair in
+  `BossStore.twin_*` (`twin_lead`, `twin_body`, `twin_angry`, `twin_anger_t`, `twin_burn_cd`; hashed after a `-3`
+  sentinel only while non-empty; `WorldSnapshot.ADDED_SINCE_V05`). Each body runs the boss framework (windup, markers,
+  shield, its own stagger meter); the boss is the bar (`WorldReader.boss_index`, the first live boss), `World.boss_id`,
+  the codex's fight, the only `BOSS_DEFEATED`, reward, kill count and legendary core (`BossTwin.leaves` in
+  `World._remove_dead`: the twin's entry goes with no defeat, shards, kill or core); only the boss's gate brings adds.
+  `World.boss_table_of_kind` answers the twin's kind with its boss's table (the death recap).
+- **One HP.** `Damage._apply` → `share_hp`: after a body's HP changes the twin's equals it (so both cross the 66 % and
+  33 % gates on the same think); `fall_together`: a body killed kills the other at once with its own `KILL` (the same
+  hit's child, no on-kill procs).
+- **One mind.** The twin never picks (`BossTwin.think` returns early for it in MOVE, turning it to the player); when
+  the boss starts attack k (`BossAi.start_attack` → `on_start`) the twin starts k the same tick if it is in MOVE.
+- **Steps (`BossTwin.moves`, phase 5).** The boss pursues as any boss; the twin walks to its flank, `flank_m` from the
+  player at a right angle from its boss on its own side; each × `anger_permille` / 1000 while angry; in a Chain Sweep
+  the twin swings to the line's end at `SWING_MULT` (4) × its speed. **Chain length (`_tether`)**, after the steps
+  and again in phase 6 (after walls and bodies push): the twin is put at `clamp(d, chain_min_m, chain_max_m)` along the
+  line from its boss; if a wall stands there the boss gives way along the line instead, else both share the move.
+- **The chain's burn (phase 6, the boss's resolve).** A player whose centre is within `player.radius_m +
+  chain_half_m` of the segment between the two centres takes `chain_burn` (× catch-up power) as damage over time
+  (`Damage.tick_dot`, effect `twin_chain`; hurt iframes apply) when `twin_burn_cd` is 0, which then becomes
+  `chain_burn_ticks` (counted down in the boss's think, so the hit-stop pauses it). Never while dashing, never while
+  `BossTide.press(p) > 0` (against a wall: it can't pin the player), never while either body rises or is in a gate,
+  never while the boss's Chain Sweep runs (`lifted`). The chain is not solid. A kill by it names the first
+  `chain_sweep` attack's late cause (`LATE_CAUSE + k`, its `late_cause_key`).
+- **Anger.** `Damage._apply` → `on_hit` (non-DoT, applied > 0, from the player): the other body is angry for
+  `anger_ticks` (`twin_angry` its id, `twin_anger_t`); one at a time; `STATUS_APPLY` (effect `twin_anger`) when it
+  turns.
+- **Crossfire (`crossfire`, shielded).** On start the safe spot `S` = the chain's midpoint + `distance_m` along the
+  chain's normal toward the player (0.75, then 0.5 of it if a wall stands there), stored as each body's `pt(b, 0)`;
+  each body's `lock_a` aims at `S`. Each wave of its pattern (a fan centred on `S`) leaves out every shot whose heading
+  is within `angle_of(Vector2(|S − body|, gap_m))` of `lock_a` (`BulletPatterns.fire`'s `gap`), so the two gaps cross
+  only at `S`; the twin's shots take `twin_look`.
+- **Chain Sweep (`chain_sweep`, locked).** Through the windup until its last `lock_ticks` the boss's line tracks:
+  `lock_a` = the angle to the player, `lock_len` = `clamp(dist + reach_m, chain_min_m, chain_max_m)` cut by
+  `EnemyAi.clear_run`; on its first active tick a player touching the lane (`AttackShapes.lane` from the boss's lock
+  point, `half_width_m`) is hit once (`hit_player`). The twin's copy draws and strikes nothing.
+- **Reads.** `WorldReader.boss_twin(i)` (`BossTwin.state`: lead, partner, angry, anger ‰, chain ends, hot, lifted,
+  burned; Crossfire's safe spot, gap lane, progress, firing; the Chain Sweep's from, to, half width, locked, progress,
+  struck), `KIND_TWIN_WARDEN`, `KIND_TWIN_WARDEN_VIOLET`, `MOVE_CROSSFIRE`, `MOVE_CHAIN_SWEEP`, `EFFECT_TWIN_ANGER`,
+  `EFFECT_TWIN_CHAIN`.
+
+## 10l. The Clockwork Judge: your echo (v0.9.0 NB3; owner Q24, [`BOSSES_4_5.md`](../roadmap/v0.9.0/BOSSES_4_5.md) N3)
+
+- **Kind.** `CLOCKWORK_JUDGE`, appended after `TWIN_WARDEN_VIOLET`; a boss kind. Floor 5's pool
+  (`data/boss_pools/floor_5.tres`) holds the Judge only until NB4 adds the Lantern Shade (`clockwork_judge`,
+  `save_order` 3: compiled after the Wardens, every saved boss index unchanged).
+- **The recording (`BossJudge.record`, tick phase 3, every live boss).** A boss whose table has `echo_points` > 0
+  (compiled from its first `echo` attack: `record_seconds` / `step_seconds`, 12 = 3.0 / 0.25) owns the echo
+  (`BossStore.echo_boss`, its actor id; the first Judge to think, one at a time) and, on every tick that is a multiple
+  of `echo_gap_ticks` (15) while the player lives, appends the player's position to `echo_x` / `echo_y`, keeping the
+  last `echo_points`, oldest first.
+- **The echo (`echo`, shielded, on the cadence).** `BossTide.due` treats `echo` as a cadence move (`is_cadence_move`:
+  `tide` or `echo`): the phase's first one every `sig_every_ticks` (600) start to start, the first `sig_first_ticks`
+  (240) after the clock starts, never by the pick. On start (`BossJudge.on_start`, after the lock) the recording locks
+  into the path (`path_x`, `path_y`, `path_k` = each point's index in the recording), every point within `radius_m` +
+  the player's radius + `echo_safe_m` (0.9 + 0.35 + 0.3) of the player's position then left out (it never strikes
+  where you stand at its start). The windup (48 ticks) shows the whole path; on active tick `path_k × echo_gap_ticks`
+  each point strikes a disc of `radius_m` (`hit_player`, its own hit each: `bosses.hit` cleared per point), so the
+  strikes come in the order walked, 0.25 s apart; the active time is `(echo_points − 1) × echo_gap_ticks + 1`. A new
+  attack by the Judge clears the path; one echo at a time (one attack at a time, the cadence 10 s).
+- **The cadence holds (`BossTide.HOLD`).** `due(…, cd)` returns `HOLD` (−2) when the signature is due but the boss's
+  cooldown still runs; the punish and the gap-closer then wait, so a player keeping far away can't starve the
+  cadence (the Tidecaller's Pull too).
+- **The Verdict (`verdict`, locked).** Its square (`square_half_m` each way, axis-aligned: `AttackShapes.lane` from
+  `c − (half, 0)` along +x) starts on the player (`on_start`), follows their exact position through the windup until
+  its last `lock_ticks` (`track_verdict`), then holds; on its first active tick a player whose circle touches the
+  square is hit once. Its telegraph is a `&"lanes"` with the one square, `tracked`, `locked`.
+- **State.** `echo_boss`, `echo_x`, `echo_y`, `path_x`, `path_y`, `path_k` in `BossStore`, hashed after a `-4` sentinel
+  only while a Judge records (`echo_boss >= 0`), in `WorldSnapshot.ADDED_SINCE_V05` (an older save has none: the Judge
+  records again from its next think); `BossSignatures.on_boss_gone` → `BossJudge.on_boss_gone` clears them.
+- **Reads.** `WorldReader.boss_echo(i)` (`BossJudge.state`: recording ‰ of the window before the next due tick, the
+  trail, the phase `ECHO_NONE` / `ECHO_SHOW` / `ECHO_REPLAY`, and while one runs progress, t, windup, gap, radius and
+  the path `[{pos, k, at, struck}]`; a winding Verdict's centre, half, locked, progress), `KIND_CLOCKWORK_JUDGE`,
+  `MOVE_ECHO`, `MOVE_VERDICT`.
+
+## 10m. The Lantern Shade: lights out (v0.9.0 NB4; owner Q24, [`BOSSES_4_5.md`](../roadmap/v0.9.0/BOSSES_4_5.md) N4)
+
+PLAN NB: "Keep the empty hood" (no head lanterns: the room's edge lanterns and the one in its hand carry the fight).
+
+- **Kind.** `LANTERN_SHADE`, appended after `CLOCKWORK_JUDGE`; a boss kind (`BossKinds.ALL`: the boss-kind table
+  moved out of `ContentCompiler`, unchanged, for its line limit). Floor 5's pool draws the Judge or the Shade
+  (`lantern_shade`, `save_order` 4: compiled after the Judge, every saved boss index unchanged).
+- **The lanterns (`BossShade`, tick phase 6 through `BossSignatures.advance`).** A boss whose table has
+  `lamp_count` > 0 (compiled from its first Lights Out: `ShadeCompiler`) owns the room's light (`BossStore.shade_boss`,
+  one Shade at a time) and puts `lamp_count` (4) lanterns `lamp_inset_m` (1.5 m) in from the middle of each wall of
+  the sealed room (`BossStore.arena`, re-read every tick; without one, round where the Shade stood, 7 m each way),
+  all lit (`lamp_t` = `lamp_ticks`, 360). Before the first Lights Out the room is lit and their clocks don't run.
+- **Lights Out (a shielded `pattern` with `dark_ticks`, on the cadence).** `BossTide.is_cadence(atk)` takes `tide`,
+  `echo` or a pattern with `dark_ticks` > 0: the phase's first one every `sig_every_ticks` (720) start to start, the
+  first `sig_first_ticks` (180) in, never by the pick; phases 2 and 3 open with it. On start (`BossShade.on_start`,
+  through `BossTide.on_start`) `shade_at` = now + `dark_ticks` (240) and `shade_from` = now. Its windup (60) and
+  active time (180: its slow wisp rings) are shielded, so the shield drops as the dark falls. At `shade_at`
+  `shade_dark` = 1 and every lantern is lit afresh (`lamp_ticks`). v0.9.0 NB4b (owner: "Dark comes and goes"):
+  `shade_until` = now + the table's `dark_hold_ticks` (480); on the first tick at or after it `shade_dark` = 0 and
+  `shade_until` = -1: the whole room is lit (the Shade hittable anywhere, the lanterns' clocks stopped, a Snuff puts
+  none out) until the next Lights Out's dark. A Lights Out whose dark falls while it is dark starts a fresh stretch.
+  A table with no `dark_hold_ticks` keeps the dark until the Shade dies (`shade_until` -1). Counted on `w.tick`, so a
+  hit's freeze (which holds the phases) can hold the lift a few ticks.
+- **The light.** `BossShade.lit(w, p, r)`: always before the dark; in the dark, a disc of radius r at p touches the
+  light when it is within `light_m` (3.5) + r of the living player or `lamp_m` (3.0) + r of a lantern with
+  `lamp_t` > 0. Each tick in the dark a lantern within `relight_m` (1.2) + the player's radius of the living player is
+  set to `lamp_ticks` (passing relights it for 6 s), else it burns down by one.
+- **Hittable only when lit.** `BossShade.unlit(w, i)`: the Shade in the dark whose body (its radius) touches no
+  light. `Damage.hit` and `Damage.tick_dot` treat it like a shield (`Damage._blocked`: `BossDodge.shielded` or
+  `unlit`): the HIT shows with `TAG_BLOCKED`, no HP lost; `WorldReader.boss_invulnerable` says so for the bar.
+- **The Snuff (`marks` with `snuff`).** A tracked circle (it follows the player's exact position, locks 0.8 s); on
+  its strike (`BossDodge.resolve_marks` → `BossShade.snuff`) the lit lantern nearest its centre goes out (`lamp_t` 0),
+  in the dark only. Phase 3's Snuff lays two.
+- **State.** `shade_boss`, `shade_dark`, `shade_at`, `shade_from`, `shade_until` (NB4b), `lamp_x`, `lamp_y`, `lamp_t` in `BossStore`,
+  hashed after a `-5` sentinel only while a Shade owns the light (`shade_boss >= 0`), in
+  `WorldSnapshot.ADDED_SINCE_V05` (an older save has none: the Shade takes the light again on its next tick, the room
+  lit until its next Lights Out); `BossSignatures.on_boss_gone` → `BossShade.on_boss_gone` clears them (the room
+  relights).
+- **Reads.** `WorldReader.boss_light()` (`BossShade.state`: dark, falling ‰ toward the next dark (-1 none), light_m,
+  lamp_m, lamp_ticks, the lanterns `[{pos, lit, left, frac}]`, the Shade's index and whether it is lit),
+  `KIND_LANTERN_SHADE`. The darkness drawn is the view's (`ShadeViews`); the dark never hides a marker (the dark
+  pass draws before every see-through thing), and a Shade wisp within 4 m of the player always shows its outline.
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×
-  `enemy_hp_floor_permille[floor − 1]` (`data/run/three_floors.tres`: 1.9^(f − 1)) × `hp_tier_permille[tier]`
-  (`data/spawning/floor_1.tres`: 1.10^tier), its damage × `enemy_damage_floor_permille` (1.4^(f − 1)) ×
+  `enemy_hp_floor_permille[floor − 1]` (`data/run/five_floors.tres` since v0.9.0 FV: 1000, 1380, 1900, 2620, 3610,
+  v0.8.0's 1.9^(f − 1) over three floors stretched over five) × `hp_tier_permille[tier]`
+  (`data/spawning/floor_1.tres`: 1.10^tier), its damage × `enemy_damage_floor_permille` (1000, 1180, 1400, 1660,
+  1960; was 1.4^(f − 1)) ×
   `damage_tier_permille` (1.05^tier), each step rounded half up (`SpawnTable.scale`). The floor factor is applied to
   the compiled enemy tables when the floor is built (`RunState.scale_enemies`, so a boss's summons get it too); the
   tier factor to each enemy as the spawn director brings it in (HP, and `ActorStore.power`, which `EnemyAi` applies

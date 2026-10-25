@@ -1,14 +1,16 @@
 extends GutTest
-## The gamble shrine through real input (v0.3.0 L19; v0.8.0 N14, owner O72: rarer, 3 wins, 30 % to fail). Run seed 2
-## (E2e.boot's fixed seed) draws a shrine on floor 1, in a combat room next to the start hall (never the start hall).
+## The gamble shrine through real input (v0.3.0 L19; v0.8.0 N14, owner O72: rarer, 3 wins, 30 % to fail). Run seed
+## SEED draws a shrine on floor 1, in a combat room two rooms from the start hall (never the start hall). v0.9.0 SH:
+## the player knows it as the Fortune Shrine; run seed 2's floor-1 shrine is now drawn as another kind (Shrines), so
+## the test moved to seed 385, the first whose floor-1 shrine is Fortune with the same five rolls.
 ## God from the dev panel (clicked with the mouse: the dev route, so the walk is safe), then walking up to the shrine
 ## with the stick shows its price above it and the prompt (red with no shards, and E then pays nothing; v0.8.0 N18,
 ## owner O76: no odds line under it); with shards, E on the keyboard pays 25 and wins a stat (the card spins and lands
 ## on it); X on the pad pays 38 and fails (the shrine fizzles, "It failed", no stat, the price still rises to 57);
 ## after the 3rd win the shrine is spent: dimmed, "Spent" above it, the prompt says so, and E pays nothing.
 
-## Run seed 2's floor-1 shrine: uses 1 and 2 fail, 0, 3 and 4 win (Gamble.fails on its floor seed).
-const SEED := 2
+## Run seed 385's floor-1 shrine (Fortune): uses 1 and 2 fail, 0, 3 and 4 win (Gamble.fails on its floor seed).
+const SEED := 385
 
 
 func after_each() -> void:

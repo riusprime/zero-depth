@@ -203,6 +203,11 @@ static func read(w: World) -> Dictionary:
 		"cards": out,
 		"cuts": cuts,
 		"incoming": incoming,
+		# v0.9.0 AS: the form fired now (&"" on a Blade run) and per limited slot category [category, held, limit]
+		"form": AttackSlots.form_id(w),
+		"slot_counts": AttackSlots.counts(w),
+		# v0.9.0 AS2: the slot category the waiting swap is limited to (AttackSlots.choice_category; 0: any slot)
+		"swap_slot": AttackSlots.choice_category(w, w.swap_code) if BuildSlots.swapping(w) else 0,
 	}
 
 
@@ -219,6 +224,7 @@ static func _card(w: World, code: int, level: int) -> Dictionary:
 		"order": order_of(w, code),  # v0.8.0 AO: what it does to the cards to its left
 		"after_trigger_dead": dead_after_trigger(w, info["id"]),  # v0.8.0 MR: it does nothing right of a trigger
 		"remnant": remnant_of(w, code),  # v0.8.0 RM: what its remnant does (REMNANT_*)
+		"slot": AttackSlots.tag(w, code),  # v0.9.0 AS: its slot tag on this run (AttackSlots; 0 none)
 	}
 
 

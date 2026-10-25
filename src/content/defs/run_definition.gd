@@ -61,6 +61,21 @@ extends ContentDef
 @export var final_name_key: StringName
 @export var final_arena: StringName
 @export var final_shatter_seconds := 1.5
+## v0.9.0 FV (owner Q24, "first floors are smaller and later floors are longer for example 10, 13, 15, 17 , 19"): the
+## rooms of floor f (the start hall included, the boss room not), an inclusive range, entry f − 1 (past the end, the
+## last entry; f is the floor within the loop, so every loop has the same sizes). Empty: data/map's range on every
+## floor (the v0.8.0 run shape, three_floors).
+@export var rooms_min_by_floor := PackedInt32Array()
+@export var rooms_max_by_floor := PackedInt32Array()
+## v0.9.0 FV: the wand's slots on each floor, over data/wand's slots_per_floor (empty: the wand's). The v0.8.0 run
+## shape keeps its 4 → 6 → 8, so a 3-floor run resumed from a v0.8.0 save grows as it did.
+@export var wand_slots_per_floor := PackedInt32Array()
+## v0.9.0 SV (owner: "Hero grows each floor"): each floor cleared raises the hero's max HP by this much, before the
+## max HP stat (so the stat cards, Fortune and the curses stack with it), and heals by as much on arrival. Counted on
+## the run's floor across loops (a loop keeps growing it); at most max_hp_floor_cap in all (0: no cap). 0: no growth
+## (the v0.8.0 run shape, three_floors).
+@export var max_hp_per_floor := 0
+@export var max_hp_floor_cap := 0
 
 
 func category() -> StringName:
@@ -138,6 +153,7 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "loop_deep_ease_permille: 1..1000")
 		)
+	_check_shape(issues)
 	if loop_threat < 0:
 		issues.append(ValidationIssue.new(&"negative", resource_path, "loop_threat is negative"))
 	if loop_catch_up_cap_permille < 0:
@@ -147,3 +163,31 @@ func validate() -> Array[ValidationIssue]:
 			)
 		)
 	return issues
+
+
+## v0.9.0 FV: the per-floor room ranges pair up and fit the generator (2..MapDefinition.MAX_ROOMS); the wand's slots
+## stay within the wand's and never shrink.
+func _check_shape(issues: Array[ValidationIssue]) -> void:
+	if rooms_min_by_floor.size() != rooms_max_by_floor.size():
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "rooms_min/max_by_floor pair up")
+		)
+	else:
+		for k in rooms_min_by_floor.size():
+			var lo := rooms_min_by_floor[k]
+			var hi := rooms_max_by_floor[k]
+			if lo < 2 or hi < lo or hi > MapDefinition.MAX_ROOMS:
+				issues.append(
+					ValidationIssue.new(
+						&"range", resource_path, "floor %d: 2 <= rooms <= 19" % (k + 1)
+					)
+				)
+	for k in wand_slots_per_floor.size():
+		var n := wand_slots_per_floor[k]
+		var lower := k > 0 and n < wand_slots_per_floor[k - 1]
+		if n < 1 or n > WandDefinition.MAX_SLOTS or lower:
+			issues.append(
+				ValidationIssue.new(
+					&"range", resource_path, "wand_slots_per_floor[%d]: 1..8, never lower" % k
+				)
+			)

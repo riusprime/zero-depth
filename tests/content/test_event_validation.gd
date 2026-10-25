@@ -10,10 +10,22 @@ func _codes(issues: Array[ValidationIssue]) -> Array:
 func test_the_shipped_events_curses_and_rules_compile() -> void:
 	var repo := EventLab.repo()
 	assert_eq(repo.errors().size(), 0, "content validates")
-	assert_eq(repo.count(&"events"), 9, "nine events (v0.5.5 DS: Whispering Deep)")
-	assert_eq(repo.count(&"curses"), 13, "five plain curses and eight trade-offs (v0.6.0 CU)")
+	# v0.9.0 EL (owner Q25): the Ambush Cache and Marked deleted
+	assert_eq(
+		repo.count(&"events"),
+		8,
+		"eight events (v0.5.5 DS: Whispering Deep; v0.9.0 EL: no Ambush Cache)"
+	)
+	assert_eq(
+		repo.count(&"curses"), 12, "five plain curses and seven trade-offs (v0.9.0 EL: no Marked)"
+	)
 	var events := EventCompiler.compile_events(repo)
+	assert_eq(events.size(), 9, "and the retired event's place kept")
+	assert_eq(EventCompiler.compile_curses(repo).size(), 13, "and the retired curse's")
 	for t in events:
+		if t.retired:
+			assert_eq([t.weight, t.choice_count()], [0, 0], "%s retired: never drawn" % t.id)
+			continue
 		assert_between(t.choice_count(), 1, 2, "%s choices" % t.id)
 		for c in t.choice_count():
 			assert_gte(t.cost[c], 0, "%s cost known" % t.id)

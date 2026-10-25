@@ -52,12 +52,18 @@ var ability_hud := AbilityHud.new()
 var events := EventHud.new()
 ## v0.4.0 AB: the Overrun room's banner (its kills, then what clearing it paid).
 var overrun_hud := OverrunHud.new()
+## v0.9.0 LK: the Lockdown banner (sealed: its formations and enemies left; then the exits open).
+var lockdown_hud := LockdownHud.new()
+## v0.9.0 SH, HF: the Blood and Chaos shrines' and the fountain's result lines (the Chaos challenge's enemies left).
+var shrine_hud := ShrineHud.new()
 ## v0.4.0 TU: the difficulty phase's name, and the line announcing a new phase or a new enemy kind.
 var phase_hud := PhaseHud.new()
 ## v0.5.0 SH: the shop's prompt and panel.
 var shop := ShopHud.new()
 ## v0.8.0 BD (O83): the boss door's interact prompt.
 var boss_door := BossDoorHud.new()
+## v0.9.0 IX: the shared interactables' one prompt (the FA pylons, the timed doors' switches).
+var interact := InteractPromptHud.new()
 ## v0.6.0 MX2: the weapon, the utility and the six modifier slot pips; the Swap choice (over the pick and the shop).
 var build_hud := BuildHud.new()
 ## v0.8.0 N8 (owner O62): the picked cards' icons fly over everything to their HUD slots.
@@ -97,9 +103,10 @@ var _floor_card := VBoxContainer.new()
 var _floor_card_title := HudStyle.label(56, true)
 var _floor_card_biome := HudStyle.label(22)
 var _floor_card_shards := HudStyle.label(18)  # v0.5.5 EC (Q-S4)
+var _floor_card_hp := HudStyle.label(18)  # v0.9.0 SV: "Max HP +15" on a floor the hero grew into
 var _floor_card_left := 0.0
 var _biome_key := ""
-## The floor card's [floor, deep, shards lost], so a language switch can word it again (v0.6.0 UP).
+## The floor card's [floor, deep, shards lost, loop, max HP gained], so a language switch can word it again (v0.6.0 UP).
 var _floor_card_args := []
 ## v0.8.0 N11 (owner O69): the hero is still arriving (the last sync): the HUD stays hidden and the floor card waits.
 var _landing := false
@@ -168,6 +175,8 @@ func _init() -> void:
 	kit_hud.heat_anchor = heat_meter
 	add_child(ability_hud)  # v0.4.0 BS
 	add_child(overrun_hud)  # v0.4.0 AB
+	add_child(lockdown_hud)  # v0.9.0 LK
+	add_child(shrine_hud)  # v0.9.0 SH, HF
 	add_child(phase_hud)  # v0.4.0 TU
 	ability_hud.anchor = _hp_frame
 	for c in find_children("*", "Control", true, false):
@@ -177,6 +186,7 @@ func _init() -> void:
 	events.panel.picked.connect(_pick.picked.emit)
 	add_child(shop)  # v0.5.0 SH: so does the shop panel
 	add_child(boss_door)  # v0.8.0 BD
+	add_child(interact)  # v0.9.0 IX
 	add_child(build_hud)  # v0.6.0 MX2
 	build_hud.anchor = _hp_frame
 	add_child(swap)  # v0.6.0 MX2: last, over the pick and the shop; its answer is input
@@ -261,9 +271,12 @@ func sync(reader: WorldReader) -> void:
 	ability_hud.sync(reader)  # v0.4.0 BS
 	events.sync(reader)  # v0.5.0 EV
 	overrun_hud.sync(reader)  # v0.4.0 AB
+	lockdown_hud.sync(reader)  # v0.9.0 LK
+	shrine_hud.sync(reader)  # v0.9.0 SH, HF
 	phase_hud.sync(reader)  # v0.4.0 TU
 	shop.sync(reader)  # v0.5.0 SH
 	boss_door.sync(reader)  # v0.8.0 BD
+	interact.sync(reader)  # v0.9.0 IX
 	build_hud.sync(reader)  # v0.6.0 MX2
 	swap.sync(reader)
 	swap.input_enabled = not _landing  # v0.8.0 N11 fix: no answer to a Swap hidden under the arrival (it would be lost)
@@ -292,12 +305,18 @@ func _process(delta: float) -> void:
 ## floor, v0.5.0 RT). v0.5.5 EC (owner Q-S4): `shards_lost` > 0 adds a line that the portal kept half your shards.
 ## v0.7.5 AP: `loop` > 1 puts "Loop N · " before the card's title.
 func show_floor(
-	floor_index: int, biome_key: String, deep: bool = false, shards_lost: int = 0, loop: int = 1
+	floor_index: int,
+	biome_key: String,
+	deep: bool = false,
+	shards_lost: int = 0,
+	loop: int = 1,
+	hp_gained: int = 0
 ) -> void:
 	_biome_key = biome_key
-	_floor_card_args = [floor_index, deep, shards_lost, loop]
+	_floor_card_args = [floor_index, deep, shards_lost, loop, hp_gained]
 	_word_floor_card()
 	_floor_card_shards.visible = shards_lost > 0
+	_floor_card_hp.visible = hp_gained > 0  # v0.9.0 SV
 	_floor_card_left = FLOOR_CARD_SECONDS
 	_floor_card.modulate.a = 1.0
 	_floor_card.visible = true
@@ -315,6 +334,8 @@ func _word_floor_card() -> void:
 	_floor_card_title.text = loop_prefix(self, _floor_card_args[3]) + tr(card_key) % floor_index
 	_floor_card_biome.text = tr(_biome_key)
 	_floor_card_shards.text = tr("HUD_SHARDS_HALVED") % shards_lost if shards_lost > 0 else ""
+	var hp_gained: int = _floor_card_args[4]
+	_floor_card_hp.text = tr("HUD_MAX_HP_GROWN") % hp_gained if hp_gained > 0 else ""
 
 
 func _notification(what: int) -> void:
@@ -341,10 +362,13 @@ func floor_card_showing() -> bool:
 	return _floor_card.visible
 
 
-## The card's title and biome, then (v0.5.5 EC, Q-S4) the shard line when the portal left shards behind.
+## The card's title and biome, then (v0.5.5 EC, Q-S4) the shard line when the portal left shards behind and (v0.9.0
+## SV) the max HP line when the hero grew.
 func floor_card_text() -> String:
 	var out := "%s %s" % [_floor_card_title.text, _floor_card_biome.text]
-	return out + " " + _floor_card_shards.text if _floor_card_shards.visible else out
+	if _floor_card_shards.visible:
+		out += " " + _floor_card_shards.text
+	return out + " " + _floor_card_hp.text if _floor_card_hp.visible else out
 
 
 func floor_text() -> String:
@@ -480,6 +504,12 @@ func _build_floor_card() -> void:
 	_floor_card_shards.add_theme_constant_override("outline_size", 4)
 	_floor_card_shards.visible = false
 	_floor_card.add_child(_floor_card_shards)
+	_floor_card_hp.name = "FloorCardHp"
+	_floor_card_hp.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_floor_card_hp.add_theme_color_override("font_color", HudStyle.REGEN)
+	_floor_card_hp.add_theme_constant_override("outline_size", 4)
+	_floor_card_hp.visible = false
+	_floor_card.add_child(_floor_card_hp)
 	_floor_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 

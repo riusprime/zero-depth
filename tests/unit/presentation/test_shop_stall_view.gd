@@ -12,6 +12,22 @@ const BIOMES: Array[StringName] = [
 ]
 const TEST_MANIFEST := "user://test_shop_manifest.json"
 const EMPTY_MANIFEST := "user://test_shop_manifest_empty.json"
+## v0.9.0 MI2: the device ids whose owner models are installed (assets/models/devices/<id>.glb in the manifest).
+const MI2_DEVICES: Array[StringName] = [
+	&"floor_receiver",
+	&"arrival_altar",
+	&"lockdown_seal",
+	&"rune_switch",
+	&"rune_pillar",
+	&"rune_mural",
+	&"cracked_wall",
+	&"cracked_wall_broken",
+	&"purple_rune_dais",
+	&"shrine_fortune",
+	&"shrine_blood",
+	&"shrine_chaos",
+	&"healing_fountain",
+]
 
 var _w: World
 
@@ -207,7 +223,15 @@ func test_the_owners_stall_is_the_tent() -> void:
 	assert_almost_eq(box.get_center().x, 0.0, 0.01, "centred")
 	assert_almost_eq(box.position.y, 0.0, 0.01, "on the floor")
 	for id: StringName in ShopModels.SPECS:
-		if id != &"shop_tent" and id != &"curse_altar":  # v0.8.0 N17: the owner's altar (test_curse_room_view)
+		if String(id).begins_with("hub_"):
+			continue  # v0.9.0 HB: the owner's hub pieces (test_hub_view)
+		if id in MI2_DEVICES:  # v0.9.0 MI2: the owner's device models, installed (assets/models/manifest.json)
+			assert_eq(
+				ShopModels.listed_path(id),
+				"res://assets/models/devices/%s.glb" % id,
+				"%s: the owner's installed file" % id
+			)
+		elif id != &"shop_tent" and id != &"curse_altar":  # v0.8.0 N17: the owner's altar
 			assert_eq(
 				ShopModels.listed_path(id), "", "%s: the stand-in until the owner's file" % id
 			)

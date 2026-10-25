@@ -9,14 +9,16 @@ extends RefCounted
 ## - among the candidates, those with the fewest doorways (a dead end when there is one) win; the pick among them is a
 ##   draw from the `map:overrun` sub-stream of the floor seed (never the `map` stream itself, so layouts don't move);
 ## - no candidate (a tiny floor): no Overrun on that floor (overrun_room stays -1).
+## - v0.9.0 CF (owner: "lets never make it a 1x1"): a candidate has at least `min_cells` grid cells (OverrunTable;
+##   0, a floor saved before CF: any room).
 ## Pure sim code: integers, BFS over the doorway graph.
 
 
 ## Marks `f`'s Overrun room and its doorways. Returns the room, or -1.
-static func mark(f: FloorLayout) -> int:
+static func mark(f: FloorLayout, min_cells: int = 0) -> int:
 	f.overrun_room = -1
 	f.overrun_doors = PackedInt32Array()
-	var cands := candidates(f)
+	var cands := candidates(f, min_cells)
 	if cands.is_empty():
 		return -1
 	var best := 1 << 30
@@ -37,14 +39,14 @@ static func mark(f: FloorLayout) -> int:
 
 
 ## Rooms that may hold the Overrun, ascending.
-static func candidates(f: FloorLayout) -> PackedInt32Array:
+static func candidates(f: FloorLayout, min_cells: int = 0) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	var target := f.boss_host_room if f.boss_room >= 0 else f.portal_room
 	var path := shortest_path(f, f.start_room, target, -1)
 	for room in f.room_count():
 		if room in [f.start_room, f.boss_room, f.boss_host_room, f.portal_room]:
 			continue
-		if path.has(room):
+		if path.has(room) or not ClosedFights.fits(f, room, min_cells):
 			continue
 		if shortest_path(f, f.start_room, target, room).is_empty():
 			continue

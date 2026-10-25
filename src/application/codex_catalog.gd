@@ -35,6 +35,8 @@ const SECTIONS := {
 const WAND_TAG := "wand"
 const TRIGGER_TAG := "trigger"
 
+## v0.9.0 CL: the Rune Archive's collectibles, in shelf order (CollectibleBook.defs; the Codex's Collectibles page).
+var collectibles: Array[CollectibleDefinition] = []
 var _entries := {}
 var _index := {}
 ## Actor kind -> enemy id, and -> boss id (the recorder's per-tick lookups).
@@ -127,13 +129,14 @@ static func build(repo: ContentRepository) -> CodexCatalog:
 				}
 			)
 		)
+	c.collectibles = CollectibleBook.defs(repo)  # v0.9.0 CL
 	return c
 
 
 ## v0.8.0 FB1: the final boss's bodies in the run's order (RunDefinition.final_bosses), then any other by id.
 static func _final_bodies(repo: ContentRepository) -> Array:
 	var out := []
-	var run: RunDefinition = repo.get_def(&"run", &"three_floors")
+	var run: RunDefinition = repo.get_def(&"run", RunSaver.RUN_ID)
 	if run != null:
 		for id: StringName in run.final_bosses:
 			var d := repo.get_def(&"final_bosses", id)
@@ -268,3 +271,11 @@ func enemy_of_kind(kind: int) -> StringName:
 ## The boss id of actor kind `kind` (&"" when none).
 func boss_of_kind(kind: int) -> StringName:
 	return _boss_kinds.get(kind, &"")
+
+
+## v0.9.0 CL: collectible `id` (null when the content has none of that id).
+func collectible(id: StringName) -> CollectibleDefinition:
+	for d in collectibles:
+		if d.id == id:
+			return d
+	return null

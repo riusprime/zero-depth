@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
 [ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
@@ -22,18 +22,43 @@ op = 7
 stage = 3
 element = &"ember"
 
+[sub_resource type="Resource" id="Op_5"]
+script = ExtResource("2_op")
+op = 6
+stage = 3
+status = &"burn"
+stacks = 1
+
+[sub_resource type="Resource" id="Op_6"]
+script = ExtResource("2_op")
+op = 0
+field = &"life_seconds"
+value = 2.0
+
+[sub_resource type="Resource" id="Op_7"]
+script = ExtResource("2_op")
+op = 0
+field = &"period_seconds"
+value = 0.5
+
+[sub_resource type="Resource" id="Op_8"]
+script = ExtResource("2_op")
+op = 0
+field = &"alive_max"
+value = 12.0
+
 [sub_resource type="Resource" id="Op_4"]
 script = ExtResource("2_op")
 op = 8
 stage = 4
-form = 7
+form = 4
 hook_trigger = 1
-hook_tags = PackedStringArray("area")
-hook_radius_m = 1.5
-hook_damage_permille = 600
-per_level = 100.0
+hook_tags = PackedStringArray("area", "ground")
+hook_radius_m = 1.2
+hook_damage_permille = 150
+per_level = 50.0
 hook_effect = &"ember_core"
-hook_ops = Array[Resource]([SubResource("Op_3")])
+hook_ops = Array[Resource]([SubResource("Op_3"), SubResource("Op_5"), SubResource("Op_6"), SubResource("Op_7"), SubResource("Op_8")])
 
 [resource]
 script = ExtResource("1_mod")

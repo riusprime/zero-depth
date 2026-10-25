@@ -161,3 +161,43 @@ func test_the_transit_is_hashed_and_deterministic() -> void:
 		CombatLab.idle(w, 30)
 		hashes.append(w.state_hash())
 	assert_eq(hashes[0], hashes[1], "same seed, same transit")
+
+
+## v0.9.0 PT (owner C4, Q15): the gates form for BossFlow.PORTAL_FORM_TICKS after the boss dies; walking in is refused
+## until then (the hero stands in the opening and nothing happens), and allowed the tick it has formed. The reader's
+## forming progress (what the view draws) runs 0 .. 1 over the same ticks.
+func test_entering_is_refused_until_the_gates_have_formed() -> void:
+	var w := _floor_world(41)
+	var reader := WorldReader.new(w)
+	var f := w.floor_layout
+	assert_eq(
+		reader.portal_form_progress(WorldReader.ROUTE_NORMAL), 0.0, "no portal before the boss"
+	)
+	w.actors.set_pos(0, f.boss_door_inside(1.5))
+	CombatLab.idle(w, 4)
+	assert_eq(reader.portal_form_progress(WorldReader.ROUTE_NORMAL), 0.0, "nor during the fight")
+	var bi := w.actors.index_of(w.boss_id)
+	w.actors.invuln[bi] = 0
+	Damage.hit(w, bi, 999999, 0, 0, 1, 0, w.actors.pos(bi), w.actors.pos(bi))
+	CombatLab.idle(w, 1)
+	assert_eq(w.boss_flow.state, BossFlow.State.OPEN, "the portal opened")
+	var opened := w.boss_flow.opened_tick
+	w.actors.set_pos(0, f.portal_front_point())
+	var frame := _move(-f.portal_facing())
+	var last := reader.portal_form_progress(WorldReader.ROUTE_NORMAL)
+	var in_opening := false
+	var taken_at := -1
+	for n in BossFlow.PORTAL_FORM_TICKS + 30:
+		w.step(frame)
+		if w.boss_flow.state == BossFlow.State.ENTERING:
+			taken_at = w.boss_flow.enter_tick - opened
+			break
+		in_opening = in_opening or BossFlow.in_portal(f, w.player_pos())
+		var k := reader.portal_form_progress(WorldReader.ROUTE_NORMAL)
+		assert_gt(k, last, "it grows every tick (%d)" % (w.tick - opened))
+		assert_lte(k, 1.0, "not past formed (%d)" % (w.tick - opened))
+		last = k
+	assert_true(in_opening, "the hero stood in the opening while it formed, and was refused")
+	assert_eq(taken_at, BossFlow.PORTAL_FORM_TICKS, "taken the tick it formed")
+	assert_eq(reader.portal_form_progress(WorldReader.ROUTE_NORMAL), 1.0, "formed")
+	assert_eq(BossFlow.PORTAL_FORM_TICKS, 90, "about 1.5 s")

@@ -52,9 +52,14 @@ static func kind_of(spec: AttackSpec) -> int:
 
 ## v0.6.0 MX2, the ZONE runner (Attacks): a patch of `spec` at `at` (radius `r`, `life` ticks) dealing ctx.damage a
 ## hit, at ctx's hook level.
+## v0.9.0 XP (owner Q11: Fire's kill blast becomes burning ground; the PF budgets): a spec with an alive_max keeps at
+## most that many of its patches alive. A new one within `r` of one already burning merges into it (that patch burns
+## on, its life renewed to the new one's end); one past the cap with none near is not lit (one LIMIT event).
 static func add_zone(
 	w: World, at: Vector2, r: float, life: int, spec: AttackSpec, ctx: AttackContext
 ) -> void:
+	if spec.alive_max > 0 and not _zone_room(w, at, r, w.tick + life, spec):
+		return
 	add_fire(w, at, r, w.tick + life, ctx.damage, 0, kind_of(spec))
 	var s := w.ab
 	var k := s.fire_pos.size() - 1
@@ -62,6 +67,24 @@ static func add_zone(
 	s.fire_depth[k] = ctx.depth
 	s.fire_proc[k] = ctx.proc_pct
 	s.fire_cap[k] = spec.count if spec.has_tag(&"field") else 0
+
+
+## v0.9.0 XP: whether a new patch of `spec` (an alive_max) may be lit at `at`: false when it merged into a patch of
+## the spec within `r` (renewed to `end`) or the spec's patches are at the cap (one LIMIT event).
+static func _zone_room(w: World, at: Vector2, r: float, end: int, spec: AttackSpec) -> bool:
+	var s := w.ab
+	var alive := 0
+	for k in s.fire_spec.size():
+		if s.fire_spec[k] != spec.key:
+			continue
+		alive += 1
+		if s.fire_pos[k].distance_squared_to(at) <= r * r:
+			s.fire_end[k] = maxi(s.fire_end[k], end)
+			return false
+	if alive < spec.alive_max:
+		return true
+	Attacks.alive_capped(w, spec)
+	return false
 
 
 ## Lights a fire patch (Flame Trail, Napalm Drone); past FIRE_CAP the oldest goes out.

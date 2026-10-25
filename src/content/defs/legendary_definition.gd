@@ -14,6 +14,9 @@ extends ContentDef
 @export var offer_size := 3
 ## A legendary stat card's amount: its epic amount x this.
 @export var stat_multiplier := 1.6
+## v0.9.0 LG (owner Q12: "Power/Haste ×1.3"): a stat card's own multiplier in place of stat_multiplier (its id: one of
+## stat_cards; at least 1). Cards not named keep stat_multiplier.
+@export var stat_multiplier_by_card: Dictionary[StringName, float] = {}
 ## Retired by v0.8.0 FL (owner O91: "remove automatic level-5 grants"): it was v0.6.5 WN5b's level every wand card
 ## was taken at from this altar. Kept so an older file still loads; it must be 0 (the upgrade choice below replaced it).
 @export var wand_level := 0
@@ -54,6 +57,19 @@ func validate() -> Array[ValidationIssue]:
 			issues.append(ValidationIssue.new(&"range", resource_path, "unknown category %s" % c))
 	if stat_multiplier < 1.0:
 		issues.append(ValidationIssue.new(&"range", resource_path, "stat_multiplier is at least 1"))
+	for id: StringName in stat_multiplier_by_card:  # v0.9.0 LG
+		if not stat_cards.has(id):
+			issues.append(
+				ValidationIssue.new(
+					&"unknown_item", resource_path, "%s is not a legendary stat card" % id
+				)
+			)
+		if stat_multiplier_by_card[id] < 1.0:
+			issues.append(
+				ValidationIssue.new(
+					&"range", resource_path, "%s: its multiplier is at least 1" % id
+				)
+			)
 	if wand_level != 0:  # v0.8.0 FL: the level-5 grant is gone (upgrade_choice)
 		issues.append(ValidationIssue.new(&"range", resource_path, "wand_level is retired: 0"))
 	if offer_size < 1 or offer_size > 3:
@@ -69,3 +85,8 @@ func validate() -> Array[ValidationIssue]:
 	if stat_weight < 0 or mod_weight < 0 or stat_weight + mod_weight <= 0:
 		issues.append(ValidationIssue.new(&"range", resource_path, "weights are >= 0, not both 0"))
 	return issues
+
+
+## v0.9.0 LG: the legendary multiplier of stat card `id` (its own, or stat_multiplier).
+func multiplier_of(id: StringName) -> float:
+	return float(stat_multiplier_by_card.get(id, stat_multiplier))

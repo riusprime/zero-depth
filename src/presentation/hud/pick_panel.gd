@@ -14,9 +14,10 @@ extends ModalPanel
 ## glowing back while the background darkens, and flips with a punch, a flash and rays behind it; a Legendary card
 ## keeps a holographic shine. The hovered card tilts toward the cursor (a focused one by key or pad: a fixed tilt)
 ## and sinks a little, its numbers counting up from the old value. On a pick its icon flies to its HUD slot
-## (card_taken → Hud's CardFly) and the cards not picked burn (no discard button: D48); a chest deals its one card,
-## already taken (N7), and any answer closes it. A press during the deal ends the deal at once and still counts (no
-## input is lost or held back). Reduced motion: no deal, flip or tilt; the cards fade in face up, tier colour and
+## (card_taken → Hud's CardFly) and the cards not picked burn (no discard button: D48; v0.9.0 AS: and the card a
+## picked Form, Pattern, Secondary or Element card replaces burns on its slot line, PickSlot); a chest deals its one
+## card, already taken (N7), and any answer closes it. A press during the deal ends the deal at once and still counts
+## (no input is lost or held back). Reduced motion: no deal, flip or tilt; the cards fade in face up, tier colour and
 ## words kept; on a pick the panel fades. All of it only draws: the sim decides (EI-07).
 
 ## v0.8.0 N8: the picked card (its code) leaves its socket at `from` (global px): the HUD flies its icon to its slot.
@@ -235,7 +236,30 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			if face["wand"]:  # v0.7.5 SM (N8): a wand card's level, and the level taking it gives
 				face["held_level"] = held_level(reader, code)
 				face["level_text"] = level_text(ci, face["held_level"], face["held_level"] + 1)
+			slot_face(ci, reader, info, face)  # v0.9.0 AS
 	return face
+
+
+## v0.9.0 AS (owner Q5, Q14: "Short line + slot tag"; C67, C87): a Form, Pattern, Secondary or Element card's slot tag
+## ("Pattern"), and when its slot is full the card taking it replaces ("Replaces Twin", that card's id and colour).
+## AS2 (G2 AS = B): the tag leads the rarity line ("Pattern · Modifier · Rare") and the pick card's ribbon (PickSlot)
+## says "Replaces Twin", or "Choose one to replace" for a full Secondary or Element slot (the Swap panel asks).
+static func slot_face(ci: Object, reader: WorldReader, info: Dictionary, face: Dictionary) -> void:
+	var slot := int(info.get("slot", WorldReader.SLOT_NONE))
+	if slot == WorldReader.SLOT_NONE:
+		return
+	face["slot"] = slot
+	face["slot_text"] = ci.tr(WorldReader.SLOT_TAG_KEYS[slot])
+	face["tier_text"] = "%s · %s" % [face["slot_text"], face.get("tier_text", "")]
+	if info.get("chooses", false):
+		face["replaces_text"] = ci.tr("UI_SLOT_CHOOSE")
+		return
+	var old := int(info.get("replaces", -1))
+	if old < 0:
+		return
+	var o := reader.card_info(old)
+	face["replaces_id"] = o["id"]
+	face["replaces_text"] = ci.tr("UI_SLOT_REPLACES") % ci.tr(o["name_key"])
 
 
 ## v0.7.5 SM (N8): the level of card `code` in the wand now (BuildSlots' slots), or 0 when it isn't held.
@@ -470,6 +494,7 @@ func _advance_outro(delta: float) -> void:
 		_rays.queue_redraw()
 		if k == _picked:
 			fx.modulate.a = 1.0 - clampf(t * 3.0, 0.0, 1.0)  # its icon is flying; the card fades fast
+			_slots[k].burn_replaced(t)  # v0.9.0 AS (Q5): the card it replaces burns
 		elif reduced:
 			fx.modulate.a = 1.0 - t
 		else:
@@ -493,6 +518,7 @@ func _end_outro() -> void:
 		s.mouse_filter = Control.MOUSE_FILTER_STOP
 		s.card.fx.set_burn(0.0)
 		s.card.fx.modulate = Color.WHITE
+		s.burn_replaced(0.0)
 
 
 ## v0.8.0 N8: the outro is playing (the picked card's icon flying, the others burning), and which card was picked.

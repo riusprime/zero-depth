@@ -70,8 +70,14 @@ func test_the_shipped_data() -> void:
 			KIND.MINE_LAYER: 4,
 			KIND.SNIPER: 5,
 			KIND.LENS_DRONE: 3,
+			KIND.BREAKER: 12,
+			KIND.RIFT_HUNTER: 12,
+			KIND.CONDUIT: 12,
 		},
-		"shards per kind (PLAN E; hatchlings 1; v0.3.5 Arc Caster and Bomb Drone 4; v0.4.0 EN horde; v0.4.0 BO Lens Drone 3)"
+		(
+			"shards per kind (PLAN E; hatchlings 1; v0.3.5 Arc Caster and Bomb Drone 4; v0.4.0 EN horde;"
+			+ " v0.4.0 BO Lens Drone 3; v0.9.0 EL: + Breaker, Rift Hunter, Conduit 12, ELITES.md E0 3 x a normal 4)"
+		)
 	)
 	assert_eq(_rewards.chest_prices, PackedInt32Array([40, 60, 80]))
 	assert_eq([_rewards.altars_min, _rewards.altars_max], [2, 3])
@@ -100,9 +106,18 @@ func test_the_shipped_data() -> void:
 			"cold_snap",
 			"conductor",
 			"finisher_plus",  # v0.8.0 RM: Fracture Bank, rare
+			"gun_bomb",  # v0.9.0 BM: the Bomb form, rare
+			"gun_glaive",  # v0.9.0 AF2: the Glaive form, rare
+			"gun_lance",  # v0.9.0 AF1: the Lance form, rare
+			"gun_laser",  # v0.9.0 LZ: the Laser form, rare
 			"gun_ring",  # v0.8.0 AO: the order rule's Ring and Swirl, rare
+			"gun_scatter",  # v0.9.0 AF1: the Scatter form, rare
+			"gun_seekers",  # v0.9.0 AF2: the Seekers form, rare
 			"gun_swirl",
 			"gun_threadline",  # v0.8.0 RM: the remnant cards, rare
+			"gun_void",  # v0.9.0 VP: the Void form, rare
+			"gun_wave",  # v0.9.0 AF3: the Wave form, rare
+			"gun_wisps",  # v0.9.0 AF3: the Wisps form, rare
 			"meltdown",
 			"overclocked_drone",
 			"razor_orbit",

@@ -1,8 +1,9 @@
 extends GutTest
 ## v0.4.0 SV (PLAN "Saves (SV)", ROADMAP R3) through main.tscn with real input only: no Continue on a fresh start;
-## the left stick walks into a neighbouring room (a first entry saves), on into the room, then Esc -> Main menu; the
-## menu now offers Continue (focused), and Enter lands back at that room's entry: the same tick and the same state
-## hash as right after the entry tick, the room known on the minimap. A death deletes the save.
+## the left stick walks into a neighbouring room (a first entry saves), on into the room, then Esc -> to the hub
+## (v0.9.0 HB, owner 2026-10-23) -> the hub's pause -> Main menu; the menu now offers Continue (focused), and Enter
+## lands back at that room's entry: the same tick and the same state hash as right after the entry tick, the room known
+## on the minimap. A death deletes the save.
 
 const LEG_FRAMES := 3000
 
@@ -14,9 +15,11 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
+## The main menu's Continue while it is offered (v0.9.0 HB: without a save it is greyed out), else null.
 func _continue_button(main: Main) -> Node:
 	var menu := main.get_node_or_null("UI/MainMenu")
-	return menu.find_child("Continue", true, false) if menu != null else null
+	var b := menu.find_child("Continue", true, false) as Button if menu != null else null
+	return b if b != null and not b.disabled else null
 
 
 func _focused(main: Main) -> Control:
@@ -42,12 +45,10 @@ func _walk(e: E2e, target: Vector2, done: Callable) -> bool:
 	return done.call()
 
 
+## v0.9.0 HB (owner 2026-10-23): the pause menu leaves to the hub, then the hub's pause to the main menu.
 func _to_main_menu(e: E2e) -> void:
-	await e.tap(KEY_ESCAPE)
-	for k in 5:  # Resume -> Build (v0.6.5 WN2) -> Restart run -> Options -> Codex (v0.7.5 CX) -> Main menu
-		await e.tap(KEY_DOWN)
-	await e.tap(KEY_ENTER)
-	await e.frames(2)
+	assert_true(await HubWalk.new(e).from_run(), "the pause menu leaves to the hub")
+	assert_true(await HubWalk.new(e).to_main_menu(), "the hub's pause -> Main menu")
 
 
 func test_quit_mid_room_and_continue_at_its_entry() -> void:
@@ -113,6 +114,44 @@ func test_quit_mid_room_and_continue_at_its_entry() -> void:
 	assert_true(hud.minimap.state.is_discovered(f.start_room), "and the start hall")
 
 
+## v0.9.0 HB (owner 2026-10-23, "To the hub (Recommended)"): the pause menu's last row, "To the Rune Ring", leaves the
+## run for the hub with the run saved; the hub's pause -> Main menu -> Continue resumes the same run on the same floor.
+func test_the_pause_menu_leaves_to_the_hub_and_continue_resumes() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu()
+	await e.frames(30)
+	var seed_value := e.world().seed_value
+	var floor_index := main.run.floor_index
+	var saved_tick := int(main.saves.last["tick"])
+	await e.tap(KEY_ESCAPE)
+	for k in 5:
+		await e.tap(KEY_DOWN)
+	var exit := _focused(main) as Button
+	assert_eq(exit.name, &"Hub", "the pause menu's last row")
+	assert_eq(tr(exit.text), "To the Rune Ring")
+	await e.tap(KEY_ENTER)
+	await e.frames(2)
+	assert_false(main.is_playing(), "the run is left")
+	assert_not_null(main.hub, "the hero is in the hub")
+	assert_null(main.get_node_or_null("UI/MainMenu"), "not the main menu")
+	assert_eq(main.hub.at, &"", "at the spawn")
+	assert_true(main.saves.store.has_save(), "the run stays saved")
+	assert_true(await HubWalk.new(e).to_main_menu(), "the hub's pause -> Main menu")
+	assert_eq(_focused(main).name, &"Continue", "Continue is offered, focused")
+	e.key(KEY_ENTER, true)  # read the resumed world in the frame it is built, before its first tick (as above)
+	e.key(KEY_ENTER, false)
+	await main.loads.finished
+	assert_true(main.is_playing(), "Continue resumes the run directly")
+	assert_null(main.hub, "not through the hub")
+	assert_eq(e.world().seed_value, seed_value, "the same run")
+	assert_eq(main.run.floor_index, floor_index, "on the same floor")
+	assert_eq(e.world().tick, saved_tick, "at its last save")
+	assert_true(await e.landed(), "the floor's arrival plays out")
+	await e.frames(3)
+	assert_gt(e.world().tick, saved_tick, "and the run goes on")
+
+
 func test_a_death_deletes_the_save() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
@@ -126,6 +165,12 @@ func test_a_death_deletes_the_save() -> void:
 			break
 	assert_not_null(panel, "standing still, you die")
 	assert_false(main.saves.store.has_save(), "the death deleted the save")
+	await e.tap(KEY_DOWN)
+	await e.tap(KEY_ENTER)  # v0.9.0 HB: the end panel's Hub, then the hub's pause -> Main menu
+	await e.frames(2)
+	assert_not_null(main.hub)
+	await e.tap(KEY_ESCAPE)
+	await e.tap(KEY_DOWN)
 	await e.tap(KEY_DOWN)
 	await e.tap(KEY_ENTER)
 	await e.frames(2)

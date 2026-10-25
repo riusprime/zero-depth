@@ -14,6 +14,7 @@ those copies are built by `godot --headless --path . -s scripts/content/build_pa
 
 | Version | Name | Date |
 |---|---|---|
+| [v0.9.0](v0.9.0.md) ([es](v0.9.0.es.md)) | World and Weapons | 2026-10-24 |
 | [v0.8.0](v0.8.0.md) ([es](v0.8.0.es.md)) | Fights and Feel | 2026-10-22 |
 | [v0.0.1](v0.0.1.md) ([es](v0.0.1.es.md)) | Ground Plane | 2026-10-06 |
 

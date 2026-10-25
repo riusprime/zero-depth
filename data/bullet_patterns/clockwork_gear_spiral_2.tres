@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 1
+look = &"gear_spark"
+speed_mps = 3.2
+radius_m = 0.2
+range_m = 18.0
+waves = 32
+wave_gap_seconds = 0.11
+arms = 2
+spin_dps = -85.0
+id = &"clockwork_gear_spiral_2"

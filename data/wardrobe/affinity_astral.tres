@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AffinityDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/affinity_definition.gd" id="1_aff"]
+
+[resource]
+script = ExtResource("1_aff")
+order = 4
+name_key = &"AFFINITY_ASTRAL"
+desc_key = &"AFFINITY_ASTRAL_DESC"
+cost_key = &"AFFINITY_ASTRAL_COST"
+color = Color(0.545098, 0.333333, 1, 1)
+glyph = 4
+secret_sense_m = 8.0
+map_secrets = true
+favoured_cards = Array[StringName]([&"gun_void", &"gravity_well", &"shared_gravity_stitch"])
+favoured_permille = 1300
+id = &"astral"

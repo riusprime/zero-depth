@@ -14,6 +14,8 @@ extends Node3D
 ## are unchanged.
 ## v0.8.0 N14 (owner O72): a failed use cracks and fizzles (the core flickers out to red, the body jolts, sparks of
 ## light die off); a spent shrine (its wins given) goes dim, its shards slow, and the price above it reads "Spent".
+## v0.9.0 BV (W71): per biome (InteractionLooks; set `biome` before setup): the owner's model (Fortune, or the gamble
+## shrine) tinted and the biome's accent round its foot. Its golden (or magenta) glow is the same in every biome.
 
 const CORE := Color("#3FF2D0")
 const METAL := Color("#3B4250")
@@ -44,11 +46,20 @@ const MODEL_CRYSTAL := Vector3(0.07, 0.86, -0.2)
 const MODEL_GLOW := Color("#D46BFF")
 ## How far the shards orbit the model's crystal (m).
 const MODEL_ORBIT_M := 0.3
+## v0.9.0 SH (owner Q29b: "Today's gamble shrine becomes the Fortune Shrine"): the owner's Fortune Shrine model
+## (ShopModels id, assets/models/devices/shrine_fortune.glb, 2.0 m tall as scripts/assets/mi2_prep.py prepares it), its
+## front (+Z) turned to the camera like the gamble shrine's; the shards orbit FORTUNE_GLOW_Y of its height up, in its
+## golden light. Without it, the v0.6.0 gamble shrine model, then the code-built obelisk.
+const FORTUNE_ID := &"shrine_fortune"
+const FORTUNE_GLOW := Color("#FFC94A")
+const FORTUNE_GLOW_Y := 0.78
 
 var root: Node3D
 var price_label: Label3D
 ## Use the owner's model (set before setup; WorldViewRoot turns it on with the v0.5.9 look).
 var kit_model := false
+## v0.9.0 BV: the floor's biome (set before setup; WorldViewRoot sets it).
+var biome := &""
 var _body: Node3D
 var _core: Node3D
 var _light: OmniLight3D
@@ -85,12 +96,17 @@ func _init() -> void:
 ## Builds the shrine at its sim position (once; the shrine never moves).
 func setup(at: Vector2) -> void:
 	root = null
-	if kit_model:
+	if kit_model:  # v0.9.0 SH: the owner's Fortune Shrine first, then his v0.6.0 gamble shrine
+		var fortune := ShopModels.get_model(FORTUNE_ID)
+		if not fortune.is_empty():
+			root = _make_fortune(fortune)
+	if kit_model and root == null:
 		var piece := KitModels.get_piece(MODEL_ID)
 		if not piece.is_empty():
 			root = _make_model(piece)
 	if root == null:
 		root = make_shrine()
+	InteractionLooks.add_accent(root, biome, 0.95, 0.0)  # v0.9.0 BV
 	root.position = SimPlane.to_3d(at)
 	add_child(root)
 
@@ -219,8 +235,9 @@ func make_shrine() -> Node3D:
 	var n := Node3D.new()
 	_body = Node3D.new()
 	n.add_child(_body)
-	var metal := _metal(METAL)
-	var top := _metal(METAL_TOP)
+	var tint: Color = InteractionLooks.look(biome)["tint"]  # v0.9.0 BV (Ruins: white)
+	var metal := _metal(METAL * tint)
+	var top := _metal(METAL_TOP * tint)
 	_body.add_child(_mesh(RewardViews.prism(6, 0.78, 0.7, 0.18, 0.0, 0.0, 3), metal))
 	_body.add_child(_mesh(RewardViews.prism(4, 0.56, 0.5, 0.2, 0.18, 0.0, 5), top))
 	_body.add_child(_mesh(RewardViews.prism(4, 0.42, 0.33, 0.9, 0.38, 0.0, 7), metal))
@@ -285,6 +302,7 @@ func _make_model(piece: Dictionary) -> Node3D:
 	var mat := (piece["material"] as StandardMaterial3D).duplicate() as StandardMaterial3D
 	ActorViews.flashable(mat)
 	mat.emission = _glow.lerp(Color.WHITE, 0.6)
+	InteractionLooks.tint_in_place(mat, biome)  # v0.9.0 BV
 	_metal_mats.append(mat)
 	_model = _mesh(piece["mesh"], mat)
 	_model.name = "Model"
@@ -299,6 +317,49 @@ func _make_model(piece: Dictionary) -> Node3D:
 		var a := TAU * k / 3.0
 		var bit := _mesh(RewardViews.bipyramid(3, 0.045, 0.08, 0.08), _core_mat)
 		bit.position = Vector3(cos(a) * MODEL_ORBIT_M, 0.0, sin(a) * MODEL_ORBIT_M)
+		bit.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_core.add_child(bit)
+	_light = OmniLight3D.new()
+	_light.light_color = _glow
+	_light.light_energy = LIGHT_ENERGY
+	_light.omni_range = 4.0
+	_light.position = crystal
+	n.add_child(_light)
+	_add_price(n)
+	return n
+
+
+## v0.9.0 SH: the owner's Fortune Shrine (ShopModels: already in metres, bottom on the floor, centred), turned to the
+## camera; the same cues as _make_model, in its golden light.
+func _make_fortune(piece: Dictionary) -> Node3D:
+	_glow = FORTUNE_GLOW
+	for m in [_core_mat, _strip_mat]:
+		m.albedo_color = _glow
+		m.emission = _glow
+	var n := Node3D.new()
+	_body = Node3D.new()
+	_body.rotation.y = MODEL_YAW
+	n.add_child(_body)
+	var mat := (piece["material"] as Material).duplicate() as StandardMaterial3D
+	if mat == null:
+		mat = StandardMaterial3D.new()
+	ActorViews.flashable(mat)
+	mat.emission = _glow.lerp(Color.WHITE, 0.6)
+	InteractionLooks.tint_in_place(mat, biome)  # v0.9.0 BV
+	_metal_mats.append(mat)
+	_model = _mesh(piece["mesh"], mat)
+	_model.name = "Model"
+	_body.add_child(_model)
+	var box: AABB = piece["aabb"]
+	var crystal := Vector3(0.0, box.end.y * FORTUNE_GLOW_Y, 0.0)
+	_core_y = crystal.y
+	_core = Node3D.new()
+	_core.position = crystal
+	n.add_child(_core)
+	for k in 3:
+		var a := TAU * k / 3.0
+		var bit := _mesh(RewardViews.bipyramid(3, 0.045, 0.08, 0.08), _core_mat)
+		bit.position = Vector3(cos(a), 0.0, sin(a)) * (maxf(box.size.x, box.size.z) * 0.5 + 0.1)
 		bit.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		_core.add_child(bit)
 	_light = OmniLight3D.new()

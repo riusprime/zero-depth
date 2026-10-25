@@ -7,6 +7,8 @@ extends GutTest
 ## SHATTERED and Invulnerable, no hostile shot stays), the Prism rises from its shards with its own bar, a save is
 ## taken at the Prism's start and Continue after Main menu resumes there; two more Kill boss win the run: the victory
 ## recap with the true ending line, the achievement unlocked.
+## v0.9.0 FA: the portal opens on the final approach first; the hero walks up and presses both rune pylons
+## (E2e.awaken_final_altar), and the Colossus rises from the altar when the buildup ends.
 
 const LEG_FRAMES := 7000
 
@@ -96,7 +98,11 @@ func _to_the_arena(e: E2e, main: Main) -> bool:
 		await e.frames(1)
 		frames += 1
 	await e.frames(3)
-	return main.run != null and main.run.final_fight
+	if main.run == null or not main.run.final_fight:
+		return false
+	var woke: bool = await e.awaken_final_altar()  # v0.9.0 FA: the approach first
+	assert_true(woke, "the pylons woke the altar: the Colossus rose")
+	return woke
 
 
 func _hud(main: Main) -> Hud:
@@ -169,13 +175,9 @@ func test_the_ascension_portal_walks_into_the_final_boss_and_beats_it() -> void:
 	var saved: Dictionary = main.saves.last
 	assert_true(bool(saved.get("run", {}).get("final", false)), "a save at the Prism's start")
 	assert_eq(int(saved["world"]["world"][&"final_fight"][&"phase"]), 1)
-	# Main menu, then Continue: the fight resumes at the Prism's start.
-	await e.tap(KEY_ESCAPE)
-	for k in 5:  # Resume -> Build -> Restart run -> Options -> Codex -> Main menu
-		await e.tap(KEY_DOWN)
-	await e.tap(KEY_ENTER)
-	await e.frames(3)
-	assert_not_null(main.get_node_or_null("UI/MainMenu"), "back on the main menu")
+	# To the hub (v0.9.0 HB), its pause's Main menu, then Continue: the fight resumes at the Prism's start.
+	assert_true(await HubWalk.new(e).from_run(), "the pause menu leaves to the hub")
+	assert_true(await HubWalk.new(e).to_main_menu(), "back on the main menu")
 	await e.tap(KEY_ENTER)  # Continue has focus
 	await e.frames(4)
 	assert_true(main.is_playing(), "Continue resumed the run")

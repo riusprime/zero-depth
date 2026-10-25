@@ -141,6 +141,7 @@ func test_event_rooms_and_the_shop_stay_out_of_arenas() -> void:
 
 func test_rewards_fill_the_arenas_first_and_keep_two_altars() -> void:
 	var with_reward := 0
+	var with_arena := 0
 	for s in range(1, 41):
 		var w := _arena_floor(s)
 		var f := w.floor_layout
@@ -151,7 +152,9 @@ func test_rewards_fill_the_arenas_first_and_keep_two_altars() -> void:
 				arena_spots += 1
 		var in_arena := 0
 		for i in w.rewards.size():
-			altars += 1 if w.rewards.kind[i] == RewardStore.Kind.ALTAR else 0
+			# v0.9.0 DX: a secret room's epic altar is an extra, outside S1's cap (the save lab builds them now)
+			if w.rewards.kind[i] == RewardStore.Kind.ALTAR and not Secrets.is_epic(w, i):
+				altars += 1
 			if f.arena_rooms.has(f.room_of(w.rewards.pos(i))):
 				in_arena += 1
 				assert_true(Arenas.locked(w, i), "seed %d: an arena's reward is locked" % s)
@@ -160,7 +163,11 @@ func test_rewards_fill_the_arenas_first_and_keep_two_altars() -> void:
 			in_arena, mini(arena_spots, w.rewards.size()), "seed %d: arena spots fill first" % s
 		)
 		with_reward += 1 if in_arena > 0 else 0
-	assert_gt(with_reward, 30, "nearly every floor's arenas hold rewards")
+		with_arena += 1 if not f.arena_rooms.is_empty() else 0
+	# v0.9.0 CF (owner: "lets never make it a 1x1"): a floor 1 whose only fitting rooms are 1 x 1 has no arena now
+	# (29 of these 40 have one, was 39)
+	assert_eq(with_reward, with_arena, "every floor's arenas hold rewards")
+	assert_gt(with_arena, 25, "most floors have an arena")
 
 
 # --- In play ------------------------------------------------------------------------------------------------------
@@ -343,6 +350,37 @@ func test_a_save_at_the_arena_entry_resumes_the_arena() -> void:
 		_round_trip(w, _floor_with_arena(20, fl), "floor %d arena entry" % fl)
 
 
+## v0.9.0 FV regression (run 20's floor 1 on the five-floor run: the hero walks into an arena on the floor's first
+## tick, so its barriers and the boss door go up on the same tick): the restore finds the door among the walls play
+## added, swaps its prepared flow field in as play did and keeps the field from before the door, so once the door
+## opens both worlds swap the same field back and their flow fields (and so the enemies' paths) never part.
+func test_a_restore_with_barriers_keeps_the_field_from_before_the_boss_door() -> void:
+	var w := _floor_with_arena(20, 1)
+	var room := w.floor_layout.arena_rooms[0]
+	w.actors.hp[0] = 100000
+	w.actors.max_hp[0] = 100000
+	_enter(w, room)
+	assert_true(
+		w.arenas.sealed() and w.boss_flow.door == BossFlow.Door.SHUT, "barriers and the door are up"
+	)
+	assert_not_null(w.get(&"_nav_open"), "play keeps the field from before the door")
+	var snap := WorldSnapshot.take(w)
+	var restored := World.from_snapshot(bytes_to_var(var_to_bytes(snap)), _floor_with_arena(20, 1))
+	assert_not_null(restored)
+	if restored == null:
+		return
+	assert_not_null(restored.get(&"_nav_open"), "and so does the restore")
+	var b1 := FightBot.new(17)
+	var b2 := FightBot.new(17)
+	for i in STEPS_AFTER:
+		w.step(SaveLab.frame(w, b1))
+		restored.step(SaveLab.frame(restored, b2))
+		if restored.nav.dist != w.nav.dist:
+			fail_test("the flow fields parted on tick %d" % w.tick)
+			return
+	assert_eq(restored.state_hash(), w.state_hash())
+
+
 func test_a_save_mid_wave_and_after_the_clear_round_trips() -> void:
 	var w := _floor_with_arena(30)
 	var room := w.floor_layout.arena_rooms[0]
@@ -391,8 +429,9 @@ func test_legendary_stat_cards_are_stronger_than_epic() -> void:
 	for s in w.legendary_table.stats:
 		var t := w.stat_tables[s]
 		assert_eq(t.amounts.size(), 4, "%s: four rarities" % t.id)
+		var mul := 1300 if t.id in [&"damage", &"attack_speed"] else 1600  # v0.9.0 LG (owner Q12)
 		assert_eq(
-			t.amounts[Offers.LEGENDARY], (t.amounts[Offers.EPIC] * 1600 + 500) / 1000, "%s" % t.id
+			t.amounts[Offers.LEGENDARY], (t.amounts[Offers.EPIC] * mul + 500) / 1000, "%s" % t.id
 		)
 		assert_gt(t.amounts[Offers.LEGENDARY], t.amounts[Offers.EPIC])
 	var before := Stats.value(w, Stats.Stat.DAMAGE)
@@ -403,6 +442,28 @@ func test_legendary_stat_cards_are_stronger_than_epic() -> void:
 		(before * (1000 + t.amounts[Offers.LEGENDARY]) + 500) / 1000,
 		"a legendary damage card adds its legendary amount"
 	)
+
+
+## v0.9.0 LG (owner Q12: "Power/Haste ×1.3"): legendary Power +40 % → +32.5 %, Haste +28.8 % → +23.4 %; the other
+## legendary stat cards keep epic × 1.6.
+func test_legendary_power_and_haste_are_epic_times_one_point_three() -> void:
+	var w := _arena_floor(3)
+	var power := w.stat_tables[Stats.Stat.DAMAGE]
+	var haste := w.stat_tables[Stats.Stat.ATTACK_SPEED]
+	assert_eq(
+		[power.amounts[Offers.EPIC], power.amounts[Offers.LEGENDARY]], [250, 325], "Power 32.5 %"
+	)
+	assert_eq(
+		[haste.amounts[Offers.EPIC], haste.amounts[Offers.LEGENDARY]], [180, 234], "Haste 23.4 %"
+	)
+	var crit := w.stat_tables[Stats.Stat.CRIT_DAMAGE]
+	assert_eq(
+		crit.amounts[Offers.LEGENDARY],
+		(crit.amounts[Offers.EPIC] * 1600 + 500) / 1000,
+		"another stat keeps × 1.6"
+	)
+	var hp := w.stat_tables[Stats.Stat.MAX_HP]
+	assert_eq(hp.amounts[Offers.LEGENDARY], (hp.amounts[Offers.EPIC] * 1600 + 500) / 1000)
 
 
 func test_killing_the_boss_leaves_a_legendary_altar_of_three() -> void:
@@ -445,9 +506,12 @@ func test_killing_the_boss_leaves_a_legendary_altar_of_three() -> void:
 				assert_eq(Offers.rarity_of(code), Offers.LEGENDARY, "legendary stat cards only")
 				assert_true(w.legendary_table.stats.has(Offers.stat_of(code)), "from its pool")
 			Offers.MOD:  # v0.6.5 WN5b: or a wand card of the run's pool (its level-5 version)
+				# v0.8.0 FL (LegendaryDefinition.card_categories): or one card of the altar's categories
+				# (data: advanced, trigger), e.g. On Kill
+				var cat := w.legendary_table.card_categories.has(LootPacing.category(w, code))
 				assert_true(
-					w.legendary_table.mods.has(code) or CardLevels.is_card(w, code),
-					"pool mods only"
+					w.legendary_table.mods.has(code) or CardLevels.is_card(w, code) or cat,
+					"pool mods, a held card's level-up or one card of the altar's categories"
 				)
 			_:
 				fail_test("no other card types")

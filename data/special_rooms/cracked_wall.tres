@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SpecialRoomDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/special_room_definition.gd" id="1_spr"]
+
+[resource]
+script = ExtResource("1_spr")
+band = &"puzzle_secret"
+code = "CrackedRooms.mark"
+order = 10
+stream = &"map:cracked_wall"
+entry = &"cracked_wall"
+placement = 0
+chance_permille = 250
+dead_end = true
+uses_host = true
+avoid = Array[StringName]([&"start", &"boss", &"boss_host", &"portal", &"overrun", &"shop", &"curse", &"arena", &"reward", &"event", &"shrine", &"fountain", &"timed_door", &"timed_door_host", &"rune_puzzle", &"rune_puzzle_host"])
+host_avoid = Array[StringName]([&"start", &"boss", &"overrun", &"shop", &"curse", &"arena", &"timed_door", &"timed_door_host", &"rune_puzzle", &"rune_puzzle_host"])
+sources = {
+"chance_permille": "secrets/secrets:crack_permille"
+}
+id = &"cracked_wall"

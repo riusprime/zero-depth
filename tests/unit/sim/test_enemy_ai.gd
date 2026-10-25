@@ -364,3 +364,57 @@ func test_every_hit_from_the_new_kinds_has_a_readable_cause() -> void:
 	assert_gt(damage, 20, "hit often enough to mean something (%d)" % damage)
 	assert_true(causes.has("CAUSE_ARC_CASTER"), "the Arc Caster landed hits: %s" % [causes])
 	assert_true(causes.has("CAUSE_BOMB_DRONE"), "the Bomb Drone landed hits: %s" % [causes])
+
+
+# --- v0.9.0: no attacks through a shut doorway ------------------------------------------------------------------
+# The owner (2026-10-23): "when there are closed rooms the enemies can attack from outside, that should not happen,
+# because you die to 20 enemies waiting on the door". A sealed doorway's barrier (World.add_barrier) is a wall.
+
+
+func _behind_a_barrier(kind: int, at: Vector2) -> World:
+	var w := CombatLab.world()
+	_tough(w)
+	w.actors.set_pos(0, Vector2.ZERO)
+	w.add_barrier(Obb.make(Vector2(at.x * 0.5, 0.0), Vector2(0.05, 60.0), 0))  # no way round: a sealed room
+	w.add_enemy(kind, at)
+	return w
+
+
+func test_enemies_behind_a_sealed_doorway_never_attack() -> void:
+	for c: Array in [
+		[K.CHARGER, Vector2(4, 0)], [K.WARDEN, Vector2(1.6, 0)], [K.NEEDLE, Vector2(5, 0)]
+	]:
+		var w := _behind_a_barrier(c[0], c[1])
+		var id := w.actors.ids[1]
+		var hp := w.actors.hp[0]
+		var wound := -1
+		for t in 600:
+			w.actors.set_pos(0, Vector2.ZERO)
+			w.step(InputFrame.new())
+			if wound < 0 and _i(w, id) >= 0 and _state(w, id) == S.WINDUP:
+				wound = t
+		assert_eq(wound, -1, "kind %d starts no attack through the barrier" % c[0])
+		assert_eq(w.actors.hp[0], hp, "and the player is not hurt")
+
+
+func test_the_same_enemies_attack_without_the_barrier() -> void:
+	for c: Array in [
+		[K.CHARGER, Vector2(4, 0)], [K.WARDEN, Vector2(1.6, 0)], [K.NEEDLE, Vector2(5, 0)]
+	]:
+		var w := CombatLab.world()
+		_tough(w)
+		var id := w.add_enemy(c[0], c[1])
+		assert_gte(
+			_until_state(w, id, S.WINDUP, InputFrame.new(), 600), 0, "kind %d attacks" % c[0]
+		)
+
+
+func test_a_slam_begun_before_the_doorway_shuts_lands_on_the_barrier() -> void:
+	var w := CombatLab.world()
+	_tough(w)
+	var id := w.add_enemy(K.WARDEN, Vector2(1.6, 0))
+	assert_gte(_until_state(w, id, S.WINDUP), 0, "the Warden winds up in the open")
+	w.add_barrier(Obb.make(Vector2(0.8, 0.0), Vector2(0.05, 6.0), 0))  # the doorway shuts mid-windup
+	var hp := w.actors.hp[0]
+	assert_gte(_until_state(w, id, S.RECOVER), 0, "its slam goes off")
+	assert_eq(w.actors.hp[0], hp, "and stops on the barrier")

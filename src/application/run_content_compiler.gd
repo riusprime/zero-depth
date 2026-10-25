@@ -16,6 +16,81 @@ static func compile_arena(def: ArenaDefinition) -> ArenaTable:
 	t.first_wave_ticks = SimTick.seconds_to_ticks(def.first_wave_seconds)
 	t.wave_gap_ticks = SimTick.seconds_to_ticks(def.wave_gap_seconds)
 	t.min_spawn_distance_m = def.min_spawn_distance
+	t.min_cells = def.min_cells  # v0.9.0 CF
+	t.area_per_enemy_m2 = def.area_per_enemy_m2
+	return t
+
+
+## v0.9.0 LK (owner Q21): the Lockdowns' numbers (null without a definition: no Lockdowns).
+static func compile_lockdown(def: LockdownDefinition) -> LockdownTable:
+	if def == null:
+		return null
+	var t := LockdownTable.new()
+	t.rooms_min = def.rooms_min
+	t.rooms_max = def.rooms_max
+	t.kind_weights = def.kind_weights.duplicate()
+	t.kind_floor_min = def.kind_floor_min.duplicate()
+	t.waves = def.waves
+	t.wave_sizes = def.wave_sizes.duplicate()
+	t.first_wave_ticks = SimTick.seconds_to_ticks(def.first_wave_seconds)
+	t.wave_gap_ticks = SimTick.seconds_to_ticks(def.wave_gap_seconds)
+	t.stuck_ticks = maxi(1, SimTick.seconds_to_ticks(def.stuck_seconds))
+	t.cap_ticks = maxi(1, SimTick.seconds_to_ticks(def.cap_seconds))
+	t.hazard_every_ticks = maxi(1, SimTick.seconds_to_ticks(def.hazard_every_seconds))
+	t.hazard_warn_ticks = SimTick.seconds_to_ticks(def.hazard_warn_seconds)
+	t.hazard_radius_m = def.hazard_radius
+	t.hazard_damage = def.hazard_damage
+	t.min_cells = def.min_cells  # v0.9.0 CF
+	t.area_per_enemy_m2 = def.area_per_enemy_m2
+	return t
+
+
+## v0.9.0 RB (AFFINITIES.md): the run's rune affinity, its offer bias resolved against the compiled `items` (one per
+## mille per item index). Null for None (or no definition): the run builds no affinity state.
+static func compile_affinity(def: AffinityDefinition, items: Array[ItemTable]) -> AffinityTable:
+	if def == null or def.is_none():
+		return null
+	var t := AffinityTable.new()
+	t.id = def.id
+	t.burn_duration_permille = def.burn_duration_permille
+	t.dash_shock_radius_m = def.dash_shock_radius_m
+	t.dash_shock_stacks = def.dash_shock_stacks
+	t.poison_jump_m = def.poison_jump_m
+	t.secret_sense_m = def.secret_sense_m
+	t.map_secrets = def.map_secrets
+	t.ward_charges = def.ward_charges
+	t.shard_permille = def.shard_permille
+	t.card_permille.resize(items.size())
+	for i in items.size():
+		var p := 1000
+		if def.favoured_cards.has(items[i].id):
+			p = def.favoured_permille
+		elif def.disfavoured_cards.has(items[i].id):
+			p = def.disfavoured_permille
+		t.card_permille[i] = p
+	return t
+
+
+## v0.9.0 SH, HF (owner Q29b, W36): the shrines' and the fountain's numbers (null without a definition: every shrine
+## stays a Fortune shrine and no floor has a fountain).
+static func compile_shrines(def: ShrineDefinition) -> ShrineTable:
+	if def == null:
+		return null
+	var t := ShrineTable.new()
+	t.kind_weights = def.kind_weights.duplicate()
+	t.kind_floor_min = def.kind_floor_min.duplicate()
+	t.blood_cost_permille = def.blood_cost_permille
+	t.blood_min_permille = def.blood_min_permille
+	t.blood_altars = def.blood_altars
+	t.chaos_sizes = def.chaos_sizes.duplicate()
+	t.chaos_elite_permille = def.chaos_elite_permille
+	t.chaos_altars = def.chaos_altars
+	t.chaos_min_cells = def.chaos_min_cells  # v0.9.0 CF
+	t.chaos_area_per_enemy_m2 = def.chaos_area_per_enemy_m2
+	t.fountain_permille = def.fountain_permille
+	t.fountain_floor_min = def.fountain_floor_min
+	t.fountain_heal_permille = def.fountain_heal_permille
+	t.reach_m = def.reach
 	return t
 
 
@@ -196,4 +271,54 @@ static func compile_map(def: MapDefinition) -> FloorParams:
 	p.footprint_weights = def.footprint_weights.duplicate()
 	p.max_span = def.max_span
 	p.place_attempts = def.place_attempts
+	p.timed_door_permille = def.timed_door_permille  # v0.9.0 TD
+	p.timed_door_ticks = def.timed_door_ticks
 	return p
+
+
+## v0.9.0 FV (owner Q24): the run's id, its floors' room ranges and its wand slots onto `t`
+## (ContentCompiler.compile_run).
+static func add_run_shape(t: RunTable, def: RunDefinition) -> RunTable:
+	t.id = def.id
+	t.rooms_min_by_floor = def.rooms_min_by_floor.duplicate()
+	t.rooms_max_by_floor = def.rooms_max_by_floor.duplicate()
+	t.wand_slots_per_floor = def.wand_slots_per_floor.duplicate()
+	t.max_hp_per_floor = def.max_hp_per_floor  # v0.9.0 SV: the hero grows each floor
+	t.max_hp_floor_cap = def.max_hp_floor_cap
+	return t
+
+
+## v0.9.0 FV (owner Q24, "Scale with floor size"): the altar and chest counts by the floor's rooms onto `t`
+## (ContentCompiler.compile_rewards).
+static func add_reward_bands(t: RewardTable, def: RewardsDefinition) -> RewardTable:
+	t.count_rooms = def.count_rooms.duplicate()
+	t.band_counts.clear()
+	for k in def.count_rooms.size():
+		(
+			t
+			. band_counts
+			. append(
+				PackedInt32Array(
+					[
+						def.altars_min_by_rooms[k],
+						def.altars_max_by_rooms[k],
+						def.chests_min_by_rooms[k],
+						def.chests_max_by_rooms[k],
+					]
+				)
+			)
+		)
+	return t
+
+
+## v0.9.0 FV: every floor's boss pool (indices into ContentCompiler.compile_bosses), entry f − 1, for floors 1 to
+## `floors` (at least as many as the pools name): an empty entry for a floor without a pool (FloorShape.boss draws
+## it from the bosses not yet met).
+static func compile_boss_pools(repo: ContentRepository, floors: int) -> Array[PackedInt32Array]:
+	var n := floors
+	for pool: BossPoolDefinition in repo.all_of(&"boss_pools"):
+		n = maxi(n, pool.floor_index)
+	var out: Array[PackedInt32Array] = []
+	for f in range(1, n + 1):
+		out.append(ContentCompiler.compile_boss_pool(repo, f))
+	return out

@@ -56,8 +56,14 @@ func test_pause_menu_offers_restart_run() -> void:
 		if c is Button:
 			names.append(String(c.name))
 	# Options: v0.3.0 O; Build: v0.6.5 WN2; Codex: v0.7.5 CX
-	assert_eq(names, ["Resume", "Build", "Restart", "Options", "Codex", "MainMenu"])
+	# v0.9.0 HB (owner 2026-10-23): the last row leaves to the hub, in the end panel's words
+	assert_eq(names, ["Resume", "Build", "Restart", "Options", "Codex", "Hub"])
+	assert_eq((m.box.get_node("Hub") as Button).text, "UI_TO_HUB")
 	m.free()
+	var dev := PauseMenu.new(false)  # the dev Playground keeps Main menu
+	assert_not_null(dev.box.get_node_or_null("MainMenu"))
+	assert_null(dev.box.get_node_or_null("Hub"))
+	dev.free()
 
 
 func test_hud_floor_card_shows_then_fades() -> void:

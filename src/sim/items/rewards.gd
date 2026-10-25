@@ -57,6 +57,7 @@ static func on_kill(w: World, i: int) -> void:
 	amount = Stats.shards(w, amount)  # v0.4.0 BS: the shard gain stat
 	Overrun.on_kill(w, i, amount)  # v0.4.0 AB: an Overrun kill counts toward the clear
 	HealOrbs.on_kill(w, i)  # v0.4.0 TU (D8): maybe a heal orb
+	amount = Affinities.shards(w, amount)  # v0.9.0 RB: A5 Guardian picks up fewer
 	if amount <= 0:
 		return
 	w.shards += amount
@@ -66,14 +67,16 @@ static func on_kill(w: World, i: int) -> void:
 
 
 ## Places the floor's altars and chests on the layout's item spots (setup). Counts and the altar/chest order are
-## drawn from the loot stream; chest prices follow chest order and World.floor_index.
+## drawn from the loot stream; chest prices follow chest order and World.floor_index. v0.9.0 FV (owner Q24, "Scale
+## with floor size"): the ranges are the floor's room band's (RewardTable.counts_for; the boss room not counted).
 static func place(w: World, layout: FloorLayout) -> void:
 	var t := w.reward_table
 	var order := arena_first(layout, spot_order(layout))
 	var kinds := PackedInt32Array()
-	for k in w.rng_loot.range_int(t.altars_min, t.altars_max):
+	var counts := t.counts_for(layout.room_count() - (1 if layout.boss_room >= 0 else 0))
+	for k in w.rng_loot.range_int(counts[0], counts[1]):
 		kinds.append(RewardStore.Kind.ALTAR)
-	for k in w.rng_loot.range_int(t.chests_min, t.chests_max):
+	for k in w.rng_loot.range_int(counts[2], counts[3]):
 		kinds.append(RewardStore.Kind.CHEST)
 	if t.altars_cap > 0:  # v0.5.5 EC (S1): the altars past the cap become chests
 		for k in range(t.altars_cap, kinds.size()):

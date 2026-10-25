@@ -351,6 +351,8 @@ func draw_at(now: float) -> void:
 		if e["kind"] == &"flash":
 			if not _off_screen(e["origin"], float(e["size"]) + CULL_PAD_M):  # v0.8.0 HV
 				_draw_flash(e, age)
+		elif e["kind"] == &"muzzle" or e["kind"] == &"halo":
+			_draw_cue(e, age)  # v0.9.0 VX
 		elif e["kind"] == &"landing":
 			if _off_screen(e["origin"], float(e["radius"]) * CULL_BURST_X + CULL_PAD_M):  # v0.8.0 HV
 				continue
@@ -868,6 +870,11 @@ func _draw_flash(e: Dictionary, age: float) -> void:
 		)
 
 
+## v0.9.0 VX: a volley cue (AttackFormView draws it).
+func _draw_cue(_e: Dictionary, _age: float) -> void:
+	pass
+
+
 # --- Particles ------------------------------------------------------------------------------------------------
 ## A stable pseudo-random number in [0, 1) for (a, b): presentation only, the same every frame (no state).
 static func _hash(a: int, b: int) -> float:
@@ -912,58 +919,12 @@ func _emit_parts(
 			var p: Vector3 = points[int(r2 * points.size()) % points.size()]
 			if not _put_particle(
 				kind,
-				_particle_xf(kind, p, u, r1, r2, r3, age, j),
-				_particle_color(kind, col, u, fade, age, j)
+				FormParticles.xf(kind, p, u, r1, r2, r3, age, j),
+				FormParticles.color(kind, col, u, fade, age, j)
 			):
 				if _part_left <= 0:
 					return
 				break  # this kind's pool is full; the other kind may still have room
-
-
-static func _particle_xf(
-	kind: StringName, p: Vector3, u: float, r1: float, r2: float, r3: float, age: float, j: int
-) -> Transform3D:
-	var a := TAU * r1
-	var out := Vector3(cos(a), 0, sin(a))
-	match kind:
-		&"sparks":
-			var pos := (
-				p
-				+ out * u * 0.5 * (0.5 + r2)
-				+ Vector3.UP * (u * 0.9 - u * u * 1.1) * (0.6 + r3 * 0.6)
-			)
-			return Transform3D(Basis.from_scale(Vector3.ONE * 0.05), pos)
-		&"crackle":
-			var step := floori(age / 3.0)
-			var h := _hash(j * 31 + step, int(r1 * 1000.0))
-			var pos := p + Vector3(cos(TAU * h), (h - 0.5) * 0.3, sin(TAU * h)) * 0.22
-			var b := Basis.from_euler(Vector3(PI * h, TAU * r2, PI * 0.5 * (0.5 + r3)))
-			return Transform3D(b * Basis.from_scale(Vector3(0.025, 0.32, 0.025)), pos)
-		&"shards":
-			var pos := p + out * u * 0.35 + Vector3.UP * (0.15 - u * 0.3)
-			var b := Basis.from_euler(Vector3(r1 * TAU + u * 3.0, r2 * TAU, 0.6))
-			return Transform3D(b * Basis.from_scale(Vector3(0.06, 0.17, 0.06)), pos)
-		&"drip":
-			var pos := p + out * 0.08 * r2 + Vector3.DOWN * u * 0.4
-			return Transform3D(Basis.from_scale(Vector3(0.045, 0.09 * (1.0 + u), 0.045)), pos)
-	# smear: a flat streak stretching as it fades
-	return flat(p + out * 0.1 * u, a, 0.45 * (0.4 + u), 0.15)
-
-
-static func _particle_color(
-	kind: StringName, c: Color, u: float, fade: float, age: float, j: int
-) -> Color:
-	match kind:
-		&"sparks":
-			return lit_color(c, (1.0 - u) * fade, 1.6)
-		&"crackle":
-			var on := 1.0 if (floori(age / 3.0) + j) % 2 == 0 else 0.35
-			return lit_color(c, on * fade, 1.8)
-		&"shards":
-			return lit_color(c, (1.0 - u) * fade, 1.3)
-		&"drip":
-			return lit_color(c, (1.0 - u * u) * fade, 1.4)
-	return lit_color(c, 0.45 * (1.0 - u) * fade, 1.3)
 
 
 func _draw_live_form(f: Dictionary, now: float) -> void:

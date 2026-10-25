@@ -1,0 +1,84 @@
+[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
+[ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
+
+[sub_resource type="Resource" id="Op_1"]
+script = ExtResource("2_op")
+op = 0
+stage = 0
+field = &"seekers"
+value = 1.0
+
+[sub_resource type="Resource" id="Op_2"]
+script = ExtResource("2_op")
+op = 0
+stage = 1
+field = &"count"
+value = 3.0
+
+[sub_resource type="Resource" id="Op_3"]
+script = ExtResource("2_op")
+op = 0
+stage = 1
+field = &"spread_degrees"
+value = 40.0
+
+[sub_resource type="Resource" id="Op_4"]
+script = ExtResource("2_op")
+op = 0
+stage = 2
+field = &"homing_dps"
+value = 360.0
+
+[sub_resource type="Resource" id="Op_5"]
+script = ExtResource("2_op")
+op = 0
+stage = 3
+field = &"share_permille"
+value = 450.0
+per_level = 22.0
+
+[sub_resource type="Resource" id="Op_6"]
+script = ExtResource("2_op")
+op = 0
+stage = 5
+field = &"period_seconds"
+value = 0.3
+
+[sub_resource type="Resource" id="Op_7"]
+script = ExtResource("2_op")
+op = 0
+stage = 5
+field = &"radius_m"
+value = 0.1
+
+[sub_resource type="Resource" id="Op_9"]
+script = ExtResource("2_op")
+op = 0
+stage = 5
+field = &"speed_mps"
+value = 10.0
+
+[sub_resource type="Resource" id="Op_10"]
+script = ExtResource("2_op")
+op = 0
+stage = 5
+field = &"life_seconds"
+value = 1.0
+
+[sub_resource type="Resource" id="Op_8"]
+script = ExtResource("2_op")
+op = 0
+stage = 5
+field = &"rate_scale_permille"
+value = 500.0
+
+[resource]
+script = ExtResource("1_mod")
+family = &"projectile"
+rarity = 1
+target = PackedStringArray("weapon", "projectile")
+stage = 1
+ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2"), SubResource("Op_3"), SubResource("Op_4"), SubResource("Op_5"), SubResource("Op_6"), SubResource("Op_7"), SubResource("Op_8"), SubResource("Op_9"), SubResource("Op_10")])
+id = &"gun_seekers"

@@ -45,7 +45,7 @@ func _sticks_off(e: E2e) -> void:
 func test_the_build_screen_shows_both_cards() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
-	await e.tap(KEY_ENTER)  # Play
+	await HubWalk.new(e).to_build_screen()  # v0.9.0 HB: Play, then the Portal Machine
 	await e.frames(2)
 	var picker := main.get_node_or_null("UI/BuildPicker") as BuildPicker
 	assert_not_null(picker, "Play opens the build screen")
@@ -65,7 +65,7 @@ func test_the_build_screen_shows_both_cards() -> void:
 func test_pick_gun_with_the_pad_then_melee_does_nothing_and_shooting_works() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
-	await _press(e, JOY_BUTTON_A)  # Play
+	await HubWalk.new(e).to_build_screen()  # v0.9.0 HB: Play, then the Portal Machine
 	var picker := main.get_node_or_null("UI/BuildPicker") as BuildPicker
 	assert_not_null(picker)
 	await _press(e, JOY_BUTTON_DPAD_RIGHT)
@@ -96,7 +96,7 @@ func test_pick_gun_with_the_pad_then_melee_does_nothing_and_shooting_works() -> 
 func test_pick_blade_with_the_keyboard_then_shooting_does_nothing() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
-	await e.tap(KEY_ENTER)  # Play
+	await HubWalk.new(e).to_build_screen()  # v0.9.0 HB: Play, then the Portal Machine
 	await e.frames(2)
 	var picker := main.get_node_or_null("UI/BuildPicker") as BuildPicker
 	await e.tap(KEY_RIGHT)
@@ -122,12 +122,13 @@ func test_pick_blade_with_the_keyboard_then_shooting_does_nothing() -> void:
 func test_a_click_picks_a_card_and_esc_goes_back() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
-	await e.tap(KEY_ENTER)  # Play
+	await HubWalk.new(e).to_build_screen()  # v0.9.0 HB: Play, then the Portal Machine
 	await e.frames(40)
 	var picker := main.get_node_or_null("UI/BuildPicker") as BuildPicker
 	await e.tap(KEY_ESCAPE)
-	assert_not_null(main.get_node_or_null("UI/MainMenu"), "Esc goes back to the menu")
-	await e.tap(KEY_ENTER)  # Play again
+	assert_null(main.get_node_or_null("UI/BuildPicker"), "Esc closes the build screen")
+	assert_not_null(main.hub, "back in the hub (v0.9.0 HB)")
+	await e.tap(KEY_E)  # the Portal Machine again
 	await e.frames(40)
 	picker = main.get_node_or_null("UI/BuildPicker") as BuildPicker
 	await e.click_at(picker.cards[1].get_global_rect().get_center())
@@ -246,7 +247,7 @@ func test_out_of_combat_regen_heals_and_the_bar_pulses() -> void:
 func test_the_left_stick_moves_between_the_cards() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
-	await _press(e, JOY_BUTTON_A)  # Play
+	await HubWalk.new(e).to_build_screen()  # v0.9.0 HB: Play, then the Portal Machine
 	var picker := main.get_node_or_null("UI/BuildPicker") as BuildPicker
 	assert_eq(picker.focused_id(), &"blade")
 	# A stick push counts in the frame after it arrives, as a real pad's does (see test_e2e_pad_menus).

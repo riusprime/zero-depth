@@ -11,4 +11,5 @@ rarity = 2
 tags = PackedStringArray("trigger")
 modifiers = Array[StringName]([&"trigger_on_kill_twice"])
 loot_category = &"advanced"
+slot_category = &"free"
 id = &"trigger_on_kill_twice"

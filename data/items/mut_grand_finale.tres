@@ -13,4 +13,5 @@ modifiers = Array[StringName]([&"mut_grand_finale"])
 offer_weight_permille = 150
 index_wave = 3
 loot_category = &"mutation"
+slot_category = &"free"
 id = &"mut_grand_finale"

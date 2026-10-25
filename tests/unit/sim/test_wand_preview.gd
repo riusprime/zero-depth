@@ -23,7 +23,7 @@ func before_all() -> void:
 	_repo = AttackScenario.repo()
 
 
-func _world(f: int = 3) -> World:
+func _world(f: int = 5) -> World:  # v0.9.0 FV: eight slots on floor 5 (was 3)
 	var t := ContentCompiler.compile_player(_repo.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(t, _repo.get_def(&"build", &"blade"))
 	var w := World.new(5, t)
@@ -56,7 +56,7 @@ func _codes(read: Dictionary) -> PackedInt32Array:
 
 func test_every_move_previews_what_the_sim_reads_after_it() -> void:
 	var w := _world()
-	assert_eq(w.mod_slots.size(), 8, "a full 8-slot wand on floor 3")
+	assert_eq(w.mod_slots.size(), 8, "a full 8-slot wand on floor 5")
 	var checked := 0
 	for from in 8:
 		for to in 8:

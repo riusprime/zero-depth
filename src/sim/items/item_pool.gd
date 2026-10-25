@@ -57,6 +57,8 @@ static func card_weight(
 	var out := base * (w.reward_table.own_weapon_card_permille if own else 1000) / 1000
 	if it.offer_weight_permille != 1000:  # v0.8.0 RM: a mutation's low weight (the others' integers unchanged)
 		out = out * it.offer_weight_permille / 1000
+	if w.affinity != null:  # v0.9.0 RB: the rune affinity's offer bias (none: the integers unchanged)
+		out = out * Affinities.card_permille(w, idx) / 1000
 	return LootPacing.weigh(w, idx, out)  # v0.8.0 FL: × the floor stage's multiplier for its category
 
 
@@ -84,11 +86,14 @@ static func available(w: World, legendary: bool = false, ceiling: int = -1) -> P
 ## The item works with the player's utility (v0.3.0 E: Bulwark needs the guard) and weapon (v0.3.0 L15: a Gun run
 ## is never offered blade items, nor a Blade run bolt items), and a heat item only in a world with heat (L18).
 ## v0.5.0 CP: an ability mod only while the player owns its ability. v0.6.5 WN5b: never a retired v0.6 card.
+## v0.9.0 AS (C66): never a card the run's attack form can't use (AttackSlots.usable: the form × card table).
 static func usable(w: World, idx: int) -> bool:
 	var it := w.item_tables[idx]
 	# v0.6.5 WN5a: the wand's trigger cards (WAND.md T1–T4) are offered in both weapons' runs.
 	if it.retired:
 		return false  # v0.6.5 WN5b: a retired v0.6 card (WAND.md; data/wand/migration.tres)
+	if w.locked_items.has(idx):
+		return false  # v0.9.0 MP: a card the profile hasn't unlocked yet (the Void before a Purple Portal)
 	if it.requires_heat and w.heat == null:
 		return false
 	var need := it.requires_utility
@@ -96,4 +101,6 @@ static func usable(w: World, idx: int) -> bool:
 		return false
 	if it.requires_ability >= 0 and Abilities.owned_of_kind(w, it.requires_ability) == null:
 		return false  # v0.5.0 CP: an ability mod only while you own the ability
-	return it.requires_weapon == 0 or (it.requires_weapon & w.player.weapons) != 0
+	if it.requires_weapon != 0 and (it.requires_weapon & w.player.weapons) == 0:
+		return false
+	return AttackSlots.usable(w, idx)  # v0.9.0 AS (C66): the form can use it, its slot isn't shut

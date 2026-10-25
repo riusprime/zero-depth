@@ -18,12 +18,6 @@ static func compile(def: WandDefinition) -> WandTable:
 	t.cast_free_lines = def.cast_free_lines.duplicate()  # v0.8.0 PF2
 	t.blast_merge_after = def.blast_merge_after
 	t.blast_merge_ids = def.blast_merge_ids.duplicate()
-	t.hole_ticks = SimTick.seconds_to_ticks(def.hole_seconds)  # v0.8.0 P2 (O24): Void's black holes
-	t.hole_max = def.hole_max
-	t.hole_pull_radius_m = def.hole_pull_radius_m
-	t.hole_pull_step_m = def.hole_pull_mps / SimTick.TICKS_PER_SECOND
-	t.hole_radius_m = def.hole_radius_m
-	t.hole_period_ticks = maxi(1, SimTick.seconds_to_ticks(def.hole_period_seconds))
 	t.secondary_proc_permille = def.secondary_proc_permille  # v0.8.0 MR (O91)
 	t.after_trigger_dead = def.after_trigger_dead.duplicate()
 	t.remnant_max = def.remnant_max  # v0.8.0 RM (O91): the remnants' limits, Thermal Break
@@ -41,6 +35,15 @@ static func from_repo(repo: ContentRepository) -> WandTable:
 	var t := compile(repo.get_def(&"wand", &"wand") as WandDefinition)
 	if t != null:
 		add_migration(t, migration(repo))
+	return t
+
+
+## v0.9.0 FV: from_repo, with the run's own slots per floor when it has them (RunTable.wand_slots_per_floor: the
+## v0.8.0 3-floor shape keeps 4 → 6 → 8; empty: data/wand's).
+static func for_run(repo: ContentRepository, run: RunTable) -> WandTable:
+	var t := from_repo(repo)
+	if t != null and run != null and not run.wand_slots_per_floor.is_empty():
+		t.slots_per_floor = run.wand_slots_per_floor.duplicate()
 	return t
 
 
@@ -79,3 +82,38 @@ static func retire_abilities(
 		for t in abilities:
 			t.retired = def.old_ids.has(t.id)
 	return abilities
+
+
+## v0.9.0 AS (owner Q2–Q5, Q13): the slot limits, the projectile caps and the form × card compatibility table
+## (data/wand/attack_slots.tres) against `items` (World.item_tables: its ids become item indices), or null without the
+## data (a lab: no limits).
+static func slots(repo: ContentRepository, items: Array[ItemTable]) -> SlotTable:
+	return compile_slots(repo.get_def(&"wand", &"attack_slots") as AttackSlotsDefinition, items)
+
+
+static func compile_slots(def: AttackSlotsDefinition, items: Array[ItemTable]) -> SlotTable:
+	if def == null:
+		return null
+	var t := SlotTable.new()
+	t.gun_limits = def.gun_limits.duplicate()
+	t.blade_limits = def.blade_limits.duplicate()
+	t.shots_per_attack_max = def.shots_per_attack_max
+	t.shots_per_second_max = def.shots_per_second_max
+	t.merge_radius_max_permille = def.merge_radius_max_permille
+	var index := {}
+	for k in items.size():
+		index[items[k].id] = k
+	for r in def.forms:
+		t.form_ids.append(r.id)
+		t.form_cards.append(int(index.get(r.card, -1)) if not String(r.card).is_empty() else -1)
+		var cells := {}
+		for id in r.allowed:
+			if index.has(id):
+				cells[int(index[id])] = SlotTable.CELL_ON
+		for id in r.ruled:
+			if index.has(id):
+				cells[int(index[id])] = SlotTable.CELL_RULED
+		t.form_cells.append(cells)
+		if String(r.card).is_empty() and t.default_form < 0:
+			t.default_form = t.form_ids.size() - 1
+	return t

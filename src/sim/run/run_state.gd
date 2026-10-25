@@ -37,7 +37,32 @@ extends RefCounted
 ## keeping its interior; FloorScenario.curse_room_rules_of).
 ## v0.8.0 BD (owner O83): 9 is today's: the boss door is shut and solid until the interact press opens it
 ## (BossFlow.Door, set in prepare). A floor saved under rules 1-8 keeps its open doorway, as it was saved.
-const FLOOR_RULES := 9
+## v0.9.0 TD (owner W §2, Q20): 10 is today's: on some floors a dead end is a secret room behind a timed door
+## (TimedDoor.setup). A floor saved under rules 1-9 is rebuilt without one, as it was saved (FloorPlan).
+## v0.9.0 RA (owner W §4 A, Q22): 11 is today's: on some floors a rune puzzle seals a dead end (RuneAlignment.setup).
+## A floor saved under rules 1-10 is rebuilt without one, as it was saved (FloorPlan). v0.9.0 DX (owner W §4 C, Q23)
+## rides the same rule (both land together): cracked walls, containers and explosive barrels (Breakables.setup).
+## v0.9.0 DP (owner Q26b): 12 is today's: the Purple Portal is earned (a purple-rune room on some floors,
+## PurpleRunes.setup; the Deep gate opens only on a floor whose runes were awakened). A floor saved under rules 1-11
+## keeps the Deep gate on every floor before the last, as it was saved (PurpleRunes.legacy_deep_gate).
+## v0.9.0 LK (owner Q21): 13 is today's: 1-2 Lockdown rooms a floor (Lockdowns.setup). A floor saved under rules 1-12
+## is rebuilt without any, as it was saved (FloorPlan).
+## v0.9.0 SH, HF (owner Q29b): 14 is today's: the floor's shrine is drawn as Fortune (the gamble shrine), Blood or
+## Chaos, and some floors from floor 2 have a healing fountain (Shrines.setup). A floor saved under rules 1-13 is
+## rebuilt as it was saved: its shrine is the gamble shrine (Fortune), and it has no Blood or Chaos shrine and no
+## fountain (FloorPlan).
+## v0.9.0 EL (owner Q24, Q25, Q21): 15 is today's: floors 4-5 mark their elite rooms (Elites.setup), an Elite Lockdown
+## may be drawn there, and the retired Ambush Cache is never drawn. A floor saved under rules 1-14 is rebuilt as it was
+## saved: no elite rooms, no Elite Lockdown, the Ambush Cache's old weight in the event draw (its pedestal then closes
+## on load: Events.drop_retired).
+## v0.9.0 CF (owner: "lets never make it a 1x1"): 16 is today's: no closed fight (an arena, the Overrun room, a
+## Lockdown, the Chaos shrine) in a room of fewer than its kind's min_cells grid cells. A floor saved under rules 1-15
+## is rebuilt with the rooms it had (the min_cells read as 0: RunSaver.floor_tables, FloorPlan.add_secrets).
+## v0.9.0 CF2 (owner: "Lockdowns get rooms first"): 17 is today's: the Lockdowns (Elite ones too) pick their rooms
+## right after the arenas and the Overrun room (FloorScenario.build, RunSaver.floor_tables' lockdown_first), before
+## the shrine, the fountain, the events, the curse room and the secrets, which then take the rooms left. A floor
+## saved under rules 1-16 is rebuilt in the old order, its Lockdowns last (FloorPlan.add_secrets).
+const FLOOR_RULES := 17
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
@@ -46,6 +71,14 @@ const FLOOR_RULES_V080_SR := 5
 const FLOOR_RULES_V080_N14 := 6
 const FLOOR_RULES_V080_N17 := 7
 const FLOOR_RULES_V080_N19 := 8
+const FLOOR_RULES_V080_BD := 9
+const FLOOR_RULES_V090_TD := 10
+const FLOOR_RULES_V090_RA := 11
+const FLOOR_RULES_V090_DP := 12
+const FLOOR_RULES_V090_LK := 13
+const FLOOR_RULES_V090_SH := 14
+const FLOOR_RULES_V090_EL := 15
+const FLOOR_RULES_V090_CF := 16
 
 var run_seed := 0
 var table: RunTable
@@ -76,6 +109,29 @@ var loop_floors := 0
 ## world is the final arena (FinalArenaScenario), on the loop's last floor (floor_index stays). Saved (RunSaver; an
 ## older payload has none).
 var final_fight := false
+## v0.9.0 DP (owner Q26b): the run's floors (run_floor(), across loops) that held a purple-rune room, so a loop holds
+## one at most (PurpleRunes.chance). Saved (RunSaver; an older payload has none).
+var purple_floors := PackedInt32Array()
+## v0.9.0 RB (owner: "locked once a run starts"): the rune affinity picked at the Wardrobe before the run (an
+## AffinityDefinition id; &"" or &"none" = None), the same on every floor. Saved (RunSaver; an older payload: None).
+var affinity := &""
+## v0.9.0 MP (PLAN W49-W50): the Rune Fragments the finished floors earned (RuneFragments.of_floor; collectibles
+## through RuneFragments.add_collectibles), banked into the profile when the run ends (MetaProgress). Saved
+## (RunSaver; an older payload: 0).
+var fragments_done := 0
+## v0.9.0 MP: how fragments are earned (FragmentTable; FloorPlan sets it from content). Null: the run earns none.
+var fragment_table: FragmentTable
+## v0.9.0 MP (owner: "void unlocked when traveling through a purple portal"): the card ids no offer draws in this
+## run (the profile's locked forms when the run started; FloorPlan resolves them into World.locked_items). Emptied
+## when the run travels through a Purple Portal (app side). Saved (RunSaver; an older payload: none locked).
+var locked_cards: Array[StringName] = []
+## v0.9.0 CL (COLLECTIBLES.md): the collectibles no floor of this run arms again (the profile's found ones when the run
+## started, and each one taken in it: the app adds it), the ones taken in this run (one Stone a run), and the secrets
+## behind hidden rune markings the finished floors found (Collectibles.marked; the Rune Rubbing counts the run's).
+## Saved (RunSaver; an older payload: none).
+var collected: Array[StringName] = []
+var collected_run: Array[StringName] = []
+var marked_done := 0
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:
@@ -190,6 +246,8 @@ func scale_enemies(tables: Array[EnemyTable], f: int = floor_index) -> void:
 	for t in tables:
 		t.hp = maxi(1, SpawnTable.scale(t.hp, hp_pm))
 		t.damage = SpawnTable.scale(t.damage, dmg_pm)
+		if t.elite != null:  # v0.9.0 EL: an elite's ability, plain attack and contact, by the same factor
+			t.elite.scale_damage(dmg_pm)
 
 
 ## Scales freshly compiled boss tables for floor f by the bosses' own factors (not the enemies' tables, so nothing
@@ -245,8 +303,17 @@ func prepare(w: World) -> void:
 			w.boss_flow.door = BossFlow.Door.SET
 		w.boss_flow.final_next = is_last_floor() and _has_final()  # v0.8.0 FB1: End leads to the final boss
 	w.deep_threat = routes.count(Routes.Route.DEEP)  # v0.5.0 RT + EV: +1 threat T per Deep floor taken
+	w.floor_hp_bonus = _hp_bonus()  # v0.9.0 SV: before the carry, so its max HP includes it
 	if not carry.is_empty():
 		RunCarry.apply(w, carry)
+	elif w.floor_hp_bonus > 0:
+		Gamble.after_carry(w)
+		w.actors.hp[0] = w.actors.max_hp[0]
+
+
+## v0.9.0 SV: the floors' max HP growth on the current floor (RunCarry.floor_hp_bonus).
+func _hp_bonus() -> int:
+	return RunCarry.floor_hp_bonus(table, run_floor())
 
 
 ## v0.7.5 MG: whether the current floor is a v0.7.0 floor resumed from an older save.
@@ -278,7 +345,12 @@ func finish_floor(w: World) -> void:
 	ticks_done += w.run_ticks
 	kills_done += w.kills
 	threat_by_floor.append(Curses.threat(w))
+	fragments_done += RuneFragments.of_floor(w, fragment_table, true)  # v0.9.0 MP
+	marked_done += Collectibles.marked(w)  # v0.9.0 CL: the Rune Rubbing counts the run's marked secrets
+	if w.purple != null and not purple_floors.has(run_floor()):  # v0.9.0 DP: one purple room a loop
+		purple_floors.append(run_floor())
 	carry = RunCarry.take(w, table.heal_permille, table.shard_carry_permille)
+	var grown_from := _hp_bonus()
 	if Ascension.took_portal(w) and _has_final():  # FB1; v0.8.0 P2: the Ascension portal: the final arena
 		final_fight = true
 	elif Ascension.looped(w):  # v0.8.0 P2 (O28): the Loop device
@@ -289,6 +361,7 @@ func finish_floor(w: World) -> void:
 	else:
 		floor_index += 1
 	floor_rules = FLOOR_RULES  # v0.7.5 MG: a new floor, always on today's rules
+	RunCarry.grow(w, carry, grown_from, _hp_bonus())  # v0.9.0 SV: the new max HP arrives filled
 	var taken := w.boss_flow.route_taken if w.boss_flow != null else -1
 	routes.resize(run_floor() - 1)  # v0.5.0 RT: the next floor's route, the one walked into
 	routes.append(taken if taken >= 0 else Routes.Route.NORMAL)

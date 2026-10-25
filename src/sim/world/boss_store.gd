@@ -28,6 +28,10 @@ const INT_FIELDS: Array[StringName] = [
 	&"dash_t",
 	&"gate_t"
 ]
+## v0.9.0 NB2: the twin pairs' fields (BossTwin), one entry per pair.
+const TWIN_FIELDS: Array[StringName] = [
+	&"twin_lead", &"twin_body", &"twin_angry", &"twin_anger_t", &"twin_burn_cd"
+]
 
 ## The boss's actor id, and its index in World.boss_tables.
 var ids := PackedInt32Array()
@@ -114,6 +118,45 @@ var melt_ey := PackedFloat32Array()
 var melt_exit := PackedInt32Array()
 ## S6: ticks until molten floor (lava or the melt) may burn the player again (0 while none is down).
 var burn_cd := 0
+## v0.9.0 NB1 (BossTide): the signature's cadence, one entry per live boss that has one (the Tidecaller): its actor
+## id and the tick its signature is next due. Empty for every other boss, and hashed only while an entry exists
+## (WorldSnapshot.ADDED_SINCE_V05: an older save has none).
+var sig_boss := PackedInt32Array()
+var sig_due := PackedInt32Array()
+## v0.9.0 NB2 (BossTwin): the twin bosses, one entry per pair alive (the Twin Wardens): the boss's actor id (its
+## bar, its defeat) and its twin's, the body angry now (its actor id, 0 = neither) and the ticks its anger has left,
+## and the ticks until the chain may burn the player again. Empty for every other boss, and hashed only while a pair
+## lives (WorldSnapshot.ADDED_SINCE_V05: an older save has none).
+var twin_lead := PackedInt32Array()
+var twin_body := PackedInt32Array()
+var twin_angry := PackedInt32Array()
+var twin_anger_t := PackedInt32Array()
+var twin_burn_cd := PackedInt32Array()
+## v0.9.0 NB3 (BossJudge): the Clockwork Judge's echo. echo_boss is the actor id of the Judge recording (-1 = none);
+## echo_x/echo_y the player's last positions, oldest first (one every echo_gap_ticks, at most echo_points); path_x,
+## path_y the echo locked as it started (the points left after the safe spot) and path_k each one's step (it strikes
+## on active tick path_k × echo_gap_ticks). Hashed only while a Judge records (WorldSnapshot.ADDED_SINCE_V05: an
+## older save has none).
+var echo_boss := -1
+var echo_x := PackedFloat32Array()
+var echo_y := PackedFloat32Array()
+var path_x := PackedFloat32Array()
+var path_y := PackedFloat32Array()
+var path_k := PackedInt32Array()
+## v0.9.0 NB4 (BossShade): the Lantern Shade's light. shade_boss is the Shade's actor id (-1 = none); shade_dark 1 while
+## a Lights Out has the room snuffed; shade_at the tick its next Lights Out snuffs the room and relights the lanterns
+## (-1 = none pending) and shade_from the tick that Lights Out began; NB4b: shade_until the tick the dark lifts (-1 =
+## not dark, or a table with no dark_hold_ticks: dark until the Shade dies); lamp_x/lamp_y the room's edge lanterns
+## and lamp_t each one's lit ticks left (0 = out). Hashed only while a Shade lives (WorldSnapshot.ADDED_SINCE_V05: an
+## older save has none).
+var shade_boss := -1
+var shade_dark := 0
+var shade_at := -1
+var shade_from := -1
+var shade_until := -1
+var lamp_x := PackedFloat32Array()
+var lamp_y := PackedFloat32Array()
+var lamp_t := PackedInt32Array()
 
 
 func size() -> int:
@@ -179,6 +222,50 @@ func hash_into(h: StateHasher) -> void:
 		_hash_signatures(h)
 	if lava_x.size() + melt_boss.size() > 0:  # v0.8.0 BS2: only while molten floor is down
 		_hash_molten(h)
+	if not sig_boss.is_empty():  # v0.9.0 NB1: only while a boss with a cadence lives
+		h.add_int(-2)
+		h.add_ints(sig_boss)
+		h.add_ints(sig_due)
+	if not twin_lead.is_empty():  # v0.9.0 NB2: only while a twin pair lives
+		h.add_int(-3)
+		for f: StringName in TWIN_FIELDS:
+			h.add_ints(get(f))
+	if echo_boss >= 0:  # v0.9.0 NB3: only while a Clockwork Judge records
+		h.add_int(-4)
+		h.add_int(echo_boss)
+		h.add_f32s(echo_x)
+		h.add_f32s(echo_y)
+		h.add_f32s(path_x)
+		h.add_f32s(path_y)
+		h.add_ints(path_k)
+	if shade_boss >= 0:  # v0.9.0 NB4: only while a Lantern Shade lives
+		h.add_int(-5)
+		h.add_ints(PackedInt32Array([shade_boss, shade_dark, shade_at, shade_from, shade_until]))
+		h.add_f32s(lamp_x)
+		h.add_f32s(lamp_y)
+		h.add_ints(lamp_t)
+
+
+## v0.9.0 NB4: forgets the Lantern Shade's light (its boss gone: the room relights).
+func clear_shade() -> void:
+	shade_boss = -1
+	shade_dark = 0
+	shade_at = -1
+	shade_from = -1
+	shade_until = -1
+	lamp_x = PackedFloat32Array()
+	lamp_y = PackedFloat32Array()
+	lamp_t = PackedInt32Array()
+
+
+## v0.9.0 NB3: forgets the Clockwork Judge's echo (its boss gone).
+func clear_echo() -> void:
+	echo_boss = -1
+	echo_x = PackedFloat32Array()
+	echo_y = PackedFloat32Array()
+	path_x = PackedFloat32Array()
+	path_y = PackedFloat32Array()
+	path_k = PackedInt32Array()
 
 
 ## v0.8.0 BS2 (S6): the lava, the meltdown and the burn clock.
@@ -238,6 +325,41 @@ func remove_melt(k: int) -> void:
 		af.remove_at(k)
 		set(f, af)
 	for f: StringName in [&"melt_boss", &"melt_attack", &"melt_from", &"melt_exit"]:
+		var ai: PackedInt32Array = get(f)
+		ai.remove_at(k)
+		set(f, ai)
+
+
+## v0.9.0 NB1: the cadence entry of boss `boss_id`, or -1.
+func sig_of(boss_id: int) -> int:
+	return sig_boss.find(boss_id)
+
+
+## v0.9.0 NB1: removes cadence entry k.
+func remove_sig(k: int) -> void:
+	sig_boss.remove_at(k)
+	sig_due.remove_at(k)
+
+
+## v0.9.0 NB2: the twin pair actor `id` is in (as the boss or its twin), or -1.
+func twin_of(id: int) -> int:
+	var k := twin_lead.find(id)
+	return k if k >= 0 else twin_body.find(id)
+
+
+## v0.9.0 NB2: a new twin pair (boss `lead`, twin `body`), calm, its chain ready.
+func add_twin(lead: int, body: int) -> void:
+	for f: StringName in TWIN_FIELDS:
+		var ai: PackedInt32Array = get(f)
+		ai.append(0)
+		set(f, ai)
+	twin_lead[twin_lead.size() - 1] = lead
+	twin_body[twin_body.size() - 1] = body
+
+
+## v0.9.0 NB2: removes twin pair k.
+func remove_twin(k: int) -> void:
+	for f: StringName in TWIN_FIELDS:
 		var ai: PackedInt32Array = get(f)
 		ai.remove_at(k)
 		set(f, ai)

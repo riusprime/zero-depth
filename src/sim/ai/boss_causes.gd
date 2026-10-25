@@ -8,6 +8,12 @@ extends RefCounted
 ## The death recap line for a boss kill: the attack that landed it (World.killer_attack), else the boss's projectile
 ## attack for a bolt, else &"".
 static func key(w: World) -> StringName:  # gdlint: ignore=max-returns
+	if w.killer_attack == Breakables.KILL_CAUSE:  # v0.9.0 DX: an explosive barrel's blast (no actor's attack)
+		return Breakables.CAUSE_KEY
+	if w.killer_attack == Lockdowns.KILL_CAUSE:  # v0.9.0 LK: a Hazard Lockdown's strike (no actor's attack)
+		return Lockdowns.CAUSE_KEY
+	if EliteAi.is_elite_kind(w.killer_kind):  # v0.9.0 EL: "The Breaker's slam …" (EliteAi.cause_key)
+		return EliteAi.cause_key(w)
 	var t := w.boss_table_of_kind(w.killer_kind)
 	if t == null and w.killer_attack >= BossSignatures.LATE_CAUSE:
 		# v0.8.0 BS2 (S5): a turret's ricochet names the boss that deployed it (its deploy attack's late part)

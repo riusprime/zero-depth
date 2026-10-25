@@ -38,7 +38,8 @@ const PACK_ROWS := 3
 const BUILDS := {
 	"gun_baseline": [&"gun", [], false],
 	"blade_baseline": [&"blade", [], false],
-	"gun_multiplication": [&"gun", [&"gun_twin", &"gun_spread", &"halo_shot"], false],
+	# v0.9.0 TW: Split in the retired Spread's place.
+	"gun_multiplication": [&"gun", [&"gun_twin", &"split_shot", &"halo_shot"], false],
 	"blade_multiplication": [&"blade", [&"echo_slash", &"double_slash", &"split_wave"], false],
 	"gun_charged": [&"gun", [&"gun_charge", &"gun_big_shot"], false],
 	"blade_charged": [&"blade", [&"heavy"], false],
@@ -90,7 +91,7 @@ var _biome: BiomeDefinition
 
 func _init(repo: ContentRepository) -> void:
 	_repo = repo
-	var run_def: RunDefinition = repo.get_def(&"run", &"three_floors")
+	var run_def: RunDefinition = repo.get_def(&"run", RunSaver.RUN_ID)
 	_biome = repo.get_def(&"biomes", run_def.biomes[0])
 
 

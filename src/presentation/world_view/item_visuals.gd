@@ -67,7 +67,13 @@ static func bolt_look(reader: WorldReader) -> Dictionary:
 ## build's specs, the step or the charge change.
 func _sync_looks(reader: WorldReader) -> void:
 	var sig := (
-		"%s|%s|%s" % [reader.attack_digest(), reader.step_attack_id(), reader.swing_overcharged()]
+		"%s|%s|%s|%s"
+		% [
+			reader.attack_digest(),
+			reader.step_attack_id(),
+			reader.swing_overcharged(),
+			ElementLooks.energy_style,  # v0.9.0 MP2: the robe's energy (The Fallen's violet)
+		]
 	)
 	if sig == _sig:
 		return

@@ -11,7 +11,7 @@ func _repo() -> ContentRepository:
 
 
 func _run_table() -> RunTable:
-	return ContentCompiler.compile_run(_repo().get_def(&"run", &"three_floors"))
+	return ContentCompiler.compile_run(_repo().get_def(&"run", RunSaver.RUN_ID))
 
 
 ## A real floor (the app's FloorScenario) with an invulnerable player.
@@ -63,22 +63,30 @@ func _into(w: World) -> Vector2:
 
 func test_the_run_data_compiles() -> void:
 	var t := _run_table()
-	assert_eq(t.floors, 3)
+	assert_eq(t.floors, 5)  # v0.9.0 FV (owner Q24): five floors (was 3)
 	assert_eq(t.biome_count, 5)  # v0.7.5 NB1: Frozen Shore joins the draw; NB2: Starfall
 	assert_eq(
-		t.enemy_hp_floor_permille, PackedInt32Array([1000, 1900, 3610]), "v0.4.0 SC: 1.9^(f - 1)"
+		t.enemy_hp_floor_permille,
+		PackedInt32Array([1000, 1380, 1900, 2620, 3610]),
+		"v0.9.0 FV: v0.4.0 SC's 1.9^(f - 1) stretched over five floors"
 	)
-	assert_eq(t.enemy_damage_floor_permille, PackedInt32Array([1000, 1400, 1960]), "1.4^(f - 1)")
-	assert_eq(t.boss_hp_per_floor_permille, 400, "bosses keep their own scaling")
-	assert_eq(t.boss_damage_per_floor_permille, 200)
-	assert_eq(t.heal_permille, 400)
-	var def: RunDefinition = _repo().get_def(&"run", &"three_floors")
+	assert_eq(
+		t.enemy_damage_floor_permille, PackedInt32Array([1000, 1180, 1400, 1660, 1960]), "1.4^"
+	)
+	assert_eq(t.boss_hp_per_floor_permille, 200, "bosses keep their own scaling (FV: +20 %)")
+	assert_eq(t.boss_damage_per_floor_permille, 100)
+	assert_eq(
+		t.heal_permille, 600, "v0.9.0 SV (owner 2026-10-23): the heal between floors 40 % -> 60 %"
+	)
+	assert_eq(t.max_hp_per_floor, 15, "v0.9.0 SV: +15 max HP per floor cleared")
+	var def: RunDefinition = _repo().get_def(&"run", RunSaver.RUN_ID)
 	for id in def.biomes:
 		assert_not_null(_repo().get_def(&"biomes", id), "biome %s exists" % id)
 
 
 ## v0.7.5 NB1: four biomes for three floors, so a run draws three different ones in a random order, and every biome
-## (Frozen Shore too) turns up across runs.
+## (Frozen Shore too) turns up across runs. v0.9.0 FV (owner Q24, "All 5, random order"): five biomes for five
+## floors, every one once.
 func test_biome_order_is_a_shuffle_per_run() -> void:
 	var t := _run_table()
 	var orders := {}
@@ -86,13 +94,13 @@ func test_biome_order_is_a_shuffle_per_run() -> void:
 	for s in 40:
 		var r := RunState.start(100 + s, t)
 		var o := r.biome_order
-		assert_eq(o.size(), 3)
+		assert_eq(o.size(), 5)
 		var distinct := {}
 		for b in o:
 			assert_between(b, 0, t.biome_count - 1)
 			distinct[b] = true
 			seen[b] = true
-		assert_eq(distinct.size(), 3, "never the same biome twice in a run")
+		assert_eq(distinct.size(), 5, "never the same biome twice in a run")
 		orders[str(o)] = true
 		assert_eq(RunState.start(100 + s, t).biome_order, o, "same run seed, same order")
 	assert_gte(orders.size(), 4, "the order varies between runs")
@@ -109,13 +117,13 @@ func test_floor_seeds_derive_from_the_run_seed() -> void:
 
 
 ## v0.4.0 SC (F10): HP × 1.9^(f - 1) and damage × 1.4^(f - 1), per-mille tables, rounded half up; floor 4 and on
-## keep floor 3's factor (the table's last entry).
+## keep floor 3's factor (the table's last entry). v0.9.0 FV: stretched over five floors; floor 6 keeps floor 5's.
 func test_enemies_scale_with_the_floor() -> void:
 	var base := CombatLab.tables()
 	var r := RunState.start(1, _run_table())
-	var hp_pm := {1: 1000, 2: 1900, 3: 3610, 4: 3610}
-	var dmg_pm := {1: 1000, 2: 1400, 3: 1960, 4: 1960}
-	for f in [1, 2, 3, 4]:
+	var hp_pm := {1: 1000, 2: 1380, 3: 1900, 4: 2620, 5: 3610, 6: 3610}
+	var dmg_pm := {1: 1000, 2: 1180, 3: 1400, 4: 1660, 5: 1960, 6: 1960}
+	for f in [1, 2, 3, 4, 5, 6]:
 		var t := CombatLab.tables()
 		r.scale_enemies(t, f)
 		for k in t.size():
@@ -129,7 +137,7 @@ func test_enemies_scale_with_the_floor() -> void:
 			)
 
 
-func test_the_carry_keeps_items_and_heals_forty_percent() -> void:
+func test_the_carry_keeps_items_and_heals_between_floors() -> void:
 	var r := RunState.start(7, _run_table())
 	var w := _floor_world(r.floor_seed(), r)
 	w.add_item(0)
@@ -140,24 +148,31 @@ func test_the_carry_keeps_items_and_heals_forty_percent() -> void:
 	w.shards = 30
 	r.finish_floor(w)
 	assert_eq(r.floor_index, 2)
-	assert_eq(r.carry[RunCarry.HP], 10 + 40, "heal 40 % of 100")
+	# v0.9.0 SV: heal_permille of the finished floor's max HP, then the floor's growth fills the new max HP
+	var t := _run_table()
+	var healed := 10 + 100 * t.heal_permille / 1000 + t.max_hp_per_floor
+	assert_eq(r.carry[RunCarry.HP], healed, "heal 60 % of 100, plus SV's +15 growth")
 	assert_eq(r.ticks_done, 600)
 	assert_eq(r.kills_done, 5)
 	var w2 := _floor_world(r.floor_seed(), r)
 	assert_eq(w2.items_owned, PackedInt32Array([0, 3]), "items carried in order")
 	assert_true(w2.item_mods.has(w2.item_tables[0].kind), "their modifiers are live")
-	assert_eq(w2.actors.hp[0], 50)
+	assert_eq(w2.actors.hp[0], healed)
 	assert_eq(w2.floor_index, 2)
 	assert_eq(w2.shards, 15, "shards carry (E), half of them (v0.5.5 Q-S4: keep half)")
 	assert_eq(w2.shards_left_behind, 15, "the portal kept the other half")
-	assert_eq(w2.floor_count, 3)
+	assert_eq(w2.floor_count, 5)  # v0.9.0 FV
 	assert_eq(w2.run_ticks, 0, "the danger tier restarts on each floor")
 	assert_eq(WorldReader.new(w2).tier(), 0)
 	for i in w2.rewards.size():
 		for item in w2.rewards.offer_of(i):
 			assert_false(item in [0, 3], "a floor never offers an item you hold")
 	w2.actors.hp[0] = 90
-	assert_eq(RunCarry.take(w2, 400)[RunCarry.HP], 100, "the heal stops at max HP")
+	assert_eq(
+		RunCarry.take(w2, t.heal_permille)[RunCarry.HP],
+		100 + t.max_hp_per_floor,
+		"the heal stops at max HP (v0.9.0 SV: floor 2's max HP is 100 + 15)"
+	)
 
 
 func test_a_combo_owned_on_floor_one_is_active_on_floor_two() -> void:
@@ -202,16 +217,17 @@ func test_each_floor_draws_its_boss_and_scales_it() -> void:
 		r.scale_bosses(t, f)
 		# v0.4.0 TU (owner D9): floor 1's bosses x0.8 in the same step.
 		var ease: int = 800 if f == 1 else 1000
-		var hp_pm: int = (1000 + 400 * (f - 1)) * ease / 1000
-		var dmg_pm: int = (1000 + 200 * (f - 1)) * ease / 1000
+		# v0.9.0 FV (owner Q24): +20 % HP and +10 % damage a floor (was +40 % / +20 %: floor 5 = old floor 3)
+		var hp_pm: int = (1000 + 200 * (f - 1)) * ease / 1000
+		var dmg_pm: int = (1000 + 100 * (f - 1)) * ease / 1000
 		assert_eq(
-			t[k].hp, base[k].hp * hp_pm / 1000, "boss HP x (1 + 0.4 (f - 1)), x0.8 on floor 1"
+			t[k].hp, base[k].hp * hp_pm / 1000, "boss HP x (1 + 0.2 (f - 1)), x0.8 on floor 1"
 		)
 		for a in t[k].attacks.size():
 			assert_eq(
 				t[k].attacks[a].damage,
 				base[k].attacks[a].damage * dmg_pm / 1000,
-				"boss damage x (1 + 0.2 (f - 1)), x0.8 on floor 1"
+				"boss damage x (1 + 0.1 (f - 1)), x0.8 on floor 1"
 			)
 
 
@@ -243,7 +259,7 @@ func test_the_carry_names_its_fields_in_one_place() -> void:
 ## so, and the next floor knows how many were left behind.
 func test_the_portal_keeps_half_the_shards_rounded_down() -> void:
 	var run := ContentCompiler.compile_run(
-		ContentRepository.load_all().get_def(&"run", &"three_floors")
+		ContentRepository.load_all().get_def(&"run", RunSaver.RUN_ID)
 	)
 	assert_eq(run.shard_carry_permille, 500, "keep half")
 	var w := CombatLab.world()

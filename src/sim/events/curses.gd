@@ -14,7 +14,7 @@ extends RefCounted
 ## - HEAT_DECAY: Overclock heat's decay per tick x (1 + amount);
 ## - EXTRA_ENEMY: every spawn arrival brings `amount` more, under the alive cap (SpawnDirector);
 ## - PRICES: chest, gamble shrine and event shard prices (and shops') x (1 + amount), rounded half up;
-## - ELITE_CHANCE: each spawned enemy rolls `amount` per mille on `ai:elite` to be an elite (+ elite HP).
+## - ELITE_CHANCE: retired in v0.9.0 EL with the Marked curse (owner Q25; kept so the numbering never moves).
 ## v0.6.0 CU, the trade-off curses' effects (C1-C8):
 ## - NO_DASH: a dash press does nothing (World._advance_actions); DODGE: an enemy hit on the player is dodged with
 ##   `amount` per mille on the `combat` stream: no damage, the hurt i-frames, a STATUS_APPLY &"dodge" cue (Damage.hit);
@@ -28,8 +28,8 @@ extends RefCounted
 ## - NO_MINIMAP: the minimap is off (WorldReader.minimap_blind); SHARD_GAIN: shards x (1 + amount) (Stats.shards);
 ## - HIT_STUN: an enemy hit that hurts stuns the player for `amount` ticks: no move, swing, shot, dash, skill or
 ##   blink (stunned); MOVE_SPEED: move speed x (1 + amount) (move_factor);
-## - ELITE_HUNT: elites within the rules' hunt range move x (1 + amount) (EnemyAi.move); ELITE_RARE_DROP: a killed
-##   elite drops a free rare card (CoreTheft.on_death).
+## - ELITE_HUNT, ELITE_RARE_DROP: retired in v0.9.0 EL with the Marked curse (no hook reads them; content may not
+##   use them: CurseDefinition.RETIRED).
 ## Cursed chests (v0.6.0 CU, owner S6: "curse was fun, but also gave me the god feeling too fast"): when a chest's
 ## offer is first rolled, `loot:event` rolls rules.cursed_chest_permille; a cursed offer's first card becomes a
 ## trade-off curse card (Offers.curse_code) for a trade-off curse you don't hold. Taking it takes the curse, upside
@@ -224,26 +224,18 @@ static func price(w: World, base: int) -> int:
 	return base if a == 0 else (base * (1000 + a) + 500) / 1000
 
 
-## Raises actor i to an elite: + rules.elite_hp_bonus_permille HP (and max HP), listed in World.ev.elite_ids. v0.6.0
-## CU: it carries a core (CoreTheft.on_elite).
-static func make_elite(w: World, i: int) -> void:
-	var a := w.actors
-	var hp := maxi(1, a.max_hp[i] * (1000 + w.ev.rules.elite_hp_bonus_permille) / 1000)
-	a.max_hp[i] = hp
-	a.hp[i] = hp
-	w.ev.elite_ids.append(a.ids[i])
-	CoreTheft.on_elite(w, i)
-
-
-## SpawnDirector, after a spawn of actor i: under an elite curse it rolls `ai:elite` and may become an elite.
-static func maybe_elite(w: World, i: int) -> void:
-	var chance := total(w, Effect.ELITE_CHANCE)
-	if chance > 0 and w.ev.rng_elite != null and w.ev.rng_elite.chance_permille(chance):
-		make_elite(w, i)
-
-
-static func is_elite(w: World, id: int) -> bool:
-	return w.ev.elite_ids.has(id)
+## v0.9.0 EL (owner Q25: "Remove it"): the curses whose ids are retired (their content deleted). Their places in
+## World.ev.curses are kept by EventCompiler (a retired table, never drawn) so a save's curse indices still name the
+## same curses; a retired curse a save still holds is dropped on load (drop_retired).
+static func drop_retired(w: World) -> void:
+	if w.curses_owned.is_empty():
+		return
+	var kept := PackedInt32Array()
+	for c in w.curses_owned:
+		if c >= w.ev.curses.size() or not w.ev.curses[c].retired:
+			kept.append(c)
+	if kept.size() != w.curses_owned.size():
+		w.curses_owned = kept
 
 
 # --- Cursed chest offers ----------------------------------------------------------------------------------------
@@ -427,20 +419,3 @@ static func move_factor(w: World) -> float:
 		return 0.0
 	var a := total(w, Effect.MOVE_SPEED)
 	return 1.0 if a == 0 else (1000 + a) / 1000.0
-
-
-## Marked: elite actor i's move factor: x (1 + amount) while within the hunt range of the player.
-static func hunt_factor(w: World, i: int) -> float:
-	if w.ev.elite_ids.is_empty():
-		return 1.0
-	var a := total(w, Effect.ELITE_HUNT)
-	if a == 0 or not is_elite(w, w.actors.ids[i]):
-		return 1.0
-	if Kin.length(w.actors.pos(i) - w.player_pos()) > w.ev.rules.hunt_range_m:
-		return 1.0
-	return (1000 + a) / 1000.0
-
-
-## Marked: a killed elite drops a free rare card.
-static func elite_drops(w: World) -> bool:
-	return has(w, Effect.ELITE_RARE_DROP)

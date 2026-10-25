@@ -77,6 +77,28 @@ var arena_template := 0
 @export var gap_close_attack: StringName
 @export var gap_close_distance_m := 5.0
 @export var gap_close_seconds := 2.0
+## v0.9.0 NB1 (BOSSES_4_5.md N1, "every 9 s"; BossTide): > 0 makes the boss perform its phase's signature (the phase's
+## first `tide` attack) every signature_every_seconds from one start to the next, the first signature_first_seconds
+## after it rises, and never by the weighted pick (0 = none). Every phase then holds a `tide` attack.
+@export var signature_every_seconds := 0.0
+@export var signature_first_seconds := 3.0
+## v0.9.0 NB1: where the boss compiles among the floor bosses (BossOrder): 0 for the six before v0.9.0 (by id), 1 and
+## on for the bosses added since, after them, so a saved boss index never moves.
+@export var save_order := 0
+## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): a boss with a twin_kind_id (BossSchemas.TWIN_KINDS) rises as two bodies,
+## twin_distance_m apart, sharing one HP; their chain is held between chain_min_m and chain_max_m (within the
+## approved 3..9 m) and burns a player touching it (chain_width_m wide) chain_burn every chain_burn_seconds; the twin
+## keeps flank_m from the player; a hit on one body speeds the other to anger_speed_permille for anger_seconds.
+@export var twin_kind_id: StringName
+@export var twin_distance_m := 5.0
+@export var chain_min_m := 3.0
+@export var chain_max_m := 9.0
+@export var chain_burn := 12
+@export var chain_burn_seconds := 0.5
+@export var chain_width_m := 0.5
+@export var flank_m := 4.5
+@export var anger_speed_permille := 1400
+@export var anger_seconds := 3.0
 
 
 func category() -> StringName:
@@ -106,6 +128,8 @@ func validate() -> Array[ValidationIssue]:
 	_check_attacks(issues)
 	_check_phases(issues)
 	_check_challenge(issues)
+	_check_cadence(issues)
+	_check_twin(issues)
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1
@@ -122,6 +146,90 @@ func validate() -> Array[ValidationIssue]:
 			ValidationIssue.new(&"arena", p, "unknown arena_template %d" % arena_template)
 		)
 	return issues
+
+
+## v0.9.0 NB1: a cadence needs a `tide` attack in every phase, a first one at least the intro away, and a period
+## longer than each phase's tide (its windup, pull and push). v0.9.0 NB3: or an `echo` (the Clockwork Judge's), the
+## period longer than its windup and its replay (as long as its recording). v0.9.0 NB4: or a Lights Out (the Lantern
+## Shade's), the period longer than its windup and its time to the dark.
+func _check_cadence(issues: Array[ValidationIssue]) -> void:
+	if signature_every_seconds == 0.0:
+		return
+	var p := resource_path
+	if signature_every_seconds < 0.0 or signature_first_seconds < 0.0:
+		issues.append(ValidationIssue.new(&"negative", p, "the signature's cadence is >= 0"))
+	for a in attacks:
+		ShadeRules.check_cadence(a, signature_every_seconds, issues, p)  # v0.9.0 NB4b: the dark lifts in time
+	for ph in phases:
+		var tide: BossAttackDefinition = null
+		for aid in ph.attack_ids:
+			var a := attack(StringName(aid))
+			if (
+				a != null
+				and (a.move == &"tide" or a.move == &"echo" or ShadeRules.is_lights_out(a))
+			):
+				tide = a
+				break
+		if tide == null:
+			issues.append(
+				ValidationIssue.new(&"attacks", p, "a cadence needs a tide in every phase")
+			)
+			continue
+		var span := (
+			tide.telegraph_seconds
+			+ float(tide.shape_params.get("pull_seconds", 0.0))
+			+ float(tide.shape_params.get("push_seconds", 0.0))
+			+ float(tide.shape_params.get("record_seconds", 0.0))
+			+ float(tide.shape_params.get("dark_seconds", 0.0))
+		)  # v0.9.0 NB4: Lights Out to its dark
+		if signature_every_seconds <= span:
+			issues.append(
+				ValidationIssue.new(&"duration", p, "signature_every_seconds must exceed its tide")
+			)
+
+
+## v0.9.0 NB2 (BOSSES_4_5.md N2): a twin's kind is known; its chain stays within 3..9 m (min below max, the twin rising
+## within them), burns a real amount on a real clock along a strip; its anger speeds a body (1000..2000 per mille) for
+## a real time; and it has a Chain Sweep whose late cause names the burn. Crossfire and Chain Sweep need a twin.
+func _check_twin(issues: Array[ValidationIssue]) -> void:
+	var p := resource_path
+	var twin_moves := attacks.filter(
+		func(a: BossAttackDefinition) -> bool:
+			return a != null and (a.move == &"crossfire" or a.move == &"chain_sweep")
+	)
+	if String(twin_kind_id).is_empty():
+		if not twin_moves.is_empty():
+			issues.append(
+				ValidationIssue.new(&"attacks", p, "Crossfire and Chain Sweep need a twin")
+			)
+		return
+	if not BossSchemas.TWIN_KINDS.has(twin_kind_id):
+		issues.append(ValidationIssue.new(&"unknown_boss", p, "no twin kind %s" % twin_kind_id))
+	if (
+		chain_min_m < BossSchemas.TWIN_CHAIN_MIN_M
+		or chain_max_m > BossSchemas.TWIN_CHAIN_MAX_M
+		or chain_min_m >= chain_max_m
+		or twin_distance_m < chain_min_m
+		or twin_distance_m > chain_max_m
+	):
+		issues.append(ValidationIssue.new(&"range", p, "the chain stays within 3..9 m"))
+	if chain_burn <= 0 or int(round(chain_burn_seconds * 60.0)) < 1 or chain_width_m <= 0.0:
+		issues.append(ValidationIssue.new(&"not_positive", p, "the chain burns > 0, each > 0 s"))
+	if (
+		anger_speed_permille < 1000
+		or anger_speed_permille > BossSchemas.TWIN_ANGER_MAX_PERMILLE
+		or anger_seconds <= 0.0
+		or flank_m <= 0.0
+	):
+		issues.append(ValidationIssue.new(&"range", p, "anger 1000..2000 per mille, > 0 s"))
+	var sweep: Array = twin_moves.filter(
+		func(a: BossAttackDefinition) -> bool:
+			return a.move == &"chain_sweep" and not String(a.late_cause_key).is_empty()
+	)
+	if sweep.is_empty():
+		issues.append(
+			ValidationIssue.new(&"missing", p, "a twin needs a Chain Sweep with a late_cause_key")
+		)
 
 
 ## The attack with this id, or null.

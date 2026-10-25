@@ -1,5 +1,5 @@
 extends GutTest
-## Boot -> main menu -> Play -> Esc pauses -> Main menu, by input events only.
+## Boot -> main menu -> Play -> Esc pauses -> to the hub (v0.9.0 HB) -> Main menu, by input events only.
 
 
 func after_each() -> void:
@@ -24,11 +24,12 @@ func test_menu_play_pause_and_back() -> void:
 	await e.tap(KEY_DOWN)  # -> Restart run
 	await e.tap(KEY_DOWN)  # -> Options (v0.3.0 O)
 	await e.tap(KEY_DOWN)  # -> Codex (v0.7.5 CX)
-	await e.tap(KEY_DOWN)  # -> Main menu
+	await e.tap(KEY_DOWN)  # -> To the Rune Ring (v0.9.0 HB, owner 2026-10-23)
 	await e.tap(KEY_ENTER)
 	await e.frames(2)
-	assert_false(main.is_playing(), "Main menu ends the stage")
-	assert_not_null(main.get_node_or_null("UI/MainMenu"))
+	assert_false(main.is_playing(), "leaving ends the stage")
+	assert_not_null(main.hub, "to the hub")
+	assert_true(await HubWalk.new(e).to_main_menu(), "the hub's pause -> Main menu")
 
 
 func test_version_label_on_the_menu() -> void:

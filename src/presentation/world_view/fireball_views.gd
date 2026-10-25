@@ -261,6 +261,104 @@ const LOOKS := {
 		"trail_style": &"drips",
 		"tail": 0.5,
 	},
+	## v0.9.0 NB1: the Tidecaller: sea-green bubbles (a translucent wobbling skin round a bright core, a dark teal
+	## rim, a trail of droplets; greener than the hero's cyan).
+	&"tide_bubble":
+	{
+		"core": Color("#46D6B0"),
+		"edge": Color("#082624"),
+		"trail": Color("#3FA88A"),
+		"size": 1.05,
+		"tip": 1.0,
+		"trail_m": 0.4,
+		"mesh": &"glob",
+		"body": Color("#1E5A50"),
+		"energy": 2.0,
+		"swirl": 1.2,
+		"wobble": 0.16,
+		"opacity": 0.7,
+		"trail_style": &"drips",
+		"tail": 0.45,
+	},
+	## v0.9.0 NB2: the Twin Wardens' Crossfire: cracked stone embers glowing from inside, gold-amber from the boss, pale
+	## violet from its twin (a rock skin over a hot core, a trail in each body's colour; cores clear of the hero's
+	## colours and of the other bosses' looks).
+	&"warden_amber_ember":
+	{
+		"core": Color("#FFDD00"),
+		"edge": Color("#2A1606"),
+		"trail": Color("#E07A1E"),
+		"size": 1.1,
+		"tip": 1.1,
+		"trail_m": 0.6,
+		"mesh": &"rock",
+		"body": Color("#4A3826"),
+		"energy": 3.0,
+		"crack": 0.7,
+		"swirl": 1.1,
+		"spin": 1.0,
+		"tumble": 0.6,
+		"trail_style": &"glow",
+		"tail": 0.5,
+	},
+	## v0.9.0 NB3: the Clockwork Judge's Gear Spiral: hot brass gear-sparks, a bright brass core in a dark bronze rim
+	## (the rock skin cut like a cog), spinning fast, a short bright trail of filings.
+	&"gear_spark":
+	{
+		"core": Color("#FFEF40"),
+		"edge": Color("#2A1A04"),
+		"trail": Color("#D99A20"),
+		"size": 1.0,
+		"tip": 1.0,
+		"trail_m": 0.5,
+		"mesh": &"rock",
+		"body": Color("#5A4416"),
+		"energy": 3.2,
+		"crack": 0.9,
+		"swirl": 0.8,
+		"spin": 2.4,
+		"tumble": 0.3,
+		"trail_style": &"glow",
+		"tail": 0.45,
+	},
+	## v0.9.0 NB4: the Lantern Shade's wisps: dim violet will-o'-wisps (BOSSES_4_5 N4), a soft wobbling orb, a thin
+	## dark smoke trail (they glow only inside light: ShadeViews' dark covers them; their outline is ShadeViews').
+	## The core is a pale ghost-violet (was #C38CFF, near the Nemesis' bolt and crescent): bright, 0.18 from every look.
+	&"shade_wisp":
+	{
+		"core": Color("#948CE4"),
+		"edge": Color("#10061E"),
+		"trail": Color("#2C1A46"),
+		"size": 1.0,
+		"tip": 1.0,
+		"trail_m": 0.4,
+		"mesh": &"orb",
+		"body": Color("#2A1648"),
+		"energy": 2.6,
+		"crack": 0.0,
+		"swirl": 1.6,
+		"wobble": 0.5,
+		"trail_style": &"smoke",
+		"tail": 0.4,
+	},
+	&"warden_violet_ember":
+	{
+		"core": Color("#BB99CC"),
+		"edge": Color("#160A26"),
+		"trail": Color("#7A3ADB"),
+		"size": 1.1,
+		"tip": 1.1,
+		"trail_m": 0.6,
+		"mesh": &"rock",
+		"body": Color("#3A3046"),
+		"energy": 3.0,
+		"crack": 0.7,
+		"swirl": 1.1,
+		"spin": 1.0,
+		"tumble": 0.6,
+		"trail_style": &"glow",
+		"tail": 0.5,
+	},
 }
 const DEFAULT_LOOK := {
 	"core": Color("#F0A890"),
@@ -285,8 +383,12 @@ const TEX_CORES := {
 	&"acid_glob": ["fx_orb_cores", 1, 0.0],
 	&"prism_orb": ["fx_orb_cores", 2, 0.0],
 	&"molten_drop": ["fx_orb_cores", 3, 0.0],
+	&"tide_bubble": ["fx_orb_cores", 1, 0.0],  # v0.9.0 NB1: the glob painting, tinted seafoam
 	&"spear_ember": ["fx_orb_cores_2", 0, SPEAR_TURN],
 	&"cannon_ember": ["fx_orb_cores_2", 1, 0.0],
+	&"warden_amber_ember": ["fx_orb_cores_2", 1, 0.0],  # v0.9.0 NB2: the cannon ember painting, tinted
+	&"warden_violet_ember": ["fx_orb_cores_2", 1, 0.0],
+	&"gear_spark": ["fx_orb_cores_2", 1, 0.0],  # v0.9.0 NB3: the cannon ember painting, tinted brass
 	&"arc_plasma": ["fx_orb_cores_2", 2, 0.0],
 	&"bomb_cinder": ["fx_orb_cores_2", 3, 0.0],
 	&"crown_orb": ["fx_orb_cores_final", 1, 0.0],

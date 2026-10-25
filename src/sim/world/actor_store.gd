@@ -34,6 +34,14 @@ enum Kind {
 	COLOSSUS,  # v0.8.0 FB1: the final boss's three bodies (FinalBoss), one kind each
 	PRISM,
 	NEMESIS,
+	TIDECALLER,  # v0.9.0 NB1: floor 4's first new boss (BOSSES_4_5.md N1)
+	BREAKER,  # v0.9.0 EL: the three elite archetypes (EliteAi; ELITES.md E1-E3)
+	RIFT_HUNTER,
+	CONDUIT,
+	TWIN_WARDEN,  # v0.9.0 NB2 (BOSSES_4_5.md N2): the Twin Wardens' amber body, the boss (its bar, its defeat)
+	TWIN_WARDEN_VIOLET,  # v0.9.0 NB2: the violet body, its twin (BossTwin: one shared HP, linked by the chain)
+	CLOCKWORK_JUDGE,  # v0.9.0 NB3 (BOSSES_4_5.md N3): floor 5's first new boss (BossJudge: your echo)
+	LANTERN_SHADE,  # v0.9.0 NB4 (BOSSES_4_5.md N4): floor 5's second new boss (BossShade: lights out)
 }
 
 const TEAM_PLAYER := 0

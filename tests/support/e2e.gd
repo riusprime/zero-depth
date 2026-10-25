@@ -10,6 +10,9 @@ const LOAD_MS := 120000
 
 var test: GutTest
 var main: Main
+## v0.9.0: the window's mouse scale, measured once (the probe move it takes aimed the hero at (100, 100) for a
+## frame on every mouse_to; AF2, AF3 found shots firing at it).
+var _scale := Vector2.ZERO
 
 
 func _init(p_test: GutTest) -> void:
@@ -44,7 +47,15 @@ func frames(n: int) -> void:
 
 
 func _through_load() -> void:
-	if main == null or not is_instance_valid(main) or not main.loads.busy():
+	if main == null or not is_instance_valid(main):
+		return
+	# v0.9.0 HB2: the hero's walk into the portal leads into the run's load: waited through like it (a test that
+	# watches the walk steps raw frames: HubWalk.through_portal).
+	var walk_frames := 0
+	while main.hub != null and main.hub.walking and not main.loads.busy() and walk_frames < 600:
+		walk_frames += 1
+		await test.get_tree().physics_frame
+	if not main.loads.busy():
 		return
 	var from := Time.get_ticks_msec()
 	while main.loads.busy() and Time.get_ticks_msec() - from < LOAD_MS:
@@ -106,24 +117,32 @@ func mouse_to(pos: Vector2) -> void:
 
 
 func _mouse_scale() -> Vector2:
+	if _scale != Vector2.ZERO:
+		await frames(1)  # the probe's frame, kept so a test's frame counts stay as they were
+		return _scale
 	var probe := InputEventMouseMotion.new()
 	probe.position = Vector2(100, 100)
 	probe.global_position = probe.position
 	send(probe)
 	await frames(1)
 	var got := main.get_viewport().get_mouse_position()
-	return got / 100.0 if got.x > 0.0 and got.y > 0.0 else Vector2.ONE
+	_scale = got / 100.0 if got.x > 0.0 and got.y > 0.0 else Vector2.ONE
+	return _scale
 
 
 ## Play from the main menu with the keyboard: the Play button has focus, then the build screen's last pick (Blade on
 ## a fresh profile; Right moves to Gun). v0.4.0 BS (F11): no utility pick; the run starts with weapon, dash, skill
 ## and vent. v0.8.0 N11: then waits for the hero to land on the receiver (`land` false: returns as the floor opens).
+## v0.9.0 HB (owner Q27): Play goes to the hub; the hero walks (the left stick) to the Portal Machine and presses E,
+## and its build screen starts the run as before.
 func start_from_menu(build: StringName = &"blade", land: bool = true) -> void:
-	await tap(KEY_ENTER)
-	await frames(2)
+	var walk := HubWalk.new(self)
+	await walk.enter()
+	await walk.use(&"portal")
 	if build == &"gun":
 		await tap(KEY_RIGHT)
 	await tap(KEY_ENTER)
+	await walk.through_portal()  # v0.9.0 HB2: the hero walks up into the portal first
 	await loaded()  # v0.8.0 N12: the run's first floor builds over frames behind the cover
 	await frames(4)
 	if land:
@@ -131,8 +150,8 @@ func start_from_menu(build: StringName = &"blade", land: bool = true) -> void:
 
 
 ## v0.8.0 N11 (owner O69): waits (reading only) until the floor's arrival is over and play is on, `limit` frames at
-## most (the cover's fade, then the arrival: floor 1's ~1.6 s). True when it was.
-func landed(limit: int = 600) -> bool:
+## most (the cover's fade, then the arrival: floor 1's 4.0 s, v0.9.0 SA). True when it was.
+func landed(limit: int = 900) -> bool:
 	for k in limit:
 		if main.driver != null and not main.driver.reader.arriving():
 			return true
@@ -256,6 +275,14 @@ static func walk_walls(w: World, target: Vector2) -> Array[Obb]:
 			continue
 		for d in ArenaRooms.doors_of(f, room):
 			out.append(ArenaRooms.barrier(f, d))
+	# v0.9.0 LK: the Lockdowns the same way (skippable as arenas; a walk only enters the one it goes to)
+	for room in f.lockdown_rooms:
+		if Lockdowns.is_open(w, room) or f.room_of(target) == room:
+			continue
+		if w.lockdown != null and w.lockdown.room == room:
+			continue
+		for d in ArenaRooms.doors_of(f, room):
+			out.append(ArenaRooms.barrier(f, d))
 	return out
 
 
@@ -291,6 +318,28 @@ func walk_to(target: Vector2, within: float) -> bool:
 
 ## v0.8.0 BD (owner O83): walks up to the shut boss door, presses interact (E) and waits until it is open. True when
 ## it is open (at once on a floor without the press, or once it already opened or the fight began).
+## v0.9.0 FA (owner Q18): on the final approach, walks (the stick) up the causeway to each rune pylon and presses E
+## by it, then waits (reading only) through the buildup until the fight has begun. True when the Colossus rose.
+## Returns at once (true) off the approach or once its fight began.
+func awaken_final_altar() -> bool:
+	var w := world()
+	if w == null or w.approach == null:
+		return true
+	await landed()
+	var f := w.floor_layout
+	for k in f.pylons.size():
+		if w.approach.lit[k] == 0:
+			await walk_to(f.pylons[k], 1.2)
+			stick_toward(Vector2.ZERO)
+			await tap(KEY_E)
+			await frames(2)
+	for k in FinalApproach.BUILDUP_TICKS + 60:
+		if w.final_fight != null:
+			break
+		await frames(1)
+	return w.final_fight != null
+
+
 func open_boss_door() -> bool:
 	var w := world()
 	var bf := w.boss_flow

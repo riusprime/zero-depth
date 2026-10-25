@@ -103,6 +103,9 @@ var nav := NavField.new()
 # --- Items (v0.2.0 E) ---------------------------------------------------------------------------------------
 ## Compiled items (part of the loadout, like enemy_tables); items_owned and pickups hold indices into it.
 var item_tables: Array[ItemTable] = []
+## v0.9.0 MP (owner: "void unlocked when traveling through a purple portal"): items no offer may draw (indices into
+## item_tables, ascending), from the run's locked cards (RunState.locked_cards; FloorPlan). Empty: nothing locked.
+var locked_items := PackedInt32Array()
 ## Items the player holds, in pickup order (indices into item_tables, no duplicates).
 var items_owned := PackedInt32Array()
 ## The owned items folded into modifiers (derived from items_owned, so not hashed).
@@ -126,6 +129,11 @@ var shot_count := 0
 var blast_tick := -1
 var blast_pos := PackedVector2Array()
 var blast_merged := 0
+## v0.9.0 AS (owner Q13, ShotCap): the player projectiles a Gun run launched in each of the last 60 ticks (indexed
+## tick % 60; shot_window_tick the last tick written): the per-second budget. Snapshotted with the world; not hashed (it
+## only changes an outcome past the budget, and no golden build reaches it).
+var shot_window := PackedInt32Array()
+var shot_window_tick := -1
 ## Item pickups lying on the floor.
 var pickups := PickupStore.new()
 ## Twin Arc: ticks until the pending echo (0 = none), its angle, combo step (its shape), root and damage, and the
@@ -176,6 +184,35 @@ var killer_attack := -1
 var boss_id := -1
 ## v0.8.0 FB1 (owner O16-O17; FinalBoss): the final boss's fight (its three bodies), null in every other world.
 var final_fight: FinalFight
+## v0.9.0 FA (owner C §3, Q18; FinalApproach): the final approach's pylons, buildup and walls; null elsewhere.
+var approach: FinalApproach
+## v0.9.0 IX (owner W34; Interactables): the shared interactables (the pylons, the timed doors' switches) and the
+## puzzles' calm rooms; empty in most worlds (hashed only when it holds one).
+var interactables := Interactables.new()
+## v0.9.0 TD (owner W §2, Q20; TimedDoor): the floor's timed door and its secret room; null on a floor without one.
+var timed: TimedDoor
+## v0.9.0 RA (owner W §4 A, Q22; RuneAlignment): the floor's rune puzzle and its hidden room; null without one.
+var runes: RuneAlignment
+## v0.9.0 DX (owner W §4 C, §5, Q23; Breakables): the cracked wall, the containers and the explosive barrels; null
+## on a floor with none.
+var breakables: Breakables
+## v0.9.0 DP (owner Q26b; PurpleRunes): the floor's purple-rune room (its dais awakens the Purple Portal); null without.
+var purple: PurpleRunes
+## v0.9.0 LK (owner Q21; Lockdowns): the floor's Lockdowns in play; null on a floor without any.
+var lockdown: LockdownState
+## v0.9.0 SH, HF (owner Q29b, W36; Shrines): the floor's Blood or Chaos shrine and its healing fountain; null without
+## either (a Fortune shrine is the gamble shrine below).
+var shrine: ShrineState
+## v0.9.0 EL (owner Q24-Q26; Elites, EliteAi): the floor's elites (its elite rooms, those alive); null on a floor that
+## never had one. elite_rules: their numbers (content, like reward_table; not hashed, not snapshotted).
+var elites: EliteState
+var elite_rules: EliteRules
+## v0.9.0 RB (AFFINITIES.md; Affinities): the run's rune affinity on this floor; null for None (no effect, not
+## hashed: a run without one hashes as before RB).
+var affinity: AffinityState
+## v0.9.0 CL (COLLECTIBLES.md; Collectibles): the collectibles this floor can hold (armed at setup by the app); null on
+## a floor that holds none (every world before CL, goldens, sims: hashed only when it exists).
+var collect: CollectState
 # --- end Bosses ---------------------------------------------------------------------------------------------
 # --- Rewards (v0.3.0 E; Rewards) ----------------------------------------------------------------------------
 ## The floor's reward rules (part of the loadout, like item_tables; not hashed).
@@ -275,6 +312,10 @@ var loop := 1
 var run_floor := 0
 var loop_threat := 0
 var loop_cap_permille := 0
+## v0.9.0 SV (owner: "Hero grows each floor"): the max HP the floors cleared so far add before the max HP stat
+## (Stats.max_hp_at). RunState.prepare sets it from the run's floor (RunState.floor_hp_bonus), so it is not saved: a
+## resumed floor derives it again. 0 outside a run.
+var floor_hp_bonus := 0
 # --- end Run flow ------------------------------------------------------------------------------------------
 var build_state := PlayerBuildState.new()  # v0.3.0 P: facing, damage remainders, combat and regen (PlayerBuild).
 var regen_bonus_permille := 0  # v0.3.0 L25 hook: extra per mille of max HP a second out of combat (PlayerRegen).
@@ -369,6 +410,9 @@ var mx := ModifierState.new()
 var blade := BladeState.new()
 ## v0.6.5 WN4: the Blade pool's runner numbers (loadout, not hashed; null = a lab world: BladeTable's defaults).
 var blade_table: BladeTable
+## v0.9.0 AS (owner Q2–Q5, Q13; AttackSlots): the wand's slot limits, projectile caps and form × card table (loadout,
+## not hashed; null = a lab world: no limits, no table, no caps).
+var slot_table: SlotTable
 ## v0.5.5 DS (D4, D7): the hidden catch-up's numbers (loadout, not hashed; null = off) and the floor's m (CatchUp),
 ## hashed only with the table. S5: the rooms of a Deep floor whose first pack already brought its elite (hashed once
 ## one did).
@@ -501,6 +545,12 @@ func set_pending_look(look: StringName) -> void:
 	_pending_projectiles[-1][10] = look
 
 
+## v0.9.0 NB2: the last n projectiles queued take look `look` (the Wardens' twin's embers).
+func relook_pending(n: int, look: StringName) -> void:
+	for k in range(maxi(0, _pending_projectiles.size() - n), _pending_projectiles.size()):
+		_pending_projectiles[k][10] = look
+
+
 ## v0.7.5 BF2: the projectile queued last was fired by its boss's attack `attack` (the recap's cause, BulletPatterns).
 func set_pending_cause(attack: int) -> void:
 	_pending_projectiles[-1][11] = attack
@@ -614,6 +664,8 @@ func step(frame: InputFrame) -> void:
 	Gamble.interact(self)  # Gamble shrine (v0.3.0 L19): the press goes to an altar or chest in reach first.
 	if boss_flow != null:  # v0.8.0 BD (O83): the press by the shut boss door opens it
 		boss_flow.interact(self)
+	# v0.9.0 IX: the shared interactables' slot (the FA pylons): the nearest enabled one in reach takes the press
+	Interactables.interact(self)
 	# 3. AI (the flow field refreshes on fixed ticks).
 	var pp := phase_probe  # v0.8.0 HS: the perf probe's phase timer (null in play)
 	# v0.8.0 NF (owner O90): the flood starts on those ticks and is built over NavField.SLICES ticks, then swapped in.
@@ -659,6 +711,8 @@ func step(frame: InputFrame) -> void:
 		pp.end(&"proj")
 		pp.begin(&"dash_abilities")
 	ItemEffects.dash_hits(self, before_move)  # Items: Kinetic Dash.
+	if affinity != null:
+		Affinities.dash_shock(self, before_move)  # v0.9.0 RB: A2 Storm's crackle
 	Abilities.advance(self)  # v0.4.0 BS: auto abilities, the blink shock, stat regen.
 	if pp != null:
 		pp.end(&"dash_abilities")
@@ -673,20 +727,36 @@ func step(frame: InputFrame) -> void:
 		pp.end(&"statuses")
 		pp.begin(&"remove_dead")
 	# 9. Deaths and spawns (the wave director adds enemies here).
+	if approach != null:
+		approach.advance(self)  # v0.9.0 FA: the buildup's end: the walls of light, the Colossus rises
+	if timed != null:
+		TimedDoor.advance(self)  # v0.9.0 TD: the slab, the timer, the shut once the hero is clear
+	if runes != null:
+		RuneAlignment.advance(self)  # v0.9.0 RA: the slab stands until the pillars are aligned
+	if breakables != null:
+		Breakables.advance(self)  # v0.9.0 DX: the cracked wall, shots through props, the barrels' blasts
 	if final_fight != null:
 		FinalBoss.advance(self)  # v0.8.0 FB1: the shatter, the next body, the win (before the dead leave)
 	_remove_dead()
 	if pp != null:
 		pp.end(&"remove_dead")
 		pp.begin(&"after")
-	Events.advance(self)  # v0.5.0 EV: ambush cleared, defence held, elites alive.
+	Events.advance(self)  # v0.5.0 EV: a defence held.
 	CoreTheft.advance(self)  # v0.6.0 CU: the gone carriers, staggers and steal windows, drops taken
 	Arenas.advance(self)  # v0.5.5 AR: sealed arenas (the Overrun too): the seal, the waves, the clear
+	if lockdown != null:
+		Lockdowns.advance(self)  # v0.9.0 LK: the seal, the formations, the safety, the cap, the open
+	if shrine != null:
+		Shrines.advance(self)  # v0.9.0 SH: a Chaos challenge cleared raises its altar
+	if elites != null:
+		Elites.advance(self)  # v0.9.0 EL: the elites gone, an elite room's elite arriving
+	if collect != null:
+		Collectibles.advance(self)  # v0.9.0 CL: a source gives its collectible; the hero takes those in reach
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
 	HealOrbs.advance(self)  # v0.4.0 TU (D8): walking over a heal orb heals
 	WaveDirector.advance(self)
 	if spawner != null:
-		if Arenas.holds_spawns(self):
+		if Arenas.holds_spawns(self) or Lockdowns.holds_spawns(self):  # v0.9.0 LK: a Lockdown too
 			Arenas.count_time(self)  # v0.5.5 AR: sealed in an arena, the horde waits; the clock runs on
 		elif boss_flow == null or boss_flow.spawns_open(self):
 			SpawnDirector.advance(self)
@@ -836,6 +906,8 @@ func add_pickup(item_index: int, pos: Vector2) -> int:
 func blink_may_land(from: Vector2, at: Vector2) -> bool:
 	if not Arenas.blink_may_land(self, at):  # v0.5.5 AR: never out of a sealed arena
 		return false
+	if not Lockdowns.blink_may_land(self, at):  # v0.9.0 LK: never out of a sealed Lockdown
+		return false
 	return boss_flow == null or boss_flow.blink_may_land(self, from, at)
 
 
@@ -867,6 +939,19 @@ func _find_wall(o: Obb) -> int:
 		if x.center == o.center and x.half == o.half and x.angle == o.angle:
 			return k
 	return -1
+
+
+## v0.9.0 FA: adds several walls during play at once (the final approach's walls of light): the grid and the flow
+## field are rebuilt once, then flooded from the player.
+func add_walls_now(list: Array[Obb]) -> void:
+	if list.is_empty():
+		return
+	walls.append_array(list)
+	rebuild_wall_grid()
+	_wall_next = null
+	_nav_next = null
+	nav.build(walls)
+	flood_nav()
 
 
 ## The wall grid from the walls as they stand (WorldSnapshot.apply after a barrier came back with a save).
@@ -980,7 +1065,7 @@ func set_boss_tables(tables: Array[BossTable]) -> void:
 ## The first boss table of an actor kind, or null.
 func boss_table_of_kind(kind: int) -> BossTable:
 	for t in boss_tables:
-		if t.kind == kind:
+		if t.kind == kind or (t.twin_kind >= 0 and t.twin_kind == kind):  # v0.9.0 NB2: a twin's is its boss's
 			return t
 	return null
 
@@ -999,6 +1084,7 @@ func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
 	boss_id = id
 	CoreTheft.on_boss(self, i)  # v0.6.0 CU: the boss's legendary core
 	CatchUp.on_boss(self, i)  # v0.5.5 DS (D7): the boss's own hidden catch-up, fixed for the fight
+	BossTwin.on_spawn(self, i)  # v0.9.0 NB2: the Twin Wardens' second body rises beside it, sharing its HP
 	return id
 
 
@@ -1256,11 +1342,36 @@ func state_hash() -> String:
 		h.add_ints(deep_elite_rooms)
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
+		# v0.9.0 TD fix: FA's approach block had split these off the boss flow's (normal floors stopped hashing them)
 		for v in [floor_index, floor_count]:
 			h.add_int(v)
 		if loop > 1:  # v0.7.5 AP: only past the first loop, so every loop-1 floor hashes as before
 			for v in [loop, run_floor, loop_threat, loop_cap_permille]:
 				h.add_int(v)
+	if approach != null:  # v0.9.0 FA: only the final approach carries it
+		approach.hash_into(h)
+	if not interactables.is_empty():  # v0.9.0 IX: only worlds holding an interactable or a calm room
+		interactables.hash_into(h)
+	if timed != null:  # v0.9.0 TD: only floors with a timed door
+		timed.hash_into(h)
+	if runes != null:  # v0.9.0 RA: only floors with a rune puzzle
+		runes.hash_into(h)
+	if breakables != null:  # v0.9.0 DX: only floors with destructibles
+		breakables.hash_into(h)
+	if purple != null:  # v0.9.0 DP: only floors with a purple-rune room
+		purple.hash_into(h)
+	if lockdown != null:  # v0.9.0 LK: only floors with a Lockdown
+		lockdown.hash_into(h)
+	if shrine != null:  # v0.9.0 SH, HF: only floors with a Blood or Chaos shrine or a fountain
+		shrine.hash_into(h)
+	if elites != null:  # v0.9.0 EL: only floors that had an elite
+		elites.hash_into(h)
+	if affinity != null:  # v0.9.0 RB: only runs with an affinity (None: null)
+		affinity.hash_into(h)
+	if not locked_items.is_empty():  # v0.9.0 MP: only runs with a card still locked (none: hashed as before)
+		h.add_ints(locked_items)
+	if collect != null:  # v0.9.0 CL: only floors armed with a collectible
+		collect.hash_into(h)
 	if final_fight != null:  # v0.8.0 FB1: only the worlds that hold the final fight
 		final_fight.hash_into(h)
 	actors.hash_into(h)
@@ -1454,6 +1565,7 @@ func _advance_actions() -> void:
 func _move_and_collide() -> void:
 	# Player.
 	var p := player_pos()
+	var kick := Lance.recoil(self)  # v0.9.0 AF1b: the Lance's push back, spent each tick (walls resolve it below)
 	if player_dead():
 		vel = Vector2.ZERO
 	elif dash_ticks_left > 0:
@@ -1470,6 +1582,7 @@ func _move_and_collide() -> void:
 				mv /= len
 			var speed := ItemProcs.move_speed(self) * Heat.move_factor(self)  # Swift Feet; the overheat stall.
 			speed *= Curses.move_factor(self)  # v0.6.0 CU: Brittle (the stun, + move speed)
+			speed *= Laser.move_factor(self)  # v0.9.0 LZ (Q8): 75 % while the beam fires
 			if guarding():
 				speed = speed * player.guard_move_permille / 1000.0
 			target = mv * speed
@@ -1485,6 +1598,7 @@ func _move_and_collide() -> void:
 		if Kin.length(vel - target) < 0.0001:
 			vel = target
 		p += vel + PlayerKit.lunge_offset(self)  # a combo step's forward step (v0.3.0 L11)
+		p += kick
 	actors.set_pos(0, p)
 	var pp := phase_probe  # v0.8.0 HS
 	if pp != null:
@@ -1653,7 +1767,14 @@ func _projectile_hits() -> void:
 			if t >= 0.0 and t < best_t:
 				best_t = t
 				best_wall = w
-		for k in _actor_grid.query_rect(span):
+		# v0.9.0 VP: a Void shot passes through bodies (its aura hurts them, VoidShots); only walls end it.
+		# v0.9.0 AF3: so does a Wave shot (its band hits them, WaveShots).
+		var bodies := (
+			PackedInt32Array()
+			if VoidShots.is_void_projectile(self, i) or WaveShots.is_wave_projectile(self, i)
+			else _actor_grid.query_rect(span)
+		)
+		for k in bodies:
 			if actors.teams[k] == projectiles.team[i] or actors.dead[k] == 1:
 				continue
 			# v0.4.0 SC: a body clearly outside the segment's box can't be hit; skip the sweep (same result).
@@ -1673,7 +1794,7 @@ func _projectile_hits() -> void:
 		if pp != null:
 			pp.end(&"proj.sweep")
 		if best_t <= 1.0:
-			if best_actor >= 0:
+			if best_actor >= 0 and not Bomb.touches(self, i):  # v0.9.0 BM: a bomb's touch bursts it, no hit
 				if pp != null:
 					pp.begin(&"proj.damage")
 				hit_spec = Attacks.projectile_spec(self, i)  # v0.6.0 MX2: the bolt's own spec feeds
@@ -1708,7 +1829,8 @@ func _projectile_hits() -> void:
 				if ProjectileMoves.pierce(self, i, best_actor, a):  # v0.6.0 MX4: Edge Rounds, Boomerang
 					continue
 			elif (
-				projectiles.bounces[i] > 0
+				best_wall >= 0
+				and projectiles.bounces[i] > 0
 				and BossRicochet.may_bounce(self, i, a + v * best_t, walls[best_wall])
 			):
 				# Items: Ricochet Core reflects the bolt off the wall instead of ending it. v0.8.0 BS2 (S5): so do the
@@ -1759,6 +1881,8 @@ func _remove_dead() -> void:
 				and EnemyAi.is_enemy_kind(actors.kinds[i])
 			):
 				continue  # v0.8.0 BS1 (S3): an egg that burst or crumbled leaves without a kill
+			if BossTwin.leaves(self, i):
+				continue  # v0.9.0 NB2: a Warden's twin goes with its boss: one defeat, one kill, one reward
 			if EnemyAi.is_enemy_kind(actors.kinds[i]):
 				kills += 1
 				EnemyAi.on_death(self, i)  # v0.4.0 EN: a Splitter splits.
@@ -1778,7 +1902,9 @@ func _remove_dead() -> void:
 				if boss_id == actors.ids[i]:
 					boss_id = -1
 			Rewards.on_kill(self, i)  # Rewards: shards.
-			CoreTheft.on_death(self, i)  # v0.6.0 CU: a core stolen in its window, Marked's rare card
+			CoreTheft.on_death(self, i)  # v0.6.0 CU: a boss's core stolen in its window
+			if EliteAi.is_elite_kind(actors.kinds[i]):
+				Elites.on_death(self, i)  # v0.9.0 EL (Q25): 30 % its core's card
 	actors.remove_sorted(gone)
 
 

@@ -27,7 +27,7 @@ func test_the_biome_is_valid_and_in_the_run_draw() -> void:
 	assert_eq(_biome.mood.problems().size(), 0)
 	assert_lt(_biome.mood.sun_color.r, _biome.mood.sun_color.b, "a cold, pale moon")
 	assert_gt(_biome.mood.fog_density, 0.0, "icy fog")
-	var run: RunDefinition = _repo.get_def(&"run", &"three_floors")
+	var run: RunDefinition = _repo.get_def(&"run", RunSaver.RUN_ID)
 	assert_has(run.biomes, &"frozen_shore", "it enters the run's biome draw")
 	assert_eq(tr(_biome.name_key), "Frozen Shore")
 

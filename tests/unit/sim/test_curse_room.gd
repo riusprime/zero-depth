@@ -340,6 +340,11 @@ func test_an_old_saves_floor_keeps_its_event_rooms_and_has_no_altar() -> void:
 	for k in w.ev.size():
 		assert_eq(back.ev.pos(k), w.ev.pos(k))
 		assert_eq(back.ev.event[k], w.ev.event[k])
+		# v0.9.0 EL (owner Q25): a retired event's pedestal (the Ambush Cache) is closed on load (Events.drop_retired)
+		var e := w.ev.event[k]
+		if e >= 0 and w.ev.events[e].retired:
+			assert_eq(back.ev.state[k], Events.State.DONE, "a retired event's pedestal closed")
+	Events.drop_retired(w)  # the floor as a load leaves it
 	assert_eq(back.state_hash(), w.state_hash(), "the same world")
 	var today := World.from_snapshot(snap, SaveLab.floor_world(seed_value, 1))
 	if today != null:

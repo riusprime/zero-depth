@@ -7,6 +7,10 @@ extends VBoxContainer
 ## curse's line. The rarity also reads as the ember glow under the tablet (and a gold rim on epic and legendary). The
 ## focused card lifts, its glow grows and its lower edge lights up. A mouse click or hover reports itself; the panel
 ## decides what happens.
+## v0.9.0 AS (owner Q5, Q14); AS2 (G2 AS = B, "ribbon + pips"): a Form, Pattern, Secondary or Element card names its
+## slot in its rarity line ("Pattern · Modifier · Rare", PickPanel.slot_face) and, when that slot is full, wears a
+## ribbon across it (StoneCard.show_ribbon): "Replaces Twin", which burns away when this card is picked
+## (burn_replaced, the pick panel's outro), or "Choose one to replace" (a full Secondary or Element slot: the Swap).
 
 signal clicked(slot: int)
 signal hovered(slot: int)
@@ -36,6 +40,8 @@ var _key := Label.new()
 var _curse := HBoxContainer.new()
 var _curse_text := Label.new()
 var _face := {}
+## v0.9.0 AS2: the ribbon's burn (the replaced card burning).
+var _old_burn: ShaderMaterial
 
 
 func _init(p_index: int, p_scale: float = PICK_SCALE) -> void:
@@ -139,7 +145,52 @@ func _render() -> void:
 		_face.get("color", Color(0, 0, 0, 0))  # v0.8.0 MU: the element's colour on the inlay ring
 	)
 	card.show_gain(_face.get("gain", {}))  # v0.8.0 N8: what gets better, old → new
+	_show_slot_line()
 	_apply()
+
+
+## v0.9.0 AS2 (G2 AS = B): the ribbon from the face (PickPanel.slot_face): "Replaces Twin" or "Choose one to replace"
+## across the card, none when the card's slot has room (its tag is in the rarity line).
+func _show_slot_line() -> void:
+	card.show_ribbon(_face.get("replaces_text", ""))
+	burn_replaced(0.0)
+
+
+## v0.9.0 AS: the card's slot tag ("" when none; AS2: shown in the rarity line) and the ribbon's words ("" when the
+## slot has room).
+func slot_text() -> String:
+	return _face.get("slot_text", "") if int(_face.get("slot", 0)) != WorldReader.SLOT_NONE else ""
+
+
+func replaces_text() -> String:
+	return card.ribbon.text if card.ribbon.visible else ""
+
+
+## v0.9.0 AS (owner Q5): 0..1 of the replaced card's burn (0: whole; 1: gone), N8's dissolve (CardFx); AS2: the
+## ribbon naming it burns.
+func burn_replaced(t: float) -> void:
+	var r := card.ribbon
+	if t <= 0.0:
+		r.material = null
+		_old_burn = null
+		r.self_modulate.a = 1.0
+		return
+	if HudStyle.reduced_motion:
+		r.self_modulate.a = 1.0 - t
+		return
+	if _old_burn == null:
+		_old_burn = CardFx.burn_material()
+	r.use_parent_material = false
+	r.material = _old_burn
+	_old_burn.set_shader_parameter("burn", t)
+	_old_burn.set_shader_parameter("edge_color", Color("#FF8A3D"))
+	_old_burn.set_shader_parameter("rect_pos", r.get_global_transform().origin)
+	_old_burn.set_shader_parameter("rect_size", r.get_global_rect().size.max(Vector2.ONE))
+
+
+## The replaced card's ribbon is burning now (tests).
+func replaced_burning() -> bool:
+	return _old_burn != null
 
 
 func _build_curse(s: float) -> void:

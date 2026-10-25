@@ -24,6 +24,9 @@ const LEGEND: Array = [
 	[&"arena", "MAP_LEGEND_ARENA"],  # v0.5.5 AR
 	[&"shop", "MAP_LEGEND_SHOP"],
 ]
+## v0.9.0 RB: A4 Astral's secret mark (the void violet) and its legend row, shown only with Astral.
+const SECRET := Color("#A982FF")
+const LEGEND_SECRET: Array = [&"secret", "MAP_LEGEND_SECRET"]
 
 ## True for the full map.
 var full := false
@@ -160,6 +163,8 @@ func _place() -> Rect2:
 	var lo := Vector2.INF
 	var hi := -Vector2.INF
 	for r in reader.floor_room_count():
+		if state.hidden.has(r):  # v0.9.0 TD: fitted without the hidden rooms (their size gives nothing away)
+			continue
 		for c in _corners(reader.floor_room(r)):
 			var t := _turn(c)
 			lo = lo.min(t)
@@ -214,7 +219,7 @@ func _outline(room: int, col: Color, width: float) -> void:
 		var cuts: Array[Vector2] = []
 		for i in reader.floor_door_count():
 			var d := reader.floor_door_rooms(i)
-			if d.x != room and d.y != room:
+			if (d.x != room and d.y != room) or state.door_hidden(reader, i):  # v0.9.0 TD: a plain wall
 				continue
 			var dr := reader.floor_door_rect(i).grow(0.05)
 			if not _touches(dr, a, b):
@@ -329,8 +334,9 @@ func _draw_icons() -> void:
 			draw_icon(&"altar", p, k)
 		else:
 			draw_icon(&"chest" if reader.reward_affordable(i) else &"chest_poor", p, k)
-	if reader.has_gamble() and state.is_discovered(reader.floor_room_of(reader.gamble_pos())):
-		draw_icon(&"shrine", to_map(reader.gamble_pos()), k)  # v0.3.0 L19: the gamble shrine
+	# v0.3.0 L19: the gamble shrine; v0.9.0 SH: any shrine kind (Fortune, Blood, Chaos)
+	if reader.has_shrine_site() and state.is_discovered(reader.floor_room_of(reader.gamble_pos())):
+		draw_icon(&"shrine", to_map(reader.gamble_pos()), k)
 	for e in reader.event_count():  # v0.5.0 EV: event pedestals in rooms you have seen
 		if state.is_discovered(reader.event_room(e)):
 			var spent := reader.event_state(e) == WorldReader.EVENT_DONE
@@ -362,6 +368,12 @@ func _draw_icons() -> void:
 				to_map(reader.deep_portal_pos()),
 				k
 			)
+	if reader.affinity_maps_secrets():  # v0.9.0 RB: A4 Astral marks a room holding a secret once entered
+		for s: Dictionary in reader.secret_spots():
+			var room := int(s["room"])
+			if state.is_discovered(room) and not bool(s["found"]):
+				var at := to_map(reader.floor_room(room).get_center()) + Vector2(9, -9) * k
+				draw_icon(&"secret", at, k)
 
 
 func _draw_player() -> void:
@@ -473,6 +485,13 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 			)
 		&"portal_sealed":
 			draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_SEALED, 1.5, true)
+		&"secret":  # v0.9.0 RB: A4 Astral's mark, a violet four-point star in a glow
+			var star := PackedVector2Array()
+			for j in 8:
+				var rr := s * (1.3 if j % 2 == 0 else 0.4)
+				star.append(p + Vector2(cos(TAU * j / 8.0), sin(TAU * j / 8.0)) * rr)
+			draw_circle(p, s * 1.7, Color(SECRET, MinimapStyle.GLOW_ALPHA))
+			draw_colored_polygon(star, SECRET)
 
 
 func _draw_legend(at: Vector2) -> void:
@@ -487,7 +506,10 @@ func _draw_legend(at: Vector2) -> void:
 		MinimapStyle.TEXT
 	)
 	var y := at.y + MinimapStyle.TITLE_SIZE + 30
-	for row: Array in LEGEND:
+	var rows := LEGEND.duplicate()
+	if reader.affinity_maps_secrets():
+		rows.append(LEGEND_SECRET)
+	for row: Array in rows:
 		draw_icon(row[0], Vector2(at.x + 16, y), 1.4)
 		draw_string(
 			font,

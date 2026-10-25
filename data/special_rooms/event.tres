@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SpecialRoomDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/special_room_definition.gd" id="1_spr"]
+
+[resource]
+script = ExtResource("1_spr")
+code = "Events.pick_rooms"
+order = 6
+stream = &"map:event"
+placement = 2
+count_min = 1
+count_max = 2
+avoid = Array[StringName]([&"start", &"boss", &"boss_host", &"portal", &"overrun", &"shop", &"arena", &"shrine", &"curse"])
+sources = {
+"count_max": "event_rules/floor:rooms_max",
+"count_min": "event_rules/floor:rooms_min"
+}
+id = &"event"

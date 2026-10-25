@@ -206,7 +206,7 @@ func test_each_condition_kind_reads_its_counters() -> void:
 	assert_true(book.met(k100))
 	# CODEX_MAX
 	var lv5 := book.get_entry(&"card_level_5")
-	codex.raise_to(&"cards", &"gun_spread", &"level", 4)
+	codex.raise_to(&"cards", &"gun_twin", &"level", 4)
 	codex.raise_to(&"cards", &"heavy", &"level", 3)
 	assert_eq(book.progress(lv5), 4, "the highest level of any card")
 	codex.raise_to(&"cards", &"heavy", &"level", 5)
@@ -229,7 +229,7 @@ func test_each_condition_kind_reads_its_counters() -> void:
 	var gun := book.get_entry(&"codex_gun")
 	var pool := catalog.section_entries(&"cards", &"gun")
 	assert_eq(book.goal(gun), pool.size(), "the Gun pool's cards")
-	assert_eq(book.progress(gun), 1, "gun_spread was seen (its level above)")
+	assert_eq(book.progress(gun), 1, "gun_twin was seen (its level above)")
 	for e: Dictionary in pool:
 		assert_false(book.met(gun))
 		codex.unlock(&"cards", e["id"])

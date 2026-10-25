@@ -34,7 +34,7 @@ func test_the_biome_is_valid_readable_and_in_the_run_draw() -> void:
 	assert_lt(_biome.mood.void_color.get_luminance(), 0.05, "a dark void for the stars")
 	assert_gt(_biome.mood.void_color.b, _biome.mood.void_color.g, "night-violet, not grey")
 	assert_eq(_biome.surface.kind, &"starglow")
-	var run: RunDefinition = _repo.get_def(&"run", &"three_floors")
+	var run: RunDefinition = _repo.get_def(&"run", RunSaver.RUN_ID)
 	assert_eq(run.biomes[run.biomes.size() - 1], &"starfall", "appended last (saves keep indices)")
 	assert_eq(run.biomes.find(&"frozen_shore"), 3, "Frozen Shore keeps its index")
 	assert_eq(tr(_biome.name_key), "Starfall")

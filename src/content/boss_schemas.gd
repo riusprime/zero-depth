@@ -16,6 +16,10 @@ const KINDS: Array[StringName] = [
 	&"colossus",
 	&"prism",
 	&"nemesis",
+	&"tidecaller",  # v0.9.0 NB1: floor 4 (BOSSES_4_5.md N1)
+	&"twin_wardens",  # v0.9.0 NB2: floor 4 (BOSSES_4_5.md N2): the amber body's kind (its twin's: BossDefinition)
+	&"clockwork_judge",  # v0.9.0 NB3: floor 5 (BOSSES_4_5.md N3)
+	&"lantern_shade",  # v0.9.0 NB4: floor 5 (BOSSES_4_5.md N4)
 ]
 
 ## Arena interior templates, in FloorLayout.Template order (a test pins the match).
@@ -87,7 +91,20 @@ const MOVES := {
 	{
 		"shape": 4,
 		"params": ["pattern_id"],
-		"optional": ["recall_seconds", "bounces", "aim_degrees"]
+		"optional":
+		[
+			"recall_seconds",
+			"bounces",
+			"aim_degrees",
+			"dark_seconds",  # v0.9.0 NB4: the Lantern Shade's Lights Out (ShadeRules.LIGHT_PARAMS)
+			"dark_lasts_seconds",  # v0.9.0 NB4b: how long its dark lasts
+			"light_m",
+			"lamps",
+			"lamp_m",
+			"lamp_seconds",
+			"relight_m",
+			"inset_m",
+		]
 	},
 	## v0.7.5 BF1: `count` ground circles, stagger_seconds apart, each following the player's exact position until
 	## the attack's lock_seconds, then locked and flashing until it strikes (BOSS_FIGHTS.md rule 1).
@@ -99,7 +116,18 @@ const MOVES := {
 	{
 		"shape": 0,
 		"params": ["count", "radius_m", "stagger_seconds"],
-		"optional": ["pattern_id", "egg_seconds", "egg_hp", "enemy_id", "max_alive", "burst_phase"],
+		"optional":
+		[
+			"pattern_id",
+			"egg_seconds",
+			"egg_hp",
+			"enemy_id",
+			"max_alive",
+			"burst_phase",
+			"drag_m",  # v0.9.0 NB1: the Undertow (BossTide)
+			"drag_reach_m",
+			"snuff",  # v0.9.0 NB4: the Snuff puts out the nearest lantern (BossShade)
+		],
 	},
 	## v0.7.5 BF1: `count` crosses of two lanes (the player's row and column, length_m long), stagger_seconds apart,
 	## tracked then locked like `marks`; cut short by walls.
@@ -226,6 +254,37 @@ const MOVES := {
 	## The player's card `card` (0 = the strongest held, then 1, 2) as the Nemesis's own attack: its arc (repeats
 	## stagger_seconds apart), its volley and its blast, tracked then locked.
 	&"card_cast": {"shape": 0, "params": ["card", "stagger_seconds"], "optional": ["weapon"]},
+	## v0.9.0 NB1 (BOSSES_4_5.md N1; BossTide): the Tidecaller's Pull, its shielded signature. After its windup (the bell
+	## rings) the room pulls the player toward it at pull_mps for pull_seconds (its pattern, the Tide Rings, fires
+	## inside the pull, and its shots bend toward it at bend_dps), then pushes them out at push_mps for push_seconds
+	## (no ring spawns); its active time is the two. Never faster than TIDE_MAX_MPS, never pressing the player toward
+	## a wall. (A `marks` attack with drag_m, the Undertow, drags a player within drag_reach_m of each struck circle
+	## drag_m toward its centre.)
+	&"tide":
+	{
+		"shape": 4,
+		"params":
+		["pattern_id", "pull_mps", "push_mps", "pull_seconds", "push_seconds", "bend_dps"],
+	},
+	## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): the Twin Wardens' Crossfire, their shielded signature pattern. Each body
+	## fires its pattern (a fan) at a safe spot distance_m off the middle of their chain on the player's side, leaving
+	## out the shots within gap_m of the spot there, so the two gaps cross only at the spot, between them. twin_look:
+	## the look of the twin's shots (its own colour; the pattern's look is the boss's).
+	&"crossfire":
+	## v0.9.0 NB2: the Chain Sweep: the boss's line from its body through the player and reach_m past them (held to the
+	## chain's lengths, cut short by walls) tracks them until the lock, then the chain lashes a lane width_m wide along
+	{"shape": 4, "params": ["pattern_id", "gap_m", "distance_m"], "optional": ["twin_look"]},
+	## it; the twin swings to the line's end. A lock is required; its late_cause_key names the chain's burn.
+	&"chain_sweep": {"shape": 2, "params": ["width_m", "reach_m"]},
+	## v0.9.0 NB3 (BOSSES_4_5.md N3; BossJudge): the Clockwork Judge's echo, its shielded signature on its cadence. The
+	## Judge records where the player walked, a point every step_seconds over the last record_seconds; as the echo
+	## starts the path locks and shows for its windup, then a ghost strike lands on each point in the order walked,
+	## step_seconds apart (radius_m each). A point within radius_m + the player's radius + safe_m of where the player
+	## stands as it starts is left out.
+	&"echo": {"shape": 4, "params": ["radius_m", "record_seconds", "step_seconds", "safe_m"]},
+	## v0.9.0 NB3: the Verdict: a square half_m each way from its centre (not a circle) follows the player, locks, and a
+	## pendulum strike drops on it. A lock is required.
+	&"verdict": {"shape": 2, "params": ["half_m"]},
 }
 ## v0.8.0 FB3: the runs an attack's `weapon` may name.
 ## v0.8.0 N2 (owner O52): "own" is The Fallen's own kit, only outside its mimic windows.
@@ -247,6 +306,8 @@ const LOCKED_MOVES: Array[StringName] = [
 	&"mimic_combo",
 	&"mimic_shots",
 	&"card_cast",
+	&"chain_sweep",  # v0.9.0 NB2
+	&"verdict",  # v0.9.0 NB3
 ]
 ## v0.8.0 FB1: the most spikes a line or a ray lays (steps).
 const MAX_STEPS := 16
@@ -260,6 +321,17 @@ const HIT_CLASSES := {&"small": [4, 5], &"medium": [3, 4], &"big": [2, 2]}
 ## this window (ticks, after its recovery_permille): starting values 0.6..0.9 s.
 const PUNISH_MIN_TICKS := 36
 const PUNISH_MAX_TICKS := 54
+## v0.9.0 NB1 (BOSSES_4_5.md N1: "the pull never moves you more than 1.5 m/s"): the fastest a tide moves the player.
+const TIDE_MAX_MPS := 1.5
+## v0.9.0 NB2 (BOSSES_4_5.md N2: "the chain is never shorter than 3 m or longer than 9 m"): the bounds a twin boss's
+## chain lengths keep, and the most its anger may speed a body (per mille).
+## The twins a boss may rise with (BossDefinition.twin_kind_id; PatternCompiler maps each to its actor kind).
+const TWIN_KINDS: Array[StringName] = [&"twin_warden_violet"]
+const TWIN_CHAIN_MIN_M := 3.0
+const TWIN_CHAIN_MAX_M := 9.0
+const TWIN_ANGER_MAX_PERMILLE := 2000
+## v0.9.0 NB3 (BOSSES_4_5.md N3): the most points an echo records (record_seconds / step_seconds).
+const ECHO_MAX_POINTS := 24
 ## v0.7.5 BF1: params that name a bullet pattern (resolved by the compiler; a content test checks they exist).
 const PATTERN_PARAMS: Array[String] = ["pattern_id"]
 

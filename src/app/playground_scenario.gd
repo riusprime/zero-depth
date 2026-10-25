@@ -32,6 +32,7 @@ static func build(repo: ContentRepository, build_id: StringName, biome: BiomeDef
 	w.run_floor = WAND_FLOOR
 	w.wand_table = WandCompiler.from_repo(repo)
 	w.blade_table = BladeCompiler.from_repo(repo)
+	w.slot_table = WandCompiler.slots(repo, w.item_tables)  # v0.9.0 AS
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)
 	w.dummy_speed = 0.0  # the dummies stand still and never shoot (dummy_fire_period stays 0)
@@ -65,3 +66,31 @@ static func lay_surface(w: World, biome: BiomeDefinition) -> void:
 	IcePatches.place(w, field)
 	layout.start_room = 0
 	layout.portal_room = 0
+
+
+## The biomes the Playground offers: the run's, in its order, with their names. (v0.9.0 HB: moved here from Main.)
+static func biomes(repo: ContentRepository) -> Array:
+	var out := []
+	var run_def: RunDefinition = repo.get_def(&"run", Main.RUN_ID)
+	for id: StringName in run_def.biomes:
+		out.append(
+			{"id": id, "name_key": (repo.get_def(&"biomes", id) as BiomeDefinition).name_key}
+		)
+	return out
+
+
+## The DPS meter's source names: an effect id -> the name key of the card, ability, combo or curse with that id, and
+## the statuses' own names. (v0.9.0 HB: moved here from Main.)
+static func source_names(repo: ContentRepository) -> Dictionary:
+	var out := {
+		&"bleed": &"UI_PG_SRC_BLEED",
+		&"bleed_burst": &"UI_PG_SRC_BLEED",
+		&"shock": &"UI_PG_SRC_SHOCK",
+		&"frost": &"UI_PG_SRC_FROST",
+		&"venom": &"UI_PG_SRC_POISON",
+	}
+	for cat: StringName in [&"items", &"ability", &"combos", &"curses"]:
+		for d: Resource in repo.all_of(cat):
+			if &"id" in d and &"name_key" in d and not out.has(d.get(&"id")):
+				out[d.get(&"id")] = d.get(&"name_key")
+	return out

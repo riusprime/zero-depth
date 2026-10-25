@@ -6,6 +6,8 @@ extends MenuPanel
 ## the key hint under it; no build cards beside it (owner: not needed). v0.6.5 WN2: a Build row under Resume opens the
 ## Build page (BuildPage: the wand's order, rearranged here). v0.7.5 CX: a Codex row after Options opens the Codex
 ## (CodexView) over the paused game.
+## v0.9.0 HB (owner 2026-10-23, "To the hub (Recommended)"): in a run the last row leaves to the Rune Ring hub, the run
+## saved for Continue (the end panel's words, UI_TO_HUB); the dev Playground keeps Main menu.
 
 signal resume_pressed
 signal build_pressed
@@ -13,6 +15,7 @@ signal options_pressed
 signal codex_pressed
 signal restart_pressed
 signal main_menu_pressed
+signal hub_pressed  # v0.9.0 HB: the in-run exit
 
 var run_line: Label
 ## The run line's numbers, so a language switch (Options opened from here) words it again (v0.6.0 UP).
@@ -20,7 +23,7 @@ var _run := []
 var _loop := 1  # v0.7.5 AP
 
 
-func _init() -> void:
+func _init(to_hub: bool = true) -> void:
 	super()
 	name = "PauseMenu"
 	add_backdrop()
@@ -30,7 +33,10 @@ func _init() -> void:
 	add_button("UI_RESTART_RUN", func() -> void: restart_pressed.emit()).name = "Restart"
 	add_button("UI_OPTIONS", func() -> void: options_pressed.emit()).name = "Options"  # v0.3.0 O
 	add_button("UI_CODEX", func() -> void: codex_pressed.emit()).name = "Codex"  # v0.7.5 CX
-	add_button("UI_MAIN_MENU", func() -> void: main_menu_pressed.emit()).name = "MainMenu"
+	if to_hub:  # v0.9.0 HB
+		add_button("UI_TO_HUB", func() -> void: hub_pressed.emit()).name = "Hub"
+	else:
+		add_button("UI_MAIN_MENU", func() -> void: main_menu_pressed.emit()).name = "MainMenu"
 	run_line = add_note("")
 	run_line.name = "RunLine"
 	run_line.visible = false

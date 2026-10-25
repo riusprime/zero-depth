@@ -5,6 +5,33 @@ extends RefCounted
 ## It is a wide facade on purpose: one read method per thing a view needs.
 
 const KIND_PLAYER := ActorStore.Kind.PLAYER
+## v0.9.0 FA: the final approach's states (approach_state).
+const APPROACH_WALK := FinalApproach.State.WALK
+const APPROACH_BUILDUP := FinalApproach.State.BUILDUP
+const APPROACH_FIGHT := FinalApproach.State.FIGHT
+## v0.9.0 IX: the shared interactables' kinds (interactable_kind).
+const INTERACT_PYLON := Interactables.Kind.PYLON
+const INTERACT_TIMED_SWITCH := Interactables.Kind.TIMED_SWITCH
+const INTERACT_RUNE_PILLAR := Interactables.Kind.RUNE_PILLAR  # v0.9.0 RA
+## v0.9.0 DX: the destructible props' kinds (breakable_kind).
+const BREAKABLE_CRATE := Breakables.Kind.CRATE
+const BREAKABLE_URN := Breakables.Kind.URN
+const BREAKABLE_BARREL := Breakables.Kind.BARREL
+const BREAKABLE_EXPLOSIVE := Breakables.Kind.EXPLOSIVE
+## v0.9.0 TD: the timed door's states (timed_door_state).
+const TIMED_SHUT := TimedDoor.State.SHUT
+const TIMED_OPEN := TimedDoor.State.OPEN
+const TIMED_HELD := TimedDoor.State.HELD
+## v0.9.0 LK: the Lockdown kinds (lockdown()["kinds"], ["kind"]).
+const LOCKDOWN_NORMAL := LockdownTable.Kind.NORMAL
+const LOCKDOWN_HAZARD := LockdownTable.Kind.HAZARD
+## v0.9.0 SH, HF: the shrine kinds (shrine_kind) and the interactables the shrines and the fountain use.
+const SHRINE_FORTUNE := ShrineTable.Kind.FORTUNE
+const SHRINE_BLOOD := ShrineTable.Kind.BLOOD
+const SHRINE_CHAOS := ShrineTable.Kind.CHAOS
+const INTERACT_SHRINE := Interactables.Kind.SHRINE
+const INTERACT_FOUNTAIN := Interactables.Kind.FOUNTAIN
+const LOCKDOWN_ELITE := LockdownTable.Kind.ELITE
 ## v0.8.0 RM: the remnant kinds, activations and Thermal Break's effect id, for the views (the layer rule).
 const REMNANT_SEGMENT := RemnantRule.Kind.SEGMENT
 const REMNANT_ANCHOR := RemnantRule.Kind.ANCHOR
@@ -40,6 +67,27 @@ const KIND_LENS_DRONE := ActorStore.Kind.LENS_DRONE
 const KIND_COLOSSUS := ActorStore.Kind.COLOSSUS
 const KIND_PRISM := ActorStore.Kind.PRISM
 const KIND_NEMESIS := ActorStore.Kind.NEMESIS
+## v0.9.0 NB1: floor 4's first new boss.
+const KIND_TIDECALLER := ActorStore.Kind.TIDECALLER
+## v0.9.0 EL: the elite archetypes, and their two attacks (elite_attack).
+const KIND_BREAKER := ActorStore.Kind.BREAKER
+const KIND_RIFT_HUNTER := ActorStore.Kind.RIFT_HUNTER
+const KIND_CONDUIT := ActorStore.Kind.CONDUIT
+const ELITE_BASIC := EliteAi.Attack.BASIC
+const ELITE_ABILITY := EliteAi.Attack.ABILITY
+## v0.9.0 NB2: floor 4's Twin Wardens, the amber body (the boss) and the violet one (its twin).
+const KIND_TWIN_WARDEN := ActorStore.Kind.TWIN_WARDEN
+const KIND_TWIN_WARDEN_VIOLET := ActorStore.Kind.TWIN_WARDEN_VIOLET
+## v0.9.0 NB3: floor 5's Clockwork Judge, and boss_echo's "phase" (no echo, the path showing, the ghosts striking).
+const KIND_CLOCKWORK_JUDGE := ActorStore.Kind.CLOCKWORK_JUDGE
+## v0.9.0 NB4: floor 5's Lantern Shade (its light: boss_light).
+const KIND_LANTERN_SHADE := ActorStore.Kind.LANTERN_SHADE
+const ECHO_NONE := BossJudge.NONE
+const ECHO_SHOW := BossJudge.SHOW
+const ECHO_REPLAY := BossJudge.REPLAY
+## v0.9.0 NB2: a Warden turning angry (STATUS_APPLY's effect) and the chain's burn (its DAMAGE's effect).
+const EFFECT_TWIN_ANGER := BossTwin.EFFECT_ANGER
+const EFFECT_TWIN_CHAIN := BossTwin.EFFECT_BURN
 ## v0.8.0 N2: The Fallen's mimic window states (final_pace "window", fallen_window), for the presentation.
 const FALLEN_OFF := FinalPace.Mimic.OFF
 const FALLEN_WARN := FinalPace.Mimic.WARN
@@ -143,6 +191,16 @@ const MOVE_CROSS := BossAttackTable.Move.CROSS  # v0.8.0 FB2 (the Prism)
 const MOVE_MIMIC_COMBO := BossAttackTable.Move.MIMIC_COMBO  # v0.8.0 FB3 (the Nemesis)
 const MOVE_MIMIC_SHOTS := BossAttackTable.Move.MIMIC_SHOTS
 const MOVE_CARD_CAST := BossAttackTable.Move.CARD_CAST
+const MOVE_TIDE := BossAttackTable.Move.TIDE  # v0.9.0 NB1 (the Tidecaller's Pull)
+const MOVE_CROSSFIRE := BossAttackTable.Move.CROSSFIRE  # v0.9.0 NB2 (the Twin Wardens)
+const MOVE_CHAIN_SWEEP := BossAttackTable.Move.CHAIN_SWEEP
+const MOVE_ECHO := BossAttackTable.Move.ECHO  # v0.9.0 NB3 (the Clockwork Judge)
+const MOVE_VERDICT := BossAttackTable.Move.VERDICT
+## v0.9.0 NB1: boss_tide's "phase".
+const TIDE_NONE := BossTide.NONE
+const TIDE_PULL := BossTide.PULL
+const TIDE_PUSH := BossTide.PUSH
+const TIDE_MAX_MPS := BossTide.MAX_MPS
 ## v0.8.0 FB3: the Nemesis's stances (BossTable.STANCE_*) and the effect ids of its dash and its card casts.
 const STANCE_ECHO := BossTable.STANCE_ECHO
 const STANCE_MIRROR := BossTable.STANCE_MIRROR
@@ -209,6 +267,14 @@ const ABILITY_SLOTS := 2 + BuildSlots.SLOTS
 ## wand ever has (it grows 4 → 6 → 8; build()["max"] is the count now), and the reorder's pick values
 ## (PICK_WAND_MOVE_BASE + from × WAND_MOVE_STRIDE + to).
 const MOD_SLOTS := Wand.MAX_SLOTS
+## v0.9.0 AS (owner Q2–Q5, Q14; AttackSlots): a card's slot tag (card_info()["slot"], wand()["cards"][n]["slot"]; NONE
+## for a card without one on this run) and each tag's translation key; the forms' name keys (wand()["form"]).
+const SLOT_NONE := AttackSlots.FREE
+const SLOT_FORM := AttackSlots.FORM
+const SLOT_PATTERN := AttackSlots.PATTERN
+const SLOT_SECONDARY := AttackSlots.SECONDARY
+const SLOT_ELEMENT := AttackSlots.ELEMENT
+const SLOT_TAG_KEYS := AttackSlots.TAG_KEYS
 const PICK_WAND_MOVE_BASE := InputFrame.PICK_WAND_MOVE_BASE
 const WAND_MOVE_STRIDE := InputFrame.WAND_MOVE_STRIDE
 ## v0.6.5 WN1: the triggers a wand card cuts on (wand()["cards"][n]["trigger"]; -1 for a card of rewrites).
@@ -373,6 +439,117 @@ func _step_index(step: int) -> int:
 
 func shooting() -> bool:
 	return PlayerKit.shooting(_w)
+
+
+## v0.9.0 LZ (owner Q8): the Laser's beams now, empty while it isn't firing: Laser.trace from the hero along the aim,
+## the geometry the tick's hits use (EI-07). Each {from, to, hits (actor indices), at (their points), wall}.
+func beams() -> Array[Dictionary]:
+	if not Laser.firing(_w):
+		return []
+	return Laser.trace(_w, Modifiers.bolt(_w), _w.player_pos(), _w.aim_angle)
+
+
+## v0.9.0 BM: player projectile `i` is a bomb (the Bomb form's shot; BombView draws it, not the pulses).
+func projectile_is_bomb(i: int) -> bool:
+	return Bomb.touches(_w, i)
+
+
+## v0.9.0 BM: the run's Gun shot is the Bomb (its throw's sound).
+func bomb_active() -> bool:
+	return Bomb.active(_w)
+
+
+## v0.9.0 AF1 (owner Q7, F5): the run's Gun shot is the Lance; how far it has charged (0..1). v0.9.0 AF1b: and the
+## charging ball in front of the hero (Lance.orb: {pos, radius}, the ball a release now would launch: EI-07), empty
+## while it isn't charging.
+func lance_active() -> bool:
+	return Lance.active(_w)
+
+
+func lance_charge() -> float:
+	return Lance.charge(_w)
+
+
+func lance_orb() -> Dictionary:
+	return Lance.orb(_w)
+
+
+## v0.9.0 AF1 (owner Q7, F6): player projectile `i` is a Scatter pellet (ScatterView draws it, not the pulses), and the
+## run's Gun shot is the Scatter (its blast's sound).
+func projectile_is_pellet(i: int) -> bool:
+	return Scatter.is_pellet(_w, i)
+
+
+func scatter_active() -> bool:
+	return Scatter.active(_w)
+
+
+## v0.9.0 AF2 (owner Q7, F7): player projectile `i` is a Glaive disc (GlaiveView draws it, not the pulses), it is on
+## its way back, and the run's Gun shot is the Glaive (its throw's sound).
+func projectile_is_disc(i: int) -> bool:
+	return Glaive.is_disc(_w, i)
+
+
+func disc_coming_back(i: int) -> bool:
+	return Glaive.coming_back(_w, i)
+
+
+func glaive_active() -> bool:
+	return Glaive.active(_w)
+
+
+## v0.9.0 AF2 (owner Q7, F8): player projectile `i` is a Seekers dart (SeekersView draws it, not the pulses), and the
+## run's Gun shot is the Seekers (its volley's sound).
+func projectile_is_dart(i: int) -> bool:
+	return Seekers.is_dart(_w, i)
+
+
+func seekers_active() -> bool:
+	return Seekers.active(_w)
+
+
+## v0.9.0 VP: player projectile `i` is a Void shot (VoidView draws it, not the pulses), and the run's Gun shot is the
+## Void (its hum).
+func projectile_is_void(i: int) -> bool:
+	return VoidShots.is_void_projectile(_w, i)
+
+
+func void_active() -> bool:
+	return VoidShots.active(_w)
+
+
+## v0.9.0 AF3 (owner Q7, F9, F10): player projectile `i` is a Wave shot (WaveView draws it, not the pulses); the Wave
+## shots in flight (WaveShots.read: id, pos, dir, half width, depth); the run's Gun shot is the Wave; the wisps round
+## the hero (Wisps.read: pos, angle, wait, period; empty without the Wisps card).
+func projectile_is_wave(i: int) -> bool:
+	return WaveShots.is_wave_projectile(_w, i)
+
+
+func wave_shots() -> Array[Dictionary]:
+	return WaveShots.read(_w)
+
+
+func wave_active() -> bool:
+	return WaveShots.active(_w)
+
+
+func wisps() -> Array[Dictionary]:
+	return Wisps.read(_w)
+
+
+## v0.9.0 AF3: player projectile `i` is a wisp's orb (its own chirp).
+func projectile_is_wisp(i: int) -> bool:
+	return Wisps.is_wisp_shot(_w, i)
+
+
+## v0.9.0 LZ: the Laser fires now (its hum, the view).
+func beam_firing() -> bool:
+	return Laser.firing(_w)
+
+
+## v0.9.0 LZ: the Laser's elements (the Gun shot's, in the order the cards added them; empty: the default energy).
+func beam_elements() -> PackedStringArray:
+	return Modifiers.bolt(_w).elements.duplicate() if Laser.active(_w) else PackedStringArray()
 
 
 ## v0.8.0 GF1 (owner O19): whether the Gun fired a shot in the last tick (the cooldown was just set to the full
@@ -973,7 +1150,12 @@ func has_floor() -> bool:
 
 ## The floor has the run's gate (its boss flow; v0.7.5 PG: the Playground's room has a floor and no gate).
 func has_gate() -> bool:
-	return _w.floor_layout != null and _w.boss_flow != null and _w.final_fight == null  # FB1: not the arena
+	return (
+		_w.floor_layout != null
+		and _w.boss_flow != null
+		and _w.final_fight == null  # FB1: not the arena
+		and _w.approach == null
+	)  # v0.9.0 FA: nor its approach
 
 
 func floor_bounds() -> Rect2:
@@ -1170,9 +1352,14 @@ func loop_device_radius() -> float:
 	return Ascension.LOOP_RADIUS_M
 
 
-## v0.8.0 P2 (owner O24): Void's black holes standing (BlackHoles.read: pos, from, age, life, radius, pull_radius).
-func black_holes() -> Array:
-	return BlackHoles.read(_w)
+## v0.9.0 VP (owner Q10): the Void shots in flight (VoidShots.read: id, pos, dir, aura, pull radius, root), and the
+## enemies their pull leans now (VoidShots.leans: actor id -> the way it is drawn, m a tick).
+func void_shots() -> Array[Dictionary]:
+	return VoidShots.read(_w)
+
+
+func void_leans() -> Dictionary:
+	return VoidShots.leans(_w)
 
 
 ## v0.8.0 RM (owner O91): the remnants alive and Dodge Imprint's standing point (Remnants.read: {remnants: [{uid,
@@ -1224,6 +1411,11 @@ func boss_door_progress() -> float:
 	return _w.boss_flow.door_progress(_w.tick) if _w.boss_flow != null else -1.0
 
 
+## v0.9.0 DS: how long the boss door takes to open, in ticks (the impact cue leads the touchdown).
+func boss_door_open_ticks() -> int:
+	return BossFlow.DOOR_OPEN_TICKS
+
+
 ## v0.8.0 BD (O83): the interact press would open the boss door now (the prompt).
 func boss_door_in_reach() -> bool:
 	return (
@@ -1263,6 +1455,18 @@ func arrival_first() -> bool:
 	return _w.run_floor_index() == 1
 
 
+## v0.9.0 SA (owner Q16: "only floor 1"): floor 1 of a run arrives on the altar (AltarStage) instead of the receiver,
+## at floor_start_pos; the start hall keeps its cover and spawn spots FloorParams.start_clear_radius (3.5 m) away,
+## outside the altar's 3.3 m.
+func arrival_altar() -> bool:
+	return floor_receiver() and arrival_first()
+
+
+## v0.9.0 SA: the arrival's whole length in ticks (0 when the floor opens without one).
+func arrival_ticks() -> int:
+	return _w.boss_flow.arrive_ticks if _w.boss_flow != null else 0
+
+
 ## v0.8.0 N11: the hero is still arriving (the world holds; nothing spawns, nothing acts, the hero isn't there yet).
 func arriving() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.arrive_left > 0
@@ -1287,6 +1491,14 @@ func gate_open(route: int) -> bool:
 	return _w.boss_flow != null and _w.boss_flow.gate_open(route)
 
 
+## v0.9.0 PT (owner C4, Q15): 0..1 through gate `route`'s forming after the boss died (0 while it is closed: before
+## the boss died, or once the other gate was taken); the hero can walk in once it is 1 (BossFlow.PORTAL_FORM_TICKS).
+func portal_form_progress(route: int) -> float:
+	if not gate_open(route):
+		return 0.0
+	return _w.boss_flow.portal_form_progress(_w.tick)
+
+
 ## The route walked into on this floor (Routes.Route; -1 = none yet).
 func route_taken() -> int:
 	return _w.boss_flow.route_taken if _w.boss_flow != null else -1
@@ -1299,7 +1511,7 @@ func floor_is_deep() -> bool:
 
 ## Reward i is the Deep floor's epic altar.
 func reward_is_epic(i: int) -> bool:
-	return Routes.is_epic_altar(_w, i)
+	return Routes.is_epic_altar(_w, i) or TimedDoor.is_epic(_w, i)  # v0.9.0 TD: the secret room's
 
 
 ## v0.5.5 AR (X1b): reward i is the boss's legendary altar.
@@ -1486,6 +1698,7 @@ func boss_invulnerable(i: int) -> bool:
 	return (
 		_w.actors.invuln[i] > 0
 		or BossDodge.shielded(_w, i)
+		or BossShade.unlit(_w, i)  # v0.9.0 NB4: a Lantern Shade in the dark
 		or s == BossAi.GATE
 		or s == FinalBoss.SHATTER
 	)
@@ -1569,6 +1782,41 @@ func actor_egg_permille(i: int) -> int:
 ## "way", "hit"} (BossGaze.state): the eye brightening and its thin aim line in the windup, then the beam.
 func boss_gaze(i: int) -> Dictionary:
 	return BossGaze.state(_w, i)
+
+
+## v0.9.0 NB1 (BOSSES_4_5.md N1): boss i's tide: {} or {"phase" (TIDE_NONE while its bell rings in the windup,
+## TIDE_PULL, TIDE_PUSH), "windup", "progress" (0..1000 of that part), "speed" (m/s), "centre"} (BossTide.state).
+func boss_tide(i: int) -> Dictionary:
+	return BossTide.state(_w, i)
+
+
+## v0.9.0 NB2 (BOSSES_4_5.md N2): Warden body i's pair: {} for any other actor; else "lead" (the boss's body),
+## "partner" (the other's index), "angry", "anger" (0..1000 left), "chain" ([] or [from, to]), "hot" (it burns),
+## "lifted" (the Chain Sweep has it), "burned" (ticks since it last burned the player, -1 none); in a Crossfire "safe",
+## "gap" ([from, to]), "progress", "firing"; the boss's Chain Sweep "sweep" {from, to, half_width, locked, progress,
+## struck} (BossTwin.state).
+func boss_twin(i: int) -> Dictionary:
+	if i <= 0 or i >= _w.actors.size():
+		return {}
+	return BossTwin.state(_w, i)
+
+
+## v0.9.0 NB3 (BOSSES_4_5.md N3): the Clockwork Judge i's echo: {} for any other actor; else "recording" (0..1000),
+## "trail" (the points recorded), "phase" (ECHO_NONE, ECHO_SHOW, ECHO_REPLAY), and while an echo runs "progress",
+## "t", "windup", "gap", "radius", "path" ([{pos, k, at, struck}]); a Verdict winding up "verdict" {center, half,
+## locked, progress} (BossJudge.state).
+func boss_echo(i: int) -> Dictionary:
+	if i <= 0 or i >= _w.actors.size() or _w.actors.kinds[i] != KIND_CLOCKWORK_JUDGE:
+		return {}
+	return BossJudge.state(_w, i)
+
+
+## v0.9.0 NB4 (BOSSES_4_5.md N4): the Lantern Shade's light: {} with no Shade; else "dark", "falling" (0..1000 to
+## the next Lights Out's dark, -1 none), "dark_left" (NB4b: ticks until the dark lifts, -1 none), "light_m" (the
+## player's circle), "lamp_m", "lamp_ticks", "lamps" ([{pos, lit, left, frac}]), "boss" (its actor index) and
+## "boss_lit" (hittable) (BossShade.state).
+func boss_light() -> Dictionary:
+	return BossShade.state(_w)
 
 
 ## v0.8.0 FB2 (FINAL_BOSS.md F5): boss i's Cross: {} or {"winding", "window", "progress", "arms" ([from, to, hit] per
@@ -1656,9 +1904,9 @@ func final_fight() -> bool:
 	return _w.final_fight != null
 
 
-## The world is the final arena (the run's last world: the fight and its arrival).
+## The world is the final arena (the run's last world: the fight and its arrival; v0.9.0 FA: and its approach).
 func final_arena() -> bool:
-	return _w.final_fight != null and _w.boss_flow != null
+	return (_w.final_fight != null or _w.approach != null) and _w.boss_flow != null
 
 
 ## The fight's name key (the boss bar's title over its segments; RunTable.final_name_key), &"" without one.
@@ -1706,6 +1954,93 @@ func final_won() -> bool:
 ## The final arena's radius (m, the wall ring's inner face; 0 elsewhere).
 func final_arena_radius() -> float:
 	return FinalArena.radius_of(_w.floor_layout) if final_arena() else 0.0
+
+
+# --- The final approach (v0.9.0 FA; FinalApproach) ---------------------------------------------------------------
+## The world is the final approach (the stair causeway, the plateau, the pylons; the fight once the buildup ended).
+func final_approach() -> bool:
+	return _w.approach != null
+
+
+## Its state (APPROACH_*; -1 without one).
+func approach_state() -> int:
+	return _w.approach.state if _w.approach != null else -1
+
+
+func approach_pylon_count() -> int:
+	return _w.floor_layout.pylons.size() if _w.approach != null else 0
+
+
+func approach_pylon_pos(k: int) -> Vector2:
+	return _w.floor_layout.pylons[k]
+
+
+## Pylon k is switched on.
+func approach_pylon_lit(k: int) -> bool:
+	return _w.approach != null and _w.approach.lit[k] == 1
+
+
+## How many pylons are on.
+func approach_pylons_lit() -> int:
+	return _w.approach.lit_count() if _w.approach != null else 0
+
+
+## The tick pylon k was switched on (-1 not yet).
+func approach_pylon_tick(k: int) -> int:
+	return _w.approach.lit_tick[k] if _w.approach != null else -1
+
+
+## The unlit pylon the interact press would switch on now, or -1 (the HUD's prompt).
+func approach_pylon_in_reach() -> int:
+	if _w.approach == null or _w.player_dead():
+		return -1
+	return _w.approach.in_reach(_w)
+
+
+## 0..1 through the buildup (after the second pylon), -1 outside it.
+func approach_buildup_progress() -> float:
+	return _w.approach.buildup_progress(_w.tick) if _w.approach != null else -1.0
+
+
+## The buildup's length in ticks.
+func approach_buildup_ticks() -> int:
+	return _w.approach.buildup_ticks if _w.approach != null else 0
+
+
+## The walls of light stand (the buildup ended and the fight began).
+func approach_walls_up() -> bool:
+	return _w.approach != null and _w.approach.state == FinalApproach.State.FIGHT
+
+
+## The tick the walls rose and the fight began (-1 not yet).
+func approach_fight_tick() -> int:
+	return _w.approach.fight_tick if _w.approach != null else -1
+
+
+func approach_light_wall_count() -> int:
+	return _w.floor_layout.light_walls.size() if _w.approach != null else 0
+
+
+func approach_light_wall(k: int) -> Obb:
+	return _w.floor_layout.light_walls[k]
+
+
+## The altar at the plateau's centre (where the boss rises), the causeway's foot and top.
+func approach_altar_pos() -> Vector2:
+	return _w.floor_layout.altar_pos if _w.approach != null else Vector2.ZERO
+
+
+func approach_causeway_foot() -> Vector2:
+	return _w.floor_layout.causeway_foot if _w.approach != null else Vector2.ZERO
+
+
+func approach_causeway_top() -> Vector2:
+	return _w.floor_layout.causeway_top if _w.approach != null else Vector2.ZERO
+
+
+## Half the causeway's width (m, wall face to wall face).
+func approach_causeway_half_width() -> float:
+	return _w.floor_layout.causeway_half_w if _w.approach != null else 0.0
 
 
 ## The tick the current body began (its rise).
@@ -2464,18 +2799,6 @@ func event_done_tick() -> int:
 	return _w.ev.done_tick
 
 
-## The pedestal of the ambush fighting now (-1 none) and its elites left.
-func event_ambush() -> int:
-	return _w.ev.ambush
-
-
-func event_ambush_left() -> int:
-	var n := 0
-	for id in _w.ev.ambush_ids:
-		n += 1 if _w.actors.index_of(id) >= 0 else 0
-	return n
-
-
 ## The pedestal being defended (-1 none), the share held (0..1) and the ring's radius.
 func event_defend() -> int:
 	return _w.ev.defend
@@ -2489,9 +2812,9 @@ func event_defend_radius_m() -> float:
 	return _w.ev.rules.defend_radius_m
 
 
-## Actor i is an elite (an ambush pack or an elite curse's spawn).
+## Actor i is an elite (v0.9.0 EL: one of the three archetypes).
 func actor_elite(i: int) -> bool:
-	return Curses.is_elite(_w, _w.actors.ids[i])
+	return EliteAi.is_elite_kind(_w.actors.kinds[i])
 
 
 # --- v0.6.0 CU: core theft and the trade-off curses ---------------------------------------------------------------
@@ -2577,8 +2900,6 @@ func curse_up_value_text(c: int) -> String:
 static func _effect_text(effect: int, amount: int) -> String:
 	match effect:
 		Curses.Effect.EXTRA_ENEMY, Curses.Effect.NO_DASH, Curses.Effect.NO_MINIMAP:
-			return str(amount)
-		Curses.Effect.ELITE_RARE_DROP:
 			return str(amount)
 		Curses.Effect.HIT_STUN:
 			return str(snappedf(float(amount) / SimTick.TICKS_PER_SECOND, 0.01))
@@ -2703,3 +3024,567 @@ func shop_denied_tick() -> int:
 ## amount, used), reroll (price, rerolls), sell (kind SHOP_SELL_*, ref, code, refund) and the last action / refusal.
 func shop() -> Dictionary:
 	return Shop.read(_w)
+
+
+# --- The shared interactables (v0.9.0 IX; Interactables) ---------------------------------------------------
+## The registry's entry the interact press would go to now, or -1: none in reach, the hero dead, a choice open, or a
+## system earlier in World.step's order (a reward, an event, the shop, the shrine, the boss door) takes the press.
+func interactable_in_reach() -> int:
+	if _w.player_dead() or choosing():
+		return -1
+	if reward_in_reach() >= 0 or event_in_reach() >= 0 or shop_in_reach() or gamble_in_reach():
+		return -1
+	if boss_door_in_reach():
+		return -1
+	return _w.interactables.in_reach(player_pos())
+
+
+## The shared prompt's string key (&"" when the press would reach no interactable).
+func interact_prompt_key() -> StringName:
+	var i := interactable_in_reach()
+	if i < 0:
+		return &""
+	return Interactables.prompt_key(_w, i)
+
+
+## v0.9.0 SH, HF: the numbers formatted into the shared prompt (a shrine's cost, the fountain's heal); [] for none.
+func interact_prompt_args() -> Array:
+	var i := interactable_in_reach()
+	if i < 0:
+		return []
+	return Interactables.prompt_args(_w, i)
+
+
+func interactable_count() -> int:
+	return _w.interactables.size()
+
+
+func interactable_kind(i: int) -> int:
+	return _w.interactables.kind[i]
+
+
+func interactable_pos(i: int) -> Vector2:
+	return _w.interactables.pos[i]
+
+
+## Entry i's state (a switch: 0 off, 1 on).
+func interactable_state(i: int) -> int:
+	return _w.interactables.state[i]
+
+
+func interactable_enabled(i: int) -> bool:
+	return _w.interactables.enabled[i] == 1
+
+
+## The tick entry i was last pressed (-1 never).
+func interactable_press_tick(i: int) -> int:
+	return _w.interactables.press_tick[i]
+
+
+# --- The timed door (v0.9.0 TD; TimedDoor) -----------------------------------------------------------------
+## The floor has a timed door to a secret room.
+func has_timed_door() -> bool:
+	return _w.timed != null
+
+
+## Its state (TIMED_*; -1 without one).
+func timed_door_state() -> int:
+	return _w.timed.state if _w.timed != null else -1
+
+
+## The doorway it shuts: its centre, the direction from the host into the secret room (1/4096 turns), its slab.
+func timed_door_center() -> Vector2:
+	return _w.floor_layout.door_centers[_w.floor_layout.timed_door]
+
+
+func timed_door_angle() -> int:
+	var f := _w.floor_layout
+	var a := f.door_angles[f.timed_door]
+	return a if f.door_rooms[f.timed_door].x == f.timed_host else (a + 2048) % 4096
+
+
+func timed_door_slab() -> Obb:
+	return _w.floor_layout.timed_door_wall
+
+
+func timed_door_width() -> float:
+	return _w.floor_layout.door_widths[_w.floor_layout.timed_door]
+
+
+func timed_door_depth() -> float:
+	return _w.floor_layout.door_depths[_w.floor_layout.timed_door]
+
+
+## The ticks the door opened and shut last (-1 not yet), its timer and the ticks left on it (0 unless open).
+func timed_open_tick() -> int:
+	return _w.timed.open_tick if _w.timed != null else -1
+
+
+func timed_shut_tick() -> int:
+	return _w.timed.shut_tick if _w.timed != null else -1
+
+
+func timed_timer_ticks() -> int:
+	return _w.timed.timer_ticks if _w.timed != null else 0
+
+
+func timed_ticks_left() -> int:
+	return _w.timed.ticks_left(_w.tick) if _w.timed != null else 0
+
+
+## How many times the door has opened (0: never, the secret room still unseen).
+func timed_opened() -> int:
+	return _w.timed.opened if _w.timed != null else 0
+
+
+## The door's switches: their count and each one's registry entry (interactable_pos, interactable_state).
+func timed_switch_count() -> int:
+	return _w.timed.switches.size() if _w.timed != null else 0
+
+
+func timed_switch_entry(k: int) -> int:
+	return _w.timed.switches[k]
+
+
+## The secret room and the room before it (the switches' room), -1 without a door.
+func timed_room() -> int:
+	return _w.floor_layout.timed_room if _w.timed != null else -1
+
+
+func timed_host() -> int:
+	return _w.floor_layout.timed_host if _w.timed != null else -1
+
+
+## v0.9.0 TD (owner Q23: "hidden room should not appear or be visible until you open it"): the room not drawn, lit or
+## shown on the minimap yet (-1 none): the secret room until its door first opens.
+func hidden_room() -> int:
+	if _w.timed == null or _w.timed.opened > 0:
+		return -1
+	return _w.floor_layout.timed_room
+
+
+## The hidden room's cells in metres, grid line to grid line (Rect2() for none).
+func hidden_room_cells() -> Rect2:
+	return room_cells_rect(hidden_room())
+
+
+## v0.9.0 RA (Q23; Secrets.hidden_rooms): every secret room not drawn, lit or shown on the minimap yet (the timed door's
+## until it first opens, the rune puzzle's until it is solved), ascending by kind.
+func hidden_rooms() -> PackedInt32Array:
+	return Secrets.hidden_rooms(_w)
+
+
+## Room `room`'s cells in metres, grid line to grid line (Rect2() for -1).
+func room_cells_rect(room: int) -> Rect2:
+	if room < 0:
+		return Rect2()
+	return _w.floor_layout.cell_rect(_w.floor_layout.room_cells[room])
+
+
+## Reward i stands in a hidden room (not drawn yet).
+func reward_hidden(i: int) -> bool:
+	var rooms := hidden_rooms()
+	return not rooms.is_empty() and rooms.has(_w.floor_layout.room_of(_w.rewards.pos(i)))
+
+
+# --- The rune puzzle (v0.9.0 RA; RuneAlignment) ----------------------------------------------------------------
+## The floor has a rune puzzle.
+func has_rune_puzzle() -> bool:
+	return _w.runes != null
+
+
+## Its hidden room and the room before it (the pillars' room), -1 without one.
+func rune_room() -> int:
+	return _w.floor_layout.rune_room if _w.runes != null else -1
+
+
+func rune_host() -> int:
+	return _w.floor_layout.rune_host if _w.runes != null else -1
+
+
+## The pillars: their count, each one's registry entry (interactable_pos, interactable_press_tick), the face it shows
+## (0..3) and the face the carving asks of it.
+func rune_pillar_count() -> int:
+	return _w.runes.pillars.size() if _w.runes != null else 0
+
+
+func rune_pillar_entry(k: int) -> int:
+	return _w.runes.pillars[k]
+
+
+func rune_face(k: int) -> int:
+	return _w.interactables.state[_w.runes.pillars[k]]
+
+
+func rune_target(k: int) -> int:
+	return _w.runes.target[k]
+
+
+## Solved (every pillar on its target), and the tick it was (-1 not yet).
+func rune_solved() -> bool:
+	return _w.runes != null and _w.runes.solved == 1
+
+
+func rune_solve_tick() -> int:
+	return _w.runes.solve_tick if _w.runes != null else -1
+
+
+## The sealed doorway: its centre, the direction from the host into the hidden room (1/4096 turns), width, depth.
+func rune_door_center() -> Vector2:
+	return _w.floor_layout.door_centers[_w.floor_layout.rune_door]
+
+
+func rune_door_angle() -> int:
+	var f := _w.floor_layout
+	var a := f.door_angles[f.rune_door]
+	return a if f.door_rooms[f.rune_door].x == f.rune_host else (a + 2048) % 4096
+
+
+func rune_door_width() -> float:
+	return _w.floor_layout.door_widths[_w.floor_layout.rune_door]
+
+
+func rune_door_depth() -> float:
+	return _w.floor_layout.door_depths[_w.floor_layout.rune_door]
+
+
+# --- The purple runes (v0.9.0 DP; PurpleRunes) ----------------------------------------------------------------
+## The floor has a purple-rune room: its room, its dais's spot and registry entry, whether awakened and when.
+func has_purple_runes() -> bool:
+	return _w.purple != null
+
+
+func purple_room() -> int:
+	return _w.floor_layout.purple_room if _w.purple != null else -1
+
+
+func purple_dais_pos() -> Vector2:
+	return _w.floor_layout.purple_pos if _w.purple != null else Vector2.ZERO
+
+
+func purple_dais_entry() -> int:
+	return _w.purple.entry if _w.purple != null else -1
+
+
+func purple_lit() -> bool:
+	return _w.purple != null and _w.purple.lit == 1
+
+
+func purple_lit_tick() -> int:
+	return _w.purple.lit_tick if _w.purple != null else -1
+
+
+## The boss room may show the Deep gate on this floor: it has it now (has_deep_portal), or its purple runes may still
+## earn it (its spot is placed). The views build the gate up front; it stands sealed (unseen) until it opens.
+func deep_portal_site() -> bool:
+	if has_deep_portal():
+		return true
+	return _w.purple != null and _w.floor_layout != null and _w.floor_layout.has_deep_portal
+
+
+# --- The destructibles (v0.9.0 DX; Breakables) -----------------------------------------------------------------
+## The floor has a cracked wall before a dead end.
+func has_cracked_wall() -> bool:
+	return _w.breakables != null and _w.breakables.has_crack()
+
+
+## Its hidden room and the room before it (-1 without one).
+func crack_room() -> int:
+	return _w.floor_layout.crack_room if has_cracked_wall() else -1
+
+
+func crack_host() -> int:
+	return _w.floor_layout.crack_host if has_cracked_wall() else -1
+
+
+## The doorway the wall fills: its centre, the direction from the host into the hidden room, width, depth.
+func crack_door_center() -> Vector2:
+	return _w.floor_layout.door_centers[_w.floor_layout.crack_door]
+
+
+func crack_door_angle() -> int:
+	var f := _w.floor_layout
+	var a := f.door_angles[f.crack_door]
+	return a if f.door_rooms[f.crack_door].x == f.crack_host else (a + 2048) % 4096
+
+
+func crack_door_width() -> float:
+	return _w.floor_layout.door_widths[_w.floor_layout.crack_door]
+
+
+func crack_door_depth() -> float:
+	return _w.floor_layout.door_depths[_w.floor_layout.crack_door]
+
+
+## The Skill hits it has left and takes in all, whether it broke, its last hit's and its break's ticks (-1 not yet).
+func crack_hp() -> int:
+	return _w.breakables.crack_hp if has_cracked_wall() else 0
+
+
+func crack_max() -> int:
+	return _w.breakables.crack_max if has_cracked_wall() else 0
+
+
+func crack_broken() -> bool:
+	return has_cracked_wall() and _w.breakables.crack_broken == 1
+
+
+func crack_hit_tick() -> int:
+	return _w.breakables.crack_hit_tick if has_cracked_wall() else -1
+
+
+func crack_break_tick() -> int:
+	return _w.breakables.crack_break_tick if has_cracked_wall() else -1
+
+
+## The props (containers and explosive barrels): their count, where each stands, its kind (BREAKABLE_*), whether it
+## broke (or blew) and when, and a barrel's fuse (lit tick, -1 not; burning now).
+func breakable_count() -> int:
+	return _w.breakables.pos.size() if _w.breakables != null else 0
+
+
+func breakable_pos(i: int) -> Vector2:
+	return _w.breakables.pos[i]
+
+
+func breakable_kind(i: int) -> int:
+	return _w.breakables.kind[i]
+
+
+func breakable_broken(i: int) -> bool:
+	return _w.breakables.broken[i] == 1
+
+
+func breakable_break_tick(i: int) -> int:
+	return _w.breakables.break_tick[i]
+
+
+func breakable_fuse_tick(i: int) -> int:
+	return _w.breakables.fuse_tick[i]
+
+
+func breakable_fusing(i: int) -> bool:
+	return _w.breakables.fusing(i)
+
+
+## The barrels' fuse (ticks) and blast radius (m).
+func barrel_fuse_ticks() -> int:
+	return _w.breakables.fuse_ticks if _w.breakables != null else 0
+
+
+func barrel_radius() -> float:
+	return _w.breakables.radius_m if _w.breakables != null else 0.0
+
+
+## v0.9.0 DX (Q29b, hidden rune markings): every secret's doorway (the timed door's, the rune puzzle's, the cracked
+## wall's), each {center, angle (from the room before it into the secret room), width, depth}.
+func secret_doors() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if has_timed_door():
+		out.append(_door_of(_w.floor_layout.timed_door, timed_door_angle()))
+	if has_rune_puzzle():
+		out.append(_door_of(_w.floor_layout.rune_door, rune_door_angle()))
+	if has_cracked_wall():
+		out.append(_door_of(_w.floor_layout.crack_door, crack_door_angle()))
+	return out
+
+
+func _door_of(d: int, angle: int) -> Dictionary:
+	var f := _w.floor_layout
+	return {
+		"center": f.door_centers[d],
+		"angle": angle,
+		"width": f.door_widths[d],
+		"depth": f.door_depths[d]
+	}
+
+
+# --- The rune affinity (v0.9.0 RB; Affinities) ------------------------------------------------------------------
+## The run's rune affinity's id (&"" for None).
+func affinity_id() -> StringName:
+	return _w.affinity.table.id if _w.affinity != null else &""
+
+
+## A5 Guardian: the wards a floor starts with (0: the affinity has none), those still up, and the tick the last one
+## broke (-1: none yet).
+func affinity_ward_charges() -> int:
+	return _w.affinity.table.ward_charges if _w.affinity != null else 0
+
+
+func affinity_ward() -> int:
+	return _w.affinity.ward if _w.affinity != null else 0
+
+
+func affinity_ward_tick() -> int:
+	return _w.affinity.ward_tick if _w.affinity != null else -1
+
+
+## A2 Storm and A3 Venom: the dash shocks given and the poison jumps made on this floor.
+func affinity_shocks() -> int:
+	return _w.affinity.shocks if _w.affinity != null else 0
+
+
+func affinity_jumps() -> int:
+	return _w.affinity.jumps if _w.affinity != null else 0
+
+
+## A4 Astral: how near (m) a secret pulses (0: off), and whether the minimap marks a secret's room once entered.
+func affinity_sense_m() -> float:
+	return _w.affinity.table.secret_sense_m if _w.affinity != null else 0.0
+
+
+func affinity_maps_secrets() -> bool:
+	return _w.affinity != null and _w.affinity.table.map_secrets
+
+
+## A4 Astral: every secret on the floor as {pos (its doorway's centre), room (the room that holds its way in), found
+## (opened, solved or broken)}: the timed door's, the rune puzzle's, the cracked wall's.
+func secret_spots() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var f := _w.floor_layout
+	if has_timed_door():
+		out.append(
+			{"pos": f.door_centers[f.timed_door], "room": timed_host(), "found": timed_opened() > 0}
+		)
+	if has_rune_puzzle():
+		out.append(
+			{"pos": f.door_centers[f.rune_door], "room": rune_host(), "found": rune_solved()}
+		)
+	if has_cracked_wall():
+		out.append(
+			{"pos": f.door_centers[f.crack_door], "room": crack_host(), "found": crack_broken()}
+		)
+	return out
+
+
+# --- The Lockdowns (v0.9.0 LK; Lockdowns) --------------------------------------------------------------------
+## The floor has Lockdown rooms.
+func has_lockdowns() -> bool:
+	return _w.lockdown != null
+
+
+# --- Shrines and the healing fountain (v0.9.0 SH, HF; Shrines) ------------------------------------------------
+## The floor has a shrine of any kind (Fortune is the gamble shrine; Blood and Chaos stand on its site).
+func has_shrine_site() -> bool:
+	return _w.gamble_id >= 0
+
+
+## The floor has a Blood or Chaos shrine or a healing fountain (World.shrine).
+func has_shrines() -> bool:
+	return _w.shrine != null
+
+
+## The floor's shrine kind (SHRINE_FORTUNE, SHRINE_BLOOD, SHRINE_CHAOS; Fortune also when there is none).
+func shrine_kind() -> int:
+	return Shrines.kind_of(_w)
+
+
+## The Blood or Chaos shrine and the fountain now (Shrines.read); {} without either.
+func shrine() -> Dictionary:
+	return Shrines.read(_w) if _w.shrine != null else {}
+
+
+## The Lockdowns now (Lockdowns.read: rooms, kinds, the sealed one, its formations, the strikes, those opened).
+func lockdown() -> Dictionary:
+	return Lockdowns.read(_w)
+
+
+## Room `room`'s doorways (each {center, angle, width, depth}), for the bars.
+func lockdown_doors(room: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if _w.floor_layout == null:
+		return out
+	for d in ArenaRooms.doors_of(_w.floor_layout, room):
+		out.append(_door_of(d, _w.floor_layout.door_angles[d]))
+	return out
+
+
+## Puzzle calm (Q22): the hero stands in an unsolved puzzle's room (new packs at a quarter of the rate).
+func puzzle_calm() -> bool:
+	return Interactables.calm_now(_w)
+
+
+# --- The elites (v0.9.0 EL; Elites, EliteAi) ----------------------------------------------------------------------
+## Actor `kind` is an elite archetype (the Breaker, the Rift Hunter, the Conduit).
+static func is_elite_kind(kind: int) -> bool:
+	return EliteAi.is_elite_kind(kind)
+
+
+## The elite actor i's name (a locale key: its bar's label), else &"".
+func elite_name_key(i: int) -> StringName:
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	return t.name_key if t != null and t.elite != null else &""
+
+
+## Which attack elite actor i is making or last made: ELITE_ABILITY or ELITE_BASIC.
+func elite_attack(i: int) -> int:
+	return _w.actors.pick[i]
+
+
+## The Rift Hunter i has vanished (no body until it reappears on its mark).
+func elite_vanished(i: int) -> bool:
+	return EliteAi.vanished(_w, i)
+
+
+## Elite actor i is in its punish window (stuck, overloaded): its hits take more.
+func elite_vulnerable(i: int) -> bool:
+	return EliteAi.vulnerable(_w, i)
+
+
+## The Conduit i's beam while it fires (and a moment after), else null.
+func elite_beam(i: int) -> Obb:
+	return EliteAi.beam_now(_w, i)
+
+
+## The floor's elites now: {"active": false} on a floor that never had one, else the elite rooms (and which arrived),
+## the elites alive, the last arrival (tick, id, pos) and the last kill (tick, pos, whether its card dropped).
+func elites() -> Dictionary:
+	var s := _w.elites
+	if s == null:
+		return {"active": false}
+	return {
+		"active": true,
+		"rooms": s.rooms.duplicate(),
+		"spawned": s.room_spawned.duplicate(),
+		"ids": s.ids.duplicate(),
+		"alive": s.size(),
+		"arrive_tick": s.arrive_tick,
+		"arrive_id": s.arrive_id,
+		"arrive_pos": s.arrive_pos,
+		"kill_tick": s.kill_tick,
+		"kill_pos": s.kill_pos,
+		"kill_dropped": s.kill_dropped,
+	}
+
+
+## v0.9.0 CL: the floor holds collectibles (armed at setup; Collectibles).
+func has_collectibles() -> bool:
+	return _w.collect != null
+
+
+## v0.9.0 CL: the floor's collectibles, one per entry: {id, source (Collectibles.Source), pos, shown_tick, taken_tick}
+## (shown_tick -1: its source hasn't given it yet; taken_tick -1: not taken). Empty without any.
+func collectibles() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var c := _w.collect
+	if c == null:
+		return out
+	for k in c.size():
+		(
+			out
+			. append(
+				{
+					"id": StringName(c.ids[k]),
+					"source": c.source[k],
+					"pos": c.pos[k],
+					"shown_tick": c.shown_tick[k],
+					"taken_tick": c.taken_tick[k],
+				}
+			)
+		)
+	return out
+
+
+## v0.9.0 CL: the collectibles the hero took on this floor (their ids).
+func collectibles_taken() -> PackedStringArray:
+	return _w.collect.taken_ids() if _w.collect != null else PackedStringArray()

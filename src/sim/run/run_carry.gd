@@ -70,6 +70,34 @@ static func apply(w: World, carry: Dictionary) -> void:
 		w.actors.hp[0] = clampi(int(carry[HP]), 1, w.actors.max_hp[0])
 
 
+## v0.9.0 SV (owner: "Hero grows each floor"): the max HP the floors cleared before run floor `f` add (counted across
+## loops; the final arena stays on its loop's last floor), at most the table's cap (0: none).
+static func floor_hp_bonus(t: RunTable, f: int) -> int:
+	var b := t.max_hp_per_floor * maxi(0, f - 1)
+	return mini(b, t.max_hp_floor_cap) if t.max_hp_floor_cap > 0 else b
+
+
+## v0.9.0 SV: the growth the run's current floor arrived with (0 on the run's first floor and in the final arena).
+static func hp_grown(run: RunState) -> int:
+	if run.final_fight:
+		return 0
+	var f := run.run_floor()
+	return floor_hp_bonus(run.table, f) - floor_hp_bonus(run.table, f - 1)
+
+
+## v0.9.0 SV: the floors' max HP bonus goes `from` -> `to` between floors: the carry's HP rises by what the max HP
+## gains (through the max HP stat of `w`, the finished floor, as the next floor's max HP will be), so it arrives filled.
+static func grow(w: World, carry: Dictionary, from: int, to: int) -> void:
+	if to <= from or not carry.has(HP):
+		return
+	var keep := w.floor_hp_bonus
+	w.floor_hp_bonus = from
+	var was := Stats.max_hp(w)
+	w.floor_hp_bonus = to
+	carry[HP] = int(carry[HP]) + Stats.max_hp(w) - was
+	w.floor_hp_bonus = keep
+
+
 static func _copy(v: Variant) -> Variant:
 	match typeof(v):
 		TYPE_ARRAY, TYPE_DICTIONARY, TYPE_PACKED_INT32_ARRAY, TYPE_PACKED_FLOAT32_ARRAY:

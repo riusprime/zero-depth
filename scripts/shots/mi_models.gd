@@ -4,10 +4,11 @@ extends SceneTree
 ## renderer:
 ##   VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" \
 ##     godot --path . --audio-driver Dummy --resolution 1500x300 -s scripts/shots/mi_models.gd -- \
-##     src=unprocessed_images/models_v080 [ids=a,b] [parts=1] [tag=_after]
+##     src=unprocessed_images/models_v080 [ids=a,b] [parts=1] [tag=_after] [fit=1]
 ## Each model is scaled to 1 unit tall and drawn five times: turned 0/90/180/270 degrees about Y under a camera on +Z
 ## looking down -Z, then from above (+X right, -Z up). The red stick is the file's +X, the blue its +Z. With parts=1
-## every mesh node gets its own flat colour (the enemy part splits). Writes build/shots/<version>/mi_models/.
+## every mesh node gets its own flat colour (the enemy part splits). v0.9.0 MI2: fit=1 scales each model so its
+## largest side (not its height) is 0.95 unit, for flat and wide models. Writes build/shots/<version>/mi_models/.
 
 const CELL := Vector2i(300, 300)
 const PART_COLORS := [
@@ -24,6 +25,7 @@ const PART_COLORS := [
 var _src := "unprocessed_images/models_v080"
 var _ids: Array[String] = []
 var _parts := false
+var _fit := false
 var _tag := ""
 var _dir := ""
 var _frame := 0
@@ -35,6 +37,7 @@ func _initialize() -> void:
 	var args := ScriptArgs.parse()
 	_src = String(args.get("src", _src))
 	_parts = String(args.get("parts", "0")) == "1"
+	_fit = String(args.get("fit", "0")) == "1"
 	_tag = String(args.get("tag", ""))
 	if args.has("ids"):
 		for id: String in String(args["ids"]).split(","):
@@ -98,6 +101,8 @@ func _build(k: int) -> void:
 			tris += mi.mesh.surface_get_array_index_len(s) / 3
 	probe.free()
 	var unit := 1.0 / maxf(box.size.y, 0.0001)
+	if _fit:
+		unit = 0.95 / maxf(maxf(box.size.x, box.size.z), maxf(box.size.y, 0.0001))
 	print("mi_models: %s bounds %s triangles %d" % [_ids[k], box, tris])
 	for v in 5:
 		var holder := Node3D.new()

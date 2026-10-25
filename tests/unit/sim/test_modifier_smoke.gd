@@ -70,9 +70,11 @@ func _run(
 					or e.amount == Engines.MAX_EVENTS_PER_TICK
 					or e.effect_id == WandRings.EFFECT_RING_CAP
 					or e.effect_id == Attacks.EFFECT_ALIVE_CAP
+					or e.effect_id == Attacks.EFFECT_SHOT_CAP
 				):
 					# the launch cap or the per-tick event watchdog holding; v0.8.0 AO: with every card at once the
-					# Ring makes order-rule rings, and their cap and their shards' alive cap hold too
+					# Ring makes order-rule rings, and their cap and their shards' alive cap hold too; v0.9.0 AS: with
+					# no second form layered, every card at once also fills the player-shot cap (256), which holds
 					capped += 1
 	return {
 		"digest": h.finish_hex(),
@@ -98,14 +100,16 @@ func _check(label: String, r: Dictionary, cap_ok: bool = false) -> void:
 func test_every_modifier_is_shipped_and_compiled() -> void:
 	assert_eq(
 		_mods.size(),
-		95,
+		104,
 		(
 			"the 14 migrated attack items (MX1), Frost Nova's frost, Razor Orbit (MX2); MX4: the M-list's"
 			+ " 29 new, 3 legendary, Cluster Payload, Overclocked Drone, Afterimage; v0.6.5 WN1: 4 triggers;"
 			+ " v0.6.5 WN3: the Gun pool's 12 new; WN4: the Blade pool's 12 new; WN5a: the shared pool's 2"
 			+ " new (Bleed, Explosive); WN5b: 3 legendary triggers; v0.8.0 BL: Blade Storm, Riposte Chain;"
 			+ " v0.8.0 AO: Ring, Swirl; v0.8.0 RR: Chain Blast; v0.8.0 RM: Threadline, Faultline, Gravity Stitch,"
-			+ " Stress Mark, Double Exposure, Grand Finale"
+			+ " Stress Mark, Double Exposure, Grand Finale; v0.9.0 LZ, BM, VP, AF1: Laser, Bomb, Void, Lance,"
+			+ " Scatter; v0.9.0 AF2: Glaive, Seekers"
+			+ "; v0.9.0 AF3: Wave, Wisps"
 		)
 	)
 

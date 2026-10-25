@@ -12,7 +12,7 @@ var run: RunState
 func _init(p_repo: ContentRepository, run_seed: int, build: StringName) -> void:
 	repo = p_repo
 	run = RunState.start(
-		run_seed, ContentCompiler.compile_run(repo.get_def(&"run", &"three_floors")), build
+		run_seed, ContentCompiler.compile_run(repo.get_def(&"run", RunSaver.RUN_ID)), build
 	)
 
 
@@ -24,7 +24,9 @@ func floor_world() -> World:
 	run.scale_enemies(enemies)
 	var bosses := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(bosses)
-	var boss := run.pick_boss(ContentCompiler.compile_boss_pool(repo, run.floor_index))
+	var boss := FloorShape.boss(
+		run, RunContentCompiler.compile_boss_pools(repo, run.table.floors), run.floor_index
+	)
 	var arena := RunSaver.boss_arena(run, bosses, boss)  # v0.7.5 BF1 (N18): an older save's room
 	var w := FloorScenario.build(
 		run.floor_seed(),
@@ -47,7 +49,10 @@ func floor_world() -> World:
 	Abilities.grant_start(w)
 	Abilities.start_floor(w)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))
-	EventCompiler.setup(w, repo, FloorScenario.curse_room_rules_of(run))  # v0.5.0 EV, as Main (N17, N19)
+	# v0.5.0 EV, as Main (N17, N19; v0.9.0 EL)
+	EventCompiler.setup(
+		w, repo, FloorScenario.curse_room_rules_of(run), FloorScenario.retired_events_of(run)
+	)
 	return w
 
 

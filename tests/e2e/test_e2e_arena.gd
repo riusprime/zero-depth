@@ -26,7 +26,8 @@ func test_die_see_the_cause_and_restart() -> void:
 	assert_eq((panel.find_child("Title", true, false) as Label).text, "UI_YOU_DIED")
 	assert_not_null(panel.find_child("Cause", true, false), "the cause is shown")
 	# v0.3.0 B: the run recap.
-	assert_eq(panel.recap_line("Floor"), tr("UI_RECAP_FLOOR") % [1, 3], "the floor reached")
+	# v0.9.0 FV: a run is five floors.
+	assert_eq(panel.recap_line("Floor"), tr("UI_RECAP_FLOOR") % [1, 5], "the floor reached")
 	assert_ne(panel.recap_line("Time"), "", "the run's time")
 	assert_eq(panel.recap_line("Kills"), tr("UI_RECAP_KILLS") % e.world().kills, "the kills")
 	assert_ne(panel.recap_line("Items"), "", "the items held")
@@ -41,7 +42,8 @@ func test_die_see_the_cause_and_restart() -> void:
 	assert_eq(e.world().seed_value, seed_before + 1, "with the next seed")
 
 
-func test_after_dying_main_menu_goes_home() -> void:
+## v0.9.0 HB (owner Q27, W48): the end panel's second row goes to the hub.
+func test_after_dying_the_hub_row_goes_to_the_hub() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
@@ -50,7 +52,7 @@ func test_after_dying_main_menu_goes_home() -> void:
 	await e.tap(KEY_DOWN)
 	await e.tap(KEY_ENTER)
 	await e.frames(3)
-	assert_not_null(main.get_node_or_null("UI/MainMenu"))
+	assert_not_null(main.hub, "the hub")
 	assert_false(main.is_playing())
 
 

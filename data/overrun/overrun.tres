@@ -10,4 +10,6 @@ waves_min = 3
 waves_max = 5
 wave_sizes = PackedInt32Array(4, 8, 12)
 shard_multiplier = 2.0
+min_cells = 2
+area_per_enemy_m2 = 30.0
 id = &"overrun"

@@ -11,10 +11,12 @@ const GROUPS := [
 	[
 		"player",
 		"UI_DEVM_G_PLAYER",
-		["res://data/player", "res://data/builds", "res://data/heat"],
+		# v0.9.0 RB: the Wardrobe's rune affinities and robe colours
+		["res://data/player", "res://data/builds", "res://data/heat", "res://data/wardrobe"],
 		""
 	],
-	["enemies", "UI_DEVM_G_ENEMIES", ["res://data/enemies"], ""],
+	# v0.9.0 EL: the elite archetypes and their rules beside the enemies
+	["enemies", "UI_DEVM_G_ENEMIES", ["res://data/enemies", "res://data/elites"], ""],
 	["sim", "UI_DEVM_G_SIM", ["res://data/tuning"], ""],
 	[
 		"bosses",
@@ -38,6 +40,8 @@ const GROUPS := [
 			"res://data/arenas",
 			"res://data/overrun",
 			"res://data/map",
+			"res://data/secrets",  # v0.9.0 RA/DX: rune puzzles, cracked walls, containers, barrels
+			"res://data/lockdowns",  # v0.9.0 LK: Lockdown rooms
 		],
 		"",
 	],
@@ -48,10 +52,13 @@ const GROUPS := [
 			"res://data/rewards",
 			"res://data/shop",
 			"res://data/gamble",
+			"res://data/shrines",  # v0.9.0 SH, HF: Blood, Chaos and Fortune shrines, healing fountains
 			"res://data/legendary",
 			"res://data/event_rules",
 			"res://data/events",
 			"res://data/curses",
+			"res://data/meta",  # v0.9.0 MP: the Rune Fragments' sources and the locked forms
+			"res://data/collectibles",  # v0.9.0 CL: the Rune Archive's collectibles (where found, the look)
 		],
 		"",
 	],

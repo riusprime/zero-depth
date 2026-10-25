@@ -132,6 +132,10 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	_validate_colossus(issues, path, where)
 	_validate_cross(issues, path, where)
 	_validate_nemesis(issues, path, where)
+	_validate_tide(issues, path, where)
+	_validate_twin(issues, path, where)
+	_validate_judge(issues, path, where)
+	ShadeRules.validate(self, issues, path, where)  # v0.9.0 NB4: Lights Out, the Snuff
 
 
 ## v0.8.0 BP (owner O27): a known hit class; a big attack never chains (its punish window follows it); orb_damage only
@@ -413,3 +417,83 @@ func _validate_nemesis(issues: Array[ValidationIssue], path: String, where: Stri
 			issues.append(ValidationIssue.new(&"not_positive", path, where + "%s must be > 0" % k))
 	if shielded:
 		issues.append(ValidationIssue.new(&"range", path, where + "the Nemesis is never shielded"))
+
+
+## v0.9.0 NB1 (BOSSES_4_5.md N1; BossTide): a tide pulls and pushes at real speeds no faster than the fair cap, each
+## part at least the telegraph minimum long, its rings bending by a non-negative rate; it is the shielded signature. An
+## Undertow's drag is a real distance (at most 2 m) from a reach that holds its circle.
+func _validate_tide(issues: Array[ValidationIssue], path: String, where: String) -> void:
+	var sp := shape_params
+	if move == &"tide":
+		for k in ["pull_mps", "push_mps"]:
+			var v := float(sp.get(k, 0.0))
+			if v <= 0.0 or v > BossSchemas.TIDE_MAX_MPS:
+				issues.append(
+					ValidationIssue.new(
+						&"range",
+						path,
+						where + "%s: over 0, at most %.1f m/s" % [k, BossSchemas.TIDE_MAX_MPS]
+					)
+				)
+		for k in ["pull_seconds", "push_seconds"]:
+			if int(round(float(sp.get(k, 0.0)) * 60.0)) < BehaviourSchemas.MIN_TELEGRAPH_TICKS:
+				issues.append(
+					ValidationIssue.new(
+						&"telegraph_short", path, where + "%s is under the telegraph minimum" % k
+					)
+				)
+		if float(sp.get("bend_dps", 0.0)) < 0.0:
+			issues.append(ValidationIssue.new(&"range", path, where + "bend_dps must be >= 0"))
+		if not shielded:
+			issues.append(ValidationIssue.new(&"missing", path, where + "a tide is shielded"))
+	if sp.has("drag_m") or sp.has("drag_reach_m"):
+		var drag := float(sp.get("drag_m", 0.0))
+		if move != &"marks" or drag <= 0.0 or drag > 2.0:
+			issues.append(ValidationIssue.new(&"range", path, where + "drag_m: a mark's, 0..2 m"))
+		if float(sp.get("drag_reach_m", 0.0)) < float(sp.get("radius_m", 0.0)):
+			issues.append(
+				ValidationIssue.new(&"range", path, where + "drag_reach_m must hold the circle")
+			)
+
+
+## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): Crossfire is the shielded signature, its safe spot a real distance off the
+## chain and its gap a real width; a Chain Sweep's lane has a width and reaches on past the player (>= 0).
+func _validate_twin(issues: Array[ValidationIssue], path: String, where: String) -> void:
+	var sp := shape_params
+	if move == &"crossfire":
+		if float(sp.get("distance_m", 0.0)) <= 0.0:
+			issues.append(
+				ValidationIssue.new(&"not_positive", path, where + "distance_m must be > 0")
+			)
+		if not shielded:
+			issues.append(ValidationIssue.new(&"missing", path, where + "a Crossfire is shielded"))
+	if move == &"chain_sweep":
+		if float(sp.get("width_m", 0.0)) <= 0.0:
+			issues.append(ValidationIssue.new(&"not_positive", path, where + "width_m must be > 0"))
+		if float(sp.get("reach_m", 0.0)) < 0.0:
+			issues.append(ValidationIssue.new(&"range", path, where + "reach_m must be >= 0"))
+
+
+## v0.9.0 NB3 (BOSSES_4_5.md N3; BossJudge): an echo is shielded (the signature) and records a real path: a step of at
+## least a tick, at most ECHO_MAX_POINTS points, a real strike and a safe spot >= 0; a Verdict's square is real.
+func _validate_judge(issues: Array[ValidationIssue], path: String, where: String) -> void:
+	var sp := shape_params
+	if move == &"echo":
+		var rec := float(sp.get("record_seconds", 0.0))
+		var step := float(sp.get("step_seconds", 0.0))
+		if (
+			int(round(step * 60.0)) < 1
+			or rec < step
+			or int(round(rec / maxf(step, 0.001))) > BossSchemas.ECHO_MAX_POINTS
+		):
+			issues.append(
+				ValidationIssue.new(
+					&"range", path, where + "an echo records 1..24 steps of >= 1 tick"
+				)
+			)
+		if float(sp.get("radius_m", 0.0)) <= 0.0 or float(sp.get("safe_m", -1.0)) < 0.0:
+			issues.append(ValidationIssue.new(&"range", path, where + "radius_m > 0, safe_m >= 0"))
+		if not shielded:
+			issues.append(ValidationIssue.new(&"missing", path, where + "an echo is shielded"))
+	if move == &"verdict" and float(sp.get("half_m", 0.0)) <= 0.0:
+		issues.append(ValidationIssue.new(&"not_positive", path, where + "half_m must be > 0"))

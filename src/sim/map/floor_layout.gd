@@ -30,6 +30,16 @@ const GATE_WIDTH := 2.4
 const GATE_HALF_DEPTH := 0.4
 ## Side of the square kept clear in front of the gate.
 const GATE_FRONT := 3.0
+## v0.9.0 PT (owner: "there should be an space between the wall and the portals"; starting value): the portal's oval
+## (OVAL_HALF_W either side of portal_pos, across its facing; the view's PortalGate.OVAL_W) keeps GATE_WALL_CLEAR m from
+## every wall: it stands that far out from the wall it backs onto (portal_pos = the wall face + facing ×
+## GATE_WALL_CLEAR), and its sides and the gap behind it are kept clear of the room's walls and interior pieces.
+const GATE_WALL_CLEAR := 1.5
+const OVAL_HALF_W := 0.8
+## How far the gate's zone reaches either side of its centre line (the oval's clearance; at least the old 2.2 m).
+const GATE_ZONE_HALF_W := OVAL_HALF_W + GATE_WALL_CLEAR
+## v0.9.0 PT: before PT a gate's zone reached this far past its frame's sides (GATE_WIDTH / 2 + 1.0 = 2.2 m).
+const LEGACY_ZONE_SIDE := 1.0
 
 ## How many templates there are, and their names (for tools and evidence).
 const TEMPLATE_COUNT := 13
@@ -84,6 +94,9 @@ var portal_room := 0
 var start_pos := Vector2.ZERO
 ## The centre of the gate's footprint; the gate faces portal_angle (into the room).
 var portal_pos := Vector2.ZERO
+## v0.9.0 PT: a floor built under floor rules 1-9 (saved before v0.9.0) keeps its gates against the wall, as it was
+## saved (FloorParams.legacy_gate); otherwise they stand GATE_WALL_CLEAR out from it.
+var legacy_gate := false
 var portal_angle := 0
 ## v0.5.0 RT: the Deep gate (Routes.place_deep_gate; only on a run's floors before the last), beside the gate in the
 ## boss room. has_deep_portal is false until it is placed.
@@ -162,6 +175,48 @@ var curse_solids: Array[Obb] = []
 ## The floor's footprint, for drawing ground: each room's cells (interior, walls and doorways up to its grid
 ## lines), then the outer half of each outer wall.
 var ground: Array[Rect2] = []
+## v0.9.0 FA (owner C §3, Q18): the final approach (FinalArena.approach_layout; empty elsewhere): the walls of light
+## that close the plateau when the buildup ends (World adds them then), the two rune pylons and the altar at the
+## plateau's centre, the causeway's foot and its top (where it meets the plateau's ring).
+var light_walls: Array[Obb] = []
+var pylons := PackedVector2Array()
+var altar_pos := Vector2.ZERO
+var causeway_foot := Vector2.ZERO
+var causeway_top := Vector2.ZERO
+var causeway_half_w := 0.0
+## v0.9.0 TD (owner W §2, Q20, Q23; TimedDoorRooms.mark, -1 / empty on a floor without one): the secret room behind the
+## timed door, the room before it (the host, which holds the two switches), the door (an index into the doorway arrays),
+## the switches' spots and the slab that shuts the doorway (TimedDoor adds it as a barrier in play).
+var timed_room := -1
+var timed_host := -1
+var timed_door := -1
+var timed_switches := PackedVector2Array()
+var timed_door_wall: Obb
+## v0.9.0 RA (owner W §4 A, Q22; RuneRooms.mark, -1 / empty on a floor without one): the rune puzzle's hidden room, the
+## room before it (the host: the three pillars and the carving), its sealed doorway (a doorway index) and the slab that
+## seals it, the pillars' spots, the faces to match (0..3 each, the carving's symbols) and the faces they start on.
+var rune_room := -1
+var rune_host := -1
+var rune_door := -1
+var rune_pillars := PackedVector2Array()
+var rune_target := PackedInt32Array()
+var rune_start := PackedInt32Array()
+var rune_door_wall: Obb
+## v0.9.0 DX (owner W §4 C, Q23; CrackedRooms.mark, -1 / null on a floor without one): the hidden room behind the
+## cracked wall, the room before it, the doorway the wall fills and the wall itself (Breakables adds it as a barrier
+## in play).
+var crack_room := -1
+var crack_host := -1
+var crack_door := -1
+var crack_wall: Obb
+## v0.9.0 DP (owner Q26b; PurpleRooms.mark, -1 on a floor without one): the purple-rune room (a big room off the
+## way) and its dais's spot.
+var purple_room := -1
+var purple_pos := Vector2.ZERO
+## v0.9.0 LK (owner Q21; LockdownRooms.mark, empty on a floor without any): the Lockdown rooms, in the order taken,
+## and each one's kind (LockdownTable.Kind).
+var lockdown_rooms := PackedInt32Array()
+var lockdown_kinds := PackedInt32Array()
 
 
 func room_count() -> int:
@@ -233,12 +288,17 @@ func door_approaches(room: int, m: float = 1.0) -> PackedVector2Array:
 
 ## The gate's footprint, its clear front square and a margin: kept free of interior pieces and spots.
 func gate_zone() -> Rect2:
-	var n := portal_facing()
+	return GateClearance.zone(self, portal_pos, portal_angle)
+
+
+## v0.9.0 PT: the rectangle that must stay free of walls round a gate's oval at `pos` facing `angle` (the oval's
+## segment across the facing, grown by GATE_WALL_CLEAR; axis-aligned: gates face a grid axis).
+static func oval_clear_rect(pos: Vector2, angle: int) -> Rect2:
+	var n := Kin.dir(angle)
 	var t := Vector2(-n.y, n.x)
-	var face := portal_pos - n * GATE_HALF_DEPTH
-	var half_w := GATE_WIDTH * 0.5 + 1.0
-	var depth := GATE_HALF_DEPTH * 2.0 + GATE_FRONT + 1.0
-	return Rect2(face + t * half_w, Vector2.ZERO).expand(face - t * half_w + n * depth)
+	return Rect2(pos + t * OVAL_HALF_W, Vector2.ZERO).expand(pos - t * OVAL_HALF_W).grow(
+		GATE_WALL_CLEAR
+	)
 
 
 ## The open passage of doorway i through the wall, from one room's face to the other's.

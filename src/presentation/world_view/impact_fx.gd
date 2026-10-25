@@ -75,6 +75,7 @@ var _seed := 0
 var _bolts := {}
 ## Spec key -> its impact colour, for one build (attack digest).
 var _colors := {}
+var _kinds := {}
 var _digest := ""
 
 
@@ -107,8 +108,10 @@ func on_hit(reader: WorldReader, e: SimEvent) -> Array:
 	if dir == Vector2.ZERO:
 		dir = Vector2.RIGHT
 	var c := HERO
+	var fx := &""
 	if not bolt.is_empty():
 		c = _key_color(reader, String(bolt[1]))
+		fx = _key_kind(String(bolt[1]))
 	elif kind == SLASH:
 		c = _key_color(reader, "#melee", reader.step_attack_id())
 	var crit := CRIT_MULT if e.tags & SimEvent.TAG_CRIT else 1.0
@@ -119,7 +122,7 @@ func on_hit(reader: WorldReader, e: SimEvent) -> Array:
 		at = SimPlane.to_3d(centre - dir * radius, y)
 	var far := SimPlane.to_3d(centre + dir * radius, y)
 	if kind != SLASH:
-		add(at, SimPlane.to_3d(dir), far, c, e.tick, s, kind)
+		add(at, SimPlane.to_3d(dir), far, c, e.tick, s, kind, fx)
 		return [dir, s, 0.0]
 	var fin := HitFeel.finisher_hit(reader, e)
 	if fin:
@@ -146,7 +149,14 @@ static func slash_tangent(motion: int, radial: Vector2) -> Vector2:
 ## Records one impact (see on_hit): merged into a live one nearby that is still young, else added (the oldest goes
 ## past MAX_LIVE). False when merged.
 func add(
-	at: Vector3, dir: Vector3, far: Vector3, c: Color, tick: int, strength: float, kind: int
+	at: Vector3,
+	dir: Vector3,
+	far: Vector3,
+	c: Color,
+	tick: int,
+	strength: float,
+	kind: int,
+	fx: StringName = &""
 ) -> bool:
 	for imp: Array in _live:
 		if (
@@ -162,7 +172,7 @@ func add(
 		_live.pop_front()
 		dropped += 1
 	_seed += 1
-	_live.append([at, dir.normalized(), far, c, tick, strength, kind, _seed * 7919 + 17])
+	_live.append([at, dir.normalized(), far, c, tick, strength, kind, _seed * 7919 + 17, fx])
 	added += 1
 	return true
 
@@ -178,10 +188,11 @@ func track(reader: WorldReader) -> void:
 
 
 func _check_build(reader: WorldReader) -> void:
-	var d := reader.attack_digest()
+	var d := reader.attack_digest() + String(ElementLooks.energy_style)
 	if d != _digest:
 		_digest = d
 		_colors.clear()
+		_kinds.clear()
 
 
 ## The impact colour of a spec key (its first element's core; none: the hero's blue-white), cached for the build.
@@ -195,8 +206,16 @@ func _key_color(reader: WorldReader, key: String, attack_id: StringName = &"") -
 	var c := HERO if els.is_empty() else AttackFormLooks.element_color(StringName(els[0]))
 	if _colors.size() > 64:
 		_colors.clear()
+		_kinds.clear()
 	_colors[k] = c
+	# v0.9.0 VX V4: the first element's effects-layer kind, for the bolt's element extra.
+	_kinds[k] = ElementLooks.kind(StringName(els[0])) if not els.is_empty() else &""
 	return c
+
+
+## v0.9.0 VX V4: the effects-layer kind of a spec key's first element (&"" for none), read with its colour.
+func _key_kind(key: String) -> StringName:
+	return _kinds.get(key, &"")
 
 
 # --- Drawing (a VfxCore drawer: WorldViewRoot adds draw to the effects layer's drawers) ----------------------------
@@ -284,6 +303,13 @@ func _draw_one(layer: VfxCore, imp: Array, u: float, dn: float) -> int:
 			&"smoke", at + Vector3(0, 0.25 * u, 0), (0.3 + 0.5 * u) * s, puff, sd % 4, sd * 0.1
 		):
 			n += 1
+	# v0.9.0 VX V4: the element's own extra (Fire embers and smoke, a Lightning fork, Frost glints and shards, Venom a
+	# splash, Bleed a splatter), for the FULL newest impacts only (inside MAX_LIVE and the merge); none at Low.
+	var fx: StringName = imp[8] if imp.size() > 8 else &""
+	if fx != &"" and dn >= layer.density:
+		var before := layer.sprites_asked
+		HeroFx.impact(layer, fx, at, d, u, sd, s * 0.8)
+		n += layer.sprites_asked - before
 	return n
 
 

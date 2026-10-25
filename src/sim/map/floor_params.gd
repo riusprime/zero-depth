@@ -98,7 +98,14 @@ var room_layouts := {}
 ## v0.8.0 RT: a designed room keeps its pieces out of a box in front of each doorway: the doorway's width plus this
 ## either side, this deep into the room from the wall face.
 var layout_door_side := 1.0
+## v0.9.0 PT: build the gates as before PT, against the wall (a floor saved under floor rules 1-9; RunSaver).
+var legacy_gate := false
 var layout_door_depth := 3.0
+
+## v0.9.0 TD (owner W §2, Q20): the share of floors with a timed door and its secret room (per mille; starting value
+## 35 %), and the door's timer in ticks (15 s at 60 Hz). MapDefinition's numbers.
+var timed_door_permille := 350
+var timed_door_ticks := 900
 
 
 static func defaults() -> FloorParams:

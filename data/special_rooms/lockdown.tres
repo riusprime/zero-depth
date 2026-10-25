@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SpecialRoomDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/special_room_definition.gd" id="1_spr"]
+
+[resource]
+script = ExtResource("1_spr")
+band = &"special_combat"
+code = "LockdownRooms.mark"
+order = 12
+stream = &"map:lockdowns"
+entry = &"sealed_on_entry"
+seals = true
+placement = 2
+count_min = 1
+count_max = 2
+min_spawn_spots = 3
+min_cells = 2
+keeps_every_room = true
+never_adjacent_to_same = true
+avoid = Array[StringName]([&"start", &"boss", &"boss_host", &"portal", &"overrun", &"shop", &"curse", &"arena", &"event", &"shrine", &"fountain", &"purple_runes", &"timed_door", &"timed_door_host", &"rune_puzzle", &"rune_puzzle_host", &"cracked_wall", &"cracked_wall_host"])
+sources = {
+"count_max": "lockdown/lockdown:rooms_max",
+"count_min": "lockdown/lockdown:rooms_min",
+"min_cells": "lockdown/lockdown:min_cells"
+}
+id = &"lockdown"

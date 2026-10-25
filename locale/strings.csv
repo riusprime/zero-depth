@@ -204,6 +204,12 @@ CAPTION_DOOR_SEAL,[The boss door slams shut],[La puerta del jefe se cierra de go
 CAPTION_DOOR_OPENING,[The boss door grinds open],[La puerta del jefe se abre chirriando]
 CAPTION_DOOR_IMPACT,[The boss door thuds down],[La puerta del jefe cae con un golpe sordo]
 CAPTION_PORTAL_OPEN,[The portal hums open],[El portal se abre con un zumbido]
+CAPTION_ARRIVAL_ALTAR,[The altar hums and flares],[El altar zumba y destella]
+CAPTION_PYLON_LOCK,[A rune pylon locks in],[Un pilar rúnico se enciende]
+CAPTION_TIMER_BEEP,[Beeping],[Pitidos]
+CAPTION_LOCKDOWN_CLOSE,[Bars slam shut],[Los barrotes caen de golpe]
+CAPTION_LOCKDOWN_OPEN,[Bars grind open],[Los barrotes se alzan chirriando]
+CAPTION_FINAL_ALTAR,[The altar roars awake],[El altar despierta con un rugido]
 CAPTION_LOW_HP,[Heartbeat: low health],[Latido: poca vida]
 ITEM_HEAT_SINK,Heat Sink,Disipador
 ITEM_HEAT_SINK_DESC,Your vents hit harder and farther.,Tus purgas golpean más fuerte y más lejos.
@@ -225,14 +231,14 @@ HUD_HEAT_OVERCLOCK,OVERCLOCK,SOBRECARGA
 HUD_HEAT_OVERHEAT,OVERHEAT,SOBRECALENTADO
 HUD_HEAT_VENT,VENT READY,PURGA LISTA
 HUD_HEAT_VENT_BLINK,VENT READY,PURGA LISTA
-UI_GAMBLE_USE,[E / X] Gamble · %d shards,[E / X] Apostar · %d fragmentos
+UI_GAMBLE_USE,[E / X] Tempt fortune · %d shards,[E / X] Tentar a la fortuna · %d fragmentos
 UI_GAMBLE_SPENT,Spent,Agotado
 UI_GAMBLE_BLOCKED,Spent,Agotado
 UI_GAMBLE_SPENT_TAG,Spent,Agotado
 UI_GAMBLE_FAILED,It failed,Falló
-UI_GAMBLE_CARD,Gamble shrine,Santuario de apuestas
-UI_GAMBLE_STATS,Shrine stats,Estadísticas del santuario
-UI_GAMBLE_STATS_NONE,No shrine stats yet,Aún no tienes estadísticas del santuario
+UI_GAMBLE_CARD,Fortune Shrine,Santuario de la Fortuna
+UI_GAMBLE_STATS,Fortune Shrine stats,Estadísticas del Santuario de la Fortuna
+UI_GAMBLE_STATS_NONE,No Fortune Shrine stats yet,Aún no tienes estadísticas del Santuario de la Fortuna
 UI_GAMBLE_MAX_HP,+%d max HP,+%d PV máximos
 UI_GAMBLE_MELEE_DAMAGE,+%s %% melee damage,+%s %% de daño cuerpo a cuerpo
 UI_GAMBLE_SHOT_DAMAGE,+%s %% shot damage,+%s %% de daño de disparo
@@ -340,7 +346,7 @@ MAP_LEGEND_CHEST,Chest (dim: can't pay yet),Cofre (tenue: aún no te alcanza)
 MAP_LEGEND_BOSS,Boss door,Puerta del jefe
 MAP_LEGEND_PORTAL,Portal (blue: open),Portal (azul: abierto)
 MAP_ROOMS,Rooms found: %d / %d,Salas halladas: %d / %d
-MAP_LEGEND_SHRINE,Gamble shrine,Santuario de apuestas
+MAP_LEGEND_SHRINE,Shrine,Santuario
 UI_ACTION_VENT,Vent,Purgar
 UI_ACTION_SKILL,Skill,Técnica
 HUD_KEY_HINT,[%s] %s,[%s] %s
@@ -488,6 +494,38 @@ CAUSE_FOUNDRY_MELT,The Foundry melted the floor out from under you.,The Foundry 
 CAPTION_TELEGRAPH_WARLORD,[Warning: the Warlord's armour clanks],[Aviso: la armadura de The Warlord resuena]
 CAPTION_TELEGRAPH_HIVE_LENS,[Warning: the Hive Lens hums as it focuses],[Aviso: The Hive Lens zumba al enfocar]
 CAPTION_TELEGRAPH_FOUNDRY,[Warning: the Foundry's furnace roars],[Aviso: el horno de The Foundry ruge]
+BOSS_TIDECALLER,The Tidecaller,The Tidecaller
+BOSS_TIDECALLER_DESC,A drowned priest who calls the tide.,Un sacerdote ahogado que llama a la marea.
+CAUSE_TIDECALLER_PULL,The Tidecaller's tide dragged you into its rings.,La marea de The Tidecaller te arrastró a sus anillos.
+CAUSE_TIDECALLER_RINGS,The Tidecaller's bubble rings closed over you.,Los anillos de burbujas de The Tidecaller se cerraron sobre ti.
+CAUSE_TIDECALLER_UNDERTOW,The Tidecaller's undertow pulled you under.,La resaca de The Tidecaller te hundió.
+CAUSE_TIDECALLER_SLAM,The Tidecaller's shell crushed you.,El caparazón de The Tidecaller te aplastó.
+CAPTION_TELEGRAPH_TIDECALLER,[Warning: the Tidecaller's bell tolls],[Aviso: la campana de The Tidecaller tañe]
+BOSS_TWIN_WARDENS,The Twin Wardens,The Twin Wardens
+BOSS_TWIN_WARDENS_DESC,"Two stone knights, one life, one burning chain.","Dos caballeros de piedra, una sola vida, una cadena ardiente."
+CAUSE_TWIN_CROSSFIRE,The Twin Wardens' crossfire caught you between them.,El fuego cruzado de The Twin Wardens te atrapó entre ellos.
+CAUSE_TWIN_SWEEP,The Twin Wardens' chain lashed you down.,La cadena de The Twin Wardens te derribó de un latigazo.
+CAUSE_TWIN_CHAIN,The Twin Wardens' burning chain seared you.,La cadena ardiente de The Twin Wardens te abrasó.
+CAUSE_TWIN_BASH,A Twin Warden's shield crushed you.,El escudo de un Twin Warden te aplastó.
+CAPTION_TELEGRAPH_TWIN_WARDENS,[Warning: the Wardens' chain rattles],[Aviso: la cadena de The Twin Wardens resuena]
+CAPTION_TWIN_CHAIN_BURN,[Chain sizzles],[La cadena chisporrotea]
+BOSS_CLOCKWORK_JUDGE,The Clockwork Judge,The Clockwork Judge
+BOSS_CLOCKWORK_JUDGE_DESC,A brass judge that sentences your own footsteps.,Un juez de latón que condena tus propios pasos.
+CAUSE_JUDGE_ECHO,The Clockwork Judge's verdict caught your old steps.,El veredicto de The Clockwork Judge alcanzó tus viejos pasos.
+CAUSE_JUDGE_SPIRAL,The Clockwork Judge's gear-sparks spun into you.,Las chispas de engranaje de The Clockwork Judge giraron hasta alcanzarte.
+CAUSE_JUDGE_VERDICT,The Clockwork Judge's pendulum fell on you.,El péndulo de The Clockwork Judge cayó sobre ti.
+CAUSE_JUDGE_GAVEL,The Clockwork Judge's gavel came down on you.,El mazo de The Clockwork Judge cayó sobre ti.
+CAPTION_TELEGRAPH_CLOCKWORK_JUDGE,[Warning: the Judge's clock ticks],[Aviso: el reloj de The Clockwork Judge marca el tiempo]
+CAPTION_JUDGE_ECHO,[Your echo strikes],[Tu eco golpea]
+BOSS_LANTERN_SHADE,The Lantern Shade,The Lantern Shade
+BOSS_LANTERN_SHADE_DESC,"A hooded wraith that snuffs the light. Keep the lanterns burning: it can only be hurt in the light.","Un espectro encapuchado que apaga la luz. Mantén los faroles encendidos: solo se le puede herir en la luz."
+CAUSE_SHADE_DARK,The Lantern Shade found you in the dark.,The Lantern Shade te encontró en la oscuridad.
+CAUSE_SHADE_BLOOM,The Lantern Shade's wisps bloomed around you.,Los fuegos fatuos de The Lantern Shade florecieron a tu alrededor.
+CAUSE_SHADE_SNUFF,The Lantern Shade snuffed you out.,The Lantern Shade te apagó como a una vela.
+CAUSE_SHADE_SWEEP,The Lantern Shade's lantern swung into you.,El farol de The Lantern Shade te golpeó al balancearse.
+CAPTION_TELEGRAPH_LANTERN_SHADE,[Warning: the Shade's lantern flares],[Aviso: el farol de The Lantern Shade se aviva]
+CAPTION_SHADE_SNUFF,[A light goes out],[Una luz se apaga]
+CAPTION_SHADE_RELIGHT,[A lantern relights],[Un farol se vuelve a encender]
 EVENT_UNSTABLE_CORE,Unstable Core,Núcleo inestable
 EVENT_UNSTABLE_CORE_DESC,A cracked power core hums with stolen strength.,Un núcleo agrietado zumba con fuerza robada.
 EVENT_UNSTABLE_CORE_DRAW,Draw the power out,Extraer la energía
@@ -500,9 +538,6 @@ EVENT_SCRAP_HEAP,Scrap Heap,Montón de chatarra
 EVENT_SCRAP_HEAP_DESC,Something useful is buried in the wreckage.,Hay algo útil enterrado entre los restos.
 EVENT_SCRAP_HEAP_BUY,Pay a scavenger,Pagar a un chatarrero
 EVENT_SCRAP_HEAP_DIG,Dig with bare hands,Cavar con las manos
-EVENT_AMBUSH_CACHE,Ambush Cache,Alijo emboscado
-EVENT_AMBUSH_CACHE_DESC,A sealed cache. Its guardians are close.,Un alijo sellado. Sus guardianes están cerca.
-EVENT_AMBUSH_CACHE_OPEN,Break the seal,Romper el sello
 EVENT_OVERCLOCK_VENT,Overclock Vent,Respiradero de sobrecarga
 EVENT_OVERCLOCK_VENT_DESC,Raw heat pours from the vent.,Calor puro sale del respiradero.
 EVENT_OVERCLOCK_VENT_VENT,Breathe in the heat,Respirar el calor
@@ -530,9 +565,6 @@ CURSE_SWARM_CALL,Swarm Call,Llamada del enjambre
 CURSE_SWARM_CALL_DESC,More enemies in every pack,Más enemigos en cada grupo
 CURSE_PRICE_GOUGE,Price Gouge,Precios abusivos
 CURSE_PRICE_GOUGE_DESC,Everything costs more,Todo cuesta más
-CURSE_MARKED,Marked,Marcado
-CURSE_MARKED_DESC,"Elites hunt you, and there are more of them","Las élites te cazan, y hay más"
-CURSE_MARKED_UP,Slain elites drop a free rare card,Las élites abatidas sueltan una carta rara
 CURSE_ROOTED,Rooted,Enraizado
 CURSE_ROOTED_DESC,You can't dash,No puedes esprintar
 CURSE_ROOTED_UP,Sometimes dodge a hit,A veces esquivas un golpe
@@ -560,7 +592,7 @@ HUD_DODGE,DODGE,ESQUIVA
 HUD_STUNNED,STUNNED,ATURDIDO
 PICK_TITLE_CORE,Stolen core · take it,Núcleo robado · tómalo
 PICK_TITLE_ELITE_DROP,Elite's card · take it,Carta de élite · tómala
-UI_DEV_SPAWN_ELITE,Spawn elite (core),Invocar élite (núcleo)
+UI_DEV_SPAWN_ELITE,Spawn the next elite,Invocar la siguiente élite
 UI_EVENT_OPEN,[E / X] Inspect: %s,[E / X] Examinar: %s
 UI_EVENT_HINT,←/→ or 1-3 to choose · Enter or A to take · Esc or B to leave,←/→ o 1-3 para elegir · Intro o A para aceptar · Esc o B para irte
 UI_EVENT_COST,Cost,Coste
@@ -581,7 +613,6 @@ UI_EVENT_REWARD_CLEANSE,Lift your latest curse: %s,Quita tu última maldición: 
 UI_EVENT_BLOCK_SHARDS,Not enough shards,No tienes fragmentos suficientes
 UI_EVENT_BLOCK_NOTHING,Nothing to gain now,Ahora no hay nada que ganar
 UI_EVENT_BLOCK_BUSY,Not now,Ahora no
-UI_EVENT_AMBUSH,Ambush · %d elites left,Emboscada · quedan %d élites
 UI_EVENT_DEFEND,Guarding the drone · %d %%,Protegiendo el dron · %d %%
 UI_EVENT_DEFEND_AWAY,Get back to the drone!,¡Vuelve junto al dron!
 UI_CURSED,Cursed,Maldito
@@ -596,6 +627,16 @@ CAPTION_AMBUSH,[ambush],[emboscada]
 UI_DEV_CURSE_CHEST,Curse next chest,Maldecir el próximo cofre
 SHOP_PROMPT,[E / X] Open the shop,[E / X] Abrir la tienda
 BOSS_DOOR_PROMPT,[E / X] Open the door,[E / X] Abrir la puerta
+APPROACH_PYLON_PROMPT,[E / X] Awaken,[E / X] Despertar
+TIMED_SWITCH_PROMPT,[E / X] Activate,[E / X] Activar
+RUNE_PILLAR_PROMPT,[E / X] Turn,[E / X] Girar
+CAUSE_EXPLOSIVE_BARREL,An explosive barrel,Un barril explosivo
+CAUSE_LOCKDOWN_HAZARD,A Lockdown's hazard,Un peligro del Bloqueo
+HUD_LOCKDOWN,LOCKDOWN,BLOQUEO
+HUD_LOCKDOWN_HAZARD,HAZARD LOCKDOWN,BLOQUEO PELIGROSO
+HUD_LOCKDOWN_LEFT,Formation %d / %d · %d left,Formación %d / %d · quedan %d
+HUD_LOCKDOWN_CLEARED,Lockdown cleared · the exits are open,Bloqueo superado · las salidas se abren
+HUD_LOCKDOWN_FORCED,The bars give way · the exits are open,Los barrotes ceden · las salidas se abren
 SHOP_TITLE,Shop,Tienda
 SHOP_SOLD,Sold,Vendido
 SHOP_CANT_USE,Can't use now,No se puede usar ahora
@@ -616,6 +657,7 @@ MAP_LEGEND_SHOP,Shop,Tienda
 HUD_FLOOR_DEEP,Floor %d · Deep · %s,Piso %d · Profundo · %s
 HUD_FLOOR_CARD_DEEP,Floor %d · Deep,Piso %d · Profundo
 HUD_SHARDS_HALVED,-%d shards,-%d fragmentos
+HUD_MAX_HP_GROWN,Max HP +%d,Vida máxima +%d
 HUD_PORTALS_OPEN,Two portals are open.,Hay dos portales abiertos.
 REWARD_OPEN_EPIC_ALTAR,[E / X] Open the epic altar,[E / X] Abrir el altar épico
 REWARD_OPEN_DROP,[E / X] Take the card,[E / X] Tomar la carta
@@ -687,7 +729,7 @@ HUD_KEY_PAD_OTHER,Pad,Mando
 ITEM_STORM_CORE,Lightning,Rayo
 ITEM_STORM_CORE_DESC,Your hits chain lightning.,Tus golpes lanzan rayos en cadena.
 ITEM_EMBER_CORE,Fire,Fuego
-ITEM_EMBER_CORE_DESC,Your hits burn. Kills explode in flames.,Tus golpes queman. Las bajas estallan en llamas.
+ITEM_EMBER_CORE_DESC,Your hits burn. Burning foes leave fire behind.,Tus golpes queman. Los enemigos en llamas dejan fuego.
 ITEM_VENOM_CORE,Venom,Veneno
 ITEM_VENOM_CORE_DESC,Your hits poison. Poison spreads on death.,Tus golpes envenenan. El veneno salta al morir.
 ITEM_ECHO_SLASH,Wave,Onda
@@ -767,6 +809,24 @@ ITEM_GUN_SPREAD,Spread,Abanico
 ITEM_GUN_SPREAD_DESC,Fire in a fan.,Disparas en abanico.
 ITEM_GUN_RING,Ring,Anillo
 ITEM_GUN_RING_DESC,Your shot becomes a lightning ring.,Tu disparo se vuelve un anillo de rayos.
+ITEM_GUN_LASER,Laser,Láser
+ITEM_GUN_LASER_DESC,Hold to burn a beam.,Mantén para quemar con un rayo.
+ITEM_GUN_BOMB,Bomb,Bomba
+ITEM_GUN_BOMB_DESC,Throw bombs that burst.,Lanza bombas que estallan.
+ITEM_GUN_VOID,Void,Vacío
+ITEM_GUN_VOID_DESC,Throw black holes that tug at foes.,Lanza agujeros negros que atraen.
+ITEM_GUN_LANCE,Lance,Lanza
+ITEM_GUN_LANCE_DESC,"Hold to charge, release a piercing energy ball.","Mantén para cargar, suelta una bola de energía perforante."
+ITEM_GUN_SCATTER,Scatter,Metralla
+ITEM_GUN_SCATTER_DESC,"A cone of pellets, brutal up close.","Un cono de perdigones, brutal de cerca."
+ITEM_GUN_GLAIVE,Glaive,Disco
+ITEM_GUN_GLAIVE_DESC,A spinning disc that flies out and back.,Un disco giratorio que va y vuelve.
+ITEM_GUN_SEEKERS,Seekers,Buscadores
+ITEM_GUN_SEEKERS_DESC,Darts that curve to the nearest foes.,Dardos que se curvan hacia los enemigos cercanos.
+ITEM_GUN_WAVE,Wave,Oleada
+ITEM_GUN_WAVE_DESC,A wide slow wave that rolls through everything.,Una ola ancha y lenta que lo atraviesa todo.
+ITEM_GUN_WISPS,Wisps,Fuegos fatuos
+ITEM_GUN_WISPS_DESC,Three wisps circle you and fire at the nearest foe.,Tres fuegos fatuos te rodean y disparan al más cercano.
 ITEM_GUN_SWIRL,Swirl,Remolino
 ITEM_GUN_SWIRL_DESC,Your shots swirl at random.,Tus disparos giran al azar.
 ITEM_GUN_PIERCE,Pierce,Perforación
@@ -954,7 +1014,7 @@ UI_ACH_GROUP_CODEX,The Codex,El Códice
 UI_ACH_GROUP_ASCENSION,Ascension,Ascensión
 ACH_CLEAR_FLOOR_1_NAME,First Steps Down,Primeros pasos
 ACH_CLEAR_FLOOR_1_DESC,Clear the first floor.,Supera el primer piso.
-ACH_CLEAR_FLOOR_2_NAME,Halfway Down,A medio camino
+ACH_CLEAR_FLOOR_2_NAME,Going Deeper,Cada vez más hondo
 ACH_CLEAR_FLOOR_2_DESC,Clear the second floor.,Supera el segundo piso.
 ACH_WIN_RUN_NAME,Bottom of the World,El fondo del mundo
 ACH_WIN_RUN_DESC,Win a run.,Gana una partida.
@@ -1148,3 +1208,150 @@ ITEM_MUT_DOUBLE_EXPOSURE,Double Exposure,Doble Exposición
 ITEM_MUT_DOUBLE_EXPOSURE_DESC,Mutation: an attack's path strikes again a moment later.,Mutación: el trazo de un ataque golpea otra vez al poco.
 ITEM_MUT_GRAND_FINALE,Grand Finale,Gran Final
 ITEM_MUT_GRAND_FINALE_DESC,Mutation: the remnants of cards to its left burst.,Mutación: estallan los restos de las cartas a su izquierda.
+UI_SLOT_FORM,Form,Forma
+UI_SLOT_PATTERN,Pattern,Patrón
+UI_SLOT_SECONDARY,Secondary,Secundaria
+UI_SLOT_ELEMENT,Element,Elemento
+UI_SLOT_REPLACES,Replaces %s,Reemplaza a %s
+UI_FORM_ORBS,Orbs,Orbes
+UI_BUILD_FORM,Form: %s,Forma: %s
+UI_SLOT_CHOOSE,Choose one to replace,Elige cuál reemplazar
+UI_SWAP_TITLE_SLOT,Your %s slots are full: choose one to replace,Tus huecos de %s están llenos: elige cuál reemplazar
+SHRINE_BLOOD_NAME,Blood Shrine,Santuario de Sangre
+SHRINE_CHAOS_NAME,Chaos Shrine,Santuario del Caos
+FOUNTAIN_NAME,Healing Fountain,Fuente curativa
+SHRINE_BLOOD_PROMPT,[E / X] Blood Shrine · give %d HP for an upgrade,[E / X] Santuario de Sangre · da %d PV por una mejora
+SHRINE_BLOOD_LOW,Blood Shrine · too weak (needs %d HP),Santuario de Sangre · demasiado débil (necesitas %d PV)
+SHRINE_CHAOS_PROMPT,[E / X] Chaos Shrine · fight %d enemies for an upgrade,[E / X] Santuario del Caos · lucha contra %d enemigos por una mejora
+FOUNTAIN_PROMPT,[E / X] Healing Fountain · drink (+%d HP · one use),[E / X] Fuente curativa · beber (+%d PV · un solo uso)
+FOUNTAIN_FULL,Healing Fountain · you are at full health,Fuente curativa · tienes la salud al máximo
+SHRINE_BLOOD_DONE,−%d HP · an upgrade rises,−%d PV · surge una mejora
+SHRINE_BLOOD_DENIED,Too weak to bleed,Demasiado débil para sangrar
+SHRINE_CHAOS_LEFT,Survive the challenge · %d left,Supera el desafío · quedan %d
+SHRINE_CHAOS_DONE,Chaos tamed · an upgrade rises,Caos domado · surge una mejora
+FOUNTAIN_DONE,+%d HP · the fountain runs dry,+%d PV · la fuente se seca
+FOUNTAIN_DENIED,Already at full health,Ya tienes la salud al máximo
+CAPTION_SHRINE_BLOOD,[Blood drains into the shrine],[La sangre fluye al santuario]
+CAPTION_SHRINE_CHAOS,[Chaos roars awake],[El caos despierta rugiendo]
+CAPTION_FOUNTAIN,[Water splashes],[El agua salpica]
+HUB_TITLE,The Rune Ring,El Anillo de Runas
+UI_TO_HUB,To the Rune Ring,Al Anillo de Runas
+HUB_HINT,Walk to a station · [E / X] to use it · Esc / Start: menu,Camina hasta una estación · [E / X] para usarla · Esc / Start: menú
+HUB_PORTAL_MACHINE,Portal Machine,Máquina de Portales
+HUB_PROMPT_PORTAL,[E / X] Start a run,[E / X] Empezar una partida
+HUB_ARCHIVE,Rune Archive,Archivo de Runas
+HUB_PROMPT_ARCHIVE,[E / X] Open the Archive,[E / X] Abrir el Archivo
+HUB_TROPHY,Trophy Area,Sala de Trofeos
+HUB_PROMPT_TROPHY,[E / X] See the achievements,[E / X] Ver los logros
+HUB_WARDROBE,Wardrobe,Vestidor
+HUB_PROMPT_WARDROBE,[E / X] Open the wardrobe,[E / X] Abrir el vestidor
+HUB_PROGRESSION,Progression Station,Estación de Progreso
+HUB_PROMPT_PROGRESSION,[E / X] Use the station,[E / X] Usar la estación
+HUB_CREDITS,Credits Stone,Piedra de los Créditos
+HUB_PROMPT_CREDITS,[E / X] Read the credits,[E / X] Leer los créditos
+HUB_WARDROBE_SOON,Robes and rune affinities will hang here. Nothing to wear yet.,Aquí colgarán las túnicas y las afinidades rúnicas. Aún no hay nada que ponerse.
+HUB_PROGRESSION_SOON,Rune Fragments will be spent here. The console is still dark.,Aquí se gastarán los Fragmentos de Runa. La consola sigue apagada.
+ELITE_BREAKER,The Breaker,El Quebrantador
+ELITE_BREAKER_DESC,"A slow armoured brute. Step out of its slam, then hit it while its fist is stuck.","Un bruto acorazado y lento. Sal de su golpe al suelo y pégale mientras tiene el puño atascado."
+ELITE_RIFT_HUNTER,The Rift Hunter,El Cazador de Grietas
+ELITE_RIFT_HUNTER_DESC,"It marks where you stand and steps out of the rift there. Keep moving, then strike during its pause.","Marca donde estás y sale de la grieta allí. Sigue moviéndote y golpéale durante su pausa."
+ELITE_CONDUIT,The Conduit,El Conducto
+ELITE_CONDUIT_DESC,"A floating caster. Sidestep its locked beam, then close in while it lies overloaded.","Un lanzador flotante. Esquiva su rayo fijado y acércate mientras yace sobrecargado."
+CAUSE_ELITE_BREAKER_CONTACT,You ran into the Breaker.,Chocaste contra el Quebrantador.
+CAUSE_ELITE_BREAKER_PUNCH,The Breaker's stone fist knocked you down.,El puño de piedra del Quebrantador te derribó.
+CAUSE_ELITE_BREAKER_SLAM,The Breaker's slam crushed you.,El golpe al suelo del Quebrantador te aplastó.
+CAUSE_ELITE_RIFT_HUNTER_CONTACT,You ran into the Rift Hunter's blades.,Chocaste contra las cuchillas del Cazador de Grietas.
+CAUSE_ELITE_RIFT_HUNTER_SLASH,The Rift Hunter stepped out of its rift and cut you down.,El Cazador de Grietas salió de su grieta y te abatió.
+CAUSE_ELITE_CONDUIT_ORBS,The Conduit's orbs caught you.,Los orbes del Conducto te alcanzaron.
+CAUSE_ELITE_CONDUIT_BEAM,The Conduit's beam burned through you.,El rayo del Conducto te atravesó.
+CAPTION_ELITE_ARRIVE,[An elite arrives],[Llega una élite]
+CAPTION_ELITE_SLAM,[A heavy slam],[Un golpe pesado]
+CAPTION_ELITE_RIFT,[A rift tears open],[Se abre una grieta]
+CAPTION_ELITE_SLASH,[Blades slash],[Cuchillas cortan]
+CAPTION_ELITE_CHARGE,[A beam charges],[Un rayo se carga]
+CAPTION_ELITE_BEAM,[The beam fires],[El rayo dispara]
+WARDROBE_ROBE,Robe,Túnica
+WARDROBE_AFFINITY,Rune affinity,Afinidad rúnica
+WARDROBE_LOCKED,locked,bloqueada
+WARDROBE_LOCKED_NOTE,Bought with Rune Fragments. Not worn yet.,Se compra con Fragmentos de Runa. Aún no la llevas.
+ROBE_CREAM,Cream,Crema
+ROBE_ASH,Ash,Ceniza
+ROBE_NIGHT,Night,Noche
+ROBE_CANYON,Canyon,Cañón
+ROBE_FROST,Frost,Escarcha
+ROBE_MOSS,Moss,Musgo
+ROBE_FALLEN,The Fallen's Regalia,Regalía de The Fallen
+ROBE_DIVINE,Divine Hollow Crown,Hollow Crown divina
+ROBE_HIDDEN,???,???
+ROBE_EPIC_TAG,epic,épica
+AFFINITY_NONE,None,Ninguna
+AFFINITY_NONE_DESC,The plain game: no rune on the robe.,El juego sin más: ninguna runa en la túnica.
+AFFINITY_NONE_COST,Card offers unweighted.,Las cartas se ofrecen sin sesgo.
+AFFINITY_EMBER,Ember,Brasa
+AFFINITY_EMBER_DESC,Your burns last 50% longer. Fire cards are offered more often.,Tus quemaduras duran un 50 % más. Las cartas de fuego se ofrecen más a menudo.
+AFFINITY_EMBER_COST,Frost cards are offered less often.,Las cartas de escarcha se ofrecen menos a menudo.
+AFFINITY_STORM,Storm,Tormenta
+AFFINITY_STORM_DESC,"Your dash crackles: enemies within 1 m of its path gain a shock stack. Lightning cards are offered more often.","Tu esprint chisporrotea: los enemigos a 1 m de su recorrido quedan electrocutados (una carga). Las cartas de rayo se ofrecen más a menudo."
+AFFINITY_STORM_COST,"Dash cooldown 1.4 s → 1.7 s. Venom cards are offered less often.","Recarga del esprint 1,4 s → 1,7 s. Las cartas de veneno se ofrecen menos a menudo."
+AFFINITY_VENOM,Venom,Veneno
+AFFINITY_VENOM_DESC,"When a poisoned enemy dies, its poison jumps to the nearest enemy within 3 m. Venom cards are offered more often.","Cuando muere un enemigo envenenado, su veneno salta al enemigo más cercano a 3 m. Las cartas de veneno se ofrecen más a menudo."
+AFFINITY_VENOM_COST,Fire cards are offered less often.,Las cartas de fuego se ofrecen menos a menudo.
+AFFINITY_ASTRAL,Astral,Astral
+AFFINITY_ASTRAL_DESC,"Secrets within 8 m pulse faintly, and the map marks a room holding one once you enter it. Void cards are offered more often.","Los secretos a 8 m laten débilmente y el mapa marca la sala que guarda uno cuando entras en ella. Las cartas de vacío se ofrecen más a menudo."
+AFFINITY_ASTRAL_COST,No combat effect at all.,Ningún efecto en combate.
+AFFINITY_GUARDIAN,Guardian,Guardián
+AFFINITY_GUARDIAN_DESC,A ward blocks the next hit that would damage you. It refills at the start of each floor.,Una guarda bloquea el siguiente golpe que te haría daño. Se recarga al empezar cada piso.
+AFFINITY_GUARDIAN_COST,You pick up 20% fewer run shards.,Recoges un 20 % menos de fragmentos en la partida.
+MAP_LEGEND_SECRET,Secret (Astral),Secreto (Astral)
+UI_RECAP_FRAGMENTS,Rune Fragments: +%d (now %d),Fragmentos de Runa: +%d (ahora %d)
+UI_UNLOCK_TOAST,FORM UNLOCKED,FORMA DESBLOQUEADA
+UNLOCK_VOID_NAME,The Void,El Vacío
+UNLOCK_VOID_DESC,You travelled through the purple Deep portal. The Void form now joins the offers.,Cruzaste el portal profundo púrpura. La forma Vacío ya aparece en las ofertas.
+PROGRESSION_BALANCE,Rune Fragments: %d,Fragmentos de Runa: %d
+PROGRESSION_ROBES_INTRO,Robes for the hero's cloak. A look only: no robe changes a run.,Túnicas para la capa del héroe. Solo el aspecto: ninguna cambia la partida.
+PROGRESSION_PRICE,%d fragments,%d fragmentos
+PROGRESSION_OWNED,owned,tuya
+PROGRESSION_VOID_LOCKED,The Void form: travel through the purple Deep portal to unlock it.,La forma Vacío: cruza el portal profundo púrpura para desbloquearla.
+PROGRESSION_VOID_OPEN,The Void form: unlocked.,La forma Vacío: desbloqueada.
+PROGRESSION_BOUGHT,%s bought. Wear it at the Wardrobe.,Túnica %s comprada. Póntela en el Vestidor.
+PROGRESSION_SHORT,Not enough Rune Fragments for %s.,No tienes Fragmentos de Runa suficientes para la túnica %s.
+PROGRESSION_ALREADY,%s is already yours.,La túnica %s ya es tuya.
+COLLECTIBLE_COLD_LANTERN,Cold Lantern,Farol Frío
+COLLECTIBLE_COLD_LANTERN_LORE,It still lights halls that fell long ago.,Aún alumbra salones que cayeron hace mucho.
+COLLECTIBLE_STARLESS_MAP,Starless Map,Mapa sin Estrellas
+COLLECTIBLE_STARLESS_MAP_LORE,Someone charted the dark and found nothing.,Alguien trazó la oscuridad y no halló nada.
+COLLECTIBLE_SUNBAKED_IDOL,Sunbaked Idol,Ídolo Tostado
+COLLECTIBLE_SUNBAKED_IDOL_LORE,It smiles at the heat.,Sonríe al calor.
+COLLECTIBLE_FROZEN_BELL,Frozen Bell,Campana Helada
+COLLECTIBLE_FROZEN_BELL_LORE,It rang once. The sea froze to listen.,Sonó una vez. El mar se heló para escuchar.
+COLLECTIBLE_STAR_SPLINTER,Star Splinter,Astilla de Estrella
+COLLECTIBLE_STAR_SPLINTER_LORE,Still warm from the fall.,Aún tibia de la caída.
+COLLECTIBLE_ALIGNED_KEY,Aligned Key,Llave Alineada
+COLLECTIBLE_ALIGNED_KEY_LORE,Turn it right and the walls remember.,Gírala bien y los muros recuerdan.
+COLLECTIBLE_SAND_SHELL,Sand Shell,Concha de Arena
+COLLECTIBLE_SAND_SHELL_LORE,"It runs out, then starts again.",Se agota y vuelve a empezar.
+COLLECTIBLE_BROKEN_SHACKLE,Broken Shackle,Grillete Roto
+COLLECTIBLE_BROKEN_SHACKLE_LORE,The bars gave way. So did this.,Los barrotes cedieron. Esto también.
+COLLECTIBLE_VIOLET_EYE,Violet Eye,Ojo Violeta
+COLLECTIBLE_VIOLET_EYE_LORE,It saw the deep road before you did.,Vio el camino profundo antes que tú.
+COLLECTIBLE_BLOOD_COIN,Blood Coin,Moneda de Sangre
+COLLECTIBLE_BLOOD_COIN_LORE,Paid in full. Paid in you.,Pagada entera. Pagada contigo.
+COLLECTIBLE_DRY_CHALICE,Dry Chalice,Cáliz Seco
+COLLECTIBLE_DRY_CHALICE_LORE,The last drink was yours.,El último trago fue tuyo.
+COLLECTIBLE_RUNE_RUBBING,Rune Rubbing,Calco de Runas
+COLLECTIBLE_RUNE_RUBBING_LORE,Old marks. Someone wanted them found.,Marcas viejas. Alguien quería que las hallaras.
+COLLECTIBLE_COLOSSUS_TOOTH,Colossus Tooth,Diente del Colossus
+COLLECTIBLE_COLOSSUS_TOOTH_LORE,Bigger than your head. Still hungry.,Más grande que tu cabeza. Aún con hambre.
+COLLECTIBLE_PRISM_SHARD,Prism Shard,Esquirla del Prism
+COLLECTIBLE_PRISM_SHARD_LORE,"Every colour, none of them kind.","Todos los colores, ninguno amable."
+COLLECTIBLE_MIRROR_MASK,Mirror Mask,Máscara Espejo
+COLLECTIBLE_MIRROR_MASK_LORE,It wears your face better than you.,Lleva tu cara mejor que tú.
+COLLECTIBLE_KEYSTONE,Keystone,Piedra Angular
+COLLECTIBLE_KEYSTONE_LORE,The first stone. It waited for the rest.,La primera piedra. Esperaba a las demás.
+COLLECTIBLE_SHELF_STONE,Stone shelf,Estante de Piedra
+COLLECTIBLE_SHELF_SEALED,Sealed shelf,Estante Sellado
+COLLECTIBLE_SHELF_CROWN,Crown shelf,Estante de la Corona
+COLLECTIBLE_SHELF_HUB,Rune Ring shelf,Estante del Anillo
+COLLECTIBLE_TOAST,ADDED TO THE RUNE ARCHIVE,AÑADIDO AL ARCHIVO DE RUNAS
+UI_CODEX_TAB_COLLECTIBLES,Collectibles,Coleccionables
+PROGRESSION_REVEALED,Revealed: %s. Wear it at the Wardrobe.,Revelada: %s. Póntela en el Vestidor.

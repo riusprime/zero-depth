@@ -1,0 +1,256 @@
+[gd_resource type="Resource" script_class="BossDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/boss_attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/boss_phase_definition.gd" id="2_ph"]
+[ext_resource type="Script" path="res://src/content/defs/boss_definition.gd" id="3_boss"]
+
+[sub_resource type="Resource" id="A_lights_out"]
+script = ExtResource("1_atk")
+id = &"lights_out"
+shape = 4
+shape_params = {
+"dark_lasts_seconds": 8.0,
+"dark_seconds": 4.0,
+"inset_m": 1.5,
+"lamp_m": 3.0,
+"lamp_seconds": 6.0,
+"lamps": 4,
+"light_m": 3.5,
+"pattern_id": "shade_lights_out_wisps",
+"relight_m": 1.2
+}
+telegraph_seconds = 1.0
+active_seconds = 3.0
+recovery_seconds = 1.0
+damage = 22
+hit_class = &"small"
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_SHADE_DARK"
+opens_weak_point = true
+shielded = true
+
+[sub_resource type="Resource" id="A_lights_out_3"]
+script = ExtResource("1_atk")
+id = &"lights_out_3"
+shape = 4
+shape_params = {
+"dark_lasts_seconds": 8.0,
+"dark_seconds": 4.0,
+"inset_m": 1.5,
+"lamp_m": 3.0,
+"lamp_seconds": 6.0,
+"lamps": 4,
+"light_m": 3.5,
+"pattern_id": "shade_lights_out_wisps_3",
+"relight_m": 1.2
+}
+telegraph_seconds = 1.0
+active_seconds = 3.0
+recovery_seconds = 0.9
+damage = 22
+hit_class = &"small"
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_SHADE_DARK"
+opens_weak_point = true
+shielded = true
+
+[sub_resource type="Resource" id="A_wisp_bloom"]
+script = ExtResource("1_atk")
+id = &"wisp_bloom"
+shape = 4
+shape_params = {
+"pattern_id": "shade_wisp_bloom"
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.2
+damage = 20
+hit_class = &"small"
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_SHADE_BLOOM"
+
+[sub_resource type="Resource" id="A_wisp_bloom_2"]
+script = ExtResource("1_atk")
+id = &"wisp_bloom_2"
+shape = 4
+shape_params = {
+"pattern_id": "shade_wisp_bloom_2"
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.1
+damage = 20
+hit_class = &"small"
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_SHADE_BLOOM"
+
+[sub_resource type="Resource" id="A_wisp_bloom_3"]
+script = ExtResource("1_atk")
+id = &"wisp_bloom_3"
+shape = 4
+shape_params = {
+"pattern_id": "shade_wisp_bloom_3"
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.0
+damage = 20
+hit_class = &"small"
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_SHADE_BLOOM"
+
+[sub_resource type="Resource" id="A_snuff"]
+script = ExtResource("1_atk")
+id = &"snuff"
+shape = 0
+shape_params = {
+"count": 1,
+"radius_m": 1.8,
+"snuff": 1,
+"stagger_seconds": 0.6
+}
+telegraph_seconds = 1.6
+active_seconds = 0.0167
+recovery_seconds = 1.0
+damage = 30
+hit_class = &"medium"
+move = &"marks"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_SHADE_SNUFF"
+lock_seconds = 0.8
+
+[sub_resource type="Resource" id="A_snuff_3"]
+script = ExtResource("1_atk")
+id = &"snuff_3"
+shape = 0
+shape_params = {
+"count": 2,
+"radius_m": 1.8,
+"snuff": 1,
+"stagger_seconds": 0.6
+}
+telegraph_seconds = 1.6
+active_seconds = 0.0167
+recovery_seconds = 1.0
+damage = 30
+hit_class = &"medium"
+move = &"marks"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_SHADE_SNUFF"
+lock_seconds = 0.8
+
+[sub_resource type="Resource" id="A_lantern_sweep"]
+script = ExtResource("1_atk")
+id = &"lantern_sweep"
+shape = 3
+shape_params = {
+"inner_radius_m": 0.0,
+"radius_m": 3.6
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.3
+damage = 50
+hit_class = &"big"
+move = &"slam_ring"
+min_range_m = 0.0
+max_range_m = 4.0
+weight = 3
+cooldown_seconds = 0.7
+cause_key = &"CAUSE_SHADE_SWEEP"
+opens_weak_point = true
+
+[sub_resource type="Resource" id="P_0"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 1000
+attack_ids = PackedStringArray("lights_out", "wisp_bloom", "snuff", "lantern_sweep")
+entry_attack = &""
+speed_permille = 1000
+cooldown_permille = 1000
+
+[sub_resource type="Resource" id="P_1"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 660
+attack_ids = PackedStringArray("lights_out", "wisp_bloom_2", "snuff", "lantern_sweep")
+entry_attack = &"lights_out"
+speed_permille = 900
+cooldown_permille = 650
+
+[sub_resource type="Resource" id="P_2"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 330
+attack_ids = PackedStringArray("lights_out_3", "wisp_bloom_3", "snuff_3", "lantern_sweep")
+entry_attack = &"lights_out_3"
+speed_permille = 990
+cooldown_permille = 487
+
+[resource]
+script = ExtResource("3_boss")
+name_key = &"BOSS_LANTERN_SHADE"
+desc_key = &"BOSS_LANTERN_SHADE_DESC"
+hp = 2400
+radius_m = 1.2
+move_speed_mps = 1.4
+turn_rate_dps = 70.0
+keep_distance_m = 0.0
+front_arc_degrees = 0.0
+front_mult_permille = 1000
+rear_arc_degrees = 0.0
+rear_mult_permille = 1000
+stagger_size = 280
+stagger_decay_per_second = 15.0
+stagger_seconds = 2.5
+attacks = Array[ExtResource("1_atk")]([SubResource("A_lights_out"), SubResource("A_lights_out_3"), SubResource("A_wisp_bloom"), SubResource("A_wisp_bloom_2"), SubResource("A_wisp_bloom_3"), SubResource("A_snuff"), SubResource("A_snuff_3"), SubResource("A_lantern_sweep")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
+arena_cells = Vector2i(4, 4)
+legacy_arena_cells = Vector2i(4, 4)
+arena_template = 0
+ranged_full_m = 5.0
+ranged_far_m = 12.0
+ranged_far_permille = 400
+punish_distance_m = 9.0
+punish_seconds = 4.0
+punish_attack = &"snuff"
+weak_point_seconds = 2.0
+weak_point_range_m = 2.5
+weak_point_mult_permille = 2000
+weak_point_stagger_permille = 2000
+arena_close_phase = -1
+arena_close_after_seconds = 0.0
+recovery_permille = 600
+lead_seconds = 0.3
+track_commit_seconds = 0.2
+dash_read_seconds = 0.5
+gap_close_attack = &"snuff"
+gap_close_distance_m = 10.0
+gap_close_seconds = 2.0
+signature_every_seconds = 12.0
+signature_first_seconds = 3.0
+save_order = 4
+id = &"lantern_shade"

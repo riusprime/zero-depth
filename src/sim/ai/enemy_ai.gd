@@ -38,6 +38,8 @@ const KEEP_AWAY: Array[int] = [
 	ActorStore.Kind.MENDER,
 	ActorStore.Kind.MINE_LAYER,
 	ActorStore.Kind.SNIPER,
+	ActorStore.Kind.RIFT_HUNTER,  # v0.9.0 EL: circling 4-6 m away between Rift Steps
+	ActorStore.Kind.CONDUIT,  # drifting 7-10 m away
 ]
 ## Aimed windups stop tracking the player this many ticks before they fire (starting value, as the bosses').
 const COMMIT_TICKS := 12
@@ -48,6 +50,8 @@ const SPREAD_WEIGHT := 1.2
 const FLANK_RANGE_M := 6.0
 const FLANK_MIN_M := 2.0
 const FLANK_PERMILLE := 450
+## v0.9.0: the sight line's half-width (sees_player): thin, so a doorway's edge does not hide a player in the opening.
+const SIGHT_R_M := 0.05
 ## A charge touches the player within this much of contact: the collision pass (phase 5) has already pushed the
 ## two bodies exactly apart before the hit check (phase 6), so an exact test missed by a rounding error (v0.3.5 AI).
 const CONTACT_SLOP_M := 0.02
@@ -124,6 +128,9 @@ static func tracking(w: World, i: int) -> bool:
 
 static func think(w: World, i: int) -> void:
 	var a := w.actors
+	if EliteAi.is_elite_kind(a.kinds[i]):  # v0.9.0 EL: the elite archetypes run their own (its walk is plan's)
+		EliteAi.think(w, i)
+		return
 	var planning := plans_now(w, i)
 	if planning:  # v0.4.0 SC: the staggered plan (before the frozen check: a thawed enemy has a fresh one)
 		if w.phase_probe != null:  # v0.8.0 HS: the perf probe's phase timer (null in play)
@@ -132,8 +139,6 @@ static func think(w: World, i: int) -> void:
 		if w.phase_probe != null:
 			w.phase_probe.end(&"ai.plan")
 	if a.frozen_t[i] > 0:  # Engines (Engines.frozen): a frozen enemy holds still, its state paused.
-		return
-	if CoreTheft.staggered(w, i):  # v0.6.0 CU: a staggered elite stands
 		return
 	var t := w.enemy_table(a.kinds[i])
 	a.state_t[i] += 1
@@ -155,6 +160,9 @@ static func think(w: World, i: int) -> void:
 				behaviour_of(a.kinds[i]) == ActorStore.Kind.NEEDLE and dist < t.flee_distance_m
 			)
 			var attack := alive and a.cd[i] == 0 and dist <= t.attack_range_m and not too_close
+			# v0.9.0 (owner 2026-10-23: "when there are closed rooms the enemies can attack from outside, that should not
+			# happen"): no attack starts without a clear line to the player (walls, sealed doorways' barriers).
+			attack = attack and sees_player(w, a.pos(i))
 			# v0.4.0 SC: a walker faces the player on its plan ticks and as it attacks; the slow turners (Warden,
 			# Shield Bearer) turn every tick (their facing is their armour).
 			if _turns_slowly(a.kinds[i]):
@@ -301,10 +309,7 @@ static func move(w: World, i: int) -> void:
 	var t := w.enemy_table(a.kinds[i])
 	var at := a.pos(i)
 	# Items (v0.2.0 J): a Frost Core slow scales both the walk and the charge (1.0 when not slowed).
-	if CoreTheft.staggered(w, i):  # v0.6.0 CU: a staggered elite stands
-		return
 	var slow := ItemProcs.slow_factor(w, i) * Curses.enemy_speed_factor(w)  # v0.5.0 EV curse
-	slow *= Curses.hunt_factor(w, i)  # v0.6.0 CU: Marked's elites hunt you
 	var hovering := a.kinds[i] == ActorStore.Kind.BOMB_DRONE and a.state[i] == State.WINDUP
 	if a.state[i] == State.MOVE and a.kinds[i] == ActorStore.Kind.SNIPER and a.pick[i] == 1:
 		_relocate(w, i, t, slow)
@@ -447,6 +452,9 @@ static func resolve(w: World, i: int) -> void:
 	var a := w.actors
 	if a.state[i] == BossSignatures.EGG_BURST and not Engines.frozen(w, i):
 		BossSignatures.egg_burst(w, i)  # v0.8.0 BS1 (S3): a phase-3 egg bursts into its acid star
+		return
+	if EliteAi.is_elite_kind(a.kinds[i]):  # v0.9.0 EL: an elite's contact, plain attack and ability
+		EliteAi.resolve(w, i)
 		return
 	if a.state[i] != State.ACTIVE or w.player_dead() or Engines.frozen(w, i):
 		return
@@ -687,6 +695,8 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return BossAi.telegraph(w, i)  # Bosses (v0.3.0 C).
 	if not is_enemy_kind(a.kinds[i]):
 		return {}
+	if EliteAi.is_elite_kind(a.kinds[i]):
+		return EliteAi.telegraph(w, i)  # v0.9.0 EL: the slam's circle, the rift mark, the beam's line
 	if a.state[i] == State.ACTIVE and _charges(a.kinds[i]) and a.lock_len[i] > 0.0:
 		return {"shape": &"lane", "ground": false, "obb": running_lane(w, i), "progress": 1000}
 	if a.kinds[i] == ActorStore.Kind.MINE_LAYER:
@@ -862,9 +872,26 @@ static func clear_of_walls(w: World, at: Vector2, r: float) -> bool:
 	return true
 
 
+## v0.9.0 (owner 2026-10-23, think): whether a thin line from `at` to the player crosses no wall. Sealed doorways'
+## barriers are walls (World.add_barrier), so an enemy outside a shut room neither starts an attack nor lands one.
+static func sees_player(w: World, at: Vector2) -> bool:
+	var p := w.player_pos()
+	for k in w.walls_along(at, p, SIGHT_R_M):
+		if Collide.sweep_vs_obb(at, p, SIGHT_R_M, w.walls[k]) >= 0.0:
+			return false
+	return true
+
+
+## v0.9.0 EL: enemy i's hit on the player (the elites' too: EliteAi), stopped by a wall between `from` and it.
+static func hit_player(w: World, i: int, amount: int, tags: int, from := Vector2.INF) -> void:
+	_hit_player(w, i, amount, tags, from)
+
+
 static func _hit_player(w: World, i: int, amount: int, tags: int, from := Vector2.INF) -> void:
 	var a := w.actors
 	var at := a.pos(i) if from == Vector2.INF else from
+	if not sees_player(w, at):  # v0.9.0: a swing or slam begun before a doorway shut stops on it
+		return
 	Damage.hit(
 		w, 0, powered(w, i, amount), a.ids[i], a.ids[i], w.take_root(), tags, at, w.player_pos()
 	)

@@ -52,13 +52,24 @@ func test_the_floors_boss_indices_stay_as_they_were() -> void:
 		ids.append(b.id)
 	assert_eq(
 		ids,
-		[&"brood_mother", &"foundry", &"gatekeeper", &"hive_lens", &"siege_engine", &"warlord"],
+		[
+			&"brood_mother",
+			&"foundry",
+			&"gatekeeper",
+			&"hive_lens",
+			&"siege_engine",
+			&"warlord",
+			&"tidecaller",  # v0.9.0 NB1: after the six (BossOrder), so their indices stay
+			&"twin_wardens",  # v0.9.0 NB2: after the Tidecaller (save_order 2)
+			&"clockwork_judge",  # v0.9.0 NB3: after the Wardens (save_order 3)
+			&"lantern_shade",  # v0.9.0 NB4: after the Judge (save_order 4)
+		],
 		"the final bodies are in their own category, so every saved boss index means what it did"
 	)
 
 
 func test_end_the_run_leads_to_the_final_arena() -> void:
-	var run := SaveLab.run_state(51, 3)
+	var run := SaveLab.run_state(51, SaveLab.floors())
 	var w := SaveLab.build_floor(run)
 	assert_true(w.boss_flow.ascension)
 	assert_true(w.boss_flow.final_next, "the run has a final boss")
@@ -67,14 +78,14 @@ func test_end_the_run_leads_to_the_final_arena() -> void:
 	assert_eq(WorldReader.new(w).outcome(), 3, "End the run: on to the next world, not a win")
 	run.finish_floor(w)
 	assert_true(run.final_fight, "the next world is the final arena")
-	assert_eq(run.floor_index, 3, "still the loop's last floor")
+	assert_eq(run.floor_index, 5, "still the loop's last floor (v0.9.0 FV: floor 5)")
 	assert_eq(run.loop, 1, "no loop after it")
 
 
 func test_end_on_a_later_loop_leads_there_too() -> void:
-	var run := SaveLab.run_state(52, 3)
+	var run := SaveLab.run_state(52, SaveLab.floors())
 	run.loop = 3
-	run.loop_floors = 6
+	run.loop_floors = 10
 	while run.routes.size() < run.run_floor():
 		run.routes.append(Routes.Route.NORMAL)
 	var w := SaveLab.build_floor(run)
@@ -88,7 +99,7 @@ func test_end_on_a_later_loop_leads_there_too() -> void:
 
 
 func test_ascend_skips_the_final_boss() -> void:
-	var run := SaveLab.run_state(53, 3)
+	var run := SaveLab.run_state(53, SaveLab.floors())
 	var w := SaveLab.build_floor(run)
 	w.boss_flow.ascend_choice = Ascension.Choice.LOOP
 	w.boss_flow.state = BossFlow.State.EXITED
@@ -100,7 +111,7 @@ func test_ascend_skips_the_final_boss() -> void:
 
 
 func test_a_run_without_a_final_boss_ends_at_once() -> void:
-	var run := SaveLab.run_state(54, 3)
+	var run := SaveLab.run_state(54, SaveLab.floors())
 	run.table.final_bosses = []
 	var w := SaveLab.build_floor(run)
 	assert_false(w.boss_flow.final_next)
@@ -349,7 +360,7 @@ func test_a_snapshot_mid_shatter_round_trips() -> void:
 
 
 func test_an_ascension_floor_saved_before_fb1_still_loads_and_leads_on() -> void:
-	var run := SaveLab.run_state(83, 3)
+	var run := SaveLab.run_state(83, SaveLab.floors())
 	var w := SaveLab.build_floor(run)
 	CombatLab.idle(w, 20)
 	var p := RunSaver.payload_of(w, run, 83, PackedByteArray())

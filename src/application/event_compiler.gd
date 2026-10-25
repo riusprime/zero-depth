@@ -3,11 +3,27 @@ extends RefCounted
 ## Compiles the event rooms' content (v0.5.0 EV; CONTENT_SCHEMA §9) into sim tables: events and curses by id (the
 ## order World.ev's indices refer to), and the rules. Percent becomes per mille, seconds ticks. Kept beside
 ## ContentCompiler so the shared compiler stays as it was.
+## v0.9.0 EL (owner Q25: the Marked curse and the Ambush Cache event "Remove it"): a deleted curse or event keeps its
+## place in the id order (a retired table: never drawn on a floor built today, no effect), so the indices a save holds
+## still name the same curses and events. RETIRED_EVENTS' weight is drawn only when a floor saved before EL is rebuilt
+## (`legacy`), so that floor's draws are the ones it was saved with.
+
+const RETIRED_CURSES: Array[StringName] = [&"marked_hunt"]
+const RETIRED_EVENTS := {&"ambush_cache": 10}
 
 
 static func compile_curses(repo: ContentRepository) -> Array[CurseTable]:
 	var out: Array[CurseTable] = []
-	for def: CurseDefinition in repo.all_of(&"curses"):
+	for cid in curse_ids(repo):
+		var def: CurseDefinition = repo.get_def(&"curses", cid)
+		if def == null:
+			var r := CurseTable.new()
+			r.id = cid
+			r.effect = -1
+			r.threat = 0
+			r.retired = true
+			out.append(r)
+			continue
 		var t := CurseTable.new()
 		t.id = def.id
 		t.name_key = def.name_key
@@ -36,12 +52,49 @@ static func curse_amount(effect: StringName, amount: float) -> int:
 	return int(round(amount * 10.0))
 
 
-static func compile_events(repo: ContentRepository) -> Array[EventTable]:
-	var curse_ids: Array[StringName] = []
-	for def: CurseDefinition in repo.all_of(&"curses"):
-		curse_ids.append(def.id)
+## v0.9.0 EL: every curse id, the retired ones too, in id order (the order World.ev.curses' indices refer to).
+static func curse_ids(repo: ContentRepository) -> Array[StringName]:
+	return _ids(repo, &"curses", RETIRED_CURSES)
+
+
+## v0.9.0 EL: every event id, the retired ones too, in id order.
+static func event_ids(repo: ContentRepository) -> Array[StringName]:
+	var retired: Array[StringName] = []
+	for k: StringName in RETIRED_EVENTS:
+		retired.append(k)
+	return _ids(repo, &"events", retired)
+
+
+static func _ids(
+	repo: ContentRepository, category: StringName, retired: Array[StringName]
+) -> Array[StringName]:
+	var keys: Array[String] = []
+	for def: ContentDef in repo.all_of(category):
+		keys.append(String(def.id))
+	for r in retired:
+		if not keys.has(String(r)):
+			keys.append(String(r))
+	keys.sort()
+	var out: Array[StringName] = []
+	for k in keys:
+		out.append(StringName(k))
+	return out
+
+
+## `legacy` (v0.9.0 EL): a floor saved before EL is being rebuilt; a retired event keeps its old weight there.
+static func compile_events(repo: ContentRepository, legacy := false) -> Array[EventTable]:
+	var curses := curse_ids(repo)
 	var out: Array[EventTable] = []
-	for def: EventDefinition in repo.all_of(&"events"):
+	for eid in event_ids(repo):
+		var def: EventDefinition = repo.get_def(&"events", eid)
+		if def == null:
+			var r := EventTable.new()
+			r.id = eid
+			r.retired = true
+			r.legacy_weight = int(RETIRED_EVENTS.get(eid, 0))
+			r.weight = r.legacy_weight if legacy else 0
+			out.append(r)
+			continue
 		var t := EventTable.new()
 		t.id = def.id
 		t.name_key = def.name_key
@@ -65,7 +118,7 @@ static func compile_events(repo: ContentRepository) -> Array[EventTable]:
 			elif c.curse == &"random":
 				t.curse.append(Events.CURSE_RANDOM)
 			else:
-				t.curse.append(curse_ids.find(c.curse))
+				t.curse.append(curses.find(c.curse))
 		out.append(t)
 	return out
 
@@ -92,15 +145,10 @@ static func compile_rules(def: EventRulesDefinition) -> EventRules:
 	t.cursed_chest_first_floor = def.cursed_chest_first_floor  # v0.7.5 MG (N10)
 	t.cursed_chest_every_floors = def.cursed_chest_every_floors
 	t.cursed_chests_per_floor = def.cursed_chests_per_floor
-	t.elite_hp_bonus_permille = int(round(def.elite_hp_bonus * 10.0))
-	t.ambush_min_distance_m = def.ambush_min_distance_m
 	t.defend_radius_m = def.defend_radius_m
 	t.cleanse_price = def.cleanse_price
-	t.core_stagger_permille = int(round(def.core_stagger_share * 10.0))  # v0.6.0 CU: core theft
-	t.core_stagger_ticks = SimTick.seconds_to_ticks(def.core_stagger_seconds)
-	t.core_window_ticks = SimTick.seconds_to_ticks(def.core_window_seconds)
+	t.core_window_ticks = SimTick.seconds_to_ticks(def.core_window_seconds)  # v0.6.0 CU: core theft
 	t.core_mod_weight = def.core_mod_weight
-	t.hunt_range_m = def.hunt_range_m
 	t.drop_offset_m = def.drop_offset_m
 	t.curse_room_floor_chance_permille = def.curse_room_floor_chance_permille  # v0.8.0 N17 (O75)
 	t.curse_room_deep_chance_permille = def.curse_room_deep_chance_permille  # v0.8.0 N19 (O80)
@@ -110,12 +158,14 @@ static func compile_rules(def: EventRulesDefinition) -> EventRules:
 ## Sets up a built floor's event rooms from the repository (Main, the shot scripts and the tests). `curse_rules`
 ## (v0.8.0 N17, N19; Events.CURSE_RULES_*): a floor saved under older floor rules keeps its event rooms as they were
 ## (FloorScenario.curse_room_rules_of).
+## v0.9.0 EL: `legacy` for a floor saved before EL (FloorScenario.retired_events_of): the retired event keeps its old
+## weight in the draw, so the floor rebuilds as saved.
 static func setup(
-	w: World, repo: ContentRepository, curse_rules: int = Events.CURSE_RULES_N19
+	w: World, repo: ContentRepository, curse_rules: int = Events.CURSE_RULES_N19, legacy := false
 ) -> void:
 	Events.setup(
 		w,
-		compile_events(repo),
+		compile_events(repo, legacy),
 		compile_curses(repo),
 		compile_rules(repo.get_def(&"event_rules", &"floor")),
 		curse_rules

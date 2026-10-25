@@ -23,6 +23,8 @@ const GROUND_TEXTURES := {
 	&"": "res://assets/textures/kit/ground_b.png",
 	&"night_rocks": "res://assets/textures/kit/ground_b.png",
 	&"red_canyon": "res://assets/textures/kit/ground_b.png",
+	# v0.9.0 MI2: Frozen Shore's snow is the owner's ground_snow (delivered 2026-10-22).
+	&"frozen_shore": "res://assets/textures/kit/ground_snow.png",
 }
 const GROUND_TEXTURE_M := 4.0
 ## v0.8.0 N10 (owners O66, O67), N13 (owner O71, D50 = A everywhere): every biome's structural walls are the
@@ -76,6 +78,9 @@ var shards: ShardCluster
 ## v0.5.5 DS (owner S5, "Deep floors must feel different"): a Deep floor (WorldReader.floor_is_deep) keeps its biome's
 ## mood and gets a violet haze on top: violet-tinted fog (thicker), ambient, sun and void (_apply_deep).
 var deep := false
+## v0.9.0 TD (Q23; HiddenRoom): the hidden room's drawn pieces (its ground, own walls), out of sight until
+## reveal_hidden(); its loose decoration and wall lights are left out (the timed door's view lights it once open).
+var hidden_nodes: Array[Node3D] = []
 var wall_specs: Array = []
 ## v0.8.0 N10: how long the procedural walls took to build (ms; 0 without them): the probes read it.
 var wall_build_ms := 0.0
@@ -100,8 +105,17 @@ var _dressing := {}
 var _placements: Array = []
 ## v0.8.0 N19: the furnished curse room (Rect2() for none), whose loose decoration and wall lights are left out.
 var _curse_rect := Rect2()
+## v0.9.0 SA: floor 1's arrival altar (its centre; radius 0 for none): no loose decoration on it.
+var _altar_at := Vector2.ZERO
+var _altar_r := 0.0
 var _proc_input := {}
 var _proc := {}
+## v0.9.0 TD, RA: per hidden room its ground rects; the hidden rooms' interiors; their own walls (wall index -> room);
+## the nodes held back per room.
+var _hidden_ground := {}
+var _hidden_rects: Array[Rect2] = []
+var _hidden_walls := {}
+var _hidden_by := {}
 
 
 func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> void:
@@ -135,6 +149,11 @@ func _build_environment_and_light() -> void:
 	_build_light()
 
 
+## v0.9.0 HB: only the mood's environment, grade, vignette and sun (the hub draws its own ground and props).
+func build_lighting_only() -> void:
+	_build_environment_and_light()
+
+
 func _build_floor_ground(reader: WorldReader, arena_half: float) -> void:
 	_ground_rects.clear()
 	if reader.has_floor():
@@ -144,6 +163,10 @@ func _build_floor_ground(reader: WorldReader, arena_half: float) -> void:
 		for i in reader.wall_count():
 			if reader.wall_class(i) == 0:
 				_add_ground(reader.wall(i).bounds())
+		for room in reader.hidden_rooms():  # v0.9.0 TD (Q23); RA: every hidden room
+			_hidden_ground[room] = HiddenRoom.split(reader, _ground_rects, room)
+			_hidden_rects.append(reader.floor_room(room))
+		_hidden_walls = HiddenRoom.walls(reader)
 	if _ground_rects.is_empty():
 		_build_ground(arena_half)
 	else:
@@ -429,6 +452,12 @@ func _build_room_ground() -> void:
 	if mats[0] == mats[1]:
 		cells = [cells[0] + cells[1], []]
 	_add_ground_tiles(cells, mats)
+	for room: int in _hidden_ground:  # v0.9.0 TD, RA: a hidden room's ground, out of sight until it opens
+		var hid := room_ground_cells(_hidden_ground[room])
+		if mats[0] == mats[1]:
+			hid = [hid[0] + hid[1], []]
+		for node in _add_ground_tiles(hid, mats, "HiddenGround%d_" % room):
+			_hide(node, room)
 
 
 ## The room ground's tiles: the global TILE_M grid clipped to each rect, as [even cells, odd cells] (the checker's two
@@ -456,7 +485,8 @@ static func room_ground_cells(rects: Array[Rect2]) -> Array:
 ## cell (was a PlaneMesh and a MeshInstance3D per tile). The same pixels: the checker is flat colour, the textured
 ## ground maps in world space (triplanar on the world position), and a plane scaled in x and z keeps its up normal.
 ## No shadow cast.
-func _add_ground_tiles(cells: Array, mats: Array) -> void:
+func _add_ground_tiles(cells: Array, mats: Array, prefix := "Ground") -> Array[Node3D]:
+	var made: Array[Node3D] = []
 	var plane := PlaneMesh.new()
 	plane.size = Vector2.ONE
 	for k in cells.size():
@@ -470,11 +500,48 @@ func _add_ground_tiles(cells: Array, mats: Array) -> void:
 		for n in list.size():
 			mm.set_instance_transform(n, list[n])
 		var node := MultiMeshInstance3D.new()
-		node.name = "Ground%d" % k
+		node.name = "%s%d" % [prefix, k]
 		node.multimesh = mm
 		node.material_override = mats[k]
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(node)
+		made.append(node)
+	return made
+
+
+## v0.9.0 TD: `node` (hidden room `room`'s) out of sight until reveal_hidden().
+func _hide(node: Node3D, room: int) -> void:
+	node.visible = false
+	hidden_nodes.append(node)
+	if not _hidden_by.has(room):
+		_hidden_by[room] = []
+	(_hidden_by[room] as Array).append(node)
+
+
+## v0.9.0 TD (Q23): hidden room `room` comes into sight (its door first opened; RA: its puzzle solved); -1: every
+## hidden room. Idempotent.
+func reveal_hidden(room := -1) -> void:
+	for r: int in _hidden_by.keys():
+		if room >= 0 and r != room:
+			continue
+		for n in _hidden_by[r]:
+			if is_instance_valid(n):
+				n.visible = true
+			hidden_nodes.erase(n)
+		_hidden_by.erase(r)
+	for i: int in _hidden_walls.keys():
+		if room < 0 or _hidden_walls[i] == room:
+			_hidden_walls.erase(i)
+
+
+## v0.9.0 TD: StageKit's pieces of the hidden room's own walls, out of sight (after the kit's nodes are built).
+func _hide_kit_walls() -> void:
+	if kit == null:
+		return
+	for i: int in _hidden_walls:
+		if i < kit.wall_pieces.size():
+			for n: Node3D in kit.wall_pieces[i]:
+				_hide(n, _hidden_walls[i])
 
 
 ## A ground tile's transform: the unit plane scaled to `size` (m, on x and z) at `at`.
@@ -535,6 +602,8 @@ func _build_walls(reader: WorldReader, draw := true) -> void:
 		node.rotation = Vector3(0, SimPlane.yaw_of(w.angle), 0)
 		add_child(node)
 		_wall_nodes.append(node)
+		if _hidden_walls.has(i):  # v0.9.0 TD
+			_hide(node, _hidden_walls[i])
 
 
 func _build_props(seed_value: int, arena_half: float) -> void:
@@ -621,6 +690,10 @@ func _build_kit(reader: WorldReader) -> void:
 		keep.append(reader.shop_front())
 	if reader.event_curse_altar() >= 0:  # v0.8.0 N17: nothing stands on the curse altar
 		keep.append(reader.event_pos(reader.event_curse_altar()))
+	if reader.has_purple_runes():  # v0.9.0 DP: nothing stands on the purple dais
+		keep.append(reader.purple_dais_pos())
+	if reader.has_shrines() and reader.shrine()["has_fountain"]:  # v0.9.0 HF: nor on the fountain
+		keep.append(reader.shrine()["fountain_pos"])
 	var dressing := {
 		"walls": walls,
 		"rooms": rooms,
@@ -640,6 +713,8 @@ func _build_kit(reader: WorldReader) -> void:
 	_curse_rect = (
 		reader.floor_room(reader.event_curse_room()) if reader.curse_room_furnished() else Rect2()
 	)
+	_altar_at = reader.floor_start_pos()
+	_altar_r = AltarStage.RADIUS + 0.2 if reader.arrival_altar() else 0.0
 	_proc_input = {
 		"walls": walls,
 		"rooms": rooms,
@@ -655,6 +730,9 @@ func _build_kit(reader: WorldReader) -> void:
 
 func _dress() -> void:
 	_placements = CurseRoomView.strip(StageDresser.dress(_dressing), _curse_rect)
+	for r in _hidden_rects:  # v0.9.0 TD, RA: no decor or light in a hidden room
+		_placements = CurseRoomView.strip(_placements, r)
+	_placements = AltarStage.clear_decor(_placements, _altar_at, _altar_r)  # v0.9.0 SA
 	_proc = {}
 	var t0 := Time.get_ticks_usec()  # v0.8.0 N10 (option A; N15, D53: the only wall style)
 	_proc_input["cuts"] = StageDresser.niches(_placements)
@@ -673,6 +751,7 @@ func _build_kit_nodes(
 	# v0.8.0 N12: in parts (StageKit.queue_build), then the shadows and the shards after them.
 	kit.queue_build(_queue, _placements, wall_specs.size(), palette["cover"], mood, _proc, tex)
 	_queue.add_next("kit_shadows", func() -> void: kit.set_shadows(lighting == "high"))
+	_queue.add_next("kit_hidden", _hide_kit_walls)  # v0.9.0 TD
 	_queue.add_next("atmosphere", _build_atmosphere)
 	_build_shards(reader, walls, rooms, doors, keep, _placements)
 
@@ -763,17 +842,34 @@ func _build_shards(
 	for p: Dictionary in placements:
 		if p["kind"] == &"light":
 			clear.append(SimPlane.to_sim((p["xform"] as Transform3D).origin))
-	if reader.has_deep_portal():
+	if reader.deep_portal_site():  # v0.9.0 DP: where the Deep gate may still open
 		clear.append(reader.deep_portal_pos())
+	if reader.has_purple_runes():  # v0.9.0 DP: none on the purple dais
+		clear.append(reader.purple_dais_pos())
 	if reader.has_shop():
 		clear.append(reader.shop_pos())
 		special.append(reader.shop_pos())
-	if reader.has_gamble():
+	if reader.has_shrine_site():  # v0.9.0 SH: any shrine kind stands on the gamble shrine's site
 		clear.append(reader.gamble_pos())
 		special.append(reader.gamble_pos())
+	if reader.has_shrines() and reader.shrine()["has_fountain"]:  # v0.9.0 HF
+		clear.append(reader.shrine()["fountain_pos"])
+		special.append(reader.shrine()["fountain_pos"])
 	for k in reader.event_count():
 		clear.append(reader.event_pos(k))
 		special.append(reader.event_pos(k))
+	if reader.has_timed_door():  # v0.9.0 TD: no crystals in the secret room or round the switches
+		special.append(reader.floor_room(reader.timed_room()).get_center())
+		for k in reader.timed_switch_count():
+			clear.append(reader.interactable_pos(reader.timed_switch_entry(k)))
+	if reader.has_rune_puzzle():  # v0.9.0 RA: none in its hidden room or round the pillars
+		special.append(reader.floor_room(reader.rune_room()).get_center())
+		for k in reader.rune_pillar_count():
+			clear.append(reader.interactable_pos(reader.rune_pillar_entry(k)))
+	if reader.has_cracked_wall():  # v0.9.0 DX: none in the room behind the cracked wall
+		special.append(reader.floor_room(reader.crack_room()).get_center())
+	for k in reader.breakable_count():  # nor on a container or a barrel
+		clear.append(reader.breakable_pos(k))
 	var blocked: Array = doors.duplicate()
 	blocked.append_array(reader.arena_barriers())
 	_shard_input = {

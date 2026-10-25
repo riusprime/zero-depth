@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RuneFragmentsDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/rune_fragments_definition.gd" id="1_frag"]
+
+[resource]
+script = ExtResource("1_frag")
+floor_cleared = 2
+boss = 3
+secret = 2
+purple_portal = 3
+final_boss = 10
+collectible = 1
+portal_unlocks = Array[StringName]([&"gun_void"])
+id = &"rune_fragments"

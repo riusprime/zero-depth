@@ -1,12 +1,13 @@
 extends GutTest
 ## v0.8.0 AO (owner O37: "make the order of the attacks be more important"; docs/roadmap/v0.8.0/evidence/
-## ATTACK_ORDER.md): a Gun run takes Ring, Spread and Swirl and the order of the three changes the attack in play,
-## through main.tscn and real input only. The dev panel (real clicks; TEST HELPER, as test_e2e_gun_pool.gd) grants
-## them in that order: the wand is Ring · Spread · Swirl, the storm (three lightning circles thrown out at random);
-## holding Shoot lays them and AttackFormView strikes lightning to each. The Build page shows each card's slot and
-## order mark; moving Swirl from slot 3 to slot 1 (the keyboard: 3, Enter, ←, ←, Enter) makes Swirl · Ring · Spread,
-## one thrown group of three rings joined by shock arcs, once the move reaches the sim. v0.8.0 N3 (owner O47): the
-## rings are the shot itself and fly: the storm's fly off each its own way, the group flies the aim spinning.
+## ATTACK_ORDER.md): a Gun run takes Ring and Swirl and their order changes the attack in play, through main.tscn and
+## real input only. The dev panel (real clicks; TEST HELPER, as test_e2e_gun_pool.gd) grants them in that order:
+## Ring · Swirl throws the ring off its own random way; holding Shoot lays it and AttackFormView strikes lightning to
+## it. The Build page shows each card's slot, order mark and slot tag; moving Swirl from slot 2 to slot 1 (the
+## keyboard: 2, Enter, ←, Enter) makes Swirl · Ring, one ring flying the aim and wobbling round its line, once the move
+## reaches the sim. v0.8.0 N3 (owner O47): the ring is the shot itself and flies. v0.9.0 AS (owner Q3: "Ring + Swirl
+## allowed; the old Ring · Spread · Swirl storm goes"): Ring is a Pattern, Swirl a Secondary riding on it; granting
+## Halo (a Pattern too) replaces the Ring, so no wand holds the storm.
 
 
 func after_each() -> void:
@@ -56,7 +57,7 @@ func _shoot(e: E2e, n: int) -> Array:
 	return [most, spread, flew]
 
 
-func test_ring_spread_swirl_is_a_storm_and_moving_swirl_first_throws_one_group() -> void:
+func test_ring_swirl_throws_the_ring_and_moving_swirl_first_flies_it_along_the_aim() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu(&"gun")
@@ -64,25 +65,24 @@ func test_ring_spread_swirl_is_a_storm_and_moving_swirl_first_throws_one_group()
 	var reader: WorldReader = main.driver.reader
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
-	for id: StringName in [&"gun_ring", &"gun_spread", &"gun_swirl"]:
+	for id: StringName in [&"gun_ring", &"gun_swirl"]:
 		await _grant(e, main, id)
 	var ids := []
 	for c in w.mod_slots:
 		ids.append(w.item_tables[c].id)
-	assert_eq(ids, [&"gun_ring", &"gun_spread", &"gun_swirl"], "picked in this order")
+	assert_eq(ids, [&"gun_ring", &"gun_swirl"], "picked in this order")
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)
 	var spec: Dictionary = reader.attack_spec(WorldReader.ATTACK_BOLT)
 	assert_eq(int(spec["form"]), AttackSpec.Form.RING, "the shot is a ring")
-	assert_eq([int(spec["count"]), int(spec["swirl"]), int(spec["swirl_group"])], [3, 1, 0])
+	assert_eq([int(spec["count"]), int(spec["swirl"]), int(spec["swirl_group"])], [1, 1, 0])
 	var forms: AttackFormView = (main.view as WorldViewRoot).attack_forms
 	var arcs := forms.ring_arcs_drawn
-	var storm: Array = await _shoot(e, 40)
-	assert_gte(int(storm[0]), 3, "the storm's rings are in play (%d at most)" % storm[0])
-	assert_gt(float(storm[1]), 1.0, "thrown apart")
-	assert_gt(float(storm[2]), 3.0, "the rings fly out (%.1f m)" % storm[2])
+	var thrown: Array = await _shoot(e, 40)
+	assert_gte(int(thrown[0]), 1, "the rings are in play (%d at most)" % thrown[0])
+	assert_gt(float(thrown[2]), 3.0, "they fly out (%.1f m)" % thrown[2])
 	assert_gt(forms.ring_arcs_drawn, arcs, "lightning strikes to the thrown rings")
-	# The Build page: each card's slot and order mark; Swirl moves from slot 3 to slot 1.
+	# The Build page: each card's slot, order mark and slot tag; Swirl moves from slot 2 to slot 1.
 	await e.tap(KEY_ESCAPE)
 	await e.tap(KEY_DOWN)
 	await e.tap(KEY_ENTER)
@@ -91,17 +91,19 @@ func test_ring_spread_swirl_is_a_storm_and_moving_swirl_first_throws_one_group()
 	assert_not_null(page, "the Build page opens")
 	if page == null:
 		return
-	assert_eq(
-		page.row.key_text(0, ModifierTable.OrderKind.SHAPE),
-		"1 · %s" % tr("UI_WAND_ORDER_SHAPE"),
-		"the Ring's tile: slot 1, a shape"
-	)
 	var texts := _tile_texts(page.row)
 	assert_true(texts.has("1 · %s" % tr("UI_WAND_ORDER_SHAPE")), "Ring: %s" % str(texts))
-	assert_true(texts.has("2 · %s" % tr("UI_WAND_ORDER_COUNT")), "Spread")
-	assert_true(texts.has("3 · %s" % tr("UI_WAND_ORDER_MOTION")), "Swirl")
-	await e.tap(KEY_3)
-	for key: Key in [KEY_ENTER, KEY_LEFT, KEY_LEFT, KEY_ENTER]:  # slot 3 → 1
+	assert_true(texts.has("2 · %s" % tr("UI_WAND_ORDER_MOTION")), "Swirl")
+	assert_true(
+		texts.has("%s · %s" % [tr("UI_WAND_LEVEL") % 1, tr("UI_SLOT_PATTERN")]), "Ring's slot tag"
+	)
+	assert_true(
+		texts.has("%s · %s" % [tr("UI_WAND_LEVEL") % 1, tr("UI_SLOT_SECONDARY")]), "Swirl's"
+	)
+	# v0.9.0 AS2 (G2 AS = B): the slot counts are the pips over the wand (the Pattern's one, lit).
+	assert_string_contains(page.pips.text(), "%s ●" % tr("UI_SLOT_PATTERN"), "the slot pips")
+	await e.tap(KEY_2)
+	for key: Key in [KEY_ENTER, KEY_LEFT, KEY_ENTER]:  # slot 2 → 1
 		await e.tap(key)
 	await e.tap(KEY_ESCAPE)  # nothing held: back to the pause menu
 	await e.frames(1)
@@ -111,22 +113,31 @@ func test_ring_spread_swirl_is_a_storm_and_moving_swirl_first_throws_one_group()
 	ids.clear()
 	for c in w.mod_slots:
 		ids.append(w.item_tables[c].id)
-	assert_eq(ids, [&"gun_swirl", &"gun_ring", &"gun_spread"], "the move reached the sim")
+	assert_eq(ids, [&"gun_swirl", &"gun_ring"], "the move reached the sim")
 	spec = reader.attack_spec(WorldReader.ATTACK_BOLT)
-	assert_eq([int(spec["count"]), int(spec["swirl"]), int(spec["swirl_group"])], [3, 0, 1])
-	await e.frames(40)  # the storm's rings end
+	assert_eq([int(spec["count"]), int(spec["swirl"]), int(spec["swirl_group"])], [1, 0, 1])
+	await e.frames(40)  # the thrown rings end
 	var start := w.tick
-	arcs = forms.ring_arcs_drawn
-	var group: Array = await _shoot(e, 12)
-	assert_gte(int(group[0]), 3, "a group of three rings")
-	assert_gt(float(group[2]), 1.5, "flying the aim")
-	assert_gt(forms.ring_arcs_drawn, arcs, "joined by shock arcs and struck from the hero")
+	var along: Array = await _shoot(e, 12)
+	assert_gte(int(along[0]), 1, "a ring")
+	assert_gt(float(along[2]), 1.5, "flying the aim")
 	var by_start := {}
 	for k in w.ab.ring_start.size():
 		var t := w.ab.ring_start[k]
 		if t >= start:
 			by_start[t] = int(by_start.get(t, 0)) + 1
-	assert_has(by_start.values(), 3, "a shot's three rings start together: %s" % str(by_start))
+	for n: int in by_start.values():
+		assert_eq(n, 1, "one ring a shot: %s" % str(by_start))
+	# v0.9.0 AS: Halo is a Pattern too: taking it replaces the Ring, so the old storm can't be built.
+	await e.tap(KEY_QUOTELEFT)
+	await _grant(e, main, &"halo_shot")
+	await e.tap(KEY_QUOTELEFT)
+	ids.clear()
+	for c in w.mod_slots:
+		ids.append(w.item_tables[c].id)
+	assert_eq(ids, [&"gun_swirl", &"halo_shot"], "Halo took the Ring's slot")
+	spec = reader.attack_spec(WorldReader.ATTACK_BOLT)
+	assert_eq(int(spec["form"]), AttackSpec.Form.BOLT, "no ring left")
 	assert_false(w.player_dead())
 
 

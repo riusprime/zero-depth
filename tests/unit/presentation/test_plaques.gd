@@ -6,8 +6,8 @@ extends GutTest
 ## base, stretched as a whole to 1280 x 720 by the project's canvas_items stretch mode, so one check covers both).
 
 const CARD_DIRS := ["res://data/items", "res://data/stat_cards", "res://data/abilities"]
+## v0.9.0 EL (owner Q25): the Ambush Cache is deleted.
 const EVENTS: Array[StringName] = [
-	&"ambush_cache",
 	&"blood_price",
 	&"cleansing_font",
 	&"echo_mirror",

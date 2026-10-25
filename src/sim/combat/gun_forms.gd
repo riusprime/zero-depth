@@ -3,7 +3,9 @@ extends RefCounted
 ## v0.6.5 WN3 (docs/design/WAND.md, the Gun pool G1–G16; SIM_CONTRACTS §8f): the runner features the Gun's cards
 ## needed beyond v0.6.0's (count, spread, circle, back, repeat, pierce, bounces, homing, return, orbit, a hook):
 ## - twin (G3 Twin): every bolt of a shot fires with `twin` more beside it, side by side (parallel, TWIN_GAP_RADII
-##   of its radius apart), each a full bolt;
+##   of its radius apart), each a full bolt; v0.9.0 TW (owner Q8: Twin and Spread merged, "Side by side, fan at 3"):
+##   three or more copies leave from one point instead, the middle one straight and the others fanned TWIN_FAN
+##   apart (the card's level 5 gives the third copy: data/modifiers/gun_twin.tres);
 ## - spiral (G11 Spiral): a projectile's heading swings `spiral` (1/4096 turns) either side of its line as
 ##   spiral × cos(2π age / SPIRAL_TICKS), so it corkscrews round the line it was fired on (the swing is applied as a
 ##   turn of its velocity each tick, after homing, so it rides a homing or a bounced path too);
@@ -11,23 +13,36 @@ extends RefCounted
 ##   touches it (its hit ends it, so its ON_END hooks fire there: the card's blast) or the wait runs out;
 ## - charge (G13 Charge): with a charging bolt the Gun no longer fires on its period while SHOOT is held: holding it
 ##   charges (World.mx.hold_t, up to hold_ticks), and the shot fires on release or at full charge, its size and
-##   damage × 1000 + (hold_permille − 1000) × held / hold_ticks per mille (a tap: a plain shot).
+##   damage × 1000 + (hold_permille − 1000) × held / hold_ticks per mille (a tap: a plain shot). v0.9.0 AF1: the
+##   Lance form (Lance) charges the same way, but a full Lance waits for the release instead of firing by itself.
 ## Pure: no randomness (EI-05), no trig (Kin's tables), one clock (ticks).
 
 ## The corkscrew's period (ticks per full swing) and a twin bolt's gap, in its own radii (starting values).
 const SPIRAL_TICKS := 24
 const TWIN_GAP_RADII := 2.6
+## v0.9.0 TW: the angle between two fanned copies (three or more), in 1/4096 turns (171 ≈ 15°). Starting value.
+const TWIN_FAN := 171
 
 
 # --- Twin ------------------------------------------------------------------------------------------------------
 ## Each bolt's sideways offsets (metres, across the aim) for a spec of radius `r`: [0], or twin + 1 lanes centred
-## on the aim.
+## on the aim (v0.9.0 TW: two lanes side by side; three or more all from the centre, fanned by lane_turns).
 static func lanes(spec: AttackSpec, r: float) -> PackedFloat32Array:
 	var out := PackedFloat32Array()
 	var n := maxi(0, spec.twin) + 1
-	var gap := r * TWIN_GAP_RADII
+	var gap := r * TWIN_GAP_RADII if n == 2 else 0.0
 	for k in n:
 		out.append((k - (n - 1) * 0.5) * gap)
+	return out
+
+
+## v0.9.0 TW: each lane's turn off the bolt's line (1/4096 turns): 0 for one or two lanes; for three or more, the
+## middle lane straight and the others TWIN_FAN apart, centred on it.
+static func lane_turns(spec: AttackSpec) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	var n := maxi(0, spec.twin) + 1
+	for k in n:
+		out.append(0 if n < 3 else (2 * k - (n - 1)) * TWIN_FAN / 2)
 	return out
 
 
@@ -52,7 +67,7 @@ static func hold(w: World, can_fire: bool, fire: Callable) -> void:
 	var held := PlayerKit.shooting(w) and can_fire and w.swing_t == 0
 	if held and w.shot_cd == 0:
 		w.mx.hold_t = mini(w.mx.hold_t + 1, spec.hold_ticks)
-		if w.mx.hold_t < spec.hold_ticks:
+		if w.mx.hold_t < spec.hold_ticks or Lance.is_lance(spec):  # v0.9.0 AF1: a full Lance waits
 			return
 	elif w.mx.hold_t <= 0:
 		return

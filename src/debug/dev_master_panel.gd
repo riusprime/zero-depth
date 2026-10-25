@@ -13,6 +13,8 @@ signal restart_requested
 signal close_requested
 ## v0.8.0 N6 (owner O60): the Playground opens from here (off a run only), not from the main menu.
 signal playground_requested
+## v0.9.0 HB (owner Q27: the small menu): the galleries open from here too (off a run, debug builds only).
+signal galleries_requested
 
 const ROW_H := 26.0
 
@@ -93,6 +95,12 @@ func _top_bar() -> Control:
 		pg.text = "UI_PLAYGROUND"
 		pg.pressed.connect(func() -> void: playground_requested.emit())
 		bar.add_child(pg)
+		if OS.is_debug_build():  # v0.9.0 HB: was the main menu's debug-only row
+			var gl := Button.new()
+			gl.name = "Galleries"
+			gl.text = "UI_GALLERIES"
+			gl.pressed.connect(func() -> void: galleries_requested.emit())
+			bar.add_child(gl)
 	for spec: Array in [
 		["UI_DEVM_RESTART", func() -> void: restart_requested.emit()],
 		["UI_DEVM_RESET_ALL", reset_all],
@@ -235,6 +243,19 @@ func _editor(key: String, value: Variant) -> Control:
 ## When a file's numbers take effect (LiveTuning): lighting at once; most balance when the panel closes; HP and
 ## shards of enemies and bosses on the next spawns; what the floor lays out, and the run's per-floor numbers, on
 ## Restart floor.
+## The DEV mark a tweaked run shows at the top of the screen (Main shows it while a balance value is off the shipped
+## game). (v0.9.0 HB: made here, moved from Main.)
+static func mark_label() -> Label:
+	var l := Label.new()
+	l.name = "DevMark"
+	l.text = "UI_DEVM_MARK"
+	l.add_theme_color_override("font_color", Color(1.0, 0.55, 0.2))
+	l.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	l.position.y = 4
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return l
+
+
 static func hint_key(path: String) -> String:
 	var dir := path.trim_prefix("res://data/").get_slice("/", 0)
 	match dir:

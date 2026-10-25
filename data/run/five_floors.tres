@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="RunDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/run_definition.gd" id="1_run"]
+
+[resource]
+script = ExtResource("1_run")
+floors = 5
+biomes = Array[StringName]([&"ruins", &"night_rocks", &"red_canyon", &"frozen_shore", &"starfall"])
+enemy_hp_floor_permille = PackedInt32Array(1000, 1380, 1900, 2620, 3610)
+enemy_damage_floor_permille = PackedInt32Array(1000, 1180, 1400, 1660, 1960)
+boss_hp_per_floor = 0.2
+boss_damage_per_floor = 0.1
+heal_between_floors = 0.6
+shard_carry = 0.5
+deep_scale = 1.25
+deep_extra_chests = 1
+boss_ease_floor_permille = PackedInt32Array(800, 1000, 1000, 1000, 1000)
+boss_room_heal_floor_permille = PackedInt32Array(1000, 0, 0, 0, 0)
+loop_enemy_hp_permille = 6000
+loop_enemy_damage_permille = 1200
+loop_boss_hp_permille = 6000
+loop_boss_damage_permille = 1200
+loop_scale_cap_permille = 100000
+loop_threat = 2
+loop_catch_up_cap_permille = 500
+loop_deep_ease_permille = 900
+final_bosses = Array[StringName]([&"colossus", &"prism", &"nemesis"])
+final_name_key = &"BOSS_HOLLOW_CROWN"
+final_arena = &"hollow_arena"
+final_shatter_seconds = 1.5
+rooms_min_by_floor = PackedInt32Array(9, 12, 14, 16, 18)
+rooms_max_by_floor = PackedInt32Array(11, 14, 16, 18, 19)
+max_hp_per_floor = 15
+id = &"five_floors"

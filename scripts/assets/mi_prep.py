@@ -24,6 +24,12 @@ those into assets/models/manifest.json and the evidence by hand).
 
 Run from the repo root:  python3 -I scripts/assets/mi_prep.py [ids...]
 Needs: numpy, Pillow, meshoptimizer==0.2.30a0, xatlas==0.0.11, scipy (pip install; offline tool, not shipped).
+
+v0.9.0 MI2 (owner, 2026-10-22: "Use Godot's simplifier"): when meshoptimizer can't be imported (it has no Windows
+wheel), simplify() goes through Godot instead, which embeds meshoptimizer for its LODs: scripts/assets/gd_simplify.gd,
+run headless as a subprocess (the executable from the GODOT environment variable, else `godot` on the PATH). That route
+aims at the exact target too but always locks the mesh's open borders (lock_border=False is not honoured; see
+gd_simplify.gd). meshoptimizer stays the default where it is installed (the cloud/Linux pipeline is unchanged).
 """
 
 import ctypes
@@ -35,11 +41,18 @@ import os
 import struct
 import sys
 
+import subprocess
+import tempfile
+
 import numpy as np
 import xatlas
-from meshoptimizer._loader import lib as _mo
 from PIL import Image
 from scipy.spatial import cKDTree
+
+try:
+    from meshoptimizer._loader import lib as _mo
+except ImportError:  # v0.9.0 MI2: no meshoptimizer (Windows): Godot's simplifier (gd_simplify.gd)
+    _mo = None
 
 SRC = "unprocessed_images/models_v080"
 OUT = {"kit": "assets/models/kit", "enemies": "assets/models/enemies", "devices": "assets/models/devices"}
@@ -217,15 +230,41 @@ def components(nverts, J):
 
 F32P = ctypes.POINTER(ctypes.c_float)
 U32P = ctypes.POINTER(ctypes.c_uint)
-_mo.meshopt_simplify.argtypes = [U32P, U32P, ctypes.c_size_t, F32P, ctypes.c_size_t, ctypes.c_size_t,
-                                 ctypes.c_size_t, ctypes.c_float, ctypes.c_uint, F32P]
-_mo.meshopt_simplify.restype = ctypes.c_size_t
+if _mo is not None:
+    _mo.meshopt_simplify.argtypes = [U32P, U32P, ctypes.c_size_t, F32P, ctypes.c_size_t, ctypes.c_size_t,
+                                     ctypes.c_size_t, ctypes.c_float, ctypes.c_uint, F32P]
+    _mo.meshopt_simplify.restype = ctypes.c_size_t
 LOCK_BORDER = 1
+## The backend simplify() uses (printed by the callers into their summaries).
+BACKEND = "meshoptimizer" if _mo is not None else "godot"
+GD_SIMPLIFY = "scripts/assets/gd_simplify.gd"
+
+
+def simplify_godot(W, J, target_tris):
+    """Godot's simplifier (gd_simplify.gd, headless): only the triangles' own vertices go in; borders always locked."""
+    used, inv = np.unique(J.ravel(), return_inverse=True)
+    pos = np.ascontiguousarray(W[used].astype(np.float32))
+    idx = np.ascontiguousarray(inv.astype(np.uint32))
+    with tempfile.TemporaryDirectory() as tmp:
+        src, dst = os.path.join(tmp, "in.bin"), os.path.join(tmp, "out.bin")
+        with open(src, "wb") as f:
+            f.write(struct.pack("<II", len(pos), idx.size) + pos.tobytes() + idx.tobytes())
+        godot = os.environ.get("GODOT", "godot")
+        r = subprocess.run([godot, "--headless", "--path", ".", "-s", GD_SIMPLIFY, "--", src, dst, str(target_tris)],
+                           capture_output=True, text=True)
+        if r.returncode != 0 or not os.path.exists(dst):
+            raise RuntimeError("gd_simplify failed (%d): %s" % (r.returncode, (r.stdout + r.stderr)[-2000:]))
+        data = open(dst, "rb").read()
+    m = struct.unpack("<I", data[:4])[0]
+    out = np.frombuffer(data[4 : 4 + 4 * m], np.uint32).astype(np.int64)
+    return used[out].reshape(-1, 3)
 
 
 def simplify(W, J, target_tris, lock_border):
     if len(J) <= target_tris:
         return J
+    if _mo is None:
+        return simplify_godot(W, J, target_tris)
     idx = np.ascontiguousarray(J.ravel().astype(np.uint32))
     pos = np.ascontiguousarray(W.astype(np.float32))
     dst = np.zeros(idx.size, np.uint32)

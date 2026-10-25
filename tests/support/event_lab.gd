@@ -20,7 +20,7 @@ static func world(
 ) -> World:
 	var r := repo()
 	var run := RunState.start(
-		run_seed, ContentCompiler.compile_run(r.get_def(&"run", &"three_floors")), build
+		run_seed, ContentCompiler.compile_run(r.get_def(&"run", RunSaver.RUN_ID)), build
 	)
 	run.floor_index = floor_index
 	if not curses.is_empty():
@@ -35,7 +35,9 @@ static func world(
 	run.scale_enemies(enemies)
 	var bosses := ContentCompiler.compile_bosses(r)
 	run.scale_bosses(bosses)
-	var boss := run.pick_boss(ContentCompiler.compile_boss_pool(r, floor_index))
+	var boss := FloorShape.boss(
+		run, RunContentCompiler.compile_boss_pools(r, run.table.floors), run.floor_index
+	)
 	var arena := (
 		BossArenaSpec.make(bosses[boss].arena_cells, bosses[boss].arena_template, boss)
 		if boss >= 0

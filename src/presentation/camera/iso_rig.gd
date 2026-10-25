@@ -7,6 +7,13 @@ const YAW_DEG := 45.0
 ## v0.8.0 GF3 (owner O22): the hit-stop's tiny camera kick: an offset (screen metres: h, v) along the swing, easing
 ## back over KICK_SECONDS. Off with shake off or reduced motion, like the shake.
 const KICK_SECONDS := 0.09
+## v0.9.0 CV (owner C20-C22, Q17: "a short, subtle vibration … without visibly pulling the camera across the screen"):
+## the vibration's offset at level 1 (screen metres) and how fast a thud fades (level per second). Three fast
+## incommensurate sines per axis (Hz): a buzz with no direction that averages to nothing, unlike shake()'s sweep.
+const VIBRATE_M := 0.06
+const VIBRATE_DECAY := 2.2
+const VIBRATE_HZ_H := [23.0, 31.7, 47.3]
+const VIBRATE_HZ_V := [19.3, 37.1, 53.9]
 
 @export var pitch_deg := 35.26
 ## Vertical extent of the view in metres (ortho size).
@@ -27,6 +34,9 @@ var _shake_seed := 0
 ## v0.8.0 GF3: the kick (see KICK_SECONDS).
 var _kick := Vector2.ZERO
 var _kick_t := 0.0
+## v0.9.0 CV: the vibration's level (0..1) and its clock (seconds).
+var _vibrate := 0.0
+var _vibrate_t := 0.0
 var _pitch: Node3D
 
 
@@ -68,7 +78,9 @@ func _process(delta: float) -> void:
 	camera.rotation.z = flourish_roll
 	_shake = maxf(0.0, _shake - delta * 2.5)
 	_shake_seed += 1
-	var off := kick_offset()
+	_vibrate = maxf(0.0, _vibrate - delta * VIBRATE_DECAY)
+	_vibrate_t += delta
+	var off := kick_offset() + vibration_offset()
 	_kick_t = maxf(0.0, _kick_t - delta)
 	if _shake > 0.0:
 		var a := float(_shake_seed) * 2.399
@@ -127,6 +139,36 @@ func set_flourish(roll: float, zoom: float) -> void:
 
 func shake_level() -> float:
 	return _shake
+
+
+## v0.9.0 CV: holds the vibration at `level` (0..1) at least: a build-up (the arrival's charge, the Ascension portal's
+## pull). It fades by itself once nothing holds it. Off with shake off or reduced motion, like the shake.
+func vibrate_to(level: float) -> void:
+	if shake_enabled and not ViewPrefs.reduced_motion:
+		_vibrate = maxf(_vibrate, clampf(level, 0.0, 1.0))
+
+
+## v0.9.0 CV: a burst of vibration (a heavy landing: the hero's pop, the boss door's slab) that eases out.
+func thud(amount: float) -> void:
+	if shake_enabled and not ViewPrefs.reduced_motion:
+		_vibrate = minf(1.0, _vibrate + amount)
+
+
+func vibration_level() -> float:
+	return _vibrate
+
+
+## v0.9.0 CV: the vibration's offset now (screen metres: h, v), at most VIBRATE_M × the level on each axis.
+func vibration_offset() -> Vector2:
+	if _vibrate <= 0.0:
+		return Vector2.ZERO
+	return Vector2(_buzz(VIBRATE_HZ_H), _buzz(VIBRATE_HZ_V)) * VIBRATE_M * _vibrate
+
+
+## A sum of fast sines weighted 0.5 / 0.3 / 0.2 (so within -1..1), at the rig's clock.
+func _buzz(hz: Array) -> float:
+	var t := _vibrate_t * TAU
+	return 0.5 * sin(t * hz[0]) + 0.3 * sin(t * hz[1] + 1.3) + 0.2 * sin(t * hz[2] + 2.1)
 
 
 ## Horizontal direction on the sim plane from a point toward the camera.

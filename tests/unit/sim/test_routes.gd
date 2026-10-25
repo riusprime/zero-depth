@@ -18,7 +18,7 @@ func before_all() -> void:
 
 
 func _run_table() -> RunTable:
-	return ContentCompiler.compile_run(_repo.get_def(&"run", &"three_floors"))
+	return ContentCompiler.compile_run(_repo.get_def(&"run", RunSaver.RUN_ID))
 
 
 ## A run on floor `f`, every floor before it taken by `route`.
@@ -31,8 +31,10 @@ func _run_on(f: int, route: int = Routes.Route.NORMAL, seed_value: int = 7) -> R
 
 
 ## A real floor (the app's FloorScenario) on the run's current floor, with an invulnerable player, the build's
-## abilities and the stat cards (as Main sets them up).
-func _floor(run: RunState, seed_value: int = -1) -> World:
+## abilities and the stat cards (as Main sets them up). v0.9.0 DP (owner Q26b): the Deep gate is earned by the floor's
+## purple runes; `earned` (TEST HELPER) earns it as their awakening does (PurpleRunes.earn), so these route tests keep
+## their gate; test_purple_runes covers the runes themselves.
+func _floor(run: RunState, seed_value: int = -1, earned: bool = true) -> World:
 	var t := ContentCompiler.compile_player(_repo.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(t, _repo.get_def(&"build", &"blade"))
 	var enemies := ContentCompiler.compile_enemies(_repo)
@@ -58,6 +60,8 @@ func _floor(run: RunState, seed_value: int = -1) -> World:
 	Abilities.grant_start(w)
 	Abilities.start_floor(w)
 	w.actors.invuln[0] = LONG
+	if earned and w.floor_layout.has_deep_portal:
+		PurpleRunes.earn(w)
 	return w
 
 
@@ -121,30 +125,35 @@ func test_the_run_data_has_the_deep_numbers() -> void:
 	)
 
 
-func test_two_gates_only_after_the_bosses_of_floors_one_and_two() -> void:
-	for f: int in [1, 2, 3]:
+## v0.9.0 FV: five floors, the Deep gate on floors 1-4 (every floor before the last); v0.9.0 DP: once earned.
+func test_two_gates_only_after_the_bosses_of_floors_one_to_four() -> void:
+	for f: int in [1, 2, 3, 4, 5]:
 		var run := _run_on(f)
-		assert_eq(Routes.offers_choice(run), f < 3, "floor %d" % f)
+		assert_eq(Routes.offers_choice(run), f < 5, "floor %d" % f)
+		assert_false(
+			WorldReader.new(_floor(run, -1, false)).has_deep_portal(),
+			"floor %d: no Deep gate unless earned (v0.9.0 DP)" % f
+		)
 		var w := _floor(run)
 		var reader := WorldReader.new(w)
 		assert_eq(
 			reader.has_deep_portal(),
-			f < 3,
+			f < 5,
 			"floor %d: the Deep gate stands only before the last" % f
 		)
-		assert_eq(w.floor_layout.has_deep_portal, f < 3)
+		assert_eq(w.floor_layout.has_deep_portal, f < 5)
 		var before := w.walls.size()
 		assert_false(reader.gate_open(Routes.Route.DEEP), "sealed before the boss dies")
 		assert_false(reader.gate_open(Routes.Route.NORMAL))
 		_open_gates(w)
 		assert_true(reader.gate_open(Routes.Route.NORMAL), "floor %d: the gate opens" % f)
 		assert_eq(
-			reader.gate_open(Routes.Route.DEEP), f < 3, "floor %d: the Deep gate opens with it" % f
+			reader.gate_open(Routes.Route.DEEP), f < 5, "floor %d: the Deep gate opens with it" % f
 		)
 		var opened := _events_of(w, SimEvent.Kind.PORTAL_OPENED)
 		assert_eq(opened.size(), 1)
 		assert_eq(
-			opened[0].amount, 1 if f < 3 else 0, "the event says whether the Deep gate opened"
+			opened[0].amount, 1 if f < 5 else 0, "the event says whether the Deep gate opened"
 		)
 		assert_eq(w.walls.size(), before, "no wall was left behind (v0.5.0 PB: the door reopened)")
 	var plain := WorldReader.new(World.new(1, PlayerTable.starting_values()))
@@ -378,14 +387,16 @@ func test_the_deep_gate_fits_every_boss_room_property() -> void:
 		assert_true(r.grow(0.001).encloses(box.bounds()), "inside the boss room")
 		assert_true(r.grow(0.001).encloses(Routes.deep_front(f)), "its front too")
 		assert_false(
-			Routes.zone(f.deep_portal_pos, f.deep_portal_angle).intersects(
-				Routes.zone(f.portal_pos, f.portal_angle)
+			Routes.zone(f, f.deep_portal_pos, f.deep_portal_angle).intersects(
+				Routes.zone(f, f.portal_pos, f.portal_angle)
 			),
 			"apart from the gate"
 		)
 		for i in range(f.slab_first, f.walls.size()):
 			assert_false(
-				f.walls[i].bounds().intersects(Routes.zone(f.deep_portal_pos, f.deep_portal_angle)),
+				f.walls[i].bounds().intersects(
+					Routes.zone(f, f.deep_portal_pos, f.deep_portal_angle)
+				),
 				"seed %d: no cover in front of it" % (3000 + s)
 			)
 		assert_eq(

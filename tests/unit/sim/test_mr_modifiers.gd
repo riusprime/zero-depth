@@ -76,8 +76,49 @@ func test_twin_lanes_each_deal_sixty_percent_and_the_second_is_secondary() -> vo
 	assert_eq(
 		w.projectiles.second_of(m[1]), ProjectileStore.SECONDARY, "the second lane is secondary"
 	)
-	_at(w, &"gun_twin", 5)
-	assert_eq(Modifiers.bolt(w).share_permille, 800, "+5 % a level")
+
+
+## v0.9.0 TW (owner Q8: Twin and Spread merged; "+10 % per level"; "Side by side, fan at 3"): two copies at levels
+## 1–4 at 60 / 70 / 80 / 90 % each, three at level 5 at 70 % each; two side by side, three fanned from one point.
+func test_twin_copies_and_share_by_level() -> void:
+	var d := _plain_bolt_damage()
+	var w := W.world(&"gun", [&"gun_twin"])
+	var got := []
+	for lvl in range(1, 6):
+		_at(w, &"gun_twin", lvl)
+		var s := Modifiers.bolt(w)
+		got.append([s.twin + 1, s.share_permille])
+	assert_eq(got, [[2, 600], [2, 700], [2, 800], [2, 900], [3, 700]])
+	W.run(w, 1, 0, W.S)
+	var m := _mine(w)
+	assert_eq(m.size(), 3, "level 5: three copies")
+	var p := w.projectiles
+	var turns := []
+	for i in m:
+		assert_eq(p.damage[i], maxi(1, (d * 700 + 500) / 1000), "each copy 70 %")
+		turns.append(Kin.angle_of(Vector2(p.vel_x[i], p.vel_y[i])))
+	turns.sort()  # 0 (straight), then one fanned left (+), then one fanned right (just under a full turn)
+	assert_eq(turns[0], 0, "the middle copy flies straight")
+	assert_almost_eq(turns[1], GunForms.TWIN_FAN, 1, "one fans one way")
+	assert_almost_eq(4096 - turns[2], GunForms.TWIN_FAN, 1, "the other the other way")
+	var kinds := []
+	for i in m:
+		kinds.append(p.second_of(i))
+	assert_eq(
+		kinds, [ProjectileStore.SECONDARY, 0, ProjectileStore.SECONDARY], "the middle is primary"
+	)
+
+
+func test_twin_two_copies_fly_side_by_side() -> void:
+	var w := W.world(&"gun", [&"gun_twin"])
+	_at(w, &"gun_twin", 4)
+	W.run(w, 1, 0, W.S)
+	var m := _mine(w)
+	assert_eq(m.size(), 2)
+	var p := w.projectiles
+	for i in m:
+		assert_eq(Kin.angle_of(Vector2(p.vel_x[i], p.vel_y[i])), 0, "parallel")
+	assert_gt(absf(p.pos_y[m[0]] - p.pos_y[m[1]]), 0.1, "apart, across the aim")
 
 
 func test_spread_is_two_more_then_one_a_level_each_bolt_a_share() -> void:

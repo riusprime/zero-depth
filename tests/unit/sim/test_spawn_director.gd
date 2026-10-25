@@ -77,19 +77,20 @@ func _packs(spawns: Array) -> Array:
 func test_the_cap_follows_the_formula_per_floor_and_tier() -> void:
 	var t := _table()
 	assert_eq(t.tier_ticks, 1800, "30 s")
-	var base := {1: 14, 2: 30, 3: 50}
-	for f in [1, 2, 3]:
+	var base := {1: 14, 2: 22, 3: 30, 4: 40, 5: 50}  # v0.9.0 FV: five floors (was 14, 30, 50)
+	for f in [1, 2, 3, 4, 5]:
 		for tier in 30:
 			assert_eq(
 				t.cap(f, tier), mini(base[f] + 6 * tier, 120), "cap, floor %d tier %d" % [f, tier]
 			)
 	assert_eq(t.cap(1, 0), 14)
-	assert_eq(t.cap(2, 0), 30)
-	assert_eq(t.cap(3, 0), 50)
+	assert_eq(t.cap(2, 0), 22)
+	assert_eq(t.cap(3, 0), 30)
+	assert_eq(t.cap(5, 0), 50)
 	assert_eq(t.cap(1, 17), 116)
 	assert_eq(t.cap(1, 18), 120, "floor 1 reaches the hard cap at tier 18")
-	assert_eq(t.cap(3, 12), 120, "floor 3 at tier 12")
-	assert_eq(t.cap(4, 0), 50, "a floor past the table keeps the last entry")
+	assert_eq(t.cap(5, 12), 120, "floor 5 at tier 12")
+	assert_eq(t.cap(6, 0), 50, "a floor past the table keeps the last entry")
 
 
 ## The tier tables are integer per-mille data (EI-02): within rounding of 1.10^tier, 1.05^tier and 0.9^tier, up to
@@ -361,11 +362,11 @@ func test_packs_on_a_floor_keep_the_placement_rules() -> void:
 
 ## v0.4.0 SC (F7): a floor at a high danger tier fields a large crowd (the cap at floor 3, tier 12 is 120).
 func test_a_high_tier_floor_fields_a_large_crowd() -> void:
-	var w := FightLab.floor_world(20261007, 3)
+	var w := FightLab.floor_world(20261007, 5)  # v0.9.0 FV: the last floor's cap of 50 (floor 3's is 30 now)
 	w.actors.invuln[0] = LONG
 	w.run_ticks = 1800 * 12
 	var t := w.spawner
-	assert_eq(t.cap(3, 12), 120)
+	assert_eq(t.cap(5, 12), 120)
 	var peak := 0
 	for n in 1500:
 		w.step(InputFrame.new())

@@ -20,6 +20,11 @@ const COLORS := {
 	WorldReader.KIND_COLOSSUS: Color("#C060FF"),  # v0.8.0 FB1: the final boss's violet
 	WorldReader.KIND_PRISM: Color("#FF4A6A"),
 	WorldReader.KIND_NEMESIS: Color("#B070FF"),
+	WorldReader.KIND_TIDECALLER: Color("#5FE0A8"),  # v0.9.0 NB1: sea green (not the hero's cyan)
+	WorldReader.KIND_TWIN_WARDEN: Color("#FFB347"),  # v0.9.0 NB2: amber
+	WorldReader.KIND_TWIN_WARDEN_VIOLET: Color("#B98CFF"),  # and violet
+	WorldReader.KIND_CLOCKWORK_JUDGE: Color("#E8B84A"),  # v0.9.0 NB3: brass gold
+	WorldReader.KIND_LANTERN_SHADE: Color("#F3DC9A"),  # v0.9.0 NB4: pale lantern gold
 }
 const DEFAULT_COLOR := Color("#E6E0FF")
 const SHOW_S := 0.15
