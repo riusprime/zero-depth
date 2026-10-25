@@ -150,6 +150,9 @@ const SLOT_CATEGORIES: Array[StringName] = [&"free", &"form", &"pattern", &"seco
 @export var phase_radius_m := 0.0
 @export var phase_guard_window_seconds := 0.0
 # --- Engines (v0.3.0 G). An engine's numbers live in each item that feeds it; owning several takes the strongest.
+## v0.9.5 CLV (CARD_LEVELS.md): how many levels this wand card has (1..5); 0 = the default, CardLevels.MAX_LEVEL. A
+## card with 1 is offered once and never again while held.
+@export var level_max := 0
 ## Tags from TAGS: at least one, no repeats.
 @export var tags: PackedStringArray = PackedStringArray()
 ## Stacks one qualifying hit of a source that is not a weapon attack adds (Static Chain's jumps, Overcharge's
@@ -290,6 +293,8 @@ func validate() -> Array[ValidationIssue]:
 			)
 		)
 	_check_tags(issues)
+	if level_max < 0 or level_max > 5:
+		issues.append(ValidationIssue.new(&"range", resource_path, "level_max is 0..5"))
 	if kind == Kind.WAND and not tags.has("wand"):
 		issues.append(ValidationIssue.new(&"tags", resource_path, "a WAND card is tagged wand"))
 	if tags.has("wand") and modifiers.is_empty():

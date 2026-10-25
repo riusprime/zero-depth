@@ -16,4 +16,5 @@ bleed_move_period_seconds = 0.25
 modifiers = Array[StringName]([&"shared_bleed"])
 loot_category = &"element"
 slot_category = &"element"
+level_max = 3
 id = &"shared_bleed"

@@ -16,4 +16,5 @@ tags = PackedStringArray("venom", "wand")
 modifiers = Array[StringName]([&"venom_core"])
 loot_category = &"element"
 slot_category = &"element"
+level_max = 3
 id = &"venom_core"

@@ -83,6 +83,8 @@ static func level_of_kind(w: World, kind: int) -> int:
 static func can_take(w: World, idx: int) -> bool:
 	if w.ability_tables[idx].retired:
 		return false  # v0.6.5 WN5b: a retired ability modifier is never offered (Abilities.grant still takes it)
+	if not w.ability_tables[idx].offered:
+		return false  # v0.9.5 CLV (C19): the Pulse Gun never comes back as a card, held at any level or not
 	var s := w.ability_owned.find(idx)
 	if s >= 0:
 		return w.ability_levels[s] < AbilityTable.MAX_LEVEL

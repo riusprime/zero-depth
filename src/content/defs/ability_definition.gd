@@ -81,6 +81,9 @@ const ENGINE_KINDS: Array[int] = [Kind.ARC_FIELD, Kind.FROST_NOVA, Kind.FLAME_TR
 @export var desc_key: StringName
 ## The build weapon whose slot 1 this ability is (&"blade", &"gun"), or empty for an ability card.
 @export var start_weapon: StringName = &""
+## v0.9.5 CLV (CARD_LEVELS.md C19): false = a starting weapon is never offered as a card (no level-ups; the Pulse Gun).
+## Its level data stays so an old save keeps its level.
+@export var offered := true
 @export var tags: Array[StringName] = []
 @export var cooldown_seconds := 0.0
 @export var damage := 0

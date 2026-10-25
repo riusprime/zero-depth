@@ -137,3 +137,23 @@ func test_the_hud_pips_and_the_build_row_show_a_wand_cards_level() -> void:
 	add_child_autofree(row)
 	row.show_wand(r.wand(), 8)
 	assert_eq(row.level_text(k), "Lv 4", "and its tile on the Build page")
+
+
+## v0.9.5 CLV: a card of one level wears no level badge (its pick card never says "level up"); a card of three levels
+## reads "Lv 1/3" when new and "Lv 1 → 2" when taking it again, and its Build row reads "Lv 2/3".
+func test_a_one_level_card_has_no_badge_and_a_three_level_card_reads_n_of_3() -> void:
+	var w := _world([])
+	var r := WorldReader.new(w)
+	var pierce := WandLab.code(w, &"gun_pierce")
+	assert_false(bool(r.card_info(pierce)["wand"]), "Pierce has no levels")
+	assert_eq(PickPanel.card_face(self, r, pierce)["level_text"], "", "no badge when new")
+	assert_true(BuildSlots.take(w, pierce))
+	assert_eq(PickPanel.card_face(self, r, pierce)["level_text"], "", "none when held either")
+	var twin := WandLab.code(w, &"gun_twin")
+	assert_eq(int(r.card_info(twin)["max_level"]), 3)
+	assert_eq(PickPanel.card_face(self, r, twin)["level_text"], "Lv 1/3", "new: Lv 1/3")
+	assert_true(BuildSlots.take(w, twin))
+	assert_eq(PickPanel.card_face(self, r, twin)["level_text"], "Lv 1 → 2", "held: Lv 1 → 2")
+	TranslationServer.set_locale("es")
+	assert_eq(PickPanel.level_text(self, 0, 1, 3), "Nv 1/3", "in Spanish")
+	TranslationServer.set_locale("en")

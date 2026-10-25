@@ -159,9 +159,9 @@ func test_wn3_values_and_levels_convert() -> void:
 		by_id[t.id] = t
 	var mine: ModifierTable = by_id[&"gun_mine"]
 	assert_eq(
-		[mine.ops[0].field, mine.ops[0].value, mine.ops[0].per_level], [&"mine_ticks", 180.0, 30.0]
+		[mine.ops[0].field, mine.ops[0].value, mine.ops[0].per_level], [&"mine_ticks", 240.0, 0.0]
 	)
-	assert_eq(mine.ops[1].per_level, 100.0, "the blast's share +100 ‰ a level")
+	assert_eq(mine.ops[1].per_level, 0.0, "v0.9.5 CLV: the blast's share is fixed")
 	var spiral: ModifierTable = by_id[&"gun_spiral"]
 	assert_eq([spiral.ops[0].field, spiral.ops[0].value], [&"spiral", 398.0], "35° in 1/4096 turns")
 	var charge: ModifierTable = by_id[&"gun_charge"]

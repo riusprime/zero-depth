@@ -7,8 +7,8 @@
 script = ExtResource("2_op")
 op = 4
 field = &"count"
-value = 3000.0
-per_level = 1000.0
+value = 4000.0
+per_level = 2000.0
 
 [sub_resource type="Resource" id="Op_2"]
 script = ExtResource("2_op")

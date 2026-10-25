@@ -15,4 +15,5 @@ tags = PackedStringArray("fire", "wand")
 modifiers = Array[StringName]([&"ember_core"])
 loot_category = &"element"
 slot_category = &"element"
+level_max = 3
 id = &"ember_core"

@@ -55,7 +55,11 @@ func _run(
 	for t in ticks:
 		w.step(AttackScenario.frame(t))
 		if w.launch_tick == w.tick - 1:
-			max_launches = maxi(max_launches, w.launch_count)
+			# v0.9.5 CLV: the launches that ran (launch_count also counts the attempts a fan-out loop makes after the cap
+			# holds, which grow with the shot counts; the cap itself is Attacks._count's)
+			max_launches = maxi(
+				max_launches, mini(w.launch_count, Attacks.MAX_LAUNCHES_PER_TICK + 1)
+			)
 		max_projectiles = maxi(max_projectiles, w.projectiles.size())
 		for e in w.events_since(seen):
 			seen = e.seq

@@ -190,7 +190,7 @@ func test_the_gain_line_is_the_forecast_and_the_outcome() -> void:
 	var w := _world()
 	var dmg := _stat(w, &"damage", Stats.Rarity.RARE)
 	var hp := _stat(w, &"max_hp", Stats.Rarity.EPIC)
-	var pierce := _item(w, &"gun_pierce")
+	var pierce := _item(w, &"gun_spread")  # v0.9.5 CLV: Pierce no longer levels
 	w.add_item(pierce)  # held at level 1: a level-up
 	var r := WorldReader.new(w)
 	var f_dmg := r.card_forecast(dmg)

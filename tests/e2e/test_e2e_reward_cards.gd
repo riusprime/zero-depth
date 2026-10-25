@@ -124,7 +124,7 @@ func test_a_jackpot_card_says_so_on_the_pick() -> void:
 	# TEST HELPER (labelled): the jackpot every offer (its shipped 15 per mille is test_loot_rewards' job)
 	w.loot_pacing.jackpot_permille = 1000
 	# TEST HELPER (labelled): a held card at floor 1's ceiling is the jackpot pool now that the mutations are retired
-	var big := AttackScenario.item_index(w.item_tables, &"gun_big_shot")
+	var big := AttackScenario.item_index(w.item_tables, &"gun_twin")  # v0.9.5 CLV: Big Shot no longer levels
 	assert_true(BuildSlots.take(w, big) and CardLevels.set_level(w, big, 2))
 	var i := E2e.nearest_reward(w, RewardStore.Kind.ALTAR)
 	assert_gte(i, 0, "an altar on the floor")

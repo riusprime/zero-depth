@@ -215,18 +215,18 @@ func test_bosses_and_elites_feel_no_pull() -> void:
 	assert_eq(VoidShots.pull_permille(b, 1), 1000)
 
 
-func test_twin_throws_two_voids_and_three_at_level_five_at_its_share() -> void:
+func test_twin_throws_two_voids_and_three_at_level_three_at_its_share() -> void:
 	var w := _world([&"gun_twin"], [])
 	var twin := W.item(w, &"gun_twin")
-	for lvl in [1, 4, 5]:
+	for lvl in [1, 2, 3]:
 		CardLevels.set_level(w, twin, lvl)
-		assert_eq(ShotCap.shots(Modifiers.bolt(w)), 3 if lvl == 5 else 2, "Twin Lv %d" % lvl)
+		assert_eq(ShotCap.shots(Modifiers.bolt(w)), 3 if lvl == 3 else 2, "Twin Lv %d" % lvl)
 	CardLevels.set_level(w, twin, 1)
 	W.run(w, 2, 0, W.S)
 	var dmg := []
 	for i in _voids(w):
 		dmg.append(w.projectiles.damage[i])
-	assert_eq(dmg, [6, 6], "two voids at 60 % of 10 each")
+	assert_eq(dmg, [7, 7], "two voids at 70 % of 10 each")
 
 
 func test_the_elements_apply_on_the_aura_at_the_fair_rate() -> void:

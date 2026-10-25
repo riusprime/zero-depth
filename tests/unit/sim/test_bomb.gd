@@ -100,20 +100,20 @@ func test_attack_speed_counts_at_half() -> void:
 	assert_eq(ItemEffects.shot_period_ticks(o), AttackRate.scaled(9, r), "the orbs take it whole")
 
 
-func test_twin_throws_two_bombs_and_three_at_level_five_at_its_share() -> void:
+func test_twin_throws_two_bombs_and_three_at_level_three_at_its_share() -> void:
 	var w := _world([&"gun_twin"], [])
 	var twin := W.item(w, &"gun_twin")
-	for lvl in [1, 4, 5]:
+	for lvl in [1, 2, 3]:
 		CardLevels.set_level(w, twin, lvl)
 		var s := Modifiers.bolt(w)
-		assert_eq(ShotCap.shots(s), 3 if lvl == 5 else 2, "Twin Lv %d" % lvl)
+		assert_eq(ShotCap.shots(s), 3 if lvl == 3 else 2, "Twin Lv %d" % lvl)
 	CardLevels.set_level(w, twin, 1)
 	W.run(w, 2, 0, W.S)
 	var dmg := []
 	for i in w.projectiles.size():
 		if Bomb.touches(w, i):
 			dmg.append(w.projectiles.damage[i])
-	assert_eq(dmg, [13, 13], "two bombs at 60 % of 22 each: not double, a trade (spread blasts)")
+	assert_eq(dmg, [15, 15], "two bombs at 70 % of 22 each: not double, a trade (spread blasts)")
 
 
 func test_the_elements_apply_on_the_blast_to_every_enemy_in_it() -> void:

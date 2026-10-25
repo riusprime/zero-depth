@@ -61,14 +61,14 @@ func test_g1_big_shot_is_a_fat_slow_orb() -> void:
 	var p := _plain()
 	var w := W.world(&"gun", [&"gun_big_shot"], [[Vector2(3.0, 0.0), 2000]])
 	var s := Modifiers.bolt(w)
-	assert_almost_eq(s.radius_m, p.radius_m * 2.0, 1e-5, "× 2 size")
+	assert_almost_eq(s.radius_m, p.radius_m * 2.2, 1e-5, "× 2.2 size")
 	assert_almost_eq(s.speed, p.speed * 0.75, 1e-5, "− 25 % speed")
-	assert_eq(s.damage, p.damage * 1600 / 1000, "× 1.6 damage")
-	assert_eq(s.damage_mul_permille, 1600, "the view's weight")
+	assert_eq(s.damage, p.damage * 1800 / 1000, "× 1.8 damage")
+	assert_eq(s.damage_mul_permille, 1800, "the view's weight")
 	W.run(w, 1, 0, W.S)
 	W.run(w, 1)
 	assert_almost_eq(
-		w.projectiles.radius[_mine(w)[0]], p.radius_m * 2.0, 1e-5, "the bolt in flight"
+		w.projectiles.radius[_mine(w)[0]], p.radius_m * 2.2, 1e-5, "the bolt in flight"
 	)
 	W.run(w, 30)
 	var d := W.damage(w, &"")
@@ -130,7 +130,7 @@ func test_g4_spread_becomes_a_three_shot_fan() -> void:
 func test_g5_split_bursts_into_three_half_size_shards_at_the_hit() -> void:
 	var w := W.world(&"gun", [&"split_shot"], [[Vector2(2.0, 0.0), 2000]])
 	var k := W.hook_of(Modifiers.bolt(w), &"split_shot")
-	assert_eq([k.trigger, k.child.count], [TRIG.ON_HIT, 3])
+	assert_eq([k.trigger, k.child.count], [TRIG.ON_HIT, 2])
 	# v0.8.0 GF1: the splits keep the card's own 0.08 m (half the old 0.16 m bolt; the bolt grew, the card didn't).
 	assert_almost_eq(k.child.radius_m, 0.08, 1e-5, "the card's size")
 	assert_lt(k.child.radius_m, _plain().radius_m * 0.5, "under half the bolt")
@@ -139,13 +139,13 @@ func test_g5_split_bursts_into_three_half_size_shards_at_the_hit() -> void:
 	for t in 20:
 		w.step(W.frame())
 		seen = maxi(seen, W.projectiles_of(w, &"split_shot"))
-	assert_eq(seen, 3)
+	assert_eq(seen, 2)
 
 
 func test_g6_pierce_streaks_through_two_enemies() -> void:
 	var line := [[Vector2(2.0, 0.0), 2000], [Vector2(3.0, 0.0), 2000], [Vector2(4.0, 0.0), 2000]]
 	var w := W.world(&"gun", [&"gun_pierce"], line)
-	assert_eq(Modifiers.bolt(w).pierce, 2)
+	assert_eq(Modifiers.bolt(w).pierce, 4)
 	W.run(w, 1, 0, W.S)
 	W.run(w, 30)
 	assert_eq(W.targets(W.damage(w, &"")).size(), 3, "one bolt, three enemies in a line")
@@ -159,7 +159,7 @@ func test_g7_ricochet_bounces_off_walls_twice() -> void:
 	var w := W.world(&"gun", [&"gun_ricochet"])
 	var walls: Array[Obb] = [Obb.make(Vector2(3.0, 0.0), Vector2(0.3, 4.0), 0)]
 	w.set_walls(walls)
-	assert_eq(Modifiers.bolt(w).bounces, 2)
+	assert_eq(Modifiers.bolt(w).bounces, 3)
 	W.run(w, 1, 0, W.S)
 	var back := false
 	for t in 20:
@@ -167,7 +167,7 @@ func test_g7_ricochet_bounces_off_walls_twice() -> void:
 		var m := _mine(w)
 		back = back or (not m.is_empty() and w.projectiles.vel_x[m[0]] < 0.0)
 	assert_true(back, "it comes off the wall")
-	assert_eq(w.projectiles.bounces[_mine(w)[0]], 1, "one bounce left")
+	assert_eq(w.projectiles.bounces[_mine(w)[0]], 2, "two bounces left")
 
 
 func test_g8_homing_curves_toward_the_nearest_enemy() -> void:
@@ -233,7 +233,7 @@ func test_g11_spiral_travels_in_a_corkscrew() -> void:
 func test_g12_mine_stops_at_its_range_waits_and_explodes_on_contact() -> void:
 	var w := W.world(&"gun", [&"gun_mine"])
 	var s := Modifiers.bolt(w)
-	assert_eq(s.mine_ticks, 180, "3 s")
+	assert_eq(s.mine_ticks, 240, "4 s")
 	var k := W.hook_of(s, &"gun_mine")
 	assert_eq([k.trigger, k.child.form], [TRIG.ON_END, FORM.BURST])
 	W.run(w, 1, 0, W.S)
@@ -249,8 +249,8 @@ func test_g12_mine_stops_at_its_range_waits_and_explodes_on_contact() -> void:
 	assert_gt(W.damage(w, &"gun_mine").size(), 0, "the blast hits")
 	var lone := W.world(&"gun", [&"gun_mine"])
 	W.run(lone, 1, 0, W.S)
-	W.run(lone, s.life_ticks + 170)
-	assert_eq(_mine(lone).size(), 1, "an untouched mine waits its 3 s")
+	W.run(lone, s.life_ticks + 230)
+	assert_eq(_mine(lone).size(), 1, "an untouched mine waits its 4 s")
 	W.run(lone, 20)
 	assert_eq(_mine(lone).size(), 0, "then it's gone")
 
@@ -280,14 +280,14 @@ func test_g13_charge_grows_while_held_and_fires_on_release() -> void:
 func test_g14_echo_fires_again_later_at_sixty_percent() -> void:
 	var w := W.world(&"gun", [&"gun_echo"])
 	var s := Modifiers.bolt(w)
-	assert_eq([s.repeat_delay_ticks, s.repeat_damage_permille], [18, 500])  # v0.8.0 MR: 50 %
+	assert_eq([s.repeat_delay_ticks, s.repeat_damage_permille], [18, 600])  # v0.9.5 CLV: 60 %
 	W.run(w, 1, 0, W.S)
 	assert_eq(_mine(w).size(), 1)
 	assert_eq(w.mx.q_key.size(), 1, "the echo waits")
 	W.run(w, 18)
 	var m := _mine(w)
 	assert_eq(m.size(), 2, "a ghost volley follows")
-	assert_eq(w.projectiles.damage[m[1]], s.damage * 500 / 1000)
+	assert_eq(w.projectiles.damage[m[1]], s.damage * 600 / 1000)
 
 
 func test_g15_backfire_also_fires_behind_you() -> void:
@@ -305,9 +305,9 @@ func test_g16_halo_fires_a_ring_at_half_range() -> void:
 	var p := _plain()
 	var w := W.world(&"gun", [&"halo_shot"])
 	var s := Modifiers.bolt(w)
-	assert_eq([s.count, s.directions, s.life_ticks], [3, AttackSpec.DIR_CIRCLE, p.life_ticks / 2])
+	assert_eq([s.count, s.directions, s.life_ticks], [4, AttackSpec.DIR_CIRCLE, p.life_ticks / 2])
 	W.run(w, 1, 0, W.S)
-	assert_eq(_mine(w).size(), 3, "a ring of shots")
+	assert_eq(_mine(w).size(), 4, "a ring of shots")
 
 
 # --- In a fight --------------------------------------------------------------------------------------------------
@@ -327,7 +327,7 @@ func test_every_gun_card_changes_the_scripted_gun_fight_and_replays() -> void:
 func test_the_view_reads_each_cards_look_on_the_bolt() -> void:
 	# AttackFormLooks composes the bolt from its spec (never from the cards held): size, count, path and cue.
 	var want := {
-		&"gun_big_shot": ["width", 1.3],
+		&"gun_big_shot": ["width", 1.4],
 		&"gun_twin": ["cue", &"twin"],
 		&"gun_spread": ["count", 3],
 		&"gun_pierce": ["cue", &"streak"],
@@ -337,7 +337,7 @@ func test_the_view_reads_each_cards_look_on_the_bolt() -> void:
 		&"gun_spiral": ["cue", &"helix"],
 		&"gun_mine": ["cue", &"mine"],
 		&"gun_charge": ["cue", &"swell"],
-		&"halo_shot": ["count", 3],
+		&"halo_shot": ["count", 4],
 	}
 	for id: StringName in want:
 		var r := WorldReader.new(W.world(&"gun", [id]))

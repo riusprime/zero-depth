@@ -112,6 +112,8 @@ var phase_radius_m := 0.0
 var phase_guard_window_ticks := 0
 ## Engines (v0.3.0 G; see ItemDefinition for each field). Tags are for views and docs, never for gameplay.
 var tags := PackedStringArray()
+## v0.9.5 CLV: the card's level cap (0: CardLevels.MAX_LEVEL; see CardLevels.max_level).
+var level_max := 0
 var stacks_per_hit := 0
 var shock_threshold := 0
 var shock_ticks := 0

@@ -221,6 +221,7 @@ static func _card(w: World, code: int, level: int) -> Dictionary:
 		"level": level,
 		"trigger": trigger_of(w, code),
 		"wand": bool(info.get("wand", false)),  # v0.7.5 SM: a wand card (it has a level, 1–5)
+		"max_level": int(info.get("max_level", 1)),  # v0.9.5 CLV
 		"order": order_of(w, code),  # v0.8.0 AO: what it does to the cards to its left
 		"after_trigger_dead": dead_after_trigger(w, info["id"]),  # v0.8.0 MR: it does nothing right of a trigger
 		"remnant": remnant_of(w, code),  # v0.8.0 RM: what its remnant does (REMNANT_*)

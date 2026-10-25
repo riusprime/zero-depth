@@ -148,7 +148,7 @@ func test_twin_then_halo_halo_takes_twins_place_and_twin_leaves() -> void:
 	assert_false(w.items_owned.has(twin), "Twin left the build (it burns)")
 	assert_eq(CardLevels.level(w, halo), 1)
 	var s := Modifiers.bolt(w)
-	assert_eq([s.count, s.twin], [3, 0], "the shot is Halo's, no Twin lane")
+	assert_eq([s.count, s.twin], [4, 0], "the shot is Halo's, no Twin lane")
 	assert_true(BuildSlots.take(w, twin), "and back: Twin replaces Halo")
 	assert_eq(_ids(w), [&"gun_pierce", &"gun_twin", &"ember_core"])
 
@@ -351,15 +351,15 @@ func test_twelve_shots_an_attack_extra_copies_merge_and_keep_the_damage() -> voi
 	var free := Modifiers.bolt(lab)
 	var free_shards := W.hook_of(free, &"split_shot").child
 	assert_eq(
-		[ShotCap.shots(free), ShotCap.shots(free_shards)], [7, 7], "Halo 5 × Split 5 = 49 before AS"
+		[ShotCap.shots(free), ShotCap.shots(free_shards)], [8, 4], "Halo 8 × Split 4 = 32 before AS"
 	)
 	var s := Modifiers.bolt(w)
 	var shards := W.hook_of(s, &"split_shot").child
-	assert_eq(ShotCap.shots(s), 7, "Halo's seven fit")
+	assert_eq(ShotCap.shots(s), 8, "Halo's eight fit")
 	assert_lte(ShotCap.shots(s) * ShotCap.shots(shards), 12, "pattern × Split children ≤ 12")
-	assert_eq(ShotCap.shots(shards), 1, "the seven shards merged into one")
+	assert_eq(ShotCap.shots(shards), 1, "the four shards merged into one")
 	var base := free_shards.share_permille if free_shards.share_permille > 0 else 1000
-	assert_eq(shards.share_permille, base * 7, "it carries the seven's damage")
+	assert_eq(shards.share_permille, base * 4, "it carries the four's damage")
 	assert_gt(shards.radius_m, free_shards.radius_m, "and is bigger")
 	var big := AttackSpec.new()
 	big.form = AttackSpec.Form.BOLT

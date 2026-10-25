@@ -184,6 +184,10 @@ func test_a_held_wand_card_shows_lv_n_to_n_plus_1_and_its_pip() -> void:
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")  # TEST HELPER: the walk between rewards must not end the run
 	await e.tap(KEY_QUOTELEFT)
+	# TEST HELPER (labelled, v0.9.5 CLV): every wand card has its default five levels here, so any altar offers a
+	# levelled one; the badge format of 1-level and 3-level cards is test_card_level_views.gd's job.
+	for t in w.item_tables:
+		t.level_max = 0
 	var found := await _find_wand_offer(e, w, reader, panel)
 	var r: int = found[0]
 	var k: int = found[1]

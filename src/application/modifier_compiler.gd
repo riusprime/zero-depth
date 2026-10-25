@@ -62,6 +62,8 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 		var map: Array = ModifierOpDefinition.FIELD_STAGE[d.field]  # [stage, sim field, unit]
 		o.field = map[1]
 		o.value = _units(d, map, d.value)
+		for v in d.level_values:  # v0.9.5 CLV: each level's value in sim units
+			o.level_values.append(_units(d, map, v))
 		if d.per_level != 0.0:  # v0.6.5 WN3: the step per level, in the same units
 			o.per_level = _units(d, map, d.value + d.per_level) - o.value
 			if d.op == ModifierOpDefinition.Op.MUL_PERMILLE:

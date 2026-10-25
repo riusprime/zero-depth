@@ -897,6 +897,7 @@ UI_BUILD_TITLE,BUILD,CONSTRUCCIÓN
 UI_BUILD_SLOTS,%d of %d slots,%d de %d huecos
 UI_BUILD_HINT,←→ choose · Enter pick up / put down · mouse: drag or click twice · pad: A pick up · d-pad move · A drop · Esc / B back,←→ elegir · Intro coger / soltar · ratón: arrastra o haz dos clics · mando: A coger · cruceta mover · A soltar · Esc / B volver
 UI_WAND_LEVEL,Lv %d,Nv %d
+UI_WAND_LEVEL_OF,Lv %d/%d,Nv %d/%d
 UI_WAND_NEW,New,Nueva
 UI_WAND_ORDER_SHAPE,← shape,← forma
 UI_WAND_ORDER_COUNT,← count,← número

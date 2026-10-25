@@ -84,12 +84,12 @@ func test_the_beam_stops_at_the_first_enemy() -> void:
 
 
 func test_pierce_passes_through_as_many_as_it_allows() -> void:
-	var w := _world([&"gun_pierce"], [2.0, 3.5, 5.0, 6.5])
-	assert_eq(Modifiers.bolt(w).pierce, 2, "Pierce Lv 1: through 2")
+	var w := _world([&"gun_pierce"], [1.5, 2.5, 3.5, 4.5, 5.5, 6.5])
+	assert_eq(Modifiers.bolt(w).pierce, 4, "Pierce: through 4")
 	W.run(w, 60, 0, W.S)
-	for k in [1, 2, 3]:
+	for k in [1, 2, 3, 4, 5]:
 		assert_gt(_dealt(w, k)[1], 0, "enemy %d is hit" % k)
-	assert_eq(_dealt(w, 4)[1], 0, "the fourth is past Pierce")
+	assert_eq(_dealt(w, 6)[1], 0, "the sixth is past Pierce")
 
 
 func test_a_wall_stops_the_beam_and_it_reaches_nine_metres() -> void:
@@ -108,10 +108,10 @@ func test_a_wall_stops_the_beam_and_it_reaches_nine_metres() -> void:
 	assert_gt(_dealt(near, 1)[1], 0, "within 9 m")
 
 
-func test_twin_gives_two_beams_and_three_at_level_five() -> void:
+func test_twin_gives_two_beams_and_three_at_level_three() -> void:
 	var w := _world([&"gun_twin"], [])
 	var twin := W.item(w, &"gun_twin")
-	var expect := {1: [2, 600], 2: [2, 700], 3: [2, 800], 4: [2, 900], 5: [3, 700]}
+	var expect := {1: [2, 700], 2: [2, 900], 3: [3, 750]}
 	for lvl: int in expect:
 		CardLevels.set_level(w, twin, lvl)
 		var s := Modifiers.bolt(w)
@@ -130,7 +130,7 @@ func test_a_twin_beam_on_one_target_deals_its_share_and_feeds_as_a_second() -> v
 	W.run(w, 720, 0, W.S)
 	var two := _dealt(w, 1, 120, 720)
 	assert_eq(two[0], 200, "both beams tick on a wide-enough target")
-	assert_eq(two[1], 480, "2 × 4 × 60 %")
+	assert_eq(two[1], 560, "2 × 4 × 70 %")
 
 
 func test_attack_speed_raises_the_tick_rate_at_half_its_value() -> void:
