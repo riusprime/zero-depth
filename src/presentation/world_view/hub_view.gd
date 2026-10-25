@@ -10,7 +10,7 @@ extends Node3D
 ## all the interactive things, looking into the middle … decoration, floor … different walls"): a 16 m plaza, the
 ## runes on the centre medallion's sockets 7.8 m out, every station along the top half turned to the middle, and the
 ## owner's floor, walls, pillar braziers, gate and props (HubDressing). The camera sees more (VIEW_SIZE) and leans a
-## little more toward the hero.
+## little more toward the hero. v0.9.5 (owner: "a bit of zoom at the hub … like a 15%"): 22.5 → 19.1 m.
 ## v0.9.0 HB2 (owner: "click, choose weapon and then the character walks upstairs towards the portal and crosses
 ## it"): walk_into_portal() moves the hero up the machine's steps and through its ring (HubPortalWalk), the portal
 ## flaring and the camera easing in; `walk_finished` when the hero is through (HubSession starts the run's load).
@@ -25,7 +25,7 @@ const CAMERA_LEAN := 0.25
 ## along the top and the spawn.
 const CAMERA_BIAS := Vector2(0.0, 4.4)
 ## v0.9.0 HB3: the hub's view height (m; the run's 17 m showed a 25 m plaza, this one is 32 m).
-const VIEW_SIZE := 22.5
+const VIEW_SIZE := 19.1
 ## v0.9.0 HB2: during the walk the camera eases toward the machine's ring and closes in this much (1: none).
 const WALK_ZOOM := 1.18
 ## A soft fill from the camera's side (no shadows), so the stations' fronts read against the mood's back light.
