@@ -11,8 +11,8 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS and RC merged.
-- **Agents working:** SB (solid bodies) and BG (biome backgrounds, from the owner's 10 images) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC and BG merged.
+- **Agents working:** SB (solid bodies) and DC (difficulty to minute 10) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner:** the G2 HUD pick, once HM's mockups are shared.
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -28,6 +28,7 @@ riusprime/zero-depth#9).
 | CB | The dash recharges in 10 s and blink in 15 s (14/13/12/11 s at its higher levels); Swift Feet, the Cooldowns stat and the shrine still cut them ([evidence](evidence/CB.md)) | `41abcd1d`, merge `5e3c789b` |
 | SS | A failing shrine flashes, gutters red, cracks and smokes with its own sound; a win floats the won stat's glyph over it with a gold pulse and a chime (both sounds synthesized; [evidence](evidence/SS.md)) | `4e5bfa1d`, merge `1ead6bc5` |
 | RC | Gravity Stitch, Double Exposure, Grand Finale and the seven trigger cards (On Hit, On Kill, On End, On Finisher and the ×2 variants) are never offered again; a save holding them drops them and refunds their salvage price ([evidence](evidence/RC.md)) | `6ddbd0ac`, merge `eff7ba59` |
+| BG | Every biome has a deep background under its floor from the owner's 10 images: two slowly drifting layers that parallax against the camera (Frozen Shore paints its sea; Starfall keeps its stars over the galaxy) ([evidence](evidence/BG.md)) | `87dc4e1c`, merge `4bd225cd` |
 
 ## Goldens changed on purpose
 - `tests/golden/fixtures/modifier_equivalence.json`: all 22 digests (CB; the scenarios dash every 97 ticks, so the
@@ -68,3 +69,8 @@ riusprime/zero-depth#9).
   `test_final_pace` "strong blade body 2" 146.7 < 147.8, the same red the owner accepted on `main` (PR #9's sim_a
   shard). Jackpots no longer have a mutation branch (dead code in `loot_pacing.gd`, left). The owner delivered the 10
   background images (`bg_assets.zip`, 1254 px, seamless; committed raw `f23ec91d`); BG started with them.
+- 2026-10-25 — BG (agent) merged: unit presentation 53/55 (the 2 reds are biome-name asserts that pass with
+  `--language en`; this PC's Godot runs in Spanish), content 39/39, e2e 12/12, arch 4/4 ([evidence](evidence/BG.md)).
+  Shots of the 5 biomes sent to the owner; Night Rocks' clouds the brightest (owner to judge). Known limit: the Deep
+  plane at −14 m meets the 100 m far plane if the view ever grows past ~22 m (today 17 m in runs, 19.1 m in the hub).
+  Frame cost NOT YET RUN (PF measures it). DC started.
