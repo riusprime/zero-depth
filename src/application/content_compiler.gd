@@ -321,6 +321,14 @@ static func compile_curve(
 			var e: EnemyDefinition = repo.get_def(&"enemies", id)
 			if e != null:
 				phase_of[compile_enemy(e).kind] = k
+	for sec in def.overtime_seconds:  # v0.9.5 DC
+		c.overtime_starts.append(SimTick.seconds_to_ticks(float(sec)))
+	c.overtime_step = SimTick.seconds_to_ticks(float(def.overtime_step_seconds))
+	c.overtime_max_tier = def.overtime_max_tier
+	c.cap_per_tier_permille = def.cap_per_tier_permille
+	c.interval_per_tier_permille = def.interval_per_tier_permille
+	c.interval_min_ticks = SimTick.seconds_to_ticks(def.interval_min_seconds)
+	c.pack_cap_bumps = def.pack_cap_bumps.duplicate()
 	c.kind_phase = PackedInt32Array()
 	for kind in spawn.kinds:
 		c.kind_phase.append(phase_of.get(kind, -1))

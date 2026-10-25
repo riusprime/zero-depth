@@ -81,3 +81,27 @@ func test_bad_curves_are_rejected() -> void:
 	d = _def()
 	d.floor_index = 0
 	assert_has(_codes(d), &"floor_index")
+
+
+func test_the_overtime_data_is_validated() -> void:
+	var d := _def()
+	assert_eq(d.overtime_seconds, PackedInt32Array([90, 150, 240, 330, 420, 510, 600]))
+	assert_eq(d.pack_cap_bumps, PackedInt32Array([6, 10, 15]))
+	assert_eq(d.validate(), [])
+	d.overtime_seconds = PackedInt32Array([90, 90, 240])
+	assert_has(_codes(d), &"overtime")
+	d = _def()
+	d.overtime_seconds = PackedInt32Array([0, 150])
+	assert_has(_codes(d), &"overtime")
+	d = _def()
+	d.overtime_seconds = PackedInt32Array([60, 150])  # before floor 1's peak at 90 s
+	assert_has(_codes(d), &"overtime")
+	d = _def()
+	d.overtime_max_tier = 5
+	assert_has(_codes(d), &"overtime")
+	d = _def()
+	d.interval_min_seconds = 0.0
+	assert_has(_codes(d), &"overtime")
+	d = _def()
+	d.pack_cap_bumps = PackedInt32Array([10, 6])
+	assert_has(_codes(d), &"overtime")

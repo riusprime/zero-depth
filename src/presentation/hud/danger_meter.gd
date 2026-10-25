@@ -15,6 +15,12 @@ const SEGMENTS := 10
 const PULSE_S := 0.8
 const SIZE := Vector2(132, 14)
 const MARK := Vector2(16, 4)
+## v0.9.5 DC (owner: "aim to a 10 minutes max per floor"): from this tier on the meter also shows the tier number
+## ("x7", in the danger colour), and from RED_TIER the marks turn the hot red. Room for the number, to the right.
+const NUMBER_TIER := 4
+const RED_TIER := 10
+const NUMBER_W := 34.0
+const NUMBER_SIZE := 13
 
 var style: HudStyle.Style
 var _tier := 0
@@ -27,7 +33,7 @@ func _init(s: HudStyle.Style = HudStyle.current) -> void:
 	style = s
 	name = "DangerMeter"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	custom_minimum_size = SIZE
+	custom_minimum_size = Vector2(SIZE.x + NUMBER_W, SIZE.y)
 
 
 ## Marks lit at this tier (0-based, as WorldReader.tier).
@@ -47,6 +53,15 @@ static func heat(tier: int) -> float:
 
 static func overdrive(tier: int) -> bool:
 	return tier >= CHEVRONS
+
+
+## v0.9.5 DC: whether the tier number is drawn, and whether the marks are the hot red.
+static func shows_number(tier: int) -> bool:
+	return tier >= NUMBER_TIER
+
+
+static func marks_red(tier: int) -> bool:
+	return tier >= RED_TIER
 
 
 func set_danger(tier: int, progress: float) -> void:
@@ -84,7 +99,7 @@ func _draw() -> void:
 	var p := 0.0 if HudStyle.reduced_motion else _pulse
 	var hot := HudStyle.danger_color(heat(_tier))
 	var lit := lit_chevrons(_tier)
-	var over := overdrive(_tier)
+	var over := marks_red(_tier)
 	var gap := (SIZE.x - CHEVRONS * MARK.x) / (CHEVRONS - 1)
 	for k in CHEVRONS:
 		var on := k < lit
@@ -104,3 +119,14 @@ func _draw() -> void:
 	var y := SIZE.y - 2.0
 	draw_rect(Rect2(0, y, SIZE.x, 2), Color(0, 0, 0, 0.4))
 	draw_rect(Rect2(0, y, SIZE.x * _progress, 2), Color(hot, 0.85))
+	if shows_number(_tier):
+		var num_col := HudStyle.danger_color(heat(_tier))
+		if p > 0.0:
+			num_col = num_col.lerp(Color.WHITE, 0.5 * p)
+		var text := tr("HUD_DANGER_TIER") % _tier
+		var font := HudStyle.font(true)
+		var at := Vector2(SIZE.x + 6.0, 11.0)
+		draw_string_outline(
+			font, at, text, HORIZONTAL_ALIGNMENT_LEFT, NUMBER_W, NUMBER_SIZE, 3, Color(0, 0, 0, 0.6)
+		)
+		draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, NUMBER_W, NUMBER_SIZE, num_col)

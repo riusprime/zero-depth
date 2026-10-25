@@ -159,7 +159,9 @@ func test_the_peak_comes_on_time_and_holds() -> void:
 			t.danger_permille(peak), t.cap_now(f, peak), t.hp_now(100, peak), t.power_now(peak)
 		]
 		assert_between(t.danger_tier(peak), 1, tier_max, "within SC's tables")
-		for ticks in [peak + 600, peak + 36000]:
+		for ticks in [peak + 600, 5399]:  # v0.9.5 DC: it holds until the overtime (90 s)
+			if ticks <= peak or ticks >= 5400:
+				continue
 			assert_eq(
 				[
 					t.danger_permille(ticks),
@@ -301,3 +303,90 @@ func test_the_reader_names_the_phase() -> void:
 	assert_eq(r.phase(), r.phase_count() - 1)
 	assert_eq(r.phase_name_key(), &"PHASE_PEAK")
 	assert_eq(r.phase_seconds_left(), 0.0)
+
+
+# --- v0.9.5 DC (owner: "aim to a 10 minutes max per floor"): the danger tier keeps rising past the peak -------------
+
+
+func _at_s(t: SpawnTable, seconds: float) -> int:
+	return t.danger_tier(SimTick.seconds_to_ticks(seconds))
+
+
+func test_the_overtime_tier_schedule_on_floors_1_2_and_5() -> void:
+	var want := {
+		89.0: 3,
+		90.0: 4,
+		150.0: 5,
+		239.0: 5,
+		240.0: 6,
+		600.0: 10,
+		629.0: 10,
+		630.0: 11,
+		900.0: 20,
+		1200.0: 20,
+	}  # gdlint: disable=max-line-length
+	for f in [1, 2, 5]:
+		var t := _table(f)
+		for s: float in want:
+			assert_eq(_at_s(t, s), want[s], "floor %d at %d s" % [f, int(s)])
+		var last := 0
+		for s in range(0, 1300, 5):
+			var tier := _at_s(t, float(s))
+			assert_gte(tier, last, "floor %d: the tier never falls (%d s)" % [f, s])
+			last = tier
+
+
+func test_the_overtime_grows_the_cap_and_shortens_the_interval() -> void:
+	var t := _table(3)
+	var t3 := SimTick.seconds_to_ticks(80.0)
+	var t10 := SimTick.seconds_to_ticks(600.0)
+	assert_eq(t.danger_tier(t3), 3)
+	var base_cap := SpawnTable.scale(t.cap(3, 10), t.curve.cap_permille_at(t10))
+	assert_eq(
+		t.cap_now(3, t10),
+		SpawnTable.scale(base_cap, 1000 + 80 * 7),
+		"cap x(1 + 0.08 x 7) at tier 10"
+	)
+	assert_gt(t.cap_now(3, t10), t.cap_now(3, SimTick.seconds_to_ticks(89.0)))
+	var base_iv := maxi(1, SpawnTable.scale(t.interval(10), t.curve.interval_permille_at(t10)))
+	assert_lte(t.interval_now(t10), base_iv)
+	for s in range(90, 1300, 30):
+		assert_gte(t.interval_now(SimTick.seconds_to_ticks(float(s))), 48, "never below 0.8 s")
+	assert_eq(t.curve.overtime_interval(1000, 20), 320, "x(1 - 0.04 x 17)")
+	assert_eq(t.curve.overtime_interval(100, 20), 48, "32 is under the floor")
+	assert_eq(t.curve.overtime_interval(60, 20), 48, "the 0.8 s floor")
+	assert_eq(t.curve.overtime_interval(40, 20), 48, "the floor holds from tier 4 on")
+	assert_eq(t.curve.overtime_interval(1000, 3), 1000, "no change at tier 3")
+	assert_eq(t.curve.cap_bonus_permille(3), 1000)
+
+
+func test_the_overtime_bumps_the_pack_cap_at_tiers_6_10_and_15() -> void:
+	var t := _table(1)
+	var base := t.curve.pack_cap[t.curve.phase_count() - 1]
+	assert_gt(base, 0)
+	var seen := {}
+	for s in range(60, 1000, 10):
+		seen[s] = t.pack_cap_now(SimTick.seconds_to_ticks(float(s)))
+	assert_eq(seen[80], base, "tier 3")
+	assert_eq(seen[330], base + 1, "tier 7 (6 reached)")
+	assert_eq(seen[240], base + 1, "tier 6")
+	assert_eq(seen[150], base, "tier 5")
+	assert_eq(seen[600], base + 2, "tier 10")
+	assert_eq(seen[510], base + 1, "tier 9")
+
+	assert_eq(seen[740], base + 2, "tier 14")
+	assert_eq(seen[750], base + 3, "tier 15")
+
+
+func test_a_floor_resumes_the_overtime_tier_from_a_save() -> void:
+	var w := SaveLab.floor_world(4109, 3)
+	w.run_ticks = SimTick.seconds_to_ticks(360.0)
+	assert_eq(w.spawner.danger_tier(w.run_ticks), 7, "6:00 is tier 7")
+	var snap := WorldSnapshot.take(w, PackedStringArray())
+	var r := World.from_snapshot(bytes_to_var(var_to_bytes(snap)), SaveLab.floor_world(4109, 3))
+	assert_not_null(r)
+	if r == null:
+		return
+	assert_eq(r.run_ticks, w.run_ticks)
+	assert_eq(r.spawner.danger_tier(r.run_ticks), 7, "the save resumes tier 7")
+	assert_eq(r.state_hash(), w.state_hash())

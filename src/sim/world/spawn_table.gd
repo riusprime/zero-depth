@@ -57,7 +57,8 @@ func cap_now(floor_index: int, run_ticks: int) -> int:
 	var tier := danger_tier(run_ticks)
 	if curve == null:
 		return cap(floor_index, tier)
-	return maxi(1, scale(cap(floor_index, tier), curve.cap_permille_at(run_ticks)))
+	var c := scale(cap(floor_index, tier), curve.cap_permille_at(run_ticks))
+	return maxi(1, scale(c, curve.cap_bonus_permille(tier)))  # v0.9.5 DC: the overtime's growth
 
 
 ## v0.4.0 TU: ticks between packs at `run_ticks` (the curve stretches or keeps the tier's interval).
@@ -65,7 +66,8 @@ func interval_now(run_ticks: int) -> int:
 	var tier := danger_tier(run_ticks)
 	if curve == null:
 		return interval(tier)
-	return maxi(1, scale(interval(tier), curve.interval_permille_at(run_ticks)))
+	var v := maxi(1, scale(interval(tier), curve.interval_permille_at(run_ticks)))
+	return curve.overtime_interval(v, tier)  # v0.9.5 DC
 
 
 ## v0.4.0 TU: mix row k may spawn at `run_ticks` (its curve phase has begun; without a curve, its unlock tier).

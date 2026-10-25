@@ -215,3 +215,18 @@ func test_the_ember_stone_pause_menu() -> void:
 	await wait_frames(2)
 	assert_true(m.marker.visible, "the ember diamond marks the focused row")
 	assert_lt(m.marker.global_position.x, (m.box.get_node("Resume") as Button).global_position.x)
+
+
+func test_the_danger_meter_shows_the_tier_number_from_tier_4_and_turns_red_at_10() -> void:
+	assert_false(DangerMeter.shows_number(3))
+	assert_true(DangerMeter.shows_number(4))
+	assert_false(DangerMeter.marks_red(9))
+	assert_true(DangerMeter.marks_red(10))
+	var m := DangerMeter.new()
+	add_child_autofree(m)
+	m.set_danger(3, 0.0)
+	m.set_danger(7, 0.0)
+	assert_true(m.pulsing(), "a rise pulses")
+	assert_eq(m.chevrons_lit(), DangerMeter.CHEVRONS, "the marks stay full")
+	assert_eq(m.tier_shown(), 7)
+	assert_eq(tr("HUD_DANGER_TIER") % 7, "×7")
