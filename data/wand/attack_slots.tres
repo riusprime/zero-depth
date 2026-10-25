@@ -38,11 +38,11 @@ card = &"gun_lance"
 allowed = Array[StringName]([&"gun_twin", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
 ruled = Array[StringName]([])
 
-[sub_resource type="Resource" id="Form_scatter"]
+[sub_resource type="Resource" id="Form_rune_explosion"]
 script = ExtResource("2_row")
-id = &"scatter"
-card = &"gun_scatter"
-allowed = Array[StringName]([&"gun_twin", &"gun_backfire", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
+id = &"rune_explosion"
+card = &"gun_rune_explosion"
+allowed = Array[StringName]([&"gun_twin", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
 ruled = Array[StringName]([])
 
 [sub_resource type="Resource" id="Form_glaive"]
@@ -80,5 +80,5 @@ blade_limits = PackedInt32Array(-1, 1, -1, -1)
 shots_per_attack_max = 12
 shots_per_second_max = 40
 merge_radius_max_permille = 2000
-forms = Array[ExtResource("2_row")]([SubResource("Form_orbs"), SubResource("Form_laser"), SubResource("Form_bomb"), SubResource("Form_void"), SubResource("Form_lance"), SubResource("Form_scatter"), SubResource("Form_glaive"), SubResource("Form_seekers"), SubResource("Form_wave"), SubResource("Form_wisps")])
+forms = Array[ExtResource("2_row")]([SubResource("Form_orbs"), SubResource("Form_laser"), SubResource("Form_bomb"), SubResource("Form_void"), SubResource("Form_lance"), SubResource("Form_rune_explosion"), SubResource("Form_glaive"), SubResource("Form_seekers"), SubResource("Form_wave"), SubResource("Form_wisps")])
 id = &"attack_slots"

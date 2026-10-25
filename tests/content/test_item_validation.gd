@@ -16,7 +16,7 @@ func test_every_item_is_valid() -> void:
 	var repo := _repo()
 	assert_eq(
 		repo.count(&"items"),
-		116,
+		117,
 		(
 			"24 + the three heat items (L18) + four ability mods (v0.5.0 CP) + the M-list's 29 new cards"
 			+ " (Frost Core was one) + 3 legendary (v0.6.0 MX4) + the wand's 4 triggers (v0.6.5 WN1)"
@@ -28,6 +28,7 @@ func test_every_item_is_valid() -> void:
 			+ " + v0.9.0 LZ, BM, VP, AF1: the Laser, the Bomb, the Void, the Lance, the Scatter"
 			+ " + v0.9.0 AF2: the Glaive, the Seekers"
 			+ " + v0.9.0 AF3: the Wave, the Wisps"
+			+ " + v0.9.5 FC0: the Rune Explosion (the Scatter stays in the data, retired)"
 		)
 	)
 	for def: ItemDefinition in repo.all_of(&"items"):

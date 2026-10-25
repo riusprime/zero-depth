@@ -267,6 +267,7 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 			"gun_rapid_fire",
 			"gun_ricochet",
 			"gun_ring",  # v0.8.0 AO: the order rule's Ring and Swirl
+			"gun_rune_explosion",  # v0.9.5 FC0
 			"gun_scatter",  # v0.9.0 AF1
 			"gun_seekers",  # v0.9.0 AF2
 			"gun_spiral",

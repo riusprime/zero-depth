@@ -3,19 +3,11 @@ extends GutTest
 ## pellets, 25°, 5 m range, every 0.55 s", Twin and Backfire yes, the rest off, elements per pellet at a lower chance):
 ## the Scatter form. Six pellets fanned over 25° every 0.55 s, gone at 5 m; all land up close, fewer at range, none past
 ## 5 m; the pellets past the centre feed at the secondary proc; Twin doubles the cone within 12 an attack; Backfire
-## fires a copy behind; 40 a second at most; its row; its DPS against the orbs (reported, see LANCE_SCATTER.md).
+## fires a copy behind; its DPS against the orbs (reported, see LANCE_SCATTER.md). v0.9.5 FC0: the card is retired into
+## the Rune Explosion (no row, never offered); its code stays reachable for a held retired card, so these tests stay.
 
 const W := preload("res://tests/support/mx4_world.gd")
 const HP := 1000000
-const SCATTER_ON: Array[StringName] = [
-	&"gun_twin",
-	&"gun_backfire",
-	&"ember_core",
-	&"storm_core",
-	&"frost_core",
-	&"venom_core",
-	&"shared_bleed"
-]
 
 
 func _world(
@@ -141,103 +133,33 @@ func test_the_elements_feed_per_pellet_at_the_lower_chance() -> void:
 		assert_gt(f.actors.burn_stacks[k], 0, "Fire on enemy %d" % k)
 
 
-func test_twin_doubles_the_cone_within_twelve_an_attack() -> void:
+func test_twin_doubles_the_cone() -> void:
 	var w := _world([&"gun_twin"], [])
 	var twin := W.item(w, &"gun_twin")
 	assert_eq(ShotCap.shots(Modifiers.bolt(w)), 12, "Lv 1: 2 × 6")
 	CardLevels.set_level(w, twin, 5)
 	assert_eq(ShotCap.shots(Modifiers.bolt(w)), 18, "Lv 5 before the cap: 3 × 6")
-	var slots := _slot_world()
-	for id: StringName in [&"gun_scatter", &"gun_twin"]:
-		assert_true(BuildSlots.take(slots, W.item(slots, id)))
-	CardLevels.set_level(slots, W.item(slots, &"gun_twin"), 5)
-	assert_lte(ShotCap.shots(Modifiers.bolt(slots)), 12, "a Gun run: at most 12 an attack")
 
 
-func test_backfire_fires_a_cone_behind_and_the_worst_build_stays_under_forty_a_second() -> void:
+func test_backfire_fires_a_cone_behind() -> void:
 	var w := _world([&"gun_backfire"], [])
 	W.run(w, 1, 0, W.S)
 	var back := 0
 	for i in _pellets(w):
 		back += 1 if w.projectiles.vel_x[i] < 0.0 else 0
 	assert_gt(back, 0, "pellets fly behind")
-	var s := _slot_world()
-	for id: StringName in [&"gun_scatter", &"gun_twin", &"gun_backfire"]:
-		assert_true(BuildSlots.take(s, W.item(s, id)))
-	CardLevels.set_level(s, W.item(s, &"gun_twin"), 5)
-	CardLevels.set_level(s, W.item(s, &"gun_scatter"), 5)
-	var launched := {}
-	var most := 0
-	var per_tick: Array[int] = []
-	var behind := 0
-	for k in 600:
-		W.run(s, 1, 0, W.S)
-		var n := 0
-		for i in s.projectiles.size():
-			var pid := s.projectiles.ids[i]
-			if s.projectiles.team[i] == ActorStore.TEAM_PLAYER and not launched.has(pid):
-				launched[pid] = true
-				n += 1
-				behind += 1 if s.projectiles.vel_x[i] < 0.0 else 0
-		per_tick.append(n)
-		var window := 0
-		for j in range(maxi(0, per_tick.size() - 60), per_tick.size()):
-			window += per_tick[j]
-		most = maxi(most, window)
-	var volleys: Array[int] = []
-	for n in per_tick:
-		if n > 0:
-			volleys.append(n)
-	(
-		gut
-		. p(
-			(
-				"AF1 Scatter + Twin Lv 5 + Backfire: most launched in any 60 ticks %d; per volley %s; behind %d of %d"
-				% [most, volleys.slice(0, 8), behind, launched.size()]
-			)
-		)
-	)
-	assert_lte(most, 40, "40 a second at most")
-	assert_gt(behind, 0, "Backfire's cone fires on a Gun run too")
 
 
-func _slot_world() -> World:
+## v0.9.5 FC0 (owner: Rune Explosion replaces Scatter): the Scatter card is retired (migration.tres), has no form row
+## and is never offered; the code stays for a retired card the dev panel can still grant (the tests above).
+func test_the_scatter_has_no_row_and_is_never_offered() -> void:
 	var w := W.world(&"gun")
-	var r := W.repo()
-	w.wand_table = WandCompiler.from_repo(r)
-	w.slot_table = WandCompiler.slots(r, w.item_tables)
-	w.floor_index = 3
-	w.run_floor = 3
-	return w
-
-
-func test_the_scatter_row_offers_only_its_cards() -> void:
-	var w := _slot_world()
-	assert_true(BuildSlots.take(w, W.item(w, &"gun_scatter")))
-	assert_eq(AttackSlots.form_id(w), &"scatter")
-	for idx in w.item_tables.size():
-		var it := w.item_tables[idx]
-		var cat := AttackSlots.category(w, idx)
-		if (
-			it.retired
-			or it.requires_weapon == PlayerTable.WEAPON_BLADE
-			or cat in [AttackSlots.FREE, AttackSlots.FORM]
-		):
-			continue
-		assert_eq(AttackSlots.usable(w, idx), SCATTER_ON.has(it.id), "%s with the Scatter" % it.id)
-
-
-func test_the_scatter_replaces_the_other_forms() -> void:
-	var w := _slot_world()
 	var sc := W.item(w, &"gun_scatter")
-	for other: StringName in [&"gun_laser", &"gun_bomb", &"gun_void", &"gun_lance"]:
-		var o := W.item(w, other)
-		assert_true(BuildSlots.take(w, o))
-		assert_eq(int(Offers.info(w, sc)["replaces"]), o, "the Scatter replaces %s" % other)
-		assert_true(BuildSlots.take(w, sc))
-		assert_false(w.items_owned.has(o), "the Scatter and %s never coexist" % other)
-		assert_eq(AttackSlots.form_id(w), &"scatter")
-		assert_true(Scatter.is_scatter(Modifiers.bolt(w)))
+	assert_true(w.item_tables[sc].retired, "retired")
+	assert_does_not_have(ItemPool.available(w), sc, "never offered")
+	var slots: AttackSlotsDefinition = W.repo().get_def(&"wand", &"attack_slots")
+	for f in slots.forms:
+		assert_ne(f.card, &"gun_scatter", "no row")
 
 
 func test_it_is_deterministic() -> void:

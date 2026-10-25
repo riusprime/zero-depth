@@ -1035,6 +1035,16 @@
       "loop": false
     },
     {
+      "id": "rune_burst",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/rune_burst.wav",
+      "sha256": "60ca36ac536eae9451f17bf21e079209e44f185c780a56c16a6731fac7681360",
+      "seconds": 0.53,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -12.96,
+      "loop": false
+    },
+    {
       "id": "pillar_turn",
       "kind": "sfx",
       "path": "assets/audio/sfx/pillar_turn.wav",

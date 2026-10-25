@@ -45,12 +45,13 @@ func test_the_shipped_table_is_discovered_and_valid() -> void:
 	assert_eq(WandMigrationDefinition.cross_check(defs), [])
 	assert_eq(
 		m.old_ids.size(),
-		58,
+		59,
 		(
 			"the v0.6 cards it retires: 13 + 4 + 17 + 3 + 6 (WAND.md table); v0.9.0: Spread (into Twin),"
 			+ " Explosive (into Fire), the old Void (into the Void form; refunded on the Blade), Charge (into"
 			+ " the Lance; refunded on the Blade), Boomerang (into the Glaive; refunded on the Blade);"
-			+ " v0.9.5 RC: Gravity Stitch, the mutations and the trigger cards leave, dropped (no card in their place)"
+			+ " v0.9.5 RC: Gravity Stitch, the mutations and the trigger cards leave, dropped (no card in their place);"
+			+ " v0.9.5 FC0: the Scatter (into the Rune Explosion)"
 		)
 	)
 

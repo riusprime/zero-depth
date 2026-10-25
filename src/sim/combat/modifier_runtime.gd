@@ -143,6 +143,7 @@ static func advance(w: World) -> void:
 	VoidShots.advance(w)  # v0.9.0 VP (Q10): the Void shots' aura and pull
 	WaveShots.advance(w)  # v0.9.0 AF3: the Wave shots' bands (after the Void clears the waits that are over)
 	Wisps.advance(w)  # v0.9.0 AF3: the wisps' own shots
+	RuneExplosion.advance(w)  # v0.9.5 FC0: the rune bursts grow, hit and shove
 	_walk(w)
 	BladeForms.advance(w)  # v0.6.5 WN4: Heavy's push, Orbit Blades, Parry Edge through the swing
 

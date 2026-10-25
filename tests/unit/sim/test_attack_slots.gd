@@ -62,7 +62,7 @@ func test_the_data_holds_the_owners_limits_caps_and_the_orbs_row() -> void:
 				&"bomb",
 				&"void",
 				&"lance",
-				&"scatter",
+				&"rune_explosion",  # v0.9.5 FC0: replaces the Scatter
 				&"glaive",
 				&"seekers",
 				&"wave",

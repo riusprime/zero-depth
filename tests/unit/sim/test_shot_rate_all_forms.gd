@@ -17,7 +17,7 @@ const FORMS: Array = [
 	[&"bomb", &"gun_bomb"],
 	[&"void", &"gun_void"],
 	[&"lance", &"gun_lance"],
-	[&"scatter", &"gun_scatter"],
+	[&"rune_explosion", &"gun_rune_explosion"],  # v0.9.5 FC0: replaces the Scatter
 	[&"glaive", &"gun_glaive"],
 	[&"seekers", &"gun_seekers"],
 	[&"wave", &"gun_wave"],
@@ -156,12 +156,10 @@ func test_every_form_with_its_patterns_and_secondaries_holds_the_caps() -> void:
 			assert_lte(compiled, 12, "%s: at most 12 an attack compiled (%d)" % [name, compiled])
 			assert_lte(tick, 12, "%s: at most 12 launched in one tick (%d)" % [name, tick])
 			assert_lte(second, 40, "%s: at most 40 in any 60 ticks (%d)" % [name, second])
-			if f[0] == &"laser":
-				assert_eq(second, 0, "%s: a beam launches no projectile" % name)
+			if f[0] in [&"laser", &"rune_explosion"]:  # no projectile
+				assert_eq(second, 0, "%s: a beam or a burst launches no projectile" % name)
 			else:
 				assert_gt(second, 0, "%s fires" % name)
 			count += 1
-	assert_eq(
-		count, 23, "the builds the shipped rows allow (orbs 5, scatter 3, wave 3, the rest 2 or 1)"
-	)
+	assert_eq(count, 22, "the builds the shipped rows allow (orbs 5, wave 3, the rest 2 or 1)")
 	gut.p("BR shots (compiled a attack, most in a tick, most in 60 ticks): " + "; ".join(report))

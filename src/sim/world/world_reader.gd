@@ -537,6 +537,16 @@ func wisps() -> Array[Dictionary]:
 	return Wisps.read(_w)
 
 
+## v0.9.5 FC0 (owner): the Rune Explosion's bursts now (RuneExplosion.read: uid, pos, radius, edge, age, grow, fade,
+## the actors hit), and whether the run's Gun shot is the Rune Explosion.
+func rune_bursts() -> Array[Dictionary]:
+	return RuneExplosion.read(_w)
+
+
+func rune_active() -> bool:
+	return RuneExplosion.active(_w)
+
+
 ## v0.9.0 AF3: player projectile `i` is a wisp's orb (its own chirp).
 func projectile_is_wisp(i: int) -> bool:
 	return Wisps.is_wisp_shot(_w, i)
