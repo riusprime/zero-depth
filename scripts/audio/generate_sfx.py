@@ -751,6 +751,28 @@ def s_boss_shade_relight(r):
     return echo(x, 90, 0.3, 0.25, 3000, 0.3)
 
 
+def s_gamble_fail(r):
+    """v0.9.5 SS: the Fortune shrine failing: a short low thud, a falling FM sweep (420 to 110 Hz) and a crackle."""
+    n = n_of(0.55)
+    sweep = fm(curve(420, 110, n), 1.5, curve(3.0, 0.8, n, "lin"), n) * env(n, 0.004, 0.3) * 0.8
+    m = n_of(0.12)
+    thud = one_pole_lp(osc(curve(95, 45, m), "sine", m), 400) * env(m, 0.002, 0.05) * 0.9
+    crack = bandpass(noise(r, n), curve(3200, 500, n), 1.2) * env(n, 0.002, 0.2)
+    gate = (noise(r, n) > -0.2).astype(float)  # crackle: the noise chops in and out
+    crackle = crack * one_pole_lp(gate, 1500) * 0.55
+    x = bitcrush(soft_clip(mix(sweep, thud, crackle), 1.3), 7, 2)
+    return echo(x, 70, 0.3, 0.2, 2500, 0.15)
+
+
+def s_gamble_win(r):
+    """v0.9.5 SS: the Fortune shrine paying out: a bright rising two-note chime a fifth apart, with a shimmer tail."""
+    m = n_of(0.33)
+    first = metal_ping(0.33, 1046.5, 2.0, 1.4, 0.16) * 0.55
+    second = at(metal_ping(0.33, 1568.0, 2.0, 1.4, 0.2) * 0.55, 0.12)
+    shimmer = at(bandpass(noise(r, m), curve(5200, 8000, m), 6.0) * env(m, 0.1, 0.2) * 0.25, 0.12)
+    return echo(mix(first, second, shimmer), 60, 0.4, 0.3, 6000, 0.15)
+
+
 def s_boss_floor_burst(r):
     """v0.4.0 BO: a flood's lanes bursting up (spears through the floor, molten metal): a crack and a hiss."""
     n = n_of(0.7)
@@ -1440,6 +1462,8 @@ SFX = [
     ("boss_telegraph_lantern_shade", s_boss_telegraph_lantern_shade),  # v0.9.0 NB4
     ("boss_shade_snuff", s_boss_shade_snuff),
     ("boss_shade_relight", s_boss_shade_relight),
+    ("gamble_fail", s_gamble_fail),  # v0.9.5 SS
+    ("gamble_win", s_gamble_win),
     ("boss_floor_burst", s_boss_floor_burst),
     ("boss_slam", s_boss_slam),
     ("boss_laser", s_boss_laser),

@@ -85,6 +85,8 @@ var _echo_tick := -1
 var _blink_tick := -1
 var _choosing := false
 var _denied_tick := -1
+## v0.9.5 SS: the gamble shrine's last win tick heard.
+var _gamble_win_tick := -1
 var _shop_open := false
 var _shop_denied := -1
 var _heartbeat_left := 0
@@ -138,6 +140,7 @@ func prime(reader: WorldReader) -> void:
 	_blink_tick = reader.blink_tick()
 	_choosing = reader.choosing()
 	_denied_tick = reader.reward_denied_tick()
+	_gamble_win_tick = reader.gamble_tick()
 	_shop_open = reader.shop_open()
 	_shop_denied = reader.shop_denied_tick()
 	_heartbeat_left = 0
@@ -495,7 +498,7 @@ func _events(reader: WorldReader, out: Array) -> void:
 			SimEvent.Kind.SHOP_SALVAGE:  # v0.5.0 SH: a sale or an ability salvaged
 				out.append([&"shop_sell", null, 1.0])
 			SimEvent.Kind.GAMBLE_FAIL:  # v0.8.0 N14 (O72): the shrine's fizzle (Vent's cold click, lower)
-				out.append([&"vent_cold", e.pos, 0.8])
+				out.append([&"gamble_fail", e.pos, 1.0])  # v0.9.5 SS: its own crack
 			SimEvent.Kind.HEAL:  # v0.4.0 EN: a Mender's beam lands a heal on an ally
 				if e.target_id != player_id:
 					out.append([&"mender_heal", e.pos, 1.0])
@@ -818,6 +821,10 @@ func _rewards(reader: WorldReader, out: Array) -> void:
 	if denied != _denied_tick and denied >= 0:
 		out.append([&"chest_refuse", null, 1.0])
 	_denied_tick = denied
+	if reader.gamble_tick() != _gamble_win_tick:  # v0.9.5 SS: the shrine pays out
+		if reader.gamble_tick() >= 0:
+			out.append([&"gamble_win", reader.gamble_pos(), 1.0])
+		_gamble_win_tick = reader.gamble_tick()
 	var shop := reader.shop_open()  # v0.5.0 SH: the terminal wakes; a refused action buzzes
 	if shop and not _shop_open:
 		out.append([&"shop_open", null, 1.0])

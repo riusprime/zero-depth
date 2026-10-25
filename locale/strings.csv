@@ -624,6 +624,8 @@ UI_RECAP_THREAT,Threat: %d (peak %d),Amenaza: %d (máximo %d)
 MAP_LEGEND_EVENT,Event,Evento
 CAPTION_CURSE,[curse],[maldición]
 CAPTION_AMBUSH,[ambush],[emboscada]
+CAPTION_GAMBLE_FAIL,[shrine fails],[el santuario falla]
+CAPTION_GAMBLE_WIN,[shrine pays out],[el santuario premia]
 UI_DEV_CURSE_CHEST,Curse next chest,Maldecir el próximo cofre
 SHOP_PROMPT,[E / X] Open the shop,[E / X] Abrir la tienda
 BOSS_DOOR_PROMPT,[E / X] Open the door,[E / X] Abrir la puerta

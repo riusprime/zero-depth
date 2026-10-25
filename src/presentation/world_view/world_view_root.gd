@@ -456,6 +456,8 @@ func _setup_devices(palette: Dictionary) -> void:
 		gamble_shrine.biome = stage.prop_style  # v0.9.0 BV
 		add_child(gamble_shrine)
 		gamble_shrine.setup(reader.gamble_pos())
+		if attack_forms.vfx != null:  # v0.9.5 SS: its smoke and gold ring ride the effects layer
+			attack_forms.vfx.drawers.append(Callable(gamble_shrine, &"draw_fx"))
 	if reader.shop_stall():  # v0.8.0 SR: the biome's tent stall and vendor
 		shop_stall = ShopStallView.new()
 		add_child(shop_stall)
