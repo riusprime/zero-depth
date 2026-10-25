@@ -70,7 +70,7 @@ func test_frozen_shore_paints_the_sea_and_adds_one_mid_plane() -> void:
 	assert_null(b.deep)
 	assert_almost_eq(b.mid.position.y, -0.40, 0.001, "Mid just above the sea")
 	assert_eq(b.params("mid")["alpha"], 0.5)
-	assert_eq(b.params("mid")["brightness"], 0.45)
+	assert_eq(b.params("mid")["brightness"], BiomeBackdrop.MID_BRIGHTNESS[&"frozen_shore"])
 	var p := b.params("sea")
 	assert_eq(
 		(p["tex"] as Texture2D).resource_path, BiomeBackdrop.texture_path(&"frozen_shore", "deep")

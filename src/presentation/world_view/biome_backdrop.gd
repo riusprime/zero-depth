@@ -25,7 +25,7 @@ const DEEP_TILE_M := 42.0
 const DEEP_PARALLAX := 0.35
 const DEEP_DRIFT := 0.010
 const DEEP_DRIFT_DIR := Vector2(1.0, 0.4)
-const DEEP_BRIGHTNESS := 0.85
+const DEEP_BRIGHTNESS := 0.65
 const MID_Y := -6.0
 ## Night Rocks' drifting islands hang down to about -7 m: its Mid plane goes below them.
 const MID_Y_BY_BIOME := {&"night_rocks": -8.0, &"frozen_shore": -0.40}
@@ -35,18 +35,19 @@ const MID_DRIFT := 0.020
 const MID_DRIFT_DIR := Vector2(-0.6, 1.0)
 const MID_ALPHA := 0.8
 const MID_ALPHA_BY_BIOME := {&"frozen_shore": 0.5}
+## v0.9.5 (owner, 2026-10-25: "just a bit dimmer so they don't take up as much protagonism"): about 25 % down.
 const MID_BRIGHTNESS := {
-	&"frozen_shore": 0.45,
-	&"night_rocks": 0.45,
-	&"ruins": 0.8,
-	&"red_canyon": 0.9,
-	&"starfall": 0.9,
+	&"frozen_shore": 0.35,
+	&"night_rocks": 0.3,
+	&"ruins": 0.6,
+	&"red_canyon": 0.7,
+	&"starfall": 0.7,
 }
 ## The plane fades to the void colour by distance from the camera focus, so its edge never shows (m).
 const FADE_FROM := 45.0
 const FADE_TO := 75.0
 ## How much of the sea's own colour the Deep image replaces (Frozen Shore).
-const SEA_MIX := 0.8
+const SEA_MIX := 0.65
 
 const SHADER := """
 shader_type spatial;
