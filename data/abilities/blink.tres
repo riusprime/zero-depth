@@ -16,6 +16,6 @@ radius_m = 2
 duration_seconds = 0.1
 damage = 15
 level_radius = PackedFloat32Array(1, 1, 1, 1, 1.4)
-level_cooldown = PackedFloat32Array(2.5, 2.3, 2.1, 1.9, 1.7)
+level_cooldown = PackedFloat32Array(15.0, 14.0, 13.0, 12.0, 11.0)
 level_extra = PackedInt32Array(1, 1, 2, 2, 2)
 id = &"blink"

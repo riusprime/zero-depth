@@ -2,7 +2,7 @@ extends GutTest
 ## The Vent and Skill buttons in the real game (v0.3.5 K, owner F1, F12, F18), through real input only
 ## (Input.parse_input_event): on a Blade run, Q lunges and cleaves (the HUD pip empties and refills over 4 s) and F
 ## while cool only clicks; on a Gun run, pad Y fires the Scatter Blast (7 pellets, tracers drawn) and the dash waits
-## 1.4 s between uses. Read through WorldReader and the HUD. (Venting while Hot through pad B is in
+## 10 s between uses. Read through WorldReader and the HUD. (Venting while Hot through pad B is in
 ## test_e2e_heat.gd.)
 
 
@@ -90,7 +90,7 @@ func test_blade_q_lunges_and_cleaves_and_f_clicks_while_cool() -> void:
 	assert_eq(_events(r, SimEvent.Kind.SKILL_USED, seq).size(), 2, "and Q uses it again")
 
 
-func test_gun_pad_y_fires_the_scatter_blast_and_the_dash_waits_1_4_s() -> void:
+func test_gun_pad_y_fires_the_scatter_blast_and_the_dash_waits_10_s() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu(&"gun")
@@ -118,14 +118,14 @@ func test_gun_pad_y_fires_the_scatter_blast_and_the_dash_waits_1_4_s() -> void:
 		kicked = maxf(kicked, hero.recoil_amount())
 	assert_gt(kicked, 0.3, "the recoil kicked the hero back")
 	assert_gt(hero.brace_amount(), 0.2, "braced")
-	# The dash (pad right bumper): used, then refused until 1.4 s later.
+	# The dash (pad right bumper): used, then refused until 10 s later.
 	await e.frames(6)
 	await _press_pad(e, JOY_BUTTON_RIGHT_SHOULDER)
-	assert_eq(r.dash_cooldown_total(), 84, "a 1.4 s dash cooldown")
+	assert_eq(r.dash_cooldown_total(), 600, "a 10 s dash cooldown")
 	assert_gt(r.dash_cooldown(), 70, "the dash went")
 	await e.frames(30)
 	await _press_pad(e, JOY_BUTTON_RIGHT_SHOULDER)
 	assert_false(r.is_dashing(), "0.6 s later: not yet")
-	await e.frames(60)
+	await e.frames(570)
 	await _press_pad(e, JOY_BUTTON_RIGHT_SHOULDER)
-	assert_gt(r.dash_cooldown(), 70, "after 1.4 s it dashes again")
+	assert_gt(r.dash_cooldown(), 70, "after 10 s it dashes again")

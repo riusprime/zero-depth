@@ -100,7 +100,11 @@ func test_the_shipped_abilities_compile() -> void:
 	assert_eq([orbit.damage, orbit.hit_ticks, orbit.period_ticks], [8, 30, 72])
 	assert_eq(orbit.level_count, PackedInt32Array([3, 4, 5, 6, 7]), "+1 blade per level")
 	var blink := _by(&"blink")
-	assert_eq(blink.level_cooldown, PackedInt32Array([150, 138, 126, 114, 102]), "-0.2 s per level")
+	assert_eq(
+		blink.level_cooldown,
+		PackedInt32Array([900, 840, 780, 720, 660]),
+		"-1 s per level (15 s to 11 s)"
+	)
 	assert_eq(blink.level_extra, PackedInt32Array([1, 1, 2, 2, 2]), "a second charge at L3")
 	assert_eq(_by(&"combo_sword").start_weapon, PlayerTable.WEAPON_BLADE)
 	assert_eq(_by(&"pulse_gun").start_weapon, PlayerTable.WEAPON_GUN)
@@ -179,7 +183,7 @@ func test_blink_teleports_and_lands_with_a_shock() -> void:
 	)
 	assert_eq(shocks[0].amount, 15)
 	assert_true(shocks[0].tags & SimEvent.TAG_ABILITY != 0)
-	assert_eq(w.blink_cd, 150 - 2, "the 2.5 s cooldown runs")
+	assert_eq(w.blink_cd, 900 - 2, "the 15 s cooldown runs")
 
 
 func test_blink_level_three_holds_two_charges() -> void:
@@ -195,10 +199,10 @@ func test_blink_level_three_holds_two_charges() -> void:
 	w.step(_f(U, up))
 	_run(w, 2)
 	assert_eq(w.ab.blink_charges, 0, "both spent back to back")
-	assert_eq(Abilities.blink_cooldown(w), 126, "L3: 2.1 s per charge")
-	_run(w, 130)
+	assert_eq(Abilities.blink_cooldown(w), 780, "L3: 13 s per charge")
+	_run(w, 790)
 	assert_eq(w.ab.blink_charges, 1, "one charge back after one cooldown")
-	_run(w, 130)
+	_run(w, 790)
 	assert_eq(w.ab.blink_charges, 2, "and the next")
 
 

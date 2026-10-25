@@ -215,6 +215,7 @@ func test_kinetic_dash_hits_each_enemy_once_per_dash() -> void:
 	assert_eq(WorldReader.new(w).dash_hit_tick(), d[0].tick)
 	_idle(w, 60)
 	var back := Kin.angle_of(w.actors.pos(1) - w.player_pos())
+	w.dash_cooldown_left = 0  # this test is about hits per dash, not the 10 s recharge
 	w.step(_f(0, InputFrame.DASH, back))
 	_idle(w, 20)
 	assert_eq(_amounts(_damage(w, SimEvent.TAG_DASH)), [12, 12], "the next dash hits it again")

@@ -79,7 +79,7 @@ static func starting_values() -> PlayerTable:
 	t.move_speed = 6.0 / SimTick.TICKS_PER_SECOND
 	t.dash_distance_m = 4.0
 	t.dash_ticks = SimTick.seconds_to_ticks(0.15)
-	t.dash_cooldown_ticks = SimTick.seconds_to_ticks(1.4)
+	t.dash_cooldown_ticks = SimTick.seconds_to_ticks(10.0)
 	t.dash_iframe_ticks = SimTick.seconds_to_ticks(0.15)
 	return t
 
