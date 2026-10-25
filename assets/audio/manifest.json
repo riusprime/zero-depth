@@ -665,6 +665,26 @@
       "loop": false
     },
     {
+      "id": "gamble_fail",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/gamble_fail.wav",
+      "sha256": "7761074a2ae5821a3ea6ebf0bf51a2f9509175e22cd99175fc62ad0157d44b6e",
+      "seconds": 0.7,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -14.36,
+      "loop": false
+    },
+    {
+      "id": "gamble_win",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/gamble_win.wav",
+      "sha256": "42b60a6e35542b32986de026f95175ce8bd6c227c31647b92763aedaf363d528",
+      "seconds": 0.6,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -12.61,
+      "loop": false
+    },
+    {
       "id": "boss_floor_burst",
       "kind": "sfx",
       "path": "assets/audio/sfx/boss_floor_burst.wav",

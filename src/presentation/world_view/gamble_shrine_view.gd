@@ -31,7 +31,33 @@ const LIGHT_ENERGY := 1.1
 const SHAKE_S := 0.35
 const LAND_FLASH_S := 0.35
 ## v0.8.0 N14: a failed use's crack and fizzle (s), and a spent shrine's glow (a share of its core's).
-const FIZZLE_S := 0.6
+## v0.9.5 SS (owner: "clearer and more visual when it fails"): the fizzle is a white flash, a gutter to red that dims
+## the core to 20 %, and a recovery (their sum is FIZZLE_S); five cracks fade over CRACK_S; the body drops JOLT_M and
+## springs back; twelve dark smoke puffs rise SMOKE_RISE_M.
+const FLASH_S := 0.08
+const GUTTER_S := 0.6
+const RECOVER_S := 0.5
+const FIZZLE_S := 1.18
+const CRACK_S := 1.0
+const CRACK_COUNT := 5
+const CRACK_M := 1.0
+const JOLT_M := 0.06
+const JOLT_BACK_S := 0.3
+const GUTTER_GLOW := 0.2
+const PUFFS := 12
+const SMOKE_RISE_M := 0.8
+const SMOKE_S := 1.0
+## v0.9.5 SS: a win floats the stat's icon over the shrine (metres above its foot, seconds), and a gold ring pulses.
+const PRIZE_FROM_M := 1.4
+const PRIZE_TO_M := 2.0
+const PRIZE_S := 2.0
+const PRIZE_POP_S := 0.2
+const PRIZE_FADE_S := 0.5
+const PRIZE_WIDTH_M := 0.45
+const PRIZE_PX := 64
+const PULSE_S := 0.3
+const PULSE_GOLD := Color("#FFC94A")
+const CRACK_TINT := Color("#FF3A2A")
 const SPENT_GLOW := 0.15
 const PRICE_SPENT := Color("#8A8F99")
 ## The owner's model (KitModels id) and its look.
@@ -53,6 +79,8 @@ const MODEL_ORBIT_M := 0.3
 const FORTUNE_ID := &"shrine_fortune"
 const FORTUNE_GLOW := Color("#FFC94A")
 const FORTUNE_GLOW_Y := 0.78
+
+static var _crack_tex: ImageTexture
 
 var root: Node3D
 var price_label: Label3D
@@ -79,6 +107,15 @@ var _hot := false
 var _glow := CORE
 var _core_y := CORE_Y
 var _model: MeshInstance3D
+## v0.9.5 SS: the effects layer's drawer feeds (smoke, gold ring) when VfxCore is on; the cracks and the prize.
+var _crack: Sprite3D
+var _crack_left := 0.0
+var _puff_age := -1.0
+var _pulse_left := 0.0
+var _prize: Sprite3D
+var _prize_age := 0.0
+var _won_id := &""
+var _core_col := CORE
 
 
 func _init() -> void:
@@ -135,10 +172,13 @@ func sync(reader: WorldReader) -> void:
 		_fail_tick = reader.gamble_fail_tick()
 		if _fail_tick >= 0:
 			_fizzle_left = FIZZLE_S
+			_crack_left = CRACK_S
+			_puff_age = 0.0
 	if reader.gamble_tick() != _seen_tick:
 		_seen_tick = reader.gamble_tick()
 		if _seen_tick >= 0:
 			_spin_left = GambleCard.SPIN_S
+			_won_id = reader.gamble_stat_id(reader.gamble_last_stat())
 	if reader.gamble_denied_tick() != _denied_tick:
 		_denied_tick = reader.gamble_denied_tick()
 		if _denied_tick >= 0:
@@ -157,6 +197,32 @@ func shaking() -> bool:
 ## v0.8.0 N14: a failed use's crack and fizzle is playing.
 func fizzling() -> bool:
 	return _fizzle_left > 0.0
+
+
+## v0.9.5 SS: the cracks are showing.
+func cracked() -> bool:
+	return _crack != null and _crack.visible
+
+
+## v0.9.5 SS: the prize icon floating over the shrine (null when none).
+func prize() -> Sprite3D:
+	return _prize
+
+
+## v0.9.5 SS: the gold ring pulse is playing.
+func pulsing() -> bool:
+	return _pulse_left > 0.0
+
+
+## v0.9.5 SS: how many smoke puffs the fail throws at the current Effects density.
+static func puff_count() -> int:
+	var share := 1.0
+	match ViewPrefs.effects_density:
+		"low":
+			share = 0.35
+		"medium":
+			share = 0.65
+	return maxi(1, int(round(PUFFS * share)))
 
 
 ## v0.8.0 N14: the shrine is spent and drawn dim.
@@ -185,6 +251,7 @@ func _process(delta: float) -> void:
 	if root == null:
 		return
 	_t += delta
+	_core_col = _glow
 	var energy := CORE_ENERGY * (1.35 if _hot else 1.0)
 	var turn := 0.8 if not _hot else 1.4
 	if _spent:  # v0.8.0 N14: its wins given, the shrine sleeps
@@ -198,6 +265,7 @@ func _process(delta: float) -> void:
 		energy = CORE_ENERGY * (1.6 + 0.8 * absf(sin(_t * 30.0)))
 		if before > 0.0 and _spin_left == 0.0:
 			_flash_left = LAND_FLASH_S
+			_start_prize()
 	_core.rotation.y += turn * delta
 	_core.position.y = _core_y + sin(_t * 2.2) * 0.05
 	var flash := 0.0
@@ -214,20 +282,188 @@ func _process(delta: float) -> void:
 		_body.position.y = 0.0
 		energy = CORE_ENERGY * (1.0 - 0.7 * s)
 		_light.light_color = _glow.lerp(DENY, s)
-	elif _fizzle_left > 0.0:  # v0.8.0 N14: the crack and fizzle of a failed use
+	elif _fizzle_left > 0.0:  # v0.8.0 N14 / v0.9.5 SS: the crack and fizzle of a failed use
 		_fizzle_left = maxf(0.0, _fizzle_left - delta)
-		var f := _fizzle_left / FIZZLE_S
-		var flicker := 0.5 + 0.5 * signf(sin(_t * 90.0))
+		var e := FIZZLE_S - _fizzle_left
+		var look := fizzle_look(e, not ViewPrefs.reduced_motion, _t)
 		_body.position.x = 0.0
-		_body.position.y = -0.04 * f * flicker
-		energy = CORE_ENERGY * (0.15 + 1.2 * f * flicker)
-		_light.light_color = DENY.lerp(_glow, 1.0 - f)
+		_body.position.y = 0.0 if ViewPrefs.reduced_motion else -JOLT_M * jolt_at(e)
+		energy = CORE_ENERGY * float(look["glow"])
+		_core_col = look["color"]
+		_light.light_color = _core_col
 	else:
 		_body.position.x = 0.0
 		_body.position.y = 0.0
 		_light.light_color = _glow
+	_core_mat.emission = _core_col
 	_core_mat.emission_energy_multiplier = energy
 	_light.light_energy = LIGHT_ENERGY * energy / CORE_ENERGY
+	_tick_fx(delta)
+
+
+## v0.9.5 SS: the failed use's core at `e` seconds in: {"glow": share of CORE_ENERGY, "color"}. A white flash (FLASH_S),
+## then it gutters to DENY red and dims to GUTTER_GLOW over GUTTER_S (flickering unless `flicker` is off), then recovers
+## to its own light over RECOVER_S.
+func fizzle_look(e: float, flicker: bool, t: float) -> Dictionary:
+	if e < FLASH_S:
+		return {"glow": 3.2, "color": Color.WHITE}
+	var g := e - FLASH_S
+	if g < GUTTER_S:
+		var k := g / GUTTER_S
+		var wob := 1.0
+		if flicker:
+			wob = 0.8 + 0.2 * signf(sin(t * 90.0))
+		return {
+			"glow": lerpf(1.6, GUTTER_GLOW, k) * wob,
+			"color": Color.WHITE.lerp(DENY, minf(1.0, g / 0.12))
+		}
+	var r := minf(1.0, (g - GUTTER_S) / RECOVER_S)
+	return {"glow": lerpf(GUTTER_GLOW, 1.0, r), "color": DENY.lerp(_glow, r)}
+
+
+## v0.9.5 SS: the body's drop at `e` seconds into the fizzle, 0..1 of JOLT_M: down fast, then springing back.
+static func jolt_at(e: float) -> float:
+	if e < FLASH_S:
+		return e / FLASH_S
+	return maxf(0.0, 1.0 - (e - FLASH_S) / JOLT_BACK_S)
+
+
+## v0.9.5 SS: advances the cracks, smoke, ring and prize.
+func _tick_fx(delta: float) -> void:
+	if _crack_left > 0.0:
+		_crack_left = maxf(0.0, _crack_left - delta)
+		if _crack == null:
+			_crack = _make_crack()
+			root.add_child(_crack)
+		_crack.visible = _crack_left > 0.0
+		_crack.position = _core.position
+		_crack.modulate.a = _crack_left / CRACK_S
+	if _puff_age >= 0.0:
+		_puff_age += delta
+		if _puff_age > SMOKE_S:
+			_puff_age = -1.0
+	_pulse_left = maxf(0.0, _pulse_left - delta)
+	if _prize != null:
+		_prize_age += delta
+		if _prize_age >= PRIZE_S:
+			_prize.queue_free()
+			_prize = null
+		else:
+			var u := _prize_age / PRIZE_S
+			_prize.position.y = lerpf(PRIZE_FROM_M, PRIZE_TO_M, u)
+			var pop := minf(1.0, _prize_age / PRIZE_POP_S)
+			_prize.scale = Vector3.ONE * lerpf(0.6, 1.0, pop)
+			_prize.modulate.a = minf(1.0, (PRIZE_S - _prize_age) / PRIZE_FADE_S)
+
+
+## v0.9.5 SS: the won stat's icon (GambleIcons, the card's symbol drawn once into a small viewport) floats up from the
+## shrine; a gold ring pulses on its base.
+func _start_prize() -> void:
+	_pulse_left = PULSE_S
+	if _won_id == &"" or root == null:
+		return
+	if _prize != null:
+		_prize.queue_free()
+	var vp := SubViewport.new()
+	vp.size = Vector2i(PRIZE_PX, PRIZE_PX)
+	vp.transparent_bg = true
+	vp.disable_3d = true
+	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+	var icon := GambleIconView.new(_won_id, float(PRIZE_PX))
+	icon.size = Vector2(PRIZE_PX, PRIZE_PX)
+	vp.add_child(icon)
+	_prize = Sprite3D.new()
+	_prize.name = "Prize"
+	_prize.add_child(vp)
+	_prize.texture = vp.get_texture()
+	_prize.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_prize.no_depth_test = true
+	_prize.fixed_size = false
+	_prize.shaded = false
+	_prize.pixel_size = PRIZE_WIDTH_M / float(PRIZE_PX)
+	_prize.position.y = PRIZE_FROM_M
+	_prize.scale = Vector3.ONE * 0.6
+	_prize_age = 0.0
+	root.add_child(_prize)
+
+
+## v0.9.5 SS: five cracks across the core, a billboard drawn in code (dark red with a bright edge so it reads on any
+## glow); shown for CRACK_S while it fades.
+func _make_crack() -> Sprite3D:
+	if _crack_tex == null:
+		_crack_tex = _crack_texture()
+	var sp := Sprite3D.new()
+	sp.name = "Cracks"
+	sp.texture = _crack_tex
+	sp.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sp.no_depth_test = true
+	sp.shaded = false
+	sp.pixel_size = CRACK_M / float(_crack_tex.get_width())
+	sp.visible = false
+	return sp
+
+
+static func _crack_texture() -> ImageTexture:
+	var size := 128
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var c := Vector2(size, size) * 0.5
+	for k in CRACK_COUNT:
+		var a := TAU * (float(k) + 0.25 * float(k % 2)) / CRACK_COUNT + 0.4
+		var p := c
+		var span := size * (0.34 + 0.08 * float((k * 3) % 4) / 3.0)
+		var steps := 6
+		for j in steps:
+			var kink := (0.5 - float((k * 7 + j * 5) % 5) / 4.0) * 0.7
+			var q := p + Vector2.from_angle(a + kink) * span / steps
+			_line(img, p, q, CRACK_TINT, 3)
+			p = q
+	# The dark core of each crack on top of its red edge.
+	for k in CRACK_COUNT:
+		var a := TAU * (float(k) + 0.25 * float(k % 2)) / CRACK_COUNT + 0.4
+		var p := c
+		var span := size * (0.34 + 0.08 * float((k * 3) % 4) / 3.0)
+		var steps := 6
+		for j in steps:
+			var kink := (0.5 - float((k * 7 + j * 5) % 5) / 4.0) * 0.7
+			var q := p + Vector2.from_angle(a + kink) * span / steps
+			_line(img, p, q, Color("#1A0202"), 1)
+			p = q
+	return ImageTexture.create_from_image(img)
+
+
+static func _line(img: Image, a: Vector2, b: Vector2, col: Color, r: int) -> void:
+	var n := int(a.distance_to(b)) + 1
+	for i in n + 1:
+		var p := a.lerp(b, float(i) / n)
+		for dx in range(-r, r + 1):
+			for dy in range(-r, r + 1):
+				var x := int(p.x) + dx
+				var y := int(p.y) + dy
+				if x >= 0 and y >= 0 and x < img.get_width() and y < img.get_height():
+					img.set_pixel(x, y, col)
+
+
+## v0.9.5 SS: the effects layer's drawer: the fail's dark smoke rising off the core and the win's gold ring on the foot.
+func draw_fx(layer: VfxCore) -> void:
+	if root == null or not is_inside_tree():
+		return
+	var base := root.global_position
+	if _puff_age >= 0.0:
+		var u := _puff_age / SMOKE_S
+		for k in puff_count():
+			var h1 := VfxCore.h(k + 3, 17) - 0.5
+			var h2 := VfxCore.h(k + 5, 29) - 0.5
+			var lag := 0.35 * float(k) / PUFFS  # the puffs leave one after another
+			var v := clampf((u - lag) / (1.0 - lag), 0.0, 1.0)
+			if v <= 0.0:
+				continue
+			var p := base + Vector3(h1 * 0.6, _core_y + SMOKE_RISE_M * v, h2 * 0.6)
+			var col := Color(0.1, 0.09, 0.11, 0.85 * (1.0 - v))
+			layer.sprite(&"smoke", p, 0.3 + 0.35 * v, col, k % 4, h1 * 4.0)
+	if _pulse_left > 0.0:
+		var w := 1.0 - _pulse_left / PULSE_S
+		var col := Color(PULSE_GOLD, 1.0 - w)
+		layer.flat_sprite(&"ring", base + Vector3(0, 0.05, 0), lerpf(0.8, 2.6, w), col, 0, 0.0)
 
 
 ## The shrine model: plinth, obelisk split by the core window, strips, fins, the core, its light and the price.
