@@ -290,4 +290,4 @@ func test_a_save_in_the_fight_then_the_boss_dies_after_the_restore() -> void:
 
 ## v0.9.5 SB: the walls that are not a solid prop's footprint (a prop joins the walls once the hero is clear of it).
 func _walls(w: World) -> int:
-	return w.walls.size() - w.solids.placed_count()
+	return w.walls.size()

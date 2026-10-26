@@ -48,8 +48,9 @@ func test_taking_a_reward_removes_its_footprint() -> void:
 	var w := _bare()
 	var id := w.add_reward(RewardStore.Kind.ALTAR, Vector2(5, 0), 0)
 	w.step(InputFrame.make(Vector2i.ZERO, 0, 0, 0, 0))
-	assert_eq(w.walls.size(), 1)
+	assert_eq(w.solids.placed_count(), 1)
 	w.solids.remove(w, Solids.Kind.REWARD, id)
+	assert_eq(w.solids.placed_count(), 0)
 	assert_eq(w.walls.size(), 0)
 	assert_true(w.solids.is_empty())
 

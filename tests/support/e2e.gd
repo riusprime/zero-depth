@@ -263,18 +263,8 @@ static func _free_goal(nav: NavField, target: Vector2) -> Vector2:
 ## isn't cleared and doesn't hold `target`, so a walk to the boss, a shop or an event never seals an arena on the way
 ## (they're skippable; the player would walk around too). A read for planning only: the sim is untouched.
 static func walk_walls(w: World, target: Vector2) -> Array[Obb]:
-	var out: Array[Obb] = []
-	for o in w.walls:  # v0.9.5 SB: a prop's footprint is planned round in a shrunk form (the nav keeps a clearance)
-		var prop := false
-		for i in w.solids.size():
-			if (
-				w.solids.placed[i] == 1
-				and w.solids.center[i] == o.center
-				and w.solids.half[i] == o.half
-			):
-				prop = true
-		if not prop:
-			out.append(o)
+	var out: Array[Obb] = w.walls.duplicate()
+	# v0.9.5 SB: a prop's footprint (not in the walls) is planned round in a shrunk form (a clearance)
 	for i in w.solids.size():
 		out.append(
 			Obb.make(w.solids.center[i], w.solids.half[i] - Vector2(0.3, 0.3), w.solids.angle[i])

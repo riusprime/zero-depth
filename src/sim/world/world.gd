@@ -1652,8 +1652,13 @@ func _move_and_collide() -> void:
 	for i in actors.size():
 		var r := actors.radius[i] + WALL_SKIP_M
 		open_x[i] = INF
-		if not _wall_grid.any_in_rect(
-			Rect2(actors.pos_x[i] - r, actors.pos_y[i] - r, r * 2.0, r * 2.0)  # v0.4.0 TU: no list built
+		if (
+			not _wall_grid.any_in_rect(
+				Rect2(actors.pos_x[i] - r, actors.pos_y[i] - r, r * 2.0, r * 2.0)  # v0.4.0 TU: no list built
+			)
+			and not solids.any_near(
+				Rect2(actors.pos_x[i] - r, actors.pos_y[i] - r, r * 2.0, r * 2.0)
+			)
 		):
 			open_x[i] = actors.pos_x[i]
 			open_y[i] = actors.pos_y[i]
@@ -1670,6 +1675,8 @@ func _move_and_collide() -> void:
 			var r := actors.radius[i]
 			for w in _wall_grid.query_rect(Rect2(ap.x - r, ap.y - r, r * 2.0, r * 2.0)):
 				ap += Collide.circle_vs_obb(ap, r, walls[w])
+			if not solids.is_empty():  # v0.9.5 SB2: solid props block bodies, not shots or sight
+				ap += solids.push(ap, r)
 			actors.set_pos(i, ap)
 		if pp != null:
 			pp.end(&"move.walls")

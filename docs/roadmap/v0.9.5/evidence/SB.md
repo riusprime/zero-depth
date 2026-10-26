@@ -81,3 +81,41 @@ Run: `godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest
 
 Test helpers changed (not goldens): tests/support/e2e.gd (walk_to stops at a prop's surface; the walk plans round props),
 clear_spot in test_e2e_bomb/laser/void, wall-count helpers in the sim tests listed in the commit.
+
+## SB2: solid props block bodies, not shots or sight
+
+Build: v095-sb2 = claude/v095-feedback + SB (bde42655) + the SB2 commit (SHA in the commit; no conflicts in either merge).
+Machine: owner PC, Windows, Godot 4.7.2, `--headless --fixed-fps 60 --language en`, one APPDATA folder per run.
+
+Change: the footprints no longer join `World.walls`. `Solids.step` only marks an entry placed once the hero is clear;
+`World` pushes bodies out of placed entries after the wall pass (`Solids.push`), the wall-skip test also checks
+`Solids.any_near`, and `EnemyAi._blocked` (steering) reads `Solids.blocks`. Shots, beams, glaives, bombs, areas and
+`sees_player` read only `walls`, so they pass over props. Snapshot: the placed count is no longer added to the barrier
+count. Tests that subtracted `solids.placed_count()` from `walls.size()` now read `walls.size()`.
+
+Root causes:
+- test_e2e_glaive_seekers "every disc hit it both ways": not a blocked disc. The odd count was a 40-damage hero-sourced
+  hit (source 0, tags 0, tick 836) on the dummy next to six 8-damage disc hits (sources 10, 12, 14). It appears only
+  when the hero stands where the altar walk leaves it (solids on); with solids off the same test has six disc hits and
+  no such hit. The helper `_hits` counted it; it now counts disc hits only (`source_id != 0`). I did not identify which
+  hero proc it is.
+- test_e2e_combo "opened reward 2": failed in the first run (solids in walls); passes after the change (shots and
+  sight no longer meet the footprints). I did not isolate the exact line; the walker (`E2e.walk_to`, `walk_walls`) was
+  not changed except that it no longer needs to filter the props out of `w.walls`.
+
+Raw totals (all on this build, solids on):
+- test_solids.gd (+1 test: bolt through an altar hits the dummy behind, enemy behind it sees the hero): 9/9 (before the final edits; 13/13 with glaive, combo, after_boss).
+- glaive_seekers, combo, after_boss, solids together: 13/13.
+- test_collision, world_walls, rewards, interactables, glaive, seekers, bomb: 68/68.
+- test_laser, void, rune_explosion, ascension, lockdowns, final_pace: 85 tests, 1 failing (final_pace, below).
+- after_boss, arenas, boss_door_press, final_approach, overrun, purple_runes, routes, run_flow, rewards, world_walls: 93/93.
+- tests/golden + tests/arch: 6/6.
+- tests/e2e folder: 197 tests, 193 passing before the `placed_count` cleanup; the 4 failures: after_boss (`placed_count`
+  subtraction, fixed, then passing), attack_order ("Ring's slot tag", "Swirl's"), gun_pool ("no new slot", "the Lance is
+  level 2", "its full charge hits harder"), modifiers_mx4 ("the crescent splits in three"). The last three fail
+  identically with `Solids.rules_on` forced false, so they are not from SB.
+- Not run: test_five_floors, test_curse_room, test_modifier_smoke (as instructed).
+
+test_final_pace.gd (strong blade body 2): 138.8 s against the 147.3 bar, with solids on and with solids off
+(identical: base blade bodies [108.9, 82.2, 138.8], strong blade bodies [70.8, 73.9, 148.3]). The owner-accepted figure
+was 146.7 vs 147.8, so this build is worse than that, and the cause is not SB (it is the same with the solids off).

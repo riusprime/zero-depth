@@ -263,4 +263,4 @@ func test_the_run_records_the_floor_that_held_it() -> void:
 
 ## v0.9.5 SB: the walls that are not a solid prop's footprint (a prop joins the walls once the hero is clear of it).
 func _walls(w: World) -> int:
-	return w.walls.size() - w.solids.placed_count()
+	return w.walls.size()

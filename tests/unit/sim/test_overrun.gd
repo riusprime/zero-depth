@@ -175,19 +175,15 @@ func test_wave_sizes_follow_the_floor() -> void:
 
 func test_clearing_every_wave_opens_the_doors_and_pays() -> void:
 	var w := _floor(21)
-	var walls := w.walls.size() - w.solids.placed_count()  # v0.9.5 SB: the props' footprints are not doors
+	var walls := w.walls.size()  # v0.9.5 SB: the props' footprints are not doors
 	_enter(w)
-	assert_eq(
-		w.walls.size() - w.solids.placed_count(),
-		walls + w.arenas.barriers.size(),
-		"the barriers stand"
-	)
+	assert_eq(w.walls.size(), walls + w.arenas.barriers.size(), "the barriers stand")
 	var waves := w.arenas.waves
 	var shards_before := w.shards
 	var seen := _fight_to_clear(w)
 	assert_true(w.overrun.cleared(), "the last wave's death clears it")
 	assert_eq(seen, waves, "every wave came, one after the other")
-	assert_eq(w.walls.size() - w.solids.placed_count(), walls, "the doors open")
+	assert_eq(w.walls.size(), walls, "the doors open")
 	assert_false(w.arenas.sealed())
 	assert_true(w.arenas.cleared.has(w.floor_layout.overrun_room))
 	assert_eq(w.overrun.kills, waves * 4, "every Overrun kill counted")

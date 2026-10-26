@@ -2,10 +2,11 @@ class_name Solids
 extends RefCounted
 ## v0.9.5 SB (owner: "Some models you can just go through ... lets make sure ... they have the 3D and feel like they
 ## have actual height and you can't just go through them"): the footprints of props that look solid. Each entry is an
-## oriented box that joins World.walls (World.add_barrier: collision, shots and sight, never the flow field) once the
+## oriented box that blocks ACTORS (the hero and the enemies: World's wall pass and the enemies' steering) once the
 ## hero is clear of it (CLEAR_M from its surface), so a prop that appears under the hero's feet never traps them, and
-## leaves with its owner (remove). A world holds them only under floor rules after FLOOR_RULES_V090_CF2 (`on`): a floor
-## saved before SB keeps its walls. Pure: no stream is drawn.
+## leaves with its owner (remove). They are NOT in World.walls: shots, beams, glaives, bombs, area attacks and lines of
+## sight pass over them, as over the shrine and the fountain. A world holds them only under floor rules after
+## FLOOR_RULES_V090_CF2 (`on`): a floor saved before SB has none. Pure: no stream is drawn.
 
 ## Owners of an entry (with the owner's own ref).
 enum Kind { REWARD, EVENT, PYLON, RUNE_PILLAR, DAIS, MURAL, ASCENSION, LOOP_DEVICE, ARRIVAL }
@@ -78,21 +79,16 @@ func add_square(p_kind: int, p_ref: int, p: Vector2, h: float = PROP_HALF_M) -> 
 
 
 ## Drops the owner's entry (and its wall).
-func remove(w: World, p_kind: int, p_ref: int) -> void:
+func remove(_w: World, p_kind: int, p_ref: int) -> void:
 	var i := find(p_kind, p_ref)
 	if i < 0:
 		return
-	var o := obb(i)
-	var was := placed[i] == 1
 	kind.remove_at(i)
 	ref.remove_at(i)
 	center.remove_at(i)
 	half.remove_at(i)
 	angle.remove_at(i)
 	placed.remove_at(i)
-	if was:
-		var list: Array[Obb] = [o]
-		w.remove_barriers(list)
 
 
 ## The extra interact reach (m) a prop of this entry's size needs: its half-extent (0 without an entry).
@@ -140,7 +136,6 @@ static func step(w: World) -> void:
 			var o := s.obb(i)
 			if Collide.circle_vs_obb(p, r, o) == Vector2.ZERO:
 				s.placed[i] = 1
-				w.add_barrier(o)
 
 
 func hash_into(h: StateHasher) -> void:
@@ -153,3 +148,30 @@ func hash_into(h: StateHasher) -> void:
 ## The reach a prop of half-side `h` adds to its interact reach (0 when the solids are off).
 func bonus(h: float = PROP_HALF_M) -> float:
 	return h if on else 0.0
+
+
+## The standing footprints' push on a circle of radius r at `at` (the sum over the entries it overlaps).
+func push(at: Vector2, r: float) -> Vector2:
+	var out := Vector2.ZERO
+	for i in kind.size():
+		if placed[i] == 1:
+			var reach := r + half[i].length()
+			if absf(at.x - center[i].x) <= reach and absf(at.y - center[i].y) <= reach:
+				out += Collide.circle_vs_obb(at + out, r, obb(i))
+	return out
+
+
+## Whether a standing footprint may touch the box `rect`.
+func any_near(rect: Rect2) -> bool:
+	for i in kind.size():
+		if placed[i] == 1 and rect.grow(half[i].length()).has_point(center[i]):
+			return true
+	return false
+
+
+## Whether a body of radius r sweeping from a to b meets a standing footprint (the enemies' steering).
+func blocks(a: Vector2, b: Vector2, r: float) -> bool:
+	for i in kind.size():
+		if placed[i] == 1 and Collide.sweep_vs_obb(a, b, r, obb(i)) >= 0.0:
+			return true
+	return false

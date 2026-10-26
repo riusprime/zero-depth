@@ -514,7 +514,6 @@ static func apply(base: World, snap: Dictionary) -> String:
 	# v0.5.5 AR: a sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
 	# so only the wall grid is rebuilt for them.
 	var barriers := base.arenas.barriers.size() + base.bosses.pillar_x.size()  # v0.8.0 BS1: pillars too
-	barriers += base.solids.placed_count()  # v0.9.5 SB: the props' footprints standing as walls
 	barriers += Secrets.slabs_up(base)  # v0.9.0 TD, RA: the secret rooms' slabs while they stand
 	if base.lockdown != null:  # v0.9.0 LK: a sealed Lockdown's bars, as an arena's
 		barriers += base.lockdown.barriers.size()

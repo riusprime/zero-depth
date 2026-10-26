@@ -116,7 +116,7 @@ func test_both_pylons_start_the_buildup_then_the_walls_and_the_colossus() -> voi
 		var w := _world()
 		var reader := WorldReader.new(w)
 		var tag := "order %s" % str(order)
-		var walls0 := w.walls.size() - w.solids.placed_count()  # v0.9.5 SB: the pylons stand apart
+		var walls0 := w.walls.size()  # v0.9.5 SB: the pylons stand apart
 		_to_pylon(w, order[0])
 		w.step(_press())
 		_to_pylon(w, order[1])
@@ -125,19 +125,11 @@ func test_both_pylons_start_the_buildup_then_the_walls_and_the_colossus() -> voi
 		assert_null(w.final_fight, "%s: not yet" % tag)
 		var t0 := w.tick
 		while reader.approach_state() == WorldReader.APPROACH_BUILDUP and w.tick - t0 < 400:
-			assert_eq(
-				w.walls.size() - w.solids.placed_count(),
-				walls0,
-				"%s: open during the buildup" % tag
-			)
+			assert_eq(w.walls.size(), walls0, "%s: open during the buildup" % tag)
 			w.step(InputFrame.new())
 		assert_eq(w.tick - t0, FinalApproach.BUILDUP_TICKS, "%s: ~3 s of buildup" % tag)
 		assert_true(reader.approach_walls_up(), "%s: the walls of light" % tag)
-		assert_eq(
-			w.walls.size() - w.solids.placed_count(),
-			walls0 + FinalArena.GAP_SEGMENTS,
-			"%s: the ring closed" % tag
-		)
+		assert_eq(w.walls.size(), walls0 + FinalArena.GAP_SEGMENTS, "%s: the ring closed" % tag)
 		assert_not_null(w.final_fight, "%s: the fight began" % tag)
 		var i := FinalLab.body(w)
 		assert_eq(w.actors.kinds[i], ActorStore.Kind.COLOSSUS, "%s: the Colossus" % tag)

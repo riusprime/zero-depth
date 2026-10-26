@@ -578,7 +578,7 @@ static func _blocked(w: World, at: Vector2, dir: Vector2, r: float) -> bool:
 	for k in w.walls_along(at, probe, r):
 		if Collide.sweep_vs_obb(at, probe, r, w.walls[k]) >= 0.0:
 			return true
-	return false
+	return not w.solids.is_empty() and w.solids.blocks(at, probe, r)  # v0.9.5 SB2
 
 
 ## The lane a Charger is about to run: its body's path from where it stands to its body's front at the end of

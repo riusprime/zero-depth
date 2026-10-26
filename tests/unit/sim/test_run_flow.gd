@@ -480,4 +480,4 @@ func test_blink_never_leaves_or_enters_the_sealed_boss_room() -> void:
 
 ## v0.9.5 SB: the walls that are not a solid prop's footprint (a prop joins the walls once the hero is clear of it).
 func _walls(w: World) -> int:
-	return w.walls.size() - w.solids.placed_count()
+	return w.walls.size()

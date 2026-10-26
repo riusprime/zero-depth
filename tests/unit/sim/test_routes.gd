@@ -447,4 +447,4 @@ func test_each_deep_floor_taken_adds_one_threat() -> void:
 
 ## v0.9.5 SB: the walls that are not a solid prop's footprint (a prop joins the walls once the hero is clear of it).
 func _walls(w: World) -> int:
-	return w.walls.size() - w.solids.placed_count()
+	return w.walls.size()
