@@ -6,6 +6,20 @@ extends Resource
 ## form's own (the form's step builds the rule; until then it reads as on); every other card is off (C62: "No by
 ## default"), so it is never offered, never equipped and never compiled with this form.
 
+## v0.9.5 FC9: the numbers the Wisps row carries (WispMods.DEFAULTS has the same keys; a test holds them equal).
+const WISP_KEYS: Array[String] = [
+	"twin_wisps",
+	"halo_wisps",
+	"halo_share",
+	"ring_mm",
+	"ring_ms",
+	"mine_gap_ticks",
+	"live_max",
+	"orbit_mm",
+	"orbit_share",
+	"orbit_gap_ticks",
+]
+
 ## v0.9.5 FC8: the numbers the Wave row carries (WaveMods.DEFAULTS has the same keys; a test holds them equal).
 const WAVE_KEYS: Array[String] = [
 	"ricochet_bounces",

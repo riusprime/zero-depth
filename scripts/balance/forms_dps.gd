@@ -151,6 +151,24 @@ const SEEKER_COMBOS: Array = [
 	[&"orbit_rounds"],
 ]
 
+## v0.9.5 FC9: the Wisps' card combinations (a card alone each; the four elements are the form's own).
+const WISP_COMBOS: Array = [
+	[],
+	[&"gun_twin"],
+	[&"halo_shot"],
+	[&"gun_ring"],
+	[&"gun_pierce"],
+	[&"gun_ricochet"],
+	[&"gun_homing"],
+	[&"gun_echo"],
+	[&"gun_big_shot"],
+	[&"gun_rapid_fire"],
+	[&"split_shot"],
+	[&"gun_spiral"],
+	[&"gun_mine"],
+	[&"orbit_rounds"],
+]
+
 
 func _scenes(near: bool) -> Dictionary:
 	if near:
@@ -234,6 +252,7 @@ func _initialize() -> void:
 		["glaive", &"gun_glaive", GLAIVE_COMBOS],
 		["wave", &"gun_wave", WAVE_COMBOS],
 		["seekers", &"gun_seekers", SEEKER_COMBOS],
+		["wisps", &"gun_wisps", WISP_COMBOS],
 	]:
 		for combo: Array in set_of[2]:
 			var d := {}

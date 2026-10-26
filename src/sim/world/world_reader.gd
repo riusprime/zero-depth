@@ -623,6 +623,11 @@ func wisps() -> Array[Dictionary]:
 	return Wisps.read(_w)
 
 
+## v0.9.5 FC9: the lightning rings the wisps' shots left (WispMods.read_rings): {pos, r (m, the largest), age, span}.
+func wisp_rings() -> Array[Dictionary]:
+	return WispMods.read_rings(_w)
+
+
 ## v0.9.5 FC0 (owner): the Rune Explosion's bursts now (RuneExplosion.read: uid, pos, radius, edge, age, grow, fade,
 ## the actors hit), and whether the run's Gun shot is the Rune Explosion.
 func rune_bursts() -> Array[Dictionary]:

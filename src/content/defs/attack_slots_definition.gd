@@ -124,6 +124,7 @@ func _keys_of(id: StringName) -> Array[String]:
 		&"glaive": AttackFormRow.GLAIVE_KEYS,
 		&"wave": AttackFormRow.WAVE_KEYS,
 		&"seekers": AttackFormRow.SEEKER_KEYS,
+		&"wisps": AttackFormRow.WISP_KEYS,
 	}
 	var keys: Array[String] = []
 	keys.assign(by_form.get(id, []))

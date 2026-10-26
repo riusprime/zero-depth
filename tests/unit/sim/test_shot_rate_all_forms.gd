@@ -163,10 +163,10 @@ func test_every_form_with_its_patterns_and_secondaries_holds_the_caps() -> void:
 			count += 1
 	assert_eq(
 		count,
-		40,
+		43,
 		(
 			"the builds the shipped rows allow"
-			+ " (orbs 5, laser 5, bomb 5, lance 5, void 4, glaive 5, seekers 4, rune 3, wave 3, the rest 2 or 1)"
+			+ " (orbs 5, laser 5, bomb 5, lance 5, void 4, glaive 5, seekers 4, wisps 4, rune 3, wave 3, the rest 2 or 1)"
 		)
 	)
 	gut.p("BR shots (compiled a attack, most in a tick, most in 60 ticks): " + "; ".join(report))

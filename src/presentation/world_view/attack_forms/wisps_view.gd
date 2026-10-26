@@ -10,7 +10,12 @@ extends Node3D
 ## glow, a ring and sparks, FIRE_TICKS, no light), its shot then a plain Orb with its own accent (V6).
 ## Presentation only (EI-07): the sim decides where and when; the bob is the frame's clock.
 
-const WISPS_MAX := 6
+## v0.9.5 FC9: Halo with Twin draws seven; Ring's lightning rings (the Void's and the Glaive's look, the same
+## ARC_FRONT).
+const WISPS_MAX := 8
+const ARCS_MAX := 12
+const ARC_U := 0.7
+const ARC_FRONT := 0.754
 const HEIGHT := SimPlane.CORE_HEIGHT + 0.15
 const SIZE := 0.75
 const BOB_M := 0.06
@@ -42,9 +47,11 @@ static var _shader: Shader = null
 
 ## What the last sync showed (tests read them): the wisps drawn, their places (sim plane), the look.
 var wisps := 0
+var arcs := 0
 var places: Array[Vector2] = []
 var look := &"default"
 
+var _arcs: Array[MeshInstance3D] = []
 var _orbs: Array[MeshInstance3D] = []
 var _mat: Array[ShaderMaterial] = []
 var _charge: Array[float] = []
@@ -77,6 +84,51 @@ func _init() -> void:
 		_charge.append(0.0)
 		_fired.append(-100.0)
 		_angle.append(0.0)
+	_make_arcs()
+
+
+## v0.9.5 FC9: the pool of lightning rings (one shared material, the Glaive's ring look).
+func _make_arcs() -> void:
+	var flat := PlaneMesh.new()
+	flat.size = Vector2(2.0, 2.0)
+	var shader := Shader.new()
+	shader.code = BombView.RING_SHADER
+	var m := ShaderMaterial.new()
+	m.shader = shader
+	m.set_shader_parameter(&"has_tex", 0.0)
+	m.set_shader_parameter(&"u", ARC_U)
+	m.set_shader_parameter(&"core", AttackFormLooks.ground_safe(BeamLooks.core(&"lightning")))
+	m.set_shader_parameter(&"edge", AttackFormLooks.ground_safe(BeamLooks.edge(&"lightning")))
+	for k in ARCS_MAX:
+		var n := MeshInstance3D.new()
+		n.mesh = flat
+		n.material_override = m
+		n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		n.visible = false
+		add_child(n)
+		_arcs.append(n)
+
+
+## v0.9.5 FC9: the Ring card's lightning rings where a wisp's shot struck (grown as the Void's are).
+func _place_arcs(reader: WorldReader) -> void:
+	arcs = 0
+	if not reader.player_dead():
+		for row in reader.wisp_rings():
+			if arcs >= ARCS_MAX:
+				break
+			var g := (
+				clampf(float(row["age"]) / float(row["span"]), 0.0, 1.0)
+				* float(row["r"])
+				/ ARC_FRONT
+			)
+			var arc := _arcs[arcs]
+			arc.visible = g > 0.01
+			arc.transform = Transform3D(
+				Basis.from_scale(Vector3(g, 1.0, g)), SimPlane.to_3d(row["pos"], 0.1)
+			)
+			arcs += 1
+	for k in range(arcs, ARCS_MAX):
+		_arcs[k].visible = false
 
 
 ## Each tick: the wisps round the hero.
@@ -107,6 +159,7 @@ func sync(reader: WorldReader) -> void:
 		_angle[k] = TAU * float(int(wd.get("angle", 0))) / 4096.0
 		places.append(wd["pos"])
 	_place()
+	_place_arcs(reader)
 
 
 func _process(delta: float) -> void:

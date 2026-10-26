@@ -167,6 +167,11 @@ func run(s: AttackSpec, from: int) -> AttackSpec:
 		if s.seekers > 0 and SeekerMods.is_card(m.id):  # v0.9.5 FC7: the Seekers' cards are SeekerMods'
 			SeekerMods.note_card(s, m)
 			continue
+		if s.wisps > 0 and WispMods.is_card(m.id):  # v0.9.5 FC9: five of the Wisps' cards are WispMods'
+			WispMods.note_card(s, m)
+			if m.id == WispMods.MINE_ID:
+				s.hooks.append(_wisp_mine(s, m, i))
+			continue
 		var applied := false
 		for stage in ModifierTable.STAGE_COUNT:  # a card's own ops in stage order
 			for op in m.ops:
@@ -284,6 +289,32 @@ func _hook(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> AttackHoo
 	k.delay_ticks = op.delay_ticks  # v0.6.0 MX4
 	k.when = op.when
 	k.child = WandRings.cap_child(s, run(c, i))  # v0.8.0 AO: a ring's shards, at most so many alive
+	return k
+
+
+## v0.9.5 FC9 (FORM_COMBOS.md P5): the Mine card on the Wisps is a hook (ON_WISP, which no moment fires; WispMods drops
+## it from each wisp): the card's own mine, a still bolt the orbs' Mine card would leave (its ops run on it: the wait
+## and the zone it ends in), at the wisp shot's damage.
+func _wisp_mine(s: AttackSpec, m: ModifierTable, i: int) -> AttackHook:
+	var c := AttackSpec.new()
+	c.id = m.id
+	c.form = AttackSpec.Form.BOLT
+	c.tags = PackedStringArray(["projectile", Modifiers.TAG_HOOK])
+	c.depth = s.depth + 1
+	c.radius_m = s.radius_m
+	c.speed = 0.0
+	c.life_ticks = 1
+	c.elements = s.elements.duplicate()
+	c.recast = s.recast
+	c.lineage = s.lineage.duplicate()
+	for op in m.ops:
+		apply(c, m, op, i)
+	c.lineage.append(String(m.id))
+	var k := AttackHook.new()
+	k.id = m.id
+	k.trigger = AttackSpec.Trigger.ON_WISP
+	k.damage_permille = 1000
+	k.child = c
 	return k
 
 
