@@ -115,7 +115,45 @@ The one reading worth passing on, still "smoke": the RenderingServer's own rende
 (about 3.5 ms) times were far below the frame time, which suggests the frame is bound by the main thread (sim and
 views) or by the busy machine, not the GPU. Only an idle-machine run can tell; that is the lead's.
 
-## Owner-PC measurement: NOT YET RUN
+## Owner-PC measurement: baseline (lead, 2026-10-26)
+
+- Machine: the owner's PC (i7-10700K, RTX 3060, Windows 11), Godot 4.7.2 console build, 1920x1080 windowed, vsync off,
+  no cap. Idle: no other Godot process (`tasklist` count 0 before the run), no agent running.
+- Build: `b9ff8110` (claude/v095-feedback with RS1 and PF1 merged).
+- Command: `APPDATA=$TEMP/zd-frame "$G" --language en --path . --resolution 1920x1080 --windowed -s scripts/checks/frame_probe.gd`
+- Raw report heads (the per-second samples are in `build/perf/`; draw calls 1060–1470, objects 9.6k→12.4k rising over
+  the 30 s, nodes ~2.6–2.8k, particle nodes 4):
+
+```
+frame_probe  sha=b9ff8110  biome=frozen_shore  ab=none
+machine: renderer=forward_plus adapter=NVIDIA GeForce RTX 3060 window=(1920, 1080)  (the report does not know whether other processes were busy: name the machine and check the CPU was idle before quoting it as evidence)
+scenario: Playground room seed 4404, Gun, 20 live enemies, warm-up 3.0 s, measured 30.0 s
+build: ITEM_GUN_GLAIVE, ITEM_GUN_RING, ITEM_SPLIT_SHOT, ITEM_EMBER_CORE, ITEM_STORM_CORE at level 3 (Glaive, Ring, Split, fire core, lightning core)
+floor: kit ground uv1_triplanar=true uv1_world_triplanar=true (no planar path exists: planar_floor NOT AVAILABLE)
+flags: none
+frames=2000  avg_ms=15.002  p50_ms=15.158  p95_ms=25.536  p99_ms=38.631
+1pct_low_fps=18.6 (1000 / mean of the slowest 20 frames)  max_ms=135.738  over_6.94ms=1690 (84.50 %)  avg_fps=66.7
+render_cpu_ms_avg=1.549  render_gpu_ms_avg=3.881  (RenderingServer viewport measured time)
+```
+
+```
+frame_probe  sha=b9ff8110  biome=red_canyon  ab=none
+machine: renderer=forward_plus adapter=NVIDIA GeForce RTX 3060 window=(1920, 1080)  (the report does not know whether other processes were busy: name the machine and check the CPU was idle before quoting it as evidence)
+scenario: Playground room seed 4404, Gun, 20 live enemies, warm-up 3.0 s, measured 30.0 s
+build: ITEM_GUN_GLAIVE, ITEM_GUN_RING, ITEM_SPLIT_SHOT, ITEM_EMBER_CORE, ITEM_STORM_CORE at level 3 (Glaive, Ring, Split, fire core, lightning core)
+floor: kit ground uv1_triplanar=true uv1_world_triplanar=true (no planar path exists: planar_floor NOT AVAILABLE)
+flags: none
+frames=2062  avg_ms=14.551  p50_ms=15.177  p95_ms=21.246  p99_ms=38.817
+1pct_low_fps=21.6 (1000 / mean of the slowest 21 frames)  max_ms=64.227  over_6.94ms=1707 (82.78 %)  avg_fps=68.7
+render_cpu_ms_avg=1.583  render_gpu_ms_avg=3.791  (RenderingServer viewport measured time)
+```
+
+**Reading:** the target (every frame under 6.94 ms) is missed by far: about 67–69 fps average, 1 % lows 18.6–21.6 fps,
+83–85 % of frames over 6.94 ms. The renderer's own times are small (CPU 1.5 ms, GPU 3.8–3.9 ms), so the frame is
+bound by the main thread's script work (sim step and view sync), not by the GPU: shadows, SSIL and the floor are not
+the first cut. The rising object count is worth a look. Next: PF2 profiles the main thread and cuts there.
+
+## Owner-PC measurement after the cuts: NOT YET RUN
 
 To be filled by the lead from a run on an idle machine: the exact command, the raw `build/perf/<sha>_<biome>.txt`
 output and the build SHA ([`TEMPLATES.md`](../../../process/TEMPLATES.md) section 3), for Frozen Shore and Red
