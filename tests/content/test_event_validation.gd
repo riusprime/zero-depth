@@ -38,7 +38,8 @@ func test_the_shipped_events_curses_and_rules_compile() -> void:
 	assert_eq(by_id[&"swift_foes"].amount, 150, "15 % in per mille")
 	assert_eq(by_id[&"swarm_call"].amount, 1, "a count stays a count")
 	var rules := EventCompiler.compile_rules(repo.get_def(&"event_rules", &"floor"))
-	assert_eq([rules.rooms_min, rules.rooms_max], [1, 2])
+	assert_eq([rules.rooms_min, rules.rooms_max], [0, 1])  # v0.9.5 AQ: 0 or 1 event room a floor
+	assert_eq([rules.event_floor_chance_permille, rules.events_max_per_run], [300, 2])
 	assert_eq(rules.cursed_chest_permille, 250)
 	var drone: EventTable = events.filter(func(t: EventTable) -> bool: return t.id == &"wandering_drone")[0]
 	assert_eq(drone.cost_amount[0], 20 * 60, "20 s in ticks")

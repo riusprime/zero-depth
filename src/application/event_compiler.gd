@@ -150,6 +150,8 @@ static func compile_rules(def: EventRulesDefinition) -> EventRules:
 	t.core_window_ticks = SimTick.seconds_to_ticks(def.core_window_seconds)  # v0.6.0 CU: core theft
 	t.core_mod_weight = def.core_mod_weight
 	t.drop_offset_m = def.drop_offset_m
+	t.event_floor_chance_permille = def.event_floor_chance_permille  # v0.9.5 AQ
+	t.events_max_per_run = def.events_max_per_run
 	t.curse_room_floor_chance_permille = def.curse_room_floor_chance_permille  # v0.8.0 N17 (O75)
 	t.curse_room_deep_chance_permille = def.curse_room_deep_chance_permille  # v0.8.0 N19 (O80)
 	return t
@@ -159,14 +161,18 @@ static func compile_rules(def: EventRulesDefinition) -> EventRules:
 ## (v0.8.0 N17, N19; Events.CURSE_RULES_*): a floor saved under older floor rules keeps its event rooms as they were
 ## (FloorScenario.curse_room_rules_of).
 ## v0.9.0 EL: `legacy` for a floor saved before EL (FloorScenario.retired_events_of): the retired event keeps its old
-## weight in the draw, so the floor rebuilds as saved.
+## weight in the draw, so the floor rebuilds as saved. v0.9.5 AQ: `rare_events` false for a floor saved before AQ.
 static func setup(
-	w: World, repo: ContentRepository, curse_rules: int = Events.CURSE_RULES_N19, legacy := false
+	w: World,
+	repo: ContentRepository,
+	curse_rules: int = Events.CURSE_RULES_N19,
+	legacy := false,
+	rare_events := true
 ) -> void:
-	Events.setup(
-		w,
-		compile_events(repo, legacy),
-		compile_curses(repo),
-		compile_rules(repo.get_def(&"event_rules", &"floor")),
-		curse_rules
-	)
+	var rules := compile_rules(repo.get_def(&"event_rules", &"floor"))
+	if not rare_events:  # v0.9.5 AQ: a floor saved before AQ keeps its 1-2 event rooms, repeats allowed
+		rules.rooms_min = 1
+		rules.rooms_max = 2
+		rules.event_floor_chance_permille = 1000
+		rules.events_max_per_run = 0
+	Events.setup(w, compile_events(repo, legacy), compile_curses(repo), rules, curse_rules)

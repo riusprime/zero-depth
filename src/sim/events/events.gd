@@ -94,6 +94,9 @@ static func place(
 	curse_rules: int = CURSE_RULES_N19
 ) -> void:
 	var placed := PackedInt32Array()
+	var rare := w.ev.rules.events_max_per_run > 0  # v0.9.5 AQ
+	if rare:
+		placed = w.events_seen.duplicate()  # never the same event twice in a run
 	var shut := taken.duplicate()
 	if Gamble.present(w):  # v0.8.0 N14: the shrine's room (a no-op for the start hall, never a candidate)
 		shut.append(layout.room_of(w.gamble_pos))
@@ -107,11 +110,13 @@ static func place(
 	if curse_room >= 0:
 		shut.append(curse_room)
 	var pool := POOL_ANY if curse_rules == CURSE_RULES_BEFORE_N17 else POOL_COMMON
-	for r in pick_rooms(layout, w.seed_value, w.ev.rules, shut):
+	for r in pick_rooms(layout, w.seed_value, w.ev.rules, shut, w.events_seen.size()):
 		var e := draw_event(w, placed, pool, curse_rules)
 		if e < 0:
 			break
 		placed.append(e)
+		if rare:
+			w.events_seen.append(e)
 		_add(w, spot(layout, r, w.ev.rules)[0], r, e)
 	if curse_room < 0:
 		return
@@ -274,10 +279,14 @@ static func is_curse_altar(w: World, k: int) -> bool:
 ## Overrun room (AB) or the shop room (SH; both marked on the layout before this runs), not an arena (AR), not in
 ## `taken` (any other side-room kind), and with a clear pedestal spot. The count is drawn in
 ## rules.rooms_min..rooms_max from `map:event`, then that many rooms by a partial shuffle of the candidates from the
-## same stream.
+## same stream. v0.9.5 AQ: under rules.events_max_per_run > 0 the count is instead 0 or rooms_max: none once the run
+## has `done` event rooms, else rooms_max on event_floor_chance_permille of floors (the stream's first draw).
 static func pick_rooms(
-	layout: FloorLayout, seed_value: int, rules: EventRules, taken: PackedInt32Array
+	layout: FloorLayout, seed_value: int, rules: EventRules, taken: PackedInt32Array, done: int = 0
 ) -> PackedInt32Array:
+	var rare := rules.events_max_per_run > 0
+	if rare and done >= rules.events_max_per_run:
+		return PackedInt32Array()
 	var cands := PackedInt32Array()
 	for r in layout.room_count():
 		if r == layout.start_room or r == layout.boss_room or r == layout.boss_host_room:
@@ -295,7 +304,12 @@ static func pick_rooms(
 			continue
 		cands.append(r)
 	var rng := RngStream.derive(seed_value, "map:event")
-	var n := mini(rng.range_int(rules.rooms_min, rules.rooms_max), cands.size())
+	var n := 0
+	if rare:
+		n = rules.rooms_max if rng.chance_permille(rules.event_floor_chance_permille) else 0
+		n = mini(n, mini(rules.events_max_per_run - done, cands.size()))
+	else:
+		n = mini(rng.range_int(rules.rooms_min, rules.rooms_max), cands.size())
 	for k in n:
 		var j := rng.range_int(k, cands.size() - 1)
 		var t := cands[k]

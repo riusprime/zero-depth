@@ -5,6 +5,9 @@ extends RefCounted
 
 var rooms_min := 1
 var rooms_max := 2
+## v0.9.5 AQ: see EventRulesDefinition. events_max_per_run 0 = the old draw (rooms_min..rooms_max every floor).
+var event_floor_chance_permille := 1000
+var events_max_per_run := 0
 var interact_radius_m := 1.6
 var clear_radius_m := 1.0
 var reward_gap_m := 3.0

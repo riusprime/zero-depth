@@ -6,6 +6,11 @@ extends ContentDef
 ## Event rooms per floor.
 @export var rooms_min := 1
 @export var rooms_max := 2
+## v0.9.5 AQ (owner: event altars "more special like the curse room"): when events_max_per_run > 0, a floor has an event
+## room on event_floor_chance_permille of floors (rooms_max of them), at most events_max_per_run a run, never the same
+## event twice. 0 keeps the old draw (rooms_min..rooms_max every floor).
+@export var event_floor_chance_permille := 1000
+@export var events_max_per_run := 0
 ## The pedestal: interact reach, and the clearance it keeps from walls and from the floor's altars and chests.
 @export var interact_radius_m := 1.6
 @export var clear_radius_m := 1.0
@@ -47,6 +52,14 @@ func validate() -> Array[ValidationIssue]:
 	var issues := super.validate()
 	if rooms_min < 0 or rooms_max < rooms_min:
 		issues.append(ValidationIssue.new(&"range", resource_path, "0 <= rooms_min <= rooms_max"))
+	if event_floor_chance_permille < 0 or event_floor_chance_permille > 1000:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "event_floor_chance_permille is outside 0..1000"
+			)
+		)
+	if events_max_per_run < 0:
+		issues.append(ValidationIssue.new(&"range", resource_path, "events_max_per_run is below 0"))
 	for f: Array in [
 		["interact_radius_m", interact_radius_m],
 		["clear_radius_m", clear_radius_m],

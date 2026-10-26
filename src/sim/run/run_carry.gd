@@ -21,6 +21,7 @@ const FIELDS: Array[StringName] = [
 	&"mod_slots",  # v0.6.0 MX2: the six modifier slots in pick order (the layer order)
 	&"card_levels",  # v0.6.5 WN3: the wand cards' levels
 	&"stat_rules",  # v0.8.0 SG: the rules stat_values follow (a carry without it is from before SG)
+	&"events_seen",  # v0.9.5 AQ: the events placed this run (a carry without it: none)
 ]
 const HP := &"hp"
 ## v0.5.5 EC (owner Q-S4): the shards the portal left behind, written to the next floor's World.shards_left_behind

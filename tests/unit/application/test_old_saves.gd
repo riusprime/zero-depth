@@ -320,3 +320,22 @@ func test_a_v080_run_resumes_and_ends_as_a_three_floor_run() -> void:
 	assert_eq(back.table.floors, 5)
 	assert_eq(WorldSnapshot.apply(SaveLab.build_floor(back), p["world"]), "", "and resume in it")
 	assert_eq(Wand.slots(fresh), 5, "floor 2 of 5: five slots")
+
+
+## v0.9.5 AQ: a floor saved under floor rules 1-17 is rebuilt with its 1-2 event rooms (no cap, repeats allowed) and
+## records no events_seen; a run save from before AQ has no events_seen in its carry and loads with none.
+func test_a_floor_saved_before_aq_keeps_its_event_rooms() -> void:
+	var run := SaveLab.run_state(41, 2)
+	run.floor_rules = RunState.FLOOR_RULES_V090_CF2
+	assert_false(FloorScenario.rare_events_of(run))
+	var w := SaveLab.build_floor(run)
+	assert_eq(w.ev.rules.events_max_per_run, 0, "no cap on the old floor")
+	assert_between(w.ev.size(), 1, 3, "its 1-2 event rooms (and the curse room)")
+	assert_eq(w.events_seen.size(), 0, "records nothing")
+	run.floor_rules = RunState.FLOOR_RULES
+	assert_true(FloorScenario.rare_events_of(run))
+	assert_eq(SaveLab.build_floor(run).ev.rules.events_max_per_run, 2, "today's floor: capped")
+	var p := RunSaver.payload_of(w, run, 1, PackedByteArray())
+	(p["run"]["carry"] as Dictionary).erase(&"events_seen")
+	assert_false(SaveLab.run_from(p).carry.has(&"events_seen"), "an old carry has no list")
+	assert_eq(SaveLab.build_floor(SaveLab.run_from(p)).events_seen.size() <= 1, true)

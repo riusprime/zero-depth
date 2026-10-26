@@ -62,7 +62,10 @@ extends RefCounted
 ## right after the arenas and the Overrun room (FloorScenario.build, RunSaver.floor_tables' lockdown_first), before
 ## the shrine, the fountain, the events, the curse room and the secrets, which then take the rooms left. A floor
 ## saved under rules 1-16 is rebuilt in the old order, its Lockdowns last (FloorPlan.add_secrets).
-const FLOOR_RULES := 18
+## v0.9.5 AQ (owner: event altars "more special like the curse room"): 19 is today's: an event room on about a third
+## of floors, at most two a run, never the same event twice (Events.pick_rooms; World.events_seen). A floor saved under
+## rules 1-18 is rebuilt with its 1-2 event rooms (FloorScenario.rare_events_of).
+const FLOOR_RULES := 19
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
@@ -82,6 +85,7 @@ const FLOOR_RULES_V090_CF := 16
 const FLOOR_RULES_V090_CF2 := 17
 ## v0.9.5 SB: the props that look solid are solid (Solids).
 const FLOOR_RULES_V095_SB := 18
+const FLOOR_RULES_V095_AQ := 19
 
 var run_seed := 0
 var table: RunTable

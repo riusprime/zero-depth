@@ -168,6 +168,7 @@ const ADDED_SINCE_V05 := {
 	&"World":
 	[
 		&"hook_chain",
+		&"events_seen",  # v0.9.5 AQ: a save from before AQ has seen none (the base's, from the carry)
 		&"launch_tick",
 		&"launch_count",
 		&"shot_tick",  # v0.8.0 PF: the player-shot cap's per-tick count

@@ -4,8 +4,8 @@
 
 [resource]
 script = ExtResource("1_rules")
-rooms_min = 1
-rooms_max = 2
+rooms_min = 0
+rooms_max = 1
 interact_radius_m = 1.6
 clear_radius_m = 1.0
 reward_gap_m = 3.0
@@ -20,4 +20,6 @@ core_mod_weight = 10
 drop_offset_m = 0.9
 curse_room_floor_chance_permille = 400
 curse_room_deep_chance_permille = 1000
+event_floor_chance_permille = 300
+events_max_per_run = 2
 id = &"floor"

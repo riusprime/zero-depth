@@ -16,7 +16,12 @@ static func repo() -> ContentRepository:
 
 ## Floor `floor_index` of run `run_seed` for `build`; `curses` (curse ids) are held from the start (as a carry).
 static func world(
-	run_seed: int, floor_index: int = 1, build: StringName = &"blade", curses: Array = []
+	run_seed: int,
+	floor_index: int = 1,
+	build: StringName = &"blade",
+	curses: Array = [],
+	rare := false,
+	extra_carry := {}
 ) -> World:
 	var r := repo()
 	var run := RunState.start(
@@ -29,6 +34,8 @@ static func world(
 		for c: StringName in curses:
 			owned.append(ids.find(c))
 		run.carry = {&"curses_owned": owned, &"threat_peak": owned.size()}
+	for k: Variant in extra_carry:
+		run.carry[k] = extra_carry[k]
 	var table := ContentCompiler.compile_player(r.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(table, r.get_def(&"build", build))
 	var enemies := ContentCompiler.compile_enemies(r)
@@ -68,7 +75,7 @@ static func world(
 	Abilities.grant_start(w)
 	Abilities.start_floor(w)
 	Heat.enable(w, ContentCompiler.compile_heat(r.get_def(&"heat", &"overclock")))
-	EventCompiler.setup(w, r)
+	EventCompiler.setup(w, r, Events.CURSE_RULES_N19, false, rare)  # v0.9.5 AQ: rare false = the old 1-2 rooms
 	return w
 
 
