@@ -45,7 +45,6 @@ var loads := CoverLoads.new()
 var playground: PlaygroundSession
 ## v0.9.0 HB (owner Q27): the hub while it runs (null otherwise: the menu, a run, the Playground).
 var hub: HubSession
-
 ## The dev panel's tuning (docs/tools/DEV_PANEL.md): the owner's saved overrides, put in the content before compiling.
 ## v0.7.5 SM: a build with the panel locked (DevGate) ignores any tuning file left on the PC.
 var tuning := DevTuning.load_saved() if DevGate.enabled() else DevTuning.new()
@@ -103,6 +102,7 @@ func _ready() -> void:
 	hint_store = HintStore.new(profile)  # v0.7.5 SM
 	hints.setup(hint_store)
 	ui.add_child(hints)
+	add_child(GameCursor.new())  # v0.9.5 MC (owner L16): the reticle in a run, the arrow elsewhere
 	show_main_menu()
 
 
