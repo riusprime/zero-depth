@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/achievement_definition.gd" id="1_ach"]
+
+[resource]
+script = ExtResource("1_ach")
+id = &"sword_unbound"
+name_key = &"ACH_SWORD_UNBOUND_NAME"
+desc_key = &"ACH_SWORD_UNBOUND_DESC"
+glyph = &"blade"
+group = &"bosses"
+order = 6
+hidden = false
+stat = &"final:won_gun"

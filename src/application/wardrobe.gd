@@ -21,9 +21,12 @@ static func has_affinity(id: StringName) -> bool:
 	return id != &"" and id != NONE
 
 
-## The build last picked at the Portal Machine (the same `loadout` section; Blade on a fresh profile).
+## The build last picked at the Portal Machine (the same `loadout` section; Blade on a fresh profile). v0.9.5 SL: the
+## Gun while the Blade is locked (SwordLock).
 static func build_of(profile: ProfileStore) -> StringName:
-	return StringName(String(profile.section("loadout").get("build", "blade")))
+	return SwordLock.usable(
+		profile, StringName(String(profile.section("loadout").get("build", "blade")))
+	)
 
 
 ## The hero's look for a run: the worn robe (the profile's) and the run's locked affinity.

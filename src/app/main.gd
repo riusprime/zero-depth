@@ -220,8 +220,8 @@ func _end_hub() -> void:
 ## utility pick; Blink and Aegis are ability cards found in the run.
 func show_build_picker() -> void:
 	var defs := ContentRepository.load_all().all_of(&"build")
-	var last := StringName(profile.section("loadout").get("build", "blade"))
-	var p := BuildPicker.new(defs, last)
+	var last := Wardrobe.build_of(profile)  # v0.9.5 SL: the Gun while the Blade is locked
+	var p := BuildPicker.new(defs, last, SwordLock.locked_builds(profile))
 	p.picked.connect(
 		func(id: StringName) -> void:
 			profile.section("loadout")["build"] = String(id)

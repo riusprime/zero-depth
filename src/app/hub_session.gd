@@ -70,7 +70,7 @@ func setup(
 	layout = HubLayout.new(hub, bool(states.get(&"gate_open", false)))
 	driver = HubDriver.new()
 	driver.name = "HubDriver"
-	var build_id := StringName(profile.section("loadout").get("build", "blade"))
+	var build_id := Wardrobe.build_of(profile)
 	driver.setup(HubScenario.build(repo, layout, build_id))
 	add_child(driver)
 	var bosses := (stores[2] as CodexCatalog).section_entries(&"bosses", &"bosses").map(

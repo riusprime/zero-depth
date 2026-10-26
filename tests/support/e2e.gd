@@ -10,6 +10,9 @@ const LOAD_MS := 120000
 
 var test: GutTest
 var main: Main
+## v0.9.5 SL: boot() unlocks the Blade (SwordLock.grant, the test path) so the e2e that pick it keep working; a test of
+## the lock itself sets this true before boot().
+var blade_locked := false
 ## v0.9.0: the window's mouse scale, measured once (the probe move it takes aimed the hero at (100, 100) for a
 ## frame on every mouse_to; AF2, AF3 found shots firing at it).
 var _scale := Vector2.ZERO
@@ -29,6 +32,8 @@ func boot(
 	Main.fixed_seed = seed
 	center_sticks()  # v0.8.0 fix: no stick an earlier test left pushed
 	ProfileStore.use_shared(profile if profile != null else ProfileStore.new(""))
+	if not blade_locked:
+		SwordLock.grant(ProfileStore.shared())
 	RunSaveStore.use_shared(saves if saves != null else RunSaveStore.new(""))  # v0.4.0 SV: none from an earlier test
 	main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
 	test.add_child_autofree(main)
