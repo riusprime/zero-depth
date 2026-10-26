@@ -705,3 +705,4 @@ func _sync_combos(reader: WorldReader) -> void:
 		badge.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		plate.add_child(badge)
+		_combos.add_child(plate)
