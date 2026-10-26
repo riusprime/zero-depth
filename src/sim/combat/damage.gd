@@ -68,6 +68,8 @@ static func hit(
 		return 0
 	var target_id := a.ids[target]
 	var splash := effect_id == Stats.EFFECT_OVERKILL  # v0.5.0 CP: an Overkill splash is already scaled
+	if w.stress != null and owner_id == a.ids[0] and target != 0:  # v0.9.5 SM: a struck weak side, before crit
+		amount = StressMarks.on_hit(w, target, amount, tags, from, at, effect_id)
 	if owner_id == a.ids[0] and target != 0 and not splash:  # v0.4.0 BS: damage stats, crit (Stats)
 		var out := Stats.outgoing(w, amount, tags)
 		amount = out[0]

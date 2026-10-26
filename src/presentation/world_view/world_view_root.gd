@@ -98,6 +98,8 @@ var loop_device: LoopDevice
 ## v0.8.0 RM (owner O91): the remnants (threads, cracks, anchors, marks, fragments, replay paths), their flashes and
 ## Thermal Break's shatter.
 var remnants: RemnantViews = _part(RemnantViews)
+## v0.9.5 SM: the Stress Mark's weak-side arcs on the enemies near the hero, and their break flashes.
+var stress_marks: StressMarkViews = _part(StressMarkViews)
 ## v0.3.5 PT: the hero's way into the portal and the arrival on a new floor.
 var transit: PortalTransitView = _part(PortalTransitView)
 ## v0.8.0 N11 (owner O69): the receiver the hero arrives on, in the middle of the first room (null without one).
@@ -380,6 +382,7 @@ func _setup_effects() -> void:
 	add_child(prism_views)  # v0.8.0 FB2
 	add_child(nemesis_views)  # v0.8.0 FB3
 	add_child(remnants)  # v0.8.0 RM
+	add_child(stress_marks)  # v0.9.5 SM
 
 
 ## The floor's portals and devices, the boss door, the shrine and the shop, the portal transit, the ink and hit feel.
@@ -518,6 +521,24 @@ func _first_sync() -> void:
 
 ## v0.8.0 FV (owner O87, the horde lag): one view's sync, timed into `sync_profile` while `profile_sync` is on (the
 ## perf probe's --horde; off in the game: a plain call).
+## v0.9.5 SM: a broken weak side's orange sparks, through the hit impacts' pools and budget (Effects density scales
+## the strength: low a third, medium two thirds).
+func _stress_sparks() -> void:
+	if hit_feel == null or stress_marks.bursts.is_empty():
+		return
+	var k := 1.0
+	if ViewPrefs.effects_density == "low":
+		k = 0.35
+	elif ViewPrefs.effects_density == "medium":
+		k = 0.7
+	for b: Array in stress_marks.bursts:
+		var dir: Vector2 = b[1]
+		var at := SimPlane.to_3d(b[0] + dir * 0.4, 0.5)
+		hit_feel.impacts.add(
+			at, SimPlane.to_3d(dir), at, StressMarkViews.ORANGE, int(b[2]), 1.2 * k, ImpactFx.OTHER
+		)
+
+
 func _sync_view(id: StringName, view: Object) -> void:
 	if not profile_sync:
 		view.call(&"sync", reader)
@@ -587,6 +608,8 @@ func sync() -> void:
 	_sync_view(&"prism_views", prism_views)  # v0.8.0 FB2
 	_sync_view(&"nemesis_views", nemesis_views)  # v0.8.0 FB3
 	_sync_view(&"remnants", remnants)  # v0.8.0 RM
+	_sync_view(&"stress_marks", stress_marks)  # v0.9.5 SM
+	_stress_sparks()
 	if rune_view != null:  # v0.9.0 RA
 		rune_view.sync(reader)
 	if purple != null:  # v0.9.0 DP (owner Q17, Q26b): the runes' vibration builds, then lands in a thud

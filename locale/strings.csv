@@ -1210,7 +1210,7 @@ ITEM_SHARED_FAULTLINE_DESC,Hits leave cracks; attacking across one makes it erup
 ITEM_SHARED_GRAVITY_STITCH,Gravity Stitch,Puntada Gravitatoria
 ITEM_SHARED_GRAVITY_STITCH_DESC,Hits leave anchors that pull enemies and bend your shots.,Los golpes dejan anclas que atraen y curvan disparos.
 ITEM_SHARED_STRESS_MARK,Stress Mark,Marca de Tensión
-ITEM_SHARED_STRESS_MARK_DESC,Hits mark foes; hit from another side to break the mark.,Los golpes marcan; golpea desde otro lado para romperla.
+ITEM_SHARED_STRESS_MARK_DESC,Nearby enemies show a weak side. Hit it for double damage.,Enemigos cercanos con lado débil. Golpéalo: daño doble.
 ITEM_MUT_DOUBLE_EXPOSURE,Double Exposure,Doble Exposición
 ITEM_MUT_DOUBLE_EXPOSURE_DESC,Mutation: an attack's path strikes again a moment later.,Mutación: el trazo de un ataque golpea otra vez al poco.
 ITEM_MUT_GRAND_FINALE,Grand Finale,Gran Final
@@ -1362,3 +1362,4 @@ COLLECTIBLE_SHELF_HUB,Rune Ring shelf,Estante del Anillo
 COLLECTIBLE_TOAST,ADDED TO THE RUNE ARCHIVE,AÑADIDO AL ARCHIVO DE RUNAS
 UI_CODEX_TAB_COLLECTIBLES,Collectibles,Coleccionables
 PROGRESSION_REVEALED,Revealed: %s. Wear it at the Wardrobe.,Revelada: %s. Póntela en el Vestidor.
+CAPTION_STRESS_BREAK,[weak point],[punto débil]

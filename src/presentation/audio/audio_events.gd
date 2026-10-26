@@ -515,6 +515,8 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"lance_release", e.pos, 1.0])
 			SimEvent.Kind.COLLECTIBLE:  # v0.9.0 CL: a collectible taken (the combo unlock's chime, a placeholder)
 				out.append([&"combo_unlock", null, 1.0])
+			SimEvent.Kind.STRESS_BREAK:  # v0.9.5 SM: a Stress Mark side broken, a metallic ting
+				out.append([&"stress_break", e.pos, 1.0])
 
 
 ## Mines (v0.4.0 EN): a beep as one arms, the blast when an armed one goes off the floor.

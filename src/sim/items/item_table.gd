@@ -114,6 +114,12 @@ var phase_guard_window_ticks := 0
 var tags := PackedStringArray()
 ## v0.9.5 CLV: the card's level cap (0: CardLevels.MAX_LEVEL; see CardLevels.max_level).
 var level_max := 0
+## v0.9.5 SM: the Stress Mark card (mark_radius_m > 0; see ItemDefinition).
+var mark_radius_m := 0.0
+var mark_half_angle_deg := 45.0
+var mark_mult_permille := 1000
+var mark_cooldown_ticks := 0
+var mark_boss_marks := 1
 var stacks_per_hit := 0
 var shock_threshold := 0
 var shock_ticks := 0

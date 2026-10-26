@@ -91,23 +91,6 @@ func test_gravity_stitch_pulls_enemies_and_bends_shots() -> void:
 	assert_false(w.mx.rem_uid.has(first), "1.2 s, then gone")
 
 
-func test_stress_mark_breaks_on_a_hit_from_another_side() -> void:
-	var w := W.world(&"blade", [&"shared_stress_mark"], [[Vector2(2.0, 0.0), 100000]])
-	var k := _hook(Modifiers.step(w, 0), &"shared_stress_mark")
-	Remnants.on_hook(w, k, _ctx(w, Vector2.ZERO, 0, 10), Vector2(2.0, 0.0), 1)
-	assert_eq(w.mx.rem_kind, PackedInt32Array([K.MARK]), "the first hit marks")
-	assert_eq(w.mx.rem_dir[0], 0, "with the hit's direction")
-	Remnants.on_hook(w, k, _ctx(w, Vector2(0.0, 1.0), 0, 10), Vector2(2.0, 0.0), 1)
-	assert_eq(w.mx.rem_uid.size(), 1, "a hit about 27° away doesn't break it")
-	Remnants.on_hook(w, k, _ctx(w, Vector2(2.0, 2.0), 0, 30), Vector2(2.0, 0.0), 1)
-	assert_eq(w.mx.rem_uid.size(), 0, "a hit from 90° away breaks it")
-	var dmg := W.damage(w, &"shared_stress_mark")
-	assert_eq(dmg.size(), 1)
-	assert_eq(dmg[0].amount, 30, "+100 % of that hit")
-	Remnants.on_hook(w, k, _ctx(w, Vector2.ZERO, 0, 10), Vector2(2.0, 0.0), 1)
-	assert_eq(w.mx.rem_uid.size(), 1, "the next hit marks it again")
-
-
 func test_fracture_bank_extracts_every_lodged_fragment() -> void:
 	var w := W.world(&"blade", [&"finisher_plus"], [[Vector2(2.0, 0.0), 100000]])
 	var lodge := _hook(Modifiers.step(w, 0), &"finisher_plus")
@@ -214,7 +197,7 @@ func test_dodge_imprint_casts_the_next_attack_where_the_dash_began() -> void:
 func _fight() -> World:
 	return W.world(
 		&"gun",
-		[&"gun_threadline", &"shared_faultline", &"shared_gravity_stitch", &"shared_stress_mark"],
+		[&"gun_threadline", &"shared_faultline", &"shared_gravity_stitch"],
 		[[Vector2(3.0, 0.4), 1000000], [Vector2(5.0, -0.6), 1000000]]
 	)
 

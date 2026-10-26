@@ -23,6 +23,8 @@ const SIZE := 37
 const CRIT_SIZE := 69
 const COLOR := Color(1, 1, 1, 0.92)
 const CRIT_COLOR := Color("#FFD23A")
+## v0.9.5 SM: a hit that struck a Stress Mark's weak side.
+const WEAK_COLOR := Color("#FF8A2A")
 ## The throw: how far out to the side (m, along the screen), how high its peak (m) and where in its life it peaks;
 ## the cosmetic spread on both (0.2: 80-120 %).
 const THROW_OUT_M := 0.9
@@ -43,6 +45,8 @@ var _crit: Array[bool] = []
 var _throw: Array[Vector2] = []
 var _next := 0
 var _last_seq := 0
+## v0.9.5 SM: the enemies whose weak side broke this tick (id -> tick), so their hit's number shows orange.
+var _weak := {}
 var _side := 1.0
 ## The cosmetic stream (presentation only, EI-05): the throw's spread and the crit's shake.
 var _rng := RandomNumberGenerator.new()
@@ -59,15 +63,25 @@ func sync(reader: WorldReader) -> void:
 	var player_id := reader.actor_id(0)
 	for e in reader.events_since(_last_seq):
 		_last_seq = e.seq
+		if e.kind == SimEvent.Kind.STRESS_BREAK:
+			_weak[e.target_id] = e.tick
+			continue
 		if e.kind != SimEvent.Kind.DAMAGE or e.owner_id != player_id or e.target_id == player_id:
 			continue
 		if e.tags & SimEvent.TAG_DOT or e.amount <= 0:
 			continue
-		show_number(e.pos, e.amount, (e.tags & SimEvent.TAG_CRIT) != 0)
+		var weak := int(_weak.get(e.target_id, -1)) == e.tick
+		show_number(
+			e.pos,
+			e.amount,
+			(e.tags & SimEvent.TAG_CRIT) != 0,
+			WEAK_COLOR if weak else Color(0, 0, 0, 0)
+		)
+		_weak.erase(e.target_id)
 
 
 ## Throws `amount` from `at` (crit: bigger, yellow, a shake and a vanish).
-func show_number(at: Vector2, amount: int, crit: bool) -> void:
+func show_number(at: Vector2, amount: int, crit: bool, tint := Color(0, 0, 0, 0)) -> void:
 	var l: Label3D
 	if _labels.size() < POOL:
 		l = Label3D.new()
@@ -92,7 +106,7 @@ func show_number(at: Vector2, amount: int, crit: bool) -> void:
 	l = _labels[k]
 	l.text = str(amount)
 	l.font_size = CRIT_SIZE if crit else SIZE
-	l.modulate = CRIT_COLOR if crit else COLOR
+	l.modulate = tint if tint.a > 0.0 else (CRIT_COLOR if crit else COLOR)
 	_from[k] = SimPlane.to_3d(at, 1.3 if crit else 1.1)
 	_crit[k] = crit
 	_left[k] = CRIT_LIFE_S if crit else LIFE_S
