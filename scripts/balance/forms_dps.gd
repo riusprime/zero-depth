@@ -79,6 +79,20 @@ const VOID_COMBOS: Array = [
 	[&"orbit_rounds"],
 ]
 
+## v0.9.5 FC5: the Rune Explosion's card combinations (a card alone each; Twin at its Lv 1), in the NEAR scenes.
+const RUNE_COMBOS: Array = [
+	[],
+	[&"gun_twin"],
+	[&"gun_ring"],
+	[&"gun_ricochet"],
+	[&"gun_homing"],
+	[&"gun_echo"],
+	[&"gun_big_shot"],
+	[&"gun_rapid_fire"],
+	[&"split_shot"],
+	[&"gun_mine"],
+]
+
 
 func _scenes(near: bool) -> Dictionary:
 	if near:
@@ -181,6 +195,28 @@ func _initialize() -> void:
 					)
 				)
 			)
+	# v0.9.5 FC5: the Rune Explosion with its cards (a card alone each), in the NEAR scenes against the NEAR orbs.
+	for combo: Array in RUNE_COMBOS:
+		var d := {}
+		for sc: String in near:
+			d[sc] = _damage(&"gun_rune_explosion", 1, false, near[sc][0], near[sc][1], combo)
+		(
+			lines
+			. append(
+				(
+					"rune_explosion (near) + %s | 1 | no | %.3f | %.3f | %.3f | %d | %d | %d"
+					% [
+						"+".join(combo) if not combo.is_empty() else "(plain)",
+						float(d["single"]) / float(base_near["single"]),
+						float(d["line"]) / float(base_near["line"]),
+						float(d["pack"]) / float(base_near["pack"]),
+						d["single"],
+						d["line"],
+						d["pack"],
+					]
+				)
+			)
+		)
 	var text := "\n".join(lines)
 	print(text)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://build/balance"))

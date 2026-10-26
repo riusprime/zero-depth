@@ -144,6 +144,7 @@ static func advance(w: World) -> void:
 	WaveShots.advance(w)  # v0.9.0 AF3: the Wave shots' bands (after the Void clears the waits that are over)
 	Wisps.advance(w)  # v0.9.0 AF3: the wisps' own shots
 	RuneExplosion.advance(w)  # v0.9.5 FC0: the rune bursts grow, hit and shove
+	RuneMods.advance(w)  # v0.9.5 FC5: the rune cards' traps, rings, shrinking shields and shards
 	LaserMods.advance(w)  # v0.9.5 FC1: the Laser's aim, targets, ramp, Echo's strikes and mines
 	BombMods.advance(w)  # v0.9.5 FC2: the Bomb's waiting bombs, mines, echoes, bomblets and rings
 	VoidMods.advance(w)  # v0.9.5 FC3: the Void's cap, the voids to open, the rings

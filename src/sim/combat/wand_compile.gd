@@ -152,6 +152,9 @@ func run(s: AttackSpec, from: int) -> AttackSpec:
 		if s.void_mm > 0 and VoidMods.is_card(m.id):  # v0.9.5 FC3: the Void's cards are VoidMods'
 			VoidMods.note_card(s, m)
 			continue
+		if s.rune_mm > 0 and RuneMods.is_card(m.id):  # v0.9.5 FC5: the Rune Explosion's cards are RuneMods'
+			RuneMods.note_card(s, m)
+			continue
 		var applied := false
 		for stage in ModifierTable.STAGE_COUNT:  # a card's own ops in stage order
 			for op in m.ops:

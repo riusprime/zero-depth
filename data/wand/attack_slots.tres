@@ -137,8 +137,34 @@ ruled = Array[StringName]([])
 script = ExtResource("2_row")
 id = &"rune_explosion"
 card = &"gun_rune_explosion"
-allowed = Array[StringName]([&"gun_twin", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
+allowed = Array[StringName]([&"gun_twin", &"gun_ring", &"gun_ricochet", &"gun_homing", &"gun_echo", &"gun_big_shot", &"gun_rapid_fire", &"split_shot", &"gun_mine", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
 ruled = Array[StringName]([])
+params = {
+"ring_ticks": 48,
+"ring_share": 1000,
+"ricochet_share": 500,
+"home_range_mm": 6000,
+"echo_delay_ticks": 36,
+"echo_share": 600,
+"big_radius_mm": 5000,
+"big_damage": 1600,
+"big_period_ticks": 90,
+"rapid_radius_mm": 2500,
+"rapid_damage": 700,
+"rapid_period_ticks": 42,
+"split_count": 2,
+"split_share": 250,
+"split_range_mm": 4000,
+"split_spread_deg": 30,
+"split_ticks": 24,
+"split_hit_mm": 300,
+"split_live_max": 24,
+"mine_life_ticks": 240,
+"mine_trigger_mm": 600,
+"mine_radius_mm": 2000,
+"mine_share": 1000,
+"mine_max": 4
+}
 
 [sub_resource type="Resource" id="Form_glaive"]
 script = ExtResource("2_row")

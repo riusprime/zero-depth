@@ -218,7 +218,7 @@ func test_a_snapshot_mid_burst_plays_on_the_same() -> void:
 	assert_eq(c.actors.hp[1], a.actors.hp[1], "the same damage taken")
 
 
-func test_the_row_allows_twin_and_the_five_elements_only() -> void:
+func test_the_row_allows_twin_the_nine_rune_cards_and_the_five_elements_only() -> void:
 	var row: AttackFormRow = null
 	var slots: AttackSlotsDefinition = W.repo().get_def(&"wand", &"attack_slots")
 	for f in slots.forms:
@@ -227,7 +227,20 @@ func test_the_row_allows_twin_and_the_five_elements_only() -> void:
 	assert_not_null(row)
 	assert_eq(row.card, RUNE)
 	var want: Array[StringName] = [
-		&"gun_twin", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"
+		&"gun_twin",
+		&"gun_ring",
+		&"gun_ricochet",
+		&"gun_homing",
+		&"gun_echo",
+		&"gun_big_shot",
+		&"gun_rapid_fire",
+		&"split_shot",
+		&"gun_mine",
+		&"ember_core",
+		&"storm_core",
+		&"frost_core",
+		&"venom_core",
+		&"shared_bleed"
 	]
 	assert_eq(row.allowed, want)
 

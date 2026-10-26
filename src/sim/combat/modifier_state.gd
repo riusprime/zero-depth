@@ -127,6 +127,23 @@ var vm_life := PackedInt32Array()
 var vm_r := PackedInt32Array()
 var vm_root := PackedInt32Array()
 var vm_hit := PackedInt32Array()
+## v0.9.5 FC5 (RuneMods): the Rune Explosion cards' rows, one a burst's meta (kind and flags, the burst's uid in rm_ref,
+## its fixed centre), a held lightning ring, a shrinking shield, a trap or a shard (kind and flags, uid, place, tick
+## born, life in ticks, damage, root, radius in mm, the source actor or burst, aim) and the hits (row uid, actor id).
+## Hashed only while any row is set (older digests unchanged).
+var rm_next := 0
+var rm_id := PackedInt32Array()
+var rm_kind := PackedInt32Array()
+var rm_at := PackedVector2Array()
+var rm_born := PackedInt32Array()
+var rm_life := PackedInt32Array()
+var rm_dmg := PackedInt32Array()
+var rm_root := PackedInt32Array()
+var rm_r := PackedInt32Array()
+var rm_ref := PackedInt32Array()
+var rm_ang := PackedInt32Array()
+var rm_hit_row := PackedInt32Array()
+var rm_hit_foe := PackedInt32Array()
 ## v0.8.0 MR (owner O91; FireRhythm): Rapid Fire's ramp (the consecutive shots so far, the tick of the last shot) and
 ## Flurry's burst (the swing's place in its burst, 1 = the first after a pause; the tick its last swing ends); and
 ## SecondaryProc's carry (per mille of a status stack a secondary hit owes, so halved stacks are exact on average).
@@ -203,6 +220,7 @@ func touched() -> bool:
 		or lz_touched()
 		or bm_touched()
 		or vm_touched()
+		or rm_touched()
 		or remnants_touched()
 	)
 
@@ -275,6 +293,27 @@ func vm_clear() -> void:
 	vm_r = PackedInt32Array()
 	vm_root = PackedInt32Array()
 	vm_hit = PackedInt32Array()
+
+
+## v0.9.5 FC5: a Rune Explosion card's row is set.
+func rm_touched() -> bool:
+	return rm_next != 0 or not rm_kind.is_empty()
+
+
+func rm_clear() -> void:
+	rm_next = 0
+	rm_id = PackedInt32Array()
+	rm_kind = PackedInt32Array()
+	rm_born = PackedInt32Array()
+	rm_life = PackedInt32Array()
+	rm_dmg = PackedInt32Array()
+	rm_root = PackedInt32Array()
+	rm_r = PackedInt32Array()
+	rm_ref = PackedInt32Array()
+	rm_ang = PackedInt32Array()
+	rm_hit_row = PackedInt32Array()
+	rm_hit_foe = PackedInt32Array()
+	rm_at = PackedVector2Array()
 
 
 ## v0.8.0 RM: a remnant card has acted (Remnants): its block is hashed from then on.
@@ -403,6 +442,27 @@ func hash_into(h: StateHasher) -> void:
 			for p in arr:
 				h.add_f32(p.x)
 				h.add_f32(p.y)
+	if rm_touched():  # v0.9.5 FC5: only while a Rune Explosion card's row is set
+		h.add_string("rmx")
+		h.add_int(rm_next)
+		for arr: PackedInt32Array in [
+			rm_id,
+			rm_kind,
+			rm_born,
+			rm_life,
+			rm_dmg,
+			rm_root,
+			rm_r,
+			rm_ref,
+			rm_ang,
+			rm_hit_row,
+			rm_hit_foe
+		]:
+			h.add_ints(arr)
+		h.add_int(rm_at.size())
+		for p in rm_at:
+			h.add_f32(p.x)
+			h.add_f32(p.y)
 	if ramp_n != 0 or burst_n != 0 or sec_carry != 0:  # v0.8.0 MR: only once a rhythm or a carry is set
 		h.add_string("mr")
 		for v in [ramp_n, ramp_tick, burst_n, burst_free, sec_carry]:

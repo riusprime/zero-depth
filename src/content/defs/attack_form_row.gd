@@ -41,6 +41,34 @@ const VOID_KEYS: Array[String] = [
 	"live_max",
 ]
 
+## v0.9.5 FC5: the numbers the Rune Explosion row carries (RuneMods.DEFAULTS has the same keys; a test holds them).
+const RUNE_KEYS: Array[String] = [
+	"ring_ticks",
+	"ring_share",
+	"ricochet_share",
+	"home_range_mm",
+	"echo_delay_ticks",
+	"echo_share",
+	"big_radius_mm",
+	"big_damage",
+	"big_period_ticks",
+	"rapid_radius_mm",
+	"rapid_damage",
+	"rapid_period_ticks",
+	"split_count",
+	"split_share",
+	"split_range_mm",
+	"split_spread_deg",
+	"split_ticks",
+	"split_hit_mm",
+	"split_live_max",
+	"mine_life_ticks",
+	"mine_trigger_mm",
+	"mine_radius_mm",
+	"mine_share",
+	"mine_max",
+]
+
 ## v0.9.5 FC2: the numbers the Bomb row carries (BombMods.DEFAULTS has the same keys; a test holds them equal).
 const BOMB_KEYS: Array[String] = [
 	"halo_dist_mm",

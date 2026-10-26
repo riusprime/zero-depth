@@ -43,7 +43,7 @@ static func active(w: World) -> bool:
 
 ## The full radius of `s` now (m): rune_mm, the area stat on it.
 static func radius_m(w: World, s: AttackSpec) -> float:
-	return Stats.area(w, s.rune_mm / 1000.0)
+	return Stats.area(w, RuneMods.radius_mm(w, s) / 1000.0)  # v0.9.5 FC5: Big Shot, Rapid Fire
 
 
 ## The edge radius (m) of a burst of full radius `radius` at `age` ticks of its `grow` growth ticks: linear, in whole
@@ -58,15 +58,24 @@ static func fire(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var s := w.mx
 	var r := radius_m(w, spec)
 	var extra_share := spec.share_permille if spec.share_permille > 0 else TWIN_SIZE_PERMILLE
+	var base := RuneMods.damage(w, spec, ctx.damage)  # v0.9.5 FC5: Big Shot's x1.6, Rapid Fire's x0.7
+	var aim := RuneMods.target(w, spec, w.player_pos())  # v0.9.5 FC5: Homing's centre
+	var fixed: bool = aim["fixed"]
+	var at: Vector2 = aim["at"]
 	var queued := false
+	var first := -1
 	for k in maxi(0, spec.twin) + 1:
 		if s.rune_uid.size() >= LIVE_MAX:
 			break
-		var dmg := ctx.damage
+		var dmg := base
 		var rad := r
 		if k > 0:
-			dmg = maxi(1, (ctx.damage * extra_share + 500) / 1000)
+			dmg = maxi(1, (base * extra_share + 500) / 1000)
 			rad = r * TWIN_SIZE_PERMILLE / 1000.0
+		if k == 0:
+			first = s.rune_next
+		if fixed:
+			RuneMods.note_burst(s, s.rune_next, at, RuneMods.F_FIXED)
 		s.rune_uid.append(s.rune_next)
 		s.rune_next += 1
 		s.rune_key.append(spec.key)
@@ -75,6 +84,8 @@ static func fire(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		s.rune_damage.append(dmg)
 		s.rune_root.append(ctx.root if ctx.root != 0 and k == 0 else w.take_root())
 		queued = true
+	if first >= 0:
+		RuneMods.on_cast(w, spec, at, base, r)  # Echo's glyph, Mine's trap
 	return queued
 
 
@@ -88,7 +99,7 @@ static func advance(w: World) -> void:
 	if w.player_dead():
 		_clear(s)
 		return
-	var centre := w.player_pos()
+	var hero := w.player_pos()
 	var k := 0
 	while k < s.rune_uid.size():
 		var spec := Modifiers.book(w).find(s.rune_key[k])
@@ -97,7 +108,10 @@ static func advance(w: World) -> void:
 			_drop(s, k)
 			continue
 		if age >= 0 and age <= spec.rune_ticks:
+			var centre := RuneMods.centre_of(s, s.rune_uid[k], hero)  # v0.9.5 FC5: Homing, Echo, Mine fix it
 			_hit(w, spec, k, centre, edge_m(s.rune_radius[k], age, spec.rune_ticks))
+			if age == spec.rune_ticks:
+				RuneMods.on_full(w, spec, s.rune_uid[k], centre, s.rune_radius[k], s.rune_damage[k])
 		k += 1
 
 
@@ -117,6 +131,7 @@ static func _hit(w: World, spec: AttackSpec, k: int, centre: Vector2, edge: floa
 		var pos := w.actors.pos(i)
 		if Attacks.land(w, spec, ctx, i, centre, pos) > 0:
 			_shove(w, i, centre)
+			RuneMods.on_hit(w, spec, uid, s.rune_damage[k], i, centre, pos)  # v0.9.5 FC5: Split
 
 
 static func _hit_before(s: ModifierState, uid: int, aid: int) -> bool:
@@ -156,6 +171,7 @@ static func _advance_push(w: World) -> void:
 
 static func _drop(s: ModifierState, k: int) -> void:
 	var uid := s.rune_uid[k]
+	RuneMods.forget(s, uid)
 	for j in range(s.rune_hit_uid.size() - 1, -1, -1):
 		if s.rune_hit_uid[j] == uid:
 			s.rune_hit_uid.remove_at(j)
@@ -169,6 +185,7 @@ static func _drop(s: ModifierState, k: int) -> void:
 
 
 static func _clear(s: ModifierState) -> void:
+	RuneMods.clear(s)
 	s.rune_uid.clear()
 	s.rune_key.clear()
 	s.rune_born.clear()
@@ -201,7 +218,7 @@ static func read(w: World) -> Array[Dictionary]:
 			. append(
 				{
 					"uid": s.rune_uid[k],
-					"pos": w.player_pos(),
+					"pos": RuneMods.centre_of(s, s.rune_uid[k], w.player_pos()),
 					"radius": s.rune_radius[k],
 					"edge": edge_m(s.rune_radius[k], age, spec.rune_ticks),
 					"age": age,
