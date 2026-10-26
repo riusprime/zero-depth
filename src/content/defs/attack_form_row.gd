@@ -6,6 +6,31 @@ extends Resource
 ## form's own (the form's step builds the rule; until then it reads as on); every other card is off (C62: "No by
 ## default"), so it is never offered, never equipped and never compiled with this form.
 
+## v0.9.5 FC8: the numbers the Wave row carries (WaveMods.DEFAULTS has the same keys; a test holds them equal).
+const WAVE_KEYS: Array[String] = [
+	"ricochet_bounces",
+	"home_cone_deg",
+	"home_turn_dps",
+	"home_group_mm",
+	"echo_delay_ms",
+	"echo_share",
+	"big_width_mm",
+	"big_speed",
+	"big_damage",
+	"rapid_width_mm",
+	"rapid_period_ms",
+	"rapid_damage",
+	"split_deg",
+	"split_len_mm",
+	"split_share",
+	"split_wide",
+	"mine_out_mm",
+	"mine_hold_ms",
+	"spiral_mm",
+	"spiral_ms",
+	"live_max",
+]
+
 ## v0.9.5 FC6: the numbers the Glaive row carries (GlaiveMods.DEFAULTS has the same keys; a test holds them equal).
 const GLAIVE_KEYS: Array[String] = [
 	"halo_count",

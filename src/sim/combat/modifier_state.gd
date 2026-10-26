@@ -146,6 +146,23 @@ var gm_root := PackedInt32Array()
 var gm_hit_row := PackedInt32Array()
 var gm_hit_actor := PackedInt32Array()
 var gm_hit_until := PackedInt32Array()
+## v0.9.5 FC8 (WaveMods): the Wave cards' rows, one a live wave's state or a wave to open (kind and flags, the wave's
+## projectile id, place, tick due, tick born, angle, damage, radius in mm, width in mm, aux and aux2 (see WaveMods),
+## root). Hashed only while set.
+var wm_next := 0
+var wm_id := PackedInt32Array()
+var wm_kind := PackedInt32Array()
+var wm_pid := PackedInt32Array()
+var wm_at := PackedVector2Array()
+var wm_due := PackedInt32Array()
+var wm_born := PackedInt32Array()
+var wm_ang := PackedInt32Array()
+var wm_dmg := PackedInt32Array()
+var wm_r := PackedInt32Array()
+var wm_w := PackedInt32Array()
+var wm_aux := PackedInt32Array()
+var wm_aux2 := PackedInt32Array()
+var wm_root := PackedInt32Array()
 ## v0.9.5 FC4 (LanceMods): the Lance cards' rows, one a live lance's state, a ghost lance to open, a ring growing or a
 ## split shard (kind and flags, the lance's projectile id, place, tick due, tick born, angle, damage, radius in mm,
 ## aux (bounces of a ghost, enemies a lance has split on), root) and Ring's hits (id * 65536 + actor). Hashed only
@@ -258,6 +275,7 @@ func touched() -> bool:
 		or bm_touched()
 		or vm_touched()
 		or gm_touched()
+		or wm_touched()
 		or lm_touched()
 		or rm_touched()
 		or remnants_touched()
@@ -332,6 +350,28 @@ func vm_clear() -> void:
 	vm_r = PackedInt32Array()
 	vm_root = PackedInt32Array()
 	vm_hit = PackedInt32Array()
+
+
+## v0.9.5 FC8: a Wave card's row is set.
+func wm_touched() -> bool:
+	return wm_next != 0 or not wm_kind.is_empty()
+
+
+func wm_clear() -> void:
+	wm_next = 0
+	wm_id = PackedInt32Array()
+	wm_kind = PackedInt32Array()
+	wm_pid = PackedInt32Array()
+	wm_at = PackedVector2Array()
+	wm_due = PackedInt32Array()
+	wm_born = PackedInt32Array()
+	wm_ang = PackedInt32Array()
+	wm_dmg = PackedInt32Array()
+	wm_r = PackedInt32Array()
+	wm_w = PackedInt32Array()
+	wm_aux = PackedInt32Array()
+	wm_aux2 = PackedInt32Array()
+	wm_root = PackedInt32Array()
 
 
 ## v0.9.5 FC6: a Glaive card's row is set.
@@ -548,6 +588,28 @@ func hash_into(h: StateHasher) -> void:
 			h.add_ints(arr)
 		h.add_int(gm_at.size())
 		for p in gm_at:
+			h.add_f32(p.x)
+			h.add_f32(p.y)
+	if wm_touched():  # v0.9.5 FC8: only while a Wave card's row is set
+		h.add_string("wm")
+		h.add_int(wm_next)
+		for arr: PackedInt32Array in [
+			wm_id,
+			wm_kind,
+			wm_pid,
+			wm_due,
+			wm_born,
+			wm_ang,
+			wm_dmg,
+			wm_r,
+			wm_w,
+			wm_aux,
+			wm_aux2,
+			wm_root
+		]:
+			h.add_ints(arr)
+		h.add_int(wm_at.size())
+		for p in wm_at:
 			h.add_f32(p.x)
 			h.add_f32(p.y)
 	if lm_touched():  # v0.9.5 FC4: only while a Lance card's row is set

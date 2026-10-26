@@ -150,6 +150,7 @@ static func advance(w: World) -> void:
 	VoidMods.advance(w)  # v0.9.5 FC3: the Void's cap, the voids to open, the rings
 	LanceMods.advance(w)  # v0.9.5 FC4: the Lance's ghosts, rings and shards
 	GlaiveMods.advance(w)  # v0.9.5 FC6: the Glaive's ghosts, small discs, rings and bound
+	WaveMods.advance(w)  # v0.9.5 FC8: the Wave cards' ghosts, children, bends, stops, sways and bound
 	_walk(w)
 	BladeForms.advance(w)  # v0.6.5 WN4: Heavy's push, Orbit Blades, Parry Edge through the swing
 

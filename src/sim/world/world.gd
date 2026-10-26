@@ -1985,12 +1985,14 @@ func _apply_spawns() -> void:
 		VoidMods.on_spawn(self, projectiles.size() - 1)  # v0.9.5 FC3: a void with cards gets its row
 		LanceMods.on_spawn(self, projectiles.size() - 1)  # v0.9.5 FC4: a lance with cards gets its row
 		GlaiveMods.on_spawn(self, projectiles.size() - 1)  # v0.9.5 FC6: a disc with cards gets its row
+		WaveMods.on_spawn(self, projectiles.size() - 1)  # v0.9.5 FC8: a wave with cards gets its row
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 		if s[13] != "":  # v0.8.0 RM: Threadline links it to the bolt before
 			Remnants.on_link(self, projectiles.size() - 1, s[13])
 	_pending_projectiles.clear()
 	VoidMods.cull(self)  # v0.9.5 FC3: at most so many voids a hero
 	GlaiveMods.cull(self)  # v0.9.5 FC6: and so many discs
+	WaveMods.cull(self)  # v0.9.5 FC8: and so many waves
 	for s in _pending_enemies:  # Bosses (v0.3.0 C): eggs and turrets.
 		if enemy_table(s[0]) != null:
 			add_enemy(s[0], s[1])

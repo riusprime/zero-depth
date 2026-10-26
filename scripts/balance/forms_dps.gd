@@ -122,6 +122,19 @@ const GLAIVE_COMBOS: Array = [
 	[&"orbit_rounds"],
 ]
 
+## v0.9.5 FC8: the Wave's card combinations (a card alone each; Twin and Backfire are the Wave's own, FC8 adds eight).
+const WAVE_COMBOS: Array = [
+	[],
+	[&"gun_ricochet"],
+	[&"gun_homing"],
+	[&"gun_echo"],
+	[&"gun_big_shot"],
+	[&"gun_rapid_fire"],
+	[&"split_shot"],
+	[&"gun_mine"],
+	[&"gun_spiral"],
+]
+
 
 func _scenes(near: bool) -> Dictionary:
 	if near:
@@ -202,7 +215,8 @@ func _initialize() -> void:
 		["bomb", &"gun_bomb", BOMB_COMBOS],
 		["void", &"gun_void", VOID_COMBOS],
 		["lance", &"gun_lance", LANCE_COMBOS],
-		["glaive", &"gun_glaive", GLAIVE_COMBOS]
+		["glaive", &"gun_glaive", GLAIVE_COMBOS],
+		["wave", &"gun_wave", WAVE_COMBOS],
 	]:
 		for combo: Array in set_of[2]:
 			var d := {}

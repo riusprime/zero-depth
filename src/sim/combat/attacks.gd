@@ -354,6 +354,11 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 		speed = GlaiveMods.speed(w, spec, gm)
 		life = GlaiveMods.life(w, spec, gm)
 		bounces = GlaiveMods.bounces(w, gm, bounces)
+	var wvm := WaveMods.mask(spec) if spec.wave_mm > 0 else 0  # v0.9.5 FC8: the Wave's cards (WaveMods)
+	if wvm != 0:  # Big Shot's and Rapid Fire's damage and speed; Ricochet's one bounce
+		dmg = WaveMods.share(dmg, WaveMods.damage_permille(w, wvm))
+		speed = WaveMods.speed(w, spec, wvm)
+		bounces = WaveMods.bounces(w, wvm, bounces)
 	var q := -1
 	var picked := 0
 	for oi in offsets.size():
@@ -390,6 +395,9 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				GlaiveMods.add_echo(
 					w, muzzle, (ctx.angle + off + turns[li]) & 4095, dmg, r, bounces
 				)
+			if wvm & WaveMods.ECHO != 0 and ctx.depth == 0 and not ctx.repeat:
+				# v0.9.5 FC8: Echo's ghost wave waits on this line
+				WaveMods.add_echo(w, muzzle, (ctx.angle + off + turns[li]) & 4095, dmg, r, bounces)
 			if root:
 				root = false  # the volley's first shot is the player's own; the rest are extras
 			else:
@@ -978,6 +986,8 @@ static func on_projectile_end(w: World, pi: int, at: Vector2) -> void:
 		VoidMods.on_end(w, spec, pi, at)  # v0.9.5 FC3: Ring, Echo and Split queue
 	if spec != null and spec.lance > 0:
 		LanceMods.on_end(w, spec, pi, at)  # v0.9.5 FC4: Ring
+	if spec != null and spec.wave_mm > 0:
+		WaveMods.on_end(w, spec, pi, at)  # v0.9.5 FC8: Split's two waves
 	if spec != null and not spec.hooks.is_empty():
 		var p := w.projectiles
 		var ang := Kin.angle_of(Vector2(p.vel_x[pi], p.vel_y[pi]))
