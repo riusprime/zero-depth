@@ -18,6 +18,8 @@ const NOT_GROUND := [
 	WorldReader.MOVE_TIDE,  # v0.9.0 NB1: the Pull is the whole room's current (TideViews), not a marker
 	WorldReader.MOVE_CROSSFIRE,  # v0.9.0 NB2: the Wardens' fans (their gaps: TwinViews), not a marker
 	WorldReader.MOVE_ECHO,  # v0.9.0 NB3: the Judge's echo, its path and ghost strikes drawn by JudgeViews
+	BossAttackTable.Move.WAVE,  # v0.9.5 BH4: the crossing waves, drawn by TideWaveViews (never a boss's own strike)
+	BossAttackTable.Move.INTERPHASE,  # v0.9.5 BH6: the Fallen's interphase carriers, drawn by InterphaseViews
 ]
 
 
