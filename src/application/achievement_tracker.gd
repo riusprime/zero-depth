@@ -40,6 +40,7 @@ var _ended := false
 var _sealed_room := -1
 var _hurt := false
 var _cleared_seen := 0
+var _lk_cleared_seen := 0  # v0.9.5 DR: the locked rooms (lockdowns, and the old arena rooms) count too
 var _overrun_done := false
 var _steal_tick := -1
 var _wand_due := 0
@@ -65,6 +66,10 @@ func attach(reader: WorldReader) -> void:
 	_sealed_room = int(ar.get("sealed", -1))
 	_hurt = true  # a room already sealed when the floor resumes doesn't count as clean
 	_cleared_seen = (ar.get("cleared", PackedInt32Array()) as PackedInt32Array).size()
+	var lk := reader.lockdown()
+	if _sealed_room < 0:
+		_sealed_room = int(lk.get("sealed", -1))
+	_lk_cleared_seen = (lk.get("cleared", PackedInt32Array()) as PackedInt32Array).size()
 	_overrun_done = bool(reader.overrun().get("cleared", false))
 	_steal_tick = reader.steal_tick()
 	_wand_due = 0
@@ -170,28 +175,36 @@ func _final(reader: WorldReader) -> void:
 		if reader.loop() > 1:
 			report(&"final:won_looped")
 
-
 ## Sealed rooms: one sealing starts clean; a hit that costs HP spoils it; its clear counts (and counts clean).
+## v0.9.5 DR: the locked rooms (lockdowns; on floor rules 20 the arena rooms too) count like the arenas.
+## the locked rooms (lockdowns; on floor rules 20 the arena rooms too) count like the arenas.
 func _rooms(reader: WorldReader) -> void:
-	var ar := reader.arenas()
-	if not bool(ar.get("active", false)):
-		return
-	var sealed := int(ar.get("sealed", -1))
-	if sealed >= 0 and sealed != _sealed_room:
-		_sealed_room = sealed
-		_hurt = false
-	var cleared: PackedInt32Array = ar.get("cleared", PackedInt32Array())
-	if cleared.size() > _cleared_seen:
-		_cleared_seen = cleared.size()
-		var clean := not _hurt and _sealed_room >= 0 and cleared.has(_sealed_room)
-		_sealed_room = -1
-		report(&"rooms:sealed_cleared")
-		if clean:
-			report(&"rooms:no_hit")
+	_cleared_seen = _sealed_source(reader.arenas(), _cleared_seen)
+	_lk_cleared_seen = _sealed_source(reader.lockdown(), _lk_cleared_seen)
 	var ov := reader.overrun()
 	if not _overrun_done and bool(ov.get("cleared", false)):
 		_overrun_done = true
 		report(&"overruns:cleared")
+
+
+## One source of sealed rooms (WorldReader.arenas() or lockdown(): {active, sealed, cleared}); returns the clears
+## it has seen.
+func _sealed_source(d: Dictionary, seen: int) -> int:
+	if not bool(d.get("active", false)):
+		return seen
+	var sealed := int(d.get("sealed", -1))
+	if sealed >= 0 and sealed != _sealed_room:
+		_sealed_room = sealed
+		_hurt = false
+	var cleared: PackedInt32Array = d.get("cleared", PackedInt32Array())
+	if cleared.size() <= seen:
+		return seen
+	var clean := not _hurt and _sealed_room >= 0 and cleared.has(_sealed_room)
+	_sealed_room = -1
+	report(&"rooms:sealed_cleared")
+	if clean:
+		report(&"rooms:no_hit")
+	return cleared.size()
 
 
 ## Unlocks every achievement the profile meets now (a floor starts; Codex counts from before AC count).
