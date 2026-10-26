@@ -11,8 +11,8 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0 and HT merged; SB built but not merged (two e2e reds, SB2 fixing).
-- **Agents working:** SB2 (SB's two e2e reds: solids block actors only) and WB (Wisps 80 %, pierce 1) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT and WB merged; SB built but not merged (two e2e reds, SB2 fixing).
+- **Agents working:** SB2 (SB's two e2e reds: solids block actors only) and SM (the Stress Mark rebuilt) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner (asleep, 2026-10-25 night):** the G2 HUD pick once HM's mockups are made; [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -34,6 +34,7 @@ riusprime/zero-depth#9).
 | CLV | Cards level only where it shows: 23 Gun cards are offered once with a fixed value (Pierce 4, Homing, Ricochet 3, …); Twin, Halo, Split and the elements have 3 levels (Twin 2/2/3 copies at 70/90/75 %); form cards don't level; the Pulse Gun is never offered; old saves read capped ([evidence](evidence/CLV.md)) | `4d8b5d15`, merge `fa7a05c4`; lead `2a6b1ff2` |
 | FC0 | Rune Explosion replaces Scatter: a violet rune dome grows out of the hero to 3.5 m every 1.1 s, hitting each enemy once and shoving it; Twin adds a smaller second burst; its own sound ([evidence](evidence/FC0.md)) | `d6d1eedd`, merge `8a8542e8` |
 | HT | Gun heat fills with time spent firing (0 → 100 in 14 s, whatever the form or attack speed); it cools 1 s after you stop at 25/s; Vent needs 40 heat and has a 6 s cooldown shown on its plate; Overclock's +25 % now reaches Bomb, Void and Rune Explosion too ([evidence](evidence/HT.md)) | `98ea1ed0`, merge `d44d07b3`; lead `27b2dfe0` |
+| WB | Wisp shots deal 80 % of an orb (was 40 %) and pierce one enemy ([evidence](evidence/WB.md)) | `a1eddac6`, merge `98ba461d` |
 
 ## Goldens changed on purpose
 - `modifier_equivalence.json` `gun_all` (017199d8… → b813b3d2…) and `both_all` (7b49193f… → a5eb26d3…): HT, heat by
@@ -103,3 +104,6 @@ riusprime/zero-depth#9).
   HT (agent) merged (`d44d07b3`): its files green; 2 digests moved on purpose (gun_all, both_all). HT2 (lead): the
   Overclock bonus counts the area forms' own hits (test_gun_heat_fill 8/8, test_heat 18/18,
   test_modifier_equivalence 3/3, test_bomb 10/10, test_rune_explosion 15/15, test_sim_purity 2/2). WB started.
+- 2026-10-26 night — WB (agent) merged (`98ba461d`): test_wisps 13/13, shot rate + equivalence + e2e 7/7, content +
+  arch 161/161, golden 2/2 (no digest). The Wisps row: ×1.30 → ×1.60 single, ×1.62 pack (N7). SM started. The
+  scratch venv lost its python.exe; lint now runs from the `venv311` scratch venv (gdlint 4.5.0).
