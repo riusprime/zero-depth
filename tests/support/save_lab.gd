@@ -105,7 +105,11 @@ static func build_floor(
 	# v0.5.0 EV, as Main: event rooms and curses after the heat (v0.8.0 N17: an older save's floor keeps its rooms;
 	# v0.9.0 EL: and the retired event's weight)
 	EventCompiler.setup(
-		w, repo, FloorScenario.curse_room_rules_of(run), FloorScenario.retired_events_of(run)
+		w,
+		repo,
+		FloorScenario.curse_room_rules_of(run),
+		FloorScenario.retired_events_of(run),
+		FloorScenario.rare_events_of(run)
 	)
 	FloorPlan.add_secrets(w, repo, run, table.move_speed)  # v0.9.0 TD, RA, DX, as Main
 	CollectibleBook.arm(w, run, CollectibleBook.defs(repo), biome.id)  # v0.9.0 CL, as Main

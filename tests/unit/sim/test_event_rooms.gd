@@ -12,6 +12,11 @@ var _rules: EventRules
 
 func before_all() -> void:
 	_rules = EventCompiler.compile_rules(EventLab.repo().get_def(&"event_rules", &"floor"))
+	# v0.9.5 AQ: this file tests the old draw (floors saved before AQ); the rare draw is in test_event_rarity.gd
+	_rules.rooms_min = 1
+	_rules.rooms_max = 2
+	_rules.event_floor_chance_permille = 1000
+	_rules.events_max_per_run = 0
 
 
 func _layout(seed_value: int) -> FloorLayout:

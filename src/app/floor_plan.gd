@@ -189,7 +189,11 @@ func _build_world() -> void:
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
 	# v0.5.0 EV: event rooms and curses, after the carry and the heat; v0.8.0 N17, N19: an old save keeps its rooms
 	EventCompiler.setup(
-		w, repo, FloorScenario.curse_room_rules_of(run), FloorScenario.retired_events_of(run)
+		w,
+		repo,
+		FloorScenario.curse_room_rules_of(run),
+		FloorScenario.retired_events_of(run),
+		FloorScenario.rare_events_of(run)
 	)
 	if arena_def == null:
 		add_secrets(w, repo, run, table.move_speed)  # v0.9.0 TD, RA, DX

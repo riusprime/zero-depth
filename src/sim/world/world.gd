@@ -399,6 +399,9 @@ var curses_owned := PackedInt32Array():
 ## Derived from curses_owned and World.ev.curses: not hashed, not snapshotted (WorldSnapshot.WORLD_KEPT).
 var curse_totals := PackedInt32Array()
 var threat_peak := 0
+## v0.9.5 AQ: the event indices (Events.draw_event) placed in common event rooms so far this run, this floor's included
+## (carried; the run's cap and "never the same twice" read it). Not hashed.
+var events_seen := PackedInt32Array()
 ## v0.5.0 RT + EV: Deep floors taken so far this run, this one included (RunState.prepare): +1 threat T each.
 var deep_threat := 0
 ## v0.6.0 CU: the trade-off curses' state in play (Curses) and core theft (CoreTheft), per floor.
