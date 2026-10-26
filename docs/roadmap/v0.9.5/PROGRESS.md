@@ -11,8 +11,8 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3, DR, FC1, TS, FC2, BK, FC3, HM, HU and FC4 merged.
-- **Agents working:** FC5 (the Rune Explosion's combinations) and FC6 (the Glaive's combinations) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3, DR, FC1, TS, FC2, BK, FC3, HM, HU, FC4, FC5 and FC6 merged.
+- **Agents working:** FC7 (the Seekers' combinations) and FC8 (the Wave's combinations) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -49,6 +49,8 @@ riusprime/zero-depth#9).
 | FC3 | The Void takes 10 more cards: Ring collapses it in lightning, Backfire, Ricochet bounces it, Homing drifts it to the biggest group, Echo opens a smaller one, Big Shot, Rapid Fire, Split into minis, Mine holds it in place, Orbit circles you first ([evidence](evidence/FC3.md)) | `70b11adf`, merge `2c189081` |
 | HU | HUD design A (owner pick): four 76 px ability squares bottom-right (Attack, Skill, Dash, Blink) with a falling cooldown cover and seconds, glyphs from the last device used; the HP plate 15 % bigger, the blue pips gone; plate and squares on one bottom line 20 px up (owner: "match the spells to the same height as the health bar, but lower both about 2 cm"); the Skill on the left trigger ([evidence](evidence/HU.md)) | `3de67891`, merge `00870f07` |
 | FC4 | The Lance takes nine more cards (N1–N9); the Void's Mine tamed (pack ×4.55) and Big Shot cut (aura 1.3 m, pull 4.0 m, +20 %): its pack ×7.93 misses the ×6.0 target, asked as N11 ([evidence](evidence/FC4.md)) | `2fc1d68b`, merge `41bff38d` |
+| FC5 | The Rune Explosion takes nine more cards (R1–R9); strongest Ring ×1.96 single / ×2.00 pack vs plain ([evidence](evidence/FC5.md)) | `3d6b8308`, merge `9ed79c13` |
+| FC6 | The Glaive takes eleven more cards (G1–G11); strongest Echo/Big Shot ×1.50 single, Ring ×2.13 pack vs plain; Mine+Echo+Ring on a cluster ×5.36 ([evidence](evidence/FC6.md)) | `7332f862`, merge `b358d62b` |
 | BH1 | Bosses can't be staggered; at each phase change a boss kneels 1 s (hittable) and its core can be stolen for 3 s; boss HP is set from your power when the door starts opening (caps ×2.5–4.5 by floor, ±8 % per fight); each completed loop (up to 3) makes the Hollow Crown's pace 12 % shorter and its hits 8 % softer; the run summary says "Looped ×N" ([evidence](evidence/BH1.md)) | `d669f646`, merge `f9197302` |
 | BH2 | A harder spell each: the Gatekeeper's shock lanes lock faster and fire a second, shifted set; the Warlord's javelins lead you, then a second fan; the Brood Mother's 3rd leap leads you and lands wider; the Hive Lens's beam turns after you; the Siege Engine's mortar grid leaves 2 safe cells that swap halfway (never on the edge). The loop ease is data now ([evidence](evidence/BH2.md)) | `eca6b78e`, merge `53cd71e1` |
 | BH3 | A harder spell each: the Foundry's furnace waves come as two walls at right angles; the Twin Wardens' crossfire lines track you for 1.2 s; the Clockwork Judge adds a counter-turning spiral from phase 2; the Lantern Shade's lanterns burn 4 s, its dark lasts 9 s and Snuff puts out two lanterns ([evidence](evidence/BH3.md)) | `7ff84613`, merge `d788b91f` |
