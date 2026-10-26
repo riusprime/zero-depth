@@ -191,6 +191,8 @@ var pm_ring_born := PackedInt32Array()
 var pm_hit_wisp := PackedInt32Array()
 var pm_hit_actor := PackedInt32Array()
 var pm_hit_until := PackedInt32Array()
+## v0.9.5 FC9b: the thousandths of a wisp shot (or Orbit touch) not yet dealt (WispMods.take); 0..999.
+var pm_carry := 0
 ## v0.9.5 FC4 (LanceMods): the Lance cards' rows, one a live lance's state, a ghost lance to open, a ring growing or a
 ## split shard (kind and flags, the lance's projectile id, place, tick due, tick born, angle, damage, radius in mm,
 ## aux (bounces of a ghost, enemies a lance has split on), root) and Ring's hits (id * 65536 + actor). Hashed only
@@ -384,7 +386,7 @@ func vm_clear() -> void:
 
 ## v0.9.5 FC9: a Wisps card's row is set.
 func pm_touched() -> bool:
-	return not pm_ring_born.is_empty() or not pm_hit_wisp.is_empty()
+	return not pm_ring_born.is_empty() or not pm_hit_wisp.is_empty() or pm_carry != 0
 
 
 func pm_clear() -> void:
@@ -393,6 +395,7 @@ func pm_clear() -> void:
 	pm_hit_wisp = PackedInt32Array()
 	pm_hit_actor = PackedInt32Array()
 	pm_hit_until = PackedInt32Array()
+	pm_carry = 0
 
 
 ## v0.9.5 FC8: a Wave card's row is set.
@@ -704,6 +707,7 @@ func hash_into(h: StateHasher) -> void:
 			h.add_f32(p.y)
 	if pm_touched():  # v0.9.5 FC9: only while a Wisps card's row is set
 		h.add_string("pm")
+		h.add_int(pm_carry)
 		for arr: PackedInt32Array in [pm_ring_born, pm_hit_wisp, pm_hit_actor, pm_hit_until]:
 			h.add_ints(arr)
 		h.add_int(pm_ring_at.size())

@@ -134,3 +134,77 @@ The sheet's scene cannot show Ricochet (no wall) or Homing's bend.
 - Feel and look of seven wisps, the 3.5 m circle, the rings at the hit points, the mines hanging by the wisps and Echo's
   full-size ghost on the owner's hardware: OWNER ONLY.
 - Cards' en/es descriptions still read their generic text; no strings added.
+
+## FC9b: the carry
+
+**What changed.** A wisp's shot (and an Orbit touch) keeps its damage fractions, as the Seekers' darts do (FC7b). `Wisps.shot_milli` is the
+shot in thousandths: the Gun's damage under the build (`PlayerBuild.bolt_damage`) x `wisp_permille` (800), then x Halo's `halo_share` (600) / 1000
+(so a Halo shot is 2400, not the rounded 2). `WispMods.take` deals `(pm_carry + milli) / 1000` whole and keeps the rest in
+`ModifierState.pm_carry` (0..999; no minimum of 1). `Wisps._fire` launches with that dealt damage; Orbit's touch is `shot_milli x orbit_share (500) / 1000`,
+taken once per landed touch. `pm_carry` is hashed inside the `pm` block (the block is now also hashed while the carry is non-zero, so a
+plain Wisps world, whose shot is exactly 4000, still has no block), cleared by `pm_clear`, and listed in `WispMods.SNAPSHOT_FIELDS` (an older save loads 0).
+Echo ghosts, Split children, Ring, the Mine card's mines and every other form are untouched (`Wisps.shot_damage`, the rounded whole, is still the mines'; `sk_carry` stays separate).
+
+**Reading to flag.** Big Shot (x1.8) and Rapid Fire (x0.85) are card ops on `spec.damage` at compile time (shared with the Orbs), so their
+factor is already rounded to a whole damage (9 and 4 of the Gun's 5) before the wisps see it; they are not in thousandths here (changing it would move the Orbs).
+Rapid Fire's wisp shot is therefore 4 x 0.8 = 3.2 (it was 3), which is why it and Big Shot rise a little in the table. Halo's, the levels' (`bolt_damage` keeps its own
+residue) and Orbit's 50 % are in thousandths. The forms_dps "x Wisps" columns include the hero's own orbs (930 / 335 / 330); the wisps alone
+(table minus the orbs) read Halo 672 / 335 / 242 vs plain 560 / 268 / 204 = x1.20 / x1.25 / x1.19.
+
+**Tests changed.** `tests/unit/sim/test_wisp_mods.gd`: `test_p2_halo_is_six_wisps_at_sixty_percent_each` pinned "each shot hits for 2", now 2 or 3 (2.4 with the carry).
+New: `test_fc9b_halo_shots_of_two_point_four_add_up_exactly`, `test_fc9b_halo_six_wisps_deal_about_one_point_two_times_three_plain_wisps` (600 ticks, ratio 1.1..1.3),
+`test_fc9b_the_carry_is_saved_hashed_and_an_older_save_loads_with_none`. No other wisp test pinned a rounded value.
+
+**Commands** (all `--language en`, `APPDATA` its own folder per process, headless, Godot 4.7.2; gdformat + gdlint on the 4 touched files: "no problems found"):
+
+| Command (`-gtest=` / `-gdir=`) | Raw result |
+|---|---|
+| test_wisp_mods, test_wisps, test_shot_rate_all_forms, test_world_snapshot, test_modifier_equivalence, test_attack_slots, tests/unit/presentation/test_wave_wisps_view (`--fixed-fps 60`) | Scripts 7, Tests 86, Passing 86, Asserts 8980 (30/30, 13/13, 2/2, 15/15, 3/3, 17/17, 6/6) |
+| tests/golden, tests/arch, tests/content (`-ginclude_subdirs`) | Scripts 33, Tests 163, Passing 163, Asserts 30942 |
+| tests/e2e/test_e2e_wisp_combos.gd | Tests 1, Passing 1, Asserts 13 |
+| `godot --headless --path . -s scripts/balance/forms_dps.gd` (floor 5, crit off) | table below |
+
+Not run: seed-loop tests, `seams.sh`, the full suite.
+
+**Goldens moved: none.** `tests/golden` passed with no digest regenerated; no golden digest includes a Wisps build.
+
+**The new Wisps table** (forms_dps raw rows: x orbs single | line | pack, then damage single | line | pack; orbs 930 / 335 / 330):
+
+```
+wisps + (plain)          1.602 | 1.800 | 1.618 | 1490 |  603 |  534
+wisps + gun_twin         1.804 | 2.134 | 1.812 | 1678 |  715 |  598
+wisps + halo_shot        1.723 | 2.000 | 1.733 | 1602 |  670 |  572
+wisps + gun_ring         1.602 | 2.003 | 2.248 | 1490 |  671 |  742
+wisps + gun_pierce       1.602 | 5.869 | 1.618 | 1490 | 1966 |  534
+wisps + gun_ricochet     1.602 | 1.800 | 1.618 | 1490 |  603 |  534
+wisps + gun_homing       1.602 | 2.099 | 1.836 | 1490 |  703 |  606
+wisps + gun_echo         2.503 | 2.693 | 2.521 | 2328 |  902 |  832
+wisps + gun_big_shot     2.894 | 3.493 | 2.942 | 2691 | 1170 |  971
+wisps + gun_rapid_fire   1.927 | 2.054 | 1.952 | 1792 |  688 |  644
+wisps + split_shot       1.602 | 1.884 | 1.642 | 1490 |  631 |  542
+wisps + gun_spiral       1.712 | 1.857 | 1.976 | 1592 |  622 |  652
+wisps + gun_mine         1.602 | 1.848 | 1.618 | 1490 |  619 |  534
+wisps + orbit_rounds     1.671 | 1.752 | 2.164 | 1554 |  587 |  714
+```
+
+Plain Wisps vs the orbs: x1.60 / 1.80 / 1.62 (1490 / 603 / 534 against 930 / 335 / 330), unchanged (its shot is exactly 4000 thousandths).
+Against the plain Wisps (single / line / pack, from the damage columns):
+
+| Card | single | line | pack |
+|---|---|---|---|
+| Twin | 1.13 | 1.19 | 1.12 |
+| Halo | 1.08 | 1.11 | 1.07 |
+| Ring | 1.00 | 1.11 | 1.39 |
+| Pierce | 1.00 | 3.26 | 1.00 |
+| Ricochet | 1.00 | 1.00 | 1.00 |
+| Homing | 1.00 | 1.17 | 1.14 |
+| Echo | 1.56 | 1.50 | 1.56 |
+| Big Shot | 1.81 | 1.94 | 1.82 |
+| Rapid Fire | 1.20 | 1.14 | 1.21 |
+| Split | 1.00 | 1.05 | 1.02 |
+| Spiral | 1.07 | 1.03 | 1.22 |
+| Mine | 1.00 | 1.03 | 1.00 |
+| Orbit | 1.04 | 0.97 | 1.34 |
+
+Halo is x1.08 / 1.11 / 1.07 of the whole build (it was 1.00 / 1.02 / 1.00) and x1.20 / 1.25 / 1.19 of the wisps' own part (the orbs are unchanged
+under it). No single exceeds x2.0 and no pack x6.0 (largest single Big Shot 1.81; largest pack Big Shot 1.82; Pierce line 3.26, unchanged).

@@ -48,7 +48,7 @@ const DEFAULTS := {
 }
 ## The ModifierState fields an older save lacks (WorldSnapshot._apply_object reads this list).
 const SNAPSHOT_FIELDS: Array[StringName] = [
-	&"pm_ring_at", &"pm_ring_born", &"pm_hit_wisp", &"pm_hit_actor", &"pm_hit_until"
+	&"pm_ring_at", &"pm_ring_born", &"pm_hit_wisp", &"pm_hit_actor", &"pm_hit_until", &"pm_carry"
 ]
 
 
@@ -110,6 +110,14 @@ static func share(w: World, spec: AttackSpec, dmg: int) -> int:
 	if mask(spec) & HALO == 0:
 		return dmg
 	return maxi(1, (dmg * param(w, "halo_share") + 500) / 1000)
+
+
+## v0.9.5 FC9b: the whole damage `milli` thousandths deal now; the rest waits in ModifierState.pm_carry (the Seekers'
+## rule, SeekerMods.take), so six wisps at 60 % of a shot keep the 0.6. A short carry deals 0 (no minimum of 1).
+static func take(w: World, milli: int) -> int:
+	var total := w.mx.pm_carry + milli
+	w.mx.pm_carry = total % 1000
+	return total / 1000
 
 
 # --- Ring ---------------------------------------------------------------------------------------------------------
@@ -184,7 +192,8 @@ static func _expire(w: World, s: ModifierState) -> void:
 ## orbit_gap_ticks per wisp.
 static func touch(w: World, spec: AttackSpec, n: int) -> void:
 	var s := w.mx
-	var dmg := maxi(1, (Wisps.shot_damage(w, spec) * param(w, "orbit_share") + 500) / 1000)
+	var milli := Wisps.shot_milli(w, spec) * param(w, "orbit_share") / 1000  # v0.9.5 FC9b: thousandths
+	var dmg := 0
 	var gap := param(w, "orbit_gap_ticks")
 	var c: AttackContext = null
 	for k in n:
@@ -201,6 +210,7 @@ static func touch(w: World, spec: AttackSpec, n: int) -> void:
 			s.pm_hit_actor.append(aid)
 			s.pm_hit_until.append(w.tick + gap)
 			c.origin = at
+			c.damage = take(w, milli)
 			Attacks.land(w, spec, c, i, at, w.actors.pos(i))
 
 

@@ -139,12 +139,16 @@ func test_p2_halo_is_six_wisps_at_sixty_percent_each() -> void:
 	var ws := Wisps.read(w)
 	assert_eq(ws.size(), 6)
 	assert_eq((int(ws[1]["angle"]) - int(ws[0]["angle"])) & 4095, 682, "a sixth of a turn apart")
-	assert_eq(Wisps.shot_damage(w, Modifiers.bolt(w)), 2, "60 percent of 4, rounded half up: 2")
+	assert_eq(
+		Wisps.shot_damage(w, Modifiers.bolt(w)),
+		2,
+		"60 percent of 4, rounded half up: 2 (the mines')"
+	)
 	W.run(w, 240, 0, 0)
 	var hits := _hits(w, 1)
 	assert_gt(hits.size(), 0)
-	for h: Array in hits:
-		assert_eq(h[1], 2, "each shot hits for 2")
+	for h: Array in hits:  # v0.9.5 FC9b: 2.4 a shot, the carry deals 2 or 3
+		assert_between(h[1], 2, 3, "each shot hits for 2 or 3 (2.4 with the carry)")
 
 
 func test_p2_twin_with_halo_is_seven_wisps() -> void:
@@ -481,3 +485,57 @@ func test_rows_are_dropped_when_the_shot_is_no_wisps_any_more() -> void:
 	Shop.remove_item(w, W.item(w, &"gun_wisps"))
 	W.run(w, 2, 0, 0)
 	assert_false(w.mx.pm_touched())
+
+
+# --- FC9b: the carry --------------------------------------------------------------------------------------------------
+func test_fc9b_halo_shots_of_two_point_four_add_up_exactly() -> void:
+	var w := _world([&"halo_shot"])
+	var spec := Modifiers.bolt(w)
+	assert_eq(Wisps.shot_milli(w, spec), 2400, "60 percent of 4: 2.4 in thousandths")
+	var total := 0
+	for k in 5:
+		total += WispMods.take(w, Wisps.shot_milli(w, spec))
+	assert_eq(total, 12, "five shots of 2.4 deal 12 (2, 2, 3, 2, 3 with the carry)")
+	assert_eq(w.mx.pm_carry, 0, "and nothing is left")
+	assert_eq(WispMods.take(w, 400), 0, "a short carry deals 0, with no minimum of 1")
+	assert_eq(w.mx.pm_carry, 400)
+
+
+func _hurt(w: World) -> int:
+	var sum := 0
+	for h: Array in _hits(w, 1):
+		sum += h[1]
+	return sum
+
+
+func test_fc9b_halo_six_wisps_deal_about_one_point_two_times_three_plain_wisps() -> void:
+	var plain := _world([], [Vector2(4.0, 0.0)])
+	var halo := _world([&"halo_shot"], [Vector2(4.0, 0.0)])
+	W.run(plain, 600, 0, 0)
+	W.run(halo, 600, 0, 0)
+	var a := _hurt(plain)
+	var b := _hurt(halo)
+	assert_gt(a, 0)
+	assert_between(float(b) / float(a), 1.1, 1.3, "Halo reads about x1.2 (%d vs %d)" % [b, a])
+
+
+func test_fc9b_the_carry_is_saved_hashed_and_an_older_save_loads_with_none() -> void:
+	var w := _world([&"halo_shot"], [Vector2(4.0, 0.0)])
+	W.run(w, 100, 0, 0)
+	assert_ne(w.mx.pm_carry, 0, "a carry is waiting")
+	assert_true(w.mx.pm_touched(), "and it counts as set")
+	var before := w.state_hash()
+	w.mx.pm_carry += 100
+	assert_ne(w.state_hash(), before, "the carry is hashed")
+	w.mx.pm_carry -= 100
+	var snap := w.to_snapshot()
+	var mx: Dictionary = (snap["world"] as Dictionary)[&"mx"]
+	assert_true(mx.has(&"pm_carry"), "pm_carry is saved")
+	var c := _world([&"halo_shot"], [Vector2(4.0, 0.0)])
+	assert_eq(WorldSnapshot.apply(c, snap), "")
+	assert_eq(c.mx.pm_carry, w.mx.pm_carry, "it round-trips")
+	assert_eq(c.state_hash(), w.state_hash())
+	mx.erase(&"pm_carry")
+	var old := _world([&"halo_shot"], [Vector2(4.0, 0.0)])
+	assert_eq(WorldSnapshot.apply(old, snap), "", "an older save without it loads")
+	assert_eq(old.mx.pm_carry, 0)
