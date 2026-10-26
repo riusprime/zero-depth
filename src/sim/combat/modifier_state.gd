@@ -146,6 +146,24 @@ var gm_root := PackedInt32Array()
 var gm_hit_row := PackedInt32Array()
 var gm_hit_actor := PackedInt32Array()
 var gm_hit_until := PackedInt32Array()
+## v0.9.5 FC7 (SeekerMods): the Seekers cards' rows, one a live dart's state, a dart to open (an Echo ghost, a Split
+## child) or a ring (kind and flags, the dart's projectile id, place, tick due, tick born, angle, damage, radius in mm,
+## aux and aux2 (see SeekerMods), root) and Pierce's hits (row id, actor id). Hashed only while set.
+var sk_next := 0
+var sk_id := PackedInt32Array()
+var sk_kind := PackedInt32Array()
+var sk_pid := PackedInt32Array()
+var sk_at := PackedVector2Array()
+var sk_due := PackedInt32Array()
+var sk_born := PackedInt32Array()
+var sk_ang := PackedInt32Array()
+var sk_dmg := PackedInt32Array()
+var sk_r := PackedInt32Array()
+var sk_aux := PackedInt32Array()
+var sk_aux2 := PackedInt32Array()
+var sk_root := PackedInt32Array()
+var sk_hit_row := PackedInt32Array()
+var sk_hit_actor := PackedInt32Array()
 ## v0.9.5 FC4 (LanceMods): the Lance cards' rows, one a live lance's state, a ghost lance to open, a ring growing or a
 ## split shard (kind and flags, the lance's projectile id, place, tick due, tick born, angle, damage, radius in mm,
 ## aux (bounces of a ghost, enemies a lance has split on), root) and Ring's hits (id * 65536 + actor). Hashed only
@@ -258,6 +276,7 @@ func touched() -> bool:
 		or bm_touched()
 		or vm_touched()
 		or gm_touched()
+		or sk_touched()
 		or lm_touched()
 		or rm_touched()
 		or remnants_touched()
@@ -337,6 +356,29 @@ func vm_clear() -> void:
 ## v0.9.5 FC6: a Glaive card's row is set.
 func gm_touched() -> bool:
 	return gm_next != 0 or not gm_kind.is_empty()
+
+
+## v0.9.5 FC7: a Seekers card's row is set.
+func sk_touched() -> bool:
+	return sk_next != 0 or not sk_kind.is_empty()
+
+
+func sk_clear() -> void:
+	sk_next = 0
+	sk_id = PackedInt32Array()
+	sk_kind = PackedInt32Array()
+	sk_pid = PackedInt32Array()
+	sk_at = PackedVector2Array()
+	sk_due = PackedInt32Array()
+	sk_born = PackedInt32Array()
+	sk_ang = PackedInt32Array()
+	sk_dmg = PackedInt32Array()
+	sk_r = PackedInt32Array()
+	sk_aux = PackedInt32Array()
+	sk_aux2 = PackedInt32Array()
+	sk_root = PackedInt32Array()
+	sk_hit_row = PackedInt32Array()
+	sk_hit_actor = PackedInt32Array()
 
 
 func gm_clear() -> void:
@@ -548,6 +590,29 @@ func hash_into(h: StateHasher) -> void:
 			h.add_ints(arr)
 		h.add_int(gm_at.size())
 		for p in gm_at:
+			h.add_f32(p.x)
+			h.add_f32(p.y)
+	if sk_touched():  # v0.9.5 FC7: only while a Seekers card's row is set
+		h.add_string("sk")
+		h.add_int(sk_next)
+		for arr: PackedInt32Array in [
+			sk_id,
+			sk_kind,
+			sk_pid,
+			sk_due,
+			sk_born,
+			sk_ang,
+			sk_dmg,
+			sk_r,
+			sk_aux,
+			sk_aux2,
+			sk_root,
+			sk_hit_row,
+			sk_hit_actor
+		]:
+			h.add_ints(arr)
+		h.add_int(sk_at.size())
+		for p in sk_at:
 			h.add_f32(p.x)
 			h.add_f32(p.y)
 	if lm_touched():  # v0.9.5 FC4: only while a Lance card's row is set

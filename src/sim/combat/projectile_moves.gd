@@ -60,6 +60,8 @@ static func steer(w: World, pi: int) -> void:
 	LanceMods.steer(w, pi)  # v0.9.5 FC4: a lance's Homing
 	if GlaiveMods.steer(w, pi):  # v0.9.5 FC6: a disc's Orbit lap and Mine hold set its velocity
 		return
+	if SeekerMods.steer(w, pi):  # v0.9.5 FC7: a dart's Orbit lap, Mine hold and Halo's straight flight
+		return
 	if GunForms.mine_waits(w, pi):  # v0.6.5 WN3: G12 Mine, still until touched
 		return
 	_steer(w, pi)
@@ -99,6 +101,8 @@ static func _steer(w: World, pi: int) -> void:
 		return
 	if p.home[pi] > 0:
 		var best := Seekers.target(w, pi)  # v0.9.0 AF2: a Seekers dart curves to its own enemy
+		if best == Seekers.STRAIGHT:  # v0.9.5 FC7: no enemy left for it to seek
+			return
 		if best < 0:
 			best = _nearest(w, at, HOME_M)
 		if best >= 0:

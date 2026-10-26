@@ -308,8 +308,18 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	)
 	if gm & GlaiveMods.HALO != 0:
 		offsets = GlaiveMods.halo_offsets(w, gm)
+	# v0.9.5 FC7: the Seekers' cards (SeekerMods), the player's own volley only; the darts' count and angles
+	var sm := (
+		SeekerMods.mask(spec)
+		if spec.seekers > 0 and ctx.depth == 0 and not ctx.repeat and not ctx.back
+		else 0
+	)
+	if sm != 0:
+		offsets = SeekerMods.offsets(w, spec, sm)
 	var r := spec.radius_m * ctx.size_permille / 1000.0  # v0.6.5 WN3: a charged shot (G13)
 	r = r * GlaiveMods.wide(w, gm) / 1000.0  # v0.9.5 FC6: Big Shot x 1.5, Rapid Fire x 0.7
+	if sm != 0:
+		r = r * SeekerMods.wide(w, sm) / 1000.0  # v0.9.5 FC7: Big Shot x 1.5, Rapid Fire x 0.7
 	var gap := t.radius_m + r + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
 	var lanes := GunForms.lanes(spec, r)  # v0.6.5 WN3: G3 Twin, side by side
 	var turns := GunForms.lane_turns(spec)  # v0.9.0 TW: three copies fan
@@ -354,6 +364,10 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 		speed = GlaiveMods.speed(w, spec, gm)
 		life = GlaiveMods.life(w, spec, gm)
 		bounces = GlaiveMods.bounces(w, gm, bounces)
+	if sm != 0:  # v0.9.5 FC7: Twin's, Big Shot's and Rapid Fire's share; Orbit's and Mine's wait; Ricochet's bounces
+		dmg = SeekerMods.share(dmg, SeekerMods.damage_permille(w, sm))
+		life = SeekerMods.life(w, spec, sm)
+		bounces = SeekerMods.bounces(w, sm, bounces)
 	var q := -1
 	var picked := 0
 	for oi in offsets.size():
@@ -390,6 +404,10 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				GlaiveMods.add_echo(
 					w, muzzle, (ctx.angle + off + turns[li]) & 4095, dmg, r, bounces
 				)
+			if sm & SeekerMods.ECHO != 0:  # v0.9.5 FC7: Echo's ghost dart waits on this line
+				SeekerMods.add_echo(
+					w, muzzle, (ctx.angle + off + turns[li]) & 4095, dmg, r, bounces
+				)
 			if root:
 				root = false  # the volley's first shot is the player's own; the rest are extras
 			else:
@@ -397,8 +415,8 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 			var kind := kind0
 			if spec.share_permille > 0 and (oi != centre or li != lane_c):
 				kind |= ProjectileStore.SECONDARY
-			if ctx.extra_pierce > 0:
-				w.set_pending_pierce(ctx.extra_pierce)
+			if ctx.extra_pierce + SeekerMods.pierce(w, sm) > 0:  # v0.9.5 FC7: Pierce, two more enemies
+				w.set_pending_pierce(ctx.extra_pierce + SeekerMods.pierce(w, sm))
 			if kind != 0:
 				w.set_pending_second(kind)
 			if link != null:

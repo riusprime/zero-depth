@@ -525,6 +525,11 @@ func glaive_rings() -> Array[Dictionary]:
 	return GlaiveMods.read_rings(_w)
 
 
+## v0.9.5 FC7: the lightning rings Ring makes where a Seekers dart hit (SeekerMods.read_rings): {pos, r (m)}.
+func seeker_rings() -> Array[Dictionary]:
+	return SeekerMods.read_rings(_w)
+
+
 ## v0.9.5 FC4: the Lance's split shards in view (LanceMods.read_shards): {from, to, age, span (ticks)}.
 func lance_shards() -> Array[Dictionary]:
 	return LanceMods.read_shards(_w)

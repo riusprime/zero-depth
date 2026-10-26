@@ -68,3 +68,23 @@ func test_the_volley_is_heard() -> void:
 	assert_true(audio.played_log.has(&"seekers_fire"), "the Seekers' volley")
 	assert_false(audio.played_log.has(&"bolt_fire"), "not the orb's shot")
 	assert_not_null(audio.stream_for(&"seekers_fire"), "the placeholder file")
+
+
+func test_the_ring_card_draws_a_lightning_ring_where_a_dart_hit() -> void:
+	var w := _world([&"gun_ring"])
+	w.add_dummy(Vector2(3.0, 0.0), 0.35, 1000000)
+	var r := WorldReader.new(w)
+	_view.sync(r)
+	assert_eq(_view.arcs, 0, "no hit, no ring")
+	var drawn := 0
+	W.run(w, 1, 0, W.S)
+	for k in 40:
+		W.run(w, 1, 0, 0)
+		_view.sync(r)
+		drawn = maxi(drawn, _view.arcs)
+	assert_gt(drawn, 0, "a ring where the dart hit")
+	var plain := _world()
+	plain.add_dummy(Vector2(3.0, 0.0), 0.35, 1000000)
+	W.run(plain, 40, 0, W.S)
+	_view.sync(WorldReader.new(plain))
+	assert_eq(_view.arcs, 0, "a plain dart makes none")
