@@ -77,6 +77,23 @@ var rune_hit_foe := PackedInt32Array()
 var rune_push_id := PackedInt32Array()
 var rune_push_dir := PackedVector2Array()
 var rune_push_left := PackedInt32Array()
+## v0.9.5 FC1 (LaserMods): the Laser cards' state. lz_aim: the beam's own aim while Homing or Big Shot lag it (-1: the
+## player's); lz_hold: ticks the beam has been held (Rapid Fire's ramp); lz_targets: Homing's actor ids, nearest first;
+## lz_mine_*: the mines alive (place, tick dropped, damage) and the tick the next drops (0: not yet set);
+## lz_echo_*: Echo's waiting strikes, one row a main leg (tick due, from, to, width, damage). Hashed only while any is
+## set (older digests unchanged).
+var lz_aim := -1
+var lz_hold := 0
+var lz_targets := PackedInt32Array()
+var lz_mine_next := 0
+var lz_mine_at := PackedVector2Array()
+var lz_mine_born := PackedInt32Array()
+var lz_mine_dmg := PackedInt32Array()
+var lz_echo_due := PackedInt32Array()
+var lz_echo_from := PackedVector2Array()
+var lz_echo_to := PackedVector2Array()
+var lz_echo_r := PackedFloat32Array()
+var lz_echo_dmg := PackedInt32Array()
 ## v0.8.0 MR (owner O91; FireRhythm): Rapid Fire's ramp (the consecutive shots so far, the tick of the last shot) and
 ## Flurry's burst (the swing's place in its burst, 1 = the first after a pause; the tick its last swing ends); and
 ## SecondaryProc's carry (per mille of a status stack a secondary hit owes, so halved stacks are exact on average).
@@ -150,8 +167,36 @@ func touched() -> bool:
 		or ramp_n != 0
 		or burst_n != 0
 		or sec_carry != 0
+		or lz_touched()
 		or remnants_touched()
 	)
+
+
+## v0.9.5 FC1: a Laser card's state is set.
+func lz_touched() -> bool:
+	return (
+		lz_aim != -1
+		or lz_hold != 0
+		or lz_mine_next != 0
+		or not lz_targets.is_empty()
+		or not lz_mine_at.is_empty()
+		or not lz_echo_due.is_empty()
+	)
+
+
+func lz_clear() -> void:
+	lz_aim = -1
+	lz_hold = 0
+	lz_mine_next = 0
+	lz_targets = PackedInt32Array()
+	lz_mine_at = PackedVector2Array()
+	lz_mine_born = PackedInt32Array()
+	lz_mine_dmg = PackedInt32Array()
+	lz_echo_due = PackedInt32Array()
+	lz_echo_from = PackedVector2Array()
+	lz_echo_to = PackedVector2Array()
+	lz_echo_r = PackedFloat32Array()
+	lz_echo_dmg = PackedInt32Array()
 
 
 ## v0.8.0 RM: a remnant card has acted (Remnants): its block is hashed from then on.
@@ -231,6 +276,20 @@ func hash_into(h: StateHasher) -> void:
 		for d in rune_push_dir:
 			h.add_f32(d.x)
 			h.add_f32(d.y)
+	if lz_touched():  # v0.9.5 FC1: only while a Laser card's state is set
+		h.add_string("lz")
+		for v in [lz_aim, lz_hold, lz_mine_next]:
+			h.add_int(v)
+		for arr: PackedInt32Array in [
+			lz_targets, lz_mine_born, lz_mine_dmg, lz_echo_due, lz_echo_dmg
+		]:
+			h.add_ints(arr)
+		h.add_f32s(lz_echo_r)
+		for arr: PackedVector2Array in [lz_mine_at, lz_echo_from, lz_echo_to]:
+			h.add_int(arr.size())
+			for p in arr:
+				h.add_f32(p.x)
+				h.add_f32(p.y)
 	if ramp_n != 0 or burst_n != 0 or sec_carry != 0:  # v0.8.0 MR: only once a rhythm or a carry is set
 		h.add_string("mr")
 		for v in [ramp_n, ramp_tick, burst_n, burst_free, sec_carry]:

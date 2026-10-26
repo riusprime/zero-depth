@@ -70,6 +70,7 @@ func validate() -> Array[ValidationIssue]:
 		seen[r.id] = true
 		if String(r.card).is_empty():
 			defaults += 1
+		issues.append_array(_check_params(r))
 		var cells := {}
 		for c in r.allowed + r.ruled:
 			if cells.has(c):
@@ -83,6 +84,31 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"missing", resource_path, "exactly one form row has no card")
 		)
+	return issues
+
+
+## v0.9.5 FC1: a form row's params are whole numbers above 0 named for something the form reads; the Laser row has
+## every number LaserMods reads.
+func _check_params(r: AttackFormRow) -> Array[ValidationIssue]:
+	var issues: Array[ValidationIssue] = []
+	for k in r.params:
+		var v: Variant = r.params[k]
+		if not (v is int) or int(v) <= 0:
+			issues.append(
+				ValidationIssue.new(
+					&"range", resource_path, "%s: param %s is a whole number > 0" % [r.id, k]
+				)
+			)
+		if r.id == &"laser" and not AttackFormRow.LASER_KEYS.has(String(k)):
+			issues.append(
+				ValidationIssue.new(&"unknown_key", resource_path, "%s: no param %s" % [r.id, k])
+			)
+	if r.id == &"laser":
+		for k in AttackFormRow.LASER_KEYS:
+			if not r.params.has(k):
+				issues.append(
+					ValidationIssue.new(&"missing", resource_path, "laser: param %s missing" % k)
+				)
 	return issues
 
 

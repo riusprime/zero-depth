@@ -6,7 +6,46 @@ extends Resource
 ## form's own (the form's step builds the rule; until then it reads as on); every other card is off (C62: "No by
 ## default"), so it is never offered, never equipped and never compiled with this form.
 
+## v0.9.5 FC1: the numbers the Laser row carries (LaserMods.DEFAULTS has the same keys; a test holds them equal).
+const LASER_KEYS: Array[String] = [
+	"halo_len_mm",
+	"halo_turn_deg",
+	"halo_share",
+	"ring_mm",
+	"ring_share",
+	"back_mm",
+	"back_share",
+	"home_dps",
+	"home_repick_ms",
+	"home_step_mm",
+	"home_bend_deg",
+	"home_chain",
+	"echo_delay_ms",
+	"echo_share",
+	"big_width",
+	"big_damage",
+	"big_turn",
+	"follow_dps",
+	"rapid_period_ms",
+	"rapid_ramp_ms",
+	"rapid_width",
+	"split_mm",
+	"split_deg",
+	"split_share",
+	"mine_every_ms",
+	"mine_mm",
+	"mine_share",
+	"mine_max",
+	"mine_life_ms",
+	"mine_trigger_mm",
+	"spiral_deg",
+	"spiral_hz",
+]
+
 @export var id: StringName = &""
 @export var card: StringName = &""
 @export var allowed: Array[StringName] = []
 @export var ruled: Array[StringName] = []
+## v0.9.5 FC1: the form's own numbers for what its cards do (the Laser's: LaserMods.DEFAULTS names them and their units
+## in their keys); every value a whole number above 0. Empty for the forms without any.
+@export var params: Dictionary = {}

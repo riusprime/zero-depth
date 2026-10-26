@@ -458,6 +458,35 @@ func beams() -> Array[Dictionary]:
 	return Laser.trace(_w, Modifiers.bolt(_w), _w.player_pos(), _w.aim_angle)
 
 
+## v0.9.5 FC1: Echo's strikes still to come, for the view's pale ghost beams: {from, to, left (ticks), total}.
+func laser_ghosts() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var s := _w.mx
+	var total := LaserMods.ticks(LaserMods.param(_w, "echo_delay_ms"))
+	for k in s.lz_echo_due.size():
+		(
+			out
+			. append(
+				{
+					"from": s.lz_echo_from[k],
+					"to": s.lz_echo_to[k],
+					"left": maxi(0, s.lz_echo_due[k] - _w.tick),
+					"total": total,
+				}
+			)
+		)
+	return out
+
+
+## v0.9.5 FC1: the Laser's mines alive: {pos, age (ticks)}.
+func laser_mines() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var s := _w.mx
+	for k in s.lz_mine_at.size():
+		out.append({"pos": s.lz_mine_at[k], "age": _w.tick - s.lz_mine_born[k]})
+	return out
+
+
 ## v0.9.0 BM: player projectile `i` is a bomb (the Bomb form's shot; BombView draws it, not the pulses).
 func projectile_is_bomb(i: int) -> bool:
 	return Bomb.touches(_w, i)

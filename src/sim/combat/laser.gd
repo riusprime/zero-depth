@@ -65,7 +65,8 @@ static func move_factor(w: World) -> float:
 ## (the class doc's fair rule), at most 1000.
 static func feed_permille(w: World, spec: AttackSpec) -> int:
 	var orb := maxi(1, w.player.shot_period_ticks)
-	return clampi(1000 * maxi(1, spec.period_ticks) / orb, 1, 1000)
+	var period := LaserMods.rapid_period(w, spec, maxi(1, spec.period_ticks))  # v0.9.5 FC1: Rapid Fire's quicker tick
+	return clampi(1000 * period / orb, 1, 1000)
 
 
 ## The `n`-th of a run of ticks at `pm` per mille is a feeding one (exact on average: pm of every 1000).
@@ -87,83 +88,79 @@ static func milli_of(spec: AttackSpec, damage: int) -> int:
 ## The beams of `spec` from `origin` along `angle` now (pure read): one per lane, {from, to, hits (actor indices,
 ## nearest first), at (each hit's point), wall (it ended on a wall)}. The view draws the same (WorldReader.beams).
 static func trace(w: World, spec: AttackSpec, origin: Vector2, angle: int) -> Array[Dictionary]:
+	if LaserMods.mask(spec) != 0:  # v0.9.5 FC1: the cards that bend, fork and reflect the beam
+		return LaserMods.plan(w, spec, origin, angle)
 	var out: Array[Dictionary] = []
 	var lanes := GunForms.lanes(spec, LANE_RADIUS_M)
 	var turns := GunForms.lane_turns(spec)
+	var most := maxi(0, spec.pierce) + 1
 	for li in lanes.size():
 		var dir := Kin.dir((angle + turns[li]) & 4095)
 		var from := origin + dir * w.player.radius_m + Vector2(-dir.y, dir.x) * lanes[li]
-		out.append(_ray(w, spec, from, dir))
+		var b := LaserMods.ray(w, from, dir, spec.reach_m, spec.radius_m, most, {})
+		b["kind"] = LaserMods.K_MAIN
+		b["lane"] = li
+		b["share"] = 1000
+		b["wmul"] = 1000
+		b["end"] = true
+		b["impact"] = b["hits"].size() > 0 or bool(b["wall"])
+		out.append(b)
 	return out
 
 
-static func _ray(w: World, spec: AttackSpec, from: Vector2, dir: Vector2) -> Dictionary:
-	var to := from + dir * spec.reach_m
-	var r := spec.radius_m
-	var wall := 1.0
-	for k in w.walls_along(from, to, r):  # the grid's superset of the walls
-		var s := Collide.sweep_vs_obb(from, to, r, w.walls[k])
-		if s >= 0.0 and s < wall:
-			wall = s
-	var ts := PackedFloat32Array()
-	var ids := PackedInt32Array()
-	var a := w.actors
-	for i in range(1, a.size()):  # every actor, as Scatter Blast's rays (phase 4 runs before the tick's grid)
-		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
-			continue
-		var s := Collide.sweep_vs_circle(from, to, r, a.pos(i), a.radius[i])
-		if s < 0.0 or s >= wall:
-			continue
-		var at := ts.size()  # nearest first; a tie keeps the lower index
-		while at > 0 and ts[at - 1] > s:
-			at -= 1
-		ts.insert(at, s)
-		ids.insert(at, i)
-	var most := maxi(0, spec.pierce) + 1
-	var end := wall
-	var hit_wall := wall < 1.0
-	if ids.size() >= most:
-		ids.resize(most)
-		ts.resize(most)
-		end = ts[most - 1]
-		hit_wall = false
-	var pts := PackedVector2Array()
-	for s in ts:
-		pts.append(from + (to - from) * s)
-	return {"from": from, "to": from + (to - from) * end, "hits": ids, "at": pts, "wall": hit_wall}
+## One hit of a beam's tick (or Echo's, a mine's) on actor `i`: with `feed` the beam's statuses and hooks as the spec's,
+## else a bare hit (a kill still runs its On Kill hooks). True if it landed.
+static func hit(
+	w: World, spec: AttackSpec, c: AttackContext, i: int, from: Vector2, at: Vector2, feed: bool
+) -> bool:
+	if feed:
+		return Attacks.land(w, spec, c, i, from, at) > 0
+	var got := Attacks.land(w, _bare_spec(), c, i, from, at)
+	if got > 0 and w.actors.dead[i] == 1:
+		Attacks.fire(w, spec, AttackSpec.Trigger.ON_KILL, c, at)
+	return got > 0
 
 
 ## One damage tick of the held beam `spec` launched with `ctx` (Attacks._shared_form): every lane hits what it touches
-## (the class doc's damage, feeding and kill rules). Returns true if a hit landed.
+## (the class doc's damage, feeding and kill rules). v0.9.5 FC1: a card-carrying beam is several beams (LaserMods.plan),
+## each dealing its share of the tick, each kind hitting an enemy at most once; Big Shot's damage, Echo's and Mine's
+## stores. Returns true if a hit landed.
 static func fire(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var key := (spec.key if spec.key != "" else String(spec.id)) + COUNT_KEY
 	var n := ModifierRuntime.count(w, key)
+	var m := LaserMods.mask(spec)
 	var feed := feeds(n, feed_permille(w, spec))
-	var dmg := dealt(n, milli_of(spec, ctx.damage))
+	var milli := milli_of(spec, ctx.damage) * LaserMods.damage_permille(w, m) / 1000
+	var dmg := dealt(n, milli)
 	var base := maxi(1, milli_of(spec, ctx.base_damage) / 1000)
 	var beams := trace(w, spec, ctx.origin, ctx.angle)
-	var centre := (beams.size() - 1) / 2  # the primary beam: the first of two, the middle of three
+	var centre := (GunForms.lanes(spec, LANE_RADIUS_M).size() - 1) / 2  # the primary beam
 	var root := w.take_root()
 	var landed := false
-	for li in beams.size():
-		var b: Dictionary = beams[li]
-		var c := AttackContext.make(ctx.origin, ctx.angle, dmg, root, ctx.tags, ctx.effect_id)
-		c.base_damage = base
-		c.secondary = ctx.secondary or li != centre
+	var seen := {}
+	for b in beams:
+		var li := int(b["lane"])
+		var kind: StringName = b["kind"]
+		var share := int(b["share"])
+		var part := dmg if share == 1000 else (maxi(1, dmg * share / 1000) if dmg > 0 else 0)
+		var tags := ctx.tags | (SimEvent.TAG_AREA if kind == LaserMods.K_RING else 0)
+		var c := AttackContext.make(ctx.origin, ctx.angle, part, root, tags, ctx.effect_id)
+		c.base_damage = base if share == 1000 else maxi(1, base * share / 1000)
+		c.secondary = ctx.secondary or li != centre or kind != LaserMods.K_MAIN
 		c.repeat = ctx.repeat
 		var hits: PackedInt32Array = b["hits"]
 		var pts: PackedVector2Array = b["at"]
+		var mark := "%s%d" % [kind, li]
 		for k in hits.size():
-			if dmg <= 0:
+			if part <= 0:
 				break
 			var i := hits[k]
-			if feed:
-				landed = Attacks.land(w, spec, c, i, b["from"], pts[k]) > 0 or landed
+			if seen.has(mark + str(i)):  # a kind hits an enemy once a tick
 				continue
-			var got := Attacks.land(w, _bare_spec(), c, i, b["from"], pts[k])
-			landed = got > 0 or landed
-			if got > 0 and w.actors.dead[i] == 1:
-				Attacks.fire(w, spec, AttackSpec.Trigger.ON_KILL, c, pts[k])
-		if feed:
+			seen[mark + str(i)] = true
+			landed = hit(w, spec, c, i, b["from"], pts[k], feed) or landed
+		if feed and kind == LaserMods.K_MAIN and bool(b["end"]):
 			Attacks.run_on_end(w, spec, c, b["to"])
+	if m != 0:
+		LaserMods.after_tick(w, m, beams, dmg, milli)
 	return landed

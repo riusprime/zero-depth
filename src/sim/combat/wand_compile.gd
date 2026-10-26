@@ -142,6 +142,10 @@ func run(s: AttackSpec, from: int) -> AttackSpec:
 		if m.is_trigger():
 			_cut(s, m, i)
 			break
+		if s.beam_hold > 0 and LaserMods.is_card(m.id):  # v0.9.5 FC1: the Laser's cards are LaserMods'
+			if not s.modifier_ids.has(String(m.id)):
+				s.modifier_ids.append(String(m.id))
+			continue
 		var applied := false
 		for stage in ModifierTable.STAGE_COUNT:  # a card's own ops in stage order
 			for op in m.ops:

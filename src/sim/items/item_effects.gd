@@ -33,9 +33,9 @@ static func shot_period_ticks(w: World) -> int:
 	var base := spec.period_ticks
 	var r := AttackRate.rate(w, spec.rate_bonus_permille + FireRhythm.shot_bonus(w, spec))  # v0.8.0 MR: the ramp
 	r = AttackRate.form_rate(spec, r)  # v0.9.0 LZ: the Laser's ticks at half the bonus
-	if r == 1000:
-		return base
-	return maxi(mini(base, AttackRate.MIN_SHOT_TICKS), AttackRate.scaled(base, r))
+	if r != 1000:
+		base = maxi(mini(base, AttackRate.MIN_SHOT_TICKS), AttackRate.scaled(base, r))
+	return LaserMods.rapid_period(w, spec, base)  # v0.9.5 FC1: Rapid Fire's tick quickens while held
 
 
 ## Damage of each bolt in a shot: the full bolt, or a Splinter share (rounded down, at least 1).
