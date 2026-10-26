@@ -161,5 +161,7 @@ func test_every_form_with_its_patterns_and_secondaries_holds_the_caps() -> void:
 			else:
 				assert_gt(second, 0, "%s fires" % name)
 			count += 1
-	assert_eq(count, 22, "the builds the shipped rows allow (orbs 5, wave 3, the rest 2 or 1)")
+	assert_eq(
+		count, 25, "the builds the shipped rows allow (orbs 5, laser 5, wave 3, the rest 2 or 1)"
+	)
 	gut.p("BR shots (compiled a attack, most in a tick, most in 60 ticks): " + "; ".join(report))

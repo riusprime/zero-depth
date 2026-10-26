@@ -108,3 +108,28 @@ func test_the_hum_loops_while_the_beam_fires() -> void:
 	W.run(w, 2, 0, 0)
 	audio.sync(r)
 	assert_false(audio.holding(&"laser_loop"), "let go: silent")
+
+
+func test_v095_fc1_the_cards_extra_paths_ghosts_rings_and_mines_are_drawn() -> void:
+	var w := _world(
+		[&"halo_shot", &"gun_ring"], [[Vector2(4.0, 0.0), 100000], [Vector2(4.5, 1.0), 100000]]
+	)
+	var r := WorldReader.new(w)
+	W.run(w, 3, 0, W.S)
+	_view.sync(r)
+	assert_eq(_view.shown, 4, "the beam and Halo's three short beams")
+	assert_eq(_view.rings_shown, 1, "Ring's circle at the tip")
+	var w2 := _world([&"gun_echo", &"gun_mine"], [])
+	var r2 := WorldReader.new(w2)
+	W.run(w2, 70, 0, W.S)
+	_view.sync(r2)
+	assert_gt(_view.ghosts_shown, 0, "Echo's strikes to come show as ghosts")
+	assert_eq(_view.mines_shown, 1, "a mine dropped at the tip after a second")
+	var w3 := _world([&"gun_homing", &"gun_pierce"], [[Vector2(3.0, 3.0), 100000]])
+	var r3 := WorldReader.new(w3)
+	W.run(w3, 3, 0, W.S)
+	_view.sync(r3)
+	assert_gt(_view.shown, 1, "a bent beam is several ribbons")
+	W.run(w3, 2, 0, 0)
+	_view.sync(r3)
+	assert_eq(_view.shown, 0, "let go: none")

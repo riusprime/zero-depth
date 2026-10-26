@@ -36,6 +36,20 @@ const FORMS: Array = [
 ## too, against the orbs in the same NEAR scenes: single at 2.5 m; line five at 1 to 3 m (0.5 m apart); pack five on
 ## a 2.5 m arc of 1.2 rad (0.3 rad apart). Their far rows stay (they read ~0, the ring does not reach 4 m).
 const NEAR: Array[StringName] = [&"rune_explosion"]
+## v0.9.5 FC1: the Laser's card combinations measured after the table.
+const LASER_COMBOS: Array = [
+	[],
+	[&"gun_pierce"],
+	[&"gun_homing"],
+	[&"gun_homing", &"gun_pierce"],
+	[&"gun_big_shot"],
+	[&"gun_rapid_fire"],
+	[&"halo_shot"],
+	[&"gun_backfire"],
+	[&"gun_echo"],
+	[&"gun_mine"],
+	[&"split_shot", &"gun_pierce"],
+]
 
 
 func _scenes(near: bool) -> Dictionary:
@@ -110,6 +124,28 @@ func _initialize() -> void:
 						)
 					)
 				)
+	# v0.9.5 FC1: the Laser with the cards that bend it (alone, Twin off), against the same orbs baseline.
+	for combo: Array in LASER_COMBOS:
+		var d := {}
+		for sc: String in scenes:
+			d[sc] = _damage(&"gun_laser", 1, false, scenes[sc][0], scenes[sc][1], combo)
+		(
+			lines
+			. append(
+				(
+					"laser + %s | 1 | no | %.3f | %.3f | %.3f | %d | %d | %d"
+					% [
+						"+".join(combo) if not combo.is_empty() else "(plain)",
+						float(d["single"]) / float(base["single"]),
+						float(d["line"]) / float(base["line"]),
+						float(d["pack"]) / float(base["pack"]),
+						d["single"],
+						d["line"],
+						d["pack"],
+					]
+				)
+			)
+		)
 	var text := "\n".join(lines)
 	print(text)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://build/balance"))
@@ -164,7 +200,9 @@ static func _twin_allowed(form: StringName) -> bool:
 
 ## The direct damage dealt to the dummies at `at` (offsets from the hero) in ticks [FROM, ticks) by `form` at card
 ## level `lv` (Twin Lv 5 too when `twin`).
-static func _damage(form: StringName, lv: int, twin: bool, at: Array, ticks: int) -> int:
+static func _damage(
+	form: StringName, lv: int, twin: bool, at: Array, ticks: int, cards: Array = []
+) -> int:
 	var w := _world()
 	if form != &"":
 		BuildSlots.take(w, W.item(w, form))
@@ -172,6 +210,8 @@ static func _damage(form: StringName, lv: int, twin: bool, at: Array, ticks: int
 	if twin:
 		BuildSlots.take(w, W.item(w, &"gun_twin"))
 		CardLevels.set_level(w, W.item(w, &"gun_twin"), 5)
+	for c: StringName in cards:
+		BuildSlots.take(w, W.item(w, c))
 	Modifiers.invalidate(w)
 	var ids := {}
 	for p: Vector2 in at:

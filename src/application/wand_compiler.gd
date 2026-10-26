@@ -114,6 +114,8 @@ static func compile_slots(def: AttackSlotsDefinition, items: Array[ItemTable]) -
 			if index.has(id):
 				cells[int(index[id])] = SlotTable.CELL_RULED
 		t.form_cells.append(cells)
+		if not r.params.is_empty():
+			t.params[r.id] = r.params.duplicate()
 		if String(r.card).is_empty() and t.default_form < 0:
 			t.default_form = t.form_ids.size() - 1
 	return t

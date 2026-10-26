@@ -11,6 +11,17 @@ const HP := 1000000
 const LASER_ON: Array[StringName] = [
 	&"gun_twin",
 	&"gun_pierce",
+	&"halo_shot",  # v0.9.5 FC1: the eleven cards LaserMods reads
+	&"gun_ring",
+	&"gun_backfire",
+	&"gun_ricochet",
+	&"gun_homing",
+	&"gun_echo",
+	&"gun_big_shot",
+	&"gun_rapid_fire",
+	&"split_shot",
+	&"gun_mine",
+	&"gun_spiral",
 	&"ember_core",
 	&"storm_core",
 	&"frost_core",
@@ -239,7 +250,7 @@ func test_the_laser_row_offers_only_its_cards() -> void:
 
 func test_the_laser_replaces_the_orbs_and_a_held_off_card_stops_compiling() -> void:
 	var w := _slot_world()
-	_take(w, [&"halo_shot", &"gun_ricochet", &"ember_core"])
+	_take(w, [&"orbit_rounds", &"gun_swirl", &"ember_core"])
 	assert_eq(AttackSlots.form_id(w), &"orbs")
 	var laser := W.item(w, &"gun_laser")
 	assert_true(ItemPool.usable(w, laser), "offered on the orbs")
@@ -248,9 +259,7 @@ func test_the_laser_replaces_the_orbs_and_a_held_off_card_stops_compiling() -> v
 	assert_eq(AttackSlots.form_id(w), &"laser")
 	var s := Modifiers.bolt(w)
 	assert_true(Laser.held(s), "the Gun's shot is the beam")
-	assert_eq(
-		[s.directions, s.bounces], [AttackSpec.DIR_FORWARD, 0], "Halo and Ricochet don't compile"
-	)
+	assert_eq([s.orbit_ticks, s.swirl], [0, 0], "Orbit and Swirl don't compile")
 	assert_true(s.has_status(&"burn"), "Fire does")
 
 

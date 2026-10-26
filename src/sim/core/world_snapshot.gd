@@ -421,6 +421,18 @@ const ADDED_SINCE_V05 := {
 		&"rune_push_id",
 		&"rune_push_dir",
 		&"rune_push_left",
+		&"lz_aim",  # v0.9.5 FC1 (LaserMods: the Laser cards' state; an older save has none)
+		&"lz_hold",
+		&"lz_targets",
+		&"lz_mine_next",
+		&"lz_mine_at",
+		&"lz_mine_born",
+		&"lz_mine_dmg",
+		&"lz_echo_due",
+		&"lz_echo_from",
+		&"lz_echo_to",
+		&"lz_echo_r",
+		&"lz_echo_dmg",
 		&"ramp_n",  # v0.8.0 MR (FireRhythm, SecondaryProc: an older save has no ramp, no burst, no carry)
 		&"ramp_tick",
 		&"burst_n",
