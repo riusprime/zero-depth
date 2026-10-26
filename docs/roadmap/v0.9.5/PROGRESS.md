@@ -11,8 +11,8 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3, DR and FC1 merged.
-- **Agents working:** FC2 (the Bomb's combinations) and TS (timed-door switches) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3, DR, FC1 and TS merged.
+- **Agents working:** FC2 (the Bomb's combinations) and BK (breakables solid) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner (asleep, 2026-10-25 night):** the G2 HUD pick once HM's mockups are made; [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -43,6 +43,7 @@ riusprime/zero-depth#9).
 | EE3 | Two level-3 elements wake a named pair (Thermal Shock, Toxic Fumes, Ignition Arc, Boiling Blood, Cold Circuit, Black Ice, Brittle, Neurotoxin, Arterial Arc, Sepsis), announced on the combo card with both element icons ([evidence](evidence/EE3.md)) | `7da137b5`, merge `25500066` |
 | DR | Only two sealed kinds: the locked room (its enemies in one burst of 2 formations 1 s apart, a free altar; the old arena rooms are locked rooms now) and the Overrun (its waves); every seal drops the iron bars; the Overrun's doorway shows a small red floor rune instead of the glowing frame; locked-room clears count for the sealed-room achievements ([evidence](evidence/DR.md)) | `62cc306c`, merge `388e5517`; `37462b02` |
 | FC1 | The Laser takes 11 more cards: Homing curves the beam to the nearest enemy (with Pierce it threads the 5 nearest), Halo fans its tip, Ring rides its tip, Backfire, Ricochet off a wall, Echo's path strikes again, Big Shot, Rapid Fire, Split forks it, Mine drops mines, Spiral wiggles it ([evidence](evidence/FC1.md)) | `e7c6084e`, merge `31ecb531` |
+| TS | Timed-door switches sit in two different rooms 1–2 rooms from the door (on different sides when the map allows); the timer is 20 s (the walk always fits in 60 % of it); a lever inside the secret room reopens the door for 5 s (floor rules 21) ([evidence](evidence/TS.md)) | `de3c3bfe`, merge `2ba37f64` |
 | BH1 | Bosses can't be staggered; at each phase change a boss kneels 1 s (hittable) and its core can be stolen for 3 s; boss HP is set from your power when the door starts opening (caps ×2.5–4.5 by floor, ±8 % per fight); each completed loop (up to 3) makes the Hollow Crown's pace 12 % shorter and its hits 8 % softer; the run summary says "Looped ×N" ([evidence](evidence/BH1.md)) | `d669f646`, merge `f9197302` |
 | BH2 | A harder spell each: the Gatekeeper's shock lanes lock faster and fire a second, shifted set; the Warlord's javelins lead you, then a second fan; the Brood Mother's 3rd leap leads you and lands wider; the Hive Lens's beam turns after you; the Siege Engine's mortar grid leaves 2 safe cells that swap halfway (never on the edge). The loop ease is data now ([evidence](evidence/BH2.md)) | `eca6b78e`, merge `53cd71e1` |
 | BH3 | A harder spell each: the Foundry's furnace waves come as two walls at right angles; the Twin Wardens' crossfire lines track you for 1.2 s; the Clockwork Judge adds a counter-turning spiral from phase 2; the Lantern Shade's lanterns burn 4 s, its dark lasts 9 s and Snuff puts out two lanterns ([evidence](evidence/BH3.md)) | `7ff84613`, merge `d788b91f` |
@@ -187,3 +188,6 @@ riusprime/zero-depth#9).
   177/177, presentation + e2e + golden 44/44, content 157/157, golden 2/2, arch 4/4; no digest ([evidence](evidence/FC1.md)).
   Laser + Homing + Pierce: ×5.97 in a line, ×2.42 in a pack. Laser + Rapid Fire doubled the beam's damage (the lead's
   spec shortened the tick without lowering its damage): FC2 adds a per-tick damage ramp to ×0.65. FC2 started.
+- 2026-10-26 — TS (agent) merged: its files green (timed door 9/9, rooms 4/4, view 4/4, old saves 11/11, content, golden,
+  arch, both e2e) ([evidence](evidence/TS.md)); 200 forced seeds: 194 doors, worst walk 0.599 of the timer; 1000 real
+  floors: 231 doors, worst 598 ‰. The door never shuts on a hero inside (N10). BK started.
