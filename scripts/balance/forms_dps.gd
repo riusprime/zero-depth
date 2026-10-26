@@ -64,6 +64,20 @@ const BOMB_COMBOS: Array = [
 	[&"split_shot"],
 	[&"gun_mine"],
 ]
+## v0.9.5 FC3: the Void's card combinations (a card alone each).
+const VOID_COMBOS: Array = [
+	[],
+	[&"gun_ring"],
+	[&"gun_backfire"],
+	[&"gun_ricochet"],
+	[&"gun_homing"],
+	[&"gun_echo"],
+	[&"gun_big_shot"],
+	[&"gun_rapid_fire"],
+	[&"split_shot"],
+	[&"gun_mine"],
+	[&"orbit_rounds"],
+]
 
 
 func _scenes(near: bool) -> Dictionary:
@@ -141,7 +155,9 @@ func _initialize() -> void:
 	# v0.9.5 FC1: the Laser with the cards that bend it (alone, Twin off), against the same orbs baseline.
 	# v0.9.5 FC2: and the Bomb with the cards that change it.
 	for set_of: Array in [
-		["laser", &"gun_laser", LASER_COMBOS], ["bomb", &"gun_bomb", BOMB_COMBOS]
+		["laser", &"gun_laser", LASER_COMBOS],
+		["bomb", &"gun_bomb", BOMB_COMBOS],
+		["void", &"gun_void", VOID_COMBOS]
 	]:
 		for combo: Array in set_of[2]:
 			var d := {}

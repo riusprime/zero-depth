@@ -108,6 +108,25 @@ var bm_dmg := PackedInt32Array()
 var bm_ang := PackedInt32Array()
 var bm_root := PackedInt32Array()
 var bm_hit := PackedInt32Array()
+## v0.9.5 FC3 (VoidMods): the Void cards' rows, one a live void's state, a void to open or a ring growing (kind and
+## flags, the void's projectile id, place or target, mine stop, tick due, tick born, aim, aura and pull in mm, damage,
+## life, ring radius in mm, root) and Ring's hits (id * 65536 + actor). Hashed only while any row is set.
+var vm_next := 0
+var vm_id := PackedInt32Array()
+var vm_kind := PackedInt32Array()
+var vm_pid := PackedInt32Array()
+var vm_at := PackedVector2Array()
+var vm_stop := PackedVector2Array()
+var vm_due := PackedInt32Array()
+var vm_born := PackedInt32Array()
+var vm_ang := PackedInt32Array()
+var vm_aura := PackedInt32Array()
+var vm_pull := PackedInt32Array()
+var vm_dmg := PackedInt32Array()
+var vm_life := PackedInt32Array()
+var vm_r := PackedInt32Array()
+var vm_root := PackedInt32Array()
+var vm_hit := PackedInt32Array()
 ## v0.8.0 MR (owner O91; FireRhythm): Rapid Fire's ramp (the consecutive shots so far, the tick of the last shot) and
 ## Flurry's burst (the swing's place in its burst, 1 = the first after a pause; the tick its last swing ends); and
 ## SecondaryProc's carry (per mille of a status stack a secondary hit owes, so halved stacks are exact on average).
@@ -183,6 +202,7 @@ func touched() -> bool:
 		or sec_carry != 0
 		or lz_touched()
 		or bm_touched()
+		or vm_touched()
 		or remnants_touched()
 	)
 
@@ -231,6 +251,30 @@ func bm_clear() -> void:
 	bm_ang = PackedInt32Array()
 	bm_root = PackedInt32Array()
 	bm_hit = PackedInt32Array()
+
+
+## v0.9.5 FC3: a Void card's row is set.
+func vm_touched() -> bool:
+	return vm_next != 0 or not vm_kind.is_empty()
+
+
+func vm_clear() -> void:
+	vm_next = 0
+	vm_id = PackedInt32Array()
+	vm_kind = PackedInt32Array()
+	vm_pid = PackedInt32Array()
+	vm_at = PackedVector2Array()
+	vm_stop = PackedVector2Array()
+	vm_due = PackedInt32Array()
+	vm_born = PackedInt32Array()
+	vm_ang = PackedInt32Array()
+	vm_aura = PackedInt32Array()
+	vm_pull = PackedInt32Array()
+	vm_dmg = PackedInt32Array()
+	vm_life = PackedInt32Array()
+	vm_r = PackedInt32Array()
+	vm_root = PackedInt32Array()
+	vm_hit = PackedInt32Array()
 
 
 ## v0.8.0 RM: a remnant card has acted (Remnants): its block is hashed from then on.
@@ -335,6 +379,30 @@ func hash_into(h: StateHasher) -> void:
 		for p in bm_at:
 			h.add_f32(p.x)
 			h.add_f32(p.y)
+	if vm_touched():  # v0.9.5 FC3: only while a Void card's row is set
+		h.add_string("vm")
+		h.add_int(vm_next)
+		for arr: PackedInt32Array in [
+			vm_id,
+			vm_kind,
+			vm_pid,
+			vm_due,
+			vm_born,
+			vm_ang,
+			vm_aura,
+			vm_pull,
+			vm_dmg,
+			vm_life,
+			vm_r,
+			vm_root,
+			vm_hit
+		]:
+			h.add_ints(arr)
+		for arr: PackedVector2Array in [vm_at, vm_stop]:
+			h.add_int(arr.size())
+			for p in arr:
+				h.add_f32(p.x)
+				h.add_f32(p.y)
 	if ramp_n != 0 or burst_n != 0 or sec_carry != 0:  # v0.8.0 MR: only once a rhythm or a carry is set
 		h.add_string("mr")
 		for v in [ramp_n, ramp_tick, burst_n, burst_free, sec_carry]:

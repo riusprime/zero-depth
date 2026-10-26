@@ -56,6 +56,7 @@ static func steer(w: World, pi: int) -> void:
 	var p := w.projectiles
 	if not p.moves or pi >= p.ret.size():
 		return
+	VoidMods.steer(w, pi)  # v0.9.5 FC3: a void's orbit, mine and homing
 	if GunForms.mine_waits(w, pi):  # v0.6.5 WN3: G12 Mine, still until touched
 		return
 	_steer(w, pi)

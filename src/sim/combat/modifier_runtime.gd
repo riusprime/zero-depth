@@ -146,6 +146,7 @@ static func advance(w: World) -> void:
 	RuneExplosion.advance(w)  # v0.9.5 FC0: the rune bursts grow, hit and shove
 	LaserMods.advance(w)  # v0.9.5 FC1: the Laser's aim, targets, ramp, Echo's strikes and mines
 	BombMods.advance(w)  # v0.9.5 FC2: the Bomb's waiting bombs, mines, echoes, bomblets and rings
+	VoidMods.advance(w)  # v0.9.5 FC3: the Void's cap, the voids to open, the rings
 	_walk(w)
 	BladeForms.advance(w)  # v0.6.5 WN4: Heavy's push, Orbit Blades, Parry Edge through the swing
 

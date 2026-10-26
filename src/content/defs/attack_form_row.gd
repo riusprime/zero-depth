@@ -6,6 +6,41 @@ extends Resource
 ## form's own (the form's step builds the rule; until then it reads as on); every other card is off (C62: "No by
 ## default"), so it is never offered, never equipped and never compiled with this form.
 
+## v0.9.5 FC3: the numbers the Void row carries (VoidMods.DEFAULTS has the same keys; a test holds them equal).
+const VOID_KEYS: Array[String] = [
+	"ring_mm",
+	"ring_ms",
+	"ring_share",
+	"ring_ticks",
+	"back_share",
+	"ricochet_bounces",
+	"home_range_mm",
+	"home_group_mm",
+	"home_every_ms",
+	"home_turn_dps",
+	"echo_share",
+	"echo_life",
+	"echo_aura",
+	"echo_pull",
+	"big_aura_mm",
+	"big_pull_mm",
+	"big_speed",
+	"big_damage",
+	"rapid_period_ms",
+	"rapid_life",
+	"rapid_aura_mm",
+	"rapid_damage",
+	"split_dist_mm",
+	"split_life_ms",
+	"split_share",
+	"split_aura_mm",
+	"split_pull_mm",
+	"mine_hold_ms",
+	"orbit_mm",
+	"orbit_ms",
+	"live_max",
+]
+
 ## v0.9.5 FC2: the numbers the Bomb row carries (BombMods.DEFAULTS has the same keys; a test holds them equal).
 const BOMB_KEYS: Array[String] = [
 	"halo_dist_mm",

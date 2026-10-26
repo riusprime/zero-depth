@@ -1976,10 +1976,12 @@ func _apply_spawns() -> void:
 		if s[12] != 0:  # v0.8.0 MR: a secondary bolt or a repeat's
 			projectiles.set_second(projectiles.size() - 1, s[12])
 		ProjectileMoves.on_spawn(self, projectiles.size() - 1, s[14])  # v0.6.0 MX4
+		VoidMods.on_spawn(self, projectiles.size() - 1)  # v0.9.5 FC3: a void with cards gets its row
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 		if s[13] != "":  # v0.8.0 RM: Threadline links it to the bolt before
 			Remnants.on_link(self, projectiles.size() - 1, s[13])
 	_pending_projectiles.clear()
+	VoidMods.cull(self)  # v0.9.5 FC3: at most so many voids a hero
 	for s in _pending_enemies:  # Bosses (v0.3.0 C): eggs and turrets.
 		if enemy_table(s[0]) != null:
 			add_enemy(s[0], s[1])

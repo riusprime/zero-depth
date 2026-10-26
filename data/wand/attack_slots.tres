@@ -90,8 +90,41 @@ params = {
 script = ExtResource("2_row")
 id = &"void"
 card = &"gun_void"
-allowed = Array[StringName]([&"gun_twin", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
+allowed = Array[StringName]([&"gun_twin", &"gun_ring", &"gun_backfire", &"gun_ricochet", &"gun_homing", &"gun_echo", &"gun_big_shot", &"gun_rapid_fire", &"split_shot", &"gun_mine", &"orbit_rounds", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
 ruled = Array[StringName]([])
+params = {
+"ring_mm": 3000,
+"ring_ms": 300,
+"ring_share": 600,
+"ring_ticks": 5,
+"back_share": 1000,
+"ricochet_bounces": 64,
+"home_range_mm": 6000,
+"home_group_mm": 2000,
+"home_every_ms": 500,
+"home_turn_dps": 90,
+"echo_share": 600,
+"echo_life": 500,
+"echo_aura": 500,
+"echo_pull": 500,
+"big_aura_mm": 1600,
+"big_pull_mm": 4500,
+"big_speed": 700,
+"big_damage": 1600,
+"rapid_period_ms": 400,
+"rapid_life": 500,
+"rapid_aura_mm": 700,
+"rapid_damage": 700,
+"split_dist_mm": 1500,
+"split_life_ms": 1000,
+"split_share": 400,
+"split_aura_mm": 600,
+"split_pull_mm": 1800,
+"mine_hold_ms": 3000,
+"orbit_mm": 2500,
+"orbit_ms": 1000,
+"live_max": 6
+}
 
 [sub_resource type="Resource" id="Form_lance"]
 script = ExtResource("2_row")

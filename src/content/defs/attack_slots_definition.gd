@@ -112,12 +112,14 @@ func _check_params(r: AttackFormRow) -> Array[ValidationIssue]:
 	return issues
 
 
-## The param keys form `id` must carry (v0.9.5 FC1: the Laser's, FC2: the Bomb's); none for the other forms.
+## The param keys form `id` must carry (v0.9.5 FC1 Laser, FC2 Bomb, FC3 Void); none for the other forms.
 func _keys_of(id: StringName) -> Array[String]:
 	if id == &"laser":
 		return AttackFormRow.LASER_KEYS
 	if id == &"bomb":
 		return AttackFormRow.BOMB_KEYS
+	if id == &"void":
+		return AttackFormRow.VOID_KEYS
 	return []
 
 
