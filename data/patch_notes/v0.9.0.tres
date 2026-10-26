@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_26c7n")
 version = "0.9.0"
-body_en = "# {{TITLE}} v0.9.0 — World and Weapons
+body_en = "# Zero Depth v0.9.0 — World and Weapons
 _2026-10-24_ · Five floors, four new bosses, ten Gun forms, a hub to come home to, and floors full of secrets.
 
 ## New Features
@@ -81,7 +81,7 @@ Your Gun's shot now has a **Form**: Orbs, Laser, Bomb, Void, Lance, Scatter, Gla
 - At most 12 projectiles an attack; extras merge into bigger shots.
 - New launch, travel and impact looks for every form and element.
 "
-body_es = "# {{TITLE}} v0.9.0 — Mundo y armas
+body_es = "# Zero Depth v0.9.0 — Mundo y armas
 _2026-10-24_ · Cinco pisos, cuatro jefes nuevos, diez formas de Pistola, un refugio al que volver y pisos llenos de secretos.
 
 ## Novedades

@@ -338,7 +338,7 @@ records the SHA it ports from in `evidence/PORTS.md`. Every later port uses that
 | `tests/e2e/dv_840/run_driver.gd` | Booting the real `main.tscn`, recording ops and markers | Send input with `Input.parse_input_event`; no direct method calls and no writes to private state |
 | `tests/golden/dv_350/fixtures/golden_scenario_runner.gd` | Fixture → run → hash → compare | Hash with `StateHasher`, not `JSON.stringify` (which loses float precision) |
 | The purity test in `tests/unit/dv_330/test_statuses_hazards.gd` | Its banned-token list | Recursive, word-bounded, wider list (§3) |
-| `tests/v9/v096/test_export_paths.gd`, `export_presets.cfg`, `.github/workflows/windows-export.yml`, `scripts/export_windows.ps1` | One "Windows Desktop" preset (x86_64, `embed_pck=false`), excluding `tests/*`, `docs/*`, `scripts/*`, `addons/gut/*`, `*.uid`, `*.md`. The Windows job with templates, the zip and `SHA256SUMS.txt` | The include filter is not needed for CSV locale (it imports to `.translation`). Names come from `{{TITLE}}`. The path test checks the scanner, not `.remap` stripping |
+| `tests/v9/v096/test_export_paths.gd`, `export_presets.cfg`, `.github/workflows/windows-export.yml`, `scripts/export_windows.ps1` | One "Windows Desktop" preset (x86_64, `embed_pck=false`), excluding `tests/*`, `docs/*`, `scripts/*`, `addons/gut/*`, `*.uid`, `*.md`. The Windows job with templates, the zip and `SHA256SUMS.txt` | The include filter is not needed for CSV locale (it imports to `.translation`). Names come from `config/name` (Zero Depth). The path test checks the scanner, not `.remap` stripping |
 
 ### Not reused
 

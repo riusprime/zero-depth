@@ -72,12 +72,12 @@ var _ended_ticks := 0
 var _stage_seed := STAGE_SEED
 var _seeds: RunSeeds
 var _run_biomes: Array[StringName] = []
-## v0.7.5 PG: the Playground's weapon and biome (kept across Restart and Change weapon).
-var _pg_build := &"gun"
+var _pg_build := &"gun"  # v0.7.5 PG: the Playground weapon and biome (kept across Restart)
 var _pg_biome := &"ruins"
 
 
 func _ready() -> void:
+	UserDirMigration.run_for_user_dir()  # v0.9.5 TT: carry the saves over from the pre-name folder
 	get_tree().set_auto_accept_quit(false)
 	_seeds = RunSeeds.new(RunSeeds.resolve(fixed_seed, STAGE_SEED))  # v0.8.0 N1 (O53)
 	_stage_seed = _seeds.mode if _seeds.mode >= 0 else STAGE_SEED

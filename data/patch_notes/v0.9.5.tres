@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_ew5nk")
 version = "0.9.5"
-body_en = "# {{TITLE}} v0.9.5 — Harder Bosses, Deeper Guns
+body_en = "# Zero Depth v0.9.5 — Harder Bosses, Deeper Guns
 _2026-10-26_ · Bosses that hit back, every Gun form takes the cards, a stone in the hub that talks, and a world that is easier to read.
 
 ## Bosses
@@ -79,7 +79,7 @@ Homing, Halo, Ring, Backfire, Ricochet, Echo, Big Shot, Rapid Fire, Split, Mine 
 ## Performance
 PERFORMANCE_TBD
 "
-body_es = "# {{TITLE}} v0.9.5 — Jefes más duros, Pistola más profunda
+body_es = "# Zero Depth v0.9.5 — Jefes más duros, Pistola más profunda
 _2026-10-26_ · Jefes que devuelven el golpe, todas las formas de la Pistola aceptan las cartas, una piedra en el refugio que habla y un mundo más fácil de leer.
 
 ## Jefes
