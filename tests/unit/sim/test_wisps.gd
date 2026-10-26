@@ -9,7 +9,24 @@ extends GutTest
 const W := preload("res://tests/support/mx4_world.gd")
 const HP := 1000000
 const WISPS_ON: Array[StringName] = [
-	&"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"
+	&"ember_core",
+	&"storm_core",
+	&"frost_core",
+	&"venom_core",
+	&"shared_bleed",
+	&"gun_twin",
+	&"halo_shot",
+	&"gun_ring",
+	&"gun_pierce",
+	&"gun_ricochet",
+	&"gun_homing",
+	&"gun_echo",
+	&"gun_big_shot",
+	&"gun_rapid_fire",
+	&"split_shot",
+	&"gun_spiral",
+	&"gun_mine",
+	&"orbit_rounds"
 ]
 
 
@@ -196,7 +213,7 @@ func _slot_world() -> World:
 	return w
 
 
-func test_the_wisps_row_offers_only_the_elements() -> void:
+func test_the_wisps_row_offers_the_elements_and_the_thirteen_cards() -> void:
 	var w := _slot_world()
 	assert_true(BuildSlots.take(w, W.item(w, &"gun_wisps")))
 	assert_eq(AttackSlots.form_id(w), &"wisps")

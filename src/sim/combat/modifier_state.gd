@@ -163,6 +163,13 @@ var wm_w := PackedInt32Array()
 var wm_aux := PackedInt32Array()
 var wm_aux2 := PackedInt32Array()
 var wm_root := PackedInt32Array()
+## v0.9.5 FC9 (WispMods): the Wisps cards' rows: the lightning rings a shot left (place, tick born; the view's) and
+## Orbit's hit gaps (wisp, actor, tick it may hit again). Hashed only while any is set.
+var pm_ring_at := PackedVector2Array()
+var pm_ring_born := PackedInt32Array()
+var pm_hit_wisp := PackedInt32Array()
+var pm_hit_actor := PackedInt32Array()
+var pm_hit_until := PackedInt32Array()
 ## v0.9.5 FC4 (LanceMods): the Lance cards' rows, one a live lance's state, a ghost lance to open, a ring growing or a
 ## split shard (kind and flags, the lance's projectile id, place, tick due, tick born, angle, damage, radius in mm,
 ## aux (bounces of a ghost, enemies a lance has split on), root) and Ring's hits (id * 65536 + actor). Hashed only
@@ -276,6 +283,7 @@ func touched() -> bool:
 		or vm_touched()
 		or gm_touched()
 		or wm_touched()
+		or pm_touched()
 		or lm_touched()
 		or rm_touched()
 		or remnants_touched()
@@ -350,6 +358,19 @@ func vm_clear() -> void:
 	vm_r = PackedInt32Array()
 	vm_root = PackedInt32Array()
 	vm_hit = PackedInt32Array()
+
+
+## v0.9.5 FC9: a Wisps card's row is set.
+func pm_touched() -> bool:
+	return not pm_ring_born.is_empty() or not pm_hit_wisp.is_empty()
+
+
+func pm_clear() -> void:
+	pm_ring_at = PackedVector2Array()
+	pm_ring_born = PackedInt32Array()
+	pm_hit_wisp = PackedInt32Array()
+	pm_hit_actor = PackedInt32Array()
+	pm_hit_until = PackedInt32Array()
 
 
 ## v0.9.5 FC8: a Wave card's row is set.
@@ -610,6 +631,14 @@ func hash_into(h: StateHasher) -> void:
 			h.add_ints(arr)
 		h.add_int(wm_at.size())
 		for p in wm_at:
+			h.add_f32(p.x)
+			h.add_f32(p.y)
+	if pm_touched():  # v0.9.5 FC9: only while a Wisps card's row is set
+		h.add_string("pm")
+		for arr: PackedInt32Array in [pm_ring_born, pm_hit_wisp, pm_hit_actor, pm_hit_until]:
+			h.add_ints(arr)
+		h.add_int(pm_ring_at.size())
+		for p in pm_ring_at:
 			h.add_f32(p.x)
 			h.add_f32(p.y)
 	if lm_touched():  # v0.9.5 FC4: only while a Lance card's row is set

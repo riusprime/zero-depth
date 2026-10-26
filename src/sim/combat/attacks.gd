@@ -72,8 +72,13 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		_run(w, spec, AttackSpec.Trigger.ON_LAUNCH, ctx, ctx.origin, -1, 0)
 	if ctx.depth == 0 and not ctx.back and spec.back_permille > 0:
 		_back(w, spec, ctx)
-	if ctx.depth == 0 and not ctx.repeat and ctx.step < 0 and spec.repeat_delay_ticks > 0:
-		ModifierRuntime.queue_repeat(w, spec, ctx)
+	if (
+		ctx.depth == 0
+		and (not ctx.repeat or ctx.wisp)
+		and ctx.step < 0
+		and spec.repeat_delay_ticks > 0
+	):
+		ModifierRuntime.queue_repeat(w, spec, ctx)  # v0.9.5 FC9: a wisp's shot echoes like an orb
 	return landed
 
 

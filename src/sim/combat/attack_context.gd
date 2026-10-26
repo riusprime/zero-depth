@@ -41,6 +41,8 @@ var radius_m := 0.0
 var size_permille := 1000
 ## v0.9.5 WB (owner Q13): this launch's bolts pierce this many more enemies than the spec (the Wisps' shots: 1).
 var extra_pierce := 0
+## v0.9.5 FC9: a wisp's own shot (Wisps._fire): a repeat in every other way, but Echo's repeat is open to it.
+var wisp := false
 ## v0.9.5 FC4: a Lance release at full charge (Halo's six lances, Ricochet's bounce; PlayerKit._fire_bolt).
 var lance_full := false
 var on_landed := Callable()

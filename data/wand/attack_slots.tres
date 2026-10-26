@@ -269,8 +269,20 @@ params = {
 script = ExtResource("2_row")
 id = &"wisps"
 card = &"gun_wisps"
-allowed = Array[StringName]([&"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
+allowed = Array[StringName]([&"gun_twin", &"halo_shot", &"gun_ring", &"gun_pierce", &"gun_ricochet", &"gun_homing", &"gun_echo", &"gun_big_shot", &"gun_rapid_fire", &"split_shot", &"gun_spiral", &"gun_mine", &"orbit_rounds", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
 ruled = Array[StringName]([])
+params = {
+"twin_wisps": 1,
+"halo_wisps": 6,
+"halo_share": 600,
+"ring_mm": 1000,
+"ring_ms": 300,
+"mine_gap_ticks": 120,
+"live_max": 6,
+"orbit_mm": 3500,
+"orbit_share": 500,
+"orbit_gap_ticks": 30
+}
 
 [resource]
 script = ExtResource("1_slots")

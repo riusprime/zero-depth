@@ -16,8 +16,9 @@ enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST, WEAPON }
 ## v0.6.5 WN1 (the wand's triggers): ON_CRIT, a landed critical hit (Attacks); ON_FINISHER is compile-time only
 ## (WandCompile turns it into the combo's last step's ON_HIT).
 ## v0.8.0 RM: ON_REMNANT, a remnant hook that no moment fires (Remnants finds it: a link, a path, a consumer).
+## v0.9.5 FC9: ON_WISP, the Wisps' Mine card's mine, which no moment fires (WispMods drops it from each wisp).
 enum Trigger {
-	ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER, ON_REMNANT
+	ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER, ON_REMNANT, ON_WISP
 }
 
 ## Numeric fields a modifier op may change (sim names; ModifierTable.FIELD_OF maps the content names), and which of
