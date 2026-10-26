@@ -26,6 +26,9 @@ extends ContentDef
 @export var hidden := false
 ## MP2: the epic robe's build in the avatar (EpicRobeView: &"fallen", &"divine"); empty for a colour robe.
 @export var style := &""
+## v0.9.5 RS2: a robe earned in the game, not bought (the Runic robe, S6): the hint shown while it is locked.
+## Such a robe is not on sale at the Progression Station and needs no price.
+@export var unlock_hint_key := &""
 
 
 func category() -> StringName:
@@ -36,7 +39,7 @@ func validate() -> Array[ValidationIssue]:
 	var issues := super.validate()
 	if String(name_key).is_empty():
 		issues.append(ValidationIssue.new(&"missing", resource_path, "a robe needs a name_key"))
-	if not free and price <= 0:
+	if not free and price <= 0 and String(unlock_hint_key).is_empty():
 		issues.append(ValidationIssue.new(&"price", resource_path, "a robe to buy needs a price"))
 	if price_step < 0:
 		issues.append(

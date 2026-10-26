@@ -471,6 +471,21 @@ func pulse_runic() -> void:
 		_pulse_t = 0.0
 
 
+## v0.9.5 RS2 (S6): the full stone's ring of the 24 runes around its base, turning slowly (RuneRingView), shown or gone.
+func set_runic_full(full: bool) -> void:
+	var st: Dictionary = stations.get(&"runic", {})
+	if st.is_empty():
+		return
+	var root := st["root"] as Node3D
+	var ring := root.get_node_or_null("RuneRing")
+	if full and ring == null:
+		ring = RuneRingView.new(float(st.get("radius", 1.0)) + 0.45)
+		ring.position = Vector3(0, 0.07, 0)
+		root.add_child(ring)
+	elif not full and ring != null:
+		ring.queue_free()
+
+
 ## Whether the Runic Stone's veins are lit now.
 func runic_lit() -> bool:
 	var ring: Variant = (stations.get(&"runic", {}) as Dictionary).get("ring")
