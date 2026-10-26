@@ -11,8 +11,8 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3, DR, FC1, TS, FC2, BK, FC3, HM, HU, FC4, FC5, FC6, FC7 (+FC7b) and FC8 merged.
-- **Agents working:** FC9 (the Wisps' combinations) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3, DR, FC1, TS, FC2, BK, FC3, HM, HU, FC4, FC5, FC6, FC7 (+FC7b), FC8 and FC9 merged (Wave C done but FC9b).
+- **Agents working:** FC9b (a wisp shot keeps its damage fractions, so Halo counts) and PR (short prompts under the hero) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -53,6 +53,7 @@ riusprime/zero-depth#9).
 | FC6 | The Glaive takes eleven more cards (G1–G11); strongest Echo/Big Shot ×1.50 single, Ring ×2.13 pack vs plain; Mine+Echo+Ring on a cluster ×5.36 ([evidence](evidence/FC6.md)) | `7332f862`, merge `b358d62b` |
 | FC7 | The Seekers take eleven more cards (S1–S11); FC7b: a dart's damage is kept in thousandths with a carry, so the card percentages and levels count (plain Seekers ×0.60 → ×0.68 orbs; Twin ×1.20, Echo ×1.50, Ring pack ×1.80, Pierce line ×3.03) ([evidence](evidence/FC7.md)) | `c1123008`, `8b282d95`, merge `880703ac` |
 | FC8 | The Wave takes eight more cards (W1–W8); strongest Big Shot ×1.6 vs plain ([evidence](evidence/FC8.md)) | `2463f914`, merge `0b8643ea` |
+| FC9 | The Wisps take thirteen more cards (P1–P6; P4's eight act on the wisps' shots as on the orbs); strongest Big Shot ×1.79 / ×1.80, Echo ×1.56; Halo reads ×1.00 from rounding (FC9b fixes) ([evidence](evidence/FC9.md)) | `6846d26a`, merge `28218c03` |
 | BH1 | Bosses can't be staggered; at each phase change a boss kneels 1 s (hittable) and its core can be stolen for 3 s; boss HP is set from your power when the door starts opening (caps ×2.5–4.5 by floor, ±8 % per fight); each completed loop (up to 3) makes the Hollow Crown's pace 12 % shorter and its hits 8 % softer; the run summary says "Looped ×N" ([evidence](evidence/BH1.md)) | `d669f646`, merge `f9197302` |
 | BH2 | A harder spell each: the Gatekeeper's shock lanes lock faster and fire a second, shifted set; the Warlord's javelins lead you, then a second fan; the Brood Mother's 3rd leap leads you and lands wider; the Hive Lens's beam turns after you; the Siege Engine's mortar grid leaves 2 safe cells that swap halfway (never on the edge). The loop ease is data now ([evidence](evidence/BH2.md)) | `eca6b78e`, merge `53cd71e1` |
 | BH3 | A harder spell each: the Foundry's furnace waves come as two walls at right angles; the Twin Wardens' crossfire lines track you for 1.2 s; the Clockwork Judge adds a counter-turning spiral from phase 2; the Lantern Shade's lanterns burn 4 s, its dark lasts 9 s and Snuff puts out two lanterns ([evidence](evidence/BH3.md)) | `7ff84613`, merge `d788b91f` |
