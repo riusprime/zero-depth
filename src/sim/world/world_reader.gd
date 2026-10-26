@@ -2820,6 +2820,12 @@ func card_info(code: int) -> Dictionary:
 	return Offers.info(_w, code)
 
 
+## v0.9.5 TX: the Gun form fired now (the held Form card's row id: &"orbs", &"laser" ...; &"" on a Blade run), for the
+## form line a Gun card shows (FormCardText).
+func attack_form_id() -> StringName:
+	return AttackSlots.form_id(_w)
+
+
 ## Crit chance and multiplier now, per mille (Stats).
 func crit_chance_permille() -> int:
 	return Stats.crit_chance(_w)

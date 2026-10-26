@@ -239,7 +239,22 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 					ci, face["held_level"], face["held_level"] + 1, int(info.get("max_level", 5))
 				)
 			slot_face(ci, reader, info, face)  # v0.9.0 AS
+			form_face(reader, info, face)  # v0.9.5 TX
 	return face
+
+
+## v0.9.5 TX: a Pattern or Secondary Gun card says what it does on the form held now (FormCardText): face["form_line"]
+## under the generic sentence, in the form's colour (face["form_color"]). Orbs, the Blade and every other card: none.
+static func form_face(reader: WorldReader, info: Dictionary, face: Dictionary) -> void:
+	var slot := int(info.get("slot", WorldReader.SLOT_NONE))
+	if slot != WorldReader.SLOT_PATTERN and slot != WorldReader.SLOT_SECONDARY:
+		return
+	var form := reader.attack_form_id()
+	var line := FormCardText.line_for(form, face["id"])
+	if line.is_empty():
+		return
+	face["form_line"] = line
+	face["form_color"] = FormCardText.accent_for(form)
 
 
 ## v0.9.0 AS (owner Q5, Q14: "Short line + slot tag"; C67, C87): a Form, Pattern, Secondary or Element card's slot tag

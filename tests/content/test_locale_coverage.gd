@@ -87,3 +87,16 @@ func _tscn_under(dir: String) -> PackedStringArray:
 	for d in DirAccess.get_directories_at(dir):
 		out.append_array(_tscn_under(dir.path_join(d)))
 	return out
+
+
+## v0.9.5 TX: every allowed Pattern or Secondary card of every Gun form has its FORMCARD_<FORM>_<CARD> line, and the
+## off line exists (the keys are built at run time, so the literal scan above cannot see them).
+func test_form_card_lines_exist() -> void:
+	var table := _table()
+	assert_true(table.has(FormCardText.OFF_KEY), "the off line")
+	for r in FormCardText.slots().forms:
+		if r.id == &"orbs":
+			continue
+		for c: StringName in r.allowed:
+			if FormCardText.CARDS.has(c):
+				assert_true(table.has(FormCardText.key_for(r.id, c)), "%s on %s" % [c, r.id])
