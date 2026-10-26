@@ -112,13 +112,23 @@ static func is_attack(tags: int, effect_id: StringName) -> bool:
 	return (tags & (SimEvent.TAG_MELEE | SimEvent.TAG_PROJECTILE)) != 0
 
 
+## v0.9.5 (owner Q12: heat for every form): a hit Overclock raises: an attack (is_attack), or a Gun form's own area
+## hit (Bomb, Void, Rune Explosion: TAG_AREA | TAG_PROJECTILE, no effect), never a status tick, chain or shrapnel.
+static func overclock_counts(tags: int, effect_id: StringName) -> bool:
+	if is_attack(tags, effect_id):
+		return true
+	var form_area := SimEvent.TAG_AREA | SimEvent.TAG_PROJECTILE
+	var never := NOT_ATTACK & ~SimEvent.TAG_AREA
+	return effect_id == &"" and (tags & form_area) == form_area and (tags & never) == 0
+
+
 ## Damage.hit's attacker multiplier (per mille): Overclock raises the player's attacks on enemies.
 static func attacker_mult(
 	w: World, target: int, owner_id: int, tags: int, effect_id: StringName
 ) -> int:
 	if w.heat == null or target == 0 or owner_id != w.actors.ids[0]:
 		return 1000
-	if not is_attack(tags, effect_id) or not overclocked(w):
+	if not overclock_counts(tags, effect_id) or not overclocked(w):
 		return 1000
 	return (
 		1000

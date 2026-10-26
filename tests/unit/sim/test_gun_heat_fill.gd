@@ -171,3 +171,22 @@ func test_hot_and_overclock_are_safe_on_every_form() -> void:
 			"%s: [heat, hits, overclock-tagged hits] %s" % [form if form != &"" else &"orbs", row]
 		)
 		assert_gt(row[0][1], 0, "%s hits at all" % form)
+
+
+## v0.9.5 (owner Q12: heat for every form): Overclock raises a Gun form's own area hits too (Bomb, Void, Rune
+## Explosion), never a status tick, a chain jump, shrapnel or an effect's payoff.
+func test_overclock_counts_the_area_forms_own_hits_only() -> void:
+	var form_area := SimEvent.TAG_AREA | SimEvent.TAG_PROJECTILE
+	assert_true(Heat.overclock_counts(form_area, &""), "a bomb, void or rune burst hit")
+	assert_true(Heat.overclock_counts(SimEvent.TAG_PROJECTILE, &""), "a bolt, as before")
+	assert_true(Heat.overclock_counts(SimEvent.TAG_MELEE, &""), "a swing, as before")
+	assert_false(
+		Heat.overclock_counts(SimEvent.TAG_AREA, &""),
+		"an area that isn't a form's (no projectile tag)"
+	)
+	assert_false(Heat.overclock_counts(form_area | SimEvent.TAG_DOT, &""), "a burn tick")
+	assert_false(Heat.overclock_counts(form_area | SimEvent.TAG_CHAIN, &""), "a chain jump")
+	assert_false(Heat.overclock_counts(form_area | SimEvent.TAG_SHRAPNEL, &""), "shrapnel")
+	assert_false(
+		Heat.overclock_counts(form_area, &"overclock_heat"), "an effect's payoff (the Vent blast)"
+	)
