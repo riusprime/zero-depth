@@ -37,6 +37,8 @@ const HORDE_KINDS: Array[int] = [
 var hidden_proxies := 0
 var lazy_proxies := 0
 var enemies := 0
+## How many other enemies' merged bodies were drawn (tests).
+var rigs := 0
 var _frames := 0
 var _waited := 0
 var _camera: Camera3D
@@ -208,6 +210,7 @@ func _enemies(actors: ActorViews) -> void:
 		h.setup(kind, actors.outline_color, actors.technique)
 		h.set_process(false)
 		add_child(h)
+		RigMerge.merge(h, kind)  # v0.9.5 PF5: the merged body draws on a skinned variant of its shaders
 		enemies += 1
 	for kind in [WorldReader.KIND_CHARGER, WorldReader.KIND_HATCHLING]:  # the Charger's shared look too
 		var c := ChargerAvatar.new()
@@ -216,7 +219,41 @@ func _enemies(actors: ActorViews) -> void:
 		c.setup(actors.outline_color, actors.technique, kind)
 		c.set_process(false)
 		add_child(c)
+		RigMerge.merge(c, kind)
 		enemies += 1
+	_merged_kinds(actors)
+
+
+## v0.9.5 PF5: the other enemies' merged bodies (RigMerge) draw on the skinned variant of the standard material; one of
+## each, built and merged as ActorViews does, so that variant is compiled behind the cover too.
+func _merged_kinds(actors: ActorViews) -> void:
+	var oc := actors.outline_color
+	var tq := actors.technique
+	var needle := NeedleAvatar.new()
+	needle.setup(oc, tq)
+	_warm_rig(needle, WorldReader.KIND_NEEDLE)
+	var elite := EliteAvatar.new()
+	elite.setup(WorldReader.KIND_BREAKER, oc, tq)
+	_warm_rig(elite, WorldReader.KIND_BREAKER)
+	var warden := WardenAvatar.new()
+	warden.setup(oc, tq)
+	_warm_rig(warden, WorldReader.KIND_WARDEN)
+	var caster := ArcCasterAvatar.new()
+	caster.setup(oc, tq)
+	_warm_rig(caster, WorldReader.KIND_ARC_CASTER)
+	var drone := BombDroneAvatar.new()
+	drone.setup(oc, tq)
+	_warm_rig(drone, WorldReader.KIND_BOMB_DRONE)
+	var lens := LensDroneAvatar.new()
+	lens.setup(oc, tq)
+	_warm_rig(lens, WorldReader.KIND_LENS_DRONE)
+
+
+func _warm_rig(a: AvatarBase, kind: int) -> void:
+	a.set_process(false)
+	add_child(a)
+	if not RigMerge.merge(a, kind).is_empty():
+		rigs += 1
 
 
 func _add(p: GeometryInstance3D) -> void:

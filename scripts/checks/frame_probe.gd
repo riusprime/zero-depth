@@ -15,6 +15,7 @@ extends SceneTree
 ##   no_ssil          the stage's screen-space indirect lighting off
 ##   fx_half          per-hit attack effects at the Options "Medium" density (the existing knob; "high" is the default)
 ##   fx_low           the same at "Low"
+##   no_rig_merge     v0.9.5 PF5: the enemies' pieces as separate meshes (RigMerge off), to compare the merged rigs
 ##   planar_floor     NOT AVAILABLE: every biome's ground is world-triplanar (StageView._ground_material) and there
 ##                    is no planar path to switch to; the report says whether the floor is triplanar.
 ## The scenario: PlaygroundScenario's fixed room (seed 4404), 20 live enemies topped up each second at 7-12 m round the
@@ -33,7 +34,9 @@ const BUILD_KEYS: Array[StringName] = [
 	&"ITEM_EMBER_CORE",
 	&"ITEM_STORM_CORE",
 ]
-const KNOWN_AB := ["no_interp", "shadows_low", "no_ssil", "fx_half", "fx_low", "planar_floor"]
+const KNOWN_AB := [
+	"no_interp", "shadows_low", "no_ssil", "fx_half", "fx_low", "planar_floor", "no_rig_merge"
+]
 ## The strafe legs (move_left / move_right / move_up / move_down), each held STRAFE_S seconds.
 const STRAFE: Array[StringName] = [&"move_left", &"move_up", &"move_right", &"move_down"]
 const STRAFE_S := 2.0
@@ -339,6 +342,8 @@ func _apply_ab() -> void:
 				RenderingServer.directional_soft_shadow_filter_set_quality(1)
 			"no_ssil":
 				_main.view.stage.environment.ssil_enabled = false
+			"no_rig_merge":  # v0.9.5 PF5: enemy rigs as built, one node per piece (enemies spawned after this)
+				RigMerge.enabled = false
 			"no_interp":
 				root.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 			"fx_half":

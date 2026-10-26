@@ -42,6 +42,8 @@ const STRIKE_SNAP_S := 0.07
 const STRIKE_HOLD_S := 0.12
 const STRIKE_BACK_S := 0.35
 
+## v0.9.5 PF5: the skeleton of this avatar's merged body (RigMerge), or null while its pieces draw as they were built.
+var merged_rig: MergedRig
 ## The outlined body materials (ActorViews flashes them on a hit).
 var body_materials: Array[StandardMaterial3D] = []
 ## v0.8.0 HR (O89): for an avatar on EnemyLooks' shared materials (the horde kinds, the Charger and Hatchling): the
@@ -79,10 +81,11 @@ var _strike_end_s := -1.0
 
 func _process(delta: float) -> void:
 	var dt := consume_hold(delta)
-	if dt <= 0.0:
-		return
-	advance(dt)
-	advance_flinch(dt)
+	if dt > 0.0:
+		advance(dt)
+		advance_flinch(dt)
+	if merged_rig != null:  # v0.9.5 PF5: the merged mesh follows the nodes just posed (sync may have moved them too)
+		merged_rig.update_bones()
 
 
 ## v0.8.0 GF3: holds the pose still for `seconds` of frame time (the longer of this and a hold already running; never
@@ -335,6 +338,15 @@ func show_hit(on: bool, c: Color = Color.WHITE, energy: float = 0.0) -> void:
 	_hit = v
 	for piece in _hit_pieces:
 		piece.set_instance_shader_parameter(EnemyLooks.HIT, v)
+
+
+## v0.9.5 PF5 (RigMerge): how this avatar's rig may be merged into one skinned mesh. "keep": the pieces that must stay
+## nodes of their own (a per-instance shader value of their own, a mesh swapped at runtime, a node added or freed at
+## runtime); "sets": the live lists of pieces that get a per-instance shader value written together (the hit flash on
+## the body plates, an accent glow on the glowing ones): RigMerge swaps a merged piece for the merged mesh in each list
+## it was in, so those writes reach the merged mesh. Each avatar overrides what it needs.
+func rig_spec() -> Dictionary:
+	return {"keep": [], "sets": [_hit_pieces]}
 
 
 ## v0.8.0 HR: the HIT now on the body pieces (tests: Vector4 rgb the linear emission x energy, w 1 = shown).
