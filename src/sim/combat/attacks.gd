@@ -356,6 +356,8 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 			var kind := kind0
 			if spec.share_permille > 0 and (oi != centre or li != lane_c):
 				kind |= ProjectileStore.SECONDARY
+			if ctx.extra_pierce > 0:
+				w.set_pending_pierce(ctx.extra_pierce)
 			if kind != 0:
 				w.set_pending_second(kind)
 			if link != null:

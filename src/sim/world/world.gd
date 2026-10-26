@@ -525,7 +525,7 @@ func queue_projectile(
 	spec_key: String = ""
 ) -> void:
 	_pending_projectiles.append(
-		[owner_id, team, at, vel, damage, radius_m, life, tags, bounces, spec_key, &"", -1, 0, ""]
+		[owner_id, team, at, vel, damage, radius_m, life, tags, bounces, spec_key, &"", -1, 0, "", 0]
 	)
 
 
@@ -533,6 +533,11 @@ func queue_projectile(
 ## (ProjectileStore.REPEAT; Attacks._bolts).
 func set_pending_second(kind: int) -> void:
 	_pending_projectiles[-1][12] = kind
+
+
+## v0.9.5 WB: the player bolt queued last pierces this many more enemies than its spec (the Wisps' shots).
+func set_pending_pierce(n: int) -> void:
+	_pending_projectiles[-1][14] = n
 
 
 ## v0.8.0 RM (Remnants, Threadline): the player bolt queued last links to the one before it (its LINK hook's key).
@@ -1919,7 +1924,7 @@ func _apply_spawns() -> void:
 			projectiles.set_cause(projectiles.size() - 1, s[11])
 		if s[12] != 0:  # v0.8.0 MR: a secondary bolt or a repeat's
 			projectiles.set_second(projectiles.size() - 1, s[12])
-		ProjectileMoves.on_spawn(self, projectiles.size() - 1)  # v0.6.0 MX4
+		ProjectileMoves.on_spawn(self, projectiles.size() - 1, s[14])  # v0.6.0 MX4
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 		if s[13] != "":  # v0.8.0 RM: Threadline links it to the bolt before
 			Remnants.on_link(self, projectiles.size() - 1, s[13])
