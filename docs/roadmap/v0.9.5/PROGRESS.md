@@ -11,8 +11,8 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV and FC0 merged.
-- **Agents working:** SB (solid bodies) and HT (heat by firing time) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0 and HT merged; SB built but not merged (two e2e reds, SB2 fixing).
+- **Agents working:** SB2 (SB's two e2e reds: solids block actors only) and WB (Wisps 80 %, pierce 1) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner (asleep, 2026-10-25 night):** the G2 HUD pick once HM's mockups are made; [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -33,8 +33,11 @@ riusprime/zero-depth#9).
 | BG2 | The backgrounds about 25 % dimmer (owner: "so they don't take up as much protagonism") | `079ff7b6` |
 | CLV | Cards level only where it shows: 23 Gun cards are offered once with a fixed value (Pierce 4, Homing, Ricochet 3, …); Twin, Halo, Split and the elements have 3 levels (Twin 2/2/3 copies at 70/90/75 %); form cards don't level; the Pulse Gun is never offered; old saves read capped ([evidence](evidence/CLV.md)) | `4d8b5d15`, merge `fa7a05c4`; lead `2a6b1ff2` |
 | FC0 | Rune Explosion replaces Scatter: a violet rune dome grows out of the hero to 3.5 m every 1.1 s, hitting each enemy once and shoving it; Twin adds a smaller second burst; its own sound ([evidence](evidence/FC0.md)) | `d6d1eedd`, merge `8a8542e8` |
+| HT | Gun heat fills with time spent firing (0 → 100 in 14 s, whatever the form or attack speed); it cools 1 s after you stop at 25/s; Vent needs 40 heat and has a 6 s cooldown shown on its plate; Overclock's +25 % now reaches Bomb, Void and Rune Explosion too ([evidence](evidence/HT.md)) | `98ea1ed0`, merge `d44d07b3`; lead `27b2dfe0` |
 
 ## Goldens changed on purpose
+- `modifier_equivalence.json` `gun_all` (017199d8… → b813b3d2…) and `both_all` (7b49193f… → a5eb26d3…): HT, heat by
+  firing time (the other 20 cases unchanged).
 - `tests/golden/fixtures/modifier_equivalence.json`: all 22 digests (CB; the scenarios dash every 97 ticks, so the
   10 s dash changes every run). The replay golden is unchanged.
 
@@ -94,3 +97,9 @@ riusprime/zero-depth#9).
   (no digest), arch 4/4 ([evidence](evidence/FC0.md)). test_items still counted the pool before RC (65 → 60): fixed,
   19/19 (`d44ea53a`). The Pulse Gun's lost damage (N4) and Rune Explosion's strength (N5) recorded for the owner.
   HT started. Several agents kept resending their final report after finishing; stopped with TaskStop.
+- 2026-10-26 night — SB (agent) committed on `v095-sb` (`bde42655`) but not green: test_e2e_glaive_seekers and
+  test_e2e_combo fail with solids on ([evidence](evidence/SB.md)); not merged. SB2 started on top of it with the lead's
+  rule: solid props block actors only, never shots (like the shrines). Brood Mother's radius left for the owner (N6).
+  HT (agent) merged (`d44d07b3`): its files green; 2 digests moved on purpose (gun_all, both_all). HT2 (lead): the
+  Overclock bonus counts the area forms' own hits (test_gun_heat_fill 8/8, test_heat 18/18,
+  test_modifier_equivalence 3/3, test_bomb 10/10, test_rune_explosion 15/15, test_sim_purity 2/2). WB started.
