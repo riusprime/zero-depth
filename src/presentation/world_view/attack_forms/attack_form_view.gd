@@ -56,7 +56,7 @@ var _form := FormLook.new()
 # --- Live wiring ----------------------------------------------------------------------------------------------
 func sync(reader: WorldReader) -> void:
 	_tick = reader.tick()
-	_tier = HeatLooks.tier_of(reader.heat_state())
+	_tier = reader.heat_tier()
 	_looks_checked = false
 	_player = reader.player_pos()
 	set_density(ViewPrefs.effects_density)

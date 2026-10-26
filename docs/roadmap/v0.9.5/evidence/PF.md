@@ -234,3 +234,125 @@ decal is created without being freed.
   `enemy_fireballs`. Goldens and equivalence digests did not move (no sim state changed; the reader gained read-only
   functions).
 - Not run: seed-loop tests, the seams, the full suite (GitHub).
+
+## PF3: draw calls and view sync
+
+Step PF3 of v0.9.5. Base: `claude/v095-feedback` at `975f6b79`. Machine: the owner's PC (RTX 3060) with other Godot
+windows / test runs of other agents possibly active, so every absolute number is **machine possibly busy, not
+evidence**. Only same-session ratios are read, and `sim_step` (code unchanged) is the load check. At most one probe
+window ran at a time (5 windows: `before1`, `census0`, `after1`, `after2`, `after3`; the raw reports are in `build/pf3/`,
+untracked). No baseline checkout was made (CLAUDE.md "no baseline copies"), so "before" is the first run on the
+unchanged code (`before1`), not a back-to-back pair.
+
+### The tool: `frame_probe.gd --census`
+
+Walks the scene at the end of the measured window and counts every `is_visible_in_tree()` `GeometryInstance3D` by
+owning script, mesh and material (distinct pairs, how many share a pair, shadow casters). Command (Red Canyon,
+20-enemy fight, 1920x1080): `APPDATA=... godot --language en --path . --resolution 1920x1080 --windowed -s
+scripts/checks/frame_probe.gd -- --biome=red_canyon --secs=15 --breakdown --census`.
+
+### 1. Draw calls: the census says there is no static level geometry worth batching (nothing changed)
+
+`census0` (6 s) and `before1` (15 s), Red Canyon:
+
+```
+census: visible GeometryInstance3D=535 (MultiMesh 84, shadow off 301); distinct mesh+material pairs=415;
+        instances sharing a pair with another=134; distinct materials=358      (census0)
+census: visible GeometryInstance3D=538 (MultiMesh 84, shadow off 374); distinct mesh+material pairs=333;
+        instances sharing a pair with another=245; distinct materials=254      (before1)
+by owner (census0): needle_avatar 102, actor_views 54, bomb_drone_avatar 52, stage_kit 40, damage_numbers 40,
+  arc_caster_avatar 36, warden_avatar 32, shard_views 20, elite_avatar 19, hit_feel 19, vfx_layer 18, elite_bar 15, ...
+```
+
+Reading: the level (`stage_kit.gd`: 40 instances, 13 distinct meshes, 9 shadow casters; `stage_view`, `biome_backdrop`,
+`kit_view` 2 each) is under 10 % of the visible instances and is already few, large pieces. The rest is the 20 enemies'
+articulated rigs (Needle 102 instances for legs, barrel and eyes with IK; Bomb Drone 52; Arc Caster 36; Warden 32;
+Elite 19), each piece its own mesh (96 distinct meshes among the Needles' 102 instances) with an outline `next_pass`
+(each piece draws twice), plus the hit-feel / damage-number / shard pools. Merging the level's pieces would save a few
+tens of draws at most; merging the rigs is not possible (their parts move every frame) without changing how they are
+built. So **no geometry was batched and no shot pair was taken** (no geometry changed). Draw calls before -> after:
+unchanged (`draw_calls` 923-1398 over `before1`; the PF3 cuts below do not touch the scene).
+
+Owner questions (each would change the look, so not done; they are where the ~1000 draws come from):
+1. 160-230 rig pieces cast shadows (`census0`: Needle 93 casters, Bomb Drone 44, Warden 28, Arc Caster 21, Elite 19);
+   each is drawn again for every shadow cascade. Turning the shadow off on the small pieces (feet, eyes, collars) would
+   cut the shadow pass; it needs a before/after shot the owner judges.
+2. The outline `next_pass` on every rig piece doubles its draws; a cheaper outline (one hull per enemy, or a
+   screen-space one) changes the look.
+3. 64 Decals and 34 OmniLights are in the tree (`node classes` line); their cost was not separated here.
+
+### 2. View sync: cuts (presentation, plus read-only reader functions; no sim state)
+
+`WorldReader` gained read-only summaries (`src/sim/world/world_reader.gd`): `any_boss()`, `any_elite()` (a kind mask built
+once from the sim's own `is_boss_kind` / `is_elite_kind`: one lookup per actor), `any_kind(kind)`, `any_egg()`,
+`any_telegraph()` (native `has` scans), `heat_tier()` (= `heat_state()["tier"]` without building the 21-key
+dictionary), `swing_step()`. `telegraph(i)` now returns `{}` at once unless the actor is winding up, active or a Mine
+Layer (every sim `telegraph` branch needs one of those); `boss_index()` early-outs on `any_boss()`.
+
+| File | What | Measured (view us/tick, `before1` -> `after1` / `after3`; noisy) |
+|---|---|---|
+| `stone_spike_views.gd` | actor loop only with a boss in the room | spikes 102 -> 10 / 11 |
+| `boss_shield_view.gd`, `boss_challenge_view.gd`, `boss_strike_views.gd` | same | boss_shields 28 -> 5, challenge 39 -> 18, strikes 50 -> 25 |
+| `boss_signature_views.gd` | egg loop only with an egg | signatures 98 -> 44 / 48 |
+| `elite_views.gd`, `event_pedestal_views.gd` | loops only with an elite | elite_fx 62 -> 41 / 51 |
+| `telegraph_views.gd` | loop only when some actor can have a telegraph | telegraphs 153 -> 89 / 110 |
+| `fireball_views.gd` | the lob loop only with a Bomb Drone | fireballs 208 -> 163 / 181 |
+| `horde_visuals.gd` | the loop only with a Mender or Sniper | 52 -> 58 / 55: no change (this scenario's mix has them) |
+| `actor_views.gd`, `attack_form_view.gd`, `kit_view.gd`, `skill_visuals.gd` | `heat_tier()` instead of `HeatLooks.tier_of(reader.heat_state())` (4 dictionaries a tick) | inside actors / attack_forms / kit (kit 43 -> 40 / 32) |
+| `player_avatar.gd` (+ `swing_step()`) | the hero's state reads one swing step, not four rebuilds | `actors.hero_sync` 158 (`after2`, busier) -> 101 (`after3`) |
+| `actor_views.gd` | `facing` / `bar` / `dazed` `visible` written only when changed; `PerfMarks` buckets `actors.update / enemy_sync / hero_sync / animate` | part of `actors.update` |
+| `elite_bar.gd` | `set_fraction` re-lays the bar only when the fraction or the chunk changed (the layout is a function of those two) | elites only |
+
+Totals (same scenario, Red Canyon, 15 s; `sim_step` is unchanged code, used as the load check):
+
+```
+                    before1   after1   after3
+sim_step (us)          1585     1426     1521
+sync_all (us)          3453     2758     2993      (sync_all / sim_step: 2.18 -> 1.93 -> 1.97)
+step_once (us)         5603     4681     5031
+view.actors (us)        959      793      906
+frames avg_ms         13.98    12.83    13.44      1pct_low_fps 16.9 / - / 20.1
+```
+
+So the view sync is about 10 % cheaper by the load-normalised ratio, mostly from views that are idle with no boss /
+elite (a boss fight will not get those savings). `view.heat_fx` read 50 -> 85 -> 107 us with no change to its file (its
+p99 is 1.2-1.5 ms): unexplained, probably the hero's heat tier in that run; not investigated.
+
+Not done (checked, left): the projectile-form views (glaives, seekers, voids, pulses, blade_forms) each loop every
+projectile and call `Attacks.projectile_spec` per player shot; a cheap guard needs a per-projectile form index the World
+does not keep (next candidate: classify each projectile once per tick in the reader); `status_fx` per-actor calls (about
+6 us each); the hero avatar's 22-key dictionary (its reads cost, not the dictionary); `actors` self time (about 550 us
+of 900: per-actor reader calls, `get_meta`, dictionary bookkeeping).
+
+### 3. The tick spike: what is left
+
+`after3` (74 fps average, so a tick in 829 of 1116 frames; at 144 fps about 42 % of frames run one):
+
+```
+step_once: 5031 us/frame mean, 6772 us in the frames that tick, p99 19.5 ms
+  sim_step 1521 (ran 2047), sync_all 2993 (ran 4030), HUD _on_playground_tick 368
+frame.scene_process 3316   frame.draw_pre_to_post 3211   frame.rest_after_draw 1877   (every frame, about 8.4 ms)
+```
+
+A frame that ticks costs about 6.8 ms of script on top of about 8.4 ms of engine slices (about 15 ms against the 6.94 ms
+target); a frame without a tick is the 8.4 ms alone, already over the target. **The target cannot be met by script cuts**:
+even a free tick leaves the engine slices (scene process 3.3 ms, draw 3.2 ms, present 1.9 ms) over 6.94 ms. Those slices
+follow node and draw counts (about 2.6k nodes, 466-540 visible instances, 1000+ draw calls, 64 Decals, 34 OmniLights),
+so the next levers are the owner questions above, and an engine-level look at what `scene_process` does (transform
+updates of ~1500 MeshInstance3D, Label3D, Decal), which this tool cannot see.
+
+Proposal for the tick spike (not implemented: it changes the order every view relies on): sync the non-critical effect
+views (about 40 views of 3-60 us that draw particles and marks) every other tick, in two staggered halves, and let their
+`_process` interpolate. It would take about 1 ms off tick frames but delays those views by up to 16 ms, so it is the
+owner's call. It does not change the 8.4 ms floor.
+
+### Tests (headless, `--language en`)
+
+- gdformat / gdlint on every touched file: clean (18 files).
+- `tests/golden` + `tests/arch` + `tests/content`: 33 scripts, 164 / 164, 31508 asserts.
+- 81 scripts that reference the changed views, `WorldViewRoot`, `test_modifier_equivalence` and `test_world_snapshot`:
+  613 / 613, 313282 asserts (`test_curse_room` excluded: seed-loop).
+- e2e `run_flow`, `playground`, `achievements`, `arenas`, `ascension`: 9 / 9, 284 asserts.
+- Goldens and `modifier_equivalence` digests did not move (no sim state changed; the reader gained read-only
+  functions, and `telegraph(i)` returns the same `{}` it returned before for the states it now skips).
+- Not run: seed-loop tests, the seams, the full suite (GitHub). Screenshots: none (no geometry or look changed).

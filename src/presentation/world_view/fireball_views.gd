@@ -519,7 +519,7 @@ func lob_count() -> int:
 ## arc), each a bigger ball of its look.
 func _sync_lobs(reader: WorldReader) -> void:
 	_lobs = {}
-	for i in reader.actor_count():
+	for i in range(reader.actor_count() if reader.any_kind(WorldReader.KIND_BOMB_DRONE) else 0):
 		if reader.actor_kind(i) != WorldReader.KIND_BOMB_DRONE:
 			continue
 		var tg := reader.telegraph(i)

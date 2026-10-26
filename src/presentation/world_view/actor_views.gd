@@ -83,7 +83,7 @@ var _proj_key_of: Array = [[], []]
 
 
 func sync(reader: WorldReader) -> void:
-	heat_tier = HeatLooks.tier_of(reader.heat_state())
+	heat_tier = reader.heat_tier()
 	if bar_chunks.get_parent() == null:
 		add_child(bar_chunks)
 	var alive := {}
@@ -106,11 +106,15 @@ func sync(reader: WorldReader) -> void:
 				tint_greys(node, enemy_tint)
 				role_glow(node, reader.actor_kind(i), role_glow_energy)  # v0.8.0 N1 (O39)
 		node.position = SimPlane.to_3d(reader.actor_pos(i))
+		var t_up := PerfMarks.start()
 		_update_actor(node, reader, i)
+		PerfMarks.add(&"actors.update", t_up)
 		if not leans.is_empty() and leans.has(id):
 			_lean(node, leans[id])
 		if node.has_meta(&"enemy_avatar"):  # v0.4.0 SC: off-screen crowds don't animate
+			var t_an := PerfMarks.start()
 			_animate_if_seen(node, id, reader.actor_pos(i), hero)
+			PerfMarks.add(&"actors.animate", t_an)
 		if fresh:
 			node.reset_physics_interpolation()
 	_drop_missing(_actors, alive)
@@ -291,11 +295,15 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
 	facing.rotation = Vector3(0, SimPlane.yaw_of(reader.actor_facing(i)), 0)
 	var spawning := reader.actor_spawning(i)
 	# Enemy models play their own rise-in while spawning (v0.2.0 L17); the others stay hidden until they arrive.
-	facing.visible = not spawning or node.has_meta(&"enemy_avatar")
+	var show_facing := not spawning or node.has_meta(&"enemy_avatar")
+	if facing.visible != show_facing:  # v0.9.5 PF3: write only what changed
+		facing.visible = show_facing
 	# v0.4.0 SC: an enemy's bar shows once it is hurt (a crowd at full health draws none); the hero's always.
 	var bar: Node3D = node.get_meta(&"bar")
 	var hurt := reader.actor_hp(i) < reader.actor_max_hp(i) or reader.actor_team(i) == 0
-	bar.visible = not spawning and not node.has_meta(&"boss") and hurt
+	var show_bar := not spawning and not node.has_meta(&"boss") and hurt
+	if bar.visible != show_bar:
+		bar.visible = show_bar
 	if node.has_meta(&"elite_bar"):  # v0.9.0 EL: the elite's bar shows while it is out (gone while it has vanished)
 		bar.visible = false
 		var eb := node.get_meta(&"elite_bar") as EliteBar
@@ -305,15 +313,22 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
 		var frac := clampf(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)), 0.0, 1.0)
 		bar_chunks.feed(reader.actor_id(i), bar, frac, reader.actor_team(i) == 0)
 	if node.has_meta(&"dazed"):
-		(node.get_meta(&"dazed") as Node3D).visible = reader.actor_recovering(i)
+		var dz := node.get_meta(&"dazed") as Node3D
+		var recovering := reader.actor_recovering(i)
+		if dz.visible != recovering:
+			dz.visible = recovering
 	if reader.actor_egg_permille(i) >= 0:  # v0.8.0 BS1 (S3): still an egg (BossSignatureViews draws it)
 		facing.visible = false
 		bar.visible = false
 	if node.has_meta(&"avatar"):
+		var t_pa := PerfMarks.start()
 		(node.get_meta(&"avatar") as PlayerAvatar).sync(reader)
+		PerfMarks.add(&"actors.hero_sync", t_pa)
 	# Enemy models (v0.2.0 L17): each kind's own node, animated in frame time from the sim state.
 	if node.has_meta(&"enemy_avatar"):
+		var t_en := PerfMarks.start()
 		node.get_meta(&"enemy_avatar").sync(reader, i)
+		PerfMarks.add(&"actors.enemy_sync", t_en)
 
 
 ## v0.4.0 SC: a projectile gone from the sim goes back to its look's pool (hidden) instead of being freed.

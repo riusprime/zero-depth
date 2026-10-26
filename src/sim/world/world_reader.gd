@@ -322,6 +322,10 @@ const FIRE_NAPALM := ElementAbilities.FIRE_NAPALM
 const FIRE_FIELD := ElementAbilities.FIRE_FIELD
 const FIRE_ZONE := ElementAbilities.FIRE_ZONE
 
+## v0.9.5 PF3: kind masks (kind -> 1) for any_boss / any_elite, built once.
+static var _boss_mask := PackedByteArray()
+static var _elite_mask := PackedByteArray()
+
 var _w: World
 ## v0.8.0 RT: piece_key -> wall index of the floor's interior pieces (built on the first layout_prop ask).
 var _layout_wall_index := {}
@@ -425,6 +429,10 @@ func swing_ticks() -> int:
 
 ## The current swing's step: how the blade moves (SwingStep.Motion), how long it takes to cross the arc, the tick
 ## it hits on.
+func swing_step() -> SwingStep:
+	return PlayerKit.current_step(_w)
+
+
 func swing_motion() -> int:
 	return PlayerKit.current_step(_w).motion
 
@@ -739,6 +747,14 @@ func actor_spell(i: int) -> int:
 
 ## The enemy's telegraph, from the same function that resolves the attack (EI-07). {} when none.
 func telegraph(i: int) -> Dictionary:
+	var a := _w.actors  # v0.9.5 PF3: every telegraph needs a windup, an active attack or a Mine Layer
+	var st := a.state[i]
+	if (
+		st != EnemyAi.State.WINDUP
+		and st != EnemyAi.State.ACTIVE
+		and a.kinds[i] != ActorStore.Kind.MINE_LAYER
+	):
+		return {}
 	return EnemyAi.telegraph(_w, i)
 
 
@@ -1703,8 +1719,62 @@ func boss_door_depth(p: Vector2) -> float:
 	return _w.floor_layout.boss_door_depth(p) if _w.floor_layout != null else 0.0
 
 
+## v0.9.5 PF3: kind masks (kind -> 1), built once from the sim's own predicates, so a view asks "is any boss / elite
+## here?" with one table lookup per actor instead of a chain of calls (read-only; no sim state).
+static func _build_masks() -> void:
+	var n: int = ActorStore.Kind.values().max() + 1
+	_boss_mask.resize(n)
+	_elite_mask.resize(n)
+	for k in n:
+		_boss_mask[k] = 1 if BossAi.is_boss_kind(k) else 0
+		_elite_mask[k] = 1 if EliteAi.is_elite_kind(k) else 0
+
+
+## True when any actor (live or dying) is a boss kind: the boss views' loops start from this.
+func any_boss() -> bool:
+	if _boss_mask.is_empty():
+		_build_masks()
+	for k in _w.actors.kinds:
+		if _boss_mask[k] == 1:
+			return true
+	return false
+
+
+## True when any actor is an elite kind.
+func any_elite() -> bool:
+	if _elite_mask.is_empty():
+		_build_masks()
+	for k in _w.actors.kinds:
+		if _elite_mask[k] == 1:
+			return true
+	return false
+
+
+## True when any actor is of this kind (a native scan).
+func any_kind(kind: int) -> bool:
+	return _w.actors.kinds.has(kind)
+
+
+## True when some actor is still an egg (a Brood Mother's, or one bursting).
+func any_egg() -> bool:
+	var s := _w.actors.state
+	return s.has(BossSignatures.EGG) or s.has(BossSignatures.EGG_BURST)
+
+
+## True when some actor could have a telegraph showing: one winding up or acting, or a Mine Layer (its mines).
+func any_telegraph() -> bool:
+	var a := _w.actors
+	return (
+		a.state.has(EnemyAi.State.WINDUP)
+		or a.state.has(EnemyAi.State.ACTIVE)
+		or a.kinds.has(ActorStore.Kind.MINE_LAYER)
+	)
+
+
 ## The actor index of the first live boss, or -1 (the boss bar shows it).
 func boss_index() -> int:
+	if not any_boss():
+		return -1
 	for i in range(1, _w.actors.size()):
 		if BossAi.is_boss_kind(_w.actors.kinds[i]) and _w.actors.dead[i] == 0:
 			return i
@@ -2529,6 +2599,10 @@ func projectile_is_shard(i: int) -> bool:
 
 func player_build() -> Dictionary:  # v0.3.0 P: PlayerBuild.read (has_blade, has_gun, facing, regenerating, ...).
 	return PlayerBuild.read(_w)
+
+
+func heat_tier() -> int:  # v0.9.5 PF3: heat_state()["tier"] (TIER_COOL without heat) without building the dictionary
+	return Heat.tier_of(_w)
 
 
 func heat_state() -> Dictionary:

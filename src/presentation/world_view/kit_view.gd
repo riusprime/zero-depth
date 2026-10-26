@@ -278,7 +278,7 @@ func sync(reader: WorldReader) -> void:
 	if _hold > 0.0:  # v0.8.0 GF3: held by the hit-stop: caught up when it ends
 		_held_reader = reader
 		return
-	set_heat_tier(HeatLooks.tier_of(reader.heat_state()))
+	set_heat_tier(reader.heat_tier())
 	var shape := reader.swing_shape()
 	if shape != _shape:
 		set_shape(shape)

@@ -311,6 +311,7 @@ func cloth_drive() -> Array:
 ## Reads the player's state after a sim tick.
 func sync(reader: WorldReader) -> void:
 	var sk := reader.skill_state()
+	var step := reader.swing_step()  # v0.9.5 PF3: one lookup for the four numbers (each read rebuilt the step)
 	apply_state(
 		{
 			"skill_kind": int(sk.get("kind", -1)),
@@ -323,17 +324,17 @@ func sync(reader: WorldReader) -> void:
 			"aim": reader.aim_angle(),
 			"dashing": reader.is_dashing(),
 			"swing_t": reader.swing_tick(),
-			"swing_ticks": reader.swing_ticks(),
+			"swing_ticks": step.ticks,
 			"swing_angle": reader.swing_angle(),
 			"combo": reader.combo_step(),
-			"motion": reader.swing_motion(),
-			"sweep_ticks": reader.swing_sweep_ticks(),
+			"motion": step.motion,
+			"sweep_ticks": step.sweep_ticks,
 			"guarding": reader.guarding(),
 			"dead": reader.player_dead(),
 			"gun": reader.weapon_id() == &"pulse_gun",
 			"shooting": reader.shooting(),
 			"shot": reader.shot_fired(),  # v0.8.0 GF1: the cast accent
-			"active_tick": reader.swing_active_tick(),  # v0.8.0 GF3: the swing accent
+			"active_tick": step.active_tick,  # v0.8.0 GF3: the swing accent
 			"finisher": reader.is_finisher(),
 			"swing_form": reader.blade_swing(),  # v0.6.5 WN4: Lunge Step drives in, Heavy braces
 		}

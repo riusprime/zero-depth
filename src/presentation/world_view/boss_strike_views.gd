@@ -172,7 +172,7 @@ func sync(reader: WorldReader) -> void:
 	_tick = reader.tick()
 	_incoming.clear()
 	var alive := {}
-	for i in reader.actor_count():
+	for i in range(reader.actor_count() if reader.any_boss() else 0):
 		var kind := reader.actor_kind(i)
 		if not WorldReader.is_boss_kind(kind):
 			continue

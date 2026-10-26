@@ -104,7 +104,7 @@ func sync(reader: WorldReader) -> void:
 	_band = reader.boss_arena_band()
 	_vortices.clear()
 	_gate_p = -1.0
-	for i in reader.actor_count():
+	for i in range(reader.actor_count() if reader.any_boss() else 0):
 		if not WorldReader.is_boss_kind(reader.actor_kind(i)):
 			continue
 		if reader.boss_in_gate(i):  # v0.5.5 DS

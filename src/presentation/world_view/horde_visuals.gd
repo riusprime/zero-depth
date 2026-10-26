@@ -41,7 +41,9 @@ func _ready() -> void:
 func sync(reader: WorldReader) -> void:
 	_sync_mines(reader)
 	var beams := {}
-	for i in range(1, reader.actor_count()):
+	# v0.9.5 PF3: only a Mender (its beam) or a Sniper (its tracer) is read here.
+	var any := reader.any_kind(WorldReader.KIND_MENDER) or reader.any_kind(WorldReader.KIND_SNIPER)
+	for i in range(1, reader.actor_count() if any else 1):
 		var id := reader.actor_id(i)
 		var kind := reader.actor_kind(i)
 		if kind == WorldReader.KIND_MENDER:

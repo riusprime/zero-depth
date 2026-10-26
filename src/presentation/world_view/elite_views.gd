@@ -56,7 +56,7 @@ func sync(reader: WorldReader) -> void:
 			_arrival(d["arrive_pos"])
 		_arrive_tick = int(d["arrive_tick"])
 	var seen := {}
-	for i in reader.actor_count():
+	for i in range(reader.actor_count() if reader.any_elite() else 0):
 		var kind := reader.actor_kind(i)
 		if not WorldReader.is_elite_kind(kind) or reader.actor_dead(i):
 			continue

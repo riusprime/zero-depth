@@ -288,7 +288,7 @@ func _sync_ring(reader: WorldReader) -> void:
 
 func _sync_crowns(reader: WorldReader) -> void:
 	var n := 0
-	for i in reader.actor_count():
+	for i in range(reader.actor_count() if reader.any_elite() else 0):
 		if reader.actor_dead(i) or not reader.actor_elite(i):
 			continue
 		if n >= _crowns.size():
