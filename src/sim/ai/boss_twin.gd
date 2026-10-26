@@ -212,15 +212,57 @@ static func on_start(w: World, i: int, k: int) -> void:
 		if j >= 0 and a.dead[j] == 0 and a.state[j] == S.MOVE:
 			BossAi.start_attack(w, j, k)
 	if atk.move == M.CROSSFIRE:
-		var safe := safe_spot(w, i, atk)
+		var safe := w.player_pos() if atk.lines_turn_milli > 0 else safe_spot(w, i, atk)
 		for body in [i, partner_of(w, i)]:
 			if body < 0 or BossAi.attack_of(w, body) != atk:
 				continue
 			w.bosses.set_pt(BossAi.entry_of(w, body), 0, safe)
+			w.bosses.pts_y[BossAi.entry_of(w, body) * BossStore.MAX_PTS + BossHard.REM_SLOT] = 0.0
 			a.lock_a[body] = Kin.angle_of(safe - a.pos(body))
 			a.facing[body] = a.lock_a[body]
 	elif atk.move == M.CHAIN_SWEEP:
 		track_sweep(w, i, atk)
+
+
+## v0.9.5 BH3 (B8), tick phase 3, a tracking Crossfire's windup (BossAi, the boss's turn): for lines_ticks each body's
+## line turns toward the player by at most lines_turn_milli (1/4096 turns x 1000, the fraction carried) a tick, and
+## the safe spot is where the two lines cross (the midpoint of their ends when they run parallel or the crossing is
+## behind a body); after that the lines hold and the fans fire along them.
+static func track_crossfire(w: World, i: int, atk: BossAttackTable) -> void:
+	var a := w.actors
+	var j := partner_of(w, i)
+	if atk.lines_turn_milli <= 0 or is_twin(w, i) or j < 0 or a.dead[j] == 1 or w.player_dead():
+		return
+	if a.state_t[i] >= atk.lines_ticks or BossAi.attack_of(w, j) != atk:
+		return
+	var p := w.player_pos()
+	for body in [i, j]:
+		var b := BossAi.entry_of(w, body)
+		var rem := (
+			int(w.bosses.pts_y[b * BossStore.MAX_PTS + BossHard.REM_SLOT]) + atk.lines_turn_milli
+		)
+		var step := rem / 1000
+		w.bosses.pts_y[b * BossStore.MAX_PTS + BossHard.REM_SLOT] = rem - step * 1000
+		a.lock_a[body] = Kin.turn_toward(a.lock_a[body], Kin.angle_of(p - a.pos(body)), step)
+		a.facing[body] = a.lock_a[body]
+	var spot := crossing_point(a.pos(i), a.lock_a[i], a.pos(j), a.lock_a[j], p)
+	for body in [i, j]:
+		w.bosses.set_pt(BossAi.entry_of(w, body), 0, spot)
+
+
+## Where the line from p1 along angle a1 meets the line from p2 along a2 (both ahead of their bodies); else the
+## midpoint of the two lines' points as far out as the player `p` is from each body.
+static func crossing_point(p1: Vector2, a1: int, p2: Vector2, a2: int, p: Vector2) -> Vector2:
+	var d1 := Kin.dir(a1)
+	var d2 := Kin.dir(a2)
+	var cross := d1.x * d2.y - d1.y * d2.x
+	if absf(cross) > 0.05:
+		var d := p2 - p1
+		var s := (d.x * d2.y - d.y * d2.x) / cross
+		var u := (d.x * d1.y - d.y * d1.x) / cross
+		if s > 0.5 and u > 0.5:
+			return p1 + d1 * s
+	return (p1 + d1 * Kin.length(p - p1) + p2 + d2 * Kin.length(p - p2)) * 0.5
 
 
 ## Crossfire's safe spot: distance_m off the chain's middle on the player's side (pulled in toward the chain when a
@@ -555,6 +597,8 @@ static func state(w: World, i: int) -> Dictionary:
 		out["safe"] = safe
 		var run := safe - a.pos(i)
 		out["gap"] = [a.pos(i), safe + run * (2.0 / maxf(Kin.length(run), 0.0001))]
+		if atk.lines_turn_milli > 0:  # v0.9.5 BH3 (B8): the line is the body's aim, the spot where the lines cross
+			out["gap"] = [a.pos(i), a.pos(i) + Kin.dir(a.lock_a[i]) * (Kin.length(run) + 2.0)]
 		out["progress"] = progress if a.state[i] == S.WINDUP else 1000
 		out["firing"] = a.state[i] == S.ACTIVE
 	elif atk.move == M.CHAIN_SWEEP and lead:

@@ -327,10 +327,9 @@ func test_crossfire_gaps_meet_only_between_them() -> void:
 	assert_true(BossDodge.shielded(w, i) and BossDodge.shielded(w, j), "both shielded")
 	var safe := w.bosses.pt(BossAi.entry_of(w, i), 0)
 	assert_eq(w.bosses.pt(BossAi.entry_of(w, j), 0), safe, "one safe spot")
-	assert_almost_eq(
-		safe, Vector2(0, -2), Vector2(0.001, 0.001), "2 m off the chain, the player's side"
-	)
-	# Standing on the spot: no shot lands; one step aside: hit.
+	# v0.9.5 BH3 (B8): the lines cross on the player where the attack starts (they follow it from there)
+	assert_almost_eq(safe, Vector2(0, -5), Vector2(0.001, 0.001), "on the player")
+	# Standing on the spot until the lines lock: no shot lands; one step aside at the last tick: hit.
 	var hurt := func(at: Vector2) -> int:
 		var s2 := _fight(Vector2(0, -5))
 		var w2: World = s2[0]
@@ -341,12 +340,12 @@ func test_crossfire_gaps_meet_only_between_them() -> void:
 		BossLab.start(w2, _i(w2, s2[1]), &"crossfire")
 		var hp := w2.actors.hp[0]
 		for k in 360:
-			w2.actors.set_pos(0, at)
+			w2.actors.set_pos(0, safe if k < 71 else at)
 			w2.step(InputFrame.new())
 		return hp - w2.actors.hp[0]
 	assert_eq(hurt.call(safe), 0, "the gaps cross at the safe spot")
 	assert_gt(hurt.call(safe + Vector2(2.2, -1.0)), 0, "off it, a fan finds you")
-	assert_gt(hurt.call(Vector2(0, -6)), 0, "behind it too")
+	assert_gt(hurt.call(Vector2(-4, -5)), 0, "to the side too")
 	# The twin's embers are violet, the boss's amber; each fan leaves its gap toward the spot.
 	CombatLab.until(w, func(x: World) -> bool: return x.projectiles.size() > 10, 200)
 	var seen := {}

@@ -107,6 +107,7 @@ const MOVES := {
 			"bounces",
 			"aim_degrees",
 			"lead_seconds",  # v0.9.5 BH2 (B2): the Javelin Fan's first fan leads, the next aims at you
+			"hard",  # v0.9.5 BH3 (B6, B9): marks the Furnace Waves and the Gear Spiral for the 0.55 s rule (HardRules)
 			"dark_seconds",  # v0.9.0 NB4: the Lantern Shade's Lights Out (ShadeRules.LIGHT_PARAMS)
 			"dark_lasts_seconds",  # v0.9.0 NB4b: how long its dark lasts
 			"light_m",
@@ -290,7 +291,11 @@ const MOVES := {
 	&"crossfire":
 	## v0.9.0 NB2: the Chain Sweep: the boss's line from its body through the player and reach_m past them (held to the
 	## chain's lengths, cut short by walls) tracks them until the lock, then the chain lashes a lane width_m wide along
-	{"shape": 4, "params": ["pattern_id", "gap_m", "distance_m"], "optional": ["twin_look"]},
+	{
+		"shape": 4,
+		"params": ["pattern_id", "gap_m", "distance_m"],
+		"optional": ["twin_look", "lines_follow_seconds", "lines_turn_dps"],  # v0.9.5 BH3 (B8): the lines follow you
+	},
 	## it; the twin swings to the line's end. A lock is required; its late_cause_key names the chain's burn.
 	&"chain_sweep": {"shape": 2, "params": ["width_m", "reach_m"]},
 	## v0.9.0 NB3 (BOSSES_4_5.md N3; BossJudge): the Clockwork Judge's echo, its shielded signature on its cadence. The

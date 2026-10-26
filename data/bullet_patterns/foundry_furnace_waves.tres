@@ -4,14 +4,17 @@
 
 [resource]
 script = ExtResource("1_pat")
+kind = 4
 look = &"molten_drop"
 speed_mps = 3.2
 radius_m = 0.2
 range_m = 18.0
 waves = 4
 wave_gap_seconds = 0.7
-turn_per_wave_degrees = 27.0
-count = 20
-gap_count = 2
-gap_width = 3
+wall_length_m = 16.0
+spacing_m = 0.55
+gap_m = 2.4
+gap_shift_m = 3.0
+crossing = true
+cross_delay_seconds = 0.3
 id = &"foundry_furnace_waves"

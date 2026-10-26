@@ -51,6 +51,7 @@ script = ExtResource("1_atk")
 id = &"furnace_waves"
 shape = 4
 shape_params = {
+"hard": 1,
 "pattern_id": "foundry_furnace_waves"
 }
 telegraph_seconds = 0.8

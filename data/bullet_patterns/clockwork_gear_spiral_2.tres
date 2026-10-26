@@ -13,4 +13,6 @@ waves = 32
 wave_gap_seconds = 0.11
 arms = 2
 spin_dps = -85.0
+counter_arms = 2
+counter_spin_dps = 85.0
 id = &"clockwork_gear_spiral_2"

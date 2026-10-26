@@ -227,3 +227,10 @@ var last_lead_ticks := 0
 var last_radius_bonus_permille := 0
 var beam_turn_milli := 0
 var safe_cells := 0
+## v0.9.5 BH3 (BOSSES_HARD.md B8; BossTwin): a `crossfire` with lines_turn_milli > 0 aims both bodies' lines at the
+## player and, for lines_ticks of its windup, turns each toward them by at most that many 1/4096 turns x 1000 a tick;
+## the crossing point of the lines is the safe spot, and the fans fire along the last aim.
+var lines_ticks := 0
+var lines_turn_milli := 0
+## v0.9.5 BH3 (B10; BossShade): a `marks` Snuff puts out the snuff_count lit lanterns nearest each struck circle.
+var snuff_count := 0

@@ -142,6 +142,8 @@ static func think(w: World, i: int) -> void:
 				BossNemesis.think_attack(w, i, b, atk, a.state_t[i])
 			elif atk.move == M.CHAIN_SWEEP:  # v0.9.0 NB2: the chain's line follows, then locks
 				BossTwin.track_sweep(w, i, atk)
+			elif atk.move == M.CROSSFIRE:  # v0.9.5 BH3 (B8): the lines follow you, then hold
+				BossTwin.track_crossfire(w, i, atk)
 			elif atk.move == M.VERDICT:  # v0.9.0 NB3: the square follows, then locks
 				BossJudge.track_verdict(w, i, b, atk)
 			elif tracking(w, i, t, atk):  # v0.3.5 AI (F3): aim follows the player until it commits

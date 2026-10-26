@@ -7,12 +7,14 @@ extends ContentDef
 ## Kinds and the fields each reads (the rest are ignored):
 ## - RING: `count` shots evenly round, minus `gap_count` gaps of `gap_width` shots each (evenly spaced).
 ## - SPIRAL: `arms` streams turning at `spin_dps`, one shot an arm every wave; the turn reverses at
-##   `reverse_at_seconds` (0 = never).
+##   `reverse_at_seconds` (0 = never). v0.9.5 BH3 (B9): with `counter_arms` > 0 a second spiral of that many arms
+##   turns the other way at `counter_spin_dps` (the Judge's Gear Spiral); HardRules checks the pair leaves a path.
 ## - FAN: `count` shots over `spread_degrees` toward the aim.
 ## - CROSS: `arms` streams (4 = a plus) turning at `spin_dps`, one shot an arm every wave.
 ## - WALL: a line of shots `spacing_m` apart, `wall_length_m` long, across the aim, marching along it, with a gap of
 ##   `gap_m` placed `gap_offset_m` off the aim line (moving `gap_shift_m` a wave, bouncing at the ends); `crossing`
-##   adds a second wall at right angles.
+##   adds a second wall at right angles; v0.9.5 BH3 (B6): with `cross_delay_seconds` > 0 its wave leaves that long
+##   after the first wall's (the Foundry's Furnace Waves).
 ## - FLOWER: `count` shots round whose speed follows a rose of `petals` petals (|cos(petals × angle / 2)|, a table
 ##   lookup), from `petal_min_permille` of the speed in a valley to the full speed on a petal; shots under
 ##   `petal_cut_permille` are left out, which opens the gaps between the petals. v0.7.5 BF3: with `rain_seconds`
@@ -61,6 +63,9 @@ const GAP_CHECK_M := 4.0
 @export var spin_dps := 90.0
 ## SPIRAL: the turn reverses this long after the first wave (0 = never).
 @export var reverse_at_seconds := 0.0
+## v0.9.5 BH3 (B9): a second spiral turning the other way (0 arms = none).
+@export var counter_arms := 0
+@export var counter_spin_dps := 0.0
 ## WALL.
 @export var wall_length_m := 18.0
 @export var spacing_m := 0.6
@@ -68,6 +73,8 @@ const GAP_CHECK_M := 4.0
 @export var gap_offset_m := 0.0
 @export var gap_shift_m := 1.5
 @export var crossing := false
+## v0.9.5 BH3 (B6): the crossing wall's wave leaves this long after the first wall's (0 = together).
+@export var cross_delay_seconds := 0.0
 ## FLOWER.
 @export var petals := 5
 @export var petal_min_permille := 450
@@ -133,6 +140,7 @@ func validate() -> Array[ValidationIssue]:
 				issues.append(ValidationIssue.new(&"range", p, "arms must be 1..12"))
 			if reverse_at_seconds < 0.0:
 				issues.append(ValidationIssue.new(&"duration", p, "reverse_at_seconds < 0"))
+			HardRules.validate_spiral(self, issues)  # v0.9.5 BH3 (B9)
 		Kind.WALL:
 			check_positive(issues, "spacing_m", spacing_m)
 			check_positive(issues, "wall_length_m", wall_length_m)
@@ -140,6 +148,7 @@ func validate() -> Array[ValidationIssue]:
 				issues.append(ValidationIssue.new(&"no_gap", p, "a wall needs a gap of >= 1 m"))
 			if spacing_m > 0.0 and wall_length_m / spacing_m > MAX_SHOTS_PER_WAVE:
 				issues.append(ValidationIssue.new(&"too_many", p, "a wall holds too many shots"))
+			HardRules.validate_walls(self, issues)  # v0.9.5 BH3 (B6)
 		Kind.FLOWER:
 			_check_count(issues, count)
 			if petals < 2 or petals > 12:
@@ -157,7 +166,7 @@ func validate() -> Array[ValidationIssue]:
 
 ## Seconds from the first wave to the last shot leaving (the lob too): what the attack's active time covers.
 func duration_seconds() -> float:
-	return _lob_seconds() + wave_gap_seconds * (waves - 1)
+	return _lob_seconds() + wave_gap_seconds * (waves - 1) + cross_delay_seconds
 
 
 ## The flight before the first wave's shots exist: a burst's shell, a raining flower's drops (v0.7.5 BF3).
