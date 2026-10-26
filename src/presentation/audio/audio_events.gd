@@ -507,6 +507,10 @@ func _events(reader: WorldReader, out: Array) -> void:
 			SimEvent.Kind.STATUS_APPLY:  # v0.8.0 FB3: the Nemesis dashes with the hero's dash cue, lower
 				if e.effect_id == WorldReader.EFFECT_NEMESIS_DASH:
 					out.append([&"dash", e.pos, 0.8])
+				elif e.effect_id == SimEvent.EFFECT_STORM_STRIKE:  # v0.9.5 EE2: Overcharge's strike (the arc cue)
+					out.append([&"arc_field", e.pos, 1.0])
+				elif e.effect_id == SimEvent.EFFECT_FROST_SHATTER:  # v0.9.5 EE2: Shatter (the frost nova's)
+					out.append([&"frost_nova", e.pos, 1.0])
 				elif e.effect_id == WorldReader.EFFECT_TWIN_ANGER:  # v0.9.0 NB2: a Warden's chain jerks taut
 					out.append([&"boss_twin_chain", e.pos, 0.75])
 			SimEvent.Kind.BLAST:  # v0.9.0 BM: a bomb bursts

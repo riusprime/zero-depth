@@ -2254,6 +2254,13 @@ func actor_frozen(actor_i: int) -> bool:
 	return Engines.frozen(_w, actor_i)
 
 
+## v0.9.5 EE2: Fire's Heat sync (`fire`) or Frost's Shatter runs (the card is Lv 3): the status pip's "+" shows.
+func element_plus(fire: bool) -> bool:
+	return (
+		ElementLevelsFsf.level(_w, ElementLevelsFsf.FIRE if fire else ElementLevelsFsf.FROST) >= 3
+	)
+
+
 ## Stacks at which shock discharges and frost freezes (0 = that engine isn't owned).
 func shock_threshold() -> int:
 	return _w.item_mods.shock_threshold

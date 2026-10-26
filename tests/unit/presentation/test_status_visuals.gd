@@ -206,3 +206,42 @@ func test_element_level_visuals() -> void:
 		if c is Label3D and (c as Label3D).visible:
 			label = c
 	assert_eq(label.modulate, DamageNumbers.EXSANGUINATE_COLOR, "in deep red")
+
+
+## v0.9.5 EE2: a burning enemy at Fire Lv 3 (Heat sync) and a frozen one at Frost Lv 3 (Shatter) carry a "+" by the bar;
+## an Overcharge strike, a Shatter and its shard draw their bolt, rings and streak.
+func test_fire_storm_frost_level_visuals() -> void:
+	var w := _world()
+	var s := _views(w)
+	var fx: StatusVisuals = s[2]
+	var a := w.actors
+	var fire := AttackScenario.item_index(w.item_tables, &"ember_core")
+	var frost := AttackScenario.item_index(w.item_tables, &"frost_core")
+	a.burn_stacks[1] = 2
+	a.frozen_t[2] = 100
+	CardLevels.set_level(w, fire, 2)
+	CardLevels.set_level(w, frost, 2)
+	fx.sync(s[0])
+	assert_eq(fx.shown(a.ids[1], &"dots_plus_fire"), 0, "no + at Lv 2")
+	assert_eq(fx.shown(a.ids[2], &"dots_plus_frost"), 0)
+	CardLevels.set_level(w, fire, 3)
+	CardLevels.set_level(w, frost, 3)
+	fx.sync(s[0])
+	assert_eq(fx.shown(a.ids[1], &"dots_plus_fire"), 1, "a + on the burning enemy at Lv 3")
+	assert_eq(fx.shown(a.ids[2], &"dots_plus_frost"), 1, "and on the frozen one")
+	a.burn_stacks[1] = 0
+	fx.sync(s[0])
+	assert_eq(fx.shown(a.ids[1], &"dots_plus_fire"), 0, "it goes with the burn")
+	var before := fx.fx_count()
+	var strike := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[0], a.ids[0], a.ids[1], a.pos(1))
+	strike.effect_id = SimEvent.EFFECT_STORM_STRIKE
+	strike.amount = 1500
+	fx.sync(s[0])
+	assert_gt(fx.fx_count(), before, "a strike draws its bolt and ring")
+	before = fx.fx_count()
+	var shatter := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[0], a.ids[0], a.ids[2], a.pos(2))
+	shatter.effect_id = SimEvent.EFFECT_FROST_SHATTER
+	var shard := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[2], a.ids[0], a.ids[1], a.pos(1))
+	shard.effect_id = SimEvent.EFFECT_FROST_SHARD
+	fx.sync(s[0])
+	assert_gt(fx.fx_count(), before + 1, "a shatter's ring and its shard's streak")

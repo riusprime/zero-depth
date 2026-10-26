@@ -160,6 +160,22 @@ var el_stack_bonus_permille := 0
 var el_wound_move_mm := 0
 var el_wound_bonus_permille := 0
 var el_burst_stacks := 0
+## v0.9.5 EE2: what Fire, Lightning and Frost gain at Lv 2 and 3 (see ItemDefinition; ElementLevelsFsf). Ticks.
+var el_patch_wide_permille := 0
+var el_patch_extra_ticks := 0
+var el_heat_permille := 0
+var el_fork_chains := 0
+var el_fork_range_m := 0.0
+var el_strike_every := 0
+var el_strike_radius_m := 0.0
+var el_strike_permille := 0
+var el_strikes_per_second := 0
+var el_frostbite_permille := 0
+var el_shard_count := 0
+var el_shard_range_m := 0.0
+var el_shard_permille := 0
+var el_shard_slow_ticks := 0
+var el_shatters_per_second := 0
 ## v0.6.5 WN5a: S5 Bleed's period while the player moves (0 = none), and T4's face on a Gun run (empty = name_key /
 ## desc_key; Offers.item_keys picks the run's).
 var bleed_move_period_ticks := 0

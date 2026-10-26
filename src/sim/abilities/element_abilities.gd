@@ -227,5 +227,5 @@ static func _fire_life(w: World, k: int) -> int:
 	var key := w.ab.fire_spec[k] if k < w.ab.fire_spec.size() else ""
 	var spec := Modifiers.book(w).find(key) if key != "" else null
 	if spec != null and spec.life_ticks > 0:
-		return spec.life_ticks
+		return spec.life_ticks + ElementLevelsFsf.patch_extra_ticks(w, spec)  # v0.9.5 EE2: Wildfire's longer life
 	return Modifiers.HOOK_ZONE_TICKS

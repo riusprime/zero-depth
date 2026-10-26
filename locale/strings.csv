@@ -83,7 +83,7 @@ ITEM_STATIC_CHAIN_DESC,Your shots shock and jump to other enemies.,Tus disparos 
 ITEM_MOMENTUM,Momentum,Inercia
 ITEM_MOMENTUM_DESC,Attack right after a dash to hit harder.,Ataca justo después de esquivar y pega más fuerte.
 ITEM_FROST_CORE,Frost,Escarcha
-ITEM_FROST_CORE_DESC,Your hits slow and freeze enemies.,Tus golpes ralentizan y congelan.
+ITEM_FROST_CORE_DESC,Freezes. Lv2: frozen take more. Lv3: shatters.,Congela. Nv2: congelados reciben más. Nv3: estalla.
 ITEM_THORN_MANTLE,Thorn Mantle,Manto de Espinas
 ITEM_THORN_MANTLE_DESC,Getting hit fires bolts all around you.,Al recibir un golpe disparas a tu alrededor.
 ITEM_EXECUTIONER,Executioner,Verdugo
@@ -730,9 +730,9 @@ HUD_KEY_PAD_RS_LEFT,RS left,SD izq.
 HUD_KEY_PAD_RS_RIGHT,RS right,SD der.
 HUD_KEY_PAD_OTHER,Pad,Mando
 ITEM_STORM_CORE,Lightning,Rayo
-ITEM_STORM_CORE_DESC,Your hits chain lightning.,Tus golpes lanzan rayos en cadena.
+ITEM_STORM_CORE_DESC,"Chains. Lv2: +1 jump. Lv3: every 6th hit, a strike.","Encadena. Nv2: +1 salto. Nv3: cada 6.º golpe, un rayo."
 ITEM_EMBER_CORE,Fire,Fuego
-ITEM_EMBER_CORE_DESC,Your hits burn. Burning foes leave fire behind.,Tus golpes queman. Los enemigos en llamas dejan fuego.
+ITEM_EMBER_CORE_DESC,Burns. Lv2: wider fire. Lv3: burning foes take more.,Quema. Nv2: fuego más amplio. Nv3: quemados reciben más.
 ITEM_VENOM_CORE,Venom,Veneno
 ITEM_VENOM_CORE_DESC,Poison. Lv2: it spreads. Lv3: it stacks.,Veneno. Nv2: se contagia. Nv3: se acumula.
 ITEM_ECHO_SLASH,Wave,Onda

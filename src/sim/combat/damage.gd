@@ -67,7 +67,9 @@ static func hit(
 	if a.dead[target] == 1:
 		return 0
 	var target_id := a.ids[target]
-	var splash := effect_id == Stats.EFFECT_OVERKILL  # v0.5.0 CP: an Overkill splash is already scaled
+	# v0.5.0 CP: an Overkill splash is already scaled; v0.9.5 EE2: so is a Shatter shard (half of a scaled hit)
+	var splash := effect_id == Stats.EFFECT_OVERKILL or effect_id == SimEvent.EFFECT_FROST_SHARD
+	var was_frozen := a.frozen_t[target] > 0 and owner_id == a.ids[0]  # v0.9.5 EE2: Shatter breaks what was frozen
 	if w.stress != null and owner_id == a.ids[0] and target != 0:  # v0.9.5 SM: a struck weak side, before crit
 		amount = StressMarks.on_hit(w, target, amount, tags, from, at, effect_id)
 	if owner_id == a.ids[0] and target != 0 and not splash:  # v0.4.0 BS: damage stats, crit (Stats)
@@ -86,6 +88,10 @@ static func hit(
 	if heat != 1000:
 		amount = amount * heat / 1000
 		tags |= SimEvent.TAG_OVERCLOCK
+	if not splash:  # v0.9.5 EE2: Heat sync, Frostbite
+		var el := ElementLevelsFsf.attacker_mult(w, target, owner_id)
+		if el != 1000:
+			amount = amount * el / 1000
 	var h := w.emit_event(SimEvent.Kind.HIT, source_id, owner_id, target_id, at)
 	h.root_id = root_id
 	h.amount = amount
@@ -128,6 +134,8 @@ static func hit(
 	elif got > 0 and target != 0 and owner_id == a.ids[0]:
 		Engines.on_hit(w, target, root_id, h.tags, effect_id)  # Engines: stacks.
 		Heat.on_hit(w, target, root_id, h.tags, effect_id)  # Heat: gain, Overclock embers.
+		if was_frozen:
+			ElementLevelsFsf.shatter(w, target, scaled, h.tags, effect_id)  # v0.9.5 EE2: Frost Lv 3
 		if a.dead[target] == 1 and not splash:
 			Stats.overkill(w, target, scaled - got, root_id)  # v0.5.0 CP: the Overkill card
 	w.last_hit_crit = (h.tags & SimEvent.TAG_CRIT) != 0  # v0.6.5 WN1: ON_CRIT reads it (after any nested hit)

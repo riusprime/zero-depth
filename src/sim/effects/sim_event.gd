@@ -68,6 +68,12 @@ enum Kind {
 ## Exsanguinate burst's DAMAGE (a DoT the number still shows).
 const EFFECT_VENOM_JUMP := &"venom_jump"
 const EFFECT_EXSANGUINATE := &"exsanguinate"
+## v0.9.5 EE2 (ElementLevelsFsf): an Overcharge strike (its STATUS_APPLY at the centre, and its hits' effect), a
+## Shatter (STATUS_APPLY on the broken enemy, amount = shards) and one shard (STATUS_APPLY, source: the broken enemy,
+## target: the one it hits; also the shard hit's effect).
+const EFFECT_STORM_STRIKE := &"storm_strike"
+const EFFECT_FROST_SHATTER := &"frost_shatter"
+const EFFECT_FROST_SHARD := &"frost_shard"
 const TAG_MELEE := 1
 const TAG_PROJECTILE := 2
 const TAG_DOT := 4
