@@ -37,7 +37,7 @@ func test_each_model_builds_flashable_outlined_pieces() -> void:
 		assert_gt(a.body_materials.size(), 15, "%s has its body pieces" % name)
 		for m in a.body_materials:
 			assert_true(m.emission_enabled, "%s: flashable (emission on, energy only)" % name)
-			assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "%s: outlined" % name)
+			assert_eq(m.stencil_mode, ActorLooks.outline_mode(), "%s: outlined" % name)
 		assert_eq(
 			_count_meshes(a),
 			_count_meshes(_avatar(cls)),

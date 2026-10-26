@@ -599,9 +599,7 @@ func _dress(mi: MeshInstance3D, material: StandardMaterial3D, _units: float = 1.
 	)
 	# v0.7.5 (owner: "remove the stroke outline around the bosses model, it is ugly"): no drawn outline on the
 	# owner's models. The outline stencil mode stays, at zero thickness, so the X-ray twin's stencil is unchanged.
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = parts.outline_color()
-	mat.stencil_outline_thickness = 0.0
+	ActorLooks.outline(mat, parts.outline_color(), 0.0)
 	mi.material_override = ActorViews.flashable(mat)
 	glow_overlay = StandardMaterial3D.new()
 	glow_overlay.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED

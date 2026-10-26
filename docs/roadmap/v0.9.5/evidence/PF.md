@@ -356,3 +356,93 @@ owner's call. It does not change the 8.4 ms floor.
 - Goldens and `modifier_equivalence` digests did not move (no sim state changed; the reader gained read-only
   functions, and `telegraph(i)` returns the same `{}` it returned before for the states it now skips).
 - Not run: seed-loop tests, the seams, the full suite (GitHub). Screenshots: none (no geometry or look changed).
+
+## PF4: outlines off, simpler shadows, effects at 30 Hz
+
+Step PF4 of v0.9.5. Base: `claude/v095-feedback` at `10d2751b`. Machine: the owner's PC (RTX 3060), other agents' Godot
+runs possibly active, so every absolute number is **machine possibly busy, not evidence**. The runs are one probe window
+at a time, in this order: `on` (baseline, outlines on), `cut1` (outlines off), `cut2` (+ shadow trim), `cut3` (+ 30 Hz).
+`on` ran while the machine was clearly busier (a 1.9 s hitch, 24.6 ms average): do not compare it with the others.
+`cut1`..`cut3` are not back-to-back A/Bs either (the 20 enemies are topped up from a time-driven strafe, so their mix
+differs per run); read the census columns, which are counts, and treat the frame times as direction only.
+Command (each run): `APPDATA=... godot --language en --path . --resolution 1920x1080 --windowed -s
+scripts/checks/frame_probe.gd -- --biome=red_canyon --secs=15 --breakdown --census --shot=<png>` (raw reports in
+`%TEMP%/zd-pf4/run_*.txt`, not tracked).
+
+### The three cuts
+
+1. **Outlines off** (`src/presentation/world_view/actor_looks.gd`, new): `ActorLooks.OUTLINES := false` is the one switch
+   (`true` = the pre-PF4 look). With it off no outline material is created anywhere: `AvatarBase.outline_material`
+   (the code-built bodies of the Needle, Warden, Arc Caster, Bomb Drone, hero, epic robe), `EnemyLooks.body` (the horde,
+   Charger and elite shared materials: no `next_pass`, and the shader's `stencil_mode write` line is dropped),
+   `BossParts` (bosses' code pieces, Lens Drone), `ActorViews._body_material` (the grey-cube fallback), the owner's boss
+   model materials (`BossAvatar._dress`, `LensDroneAvatar`), and `AvatarBase.write_stencil` (faces, visors, eyes no
+   longer write the stencil). All go through `ActorLooks.outline(mat, colour, thickness)`; shard rock outlines
+   (`ShardMesh.outline_material`, scenery, not actors) are untouched. Readability that leaned on the outline: I found
+   none. The hit flash and status tints are the body material's emission (`EnemyLooks.HIT` / `flashable()`), the team
+   colour is the body albedo and the red ground ring under each enemy is its own mesh, so all of them still work
+   with the outline off (the shots show them). Tests that asserted the outline now assert it follows
+   `ActorLooks.OUTLINES` (`ActorLooks.outline_mode()`), keeping their other coverage.
+2. **Simpler enemy shadows** (`shadow_trim.gd`, new; called from `ActorViews._make_actor`): after an enemy's model is
+   built, every shadow-casting `MeshInstance3D` under its facing node except the largest 2 by mesh-AABB volume (times
+   the pieces' scale in the avatar) gets `SHADOW_CASTING_SETTING_OFF`; bosses keep the largest 4; the hero is skipped.
+   `ShadowTrim.ENABLED` turns it off in one line.
+3. **Effects every other tick** (`view_schedule.gd`, new; `WorldViewRoot._sync_view`): `ViewSchedule.HALF_RATE` lists the
+   30 Hz views and their parity; a listed view syncs only on its parity's ticks (its very first sync always runs);
+   `WorldViewRoot.half_rate_enabled := false` turns it off. On 30 Hz:
+   - `status_fx` (even ticks): burn / frost / poison particles, rings and pips riding an enemy. Safe: the effect nodes are
+     children of the enemy's own node, which still moves every tick; the sim state (the status itself) is not read late
+     for anything but the picture; a status shows or clears up to 1 tick (16 ms) later; the animation clock now counts
+     ticks (`_frame += ticks since the last sync`), so the speed is unchanged. Found by the run: the view kept a freed
+     enemy node for the extra tick and errored (16 `SCRIPT ERROR`s), fixed by checking validity before the typed read.
+   - `modifier_marks` (odd ticks): the hero's own shell / charge / phase auras and the poison-drop / queued marks. Safe:
+     the player's own cards, nothing an enemy does and nothing to dodge; the aura follows the hero up to 1 tick late
+     (about 0.1 m at full speed).
+   Looked at and left at 60 Hz because they show something the player reacts to or keep per-tick state: `telegraphs`,
+   `fireballs`, `elite_fx`, `boss_*`, `strikes`, `spikes`, `cores`, `heat_fx` (emits on `tick % N`; half the ticks would
+   skip every emit), `item_fx` (per-tick afterimages), `element_fx` (fire patches are hit areas), `stress_marks` (the
+   weak sides are gameplay), `remnants`, `damage_numbers`, `hit_feel`. So only two views qualify as
+   safe; "half on even, half on odd" is one each. More could move with owner say-so.
+
+### Census and probe, Red Canyon, 20 enemies (this machine, busy-ness unknown)
+
+| run | draw calls (15 s mean) | visible instances | shadow off | shadow casters | frame avg / p99 ms | 1 % low fps | render CPU / GPU ms |
+|---|---|---|---|---|---|---|---|
+| `on` (outlines on; busy machine) | 1250 | 518 | 272 | 246 | 24.57 / 64.89 | 2.5 | 4.81 / 3.58 |
+| `cut1` outlines off | 943 | 502 | 252 | 250 | 9.88 / 17.30 | 19.0 | 1.22 / 3.10 |
+| `cut2` + shadow trim | 814 | 565 | 498 | 67 | 10.21 / 18.53 | 17.5 | 1.19 / 3.06 |
+| `cut3` + 30 Hz views | 835 | 517 | 454 | 63 | 11.79 / 18.78 | 16.2 | 1.29 / 3.35 |
+
+Shadow casters before -> after the trim: 250 -> 67 (the cut's own pair, `cut1` -> `cut2`; 246 on the busy-machine
+baseline). The 1 % lows are dominated by one 0.5 s hitch at the start of each run (`max_ms` ~ 500 in all three), not by
+the steady frames; the p99 is the steadier figure. Per-view means (us per tick, `status_fx` / `modifier_marks`):
+`cut2` 95 / 23 -> `cut3` 68 / 13 (ran in 436 of 870 frames each). **144 fps (6.94 ms) is NOT reached by this step**: the
+average is 9.9-11.8 ms here, with the engine slices still the bulk.
+
+### Shots (1920x1080, `build/shots/v0.9.5/pf4/`, untracked)
+
+`outlines_on_fight.png`, `outlines_off_fight.png` (a 20-enemy Red Canyon fight; the two moments are the same scenario
+at the same probe time but the fight is not tick-identical), `outlines_on_boss.png`, `outlines_off_boss.png` (the
+Gatekeeper, 8 s in). The boss pair looks identical: the bosses' models already drew no outline (owner, v0.7.5), so the cut
+changes the code-built enemies only. Also `shadows_trimmed_fight.png` and `effects30_fight.png`. I looked at both pairs: the enemies stay readable against the red floor without the edge line, and the flash, the burn tint and the ground ring still show; how it feels is the owner's call.
+
+### Tests (headless, `--language en`)
+
+- gdformat / gdlint on every touched file: clean.
+- `tests/golden` + `tests/arch` + `tests/content`: 33 scripts, 164 / 164, 31535 asserts.
+- `tests/unit/presentation` (whole folder, includes the new `test_shadow_trim.gd`): 163 scripts, 1101 / 1101, 1967790 asserts.
+- e2e `test_e2e_run_flow`, `test_e2e_playground`: 4 / 4, 112 asserts.
+- `tests/unit/sim/test_modifier_equivalence.gd`: 3 / 3, 68 asserts.
+- Goldens and equivalence digests did not move (presentation only; no sim file changed).
+- Not run: seed-loop tests, the seams, the full suite (GitHub).
+
+### Probe tool
+
+`frame_probe.gd` gained `--shot=<png>` (saves the viewport 0.5 s before the end) and `--boss=<table index>` (one boss
+5 m from a standing hero instead of the 20 enemies; it prints the boss's screen position at the shot).
+
+### OWNER ONLY
+
+- Whether the look without outlines is acceptable (flip `ActorLooks.OUTLINES` to `true` to get it back).
+- Whether the enemies' shadows with only their 2 largest pieces look right in motion.
+- Frame times on the owner's hardware with nothing else running.

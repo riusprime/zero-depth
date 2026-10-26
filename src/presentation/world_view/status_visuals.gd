@@ -62,6 +62,7 @@ var _shell := SphereMesh.new()
 ## Actor id -> its pieces: {"root": Node3D, "embers": [...], "pips": [...], ...}.
 var _views := {}
 var _frame := 0
+var _last_tick := -1
 ## v0.9.5 EE1: the last event read (Contagion jumps, the Exsanguinate burst).
 var _last_seq := 0
 ## v0.9.5 EE2: where the last Shatter broke (its shards fly from there), and whether the "+" shows this sync.
@@ -111,7 +112,10 @@ func use_vfx(layer: VfxLayer) -> void:
 
 
 func sync(reader: WorldReader) -> void:
-	_frame += 1
+	# v0.9.5 PF4: it may sync every other tick, so the animation clock counts ticks, not syncs.
+	var tick := reader.tick()
+	_frame += clampi(tick - _last_tick, 1, 2)
+	_last_tick = tick
 	_plus_fire = reader.element_plus(true)  # v0.9.5 EE2
 	_plus_frost = reader.element_plus(false)
 	_on.clear()
@@ -492,10 +496,10 @@ func _draw_vfx(layer: VfxCore) -> void:
 	statuses_culled = 0
 	for id: int in _on:
 		var s: Dictionary = _on[id]
-		var node: Node3D = s["node"]
-		if not is_instance_valid(node) or not node.is_inside_tree():
+		var node_v: Variant = s["node"]  # PF4: a sync every other tick may see it freed
+		if not is_instance_valid(node_v) or not (node_v as Node3D).is_inside_tree():
 			continue
-		var p := node.global_position
+		var p := (node_v as Node3D).global_position
 		var ground := Vector3(p.x, 0.0, p.z)
 		var r := float(s["r"])
 		if cull != null and not cull.shows(ground, r + STATUS_REACH_M):  # v0.8.0 HV: wholly off screen

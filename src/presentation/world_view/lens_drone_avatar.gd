@@ -99,8 +99,7 @@ func _build_model() -> bool:
 		mat.albedo_texture = tex
 		mat.albedo_color = _color(&"body") if slot == &"role" else Color.WHITE
 		mat.roughness = 1.0
-		mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-		mat.stencil_outline_thickness = 0.0
+		ActorLooks.outline(mat, Color.BLACK, 0.0)
 		mat.set_meta(&"enemy_tex", true)
 		mats[slot] = ActorViews.flashable(mat)
 		_parts.body_materials.append(mat)

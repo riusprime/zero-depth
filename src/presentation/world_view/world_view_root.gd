@@ -217,6 +217,9 @@ var occlusion_enabled := true
 ## `profile_sync` is on.
 var profile_sync := false
 var sync_profile := {}
+## v0.9.5 PF4: the decorative views at 30 Hz (ViewSchedule); false: every view every tick.
+var half_rate_enabled := true
+var _half_synced := {}
 ## v0.8.0 P3 (O32): the floor's walls for the occlusion test, indexed once (Occlusion.build_index).
 var _occlusion_index := {}
 
@@ -548,6 +551,8 @@ func _stress_sparks() -> void:
 
 
 func _sync_view(id: StringName, view: Object) -> void:
+	if half_rate_enabled and not ViewSchedule.due(id, reader.tick(), _half_synced):
+		return
 	if not profile_sync:
 		view.call(&"sync", reader)
 		return

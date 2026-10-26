@@ -448,9 +448,7 @@ func _body_material(c: Color) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = c
 	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = outline_color
-	mat.stencil_outline_thickness = 0.035
+	ActorLooks.outline(mat, outline_color, 0.035)
 	return flashable(mat)
 
 
@@ -648,6 +646,10 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			)
 			if is_player:
 				_add_core_panels(facing, size)
+	if not is_player:  # v0.9.5 PF4: only the largest rig pieces cast a shadow (the hero is unchanged)
+		ShadowTrim.trim(
+			facing, ShadowTrim.BOSS_KEEP if root.has_meta(&"boss") else ShadowTrim.ENEMY_KEEP
+		)
 	# Floating health bar, as in the reference; it shrinks toward its centre as HP drops.
 	var bar_root := Node3D.new()
 	bar_root.position = Vector3(0, height + 0.55, 0)

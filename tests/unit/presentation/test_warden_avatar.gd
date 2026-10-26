@@ -49,7 +49,7 @@ func test_exposes_body_materials_for_the_hit_flash() -> void:
 	var a := _avatar()
 	assert_gt(a.body_materials.size(), 8, "every body piece has a material")
 	for m in a.body_materials:
-		assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "body pieces are outlined")
+		assert_eq(m.stencil_mode, ActorLooks.outline_mode(), "body pieces are outlined")
 
 
 func test_no_xray_twins() -> void:

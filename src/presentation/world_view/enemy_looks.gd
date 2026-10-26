@@ -93,6 +93,8 @@ static func body(
 	if not _mats.has(key):
 		var textured := tex != null
 		var head := _LIT_HEAD.replace("cull_back", "cull_disabled") if two_sided else _LIT_HEAD
+		if not ActorLooks.OUTLINES:
+			head = head.replace("stencil_mode write, compare_always, 1;\n", "")
 		var code := (
 			head
 			+ (_TEX if textured else "")
@@ -105,7 +107,9 @@ static func body(
 			m.set_shader_parameter("texture_albedo", tex)
 		m.set_shader_parameter("emission", rest)
 		m.set_shader_parameter("emission_energy", rest_energy)
-		m.next_pass = _outline_pass(outline, outline_m) if outline_m > 0.0 else null
+		m.next_pass = (
+			_outline_pass(outline, outline_m) if ActorLooks.OUTLINES and outline_m > 0.0 else null
+		)
 		_mats[key] = m
 	return _mats[key]
 

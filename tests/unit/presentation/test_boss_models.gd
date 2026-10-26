@@ -52,8 +52,9 @@ func test_the_model_material_is_flashable_outlined_and_keeps_its_texture() -> vo
 		assert_same(a.imported.material_override, m)
 		assert_true(m.emission_enabled, "flashable: emission on")
 		assert_eq(m.emission_energy_multiplier, 0.0, "dark until hit")
-		assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE)
-		assert_eq(m.stencil_outline_thickness, 0.0, "no drawn outline (owner, v0.7.5)")
+		assert_eq(m.stencil_mode, ActorLooks.outline_mode())
+		if ActorLooks.OUTLINES:
+			assert_eq(m.stencil_outline_thickness, 0.0, "no drawn outline (owner, v0.7.5)")
 		assert_not_null(m.albedo_texture, "%s keeps its albedo texture" % id)
 		assert_eq(a.imported.cast_shadow, GeometryInstance3D.SHADOW_CASTING_SETTING_ON)
 		assert_eq(_body_meshes(a), 1, "no silhouette twin (v0.9.5 PF1)")
