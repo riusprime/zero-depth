@@ -57,7 +57,8 @@ shape = 0
 shape_params = {
 "cell_m": 2.4,
 "count": 5,
-"radius_m": 1.1,
+"radius_m": 1.45,
+"safe_cells": 2,
 "stagger_seconds": 1.0,
 "volleys": 2
 }
@@ -72,7 +73,7 @@ max_range_m = 99.0
 weight = 3
 cooldown_seconds = 0.9
 cause_key = &"CAUSE_SIEGE_GRID"
-lock_seconds = 0.8
+lock_seconds = 0.6
 
 [sub_resource type="Resource" id="A_mortar_grid_3"]
 script = ExtResource("1_atk")
@@ -81,7 +82,8 @@ shape = 0
 shape_params = {
 "cell_m": 2.4,
 "count": 5,
-"radius_m": 1.1,
+"radius_m": 1.45,
+"safe_cells": 2,
 "stagger_seconds": 0.9,
 "volleys": 3
 }
@@ -96,7 +98,7 @@ max_range_m = 99.0
 weight = 3
 cooldown_seconds = 0.9
 cause_key = &"CAUSE_SIEGE_GRID"
-lock_seconds = 0.8
+lock_seconds = 0.6
 
 [sub_resource type="Resource" id="A_barrage"]
 script = ExtResource("1_atk")

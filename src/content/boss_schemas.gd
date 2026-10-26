@@ -33,14 +33,24 @@ const MOVES := {
 	## A ring of spikes around the boss, from inner_radius_m to radius_m (hugging it is safe).
 	&"slam_ring": {"shape": 3, "params": ["inner_radius_m", "radius_m"]},
 	## `count` straight shockwaves fanned toward the player, travelling along the ground over the active time.
-	&"lanes": {"shape": 2, "params": ["count", "spread_degrees", "length_m", "width_m"]},
+	&"lanes":
+	{
+		"shape": 2,
+		"params": ["count", "spread_degrees", "length_m", "width_m"],
+		"optional": ["turn_dps"],  # v0.9.5 BH2 (B4): the Focus Beam burns, turning toward the player
+	},
 	## A melee arc in front.
 	&"sweep": {"shape": 1, "params": ["arc_degrees", "reach_m"]},
 	## A straight charge along a locked lane; touching the body hurts.
 	&"charge": {"shape": 2, "params": ["length_m", "speed_mps"]},
 	## Jumps onto the player's marked spot; `chain` leaps in a row.
 	## v0.8.0 FB1: an optional pattern_id fires its first wave from where it lands (the Colossus's shockwave ring).
-	&"leap": {"shape": 0, "params": ["radius_m", "range_m", "chain"], "optional": ["pattern_id"]},
+	&"leap":
+	{
+		"shape": 0,
+		"params": ["radius_m", "range_m", "chain"],
+		"optional": ["pattern_id", "last_lead_seconds", "last_radius_bonus_permille"],  # v0.9.5 BH2 (B3)
+	},
 	## Dives under, a ripple tracks the player, stops, and erupts after erupt_seconds (its own telegraph).
 	## v0.7.5 BF2: with lock_seconds its eruption circle follows the player's exact position while it tracks, then
 	## holds for the lock; an optional pattern_id (a RING) bursts from the eruption.
@@ -96,6 +106,7 @@ const MOVES := {
 			"recall_seconds",
 			"bounces",
 			"aim_degrees",
+			"lead_seconds",  # v0.9.5 BH2 (B2): the Javelin Fan's first fan leads, the next aims at you
 			"dark_seconds",  # v0.9.0 NB4: the Lantern Shade's Lights Out (ShadeRules.LIGHT_PARAMS)
 			"dark_lasts_seconds",  # v0.9.0 NB4b: how long its dark lasts
 			"light_m",
@@ -137,13 +148,19 @@ const MOVES := {
 	{
 		"shape": 2,
 		"params": ["count", "length_m", "width_m", "stagger_seconds"],
-		"optional": ["pillar_seconds", "pillar_m", "pillar_step_m"],
+		"optional":
+		["pillar_seconds", "pillar_m", "pillar_step_m", "second_seconds", "second_offset_m"],  # BH2 (B1)
 	},
 	## v0.7.5 BF3: a checkerboard of `count` × `count` ground circles (count odd; radius_m each, cell_m apart) centred
 	## on the player's exact position until the attack's lock_seconds, then locked; `volleys` strikes stagger_seconds
 	## apart, alternating the board's two colours (the first holds the player's cell). Each colour shows only for
 	## its own lock before it strikes.
-	&"grid": {"shape": 0, "params": ["count", "cell_m", "radius_m", "volleys", "stagger_seconds"]},
+	&"grid":
+	{
+		"shape": 0,
+		"params": ["count", "cell_m", "radius_m", "volleys", "stagger_seconds"],
+		"optional": ["safe_cells"],  # v0.9.5 BH2 (B5): every volley strikes all but these cells
+	},
 	## v0.7.5 BF3: `count` lanes along the room's rows (x), gap_m apart and centred on the player's row, length_m
 	## long centred on the player (cut short by walls); tracked then locked like `marks`, then standing for the
 	## active time and hurting once every burn_seconds, like `flood` (the Foundry's molten floor).

@@ -53,6 +53,7 @@ static func compile_boss_attack(
 	ShadeCompiler.compile_attack(def, t)  # v0.9.0 NB4: Lights Out's dark, the Snuff
 	if t.pillar_ticks > 0:  # v0.8.0 BS1 (S1): the last cross's pillars rise the tick after it strikes
 		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 2)
+	HardCompiler.compile_attack(def, t)  # v0.9.5 BH2: the five harder spells (a second cross lengthens the active time)
 	if sp.has("pattern_id"):
 		var pd: BulletPatternDefinition = repo.get_def(
 			&"bullet_patterns", StringName(sp["pattern_id"])

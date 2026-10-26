@@ -177,6 +177,9 @@ static func compile_sim_tuning(def: SimTuningDefinition) -> SimTuning:
 	t.attack_speed_knee2_permille = def.attack_speed_knee2_permille
 	t.attack_speed_slope_permille = def.attack_speed_slope_permille
 	t.attack_speed_slope2_permille = def.attack_speed_slope2_permille
+	t.loop_ease_max = def.loop_ease_max  # v0.9.5 BH2: the final fight's loop ease (was FinalPace constants)
+	t.loop_time_ease_permille = def.loop_time_ease_permille
+	t.loop_damage_ease_permille = def.loop_damage_ease_permille
 	return t
 
 

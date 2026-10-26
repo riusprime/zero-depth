@@ -50,3 +50,9 @@ var attack_speed_knee_permille := AttackRate.KNEE
 var attack_speed_knee2_permille := AttackRate.KNEE2
 var attack_speed_slope_permille := AttackRate.SLOPE
 var attack_speed_slope2_permille := AttackRate.SLOPE2
+
+## v0.9.5 BH2 (moved from FinalPace constants; owner Q11): each loop finished (at most loop_ease_max) shortens the final
+## fight by loop_time_ease_permille and softens the final bodies by loop_damage_ease_permille (FinalPace).
+var loop_ease_max := 3
+var loop_time_ease_permille := 120
+var loop_damage_ease_permille := 80

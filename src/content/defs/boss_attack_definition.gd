@@ -136,6 +136,7 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	_validate_twin(issues, path, where)
 	_validate_judge(issues, path, where)
 	ShadeRules.validate(self, issues, path, where)  # v0.9.0 NB4: Lights Out, the Snuff
+	HardRules.validate(self, issues, path, where)  # v0.9.5 BH2: the five harder spells
 
 
 ## v0.8.0 BP (owner O27): a known hit class; a big attack never chains (its punish window follows it); orb_damage only
@@ -380,6 +381,7 @@ func _validate_lock(issues: Array[ValidationIssue], path: String, where: String)
 		issues.append(ValidationIssue.new(&"range", path, where + "a grid's count must be odd"))
 	if (
 		move == &"grid"
+		and not shape_params.has("safe_cells")  # v0.9.5 BH2: HardRules checks that board
 		and float(shape_params.get("cell_m", 0.0)) < 2.0 * float(shape_params.get("radius_m", 0.0))
 	):
 		issues.append(ValidationIssue.new(&"no_gap", path, where + "a grid's circles overlap"))
