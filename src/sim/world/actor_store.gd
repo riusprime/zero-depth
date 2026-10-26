@@ -85,13 +85,16 @@ const AI_FIELDS: Array[StringName] = [&"windup", &"pick", &"plan_block", &"power
 ## v0.6.0 MX4: Venom Core's poison (Venom), kept apart so worlds without it hash as before (hash_venom, only while
 ## the poison engine runs).
 const VENOM_FIELDS: Array[StringName] = [&"poison_stacks", &"poison_t", &"poison_cd"]
+## v0.9.5 EE1 (ElementLevels): the next Contagion jump, and the place of the last bleed tick (millimetres), hashed only
+## while an element card runs at Lv 2 or more (hash_element).
+const ELEMENT_FIELDS: Array[StringName] = [&"poison_jump_cd", &"bleed_x", &"bleed_y"]
 ## The staggered plan (v0.4.0 SC; EnemyAi.plan): the walk, refreshed every EnemyAi.PLAN_PERIOD ticks.
 const AI_FLOAT_FIELDS: Array[StringName] = [&"plan_x", &"plan_y"]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"pos_x", &"pos_y", &"radius", &"lock_x", &"lock_y", &"lock_len", &"jitter_x", &"jitter_y"
 ]
 ## Every int and every float column, in that order: add and remove_sorted walk them (concatenated once, not per call).
-const ALL_INT_FIELDS := INT_FIELDS + STATUS_FIELDS + AI_FIELDS + VENOM_FIELDS
+const ALL_INT_FIELDS := INT_FIELDS + STATUS_FIELDS + AI_FIELDS + VENOM_FIELDS + ELEMENT_FIELDS
 const ALL_FLOAT_FIELDS := FLOAT_FIELDS + AI_FLOAT_FIELDS
 
 var ids := PackedInt32Array()
@@ -156,6 +159,10 @@ var power := PackedInt32Array()
 var poison_stacks := PackedInt32Array()
 var poison_t := PackedInt32Array()
 var poison_cd := PackedInt32Array()
+## v0.9.5 EE1: Contagion's ticks to the next jump, and the place of the last bleed tick (Open wounds), in millimetres.
+var poison_jump_cd := PackedInt32Array()
+var bleed_x := PackedInt32Array()
+var bleed_y := PackedInt32Array()
 
 
 func size() -> int:
@@ -241,4 +248,10 @@ func hash_ai(h: StateHasher) -> void:
 ## v0.6.0 MX4: the poison columns (Venom), in VENOM_FIELDS order.
 func hash_venom(h: StateHasher) -> void:
 	for f in VENOM_FIELDS:
+		h.add_ints(get(f))
+
+
+## v0.9.5 EE1: the element columns (ElementLevels), in ELEMENT_FIELDS order.
+func hash_element(h: StateHasher) -> void:
+	for f in ELEMENT_FIELDS:
 		h.add_ints(get(f))

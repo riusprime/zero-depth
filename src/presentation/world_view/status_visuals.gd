@@ -17,6 +17,13 @@ extends Node3D
 ## pieces are children of its ActorViews node, so they move and go with it.
 
 const PIPS := 5
+## v0.9.5 EE1: the stack dots over the bar (poison, then bleed, above shock's pips), one per stack up to DOTS.
+const DOTS := 5
+const DOT_POISON := Color("#7BE04A")
+## A Contagion arc lasts 0.25 s (15 ticks); the Exsanguinate splash 20 ticks.
+const JUMP_TICKS := 15.0
+const SPLASH_TICKS := 20.0
+const SPLASH_RADIUS_M := 1.2
 const EMBERS := 3
 const DRIPS := 3
 const CRYSTALS := 4
@@ -43,10 +50,13 @@ var _mats := {}
 var _box := BoxMesh.new()
 var _prism := PrismMesh.new()
 var _pip := QuadMesh.new()
+var _dot := QuadMesh.new()
 var _shell := SphereMesh.new()
 ## Actor id -> its pieces: {"root": Node3D, "embers": [...], "pips": [...], ...}.
 var _views := {}
 var _frame := 0
+## v0.9.5 EE1: the last event read (Contagion jumps, the Exsanguinate burst).
+var _last_seq := 0
 var _seen := {}
 var _fx: Array = []
 var _fx_template := SkillVisuals._make_template()
@@ -75,6 +85,9 @@ func _init(p_actors: ActorViews) -> void:
 		_mats[k] = _material(ItemLooks.status_color(k), 1.0, false)
 	_mats[&"pip_off"] = _material(Color(0.05, 0.06, 0.09, 0.85), 0.85, true)
 	_mats[&"pip_on"] = _material(ItemLooks.status_color(&"shock"), 1.0, true)
+	_mats[&"dot_poison"] = _material(DOT_POISON, 1.0, true)
+	_mats[&"dot_bleed"] = _material(ItemLooks.status_color(&"bleed"), 1.0, true)
+	_dot.size = Vector2(0.08, 0.08)
 	_mats[&"shell"] = _material(ItemLooks.status_color(&"frozen"), 0.38, false)
 
 
@@ -157,7 +170,9 @@ func _build(node: Node3D, r: float) -> Dictionary:
 	var bar_y := 1.3
 	if node.has_meta(&"bar"):
 		bar_y = (node.get_meta(&"bar") as Node3D).get_parent().position.y
-	var v := {"root": root, "bar_y": bar_y, "pips": [], "orbs": []}
+	var v := {
+		"root": root, "bar_y": bar_y, "pips": [], "orbs": [], "dots_poison": [], "dots_bleed": []
+	}
 	if vfx != null:
 		# v0.8.0 FV (owner O87, the horde lag): the effects layer draws the embers, drips, crystals, sparks and shell,
 		# so none of their ~15 hidden meshes is built per affected enemy (a burning horde built and freed them as
@@ -194,6 +209,18 @@ func _build_pips(v: Dictionary) -> void:
 	v["pips"] = pips
 
 
+## v0.9.5 EE1: the stack dots of `status` (poison or bleed), one per stack up to DOTS, built when first shown.
+func _update_dots(v: Dictionary, status: StringName, stacks: int, rise: float) -> void:
+	var dots: Array = v["dots_" + String(status)]
+	if stacks > 0 and dots.is_empty():
+		for k in DOTS:
+			var p := _piece(v["root"], _dot, Vector3.ONE, StringName("dot_" + String(status)))
+			p.position = Vector3((k - (DOTS - 1) * 0.5) * 0.1, float(v["bar_y"]) + rise, 0)
+			dots.append(p)
+	for k in dots.size():
+		(dots[k] as Node3D).visible = k < stacks
+
+
 ## The guard orbs (once per view).
 func _build_orbs(v: Dictionary) -> void:
 	v["orbs"] = _pieces(v["root"], ORBS, _box, Vector3(0.12, 0.12, 0.12), &"guard")
@@ -219,6 +246,8 @@ func _update(v: Dictionary, on: Dictionary, r: float) -> void:
 		var m: Material = _mats[&"pip_on" if k < shock else &"pip_off"]
 		if p.material_override != m:  # v0.8.0 HV: set on a change only
 			p.material_override = m
+	_update_dots(v, &"poison", on.get(&"poison", 0), 0.36)
+	_update_dots(v, &"bleed", on.get(&"bleed", 0), 0.46)
 	var charges: int = on.get(&"guard", 0)
 	if charges > 0 and (v["orbs"] as Array).is_empty():
 		_build_orbs(v)
@@ -290,6 +319,7 @@ func fx_count() -> int:
 
 # --- Combo and engine payoffs --------------------------------------------------------------------------------
 func _sync_payoffs(reader: WorldReader) -> void:
+	_sync_element_events(reader)
 	if vfx != null:
 		_sync_payoff_shots(reader)
 		return
@@ -309,6 +339,35 @@ func _sync_payoffs(reader: WorldReader) -> void:
 		_ring(reader.player_pos(), 1.2, ItemLooks.combo_color(&"frozen_bastion"))
 	if _changed(&"slipstream", reader.slipstream_tick()):
 		_ring(reader.player_pos(), 0.9, ItemLooks.combo_color(&"slipstream"))
+
+
+## v0.9.5 EE1: a Contagion jump draws a thin green arc from the giver to the receiver for 0.25 s; the Exsanguinate
+## burst splashes red (ElementLevels). Read from the event log; both go through the effects layer's pooled lines and
+## bursts (their caps and Effects density), or the old look's bolt line and ring.
+func _sync_element_events(reader: WorldReader) -> void:
+	var now := float(reader.tick())
+	for e in reader.events_since(_last_seq):
+		_last_seq = e.seq
+		if e.kind == SimEvent.Kind.STATUS_APPLY and e.effect_id == SimEvent.EFFECT_VENOM_JUMP:
+			var gi := reader.actor_index(e.source_id)
+			if gi < 0:
+				continue
+			var from := reader.actor_pos(gi)
+			if vfx != null:
+				var to: Array = [SimPlane.to_3d(e.pos, 0.6)]
+				_shots.append([&"jump", SimPlane.to_3d(from, 0.6), 0.0, now, JUMP_TICKS, e.seq, to])
+			else:
+				_bolt_line(from, e.pos, DOT_POISON)
+		elif (
+			e.kind == SimEvent.Kind.DAMAGE
+			and e.effect_id == SimEvent.EFFECT_EXSANGUINATE
+			and e.amount > 0
+		):
+			if vfx != null:
+				var at := SimPlane.to_3d(e.pos, 0.07)
+				_shots.append([&"exsang", at, SPLASH_RADIUS_M, now, SPLASH_TICKS, e.seq, []])
+			else:
+				_ring(e.pos, SPLASH_RADIUS_M, ItemLooks.status_color(&"bleed"))
 
 
 ## The new look's payoffs: element bursts and lightning in the effects layer, the radius rings kept for the rest.
@@ -369,6 +428,9 @@ func _draw_vfx(layer: VfxCore) -> void:
 			&"discharge":
 				for to: Vector3 in shot[6]:
 					fx.line(&"storm", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
+			&"jump":
+				var to: Vector3 = (shot[6] as Array)[0]
+				fx.line(&"venom", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
 			&"shatter":
 				fx.burst(&"frost", shot[1], shot[2], u, int(shot[5]))
 			&"wildfire":

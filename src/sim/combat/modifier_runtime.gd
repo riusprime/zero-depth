@@ -275,5 +275,6 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	if w.mx.touched():
 		w.mx.hash_into(h)
 	Venom.hash_into(w, h)
+	ElementLevels.hash_into(w, h)  # v0.9.5 EE1
 	ProjectileMoves.hash_into(w, h)
 	BladeForms.hash_into(w, h)  # v0.6.5 WN4

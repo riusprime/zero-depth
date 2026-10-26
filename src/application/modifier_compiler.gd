@@ -188,6 +188,18 @@ static func compile_item_extras(def: ItemDefinition, t: ItemTable) -> void:
 	t.poison_ticks = SimTick.seconds_to_ticks(def.poison_seconds)
 	t.poison_max_stacks = def.poison_max_stacks
 	t.poison_spread_m = def.poison_spread_m
+	t.el_jump_ticks = SimTick.seconds_to_ticks(def.el_jump_seconds)  # v0.9.5 EE1
+	t.el_jump_range_m = def.el_jump_range_m
+	t.el_jump_gap_ticks = (
+		maxi(1, SimTick.TICKS_PER_SECOND / def.el_jumps_per_second)
+		if def.el_jumps_per_second > 0
+		else 0
+	)
+	t.el_stack_cap = def.el_stack_cap
+	t.el_stack_bonus_permille = def.el_stack_bonus_permille
+	t.el_wound_move_mm = def.el_wound_move_mm
+	t.el_wound_bonus_permille = def.el_wound_bonus_permille
+	t.el_burst_stacks = def.el_burst_stacks
 	t.bleed_move_period_ticks = SimTick.seconds_to_ticks(def.bleed_move_period_seconds)  # v0.6.5 WN5a
 	t.name_key_gun = def.name_key_gun
 	t.desc_key_gun = def.desc_key_gun

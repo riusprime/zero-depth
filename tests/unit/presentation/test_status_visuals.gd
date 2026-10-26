@@ -166,3 +166,43 @@ func test_rebuilt_rows_drop_the_old_children_at_once() -> void:
 	assert_eq(hud.item_icon_count(), 2)
 	for c in hud._items.get_children():
 		assert_false(c.is_queued_for_deletion(), "no freed icon left in the row")
+
+
+## v0.9.5 EE1: the stack count shows as small dots (poison and bleed), a Contagion jump draws an arc, the
+## Exsanguinate burst a red ring and a deep red number.
+func test_element_level_visuals() -> void:
+	var w := _world()
+	var s := _views(w)
+	var fx: StatusVisuals = s[2]
+	var a := w.actors
+	var id := a.ids[1]
+	a.poison_stacks[1] = 3
+	a.bleed_stacks[1] = 4
+	fx.sync(s[0])
+	assert_eq(fx.shown(id, &"dots_poison"), 3, "one green dot per poison stack")
+	assert_eq(fx.shown(id, &"dots_bleed"), 4, "one red dot per bleed stack")
+	a.poison_stacks[1] = 0
+	a.bleed_stacks[1] = 9
+	fx.sync(s[0])
+	assert_eq(fx.shown(id, &"dots_poison"), 0)
+	assert_eq(fx.shown(id, &"dots_bleed"), StatusVisuals.DOTS, "shown up to 5")
+	var before := fx.fx_count()
+	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, id, a.ids[0], a.ids[2], a.pos(2))
+	e.effect_id = SimEvent.EFFECT_VENOM_JUMP
+	fx.sync(s[0])
+	assert_eq(fx.fx_count(), before + 4, "a jump draws its arc (4 segments)")
+	var d := w.emit_event(SimEvent.Kind.DAMAGE, a.ids[0], a.ids[0], id, a.pos(1))
+	d.effect_id = SimEvent.EFFECT_EXSANGUINATE
+	d.amount = 40
+	d.tags = SimEvent.TAG_DOT
+	fx.sync(s[0])
+	assert_eq(fx.fx_count(), before + 5, "the burst adds its ring")
+	var nums := DamageNumbers.new()
+	add_child_autofree(nums)
+	nums.sync(s[0])
+	assert_eq(nums.showing(), 1, "the burst's number shows although it is a DoT")
+	var label: Label3D = null
+	for c in nums.get_children():
+		if c is Label3D and (c as Label3D).visible:
+			label = c
+	assert_eq(label.modulate, DamageNumbers.EXSANGUINATE_COLOR, "in deep red")
