@@ -11,8 +11,8 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3, DR, FC1, TS and FC2 merged.
-- **Agents working:** FC3 (the Void's combinations) and BK (breakables solid) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3, DR, FC1, TS, FC2 and BK merged.
+- **Agents working:** FC3 (the Void's combinations) and HM (the HUD mockups, G2) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner (asleep, 2026-10-25 night):** the G2 HUD pick once HM's mockups are made; [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -45,6 +45,7 @@ riusprime/zero-depth#9).
 | FC1 | The Laser takes 11 more cards: Homing curves the beam to the nearest enemy (with Pierce it threads the 5 nearest), Halo fans its tip, Ring rides its tip, Backfire, Ricochet off a wall, Echo's path strikes again, Big Shot, Rapid Fire, Split forks it, Mine drops mines, Spiral wiggles it ([evidence](evidence/FC1.md)) | `e7c6084e`, merge `31ecb531` |
 | TS | Timed-door switches sit in two different rooms 1–2 rooms from the door (on different sides when the map allows); the timer is 20 s (the walk always fits in 60 % of it); a lever inside the secret room reopens the door for 5 s (floor rules 21) ([evidence](evidence/TS.md)) | `de3c3bfe`, merge `2ba37f64` |
 | FC2 | The Bomb takes 10 more cards: Halo drops four in a cross, Ring leaves a growing lightning ring, Backfire drops one at your feet, Ricochet skips it on, Homing lands it on the nearest enemy, Echo bursts it again, Big Shot, Rapid Fire, Split throws bomblets, Mine leaves it waiting; Laser + Rapid Fire now ramps its tick damage down (×1.3 of a plain beam, was ×2) ([evidence](evidence/FC2.md)) | `4527ece2`, merge `dafddf30` |
+| BK | Crates, urns and barrels are solid until you break them (they push you and enemies, never shots); no breakable within 1.5 m of a doorway (floor rules 22) ([evidence](evidence/BK.md)) | `a6a7b490`, merge `461b630a` |
 | BH1 | Bosses can't be staggered; at each phase change a boss kneels 1 s (hittable) and its core can be stolen for 3 s; boss HP is set from your power when the door starts opening (caps ×2.5–4.5 by floor, ±8 % per fight); each completed loop (up to 3) makes the Hollow Crown's pace 12 % shorter and its hits 8 % softer; the run summary says "Looped ×N" ([evidence](evidence/BH1.md)) | `d669f646`, merge `f9197302` |
 | BH2 | A harder spell each: the Gatekeeper's shock lanes lock faster and fire a second, shifted set; the Warlord's javelins lead you, then a second fan; the Brood Mother's 3rd leap leads you and lands wider; the Hive Lens's beam turns after you; the Siege Engine's mortar grid leaves 2 safe cells that swap halfway (never on the edge). The loop ease is data now ([evidence](evidence/BH2.md)) | `eca6b78e`, merge `53cd71e1` |
 | BH3 | A harder spell each: the Foundry's furnace waves come as two walls at right angles; the Twin Wardens' crossfire lines track you for 1.2 s; the Clockwork Judge adds a counter-turning spiral from phase 2; the Lantern Shade's lanterns burn 4 s, its dark lasts 9 s and Snuff puts out two lanterns ([evidence](evidence/BH3.md)) | `7ff84613`, merge `d788b91f` |
@@ -195,3 +196,6 @@ riusprime/zero-depth#9).
 - 2026-10-26 — FC2 (agent) merged: sim batch 178/178, arch + bomb view + e2e 30/30, presentation + e2e 15/15; no digest
   ([evidence](evidence/FC2.md)). The cards' descriptions still read the same on every form: a later text step (TX)
   will add each form's own line. FC3 started.
+- 2026-10-26 — BK (agent) merged: breakables/solids/walls/collision 29/29, golden + arch + content + application
+  302/302, e2e 5/5 ([evidence](evidence/BK.md)); 0 of 941 props dropped by the doorway rule (the 2 m approach gap
+  already kept them clear). HM started (the HUD mockups for the owner's G2 pick).
