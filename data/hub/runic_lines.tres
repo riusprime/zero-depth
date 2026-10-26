@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="RunicLinesDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/runic_line_entry.gd" id="1_ent"]
+[ext_resource type="Script" path="res://src/content/defs/runic_lines_definition.gd" id="2_def"]
+
+[sub_resource type="Resource" id="L_r1"]
+script = ExtResource("1_ent")
+id = &"r1"
+english = "WHAT SLEEPS BELOW REMEMBERS"
+
+[sub_resource type="Resource" id="L_r2"]
+script = ExtResource("1_ent")
+id = &"r2"
+english = "YOU RETURN AND RETURN"
+
+[sub_resource type="Resource" id="L_r3"]
+script = ExtResource("1_ent")
+id = &"r3"
+english = "PATIENCE IS A KEY"
+
+[resource]
+script = ExtResource("2_def")
+id = &"main"
+lines = Array[ExtResource("1_ent")]([SubResource("L_r1"), SubResource("L_r2"), SubResource("L_r3")])
