@@ -172,15 +172,15 @@ func test_m7_shock_circles_turn_shots_into_rings_at_half_range() -> void:
 	assert_gt(shocked.size(), 0, "the ring shocks what it passes")
 
 
-func test_m8_halo_shot_fires_all_round_three_times_the_count_at_half_range() -> void:
+func test_m8_halo_shot_fires_all_round_four_times_the_count_at_half_range() -> void:  # v0.9.5 CLV: Lv 1 = 4
 	var plain := Modifiers.bolt(W.world(&"gun"))
 	var w := W.world(&"gun", [&"halo_shot"])
 	var bolt := Modifiers.bolt(w)
-	assert_eq([bolt.count, bolt.directions], [plain.count * 3, AttackSpec.DIR_CIRCLE])
+	assert_eq([bolt.count, bolt.directions], [plain.count * 4, AttackSpec.DIR_CIRCLE])
 	assert_eq(bolt.life_ticks, plain.life_ticks / 2)
-	assert_eq(Attacks.shot_offsets(bolt), PackedInt32Array([0, 1365, 2730]))
+	assert_eq(Attacks.shot_offsets(bolt), PackedInt32Array([0, 1024, 2048, 3072]))
 	W.run(w, 2, 0, W.S)
-	assert_eq(W.projectiles_of(w, Modifiers.GUN_BOLT), 3, "three bolts round the player")
+	assert_eq(W.projectiles_of(w, Modifiers.GUN_BOLT), 4, "four bolts round the player")
 
 
 func test_m9_boomerang_projectiles_come_back() -> void:
@@ -220,10 +220,10 @@ func test_m10_orbit_rounds_circle_the_player_before_they_fly() -> void:
 	assert_gt(d, ProjectileMoves.ORBIT_R_M + 1.0, "then it leaves")
 
 
-func test_m11_split_shot_splits_in_three_and_the_splits_never_split() -> void:
+func test_m11_split_shot_splits_in_two_and_the_splits_never_split() -> void:  # v0.9.5 CLV: Lv 1 = 2
 	var w := W.world(&"gun", [&"split_shot"], [[Vector2(2.0, 0.0), 2000]])
 	var k := W.hook_of(Modifiers.bolt(w), &"split_shot")
-	assert_eq([k.trigger, k.child.form, k.child.count], [TRIG.ON_HIT, FORM.BOLT, 3])
+	assert_eq([k.trigger, k.child.form, k.child.count], [TRIG.ON_HIT, FORM.BOLT, 2])
 	assert_null(W.hook_of(k.child, &"split_shot"), "lineage: its own child carries no split")
 	assert_true(k.child.lineage.has("split_shot"))
 	W.run(w, 1, 0, W.S)
@@ -231,7 +231,7 @@ func test_m11_split_shot_splits_in_three_and_the_splits_never_split() -> void:
 	for t in 20:
 		w.step(W.frame())
 		seen = maxi(seen, W.projectiles_of(w, &"split_shot"))
-	assert_eq(seen, 3, "three splits leave the hit")
+	assert_eq(seen, 2, "two splits leave the hit")
 
 
 func test_m12_twin_cast_repeats_a_shot_and_rides_the_blade_echo() -> void:

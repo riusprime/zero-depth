@@ -404,6 +404,9 @@ const ADDED_SINCE_V05 := {
 	&"LockdownState": [&"later_kinds", &"later_pos"],
 	&"ShrineState": [&"later_kinds", &"later_pos"],
 	&"ItemMods": [&"bleed_move_period_ticks"],  # v0.6.5 WN5a (S5 Bleed: an older save has the base's)
+	# v0.9.5 HT: the Gun's heat fill remainder and the Vent cooldown (an older save has neither: 0)
+	&"HeatState": [&"fill_rem"],
+	&"KitState": [&"vent_cd"],
 	# v0.7.5 MG (N10: an older save's floor counts its cursed chests from 0); v0.8.0 N17: the curse room's altar (an
 	# older save's floor has none: -1, apply)
 	&"EventState": [&"cursed_rolled", &"curse_k"],

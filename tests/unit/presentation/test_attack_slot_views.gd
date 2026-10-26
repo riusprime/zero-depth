@@ -105,7 +105,8 @@ func test_the_wand_tiles_and_the_pips_read_the_slots() -> void:
 			WorldReader.SLOT_NONE
 		]
 	)
-	assert_eq(row.level_text(0), "Lv 1 · Pattern", "the tag joins the level line")
+	assert_eq(row.level_text(0), "Pattern", "the tag alone: v0.9.5 CLV, Ring doesn't level")
+	assert_eq(row.level_text(2), "Lv 1/3 · Element", "a 3-level card: its level, then the tag")
 	assert_eq(row.level_text(3), "", "a trigger: no tag")
 	var page := BuildPage.new()
 	add_child_autofree(page)

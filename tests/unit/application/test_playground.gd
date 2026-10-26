@@ -194,9 +194,9 @@ func test_a_wand_card_goes_in_at_its_level_and_comes_out() -> void:
 	assert_gt(k, -1)
 	assert_true(pg.grant_now(k, 3))
 	assert_true(w.mod_slots.has(k))
-	assert_eq(CardLevels.level(w, k), 3)
+	assert_eq(CardLevels.level(w, k), mini(3, CardLevels.max_level(w, k)))
 	assert_true(pg.grant_now(k, 5))
-	assert_eq(CardLevels.level(w, k), 5)
+	assert_eq(CardLevels.level(w, k), CardLevels.max_level(w, k), "v0.9.5 CLV: held at its cap")
 	assert_true(pg.remove_card_now(k))
 	assert_false(w.items_owned.has(k))
 	assert_false(w.mod_slots.has(k))
@@ -286,7 +286,7 @@ func test_the_catalog_lists_every_group_and_marks_what_is_held() -> void:
 		if e["code"] == k:
 			row = e
 	assert_true(row["held"])
-	assert_eq(row["level"], 4)
+	assert_eq(row["level"], mini(4, CardLevels.max_level(w, k)))
 	var mine := pg.held()
 	assert_eq(mine.size(), 1)
 	assert_eq(mine[0]["code"], k)

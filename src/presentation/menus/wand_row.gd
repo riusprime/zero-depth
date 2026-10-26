@@ -262,7 +262,9 @@ func _refresh() -> void:
 			var ability := int(c["type"]) == WorldReader.CARD_ABILITY
 			var levels := ability or bool(c.get("wand", false))  # v0.7.5 SM: a wand card shows its level too
 			var cap := int(c.get("max_level", 5))
-			if levels and cap < 5 and not ability:  # v0.9.5 CLV: "Lv 2/3"
+			if levels and cap <= 1 and not ability:  # v0.9.5 CLV: a card that doesn't level shows none
+				_levels[k].text = ""
+			elif levels and cap < 5 and not ability:  # v0.9.5 CLV: "Lv 2/3"
 				_levels[k].text = tr("UI_WAND_LEVEL_OF") % [int(c["level"]), cap]
 			else:
 				_levels[k].text = tr("UI_WAND_LEVEL") % int(c["level"]) if levels else ""

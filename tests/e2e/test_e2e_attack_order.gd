@@ -95,11 +95,9 @@ func test_ring_swirl_throws_the_ring_and_moving_swirl_first_flies_it_along_the_a
 	assert_true(texts.has("1 · %s" % tr("UI_WAND_ORDER_SHAPE")), "Ring: %s" % str(texts))
 	assert_true(texts.has("2 · %s" % tr("UI_WAND_ORDER_MOTION")), "Swirl")
 	assert_true(
-		texts.has("%s · %s" % [tr("UI_WAND_LEVEL") % 1, tr("UI_SLOT_PATTERN")]), "Ring's slot tag"
+		texts.has(tr("UI_SLOT_PATTERN")), "Ring's slot tag (v0.9.5 CLV: Ring doesn't level, no Lv)"
 	)
-	assert_true(
-		texts.has("%s · %s" % [tr("UI_WAND_LEVEL") % 1, tr("UI_SLOT_SECONDARY")]), "Swirl's"
-	)
+	assert_true(texts.has(tr("UI_SLOT_SECONDARY")), "Swirl's")
 	# v0.9.0 AS2 (G2 AS = B): the slot counts are the pips over the wand (the Pattern's one, lit).
 	assert_string_contains(page.pips.text(), "%s ●" % tr("UI_SLOT_PATTERN"), "the slot pips")
 	await e.tap(KEY_2)

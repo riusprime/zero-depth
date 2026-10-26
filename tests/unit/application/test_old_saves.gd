@@ -98,7 +98,11 @@ func test_a_v0_6_1_gun_save_from_its_carry_maps_and_levels_up_duplicates() -> vo
 			+ " → G12, Storm Core stays (S2)"
 		)
 	)
-	assert_eq(_levels(w), [1, 1, 3, 1, 1])
+	assert_eq(
+		_levels(w),
+		[1, 1, 1, 1, 1],
+		"v0.9.5 CLV: Mine no longer levels (its two merged copies read Lv 1)"
+	)
 	assert_eq(refund, 0, "every card has a match (Storm Core is WN5a's S2)")
 	assert_eq(w.shards, int(got[2]) + refund)
 	_no_retired(w)
