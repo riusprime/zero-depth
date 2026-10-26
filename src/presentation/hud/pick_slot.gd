@@ -145,6 +145,7 @@ func _render() -> void:
 		_face.get("color", Color(0, 0, 0, 0))  # v0.8.0 MU: the element's colour on the inlay ring
 	)
 	card.show_gain(_face.get("gain", {}))  # v0.8.0 N8: what gets better, old → new
+	card.show_form_line(_face.get("form_line", ""), _face.get("form_color", Color.WHITE))  # v0.9.5 TX
 	_show_slot_line()
 	_apply()
 

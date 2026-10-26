@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 class_name StoneCard
 extends Control
 ## A pick card as a carved stone tablet (v0.8.0 MU, owner O14 "we're just throwing away the shard cards"; G2 pick
@@ -38,6 +39,8 @@ const TIER_BOTTOM := 16.0
 const TIER_SIZE := 14
 const TITLE_SIZES := [22, 21, 20, 19, 18, 17, 16, 15, 14, 13]
 const DESC_SIZES := [17, 16, 15, 14, 13, 12]
+## v0.9.5 TX: the form line's type sizes.
+const FORM_SIZES := [14, 13, 12, 11]
 const TITLE_MAX_LINES := 2
 const LEVEL_SIZE := 14
 const TEXT := Color("#EDE3D6")
@@ -75,6 +78,10 @@ var _level_box := StyleBoxFlat.new()
 ## v0.8.0 N8: the gain line (old → new) and its numbers (WorldReader.card_forecast), the count-up's progress (1: done).
 var _gain := Label.new()
 var _gain_data := {}
+## v0.9.5 TX: what a Pattern or Secondary Gun card does on the form held (FormCardText), under the sentence, in the
+## form's colour; hidden for any other card.
+var _form := Label.new()
+var _form_box := Vector2.ZERO
 ## v0.8.0 N8: the boxes the layout gave the title and the sentence (a Label grows past its box to hold its text, so
 ## the fit is checked against these).
 var _title_box := Vector2.ZERO
@@ -146,6 +153,16 @@ func _init(p_scale: float = 1.0) -> void:
 	_gain.add_theme_constant_override("outline_size", 4)
 	_gain.visible = false
 	_root.add_child(_gain)
+	_form.name = "FormLine"
+	_form.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_form.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	_form.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_form.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_form.add_theme_font_override("font", HudStyle.font(true))
+	_form.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
+	_form.add_theme_constant_override("outline_size", 3)
+	_form.visible = false
+	_root.add_child(_form)
 	_root.add_child(ribbon)
 	remove_child(_root)
 	fx = CardFx.new(_root)  # v0.8.0 N8: the face hangs from the pivot (its shine is the face's last child)
@@ -226,6 +243,19 @@ func show_ribbon(text: String) -> void:
 	ribbon.text = text
 	ribbon.visible = text != ""
 	_layout()
+
+
+## v0.9.5 TX: the form line under the sentence ("" hides it) in the form's colour.
+func show_form_line(text: String, c: Color = Color.WHITE) -> void:
+	_form.text = text
+	_form.visible = text != ""
+	_form.add_theme_color_override("font_color", c.lerp(Color.WHITE, 0.2))
+	_layout()
+
+
+## v0.9.5 TX: the form line as shown ("" for none).
+func form_text() -> String:
+	return _form.text if _form.visible else ""
 
 
 func show_gain(gain: Dictionary) -> void:
@@ -411,6 +441,17 @@ func _place(socket_px: float, title_top: float) -> void:
 		ribbon.size = Vector2(full.x + 2.0 * RIBBON_OVERHANG * s, rh)
 		ribbon.position = Vector2(-RIBBON_OVERHANG * s, bottom - rh)
 		bottom -= rh + 8.0 * s
+	if _form.visible:  # v0.9.5 TX: the form line takes the foot of the text area; the sentence keeps the rest
+		var fsizes := _scaled(FORM_SIZES)
+		var fs := TextFit.fit_size(
+			regular, _form.text, w, regular.get_height(fsizes[0]) * 3.0, fsizes, 3
+		)
+		var fh := TextFit.text_height(regular, _form.text, w, fs)
+		_form.add_theme_font_size_override("font_size", fs)
+		_form.position = Vector2(x, bottom - fh)
+		_form.size = Vector2(w, fh)
+		_form_box = Vector2(w, fh)
+		bottom -= fh + 6.0 * s
 	var desc_h := maxf(bottom - y, 0.0)
 	var dsizes := _scaled(DESC_SIZES)
 	desc_size = TextFit.fit_size(regular, _desc.text, w, desc_h, dsizes)
@@ -418,6 +459,9 @@ func _place(socket_px: float, title_top: float) -> void:
 	_desc.position = Vector2(x, y)
 	_desc.size = Vector2(w, desc_h)
 	_desc_box = Vector2(w, desc_h)
+	if _form.visible:  # v0.9.5 TX: the form line sits right under the sentence (not at the foot)
+		var used := minf(desc_h, TextFit.text_height(regular, _desc.text, w, desc_size))
+		_form.position.y = y + used + 8.0 * s
 	# v0.7.5 SM: the level badge top right, above the title.
 	_level.add_theme_font_size_override("font_size", maxi(10, roundi(LEVEL_SIZE * s)))
 	_level.reset_size()

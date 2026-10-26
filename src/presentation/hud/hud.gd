@@ -638,7 +638,10 @@ func _show_card(reader: WorldReader, idx: int, caption: String) -> void:
 	var plaque := Plaques.of_card(
 		face["id"], type, int(face["tier"]), type == WorldReader.CARD_CURSE
 	)
-	_card.show_item(face["id"], face["title"], face["sentence"], face["color"], caption, plaque)
+	var sentence: String = face["sentence"]
+	if face.has("form_line"):  # v0.9.5 TX: what the card does on the form held, under the sentence
+		sentence += "\n" + String(face["form_line"])
+	_card.show_item(face["id"], face["title"], sentence, face["color"], caption, plaque)
 
 
 ## The combo card (tests and shot scripts read it).
