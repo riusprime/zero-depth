@@ -30,6 +30,11 @@ static func clear_spot(w: World, dist: float) -> Vector2:
 		var to := p + dir * (dist + 1.0)
 		var blocked := false
 		for i in w.walls_along(p, to, 0.6):
+			if (
+				Collide.circle_vs_obb(p, 0.6, w.walls[i]) != Vector2.ZERO
+				and Collide.circle_vs_obb(p + dir * 1.0, 0.6, w.walls[i]) == Vector2.ZERO
+			):
+				continue  # v0.9.5 SB: a prop the hero stands against (an altar), when the line leads away from it
 			if Collide.sweep_vs_obb(p, to, 0.6, w.walls[i]) >= 0.0:
 				blocked = true
 				break

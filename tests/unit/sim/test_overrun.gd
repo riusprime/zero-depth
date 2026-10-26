@@ -175,7 +175,7 @@ func test_wave_sizes_follow_the_floor() -> void:
 
 func test_clearing_every_wave_opens_the_doors_and_pays() -> void:
 	var w := _floor(21)
-	var walls := w.walls.size()
+	var walls := w.walls.size()  # v0.9.5 SB: the props' footprints are not doors
 	_enter(w)
 	assert_eq(w.walls.size(), walls + w.arenas.barriers.size(), "the barriers stand")
 	var waves := w.arenas.waves

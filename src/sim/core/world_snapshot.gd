@@ -146,6 +146,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"NemesisCast",  # v0.8.0 FB3: the Nemesis's hostile copies of the player's shot and cards (FinalFight)
 	&"IntensityState",  # v0.8.0 N5: the intensity director's state
 	&"FinalApproach",  # v0.9.0 FA: the final approach (the pylons, the buildup, the walls of light)
+	&"Solids",  # v0.9.5 SB: the props' footprints (standing, or waiting for the hero to clear)
 	&"Interactables",  # v0.9.0 IX: the shared interactables and the puzzles' calm rooms
 	&"TimedDoor",  # v0.9.0 TD: the timed door (its state, timer and reward)
 	&"RuneAlignment",  # v0.9.0 RA: the rune puzzle (its pillars, solved, slab and reward)
@@ -191,6 +192,7 @@ const ADDED_SINCE_V05 := {
 		&"loop_cap_permille",
 		&"final_fight",  # v0.8.0 FB1: the final boss's fight (a save from before FB1 holds none: null, as the base's)
 		&"approach",  # v0.9.0 FA: the final approach (a save from before FA holds none: FloorPlan builds that one bare)
+		&"solids",  # v0.9.5 SB: a floor saved before SB has none (floor rules 1-17 build none in the base either)
 		&"interactables",  # v0.9.0 IX: a save from before IX keeps the base's registry (apply re-syncs the pylons)
 		&"timed",  # v0.9.0 TD: a floor saved before TD has none (built under floor rules 1-9: none in the base either)
 		&"runes",  # v0.9.0 RA: a floor saved before RA has none (built under floor rules 1-10: none in the base either)

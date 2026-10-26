@@ -44,11 +44,11 @@ func _stand_out(w: World, m: float) -> void:
 
 func test_the_door_is_shut_and_solid_until_pressed() -> void:
 	var w := _world(8301)
-	var walls_open := w.walls.size()
+	var walls_open := _walls(w)
 	assert_eq(w.boss_flow.door, BossFlow.Door.SET, "today's floor: the door waits for the press")
 	w.step(_frame())
 	assert_eq(w.boss_flow.door, BossFlow.Door.SHUT)
-	assert_eq(w.walls.size(), walls_open + 1, "the door's collider joined the walls")
+	assert_eq(_walls(w), walls_open + 1, "the door's collider joined the walls")
 	_stand_out(w, 1.0)
 	for k in 240:
 		w.step(_frame(_into(w)))
@@ -58,7 +58,7 @@ func test_the_door_is_shut_and_solid_until_pressed() -> void:
 
 func test_the_press_opens_it_over_the_opening_ticks() -> void:
 	var w := _world(8302)
-	var walls_open := w.walls.size()
+	var walls_open := _walls(w)
 	w.step(_frame())
 	_stand_out(w, BossFlow.DOOR_REACH_M + 1.5)
 	w.step(_frame(Vector2.ZERO, true))
@@ -73,13 +73,13 @@ func test_the_press_opens_it_over_the_opening_ticks() -> void:
 	for k in BossFlow.DOOR_OPEN_TICKS / 2:
 		w.step(_frame())
 	assert_almost_eq(WorldReader.new(w).boss_door_progress(), 0.5, 0.02, "half way down")
-	assert_eq(w.walls.size(), walls_open + 1, "still solid while it slides")
+	assert_eq(_walls(w), walls_open + 1, "still solid while it slides")
 	seq = w.last_event_seq()
 	for k in BossFlow.DOOR_OPEN_TICKS / 2 + 1:
 		w.step(_frame())
 	assert_eq(w.boss_flow.door, BossFlow.Door.OPEN)
 	assert_eq(_count(w, SimEvent.Kind.BOSS_DOOR_OPENED, seq), 1, "the impact sound's event")
-	assert_eq(w.walls.size(), walls_open, "the passage is open")
+	assert_eq(_walls(w), walls_open, "the passage is open")
 	assert_eq(WorldReader.new(w).boss_door_progress(), 1.0)
 	var nav_closed: NavField = w.get(&"_nav_next")
 	assert_not_null(nav_closed, "the shut door's flow field is kept for the sealing")
@@ -88,17 +88,17 @@ func test_the_press_opens_it_over_the_opening_ticks() -> void:
 		if w.boss_flow.state == BossFlow.State.FIGHT:
 			break
 	assert_eq(w.boss_flow.state, BossFlow.State.FIGHT, "walking in seals it, as before")
-	assert_eq(w.walls.size(), walls_open + 1, "sealed: the door is a wall again")
+	assert_eq(_walls(w), walls_open + 1, "sealed: the door is a wall again")
 	assert_same(w.nav, nav_closed, "the kept field swapped in (no rebuild)")
 	assert_eq(WorldReader.new(w).boss_door_progress(), -1.0, "the fight drives the door now")
 
 
 func test_a_floor_saved_before_bd_keeps_its_open_doorway() -> void:
 	var w := _world(8303, RunState.FLOOR_RULES_V080_N19)
-	var walls_open := w.walls.size()
+	var walls_open := _walls(w)
 	assert_eq(w.boss_flow.door, BossFlow.Door.PASSAGE)
 	w.step(_frame())
-	assert_eq(w.walls.size(), walls_open, "no door collider before the fight")
+	assert_eq(_walls(w), walls_open, "no door collider before the fight")
 	assert_eq(
 		WorldReader.new(w).boss_door_progress(), -1.0, "the view opens it by nearness, as before"
 	)
@@ -112,12 +112,12 @@ func test_a_floor_saved_before_bd_keeps_its_open_doorway() -> void:
 
 func test_a_hero_put_inside_past_the_shut_door_still_seals_once() -> void:
 	var w := _world(8304)
-	var walls_open := w.walls.size()
+	var walls_open := _walls(w)
 	w.step(_frame())
 	w.actors.set_pos(0, w.floor_layout.boss_door_inside(BossFlow.ENTRY_DEPTH_M + 1.2))
 	w.step(_frame())
 	assert_eq(w.boss_flow.state, BossFlow.State.FIGHT)
-	assert_eq(w.walls.size(), walls_open + 1, "the door's collider once, not twice")
+	assert_eq(_walls(w), walls_open + 1, "the door's collider once, not twice")
 
 
 func _press_and_wait(w: World, ticks: int) -> void:
@@ -142,10 +142,15 @@ func test_same_seed_same_hash_and_a_save_mid_opening_finishes_the_same() -> void
 	if restored == null:
 		return
 	assert_eq(restored.state_hash(), a.state_hash(), "restored hash")
-	assert_eq(restored.walls.size(), a.walls.size(), "the shut door came back")
+	assert_eq(_walls(restored), _walls(a), "the shut door came back")
 	for k in BossFlow.DOOR_OPEN_TICKS:
 		a.step(_frame())
 		restored.step(_frame())
 	assert_eq(restored.boss_flow.door, BossFlow.Door.OPEN)
 	assert_eq(restored.state_hash(), a.state_hash(), "equal once open")
-	assert_eq(restored.walls.size(), a.walls.size())
+	assert_eq(_walls(restored), _walls(a))
+
+
+## v0.9.5 SB: the walls that are not a solid prop's footprint (a prop joins the walls once the hero is clear of it).
+func _walls(w: World) -> int:
+	return w.walls.size()

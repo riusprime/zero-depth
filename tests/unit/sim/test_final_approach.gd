@@ -32,7 +32,7 @@ func _world(seed_value: int = SEED) -> World:
 ## Walks the hero to `to` (straight, FinalLab.walk), at most `limit` ticks; the ticks it took.
 func _walk(w: World, to: Vector2, limit: int = 1200) -> int:
 	for k in limit:
-		if w.player_pos().distance_to(to) < 0.8:
+		if w.player_pos().distance_to(to) < 1.4:  # v0.9.5 SB: a pylon is solid (1 m square): the hero stops at its surface
 			return k
 		w.step(FinalLab.walk(w, to))
 	return limit
@@ -116,7 +116,7 @@ func test_both_pylons_start_the_buildup_then_the_walls_and_the_colossus() -> voi
 		var w := _world()
 		var reader := WorldReader.new(w)
 		var tag := "order %s" % str(order)
-		var walls0 := w.walls.size()
+		var walls0 := w.walls.size()  # v0.9.5 SB: the pylons stand apart
 		_to_pylon(w, order[0])
 		w.step(_press())
 		_to_pylon(w, order[1])

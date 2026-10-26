@@ -79,6 +79,7 @@ func _hits(w: World, id: int) -> int:
 		if (
 			ev.kind == SimEvent.Kind.DAMAGE
 			and ev.target_id == id
+			and ev.source_id != 0  # discs only: a hero-sourced hit is a proc
 			and not (ev.tags & SimEvent.TAG_DOT)
 		):
 			n += 1

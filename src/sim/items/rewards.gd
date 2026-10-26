@@ -96,7 +96,8 @@ static func place(w: World, layout: FloorLayout) -> void:
 		if kinds[k] == RewardStore.Kind.CHEST:
 			price = t.chest_price(chests, w.floor_index)
 			chests += 1
-		w.add_reward(kinds[k], layout.item_spots[order[k]], price)
+		var spot := w.solids.clear_of_doors(layout, layout.item_spots[order[k]])  # v0.9.5 SB: off the doorways
+		w.add_reward(kinds[k], spot, price)
 
 
 ## v0.5.5 AR: `order` with the spots in arena rooms first (start_first among them), then the others (start_first
@@ -150,7 +151,11 @@ static func nearest(w: World) -> int:
 	for i in w.rewards.size():
 		if Arenas.locked(w, i):  # v0.5.5 AR: locked until its arena clears
 			continue
-		var d := Kin.length(w.rewards.pos(i) - p)
+		# v0.9.5 SB: measured to the footprint's surface, not its centre (the hero cannot stand on it)
+		var d := (
+			Kin.length(w.rewards.pos(i) - p)
+			- Solids.reach_bonus(w, Solids.Kind.REWARD, w.rewards.ids[i])
+		)
 		if d <= best_d and (best < 0 or d < best_d):
 			best = i
 			best_d = d
@@ -244,6 +249,7 @@ static func choose(w: World, frame: InputFrame) -> void:
 		return
 	_take(w, i, k, replace)
 	if not BossReward.another_pick(w, i):  # v0.8.0 RR: a later loop's boss altar gives more picks
+		w.solids.remove(w, Solids.Kind.REWARD, w.rewards.ids[i])  # v0.9.5 SB: its footprint goes with it
 		w.rewards.remove_at(i)
 	_resume(w)
 

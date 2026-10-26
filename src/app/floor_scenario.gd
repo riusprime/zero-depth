@@ -69,6 +69,10 @@ static func build(
 	if run != null and run.is_last_floor():  # v0.8.0 P2 (O28): the Loop device beside the Ascension portal
 		Ascension.place_loop_device(layout)
 	var w := World.new(seed_value, player, layout.start_pos)
+	w.solids.on = Solids.rules_on(run)  # v0.9.5 SB: the props that look solid are solid
+	if layout.has_loop_device:  # the Loop device is one of them (Ascension.touching_loop_device enters it)
+		var loop := Ascension.loop_footprint(layout)
+		w.solids.add(Solids.Kind.LOOP_DEVICE, 0, loop.center, loop.half, loop.angle)
 	var walls: Array[Obb] = layout.walls.duplicate()
 	walls.append(gate_collider(layout))
 	if deep_now:

@@ -264,6 +264,11 @@ static func _free_goal(nav: NavField, target: Vector2) -> Vector2:
 ## (they're skippable; the player would walk around too). A read for planning only: the sim is untouched.
 static func walk_walls(w: World, target: Vector2) -> Array[Obb]:
 	var out: Array[Obb] = w.walls.duplicate()
+	# v0.9.5 SB: a prop's footprint (not in the walls) is planned round in a shrunk form (a clearance)
+	for i in w.solids.size():
+		out.append(
+			Obb.make(w.solids.center[i], w.solids.half[i] - Vector2(0.3, 0.3), w.solids.angle[i])
+		)
 	var f := w.floor_layout
 	if f == null:
 		return out
@@ -290,6 +295,10 @@ static func walk_walls(w: World, target: Vector2) -> Array[Obb]:
 ## lets go and waits for the player to stop. False if it didn't get there (or died).
 func walk_to(target: Vector2, within: float) -> bool:
 	var w := world()
+	# v0.9.5 SB: a solid prop (an altar, a pedestal) stops the hero at its surface, 1.0-1.25 m from its centre.
+	for i in w.solids.size():
+		if w.solids.center[i].distance_to(target) < 0.05:
+			within = maxf(within, 1.35)
 	var nav := NavField.new()
 	nav.build(walk_walls(w, target))
 	nav.flood(_free_goal(nav, target))
@@ -302,6 +311,13 @@ func walk_to(target: Vector2, within: float) -> bool:
 		if w.player_dead():
 			break
 		var dir := nav.direction(p)
+		if dir == Vector2.ZERO:  # v0.9.5 SB: against a prop the hero's cell can be blocked: use a free cell near it
+			for ring in [0.6, 1.0]:
+				for a in 8:
+					var q: Vector2 = p + Vector2.from_angle(TAU * a / 8.0) * ring
+					var d: Vector2 = nav.direction(q)
+					if dir == Vector2.ZERO and d != Vector2.ZERO:
+						dir = (q - p).normalized() if ring > 0.0 else d
 		if (target - p).length() < 1.5 or dir == Vector2.ZERO:
 			dir = (target - p).normalized()
 		# Sim direction -> screen stick (the inverse of the +45 degree screen-to-sim rotation); stick y is down.

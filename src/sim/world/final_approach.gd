@@ -63,7 +63,13 @@ func lit_count() -> int:
 func register(w: World) -> void:
 	var f := w.floor_layout
 	for k in f.pylons.size():
-		w.interactables.add(Interactables.Kind.PYLON, f.pylons[k], PYLON_REACH_M, k)
+		w.interactables.add(
+			Interactables.Kind.PYLON,
+			f.pylons[k],
+			PYLON_REACH_M + w.solids.bonus(Solids.PYLON_HALF_M),
+			k
+		)
+		w.solids.add_square(Solids.Kind.PYLON, k, f.pylons[k], Solids.PYLON_HALF_M)  # v0.9.5 SB
 	sync_registry(w)
 
 
