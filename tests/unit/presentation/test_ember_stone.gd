@@ -57,15 +57,19 @@ func test_the_ember_glow_is_apart_from_the_heat_colours() -> void:
 
 
 func test_no_crystal_art_is_left_in_the_ui() -> void:
-	assert_false(
-		DirAccess.dir_exists_absolute("res://assets/ui"), "the crystal frames and plaques retired"
+	# v0.9.5 MM: the one UI art is the owner's main-menu logo and backdrop (assets/ui/menu, MainMenu only).
+	assert_eq(
+		Array(DirAccess.get_directories_at("res://assets/ui")),
+		["cursors", "menu"],
+		"the crystal frames and plaques retired"
 	)
 	for dir: String in PRESENTATION:
 		for f in DirAccess.get_files_at(dir):
 			if not f.ends_with(".gd"):
 				continue
 			var src := FileAccess.get_file_as_string(dir + "/" + f)
-			assert_false(src.contains("assets/ui/"), "%s loads no UI art" % f)
+			if f != "main_menu.gd":
+				assert_false(src.contains("assets/ui/"), "%s loads no UI art" % f)
 			for gone in ["CrystalCard", "BuildArt", "glass_panel", "GlassMarker"]:
 				assert_false(
 					src.contains(gone + ".") or src.contains(gone + "("), "%s: no %s" % [f, gone]
@@ -127,10 +131,8 @@ func test_every_menu_is_on_ember_stone() -> void:
 	assert_true(t.get_stylebox("normal", "Button") is StyleBoxEmpty, "a plain row is type only")
 	var main := MainMenu.new("v", false)
 	add_child_autofree(main)
-	var bd := main.find_child("MenuBackdrop", true, false) as MenuBackdrop
-	assert_not_null(bd, "the main menu has a backdrop")
-	assert_true(bd.own_scene, "of its own: the ember-lit stone scene (nothing is behind it)")
-	assert_true(main.slab.get_theme_stylebox("panel") is StoneBox, "its list on a slab")
+	assert_not_null(main.backdrop.texture, "v0.9.5 MM: the owner's picture is behind the main menu")
+	assert_null(main.find_child("MenuBackdrop", true, false), "and no ember backdrop")
 	var repo := ContentRepository.load_all()
 	for screen: Control in [
 		PauseMenu.new(),
