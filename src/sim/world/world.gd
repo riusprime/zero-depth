@@ -140,6 +140,13 @@ var shot_window_tick := -1
 var el_chain_hits := 0
 var el_strike_log := PackedInt32Array()
 var el_shatter_log := PackedInt32Array()
+## v0.9.5 EE3 (ElementPairs): the pairs' numbers (loadout; null: no pairs), the pairs on now (bit X per pair, set when
+## the wand compiles), the (pair, tick) of each firing in the last second (the 4-a-second budget, flat) and the Toxic
+## Fumes clouds (x mm, y mm, ticks left, flat). Hashed only while a pair is on.
+var pair_table: ElementPairTable
+var pair_mask := 0
+var pair_log := PackedInt32Array()
+var pair_clouds := PackedInt32Array()
 ## Item pickups lying on the floor.
 var pickups := PickupStore.new()
 ## Twin Arc: ticks until the pending echo (0 = none), its angle, combo step (its shape), root and damage, and the

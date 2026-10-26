@@ -19,6 +19,9 @@ const NAPALM_COLOR := Color("#E8401A")
 const STORM_COLOR := Color("#C8B4FF")
 const WARD_COLOR := Color("#FFB03A")
 const CHARGE_COLOR := Color("#D88CFF")
+const GAS_COLOR := Color("#7CD65A")
+const GAS_Y := 0.03
+const MAX_CLOUDS := 16
 const FX_FRAMES := 16
 const FIRE_Y := 0.025
 const BOLT_SEGMENTS := 4
@@ -36,6 +39,10 @@ var _zone_mat := _template.duplicate() as StandardMaterial3D
 var _rings: Array[MeshInstance3D] = []
 var _ring_mat := _template.duplicate() as StandardMaterial3D
 var _disc_mesh := CylinderMesh.new()
+## v0.9.5 EE3: Toxic Fumes' clouds (one flat quad each, a soft round alpha).
+var _clouds: Array[MeshInstance3D] = []
+var _quad := QuadMesh.new()
+var _gas_mat := _template.duplicate() as StandardMaterial3D
 var _last := {}
 var _spec_keys := PackedStringArray()
 
@@ -51,6 +58,19 @@ func _init() -> void:
 	_disc_mesh.top_radius = 1.0
 	_disc_mesh.bottom_radius = 1.0
 	_disc_mesh.radial_segments = 20
+	_quad.size = Vector2(2.0, 2.0)
+	var soft := Gradient.new()
+	soft.colors = PackedColorArray([Color(1, 1, 1, 0.9), Color(1, 1, 1, 0.0)])
+	soft.offsets = PackedFloat32Array([0.45, 1.0])
+	var tex := GradientTexture2D.new()
+	tex.gradient = soft
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	tex.width = 64
+	tex.height = 64
+	_gas_mat.albedo_texture = tex
+	_gas_mat.albedo_color = Color(GAS_COLOR, 0.7)
 	for k in [&"arc", &"nova", &"storm", &"ward", &"charge", &"wing"]:
 		_last[k] = -1
 
@@ -59,6 +79,7 @@ func sync(reader: WorldReader) -> void:
 	var fx := reader.element_fx()
 	_spec_keys = reader.fire_spec_keys() if forms_drawn else PackedStringArray()
 	_sync_fires(fx)
+	_sync_clouds(reader)
 	_sync_rings([] if forms_drawn else fx.get("rings", []))
 	if _edge(&"arc", fx["arc_tick"]):
 		var sup: bool = fx["arc_super"]
@@ -210,3 +231,34 @@ func _add(n: MeshInstance3D, c: Color, alpha: float, kind: StringName) -> void:
 
 func _process(_delta: float) -> void:
 	_fx.step(1)
+
+
+# --- Toxic Fumes (v0.9.5 EE3) --------------------------------------------------------------------------------------
+## Each gas cloud is one flat quad with a soft round alpha (a radial gradient), at the sim's radius, fading through its
+## last second. A pool of MAX_CLOUDS made once; nothing is spawned per cloud.
+func _sync_clouds(reader: WorldReader) -> void:
+	var c := reader.pair_clouds()
+	var pos: PackedVector2Array = c["pos"]
+	var left: PackedInt32Array = c["left"]
+	var r: float = c["radius"]
+	while _clouds.size() < mini(pos.size(), MAX_CLOUDS):
+		var m := MeshInstance3D.new()
+		m.mesh = _quad
+		m.material_override = _gas_mat
+		m.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(m)
+		_clouds.append(m)
+	for k in _clouds.size():
+		var q := _clouds[k]
+		q.visible = k < pos.size()
+		if not q.visible:
+			continue
+		var fade := clampf(left[k] / 60.0, 0.0, 1.0)
+		q.position = SimPlane.to_3d(pos[k], GAS_Y + 0.002 * (k % 4))
+		q.scale = Vector3(r * (0.7 + 0.3 * fade), r * (0.7 + 0.3 * fade), 1.0)
+
+
+## Clouds drawn now (tests).
+func cloud_count() -> int:
+	return _clouds.filter(func(q: MeshInstance3D) -> bool: return q.visible).size()

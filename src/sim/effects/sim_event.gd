@@ -62,6 +62,7 @@ enum Kind {
 	LANCE,  # v0.9.0 AF1b: a Lance ball released (Lance.on_release: pos = muzzle, amount = radius mm, amount_applied = aim)
 	COLLECTIBLE,  # v0.9.0 CL: a collectible taken (Collectibles: pos, amount = its entry, effect_id = its id)
 	STRESS_BREAK,  # v0.9.5 SM: a weak side broken (StressMarks.on_hit: pos, amount = extra damage, amount_applied = side)
+	PAIR_ON,  # v0.9.5 EE3: an element pair turned on (ElementPairs.refresh: amount = its X index 0..9, effect_id = its id)
 }
 
 ## v0.9.5 EE1 (ElementLevels): a Contagion jump's STATUS_APPLY (source: the giver, target: the receiver), and the
@@ -74,6 +75,10 @@ const EFFECT_EXSANGUINATE := &"exsanguinate"
 const EFFECT_STORM_STRIKE := &"storm_strike"
 const EFFECT_FROST_SHATTER := &"frost_shatter"
 const EFFECT_FROST_SHARD := &"frost_shard"
+## v0.9.5 EE3 (ElementPairs): a pair burst (X1 Thermal Shock, X7 Brittle: STATUS_APPLY at the centre, amount = radius
+## in mm; also its hits' effect) and a Toxic Fumes cloud laid (STATUS_APPLY, amount = radius in mm).
+const EFFECT_PAIR_BURST := &"pair_burst"
+const EFFECT_PAIR_CLOUD := &"pair_cloud"
 const TAG_MELEE := 1
 const TAG_PROJECTILE := 2
 const TAG_DOT := 4

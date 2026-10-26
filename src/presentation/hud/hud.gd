@@ -96,6 +96,8 @@ var _combos := HBoxContainer.new()
 var _combo_card := ComboCard.new()
 var _combo_left := 0.0
 var _combo_pending := -1
+## v0.9.5 EE3: an element pair that just turned on (its X index; -1 none): its name shows on the combo card.
+var _pair_pending := -1
 var _combos_shown := -1
 # Run flow (v0.3.0 B).
 var _floor := HudStyle.label(16)
@@ -622,6 +624,8 @@ func _sync_items(reader: WorldReader) -> void:
 			_card_left = CARD_SECONDS
 		elif e.kind == SimEvent.Kind.COMBO_UNLOCKED:
 			_combo_pending = e.amount
+		elif e.kind == SimEvent.Kind.PAIR_ON:  # v0.9.5 EE3: an element pair turned on
+			_pair_pending = e.amount
 	if _card_mode == &"pickup" and _card_left <= 0.0:
 		_card_mode = &""
 	if _card_mode != &"pickup":
@@ -685,6 +689,20 @@ func _sync_combos(reader: WorldReader) -> void:
 		)
 		_combo_left = COMBO_CARD_SECONDS
 		_combo_card.place_bottom_centre(-196 - _card.plaque_height() - 10)  # above the item plaque
+	if _pair_pending >= 0:  # v0.9.5 EE3: the pair's banner is the combo card, with its two element cards
+		var x := _pair_pending
+		_pair_pending = -1
+		var cards := reader.pair_card_ids(x)
+		_combo_card.show_combo(
+			reader.pair_id(x),
+			cards[0],
+			cards[1],
+			tr(reader.pair_name_key(x)),
+			tr(reader.pair_desc_key(x)),
+			tr("UI_PAIR_ON")
+		)
+		_combo_left = COMBO_CARD_SECONDS
+		_combo_card.place_bottom_centre(-196 - _card.plaque_height() - 10)
 	if _combo_left <= 0.0 and _combo_card.is_showing():
 		_combo_card.hide_card()
 	var owned := reader.combos_owned()

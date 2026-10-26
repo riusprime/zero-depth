@@ -2326,6 +2326,40 @@ func combo_item_ids(combo_index: int) -> Array[StringName]:
 	return [_w.item_tables[c.item_a].id, _w.item_tables[c.item_b].id]
 
 
+## v0.9.5 EE3 (ElementPairs): a pair's id, text keys and its two element cards (the banner), the pairs on now (bit X
+## each), and the Toxic Fumes clouds: their centres, the radius they share and the ticks each has left.
+func pair_id(x: int) -> StringName:
+	return ElementPairs.IDS[x]
+
+
+func pair_name_key(x: int) -> StringName:
+	return ElementPairs.name_key(x)
+
+
+func pair_desc_key(x: int) -> StringName:
+	return ElementPairs.desc_key(x)
+
+
+func pair_card_ids(x: int) -> Array[StringName]:
+	return ElementPairs.card_ids(x)
+
+
+func pair_mask() -> int:
+	return _w.pair_mask
+
+
+func pair_clouds() -> Dictionary:
+	var pos := PackedVector2Array()
+	var left := PackedInt32Array()
+	var c := _w.pair_clouds
+	for k in range(0, c.size(), 3):
+		pos.append(Vector2(c[k] / 1000.0, c[k + 1] / 1000.0))
+		left.append(c[k + 2])
+	var r := _w.pair_table.cloud_radius_m if _w.pair_table != null else 0.0
+	var life := _w.pair_table.cloud_ticks if _w.pair_table != null else 1
+	return {"pos": pos, "left": left, "radius": r, "life": life}
+
+
 ## The last shock discharge: tick (-1 = never), where it went off, and where each jump landed.
 func discharge_tick() -> int:
 	return _w.discharge_tick

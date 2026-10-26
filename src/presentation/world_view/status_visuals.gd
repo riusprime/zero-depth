@@ -436,6 +436,14 @@ func _sync_fsf_event(e: SimEvent, now: float) -> void:
 				)
 			else:
 				_ring(e.pos, 1.0, ItemLooks.status_color(&"frozen"))
+		SimEvent.EFFECT_PAIR_BURST:  # v0.9.5 EE3: Thermal Shock, Brittle: the frost burst at the pair's radius
+			var reach := float(e.amount) / 1000.0
+			if vfx != null:
+				_shots.append(
+					[&"shatter", SimPlane.to_3d(e.pos, 0.07), reach, now, SHARD_TICKS, e.seq, []]
+				)
+			else:
+				_ring(e.pos, reach, ItemLooks.status_color(&"frozen"))
 		SimEvent.EFFECT_FROST_SHARD:
 			if vfx != null:
 				var to: Array = [SimPlane.to_3d(e.pos, 0.6)]

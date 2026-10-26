@@ -482,7 +482,7 @@ func _events(reader: WorldReader, out: Array) -> void:
 					out.append([DEATHS[_kinds[e.target_id]], e.pos, 1.0])
 			SimEvent.Kind.PICKUP:
 				out.append([&"item_pickup", null, 1.0])
-			SimEvent.Kind.COMBO_UNLOCKED:
+			SimEvent.Kind.COMBO_UNLOCKED, SimEvent.Kind.PAIR_ON:  # v0.9.5 EE3: a pair shares the combo's chime
 				out.append([&"combo_unlock", null, 1.0])
 			SimEvent.Kind.BOSS_DEFEATED:
 				out.append([&"boss_death", e.pos, 1.0])

@@ -463,19 +463,29 @@ static func _chain(w: World, spec: AttackSpec, ctx: AttackContext, first: int) -
 	for n in ElementLevelsFsf.fork_chains(w, spec):
 		var next := -1
 		var nd := reach
-		for j in w.enemies_near(from, reach):
-			var d := Kin.length(a.pos(j) - from)
-			if not hit.has(j) and d <= nd and (next < 0 or d < nd):
-				next = j
-				nd = d
+		if w.pair_mask != 0:  # v0.9.5 EE3: Cold Circuit jumps to a frozen enemy first
+			next = ElementPairs.frozen_target(w, from, reach, hit)
+		if next < 0:
+			for j in w.enemies_near(from, reach):
+				var d := Kin.length(a.pos(j) - from)
+				if not hit.has(j) and d <= nd and (next < 0 or d < nd):
+					next = j
+					nd = d
 		if next < 0:
 			break
 		hit.append(next)
 		w.chain_from = from
 		w.chain_to = a.pos(next)
-		if _hit(w, next, ctx, from, a.pos(next)) > 0:
+		var dmg0 := ctx.damage
+		if w.pair_mask != 0:
+			ctx.damage = ElementPairs.jump_damage(w, next, dmg0)  # v0.9.5 EE3: Cold Circuit's double
+		var got := _hit(w, next, ctx, from, a.pos(next))
+		ctx.damage = dmg0
+		if got > 0:
 			landed += 1
 			_landed(w, spec, ctx, next, a.pos(next), n + 2)
+			if w.pair_mask != 0:
+				ElementPairs.on_jump(w, next, ctx.root)  # v0.9.5 EE3: Ignition Arc, Neurotoxin, Arterial Arc
 		from = a.pos(next)
 	return landed
 

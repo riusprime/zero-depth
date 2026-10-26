@@ -68,8 +68,13 @@ static func hit(
 		return 0
 	var target_id := a.ids[target]
 	# v0.5.0 CP: an Overkill splash is already scaled; v0.9.5 EE2: so is a Shatter shard (half of a scaled hit)
-	var splash := effect_id == Stats.EFFECT_OVERKILL or effect_id == SimEvent.EFFECT_FROST_SHARD
+	var splash := (
+		effect_id == Stats.EFFECT_OVERKILL
+		or effect_id == SimEvent.EFFECT_FROST_SHARD
+		or effect_id == SimEvent.EFFECT_PAIR_BURST
+	)  # v0.9.5 EE3: a pair burst is already scaled
 	var was_frozen := a.frozen_t[target] > 0 and owner_id == a.ids[0]  # v0.9.5 EE2: Shatter breaks what was frozen
+	var was_hot := a.burn_stacks[target] > 0  # v0.9.5 EE3: Thermal Shock reads it before this hit's own statuses
 	if w.stress != null and owner_id == a.ids[0] and target != 0:  # v0.9.5 SM: a struck weak side, before crit
 		amount = StressMarks.on_hit(w, target, amount, tags, from, at, effect_id)
 	if owner_id == a.ids[0] and target != 0 and not splash:  # v0.4.0 BS: damage stats, crit (Stats)
@@ -92,6 +97,8 @@ static func hit(
 		var el := ElementLevelsFsf.attacker_mult(w, target, owner_id)
 		if el != 1000:
 			amount = amount * el / 1000
+	if w.pair_mask != 0:  # v0.9.5 EE3: Sepsis, +20 % on an enemy deep in poison and bleed
+		amount = amount * ElementPairs.attacker_mult(w, target, owner_id) / 1000
 	var h := w.emit_event(SimEvent.Kind.HIT, source_id, owner_id, target_id, at)
 	h.root_id = root_id
 	h.amount = amount
@@ -132,6 +139,8 @@ static func hit(
 		ItemProcs.on_guard_block(w)  # Items: Phase Strike.
 		Engines.on_guard_block(w, owner_id, root_id)  # Engines: Bulwark, Frozen Bastion.
 	elif got > 0 and target != 0 and owner_id == a.ids[0]:
+		if w.pair_mask != 0 and was_hot and was_frozen and a.dead[target] == 0:
+			ElementPairs.thermal_shock(w, target, scaled, h.tags, effect_id)  # v0.9.5 EE3: X1
 		Engines.on_hit(w, target, root_id, h.tags, effect_id)  # Engines: stacks.
 		Heat.on_hit(w, target, root_id, h.tags, effect_id)  # Heat: gain, Overclock embers.
 		if was_frozen:
@@ -155,6 +164,8 @@ static func tick_dot(
 		return 0
 	if owner_id == a.ids[0] and target != 0:
 		amount = Stats.dot(w, amount)  # v0.4.0 BS: the damage stat (a DoT tick never crits)
+		if w.pair_mask != 0:  # v0.9.5 EE3: Sepsis takes the ticks too
+			amount = amount * ElementPairs.attacker_mult(w, target, owner_id) / 1000
 	var root := w.take_root()
 	return _apply(
 		w,
@@ -222,6 +233,8 @@ static func _apply(
 			Engines.on_kill(w, k, target, tags)  # Engines: Wildfire, Blood Harvest.
 			ModifierAbilities.on_kill(w)  # v0.6.0 MX2: Frost Nova's kill streak
 			Venom.on_kill(w, target, root_id)  # v0.6.0 MX4: Venom Core's spread
+			if w.pair_mask != 0 and a.frozen_t[target] > 0:
+				ElementPairs.on_frozen_end(w, target)  # v0.9.5 EE3: Brittle
 		BossTwin.fall_together(w, target, k)  # v0.9.0 NB2: its twin falls with it (its own KILL)
 	if target != 0 and not (tags & SimEvent.TAG_DOT):
 		BossTwin.on_hit(w, target, applied, owner_id)  # v0.9.0 NB2: a hit on one Warden angers the other

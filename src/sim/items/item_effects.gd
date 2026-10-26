@@ -132,7 +132,8 @@ static func on_melee_hit(w: World, i: int, root: int, stacks: int = 1) -> void:
 	if m.burn_max_stacks <= 0 or a.dead[i] == 1 or a.burn_root[i] == root:
 		return
 	a.burn_root[i] = root
-	if a.burn_stacks[i] == 0:
+	var lit := a.burn_stacks[i] == 0
+	if lit:
 		a.burn_cd[i] = m.burn_period_ticks
 	a.burn_stacks[i] = mini(a.burn_stacks[i] + stacks, m.burn_max_stacks)
 	a.burn_t[i] = Affinities.burn_ticks(w, m.burn_duration_ticks)  # v0.9.0 RB: A1 Ember
@@ -140,6 +141,8 @@ static func on_melee_hit(w: World, i: int, root: int, stacks: int = 1) -> void:
 	e.root_id = root
 	e.amount = a.burn_stacks[i]
 	e.effect_id = EFFECT_EMBER_EDGE
+	if lit and w.pair_mask != 0:
+		ElementPairs.on_burn_start(w, i)  # v0.9.5 EE3: Toxic Fumes
 
 
 ## Phase 8: burns tick. Every period each burning actor takes burn_damage × stacks as DoT; when the burn runs
