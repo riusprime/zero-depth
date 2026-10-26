@@ -317,6 +317,10 @@ offers, `attack_slots.tres`, the forms). The order inside each list is the build
    `docs/art/requests/v0.9.5_BACKGROUNDS.md` (Q5).
 
 ### PF. Performance (last, owner's order)
+- **Target (owner, 2026-10-26):** "i think thet my pc should run this game 144fps constant, because it doesnt have that
+  good gaphics". So: a steady 144 fps on the owner's PC (i7-10700K, RTX 3060) at 1080p with the default settings,
+  in the heaviest fights too: every frame under 6.9 ms, judged on the 1 % lows, not the average. Cut until it holds;
+  if a cut would change the look, ask the owner first.
 - No enemy is drawn behind walls or floors: the X-ray silhouette pass goes (`ActorViews.technique = &"xray"`, a
   second mesh per body piece).
 - Profile a 20-enemy fight with a multi-hit, two-element build on the owner's PC: Frozen Shore and one other biome.
