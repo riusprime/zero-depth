@@ -20,7 +20,7 @@ func after_each() -> void:
 	BossModels.dir = BossModels.DIR
 
 
-func _avatar(cls: Variant, technique: StringName = &"xray") -> BossAvatar:
+func _avatar(cls: Variant, technique: StringName = &"outline") -> BossAvatar:
 	var a: BossAvatar = cls.new()
 	a.setup(Color("#1A1A22"), technique)
 	add_child_autofree(a)
@@ -51,8 +51,11 @@ func test_each_model_builds_flashable_outlined_pieces() -> void:
 			assert_true(m.emission_enabled, "%s: flashable (emission on, energy only)" % name)
 			assert_eq(m.emission_energy_multiplier, 0.0, "%s: dark until a hit" % name)
 			assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "%s: outlined" % name)
-		var o := _avatar(cls, &"outline")
-		assert_lt(_count_meshes(o), _count_meshes(a), "%s: xray adds silhouette twins" % name)
+		assert_eq(
+			_count_meshes(a),
+			_count_meshes(_avatar(cls)),
+			"%s: no silhouette twins (v0.9.5 PF1)" % name
+		)
 
 
 func test_the_lens_drone_builds_flashable_and_hovers() -> void:

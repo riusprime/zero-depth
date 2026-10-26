@@ -84,9 +84,8 @@ var _kick := 0.0
 var _tell_p := -1.0
 
 
-## Builds the model. technique "xray" adds a team-coloured silhouette twin to the cube, the pods and the barrel
-## (as ActorViews does for its body pieces); the thin legs have none.
-func setup(outline_color: Color, technique: StringName = &"xray") -> void:
+## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
+func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var team := ThemePalette.color(&"enemy_body")
 	body = Node3D.new()

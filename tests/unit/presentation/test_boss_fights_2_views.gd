@@ -82,7 +82,7 @@ func test_the_hive_lens_closes_its_eye_while_its_prism_spiral_shields_it() -> vo
 	w.actors.hp[0] = 1 << 20
 	var reader := WorldReader.new(w)
 	var a := HiveLensAvatar.new()
-	a.setup(Color("#1A1A22"), &"xray")
+	a.setup(Color("#1A1A22"), &"outline")
 	add_child_autofree(a)
 	a.set_process(false)
 	w.actors.cd[i] = 1 << 20  # it waits: no attack of its own before the test's
@@ -112,7 +112,7 @@ func test_the_hive_lens_closes_its_eye_while_its_prism_spiral_shields_it() -> vo
 
 func test_the_avatars_pose_the_new_moves() -> void:
 	var b := BroodMotherAvatar.new()
-	b.setup(Color("#1A1A22"), &"xray")
+	b.setup(Color("#1A1A22"), &"outline")
 	add_child_autofree(b)
 	b.apply_state(
 		{
@@ -133,7 +133,7 @@ func test_the_avatars_pose_the_new_moves() -> void:
 	)
 	assert_eq(b._move, WorldReader.MOVE_BROOD, "the Web Spiral too")
 	var h := HiveLensAvatar.new()
-	h.setup(Color("#1A1A22"), &"xray")
+	h.setup(Color("#1A1A22"), &"outline")
 	add_child_autofree(h)
 	h.apply_state(
 		{

@@ -64,12 +64,11 @@ const STRIKE_KINDS: Array[int] = [
 const CLAW_PIVOT := Vector3(0.1, 0.6, 0.36)
 ## v0.8.0 MI (the owner's models, posed in code): the walk is full at WALK_FULL_MPS (m/s on the ground), a stride
 ## WALK_HZ a second, the legs swing WALK_SWING (radians); a death lasts DEATH_SECONDS; the X-ray twin shrinks by
-## XRAY_GROW along its normals (m). Starting values.
+## (m). Starting values.
 const WALK_FULL_MPS := 2.0
 const WALK_HZ := 2.2
 const WALK_SWING := 0.3
 const DEATH_SECONDS := 0.4
-const XRAY_GROW := -0.02
 ## The Sniper's muzzle glow at full charge (emission energy; 0 when cold), and where it sits on the barrel.
 const MUZZLE_ENERGY := 4.0
 const MUZZLE_AT := Vector3(0.92, 0, 0)
@@ -95,7 +94,6 @@ var _muzzle_mat: ShaderMaterial
 ## (their glow is the seam and the heal crystal), steady.
 var _eye_mat: ShaderMaterial
 ## v0.8.0 HR: the X-ray pass the body's pieces carry (null without the xray technique).
-var _xray: Material
 ## v0.8.0 HR: this enemy's accent pieces (the glow) and muzzle, and the energies last set on them (the body plates
 ## and their flash: AvatarBase's _hit_pieces).
 var _glow_pieces: Array[GeometryInstance3D] = []
@@ -111,7 +109,7 @@ var _rise := 0.0
 var _wind := 0.0
 var _strike := 0.0
 var _outline := Color.BLACK
-var _technique := &"xray"
+var _technique := &"outline"
 ## v0.8.0 MI: each part's rest pivot, the walk's phase and pace (0..1, from how fast the node moves on screen), and
 ## the death (seconds in; -1: alive).
 var _rest := {}
@@ -162,7 +160,7 @@ func dying() -> bool:
 	return _die_t >= 0.0
 
 
-func setup(p_kind: int, outline_color: Color, technique: StringName = &"xray") -> void:
+func setup(p_kind: int, outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	kind = p_kind
 	_outline = outline_color
@@ -171,21 +169,13 @@ func setup(p_kind: int, outline_color: Color, technique: StringName = &"xray") -
 	body = Node3D.new()
 	add_child(body)
 	var glow := _col(&"eye")
-	_eye_mat = EnemyLooks.accent(glow, glow, 1.5, null)
+	_eye_mat = EnemyLooks.accent(glow, glow, 1.5)
 	if kind in [WorldReader.KIND_SPLITTER, WorldReader.KIND_SPLITLING]:
 		glow = ThemePalette.color(&"telegraph_hostile")
 	elif kind == WorldReader.KIND_MENDER:
 		glow = MEND
 	var owner_model := EnemyModels.get_model(model_id(kind))  # v0.8.0 MI: the owner's model first
-	if _technique == &"xray":
-		var team := ThemePalette.color(&"enemy_body")
-		_xray = (
-			EnemyLooks.xray(team, EnemyLooks.XRAY_SHRINK, 0.0)
-			if owner_model.is_empty()
-			else EnemyLooks.xray(team, 1.0, XRAY_GROW / maxf(float(owner_model["scale"]), 0.0001))
-		)
-	# The owner's model's accents carry the X-ray pass (its twin covered every surface); the code bodies' do not.
-	_glow_mat = EnemyLooks.accent(glow, glow, 1.5, _xray if not owner_model.is_empty() else null)
+	_glow_mat = EnemyLooks.accent(glow, glow, 1.5)
 	if not owner_model.is_empty():
 		_build_model(owner_model)
 		if kind == WorldReader.KIND_SPLITLING:
@@ -382,7 +372,7 @@ func _set_muzzle(e: float) -> void:
 ## _col(&"body")), the accents on the glowing accent material (`glow`). Both body materials take the hit flash and
 ## the biome's tint and role glow like the code bodies' plates (they were the "enemy_tex" materials); no drawn
 ## outline (owner v0.7.5 on his models: the stroke is ugly; v0.8.0 HR: the stencil is written straight, no empty
-## outline pass), and the X-ray pass shrinks along the normals (XRAY_GROW).
+## outline pass).
 func _build_model(m: Dictionary) -> void:
 	var tex: Texture2D = m["texture"]
 	var base := _body_material(Color.WHITE, tex, 0.0)
@@ -425,7 +415,7 @@ func _build_model(m: Dictionary) -> void:
 ## v0.8.0 HR: the shared body material for a plate of colour `c` (times `tex`, the owner's colour map, when given),
 ## outlined `outline_m` thick (AvatarBase.shared_body: the biome's cast and the role glow picked in).
 func _body_material(c: Color, tex: Texture2D, outline_m: float) -> ShaderMaterial:
-	return shared_body(kind, c, tex, _outline, outline_m, _xray)
+	return shared_body(kind, c, tex, _outline, outline_m)
 
 
 ## v0.8.0 MI: the model's parts in this frame's pose (model units, about a metre each; +X the front, each part turning
@@ -697,7 +687,7 @@ func _build_sniper() -> void:
 	_glow(barrel, Vector3(0.012, 0.05, 0.05), Vector3(0.115, 0.1, 0))
 	parts["barrel"] = barrel
 	# v0.8.0 TG: the muzzle that charges up through the windup (a small hot gem at the barrel's tip, in the air).
-	_muzzle_mat = EnemyLooks.accent(_col(&"eye"), _col(&"eye").lightened(0.3), 0.0, null)
+	_muzzle_mat = EnemyLooks.accent(_col(&"eye"), _col(&"eye").lightened(0.3), 0.0)
 	var muzzle := MeshInstance3D.new()
 	muzzle.name = "Muzzle"
 	muzzle.mesh = _shared_mesh(ArcCasterAvatar._octahedron(0.06))

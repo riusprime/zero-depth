@@ -16,7 +16,7 @@ func after_each() -> void:
 	ViewPrefs.reduced_motion = false
 
 
-func _avatar(cls: Variant, technique: StringName = &"xray") -> BossAvatar:
+func _avatar(cls: Variant, technique: StringName = &"outline") -> BossAvatar:
 	var a: BossAvatar = cls.new()
 	a.setup(Color("#1A1A22"), technique)
 	add_child_autofree(a)
@@ -126,7 +126,7 @@ func test_the_foundry_mesh_is_cut_into_four_legs_and_a_body() -> void:
 	assert_gt(counts.get(&"body", 0), verts.size() / 2, "the body is the rest")
 
 
-func test_the_models_are_flashable_outlined_textured_with_an_xray_twin() -> void:
+func test_the_models_are_flashable_outlined_textured_without_an_xray_twin() -> void:
 	for id in IDS:
 		var a := _avatar(classes[id])
 		assert_eq(a.body_materials.size(), 1)
@@ -137,11 +137,11 @@ func test_the_models_are_flashable_outlined_textured_with_an_xray_twin() -> void
 		assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "%s outlined" % id)
 		assert_eq(m.stencil_outline_thickness, 0.0, "%s: no drawn outline (owner, v0.7.5)" % id)
 		assert_not_null(m.albedo_texture, "%s keeps its texture" % id)
-		var twins := a.find_children("XrayTwin", "MeshInstance3D", true, false)
-		assert_eq(twins.size(), 1, "%s has its X-ray twin" % id)
-		assert_same((twins[0] as MeshInstance3D).skin, a.imported.skin, "on the same skeleton")
-		var o := _avatar(classes[id], &"outline")
-		assert_eq(o.find_children("XrayTwin", "MeshInstance3D", true, false).size(), 0)
+		assert_eq(
+			a.find_children("XrayTwin", "MeshInstance3D", true, false).size(),
+			0,
+			"%s: no X-ray twin" % id
+		)
 	assert_true(
 		(_avatar(HiveLensAvatar).body_materials[0] as StandardMaterial3D).normal_enabled,
 		"the Hive Lens keeps its normal map"

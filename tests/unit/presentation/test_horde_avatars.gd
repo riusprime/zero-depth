@@ -18,7 +18,7 @@ const KINDS := [
 
 func _avatar(kind: int) -> HordeAvatar:
 	var a := HordeAvatar.new()
-	a.setup(kind, Color.BLACK, &"xray")
+	a.setup(kind, Color.BLACK, &"outline")
 	add_child_autofree(a)
 	a.set_process(false)
 	return a
@@ -37,7 +37,7 @@ func _run(a: HordeAvatar, t0: int, state: int, ticks: int, healing := false) -> 
 func test_every_kind_is_built_flashable_and_outlined() -> void:
 	for kind: int in KINDS:
 		var a := HordeAvatar.new()
-		a.setup(kind, Color.BLACK, &"xray")
+		a.setup(kind, Color.BLACK, &"outline")
 		# v0.8.0 MI: an owner's model has two body materials (its frame, its role plates); a code body more.
 		var looks := a.body_looks()
 		assert_gt(looks.size(), 1 if a.has_model() else 2, "kind %d has a model" % kind)
@@ -46,9 +46,9 @@ func test_every_kind_is_built_flashable_and_outlined() -> void:
 		assert_eq(a.hit_look(), EnemyLooks.HIT_OFF, "kind %d: dark until flashed" % kind)
 		for m: ShaderMaterial in looks:
 			assert_eq(m.get_shader_parameter("emission_energy"), 0.0, "kind %d: no glow" % kind)
-			assert_not_null(EnemyLooks.xray_of(m), "kind %d: seen through walls" % kind)
-			var outlined := m.next_pass != EnemyLooks.xray_of(m)
-			assert_eq(outlined, not a.has_model(), "kind %d: code bodies outlined" % kind)
+			assert_eq(
+				m.next_pass != null, not a.has_model(), "kind %d: code bodies outlined" % kind
+			)
 		assert_eq(
 			a.find_children("XrayTwin", "MeshInstance3D", true, false).size(), 0, "no twin nodes"
 		)
@@ -240,7 +240,7 @@ func test_the_splitter_model_raises_its_claws_and_splits_on_death() -> void:
 ## v0.8.0 MI: the Shield Bearer's legs swing while it walks (its pace read from how fast its node moves).
 func test_the_shield_bearer_model_walks_on_its_legs() -> void:
 	var a := HordeAvatar.new()
-	a.setup(WorldReader.KIND_SHIELD_BEARER, Color.BLACK, &"xray")
+	a.setup(WorldReader.KIND_SHIELD_BEARER, Color.BLACK, &"outline")
 	var holder := Node3D.new()
 	add_child_autofree(holder)
 	holder.add_child(a)

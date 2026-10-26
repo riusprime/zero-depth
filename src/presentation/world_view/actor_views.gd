@@ -33,10 +33,10 @@ const ROLE_GLOW := 0.45
 ## v0.8.0 N1: the role glow's energy the views build with (ROLE_GLOW; the line-up shot script sweeps it, 0 = none).
 static var role_glow_energy := ROLE_GLOW
 
-## Occlusion technique under test: "outline" (rim only) or "xray" (rim + silhouette through walls).
+## Technique kept for callers: "outline" (rim only). The X-ray silhouette pass was removed in v0.9.5 PF1.
 ## v0.5.9: the floor's lighting mood; with one, the hero carries a small warm light (StageKit.hero_light).
 var hero_mood: BiomeMood
-var technique := &"xray"
+var technique := &"outline"
 ## How many frames a hit flashes the actor white (PRESENTATION §6, starting value).
 var flash_frames := 3
 var outline_color := Color("#1A1A22")
@@ -439,16 +439,8 @@ func _body_material(c: Color) -> StandardMaterial3D:
 	return flashable(mat)
 
 
-func _ghost_material(c: Color, team_c: Color) -> StandardMaterial3D:
-	var gm := StandardMaterial3D.new()
-	gm.albedo_color = c
-	gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-	gm.stencil_color = Color(team_c, 0.85)
-	return gm
-
-
-## A box body piece (and its X-ray twin): size, centre offset from the actor's feet (in the facing frame).
-func _piece(parent: Node3D, size: Vector3, at: Vector3, c: Color, team_c: Color) -> void:
+## A box body piece: size, centre offset from the actor's feet (in the facing frame).
+func _piece(parent: Node3D, size: Vector3, at: Vector3, c: Color, _team_c: Color) -> void:
 	var body := MeshInstance3D.new()
 	var box := BoxMesh.new()
 	box.size = size
@@ -460,15 +452,6 @@ func _piece(parent: Node3D, size: Vector3, at: Vector3, c: Color, team_c: Color)
 	var mats: Array = root.get_meta(&"mats", [])
 	mats.append(body.material_override)
 	root.set_meta(&"mats", mats)
-	if technique == &"xray":
-		var ghost := MeshInstance3D.new()
-		var gbox := BoxMesh.new()
-		gbox.size = size * 0.96
-		ghost.mesh = gbox
-		ghost.material_override = _ghost_material(c, team_c)
-		ghost.position = at
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(ghost)
 
 
 func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:

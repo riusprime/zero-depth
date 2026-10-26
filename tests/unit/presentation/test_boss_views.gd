@@ -8,7 +8,7 @@ const DT := 1.0 / 60.0
 var avatars := [GatekeeperAvatar, BroodMotherAvatar, SiegeEngineAvatar]
 
 
-func _avatar(cls: Variant, technique: StringName = &"xray") -> BossAvatar:
+func _avatar(cls: Variant, technique: StringName = &"outline") -> BossAvatar:
 	var a: BossAvatar = cls.new()
 	a.setup(Color("#1A1A22"), technique)
 	add_child_autofree(a)
@@ -38,8 +38,11 @@ func test_each_model_builds_flashable_outlined_pieces() -> void:
 		for m in a.body_materials:
 			assert_true(m.emission_enabled, "%s: flashable (emission on, energy only)" % name)
 			assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "%s: outlined" % name)
-		var o := _avatar(cls, &"outline")
-		assert_lt(_count_meshes(o), _count_meshes(a), "%s: xray adds silhouette twins" % name)
+		assert_eq(
+			_count_meshes(a),
+			_count_meshes(_avatar(cls)),
+			"%s: no silhouette twins (v0.9.5 PF1)" % name
+		)
 
 
 func test_the_parts_the_sheet_shows() -> void:

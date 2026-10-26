@@ -41,7 +41,7 @@ var _armed := 1.0
 var _fuse := 0.0
 
 
-func setup(outline_color: Color, technique: StringName = &"xray") -> void:
+func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var team := ThemePalette.color(&"enemy_body")
 	# The ground shadow: a dark, soft disc right under the drone (it stays on the ground).

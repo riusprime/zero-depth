@@ -43,7 +43,7 @@ var _charge := 0.0
 var _kick := 0.0
 
 
-func setup(outline_color: Color, technique: StringName = &"xray") -> void:
+func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var team := ThemePalette.color(&"enemy_body")
 	var red := EnemyPalettes.color(KIND, &"body")
