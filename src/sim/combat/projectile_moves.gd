@@ -20,7 +20,7 @@ const CLEARANCE_M := 0.02
 
 
 ## Projectile `pi` just spawned (World._apply_spawns): its spec's behaviours into the store's columns.
-static func on_spawn(w: World, pi: int) -> void:
+static func on_spawn(w: World, pi: int, extra_pierce: int = 0) -> void:
 	var p := w.projectiles
 	if p.team[pi] != ActorStore.TEAM_PLAYER or p.spec_key[pi] == "":
 		return
@@ -28,7 +28,7 @@ static func on_spawn(w: World, pi: int) -> void:
 	if (
 		s == null
 		or (
-			s.pierce <= 0
+			s.pierce + extra_pierce <= 0
 			and s.returns <= 0
 			and s.homing <= 0
 			and s.orbit_ticks <= 0
@@ -38,7 +38,7 @@ static func on_spawn(w: World, pi: int) -> void:
 		return
 	p.moves = true
 	GunForms.on_spawn(w, pi, s)  # v0.6.5 WN3: before the orbit, so life0 counts the mine's wait
-	p.pierce_left[pi] = s.pierce
+	p.pierce_left[pi] = s.pierce + extra_pierce  # v0.9.5 WB: the Wisps' shots pierce one more
 	p.ret[pi] = 1 if s.returns > 0 else 0
 	p.home[pi] = s.homing
 	p.speed[pi] = Kin.length(Vector2(p.vel_x[pi], p.vel_y[pi]))

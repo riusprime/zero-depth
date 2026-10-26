@@ -1,7 +1,7 @@
 extends GutTest
 ## v0.9.0 AF3 (owner Q7; ATTACK_FORMS.md F10 "Orbs circle you and fire on their own at the nearest enemy while you aim
-## and fire too … 3 wisps, each a 40 % orb every 0.6 s", every pattern and secondary off, elements all): the Wisps form.
-## Three wisps circle the hero; each fires a 40 % orb every 0.6 s (staggered) at the nearest enemy it can see, SHOOT
+## and fire too … 3 wisps, each an 80 % orb every 0.6 s", every pattern and secondary off, elements all): the Wisps form.
+## Three wisps circle the hero; each fires an 80 % orb every 0.6 s (staggered) at the nearest enemy it can see, SHOOT
 ## held or not; no enemy, no shot; the hero's own orbs are unchanged; the elements ride the wisps' orbs; the caps hold;
 ## its row; deterministic with no state of its own; its DPS over the orbs (reported, see WAVE_WISPS.md).
 
@@ -40,7 +40,7 @@ func test_the_card_brings_three_wisps_and_keeps_the_orbs() -> void:
 	var s := Modifiers.bolt(w)
 	var orb := Modifiers.bolt(W.world(&"gun"))
 	assert_true(Wisps.is_wisps(s))
-	assert_eq([s.wisps, s.wisp_ticks, s.wisp_permille], [3, 36, 400], "3 wisps, every 0.6 s, 40 %")
+	assert_eq([s.wisps, s.wisp_ticks, s.wisp_permille], [3, 36, 800], "3 wisps, every 0.6 s, 80 %")
 	assert_eq(
 		[s.form, s.damage, s.period_ticks, s.count, s.speed, s.life_ticks],
 		[orb.form, orb.damage, orb.period_ticks, orb.count, orb.speed, orb.life_ticks],
@@ -67,14 +67,14 @@ func test_the_wisps_circle_the_hero_evenly() -> void:
 
 
 func test_they_fire_on_their_own_at_the_nearest_enemy() -> void:
-	var w := _world([], [Vector2(4.0, 0.0), Vector2(8.0, 0.0)])
+	var w := _world([], [Vector2(4.0, 0.0), Vector2(-8.0, 0.0)])
 	W.run(w, 360, 0, 0)
 	var near := _dealt(w, 1)
 	assert_eq(_dealt(w, 2)[0], 0, "the nearer enemy draws them all")
 	assert_between(
 		near[0], 28, 30, "3 wisps × 10 shots in 6 s, SHOOT never held (the last in flight)"
 	)
-	assert_eq(near[1], near[0] * 2, "each 40 % of 5")
+	assert_eq(near[1], near[0] * 4, "each 80 % of 5")
 	var none := _world([], [])
 	W.run(none, 120, 0, 0)
 	assert_eq(none.projectiles.size(), 0, "no enemy, no shot")
@@ -118,7 +118,7 @@ func test_the_hero_fires_too_and_the_wisps_add_damage() -> void:
 			)
 		)
 	)
-	assert_gt(ratio, 1.2, "the orbs plus three wisps' 40 % orbs")
+	assert_gt(ratio, 1.2, "the orbs plus three wisps' 80 % orbs")
 	var idle := _world([], [Vector2(4.0, 0.0)])
 	W.run(idle, 1800, 0, 0)
 	var alone := _dealt(idle, 1, 120, 1800)
@@ -224,3 +224,34 @@ func test_the_wisps_replace_the_other_forms() -> void:
 		assert_false(w.items_owned.has(o), "the Wisps and %s never coexist" % other)
 		assert_eq(AttackSlots.form_id(w), &"wisps")
 		assert_true(Wisps.is_wisps(Modifiers.bolt(w)))
+
+
+## v0.9.5 WB (owner Q13): a wisp's shot pierces one enemy: it passes the first and hits the second in line.
+func test_a_wisp_shot_pierces_one_enemy() -> void:
+	var w := _world([], [Vector2(4.0, 0.0), Vector2(6.0, 0.0), Vector2(8.0, 0.0)])
+	W.run(w, 240, 0, 0)
+	var first := _dealt(w, 1)
+	var second := _dealt(w, 2)
+	var third := _dealt(w, 3)
+	assert_gt(second[0], 0, "the second in line is hit through the first")
+	assert_eq(third[0], 0, "one pierce only: the third is not")
+	assert_gte(first[0], second[0], "the first is hit by every shot")
+
+
+func test_only_the_wisps_shots_get_the_extra_pierce() -> void:
+	var o := _world([], [Vector2(4.0, 0.0)], true)
+	W.run(o, 30, 0, W.S)
+	assert_gt(o.projectiles.size(), 0)
+	for i in o.projectiles.size():
+		assert_eq(o.projectiles.pierce_left[i], 0, "the orbs' own shots do not pierce")
+	var w := _world([], [Vector2(4.0, 0.0)])
+	W.run(w, 40, 0, W.S)
+	var piercing := 0
+	var plain := 0
+	for i in w.projectiles.size():
+		if w.projectiles.pierce_left[i] == 1:
+			piercing += 1
+		elif w.projectiles.pierce_left[i] == 0:
+			plain += 1
+	assert_gt(piercing, 0, "the wisps' shots pierce one")
+	assert_gt(plain, 0, "the hero's own shots do not")

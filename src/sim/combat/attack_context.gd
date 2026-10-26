@@ -39,6 +39,8 @@ var secondary := false
 var radius_m := 0.0
 ## v0.6.5 WN3: a charged shot's bolts are this much bigger (per mille of the spec's radius; G13 Charge).
 var size_permille := 1000
+## v0.9.5 WB (owner Q13): this launch's bolts pierce this many more enemies than the spec (the Wisps' shots: 1).
+var extra_pierce := 0
 var on_landed := Callable()
 var on_ray := Callable()
 

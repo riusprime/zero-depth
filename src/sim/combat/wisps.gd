@@ -20,6 +20,8 @@ const ORBIT_TICKS := 150
 const SHOT_SIZE_PERMILLE := 650
 ## A wisp's orb leaves this far from the wisp (m).
 const MUZZLE_M := 0.12
+## v0.9.5 WB (owner Q13): a wisp's shot passes through this many enemies (on top of the build's pierce).
+const EXTRA_PIERCE := 1
 
 
 ## `s` brings the wisps.
@@ -99,6 +101,7 @@ static func _fire(w: World, spec: AttackSpec, from: Vector2, to: Vector2) -> voi
 	ctx.repeat = true  # no root launch: no Echo, no Ascension, no Backfire
 	ctx.size_permille = SHOT_SIZE_PERMILLE
 	ctx.muzzle_m = MUZZLE_M
+	ctx.extra_pierce = EXTRA_PIERCE
 	Attacks.launch(w, spec, ctx)
 
 
