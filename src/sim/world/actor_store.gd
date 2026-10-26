@@ -94,7 +94,11 @@ const FLOAT_FIELDS: Array[StringName] = [
 	&"pos_x", &"pos_y", &"radius", &"lock_x", &"lock_y", &"lock_len", &"jitter_x", &"jitter_y"
 ]
 ## Every int and every float column, in that order: add and remove_sorted walk them (concatenated once, not per call).
-const ALL_INT_FIELDS := INT_FIELDS + STATUS_FIELDS + AI_FIELDS + VENOM_FIELDS + ELEMENT_FIELDS
+## v0.9.5 EE3 (ElementPairs): ticks until a Toxic Fumes cloud can poison this enemy again; hashed while a pair is on.
+const PAIR_FIELDS: Array[StringName] = [&"gas_cd"]
+const ALL_INT_FIELDS := (
+	INT_FIELDS + STATUS_FIELDS + AI_FIELDS + VENOM_FIELDS + ELEMENT_FIELDS + PAIR_FIELDS
+)
 const ALL_FLOAT_FIELDS := FLOAT_FIELDS + AI_FLOAT_FIELDS
 
 var ids := PackedInt32Array()
@@ -163,6 +167,7 @@ var poison_cd := PackedInt32Array()
 var poison_jump_cd := PackedInt32Array()
 var bleed_x := PackedInt32Array()
 var bleed_y := PackedInt32Array()
+var gas_cd := PackedInt32Array()
 
 
 func size() -> int:
@@ -248,6 +253,12 @@ func hash_ai(h: StateHasher) -> void:
 ## v0.6.0 MX4: the poison columns (Venom), in VENOM_FIELDS order.
 func hash_venom(h: StateHasher) -> void:
 	for f in VENOM_FIELDS:
+		h.add_ints(get(f))
+
+
+## v0.9.5 EE3: the pair columns (ElementPairs), in PAIR_FIELDS order.
+func hash_pair(h: StateHasher) -> void:
+	for f in PAIR_FIELDS:
 		h.add_ints(get(f))
 
 

@@ -148,6 +148,8 @@ static func shatter(w: World, target: int, dmg: int, tags: int, effect_id: Strin
 	if not _room(w, false, t.el_shatters_per_second):
 		return
 	a.frozen_t[target] = 0
+	if w.pair_mask != 0:
+		ElementPairs.on_frozen_end(w, target)  # v0.9.5 EE3: Brittle
 	var pid := a.ids[0]
 	var from := a.pos(target)
 	var root := w.take_root()

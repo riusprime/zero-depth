@@ -220,11 +220,14 @@ static func add_burn(w: World, i: int, n: int, root: int, effect: StringName) ->
 	var m := w.item_mods
 	if m.burn_max_stacks <= 0 or a.dead[i] == 1 or n <= 0:
 		return
-	if a.burn_stacks[i] == 0:
+	var lit := a.burn_stacks[i] == 0
+	if lit:
 		a.burn_cd[i] = m.burn_period_ticks
 	a.burn_stacks[i] = mini(a.burn_stacks[i] + n, m.burn_max_stacks)
 	a.burn_t[i] = Affinities.burn_ticks(w, m.burn_duration_ticks)  # v0.9.0 RB: A1 Ember
 	_status(w, i, root, a.burn_stacks[i], effect)
+	if lit and w.pair_mask != 0:
+		ElementPairs.on_burn_start(w, i)  # v0.9.5 EE3: Toxic Fumes
 	thermal_break(w, i, root)  # v0.8.0 RM: fire on a chilled enemy
 
 
@@ -384,7 +387,9 @@ static func tick_statuses(w: World) -> void:
 				Damage.tick_dot(
 					w,
 					i,
-					ElementLevels.bleed_tick(w, i, m.bleed_damage * a.bleed_stacks[i]),
+					ElementPairs.bleed_tick(
+						w, i, ElementLevels.bleed_tick(w, i, m.bleed_damage * a.bleed_stacks[i])  # v0.9.5 EE3: Boiling Blood
+					),
 					a.ids[0],
 					a.ids[0],
 					EFFECT_BLEED

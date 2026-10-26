@@ -44,6 +44,7 @@ const WORLD_KEPT := {
 	&"wand_table": "loadout",  # v0.6.5 WN1
 	&"blade_table": "loadout",  # v0.6.5 WN4
 	&"slot_table": "loadout",  # v0.9.0 AS
+	&"pair_table": "loadout",  # v0.9.5 EE3
 	&"elite_rules": "loadout",  # v0.9.0 EL
 	&"ice": "loadout (v0.7.5 NB1: IcePatches lays it from the floor seed)",
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
@@ -181,6 +182,9 @@ const ADDED_SINCE_V05 := {
 		&"el_chain_hits",  # v0.9.5 EE2 (Lightning's Overcharge count, the strike and shatter budgets; padded as new)
 		&"el_strike_log",
 		&"el_shatter_log",
+		&"pair_mask",  # v0.9.5 EE3 (the element pairs on, their budget and clouds; an older save has none)
+		&"pair_log",
+		&"pair_clouds",
 		&"mod_slots",
 		&"swap_code",
 		&"swap_source",
@@ -322,7 +326,15 @@ const ADDED_SINCE_V05 := {
 	# v0.6.0 MX4 (Venom; padded with 0); v0.9.5 EE1 (the element columns, padded with 0)
 	&"ActorStore":
 	# v0.8.0 FB2: the final fight's centre and damage meter (an FB1 save has neither: the base's, a fresh meter)
-	[&"poison_stacks", &"poison_t", &"poison_cd", &"poison_jump_cd", &"bleed_x", &"bleed_y"],
+	[
+		&"poison_stacks",
+		&"poison_t",
+		&"poison_cd",
+		&"poison_jump_cd",
+		&"bleed_x",
+		&"bleed_y",
+		&"gas_cd",  # v0.9.5 EE3
+	],
 	# v0.8.0 FB3: the mimic body's state (an FB2 save has none: a fresh one, the build read at the Nemesis's next tick)
 	&"FinalFight":
 	[
@@ -654,6 +666,9 @@ static func _pad_added(w: World) -> void:
 		nil.fill(0)
 		for f in ActorStore.ELEMENT_FIELDS:
 			a.set(f, nil.duplicate())
+	if a.gas_cd.size() != a.ids.size():  # v0.9.5 EE3: an older save's actors carry no gas clock
+		a.gas_cd.resize(a.ids.size())
+		a.gas_cd.fill(0)
 	var s := w.ab
 	while s.bomb_spec.size() < s.bomb_pos.size():
 		s.bomb_spec.append("")

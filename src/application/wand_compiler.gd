@@ -117,3 +117,28 @@ static func compile_slots(def: AttackSlotsDefinition, items: Array[ItemTable]) -
 		if String(r.card).is_empty() and t.default_form < 0:
 			t.default_form = t.form_ids.size() - 1
 	return t
+
+
+## v0.9.5 EE3: the element pairs' numbers (data/combos/element_pairs.tres), or null without the data (a lab: no pairs).
+static func pairs(repo: ContentRepository) -> ElementPairTable:
+	var def := repo.get_def(&"element_pairs", &"element_pairs") as ElementPairsDefinition
+	if def == null:
+		return null
+	var t := ElementPairTable.new()
+	t.triggers_per_second = def.triggers_per_second
+	t.burst_permille = def.burst_permille
+	t.burst_radius_m = def.burst_radius_m
+	t.cloud_radius_m = def.cloud_radius_m
+	t.cloud_ticks = SimTick.seconds_to_ticks(def.cloud_seconds)
+	t.cloud_stacks = def.cloud_stacks
+	t.cloud_gap_ticks = SimTick.seconds_to_ticks(def.cloud_gap_seconds)
+	t.arc_burn_stacks = def.arc_burn_stacks
+	t.arc_poison_stacks = def.arc_poison_stacks
+	t.arc_bleed_stacks = def.arc_bleed_stacks
+	t.boil_permille = def.boil_permille
+	t.circuit_permille = def.circuit_permille
+	t.ice_slow_permille = def.ice_slow_permille
+	t.brittle_radius_m = def.brittle_radius_m
+	t.sepsis_stacks = def.sepsis_stacks
+	t.sepsis_permille = def.sepsis_permille
+	return t

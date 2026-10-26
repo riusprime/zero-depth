@@ -115,6 +115,8 @@ func test_item_and_combo_plaques_fit_in_english_and_spanish() -> void:
 				grown.append("%s %s %d" % [lang, r.id, card.plaque_height()])
 			assert_gte(card.desc_size, MIN_TEXT, "%s %s: sentence size" % [lang, r.id])
 		for r in _defs(["res://data/combos"]):
+			if not r is ComboDefinition:  # v0.9.5 EE3: element_pairs.tres is the pairs' numbers (test_pair_banner)
+				continue
 			var a: StringName = r.item_a if r.item_a != &"" else r.ability_a
 			var b: StringName = r.item_b if r.item_b != &"" else r.ability_b
 			combo.show_combo(r.id, a, b, tr(r.name_key), tr(r.desc_key), tr("UI_COMBO_UNLOCKED"))

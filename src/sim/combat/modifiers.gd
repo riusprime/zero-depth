@@ -158,7 +158,9 @@ static func ability(w: World, t: AbilityTable) -> AttackSpec:
 
 
 static func compile(w: World) -> AttackBook:
-	return compile_for(w, build_modifiers(w))
+	var b := compile_for(w, build_modifiers(w))
+	ElementPairs.refresh(w)  # v0.9.5 EE3: the element pairs follow the cards' levels
+	return b
 
 
 ## The book of `w`'s player table with `mods` (in this order) and w's riders. Tests compile any list with it.

@@ -39,7 +39,8 @@ static func tick(w: World) -> void:
 	for i in range(1, a.size()):
 		if a.poison_stacks[i] == 0:
 			continue
-		a.poison_t[i] -= 1
+		if not (w.pair_mask != 0 and ElementPairs.poison_holds(w, i)):  # v0.9.5 EE3: Black Ice
+			a.poison_t[i] -= 1
 		a.poison_cd[i] -= 1
 		if a.poison_cd[i] <= 0:
 			a.poison_cd[i] = m.poison_period_ticks
@@ -57,6 +58,7 @@ static func tick(w: World) -> void:
 			a.poison_stacks[i] = 0
 			a.poison_cd[i] = 0
 	ElementLevels.tick_contagion(w)  # v0.9.5 EE1: Venom Lv 2, Contagion
+	ElementPairs.tick(w)  # v0.9.5 EE3: Toxic Fumes' clouds
 
 
 ## Enemy `i` died (Damage._apply, a kill the player owns) under root `root`: its poison spreads.

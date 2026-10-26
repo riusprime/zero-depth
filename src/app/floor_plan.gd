@@ -174,6 +174,7 @@ func _build_world() -> void:
 	w.wand_table = WandCompiler.for_run(repo, run.table)  # v0.6.5 WN1; v0.9.0 FV: 4 → 8 over five floors
 	w.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4: the Blade pool's runner numbers
 	w.slot_table = WandCompiler.slots(repo, w.item_tables)  # v0.9.0 AS: slot limits, caps, compatibility
+	w.pair_table = WandCompiler.pairs(repo)  # v0.9.5 EE3: the element pairs' numbers
 	w.ability_tables = ContentCompiler.compile_abilities(repo)  # v0.4.0 BS: the four slots,
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)  # the stat cards,
 	w.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB

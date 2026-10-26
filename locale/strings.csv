@@ -1370,3 +1370,24 @@ UI_CODEX_TAB_COLLECTIBLES,Collectibles,Coleccionables
 PROGRESSION_REVEALED,Revealed: %s. Wear it at the Wardrobe.,Revelada: %s. Póntela en el Vestidor.
 CAPTION_STRESS_BREAK,[weak point],[punto débil]
 RUN_SUMMARY_LOOPED,Looped ×%d,Bucles ×%d
+UI_PAIR_ON,Element pair,Par elemental
+PAIR_THERMAL_SHOCK,Thermal Shock,Choque Térmico
+PAIR_THERMAL_SHOCK_DESC,A foe burning and frozen bursts for x3 when hit.,Un enemigo ardiendo y helado estalla x3 al golpearlo.
+PAIR_TOXIC_FUMES,Toxic Fumes,Humos Tóxicos
+PAIR_TOXIC_FUMES_DESC,A poisoned foe catching fire leaves a gas cloud.,Un envenenado que arde deja una nube de gas.
+PAIR_IGNITION_ARC,Ignition Arc,Arco Ígneo
+PAIR_IGNITION_ARC_DESC,Chain jumps set enemies on fire.,Los saltos de cadena prenden fuego.
+PAIR_BOILING_BLOOD,Boiling Blood,Sangre Hirviente
+PAIR_BOILING_BLOOD_DESC,Bleed ticks on burning enemies deal double.,El sangrado en enemigos ardiendo hace doble.
+PAIR_COLD_CIRCUIT,Cold Circuit,Circuito Gélido
+PAIR_COLD_CIRCUIT_DESC,Chains seek frozen enemies and hit them double.,Las cadenas buscan helados y les hacen doble.
+PAIR_BLACK_ICE,Black Ice,Hielo Negro
+PAIR_BLACK_ICE_DESC,Poisoned foes slow 20% more; frozen: poison holds.,Envenenados 20% más lentos; helados: el veneno dura.
+PAIR_BRITTLE,Brittle,Quebradizo
+PAIR_BRITTLE_DESC,A frozen foe shattered or dead bursts its bleed.,Un helado roto o muerto estalla su sangrado.
+PAIR_NEUROTOXIN,Neurotoxin,Neurotoxina
+PAIR_NEUROTOXIN_DESC,Chain jumps carry 1 poison stack.,Los saltos de cadena llevan 1 veneno.
+PAIR_ARTERIAL_ARC,Arterial Arc,Arco Arterial
+PAIR_ARTERIAL_ARC_DESC,Chain jumps make enemies bleed.,Los saltos de cadena hacen sangrar.
+PAIR_SEPSIS,Sepsis,Sepsis
+PAIR_SEPSIS_DESC,3+ poison and 3+ bleed stacks: +20% damage taken.,3+ de veneno y de sangrado: recibe +20% de daño.
