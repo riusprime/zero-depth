@@ -270,5 +270,3 @@ func test_the_last_leap_aims_where_the_hero_is_going_and_the_others_where_they_a
 	assert_almost_eq(BossHard.leap_radius(w, b, atk), 2.64, 0.0001)
 	w.bosses.step[b] = 1
 	assert_almost_eq(BossHard.leap_radius(w, b, atk), 2.2, 0.0001)
-
-
