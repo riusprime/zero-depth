@@ -226,3 +226,95 @@ func _first(b: Breakables, kinds: Array, from: int = 0) -> int:
 		if b.kind[k] in kinds and b.broken[k] == 0:
 			return k
 	return -1
+
+
+## v0.9.5 BK: drives the hero at prop i from 2 m west along +x for 90 ticks; how close its centre came.
+func _walk_into(w: World, i: int) -> float:
+	var b := w.breakables
+	w.actors.set_pos(0, b.pos[i] + Vector2(-2.0, 0.0))
+	w.vel = Vector2.ZERO
+	var closest := 1.0e9
+	for t in 90:
+		w.step(InputFrame.make(Vector2i(127, 0), 0, 100, 0, 0))
+		closest = minf(closest, (w.player_pos() - b.pos[i]).length())
+	return closest
+
+
+func test_unbroken_props_are_solid_and_open_when_broken() -> void:
+	var w := CrackLab.world(&"blade", false)
+	assert_not_null(w)
+	if w == null:
+		return
+	var b := w.breakables
+	var seen := {}
+	for i in b.pos.size():
+		var kd: int = b.kind[i]
+		if seen.has(kd) or b.broken[i] == 1:
+			continue
+		# a lone prop: the walls and the other solids cleared
+		w.set_walls([] as Array[Obb])
+		w.solids = Solids.new()
+		w.solids.on = true
+		b.make_solid(w, i)
+		w.step(InputFrame.new())
+		var half := (
+			Breakables.CRATE_HALF_M if kd == Breakables.Kind.CRATE else Breakables.ROUND_HALF_M
+		)
+		var closest := _walk_into(w, i)
+		assert_gte(
+			closest,
+			w.actors.radius[0] + half - 0.05,
+			"kind %d stops the hero (%.2f)" % [kd, closest]
+		)
+		assert_eq(b.broken[i], 0, "walking into it breaks nothing")
+		if kd != Breakables.Kind.EXPLOSIVE:
+			Breakables.hit(w, i)
+			assert_eq(w.solids.find(Solids.Kind.BREAKABLE, i), -1, "broken: no footprint")
+			_walk_into(w, i)
+			assert_gt(w.player_pos().x, b.pos[i].x + 0.5, "broken: the hero walks through")
+		seen[kd] = true
+	assert_gte(seen.size(), 1)
+
+
+func test_a_bolt_still_hits_and_breaks_a_solid_prop() -> void:
+	var w := CrackLab.world(&"gun", false)
+	assert_not_null(w)
+	if w == null:
+		return
+	var b := w.breakables
+	var i := _first(b, [Breakables.Kind.CRATE, Breakables.Kind.URN, Breakables.Kind.BARREL])
+	assert_gte(i, 0)
+	if i < 0:
+		return
+	assert_gte(w.solids.find(Solids.Kind.BREAKABLE, i), 0, "it stands as a footprint")
+	w.set_walls([] as Array[Obb])
+	var at: Vector2 = b.pos[i]
+	var from := at + Vector2(-3.0, 0.0)
+	w.projectiles.add(
+		w.take_id(), w.actors.ids[0], ActorStore.TEAM_PLAYER, from, Vector2(0.5, 0.0), 0.1, 60
+	)
+	for t in 20:
+		w.step(InputFrame.new())
+		if b.broken[i] == 1:
+			break
+	assert_eq(b.broken[i], 1, "a player bolt broke it: its footprint does not stop shots")
+
+
+func test_no_prop_within_one_and_a_half_metres_of_a_doorway() -> void:
+	var repo := ContentRepository.load_all()
+	var kept := 0
+	var dropped := 0
+	var before := 0
+	for s in range(1, 101):
+		var w := RunLab.new(repo, s, &"blade").floor_world()
+		Breakables.setup(w, CrackLab.rules(false), false)  # the placement before BK
+		before += w.breakables.pos.size() if w.breakables != null else 0
+		Breakables.setup(w, CrackLab.rules(false), true)
+		if w.breakables != null:
+			kept += w.breakables.pos.size()
+			dropped += w.breakables.dropped
+			for q in w.breakables.pos:
+				for d in w.floor_layout.door_centers:
+					assert_gte((q - d).length(), Breakables.DOOR_CLEAR_M, "seed %d" % s)
+	gut.p("BK| seeds=100 before=%d kept=%d dropped=%d" % [before, kept, dropped])
+	assert_eq(kept + dropped, before, "the draws are unchanged: only drops")

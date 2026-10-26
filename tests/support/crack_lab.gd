@@ -18,7 +18,7 @@ static func world(build: StringName = &"blade", crack: bool = true, first_seed: 
 	for s in range(first_seed, first_seed + 80):
 		var lab := RunLab.new(repo, s, build)
 		var w := lab.floor_world()
-		Breakables.setup(w, rules(crack))
+		Breakables.setup(w, rules(crack), true)
 		if w.breakables == null or (crack and not w.breakables.has_crack()):
 			continue
 		w.actors.invuln[0] = LONG
