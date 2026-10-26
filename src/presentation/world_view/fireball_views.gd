@@ -590,6 +590,16 @@ func _draw(f: float) -> void:
 	_light_wants.clear()
 	for key in _drawn:
 		var ids: PackedInt32Array = _drawn[key]
+		# PF2: a look with nothing in the air now and nothing drawn last time has nothing to write (its three
+		# MultiMeshes already show 0 instances)
+		if (
+			ids.is_empty()
+			and not _lobs.has(key)
+			and not _rain.has(key)
+			and int(_balls.get(key, 0)) == 0
+			and int(_trails.get(key, 0)) == 0
+		):
+			continue
 		var look := look_of(key)
 		var cores := PackedFloat32Array()
 		var edges := PackedFloat32Array()

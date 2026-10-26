@@ -2362,6 +2362,19 @@ func actor_frozen(actor_i: int) -> bool:
 	return Engines.frozen(_w, actor_i)
 
 
+## v0.9.5 PF2: actor i carries any status the status view draws (one call instead of six for the common none).
+func any_status(actor_i: int) -> bool:
+	var a := _w.actors
+	return (
+		a.burn_stacks[actor_i] > 0
+		or a.shock_stacks[actor_i] > 0
+		or a.bleed_stacks[actor_i] > 0
+		or a.frost_stacks[actor_i] > 0
+		or (actor_i < a.poison_stacks.size() and a.poison_stacks[actor_i] > 0)
+		or Engines.frozen(_w, actor_i)
+	)
+
+
 ## v0.9.5 EE2: Fire's Heat sync (`fire`) or Frost's Shatter runs (the card is Lv 3): the status pip's "+" shows.
 func element_plus(fire: bool) -> bool:
 	return (
@@ -2806,6 +2819,29 @@ func weapon_id() -> StringName:
 		if _w.ability_tables[idx].start_weapon != 0:
 			return _w.ability_tables[idx].id
 	return &""
+
+
+## v0.9.5 PF2: whether the hero holds any ability (the weapon is one of them).
+func has_abilities() -> bool:
+	return not _w.ability_owned.is_empty()
+
+
+## v0.9.5 PF2: a cheap number that changes whenever the HUD's build pips would: the wand's cards and their levels, its
+## size, the weapon form, and the abilities held. The HUD rewrites the pips only when it changes.
+func pips_key() -> int:
+	var levels := PackedInt32Array()
+	for s in _w.mod_slots.size():
+		levels.append(BuildSlots.level_at(_w, s))
+	return hash(
+		[
+			_w.mod_slots,
+			levels,
+			Wand.slots(_w),
+			PlayerBuild.has_gun(_w),
+			PlayerBuild.has_blade(_w),
+			_w.ability_owned
+		]
+	)
 
 
 func utility_id() -> StringName:

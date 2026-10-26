@@ -158,3 +158,79 @@ the first cut. The rising object count is worth a look. Next: PF2 profiles the m
 To be filled by the lead from a run on an idle machine: the exact command, the raw `build/perf/<sha>_<biome>.txt`
 output and the build SHA ([`TEMPLATES.md`](../../../process/TEMPLATES.md) section 3), for Frozen Shore and Red
 Canyon, then the A/B runs per flag. Target: every frame under 6.94 ms, judged on the 1 % lows.
+
+## PF2: main-thread cuts
+
+Step PF2 of v0.9.5. Base: `claude/v095-feedback` at `2427d296`. Machine: the owner's PC (RTX 3060) while other Godot
+windows and test runs of other agents were using it, so every absolute number below is **machine possibly busy, not
+evidence**. Only back-to-back ratios are quoted; the lead takes the owner-PC numbers. `fight_bench.gd` was NOT written:
+the sim's phases are already measured in the renderer run through `World.phase_probe`, so the real scene needed no
+second harness.
+
+### The tool (`frame_probe.gd --breakdown`, `--process`)
+
+`--breakdown` adds per frame (mean, p99, mean over the frames the bucket ran, frames it ran in; microseconds) the
+buckets: `step_once` (the physics tick: input, `sim_step`, `ticked_all`), `sim_step` (`World.step`) with its phases
+(`World.phase_probe`), `ticked_all` split per `SimDriver.ticked` listener (`tick.<script>.<method>`), `sync_all` and
+`view.<name>` (each view's sync, via `WorldViewRoot.profile_sync`), `sync.occlusion`, and the frame's three engine
+slices `frame.scene_process` (probe `_process` to `frame_pre_draw`), `frame.draw_pre_to_post`, `frame.rest_after_draw`.
+`PerfMarks` (`src/presentation/perf_marks.gd`) is the static helper: one bool check when off. `--process` takes every
+node's `_process` off the engine and times it from the probe, per script. `--ab=no_interp` turns physics interpolation
+off. The per-second samples gained `resources` and `orphan_nodes`.
+
+### Where a frame goes (Red Canyon, 15 s, one run, before any cut, busy machine)
+
+```
+frames=999 avg_ms=15.0 (66 fps)
+step_once            6200 us/frame  (ran in 838 of 999 frames: ~60 Hz ticks in ~67 fps frames)
+  sim_step           1596   (ai 319, move 296, proj 289 [sweep 234], nav_flood 269 [1054 on its 255 ticks], dash_abilities 153)
+  ticked_all         4557
+    view sync        3385   (actors 906, fireballs 207, attack_forms 154, status_fx 145, telegraphs 144, spikes 105, signatures 100, ~55 more views at 30-90 each)
+    HUD (Playground) 1068   (build_hud 666 alone)
+frame.scene_process  2907   (script _process of all nodes is under ~1000 of it; physics interpolation off: no change)
+frame.draw_pre_to_post 3022
+frame.rest_after_draw  2885
+```
+
+Reading: the 60 Hz tick (sim + view sync + HUD) is about 6.2 ms of a 15 ms frame; the engine's scene process, the draw and
+the present are about 9 ms and are not script work I can cut (render CPU 1.5 ms, GPU 3.9 ms from the same run). The
+view sync is a long tail: about 60 views at 30-200 us each, each looping every actor through `WorldReader` calls
+(about 1 us a call in GDScript), even when its feature is idle (a boss view in a room with no boss). The 144 fps target
+is NOT reachable by these cuts.
+
+### Cuts
+
+1. `src/presentation/hud/build_hud.gd` (+ `WorldReader.pips_key()`, `has_abilities()`): the build pips were rewritten
+   every tick (`reader.build()`, `wand()`, `abilities()` allocate and parse every card; each pip write redraws a stone
+   box; `_place()` re-lays the row). Now a cheap key (cards, levels, wand size, weapon form, abilities held, locale)
+   gates all of it; the plate is re-placed only when the key or the anchor moved. `build_hud` 666 -> 24 us/tick; the
+   Playground HUD tick (`_on_playground_tick`) 1068 -> 384 us (same session, two runs).
+2. `src/presentation/world_view/fireball_views.gd`: `_draw` skips a look that has nothing in the air and drew nothing
+   last time (3 MultiMesh writes per idle look per tick). `view.fireballs` about 245 -> 146-202 us.
+3. `src/presentation/world_view/status_visuals.gd` (+ `WorldReader.any_status(i)`): one call replaces six per statusless
+   enemy. `view.status_fx` about 200 -> 156-170 us.
+
+Back-to-back A/B of cuts 2 and 3 (and 1) in alternating runs (before1/after1 ... before3/after3; after1 overlapped a
+second probe window and is discarded): frame avg 17.6 / 17.9 / 16.8 ms before vs 15.1 / 13.6 ms after (after1 discarded).
+Per-view numbers move with the machine load (`sim_step`, unchanged code, ranged 1.4-2.2 ms between runs), so read them as
+direction only. Not done (checked, left): memoising `reader.telegraph(i)` (all 10 callers together cost about 220 us and
+a memo could go stale inside a tick in tests), a per-kind actor index for the boss views, the hero avatar's 22-key state
+dictionary (about 100 us), `ActorViews._update_actor`'s property writes. These are the next candidates.
+
+### Object count (9.6k -> 12.4k)
+
+Not a leak. In the 30 s samples `resources` stays 1175, `nodes` 2.5k-2.8k, `orphan_nodes` 0. A 100 s run: objects 9.6k
+-> about 14k by ~50 s, then flat at 13.7-14.5k. The climb is `World._events`, the sim's bounded event log of `SimEvent`
+RefCounted objects (`EVENT_LOG_CAP` 4096 + `EVENT_LOG_TRIM` 512), filling up in a fight. No per-hit material, mesh or
+decal is created without being freed.
+
+### Tests (headless, `--language en`)
+
+- gdformat/gdlint on every touched file: clean.
+- `tests/golden` 2 / 2, `tests/arch` 4 / 4 (18255 asserts), `tests/content` 158 / 158 (30 scripts).
+- 18 scripts, 128 / 128 passing (27427 asserts): `test_modifier_equivalence`, `test_world_snapshot`, presentation
+  `card_level_views`, `ember_stone`, `reward_cards`, `ui_polish`, `wand_views`, `status_visuals`, `enemy_fireball_views`,
+  `vfx_layer`, `attack_visuals`, `boss_fight_views`; e2e `run_flow`, `playground`, `wand_build`, `swap`, `card_levels`,
+  `enemy_fireballs`. Goldens and equivalence digests did not move (no sim state changed; the reader gained read-only
+  functions).
+- Not run: seed-loop tests, the seams, the full suite (GitHub).

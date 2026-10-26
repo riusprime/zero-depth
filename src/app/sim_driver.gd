@@ -56,7 +56,9 @@ func _physics_process(_delta: float) -> void:
 		return
 	if hold.is_valid() and reader.arriving() and hold.call():
 		return
+	var t_phys := PerfMarks.start()
 	step_once()
+	PerfMarks.add(&"step_once", t_phys)
 
 
 ## One tick: close the latched frame, then step the world.
@@ -77,6 +79,10 @@ func step_once() -> void:
 	if playground != null:
 		playground.apply_pending()  # v0.7.5 PG: so do the Playground's (and its upkeep)
 	last_frame = latch.close_frame(move, aim, dist)
+	var t0 := PerfMarks.start()
 	world.step(last_frame)
+	PerfMarks.add(&"sim_step", t0)
 	ticks_this_frame += 1
+	t0 = PerfMarks.start()
 	ticked.emit()
+	PerfMarks.add(&"ticked_all", t0)

@@ -33,7 +33,7 @@ const BUILD_KEYS: Array[StringName] = [
 	&"ITEM_EMBER_CORE",
 	&"ITEM_STORM_CORE",
 ]
-const KNOWN_AB := ["shadows_low", "no_ssil", "fx_half", "fx_low", "planar_floor"]
+const KNOWN_AB := ["no_interp", "shadows_low", "no_ssil", "fx_half", "fx_low", "planar_floor"]
 ## The strafe legs (move_left / move_right / move_up / move_down), each held STRAFE_S seconds.
 const STRAFE: Array[StringName] = [&"move_left", &"move_up", &"move_right", &"move_down"]
 const STRAFE_S := 2.0
@@ -63,6 +63,17 @@ var _saved_density := "high"
 var _floor_triplanar := "unknown"
 var _sha := "nosha"
 var _api: PlaygroundApi
+var _bd := false  # --breakdown
+var _timers: Array = []
+var _t_proc := 0
+var _t_pre := 0
+var _t_post := 0
+var _proc := false  # --process
+var _has_process := {}
+var _stolen := {}
+var _proc_total_nodes := 0
+var _bk := {}  # bucket -> per-measured-frame microseconds
+var _phase_timer := PhaseTimer.new()
 
 
 func _initialize() -> void:
@@ -75,6 +86,11 @@ func _initialize() -> void:
 			_secs = float(s.trim_prefix("secs="))
 		elif s.begins_with("warm="):
 			_warm = float(s.trim_prefix("warm="))
+		elif s == "breakdown":
+			_bd = true
+		elif s == "process":
+			_bd = true
+			_proc = true
 		elif s.begins_with("ab="):
 			_ab = s.trim_prefix("ab=").split(",", false)
 	_biomes = Array(biome_arg.split(",", false))
@@ -94,7 +110,7 @@ func _initialize() -> void:
 	root.add_child(_main)
 
 
-func _process(_delta: float) -> bool:
+func _process(delta: float) -> bool:
 	_frame += 1
 	var now := Time.get_ticks_usec()
 	match _phase:
@@ -106,11 +122,17 @@ func _process(_delta: float) -> bool:
 				_setup_scenario()
 		&"warm":
 			_drive(now)
+			if _proc:
+				_steal_and_time(delta)
 			if (now - _t0) >= int(_warm * 1e6):
 				_begin_measure(now)
 		&"measure":
 			_drive(now)
+			if _proc:
+				_steal_and_time(delta)
 			var dt_ms := (now - _last_us) / 1000.0
+			if _bd:
+				_collect(now)
 			_frames.append(dt_ms)
 			var vp := root.get_viewport_rid()
 			_cpu += RenderingServer.viewport_get_measured_render_time_cpu(vp)
@@ -156,6 +178,13 @@ func _setup_scenario() -> void:
 			"rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality", 4
 		)
 	)
+	if _bd:
+		PerfMarks.on = true
+		RenderingServer.frame_pre_draw.connect(func() -> void: _t_pre = Time.get_ticks_usec())
+		RenderingServer.frame_post_draw.connect(func() -> void: _t_post = Time.get_ticks_usec())
+		_main.view.profile_sync = true
+		_main.driver.world.phase_probe = _phase_timer
+		_time_listeners()
 	_apply_ab()
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
@@ -182,6 +211,10 @@ func _begin_measure(now: int) -> void:
 	_cpu = 0.0
 	_gpu = 0.0
 	_rs_n = 0
+	_bk.clear()
+	PerfMarks.clear()
+	_phase_timer.reset()
+	_main.view.sync_profile.clear()
 
 
 ## Strafe, aim and refill the enemies, once per frame (cheap: the refill runs once a second).
@@ -257,6 +290,8 @@ func _sample() -> Array:
 		Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),
 		Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0,
 		Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
+		Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT),
+		Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT),
 		particles,
 		emitting,
 	]
@@ -270,6 +305,8 @@ func _apply_ab() -> void:
 				RenderingServer.directional_soft_shadow_filter_set_quality(1)
 			"no_ssil":
 				_main.view.stage.environment.ssil_enabled = false
+			"no_interp":
+				root.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 			"fx_half":
 				ViewPrefs.effects_density = "medium"
 			"fx_low":
@@ -384,11 +421,22 @@ func _finish_biome() -> void:
 	(
 		lines
 		. append(
-			"per-second samples: draw_calls, objects, primitives, video_mem_MB, nodes, particle_nodes, emitting"
+			(
+				"per-second samples: draw_calls, objects, primitives, video_mem_MB, nodes, resources, orphans, "
+				+ "particle_nodes, emitting"
+			)
 		)
 	)
 	for s: Array in _samples:
-		lines.append("  %d, %d, %d, %.0f, %d, %d, %d" % [s[0], s[1], s[2], s[3], s[4], s[5], s[6]])
+		lines.append(
+			(
+				"  %d, %d, %d, %.0f, %d, %d, %d, %d, %d"
+				% [s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8]]
+			)
+		)
+	if _bd:
+		lines.append_array(_class_histogram())
+		lines.append_array(_breakdown_lines())
 	var text := "\n".join(lines) + "\n"
 	print(text)
 	var tag := "" if _ab.is_empty() else "_ab-" + "-".join(_ab)
@@ -428,3 +476,198 @@ func _restore() -> void:
 	ViewPrefs.effects_density = _saved_density
 	Engine.max_fps = 0
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
+
+
+# --- PF2: --breakdown ---------------------------------------------------------------------------------------------
+## The phase timer World.step reports to (World.phase_probe): probe-only, the sim never reads the clock.
+class PhaseTimer:
+	extends RefCounted
+	var us := {}
+	var _open := {}
+
+	func begin(k: StringName) -> void:
+		_open[k] = Time.get_ticks_usec()
+
+	func end(k: StringName) -> void:
+		us[k] = int(us.get(k, 0)) + Time.get_ticks_usec() - int(_open[k])
+
+	func reset() -> void:
+		us.clear()
+
+
+## Moves this frame's marks (PerfMarks, each view's sync, the sim's phases) into the per-frame series, then clears them.
+func _collect(now: int) -> void:
+	var n := _frames.size()
+	var this := {}
+	if _t_post >= _t_pre and _t_pre >= _t_proc and _t_proc > 0:
+		var phys := int(PerfMarks.us.get(&"step_once", 0))
+		this["frame.scene_process"] = float(_t_pre - _t_proc)
+		this["frame.draw_pre_to_post"] = float(_t_post - _t_pre)
+		this["frame.rest_after_draw"] = float(now - _t_post - phys)
+	_t_proc = now
+	for k: StringName in PerfMarks.us:
+		this[String(k)] = float(PerfMarks.us[k])
+	for k: StringName in _main.view.sync_profile:
+		this["view." + String(k)] = float(_main.view.sync_profile[k]) * 1000.0
+	for k: StringName in _phase_timer.us:
+		this["phase." + String(k)] = float(_phase_timer.us[k])
+	this["count.projectiles"] = float(_main.driver.reader.projectile_count())
+	this["count.actors"] = float(_main.driver.reader.actor_count())
+	this["ticks"] = float(PerfMarks.calls.get(&"sim_step", 0))
+	this["engine.process"] = Performance.get_monitor(Performance.TIME_PROCESS) * 1e6
+	this["engine.physics_process"] = Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1e6
+	this["frame_total"] = (Time.get_ticks_usec() - _last_us) * 1.0
+	for k: String in this:
+		if not _bk.has(k):
+			var z := PackedFloat64Array()
+			z.resize(n)
+			_bk[k] = z
+		var a: PackedFloat64Array = _bk[k]
+		a.append(this[k])
+		_bk[k] = a
+	for k: String in _bk:
+		if not this.has(k):
+			var b: PackedFloat64Array = _bk[k]
+			b.append(0.0)
+			_bk[k] = b
+	PerfMarks.clear()
+	_phase_timer.reset()
+	_main.view.sync_profile.clear()
+
+
+## One row per bucket: mean over all frames, mean over the frames it ran in, p99 over all frames (microseconds).
+func _breakdown_lines() -> PackedStringArray:
+	var out: PackedStringArray = []
+	(
+		out
+		. append(
+			"breakdown (us per frame; main-thread script time; 'ran' = mean over frames the bucket was entered):"
+		)
+	)
+	if _proc:
+		out.append(
+			(
+				"  (--process: %d script nodes with a _process, timed from the probe)"
+				% _proc_total_nodes
+			)
+		)
+	out.append("  %-28s %9s %9s %9s %9s" % ["bucket", "mean", "p99", "ran_mean", "ran_frames"])
+	var keys: Array = _bk.keys()
+	keys.sort_custom(func(a: String, b: String) -> bool: return _mean(_bk[a]) > _mean(_bk[b]))
+	for k: String in keys:
+		var s: PackedFloat64Array = _bk[k]
+		var ran := 0
+		var sum := 0.0
+		for v in s:
+			if v > 0.0:
+				ran += 1
+				sum += v
+		var sorted := s.duplicate()
+		sorted.sort()
+		out.append(
+			(
+				"  %-28s %9.0f %9.0f %9.0f %9d"
+				% [k, _mean(s), _pct(sorted, 0.99), sum / maxf(ran, 1), ran]
+			)
+		)
+	return out
+
+
+static func _mean(s: PackedFloat64Array) -> float:
+	var t := 0.0
+	for v in s:
+		t += v
+	return t / maxf(s.size(), 1)
+
+
+# --- PF2: --process ------------------------------------------------------------------------------------------------
+## Splits the scene tree's own _process time by script: every processing node is taken off the engine's process list
+## and its _process is called from here, timed, in tree order (the probe's _process runs before the nodes'). Nodes the
+## game switches off by set_process(false) (off-screen enemy models) are still called, so those are overstated.
+func _steal_and_time(delta: float) -> void:
+	var stack: Array[Node] = [root]
+	var order: Array[Node] = []
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		if n == self or n is SimDriver:
+			continue
+		var kids := n.get_children()
+		for k in range(kids.size() - 1, -1, -1):
+			stack.append(kids[k])
+		var sc: Script = n.get_script()
+		if sc == null or n.is_queued_for_deletion():
+			continue
+		if not _has_process.has(sc):
+			_has_process[sc] = n.has_method(&"_process")
+		if not _has_process[sc]:
+			continue
+		if n.is_processing():
+			n.set_process(false)
+			_stolen[n.get_instance_id()] = true
+		if _stolen.has(n.get_instance_id()):
+			order.append(n)
+	var per := {}
+	for n in order:
+		var t0 := Time.get_ticks_usec()
+		n.call(&"_process", delta)
+		var key := String((n.get_script() as Script).resource_path.get_file())
+		per[key] = int(per.get(key, 0)) + Time.get_ticks_usec() - t0
+		per["calls " + key] = int(per.get("calls " + key, 0)) + 1
+	for k: String in per:
+		if not k.begins_with("calls "):
+			PerfMarks.us[StringName("script." + k)] = per[k]
+			PerfMarks.calls[StringName("script." + k)] = per["calls " + k]
+	_proc_total_nodes = order.size()
+
+
+## The tree's node classes, most numerous first (--breakdown), and how many of them move per frame by the engine.
+func _class_histogram() -> PackedStringArray:
+	var counts := {}
+	var visible_mi := 0
+	var stack: Array[Node] = [root]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		stack.append_array(n.get_children())
+		var c := n.get_class()
+		counts[c] = int(counts.get(c, 0)) + 1
+		if n is VisualInstance3D and (n as VisualInstance3D).is_visible_in_tree():
+			visible_mi += 1
+	var keys: Array = counts.keys()
+	keys.sort_custom(func(a: String, b: String) -> bool: return counts[a] > counts[b])
+	var out: PackedStringArray = []
+	var parts: PackedStringArray = []
+	for k: String in keys.slice(0, 18):
+		parts.append("%s=%d" % [k, counts[k]])
+	out.append("node classes: " + ", ".join(parts) + "; visible VisualInstance3D=%d" % visible_mi)
+	return out
+
+
+## --breakdown: every SimDriver.ticked listener (view sync, audio, codex, HUD, ...) called through a timer, in the
+## order it was connected.
+func _time_listeners() -> void:
+	var drv := _main.driver
+	var cons := drv.ticked.get_connections()
+	for c: Dictionary in cons:
+		drv.ticked.disconnect(c["callable"])
+	for c: Dictionary in cons:
+		var cb: Callable = c["callable"]
+		var key := StringName("tick.%s.%s" % [cb.get_object().get_class(), cb.get_method()])
+		var script: Script = (cb.get_object() as Object).get_script()
+		if script != null:
+			key = StringName("tick.%s.%s" % [script.resource_path.get_file(), cb.get_method()])
+		var t := TimedListener.new()
+		t.cb = cb
+		t.key = key
+		_timers.append(t)
+		drv.ticked.connect(t.call_it)
+
+
+class TimedListener:
+	extends RefCounted
+	var cb: Callable
+	var key: StringName
+
+	func call_it() -> void:
+		var t0 := PerfMarks.start()
+		cb.call()
+		PerfMarks.add(key, t0)
