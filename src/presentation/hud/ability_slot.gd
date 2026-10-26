@@ -146,6 +146,11 @@ func _draw() -> void:
 
 ## The share still cooling, as a dark wedge from twelve o'clock, clockwise.
 func _sweep(r: Rect2, share: float) -> void:
+	draw_sweep(self, r, share)
+
+
+## The same wedge on any canvas item (v0.9.5 HT: the Vent plate's cooldown).
+static func draw_sweep(item: CanvasItem, r: Rect2, share: float) -> void:
 	var c := r.get_center()
 	var rad := r.size.length() * 0.5
 	var pts := PackedVector2Array([c])
@@ -154,4 +159,4 @@ func _sweep(r: Rect2, share: float) -> void:
 		var a := -PI * 0.5 + TAU * share * k / steps
 		var p := c + Vector2(cos(a), sin(a)) * rad
 		pts.append(Vector2(clampf(p.x, r.position.x, r.end.x), clampf(p.y, r.position.y, r.end.y)))
-	draw_colored_polygon(pts, AbilityHud.SWEEP)
+	item.draw_colored_polygon(pts, AbilityHud.SWEEP)

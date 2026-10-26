@@ -979,13 +979,13 @@ static func compile_heat(def: HeatDefinition) -> HeatTable:
 	if def == null:
 		return null
 	var t := HeatTable.new()
-	var m := HeatTable.MILLI
 	t.max_heat = def.max_heat
-	t.gain_swing = int(round(def.gain_swing * m))
-	t.gain_finisher = int(round(def.gain_finisher * m))
-	t.gain_bolt = int(round(def.gain_bolt * m))
-	t.decay_delay_ticks = SimTick.seconds_to_ticks(def.decay_delay_seconds)
-	t.decay_per_tick = int(round(def.decay_per_second * m / SimTick.TICKS_PER_SECOND))
+	t.gain_swing = int(round(def.gain_swing * HeatTable.MILLI))
+	t.gain_finisher = int(round(def.gain_finisher * HeatTable.MILLI))
+	t.gain_bolt = int(round(def.gain_bolt * HeatTable.MILLI))
+	t.gun_fill_ticks = maxi(1, SimTick.seconds_to_ticks(def.gun_fill_seconds))
+	t.cool_delay_ticks = SimTick.seconds_to_ticks(def.cool_delay_seconds)
+	t.cool_per_tick = int(round(def.cool_per_second * HeatTable.MILLI / SimTick.TICKS_PER_SECOND))
 	t.hot_threshold = def.hot_threshold
 	t.hot_reach_permille = int(round(def.hot_reach_bonus * 1000.0))
 	t.overclock_threshold = def.overclock_threshold
@@ -995,4 +995,6 @@ static func compile_heat(def: HeatDefinition) -> HeatTable:
 	t.stall_move_permille = int(round(def.overheat_move_multiplier * 1000.0))
 	t.vent_radius_m = def.vent_radius_m
 	t.vent_damage_permille = int(round(def.vent_damage_per_heat * 1000.0))
+	t.vent_min_milli = int(round(def.vent_min_heat * HeatTable.MILLI))
+	t.vent_cooldown_ticks = SimTick.seconds_to_ticks(def.vent_cooldown_seconds)
 	return t

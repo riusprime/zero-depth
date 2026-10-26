@@ -103,6 +103,8 @@ static func advance(w: World) -> void:
 		Engines.on_swing_start(w)  # Engines: Bulwark's guard charges.
 		FireRhythm.on_swing(w)  # v0.8.0 MR (O91): Flurry's burst
 	# Shooting: while held (and not swinging), a bolt every shot_period_ticks; the first one comes at once.
+	if shooting(w) and can_attack and w.swing_t == 0:
+		Heat.fire_tick(w)  # v0.9.5 HT: the primary attack is active (every form): heat fills by firing time
 	if w.shot_cd > 0:
 		w.shot_cd -= 1
 	if GunForms.charging(w):  # v0.6.5 WN3: G13 Charge, hold to grow the shot, release to fire

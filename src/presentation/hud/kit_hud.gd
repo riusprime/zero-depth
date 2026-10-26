@@ -23,7 +23,21 @@ var _skill_back := ColorRect.new()
 var _skill_fill := ColorRect.new()
 var _skill_label := Label.new()
 var _vent := Label.new()
+var _vent_sweep := VentSweep.new()
 var _ready := 0.0
+
+
+## The Vent plate's cooldown wedge (v0.9.5 HT): the share still cooling, drawn clockwise from twelve o'clock.
+class VentSweep:
+	extends Control
+	var share := 0.0
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		if share >= 0.01 and size.x > 1.0 and size.y > 1.0:  # a thinner wedge is degenerate (no triangulation)
+			AbilitySlot.draw_sweep(self, Rect2(Vector2.ZERO, size), minf(share, 0.99))
 
 
 func _init() -> void:
@@ -50,6 +64,9 @@ func _init() -> void:
 	HudStyle.style_label(_vent, FONT_SIZE, true)
 	_vent_plate.name = "VentPlate"
 	_vent_plate.add_child(_vent)
+	_vent_sweep.name = "VentSweep"
+	_vent_sweep.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_vent_plate.add_child(_vent_sweep)
 	add_child(_vent_plate)
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -84,6 +101,12 @@ func sync(reader: WorldReader) -> void:
 	if _vent.visible:
 		_vent.text = tr("HUD_KEY_HINT") % [key_text(&"vent"), tr("HUD_VENT")]
 		var hot: bool = h["vent_ready"]
+		# v0.9.5 HT: the 6 s cooldown, as the ability slots show theirs: a clockwise sweep and the seconds left.
+		var left := int(h["vent_cd"])
+		_vent_sweep.share = float(left) / maxf(1.0, float(h["vent_cd_total"]))
+		_vent_sweep.queue_redraw()
+		if left > 0:
+			_vent.text += " %d" % ceili(left / float(SimTick.TICKS_PER_SECOND))
 		_vent.modulate = Color(HudStyle.HEAT[1], 1.0) if hot else Color(1, 1, 1, DIM_ALPHA)
 	_place()
 
@@ -131,6 +154,11 @@ func skill_text() -> String:
 
 func vent_visible() -> bool:
 	return _vent.visible
+
+
+## The share of the Vent plate's cooldown wedge still cooling, 1 (just vented) .. 0 (ready).
+func vent_sweep_share() -> float:
+	return _vent_sweep.share
 
 
 func vent_text() -> String:

@@ -19,13 +19,14 @@ a blink vented; they no longer do.
 | Rule | Starting value | Where |
 |---|---|---|
 | Heat range | 0–100 points (the overheat point is 100) | `data/heat/overclock.tres` `max_heat` |
-| Gain per landed attack | combo step +2.5, finisher +5, bolt +1.157 (v0.8.0 GF1: was +0.9; ×9/7 with the Gun's slower fire, so it heats as fast a second; a swing adds once however many it hits) | `gain_swing`, `gain_finisher`, `gain_bolt` |
+| Gain per landed attack (Blade) | combo step +2.5, finisher +5, bolt +1.157 (v0.8.0 GF1: was +0.9; ×9/7 with the Gun's slower fire, so it heats as fast a second; a swing adds once however many it hits) | `gain_swing`, `gain_finisher`, `gain_bolt` (unused on a Gun run) |
+| Gun gain (v0.9.5 HT) | by firing time: 0 to 100 in 14 s of the primary attack held and armed, whatever the form, attack speed or hits | `gun_fill_seconds`, `Heat.fire_tick` |
 | What never adds heat | payoffs (vent, Meltdown, shock discharge…), DoT ticks, Twin Arc echoes, chain jumps, dash bodies, thorn rings, shrapnel, whiffs | `Heat.is_attack` |
-| Decay | after 1 s without a landed attack, −15/s | `decay_delay_seconds`, `decay_per_second` |
+| Cooling | after 1 s without a gain (v0.9.5 HT: a firing tick or a landed Blade attack), −25/s | `cool_delay_seconds`, `cool_per_second` |
 | **Hot** (≥ 40) | blade reach +20 %; each bolt pierces one enemy | `hot_threshold`, `hot_reach_bonus` |
 | **Overclock** (≥ 75) | the player's attacks deal +25 % and leave embers; with a burn item owned (the fire engine), each Overclock hit adds 1 burn stack | `overclock_threshold`, `overclock_damage_bonus`, `overclock_burn_stacks` |
 | **Overheat** (reaching 100) | a 1.2 s stall: you move at 60 % and can't swing or shoot; heat drains to 0 over the stall; steam vents | `overheat_seconds`, `overheat_move_multiplier` |
-| **Vent** (v0.3.5 K) | pressing Vent while Hot (or Overclock) blasts every enemy within 2.5 m of you for heat vented × 0.5 (40 heat → 20, 99 → 49) and resets heat to 0; under Hot (or overheated) the press does nothing but a small cold click | `vent_radius_m`, `vent_damage_per_heat`; `PlayerSkill` (the button), `Heat.vent` |
+| **Vent** (v0.3.5 K) | pressing Vent with at least 40 heat (v0.9.5 HT; then a 6 s cooldown) blasts every enemy within 2.5 m of you for heat vented × 0.5 (40 heat → 20, 99 → 49) and resets heat to 0; a refused press does nothing, silently | `vent_radius_m`, `vent_damage_per_heat`, `vent_min_heat`, `vent_cooldown_seconds`; `PlayerSkill` (the button), `Heat.vent` |
 | Skills (v0.3.5 K) | a landed build skill adds its own heat once per use: Lunge Cleave +5, Scatter Blast +2.5 | `data/builds/*.tres` `skill.heat` |
 
 Tuning check (unit test `test_a_sustained_fight_reaches_the_thresholds_in_6_to_10_seconds`, mashing against a

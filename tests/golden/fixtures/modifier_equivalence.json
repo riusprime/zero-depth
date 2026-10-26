@@ -61,8 +61,8 @@
   },
   "both_all": {
     "damage": 4160,
-    "digest": "7b49193f9a304121ee1e2b46282463f407f958b89b7d45f71cbd46b86855356e",
-    "hits": 194,
+    "digest": "a5eb26d3e0ba42bb4996488f0ba70b127acb5ee292f8c7536d0c0dd34395bc6c",
+    "hits": 191,
     "kills": 14
   },
   "both_plain": {
@@ -73,8 +73,8 @@
   },
   "gun_all": {
     "damage": 4160,
-    "digest": "017199d894fc44073d59b74ccbd65e8da0acddcb78c983598dbadea16beed033",
-    "hits": 377,
+    "digest": "b813b3d213fc420b6a2cb7cd3545c8eed1837b94bd6eb101694a4eedafdacdf2",
+    "hits": 420,
     "kills": 14
   },
   "gun_barbed_bolts": {
