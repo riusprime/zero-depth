@@ -125,8 +125,17 @@ static func mm(v: int) -> float:
 	return v / 1000.0
 
 
-static func share(dmg: int, permille: int) -> int:
-	return maxi(1, dmg * permille / 1000)
+## v0.9.5 FC7b: `dmg` x `permille` in thousandths of a point (a dart's damage keeps its fractions).
+static func milli_of(dmg: int, permille: int) -> int:
+	return dmg * permille
+
+
+## v0.9.5 FC7b: the whole damage a dart of `milli` thousandths deals now; the rest waits in ModifierState.sk_carry,
+## so a run of 2.25-damage darts deals 9 over four (exact on average, deterministic). A short carry deals 0.
+static func take(w: World, milli: int) -> int:
+	var total := w.mx.sk_carry + milli
+	w.mx.sk_carry = total % 1000
+	return total / 1000
 
 
 ## The darts in a volley of `spec` with cards `m`: Big Shot 2, Rapid Fire 5 (both: the plain 3), Twin doubles.
@@ -208,15 +217,15 @@ static func life(w: World, spec: AttackSpec, m: int) -> int:
 
 
 # --- The volley -----------------------------------------------------------------------------------------------------
-## Echo: a ghost dart of the dart just launched from `at` along `ang` (damage `dmg` before the share) waits.
-static func add_echo(w: World, at: Vector2, ang: int, dmg: int, r: float, bounce: int) -> void:
+## Echo: a ghost dart of the dart just launched from `at` along `ang` (thousandths `milli` before the share) waits.
+static func add_echo(w: World, at: Vector2, ang: int, milli: int, r: float, bounce: int) -> void:
 	var j := _add(
 		w,
 		K_OPEN,
 		0,
 		at,
 		w.tick + param(w, "echo_delay_ticks"),
-		share(dmg, param(w, "echo_share")),
+		milli * param(w, "echo_share") / 1000,
 		ang,
 		w.take_root()
 	)
@@ -289,8 +298,13 @@ static func _hit_before(s: ModifierState, rid: int, aid: int) -> bool:
 	return false
 
 
+## The thousandths dart row `k` was dealt from: its row's, or (a row from an older save) its whole damage x 1000.
+static func _milli_of_dart(s: ModifierState, k: int, dmg: int) -> int:
+	return s.sk_dmg[k] if s.sk_dmg[k] > 0 else dmg * 1000
+
+
 ## Dart projectile `pi` just spawned (World._apply_spawns): with cards it gets a K_BALL row.
-static func on_spawn(w: World, pi: int) -> void:
+static func on_spawn(w: World, pi: int, milli: int = 0) -> void:
 	var p := w.projectiles
 	if p.team[pi] != ActorStore.TEAM_PLAYER:
 		return
@@ -301,6 +315,7 @@ static func on_spawn(w: World, pi: int) -> void:
 	var k := _add(w, K_BALL, p.ids[pi], Vector2.ZERO, w.tick, 0, ang, p.root_id[pi])
 	if k >= 0:
 		w.mx.sk_r[k] = ang  # the launch heading
+		w.mx.sk_dmg[k] = milli  # v0.9.5 FC7b: what the dart was dealt from (its Ring and Split shares)
 
 
 # --- Flight ---------------------------------------------------------------------------------------------------------
@@ -407,7 +422,7 @@ static func on_hit(w: World, pi: int, target: int) -> void:
 			0,
 			tpos,
 			w.tick + RING_VIEW_TICKS,
-			share(p.damage[pi], param(w, "ring_share")),
+			_milli_of_dart(s, k, p.damage[pi]) * param(w, "ring_share") / 1000,
 			0,
 			w.take_root()
 		)
@@ -429,7 +444,7 @@ static func on_hit(w: World, pi: int, target: int) -> void:
 			0,
 			from,
 			w.tick,
-			share(p.damage[pi], param(w, "split_share")),
+			_milli_of_dart(s, k, p.damage[pi]) * param(w, "split_share") / 1000,
 			a,
 			w.take_root()
 		)
@@ -480,7 +495,9 @@ static func _ring(w: World, spec: AttackSpec, k: int) -> void:
 	var c: AttackContext = null
 	for i in w.enemies_near(at, Stats.area(w, mm(param(w, "ring_mm")))):
 		if c == null:
-			c = AttackContext.make(at, 0, s.sk_dmg[k], w.take_root(), SimEvent.TAG_AREA, &"")
+			c = AttackContext.make(
+				at, 0, take(w, s.sk_dmg[k]), w.take_root(), SimEvent.TAG_AREA, &""
+			)
 			c.depth = spec.depth
 			c.proc_pct = maxi(1, 100 >> spec.depth)
 			c.secondary = true
@@ -493,7 +510,7 @@ static func _open(w: World, spec: AttackSpec, k: int) -> void:
 	var flags: int = s.sk_kind[k]
 	var at: Vector2 = s.sk_at[k]
 	var ang: int = s.sk_ang[k]
-	var dmg: int = s.sk_dmg[k]
+	var milli: int = s.sk_dmg[k]  # v0.9.5 FC7b: thousandths; the whole damage is dealt (take) as the dart opens
 	var r: float = s.sk_r[k] / 1000.0
 	var aux: int = s.sk_aux[k]
 	var aux2: int = s.sk_aux2[k]
@@ -502,6 +519,7 @@ static func _open(w: World, spec: AttackSpec, k: int) -> void:
 	var m := mask(spec)
 	var child := flags & F_CHILD != 0
 	var bounce := aux  # a ghost: the bounces of the dart it echoes
+	var dmg := take(w, milli)
 	var life_ticks := life(w, spec, m)
 	if child:
 		life_ticks = spec.life_ticks
@@ -528,6 +546,7 @@ static func _open(w: World, spec: AttackSpec, k: int) -> void:
 		w, K_BALL | F_NOFOLLOW | (F_CHILD if child else 0), id, Vector2.ZERO, w.tick, 0, ang, root
 	)
 	if j >= 0:
+		s.sk_dmg[j] = milli
 		s.sk_r[j] = ang
 		if child:
 			s.sk_aux[j] = aux

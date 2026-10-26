@@ -114,3 +114,61 @@ number was tuned.
 - Whether Twin's six darts, Halo's circle, Mine's hang and dive, Orbit's lap and Split's children read well and feel
   right: OWNER ONLY (empty).
 - Whether Halo at x0.33 and Twin / Rapid Fire at about x1.0 / x0.83 are acceptable: OWNER ONLY (empty).
+
+## FC7b: the carry
+
+**What changed.** A Seekers hit no longer floors to a whole number with a minimum of 1. Every dart is dealt in thousandths:
+`milli = shot_damage * share_permille` (450 + 5 per level), times the cards' factor (Twin 600, Big Shot 2000, Rapid Fire 650) / 1000;
+Echo ghosts, Split children and Rings take their share of the dart's milli (500, 350, 300). `SeekerMods.take` deals
+`(sk_carry + milli) / 1000` whole damage and keeps the rest in `ModifierState.sk_carry` (one per world: there is one hero).
+A short carry deals 0 (no minimum of 1); a 0-damage dart is still launched and goes through the same `Damage.hit` path as any hit.
+`sk_carry` is hashed inside the `sk` block, which is now also hashed while the carry is non-zero, and is saved in `WorldSnapshot.ADDED_SINCE_V05`
+(an older save loads with 0). Only the Seekers form changed (`Attacks._shared_form` skips the half-up share rounding for `spec.seekers > 0`;
+`Attacks._bolts` computes the milli). `World.set_pending_milli` hands the dart's milli to `SeekerMods.on_spawn`, which keeps it in the dart's row (`sk_dmg`) for Ring and Split.
+
+**Reading to flag.** The carry is paid out when a dart is launched (volley, Echo ghost opening, Split child opening, Ring landing), not when it hits,
+because a projectile stores whole damage; the average is exact, but a dart that misses still spent its share. `sk_dmg` of a K_OPEN row now holds thousandths
+(an older save with an Echo/Split row in flight would read it 1000 times small: one volley of a mid-flight save). Plain Seekers now has a carry,
+so its `sk` block is hashed after the first volley (it was hashed only with card rows before).
+
+**Commands and raw results** (all `--language en`, own `APPDATA`, headless, `--fixed-fps 60`, Godot 4.7.2; lint: gdformat + gdlint on the 6 touched files, "no problems found"):
+
+| Test | Result |
+|---|---|
+| `tests/unit/sim/test_seeker_mods.gd` | 25/25 passed, 761 asserts (4 new FC7b tests; 5 old assertions reworded to totals; 3 asserted "plain Seekers has no state", now "no rows" / no shot) |
+| `tests/unit/sim/test_seekers.gd` | 10/10, 79 asserts |
+| `tests/unit/presentation/test_seekers_view.gd` | 5/5, 16 asserts |
+| `tests/unit/sim/test_shot_rate_all_forms.gd` | 2/2, 336 asserts |
+| `tests/unit/sim/test_world_snapshot.gd` | 15/15, 6291 asserts |
+| `tests/unit/sim/test_modifier_equivalence.gd` | 3/3, 68 asserts |
+| `tests/unit/sim/test_attack_slots.gd` | 17/17, 525 asserts |
+| `tests/unit/sim/test_card_levels_clv.gd` | 9/9, 302 asserts |
+| `tests/golden` | 2/2, 4 asserts |
+| `tests/arch` | 4/4, 17998 asserts |
+| `tests/content` | 157/157, 12760 asserts |
+| `tests/e2e/test_e2e_seeker_combos.gd` | 1/1, 15 asserts |
+
+Not run: seed-loop tests, `seams.sh`, the full suite (GitHub runs them).
+
+**Goldens moved: none.** `tests/golden` (test_replay_ground_plane) passed with no digest regenerated; no golden includes a Seekers build.
+
+**forms_dps** (`godot --headless --path . -s scripts/balance/forms_dps.gd`, floor 5, crit off, no elements). Orbs: single 930, line 335, pack 330.
+Plain Seekers: single 628, line 223, pack 223 (x0.675 / 0.666 / 0.676 of the orbs; before 558 / 198 / 198). Ratios against plain Seekers (raw table rows in the script output; ratio = card dmg / plain dmg):
+
+| Cards | single x | line x | pack x | single / line / pack dmg |
+|---|---|---|---|---|
+| (plain) | 1.000 | 1.000 | 1.000 | 628 / 223 / 223 |
+| Twin | 1.199 | 1.202 | 1.197 | 753 / 268 / 267 |
+| Halo | 0.333 | 0.332 | 0.336 | 209 / 74 / 74 |
+| Ring | 1.299 | 1.300 | 1.798 | 816 / 290 / 401 |
+| Pierce | 1.000 | 3.032 | 1.332 | 628 / 676 / 297 |
+| Ricochet | 1.000 | 1.000 | 1.000 | 628 / 223 / 223 |
+| Echo | 1.500 | 1.498 | 1.498 | 942 / 334 / 334 |
+| Big Shot | 1.333 | 1.332 | 1.332 | 837 / 297 / 297 |
+| Rapid Fire | 1.083 | 1.081 | 1.085 | 680 / 241 / 242 |
+| Split | 0.998 | 1.704 | 1.700 | 627 / 380 / 379 |
+| Mine | 0.998 | 1.000 | 0.996 | 627 / 223 / 222 |
+| Orbit | 1.006 | 0.664 | 1.027 | 632 / 148 / 229 |
+
+Twin x1.20, Rapid Fire x1.08, Echo x1.50 now match the percentages. Big Shot is x2.0 a dart but two darts replace three (x1.333 a volley). Nothing exceeds x2.0
+single or x6.0 pack (largest: Pierce line x3.03, Ring pack x1.80). Other forms' rows in the same run are unchanged by this step (only the Seekers path was edited).

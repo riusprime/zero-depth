@@ -482,6 +482,7 @@ const ADDED_SINCE_V05 := {
 		&"sk_root",
 		&"sk_hit_row",
 		&"sk_hit_actor",
+		&"sk_carry",  # v0.9.5 FC7b (the Seekers darts' undealt thousandths; an older save has none)
 		&"gm_next",  # v0.9.5 FC6 (GlaiveMods: the Glaive cards' rows; an older save has none)
 		&"gm_id",
 		&"gm_kind",

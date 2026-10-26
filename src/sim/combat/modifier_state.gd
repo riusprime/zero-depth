@@ -164,6 +164,8 @@ var sk_aux2 := PackedInt32Array()
 var sk_root := PackedInt32Array()
 var sk_hit_row := PackedInt32Array()
 var sk_hit_actor := PackedInt32Array()
+## v0.9.5 FC7b: the thousandths of a Seekers dart's damage not yet dealt (SeekerMods.take); 0..999.
+var sk_carry := 0
 ## v0.9.5 FC4 (LanceMods): the Lance cards' rows, one a live lance's state, a ghost lance to open, a ring growing or a
 ## split shard (kind and flags, the lance's projectile id, place, tick due, tick born, angle, damage, radius in mm,
 ## aux (bounces of a ghost, enemies a lance has split on), root) and Ring's hits (id * 65536 + actor). Hashed only
@@ -360,7 +362,7 @@ func gm_touched() -> bool:
 
 ## v0.9.5 FC7: a Seekers card's row is set.
 func sk_touched() -> bool:
-	return sk_next != 0 or not sk_kind.is_empty()
+	return sk_next != 0 or not sk_kind.is_empty() or sk_carry != 0
 
 
 func sk_clear() -> void:
@@ -595,6 +597,7 @@ func hash_into(h: StateHasher) -> void:
 	if sk_touched():  # v0.9.5 FC7: only while a Seekers card's row is set
 		h.add_string("sk")
 		h.add_int(sk_next)
+		h.add_int(sk_carry)
 		for arr: PackedInt32Array in [
 			sk_id,
 			sk_kind,

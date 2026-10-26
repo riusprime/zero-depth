@@ -560,6 +560,7 @@ func queue_projectile(
 			-1,
 			0,
 			"",
+			0,
 			0
 		]
 	)
@@ -574,6 +575,11 @@ func set_pending_second(kind: int) -> void:
 ## v0.9.5 WB: the player bolt queued last pierces this many more enemies than its spec (the Wisps' shots).
 func set_pending_pierce(n: int) -> void:
 	_pending_projectiles[-1][14] = n
+
+
+## v0.9.5 FC7b: the Seekers dart queued last was dealt from this many thousandths of damage (SeekerMods.on_spawn).
+func set_pending_milli(n: int) -> void:
+	_pending_projectiles[-1][15] = n
 
 
 ## v0.8.0 RM (Remnants, Threadline): the player bolt queued last links to the one before it (its LINK hook's key).
@@ -1986,7 +1992,7 @@ func _apply_spawns() -> void:
 		VoidMods.on_spawn(self, projectiles.size() - 1)  # v0.9.5 FC3: a void with cards gets its row
 		LanceMods.on_spawn(self, projectiles.size() - 1)  # v0.9.5 FC4: a lance with cards gets its row
 		GlaiveMods.on_spawn(self, projectiles.size() - 1)  # v0.9.5 FC6: a disc with cards gets its row
-		SeekerMods.on_spawn(self, projectiles.size() - 1)  # v0.9.5 FC7: a dart with cards gets its row
+		SeekerMods.on_spawn(self, projectiles.size() - 1, s[15])  # v0.9.5 FC7: a dart with cards gets its row
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 		if s[13] != "":  # v0.8.0 RM: Threadline links it to the bolt before
 			Remnants.on_link(self, projectiles.size() - 1, s[13])

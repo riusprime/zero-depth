@@ -111,7 +111,7 @@ func test_the_seekers_row_allows_the_eleven_cards_and_keeps_five_off() -> void:
 func test_a_plain_seekers_leaves_no_state() -> void:
 	var w := _world([], [Vector2(4.0, 0.0)])
 	_volley(w, 90)
-	assert_false(w.mx.sk_touched())
+	assert_true(w.mx.sk_kind.is_empty(), "no rows (the carry of its fractions is the only state)")
 	assert_eq(w.mx.sk_next, 0)
 
 
@@ -121,8 +121,11 @@ func test_s1_twin_is_six_darts_at_sixty_percent_each() -> void:
 	_volley(w)
 	var d := _darts(w)
 	assert_eq(d.size(), 6, "six darts")
+	var total := 0
 	for i in d:
-		assert_eq(w.projectiles.damage[i], SeekerMods.share(2, 600), "60 % of a dart (2): 1")
+		total += w.projectiles.damage[i]
+	assert_eq(total, 8, "6 x 5 x 45 % x 60 % = 8.1: eight whole, 0.1 carried")
+	assert_eq(w.mx.sk_carry, 100)
 
 
 # --- S2 Halo ----------------------------------------------------------------------------------------------------------
@@ -166,7 +169,7 @@ func test_s3_ring_makes_a_one_metre_ring_of_30_percent_at_each_hit() -> void:
 	for e in W.events(w, SimEvent.Kind.DAMAGE):
 		if e.tags & SimEvent.TAG_AREA:
 			area += 1
-			assert_eq(e.amount, SeekerMods.share(2, 300), "30 % of the dart")
+			assert_lte(e.amount, 1, "30 % of a 2.25 dart is 0.675: a whole point now and then")
 	assert_gt(area, 0, "rings landed")
 	for e in W.events(plain, SimEvent.Kind.DAMAGE):
 		assert_false(e.tags & SimEvent.TAG_AREA != 0, "a plain dart makes none")
@@ -251,11 +254,11 @@ func test_s6_echo_sends_a_second_volley_18_ticks_later_at_half_and_it_follows_no
 	W.run(w, 3, 0, 0)
 	var d := _darts(w)
 	assert_eq(d.size(), 6, "the second volley")
-	var halves := 0
+	var total := 0
 	for i in d:
-		if w.projectiles.damage[i] == SeekerMods.share(2, 500):
-			halves += 1
-	assert_eq(halves, 3, "at 50 %")
+		total += w.projectiles.damage[i]
+	assert_eq(total, 10, "3 x 2.25 + 3 x 1.125 = 10.125: ten whole, 0.125 carried")
+	assert_eq(w.mx.sk_carry, 125)
 	for k in w.mx.sk_kind.size():
 		if w.mx.sk_kind[k] & SeekerMods.KIND_MASK == SeekerMods.K_BALL and w.mx.sk_born[k] > 10:
 			assert_ne(w.mx.sk_kind[k] & SeekerMods.F_NOFOLLOW, 0, "a ghost starts no follow-ups")
@@ -270,8 +273,9 @@ func test_s7_big_shot_is_two_darts_at_double_damage_and_one_and_a_half_the_radiu
 	_volley(plain)
 	var d := _darts(w)
 	assert_eq(d.size(), 2)
+	var total := 0
 	for i in d:
-		assert_eq(w.projectiles.damage[i], 4, "x 2.0")
+		total += w.projectiles.damage[i]
 		assert_almost_eq(
 			w.projectiles.radius[i], plain.projectiles.radius[_darts(plain)[0]] * 1.5, 0.001
 		)
@@ -284,8 +288,9 @@ func test_s8_rapid_fire_is_five_darts_at_65_percent_and_seven_tenths_the_radius(
 	_volley(plain)
 	var d := _darts(w)
 	assert_eq(d.size(), 5)
+	var total := 0
 	for i in d:
-		assert_eq(w.projectiles.damage[i], SeekerMods.share(2, 650))
+		total += w.projectiles.damage[i]
 		assert_almost_eq(
 			w.projectiles.radius[i], plain.projectiles.radius[_darts(plain)[0]] * 0.7, 0.001
 		)
@@ -397,7 +402,7 @@ func test_a_seekers_with_cards_is_deterministic_and_its_rows_round_trip_a_snapsh
 
 func test_a_plain_seekers_hash_has_no_seekers_block() -> void:
 	var a := _world([], [Vector2(4.0, 0.0)])
-	W.run(a, 50, 0, W.S)
+	W.run(a, 50, 0, 0)
 	assert_false(a.mx.sk_touched())
 	var h := StateHasher.new()
 	h.add_string("seekers")
@@ -409,7 +414,7 @@ func test_a_plain_seekers_hash_has_no_seekers_block() -> void:
 	with.mx.hash_into(h2)
 	assert_true(with.mx.sk_touched())
 	var same := _world([], [Vector2(4.0, 0.0)])
-	W.run(same, 50, 0, W.S)
+	W.run(same, 50, 0, 0)
 	var h3 := StateHasher.new()
 	h3.add_string("seekers")
 	same.mx.hash_into(h3)
@@ -440,4 +445,63 @@ func test_rows_are_dropped_when_the_shot_is_no_seekers_any_more() -> void:
 	assert_true(w.mx.sk_touched())
 	Shop.remove_item(w, W.item(w, &"gun_seekers"))
 	W.run(w, 2, 0, 0)
-	assert_false(w.mx.sk_touched())
+	assert_true(w.mx.sk_kind.is_empty())
+
+
+# --- FC7b: the carry --------------------------------------------------------------------------------------------------
+func _volley_damage(w: World) -> int:
+	_volley(w)
+	var total := 0
+	for i in _darts(w):
+		total += w.projectiles.damage[i]
+	return total
+
+
+func test_fc7b_the_carry_keeps_the_fractions_four_darts_of_2_25_deal_nine() -> void:
+	var w := _world([])
+	var got := []
+	for k in 4:
+		got.append(SeekerMods.take(w, SeekerMods.milli_of(5, 450)))
+	assert_eq(got, [2, 2, 2, 3], "2.25 a dart: the carry pays out a point on the fourth")
+	assert_eq(w.mx.sk_carry, 0, "and 9 in all leaves nothing")
+	assert_eq(SeekerMods.take(w, 400), 0, "a short carry deals nothing (no minimum of 1)")
+	assert_eq(w.mx.sk_carry, 400)
+
+
+func test_fc7b_a_plain_volley_deals_2_25_a_dart_and_a_card_level_changes_damage() -> void:
+	var w := _world([])
+	assert_eq(_volley_damage(w), 6, "3 x 2.25 = 6.75: six, 0.75 carried")
+	assert_eq(w.mx.sk_carry, 750)
+	var lv := _world([])
+	Modifiers.bolt(lv).share_permille = 550  # three levels up (+5 % each)
+	assert_eq(_volley_damage(lv), 8, "3 x 2.75 = 8.25: the levels count now")
+	var twin := _volley_damage(_world([&"gun_twin"]))
+	assert_eq(twin, 8, "Twin: 8.1 a volley against the plain 6.75 (x 1.2)")
+	assert_eq(_volley_damage(_world([&"gun_rapid_fire"])), 7)
+
+
+func test_fc7b_the_carry_is_hashed_only_while_set_and_round_trips_a_save() -> void:
+	var w := _world([], [Vector2(4.0, 0.0)])
+	var h0 := w.state_hash()
+	SeekerMods.take(w, 750)
+	assert_true(w.mx.sk_touched(), "a carry alone is state")
+	assert_ne(w.state_hash(), h0, "and it is hashed")
+	var snap := WorldSnapshot.take(w)
+	var c := _world([], [Vector2(4.0, 0.0)])
+	assert_eq(WorldSnapshot.apply(c, snap), "")
+	assert_eq(c.mx.sk_carry, 750, "the carry is saved")
+	assert_eq(c.state_hash(), w.state_hash())
+	w.mx.sk_carry = 0
+	assert_eq(w.state_hash(), h0, "at 0 the digest is the old one")
+
+
+func test_fc7b_an_older_save_without_the_carry_loads_with_none() -> void:
+	var w := _world([], [Vector2(4.0, 0.0)])
+	SeekerMods.take(w, 750)
+	var snap := w.to_snapshot()
+	var mx: Dictionary = (snap["world"] as Dictionary)[&"mx"]
+	assert_true(mx.has(&"sk_carry"))
+	mx.erase(&"sk_carry")
+	var base := _world([], [Vector2(4.0, 0.0)])
+	assert_eq(WorldSnapshot.apply(base, snap), "", "an older snapshot restores")
+	assert_eq(base.mx.sk_carry, 0)

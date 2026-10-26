@@ -91,7 +91,8 @@ static func _shared_form(w: World, spec: AttackSpec, ctx: AttackContext) -> bool
 		return _form(w, spec, ctx)
 	var d0 := ctx.damage
 	var b0 := ctx.base_damage
-	ctx.damage = maxi(1, (d0 * share + 500) / 1000)
+	if spec.seekers <= 0:  # v0.9.5 FC7b: a Seekers dart takes its share in thousandths (SeekerMods.milli_of, _bolts)
+		ctx.damage = maxi(1, (d0 * share + 500) / 1000)
 	ctx.base_damage = maxi(1, (b0 * share + 500) / 1000)
 	var landed := _form(w, spec, ctx)
 	ctx.damage = d0
@@ -364,8 +365,11 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 		speed = GlaiveMods.speed(w, spec, gm)
 		life = GlaiveMods.life(w, spec, gm)
 		bounces = GlaiveMods.bounces(w, gm, bounces)
-	if sm != 0:  # v0.9.5 FC7: Twin's, Big Shot's and Rapid Fire's share; Orbit's and Mine's wait; Ricochet's bounces
-		dmg = SeekerMods.share(dmg, SeekerMods.damage_permille(w, sm))
+	var milli := 0  # v0.9.5 FC7b: a Seekers dart's damage in thousandths (the carry deals the whole part per dart)
+	if spec.seekers > 0:
+		var sh := spec.share_permille if spec.share_permille > 0 else 1000
+		milli = SeekerMods.milli_of(dmg, sh) * SeekerMods.damage_permille(w, sm) / 1000
+	if sm != 0:  # v0.9.5 FC7: Orbit's and Mine's wait; Ricochet's bounces (Twin, Big Shot, Rapid Fire: the milli)
 		life = SeekerMods.life(w, spec, sm)
 		bounces = SeekerMods.bounces(w, sm, bounces)
 	var q := -1
@@ -386,18 +390,21 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 			if not _shot_room(w):
 				return
 			var muzzle := ctx.origin + dir * gap + Vector2(-dir.y, dir.x) * side
+			var dart_dmg := SeekerMods.take(w, milli) if spec.seekers > 0 else dmg
 			w.queue_projectile(
 				w.actors.ids[0],
 				ActorStore.TEAM_PLAYER,
 				muzzle,
 				dir * speed,
-				dmg,
+				dart_dmg,
 				r,
 				maxi(1, life),
 				ctx.tags,
 				bounces,
 				spec.key
 			)
+			if spec.seekers > 0:
+				w.set_pending_milli(milli)  # v0.9.5 FC7b: for its Ring and Split shares
 			if lm & LanceMods.ECHO != 0:  # v0.9.5 FC4: Echo's ghost lance waits on this line
 				LanceMods.add_echo(w, muzzle, (ctx.angle + off + turns[li]) & 4095, dmg, r, bounces)
 			if gm & GlaiveMods.ECHO != 0:  # v0.9.5 FC6: Echo's ghost disc waits on this line
@@ -406,7 +413,7 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				)
 			if sm & SeekerMods.ECHO != 0:  # v0.9.5 FC7: Echo's ghost dart waits on this line
 				SeekerMods.add_echo(
-					w, muzzle, (ctx.angle + off + turns[li]) & 4095, dmg, r, bounces
+					w, muzzle, (ctx.angle + off + turns[li]) & 4095, milli, r, bounces
 				)
 			if root:
 				root = false  # the volley's first shot is the player's own; the rest are extras
