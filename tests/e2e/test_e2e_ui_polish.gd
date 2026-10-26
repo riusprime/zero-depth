@@ -22,7 +22,7 @@ func test_a_language_switch_words_the_live_banner_again() -> void:
 	assert_false(shown.is_empty(), "a banner shows (the first enemy kind met)")
 	var entry := hud.phase_hud.current_entry()
 	assert_eq(shown, hud.phase_hud.line(entry), "worded in English")
-	assert_eq(hud.ability_hud.slot(0).key_text, "LMB", "the weapon's key, short")
+	assert_eq(hud.ability_squares.slot_of(&"attack")["glyph"], "LMB", "the weapon's key, short")
 	# Options from the pause menu (Esc, Down x3: past Build, v0.6.5 WN2; Enter), the Language category (Down x4),
 	# into it (Right) and one step to Spanish (Right).
 	await e.tap(KEY_ESCAPE)
@@ -48,4 +48,6 @@ func test_a_language_switch_words_the_live_banner_again() -> void:
 		await e.frames(2)
 	await e.frames(3)
 	assert_false(main.driver.paused, "the run goes on")
-	assert_eq(hud.ability_hud.slot(0).key_text, "Clic izq.", "the weapon's key, in Spanish")
+	assert_eq(
+		hud.ability_squares.slot_of(&"attack")["glyph"], "Clic izq.", "the weapon's key, in Spanish"
+	)

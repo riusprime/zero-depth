@@ -94,3 +94,29 @@ func test_labels_name_every_default_binding() -> void:
 				assert_false(
 					InputLabels.text(spec).is_empty(), "%s/%s has a label" % [action, device]
 				)
+
+
+func test_the_skill_defaults_to_the_left_trigger_and_q_and_y_is_free() -> void:  # v0.9.5 HU (owner Q9)
+	InputDefaults.apply()
+	assert_eq(InputRebind.binding(&"skill", InputRebind.PAD), [&"axis", JOY_AXIS_TRIGGER_LEFT, 1.0])
+	assert_eq(InputRebind.binding(&"skill", InputRebind.KBM), [&"key", KEY_Q])
+	for action: StringName in InputDefaults.ACTIONS:
+		for spec: Array in InputDefaults.ACTIONS[action]:
+			assert_false(
+				spec[0] == &"button" and spec[1] == JOY_BUTTON_Y,
+				"%s: nothing defaults to Y" % action
+			)
+
+
+func test_a_saved_skill_binding_on_y_still_loads_y() -> void:  # v0.9.5 HU: only the defaults changed
+	var p := ProfileStore.new("")
+	InputDefaults.apply()
+	var b := InputEventJoypadButton.new()
+	b.button_index = JOY_BUTTON_Y
+	b.pressed = true
+	InputRebind.rebind(p, &"skill", InputRebind.spec_of(b))
+	InputDefaults.apply()  # a fresh start, then the saved profile
+	InputRemap.apply(p)
+	assert_eq(InputRebind.binding(&"skill", InputRebind.PAD), [&"button", JOY_BUTTON_Y])
+	assert_eq(InputRebind.binding(&"skill", InputRebind.KBM), [&"key", KEY_Q])
+	InputDefaults.apply()

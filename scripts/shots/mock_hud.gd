@@ -246,47 +246,7 @@ class HudMock:
 			draw_polyline(pts, col, 3.0)
 
 	func _icon(id: StringName, r: Rect2, col: Color) -> void:
-		match id:
-			&"attack":
-				ItemIcons.draw(self, &"pulse_gun", r, col)
-			&"blink":
-				ItemIcons.draw(self, &"blink", r, col)
-			&"skill":  # a fan of three pellets
-				var o := r.position + Vector2(r.size.x * 0.18, r.size.y * 0.5)
-				for a in [-0.55, 0.0, 0.55]:
-					var d := Vector2(cos(a), sin(a))
-					draw_line(o, o + d * r.size.x * 0.58, Color(col, 0.55), 2.0)
-					draw_circle(o + d * r.size.x * 0.74, r.size.x * 0.1, col)
-				draw_circle(o, r.size.x * 0.09, col)
-			&"dash":  # a double chevron
-				for dx in [0.1, 0.45]:
-					var p := r.position + Vector2(r.size.x * dx, 0)
-					draw_polyline(
-						PackedVector2Array(
-							[
-								p + Vector2(0, r.size.y * 0.12),
-								p + Vector2(r.size.x * 0.35, r.size.y * 0.5),
-								p + Vector2(0, r.size.y * 0.88),
-							]
-						),
-						col,
-						5.0
-					)
-			&"vent":  # an upward arrow
-				var c := r.get_center()
-				var tip := c + Vector2(0, -r.size.y * 0.3)
-				draw_polyline(
-					PackedVector2Array(
-						[
-							c + Vector2(-r.size.x * 0.3, r.size.y * 0.1),
-							tip,
-							c + Vector2(r.size.x * 0.3, r.size.y * 0.1)
-						]
-					),
-					col,
-					4.0
-				)
-				draw_line(tip, c + Vector2(0, r.size.y * 0.4), col, 4.0)
+		AbilitySquareIcons.draw(self, &"pulse_gun" if id == &"attack" else id, r, col)
 
 	## C: the thin heat bar over the four squares, and Vent as a fifth, smaller square at the right end.
 	func _heat_and_vent() -> void:
@@ -392,15 +352,8 @@ func _show(shot: Array) -> void:
 	TranslationServer.set_locale(shot[1])
 	_tick()
 	var v: String = shot[0]
-	# The old blue pips, the old ability row and the Skill pip are hidden; the HP plate is 15 % bigger.
-	var pips: Control = (_hud.get("_dash") as Control).get_parent()
-	pips.visible = false
-	_hud.ability_hud.visible = false
-	(_hud.kit_hud.get("_skill_plate") as Control).visible = false
-	var corner: Control = (_hud.get("_hp_frame") as Control).get_parent()
-	corner.reset_size()
-	corner.pivot_offset = Vector2(0, corner.size.y)
-	corner.scale = Vector2.ONE * 1.15
+	# The real squares (v0.9.5 HU) are hidden; the mockup's are drawn over the HUD, which keeps its real HP plate.
+	_hud.ability_squares.visible = false
 	if v == "c":  # the heat meter and the Vent plate move into the squares' row
 		_hud.heat_meter.visible = false
 		(_hud.kit_hud.find_child("VentPlate", true, false) as Control).visible = false

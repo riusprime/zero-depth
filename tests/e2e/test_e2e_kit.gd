@@ -35,12 +35,13 @@ func test_blade_q_lunges_and_cleaves_and_f_clicks_while_cool() -> void:
 	var r := WorldReader.new(e.world())
 	var hud: Hud = main.get_node("UI/Hud")
 	var pip := hud.kit_hud
+	var sq := hud.ability_squares
 	var s := r.skill_state()
 	assert_false(s.is_empty(), "the Blade run has its skill")
 	assert_eq(int(s["kind"]), WorldReader.SKILL_LUNGE_CLEAVE)
-	assert_true(pip.skill_visible(), "the HUD shows the skill pip")
-	assert_true(pip.skill_text().contains("Q"), "with its key: %s" % pip.skill_text())
-	assert_almost_eq(pip.skill_fill(), 1.0, 1e-6, "ready")
+	assert_true(sq.shown().has(&"skill"), "the HUD shows the skill square")
+	assert_eq(sq.slot_of(&"skill")["glyph"], "Q", "with its key")
+	assert_false(sq.slot_of(&"skill")["cooling"], "ready")
 	var seq := r.last_event_seq()
 	var from := r.player_pos()
 	await e.tap(KEY_Q)
@@ -69,7 +70,7 @@ func test_blade_q_lunges_and_cleaves_and_f_clicks_while_cool() -> void:
 	gut.p("lunged %.2f m" % moved)
 	assert_gt(moved, 0.3, "the lunge moved the hero (walls may stop it short)")
 	assert_lte(moved, 3.5 + 0.05, "never farther than 3.5 m")
-	assert_lt(pip.skill_fill(), 0.2, "the pip emptied")
+	assert_gt(sq.slot_of(&"skill")["share"], 0.8, "the cover is nearly full")
 	await e.tap(KEY_Q)
 	await e.frames(3)
 	assert_eq(_events(r, SimEvent.Kind.SKILL_USED, seq).size(), 1, "on cooldown: nothing")
@@ -86,13 +87,13 @@ func test_blade_q_lunges_and_cleaves_and_f_clicks_while_cool() -> void:
 	# The pip refills: the skill is back 4 s after the press.
 	await e.frames(240)
 	assert_true(bool(r.skill_state()["ready"]), "ready again after 4 s")
-	assert_almost_eq(pip.skill_fill(), 1.0, 1e-6, "the pip is full")
+	assert_false(sq.slot_of(&"skill")["cooling"], "the cover is gone")
 	await e.tap(KEY_Q)
 	await e.frames(2)
 	assert_eq(_events(r, SimEvent.Kind.SKILL_USED, seq).size(), 2, "and Q uses it again")
 
 
-func test_gun_pad_y_fires_the_scatter_blast_and_the_dash_waits_10_s() -> void:
+func test_gun_pad_left_trigger_fires_the_scatter_blast_and_the_dash_waits_10_s() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu(&"gun")
@@ -101,12 +102,15 @@ func test_gun_pad_y_fires_the_scatter_blast_and_the_dash_waits_10_s() -> void:
 	var s := r.skill_state()
 	assert_eq(int(s["kind"]), WorldReader.SKILL_SCATTER_BLAST, "the Gun run has the Scatter Blast")
 	var seq := r.last_event_seq()
-	e.joy_button(JOY_BUTTON_Y, true)
+	e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 1.0)
 	await e.frames(1)
-	e.joy_button(JOY_BUTTON_Y, false)
+	e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
 	await e.frames(1)
 	var used := _events(r, SimEvent.Kind.SKILL_USED, seq)
-	assert_eq(used.size(), 1, "pad Y used the skill")
+	assert_eq(used.size(), 1, "the pad's left trigger used the skill")
+	var squares := (main.get_node("UI/Hud") as Hud).ability_squares
+	assert_true(squares.slot_of(&"skill")["cooling"], "its square starts cooling")
+	assert_gt(squares.cover_height(&"skill"), 60.0, "under a nearly full cover")
 	s = r.skill_state()
 	assert_eq((s["pellet_ends"] as PackedVector2Array).size(), 7, "7 pellets flew")
 	assert_eq(main.view.skill_fx.fx_count_of(&"tracer"), 7, "7 tracers drawn")

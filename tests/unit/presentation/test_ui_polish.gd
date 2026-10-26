@@ -92,14 +92,25 @@ func test_every_slot_key_name_fits_its_slot_in_both_languages() -> void:
 		for spec: Array in _specs():
 			var t := InputLabels.short_text(spec)
 			assert_false(t.is_empty(), "%s %s has a short name" % [lang, spec])
-			assert_true(AbilitySlot.key_fits(t), "%s: '%s' fits the slot" % [lang, t])
+			assert_lte(
+				(
+					(
+						HudStyle
+						. font(true)
+						. get_string_size(
+							t, HORIZONTAL_ALIGNMENT_LEFT, -1, AbilitySquares.GLYPH_FONT
+						)
+						. x
+					)
+					+ 14.0
+				),
+				AbilitySquares.SIDE - 5.0,
+				"%s: %s fits the square" % [lang, t]
+			)
 	TranslationServer.set_locale("en")
 	assert_eq(InputLabels.short_text([&"mouse", MOUSE_BUTTON_LEFT]), "LMB")
-	assert_eq(AbilitySlot.fit_key("LMB"), AbilityHud.KEY_FONT, "a short name keeps the full size")
 	TranslationServer.set_locale("es")
 	assert_eq(InputLabels.short_text([&"mouse", MOUSE_BUTTON_LEFT]), "Clic izq.")
-	assert_eq(AbilitySlot.fit_key("Clic izq."), AbilityHud.KEY_FONT)
-	assert_lt(AbilitySlot.fit_key("Escape Escape"), AbilityHud.KEY_FONT, "a long name shrinks")
 	assert_eq(InputLabels.short_text([&"key", KEY_KP_MULTIPLY]), "Kp *", "the keypad's symbols")
 	# The Options list keeps the full names.
 	assert_eq(InputLabels.text([&"mouse", MOUSE_BUTTON_LEFT]), "Clic izquierdo")
@@ -117,37 +128,6 @@ func test_every_short_name_is_in_both_languages() -> void:
 	for pair: Array in InputLabels.AXES.values():
 		for key: String in pair:
 			assert_true(InputLabels.SHORT.has(key), "%s has a short name" % key)
-
-
-func test_the_weapon_slot_names_its_key_in_full_in_both_languages() -> void:
-	InputDefaults.apply()
-	var repo := ContentRepository.load_all()
-	var t := ContentCompiler.compile_player(repo.get_def(&"player", &"runner"))
-	ContentCompiler.apply_build(t, repo.get_def(&"build", &"blade"))
-	var w := World.new(3, t)
-	w.ability_tables = ContentCompiler.compile_abilities(repo)
-	w.stat_tables = ContentCompiler.compile_stat_cards(repo)
-	Abilities.grant_start(w)
-	Abilities.start_floor(w)
-	Abilities.grant(w, Abilities.index_of_kind(w, AbilityTable.Kind.BLINK))
-	var hud := AbilityHud.new()
-	add_child_autofree(hud)
-	var reader := WorldReader.new(w)
-	for lang: String in LANGS:
-		TranslationServer.set_locale(lang)
-		hud.sync(reader)
-		for k in hud.filled_count():
-			var s := hud.slot(k)
-			if s.key_text.is_empty():
-				continue
-			var f := HudStyle.font(true)
-			var width := (
-				f.get_string_size(s.key_text, HORIZONTAL_ALIGNMENT_LEFT, -1, s.key_font_size()).x
-			)
-			assert_lte(width, AbilitySlot.KEY_W, "%s slot %d: '%s' fits" % [lang, k, s.key_text])
-			assert_lte(width, s.size.x, "inside the slot")
-		var expect := "Clic izq." if lang == "es" else "LMB"
-		assert_eq(hud.slot(0).key_text, expect, "%s: the weapon's key (left click)" % lang)
 
 
 func test_the_shrine_stats_panel_wears_the_menu_style_in_the_pause_menu() -> void:

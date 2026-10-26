@@ -34,27 +34,10 @@ func _hud() -> KitHud:
 	return h
 
 
-func test_the_hud_shows_the_skill_with_its_key_and_cooldown() -> void:
+func test_the_vent_hint_is_hidden_without_heat() -> void:  # v0.9.5 HU: the skill pip moved into AbilitySquares
 	var h := _hud()
 	h.sync(WorldReader.new(World.new(5, PlayerTable.starting_values())))
-	assert_false(h.skill_visible(), "no build skill, no pip")
 	assert_false(h.vent_visible(), "no heat, no vent hint")
-	var w := _world(&"blade")
-	var r := WorldReader.new(w)
-	h.sync(r)
-	assert_true(h.skill_visible())
-	assert_eq(h.skill_text(), tr("HUD_KEY_HINT") % ["Q", tr("SKILL_LUNGE_CLEAVE")])
-	assert_almost_eq(h.skill_fill(), 1.0, 1e-6, "ready: full")
-	w.step(_f(InputFrame.SKILL))
-	h.sync(r)
-	assert_lt(h.skill_fill(), 0.01, "just used: empty")
-	for k in 120:
-		w.step(_f())
-	h.sync(r)
-	assert_almost_eq(h.skill_fill(), 121.0 / 240.0, 0.01, "half way through the 4 s cooldown")
-	var g := _world(&"gun")
-	h.sync(WorldReader.new(g))
-	assert_eq(h.skill_text(), tr("HUD_KEY_HINT") % ["Q", tr("SKILL_SCATTER_BLAST")])
 
 
 func test_the_vent_hint_shows_the_key_and_lights_when_hot() -> void:

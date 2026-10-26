@@ -63,8 +63,7 @@ func test_pick_an_ability_card_at_an_altar_and_see_it_fire() -> void:
 	var t := w.ability_tables[idx]
 	assert_true(Abilities.owned(w, idx), "the ability is held")
 	assert_eq(reader.abilities().size(), 2)
-	assert_eq(hud.ability_hud.filled_count(), 2, "the HUD shows it")
-	assert_eq(hud.ability_hud.slot(1).ability_id, t.id)
+	assert_true(hud.ability_squares.visible, "the HUD shows its ability squares (v0.9.5 HU)")
 	gut.p("took %s" % t.id)
 	for c in offer:  # v0.6.5 WN5b: the six auto abilities are retired (WAND.md): never offered
 		assert_false(
@@ -123,8 +122,8 @@ func test_blink_card_then_shift_blinks() -> void:
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)
 	var hud: Hud = main.get_node("UI/Hud")
-	assert_eq(hud.ability_hud.filled_count(), 2, "Blink in slot 2")
-	assert_ne(hud.ability_hud.slot(1).key_text, "", "a manual slot shows its key")
+	assert_true(hud.ability_squares.shown().has(&"blink"), "Blink has its square")
+	assert_ne(hud.ability_squares.slot_of(&"blink")["glyph"], "", "with its key")
 	var start := w.player_pos()
 	e.key(KEY_W, true)
 	await e.frames(3)
@@ -135,7 +134,9 @@ func test_blink_card_then_shift_blinks() -> void:
 	assert_gt(w.player_pos().distance_to(start), 2.5, "Shift blinked")
 	assert_eq(w.ab.blink_charges, 0, "spending its charge")
 	await e.frames(2)
-	assert_lt(hud.ability_hud.slot(1).fill, 1.0, "the slot's cooldown sweep runs")
+	assert_true(
+		hud.ability_squares.slot_of(&"blink")["cooling"], "the square's cooldown cover runs"
+	)
 
 
 func _nearest_enemy(w: World) -> int:
