@@ -10,6 +10,17 @@ const HP := 1000000
 const GLAIVE_ON: Array[StringName] = [
 	&"gun_twin",
 	&"gun_swirl",
+	&"halo_shot",  # v0.9.5 FC6: the eleven cards of GlaiveMods
+	&"gun_ring",
+	&"gun_backfire",
+	&"gun_ricochet",
+	&"gun_homing",
+	&"gun_echo",
+	&"gun_big_shot",
+	&"gun_rapid_fire",
+	&"split_shot",
+	&"gun_mine",
+	&"orbit_rounds",
 	&"ember_core",
 	&"storm_core",
 	&"frost_core",

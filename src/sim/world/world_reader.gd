@@ -520,6 +520,11 @@ func lance_rings() -> Array[Dictionary]:
 	return LanceMods.read_rings(_w)
 
 
+## v0.9.5 FC6: the lightning rings round the Glaive's discs (GlaiveMods.read_rings): {pos, r (m)}.
+func glaive_rings() -> Array[Dictionary]:
+	return GlaiveMods.read_rings(_w)
+
+
 ## v0.9.5 FC4: the Lance's split shards in view (LanceMods.read_shards): {from, to, age, span (ticks)}.
 func lance_shards() -> Array[Dictionary]:
 	return LanceMods.read_shards(_w)

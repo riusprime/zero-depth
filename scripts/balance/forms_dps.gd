@@ -92,6 +92,22 @@ const LANCE_COMBOS: Array = [
 	[&"split_shot"],
 ]
 
+## v0.9.5 FC6: the Glaive's card combinations (a card alone each).
+const GLAIVE_COMBOS: Array = [
+	[],
+	[&"halo_shot"],
+	[&"gun_ring"],
+	[&"gun_backfire"],
+	[&"gun_ricochet"],
+	[&"gun_homing"],
+	[&"gun_echo"],
+	[&"gun_big_shot"],
+	[&"gun_rapid_fire"],
+	[&"split_shot"],
+	[&"gun_mine"],
+	[&"orbit_rounds"],
+]
+
 
 func _scenes(near: bool) -> Dictionary:
 	if near:
@@ -171,7 +187,8 @@ func _initialize() -> void:
 		["laser", &"gun_laser", LASER_COMBOS],
 		["bomb", &"gun_bomb", BOMB_COMBOS],
 		["void", &"gun_void", VOID_COMBOS],
-		["lance", &"gun_lance", LANCE_COMBOS]
+		["lance", &"gun_lance", LANCE_COMBOS],
+		["glaive", &"gun_glaive", GLAIVE_COMBOS]
 	]:
 		for combo: Array in set_of[2]:
 			var d := {}

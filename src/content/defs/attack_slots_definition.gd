@@ -122,6 +122,8 @@ func _keys_of(id: StringName) -> Array[String]:
 		return AttackFormRow.VOID_KEYS
 	if id == &"lance":
 		return AttackFormRow.LANCE_KEYS
+	if id == &"glaive":
+		return AttackFormRow.GLAIVE_KEYS
 	return []
 
 
