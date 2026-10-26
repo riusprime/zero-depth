@@ -5,7 +5,7 @@ UI_CONTINUE,Continue,Continuar
 UI_OPTIONS,Options,Opciones
 UI_CREDITS,Credits,Créditos
 UI_GALLERIES,Galleries,Galerías
-UI_QUIT,Quit,Salir
+UI_QUIT,Exit,Salir
 UI_PAUSED,PAUSED,PAUSA
 UI_RESUME,Resume,Continuar
 UI_MAIN_MENU,Main menu,Menú principal
