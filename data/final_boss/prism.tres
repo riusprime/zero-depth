@@ -19,10 +19,10 @@ shape_params = {
 "reverse_seconds": 3.529,
 "spin_seconds": 5.0,
 "width_m": 0.9,
-"window_seconds": 2.5
+"window_seconds": 3.5
 }
 telegraph_seconds = 1.0
-active_seconds = 7.5
+active_seconds = 8.5
 recovery_seconds = 0.0
 damage = 30
 hit_class = &"medium"
@@ -47,10 +47,10 @@ shape_params = {
 "reverse_seconds": 3.529,
 "spin_seconds": 5.0,
 "width_m": 0.9,
-"window_seconds": 2.5
+"window_seconds": 3.5
 }
 telegraph_seconds = 1.0
-active_seconds = 7.5
+active_seconds = 8.5
 recovery_seconds = 0.0
 damage = 30
 hit_class = &"medium"
@@ -75,10 +75,10 @@ shape_params = {
 "reverse_seconds": 3.529,
 "spin_seconds": 5.0,
 "width_m": 0.9,
-"window_seconds": 2.5
+"window_seconds": 3.5
 }
 telegraph_seconds = 1.0
-active_seconds = 7.5
+active_seconds = 8.5
 recovery_seconds = 0.0
 damage = 30
 hit_class = &"medium"
@@ -122,12 +122,12 @@ shape_params = {
 }
 telegraph_seconds = 0.8
 active_seconds = 1.0
-recovery_seconds = 0.0
+recovery_seconds = 2.0
 damage = 22
 hit_class = &"small"
 move = &"pattern"
 weight = 1
-cooldown_seconds = 0.5
+cooldown_seconds = 0.0
 cause_key = &"CAUSE_PRISM_ORBS"
 shielded = true
 
@@ -141,12 +141,12 @@ shape_params = {
 }
 telegraph_seconds = 0.8
 active_seconds = 1.0
-recovery_seconds = 0.0
+recovery_seconds = 2.0
 damage = 22
 hit_class = &"small"
 move = &"pattern"
 weight = 1
-cooldown_seconds = 0.5
+cooldown_seconds = 0.0
 cause_key = &"CAUSE_PRISM_ORBS"
 shielded = true
 
@@ -160,12 +160,12 @@ shape_params = {
 }
 telegraph_seconds = 0.8
 active_seconds = 1.0
-recovery_seconds = 0.0
+recovery_seconds = 2.0
 damage = 22
 hit_class = &"small"
 move = &"pattern"
 weight = 1
-cooldown_seconds = 0.5
+cooldown_seconds = 0.0
 cause_key = &"CAUSE_PRISM_ORBS"
 shielded = true
 

@@ -35,7 +35,7 @@ enum Kind { RING, SPIRAL, FAN, CROSS, WALL, FLOWER, BURST }
 const MAX_SHOTS_PER_WAVE := 64
 ## "Small, many, slow (about 3–5 m/s against the hero's run)": the band the validation allows.
 const MIN_SPEED_MPS := 1.5
-const MAX_SPEED_MPS := 7.0
+const MAX_SPEED_MPS := 8.0  # v0.9.5 BH5 (HC1): the Colossus quake ring runs at 7.5
 ## A gap must let the hero through: at least this wide (metres) where the shots are `GAP_CHECK_M` out.
 const MIN_GAP_M := 1.0
 const GAP_CHECK_M := 4.0
