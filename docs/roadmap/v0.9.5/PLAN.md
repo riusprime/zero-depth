@@ -321,6 +321,15 @@ offers, `attack_slots.tres`, the forms). The order inside each list is the build
 9. **BG:** the biome background layers (code stand-ins), plus the owner's image prompts in
    `docs/art/requests/v0.9.5_BACKGROUNDS.md` (Q5).
 
+### MM. The main menu (owner, 2026-10-26)
+- Owner: "make the main menu look closer to this", with
+  [`../../art/reference/v0.9.5_main_menu.webp`](../../art/reference/v0.9.5_main_menu.webp): black, a left column of
+  cracked dark-stone buttons with crystal shards on their ends, the focused one rimmed and lit in blue; on the right a
+  floating ruined portal ring with a red beam, red crystals and floating rocks, and the hero on a cracked path with
+  red-glowing seams.
+- Answers (AskUserQuestion, 2026-10-26): the right side is a **live 3D scene** built from the game's own models (not
+  the picture); **Credits stay** (Play, Continue, Options, Credits, Exit).
+
 ### PF. Performance (last, owner's order)
 - **Target (owner, 2026-10-26):** "i think thet my pc should run this game 144fps constant, because it doesnt have that
   good gaphics". So: a steady 144 fps on the owner's PC (i7-10700K, RTX 3060) at 1080p with the default settings,
