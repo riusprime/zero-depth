@@ -205,3 +205,6 @@ riusprime/zero-depth#9).
   edit; no digest ([evidence](evidence/FC3.md)). Void + Mine measured ×7.98 single / ×23.8 pack (held voids stack) and
   Void + Big Shot ×10.6 pack: FC4 tames both (one held void at a time; a smaller Big Shot). HM (agent) merged: three
   HUD mockups sent; the owner picked **A** (the Risk of Rain row). FC4 and HU started.
+- 2026-10-26 — Owner, on the HUD: "match the spells to the same height as the health bar, but lower both about 2 cm".
+  Passed to HU: the squares and the HP plate share one bottom line 20 px above the screen's edge at 1080p (the plate
+  ~70 px lower than today), the squares centred on the bar row; whatever sat above the plate moves down with it.
