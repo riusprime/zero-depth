@@ -11,8 +11,8 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ and EE2 merged.
-- **Agents working:** BH1 (no boss stagger, HP at the door, loop ease) and SW (a sweep of tests/unit/sim, presentation and e2e for this version's fallout) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2 and BH1 merged.
+- **Agents working:** BH2 (hard spells B1–B5) and SW (a sweep of tests/unit/sim, presentation and e2e for this version's fallout) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner (asleep, 2026-10-25 night):** the G2 HUD pick once HM's mockups are made; [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -40,6 +40,7 @@ riusprime/zero-depth#9).
 | EE1 | Venom: Lv 2 spreads to the nearest unpoisoned enemy every 1.5 s, Lv 3 stacks to 5 (+25 % a stack); Bleed: Lv 2 hurts 50 % more while the enemy moves, Lv 3 stacks to 5 and bursts for the rest at 5 ([evidence](evidence/EE1.md)) | `0767d9f2`, merge `61cbbab0` |
 | AQ | Event altars (Unstable Core, Echo Mirror …) appear on about 30 % of floors, at most twice a run, never the same one twice; floors saved earlier keep their old draw (floor rules 19) ([evidence](evidence/AQ.md)) | `d8b8e806`, merge `6e97560a` |
 | EE2 | Fire: Lv 2 wider, longer fire patches, Lv 3 burning foes take +15 %; Lightning: Lv 2 +1 jump and range, Lv 3 every 6th hit calls a strike; Frost: Lv 2 frozen foes take +25 %, Lv 3 a hit shatters the ice into 3 shards ([evidence](evidence/EE2.md)) | `afab26ac`, merge `1e0c5133` |
+| BH1 | Bosses can't be staggered; at each phase change a boss kneels 1 s (hittable) and its core can be stolen for 3 s; boss HP is set from your power when the door starts opening (caps ×2.5–4.5 by floor, ±8 % per fight); each completed loop (up to 3) makes the Hollow Crown's pace 12 % shorter and its hits 8 % softer; the run summary says "Looped ×N" ([evidence](evidence/BH1.md)) | `d669f646`, merge `f9197302` |
 
 ## Goldens changed on purpose
 - `modifier_equivalence.json` `gun_all` (017199d8… → b813b3d2…) and `both_all` (7b49193f… → a5eb26d3…): HT, heat by
@@ -133,3 +134,7 @@ riusprime/zero-depth#9).
   happens (only the size and life change). EE2 found CLV fallout outside seams (test_items_j, test_wand_compile,
   test_remnants, test_card_pool_reach, test_loot_pacing): SW started to sweep tests/unit/sim, presentation and e2e.
   BH1 started.
+- 2026-10-26 — BH1 (agent) merged (`f9197302`): bosses, challenge, gates, core theft, catch-up, final boss and pace,
+  the boss-fight files, content 157/157, arch 4/4, golden 2/2, application 136/136, the boss/final/ascension/difficulty
+  e2e green ([evidence](evidence/BH1.md)); stagger tests converted to "never staggered". test_final_pace now passes
+  (strong blade body 2: 151.4 vs 152.6 s). A phase gate is no longer invulnerable (the kneel can be hit). BH2 started.
