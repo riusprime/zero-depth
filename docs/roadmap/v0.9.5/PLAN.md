@@ -278,6 +278,11 @@ tested as CLAUDE.md "Testing before a push" says.
 - **DC: difficulty keeps rising to minute 10** (data + sim + HUD): the Q19 curve.
 - **MC: the mouse cursor** (presentation): a code-drawn rune reticle in runs, an arrow in menus, the hardware cursor
   API (no per-frame cost).
+  - **Owner, 2026-10-26, on MC's first cursor:** "the cursor you made is not valid, use this image as reference, ignore
+    the position for click moving we dont use that". The reference is
+    [`../../art/reference/v0.9.5_cursor_sheet.png`](../../art/reference/v0.9.5_cursor_sheet.png): a faceted silver
+    arrowhead with a red crystal; states Default, Hover, Click, Disabled, Aim/Target, Interact, Invalid (Move Target not
+    used). Rebuilt in step MC2.
 - **HM: the HUD mockups** (G2): three mockups of the bottom-right ability squares and the bigger HP plate,
   `scripts/shots/mock_hud.gd`, en + es, 1920×1080.
 
