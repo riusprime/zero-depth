@@ -44,9 +44,10 @@ static func setup(w: World, chance_permille: int) -> void:
 	r.target = f.rune_target.duplicate()
 	for k in f.rune_pillars.size():
 		var i := w.interactables.add(
-			Interactables.Kind.RUNE_PILLAR, f.rune_pillars[k], PILLAR_REACH_M, k
+			Interactables.Kind.RUNE_PILLAR, f.rune_pillars[k], PILLAR_REACH_M + w.solids.bonus(), k
 		)
 		w.interactables.state[i] = f.rune_start[k]
+		w.solids.add_square(Solids.Kind.RUNE_PILLAR, k, f.rune_pillars[k])  # v0.9.5 SB
 		r.pillars.append(i)
 	r.calm_k = w.interactables.add_calm_room(f.rune_host)
 	Secrets.drop_spawns(w, f.rune_room)

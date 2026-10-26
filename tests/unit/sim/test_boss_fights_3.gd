@@ -83,7 +83,7 @@ func test_the_siege_engines_phase_script() -> void:
 		):
 			assert_eq(a.lock_ticks, 48, "%s locks for 0.8 s" % a.id)
 	assert_eq(t.attacks[t.attack_index(&"shockwave")].radius_m, 50.0, "BF1's 50 m outer edge")
-	assert_eq(t.radius_m, 1.8, "BF1's body (N18)")
+	assert_eq(t.radius_m, 2.81, "BF1's body (N18), v0.9.5 SB: 85% of the model's half-width")
 	assert_eq(t.attacks[t.gap_attack].id, &"barrage", "a gap-closer: the tracked barrage")
 
 

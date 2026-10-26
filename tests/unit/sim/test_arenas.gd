@@ -115,13 +115,13 @@ func test_the_pick_is_deterministic_and_leaves_the_layout_alone() -> void:
 		var a := FloorGenerator.generate(s)
 		BossRoomBuilder.attach(a)
 		OverrunRooms.mark(a)
-		var walls := a.walls.size()
+		var walls := _walls(a)
 		var rooms := ArenaRooms.mark(a, 330)
 		var b := FloorGenerator.generate(s)
 		BossRoomBuilder.attach(b)
 		OverrunRooms.mark(b)
 		assert_eq(ArenaRooms.mark(b, 330), rooms, "seed %d: same rooms" % s)
-		assert_eq(a.walls.size(), walls, "no wall added")
+		assert_eq(_walls(a), walls, "no wall added")
 		assert_eq(ArenaRooms.mark(b, 0), PackedInt32Array(), "a zero share: none")
 
 
@@ -179,12 +179,12 @@ func test_entering_seals_the_doors_and_the_horde_pauses() -> void:
 	for n in 30:
 		w.step(InputFrame.new())
 	assert_false(w.arenas.touched(), "not hashed before an arena seals")
-	var walls := w.walls.size()
+	var walls := _walls(w)
 	_enter(w, room)
 	assert_eq(w.arenas.room, room, "sealed on the first tick inside")
 	var doors := ArenaRooms.doors_of(f, room)
 	assert_eq(w.arenas.barriers.size(), doors.size(), "a barrier in each doorway")
-	assert_eq(w.walls.size(), walls + doors.size(), "they stand in the walls")
+	assert_eq(_walls(w), walls + doors.size(), "they stand in the walls")
 	assert_between(w.arenas.waves, 2, 3, "2-3 waves, drawn per room")
 	var cd := w.spawn_cd
 	var ticks := w.run_ticks
@@ -217,7 +217,7 @@ func test_waves_spawn_inside_one_after_another_then_the_doors_open() -> void:
 	var f := w.floor_layout
 	var room := f.arena_rooms[0]
 	# v0.8.0 BD: the shut boss door's collider joins the walls on the first tick and stays (no press here).
-	var walls := w.walls.size() + (1 if w.boss_flow.door == BossFlow.Door.SET else 0)
+	var walls := _walls(w) + (1 if w.boss_flow.door == BossFlow.Door.SET else 0)
 	var locked := PackedInt32Array()
 	for i in w.rewards.size():
 		if f.room_of(w.rewards.pos(i)) == room:
@@ -247,7 +247,7 @@ func test_waves_spawn_inside_one_after_another_then_the_doors_open() -> void:
 	for n in sizes:
 		assert_eq(n, 3, "floor 1: waves of 3")
 	assert_true(w.arenas.cleared.has(room))
-	assert_eq(w.walls.size(), walls, "the doors open")
+	assert_eq(_walls(w), walls, "the doors open")
 	for id in locked:
 		assert_false(Arenas.locked(w, w.rewards.index_of(id)), "its reward unlocks")
 	_enter(w, room)
@@ -328,7 +328,7 @@ func _round_trip(w: World, base: World, label: String) -> void:
 	if restored == null:
 		return
 	assert_eq(restored.state_hash(), w.state_hash(), "%s: restored hash equals" % label)
-	assert_eq(restored.walls.size(), w.walls.size(), "%s: the barriers came back" % label)
+	assert_eq(_walls(restored), _walls(w), "%s: the barriers came back" % label)
 	var b1 := FightBot.new(17)
 	var b2 := FightBot.new(17)
 	for i in STEPS_AFTER:
@@ -523,3 +523,8 @@ func test_killing_the_boss_leaves_a_legendary_altar_of_three() -> void:
 	for n in 5:
 		w.step(InputFrame.new())
 	assert_eq(w.rewards.index_of(w.legendary_id), -1, "one per boss")
+
+
+## v0.9.5 SB: the walls that are not a solid prop's footprint (a prop joins the walls once the hero is clear of it).
+func _walls(w: World) -> int:
+	return w.walls.size() - w.solids.placed_count()

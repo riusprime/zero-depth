@@ -64,7 +64,7 @@ func test_out_through_the_boss_door_and_back_to_the_portal() -> void:
 	await _click(e, main, "God")
 	assert_true(main.driver.debug.god, "God mode for the walk")
 	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
-	var walls_open := w.walls.size()
+	var walls_open := w.walls.size() - w.solids.placed_count()
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(
 		e, f.boss_door_inside(2.0), func() -> bool: return w.boss_flow.door_sealed(), into
@@ -72,7 +72,11 @@ func test_out_through_the_boss_door_and_back_to_the_portal() -> void:
 	assert_true(sealed, "walked through the boss door: it sealed")
 	if not sealed:
 		return
-	assert_eq(w.walls.size(), walls_open + 1, "the door is a wall during the fight")
+	assert_eq(
+		w.walls.size() - w.solids.placed_count(),
+		walls_open + 1,
+		"the door is a wall during the fight"
+	)
 	await e.frames(30)
 	await _click(e, main, "KillBoss")
 	await e.frames(3)
@@ -80,7 +84,7 @@ func test_out_through_the_boss_door_and_back_to_the_portal() -> void:
 	assert_false(w.boss_alive(), "Kill boss killed it")
 	assert_true(reader.portal_active(), "the portal is open")
 	assert_false(reader.boss_door_sealed(), "and the boss door with it")
-	assert_eq(w.walls.size(), walls_open, "its collider is gone")
+	assert_eq(w.walls.size() - w.solids.placed_count(), walls_open, "its collider is gone")
 	# v0.8.0 N18 (owner O76): the "explore the rest of the floor" line is gone; the note only says the portal is open
 	assert_eq(
 		hud.gate_text(),
