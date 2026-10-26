@@ -258,6 +258,12 @@ func _pose_model(ability: bool, calm: bool) -> void:
 				(parts["shards"] as Node3D).rotation.y = -_t * 0.9
 
 
+## v0.9.5 PF5: the hit flash and the accent glow are each written to a list of pieces (RigMerge swaps merged
+## pieces in them).
+func rig_spec() -> Dictionary:
+	return {"keep": [], "sets": [_hit_pieces, _glow_pieces]}
+
+
 func _set_glow(e: float) -> void:
 	if e == _glow_e:
 		return

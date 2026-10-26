@@ -446,3 +446,179 @@ changes the code-built enemies only. Also `shadows_trimmed_fight.png` and `effec
 - Whether the look without outlines is acceptable (flip `ActorLooks.OUTLINES` to `true` to get it back).
 - Whether the enemies' shadows with only their 2 largest pieces look right in motion.
 - Frame times on the owner's hardware with nothing else running.
+
+## PF5: merged enemy rigs
+
+Step PF5 of v0.9.5. Base: `claude/v095-feedback` at `1717e42b`. Machine: the owner's PC (RTX 3060), other Godot processes
+possibly active (a hung `rig_compare` window of this step's own, from a tool error since fixed, was open during the
+last two probe runs), so every absolute timing is **machine possibly busy, not evidence**; the rule that decided
+acceptance is the pixel comparison, which does not depend on timing.
+
+### What it does
+
+`RigMerge.merge(avatar, kind)` (`rig_merge.gd`, called from `ActorViews._make_actor` after `ShadowTrim`, for every enemy
+that is not a boss or the hero): every Node3D from the avatar down to a mesh piece becomes one bone of a `MergedRig`
+(`merged_rig.gd`, a `Skeleton3D`; same hierarchy, same node transforms), each piece's vertices are bound 100 % to its own
+bone and baked in the avatar's space at the merge moment (the skeleton's rest, so the skin is identity then), and the
+pieces become one `MeshInstance3D` per (shadow-casting setting, per-instance-parameter set) with one surface per
+distinct material. The avatar's animation code is untouched: it still writes the same Node3D transforms; its `_process`
+then calls `merged_rig.update_bones()`, which copies every changed transform to its bone (a hidden node folds its bone
+to a point, so `visible` toggles work). The original piece nodes stay in the tree with `mesh = null` (the mesh is kept
+in meta `merged_mesh`), so the avatars' references and tests keep working. Body materials that are equal (same albedo,
+vertex-colour flag, emission rest, ...) become one material, listed once in `body_materials` / the actor's `mats`, so the
+hit flash and tints (`ActorViews._set_flash`, `tint_greys`, `role_glow`) are written once to it; animated materials
+(eye, muzzle, fuse glow ...) stay the same objects as surfaces. The hit flash / accent glow per-instance shader values
+(`HIT`, `GLOW`) are written to the merged meshes (`AvatarBase.rig_spec()["sets"]`, the lists the avatar writes to).
+Shadows: `ShadowTrim` runs first, so the pieces that cast are the PF4 ones, and the merged mesh of casting pieces casts
+(same pieces, same casters; the shadow count is in the table). Merged meshes and skins are cached per avatar script and
+kind (checked against the layout and the pieces' geometry), so a spawn after the first of a kind builds none.
+Switches: `RigMerge.enabled`, `RigMerge.skip_kinds` (a kind id), `frame_probe.gd --ab=no_rig_merge`.
+
+Left as nodes of their own, and why (the owner's rule: unmerged rather than changed):
+- see-through surfaces (the Bomb Drone and Lens Drone ground shadows, the Warden's slam dust): they sort by their own
+  node;
+- the Charger and Hatchling's hood, face and visor (everything under `body`): the lunge stretches `body` by
+  (1.14, 0.94, 0.96) and a skinned mesh shades from the bone matrix, not its inverse transpose. Measured: merged,
+  the Charger differed up to 22 / 255 over 0.8 % of the frame on the strike (mean 0.102, over the 0.5 % rule); the
+  legs, which are not scaled, are merged;
+- the Charger's visor and the Sniper's muzzle (their own per-instance `GLOW` value);
+- bosses and the hero: out of scope.
+
+### rig_compare (`scripts/checks/rig_compare.gd`, 480x480, ortho iso camera, sun with shadows)
+
+Per kind: one enemy built through the real `_make_actor`, a fixed sequence (spawn rise to tick 20, idle, walk 40-100,
+wind-up 100-130, attack 130-150, recover 150-170, hit flash + flinch at 165, burning tint 178-188, death at 190), frames at
+13 ticks, run with `RigMerge.enabled` false then true (the merged enemy taken from the cache, as spawns are), compared per
+pixel. A first version without settle frames compared a pipeline compiled in the background and showed false
+differences; the tool now waits 3 frames before each capture. Command: `APPDATA=... godot --language en --path .
+--resolution 480x480 --windowed -s scripts/checks/rig_compare.gd` (raw output `build/cmp_final3.txt`, frames in
+`build/shots/v0.9.5/pf5/<kind>/{old,new}_<tick>.png`, untracked). Accept rule: mean < 0.5 and over-8/255 share < 0.5 %.
+Columns: worst mean abs diff per channel (0..255) over the 13 frames, worst share of pixels with a channel diff > 8, the
+tick of the worst mean, the surfaces submitted at tick 60 (and shadow-caster surfaces) old -> new, and what was merged.
+
+```
+rig_compare (mean abs diff per channel 0..255 | % pixels > 8 | accept: mean < 0.5, pct < 0.5)
+kind                  mean   pct>8   tick verdict  draws old -> new (casters) merged
+charger              0.000   0.000    175 OK       27 -> 11 (5 -> 5)          12 pieces, 17 bones, 6 surfaces, 2 meshes
+hatchling            0.000   0.000    175 OK       27 -> 11 (5 -> 5)          12 pieces, 17 bones, 6 surfaces, 2 meshes
+warden               0.009   0.000    175 OK       16 -> 10 (2 -> 2)          16 pieces, 27 bones, 10 surfaces, 2 meshes
+needle               0.002   0.002    138 OK       34 -> 8 (2 -> 2)           34 pieces, 56 bones, 8 surfaces, 2 meshes
+arc_caster           0.000   0.000    215 OK       12 -> 7 (2 -> 2)           12 pieces, 19 bones, 7 surfaces, 2 meshes
+bomb_drone           0.001   0.002    215 OK       18 -> 8 (2 -> 2)           17 pieces, 35 bones, 7 surfaces, 2 meshes
+lens_drone           0.000   0.000    138 OK       6 -> 4 (5 -> 3)            2 pieces, 6 bones, 3 surfaces, 1 meshes
+swarmer              0.000   0.000    126 OK       11 -> 5 (2 -> 2)           11 pieces, 20 bones, 5 surfaces, 3 meshes
+splitter             0.000   0.000    115 OK       14 -> 7 (4 -> 2)           6 pieces, 14 bones, 7 surfaces, 3 meshes
+splitling            0.000   0.000    175 OK       14 -> 7 (4 -> 2)           6 pieces, 14 bones, 7 surfaces, 3 meshes
+shield_bearer        0.003   0.000    148 OK       9 -> 7 (5 -> 5)            4 pieces, 10 bones, 7 surfaces, 3 meshes
+mender               0.000   0.000    115 OK       9 -> 6 (6 -> 3)            3 pieces, 8 bones, 6 surfaces, 2 meshes
+mine_layer           0.000   0.000    160 OK       7 -> 5 (2 -> 2)            7 pieces, 10 bones, 5 surfaces, 3 meshes
+sniper               0.001   0.000    185 OK       8 -> 6 (2 -> 2)            7 pieces, 13 bones, 5 surfaces, 3 meshes
+elite_breaker        0.001   0.000     90 OK       8 -> 2 (2 -> 1)            7 pieces, 16 bones, 2 surfaces, 2 meshes
+elite_rift_hunter    0.001   0.000     60 OK       8 -> 2 (2 -> 1)            7 pieces, 16 bones, 2 surfaces, 2 meshes
+elite_conduit        0.000   0.000    160 OK       5 -> 2 (2 -> 1)            5 pieces, 12 bones, 2 surfaces, 2 meshes
+
+```
+
+Every kind passes (all means under 0.03, shares under 0.01 %). Where a frame's largest channel difference is high
+(Needle, Arc Caster, Bomb Drone, Warden, up to 244 / 255) the share of pixels is under 0.003 %, i.e. a few edge pixels of
+thin parts (the eye slits, the orbiting shards): sub-pixel float differences between a node transform and a skinned
+vertex. I looked at the Warden pair (tick 148) and the Conduit pair (tick 160) side by side: identical to the eye,
+shadows included. Per-frame numbers (tick: mean / share / largest channel difference):
+
+```
+charger per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max1, 30: 0.000/0.00/max1, 60: 0.000/0.00/max1, 90: 0.000/0.00/max1, 115: 0.000/0.00/max1, 126: 0.000/0.00/max0, 138: 0.000/0.00/max1, 148: 0.000/0.00/max1, 160: 0.000/0.00/max1, 167: 0.000/0.00/max0, 175: 0.000/0.00/max1, 185: 0.000/0.00/max1, 215: 0.000/0.00/max1
+hatchling per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max1, 30: 0.000/0.00/max1, 60: 0.000/0.00/max1, 90: 0.000/0.00/max1, 115: 0.000/0.00/max0, 126: 0.000/0.00/max1, 138: 0.000/0.00/max1, 148: 0.000/0.00/max1, 160: 0.000/0.00/max0, 167: 0.000/0.00/max0, 175: 0.000/0.00/max1, 185: 0.000/0.00/max0, 215: 0.000/0.00/max1
+warden per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max0, 30: 0.002/0.00/max3, 60: 0.002/0.00/max1, 90: 0.000/0.00/max1, 115: 0.000/0.00/max1, 126: 0.000/0.00/max21, 138: 0.000/0.00/max1, 148: 0.000/0.00/max1, 160: 0.000/0.00/max1, 167: 0.000/0.00/max0, 175: 0.009/0.00/max2, 185: 0.004/0.00/max59, 215: 0.002/0.00/max1
+needle per-frame (tick: mean/pct/max channel diff): 10: 0.001/0.00/max233, 30: 0.001/0.00/max233, 60: 0.001/0.00/max233, 90: 0.001/0.00/max233, 115: 0.001/0.00/max100, 126: 0.002/0.00/max207, 138: 0.002/0.00/max218, 148: 0.001/0.00/max82, 160: 0.001/0.00/max212, 167: 0.000/0.00/max0, 175: 0.001/0.00/max211, 185: 0.001/0.00/max130, 215: 0.000/0.00/max172
+arc_caster per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max0, 30: 0.000/0.00/max1, 60: 0.000/0.00/max1, 90: 0.000/0.00/max1, 115: 0.000/0.00/max1, 126: 0.000/0.00/max1, 138: 0.000/0.00/max1, 148: 0.000/0.00/max1, 160: 0.000/0.00/max1, 167: 0.000/0.00/max0, 175: 0.000/0.00/max1, 185: 0.000/0.00/max1, 215: 0.000/0.00/max1
+bomb_drone per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max158, 30: 0.001/0.00/max159, 60: 0.000/0.00/max1, 90: 0.000/0.00/max1, 115: 0.001/0.00/max129, 126: 0.001/0.00/max163, 138: 0.000/0.00/max139, 148: 0.001/0.00/max155, 160: 0.001/0.00/max173, 167: 0.001/0.00/max194, 175: 0.000/0.00/max164, 185: 0.001/0.00/max154, 215: 0.001/0.00/max157
+lens_drone per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max1, 30: 0.000/0.00/max1, 60: 0.000/0.00/max1, 90: 0.000/0.00/max1, 115: 0.000/0.00/max1, 126: 0.000/0.00/max1, 138: 0.000/0.00/max1, 148: 0.000/0.00/max2, 160: 0.000/0.00/max1, 167: 0.000/0.00/max0, 175: 0.000/0.00/max1, 185: 0.000/0.00/max1, 215: 0.000/0.00/max1
+swarmer per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max0, 30: 0.000/0.00/max1, 60: 0.000/0.00/max0, 90: 0.000/0.00/max0, 115: 0.000/0.00/max1, 126: 0.000/0.00/max1, 138: 0.000/0.00/max0, 148: 0.000/0.00/max1, 160: 0.000/0.00/max0, 167: 0.000/0.00/max0, 175: 0.000/0.00/max1, 185: 0.000/0.00/max0, 215: 0.000/0.00/max0
+splitter per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max0, 30: 0.000/0.00/max1, 60: 0.000/0.00/max1, 90: 0.000/0.00/max1, 115: 0.000/0.00/max13, 126: 0.000/0.00/max1, 138: 0.000/0.00/max1, 148: 0.000/0.00/max1, 160: 0.000/0.00/max1, 167: 0.000/0.00/max0, 175: 0.000/0.00/max1, 185: 0.000/0.00/max1, 215: 0.000/0.00/max1
+splitling per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max0, 30: 0.000/0.00/max1, 60: 0.000/0.00/max1, 90: 0.000/0.00/max1, 115: 0.000/0.00/max1, 126: 0.000/0.00/max1, 138: 0.000/0.00/max1, 148: 0.000/0.00/max1, 160: 0.000/0.00/max2, 167: 0.000/0.00/max0, 175: 0.000/0.00/max127, 185: 0.000/0.00/max1, 215: 0.000/0.00/max1
+shield_bearer per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max0, 30: 0.000/0.00/max1, 60: 0.001/0.00/max2, 90: 0.001/0.00/max3, 115: 0.000/0.00/max1, 126: 0.001/0.00/max3, 138: 0.002/0.00/max3, 148: 0.003/0.00/max3, 160: 0.001/0.00/max3, 167: 0.000/0.00/max3, 175: 0.001/0.00/max3, 185: 0.001/0.00/max3, 215: 0.000/0.00/max3
+mender per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max0, 30: 0.000/0.00/max1, 60: 0.000/0.00/max1, 90: 0.000/0.00/max1, 115: 0.000/0.00/max38, 126: 0.000/0.00/max1, 138: 0.000/0.00/max1, 148: 0.000/0.00/max1, 160: 0.000/0.00/max1, 167: 0.000/0.00/max0, 175: 0.000/0.00/max1, 185: 0.000/0.00/max1, 215: 0.000/0.00/max1
+mine_layer per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max0, 30: 0.000/0.00/max0, 60: 0.000/0.00/max1, 90: 0.000/0.00/max1, 115: 0.000/0.00/max0, 126: 0.000/0.00/max1, 138: 0.000/0.00/max0, 148: 0.000/0.00/max0, 160: 0.000/0.00/max1, 167: 0.000/0.00/max0, 175: 0.000/0.00/max1, 185: 0.000/0.00/max0, 215: 0.000/0.00/max1
+sniper per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max0, 30: 0.000/0.00/max1, 60: 0.000/0.00/max1, 90: 0.000/0.00/max1, 115: 0.000/0.00/max1, 126: 0.000/0.00/max1, 138: 0.000/0.00/max38, 148: 0.000/0.00/max1, 160: 0.000/0.00/max1, 167: 0.000/0.00/max0, 175: 0.000/0.00/max1, 185: 0.001/0.00/max3, 215: 0.000/0.00/max1
+elite_breaker per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max1, 30: 0.000/0.00/max1, 60: 0.001/0.00/max1, 90: 0.001/0.00/max2, 115: 0.000/0.00/max1, 126: 0.000/0.00/max1, 138: 0.000/0.00/max1, 148: 0.000/0.00/max1, 160: 0.000/0.00/max1, 167: 0.000/0.00/max0, 175: 0.000/0.00/max1, 185: 0.000/0.00/max1, 215: 0.000/0.00/max1
+elite_rift_hunter per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max1, 30: 0.000/0.00/max1, 60: 0.001/0.00/max138, 90: 0.000/0.00/max8, 115: 0.000/0.00/max1, 126: 0.000/0.00/max1, 138: 0.000/0.00/max2, 148: 0.000/0.00/max2, 160: 0.000/0.00/max1, 167: 0.000/0.00/max0, 175: 0.000/0.00/max1, 185: 0.000/0.00/max1, 215: 0.000/0.00/max1
+elite_conduit per-frame (tick: mean/pct/max channel diff): 10: 0.000/0.00/max1, 30: 0.000/0.00/max1, 60: 0.000/0.00/max1, 90: 0.000/0.00/max1, 115: 0.000/0.00/max1, 126: 0.000/0.00/max1, 138: 0.000/0.00/max1, 148: 0.000/0.00/max1, 160: 0.000/0.00/max1, 167: 0.000/0.00/max0, 175: 0.000/0.00/max1, 185: 0.000/0.00/max1, 215: 0.000/0.00/max1
+```
+
+### Draws, census and the frame cost (honest reading: the saving is real, the frame gain is not shown)
+
+Draws per rig (surfaces submitted at tick 60, from the table): Charger / Hatchling 27 -> 11, Warden 16 -> 10, Needle
+34 -> 8, Arc Caster 12 -> 7, Bomb Drone 18 -> 8, Lens Drone 6 -> 4, Swarmer 11 -> 5, Splitter / Splitling 14 -> 7,
+Shield Bearer 9 -> 7, Mender 9 -> 6, Mine Layer 7 -> 5, Sniper 8 -> 6, each elite 5-8 -> 2. A rig keeps one surface per
+distinct material, so 2-11, not 1-4: the rigs have 3-7 materials (red body, trim, grey, dark, eye glow, bore glow ...).
+
+Fixed 20-enemy crowd (`scripts/checks/rig_crowd.gd`, 1920x1080, vsync off, OFF ON OFF ON, 6 s each; the crowd is the
+whole scene, so frames are much cheaper than the game's):
+
+```
+rig_crowd: 20 enemies, 6 s measured after 2 s warm-up, OFF ON OFF ON
+merge OFF frames=3864 avg_ms=1.55 p99_ms=2.38 draw_calls=376 objects=458 render_cpu_ms=0.40 render_gpu_ms=0.87 script_process_ms=2.85 build_20_enemies_ms=684.1
+merge ON  frames=3247 avg_ms=1.85 p99_ms=2.43 draw_calls=244 objects=255 render_cpu_ms=0.39 render_gpu_ms=0.89 script_process_ms=2.83 build_20_enemies_ms=276.8
+merge OFF frames=3915 avg_ms=1.53 p99_ms=2.21 draw_calls=376 objects=458 render_cpu_ms=0.40 render_gpu_ms=0.86 script_process_ms=2.52 build_20_enemies_ms=136.1
+merge ON  frames=3194 avg_ms=1.88 p99_ms=2.49 draw_calls=244 objects=255 render_cpu_ms=0.41 render_gpu_ms=0.89 script_process_ms=2.69 build_20_enemies_ms=165.9
+```
+
+Draw calls 376 -> 244 (objects 458 -> 255) with the render CPU / GPU unchanged (0.40 / 0.87 ms vs 0.39-0.41 / 0.89),
+but the frame is 0.3 ms slower with the merge (1.54 -> 1.86 ms mean): the bones are written from script every frame
+(about 500 `set_bone_pose` calls for 20 enemies). Two experiments on the same tool (not kept): without
+`force_update_all_bone_transforms` the frame was still 1.87 ms; with `set_bone_pose` left out the frame was 1.55 ms and
+render CPU 0.32 ms (so the draw cut is worth about 0.09 ms render CPU on this machine and the bone writes cost 0.3 ms).
+The build of 20 enemies in that tool: merge off 684 / 136 ms (the first is the first build of the session), merge on
+277 / 166 ms (the cache works; the first merged build of a kind costs more).
+So on this machine merging does not buy frame time: draw calls are not what limits the frame (PF3's reading), and the
+script cost of the bones is slightly higher than the draw saving. Which way it goes on a GPU / CPU where draws cost more
+is for the owner's hardware. To get the cost down the bone writes would have to go to the renderer directly
+(`RenderingServer.skeleton_bone_set_transform`, not reachable from `Skeleton3D` in GDScript), a larger change not made here.
+
+`frame_probe.gd -- --biome=red_canyon --secs=15 --breakdown --census` (Red Canyon, 20 enemies, 1920x1080; the first
+with `--ab=no_rig_merge`; the 20 enemies are topped up from a time-driven strafe so the two mixes differ, and the second
+run was on a slower machine: `sim_step`, code unchanged, 938 -> 1152 us mean, +23 %). Raw: `build/probe_before.txt`,
+`build/probe_after.txt`.
+
+```
+                               before (no_rig_merge)   after (merged)
+frames avg_ms / p99_ms              9.231 / 17.76        11.212 / 26.23     (machine +23 % by sim_step)
+draw_calls, mean of 15 samples        780.5                710.1
+visible GeometryInstance3D            533                  536   (the emptied piece nodes still count: no mesh, no draw)
+shadow off (census)                   473                  448
+render CPU / GPU ms                 1.148 / 3.069        1.267 / 3.133
+frame.scene_process (us)             2732                 3368   (+23 %, the same as sim_step)
+actors.update / enemy_sync / animate 287 / 92 / 40        357 / 118 / 50
+census instances by owner:  needle 136, arc_caster 36, warden 32, charger 30, horde 21, elite 17, bomb_drone 16
+                            -> needle 68, arc_caster 48, warden 48, charger 15, horde 12, elite 36, bomb 18,
+                               merged_rig (the merged meshes) 43
+```
+
+The census counts the piece nodes that remain (mesh null) as before, so its instance counts do not fall; the draw
+calls do, by about 9 % here and 35 % in the fixed crowd. Read this with the crowd table: no frame gain is shown.
+
+### Tests
+
+- gdformat / gdlint on every touched file: clean.
+- New `tests/unit/presentation/test_rig_merge.gd` (9 tests): fewer surfaces, switch and skip list, a bone follows its
+  node, hidden node folds and returns, animated material object kept, equal body materials listed once, hit flash reaches
+  the merged mesh, Charger keeps its body, shadows follow the trimmed pieces.
+- `tests/unit/presentation` (whole folder, headless, `--language en`): 164 scripts, 1110 / 1110, 1967221 asserts (1101
+  before this step + 9 new). No existing test needed a changed count: the piece nodes are still there.
+- `tests/golden` + `tests/arch` + `tests/content` + `test_modifier_equivalence`: 34 scripts, 167 / 167, 31637 asserts.
+- e2e `run_flow`, `playground`, `damage_soak`, `horde_enemies`, `elites`: 8 / 8, 187 asserts; `damage_soak`: nodes
+  2137 -> 2131 (no growth). `playground` reports 7 orphans (`PlaygroundHint`, `DpsMeter` ... HUD nodes); the same 7 with
+  `RigMerge.enabled = false`, so not from this step. The presentation folder's 11 orphans are UI / `BarChunks` nodes
+  (the warm-up test's 2 `BarChunks` are the same with the merge off).
+- Digests unchanged: the goldens and `test_modifier_equivalence` pass; no sim file was touched.
+- `ShaderWarmup` now also merges the warm-up enemies it builds (horde, Charger, Hatchling) and builds one each of the
+  Needle, Elite, Warden, Arc Caster, Bomb Drone and Lens Drone merged, so the skinned variants of their shaders compile
+  behind the cover (`test_shader_warmup` passes unchanged).
+- Not run: seed-loop tests, the seams, the full suite (GitHub).
+
+### OWNER ONLY
+
+- The animations in play (the numbers say the frames are pixel-identical in the scripted sequence; the game's own flow,
+  many enemies, spawn and death in a real room, is yours).
+- Whether the merge is worth keeping on: it cuts draw calls but showed no frame-time gain on this machine
+  (`RigMerge.enabled := false` is the switch); frame times on your hardware with nothing else running.

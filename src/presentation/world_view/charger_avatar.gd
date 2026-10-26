@@ -205,6 +205,13 @@ func leg_tips() -> Array[Vector3]:
 	return out
 
 
+## v0.9.5 PF5: the hood, face and visor sit under `body`, which the lunge stretches (scale 1.14, 0.94, 0.96): a skinned
+## mesh shades a stretched body's facets from the bone's matrix, not its inverse transpose, so they would shade up to
+## 22 of 255 differently on the strike. They stay their own nodes; the legs (no scale) are merged.
+func rig_spec() -> Dictionary:
+	return {"keep": RigMerge.pieces_under(body), "sets": [_hit_pieces]}
+
+
 ## The body's height above its rest pose, in metres (negative when it sinks: dazed, or before the rise).
 func body_lift() -> float:
 	return _model.position.y + body.position.y

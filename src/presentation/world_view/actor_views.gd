@@ -650,6 +650,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		ShadowTrim.trim(
 			facing, ShadowTrim.BOSS_KEEP if root.has_meta(&"boss") else ShadowTrim.ENEMY_KEEP
 		)
+		RigMerge.merge_actor(root, kind)  # v0.9.5 PF5: the enemy's pieces become one skinned mesh
 	# Floating health bar, as in the reference; it shrinks toward its centre as HP drops.
 	var bar_root := Node3D.new()
 	bar_root.position = Vector3(0, height + 0.55, 0)

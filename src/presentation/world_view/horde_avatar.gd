@@ -348,6 +348,16 @@ func _pose() -> void:
 	_set_glow(energy * lerpf(0.2, 1.0, _rise))
 
 
+## v0.9.5 PF5: the hit flash and the accent glow are each written to a list of pieces (RigMerge swaps merged
+## pieces in them).
+## The Sniper's muzzle has a glow value of its own (_set_muzzle), so it stays a node of its own.
+func rig_spec() -> Dictionary:
+	var keep: Array[Node] = []
+	if _muzzle_piece != null:
+		keep.append(_muzzle_piece)
+	return {"keep": keep, "sets": [_hit_pieces, _glow_pieces]}
+
+
 ## v0.8.0 HR: the accent's energy on this enemy's accent pieces, set only when it changes.
 func _set_glow(e: float) -> void:
 	if e == _glow_e:
