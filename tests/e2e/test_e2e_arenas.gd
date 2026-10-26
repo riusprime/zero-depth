@@ -1,9 +1,10 @@
 extends GutTest
 ## v0.5.5 AR through the real game (main.tscn, input only: the stick, keys and mouse clicks on the dev panel):
-## - an arena: the dev route puts the hero by an arena's amber door, the stick walks in: the doors seal (barriers in the
-##   doorways), the banner shows the wave, the rest of the floor goes dark on top of the biome's lighting (the sun and
-##   the ambient light are untouched), the arena's reward wears its seal; the dev panel's Clear wave stands in for the
-##   fight wave by wave until the doors open, the dark lifts, the seal goes and E opens the reward;
+## - an arena room (v0.9.5 DR, owner Q6: a locked room now): the dev route puts the hero by its door, the stick
+##   walks in:
+##   the doors seal (the Lockdowns' bars fall into the doorways, no glowing barrier), the banner shows LOCKDOWN, the
+##   biome's lighting is untouched, the room's reward wears its seal; the dev panel's Clear wave stands in for the
+##   fight until the doors open, the seal goes and E opens the reward;
 ## - the boss: through the boss door, Kill boss: a bright-gold legendary altar rises where the boss stood; E opens
 ##   "Pick a legendary card" with three legendary cards, Enter takes one.
 
@@ -41,7 +42,7 @@ func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO
 	return done.call()
 
 
-func test_walk_into_an_arena_fight_its_waves_and_open_its_reward() -> void:
+func test_walk_into_an_arena_room_fight_its_burst_and_open_its_reward() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
@@ -53,7 +54,7 @@ func test_walk_into_an_arena_fight_its_waves_and_open_its_reward() -> void:
 	assert_false(f.arena_rooms.is_empty(), "regular ones besides the Overrun")
 	if f.arena_rooms.is_empty():
 		return
-	assert_gt(main.view.arenas.frame_count(), 0, "their doorways wear amber frames")
+	assert_eq(main.view.arenas.frame_count(), 0, "no amber frames: they are locked rooms (DR)")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
 	await _click(e, main, "GoArena")  # the dev route: by an arena's door, outside it
@@ -76,20 +77,17 @@ func test_walk_into_an_arena_fight_its_waves_and_open_its_reward() -> void:
 	)
 	var walls := w.walls.size()
 	var sealed: bool = await _walk(
-		e, f.rooms[room].get_center(), func() -> bool: return w.arenas.room == room
+		e, f.rooms[room].get_center(), func() -> bool: return w.lockdown.room == room
 	)
 	assert_true(sealed, "walking in seals the arena")
 	if not sealed:
 		return
-	await e.frames(3)
+	await e.frames(30)
 	assert_gt(w.walls.size(), walls, "barriers stand in its doorways")
-	assert_eq(main.view.arenas.barrier_count(), w.arenas.barriers.size(), "and are drawn")
-	assert_true(hud.overrun_hud.visible, "the banner shows")
-	assert_eq(hud.overrun_hud.title.text, tr("HUD_ARENA"))
-	var veiled := main.view.arenas.veiled_rooms()
-	assert_eq(veiled.size(), f.room_count() - 1, "every other room goes dark")
-	assert_false(veiled.has(room), "but not this one")
-	assert_gt(main.view.arenas.veil_target(), 0.5)
+	assert_eq(main.view.lockdowns.bars_down(room), 1.0, "and the bars fell")
+	assert_eq(main.view.arenas.barrier_count(), 0, "no glowing barrier")
+	assert_true(hud.lockdown_hud.visible, "the banner shows")
+	assert_eq(hud.lockdown_hud.title.text, tr("HUD_LOCKDOWN"))
 	assert_eq(main.view.stage.sun.light_energy, sun_energy, "the biome's sun is untouched")
 	if main.view.stage.environment:
 		assert_eq(
@@ -97,23 +95,22 @@ func test_walk_into_an_arena_fight_its_waves_and_open_its_reward() -> void:
 		)
 	if reward >= 0:
 		assert_true(main.view.rewards.is_sealed(reward), "its reward wears the seal")
-	var waves := w.arenas.waves
+	var waves := w.lockdown.waves
 	var cleared := false
 	for k in 40:
-		await e.frames(70)  # the next wave arrives (and spawns in)
-		if not w.arenas.sealed():
+		await e.frames(70)  # the next formation arrives (and spawns in)
+		if not w.lockdown.sealed():
 			cleared = true
 			break
 		await e.tap(KEY_QUOTELEFT)
 		await _click(e, main, "ClearWave")
 		await e.frames(2)
 		await e.tap(KEY_QUOTELEFT)
-	assert_true(cleared, "after %d waves the arena clears" % waves)
+	assert_true(cleared, "after %d formations the room opens" % waves)
 	await e.frames(3)
 	assert_eq(w.walls.size(), walls, "the doors open")
 	assert_eq(main.view.arenas.barrier_count(), 0, "the barriers go")
-	assert_eq(main.view.arenas.veil_target(), 0.0, "the dark lifts")
-	assert_eq(hud.overrun_hud.progress.text, tr("HUD_ARENA_CLEARED"))
+	assert_eq(hud.lockdown_hud.progress.text, tr("HUD_LOCKDOWN_CLEARED"))
 	if reward < 0:
 		return
 	assert_false(main.view.rewards.is_sealed(reward), "the seal goes")

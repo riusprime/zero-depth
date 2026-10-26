@@ -161,6 +161,9 @@ static func lockdown_table(run: RunState, repo: ContentRepository) -> LockdownTa
 	var t := RunContentCompiler.compile_lockdown(repo.get_def(&"lockdown", &"lockdown"))
 	if t != null and run != null and run.floor_rules <= RunState.FLOOR_RULES_V090_SH:
 		t.kind_weights[LockdownTable.Kind.ELITE] = 0  # v0.9.0 EL: a floor saved before EL had none
+	if t != null and run != null and run.floor_rules <= RunState.FLOOR_RULES_V095_AQ:
+		t.burst_gap_ticks = 0  # v0.9.5 DR: a floor saved before DR keeps its three formations and its arenas
+		t.takes_arenas = false
 	if t != null and ClosedFights.legacy_rooms(run):  # v0.9.0 CF: a floor saved before CF keeps its rooms
 		t.min_cells = 0
 	return t

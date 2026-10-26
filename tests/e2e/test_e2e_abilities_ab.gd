@@ -68,7 +68,7 @@ func test_dev_panel_grants_a_pair_and_storm_bombs_evolve() -> void:
 	assert_true(drawn, "and the chain was drawn")
 
 
-func test_walk_through_the_red_door_into_an_overrun() -> void:
+func test_walk_over_the_red_rune_into_an_overrun() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
@@ -76,8 +76,8 @@ func test_walk_through_the_red_door_into_an_overrun() -> void:
 	var hud: Hud = main.get_node("UI/Hud")
 	var o := main.driver.reader.overrun()
 	assert_true(o["active"], "this floor has an Overrun room")
-	assert_gte(main.view.overrun_doors.frame_count(), 1, "its doorway is framed")
-	assert_true(main.view.overrun_doors.is_lit(), "in red")
+	assert_gte(main.view.overrun_doors.rune_count(), 1, "a red rune lies outside its doorway")
+	assert_true(main.view.overrun_doors.is_lit(), "glowing")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
 	await _click(e, main, "GoOverrun")  # the dev route: by the door, outside the room
@@ -89,6 +89,11 @@ func test_walk_through_the_red_door_into_an_overrun() -> void:
 	assert_true(main.driver.reader.overrun()["inside"], "inside the Overrun")
 	assert_true(hud.overrun_hud.visible, "the banner shows")
 	assert_eq(hud.overrun_hud.title.text, tr("HUD_OVERRUN"))
+	await e.frames(30)
+	assert_eq(
+		main.view.lockdowns.bars_down(w.floor_layout.overrun_room), 1.0, "v0.9.5 DR: bars fell"
+	)
+	assert_eq(main.view.arenas.barrier_count(), 0, "and no glowing barrier box")
 	var boosted := false
 	for k in 1200:
 		await e.frames(1)

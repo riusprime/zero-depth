@@ -295,7 +295,7 @@ func test_every_lockdown_opens() -> void:
 func _lockdown_seed(floor_index: int) -> int:
 	NavField.skip_build = true
 	for s in range(1, 31):
-		if SaveLab.floor_world(s, floor_index).lockdown != null:
+		if not SaveLab.floor_world(s, floor_index).floor_layout.lockdown_rooms.is_empty():
 			NavField.skip_build = false
 			return s
 	NavField.skip_build = false
