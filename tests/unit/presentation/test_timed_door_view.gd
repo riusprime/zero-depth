@@ -95,7 +95,7 @@ func test_the_door_the_switches_and_the_hidden_room() -> void:
 		if t.flash > was:
 			flashes += 1
 		was = t.flash
-	assert_eq(beeps, TimedDoorView.beep_ticks(900).size(), "every beep heard")
+	assert_eq(beeps, TimedDoorView.beep_ticks(1200).size(), "every beep heard")
 	assert_eq(flashes, beeps - 1, "and each one seen")
 	assert_true(t.slammed, "the shut slams the slab")
 	t._process(TimedDoorView.SLAM_S + 0.05)
@@ -120,7 +120,7 @@ func test_the_shut_plays_the_impact() -> void:
 	cues.prime(reader)
 	w.actors.set_pos(0, w.floor_layout.timed_switches[0])
 	var heard: Array = []
-	for k in 900:
+	for k in 1200:
 		w.step(InputFrame.new())
 		heard.append_array(_ids(cues.collect(reader)))
 	assert_eq(reader.timed_door_state(), WorldReader.TIMED_SHUT)
@@ -132,3 +132,27 @@ func _ids(reqs: Array) -> Array:
 	for r: Array in reqs:
 		out.append(r[0])
 	return out
+
+
+func test_the_lever_inside_swings_down_while_the_door_stands_open() -> void:
+	var w := TimedLab.world()
+	if w == null:
+		return
+	w.step(InputFrame.new())
+	var v := _view(w)
+	var t := v.timed_door
+	assert_true(t.has_lever, "v0.9.5 TS: a lever stands inside the secret room")
+	var lever := t.get_node_or_null("Lever") as Node3D
+	assert_not_null(lever)
+	assert_eq(lever.position, SimPlane.to_3d(w.floor_layout.timed_lever), "on its spot")
+	assert_eq(t.lever_pull, 0.0, "shut: the handle stands up")
+	TimedLab.switch(w, 0)
+	TimedLab.switch(w, 1)
+	v.sync()
+	t._process(TimedDoorView.PULL_S + 0.05)
+	assert_eq(t.lever_pull, 1.0, "open: the handle is down")
+	assert_eq(
+		TranslationServer.translate(&"TIMED_LEVER_PROMPT").begins_with("[E / X]"),
+		true,
+		"the lever has its own prompt"
+	)

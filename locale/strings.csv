@@ -633,6 +633,7 @@ SHOP_PROMPT,[E / X] Open the shop,[E / X] Abrir la tienda
 BOSS_DOOR_PROMPT,[E / X] Open the door,[E / X] Abrir la puerta
 APPROACH_PYLON_PROMPT,[E / X] Awaken,[E / X] Despertar
 TIMED_SWITCH_PROMPT,[E / X] Activate,[E / X] Activar
+TIMED_LEVER_PROMPT,[E / X] Pull the lever,[E / X] Tirar de la palanca
 RUNE_PILLAR_PROMPT,[E / X] Turn,[E / X] Girar
 CAUSE_EXPLOSIVE_BARREL,An explosive barrel,Un barril explosivo
 CAUSE_LOCKDOWN_HAZARD,A Lockdown's hazard,Un peligro del Bloqueo

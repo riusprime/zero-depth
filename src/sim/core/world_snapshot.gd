@@ -166,6 +166,12 @@ const STATE_CLASSES: Array[StringName] = [
 ## the per-entry arrays to their store's size and migrates the build into the slots (BuildSlots.migrate). Any other
 ## missing field still fails.
 const ADDED_SINCE_V05 := {
+	&"TimedDoor":
+	[
+		&"lever",  # v0.9.5 TS: a floor saved before TS has no lever and its 15 s timer (the base's, from the old rules)
+		&"lever_ticks",
+		&"open_ticks",
+	],
 	&"World":
 	[
 		&"hook_chain",

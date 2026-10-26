@@ -249,7 +249,17 @@ static func add_secrets(
 		Shrines.setup(w, shrines, run.floor_index, rules)
 	if run.floor_rules > RunState.FLOOR_RULES_V080_BD:
 		var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
-		TimedDoor.setup(w, map.timed_door_permille, map.timed_door_ticks, move_speed)
+		if run.floor_rules > RunState.FLOOR_RULES_V095_DR:  # v0.9.5 TS (owner Q7): spread switches, 20 s, a lever
+			TimedDoor.setup(
+				w,
+				map.timed_door_permille,
+				map.timed_door_ticks,
+				move_speed,
+				map.timed_switch_steps_max,
+				map.timed_lever_ticks
+			)
+		else:  # a floor saved under rules 10-20: both switches by the door, 15 s, no lever
+			TimedDoor.setup(w, map.timed_door_permille, TimedDoor.LEGACY_TICKS, move_speed)
 	if run.floor_rules > RunState.FLOOR_RULES_V090_TD:
 		var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
 		RuneAlignment.setup(w, secrets.rune_permille if secrets != null else 0)

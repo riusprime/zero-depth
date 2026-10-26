@@ -23,6 +23,7 @@ static func mark(f: FloorLayout, chance_permille: int, taken: PackedInt32Array) 
 	if not rng.chance_permille(chance_permille):
 		return -1
 	var busy := PackedInt32Array([f.timed_room, f.timed_host, f.rune_room, f.rune_host])
+	busy.append_array(f.timed_switch_rooms)  # v0.9.5 TS
 	var cands := PackedInt32Array()
 	for room in TimedDoorRooms.candidates(f, taken):
 		if not room in busy and not RuneRooms.host_of(f, room) in busy:
