@@ -322,6 +322,14 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	if root and spec.blast_mm > 0:  # v0.9.5 FC2: the Bomb's Halo cross and Backfire drop wait
 		BombMods.on_throw(w, spec, ctx.origin, ctx.angle, dmg)
 	var speed := BombMods.speed(w, spec) if spec.blast_mm > 0 else spec.speed  # v0.9.5 FC2: Big Shot's slower throw
+	var life := spec.life_ticks
+	var bounces := spec.bounces
+	var own := root
+	if spec.void_mm > 0 and not spec.modifier_ids.is_empty():  # v0.9.5 FC3: the Void's cards (VoidMods)
+		dmg = VoidMods.share(dmg, VoidMods.damage_permille(w, VoidMods.mask(spec)))
+		speed = VoidMods.speed(w, spec)
+		life = VoidMods.life(w, spec)
+		bounces = VoidMods.bounces(w, spec)
 	var q := -1
 	var picked := 0
 	for oi in offsets.size():
@@ -347,9 +355,9 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				dir * speed,
 				dmg,
 				r,
-				maxi(1, spec.life_ticks),
+				maxi(1, life),
 				ctx.tags,
-				spec.bounces,
+				bounces,
 				spec.key
 			)
 			if root:
@@ -365,6 +373,9 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				w.set_pending_second(kind)
 			if link != null:
 				w.set_pending_link(link.child.key)
+	if own and VoidMods.mask(spec) & VoidMods.BACKFIRE != 0 and _shot_room(w):
+		ShotCap.spend(w, 1)  # v0.9.5 FC3: Backfire's second void
+		VoidMods.back_throw(w, spec, ctx, dmg, r, gap)
 
 
 ## v0.8.0 PF2: how many more of `spec`'s bolts may launch now under its alive_max (-1: no cap of its own).
@@ -924,6 +935,8 @@ static func on_projectile_end(w: World, pi: int, at: Vector2) -> void:
 	var spec := projectile_spec(w, pi)
 	if Bomb.is_bomb(spec) and Bomb.touches(w, pi):
 		Bomb.blast(w, spec, pi, at)  # v0.9.0 BM: the bomb bursts where it ends
+	if spec != null and spec.void_mm > 0:
+		VoidMods.on_end(w, spec, pi, at)  # v0.9.5 FC3: Ring, Echo and Split queue
 	if spec != null and not spec.hooks.is_empty():
 		var p := w.projectiles
 		var ang := Kin.angle_of(Vector2(p.vel_x[pi], p.vel_y[pi]))

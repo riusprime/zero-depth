@@ -510,6 +510,11 @@ func bomb_rows() -> Array[Dictionary]:
 	return out
 
 
+## v0.9.5 FC3: the Void's lightning rings growing (VoidMods.read_rings): {pos, r (m, the largest), age, span (ticks)}.
+func void_rings() -> Array[Dictionary]:
+	return VoidMods.read_rings(_w)
+
+
 ## v0.9.0 BM: player projectile `i` is a bomb (the Bomb form's shot; BombView draws it, not the pulses).
 func projectile_is_bomb(i: int) -> bool:
 	return Bomb.touches(_w, i)

@@ -64,6 +64,22 @@ func test_twin_draws_each_void() -> void:
 	assert_eq(_view.voids, 2)
 
 
+## v0.9.5 FC3: Ring's lightning ring grows where a void ended, and an Echo's still void is drawn like any other.
+func test_fc3_the_ring_is_drawn_growing_and_a_still_echo_void_is_a_void() -> void:
+	var w := _world([&"gun_ring", &"gun_echo"], [])
+	var r := WorldReader.new(w)
+	var seen := 0
+	var echoes := 0
+	for k in 100:
+		W.run(w, 1, 0, W.S if k == 0 else 0)
+		_view.sync(r)
+		seen = maxi(seen, _view.arcs)
+		echoes = maxi(echoes, _view.voids if k > 68 else 0)
+	assert_gte(seen, 1, "a lightning ring is drawn while it grows")
+	assert_eq(r.void_rings().size(), 0, "and it is gone")
+	assert_gte(echoes, 1, "the echo void is drawn")
+
+
 func test_pulled_enemies_lean_into_it() -> void:
 	var w := _world()
 	var r := WorldReader.new(w)

@@ -10,7 +10,22 @@ const W := preload("res://tests/support/mx4_world.gd")
 const HP := 1000000
 const TOP_STEP := 1.0 / 60.0
 const VOID_ON: Array[StringName] = [
-	&"gun_twin", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"
+	&"gun_twin",
+	&"gun_ring",
+	&"gun_backfire",
+	&"gun_ricochet",
+	&"gun_homing",
+	&"gun_echo",
+	&"gun_big_shot",
+	&"gun_rapid_fire",
+	&"split_shot",
+	&"gun_mine",
+	&"orbit_rounds",
+	&"ember_core",
+	&"storm_core",
+	&"frost_core",
+	&"venom_core",
+	&"shared_bleed"
 ]
 
 
@@ -282,8 +297,9 @@ func test_the_void_row_offers_only_its_cards() -> void:
 	var w := _slot_world()
 	assert_true(BuildSlots.take(w, W.item(w, &"gun_void")))
 	assert_eq(AttackSlots.form_id(w), &"void")
+	assert_true(ItemPool.usable(w, W.item(w, &"gun_ring")), "Void + Ring: on since FC3 (V1)")
 	for id: StringName in [
-		&"gun_ring", &"halo_shot", &"gun_backfire", &"gun_spiral", &"gun_swirl", &"gun_pierce"
+		&"halo_shot", &"gun_spiral", &"gun_swirl", &"gun_pierce", &"gun_threadline"
 	]:
 		assert_false(ItemPool.usable(w, W.item(w, id)), "%s with the Void: never" % id)
 	for idx in w.item_tables.size():
@@ -297,7 +313,7 @@ func test_the_void_row_offers_only_its_cards() -> void:
 			continue
 		assert_eq(AttackSlots.usable(w, idx), VOID_ON.has(it.id), "%s with the Void" % it.id)
 	var off := []
-	for id: StringName in [&"gun_ring", &"halo_shot", &"gun_backfire", &"gun_spiral", &"gun_swirl"]:
+	for id: StringName in [&"halo_shot", &"gun_spiral", &"gun_swirl", &"gun_pierce"]:
 		off.append(W.item(w, id))
 	for k in 200:
 		w.rng_loot = RngStream.derive(k, "loot")

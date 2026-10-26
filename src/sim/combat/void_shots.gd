@@ -67,6 +67,12 @@ static func aura_m(w: World, s: AttackSpec) -> float:
 	return Stats.area(w, s.void_mm / 1000.0)
 
 
+## The aura's radius of void projectile `sid` now (m): its own (v0.9.5 FC3: Big Shot's, Rapid Fire's, a mini's), the
+## area stat on it.
+static func aura_of(w: World, s: AttackSpec, sid: int) -> float:
+	return Stats.area(w, VoidMods.aura_mm(w, s, sid) / 1000.0)
+
+
 ## The share of the aura's hits that feed statuses and hooks, per mille (Laser.feed_permille's rule on the aura tick).
 static func feed_permille(w: World, s: AttackSpec) -> int:
 	var orb := maxi(1, w.player.shot_period_ticks)
@@ -132,7 +138,7 @@ static func _aura(w: World, pi: int) -> void:
 	var wait := maxi(1, spec.void_tick_ticks)
 	var pm := feed_permille(w, spec)
 	var ctx: AttackContext = null
-	for i in w.enemies_near(at, aura_m(w, spec)):
+	for i in w.enemies_near(at, aura_of(w, spec, sid)):
 		var aid := w.actors.ids[i]
 		if _waiting(s, sid, aid):
 			continue
@@ -167,17 +173,17 @@ static func steps(w: World, shots: PackedInt32Array) -> Array:
 		var at := Vector2(p.pos_x[pi], p.pos_y[pi])
 		var v := Vector2(p.vel_x[pi], p.vel_y[pi])
 		var speed := Kin.length(v)
-		var reach := spec.void_pull_mm / 1000.0
+		var reach := VoidMods.pull_mm(w, spec, p.ids[pi]) / 1000.0
 		var most := spec.void_pull_mmps / 1000.0 / SimTick.TICKS_PER_SECOND
-		if speed <= 0.0 or reach <= 0.0 or most <= 0.0:
+		if reach <= 0.0 or most <= 0.0:
 			continue
-		var dir := v / speed
+		var dir := v / speed if speed > 0.0 else Vector2.ZERO  # v0.9.5 FC3: a still void pulls toward its point
 		for i in w.enemies_near(at, reach):
 			var f := pull_permille(w, i)
 			if f <= 0:
 				continue
 			var off := a.pos(i) - at
-			var to_path := dir * off.dot(dir) - off  # from the enemy to the nearest point of the path
+			var to_path := (dir * off.dot(dir) - off) if speed > 0.0 else -off  # to the nearest point of the path
 			var d := Kin.length(to_path)
 			if d <= PATH_GAP_M:
 				continue
@@ -230,8 +236,8 @@ static func read(w: World) -> Array[Dictionary]:
 					"id": p.ids[pi],
 					"pos": Vector2(p.pos_x[pi], p.pos_y[pi]),
 					"dir": v / sp if sp > 0.0 else Vector2.RIGHT,
-					"aura": aura_m(w, spec),
-					"pull": spec.void_pull_mm / 1000.0,
+					"aura": aura_of(w, spec, p.ids[pi]),
+					"pull": VoidMods.pull_mm(w, spec, p.ids[pi]) / 1000.0,
 				}
 			)
 		)

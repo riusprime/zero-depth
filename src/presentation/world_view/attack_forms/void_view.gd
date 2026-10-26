@@ -13,6 +13,11 @@ extends Node3D
 ## shader's.
 
 const VOIDS_MAX := 16
+## v0.9.5 FC3: Ring's lightning rings drawn at once, and the ring shader's phase that puts its band at ARC_FRONT of the
+## quad's half-width (0.25 + 0.72 u), so a ring of radius r is drawn at r / ARC_FRONT.
+const ARCS_MAX := 6
+const ARC_U := 0.7
+const ARC_FRONT := 0.754
 const TRAIL := 3
 ## The trail's puffs this far apart behind the shot (m).
 const TRAIL_GAP_M := 0.38
@@ -99,6 +104,7 @@ static var _shaders := {}
 ## What the last sync drew (tests read them): the shots and the dust puffs behind them; v0.9.0 VX: the collapses
 ## playing, the shots' lens growth (0..1, the newest shot's) and whether the dust disc shows (Effects density Low: no).
 var voids := 0
+var arcs := 0
 var puffs := 0
 var collapses := 0
 var growth := 1.0
@@ -111,6 +117,7 @@ var _cores: Array[MeshInstance3D] = []
 var _lenses: Array[MeshInstance3D] = []
 var _dust: Array[MeshInstance3D] = []
 var _rings: Array[MeshInstance3D] = []
+var _arcs: Array[MeshInstance3D] = []
 var _trail: Array[MeshInstance3D] = []
 var _trail_mat: Array[ShaderMaterial] = []
 var _dust_mats: Array[ShaderMaterial] = []
@@ -169,6 +176,14 @@ func _init() -> void:
 			var m := _dust_mat(1.0, true)
 			_trail.append(_node(quad, m))
 			_trail_mat.append(m)
+	var arc_mat := ShaderMaterial.new()  # v0.9.5 FC3: Ring's lightning ring (the Bomb's ring look)
+	arc_mat.shader = _shader(BombView.RING_SHADER)
+	arc_mat.set_shader_parameter(&"has_tex", 0.0)
+	arc_mat.set_shader_parameter(&"u", ARC_U)
+	arc_mat.set_shader_parameter(&"core", AttackFormLooks.ground_safe(BeamLooks.core(&"lightning")))
+	arc_mat.set_shader_parameter(&"edge", AttackFormLooks.ground_safe(BeamLooks.edge(&"lightning")))
+	for k in ARCS_MAX:
+		_arcs.append(_node(flat, arc_mat))
 	for k in COLLAPSE_MAX:
 		_gone_cores.append(_node(ball, black))
 		_gone_lenses.append(_node(quad, _lens_mat))
@@ -239,6 +254,26 @@ func sync(reader: WorldReader) -> void:
 		_hide_shot(k)
 	_collapse_gone()
 	_place_collapses()
+	_place_arcs(reader)  # v0.9.5 FC3: Ring
+
+
+## v0.9.5 FC3: the Ring card's lightning rings growing from where a void ended.
+func _place_arcs(reader: WorldReader) -> void:
+	arcs = 0
+	for row in reader.void_rings():
+		if arcs >= ARCS_MAX:
+			break
+		var g := (
+			clampf(float(row["age"]) / float(row["span"]), 0.0, 1.0) * float(row["r"]) / ARC_FRONT
+		)
+		var arc := _arcs[arcs]
+		arc.visible = g > 0.01
+		arc.transform = Transform3D(
+			Basis.from_scale(Vector3(g, 1.0, g)), SimPlane.to_3d(row["pos"], 0.1)
+		)
+		arcs += 1
+	for k in range(arcs, ARCS_MAX):
+		_arcs[k].visible = false
 
 
 func _place_shot(k: int, p: Vector2, dir: Vector2, aura: float, id: int, g: float) -> void:
