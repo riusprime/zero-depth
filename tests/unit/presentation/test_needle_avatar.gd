@@ -53,24 +53,14 @@ func test_exposes_outlined_body_materials_for_the_hit_flash() -> void:
 	assert_eq(reds.size(), 1, "one red cube")
 
 
-func test_xray_twins_only_with_xray() -> void:
-	var with_x := NeedleAvatar.new()
-	with_x.setup(Color.BLACK, &"xray")
-	var without := NeedleAvatar.new()
-	without.setup(Color.BLACK, &"outline")
-	var count := func(n: Node) -> int:
-		var c := 0
-		for m in n.find_children("*", "MeshInstance3D", true, false):
-			var mat := (m as MeshInstance3D).material_override as StandardMaterial3D
-			if mat != null and mat.stencil_mode == BaseMaterial3D.STENCIL_MODE_XRAY:
-				c += 1
-			elif mat != null and EnemyLooks.xray_of(mat) != null:  # v0.8.0 HR: its own material's pass
-				c += 1
-		return c
-	assert_gt(count.call(with_x), 0, "xray adds twins")
-	assert_eq(count.call(without), 0, "outline has none")
-	with_x.free()
-	without.free()
+func test_no_xray_twins() -> void:
+	var a := NeedleAvatar.new()
+	a.setup(Color.BLACK, &"outline")
+	for m in a.find_children("*", "MeshInstance3D", true, false):
+		var mat := (m as MeshInstance3D).material_override as StandardMaterial3D
+		if mat != null:
+			assert_ne(mat.stencil_mode, BaseMaterial3D.STENCIL_MODE_XRAY, "no X-ray (v0.9.5 PF1)")
+	a.free()
 
 
 func test_feet_stand_on_the_ground_at_rest() -> void:

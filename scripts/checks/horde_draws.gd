@@ -105,7 +105,7 @@ func _initialize() -> void:
 	wall.rotation_degrees = Vector3(0, 45, 0)
 	scene.add_child(wall)
 	_views = ActorViews.new()
-	_views.technique = &"xray"
+	_views.technique = &"outline"
 	scene.add_child(_views)
 	_views.sync(reader)
 	for i in reader.actor_count():  # a third flashing, as if hit

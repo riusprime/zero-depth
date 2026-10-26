@@ -18,7 +18,7 @@ func after_each() -> void:
 
 func _avatar(violet: bool) -> TwinWardenAvatar:
 	var a: TwinWardenAvatar = TwinWardenVioletAvatar.new() if violet else TwinWardenAvatar.new()
-	a.setup(Color("#1A1A22"), &"xray")
+	a.setup(Color("#1A1A22"), &"outline")
 	add_child_autofree(a)
 	a.set_process(false)
 	return a

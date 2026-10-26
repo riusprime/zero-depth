@@ -88,10 +88,9 @@ var _body_pos := Vector3.ZERO
 var _visor_e := VISOR_ENERGY
 
 
-## Builds the model. technique "xray" adds an enemy-coloured silhouette twin to the hood and the body, as
-## ActorViews does for its body pieces; the thin legs have none. `p_kind` picks the colours (EnemyPalettes).
+## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
 func setup(
-	outline_color: Color, technique: StringName = &"xray", p_kind := WorldReader.KIND_CHARGER
+	outline_color: Color, _technique: StringName = &"outline", p_kind := WorldReader.KIND_CHARGER
 ) -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	kind = p_kind
@@ -104,7 +103,7 @@ func setup(
 		[_flap_mesh(), EnemyPalettes.color(kind, &"trim")],
 		[_core_mesh(), CORE_COLOR]
 	]
-	_piece(body, shell, outline_color, team, technique)
+	_piece(body, shell, outline_color)
 	var face := MeshInstance3D.new()
 	face.mesh = _face_mesh()
 	face.material_override = _face_material()  # v0.8.0 HR: one for every Charger
@@ -113,15 +112,15 @@ func setup(
 	visor = MeshInstance3D.new()
 	visor.mesh = _visor_mesh()
 	var eye := EnemyPalettes.color(kind, &"eye")
-	_visor_mat = EnemyLooks.accent(eye, eye, VISOR_ENERGY, null)  # v0.8.0 HR: shared, GLOW per Charger
+	_visor_mat = EnemyLooks.accent(eye, eye, VISOR_ENERGY)  # v0.8.0 HR: shared, GLOW per Charger
 	visor.material_override = _visor_mat
 	visor.position = Vector3(0.155, 0.51, 0)
 	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(visor)
 	for side in [1.0, -1.0]:
-		_build_leg(FRONT_HIP, FRONT_LEN, side, true, outline_color, team)
+		_build_leg(FRONT_HIP, FRONT_LEN, side, true, outline_color)
 	for side in [1.0, -1.0]:
-		_build_leg(BACK_HIP, BACK_LEN, side, false, outline_color, team)
+		_build_leg(BACK_HIP, BACK_LEN, side, false, outline_color)
 	_pose()
 
 
@@ -316,9 +315,7 @@ static func _pose_seg(seg: Node3D, at: Vector3, y: float, p: float, reach: float
 	return at + Vector3(cos(p) * cos(y), sin(p), -cos(p) * sin(y)) * reach
 
 
-func _build_leg(
-	hip: Vector3, lens: Array, side: float, front: bool, outline: Color, team: Color
-) -> void:
+func _build_leg(hip: Vector3, lens: Array, side: float, front: bool, outline: Color) -> void:
 	var s := 1.0 if front else 0.8
 	var c := EnemyPalettes.color(kind, &"grey") if front else BACK_LEG_COLOR
 	var root := Node3D.new()
@@ -332,11 +329,11 @@ func _build_leg(
 	var femur_parts := [[_plate(l1, 0.046 * s, 0.042 * s), c]]
 	if not front:
 		femur_parts.append([_ball(0.05), JOINT_COLOR])
-	var femur := _piece(root, femur_parts, outline, team, &"outline")
+	var femur := _piece(root, femur_parts, outline)
 	var tibia_parts := [[_ball(0.05 * s), JOINT_COLOR], [_plate(l2, 0.055 * s, 0.068 * s), c]]
-	var tibia := _piece(root, tibia_parts, outline, team, &"outline")
+	var tibia := _piece(root, tibia_parts, outline)
 	var talon_parts := [[_ball(0.042 * s), JOINT_COLOR], [_talon_mesh(l3, 0.05 * s), TALON_COLOR]]
-	var talon := _piece(root, talon_parts, outline, team, &"outline")
+	var talon := _piece(root, talon_parts, outline)
 	legs.append(root)
 	_femurs.append(femur)
 	_tibias.append(tibia)
@@ -707,11 +704,8 @@ static func _face_material() -> StandardMaterial3D:
 
 
 ## One mesh node from several [mesh, colour] parts, a surface each on a shared, two-sided, outlined body plate
-## (v0.8.0 HR: EnemyLooks, the flash this Charger's HIT); technique "xray" adds the X-ray pass to each plate (it was
-## one silhouette twin node for the whole node, shrunk EnemyLooks.XRAY_SHRINK as the pass is).
-func _piece(
-	parent: Node3D, parts: Array, outline: Color, team: Color, technique: StringName
-) -> MeshInstance3D:
+## (v0.8.0 HR: EnemyLooks, the flash this Charger's HIT); no X-ray pass since v0.9.5 PF1.
+func _piece(parent: Node3D, parts: Array, outline: Color) -> MeshInstance3D:
 	var key := "piece"
 	for part: Array in parts:
 		key += " %d" % (part[0] as Object).get_instance_id()
@@ -724,12 +718,9 @@ func _piece(
 		_meshes[key] = merged
 	var mi := MeshInstance3D.new()
 	mi.mesh = merged
-	var xray: Material = (
-		EnemyLooks.xray(team, EnemyLooks.XRAY_SHRINK, 0.0) if technique == &"xray" else null
-	)
 	for k in parts.size():
 		mi.set_surface_override_material(
-			k, shared_body(kind, parts[k][1], null, outline, OUTLINE_M, xray, true)
+			k, shared_body(kind, parts[k][1], null, outline, OUTLINE_M, true)
 		)
 	parent.add_child(mi)
 	_hit_pieces.append(mi)

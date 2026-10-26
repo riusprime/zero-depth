@@ -29,7 +29,7 @@ var _rise := 0.0
 var _charge := 0.0
 
 
-func setup(outline_color: Color, technique: StringName = &"xray") -> void:
+func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_parts = BossParts.new(outline_color, technique, OUTLINE_M)
 	shadow = MeshInstance3D.new()
@@ -129,18 +129,6 @@ func _build_model() -> bool:
 				k, _eye_mat if surfaces[k] == &"glow" else mats.get(surfaces[k], mats[&"base"])
 			)
 		pivot.add_child(mi)
-		if _parts.technique() == &"xray":
-			var ghost := MeshInstance3D.new()
-			ghost.mesh = part["mesh"]
-			var gm := StandardMaterial3D.new()
-			gm.albedo_color = _color(&"body")
-			gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-			gm.stencil_color = Color(ThemePalette.color(&"enemy_body"), 0.85)
-			gm.grow = true
-			gm.grow_amount = -0.02 / maxf(s, 0.0001)
-			ghost.material_override = gm
-			ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			pivot.add_child(ghost)
 		if pname == &"ring":
 			ring = pivot
 	if ring == null:

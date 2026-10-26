@@ -39,7 +39,6 @@ const WALK_SWING := 0.32
 ## The Conduit floats this high (m) while it isn't overloaded.
 const FLOAT_M := 0.3
 const DEATH_SECONDS := 0.6
-const XRAY_GROW := -0.02
 
 var kind := WorldReader.KIND_BREAKER
 var height := 2.6
@@ -48,11 +47,10 @@ var model: Node3D
 var parts := {}
 var _rest := {}
 var _glow_mat: ShaderMaterial
-var _xray: Material
 var _glow_pieces: Array[GeometryInstance3D] = []
 var _glow_e := -1.0
 var _outline := Color.BLACK
-var _technique := &"xray"
+var _technique := &"outline"
 var _state := WorldReader.STATE_SPAWN
 var _pick := WorldReader.ELITE_BASIC
 var _progress := 0.0
@@ -79,7 +77,7 @@ func has_model() -> bool:
 	return model != null
 
 
-func setup(p_kind: int, outline_color: Color, technique: StringName = &"xray") -> void:
+func setup(p_kind: int, outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	kind = p_kind
 	_outline = outline_color
@@ -88,15 +86,8 @@ func setup(p_kind: int, outline_color: Color, technique: StringName = &"xray") -
 	body = Node3D.new()
 	add_child(body)
 	var owner_model := EnemyModels.get_model(MODEL_IDS.get(kind, &""))
-	if _technique == &"xray":
-		var team := ThemePalette.color(&"enemy_body")
-		_xray = (
-			EnemyLooks.xray(team, EnemyLooks.XRAY_SHRINK, 0.0)
-			if owner_model.is_empty()
-			else EnemyLooks.xray(team, 1.0, XRAY_GROW / maxf(float(owner_model["scale"]), 0.0001))
-		)
 	var accent: Color = ACCENTS.get(kind, Color.WHITE)
-	_glow_mat = EnemyLooks.accent(accent, accent, 1.5, _xray)
+	_glow_mat = EnemyLooks.accent(accent, accent, 1.5)
 	if owner_model.is_empty():
 		_build_stand_in(accent)
 	else:
@@ -278,7 +269,7 @@ func _set_glow(e: float) -> void:
 ## The owner's model (EnemyModels.get_model): each part a node at its pivot, `base` on the shared body material (the
 ## hit flash and the biome's cast), `glow` on the accent.
 func _build_model(m: Dictionary) -> void:
-	var base := shared_body(kind, Color.WHITE, m["texture"], _outline, 0.0, _xray)
+	var base := shared_body(kind, Color.WHITE, m["texture"], _outline, 0.0)
 	model = Node3D.new()
 	model.name = "Model"
 	_model_scale = float(m["scale"])
@@ -314,7 +305,7 @@ func _build_stand_in(accent: Color) -> void:
 	var piece := MeshInstance3D.new()
 	piece.mesh = box
 	piece.position = Vector3(0, height * 0.5, 0)
-	piece.material_override = shared_body(kind, accent.darkened(0.6), null, _outline, 0.02, _xray)
+	piece.material_override = shared_body(kind, accent.darkened(0.6), null, _outline, 0.02)
 	body.add_child(piece)
 	_hit_pieces.append(piece)
 	var band := BoxMesh.new()

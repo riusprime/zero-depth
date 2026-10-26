@@ -124,7 +124,7 @@ var runes: AffinityRunes
 var epic: EpicRobeView
 var _style := &""
 var _outline := Color.BLACK
-var _technique := &"xray"
+var _technique := &"outline"
 var _hood_mat: StandardMaterial3D
 
 var _pelvis := Node3D.new()
@@ -190,9 +190,8 @@ var _acc_fin := false
 var _accent := Vector3.ZERO
 
 
-## Builds the model. technique "xray" adds a team-coloured silhouette twin to the hood and the cloak (as
-## ActorViews does for its body pieces); the legs, mostly under the cloak, have none.
-func setup(outline_color: Color, technique: StringName = &"xray") -> void:
+## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
+func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_outline = outline_color
 	_technique = technique

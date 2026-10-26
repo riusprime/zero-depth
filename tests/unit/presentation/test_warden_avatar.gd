@@ -6,7 +6,7 @@ extends GutTest
 const DT := 1.0 / 60.0
 
 
-func _avatar(technique: StringName = &"xray") -> WardenAvatar:
+func _avatar(technique: StringName = &"outline") -> WardenAvatar:
 	var a := WardenAvatar.new()
 	a.setup(Color("#1A1A22"), technique)
 	add_child_autofree(a)
@@ -52,21 +52,13 @@ func test_exposes_body_materials_for_the_hit_flash() -> void:
 		assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "body pieces are outlined")
 
 
-func test_xray_adds_twins_and_outline_does_not() -> void:
-	var x := _avatar(&"xray")
+func test_no_xray_twins() -> void:
 	var o := _avatar(&"outline")
-	# v0.8.0 HR: the silhouette is a pass of each piece's own material (EnemyLooks.xray), not a twin node.
-	var count := func(root: Node) -> int:
-		var n := 0
-		for c in _all_nodes(root):
-			if c is MeshInstance3D:
-				var m := (c as MeshInstance3D).material_override
-				if m != null and EnemyLooks.xray_of(m) != null:
-					n += 1
-		return n
-	assert_gt(count.call(x), count.call(o), "the X-ray technique adds silhouette passes")
-	assert_eq(count.call(o), 0, "outline draws none")
-	assert_eq(x.body_materials.size(), o.body_materials.size(), "the same body pieces either way")
+	for c in _all_nodes(o):
+		if c is MeshInstance3D:
+			var m := (c as MeshInstance3D).material_override as StandardMaterial3D
+			if m != null:
+				assert_ne(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_XRAY, "no X-ray (v0.9.5 PF1)")
 
 
 func test_has_no_shield() -> void:

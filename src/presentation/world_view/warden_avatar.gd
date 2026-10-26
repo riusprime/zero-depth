@@ -111,7 +111,7 @@ var _chest := Node3D.new()
 var _elbows: Array[Node3D] = []
 var _visor_mat := StandardMaterial3D.new()
 var _crack_mat := StandardMaterial3D.new()
-var _technique := &"xray"
+var _technique := &"outline"
 var _outline := Color.BLACK
 # Sim state from the last sync.
 var _state := WorldReader.STATE_MOVE
@@ -131,8 +131,8 @@ var _dust_t := -1.0
 var _dust_mat := StandardMaterial3D.new()
 
 
-## Builds the model. technique "xray" adds a team-coloured silhouette twin to every body piece.
-func setup(outline_color: Color, technique: StringName = &"xray") -> void:
+## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
+func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_outline = outline_color
 	_technique = technique

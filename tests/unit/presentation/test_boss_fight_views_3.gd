@@ -175,7 +175,7 @@ func test_the_foundry_hunkers_while_its_fountain_runs() -> void:
 
 func test_the_siege_engine_poses_its_new_moves_as_its_old_ones() -> void:
 	var a: BossAvatar = SiegeEngineAvatar.new()
-	a.setup(Color("#1A1A22"), &"xray")
+	a.setup(Color("#1A1A22"), &"outline")
 	add_child_autofree(a)
 	a.set_process(false)
 	for spec in [
@@ -189,7 +189,7 @@ func test_the_siege_engine_poses_its_new_moves_as_its_old_ones() -> void:
 		)
 		assert_eq(a._move, spec[1])
 	var f: BossAvatar = FoundryAvatar.new()
-	f.setup(Color("#1A1A22"), &"xray")
+	f.setup(Color("#1A1A22"), &"outline")
 	add_child_autofree(f)
 	f.set_process(false)
 	for spec in [

@@ -151,8 +151,8 @@ var _shield_t := 0.0
 var _recall := -1.0
 
 
-## Builds the model. technique "xray" adds a team-coloured silhouette twin to every body piece.
-func setup(outline_color: Color, technique: StringName = &"xray") -> void:
+## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
+func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	parts = BossParts.new(outline_color, technique)
 	model.name = "Model"
@@ -538,7 +538,7 @@ func _build_body() -> void:
 
 
 ## v0.7.5 BM: the owner's rigged model as delivered, its own skeleton and skin, under a node that turns, scales and
-## lifts it into our frame; dressed like the others (flashable, outlined, the glow overlay, the X-ray twin).
+## lifts it into our frame; dressed like the others (flashable, outlined, the glow overlay).
 func _build_skinned(m: Dictionary) -> void:
 	pivot = Node3D.new()
 	pivot.name = "Body"
@@ -591,9 +591,9 @@ func _build_imported(m: Dictionary) -> void:
 
 
 ## Dresses the owner's skinned mesh: its own material kept (texture and all), duplicated, made flashable (no drawn
-## outline since v0.7.5), the glow overlay, shadows on, and with the X-ray technique a twin on the same skeleton.
-## `units` is the mesh's metres per unit (the twin shrinks by 4 cm along its normals in metres).
-func _dress(mi: MeshInstance3D, material: StandardMaterial3D, units: float = 1.0) -> void:
+## outline since v0.7.5), the glow overlay, shadows on.
+## `units` is kept for callers (it sized the X-ray twin's shrink).
+func _dress(mi: MeshInstance3D, material: StandardMaterial3D, _units: float = 1.0) -> void:
 	var mat: StandardMaterial3D = (
 		material.duplicate() as StandardMaterial3D if material != null else StandardMaterial3D.new()
 	)
@@ -611,24 +611,6 @@ func _dress(mi: MeshInstance3D, material: StandardMaterial3D, units: float = 1.0
 	mi.material_overlay = glow_overlay
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	parts.body_materials.append(mat)
-	if parts.technique() == &"xray":
-		var ghost := MeshInstance3D.new()
-		ghost.name = "XrayTwin"
-		ghost.mesh = mi.mesh
-		ghost.skin = mi.skin
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = Color("#6B5F5B")
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		# Shrunk along its normals (the skinned twin shares the body's surface, so it would z-fight with it).
-		gm.grow = true
-		gm.grow_amount = -0.04 / maxf(units, 0.0001)
-		gm.stencil_color = Color(ThemePalette.color(&"enemy_body"), 0.85)
-		ghost.material_override = gm
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		ghost.extra_cull_margin = mi.extra_cull_margin
-		mi.get_parent().add_child(ghost)
-		ghost.transform = mi.transform
-		ghost.skeleton = mi.skeleton  # a sibling: the same path reaches the skeleton
 
 
 ## Nodes the code-built body creates up front (freed when the owner's model is used instead).

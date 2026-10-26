@@ -16,7 +16,7 @@ func after_each() -> void:
 	BossModels.dir = BossModels.DIR
 
 
-func _avatar(cls: Variant, technique: StringName = &"xray") -> BossAvatar:
+func _avatar(cls: Variant, technique: StringName = &"outline") -> BossAvatar:
 	var a: BossAvatar = cls.new()
 	a.setup(Color("#1A1A22"), technique)
 	add_child_autofree(a)
@@ -41,7 +41,7 @@ func test_each_boss_uses_its_installed_model() -> void:
 		var box: AABB = a.imported.mesh.get_aabb()
 		assert_almost_eq(box.position.y, 0.0, 0.01, "%s stands on the ground" % id)
 		assert_almost_eq(box.size.y, BossModels.SPECS[id]["height"], 0.01, "%s at its height" % id)
-		assert_eq(_body_meshes(a), 2, "the mesh and its X-ray twin")
+		assert_eq(_body_meshes(a), 1, "the mesh, no X-ray twin")
 
 
 func test_the_model_material_is_flashable_outlined_and_keeps_its_texture() -> void:
@@ -56,8 +56,7 @@ func test_the_model_material_is_flashable_outlined_and_keeps_its_texture() -> vo
 		assert_eq(m.stencil_outline_thickness, 0.0, "no drawn outline (owner, v0.7.5)")
 		assert_not_null(m.albedo_texture, "%s keeps its albedo texture" % id)
 		assert_eq(a.imported.cast_shadow, GeometryInstance3D.SHADOW_CASTING_SETTING_ON)
-		var o := _avatar(classes[id], &"outline")
-		assert_eq(_body_meshes(o), 1, "no twin without xray")
+		assert_eq(_body_meshes(a), 1, "no silhouette twin (v0.9.5 PF1)")
 
 
 func test_whole_body_motion_and_glow_change_no_shader() -> void:

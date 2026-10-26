@@ -56,17 +56,7 @@ func test_builds_hood_visor_and_four_clawed_legs() -> void:
 	assert_gt(looks.size(), 4, "hood, mantle, core and leg colours")
 	for m: ShaderMaterial in looks:
 		assert_eq(m.get_shader_parameter("emission_energy"), 0.0, "no glow outside ActorViews")
-		assert_ne(m.next_pass, EnemyLooks.xray_of(m), "outlined like the other actors")
 		assert_not_null(m.next_pass, "outlined like the other actors")
-	var body_piece := a.hit_pieces()[0] as MeshInstance3D
-	assert_not_null(
-		EnemyLooks.xray_of(body_piece.get_surface_override_material(0)),
-		"the body seen through walls"
-	)
-	var leg_piece := a.hit_pieces()[1] as MeshInstance3D
-	assert_null(
-		EnemyLooks.xray_of(leg_piece.get_surface_override_material(0)), "the thin legs: none"
-	)
 	assert_eq(a.find_children("*", "MeshInstance3D", true, false).size(), 15, "no twin node")
 	var tips := a.leg_tips()
 	for k in tips.size():

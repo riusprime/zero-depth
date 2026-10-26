@@ -12,7 +12,7 @@ const FACET_TINT := 0.14
 var body_materials: Array[StandardMaterial3D] = []
 var glow_materials: Array[StandardMaterial3D] = []
 var _outline := Color.BLACK
-var _technique := &"xray"
+var _technique := &"outline"
 var _outline_m := 0.03
 
 
@@ -57,19 +57,6 @@ func piece(
 	body.material_override = mat
 	parent.add_child(body)
 	body_materials.append(ActorViews.flashable(mat))
-	if _technique == &"xray":
-		var ghost := MeshInstance3D.new()
-		ghost.mesh = mesh
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = c
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		gm.stencil_color = Color(ThemePalette.color(&"enemy_body"), 0.85)
-		ghost.material_override = gm
-		ghost.position = at
-		ghost.rotation = rot
-		ghost.scale = scl * 0.96
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(ghost)
 	return body
 
 

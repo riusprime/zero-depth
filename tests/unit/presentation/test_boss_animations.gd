@@ -29,7 +29,7 @@ func after_each() -> void:
 	ViewPrefs.reduced_motion = false
 
 
-func _avatar(cls: Variant, technique: StringName = &"xray") -> BossAvatar:
+func _avatar(cls: Variant, technique: StringName = &"outline") -> BossAvatar:
 	var a: BossAvatar = cls.new()
 	a.setup(Color("#1A1A22"), technique)
 	add_child_autofree(a)
@@ -364,7 +364,7 @@ func test_every_model_collapses_when_it_dies() -> void:
 	assert_false(_avatar(GatekeeperAvatar).die(), "the code bodies still go at once")
 
 
-func test_the_outline_and_xray_twin_are_unchanged_and_no_shader_changes() -> void:
+func test_the_outline_is_unchanged_and_no_shader_changes() -> void:
 	for id: StringName in classes:
 		var a := _avatar(classes[id])
 		var before := DamageFlashKeys.of(a)
@@ -381,11 +381,11 @@ func test_the_outline_and_xray_twin_are_unchanged_and_no_shader_changes() -> voi
 		assert_eq(DamageFlashKeys.of(a), before, "%s: no shader changed" % id)
 		assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "%s keeps its stencil" % id)
 		assert_eq(m.stencil_outline_thickness, 0.0, "%s: no drawn outline (owner, v0.7.5)" % id)
-		var twins := a.find_children("XrayTwin", "MeshInstance3D", true, false)
-		assert_eq(twins.size(), 1, "%s keeps its X-ray twin" % id)
-		assert_same((twins[0] as MeshInstance3D).skin, a.imported.skin, "on the animated skeleton")
-		var o := _avatar(classes[id], &"outline")
-		assert_eq(o.find_children("XrayTwin", "MeshInstance3D", true, false).size(), 0)
+		assert_eq(
+			a.find_children("XrayTwin", "MeshInstance3D", true, false).size(),
+			0,
+			"%s: no X-ray twin" % id
+		)
 
 
 func test_reduced_motion_keeps_the_poses_without_tremble_or_daze() -> void:
