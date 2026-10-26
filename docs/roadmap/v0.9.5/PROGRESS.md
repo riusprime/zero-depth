@@ -12,7 +12,7 @@ riusprime/zero-depth#9).
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
 - **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3, DR, FC1, TS, FC2, BK, FC3, HM, HU, FC4, FC5, FC6, FC7 (+FC7b), FC8, FC9 (+FC9b), PR, MC, SL, TX, RS1, RS2 and PF1 merged (Waves B, C and D done).
-- **Agents working:** PF2 (cutting the main thread's script work; baseline on the owner's PC: ~68 fps, 1 % lows 19–22, GPU 3.8 ms) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Agents working:** MC2 (the cursor rebuilt from the owner's reference sheet) and PF3 (draw calls and view sync toward 144 fps) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -62,6 +62,8 @@ riusprime/zero-depth#9).
 | RS1 | The Runic Stone: Credits to the main menu; the stone sleeps, wakes at the first purple-rune room and speaks in drawn Futhark runes (a letter cipher); lines r1–r3 ([evidence](evidence/RS1.md)) | `ef013aa5`, merge `f801794c` |
 | PF1 | No enemy drawn through walls (the x-ray pass removed); `scripts/checks/frame_probe.gd`; the owner-PC baseline ([evidence](evidence/PF.md)) | `f1fde72c`, merge `b9ff8110` |
 | RS2 | The Runic Stone's eggs r4–r10, granted on load when already met; the full stone's turning rune ring and the Runic robe ([evidence](evidence/RS2.md)) | `f2214b2c` |
+| R1 | The v0.9.5 patch notes (en, es; Performance line waits on PF) and PLAYTEST.md | `1f3236a9`, merge `a962219c` |
+| PF2 | The main thread's breakdown (`--breakdown`); the build HUD, idle fireball looks and statusless enemies stop redoing work every tick; the object climb is the sim's bounded event log filling, not a leak ([evidence](evidence/PF.md)) | `03ea97fd`, merge `975f6b79` |
 | BH1 | Bosses can't be staggered; at each phase change a boss kneels 1 s (hittable) and its core can be stolen for 3 s; boss HP is set from your power when the door starts opening (caps ×2.5–4.5 by floor, ±8 % per fight); each completed loop (up to 3) makes the Hollow Crown's pace 12 % shorter and its hits 8 % softer; the run summary says "Looped ×N" ([evidence](evidence/BH1.md)) | `d669f646`, merge `f9197302` |
 | BH2 | A harder spell each: the Gatekeeper's shock lanes lock faster and fire a second, shifted set; the Warlord's javelins lead you, then a second fan; the Brood Mother's 3rd leap leads you and lands wider; the Hive Lens's beam turns after you; the Siege Engine's mortar grid leaves 2 safe cells that swap halfway (never on the edge). The loop ease is data now ([evidence](evidence/BH2.md)) | `eca6b78e`, merge `53cd71e1` |
 | BH3 | A harder spell each: the Foundry's furnace waves come as two walls at right angles; the Twin Wardens' crossfire lines track you for 1.2 s; the Clockwork Judge adds a counter-turning spiral from phase 2; the Lantern Shade's lanterns burn 4 s, its dark lasts 9 s and Snuff puts out two lanterns ([evidence](evidence/BH3.md)) | `7ff84613`, merge `d788b91f` |
