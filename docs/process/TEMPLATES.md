@@ -127,7 +127,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `<branch>`, cut from `main` at `<sha>`.
 ## 5. Patch notes: `docs/patch-notes/vX.Y.Z.md` (and `.es.md`)
 
 ```markdown
-# {{TITLE}} vX.Y.Z — <Update name>
+# Zero Depth vX.Y.Z — <Update name>
 _YYYY-MM-DD_ · <one-sentence summary>
 
 ## New Features

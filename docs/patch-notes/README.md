@@ -23,7 +23,7 @@ those copies are built by `godot --headless --path . -s scripts/content/build_pa
 The full template is in [`../process/TEMPLATES.md`](../process/TEMPLATES.md) §5:
 
 ```markdown
-# {{TITLE}} vX.Y.Z — <Update name>
+# Zero Depth vX.Y.Z — <Update name>
 _<date>_ · <one-sentence summary>
 
 ## New Features

@@ -1,4 +1,4 @@
-# {{TITLE}}
+# Zero Depth
 
 A real-time action roguelike in low-poly isometric 3D. Move and aim freely; fight with a primary attack, a utility
 skill (guard or a mobile skill) and a dash. Build item **engines** (bleed, guard and more) that change how you

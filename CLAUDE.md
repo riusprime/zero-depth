@@ -1,8 +1,8 @@
 # CLAUDE.md
 
 A real-time, low-poly isometric action roguelike in **Godot 4.7 (3D)**. The simulation is a deterministic 2D plane
-stepped at 60 Hz, and a fixed orthographic iso camera draws it. The game is untitled; the token `{{TITLE}}`
-stands in for the name in `README.md`, `project.godot` and `export_presets.cfg`.
+stepped at 60 Hz, and a fixed orthographic iso camera draws it. The game is called **Zero Depth** (owner, 2026-10-26; the same in Spanish).
+`config/name` and `export_presets.cfg` carry it; `UserDirMigration` copies the saves from the pre-name folder.
 
 The owner is **Rius**. They decide what the game is; you build it, prove it and report honestly. The process
 copies what worked in the owner's previous game, Deathventory ("DV"). The rules exist because of what didn't:
