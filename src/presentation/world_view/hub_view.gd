@@ -85,6 +85,15 @@ var _pulse_t := -1.0
 var _veins_on := false
 
 
+## v0.9.5 (seams): the member nodes are parented only by setup(); a view freed without it (a test) frees them too,
+## so none is left an orphan.
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_PREDELETE:
+		return
+	for n: Variant in [avatar, machine, ink, stage, rig, plan, hero]:
+		AvatarBase.free_if_loose(n)
+
+
 ## Builds the hub: `states` from HubFlags.states (state id -> bool, &"runes" -> Array[bool]), `trophies` one bool per
 ## floor boss (HubFlags.boss_trophies), the biome's mood and palette for the light (Ruins).
 func setup(

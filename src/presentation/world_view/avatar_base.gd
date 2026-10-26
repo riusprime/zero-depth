@@ -441,3 +441,10 @@ static func flat_mesh(tris: Array, centre: Vector3) -> ArrayMesh:
 	var m := ArrayMesh.new()
 	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return m
+
+
+## v0.9.5 (seams): frees a node built in a member initializer and never parented (its owner freed before setup), so
+## it is not left an orphan; anything already in the tree is left to its parent.
+static func free_if_loose(n: Variant) -> void:
+	if is_instance_valid(n) and (n as Node).get_parent() == null:
+		(n as Node).free()

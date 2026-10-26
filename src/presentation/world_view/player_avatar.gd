@@ -190,6 +190,14 @@ var _acc_fin := false
 var _accent := Vector3.ZERO
 
 
+## v0.9.5 (seams): the rig's joints are parented only by setup(); an avatar freed without it frees them too.
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_PREDELETE:
+		return
+	for n: Variant in [_leg_root, _head_yaw, _pelvis]:
+		AvatarBase.free_if_loose(n)
+
+
 ## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
 func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF

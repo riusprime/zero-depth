@@ -94,6 +94,9 @@ func _input(_event: InputEvent) -> void:
 
 ## R10: the language changed while the hub runs with the stone awake.
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and is_instance_valid(bubble) and bubble.get_parent() == null:
+		bubble.free()  # never parented (no setup: a test): not left an orphan
+		return
 	if what != NOTIFICATION_TRANSLATION_CHANGED or stone == null:
 		return
 	var loc := TranslationServer.get_locale()
