@@ -6,7 +6,8 @@ extends GutTest
 
 ## The attacks with no hit class of their own: the meltdown's burning ground (a hazard). v0.8.0 N2 (owner O27, D36
 ## superseded): The Fallen's attacks are classed too (its own hits outside its mimic windows).
-const UNCLASSED := [&"meltdown"]
+## v0.9.5 BH4: the Tidecaller's crossing wave is one too (a hazard the owner set at 15 damage, seven hits: chip damage).
+const UNCLASSED := [&"meltdown", &"crossing_wave"]
 ## Per boss, the slow readable attacks BP left as they were: [id, telegraph seconds].
 const KEPT_SLOW := {
 	&"gatekeeper": [[&"rock_rings", 0.8], [&"shock_lanes", 1.35]],  # v0.9.5 BH2 (B1): it locks 0.55 s now
@@ -17,7 +18,7 @@ const KEPT_SLOW := {
 	&"foundry": [[&"slag_fountain", 1.0], [&"molten_flood", 1.6]],
 	&"colossus": [[&"spike_chase", 0.9], [&"fist_combo", 0.8]],
 	&"prism": [[&"cross_ring", 1.0]],
-	&"tidecaller": [[&"tide_rings", 0.8], [&"undertow", 1.6]],  # v0.9.0 NB1: built at BP's pace
+	&"tidecaller": [[&"ring_stream", 0.8], [&"undertow", 1.6]],  # v0.9.0 NB1: built at BP's pace
 	&"twin_wardens": [[&"crossfire", 1.2], [&"chain_sweep", 1.6]],  # v0.9.0 NB2: built at BP's pace
 	&"clockwork_judge": [[&"gear_spiral", 0.8], [&"verdict", 1.6]],  # v0.9.0 NB3: built at BP's pace
 	&"lantern_shade": [[&"wisp_bloom", 0.8], [&"snuff", 1.6]],  # v0.9.0 NB4: built at BP's pace

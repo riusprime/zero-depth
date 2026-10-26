@@ -287,6 +287,19 @@ const ADDED_SINCE_V05 := {
 		&"lamp_x",
 		&"lamp_y",
 		&"lamp_t",
+		&"str_boss",  # v0.9.5 BH4: the Tidecaller's ring stream and crossing waves (an older save has none)
+		&"str_ring_due",
+		&"str_ring_n",
+		&"str_wave_due",
+		&"wv_boss",
+		&"wv_atk",
+		&"wv_from",
+		&"wv_dir",
+		&"wv_hit",
+		&"wv_x",
+		&"wv_y",
+		&"wv_len",
+		&"wv_run",
 	],
 	&"ProjectileStore":
 	[

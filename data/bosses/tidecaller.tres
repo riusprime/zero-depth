@@ -10,10 +10,10 @@ id = &"the_pull"
 shape = 4
 shape_params = {
 "bend_dps": 25.0,
-"pattern_id": "tidecaller_pull_rings",
-"pull_mps": 1.2,
+"max_mps": 2.2,
+"pull_mps": 1.7,
 "pull_seconds": 3.0,
-"push_mps": 1.0,
+"push_mps": 1.4,
 "push_seconds": 2.0
 }
 telegraph_seconds = 1.0
@@ -36,10 +36,10 @@ id = &"the_pull_3"
 shape = 4
 shape_params = {
 "bend_dps": 30.0,
-"pattern_id": "tidecaller_pull_rings_3",
-"pull_mps": 1.5,
+"max_mps": 2.2,
+"pull_mps": 2.0,
 "pull_seconds": 3.0,
-"push_mps": 1.2,
+"push_mps": 1.7,
 "push_seconds": 2.0
 }
 telegraph_seconds = 1.0
@@ -56,12 +56,12 @@ cause_key = &"CAUSE_TIDECALLER_PULL"
 opens_weak_point = true
 shielded = true
 
-[sub_resource type="Resource" id="A_tide_rings"]
+[sub_resource type="Resource" id="A_ring_stream"]
 script = ExtResource("1_atk")
-id = &"tide_rings"
+id = &"ring_stream"
 shape = 4
 shape_params = {
-"pattern_id": "tidecaller_tide_rings"
+"pattern_id": "tidecaller_stream"
 }
 telegraph_seconds = 0.8
 active_seconds = 0.0167
@@ -71,28 +71,50 @@ hit_class = &"small"
 move = &"pattern"
 min_range_m = 0.0
 max_range_m = 99.0
-weight = 3
+weight = 1
 cooldown_seconds = 0.9
 cause_key = &"CAUSE_TIDECALLER_RINGS"
 
-[sub_resource type="Resource" id="A_tide_rings_fast"]
+[sub_resource type="Resource" id="A_ring_stream_3"]
 script = ExtResource("1_atk")
-id = &"tide_rings_fast"
+id = &"ring_stream_3"
 shape = 4
 shape_params = {
-"pattern_id": "tidecaller_tide_rings_fast"
+"pattern_id": "tidecaller_stream_3"
 }
 telegraph_seconds = 0.8
 active_seconds = 0.0167
-recovery_seconds = 1.1
+recovery_seconds = 1.2
 damage = 22
 hit_class = &"small"
 move = &"pattern"
 min_range_m = 0.0
 max_range_m = 99.0
-weight = 3
-cooldown_seconds = 0.8
+weight = 1
+cooldown_seconds = 0.9
 cause_key = &"CAUSE_TIDECALLER_RINGS"
+
+[sub_resource type="Resource" id="A_crossing_wave"]
+script = ExtResource("1_atk")
+id = &"crossing_wave"
+shape = 2
+shape_params = {
+"clear_m": 3.0,
+"lengths_m": [2.0, 3.0, 4.0],
+"shove_m": 1.5,
+"speed_mps": 4.5,
+"thickness_m": 0.5
+}
+telegraph_seconds = 0.7
+active_seconds = 0.0167
+recovery_seconds = 0.0
+damage = 15
+move = &"wave"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.0
+cause_key = &"CAUSE_TIDECALLER_WAVE"
 
 [sub_resource type="Resource" id="A_undertow"]
 script = ExtResource("1_atk")
@@ -166,26 +188,41 @@ opens_weak_point = true
 [sub_resource type="Resource" id="P_0"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 1000
-attack_ids = PackedStringArray("the_pull", "tide_rings", "undertow", "shell_slam")
+attack_ids = PackedStringArray("the_pull", "undertow", "shell_slam")
 entry_attack = &""
 speed_permille = 1000
 cooldown_permille = 1000
+stream_attack = &"ring_stream"
+stream_every_seconds = 2.2
+wave_attack = &"crossing_wave"
+wave_every_seconds = 3.5
+wave_count = 1
 
 [sub_resource type="Resource" id="P_1"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 660
-attack_ids = PackedStringArray("the_pull", "tide_rings", "undertow_2", "shell_slam")
+attack_ids = PackedStringArray("the_pull", "undertow_2", "shell_slam")
 entry_attack = &"the_pull"
 speed_permille = 900
 cooldown_permille = 650
+stream_attack = &"ring_stream"
+stream_every_seconds = 1.9
+wave_attack = &"crossing_wave"
+wave_every_seconds = 3.5
+wave_count = 2
 
 [sub_resource type="Resource" id="P_2"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 330
-attack_ids = PackedStringArray("the_pull_3", "tide_rings_fast", "undertow_2", "shell_slam")
+attack_ids = PackedStringArray("the_pull_3", "undertow_2", "shell_slam")
 entry_attack = &"the_pull_3"
 speed_permille = 990
 cooldown_permille = 487
+stream_attack = &"ring_stream_3"
+stream_every_seconds = 1.6
+wave_attack = &"crossing_wave"
+wave_every_seconds = 3.5
+wave_count = 2
 
 [resource]
 script = ExtResource("3_boss")
@@ -203,7 +240,7 @@ rear_mult_permille = 1000
 stagger_size = 280
 stagger_decay_per_second = 15.0
 stagger_seconds = 2.5
-attacks = Array[ExtResource("1_atk")]([SubResource("A_the_pull"), SubResource("A_the_pull_3"), SubResource("A_tide_rings"), SubResource("A_tide_rings_fast"), SubResource("A_undertow"), SubResource("A_undertow_2"), SubResource("A_shell_slam")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_the_pull"), SubResource("A_the_pull_3"), SubResource("A_ring_stream"), SubResource("A_ring_stream_3"), SubResource("A_crossing_wave"), SubResource("A_undertow"), SubResource("A_undertow_2"), SubResource("A_shell_slam")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
 legacy_arena_cells = Vector2i(4, 4)
@@ -227,7 +264,7 @@ dash_read_seconds = 0.5
 gap_close_attack = &"undertow"
 gap_close_distance_m = 10.0
 gap_close_seconds = 2.0
-signature_every_seconds = 9.0
+signature_every_seconds = 8.0
 signature_first_seconds = 3.0
 save_order = 1
 id = &"tidecaller"

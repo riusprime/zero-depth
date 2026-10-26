@@ -193,6 +193,15 @@ var window_every_ticks := 1200
 var window_first_ticks := 720
 var window_warn_ticks := 90
 var nerf_min_permille := 100
+## v0.9.5 BH4 (BOSSES_HARD.md T2, T3; BossStream): per phase, the attack index of its ring stream (-1 = none) and the
+## ticks between rings; of its crossing wave, the attack index, the ticks between waves and how many form at once.
+## `streams` is true when any phase has one (the streams run the whole fight, beside the attack rotation).
+var streams := false
+var phase_ring_atk := PackedInt32Array()
+var phase_ring_ticks := PackedInt32Array()
+var phase_wave_atk := PackedInt32Array()
+var phase_wave_ticks := PackedInt32Array()
+var phase_wave_n := PackedInt32Array()
 
 
 ## The attack index with this id, or -1.

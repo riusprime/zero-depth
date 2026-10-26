@@ -373,6 +373,7 @@ static func advance(w: World) -> void:
 		_recall(w)
 	BossLava.advance(w)
 	BossShade.advance(w)  # v0.9.0 NB4: the Lantern Shade's dark and its lanterns
+	BossStream.advance(w)  # v0.9.5 BH4: the Tidecaller's ring stream and crossing waves
 
 
 ## World._remove_dead: boss `boss_id` is gone: its pillars sink and its javelins go (its eggs crumble on their own).
@@ -389,6 +390,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 	BossTwin.on_boss_gone(w, boss_id)  # v0.9.0 NB2: the Wardens' pair
 	BossJudge.on_boss_gone(w, boss_id)  # v0.9.0 NB3: the Clockwork Judge's echo
 	BossShade.on_boss_gone(w, boss_id)  # v0.9.0 NB4: the Lantern Shade's room relights
+	BossStream.on_boss_gone(w, boss_id)  # v0.9.5 BH4: its streams and waves
 
 
 ## The recap's death line for a cause past LATE_CAUSE (a late part): its attack's late_cause_key (its own cause_key

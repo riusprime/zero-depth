@@ -101,7 +101,10 @@ func _dodge(id: StringName, attack_id: StringName, dist: float, way: int) -> Arr
 			var rel := w.player_pos() - w.actors.pos(i)
 			var side := -1.0 if way == 0 else 1.0
 			var drift := clampf((rel.length() - 3.5) * 0.1, 0.0, 0.4)  # in toward 3.5 m, never into the body
-			go = (Vector2(-rel.y, rel.x).normalized() * side * 0.9 - rel.normalized() * drift).normalized()
+			go = (
+				(Vector2(-rel.y, rel.x).normalized() * side * 0.9 - rel.normalized() * drift)
+				. normalized()
+			)
 		w.step(_frame(go if running else Vector2.ZERO, go, pressed))
 	return [hp0 - w.actors.hp[0], dashed]
 
@@ -192,6 +195,39 @@ func test_the_blade_kills_every_boss_in_its_windows() -> void:
 			)
 		)
 		assert_true(bot.boss_dead(w), "%s: the Blade kills it within %d s" % [id, KILL_LIMIT / 60])
+
+
+## v0.9.5 BH4: the Tidecaller too (v0.9.0 NB1 built it at BP's pace and no lab fought it): through its stronger pulls,
+## the ring stream all fight and its crossing waves, the same Blade hero (it ignores the waves and the rings: it
+## stands at the boss's side, where the rings can't reach) still kills it within the same limit, on three seeds. The
+## damage it takes a minute is printed (BH4's evidence: before the step 53.7 a minute on these seeds, after 116.4).
+func test_the_blade_kills_the_tidecaller_through_its_streams() -> void:
+	var bigs := {}
+	for def: BossDefinition in _repo().all_of(&"bosses"):
+		for a in def.attacks:
+			if a.hit_class == &"big":
+				bigs[a.id] = true
+	var taken := 0
+	var ticks := 0
+	for seed_value in [9, 10, 11]:
+		var w := _world(seed_value)
+		var i := BossLab.ready_boss(w, &"tidecaller")
+		var aid := w.actors.ids[i]
+		w.actors.set_pos(0, Vector2(6, 0))
+		var bot := BladeRun.new(aid, bigs)
+		var n := bot.fight(w, KILL_LIMIT, func(_w: World) -> bool: return bot.boss_dead(w))
+		taken += bot.taken
+		ticks += n
+		assert_true(
+			bot.boss_dead(w),
+			"seed %d: the Blade kills the Tidecaller in %d s" % [seed_value, n / 60]
+		)
+	print(
+		(
+			"BH4 blade tidecaller: %d damage over %.1f s = %.1f a minute"
+			% [taken, ticks / 60.0, taken / (ticks / 3600.0)]
+		)
+	)
 
 
 ## The final boss (FinalLab's arena: the run's last floor at loop 1, scaled as a run scales it, the Blade build): the

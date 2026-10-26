@@ -35,6 +35,7 @@ enum Move {
 	CHAIN_SWEEP,  # v0.9.0 NB2: their chain's line tracks the player, locks and lashes (BossTwin)
 	ECHO,  # v0.9.0 NB3 (BOSSES_4_5.md N3): the Clockwork Judge's echo of the player's path (BossJudge)
 	VERDICT,  # v0.9.0 NB3: its tracked square, locked, a pendulum strike dropping on it (BossJudge)
+	WAVE,  # v0.9.5 BH4 (BOSSES_HARD.md T3): the Tidecaller's crossing wave (BossStream; never a boss's own attack)
 }
 
 ## v0.8.0 FB3: the runs a Nemesis attack answers to (`weapon` below).
@@ -234,3 +235,13 @@ var lines_ticks := 0
 var lines_turn_milli := 0
 ## v0.9.5 BH3 (B10; BossShade): a `marks` Snuff puts out the snuff_count lit lanterns nearest each struck circle.
 var snuff_count := 0
+## v0.9.5 BH4 (BOSSES_HARD.md T1; BossTide): the most a `tide` attack moves the player (metres per tick; 0 = BossTide's
+## own ceiling).
+var tide_max := 0.0
+## v0.9.5 BH4 (T3; BossStream): a `wave`'s lengths (metres), thickness, speed (metres per tick), shove (metres along its
+## travel) and the clear distance from the player's projection on its wall; its telegraph is windup_ticks.
+var wave_lengths := PackedFloat32Array()
+var wave_thick_m := 0.0
+var wave_speed := 0.0
+var wave_shove_m := 0.0
+var wave_clear_m := 0.0

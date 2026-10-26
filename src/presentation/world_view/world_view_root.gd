@@ -57,6 +57,7 @@ static var parts: Array[GDScript] = [
 	StoneSpikeViews,
 	BossSignatureViews,
 	TideViews,  # v0.9.0 NB1
+	TideWaveViews,  # v0.9.5 BH4
 	TwinViews,  # v0.9.0 NB2
 	JudgeViews,  # v0.9.0 NB3
 	ShadeViews,  # v0.9.0 NB4
@@ -189,6 +190,8 @@ var spikes: StoneSpikeViews = _part(StoneSpikeViews)
 var signatures: BossSignatureViews = _part(BossSignatureViews)
 ## v0.9.0 NB1: the Tidecaller's Pull (the moving water, the bell's toll, the push's swell).
 var tides: TideViews = _part(TideViews)
+## v0.9.5 BH4: the Tidecaller's crossing waves (a foam line at the wall, then the curling water band).
+var tide_waves: TideWaveViews = _part(TideWaveViews)
 ## v0.9.0 NB2: the Twin Wardens' burning chain, Crossfire's gap lanes and safe spot, the Chain Sweep's lash.
 var twins: TwinViews = _part(TwinViews)
 ## v0.9.0 NB3: the Clockwork Judge's echo (its recording, path and ghost trail) and its Verdict's pendulum.
@@ -372,6 +375,7 @@ func _setup_effects() -> void:
 	add_child(spikes)  # v0.8.0 AV
 	add_child(signatures)  # v0.8.0 BS1
 	add_child(tides)  # v0.9.0 NB1
+	add_child(tide_waves)  # v0.9.5 BH4
 	add_child(twins)  # v0.9.0 NB2
 	add_child(judges)  # v0.9.0 NB3
 	add_child(shades)  # v0.9.0 NB4 (it dims the stage's sun with the dark)
@@ -599,6 +603,7 @@ func sync() -> void:
 	_sync_view(&"spikes", spikes)  # v0.8.0 AV
 	_sync_view(&"signatures", signatures)  # v0.8.0 BS1
 	_sync_view(&"tides", tides)  # v0.9.0 NB1
+	_sync_view(&"tide_waves", tide_waves)  # v0.9.5 BH4
 	_sync_view(&"twins", twins)  # v0.9.0 NB2
 	_sync_view(&"judges", judges)  # v0.9.0 NB3
 	_sync_view(&"shades", shades)  # v0.9.0 NB4

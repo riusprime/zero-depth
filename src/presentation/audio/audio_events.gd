@@ -13,6 +13,8 @@ const HEARTBEAT_TICKS := 54
 const BOSS_PITCH := 0.8
 ## v0.9.0 AF1b: the Lance's charge-up hum starts once a charge passes this (a tap stays quiet).
 const LANCE_HUM_AT := 0.1
+## v0.9.5 BH4: a Tidecaller wave's whoosh is the tide cue at this pitch.
+const WAVE_PITCH := 1.35
 ## A crit's hit is pitched up, so it rings sharper (v0.4.0 BS).
 const CRIT_PITCH := 1.6
 ## v0.9.0 DS (owner C35, Q19): `boss_door_impact.wav` peaks about 0.3 s in, so its cue starts this many ticks before
@@ -131,6 +133,8 @@ var _lance_hum := false
 var _shrine := [-1, -1]
 ## v0.9.0 EL: the last elite arrival's tick, for its cue's edge.
 var _elite_arrive := -1
+## v0.9.5 BH4: the Tidecaller waves heard so far (formed tick x 4 + wall), each whooshing once as it leaves its wall.
+var _waves_heard := {}
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -169,6 +173,8 @@ func prime(reader: WorldReader) -> void:
 	_lance_hum = reader.lance_charge() >= LANCE_HUM_AT
 	_shrine = shrine_marks(reader)
 	_elite_arrive = elite_arrive_tick(reader)
+	_waves_heard.clear()
+	_waves(reader, [])
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -198,6 +204,7 @@ func collect(reader: WorldReader) -> Array:
 	_final_approach(reader, out)
 	_timed_door(reader, out)
 	_rune_puzzle(reader, out)
+	_waves(reader, out)  # v0.9.5 BH4
 	_purple_runes(reader, out)  # v0.9.0 DP
 	_breakables(reader, out)
 	_lockdown(reader, out)  # v0.9.0 LK
@@ -893,3 +900,19 @@ func _event_rooms(reader: WorldReader, out: Array) -> void:
 		if reader.event_done_tick() >= 0:
 			out.append([&"event_done", null, 1.0])
 		_done_tick = reader.event_done_tick()
+
+
+## v0.9.5 BH4: a Tidecaller wave leaving its wall whooshes once (the tide's cue, pitched up), where it leaves; the
+## marks of
+## waves that are gone are dropped.
+func _waves(reader: WorldReader, out: Array) -> void:
+	var live := {}
+	for wv in reader.boss_waves():
+		var key := int(wv["formed"]) * 4 + int(wv["wall"])
+		live[key] = true
+		if int(wv["telegraph"]) < 0 and not _waves_heard.has(key):
+			_waves_heard[key] = true
+			out.append([&"boss_tide_pull", wv["pos"], WAVE_PITCH])
+	for key: int in _waves_heard.keys():
+		if not live.has(key):
+			_waves_heard.erase(key)

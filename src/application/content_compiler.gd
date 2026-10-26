@@ -56,6 +56,7 @@ const BOSS_MOVES := {
 	&"chain_sweep": BossAttackTable.Move.CHAIN_SWEEP,
 	&"echo": BossAttackTable.Move.ECHO,  # v0.9.0 NB3 (the Clockwork Judge)
 	&"verdict": BossAttackTable.Move.VERDICT,
+	&"wave": BossAttackTable.Move.WAVE,  # v0.9.5 BH4
 }
 ## v0.8.0 FB3: a Nemesis attack's `weapon`.
 const ATTACK_WEAPONS := {
@@ -591,6 +592,7 @@ static func compile_boss(def: BossDefinition, repo: ContentRepository) -> BossTa
 		)
 		t.phase_speed_permille.append(ph.speed_permille)
 		t.phase_cd_permille.append(ph.cooldown_permille)
+		HardCompiler.compile_phase(ph, t)  # v0.9.5 BH4: the ring stream and the waves
 	t.arena_cells = def.arena_cells
 	t.legacy_arena_cells = (
 		def.legacy_arena_cells if def.legacy_arena_cells != Vector2i.ZERO else def.arena_cells
