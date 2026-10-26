@@ -48,6 +48,8 @@ var _wand_due := 0
 ## v0.8.0 FB1: the final fight's body being watched, and whether the hero lost HP since it rose.
 var _final_phase := -1
 var _final_hurt := false
+## v0.9.5 RS1: the floor's purple runes were awake when last read (RunicStone.PURPLE_STAT).
+var _purple_seen := false
 
 
 func _init(p_book: AchievementBook) -> void:
@@ -76,6 +78,7 @@ func attach(reader: WorldReader) -> void:
 	_wand_due = 0
 	_final_phase = reader.final_phase()  # v0.8.0 FB1: saves are taken at a body's start, so it starts clean
 	_final_hurt = false
+	_purple_seen = reader.purple_lit()  # v0.9.5 RS1: a floor resumed with the runes awake counted already
 	evaluate_all()
 
 
@@ -115,6 +118,9 @@ func observe(reader: WorldReader) -> void:
 			store.raise_stat(&"wand:cards_max", n)
 			_check(book.reading_stat(&"wand:cards_max"))
 	_final(reader)
+	if not _purple_seen and reader.purple_lit():  # v0.9.5 RS1: a purple-rune room activated (the Runic Stone)
+		_purple_seen = true
+		report(RunicStone.PURPLE_STAT)
 	if not _ended and reader.outcome() in [1, 3]:
 		_ended = true
 		if not reader.final_arena():  # v0.8.0 FB1: End the run counted the floor

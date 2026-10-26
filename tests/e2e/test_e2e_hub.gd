@@ -39,7 +39,9 @@ func test_the_small_menu() -> void:
 	var main: Main = await e.boot()
 	var menu := main.get_node_or_null("UI/MainMenu") as MainMenu
 	assert_not_null(menu)
-	assert_eq(_rows(menu), ["Continue", "Play", "Options", "Quit"], "the small menu (Q27)")
+	assert_eq(
+		_rows(menu), ["Continue", "Play", "Options", "Credits", "Quit"], "the small menu (Q27)"
+	)
 	assert_true(
 		(menu.box.get_node("Continue") as Button).disabled, "Continue greyed out without a save"
 	)
@@ -48,6 +50,8 @@ func test_the_small_menu() -> void:
 	assert_eq(_focused(main).name, &"Play", "the greyed-out Continue takes no focus")
 	await e.tap(KEY_DOWN)
 	assert_eq(_focused(main).name, &"Options")
+	await e.tap(KEY_DOWN)
+	assert_eq(_focused(main).name, &"Credits")  # v0.9.5 RS1: Options, Credits, Quit
 	await e.tap(KEY_DOWN)
 	assert_eq(_focused(main).name, &"Quit")
 
@@ -183,12 +187,9 @@ func test_each_station_opens_its_panel() -> void:
 	await e.frames(2)
 	assert_null(main.get_node_or_null("UI/ProgressionPanel"), "Esc closes it")
 	assert_false(main.hub.driver.paused)
-	# The Credits stone.
-	await walk.use(&"credits")
-	assert_not_null(main.get_node_or_null("UI/CreditsView"), "the Credits stone opens the credits")
-	await e.tap(KEY_ESCAPE)
-	await e.frames(2)
-	assert_null(main.get_node_or_null("UI/CreditsView"))
+	# v0.9.5 RS1: the Runic Stone (was the Credits stone) opens no panel; the Credits are in the main menu.
+	await walk.use(&"runic")
+	assert_null(main.get_node_or_null("UI/CreditsView"), "the Runic Stone opens no credits")
 	assert_not_null(main.hub, "still in the hub")
 
 

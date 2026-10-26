@@ -171,6 +171,7 @@ func show_main_menu() -> void:
 	)
 	m.play_pressed.connect(_show_hub)
 	m.options_pressed.connect(show_options)
+	m.credits_pressed.connect(show_credits)  # v0.9.5 RS1: the Credits moved from the hub to the menu
 	m.quit_pressed.connect(
 		func() -> void: get_tree().root.propagate_notification(NOTIFICATION_WM_CLOSE_REQUEST)
 	)
@@ -191,6 +192,7 @@ func _show_hub() -> void:
 	hub.station_used.connect(_open_station)
 	hub.options_requested.connect(show_options.bind(hub.open_pause))
 	hub.main_menu_requested.connect(show_main_menu)
+	hub.cue_requested.connect(audio.play)  # v0.9.5 RS1: the Runic Stone's hum
 	loads.cover.unveil(FADE_SECONDS)
 	audio.set_ambience(HubSession.BIOME)
 
@@ -201,8 +203,6 @@ func _open_station(_id: StringName, panel: StringName) -> void:
 			show_build_picker()
 		&"codex", &"achievements":
 			show_codex(CodexView.page_of(panel))  # v0.9.0 CL: the Rune Archive opens on its collectibles
-		&"credits":
-			show_credits()
 
 
 func _close_station() -> void:

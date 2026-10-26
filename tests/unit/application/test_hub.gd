@@ -18,7 +18,7 @@ func test_the_rune_ring_is_valid_content() -> void:
 	var ids := []
 	for s in _hub.stations:
 		ids.append(s.id)
-	assert_eq(ids, [&"archive", &"trophy", &"wardrobe", &"progression", &"credits"])
+	assert_eq(ids, [&"archive", &"trophy", &"wardrobe", &"progression", &"runic"])
 	assert_eq(_hub.rune_count, 16, "16 floor runes")
 
 
@@ -63,7 +63,7 @@ func test_stations_are_found_where_the_hero_stands() -> void:
 	assert_eq(
 		l.station_at(HubLayout.to_sim(Vector2(0, -3.0))), HubLayout.MACHINE, "the machine's ring"
 	)
-	for id: StringName in [&"archive", &"trophy", &"wardrobe", &"progression", &"credits"]:
+	for id: StringName in [&"archive", &"trophy", &"wardrobe", &"progression", &"runic"]:
 		assert_eq(l.station_at(HubLayout.to_sim(l.front_of(id))), id, "before the %s" % id)
 	# v0.9.0 HB3: the stations stand along the top half, each turned to face the plaza's middle.
 	for s in _hub.stations:
@@ -144,9 +144,7 @@ func test_the_hub_world_walks_the_hero_and_holds_it_in() -> void:
 func test_walking_times_from_the_spawn_stay_short() -> void:
 	var l := HubLayout.new(_hub)
 	var line := []
-	for id: StringName in [
-		&"portal", &"wardrobe", &"progression", &"archive", &"trophy", &"credits"
-	]:
+	for id: StringName in [&"portal", &"wardrobe", &"progression", &"archive", &"trophy", &"runic"]:
 		var w := HubScenario.build(_repo, l, &"blade")
 		var goal := l.front_of(id, 0.2)
 		var ticks := 0

@@ -15,6 +15,8 @@ const TROPHY_WALL_D := 2.04
 ## v0.9.0 HB3: the stations' low plinths (the Archive's ledge, the Trophy Area's step) in the owner's paving, a
 ## little darker than the plaza (they were flat dark boxes).
 const LEDGE := Color(0.62, 0.6, 0.57)
+## v0.9.5 RS1: the Runic Stone's veins (RUNIC_STONE.md S3).
+const RUNE_VIOLET := Color("#9B6BFF")
 
 
 ## The Rune Archive (opens the Codex): the owner's bookcase niche (or a stone shelf of three tiers), blue rune plaques,
@@ -252,24 +254,36 @@ static func progression(root: Node3D, half: Vector2, h: float) -> Dictionary:
 	return {"glow": g, "crystal": crystal, "model": model}
 
 
-## The Credits stone: the owner's tablet of carved names on its plinth (v0.9.0 HB3, hub_credits_stone), or a low
-## engraved slab with its carved lines faintly lit.
-static func credits(root: Node3D, half: Vector2, h: float) -> Dictionary:
-	var stone := HubProps.stone(HubProps.STONE)
+## The Runic Stone (v0.9.5 RS1, RUNIC_STONE.md S2, S3; was the Credits stone): the owner's tablet on its plinth
+## (hub_credits_stone), or a low slab. Locked it is dark and cold, with no glow. The model is one surface, so its veins
+## are a thin violet ring at its base (`ring`) plus a small violet light, both off until the stone wakes
+## (HubView.set_runic). No halo: `glow` is empty.
+static func runic(root: Node3D, half: Vector2, h: float) -> Dictionary:
+	var stone := HubProps.stone(HubProps.STONE_DARK)
 	var body := HubProps.stand_in(root)
 	HubProps.box(
 		body, "Slab", Vector3(half.x * 2.0, h, half.y * 2.0), stone, Vector3(0, h * 0.5, 0)
 	)
 	var model := HubProps.owner_model(root, &"hub_credits_stone", Vector3.ZERO, body)
-	for k in 3 if model == null else 0:
-		HubProps.box(
-			body,
-			"Line%d" % k,
-			Vector3(half.x * (1.4 - k * 0.3), 0.02, 0.05),
-			HubProps.emissive(HubProps.GOLD.darkened(0.2), 1.4),
-			Vector3(0, h + 0.005, -0.25 + k * 0.25)
-		)
-	var g := HubProps.glow(
-		root, "Glow", HubProps.GOLD, HubProps.GOLD_CORE, Vector3(0, h + 0.3, 0.0), 1.4
+	if model != null:
+		var cold: Material = model.material_override
+		if cold is BaseMaterial3D:
+			cold = cold.duplicate()
+			(cold as BaseMaterial3D).albedo_color = Color(0.52, 0.56, 0.68)  # dark, cold stone
+			model.material_override = cold
+	var torus := TorusMesh.new()
+	var r := maxf(half.x, half.y) + 0.12
+	torus.inner_radius = r
+	torus.outer_radius = r + 0.05
+	var ring := HubProps.mesh(
+		root, "Veins", torus, HubProps.emissive(RUNE_VIOLET, 0.0), Vector3(0, 0.06, 0)
 	)
-	return {"glow": g, "model": model}
+	ring.visible = false
+	var light := OmniLight3D.new()
+	light.name = "VeinLight"
+	light.light_color = RUNE_VIOLET
+	light.light_energy = 0.0
+	light.omni_range = 4.0
+	light.position = Vector3(0, h * 0.6, 0)
+	root.add_child(light)
+	return {"glow": {}, "model": model, "ring": ring, "light": light, "height": h}

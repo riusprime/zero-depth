@@ -24,7 +24,7 @@ func _view(states: Dictionary, trophies: Array[bool] = [false, true]) -> HubView
 
 func test_every_station_and_the_machine_are_drawn() -> void:
 	var v := _view({})
-	for id: StringName in [&"archive", &"trophy", &"wardrobe", &"progression", &"credits"]:
+	for id: StringName in [&"archive", &"trophy", &"wardrobe", &"progression", &"runic"]:
 		assert_true(v.stations.has(id), "%s is drawn" % id)
 		assert_not_null(v.plan.get_node_or_null("Station_%s" % id))
 	assert_not_null(v.machine.altar, "the stand-in machine stands on SA's altar")
@@ -44,6 +44,8 @@ func test_the_glows_are_layered() -> void:
 	var v := _view({})
 	for id: StringName in v.stations:
 		var g: Dictionary = v.stations[id]["glow"]
+		if id == &"runic":  # v0.9.5 RS1: the Runic Stone has no halo (its veins are a ring)
+			continue
 		assert_true(
 			g.has("halo") and g.has("pool") and g.has("light"), "%s: halo, floor pool, light" % id
 		)
@@ -55,12 +57,33 @@ func test_focus_brightens_the_station() -> void:
 	var v := _view({})
 	v.focus(&"archive")
 	var arch: Dictionary = v.stations[&"archive"]["glow"]
-	var cred: Dictionary = v.stations[&"credits"]["glow"]
-	assert_gt(
-		(arch["light"] as OmniLight3D).light_energy, (cred["light"] as OmniLight3D).light_energy
+	assert_gt((arch["light"] as OmniLight3D).light_energy, 0.0)
+	assert_true(
+		(v.stations[&"runic"]["glow"] as Dictionary).is_empty(), "the Runic Stone has no halo"
 	)
 	v.focus(HubLayout.MACHINE)
 	assert_eq(v.machine.focus, 1.0, "the machine wakes when the hero stands at it")
+
+
+## v0.9.5 RS1 (RUNIC_STONE.md S2, S3): locked, the stone is dark (no veins, no light); awake, its veins glow violet and
+## a pulse flares them once and settles.
+func test_the_runic_stone_is_dark_locked_and_violet_awake() -> void:
+	var v := _view({})
+	var st: Dictionary = v.stations[&"runic"]
+	assert_false(v.runic_lit(), "locked: no veins")
+	assert_eq((st["light"] as OmniLight3D).light_energy, 0.0)
+	v.set_runic(true)
+	assert_true(v.runic_lit(), "awake: the veins are lit")
+	var mat := (st["ring"] as MeshInstance3D).material_override as StandardMaterial3D
+	assert_eq(mat.emission, HubStations.RUNE_VIOLET, "violet #9B6BFF")
+	var calm := mat.emission_energy_multiplier
+	v.pulse_runic()
+	v._advance_pulse(HubView.PULSE_S * 0.5)
+	assert_gt(mat.emission_energy_multiplier, calm, "the pulse flares them")
+	v._advance_pulse(HubView.PULSE_S)
+	assert_eq(mat.emission_energy_multiplier, calm, "and they settle")
+	v.set_runic(false)
+	assert_false(v.runic_lit())
 
 
 func test_the_states_and_hooks_change_the_hub() -> void:
@@ -198,7 +221,7 @@ func test_the_small_menu_and_the_end_panel_rows() -> void:
 	for c in m.box.get_children():
 		if c is Button:
 			rows.append(String(c.name))
-	assert_eq(rows, ["Continue", "Play", "Options", "Quit"])
+	assert_eq(rows, ["Continue", "Play", "Options", "Credits", "Quit"])  # v0.9.5 RS1: Credits is back
 	assert_true((m.box.get_node("Continue") as Button).disabled)
 	var with_save := MainMenu.new("v", true)
 	add_child_autofree(with_save)

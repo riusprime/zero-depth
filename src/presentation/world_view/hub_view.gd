@@ -31,6 +31,8 @@ const WALK_ZOOM := 1.18
 ## A soft fill from the camera's side (no shadows), so the stations' fronts read against the mood's back light.
 const FILL_ENERGY := 0.45
 const RUNE_R := 0.38
+## v0.9.5 RS1: how long (s) the Runic Stone's pulse lasts.
+const PULSE_S := 1.2
 ## v0.9.0 HB3: a lit rune: the owner's stone with its carved grooves glowing (the albedo's dark grooves -> `glow`).
 const RUNE_SHADER := """
 shader_type spatial;
@@ -78,6 +80,9 @@ var _walk_told := false
 var _rune_dark: Material
 var _rune_lit: ShaderMaterial
 var _t := 0.0
+## v0.9.5 RS1: seconds into the Runic Stone's pulse (-1: none) and whether its veins are lit.
+var _pulse_t := -1.0
+var _veins_on := false
 
 
 ## Builds the hub: `states` from HubFlags.states (state id -> bool, &"runes" -> Array[bool]), `trophies` one bool per
@@ -176,6 +181,7 @@ func _process(delta: float) -> void:
 	_t += delta
 	for i in fires.size():
 		HubProps.flicker(fires[i], _t, float(i) * 1.7)
+	_advance_pulse(delta)
 	if walk != null:
 		_advance_walk(delta)
 
@@ -450,7 +456,57 @@ static func build_station(
 			return HubStations.wardrobe(root, s.half, s.height_m)
 		&"progression":
 			return HubStations.progression(root, s.half, s.height_m)
-	return HubStations.credits(root, s.half, s.height_m)
+	return HubStations.runic(root, s.half, s.height_m)  # v0.9.5 RS1: the Runic Stone (was the Credits stone)
+
+
+## v0.9.5 RS1 (RUNIC_STONE.md S3): the Runic Stone's veins lit violet (awake) or dark (locked: no glow at all).
+func set_runic(awake: bool) -> void:
+	_veins_on = awake
+	_apply_veins(0.0)
+
+
+## v0.9.5 RS1 (S5): the veins flare once (about 1.2 s) and settle.
+func pulse_runic() -> void:
+	if _veins_on:
+		_pulse_t = 0.0
+
+
+## Whether the Runic Stone's veins are lit now.
+func runic_lit() -> bool:
+	var ring: Variant = (stations.get(&"runic", {}) as Dictionary).get("ring")
+	return ring is MeshInstance3D and (ring as MeshInstance3D).visible
+
+
+## Where the Runic Stone's top is on the 3D floor (the speech bubble's tail).
+func runic_top() -> Vector3:
+	var st: Dictionary = stations.get(&"runic", {})
+	if st.is_empty():
+		return Vector3.ZERO
+	var top := float(st.get("height", 1.7)) + 0.3
+	return (st["root"] as Node3D).global_position + Vector3(0, top, 0)
+
+
+func _advance_pulse(delta: float) -> void:
+	if _pulse_t < 0.0:
+		return
+	_pulse_t += delta
+	var k := 0.0
+	if _pulse_t >= PULSE_S:
+		_pulse_t = -1.0
+	else:
+		k = sin(PI * _pulse_t / PULSE_S)
+	_apply_veins(k)
+
+
+func _apply_veins(pulse: float) -> void:
+	var st: Dictionary = stations.get(&"runic", {})
+	if st.is_empty():
+		return
+	var ring := st["ring"] as MeshInstance3D
+	ring.visible = _veins_on
+	var energy := (2.2 + 4.0 * pulse) if _veins_on else 0.0
+	(ring.material_override as StandardMaterial3D).emission_energy_multiplier = energy
+	(st["light"] as OmniLight3D).light_energy = (0.5 + 1.6 * pulse) if _veins_on else 0.0
 
 
 func _set_trophy_states(lit: bool, crown: bool) -> void:

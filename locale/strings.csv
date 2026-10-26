@@ -1261,8 +1261,8 @@ HUB_WARDROBE,Wardrobe,Vestidor
 HUB_PROMPT_WARDROBE,Open,Abrir
 HUB_PROGRESSION,Progression Station,Estación de Progreso
 HUB_PROMPT_PROGRESSION,Use,Usar
-HUB_CREDITS,Credits Stone,Piedra de los Créditos
-HUB_PROMPT_CREDITS,Read,Leer
+HUB_RUNIC_STONE,Runic Stone,Piedra rúnica
+HUB_PROMPT_RUNIC_READ,Read,Leer
 HUB_WARDROBE_SOON,Robes and rune affinities will hang here. Nothing to wear yet.,Aquí colgarán las túnicas y las afinidades rúnicas. Aún no hay nada que ponerse.
 HUB_PROGRESSION_SOON,Rune Fragments will be spent here. The console is still dark.,Aquí se gastarán los Fragmentos de Runa. La consola sigue apagada.
 ELITE_BREAKER,The Breaker,El Quebrantador
@@ -1497,3 +1497,4 @@ FORMCARD_WISPS_SPLIT,The wisps' shots split on hit,Los disparos de los fuegos fa
 FORMCARD_WISPS_SPIRAL,The wisps' shots corkscrew,Los disparos de los fuegos fatuos avanzan en espiral
 FORMCARD_WISPS_MINE,Each wisp drops a mine every 2 s,Cada fuego fatuo suelta una mina cada 2 s
 FORMCARD_WISPS_ORBIT,The wisps circle wider (3.5 m) and hurt what they touch,"Los fuegos fatuos giran más amplio (3,5 m) y dañan al tocar"
+MENU_CREDITS,Credits,Créditos
