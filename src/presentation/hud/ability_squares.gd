@@ -46,15 +46,21 @@ func _init() -> void:
 
 func _input(event: InputEvent) -> void:
 	var was := pad_active
+	pad_active = pad_after(event, pad_active)
+	if pad_active != was:
+		queue_redraw()
+
+
+## Whether the pad is the device in use after `event` (a key or mouse event: no; a pad button or a pushed stick: yes).
+static func pad_after(event: InputEvent, was: bool) -> bool:
 	if event is InputEventMouseMotion or event is InputEventMouseButton or event is InputEventKey:
-		pad_active = false
-	elif (
+		return false
+	if (
 		event is InputEventJoypadButton
 		or (event is InputEventJoypadMotion and absf(event.axis_value) > 0.3)
 	):
-		pad_active = true
-	if pad_active != was:
-		queue_redraw()
+		return true
+	return was
 
 
 func _process(delta: float) -> void:

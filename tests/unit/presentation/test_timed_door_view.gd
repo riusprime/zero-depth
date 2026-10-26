@@ -152,7 +152,7 @@ func test_the_lever_inside_swings_down_while_the_door_stands_open() -> void:
 	t._process(TimedDoorView.PULL_S + 0.05)
 	assert_eq(t.lever_pull, 1.0, "open: the handle is down")
 	assert_eq(
-		TranslationServer.translate(&"TIMED_LEVER_PROMPT").begins_with("[E / X]"),
+		TranslationServer.translate(&"TIMED_LEVER_PROMPT").begins_with("Pull"),
 		true,
-		"the lever has its own prompt"
+		"the lever has its own prompt: a short verb"
 	)

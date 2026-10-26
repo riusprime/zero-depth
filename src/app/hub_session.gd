@@ -122,7 +122,7 @@ func _on_tick() -> void:
 	if _found_ticks > 0 and keystone != null:  # v0.9.0 CL: "Keystone · Added to the Rune Archive"
 		_found_ticks -= 1
 		keys = [keystone.name_key, CollectibleBook.HEADER_KEY]
-	hud.show_station(keys[0], keys[1])
+	hud.show_station(keys[0], keys[1], driver.reader)
 
 
 ## v0.9.0 CL: the shelf's niches, the floor runes (one per collectible found) and the Keystone, from the profile.

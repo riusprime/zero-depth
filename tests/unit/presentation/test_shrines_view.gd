@@ -97,11 +97,7 @@ func test_the_prompt_shows_the_price_and_the_hud_the_result() -> void:
 	prompt.sync(reader)
 	var cost := Shrines.blood_cost(w)
 	assert_gt(cost, 0)
-	assert_eq(
-		prompt.prompt_text(),
-		"[E / X] Blood Shrine · give %d HP for an upgrade" % cost,
-		"the price before the press"
-	)
+	assert_eq(prompt.prompt_text(), "Pray · −%d HP" % cost, "the price before the press")
 	var hud := ShrineHud.new()
 	add_child_autofree(hud)
 	hud.sync(reader)
@@ -114,7 +110,7 @@ func test_the_prompt_shows_the_price_and_the_hud_the_result() -> void:
 	w.actors.hp[0] = 10
 	prompt.sync(reader)
 	var heal := Shrines.fountain_heal(w)
-	assert_eq(prompt.prompt_text(), "[E / X] Healing Fountain · drink (+%d HP · one use)" % heal)
+	assert_eq(prompt.prompt_text(), "Drink · +%d HP" % heal)
 	w.tick = 9
 	Shrines.press_fountain(w, w.shrine.fountain_entry)
 	hud.sync(reader)

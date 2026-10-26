@@ -92,7 +92,7 @@ var _shards := Label.new()
 var _shard_box := HBoxContainer.new()
 var _shard_pulse := 0.0
 var _shards_shown := -1
-var _prompt := Label.new()
+var _prompt := InteractPrompt.new()
 var _pick := PickPanel.new()
 var _combos := HBoxContainer.new()
 var _combo_card := ComboCard.new()
@@ -512,11 +512,11 @@ func shard_text() -> String:
 
 ## The interact prompt by an altar or chest ("" when none), and whether it shows the can't-afford colour.
 func prompt_text() -> String:
-	return _prompt.text if _prompt.visible else ""
+	return _prompt.text()
 
 
 func prompt_poor() -> bool:
-	return _prompt.get_theme_color(&"font_color") == POOR
+	return _prompt.is_poor()
 
 
 func _build_rewards() -> void:
@@ -536,14 +536,7 @@ func _build_rewards() -> void:
 	plate.add_child(_shard_box)
 	add_child(plate)
 	_shard_box.pivot_offset = Vector2(20, 20)
-	_prompt.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_prompt.custom_minimum_size = Vector2(900, 0)
-	_prompt.position = Vector2(-450, -112)
-	_prompt.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	HudStyle.style_label(_prompt, 22, true)
-	_prompt.add_theme_constant_override("outline_size", 6)
-	_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	_prompt.name = "RewardPrompt"
 	add_child(_prompt)
 
 
@@ -555,20 +548,20 @@ func _sync_rewards(reader: WorldReader) -> void:
 		_shards_shown = n
 		_shards.text = str(n)
 	var i := reader.reward_in_reach() if not reader.choosing() else -1
-	_prompt.visible = i >= 0
 	if i >= 0:
 		var price := reader.reward_price(i)
+		var line := ""
 		if reader.reward_is_epic(i):  # v0.5.0 RT
-			_prompt.text = tr("REWARD_OPEN_EPIC_ALTAR")
+			line = tr("REWARD_OPEN_EPIC_ALTAR")
 		elif reader.reward_kind(i) == WorldReader.REWARD_DROP:  # v0.6.0 CU: a free card drop
-			_prompt.text = tr("REWARD_OPEN_DROP")
+			line = tr("REWARD_OPEN_DROP")
 		elif reader.reward_kind(i) == WorldReader.REWARD_ALTAR:
-			_prompt.text = tr("REWARD_OPEN_ALTAR")
-		elif reader.reward_affordable(i):
-			_prompt.text = tr("REWARD_OPEN_CHEST") % price
-		else:
-			_prompt.text = tr("REWARD_TOO_POOR") % [reader.shards(), price]
-		HudStyle.font_color(_prompt, HudStyle.text_color() if reader.reward_affordable(i) else POOR)
+			line = tr("REWARD_OPEN_ALTAR")
+		else:  # v0.9.5 PR: the price shows red when you cannot pay it
+			line = tr("REWARD_OPEN_CHEST") % price
+		_prompt.show_prompt(reader, line, not reader.reward_affordable(i))
+	else:
+		_prompt.hide_prompt()
 	_pick.sync(reader)
 
 
