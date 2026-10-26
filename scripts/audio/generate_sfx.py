@@ -1409,6 +1409,17 @@ def s_elite_beam(r):
     return mix(zap, burst, at(tail, 0.05))
 
 
+def s_stress_break(r):
+    """v0.9.5 SM (the Stress Mark's weak side broken): 0.3 s, a sharp metallic ting (two inharmonic FM partials that
+    ring and fade) on a short noise crack."""
+    n = n_of(0.3)
+    ting = metal_ping(0.3, 2350.0, 1.47, 3.0, 0.12) * 0.55
+    ting2 = metal_ping(0.3, 3620.0, 1.62, 2.0, 0.07) * 0.3
+    c = n_of(0.03)
+    crack = one_pole_hp(noise(r, c), 2000.0) * env(c, 0.0005, 0.012) * 0.6
+    return mix(pad_to(ting, n), pad_to(ting2, n), crack)
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -1535,6 +1546,7 @@ SFX = [
     ("elite_slash", s_elite_slash),
     ("elite_charge", s_elite_charge),
     ("elite_beam", s_elite_beam),
+    ("stress_break", s_stress_break),  # v0.9.5 SM
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------

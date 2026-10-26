@@ -61,6 +61,7 @@ enum Kind {
 	BLAST,  # v0.9.0 BM: a bomb burst (Bomb.blast: pos, amount = radius in mm, effect_id = the bomb's spec key)
 	LANCE,  # v0.9.0 AF1b: a Lance ball released (Lance.on_release: pos = muzzle, amount = radius mm, amount_applied = aim)
 	COLLECTIBLE,  # v0.9.0 CL: a collectible taken (Collectibles: pos, amount = its entry, effect_id = its id)
+	STRESS_BREAK,  # v0.9.5 SM: a weak side broken (StressMarks.on_hit: pos, amount = extra damage, amount_applied = side)
 }
 
 const TAG_MELEE := 1

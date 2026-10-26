@@ -213,6 +213,8 @@ var affinity: AffinityState
 ## v0.9.0 CL (COLLECTIBLES.md; Collectibles): the collectibles this floor can hold (armed at setup by the app); null on
 ## a floor that holds none (every world before CL, goldens, sims: hashed only when it exists).
 var collect: CollectState
+## v0.9.5 SM (Stress Mark; StressMarks): the weak sides on enemies; null until a hero first holds the card.
+var stress: StressState
 # --- end Bosses ---------------------------------------------------------------------------------------------
 # --- Rewards (v0.3.0 E; Rewards) ----------------------------------------------------------------------------
 ## The floor's reward rules (part of the loadout, like item_tables; not hashed).
@@ -525,7 +527,23 @@ func queue_projectile(
 	spec_key: String = ""
 ) -> void:
 	_pending_projectiles.append(
-		[owner_id, team, at, vel, damage, radius_m, life, tags, bounces, spec_key, &"", -1, 0, "", 0]
+		[
+			owner_id,
+			team,
+			at,
+			vel,
+			damage,
+			radius_m,
+			life,
+			tags,
+			bounces,
+			spec_key,
+			&"",
+			-1,
+			0,
+			"",
+			0
+		]
 	)
 
 
@@ -746,6 +764,7 @@ func step(frame: InputFrame) -> void:
 	if pp != null:
 		pp.end(&"remove_dead")
 		pp.begin(&"after")
+	StressMarks.advance(self)  # v0.9.5 SM: the weak sides on the enemies near the hero
 	Events.advance(self)  # v0.5.0 EV: a defence held.
 	CoreTheft.advance(self)  # v0.6.0 CU: the gone carriers, staggers and steal windows, drops taken
 	Arenas.advance(self)  # v0.5.5 AR: sealed arenas (the Overrun too): the seal, the waves, the clear
@@ -1377,6 +1396,8 @@ func state_hash() -> String:
 		h.add_ints(locked_items)
 	if collect != null:  # v0.9.0 CL: only floors armed with a collectible
 		collect.hash_into(h)
+	if stress != null:  # v0.9.5 SM: only runs that held the Stress Mark
+		stress.hash_into(h)
 	if final_fight != null:  # v0.8.0 FB1: only the worlds that hold the final fight
 		final_fight.hash_into(h)
 	actors.hash_into(h)

@@ -478,7 +478,7 @@ static func _compile_item_v2(def: ItemDefinition, t: ItemTable) -> void:
 ## Engines (v0.3.0 G).
 static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 	t.tags = def.tags.duplicate()
-	t.level_max = def.level_max  # v0.9.5 CLV
+	StressMarkCompiler.compile(def, t)  # v0.9.5 CLV level_max, SM the Stress Mark's numbers
 	t.stacks_per_hit = def.stacks_per_hit
 	t.shock_threshold = def.shock_threshold
 	t.shock_ticks = SimTick.seconds_to_ticks(def.shock_seconds)

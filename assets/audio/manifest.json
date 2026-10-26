@@ -1255,6 +1255,16 @@
       "loop": false
     },
     {
+      "id": "stress_break",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/stress_break.wav",
+      "sha256": "3048de635e8d346f02de64b5bbbb2983199892a56f015ae572f655cc5bc806f8",
+      "seconds": 0.3,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -17.72,
+      "loop": false
+    },
+    {
       "id": "laser_loop",
       "kind": "sfx",
       "path": "assets/audio/sfx/laser_loop.wav",

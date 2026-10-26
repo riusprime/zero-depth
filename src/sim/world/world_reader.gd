@@ -3598,3 +3598,24 @@ func collectibles() -> Array[Dictionary]:
 ## v0.9.0 CL: the collectibles the hero took on this floor (their ids).
 func collectibles_taken() -> PackedStringArray:
 	return _w.collect.taken_ids() if _w.collect != null else PackedStringArray()
+
+
+## v0.9.5 SM (Stress Mark): the sides marked on actor `i` (bits 0 up, 1 right, 2 down, 3 left on the screen).
+func stress_mask(i: int) -> int:
+	return StressMarks.mask_of(_w, i)
+
+
+## v0.9.5 SM: the radius (m) within which marks are shown, 0 without the card.
+func stress_radius_m() -> float:
+	var idx := StressMarks.card(_w)
+	return 0.0 if idx < 0 else _w.item_tables[idx].mark_radius_m
+
+
+## v0.9.5 SM: the unit vector from an enemy out to screen side `side` (0 up, 1 right, 2 down, 3 left).
+static func stress_side_dir(side: int) -> Vector2:
+	return StressMarks.side_dir(side)
+
+
+## v0.9.5 SM: the side's angle on the sim plane (1/4096 turn).
+static func stress_side_angle(side: int) -> int:
+	return StressMarks.SIDE_ANGLES[side]

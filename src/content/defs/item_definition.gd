@@ -153,6 +153,14 @@ const SLOT_CATEGORIES: Array[StringName] = [&"free", &"form", &"pattern", &"seco
 ## v0.9.5 CLV (CARD_LEVELS.md): how many levels this wand card has (1..5); 0 = the default, CardLevels.MAX_LEVEL. A
 ## card with 1 is offered once and never again while held.
 @export var level_max := 0
+## v0.9.5 SM (Stress Mark): a nonzero radius makes this the Stress Mark card: enemies within it show a weak side
+## (half_angle_deg wide), a hit from it multiplies by mult_permille, then waits cooldown_seconds; a boss carries
+## boss_marks sides.
+@export var mark_radius_m := 0.0
+@export var mark_half_angle_deg := 45.0
+@export var mark_mult_permille := 1000
+@export var mark_cooldown_seconds := 8.0
+@export var mark_boss_marks := 1
 ## Tags from TAGS: at least one, no repeats.
 @export var tags: PackedStringArray = PackedStringArray()
 ## Stacks one qualifying hit of a source that is not a weapon attack adds (Static Chain's jumps, Overcharge's
@@ -295,6 +303,10 @@ func validate() -> Array[ValidationIssue]:
 	_check_tags(issues)
 	if level_max < 0 or level_max > 5:
 		issues.append(ValidationIssue.new(&"range", resource_path, "level_max is 0..5"))
+	if mark_radius_m < 0.0 or mark_radius_m > 20.0 or mark_boss_marks < 1 or mark_boss_marks > 4:
+		issues.append(ValidationIssue.new(&"range", resource_path, "mark_* out of range"))
+	if mark_radius_m > 0.0 and (mark_half_angle_deg <= 0.0 or mark_half_angle_deg > 90.0):
+		issues.append(ValidationIssue.new(&"range", resource_path, "mark_half_angle_deg is 0..90"))
 	if kind == Kind.WAND and not tags.has("wand"):
 		issues.append(ValidationIssue.new(&"tags", resource_path, "a WAND card is tagged wand"))
 	if tags.has("wand") and modifiers.is_empty():

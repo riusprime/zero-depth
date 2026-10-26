@@ -12,9 +12,7 @@ func _ctx(w: World, at: Vector2) -> AttackContext:
 
 func test_segments_anchors_and_marks_are_drawn_from_the_pool() -> void:
 	var w := W.world(
-		&"blade",
-		[&"shared_faultline", &"shared_gravity_stitch", &"shared_stress_mark"],
-		[[Vector2(2.0, 0.0), 100000]]
+		&"blade", [&"shared_faultline", &"shared_gravity_stitch"], [[Vector2(2.0, 0.0), 100000]]
 	)
 	var reader := WorldReader.new(w)
 	var v := RemnantViews.new()
@@ -23,10 +21,10 @@ func test_segments_anchors_and_marks_are_drawn_from_the_pool() -> void:
 	v.sync(reader)
 	assert_eq([v.drawn_segments, v.drawn_anchors, v.drawn_marks], [0, 0, 0], "nothing without one")
 	var s := Modifiers.step(w, 0)
-	for id: StringName in [&"shared_faultline", &"shared_gravity_stitch", &"shared_stress_mark"]:
+	for id: StringName in [&"shared_faultline", &"shared_gravity_stitch"]:
 		Remnants.on_hook(w, W.hook_of(s, id), _ctx(w, Vector2.ZERO), Vector2(2.0, 0.0), 1)
 	v.sync(reader)
-	assert_eq([v.drawn_segments, v.drawn_anchors, v.drawn_marks], [1, 1, 1])
+	assert_eq([v.drawn_segments, v.drawn_anchors, v.drawn_marks], [1, 1, 0])
 	assert_eq(v.get_child_count(), nodes, "pooled: no node made for a remnant")
 	var bar := v.get_node("Bar0") as MeshInstance3D
 	var mid := SimPlane.to_3d((w.mx.rem_a[0] + w.mx.rem_b[0]) * 0.5)
@@ -40,25 +38,16 @@ func test_segments_anchors_and_marks_are_drawn_from_the_pool() -> void:
 
 
 func test_activations_and_thermal_breaks_flash() -> void:
-	var w := W.world(
-		&"blade",
-		[&"ember_core", &"frost_core", &"shared_stress_mark"],
-		[[Vector2(2.0, 0.0), 100000]]
-	)
+	var w := W.world(&"blade", [&"ember_core", &"frost_core"], [[Vector2(2.0, 0.0), 100000]])
 	var reader := WorldReader.new(w)
 	var v := RemnantViews.new()
 	add_child_autofree(v)
 	v.sync(reader)
-	var k := W.hook_of(Modifiers.step(w, 0), &"shared_stress_mark")
-	Remnants.on_hook(w, k, _ctx(w, Vector2.ZERO), Vector2(2.0, 0.0), 1)
-	Remnants.on_hook(w, k, _ctx(w, Vector2(2.0, 2.0)), Vector2(2.0, 0.0), 1)
-	v.sync(reader)
-	assert_eq(v.flashes_live, 1, "the mark's break flashes")
 	var root := w.take_root()
 	Engines.add_burn(w, 1, 2, root, &"test")
 	Engines.add_frost(w, 1, 1, root, &"test")
 	v.sync(reader)
-	assert_eq(v.flashes_live, 2, "Thermal Break's shatter")
+	assert_eq(v.flashes_live, 1, "Thermal Break's shatter")
 	for f in RemnantViews.FLASH_FRAMES + 1:
 		v.sync(reader)
 	assert_eq(v.flashes_live, 0, "flashes fade")
