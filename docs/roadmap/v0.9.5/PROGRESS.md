@@ -11,9 +11,9 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3, DR, FC1, TS, FC2 and BK merged.
-- **Agents working:** FC3 (the Void's combinations) and HM (the HUD mockups, G2) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
-- **Waiting on the owner (asleep, 2026-10-25 night):** the G2 HUD pick once HM's mockups are made; [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3, DR, FC1, TS, FC2, BK and FC3 merged.
+- **Agents working:** FC4 (the Lance's combinations + the Void's Mine and Big Shot tamed) and HU (the HUD, design A) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Waiting on the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
 ## Done
@@ -46,6 +46,7 @@ riusprime/zero-depth#9).
 | TS | Timed-door switches sit in two different rooms 1–2 rooms from the door (on different sides when the map allows); the timer is 20 s (the walk always fits in 60 % of it); a lever inside the secret room reopens the door for 5 s (floor rules 21) ([evidence](evidence/TS.md)) | `de3c3bfe`, merge `2ba37f64` |
 | FC2 | The Bomb takes 10 more cards: Halo drops four in a cross, Ring leaves a growing lightning ring, Backfire drops one at your feet, Ricochet skips it on, Homing lands it on the nearest enemy, Echo bursts it again, Big Shot, Rapid Fire, Split throws bomblets, Mine leaves it waiting; Laser + Rapid Fire now ramps its tick damage down (×1.3 of a plain beam, was ×2) ([evidence](evidence/FC2.md)) | `4527ece2`, merge `dafddf30` |
 | BK | Crates, urns and barrels are solid until you break them (they push you and enemies, never shots); no breakable within 1.5 m of a doorway (floor rules 22) ([evidence](evidence/BK.md)) | `a6a7b490`, merge `461b630a` |
+| FC3 | The Void takes 10 more cards: Ring collapses it in lightning, Backfire, Ricochet bounces it, Homing drifts it to the biggest group, Echo opens a smaller one, Big Shot, Rapid Fire, Split into minis, Mine holds it in place, Orbit circles you first ([evidence](evidence/FC3.md)) | `70b11adf`, merge `2c189081` |
 | BH1 | Bosses can't be staggered; at each phase change a boss kneels 1 s (hittable) and its core can be stolen for 3 s; boss HP is set from your power when the door starts opening (caps ×2.5–4.5 by floor, ±8 % per fight); each completed loop (up to 3) makes the Hollow Crown's pace 12 % shorter and its hits 8 % softer; the run summary says "Looped ×N" ([evidence](evidence/BH1.md)) | `d669f646`, merge `f9197302` |
 | BH2 | A harder spell each: the Gatekeeper's shock lanes lock faster and fire a second, shifted set; the Warlord's javelins lead you, then a second fan; the Brood Mother's 3rd leap leads you and lands wider; the Hive Lens's beam turns after you; the Siege Engine's mortar grid leaves 2 safe cells that swap halfway (never on the edge). The loop ease is data now ([evidence](evidence/BH2.md)) | `eca6b78e`, merge `53cd71e1` |
 | BH3 | A harder spell each: the Foundry's furnace waves come as two walls at right angles; the Twin Wardens' crossfire lines track you for 1.2 s; the Clockwork Judge adds a counter-turning spiral from phase 2; the Lantern Shade's lanterns burn 4 s, its dark lasts 9 s and Snuff puts out two lanterns ([evidence](evidence/BH3.md)) | `7ff84613`, merge `d788b91f` |
@@ -61,10 +62,11 @@ riusprime/zero-depth#9).
 
 ## Gates
 - G1 FORM_COMBOS, ELEMENTS, CARD_LEVELS, BOSSES_HARD, RUNIC_STONE: asked 2026-10-25, all approved as written the same day.
-- G2 HUD: mockups to come (HM).
+- G2 HUD: three mockups (HM, `scripts/shots/mock_hud.gd`, [evidence](evidence/HM.md)); **the owner picked A, the Risk of Rain
+  row** (2026-10-26, in chat). Built in HU.
 
 ## Open
-- The G2 HUD pick (HM).
+- (none blocking; see OWNER_QUESTIONS.md)
 
 ## Blockers
 - (none)
@@ -199,3 +201,7 @@ riusprime/zero-depth#9).
 - 2026-10-26 — BK (agent) merged: breakables/solids/walls/collision 29/29, golden + arch + content + application
   302/302, e2e 5/5 ([evidence](evidence/BK.md)); 0 of 941 props dropped by the doorway rule (the 2 m approach gap
   already kept them clear). HM started (the HUD mockups for the owner's G2 pick).
+- 2026-10-26 — FC3 (agent) merged: test_void_mods 20/20 and its batch, content + golden + arch 163/163 after its last
+  edit; no digest ([evidence](evidence/FC3.md)). Void + Mine measured ×7.98 single / ×23.8 pack (held voids stack) and
+  Void + Big Shot ×10.6 pack: FC4 tames both (one held void at a time; a smaller Big Shot). HM (agent) merged: three
+  HUD mockups sent; the owner picked **A** (the Risk of Rain row). FC4 and HU started.
