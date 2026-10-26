@@ -427,14 +427,19 @@ func _validate_nemesis(issues: Array[ValidationIssue], path: String, where: Stri
 func _validate_tide(issues: Array[ValidationIssue], path: String, where: String) -> void:
 	var sp := shape_params
 	if move == &"tide":
+		var cap := float(sp.get("max_mps", BossSchemas.TIDE_MAX_MPS))  # v0.9.5 BH4: the drift cap is data
+		if cap <= 0.0 or cap > BossSchemas.TIDE_MAX_MPS:
+			issues.append(
+				ValidationIssue.new(
+					&"range", path, where + "max_mps: 0..%.1f m/s" % BossSchemas.TIDE_MAX_MPS
+				)
+			)
 		for k in ["pull_mps", "push_mps"]:
 			var v := float(sp.get(k, 0.0))
-			if v <= 0.0 or v > BossSchemas.TIDE_MAX_MPS:
+			if v <= 0.0 or v > cap:
 				issues.append(
 					ValidationIssue.new(
-						&"range",
-						path,
-						where + "%s: over 0, at most %.1f m/s" % [k, BossSchemas.TIDE_MAX_MPS]
+						&"range", path, where + "%s: over 0, at most %.1f m/s" % [k, cap]
 					)
 				)
 		for k in ["pull_seconds", "push_seconds"]:

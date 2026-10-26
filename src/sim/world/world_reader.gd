@@ -1787,6 +1787,13 @@ func boss_tide(i: int) -> Dictionary:
 	return BossTide.state(_w, i)
 
 
+## v0.9.5 BH4 (BOSSES_HARD.md T3): the Tidecaller's crossing waves on the floor, each {"boss", "wall" (0 north .. 3
+## west), "dir", "start", "pos", "length", "thick", "telegraph" (0..1000 as a foam line, -1 once it moves),
+## "progress" (0..1000 of its run), "hit", "formed"} (BossStream.state).
+func boss_waves() -> Array[Dictionary]:
+	return BossStream.state(_w)
+
+
 ## v0.9.0 NB2 (BOSSES_4_5.md N2): Warden body i's pair: {} for any other actor; else "lead" (the boss's body),
 ## "partner" (the other's index), "angry", "anger" (0..1000 left), "chain" ([] or [from, to]), "hot" (it burns),
 ## "lifted" (the Chain Sweep has it), "burned" (ticks since it last burned the player, -1 none); in a Crossfire "safe",

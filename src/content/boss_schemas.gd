@@ -281,8 +281,10 @@ const MOVES := {
 	&"tide":
 	{
 		"shape": 4,
-		"params":
-		["pattern_id", "pull_mps", "push_mps", "pull_seconds", "push_seconds", "bend_dps"],
+		"params": ["pull_mps", "push_mps", "pull_seconds", "push_seconds", "bend_dps"],
+		# v0.9.5 BH4 (T1, T2): the rings run all fight (BossStream), so the Pull has none of its own; max_mps: the most
+		# it moves the player (<= TIDE_MAX_MPS)
+		"optional": ["pattern_id", "max_mps"],
 	},
 	## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): the Twin Wardens' Crossfire, their shielded signature pattern. Each body
 	## fires its pattern (a fan) at a safe spot distance_m off the middle of their chain on the player's side, leaving
@@ -307,6 +309,12 @@ const MOVES := {
 	## v0.9.0 NB3: the Verdict: a square half_m each way from its centre (not a circle) follows the player, locks, and a
 	## pendulum strike drops on it. A lock is required.
 	&"verdict": {"shape": 2, "params": ["half_m"]},
+	## v0.9.5 BH4 (BOSSES_HARD.md T3; BossStream): the Tidecaller's crossing wave, in no attack list. A phase's
+	## wave_attack forms one every wave_every_seconds. lengths_m: the lengths one is drawn from; thickness_m; speed_mps
+	## across the room after the telegraph (a foam line at the wall); shove_m along its travel when it hits; clear_m: it
+	## never forms within that of the hero's projection on its wall.
+	&"wave":
+	{"shape": 2, "params": ["lengths_m", "thickness_m", "speed_mps", "shove_m", "clear_m"]},
 }
 ## v0.8.0 FB3: the runs an attack's `weapon` may name.
 ## v0.8.0 N2 (owner O52): "own" is The Fallen's own kit, only outside its mimic windows.
@@ -343,8 +351,8 @@ const HIT_CLASSES := {&"small": [4, 5], &"medium": [3, 4], &"big": [2, 2]}
 ## this window (ticks, after its recovery_permille): starting values 0.6..0.9 s.
 const PUNISH_MIN_TICKS := 36
 const PUNISH_MAX_TICKS := 54
-## v0.9.0 NB1 (BOSSES_4_5.md N1: "the pull never moves you more than 1.5 m/s"): the fastest a tide moves the player.
-const TIDE_MAX_MPS := 1.5
+## v0.9.0 NB1 (BOSSES_4_5.md N1; v0.9.5 BH4: 1.5 -> 2.2 m/s): the most a tide attack may be set to move the player.
+const TIDE_MAX_MPS := 2.2
 ## v0.9.0 NB2 (BOSSES_4_5.md N2: "the chain is never shorter than 3 m or longer than 9 m"): the bounds a twin boss's
 ## chain lengths keep, and the most its anger may speed a body (per mille).
 ## The twins a boss may rise with (BossDefinition.twin_kind_id; PatternCompiler maps each to its actor kind).

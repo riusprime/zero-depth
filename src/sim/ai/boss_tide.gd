@@ -17,7 +17,8 @@ extends RefCounted
 ##   toward its centre (never past it, by the same wall rule).
 ## Pure: no stream is drawn here; everything follows from the attack's clock and positions.
 
-## The fastest the room ever moves the player (BOSSES_4_5.md: "the pull never moves you more than 1.5 m/s").
+## The fastest the room may ever move the player (BOSSES_4_5.md: 1.5 m/s; v0.9.5 BH4: 2.2). Each tide attack sets its
+## own cap in data (max_mps, at most this): cap_of.
 const MAX_MPS := BossSchemas.TIDE_MAX_MPS
 ## The drift never brings the player closer than this to a wall (beyond where they already are).
 const WALL_MARGIN_M := 0.6
@@ -31,6 +32,11 @@ const PUSH := 2
 const HOLD := -2
 
 const M := BossAttackTable.Move
+
+
+## v0.9.5 BH4 (T1): the most tide attack `atk` moves the player a tick (its data's max_mps, else MAX_MPS).
+static func cap_of(atk: BossAttackTable) -> float:
+	return atk.tide_max if atk.tide_max > 0.0 else MAX_MPS / SimTick.TICKS_PER_SECOND
 
 
 ## True for an attack the cadence starts (so the weighted pick leaves it out).
@@ -121,7 +127,7 @@ static func drift_of(w: World, i: int) -> Vector2:
 	var d := Kin.length(to)
 	if d <= 0.0001:
 		return Vector2.ZERO
-	var most := MAX_MPS / SimTick.TICKS_PER_SECOND
+	var most := cap_of(atk)
 	if ph == PULL:
 		var gap := d - w.actors.radius[i] - w.player.radius_m - BODY_GAP_M
 		return to * (clampf(minf(atk.tide_pull, most), 0.0, maxf(gap, 0.0)) / d)
@@ -233,9 +239,7 @@ static func state(w: World, i: int) -> Dictionary:
 	var st := a.state_t[i]
 	var from := 0 if ph == PULL else atk.tide_pull_ticks
 	var span := atk.tide_pull_ticks if ph == PULL else atk.tide_push_ticks
-	var speed := minf(
-		atk.tide_pull if ph == PULL else atk.tide_push, MAX_MPS / SimTick.TICKS_PER_SECOND
-	)
+	var speed := minf(atk.tide_pull if ph == PULL else atk.tide_push, cap_of(atk))
 	return {
 		"phase": ph,
 		"windup": false,

@@ -25,6 +25,13 @@ const MAX_TRACK_DPS := 90.0
 const MIN_SPIRAL_PATH_M := 1.6
 ## The hero's radius the grid's pockets are measured against (the base hero: PlayerDefinition.radius_m).
 const HERO_RADIUS_M := 0.35
+## v0.9.5 BH4 (T2, T3): the ring stream and the waves keep to these (a ring is 1..6 s apart, a wave 2..10 s apart, one
+## or two waves at a time).
+const MIN_STREAM_SECONDS := 1.0
+const MAX_STREAM_SECONDS := 6.0
+const MIN_WAVE_SECONDS := 2.0
+const MAX_WAVE_SECONDS := 10.0
+const MAX_WAVES_AT_ONCE := 2
 
 
 ## BossAttackDefinition.validate_into: the hard params sit on the moves that read them, with real values.
@@ -37,6 +44,8 @@ static func validate(
 			if sp.has(k) and a.move != move:
 				var msg := "%s belongs to %s" % [k, move]
 				issues.append(ValidationIssue.new(&"param_unknown", path, where + msg))
+	if a.move == &"wave":
+		validate_wave(a, issues, path, where)  # v0.9.5 BH4
 	_validate_second(sp, issues, path, where)
 	_validate_leads(sp, issues, path, where)
 	if sp.has("turn_dps"):
@@ -207,3 +216,82 @@ static func _validate_follow(
 		issues.append(
 			ValidationIssue.new(&"duration", path, where + "the lines show the whole tracking")
 		)
+
+
+# --- v0.9.5 BH4 (BOSSES_HARD.md T2, T3): the Tidecaller's ring stream and crossing waves ----------------------------
+
+
+## BossAttackDefinition.validate_into, a `wave`: real lengths (1..6 m), a thickness (0.2..1.0 m), a speed (2..8 m/s), a
+## shove (0..3 m), a clear distance (0..6 m), a telegraph of at least 0.55 s (the hard spells' rule) and a damage.
+static func validate_wave(
+	a: BossAttackDefinition, issues: Array[ValidationIssue], path: String, where: String
+) -> void:
+	var sp := a.shape_params
+	var lengths: Array = sp.get("lengths_m", [])
+	if lengths.is_empty():
+		issues.append(ValidationIssue.new(&"missing", path, where + "lengths_m needs a length"))
+	for v: Variant in lengths:
+		if float(v) < 1.0 or float(v) > 6.0:
+			issues.append(ValidationIssue.new(&"range", path, where + "lengths_m: 1..6 m each"))
+	for pair: Array in [
+		["thickness_m", 0.2, 1.0],
+		["speed_mps", 2.0, 8.0],
+		["shove_m", 0.0, 3.0],
+		["clear_m", 0.0, 6.0]
+	]:
+		var v := float(sp.get(pair[0], -1.0))
+		if v < float(pair[1]) or v > float(pair[2]):
+			issues.append(
+				ValidationIssue.new(
+					&"range", path, where + "%s: %.1f..%.1f" % [pair[0], pair[1], pair[2]]
+				)
+			)
+	if int(round(a.telegraph_seconds * 60.0)) < HARD_MIN_TELEGRAPH_TICKS:
+		issues.append(ValidationIssue.new(&"telegraph_short", path, where + "telegraph >= 0.55 s"))
+
+
+## BossDefinition.validate: each phase's ring stream names a `pattern` attack of the boss and a real period; its waves a
+## `wave` attack, a period, and one or two at a time. Both come as a pair (the attack and its period).
+static func validate_streams(def: BossDefinition, issues: Array[ValidationIssue]) -> void:
+	var p := def.resource_path
+	for k in def.phases.size():
+		var ph: BossPhaseDefinition = def.phases[k]
+		if ph == null:
+			continue
+		var has_ring := not String(ph.stream_attack).is_empty()
+		var ring := def.attack(ph.stream_attack) if has_ring else null
+		if has_ring != (ph.stream_every_seconds > 0.0) or (has_ring and ring == null):
+			issues.append(
+				ValidationIssue.new(
+					&"attacks", p, "phase %d: a ring stream is an attack and a period" % k
+				)
+			)
+		elif has_ring:
+			if ring.move != &"pattern" or not ring.shape_params.has("pattern_id"):
+				issues.append(
+					ValidationIssue.new(
+						&"attacks", p, "phase %d: a ring stream fires a pattern" % k
+					)
+				)
+			if (
+				ph.stream_every_seconds < MIN_STREAM_SECONDS
+				or ph.stream_every_seconds > MAX_STREAM_SECONDS
+			):
+				issues.append(ValidationIssue.new(&"range", p, "phase %d: a ring every 1..6 s" % k))
+		var has_wave := not String(ph.wave_attack).is_empty()
+		var wave := def.attack(ph.wave_attack) if has_wave else null
+		if has_wave != (ph.wave_every_seconds > 0.0) or (has_wave and wave == null):
+			issues.append(
+				ValidationIssue.new(&"attacks", p, "phase %d: a wave is an attack and a period" % k)
+			)
+		elif has_wave:
+			if wave.move != &"wave":
+				issues.append(ValidationIssue.new(&"attacks", p, "phase %d: a wave is a wave" % k))
+			if ph.wave_every_seconds < MIN_WAVE_SECONDS or ph.wave_every_seconds > MAX_WAVE_SECONDS:
+				issues.append(
+					ValidationIssue.new(&"range", p, "phase %d: a wave every 2..10 s" % k)
+				)
+			if ph.wave_count < 1 or ph.wave_count > MAX_WAVES_AT_ONCE:
+				issues.append(ValidationIssue.new(&"range", p, "phase %d: one or two waves" % k))
+		elif ph.wave_count != 0:
+			issues.append(ValidationIssue.new(&"range", p, "phase %d: wave_count needs a wave" % k))

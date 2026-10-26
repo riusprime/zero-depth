@@ -130,6 +130,7 @@ func validate() -> Array[ValidationIssue]:
 	_check_challenge(issues)
 	_check_cadence(issues)
 	_check_twin(issues)
+	HardRules.validate_streams(self, issues)  # v0.9.5 BH4: the ring stream and the waves
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1
