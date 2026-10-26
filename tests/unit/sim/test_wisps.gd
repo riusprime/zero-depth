@@ -1,6 +1,7 @@
 extends GutTest
 ## v0.9.0 AF3 (owner Q7; ATTACK_FORMS.md F10 "Orbs circle you and fire on their own at the nearest enemy while you aim
-## and fire too … 3 wisps, each an 80 % orb every 0.6 s", every pattern and secondary off, elements all): the Wisps form.
+## and fire too … 3 wisps, each an 80 % orb every 0.6 s", every pattern and secondary off, elements all): the
+## Wisps form.
 ## Three wisps circle the hero; each fires an 80 % orb every 0.6 s (staggered) at the nearest enemy it can see, SHOOT
 ## held or not; no enemy, no shot; the hero's own orbs are unchanged; the elements ride the wisps' orbs; the caps hold;
 ## its row; deterministic with no state of its own; its DPS over the orbs (reported, see WAVE_WISPS.md).

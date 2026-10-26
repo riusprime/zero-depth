@@ -94,7 +94,7 @@ func test_a_jackpot_lifts_a_card_past_the_ceiling_and_says_so() -> void:
 	var w := _world(&"gun")
 	w.loot_pacing.jackpot_permille = 1000
 	w.loot_pacing.guaranteed_altars = PackedInt32Array([0, 0, 0, 0])
-	var big := _hold(w, &"gun_big_shot", 2)
+	var big := _hold(w, &"gun_twin", 2)  # v0.9.5 CLV: Twin levels (1–3); Big Shot no longer does
 	var pool := LootPacing.jackpot_pool(w, PackedInt32Array())
 	assert_has(pool, big, "the held card at the ceiling")
 	for c in pool:
@@ -151,7 +151,7 @@ func test_the_boss_altar_offers_an_upgrade_an_advanced_or_trigger_card_and_a_leg
 ) -> void:
 	var w := _world(&"gun")
 	w.legendary_table.card_permille = 0
-	var big := _hold(w, &"gun_big_shot", 2)
+	var big := _hold(w, &"gun_twin", 2)  # v0.9.5 CLV: a 3-level card
 	var offer := Offers.roll_legendary(w)
 	assert_eq(offer.size(), 3)
 	assert_eq(
@@ -172,11 +172,9 @@ func test_the_boss_altar_offers_an_upgrade_an_advanced_or_trigger_card_and_a_leg
 		assert_eq(CardLevels.level(w, offer[1]), 1, "a new card at level 1")
 	var top := _world(&"gun")
 	top.legendary_table.card_permille = 0
-	_hold(top, &"gun_big_shot", 3)
+	_hold(top, &"gun_twin", 3)
 	for c in Offers.roll_legendary(top):
-		assert_ne(
-			c, _it(top, &"gun_big_shot"), "at floor 2's ceiling: no upgrade from floor 1's boss"
-		)
+		assert_ne(c, _it(top, &"gun_twin"), "at floor 2's ceiling: no upgrade from floor 1's boss")
 
 
 func test_the_boss_altars_legendary_chance_takes_the_cards_place() -> void:
