@@ -24,7 +24,11 @@ const MAX_ROOMS := 19
 ## v0.9.0 TD (owner W §2, Q20 "Allow local timers"): the share of floors (per mille) with a timed door to a secret room
 ## (starting value 35 %), and the door's timer in ticks from the second switch (15 s at 60 Hz; owner W17 "12–18 s").
 @export var timed_door_permille := 350
-@export var timed_door_ticks := 900
+@export var timed_door_ticks := 1200
+## v0.9.5 TS (owner Q7): the switches sit 1..timed_switch_steps_max rooms from the door's host, and the lever inside
+## opens the shut door for timed_lever_ticks.
+@export var timed_switch_steps_max := 2
+@export var timed_lever_ticks := 300
 
 
 func category() -> StringName:
@@ -64,6 +68,12 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "timed_door_permille is 0..1000")
 		)
-	if timed_door_ticks < 12 * 60 or timed_door_ticks > 18 * 60:
-		issues.append(ValidationIssue.new(&"range", resource_path, "timed_door_ticks is 12..18 s"))
+	if timed_door_ticks < 12 * 60 or timed_door_ticks > 24 * 60:
+		issues.append(ValidationIssue.new(&"range", resource_path, "timed_door_ticks is 12..24 s"))
+	if timed_switch_steps_max < 1 or timed_switch_steps_max > 3:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "timed_switch_steps_max is 1..3")
+		)
+	if timed_lever_ticks < 60 or timed_lever_ticks > 600:
+		issues.append(ValidationIssue.new(&"range", resource_path, "timed_lever_ticks is 1..10 s"))
 	return issues

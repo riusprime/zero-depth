@@ -3197,7 +3197,7 @@ func timed_shut_tick() -> int:
 
 
 func timed_timer_ticks() -> int:
-	return _w.timed.timer_ticks if _w.timed != null else 0
+	return _w.timed.open_ticks if _w.timed != null else 0
 
 
 func timed_ticks_left() -> int:
@@ -3216,6 +3216,11 @@ func timed_switch_count() -> int:
 
 func timed_switch_entry(k: int) -> int:
 	return _w.timed.switches[k]
+
+
+## v0.9.5 TS: the lever inside the secret room (its registry entry, -1 without one).
+func timed_lever_entry() -> int:
+	return _w.timed.lever if _w.timed != null else -1
 
 
 ## The secret room and the room before it (the switches' room), -1 without a door.

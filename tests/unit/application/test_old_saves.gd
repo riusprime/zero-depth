@@ -339,3 +339,44 @@ func test_a_floor_saved_before_aq_keeps_its_event_rooms() -> void:
 	(p["run"]["carry"] as Dictionary).erase(&"events_seen")
 	assert_false(SaveLab.run_from(p).carry.has(&"events_seen"), "an old carry has no list")
 	assert_eq(SaveLab.build_floor(SaveLab.run_from(p)).events_seen.size() <= 1, true)
+
+
+## v0.9.5 TS (owner Q7): a floor saved under floor rules 1-20 keeps both switches in the host room, its 15 s timer
+## and no lever; a save of it lacks the lever's fields and still fits. Today's floor (rules 21) spreads the switches,
+## runs 20 s and has a lever.
+func test_a_floor_saved_before_ts_keeps_its_timed_door() -> void:
+	var run := SaveLab.run_state(2, 1)
+	run.floor_rules = RunState.FLOOR_RULES_V095_DR
+	var old := SaveLab.build_floor(run)
+	assert_not_null(old.timed, "this floor has a timed door")
+	if old.timed == null:
+		return
+	var f := old.floor_layout
+	assert_eq(old.timed.timer_ticks, 900, "15 s")
+	assert_eq(old.timed.lever, -1, "no lever")
+	assert_true(f.timed_switch_rooms.is_empty(), "both switches in the host")
+	for q in f.timed_switches:
+		assert_eq(f.room_of(q), f.timed_host)
+	var now_run := SaveLab.run_state(2, 1)
+	assert_eq(now_run.floor_rules, RunState.FLOOR_RULES, "a new floor is on today's rules")
+	assert_eq(RunState.FLOOR_RULES, RunState.FLOOR_RULES_V095_TS)
+	var now := SaveLab.build_floor(now_run)
+	assert_eq(now.timed.timer_ticks, 1200, "20 s")
+	assert_gte(now.timed.lever, 0, "and a lever")
+	assert_eq(now.floor_layout.timed_switch_rooms.size(), 2)
+	# a mid-timer save of the old floor, without the new fields, resumes exactly
+	for k in 2:
+		old.actors.set_pos(0, f.timed_switches[k] + Vector2(0.3, 0.0))
+		old.vel = Vector2.ZERO
+		old.step(InputFrame.new())
+		old.step(InputFrame.make(Vector2i.ZERO, 0, 1000, InputFrame.INTERACT, InputFrame.INTERACT))
+	assert_eq(old.timed.state, TimedDoor.State.OPEN)
+	for k in 60:
+		old.step(InputFrame.new())
+	var snap := WorldSnapshot.take(old)
+	for field in [&"lever", &"lever_ticks", &"open_ticks"]:
+		(snap["world"][&"timed"] as Dictionary).erase(field)
+	var base := SaveLab.build_floor(run)
+	assert_eq(WorldSnapshot.apply(base, snap), "", "an old snapshot fits")
+	assert_eq(base.timed.open_ticks, 900, "its door keeps its 15 s")
+	assert_eq(base.state_hash(), old.state_hash(), "same state")

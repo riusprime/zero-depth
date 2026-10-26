@@ -3,13 +3,15 @@ extends GutTest
 ## 3. Activating both opens the door … 6. The player must reach the entrance before the timer expires"; Q20; Q23)
 ## through main.tscn with real input only: run seed SEED's floor 1 holds a timed door (asserted below). God from the
 ## dev panel (clicked with the mouse: the dev route, so the walk is safe), then the stick walks to each rune switch,
-## the shared prompt reads "Activate", E switches it on; the second opens the door and the secret room comes into
+## the shared prompt reads "Activate", E switches it on (v0.9.5 TS, owner Q7: they sit in two other rooms, 1-2 rooms
+## from the door, and the timer is 20 s); the second opens the door and the secret room comes into
 ## sight; the hero walks through the doorway into it before the timer runs out, and the door stays open while the
 ## hero is inside.
 
 ## Run seed SEED: floor 1 holds a timed door (found with the floor plan, asserted below; v0.9.0 FV: 2 on the
-## five-floor run, seed 3 before; v0.9.0 CF2: 147, the Lockdowns now take their rooms first).
-const SEED := 147
+## five-floor run, seed 3 before; v0.9.0 CF2: 147, the Lockdowns now take their rooms first; v0.9.5 TS: 2, the
+## switches sit in two other rooms, so the walk is from switch to switch to the door).
+const SEED := 2
 
 
 func after_each() -> void:

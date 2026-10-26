@@ -278,6 +278,8 @@ static func compile_map(def: MapDefinition) -> FloorParams:
 	p.place_attempts = def.place_attempts
 	p.timed_door_permille = def.timed_door_permille  # v0.9.0 TD
 	p.timed_door_ticks = def.timed_door_ticks
+	p.timed_switch_steps_max = def.timed_switch_steps_max  # v0.9.5 TS
+	p.timed_lever_ticks = def.timed_lever_ticks
 	return p
 
 

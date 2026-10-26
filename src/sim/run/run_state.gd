@@ -69,7 +69,10 @@ extends RefCounted
 ## fights one burst of two formations 1 s apart and the floor's arena rooms are locked rooms; every sealed door drops
 ## bars. A floor saved under rules 1-19 keeps its three-formation Lockdowns and its wave Arenas
 ## (RunSaver.lockdown_table).
-const FLOOR_RULES := 20
+## v0.9.5 TS (owner Q7): 21 is today's: the timed door's switches sit in two other rooms 1-2 steps from it, its timer is
+## 20 s, and a lever inside reopens it for 5 s. A floor saved under rules 10-20 keeps both switches by the door and
+## 15 s (FloorPlan.add_secrets).
+const FLOOR_RULES := 21
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
@@ -91,6 +94,7 @@ const FLOOR_RULES_V090_CF2 := 17
 const FLOOR_RULES_V095_SB := 18
 const FLOOR_RULES_V095_AQ := 19
 const FLOOR_RULES_V095_DR := 20
+const FLOOR_RULES_V095_TS := 21
 
 var run_seed := 0
 var table: RunTable

@@ -193,10 +193,57 @@ func _check_reach(w: World, census: Dictionary, where: String, bad: Dictionary) 
 		_bad(bad, "reach", "%s: the boss room or the exit is cut off with every seal shut" % where)
 
 
+## v0.9.5 TS: the same walk when the switches are in other rooms: from each switch (either may be the second) through
+## the rooms between to the door, every leg on the final walls at the hero's radius.
+func _check_spread(w: World, where: String, bad: Dictionary) -> int:
+	var f := w.floor_layout
+	var found := TimedDoorRooms._rooms_within(f, f.timed_host, f.timed_room, 2)
+	var goal := TimedDoorRooms.door_goal(f, f.timed_host, f.timed_door)
+	var reaches := {}
+	var budget := float(w.timed.timer_ticks) * w.player.move_speed
+	var worst := 0
+	for k in f.timed_switches.size():
+		var room := f.timed_switch_rooms[k]
+		if not found.has(room):
+			_bad(bad, "timed", "%s: switch %d is not 1-2 steps from the door's host" % [where, k])
+			continue
+		for r: int in found[room]["rooms"]:
+			if not reaches.has(r):
+				var area := f.rooms[r]
+				for d in f.door_rooms.size():
+					if f.door_rooms[d].x == r or f.door_rooms[d].y == r:
+						area = area.merge(f.door_rect(d))
+				var near: Array[Obb] = []
+				for o in w.walls:
+					if o.bounds().intersects(area.grow(1.0)):
+						near.append(o)
+				var reach := FloorReach.new()
+				reach.build(area, near, w.player.radius_m)
+				reaches[r] = reach
+		var at := _open_near(reaches[room], f.timed_switches[k], TimedDoor.SWITCH_REACH_M)
+		var walk := -1.0
+		if at.is_finite():
+			walk = TimedDoorRooms.path_m(f, found[room], at, goal, reaches)
+		if walk < 0.0 or walk > budget:
+			_bad(
+				bad,
+				"timed",
+				(
+					"%s: the walk from %s is %.1f m, the timer reaches %.1f m"
+					% [where, f.timed_switches[k], walk, budget]
+				)
+			)
+			continue
+		worst = maxi(worst, int(walk * 1000.0 / budget))
+	return worst
+
+
 ## (a): the timed door's walk on the final walls at the hero's radius. Returns the worst walk as per mille of the
 ## timer's reach at the base move speed.
 func _check_timed(w: World, where: String, bad: Dictionary) -> int:
 	var f := w.floor_layout
+	if not f.timed_switch_rooms.is_empty():  # v0.9.5 TS: the switches are in other rooms
+		return _check_spread(w, where, bad)
 	var host := f.timed_host
 	var door := f.timed_door
 	var area := f.rooms[host].merge(f.door_rect(door))
