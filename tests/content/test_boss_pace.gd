@@ -24,6 +24,7 @@ const KEPT_SLOW := {
 	&"lantern_shade": [[&"wisp_bloom", 0.8], [&"snuff", 1.6]],  # v0.9.0 NB4: built at BP's pace
 }
 ## Per boss, the attacks BP sped up: [id, telegraph seconds before BP, after].
+## v0.9.5 BH5 (HC1): the Colossus Leap Slam is 0.55 s now (was 0.7).
 const SPED_UP := {
 	&"gatekeeper":
 	[[&"fist_slam", 1.6, 1.1], [&"fist_slam_2", 1.6, 1.1], [&"fist_slam_3", 1.6, 1.1]],
@@ -34,7 +35,7 @@ const SPED_UP := {
 	&"foundry":
 	[[&"vent_blast", 0.8, 0.6], [&"bomb_launch", 1.0, 0.7], [&"bomb_launch_3", 1.0, 0.7]],
 	&"colossus":
-	[[&"leap_slam", 0.9, 0.7], [&"leap_slam_2", 0.9, 0.7], [&"boulder_throw", 1.0, 0.75]],
+	[[&"leap_slam", 0.9, 0.55], [&"leap_slam_2", 0.9, 0.55], [&"boulder_throw", 1.0, 0.75]],
 }
 
 

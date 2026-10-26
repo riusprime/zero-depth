@@ -6,7 +6,7 @@
 script = ExtResource("1_pat")
 kind = 6
 look = &"ember_stone"
-speed_mps = 4.2
+speed_mps = 5.2
 radius_m = 0.22
 range_m = 9.0
 waves = 1
