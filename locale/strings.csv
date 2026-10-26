@@ -1363,3 +1363,4 @@ COLLECTIBLE_TOAST,ADDED TO THE RUNE ARCHIVE,AÑADIDO AL ARCHIVO DE RUNAS
 UI_CODEX_TAB_COLLECTIBLES,Collectibles,Coleccionables
 PROGRESSION_REVEALED,Revealed: %s. Wear it at the Wardrobe.,Revelada: %s. Póntela en el Vestidor.
 CAPTION_STRESS_BREAK,[weak point],[punto débil]
+RUN_SUMMARY_LOOPED,Looped ×%d,Bucles ×%d

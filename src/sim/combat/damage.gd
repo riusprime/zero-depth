@@ -224,9 +224,7 @@ static func _apply(
 			Venom.on_kill(w, target, root_id)  # v0.6.0 MX4: Venom Core's spread
 		BossTwin.fall_together(w, target, k)  # v0.9.0 NB2: its twin falls with it (its own KILL)
 	if target != 0 and not (tags & SimEvent.TAG_DOT):
-		BossAi.on_damage(w, target, applied, tags)  # Bosses (v0.3.0 C): hits fill the stagger meter.
 		BossTwin.on_hit(w, target, applied, owner_id)  # v0.9.0 NB2: a hit on one Warden angers the other
-		CoreTheft.on_damage(w, target, applied, tags)  # v0.6.0 CU: a stagger opens the steal window
 	if target == 0:
 		ItemProcs.on_player_hurt(w)  # Items: Thorn Mantle.
 		if applied > 0 and not (tags & SimEvent.TAG_DOT) and owner_id != a.ids[0]:

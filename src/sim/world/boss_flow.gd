@@ -162,6 +162,7 @@ func interact(w: World) -> void:
 	w.consume_buffered(InputFrame.INTERACT)
 	door = Door.OPENING
 	door_press_tick = w.tick
+	CatchUp.read_boss(w)  # v0.9.5 BH1 (H2, Q2): the boss's HP is read as the door starts to open
 	w.emit_event(SimEvent.Kind.BOSS_DOOR_OPENING, 0, 0, 0, f.boss_door_center)
 
 

@@ -111,7 +111,11 @@ func test_each_body_lasts_a_minute_or_more_whatever_the_build() -> void:
 		assert_eq((r[1] as Array).size(), 3, "%s: three bodies" % b[0])
 		for k in (r[1] as Array).size():
 			var s: float = r[1][k]
-			assert_gte(s, 60.0, "%s body %d: never under a minute (%.1f s)" % [b[0], k, s])
+			# v0.9.5 BH1 (Q11): a looped run's minute is 12 % shorter per loop finished (at most 3)
+			var floor_s := 60.0 * (1000 - 120 * mini(int(b[2]) - 1, 3)) / 1000.0
+			assert_gte(
+				s, floor_s, "%s body %d: never under %.1f s (%.1f s)" % [b[0], k, floor_s, s]
+			)
 			assert_lte(s, 185.0, "%s body %d: never past three minutes (%.1f s)" % [b[0], k, s])
 			if base.is_empty():
 				continue
@@ -518,3 +522,37 @@ class Hero:
 		):
 			f.held |= InputFrame.SHOOT
 		return f
+
+
+# --- v0.9.5 BH1 (Q11, HC7): each finished loop (up to 3) eases the final fight -----------------------------------
+
+
+func test_each_finished_loop_cuts_the_target_time_12_percent_and_the_floor_with_it() -> void:
+	var t := _table(&"colossus")
+	var w := FinalLab.arena(FinalLab.run_state(31))
+	for n in 6:
+		w.loop = 1 + n
+		var k := mini(n, 3)
+		assert_eq(FinalPace.loops_eased(w), k, "loop %d: %d loops finished count" % [1 + n, k])
+		var e := FinalPace.ease_permille(w)
+		assert_eq(e, 1000 - 120 * k)
+		assert_eq(
+			FinalPace.seconds_at(30000, t, e), 7200 * e / 1000, "the base hero, loop %d" % [1 + n]
+		)
+		assert_eq(FinalPace.seconds_at(3000000, t, e), 3600 * e / 1000, "the floor falls with it")
+		assert_eq(FinalPace.hp_for(30000, t, e), 3600 * e / 1000, "30 dps x the eased time")
+	assert_eq(FinalPace.seconds_at(30000, t, 1000), 7200, "no ease: as before")
+	w.loop = 4
+	assert_eq(FinalPace.ease_permille(w), 640, "three loops: -36 %")
+	assert_eq(FinalPace.seconds_at(30000, t, 640), 4608, "76.8 s")
+
+
+func test_each_finished_loop_cuts_the_final_bodies_damage_8_percent() -> void:
+	for n in 5:
+		var w := FinalLab.arena(FinalLab.run_state(31, &"blade", 1 + n))
+		var i := FinalLab.body(w)
+		assert_eq(w.loop, 1 + n)
+		var k := mini(n, 3)
+		assert_eq(FinalPace.damage_ease_permille(w), 1000 - 80 * k)
+		var want := CatchUp.damage_permille(w.catch_up.boss) * (1000 - 80 * k) / 1000
+		assert_eq(w.actors.power[i], want, "loop %d: x%d per mille" % [1 + n, 1000 - 80 * k])

@@ -86,11 +86,12 @@ func test_the_weak_point_opens_after_a_slam_and_doubles_close_hits() -> void:
 	# Up close (2 m from its edge, from its side: no directional armour): x2 damage, and the meter fills x2.
 	w.actors.facing[i] = 0
 	w.actors.set_pos(0, Vector2(0, w.actors.radius[i] + 2.0))
-	var meter := w.bosses.meter[b]
 	var seq := w.last_event_seq()
 	assert_eq(Damage.hit(w, i, 50, 1, 1, 1, 0, w.player_pos(), w.actors.pos(i)), 100, "x2")
 	assert_ne(_last_hit(w, aid, seq).tags & SimEvent.TAG_EXPOSED, 0, "tagged exposed")
-	assert_eq(w.bosses.meter[b] - meter, 100 * 2000, "stagger fills twice as fast")
+	assert_eq(
+		w.bosses.meter[b], 0, "v0.9.5 BH1: the weak point fills no stagger meter (bosses have none)"
+	)
 	# From afar it is only the ranged armour.
 	w.actors.set_pos(0, Vector2(0, w.actors.radius[i] + 12.0))
 	seq = w.last_event_seq()

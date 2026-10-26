@@ -1,6 +1,7 @@
 extends GutTest
 ## v0.5.5 Step DS (owner D7): mechanics HP can't skip. Every boss has phase gates at 66 % and 33 %: a burst stops at
-## the gate, the gate is a short invulnerable transition that deals no damage and shows itself, it brings 2-4 adds of
+## the gate, the gate is a short transition (v0.9.5 BH1: the boss kneels, it can be hit) that deals no damage and
+## shows itself, it brings 2-4 adds of
 ## the floor's enemy kinds, and the next phase opens with its entry attack (new or faster attacks).
 
 const LONG := 1 << 24
@@ -49,7 +50,10 @@ func test_a_burst_stops_at_each_gate_and_the_gate_cannot_be_hurt() -> void:
 		w.step(InputFrame.new())
 		i = w.actors.index_of(aid)
 		assert_eq(w.actors.state[i], BossAi.GATE, "%s: the gate" % id)
-		assert_eq(_burst(w, i), 0, "%s: invulnerable in the gate" % id)
+		var kneel_hit := Damage.hit(
+			w, i, 1, w.actors.ids[0], w.actors.ids[0], 1, 0, w.actors.pos(i), w.actors.pos(i)
+		)
+		assert_gt(kneel_hit, 0, "%s: the kneeling boss can be hit (v0.9.5 BH1, Q3)" % id)
 		BossLab.through_gate(w, aid)
 		BossLab.until_open(w, aid)  # v0.7.5 BF1: a shielded entry pattern runs first
 		i = w.actors.index_of(aid)
@@ -65,6 +69,35 @@ func test_a_burst_stops_at_each_gate_and_the_gate_cannot_be_hurt() -> void:
 		w.actors.invuln[i] = 0
 		_burst(w, i)
 		assert_eq(w.actors.dead[i], 1, "%s: past the last gate a burst can kill" % id)
+
+
+## v0.9.5 BH1 (H1, Q3): the phase change is the boss's kneel, 60 ticks: no attack starts, it does not move.
+func test_the_kneel_lasts_60_ticks_and_nothing_starts_in_it() -> void:
+	for id in BOSSES:
+		var w := BossLab.world()
+		var i := BossLab.ready_boss(w, id, Vector2(0, 0))
+		var aid := w.actors.ids[i]
+		w.actors.set_pos(0, Vector2(3, 0))
+		var b := BossAi.entry_of(w, i)
+		w.actors.hp[i] = w.actors.max_hp[i] * 600 / 1000
+		w.actors.cd[i] = 0
+		w.step(InputFrame.new())
+		i = w.actors.index_of(aid)
+		assert_eq(w.actors.state[i], BossAi.GATE, "%s kneels" % id)
+		var at := w.actors.pos(i)
+		var gate_left := w.bosses.gate_t[b]
+		assert_between(gate_left, 59, 60, "%s: 1 s" % id)
+		for n in gate_left - 1:
+			w.actors.cd[i] = 0
+			w.step(InputFrame.new())
+			i = w.actors.index_of(aid)
+			assert_eq(w.actors.state[i], BossAi.GATE, "%s still kneels (%d)" % [id, n])
+			assert_eq(w.bosses.attack[b], -1, "%s: no attack starts" % id)
+			assert_eq(w.actors.pos(i), at, "%s: no movement" % id)
+		w.step(InputFrame.new())
+		w.step(InputFrame.new())
+		i = w.actors.index_of(aid)
+		assert_ne(w.actors.state[i], BossAi.GATE, "%s: up after 60 ticks" % id)
 
 
 func test_the_gate_deals_no_damage_and_shows_itself() -> void:

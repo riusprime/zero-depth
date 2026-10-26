@@ -1620,19 +1620,6 @@ func boss_name_key(i: int) -> StringName:
 	return BossAi.table_of(_w, i).name_key
 
 
-## Boss i's stagger meter, 0..1000 of full (1000 while staggered).
-func boss_stagger_permille(i: int) -> int:
-	if _w.actors.state[i] == BossAi.STAGGERED:
-		return 1000
-	var b := BossAi.entry_of(_w, i)
-	var t := BossAi.table_of(_w, i)
-	return clampi(_w.bosses.meter[b] * 1000 / maxi(1, t.stagger_size_milli), 0, 1000)
-
-
-func boss_staggered(i: int) -> bool:
-	return _w.actors.state[i] == BossAi.STAGGERED
-
-
 ## v0.5.5 DS (D7): 0..1000, how far boss i's phase gate has run (0 when it isn't in one; BossGates).
 func boss_gate_permille(i: int) -> int:
 	return BossGates.progress(_w, i)

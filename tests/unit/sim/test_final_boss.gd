@@ -304,8 +304,11 @@ func test_the_colossus_scales_with_the_loop() -> void:
 	var hp1 := w1.actors.max_hp[FinalLab.body(w1)]
 	var hp2 := w2.actors.max_hp[FinalLab.body(w2)]
 	var t := _run_table()
+	# v0.9.5 BH1 (Q2): each boss draws its own +-8 % spread, so the loops are compared without their catch-up m
+	var base1 := hp1 * 1000 / w1.catch_up.boss
+	var base2 := hp2 * 1000 / w2.catch_up.boss
 	assert_gt(
-		hp2, hp1 * (t.loop_boss_hp_permille / 1000) - 2, "its HP × the loop's boss factor (F7)"
+		base2, base1 * (t.loop_boss_hp_permille / 1000) - 4, "its HP × the loop's boss factor (F7)"
 	)
 
 

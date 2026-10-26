@@ -415,6 +415,7 @@ const ADDED_SINCE_V05 := {
 	# v0.9.5 HT: the Gun's heat fill remainder and the Vent cooldown (an older save has neither: 0)
 	&"HeatState": [&"fill_rem"],
 	&"KitState": [&"vent_cd"],
+	&"CatchUpState": [&"boss_read"],  # v0.9.5 BH1: an older save has no door-read m waiting (0)
 	# v0.7.5 MG (N10: an older save's floor counts its cursed chests from 0); v0.8.0 N17: the curse room's altar (an
 	# older save's floor has none: -1, apply)
 	&"EventState": [&"cursed_rolled", &"curse_k"],

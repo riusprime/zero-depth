@@ -14,8 +14,10 @@ extends ContentDef
 @export var cap_permille := PackedInt32Array([1500, 2000, 2500])
 ## E at the boss (the floor's end), per mille; entry f − 1.
 @export var boss_expected_power_permille := PackedInt32Array([2000, 4000, 7000])
-## The bosses' cap per floor, per mille; entry f − 1.
-@export var boss_cap_permille := PackedInt32Array([2000, 3000, 4000])
+## The bosses' cap per floor, per mille; entry f − 1 (v0.9.5 BH1, Q2: 2.5 / 3.0 / 3.5 / 4.0 / 4.5 for floors 1-5).
+@export var boss_cap_permille := PackedInt32Array([2500, 3000, 3500, 4000, 4500])
+## v0.9.5 BH1 (owner Q2): each boss draws its HP spread in +- this per mille (80 = +-8 %), applied after the cap.
+@export var boss_spread_permille := 80
 ## Added to both caps per point of threat T (Curses.threat: curses held and Deep floors taken), per mille.
 @export var threat_cap_bonus_permille := 250
 ## The build's power terms besides the weapon and the stat cards (per mille each): every level of an ability that
@@ -35,6 +37,10 @@ func validate() -> Array[ValidationIssue]:
 	_check_table(issues, "cap_permille", cap_permille, 1000)
 	_check_table(issues, "boss_expected_power_permille", boss_expected_power_permille, 1)
 	_check_table(issues, "boss_cap_permille", boss_cap_permille, 1000)
+	if boss_spread_permille < 0 or boss_spread_permille > 500:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "boss_spread_permille is outside 0..500")
+		)
 	for pair: Array in [
 		["threat_cap_bonus_permille", threat_cap_bonus_permille],
 		["ability_level_permille", ability_level_permille],

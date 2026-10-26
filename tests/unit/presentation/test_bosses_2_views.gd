@@ -81,7 +81,7 @@ func test_windup_and_stagger_drive_each_pose() -> void:
 		var a := _avatar(cls)
 		_drive(a, {"state": WorldReader.STATE_WINDUP, "move": moves[cls], "windup": 0.9}, 40)
 		assert_gt(a.windup_amount(), 0.5, "%s winds up" % a.get_script().get_global_name())
-		_drive(a, {"state": WorldReader.STATE_STAGGERED}, 40, 41)
+		_drive(a, {"state": WorldReader.STATE_GATE}, 40, 41)
 		assert_gt(a.stagger_amount(), 0.8)
 
 

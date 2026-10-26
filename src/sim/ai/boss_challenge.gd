@@ -4,8 +4,8 @@ extends RefCounted
 ## - Ranged armour: the player's hits on a boss deal less the farther the player stands (hit_mult; TAG_DEFLECTED).
 ## - Punish: staying beyond the punish distance for long enough makes the boss perform its punish attack (a pull, a
 ##   chain of leaps, a room-wide shockwave), started from BossAi.think through punish_due().
-## - Weak point: the recovery of some attacks opens it for a while; hits from up close deal more and fill the
-##   stagger meter faster (hit_mult, stagger_permille; TAG_EXPOSED).
+## - Weak point: the recovery of some attacks opens it for a while; hits from up close deal more
+##   (hit_mult; TAG_EXPOSED; v0.9.5 BH1: they no longer fill a stagger meter, bosses have none).
 ## - Closing arena: a damaging band creeps in from the boss room's walls in marked steps (band, touches_band,
 ##   resolve_arena), capped so the room's centre stays safe.
 ## - Summoning the boss dissolves every normal enemy on the floor (dissolve_floor; ENEMY_DISSOLVED).
@@ -50,13 +50,6 @@ static func ranged_permille(t: BossTable, d: float) -> int:
 		return 1000
 	var f := clampf((d - t.ranged_full_m) / (t.ranged_far_m - t.ranged_full_m), 0.0, 1.0)
 	return 1000 - int((1000 - t.ranged_far_permille) * f)
-
-
-## Per mille of a hit's damage that fills boss i's stagger meter (the weak point fills it faster).
-static func stagger_permille(w: World, i: int, tags: int) -> int:
-	if not (tags & SimEvent.TAG_EXPOSED):
-		return 1000
-	return BossAi.table_of(w, i).weak_stagger_permille
 
 
 # --- phase 3 (BossAi.think) ------------------------------------------------------------------------------------

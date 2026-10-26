@@ -46,6 +46,8 @@ const RISE_FLOURISH_SECONDS := 1.0
 const DEFAULT_ACTIVE_TICKS := 6
 const DEFAULT_RECOVER_TICKS := 60
 const STAGGER_CLIP_SECONDS := 1.2
+## v0.9.5 BH1 (Q3): the kneel at a phase change (the 1 s gate) dips the model by this much.
+const KNEEL_DIP := 0.15
 const SHIELD_CLIP_SECONDS := 0.4
 ## v0.8.0 GF2 (owner O20: "the enemy should flinch"): the player's hits play the flinch clip, a light additive layer;
 ## a hit restarts it only once the last one has faded to FLINCH_RETRIGGER (so steady fire keeps it twitching instead
@@ -358,7 +360,7 @@ func advance(delta: float) -> void:
 		wind_target = smoothstep(0.0, 0.8, _windup)
 	_wind = lerpf(_wind, wind_target, _rate(10.0 if wind_target > _wind else 6.0, dt))
 	_hit = move_toward(_hit, 0.0, dt * 2.2)
-	var stag := 1.0 if _state == WorldReader.STATE_STAGGERED else 0.0
+	var stag := 1.0 if _kneeling() else 0.0  # v0.9.5 BH1: the kneel (the phase gate's 1 s) is the old stagger's slump
 	_stagger = lerpf(_stagger, stag, _rate(7.0, dt))
 	_late = move_toward(_late, 1.0 if _boss_phase > 0 else 0.0, dt)
 	_flinch = move_toward(_flinch, 0.0, dt * 3.5)
@@ -377,6 +379,7 @@ func advance(delta: float) -> void:
 	if _airborne:
 		lift = 4.0 * _leap * (1.0 - _leap) * LEAP_HEIGHT
 	model.position = Vector3(0, -3.2 * rise - 3.0 * _sink * _sink + lift - 0.12 * _stagger, 0)
+	model.scale.y = BossModels.SIZE_SCALE * (1.0 - KNEEL_DIP * _stagger)  # v0.9.5 BH1: the kneel dips the boss
 	model.visible = _sink < 0.98
 
 
@@ -668,6 +671,12 @@ func _pose_imported(dt: float) -> void:
 	)
 
 
+## v0.9.5 BH1: the boss kneels at a phase change (the sim's 1 s gate). A save made before BH1 may still hold a
+## STAGGERED boss: it slumps the same way.
+func _kneeling() -> bool:
+	return _state == WorldReader.STATE_GATE or _state == WorldReader.STATE_STAGGERED
+
+
 ## v0.8.0 FB1: extra glow over the windup's (0 for most bodies; FinalBodyAvatar's shatter).
 func _extra_glow() -> float:
 	return 0.0
@@ -675,7 +684,7 @@ func _extra_glow() -> float:
 
 ## The clips' clocks that run in frame time: the stagger's, the shielded hold's, the gate's roar, the rise.
 func _advance_clips(dt: float, spawning: bool) -> void:
-	_stagger_secs = _stagger_secs + dt if _state == WorldReader.STATE_STAGGERED else 0.0
+	_stagger_secs = _stagger_secs + dt if _kneeling() else 0.0
 	if _shielded:
 		_shield_t = minf(1.0, _shield_t + dt / SHIELD_CLIP_SECONDS)
 	elif _shield_hold < 0.01:

@@ -9,6 +9,8 @@ var cap_permille := PackedInt32Array([1500])
 var boss_expected_permille := PackedInt32Array([2000])
 var boss_cap_permille := PackedInt32Array([2000])
 var threat_cap_permille := 250
+## v0.9.5 BH1 (Q2): each boss's HP spread, +- this per mille, drawn once per fight (CatchUp.read_boss).
+var boss_spread_permille := 80
 var ability_level_permille := 120
 var item_permille := 80
 var combo_permille := 150
