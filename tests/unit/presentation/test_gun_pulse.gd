@@ -124,8 +124,8 @@ func test_what_you_see_is_what_hits() -> void:
 		drawn[0], 0.2 * HeroPulseViews.CORE_SCALE, 1e-6, "the plain bolt's 0.2 m (O18)"
 	)
 	assert_almost_eq(
-		drawn[1], drawn[0] * 2.0, 1e-5, "Big Shot doubles the pulse with its hit radius"
-	)
+		drawn[1], drawn[0] * 2.2, 1e-5, "Big Shot widens the pulse 2.2x with its hit radius"
+	)  # v0.9.5 CLV: Big Shot is 2.2 x
 
 
 func test_the_pulse_is_the_heros_colours_and_off_every_hostile_look() -> void:

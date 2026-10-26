@@ -35,7 +35,7 @@ func test_big_then_split_is_one_big_shot_whose_splits_are_normal() -> void:
 	assert_almost_eq(s.radius_m, plain * 2.0, 1e-5, "the shot is big")
 	var k := _hook(s, &"split_shot")
 	assert_not_null(k, "it splits")
-	assert_eq(k.child.count, 3)
+	assert_eq(k.child.count, 2)  # v0.9.5 CLV: Split Shot level 1 splits in two
 	assert_almost_eq(
 		k.child.radius_m, 0.08, 1e-5, "the splits are the card's normal size (half the bolt)"
 	)
@@ -79,7 +79,7 @@ func test_inside_one_card_the_ops_keep_their_stage_order() -> void:
 	var a := _bolt([halo])
 	var b := _bolt([flipped])
 	assert_eq([a.count, a.directions, a.life_ticks], [b.count, b.directions, b.life_ticks])
-	assert_eq(a.count, 3, "×3 of one shot")
+	assert_eq(a.count, 4, "×4 of one shot")  # v0.9.5 CLV: Halo level 1 is 4
 
 
 # --- Triggers -------------------------------------------------------------------------------------------------------

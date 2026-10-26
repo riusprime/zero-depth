@@ -179,18 +179,26 @@ func test_a_mutation_is_out_of_floor_ones_regular_draws() -> void:
 
 # --- The ceilings across the sources -------------------------------------------------------------------------------
 func test_a_held_card_at_the_floors_ceiling_is_offered_no_more() -> void:
-	for pair: Array in [[1, 2], [2, 3], [3, 5]]:
-		var w := _world(&"gun", 7, pair[0])
-		var k := _hold(w, &"gun_big_shot", pair[1] - 1)
+	# v0.9.5 CLV: Big Shot has one level now; Twin (3 levels) stands in on floor 1, a Blade card (5) on floors 2-3
+	var cases := [
+		[1, 2, &"gun", &"gun_twin"],
+		[2, 3, &"blade", &"blade_storm"],
+		[3, 5, &"blade", &"blade_storm"]
+	]
+	for pair: Array in cases:
+		var w := _world(pair[2], 7, pair[0])
+		var k := _hold(w, pair[3], pair[1] - 1)
 		assert_has(ItemPool.available(w), k, "floor %d: below the ceiling, offered" % pair[0])
 		assert_true(Shop.can_apply(w, k), "the shop's, the events' and the cores' rule agree")
 		CardLevels.set_level(w, k, pair[1])
 		if pair[1] < CardLevels.MAX_LEVEL:
-			assert_does_not_have(ItemPool.available(w), k, "floor %d: at %d, no more" % pair)
+			assert_does_not_have(
+				ItemPool.available(w), k, "floor %d: at %d, no more" % [pair[0], pair[1]]
+			)
 			assert_false(Shop.can_apply(w, k), "nor bought, nor an event's, nor a core's drop")
 			assert_true(CardLevels.can_take(w, k, CardLevels.MAX_LEVEL), "the dev grant's rule")
-		var later := _world(&"gun", 7, mini(pair[0] + 1, 3))
-		var k2 := _hold(later, &"gun_big_shot", pair[1])
+		var later := _world(pair[2], 7, mini(pair[0] + 1, 3))
+		var k2 := _hold(later, pair[3], pair[1])
 		if pair[1] < CardLevels.MAX_LEVEL:
 			assert_has(ItemPool.available(later), k2, "the next floor offers it again")
 

@@ -91,5 +91,5 @@ func test_echo_slash_and_split_shot_combine_in_play() -> void:
 		if seen_split > 0:
 			break
 	assert_gt(seen_crescent, 0, "the slash throws a crescent")
-	assert_eq(seen_split, 3, "the crescent splits in three where it hits")
+	assert_eq(seen_split, 2, "the crescent splits in two where it hits")  # v0.9.5 CLV: Split Shot level 1
 	assert_false(w.player_dead())

@@ -136,11 +136,11 @@ func test_shots_come_every_point_nine_seconds() -> void:
 func test_twin_fires_side_by_side_waves_at_its_share_and_backfire_one_behind() -> void:
 	var w := _world([&"gun_twin"], [Vector2(4.0, 0.0)])
 	_one(w)
-	assert_eq(_dealt(w, 1), [2, 36], "two waves, each 60 % of 30")
+	assert_eq(_dealt(w, 1), [2, 42], "two waves, each 70 % of 30")  # v0.9.5 CLV: Twin level 1 is 70 %
 	var twin := W.item(w, &"gun_twin")
-	CardLevels.set_level(w, twin, 5)
+	CardLevels.set_level(w, twin, 3)  # v0.9.5 CLV: Twin tops out at level 3
 	W.run(w, 1, 0, W.S)
-	assert_eq(_waves(w).size(), 3, "Lv 5: three")
+	assert_eq(_waves(w).size(), 3, "Lv 3: three")
 	var b := _world([&"gun_backfire"], [Vector2(-4.0, 0.0), Vector2(4.0, 0.0)])
 	_one(b)
 	assert_eq(_dealt(b, 2)[0], 1, "the wave ahead")

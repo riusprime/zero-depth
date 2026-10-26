@@ -73,17 +73,18 @@ func test_twin_and_the_lance_change_the_gun_shot_in_play() -> void:
 	await e.frames(3)
 	assert_eq(_lances(w), 1, "the release fires one Lance")
 	assert_eq(_player_bolts(w).size(), 2, "as Twin's two balls")
-	# The Lance again: a level-up, no new slot (the panel's choice starts over when it opens again).
+	# v0.9.5 CLV: the Lance has one level (a second grant would take a slot), so Twin again is the level-up:
+	# no new slot (the panel's choice starts over when it opens again); the Lance's charge is fixed.
 	await e.tap(KEY_QUOTELEFT)
-	await _grant(e, main, &"gun_lance")
+	await _grant(e, main, &"gun_twin")
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)
 	assert_eq(w.mod_slots.size(), 2, "no new slot")
 	var cards: Array = reader.wand()["cards"]
-	assert_eq(int(cards[1]["level"]), 2, "the Lance is level 2")
-	assert_gt(
+	assert_eq(int(cards[0]["level"]), 2, "Twin is level 2")
+	assert_eq(
 		int(reader.attack_spec(WorldReader.ATTACK_BOLT)["hold_permille"]),
 		int(spec["hold_permille"]),
-		"and its full charge hits harder"
+		"and the Lance's full charge is fixed"
 	)
 	assert_false(w.player_dead())

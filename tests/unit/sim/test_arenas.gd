@@ -115,13 +115,13 @@ func test_the_pick_is_deterministic_and_leaves_the_layout_alone() -> void:
 		var a := FloorGenerator.generate(s)
 		BossRoomBuilder.attach(a)
 		OverrunRooms.mark(a)
-		var walls := _walls(a)
+		var walls := a.walls.size()
 		var rooms := ArenaRooms.mark(a, 330)
 		var b := FloorGenerator.generate(s)
 		BossRoomBuilder.attach(b)
 		OverrunRooms.mark(b)
 		assert_eq(ArenaRooms.mark(b, 330), rooms, "seed %d: same rooms" % s)
-		assert_eq(_walls(a), walls, "no wall added")
+		assert_eq(a.walls.size(), walls, "no wall added")
 		assert_eq(ArenaRooms.mark(b, 0), PackedInt32Array(), "a zero share: none")
 
 
