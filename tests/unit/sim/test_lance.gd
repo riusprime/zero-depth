@@ -10,7 +10,21 @@ extends GutTest
 const W := preload("res://tests/support/mx4_world.gd")
 const HP := 1000000
 const LANCE_ON: Array[StringName] = [
-	&"gun_twin", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"
+	&"gun_twin",
+	&"halo_shot",
+	&"gun_ring",
+	&"gun_backfire",
+	&"gun_ricochet",
+	&"gun_homing",
+	&"gun_echo",
+	&"gun_big_shot",
+	&"gun_rapid_fire",
+	&"split_shot",  # v0.9.5 FC4: the nine cards LanceMods reads
+	&"ember_core",
+	&"storm_core",
+	&"frost_core",
+	&"venom_core",
+	&"shared_bleed",
 ]
 ## Ticks after a release for a ball to fly its whole range.
 const FLY := 60

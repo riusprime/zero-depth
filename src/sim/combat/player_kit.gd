@@ -109,7 +109,8 @@ static func advance(w: World) -> void:
 		w.shot_cd -= 1
 	if GunForms.charging(w):  # v0.6.5 WN3: G13 Charge, hold to grow the shot, release to fire
 		GunForms.hold(w, can_attack, func(pm: int) -> void: _fire_bolt(w, pm))
-	elif shooting(w) and can_attack and w.swing_t == 0 and w.shot_cd == 0:
+	# v0.9.5 FC4 (V9): a Void with Mine holds one void at a time (VoidMods.held)
+	elif shooting(w) and can_attack and w.swing_t == 0 and w.shot_cd == 0 and not VoidMods.held(w):
 		_fire_bolt(w)
 		w.shot_cd = ItemEffects.shot_period_ticks(w)
 	ItemProcs.advance_momentum(w)
@@ -211,7 +212,8 @@ static func _fire_bolt(w: World, charge: int = 1000) -> void:
 		ctx.size_permille = charge
 	var lance := Lance.is_lance(spec)
 	if lance:  # v0.9.0 AF1b: the Lance's ball grows x 1 to x 2 while its damage grows x 1 to x 11.6
-		ctx.size_permille = Lance.size_permille(spec, charge)
+		ctx.size_permille = Lance.size_permille(spec, charge) * LanceMods.wide(w, spec) / 1000  # v0.9.5 FC4: Big Shot
+		ctx.lance_full = LanceMods.is_full(spec, charge)
 	Attacks.launch(w, spec, ctx)
 	if lance:
 		Lance.on_release(w, spec, charge, spec.radius_m * ctx.size_permille / 1000.0)

@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 extends GutTest
 ## v0.9.5 FC3 (FORM_COMBOS.md V1-V10): what ten cards do to the Void form (VoidMods), one test a row with the table's
 ## numbers. The plain void deals 10 a tick (one orb hit x 2.0), flies 0.162 m a tick for 67 ticks from 0.86 m out, one
@@ -240,26 +241,26 @@ func test_v5_echo_opens_a_smaller_void_where_it_ended_at_60_percent_half_the_lif
 
 
 # --- V6 Big Shot ------------------------------------------------------------------------------------------------------
-func test_v6_big_shot_has_a_1_6_m_aura_pulls_from_4_5_m_flies_30_percent_slower_for_60_percent_more(
+func test_v6_big_shot_has_a_1_3_m_aura_pulls_from_4_m_flies_30_percent_slower_for_20_percent_more(
 ) -> void:
 	var w := _world([&"gun_big_shot"])
 	W.run(w, 2, 0, W.S)
 	var i := _voids(w)[0]
 	var p := w.projectiles
-	assert_eq(p.damage[i], 16, "+60 % a tick")
+	assert_eq(p.damage[i], 12, "+20 % a tick (FC4: was +60 %)")
 	assert_almost_eq(Vector2(p.vel_x[i], p.vel_y[i]).length(), 0.162 * 0.7, 0.0001, "30 % slower")
 	var v := VoidShots.read(w)[0]
-	assert_almost_eq(v["aura"], 1.6, 0.001)
-	assert_almost_eq(v["pull"], 4.5, 0.001)
+	assert_almost_eq(v["aura"], 1.3, 0.001)
+	assert_almost_eq(v["pull"], 4.0, 0.001)
 	assert_eq(p.life[i], 66, "its life is unchanged")
-	_big_shots_pull_reaches_4_5_m_and_never_a_boss()
+	_big_shots_pull_reaches_4_m_and_never_a_boss()
 
 
-func _big_shots_pull_reaches_4_5_m_and_never_a_boss() -> void:
-	var w := _world([&"gun_big_shot"], [Vector2(3.0, 4.0)])
+func _big_shots_pull_reaches_4_m_and_never_a_boss() -> void:
+	var w := _world([&"gun_big_shot"], [Vector2(3.0, 3.6)])
 	W.run(w, 8, 0, W.S)
 	var by: Array = VoidShots.steps(w, _voids(w))
-	assert_eq((by[0] as PackedInt32Array).size(), 1, "an enemy 4 m off the path is pulled")
+	assert_eq((by[0] as PackedInt32Array).size(), 1, "an enemy 3.6 m off the path is pulled")
 	w.actors.kinds[1] = ActorStore.Kind.GATEKEEPER
 	assert_eq((VoidShots.steps(w, _voids(w))[0] as PackedInt32Array).size(), 0, "a boss: none")
 
@@ -471,3 +472,19 @@ func test_rows_are_dropped_when_the_shot_is_no_void_any_more() -> void:
 	Shop.remove_item(w, W.item(w, &"gun_void"))
 	W.run(w, 2, 0, 0)
 	assert_false(w.mx.vm_touched())
+
+
+# --- FC4 (V9): one held void at a time --------------------------------------------------------------------------------
+func test_fc4_mine_holds_one_void_at_a_time_and_the_next_shot_waits_for_it_to_end() -> void:
+	var w := _world([&"gun_mine"], [Vector2(3.0, 0.8)])
+	var most := 0
+	var seen := {}
+	for k in 480:
+		W.run(w, 1, 0, W.S)
+		most = maxi(most, _voids(w).size())
+		for i in _voids(w):
+			seen[w.projectiles.ids[i]] = true
+	assert_eq(most, 1, "never two voids out")
+	assert_between(
+		seen.size(), 2, 3, "one about every 3.3 s over 8 s: flight, 3 s hold, then the next"
+	)

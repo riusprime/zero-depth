@@ -17,6 +17,13 @@ extends Node3D
 ## Presentation only (EI-07): it reads the reader, never writes; a burst's life is sim ticks.
 
 const BURSTS_MAX := 6
+## v0.9.5 FC4: Ring's lightning rings drawn at once, and the ring shader's phase that puts its band at ARC_FRONT of the
+## quad's half-width (0.25 + 0.72 u), so a ring of radius r is drawn at r / ARC_FRONT.
+const ARCS_MAX := 6
+const ARC_U := 0.7
+const ARC_FRONT := 0.754
+## v0.9.5 FC4: a split shard's sparks along its line.
+const SHARD_SPARKS := 6
 const BURST_TICKS := 12.0
 const HEIGHT := SimPlane.CORE_HEIGHT
 ## The circle's radius: this many of the ball's radii plus a margin (m), so the gathering energy reads round the ball.
@@ -106,6 +113,9 @@ var last_burst_radius := 0.0
 ## v0.9.0 VX V19: the wall stops playing now, and since the view began (the tests).
 var walls := 0
 var walls_seen := 0
+## v0.9.5 FC4: the rings drawn now and the split shards in view (the tests).
+var arcs := 0
+var shards := 0
 
 var _circle: MeshInstance3D
 var _circle_mat: ShaderMaterial
@@ -122,6 +132,8 @@ var _form := FormLook.new()
 var _balls := {}
 var _balls_was := {}
 var _walls: Array = []
+var _arcs: Array[MeshInstance3D] = []
+var _shards: Array[Dictionary] = []
 
 
 func _init() -> void:
@@ -134,6 +146,22 @@ func _init() -> void:
 		var n := _quad(quad, BURST_SHADER)
 		_burst_nodes.append(n)
 		_burst_mat.append(n.material_override as ShaderMaterial)
+	var flat := PlaneMesh.new()  # v0.9.5 FC4: Ring's lightning ring (the Bomb's ring look, as the Void's)
+	flat.size = Vector2(2.0, 2.0)
+	var arc_mat := ShaderMaterial.new()
+	arc_mat.shader = _shader(BombView.RING_SHADER)
+	arc_mat.set_shader_parameter(&"has_tex", 0.0)
+	arc_mat.set_shader_parameter(&"u", ARC_U)
+	arc_mat.set_shader_parameter(&"core", AttackFormLooks.ground_safe(BeamLooks.core(&"lightning")))
+	arc_mat.set_shader_parameter(&"edge", AttackFormLooks.ground_safe(BeamLooks.edge(&"lightning")))
+	for k in ARCS_MAX:
+		var n := MeshInstance3D.new()
+		n.mesh = flat
+		n.material_override = arc_mat
+		n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		n.visible = false
+		add_child(n)
+		_arcs.append(n)
 
 
 func _quad(mesh: Mesh, code: String) -> MeshInstance3D:
@@ -211,6 +239,28 @@ func sync(reader: WorldReader) -> void:
 		m.set_shader_parameter(&"edge", f[4])
 		m.set_shader_parameter(&"u", u)
 	_sync_walls(reader)
+	_place_arcs(reader)
+	_shards = reader.lance_shards()
+	shards = _shards.size()
+
+
+## v0.9.5 FC4: the Ring card's lightning rings growing from where a lance ended.
+func _place_arcs(reader: WorldReader) -> void:
+	arcs = 0
+	for row in reader.lance_rings():
+		if arcs >= ARCS_MAX:
+			break
+		var g := (
+			clampf(float(row["age"]) / float(row["span"]), 0.0, 1.0) * float(row["r"]) / ARC_FRONT
+		)
+		var arc := _arcs[arcs]
+		arc.visible = g > 0.01
+		arc.transform = Transform3D(
+			Basis.from_scale(Vector3(g, 1.0, g)), SimPlane.to_3d(row["pos"], 0.1)
+		)
+		arcs += 1
+	for k in range(arcs, ARCS_MAX):
+		_arcs[k].visible = false
 
 
 ## V19: the balls in flight this sync; a ball that left where a wall stands just ahead of it (its last place plus its
@@ -305,6 +355,16 @@ func draw_fx(layer: VfxCore) -> void:
 		var sd := 4211 + k * 17 + int(float(_walls[k][1]))
 		HeroFx.flash(layer, p, _form.core, _form.edge, minf(1.0, u * 1.6), 1.2, sd, 6)
 		HeroFx.impact(layer, _form.kind, p, _walls[k][2], u, sd)
+	for sh in _shards:  # v0.9.5 FC4: Split's shards, sparks racing along their lines
+		var u := clampf(float(sh["age"]) / float(sh["span"]), 0.0, 1.0)
+		var from: Vector2 = sh["from"]
+		var to: Vector2 = sh["to"]
+		for j in SHARD_SPARKS:
+			var f := (float(j) + u) / float(SHARD_SPARKS)
+			var c := Color(_form.edge.r * 2.0, _form.edge.g * 2.0, _form.edge.b * 2.0, 1.0 - u)
+			layer.sprite(
+				&"spark", SimPlane.to_3d(from.lerp(to, f), HEIGHT), 0.22 * (1.0 - u), c, j % 4, 0.0
+			)
 	if circle and charge > 0.0:
 		layer.light_merged(
 			_circle.position + Vector3(0, 0.3, 0), _form.edge, 0.4 + 0.9 * charge, 2.5, 1.2

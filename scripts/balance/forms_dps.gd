@@ -78,6 +78,19 @@ const VOID_COMBOS: Array = [
 	[&"gun_mine"],
 	[&"orbit_rounds"],
 ]
+## v0.9.5 FC4: the Lance's card combinations (a card alone each; the charge is held to full, so Halo fires its six).
+const LANCE_COMBOS: Array = [
+	[],
+	[&"halo_shot"],
+	[&"gun_ring"],
+	[&"gun_backfire"],
+	[&"gun_ricochet"],
+	[&"gun_homing"],
+	[&"gun_echo"],
+	[&"gun_big_shot"],
+	[&"gun_rapid_fire"],
+	[&"split_shot"],
+]
 
 
 func _scenes(near: bool) -> Dictionary:
@@ -157,7 +170,8 @@ func _initialize() -> void:
 	for set_of: Array in [
 		["laser", &"gun_laser", LASER_COMBOS],
 		["bomb", &"gun_bomb", BOMB_COMBOS],
-		["void", &"gun_void", VOID_COMBOS]
+		["void", &"gun_void", VOID_COMBOS],
+		["lance", &"gun_lance", LANCE_COMBOS]
 	]:
 		for combo: Array in set_of[2]:
 			var d := {}
@@ -254,7 +268,7 @@ static func _damage(
 		ids[w.actors.ids[w.actors.ids.size() - 1]] = true
 	if form == &"gun_lance":
 		while w.tick < ticks:
-			W.run(w, 72, 0, W.S)
+			W.run(w, LanceMods.hold_ticks(w, Modifiers.bolt(w)), 0, W.S)
 			W.run(w, 1, 0, 0)
 			W.run(w, 23, 0, 0)
 	else:

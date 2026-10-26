@@ -72,8 +72,8 @@ static func orb(w: World) -> Dictionary:
 	if c <= 0.0:
 		return {}
 	var spec := Modifiers.bolt(w)
-	var pm := GunForms.charge_permille(spec, w.mx.hold_t)
-	var r := spec.radius_m * size_permille(spec, pm) / 1000.0
+	var pm := GunForms.charge_permille(spec, w.mx.hold_t, LanceMods.hold_ticks(w, spec))
+	var r := spec.radius_m * size_permille(spec, pm) * LanceMods.wide(w, spec) / 1000000.0  # v0.9.5 FC4: Big Shot
 	var dir := Kin.dir(w.aim_angle)
 	return {
 		"pos": w.player_pos() + dir * (w.player.radius_m + r + Attacks.MUZZLE_GAP_M), "radius": r

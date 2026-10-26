@@ -3,7 +3,7 @@ extends RefCounted
 ## v0.9.5 FC3 (docs/roadmap/v0.9.5/FORM_COMBOS.md V1-V10): what ten cards do to the Void form. One handler per card.
 ## A void ignores these cards' generic ops (WandCompile.run: it only notes the id in modifier_ids, and Split's level as
 ## "bomblets:N"), and this file reads them from there: mask(spec).
-## - At the throw (Attacks._bolts): Big Shot's +60 % damage and 30 % slower flight, Rapid Fire's 0.7 damage and half
+## - At the throw (Attacks._bolts): Big Shot's +20 % damage and 30 % slower flight, Rapid Fire's 0.7 damage and half
 ##   life (damage_permille(), speed(), life()), Ricochet's wall bounces (bounces(), the world's own wall pass reflects
 ##   the shot), Orbit's extra second of life, Backfire's second void thrown behind (back_throw()).
 ## - At the spawn (World._apply_spawns -> on_spawn): a void with cards gets a row (kind K_SHOT) holding its aura and
@@ -74,10 +74,10 @@ const DEFAULTS := {
 	"echo_life": 500,
 	"echo_aura": 500,
 	"echo_pull": 500,
-	"big_aura_mm": 1600,
-	"big_pull_mm": 4500,
+	"big_aura_mm": 1300,
+	"big_pull_mm": 4000,
 	"big_speed": 700,
-	"big_damage": 1600,
+	"big_damage": 1200,
 	"rapid_period_ms": 400,
 	"rapid_life": 500,
 	"rapid_aura_mm": 700,
@@ -156,7 +156,7 @@ static func share(dmg: int, permille: int) -> int:
 	return maxi(1, dmg * permille / 1000)
 
 
-## The damage factor (per mille): Big Shot's +60 %, Rapid Fire's 0.7 a tick.
+## The damage factor (per mille): Big Shot's +20 % (FC4: was +60 %), Rapid Fire's 0.7 a tick.
 static func damage_permille(w: World, m: int) -> int:
 	var f := 1000
 	if m & BIG:
@@ -255,6 +255,17 @@ static func back_throw(
 		spec.key
 	)
 	w.set_pending_second(ProjectileStore.SECONDARY)
+
+
+## FC4 (V9): with Mine, only one void at a time: the Void does not fire while one is out (flying or held).
+static func held(w: World) -> bool:
+	var s := w.mx
+	if s.vm_kind.is_empty() or mask(Modifiers.bolt(w)) & MINE == 0:
+		return false
+	for k in s.vm_kind.size():
+		if s.vm_kind[k] & KIND_MASK == K_SHOT:
+			return true
+	return false
 
 
 # --- Rows -----------------------------------------------------------------------------------------------------------

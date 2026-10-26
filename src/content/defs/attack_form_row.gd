@@ -6,6 +6,32 @@ extends Resource
 ## form's own (the form's step builds the rule; until then it reads as on); every other card is off (C62: "No by
 ## default"), so it is never offered, never equipped and never compiled with this form.
 
+## v0.9.5 FC4: the numbers the Lance row carries (LanceMods.DEFAULTS has the same keys; a test holds them equal).
+const LANCE_KEYS: Array[String] = [
+	"halo_count",
+	"halo_share",
+	"ring_mm",
+	"ring_ms",
+	"ring_share",
+	"back_share",
+	"ricochet_bounces",
+	"home_range_mm",
+	"home_cone_deg",
+	"home_turn_dps",
+	"echo_delay_ms",
+	"echo_share",
+	"big_wide",
+	"big_damage",
+	"big_hold_ms",
+	"rapid_charge",
+	"rapid_damage",
+	"split_len_mm",
+	"split_width_mm",
+	"split_share",
+	"split_max",
+	"split_ticks",
+]
+
 ## v0.9.5 FC3: the numbers the Void row carries (VoidMods.DEFAULTS has the same keys; a test holds them equal).
 const VOID_KEYS: Array[String] = [
 	"ring_mm",

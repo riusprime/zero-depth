@@ -127,6 +127,23 @@ var vm_life := PackedInt32Array()
 var vm_r := PackedInt32Array()
 var vm_root := PackedInt32Array()
 var vm_hit := PackedInt32Array()
+## v0.9.5 FC4 (LanceMods): the Lance cards' rows, one a live lance's state, a ghost lance to open, a ring growing or a
+## split shard (kind and flags, the lance's projectile id, place, tick due, tick born, angle, damage, radius in mm,
+## aux (bounces of a ghost, enemies a lance has split on), root) and Ring's hits (id * 65536 + actor). Hashed only
+## while any row is set.
+var lm_next := 0
+var lm_id := PackedInt32Array()
+var lm_kind := PackedInt32Array()
+var lm_pid := PackedInt32Array()
+var lm_at := PackedVector2Array()
+var lm_due := PackedInt32Array()
+var lm_born := PackedInt32Array()
+var lm_ang := PackedInt32Array()
+var lm_dmg := PackedInt32Array()
+var lm_r := PackedInt32Array()
+var lm_aux := PackedInt32Array()
+var lm_root := PackedInt32Array()
+var lm_hit := PackedInt32Array()
 ## v0.8.0 MR (owner O91; FireRhythm): Rapid Fire's ramp (the consecutive shots so far, the tick of the last shot) and
 ## Flurry's burst (the swing's place in its burst, 1 = the first after a pause; the tick its last swing ends); and
 ## SecondaryProc's carry (per mille of a status stack a secondary hit owes, so halved stacks are exact on average).
@@ -203,6 +220,7 @@ func touched() -> bool:
 		or lz_touched()
 		or bm_touched()
 		or vm_touched()
+		or lm_touched()
 		or remnants_touched()
 	)
 
@@ -275,6 +293,27 @@ func vm_clear() -> void:
 	vm_r = PackedInt32Array()
 	vm_root = PackedInt32Array()
 	vm_hit = PackedInt32Array()
+
+
+## v0.9.5 FC4: a Lance card's row is set.
+func lm_touched() -> bool:
+	return lm_next != 0 or not lm_kind.is_empty()
+
+
+func lm_clear() -> void:
+	lm_next = 0
+	lm_id = PackedInt32Array()
+	lm_kind = PackedInt32Array()
+	lm_pid = PackedInt32Array()
+	lm_at = PackedVector2Array()
+	lm_due = PackedInt32Array()
+	lm_born = PackedInt32Array()
+	lm_ang = PackedInt32Array()
+	lm_dmg = PackedInt32Array()
+	lm_r = PackedInt32Array()
+	lm_aux = PackedInt32Array()
+	lm_root = PackedInt32Array()
+	lm_hit = PackedInt32Array()
 
 
 ## v0.8.0 RM: a remnant card has acted (Remnants): its block is hashed from then on.
@@ -403,6 +442,17 @@ func hash_into(h: StateHasher) -> void:
 			for p in arr:
 				h.add_f32(p.x)
 				h.add_f32(p.y)
+	if lm_touched():  # v0.9.5 FC4: only while a Lance card's row is set
+		h.add_string("lm")
+		h.add_int(lm_next)
+		for arr: PackedInt32Array in [
+			lm_id, lm_kind, lm_pid, lm_due, lm_born, lm_ang, lm_dmg, lm_r, lm_aux, lm_root, lm_hit
+		]:
+			h.add_ints(arr)
+		h.add_int(lm_at.size())
+		for p in lm_at:
+			h.add_f32(p.x)
+			h.add_f32(p.y)
 	if ramp_n != 0 or burst_n != 0 or sec_carry != 0:  # v0.8.0 MR: only once a rhythm or a carry is set
 		h.add_string("mr")
 		for v in [ramp_n, ramp_tick, burst_n, burst_free, sec_carry]:
