@@ -11,8 +11,8 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW and EE3 merged.
-- **Agents working:** FC1 (the Laser's combinations) and DR (locked rooms vs Overrun, bars on every seal) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3 and DR merged.
+- **Agents working:** FC1 (the Laser's combinations) and TS (timed-door switches) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner (asleep, 2026-10-25 night):** the G2 HUD pick once HM's mockups are made; [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -41,6 +41,7 @@ riusprime/zero-depth#9).
 | AQ | Event altars (Unstable Core, Echo Mirror …) appear on about 30 % of floors, at most twice a run, never the same one twice; floors saved earlier keep their old draw (floor rules 19) ([evidence](evidence/AQ.md)) | `d8b8e806`, merge `6e97560a` |
 | EE2 | Fire: Lv 2 wider, longer fire patches, Lv 3 burning foes take +15 %; Lightning: Lv 2 +1 jump and range, Lv 3 every 6th hit calls a strike; Frost: Lv 2 frozen foes take +25 %, Lv 3 a hit shatters the ice into 3 shards ([evidence](evidence/EE2.md)) | `afab26ac`, merge `1e0c5133` |
 | EE3 | Two level-3 elements wake a named pair (Thermal Shock, Toxic Fumes, Ignition Arc, Boiling Blood, Cold Circuit, Black Ice, Brittle, Neurotoxin, Arterial Arc, Sepsis), announced on the combo card with both element icons ([evidence](evidence/EE3.md)) | `7da137b5`, merge `25500066` |
+| DR | Only two sealed kinds: the locked room (its enemies in one burst of 2 formations 1 s apart, a free altar; the old arena rooms are locked rooms now) and the Overrun (its waves); every seal drops the iron bars; the Overrun's doorway shows a small red floor rune instead of the glowing frame; locked-room clears count for the sealed-room achievements ([evidence](evidence/DR.md)) | `62cc306c`, merge `388e5517`; `37462b02` |
 | BH1 | Bosses can't be staggered; at each phase change a boss kneels 1 s (hittable) and its core can be stolen for 3 s; boss HP is set from your power when the door starts opening (caps ×2.5–4.5 by floor, ±8 % per fight); each completed loop (up to 3) makes the Hollow Crown's pace 12 % shorter and its hits 8 % softer; the run summary says "Looped ×N" ([evidence](evidence/BH1.md)) | `d669f646`, merge `f9197302` |
 | BH2 | A harder spell each: the Gatekeeper's shock lanes lock faster and fire a second, shifted set; the Warlord's javelins lead you, then a second fan; the Brood Mother's 3rd leap leads you and lands wider; the Hive Lens's beam turns after you; the Siege Engine's mortar grid leaves 2 safe cells that swap halfway (never on the edge). The loop ease is data now ([evidence](evidence/BH2.md)) | `eca6b78e`, merge `53cd71e1` |
 | BH3 | A harder spell each: the Foundry's furnace waves come as two walls at right angles; the Twin Wardens' crossfire lines track you for 1.2 s; the Clockwork Judge adds a counter-turning spiral from phase 2; the Lantern Shade's lanterns burn 4 s, its dark lasts 9 s and Snuff puts out two lanterns ([evidence](evidence/BH3.md)) | `7ff84613`, merge `d788b91f` |
@@ -176,3 +177,8 @@ riusprime/zero-depth#9).
   drawn by their own views) → fixed, test_attack_visuals 16/16, test_attack_visuals_2 11/11. EE3 (agent) merged:
   test_element_pairs 25/25, banner 3/3, e2e 1/1, related batches 112/112 and 58/58, content 157/157, golden + arch 6/6;
   no digest ([evidence](evidence/EE3.md)). Seams re-run on the merged head. FC1 started.
+- 2026-10-26 — Seams on `25500066`: **540/540** (1698 s), the first fully green seams of v0.9.5 (test_final_pace passes
+  since BH1). Pushed. DR (agent) merged: its files green (locked_rooms 3/3, dr_views 2/2, lockdowns, arenas, overrun,
+  old saves, content, golden, arch, e2e lockdown/arenas/saves) ([evidence](evidence/DR.md)). DR2 (lead): the
+  achievement tracker counts locked-room clears too (the arena-clear counter would have stopped: arena rooms are locked
+  rooms now); test_achievements 15/15 (1 new), e2e achievements 1/1. TS started on top of DR (floor rules 21).
