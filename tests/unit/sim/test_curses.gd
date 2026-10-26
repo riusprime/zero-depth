@@ -87,7 +87,7 @@ func test_leaky_core_heat_decays_twice_as_fast() -> void:
 	for curses in [[], [&"leaky_core"]]:
 		var w := _world(curses)
 		w.heat.milli = 40 * HeatTable.MILLI  # test setup
-		w.heat.idle = w.heat.table.decay_delay_ticks + 1
+		w.heat.idle = w.heat.table.cool_delay_ticks + 1
 		var before := w.heat.milli
 		Heat.advance(w)
 		drops.append(before - w.heat.milli)

@@ -75,6 +75,30 @@ func test_the_vent_hint_shows_the_key_and_lights_when_hot() -> void:
 	InputDefaults.apply()
 
 
+func test_the_vent_plate_dims_under_40_and_counts_its_6_second_cooldown() -> void:  # v0.9.5 HT
+	var h := _hud()
+	var w := _world(&"blade", [], true)
+	var r := WorldReader.new(w)
+	w.heat.milli = 39 * HeatTable.MILLI
+	h.sync(r)
+	assert_false(h.vent_lit(), "under 40: dim")
+	w.heat.milli = 60 * HeatTable.MILLI
+	h.sync(r)
+	assert_true(h.vent_lit(), "40 or more: lit")
+	w.step(_f(InputFrame.VENT))
+	w.heat.milli = 60 * HeatTable.MILLI
+	h.sync(r)
+	assert_false(h.vent_lit(), "on cooldown: dim even with the heat")
+	assert_string_ends_with(h.vent_text(), " 6", "6 seconds left")
+	assert_almost_eq(h.vent_sweep_share(), 1.0, 0.01, "a full wedge just after the vent")
+	for k in 180:
+		w.step(_f())
+	w.heat.milli = 60 * HeatTable.MILLI
+	h.sync(r)
+	assert_string_ends_with(h.vent_text(), " 3", "3 seconds left")
+	assert_almost_eq(h.vent_sweep_share(), 0.5, 0.02, "half the wedge")
+
+
 func test_the_cleave_forecast_uses_the_hits_numbers_then_flashes() -> void:
 	var w := _world(&"blade", [Vector2(5.5, 0)])
 	var r := WorldReader.new(w)
@@ -134,7 +158,11 @@ func test_the_skills_and_the_cold_vent_have_sounds() -> void:
 	cev.prime(cr)
 	c.step(_f(InputFrame.VENT))
 	assert_eq(cr.vent_cold_tick(), 0)
-	assert_has(cev.collect(cr).map(func(x: Array) -> StringName: return x[0]), &"vent_cold")
+	assert_does_not_have(
+		cev.collect(cr).map(func(x: Array) -> StringName: return x[0]),
+		&"vent_cold",
+		"v0.9.5 HT: a refused Vent press is silent"
+	)
 	var d := AudioDirector.new()
 	add_child_autofree(d)
 	for id: StringName in [&"skill_lunge_cleave", &"skill_scatter_blast", &"vent_cold"]:

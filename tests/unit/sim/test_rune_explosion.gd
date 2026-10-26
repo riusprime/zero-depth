@@ -1,8 +1,9 @@
 extends GutTest
 ## v0.9.5 FC0 (owner: Rune Explosion replaces Scatter; FORM_COMBOS.md R0, R1): the Rune Explosion form. A ring centred
 ## on the hero grows 0 to 3.5 m over 21 ticks (linear, whole mm) every 1.1 s while the hero attacks; each enemy is hit
-## once per burst as the edge passes it, for 3.75 x an orb hit (3.0 before the DPS check), and shoved 0.4 m outward; Twin adds smaller later
-## bursts (70 % size and share, 0.2 s apart; Lv 3 two of them); at most 3 live; no heat; a snapshot mid-burst plays on
+## once per burst as the edge passes it, for 3.75 x an orb hit (3.0 before the DPS check), and shoved 0.4 m outward;
+## Twin adds smaller later bursts (70 % size and share, 0.2 s apart; Lv 3 two of them); at most 3 live; its heat is the
+## firing time only (v0.9.5 HT); a snapshot mid-burst plays on
 ## the same; an old save holding Scatter loads holding Rune Explosion.
 
 const W := preload("res://tests/support/mx4_world.gd")
@@ -127,11 +128,11 @@ func test_the_burst_follows_the_hero() -> void:
 	assert_eq(now, r.player_pos())
 
 
-func test_it_adds_no_heat() -> void:
+func test_its_heat_is_the_firing_time_only() -> void:  # v0.9.5 HT (was: it adds no heat)
 	var w := W.world(&"gun", [RUNE], [[Vector2(2.0, 0.0), HP]], [], true)
 	W.run(w, 150, 0, W.S)
 	assert_gt(_dealt(w, 1)[0], 0, "it hit")
-	assert_eq(Heat.points(w), 0, "an area attack: no heat")
+	assert_eq(Heat.points(w), 17, "no heat per hit; 150 firing ticks of 100/840 per tick")
 
 
 func test_it_fires_on_its_period_while_attacking_and_not_without() -> void:

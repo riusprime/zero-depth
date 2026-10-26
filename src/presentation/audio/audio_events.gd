@@ -493,8 +493,8 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"blink_out", null, 0.7])
 			SimEvent.Kind.SKILL_USED:  # v0.3.5 K: the build skill, by its kind
 				out.append([skill_cue(e.amount), e.pos, 1.0])
-			SimEvent.Kind.VENT_COLD:  # v0.3.5 K: Vent pressed under Hot
-				out.append([&"vent_cold", null, 1.0])
+			SimEvent.Kind.VENT_COLD:  # v0.9.5 HT: a refused Vent press is silent (it was a click under Hot)
+				pass
 			SimEvent.Kind.SHOP_BUY:  # v0.5.0 SH: a purchase, the heal or a reroll
 				out.append([&"shop_buy", null, 1.0])
 			SimEvent.Kind.SHOP_SALVAGE:  # v0.5.0 SH: a sale or an ability salvaged

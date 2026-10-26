@@ -11,9 +11,12 @@ extends ContentDef
 @export var gain_swing := 2.5
 @export var gain_finisher := 5.0
 @export var gain_bolt := 0.9
-## Heat starts to fall this long after the last landed attack, at this rate.
-@export var decay_delay_seconds := 1.0
-@export var decay_per_second := 15.0
+## v0.9.5 HT: a Gun run's heat fills by time spent firing (the primary attack held and armed), whatever the form:
+## 0 to max_heat in gun_fill_seconds. gain_bolt no longer applies on a Gun run (the Blade's gains are unchanged).
+@export var gun_fill_seconds := 14.0
+## Heat starts to fall this long after the last gain (a firing tick or a landed Blade attack), at this rate.
+@export var cool_delay_seconds := 1.0
+@export var cool_per_second := 25.0
 ## Hot: the blade reaches farther and each bolt pierces one enemy.
 @export var hot_threshold := 40
 @export var hot_reach_bonus := 0.2
@@ -28,6 +31,9 @@ extends ContentDef
 ## vent_damage_per_heat, and resets heat to 0.
 @export var vent_radius_m := 2.5
 @export var vent_damage_per_heat := 0.5
+## v0.9.5 HT: Vent needs at least vent_min_heat and then waits vent_cooldown_seconds before it can go again.
+@export var vent_min_heat := 40.0
+@export var vent_cooldown_seconds := 6.0
 
 
 func category() -> StringName:
@@ -41,7 +47,10 @@ func validate() -> Array[ValidationIssue]:
 		["gain_swing", gain_swing],
 		["gain_finisher", gain_finisher],
 		["gain_bolt", gain_bolt],
-		["decay_per_second", decay_per_second],
+		["gun_fill_seconds", gun_fill_seconds],
+		["cool_per_second", cool_per_second],
+		["vent_min_heat", vent_min_heat],
+		["vent_cooldown_seconds", vent_cooldown_seconds],
 		["hot_reach_bonus", hot_reach_bonus],
 		["overclock_damage_bonus", overclock_damage_bonus],
 		["overheat_seconds", overheat_seconds],
@@ -49,7 +58,9 @@ func validate() -> Array[ValidationIssue]:
 		["vent_damage_per_heat", vent_damage_per_heat],
 	]:
 		check_positive(issues, pair[0], pair[1])
-	check_duration(issues, "decay_delay_seconds", decay_delay_seconds)
+	check_duration(issues, "cool_delay_seconds", cool_delay_seconds)
+	check_duration(issues, "gun_fill_seconds", gun_fill_seconds)
+	check_duration(issues, "vent_cooldown_seconds", vent_cooldown_seconds)
 	check_duration(issues, "overheat_seconds", overheat_seconds)
 	if not (
 		0 < hot_threshold and hot_threshold < overclock_threshold and overclock_threshold < max_heat

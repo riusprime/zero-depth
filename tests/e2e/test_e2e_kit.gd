@@ -78,7 +78,9 @@ func test_blade_q_lunges_and_cleaves_and_f_clicks_while_cool() -> void:
 	var vseq := r.last_event_seq()
 	await e.tap(KEY_F)
 	await e.frames(2)
-	assert_eq(_events(r, SimEvent.Kind.VENT_COLD, vseq).size(), 1, "F clicked cold")
+	assert_eq(
+		_events(r, SimEvent.Kind.VENT_COLD, vseq).size(), 1, "F while cool: a silent cold event"
+	)
 	assert_eq(_events(r, SimEvent.Kind.VENT, vseq).size(), 0, "and vented nothing")
 	assert_false(pip.vent_lit(), "the vent hint stays dim")
 	# The pip refills: the skill is back 4 s after the press.

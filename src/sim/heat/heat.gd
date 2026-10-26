@@ -3,7 +3,7 @@ extends RefCounted
 ## Overclock heat (v0.3.0 PLAN L18; docs/design/SIGNATURE.md §Overclock), the first signature system. Every hook is
 ## a no-op when World.heat is null (worlds without heat keep their behaviour and their hash).
 ## - Gain: each landed attack (a swing once, however many it hits; each bolt) adds its type's heat. Payoffs, DoT,
-##   echoes, chains and dash hits never add heat. Heat waits decay_delay_ticks after the last gain, then falls.
+##   echoes, chains and dash hits never add heat. Heat waits cool_delay_ticks after the last gain, then falls.
 ## - Hot (>= hot_threshold): the blade reaches farther (swing_reach_m, the same reach WorldReader draws) and each
 ##   bolt pierces one enemy. Overclock (>= overclock_threshold): attacks deal more, leave an ember, and add burn
 ##   stacks when a burn item (the fire engine) is owned.
@@ -81,7 +81,7 @@ static func stalled(w: World) -> bool:
 
 # --- The clock ------------------------------------------------------------------------------------------------
 ## Tick phase 4 (PlayerKit.advance, before the attacks): the stall runs down and drains the heat; otherwise heat
-## decays once decay_delay_ticks have passed without a gain.
+## cools once cool_delay_ticks have passed without a gain.
 static func advance(w: World) -> void:
 	var s := w.heat
 	if s == null:
@@ -91,8 +91,8 @@ static func advance(w: World) -> void:
 		s.milli = s.table.max_milli() * s.stall / maxi(1, s.stall_total)
 	else:
 		s.idle += 1
-		if s.idle > s.table.decay_delay_ticks and s.milli > 0:
-			s.milli = maxi(0, s.milli - Curses.heat_decay(w, s.table.decay_per_tick))  # v0.5.0 EV
+		if s.idle > s.table.cool_delay_ticks and s.milli > 0:
+			s.milli = maxi(0, s.milli - Curses.heat_decay(w, s.table.cool_per_tick))  # v0.5.0 EV
 	_retier(w)
 
 
@@ -156,7 +156,23 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 		)
 	if tags & SimEvent.TAG_SKILL and w.player.skill != null:
 		g = w.player.skill.heat_gain  # Kit (v0.3.5 K): a skill adds its own heat, once per use.
+	elif not (tags & SimEvent.TAG_MELEE) and PlayerBuild.has_gun(w):
+		return  # v0.9.5 HT: a Gun's shots add nothing per hit; its heat fills by firing time (fire_tick)
 	add(w, g, root)
+
+
+## v0.9.5 HT: a tick of the Gun's primary attack held and armed (PlayerKit.advance), whatever the form: heat rises
+## by max / gun_fill_ticks, the remainder carried so gun_fill_ticks of firing fill the meter exactly. Attack speed,
+## hits, pierce and projectile count do not matter.
+static func fire_tick(w: World) -> void:
+	var s := w.heat
+	if s == null or s.stall > 0 or w.player_dead():
+		return
+	var t := s.table
+	s.fill_rem += t.max_milli()
+	var g := s.fill_rem / t.gun_fill_ticks
+	s.fill_rem -= g * t.gun_fill_ticks
+	add(w, g)
 
 
 ## Adds `milli` heat (from the attack with root `root`); reaching the overheat point overheats.
@@ -246,19 +262,24 @@ static func pierce(w: World, pi: int, k: int, from: Vector2) -> bool:
 ## Returns true if it vented (false: no heat, under Hot, overheated or dead).
 static func vent(w: World) -> bool:
 	var s := w.heat
-	if s == null or w.player_dead() or not hot(w):
+	if s == null or not vent_ready(w):
 		return false
 	var heat := s.milli / HeatTable.MILLI
 	_blast(w, heat, 1000, w.take_root(), EFFECT_VENT)
+	w.kit.vent_cd = s.table.vent_cooldown_ticks  # v0.9.5 HT
 	s.milli = 0
 	s.idle = 0
 	_retier(w)
 	return true
 
 
-## Venting now would blast (the meter's VENT prompt): Hot (or Overclock) and alive.
+## Venting now would blast (the meter's VENT prompt): v0.9.5 HT: at least vent_min_heat, not overheated, alive and
+## the 6 s cooldown over.
 static func vent_ready(w: World) -> bool:
-	return hot(w) and not w.player_dead()
+	var s := w.heat
+	if s == null or s.stall > 0 or w.player_dead() or w.kit.vent_cd > 0:
+		return false
+	return s.milli >= s.table.vent_min_milli
 
 
 ## The blast's radius: the vent spec's (v0.6.0 MX4: the table's, as the build's modifiers left it), with Heat Sink's
@@ -324,6 +345,9 @@ static func read(w: World) -> Dictionary:
 		"stall": s.stall,
 		"stall_total": s.stall_total,
 		"vent_ready": vent_ready(w),
+		"vent_min": s.table.vent_min_milli / float(HeatTable.MILLI),
+		"vent_cd": w.kit.vent_cd,
+		"vent_cd_total": s.table.vent_cooldown_ticks,
 		"overheat_tick": s.overheat_tick,
 		"meltdown": s.meltdown,
 		"vent_tick": s.vent_tick,

@@ -79,8 +79,10 @@ func test_the_data_compiles_to_the_starting_values() -> void:
 	assert_eq(_heat.max_heat, 100)
 	# v0.8.0 GF1: a bolt's heat 0.9 x 9/7 (the Gun fires 7/9 as often, so it heats as fast a second).
 	assert_eq([_heat.gain_swing, _heat.gain_finisher, _heat.gain_bolt], [2500, 5000, 1157])
-	assert_eq(_heat.decay_delay_ticks, 60, "decay waits 1 s")
-	assert_eq(_heat.decay_per_tick, 250, "then 15 heat per second")
+	assert_eq(_heat.cool_delay_ticks, 60, "cooling waits 1 s")
+	assert_eq(_heat.cool_per_tick, 417, "then 25 heat per second (v0.9.5 HT: was 15)")
+	assert_eq(_heat.gun_fill_ticks, 840, "v0.9.5 HT: a Gun fills in 14 s of firing")
+	assert_eq([_heat.vent_min_milli, _heat.vent_cooldown_ticks], [40000, 360], "Vent: 40 heat, 6 s")
 	assert_eq([_heat.hot_threshold, _heat.overclock_threshold], [40, 75])
 	assert_eq([_heat.hot_reach_permille, _heat.overclock_damage_permille], [200, 250])
 	assert_eq(_heat.stall_ticks, 72, "a 1.2 s stall")
@@ -115,20 +117,22 @@ func test_each_landed_attack_adds_its_type_once() -> void:
 	var v := _world([], [Vector2(3, 0)])
 	v.step(_f(S))
 	_idle(v, 12, 0)
-	assert_eq(v.heat.milli, 1157, "one landed bolt adds 1.157 (v0.8.0 GF1: 0.9 x 9/7)")
+	assert_eq(
+		v.heat.milli, 119, "v0.9.5 HT: a landed bolt adds nothing; the one firing tick adds 100/840"
+	)
 	var miss := _world([], [Vector2(-3, 0)])
 	_swing(miss)
 	assert_eq(miss.heat.milli, 0, "a whiff adds nothing")
 
 
-func test_heat_holds_a_second_then_decays_at_15_per_second() -> void:
+func test_heat_holds_a_second_then_cools_at_25_per_second() -> void:
 	var w := _world()
 	w.heat.milli = 50 * M
 	w.heat.idle = 0
 	_idle(w, 60)
 	assert_eq(w.heat.milli, 50 * M, "held for 1 s after the last gain")
 	_idle(w, 60)
-	assert_eq(w.heat.milli, 35 * M, "then 15 heat in the next second")
+	assert_eq(w.heat.milli, 50 * M - 60 * _heat.cool_per_tick, "then 25 heat in the next second")
 	_idle(w, 200)
 	assert_eq(w.heat.milli, 0, "down to 0, never below")
 
@@ -150,8 +154,12 @@ func test_a_sustained_fight_reaches_the_thresholds_in_6_to_10_seconds() -> void:
 			if oc < 0 and Heat.points(w) >= 75:
 				oc = w.tick
 		gut.p("%s: Hot at %.2f s, Overclock at %.2f s" % [mode, hot / 60.0, oc / 60.0])
-		assert_between(hot, 4 * 60, 6 * 60, "%s: Hot in 4-6 s" % mode)
-		assert_between(oc, 6 * 60, 10 * 60, "%s: Overclock in 6-10 s" % mode)
+		if mode == "blade":
+			assert_between(hot, 4 * 60, 6 * 60, "%s: Hot in 4-6 s" % mode)
+			assert_between(oc, 6 * 60, 10 * 60, "%s: Overclock in 6-10 s" % mode)
+		else:  # v0.9.5 HT: the Gun fills by firing time: 40 % and 75 % of 14 s
+			assert_between(hot, 5.5 * 60, 5.7 * 60, "gun: Hot at 5.6 s")
+			assert_between(oc, 10.4 * 60, 10.6 * 60, "gun: Overclock at 10.5 s")
 
 
 func test_hot_reaches_farther_and_bolts_pierce_one_enemy() -> void:
@@ -277,7 +285,7 @@ func test_the_vent_button_while_hot_vents_a_blast_and_resets_heat() -> void:
 	cool.step(_f(0, V))
 	assert_eq(_events(cool, SimEvent.Kind.HIT).size(), 0, "under Hot the Vent button vents nothing")
 	assert_eq(cool.heat.milli, 39 * M, "and keeps its heat")
-	assert_eq(_events(cool, SimEvent.Kind.VENT_COLD).size(), 1, "only a cold click")
+	assert_eq(_events(cool, SimEvent.Kind.VENT_COLD).size(), 1, "only a (silent) cold event")
 	assert_eq(cool.kit.cold_tick, 0)
 
 
