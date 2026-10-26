@@ -44,6 +44,11 @@ static func half_m(w: World, s: AttackSpec) -> float:
 	return Stats.area(w, s.wave_mm / 2000.0)
 
 
+## Half the band of wave projectile `pi` now (m): its own width (v0.9.5 FC8 WaveMods: Big Shot, Rapid Fire, a child).
+static func half_of(w: World, pi: int) -> float:
+	return Stats.area(w, WaveMods.band_mm(w, pi, Attacks.projectile_spec(w, pi)) / 2000.0)
+
+
 ## Tick phase 6 (ModifierRuntime.advance, after VoidShots.advance clears the waits that are over): each Wave shot's
 ## band hits what it rolls over.
 static func advance(w: World) -> void:
@@ -73,13 +78,11 @@ static func _waiting(s: ModifierState, shot: int, foe: int) -> bool:
 static func covered(w: World, pi: int) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	var p := w.projectiles
-	var v := Vector2(p.vel_x[pi], p.vel_y[pi])
-	var speed := Kin.length(v)
-	if speed <= 0.0:
+	var dir := WaveMods.heading(w, pi)  # v0.9.5 FC8: a Mine churning in place keeps its heading
+	if dir == Vector2.ZERO:
 		return out
-	var dir := v / speed
 	var at := Vector2(p.pos_x[pi], p.pos_y[pi])
-	var half := half_m(w, Attacks.projectile_spec(w, pi))
+	var half := half_of(w, pi)
 	var a := w.actors
 	for i in w.enemies_near(at, half + DEPTH_M):
 		var off := a.pos(i) - at
@@ -119,7 +122,8 @@ static func _band(w: World, pi: int) -> void:
 		s.void_foe.append(aid)
 		s.void_next.append(w.tick + p.life[pi] + 2)  # gone with the shot (VoidShots.advance drops it)
 		if ctx == null:
-			var ang := Kin.angle_of(Vector2(p.vel_x[pi], p.vel_y[pi]))
+			var vel := Vector2(p.vel_x[pi], p.vel_y[pi])
+			var ang := Kin.angle_of(vel if vel != Vector2.ZERO else WaveMods.heading(w, pi))
 			ctx = AttackContext.make(at, ang, p.damage[pi], w.take_root(), p.tags[pi], &"")
 			ctx.depth = spec.depth
 			ctx.proc_pct = maxi(1, 100 >> spec.depth)
@@ -134,16 +138,15 @@ static func read(w: World) -> Array[Dictionary]:
 		return out
 	var p := w.projectiles
 	for pi in _shots(w):
-		var v := Vector2(p.vel_x[pi], p.vel_y[pi])
-		var sp := Kin.length(v)
+		var dir := WaveMods.heading(w, pi)
 		(
 			out
 			. append(
 				{
 					"id": p.ids[pi],
 					"pos": Vector2(p.pos_x[pi], p.pos_y[pi]),
-					"dir": v / sp if sp > 0.0 else Vector2.RIGHT,
-					"half": half_m(w, Attacks.projectile_spec(w, pi)),
+					"dir": dir if dir != Vector2.ZERO else Vector2.RIGHT,
+					"half": half_of(w, pi),
 					"depth": DEPTH_M,
 				}
 			)

@@ -10,6 +10,14 @@ const HP := 1000000
 const WAVE_ON: Array[StringName] = [
 	&"gun_twin",
 	&"gun_backfire",
+	&"gun_ricochet",  # v0.9.5 FC8: the eight cards of FORM_COMBOS W1-W8
+	&"gun_homing",
+	&"gun_echo",
+	&"gun_big_shot",
+	&"gun_rapid_fire",
+	&"split_shot",
+	&"gun_mine",
+	&"gun_spiral",
 	&"ember_core",
 	&"storm_core",
 	&"frost_core",

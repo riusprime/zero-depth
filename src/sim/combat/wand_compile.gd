@@ -161,6 +161,9 @@ func run(s: AttackSpec, from: int) -> AttackSpec:
 		if s.glaive > 0 and GlaiveMods.is_card(m.id):  # v0.9.5 FC6: the Glaive's cards are GlaiveMods'
 			GlaiveMods.note_card(s, m)
 			continue
+		if s.wave_mm > 0 and WaveMods.is_card(m.id):  # v0.9.5 FC8: the Wave's cards are WaveMods'
+			WaveMods.note_card(s, m)
+			continue
 		var applied := false
 		for stage in ModifierTable.STAGE_COUNT:  # a card's own ops in stage order
 			for op in m.ops:
