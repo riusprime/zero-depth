@@ -16,7 +16,7 @@ const FAIL_COLOR := Color("#FF7A5C")
 
 var card := GambleCard.new()
 var stats := GambleStatsPanel.new()
-var _prompt := Label.new()
+var _prompt := InteractPrompt.new()
 var _fail := Label.new()
 var _seen_tick := -1
 var _fail_tick := -1
@@ -29,16 +29,6 @@ func _init() -> void:
 	name = "Gamble"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_prompt.name = "GamblePrompt"
-	_prompt.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_prompt.custom_minimum_size = Vector2(900, 0)
-	_prompt.position = Vector2(-450, -112)
-	_prompt.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	_prompt.add_theme_font_size_override("font_size", 24)
-	_prompt.add_theme_constant_override("outline_size", 6)
-	_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-	_prompt.visible = false
 	add_child(_prompt)
 	_fail.name = "GambleFailed"  # v0.8.0 N14: a failed use's short line, over the shrine
 	_fail.set_anchors_preset(Control.PRESET_CENTER)
@@ -65,25 +55,28 @@ func _init() -> void:
 
 func sync(reader: WorldReader) -> void:
 	if not reader.has_gamble():
-		_prompt.visible = false
+		_prompt.hide_prompt()
 		_fail.visible = false
 		stats.visible = false
 		return
 	_near = reader.gamble_in_reach() and not reader.choosing()
-	_prompt.visible = _near
 	var spent := reader.gamble_spent()
 	if _near:
 		var price := reader.gamble_price()
 		var ok := reader.gamble_affordable() and not reader.gamble_exhausted() and not spent
+		var line := ""
+		var no_press := false
 		if spent:  # v0.8.0 N14 (O72): blocked after its wins
-			_prompt.text = tr("UI_GAMBLE_BLOCKED")
+			line = tr("UI_GAMBLE_BLOCKED")
+			no_press = true
 		elif reader.gamble_exhausted():
-			_prompt.text = tr("UI_GAMBLE_SPENT")
-		elif reader.gamble_affordable():
-			_prompt.text = tr("UI_GAMBLE_USE") % price
+			line = tr("UI_GAMBLE_SPENT")
+			no_press = true
 		else:
-			_prompt.text = tr("REWARD_TOO_POOR") % [reader.shards(), price]
-		HudStyle.font_color(_prompt, Color.WHITE if ok else POOR)
+			line = tr("UI_GAMBLE_USE") % price  # v0.9.5 PR: short; too poor shows it red
+		_prompt.show_prompt(reader, line, not ok, Color.WHITE, not no_press)
+	else:
+		_prompt.hide_prompt()
 	var f := reader.gamble_fail_tick()
 	if f != _fail_tick:
 		_fail_tick = f
@@ -114,7 +107,7 @@ func _process(delta: float) -> void:
 
 ## The prompt by the shrine ("" when none), and whether it shows the can't-afford colour.
 func prompt_text() -> String:
-	return _prompt.text if _prompt.visible else ""
+	return _prompt.text()
 
 
 ## v0.8.0 N14: the failed use's line ("" when none).
@@ -123,7 +116,7 @@ func fail_text() -> String:
 
 
 func prompt_poor() -> bool:
-	return _prompt.get_theme_color(&"font_color") == POOR
+	return _prompt.is_poor()
 
 
 func _play(reader: WorldReader) -> void:

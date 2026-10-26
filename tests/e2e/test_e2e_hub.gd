@@ -262,7 +262,7 @@ func test_the_hub_in_spanish() -> void:
 	await walk.walk_to(&"portal")
 	var hud := main.get_node_or_null("UI/HubHud") as HubHud
 	assert_eq(hud.station_name(), "Máquina de Portales", "the station's name in Spanish")
-	assert_eq(hud.prompt_text(), "[E / X] Empezar una partida", "and its prompt")
+	assert_eq(hud.prompt_text(), "Empezar", "and its prompt")
 	TranslationServer.set_locale("en")
 
 

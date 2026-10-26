@@ -118,7 +118,7 @@ func test_hud_counter_and_prompt() -> void:
 	w.shards = 12
 	hud.sync(r)
 	assert_eq(hud.shard_text(), "12")
-	assert_eq(hud.prompt_text(), tr("REWARD_TOO_POOR") % [12, 40])
+	assert_eq(hud.prompt_text(), tr("REWARD_OPEN_CHEST") % 40)
 	assert_true(hud.prompt_poor())
 	w.shards = 45
 	hud.sync(r)

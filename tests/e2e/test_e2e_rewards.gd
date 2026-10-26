@@ -69,7 +69,7 @@ func test_a_chest_is_shut_until_you_can_pay_then_it_deals_one_card() -> void:
 	assert_true(reached, "walked up to the chest")
 	assert_lt(w.shards, price, "not enough shards yet")
 	await e.frames(2)
-	assert_eq(hud.prompt_text(), tr("REWARD_TOO_POOR") % [w.shards, price])
+	assert_eq(hud.prompt_text(), tr("REWARD_OPEN_CHEST") % price, "v0.9.5 PR: the price, red")
 	assert_true(hud.prompt_poor(), "the prompt is red")
 	var label := main.view.rewards.price_label(chest_id)
 	assert_true(label.visible, "the price floats above the chest")

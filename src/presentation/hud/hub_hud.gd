@@ -5,7 +5,7 @@ extends Control
 ## fight). The key hint for the pause sits small in a corner. Reads only; the press is the hub's (HubSession).
 
 var _name := Label.new()
-var _prompt := Label.new()
+var _prompt := InteractPrompt.new()
 var _hint := Label.new()
 
 
@@ -13,7 +13,7 @@ func _init() -> void:
 	name = "HubHud"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for l: Label in [_name, _prompt]:
+	for l: Label in [_name]:
 		l.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.custom_minimum_size = Vector2(900, 0)
@@ -26,9 +26,7 @@ func _init() -> void:
 	_name.name = "StationName"
 	_name.position = Vector2(-450, -158)
 	HudStyle.style_label(_name, 28, true)
-	_prompt.name = "Prompt"
-	_prompt.position = Vector2(-450, -112)
-	HudStyle.style_label(_prompt, 22, true)
+	add_child(_prompt)
 	_hint.name = "Hint"
 	_hint.text = "HUB_HINT"
 	_hint.set_anchors_preset(Control.PRESET_TOP_LEFT)
@@ -40,18 +38,22 @@ func _init() -> void:
 
 
 ## The station shown: its name and prompt keys (&"" hides both).
-func show_station(name_key: StringName, prompt_key: StringName) -> void:
+func show_station(name_key: StringName, prompt_key: StringName, reader: WorldReader = null) -> void:
 	_name.visible = name_key != &""
-	_prompt.visible = prompt_key != &""
 	if _name.visible:
 		_name.text = tr(name_key)
-	if _prompt.visible:
-		_prompt.text = tr(prompt_key)
+	if prompt_key != &"":
+		# The collectible toast names a find, not a press: no button.
+		_prompt.show_prompt(
+			reader, tr(prompt_key), false, Color.WHITE, prompt_key != CollectibleBook.HEADER_KEY
+		)
+	else:
+		_prompt.hide_prompt()
 
 
 ## The prompt shown now ("" when none).
 func prompt_text() -> String:
-	return _prompt.text if _prompt.visible else ""
+	return _prompt.text()
 
 
 func station_name() -> String:
