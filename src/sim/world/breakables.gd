@@ -22,7 +22,10 @@ extends RefCounted
 ##   start hall, the boss room, the portal room, the shop's room, the curse room and the secret rooms, 0..containers_max
 ##   containers and, with barrel_room_permille, 1..barrels_max explosive barrels, on its spawn spots DOOR_GAP_M from its
 ##   doorways' approaches, AVOID_M from rewards, pedestals, the shrine, the shop and the puzzles' pieces and PROP_GAP_M
-##   apart. Not solid: they never block a path.
+##   apart.
+## - v0.9.5 BK (owner Q17 a: "Breakables solid until broken; kept 1.5 m from doorways"): under floor rules 22 each
+##   unbroken prop is a Solids entry (crate 0.4 m half-side, urn and barrels 0.3 m), gone the tick it breaks or blows;
+##   shots still reach it (it is not a wall). Generation drops (never moves) a prop within DOOR_CLEAR_M of a doorway.
 
 enum Kind { CRATE, URN, BARREL, EXPLOSIVE }
 enum Drop { NONE, SHARDS, HEAL }
@@ -31,6 +34,10 @@ const PROP_RADIUS_M := 0.4
 const DOOR_GAP_M := 2.0
 const AVOID_M := 2.5
 const PROP_GAP_M := 1.5
+## v0.9.5 BK: the doorway clearance (m, to the doorway centre) and the solid footprints' half-sides.
+const DOOR_CLEAR_M := 1.5
+const CRATE_HALF_M := 0.4
+const ROUND_HALF_M := 0.3
 const STREAM := "map:containers"
 const DROP_STREAM := "loot:containers"
 const REWARD_STREAM := "loot:cracked_wall"
@@ -64,10 +71,12 @@ var fuse_ticks := 60
 var radius_m := 2.0
 var damage := 40
 var hero_damage := 15
+## v0.9.5 BK: props generation dropped for standing within DOOR_CLEAR_M of a doorway (setup, not hashed).
+var dropped := 0
 
 
 ## Sets up `w`'s destructibles (setup, after the rewards, events, shrine, shop, timed door and rune puzzle).
-static func setup(w: World, rules: SecretRules) -> void:
+static func setup(w: World, rules: SecretRules, bk := false) -> void:
 	var f := w.floor_layout
 	if f == null:
 		return
@@ -84,12 +93,12 @@ static func setup(w: World, rules: SecretRules) -> void:
 		var got := Secrets.place_reward(w, f.crack_room, REWARD_STREAM)
 		b.crack_reward_id = got.x
 		b.crack_reward_epic = got.y
-	_place_props(w, b, rules)
+	_place_props(w, b, rules, bk)
 	if b.crack_max == 0 and b.pos.is_empty():
 		w.breakables = null
 
 
-static func _place_props(w: World, b: Breakables, rules: SecretRules) -> void:
+static func _place_props(w: World, b: Breakables, rules: SecretRules, bk: bool) -> void:
 	var f := w.floor_layout
 	var rng := RngStream.derive(f.seed_value, STREAM)
 	var loot := RngStream.derive(f.seed_value, DROP_STREAM)
@@ -122,7 +131,12 @@ static func _place_props(w: World, b: Breakables, rules: SecretRules) -> void:
 				)
 				if dr == Drop.SHARDS:
 					amount = loot.range_int(rules.container_shards_min, rules.container_shards_max)
+			if bk and not _far(spots[k], f.door_centers, DOOR_CLEAR_M):
+				b.dropped += 1  # v0.9.5 BK: dropped, never moved (every draw above is made as before)
+				continue
 			b.add(spots[k], kd, r, dr, amount)
+			if bk:
+				b.make_solid(w, b.pos.size() - 1)
 
 
 ## Room `r`'s free spots for props, drawn from rng (none closer than PROP_GAP_M to each other or to `taken`).
@@ -156,6 +170,12 @@ func add(at: Vector2, p_kind: int, p_room: int, p_drop: int, amount: int) -> voi
 	fuse_tick.append(-1)
 	drop.append(p_drop)
 	drop_amount.append(amount)
+
+
+## v0.9.5 BK: prop i stands as a solid footprint (Solids.Kind.BREAKABLE, ref i) until it breaks.
+func make_solid(w: World, i: int) -> void:
+	var h := CRATE_HALF_M if kind[i] == Kind.CRATE else ROUND_HALF_M
+	w.solids.add_square(Solids.Kind.BREAKABLE, i, pos[i], h)
 
 
 func has_crack() -> bool:
@@ -220,6 +240,7 @@ static func hit(w: World, i: int) -> void:
 		return
 	b.broken[i] = 1
 	b.break_tick[i] = w.tick
+	w.solids.remove(w, Solids.Kind.BREAKABLE, i)  # v0.9.5 BK
 	var me := w.actors.ids[0]
 	match b.drop[i]:
 		Drop.SHARDS:
@@ -303,6 +324,7 @@ static func advance(w: World) -> void:
 static func _blast(w: World, b: Breakables, i: int) -> void:
 	b.broken[i] = 1
 	b.break_tick[i] = w.tick
+	w.solids.remove(w, Solids.Kind.BREAKABLE, i)  # v0.9.5 BK
 	var at := b.pos[i]
 	var a := w.actors
 	var root := w.take_root()

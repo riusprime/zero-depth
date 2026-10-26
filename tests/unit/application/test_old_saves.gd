@@ -359,7 +359,7 @@ func test_a_floor_saved_before_ts_keeps_its_timed_door() -> void:
 		assert_eq(f.room_of(q), f.timed_host)
 	var now_run := SaveLab.run_state(2, 1)
 	assert_eq(now_run.floor_rules, RunState.FLOOR_RULES, "a new floor is on today's rules")
-	assert_eq(RunState.FLOOR_RULES, RunState.FLOOR_RULES_V095_TS)
+	assert_eq(RunState.FLOOR_RULES, RunState.FLOOR_RULES_V095_BK)
 	var now := SaveLab.build_floor(now_run)
 	assert_eq(now.timed.timer_ticks, 1200, "20 s")
 	assert_gte(now.timed.lever, 0, "and a lever")

@@ -9,7 +9,9 @@ extends RefCounted
 ## FLOOR_RULES_V090_CF2 (`on`): a floor saved before SB has none. Pure: no stream is drawn.
 
 ## Owners of an entry (with the owner's own ref).
-enum Kind { REWARD, EVENT, PYLON, RUNE_PILLAR, DAIS, MURAL, ASCENSION, LOOP_DEVICE, ARRIVAL }
+enum Kind {
+	REWARD, EVENT, PYLON, RUNE_PILLAR, DAIS, MURAL, ASCENSION, LOOP_DEVICE, ARRIVAL, BREAKABLE
+}
 
 ## Half the side of a 1.2 m prop (altars, chests, pedestals, pillars, the dais, the mural's plinth).
 const PROP_HALF_M := 0.6
