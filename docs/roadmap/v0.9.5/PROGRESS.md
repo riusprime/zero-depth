@@ -11,8 +11,8 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT and WB merged; SB built but not merged (two e2e reds, SB2 fixing).
-- **Agents working:** SB2 (SB's two e2e reds: solids block actors only) and SM (the Stress Mark rebuilt) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB and SM merged; SB built but not merged (two e2e reds, SB2 fixing).
+- **Agents working:** SB2 (SB's two e2e reds: solids block actors only) and EE1 (Venom and Bleed levels) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner (asleep, 2026-10-25 night):** the G2 HUD pick once HM's mockups are made; [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -35,6 +35,7 @@ riusprime/zero-depth#9).
 | FC0 | Rune Explosion replaces Scatter: a violet rune dome grows out of the hero to 3.5 m every 1.1 s, hitting each enemy once and shoving it; Twin adds a smaller second burst; its own sound ([evidence](evidence/FC0.md)) | `d6d1eedd`, merge `8a8542e8` |
 | HT | Gun heat fills with time spent firing (0 → 100 in 14 s, whatever the form or attack speed); it cools 1 s after you stop at 25/s; Vent needs 40 heat and has a 6 s cooldown shown on its plate; Overclock's +25 % now reaches Bomb, Void and Rune Explosion too ([evidence](evidence/HT.md)) | `98ea1ed0`, merge `d44d07b3`; lead `27b2dfe0` |
 | WB | Wisp shots deal 80 % of an orb (was 40 %) and pierce one enemy ([evidence](evidence/WB.md)) | `a1eddac6`, merge `98ba461d` |
+| SM | The Stress Mark rebuilt: enemies within 6 m show an orange arc on one side (a boss on all four); a hit from that side (within 45°) deals ×2 once, then that mark returns in 8 s on a new side; its own sound ([evidence](evidence/SM.md)) | `34ea4f86`, merge `c5be3248` |
 
 ## Goldens changed on purpose
 - `modifier_equivalence.json` `gun_all` (017199d8… → b813b3d2…) and `both_all` (7b49193f… → a5eb26d3…): HT, heat by
@@ -107,3 +108,7 @@ riusprime/zero-depth#9).
 - 2026-10-26 night — WB (agent) merged (`98ba461d`): test_wisps 13/13, shot rate + equivalence + e2e 7/7, content +
   arch 161/161, golden 2/2 (no digest). The Wisps row: ×1.30 → ×1.60 single, ×1.62 pack (N7). SM started. The
   scratch venv lost its python.exe; lint now runs from the `venv311` scratch venv (gdlint 4.5.0).
+- 2026-10-26 night — SM (agent) merged: stress/view/e2e/credits 21/21, content 157/157, golden 2/2, arch 4/4
+  ([evidence](evidence/SM.md); the Spanish card text shortened to fit the 60-character cap; no shot). Lead fixes
+  (`8fa8862e`): test_loot_rewards still levelled Big Shot (CLV) → Twin, 10/10; a long line in test_wisps (WB), 13/13.
+  Seams started on `8fa8862e` (a shim puts Godot with `--language en` and the venv311 lint on PATH). EE1 started.
