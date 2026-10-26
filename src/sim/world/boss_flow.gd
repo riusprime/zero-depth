@@ -309,7 +309,11 @@ func advance(w: World) -> void:
 			if ascension:  # v0.8.0 P2 (O28): the Ascension portal or the Loop device, no menu
 				if in_portal(f, p):
 					enter_ascension(w, Ascension.Choice.ASCENSION)
-				elif Ascension.on_loop_device(f, p):
+				elif (
+					Ascension.touching_loop_device(f, p, w.actors.radius[0])  # v0.9.5 SB: a solid device
+					if w.solids.on
+					else Ascension.on_loop_device(f, p)
+				):
 					enter_ascension(w, Ascension.Choice.LOOP)
 				return
 			if portal_form_progress(w.tick) < 1.0:  # v0.9.0 PT (C4): the gates are still forming

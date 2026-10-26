@@ -189,6 +189,8 @@ var approach: FinalApproach
 ## v0.9.0 IX (owner W34; Interactables): the shared interactables (the pylons, the timed doors' switches) and the
 ## puzzles' calm rooms; empty in most worlds (hashed only when it holds one).
 var interactables := Interactables.new()
+## v0.9.5 SB: the footprints of props that look solid (Solids); empty unless the floor's rules ask for them.
+var solids := Solids.new()
 ## v0.9.0 TD (owner W §2, Q20; TimedDoor): the floor's timed door and its secret room; null on a floor without one.
 var timed: TimedDoor
 ## v0.9.0 RA (owner W §4 A, Q22; RuneAlignment): the floor's rune puzzle and its hidden room; null without one.
@@ -666,6 +668,7 @@ func step(frame: InputFrame) -> void:
 		boss_flow.interact(self)
 	# v0.9.0 IX: the shared interactables' slot (the FA pylons): the nearest enabled one in reach takes the press
 	Interactables.interact(self)
+	Solids.step(self)  # v0.9.5 SB: a prop's footprint joins the walls once the hero is clear of it
 	# 3. AI (the flow field refreshes on fixed ticks).
 	var pp := phase_probe  # v0.8.0 HS: the perf probe's phase timer (null in play)
 	# v0.8.0 NF (owner O90): the flood starts on those ticks and is built over NavField.SLICES ticks, then swapped in.
@@ -1093,6 +1096,8 @@ func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
 func add_reward(kind: int, pos: Vector2, price: int) -> int:
 	var id := take_id()
 	rewards.add(id, pos, kind, price)
+	if kind != RewardStore.Kind.DROP:  # v0.9.5 SB: an altar or chest is solid (a drop is a card, not a prop)
+		solids.add_square(Solids.Kind.REWARD, id, pos)
 	emit_event(SimEvent.Kind.SPAWN, id, id, id, pos)
 	return id
 
@@ -1352,6 +1357,8 @@ func state_hash() -> String:
 		approach.hash_into(h)
 	if not interactables.is_empty():  # v0.9.0 IX: only worlds holding an interactable or a calm room
 		interactables.hash_into(h)
+	if not solids.is_empty():  # v0.9.5 SB: only floors holding a solid prop
+		solids.hash_into(h)
 	if timed != null:  # v0.9.0 TD: only floors with a timed door
 		timed.hash_into(h)
 	if runes != null:  # v0.9.0 RA: only floors with a rune puzzle

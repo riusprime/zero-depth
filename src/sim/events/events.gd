@@ -124,7 +124,7 @@ static func place(
 		return
 	var at := curse_spot(layout, curse_room, w.ev.rules)[0]
 	_furnish(w, layout, curse_room, at)
-	_add(w, at, curse_room, c)
+	_add(w, at, curse_room, c, false)
 
 
 ## v0.8.0 N19: the curse room becomes its own room (CurseRoom.furnish); the world's walls follow the layout's (the
@@ -145,9 +145,11 @@ static func _furnish(w: World, layout: FloorLayout, room: int, at: Vector2) -> v
 	w.spawn_points = spawns
 
 
-static func _add(w: World, at: Vector2, room: int, e: int) -> void:
+static func _add(w: World, at: Vector2, room: int, e: int, solid: bool = true) -> void:
 	var id := w.take_root()
 	w.ev.add(id, at, room, e)
+	if solid:  # v0.9.5 SB: a pedestal is solid (the furnished curse altar already is)
+		w.solids.add_square(Solids.Kind.EVENT, id, at)
 	w.emit_event(SimEvent.Kind.SPAWN, id, id, id, at)
 
 
@@ -385,7 +387,7 @@ static func nearest(w: World) -> int:
 	for k in w.ev.size():
 		if w.ev.state[k] != State.READY:
 			continue
-		var d := Kin.length(w.ev.pos(k) - p)
+		var d := Kin.length(w.ev.pos(k) - p) - Solids.reach_bonus(w, Solids.Kind.EVENT, w.ev.ids[k])
 		if d <= best_d and (best < 0 or d < best_d):
 			best = k
 			best_d = d

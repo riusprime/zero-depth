@@ -142,7 +142,7 @@ func test_two_gates_only_after_the_bosses_of_floors_one_to_four() -> void:
 			"floor %d: the Deep gate stands only before the last" % f
 		)
 		assert_eq(w.floor_layout.has_deep_portal, f < 5)
-		var before := w.walls.size()
+		var before := _walls(w)
 		assert_false(reader.gate_open(Routes.Route.DEEP), "sealed before the boss dies")
 		assert_false(reader.gate_open(Routes.Route.NORMAL))
 		_open_gates(w)
@@ -155,7 +155,7 @@ func test_two_gates_only_after_the_bosses_of_floors_one_to_four() -> void:
 		assert_eq(
 			opened[0].amount, 1 if f < 5 else 0, "the event says whether the Deep gate opened"
 		)
-		assert_eq(w.walls.size(), before, "no wall was left behind (v0.5.0 PB: the door reopened)")
+		assert_eq(_walls(w), before, "no wall was left behind (v0.5.0 PB: the door reopened)")
 	var plain := WorldReader.new(World.new(1, PlayerTable.starting_values()))
 	assert_false(plain.has_deep_portal(), "worlds without a run have no Deep gate")
 
@@ -443,3 +443,8 @@ func test_each_deep_floor_taken_adds_one_threat() -> void:
 	var two := _floor(_run_on(3, Routes.Route.DEEP))
 	assert_eq(Curses.threat(two), 2, "floors 2 and 3 Deep: threat 2")
 	assert_eq(WorldReader.new(two).threat_peak(), 2, "the run's peak shows it")
+
+
+## v0.9.5 SB: the walls that are not a solid prop's footprint (a prop joins the walls once the hero is clear of it).
+func _walls(w: World) -> int:
+	return w.walls.size() - w.solids.placed_count()

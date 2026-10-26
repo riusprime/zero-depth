@@ -280,7 +280,7 @@ func test_the_portal_keeps_half_the_shards_rounded_down() -> void:
 func test_entering_the_boss_room_seals_it_and_starts_the_boss() -> void:
 	var w := _floor_world(31)
 	var f := w.floor_layout
-	var walls_before := w.walls.size()
+	var walls_before := _walls(w)
 	CombatLab.idle(w, 5)
 	assert_eq(w.boss_flow.state, BossFlow.State.WAITING)
 	# Standing in the doorway does not seal it.
@@ -292,7 +292,7 @@ func test_entering_the_boss_room_seals_it_and_starts_the_boss() -> void:
 	w.actors.set_pos(0, f.boss_door_inside(1.5))
 	CombatLab.idle(w, 1)
 	assert_eq(w.boss_flow.state, BossFlow.State.FIGHT, "past the door line, the fight starts")
-	assert_eq(w.walls.size(), walls_before + 1, "the door's collider joined the walls")
+	assert_eq(_walls(w), walls_before + 1, "the door's collider joined the walls")
 	assert_eq(_events_of(w, SimEvent.Kind.BOSS_ROOM_SEALED), 1)
 	assert_true(w.boss_alive(), "the boss is up")
 	var bi := w.actors.index_of(w.boss_id)
@@ -476,3 +476,8 @@ func test_blink_never_leaves_or_enters_the_sealed_boss_room() -> void:
 	w.blink_cd = 0
 	_blink(w, _into(w))
 	assert_false(f.boss_cells_rect.has_point(w.player_pos()), "and none in from outside")
+
+
+## v0.9.5 SB: the walls that are not a solid prop's footprint (a prop joins the walls once the hero is clear of it).
+func _walls(w: World) -> int:
+	return w.walls.size() - w.solids.placed_count()

@@ -21,6 +21,10 @@ enum Choice { NONE, ASCENSION, LOOP }
 
 ## The Loop device takes the hero within this far (m) of its centre.
 const LOOP_RADIUS_M := 0.9
+## v0.9.5 SB: the Loop device's footprint (a 1 m square at its spot, facing as placed) is solid (FloorScenario registers
+## it in World.solids), so the hero cannot walk through it; a body within LOOP_TOUCH_M of its surface enters it.
+const LOOP_HALF_M := 0.5
+const LOOP_TOUCH_M := 0.15
 ## With no spot beside the portal: this far (m) from where the boss appears, toward the portal (the boss's legendary
 ## altar stands at boss_spawn). Not met in 60 probed runs (docs/roadmap/v0.8.0/evidence/VOID_AND_PORTALS.md).
 const FALLBACK_M := 3.0
@@ -29,7 +33,7 @@ const FALLBACK_M := 3.0
 ## Places the Loop device in f's boss room (setup, on a loop's last floor): in front of the first spot where a Deep gate
 ## would fit beside the gate (Routes.candidates and Routes.fits, without clearing any piece), at the centre of that
 ## spot's clear front square, facing out of its wall. If none fits, FALLBACK_M from where the boss appears, toward the
-## portal, facing as the gate. Nothing solid is added (the walls stay those of the floor the generator builds, so a
+## portal, facing as the gate. No wall is added here (the walls stay those of the floor the generator builds, so a
 ## saved floor's snapshot still fits it). Returns whether the boss room had a place.
 static func place_loop_device(f: FloorLayout, params: FloorParams = null) -> bool:
 	f.has_loop_device = false
@@ -47,6 +51,17 @@ static func place_loop_device(f: FloorLayout, params: FloorParams = null) -> boo
 	f.loop_pos = f.boss_spawn - Kin.dir(f.portal_angle) * FALLBACK_M  # clear of the boss's altar at boss_spawn
 	f.loop_angle = f.portal_angle
 	return true
+
+
+static func loop_footprint(f: FloorLayout) -> Obb:
+	return Obb.make(f.loop_pos, Vector2(LOOP_HALF_M, LOOP_HALF_M), f.loop_angle)
+
+
+## v0.9.5 SB: a body of radius `r` at p touches the solid Loop device (its face, or 0.15 m off it).
+static func touching_loop_device(f: FloorLayout, p: Vector2, r: float) -> bool:
+	if not f.has_loop_device:
+		return false
+	return Collide.circle_vs_obb(p, r + LOOP_TOUCH_M, loop_footprint(f)) != Vector2.ZERO
 
 
 ## p stands on the Loop device of f.

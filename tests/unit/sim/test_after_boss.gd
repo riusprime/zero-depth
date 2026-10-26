@@ -70,13 +70,13 @@ func _spawned(w: World, n: int) -> PackedInt32Array:
 func test_the_boss_dying_reopens_the_door_both_ways() -> void:
 	var w := _world(4101)
 	var f := w.floor_layout
-	var walls_open := w.walls.size()
+	var walls_open := _walls(w)
 	w.actors.set_pos(0, f.boss_door_inside(BossFlow.ENTRY_DEPTH_M + 1.2))
 	CombatLab.idle(w, 1)
-	assert_eq(w.walls.size(), walls_open + 1, "sealed: the door is a wall")
+	assert_eq(_walls(w), walls_open + 1, "sealed: the door is a wall")
 	assert_true(w.boss_flow.door_sealed())
 	_beat_boss(w)
-	assert_eq(w.walls.size(), walls_open, "v0.5.0 PB: the door's collider left the walls")
+	assert_eq(_walls(w), walls_open, "v0.5.0 PB: the door's collider left the walls")
 	assert_false(w.boss_flow.door_sealed(), "the door is open")
 	assert_true(w.boss_flow.boss_reached(), "the boss was reached")
 	var reader := WorldReader.new(w)
@@ -91,7 +91,7 @@ func test_the_boss_dying_reopens_the_door_both_ways() -> void:
 	assert_eq(f.room_of(w.player_pos()), f.boss_room, "and back in")
 	assert_eq(w.boss_flow.state, BossFlow.State.OPEN, "re-entering never seals it again")
 	assert_eq(_events_of(w, SimEvent.Kind.BOSS_ROOM_SEALED).size(), 1, "sealed once")
-	assert_eq(w.walls.size(), walls_open)
+	assert_eq(_walls(w), walls_open)
 
 
 func test_the_floor_one_heal_is_once() -> void:
@@ -229,7 +229,7 @@ func _round_trip(w: World, base: World, label: String) -> World:
 	if restored == null:
 		return null
 	assert_eq(restored.state_hash(), w.state_hash(), "%s: restored hash" % label)
-	assert_eq(restored.walls.size(), w.walls.size(), "%s: the same walls" % label)
+	assert_eq(_walls(restored), _walls(w), "%s: the same walls" % label)
 	assert_eq(restored.boss_flow.door_sealed(), w.boss_flow.door_sealed(), "%s: the door" % label)
 	assert_eq(
 		restored.boss_flow.portal_active(), w.boss_flow.portal_active(), "%s: portals" % label
@@ -240,17 +240,17 @@ func _round_trip(w: World, base: World, label: String) -> World:
 		w.step(SaveLab.frame(w, b1))
 		restored.step(SaveLab.frame(restored, b2))
 	assert_eq(restored.state_hash(), w.state_hash(), "%s: equal 600 ticks later" % label)
-	assert_eq(restored.walls.size(), w.walls.size(), "%s: walls 600 ticks later" % label)
+	assert_eq(_walls(restored), _walls(w), "%s: walls 600 ticks later" % label)
 	return restored
 
 
 func test_a_save_after_the_boss_restores_an_open_door_and_portals() -> void:
 	var w := _world(4107)
-	var walls_open := w.walls.size()
+	var walls_open := _walls(w)
 	_beat_boss(w)
 	var r := _round_trip(w, _world(4107), "in the boss room")
 	if r != null:
-		assert_eq(r.walls.size(), walls_open, "the door stays open")
+		assert_eq(_walls(r), walls_open, "the door stays open")
 	var w2 := _world(4108)
 	_beat_boss(w2)
 	w2.actors.set_pos(0, w2.floor_layout.boss_door_outside(2.5))
@@ -266,7 +266,7 @@ func test_a_save_after_the_boss_restores_an_open_door_and_portals() -> void:
 
 func test_a_save_in_the_fight_then_the_boss_dies_after_the_restore() -> void:
 	var w := _world(4109)
-	var walls_open := w.walls.size()
+	var walls_open := _walls(w)
 	var f := w.floor_layout
 	w.actors.set_pos(0, f.boss_door_inside(BossFlow.ENTRY_DEPTH_M + 1.2))
 	CombatLab.idle(w, 4)
@@ -281,8 +281,13 @@ func test_a_save_in_the_fight_then_the_boss_dies_after_the_restore() -> void:
 		x.actors.invuln[bi] = 0
 		Damage.hit(x, bi, 9999999, 0, 0, 1, 0, x.actors.pos(bi), x.actors.pos(bi))
 		CombatLab.idle(x, 2)
-		assert_eq(x.walls.size(), walls_open, "the door opened")
+		assert_eq(_walls(x), walls_open, "the door opened")
 		x.actors.set_pos(0, f.boss_door_outside(2.5))
 		x.vel = Vector2.ZERO
 		CombatLab.idle(x, 900)
 	assert_eq(r.state_hash(), w.state_hash(), "the restored fight opens the door the same way")
+
+
+## v0.9.5 SB: the walls that are not a solid prop's footprint (a prop joins the walls once the hero is clear of it).
+func _walls(w: World) -> int:
+	return w.walls.size() - w.solids.placed_count()

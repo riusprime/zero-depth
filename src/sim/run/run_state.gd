@@ -62,7 +62,7 @@ extends RefCounted
 ## right after the arenas and the Overrun room (FloorScenario.build, RunSaver.floor_tables' lockdown_first), before
 ## the shrine, the fountain, the events, the curse room and the secrets, which then take the rooms left. A floor
 ## saved under rules 1-16 is rebuilt in the old order, its Lockdowns last (FloorPlan.add_secrets).
-const FLOOR_RULES := 17
+const FLOOR_RULES := 18
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
@@ -79,6 +79,9 @@ const FLOOR_RULES_V090_LK := 13
 const FLOOR_RULES_V090_SH := 14
 const FLOOR_RULES_V090_EL := 15
 const FLOOR_RULES_V090_CF := 16
+const FLOOR_RULES_V090_CF2 := 17
+## v0.9.5 SB: the props that look solid are solid (Solids).
+const FLOOR_RULES_V095_SB := 18
 
 var run_seed := 0
 var table: RunTable
