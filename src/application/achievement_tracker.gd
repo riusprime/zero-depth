@@ -22,6 +22,7 @@ extends RefCounted
 ##   (won on a loop past the first), final:no_hit_phase (a body's whole segment, from its rise to its fall, without the
 ##   hero losing HP; a fight resumed from a save starts its body clean, the save being its start). The arena's win
 ##   doesn't count its floor cleared again (End the run already did).
+## - v0.9.5 SL: final:won_gun (the final boss beaten with the Gun: "Sword Unbound", which unlocks the Blade; SwordLock).
 ## Off (`enabled` false) in a run with the dev panel's balance tweaks (owner: tweaked runs don't count): nothing is
 ## recorded and nothing unlocks.
 
@@ -172,6 +173,8 @@ func _final(reader: WorldReader) -> void:
 		_final_hurt = false
 	if won and not _ended:
 		report(&"final:won")
+		if reader.wand().get("weapon", &"blade") == &"gun":  # v0.9.5 SL: Sword Unbound unlocks the Blade
+			report(&"final:won_gun")
 		if reader.loop() > 1:
 			report(&"final:won_looped")
 

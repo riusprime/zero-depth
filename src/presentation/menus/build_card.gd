@@ -37,11 +37,15 @@ var desc_key := &""
 var damage_permille := 1000
 ## v0.8.0 N1 (D39): the build's damage taken, per mille (1000 draws no line; the Blade's 750 reads "-25 %").
 var taken_permille := 1000
+## v0.9.5 SL: a padlocked build (the Blade until Sword Unbound) shows this condition line (a tr key) instead of its
+## damage lines, a padlock over its symbol, and can't be picked (BuildPicker). &"" is a build that can be picked.
+var locked_key := &""
 var delay := 0.0
 ## Sizes picked by the last draw (tests check the text fits).
 var name_size := 0
 var desc_size := 0
 var _t := 0.0
+var _deny := 0.0
 var _focus_glow := 0.0
 var _box := StoneBox.new()
 
@@ -86,7 +90,34 @@ func seek(t: float) -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	_focus_glow = move_toward(_focus_glow, 1.0 if has_focus() else 0.0, delta * 6.0)
+	_deny = move_toward(_deny, 0.0, delta * 4.0)
 	queue_redraw()
+
+
+## True while the build is padlocked.
+func is_locked() -> bool:
+	return locked_key != &""
+
+
+## A pick of a padlocked build: the padlock flashes red for a moment (the card does nothing else).
+func deny() -> void:
+	_deny = 1.0
+	queue_redraw()
+
+
+## The padlock drawn over the symbol's socket (centre `c`): a body, a shackle and a keyhole.
+func _draw_padlock(c: Vector2) -> void:
+	var tint := Color("#C9CED6").lerp(Color("#FF4A3D"), _deny)
+	var dark := Color(0.05, 0.05, 0.07, 0.9)
+	draw_circle(c, SOCKET_R * 0.86, Color(0, 0, 0, 0.62))
+	var body := Rect2(c + Vector2(-28, -2), Vector2(56, 44))
+	draw_arc(c + Vector2(0, -2), 19.0, PI, TAU, 24, tint, 8.0, true)
+	draw_line(c + Vector2(-19, -2), c + Vector2(-19, 8), tint, 8.0)
+	draw_line(c + Vector2(19, -2), c + Vector2(19, 8), tint, 8.0)
+	draw_rect(body, tint)
+	draw_rect(body, dark, false, 2.0)
+	draw_circle(c + Vector2(0, 16), 6.0, dark)
+	draw_rect(Rect2(c + Vector2(-2.5, 16), Vector2(5, 14)), dark)
 
 
 ## The text box on the card (px): where the name, the description and the damage line go.
@@ -162,6 +193,8 @@ func _draw() -> void:
 		Rect2(em.position + off - grow * 0.5, em.size + grow),
 		acc.lerp(Color.WHITE, 0.2)
 	)
+	if is_locked():
+		_draw_padlock(SOCKET_C + off)
 	var r := text_rect()
 	r.position += off
 	var name_text := tr(title_key)
@@ -194,6 +227,21 @@ func _draw() -> void:
 		DESC_LINES,
 		TEXT_DIM
 	)
+	if is_locked():  # v0.9.5 SL: the condition in place of the damage lines
+		var cond := tr(locked_key)
+		var cs := 17
+		var top := r.end.y - 3.0 * bold.get_height(cs) - 4.0
+		draw_multiline_string(
+			bold,
+			Vector2(r.position.x, top + bold.get_ascent(cs)),
+			cond,
+			HORIZONTAL_ALIGNMENT_CENTER,
+			r.size.x,
+			cs,
+			3,
+			Color("#FFD27A")
+		)
+		return
 	draw_string(
 		bold,
 		Vector2(r.position.x, r.end.y - regular.get_descent(DAMAGE_SIZE)),

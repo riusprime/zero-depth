@@ -68,6 +68,7 @@ func _toast_shows(e: E2e, toast: AchievementToast, id: StringName) -> bool:
 
 func test_an_achievement_unlocks_by_play_toasts_and_is_on_the_codex_page() -> void:
 	var e := E2e.new(self)
+	e.blade_locked = true  # v0.9.5 SL: a truly fresh profile (the Gun run below needs no Blade)
 	var main: Main = await e.boot()
 	assert_eq(main.achievements.unlocked_count(), 0, "a fresh profile")
 	await e.start_from_menu(&"gun")

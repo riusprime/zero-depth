@@ -1392,3 +1392,6 @@ PAIR_ARTERIAL_ARC,Arterial Arc,Arco Arterial
 PAIR_ARTERIAL_ARC_DESC,Chain jumps make enemies bleed.,Los saltos de cadena hacen sangrar.
 PAIR_SEPSIS,Sepsis,Sepsis
 PAIR_SEPSIS_DESC,3+ poison and 3+ bleed stacks: +20% damage taken.,3+ de veneno y de sangrado: recibe +20% de daño.
+ACH_SWORD_UNBOUND_NAME,Sword Unbound,Espada liberada
+ACH_SWORD_UNBOUND_DESC,Beat the Hollow Crown with the Gun.,Vence a la Corona Hueca con la Pistola.
+BUILD_BLADE_LOCKED,Beat the Hollow Crown with the Gun to unlock,Vence a la Corona Hueca con la Pistola para desbloquear

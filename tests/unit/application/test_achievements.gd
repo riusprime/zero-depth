@@ -183,7 +183,7 @@ func test_the_book_expands_one_per_boss_and_biome_from_the_data() -> void:
 	assert_true(book.has(&"biome_frozen_shore"))
 	assert_true(book.has(&"boss_warlord"))
 	assert_eq(book.size(), repo.count(&"achievements") - 2 + bosses + biomes)
-	assert_between(book.size(), 30, 45, "a starting set of about 30")
+	assert_between(book.size(), 30, 50, "a starting set of about 30")
 	assert_eq(book.groups()[0], &"run", "the page's groups in order")
 	assert_eq(book.groups()[book.groups().size() - 1], &"ascension")
 

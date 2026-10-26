@@ -32,7 +32,9 @@ var _t := 0.0
 var _backdrop := MenuBackdrop.new()  # v0.8.0 MU: from the main menu, so its own ember scene
 
 
-func _init(builds: Array, last_id: StringName) -> void:
+## `locked`: {build id: condition tr key} for the builds shown padlocked (v0.9.5 SL: the Blade); a pick of one does
+## nothing but flash its padlock. The Playground (a dev tool) passes none.
+func _init(builds: Array, last_id: StringName, locked: Dictionary = {}) -> void:
 	name = "BuildPicker"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	MenuStyle.apply(self)
@@ -75,7 +77,14 @@ func _init(builds: Array, last_id: StringName) -> void:
 		c.name = String(def.id).capitalize()
 		c.taken_permille = def.damage_taken_permille  # v0.8.0 N1 (D39)
 		var id := def.id
-		c.pressed.connect(func() -> void: picked.emit(id))
+		c.locked_key = StringName(locked.get(id, &""))
+		c.pressed.connect(
+			func() -> void:
+				if c.is_locked():
+					c.deny()
+				else:
+					picked.emit(id)
+		)
 		row.add_child(c)
 		cards.append(c)
 		_ids.append(id)
