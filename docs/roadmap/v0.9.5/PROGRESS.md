@@ -12,7 +12,7 @@ riusprime/zero-depth#9).
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
 - **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3, DR, FC1, TS, FC2, BK, FC3, HM, HU, FC4, FC5, FC6, FC7 (+FC7b), FC8, FC9 (+FC9b), PR, MC, SL, TX, RS1, RS2 and PF1 merged (Waves B, C and D done).
-- **Agents working:** MC2 (the cursor rebuilt from the owner's reference sheet) and PF3 (draw calls and view sync toward 144 fps) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Agents working:** PF5 (each enemy's pieces merged into one skinned mesh, kept only where the animation frames match) (Sonnet, worktree). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -64,6 +64,11 @@ riusprime/zero-depth#9).
 | RS2 | The Runic Stone's eggs r4–r10, granted on load when already met; the full stone's turning rune ring and the Runic robe ([evidence](evidence/RS2.md)) | `f2214b2c` |
 | R1 | The v0.9.5 patch notes (en, es; Performance line waits on PF) and PLAYTEST.md | `1f3236a9`, merge `a962219c` |
 | PF2 | The main thread's breakdown (`--breakdown`); the build HUD, idle fireball looks and statusless enemies stop redoing work every tick; the object climb is the sim's bounded event log filling, not a leak ([evidence](evidence/PF.md)) | `03ea97fd`, merge `975f6b79` |
+| MC2 | The owner's cursor, cut from their sheet: default, hover, click, disabled, aim, interact, invalid ([evidence](evidence/MC.md)) | `d7c47e60`, merge `f1e461df` |
+| MM | The main menu: the owner's picture, the owner's Zero Depth logo (as sent) over cracked-stone plates (the focused one lit blue); plates and logo 30 % smaller at the owner's word; finished by the lead ([evidence](evidence/MM.md)) | `34e9276d` |
+| PF3 | Idle views skip their loops (view sync ~10 % cheaper); the draw-call census: enemy rigs are most of the ~1000 draws ([evidence](evidence/PF.md)) | `bd102f0f` |
+| PF4 | Outlines off (owner approved the before/after), enemies cast only their biggest shadows (250 → 67 casters), two effect views at 30 Hz; draws ~1250 → ~835 ([evidence](evidence/PF.md)) | `e55b06d6`, merge `7abba8fb` |
+| TT | The game is named Zero Depth; on first launch the saves are copied from the old `{{TITLE}}` folder (never moved) ([evidence](evidence/TT.md)) | `8d241b04`, merge `174dda40` |
 | BH1 | Bosses can't be staggered; at each phase change a boss kneels 1 s (hittable) and its core can be stolen for 3 s; boss HP is set from your power when the door starts opening (caps ×2.5–4.5 by floor, ±8 % per fight); each completed loop (up to 3) makes the Hollow Crown's pace 12 % shorter and its hits 8 % softer; the run summary says "Looped ×N" ([evidence](evidence/BH1.md)) | `d669f646`, merge `f9197302` |
 | BH2 | A harder spell each: the Gatekeeper's shock lanes lock faster and fire a second, shifted set; the Warlord's javelins lead you, then a second fan; the Brood Mother's 3rd leap leads you and lands wider; the Hive Lens's beam turns after you; the Siege Engine's mortar grid leaves 2 safe cells that swap halfway (never on the edge). The loop ease is data now ([evidence](evidence/BH2.md)) | `eca6b78e`, merge `53cd71e1` |
 | BH3 | A harder spell each: the Foundry's furnace waves come as two walls at right angles; the Twin Wardens' crossfire lines track you for 1.2 s; the Clockwork Judge adds a counter-turning spiral from phase 2; the Lantern Shade's lanterns burn 4 s, its dark lasts 9 s and Snuff puts out two lanterns ([evidence](evidence/BH3.md)) | `7ff84613`, merge `d788b91f` |
@@ -89,6 +94,7 @@ riusprime/zero-depth#9).
 - (none)
 
 ## History
+- 2026-10-26: seams 582/582 green on `1717e42b`. The 576/577 run before it caught 171 orphan nodes left by RS2's test (a hub view, avatar and bubble freed before setup); lead fix `61bef7ea`.
 - 2026-10-26: seams 566/566 green on `2427d296` (TX, RS1, PF1).
 - 2026-10-26: seams 544/544 green on `28218c03` (FC7–FC9). Lead fix: HU had dropped the combo-badge line in `hud.gd` (test_status_visuals red, now 7/7).
 - 2026-10-26: seams 544/544 green on `b358d62b` (FC4–FC6 merged). The owner set PF's target: a steady 144 fps on their PC (PLAN PF).
