@@ -11,8 +11,8 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3 and BH4 merged.
-- **Agents working:** BH5 (the Hollow Crown, phases 1–2) and SW (a sweep of tests/unit/sim, presentation and e2e for this version's fallout) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4 and BH5 merged.
+- **Agents working:** BH6 (the Fallen's interphases) and SW (a sweep of tests/unit/sim, presentation and e2e for this version's fallout) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner (asleep, 2026-10-25 night):** the G2 HUD pick once HM's mockups are made; [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -44,6 +44,7 @@ riusprime/zero-depth#9).
 | BH2 | A harder spell each: the Gatekeeper's shock lanes lock faster and fire a second, shifted set; the Warlord's javelins lead you, then a second fan; the Brood Mother's 3rd leap leads you and lands wider; the Hive Lens's beam turns after you; the Siege Engine's mortar grid leaves 2 safe cells that swap halfway (never on the edge). The loop ease is data now ([evidence](evidence/BH2.md)) | `eca6b78e`, merge `53cd71e1` |
 | BH3 | A harder spell each: the Foundry's furnace waves come as two walls at right angles; the Twin Wardens' crossfire lines track you for 1.2 s; the Clockwork Judge adds a counter-turning spiral from phase 2; the Lantern Shade's lanterns burn 4 s, its dark lasts 9 s and Snuff puts out two lanterns ([evidence](evidence/BH3.md)) | `7ff84613`, merge `d788b91f` |
 | BH4 | The Tidecaller pulls and pushes harder (1.7 / 1.4 m/s, 2.0 / 1.7 in phase 3) every 8 s; a ring of bubbles leaves it every 2.2 / 1.9 / 1.6 s all fight; every 3.5 s a short wave (2, 3 or 4 m) forms at a wall, foams 0.7 s and rolls across the room (two at once from phase 2) ([evidence](evidence/BH4.md)) | `6cac6eb3`, merge `8ba5aebd` |
+| BH5 | The Hollow Crown: the Colossus's fist combo, leap slam (0.55 s telegraph, faster quake ring) and boulders are faster; the Prism's ball patterns have wider gaps (28 per ring with 3-wide gaps, 52-ball flower, 8-arm spiral: always ≥ 1.4 m to slip through mid-arena), its window after the lasers is 3.5 s and it can be hurt for 2 s after each ball pattern ([evidence](evidence/BH5.md)) | `15bf89e4`, merge `890334b4` |
 
 ## Goldens changed on purpose
 - `modifier_equivalence.json` `gun_all` (017199d8… → b813b3d2…) and `both_all` (7b49193f… → a5eb26d3…): HT, heat by
@@ -154,3 +155,7 @@ riusprime/zero-depth#9).
   6/6, e2e tidecaller and dodge labs green, test_boss_pace 6/6 (its Tidecaller lab is new) ([evidence](evidence/BH4.md)).
   The bot's damage a minute 54 → 116 (N9). Lead tried longer Undertow / Shell Slam cooldowns (+1.3 s: 91 a minute but
   The Pull slipped to every 12 s, test_tidecaller red; +0.6 s: 119): reverted, left to the owner's play. BH5 started.
+- 2026-10-26 — BH5 (agent) merged (`890334b4`): its unit files, test_hollow_crown_hard 7/7, e2e prism / final / approach,
+  content + golden + arch 163 (test_boss_pace's pin updated) ([evidence](evidence/BH5.md)). The leap slam's telegraph
+  sits on the 0.55 s floor; the ring turns 45° a wave so waves don't overlap; the Prism's HP rises with its open share,
+  so its fight time holds (−10 % to +15 %). BH6 started.
