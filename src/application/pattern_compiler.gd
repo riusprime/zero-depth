@@ -236,6 +236,11 @@ static func compile_pattern(def: BulletPatternDefinition) -> BulletPatternTable:
 	t.gap_offset_m = def.gap_offset_m
 	t.gap_shift_m = def.gap_shift_m
 	t.crossing = def.crossing
+	t.cross_delay_ticks = SimTick.seconds_to_ticks(def.cross_delay_seconds)  # v0.9.5 BH3 (B6)
+	t.counter_arms = def.counter_arms  # v0.9.5 BH3 (B9)
+	t.counter_spin_milli = int(
+		round(def.counter_spin_dps * 4096.0 / 360.0 * 1000.0 / SimTick.TICKS_PER_SECOND)
+	)
 	t.petals = def.petals
 	t.petal_min_permille = def.petal_min_permille
 	t.petal_cut_permille = def.petal_cut_permille

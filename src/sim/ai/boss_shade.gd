@@ -156,24 +156,27 @@ static func unlit(w: World, i: int) -> bool:
 	return not lit(w, w.actors.pos(i), w.actors.radius[i])
 
 
-## Tick phase 6, a Snuff circle at c struck (BossDodge.resolve_marks): the lit lantern nearest c goes out.
+## Tick phase 6, a Snuff circle at c struck (BossDodge.resolve_marks): the atk.snuff_count lit lanterns nearest c go
+## out (v0.9.5 BH3, B10: two; one before).
 static func snuff(w: World, atk: BossAttackTable, c: Vector2) -> void:
 	if not atk.snuff or not dark(w):
 		return
 	var bs := w.bosses
-	var best := -1
-	var best_d := INF
-	for k in bs.lamp_t.size():
-		if bs.lamp_t[k] <= 0:
-			continue
-		var d := Kin.length(Vector2(bs.lamp_x[k], bs.lamp_y[k]) - c)
-		if d < best_d:
-			best_d = d
-			best = k
-	if best >= 0:
-		var lt := bs.lamp_t
+	var lt := bs.lamp_t
+	for n in maxi(1, atk.snuff_count):
+		var best := -1
+		var best_d := INF
+		for k in lt.size():
+			if lt[k] <= 0:
+				continue
+			var d := Kin.length(Vector2(bs.lamp_x[k], bs.lamp_y[k]) - c)
+			if d < best_d:
+				best_d = d
+				best = k
+		if best < 0:
+			break
 		lt[best] = 0
-		bs.lamp_t = lt
+	bs.lamp_t = lt
 
 
 ## World._remove_dead (through BossSignatures.on_boss_gone): the room relights.

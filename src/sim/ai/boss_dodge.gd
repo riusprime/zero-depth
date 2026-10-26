@@ -72,14 +72,24 @@ static func resolve_pattern(w: World, i: int, b: int, atk: BossAttackTable, st: 
 		if AttackShapes.disc_touches(c, pat.land_radius_m, w.player_pos(), w.player.radius_m):
 			BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, c)
 	var k := BulletPatterns.wave_at(pat, st)
-	if k < 0:
+	var part := 0 if pat.cross_delay_ticks > 0 else -1  # v0.9.5 BH3 (B6): the crossing wall leaves later
+	var kc := BulletPatterns.cross_wave_at(pat, st)
+	if k < 0 and kc < 0:
 		return
-	BossHard.aim_fan(w, i, atk, k)  # v0.9.5 BH2 (B2): the first fan leads you, the next aims where you are
+	if k >= 0:
+		BossHard.aim_fan(w, i, atk, k)  # v0.9.5 BH2 (B2): the first fan leads you, the next aims where you are
 	var origin := w.bosses.pt(b, 0) if burst else w.actors.pos(i)
 	var r := 0.0 if burst else w.actors.radius[i] + pat.radius_m + BulletPatterns.MUZZLE_M
-	var n := BulletPatterns.fire(
-		w, i, pat, k, origin, w.actors.lock_a[i], r, BossAi.orb_damage(w, i, atk)
-	)
+	var dmg := BossAi.orb_damage(w, i, atk)
+	var n := 0
+	if kc >= 0:
+		n += BulletPatterns.fire(
+			w, i, pat, kc, origin, w.actors.lock_a[i], r, dmg, -2, Vector2i.ZERO, 1
+		)
+	if k >= 0:
+		n += BulletPatterns.fire(
+			w, i, pat, k, origin, w.actors.lock_a[i], r, dmg, -2, Vector2i.ZERO, part
+		)
 	BossRicochet.arm_pattern(w, atk, n)  # v0.8.0 BS2 (S5): the Turret Cross's embers bounce once
 
 

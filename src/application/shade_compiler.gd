@@ -8,7 +8,8 @@ extends RefCounted
 ## PatternCompiler.compile_boss_attack: a Lights Out's dark_ticks, a Snuff's flag.
 static func compile_attack(def: BossAttackDefinition, t: BossAttackTable) -> void:
 	var sp := def.shape_params
-	t.snuff = int(sp.get("snuff", 0)) == 1
+	t.snuff = int(sp.get("snuff", 0)) > 0
+	t.snuff_count = int(sp.get("snuff", 0))  # v0.9.5 BH3 (B10): 2 = the two nearest lanterns
 	if ShadeRules.is_lights_out(def):
 		t.dark_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("dark_seconds", 0.0))))
 

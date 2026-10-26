@@ -4,7 +4,7 @@ extends GutTest
 ## checkerboard struck in alternating colours, with a safe square each time); the Barrage (three circles in turn) and
 ## the Rail (a tracked lane), each tracked then locked; the Molten Flood's rows (tracked, locked, a gap between
 ## them); the Slag Fountain's rain (drops land in a flower, never on the player, and hurt only once landed); the
-## Furnace Waves' alternating rings with shifting gaps; their fireball looks; determinism.
+## Furnace Waves' crossing walls with shifting gaps; their fireball looks; determinism.
 
 const S := EnemyAi.State
 const LONG := 1 << 20
@@ -311,20 +311,15 @@ func test_a_drop_never_lands_on_the_player() -> void:
 	assert_false(hurt, "nothing hit on landing")
 
 
-func test_the_furnace_waves_alternate_and_their_gaps_shift() -> void:
+func test_the_furnace_waves_are_two_walls_and_their_gaps_shift() -> void:
+	# v0.9.5 BH3 (B6): the rings became two crossing walls (test_boss_hard_3.gd pins their numbers)
 	var w := BossLab.world()
 	var t := w.boss_tables[BossLab.table_index(w, &"foundry")]
 	var p := t.attacks[t.attack_index(&"furnace_waves")].pattern
-	var step := 4096 / p.count
-	var a0 := BulletPatterns.base_angle(p, 0, 0)
-	var a1 := BulletPatterns.base_angle(p, 1, 0)
-	var turn := (a1 - a0 + 4096) % 4096
-	assert_almost_eq(
-		turn % step, step / 2, 2, "each ring sits half a step off the last: they alternate"
-	)
-	assert_ne(turn, 0, "and the gaps shift")
-	var shots0: PackedVector2Array = BulletPatterns.wave_shots(p, 0, Vector2.ZERO, 0, 1.0)[1]
-	assert_eq(shots0.size(), p.count - p.gap_count * p.gap_width, "two gaps of three")
+	assert_eq(p.kind, BulletPatternTable.Kind.WALL, "walls")
+	assert_ne(BulletPatterns.wall_gap(p, 0), BulletPatterns.wall_gap(p, 1), "the gap shifts a wave")
+	var wall_a: PackedVector2Array = BulletPatterns.wave_shots(p, 0, Vector2.ZERO, 0, 1.0, 0)[1]
+	assert_gt(wall_a.size(), 20, "each wall is a line of shots with a gap")
 
 
 func test_both_fights_are_deterministic() -> void:

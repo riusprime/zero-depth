@@ -31,6 +31,13 @@ static func wave_at(p: BulletPatternTable, st: int) -> int:
 	return k if k < p.waves else -1
 
 
+## v0.9.5 BH3 (B6): the wave whose crossing wall leaves on tick st (cross_delay_ticks after its first wall), or -1.
+static func cross_wave_at(p: BulletPatternTable, st: int) -> int:
+	if p.kind != K.WALL or not p.crossing or p.cross_delay_ticks <= 0:
+		return -1
+	return wave_at(p, st - p.cross_delay_ticks)
+
+
 ## The base angle of wave k: the aim, the offset, and the turn per wave (every other wave with `alternate`).
 static func base_angle(p: BulletPatternTable, k: int, aim: int) -> int:
 	var steps := (k % 2) if p.alternate else k
@@ -39,8 +46,9 @@ static func base_angle(p: BulletPatternTable, k: int, aim: int) -> int:
 
 ## Wave k's shots: [spawn points, velocities (metres per tick)], from `origin` (a body's centre, `origin_r` out; a
 ## burst's landing point with origin_r 0) toward `aim` (1/4096 turns). Pure: the shapes drawn and fired are these.
+## v0.9.5 BH3 (B6): `part` picks one wall of a crossing WALL (0 the first, 1 the crossing one; -1 both).
 static func wave_shots(
-	p: BulletPatternTable, k: int, origin: Vector2, aim: int, origin_r: float
+	p: BulletPatternTable, k: int, origin: Vector2, aim: int, origin_r: float, part := -1
 ) -> Array[PackedVector2Array]:
 	var pos := PackedVector2Array()
 	var vel := PackedVector2Array()
@@ -60,9 +68,15 @@ static func wave_shots(
 			var turn := spin_at(p, k * p.wave_gap_ticks)
 			for arm in p.arms:
 				_radial(pos, vel, origin, origin_r, base + turn + arm * 4096 / p.arms, p.speed)
+			if p.kind == K.SPIRAL and p.counter_arms > 0:  # v0.9.5 BH3 (B9): a spiral the other way
+				var back := p.counter_spin_milli * (k * p.wave_gap_ticks) / 1000
+				for arm in p.counter_arms:
+					var ang := base + back + arm * 4096 / p.counter_arms
+					_radial(pos, vel, origin, origin_r, ang, p.speed)
 		K.WALL:
-			_wall(pos, vel, p, k, origin, base, origin_r)
-			if p.crossing:
+			if part != 1:
+				_wall(pos, vel, p, k, origin, base, origin_r)
+			if p.crossing and part != 0:
 				_wall(pos, vel, p, k + 1, origin, base + 1024, origin_r)
 		K.FLOWER:
 			for j in p.count:
@@ -101,9 +115,10 @@ static func fire(
 	origin_r: float,
 	damage: int,
 	cause: int = -2,
-	gap := Vector2i.ZERO
+	gap := Vector2i.ZERO,
+	part := -1
 ) -> int:
-	var shots := wave_shots(p, k, origin, aim, origin_r)
+	var shots := wave_shots(p, k, origin, aim, origin_r, part)
 	var pos: PackedVector2Array = shots[0]
 	var vel: PackedVector2Array = shots[1]
 	var safe := p.safe_radius_m + w.player.radius_m
