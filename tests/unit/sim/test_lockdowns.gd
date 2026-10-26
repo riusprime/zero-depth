@@ -250,6 +250,7 @@ func test_a_hazard_lockdown_warns_on_the_ground_then_hurts() -> void:
 	# Only the strikes here: no formation spawns (no spawner) and the room stays sealed while they come.
 	w.spawner = null
 	w.lockdown.table.waves = 20
+	w.lockdown.table.burst_waves = 30  # v0.9.5 DR
 	var r := LockLab.room(w)
 	LockLab.enter(w, r)
 	var s := w.lockdown
@@ -312,7 +313,7 @@ func test_a_floor_saved_before_lk_has_none() -> void:
 		var old := SaveLab.build_floor(r)
 		assert_null(old.lockdown, "seed %d: none under floor rules 12" % s)
 		assert_true(old.floor_layout.lockdown_rooms.is_empty())
-		if SaveLab.floor_world(s, 2).lockdown != null:
+		if not SaveLab.floor_world(s, 2).floor_layout.lockdown_rooms.is_empty():
 			with += 1
 	assert_gt(with, 0, "today's floors have them")
 

@@ -20,7 +20,7 @@ func _click(e: E2e, main: Main, button: String) -> void:
 
 func _seed() -> int:
 	for s in range(1, 40):
-		if SaveLab.floor_world(s, FLOOR).lockdown != null:
+		if not SaveLab.floor_world(s, FLOOR).floor_layout.lockdown_rooms.is_empty():
 			return s
 	return -1
 

@@ -65,7 +65,11 @@ extends RefCounted
 ## v0.9.5 AQ (owner: event altars "more special like the curse room"): 19 is today's: an event room on about a third
 ## of floors, at most two a run, never the same event twice (Events.pick_rooms; World.events_seen). A floor saved under
 ## rules 1-18 is rebuilt with its 1-2 event rooms (FloorScenario.rare_events_of).
-const FLOOR_RULES := 19
+## v0.9.5 DR (owner Q6: "we will only have locked rooms ... and overrun"): 20 is today's: a locked room (a Lockdown)
+## fights one burst of two formations 1 s apart and the floor's arena rooms are locked rooms; every sealed door drops
+## bars. A floor saved under rules 1-19 keeps its three-formation Lockdowns and its wave Arenas
+## (RunSaver.lockdown_table).
+const FLOOR_RULES := 20
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
@@ -86,6 +90,7 @@ const FLOOR_RULES_V090_CF2 := 17
 ## v0.9.5 SB: the props that look solid are solid (Solids).
 const FLOOR_RULES_V095_SB := 18
 const FLOOR_RULES_V095_AQ := 19
+const FLOOR_RULES_V095_DR := 20
 
 var run_seed := 0
 var table: RunTable

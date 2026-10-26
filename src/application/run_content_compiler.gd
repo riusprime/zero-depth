@@ -32,6 +32,8 @@ static func compile_lockdown(def: LockdownDefinition) -> LockdownTable:
 	t.kind_floor_min = def.kind_floor_min.duplicate()
 	t.waves = def.waves
 	t.wave_sizes = def.wave_sizes.duplicate()
+	t.burst_waves = def.burst_waves  # v0.9.5 DR
+	t.burst_gap_ticks = maxi(1, SimTick.seconds_to_ticks(def.burst_gap_seconds))
 	t.first_wave_ticks = SimTick.seconds_to_ticks(def.first_wave_seconds)
 	t.wave_gap_ticks = SimTick.seconds_to_ticks(def.wave_gap_seconds)
 	t.stuck_ticks = maxi(1, SimTick.seconds_to_ticks(def.stuck_seconds))
