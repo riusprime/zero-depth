@@ -2,7 +2,7 @@
 
 Owner (2026-10-26): "make the main menu look closer to this" (`docs/art/reference/v0.9.5_main_menu.webp`), then
 "Forget about the ingame render, use the image I sent this will be the logo for the game"
-(`docs/art/reference/v0.9.5_logo.webp`). A first live-3D scene was built and then dropped on that change; none of it is
+(`docs/art/reference/v0.9.5_logo.png`). A first live-3D scene was built and then dropped on that change; none of it is
 in the commit.
 
 ## What was built
