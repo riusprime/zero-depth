@@ -34,6 +34,11 @@ var _levels: Array[Label] = []
 ## v0.6.5 WN2: the cut after each pip (shown after a trigger card's).
 var _cuts: Array[ColorRect] = []
 var _filled := 0
+## PF2: what the pips were last written from, so a tick that changed nothing writes nothing (each write redraws a stone
+## box and re-lays the row), and where the plate was last put.
+var _sig: Array = []
+var _placed_at := Vector2(-1.0, -1.0)
+var _dirty := true
 
 
 func _init() -> void:
@@ -86,11 +91,19 @@ func _init() -> void:
 
 
 func sync(reader: WorldReader) -> void:
-	var weapon := reader.weapon_id()
-	var abilities := reader.abilities()
-	visible = weapon != &"" or not abilities.is_empty()
+	visible = reader.has_abilities()  # the weapon is one of them
 	if not visible:
 		return
+	var sig := [reader.pips_key(), TranslationServer.get_locale()]
+	if sig == _sig:
+		_place()
+		return
+	_sig = sig
+	_dirty = true
+	var weapon := reader.weapon_id()
+	var abilities := reader.abilities()
+	var b := reader.build()
+	var cuts: PackedInt32Array = reader.wand()["cuts"]  # v0.6.5 WN2: the trigger cards' slots
 	var names := {}
 	for a: Dictionary in abilities:
 		names[a["id"]] = a["name_key"]
@@ -98,11 +111,9 @@ func sync(reader: WorldReader) -> void:
 	var util := reader.utility_id()
 	_utility.text = "· %s" % tr(names[util]) if util != &"" and names.has(util) else ""
 	_utility.visible = _utility.text != ""
-	var b := reader.build()
 	var slots: Array = b["slots"]
 	_filled = mini(slots.size(), _pips.size())
 	var shown := maxi(int(b["max"]), slots.size())  # v0.6.5 WN1: the wand's slots now (4 → 6 → 8)
-	var cuts: PackedInt32Array = reader.wand()["cuts"]  # v0.6.5 WN2: the trigger cards' slots
 	for k in _pips.size():
 		_pips[k].visible = k < shown
 		var box := _boxes[k]
@@ -131,6 +142,10 @@ func _place() -> void:
 	var origin := Vector2(28, get_viewport_rect().size.y - 330)
 	if anchor != null and anchor.is_inside_tree():
 		origin = anchor.get_global_rect().position - Vector2(0, LIFT + PIP)
+	if origin == _placed_at and not _dirty:
+		return
+	_placed_at = origin
+	_dirty = false
 	_plate.size = _plate.get_combined_minimum_size()
 	_plate.global_position = origin - Vector2(0, (_plate.size.y - PIP) * 0.5)
 

@@ -557,6 +557,7 @@ func _sync_view(id: StringName, view: Object) -> void:
 
 
 func sync() -> void:
+	var t_all := PerfMarks.start()
 	cull.refresh(rig.camera)  # v0.8.0 HV
 	_sync_view(&"telegraphs", telegraphs)
 	_sync_view(&"challenge", challenge)
@@ -672,6 +673,7 @@ func sync() -> void:
 		deep_gate.set_sealed(not deep_open)
 	if deep_gate != null and deep_open:
 		deep_gate.set_growth(reader.portal_form_progress(WorldReader.ROUTE_DEEP))
+	var t_occ := PerfMarks.start()
 	rig.target = SimPlane.to_3d(reader.player_pos())
 	if occlusion_enabled:
 		var focus: Array[Vector2] = []
@@ -696,6 +698,8 @@ func sync() -> void:
 		)
 	else:
 		stage.apply_occlusion(PackedInt32Array())
+	PerfMarks.add(&"sync.occlusion", t_occ)
+	PerfMarks.add(&"sync_all", t_all)
 
 
 ## Draws a real flame on each fire prop into the effects layer (inside its frame): the props' own lights stay in

@@ -161,6 +161,8 @@ func _statuses(reader: WorldReader, i: int, out: Dictionary) -> Dictionary:
 		if reader.guard_charges() > 0:
 			out[&"guard"] = reader.guard_charges()
 		return out
+	if not reader.any_status(i):
+		return out
 	if reader.burn_stacks(i) > 0:
 		out[&"burn"] = reader.burn_stacks(i)
 		if _plus_fire:
