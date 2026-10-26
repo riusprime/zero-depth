@@ -78,6 +78,8 @@ func _init(builds: Array, last_id: StringName, locked: Dictionary = {}) -> void:
 		c.taken_permille = def.damage_taken_permille  # v0.8.0 N1 (D39)
 		var id := def.id
 		c.locked_key = StringName(locked.get(id, &""))
+		if c.is_locked():
+			c.set_meta(GameCursor.META_INVALID, true)  # v0.9.5 MC2: the cursor shows INVALID over it
 		c.pressed.connect(
 			func() -> void:
 				if c.is_locked():
