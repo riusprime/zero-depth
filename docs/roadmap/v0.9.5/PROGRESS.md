@@ -11,8 +11,8 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB and SM merged; SB built but not merged (two e2e reds, SB2 fixing).
-- **Agents working:** SB2 (SB's two e2e reds: solids block actors only) and EE1 (Venom and Bleed levels) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2) and EE1 merged.
+- **Agents working:** AQ (rarer event altars) (Sonnet, worktree). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner (asleep, 2026-10-25 night):** the G2 HUD pick once HM's mockups are made; [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -36,6 +36,8 @@ riusprime/zero-depth#9).
 | HT | Gun heat fills with time spent firing (0 → 100 in 14 s, whatever the form or attack speed); it cools 1 s after you stop at 25/s; Vent needs 40 heat and has a 6 s cooldown shown on its plate; Overclock's +25 % now reaches Bomb, Void and Rune Explosion too ([evidence](evidence/HT.md)) | `98ea1ed0`, merge `d44d07b3`; lead `27b2dfe0` |
 | WB | Wisp shots deal 80 % of an orb (was 40 %) and pierce one enemy ([evidence](evidence/WB.md)) | `a1eddac6`, merge `98ba461d` |
 | SM | The Stress Mark rebuilt: enemies within 6 m show an orange arc on one side (a boss on all four); a hit from that side (within 45°) deals ×2 once, then that mark returns in 8 s on a new side; its own sound ([evidence](evidence/SM.md)) | `34ea4f86`, merge `c5be3248` |
+| SB | Props that look solid are solid: reward altars, chests, event pedestals, rune pillars, the purple-rune dais (1.2 m), the final approach's pylons and the Loop device (1 m) push you and enemies out, while shots, beams and blasts pass over them; interact reach is measured to their surface; the Gatekeeper, Siege Engine, Lantern Shade, Prism and Colossus bodies widened to fit their models. The arrival portal collapses before you can move (no body needed) ([evidence](evidence/SB.md)) | `bde42655` + SB2 `a57e84c4`, merge `fcaaa355` |
+| EE1 | Venom: Lv 2 spreads to the nearest unpoisoned enemy every 1.5 s, Lv 3 stacks to 5 (+25 % a stack); Bleed: Lv 2 hurts 50 % more while the enemy moves, Lv 3 stacks to 5 and bursts for the rest at 5 ([evidence](evidence/EE1.md)) | `0767d9f2`, merge `61cbbab0` |
 
 ## Goldens changed on purpose
 - `modifier_equivalence.json` `gun_all` (017199d8… → b813b3d2…) and `both_all` (7b49193f… → a5eb26d3…): HT, heat by
@@ -112,3 +114,12 @@ riusprime/zero-depth#9).
   ([evidence](evidence/SM.md); the Spanish card text shortened to fit the 60-character cap; no shot). Lead fixes
   (`8fa8862e`): test_loot_rewards still levelled Big Shot (CLV) → Twin, 10/10; a long line in test_wisps (WB), 13/13.
   Seams started on `8fa8862e` (a shim puts Godot with `--language en` and the venv311 lint on PATH). EE1 started.
+- 2026-10-26 night — Seams on `8fa8862e`: 528/536 (1557 s, owner's PC, `--language en`). Reds and fixes (lead,
+  `a8f63b58`): HT's `fill_rem` / `vent_cd` missing from older saves (snapshot table; test_ascension_saves 4/4,
+  test_old_saves 9/9, test_e2e_old_save 1/1); CLV showed "Lv 1/1" on cards that don't level (wand_row; e2e attack_order
+  1/1, test_attack_slot_views 4/4); tests following CLV and FC0 (test_playground 22/22, test_mx4_modifiers 16/16,
+  test_modifier_smoke's count 105). test_final_pace stays red (the owner's accepted one; F7). SB2 (agent) fixed SB's
+  two e2e reds by keeping solids out of World.walls (they push actors, never stop shots); its own e2e folder 193/197
+  with the 4 reds all from other steps (fixed above). One unexplained 40-damage hero hit beside the glaive in
+  test_e2e_glaive_seekers (it counts disc hits only now). SB + SB2 and EE1 merged (EE1: 11/11 new, content 157/157,
+  golden 2/2, arch 4/4; [evidence](evidence/EE1.md)). Seams re-run on the merged head.
