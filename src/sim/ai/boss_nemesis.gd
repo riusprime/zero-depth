@@ -39,6 +39,9 @@ const MUZZLE_M := 0.05
 const ARRIVE_M := 0.3
 ## BossStore point of a card cast's blast (tracked, then locked).
 const BLAST_PT := 0
+## v0.9.5 BH6: the draws a dash's spot gets, and how far the line stays from the hero's edge (m).
+const RD_TRIES := 12
+const RD_HERO_M := 1.0
 
 
 ## Actor i is a mimic body in a fight (BossTable.mimic).
@@ -104,8 +107,10 @@ static func think(w: World, i: int, t: BossTable) -> void:
 	var free := a.state[i] == S.MOVE or a.state[i] == S.RECOVER
 	if f.dash_due >= 0 and w.tick >= f.dash_due:
 		f.dash_due = -1
-		if free and f.dash_t == 0 and not w.player_dead() and FinalPace.copies(w):  # N2: in a window
-			_dash(w, i)
+		if free and f.dash_t == 0 and f.rd_t == 0 and not w.player_dead() and FinalPace.copies(w):
+			_dash(w, i)  # N2: in a window
+	if t.interphase != null:
+		_reposition(w, i, t)  # v0.9.5 BH6 (HC6): the dash to a new spot between two moves
 	if a.state[i] == S.MOVE and f.dash_t == 0:
 		f.stance_t -= 1
 		if f.stance_t <= 0:
@@ -114,7 +119,71 @@ static func think(w: World, i: int, t: BossTable) -> void:
 
 ## True while body i dashes (it picks no attack meanwhile).
 static func dashing(w: World, i: int) -> bool:
-	return is_mimic(w, i) and w.final_fight.dash_t > 0
+	return is_mimic(w, i) and (w.final_fight.dash_t > 0 or w.final_fight.rd_t > 0)
+
+
+## v0.9.5 BH6 (HC6; owner: "the fight should be more dynamic"): between every two moves it dashes to a new spot. After a
+## move (after_attack) one is due; once it is free (moving) it picks its spot (RD_TRIES draws from the ai stream: 6-9 m
+## away, a clear run, the end at least dash_wall_m from every wall, the line never through the hero), shows the line for
+## dash_telegraph_ticks (0.4 s) standing still, then dashes along it in dash_ticks (the Nemesis's dash movement).
+static func _reposition(w: World, i: int, t: BossTable) -> void:
+	var f := w.final_fight
+	var ip := t.interphase
+	var a := w.actors
+	if f.rd_t > 0:
+		f.rd_t -= 1
+		if f.rd_t == 0:  # the telegraph is over: the dash
+			var v := (f.rd_to - a.pos(i)) / float(ip.dash_ticks)
+			f.dash_t = ip.dash_ticks
+			f.dash_vel = v
+		return
+	if f.rd_pending == 0 or a.state[i] != S.MOVE or f.dash_t > 0 or w.player_dead():
+		return
+	f.rd_pending = 0
+	var to := reposition_spot(w, i, ip)
+	if to.x < 1.0e8:
+		f.rd_to = to
+		f.rd_t = maxi(1, ip.dash_telegraph_ticks)
+
+
+## Where the next dash goes: drawn from the ai stream, or (1e9, 1e9) when no draw fits.
+static func reposition_spot(w: World, i: int, ip: InterphaseTable) -> Vector2:
+	var a := w.actors
+	var at := a.pos(i)
+	var r: float = a.radius[i]
+	var hero := w.player_pos()
+	for _try in RD_TRIES:
+		var ang := w.rng_ai.range_int(0, 4095)
+		var len := (
+			ip.dash_min_m + (ip.dash_max_m - ip.dash_min_m) * w.rng_ai.range_int(0, 1000) / 1000.0
+		)
+		if EnemyAi.clear_run(w, at, ang, len, r) < len - 0.01:
+			continue
+		var end := at + Kin.dir(ang) * len
+		if not _walls_clear(w, end, r, ip.dash_wall_m):
+			continue
+		if segment_distance(hero, at, end) < r + w.player.radius_m + RD_HERO_M:
+			continue
+		return end
+	return Vector2(1.0e9, 1.0e9)
+
+
+## True when no wall lies within `m` of `at` (eight ways, a body of radius r).
+static func _walls_clear(w: World, at: Vector2, r: float, m: float) -> bool:
+	for k in 8:
+		if EnemyAi.clear_run(w, at, k * 512, m, r) < m - 0.01:
+			return false
+	return true
+
+
+## The distance from point p to the segment a-b.
+static func segment_distance(p: Vector2, a: Vector2, b: Vector2) -> float:
+	var ab := b - a
+	var l2 := ab.x * ab.x + ab.y * ab.y
+	if l2 < 0.000001:
+		return Kin.length(p - a)
+	var u := clampf(((p.x - a.x) * ab.x + (p.y - a.y) * ab.y) / l2, 0.0, 1.0)
+	return Kin.length(p - (a + ab * u))
 
 
 static func _dash(w: World, i: int) -> void:
@@ -148,6 +217,8 @@ static func _next_stance(w: World, t: BossTable) -> void:
 
 ## BossAi.think, as body i's attack ends (back to moving): after a combo it backs off.
 static func after_attack(w: World, i: int, atk: BossAttackTable) -> void:
+	if is_mimic(w, i) and BossAi.table_of(w, i).interphase != null:
+		w.final_fight.rd_pending = 1  # v0.9.5 BH6 (HC6): a dash to a new spot before the next move
 	if atk.move == M.MIMIC_COMBO and is_mimic(w, i):
 		w.final_fight.stance = BossTable.STANCE_BACK
 		w.final_fight.stance_t = maxi(1, BossAi.table_of(w, i).stance_ticks)
@@ -198,6 +269,8 @@ static func moves(w: World, i: int, slow: float) -> bool:
 	if s == S.SPAWN or s == BossAi.GATE or s == FinalBoss.SHATTER or s == BossAi.STAGGERED:
 		f.dash_t = 0
 		return true
+	if s == BossInterphase.STATE:
+		return true  # v0.9.5 BH6: vanished
 	if f.dash_t > 0:
 		f.dash_t -= 1
 		var v := f.dash_vel
@@ -206,6 +279,8 @@ static func moves(w: World, i: int, slow: float) -> bool:
 			var run := EnemyAi.clear_run(w, a.pos(i), Kin.angle_of(v), len, a.radius[i])
 			a.set_pos(i, a.pos(i) + v * (clampf(run, 0.0, len) / len))
 		return true
+	if f.rd_t > 0:
+		return true  # v0.9.5 BH6: it stands still while its dash line shows
 	match s:
 		S.MOVE:
 			_walk(w, i, stance_point(w, i), slow)
@@ -620,6 +695,17 @@ static func state(w: World, i: int) -> Dictionary:
 		"stance": f.stance,
 		"dashing": f.dash_t > 0,
 		"dash_dir": f.dash_vel,
+		"reposition":
+		(
+			{
+				"from": w.actors.pos(i),
+				"to": f.rd_to,
+				"progress":
+				clampi(1000 - f.rd_t * 1000 / maxi(1, t.interphase.dash_telegraph_ticks), 0, 1000),
+			}
+			if f.rd_t > 0 and t.interphase != null
+			else {}
+		),
 		"echo": f.echo_at(t.echo_ticks, w.player_pos()),
 		"mirror": f.home * 2.0 - w.player_pos(),
 		"hit": f.hit,

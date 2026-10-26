@@ -7,7 +7,16 @@ extends GutTest
 ## The attacks with no hit class of their own: the meltdown's burning ground (a hazard). v0.8.0 N2 (owner O27, D36
 ## superseded): The Fallen's attacks are classed too (its own hits outside its mimic windows).
 ## v0.9.5 BH4: the Tidecaller's crossing wave is one too (a hazard the owner set at 15 damage, seven hits: chip damage).
-const UNCLASSED := [&"meltdown", &"crossing_wave"]
+## v0.9.5 BH6: so are the Fallen's five interphase carriers (owner-set 15 damage hits: chip damage, no class).
+const UNCLASSED := [
+	&"meltdown",
+	&"crossing_wave",
+	&"fallen_rays",
+	&"fallen_rain",
+	&"fallen_dark",
+	&"fallen_erupt",
+	&"fallen_return",
+]
 ## Per boss, the slow readable attacks BP left as they were: [id, telegraph seconds].
 const KEPT_SLOW := {
 	&"gatekeeper": [[&"rock_rings", 0.8], [&"shock_lanes", 1.35]],  # v0.9.5 BH2 (B1): it locks 0.55 s now

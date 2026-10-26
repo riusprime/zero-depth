@@ -335,3 +335,57 @@ func test_beating_the_nemesis_on_a_later_loop_is_the_true_ending() -> void:
 	)
 	assert_true(main.achievements.is_unlocked(&"final_looped"), "Beyond the Loop")
 	assert_eq(get_errors().size(), 0, "no engine or script error")
+
+
+## v0.9.5 BH6 (HC4, HC5): the Fallen vanishes at 66 % of its HP for an interphase and comes back. TEST HELPER: the
+## body's HP is set to 65 % (a real fight to that point is minutes long); everything else is the game: God mode, the
+## Playground's Phase 3, real frames. Vanished it is hidden and untouchable, a set is drawn, and after the return ring
+## it slams back down in the centre with its HP as it left.
+func test_the_fallen_vanishes_for_an_interphase_and_slams_back() -> void:
+	_e = E2e.new(self)
+	var main := await _e.boot()
+	_scale = await _e._mouse_scale()
+	await _playground_phase_3(main, &"blade")
+	var reader := main.driver.reader
+	var w := _e.world()
+	var i := await _risen(main)
+	assert_true(reader.final_interphase().is_empty(), "no interphase at full HP")
+	w.actors.hp[i] = w.actors.max_hp[i] * 650 / 1000  # TEST HELPER (see above)
+	var hp := w.actors.hp[i]
+	var gone := false
+	for k in 200:
+		await _e.frames(1)
+		if not reader.final_interphase().is_empty():
+			gone = true
+			break
+	assert_true(gone, "it vanishes")
+	i = reader.boss_index()
+	assert_true(reader.boss_hidden(i), "not drawn")
+	assert_true(reader.boss_invulnerable(i), "and untouchable")
+	var drawn := false
+	for k in 150:
+		await _e.frames(1)
+		var v := main.view.interphase
+		drawn = (
+			drawn
+			or v.bursts_alive() > 0
+			or v.beams_drawn() > 0
+			or v.discs_drawn() > 0
+			or v.lines_drawn() > 0
+		)
+		drawn = drawn or v.points_drawn() > 0
+	assert_true(drawn, "the interphase is drawn")
+	assert_eq(w.actors.hp[i], hp, "its HP is frozen")
+	var back := false
+	for k in 1100:
+		await _e.frames(1)
+		if reader.final_interphase().is_empty():
+			back = true
+			break
+	assert_true(back, "after 15 s and the return ring it is back")
+	await _e.frames(2)
+	i = reader.boss_index()
+	assert_false(reader.boss_hidden(i), "drawn again")
+	assert_eq(w.actors.hp[i], hp, "with the HP it left with")
+	assert_lt(w.actors.pos(i).distance_to(reader.final_home()), 1.0, "in the centre")
+	assert_false(w.player_dead(), "the hero stands (God mode)")

@@ -64,7 +64,8 @@ static func arena(b: Array, seed_value: int = 21) -> World:
 	return w
 
 
-## Fights the final boss with build `b`; returns [won, [seconds of each body], [[max HP, measured dps] of each], bot].
+## Fights the final boss with build `b`; returns [won, [seconds of each body], [[max HP, measured dps] of each], bot,
+## [the last body's raw seconds, the seconds it was gone]].
 static func fight(b: Array, seed_value: int = 21) -> Array:
 	var w := arena(b, seed_value)
 	var bot := Hero.new(-1, bigs())
@@ -91,7 +92,12 @@ static func fight(b: Array, seed_value: int = 21) -> Array:
 	var secs := []
 	for k in starts.size() - 1:
 		secs.append(snappedf((starts[k + 1] - starts[k]) / 60.0, 0.1))
-	return [w.final_fight.won, secs, reads, bot]
+	# v0.9.5 BH6: the Fallen's two interphases (it is gone, 15 s and the 1 s ring each) are not fought: the pace's target
+	# time leaves them out. The last body's time is the fight's without them; the raw time is the fourth item.
+	var gone := w.final_fight.ip_total
+	var raw: float = secs[secs.size() - 1]
+	secs[secs.size() - 1] = snappedf(raw - gone / 60.0, 0.1)
+	return [w.final_fight.won, secs, reads, bot, [raw, snappedf(gone / 60.0, 0.1)]]
 
 
 ## Each body from its rise to the next one's (its rise, the fight, its shatter): at least the pace's minute, at most
@@ -101,10 +107,16 @@ func test_each_body_lasts_a_minute_or_more_whatever_the_build() -> void:
 	for b: Array in BUILDS:
 		var r := fight(b)
 		var bot: Hero = r[3]
-		gut.p(
-			(
-				"N2 pace %s: won=%s, bodies (s) %s, [max HP, measured dps] %s, hits taken %d"
-				% [b[0], r[0], r[1], r[2], bot.hits]
+		(
+			gut
+			. p(
+				(
+					(
+						"N2 pace %s: won=%s, bodies (s, the Fallen's less its interphases) %s, [max HP, measured dps] %s, "
+						+ "hits taken %d; the Fallen's raw time and interphase time (s) %s"
+					)
+					% [b[0], r[0], r[1], r[2], bot.hits, r[4]]
+				)
 			)
 		)
 		assert_true(r[0], "%s: the fight is won" % b[0])
@@ -208,7 +220,7 @@ func test_the_colossus_takes_its_hp_from_the_meter_keeping_its_fill() -> void:
 func test_the_fallen_mimics_you_in_windows_on_and_off() -> void:
 	var w := NemesisLab.world(33, &"blade", [[&"echo_slash", 3]], true, false)
 	var t := BossAi.table_of(w, FinalLab.body(w))
-	assert_eq(t.window_ticks, 420, "7 s windows")
+	assert_eq(t.window_ticks, 336, "5.6 s windows (v0.9.5 BH6, HC6: 20 % shorter than 7 s)")
 	assert_eq(t.window_every_ticks, 1200, "one every 20 s")
 	assert_eq(t.window_warn_ticks, 90, "warned 1.5 s ahead")
 	assert_eq(FinalPace.window(w), FinalPace.Mimic.OFF, "it rises in its own kit")
@@ -229,7 +241,7 @@ func test_the_fallen_mimics_you_in_windows_on_and_off() -> void:
 	assert_eq(cues[1][0], FinalPace.EFFECT_OPEN)
 	assert_eq(cues[2][0], FinalPace.EFFECT_CLOSE)
 	assert_eq(cues[1][1] - cues[0][1], 90, "the window opens 1.5 s after its warning")
-	assert_eq(cues[2][1] - cues[1][1], 420, "and lasts 7 s")
+	assert_eq(cues[2][1] - cues[1][1], 336, "and lasts 5.6 s")
 	assert_eq(cues[4][1] - cues[1][1], 1200, "the next one 20 s later")
 
 

@@ -125,6 +125,8 @@ static func advance(w: World, i: int, t: BossTable) -> void:
 	var a := w.actors
 	if a.state[i] == EnemyAi.State.SPAWN or a.dead[i] == 1:
 		return
+	if f.ip_stage >= BossInterphase.STAGE_VANISHED:
+		return  # v0.9.5 BH6: vanished, the bucket does not fill and no window cue comes
 	if t.pace:
 		if not f.paced:
 			_try_set(w, i, t)
@@ -171,8 +173,15 @@ static func window_at(w: World, tick: int) -> int:
 	var i := FinalBoss.body_index(w)
 	if i < 0 or w.actors.dead[i] == 1 or w.actors.state[i] == EnemyAi.State.SPAWN:
 		return Mimic.OFF
+	if f.ip_stage >= BossInterphase.STAGE_VANISHED:
+		return Mimic.OFF  # v0.9.5 BH6: no window while it is vanished
 	var u := (
-		tick - f.phase_tick - w.tuning.boss_intro_ticks - t.window_first_ticks + t.window_warn_ticks
+		tick
+		- f.phase_tick
+		- f.ip_total
+		- w.tuning.boss_intro_ticks
+		- t.window_first_ticks
+		+ t.window_warn_ticks
 	)
 	if u < 0:
 		return Mimic.OFF
@@ -219,6 +228,7 @@ static func window_clock(w: World) -> Array[int]:
 	var u := (
 		w.tick
 		- f.phase_tick
+		- f.ip_total
 		- w.tuning.boss_intro_ticks
 		- t.window_first_ticks
 		+ t.window_warn_ticks

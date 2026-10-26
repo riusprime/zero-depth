@@ -69,6 +69,62 @@ static func compile_into(def: FinalBossDefinition, t: BossTable) -> void:
 	t.window_warn_ticks = SimTick.seconds_to_ticks(def.mimic_warn_seconds)
 	t.nerf_min_permille = def.mimic_nerf_min_permille
 	_compile_mimic(def, t)
+	_compile_interphase(def, t)
+
+
+## v0.9.5 BH6 (BOSSES_HARD.md HC4-HC6): the Fallen's interphases and dashes, in sim units.
+static func _compile_interphase(def: FinalBossDefinition, t: BossTable) -> void:
+	if def.interphase.is_empty():
+		return
+	var ip := InterphaseTable.new()
+	ip.thresholds = PackedInt32Array(
+		[int(def.interphase_value("first_permille")), int(def.interphase_value("second_permille"))]
+	)
+	ip.ticks = SimTick.seconds_to_ticks(def.interphase_value("seconds"))
+	ip.finish_ticks = SimTick.seconds_to_ticks(def.interphase_value("finish_seconds"))
+	ip.atk_rays = t.attack_index(&"fallen_rays")
+	ip.atk_rain = t.attack_index(&"fallen_rain")
+	ip.atk_dark = t.attack_index(&"fallen_dark")
+	ip.atk_erupt = t.attack_index(&"fallen_erupt")
+	ip.atk_return = t.attack_index(&"fallen_return")
+	ip.grace_ticks = SimTick.seconds_to_ticks(def.interphase_value("grace_seconds"))
+	ip.slam_m = def.interphase_value("slam_m")
+	ip.beam_count = int(def.interphase_value("beam_count"))
+	ip.beam_half_m = float(def.interphase_value("beam_width_m")) * 0.5
+	ip.beam_turn_milli = int(
+		round(float(def.interphase_value("beam_turn_dps")) * 4096.0 * 1000.0 / 360.0 / 60.0)
+	)
+	ip.erupt_ticks = SimTick.seconds_to_ticks(def.interphase_value("erupt_seconds"))
+	ip.erupt_m = def.interphase_value("erupt_m")
+	ip.rain_ticks = SimTick.seconds_to_ticks(def.interphase_value("rain_seconds"))
+	ip.rain_balls = int(def.interphase_value("rain_balls"))
+	ip.rain_gap_slots = int(def.interphase_value("rain_gap_slots"))
+	ip.rain_speed = float(def.interphase_value("rain_speed_mps")) / SimTick.TICKS_PER_SECOND
+	ip.rain_radius_m = def.interphase_value("rain_radius_m")
+	ip.rain_inset_m = def.interphase_value("rain_inset_m")
+	ip.spike_ticks = SimTick.seconds_to_ticks(def.interphase_value("spike_seconds"))
+	ip.spike_half_m = float(def.interphase_value("spike_width_m")) * 0.5
+	ip.spike_speed = float(def.interphase_value("spike_speed_mps")) / SimTick.TICKS_PER_SECOND
+	ip.spike_len_m = def.interphase_value("spike_length_m")
+	ip.dark_balls = int(def.interphase_value("dark_balls"))
+	ip.dark_ball_speed = (
+		float(def.interphase_value("dark_ball_speed_mps")) / SimTick.TICKS_PER_SECOND
+	)
+	ip.dark_ball_radius_m = def.interphase_value("dark_ball_radius_m")
+	ip.dark_erupt_ticks = SimTick.seconds_to_ticks(def.interphase_value("dark_erupt_seconds"))
+	ip.light_m = def.interphase_value("light_m")
+	ip.lamp_m = def.interphase_value("lamp_m")
+	ip.lamp_ticks = SimTick.seconds_to_ticks(def.interphase_value("lamp_seconds"))
+	ip.relight_m = def.interphase_value("relight_m")
+	ip.lamp_inset_m = def.interphase_value("lamp_inset_m")
+	ip.dash_telegraph_ticks = SimTick.seconds_to_ticks(
+		def.interphase_value("dash_telegraph_seconds")
+	)
+	ip.dash_ticks = maxi(1, SimTick.seconds_to_ticks(def.interphase_value("dash_seconds")))
+	ip.dash_min_m = def.interphase_value("dash_min_m")
+	ip.dash_max_m = def.interphase_value("dash_max_m")
+	ip.dash_wall_m = def.interphase_value("dash_wall_m")
+	t.interphase = ip
 
 
 ## v0.8.0 FB3 (FINAL_BOSS.md F6, F7).

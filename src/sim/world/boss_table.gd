@@ -202,6 +202,8 @@ var phase_ring_ticks := PackedInt32Array()
 var phase_wave_atk := PackedInt32Array()
 var phase_wave_ticks := PackedInt32Array()
 var phase_wave_n := PackedInt32Array()
+## v0.9.5 BH6 (HC4-HC6): The Fallen's interphases and dashes between moves (null: none).
+var interphase: InterphaseTable = null
 
 
 ## The attack index with this id, or -1.

@@ -1,7 +1,6 @@
 class_name ContentCompiler
 extends RefCounted
 ## Turns definitions into the sim's plain tables, converting seconds to ticks once (CONTENT_SCHEMA §9).
-
 ## A build weapon id (BuildDefinition.WEAPON_IDS) to its PlayerTable weapon bit; any other id (empty) is 0.
 const WEAPON_BITS := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
 ## Enemy behaviour ids (BehaviourSchemas.SCHEMAS) to actor kinds (a test checks the two key sets match).
@@ -57,6 +56,7 @@ const BOSS_MOVES := {
 	&"echo": BossAttackTable.Move.ECHO,  # v0.9.0 NB3 (the Clockwork Judge)
 	&"verdict": BossAttackTable.Move.VERDICT,
 	&"wave": BossAttackTable.Move.WAVE,  # v0.9.5 BH4
+	&"interphase": BossAttackTable.Move.INTERPHASE,  # v0.9.5 BH6
 }
 ## v0.8.0 FB3: a Nemesis attack's `weapon`.
 const ATTACK_WEAPONS := {

@@ -36,6 +36,7 @@ enum Move {
 	ECHO,  # v0.9.0 NB3 (BOSSES_4_5.md N3): the Clockwork Judge's echo of the player's path (BossJudge)
 	VERDICT,  # v0.9.0 NB3: its tracked square, locked, a pendulum strike dropping on it (BossJudge)
 	WAVE,  # v0.9.5 BH4 (BOSSES_HARD.md T3): the Tidecaller's crossing wave (BossStream; never a boss's own attack)
+	INTERPHASE,  # v0.9.5 BH6 (HC5): a carrier of the Fallen's interphase hits (BossInterphase; never picked)
 }
 
 ## v0.8.0 FB3: the runs a Nemesis attack answers to (`weapon` below).
