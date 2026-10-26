@@ -329,6 +329,11 @@ offers, `attack_slots.tres`, the forms). The order inside each list is the build
   red-glowing seams.
 - Answers (AskUserQuestion, 2026-10-26): the right side is a **live 3D scene** built from the game's own models (not
   the picture); **Credits stay** (Play, Continue, Options, Credits, Exit).
+- **Changed by the owner the same day:** "Forget about the ingame render, use the image I sent this will be the logo
+  for the game". The right side is the owner's picture itself (its baked buttons faded to black), and
+  [`../../art/reference/v0.9.5_logo.webp`](../../art/reference/v0.9.5_logo.webp) ("ZERO DEPTH") is the game's logo, at
+  the top of the menu's left column. **The game's name is Zero Depth:** the `{{TITLE}}` token is replaced in step TT
+  (it moves the save folder, so old saves are carried over).
 
 ### PF. Performance (last, owner's order)
 - **Target (owner, 2026-10-26):** "i think thet my pc should run this game 144fps constant, because it doesnt have that
