@@ -64,6 +64,7 @@ var _floor_triplanar := "unknown"
 var _sha := "nosha"
 var _api: PlaygroundApi
 var _bd := false  # --breakdown
+var _census := false  # --census
 var _timers: Array = []
 var _t_proc := 0
 var _t_pre := 0
@@ -88,6 +89,8 @@ func _initialize() -> void:
 			_warm = float(s.trim_prefix("warm="))
 		elif s == "breakdown":
 			_bd = true
+		elif s == "census":
+			_census = true
 		elif s == "process":
 			_bd = true
 			_proc = true
@@ -434,6 +437,8 @@ func _finish_biome() -> void:
 				% [s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8]]
 			)
 		)
+	if _census:
+		lines.append_array(_census_lines())
 	if _bd:
 		lines.append_array(_class_histogram())
 		lines.append_array(_breakdown_lines())
@@ -671,3 +676,97 @@ class TimedListener:
 		var t0 := PerfMarks.start()
 		cb.call()
 		PerfMarks.add(key, t0)
+
+
+## --census (PF3): what the draw calls are. Every visible GeometryInstance3D, grouped by the script that owns it (the
+## nearest ancestor with a script), by mesh and by material; a MultiMeshInstance3D counts as one draw per surface.
+func _census_lines() -> PackedStringArray:
+	var by_owner := {}
+	var by_pair := {}
+	var by_mesh := {}
+	var by_detail := {}
+	var total := 0
+	var multi := 0
+	var no_shadow := 0
+	var stack: Array[Node] = [root]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		stack.append_array(n.get_children())
+		if not (n is GeometryInstance3D) or not (n as GeometryInstance3D).is_visible_in_tree():
+			continue
+		var g := n as GeometryInstance3D
+		total += 1
+		if g is MultiMeshInstance3D:
+			multi += 1
+		if g.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_OFF:
+			no_shadow += 1
+		var o: Node = g
+		while o != null and o.get_script() == null:
+			o = o.get_parent()
+		var owner_name := "(no script)"
+		if o != null:
+			owner_name = String(o.get_script().resource_path.get_file())
+		by_owner[owner_name] = int(by_owner.get(owner_name, 0)) + 1
+		var mesh: Mesh = null
+		var mat: Material = g.material_override
+		if g is MeshInstance3D:
+			mesh = (g as MeshInstance3D).mesh
+			if mat == null and mesh != null and mesh.get_surface_count() > 0:
+				mat = (g as MeshInstance3D).get_active_material(0)
+		elif g is MultiMeshInstance3D and (g as MultiMeshInstance3D).multimesh != null:
+			mesh = (g as MultiMeshInstance3D).multimesh.mesh
+		var mk := "none" if mesh == null else str(mesh.get_instance_id())
+		var pair := "%s|%s" % [mk, "none" if mat == null else str(mat.get_instance_id())]
+		by_pair[pair] = int(by_pair.get(pair, 0)) + 1
+		if not by_detail.has(owner_name):
+			by_detail[owner_name] = {"meshes": {}, "pairs": {}, "casters": 0}
+		var det: Dictionary = by_detail[owner_name]
+		det["meshes"][mk] = true
+		det["pairs"][pair] = true
+		if g.cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_OFF:
+			det["casters"] = int(det["casters"]) + 1
+		var mname := "none"
+		if mesh != null:
+			mname = mesh.resource_path if mesh.resource_path != "" else mesh.get_class() + "#" + mk
+		by_mesh[mname] = int(by_mesh.get(mname, 0)) + 1
+	var shared := 0
+	var distinct_mats := {}
+	for k: String in by_pair:
+		if int(by_pair[k]) > 1:
+			shared += int(by_pair[k])
+		distinct_mats[k.get_slice("|", 1)] = true
+	var out: PackedStringArray = []
+	(
+		out
+		. append(
+			(
+				(
+					"census: visible GeometryInstance3D=%d (MultiMesh %d, shadow off %d); distinct mesh+material pairs=%d; "
+					+ "instances sharing a pair with another=%d; distinct materials=%d"
+				)
+				% [total, multi, no_shadow, by_pair.size(), shared, distinct_mats.size()]
+			)
+		)
+	)
+	for title: String in ["owner script", "mesh"]:
+		var d: Dictionary = by_owner if title == "owner script" else by_mesh
+		var keys: Array = d.keys()
+		keys.sort_custom(func(a: String, b: String) -> bool: return d[a] > d[b])
+		var parts: PackedStringArray = []
+		for k: String in keys.slice(0, 25):
+			parts.append("%s=%d" % [k, d[k]])
+		out.append("census by %s: %s" % [title, ", ".join(parts)])
+	var okeys: Array = by_owner.keys()
+	okeys.sort_custom(func(a: String, b: String) -> bool: return by_owner[a] > by_owner[b])
+	for k: String in okeys.slice(0, 30):
+		var det: Dictionary = by_detail[k]
+		(
+			out
+			. append(
+				(
+					"census owner %s: instances=%d distinct_meshes=%d distinct_mesh+material=%d shadow_casters=%d"
+					% [k, by_owner[k], det["meshes"].size(), det["pairs"].size(), det["casters"]]
+				)
+			)
+		)
+	return out

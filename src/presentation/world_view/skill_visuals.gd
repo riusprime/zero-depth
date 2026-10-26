@@ -110,7 +110,7 @@ static func cleave_progress(running: int, move_ticks: int, since_hit: int) -> Ve
 
 
 func sync(reader: WorldReader) -> void:
-	_tier = HeatLooks.tier_of(reader.heat_state())
+	_tier = reader.heat_tier()
 	var tick := reader.tick()
 	if _last_tick >= 0 and tick > _last_tick:
 		_age(tick - _last_tick)

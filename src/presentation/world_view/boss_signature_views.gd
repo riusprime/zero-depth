@@ -185,7 +185,7 @@ func sync(reader: WorldReader) -> void:
 	var boss := reader.boss_index()
 	if boss >= 0:
 		_jav = reader.boss_javelins(boss)
-	for i in reader.actor_count():
+	for i in range(reader.actor_count() if reader.any_egg() else 0):
 		var e := reader.actor_egg_permille(i)
 		if e >= 0:
 			_egg_rows.append(

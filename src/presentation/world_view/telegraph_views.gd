@@ -201,7 +201,7 @@ static func look_of(reader: WorldReader, i: int, tg: Dictionary) -> StringName:
 
 func sync(reader: WorldReader) -> void:
 	var seen := {}
-	for i in reader.actor_count():
+	for i in range(reader.actor_count() if reader.any_telegraph() else 0):
 		var tg := reader.telegraph(i)
 		if tg.is_empty() or not tg.get("ground", true):
 			continue  # v0.7.5 EF: a body or air cue ("cast", "lob") draws nothing on the ground
