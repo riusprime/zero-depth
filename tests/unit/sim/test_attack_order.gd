@@ -22,7 +22,7 @@ const ORDERS := {
 	"ring_swirl": [RING, SWIRL],
 	"swirl_ring": [SWIRL, RING],
 }
-const RADIUS := 1.4
+const RADIUS := 2.0  # v0.9.5 CLV: the Ring card is fixed at 2.0 m
 
 
 func _bolt(ids: Array) -> AttackSpec:
@@ -264,8 +264,8 @@ func test_the_old_cards_results_dont_move() -> void:
 	for ids: Array in [[SPREAD], [&"halo_shot"], [SPREAD, &"halo_shot"], [&"halo_shot", SPREAD]]:
 		var s := _bolt(ids)
 		assert_eq([s.form, s.ring_layout, s.swirl, s.ring_flight], [AttackSpec.Form.BOLT, 0, 0, 0])
-	assert_eq(_bolt([&"halo_shot", SPREAD]).count, 5, "Halo · Spread: 3 + 2")
-	assert_eq(_bolt([SPREAD, &"halo_shot"]).count, 9, "Spread · Halo: 3 × 3")
+	assert_eq(_bolt([&"halo_shot", SPREAD]).count, 6, "Halo · Spread: 4 + 2")  # v0.9.5 CLV: Halo level 1 is 4
+	assert_eq(_bolt([SPREAD, &"halo_shot"]).count, 12, "Spread · Halo: 3 × 4")  # v0.9.5 CLV
 
 
 # --- The wand's read ----------------------------------------------------------------------------------------------

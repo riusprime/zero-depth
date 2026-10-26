@@ -178,5 +178,8 @@ func test_shards_keep_growing_with_floor_time_after_the_peak() -> void:
 	w.run_ticks = peak
 	var at_peak := Rewards.shards_for_kill(w, KIND.CHARGER)
 	w.run_ticks = peak + 3600 * 2
-	assert_eq(w.spawner.danger_tier(w.run_ticks), w.spawner.danger_tier(peak), "the curve holds")
+	# v0.9.5 DC: past the peak the danger tier keeps rising (+1 per 30 s to 20), so the curve no longer holds
+	assert_gt(
+		w.spawner.danger_tier(w.run_ticks), w.spawner.danger_tier(peak), "the tier keeps rising"
+	)
 	assert_gt(Rewards.shards_for_kill(w, KIND.CHARGER), at_peak, "staying longer pays more shards")
