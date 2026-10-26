@@ -14,6 +14,8 @@ extends Node3D
 
 const FX_FRAMES := 14
 
+## v0.9.5 PF: false hides the burn/frozen tint (frame_probe --ab=no_burn_fx measures its cost).
+static var burn_tint := true
 var kit: KitView
 var actors: ActorViews
 ## Kept for the view's life so item effects (echo, ring, afterimages) compile their shader once, not on the first
@@ -84,6 +86,8 @@ func _sync_looks(reader: WorldReader) -> void:
 
 
 func _sync_burns(reader: WorldReader) -> void:
+	if not burn_tint:
+		return
 	var now := {}
 	var frozen := {}
 	for i in range(1, reader.actor_count()):

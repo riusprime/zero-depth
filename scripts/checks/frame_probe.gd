@@ -15,6 +15,7 @@ extends SceneTree
 ##   no_ssil          the stage's screen-space indirect lighting off
 ##   fx_half          per-hit attack effects at the Options "Medium" density (the existing knob; "high" is the default)
 ##   fx_low           the same at "Low"
+##   no_burn_fx       v0.9.5 PF: burning enemies keep no orange tint and no embers
 ##   no_rig_merge     v0.9.5 PF5: the enemies' pieces as separate meshes (RigMerge off), to compare the merged rigs
 ##   planar_floor     NOT AVAILABLE: every biome's ground is world-triplanar (StageView._ground_material) and there
 ##                    is no planar path to switch to; the report says whether the floor is triplanar.
@@ -35,7 +36,14 @@ const BUILD_KEYS: Array[StringName] = [
 	&"ITEM_STORM_CORE",
 ]
 const KNOWN_AB := [
-	"no_interp", "shadows_low", "no_ssil", "fx_half", "fx_low", "planar_floor", "no_rig_merge"
+	"no_interp",
+	"shadows_low",
+	"no_ssil",
+	"fx_half",
+	"fx_low",
+	"planar_floor",
+	"no_rig_merge",
+	"no_burn_fx"
 ]
 ## The strafe legs (move_left / move_right / move_up / move_down), each held STRAFE_S seconds.
 const STRAFE: Array[StringName] = [&"move_left", &"move_up", &"move_right", &"move_down"]
@@ -342,6 +350,9 @@ func _apply_ab() -> void:
 				RenderingServer.directional_soft_shadow_filter_set_quality(1)
 			"no_ssil":
 				_main.view.stage.environment.ssil_enabled = false
+			"no_burn_fx":  # v0.9.5 PF: the burn tint and embers off (owner: do they cost much?)
+				ItemVisuals.burn_tint = false
+				StatusVisuals.burn_embers = false
 			"no_rig_merge":  # v0.9.5 PF5: enemy rigs as built, one node per piece (enemies spawned after this)
 				RigMerge.enabled = false
 			"no_interp":

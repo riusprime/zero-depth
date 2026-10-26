@@ -43,6 +43,8 @@ const STATUS_REACH_M := 3.5
 ## P-9: the pieces the effects layer draws instead (hidden under the new look).
 const VFX_DRAWN: Array[String] = ["embers", "drips", "crystals", "sparks"]
 
+## v0.9.5 PF: false hides the burn embers (frame_probe --ab=no_burn_fx measures their cost).
+static var burn_embers := true
 var actors: ActorViews
 ## The new look's effects layer (null: the boxes and rings as before).
 var vfx: VfxLayer
@@ -307,7 +309,7 @@ func _update(v: Dictionary, on: Dictionary, r: float) -> void:
 
 ## The old look's embers, drips, ice crystals, shell and shock sparks (without the effects layer).
 func _update_pieces(v: Dictionary, on: Dictionary, r: float, t: float) -> void:
-	var burn: int = on.get(&"burn", 0)
+	var burn: int = on.get(&"burn", 0) if burn_embers else 0
 	for k in EMBERS:
 		var e: Node3D = v["embers"][k]
 		e.visible = k < mini(EMBERS, 1 + burn / 2) and burn > 0

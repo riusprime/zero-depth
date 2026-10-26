@@ -19,7 +19,7 @@ const CULL_GROW := 1.2
 ## The merged meshes and skins already built, by avatar script and kind (see _meshes_for).
 static var _cache: Dictionary = {}
 ## false: nothing is merged (the pre-PF5 rigs); tools flip it to compare.
-static var enabled := true
+static var enabled := false  # v0.9.5 PF5: off by default: slower on the owner's PC (evidence/PF.md)
 ## Kinds (WorldReader.KIND_*) whose rig is left as built (a rig that could not be merged without a visible change).
 static var skip_kinds: Dictionary = {}
 

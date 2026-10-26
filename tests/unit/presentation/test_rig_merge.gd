@@ -1,11 +1,16 @@
 extends GutTest
 ## v0.9.5 PF5: an enemy's rigid pieces become one skinned mesh (RigMerge); the avatar keeps animating its own nodes and
 ## the bones follow them. The pixel proof is scripts/checks/rig_compare.gd (needs a renderer); these are the
-## structural guarantees.
+## structural guarantees. The merge is off by default (slower on the owner's PC, evidence/PF.md): each test turns it
+## on.
+
+
+func before_each() -> void:
+	RigMerge.enabled = true
 
 
 func after_each() -> void:
-	RigMerge.enabled = true
+	RigMerge.enabled = false
 	RigMerge.skip_kinds = {}
 
 

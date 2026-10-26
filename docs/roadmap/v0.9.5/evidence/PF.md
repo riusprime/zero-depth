@@ -622,3 +622,41 @@ calls do, by about 9 % here and 35 % in the fixed crowd. Read this with the crow
   many enemies, spawn and death in a real room, is yours).
 - Whether the merge is worth keeping on: it cuts draw calls but showed no frame-time gain on this machine
   (`RigMerge.enabled := false` is the switch); frame times on your hardware with nothing else running.
+
+## Lead: owner-PC measurement after PF2–PF5 (2026-10-26)
+
+- Machine: the owner's PC (i7-10700K, RTX 3060, Windows 11), Godot 4.7.2 console build, 1920x1080 windowed, vsync off,
+  no cap. Idle: no other Godot process (the process list empty before each batch; the owner closed PF5's hung compare
+  window first). Build: `86cfcedd` (PF5 merged), then the same plus the two probe switches below.
+- Command: `APPDATA=$TEMP/zd-frame "$G" --language en --path . --resolution 1920x1080 --windowed -s scripts/checks/frame_probe.gd -- --biome=red_canyon --secs=30 [--ab=...]`,
+  runs back to back, alternating.
+
+**PF5's merged rigs on vs off** (`--ab=no_rig_merge`):
+
+| run | frames | avg ms | p99 ms | 1 % low fps | max ms | avg fps |
+|---|---|---|---|---|---|---|
+| merge on | 2513 | 11.942 | 22.162 | 34.1 | 127.849 | 83.7 |
+| merge off | 3028 | 9.908 | 17.433 | 45.5 | 34.118 | 100.9 |
+| merge on | 2740 | 10.953 | 20.746 | 32.6 | 125.578 | 91.3 |
+| merge off | 3050 | 9.841 | 18.366 | 42.9 | 38.797 | 101.6 |
+
+The merge is slower here (the ~500 script bone writes a frame cost more than the draws saved, and its first build
+makes a ~126 ms hitch), so **`RigMerge.enabled` is false by default**; the code stays for a cheaper bone path later.
+
+**Owner's question, 2026-10-26:** "do enemies turning red for fire use much resources? maybe we can just make it icons
+… only if it uses a meaninful amount of resources". New switch `--ab=no_burn_fx` (`ItemVisuals.burn_tint`,
+`StatusVisuals.burn_embers`: no orange tint, no embers), merge off:
+
+| run | frames | avg ms | p99 ms | 1 % low fps | max ms | avg fps |
+|---|---|---|---|---|---|---|
+| burn fx on | 2962 | 10.130 | 19.923 | 36.9 | 43.035 | 98.7 |
+| burn fx off | 2625 | 11.434 | 22.333 | 35.9 | 62.853 | 87.5 |
+| burn fx on | 3367 | 8.911 | 16.610 | 46.2 | 35.393 | 112.2 |
+| burn fx off | 2583 | 11.616 | 21.800 | 38.4 | 34.997 | 86.1 |
+
+Turning the fire look off did not make frames faster (they were slower, which is run-to-run spread: two runs of the
+same build differ by ~14 fps). **The burn tint and embers are not a meaningful cost; they stay.**
+
+**Where v0.9.5 ends:** from the baseline (67–69 fps, 1 % lows 19–22) to ~99–112 fps average and 1 % lows 37–46 in this
+20-enemy, two-element fight. The 144 fps target (every frame under 6.94 ms) is **not met**; per the owner ("if
+performance is still unnaceptable we will work later on it") the rest is follow-up work.
