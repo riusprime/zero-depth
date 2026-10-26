@@ -1,3 +1,4 @@
+# gdlint: disable=max-file-lines
 class_name Attacks
 extends RefCounted
 ## v0.6.0 MX1 (docs/design/MODIFIER_ENGINE.md §7; SIM_CONTRACTS §5b): the one entry point that runs an attack from
@@ -299,7 +300,16 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 		var halo := LanceMods.halo_offsets(w, lm, ctx.lance_full)
 		if not halo.is_empty():
 			offsets = halo
+	# v0.9.5 FC6: the Glaive's cards (GlaiveMods), the player's own throw only; Halo's four discs
+	var gm := (
+		GlaiveMods.mask(spec)
+		if spec.glaive > 0 and ctx.depth == 0 and not ctx.repeat and not ctx.back
+		else 0
+	)
+	if gm & GlaiveMods.HALO != 0:
+		offsets = GlaiveMods.halo_offsets(w, gm)
 	var r := spec.radius_m * ctx.size_permille / 1000.0  # v0.6.5 WN3: a charged shot (G13)
+	r = r * GlaiveMods.wide(w, gm) / 1000.0  # v0.9.5 FC6: Big Shot x 1.5, Rapid Fire x 0.7
 	var gap := t.radius_m + r + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
 	var lanes := GunForms.lanes(spec, r)  # v0.6.5 WN3: G3 Twin, side by side
 	var turns := GunForms.lane_turns(spec)  # v0.9.0 TW: three copies fan
@@ -339,6 +349,11 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	if lm != 0:  # v0.9.5 FC4: Big Shot, Rapid Fire, a full Halo's share, Ricochet's bounce
 		dmg = LanceMods.share(dmg, LanceMods.damage_permille(w, lm, ctx.lance_full))
 		bounces = LanceMods.bounces(w, lm, ctx.lance_full, bounces)
+	if gm != 0:  # v0.9.5 FC6: Halo's, Big Shot's and Rapid Fire's share, speed and lap; Ricochet's bounces
+		dmg = GlaiveMods.share(dmg, GlaiveMods.damage_permille(w, gm))
+		speed = GlaiveMods.speed(w, spec, gm)
+		life = GlaiveMods.life(w, spec, gm)
+		bounces = GlaiveMods.bounces(w, gm, bounces)
 	var q := -1
 	var picked := 0
 	for oi in offsets.size():
@@ -371,6 +386,10 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 			)
 			if lm & LanceMods.ECHO != 0:  # v0.9.5 FC4: Echo's ghost lance waits on this line
 				LanceMods.add_echo(w, muzzle, (ctx.angle + off + turns[li]) & 4095, dmg, r, bounces)
+			if gm & GlaiveMods.ECHO != 0:  # v0.9.5 FC6: Echo's ghost disc waits on this line
+				GlaiveMods.add_echo(
+					w, muzzle, (ctx.angle + off + turns[li]) & 4095, dmg, r, bounces
+				)
 			if root:
 				root = false  # the volley's first shot is the player's own; the rest are extras
 			else:
@@ -392,6 +411,10 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	if own and lm & LanceMods.BACKFIRE != 0 and not halo_full and _shot_room(w):
 		ShotCap.spend(w, 1)
 		LanceMods.back_throw(w, spec, ctx, dmg, r, gap, life, bounces)
+	# v0.9.5 FC6: Backfire's disc behind (a Halo already has one at 180 degrees)
+	if own and gm & GlaiveMods.BACKFIRE != 0 and gm & GlaiveMods.HALO == 0 and _shot_room(w):
+		ShotCap.spend(w, 1)
+		GlaiveMods.back_throw(w, spec, ctx, dmg, r, gap, speed, life, bounces)
 
 
 ## v0.8.0 PF2: how many more of `spec`'s bolts may launch now under its alive_max (-1: no cap of its own).

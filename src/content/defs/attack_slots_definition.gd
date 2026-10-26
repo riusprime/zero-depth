@@ -112,19 +112,20 @@ func _check_params(r: AttackFormRow) -> Array[ValidationIssue]:
 	return issues
 
 
-## The param keys form `id` must carry (v0.9.5 FC1 Laser, FC2 Bomb, FC3 Void, FC5 Rune); none for the other forms.
+## The param keys form `id` must carry (v0.9.5 FC1 Laser, FC2 Bomb, FC3 Void, FC4 Lance, FC5 Rune, FC6 Glaive); none for
+## the other forms.
 func _keys_of(id: StringName) -> Array[String]:
-	if id == &"laser":
-		return AttackFormRow.LASER_KEYS
-	if id == &"bomb":
-		return AttackFormRow.BOMB_KEYS
-	if id == &"void":
-		return AttackFormRow.VOID_KEYS
-	if id == &"lance":
-		return AttackFormRow.LANCE_KEYS
-	if id == &"rune_explosion":
-		return AttackFormRow.RUNE_KEYS
-	return []
+	var by_form := {
+		&"laser": AttackFormRow.LASER_KEYS,
+		&"bomb": AttackFormRow.BOMB_KEYS,
+		&"void": AttackFormRow.VOID_KEYS,
+		&"lance": AttackFormRow.LANCE_KEYS,
+		&"rune_explosion": AttackFormRow.RUNE_KEYS,
+		&"glaive": AttackFormRow.GLAIVE_KEYS,
+	}
+	var keys: Array[String] = []
+	keys.assign(by_form.get(id, []))
+	return keys
 
 
 ## v0.9.0 AS: every live card (an item the migration table doesn't retire) that takes a wand slot (it names modifiers)

@@ -6,6 +6,39 @@ extends Resource
 ## form's own (the form's step builds the rule; until then it reads as on); every other card is off (C62: "No by
 ## default"), so it is never offered, never equipped and never compiled with this form.
 
+## v0.9.5 FC6: the numbers the Glaive row carries (GlaiveMods.DEFAULTS has the same keys; a test holds them equal).
+const GLAIVE_KEYS: Array[String] = [
+	"halo_count",
+	"halo_share",
+	"ring_mm",
+	"ring_share",
+	"ring_gap_ticks",
+	"back_share",
+	"ricochet_bounces",
+	"home_range_mm",
+	"home_turn_dps",
+	"home_cone_deg",
+	"home_back_ms",
+	"echo_delay_ms",
+	"echo_share",
+	"big_wide",
+	"big_speed",
+	"big_damage",
+	"rapid_period_ms",
+	"rapid_wide",
+	"rapid_speed",
+	"rapid_damage",
+	"split_deg",
+	"split_len_mm",
+	"split_share",
+	"split_wide",
+	"mine_hold_ms",
+	"mine_gap_ticks",
+	"orbit_mm",
+	"orbit_ms",
+	"live_max",
+]
+
 ## v0.9.5 FC4: the numbers the Lance row carries (LanceMods.DEFAULTS has the same keys; a test holds them equal).
 const LANCE_KEYS: Array[String] = [
 	"halo_count",

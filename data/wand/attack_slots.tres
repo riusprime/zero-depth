@@ -194,8 +194,39 @@ params = {
 script = ExtResource("2_row")
 id = &"glaive"
 card = &"gun_glaive"
-allowed = Array[StringName]([&"gun_twin", &"gun_swirl", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
+allowed = Array[StringName]([&"gun_twin", &"gun_swirl", &"halo_shot", &"gun_ring", &"gun_backfire", &"gun_ricochet", &"gun_homing", &"gun_echo", &"gun_big_shot", &"gun_rapid_fire", &"split_shot", &"gun_mine", &"orbit_rounds", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
 ruled = Array[StringName]([])
+params = {
+"halo_count": 4,
+"halo_share": 500,
+"ring_mm": 1000,
+"ring_share": 400,
+"ring_gap_ticks": 30,
+"back_share": 1000,
+"ricochet_bounces": 2,
+"home_range_mm": 6000,
+"home_turn_dps": 90,
+"home_cone_deg": 90,
+"home_back_ms": 1000,
+"echo_delay_ms": 300,
+"echo_share": 500,
+"big_wide": 1500,
+"big_speed": 750,
+"big_damage": 1600,
+"rapid_period_ms": 450,
+"rapid_wide": 700,
+"rapid_speed": 1250,
+"rapid_damage": 700,
+"split_deg": 30,
+"split_len_mm": 4000,
+"split_share": 300,
+"split_wide": 700,
+"mine_hold_ms": 1200,
+"mine_gap_ticks": 30,
+"orbit_mm": 2500,
+"orbit_ms": 1000,
+"live_max": 8
+}
 
 [sub_resource type="Resource" id="Form_seekers"]
 script = ExtResource("2_row")

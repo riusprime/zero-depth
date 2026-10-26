@@ -24,6 +24,12 @@ const GHOST_FADE: Array[float] = [0.45, 0.2]
 const CATCH_M := 1.6
 const CATCH_TICKS := 4.0
 const CATCHES_MAX := 4
+## v0.9.5 FC6: Ring's lightning rings round the discs (the Bomb's ring look, as the Lance's and the Void's): drawn at
+## once, and the ring shader's phase that puts its band at ARC_FRONT of the quad's half-width (0.25 + 0.72 u), so a
+## ring of radius r is drawn at r / ARC_FRONT.
+const ARCS_MAX := 12
+const ARC_U := 0.7
+const ARC_FRONT := 0.754
 
 const DISC_SHADER := """
 shader_type spatial;
@@ -57,6 +63,8 @@ var look := &"default"
 var ghosts := 0
 var catches := 0
 var caught := 0
+## v0.9.5 FC6: the lightning rings drawn now (the tests read it).
+var arcs := 0
 
 var _nodes: Array[MeshInstance3D] = []
 var _mats: Array[ShaderMaterial] = []
@@ -79,12 +87,14 @@ var _spin := 0.0
 var _tick := 0.0
 var _hero := Vector2.ZERO
 var _form := FormLook.new()
+var _arcs: Array[MeshInstance3D] = []
 
 
 func _init() -> void:
 	name = "GlaiveView"
 	var plane := PlaneMesh.new()
 	plane.size = Vector2.ONE
+	_make_arcs()
 	_ghost_pos.resize(DISCS_MAX * GHOSTS)
 	for k in DISCS_MAX:
 		var n := _node(plane)
@@ -94,6 +104,45 @@ func _init() -> void:
 			var h := _node(plane)
 			_ghosts.append(h)
 			_ghost_mats.append(h.material_override as ShaderMaterial)
+
+
+## v0.9.5 FC6: the pool of lightning rings (one shared material, the Lance's ring look).
+func _make_arcs() -> void:
+	var flat := PlaneMesh.new()
+	flat.size = Vector2(2.0, 2.0)
+	var shader := Shader.new()
+	shader.code = BombView.RING_SHADER
+	var m := ShaderMaterial.new()
+	m.shader = shader
+	m.set_shader_parameter(&"has_tex", 0.0)
+	m.set_shader_parameter(&"u", ARC_U)
+	m.set_shader_parameter(&"core", AttackFormLooks.ground_safe(BeamLooks.core(&"lightning")))
+	m.set_shader_parameter(&"edge", AttackFormLooks.ground_safe(BeamLooks.edge(&"lightning")))
+	for k in ARCS_MAX:
+		var n := MeshInstance3D.new()
+		n.mesh = flat
+		n.material_override = m
+		n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		n.visible = false
+		add_child(n)
+		_arcs.append(n)
+
+
+## v0.9.5 FC6: the Ring card's lightning ring round each disc that carries one.
+func _place_arcs(reader: WorldReader) -> void:
+	arcs = 0
+	for row in reader.glaive_rings():
+		if arcs >= ARCS_MAX:
+			break
+		var g := float(row["r"]) / ARC_FRONT
+		var arc := _arcs[arcs]
+		arc.visible = true
+		arc.transform = Transform3D(
+			Basis.from_scale(Vector3(g, 1.0, g)), SimPlane.to_3d(row["pos"], 0.1)
+		)
+		arcs += 1
+	for k in range(arcs, ARCS_MAX):
+		_arcs[k].visible = false
 
 
 func _node(mesh: Mesh) -> MeshInstance3D:
@@ -152,6 +201,7 @@ func sync(reader: WorldReader) -> void:
 		if past.size() > GHOSTS:
 			past.pop_back()
 	_drop_gone()
+	_place_arcs(reader)
 	discs = _pos.size()
 	for k in DISCS_MAX:
 		var on := k < discs

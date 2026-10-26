@@ -127,6 +127,25 @@ var vm_life := PackedInt32Array()
 var vm_r := PackedInt32Array()
 var vm_root := PackedInt32Array()
 var vm_hit := PackedInt32Array()
+## v0.9.5 FC6 (GlaiveMods): the Glaive cards' rows, one a live disc's state or a disc to open (kind and flags, the
+## disc's projectile id, place, tick due, tick born, angle, damage, radius in mm, aux and aux2 (see GlaiveMods), root)
+## and the per-enemy hit gaps of Ring and Mine (row id, actor id, the tick the gap ends). Hashed only while set.
+var gm_next := 0
+var gm_id := PackedInt32Array()
+var gm_kind := PackedInt32Array()
+var gm_pid := PackedInt32Array()
+var gm_at := PackedVector2Array()
+var gm_due := PackedInt32Array()
+var gm_born := PackedInt32Array()
+var gm_ang := PackedInt32Array()
+var gm_dmg := PackedInt32Array()
+var gm_r := PackedInt32Array()
+var gm_aux := PackedInt32Array()
+var gm_aux2 := PackedInt32Array()
+var gm_root := PackedInt32Array()
+var gm_hit_row := PackedInt32Array()
+var gm_hit_actor := PackedInt32Array()
+var gm_hit_until := PackedInt32Array()
 ## v0.9.5 FC4 (LanceMods): the Lance cards' rows, one a live lance's state, a ghost lance to open, a ring growing or a
 ## split shard (kind and flags, the lance's projectile id, place, tick due, tick born, angle, damage, radius in mm,
 ## aux (bounces of a ghost, enemies a lance has split on), root) and Ring's hits (id * 65536 + actor). Hashed only
@@ -238,6 +257,7 @@ func touched() -> bool:
 		or lz_touched()
 		or bm_touched()
 		or vm_touched()
+		or gm_touched()
 		or lm_touched()
 		or rm_touched()
 		or remnants_touched()
@@ -312,6 +332,30 @@ func vm_clear() -> void:
 	vm_r = PackedInt32Array()
 	vm_root = PackedInt32Array()
 	vm_hit = PackedInt32Array()
+
+
+## v0.9.5 FC6: a Glaive card's row is set.
+func gm_touched() -> bool:
+	return gm_next != 0 or not gm_kind.is_empty()
+
+
+func gm_clear() -> void:
+	gm_next = 0
+	gm_id = PackedInt32Array()
+	gm_kind = PackedInt32Array()
+	gm_pid = PackedInt32Array()
+	gm_at = PackedVector2Array()
+	gm_due = PackedInt32Array()
+	gm_born = PackedInt32Array()
+	gm_ang = PackedInt32Array()
+	gm_dmg = PackedInt32Array()
+	gm_r = PackedInt32Array()
+	gm_aux = PackedInt32Array()
+	gm_aux2 = PackedInt32Array()
+	gm_root = PackedInt32Array()
+	gm_hit_row = PackedInt32Array()
+	gm_hit_actor = PackedInt32Array()
+	gm_hit_until = PackedInt32Array()
 
 
 ## v0.9.5 FC4: a Lance card's row is set.
@@ -482,6 +526,30 @@ func hash_into(h: StateHasher) -> void:
 			for p in arr:
 				h.add_f32(p.x)
 				h.add_f32(p.y)
+	if gm_touched():  # v0.9.5 FC6: only while a Glaive card's row is set
+		h.add_string("gm")
+		h.add_int(gm_next)
+		for arr: PackedInt32Array in [
+			gm_id,
+			gm_kind,
+			gm_pid,
+			gm_due,
+			gm_born,
+			gm_ang,
+			gm_dmg,
+			gm_r,
+			gm_aux,
+			gm_aux2,
+			gm_root,
+			gm_hit_row,
+			gm_hit_actor,
+			gm_hit_until
+		]:
+			h.add_ints(arr)
+		h.add_int(gm_at.size())
+		for p in gm_at:
+			h.add_f32(p.x)
+			h.add_f32(p.y)
 	if lm_touched():  # v0.9.5 FC4: only while a Lance card's row is set
 		h.add_string("lm")
 		h.add_int(lm_next)

@@ -1809,6 +1809,10 @@ func _projectile_hits() -> void:
 		if pp != null:
 			pp.begin(&"proj.sweep")
 		ProjectileMoves.steer(self, i)  # v0.6.0 MX4: orbit first, homing, the way back
+		if GlaiveMods.hold(self, i):  # v0.9.5 FC6: a Mine disc spins in place (no sweep), hitting
+			if pp != null:
+				pp.end(&"proj.sweep")
+			continue
 		var a := Vector2(projectiles.pos_x[i], projectiles.pos_y[i])
 		var v := Vector2(projectiles.vel_x[i], projectiles.vel_y[i])
 		var b := a + v
@@ -1881,6 +1885,7 @@ func _projectile_hits() -> void:
 				if pp != null:
 					pp.end(&"proj.procs")
 				LanceMods.on_hit(self, i, best_actor)  # v0.9.5 FC4: Split spits its shards
+				GlaiveMods.on_hit(self, i, best_actor)  # v0.9.5 FC6: Split sheds its small discs
 				if Heat.pierce(self, i, best_actor, a):  # Heat: a Hot bolt goes on through one enemy.
 					continue
 				if ProjectileMoves.pierce(self, i, best_actor, a):  # v0.6.0 MX4: Edge Rounds, Boomerang
@@ -1979,11 +1984,13 @@ func _apply_spawns() -> void:
 		ProjectileMoves.on_spawn(self, projectiles.size() - 1, s[14])  # v0.6.0 MX4
 		VoidMods.on_spawn(self, projectiles.size() - 1)  # v0.9.5 FC3: a void with cards gets its row
 		LanceMods.on_spawn(self, projectiles.size() - 1)  # v0.9.5 FC4: a lance with cards gets its row
+		GlaiveMods.on_spawn(self, projectiles.size() - 1)  # v0.9.5 FC6: a disc with cards gets its row
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 		if s[13] != "":  # v0.8.0 RM: Threadline links it to the bolt before
 			Remnants.on_link(self, projectiles.size() - 1, s[13])
 	_pending_projectiles.clear()
 	VoidMods.cull(self)  # v0.9.5 FC3: at most so many voids a hero
+	GlaiveMods.cull(self)  # v0.9.5 FC6: and so many discs
 	for s in _pending_enemies:  # Bosses (v0.3.0 C): eggs and turrets.
 		if enemy_table(s[0]) != null:
 			add_enemy(s[0], s[1])

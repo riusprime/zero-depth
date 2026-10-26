@@ -58,9 +58,12 @@ static func steer(w: World, pi: int) -> void:
 		return
 	VoidMods.steer(w, pi)  # v0.9.5 FC3: a void's orbit, mine and homing
 	LanceMods.steer(w, pi)  # v0.9.5 FC4: a lance's Homing
+	if GlaiveMods.steer(w, pi):  # v0.9.5 FC6: a disc's Orbit lap and Mine hold set its velocity
+		return
 	if GunForms.mine_waits(w, pi):  # v0.6.5 WN3: G12 Mine, still until touched
 		return
 	_steer(w, pi)
+	GlaiveMods.steer_after(w, pi)  # v0.9.5 FC6: a disc's Homing, Ricochet's end
 	GunForms.spiral_turn(w, pi)  # v0.6.5 WN3: G11 Spiral, after homing and the way back
 
 
