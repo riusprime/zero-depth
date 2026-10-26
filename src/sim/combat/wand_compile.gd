@@ -146,6 +146,9 @@ func run(s: AttackSpec, from: int) -> AttackSpec:
 			if not s.modifier_ids.has(String(m.id)):
 				s.modifier_ids.append(String(m.id))
 			continue
+		if s.blast_mm > 0 and BombMods.is_card(m.id):  # v0.9.5 FC2: the Bomb's cards are BombMods'
+			BombMods.note_card(s, m)
+			continue
 		var applied := false
 		for stage in ModifierTable.STAGE_COUNT:  # a card's own ops in stage order
 			for op in m.ops:

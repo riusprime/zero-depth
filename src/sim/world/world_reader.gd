@@ -487,6 +487,29 @@ func laser_mines() -> Array[Dictionary]:
 	return out
 
 
+## v0.9.5 FC2: the Bomb cards' rows for the view: {kind (&"burst", &"drop", &"mine" or
+## &"ring"), pos, r (m, a ring's largest), age, left (ticks), span (ticks, born to due), secondary}.
+func bomb_rows() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var s := _w.mx
+	for k in s.bm_kind.size():
+		(
+			out
+			. append(
+				{
+					"kind": BombMods.KIND_NAMES[s.bm_kind[k] & BombMods.KIND_MASK],
+					"pos": s.bm_at[k],
+					"r": s.bm_r[k] / 1000.0,
+					"age": _w.tick - s.bm_born[k],
+					"left": maxi(0, s.bm_due[k] - _w.tick),
+					"span": maxi(1, s.bm_due[k] - s.bm_born[k]),
+					"secondary": (s.bm_kind[k] & BombMods.SEC) != 0,
+				}
+			)
+		)
+	return out
+
+
 ## v0.9.0 BM: player projectile `i` is a bomb (the Bomb form's shot; BombView draws it, not the pulses).
 func projectile_is_bomb(i: int) -> bool:
 	return Bomb.touches(_w, i)

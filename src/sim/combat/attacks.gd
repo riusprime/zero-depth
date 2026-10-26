@@ -319,6 +319,9 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var dmg := ctx.damage if fit >= want else maxi(1, (ctx.damage * want + fit / 2) / fit)
 	if fit < want and w.slot_table != null:
 		r = r * ShotCap.grow_permille(want, fit, w.slot_table.merge_radius_max_permille) / 1000.0
+	if root and spec.blast_mm > 0:  # v0.9.5 FC2: the Bomb's Halo cross and Backfire drop wait
+		BombMods.on_throw(w, spec, ctx.origin, ctx.angle, dmg)
+	var speed := BombMods.speed(w, spec) if spec.blast_mm > 0 else spec.speed  # v0.9.5 FC2: Big Shot's slower throw
 	var q := -1
 	var picked := 0
 	for oi in offsets.size():
@@ -341,7 +344,7 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				w.actors.ids[0],
 				ActorStore.TEAM_PLAYER,
 				muzzle,
-				dir * spec.speed,
+				dir * speed,
 				dmg,
 				r,
 				maxi(1, spec.life_ticks),

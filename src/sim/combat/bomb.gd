@@ -37,28 +37,39 @@ static func active(w: World) -> bool:
 	return PlayerBuild.has_gun(w) and not PlayerBuild.has_blade(w) and is_bomb(Modifiers.bolt(w))
 
 
-## The blast radius of `s` now (m): blast_mm, the area stat on it.
+## The blast radius of `s` now (m): blast_mm, the area stat on it. v0.9.5 FC2: Big Shot's and Rapid Fire's factors.
 static func radius_m(w: World, s: AttackSpec) -> float:
-	return Stats.area(w, s.blast_mm / 1000.0)
+	return Stats.area(w, BombMods.blast_mm(w, s) / 1000.0)
 
 
 ## Bomb projectile `pi` of `spec` ended at `at`: it bursts (the class doc). Returns the enemies its blast landed on
-## (-1: merged into a blast already set off this tick).
+## (-1: merged into a blast already set off this tick). v0.9.5 FC2: with Bomb cards (BombMods) it may skip, home, wait
+## as a mine, and its blast may leave a ring, an echo and bomblets.
 static func blast(w: World, spec: AttackSpec, pi: int, at: Vector2) -> int:
-	var r := radius_m(w, spec)
+	var p := w.projectiles
+	var secondary := (p.second_of(pi) & ProjectileStore.SECONDARY) != 0
+	var m := BombMods.mask(spec)
+	if m != 0:
+		return BombMods.on_land(w, spec, m, pi, at, secondary)
+	return burst(w, spec, p.root_id[pi], at, radius_m(w, spec), p.damage[pi], secondary)
+
+
+## One blast at `at`, `r` m, of `dmg` for `root` (blast()'s body; the delayed bursts of BombMods use it too).
+static func burst(
+	w: World, spec: AttackSpec, root: int, at: Vector2, r: float, dmg: int, secondary: bool
+) -> int:
 	if Attacks.merged_at(w, at, r):
 		return -1
-	var p := w.projectiles
 	var pid := w.actors.ids[0]
 	var e := w.emit_event(SimEvent.Kind.BLAST, pid, pid, pid, at)
-	e.root_id = p.root_id[pi]
+	e.root_id = root
 	e.amount = int(round(r * 1000.0))
 	e.effect_id = StringName(spec.key)
 	var tags := SimEvent.TAG_AREA | SimEvent.TAG_PROJECTILE
-	var ctx := AttackContext.make(at, 0, p.damage[pi], p.root_id[pi], tags, &"")
+	var ctx := AttackContext.make(at, 0, dmg, root, tags, &"")
 	ctx.depth = spec.depth
 	ctx.proc_pct = maxi(1, 100 >> spec.depth)
-	ctx.secondary = (p.second_of(pi) & ProjectileStore.SECONDARY) != 0
+	ctx.secondary = secondary
 	var landed := 0
 	for i in w.enemies_near(at, r):
 		if Attacks.land(w, spec, ctx, i, at, w.actors.pos(i)) > 0:

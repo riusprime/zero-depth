@@ -99,17 +99,26 @@ func _check_params(r: AttackFormRow) -> Array[ValidationIssue]:
 					&"range", resource_path, "%s: param %s is a whole number > 0" % [r.id, k]
 				)
 			)
-		if r.id == &"laser" and not AttackFormRow.LASER_KEYS.has(String(k)):
+		var keys := _keys_of(r.id)
+		if not keys.is_empty() and not keys.has(String(k)):
 			issues.append(
 				ValidationIssue.new(&"unknown_key", resource_path, "%s: no param %s" % [r.id, k])
 			)
-	if r.id == &"laser":
-		for k in AttackFormRow.LASER_KEYS:
-			if not r.params.has(k):
-				issues.append(
-					ValidationIssue.new(&"missing", resource_path, "laser: param %s missing" % k)
-				)
+	for k in _keys_of(r.id):
+		if not r.params.has(k):
+			issues.append(
+				ValidationIssue.new(&"missing", resource_path, "%s: param %s missing" % [r.id, k])
+			)
 	return issues
+
+
+## The param keys form `id` must carry (v0.9.5 FC1: the Laser's, FC2: the Bomb's); none for the other forms.
+func _keys_of(id: StringName) -> Array[String]:
+	if id == &"laser":
+		return AttackFormRow.LASER_KEYS
+	if id == &"bomb":
+		return AttackFormRow.BOMB_KEYS
+	return []
 
 
 ## v0.9.0 AS: every live card (an item the migration table doesn't retire) that takes a wand slot (it names modifiers)

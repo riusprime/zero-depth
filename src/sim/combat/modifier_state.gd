@@ -94,6 +94,20 @@ var lz_echo_from := PackedVector2Array()
 var lz_echo_to := PackedVector2Array()
 var lz_echo_r := PackedFloat32Array()
 var lz_echo_dmg := PackedInt32Array()
+## v0.9.5 FC2 (BombMods): the Bomb cards' rows, one a bomb waiting or a ring growing (kind, place, tick due, tick born,
+## blast in mm, damage, aim, root, id) and Ring's hits (id * 65536 + actor). Hashed only while any row is set (older
+## digests unchanged).
+var bm_next := 0
+var bm_id := PackedInt32Array()
+var bm_kind := PackedInt32Array()
+var bm_at := PackedVector2Array()
+var bm_due := PackedInt32Array()
+var bm_born := PackedInt32Array()
+var bm_r := PackedInt32Array()
+var bm_dmg := PackedInt32Array()
+var bm_ang := PackedInt32Array()
+var bm_root := PackedInt32Array()
+var bm_hit := PackedInt32Array()
 ## v0.8.0 MR (owner O91; FireRhythm): Rapid Fire's ramp (the consecutive shots so far, the tick of the last shot) and
 ## Flurry's burst (the swing's place in its burst, 1 = the first after a pause; the tick its last swing ends); and
 ## SecondaryProc's carry (per mille of a status stack a secondary hit owes, so halved stacks are exact on average).
@@ -168,6 +182,7 @@ func touched() -> bool:
 		or burst_n != 0
 		or sec_carry != 0
 		or lz_touched()
+		or bm_touched()
 		or remnants_touched()
 	)
 
@@ -197,6 +212,25 @@ func lz_clear() -> void:
 	lz_echo_to = PackedVector2Array()
 	lz_echo_r = PackedFloat32Array()
 	lz_echo_dmg = PackedInt32Array()
+
+
+## v0.9.5 FC2: a Bomb card's row is set.
+func bm_touched() -> bool:
+	return bm_next != 0 or not bm_kind.is_empty()
+
+
+func bm_clear() -> void:
+	bm_next = 0
+	bm_id = PackedInt32Array()
+	bm_kind = PackedInt32Array()
+	bm_at = PackedVector2Array()
+	bm_due = PackedInt32Array()
+	bm_born = PackedInt32Array()
+	bm_r = PackedInt32Array()
+	bm_dmg = PackedInt32Array()
+	bm_ang = PackedInt32Array()
+	bm_root = PackedInt32Array()
+	bm_hit = PackedInt32Array()
 
 
 ## v0.8.0 RM: a remnant card has acted (Remnants): its block is hashed from then on.
@@ -290,6 +324,17 @@ func hash_into(h: StateHasher) -> void:
 			for p in arr:
 				h.add_f32(p.x)
 				h.add_f32(p.y)
+	if bm_touched():  # v0.9.5 FC2: only while a Bomb card's row is set
+		h.add_string("bm")
+		h.add_int(bm_next)
+		for arr: PackedInt32Array in [
+			bm_id, bm_kind, bm_due, bm_born, bm_r, bm_dmg, bm_ang, bm_root, bm_hit
+		]:
+			h.add_ints(arr)
+		h.add_int(bm_at.size())
+		for p in bm_at:
+			h.add_f32(p.x)
+			h.add_f32(p.y)
 	if ramp_n != 0 or burst_n != 0 or sec_carry != 0:  # v0.8.0 MR: only once a rhythm or a carry is set
 		h.add_string("mr")
 		for v in [ramp_n, ramp_tick, burst_n, burst_free, sec_carry]:

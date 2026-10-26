@@ -30,7 +30,7 @@ static func swing_reach_m(w: World, step: int = -1) -> float:
 ## Hands (AttackRate.rate), rounded half up; never under AttackRate.MIN_SHOT_TICKS once changed.
 static func shot_period_ticks(w: World) -> int:
 	var spec := Modifiers.bolt(w)
-	var base := spec.period_ticks
+	var base := BombMods.period(w, spec, spec.period_ticks)  # v0.9.5 FC2: the Bomb's Rapid Fire (0.6 s)
 	var r := AttackRate.rate(w, spec.rate_bonus_permille + FireRhythm.shot_bonus(w, spec))  # v0.8.0 MR: the ramp
 	r = AttackRate.form_rate(spec, r)  # v0.9.0 LZ: the Laser's ticks at half the bonus
 	if r != 1000:

@@ -50,6 +50,20 @@ const LASER_COMBOS: Array = [
 	[&"gun_mine"],
 	[&"split_shot", &"gun_pierce"],
 ]
+## v0.9.5 FC2: the Bomb's card combinations (a card alone each), after the Laser's.
+const BOMB_COMBOS: Array = [
+	[],
+	[&"halo_shot"],
+	[&"gun_ring"],
+	[&"gun_backfire"],
+	[&"gun_ricochet"],
+	[&"gun_homing"],
+	[&"gun_echo"],
+	[&"gun_big_shot"],
+	[&"gun_rapid_fire"],
+	[&"split_shot"],
+	[&"gun_mine"],
+]
 
 
 func _scenes(near: bool) -> Dictionary:
@@ -125,27 +139,32 @@ func _initialize() -> void:
 					)
 				)
 	# v0.9.5 FC1: the Laser with the cards that bend it (alone, Twin off), against the same orbs baseline.
-	for combo: Array in LASER_COMBOS:
-		var d := {}
-		for sc: String in scenes:
-			d[sc] = _damage(&"gun_laser", 1, false, scenes[sc][0], scenes[sc][1], combo)
-		(
-			lines
-			. append(
-				(
-					"laser + %s | 1 | no | %.3f | %.3f | %.3f | %d | %d | %d"
-					% [
-						"+".join(combo) if not combo.is_empty() else "(plain)",
-						float(d["single"]) / float(base["single"]),
-						float(d["line"]) / float(base["line"]),
-						float(d["pack"]) / float(base["pack"]),
-						d["single"],
-						d["line"],
-						d["pack"],
-					]
+	# v0.9.5 FC2: and the Bomb with the cards that change it.
+	for set_of: Array in [
+		["laser", &"gun_laser", LASER_COMBOS], ["bomb", &"gun_bomb", BOMB_COMBOS]
+	]:
+		for combo: Array in set_of[2]:
+			var d := {}
+			for sc: String in scenes:
+				d[sc] = _damage(set_of[1], 1, false, scenes[sc][0], scenes[sc][1], combo)
+			(
+				lines
+				. append(
+					(
+						"%s + %s | 1 | no | %.3f | %.3f | %.3f | %d | %d | %d"
+						% [
+							set_of[0],
+							"+".join(combo) if not combo.is_empty() else "(plain)",
+							float(d["single"]) / float(base["single"]),
+							float(d["line"]) / float(base["line"]),
+							float(d["pack"]) / float(base["pack"]),
+							d["single"],
+							d["line"],
+							d["pack"],
+						]
+					)
 				)
 			)
-		)
 	var text := "\n".join(lines)
 	print(text)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://build/balance"))
