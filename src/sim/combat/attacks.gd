@@ -293,6 +293,12 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 		offsets = Abilities.shot_offsets(w, offsets)  # Pulse Gun L5: twin bolts (the weapon's own shots)
 	if spec.swirl > 0:
 		offsets = WandRings.swirl_offsets(w, offsets)  # v0.8.0 AO: Swirl, each bolt at a random angle
+	var lm := 0  # v0.9.5 FC4: the Lance's cards (LanceMods), the player's own release only
+	if spec.lance > 0 and ctx.depth == 0 and not ctx.repeat and not ctx.back:
+		lm = LanceMods.mask(spec)
+		var halo := LanceMods.halo_offsets(w, lm, ctx.lance_full)
+		if not halo.is_empty():
+			offsets = halo
 	var r := spec.radius_m * ctx.size_permille / 1000.0  # v0.6.5 WN3: a charged shot (G13)
 	var gap := t.radius_m + r + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
 	var lanes := GunForms.lanes(spec, r)  # v0.6.5 WN3: G3 Twin, side by side
@@ -330,6 +336,9 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 		speed = VoidMods.speed(w, spec)
 		life = VoidMods.life(w, spec)
 		bounces = VoidMods.bounces(w, spec)
+	if lm != 0:  # v0.9.5 FC4: Big Shot, Rapid Fire, a full Halo's share, Ricochet's bounce
+		dmg = LanceMods.share(dmg, LanceMods.damage_permille(w, lm, ctx.lance_full))
+		bounces = LanceMods.bounces(w, lm, ctx.lance_full, bounces)
 	var q := -1
 	var picked := 0
 	for oi in offsets.size():
@@ -360,6 +369,8 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				bounces,
 				spec.key
 			)
+			if lm & LanceMods.ECHO != 0:  # v0.9.5 FC4: Echo's ghost lance waits on this line
+				LanceMods.add_echo(w, muzzle, (ctx.angle + off + turns[li]) & 4095, dmg, r, bounces)
 			if root:
 				root = false  # the volley's first shot is the player's own; the rest are extras
 			else:
@@ -376,6 +387,11 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	if own and VoidMods.mask(spec) & VoidMods.BACKFIRE != 0 and _shot_room(w):
 		ShotCap.spend(w, 1)  # v0.9.5 FC3: Backfire's second void
 		VoidMods.back_throw(w, spec, ctx, dmg, r, gap)
+	# v0.9.5 FC4: Backfire's lance behind (a full Halo already has one at 180 degrees)
+	var halo_full := lm & LanceMods.HALO != 0 and ctx.lance_full
+	if own and lm & LanceMods.BACKFIRE != 0 and not halo_full and _shot_room(w):
+		ShotCap.spend(w, 1)
+		LanceMods.back_throw(w, spec, ctx, dmg, r, gap, life, bounces)
 
 
 ## v0.8.0 PF2: how many more of `spec`'s bolts may launch now under its alive_max (-1: no cap of its own).
@@ -937,6 +953,8 @@ static func on_projectile_end(w: World, pi: int, at: Vector2) -> void:
 		Bomb.blast(w, spec, pi, at)  # v0.9.0 BM: the bomb bursts where it ends
 	if spec != null and spec.void_mm > 0:
 		VoidMods.on_end(w, spec, pi, at)  # v0.9.5 FC3: Ring, Echo and Split queue
+	if spec != null and spec.lance > 0:
+		LanceMods.on_end(w, spec, pi, at)  # v0.9.5 FC4: Ring
 	if spec != null and not spec.hooks.is_empty():
 		var p := w.projectiles
 		var ang := Kin.angle_of(Vector2(p.vel_x[pi], p.vel_y[pi]))

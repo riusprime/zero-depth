@@ -515,6 +515,16 @@ func void_rings() -> Array[Dictionary]:
 	return VoidMods.read_rings(_w)
 
 
+## v0.9.5 FC4: the Lance's lightning rings growing (LanceMods.read_rings): {pos, r (m, the largest), age, span (ticks)}.
+func lance_rings() -> Array[Dictionary]:
+	return LanceMods.read_rings(_w)
+
+
+## v0.9.5 FC4: the Lance's split shards in view (LanceMods.read_shards): {from, to, age, span (ticks)}.
+func lance_shards() -> Array[Dictionary]:
+	return LanceMods.read_shards(_w)
+
+
 ## v0.9.0 BM: player projectile `i` is a bomb (the Bomb form's shot; BombView draws it, not the pulses).
 func projectile_is_bomb(i: int) -> bool:
 	return Bomb.touches(_w, i)

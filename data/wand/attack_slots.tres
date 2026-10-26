@@ -107,10 +107,10 @@ params = {
 "echo_life": 500,
 "echo_aura": 500,
 "echo_pull": 500,
-"big_aura_mm": 1600,
-"big_pull_mm": 4500,
+"big_aura_mm": 1300,
+"big_pull_mm": 4000,
 "big_speed": 700,
-"big_damage": 1600,
+"big_damage": 1200,
 "rapid_period_ms": 400,
 "rapid_life": 500,
 "rapid_aura_mm": 700,
@@ -130,8 +130,32 @@ params = {
 script = ExtResource("2_row")
 id = &"lance"
 card = &"gun_lance"
-allowed = Array[StringName]([&"gun_twin", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
+allowed = Array[StringName]([&"gun_twin", &"halo_shot", &"gun_ring", &"gun_backfire", &"gun_ricochet", &"gun_homing", &"gun_echo", &"gun_big_shot", &"gun_rapid_fire", &"split_shot", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
 ruled = Array[StringName]([])
+params = {
+"halo_count": 6,
+"halo_share": 500,
+"ring_mm": 2000,
+"ring_ms": 250,
+"ring_share": 500,
+"back_share": 500,
+"ricochet_bounces": 1,
+"home_range_mm": 12000,
+"home_cone_deg": 60,
+"home_turn_dps": 60,
+"echo_delay_ms": 400,
+"echo_share": 500,
+"big_wide": 2000,
+"big_damage": 1600,
+"big_hold_ms": 300,
+"rapid_charge": 1400,
+"rapid_damage": 700,
+"split_len_mm": 3000,
+"split_width_mm": 250,
+"split_share": 250,
+"split_max": 6,
+"split_ticks": 8
+}
 
 [sub_resource type="Resource" id="Form_rune_explosion"]
 script = ExtResource("2_row")

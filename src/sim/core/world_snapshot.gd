@@ -1,3 +1,4 @@
+# gdlint: disable=max-file-lines
 class_name WorldSnapshot
 extends RefCounted
 ## v0.4.0 SV: the canonical snapshot of a whole World as plain data (SIM_CONTRACTS §10b), and its restore. Pure: no
@@ -466,6 +467,19 @@ const ADDED_SINCE_V05 := {
 		&"vm_r",
 		&"vm_root",
 		&"vm_hit",
+		&"lm_next",  # v0.9.5 FC4 (LanceMods: the Lance cards' rows; an older save has none)
+		&"lm_id",
+		&"lm_kind",
+		&"lm_pid",
+		&"lm_at",
+		&"lm_due",
+		&"lm_born",
+		&"lm_ang",
+		&"lm_dmg",
+		&"lm_r",
+		&"lm_aux",
+		&"lm_root",
+		&"lm_hit",
 		&"ramp_n",  # v0.8.0 MR (FireRhythm, SecondaryProc: an older save has no ramp, no burst, no carry)
 		&"ramp_tick",
 		&"burst_n",

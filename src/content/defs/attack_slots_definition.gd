@@ -120,6 +120,8 @@ func _keys_of(id: StringName) -> Array[String]:
 		return AttackFormRow.BOMB_KEYS
 	if id == &"void":
 		return AttackFormRow.VOID_KEYS
+	if id == &"lance":
+		return AttackFormRow.LANCE_KEYS
 	return []
 
 

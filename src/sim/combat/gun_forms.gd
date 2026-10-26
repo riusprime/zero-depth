@@ -47,12 +47,14 @@ static func lane_turns(spec: AttackSpec) -> PackedInt32Array:
 
 
 # --- Charge ----------------------------------------------------------------------------------------------------
-## The shot's size and damage factor (per mille) after holding `held` ticks of a spec charging over hold_ticks.
-static func charge_permille(spec: AttackSpec, held: int) -> int:
+## The shot's size and damage factor (per mille) after holding `held` ticks of a spec charging over hold_ticks (v0.9.5
+## FC4: or over `ticks`, the Lance's Big Shot and Rapid Fire change it: LanceMods.hold_ticks).
+static func charge_permille(spec: AttackSpec, held: int, ticks: int = -1) -> int:
 	if spec.hold_ticks <= 0:
 		return 1000
-	var t := clampi(held, 0, spec.hold_ticks)
-	return 1000 + (spec.hold_permille - 1000) * t / spec.hold_ticks
+	var n := spec.hold_ticks if ticks < 0 else ticks
+	var t := clampi(held, 0, n)
+	return 1000 + (spec.hold_permille - 1000) * t / n
 
 
 ## The Gun charges (its bolt has hold_ticks).
@@ -65,16 +67,17 @@ static func charging(w: World) -> bool:
 static func hold(w: World, can_fire: bool, fire: Callable) -> void:
 	var spec := Modifiers.bolt(w)
 	var held := PlayerKit.shooting(w) and can_fire and w.swing_t == 0
+	var full := LanceMods.hold_ticks(w, spec)  # v0.9.5 FC4: Big Shot and Rapid Fire move a Lance's full charge
 	if held and w.shot_cd == 0:
-		w.mx.hold_t = mini(w.mx.hold_t + 1, spec.hold_ticks)
-		if w.mx.hold_t < spec.hold_ticks or Lance.is_lance(spec):  # v0.9.0 AF1: a full Lance waits
+		w.mx.hold_t = mini(w.mx.hold_t + 1, full)
+		if w.mx.hold_t < full or Lance.is_lance(spec):  # v0.9.0 AF1: a full Lance waits
 			return
 	elif w.mx.hold_t <= 0:
 		return
 	if w.player_dead() or not can_fire:
 		w.mx.hold_t = 0
 		return
-	var pm := charge_permille(spec, w.mx.hold_t)
+	var pm := charge_permille(spec, w.mx.hold_t, full)
 	w.mx.hold_t = 0
 	fire.call(pm)
 	w.shot_cd = ItemEffects.shot_period_ticks(w)
@@ -85,7 +88,7 @@ static func charge_fraction(w: World) -> float:
 	var spec := Modifiers.bolt(w)
 	if spec.hold_ticks <= 0 or w.mx.hold_t <= 0:
 		return 0.0
-	return float(w.mx.hold_t) / float(spec.hold_ticks)
+	return minf(1.0, float(w.mx.hold_t) / float(LanceMods.hold_ticks(w, spec)))
 
 
 # --- Spiral and mine (ProjectileMoves calls these) -------------------------------------------------------------
