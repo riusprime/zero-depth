@@ -193,7 +193,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 static func state(w: World) -> Dictionary:
 	var bs := w.bosses
 	if bs.shade_boss < 0:
-		return {}
+		return BossInterphase.light(w)  # v0.9.5 BH6: the Fallen's Lights Out interphase shows the same dark
 	var i := w.actors.index_of(bs.shade_boss)
 	if i < 0:
 		return {}

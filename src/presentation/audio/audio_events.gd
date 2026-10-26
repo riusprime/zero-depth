@@ -520,6 +520,8 @@ func _events(reader: WorldReader, out: Array) -> void:
 					out.append([&"frost_nova", e.pos, 1.0])
 				elif e.effect_id == WorldReader.EFFECT_TWIN_ANGER:  # v0.9.0 NB2: a Warden's chain jerks taut
 					out.append([&"boss_twin_chain", e.pos, 0.75])
+				else:
+					_fallen_cue(e, out)
 			SimEvent.Kind.BLAST:  # v0.9.0 BM: a bomb bursts
 				out.append([&"bomb_blast", e.pos, 1.0])
 			SimEvent.Kind.LANCE:  # v0.9.0 AF1b: a Lance released, its whoosh
@@ -528,6 +530,27 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"combo_unlock", null, 1.0])
 			SimEvent.Kind.STRESS_BREAK:  # v0.9.5 SM: a Stress Mark side broken, a metallic ting
 				out.append([&"stress_break", e.pos, 1.0])
+
+
+## v0.9.5 BH6: the Fallen's interphase: it vanishes with the phase cue, the beams open with the laser's, an eruption
+## strikes with the spikes' floor burst, the dark falls with the Shade's snuff, the rain with the mortar's, and the
+## slam back down with the heavy slam.
+func _fallen_cue(e: SimEvent, out: Array) -> void:
+	match e.effect_id:
+		WorldReader.EFFECT_FALLEN_VANISH:
+			out.append([&"boss_phase", null, 1.0])
+		WorldReader.EFFECT_FALLEN_BEAMS:
+			out.append([&"boss_laser", e.pos, 1.0])
+		WorldReader.EFFECT_FALLEN_ERUPT:
+			out.append([&"boss_floor_burst", e.pos, 0.9])
+		WorldReader.EFFECT_FALLEN_DARK:
+			out.append([&"boss_shade_snuff", null, 1.0])
+		WorldReader.EFFECT_FALLEN_RAIN:
+			out.append([&"boss_mortar", e.pos, 0.8])
+		WorldReader.EFFECT_FALLEN_LINE:
+			out.append([&"boss_floor_burst", e.pos, 0.7])
+		WorldReader.EFFECT_FALLEN_RETURN:
+			out.append([&"boss_slam", e.pos, 1.0])
 
 
 ## Mines (v0.4.0 EN): a beep as one arms, the blast when an armed one goes off the floor.

@@ -374,6 +374,7 @@ static func advance(w: World) -> void:
 	BossLava.advance(w)
 	BossShade.advance(w)  # v0.9.0 NB4: the Lantern Shade's dark and its lanterns
 	BossStream.advance(w)  # v0.9.5 BH4: the Tidecaller's ring stream and crossing waves
+	BossInterphase.advance(w)  # v0.9.5 BH6: the Fallen's interphase hazards and its return
 
 
 ## World._remove_dead: boss `boss_id` is gone: its pillars sink and its javelins go (its eggs crumble on their own).

@@ -314,7 +314,11 @@ const MOVES := {
 	## across the room after the telegraph (a foam line at the wall); shove_m along its travel when it hits; clear_m: it
 	## never forms within that of the hero's projection on its wall.
 	&"wave":
+	## v0.9.5 BH6 (BOSSES_HARD.md HC5; BossInterphase): a carrier of the Fallen's interphase hits, in no attack list: its
+	## damage, telegraph and recap cause belong to the hazards (fallen_rays, fallen_rain, fallen_dark, fallen_erupt,
 	{"shape": 2, "params": ["lengths_m", "thickness_m", "speed_mps", "shove_m", "clear_m"]},
+	## fallen_return).
+	&"interphase": {"shape": 2, "params": []},
 }
 ## v0.8.0 FB3: the runs an attack's `weapon` may name.
 ## v0.8.0 N2 (owner O52): "own" is The Fallen's own kit, only outside its mimic windows.

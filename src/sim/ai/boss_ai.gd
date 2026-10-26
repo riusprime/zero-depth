@@ -79,6 +79,8 @@ static func think(w: World, i: int) -> void:
 	if a.cd[i] > 0:
 		a.cd[i] -= 1
 	if a.state[i] != GATE and a.state[i] != FinalBoss.SHATTER and a.dead[i] == 0:
+		if t.interphase != null and BossInterphase.think(w, i, b, t):
+			return  # v0.9.5 BH6 (HC4, HC5): the Fallen is vanished, or vanishes now
 		_update_phase(w, i, b, t)  # v0.5.5 DS: a boss killed between ticks opens no gate (FB1: nor a shattering one)
 	BossChallenge.think(w, i, b, t)
 	if t.mimic and w.final_fight != null:  # v0.8.0 FB3: the build read, a dash due, the stance's clock
@@ -96,6 +98,8 @@ static func think(w: World, i: int) -> void:
 			BossGates.advance(w, i, b)
 		FinalBoss.SHATTER:
 			pass  # v0.8.0 FB1: FinalBoss runs the shatter (tick phase 9)
+		BossInterphase.STATE:
+			pass  # v0.9.5 BH6: BossInterphase runs the interphase (tick phase 6)
 		STAGGERED:  # v0.9.5 BH1 (H0): the sim never enters it now; a save made before it (and the tests' hold) runs out
 			bs.stagger_t[b] -= 1
 			if bs.stagger_t[b] <= 0:
@@ -526,6 +530,8 @@ static func move(w: World, i: int) -> void:
 
 ## True while the boss is in the air (a leap) or underground (a burrow): walls and bodies don't stop it.
 static func passes_through(w: World, i: int) -> bool:
+	if is_boss_kind(w.actors.kinds[i]) and w.actors.state[i] == BossInterphase.STATE:
+		return true  # v0.9.5 BH6: vanished, it is nowhere the hero can be shoved by
 	if not is_boss_kind(w.actors.kinds[i]) or w.actors.state[i] != S.ACTIVE:
 		return false
 	var atk := attack_of(w, i)
@@ -538,6 +544,8 @@ static func passes_through(w: World, i: int) -> bool:
 
 ## Underground (a burrow before it erupts): the view hides the body.
 static func hidden(w: World, i: int) -> bool:
+	if w.actors.state[i] == BossInterphase.STATE:
+		return true  # v0.9.5 BH6: the Fallen is vanished
 	var atk := attack_of(w, i)
 	return (
 		atk != null

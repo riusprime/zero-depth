@@ -27,6 +27,8 @@ extends RefCounted
 ## BossAi state of a shattering body: after BossAi.GATE (6) and BossSignatures' egg states (7-9), which the views
 ## also read off the state alone.
 const SHATTER := 10
+## v0.9.5 BH6: BossAi state of the Fallen vanished in an interphase (BossInterphase.STATE).
+const INTERPHASE := BossInterphase.STATE
 ## STATUS_APPLY effect ids for the views and the sound: a body shatters (amount = the phase it ends), a body rises
 ## (amount = the phase it begins).
 const EFFECT_SHATTER := &"final_shatter"
@@ -65,6 +67,8 @@ static func clamp_damage(w: World, i: int, amount: int, owner_id: int = 0) -> in
 	var f := w.final_fight
 	if f == null or w.actors.ids[i] != f.body_id:
 		return amount
+	if f.ip_stage >= BossInterphase.STAGE_VANISHED and owner_id != 0:
+		return 0  # v0.9.5 BH6: vanished, its HP is frozen (the world's own hit, the dev panel's Kill boss, still lands)
 	if not f.last_phase():
 		amount = mini(amount, maxi(0, w.actors.hp[i] - 1))
 	return FinalPace.cap_hit(w, amount, owner_id)
@@ -236,6 +240,8 @@ static func measuring(w: World, i: int) -> bool:
 	var f := w.final_fight
 	if f == null or f.won or w.player_dead() or i < 0 or f.shatter_t > 0:
 		return false
+	if f.ip_stage >= BossInterphase.STAGE_VANISHED:
+		return false  # v0.9.5 BH6: the interphase's seconds are not fought: the meter holds
 	var s := w.actors.state[i]
 	if s == EnemyAi.State.SPAWN or s == BossAi.GATE or s == SHATTER or w.actors.dead[i] == 1:
 		return false

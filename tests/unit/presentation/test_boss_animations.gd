@@ -99,6 +99,8 @@ func test_every_boss_has_every_clip_its_moves_need() -> void:
 		var moves := 0
 		for atk: Resource in def.get("attacks"):
 			var move := StringName(atk.get("move"))
+			if move == &"interphase":
+				continue  # v0.9.5 BH6: a carrier of the Fallen's interphase hits, never picked: no clip
 			moves += 1
 			assert_true(lib.has(move), "%s: %s (%s) has its clip" % [id, atk.get("id"), move])
 			if atk.get("shielded"):

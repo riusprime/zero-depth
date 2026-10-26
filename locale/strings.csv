@@ -1172,6 +1172,11 @@ CAUSE_NEMESIS_SLASH,The Fallen cut you down.,The Fallen te abatió de un tajo.
 CAUSE_NEMESIS_CRESCENTS,The Fallen's crescents caught you.,Las medialunas de The Fallen te alcanzaron.
 CAUSE_NEMESIS_CARD,The Fallen used your own card.,The Fallen usó tu propia carta.
 CAUSE_NEMESIS_SHOTS,The Fallen shot you with your own gun.,The Fallen te disparó con tu propia arma.
+CAUSE_FALLEN_RAYS,The Fallen's rays cut you down as it hid.,Los rayos de The Fallen te cortaron mientras se ocultaba.
+CAUSE_FALLEN_RAIN,The Fallen's rain of spikes and orbs caught you.,La lluvia de pinchos y orbes de The Fallen te alcanzó.
+CAUSE_FALLEN_DARK,A drifting orb in the dark took you.,Un orbe a la deriva en la oscuridad te alcanzó.
+CAUSE_FALLEN_ERUPTION,The ground burst under you as The Fallen hid.,El suelo estalló bajo tus pies mientras The Fallen se ocultaba.
+CAUSE_FALLEN_RETURN,The Fallen slammed back down on you.,The Fallen cayó de vuelta sobre ti.
 ACH_FINAL_BOSS_NAME,Crown Breaker,Rompecoronas
 ACH_FINAL_BOSS_DESC,Beat the Hollow Crown.,Derrota a Hollow Crown.
 ACH_FINAL_NO_HIT_NAME,Untouched,Intocable

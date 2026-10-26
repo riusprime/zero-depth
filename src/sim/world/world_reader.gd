@@ -212,6 +212,15 @@ const EFFECT_NEMESIS_CAST := BossNemesis.EFFECT_CAST
 const STATE_SHATTER := FinalBoss.SHATTER
 const EFFECT_FINAL_SHATTER := FinalBoss.EFFECT_SHATTER
 const EFFECT_FINAL_RISE := FinalBoss.EFFECT_RISE
+## v0.9.5 BH6: the Fallen's interphase (BossInterphase): the vanished body's state and its views' events.
+const STATE_INTERPHASE := BossInterphase.STATE
+const EFFECT_FALLEN_VANISH := BossInterphase.EFFECT_VANISH
+const EFFECT_FALLEN_BEAMS := BossInterphase.EFFECT_BEAMS
+const EFFECT_FALLEN_ERUPT := BossInterphase.EFFECT_ERUPT
+const EFFECT_FALLEN_DARK := BossInterphase.EFFECT_DARK
+const EFFECT_FALLEN_RAIN := BossInterphase.EFFECT_RAIN
+const EFFECT_FALLEN_LINE := BossInterphase.EFFECT_LINE
+const EFFECT_FALLEN_RETURN := BossInterphase.EFFECT_RETURN
 ## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
@@ -1698,7 +1707,8 @@ func boss_invulnerable(i: int) -> bool:
 		or BossShade.unlit(_w, i)  # v0.9.0 NB4: a Lantern Shade in the dark
 		or s == BossAi.GATE
 		or s == FinalBoss.SHATTER
-	)
+		or s == BossInterphase.STATE
+	)  # v0.9.5 BH6: the Fallen, vanished
 
 
 ## v0.8.0 N4: the shields boss i still has to pass before it can fall, derived from sim state (no store counts
@@ -1948,6 +1958,23 @@ func final_shatter_permille() -> int:
 
 func final_shattering() -> bool:
 	return FinalBoss.shattering(_w)
+
+
+## v0.9.5 BH6 (BOSSES_HARD.md HC4, HC5): the Fallen's interphase while it is vanished or returning, else {}: "stage"
+## (2 vanished, 3 returning), "set" (0 rays, 1 rain, 2 lights out), "t", "ticks", "center", "radius", "beams", "erupts",
+## "lines", "points", "ret" (BossInterphase.state).
+func final_interphase() -> Dictionary:
+	return BossInterphase.state(_w)
+
+
+## The final fight's centre (where the first body rose; the Fallen slams back down here).
+func final_home() -> Vector2:
+	return _w.final_fight.home if _w.final_fight != null else Vector2.ZERO
+
+
+## The Fallen's interphases that have begun (a bitmask: bit 0 the first) and the one running now (0 none).
+func final_interphases_done() -> int:
+	return _w.final_fight.ip_done if _w.final_fight != null else 0
 
 
 ## The last body fell (the fight is won).

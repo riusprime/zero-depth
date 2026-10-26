@@ -32,6 +32,8 @@ const MAX_STREAM_SECONDS := 6.0
 const MIN_WAVE_SECONDS := 2.0
 const MAX_WAVE_SECONDS := 10.0
 const MAX_WAVES_AT_ONCE := 2
+## v0.9.5 BH6 (HC5): the owner's rule for The Fallen's interphase: every telegraph at least 0.8 s (48 ticks).
+const MIN_INTERPHASE_TELEGRAPH_TICKS := 48
 
 
 ## BossAttackDefinition.validate_into: the hard params sit on the moves that read them, with real values.
@@ -46,6 +48,11 @@ static func validate(
 				issues.append(ValidationIssue.new(&"param_unknown", path, where + msg))
 	if a.move == &"wave":
 		validate_wave(a, issues, path, where)  # v0.9.5 BH4
+	if a.move == &"interphase":  # v0.9.5 BH6 (HC5): every interphase telegraph is at least 0.8 s
+		if int(round(a.telegraph_seconds * 60.0)) < MIN_INTERPHASE_TELEGRAPH_TICKS:
+			issues.append(
+				ValidationIssue.new(&"telegraph_short", path, where + "telegraph >= 0.8 s")
+			)
 	_validate_second(sp, issues, path, where)
 	_validate_leads(sp, issues, path, where)
 	if sp.has("turn_dps"):
