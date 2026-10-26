@@ -427,8 +427,9 @@ static func _burst(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 static func _seek(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var a := w.actors
 	var best := -1
-	var best_d := spec.reach_m
-	for j in w.aoe_candidates(ctx.origin, spec.reach_m):  # v0.8.0 HS: a superset, ascending
+	var reach := ElementLevelsFsf.fork_reach(w, spec)  # v0.9.5 EE2: Lightning Lv 2, Fork
+	var best_d := reach
+	for j in w.aoe_candidates(ctx.origin, reach):  # v0.8.0 HS: a superset, ascending
 		if j == ctx.exclude or a.teams[j] == ActorStore.TEAM_PLAYER or a.dead[j] == 1:
 			continue
 		var d := Kin.length(a.pos(j) - ctx.origin)
@@ -458,10 +459,11 @@ static func _chain(w: World, spec: AttackSpec, ctx: AttackContext, first: int) -
 		hit.append(ctx.exclude)
 	var from := a.pos(first)
 	var landed := 0
-	for n in spec.chains:
+	var reach := ElementLevelsFsf.fork_reach(w, spec)  # v0.9.5 EE2: Lightning Lv 2, Fork
+	for n in ElementLevelsFsf.fork_chains(w, spec):
 		var next := -1
-		var nd := spec.reach_m
-		for j in w.enemies_near(from, spec.reach_m):
+		var nd := reach
+		for j in w.enemies_near(from, reach):
 			var d := Kin.length(a.pos(j) - from)
 			if not hit.has(j) and d <= nd and (next < 0 or d < nd):
 				next = j
@@ -599,7 +601,9 @@ static func land_lob(
 ## A patch at ctx.origin (ElementAbilities keeps it and burns what stands in it, phase 6).
 static func _zone(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var life := spec.life_ticks if spec.life_ticks > 0 else Modifiers.HOOK_ZONE_TICKS
-	ElementAbilities.add_zone(w, ctx.origin, area_radius(w, spec), life, spec, ctx)
+	life += ElementLevelsFsf.patch_extra_ticks(w, spec)  # v0.9.5 EE2: Fire Lv 2, Wildfire
+	var r := ElementLevelsFsf.patch_radius(w, spec, area_radius(w, spec))
+	ElementAbilities.add_zone(w, ctx.origin, r, life, spec, ctx)
 
 
 ## A ring from ctx.origin (ModifierAbilities grows it, phase 6). v0.8.0 AO: a ring a SHAPE card made lays its rings
@@ -772,6 +776,7 @@ static func run_hook(
 	w.hook_chain.append(String(k.id))
 	var landed := launch(w, k.child, c)
 	w.hook_chain.remove_at(w.hook_chain.size() - 1)
+	ElementLevelsFsf.overcharge(w, k, parent, exclude)  # v0.9.5 EE2: Lightning Lv 3, the strike
 	return landed
 
 

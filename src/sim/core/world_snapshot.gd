@@ -177,6 +177,9 @@ const ADDED_SINCE_V05 := {
 		&"blast_merged",
 		&"shot_window",  # v0.9.0 AS: the last second's player launches (a save from before AS: none)
 		&"shot_window_tick",
+		&"el_chain_hits",  # v0.9.5 EE2 (Lightning's Overcharge count, the strike and shatter budgets; padded as new)
+		&"el_strike_log",
+		&"el_shatter_log",
 		&"mod_slots",
 		&"swap_code",
 		&"swap_source",

@@ -225,6 +225,29 @@ const SLOT_CATEGORIES: Array[StringName] = [&"free", &"form", &"pattern", &"seco
 @export var el_wound_move_mm := 0
 @export var el_wound_bonus_permille := 0
 @export var el_burst_stacks := 0
+# --- v0.9.5 EE2 (ELEMENTS.md E3-E5): what Fire, Lightning and Frost gain at Lv 2 and 3 (ElementLevelsFsf).
+# Fire Lv 2 Wildfire: the patches are el_patch_wide_permille wider and last el_patch_extra_seconds longer;
+# Lv 3 Heat sync: a burning enemy takes el_heat_permille more from the hero's hits.
+# Lightning Lv 2 Fork: +el_fork_chains jumps and +el_fork_range_m reach; Lv 3 Overcharge: every el_strike_every-th hit
+# that can chain calls a strike (el_strike_radius_m, el_strike_permille of the hit), at most el_strikes_per_second.
+# Frost Lv 2 Frostbite: a frozen enemy takes el_frostbite_permille more; Lv 3 Shatter: a hit on a frozen enemy breaks
+# it and fires el_shard_count shards at the nearest others within el_shard_range_m (el_shard_permille of the hit, a
+# slow of el_shard_slow_seconds), at most el_shatters_per_second a second.
+@export var el_patch_wide_permille := 0
+@export var el_patch_extra_seconds := 0.0
+@export var el_heat_permille := 0
+@export var el_fork_chains := 0
+@export var el_fork_range_m := 0.0
+@export var el_strike_every := 0
+@export var el_strike_radius_m := 0.0
+@export var el_strike_permille := 0
+@export var el_strikes_per_second := 0
+@export var el_frostbite_permille := 0
+@export var el_shard_count := 0
+@export var el_shard_range_m := 0.0
+@export var el_shard_permille := 0
+@export var el_shard_slow_seconds := 0.0
+@export var el_shatters_per_second := 0
 # --- v0.6.5 WN5a (docs/design/WAND.md, the shared pool and the triggers).
 ## S5 Bleed: the bleed's period while you move (walking or dashing; 0 = the same as standing). Shorter: it ticks
 ## faster while you move.
@@ -396,6 +419,7 @@ func _validate_engines(issues: Array[ValidationIssue]) -> void:
 			_check_frost(issues)
 			check_positive(issues, "chill_bonus_permille", chill_bonus_permille)
 			check_positive(issues, "frozen_bonus_permille", frozen_bonus_permille)
+			_check_element_levels(issues)  # v0.9.5 EE2: Frost's Lv 2 and 3
 		Kind.BULWARK:
 			check_positive(issues, "charge_max", charge_max)
 			check_positive(issues, "charge_bonus_permille", charge_bonus_permille)
@@ -454,6 +478,66 @@ func _check_element_levels(issues: Array[ValidationIssue]) -> void:
 		if not ok:
 			issues.append(
 				ValidationIssue.new(&"range", resource_path, "the Bleed level set is whole")
+			)
+	_check_element_levels_fsf(issues)
+
+
+## v0.9.5 EE2: Fire's, Lightning's and Frost's level numbers are in range, and each set comes whole.
+func _check_element_levels_fsf(issues: Array[ValidationIssue]) -> void:
+	var ints := [
+		el_patch_wide_permille,
+		el_heat_permille,
+		el_fork_chains,
+		el_strike_every,
+		el_strike_permille,
+		el_strikes_per_second,
+		el_frostbite_permille,
+		el_shard_count,
+		el_shard_permille,
+		el_shatters_per_second
+	]
+	var floats := [
+		el_patch_extra_seconds,
+		el_fork_range_m,
+		el_strike_radius_m,
+		el_shard_range_m,
+		el_shard_slow_seconds
+	]
+	var neg := false
+	for v: int in ints:
+		neg = neg or v < 0
+	for v: float in floats:
+		neg = neg or v < 0.0
+	if neg:
+		issues.append(ValidationIssue.new(&"range", resource_path, "el_* fields are >= 0"))
+	var fire := el_patch_wide_permille > 0 or el_patch_extra_seconds > 0.0 or el_heat_permille > 0
+	if fire:
+		var ok := el_patch_wide_permille > 0 and el_patch_extra_seconds > 0.0
+		ok = ok and el_heat_permille > 0 and burn_max_stacks > 0
+		if not ok:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "the Fire level set is whole")
+			)
+	var storm := el_fork_chains > 0 or el_fork_range_m > 0.0 or el_strike_every > 0
+	storm = storm or el_strike_radius_m > 0.0 or el_strike_permille > 0 or el_strikes_per_second > 0
+	if storm:
+		var ok := el_fork_chains > 0 and el_fork_range_m > 0.0 and el_strike_every > 1
+		ok = ok and el_strike_radius_m > 0.0 and el_strike_permille > 0
+		ok = ok and el_strikes_per_second > 0
+		if not ok:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "the Lightning level set is whole")
+			)
+	var frost := el_frostbite_permille > 0 or el_shard_count > 0 or el_shard_range_m > 0.0
+	frost = frost or el_shard_permille > 0 or el_shard_slow_seconds > 0.0
+	frost = frost or el_shatters_per_second > 0
+	if frost:
+		var ok := el_frostbite_permille > 0 and el_shard_count > 0 and el_shard_range_m > 0.0
+		ok = ok and el_shard_permille > 0 and el_shard_slow_seconds > 0.0
+		ok = ok and el_shatters_per_second > 0 and frost_threshold > 0
+		if not ok:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "the Frost level set is whole")
 			)
 
 

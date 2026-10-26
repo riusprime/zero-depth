@@ -134,6 +134,12 @@ var blast_merged := 0
 ## only changes an outcome past the budget, and no golden build reaches it).
 var shot_window := PackedInt32Array()
 var shot_window_tick := -1
+## v0.9.5 EE2 (ElementLevelsFsf): the hits that could chain while Lightning is Lv 3 (every el_strike_every-th calls
+## a strike), and the ticks of the strikes and the shatters in the last second (their budgets). Hashed only while
+## Lightning or Frost runs at Lv 3.
+var el_chain_hits := 0
+var el_strike_log := PackedInt32Array()
+var el_shatter_log := PackedInt32Array()
 ## Item pickups lying on the floor.
 var pickups := PickupStore.new()
 ## Twin Arc: ticks until the pending echo (0 = none), its angle, combo step (its shape), root and damage, and the

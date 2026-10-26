@@ -229,15 +229,9 @@ func test_each_shared_card_levels_up_without_a_slot_and_grows() -> void:
 		Offers.apply(w, k)
 		assert_eq(CardLevels.level(w, k), 2, "%s: a duplicate is level 2" % c[0])
 		assert_eq(w.mod_slots.size(), slots, "%s: no new slot" % c[0])
-		if c[0] == &"venom_core" or c[0] == &"shared_bleed":  # v0.9.5 EE1: their levels are behaviours
-			assert_eq(Modifiers.book(w).digest, digest, "%s: the spell is the same" % c[0])
-			assert_eq(Modifiers.bolt(w).damage, damage, "%s: no damage per level" % c[0])
-			continue
-		assert_ne(Modifiers.book(w).digest, digest, "%s: the spell changed" % c[0])
-		var up := W.hook_of(Modifiers.bolt(w), c[0])
-		if c[0] == &"ember_core":  # v0.9.0 XP: Fire's burning patch, +5 % a level
-			assert_eq(up.damage_permille, share + 50, "Fire: its patch +5 %%")
-		elif hook != null:
-			assert_eq(up.damage_permille, share + 100, "%s: its hook +10 %%" % c[0])
-		else:
-			assert_eq(Modifiers.bolt(w).damage, damage * 1050 / 1000, "%s: +5 %% damage" % c[0])
+		# v0.9.5 EE1, EE2: every element card's levels are behaviours now, not a percentage
+		assert_eq(Modifiers.book(w).digest, digest, "%s: the spell is the same" % c[0])
+		assert_eq(Modifiers.bolt(w).damage, damage, "%s: no damage per level" % c[0])
+		if hook != null:
+			var up := W.hook_of(Modifiers.bolt(w), c[0])
+			assert_eq(up.damage_permille, share, "%s: its hook is the same share" % c[0])

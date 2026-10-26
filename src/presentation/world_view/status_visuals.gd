@@ -24,6 +24,13 @@ const DOT_POISON := Color("#7BE04A")
 const JUMP_TICKS := 15.0
 const SPLASH_TICKS := 20.0
 const SPLASH_RADIUS_M := 1.2
+## v0.9.5 EE2: the "+" over a burning (Heat sync) or frozen (Shatter) enemy's bar at Lv 3; an Overcharge strike's bolt
+## and a shard's streak last 0.33 s and 0.25 s.
+const PLUS_FIRE := Color("#FFB347")
+const PLUS_FROST := Color("#BDEBFF")
+const STRIKE_TICKS := 20.0
+const SHARD_TICKS := 15.0
+const STRIKE_TOP_M := 3.5
 const EMBERS := 3
 const DRIPS := 3
 const CRYSTALS := 4
@@ -57,6 +64,10 @@ var _views := {}
 var _frame := 0
 ## v0.9.5 EE1: the last event read (Contagion jumps, the Exsanguinate burst).
 var _last_seq := 0
+## v0.9.5 EE2: where the last Shatter broke (its shards fly from there), and whether the "+" shows this sync.
+var _shatter_at := Vector2.ZERO
+var _plus_fire := false
+var _plus_frost := false
 var _seen := {}
 var _fx: Array = []
 var _fx_template := SkillVisuals._make_template()
@@ -87,6 +98,8 @@ func _init(p_actors: ActorViews) -> void:
 	_mats[&"pip_on"] = _material(ItemLooks.status_color(&"shock"), 1.0, true)
 	_mats[&"dot_poison"] = _material(DOT_POISON, 1.0, true)
 	_mats[&"dot_bleed"] = _material(ItemLooks.status_color(&"bleed"), 1.0, true)
+	_mats[&"dot_plus_fire"] = _material(PLUS_FIRE, 1.0, true)
+	_mats[&"dot_plus_frost"] = _material(PLUS_FROST, 1.0, true)
 	_dot.size = Vector2(0.08, 0.08)
 	_mats[&"shell"] = _material(ItemLooks.status_color(&"frozen"), 0.38, false)
 
@@ -99,6 +112,8 @@ func use_vfx(layer: VfxLayer) -> void:
 
 func sync(reader: WorldReader) -> void:
 	_frame += 1
+	_plus_fire = reader.element_plus(true)  # v0.9.5 EE2
+	_plus_frost = reader.element_plus(false)
 	_on.clear()
 	_alive.clear()
 	for i in reader.actor_count():
@@ -148,6 +163,8 @@ func _statuses(reader: WorldReader, i: int, out: Dictionary) -> Dictionary:
 		return out
 	if reader.burn_stacks(i) > 0:
 		out[&"burn"] = reader.burn_stacks(i)
+		if _plus_fire:
+			out[&"plus_fire"] = 1  # v0.9.5 EE2: Heat sync
 	if reader.shock_stacks(i) > 0:
 		out[&"shock"] = reader.shock_stacks(i)
 		out[&"shock_max"] = maxi(1, reader.shock_threshold())
@@ -157,6 +174,8 @@ func _statuses(reader: WorldReader, i: int, out: Dictionary) -> Dictionary:
 		out[&"frost"] = reader.frost_stacks(i)
 	if reader.actor_frozen(i):
 		out[&"frozen"] = 1
+		if _plus_frost:
+			out[&"plus_frost"] = 1  # v0.9.5 EE2: Shatter
 	if reader.poison_stacks(i) > 0:
 		out[&"poison"] = reader.poison_stacks(i)
 	return out
@@ -171,7 +190,14 @@ func _build(node: Node3D, r: float) -> Dictionary:
 	if node.has_meta(&"bar"):
 		bar_y = (node.get_meta(&"bar") as Node3D).get_parent().position.y
 	var v := {
-		"root": root, "bar_y": bar_y, "pips": [], "orbs": [], "dots_poison": [], "dots_bleed": []
+		"root": root,
+		"bar_y": bar_y,
+		"pips": [],
+		"orbs": [],
+		"dots_poison": [],
+		"dots_bleed": [],
+		"dots_plus_fire": [],
+		"dots_plus_frost": []
 	}
 	if vfx != null:
 		# v0.8.0 FV (owner O87, the horde lag): the effects layer draws the embers, drips, crystals, sparks and shell,
@@ -221,6 +247,19 @@ func _update_dots(v: Dictionary, status: StringName, stacks: int, rise: float) -
 		(dots[k] as Node3D).visible = k < stacks
 
 
+## v0.9.5 EE2: the "+" (one bigger dot, beside the bar's right end) of `status` (plus_fire or plus_frost).
+func _update_plus(v: Dictionary, status: StringName, on: bool) -> void:
+	var dots: Array = v["dots_" + String(status)]
+	if on and dots.is_empty():
+		var p := _piece(
+			v["root"], _dot, Vector3(1.7, 1.7, 1.7), StringName("dot_" + String(status))
+		)
+		p.position = Vector3(0.42, float(v["bar_y"]) + 0.2, 0)
+		dots.append(p)
+	for p: Node3D in dots:
+		p.visible = on
+
+
 ## The guard orbs (once per view).
 func _build_orbs(v: Dictionary) -> void:
 	v["orbs"] = _pieces(v["root"], ORBS, _box, Vector3(0.12, 0.12, 0.12), &"guard")
@@ -248,6 +287,8 @@ func _update(v: Dictionary, on: Dictionary, r: float) -> void:
 			p.material_override = m
 	_update_dots(v, &"poison", on.get(&"poison", 0), 0.36)
 	_update_dots(v, &"bleed", on.get(&"bleed", 0), 0.46)
+	_update_plus(v, &"plus_fire", on.has(&"plus_fire"))
+	_update_plus(v, &"plus_frost", on.has(&"plus_frost"))
 	var charges: int = on.get(&"guard", 0)
 	if charges > 0 and (v["orbs"] as Array).is_empty():
 		_build_orbs(v)
@@ -368,6 +409,41 @@ func _sync_element_events(reader: WorldReader) -> void:
 				_shots.append([&"exsang", at, SPLASH_RADIUS_M, now, SPLASH_TICKS, e.seq, []])
 			else:
 				_ring(e.pos, SPLASH_RADIUS_M, ItemLooks.status_color(&"bleed"))
+		elif e.kind == SimEvent.Kind.STATUS_APPLY:
+			_sync_fsf_event(e, now)
+
+
+## v0.9.5 EE2: an Overcharge strike (a bolt from above and a ring), a Shatter (a crackle where the ice broke) and its
+## shards (streaks to the enemies they hit), through the effects layer's pooled lines and bursts (their caps and
+## Effects density), or the old look's bolt line and ring.
+func _sync_fsf_event(e: SimEvent, now: float) -> void:
+	match e.effect_id:
+		SimEvent.EFFECT_STORM_STRIKE:
+			var radius := float(e.amount) / 1000.0
+			if vfx != null:
+				var top: Array = [SimPlane.to_3d(e.pos, STRIKE_TOP_M)]
+				_shots.append(
+					[&"strike", SimPlane.to_3d(e.pos, 0.07), radius, now, STRIKE_TICKS, e.seq, top]
+				)
+			else:
+				_bolt_line(e.pos + Vector2(0.5, 0.5), e.pos, ItemLooks.status_color(&"shock"))
+				_ring(e.pos, radius, ItemLooks.status_color(&"shock"))
+		SimEvent.EFFECT_FROST_SHATTER:
+			_shatter_at = e.pos
+			if vfx != null:
+				_shots.append(
+					[&"shatter", SimPlane.to_3d(e.pos, 0.07), 1.2, now, SHARD_TICKS, e.seq, []]
+				)
+			else:
+				_ring(e.pos, 1.0, ItemLooks.status_color(&"frozen"))
+		SimEvent.EFFECT_FROST_SHARD:
+			if vfx != null:
+				var to: Array = [SimPlane.to_3d(e.pos, 0.6)]
+				_shots.append(
+					[&"shard", SimPlane.to_3d(_shatter_at, 0.6), 0.0, now, SHARD_TICKS, e.seq, to]
+				)
+			else:
+				_bolt_line(_shatter_at, e.pos, ItemLooks.status_color(&"frozen"))
 
 
 ## The new look's payoffs: element bursts and lightning in the effects layer, the radius rings kept for the rest.
@@ -431,6 +507,13 @@ func _draw_vfx(layer: VfxCore) -> void:
 			&"jump":
 				var to: Vector3 = (shot[6] as Array)[0]
 				fx.line(&"venom", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
+			&"strike":
+				var top: Vector3 = (shot[6] as Array)[0]
+				fx.line(&"storm", top, shot[1], 1.0 - u, u * float(shot[4]), int(shot[5]))
+				fx.burst(&"storm", shot[1], shot[2], u, int(shot[5]))
+			&"shard":
+				var to: Vector3 = (shot[6] as Array)[0]
+				fx.line(&"frost", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
 			&"shatter":
 				fx.burst(&"frost", shot[1], shot[2], u, int(shot[5]))
 			&"wildfire":
