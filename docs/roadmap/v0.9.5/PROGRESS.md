@@ -12,7 +12,7 @@ riusprime/zero-depth#9).
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
 - **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 merged (Wave D done).
-- **Agents working:** EE3 (the element pairs) and SW (a sweep of tests/unit/sim, presentation and e2e for this version's fallout) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Agents working:** EE3 (the element pairs) and DR (locked rooms vs Overrun, bars on every seal) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner (asleep, 2026-10-25 night):** the G2 HUD pick once HM's mockups are made; [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -164,3 +164,7 @@ riusprime/zero-depth#9).
   16/16, e2e 6/6, content 157/157, golden 2/2, arch 4/4, debug 16/16, application 137/137 ([evidence](evidence/BH6.md));
   sampled gaps ≥ 6.8 m and no overlapping hits. Presentation reds it saw outside its files (attack_visuals' Gatekeeper
   sweep, BH4's wave looks, test_gun_pulse) left for the sweep. Wave D (bosses) is complete. EE3 started.
+- 2026-10-26 — SW (agent) merged (`8ace98be`): on base `1e0c5133` its first runs were tests/unit/sim 1740/1763 and
+  presentation + e2e 1235/1238 (8202 s and 3029 s on a loaded machine); it fixed 14 test files that followed CLV, RC,
+  FC0, DC and SB (one parse error in test_arenas from SB), re-runs 129/129 and 16/16; no unexplained failure. Seams and
+  the whole presentation folder started on the merged head. DR started.
