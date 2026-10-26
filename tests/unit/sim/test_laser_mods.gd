@@ -303,12 +303,30 @@ func test_l8_rapid_fire_quickens_from_0_1_s_to_0_05_s_over_2_s_and_thins() -> vo
 	assert_eq(LaserMods.width_permille(w, LaserMods.RAPID), 1000)
 	w.mx.lz_hold = 120
 	assert_eq(LaserMods.width_permille(w, LaserMods.RAPID), 500, "half as wide at the top")
+	var dmg := []
+	for h in [0, 60, 120, 500]:
+		w.mx.lz_hold = h
+		dmg.append(LaserMods.damage_permille(w, LaserMods.RAPID))
+	assert_eq(
+		dmg,
+		[1000, 825, 650, 650],
+		"FC2 follow-up: each tick deals 1000 down to 650 per mille along the ramp"
+	)
 	w.mx.lz_hold = 0
 	W.run(w, 260, 0, W.S)
 	var late := _hits(w, 1).filter(
 		func(h: Dictionary) -> bool: return h["tick"] >= 150 and h["tick"] < 210
 	)
 	assert_between(late.size(), 19, 21, "20 ticks a second once ramped")
+	var late_total := 0
+	for h: Dictionary in late:
+		late_total += int(h["amount"])
+	assert_between(
+		late_total,
+		50,
+		54,
+		"20 ticks a second at 65 % of 4: 52 a second, about 1.3x a plain beam's 40"
+	)
 	var early := _hits(w, 1).filter(func(h: Dictionary) -> bool: return h["tick"] < 30)
 	assert_lte(early.size(), 5, "10 a second at the start")
 	W.run(w, 2, 0, 0)

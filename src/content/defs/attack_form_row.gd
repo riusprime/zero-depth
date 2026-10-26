@@ -6,6 +6,35 @@ extends Resource
 ## form's own (the form's step builds the rule; until then it reads as on); every other card is off (C62: "No by
 ## default"), so it is never offered, never equipped and never compiled with this form.
 
+## v0.9.5 FC2: the numbers the Bomb row carries (BombMods.DEFAULTS has the same keys; a test holds them equal).
+const BOMB_KEYS: Array[String] = [
+	"halo_dist_mm",
+	"halo_delay_ms",
+	"halo_share",
+	"ring_mm",
+	"ring_ms",
+	"ring_share",
+	"back_fuse_ms",
+	"back_share",
+	"ricochet_mm",
+	"home_range_mm",
+	"echo_delay_ms",
+	"echo_share",
+	"big_blast_mm",
+	"big_damage",
+	"big_speed",
+	"rapid_period_ms",
+	"rapid_blast_mm",
+	"rapid_damage",
+	"split_dist_mm",
+	"split_fuse_ms",
+	"split_share",
+	"split_blast_mm",
+	"mine_trigger_mm",
+	"mine_max",
+	"mine_life_ms",
+]
+
 ## v0.9.5 FC1: the numbers the Laser row carries (LaserMods.DEFAULTS has the same keys; a test holds them equal).
 const LASER_KEYS: Array[String] = [
 	"halo_len_mm",
@@ -29,6 +58,7 @@ const LASER_KEYS: Array[String] = [
 	"rapid_period_ms",
 	"rapid_ramp_ms",
 	"rapid_width",
+	"rapid_damage_permille",
 	"split_mm",
 	"split_deg",
 	"split_share",

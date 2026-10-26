@@ -7,7 +7,22 @@ extends GutTest
 const W := preload("res://tests/support/mx4_world.gd")
 const HP := 1000000
 const BOMB_ON: Array[StringName] = [
-	&"gun_twin", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"
+	&"gun_twin",
+	&"halo_shot",
+	&"gun_ring",
+	&"gun_backfire",
+	&"gun_ricochet",
+	&"gun_homing",
+	&"gun_echo",
+	&"gun_big_shot",
+	&"gun_rapid_fire",
+	&"split_shot",
+	&"gun_mine",
+	&"ember_core",
+	&"storm_core",
+	&"frost_core",
+	&"venom_core",
+	&"shared_bleed"
 ]
 
 
@@ -153,11 +168,12 @@ func _slot_world() -> World:
 	return w
 
 
-func test_the_bomb_row_offers_only_its_cards_and_never_ring() -> void:
+func test_the_bomb_row_offers_only_its_cards_and_never_pierce_or_orbit() -> void:
 	var w := _slot_world()
 	assert_true(BuildSlots.take(w, W.item(w, &"gun_bomb")))
 	assert_eq(AttackSlots.form_id(w), &"bomb")
-	assert_false(ItemPool.usable(w, W.item(w, &"gun_ring")), "Bomb + Ring: never (C52)")
+	assert_true(ItemPool.usable(w, W.item(w, &"gun_ring")), "Bomb + Ring: on since FC2 (B2)")
+	assert_false(ItemPool.usable(w, W.item(w, &"gun_pierce")), "Bomb + Pierce: off")
 	for idx in w.item_tables.size():
 		var it := w.item_tables[idx]
 		var cat := AttackSlots.category(w, idx)
@@ -170,7 +186,7 @@ func test_the_bomb_row_offers_only_its_cards_and_never_ring() -> void:
 		assert_eq(AttackSlots.usable(w, idx), BOMB_ON.has(it.id), "%s with the Bomb" % it.id)
 	for k in 200:
 		w.rng_loot = RngStream.derive(k, "loot")
-		assert_false(ItemPool.draw_weighted(w, 3, 3).has(W.item(w, &"gun_ring")), "draw %d" % k)
+		assert_false(ItemPool.draw_weighted(w, 3, 3).has(W.item(w, &"gun_pierce")), "draw %d" % k)
 
 
 func test_the_bomb_replaces_the_laser_and_the_laser_the_bomb() -> void:

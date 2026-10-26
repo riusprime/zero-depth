@@ -76,6 +76,7 @@ const DEFAULTS := {
 	"rapid_period_ms": 50,
 	"rapid_ramp_ms": 2000,
 	"rapid_width": 500,
+	"rapid_damage_permille": 650,
 	"split_mm": 4000,
 	"split_deg": 25,
 	"split_share": 500,
@@ -135,9 +136,16 @@ static func turn_step(dps: int, tick: int) -> int:
 	return u * (tick + 1) / HZ - u * tick / HZ
 
 
-## The tick damage factor (per mille): Big Shot's +60 %.
+## The tick damage factor (per mille): Big Shot's +60 %; Rapid Fire's ticks come faster, so each deals less (FC2
+## follow-up: 1000 down to rapid_damage_permille along the same ramp as the period, so a ramped beam deals about 1.3x
+## a plain one).
 static func damage_permille(w: World, m: int) -> int:
-	return param(w, "big_damage") if m & BIG else 1000
+	var f := param(w, "big_damage") if m & BIG else 1000
+	if m & RAPID:
+		var ramp := ticks(param(w, "rapid_ramp_ms"))
+		var h := clampi(w.mx.lz_hold, 0, ramp)
+		f = f * (1000 - (1000 - param(w, "rapid_damage_permille")) * h / ramp) / 1000
+	return f
 
 
 ## The beam's width factor (per mille): Big Shot's double, Rapid Fire's thinning with the ramp.

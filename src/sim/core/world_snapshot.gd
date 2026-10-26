@@ -433,6 +433,17 @@ const ADDED_SINCE_V05 := {
 		&"lz_echo_to",
 		&"lz_echo_r",
 		&"lz_echo_dmg",
+		&"bm_next",  # v0.9.5 FC2 (BombMods: the Bomb cards' rows; an older save has none)
+		&"bm_id",
+		&"bm_kind",
+		&"bm_at",
+		&"bm_due",
+		&"bm_born",
+		&"bm_r",
+		&"bm_dmg",
+		&"bm_ang",
+		&"bm_root",
+		&"bm_hit",
 		&"ramp_n",  # v0.8.0 MR (FireRhythm, SecondaryProc: an older save has no ramp, no burst, no carry)
 		&"ramp_tick",
 		&"burst_n",

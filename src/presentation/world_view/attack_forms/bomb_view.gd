@@ -13,6 +13,11 @@ extends Node3D
 
 const BOMBS_MAX := 16
 const BLASTS_MAX := 8
+## v0.9.5 FC2: the lightning rings drawn at once, and the ring shader's phase that puts its band at ARC_FRONT of the
+## quad's half-width (0.25 + 0.72 u), so a ring of radius r is drawn at r / ARC_FRONT.
+const ARCS_MAX := 6
+const ARC_U := 0.7
+const ARC_FRONT := 0.754
 const BLAST_TICKS := 20.0
 const BOMB_SIZE := 0.62
 const SPARK_SIZE := 0.42
@@ -69,6 +74,9 @@ static var _shaders := {}
 var bombs := 0
 var blasts := 0
 var last_look := &""
+## v0.9.5 FC2: bombs waiting on the ground (a Halo cross, a Backfire drop, mines) and lightning rings drawn.
+var waiting := 0
+var arcs := 0
 ## The effects layer for the element bursts (WorldViewRoot hands it in; null: the rings alone).
 var vfx: VfxLayer = null
 
@@ -76,6 +84,9 @@ var _bomb_nodes: Array[MeshInstance3D] = []
 var _sparks: Array[MeshInstance3D] = []
 var _rings: Array[MeshInstance3D] = []
 var _ring_mat: Array[ShaderMaterial] = []
+## v0.9.5 FC2: Ring's growing lightning rings (the reader's bomb_rows of kind ring).
+var _arcs: Array[MeshInstance3D] = []
+var _arc_mat: Array[ShaderMaterial] = []
 ## Live blasts: [pos (Vector2), radius (m), start tick, look].
 var _live: Array = []
 var _last_seq := 0
@@ -121,6 +132,21 @@ func _init() -> void:
 		add_child(r)
 		_rings.append(r)
 		_ring_mat.append(m)
+	for k in ARCS_MAX:
+		var m := ShaderMaterial.new()
+		m.shader = _shader(RING_SHADER)
+		m.set_shader_parameter(&"has_tex", 0.0)
+		m.set_shader_parameter(&"u", ARC_U)
+		m.set_shader_parameter(&"core", AttackFormLooks.ground_safe(BeamLooks.core(&"lightning")))
+		m.set_shader_parameter(&"edge", AttackFormLooks.ground_safe(BeamLooks.edge(&"lightning")))
+		var r := MeshInstance3D.new()
+		r.mesh = flat
+		r.material_override = m
+		r.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		r.visible = false
+		add_child(r)
+		_arcs.append(r)
+		_arc_mat.append(m)
 
 
 static func _shader(code: String) -> Shader:
@@ -210,6 +236,40 @@ func sync(reader: WorldReader) -> void:
 		spark.position = at + Vector3.UP * (0.62 * s)
 		spark.scale = Vector3.ONE * SPARK_SIZE
 		bombs += 1
+	var rings := 0
+	var rows := reader.bomb_rows()
+	for row in rows:  # v0.9.5 FC2: bombs waiting (Halo, Backfire, Mine) and Ring's rings
+		var kind: StringName = row["kind"]
+		if kind == &"ring":
+			if rings < ARCS_MAX:
+				var arc := _arcs[rings]
+				var span: float = row["span"]
+				var g := clampf(float(row["age"]) / span, 0.0, 1.0) * float(row["r"]) / ARC_FRONT
+				arc.visible = g > 0.01
+				arc.transform = Transform3D(
+					Basis.from_scale(Vector3(g, 1.0, g)), SimPlane.to_3d(row["pos"], 0.1)
+				)
+				rings += 1
+		elif (kind == &"drop" or kind == &"mine") and bombs < BOMBS_MAX:
+			var spot := SimPlane.to_3d(row["pos"], HEIGHT * 0.5)
+			var node := _bomb_nodes[bombs]
+			node.visible = true
+			var blink := kind == &"drop" and int(row["left"]) % 10 < 5  # a fuse's flicker
+			node.transform = Transform3D(
+				Basis.from_scale(Vector3.ONE * BOMB_SIZE * (1.15 if blink else 1.0)), spot
+			)
+			var spark := _sparks[bombs]
+			spark.visible = true
+			spark.position = spot + Vector3.UP * 0.4
+			spark.scale = Vector3.ONE * SPARK_SIZE
+			bombs += 1
+	waiting = 0
+	for row in rows:
+		if row["kind"] == &"drop" or row["kind"] == &"mine":
+			waiting += 1
+	arcs = rings
+	for k in range(rings, ARCS_MAX):
+		_arcs[k].visible = false
 	for k in range(bombs, BOMBS_MAX):
 		_bomb_nodes[k].visible = false
 		_sparks[k].visible = false

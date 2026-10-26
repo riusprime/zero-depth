@@ -63,3 +63,30 @@ func test_the_throw_and_the_blast_sound() -> void:
 	assert_false(audio.played_log.has(&"bolt_fire"), "not the orb's shot")
 	assert_true(audio.played_log.has(&"bomb_blast"), "the blast")
 	assert_not_null(audio.stream_for(&"bomb_throw"), "the placeholder file")
+
+
+## v0.9.5 FC2: the Bomb cards' waiting bombs (Halo's cross, a Mine) sit on the ground as bombs, and Ring's ring grows.
+func test_fc2_waiting_bombs_and_the_growing_ring_are_drawn() -> void:
+	var w := _world([&"halo_shot", &"gun_ring"])
+	var r := WorldReader.new(w)
+	W.run(w, 3, 0, W.S)
+	_view.sync(r)
+	assert_eq(_view.waiting, 4, "Halo's four bombs wait on the ground")
+	assert_gte(_view.bombs, 4, "drawn as bombs")
+	assert_eq(r.bomb_rows().size(), 4)
+	var seen := 0
+	var rang := 0
+	for k in 60:
+		W.run(w, 1, 0, 0)
+		_view.sync(r)
+		seen = maxi(seen, _view.arcs)
+		rang = maxi(rang, _view.blasts)
+	assert_eq(_view.waiting, 0, "they landed")
+	assert_gte(rang, 1, "their blasts ring out")
+	assert_gte(seen, 1, "Ring's lightning ring is drawn while it grows")
+	var mine_world := W.world(&"gun", [&"gun_bomb", &"gun_mine"], [])
+	var mr := WorldReader.new(mine_world)
+	var mine_view: BombView = add_child_autofree(BombView.new())
+	W.run(mine_world, 60, 0, W.S)
+	mine_view.sync(mr)
+	assert_eq(mine_view.waiting, 1, "a mine waits as a bomb")
