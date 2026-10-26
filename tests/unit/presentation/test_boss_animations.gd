@@ -379,8 +379,9 @@ func test_the_outline_is_unchanged_and_no_shader_changes() -> void:
 		for t in 30:
 			a.advance(DT)
 		assert_eq(DamageFlashKeys.of(a), before, "%s: no shader changed" % id)
-		assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "%s keeps its stencil" % id)
-		assert_eq(m.stencil_outline_thickness, 0.0, "%s: no drawn outline (owner, v0.7.5)" % id)
+		assert_eq(m.stencil_mode, ActorLooks.outline_mode(), "%s keeps its stencil" % id)
+		if ActorLooks.OUTLINES:
+			assert_eq(m.stencil_outline_thickness, 0.0, "%s: no drawn outline (owner, v0.7.5)" % id)
 		assert_eq(
 			a.find_children("XrayTwin", "MeshInstance3D", true, false).size(),
 			0,

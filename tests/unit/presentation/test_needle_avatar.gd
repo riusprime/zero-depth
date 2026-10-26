@@ -47,7 +47,7 @@ func test_exposes_outlined_body_materials_for_the_hit_flash() -> void:
 	var a := _avatar()
 	assert_gt(a.body_materials.size(), 10, "every body piece has a material")
 	for m in a.body_materials:
-		assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "outlined")
+		assert_eq(m.stencil_mode, ActorLooks.outline_mode(), "outlined")
 	var red := EnemyPalettes.color(WorldReader.KIND_NEEDLE, &"body")
 	var reds := a.body_materials.filter(func(m): return m.albedo_color == red)
 	assert_eq(reds.size(), 1, "one red cube")

@@ -380,14 +380,14 @@ static func outline_material(c: Color, outline: Color, outline_m: float) -> Stan
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = c
 	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = outline
-	mat.stencil_outline_thickness = outline_m
+	ActorLooks.outline(mat, outline, outline_m)
 	return mat
 
 
 ## A face, visor or glow marks the stencil like the body pieces do.
 static func write_stencil(m: StandardMaterial3D) -> void:
+	if not ActorLooks.OUTLINES:
+		return
 	m.stencil_mode = BaseMaterial3D.STENCIL_MODE_CUSTOM
 	m.stencil_flags = BaseMaterial3D.STENCIL_FLAG_WRITE
 	m.stencil_compare = BaseMaterial3D.STENCIL_COMPARE_ALWAYS

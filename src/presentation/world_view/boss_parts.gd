@@ -50,9 +50,7 @@ func piece(
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = c
 	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = _outline
-	mat.stencil_outline_thickness = _outline_m
+	ActorLooks.outline(mat, _outline, _outline_m)
 	mat.vertex_color_use_as_albedo = mesh is ArrayMesh
 	body.material_override = mat
 	parent.add_child(body)
@@ -80,10 +78,7 @@ func glow(
 	m.emission_enabled = true
 	m.emission = c
 	m.emission_energy_multiplier = energy
-	m.stencil_mode = BaseMaterial3D.STENCIL_MODE_CUSTOM
-	m.stencil_flags = BaseMaterial3D.STENCIL_FLAG_WRITE
-	m.stencil_compare = BaseMaterial3D.STENCIL_COMPARE_ALWAYS
-	m.stencil_reference = 1
+	AvatarBase.write_stencil(m)
 	n.material_override = m
 	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(n)

@@ -47,7 +47,9 @@ func test_every_kind_is_built_flashable_and_outlined() -> void:
 		for m: ShaderMaterial in looks:
 			assert_eq(m.get_shader_parameter("emission_energy"), 0.0, "kind %d: no glow" % kind)
 			assert_eq(
-				m.next_pass != null, not a.has_model(), "kind %d: code bodies outlined" % kind
+				m.next_pass != null,
+				ActorLooks.OUTLINES and not a.has_model(),
+				"kind %d: code bodies outlined only while ActorLooks.OUTLINES" % kind
 			)
 		assert_eq(
 			a.find_children("XrayTwin", "MeshInstance3D", true, false).size(), 0, "no twin nodes"

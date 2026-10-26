@@ -65,6 +65,9 @@ var _sha := "nosha"
 var _api: PlaygroundApi
 var _bd := false  # --breakdown
 var _census := false  # --census
+var _shot := ""  # --shot=<png path>: the viewport 0.5 s before the end (PF4)
+var _boss := -1  # --boss=<table index>: one boss instead of the 20 enemies (PF4)
+var _boss_placed := false
 var _timers: Array = []
 var _t_proc := 0
 var _t_pre := 0
@@ -89,6 +92,10 @@ func _initialize() -> void:
 			_warm = float(s.trim_prefix("warm="))
 		elif s == "breakdown":
 			_bd = true
+		elif s.begins_with("shot="):
+			_shot = s.trim_prefix("shot=")
+		elif s.begins_with("boss="):
+			_boss = int(s.trim_prefix("boss="))
 		elif s == "census":
 			_census = true
 		elif s == "process":
@@ -144,6 +151,23 @@ func _process(delta: float) -> bool:
 			if now >= _next_sample_us:
 				_next_sample_us = now + 1000000
 				_samples.append(_sample())
+			if not _shot.is_empty() and (now - _t0) >= int((_secs - 0.5) * 1e6):
+				var img := root.get_texture().get_image()
+				DirAccess.make_dir_recursive_absolute(_shot.get_base_dir())
+				img.save_png(_shot)
+				var w := _main.driver.world
+				for i in w.actors.ids.size():
+					if BossAi.is_boss_kind(w.actors.kinds[i]) and w.actors.dead[i] == 0:
+						var cam: Camera3D = _main.view.rig.camera
+						print(
+							"shot: boss at sim ",
+							w.actors.pos(i),
+							" on screen ",
+							cam.unproject_position(SimPlane.to_3d(w.actors.pos(i))),
+							" hero ",
+							w.player_pos()
+						)
+				_shot = ""
 			if (now - _t0) >= int(_secs * 1e6):
 				_finish_biome()
 	_last_us = now
@@ -223,6 +247,9 @@ func _begin_measure(now: int) -> void:
 ## Strafe, aim and refill the enemies, once per frame (cheap: the refill runs once a second).
 func _drive(now: int) -> void:
 	var t := (now - _t0) / 1e6
+	if _boss >= 0:  # PF4: the boss shot: stand still, the boss stays in view
+		_aim(Vector2(1400, 500))
+		return
 	var leg := STRAFE[int(t / STRAFE_S) % STRAFE.size()]
 	if String(leg) != _held:
 		if _held != "":
@@ -260,10 +287,14 @@ func _top_up() -> void:
 	for i in a.ids.size():
 		if a.teams[i] == ActorStore.TEAM_ENEMY and a.dead[i] == 0 and a.hp[i] > 0:
 			alive += 1
+	var p := w.player_pos()
+	if _boss >= 0:
+		if not _boss_placed:
+			_boss_placed = _api.place_boss_now(_boss, p + Vector2(5.0, -2.0))
+		return
 	var kinds := _api.enemy_choices()
 	if kinds.is_empty():
 		return
-	var p := w.player_pos()
 	var tries := 0
 	while alive < ENEMIES and tries < 80:
 		tries += 1
