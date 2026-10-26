@@ -22,6 +22,10 @@ const MIN_WARN_SECONDS := 0.4
 ## Formations per Lockdown, and each formation's size on floors 1-5 (the last repeats).
 @export var waves := 3
 @export var wave_sizes := PackedInt32Array([5, 5, 5, 6, 6])
+## v0.9.5 DR (owner Q6: "only locked rooms, where enemies spawn, no rounds"): a locked room fights one burst of
+## burst_waves formations (each wave_sizes[floor] enemies), the next burst_gap_seconds after the one before.
+@export var burst_waves := 2
+@export var burst_gap_seconds := 1.0
 ## Seconds from the seal (the bars dropping) to the first formation, and from a formation's last kill to the next.
 @export var first_wave_seconds := 1.0
 @export var wave_gap_seconds := 0.75
@@ -61,6 +65,8 @@ func validate() -> Array[ValidationIssue]:
 			issues.append(ValidationIssue.new(&"range", p, "kind weights are >= 0"))
 			break
 	check_positive(issues, "waves", waves)
+	check_positive(issues, "burst_waves", burst_waves)
+	check_positive(issues, "burst_gap_seconds", burst_gap_seconds)
 	issues.append_array(ArenaDefinition.wave_size_issues(p, wave_sizes))
 	for f in [
 		"stuck_seconds", "cap_seconds", "hazard_every_seconds", "hazard_radius", "hazard_damage"

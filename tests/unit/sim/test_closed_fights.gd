@@ -151,7 +151,7 @@ func test_a_floor_saved_before_cf_keeps_its_rooms() -> void:
 # --- Arenas -------------------------------------------------------------------------------------------------------
 func _arena_world(from: int) -> World:
 	for s in range(from, from + 40):
-		var w := SaveLab.floor_world(s, 1)
+		var w := _floor(s, 1, RunState.FLOOR_RULES_V095_AQ)  # v0.9.5 DR: the wave Arenas are rules 19's
 		if not w.floor_layout.arena_rooms.is_empty():
 			w.actors.invuln[0] = LONG
 			w.actors.hp[0] = 100000
@@ -281,7 +281,7 @@ func test_a_save_with_members_waiting_round_trips() -> void:
 func _lock_world(floor_index: int, elite: bool) -> World:
 	for s in range(1, 80):
 		var w := SaveLab.floor_world(s, floor_index)
-		if w.lockdown == null:
+		if w.lockdown == null or w.floor_layout.lockdown_rooms.is_empty():
 			continue
 		if elite and not w.floor_layout.lockdown_kinds.has(LockdownTable.Kind.ELITE):
 			continue

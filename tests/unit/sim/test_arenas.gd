@@ -13,8 +13,12 @@ const STEPS_AFTER := 600
 const CHALLENGE_BEFORE_PERMILLE := 3231
 
 
+## v0.9.5 DR (owner Q6): the wave Arenas are what floors saved under rules 1-19 keep (rules 20 seal their arena rooms
+## as locked rooms: test_locked_rooms), so these floors are built under rules 19.
 func _arena_floor(run_seed: int, floor_index: int = 1) -> World:
-	return SaveLab.floor_world(run_seed, floor_index)
+	var run := SaveLab.run_state(run_seed, floor_index)
+	run.floor_rules = RunState.FLOOR_RULES_V095_AQ
+	return SaveLab.build_floor(run)
 
 
 ## A floor (SaveLab, as Main builds it) with at least one regular arena, from `from` on.

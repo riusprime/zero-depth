@@ -217,7 +217,7 @@ static func arena_door_outside(w: World, m: float) -> Vector2:
 		return Vector2.INF
 	var best := Vector2.INF
 	for room in f.arena_rooms:
-		if Arenas.is_cleared(w, room):
+		if Arenas.is_cleared(w, room) or Lockdowns.is_open(w, room):
 			continue
 		var doors := ArenaRooms.doors_of(f, room)
 		if doors.is_empty():

@@ -439,7 +439,7 @@ func _setup_devices(palette: Dictionary) -> void:
 		purple.biome = stage.prop_style  # v0.9.0 BV: the biome's look
 		add_child(purple)
 		purple.setup(reader, palette["cover"])
-	if reader.has_lockdowns():  # v0.9.0 LK
+	if reader.has_lockdowns() or reader.overrun()["active"]:  # v0.9.0 LK; v0.9.5 DR: the Overrun's bars too
 		lockdowns = LockdownView.new()
 		add_child(lockdowns)
 		lockdowns.setup(reader, stage.prop_style)

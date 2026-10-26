@@ -42,7 +42,9 @@ static func is_arena(w: World, room: int) -> bool:
 	var f := w.floor_layout
 	if f == null or room < 0:
 		return false
-	return f.arena_rooms.has(room) or (room == f.overrun_room and Overrun.enabled(w))
+	if room == f.overrun_room and Overrun.enabled(w):
+		return true
+	return f.arena_rooms.has(room) and not Lockdowns.takes_arenas(w)  # v0.9.5 DR: rules 20+ seal them as locked rooms
 
 
 static func is_cleared(w: World, room: int) -> bool:
@@ -126,6 +128,8 @@ static func locked(w: World, i: int) -> bool:
 	if w.floor_layout == null:
 		return false
 	var room := w.floor_layout.room_of(w.rewards.pos(i))
+	if Lockdowns.takes_arenas(w) and w.floor_layout.arena_rooms.has(room):  # v0.9.5 DR: a locked room's, till it opens
+		return not Lockdowns.is_open(w, room)
 	return is_arena(w, room) and not is_cleared(w, room)
 
 
@@ -302,7 +306,8 @@ static func read(w: World) -> Dictionary:
 	var f := w.floor_layout
 	var rooms := PackedInt32Array()
 	if f != null:
-		rooms = f.arena_rooms.duplicate()
+		if not Lockdowns.takes_arenas(w):  # v0.9.5 DR: rules 20+ list them as locked rooms (Lockdowns.read)
+			rooms = f.arena_rooms.duplicate()
 		if Overrun.enabled(w):
 			rooms.append(f.overrun_room)
 	return {

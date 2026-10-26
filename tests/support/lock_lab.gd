@@ -10,7 +10,7 @@ const LONG := 1 << 24
 static func world(floor: int = 2, first_seed: int = 1, tries: int = 60) -> World:
 	for s in range(first_seed, first_seed + tries):
 		var w := SaveLab.floor_world(s, floor)
-		if w.lockdown != null:
+		if w.lockdown != null and not w.floor_layout.lockdown_rooms.is_empty():
 			calm(w)
 			return w
 	return null
