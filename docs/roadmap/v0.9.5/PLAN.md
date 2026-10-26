@@ -340,6 +340,13 @@ offers, `attack_slots.tres`, the forms). The order inside each list is the build
   good gaphics". So: a steady 144 fps on the owner's PC (i7-10700K, RTX 3060) at 1080p with the default settings,
   in the heaviest fights too: every frame under 6.9 ms, judged on the 1 % lows, not the average. Cut until it holds;
   if a cut would change the look, ask the owner first.
+- **Owner, 2026-10-26, after PF3** (20 enemies are ~500 rig pieces, each drawn twice for its outline and again per
+  shadow cascade; the engine's frame alone is ~8.4 ms): "We can try removing the outlines and see how it looks I don't
+  think they are ncessary, and also merge the enemy's pieces only if that does not change how animations look, the idea
+  is to keep the animations as they are"; plus "Simpler enemy shadows" and "Effects update every other tick". So:
+  **PF4** outlines off (before/after shots for the owner), small enemy pieces cast no shadow, non-critical effect views
+  at 30 Hz staggered; then **PF5** each enemy's rigid pieces merged into one skinned mesh, kept only if the animation
+  frames match the old ones.
 - No enemy is drawn behind walls or floors: the X-ray silhouette pass goes (`ActorViews.technique = &"xray"`, a
   second mesh per body piece).
 - Profile a 20-enemy fight with a multi-hit, two-element build on the owner's PC: Frozen Shore and one other biome.
