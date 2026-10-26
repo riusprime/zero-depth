@@ -102,7 +102,7 @@ func _ready() -> void:
 	hint_store = HintStore.new(profile)  # v0.7.5 SM
 	hints.setup(hint_store)
 	ui.add_child(hints)
-	add_child(GameCursor.new())  # v0.9.5 MC (owner L16): the reticle in a run, the arrow elsewhere
+	add_child(GameCursor.new())  # v0.9.5 MC2: the cursor
 	show_main_menu()
 
 

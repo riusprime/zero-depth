@@ -48,6 +48,7 @@ var _has_hero := false
 
 func _init() -> void:
 	name = "InteractPrompt"
+	add_to_group(&"interact_prompt")  # v0.9.5 MC2: GameCursor shows INTERACT while one is shown
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_row.mouse_filter = Control.MOUSE_FILTER_IGNORE

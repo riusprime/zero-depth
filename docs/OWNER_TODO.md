@@ -298,4 +298,3 @@ AnimationPlayer inside the `.glb`; yours replace the code ones.
 | ☐ | `fx_rail_streak` (P2) | The Siege Engine's rail shot (the only texture missing from the zips) | in [`art/requests/v0.8.0_textures.md`](art/requests/v0.8.0_textures.md) |
 | ☐ | final-boss music (P3) | A track for the final arena; today it uses the boss sounds | — |
 | ☐ | `bg_<biome>_deep/mid` ×10 (v0.9.5 BG, Q5) | Two seamless 2048² background layers per biome (Deep opaque, Mid transparent), dark and top-down | in [`art/requests/v0.9.5_BACKGROUNDS.md`](art/requests/v0.9.5_BACKGROUNDS.md) |
-| ☐ | `assets/ui/cursor_reticle.png`, `cursor_arrow.png` (v0.9.5 MC, optional) | Your own cursor images, 32×32 PNG, with a transparent background. The reticle (in a run) has its hotspot at the centre, the arrow (menus, hub, pause, death) at the tip. Without them the game draws its own | — |

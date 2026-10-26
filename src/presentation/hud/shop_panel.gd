@@ -261,6 +261,7 @@ func _add_card(reader: WorldReader, k: int, c: Dictionary) -> void:
 		"font_color", POOR if not sold and c["can_apply"] and not c["affordable"] else Color.WHITE
 	)
 	slot.modulate = Color(1, 1, 1, 1.0 if ok else 0.45)
+	slot.set_meta(GameCursor.META_INVALID, not ok)  # v0.9.5 MC2: INVALID over a card you can't buy
 	var at := _entries.size()
 	slot.hovered.connect(func(_i: int) -> void: _set_focus(at))
 	slot.clicked.connect(func(_i: int) -> void: _act(at))

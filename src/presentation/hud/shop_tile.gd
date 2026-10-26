@@ -155,6 +155,7 @@ func _fit() -> void:
 func _apply() -> void:
 	_box.set_focused(focused)
 	modulate = Color(1, 1, 1, 1.0 if enabled else 0.45)
+	set_meta(GameCursor.META_INVALID, not enabled)  # v0.9.5 MC2: the cursor shows INVALID over a tile you can't use
 	title.add_theme_color_override("font_color", _accent.lerp(Color.WHITE, 0.55))
 
 
