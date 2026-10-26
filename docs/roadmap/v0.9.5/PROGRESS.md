@@ -11,8 +11,8 @@ riusprime/zero-depth#9).
   RUNIC_STONE.
 - **The owner answered everything on 2026-10-25:** Q1–Q19 and all five G1s (PLAN "Owner decisions"); the PLAN is
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
-- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3, DR, FC1, TS, FC2, BK, FC3, HM, HU, FC4, FC5, FC6, FC7 (+FC7b), FC8, FC9 (+FC9b), PR, MC and SL merged (Waves B, C and D done).
-- **Agents working:** RS1 (the Runic Stone wakes and speaks) and TX (each card's line for the form you hold) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
+- **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3, DR, FC1, TS, FC2, BK, FC3, HM, HU, FC4, FC5, FC6, FC7 (+FC7b), FC8, FC9 (+FC9b), PR, MC, SL and TX merged (Waves B, C and D done).
+- **Agents working:** RS1 (the Runic Stone wakes and speaks) and PF1 (the x-ray pass removed; the frame-time profiler for the owner's PC) (Sonnet, worktrees). At most 2 at a time (owner rule, 2026-10-25).
 - **Waiting on the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
@@ -58,6 +58,7 @@ riusprime/zero-depth#9).
 | PR | Short prompts under the hero: a drawn button (key cap, Xbox, PlayStation) + a verb, and a cost only when there is one (red when you can't pay) ([evidence](evidence/PR.md)) | `42c9c9d6` |
 | MC | The mouse cursor: a code-drawn rune reticle in runs, a rune arrow in menus, hidden while a pad plays; owner images override ([evidence](evidence/MC.md)) | `2d265c19` |
 | SL | The Blade locked for every profile; the "Sword Unbound" achievement (beat the Hollow Crown with the Gun) unlocks it; padlock and condition in the picker; no retroactive grant ([evidence](evidence/SL.md)) | `bb51c3a9`, merge `a8e98d30` |
+| TX | Each Gun card shows one line for the form you hold (101 lines, en+es; "Does nothing on this form" when off); numbers from the data rows ([evidence](evidence/TX.md)) | `df8a84d6`, merge `1a7307b7` |
 | BH1 | Bosses can't be staggered; at each phase change a boss kneels 1 s (hittable) and its core can be stolen for 3 s; boss HP is set from your power when the door starts opening (caps ×2.5–4.5 by floor, ±8 % per fight); each completed loop (up to 3) makes the Hollow Crown's pace 12 % shorter and its hits 8 % softer; the run summary says "Looped ×N" ([evidence](evidence/BH1.md)) | `d669f646`, merge `f9197302` |
 | BH2 | A harder spell each: the Gatekeeper's shock lanes lock faster and fire a second, shifted set; the Warlord's javelins lead you, then a second fan; the Brood Mother's 3rd leap leads you and lands wider; the Hive Lens's beam turns after you; the Siege Engine's mortar grid leaves 2 safe cells that swap halfway (never on the edge). The loop ease is data now ([evidence](evidence/BH2.md)) | `eca6b78e`, merge `53cd71e1` |
 | BH3 | A harder spell each: the Foundry's furnace waves come as two walls at right angles; the Twin Wardens' crossfire lines track you for 1.2 s; the Clockwork Judge adds a counter-turning spiral from phase 2; the Lantern Shade's lanterns burn 4 s, its dark lasts 9 s and Snuff puts out two lanterns ([evidence](evidence/BH3.md)) | `7ff84613`, merge `d788b91f` |
