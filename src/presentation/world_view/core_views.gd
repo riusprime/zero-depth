@@ -100,7 +100,9 @@ func sync(reader: WorldReader) -> void:
 		var boss := reader.actor_core_boss(i)
 		var r := reader.actor_radius(i)
 		gem.position = SimPlane.to_3d(reader.actor_pos(i), maxf(2.6, r * 2.2) if boss else 1.35 + r)
-		var staggered := reader.actor_core_staggered(i) or (boss and reader.boss_staggered(i))
+		var staggered := (
+			reader.actor_core_staggered(i) or (boss and reader.actor_steal_ticks(i) > 0)
+		)
 		gem.set_meta(&"hot", staggered)
 		gem.set_meta(&"base", 1.6 if boss else 1.0)
 		var left := reader.actor_steal_ticks(i)

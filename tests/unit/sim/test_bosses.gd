@@ -134,40 +134,27 @@ func test_every_attack_telegraphs_at_least_the_minimum_before_it_lands() -> void
 			)
 
 
-func test_stagger_fills_staggers_and_resets() -> void:
+## v0.9.5 BH1 (H0, converted from "a full meter staggers"): a boss under a huge burst never staggers, never fills a
+## meter and its attack is not cancelled.
+func test_a_boss_never_staggers_however_hard_it_is_hit() -> void:
 	var w := BossLab.world()
 	var i := BossLab.ready_boss(w, &"gatekeeper", Vector2(6, 0))
 	var aid := w.actors.ids[i]
-	var t := BossAi.table_of(w, i)
 	var b := BossAi.entry_of(w, i)
 	var side := Vector2(6, 5)  # neither front nor back: full damage
-	Damage.hit(w, i, 100, 1, 1, 1, 0, side, w.actors.pos(i))
-	assert_eq(w.bosses.meter[b], 100 * 1000)
-	w.step(InputFrame.new())
-	i = w.actors.index_of(aid)
-	assert_eq(w.bosses.meter[b], 100 * 1000 - t.stagger_decay_milli, "the meter decays")
-	Damage.tick_dot(w, i, 50, 1, 1, &"burn")
-	assert_eq(
-		w.bosses.meter[b], 100 * 1000 - t.stagger_decay_milli, "damage over time doesn't fill it"
-	)
-	var events_before := w.last_event_seq()
-	Damage.hit(w, i, t.stagger_size_milli / 1000, 1, 1, 1, 0, side, w.actors.pos(i))
-	assert_eq(w.actors.state[i], BossAi.STAGGERED, "a full meter staggers")
-	assert_eq(w.bosses.meter[b], 0, "and resets")
-	var stagger_events := w.events_since(events_before).filter(
-		func(e: SimEvent) -> bool: return e.effect_id == &"boss_stagger"
-	)
-	assert_eq(stagger_events.size(), 1)
-	Damage.hit(w, i, 10, 1, 1, 1, 0, side, w.actors.pos(i))
-	assert_eq(w.bosses.meter[b], 0, "no filling while staggered")
-	CombatLab.idle(w, t.stagger_ticks - 1)
-	assert_eq(w.actors.state[w.actors.index_of(aid)], BossAi.STAGGERED, "staggered for its length")
-	CombatLab.idle(w, 2)
-	assert_eq(w.actors.state[w.actors.index_of(aid)], S.MOVE, "then it gets up")
-	assert_eq(t.stagger_ticks, 150, "2.5 s")
+	for k in 40:
+		i = w.actors.index_of(aid)
+		w.actors.hp[i] = w.actors.max_hp[i]
+		Damage.hit(w, i, 100000, 1, 1, 1, 0, side, w.actors.pos(i))
+		Damage.hit(w, i, 700, 1, 1, 1, SimEvent.TAG_EXPOSED, side, w.actors.pos(i))
+		w.step(InputFrame.new())
+		i = w.actors.index_of(aid)
+		assert_ne(w.actors.state[i], BossAi.STAGGERED, "never staggered (tick %d)" % k)
+		assert_eq(w.bosses.meter[b], 0, "no meter fills")
+		assert_eq(w.bosses.stagger_t[b], 0)
 
 
-func test_stagger_interrupts_an_attack() -> void:
+func test_a_hit_does_not_interrupt_a_boss_attack() -> void:
 	var w := BossLab.world()
 	var i := BossLab.ready_boss(w, &"gatekeeper", Vector2(0, 0))
 	var aid := w.actors.ids[i]
@@ -175,12 +162,10 @@ func test_stagger_interrupts_an_attack() -> void:
 	BossLab.start(w, i, &"fist_slam")
 	CombatLab.idle(w, 5)
 	i = w.actors.index_of(aid)
-	var size := BossAi.table_of(w, i).stagger_size_milli / 1000
-	Damage.hit(w, i, size, 1, 1, 1, 0, Vector2(0, 5), w.actors.pos(i))
-	assert_eq(w.actors.state[i], BossAi.STAGGERED)
-	assert_true(BossAi.telegraph(w, i).is_empty(), "the slam is gone")
-	CombatLab.idle(w, 120)
-	assert_eq(CombatLab.player_damage(w), [], "and never lands")
+	w.actors.hp[i] = w.actors.max_hp[i]
+	Damage.hit(w, i, 3000, 1, 1, 1, 0, Vector2(0, 5), w.actors.pos(i))
+	assert_ne(w.actors.state[i], BossAi.STAGGERED)
+	assert_false(BossAi.telegraph(w, i).is_empty(), "the slam is still there")
 
 
 ## v0.5.5 DS (D7): phase two now starts at 66 % (the first gate), its entry attack after the gate.

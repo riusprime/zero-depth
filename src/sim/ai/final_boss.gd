@@ -145,6 +145,10 @@ static func _spawn(w: World, phase: int, at: Vector2) -> void:
 	f.shatter_t = 0
 	f.body_id = w.spawn_boss(f.tables[phase], at)
 	var t := w.boss_tables[f.tables[phase]]
+	if w.loop > 1:  # v0.9.5 BH1 (Q11, HC7): a looped run meets softer bodies (80 per mille per loop finished)
+		var j := w.actors.index_of(f.body_id)
+		var pm := w.actors.power[j] if w.actors.power[j] > 0 else 1000
+		w.actors.power[j] = maxi(1, pm * FinalPace.damage_ease_permille(w) / 1000)
 	if t.dps_hp and not t.pace:  # v0.8.0 FB2 (F7): her HP from the player's measured damage per second
 		var i := w.actors.index_of(f.body_id)
 		var hp := dps_hp_of(w, t)
@@ -257,7 +261,7 @@ static func measured(w: World, t: BossTable) -> Array[int]:
 ## v0.8.0 N2 (owner O41): a paced body's is FinalPace's (its time at the measured rate from a square root).
 static func dps_hp_of(w: World, t: BossTable) -> int:
 	if t.pace:
-		return FinalPace.hp_for(FinalPace.measured_milli(w, t), t)
+		return FinalPace.hp_for(FinalPace.measured_milli(w, t), t, FinalPace.ease_permille(w))
 	var m := measured(w, t)
 	var hp := t.hp
 	if m[1] > 0 and m[1] >= t.dps_min_seconds:

@@ -19,7 +19,12 @@ extends RefCounted
 ##   ActorStore.power) × sqrt(m).
 ## - on_boss(w, i): a boss as it spawns: its own m from P now against the expected power at the floor's end and the
 ##   boss cap (cap + threat_cap × T); max HP × m, its attacks' damage × sqrt(m) (ActorStore.power, BossAi.powered).
+## v0.9.5 BH1 (owner Q2): the boss's m is read when its door starts to open (read_boss) and held to the spawn, its cap
+## is 2.5 / 3.0 / 3.5 / 4.0 / 4.5 by floor, and a +-8 % spread is drawn once per boss fight.
 ## A world without World.catch_up_table (labs, kernel, arena) is untouched. Nothing here is shown to the player.
+
+## v0.9.5 BH1 (Q2): the named stream of a boss fight's HP spread (see spread_stream).
+const BOSS_SPREAD_STREAM := "boss:hp_spread"
 
 
 ## The build's power P, per mille of a fresh build (see the class comment). 1000 for a world without a table.
@@ -145,6 +150,7 @@ static func start_floor(w: World) -> void:
 	s.expected = CatchUpTable.at_floor(t.expected_permille, w.floor_index)
 	s.cap = cap_at(t.cap_permille, t, w.floor_index, Curses.threat(w)) + w.loop_cap_permille  # v0.7.5 AP
 	s.enemy = multiplier(s.power, s.expected, s.cap)
+	s.boss_read = 0  # v0.9.5 BH1: the floor's boss is read again at its door
 
 
 ## Enemy i just arrived (its tier, floor and Overrun scaling already applied): max HP × m, damage × sqrt(m).
@@ -159,9 +165,11 @@ static func on_enemy(w: World, i: int) -> void:
 	a.power[i] = maxi(1, a.power[i]) * damage_permille(m) / 1000
 
 
-## Boss i just spawned: its own m (P now, the expected power at the floor's end, the boss cap at T now), then max HP
-## × m and its attacks' damage × sqrt(m) (ActorStore.power). No-op without a table.
-static func on_boss(w: World, i: int) -> void:
+## v0.9.5 BH1 (H2, Q2): reads the boss's own m now: P now, the expected power at the floor's end, the boss cap (the
+## floor's entry of boss_cap_permille + threat_cap × T now + the loops'), then the boss's spread (BOSS_SPREAD_STREAM:
+## one draw per boss fight, uniform in ±BOSS_SPREAD_PERMILLE per mille, applied after the cap). BossFlow.interact calls
+## it as the boss door starts to open; on_boss reads it at the spawn when none was stored. No-op without a table.
+static func read_boss(w: World) -> void:
 	var t := w.catch_up_table
 	if t == null:
 		return
@@ -171,7 +179,31 @@ static func on_boss(w: World, i: int) -> void:
 	s.boss_cap = (
 		cap_at(t.boss_cap_permille, t, w.floor_index, Curses.threat(w)) + w.loop_cap_permille
 	)  # v0.7.5 AP: each loop past the first raises the caps
-	s.boss = multiplier(s.boss_power, s.boss_expected, s.boss_cap)
+	var m := multiplier(s.boss_power, s.boss_expected, s.boss_cap)
+	var rng := RngStream.derive(w.seed_value, spread_stream(w))
+	s.boss = maxi(
+		1, m * (1000 + rng.range_int(-t.boss_spread_permille, t.boss_spread_permille)) / 1000
+	)
+	s.boss_read = 1
+
+
+## The named stream of a boss fight's HP spread: `boss:hp_spread`, keyed by the floor, the loop and (a final fight) the
+## body, so each fight draws its own value, the same for the same seed.
+static func spread_stream(w: World) -> String:
+	var body := w.final_fight.phase if w.final_fight != null else 0
+	return "%s:%d:%d:%d" % [BOSS_SPREAD_STREAM, w.floor_index, w.loop, body]
+
+
+## Boss i just spawned: its m (read at the door when BossFlow stored one, else read now), then max HP × m and its
+## attacks' damage × sqrt(m) (ActorStore.power). No-op without a table.
+static func on_boss(w: World, i: int) -> void:
+	var t := w.catch_up_table
+	if t == null:
+		return
+	var s := w.catch_up
+	if s.boss_read == 0:
+		read_boss(w)
+	s.boss_read = 0
 	var a := w.actors
 	var hp := maxi(1, a.max_hp[i] * s.boss / 1000)
 	a.max_hp[i] = hp

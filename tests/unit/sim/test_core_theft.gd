@@ -1,6 +1,7 @@
 extends GutTest
 ## v0.6.0 CU core theft (PLAN v0.5.5 X2; SIGNATURE.md): elites and bosses carry a core drawn on `ai:elite`; a boss's
-## stagger opens the steal window and a kill inside it drops the core as a free pick (through the pick); a boss's core
+## phase change (v0.9.5 BH1: not a stagger) opens the steal window and a kill inside it drops the core as a free
+## pick (through the pick); a boss's core
 ## is from the legendary tier. v0.9.0 EL (owner Q25: "you have a 30% chance of dropping the core"; no stagger window):
 ## an elite (an archetype) never staggers and has no window; killed, it drops its core's card 30 % of the time (on
 ## `ai:elite`). Real floors (EventLab, built as Main).
@@ -127,7 +128,7 @@ func test_the_core_drops_30_percent_of_the_time() -> void:
 	assert_between(rate, 0.25, 0.35, "about 30 %")
 
 
-func test_a_boss_core_is_legendary_and_its_own_stagger_opens_the_window() -> void:
+func test_a_boss_core_is_legendary_and_its_phase_change_opens_the_window() -> void:
 	var w := _world()
 	assert_not_null(w.legendary_table)
 	var id := w.spawn_boss(0, w.player_pos() + Vector2(5, 0))
@@ -142,17 +143,21 @@ func test_a_boss_core_is_legendary_and_its_own_stagger_opens_the_window() -> voi
 	else:
 		assert_true(w.legendary_table.mods.has(card), "a legendary-tier mod")
 	w.actors.invuln[0] = 1 << 20
-	CombatLab.idle(w, BossAi.INTRO_TICKS + 2)  # it rises (no stagger while rising)
+	CombatLab.idle(w, BossAi.INTRO_TICKS + 2)  # it rises
 	i = w.actors.index_of(id)
 	w.actors.invuln[i] = 0
 	var t := BossAi.table_of(w, i)
 	var b := w.bosses.index_of(id)
-	var guard := 0
-	while w.bosses.stagger_t[b] == 0 and guard < 200:
-		guard += 1
+	# v0.9.5 BH1 (H1, Q3): hits open nothing (no stagger); the phase change does, for 3 s from its first tick.
+	for n in 30:
 		w.actors.hp[i] = w.actors.max_hp[i]  # test setup: keep it away from its phase gates
-		_hit(w, i, maxi(1, t.stagger_size_milli / 1000 / 4))
-	assert_gt(w.bosses.stagger_t[b], 0, "the boss staggered by its own meter")
+		_hit(w, i, maxi(1, t.stagger_size_milli / 1000))
+	assert_eq(w.bosses.stagger_t[b], 0, "no stagger")
+	assert_false(CoreTheft.window_open(w, i), "no window from hits")
+	w.actors.hp[i] = w.actors.max_hp[i] * 600 / 1000  # past the first gate
+	w.step(InputFrame.new())
+	i = w.actors.index_of(id)
+	assert_eq(w.actors.state[i], BossAi.GATE, "it kneels")
 	assert_true(CoreTheft.window_open(w, i), "the window opened with it")
 	# Killed inside the window (owner 0, as the dev panel's kill: past the phase gates).
 	var at := w.actors.pos(i)
@@ -162,6 +167,55 @@ func test_a_boss_core_is_legendary_and_its_own_stagger_opens_the_window() -> voi
 	assert_eq(drops.size(), 1, "the boss's core dropped")
 	assert_eq(w.rewards.offer_of(drops[0]), PackedInt32Array([card]))
 	assert_true(WorldReader.new(w).reward_is_legendary(drops[0]), "the pick shows it legendary")
+
+
+## A boss at its first phase change (its gate): the kneel, the window open for rules.core_window_ticks (3 s) from the
+## gate's first tick; `then` ticks later the boss dies to the world's own hit. Returns [world, boss index].
+func _kneel_then(then: int) -> Array:
+	var w := _world()
+	var id := w.spawn_boss(0, w.player_pos() + Vector2(5, 0))
+	w.actors.invuln[0] = 1 << 20
+	CombatLab.idle(w, BossAi.INTRO_TICKS + 2)
+	var i := w.actors.index_of(id)
+	w.actors.invuln[i] = 0
+	w.actors.hp[i] = w.actors.max_hp[i] * 600 / 1000  # past the first gate
+	w.step(InputFrame.new())
+	i = w.actors.index_of(id)
+	assert_eq(w.actors.state[i], BossAi.GATE)
+	var k := CoreTheft.entry_of(w, id)
+	assert_eq(w.ev.rules.core_window_ticks, 180, "3 s")
+	assert_eq(
+		w.cores.window_t[k],
+		179,
+		"opened at the gate's first tick (180 ticks, one already run down)"
+	)
+	for n in then:
+		w.step(InputFrame.new())
+		i = w.actors.index_of(id)
+	return [w, i]
+
+
+func test_the_boss_core_window_is_3_seconds_from_the_phase_change() -> void:
+	var s := _kneel_then(100)  # inside the window (and past the 1 s kneel)
+	var w: World = s[0]
+	var i: int = s[1]
+	assert_ne(w.actors.state[i], BossAi.GATE, "the kneel lasted 60 ticks")
+	assert_true(CoreTheft.window_open(w, i), "still open at 100 ticks")
+	var at := w.actors.pos(i)
+	Damage.hit(w, i, w.actors.hp[i] * 10, 0, 0, w.take_root(), 0, at, at)
+	w.step(InputFrame.new())
+	assert_eq(_drops(w, CoreState.Drop.BOSS_CORE).size(), 1, "stolen inside the window")
+
+
+func test_the_boss_core_cannot_be_stolen_after_the_window() -> void:
+	var s := _kneel_then(185)
+	var w: World = s[0]
+	var i: int = s[1]
+	assert_false(CoreTheft.window_open(w, i), "shut after 3 s")
+	var at := w.actors.pos(i)
+	Damage.hit(w, i, w.actors.hp[i] * 10, 0, 0, w.take_root(), 0, at, at)
+	w.step(InputFrame.new())
+	assert_eq(_drops(w, CoreState.Drop.BOSS_CORE).size(), 0, "no core outside the window")
 
 
 ## Audit G-6: a core whose mod stopped working with the build (its ability is gone) is redrawn, by the shop's rule.

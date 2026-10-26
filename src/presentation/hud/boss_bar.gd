@@ -1,8 +1,8 @@
 class_name BossBar
 extends Control
-## The boss bar (PLAN v0.3.0 C) across the top of the HUD while a boss is alive: its name, its HP, and its stagger
-## meter under it (bright and labelled while it is staggered). Reads the sim through WorldReader only; hidden when no
-## boss is alive.
+## The boss bar (PLAN v0.3.0 C) across the top of the HUD while a boss is alive: its name, its HP, and the label over
+## it ("PHASE SHIFT" through a phase change; v0.9.5 BH1: bosses have no stagger meter). Reads the sim through
+## WorldReader only; hidden when no boss is alive.
 ## v0.3.0 BX (L22): while the boss rises the bar fills from empty to full over exactly its intro ticks
 ## (WorldReader.boss_intro_permille), then shows its real HP.
 ## v0.3.5 F15: calmer; plain type, a thin bar on a faint track, a hairline stagger meter.
@@ -19,14 +19,11 @@ extends Control
 ## "Invulnerable", with the shields still to pass (WorldReader.boss_shields_left) when there are any.
 
 const BAR := Vector2(560, 8)
-const STAGGER := Vector2(560, 3)
 ## The bar while the boss can't be hurt: a cold steel blue, far from the HP red (and from the stagger's gold).
 const INVULNERABLE := Color("#8FB8E8")
 
 var _name := Label.new()
 var _hp := HudBar.new()
-var _stagger_back := ColorRect.new()
-var _stagger_fill := ColorRect.new()
 var _stagger_label := Label.new()
 ## v0.8.0 N4: the phase (or the final boss's body) line, and the invulnerable line.
 var _sub := Label.new()
@@ -55,14 +52,6 @@ func _init() -> void:
 	_hp.position = Vector2(0, 26)
 	_hp.size = BAR
 	add_child(_hp)
-	_stagger_back.color = Color(0, 0, 0, 0.35)
-	_stagger_back.position = Vector2(0, 26 + BAR.y + 3)
-	_stagger_back.size = STAGGER
-	add_child(_stagger_back)
-	_stagger_fill.name = "Stagger"
-	_stagger_fill.color = Color("#E8C15A")
-	_stagger_fill.size = Vector2(0, STAGGER.y)
-	_stagger_back.add_child(_stagger_fill)
 	_stagger_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_stagger_label.position = Vector2(BAR.x + 10, 26 + BAR.y - 10)
 	HudStyle.style_label(_stagger_label, 14)
@@ -102,11 +91,7 @@ func sync(reader: WorldReader) -> void:
 		return
 	var final := reader.final_fight()
 	_sync_hp(reader, i, final)
-	var st := reader.boss_stagger_permille(i)
-	var staggered := reader.boss_staggered(i)
-	_stagger_fill.size = Vector2(STAGGER.x * st / 1000.0, STAGGER.y)
-	_stagger_fill.color = Color("#FFE38A") if staggered else Color("#E8C15A")
-	_stagger_label.text = tr("HUD_BOSS_STAGGERED") if staggered else ""
+	_stagger_label.text = ""
 	if reader.boss_in_gate(i):  # v0.5.5 DS (D7): the phase gate's transition
 		_stagger_label.text = tr("HUD_BOSS_PHASE_SHIFT")
 	if not final:
@@ -197,14 +182,9 @@ func phase_text() -> String:
 	return _sub.text
 
 
-## The line beside the stagger meter (STAGGERED, PHASE SHIFT or empty; tests).
+## The line over the bar (PHASE SHIFT or empty; tests).
 func status_text() -> String:
 	return _stagger_label.text
-
-
-## The stagger fraction shown (tests).
-func stagger_fraction() -> float:
-	return _stagger_fill.size.x / STAGGER.x
 
 
 ## v0.8.0 N2: The Fallen's window line ("" none; tests).

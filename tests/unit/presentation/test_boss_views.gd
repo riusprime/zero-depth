@@ -76,9 +76,7 @@ func test_windup_stagger_and_burrow_drive_the_pose() -> void:
 			a.advance(DT)
 		assert_gt(a.windup_amount(), 0.5, "%s winds up" % a.get_script().get_global_name())
 		for t in 40:
-			a.apply_state(
-				{"tick": 41 + t, "pos": Vector2.ZERO, "state": WorldReader.STATE_STAGGERED}
-			)
+			a.apply_state({"tick": 41 + t, "pos": Vector2.ZERO, "state": WorldReader.STATE_GATE})
 			a.advance(DT)
 		assert_gt(a.stagger_amount(), 0.8)
 		for t in 40:
@@ -200,10 +198,11 @@ func test_the_boss_bar_shows_while_a_boss_lives() -> void:
 	assert_almost_eq(
 		hud.boss_bar.hp_fraction(), 0.0, 0.001, "v0.8.0 N4: the first phase's bar is empty there"
 	)
-	assert_almost_eq(
-		hud.boss_bar.stagger_fraction(), 1.0, 0.01, "612 > 300: staggered, the meter shows full"
+	assert_ne(
+		w.actors.state[i],
+		BossAi.STAGGERED,
+		"v0.9.5 BH1: a boss never staggers (no meter on the bar)"
 	)
-	assert_true(reader.boss_staggered(i))
 	Damage.hit(w, i, 99999, 0, 0, 1, 0, Vector2(6, 5), w.actors.pos(i))  # the world's kill: past the gates
 	w.step(InputFrame.new())
 	hud.sync(reader)

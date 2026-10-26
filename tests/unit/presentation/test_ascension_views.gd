@@ -125,3 +125,18 @@ func test_loop_lines_on_the_hud_pause_and_recap() -> void:
 	assert_true(
 		pause.run_line.text.begins_with(tr("HUD_LOOP") % 2), "the pause line names the loop"
 	)
+
+
+## v0.9.5 BH1 (Q11): the run summary marks a looped run "Looped ×N" (N loops finished, at most 3).
+func test_the_recap_marks_a_looped_run() -> void:
+	var one := EndPanel.new(true, -1, &"", {"floor": 3, "floors": 3, "loop": 1})
+	add_child_autofree(one)
+	assert_eq(one.recap_line("Looped"), "", "loop 1: no mark")
+	for loop in [2, 3, 4, 7]:
+		var end := EndPanel.new(true, -1, &"", {"floor": 3, "floors": 3, "loop": loop})
+		add_child_autofree(end)
+		assert_eq(end.recap_line("Looped"), tr("RUN_SUMMARY_LOOPED") % mini(loop - 1, 3))
+	assert_eq(tr("RUN_SUMMARY_LOOPED") % 3, "Looped ×3")
+	TranslationServer.set_locale("es")
+	assert_eq(tr("RUN_SUMMARY_LOOPED") % 2, "Bucles ×2")
+	TranslationServer.set_locale("en")

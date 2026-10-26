@@ -574,8 +574,6 @@ func _scan_actors(reader: WorldReader, out: Array) -> void:
 			var cue := attack_cue(reader.boss_move(i))
 			if cue != &"":
 				out.append([cue, at, 1.0])
-		elif st == WorldReader.STATE_STAGGERED:
-			out.append([&"boss_stagger", null, 1.0])
 		if phase > was_phase:
 			out.append([&"boss_phase", null, 1.0])
 

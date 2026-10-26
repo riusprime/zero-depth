@@ -577,9 +577,6 @@ static func compile_boss(def: BossDefinition, repo: ContentRepository) -> BossTa
 	t.rear_half_arc = degrees_to_units(def.rear_arc_degrees * 0.5)
 	t.rear_mult_permille = def.rear_mult_permille
 	t.stagger_size_milli = def.stagger_size * 1000
-	t.stagger_decay_milli = int(
-		round(def.stagger_decay_per_second * 1000.0 / SimTick.TICKS_PER_SECOND)
-	)
 	t.stagger_ticks = maxi(1, SimTick.seconds_to_ticks(def.stagger_seconds))
 	for a in def.attacks:
 		t.attacks.append(compile_boss_attack(a, repo))
@@ -968,6 +965,7 @@ static func compile_catch_up(def: CatchUpDefinition) -> CatchUpTable:
 	t.cap_permille = def.cap_permille.duplicate()
 	t.boss_expected_permille = def.boss_expected_power_permille.duplicate()
 	t.boss_cap_permille = def.boss_cap_permille.duplicate()
+	t.boss_spread_permille = def.boss_spread_permille
 	t.threat_cap_permille = def.threat_cap_bonus_permille
 	t.ability_level_permille = def.ability_level_permille
 	t.item_permille = def.item_permille

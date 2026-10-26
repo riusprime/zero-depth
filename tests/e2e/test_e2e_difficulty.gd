@@ -91,7 +91,12 @@ func test_a_strong_build_meets_the_hidden_catch_up_and_the_boss_gates() -> void:
 	var bi := w.actors.index_of(w.boss_id)
 	assert_gte(bi, 0, "the boss spawned")
 	var bt := BossAi.table_of(w, bi)
-	var m := CatchUp.multiplier(CatchUp.power(w), 2000, 2000)
+	var m := CatchUp.multiplier(CatchUp.power(w), 2000, 2500)  # v0.9.5 BH1: the floor 1 boss cap is x2.5
+	m = (
+		m
+		* (1000 + RngStream.derive(w.seed_value, CatchUp.spread_stream(w)).range_int(-80, 80))
+		/ 1000
+	)
 	assert_gt(m, 1000, "the strong build lifts the boss")
 	assert_eq(w.catch_up.boss, m, "its own m: P against floor 1's end, the boss cap")
 	assert_eq(w.actors.max_hp[bi], bt.hp * m / 1000, "boss HP × m")

@@ -78,6 +78,9 @@ func _add_recap() -> void:
 				+ tr("UI_RECAP_FLOOR") % [recap["floor"], recap.get("floors", recap["floor"])]
 			)
 		)
+	var looped := clampi(int(recap.get("loop", 1)) - 1, 0, 3)  # v0.9.5 BH1 (Q11): the loops that eased the fight
+	if looped >= 1:
+		_line("Looped", tr("RUN_SUMMARY_LOOPED") % looped)
 	if recap.has("loops_cleared"):  # v0.7.5 AP: the Ascension loop
 		_line("Loops", tr("UI_RECAP_LOOPS") % recap["loops_cleared"])
 	if recap.has("seconds"):

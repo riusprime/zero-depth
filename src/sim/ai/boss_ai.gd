@@ -11,7 +11,7 @@ extends RefCounted
 
 ## Appended after EnemyAi.State (SPAWN, MOVE, WINDUP, ACTIVE, RECOVER).
 const STAGGERED := 5
-## v0.5.5 DS (D7): a phase gate's transition (BossGates): invulnerable, still, the adds rising.
+## v0.5.5 DS (D7): a phase gate's transition (BossGates): still, the adds rising. v0.9.5 BH1: the boss kneels.
 const GATE := 6
 ## A boss rises for this long before it acts (invulnerable meanwhile; starting value, 1.0 s).
 const INTRO_TICKS := 60
@@ -81,8 +81,6 @@ static func think(w: World, i: int) -> void:
 	if a.state[i] != GATE and a.state[i] != FinalBoss.SHATTER and a.dead[i] == 0:
 		_update_phase(w, i, b, t)  # v0.5.5 DS: a boss killed between ticks opens no gate (FB1: nor a shattering one)
 	BossChallenge.think(w, i, b, t)
-	if a.state[i] != STAGGERED:
-		bs.meter[b] = maxi(0, bs.meter[b] - t.stagger_decay_milli)
 	if t.mimic and w.final_fight != null:  # v0.8.0 FB3: the build read, a dash due, the stance's clock
 		BossNemesis.think(w, i, t)
 	BossJudge.record(w, i, t)  # v0.9.0 NB3: the Clockwork Judge keeps your last 3 s for its echo
@@ -98,7 +96,7 @@ static func think(w: World, i: int) -> void:
 			BossGates.advance(w, i, b)
 		FinalBoss.SHATTER:
 			pass  # v0.8.0 FB1: FinalBoss runs the shatter (tick phase 9)
-		STAGGERED:
+		STAGGERED:  # v0.9.5 BH1 (H0): the sim never enters it now; a save made before it (and the tests' hold) runs out
 			bs.stagger_t[b] -= 1
 			if bs.stagger_t[b] <= 0:
 				bs.stagger_t[b] = 0
@@ -698,34 +696,6 @@ static func hit_player(w: World, i: int, atk: BossAttackTable, tags: int, from: 
 	Damage.hit(w, 0, dmg, a.ids[i], a.ids[i], w.take_root(), tags, from, w.player_pos())
 	if w.player_dead() and w.killer_attack < 0:
 		w.killer_attack = w.bosses.attack[b]
-
-
-# --- stagger ----------------------------------------------------------------------------------------------------
-
-
-## Damage (not damage over time) on a boss fills its stagger meter; a full meter staggers it: its attack stops,
-## it can't act for stagger_ticks, and the meter resets. Emits STATUS_APPLY (effect &"boss_stagger").
-static func on_damage(w: World, i: int, applied: int, tags: int = 0) -> void:
-	var a := w.actors
-	if not is_boss_kind(a.kinds[i]) or a.dead[i] == 1 or applied <= 0:
-		return
-	if a.state[i] == STAGGERED or a.state[i] == S.SPAWN or a.state[i] == GATE:
-		return
-	if a.state[i] == FinalBoss.SHATTER:  # v0.8.0 FB1
-		return
-	var b := entry_of(w, i)
-	var t: BossTable = w.boss_tables[w.bosses.table[b]]
-	w.bosses.meter[b] += applied * BossChallenge.stagger_permille(w, i, tags)  # BX: the weak point
-	if w.bosses.meter[b] < t.stagger_size_milli:
-		return
-	w.bosses.meter[b] = 0
-	w.bosses.stagger_t[b] = t.stagger_ticks
-	w.bosses.attack[b] = -1
-	a.lock_len[i] = 0.0
-	EnemyAi.enter_state(a, i, STAGGERED)
-	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[i], a.ids[0], a.ids[i], a.pos(i))
-	e.effect_id = &"boss_stagger"
-	e.amount = t.stagger_ticks
 
 
 # --- shapes (one function per area; the view draws them, resolve() hits with them) ----------------------------

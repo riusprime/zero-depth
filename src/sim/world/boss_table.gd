@@ -26,7 +26,6 @@ var rear_half_arc := 0
 var rear_mult_permille := 1000
 ## Stagger meter: size and decay per tick in milli-points (1000 per damage point), and the stagger's length.
 var stagger_size_milli := 1000
-var stagger_decay_milli := 0
 var stagger_ticks := 150
 var attacks: Array[BossAttackTable] = []
 ## Phases, in order: HP threshold (per mille of max HP), the attack indices it picks from, its entry attack (-1 =

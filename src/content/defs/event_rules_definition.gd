@@ -22,11 +22,12 @@ extends ContentDef
 @export var defend_radius_m := 4.5
 ## The shop's cleanse: lifting the latest curse costs this many shards x the floor (SH's terminal).
 @export var cleanse_price := 60
-## v0.6.0 CU core theft (PLAN v0.5.5 X2; SIGNATURE.md): a boss's own stagger opens a steal window of
-## core_window_seconds. An elite's core is a mod (each weighs core_mod_weight) or a rare stat card (its card weight).
+## v0.6.0 CU core theft (PLAN v0.5.5 X2; SIGNATURE.md): a boss's steal window of core_window_seconds (v0.9.5 BH1, Q3:
+## 3 s from the start of each phase change; it was 2 s from a stagger). An elite's core is a mod (each weighs
+## core_mod_weight) or a rare stat card (its card weight).
 ## v0.9.0 EL (owner Q25): an elite no longer staggers (its 30 % drop: data/elites/rules.tres); the elite HP bonus,
 ## the Ambush Cache's distance and Marked's hunt range went with them.
-@export var core_window_seconds := 2.0
+@export var core_window_seconds := 3.0
 @export var core_mod_weight := 10
 ## A drop (a core's card) lands this far from the next drop at the same spot.
 @export var drop_offset_m := 0.9
