@@ -107,3 +107,23 @@ func test_a_burst_booms_once_with_its_own_cue() -> void:
 		n += 1 if c == &"rune_burst" else 0
 	assert_eq(n, 1, "one boom for the one burst")
 	assert_not_null(audio.stream_for(&"rune_burst"), "the placeholder file")
+
+
+func test_fc5_the_cards_floor_rings_and_shards_follow_the_sim() -> void:
+	var view: RuneExplosionView = add_child_autofree(RuneExplosionView.new())
+	var w := _world([&"gun_ring", &"gun_mine", &"split_shot", &"gun_echo"])
+	var r := WorldReader.new(w)
+	W.run(w, 1, 0, W.S)
+	W.run(w, 12, 0, 0)
+	view.sync(r)
+	var fx := r.rune_effects()
+	assert_eq(fx["mines"].size(), 1, "a trap")
+	assert_eq(fx["glyphs"].size(), 1, "an Echo glyph waits")
+	assert_eq(fx["shards"].size(), 2, "two shards")
+	assert_eq(view.shards, 2, "both drawn")
+	assert_eq(view.extras, 2, "the trap and the glyph (the ring is not full yet)")
+	W.run(w, 12, 0, 0)
+	view.sync(r)
+	assert_eq(r.rune_effects()["holds"].size(), 1)
+	assert_eq(view.extras, 3, "and the held ring")
+	assert_true(view._x_rings[0].visible)

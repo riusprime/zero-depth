@@ -623,6 +623,11 @@ func rune_active() -> bool:
 	return RuneExplosion.active(_w)
 
 
+## v0.9.5 FC5: what the Rune Explosion cards leave on the floor (RuneMods.read: holds, shrinks, mines, shards, glyphs).
+func rune_effects() -> Dictionary:
+	return RuneMods.read(_w)
+
+
 ## v0.9.0 AF3: player projectile `i` is a wisp's orb (its own chirp).
 func projectile_is_wisp(i: int) -> bool:
 	return Wisps.is_wisp_shot(_w, i)

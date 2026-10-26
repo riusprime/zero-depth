@@ -14,7 +14,13 @@ extends Node3D
 ## All shaders are unshaded with fog_disabled. Pooled (BURSTS_MAX). Presentation only (EI-07): the sim decides the
 ## radius and the hits; this reads them.
 
-const BURSTS_MAX := 3
+const BURSTS_MAX := 6
+## v0.9.5 FC5: the cards' floor rings (a held Ring, a shrinking shield, a trap, an Echo glyph) and Split's shards.
+const EXTRAS_MAX := 12
+const SHARDS_MAX := 24
+const SHARD_SIZE := 0.14
+const TRAP_FADE := 0.7
+const GLYPH_FADE := 0.45
 const DOME_H := 0.45
 const DOME_ALPHA_MAX := 0.35
 ## The rune band's depth behind the edge (m), and the floor lift.
@@ -96,11 +102,17 @@ var bursts := 0
 var edges: Array[float] = []
 var fades: Array[float] = []
 var domes_shown := false
+## v0.9.5 FC5: the card rings and shards drawn now (the sim's RuneMods.read).
+var extras := 0
+var shards := 0
 
 var _domes: Array[MeshInstance3D] = []
 var _dome_mat: Array[ShaderMaterial] = []
 var _rings: Array[MeshInstance3D] = []
 var _ring_mat: Array[ShaderMaterial] = []
+var _x_rings: Array[MeshInstance3D] = []
+var _x_mat: Array[ShaderMaterial] = []
+var _shard_nodes: Array[MeshInstance3D] = []
 ## The enemies already flashed (burst uid * 1000003 + actor id) and the flashes alive (place, tick).
 var _flashed := {}
 var _flash_at: Array[Vector3] = []
@@ -147,6 +159,38 @@ func _init() -> void:
 		add_child(g)
 		_rings.append(g)
 		_ring_mat.append(rm)
+	for k in EXTRAS_MAX:  # v0.9.5 FC5: the cards' floor rings, the same rune ring
+		var xm := ShaderMaterial.new()
+		xm.shader = _ring_shader
+		xm.set_shader_parameter(&"runes", tex)
+		xm.set_shader_parameter(&"repeat_n", GLYPH_REPEAT)
+		var x := MeshInstance3D.new()
+		x.mesh = plane
+		x.material_override = xm
+		x.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		x.visible = false
+		add_child(x)
+		_x_rings.append(x)
+		_x_mat.append(xm)
+	var shard := SphereMesh.new()
+	shard.radius = SHARD_SIZE
+	shard.height = SHARD_SIZE * 2.0
+	shard.radial_segments = 8
+	shard.rings = 4
+	var sm := StandardMaterial3D.new()
+	sm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	sm.albedo_color = RIM
+	sm.emission_enabled = true
+	sm.emission = CORE
+	sm.disable_fog = true
+	for k in SHARDS_MAX:  # Split's rune shards
+		var sh := MeshInstance3D.new()
+		sh.mesh = shard
+		sh.material_override = sm
+		sh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		sh.visible = false
+		add_child(sh)
+		_shard_nodes.append(sh)
 
 
 ## The rune strip: GLYPHS drawn into one image (12 cells of GLYPH_PX), made once and cached.
@@ -246,6 +290,56 @@ func sync(reader: WorldReader) -> void:
 		if _tick - _flash_tick[j] > FLASH_TICKS:
 			_flash_at.remove_at(j)
 			_flash_tick.remove_at(j)
+	_sync_cards(reader)
+
+
+## v0.9.5 FC5: what the cards leave on the floor (WorldReader.rune_effects): a held Ring and a shrinking shield (the
+## rune ring at the sim's radius), a trap (a small ring), an Echo glyph waiting (a dim ring at the burst point), and
+## Split's shards (small violet beads).
+func _sync_cards(reader: WorldReader) -> void:
+	var fx: Dictionary = {} if reader.player_dead() else reader.rune_effects()
+	extras = 0
+	for key: String in ["holds", "shrinks", "mines", "glyphs"]:
+		for row: Dictionary in fx.get(key, []):
+			if extras >= EXTRAS_MAX:
+				break
+			var r := float(row["radius"])
+			var life := maxf(1.0, float(row["life"]))
+			var fd := 1.0
+			match key:
+				"holds":
+					fd = clampf(1.0 - float(row["age"]) / life, 0.0, 1.0) * 0.8 + 0.2
+				"shrinks":
+					fd = 0.8
+				"mines":
+					fd = TRAP_FADE
+				"glyphs":
+					fd = GLYPH_FADE
+			var half := r + 0.15
+			var xm := _x_mat[extras]
+			xm.set_shader_parameter(&"edge_f", r / half)
+			xm.set_shader_parameter(&"band_f", minf(BAND_M, r) / half)
+			xm.set_shader_parameter(&"fade", fd)
+			xm.set_shader_parameter(&"glow", 0.0 if ViewPrefs.effects_density == "low" else 1.0)
+			xm.set_shader_parameter(&"motion", 0.0 if ViewPrefs.reduced_motion else 1.0)
+			_x_rings[extras].transform = Transform3D(
+				Basis.IDENTITY.scaled(Vector3(half, 1.0, half)), SimPlane.to_3d(row["pos"], LIFT)
+			)
+			_x_rings[extras].visible = r > 0.02
+			extras += 1
+	for k in range(extras, EXTRAS_MAX):
+		_x_rings[k].visible = false
+	shards = 0
+	for row: Dictionary in fx.get("shards", []):
+		if shards >= SHARDS_MAX:
+			break
+		_shard_nodes[shards].transform = Transform3D(
+			Basis.IDENTITY, SimPlane.to_3d(row["pos"], SimPlane.CORE_HEIGHT)
+		)
+		_shard_nodes[shards].visible = true
+		shards += 1
+	for k in range(shards, SHARDS_MAX):
+		_shard_nodes[k].visible = false
 
 
 ## The effects layer's drawer (WorldViewRoot appends it): a small violet flash on each enemy hit.

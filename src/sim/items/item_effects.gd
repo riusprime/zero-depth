@@ -32,6 +32,7 @@ static func shot_period_ticks(w: World) -> int:
 	var spec := Modifiers.bolt(w)
 	var base := BombMods.period(w, spec, spec.period_ticks)  # v0.9.5 FC2: the Bomb's Rapid Fire (0.6 s)
 	base = VoidMods.period(w, spec, base)  # v0.9.5 FC3: the Void's Rapid Fire (0.4 s)
+	base = RuneMods.period(w, spec, base)  # v0.9.5 FC5: the Rune Explosion's Big Shot (90) and Rapid Fire (42)
 	var r := AttackRate.rate(w, spec.rate_bonus_permille + FireRhythm.shot_bonus(w, spec))  # v0.8.0 MR: the ramp
 	r = AttackRate.form_rate(spec, r)  # v0.9.0 LZ: the Laser's ticks at half the bonus
 	if r != 1000:

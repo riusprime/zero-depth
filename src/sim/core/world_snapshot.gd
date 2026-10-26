@@ -851,6 +851,8 @@ static func _apply_object(obj: Object, data: Dictionary, kept: Dictionary, where
 		if not data.has(f):
 			if (ADDED_SINCE_V05.get(class_of(obj), []) as Array).has(f):
 				continue  # v0.6.0 MX2: an older save; apply() fills it in
+			if class_of(obj) == &"ModifierState" and RuneMods.SNAPSHOT_FIELDS.has(f):
+				continue  # v0.9.5 FC5: the Rune Explosion cards' rows (RuneMods lists them: this file is at its line cap)
 			return "%s.%s: not in the snapshot" % [where, f]
 		var cur: Variant = obj.get(f)
 		var r: Array = _decode(cur, data[f], "%s.%s" % [where, f])

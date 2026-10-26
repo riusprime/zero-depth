@@ -175,6 +175,7 @@ func _final(reader: WorldReader) -> void:
 		if reader.loop() > 1:
 			report(&"final:won_looped")
 
+
 ## Sealed rooms: one sealing starts clean; a hit that costs HP spoils it; its clear counts (and counts clean).
 ## v0.9.5 DR: the locked rooms (lockdowns; on floor rules 20 the arena rooms too) count like the arenas.
 ## the locked rooms (lockdowns; on floor rules 20 the arena rooms too) count like the arenas.

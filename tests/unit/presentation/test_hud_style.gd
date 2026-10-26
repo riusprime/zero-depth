@@ -244,7 +244,9 @@ func test_the_hp_plate_is_15_percent_bigger_and_shares_the_squares_bottom_line()
 	await wait_process_frames(3)
 	var plate := hud.get("_hp_frame") as Control
 	var bottom := hud.get_viewport_rect().size.y - Hud.BOTTOM_LINE
-	assert_almost_eq(plate.get_global_rect().end.y, bottom, 1.0, "the plate sits 20 px above the bottom")
+	assert_almost_eq(
+		plate.get_global_rect().end.y, bottom, 1.0, "the plate sits 20 px above the bottom"
+	)
 	assert_lte(plate.size.y, AbilitySquares.SIDE, "no taller than a square: both bottom-aligned")
 	assert_eq(hud.hp_bar().size.x, 345.0)
 	assert_false(hud.has_method("_pip"), "the old blue pips are gone")
