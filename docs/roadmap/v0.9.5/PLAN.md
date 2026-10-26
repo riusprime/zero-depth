@@ -347,6 +347,9 @@ offers, `attack_slots.tres`, the forms). The order inside each list is the build
   **PF4** outlines off (before/after shots for the owner), small enemy pieces cast no shadow, non-critical effect views
   at 30 Hz staggered; then **PF5** each enemy's rigid pieces merged into one skinned mesh, kept only if the animation
   frames match the old ones.
+- **Owner, 2026-10-26, on PF4's before/after shots:** "yeah i it looks fine lets go for those changes if performance
+  is still unnaceptable we will work later on it". Outlines stay off; PF5 goes ahead; whatever 144 fps still needs
+  after PF5 is follow-up work, not a v0.9.5 blocker.
 - No enemy is drawn behind walls or floors: the X-ray silhouette pass goes (`ActorViews.technique = &"xray"`, a
   second mesh per body piece).
 - Profile a 20-enemy fight with a multi-hit, two-element build on the owner's PC: Frozen Shore and one other biome.
