@@ -18,8 +18,8 @@ const GAP := 4.0
 const CUT_W := 2.0
 ## v0.6.5 WN2: the mark on a trigger card's pip.
 const TRIGGER_MARK := "›"
-## Above the anchor's top edge (px): clears the ability row (AbilityHud).
-const LIFT := 12.0 + AbilityHud.SLOT + AbilityHud.PIP * 2.0 + AbilityHud.LIFT + 8.0
+## Above the anchor's top edge (px).
+const LIFT := 12.0
 
 ## The HP plate the row sits over (Hud sets it; may be null).
 var anchor: Control

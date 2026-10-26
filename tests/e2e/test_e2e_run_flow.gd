@@ -175,7 +175,8 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_true(hud2.floor_card_showing(), "floor 2's card")
 	assert_string_contains(hud2.floor_card_text(), tr("HUD_MAX_HP_GROWN") % 15, false)
 	assert_eq(hud2.item_icon_count(), items.size(), "the carried items' icons")
-	assert_eq(hud2.ability_hud.filled_count(), owned.size(), "the ability slots")
+	assert_true(hud2.ability_squares.visible, "the ability squares (v0.9.5 HU)")
+	assert_true(hud2.ability_squares.shown().has(&"attack"), "with the attack")
 	assert_true(
 		main.get_node("UI/LoadingCover").visible,
 		"the floor opens from the portal's cover (v0.8.0 N3)"

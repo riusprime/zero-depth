@@ -146,7 +146,7 @@ func test_the_calm_hud_has_plain_labels_and_thin_bars() -> void:
 		# v0.8.0 N8: the tablet's face hangs from the card's pivot (StoneCard → CardFx → Pivot → Face → Title)
 		var card_title := l.name == &"Title" and l.get_parent().get_parent().get_parent() is CardFx
 		assert_eq((l as Label).uppercase, card_title, "%s is plain type" % l.name)
-	assert_lte(Hud.BAR.y, 10.0, "a thin HP bar")
+	assert_lte(Hud.BAR.y, 12.0, "a thin HP bar (v0.9.5 HU: 15 percent bigger than 10)")
 	assert_lte(DangerMeter.SIZE.y, 16.0, "a slim danger meter")
 	assert_lte(BossBar.BAR.y, 10.0, "a thin boss bar")
 	var f := HudStyle.font(true)
@@ -230,3 +230,25 @@ func test_the_danger_meter_shows_the_tier_number_from_tier_4_and_turns_red_at_10
 	assert_eq(m.chevrons_lit(), DangerMeter.CHEVRONS, "the marks stay full")
 	assert_eq(m.tier_shown(), 7)
 	assert_eq(tr("HUD_DANGER_TIER") % 7, "×7")
+
+
+## v0.9.5 HU (owner: the HP plate "15% bigger"; the spells "the same height as the health bar, but lower both about 2
+## cm"): the HP bar 345 x 12, its type 16 pt, the plate and the ability squares on one bottom line 20 px up.
+func test_the_hp_plate_is_15_percent_bigger_and_shares_the_squares_bottom_line() -> void:
+	assert_eq(Hud.BAR, Vector2(345, 12))
+	assert_almost_eq(Hud.BAR.x / 300.0, 1.15, 0.001)
+	assert_eq(Hud.HP_FONT, 16)
+	var hud := Hud.new()
+	add_child_autofree(hud)
+	hud.sync(WorldReader.new(_world()))
+	await wait_process_frames(3)
+	var plate := hud.get("_hp_frame") as Control
+	var bottom := hud.get_viewport_rect().size.y - Hud.BOTTOM_LINE
+	assert_almost_eq(plate.get_global_rect().end.y, bottom, 1.0, "the plate sits 20 px above the bottom")
+	assert_lte(plate.size.y, AbilitySquares.SIDE, "no taller than a square: both bottom-aligned")
+	assert_eq(hud.hp_bar().size.x, 345.0)
+	assert_false(hud.has_method("_pip"), "the old blue pips are gone")
+	var squares := hud.ability_squares
+	assert_almost_eq(
+		squares.rect_of(&"attack").end.y, bottom, 1.0, "the squares' bottom is the plate's bottom"
+	)

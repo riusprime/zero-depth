@@ -1,16 +1,20 @@
 class_name Hud
 extends Control
-## The fight's HUD (PLAN v0.1.0 Step 5): health, dash and utility readiness (bottom left), wave and enemies left
+## The fight's HUD (PLAN v0.1.0 Step 5): health (bottom left; the ability squares bottom right), wave and enemies left
 ## (top centre); on a floor, the carried-item icons (bottom right) and the item card (bottom centre). It never
 ## takes mouse input, so clicks reach the game. v0.3.0 UI (L21, L23, L24), calmer in v0.3.5 (F15): drawn in the
 ## HudStyle look (plain type, thin bars, a hairline per group); the top group shows floor, biome, time and a visual
 ## danger meter (no numbers); below 30 % HP the HP bar and the screen edge pulse red.
 ## v0.5.5 A5 (owner pick B "Ember stone"): the groups sit on chipped stone slabs (HudStyle.EMBER); the HP and top
-## plates carry the warm ember line; HP is a red bar; the skill and vent hints get small slabs of their own.
+## plates carry the warm ember line; HP is a red bar; the vent hint gets a small slab of its own.
 
-const BAR := Vector2(300, 10)
-## The dash / utility readiness squares (px).
-const PIP := 24.0
+## v0.9.5 HU (owner: "make it just a 15% bigger"): the HP plate's bar and type, 1.15 x the old 300 x 10 and 14 pt.
+const BAR := Vector2(345, 12)
+const HP_FONT := 16
+## The carried-item row sits this far above the bottom edge: clear of the ability squares (px).
+const ITEMS_LIFT := AbilitySquares.MARGIN_BOTTOM + AbilitySquares.SIDE + 12.0
+## The plate bottom and the ability squares share one line this far above the screen bottom (owner, 2026-10-26).
+const BOTTOM_LINE := AbilitySquares.MARGIN_BOTTOM
 ## The top plate's width (px).
 const TOP_W := 540.0
 ## Floor (PLAN v0.2.0 F, K): a row of icons for the items you carry, a compact item card (on pickup, and as a
@@ -44,10 +48,10 @@ var heat_meter := HeatMeter.new()
 var gamble := GambleHud.new()
 ## The minimap (v0.3.0 MM): the corner map, and the full map while Tab / pad Select is held.
 var minimap := Minimap.new()
-## v0.3.5 K: the skill pip beside the HP bar and the vent hint beside the heat meter.
+## v0.3.5 K: the vent hint beside the heat meter.
 var kit_hud := KitHud.new()
-## v0.4.0 BS: the four ability slots above the HP plate.
-var ability_hud := AbilityHud.new()
+## v0.9.5 HU: the four ability squares (Attack, Skill, Dash, Blink), bottom right.
+var ability_squares := AbilitySquares.new()
 ## v0.5.0 EV: the event prompt, status and panel, and threat T with the curses held.
 var events := EventHud.new()
 ## v0.4.0 AB: the Overrun room's banner (its kills, then what clearing it paid).
@@ -70,10 +74,8 @@ var build_hud := BuildHud.new()
 var flights := CardFlights.new()
 var swap := SwapPanel.new()
 var _hp_bar := HudBar.new()
-var _hp_text := HudStyle.label(14, true)
+var _hp_text := HudStyle.label(HP_FONT, true)
 var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse on the HP bar while regenerating.
-var _dash := _pip("HUD_DASH")
-var _util := _pip("HUD_UTILITY")
 var _wave := HudStyle.label(22, true)
 var _left := HudStyle.label(14)
 var _items := HBoxContainer.new()
@@ -142,8 +144,8 @@ func _init() -> void:
 	add_child(_items)
 	_items.offset_left = -28
 	_items.offset_right = -28
-	_items.offset_top = -28
-	_items.offset_bottom = -28
+	_items.offset_top = -ITEMS_LIFT
+	_items.offset_bottom = -ITEMS_LIFT
 	add_child(_card)
 	_card.place_bottom_centre(-196)
 	_combos.name = "ComboBadges"
@@ -155,8 +157,8 @@ func _init() -> void:
 	add_child(_combos)
 	_combos.offset_left = -28
 	_combos.offset_right = -28
-	_combos.offset_top = -28 - ROW_ICON - 12
-	_combos.offset_bottom = -28 - ROW_ICON - 12
+	_combos.offset_top = -ITEMS_LIFT - ROW_ICON - 12
+	_combos.offset_bottom = -ITEMS_LIFT - ROW_ICON - 12
 	add_child(_combo_card)
 	_combo_card.place_bottom_centre(-196 - ItemCard.HEIGHT - 10)  # v0.6.1 R1: above the taller item plaque
 	_gate.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
@@ -173,14 +175,12 @@ func _init() -> void:
 	_build_rewards()
 	add_child(gamble)
 	add_child(kit_hud)  # v0.3.5 K
-	kit_hud.hp_anchor = _hp_frame  # v0.5.5 A5: the skill's slab sits beside the HP slab
 	kit_hud.heat_anchor = heat_meter
-	add_child(ability_hud)  # v0.4.0 BS
+	add_child(ability_squares)  # v0.9.5 HU
 	add_child(overrun_hud)  # v0.4.0 AB
 	add_child(lockdown_hud)  # v0.9.0 LK
 	add_child(shrine_hud)  # v0.9.0 SH, HF
 	add_child(phase_hud)  # v0.4.0 TU
-	ability_hud.anchor = _hp_frame
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_pick)  # after the loop: the pick takes mouse input
@@ -192,7 +192,7 @@ func _init() -> void:
 	add_child(build_hud)  # v0.6.0 MX2
 	build_hud.anchor = _hp_frame
 	add_child(swap)  # v0.6.0 MX2: last, over the pick and the shop; its answer is input
-	flights.abilities = ability_hud  # v0.8.0 N8: where a picked card's icon flies
+	flights.squares = ability_squares  # v0.8.0 N8: where a picked card's icon flies
 	flights.build = build_hud
 	flights.items = _items
 	flights.plate = _hp_frame
@@ -223,16 +223,6 @@ func sync(reader: WorldReader) -> void:
 		_hp_text.text = tr("HUD_HP") % [hp, mx]
 		_hp_text.add_theme_color_override("font_color", hp_color)
 	_regen.sync(reader, Vector2(_hp_bar.size.x * _hp_bar.shown_fraction(), _hp_bar.size.y))
-	_set_pip(_dash, reader.dash_cooldown(), reader.dash_cooldown_total())
-	if reader.has_blink():
-		if _changed(&"util", &"UTIL_BLINK"):
-			(_util.get_child(1) as Label).text = tr("UTIL_BLINK")
-		_set_pip(_util, reader.blink_cooldown(), reader.blink_cooldown_total())
-	elif reader.has_guard():
-		if _changed(&"util", &"UTIL_GUARD"):
-			(_util.get_child(1) as Label).text = tr("UTIL_GUARD")
-		_set_pip(_util, 0, 1, reader.guarding())
-	_util.visible = reader.has_blink() or reader.has_guard()
 	if reader.has_floor():
 		var secs := int(reader.run_seconds())
 		if _changed(&"wave", [&"HUD_TIME", secs]):
@@ -270,7 +260,7 @@ func sync(reader: WorldReader) -> void:
 	_sync_rewards(reader)
 	gamble.sync(reader)
 	kit_hud.sync(reader)  # v0.3.5 K
-	ability_hud.sync(reader)  # v0.4.0 BS
+	ability_squares.sync(reader)  # v0.9.5 HU
 	events.sync(reader)  # v0.5.0 EV
 	overrun_hud.sync(reader)  # v0.4.0 AB
 	lockdown_hud.sync(reader)  # v0.9.0 LK
@@ -406,7 +396,7 @@ func top_texts() -> PackedStringArray:
 func _build_corner() -> void:
 	var corner := VBoxContainer.new()
 	corner.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	corner.position = Vector2(28, -160)
+	corner.position = Vector2(28, -BOTTOM_LINE)  # v0.9.5 HU: the plate's bottom on the squares' line
 	corner.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	add_child(corner)
 	_hp_frame.name = "HpPlate"
@@ -421,11 +411,6 @@ func _build_corner() -> void:
 	_hp_bar.custom_minimum_size = BAR
 	col.add_child(_hp_bar)
 	_hp_bar.add_child(_regen)
-	var pips := HBoxContainer.new()
-	pips.add_theme_constant_override("separation", 18)
-	pips.add_child(_dash)
-	pips.add_child(_util)
-	col.add_child(pips)
 
 
 ## The top plate: "FLOOR 01 // RUINS" over the run time, the danger meter and the kills.
@@ -727,32 +712,3 @@ func _sync_combos(reader: WorldReader) -> void:
 		badge.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		plate.add_child(badge)
-		_combos.add_child(plate)
-
-
-## A small square that fills as the cooldown runs out, with a label.
-func _pip(key: String) -> HBoxContainer:
-	var box := HBoxContainer.new()
-	box.add_theme_constant_override("separation", 8)
-	var sq := ColorRect.new()
-	sq.custom_minimum_size = Vector2(PIP, PIP)
-	sq.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	sq.color = HudStyle.dim()
-	var fill := ColorRect.new()
-	fill.color = ThemePalette.color(&"player_core")
-	fill.size = Vector2(PIP, PIP)
-	sq.add_child(fill)
-	box.add_child(sq)
-	var l := Label.new()
-	l.text = key
-	HudStyle.style_label(l, 14)
-	box.add_child(l)
-	return box
-
-
-func _set_pip(pip: HBoxContainer, left: int, total: int, active: bool = false) -> void:
-	var fill: ColorRect = pip.get_child(0).get_child(0)
-	var ready := 1.0 - clampf(float(left) / maxf(1.0, total), 0.0, 1.0)
-	fill.size = Vector2(PIP, PIP * ready)
-	fill.position = Vector2(0, PIP * (1.0 - ready))
-	fill.color = ThemePalette.color(&"player_core").lightened(0.4 if active else 0.0)
