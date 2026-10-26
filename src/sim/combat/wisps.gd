@@ -66,6 +66,16 @@ static func wait(w: World, k: int, n: int, period: int) -> int:
 	return (period - t) % period
 
 
+## v0.9.5 FC9b: a wisp shot's damage in thousandths of a point (the Gun's factor, the wisps' share and Halo's keep their
+## fractions; WispMods.take deals the whole part).
+static func shot_milli(w: World, spec: AttackSpec) -> int:
+	var dmg := PlayerBuild.bolt_damage(w, Attacks.bolt_base_damage(spec))
+	var milli := dmg * spec.wisp_permille
+	if WispMods.mask(spec) & WispMods.HALO != 0:
+		milli = milli * WispMods.param(w, "halo_share") / 1000
+	return milli
+
+
 ## A wisp shot's damage under the Gun's factor, the wisps' share and Halo's (v0.9.5 FC9).
 static func shot_damage(w: World, spec: AttackSpec) -> int:
 	var dmg := PlayerBuild.bolt_damage(w, Attacks.bolt_base_damage(spec))  # Builds: the Gun's factor (L16)
@@ -111,7 +121,7 @@ static func target(w: World, from: Vector2, spec: AttackSpec) -> int:
 
 
 static func _fire(w: World, spec: AttackSpec, from: Vector2, to: Vector2) -> void:
-	var dmg := shot_damage(w, spec)
+	var dmg := WispMods.take(w, shot_milli(w, spec))  # v0.9.5 FC9b: thousandths; the carry deals the whole part
 	var tags := SimEvent.TAG_PROJECTILE
 	var ctx := AttackContext.make(from, Kin.angle_of(to - from), dmg, 0, tags, &"")
 	ctx.base_damage = dmg
