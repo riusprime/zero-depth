@@ -213,3 +213,17 @@ var square_half_m := 0.0
 ## attack with snuff puts out the lit lantern nearest each struck circle (the Snuff).
 var dark_ticks := 0
 var snuff := false
+## v0.9.5 BH2 (BOSSES_HARD.md B1-B5; BossHard): a `row_lanes` attack with second_ticks > 0 follows each cross with a
+## second one second_ticks after it strikes, shifted second_offset_m. A `pattern` with lead_ticks > 0 aims its first
+## wave that many ticks ahead of the player's movement and every later wave at them. A `leap` with last_lead_ticks > 0
+## aims its last leap that far ahead, and one with last_radius_bonus_permille > 0 lands that last leap that much
+## wider. A `lanes` attack with beam_turn_milli > 0 burns its whole active time, turning toward the player by that
+## many 1/4096 turns x 1000 a tick. A `grid` with safe_cells > 0 strikes all but that many cells of its board (inside
+## its outer ring) each volley.
+var second_ticks := 0
+var second_offset_m := 0.0
+var lead_ticks := 0
+var last_lead_ticks := 0
+var last_radius_bonus_permille := 0
+var beam_turn_milli := 0
+var safe_cells := 0

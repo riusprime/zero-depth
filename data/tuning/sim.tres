@@ -13,3 +13,6 @@ attack_speed_knee_permille = 500
 attack_speed_knee2_permille = 1500
 attack_speed_slope_permille = 500
 attack_speed_slope2_permille = 250
+loop_ease_max = 3
+loop_time_ease_permille = 120
+loop_damage_ease_permille = 80

@@ -221,6 +221,10 @@ static func _think_active(w: World, i: int, b: int, atk: BossAttackTable) -> voi
 			a.facing[i] = BossGaze.angle_at(w, i, mini(a.state_t[i] + 1, atk.active_ticks - 1))
 			if a.state_t[i] >= atk.active_ticks:
 				_finish(w, i, b, atk)
+		M.LANES:  # v0.9.5 BH2 (B4): a burning beam turns toward the player
+			BossHard.turn_beam(w, i, b, atk)
+			if a.state_t[i] >= atk.active_ticks:
+				_finish(w, i, b, atk)
 		M.CROSS:  # v0.8.0 FB2: she watches the player while her Cross turns
 			if not w.player_dead():
 				a.facing[i] = Kin.angle_of(w.player_pos() - a.pos(i))
@@ -314,6 +318,8 @@ static func start_attack(w: World, i: int, k: int) -> void:
 	bs.chained[b] = 0
 	BossTide.on_start(w, i, atk)  # v0.9.0 NB1: the next Pull's due tick
 	_lock(w, i, b, atk)
+	if atk.move == M.GRID and atk.safe_cells > 0:  # v0.9.5 BH2 (B5): which cells are safe: one draw, now
+		BossHard.draw_safe(w, b, atk)
 	BossTwin.on_start(w, i, k)  # v0.9.0 NB2: the twin starts it too; Crossfire's safe spot
 	BossJudge.on_start(w, i, atk)  # v0.9.0 NB3: the echo's path locks; the Verdict's square starts on you
 
@@ -332,6 +338,7 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 	a.facing[i] = aim
 	match atk.move:
 		M.LANES:
+			BossHard.reset_beam(w, b)  # v0.9.5 BH2 (B4): a new beam turns from nothing
 			for k in atk.count:
 				var ang := lane_angle(atk, aim, k)
 				var start := at + Kin.dir(ang) * a.radius[i]
@@ -404,6 +411,9 @@ static func tracking(w: World, i: int, t: BossTable, atk: BossAttackTable) -> bo
 ## v0.7.5 BF1: where an attack aims: the player's exact position for a locked attack (owner N15: "follow exact
 ## position of the player"), else BossChallenge.aim_point (the lead and the dash read).
 static func _target(w: World, b: int, atk: BossAttackTable) -> Vector2:
+	var led := BossHard.leap_target(w, b, atk)  # v0.9.5 BH2 (B3): the last leap aims ahead of your movement
+	if led[0]:
+		return led[1]
 	return w.player_pos() if atk.lock_ticks > 0 else BossChallenge.aim_point(w, b, atk.move)
 
 
@@ -729,6 +739,8 @@ static func lane_slice(w: World, i: int, k: int, st: int) -> Obb:
 	var a := w.actors
 	var atk := attack_of(w, i)
 	var b := entry_of(w, i)
+	if atk.beam_turn_milli > 0:  # v0.9.5 BH2 (B4): a burning beam is whole all the time it burns
+		return lane_of(w, i, k)
 	var ang := lane_angle(atk, a.lock_a[i], k)
 	var len := maxf(w.bosses.pts_x[b * BossStore.MAX_PTS + k], 0.01)
 	var f0 := atk.length_m * st / atk.active_ticks
@@ -751,7 +763,8 @@ static func arc_of(w: World, i: int) -> Array:
 
 ## [center, radius] where a leap lands.
 static func leap_disc(w: World, i: int) -> Array:
-	return [w.bosses.pt(entry_of(w, i), 0), attack_of(w, i).radius_m]
+	var b := entry_of(w, i)
+	return [w.bosses.pt(b, 0), BossHard.leap_radius(w, b, attack_of(w, i))]  # v0.9.5 BH2 (B3): the last one wider
 
 
 ## [center, radius] of a burrow's eruption (where the ripple stopped).
@@ -863,6 +876,9 @@ static func telegraph(w: World, i: int) -> Dictionary:
 			for k in atk.count:
 				obbs.append(lane_of(w, i, k) if atk.move == M.LANES else fan_lane_of(w, i, k))
 			out = {"shape": &"lanes", "obbs": obbs}
+			if not windup and atk.beam_turn_milli > 0:  # v0.9.5 BH2 (B4): the burning beam stays drawn, turning
+				progress = 1000
+				windup = true
 		M.SWEEP:
 			var c := arc_of(w, i)
 			out = {

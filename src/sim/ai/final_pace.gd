@@ -24,19 +24,14 @@ extends RefCounted
 ##   pulls you to its level: your damage on it × nerf_permille (pace_ref_dps / the dps its HP was set from, at least
 ##   nerf_min_permille: the base hero's damage), your move speed at most the base (Stats.move_permille). Outside, it
 ##   fights with its own kit and you with yours.
-## - v0.9.5 BH1 (owner Q11, HC7): each loop finished (n = min(loop - 1, LOOP_EASE_MAX)) shortens the fight:
+## - v0.9.5 BH1 (owner Q11, HC7): each loop finished (n = min(loop - 1, loop_ease_max)) shortens the fight:
 ##   pace_ref_ticks and the floor pace_min_ticks (and the rate cap, which is that floor) are cut by
-##   LOOP_TIME_EASE_PERMILLE (120) per loop before the square root and the clamp (ease_permille); the final bodies'
-##   attacks hit LOOP_DAMAGE_EASE_PERMILLE (80) per loop softer (damage_ease_permille; FinalBoss._spawn).
+##   loop_time_ease_permille (120) per loop before the square root and the clamp (ease_permille); the final bodies'
+##   attacks hit loop_damage_ease_permille (80) per loop softer (damage_ease_permille; FinalBoss._spawn). v0.9.5 BH2:
+##   the three numbers (3, 120, 80) are data (data/tuning/sim.tres, SimTuning), no longer constants here.
 ## Pure: integer maths (64-bit), the integer square root (CatchUp.isqrt); no stream is drawn.
 
 enum Mimic { OFF, WARN, ON }
-
-## v0.9.5 BH1 (Q11): the loops that ease the fight (at most this many), and the cut per loop in per mille: the time
-## 12 %, the bodies' damage 8 %. Starting values (the owner's: Q11).
-const LOOP_EASE_MAX := 3
-const LOOP_TIME_EASE_PERMILLE := 120
-const LOOP_DAMAGE_EASE_PERMILLE := 80
 
 ## STATUS_APPLY effect ids for the views, the sound and the HUD: a window's warning begins, a window opens, it closes.
 const EFFECT_WARN := &"fallen_warn"
@@ -55,19 +50,21 @@ static func table(w: World) -> BossTable:
 # --- the HP ---------------------------------------------------------------------------------------------------------
 
 
-## v0.9.5 BH1 (Q11): the loops finished that ease the final fight: min(loop - 1, 3).
+## v0.9.5 BH1 (Q11): the loops finished that ease the final fight: min(loop - 1, loop_ease_max) (3 as shipped).
 static func loops_eased(w: World) -> int:
-	return clampi(w.loop - 1, 0, LOOP_EASE_MAX)
+	return clampi(w.loop - 1, 0, w.tuning.loop_ease_max)
 
 
-## v0.9.5 BH1: what the fight's target time (and its floor) is scaled by, per mille: 1000 - 120 per loop finished.
+## v0.9.5 BH1: what the fight's target time (and its floor) is scaled by, per mille: 1000 - 120 per loop finished
+## (loop_time_ease_permille).
 static func ease_permille(w: World) -> int:
-	return 1000 - LOOP_TIME_EASE_PERMILLE * loops_eased(w)
+	return 1000 - w.tuning.loop_time_ease_permille * loops_eased(w)
 
 
-## v0.9.5 BH1: what the final bodies' attack damage is scaled by, per mille: 1000 - 80 per loop finished.
+## v0.9.5 BH1: what the final bodies' attack damage is scaled by, per mille: 1000 - 80 per loop finished
+## (loop_damage_ease_permille).
 static func damage_ease_permille(w: World) -> int:
-	return 1000 - LOOP_DAMAGE_EASE_PERMILLE * loops_eased(w)
+	return 1000 - w.tuning.loop_damage_ease_permille * loops_eased(w)
 
 
 ## The HP a paced body of table t gets at `dps_milli` (the measured damage per second × 1000): see the class doc.

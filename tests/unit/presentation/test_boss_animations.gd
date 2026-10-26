@@ -235,7 +235,7 @@ func test_the_strike_pose_lands_on_the_first_active_tick_read_from_the_sim() -> 
 ## the strike pose lands on its first active tick (no view timer of its own).
 func test_the_sped_up_attacks_animate_on_the_sims_faster_ticks() -> void:
 	for pick: Array in [
-		[&"warlord", &"javelin_fan", 27],
+		[&"warlord", &"javelin_fan", 36],  # v0.9.5 BH2: 0.6 s
 		[&"warlord", &"lunge_dash", 60],
 		[&"brood_mother", &"leap", 60],
 		[&"hive_lens", &"dive", 60],

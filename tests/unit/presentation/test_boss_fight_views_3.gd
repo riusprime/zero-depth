@@ -113,7 +113,7 @@ func test_the_mortar_grid_draws_one_colour_and_strikes_what_it_drew() -> void:
 	var drawn := []
 	for item: Dictionary in tg["items"]:
 		drawn.append(item["center"])
-	assert_eq(drawn.size(), 13, "the first colour of a 5 x 5 board")
+	assert_eq(drawn.size(), 23, "all but the two safe cells of a 5 x 5 board (v0.9.5 BH2)")
 	var discs := BossDodge.grid_discs(w, w.actors.index_of(aid), 0)
 	assert_eq(PackedVector2Array(drawn), discs, "drawn = struck (EI-07)")
 	var r: float = tg["items"][0]["radius"]
@@ -128,7 +128,7 @@ func test_the_mortar_grid_draws_one_colour_and_strikes_what_it_drew() -> void:
 		BossLab.start(w2, w2.actors.index_of(s2[1]), &"mortar_grid")
 		var hit := false
 		for t in atk.windup_ticks + 2:
-			var stand: Vector2 = Vector2(7, 0) if t < atk.windup_ticks - atk.lock_ticks else p
+			var stand: Vector2 = Vector2(7, 0) if t <= atk.windup_ticks - atk.lock_ticks else p
 			w2.actors.set_pos(0, stand)
 			var seq := w2.last_event_seq()
 			w2.step(InputFrame.new())

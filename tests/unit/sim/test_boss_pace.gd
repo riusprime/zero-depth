@@ -95,7 +95,14 @@ func _dodge(id: StringName, attack_id: StringName, dist: float, way: int) -> Arr
 			if w.dash_cooldown_left == 0:
 				pressed = InputFrame.DASH
 				dashed = n if dashed < 0 else dashed
-		w.step(_frame(dir if running else Vector2.ZERO, dir, pressed))
+		var go := dir
+		if running and atk.beam_turn_milli > 0 and way < 2:
+			# v0.9.5 BH2 (B4): the burning beam turns after you, so the bot's answer is to circle the boss, drifting in
+			var rel := w.player_pos() - w.actors.pos(i)
+			var side := -1.0 if way == 0 else 1.0
+			var drift := clampf((rel.length() - 3.5) * 0.1, 0.0, 0.4)  # in toward 3.5 m, never into the body
+			go = (Vector2(-rel.y, rel.x).normalized() * side * 0.9 - rel.normalized() * drift).normalized()
+		w.step(_frame(go if running else Vector2.ZERO, go, pressed))
 	return [hp0 - w.actors.hp[0], dashed]
 
 

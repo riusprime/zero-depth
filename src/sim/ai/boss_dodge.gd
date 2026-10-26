@@ -21,11 +21,15 @@ static func track_marks(w: World, b: int, atk: BossAttackTable, t: int) -> void:
 	for k in atk.count:
 		if t < k * atk.mark_gap_ticks + atk.windup_ticks - atk.lock_ticks:
 			w.bosses.set_pt(b, k, w.player_pos())
+			if atk.second_ticks > 0:  # v0.9.5 BH2 (B1): its second cross sits beside it, locking with it
+				w.bosses.set_pt(b, atk.count + k, BossHard.second_point(w, b, atk, w.player_pos()))
 
 
 ## v0.7.5 BF1: marker k's state `t` ticks into its attack: -1 not started, 0 tracking, 1 locked, 2 striking (this
 ## tick), 3 done.
 static func mark_state(atk: BossAttackTable, k: int, t: int) -> int:
+	if k >= atk.count:  # v0.9.5 BH2 (B1): a second cross
+		return BossHard.second_state(atk, k, t)
 	var t0 := k * atk.mark_gap_ticks
 	if t < t0:
 		return -1
@@ -70,6 +74,7 @@ static func resolve_pattern(w: World, i: int, b: int, atk: BossAttackTable, st: 
 	var k := BulletPatterns.wave_at(pat, st)
 	if k < 0:
 		return
+	BossHard.aim_fan(w, i, atk, k)  # v0.9.5 BH2 (B2): the first fan leads you, the next aims where you are
 	var origin := w.bosses.pt(b, 0) if burst else w.actors.pos(i)
 	var r := 0.0 if burst else w.actors.radius[i] + pat.radius_m + BulletPatterns.MUZZLE_M
 	var n := BulletPatterns.fire(
@@ -102,11 +107,15 @@ static func marks_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionar
 	var t := attack_ticks(w, i, atk)
 	var items: Array[Dictionary] = []
 	var first := -1
-	for k in atk.count:
+	for k in BossHard.marker_count(atk):
 		var st := mark_state(atk, k, t)
 		if st < 0 or st > 2:
 			continue
 		var pr := clampi((t - k * atk.mark_gap_ticks) * 1000 / maxi(1, atk.windup_ticks), 0, 1000)
+		if k >= atk.count:  # v0.9.5 BH2 (B1): a second cross fills from the lock to its strike
+			var shown := (k - atk.count) * atk.mark_gap_ticks + atk.windup_ticks - atk.lock_ticks
+			var span := BossHard.strike_at(atk, k) + atk.windup_ticks - shown
+			pr = clampi((t - shown) * 1000 / maxi(1, span), 0, 1000)
 		if first < 0:
 			first = pr
 		var item := {"locked": st >= 1, "progress": pr}
@@ -210,14 +219,16 @@ static func pattern_state(w: World, i: int) -> Dictionary:
 static func resolve_marks(w: World, i: int, b: int, atk: BossAttackTable, st: int) -> void:
 	var p := w.player_pos()
 	var pr := w.player.radius_m
-	for k in atk.count:
-		if atk.pattern != null and atk.egg_ticks <= 0:  # v0.8.0 BS1: an egg bursts on its own clock
-			burst_mark(w, i, atk, k, st - k * atk.mark_gap_ticks)
-		if atk.pillar_ticks > 0 and st == k * atk.mark_gap_ticks + 1:
+	for k in BossHard.marker_count(atk):
+		var at := BossHard.strike_at(atk, k)
+		if k < atk.count and atk.pattern != null and atk.egg_ticks <= 0:
+			burst_mark(w, i, atk, k, st - k * atk.mark_gap_ticks)  # v0.8.0 BS1: an egg bursts on its own clock
+		if atk.pillar_ticks > 0 and st == at + 1 and (atk.second_ticks <= 0 or k >= atk.count):
 			# v0.8.0 BS1 (S1): the spikes stay as pillars, the tick after the strike (the strike's own lanes,
-			# drawn and hit on its tick, are never cut short by its pillars).
+			# drawn and hit on its tick, are never cut short by its pillars). v0.9.5 BH2: with second crosses,
+			# only the second ones leave pillars (the first ones' would cut the second ones' lanes short).
 			BossSignatures.raise_pillars(w, i, atk, k)
-		if st != k * atk.mark_gap_ticks:
+		if st != at:
 			continue
 		w.bosses.hit[b] = 0
 		if atk.move == BossAttackTable.Move.MARKS:
@@ -291,9 +302,15 @@ static func grid_discs(w: World, i: int, k: int) -> PackedVector2Array:
 	var c := mark_of(w, i, 0)
 	var h := atk.count / 2
 	var out := PackedVector2Array()
+	var safe: Array = (
+		BossHard.safe_cells_of(w, BossAi.entry_of(w, i), atk, c, k) if atk.safe_cells > 0 else []
+	)
 	for y in range(-h, h + 1):
 		for x in range(-h, h + 1):
-			if absi(x + y) % 2 != k % 2:
+			if atk.safe_cells > 0:  # v0.9.5 BH2 (B5): every cell but the safe ones
+				if safe.has(Vector2i(x, y)):
+					continue
+			elif absi(x + y) % 2 != k % 2:
 				continue
 			var at := c + Vector2(x, y) * atk.cell_m
 			if EnemyAi.clear_of_walls(w, at, 0.05):

@@ -128,7 +128,7 @@ shape_params = {
 "stagger_seconds": 0.7,
 "width_m": 1.2
 }
-telegraph_seconds = 1.6
+telegraph_seconds = 1.35
 active_seconds = 0.0167
 recovery_seconds = 1.0
 damage = 30
@@ -139,7 +139,35 @@ max_range_m = 99.0
 weight = 2
 cooldown_seconds = 0.9
 cause_key = &"CAUSE_GATEKEEPER_LANES"
-lock_seconds = 0.8
+lock_seconds = 0.55
+
+[sub_resource type="Resource" id="A_shock_lanes_follow"]
+script = ExtResource("1_atk")
+id = &"shock_lanes_follow"
+shape = 2
+shape_params = {
+"count": 1,
+"length_m": 24.0,
+"pillar_m": 1.0,
+"pillar_seconds": 6.0,
+"pillar_step_m": 2.2,
+"second_offset_m": 0.6,
+"second_seconds": 0.4,
+"stagger_seconds": 0.7,
+"width_m": 1.2
+}
+telegraph_seconds = 1.35
+active_seconds = 0.0167
+recovery_seconds = 1.0
+damage = 30
+hit_class = &"medium"
+move = &"row_lanes"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 2
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_GATEKEEPER_LANES"
+lock_seconds = 0.55
 
 [sub_resource type="Resource" id="A_shock_lanes_2"]
 script = ExtResource("1_atk")
@@ -151,10 +179,12 @@ shape_params = {
 "pillar_m": 1.0,
 "pillar_seconds": 6.0,
 "pillar_step_m": 2.2,
+"second_offset_m": 0.6,
+"second_seconds": 0.4,
 "stagger_seconds": 0.7,
 "width_m": 1.2
 }
-telegraph_seconds = 1.6
+telegraph_seconds = 1.35
 active_seconds = 0.0167
 recovery_seconds = 1.0
 damage = 30
@@ -165,7 +195,7 @@ max_range_m = 99.0
 weight = 2
 cooldown_seconds = 0.9
 cause_key = &"CAUSE_GATEKEEPER_LANES"
-lock_seconds = 0.8
+lock_seconds = 0.55
 
 [sub_resource type="Resource" id="A_sweep"]
 script = ExtResource("1_atk")
@@ -200,7 +230,7 @@ cooldown_permille = 1000
 [sub_resource type="Resource" id="P_1"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 660
-attack_ids = PackedStringArray("rock_rings_4", "fist_slam_2", "shock_lanes", "sweep")
+attack_ids = PackedStringArray("rock_rings_4", "fist_slam_2", "shock_lanes_follow", "sweep")
 entry_attack = &"rock_rings_4"
 speed_permille = 1300
 cooldown_permille = 650
@@ -229,7 +259,7 @@ rear_mult_permille = 1100
 stagger_size = 220
 stagger_decay_per_second = 12.0
 stagger_seconds = 2.5
-attacks = Array[ExtResource("1_atk")]([SubResource("A_rock_rings"), SubResource("A_rock_rings_4"), SubResource("A_fist_slam"), SubResource("A_fist_slam_2"), SubResource("A_fist_slam_3"), SubResource("A_shock_lanes"), SubResource("A_shock_lanes_2"), SubResource("A_sweep")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_rock_rings"), SubResource("A_rock_rings_4"), SubResource("A_fist_slam"), SubResource("A_fist_slam_2"), SubResource("A_fist_slam_3"), SubResource("A_shock_lanes"), SubResource("A_shock_lanes_follow"), SubResource("A_shock_lanes_2"), SubResource("A_sweep")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
 legacy_arena_cells = Vector2i(3, 3)

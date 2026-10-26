@@ -424,7 +424,7 @@ func test_the_petal_bloom_opens_5_petals_with_gaps_between() -> void:
 		assert_gt(speeds.size(), 2, "%s: the petals open out (tips faster than the sides)" % id)
 
 
-func test_the_focus_beam_tracks_then_locks_and_a_step_aside_escapes() -> void:
+func test_the_focus_beam_tracks_then_locks_and_turns_onto_a_step_aside() -> void:
 	for stay: bool in [true, false]:
 		var s := _fight(&"hive_lens", Vector2(9, 0))
 		var w: World = s[0]
@@ -452,7 +452,10 @@ func test_the_focus_beam_tracks_then_locks_and_a_step_aside_escapes() -> void:
 		for k in range(track, aims.size()):
 			assert_eq(aims[k], aims[track], "then holds")
 		var hit := CombatLab.player_damage(w).size() > 0
-		assert_eq(hit, stay, "stood still: hit" if stay else "stepped aside after the lock: missed")
+		# v0.9.5 BH2 (B4): the burning beam turns toward you at 40 degrees a second: a step aside is followed
+		assert_true(
+			hit, "stood still: hit" if stay else "a step aside is followed by the turning beam"
+		)
 
 
 func test_both_bosses_patterns_fire_slow_shots_in_their_looks() -> void:

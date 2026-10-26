@@ -81,7 +81,11 @@ func test_the_siege_engines_phase_script() -> void:
 			a.move
 			in [BossAttackTable.Move.GRID, BossAttackTable.Move.MARKS, BossAttackTable.Move.LANES]
 		):
-			assert_eq(a.lock_ticks, 48, "%s locks for 0.8 s" % a.id)
+			assert_eq(
+				a.lock_ticks,
+				36 if a.safe_cells > 0 else 48,
+				"%s locks for 0.8 s (BH2: the Mortar Grid 0.6 s)" % a.id
+			)
 	assert_eq(t.attacks[t.attack_index(&"shockwave")].radius_m, 50.0, "BF1's 50 m outer edge")
 	assert_eq(t.radius_m, 2.81, "BF1's body (N18), v0.9.5 SB: 85% of the model's half-width")
 	assert_eq(t.attacks[t.gap_attack].id, &"barrage", "a gap-closer: the tracked barrage")
@@ -181,34 +185,6 @@ func test_the_mortar_grid_tracks_then_locks_on_the_players_square() -> void:
 		at = Vector2(7, 0) + Vector2(0.03, 0.04) * t
 		_step_at(w, at)
 	assert_ne(locked, Vector2.INF)
-
-
-func test_the_mortar_grid_alternates_and_each_volley_leaves_safe_squares() -> void:
-	var cell := 2.4
-	# [where the player stands for volley 0, then for volley 1] (from the board's centre) -> [hit by 0, by 1]
-	var cases := [
-		[Vector2.ZERO, Vector2.ZERO, [true, false]],  # the centre square: struck first, safe second
-		[Vector2(cell, 0), Vector2(cell, 0), [false, true]],  # the next square: safe first, struck second
-		[Vector2(cell, 0), Vector2.ZERO, [false, false]],  # step out, then back: never hit
-		[Vector2(cell * 0.5, cell * 0.5), Vector2(cell * 0.5, cell * 0.5), [false, false]],  # a corner
-	]
-	for c in cases:
-		var s := _fight(&"siege_engine", Vector2(7, 0))
-		var w: World = s[0]
-		var aid: int = s[1]
-		BossLab.start(w, w.actors.index_of(aid), &"mortar_grid")
-		var atk := BossAi.attack_of(w, w.actors.index_of(aid))
-		var centre := Vector2(7, 0)
-		var got := [false, false]
-		for t in atk.windup_ticks + atk.active_ticks + 2:
-			var i := w.actors.index_of(aid)
-			if w.actors.state[i] == S.RECOVER:
-				break
-			var k := 0 if BossDodge.attack_ticks(w, i, atk) <= atk.windup_ticks else 1
-			var stand: Vector2 = centre if t < atk.windup_ticks - atk.lock_ticks else centre + c[k]
-			if _step_at(w, stand):
-				got[k] = true
-		assert_eq(got, c[2], "standing %s then %s" % [c[0], c[1]])
 
 
 func test_the_barrage_tracks_three_circles_in_turn() -> void:

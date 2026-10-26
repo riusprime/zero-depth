@@ -51,10 +51,11 @@ script = ExtResource("1_atk")
 id = &"javelin_fan"
 shape = 4
 shape_params = {
+"lead_seconds": 0.35,
 "pattern_id": "warlord_javelin_fan",
 "recall_seconds": 0.5
 }
-telegraph_seconds = 0.45
+telegraph_seconds = 0.6
 active_seconds = 0.0167
 recovery_seconds = 1.1
 damage = 25
@@ -72,10 +73,11 @@ script = ExtResource("1_atk")
 id = &"javelin_fan_fast"
 shape = 4
 shape_params = {
+"lead_seconds": 0.35,
 "pattern_id": "warlord_javelin_fan_fast",
 "recall_seconds": 0.5
 }
-telegraph_seconds = 0.45
+telegraph_seconds = 0.6
 active_seconds = 0.0167
 recovery_seconds = 1.0
 damage = 25
