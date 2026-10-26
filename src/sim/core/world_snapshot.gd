@@ -302,8 +302,10 @@ const ADDED_SINCE_V05 := {
 		&"cause",  # v0.7.5 BF2 fix (the attack that fired a boss shot; padded with "none")
 		&"second",  # v0.8.0 MR (a secondary bolt or a repeat's; empty = none, as a store that never held one)
 	],
-	&"ActorStore": [&"poison_stacks", &"poison_t", &"poison_cd"],  # v0.6.0 MX4 (Venom; padded with 0)
+	# v0.6.0 MX4 (Venom; padded with 0); v0.9.5 EE1 (the element columns, padded with 0)
+	&"ActorStore":
 	# v0.8.0 FB2: the final fight's centre and damage meter (an FB1 save has neither: the base's, a fresh meter)
+	[&"poison_stacks", &"poison_t", &"poison_cd", &"poison_jump_cd", &"bleed_x", &"bleed_y"],
 	# v0.8.0 FB3: the mimic body's state (an FB2 save has none: a fresh one, the build read at the Nemesis's next tick)
 	&"FinalFight":
 	[
@@ -600,6 +602,12 @@ static func _pad_added(w: World) -> void:
 		zero.fill(0)
 		for f in ActorStore.VENOM_FIELDS:
 			a.set(f, zero.duplicate())
+	if a.poison_jump_cd.size() != a.ids.size():  # v0.9.5 EE1: an older save's actors carry no element state
+		var nil := PackedInt32Array()
+		nil.resize(a.ids.size())
+		nil.fill(0)
+		for f in ActorStore.ELEMENT_FIELDS:
+			a.set(f, nil.duplicate())
 	var s := w.ab
 	while s.bomb_spec.size() < s.bomb_pos.size():
 		s.bomb_spec.append("")

@@ -734,7 +734,7 @@ ITEM_STORM_CORE_DESC,Your hits chain lightning.,Tus golpes lanzan rayos en caden
 ITEM_EMBER_CORE,Fire,Fuego
 ITEM_EMBER_CORE_DESC,Your hits burn. Burning foes leave fire behind.,Tus golpes queman. Los enemigos en llamas dejan fuego.
 ITEM_VENOM_CORE,Venom,Veneno
-ITEM_VENOM_CORE_DESC,Your hits poison. Poison spreads on death.,Tus golpes envenenan. El veneno salta al morir.
+ITEM_VENOM_CORE_DESC,Poison. Lv2: it spreads. Lv3: it stacks.,Veneno. Nv2: se contagia. Nv3: se acumula.
 ITEM_ECHO_SLASH,Wave,Onda
 ITEM_ECHO_SLASH_DESC,Your slashes fly as crescents.,Tus tajos vuelan como medias lunas.
 ITEM_EDGE_ROUNDS,Edge Rounds,Balas Filo
@@ -946,7 +946,7 @@ UI_DEVM_G_SIM,"Timings, AI and caps","Tiempos, IA y límites"
 ITEM_TRIGGER_ON_CRIT,On Crit,Al Crítico
 ITEM_TRIGGER_ON_CRIT_DESC,Cards to its right cast on a critical hit.,Las cartas a su derecha se lanzan con un crítico.
 ITEM_SHARED_BLEED,Bleed,Sangrado
-ITEM_SHARED_BLEED_DESC,"Your hits bleed, faster while you move.","Desangras, y más rápido si te mueves."
+ITEM_SHARED_BLEED_DESC,Bleed. Lv2: hurts more on the move. Lv3: bursts.,Sangrado. Nv2: más daño si se mueve. Nv3: estalla.
 ITEM_SHARED_EXPLOSIVE,Explosive,Explosivo
 ITEM_SHARED_EXPLOSIVE_DESC,Your attack explodes where it ends.,Tu ataque estalla donde termina.
 ITEM_TRIGGER_ON_HIT_TWICE,On Hit ×2,Al Impactar ×2

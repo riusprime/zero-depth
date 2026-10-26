@@ -25,6 +25,8 @@ const COLOR := Color(1, 1, 1, 0.92)
 const CRIT_COLOR := Color("#FFD23A")
 ## v0.9.5 SM: a hit that struck a Stress Mark's weak side.
 const WEAK_COLOR := Color("#FF8A2A")
+## v0.9.5 EE1: Exsanguinate's burst (a DoT, so shown on purpose).
+const EXSANGUINATE_COLOR := Color("#9E0F26")
 ## The throw: how far out to the side (m, along the screen), how high its peak (m) and where in its life it peaks;
 ## the cosmetic spread on both (0.2: 80-120 %).
 const THROW_OUT_M := 0.9
@@ -67,6 +69,9 @@ func sync(reader: WorldReader) -> void:
 			_weak[e.target_id] = e.tick
 			continue
 		if e.kind != SimEvent.Kind.DAMAGE or e.owner_id != player_id or e.target_id == player_id:
+			continue
+		if e.effect_id == SimEvent.EFFECT_EXSANGUINATE and e.amount > 0:  # v0.9.5 EE1: the burst, in deep red
+			show_number(e.pos, e.amount, false, EXSANGUINATE_COLOR)
 			continue
 		if e.tags & SimEvent.TAG_DOT or e.amount <= 0:
 			continue

@@ -64,6 +64,10 @@ enum Kind {
 	STRESS_BREAK,  # v0.9.5 SM: a weak side broken (StressMarks.on_hit: pos, amount = extra damage, amount_applied = side)
 }
 
+## v0.9.5 EE1 (ElementLevels): a Contagion jump's STATUS_APPLY (source: the giver, target: the receiver), and the
+## Exsanguinate burst's DAMAGE (a DoT the number still shows).
+const EFFECT_VENOM_JUMP := &"venom_jump"
+const EFFECT_EXSANGUINATE := &"exsanguinate"
 const TAG_MELEE := 1
 const TAG_PROJECTILE := 2
 const TAG_DOT := 4

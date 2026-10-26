@@ -212,6 +212,19 @@ const SLOT_CATEGORIES: Array[StringName] = [&"free", &"form", &"pattern", &"seco
 @export var poison_seconds := 0.0
 @export var poison_max_stacks := 0
 @export var poison_spread_m := 0.0
+# --- v0.9.5 EE1 (ELEMENTS.md E1, E2): what Venom and Bleed gain at Lv 2 and 3 (ElementLevels). Venom Lv 2 Contagion: a
+# poisoned enemy passes its poison on every el_jump_seconds, within el_jump_range_m, the room at most
+# el_jumps_per_second; Lv 3 Virulence: stacks cap at el_stack_cap, each adds el_stack_bonus_permille to a tick.
+# Bleed Lv 2 Open wounds: a bleeding enemy that moved over el_wound_move_mm since its last tick takes
+# el_wound_bonus_permille more; Lv 3 Exsanguinate: stacks cap at el_stack_cap and the el_burst_stacks-th bursts.
+@export var el_jump_seconds := 0.0
+@export var el_jump_range_m := 0.0
+@export var el_jumps_per_second := 0
+@export var el_stack_cap := 0
+@export var el_stack_bonus_permille := 0
+@export var el_wound_move_mm := 0
+@export var el_wound_bonus_permille := 0
+@export var el_burst_stacks := 0
 # --- v0.6.5 WN5a (docs/design/WAND.md, the shared pool and the triggers).
 ## S5 Bleed: the bleed's period while you move (walking or dashing; 0 = the same as standing). Shorter: it ticks
 ## faster while you move.
@@ -415,6 +428,33 @@ func _validate_ability_mods(issues: Array[ValidationIssue]) -> void:
 				_check_poison(issues)
 			if bleed_max_stacks > 0:
 				_check_bleed_engine(issues)
+			_check_element_levels(issues)
+
+
+## v0.9.5 EE1: the element levels' numbers are in range, and each element's set comes whole.
+func _check_element_levels(issues: Array[ValidationIssue]) -> void:
+	var venom := el_jump_seconds > 0.0 or el_jump_range_m > 0.0 or el_jumps_per_second > 0
+	var bleed := el_wound_move_mm > 0 or el_wound_bonus_permille > 0 or el_burst_stacks > 0
+	var neg := el_jump_seconds < 0.0 or el_jump_range_m < 0.0 or el_jumps_per_second < 0
+	neg = neg or el_stack_cap < 0 or el_stack_bonus_permille < 0 or el_wound_bonus_permille < 0
+	neg = neg or el_wound_move_mm < 0 or el_burst_stacks < 0
+	if neg:
+		issues.append(ValidationIssue.new(&"range", resource_path, "el_* fields are >= 0"))
+	if venom:
+		var ok := el_jump_seconds > 0.0 and el_jump_range_m > 0.0 and el_jumps_per_second > 0
+		ok = ok and el_stack_bonus_permille > 0 and el_stack_cap > 0
+		ok = ok and poison_max_stacks >= el_stack_cap
+		if not ok:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "the Venom level set is whole")
+			)
+	if bleed:
+		var ok := el_wound_move_mm > 0 and el_wound_bonus_permille > 0 and el_burst_stacks > 0
+		ok = ok and el_stack_cap >= el_burst_stacks and bleed_max_stacks >= el_stack_cap
+		if not ok:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "the Bleed level set is whole")
+			)
 
 
 ## v0.6.0 MX4: Venom Core's poison engine.

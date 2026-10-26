@@ -280,9 +280,11 @@ static func add_bleed(w: World, i: int, n: int, root: int) -> void:
 		return
 	if a.bleed_stacks[i] == 0:
 		a.bleed_cd[i] = m.bleed_period_ticks
-	a.bleed_stacks[i] = mini(a.bleed_stacks[i] + n, m.bleed_max_stacks)
+		ElementLevels.on_bleed_start(w, i)  # v0.9.5 EE1: Open wounds starts from where it stands
+	a.bleed_stacks[i] = mini(a.bleed_stacks[i] + n, ElementLevels.bleed_cap(w))
 	a.bleed_t[i] = m.bleed_ticks
 	_status(w, i, root, a.bleed_stacks[i], EFFECT_BLEED)
+	ElementLevels.exsanguinate(w, i, bleed_period(w))  # v0.9.5 EE1: Bleed Lv 3 bursts at the cap
 
 
 ## Adds frost stacks (refreshed; each one also chills: the slow runs). No stacks build while frozen. At the
@@ -380,7 +382,12 @@ static func tick_statuses(w: World) -> void:
 			if a.bleed_cd[i] <= 0:
 				a.bleed_cd[i] = period
 				Damage.tick_dot(
-					w, i, m.bleed_damage * a.bleed_stacks[i], a.ids[0], a.ids[0], EFFECT_BLEED
+					w,
+					i,
+					ElementLevels.bleed_tick(w, i, m.bleed_damage * a.bleed_stacks[i]),
+					a.ids[0],
+					a.ids[0],
+					EFFECT_BLEED
 				)
 			if a.bleed_t[i] <= 0:
 				a.bleed_stacks[i] = 0
