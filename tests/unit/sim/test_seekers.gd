@@ -7,8 +7,24 @@ extends GutTest
 
 const W := preload("res://tests/support/mx4_world.gd")
 const HP := 1000000
+## v0.9.5 FC7: the five elements, and the eleven cards the row takes now (SeekerMods).
 const SEEKERS_ON: Array[StringName] = [
-	&"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"
+	&"ember_core",
+	&"storm_core",
+	&"frost_core",
+	&"venom_core",
+	&"shared_bleed",
+	&"gun_twin",
+	&"halo_shot",
+	&"gun_ring",
+	&"gun_pierce",
+	&"gun_ricochet",
+	&"gun_echo",
+	&"gun_big_shot",
+	&"gun_rapid_fire",
+	&"split_shot",
+	&"gun_mine",
+	&"orbit_rounds",
 ]
 ## Three enemies spread round the aim: ahead, and 40° either side, at 4, 5 and 6 m.
 const SPREAD: Array[Vector2] = [Vector2(4.0, 0.0), Vector2(3.83, 3.21), Vector2(4.6, -3.86)]

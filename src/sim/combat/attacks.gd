@@ -91,7 +91,8 @@ static func _shared_form(w: World, spec: AttackSpec, ctx: AttackContext) -> bool
 		return _form(w, spec, ctx)
 	var d0 := ctx.damage
 	var b0 := ctx.base_damage
-	ctx.damage = maxi(1, (d0 * share + 500) / 1000)
+	if spec.seekers <= 0:  # v0.9.5 FC7b: a Seekers dart takes its share in thousandths (SeekerMods.milli_of, _bolts)
+		ctx.damage = maxi(1, (d0 * share + 500) / 1000)
 	ctx.base_damage = maxi(1, (b0 * share + 500) / 1000)
 	var landed := _form(w, spec, ctx)
 	ctx.damage = d0
@@ -308,8 +309,18 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	)
 	if gm & GlaiveMods.HALO != 0:
 		offsets = GlaiveMods.halo_offsets(w, gm)
+	# v0.9.5 FC7: the Seekers' cards (SeekerMods), the player's own volley only; the darts' count and angles
+	var sm := (
+		SeekerMods.mask(spec)
+		if spec.seekers > 0 and ctx.depth == 0 and not ctx.repeat and not ctx.back
+		else 0
+	)
+	if sm != 0:
+		offsets = SeekerMods.offsets(w, spec, sm)
 	var r := spec.radius_m * ctx.size_permille / 1000.0  # v0.6.5 WN3: a charged shot (G13)
 	r = r * GlaiveMods.wide(w, gm) / 1000.0  # v0.9.5 FC6: Big Shot x 1.5, Rapid Fire x 0.7
+	if sm != 0:
+		r = r * SeekerMods.wide(w, sm) / 1000.0  # v0.9.5 FC7: Big Shot x 1.5, Rapid Fire x 0.7
 	var gap := t.radius_m + r + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
 	var lanes := GunForms.lanes(spec, r)  # v0.6.5 WN3: G3 Twin, side by side
 	var turns := GunForms.lane_turns(spec)  # v0.9.0 TW: three copies fan
@@ -359,6 +370,13 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 		dmg = WaveMods.share(dmg, WaveMods.damage_permille(w, wvm))
 		speed = WaveMods.speed(w, spec, wvm)
 		bounces = WaveMods.bounces(w, wvm, bounces)
+	var milli := 0  # v0.9.5 FC7b: a Seekers dart's damage in thousandths (the carry deals the whole part per dart)
+	if spec.seekers > 0:
+		var sh := spec.share_permille if spec.share_permille > 0 else 1000
+		milli = SeekerMods.milli_of(dmg, sh) * SeekerMods.damage_permille(w, sm) / 1000
+	if sm != 0:  # v0.9.5 FC7: Orbit's and Mine's wait; Ricochet's bounces (Twin, Big Shot, Rapid Fire: the milli)
+		life = SeekerMods.life(w, spec, sm)
+		bounces = SeekerMods.bounces(w, sm, bounces)
 	var q := -1
 	var picked := 0
 	for oi in offsets.size():
@@ -377,18 +395,21 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 			if not _shot_room(w):
 				return
 			var muzzle := ctx.origin + dir * gap + Vector2(-dir.y, dir.x) * side
+			var dart_dmg := SeekerMods.take(w, milli) if spec.seekers > 0 else dmg
 			w.queue_projectile(
 				w.actors.ids[0],
 				ActorStore.TEAM_PLAYER,
 				muzzle,
 				dir * speed,
-				dmg,
+				dart_dmg,
 				r,
 				maxi(1, life),
 				ctx.tags,
 				bounces,
 				spec.key
 			)
+			if spec.seekers > 0:
+				w.set_pending_milli(milli)  # v0.9.5 FC7b: for its Ring and Split shares
 			if lm & LanceMods.ECHO != 0:  # v0.9.5 FC4: Echo's ghost lance waits on this line
 				LanceMods.add_echo(w, muzzle, (ctx.angle + off + turns[li]) & 4095, dmg, r, bounces)
 			if gm & GlaiveMods.ECHO != 0:  # v0.9.5 FC6: Echo's ghost disc waits on this line
@@ -398,6 +419,10 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 			if wvm & WaveMods.ECHO != 0 and ctx.depth == 0 and not ctx.repeat:
 				# v0.9.5 FC8: Echo's ghost wave waits on this line
 				WaveMods.add_echo(w, muzzle, (ctx.angle + off + turns[li]) & 4095, dmg, r, bounces)
+			if sm & SeekerMods.ECHO != 0:  # v0.9.5 FC7: Echo's ghost dart waits on this line
+				SeekerMods.add_echo(
+					w, muzzle, (ctx.angle + off + turns[li]) & 4095, milli, r, bounces
+				)
 			if root:
 				root = false  # the volley's first shot is the player's own; the rest are extras
 			else:
@@ -405,8 +430,8 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 			var kind := kind0
 			if spec.share_permille > 0 and (oi != centre or li != lane_c):
 				kind |= ProjectileStore.SECONDARY
-			if ctx.extra_pierce > 0:
-				w.set_pending_pierce(ctx.extra_pierce)
+			if ctx.extra_pierce + SeekerMods.pierce(w, sm) > 0:  # v0.9.5 FC7: Pierce, two more enemies
+				w.set_pending_pierce(ctx.extra_pierce + SeekerMods.pierce(w, sm))
 			if kind != 0:
 				w.set_pending_second(kind)
 			if link != null:

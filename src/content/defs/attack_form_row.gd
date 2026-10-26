@@ -64,6 +64,32 @@ const GLAIVE_KEYS: Array[String] = [
 	"live_max",
 ]
 
+## v0.9.5 FC7: the numbers the Seekers row carries (SeekerMods.DEFAULTS has the same keys; a test holds them equal).
+const SEEKER_KEYS: Array[String] = [
+	"twin_mult",
+	"twin_share",
+	"halo_straight_ticks",
+	"ring_mm",
+	"ring_share",
+	"pierce_extra",
+	"ricochet_bounces",
+	"echo_delay_ticks",
+	"echo_share",
+	"big_count",
+	"big_damage",
+	"big_wide",
+	"rapid_count",
+	"rapid_damage",
+	"rapid_wide",
+	"split_count",
+	"split_share",
+	"split_deg",
+	"mine_hold_ticks",
+	"orbit_mm",
+	"orbit_ticks",
+	"live_max",
+]
+
 ## v0.9.5 FC4: the numbers the Lance row carries (LanceMods.DEFAULTS has the same keys; a test holds them equal).
 const LANCE_KEYS: Array[String] = [
 	"halo_count",

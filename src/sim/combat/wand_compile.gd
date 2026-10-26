@@ -164,6 +164,9 @@ func run(s: AttackSpec, from: int) -> AttackSpec:
 		if s.wave_mm > 0 and WaveMods.is_card(m.id):  # v0.9.5 FC8: the Wave's cards are WaveMods'
 			WaveMods.note_card(s, m)
 			continue
+		if s.seekers > 0 and SeekerMods.is_card(m.id):  # v0.9.5 FC7: the Seekers' cards are SeekerMods'
+			SeekerMods.note_card(s, m)
+			continue
 		var applied := false
 		for stage in ModifierTable.STAGE_COUNT:  # a card's own ops in stage order
 			for op in m.ops:

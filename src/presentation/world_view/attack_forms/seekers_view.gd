@@ -9,7 +9,13 @@ extends Node3D
 ## ember, a crackle, a shard, a drop: HeroFx.mote), same count; V47 Low keeps LOW_MOTES a dart; V48 in-place buffers.
 ## Presentation only (EI-07): it reads the reader, never writes.
 
-const DARTS_MAX := 18
+const DARTS_MAX := 24
+## v0.9.5 FC7: Ring's lightning rings where a dart hit (the Glaive's ring look): at most ARCS_MAX at once; the ring
+## shader's phase that puts its band at ARC_FRONT of the quad's half-width (0.25 + 0.72 u), so a ring of radius r is
+## drawn at r / ARC_FRONT.
+const ARCS_MAX := 8
+const ARC_U := 0.7
+const ARC_FRONT := 0.754
 const TRAIL := 5
 const HEIGHT := SimPlane.CORE_HEIGHT
 ## A dart's needle: its length (m, along its flight) and width (m); a trail mote's size (m).
@@ -49,6 +55,8 @@ static var _shaders := {}
 var darts := 0
 var motes := 0
 var look := &"default"
+## v0.9.5 FC7: the lightning rings drawn now.
+var arcs := 0
 ## v0.9.0 VX V29: the effects layer is on (WorldViewRoot sets it): an element's trail motes become its own sprites
 ## (draw_fx), the round motes hide. Same count, so the cost stays the same.
 var vfx_on := false
@@ -66,10 +74,51 @@ var _mote_id: PackedInt32Array = PackedInt32Array()
 var _trail := {}
 var _seen := {}
 var _form := FormLook.new()
+var _arcs: Array[MeshInstance3D] = []
+
+
+## v0.9.5 FC7: the pool of lightning rings (one shared material, the Glaive's ring look).
+func _make_arcs() -> void:
+	var flat := PlaneMesh.new()
+	flat.size = Vector2(2.0, 2.0)
+	var shader := Shader.new()
+	shader.code = BombView.RING_SHADER
+	var m := ShaderMaterial.new()
+	m.shader = shader
+	m.set_shader_parameter(&"has_tex", 0.0)
+	m.set_shader_parameter(&"u", ARC_U)
+	m.set_shader_parameter(&"core", AttackFormLooks.ground_safe(BeamLooks.core(&"lightning")))
+	m.set_shader_parameter(&"edge", AttackFormLooks.ground_safe(BeamLooks.edge(&"lightning")))
+	for k in ARCS_MAX:
+		var n := MeshInstance3D.new()
+		n.mesh = flat
+		n.material_override = m
+		n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		n.visible = false
+		add_child(n)
+		_arcs.append(n)
+
+
+## v0.9.5 FC7: Ring's lightning ring where each dart hit.
+func _place_arcs(reader: WorldReader) -> void:
+	arcs = 0
+	for row in reader.seeker_rings():
+		if arcs >= ARCS_MAX:
+			break
+		var g := float(row["r"]) / ARC_FRONT
+		var arc := _arcs[arcs]
+		arc.visible = true
+		arc.transform = Transform3D(
+			Basis.from_scale(Vector3(g, 1.0, g)), SimPlane.to_3d(row["pos"], 0.1)
+		)
+		arcs += 1
+	for k in range(arcs, ARCS_MAX):
+		_arcs[k].visible = false
 
 
 func _init() -> void:
 	name = "SeekersView"
+	_make_arcs()
 	var quad := QuadMesh.new()
 	quad.size = Vector2.ONE
 	for k in DARTS_MAX:
@@ -131,6 +180,7 @@ func sync(reader: WorldReader) -> void:
 	for id: int in _trail.keys():
 		if not _seen.has(id):
 			_trail.erase(id)
+	_place_arcs(reader)
 	darts = _pos.size()
 	motes = _mote_pos.size()
 	var round := not vfx_on or _form.kind == &""

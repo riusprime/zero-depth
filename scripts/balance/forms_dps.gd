@@ -135,6 +135,22 @@ const WAVE_COMBOS: Array = [
 	[&"gun_spiral"],
 ]
 
+## v0.9.5 FC7: the Seekers' card combinations (a card alone each; Twin at its Lv 1).
+const SEEKER_COMBOS: Array = [
+	[],
+	[&"gun_twin"],
+	[&"halo_shot"],
+	[&"gun_ring"],
+	[&"gun_pierce"],
+	[&"gun_ricochet"],
+	[&"gun_echo"],
+	[&"gun_big_shot"],
+	[&"gun_rapid_fire"],
+	[&"split_shot"],
+	[&"gun_mine"],
+	[&"orbit_rounds"],
+]
+
 
 func _scenes(near: bool) -> Dictionary:
 	if near:
@@ -217,6 +233,7 @@ func _initialize() -> void:
 		["lance", &"gun_lance", LANCE_COMBOS],
 		["glaive", &"gun_glaive", GLAIVE_COMBOS],
 		["wave", &"gun_wave", WAVE_COMBOS],
+		["seekers", &"gun_seekers", SEEKER_COMBOS],
 	]:
 		for combo: Array in set_of[2]:
 			var d := {}

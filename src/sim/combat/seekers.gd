@@ -18,6 +18,8 @@ extends RefCounted
 
 ## How far from the hero the darts look for targets (m; as far as an orb flies). Starting value.
 const SEEK_M := 10.8
+## v0.9.5 FC7: target() answers STRAIGHT when a Pierce dart or a Split child has no enemy left to seek (no homing).
+const STRAIGHT := -2
 
 
 ## `s` shoots the Seekers' darts.
@@ -46,7 +48,10 @@ static func target(w: World, pi: int) -> int:
 	var spec := Attacks.projectile_spec(w, pi)
 	if not is_seekers(spec):
 		return -1
-	var n := maxi(1, spec.count)
+	var picked := SeekerMods.pick(w, pi)  # v0.9.5 FC7: Pierce's next enemy, a Split child's own
+	if picked != SeekerMods.NO_PICK:
+		return picked
+	var n := maxi(1, SeekerMods.count(w, spec, SeekerMods.mask(spec)))
 	var rank := w.projectiles.ids[pi] % n
 	var hero := w.player_pos()
 	var a := w.actors

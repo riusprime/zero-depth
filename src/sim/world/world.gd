@@ -560,6 +560,7 @@ func queue_projectile(
 			-1,
 			0,
 			"",
+			0,
 			0
 		]
 	)
@@ -574,6 +575,11 @@ func set_pending_second(kind: int) -> void:
 ## v0.9.5 WB: the player bolt queued last pierces this many more enemies than its spec (the Wisps' shots).
 func set_pending_pierce(n: int) -> void:
 	_pending_projectiles[-1][14] = n
+
+
+## v0.9.5 FC7b: the Seekers dart queued last was dealt from this many thousandths of damage (SeekerMods.on_spawn).
+func set_pending_milli(n: int) -> void:
+	_pending_projectiles[-1][15] = n
 
 
 ## v0.8.0 RM (Remnants, Threadline): the player bolt queued last links to the one before it (its LINK hook's key).
@@ -1886,6 +1892,7 @@ func _projectile_hits() -> void:
 					pp.end(&"proj.procs")
 				LanceMods.on_hit(self, i, best_actor)  # v0.9.5 FC4: Split spits its shards
 				GlaiveMods.on_hit(self, i, best_actor)  # v0.9.5 FC6: Split sheds its small discs
+				SeekerMods.on_hit(self, i, best_actor)  # v0.9.5 FC7: Pierce notes it, Ring, Split
 				if Heat.pierce(self, i, best_actor, a):  # Heat: a Hot bolt goes on through one enemy.
 					continue
 				if ProjectileMoves.pierce(self, i, best_actor, a):  # v0.6.0 MX4: Edge Rounds, Boomerang
@@ -1986,6 +1993,7 @@ func _apply_spawns() -> void:
 		LanceMods.on_spawn(self, projectiles.size() - 1)  # v0.9.5 FC4: a lance with cards gets its row
 		GlaiveMods.on_spawn(self, projectiles.size() - 1)  # v0.9.5 FC6: a disc with cards gets its row
 		WaveMods.on_spawn(self, projectiles.size() - 1)  # v0.9.5 FC8: a wave with cards gets its row
+		SeekerMods.on_spawn(self, projectiles.size() - 1, s[15])  # v0.9.5 FC7: a dart with cards gets its row
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 		if s[13] != "":  # v0.8.0 RM: Threadline links it to the bolt before
 			Remnants.on_link(self, projectiles.size() - 1, s[13])
@@ -1993,6 +2001,7 @@ func _apply_spawns() -> void:
 	VoidMods.cull(self)  # v0.9.5 FC3: at most so many voids a hero
 	GlaiveMods.cull(self)  # v0.9.5 FC6: and so many discs
 	WaveMods.cull(self)  # v0.9.5 FC8: and so many waves
+	SeekerMods.cull(self)  # v0.9.5 FC7: and so many darts
 	for s in _pending_enemies:  # Bosses (v0.3.0 C): eggs and turrets.
 		if enemy_table(s[0]) != null:
 			add_enemy(s[0], s[1])
