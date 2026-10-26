@@ -96,9 +96,18 @@ func focus_first() -> void:
 func _on_robe(id: String) -> void:
 	var open := robe_cycler.is_unlocked()
 	lock_note.visible = not open
+	lock_note.text = _note_for(id)
 	if open:
 		worn_robe = StringName(id)
 		picked.emit(worn_robe, affinity)
+
+
+## The note under a locked robe: its own hint (v0.9.5 RS2: the Runic robe is earned, not bought) or the shop's.
+func _note_for(id: String) -> String:
+	for r: RobeDefinition in _robes:
+		if String(r.id) == id and not String(r.unlock_hint_key).is_empty():
+			return String(r.unlock_hint_key)
+	return "WARDROBE_LOCKED_NOTE"
 
 
 func _on_affinity(id: String) -> void:

@@ -286,4 +286,4 @@ static func runic(root: Node3D, half: Vector2, h: float) -> Dictionary:
 	light.omni_range = 4.0
 	light.position = Vector3(0, h * 0.6, 0)
 	root.add_child(light)
-	return {"glow": {}, "model": model, "ring": ring, "light": light, "height": h}
+	return {"glow": {}, "model": model, "ring": ring, "light": light, "height": h, "radius": r}

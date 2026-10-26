@@ -25,7 +25,7 @@ func _stone() -> RunicStone:
 func test_the_lines_are_valid_content() -> void:
 	assert_not_null(_lines, "data/hub/runic_lines.tres")
 	assert_eq(_lines.validate().size(), 0)
-	assert_eq(_lines.lines.size(), 3, "r1 to r3 (RS2 adds the rest as data)")
+	assert_eq(_lines.lines.size(), 10, "r1 to r10 (RS2 added r4 to r10 as data)")
 	assert_eq(_lines.line(&"r1").english, "WHAT SLEEPS BELOW REMEMBERS")
 	assert_eq(_lines.line(&"r2").english, "YOU RETURN AND RETURN")
 	assert_eq(_lines.line(&"r3").english, "PATIENCE IS A KEY")

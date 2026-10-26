@@ -23,6 +23,8 @@ extends RefCounted
 ##   hero losing HP; a fight resumed from a save starts its body clean, the save being its start). The arena's win
 ##   doesn't count its floor cleared again (End the run already did).
 ## - v0.9.5 SL: final:won_gun (the final boss beaten with the Gun: "Sword Unbound", which unlocks the Blade; SwordLock).
+## - v0.9.5 RS2 (the Runic Stone's lines): bosses:no_hit (a floor boss beaten from its door shutting with no HP lost; a
+##   fight resumed from a save doesn't count) and secrets:crack_runs (a cracked wall broken, at most once per run).
 ## Off (`enabled` false) in a run with the dev panel's balance tweaks (owner: tweaked runs don't count): nothing is
 ## recorded and nothing unlocks.
 
@@ -50,6 +52,15 @@ var _final_phase := -1
 var _final_hurt := false
 ## v0.9.5 RS1: the floor's purple runes were awake when last read (RunicStone.PURPLE_STAT).
 var _purple_seen := false
+## v0.9.5 RS2: a floor boss fight (the door shut) and whether the hero lost HP in it (RunicStone.NO_HIT_STAT); the
+## cracked wall seen broken; this run already counted for RunicStone.CRACK_STAT; the run floor last attached (a lower
+## one: a new run).
+var _boss_fight := false
+var _boss_hurt := false
+var _boss_done := false
+var _crack_seen := false
+var _crack_counted := false
+var _last_run_floor := 0
 
 
 func _init(p_book: AchievementBook) -> void:
@@ -79,6 +90,14 @@ func attach(reader: WorldReader) -> void:
 	_final_phase = reader.final_phase()  # v0.8.0 FB1: saves are taken at a body's start, so it starts clean
 	_final_hurt = false
 	_purple_seen = reader.purple_lit()  # v0.9.5 RS1: a floor resumed with the runes awake counted already
+	_boss_fight = false  # v0.9.5 RS2: a boss fight resumed from a save is not a clean one
+	_boss_hurt = false
+	_boss_done = reader.boss_door_sealed()
+	_crack_seen = reader.crack_broken()
+	var rf := reader.run_floor()
+	if rf < _last_run_floor or (rf <= 1 and reader.tick() == 0):
+		_crack_counted = false  # a new run
+	_last_run_floor = rf
 	evaluate_all()
 
 
@@ -104,6 +123,14 @@ func observe(reader: WorldReader) -> void:
 		_last_seq = events[events.size() - 1].seq
 	if not enabled:
 		return
+	if (
+		not _boss_done
+		and not _boss_fight
+		and reader.boss_door_sealed()
+		and not reader.final_arena()
+	):
+		_boss_fight = true  # v0.9.5 RS2: the door shut behind the hero: the fight begins clean
+		_boss_hurt = false
 	var took := _events(reader, events)
 	_rooms(reader)
 	if reader.steal_tick() != _steal_tick:
@@ -118,6 +145,11 @@ func observe(reader: WorldReader) -> void:
 			store.raise_stat(&"wand:cards_max", n)
 			_check(book.reading_stat(&"wand:cards_max"))
 	_final(reader)
+	if not _crack_seen and reader.crack_broken():  # v0.9.5 RS2: a cracked wall broken: once per run
+		_crack_seen = true
+		if not _crack_counted:
+			_crack_counted = true
+			report(RunicStone.CRACK_STAT)
 	if not _purple_seen and reader.purple_lit():  # v0.9.5 RS1: a purple-rune room activated (the Runic Stone)
 		_purple_seen = true
 		report(RunicStone.PURPLE_STAT)
@@ -147,6 +179,14 @@ func _events(reader: WorldReader, events: Array[SimEvent]) -> bool:
 					_hurt = true
 				if e.target_id == me and e.amount_applied > 0:
 					_final_hurt = true  # v0.8.0 FB1
+				if e.target_id == me and e.amount_applied > 0 and _boss_fight:
+					_boss_hurt = true  # v0.9.5 RS2
+			SimEvent.Kind.BOSS_DEFEATED:
+				if _boss_fight and not reader.boss_alive():  # v0.9.5 RS2: the last boss of the room fell
+					_boss_fight = false
+					_boss_done = true
+					if not _boss_hurt:
+						report(RunicStone.NO_HIT_STAT)
 			SimEvent.Kind.KILL:
 				if e.owner_id == me and e.target_id != me:
 					var pct: int = hits.get(damages.get(e.parent_seq, -2), 100)

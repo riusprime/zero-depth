@@ -18,6 +18,9 @@ const READ_KEY := &"HUB_PROMPT_RUNIC_READ"
 var stone: RunicStone
 var bubble := RuneBubble.new()
 var session: HubSession
+## v0.9.5 RS2: hub ticks since the last input, and the language the stone last saw.
+var idle_ticks := 0
+var _locale := ""
 
 
 ## `stores` = HubSession.setup's [CodexStore, AchievementStore, CodexCatalog].
@@ -30,6 +33,8 @@ func setup(p_session: HubSession, stores: Array) -> void:
 		session.profile.save_file()
 	session.ui.add_child(bubble)
 	session.view.set_runic(stone.is_awake())
+	session.view.set_runic_full(stone.is_full())  # v0.9.5 RS2 (S6)
+	_locale = TranslationServer.get_locale()
 	if stone.pending_pulse:  # S5: a line learned since the last visit: the stone pulses once on entry
 		stone.pending_pulse = false
 		session.view.pulse_runic()
@@ -49,6 +54,7 @@ func keys(at: StringName, base: Array[StringName]) -> Array[StringName]:
 
 ## After every hub tick, with the station the hero stands at.
 func tick(at: StringName) -> void:
+	_idle()
 	if at == STATION:
 		if not stone.is_awake() and not bubble.is_open():
 			bubble.show_dots()
@@ -66,9 +72,47 @@ func press() -> void:
 	if learned:  # R3: the stone pulses and speaks the new line
 		session.profile.save_file()
 		session.view.pulse_runic()
+		session.view.set_runic_full(stone.is_full())
 		stone.pending_pulse = false
 	var id := stone.read_next()
 	bubble.show_line(RuneCipher.encode(stone.english(id)))
+
+
+## R5: IDLE_TICKS hub ticks (60 s) with no input at all; a menu, the pause or the walk over the hub starts it over.
+func _idle() -> void:
+	if session.held or session.overlay != null or session.walking:
+		idle_ticks = 0
+		return
+	idle_ticks += 1
+	if idle_ticks == RunicStone.IDLE_TICKS and stone.learn(&"r5"):
+		announce()
+
+
+func _input(_event: InputEvent) -> void:
+	idle_ticks = 0
+
+
+## R10: the language changed while the hub runs with the stone awake.
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_TRANSLATION_CHANGED or stone == null:
+		return
+	var loc := TranslationServer.get_locale()
+	if loc == _locale:
+		return
+	_locale = loc
+	if stone.is_awake() and stone.learn(&"r10"):
+		announce()
+
+
+## A line learned in the hub (R5, R10): saved, the stone pulses at once, the full stone shows its ring, and an open
+## bubble speaks the new line.
+func announce() -> void:
+	session.profile.save_file()
+	stone.pending_pulse = false
+	session.view.pulse_runic()
+	session.view.set_runic_full(stone.is_full())
+	if bubble.is_open() and stone.is_awake():
+		bubble.show_line(RuneCipher.encode(stone.english(stone.newest_first()[0])))
 
 
 func _process(_delta: float) -> void:

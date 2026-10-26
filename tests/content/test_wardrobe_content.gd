@@ -85,8 +85,8 @@ func test_the_six_robes() -> void:
 			assert_gt(_dist(c, HOSTILE_YELLOW), 0.2, "%s is not the hostile yellow" % r.id)
 	assert_eq(
 		ids,
-		[&"cream", &"ash", &"night", &"canyon", &"frost", &"moss", &"fallen", &"divine"],
-		"R1-R6 and MP2's two epic robes"
+		[&"cream", &"ash", &"night", &"canyon", &"frost", &"moss", &"fallen", &"divine", &"runic"],
+		"R1-R6, MP2's two epic robes and RS2's earned Runic robe"
 	)
 	assert_eq(free, [&"cream", &"ash"], "Cream and Ash free; the rest for Rune Fragments")
 	var cream: RobeDefinition = _repo.get_def(&"robe", &"cream")
