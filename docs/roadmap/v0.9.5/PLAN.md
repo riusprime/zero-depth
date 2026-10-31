@@ -406,6 +406,11 @@ offers, `attack_slots.tres`, the forms). The order inside each list is the build
   - Turning a pair on shows a bigger banner, longer, with the chime: "Element pair!" + name + level + the line.
   - A level-up gets the same banner with "Lv 2" / "Lv 3".
   - Each active pair gets a HUD badge next to the combo badges, with its level.
+- **BR, the Bomb form goes** (owner, 2026-10-31: "let's just remove the bomb I didnt quite enjoy playing it"). Retired
+  the way FC0 retired Scatter: its row leaves `data/wand/attack_slots.tres`, a held Bomb migrates into **Void** (the
+  other travelling area form) through `data/wand/migration.tres`, and the code stays for a held retired card. Cards that
+  do nothing without the Bomb retire with it (migrated to nothing). The Bomb Drone enemy is not this and stays. VFX_PACK
+  R6 (the bomb's blast) is moot; R18 (fire explosions) stands.
 - These steps change the loot stream's draws, so seeded tests, goldens and balance numbers move. Each change is
   named in PROGRESS "Goldens changed on purpose".
 

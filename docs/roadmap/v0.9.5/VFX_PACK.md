@@ -102,7 +102,7 @@ The catalog below is from a read of `src/presentation/world_view/` (written `W/`
 | R3 | Wisps orbs, firing flare | `W/attack_forms/wisps_view.gd` | `magic_orb_small_*`, `magic_orb_flare_*` | Full | **R3** |
 | R4 | Laser beam, muzzle, impact star | `W/attack_forms/laser_view.gd`, `beam_looks.gd:43` | `laser_vfx_*`: storm 02, frost 04, ember 06/07, void 05, bleed 01; venom `beam_vfx_07` | Full | **R4** |
 | R5 | Lance charge circle, muzzle burst, ball | `W/attack_forms/lance_view.gd` | `MagicCircles circle_<element>` · `big_flash_*` · `magic_orb_big_*` | Full | **R5** |
-| R6 | Bomb blast (bomb model and fuse stay) | `W/attack_forms/bomb_view.gd`, `W/vfx/vfx_layer.gd:344` | ember/plain `vfx_explosion_01`/`04` · frost `vfx_explosion_07` · bleed `vfx_explosion_02` · others recoloured | Partial | **R6** |
+| R6 | ~~Bomb blast~~ (moot: the Bomb form was removed, owner 2026-10-31, PLAN BR) | `W/attack_forms/bomb_view.gd`, `W/vfx/vfx_layer.gd:344` | ember/plain `vfx_explosion_01`/`04` · frost `vfx_explosion_07` · bleed `vfx_explosion_02` · others recoloured | Partial | **R6** |
 | R7 | Void shot body and collapse (the screen-distortion lens stays) | `W/attack_forms/void_view.gd` | `magic_orb_huge_vfx_03` recoloured violet · `magic_orb_flash_vfx_03` | Partial | **R7** |
 | R8 | Rune Explosion dome, rune ring, hit flash | `W/attack_forms/rune_explosion_view.gd` | `fire_forcefield_02` recoloured violet · `MagicCircles circle_arcane` · `vfx_hit_*` | Full | **R8** |
 | R9 | Spec forms ZONE, RING, BURST, ORBITER, LOB | `W/attack_forms/attack_form_canvas.gd:448-760` | `basic_area`/`ripple_area` · `pulse_area` · `vfx_impact_*` · `magic_orb_small` · `fire_ball_*` | Full | **R9** |
