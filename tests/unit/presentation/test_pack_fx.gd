@@ -151,6 +151,24 @@ func test_warm_one_id_at_a_time_for_a_queue() -> void:
 	assert_eq(fx.live_count(), 0, "and it goes back after its frames")
 
 
+func test_a_floor_load_warms_only_what_the_session_has_not_warmed() -> void:
+	var fx := _fx()
+	var mode := PackFx.warm_mode
+	PackFx._warmed.clear()
+	PackFx.warm_mode = &"menu"
+	var all := fx.warm_ids().size()
+	assert_eq(fx.pending_warm_ids().size(), all, "nothing warmed yet: every id")
+	fx.warm(SMOKE)
+	assert_true(PackFx.is_warmed(SMOKE))
+	assert_eq(fx.pending_warm_ids().size(), all - 1, "a warmed id is not queued again")
+	PackFx.warm_mode = &"load"
+	assert_eq(fx.pending_warm_ids().size(), all, "VX0's mode: every id on every load")
+	PackFx.warm_mode = &"none"
+	assert_eq(fx.pending_warm_ids().size(), 0)
+	PackFx.warm_mode = mode
+	PackFx._warmed.clear()
+
+
 func test_a_pause_stops_the_effects_and_a_resume_runs_them() -> void:
 	var fx := _fx()
 	var n := fx.spawn(EXPLOSION, Vector3.ZERO)

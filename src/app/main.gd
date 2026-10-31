@@ -5,8 +5,7 @@ extends Node
 
 const STAGE_SEED := 20261006
 const END_PANEL_DELAY_TICKS := 45
-## Run flow (v0.3.0 B): the run's data, and the fade-in from black when a floor starts (v0.8.0 N3: the loading
-## cover's; a floor reached through a portal opens from the portal's cover over PORTAL_UNVEIL_SECONDS).
+## Run flow (v0.3.0 B): the run's data; the fade-in when a floor starts is the loading cover's (v0.8.0 N3).
 const RUN_ID := RunSaver.RUN_ID  # v0.9.0 FV: five floors (a v0.8.0 save resumes in its own three)
 const FADE_SECONDS := 0.45
 ## v0.8.0 N3 (owner O45): a portal's cover opens on the new floor over this long (CoverLoads).
@@ -103,6 +102,7 @@ func _ready() -> void:
 	hints.setup(hint_store)
 	ui.add_child(hints)
 	add_child(GameCursor.new())  # v0.9.5 MC2: the cursor
+	PackFxSessionWarm.start(self)  # v0.10.0 VX-W: the VFX pack warms up behind the menu
 	show_main_menu()
 
 
