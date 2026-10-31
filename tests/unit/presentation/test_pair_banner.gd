@@ -52,7 +52,7 @@ func test_hud_shows_the_pairs_name_when_it_turns_on() -> void:
 	hud.sync(reader)
 	await wait_process_frames(1)
 	assert_true(hud.combo_card().is_showing(), "the banner shows")
-	assert_eq(hud.combo_card().title_text(), "Thermal Shock")
+	assert_eq(hud.combo_card().title_text(), "Thermal Shock · Lv 3")  # v0.9.5 EP4: the level joins the title
 	assert_eq(hud.combo_card().desc_text(), tr("PAIR_THERMAL_SHOCK_DESC"))
 	assert_eq(
 		hud.combo_card().pair_ids(), [&"ember_core", &"frost_core"], "with both elements' icons"
@@ -114,3 +114,47 @@ func test_a_gas_cloud_is_one_flat_quad_each() -> void:
 	w.pair_clouds = PackedInt32Array()
 	view.sync(reader)
 	assert_eq(view.cloud_count(), 0, "gone with the cloud")
+
+
+func _item(w: World, id: StringName) -> int:
+	for k in w.item_tables.size():
+		if w.item_tables[k].id == id:
+			return k
+	return -1
+
+
+## v0.9.5 EP4: the offer card of an element that would turn a pair on says so, in the pair's words.
+func test_the_offer_card_names_the_pair_it_would_turn_on() -> void:
+	TranslationServer.set_locale("en")
+	var w := _world()
+	var reader := WorldReader.new(w)
+	_grant(w, &"ember_core", 1)
+	Modifiers.book(w)
+	var face := PickPanel.card_face(self, reader, _item(w, &"frost_core"))
+	assert_eq(face.get("form_line", ""), "Pair: Thermal Shock")
+	var plain := PickPanel.card_face(self, reader, _item(w, &"ember_core"))
+	assert_false(plain.has("form_line"), "Fire again pairs with nothing new")
+
+
+## v0.9.5 EP4: a pair that turns on at Lv 2 says so on the card and shows the big title; its badge shows its level.
+func test_banner_title_and_badge_show_the_pairs_level() -> void:
+	TranslationServer.set_locale("en")
+	var w := _world()
+	var reader := WorldReader.new(w)
+	var hud := Hud.new()
+	add_child_autofree(hud)
+	hud.sync(reader)
+	_grant(w, &"ember_core", 2)
+	_grant(w, &"frost_core", 2)
+	Modifiers.book(w)
+	hud.sync(reader)
+	await wait_process_frames(2)
+	assert_eq(hud.combo_card().title_text(), "Thermal Shock · Lv 2")
+	var title := hud.find_child("PairTitle", true, false) as Label
+	assert_not_null(title)
+	assert_true(title.visible, "the big title shows")
+	assert_eq(title.text, "Element pair! Thermal Shock")
+	var badge := hud.find_child("PairBadge0", true, false)
+	assert_not_null(badge, "X1 has a badge")
+	assert_eq((badge.find_child("Level", true, false) as Label).text, "Lv 2")
+	assert_eq(hud.combo_badge_count(), 0, "it is not a combo badge")

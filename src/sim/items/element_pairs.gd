@@ -148,6 +148,33 @@ static func bonus(w: World, x: int, m: int) -> int:
 	return 1000 + (m - 1000) * scale(w, x) / 1000
 
 
+## v0.9.5 EP4: the pairs that taking item `idx` would turn on or raise, flat [x, new_level, ...] (the offer card's
+## line). Empty for a card that is not an element card or that changes no pair. Slot limits and swaps are ignored.
+static func preview(w: World, idx: int) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	if w.pair_table == null or idx < 0 or idx >= w.item_tables.size():
+		return out
+	var own := CARDS.find(w.item_tables[idx].id)
+	if own < 0:
+		return out
+	var lv := PackedInt32Array()
+	for e in 5:
+		lv.append(element_level(w, e) if held_element(w, e) else 0)
+	lv[own] = mini(lv[own] + 1, 3) if lv[own] > 0 else 1
+	for x in COUNT:
+		var a: int = ELEMENTS[x][0]
+		var b: int = ELEMENTS[x][1]
+		if a != own and b != own:
+			continue
+		if lv[a] <= 0 or lv[b] <= 0:
+			continue
+		var nl := clampi(mini(lv[a], lv[b]), 1, 3)
+		if nl > level(w, x):
+			out.append(x)
+			out.append(nl)
+	return out
+
+
 ## The wand compiled (Modifiers.compile): the mask and levels follow the cards, a pair that just turned on or grew a
 ## level is announced (amount_applied: its level), and a pair that turned off takes its clouds with it.
 static func refresh(w: World) -> void:

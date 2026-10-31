@@ -240,6 +240,7 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 				)
 			slot_face(ci, reader, info, face)  # v0.9.0 AS
 			form_face(reader, info, face)  # v0.9.5 TX
+			pair_face(ci, reader, code, face)  # v0.9.5 EP4
 	return face
 
 
@@ -255,6 +256,25 @@ static func form_face(reader: WorldReader, info: Dictionary, face: Dictionary) -
 		return
 	face["form_line"] = line
 	face["form_color"] = FormCardText.accent_for(form)
+
+
+## v0.9.5 EP4 (owner: "some kind of notification when you select it and see that you got the element combination"): an
+## element card that would turn on or raise a pair says so under the sentence ("Pair: Thermal Shock", "Thermal Shock
+## -> Lv 2") in the pair's colour, unless the card already has a form line. `code` is the item's index.
+static func pair_face(ci: Object, reader: WorldReader, code: int, face: Dictionary) -> void:
+	if face.has("form_line"):
+		return
+	var pv := reader.pair_preview(code)
+	if pv.size() < 2:
+		return
+	var x := pv[0]
+	var lv := pv[1]
+	var pname: String = ci.tr(reader.pair_name_key(x))
+	if lv <= 1:
+		face["form_line"] = ci.tr("UI_PAIR_PREVIEW_ON") % pname
+	else:
+		face["form_line"] = ci.tr("UI_PAIR_PREVIEW_UP") % [pname, lv]
+	face["form_color"] = ItemLooks.combo_color(reader.pair_id(x))
 
 
 ## v0.9.0 AS (owner Q5, Q14: "Short line + slot tag"; C67, C87): a Form, Pattern, Secondary or Element card's slot tag

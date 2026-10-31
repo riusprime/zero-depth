@@ -29,6 +29,11 @@ const POOR := Color("#FF5A4D")
 
 ## v0.3.0 G: a combo's card stays this long, above the item card; its badges sit in a row above the item icons.
 const COMBO_CARD_SECONDS := 4.0
+## v0.9.5 EP4: an element pair's card stays this long; its big title fades in, holds and fades out (presentation only).
+const PAIR_CARD_SECONDS := 6.0
+const PAIR_TITLE_IN := 0.25
+const PAIR_TITLE_HOLD := 1.6
+const PAIR_TITLE_OUT := 0.4
 const COMBO_BADGE := 44.0
 ## v0.6.1 R1: each badge sits in a small stone plaque this tall (v0.8.0 MU) (the combo's nearest colour).
 const COMBO_PLAQUE_H := 96.0
@@ -100,6 +105,12 @@ var _combo_left := 0.0
 var _combo_pending := -1
 ## v0.9.5 EE3: an element pair that just turned on (its X index; -1 none): its name shows on the combo card.
 var _pair_pending := -1
+## v0.9.5 EP4: that pair's new level (1-3), the big centred title (PairTitle) and its clock (-1: not showing), and the
+## pair badges' signature (mask and levels) they were built from.
+var _pair_level_pending := 3
+var _pair_title := HudStyle.label(56, true)
+var _pair_title_t := -1.0
+var _pair_sig := -1
 var _combos_shown := -1
 # Run flow (v0.3.0 B).
 var _floor := HudStyle.label(16)
@@ -159,6 +170,7 @@ func _init() -> void:
 	_combos.offset_right = -28
 	_combos.offset_top = -ITEMS_LIFT - ROW_ICON - 12
 	_combos.offset_bottom = -ITEMS_LIFT - ROW_ICON - 12
+	_build_pair_title()
 	add_child(_combo_card)
 	_combo_card.place_bottom_centre(-196 - ItemCard.HEIGHT - 10)  # v0.6.1 R1: above the taller item plaque
 	_gate.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
@@ -284,6 +296,7 @@ func _process(delta: float) -> void:
 		_card_left -= delta
 	if _combo_left > 0.0:
 		_combo_left -= delta
+	_advance_pair_title(delta)
 	if _floor_card_left > 0.0 and not _landing:  # v0.8.0 N11: the card shows once the hero landed
 		_floor_card_left -= delta
 		_floor_card.modulate.a = clampf(_floor_card_left / FLOOR_CARD_FADE, 0.0, 1.0)
@@ -604,6 +617,7 @@ func _sync_items(reader: WorldReader) -> void:
 			_combo_pending = e.amount
 		elif e.kind == SimEvent.Kind.PAIR_ON:  # v0.9.5 EE3: an element pair turned on
 			_pair_pending = e.amount
+			_pair_level_pending = 3 if e.amount_applied <= 0 else e.amount_applied
 	if _card_mode == &"pickup" and _card_left <= 0.0:
 		_card_mode = &""
 	if _card_mode != &"pickup":
@@ -651,7 +665,11 @@ func combo_card() -> ComboCard:
 
 ## The number of combo badges in the row.
 func combo_badge_count() -> int:
-	return _combos.get_child_count()
+	var n := 0
+	for c in _combos.get_children():
+		if not String(c.name).begins_with("PairBadge"):
+			n += 1
+	return n
 
 
 ## v0.3.0 G: a combo that just unlocked shows its card; the badge row follows the combos owned.
@@ -674,18 +692,24 @@ func _sync_combos(reader: WorldReader) -> void:
 		var x := _pair_pending
 		_pair_pending = -1
 		var cards := reader.pair_card_ids(x)
+		var lvl := _pair_level_pending
+		var pname := tr(reader.pair_name_key(x))
 		_combo_card.show_combo(
 			reader.pair_id(x),
 			cards[0],
 			cards[1],
-			tr(reader.pair_name_key(x)),
+			pname if lvl <= 1 else "%s · %s" % [pname, tr("UI_WAND_LEVEL") % lvl],
 			tr(reader.pair_desc_key(x)),
-			tr("UI_PAIR_ON")
+			tr("UI_PAIR_ON") if lvl <= 1 else tr("UI_PAIR_LEVEL") % lvl
 		)
-		_combo_left = COMBO_CARD_SECONDS
+		_combo_left = PAIR_CARD_SECONDS
 		_combo_card.place_bottom_centre(-196 - _card.plaque_height() - 10)
+		_pair_title.text = tr("UI_PAIR_BIG") % pname
+		_pair_title.add_theme_color_override("font_color", ItemLooks.combo_color(reader.pair_id(x)))
+		_pair_title_t = 0.0
 	if _combo_left <= 0.0 and _combo_card.is_showing():
 		_combo_card.hide_card()
+	_sync_pair_badges(reader)
 	var owned := reader.combos_owned()
 	if owned.size() == _combos_shown:
 		return
@@ -693,6 +717,7 @@ func _sync_combos(reader: WorldReader) -> void:
 	for c in _combos.get_children():
 		_combos.remove_child(c)
 		c.queue_free()
+	_pair_sig = -1  # the pair badges follow the combo badges in the row
 	for c in owned:
 		var pair := reader.combo_item_ids(c)
 		var col := ItemLooks.combo_color(reader.combo_id(c))
@@ -708,4 +733,82 @@ func _sync_combos(reader: WorldReader) -> void:
 		badge.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		plate.add_child(badge)
+		_combos.add_child(plate)
+	_sync_pair_badges(reader)
+
+
+## v0.9.5 EP4: the big centred "Element pair! <name>" title (PairTitle), hidden until a pair turns on.
+func _build_pair_title() -> void:
+	_pair_title.name = "PairTitle"
+	_pair_title.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_pair_title.anchor_top = 0.28
+	_pair_title.anchor_bottom = 0.28
+	_pair_title.offset_top = 0.0
+	_pair_title.offset_bottom = 80.0
+	_pair_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_pair_title.add_theme_constant_override("outline_size", 8)
+	_pair_title.add_theme_color_override("font_outline_color", Color.BLACK)
+	_pair_title.modulate.a = 0.0
+	_pair_title.visible = false
+	add_child(_pair_title)
+
+
+## v0.9.5 EP4: the title fades in, holds and fades out by `delta` (the view's clock; nothing in the sim waits on it).
+func _advance_pair_title(delta: float) -> void:
+	if _pair_title_t < 0.0:
+		return
+	_pair_title_t += delta
+	var total := PAIR_TITLE_IN + PAIR_TITLE_HOLD + PAIR_TITLE_OUT
+	if _pair_title_t >= total:
+		_pair_title_t = -1.0
+		_pair_title.visible = false
+		return
+	var a := 1.0
+	if _pair_title_t < PAIR_TITLE_IN:
+		a = _pair_title_t / PAIR_TITLE_IN
+	elif _pair_title_t > PAIR_TITLE_IN + PAIR_TITLE_HOLD:
+		a = (total - _pair_title_t) / PAIR_TITLE_OUT
+	_pair_title.modulate.a = clampf(a, 0.0, 1.0)
+	_pair_title.visible = true
+
+
+## v0.9.5 EP4: one badge per pair that is on (PairBadge<X>: its two element icons and "Lv N"), after the combo badges;
+## rebuilt when the mask or any level changes.
+func _sync_pair_badges(reader: WorldReader) -> void:
+	var sig := reader.pair_mask()
+	for x in reader.pair_count():
+		sig = sig * 4 + reader.pair_level(x) if (sig >> x) & 1 == 1 else sig * 4
+	if sig == _pair_sig:
+		return
+	_pair_sig = sig
+	for c in _combos.get_children():
+		if String(c.name).begins_with("PairBadge"):
+			_combos.remove_child(c)
+			c.queue_free()
+	var mask := reader.pair_mask()
+	for x in reader.pair_count():
+		if (mask >> x) & 1 == 0:
+			continue
+		var cards := reader.pair_card_ids(x)
+		var col := ItemLooks.combo_color(reader.pair_id(x))
+		var plate := PanelContainer.new()
+		plate.name = "PairBadge%d" % x
+		plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		plate.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		plate.add_theme_stylebox_override(
+			"panel", Plaques.box(Plaques.nearest(col), COMBO_PLAQUE_H)
+		)
+		var col_box := VBoxContainer.new()
+		col_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		col_box.alignment = BoxContainer.ALIGNMENT_CENTER
+		var badge := ComboIconView.new(cards[0], cards[1], col, false)
+		badge.custom_minimum_size = Vector2(COMBO_BADGE, COMBO_BADGE)
+		badge.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		col_box.add_child(badge)
+		var lv := HudStyle.label(14, true)
+		lv.name = "Level"
+		lv.text = tr("UI_WAND_LEVEL") % reader.pair_level(x)
+		lv.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col_box.add_child(lv)
+		plate.add_child(col_box)
 		_combos.add_child(plate)
