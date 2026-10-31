@@ -31,6 +31,12 @@ const GLYPH_PX := 64
 const GLYPH_REPEAT := 3.0
 const CORE := Color("9B5CFF")
 const RIM := Color("D9C2FF")
+## v0.10.0 VX2 (VFX_PACK R8): the dome is the pack's fire_forcefield_02 recoloured violet, the floor ring a MagicArea
+## arcane circle of the burst's radius, the hit flash the pack's vfx_hit_02 (false: the old dome, ring and flash, for
+## before/after shots). The forcefield's sphere is squashed to the old dome's height (DOME_H, times this).
+const PACK_RUNES := true
+const DOME_SQUASH := 1.5
+const HIT_SCALE := 0.8
 
 const DOME_SHADER := """
 shader_type spatial;
@@ -105,7 +111,16 @@ var domes_shown := false
 ## v0.9.5 FC5: the card rings and shards drawn now (the sim's RuneMods.read).
 var extras := 0
 var shards := 0
+## v0.10.0 VX2: the pack the dome and flashes draw with (WorldViewRoot hands it in), the domes it holds by burst uid,
+## and each burst's floor-ring MagicArea.
+var pack_fx: PackFx = null:
+	set(v):
+		pack_fx = v
+		hold.pack = v if PACK_RUNES else null
+var hold := PackHold.new()
 
+var _floors := {}
+var _flash_packed: Array[bool] = []
 var _domes: Array[MeshInstance3D] = []
 var _dome_mat: Array[ShaderMaterial] = []
 var _rings: Array[MeshInstance3D] = []
@@ -244,6 +259,7 @@ func sync(reader: WorldReader) -> void:
 	domes_shown = not ViewPrefs.reduced_motion
 	var low := ViewPrefs.effects_density == "low"
 	var live := {}
+	hold.begin()
 	for k in BURSTS_MAX:
 		_domes[k].visible = false
 		_rings[k].visible = false
@@ -255,6 +271,8 @@ func sync(reader: WorldReader) -> void:
 		edges.append(edge)
 		fades.append(fd)
 		var at := SimPlane.to_3d(b["pos"], LIFT)
+		var dome_packed := domes_shown and edge > 0.02 and _pack_dome(int(b["uid"]), at, edge)
+		var floor_packed := edge > 0.02 and _pack_floor(int(b["uid"]), at, edge, fd)
 		# The floor ring: a quad a little wider than the edge, the band inside it.
 		var half := edge + 0.15
 		var rm := _ring_mat[k]
@@ -264,9 +282,9 @@ func sync(reader: WorldReader) -> void:
 		rm.set_shader_parameter(&"glow", 0.0 if low else 1.0)
 		rm.set_shader_parameter(&"motion", 0.0 if ViewPrefs.reduced_motion else 1.0)
 		_rings[k].transform = Transform3D(Basis.IDENTITY.scaled(Vector3(half, 1.0, half)), at)
-		_rings[k].visible = edge > 0.02
+		_rings[k].visible = edge > 0.02 and not floor_packed
 		# The dome: a low hemisphere over the edge (none with Reduced motion).
-		if domes_shown and edge > 0.02:
+		if domes_shown and edge > 0.02 and not dome_packed:
 			_dome_mat[k].set_shader_parameter(&"fade", fd)
 			var basis := Basis.IDENTITY.scaled(Vector3(edge, DOME_H * edge, edge))
 			_domes[k].transform = Transform3D(basis, at)
@@ -281,8 +299,15 @@ func sync(reader: WorldReader) -> void:
 			_flashed[key] = uid
 			var i := reader.actor_index(foe)
 			if i >= 0:
-				_flash_at.append(SimPlane.to_3d(reader.actor_pos(i), SimPlane.CORE_HEIGHT))
+				var spot := SimPlane.to_3d(reader.actor_pos(i), SimPlane.CORE_HEIGHT)
+				_flash_at.append(spot)
 				_flash_tick.append(_tick)
+				_flash_packed.append(_pack_flash(spot))
+	hold.end()
+	for uid: int in _floors.keys():  # a gone burst's floor ring fades out and frees itself
+		if not live.has(uid):
+			(_floors[uid] as MagicArea).stop(0.15)
+			_floors.erase(uid)
 	for key: int in _flashed.keys():  # a gone burst forgets its hits
 		if not live.has(int(_flashed[key])):
 			_flashed.erase(key)
@@ -290,7 +315,72 @@ func sync(reader: WorldReader) -> void:
 		if _tick - _flash_tick[j] > FLASH_TICKS:
 			_flash_at.remove_at(j)
 			_flash_tick.remove_at(j)
+			_flash_packed.remove_at(j)
 	_sync_cards(reader)
+
+
+## v0.10.0 VX2 (R8): burst `uid`'s dome as the pack's forcefield (violet), scaled to the edge and squashed to the old
+## dome's height, held while the burst lives. False: no pack or no room (the old dome draws).
+func _pack_dome(uid: int, at: Vector3, edge: float) -> bool:
+	if not hold.active():
+		return false
+	var s := Vector3(edge, edge * DOME_H * DOME_SQUASH, edge)
+	var n := hold.put(uid, &"vx2_rune_dome", &"area", Transform3D(Basis.from_scale(s), at))
+	if n == null:
+		return false
+	if not n.has_meta(&"vx2_violet"):  # (the scene's shader colours are shared by every dome: violet once)
+		n.set_meta(&"vx2_violet", true)
+		_violet(n)
+	return true
+
+
+## The forcefield's shared material in the rune violet (main, edge and glow colours).
+static func _violet(n: Node3D) -> void:
+	var mesh := n.get_node_or_null("FieldMesh") as MeshInstance3D
+	var mat := mesh.mesh.material as ShaderMaterial if mesh != null and mesh.mesh != null else null
+	if mat == null:
+		return
+	mat.set_shader_parameter(&"main_color", CORE)
+	mat.set_shader_parameter(&"edge_color", RIM)
+	mat.set_shader_parameter(&"glow_color", RIM.lerp(Color.WHITE, 0.5))
+
+
+## R8: burst `uid`'s floor ring as a MagicArea arcane circle of the edge's radius (grown by scale, its strength the
+## burst's fade), at most BURSTS_MAX alive. False: no pack (the old ring quad draws).
+func _pack_floor(uid: int, at: Vector3, edge: float, fd: float) -> bool:
+	if not PACK_RUNES or pack_fx == null:
+		return false
+	var area: MagicArea = _floors.get(uid)
+	if area == null:
+		if _floors.size() >= BURSTS_MAX:
+			return false
+		area = (
+			MagicArea
+			. add(
+				self,
+				"arcane_circle",
+				{
+					&"radius": 1.0,
+					&"appear": 0.15,
+					&"light": false,
+					&"particles": false,
+					&"color": RIM,
+					&"edge_color": CORE,
+				}
+			)
+		)
+		_floors[uid] = area
+	area.position = at
+	area.scale = Vector3(edge, 1.0, edge)
+	area.intensity = fd
+	return true
+
+
+## R8: the hit flash on an enemy the edge reached, as the pack's vfx_hit_02 in violet (played once). False: the layer's.
+func _pack_flash(at: Vector3) -> bool:
+	if not hold.active() or not pack_fx.has_room(&"hit"):
+		return false
+	return pack_fx.spawn(&"vx2_hit_rune", at, HIT_SCALE, PackLooks.violet_colors()) != null
 
 
 ## v0.9.5 FC5: what the cards leave on the floor (WorldReader.rune_effects): a held Ring and a shrinking shield (the
@@ -346,6 +436,8 @@ func _sync_cards(reader: WorldReader) -> void:
 func draw_fx(layer: VfxCore) -> void:
 	var now := layer.now()
 	for j in _flash_at.size():
+		if _flash_packed[j]:
+			continue  # the pack's flash plays
 		var u := (now - _flash_tick[j]) / FLASH_TICKS
 		if u >= 0.0 and u < 1.0:
 			var sparks := 1 if ViewPrefs.effects_density == "low" else 3

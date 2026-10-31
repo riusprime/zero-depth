@@ -96,6 +96,14 @@ var density := "high"
 ## new look, WorldViewRoot hands the canvas a VfxLayer. Fire and electric then draw as real flames and lightning, and
 ## bomb landings as explosions, instead of flat ground shapes; without it the canvas draws as before.
 var vfx: VfxLayer = null
+## v0.10.0 VX2 (VFX_PACK R9, R12, R13): the pack the forms draw with (WorldViewRoot hands it in; null: the old looks),
+## and the hero shots the pulses already draw with the pack (their trail and rim are skipped here).
+var pack_fx: PackFx = null:
+	set(v):
+		pack_fx = v
+		forms_pack.pack_fx = v
+var forms_pack := FormPack.new(self)
+var pulse_hold: PackHold = null
 ## v0.8.0 HV (O89): the camera's view (null: all draw); off-screen live bolts, flashes, landings, rings, patches skip.
 var cull: ScreenCull
 var pools := {}
@@ -243,12 +251,15 @@ func spawn(
 	}
 	_push(e)
 	if bool(look["crit"]):
-		flash(origin, AttackFormLooks.CRIT_FLASH, 0.9, float(e["start"]))
+		flash(origin, AttackFormLooks.CRIT_FLASH, 0.9, float(e["start"]), &"crit")
 	return e
 
 
-## A short flash of light at `at` (a crit's white-hot, a bounce's).
-func flash(at: Vector2, c: Color, size: float, start: float = -1.0) -> void:
+## A short flash of light at `at` (a crit's white-hot, a bounce's). v0.10.0 VX2: a `kind` of &"crit", &"bounce" or
+## &"sigil" is a pack effect (the hit flashes, the holy circle) when the pack has room, else the old flash.
+func flash(at: Vector2, c: Color, size: float, start: float = -1.0, kind: StringName = &"") -> void:
+	if forms_pack.flash(at, c, size, kind):
+		return
 	_push(
 		{
 			"kind": &"flash",
@@ -263,6 +274,7 @@ func flash(at: Vector2, c: Color, size: float, start: float = -1.0) -> void:
 
 
 func clear() -> void:
+	forms_pack.hold.clear()
 	_cast_tick = -1  # v0.6.5 WN5a
 	_cast_n = 0
 	_effects.clear()
@@ -327,6 +339,7 @@ func draw_at(now: float) -> void:
 	if vfx != null:
 		vfx.density = particle_scale()
 		vfx.begin(now)
+	forms_pack.hold.begin()  # v0.10.0 VX2: the held pack effects of this frame's forms
 	var bolts := 0
 	for b in _live:
 		# v0.8.0 PF: past LIVE_BOLTS_MAX a bolt keeps only its dart (ActorViews); the charging orb (id -1) always draws
@@ -366,6 +379,7 @@ func draw_at(now: float) -> void:
 	var spent := _effects  # v0.8.0 HV: swapped, not rebuilt
 	_effects = _keep
 	_keep = spent
+	forms_pack.hold.end()
 	if vfx != null:
 		vfx.finish()
 	_drawn_meshes = mesh_cap() - _mesh_left
@@ -588,20 +602,23 @@ func _draw_ring(e: Dictionary, look: Dictionary, age: float) -> void:
 		if t < 0.0 or t > 1.0:
 			continue
 		fade_all = 1.0 - t * t * t
-		_ring_at(
-			SimPlane.to_3d(e["origin"], GROUND_H), float(look["radius"]) * t, look, fade_all, points
-		)
+		var at := SimPlane.to_3d(e["origin"], GROUND_H)
+		_ring_at(at, float(look["radius"]) * t, look, fade_all, points, int(e["seed"]) * 16 + k + 1)
 	_emit(e, look, points, age, fade_all)
 
 
 ## A ring at radius `r` now (the RING runner's linear growth: the drawn front is the hit front): its ground-safe fill
 ## and its raised front in the heat edge.
-func _ring_at(c: Vector3, r: float, look: Dictionary, fade: float, points: Array[Vector3]) -> void:
+func _ring_at(
+	c: Vector3, r: float, look: Dictionary, fade: float, points: Array[Vector3], key := 0
+) -> void:
 	r = maxf(r, 0.05)
 	var kind := _vfx_kind(look)
 	if kind != &"":
 		vfx.ring(kind, c, r, fade, vfx.now(), int(c.x * 97.0) * 31 + int(c.z * 89.0))
 		return
+	if key != 0 and forms_pack.ground(key, &"vx2_ring_pulse", c, r * FormPack.RING_PER_M, look):
+		return  # (no element here, so no particles: the layer draws every element's)
 	_put(
 		&"ring_fill",
 		Transform3D(Basis.from_scale(Vector3(r, 1, r)), c),
@@ -677,6 +694,9 @@ func _zone_at(
 	if _vfx_kind(look) != &"":
 		vfx.field(_vfx_kind(look), c, r, fade, age, sd)
 		return
+	var key := sd * 131 + roundi(c.x * 7.0) * 17 + roundi(c.z * 7.0)
+	if forms_pack.ground(key, &"vx2_zone_basic", c, r * FormPack.ZONE_PER_M, look):
+		return
 	var pulse := 0.5 + 0.5 * sin(age * 0.15 + float(sd))
 	_put(
 		&"zone_fill",
@@ -701,16 +721,26 @@ func _draw_orbiter(e: Dictionary, look: Dictionary, age: float) -> void:
 	var points: Array[Vector3] = []
 	for k in n:
 		var a: float = float(e["angle"]) + TAU * k / n + ORBIT_TURN * age
-		_orbiter_at(e["origin"], a, float(look["reach"]), look, fade, points)
+		_orbiter_at(
+			e["origin"], a, float(look["reach"]), look, fade, points, int(e["seed"]) * 16 + k + 1
+		)
 	_emit(e, look, points, age, fade)
 
 
 ## One orbiting body at angle `a` round `origin`, `orbit` out, with a short trail behind it along the orbit.
 func _orbiter_at(
-	origin: Vector2, a: float, orbit: float, look: Dictionary, fade: float, points: Array[Vector3]
+	origin: Vector2,
+	a: float,
+	orbit: float,
+	look: Dictionary,
+	fade: float,
+	points: Array[Vector3],
+	slot := 0
 ) -> void:
 	var thick: float = look["thick"]
 	var p := SimPlane.to_3d(origin + _dir(a) * orbit, BODY_H)
+	if forms_pack.orbiter(slot, p, thick, look):  # v0.10.0 VX2 (R9): a pack orb per body
+		return
 	var xf := Transform3D(
 		(
 			Basis(Vector3.UP, a + PI * 0.5)
@@ -760,16 +790,17 @@ func _lob_at(
 	var g := SimPlane.to_3d(target, GROUND_H)
 	var apex := 1.4 + from.distance_to(target) * 0.12
 	var p := SimPlane.to_3d(from.lerp(target, s), BODY_H + 4.0 * apex * s * (1.0 - s))
-	_put(
-		&"lob_body",
-		Transform3D(Basis.from_scale(Vector3.ONE * 0.34), p),
-		Color(look["core"], 1.0).darkened(0.72)
-	)
-	_put(
-		&"lob_glow",
-		Transform3D(Basis.from_scale(Vector3.ONE * 0.12), p + Vector3(0, 0.17, 0)),
-		lit_color(look["core"], 1.0, 1.8)
-	)
+	if not forms_pack.lob(from, target, p):  # v0.10.0 VX2 (R9): the bomb in flight is the pack's fire ball
+		_put(
+			&"lob_body",
+			Transform3D(Basis.from_scale(Vector3.ONE * 0.34), p),
+			Color(look["core"], 1.0).darkened(0.72)
+		)
+		_put(
+			&"lob_glow",
+			Transform3D(Basis.from_scale(Vector3.ONE * 0.12), p + Vector3(0, 0.17, 0)),
+			lit_color(look["core"], 1.0, 1.8)
+		)
 	if vfx != null:
 		points.append(p)
 		return  # the new look: no ground circle, only the bomb and its lit fuse
@@ -942,7 +973,8 @@ func _draw_live_form(f: Dictionary, now: float) -> void:
 			if _off_screen(at[0], float(at[1]) + CULL_PAD_M):  # v0.8.0 HV: wholly off screen
 				return
 			fade = 1.0 - (smoothstep(TRAVEL_FADE_FROM, 1.0, t) if go else t * t * t)
-			_ring_at(SimPlane.to_3d(at[0], GROUND_H), float(at[1]), look, fade, pts)
+			var c3 := SimPlane.to_3d(at[0], GROUND_H)
+			_ring_at(c3, float(at[1]), look, fade, pts, int(f["seed"]) * 16 + 15)
 		&"zone":
 			if _off_screen(f["pos"], float(f["radius"]) + CULL_PAD_M):  # v0.8.0 HV
 				return
@@ -954,6 +986,8 @@ func _draw_live_form(f: Dictionary, now: float) -> void:
 			var sp := clampf((now - float(f["throw"])) / flight, 0.0, 1.0)
 			_lob_at(f["from"], f["pos"], sp, float(f["radius"]), look, pts)
 		&"orbit":
+			var slot := int(f["seed"]) * 16
 			for a: float in f["angles"]:
-				_orbiter_at(f["pos"], a, float(f["orbit"]), look, 1.0, pts)
+				slot += 1
+				_orbiter_at(f["pos"], a, float(f["orbit"]), look, 1.0, pts, slot)
 	_emit(f, look, pts, now, fade)

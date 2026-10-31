@@ -87,7 +87,9 @@ static func draw(c: AttackFormCanvas, b: Dictionary, info: LiveBoltLook, now: fl
 	# v0.9.0 VX V18 (a full-charge Lance ball reads heavier) and V36 (a Spiral bolt's corkscrew reads): the long trail.
 	var long := info.streak or info.helix or size >= FULL_CHARGE_SCALE
 	var cap := AttackFormCanvas.STREAK_SEGMENTS if long else AttackFormCanvas.TAIL_SEGMENTS
-	var segs := mini(trail.size() - 1, cap)
+	# v0.10.0 VX2 (R1): a shot the pack draws (HeroPulseViews) has its own trail and body: no segments, no rim here.
+	var packed := c.pulse_hold != null and c.pulse_hold.has(int(b["id"]))
+	var segs := 0 if packed else mini(trail.size() - 1, cap)
 	var w: float = info.thick * 2.2 * size
 	var n := trail.size()
 	for j in segs:
@@ -102,11 +104,12 @@ static func draw(c: AttackFormCanvas, b: Dictionary, info: LiveBoltLook, now: fl
 	var at := SimPlane.to_3d(b["pos"], h)
 	var heading := (b["vel"] as Vector2).angle()
 	var scl := Vector3(info.length * 1.25, info.thick * 1.8, info.thick * 1.8) * size
-	c._put_in(
-		c._bolt_core,
-		Transform3D(Basis(Vector3.UP, heading) * Basis.from_scale(scl), at),
-		AttackFormCanvas.lit_color(info.rim, 0.45, info.energy)
-	)
+	if not packed:
+		c._put_in(
+			c._bolt_core,
+			Transform3D(Basis(Vector3.UP, heading) * Basis.from_scale(scl), at),
+			AttackFormCanvas.lit_color(info.rim, 0.45, info.energy)
+		)
 	if info.tether:
 		c._put_in(
 			c.pools[&"cue"],

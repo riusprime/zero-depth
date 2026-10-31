@@ -23,6 +23,11 @@ const NEEDLE := Vector2(0.5, 0.11)
 const MOTE := 0.16
 ## v0.9.0 VX V47: Effects density Low keeps this many trail motes a dart.
 const LOW_MOTES := 2
+## v0.10.0 VX2 (VFX_PACK R2): each dart is the pack's javelin (mprojectile_javelin, the element's scene and colours)
+## following it, its own trail replacing the needle and the motes (false: the needles, for before/after shots).
+const PACK_DARTS := true
+## The javelin scene drawn at this scale (its head and trail are about 2.7 m long, the needle 0.5 m).
+const JAVELIN_SCALE := 0.4
 
 const NEEDLE_SHADER := """
 shader_type spatial;
@@ -60,7 +65,14 @@ var arcs := 0
 ## v0.9.0 VX V29: the effects layer is on (WorldViewRoot sets it): an element's trail motes become its own sprites
 ## (draw_fx), the round motes hide. Same count, so the cost stays the same.
 var vfx_on := false
+## v0.10.0 VX2: the pack the darts draw with (WorldViewRoot hands it in) and the javelins it holds, by dart id.
+var pack_fx: PackFx = null:
+	set(v):
+		pack_fx = v
+		hold.pack = v if PACK_DARTS else null
+var hold := PackHold.new()
 
+var _dart_ids: PackedInt32Array = PackedInt32Array()
 var _needles: Array[MeshInstance3D] = []
 var _needle_mat: Array[ShaderMaterial] = []
 var _motes: Array[MeshInstance3D] = []
@@ -157,6 +169,7 @@ func sync(reader: WorldReader) -> void:
 	_mote_pos.clear()
 	_mote_fade.clear()
 	_mote_id.clear()
+	_dart_ids.clear()
 	_seen.clear()
 	for i in reader.projectile_count():
 		if reader.projectile_team(i) != 0 or not reader.projectile_is_dart(i):
@@ -170,6 +183,7 @@ func sync(reader: WorldReader) -> void:
 		if _pos.size() < DARTS_MAX:
 			_pos.append(p)
 			_vel.append(reader.projectile_vel(i))
+			_dart_ids.append(id)
 			for g in mini(past.size(), keep_n):
 				_mote_pos.append(past[g])
 				_mote_fade.append(1.0 - float(g + 1) / float(TRAIL + 1))
@@ -207,21 +221,41 @@ func _process(_delta: float) -> void:
 func _place() -> void:
 	var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
 	var view := Vector3(0, 1, 1).normalized() if cam == null else cam.global_transform.basis.z
+	hold.begin()
 	for k in darts:
 		var v := _vel[k]
 		var dir2 := v.normalized() if v.length_squared() > 1e-8 else Vector2.RIGHT
 		var x := SimPlane.to_3d(dir2, 0.0).normalized()
+		if _pack_dart(k, x):
+			_needles[k].visible = false  # v0.10.0 VX2: the pack's javelin is the dart
+			continue
+		_needles[k].visible = true
 		var y := x.cross(view).normalized()
 		if y.length_squared() < 0.5:
 			y = Vector3.UP.cross(x).normalized()
 		var n := x.cross(y).normalized()
 		var at := SimPlane.to_3d(_pos[k], HEIGHT) - x * (NEEDLE.x * 0.35)
 		_needles[k].transform = Transform3D(Basis(x * NEEDLE.x, y * NEEDLE.y, n), at)
+	hold.end()
 	var right := Vector3.RIGHT if cam == null else cam.global_transform.basis.x
 	var up := view.cross(right).normalized()
 	for k in motes:
+		if hold.has(_mote_id[k] >> 3):  # a javelin's own trail replaces its motes
+			_motes[k].visible = false
+			continue
 		var b := Basis(right * MOTE, up * MOTE, view)
 		_motes[k].transform = Transform3D(b, SimPlane.to_3d(_mote_pos[k], HEIGHT))
+
+
+## v0.10.0 VX2 (R2): dart `k` (flying along `x` on the ground) as the pack's javelin of its element, held on it. False:
+## the needle draws.
+func _pack_dart(k: int, x: Vector3) -> bool:
+	if not hold.active():
+		return false
+	var id := _dart_ids[k]
+	var cols := {} if hold.has(id) else PackLooks.colors(_form.elements)
+	var xf := Transform3D(PackLooks.facing(x, JAVELIN_SCALE), SimPlane.to_3d(_pos[k], HEIGHT))
+	return hold.put(id, PackLooks.id_of("jav", _form.element), &"projectile", xf, cols) != null
 
 
 ## The effects layer's drawer (WorldViewRoot appends it): V29's element motes, one sprite where each round mote was.
@@ -229,5 +263,7 @@ func draw_fx(layer: VfxCore) -> void:
 	if not vfx_on or _form.kind == &"":
 		return
 	for k in motes:
+		if hold.has(_mote_id[k] >> 3):
+			continue
 		var q := SimPlane.to_3d(_mote_pos[k], HEIGHT)
 		HeroFx.mote(layer, _form.kind, _form.element, q, _mote_fade[k], _mote_id[k])

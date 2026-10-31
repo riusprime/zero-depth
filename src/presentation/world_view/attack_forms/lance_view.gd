@@ -34,6 +34,13 @@ const BURST_RADII := 3.5
 ## v0.9.0 VX V19: a wall stop's flash and extra (ticks), and how many play at once.
 const WALL_TICKS := 18.0
 const WALLS_MAX := 4
+## v0.10.0 VX2 (VFX_PACK R5): the charge circle is a MagicArea circle of the element (its brightness and spin follow the
+## charge), the release's muzzle burst the pack's big_flash_02 (the ball in flight: HeroPulseViews' big orb). False: the
+## swirl and burst quads, for before/after shots. At most CIRCLES_MAX circles alive (one charging, the rest fading).
+const PACK_LANCE := true
+const CIRCLES_MAX := 6
+## The pack's muzzle burst per metre of the ball's radius.
+const MUZZLE_PER_RADIUS := 3.0
 
 const SWIRL_SHADER := """
 shader_type spatial;
@@ -116,7 +123,11 @@ var walls_seen := 0
 ## v0.9.5 FC4: the rings drawn now and the split shards in view (the tests).
 var arcs := 0
 var shards := 0
+## v0.10.0 VX2: the pack the muzzle burst draws with (WorldViewRoot hands it in), and the charge circle's MagicArea.
+var pack_fx: PackFx = null
+var charge_area: MagicArea = null
 
+var _circles_alive := 0
 var _circle: MeshInstance3D
 var _circle_mat: ShaderMaterial
 var _burst_nodes: Array[MeshInstance3D] = []
@@ -204,17 +215,22 @@ func sync(reader: WorldReader) -> void:
 		circle_size = 2.0 * (float(orb["radius"]) * CIRCLE_RADII + CIRCLE_PAD_M)
 		_circle.position = SimPlane.to_3d(orb["pos"], HEIGHT)
 		_circle.scale = Vector3.ONE * circle_size
+		if _pack_circle(orb["pos"]):
+			_circle.visible = false  # the MagicArea circle draws it
 		_circle_mat.set_shader_parameter(&"core", _form.core)
 		_circle_mat.set_shader_parameter(&"edge", _form.edge)
 		_circle_mat.set_shader_parameter(&"charge", charge)
 		_circle_mat.set_shader_parameter(&"full", 1.0 if charge >= 1.0 else 0.0)
 		_circle_mat.set_shader_parameter(&"energy", 0.7 + 1.1 * charge)
+	else:
+		_end_circle()
 	for e in reader.events_since(_last_seq):
 		_last_seq = e.seq
 		if e.kind != SimEvent.Kind.LANCE:
 			continue
 		var radius := e.amount / 1000.0
-		_live.append([e.pos, float(e.tick), _form.core, radius, _form.edge])
+		if not _pack_burst(e.pos, Kin.dir(e.amount_applied), radius):
+			_live.append([e.pos, float(e.tick), _form.core, radius, _form.edge])
 		last_burst_charge = e.proc_pct
 		last_burst_radius = radius
 	while _live.size() > BURSTS_MAX:
@@ -242,6 +258,65 @@ func sync(reader: WorldReader) -> void:
 	_place_arcs(reader)
 	_shards = reader.lance_shards()
 	shards = _shards.size()
+
+
+## v0.10.0 VX2 (R5): the charging circle as a MagicArea circle (fire, frost, poison, blood, arcane; storm is the arcane
+## one in the storm's blue) round the ball, grown by scale (a radius change would rebuild it), brighter and faster with
+## the charge. False: no pack, or CIRCLES_MAX alive; the swirl quad draws.
+func _pack_circle(pos: Vector2) -> bool:
+	if not PACK_LANCE or pack_fx == null:
+		return false
+	if charge_area == null:
+		if _circles_alive >= CIRCLES_MAX:
+			return false
+		var first := _form.element
+		var options := {
+			&"radius": 1.0,
+			&"appear": 0.2,
+			&"light": false,
+			&"particles": ViewPrefs.effects_density != "low",
+		}
+		if first == &"storm":
+			options[&"color"] = ElementLooks.core(&"storm")
+			options[&"edge_color"] = ElementLooks.deep(&"storm")
+		charge_area = MagicArea.add(self, "%s_circle" % PackLooks.circle_element(first), options)
+		_circles_alive += 1
+		charge_area.finished.connect(_on_circle_done)
+	charge_area.position = SimPlane.to_3d(pos, SimPlane.CORE_HEIGHT * 0.4)
+	charge_area.scale = Vector3.ONE * circle_size * 0.5
+	charge_area.intensity = 0.6 + 0.9 * charge
+	charge_area.speed = 1.0 + 1.5 * charge
+	return true
+
+
+## The circle's charge ended (a release or a cancel): it fades out and frees itself.
+func _end_circle() -> void:
+	if charge_area != null:
+		charge_area.stop(0.2)
+		charge_area = null
+
+
+func _on_circle_done() -> void:
+	_circles_alive = maxi(0, _circles_alive - 1)
+
+
+## v0.10.0 VX2 (R5): the release's muzzle burst as the pack's big_flash_02, turned along the aim. False: no pack or no
+## room (the burst quads draw).
+func _pack_burst(pos: Vector2, dir: Vector2, radius: float) -> bool:
+	if not PACK_LANCE or pack_fx == null or not pack_fx.has_room(&"hit"):
+		return false
+	var xf := Transform3D(
+		PackLooks.facing(Vector3(dir.x, 0.0, -dir.y), radius * MUZZLE_PER_RADIUS),
+		SimPlane.to_3d(pos, HEIGHT)
+	)
+	var n := pack_fx.spawn(&"vx2_muzzle_big", xf.origin, 1.0, PackLooks.colors(_form.elements))
+	if n == null:
+		return false
+	if n.is_inside_tree():
+		n.global_transform = xf
+	else:
+		n.transform = xf
+	return true
 
 
 ## v0.9.5 FC4: the Ring card's lightning rings growing from where a lance ended.
