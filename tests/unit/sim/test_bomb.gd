@@ -2,28 +2,11 @@ extends GutTest
 ## v0.9.0 BM (owner C §6.3, Q9; PLAN C51–C53; ATTACK_FORMS.md F3): the Bomb form. One bomb a second thrown straight
 ## along the aim; it bursts on the first enemy, on a wall or 8 m out; the blast (2.2 m, 4.5 × an orb hit) hits every
 ## enemy in it once; attack speed counts at half; Twin throws 2 bombs (3 at Lv 5) at its share; the elements apply on
-## the blast; overlapping blasts past 8 in a tick merge; the Bomb replaces the Laser and back, and never takes Ring.
+## the blast; overlapping blasts past 8 in a tick merge. v0.9.5 BR: the card is retired into the Void (no row, never
+## offered); its code stays reachable for a held retired card, so these tests stay.
 
 const W := preload("res://tests/support/mx4_world.gd")
 const HP := 1000000
-const BOMB_ON: Array[StringName] = [
-	&"gun_twin",
-	&"halo_shot",
-	&"gun_ring",
-	&"gun_backfire",
-	&"gun_ricochet",
-	&"gun_homing",
-	&"gun_echo",
-	&"gun_big_shot",
-	&"gun_rapid_fire",
-	&"split_shot",
-	&"gun_mine",
-	&"ember_core",
-	&"storm_core",
-	&"frost_core",
-	&"venom_core",
-	&"shared_bleed"
-]
 
 
 func _world(items: Array = [], at: Array = [Vector2(4.0, 0.0)]) -> World:
@@ -157,52 +140,19 @@ func test_overlapping_blasts_past_eight_in_a_tick_merge() -> void:
 	assert_gt(w.blast_merged, 0)
 
 
-# --- The slots ------------------------------------------------------------------------------------------------------
-func _slot_world() -> World:
+## v0.9.5 BR (owner, 2026-10-31: "let's just remove the bomb I didnt quite enjoy playing it"): the Bomb card is retired
+## into the Void (migration.tres), has no form row and is never offered; its code stays for a held retired card.
+func test_the_bomb_has_no_row_and_is_never_offered() -> void:
 	var w := W.world(&"gun")
-	var r := W.repo()
-	w.wand_table = WandCompiler.from_repo(r)
-	w.slot_table = WandCompiler.slots(r, w.item_tables)
+	var bomb := W.item(w, &"gun_bomb")
+	assert_true(w.item_tables[bomb].retired, "retired")
+	assert_does_not_have(ItemPool.available(w), bomb, "never offered")
+	var slots: AttackSlotsDefinition = W.repo().get_def(&"wand", &"attack_slots")
+	for f in slots.forms:
+		assert_ne(f.card, &"gun_bomb", "no row")
+		assert_ne(f.id, &"bomb", "no row id")
 	w.floor_index = 3
 	w.run_floor = 3
-	return w
-
-
-func test_the_bomb_row_offers_only_its_cards_and_never_pierce_or_orbit() -> void:
-	var w := _slot_world()
-	assert_true(BuildSlots.take(w, W.item(w, &"gun_bomb")))
-	assert_eq(AttackSlots.form_id(w), &"bomb")
-	assert_true(ItemPool.usable(w, W.item(w, &"gun_ring")), "Bomb + Ring: on since FC2 (B2)")
-	assert_false(ItemPool.usable(w, W.item(w, &"gun_pierce")), "Bomb + Pierce: off")
-	for idx in w.item_tables.size():
-		var it := w.item_tables[idx]
-		var cat := AttackSlots.category(w, idx)
-		if (
-			it.retired
-			or it.requires_weapon == PlayerTable.WEAPON_BLADE
-			or cat in [AttackSlots.FREE, AttackSlots.FORM]
-		):
-			continue
-		assert_eq(AttackSlots.usable(w, idx), BOMB_ON.has(it.id), "%s with the Bomb" % it.id)
 	for k in 200:
 		w.rng_loot = RngStream.derive(k, "loot")
-		assert_false(ItemPool.draw_weighted(w, 3, 3).has(W.item(w, &"gun_pierce")), "draw %d" % k)
-
-
-func test_the_bomb_replaces_the_laser_and_the_laser_the_bomb() -> void:
-	var w := _slot_world()
-	var bomb := W.item(w, &"gun_bomb")
-	var laser := W.item(w, &"gun_laser")
-	assert_true(BuildSlots.take(w, laser))
-	assert_eq(
-		int(Offers.info(w, bomb)["replaces"]), laser, "the Bomb card says it replaces the Laser"
-	)
-	assert_true(BuildSlots.take(w, bomb))
-	assert_false(w.items_owned.has(laser), "Bomb + Laser never coexist (C52)")
-	assert_eq(AttackSlots.form_id(w), &"bomb")
-	assert_true(Bomb.is_bomb(Modifiers.bolt(w)))
-	assert_eq(int(Offers.info(w, laser)["replaces"]), bomb)
-	assert_true(BuildSlots.take(w, laser))
-	assert_false(w.items_owned.has(bomb))
-	assert_eq(AttackSlots.form_id(w), &"laser")
-	assert_true(Laser.held(Modifiers.bolt(w)))
+		assert_false(ItemPool.draw_weighted(w, 3, 3).has(bomb), "draw %d" % k)

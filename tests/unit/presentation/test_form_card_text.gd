@@ -41,7 +41,7 @@ func _pairs() -> Array:
 
 func test_every_allowed_pair_is_a_card_with_a_line() -> void:
 	var pairs := _pairs()
-	assert_gt(pairs.size(), 90, "the data has the cells (101 at FC9)")
+	assert_gt(pairs.size(), 85, "the data has the cells (101 at FC9, 90 after BR removed the Bomb's 11)")
 	for p: Array in pairs:
 		assert_true(FormCardText.CARDS.has(p[1]), "%s on %s is a known card" % [p[1], p[0]])
 

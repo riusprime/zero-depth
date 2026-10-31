@@ -57,9 +57,10 @@ func test_the_table_retires_43_cards_and_marks_them() -> void:
 		abilities += 1 if t.retired else 0
 	assert_eq(
 		[items, abilities],
-		[53, 6],
+		[54, 6],
 		(
-			"59 rows: 53 items (v0.9.0: Spread, Explosive, the old Void, Charge, Boomerang; v0.9.5: ten and the Scatter)"
+			"60 rows: 54 items (v0.9.0: Spread, Explosive, the old Void, Charge, Boomerang; v0.9.5: ten,"
+			+ " the Scatter and the Bomb)"
 			+ " and the six old"
 			+ " ability modifiers"
 		)
@@ -232,6 +233,20 @@ func test_a_held_scatter_becomes_rune_explosion_and_is_never_offered() -> void:
 	WandMigration.run(w)
 	assert_eq(_ids(w), [&"gun_twin", &"gun_rune_explosion"], "in the Scatter's place")
 	assert_eq(AttackSlots.form_id(w), &"rune_explosion", "the shot is the Rune Explosion")
+
+
+## v0.9.5 BR (owner: "let's just remove the bomb I didnt quite enjoy playing it"): an old save holding the Bomb loads
+## holding the Void in its place; the Bomb is never offered again.
+func test_a_held_bomb_becomes_void_and_is_never_offered() -> void:
+	var w := _floor(&"gun")
+	var bomb := _it(w, &"gun_bomb")
+	assert_true(w.item_tables[bomb].retired, "the Bomb is retired")
+	assert_does_not_have(ItemPool.available(w), bomb, "never offered")
+	assert_has(ItemPool.available(w), _it(w, &"gun_void"), "the Void is")
+	_take(w, [&"gun_twin", &"gun_bomb"])
+	WandMigration.run(w)
+	assert_eq(_ids(w), [&"gun_twin", &"gun_void"], "in the Bomb's place")
+	assert_eq(AttackSlots.form_id(w), &"void", "the shot is the Void")
 
 
 ## v0.9.0 XP (owner Q11: "Both": Fire's kill blast and the Explosive card go): Explosive is retired, never offered on
