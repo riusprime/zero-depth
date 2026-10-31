@@ -11,7 +11,15 @@ extends ContentDef
 
 ## The families a row may name; PackFx.CAPS holds each one's live cap (I5).
 const FAMILIES: Array[StringName] = [
-	&"hit", &"impact", &"explosion", &"area", &"beam", &"cloud", &"projectile", &"status"
+	&"hit",
+	&"impact",
+	&"explosion",
+	&"area",
+	&"beam",
+	&"cloud",
+	&"projectile",
+	&"status",
+	&"enemy_shot"
 ]
 
 @export var ids: Array[StringName] = []

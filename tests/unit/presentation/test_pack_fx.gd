@@ -172,3 +172,19 @@ func test_follow_sees_a_tick_that_stopped_as_a_pause() -> void:
 	assert_true(fx.is_held(), "no new tick for HOLD_S")
 	fx.follow(101.0)
 	assert_false(fx.is_held(), "a new tick runs it again")
+
+
+## v0.10.0 lead: life 0 holds an effect until the caller's release(); has_room says whether a family has a free slot.
+func test_a_held_effect_stays_until_released_and_has_room_reads_the_cap() -> void:
+	var fx := _fx()
+	var n := fx.spawn(SMOKE, Vector3.ZERO, 1.0, {}, 0.0)
+	fx.advance(1000.0)
+	assert_true(n.visible, "life 0: still live after any time")
+	assert_eq(fx.live_count(&"cloud"), 1)
+	fx.release(n)
+	assert_false(n.visible, "release() returns it to its pool")
+	assert_eq(fx.live_count(&"cloud"), 0)
+	for k in fx.cap_for(&"cloud"):
+		assert_true(fx.has_room(&"cloud"))
+		fx.spawn(SMOKE, Vector3.ZERO, 1.0, {}, 0.0)
+	assert_false(fx.has_room(&"cloud"), "full at the cap")

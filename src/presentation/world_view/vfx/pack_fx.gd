@@ -24,6 +24,7 @@ const CAPS := {
 	&"cloud": 4,
 	&"projectile": 96,
 	&"status": 32,
+	&"enemy_shot": 128,  # v0.10.0: hostile shots have their own cap, so hero bolts never starve them
 }
 ## ViewPrefs.effects_density -> the factor on CAPS (I9).
 const DENSITY_FACTOR := {"low": 0.25, "medium": 0.55, "high": 1.0}
@@ -109,8 +110,9 @@ func pooled(effect_id: StringName) -> int:
 
 
 ## Plays effect `effect_id` at world position `pos`, `scale` times the table's scale; `colors` may hold `primary`,
-## `secondary` and `tertiary`. Returns the instance (null for an unknown id).
-func spawn(effect_id: StringName, pos: Vector3, scale := 1.0, colors := {}) -> Node3D:
+## `secondary` and `tertiary`. Returns the instance (null for an unknown id). v0.10.0: `life` -1 is the scene's own
+## length; 0 keeps it until the caller's release() (a bolt, a zone, a status that follows something); above 0, seconds.
+func spawn(effect_id: StringName, pos: Vector3, scale := 1.0, colors := {}, life := -1.0) -> Node3D:
 	var k := _def.row(effect_id) if _def != null else -1
 	if k < 0:
 		return null
@@ -129,7 +131,8 @@ func spawn(effect_id: StringName, pos: Vector3, scale := 1.0, colors := {}) -> N
 		node.position = pos
 	_colour(node, info, colors, k)
 	_restart(node, info)
-	_live.append({"node": node, "id": effect_id, "family": family, "left": float(info["life"])})
+	var left := float(info["life"]) if life < 0.0 else (INF if life == 0.0 else life)
+	_live.append({"node": node, "id": effect_id, "family": family, "left": left})
 	spawned += 1
 	return node
 
@@ -315,6 +318,17 @@ func _particles(node: Node3D) -> Array[GPUParticles3D]:
 
 func _on_anim_done(anim_name: StringName, node: Node3D) -> void:
 	if anim_name == ANIM:
+		_release(node)
+
+
+## v0.10.0: the family has a free slot (a caller with a fallback look draws that instead of reusing the oldest).
+func has_room(family: StringName) -> bool:
+	return live_count(family) < cap_for(family)
+
+
+## v0.10.0: the caller is done with `node` (a bolt ended, a zone or a status went): back to its pool.
+func release(node: Node3D) -> void:
+	if node != null:
 		_release(node)
 
 
