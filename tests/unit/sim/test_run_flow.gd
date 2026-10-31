@@ -67,11 +67,11 @@ func test_the_run_data_compiles() -> void:
 	assert_eq(t.biome_count, 5)  # v0.7.5 NB1: Frozen Shore joins the draw; NB2: Starfall
 	assert_eq(
 		t.enemy_hp_floor_permille,
-		PackedInt32Array([1000, 1380, 1900, 2620, 3610]),
+		PackedInt32Array([850, 1380, 1900, 2620, 3610]),
 		"v0.9.0 FV: v0.4.0 SC's 1.9^(f - 1) stretched over five floors"
 	)
 	assert_eq(
-		t.enemy_damage_floor_permille, PackedInt32Array([1000, 1180, 1400, 1660, 1960]), "1.4^"
+		t.enemy_damage_floor_permille, PackedInt32Array([850, 1180, 1400, 1660, 1960]), "1.4^"
 	)
 	assert_eq(t.boss_hp_per_floor_permille, 200, "bosses keep their own scaling (FV: +20 %)")
 	assert_eq(t.boss_damage_per_floor_permille, 100)
@@ -118,11 +118,12 @@ func test_floor_seeds_derive_from_the_run_seed() -> void:
 
 ## v0.4.0 SC (F10): HP × 1.9^(f - 1) and damage × 1.4^(f - 1), per-mille tables, rounded half up; floor 4 and on
 ## keep floor 3's factor (the table's last entry). v0.9.0 FV: stretched over five floors; floor 6 keeps floor 5's.
+## v0.9.5 EP3: floor 1 is x0.85.
 func test_enemies_scale_with_the_floor() -> void:
 	var base := CombatLab.tables()
 	var r := RunState.start(1, _run_table())
-	var hp_pm := {1: 1000, 2: 1380, 3: 1900, 4: 2620, 5: 3610, 6: 3610}
-	var dmg_pm := {1: 1000, 2: 1180, 3: 1400, 4: 1660, 5: 1960, 6: 1960}
+	var hp_pm := {1: 850, 2: 1380, 3: 1900, 4: 2620, 5: 3610, 6: 3610}
+	var dmg_pm := {1: 850, 2: 1180, 3: 1400, 4: 1660, 5: 1960, 6: 1960}
 	for f in [1, 2, 3, 4, 5, 6]:
 		var t := CombatLab.tables()
 		r.scale_enemies(t, f)

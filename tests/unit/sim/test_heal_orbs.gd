@@ -29,7 +29,7 @@ func test_the_shipped_numbers() -> void:
 	var repo := ContentRepository.load_all()
 	var t := ContentCompiler.compile_rewards(repo.get_def(&"rewards", &"floor"))
 	assert_eq(
-		[t.heal_orb_chance_permille, t.heal_orb_heal_permille], [0, 250], "D9: no base chance"
+		[t.heal_orb_chance_permille, t.heal_orb_heal_permille], [30, 250], "v0.9.5 EP3: a 3 % base"
 	)
 	assert_eq(
 		RewardTable.new().heal_orb_chance_permille, 0, "a world without reward data drops none"
@@ -183,3 +183,12 @@ func test_shards_keep_growing_with_floor_time_after_the_peak() -> void:
 		w.spawner.danger_tier(w.run_ticks), w.spawner.danger_tier(peak), "the tier keeps rising"
 	)
 	assert_gt(Rewards.shards_for_kill(w, KIND.CHARGER), at_peak, "staying longer pays more shards")
+
+
+func test_the_shipped_three_percent_base_drops_without_a_card() -> void:
+	# v0.9.5 EP3 (owner): orbs drop at the shipped 3 % base with no Lifesprout card.
+	var w := _sprout_world()
+	w.reward_table.heal_orb_chance_permille = 30
+	var n := _drops(w, 600)
+	assert_gt(n, 0, "some orbs drop over 600 kills")
+	assert_lt(n, 60, "about 3 %, nowhere near 10 %")

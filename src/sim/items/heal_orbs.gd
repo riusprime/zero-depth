@@ -10,7 +10,8 @@ extends RefCounted
 ##   heal_orb; amount the heal asked for, amount_applied what it gave). An orb at full HP stays on the floor.
 ## Orbs never expire on their own: the floor ends with them.
 ## v0.5.5 EC (owner D9, "Too common, we should add them as a card"): the drop chance is the reward table's base
-## (0 in the shipped data) plus the Lifesprout stat card's (Stats.heal_orb_chance): no card, no orbs. The loot
+## plus the Lifesprout stat's (Stats.heal_orb_chance). v0.9.5 EP3 (owner 2026-10-31, "a bit of healing from
+## the beginning"): the shipped base is 3 % a kill; Lifesprout adds to it. The loot
 ## stream is drawn only when the chance is above 0.
 
 const MAX_ON_FLOOR := 16

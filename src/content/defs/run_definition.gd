@@ -10,7 +10,8 @@ extends ContentDef
 @export var biomes: Array[StringName] = []
 ## v0.4.0 SC (F10): normal enemies' HP and damage per mille on floor f, entry f − 1 (past the end, the last entry):
 ## 1.9^(f − 1) and 1.4^(f − 1) rounded. Integer tables, not runtime powers (EI-02). The danger tier's scaling comes
-## on top (SpawnDirectorDefinition).
+## on top (SpawnDirectorDefinition). v0.9.5 EP3: floor 1 is 850 in the shipped five-floor run (it may start at
+## 500..1000); later floors are unchanged.
 @export var enemy_hp_floor_permille := PackedInt32Array([1000, 1900, 3610])
 @export var enemy_damage_floor_permille := PackedInt32Array([1000, 1400, 1960])
 ## Bosses keep their own per-floor scaling (v0.3.0 B): HP × (1 + boss_hp_per_floor × (f − 1)) and every attack's
@@ -101,8 +102,11 @@ func validate() -> Array[ValidationIssue]:
 	for b in biomes:
 		if String(b).is_empty():
 			issues.append(ValidationIssue.new(&"missing", resource_path, "a biome id is empty"))
-	check_permille_table(issues, "enemy_hp_floor_permille", enemy_hp_floor_permille, true)
-	check_permille_table(issues, "enemy_damage_floor_permille", enemy_damage_floor_permille, true)
+	# v0.9.5 EP3: floor 1 may ease below ×1.0
+	check_permille_table(issues, "enemy_hp_floor_permille", enemy_hp_floor_permille, true, 500)
+	check_permille_table(
+		issues, "enemy_damage_floor_permille", enemy_damage_floor_permille, true, 500
+	)
 	if boss_hp_per_floor < 0.0:
 		issues.append(
 			ValidationIssue.new(&"negative", resource_path, "boss_hp_per_floor is negative")
