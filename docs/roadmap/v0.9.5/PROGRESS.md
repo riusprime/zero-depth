@@ -95,6 +95,7 @@ riusprime/zero-depth#9).
 - (none)
 
 ## History
+- 2026-10-31: the owner started v0.10.0 before a v0.9.5 playtest ("v0.10.5 will be focused on feedback"); v0.9.5 closes EP3, the combo e2e fix and seams, then v0.10.0 builds on top; one PR carries both.
 - 2026-10-31: the owner added the new VFX pack (`newVFX/`, untracked). The lead rendered all 291 attack effects one by one (`build/vfx_lab/`), ran the cost test on the owner's PC and wrote G1 VFX_PACK. Nothing in the game changed.
 - 2026-10-26: seams 582/582 green on `1717e42b`. The 576/577 run before it caught 171 orphan nodes left by RS2's test (a hub view, avatar and bubble freed before setup); lead fix `61bef7ea`.
 - 2026-10-26: seams 566/566 green on `2427d296` (TX, RS1, PF1).

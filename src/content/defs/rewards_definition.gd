@@ -56,7 +56,8 @@ extends ContentDef
 @export var chest_rarity_weights := PackedInt32Array([40, 40, 20])
 ## v0.4.0 TU (owner D8): a normal enemy's kill drops a heal orb with this chance; walking over it (within
 ## heal_orb_reach_m, × pickup range) heals heal_orb_heal of max HP. v0.5.5 EC (owner D9): heal_orb_chance is only a
-## base under the Lifesprout stat card's chance; the shipped data has 0, so orbs drop only with the card.
+## base under the Lifesprout stat card's chance; v0.9.5 EP3 (owner 2026-10-31, "a bit of healing from
+## the beginning"): the shipped base is 3 % a kill; Lifesprout adds to it.
 @export var heal_orb_chance := 0.0
 @export var heal_orb_heal := 0.25
 @export var heal_orb_reach_m := 0.9

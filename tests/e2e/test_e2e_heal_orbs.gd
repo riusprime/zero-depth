@@ -2,7 +2,8 @@ extends GutTest
 ## v0.4.0 TU (owner D8) through the real game (main.tscn, input only: the sticks and the trigger): the hero fights
 ## the floor's enemies until a kill drops a heal orb; the view draws it; walking onto it heals a hurt hero (or, at
 ## full HP, leaves it lying).
-## v0.5.5 EC (owner D9): orbs drop only with the Lifesprout stat card. First, with no card, kills drop none; then
+## v0.5.5 EC (owner D9; v0.9.5 EP3: the shipped base is now 3 % a kill, so the first kills may drop one). First,
+## five kills with no card; then
 ## the card is granted (a labelled test helper: that chests offer it is test_card_pool_reach, that a picked card
 ## applies is test_e2e_rewards) and the fight goes on until an orb drops.
 
@@ -30,11 +31,10 @@ func test_a_kill_drops_a_heal_orb_and_walking_onto_it_heals() -> void:
 	var trigger := false
 	var kills_without := -1
 	for k in MAX_FRAMES:
-		if not r.heal_orbs().is_empty() or r.player_dead():
+		if (kills_without >= 0 and not r.heal_orbs().is_empty()) or r.player_dead():
 			break
 		if kills_without < 0 and w.kills >= 5:
 			kills_without = w.kills
-			assert_true(r.heal_orbs().is_empty(), "D9: no Lifesprout, no orb from 5 kills")
 			# TEST HELPER (labelled): the Lifesprout card, as a chest pick would give it.
 			Stats.add_card(w, Stats.Stat.LIFESPROUT, Stats.Rarity.COMMON)
 			assert_eq(Stats.heal_orb_chance(w), 100, "the card: 10 % of kills")
