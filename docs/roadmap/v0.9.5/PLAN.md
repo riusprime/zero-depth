@@ -62,6 +62,7 @@ only gate left.
 | G9 | Stress Mark rebuilt: an orange arc marks one side of nearby enemies; a hit from that side deals ×2 once; 8 s cooldown (like Fiora) | **Decide:** Q14 | SM |
 | G10 | Dash cooldown 10 s, Blink 15 s | **Direct:** see step CB | CB |
 | G11 | The sword (Blade) locked from the start, unlocked by a challenge (hard mode); its forms wait for v0.10.0 | **Decide:** Q15 | SL |
+| V1 | (2026-10-31) The new VFX pack (`newVFX/`) replaces the attack effects; recolour to match elements; list what has no replacement; a small cost test | **Decide:** G1 [`VFX_PACK.md`](VFX_PACK.md) (I0–I10, R1–R43, N1–N10); test in [evidence](evidence/VFX_PACK.md) | VX0–VX5 (after the answers) |
 
 ## Design questions (asked 2026-10-25)
 Answer by number, e.g. "Q2 a, Q5 b with …". ← marks the lead's recommendation.
@@ -364,6 +365,7 @@ offers, `attack_slots.tres`, the forms). The order inside each list is the build
 ## Open items (what they block)
 - Q1–Q17 and the five G1s block their steps (the table above).
 - Q9 blocks HU, but not HM's mockups.
+- G1 VFX_PACK (2026-10-31) blocks VX0–VX5; I0 says where they land.
 
 ## Verification
 - Tests per step: lint, the touched folders and their e2e.

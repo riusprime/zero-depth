@@ -13,7 +13,7 @@ riusprime/zero-depth#9).
   owner-approved. Only the G2 HUD pick (HM) is left. Waves C–E are ordered in the PLAN.
 - **Done:** AP, HZ, AL, CD (lead); SQ, CB, SS, RC, BG, DC, CLV, FC0, HT, WB, SM, SB (+SB2), EE1, AQ, EE2, BH1, BH2, BH3, BH4, BH5 and BH6 (Wave D done), SW, EE3, DR, FC1, TS, FC2, BK, FC3, HM, HU, FC4, FC5, FC6, FC7 (+FC7b), FC8, FC9 (+FC9b), PR, MC, SL, TX, RS1, RS2 and PF1 merged (Waves B, C and D done).
 - **Agents working:** PF5 (each enemy's pieces merged into one skinned mesh, kept only where the animation frames match) (Sonnet, worktree). At most 2 at a time (owner rule, 2026-10-25).
-- **Waiting on the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block).
+- **Waiting on the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) (none block); G1 [`VFX_PACK.md`](VFX_PACK.md) (the new VFX pack, asked 2026-10-31; blocks VX0–VX5 only).
 - **Next:** MC, DC and HM (Wave B), then Waves C–E, two agents at a time.
 
 ## Done
@@ -87,6 +87,7 @@ riusprime/zero-depth#9).
 - G2 HUD: three mockups (HM, `scripts/shots/mock_hud.gd`, [evidence](evidence/HM.md)); **the owner picked A, the Risk of Rain
   row** (2026-10-26, in chat). Built in HU.
 
+- G1 VFX_PACK ([`VFX_PACK.md`](VFX_PACK.md)): asked 2026-10-31; waiting on the owner. Lab test on the owner's PC: [evidence](evidence/VFX_PACK.md).
 ## Open
 - (none blocking; see OWNER_QUESTIONS.md)
 
@@ -94,6 +95,7 @@ riusprime/zero-depth#9).
 - (none)
 
 ## History
+- 2026-10-31: the owner added the new VFX pack (`newVFX/`, untracked). The lead rendered all 291 attack effects one by one (`build/vfx_lab/`), ran the cost test on the owner's PC and wrote G1 VFX_PACK. Nothing in the game changed.
 - 2026-10-26: seams 582/582 green on `1717e42b`. The 576/577 run before it caught 171 orphan nodes left by RS2's test (a hub view, avatar and bubble freed before setup); lead fix `61bef7ea`.
 - 2026-10-26: seams 566/566 green on `2427d296` (TX, RS1, PF1).
 - 2026-10-26: seams 544/544 green on `28218c03` (FC7–FC9). Lead fix: HU had dropped the combo-badge line in `hud.gd` (test_status_visuals red, now 7/7).
