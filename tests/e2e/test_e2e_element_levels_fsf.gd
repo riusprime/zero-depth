@@ -79,7 +79,7 @@ func test_frost_at_level_three_shatters_and_a_shard_hits_the_neighbour() -> void
 	await e.frames(2)
 	assert_eq(CardLevels.level(w, k), 3, "Frost Lv 3")
 	# TEST HELPER (labelled): two standing dummies 4 m away on a clear line, 1.5 m apart across it.
-	var bomb := load("res://tests/e2e/test_e2e_bomb.gd")
+	var bomb := load("res://tests/e2e/test_e2e_laser.gd")  # v0.9.5 BR: the Bomb's test went; the same clear_spot
 	var at: Vector2 = bomb.clear_spot(w, 4.0)
 	assert_ne(at, Vector2.INF, "a clear line from the hero")
 	var side := (at - w.player_pos()).normalized().orthogonal()

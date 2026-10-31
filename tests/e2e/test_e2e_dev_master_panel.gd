@@ -65,7 +65,11 @@ func test_f10_edit_restart_floor() -> void:
 	await _e.tap(KEY_ENTER)
 	await _e.frames(4)
 	assert_ne(_arc_caster_hp(_e.world()), shipped)
-	assert_eq(_arc_caster_hp(_e.world()), 97, "the rebuilt floor uses it (floor 1 scaling is x1)")
+	assert_eq(
+		_arc_caster_hp(_e.world()),
+		82,
+		"the rebuilt floor uses it (floor 1 scaling is x0.85 since v0.9.5 EP3)"
+	)
 	assert_null(main.get_node_or_null("UI/DevMasterPanel"), "restart closes the panel")
 	await _e.tap(KEY_F10)
 	var again := main.get_node_or_null("UI/DevMasterPanel") as DevMasterPanel

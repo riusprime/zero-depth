@@ -56,7 +56,7 @@ func test_fire_and_frost_at_level_3_wake_thermal_shock() -> void:
 	assert_not_null(hud.find_child("PairBadge0", true, false), "the pair's HUD badge shows")
 	# TEST HELPER (labelled): two standing dummies 4 m away on a clear line, 1 m apart across it; the first is burning
 	# and frozen (the statuses are set; the hit is the real bolt).
-	var bomb := load("res://tests/e2e/test_e2e_bomb.gd")
+	var bomb := load("res://tests/e2e/test_e2e_laser.gd")  # v0.9.5 BR: the Bomb's test went; the same clear_spot
 	var at: Vector2 = bomb.clear_spot(w, 4.0)
 	assert_ne(at, Vector2.INF, "a clear line from the hero")
 	var side := (at - w.player_pos()).normalized().orthogonal()
