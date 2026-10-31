@@ -190,6 +190,7 @@ const ADDED_SINCE_V05 := {
 		&"el_strike_log",
 		&"el_shatter_log",
 		&"pair_mask",  # v0.9.5 EE3 (the element pairs on, their budget and clouds; an older save has none)
+		&"pair_levels",  # v0.9.5 EP1 (an older save has none: its pairs read as Lv 3)
 		&"pair_log",
 		&"pair_clouds",
 		&"mod_slots",

@@ -30,6 +30,18 @@ static func card(w: World, venom: bool) -> ItemTable:
 	return null
 
 
+## The Venom (or Bleed) card is held (v0.9.5 EP1: a pair is on while both of its elements are).
+static func held(w: World, venom: bool) -> bool:
+	for idx in w.items_owned:
+		var t := w.item_tables[idx]
+		if (
+			(t.poison_max_stacks if venom else t.bleed_max_stacks) > 0
+			and CardLevels.is_card(w, idx)
+		):
+			return true
+	return false
+
+
 ## The held Venom (or Bleed) card's level, 1 without one.
 static func level(w: World, venom: bool) -> int:
 	for idx in w.items_owned:

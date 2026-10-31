@@ -3,6 +3,7 @@ extends RefCounted
 ## v0.9.5 EE3: the element pairs' numbers in sim units (ElementPairsDefinition compiled by WandCompiler.pairs): seconds
 ## as ticks, set at setup and never written in play (World.pair_table).
 
+var level_permille := PackedInt32Array([400, 700, 1000])  # v0.9.5 EP1: strength at pair Lv 1/2/3
 var triggers_per_second := 4
 var burst_permille := 3000
 var burst_radius_m := 1.5

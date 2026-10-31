@@ -41,6 +41,11 @@ static func _find(w: World, which: int) -> int:
 	return -1
 
 
+## The element is held (v0.9.5 EP1: a pair is on while both of its elements are).
+static func held(w: World, which: int) -> bool:
+	return _find(w, which) >= 0
+
+
 ## The held card's level, 1 without one.
 static func level(w: World, which: int) -> int:
 	var idx := _find(w, which)

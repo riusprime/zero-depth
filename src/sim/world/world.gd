@@ -145,6 +145,8 @@ var el_shatter_log := PackedInt32Array()
 ## Fumes clouds (x mm, y mm, ticks left, flat). Hashed only while a pair is on.
 var pair_table: ElementPairTable
 var pair_mask := 0
+## v0.9.5 EP1: 2 bits per pair (bit 2*x): its level 1-3 while on; 0 for an older save's pair (read as Lv 3).
+var pair_levels := 0
 var pair_log := PackedInt32Array()
 var pair_clouds := PackedInt32Array()
 ## Item pickups lying on the floor.

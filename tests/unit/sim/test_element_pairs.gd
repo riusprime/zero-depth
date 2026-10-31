@@ -26,12 +26,9 @@ func _pair(x: int, enemies: Array, lv: int = 3) -> World:
 	return _world(ElementPairs.ELEMENTS[x], enemies, lv)
 
 
-## The same pair with its second element at Lv 2: the pair is off, everything else equal.
+## The same pair with only its first element held: the pair is off.
 func _off(x: int, enemies: Array) -> World:
-	var w := _pair(x, enemies)
-	CardLevels.set_level(w, W.item(w, CARDS[ElementPairs.ELEMENTS[x][1]]), 2)
-	ElementPairs.refresh(w)
-	return w
+	return _world([ElementPairs.ELEMENTS[x][0]], enemies)
 
 
 func _hit(w: World, i: int, amount: int = 1000, tags: int = SimEvent.TAG_PROJECTILE) -> int:
@@ -87,7 +84,7 @@ func _chain_targets(w: World, ticks: int = 40) -> Array:
 
 
 # --- On and off ------------------------------------------------------------------------------------------------
-func test_each_pair_is_on_only_with_both_elements_at_lv3() -> void:
+func test_each_pair_is_on_only_with_both_elements_held() -> void:
 	for x in ElementPairs.COUNT:
 		var both := _pair(x, [])
 		assert_eq(
@@ -96,9 +93,11 @@ func test_each_pair_is_on_only_with_both_elements_at_lv3() -> void:
 			"%s: exactly its own bit with both at Lv 3" % ElementPairs.IDS[x]
 		)
 		assert_true(ElementPairs.on(both, x))
-		var lv2 := _pair(x, [], 2)
-		assert_eq(lv2.pair_mask, 0, "%s: off with both at Lv 2" % ElementPairs.IDS[x])
-		assert_eq(_off(x, []).pair_mask, 0, "%s: off with one at Lv 2" % ElementPairs.IDS[x])
+		assert_eq(ElementPairs.level(both, x), 3, "%s: Lv 3" % ElementPairs.IDS[x])
+		var lv1 := _pair(x, [], 1)
+		assert_eq(lv1.pair_mask, 1 << x, "%s: on with both at Lv 1" % ElementPairs.IDS[x])
+		assert_eq(ElementPairs.level(lv1, x), 1)
+		assert_eq(_off(x, []).pair_mask, 0, "%s: off with one element held" % ElementPairs.IDS[x])
 		var first: int = ElementPairs.ELEMENTS[x][0]
 		assert_eq(
 			_world([first], []).pair_mask, 0, "%s: off with one element alone" % ElementPairs.IDS[x]
@@ -125,21 +124,86 @@ func test_the_ten_pairs_are_distinct_and_cover_every_two_elements() -> void:
 
 
 func test_a_pair_turning_on_announces_itself_once() -> void:
-	var w := _world([ElementPairs.FIRE, ElementPairs.FROST], [], 2)
-	assert_eq(W.events(w, SimEvent.Kind.PAIR_ON).size(), 0, "nothing at Lv 2")
+	var w := _world([ElementPairs.FIRE], [])
+	assert_eq(W.events(w, SimEvent.Kind.PAIR_ON).size(), 0, "nothing with one element")
+	w = _pair(ElementPairs.X1, [], 2)
 	for id: StringName in [&"ember_core", &"frost_core"]:
 		CardLevels.set_level(w, W.item(w, id), 3)
 	Modifiers.book(w)
 	var ev := W.events(w, SimEvent.Kind.PAIR_ON)
-	assert_eq(ev.size(), 1)
+	assert_eq(ev.size(), 2, "on at Lv 2, then Lv 3")
+	ev = [ev[1]]
 	assert_eq(ev[0].amount, ElementPairs.X1)
 	assert_eq(ev[0].effect_id, &"thermal_shock")
 	Modifiers.invalidate(w)
 	Modifiers.book(w)
-	assert_eq(W.events(w, SimEvent.Kind.PAIR_ON).size(), 1, "a recompile does not repeat it")
+	assert_eq(W.events(w, SimEvent.Kind.PAIR_ON).size(), 2, "a recompile does not repeat it")
 	CardLevels.set_level(w, W.item(w, &"frost_core"), 2)
 	Modifiers.book(w)
-	assert_eq(w.pair_mask, 0, "and it turns off with the card")
+	assert_eq(w.pair_mask, 1, "and stays on at Lv 2 (pair Lv 2)")
+	assert_eq(ElementPairs.level(w, ElementPairs.X1), 2)
+
+
+func test_a_pair_is_on_at_lv1_and_its_level_is_the_lower_element() -> void:
+	var w := _pair(ElementPairs.X1, [], 1)
+	assert_true(ElementPairs.on(w, ElementPairs.X1))
+	assert_eq(ElementPairs.level(w, ElementPairs.X1), 1)
+	assert_false(ElementPairs.on(_world([ElementPairs.FIRE], []), ElementPairs.X1), "one held: off")
+	var m := _pair(ElementPairs.X1, [])
+	CardLevels.set_level(m, W.item(m, &"frost_core"), 1)
+	ElementPairs.refresh(m)
+	assert_eq(ElementPairs.level(m, ElementPairs.X1), 1, "Lv 3 + Lv 1: pair Lv 1")
+
+
+func test_x1_burst_scales_with_the_pair_level() -> void:
+	var want := {1: 1800, 2: 2400, 3: 3000}
+	for lv: int in [1, 2, 3]:
+		var w := _pair(ElementPairs.X1, [[Vector2(4, 0), BIG], [Vector2(4, 1.2), BIG]], lv)
+		_burn(w, 1)
+		_freeze(w, 1)
+		_hit(w, 1)
+		var first: int = _dmg(w, 1, &"*")[0].amount
+		var near := _dmg(w, 2, SimEvent.EFFECT_PAIR_BURST)
+		assert_eq(near.size(), 1, "Lv %d: a burst" % lv)
+		assert_eq(
+			near[0].amount,
+			maxi(1, first * want[lv] / 1000),
+			"Lv %d: x%d per mille" % [lv, want[lv]]
+		)
+
+
+func test_x3_below_lv3_acts_only_on_the_first_jumps_of_a_chain() -> void:
+	var w := _pair(ElementPairs.X3, _line(), 1)
+	var a := w.actors
+	ElementPairs.on_jump(w, 1, w.take_root(), 1)
+	assert_eq(a.burn_stacks[1], 0, "Lv 1: the second jump (n = 1) does not burn")
+	ElementPairs.on_jump(w, 1, w.take_root(), 0)
+	assert_gt(a.burn_stacks[1], 0, "Lv 1: the first jump burns")
+	var hi := _pair(ElementPairs.X3, _line(), 3)
+	ElementPairs.on_jump(hi, 1, hi.take_root(), 5)
+	assert_gt(hi.actors.burn_stacks[1], 0, "Lv 3: every jump burns")
+
+
+func test_raising_an_element_announces_the_pair_level_and_a_plain_refresh_does_not() -> void:
+	var w := _pair(ElementPairs.X1, [], 1)
+	var n := W.events(w, SimEvent.Kind.PAIR_ON).size()
+	assert_eq(n, 1)
+	assert_eq(W.events(w, SimEvent.Kind.PAIR_ON)[0].amount_applied, 1)
+	for id: StringName in [&"ember_core", &"frost_core"]:
+		CardLevels.set_level(w, W.item(w, id), 2)
+	ElementPairs.refresh(w)
+	var ev := W.events(w, SimEvent.Kind.PAIR_ON)
+	assert_eq(ev.size(), 2, "1 -> 2 announces again")
+	assert_eq(ev[1].amount_applied, 2)
+	ElementPairs.refresh(w)
+	assert_eq(W.events(w, SimEvent.Kind.PAIR_ON).size(), 2, "no change: nothing")
+
+
+func test_an_older_saves_pair_reads_as_lv3() -> void:
+	var w := _pair(ElementPairs.X1, [], 1)
+	w.pair_levels = 0
+	assert_eq(ElementPairs.level(w, ElementPairs.X1), 3)
+	assert_eq(ElementPairs.scale(w, ElementPairs.X1), 1000)
 
 
 func test_the_pairs_have_text_in_both_languages_within_60_chars() -> void:
@@ -301,7 +365,7 @@ func test_the_chain_rules_fire_four_times_a_second_at_most() -> void:
 		w.add_dummy(Vector2(6, 3.0 * k), 0.35, BIG)
 	var burning := 0
 	for i in range(1, 9):
-		ElementPairs.on_jump(w, i, w.take_root())
+		ElementPairs.on_jump(w, i, w.take_root(), 0)
 		burning += 1 if w.actors.burn_stacks[i] > 0 else 0
 	assert_eq(burning, 4, "8 jumps in a tick: 4 burns")
 
@@ -320,8 +384,7 @@ func test_x4_bleed_ticks_on_a_burning_enemy_deal_double() -> void:
 	for pair_on in [false, true]:
 		var w := _pair(ElementPairs.X4, [[Vector2(4, 0), BIG], [Vector2(4, 3), BIG]])
 		if not pair_on:
-			CardLevels.set_level(w, W.item(w, &"shared_bleed"), 2)
-			ElementPairs.refresh(w)
+			w.pair_mask = 0
 		_bleed(w, 1)
 		_bleed(w, 2)
 		_burn(w, 1)
@@ -437,8 +500,7 @@ func test_x7_a_frozen_enemy_that_dies_bursts_the_same_way() -> void:
 
 func test_x7_off_without_the_pair() -> void:
 	var w := _brittle_world()
-	CardLevels.set_level(w, W.item(w, &"shared_bleed"), 2)
-	ElementPairs.refresh(w)
+	w.pair_mask = 0  # the pair off (it is on from Lv 1 while both elements are held)
 	_hit(w, 1)
 	assert_eq(_dmg(w, 2, SimEvent.EFFECT_PAIR_BURST).size(), 0)
 
@@ -451,8 +513,7 @@ func test_x10_three_stacks_of_both_take_twenty_percent_more() -> void:
 			ElementPairs.X10, [[Vector2(4, 0), BIG], [Vector2(4, 3), BIG], [Vector2(4, 6), BIG]]
 		)
 		if not pair_on:
-			CardLevels.set_level(w, W.item(w, &"shared_bleed"), 2)
-			ElementPairs.refresh(w)
+			w.pair_mask = 0
 		var a := w.actors
 		a.poison_stacks[1] = 3
 		a.bleed_stacks[1] = 3
@@ -522,6 +583,7 @@ func test_the_state_survives_a_snapshot() -> void:
 	if r == null:
 		return
 	assert_eq(r.pair_mask, w.pair_mask)
+	assert_eq(r.pair_levels, w.pair_levels)
 	assert_eq(r.pair_log, w.pair_log)
 	assert_eq(r.pair_clouds, w.pair_clouds)
 	assert_eq(r.state_hash(), w.state_hash(), "the restored hash equals")

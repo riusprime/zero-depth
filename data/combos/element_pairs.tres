@@ -5,3 +5,4 @@
 [resource]
 script = ExtResource("1_pairs")
 id = &"element_pairs"
+level_permille = PackedInt32Array(400, 700, 1000)
