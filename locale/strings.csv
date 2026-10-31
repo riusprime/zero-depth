@@ -1409,17 +1409,6 @@ FORMCARD_LASER_RAPID_FIRE,"Ticks faster over 2 s held; thinner beam, -35 % damag
 FORMCARD_LASER_SPLIT,"The first enemy hit forks the beam in 2 (4 m, 50 %)","El primer enemigo golpeado bifurca el rayo en 2 (4 m, 50 %)"
 FORMCARD_LASER_MINE,"The tip drops a mine every 1.0 s (1.5 m burst, up to 4)","La punta suelta una mina cada 1,0 s (1,5 m, hasta 4)"
 FORMCARD_LASER_SPIRAL,"The beam wiggles side to side (12 degrees, twice a second)","El rayo ondula de lado a lado (12 grados, 2 veces por segundo)"
-FORMCARD_BOMB_TWIN,Two bombs per throw,Dos bombas por lanzamiento
-FORMCARD_BOMB_HALO,4 bombs land in a cross 3 m around you,4 bombas caen en cruz a 3 m a tu alrededor
-FORMCARD_BOMB_RING,The blast leaves a lightning ring up to 3.5 m (50 %),"La explosión deja un anillo de rayos de 3,5 m (50 %)"
-FORMCARD_BOMB_BACKFIRE,A second bomb drops at your feet (0.5 s fuse),"Una segunda bomba cae a tus pies (mecha 0,5 s)"
-FORMCARD_BOMB_RICOCHET,The bomb skips once and bursts 2 m further on,La bomba rebota una vez y estalla 2 m más allá
-FORMCARD_BOMB_HOMING,The bomb lands on the nearest enemy within 3 m,La bomba cae sobre el enemigo más cercano a 3 m
-FORMCARD_BOMB_ECHO,The blast goes off again 0.5 s later (50 %),"La explosión se repite 0,5 s después (50 %)"
-FORMCARD_BOMB_BIG_SHOT,"3.3 m blast, +60 % damage, slower throw","Explosión de 3,3 m, +60 % de daño, lanzamiento lento"
-FORMCARD_BOMB_RAPID_FIRE,"1.6 m blasts every 0.6 s, -35 % damage","Explosiones de 1,6 m cada 0,6 s, -35 % de daño"
-FORMCARD_BOMB_SPLIT,The blast throws 2 to 4 bomblets 2 m out (40 % each),La explosión lanza 2 a 4 minibombas a 2 m (40 % cada una)
-FORMCARD_BOMB_MINE,The bomb waits as a mine until an enemy is within 1.5 m,"La bomba espera como mina hasta que un enemigo está a 1,5 m"
 FORMCARD_VOID_TWIN,Two voids per cast,Dos vacíos por lanzamiento
 FORMCARD_VOID_RING,"When it ends, it collapses in a 3 m lightning ring (60 %)","Al terminar, colapsa en un anillo de rayos de 3 m (60 %)"
 FORMCARD_VOID_BACKFIRE,A second void opens straight behind you,Un segundo vacío se abre justo a tu espalda

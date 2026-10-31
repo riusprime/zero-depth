@@ -60,7 +60,9 @@ func test_the_data_row_holds_every_number_the_code_reads() -> void:
 	w.slot_table = WandCompiler.slots(W.repo(), w.item_tables)
 	for k: String in BombMods.DEFAULTS:
 		assert_eq(BombMods.param(w, k), int(BombMods.DEFAULTS[k]), "%s: data = default" % k)
-	assert_true(w.slot_table.params.has(&"bomb"))
+	assert_false(
+		w.slot_table.params.has(&"bomb"), "v0.9.5 BR: the row is gone; the defaults are used"
+	)
 	var keys := BombMods.DEFAULTS.keys()
 	keys.sort()
 	var content_keys := AttackFormRow.BOMB_KEYS.duplicate()
@@ -73,15 +75,14 @@ func test_the_data_row_holds_every_number_the_code_reads() -> void:
 	assert_eq(laser_content, laser_keys)
 
 
-func test_the_bomb_row_allows_the_ten_cards_and_keeps_five_off() -> void:
+## v0.9.5 BR: the Bomb is retired (no row), so no card is gated by it; the bomb cards are all still real cards.
+func test_the_bomb_has_no_row_so_its_cards_are_never_gated_by_it() -> void:
 	var w := _world([])
 	w.slot_table = WandCompiler.slots(W.repo(), w.item_tables)
-	w.floor_index = 3
-	w.run_floor = 3
 	for id in BombMods.CARD_IDS:
-		assert_true(AttackSlots.usable(w, W.item(w, id)), "%s is on" % id)
-	for id in [&"gun_pierce", &"orbit_rounds", &"gun_spiral", &"gun_swirl", &"gun_threadline"]:
-		assert_false(AttackSlots.usable(w, W.item(w, id)), "%s stays off" % id)
+		assert_gt(W.item(w, id), -1, "%s still exists" % id)
+	assert_false(w.slot_table.form_ids.has(&"bomb"), "no Bomb row")
+	assert_false(w.slot_table.form_cards.has(W.item(w, &"gun_bomb")), "no Bomb card in a row")
 
 
 # --- B1 Halo ----------------------------------------------------------------------------------------------------------

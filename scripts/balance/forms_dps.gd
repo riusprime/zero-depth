@@ -22,7 +22,6 @@ const FROM := 120
 const FORMS: Array = [
 	[&"orbs", &""],
 	[&"laser", &"gun_laser"],
-	[&"bomb", &"gun_bomb"],
 	[&"void", &"gun_void"],
 	[&"lance", &"gun_lance"],
 	[&"rune_explosion", &"gun_rune_explosion"],  # v0.9.5 FC0: replaces the Scatter
@@ -49,20 +48,6 @@ const LASER_COMBOS: Array = [
 	[&"gun_echo"],
 	[&"gun_mine"],
 	[&"split_shot", &"gun_pierce"],
-]
-## v0.9.5 FC2: the Bomb's card combinations (a card alone each), after the Laser's.
-const BOMB_COMBOS: Array = [
-	[],
-	[&"halo_shot"],
-	[&"gun_ring"],
-	[&"gun_backfire"],
-	[&"gun_ricochet"],
-	[&"gun_homing"],
-	[&"gun_echo"],
-	[&"gun_big_shot"],
-	[&"gun_rapid_fire"],
-	[&"split_shot"],
-	[&"gun_mine"],
 ]
 ## v0.9.5 FC3: the Void's card combinations (a card alone each).
 const VOID_COMBOS: Array = [
@@ -243,10 +228,8 @@ func _initialize() -> void:
 					)
 				)
 	# v0.9.5 FC1: the Laser with the cards that bend it (alone, Twin off), against the same orbs baseline.
-	# v0.9.5 FC2: and the Bomb with the cards that change it.
 	for set_of: Array in [
 		["laser", &"gun_laser", LASER_COMBOS],
-		["bomb", &"gun_bomb", BOMB_COMBOS],
 		["void", &"gun_void", VOID_COMBOS],
 		["lance", &"gun_lance", LANCE_COMBOS],
 		["glaive", &"gun_glaive", GLAIVE_COMBOS],

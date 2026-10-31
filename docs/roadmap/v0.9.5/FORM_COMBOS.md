@@ -86,6 +86,8 @@ once as the edge passes it. Damage ×3.0 orb. Every 1.1 s. A 0.4 m shove outward
 | — | Orbit, Swirl, Threadline† | Off |
 
 ## Bomb (lobbed, 2.2 m blast, every 1.0 s)
+**RETIRED (step BR, owner 2026-10-31): the Bomb form is removed; its rows below ship nowhere (code kept for a held card).**
+
 | ID | Card | Proposal on Bomb |
 |---|---|---|
 | ✔ | Twin | (on today) Two bombs |
