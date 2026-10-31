@@ -156,6 +156,8 @@ var cores: CoreViews = _part(CoreViews)  # v0.6.0 CU: cores on elites and bosses
 var elite_fx: EliteViews = _part(EliteViews)
 ## v0.6.0 MX3: the attack forms drawn from their final specs (element core, heat edge, motion cues), pooled.
 var attack_forms: AttackFormView = _part(AttackFormView)
+## v0.10.0 VX0: the pack effects (PackFx), made with the effects layer; none without the layer.
+var pack_fx: PackFx = null
 ## v0.9.0 LZ (owner C §6.2): the Laser's beams, per element.
 var laser: LaserView = _part(LaserView)
 ## v0.9.0 BM (owner C §6.3): the bombs in flight and their blasts, per element.
@@ -284,6 +286,7 @@ func queue_setup(
 	stage.queue_build(q, reader, palette, arena_half)
 	q.add("first_sync", _first_sync)
 	q.add("shader_warmup", _warm_shaders)  # v0.8.0 HR (O89; RenderSwitches.SHADER_WARMUP)
+	q.add("pack_fx_warmup", _queue_pack_warmup.bind(q))  # v0.10.0 VX0 (I2)
 
 
 ## v0.8.0 HR: the window's MSAA under RenderSwitches.MSAA_OFF (the game's root window only).
@@ -294,6 +297,16 @@ func _enter_tree() -> void:
 ## v0.8.0 HR: the floor's effect, attack and enemy shaders drawn once, tiny, behind the cover (ShaderWarmup).
 func _warm_shaders() -> void:
 	ShaderWarmup.build(self, rig.camera, actors)
+
+
+## v0.10.0 VX0 (VFX_PACK I2): every pack effect spawned once in front of the camera behind the cover, so the shaders
+## compile before the first fight (PackFx returns them to their pools two frames later). One job an effect, so no one
+## frame carries every pipeline compile.
+func _queue_pack_warmup(q: ViewBuildQueue) -> void:
+	if pack_fx == null:
+		return
+	for id in pack_fx.warm_ids():
+		q.add_next("pack_fx_warmup_%s" % id, pack_fx.warm.bind(id))
 
 
 func _setup_views(palette: Dictionary) -> void:
@@ -348,6 +361,11 @@ func _setup_effects() -> void:
 	if stage.mood != null and VfxLayer.available():  # v0.5.9 art: real fire, explosions and lightning
 		var layer := VfxLayer.new()
 		add_child(layer)
+		if PackFx.available():  # v0.10.0 VX0: the pack's effects, handed to the layer
+			pack_fx = PackFx.new()
+			pack_fx.camera = rig.camera
+			add_child(pack_fx)
+			layer.pack_fx = pack_fx
 		attack_forms.vfx = layer
 		status_fx.use_vfx(layer)
 		layer.drawers.append(_draw_prop_fires)  # the fire props' flames (lighting pass, 2026-10-12)

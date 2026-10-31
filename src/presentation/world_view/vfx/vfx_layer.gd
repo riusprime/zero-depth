@@ -40,6 +40,24 @@ const BURST_FULL := 12
 const BURST_MAX := 32
 const BURST_MERGE_M := 1.2
 const BURST_THIN := 0.3
+## v0.10.0 VX0 (VFX_PACK R18): the fire explosion's fireball, debris and smoke are the pack's effects (PackFx);
+## false keeps the sprite explosion (the before shots).
+const PACK_EXPLOSION := true
+## Pack explosion ids (picked by seed), the factor on the burst radius that makes the pack's ~3 m fireball fill
+## it, the thinned burst's scale and the smoke's delay (s).
+const PACK_EXPLOSIONS: Array[StringName] = [
+	&"explosion_fire_a", &"explosion_fire_b", &"explosion_fire_c"
+]
+const PACK_SCALE_PER_M := 1.0 / 1.5
+const PACK_THIN_SCALE := 0.6
+const PACK_SMOKE_DELAY_S := 0.25
+## A burst's seed is forgotten this long (ticks) after it was last drawn.
+const PACK_SEEN_TICKS := 180.0
+
+## The pack effects (WorldViewRoot sets it); none: the sprite explosion draws.
+var pack_fx: PackFx = null
+var _pack_seen := {}  # seed -> the tick the burst was last drawn
+var _pack_smoke: Array[Array] = []  # [due tick, position, scale]
 
 
 # --- Public: one call per form ----------------------------------------------------------------------------------
@@ -342,6 +360,48 @@ func _smoke(
 ## A bomb landing: a fireball that blooms and burns out (fading, darkening, no streaks), debris thrown out, a smoke
 ## cloud that rises after it, a light flash, a ragged scorch.
 func _explosion(c: Vector3, r: float, u: float, sd: int) -> void:
+	if PACK_EXPLOSION and pack_fx != null:
+		_pack_explosion(c, r, sd)
+	else:
+		_explosion_sprites(c, r, u, sd)
+	_explosion_rest(c, r, u, sd)
+
+
+## v0.10.0 VX0 (R18): the pack's fire explosion, once per burst (the first frame its seed is drawn), then its smoke
+## PACK_SMOKE_DELAY_S later. A thinned burst (past BURST_FULL) is a smaller explosion without smoke.
+func _pack_explosion(c: Vector3, r: float, sd: int) -> void:
+	var seen := _pack_seen.has(sd)
+	_pack_seen[sd] = now()
+	if seen:
+		return
+	for k: int in _pack_seen.keys():
+		if absf(now() - float(_pack_seen[k])) > PACK_SEEN_TICKS:
+			_pack_seen.erase(k)
+	var size := r * PACK_SCALE_PER_M
+	var id := PACK_EXPLOSIONS[absi(sd) % PACK_EXPLOSIONS.size()]
+	if _lights_off:  # the thinned burst (burst() turns the light off for it)
+		pack_fx.spawn(id, c, size * PACK_THIN_SCALE)
+		return
+	pack_fx.spawn(id, c, size)
+	_pack_smoke.append([now() + PACK_SMOKE_DELAY_S * 60.0, c, size])
+
+
+## The pack's delayed smoke clouds that are due, then the frame as VfxCore starts it.
+func begin(p_now: float) -> void:
+	super.begin(p_now)
+	if pack_fx == null:
+		return
+	pack_fx.follow(p_now)
+	var left: Array[Array] = []
+	for s in _pack_smoke:
+		if float(s[0]) <= p_now:
+			pack_fx.spawn(&"smoke_after", s[1], s[2])
+		elif float(s[0]) - p_now < PACK_SEEN_TICKS:  # (a clock that went back drops it)
+			left.append(s)
+	_pack_smoke = left
+
+
+func _explosion_sprites(c: Vector3, r: float, u: float, sd: int) -> void:
 	var bloom := clampf(u / 0.2, 0.0, 1.0)
 	var burn := clampf((u - 0.1) / 0.3, 0.0, 1.0)
 	if burn < 1.0:
@@ -394,6 +454,10 @@ func _explosion(c: Vector3, r: float, u: float, sd: int) -> void:
 			0.0,
 			h(sd, k + 9)
 		)
+
+
+## The explosion's sparks, light flash and scorch mark (the same with the sprite or the pack fireball).
+func _explosion_rest(c: Vector3, r: float, u: float, sd: int) -> void:
 	for k in _thin(&"spark", int(round(10 * density))):
 		var a := TAU * h(sd + 10, k)
 		var t := clampf(u * 2.2, 0.0, 1.0)

@@ -17,6 +17,8 @@ extends SceneTree
 ##   fx_low           the same at "Low"
 ##   no_burn_fx       v0.9.5 PF: burning enemies keep no orange tint and no embers
 ##   no_rig_merge     v0.9.5 PF5: the enemies' pieces as separate meshes (RigMerge off), to compare the merged rigs
+##   wildfire         v0.10.0 VX0: also grants Wildfire (a burning kill spreads fire: the fire bursts judged here)
+##   no_pack_fx       v0.10.0 VX0: the fire explosion draws as sprites (the pack's PackFx off), the "before" of VX0
 ##   planar_floor     NOT AVAILABLE: every biome's ground is world-triplanar (StageView._ground_material) and there
 ##                    is no planar path to switch to; the report says whether the floor is triplanar.
 ## The scenario: PlaygroundScenario's fixed room (seed 4404), 20 live enemies topped up each second at 7-12 m round the
@@ -36,6 +38,8 @@ const BUILD_KEYS: Array[StringName] = [
 	&"ITEM_STORM_CORE",
 ]
 const KNOWN_AB := [
+	"wildfire",
+	"no_pack_fx",
 	"no_interp",
 	"shadows_low",
 	"no_ssil",
@@ -361,6 +365,12 @@ func _apply_ab() -> void:
 				ViewPrefs.effects_density = "medium"
 			"fx_low":
 				ViewPrefs.effects_density = "low"
+			"wildfire":  # v0.10.0 VX0
+				for e: Dictionary in _api.catalog():
+					if e["name_key"] == &"ITEM_WILDFIRE":
+						_api.grant_now(e["code"], 3)
+			"no_pack_fx":  # v0.10.0 VX0
+				_main.view.attack_forms.vfx.pack_fx = null
 
 
 func _triplanar_state() -> String:
@@ -468,6 +478,14 @@ func _finish_biome() -> void:
 			)
 		)
 	)
+	var pack: PackFx = _main.view.pack_fx  # v0.10.0 VX0
+	if pack != null:
+		lines.append(
+			(
+				"pack_fx: spawned=%d reused=%d (whole run, warm-up included)"
+				% [pack.spawned, pack.reused]
+			)
+		)
 	(
 		lines
 		. append(

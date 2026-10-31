@@ -50,9 +50,13 @@ func test_every_manifest_font_and_addon_is_listed() -> void:
 				and l.sources[k].begins_with("addons/" + dir)
 			):
 				found = true
-				assert_string_contains(
-					l.bodies[k], "Permission is hereby granted", "%s's licence text" % dir
-				)
+				if dir == "magic_circles":  # v0.10.0 VX0: CC BY 4.0, with its credit line
+					assert_string_contains(l.bodies[k], "Magic Circles 3D Free by heyheythere")
+					assert_string_contains(l.bodies[k], "CC BY 4.0")
+				else:
+					assert_string_contains(
+						l.bodies[k], "Permission is hereby granted", "%s's licence text" % dir
+					)
 		assert_true(found, "addon %s is credited" % dir)
 	var gut := -1
 	for k in l.count():

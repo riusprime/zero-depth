@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PackFxDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/pack_fx_definition.gd" id="1_packfx"]
+
+[resource]
+script = ExtResource("1_packfx")
+id = &"pack_fx"
+ids = Array[StringName]([&"explosion_fire_a", &"explosion_fire_b", &"explosion_fire_c", &"smoke_after"])
+scenes = PackedStringArray("res://assets/BinbunVFX/impact_explosions/effects/explosion/vfx_explosion_01.tscn", "res://assets/BinbunVFX/impact_explosions/effects/explosion/vfx_explosion_03.tscn", "res://assets/BinbunVFX/impact_explosions/effects/explosion/vfx_explosion_04.tscn", "res://assets/BinbunVFX/smoke_effects/effects/smoke/smoke_vfx_02.tscn")
+families = Array[StringName]([&"explosion", &"explosion", &"explosion", &"cloud"])
+scales = PackedFloat32Array(1, 1, 1, 1)
+primary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)])
+secondary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)])
+tertiary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)])
