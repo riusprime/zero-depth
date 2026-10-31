@@ -2,7 +2,8 @@ extends GutTest
 ## v0.4.0 TU (owner D8) through the real game (main.tscn, input only: the sticks and the trigger): the hero fights
 ## the floor's enemies until a kill drops a heal orb; the view draws it; walking onto it heals a hurt hero (or, at
 ## full HP, leaves it lying).
-## v0.5.5 EC (owner D9; v0.9.5 EP3: the shipped base is now 3 % a kill, so the first kills may drop one). First, five kills with no card; then
+## v0.5.5 EC (owner D9; v0.9.5 EP3: the shipped base is now 3 % a kill, so the first kills may drop one). First,
+## five kills with no card; then
 ## the card is granted (a labelled test helper: that chests offer it is test_card_pool_reach, that a picked card
 ## applies is test_e2e_rewards) and the fight goes on until an orb drops.
 
