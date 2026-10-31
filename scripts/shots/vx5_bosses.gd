@@ -3,7 +3,8 @@ extends SceneTree
 ## PackFx above the view) and after (the pack's), side by side. Four sheets, each row one effect, the old on the left
 ## and the new on the right, from an iso camera like the game's: strikes, beams, shields and sigils. A green ring or a
 ## green box marks the strike's hit area (radius / lane), which the pack effect must not outgrow. Each tile is the real
-## view class driven the way the game drives it. A tool, not a test. Needs a renderer (no --headless) and a fixed frame time:
+## view class driven the way the game drives it. A tool, not a test. Needs a renderer (no --headless) and a fixed
+## frame time (run it off screen: --position -10000,-10000):
 ##   godot --path . --fixed-fps 60 --audio-driver Dummy --resolution 1280x720 -s scripts/shots/vx5_bosses.gd
 ## Writes build/shots/v0.10.0/vx5/<sheet>.png and prints each path.
 
