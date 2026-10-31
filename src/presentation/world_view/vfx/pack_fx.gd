@@ -236,6 +236,7 @@ func _take(effect_id: StringName, scene_path: String) -> Node3D:
 	if "speed_scale" in node:
 		info["speed"] = float(node.get("speed_scale"))
 	node.visible = false
+	_own_materials(node)
 	var anim := node.get_node_or_null("AnimationPlayer") as AnimationPlayer
 	if anim != null:
 		anim.autoplay = ""  # (before the tree: the scene's RESET would play on entering it)
@@ -319,6 +320,26 @@ func _particles(node: Node3D) -> Array[GPUParticles3D]:
 func _on_anim_done(anim_name: StringName, node: Node3D) -> void:
 	if anim_name == ANIM:
 		_release(node)
+
+
+## v0.10.0 lead (VX3's finding): the instances of one scene share its ShaderMaterials, so a recolour of one would
+## recolour them all. Each new instance takes its own copies of its pieces' material_override (the VFXController sets
+## its colours there, and the AnimationPlayer animates them through the node, so the tracks still reach the copies).
+func _own_materials(node: Node) -> void:
+	if node is GeometryInstance3D:
+		var g := node as GeometryInstance3D
+		if g.material_override != null:
+			g.material_override = g.material_override.duplicate()
+	for c in node.get_children():
+		_own_materials(c)
+
+
+## v0.10.0 lead: `node` is playing (not back in its pool, not taken over past a cap).
+func is_live(node: Node3D) -> bool:
+	for e in _live:
+		if e["node"] == node:
+			return true
+	return false
 
 
 ## v0.10.0: the family has a free slot (a caller with a fallback look draws that instead of reusing the oldest).

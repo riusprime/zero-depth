@@ -188,3 +188,27 @@ func test_a_held_effect_stays_until_released_and_has_room_reads_the_cap() -> voi
 		assert_true(fx.has_room(&"cloud"))
 		fx.spawn(SMOKE, Vector3.ZERO, 1.0, {}, 0.0)
 	assert_false(fx.has_room(&"cloud"), "full at the cap")
+
+
+## v0.10.0 lead: two instances of one scene recolour on their own (each has its own material copies).
+func test_two_instances_of_one_scene_keep_their_own_colours() -> void:
+	var fx := _fx()
+	var a := fx.spawn(SMOKE, Vector3.ZERO, 1.0, {"primary": Color.RED}, 0.0)
+	var b := fx.spawn(SMOKE, Vector3(2, 0, 0), 1.0, {"primary": Color.BLUE}, 0.0)
+	assert_true(fx.is_live(a) and fx.is_live(b))
+	var ma := _first_material(a)
+	var mb := _first_material(b)
+	assert_not_null(ma)
+	assert_ne(ma, mb, "each instance has its own material")
+	fx.release(a)
+	assert_false(fx.is_live(a), "released: not live")
+
+
+func _first_material(n: Node) -> Material:
+	if n is GeometryInstance3D and (n as GeometryInstance3D).material_override != null:
+		return (n as GeometryInstance3D).material_override
+	for c in n.get_children():
+		var m := _first_material(c)
+		if m != null:
+			return m
+	return null
