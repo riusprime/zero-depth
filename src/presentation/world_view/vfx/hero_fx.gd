@@ -19,6 +19,11 @@ extends RefCounted
 
 ## Effects density under which the accents and impact extras are left out (Low: 0.25; the core shapes stay, V47).
 const LOW := 0.3
+## v0.10.0 VX1: the hits (R14), the volley's muzzle spark (R10) and the heavy cast flash (R11) are the pack's scenes
+## (HitPack); false: the old sprites (before/after shots). A family that is full draws the old look for that one.
+const PACK_HITS := true
+const PACK_MUZZLE := true
+const PACK_FLASH := true
 const WARM := Color(1.0, 0.6, 0.28)
 const COLD := Color(0.55, 0.75, 1.0)
 ## The splatter sheet's four marks (VfxCore.MARK_TEX).
@@ -303,6 +308,8 @@ static func impact(
 ) -> void:
 	if layer == null or kind == &"" or layer.density < LOW or u >= 1.0:
 		return
+	if PACK_HITS and HitPack.hit(layer, kind, p, u, sd, s):  # VX1 R14: the pack's hit scene is the element's extra
+		return
 	var t := 1.0 - (1.0 - u) * (1.0 - u)
 	match kind:
 		&"fire":
@@ -362,6 +369,8 @@ static func muzzle(
 ) -> void:
 	if layer == null or layer.density < LOW or u >= 1.0:
 		return
+	if PACK_MUZZLE and HitPack.muzzle(layer, p, dir, hot, col, u, sd):  # VX1 R10
+		return
 	var f := 1.0 - u
 	if not layer.sprite(&"muzzle", p, 0.6 * (0.7 + 0.5 * u), _lit(hot, 2.0, f), sd % 4, 0.0):
 		layer.sprite(&"spark", p, 0.45 * (0.8 + 0.4 * u), _lit(hot, 2.2, f), 0, _h(sd, 1) * 0.6)
@@ -393,10 +402,17 @@ static func flash(
 		return
 	var f := 1.0 - u
 	var t := 1.0 - f * f
-	layer.sprite(&"spark", p, size * 0.7 * (0.6 + 0.6 * f), _lit(hot, 2.4, f), 0, _h(sd, 1) * TAU)
-	layer.sprite(&"glow", p, size * (0.9 + 0.5 * t), _lit(col, 1.6, 0.7 * f), 0, 0.0)
-	layer.sprite(&"ring", p, size * (0.4 + 1.1 * t), _lit(col.lerp(hot, 0.3), 1.8, f * f), 0, 0.0)
-	var n := sparks if layer.density >= LOW else 1
+	# VX1 R11: a heavy flash is the pack's big flash (its light below is kept); small flashes keep the old sprites.
+	var packed := PACK_FLASH and HitPack.flash(layer, p, hot, col, u, size, sd)
+	if not packed:
+		layer.sprite(
+			&"spark", p, size * 0.7 * (0.6 + 0.6 * f), _lit(hot, 2.4, f), 0, _h(sd, 1) * TAU
+		)
+		layer.sprite(&"glow", p, size * (0.9 + 0.5 * t), _lit(col, 1.6, 0.7 * f), 0, 0.0)
+		layer.sprite(
+			&"ring", p, size * (0.4 + 1.1 * t), _lit(col.lerp(hot, 0.3), 1.8, f * f), 0, 0.0
+		)
+	var n := 0 if packed else (sparks if layer.density >= LOW else 1)
 	for j in n:
 		var a := TAU * (j + _h(sd, j)) / maxf(n, 1)
 		var v := Vector3(cos(a), 0.35 + 0.4 * _h(sd, j + 9), sin(a)).normalized()

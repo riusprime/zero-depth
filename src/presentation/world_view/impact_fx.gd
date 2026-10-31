@@ -23,6 +23,8 @@ extends RefCounted
 ## finisher's FINISHER_MULT bigger; the same budget, merging and pools. Its flinch (on_hit's return) is stronger than
 ## a bolt's (FLINCH_SLASH) and knocks the pose away from the swing (HitFeel, AvatarBase.flinch's knock).
 
+## v0.10.0 VX1: a bolt's and a slash's impact are the pack's scenes (false: the old sprites, for before/after shots).
+const PACK_HITS := true
 const LIFE_TICKS := 18.0
 const MAX_LIVE := 32
 const FULL := 8
@@ -114,6 +116,7 @@ func on_hit(reader: WorldReader, e: SimEvent) -> Array:
 		fx = _key_kind(String(bolt[1]))
 	elif kind == SLASH:
 		c = _key_color(reader, "#melee", reader.step_attack_id())
+		fx = _key_kind("#melee:" + String(reader.step_attack_id()))  # VX1: the cut's pack scene is the element's
 	var crit := CRIT_MULT if e.tags & SimEvent.TAG_CRIT else 1.0
 	var s: float = STRENGTH[kind] * crit
 	var y := BOLT_Y if kind == BOLT else SLASH_Y
@@ -130,7 +133,7 @@ func on_hit(reader: WorldReader, e: SimEvent) -> Array:
 	var tan := slash_tangent(reader.swing_motion(), dir)
 	var face := (-dir).lerp(CAM, CAM_SIDE).normalized()
 	at = SimPlane.to_3d(centre + face * radius * CAM_OUT, y)
-	add(at, SimPlane.to_3d(tan), far, c, e.tick, s, kind)
+	add(at, SimPlane.to_3d(tan), far, c, e.tick, s, kind, fx)
 	var away := (dir + tan * 0.6).normalized()
 	return [away, FLINCH_SLASH * crit, KNOCK_FINISHER if fin else KNOCK_SLASH]
 
@@ -255,8 +258,11 @@ func _draw_one(layer: VfxCore, imp: Array, u: float, dn: float) -> int:
 	var n := 0
 	if kind == SLASH:
 		return _draw_slash(layer, imp, u, dn)
+	var fx: StringName = imp[8] if imp.size() > 8 else &""
+	# v0.10.0 VX1 (R14, R15): a bolt's flash, element extra and puff are the pack's hit (heavy: impact) scene.
+	var packed := PACK_HITS and kind == BOLT and HitPack.hit(layer, fx, at, u, sd, s)
 	# The flash where it hit.
-	if u < 0.35:
+	if u < 0.35 and not packed:
 		var f := 1.0 - u / 0.35
 		if layer.sprite(&"spark", at, 0.8 * s * (0.8 + 0.6 * u), Color(hot, f), sd % 4, 0.0):
 			n += 1
@@ -295,7 +301,7 @@ func _draw_one(layer: VfxCore, imp: Array, u: float, dn: float) -> int:
 		)
 		if layer.sprite(&"debris", q, 0.2 * s, chunk, (sd + j) % 4, u * 5.0):
 			n += 1
-	if dn >= 0.5:
+	if dn >= 0.5 and not packed:
 		var puff := Color(
 			Color(0.6, 0.6, 0.62).lerp(c, 0.25), 0.35 * (1.0 - u) * minf(1.0, u * 6.0)
 		)
@@ -305,8 +311,7 @@ func _draw_one(layer: VfxCore, imp: Array, u: float, dn: float) -> int:
 			n += 1
 	# v0.9.0 VX V4: the element's own extra (Fire embers and smoke, a Lightning fork, Frost glints and shards, Venom a
 	# splash, Bleed a splatter), for the FULL newest impacts only (inside MAX_LIVE and the merge); none at Low.
-	var fx: StringName = imp[8] if imp.size() > 8 else &""
-	if fx != &"" and dn >= layer.density:
+	if fx != &"" and dn >= layer.density and not packed:
 		var before := layer.sprites_asked
 		HeroFx.impact(layer, fx, at, d, u, sd, s * 0.8)
 		n += layer.sprites_asked - before
@@ -340,8 +345,11 @@ func _draw_slash(layer: VfxCore, imp: Array, u: float, dn: float) -> int:
 	var sd: int = imp[7]
 	var hot := Color(c.lerp(Color.WHITE, 0.5) * 2.6, 1.0)
 	var n := 0
+	var fx: StringName = imp[8] if imp.size() > 8 else &""
+	# v0.10.0 VX1 (R16): the cut and its flash are the pack's slash scene, turned to the slash.
+	var packed := PACK_HITS and HitPack.slash(layer, fx, at, tan, u, sd, s)
 	# The cut: drawn out along the slash in its first moment, then fading where it lies.
-	if u < 0.5:
+	if u < 0.5 and not packed:
 		var f := 1.0 - u / 0.5
 		var grow := minf(1.0, u / 0.12)
 		var half := CUT_HALF_M * s * (0.4 + 0.6 * grow)

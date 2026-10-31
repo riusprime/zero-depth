@@ -22,6 +22,18 @@ const FINISHER_SHAKE := 0.3
 const FINISHER_FLASH_MULT := 2
 ## A hit a boss's ranged armour deflected (v0.3.0 BX): a dull, small, grey-blue spark.
 const DEFLECT_COLOR := Color(0.42, 0.46, 0.52)
+## v0.10.0 VX1 (R17, R43): the guard, block, deflect, weak-spot, armour and finisher sparks are the pack's hit scenes
+## and a dead enemy's pop adds a smoke and a flash (the lit chunks stay); false: the old box bursts. A full family
+## throws the boxes for that spark.
+const PACK_SPARKS := true
+const SPARK_HEIGHT := 0.4
+## The pack scenes' scale for each spark (a metre across at 1).
+const SCALE_GUARD := 0.3
+const SCALE_DEFLECT := 0.25
+const SCALE_WEAK := 0.4
+const SCALE_EXPOSED := 0.5
+const SCALE_ARMOUR := 0.22
+const SCALE_FINISHER := 0.4
 
 var actors: ActorViews
 var rig: IsoRig
@@ -31,6 +43,8 @@ var impacts := ImpactFx.new()
 var flinches := 0
 ## v0.8.0 GF3: the view's hit-stop (WorldViewRoot hands it the blade view, KitView, as `hit_stop.kit`).
 var hit_stop := HitStop.new()
+## v0.10.0 VX1: the pack's effects (WorldViewRoot hands it over); none: the box bursts.
+var pack_fx: PackFx = null
 ## v0.8.0 GF3: a count of the swings seen (one swing's hits share one freeze), and the last sync's swing tick / step.
 var _swing_serial := 0
 var _last_swing_t := 0
@@ -63,7 +77,7 @@ func sync(reader: WorldReader) -> void:
 			SimEvent.Kind.DAMAGE:
 				if finisher_hit(reader, e):
 					actors.flash(e.target_id, actors.flash_frames * FINISHER_FLASH_MULT)
-					_burst(e.pos, Color(0.85, 1.0, 1.0), 6, 0.1)
+					_spark(HitPack.GUARD, e.pos, Color(0.85, 1.0, 1.0), SCALE_FINISHER, 6, 0.1)
 					if not shook:
 						rig.shake(FINISHER_SHAKE)
 						shook = true
@@ -85,18 +99,19 @@ func sync(reader: WorldReader) -> void:
 						)
 			SimEvent.Kind.HIT:
 				if e.tags & SimEvent.TAG_EXPOSED:  # BX: a boss's open weak point, struck up close
-					_burst(e.pos, Color(1.0, 0.84, 0.42), 9, 0.11)
+					_spark(HitPack.WEAK, e.pos, Color(1.0, 0.84, 0.42), SCALE_EXPOSED, 9, 0.11)
 				elif e.tags & SimEvent.TAG_DEFLECTED:  # BX: the ranged armour turned most of it
-					_burst(e.pos, DEFLECT_COLOR, 3, 0.06)
+					_spark(HitPack.DEFLECT, e.pos, DEFLECT_COLOR, SCALE_DEFLECT, 3, 0.06)
 				elif e.tags & (SimEvent.TAG_BLOCKED | SimEvent.TAG_GUARDED):
-					_burst(e.pos, Color(0.85, 0.9, 1.0), 4, 0.08)
+					_spark(HitPack.GUARD, e.pos, Color(0.85, 0.9, 1.0), SCALE_GUARD, 4, 0.08)
 				elif e.tags & SimEvent.TAG_ARMOURED:
-					_burst(e.pos, Color(0.45, 0.45, 0.48), 3, 0.07)
+					_spark(HitPack.GUARD, e.pos, Color(0.45, 0.45, 0.48), SCALE_ARMOUR, 3, 0.07)
 				elif e.tags & SimEvent.TAG_WEAK_SPOT:
-					_burst(e.pos, Color(1.0, 0.92, 0.55), 6, 0.09)
+					_spark(HitPack.WEAK, e.pos, Color(1.0, 0.92, 0.55), SCALE_WEAK, 6, 0.09)
 			SimEvent.Kind.KILL:
 				if e.target_id != player_id:
 					_burst(e.pos, ThemePalette.color(&"enemy_body"), SHARDS, 0.16, true)
+					_death_pack(e.pos)
 	impacts.track(reader)
 
 
@@ -138,6 +153,33 @@ static func finisher_hit(reader: WorldReader, e: SimEvent) -> bool:
 ## How many spark pieces are flying (tests).
 func spark_count() -> int:
 	return _shards.size()
+
+
+## v0.10.0 VX1 (R17): a spark of pack scene `id` tinted `c` and scaled `k`; the family full (or no pack): `n` boxes.
+func _spark(id: StringName, at: Vector2, c: Color, k: float, n: int, size: float) -> void:
+	if (
+		PACK_SPARKS
+		and ViewPrefs.sparks(n) > 0
+		and HitPack.spark(pack_fx, id, SimPlane.to_3d(at, SPARK_HEIGHT), k, c)
+	):
+		return
+	_burst(at, c, n, size)
+
+
+## v0.10.0 VX1 (R43): a dead enemy's smoke puff and flash in its body colour, added to the chunks.
+func _death_pack(at: Vector2) -> void:
+	if not PACK_SPARKS or pack_fx == null or ViewPrefs.sparks(1) == 0:
+		return
+	var p := SimPlane.to_3d(at, SPARK_HEIGHT)
+	if pack_fx.has_room(&"hit"):
+		pack_fx.spawn(HitPack.DEATH_SMOKE, p, HitPack.DEATH_SMOKE_SCALE)
+	if pack_fx.has_room(&"hit"):
+		pack_fx.spawn(
+			HitPack.DEATH_POP,
+			p,
+			HitPack.DEATH_POP_SCALE,
+			HitPack.tint(ThemePalette.color(&"enemy_body"))
+		)
 
 
 ## `lit`: the pieces are debris (a dead enemy's body), shaded by the scene's light like the body they came from;

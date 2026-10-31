@@ -130,8 +130,9 @@ func test_smoke_without_an_animation_also_ends() -> void:
 func test_warm_all_spawns_every_id_once_and_leaves_none_live() -> void:
 	var fx := _fx()
 	fx.warm_all()
-	assert_eq(fx.spawned, 4, "four ids, spawned once each")
-	assert_eq(fx.live_count(), 4, "all four are up for the warm-up frames")
+	var n := fx.warm_ids().size()
+	assert_eq(fx.spawned, n, "every id of the table, spawned once each")
+	assert_eq(fx.live_count(), n, "all are up for the warm-up frames")
 	await wait_frames(PackFx.WARM_FRAMES + 2)
 	assert_eq(fx.live_count(), 0, "and none after them")
 	assert_eq(fx.pooled(EXPLOSION), 1, "kept in their pools")
@@ -139,7 +140,7 @@ func test_warm_all_spawns_every_id_once_and_leaves_none_live() -> void:
 
 func test_warm_one_id_at_a_time_for_a_queue() -> void:
 	var fx := _fx()
-	assert_eq(fx.warm_ids().size(), 4, "every id of the table")
+	assert_gte(fx.warm_ids().size(), 4, "every id of the table")
 	fx.warm(SMOKE)
 	assert_eq(fx.live_count(&"cloud"), 1, "only that one is up")
 	assert_eq(fx.live_count(&"explosion"), 0)
