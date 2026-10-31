@@ -19,6 +19,17 @@ extends Node3D
 ## band, colours and height, in a MultiMesh each (BakedMeshPools): a crowd of them costs a transform each, not 84
 ## vertices each. They look the same as before.
 
+## v0.10.0 VX8 (VFX_PACK N3): the pack draws the Blade's forms: the baked crescents and ghost slashes wear a copy of
+## rim_area_04's material, the fissure's eruption is vfx_impact_02, the parry spark vfx_hit_04 and the counter's and
+## finisher's rings the pulse areas; false (or a full family): the old looks.
+const PACK_BLADE := true
+## The pack scenes' size per metre: an eruption's impact per metre of its width, a pulse area's 4.5 m across at 1.
+const ERUPT_PER_M := 0.6
+const ERUPT_SPACING := 1.6
+const ERUPT_MAX := 3
+const PARRY_SCALE := 0.4
+const PULSE_M := 4.5
+const ONCE_KEEP_TICKS := 90
 const HEIGHT := 0.45
 const FLOOR := 0.04
 const GHOST_TICKS := 14
@@ -46,6 +57,11 @@ var _looks := {}
 ## v0.8.0 PF2: the build digest read once a sync (the crescents' look cache keys on it), and the baked shapes' pools.
 var _digest := ""
 var _baked := BakedMeshPools.new()
+## v0.10.0 VX8: the pack the view hangs under (null: none), the rim material of the baked bands, and what each effect of
+## the pack chose when it began: key -> [PACK or OLD, tick].
+var _pack: PackFx = null
+var _rim: ShaderMaterial
+var _once := {}
 
 
 func _init() -> void:
@@ -70,6 +86,9 @@ func sync(reader: WorldReader) -> void:
 	drawn = {}
 	var tick := reader.tick()
 	_digest = reader.attack_digest()
+	_pack = BladePack.pack_of(self) if PACK_BLADE else null
+	if _pack != null and _rim == null:
+		_rim = BladePack.rim_material(_core)
 	var b := reader.blade_forms()
 	_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
 	_baked.begin()
@@ -154,6 +173,7 @@ func _bake(key: Vector4) -> ArrayMesh:
 func _band_mesh(
 	centre: Vector2, a0: float, a1: float, r0: float, r1: float, c: Color, alpha: float
 ) -> ArrayMesh:
+	var uvs := PackedVector2Array()
 	var verts := PackedVector3Array()
 	var cols := PackedColorArray()
 	var inner := Color(c, alpha * 0.25)
@@ -172,14 +192,17 @@ func _band_mesh(
 			[d1 * r0, inner],
 		]:
 			verts.append(SimPlane.to_3d(centre + (pair[0] as Vector2), HEIGHT))
+			# v0.10.0 VX8: the band seen as the rim of a disc (the rim material's masks are radial), 0.5 at its centre
+			uvs.append(Vector2(0.5, 0.5) + 0.5 * (pair[0] as Vector2) / maxf(r1, 0.01))
 			cols.append(pair[1])
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = verts
 	arrays[Mesh.ARRAY_COLOR] = cols
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
 	var m := ArrayMesh.new()
 	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	m.surface_set_material(0, _mat)
+	m.surface_set_material(0, _rim if _rim != null else _mat)
 	return m
 
 
@@ -196,11 +219,11 @@ func _fx(f: Dictionary, tick: int, hero: Vector2) -> bool:
 		WorldReader.BLADE_FX_ARC, WorldReader.BLADE_FX_ARC_MIRROR:
 			return _ghost(f, age, at, yaw)
 		WorldReader.BLADE_FX_LINE:
-			return _eruption(f, age, at, yaw)
+			return _eruption(f, tick, age, at, yaw)
 		WorldReader.BLADE_FX_PARRY:
-			return _spark(age, at, yaw)
+			return _spark(f, tick, age, at, yaw)
 		WorldReader.BLADE_FX_COUNTER, WorldReader.BLADE_FX_BURST:
-			return _ring(f, age, at, hero)
+			return _ring(f, tick, age, at, hero)
 	return false
 
 
@@ -220,15 +243,16 @@ func _ghost(f: Dictionary, age: int, at: Vector2, yaw: float) -> bool:
 
 
 ## Fissure's eruption: the line lit on the floor and spikes of light rising along it.
-func _eruption(f: Dictionary, age: int, at: Vector2, yaw: float) -> bool:
+func _eruption(f: Dictionary, tick: int, age: int, at: Vector2, yaw: float) -> bool:
 	if age > LINE_TICKS:
 		return false
 	var fade := 1.0 - float(age) / LINE_TICKS
 	var length := float(f["a"])
 	var width := float(f["b"])
 	var dir := Vector2(cos(yaw), sin(yaw))
+	var packed := _packed(f, tick, _erupt_play.bind(at, dir, length, width))
 	_quad(at, at + dir * length, width * (1.0 + 0.4 * fade), FLOOR, _core, 0.55 * fade)
-	for k in int(length / 0.5):
+	for k in 0 if packed else int(length / 0.5):
 		var c := at + dir * (0.25 + 0.5 * k)
 		var side := 0.25 if k % 2 == 0 else -0.25
 		var tip := c + Vector2(-dir.y, dir.x) * side * width
@@ -238,9 +262,12 @@ func _eruption(f: Dictionary, age: int, at: Vector2, yaw: float) -> bool:
 
 
 ## Parry Edge's spark: a white star where the shot was cut.
-func _spark(age: int, at: Vector2, yaw: float) -> bool:
+func _spark(f: Dictionary, tick: int, age: int, at: Vector2, yaw: float) -> bool:
 	if age > SPARK_TICKS:
 		return false
+	if _packed(f, tick, _spark_play.bind(at)):
+		_count(&"spark")
+		return false  # the pack draws it: nothing in the surface
 	var fade := 1.0 - float(age) / SPARK_TICKS
 	var s := 0.2 + 0.35 * (1.0 - fade)
 	for k in 4:
@@ -252,11 +279,14 @@ func _spark(age: int, at: Vector2, yaw: float) -> bool:
 
 
 ## A counter's ring flash round the hero, or Finisher+'s shockwave ring at its radius.
-func _ring(f: Dictionary, age: int, at: Vector2, hero: Vector2) -> bool:
+func _ring(f: Dictionary, tick: int, age: int, at: Vector2, hero: Vector2) -> bool:
 	if age > RING_TICKS:
 		return false
 	var p := float(age) / RING_TICKS
 	var big := int(f["kind"]) == WorldReader.BLADE_FX_BURST
+	if _packed(f, tick, _ring_play.bind(float(f["a"]) if big else 1.2, at if big else hero, big)):
+		_count(&"ring")
+		return false  # the pack draws it: nothing in the surface
 	var r := (float(f["a"]) if big else 1.2) * (0.3 + 0.7 * p)
 	_arc_band(
 		at if big else hero, 0.0, TAU, maxf(r - 0.15, 0.0), r, FLOOR + 0.02, _core, 0.6 * (1.0 - p)
@@ -337,3 +367,53 @@ func _spike(
 	_mesh.surface_add_vertex(SimPlane.to_3d(base + d, FLOOR))
 	_mesh.surface_set_color(Color(c.lerp(Color.WHITE, 0.4), alpha))
 	_mesh.surface_add_vertex(top)
+
+
+# --- v0.10.0 VX8: the pack's looks, each started once (a pack scene plays on its own) ---------------------------
+## True when the pack draws effect `f` (kept per effect, so a look never swaps half way): `play` starts it on the first
+## sync that sees it and says whether it could (no pack, or the family is full: the old look draws).
+func _packed(f: Dictionary, tick: int, play: Callable) -> bool:
+	if _pack == null:
+		return false
+	var at: Vector2 = f["pos"]
+	var key := (
+		"%d|%d|%d|%d" % [int(f["tick"]), int(f["kind"]), roundi(at.x * 100.0), roundi(at.y * 100.0)]
+	)
+	if not _once.has(key):
+		if _once.size() > 64:
+			for k: String in _once.keys():
+				if tick - int((_once[k] as Array)[1]) > ONCE_KEEP_TICKS:
+					_once.erase(k)
+		_once[key] = [bool(play.call()), tick]
+	return bool((_once[key] as Array)[0])
+
+
+## Fissure's eruption: vfx_impact_02 spread along the line, one every ERUPT_SPACING m (at most ERUPT_MAX).
+func _erupt_play(at: Vector2, dir: Vector2, length: float, width: float) -> bool:
+	if not _pack.has_room(&"impact"):
+		return false
+	var n := clampi(ceili(length / ERUPT_SPACING), 1, ERUPT_MAX)
+	var scale := clampf((width + 0.4) * ERUPT_PER_M, 0.4, 1.4)
+	var colors := BladePack.colors_of(_core)
+	var played := false
+	for k in n:
+		var p := at + dir * (length * (float(k) + 0.5) / n)
+		played = _pack.spawn(&"vx8_erupt", SimPlane.to_3d(p, 0.0), scale, colors) != null or played
+	return played
+
+
+## Parry Edge's spark: vfx_hit_04 where the shot was cut.
+func _spark_play(at: Vector2) -> bool:
+	if not _pack.has_room(&"hit"):
+		return false
+	var colors := BladePack.colors_of(SPARK)
+	return _pack.spawn(&"vx8_parry", SimPlane.to_3d(at, HEIGHT), PARRY_SCALE, colors) != null
+
+
+## The counter's ring (radius 1.2 m, round the hero) or Finisher+'s (its radius): a pulse area on the floor.
+func _ring_play(radius: float, at: Vector2, big: bool) -> bool:
+	if not _pack.has_room(&"area"):
+		return false
+	var id := &"vx8_finisher" if big else &"vx8_counter"
+	var scale := maxf(radius, 0.3) * 2.0 / PULSE_M
+	return _pack.spawn(id, SimPlane.to_3d(at, FLOOR), scale, BladePack.colors_of(_core)) != null
