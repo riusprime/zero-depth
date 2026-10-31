@@ -19,7 +19,10 @@ const FAMILIES: Array[StringName] = [
 	&"cloud",
 	&"projectile",
 	&"status",
-	&"enemy_shot"
+	&"enemy_shot",
+	&"bolt",
+	&"trail",
+	&"mark",
 ]
 
 @export var ids: Array[StringName] = []

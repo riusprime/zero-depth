@@ -25,6 +25,9 @@ const CAPS := {
 	&"projectile": 96,
 	&"status": 32,
 	&"enemy_shot": 128,  # v0.10.0: hostile shots have their own cap, so hero bolts never starve them
+	&"bolt": 48,  # v0.10.0 VX6: lightning strikes, chains and forks
+	&"trail": 8,  # v0.10.0 VX8: blade swing ribbons
+	&"mark": 48,  # v0.10.0 VX7: lasting floor marks
 }
 ## ViewPrefs.effects_density -> the factor on CAPS (I9).
 const DENSITY_FACTOR := {"low": 0.25, "medium": 0.55, "high": 1.0}
