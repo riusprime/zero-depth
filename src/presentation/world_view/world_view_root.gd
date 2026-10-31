@@ -305,7 +305,7 @@ func _warm_shaders() -> void:
 func _queue_pack_warmup(q: ViewBuildQueue) -> void:
 	if pack_fx == null:
 		return
-	for id in pack_fx.warm_ids():
+	for id in pack_fx.pending_warm_ids():
 		q.add_next("pack_fx_warmup_%s" % id, pack_fx.warm.bind(id))
 
 

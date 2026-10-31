@@ -93,6 +93,8 @@ func _view(biome: BiomeDefinition) -> WorldViewRoot:
 
 
 func test_a_view_built_in_slices_is_the_view_built_in_one_call() -> void:
+	var warm := PackFx.warm_mode  # (VX-W: the session warms an id once; both builds must warm the same ids)
+	PackFx.warm_mode = &"load"
 	var repo := ContentRepository.load_all()
 	for c: Array in [[&"ruins", 7, 1], [&"night_rocks", 11, 2]]:
 		var biome: BiomeDefinition = repo.get_def(&"biomes", c[0])
@@ -119,6 +121,7 @@ func test_a_view_built_in_slices_is_the_view_built_in_one_call() -> void:
 		assert_eq(reader.state_hash(), before, "%s: the sim untouched" % c[0])
 		one.queue_free()
 		sliced.queue_free()
+	PackFx.warm_mode = warm
 
 
 ## v0.8.0 LD (owner O70): a load makes the view's parts a few a frame (WorldViewRoot.prebuild) before the view; the

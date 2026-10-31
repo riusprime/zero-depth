@@ -11,8 +11,9 @@ extends Node3D
 ## - Lights are off on every instance (I3): a family that should glow asks VfxCore for its merged light.
 ## - Colours (I6): the table's, or the caller's (`primary`, `secondary`, `tertiary`); an alpha of 0 keeps the scene's.
 ## - Pause (I8): while the sim holds (follow() sees no tick for HOLD_S), every live instance's speed_scale is 0.
-## - warm_all() (I2): every id once, in front of the camera, for WARM_FRAMES frames behind the loading cover, so the
-##   shaders compile before the first fight.
+## - warm(id) (I2): the id once, in front of the camera, for WARM_FRAMES frames, so its shaders compile before the first
+##   fight. v0.10.0 VX-W: once a session, at the main menu (PackFxSessionWarm), never one spawn an id on every floor
+##   load; the effect scenes are kept for the session, so a later floor reuses the compiled pipelines.
 
 ## Live instances per family at Effects density High (I5; starting values).
 const CAPS := {
@@ -41,6 +42,13 @@ const ANIM := &"main"
 const WARM_AHEAD_M := 2.0
 
 static var _shared: PackFxDefinition
+## How floor loads warm the pack (VX-W): &"menu" (PackFxSessionWarm warms at the main menu; a load warms what is
+## left), &"session" (the first load warms everything, later loads nothing), &"load" (every load warms every id: VX0),
+## &"none". The probes set it (scripts/checks/load_probe.gd --warm=).
+static var warm_mode := &"menu"
+static var _scenes := {}  # scene path -> PackedScene, kept for the session
+static var _requested := {}  # scene path -> true, once asked of the loader threads
+static var _warmed := {}  # id -> true, once warm() ran it this session
 
 ## The camera the warm-up places the effects in front of (WorldViewRoot sets it).
 var camera: Camera3D = null
@@ -158,10 +166,22 @@ func warm_ids() -> Array[StringName]:
 	return out
 
 
+## The ids a floor load still has to warm (VX-W): all of them, none, or the ones this session has not warmed.
+func pending_warm_ids() -> Array[StringName]:
+	if warm_mode == &"none":
+		return []
+	var out: Array[StringName] = []
+	for id in warm_ids():
+		if warm_mode == &"load" or not _warmed.has(id):
+			out.append(id)
+	return out
+
+
 ## One id in front of the camera, hidden only by the loading cover (the shaders and pipelines really compile);
 ## WARM_FRAMES frames later it goes back to its pool.
 func warm(effect_id: StringName) -> void:
 	var n := spawn(effect_id, _focus())
+	_warmed[effect_id] = true
 	if n != null:
 		_warm_nodes.append({"node": n, "left": WARM_FRAMES})
 
@@ -227,7 +247,7 @@ func _take(effect_id: StringName, scene_path: String) -> Node3D:
 	var idle: Array = _idle.get(effect_id, [])
 	if not idle.is_empty():
 		return idle.pop_back()
-	var scene := load(scene_path) as PackedScene
+	var scene := _scene(scene_path)
 	if scene == null:
 		return null
 	var node := scene.instantiate() as Node3D
@@ -397,3 +417,42 @@ func _focus() -> Vector3:
 	var hit := from + fwd * (-from.y / fwd.y)
 	var back := Vector3(-fwd.x, 0.0, -fwd.z).normalized()
 	return Vector3(hit.x, 0.0, hit.z) + back * WARM_AHEAD_M
+
+
+## True once `effect_id` has been through warm() this session.
+static func is_warmed(effect_id: StringName) -> bool:
+	return _warmed.has(effect_id)
+
+
+## Asks the loader threads for every effect scene in the table (once; PackFxSessionWarm calls it at the menu).
+static func request_scenes() -> void:
+	var def := shared_def()
+	if def == null:
+		return
+	for path in def.scenes:
+		if not _scenes.has(path) and not _requested.has(path):
+			_requested[path] = true
+			ResourceLoader.load_threaded_request(path)
+
+
+## True when the scene of `effect_id` is read (or its read failed, so nothing waits on it for ever).
+static func scenes_ready(effect_id: StringName) -> bool:
+	var def := shared_def()
+	var k := def.row(effect_id) if def != null else -1
+	if k < 0:
+		return true
+	var path: String = def.scenes[k]
+	if _scenes.has(path) or not _requested.has(path):
+		return true
+	return ResourceLoader.load_threaded_get_status(path) != ResourceLoader.THREAD_LOAD_IN_PROGRESS
+
+
+## The effect's scene, read once per session and kept: while it is held, its shaders and their compiled pipelines stay
+## in the renderer, so a PackFx made by a later floor does not compile them again (VX-W).
+static func _scene(scene_path: String) -> PackedScene:
+	if not _scenes.has(scene_path):
+		if _requested.has(scene_path):
+			_scenes[scene_path] = ResourceLoader.load_threaded_get(scene_path) as PackedScene
+		else:
+			_scenes[scene_path] = load(scene_path) as PackedScene
+	return _scenes[scene_path]
