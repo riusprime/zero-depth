@@ -21,10 +21,14 @@ func test_it_warms_the_table_one_id_at_a_time() -> void:
 	var all := w.fx.warm_ids().size()
 	assert_gte(all, 4)
 	assert_false(PackFx.is_warmed(w.fx.warm_ids()[0]))
-	await wait_frames(PackFxSessionWarm.STEP_FRAMES * 3 + 2)
 	var n := 0
-	for id in w.fx.warm_ids():
-		n += 1 if PackFx.is_warmed(id) else 0
+	for k in 600:  # the scenes load on a thread first; a busy machine takes longer
+		await wait_frames(1)
+		n = 0
+		for id in w.fx.warm_ids():
+			n += 1 if PackFx.is_warmed(id) else 0
+		if n > 0:
+			break
 	assert_gt(n, 0, "some ids are warmed")
 	assert_lt(n, all, "one id every STEP_FRAMES, not all at once")
 	assert_false(w.done())

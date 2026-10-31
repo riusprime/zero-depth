@@ -189,7 +189,7 @@ func test_follow_sees_a_tick_that_stopped_as_a_pause() -> void:
 	fx.spawn(EXPLOSION, Vector3.ZERO)
 	fx.follow(100.0)
 	assert_false(fx.is_held())
-	await wait_seconds(PackFx.HOLD_S + 0.1)
+	OS.delay_msec(int((PackFx.HOLD_S + 0.1) * 1000.0))  # wall time: follow() reads the clock, not frames
 	fx.follow(100.4)  # the same tick, a while later
 	assert_true(fx.is_held(), "no new tick for HOLD_S")
 	fx.follow(101.0)

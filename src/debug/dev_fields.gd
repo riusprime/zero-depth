@@ -72,6 +72,7 @@ const GROUPS := [
 			"res://data/combos",
 			"res://data/stat_cards",
 			"res://data/wand",
+			"res://data/vfx",  # v0.10.0: the VFX pack's effect table (scales, colours)
 		],
 		"",
 	],
