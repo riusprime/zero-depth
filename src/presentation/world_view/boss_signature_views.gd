@@ -102,6 +102,16 @@ const LAVA_FADE_TICKS := 8.0
 const LAVA_CRUST_TICKS := 60.0
 ## v0.8.0 TX2: the lava and meltdown shaders' owner textures (BossStrikeMeshes.GROUND_TEX slots).
 const LAVA_SLOTS := ["lava_tex", "crust_tex"]
+## v0.10.0 VX5 (R27, R21): the Gaze's beam and the molten floor's flames are the pack's (a full family keeps the old
+## look); false: all old.
+const PACK_GAZE := true
+const PACK_LAVA := true
+## A molten piece's flames stop this many ticks before it crusts over (the pack's fire has no cooling).
+const LAVA_FLAME_OFF_TICKS := 20.0
+## The meltdown's flames: how many round the melting edge, how far out of it (m), and their scale.
+const MELT_FLAMES := 10
+const MELT_FLAME_OUT_M := 1.5
+const MELT_FLAME_SCALE := 1.3
 
 ## Where the owner's javelin is looked up (tests point it elsewhere to see the fallback).
 static var model_path := MODEL_PATH
@@ -146,6 +156,8 @@ var _lava_shader := Shader.new()
 var _melt_rows: Array = []
 var _melt_nodes: Array[MeshInstance3D] = []
 var _melt_shader := Shader.new()
+var _hold: PackHold = null
+var _gaze_packed := false
 
 
 func _init() -> void:
@@ -685,7 +697,7 @@ func _bs2_busy() -> bool:
 
 ## True while the Gaze is drawn (its aim line in the windup, its beam after; tests and the tour).
 func gaze_drawn() -> bool:
-	return _beam.visible or _aim.visible
+	return _beam.visible or _aim.visible or _gaze_packed
 
 
 ## The drawn beam's (or aim line's) ends in 3D, [from, to] (tests: on the sim's beam), or [].
@@ -714,11 +726,17 @@ func spark_count() -> int:
 
 
 func _draw_bs2(now: float, still: bool) -> void:
+	_hold = PackHold.of(self, _hold) if (PACK_GAZE or PACK_LAVA) else null
+	if _hold != null:
+		_hold.begin()
+	_gaze_packed = false
 	_draw_gaze(now, still)
 	_draw_scorch(now)
 	_draw_sparks(now)
 	_draw_lava(now)
 	_draw_melt()
+	if _hold != null:
+		_hold.end()
 
 
 ## The Gaze: in the windup the eye brightens and a thin aim line runs the way the beam will open; then the beam, a
@@ -753,10 +771,19 @@ func _draw_gaze(now: float, still: bool) -> void:
 		_gaze_ends = [eye, to]
 		return
 	var hw := float(g["half_width"])
-	_beam.visible = true
-	_beam_glow.visible = true
-	_place_cylinder(_beam, eye, to, hw * 0.45)
-	_place_cylinder(_beam_glow, eye, to, hw * (1.05 + (0.0 if still else 0.08 * sin(now * 1.7))))
+	var pack_beam: Node3D = null
+	if PACK_GAZE and _hold != null:  # R27: the pack's beam in the Gaze's colour, in place of the two cylinders
+		pack_beam = _hold.hold(&"gaze", PackHold.beam_id(GAZE), eye, 1.0, {}, false)
+	if pack_beam != null:
+		PackHold.beam_place(pack_beam, eye, to, hw)
+		_gaze_packed = true
+	else:
+		_beam.visible = true
+		_beam_glow.visible = true
+		_place_cylinder(_beam, eye, to, hw * 0.45)
+		_place_cylinder(
+			_beam_glow, eye, to, hw * (1.05 + (0.0 if still else 0.08 * sin(now * 1.7)))
+		)
 	_gaze_ends = [eye, to]
 	var from2: Vector2 = g["from"]
 	var to2: Vector2 = g["to"]
@@ -868,6 +895,52 @@ func _draw_lava(now: float) -> void:
 		var left := float(row[2]) - now
 		m.set_shader_parameter("fade", clampf(since / LAVA_FADE_TICKS, 0.0, 1.0))
 		m.set_shader_parameter("cool", clampf(1.0 - left / LAVA_CRUST_TICKS, 0.0, 1.0))
+		if PACK_LAVA and _hold != null and left > LAVA_FLAME_OFF_TICKS:
+			_pack_lava(k, _lava_rows[k][0])
+
+
+## R21: flames on a molten piece (the pack's fire areas, blobs along its long side; the shader floor stays).
+func _pack_lava(k: int, r: Rect2) -> void:
+	var short := maxf(minf(r.size.x, r.size.y), 0.5)
+	var long := maxf(r.size.x, r.size.y)
+	var n := clampi(ceili(long / short), 1, 4)
+	var along_x := r.size.x >= r.size.y
+	for j in n:
+		var t := (float(j) + 0.5) / n - 0.5
+		var at := r.get_center() + (Vector2(long * t, 0.0) if along_x else Vector2(0.0, long * t))
+		_hold.hold(
+			Vector2i(k, j),
+			&"bx_lava_a" if (k + j) % 2 == 0 else &"bx_lava_b",
+			SimPlane.to_3d(at, 0.25),
+			clampf(minf(short, long / n) / 1.6, 0.6, 6.0)
+		)
+
+
+## R21: flames round the melting edge, off the cool bridge to the exit.
+func _pack_melt(k: int, row: Dictionary) -> void:
+	var radius := float(row["radius"])
+	if radius >= 1000.0:
+		return
+	var c: Vector2 = row["centre"]
+	var e: Vector2 = row["exit"]
+	for j in MELT_FLAMES:
+		var a := TAU * (float(j) + 0.5) / MELT_FLAMES
+		var at := c + Vector2(cos(a), sin(a)) * (radius + MELT_FLAME_OUT_M)
+		if bool(row["bridge"]) and _near_segment(at, c, e, float(row["half"]) + 1.0):
+			continue
+		_hold.hold(
+			Vector2i(-1 - k, j),
+			&"bx_lava_b" if j % 2 == 0 else &"bx_lava_a",
+			SimPlane.to_3d(at, 0.25),
+			MELT_FLAME_SCALE
+		)
+
+
+static func _near_segment(p: Vector2, a: Vector2, b: Vector2, within: float) -> bool:
+	var ab := b - a
+	var len2 := maxf(ab.length_squared(), 0.0001)
+	var t := clampf((p - a).dot(ab) / len2, 0.0, 1.0)
+	return p.distance_to(a + ab * t) <= within
 
 
 func _sync_melt_nodes() -> void:
@@ -914,3 +987,5 @@ func _draw_melt() -> void:
 		m.set_shader_parameter("bridge", 1.0 if row["bridge"] else 0.0)
 		m.set_shader_parameter("bridge_to", Vector2(e.x, e.z))
 		m.set_shader_parameter("bridge_half", float(row["half"]))
+		if PACK_LAVA and _hold != null:
+			_pack_melt(k, row)

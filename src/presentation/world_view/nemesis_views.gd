@@ -16,6 +16,8 @@ const GHOST := Color(0.16, 0.06, 0.22)
 ## The card's name floats this high (m); the sigil's radius (m).
 const LABEL_Y := 2.1
 const SIGIL_R := 1.1
+## v0.10.0 VX5 (R13): the cast sigil is a MagicArea in the blood element; false: the owner's sigil texture.
+const PACK_SIGIL := true
 ## An afterimage every GHOST_EVERY ticks of a dash, at most GHOSTS alive, each fading over GHOST_TICKS.
 const GHOST_EVERY := 2
 const GHOSTS := 8
@@ -29,6 +31,7 @@ var _sigil := MeshInstance3D.new()
 var _sigil_mat := StandardMaterial3D.new()
 ## v0.8.0 TX1: the owner's sigil (FxTextures.sigil_material; null: the code disc).
 var _sigil_tex: ShaderMaterial
+var _area: MagicArea = null
 var _ghosts: Array[MeshInstance3D] = []
 var _ghost_mats: Array[StandardMaterial3D] = []
 var _ghost_tick := PackedInt32Array()
@@ -134,6 +137,7 @@ func sync(reader: WorldReader) -> void:
 	if n.is_empty() or _casting < 0:
 		label.visible = false
 		_sigil.visible = false
+		_end_area()
 	else:
 		var cards: Array = n["cards"]
 		var c: Dictionary = cards[_casting] if _casting < cards.size() else {}
@@ -144,6 +148,17 @@ func sync(reader: WorldReader) -> void:
 		label.position = SimPlane.to_3d(at, LABEL_Y)
 		_sigil.position = SimPlane.to_3d(at, 0.03)
 		_sigil.visible = true
+		_sigil.layers = 1
+		if PACK_SIGIL and MagicArea.kinds().has("circle"):
+			# R13: the cast sigil is a blood magic circle at its feet (the old sigil stays as the flag the tests read)
+			if _area == null or not is_instance_valid(_area):
+				_area = MagicArea.add(
+					self,
+					"blood_circle",
+					{&"radius": SIGIL_R, &"light": false, &"position": _sigil.position}
+				)
+			_area.position = _sigil.position
+			_sigil.layers = 0
 	if not n.is_empty() and bool(n["dashing"]) and _tick % GHOST_EVERY == 0:
 		var g := _ghosts[_next]
 		g.position = SimPlane.to_3d(reader.actor_pos(i), 0.75)
@@ -201,6 +216,15 @@ func _process(delta: float) -> void:
 				"turn", 0.0 if ViewPrefs.reduced_motion else _progress * 1.2
 			)
 		_sigil.scale = Vector3.ONE * (0.6 + 0.4 * _progress)
+	if _area != null and is_instance_valid(_area):
+		_area.intensity = 0.5 + 0.5 * _progress  # brightening until the cast lands, as the sigil did
+
+
+## The cast is over: the circle fades out and frees itself.
+func _end_area() -> void:
+	if _area != null and is_instance_valid(_area):
+		_area.stop(0.3)
+	_area = null
 
 
 func _fade() -> void:
