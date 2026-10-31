@@ -184,7 +184,7 @@ func _burst(at: Vector3, radius: float, tick: int) -> void:
 	_burst_at = at
 	_burst_r = radius
 	_burst_packed = false
-	var pack := PackHold.find(self) if PACK_SHATTER else null
+	var pack := BossPackHold.find(self) if PACK_SHATTER else null
 	if pack != null and pack.has_room(&"explosion"):  # R19: the pack's burst, in the shatter's colour
 		_burst_packed = (
 			pack.spawn(

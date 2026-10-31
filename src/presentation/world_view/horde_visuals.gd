@@ -18,7 +18,7 @@ const MINE_LIGHT_LO := Color("#5A0E0B")
 
 var _mines := {}
 var _beams := {}
-var _hold: PackHold = null
+var _hold: BossPackHold = null
 var _tracers: Array = []
 var _states := {}
 var _t := 0.0
@@ -44,7 +44,7 @@ func _ready() -> void:
 
 func sync(reader: WorldReader) -> void:
 	_sync_mines(reader)
-	_hold = PackHold.of(self, _hold) if PACK_BEAMS else null
+	_hold = BossPackHold.of(self, _hold) if PACK_BEAMS else null
 	if _hold != null:
 		_hold.begin()
 	var beams := {}
@@ -163,10 +163,10 @@ func _beam(id: int, from: Vector2, to: Vector2) -> void:
 	var b := SimPlane.to_3d(to, 0.6)
 	var packed: Node3D = null
 	if _hold != null:
-		packed = _hold.hold(id, PackHold.beam_id(HordeAvatar.MEND), a, 1.0, {}, false)
+		packed = _hold.hold(id, BossPackHold.beam_id(HordeAvatar.MEND), a, 1.0, {}, false)
 	n.visible = packed == null
 	if packed != null:
-		PackHold.beam_place(packed, a, b, PACK_BEAM_HALF_W)
+		BossPackHold.beam_place(packed, a, b, PACK_BEAM_HALF_W)
 		return
 	var len := maxf(a.distance_to(b), 0.01)
 	(n.mesh as BoxMesh).size = Vector3(BEAM_W, BEAM_W, len)

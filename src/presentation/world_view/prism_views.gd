@@ -40,7 +40,7 @@ var _core_light := OmniLight3D.new()
 var _ring := MeshInstance3D.new()
 var _ring_mat := StandardMaterial3D.new()
 var _ends: Array = []
-var _hold: PackHold = null
+var _hold: BossPackHold = null
 
 
 func _init() -> void:
@@ -229,7 +229,7 @@ func shard_flash_drawn() -> bool:
 func _draw(now: float) -> void:
 	_ends = []
 	var still := ViewPrefs.reduced_motion
-	_hold = PackHold.of(self, _hold) if PACK_BEAMS else null
+	_hold = BossPackHold.of(self, _hold) if PACK_BEAMS else null
 	if _hold != null:
 		_hold.begin()
 	for arm in _arms:
@@ -287,9 +287,9 @@ func _draw_arms(c: Dictionary, p: float, now: float, still: bool, flicker: float
 		var glow: MeshInstance3D = arm["glow"]
 		var pack_beam: Node3D = null
 		if _hold != null:  # R27: the pack's beam (the colour's nearest scene) in place of the two cylinders
-			pack_beam = _hold.hold(k, PackHold.beam_id(BEAM), a, 1.0, {}, false)
+			pack_beam = _hold.hold(k, BossPackHold.beam_id(BEAM), a, 1.0, {}, false)
 		if pack_beam != null:
-			PackHold.beam_place(pack_beam, a, b, hw)
+			BossPackHold.beam_place(pack_beam, a, b, hw)
 			arm["packed"] = true
 		else:
 			core.visible = true

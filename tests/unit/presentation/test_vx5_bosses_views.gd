@@ -6,7 +6,7 @@ extends GutTest
 const W := preload("res://tests/support/mx4_world.gd")
 
 
-## A node PackHold.find reads a PackFx from (WorldViewRoot's `pack_fx`).
+## A node BossPackHold.find reads a PackFx from (WorldViewRoot's `pack_fx`).
 class Holder:
 	extends Node3D
 	var pack_fx: PackFx
@@ -73,7 +73,7 @@ func test_the_prism_cross_is_pack_beams_and_the_cylinders_where_it_is_full() -> 
 
 func test_the_pack_beam_runs_from_a_to_b() -> void:
 	var n: Node3D = _fx.spawn(&"bx_beam_01", Vector3.ZERO, 1.0, {}, 0.0)
-	PackHold.beam_place(n, Vector3(1, 1, 2), Vector3(1, 1, 8), 0.5)
+	BossPackHold.beam_place(n, Vector3(1, 1, 2), Vector3(1, 1, 8), 0.5)
 	assert_almost_eq(n.global_position.distance_to(Vector3(1, 1, 2)), 0.0, 0.001)
 	assert_almost_eq(float(n.get("beam_length")), 6.0, 0.001, "its length is a to b")
 	var along := -n.global_transform.basis.z.normalized()
@@ -82,7 +82,7 @@ func test_the_pack_beam_runs_from_a_to_b() -> void:
 
 func test_the_menders_beam_is_the_packs_and_its_box_gives_way() -> void:
 	var v: HordeVisuals = _under(HordeVisuals.new())
-	v._hold = PackHold.new(_fx)
+	v._hold = BossPackHold.new(_fx)
 	v._hold.begin()
 	v._beam(5, Vector2.ZERO, Vector2(4, 0))
 	v._hold.end()
@@ -184,7 +184,7 @@ func test_the_foundrys_molten_floor_is_held_fire() -> void:
 	var v: BossSignatureViews = _under(BossSignatureViews.new())
 	v._lava_rows = [[Rect2(2, 2, 4, 4), 0.0, 400.0]]
 	v._sync_lava_nodes()
-	v._hold = PackHold.new(_fx)
+	v._hold = BossPackHold.new(_fx)
 	v._hold.begin()
 	v._draw_lava(10.0)
 	v._hold.end()

@@ -159,13 +159,13 @@ func _rift(id: int, tg: Dictionary) -> void:
 
 
 func _beam(o: Obb) -> void:
-	var pack := PackHold.find(self) if PACK_BEAMS else null
+	var pack := BossPackHold.find(self) if PACK_BEAMS else null
 	if pack != null and pack.has_room(&"beam"):  # R27: the pack's beam along the Conduit's line for BEAM_S
 		var from := SimPlane.to_3d(o.center - o.axis_u * o.half.x, 0.9)
 		var to := SimPlane.to_3d(o.center + o.axis_u * o.half.x, 0.9)
-		var pn := pack.spawn(PackHold.beam_id(BEAM), from, 1.0, {}, BEAM_S)
+		var pn := pack.spawn(BossPackHold.beam_id(BEAM), from, 1.0, {}, BEAM_S)
 		if pn != null:
-			PackHold.beam_place(pn, from, to, o.half.y * 0.7)
+			BossPackHold.beam_place(pn, from, to, o.half.y * 0.7)
 			return
 	var n := Node3D.new()
 	var mi := MeshInstance3D.new()

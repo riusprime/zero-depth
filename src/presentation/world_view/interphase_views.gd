@@ -275,7 +275,7 @@ func _note_strikes() -> void:
 
 ## R37: the pack's pillar of light, in the Fallen's violet, where an eruption strikes (spikes and floor ring stay).
 func _pack_pillar(e: Dictionary) -> void:
-	var pack := PackHold.find(self) if PACK_PILLARS else null
+	var pack := BossPackHold.find(self) if PACK_PILLARS else null
 	if pack == null or not pack.has_room(&"area"):
 		return
 	pack.spawn(

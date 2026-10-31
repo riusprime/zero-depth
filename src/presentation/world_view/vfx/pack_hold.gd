@@ -93,10 +93,7 @@ func _drop(key: int) -> void:
 
 ## Whether PackFx still has `node` as a live effect (it may have reused it for a newer one when its family was full).
 func _is_live(node: Node3D) -> bool:
-	for e: Dictionary in fx.get(&"_live"):
-		if e["node"] == node:
-			return true
-	return false
+	return fx.is_live(node)
 
 
 func _move(node: Node3D, pos: Vector3, scale: float, it: Dictionary) -> void:

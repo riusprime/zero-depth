@@ -1,4 +1,4 @@
-class_name PackHold
+class_name BossPackHold
 extends RefCounted
 ## v0.10.0 VX5 (VFX_PACK R13-R42): the boss, elite and shield views' way of using PackFx. Their effects are drawn from
 ## the sim's state every frame, so a pack effect needs a keyed owner: one-shots start once per key (`once`), held ones
@@ -193,23 +193,20 @@ func _drop(key: Variant) -> void:
 
 
 ## `node` is still the live instance PackFx started for `id` (it was not given back, or reused for another effect).
-func _live(node: Variant, id: StringName) -> bool:
+func _live(node: Variant, _id: StringName) -> bool:
 	if not is_instance_valid(pack) or not is_instance_valid(node):
 		return false
-	for e: Dictionary in pack.get("_live"):
-		if e["node"] == node:
-			return e["id"] == id
-	return false
+	return pack.is_live(node)  # (a node never changes id: each id has its own pool)
 
 
 ## A view's hold: made once the view is in a tree with a PackFx above it (null before, and without the pack).
-static func of(view: Node, cached: PackHold) -> PackHold:
+static func of(view: Node, cached: BossPackHold) -> BossPackHold:
 	if cached != null and cached.pack != null:
 		return cached
 	if not view.is_inside_tree():
 		return null
 	var p := find(view)
-	return PackHold.new(p) if p != null else null
+	return BossPackHold.new(p) if p != null else null
 
 
 ## Recolours a pack fire field (fire_forcefield, fire_area: no colour exports, the colours are on its mesh's material).

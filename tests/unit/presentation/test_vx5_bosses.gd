@@ -4,7 +4,7 @@ extends GutTest
 ## they end, one-shots start once a strike, and a full family keeps that instance's old look.
 
 
-## A node PackHold.find reads a PackFx from (WorldViewRoot's `pack_fx`).
+## A node BossPackHold.find reads a PackFx from (WorldViewRoot's `pack_fx`).
 class Holder:
 	extends Node3D
 	var pack_fx: PackFx
@@ -40,27 +40,29 @@ func _fill(family: StringName, id: StringName) -> void:
 
 # --- The table and the helper -------------------------------------------------------------------------------------
 func test_every_id_is_in_the_table_with_the_family_the_helper_says() -> void:
-	for id: StringName in PackHold.FAMILY:
+	for id: StringName in BossPackHold.FAMILY:
 		assert_true(_fx.has_id(id), "%s is in data/vfx" % id)
 		var n := _fx.spawn(id, Vector3.ZERO, 1.0, {}, 0.0)
 		assert_not_null(n, "%s loads" % id)
 		assert_eq(
-			_fx.live_count(PackHold.FAMILY[id]) > 0,
+			_fx.live_count(BossPackHold.FAMILY[id]) > 0,
 			true,
-			"%s is in its family %s" % [id, PackHold.FAMILY[id]]
+			"%s is in its family %s" % [id, BossPackHold.FAMILY[id]]
 		)
 		_fx.release(n)
 
 
 func test_a_beam_takes_the_scene_nearest_its_colour() -> void:
-	assert_eq(PackHold.beam_id(Color(1.0, 0.16, 0.3)), &"bx_beam_05", "the Prism's pink-red")
-	assert_eq(PackHold.beam_id(Color(0.9, 0.1, 0.05)), &"bx_beam_01", "red")
-	assert_eq(PackHold.beam_id(Color("#B8FFF4")), &"bx_beam_04", "the Conduit's teal")
-	assert_eq(PackHold.beam_id(Color(0.9, 0.9, 0.92)), &"bx_beam_08", "near white is the steel one")
+	assert_eq(BossPackHold.beam_id(Color(1.0, 0.16, 0.3)), &"bx_beam_05", "the Prism's pink-red")
+	assert_eq(BossPackHold.beam_id(Color(0.9, 0.1, 0.05)), &"bx_beam_01", "red")
+	assert_eq(BossPackHold.beam_id(Color("#B8FFF4")), &"bx_beam_04", "the Conduit's teal")
+	assert_eq(
+		BossPackHold.beam_id(Color(0.9, 0.9, 0.92)), &"bx_beam_08", "near white is the steel one"
+	)
 
 
 func test_a_held_effect_goes_back_when_it_is_not_asked_again() -> void:
-	var h := PackHold.new(_fx)
+	var h := BossPackHold.new(_fx)
 	h.begin()
 	assert_not_null(h.hold(&"a", &"bx_shell", Vector3.ZERO))
 	h.end()
@@ -77,7 +79,7 @@ func test_a_held_effect_goes_back_when_it_is_not_asked_again() -> void:
 
 
 func test_a_full_family_answers_no_and_a_one_shot_remembers_it() -> void:
-	var h := PackHold.new(_fx)
+	var h := BossPackHold.new(_fx)
 	_fill(&"cloud", &"bx_smoke_dust")
 	h.begin()
 	assert_false(h.once(&"k", &"bx_smoke_big", Vector3.ZERO), "no room: the old look")
@@ -87,14 +89,14 @@ func test_a_full_family_answers_no_and_a_one_shot_remembers_it() -> void:
 	assert_false(h.once(&"k", &"bx_smoke_big", Vector3.ZERO), "the same strike keeps its old look")
 	assert_true(h.once(&"k2", &"bx_smoke_big", Vector3.ZERO), "a new strike takes the pack's")
 	h.end()
-	var beams := PackHold.new(_fx)
+	var beams := BossPackHold.new(_fx)
 	_fill(&"beam", &"bx_beam_01")
 	beams.begin()
 	assert_null(beams.hold(1, &"bx_beam_05", Vector3.ZERO), "no beam slot: the old cylinders")
 
 
 func test_a_one_shot_starts_once_per_key_across_frames() -> void:
-	var h := PackHold.new(_fx)
+	var h := BossPackHold.new(_fx)
 	for k in 5:
 		h.begin()
 		h.once(&"strike", &"bx_impact_a", Vector3.ZERO)

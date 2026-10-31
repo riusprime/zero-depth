@@ -4,7 +4,7 @@ extends RefCounted
 ## sparks, flames from the owner's atlases), its light (merged, into the 10-light pool), its floor marks (the decal
 ## cap) and its explosions and acid splats (VfxLayer.burst: the frame's burst budget). Thinned with the layer's
 ## density. Presentation only.
-## v0.10.0 VX5 (VFX_PACK R27, R36-R39): the strikes' decoration is the pack's (PackHold: each effect starts once per
+## v0.10.0 VX5 (VFX_PACK R27, R36-R39): the strikes' decoration is the pack's (BossPackHold: each effect starts once per
 ## strike, the held ones follow the strike while it lasts); a full family keeps that instance's old sprites. The
 ## strikes' shapes, rocks, floor marks, lights and hit areas are untouched. A const to switch the old look back on.
 
@@ -169,7 +169,9 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					if on and hold != null and s["kind"] == &"rail":  # R27: the rail's blast along its lane
 						var bn := hold.hold(_key(s, li, 6), &"bx_rail", near, 1.0, {}, false)
 						if bn != null:
-							PackHold.beam_place(bn, near, far, lane.half.y, PackHold.RAIL_NATIVE_R)
+							BossPackHold.beam_place(
+								bn, near, far, lane.half.y, BossPackHold.RAIL_NATIVE_R
+							)
 					if on:
 						_sparks(layer, far, age, sd, 8, glow)
 						layer.light_merged(near.lerp(far, 0.3), glow, 4.0, 8.0, 3.0)
@@ -218,7 +220,7 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 
 ## The Mythic lanes' flames as the pack's fire, a row about FLAME_GAP_M apart along the lane. False when the family had
 ## no room for the first (the caller draws its old flames for this lane).
-static func _pack_flames(hold: PackHold, s: Dictionary, lane: Obb, lk: int) -> bool:
+static func _pack_flames(hold: BossPackHold, s: Dictionary, lane: Obb, lk: int) -> bool:
 	var n := clampi(int(lane.half.x * 2.0 / FLAME_GAP_M), 2, FLAMES_PER_LANE)
 	for j in n:
 		var t := (float(j) + 0.5) / n * 2.0 - 1.0
@@ -236,12 +238,12 @@ static func _pack_flames(hold: PackHold, s: Dictionary, lane: Obb, lk: int) -> b
 
 ## The pack's hold for `fx`'s PackFx (made again when the layer's changes); null without the pack or with
 ## PACK_STRIKES off.
-static func _pack_hold(fx: VfxLayer) -> PackHold:
+static func _pack_hold(fx: VfxLayer) -> BossPackHold:
 	if not PACK_STRIKES or fx == null or fx.pack_fx == null:
 		return null
-	var h: PackHold = fx.get_meta(&"vx5_hold") if fx.has_meta(&"vx5_hold") else null  # one hold a layer
+	var h: BossPackHold = fx.get_meta(&"vx5_hold") if fx.has_meta(&"vx5_hold") else null  # one hold a layer
 	if h == null or h.pack != fx.pack_fx:
-		h = PackHold.new(fx.pack_fx)
+		h = BossPackHold.new(fx.pack_fx)
 		fx.set_meta(&"vx5_hold", h)
 	return h
 

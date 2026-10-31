@@ -28,7 +28,7 @@ var phase := MeshInstance3D.new()
 var drops: Array[MeshInstance3D] = []
 var marks: Array[MeshInstance3D] = []
 var _shell_mat := StandardMaterial3D.new()
-var _hold: PackHold = null
+var _hold: BossPackHold = null
 
 
 func _ready() -> void:
@@ -96,7 +96,7 @@ func sync(reader: WorldReader) -> void:
 	shell.visible = bool(m["shell"]) or flash
 	shell.position = hero + Vector3(0, 0.9, 0)
 	_shell_mat.albedo_color = Color(SHELL, 0.6) if flash else SHELL
-	_hold = PackHold.of(self, _hold) if PACK_SHELL else null
+	_hold = BossPackHold.of(self, _hold) if PACK_SHELL else null
 	if _hold != null:  # R40: the barrier is the pack's forcefield while it is up (the sphere still flashes on a hit)
 		_hold.begin()
 		var field: Node3D = null
@@ -106,7 +106,7 @@ func sync(reader: WorldReader) -> void:
 			)
 		if field != null:  # the fire field's colours are on its material: the shell's green
 			var c := Color(SHELL.r, SHELL.g, SHELL.b, 1.0)
-			PackHold.tint_field(field, c, c.lightened(0.3), c.lightened(0.7))
+			BossPackHold.tint_field(field, c, c.lightened(0.3), c.lightened(0.7))
 		_hold.end()
 		shell.layers = 1 if (flash or field == null) else 0
 	charge.visible = bool(m["charged"])

@@ -156,7 +156,7 @@ var _lava_shader := Shader.new()
 var _melt_rows: Array = []
 var _melt_nodes: Array[MeshInstance3D] = []
 var _melt_shader := Shader.new()
-var _hold: PackHold = null
+var _hold: BossPackHold = null
 var _gaze_packed := false
 
 
@@ -726,7 +726,7 @@ func spark_count() -> int:
 
 
 func _draw_bs2(now: float, still: bool) -> void:
-	_hold = PackHold.of(self, _hold) if (PACK_GAZE or PACK_LAVA) else null
+	_hold = BossPackHold.of(self, _hold) if (PACK_GAZE or PACK_LAVA) else null
 	if _hold != null:
 		_hold.begin()
 	_gaze_packed = false
@@ -773,9 +773,9 @@ func _draw_gaze(now: float, still: bool) -> void:
 	var hw := float(g["half_width"])
 	var pack_beam: Node3D = null
 	if PACK_GAZE and _hold != null:  # R27: the pack's beam in the Gaze's colour, in place of the two cylinders
-		pack_beam = _hold.hold(&"gaze", PackHold.beam_id(GAZE), eye, 1.0, {}, false)
+		pack_beam = _hold.hold(&"gaze", BossPackHold.beam_id(GAZE), eye, 1.0, {}, false)
 	if pack_beam != null:
-		PackHold.beam_place(pack_beam, eye, to, hw)
+		BossPackHold.beam_place(pack_beam, eye, to, hw)
 		_gaze_packed = true
 	else:
 		_beam.visible = true

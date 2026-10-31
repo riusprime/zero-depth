@@ -126,7 +126,7 @@ func play(at: Vector3) -> void:
 	visible = true
 	_packed = false
 	if PACK_FLASH:  # R42: the pack's flash orb in the blue (the column, pool and sparks give way; the light stays)
-		var pack := PackHold.find(self)
+		var pack := BossPackHold.find(self)
 		if pack != null and pack.has_room(&"impact"):
 			var where := global_position if is_inside_tree() else at
 			_packed = (
