@@ -2518,6 +2518,21 @@ func pair_mask() -> int:
 	return _w.pair_mask
 
 
+## v0.9.5 EP4: how many element pairs there are.
+func pair_count() -> int:
+	return ElementPairs.COUNT
+
+
+## v0.9.5 EP4: pair `x`'s level 1-3 now (0 while off).
+func pair_level(x: int) -> int:
+	return ElementPairs.level(_w, x)
+
+
+## v0.9.5 EP4: the pairs taking item `item_idx` would turn on or raise, flat [x, new_level, ...].
+func pair_preview(item_idx: int) -> PackedInt32Array:
+	return ElementPairs.preview(_w, item_idx)
+
+
 func pair_clouds() -> Dictionary:
 	var pos := PackedVector2Array()
 	var left := PackedInt32Array()

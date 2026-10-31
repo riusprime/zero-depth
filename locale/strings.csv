@@ -1371,7 +1371,11 @@ UI_CODEX_TAB_COLLECTIBLES,Collectibles,Coleccionables
 PROGRESSION_REVEALED,Revealed: %s. Wear it at the Wardrobe.,Revelada: %s. Póntela en el Vestidor.
 CAPTION_STRESS_BREAK,[weak point],[punto débil]
 RUN_SUMMARY_LOOPED,Looped ×%d,Bucles ×%d
-UI_PAIR_ON,Element pair,Par elemental
+UI_PAIR_ON,Element pair!,¡Par elemental!
+UI_PAIR_LEVEL,Element pair · Lv %d,Par elemental · Nv %d
+UI_PAIR_PREVIEW_ON,Pair: %s,Par: %s
+UI_PAIR_PREVIEW_UP,%s → Lv %d,%s → Nv %d
+UI_PAIR_BIG,Element pair! %s,¡Par elemental! %s
 PAIR_THERMAL_SHOCK,Thermal Shock,Choque Térmico
 PAIR_THERMAL_SHOCK_DESC,A foe burning and frozen bursts when hit (up to x3).,Un enemigo ardiendo y helado estalla al golpe (hasta x3).
 PAIR_TOXIC_FUMES,Toxic Fumes,Humos Tóxicos
