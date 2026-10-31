@@ -54,20 +54,32 @@ const PACK_SMOKE_DELAY_S := 0.25
 ## A burst's seed is forgotten this long (ticks) after it was last drawn.
 const PACK_SEEN_TICKS := 180.0
 
+## v0.10.0 VX3 (VFX_PACK R19-R26, R28-R30, R41): the zones, rings, element bursts and the statuses on enemies are the
+## pack's effects (PackFx); false keeps the old sprites for that area (the before shots). Each also falls back, one
+## instance at a time, when PackFx has no room in the effect's family.
+const PACK_ZONES := true  # fire, frost, venom and bleed patches; the element rings
+const PACK_BURSTS := true  # frost, shatter, venom, bleed and Wildfire bursts
+const PACK_STATUS := true  # burn, poison and frost on an enemy; Bulwark's guard orbs
 ## The pack effects (WorldViewRoot sets it); none: the sprite explosion draws.
 var pack_fx: PackFx = null
+## VX3: how many of the guard orbs the pack draws this frame (StatusVisuals hides that many of its own).
+var guard_orbs_packed := 0
 var _pack_seen := {}  # seed -> the tick the burst was last drawn
 var _pack_smoke: Array[Array] = []  # [due tick, position, scale]
+## VX3: the pack's zones, bursts and statuses (VfxPackViews).
+var _views := VfxPackViews.new(self)
 
 
 # --- Public: one call per form ----------------------------------------------------------------------------------
 ## A lingering patch of radius `r` at `c` (ground). `fade` 0..1, `age` in ticks, `sd` the effect's seed.
-func field(kind: StringName, c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
+func field(
+	kind: StringName, c: Vector3, r: float, fade: float, age: float, sd: int, hostile := false
+) -> void:
 	if fade <= 0.0:
 		return
 	match kind:
 		&"fire":
-			_fire(c, r, fade, age, sd)
+			_fire(c, r, fade, age, sd, hostile)
 		&"storm":
 			_storm_field(c, r, fade, age, sd)
 		&"frost":
@@ -144,6 +156,11 @@ func _burst_kind(kind: StringName, c: Vector3, r: float, u: float, sd: int) -> v
 			_storm_burst(c, r, u, sd)
 		&"frost":
 			_frost_burst(c, r, u, sd)
+		&"shatter":  # v0.10.0 VX3: a frozen enemy's shatter: the frost burst and a small ice patch
+			_frost_burst(c, r, u, sd, true)
+		&"wildfire":  # v0.10.0 VX3: Wildfire from a burning kill: fire_area_03, or the fire sprites' explosion
+			if not (PACK_BURSTS and pack_fx != null and _views.wildfire(c, r, u, sd)):
+				_explosion(c, r, u, sd)
 		&"venom":
 			_liquid_burst(c, r, u, sd, VENOM, VENOM_MARK, true)
 		&"bleed":
@@ -162,7 +179,8 @@ func status(p: Vector3, r: float, on: Dictionary, sd: int, top: float = 0.9) -> 
 	var age := _now
 	var burn: int = on.get(&"burn", 0)
 	if burn > 0:
-		var n := clampi(1 + burn / 2, 1, 4)
+		var packed := PACK_STATUS and pack_fx != null and _views.burn(p, r, burn, sd, top)
+		var n := 0 if packed else clampi(1 + burn / 2, 1, 4)
 		for k in n:
 			var a := TAU * (k / float(n) + h(sd, k))
 			# Round the body's top edge, licking up past it.
@@ -178,7 +196,8 @@ func status(p: Vector3, r: float, on: Dictionary, sd: int, top: float = 0.9) -> 
 				0.0,
 				h(sd, k) * 10.0
 			)
-		_embers(p + Vector3(0, top, 0), age, sd, 2, 1.0)
+		if not packed:
+			_embers(p + Vector3(0, top, 0), age, sd, 2, 1.0)
 		# v0.8.0 FV: a status light (merged, the brightest few: VfxCore.STATUS_LIGHTS_MAX).
 		_light_status(p + Vector3(0, top + 0.4, 0), WARM, 0.7 + 0.1 * burn, 3.0)
 	var shock: int = on.get(&"shock", 0)
@@ -207,12 +226,24 @@ func status(p: Vector3, r: float, on: Dictionary, sd: int, top: float = 0.9) -> 
 			BLOOD_MARK
 		)
 	var poison: int = on.get(&"poison", 0)
-	if poison > 0:
+	if poison > 0 and not (PACK_STATUS and pack_fx != null and _views.poison(p, r, sd, top)):
 		_drips(p, r, top, age, sd + 3, mini(2, 1 + poison / 4), VENOM)
 		for k in mini(4, 1 + poison / 2):
 			_bubble(p + Vector3(0, top * 0.8, 0), r * 0.6, age, sd + 9 * k, 0.2, 1.0, 40.0, VENOM)
+	var guard: int = on.get(&"guard", 0)
+	if guard > 0 and PACK_STATUS and pack_fx != null:
+		guard_orbs_packed = _views.guard(p, r, guard, sd)
 	var frozen := on.has(&"frozen")
-	var frost := _thin(&"ice", 6 if frozen else mini(on.get(&"frost", 0), 4))
+	# The pack's mist at the feet replaces the frost crystals; a frozen enemy keeps our cage (and gets the mist too)
+	var mist: bool = (
+		(frozen or on.get(&"frost", 0) > 0)
+		and PACK_STATUS
+		and pack_fx != null
+		and _views.frost(p, r, sd)
+	)
+	var frost := (
+		0 if (mist and not frozen) else _thin(&"ice", 6 if frozen else mini(on.get(&"frost", 0), 4))
+	)
 	for k in frost:
 		var a := TAU * k / maxf(frost, 1) + h(sd, k + 20)
 		var out := Vector3(cos(a), 0, sin(a))
@@ -250,7 +281,9 @@ static func _splat(k: int) -> StringName:
 
 # --- Fire -------------------------------------------------------------------------------------------------------
 ## Fire over a patch: upright flames with a taller core, rising embers, a little smoke, warm light, a scorch.
-func _fire(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
+func _fire(c: Vector3, r: float, fade: float, age: float, sd: int, hostile := false) -> void:
+	if PACK_ZONES and pack_fx != null and _views.fire(c, r, fade, age, sd, hostile):
+		return
 	var n := clampi(int(round((3.0 + r * r * 2.0) * density)), 3, 16)
 	for k in n:
 		var a := TAU * h(sd, k)
@@ -302,6 +335,8 @@ func _flame(p: Vector3, hgt: float, k: int, age: float, sd: int, fade: float) ->
 
 ## Flames along a ring's edge.
 func _fire_ring(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
+	if PACK_ZONES and pack_fx != null and _views.ring(&"fire", c, r, fade, sd):
+		return
 	var n := clampi(int(r * 4.0 * density), 8, 24)
 	for k in n:
 		var a := TAU * (k + 0.3 * h(sd, k)) / n
@@ -389,6 +424,8 @@ func _pack_explosion(c: Vector3, r: float, sd: int) -> void:
 ## The pack's delayed smoke clouds that are due, then the frame as VfxCore starts it.
 func begin(p_now: float) -> void:
 	super.begin(p_now)
+	_views.begin(pack_fx)
+	guard_orbs_packed = 0
 	if pack_fx == null:
 		return
 	pack_fx.follow(p_now)
@@ -399,6 +436,12 @@ func begin(p_now: float) -> void:
 		elif float(s[0]) - p_now < PACK_SEEN_TICKS:  # (a clock that went back drops it)
 			left.append(s)
 	_pack_smoke = left
+
+
+## The frame's end: the pack effects nothing touched this frame (a patch, ring or status that ended) go back to PackFx.
+func finish() -> void:
+	super.finish()
+	_views.end()
 
 
 func _explosion_sprites(c: Vector3, r: float, u: float, sd: int) -> void:
@@ -597,6 +640,8 @@ func _storm_burst(c: Vector3, r: float, u: float, sd: int) -> void:
 # --- Frost ------------------------------------------------------------------------------------------------------
 ## Frost over a patch: ice crystals grown out of the floor, a low cold mist, glints, frost on the floor.
 func _frost_field(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
+	if PACK_ZONES and pack_fx != null and _views.frost_field(c, r, fade, sd):
+		return
 	var grow := clampf(age / 10.0, 0.0, 1.0)
 	var n := _thin(&"ice", clampi(int(round((3.0 + r * r * 2.0) * density)), 3, 16))
 	for k in n:
@@ -629,6 +674,8 @@ func _frost_field(c: Vector3, r: float, fade: float, age: float, sd: int) -> voi
 
 ## A ring of ice spikes erupting along the ring's front.
 func _frost_ring(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
+	if PACK_ZONES and pack_fx != null and _views.ring(&"frost", c, r, fade, sd):
+		return
 	var n := _thin(&"ice", clampi(int(r * 4.0 * density), 8, 24))
 	for k in n:
 		var a := TAU * (k + 0.4 * h(sd, k)) / n
@@ -660,7 +707,9 @@ func _frost_line(a: Vector3, b: Vector3, fade: float, age: float, sd: int) -> vo
 
 
 ## Ice bursting out of the floor: crystals erupt outward, shards fly, a cold flash, frost left behind.
-func _frost_burst(c: Vector3, r: float, u: float, sd: int) -> void:
+func _frost_burst(c: Vector3, r: float, u: float, sd: int, shatter := false) -> void:
+	if PACK_BURSTS and pack_fx != null and _views.frost_burst(c, r, u, sd, shatter):
+		return
 	var rise := clampf(u / 0.12, 0.0, 1.0)
 	var sink := clampf((u - 0.6) / 0.4, 0.0, 1.0)
 	var n := _thin(&"ice", clampi(int(round((6.0 + r * 4.0) * density)), 6, 20))
@@ -714,6 +763,10 @@ func _liquid_field(
 			r * 0.7,
 			mark_c
 		)
+	if PACK_ZONES and pack_fx != null and _views.liquid_field(c, r, fade, sd, toxic):
+		if toxic:
+			_light(c + Vector3(0, 0.5, 0), col, 0.8 * fade, r + 2.0)
+		return
 	var n := clampi(int(round((2.0 + r * r * 1.5) * density)), 2, 12)
 	for k in n:
 		var a := TAU * h(sd, k)
@@ -731,6 +784,9 @@ func _liquid_field(
 
 ## Splashes cycling along a ring's front.
 func _liquid_ring(c: Vector3, r: float, fade: float, age: float, sd: int, col: Color) -> void:
+	var kind := &"venom" if col == VENOM else &"bleed"
+	if PACK_ZONES and pack_fx != null and _views.ring(kind, c, r, fade, sd):
+		return
 	var n := clampi(int(r * 3.0 * density), 6, 18)
 	for k in n:
 		var a := TAU * (k + 0.4 * h(sd, k)) / n
@@ -764,6 +820,8 @@ func _liquid_line(
 func _liquid_burst(
 	c: Vector3, r: float, u: float, sd: int, col: Color, mark_c: Color, toxic: bool
 ) -> void:
+	if PACK_BURSTS and pack_fx != null and _views.liquid_burst(c, r, u, sd, toxic):
+		return
 	var grow := clampf(u / 0.25, 0.0, 1.0)
 	var gone := clampf((u - 0.3) / 0.3, 0.0, 1.0)
 	if gone < 1.0:

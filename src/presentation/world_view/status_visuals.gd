@@ -302,7 +302,8 @@ func _update(v: Dictionary, on: Dictionary, r: float) -> void:
 		_build_orbs(v)
 	for k in (v["orbs"] as Array).size():
 		var o: Node3D = v["orbs"][k]
-		o.visible = k < charges
+		# v0.10.0 VX3 (R41): the pack's orbs draw the first guard_orbs_packed of them (one frame behind)
+		o.visible = k < charges and (vfx == null or k >= vfx.guard_orbs_packed)
 		var a := t * 3.0 + TAU * k / ORBS
 		o.position = Vector3(cos(a) * (r + 0.35), 0.7, sin(a) * (r + 0.35))
 
@@ -530,10 +531,10 @@ func _draw_vfx(layer: VfxCore) -> void:
 			&"shard":
 				var to: Vector3 = (shot[6] as Array)[0]
 				fx.line(&"frost", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
-			&"shatter":
-				fx.burst(&"frost", shot[1], shot[2], u, int(shot[5]))
-			&"wildfire":
-				fx.burst(&"fire", shot[1], shot[2], u, int(shot[5]))
+			&"shatter":  # v0.10.0 VX3: the frost burst and a small ice patch
+				fx.burst(&"shatter", shot[1], shot[2], u, int(shot[5]))
+			&"wildfire":  # v0.10.0 VX3: fire_area_03 (the fire sprites' explosion without room)
+				fx.burst(&"wildfire", shot[1], shot[2], u, int(shot[5]))
 			_:
 				fx.burst(&"bleed", shot[1], shot[2], u, int(shot[5]))
 	_shots = keep

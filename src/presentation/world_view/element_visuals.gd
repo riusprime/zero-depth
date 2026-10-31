@@ -25,10 +25,20 @@ const MAX_CLOUDS := 16
 const FX_FRAMES := 16
 const FIRE_Y := 0.025
 const BOLT_SEGMENTS := 4
+## v0.10.0 VX3 (VFX_PACK R24, R26): Toxic Fumes' clouds, Frost Nova's ring and Ember Ward's ring are the pack's effects
+## (PackFx); false keeps the flat quad and the torus (the before shots). Each also falls back when the pack has no
+## room in the effect's family (clouds: cap 4).
+const PACK_ELEMENTS := true
+## The cloud scene's scale per metre of the sim's gas radius, the rings' per metre of the sim's radius.
+const FUMES_PER_M := 0.7
+const RING_PER_M := {&"ring_frost": 0.5, &"ring_fire": 0.55}
 
 ## v0.6.0 MX3: AttackFormView draws the RING form's rings and every patch that names a spec (WorldViewRoot sets
 ## it); this view keeps the patches without one (Napalm Drone's).
 var forms_drawn := false
+## The pack effects (WorldViewRoot sets it); none: the old quads and rings.
+var pack_fx: PackFx = null
+var _holds := PackHold.new()
 var _fires: Array[MeshInstance3D] = []
 var _fx := FxFade.new()
 var _template := SkillVisuals._make_template()
@@ -88,14 +98,16 @@ func sync(reader: WorldReader) -> void:
 				fx["arc_from"], to, SUPER_COLOR if sup else ARC_COLOR, 0.09 if sup else 0.05, &"arc"
 			)
 	if _edge(&"nova", fx["nova_tick"]):
-		_ring(fx["nova_pos"], fx["nova_r"], NOVA_COLOR, &"nova")
-		_disc(fx["nova_pos"], fx["nova_r"], NOVA_COLOR, 0.25, &"nova")
+		if not _pack_ring(fx["nova_pos"], fx["nova_r"], &"ring_frost", &"frost"):
+			_ring(fx["nova_pos"], fx["nova_r"], NOVA_COLOR, &"nova")
+			_disc(fx["nova_pos"], fx["nova_r"], NOVA_COLOR, 0.25, &"nova")
 	if _edge(&"storm", fx["storm_tick"]):
 		for to: Vector2 in fx["storm_to"]:
 			_bolt(fx["storm_from"], to, STORM_COLOR, 0.07, &"storm")
 	if _edge(&"ward", fx["ward_tick"]):
-		_ring(fx["ward_pos"], fx["ward_r"], WARD_COLOR, &"ward")
-		_disc(fx["ward_pos"], fx["ward_r"], WARD_COLOR, 0.35, &"ward")
+		if not _pack_ring(fx["ward_pos"], fx["ward_r"], &"ring_fire", &"fire"):
+			_ring(fx["ward_pos"], fx["ward_r"], WARD_COLOR, &"ward")
+			_disc(fx["ward_pos"], fx["ward_r"], WARD_COLOR, 0.35, &"ward")
 	if _edge(&"charge", fx["charge_tick"]):
 		_disc(fx["charge_pos"], 0.9, CHARGE_COLOR, 0.6, &"charge")
 	if _edge(&"wing", fx["wing_tick"]):
@@ -225,6 +237,21 @@ func _disc(
 	_add(n, c, alpha, kind)
 
 
+## v0.10.0 VX3 (R26): the pack's ring `id` out to the sim's radius `r` at `at`, in the hero's `kind` colours, once
+## (Frost Nova: pulse_area_02, Ember Ward: rim_area_04). False: no PackFx or no room, the torus and disc draw.
+func _pack_ring(at: Vector2, r: float, id: StringName, kind: StringName) -> bool:
+	if not PACK_ELEMENTS or pack_fx == null or not pack_fx.has_room(&"area"):
+		return false
+	var n := PackHold.play(
+		pack_fx,
+		id,
+		SimPlane.to_3d(at, FIRE_Y + 0.03),
+		r * float(RING_PER_M[id]),
+		VfxPackViews.kind_colors(kind, true)
+	)
+	return n != null
+
+
 func _add(n: MeshInstance3D, c: Color, alpha: float, kind: StringName) -> void:
 	_fx.add(self, n, _template, c, alpha, kind, FX_FRAMES)
 
@@ -249,14 +276,35 @@ func _sync_clouds(reader: WorldReader) -> void:
 		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(m)
 		_clouds.append(m)
+	_holds.fx = pack_fx
+	_holds.begin()
 	for k in _clouds.size():
 		var q := _clouds[k]
 		q.visible = k < pos.size()
 		if not q.visible:
 			continue
 		var fade := clampf(left[k] / 60.0, 0.0, 1.0)
+		# v0.10.0 VX3 (R24): the pack's cloud (cap 4), held while the sim's cloud lasts; past the cap the flat quad
+		if PACK_ELEMENTS and pack_fx != null:
+			var node := _holds.touch(
+				_cloud_key(pos[k]),
+				&"fumes_cloud",
+				&"cloud",
+				SimPlane.to_3d(pos[k], GAS_Y),
+				r * (0.7 + 0.3 * fade) * FUMES_PER_M,
+				VfxPackViews.kind_colors(&"venom", true)
+			)
+			if node != null:
+				q.visible = false
+				continue
 		q.position = SimPlane.to_3d(pos[k], GAS_Y + 0.002 * (k % 4))
 		q.scale = Vector3(r * (0.7 + 0.3 * fade), r * (0.7 + 0.3 * fade), 1.0)
+	_holds.end()
+
+
+## A cloud's key: where it stands (a cloud does not move).
+static func _cloud_key(at: Vector2) -> int:
+	return roundi(at.x * 16.0) * 100003 + roundi(at.y * 16.0)
 
 
 ## Clouds drawn now (tests).
