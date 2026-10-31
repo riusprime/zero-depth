@@ -57,13 +57,20 @@ func _init(def: PackFxDefinition = null) -> void:
 	_def = def if def != null else shared_def()
 
 
-## The table in data/vfx (discovered through ContentScanner), or null without it.
+## The table in data/vfx (discovered through ContentScanner), or null without it. v0.10.0: every PackFxDefinition
+## there joins one table (each VX step ships its own file, data/vfx/pack_fx_<step>.tres), in path order.
 static func shared_def() -> PackFxDefinition:
 	if _shared == null:
-		for path in ContentScanner.scan(DEFS_DIR):
+		var paths := Array(ContentScanner.scan(DEFS_DIR))
+		paths.sort()
+		for path: String in paths:
 			var d := load(path) as PackFxDefinition
-			if d != null:
-				_shared = d
+			if d == null:
+				continue
+			if _shared == null:
+				_shared = d.duplicate(true) as PackFxDefinition
+			else:
+				_shared.append_rows(d)
 	return _shared
 
 

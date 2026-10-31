@@ -31,6 +31,21 @@ func count() -> int:
 	return ids.size()
 
 
+## v0.10.0: `other`'s rows appended to this table (PackFx joins every file in data/vfx; an id already here is skipped,
+## the content test keeps ids unique across files).
+func append_rows(other: PackFxDefinition) -> void:
+	for k in other.count():
+		if ids.has(other.ids[k]):
+			continue
+		ids.append(other.ids[k])
+		scenes.append(other.scenes[k])
+		families.append(other.families[k])
+		scales.append(other.scales[k])
+		primary.append(other.primary[k])
+		secondary.append(other.secondary[k])
+		tertiary.append(other.tertiary[k])
+
+
 ## The row of `effect_id`, or -1.
 func row(effect_id: StringName) -> int:
 	return ids.find(effect_id)

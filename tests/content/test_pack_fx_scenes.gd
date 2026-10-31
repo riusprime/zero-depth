@@ -74,3 +74,16 @@ func test_the_table_rejects_bad_rows() -> void:
 	for i in def.validate():
 		codes.append(i.code)
 	assert_has(codes, &"size_mismatch")
+
+
+## v0.10.0: each VX step ships its own data/vfx/pack_fx*.tres; their ids never repeat across files.
+func test_ids_are_unique_across_the_table_files() -> void:
+	var seen := {}
+	for path in ContentScanner.scan("res://data/vfx"):
+		var d := load(path) as PackFxDefinition
+		if d == null:
+			continue
+		for id in d.ids:
+			assert_false(seen.has(id), "%s is in %s and %s" % [id, seen.get(id, ""), path])
+			seen[id] = path
+	assert_true(seen.size() >= 4, "the VX0 rows are found")
