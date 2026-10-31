@@ -30,6 +30,16 @@ const CAPS := {
 	&"trail": 8,  # v0.10.0 VX8: blade swing ribbons
 	&"mark": 48,  # v0.10.0 VX7: lasting floor marks
 }
+## v0.10.0 FX (owner, 2026-10-31: oversized glows and flares, "lighting artifacts"): the pack's particles live in world
+## space, and Godot does not size a world-space particle by its node's scale, so a spark scaled to 0.1 still drew its
+## flares and glows full size (the white starbursts at every bolt's end, the hits' flashes). Every effect that stands
+## where it was spawned now has local particles (the node's scale sizes them); only the families that fly keep world
+## space, for their trails (FireballViews and the forms size those by hand).
+const WORLD_SPACE: Array[StringName] = [&"projectile", &"enemy_shot", &"trail"]
+## v0.10.0 FX (owner, 2026-10-31: effects "appear in unintended screen positions"): the pack's particles live in
+## world space, so a held effect moved further than JUMP_M in one frame (a key handed to another shot, a pooled
+## instance taken over) would draw its old trail across the screen; settle() starts its particles again.
+const JUMP_M := 1.5
 ## ViewPrefs.effects_density -> the factor on CAPS (I9).
 const DENSITY_FACTOR := {"low": 0.25, "medium": 0.55, "high": 1.0}
 const DEFS_DIR := "res://data/vfx"
@@ -123,7 +133,10 @@ func pooled(effect_id: StringName) -> int:
 ## Plays effect `effect_id` at world position `pos`, `scale` times the table's scale; `colors` may hold `primary`,
 ## `secondary` and `tertiary`. Returns the instance (null for an unknown id). v0.10.0: `life` -1 is the scene's own
 ## length; 0 keeps it until the caller's release() (a bolt, a zone, a status that follows something); above 0, seconds.
-func spawn(effect_id: StringName, pos: Vector3, scale := 1.0, colors := {}, life := -1.0) -> Node3D:
+## v0.10.0 FX: `speed` plays the scene that many times faster (a Blink's flash pops in a fraction of its length).
+func spawn(
+	effect_id: StringName, pos: Vector3, scale := 1.0, colors := {}, life := -1.0, speed := 1.0
+) -> Node3D:
 	var k := _def.row(effect_id) if _def != null else -1
 	if k < 0:
 		return null
@@ -145,8 +158,10 @@ func spawn(effect_id: StringName, pos: Vector3, scale := 1.0, colors := {}, life
 	# its scene's one pass (an animation-less scene's particles fire once).
 	for p in _particles(node):
 		p.one_shot = life != 0.0 and info["anim"] == null
+		p.local_coords = not WORLD_SPACE.has(family)
+	info["mul"] = speed
 	_restart(node, info)
-	var left := float(info["life"]) if life < 0.0 else (INF if life == 0.0 else life)
+	var left := float(info["life"]) / speed if life < 0.0 else (INF if life == 0.0 else life)
 	_live.append({"node": node, "id": effect_id, "family": family, "left": left})
 	spawned += 1
 	return node
@@ -202,7 +217,7 @@ func set_held(on: bool) -> void:
 		return
 	_held = on
 	for e in _live:
-		_set_speed(e["node"], 0.0 if on else float(_info[e["node"]]["speed"]))
+		_set_speed(e["node"], 0.0 if on else _speed_of(_info[e["node"]]))
 
 
 func is_held() -> bool:
@@ -322,13 +337,18 @@ func _colour(node: Node3D, info: Dictionary, colors: Dictionary, row: int) -> vo
 
 func _restart(node: Node3D, info: Dictionary) -> void:
 	node.visible = true
-	_set_speed(node, 0.0 if _held else float(info["speed"]))
+	_set_speed(node, 0.0 if _held else _speed_of(info))
 	for p in _particles(node):
 		p.restart()
 	var anim := info["anim"] as AnimationPlayer
 	if anim != null and anim.has_animation(ANIM):
 		anim.play(ANIM)
 		anim.seek(0.0)
+
+
+## The scene's own speed times the spawn's (v0.10.0 FX).
+static func _speed_of(info: Dictionary) -> float:
+	return float(info["speed"]) * float(info.get("mul", 1.0))
 
 
 func _set_speed(node: Node3D, speed: float) -> void:
@@ -364,6 +384,16 @@ func _own_materials(node: Node) -> void:
 			g.material_override = g.material_override.duplicate()
 	for c in node.get_children():
 		_own_materials(c)
+
+
+## v0.10.0 FX: a held effect moved further than JUMP_M in one frame starts its particles again (the holds call it
+## after each move).
+static func settle(node: Node3D, was: Vector3, now_at: Vector3) -> void:
+	if was.distance_to(now_at) <= JUMP_M:
+		return
+	for c in node.get_children():
+		if c is GPUParticles3D:
+			(c as GPUParticles3D).restart()
 
 
 ## v0.10.0 lead: `node` is playing (not back in its pool, not taken over past a cap).

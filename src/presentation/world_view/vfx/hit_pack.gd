@@ -50,8 +50,6 @@ const MUZZLE_IDS := {
 }
 const MUZZLE_NEUTRAL := &"vx1_muzzle_05"
 const FLASH_BIG := &"vx1_flash_big"
-const DEATH_SMOKE := &"vx1_death_smoke"
-const DEATH_POP := &"vx1_death_pop"
 
 ## Scales (the pack's scene is about a metre across at 1): per metre of the old effect's strength.
 const HIT_SCALE := 0.35
@@ -59,8 +57,6 @@ const IMPACT_SCALE := 0.3
 const SLASH_SCALE := 0.5
 const MUZZLE_SCALE := 0.8
 const FLASH_PER_M := 0.8
-const DEATH_SMOKE_SCALE := 0.18
-const DEATH_POP_SCALE := 0.35
 ## Per scene: the factor on the scales above (the scenes differ in size: Storm's hit and the Ember and Frost impacts are
 ## several metres across at 1; found in the shots).
 const SCENE_K := {

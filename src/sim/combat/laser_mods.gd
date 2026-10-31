@@ -50,7 +50,7 @@ const K_RING := &"ring"
 const K_BACK := &"back"
 const K_SPLIT := &"split"
 ## The most legs of one path (a curve of short steps, a bounce).
-const MAX_LEGS := 14
+const MAX_LEGS := 24
 const ECHO_TICKS_MAX := 8
 const HZ := 60
 ## The laser row's numbers (units in the names; data/wand/attack_slots.tres carries the same).
@@ -62,10 +62,9 @@ const DEFAULTS := {
 	"ring_share": 500,
 	"back_mm": 4500,
 	"back_share": 1000,
-	"home_dps": 120,
 	"home_repick_ms": 200,
-	"home_step_mm": 1500,
-	"home_bend_deg": 25,
+	"home_step_mm": 750,
+	"home_bend_deg": 12,
 	"home_chain": 5,
 	"echo_delay_ms": 400,
 	"echo_share": 500,
@@ -181,10 +180,11 @@ static func spiral_offset(w: World) -> int:
 	return deg(param(w, "spiral_deg")) * v / 30
 
 
-## The heading the main beam has now: the player's aim (or the lagging one Homing and Big Shot keep), plus Spiral.
+## The heading the main beam has now: the player's aim (or the lagging one Big Shot keeps), plus Spiral. v0.10.0 FX
+## (owner: "improve aiming responsiveness"): Homing no longer lags the aim; it only bends the path (_path).
 static func heading(w: World, m: int, angle: int) -> int:
 	var a := angle
-	if m & (HOMING | BIG) != 0 and w.mx.lz_aim >= 0:
+	if m & BIG != 0 and w.mx.lz_aim >= 0:
 		a = w.mx.lz_aim
 	if m & SPIRAL:
 		a += spiral_offset(w)
@@ -429,24 +429,24 @@ static func advance(w: World) -> void:
 	_mine_triggers(w, spec)
 
 
-## Homing and Big Shot: the beam's aim follows its wish (the player's aim, or the nearest enemy's direction with
-## Homing) at most home_dps (follow_dps for Big Shot alone) a second, Big Shot 30 % slower still.
+## Homing picks its targets; Big Shot's aim follows the player's at 70 % of follow_dps. v0.10.0 FX: Homing's aim is the
+## player's own (it used to swing toward the nearest enemy at 120 degrees a second, which made aiming feel stiff).
 static func _steer(w: World, spec: AttackSpec, m: int) -> void:
 	var s := w.mx
-	var want := w.aim_angle
 	if m & HOMING:
 		_pick(w, spec)
-		if s.lz_targets.size() > 0:
-			want = Kin.angle_of(w.actors.pos(s.lz_targets[0]) - w.player_pos())
+	if m & BIG == 0:
+		s.lz_aim = w.aim_angle
+		return
 	var cur := s.lz_aim if s.lz_aim >= 0 else w.aim_angle
-	var dps := param(w, "home_dps") if m & HOMING else param(w, "follow_dps")
-	if m & BIG:
-		dps = dps * param(w, "big_turn") / 1000
-	s.lz_aim = Kin.turn_toward(cur, want, turn_step(dps, w.tick))
+	var dps := param(w, "follow_dps") * param(w, "big_turn") / 1000
+	s.lz_aim = Kin.turn_toward(cur, w.aim_angle, turn_step(dps, w.tick))
 
 
 ## Homing's targets: the nearest enemies within the beam's reach, nearest first (the nearest alone, or with Pierce up to
-## pierce + 1, at most home_chain), picked again every home_repick_ms and when one is gone.
+## pierce + 1, at most home_chain), picked again every home_repick_ms and when one is gone. v0.10.0 FX (owner: "homing
+## must respect walls"): an enemy behind the aim (more than 90 degrees off it) is no target, and each target must be in
+## sight (no wall on the line) of the one before it in the chain, the first of the hero: the line the beam bends along.
 static func _pick(w: World, spec: AttackSpec) -> void:
 	var s := w.mx
 	var stale := s.lz_targets.is_empty() or w.tick % ticks(param(w, "home_repick_ms")) == 0
@@ -455,20 +455,29 @@ static func _pick(w: World, spec: AttackSpec) -> void:
 	if not stale:
 		return
 	var hero := w.player_pos()
+	var aim := Kin.dir(w.aim_angle)
 	var found := w.enemies_near(hero, spec.reach_m)
 	var ds: Array[float] = []
 	var ids: Array[int] = []
 	for i in found:
-		var d := Kin.length(w.actors.pos(i) - hero)
+		var to := w.actors.pos(i) - hero
+		if to.dot(aim) < 0.0:
+			continue
+		var d := Kin.length(to)
 		var at := ids.size()  # nearest first; a tie keeps the lower index
 		while at > 0 and (ds[at - 1] > d or (ds[at - 1] == d and ids[at - 1] > i)):
 			at -= 1
 		ds.insert(at, d)
 		ids.insert(at, i)
-	var n := mini(ids.size(), mini(param(w, "home_chain"), maxi(0, spec.pierce) + 1))
+	var n := mini(param(w, "home_chain"), maxi(0, spec.pierce) + 1)
 	var out := PackedInt32Array()
-	for k in n:
-		out.append(ids[k])
+	var from := hero
+	for i in ids:  # nearest first, each seen from the last one taken
+		if out.size() >= n:
+			break
+		if w.sees(from, w.actors.pos(i)):
+			out.append(i)
+			from = w.actors.pos(i)
 	s.lz_targets = out
 
 

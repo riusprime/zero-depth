@@ -72,7 +72,6 @@ func test_the_table_has_every_vx3_id_with_its_scene() -> void:
 		&"burst_shatter",
 		&"burst_venom",
 		&"burst_bleed",
-		&"burst_puddle",
 		&"burst_wildfire",
 		&"status_burn_a",
 		&"status_burn_b",
@@ -267,17 +266,16 @@ func test_a_shatter_adds_a_small_ice_patch() -> void:
 	assert_eq(_spawned(), 2)
 
 
-func test_venom_and_bleed_bursts_are_a_bubble_and_a_short_puddle() -> void:
+## v0.10.0 FX: the bubble alone (the short puddle on the splat decal is gone).
+func test_venom_and_bleed_bursts_are_a_bubble() -> void:
 	_frame(0.0, func() -> void: _layer.burst(&"venom", Vector3.ZERO, 1.5, 0.1, 23))
 	assert_eq(_live(&"burst_venom").size(), 1)
-	assert_eq(_live(&"burst_puddle").size(), 1)
 	_frame(1.0, func() -> void: _layer.burst(&"bleed", Vector3(8, 0, 0), 1.5, 0.1, 24))
 	assert_eq(_live(&"burst_bleed").size(), 1)
-	assert_eq(_live(&"burst_puddle").size(), 2)
 	assert_eq(_live(&"burst_bleed")[0].get("primary_color"), ElementLooks.core(&"bleed"))
-	assert_eq(_spawned(), 4, "no more on later frames")
+	assert_eq(_spawned(), 2, "no more on later frames")
 	_frame(2.0, func() -> void: _layer.burst(&"bleed", Vector3(8, 0, 0), 1.5, 0.2, 24))
-	assert_eq(_spawned(), 4)
+	assert_eq(_spawned(), 2)
 
 
 func test_wildfire_is_fire_area_03() -> void:

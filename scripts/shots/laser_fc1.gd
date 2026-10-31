@@ -28,6 +28,7 @@ var _k := 0
 var _ticks := 0
 var _settle := -1
 var _dir := ""
+var _aim := 0  # v0.10.0 FX: at the first dummy (Homing no longer swings the aim; a player aims at the group)
 
 
 func _initialize() -> void:
@@ -70,6 +71,7 @@ func _build(k: int) -> void:
 	var arc := _clear_arc(_world)
 	for at in arc:
 		_world.add_dummy(at, 0.35, 1 << 20)
+	_aim = Kin.angle_of(arc[0] - _world.player_pos())
 	_reader = WorldReader.new(_world)
 	_view = WorldViewRoot.new()
 	_vp.add_child(_view)
@@ -88,7 +90,7 @@ func _process(_delta: float) -> bool:
 	var spec: Array = PLAN[_k]
 	if _settle < 0:
 		var pressed := InputFrame.SHOOT if _ticks == 0 else 0
-		_world.step(InputFrame.make(Vector2i.ZERO, 0, 500, InputFrame.SHOOT, pressed))
+		_world.step(InputFrame.make(Vector2i.ZERO, _aim, 500, InputFrame.SHOOT, pressed))
 		_view.sync()
 		_ticks += 1
 		if _ticks >= int(spec[3]):

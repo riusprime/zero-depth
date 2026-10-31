@@ -38,12 +38,14 @@ const ACCENT_DENSITY := 0.5
 ## v0.10.0 VX2 (VFX_PACK R7): the shot's body (the dark core, the dust disc and the trail puffs) is the pack's huge orb
 ## in the Void violet, and its collapse the pack's orb flash (the screen-distortion lens and the ground ring stay).
 ## False: the old body, for before/after shots. The orbs' scales per metre of the lens (LENS_SIZE).
-const PACK_VOID := true
+## v0.10.0 FX (owner, 2026-10-31: "the previous version of Void looked and felt better"): off, with PACK_SPARKS below
+## and GapPack.PACK_RIFT; the Void is its v0.9.5 self again (its lens, dark body, dust trail, collapse and ring).
+const PACK_VOID := false
 const BODY_PER_LENS := 0.35
 const COLLAPSE_PER_LENS := 0.5
 ## v0.10.0 VX7 (VFX_PACK N5): violet sparks (the pack's orb flash, small) now and then along the dust trail, one every
 ## SPARK_EVERY ticks a shot (Effects density Medium and High: with the dust), SPARK_PER_LENS of the lens' size.
-const PACK_SPARKS := true
+const PACK_SPARKS := false
 const SPARK_ID := &"vx7_void_spark"
 const SPARK_EVERY := 9
 const SPARK_PER_LENS := 0.15

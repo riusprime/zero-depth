@@ -65,10 +65,12 @@ func put(
 			return null
 		loop(n)
 		_nodes[key] = n
+	var was := n.global_position if n.is_inside_tree() else n.position
 	if n.is_inside_tree():
 		n.global_transform = xf
 	else:
 		n.transform = xf
+	PackFx.settle(n, was, xf.origin)
 	return n
 
 

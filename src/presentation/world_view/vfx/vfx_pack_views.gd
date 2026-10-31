@@ -29,7 +29,6 @@ const BURST_PER_M := {
 	&"burst_shatter": 0.4,
 	&"burst_venom": 0.7,
 	&"burst_bleed": 0.7,
-	&"burst_puddle": 0.5,
 	&"burst_wildfire": 0.6,
 }
 ## The ring effect of each element kind (R26: Frost Nova's pulse, Ember Ward's rim).
@@ -44,8 +43,7 @@ const FROST_ZONES: Array[StringName] = [
 const VENOM_ZONES: Array[StringName] = [&"zone_venom_a", &"zone_venom_b"]
 const FIRE_ZONES: Array[StringName] = [&"zone_fire_a", &"zone_fire_b"]
 const FOE_FIRE_ZONES: Array[StringName] = [&"zone_fire_foe_a", &"zone_fire_foe_b"]
-## A burst's short puddle, a shatter's ice patch and a Wildfire's flames last this long (s).
-const PUDDLE_S := 1.3
+## A shatter's ice patch and a Wildfire's flames last this long (s).
 const SHATTER_S := 0.9
 const WILDFIRE_S := 1.0
 ## A poisoned enemy pops a bubble about this often (ticks, plus up to as much again).
@@ -255,8 +253,8 @@ func frost_burst(c: Vector3, r: float, u: float, sd: int, shatter: bool) -> bool
 	return true
 
 
-## The venom or bleed burst (R20): a poison bubble and a short puddle, bleed in its dark red; the layer's light and
-## floor splat stay. False: no room, the old burst draws.
+## The venom or bleed burst (R20): a poison bubble, bleed in its dark red; the layer's light and floor splat stay.
+## v0.10.0 FX: its short pack puddle on the splat is gone. False: no room, the old burst draws.
 func liquid_burst(c: Vector3, r: float, u: float, sd: int, toxic: bool) -> bool:
 	var mode := once(bkey(sd, 2 if toxic else 3), &"impact")
 	if mode == ONCE_OLD:
@@ -264,9 +262,7 @@ func liquid_burst(c: Vector3, r: float, u: float, sd: int, toxic: bool) -> bool:
 	var kind := &"venom" if toxic else &"bleed"
 	if mode == ONCE_SPAWN:
 		var cols := kind_colors(kind, false)
-		shot(&"burst_venom" if toxic else &"burst_bleed", c, r, cols)
-		if layer.pack_fx.has_room(&"area"):
-			shot(&"burst_puddle", c, r, cols, PUDDLE_S)
+		shot(&"burst_venom" if toxic else &"burst_bleed", c, r, cols)  # v0.10.0 FX: no puddle (the splat decal)
 	var col := VfxLayer.VENOM if toxic else VfxLayer.BLOOD
 	layer._light(c + Vector3(0, 0.6, 0), col, 2.0 * (1.0 - u), r * 2.0 + 1.0)
 	var mark_c := VfxLayer.VENOM_MARK if toxic else VfxLayer.BLOOD_MARK

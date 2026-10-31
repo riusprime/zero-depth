@@ -44,13 +44,13 @@ const BURST_THIN := 0.3
 ## false keeps the sprite explosion (the before shots).
 const PACK_EXPLOSION := true
 ## Pack explosion ids (picked by seed), the factor on the burst radius that makes the pack's ~3 m fireball fill
-## it, the thinned burst's scale and the smoke's delay (s).
+## it and the thinned burst's scale. v0.10.0 FX (owner, 2026-10-31: "lingering smoke"): no smoke cloud after it (the
+## pack's smoke_vfx_02 hung 4 s over every blast).
 const PACK_EXPLOSIONS: Array[StringName] = [
 	&"explosion_fire_a", &"explosion_fire_b", &"explosion_fire_c"
 ]
 const PACK_SCALE_PER_M := 1.0 / 1.5
 const PACK_THIN_SCALE := 0.6
-const PACK_SMOKE_DELAY_S := 0.25
 ## A burst's seed is forgotten this long (ticks) after it was last drawn.
 const PACK_SEEN_TICKS := 180.0
 
@@ -65,18 +65,12 @@ var pack_fx: PackFx = null
 ## VX3: how many of the guard orbs the pack draws this frame (StatusVisuals hides that many of its own).
 var guard_orbs_packed := 0
 var _pack_seen := {}  # seed -> the tick the burst was last drawn
-var _pack_smoke: Array[Array] = []  # [due tick, position, scale]
 ## VX3: the pack's zones, bursts and statuses (VfxPackViews).
 var _views := VfxPackViews.new(self)
 ## v0.10.0 VX6: the storm looks, the pack's lightning (StormPack).
 var _storm := StormPack.new(self)
 ## VX7: the bleed status and the void rifts in the pack's style (GapPack).
 var _gap := GapPack.new(self)
-
-
-## VX7: the marks' pack effects (VfxCore._lay_pack_marks).
-func _pack_fx() -> PackFx:
-	return pack_fx
 
 
 # --- Public: one call per form ----------------------------------------------------------------------------------
@@ -404,8 +398,8 @@ func _explosion(c: Vector3, r: float, u: float, sd: int) -> void:
 	_explosion_rest(c, r, u, sd)
 
 
-## v0.10.0 VX0 (R18): the pack's fire explosion, once per burst (the first frame its seed is drawn), then its smoke
-## PACK_SMOKE_DELAY_S later. A thinned burst (past BURST_FULL) is a smaller explosion without smoke.
+## v0.10.0 VX0 (R18): the pack's fire explosion, once per burst (the first frame its seed is drawn). A thinned burst
+## (past BURST_FULL) is a smaller one.
 func _pack_explosion(c: Vector3, r: float, sd: int) -> void:
 	var seen := _pack_seen.has(sd)
 	_pack_seen[sd] = now()
@@ -420,10 +414,9 @@ func _pack_explosion(c: Vector3, r: float, sd: int) -> void:
 		pack_fx.spawn(id, c, size * PACK_THIN_SCALE)
 		return
 	pack_fx.spawn(id, c, size)
-	_pack_smoke.append([now() + PACK_SMOKE_DELAY_S * 60.0, c, size])
 
 
-## The pack's delayed smoke clouds that are due, then the frame as VfxCore starts it.
+## The frame as VfxCore starts it, and the pack's (its pause clock).
 func begin(p_now: float) -> void:
 	super.begin(p_now)
 	_views.begin(pack_fx)
@@ -432,13 +425,6 @@ func begin(p_now: float) -> void:
 	if pack_fx == null:
 		return
 	pack_fx.follow(p_now)
-	var left: Array[Array] = []
-	for s in _pack_smoke:
-		if float(s[0]) <= p_now:
-			pack_fx.spawn(&"smoke_after", s[1], s[2])
-		elif float(s[0]) - p_now < PACK_SEEN_TICKS:  # (a clock that went back drops it)
-			left.append(s)
-	_pack_smoke = left
 
 
 ## The frame's end: the pack effects nothing touched this frame (a patch, ring or status that ended) go back to PackFx.

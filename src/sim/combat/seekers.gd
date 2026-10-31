@@ -16,8 +16,11 @@ extends RefCounted
 ## - Caps: 3 an attack, about 10 a second at most, under ShotCap's 12 and 40.
 ## Pure: no randomness, no trig, one clock; a dart's target is read from the world each tick (no state of its own).
 
-## How far from the hero the darts look for targets (m; as far as an orb flies). Starting value.
-const SEEK_M := 10.8
+## How far from the hero the darts look for targets (m). Starting value. v0.10.0 FX (owner, 2026-10-31: "Seekers have
+## difficulty reaching enemies ... moderately increase their range"): 10.8 -> 12 m, the dart's life 1 -> 1.3 s
+## (gun_seekers.tres: 13 m of flight, so a dart can curve onto a target at the edge), and a target must be in sight of
+## the hero (no wall between: a longer search would otherwise pick more enemies behind walls).
+const SEEK_M := 12.0
 ## v0.9.5 FC7: target() answers STRAIGHT when a Pierce dart or a Split child has no enemy left to seek (no homing).
 const STRAIGHT := -2
 
@@ -64,7 +67,7 @@ static func target(w: World, pi: int) -> int:
 		var k := ds.size()  # keep the rank + 1 nearest, sorted
 		while k > 0 and (ds[k - 1] > d or (ds[k - 1] == d and ids[k - 1] > i)):
 			k -= 1
-		if k > rank:
+		if k > rank or not w.sees(hero, a.pos(i)):  # (the sight test only for a candidate)
 			continue
 		ds.insert(k, d)
 		ids.insert(k, i)

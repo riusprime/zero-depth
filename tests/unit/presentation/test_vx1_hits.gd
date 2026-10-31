@@ -50,8 +50,6 @@ func test_the_vx1_table_names_every_id_the_code_uses() -> void:
 		HitPack.DEFLECT,
 		HitPack.MUZZLE_NEUTRAL,
 		HitPack.FLASH_BIG,
-		HitPack.DEATH_SMOKE,
-		HitPack.DEATH_POP,
 	]
 	all.append_array(HitPack.HIT_IDS.values())
 	all.append_array(HitPack.MUZZLE_IDS.values())
@@ -248,18 +246,15 @@ func test_hit_feel_sparks_are_pack_scenes_with_a_box_fallback() -> void:
 	assert_eq(feel.spark_count(), 8, "no pack: the boxes")
 
 
-func test_a_death_adds_smoke_and_a_flash_to_the_chunks() -> void:
+## v0.10.0 FX (owner: no death explosions or smoke): a kill is the lit chunks alone, no pack effect.
+func test_a_death_is_the_chunks_alone() -> void:
 	var feel := HitFeel.new(null, null)
 	add_child_autofree(feel)
 	feel.pack_fx = _fx
 	feel._burst(Vector2.ZERO, ThemePalette.color(&"enemy_body"), HitFeel.SHARDS, 0.16, true)
-	feel._death_pack(Vector2.ZERO)
-	assert_eq(feel.spark_count(), HitFeel.SHARDS, "the chunks stay")
-	assert_eq(_ids().count(HitPack.DEATH_SMOKE), 1)
-	assert_eq(_ids().count(HitPack.DEATH_POP), 1)
-	assert_almost_eq(
-		_node(HitPack.DEATH_SMOKE).scale.x, HitPack.DEATH_SMOKE_SCALE, 0.001, "the smoke is small"
-	)
+	assert_eq(feel.spark_count(), HitFeel.SHARDS, "the chunks")
+	assert_false(_fx.has_id(&"vx1_death_smoke"), "the death smoke is gone from the table")
+	assert_false(_fx.has_id(&"vx1_death_pop"), "and the death flash")
 
 
 func test_the_cast_spark_at_the_hand_is_a_pack_flash_on_every_shot() -> void:

@@ -518,6 +518,14 @@ func walls_along(a: Vector2, b: Vector2, r: float) -> PackedInt32Array:
 	return _wall_grid.query_segment(a, b, r * 1.5)
 
 
+## v0.10.0 FX: no wall crosses the line from `a` to `b` (homing targets: the Laser's Homing, the Seekers).
+func sees(a: Vector2, b: Vector2) -> bool:
+	for k in walls_along(a, b, 0.0):
+		if Collide.sweep_vs_obb(a, b, 0.0, walls[k]) >= 0.0:
+			return false
+	return true
+
+
 ## Indices of the actors whose bodies may touch `rect` (ascending; a superset) as of the last actor-grid build:
 ## tick phase 3 builds it before the enemies plan (v0.4.0 SC), each collision pass in phase 5 rebuilds it.
 func actors_near(rect: Rect2) -> PackedInt32Array:

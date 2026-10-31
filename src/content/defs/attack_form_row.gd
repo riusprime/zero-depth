@@ -231,7 +231,6 @@ const LASER_KEYS: Array[String] = [
 	"ring_share",
 	"back_mm",
 	"back_share",
-	"home_dps",
 	"home_repick_ms",
 	"home_step_mm",
 	"home_bend_deg",

@@ -25,9 +25,16 @@ const EXTRA_EVERY := 30.0
 const EXTRA_TICKS := 18.0
 ## v0.10.0 VX2 (VFX_PACK R4): each beam is the pack's laser scene (beam_vfx) laid from its start to its end every
 ## frame (false: the ribbons, for before/after shots). The scene's core radius per metre of the ribbon's width.
-const PACK_LASER := true
+## v0.10.0 FX (owner, 2026-10-31: a bent beam was "7-8 overlapping straight laser segments", each pack scene with its
+## own flare at its start): off; the ribbons are back, and a bent beam is one ribbon (_join).
+const PACK_LASER := false
 const BEAM_RADIUS_PER_W := 0.12
 const BEAM_RADIUS_MIN := 0.04
+## v0.10.0 FX: a bent beam's corners are rounded (Chaikin cuts, CURVE_CUTS passes) where it turns less than
+## CURVE_MAX_TURN_DEG (a Ricochet bounce keeps its corner); the legs join when the next starts within JOIN_M.
+const CURVE_CUTS := 2
+const CURVE_MAX_TURN_DEG := 40.0
+const JOIN_M := 0.08
 
 const BEAM_SHADER := """
 shader_type spatial;
@@ -84,6 +91,8 @@ static var _shaders := {}
 var shown := 0
 var look := &"default"
 var impacts := 0
+## v0.10.0 FX: the points of the drawn beams' centre lines (more than 2 a beam: a curve).
+var points_shown := 0
 ## What the last sync showed of the cards' extras (tests read them): ghost ribbons, rings, mines.
 var ghosts_shown := 0
 var rings_shown := 0
@@ -132,7 +141,7 @@ func _grow(n: int) -> void:
 		var bm := ShaderMaterial.new()
 		bm.shader = _shader(BEAM_SHADER)
 		var r := MeshInstance3D.new()
-		r.mesh = _quad
+		r.mesh = ImmediateMesh.new()  # v0.10.0 FX: a strip along the beam's (maybe bent) centre line
 		r.material_override = bm
 		r.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		r.visible = false
@@ -187,6 +196,7 @@ func sync(reader: WorldReader) -> void:
 			_rings.append(b)
 		else:
 			_beams.append(b)
+	_beams = _join(_beams)
 	_ghosts = reader.laser_ghosts()
 	_mines = reader.laser_mines()
 	ghosts_shown = mini(_ghosts.size(), GHOSTS_MAX)
@@ -200,6 +210,9 @@ func sync(reader: WorldReader) -> void:
 		look = _form.look
 		_set_look(look)
 	shown = _beams.size()
+	points_shown = 0
+	for b in _beams:
+		points_shown += (b["pts"] as PackedVector2Array).size()
 	_grow(shown)
 	_grow_ghosts(ghosts_shown)
 	impacts = 0
@@ -243,7 +256,7 @@ func _place_ribbons() -> void:
 			_ribbons[k].visible = false
 			continue
 		_ribbons[k].visible = true
-		_lay(_ribbons[k], _beam_mat[k], b["from"], b["to"], bw, view)
+		_lay_path(_ribbons[k], _beam_mat[k], b["pts"], bw, view)
 	hold.end()
 	for k in ghosts_shown:
 		var g: Dictionary = _ghosts[k]
@@ -275,6 +288,97 @@ func _pack_beam(k: int, b: Dictionary, w: float) -> bool:
 		n.set_meta(&"vx2_radius", radius)  # (the setter rebuilds the scene's shared meshes: only when it changes)
 		n.set(&"beam_radius", radius)
 	return true
+
+
+## v0.10.0 FX: the beams as drawn: each lane's chain of main legs (Homing's curve, a Ricochet bounce) is one beam
+## {pts (its centre line, rounded), from, to, hits, wall, impact, wmul}; the other beams stay as they are (pts: their
+## two ends). The hits and the impact are the chain's last leg's; every point is a point of the sim's own trace.
+static func _join(beams: Array[Dictionary]) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for b in beams:
+		var main := StringName(b.get("kind", &"main")) == &"main"
+		var last: Dictionary = out.back() if not out.is_empty() else {}
+		if (
+			main
+			and not last.is_empty()
+			and bool(last.get("chain", false))
+			and int(last.get("lane", 0)) == int(b.get("lane", 0))
+			and (last["to"] as Vector2).distance_to(b["from"]) <= JOIN_M
+		):
+			var pts: PackedVector2Array = last["pts"]  # (a packed array is a copy: written back)
+			pts.append(b["to"])
+			last["pts"] = pts
+			last["to"] = b["to"]
+			last["hits"] = b["hits"]
+			last["wall"] = b["wall"]
+			last["impact"] = b.get(
+				"impact", (b["hits"] as PackedInt32Array).size() > 0 or bool(b["wall"])
+			)
+			continue
+		var d := b.duplicate()
+		d["pts"] = PackedVector2Array([b["from"], b["to"]])
+		d["chain"] = main
+		out.append(d)
+	for d in out:
+		d["pts"] = _round(d["pts"])
+	return out
+
+
+## Chaikin's corner cutting, CURVE_CUTS passes, on the corners that turn less than CURVE_MAX_TURN_DEG; the ends stay.
+static func _round(pts: PackedVector2Array) -> PackedVector2Array:
+	var cur := pts
+	for pass_k in CURVE_CUTS:
+		if cur.size() < 3:
+			return cur
+		var nxt := PackedVector2Array([cur[0]])
+		for i in range(1, cur.size() - 1):
+			var a := cur[i] - cur[i - 1]
+			var b := cur[i + 1] - cur[i]
+			if a.length() < 0.001 or b.length() < 0.001:
+				nxt.append(cur[i])
+				continue
+			if rad_to_deg(absf(a.angle_to(b))) >= CURVE_MAX_TURN_DEG:
+				nxt.append(cur[i])  # a bounce: a sharp corner
+				continue
+			nxt.append(cur[i].lerp(cur[i - 1], 0.25))
+			nxt.append(cur[i].lerp(cur[i + 1], 0.25))
+		nxt.append(cur[cur.size() - 1])
+		cur = nxt
+	return cur
+
+
+## v0.10.0 FX: one ribbon along the centre line `pts` (sim plane), `w` wide, facing the camera `view`: a single strip,
+## so a bent beam has no joints, overlaps or repeated ends (the shader fades its two real ends only).
+func _lay_path(
+	r: MeshInstance3D, mat: ShaderMaterial, pts: PackedVector2Array, w: float, view: Vector3
+) -> void:
+	var p3: Array[Vector3] = []
+	for p in pts:
+		var q := SimPlane.to_3d(p, HEIGHT)
+		p3.append(to_local(q) if is_inside_tree() else q)
+	var lens := PackedFloat32Array([0.0])
+	for i in range(1, p3.size()):
+		lens.append(lens[i - 1] + p3[i].distance_to(p3[i - 1]))
+	var total := lens[lens.size() - 1]
+	var im := r.mesh as ImmediateMesh
+	im.clear_surfaces()
+	if total < 0.01:
+		r.visible = false
+		return
+	r.transform = Transform3D.IDENTITY
+	im.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
+	for i in p3.size():
+		var t := (p3[mini(i + 1, p3.size() - 1)] - p3[maxi(i - 1, 0)]).normalized()
+		var side := t.cross(view).normalized()
+		if side.length_squared() < 0.5:
+			side = Vector3.UP.cross(t).normalized()
+		var u := lens[i] / total
+		im.surface_set_uv(Vector2(u, 0.0))
+		im.surface_add_vertex(p3[i] - side * w * 0.5)
+		im.surface_set_uv(Vector2(u, 1.0))
+		im.surface_add_vertex(p3[i] + side * w * 0.5)
+	im.surface_end()
+	mat.set_shader_parameter(&"length_m", total)
 
 
 ## One ribbon from `p0` to `p1` (sim plane), `w` wide, facing the camera `view`.
@@ -357,11 +461,23 @@ func draw_fx(layer: VfxCore) -> void:
 	var col := _form.edge
 	for k in shown:
 		var b: Dictionary = _beams[k]
-		var a := SimPlane.to_3d(b["from"], HEIGHT)
+		var pts: PackedVector2Array = b["pts"]
+		var a := SimPlane.to_3d(pts[maxi(0, pts.size() - 2)], HEIGHT)
 		var e := SimPlane.to_3d(b["to"], HEIGHT)
 		var sd := 7001 + k * 131
-		if kind != &"" and fx != null:
-			fx.line(kind, a, e, 1.0, now, sd)
+		if kind != &"" and fx != null:  # along the centre line, a few points at a time (a curve follows it)
+			var i := 0
+			while i < pts.size() - 1:
+				var j := mini(i + 4, pts.size() - 1)
+				fx.line(
+					kind,
+					SimPlane.to_3d(pts[i], HEIGHT),
+					SimPlane.to_3d(pts[j], HEIGHT),
+					1.0,
+					now,
+					sd + i
+				)
+				i = j
 		if not _impacts[k].visible:
 			continue
 		for j in 3:

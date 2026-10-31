@@ -1,7 +1,7 @@
 extends GutTest
 ## v0.10.0 VX0 (VFX_PACK R18): VfxLayer's fire explosion is the pack's: one effect per burst (the first frame its
-## seed is drawn, not every frame), its smoke PACK_SMOKE_DELAY_S later, a thinned burst small and without smoke, the
-## burst budget unchanged, and the sprite explosion kept without a PackFx.
+## seed is drawn, not every frame), no smoke after it (v0.10.0 FX), a thinned burst small, the burst budget unchanged,
+## and the sprite explosion kept without a PackFx.
 
 var _layer: VfxLayer
 var _fx: PackFx
@@ -36,13 +36,14 @@ func test_a_burst_spawns_one_pack_explosion_not_one_per_frame() -> void:
 	assert_eq(_fx.live_count(&"explosion"), 2, "another seed is another explosion")
 
 
-func test_the_smoke_follows_after_its_delay() -> void:
+## v0.10.0 FX (owner: "lingering smoke"): no smoke cloud follows the explosion.
+func test_no_smoke_follows_the_explosion() -> void:
 	_frame(0.0, Vector3.ZERO, 0.0, 7)
-	assert_eq(_fx.live_count(&"cloud"), 0, "no smoke yet")
-	_layer.begin(VfxLayer.PACK_SMOKE_DELAY_S * 60.0 - 3.0)
-	assert_eq(_fx.live_count(&"cloud"), 0, "not due")
-	_layer.begin(VfxLayer.PACK_SMOKE_DELAY_S * 60.0)
-	assert_eq(_fx.live_count(&"cloud"), 1, "the smoke is up when it is due")
+	for k in 60:
+		_layer.begin(float(k + 1))
+		_layer.finish()
+	assert_eq(_fx.live_count(&"cloud"), 0, "no smoke")
+	assert_eq(_fx.spawned, 1, "the explosion alone")
 
 
 func test_a_thinned_burst_is_a_small_explosion_without_smoke() -> void:
@@ -54,8 +55,6 @@ func test_a_thinned_burst_is_a_small_explosion_without_smoke() -> void:
 	_layer.burst(&"fire", Vector3(0, 0, 50), 2.0, 0.1, 999)
 	assert_eq(_fx.spawned, before + 1, "the thinned burst spawns an explosion")
 	_layer.finish()
-	_layer.begin(VfxLayer.PACK_SMOKE_DELAY_S * 60.0)
-	assert_eq(_fx.spawned, before + 1 + VfxLayer.BURST_FULL, "smoke for the full ones only")
 
 
 func test_the_burst_budget_still_caps_the_explosions() -> void:

@@ -69,21 +69,6 @@ const MAX_SPRITES := 2000
 ## How long a floor mark stays (ticks) and how long it fades at the end.
 const MARK_TICKS := 420.0
 const MARK_FADE := 90.0
-## v0.10.0 VX7 (VFX_PACK N9): a lasting mark also carries the pack's effect for its texture, frozen on one frame of its
-## animation (MARK_FREEZE_AT of its length) for the mark's life and shrinking away in its last MARK_FADE (and growing in
-## over MARK_FADE_IN); the decal stays under it. [pack id, scale per metre of the decal's radius]. false: decals only.
-## Past the family's cap (PackFx "mark") a mark is the decal alone.
-const PACK_MARKS := true
-const MARK_FREEZE_AT := 0.6
-const MARK_FADE_IN := 6.0
-const MARK_PACK := {
-	&"frost": [&"vx7_mark_frost", 0.62],
-	&"frost_burst": [&"vx7_mark_frost", 0.62],
-	&"splat0": [&"vx7_mark_splat", 0.62],
-	&"splat1": [&"vx7_mark_splat", 0.62],
-	&"splat2": [&"vx7_mark_splat", 0.62],
-	&"splat3": [&"vx7_mark_splat", 0.62],
-}
 ## v0.8.0 FV (owner O86, feedback 2026-10-19 Part 3: "every other effect requests unmerged lights"): every effect's
 ## light joins a light of its own colour within LIGHT_MERGE_M (the fire patches' 2.5 m since the lighting pass), so
 ## near-simultaneous effects (Twin pairs, chains, overlapping blasts) share one light instead of each taking a slot.
@@ -177,8 +162,6 @@ var _status_wants: Array = []
 var _marks: Array = []
 var _mark_keys := {}
 var _mark_tex := {}
-## VX7: the pack effects held on the marks, by the mark's key (PackHold).
-var _mark_holds := PackHold.new()
 var _now := 0.0
 var _shaders := {}
 ## This frame's taken spots, per kind: kind -> {grid cell (Vector2i) -> [[Vector3, owner]]} (see _claim).
@@ -647,7 +630,6 @@ func mark(key: int, tex: StringName, p: Vector3, r: float, c: Color) -> void:
 func clear_marks() -> void:
 	_marks.clear()
 	_mark_keys.clear()
-	_mark_holds.clear()
 
 
 func _lay_marks() -> void:
@@ -687,59 +669,6 @@ func _lay_marks() -> void:
 			c.a * clampf(left / MARK_FADE, 0.0, 1.0) * clampf((_now - float(s[4])) / 6.0, 0.0, 1.0)
 		)
 		d.visible = tex != null
-	_lay_pack_marks()
-
-
-## v0.10.0 VX7: the PackFx the marks draw their pack effects with (VfxLayer hands it over); none: decals only.
-func _pack_fx() -> PackFx:
-	return null
-
-
-## The pack effect of each live mark (N9), held and frozen; what no mark keeps goes back to PackFx.
-func _lay_pack_marks() -> void:
-	var fx := _pack_fx() if PACK_MARKS else null
-	if fx == null:
-		if _mark_holds.held > 0:
-			_mark_holds.clear()
-		return
-	_mark_holds.fx = fx
-	_mark_holds.begin()
-	for s: Array in _marks:
-		var row: Array = MARK_PACK.get(s[1], [])
-		if row.is_empty():
-			continue  # (scorch and the fire patch stay decals: a frozen flame reads as live fire)
-		var age := _now - float(s[4])
-		var k := clampf(minf((MARK_TICKS - age) / MARK_FADE, age / MARK_FADE_IN), 0.001, 1.0)
-		var node := _mark_holds.touch(
-			int(s[0]),
-			row[0],
-			&"mark",
-			(s[2] as Vector3) + Vector3(0, 0.03, 0),
-			float(s[3]) * float(row[1]) * k,
-			_mark_colors(s[1], s[6]),
-			_freeze_mark
-		)
-		if node != null and &"speed_scale" in node and not is_zero_approx(node.get(&"speed_scale")):
-			_freeze_mark(node)  # (a pause ending gave the scene its speed back)
-	_mark_holds.end()
-
-
-## A splat takes its decal's colour (lit a little: the puddle is dark in the shadows); the others keep the scene's.
-static func _mark_colors(tex: StringName, c: Color) -> Dictionary:
-	if not String(tex).begins_with("splat"):
-		return {}
-	var o := Color(c, 1.0)
-	return {&"primary": o, &"secondary": o.darkened(0.35), &"tertiary": o.darkened(0.7)}
-
-
-## One frame of the scene, held: its animation seeked to MARK_FREEZE_AT of its length, then its speed 0 (the
-## controller's setter stops the animation, the particles and the shader's time).
-static func _freeze_mark(node: Node3D) -> void:
-	var anim := node.get_node_or_null("AnimationPlayer") as AnimationPlayer
-	if anim != null and anim.has_animation(PackFx.ANIM):
-		anim.seek(anim.get_animation(PackFx.ANIM).length * MARK_FREEZE_AT, true)
-	if &"speed_scale" in node:
-		node.set(&"speed_scale", 0.0)
 
 
 # --- Counts (tests and the bench) ------------------------------------------------------------------------------

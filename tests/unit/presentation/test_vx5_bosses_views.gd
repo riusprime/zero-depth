@@ -180,7 +180,9 @@ func test_the_final_boss_shatter_is_the_packs_explosion() -> void:
 	assert_false(f._burst_packed, "the sprites where the family is full")
 
 
-func test_the_foundrys_molten_floor_is_held_fire() -> void:
+## v0.10.0 FX (owner: the Foundry drew "both older and newer VFX"): the molten floor is its shader alone, no pack fire
+## on top of it.
+func test_the_foundrys_molten_floor_is_its_shader_alone() -> void:
 	var v: BossSignatureViews = _under(BossSignatureViews.new())
 	v._lava_rows = [[Rect2(2, 2, 4, 4), 0.0, 400.0]]
 	v._sync_lava_nodes()
@@ -188,11 +190,8 @@ func test_the_foundrys_molten_floor_is_held_fire() -> void:
 	v._hold.begin()
 	v._draw_lava(10.0)
 	v._hold.end()
-	assert_eq(_fx.live_count(&"area"), 1, "a fire area on the piece")
-	v._hold.begin()
-	v._draw_lava(395.0)  # about to crust over: the flames are off
-	v._hold.end()
-	assert_eq(_fx.live_count(&"area"), 0, "off before it cools")
+	assert_eq(_fx.spawned, 0, "no pack fire on the piece")
+	assert_true(v._lava_nodes[0].visible, "the molten floor draws")
 
 
 func test_the_nemesis_cast_sigil_is_a_blood_circle_while_it_casts() -> void:

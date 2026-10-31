@@ -23,8 +23,8 @@ const FINISHER_FLASH_MULT := 2
 ## A hit a boss's ranged armour deflected (v0.3.0 BX): a dull, small, grey-blue spark.
 const DEFLECT_COLOR := Color(0.42, 0.46, 0.52)
 ## v0.10.0 VX1 (R17, R43): the guard, block, deflect, weak-spot, armour and finisher sparks are the pack's hit scenes
-## and a dead enemy's pop adds a smoke and a flash (the lit chunks stay); false: the old box bursts. A full family
-## throws the boxes for that spark.
+## (false: the old box bursts; a full family throws the boxes for that spark). v0.10.0 FX (owner, 2026-10-31: "enemies
+## explode when killed ... smoke remains 4-5 seconds"): a dead enemy's pop is the lit chunks alone again, as before VX1.
 const PACK_SPARKS := true
 const SPARK_HEIGHT := 0.4
 ## The pack scenes' scale for each spark (a metre across at 1).
@@ -111,7 +111,6 @@ func sync(reader: WorldReader) -> void:
 			SimEvent.Kind.KILL:
 				if e.target_id != player_id:
 					_burst(e.pos, ThemePalette.color(&"enemy_body"), SHARDS, 0.16, true)
-					_death_pack(e.pos)
 	impacts.track(reader)
 
 
@@ -167,21 +166,6 @@ func _spark(id: StringName, at: Vector2, c: Color, k: float, n: int, size: float
 
 
 ## v0.10.0 VX1 (R43): a dead enemy's smoke puff and flash in its body colour, added to the chunks.
-func _death_pack(at: Vector2) -> void:
-	if not PACK_SPARKS or pack_fx == null or ViewPrefs.sparks(1) == 0:
-		return
-	var p := SimPlane.to_3d(at, SPARK_HEIGHT)
-	if pack_fx.has_room(&"hit"):
-		pack_fx.spawn(HitPack.DEATH_SMOKE, p, HitPack.DEATH_SMOKE_SCALE)
-	if pack_fx.has_room(&"hit"):
-		pack_fx.spawn(
-			HitPack.DEATH_POP,
-			p,
-			HitPack.DEATH_POP_SCALE,
-			HitPack.tint(ThemePalette.color(&"enemy_body"))
-		)
-
-
 ## `lit`: the pieces are debris (a dead enemy's body), shaded by the scene's light like the body they came from;
 ## otherwise they are sparks of light, unshaded. v0.5.5 LK (A3 VFX audit): the death pop was unshaded, so its red
 ## chunks glowed at full brightness next to the lit bodies, and stood out of a darker scene as flat stickers.

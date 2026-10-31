@@ -435,6 +435,7 @@ const PACK_SKIP: Array[StringName] = [&"nemesis_crescent"]
 ## v0.10.0 VX7 (VFX_PACK N4): the nemesis_crescent keeps its shape and takes a copy of the pack's rim_area_04 glow
 ## material in its own colours (a sheet of UVs cut from where each point lies); false: the shader core as before.
 const PACK_CRESCENT := true
+
 const CRESCENT_KEY := &"nemesis_crescent"
 ## The crescent mesh's reach along its flight (x, m): what its UV's v runs over.
 const CRESCENT_X0 := -0.05
@@ -483,6 +484,7 @@ var _trail_width := 1.0
 ## the draw in progress.
 var _packed := {}
 var _packed_seen := {}
+var _lob_ids := {}  # look -> the lobbing drones' actor ids, in _lobs' order
 
 
 func _exit_tree() -> void:
@@ -558,6 +560,7 @@ func lob_count() -> int:
 ## arc), each a bigger ball of its look.
 func _sync_lobs(reader: WorldReader) -> void:
 	_lobs = {}
+	_lob_ids = {}
 	for i in range(reader.actor_count() if reader.any_kind(WorldReader.KIND_BOMB_DRONE) else 0):
 		if reader.actor_kind(i) != WorldReader.KIND_BOMB_DRONE:
 			continue
@@ -570,6 +573,9 @@ func _sync_lobs(reader: WorldReader) -> void:
 		var list: Array = _lobs.get(key, [])
 		list.append(SimPlane.to_3d(at, HEIGHT + LOB_RISE * 4.0 * p * (1.0 - p)))
 		_lobs[key] = list
+		var ids: Array = _lob_ids.get(key, [])
+		ids.append(reader.actor_id(i))  # v0.10.0 FX: the drone's id names its lob's effect (not its place in the list)
+		_lob_ids[key] = ids
 		if not _drawn.has(key):
 			_drawn[key] = PackedInt32Array()
 
@@ -696,20 +702,20 @@ func _draw(f: float) -> void:
 				)
 			)
 		var lob_n := 0
+		var lob_ids: Array = _lob_ids.get(key, [])
 		for at: Vector3 in _lobs.get(key, []):
 			var lr := LOB_RADIUS * size
-			var lob_token := "lob:%s:%d" % [key, lob_n]
+			var lid: int = lob_ids[lob_n] if lob_n < lob_ids.size() else -1 - lob_n
+			var lob_token := "lob:%s:%d" % [key, lid]  # v0.10.0 FX: by the drone, not the list index
 			lob_n += 1
 			if not _pack_shot(lob_token, key, look, at, Vector2.RIGHT, lr / PACK_REF_RADIUS):
 				cores.append_array(_row(Transform3D(Basis().scaled(Vector3.ONE * lr), at)))
 			edges.append_array(_row(Transform3D(Basis().scaled(Vector3.ONE * lr * EDGE_SCALE), at)))
 			_light_wants.append([at, glow, LIGHT_ENERGY, LIGHT_RANGE, LIGHT_MERGE])
-		var rain_n := 0
 		for d: Array in _rain.get(key, []):  # v0.7.5 BF3: the drops in the air, on their arc
 			var r: float = 0.22 * size
 			var at := rain_point(d[0], d[1], d[2] + d[3] * f)
-			var rain_token := "rain:%s:%d" % [key, rain_n]
-			rain_n += 1
+			var rain_token := "rain:%s:%s:%s" % [key, d[0], d[1]]  # v0.10.0 FX: by the drop, as the lobs
 			if not _pack_shot(rain_token, key, look, at, Vector2.RIGHT, r / PACK_REF_RADIUS):
 				cores.append_array(_row(Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * r), at)))
 			edges.append_array(
@@ -759,10 +765,12 @@ func _pack_shot(
 	var n := slot["node"] as Node3D
 	var s: float = float(slot["s"])
 	var t := Transform3D(_scaled(_along(dir), Vector3.ONE * s), at)
+	var was := n.global_position if n.is_inside_tree() else n.position
 	if n.is_inside_tree():
 		n.global_transform = t
 	else:
 		n.transform = t
+	PackFx.settle(n, was, at)  # v0.10.0 FX: a jump starts its trail again
 	_packed_seen[token] = true
 	return true
 

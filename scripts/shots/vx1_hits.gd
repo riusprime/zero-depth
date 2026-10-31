@@ -150,7 +150,6 @@ func _start(g: int, layer: VfxLayer) -> void:
 				HitPack.GUARD, _spot2(4), Color(0.85, 1.0, 1.0), HitFeel.SCALE_FINISHER, 6, 0.1
 			)
 			feel._burst(_spot2(5), ThemePalette.color(&"enemy_body"), HitFeel.SHARDS, 0.16, true)
-			feel._death_pack(_spot2(5))
 		3:
 			var elements: Array[StringName] = [&"ember", &"storm", &"frost", &"venom", &"bleed"]
 			for i in 5:

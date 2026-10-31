@@ -29,8 +29,6 @@ const FAMILY := {
 	&"bx_pulse_steam": &"area",
 	&"bx_fire_lane_a": &"status",
 	&"bx_fire_lane_b": &"status",
-	&"bx_lava_a": &"area",
-	&"bx_lava_b": &"area",
 	&"bx_shell": &"area",
 	&"bx_flash": &"impact",
 	&"bx_shatter": &"explosion",
@@ -156,10 +154,12 @@ func hold(
 		return n
 	var node: Node3D = e["node"]
 	if move:
+		var was := node.global_position if node.is_inside_tree() else node.position
 		if node.is_inside_tree():
 			node.global_position = pos
 		else:
 			node.position = pos
+		PackFx.settle(node, was, pos)
 	return node
 
 

@@ -129,7 +129,7 @@ func _build() -> void:
 			var fx := PackFx.new()
 			_view.add_child(fx)
 			for k in fx.cap_for(&"hit"):
-				fx.spawn(&"vx7_void_spark", Vector3(0, -80, 0), 1.0, {}, 0.0)
+				fx.spawn(&"vx1_hit_plain", Vector3(0, -80, 0), 1.0, {}, 0.0)
 			_view.voids.set("pack_fx", fx)
 	layer.drawers.append(_draw.bind(layer))
 	_frame = 0

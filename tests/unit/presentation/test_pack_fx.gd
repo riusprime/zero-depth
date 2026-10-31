@@ -4,7 +4,7 @@ extends GutTest
 ## an effect's life, the warm-up and the pause.
 
 const EXPLOSION := &"explosion_fire_a"
-const SMOKE := &"smoke_after"
+const SMOKE := &"fumes_cloud"  # v0.10.0 FX: a cloud (the explosion's smoke row is gone)
 
 var _saved_density := ""
 

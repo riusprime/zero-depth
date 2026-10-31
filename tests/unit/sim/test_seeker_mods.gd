@@ -1,8 +1,8 @@
 # gdlint: disable=max-public-methods
 extends GutTest
 ## v0.9.5 FC7 (FORM_COMBOS.md S1-S11): what eleven cards do to the Seekers form (SeekerMods), one test a row with the
-## table's numbers. A plain volley is three darts of 2 damage (45 % of 5) every 18 ticks, 10 m/s for 60 ticks, curving
-## at 360 degrees a second; aim 0 is +x, the hero stands at the origin, the dummies are 0.35 m wide.
+## table's numbers. A plain volley is three darts of 2 damage (45 % of 5) every 18 ticks, 10 m/s for 78 ticks (v0.10.0
+## FX: 1.3 s), curving at 360 degrees a second; aim 0 is +x, the hero stands at the origin, the dummies are 0.35 m wide.
 
 const W := preload("res://tests/support/mx4_world.gd")
 const HP := 1000000
@@ -78,7 +78,7 @@ func test_each_card_sets_its_bit_and_a_plain_seekers_has_none() -> void:
 				s.bounces,
 				s.pierce
 			],
-			[1, 3, 18, 60, 450, 0, 0],
+			[1, 3, 18, 78, 450, 0, 0],
 			"its generic ops are skipped (%s)" % SeekerMods.CARD_IDS[k]
 		)
 		assert_true(s.hooks.is_empty(), "no hook from %s" % SeekerMods.CARD_IDS[k])

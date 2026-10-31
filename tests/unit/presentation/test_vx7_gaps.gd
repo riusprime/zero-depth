@@ -48,13 +48,8 @@ func _fill(family: StringName, id: StringName) -> void:
 func test_the_table_has_every_vx7_id_and_validates() -> void:
 	for id: StringName in [
 		&"vx7_bleed_drips",
-		&"vx7_bleed_splat",
-		&"vx7_mark_frost",
-		&"vx7_mark_splat",
 		&"vx7_glaive_ring",
 		&"vx7_wave_wash",
-		&"vx7_void_rift",
-		&"vx7_void_spark",
 		&"vx7_tide_disc",
 		&"vx7_tide_swell",
 		&"vx7_tide_bubble",
@@ -62,8 +57,10 @@ func test_the_table_has_every_vx7_id_and_validates() -> void:
 		assert_true(_fx.has_id(id), "%s is in the table" % id)
 	var def := PackFx.shared_def()
 	assert_eq(def.validate().size(), 0)
-	assert_eq(def.families[def.row(&"vx7_mark_frost")], &"mark", "the marks have their own family")
-	assert_eq(PackFx.CAPS[&"mark"], 48)
+	for id: StringName in [&"vx7_bleed_splat", &"vx7_mark_frost", &"vx7_mark_splat"]:
+		assert_false(
+			_fx.has_id(id), "v0.10.0 FX: %s is gone (no pack effect on the floor marks)" % id
+		)
 
 
 func test_the_drips_scene_is_particles_with_gravity_in_bleeds_red() -> void:
@@ -94,21 +91,11 @@ func test_a_bleeding_enemy_holds_one_drips_effect_and_it_ends_with_the_bleed() -
 	assert_eq(_live(&"vx7_bleed_drips").size(), 0, "released when the bleed ended")
 
 
-func test_the_bleed_splatter_is_laid_once_a_cycle_for_1_5_seconds() -> void:
+## v0.10.0 FX (owner: "remove residual ground effects"): a bleeding enemy lays the old splat decal alone.
+func test_the_bleed_splat_is_the_decal_alone() -> void:
 	for k in 5:
 		_frame(float(k), func() -> void: _layer.status(Vector3.ZERO, 0.4, {&"bleed": 1}, 12, 0.9))
-	assert_eq(_live(&"vx7_bleed_splat").size(), 1, "one splatter the first cycle")
-	_frame(130.0, func() -> void: _layer.status(Vector3.ZERO, 0.4, {&"bleed": 1}, 12, 0.9))
-	var splats := 0
-	for e: Dictionary in _fx.get(&"_live"):
-		if e["id"] == &"vx7_bleed_splat":
-			splats += 1
-	assert_eq(splats, 2, "the next cycle's splatter (the first has not ended: no time has run)")
-	var left := 0.0
-	for e: Dictionary in _fx.get(&"_live"):
-		if e["id"] == &"vx7_bleed_splat":
-			left = float(e["left"])
-	assert_almost_eq(left, GapPack.SPLAT_S, 0.01, "short life")
+	assert_eq(_fx.live_count(&"mark"), 0, "no pack splatter")
 	assert_gte(
 		(
 			_layer.marks_of(&"splat0")
@@ -117,7 +104,7 @@ func test_the_bleed_splatter_is_laid_once_a_cycle_for_1_5_seconds() -> void:
 			+ _layer.marks_of(&"splat3")
 		),
 		1,
-		"the floor splat stays"
+		"the decal"
 	)
 
 
@@ -138,106 +125,24 @@ func test_without_a_pack_the_bleed_status_draws_the_old_way() -> void:
 
 
 # --- N5 void ---------------------------------------------------------------------------------------------------------
-func test_a_void_patch_holds_a_pulse_ring_in_void_violet_and_keeps_its_tendrils() -> void:
-	for k in 3:
-		_frame(
-			float(k), func() -> void: _layer.field(&"void", Vector3(1, 0, 1), 2.0, 1.0, float(k), 5)
-		)
-	assert_eq(_live(&"vx7_void_rift").size(), 1, "one rift for three frames")
-	var n := _live(&"vx7_void_rift")[0]
-	assert_eq(n.get(&"primary_color"), ElementLooks.core(&"void"), "#8B55FF")
-	assert_gt(_layer.used(&"tendril"), 0, "the tendrils keep their sprites")
-	assert_eq(_layer.used(&"rift"), 0, "the rift sprite does not draw")
-	_frame(4.0, func() -> void: pass)
-	assert_eq(_live(&"vx7_void_rift").size(), 0, "gone with the patch")
-
-
-func test_a_void_blast_tears_one_pack_rift_once() -> void:
-	for k in 4:
-		_frame(
-			float(k), func() -> void: _layer.burst(&"void", Vector3.ZERO, 2.0, float(k) / 20.0, 6)
-		)
-	assert_eq(_fx.spawned, 1, "the rift once")
-	assert_eq(_live(&"vx7_void_rift").size(), 1)
-	assert_eq(_layer.used(&"rift"), 0)
-
-
-func test_without_a_pack_the_void_rift_is_the_sprite() -> void:
-	var layer: VfxLayer = add_child_autofree(VfxLayer.new())
-	layer.begin(0.0)
-	layer.field(&"void", Vector3.ZERO, 2.0, 1.0, 0.0, 5)
-	layer.finish()
-	assert_gt(layer.used(&"rift"), 0)
-
-
-func test_a_full_area_family_keeps_the_rift_sprite() -> void:
-	_fill(&"area", &"zone_frost_a")
-	_frame(0.0, func() -> void: _layer.field(&"void", Vector3.ZERO, 2.0, 1.0, 0.0, 5))
-	assert_eq(_live(&"vx7_void_rift").size(), 0)
+## v0.10.0 FX (owner: "restore the previous Void"): the patch and the blast are their v0.9.5 sprites again.
+func test_the_void_patch_and_blast_are_their_old_sprites() -> void:
+	_frame(0.0, func() -> void: _layer.field(&"void", Vector3(1, 0, 1), 2.0, 1.0, 0.0, 5))
+	assert_gt(_layer.used(&"rift"), 0, "the rift sprite")
+	assert_gt(_layer.used(&"tendril"), 0, "the tendrils")
+	_frame(1.0, func() -> void: _layer.burst(&"void", Vector3.ZERO, 2.0, 0.1, 6))
+	assert_eq(_fx.spawned, 0, "no pack effect")
 	assert_gt(_layer.used(&"rift"), 0)
 
 
 # --- N9 floor marks --------------------------------------------------------------------------------------------------
-func test_a_frost_mark_carries_a_frozen_pack_effect_that_shrinks_in_its_last_fade() -> void:
+## v0.10.0 FX: a lasting mark is its decal alone (the frozen pack effects on them are gone).
+func test_a_frost_mark_is_a_decal_alone() -> void:
 	_frame(
 		0.0, func() -> void: _layer.mark(1, &"frost", Vector3(2, 0, 2), 1.0, VfxLayer.FROST_MARK)
 	)
-	_frame(
-		10.0, func() -> void: _layer.mark(1, &"frost", Vector3(2, 0, 2), 1.0, VfxLayer.FROST_MARK)
-	)
-	var nodes := _live(&"vx7_mark_frost")
-	assert_eq(nodes.size(), 1)
-	assert_eq(_fx.live_count(&"mark"), 1)
-	var n := nodes[0]
-	assert_eq(n.get(&"speed_scale"), 0.0, "frozen on one frame")
-	var full := n.scale.x
-	assert_gt(full, 0.5, "sized to the decal")
-	_frame(VfxCore.MARK_TICKS - 20.0, func() -> void: pass)
-	assert_lt(_live(&"vx7_mark_frost")[0].scale.x, full * 0.5, "shrinking in the last fade")
-	_frame(VfxCore.MARK_TICKS + 5.0, func() -> void: pass)
-	assert_eq(_live(&"vx7_mark_frost").size(), 0, "gone with the decal")
-	assert_eq(_layer.marks(), 0)
-
-
-func test_the_frost_and_splat_marks_use_their_scenes_and_scorch_stays_a_decal() -> void:
-	_frame(
-		0.0,
-		func() -> void:
-			_layer.mark(2, &"frost", Vector3(0, 0, 0), 1.0, VfxLayer.FROST_MARK)
-			_layer.mark(3, &"splat0", Vector3(6, 0, 0), 1.0, VfxLayer.BLOOD_MARK)
-			_layer.mark(4, &"scorch", Vector3(12, 0, 0), 1.0, VfxLayer.SCORCH)
-	)
-	_frame(10.0, func() -> void: pass)
-	assert_eq(_live(&"vx7_mark_frost").size(), 1)
-	assert_eq(_live(&"vx7_mark_splat").size(), 1)
-	assert_eq(
-		_fx.live_count(&"mark"),
-		2,
-		"the scorch is the decal alone: a frozen flame reads as live fire"
-	)
-	assert_eq(_layer.marks(), 3, "the decals all stay")
-	assert_eq(
-		_live(&"vx7_mark_frost")[0].get(&"speed_scale"), 0.0, "the ice is frozen on one frame"
-	)
-	var splat := _live(&"vx7_mark_splat")[0]
-	var c: Color = splat.get(&"secondary_color")
-	assert_gt(c.r, c.g, "a bleed splat is red")
-
-
-func test_marks_past_the_family_cap_are_decals_only() -> void:
-	_fill(&"mark", &"vx7_mark_frost")
-	_frame(0.0, func() -> void: _layer.mark(5, &"frost", Vector3.ZERO, 1.0, VfxLayer.FROST_MARK))
-	_frame(10.0, func() -> void: pass)
-	assert_eq(_fx.live_count(&"mark"), _fx.cap_for(&"mark"), "no slot stolen")
-	assert_eq(_layer.marks(), 1, "the decal draws")
-
-
-func test_a_new_floor_clears_the_marks_effects_too() -> void:
-	_frame(0.0, func() -> void: _layer.mark(6, &"frost", Vector3.ZERO, 1.0, VfxLayer.FROST_MARK))
-	_frame(10.0, func() -> void: pass)
-	assert_eq(_live(&"vx7_mark_frost").size(), 1)
-	_layer.clear_marks()
-	assert_eq(_live(&"vx7_mark_frost").size(), 0)
+	assert_eq(_layer.marks_of(&"frost"), 1)
+	assert_eq(_fx.spawned, 0, "no pack effect")
 
 
 # --- N4 Glaive, Wave, crescent ---------------------------------------------------------------------------------------
@@ -317,34 +222,6 @@ func test_the_nemesis_crescent_keeps_its_shape_with_the_pack_rim_material() -> v
 		FireballViews.look_of(&"nemesis_crescent")["core"],
 		"its own colours"
 	)
-
-
-# --- N5 void shot sparks ---------------------------------------------------------------------------------------------
-func test_a_void_shot_sheds_violet_sparks_along_its_trail() -> void:
-	var view: VoidView = add_child_autofree(VoidView.new())
-	view.pack_fx = _fx
-	var w := W.world(&"gun", [&"gun_void"], [[Vector2(4.0, 2.0), 100000]])
-	var r := WorldReader.new(w)
-	W.run(w, 1, 0, W.S)
-	for k in 30:
-		W.run(w, 1, 0, 0)
-		view.sync(r)
-	assert_gt(view.sparks, 0, "now and then")
-	assert_lt(view.sparks, 8, "not a fountain")
-	assert_gt(_fx.live_count(&"hit") + _fx.spawned, 0)
-
-
-func test_void_sparks_stop_when_the_dust_does() -> void:
-	ViewPrefs.effects_density = "low"
-	var view: VoidView = add_child_autofree(VoidView.new())
-	view.pack_fx = _fx
-	var w := W.world(&"gun", [&"gun_void"], [[Vector2(4.0, 2.0), 100000]])
-	var r := WorldReader.new(w)
-	W.run(w, 1, 0, W.S)
-	for k in 30:
-		W.run(w, 1, 0, 0)
-		view.sync(r)
-	assert_eq(view.sparks, 0, "Low density: no dust, no sparks")
 
 
 # --- N8 water --------------------------------------------------------------------------------------------------------

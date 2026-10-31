@@ -146,28 +146,31 @@ func test_l3_backfire_is_a_half_length_beam_behind_the_hero() -> void:
 
 
 # --- L4 Homing -------------------------------------------------------------------------------------------------------
-func test_l4_homing_turns_the_beams_aim_at_most_120_degrees_a_second() -> void:
+## v0.10.0 FX (owner: "improve aiming responsiveness"): Homing no longer swings the aim; the beam leaves along the
+## player's aim at once, and an enemy behind the aim is no target.
+func test_l4_homing_keeps_the_players_aim_and_skips_enemies_behind_it() -> void:
 	var w := _world([&"gun_homing"], [Vector2(-3.5, 3.5)])
-	W.run(w, 1, 0, W.S)
-	var first := w.mx.lz_aim
-	assert_gte(first, 0)
-	var steps := 0
-	var worst := 0
-	var prev := first
-	var at_60 := -1
-	for k in 70:
-		W.run(w, 1, 0, W.S)
-		steps = Kin.angle_diff(w.mx.lz_aim, prev)
-		prev = w.mx.lz_aim
-		worst = maxi(worst, steps)
-		if k == 58:
-			at_60 = w.mx.lz_aim
-	assert_lte(worst, 23, "at most 2 degrees a tick (22.8 units)")
-	assert_lte(Kin.angle_diff(at_60, first), 1366, "at most 120 degrees over one second")
-	assert_gt(Kin.angle_diff(at_60, first), 1300, "and it does turn that fast toward the enemy")
-	W.run(w, 40, 0, W.S)
-	assert_eq(w.mx.lz_aim, 1536, "it settles on the enemy (135 degrees)")
-	assert_gt(_total(w, 1), 0, "and burns it")
+	W.run(w, 2, 0, W.S)
+	assert_eq(w.mx.lz_targets.size(), 0, "135 degrees off the aim: not a target")
+	var main := _kind(_trace(w), &"main")
+	assert_eq(main.size(), 1, "a straight beam")
+	assert_almost_eq(float(_angle(main[0])), 0.0, 2.0, "along the aim")
+	W.run(w, 1, 0, W.S, AIM_NORTH)
+	assert_eq(Array(w.mx.lz_targets), [1], "aimed north, it is in front: a target at once")
+	assert_eq(w.mx.lz_aim, AIM_NORTH, "no lag behind the aim")
+	W.run(w, 60, 0, W.S, AIM_NORTH)
+	assert_gt(_total(w, 1), 0, "and the curve burns it")
+
+
+## v0.10.0 FX (owner: "homing must respect walls"): an enemy behind a wall is no target.
+func test_l4_homing_ignores_an_enemy_behind_a_wall() -> void:
+	var w := _world([&"gun_homing"], [Vector2(3.0, 0.0), Vector2(4.0, 3.0)])
+	w.add_wall_now(Obb.make(Vector2(2.0, 0.0), Vector2(0.2, 1.0), 0))
+	W.run(w, 2, 0, W.S)
+	assert_eq(Array(w.mx.lz_targets), [2], "the nearer one behind the wall isn't picked")
+	W.run(w, 60, 0, W.S, 421)
+	assert_gt(_total(w, 2), 0, "the one in sight is burned")
+	assert_eq(_total(w, 1), 0, "the one behind the wall is not")
 
 
 func test_l4_homing_bends_the_path_toward_the_nearest_enemy() -> void:
@@ -178,7 +181,7 @@ func test_l4_homing_bends_the_path_toward_the_nearest_enemy() -> void:
 	var a0 := _angle(main[0])
 	var a1 := _angle(main[main.size() - 1])
 	assert_ne(a0, a1, "its heading changes along the path")
-	assert_lte(Kin.angle_diff(a0, a1), 25 * 12 * 3, "smooth")
+	assert_lte(Kin.angle_diff(a0, a1), 12 * 12 * 6, "smooth")
 	var total := 0.0
 	for b in main:
 		total += _len(b)

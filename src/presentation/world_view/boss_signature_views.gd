@@ -102,16 +102,11 @@ const LAVA_FADE_TICKS := 8.0
 const LAVA_CRUST_TICKS := 60.0
 ## v0.8.0 TX2: the lava and meltdown shaders' owner textures (BossStrikeMeshes.GROUND_TEX slots).
 const LAVA_SLOTS := ["lava_tex", "crust_tex"]
-## v0.10.0 VX5 (R27, R21): the Gaze's beam and the molten floor's flames are the pack's (a full family keeps the old
-## look); false: all old.
+## v0.10.0 VX5 (R27): the Gaze's beam is the pack's (a full family keeps the old look); false: the old cylinders.
+## v0.10.0 FX (owner, 2026-10-31: the Foundry "uses both older and newer VFX ... performance drops"): VX5's flames on
+## the molten floor are gone. The floor's own shader already burns and crusts; the pack's fire areas stood on top of
+## it (up to 4 a piece and 10 round the meltdown), so the two looks drew at once and filled the area family.
 const PACK_GAZE := true
-const PACK_LAVA := true
-## A molten piece's flames stop this many ticks before it crusts over (the pack's fire has no cooling).
-const LAVA_FLAME_OFF_TICKS := 20.0
-## The meltdown's flames: how many round the melting edge, how far out of it (m), and their scale.
-const MELT_FLAMES := 10
-const MELT_FLAME_OUT_M := 1.5
-const MELT_FLAME_SCALE := 1.3
 
 ## Where the owner's javelin is looked up (tests point it elsewhere to see the fallback).
 static var model_path := MODEL_PATH
@@ -726,7 +721,7 @@ func spark_count() -> int:
 
 
 func _draw_bs2(now: float, still: bool) -> void:
-	_hold = BossPackHold.of(self, _hold) if (PACK_GAZE or PACK_LAVA) else null
+	_hold = BossPackHold.of(self, _hold) if PACK_GAZE else null
 	if _hold != null:
 		_hold.begin()
 	_gaze_packed = false
@@ -895,52 +890,6 @@ func _draw_lava(now: float) -> void:
 		var left := float(row[2]) - now
 		m.set_shader_parameter("fade", clampf(since / LAVA_FADE_TICKS, 0.0, 1.0))
 		m.set_shader_parameter("cool", clampf(1.0 - left / LAVA_CRUST_TICKS, 0.0, 1.0))
-		if PACK_LAVA and _hold != null and left > LAVA_FLAME_OFF_TICKS:
-			_pack_lava(k, _lava_rows[k][0])
-
-
-## R21: flames on a molten piece (the pack's fire areas, blobs along its long side; the shader floor stays).
-func _pack_lava(k: int, r: Rect2) -> void:
-	var short := maxf(minf(r.size.x, r.size.y), 0.5)
-	var long := maxf(r.size.x, r.size.y)
-	var n := clampi(ceili(long / short), 1, 4)
-	var along_x := r.size.x >= r.size.y
-	for j in n:
-		var t := (float(j) + 0.5) / n - 0.5
-		var at := r.get_center() + (Vector2(long * t, 0.0) if along_x else Vector2(0.0, long * t))
-		_hold.hold(
-			Vector2i(k, j),
-			&"bx_lava_a" if (k + j) % 2 == 0 else &"bx_lava_b",
-			SimPlane.to_3d(at, 0.25),
-			clampf(minf(short, long / n) / 1.6, 0.6, 6.0)
-		)
-
-
-## R21: flames round the melting edge, off the cool bridge to the exit.
-func _pack_melt(k: int, row: Dictionary) -> void:
-	var radius := float(row["radius"])
-	if radius >= 1000.0:
-		return
-	var c: Vector2 = row["centre"]
-	var e: Vector2 = row["exit"]
-	for j in MELT_FLAMES:
-		var a := TAU * (float(j) + 0.5) / MELT_FLAMES
-		var at := c + Vector2(cos(a), sin(a)) * (radius + MELT_FLAME_OUT_M)
-		if bool(row["bridge"]) and _near_segment(at, c, e, float(row["half"]) + 1.0):
-			continue
-		_hold.hold(
-			Vector2i(-1 - k, j),
-			&"bx_lava_b" if j % 2 == 0 else &"bx_lava_a",
-			SimPlane.to_3d(at, 0.25),
-			MELT_FLAME_SCALE
-		)
-
-
-static func _near_segment(p: Vector2, a: Vector2, b: Vector2, within: float) -> bool:
-	var ab := b - a
-	var len2 := maxf(ab.length_squared(), 0.0001)
-	var t := clampf((p - a).dot(ab) / len2, 0.0, 1.0)
-	return p.distance_to(a + ab * t) <= within
 
 
 func _sync_melt_nodes() -> void:
@@ -987,5 +936,3 @@ func _draw_melt() -> void:
 		m.set_shader_parameter("bridge", 1.0 if row["bridge"] else 0.0)
 		m.set_shader_parameter("bridge_to", Vector2(e.x, e.z))
 		m.set_shader_parameter("bridge_half", float(row["half"]))
-		if PACK_LAVA and _hold != null:
-			_pack_melt(k, row)

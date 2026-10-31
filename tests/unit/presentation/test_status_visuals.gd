@@ -47,7 +47,8 @@ func test_each_status_shows_its_pieces_and_they_go_when_it_ends() -> void:
 	w.guard_charges = 2
 	fx.sync(s[0])
 	assert_eq(fx.shown(id, &"embers"), StatusVisuals.EMBERS, "a full burn: every ember")
-	assert_eq(fx.shown(id, &"pips_lit"), 3, "one lit pip per shock stack")
+	assert_eq(fx.badge(id, &"shock"), 3, "v0.10.0 FX: the shock badge reads x3")
+	assert_eq(fx.badge(id, &"burn"), 5, "the burn badge x5")
 	assert_eq(fx.shown(id, &"drips"), 3)
 	assert_eq(fx.shown(id, &"crystals"), 2, "one crystal per frost stack")
 	assert_eq(fx.shown(id, &"shell"), 0)
@@ -168,8 +169,8 @@ func test_rebuilt_rows_drop_the_old_children_at_once() -> void:
 		assert_false(c.is_queued_for_deletion(), "no freed icon left in the row")
 
 
-## v0.9.5 EE1: the stack count shows as small dots (poison and bleed), a Contagion jump draws an arc, the
-## Exsanguinate burst a red ring and a deep red number.
+## v0.9.5 EE1: the stack count shows (v0.10.0 FX: as an icon and "xN", not a dot a stack), a Contagion jump draws
+## an arc, the Exsanguinate burst a red ring and a deep red number.
 func test_element_level_visuals() -> void:
 	var w := _world()
 	var s := _views(w)
@@ -179,13 +180,13 @@ func test_element_level_visuals() -> void:
 	a.poison_stacks[1] = 3
 	a.bleed_stacks[1] = 4
 	fx.sync(s[0])
-	assert_eq(fx.shown(id, &"dots_poison"), 3, "one green dot per poison stack")
-	assert_eq(fx.shown(id, &"dots_bleed"), 4, "one red dot per bleed stack")
+	assert_eq(fx.badge(id, &"poison"), 3, "poison x3")
+	assert_eq(fx.badge(id, &"bleed"), 4, "bleed x4")
 	a.poison_stacks[1] = 0
 	a.bleed_stacks[1] = 9
 	fx.sync(s[0])
-	assert_eq(fx.shown(id, &"dots_poison"), 0)
-	assert_eq(fx.shown(id, &"dots_bleed"), StatusVisuals.DOTS, "shown up to 5")
+	assert_eq(fx.badge(id, &"poison"), 0, "gone with its stacks")
+	assert_eq(fx.badge(id, &"bleed"), 9, "the count follows, past the old 5 dots")
 	var before := fx.fx_count()
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, id, a.ids[0], a.ids[2], a.pos(2))
 	e.effect_id = SimEvent.EFFECT_VENOM_JUMP

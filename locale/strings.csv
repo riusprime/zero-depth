@@ -591,6 +591,7 @@ CURSE_BRITTLE_UP,Move faster,Te mueves más rápido
 UI_CURSE_UPSIDE,Trade-off,Compensación
 UI_CARD_CURSE,Curse,Maldición
 HUD_DODGE,DODGE,ESQUIVA
+STATUS_STACK_COUNT,x%d,x%d
 HUD_STUNNED,STUNNED,ATURDIDO
 PICK_TITLE_CORE,Stolen core · take it,Núcleo robado · tómalo
 PICK_TITLE_ELITE_DROP,Elite's card · take it,Carta de élite · tómala

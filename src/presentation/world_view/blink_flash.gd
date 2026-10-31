@@ -5,7 +5,9 @@ extends Node3D
 ## the ground, a burst of small blue sparks and a blue OmniLight3D, all fading over DURATION_S. Presentation only
 ## (EI-07): UtilityView starts it when the sim reports a blink; it decides nothing.
 
-const DURATION_S := 0.36
+## v0.10.0 FX (owner, 2026-10-31: "teleport circles linger for too long ... a quick pop"): 0.36 -> 0.22 s, and the
+## pack flash runs its whole animation in PACK_LIFE_S (it played its 1.1 s at each end).
+const DURATION_S := 0.22
 const COLUMN_H := 2.4
 const COLUMN_R := 0.42
 const SPARKS := 18
@@ -15,6 +17,8 @@ const LIGHT_ENERGY := 5.0
 ## v0.10.0 VX5 (R42): the flash is the pack's magic_orb_flash; false: the column, pool and sparks.
 const PACK_FLASH := true
 const PACK_SCALE := 1.0
+const PACK_LIFE_S := 0.28
+const PACK_SPEED := 4.0
 
 const COLUMN_SHADER := """
 shader_type spatial;
@@ -134,7 +138,9 @@ func play(at: Vector3) -> void:
 					&"bx_flash",
 					where + Vector3(0, 0.9, 0),
 					PACK_SCALE,
-					{&"primary": BLUE_CORE, &"secondary": BLUE, &"tertiary": BLUE.darkened(0.3)}
+					{&"primary": BLUE_CORE, &"secondary": BLUE, &"tertiary": BLUE.darkened(0.3)},
+					PACK_LIFE_S,
+					PACK_SPEED
 				)
 				!= null
 			)

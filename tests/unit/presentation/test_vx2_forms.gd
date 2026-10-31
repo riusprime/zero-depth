@@ -43,8 +43,6 @@ func test_every_vx2_row_exists() -> void:
 		&"vx2_laser_void",
 		&"vx2_laser_venom",
 		&"vx2_muzzle_big",
-		&"vx2_void_body",
-		&"vx2_void_collapse"
 	]:
 		assert_true(_fx.has_id(id), String(id))
 	for id in [
@@ -150,37 +148,30 @@ func test_seekers_are_javelins_held_on_the_darts() -> void:
 	assert_eq(view.hold.count(), 0, "released with the darts")
 
 
-func test_the_laser_is_the_pack_beam() -> void:
+## v0.10.0 FX: the laser went back to its own ribbons (a bent beam was a pack scene per leg, each with a flare).
+func test_the_laser_draws_no_pack_beam() -> void:
 	var view: LaserView = add_child_autofree(LaserView.new())
 	view.pack_fx = _fx
 	var w := W.world(&"gun", [&"gun_laser"], [[Vector2(4.0, 0.0), 100000]])
 	var r := WorldReader.new(w)
 	W.run(w, 3, 0, W.S)
 	view.sync(r)
-	assert_eq(_fx.live_count(&"beam"), 1)
-	var n := view.hold.node(0)
-	assert_not_null(n)
-	var b: Dictionary = r.beams()[0]
-	var len := (b["from"] as Vector2).distance_to(b["to"])
-	assert_almost_eq(float(n.get("beam_length")), len, 0.01, "its length is the trace")
-	W.run(w, 3, 0, 0)
-	view.sync(r)
-	assert_eq(_fx.live_count(&"beam"), 0, "gone with the fire")
+	assert_eq(view.shown, 1, "the ribbon draws")
+	assert_eq(_fx.live_count(&"beam"), 0, "no pack beam")
 
 
-func test_void_shots_are_the_huge_orb_and_collapse_in_the_flash() -> void:
+## v0.10.0 FX (owner: "restore the previous Void"): no pack orb or flash; the old body draws.
+func test_void_shots_draw_no_pack_effect() -> void:
 	var view: VoidView = add_child_autofree(VoidView.new())
 	view.pack_fx = _fx
 	var w := W.world(&"gun", [&"gun_void"])
 	var r := WorldReader.new(w)
 	W.run(w, 2, 0, W.S)
 	view.sync(r)
-	assert_gt(view.hold.count(), 0)
-	assert_gt(_fx.pooled(&"vx2_void_body"), 0)
+	assert_eq(view.hold.count(), 0)
 	W.run(w, 200, 0, 0)
 	view.sync(r)
-	assert_eq(view.hold.count(), 0)
-	assert_gt(_fx.pooled(&"vx2_void_collapse"), 0, "the collapse flash played")
+	assert_eq(_fx.spawned, 0, "no body, no collapse flash")
 
 
 func test_the_rune_explosion_has_a_pack_dome() -> void:

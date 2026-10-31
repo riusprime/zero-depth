@@ -4,27 +4,21 @@ extends RefCounted
 ## status and void patches in the VFX pack's style (PackFx, data/vfx/pack_fx_vx7.tres). The layer asks first; the old
 ## sprites draw when there is no PackFx, no room in the effect's family, or the const for the area is false.
 ## - Bleed (N2): drips held on a bleeding enemy (assets/vfx_zd/bleed/drips.tscn: the poison bubble's splat particles,
-##   dark red, falling), and a short splatter (the poison puddle, bleed's colours, SPLAT_S) at its feet each time the
-##   old floor splat is laid. The old floor decal stays under it.
+##   dark red, falling); the old floor decal under it. v0.10.0 FX (owner: "remove residual ground effects"): the pack's
+##   splatter laid on the decal every 2 s is gone (two ground looks for one splat).
 ## - Void (N5): the rift (a flickering sprite in a patch, tearing open in a blast) is the pack's pulse ring in the void
 ##   violet. The tendrils keep their sprites; the rift torn along a beam keeps its ribbon.
 ## Also here: the helpers the views use to find the pack and to draw a pack material on our own meshes. Cosmetic only.
 
 ## false: the old look (bleed drips and splash; void rifts).
 const PACK_BLEED := true
-const PACK_RIFT := true
+const PACK_RIFT := false  # v0.10.0 FX: the Void as before VX7 (VoidView.PACK_VOID)
 const DRIPS_ID := &"vx7_bleed_drips"
-const SPLAT_ID := &"vx7_bleed_splat"
 const RIFT_ID := &"vx7_void_rift"
-## The splatter's life (s), how often one is laid (ticks, the old floor splat's cycle) and its scale per metre of
-## radius (the puddle's visible radius is about 1.6 m).
-const SPLAT_S := 1.5
+## How often the old floor splat is laid (ticks).
 const SPLAT_TICKS := 120.0
-const SPLAT_PER_M := 0.62
 ## The rift's scale per metre of the patch or blast radius (a pulse ring grows to about 2.2 m).
 const RIFT_PER_M := 0.45
-## The room a view's drops of bleed colour need.
-const SPLAT_SEEN_MAX := 256
 
 ## The pack's materials our own meshes wear (copied per use; the vendor files are never edited): the Wave crest's pillar
 ## sheet and the Nemesis crescent's rim glow.
@@ -33,7 +27,6 @@ const PILLAR_MAT := MAT_DIR + "pillar_area/pillar_area_01/pillar_area_01_pillar_
 const RIM_MAT := MAT_DIR + "rim_area/rim_area_04/rim_area_04_upward.tres"
 
 var layer: VfxLayer
-var _splat_slot := {}  # an enemy's seed -> the cycle it last splashed in
 
 
 func _init(p_layer: VfxLayer) -> void:
@@ -109,7 +102,7 @@ static func bleed_colors() -> Dictionary:
 
 # --- Bleed (N2) --------------------------------------------------------------------------------------------------
 ## A bleeding enemy at `p` (its feet), radius `r`, body height `top`: drips running off it (held), the floor splat and
-## the short pack splatter (each cycle).
+## (each cycle).
 func bleed_status(p: Vector3, r: float, top: float, age: float, sd: int, bleed: int) -> void:
 	var fx := layer.pack_fx if PACK_BLEED else null
 	var packed := false
@@ -128,14 +121,6 @@ func bleed_status(p: Vector3, r: float, top: float, age: float, sd: int, bleed: 
 	layer.mark(
 		VfxLayer._status_key(sd, 1, slot), VfxLayer._splat(sd + slot), p, size, VfxLayer.BLOOD_MARK
 	)
-	if fx != null and int(_splat_slot.get(sd, -1)) != slot:
-		if _splat_slot.size() > SPLAT_SEEN_MAX:
-			_splat_slot.clear()
-		_splat_slot[sd] = slot
-		if fx.has_room(&"mark"):
-			PackHold.play(
-				fx, SPLAT_ID, Vector3(p.x, 0.03, p.z), size * SPLAT_PER_M, bleed_colors(), SPLAT_S
-			)
 
 
 # --- Void (N5) ---------------------------------------------------------------------------------------------------

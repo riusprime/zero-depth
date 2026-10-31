@@ -30,6 +30,7 @@
 | V2 | Gaps built in the pack's style ("take that style and how they are built and build something new") | **Decided:** VFX_PACK N rows | VX6–VX8 |
 | V3 | I7: the hero's fire patches shift cooler | **Direct** | VX3 |
 | V4 | v0.10.5 is the feedback pass | Process | — |
+| V5–V13 | The VFX cleanup brief (2026-10-31, nine points: Laser + Homing + Pierce, deaths, stray sprites and lights, stack indicators, the Foundry, Blink, Seekers, Void, general clutter) | **Direct** (owner's brief) | FX |
 
 ## Design questions
 **Q1. The Blade's forms.** v0.9.5 left them "for v0.10.0".
@@ -121,6 +122,50 @@ marks.
 ### VX8. Blade swings in the pack's style (N3)
 The pack's look on the Blade's existing swings: a ribbon trail along the swing with the beam's scrolling noise, and
 slash flashes. The Blade's forms are Q1.
+
+### FX. The VFX cleanup (owner's brief, 2026-10-31)
+The owner, after a look at the build: "the latest VFX overhaul has introduced visual clutter, performance problems, and
+regressions ... make combat visually cleaner, more readable, smoother, and better optimized", "restore older effects
+when they were objectively better", "do not revert the entire overhaul blindly". Evidence:
+[`evidence/FX.md`](evidence/FX.md). The lead's calls, per point:
+- **1. Laser + Homing + Pierce.** Each Homing leg was its own pack beam scene with its own start flare, which gave the 7–8
+  overlapping beams. Now:
+  - the Laser draws its own ribbons again (`LaserView.PACK_LASER` off), and a lane's chain of legs is one strip along
+    the sim's points, corners rounded (`_join`, `_round`, `_lay_path`), so the beam and the hits stay in step;
+  - **sim:** Homing no longer swings the aim (it turned at 120 °/s toward the nearest enemy; `home_dps` is gone), so the
+    beam leaves along the player's aim at once and bends toward its targets;
+  - a target must be in sight of the hero (`World.sees`) and no more than 90° off the aim;
+  - legs are 0.75 m and turn at most 12° each (were 1.5 m and 25°: the same curve, smoother), up to 24 legs.
+- **2. Deaths.** VX1's smoke and flash on every kill are gone, and so is the smoke after every pack fire explosion
+  (`smoke_after`: 4.1 s). A kill is the old lit chunks.
+- **3. Stray sprites and lights.**
+  - Godot does not size a world-space particle by its node's scale, so every scaled-down pack effect drew its particles
+    full size (the white starbursts, oversized flashes). An effect that stands where it spawned now has local particles
+    (`PackFx.WORLD_SPACE`: only projectiles, enemy shots and trails keep world space).
+  - Enemy lob and rain shots were keyed by their place in the frame's list, so a landed shot's effect jumped to the next
+    shot and its trail streaked across the screen. They are keyed by the drone and the drop now.
+  - Any held effect that jumps more than 1.5 m in a frame restarts its particles (`PackFx.settle`).
+- **4. Stack indicators.** `StatusBadges`: an icon (drawn in code) and an `xN` count (`STATUS_STACK_COUNT`) for burn,
+  bleed, poison, shock and frost, in a row over the bar. They replace the shock pips and the poison and bleed dots.
+- **5. Foundry.** VX5's pack fire areas stood on the molten floor's own shader (up to 4 a piece, 10 round the meltdown),
+  so both looks drew at once. The pack flames are removed; the floor shader stays. The rain and lob keys (point 3) were
+  the Foundry's other duplicate.
+- **6. Blink.** The flash plays its whole animation in 0.28 s (`PackFx.spawn` gains `speed`); it was 1.1 s at each end.
+  The old flash fallback is 0.22 s (was 0.36 s).
+- **7. Seekers (sim).**
+  - The search reaches 12 m (was 10.8 m) and a dart lives 1.3 s (was 1 s: 10 m of flight for a 10.8 m search).
+  - A target must be in sight of the hero.
+- **8. Void.** Its v0.9.5 look is back (`VoidView.PACK_VOID`, `PACK_SPARKS`, `GapPack.PACK_RIFT` off; their rows
+  removed).
+- **9. Clutter, judged one by one.**
+  - **Removed:**
+    - the frozen pack effects on every frost and splat floor mark (7 s each, on the decals);
+    - the pack splatter laid on the bleed splat decal every 2 s;
+    - the puddle after venom and bleed bursts.
+  - **Kept:** the hits, impacts, zones, enemy shots, lightning and blade looks (improvements once their particles are
+    the right size).
+- **Goldens:** the laser and the Seekers changes are sim changes; they move no golden unless a golden run uses Homing
+  or the Seekers (the seams run says).
 
 ### R. Release
 - The release checklist (ROADMAP §0.4) for v0.10.0, covering v0.9.5 too.

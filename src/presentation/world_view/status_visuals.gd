@@ -2,8 +2,9 @@ class_name StatusVisuals
 extends Node3D
 ## Engine statuses and combo payoffs on screen (v0.3.0 G). Reads the sim through WorldReader only:
 ## - burn: embers rising around the enemy (more stacks, more embers); its orange glow is ItemVisuals' tint;
-## - shock: a row of pips over the health bar, one lit per stack up to the discharge threshold, and flickering
-##   sparks; a discharge draws a lightning line to each enemy it jumped to;
+## - shock: flickering sparks; a discharge draws a lightning line to each enemy it jumped to;
+## - v0.10.0 FX: every stacking status (burn, bleed, poison, shock, frost) shows its icon and count ("x3") over the
+##   health bar (StatusBadges), in place of the shock pips and the poison and bleed dots;
 ## - bleed: red drips falling from the enemy (more stacks, more drips); a burst draws a red ring;
 ## - frost: ice crystals around the enemy's feet, one per stack; frozen: an ice shell (and ItemVisuals' icy tint);
 ## - Bulwark's guard charges: gold orbs circling the player;
@@ -12,14 +13,10 @@ extends Node3D
 ## With the new look (v0.5.9 art, VFX phase 2: `vfx` set) the enemy statuses draw into the VfxLayer instead of the
 ## boxes: flames on a burning body, arcs over a shocked one, red drips, bubbles and green drips for poison, ice
 ## crystals and a crystal cage for frost and frozen; the bleed, shatter, wildfire and harvest payoffs burst in
-## their element and a discharge strikes as lightning. The shock pips and guard orbs stay (they are counts).
+## their element and a discharge strikes as lightning. The badges and guard orbs stay (they are counts).
 ## Materials are made once and kept (never emission toggles at runtime: the v0.2.0 DAMAGE_LAG rule); each actor's
 ## pieces are children of its ActorViews node, so they move and go with it.
 
-const PIPS := 5
-## v0.9.5 EE1: the stack dots over the bar (poison, then bleed, above shock's pips), one per stack up to DOTS.
-const DOTS := 5
-const DOT_POISON := Color("#7BE04A")
 ## A Contagion arc lasts 0.25 s (15 ticks); the Exsanguinate splash 20 ticks.
 const JUMP_TICKS := 15.0
 const SPLASH_TICKS := 20.0
@@ -58,13 +55,14 @@ var statuses_culled := 0
 var _mats := {}
 var _box := BoxMesh.new()
 var _prism := PrismMesh.new()
-var _pip := QuadMesh.new()
 var _dot := QuadMesh.new()
 var _shell := SphereMesh.new()
-## Actor id -> its pieces: {"root": Node3D, "embers": [...], "pips": [...], ...}.
+## Actor id -> its pieces: {"root": Node3D, "embers": [...], "badges": StatusBadges, ...}.
 var _views := {}
 var _frame := 0
 var _last_tick := -1
+## v0.10.0 FX: the camera's right (world), the badges' row direction.
+var _right := Vector3.RIGHT
 ## v0.9.5 EE1: the last event read (Contagion jumps, the Exsanguinate burst).
 var _last_seq := 0
 ## v0.9.5 EE2: where the last Shatter broke (its shards fly from there), and whether the "+" shows this sync.
@@ -90,17 +88,12 @@ func _init(p_actors: ActorViews) -> void:
 	actors = p_actors
 	_box.size = Vector3.ONE
 	_prism.size = Vector3(0.12, 0.3, 0.12)
-	_pip.size = Vector2(0.13, 0.13)
 	_shell.radius = 0.5
 	_shell.height = 1.0
 	_shell.radial_segments = 8
 	_shell.rings = 4
 	for k: StringName in [&"burn", &"shock", &"bleed", &"frost", &"guard"]:
 		_mats[k] = _material(ItemLooks.status_color(k), 1.0, false)
-	_mats[&"pip_off"] = _material(Color(0.05, 0.06, 0.09, 0.85), 0.85, true)
-	_mats[&"pip_on"] = _material(ItemLooks.status_color(&"shock"), 1.0, true)
-	_mats[&"dot_poison"] = _material(DOT_POISON, 1.0, true)
-	_mats[&"dot_bleed"] = _material(ItemLooks.status_color(&"bleed"), 1.0, true)
 	_mats[&"dot_plus_fire"] = _material(PLUS_FIRE, 1.0, true)
 	_mats[&"dot_plus_frost"] = _material(PLUS_FROST, 1.0, true)
 	_dot.size = Vector2(0.08, 0.08)
@@ -120,6 +113,9 @@ func sync(reader: WorldReader) -> void:
 	_last_tick = tick
 	_plus_fire = reader.element_plus(true)  # v0.9.5 EE2
 	_plus_frost = reader.element_plus(false)
+	var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
+	if cam != null:
+		_right = cam.global_transform.basis.x
 	_on.clear()
 	_alive.clear()
 	for i in reader.actor_count():
@@ -175,7 +171,6 @@ func _statuses(reader: WorldReader, i: int, out: Dictionary) -> Dictionary:
 			out[&"plus_fire"] = 1  # v0.9.5 EE2: Heat sync
 	if reader.shock_stacks(i) > 0:
 		out[&"shock"] = reader.shock_stacks(i)
-		out[&"shock_max"] = maxi(1, reader.shock_threshold())
 	if reader.bleed_stacks(i) > 0:
 		out[&"bleed"] = reader.bleed_stacks(i)
 	if reader.frost_stacks(i) > 0:
@@ -200,17 +195,15 @@ func _build(node: Node3D, r: float) -> Dictionary:
 	var v := {
 		"root": root,
 		"bar_y": bar_y,
-		"pips": [],
+		"badges": StatusBadges.new(root, bar_y),
 		"orbs": [],
-		"dots_poison": [],
-		"dots_bleed": [],
 		"dots_plus_fire": [],
 		"dots_plus_frost": []
 	}
 	if vfx != null:
 		# v0.8.0 FV (owner O87, the horde lag): the effects layer draws the embers, drips, crystals, sparks and shell,
 		# so none of their ~15 hidden meshes is built per affected enemy (a burning horde built and freed them as
-		# statuses came and went); the shock pips and guard orbs are built the first time they show (_update).
+		# statuses came and went); the badges and guard orbs are built the first time they show (_update).
 		for kind: String in VFX_DRAWN:
 			v[kind] = []
 		v["shell"] = null
@@ -220,7 +213,6 @@ func _build(node: Node3D, r: float) -> Dictionary:
 	v["crystals"] = _pieces(root, CRYSTALS, _prism, Vector3.ONE, &"frost")
 	v["sparks"] = _pieces(root, 2, _box, Vector3(0.05, 0.05, 0.5), &"shock")
 	_build_orbs(v)
-	_build_pips(v)
 	var shell := _piece(root, _shell, Vector3(r * 2.6, 1.3, r * 2.6), &"shell")
 	shell.position = Vector3(0, 0.55, 0)
 	v["shell"] = shell
@@ -230,29 +222,6 @@ func _build(node: Node3D, r: float) -> Dictionary:
 			cos(a) * (r + 0.08), 0.15, sin(a) * (r + 0.08)
 		)
 	return v
-
-
-## The shock pips over the bar (once per view).
-func _build_pips(v: Dictionary) -> void:
-	var root: Node3D = v["root"]
-	var pips: Array = []
-	for k in PIPS:
-		var p := _piece(root, _pip, Vector3.ONE, &"pip_off")
-		p.position = Vector3((k - (PIPS - 1) * 0.5) * 0.16, float(v["bar_y"]) + 0.2, 0)
-		pips.append(p)
-	v["pips"] = pips
-
-
-## v0.9.5 EE1: the stack dots of `status` (poison or bleed), one per stack up to DOTS, built when first shown.
-func _update_dots(v: Dictionary, status: StringName, stacks: int, rise: float) -> void:
-	var dots: Array = v["dots_" + String(status)]
-	if stacks > 0 and dots.is_empty():
-		for k in DOTS:
-			var p := _piece(v["root"], _dot, Vector3.ONE, StringName("dot_" + String(status)))
-			p.position = Vector3((k - (DOTS - 1) * 0.5) * 0.1, float(v["bar_y"]) + rise, 0)
-			dots.append(p)
-	for k in dots.size():
-		(dots[k] as Node3D).visible = k < stacks
 
 
 ## v0.9.5 EE2: the "+" (one bigger dot, beside the bar's right end) of `status` (plus_fire or plus_frost).
@@ -283,18 +252,7 @@ func _update(v: Dictionary, on: Dictionary, r: float) -> void:
 				p.visible = false
 		if v["shell"] != null:
 			(v["shell"] as Node3D).visible = false
-	var shock: int = on.get(&"shock", 0)
-	if shock > 0 and (v["pips"] as Array).is_empty():  # v0.8.0 FV: built when first shown
-		_build_pips(v)
-	var shock_max: int = mini(on.get(&"shock_max", PIPS), PIPS)
-	for k in (v["pips"] as Array).size():
-		var p: MeshInstance3D = v["pips"][k]
-		p.visible = shock > 0 and k < shock_max
-		var m: Material = _mats[&"pip_on" if k < shock else &"pip_off"]
-		if p.material_override != m:  # v0.8.0 HV: set on a change only
-			p.material_override = m
-	_update_dots(v, &"poison", on.get(&"poison", 0), 0.36)
-	_update_dots(v, &"bleed", on.get(&"bleed", 0), 0.46)
+	(v["badges"] as StatusBadges).update(on, _right)  # v0.10.0 FX: icon and "xN" a status
 	_update_plus(v, &"plus_fire", on.has(&"plus_fire"))
 	_update_plus(v, &"plus_frost", on.has(&"plus_frost"))
 	var charges: int = on.get(&"guard", 0)
@@ -338,24 +296,24 @@ func _update_pieces(v: Dictionary, on: Dictionary, r: float, t: float) -> void:
 		s.rotation = Vector3(0.4 * k, a, 0.6)
 
 
+## v0.10.0 FX: the count the badge of `status` shows on actor `id` (0: none).
+func badge(id: int, status: StringName) -> int:
+	var v: Dictionary = _views.get(id, {})
+	return 0 if v.is_empty() else (v["badges"] as StatusBadges).shown(status)
+
+
 ## The number of actors showing at least one status piece (tests read it).
 func view_count() -> int:
 	return _views.size()
 
 
-## The visible pieces of `kind` (&"embers", &"pips_lit", &"drips", &"crystals", &"shell", &"orbs") on actor `id`.
+## The visible pieces of `kind` (&"embers", &"drips", &"crystals", &"shell", &"orbs") on actor `id`.
 func shown(id: int, kind: StringName) -> int:
 	var v: Dictionary = _views.get(id, {})
 	if v.is_empty():
 		return 0
 	if kind == &"shell":
 		return 1 if v["shell"] != null and (v["shell"] as Node3D).visible else 0
-	if kind == &"pips_lit":
-		var lit := 0
-		for p: MeshInstance3D in v["pips"]:
-			if p.visible and p.material_override == _mats[&"pip_on"]:
-				lit += 1
-		return lit
 	var n := 0
 	for p: Node3D in v[kind]:
 		if p.visible:
@@ -407,7 +365,7 @@ func _sync_element_events(reader: WorldReader) -> void:
 				var to: Array = [SimPlane.to_3d(e.pos, 0.6)]
 				_shots.append([&"jump", SimPlane.to_3d(from, 0.6), 0.0, now, JUMP_TICKS, e.seq, to])
 			else:
-				_bolt_line(from, e.pos, DOT_POISON)
+				_bolt_line(from, e.pos, StatusBadges.POISON)
 		elif (
 			e.kind == SimEvent.Kind.DAMAGE
 			and e.effect_id == SimEvent.EFFECT_EXSANGUINATE
@@ -640,7 +598,7 @@ func _piece(root: Node3D, mesh: Mesh, scale: Vector3, mat: StringName) -> MeshIn
 	return p
 
 
-## An unshaded material (alpha when a < 1); `billboard` for the pips, drawn over everything like the health bar.
+## An unshaded material (alpha when a < 1); `billboard` for the "+" marks, drawn over everything like the health bar.
 static func _material(c: Color, a: float, billboard: bool) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED

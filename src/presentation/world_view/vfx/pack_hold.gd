@@ -97,10 +97,12 @@ func _is_live(node: Node3D) -> bool:
 
 
 func _move(node: Node3D, pos: Vector3, scale: float, it: Dictionary) -> void:
+	var was := node.global_position if node.is_inside_tree() else node.position
 	if node.is_inside_tree():
 		node.global_position = pos
 	else:
 		node.position = pos
+	PackFx.settle(node, was, pos)
 	if not is_equal_approx(float(it["scale"]), scale):
 		it["scale"] = scale
 		node.scale = Vector3.ONE * scale

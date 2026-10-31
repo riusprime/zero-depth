@@ -3,8 +3,8 @@ extends GutTest
 ## pierce it would make a smooth curve trying to hit the closest 5 enemies") through the real game (main.tscn, input by
 ## Input.parse_input_event only): a Gun run takes the Laser at an altar (E and the pick panel), takes Homing and Pierce
 ## with the dev panel's Grant (real clicks), and holds the shoot button with the mouse on the nearest of five standing
-## dummies laid on a curve: the beam bends along it and every one of the five takes damage, the beam drawn as a curve of
-## several ribbons.
+## dummies laid on a curve: the beam bends along it and every one of the five takes damage, the beam drawn as one
+## ribbon along a curve (v0.10.0 FX: it was a ribbon a leg).
 
 const W := preload("res://tests/support/mx4_world.gd")
 ## Five dummies on a gentle curve, in the hero's frame (x ahead, y to the left), nearest first.
@@ -129,7 +129,7 @@ func test_homing_and_pierce_make_the_laser_thread_five_enemies() -> void:
 	await e.mouse_to(cam.unproject_position(SimPlane.to_3d(arc[0], SimPlane.CORE_HEIGHT)))
 	for n in 240:
 		await e.frames(1)
-		curved = curved or main.view.laser.shown >= 3
+		curved = curved or (main.view.laser.shown == 1 and main.view.laser.points_shown > 4)
 	e.mouse_button(MOUSE_BUTTON_RIGHT, false)
 	var hurt := 0
 	for id: int in ids:
@@ -138,11 +138,11 @@ func test_homing_and_pierce_make_the_laser_thread_five_enemies() -> void:
 			hurt += 1
 	gut.p(
 		(
-			"FC1 e2e: %d of 5 dummies hurt after 240 frames held; curve drawn as >= 3 ribbons: %s"
+			"FC1 e2e: %d of 5 dummies hurt after 240 frames held; one curved ribbon: %s"
 			% [hurt, curved]
 		)
 	)
 	assert_eq(hurt, 5, "all five take damage")
-	assert_true(curved, "the beam is drawn as a curve of several ribbons")
+	assert_true(curved, "the beam is drawn as one ribbon along a curve")
 	await e.frames(4)
 	assert_eq(main.view.laser.shown, 0, "let go: the beam is gone")
