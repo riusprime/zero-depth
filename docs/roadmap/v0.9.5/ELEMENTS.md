@@ -69,3 +69,4 @@ Each pair is one extra rule. It is shown as a named banner when it turns on, lik
 | ID | Answer | Built in |
 |---|---|---|
 | E1–E5, X1–X10 | Approved as written (owner, 2026-10-25, in chat) | |
+| X1–X10 | **Changed (owner, 2026-10-31):** pairs turn on from Lv 1, weaker, and grow to the Lv 3 numbers above (PLAN EP1) | |

@@ -358,6 +358,57 @@ offers, `attack_slots.tres`, the forms). The order inside each list is the build
   per-hit VFX thinning; status-effect particle caps.
 - Frame times are measured on the owner's PC, so they're real evidence.
 
+### EP. An early build, pairs from Lv 1 (owner, 2026-10-31)
+- **Owner, 2026-10-31:** "update the element combination, you wont need lv 3 for combinations to activate, they do
+  from level 1 but weaker and as you level up they increase, also floor 1 should ease on a little bit and we should
+  increase the prob of getting mods, weapons and elements in floor 1 and 2 so you get a somewhat build early on, then
+  we match the regular cards prob with these, you you get a build then increase dmg attacks or miscelaneaus, lets make
+  the healing orb a default but very low, you should get a low chance, so there is just a bit of healing from the
+  beggning of the game"; then "we also need some kind of notification when you select it and see that you got the
+  element combination, so player notices". Agents: up to 4 Sonnet at once for this session (owner, same message).
+- **EP1, pairs from Lv 1** (supersedes ELEMENTS.md's "both at Lv 3"):
+  - A pair is on while the Gun holds both of its elements at any level.
+  - Its level is the lower of the two elements' levels (1–3).
+  - Its strength is `level_permille` [400, 700, 1000] of today's Lv 3 bonus (starting values, data).
+  - Multipliers scale their extra part: X1 burst ×1.8 / ×2.4 / ×3; X4 and X5 ×1.4 / ×1.7 / ×2; X10 ×1.08 / ×1.14 /
+    ×1.2.
+  - X6's slow is 8 / 14 / 20 %. X7 bursts 40 / 70 / 100 % of the bleed. X2's cloud lasts 1.2 / 2.1 / 3 s, same
+    radius.
+  - X3, X8 and X9 apply on the first jump / the first 2 jumps / every jump of a chain.
+  - Rules that only switch something (X5 seeks frozen enemies first, X6 holds poison while frozen) work from Lv 1.
+  - An old save's pair (on, with no level stored) reads as Lv 3.
+  - PAIR_ON fires when a pair turns on **or its level rises**; `amount_applied` carries the level.
+  - Text: the pair's line says "up to" the Lv 3 number.
+- **EP2, card odds by floor** (data `data/rewards/pacing.tres`, per stage [ability, stat, mod], starting values):
+
+  | Stage | Altar | Chest |
+  |---|---|---|
+  | Floor 1 | [10, 30, 60] | [10, 25, 65] |
+  | Floor 2 | [10, 40, 50] | [10, 30, 60] |
+  | Floor 3 and Deep (stats matched with mods) | [14, 43, 43] | [14, 43, 43] |
+
+  Today it is [15, 75, 10] at altars and [15, 55, 30] in chests on every floor.
+
+  Inside the mods, the category multipliers [form, element, advanced, trigger, mutation] are:
+  - floor 1: [1400, 1400, 400, 600, 20] → [1500, 1600, 900, 600, 20];
+  - floor 2: [1000, 1000, 1000, 1200, 100] → [1300, 1400, 1100, 1200, 100];
+  - floor 3 and Deep: unchanged.
+
+  The epic altar and the boss's legendary altar are unchanged.
+- **EP3, floor 1 eases; a little healing from the start** (data):
+  - `five_floors.tres`: floor 1 enemy HP and damage ×1.0 → ×0.85 (`enemy_hp_floor_permille` and
+    `enemy_damage_floor_permille` [0]: 1000 → 850).
+  - The heal orb's base drop chance 0 → 3 % a normal kill (`heal_orb_chance` 0.0 → 0.03; the heal stays 25 % of max
+    HP; Lifesprout adds on top).
+- **EP4, the pair notice** (after EP1):
+  - An element card on an offer that would turn a pair on or raise it says so on the card ("Pair: Thermal Shock",
+    "Thermal Shock → Lv 2").
+  - Turning a pair on shows a bigger banner, longer, with the chime: "Element pair!" + name + level + the line.
+  - A level-up gets the same banner with "Lv 2" / "Lv 3".
+  - Each active pair gets a HUD badge next to the combo badges, with its level.
+- These steps change the loot stream's draws, so seeded tests, goldens and balance numbers move. Each change is
+  named in PROGRESS "Goldens changed on purpose".
+
 ### R. Release
 - Version 0.9.5, patch notes en + es, What's New, the ROADMAP row and History, the README status line, CLAUDE.md
   re-checked, PROGRESS final, PLAYTEST.md, the full suite on the PR into `main`.
@@ -366,6 +417,7 @@ offers, `attack_slots.tres`, the forms). The order inside each list is the build
 - Q1–Q17 and the five G1s block their steps (the table above).
 - Q9 blocks HU, but not HM's mockups.
 - G1 VFX_PACK (2026-10-31) blocks VX0–VX5; I0 says where they land.
+- EP4 waits for EP1 (it reads the pair levels).
 
 ## Verification
 - Tests per step: lint, the touched folders and their e2e.
