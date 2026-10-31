@@ -62,6 +62,8 @@ func test_dev_panel_grants_a_pair_and_storm_bombs_evolve() -> void:
 			storm = storm or (ev.kind == SimEvent.Kind.DAMAGE and ev.effect_id == &"storm_bombs")
 		seq = w.last_event_seq()
 		drawn = drawn or main.view.element_fx.fx_count_of(&"storm") > 0
+		# v0.10.0 VX6: with the pack, the chain is the pack's bolts (PackFx family bolt)
+		drawn = drawn or (main.view.pack_fx != null and main.view.pack_fx.live_count(&"bolt") > 0)
 		if storm and drawn:
 			break
 	assert_true(storm, "a blast chained lightning (Storm Bombs)")

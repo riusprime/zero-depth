@@ -68,6 +68,8 @@ var _pack_seen := {}  # seed -> the tick the burst was last drawn
 var _pack_smoke: Array[Array] = []  # [due tick, position, scale]
 ## VX3: the pack's zones, bursts and statuses (VfxPackViews).
 var _views := VfxPackViews.new(self)
+## v0.10.0 VX6: the storm looks, the pack's lightning (StormPack).
+var _storm := StormPack.new(self)
 
 
 # --- Public: one call per form ----------------------------------------------------------------------------------
@@ -81,7 +83,7 @@ func field(
 		&"fire":
 			_fire(c, r, fade, age, sd, hostile)
 		&"storm":
-			_storm_field(c, r, fade, age, sd)
+			_storm.field(c, r, fade, age, sd)
 		&"frost":
 			_frost_field(c, r, fade, age, sd)
 		&"venom":
@@ -100,7 +102,7 @@ func ring(kind: StringName, c: Vector3, r: float, fade: float, age: float, sd: i
 		&"fire":
 			_fire_ring(c, r, fade, age, sd)
 		&"storm":
-			_storm_ring(c, r, fade, age, sd)
+			_storm.ring(c, r, fade, age, sd)
 		&"frost":
 			_frost_ring(c, r, fade, age, sd)
 		&"venom":
@@ -119,7 +121,7 @@ func line(kind: StringName, a: Vector3, b: Vector3, fade: float, age: float, sd:
 		&"fire":
 			_fire_line(a, b, fade, age, sd)
 		&"storm":
-			_lightning(a, b, fade, age, sd, COLD)
+			_storm.lightning(a, b, fade, age, sd, COLD)
 		&"frost":
 			_frost_line(a, b, fade, age, sd)
 		&"venom":
@@ -153,7 +155,7 @@ func burst(kind: StringName, c: Vector3, r: float, u: float, sd: int) -> void:
 func _burst_kind(kind: StringName, c: Vector3, r: float, u: float, sd: int) -> void:
 	match kind:
 		&"storm":
-			_storm_burst(c, r, u, sd)
+			_storm.burst(c, r, u, sd)
 		&"frost":
 			_frost_burst(c, r, u, sd)
 		&"shatter":  # v0.10.0 VX3: a frozen enemy's shatter: the frost burst and a small ice patch
@@ -201,11 +203,11 @@ func status(p: Vector3, r: float, on: Dictionary, sd: int, top: float = 0.9) -> 
 		# v0.8.0 FV: a status light (merged, the brightest few: VfxCore.STATUS_LIGHTS_MAX).
 		_light_status(p + Vector3(0, top + 0.4, 0), WARM, 0.7 + 0.1 * burn, 3.0)
 	var shock: int = on.get(&"shock", 0)
-	if shock > 0 and (int(age / 3.0) + sd) % 3 != 0:
+	if shock > 0 and not _storm.shock(p, r, sd, age, top) and (int(age / 3.0) + sd) % 3 != 0:
 		var strike := int(age / 3.0)
 		var a := TAU * h(sd + strike, 1)
 		var b := a + PI * (0.6 + 0.6 * h(sd + strike, 2))
-		_lightning(
+		_storm.lightning(
 			p + Vector3(cos(a) * r, 0.35 + 0.5 * h(sd + strike, 3), sin(a) * r),
 			p + Vector3(cos(b) * r, 0.35 + 0.5 * h(sd + strike, 4), sin(b) * r),
 			0.9,
@@ -425,6 +427,7 @@ func _pack_explosion(c: Vector3, r: float, sd: int) -> void:
 func begin(p_now: float) -> void:
 	super.begin(p_now)
 	_views.begin(pack_fx)
+	_storm.begin(pack_fx)
 	guard_orbs_packed = 0
 	if pack_fx == null:
 		return
@@ -442,6 +445,7 @@ func begin(p_now: float) -> void:
 func finish() -> void:
 	super.finish()
 	_views.end()
+	_storm.end()
 
 
 func _explosion_sprites(c: Vector3, r: float, u: float, sd: int) -> void:
@@ -510,131 +514,6 @@ func _explosion_rest(c: Vector3, r: float, u: float, sd: int) -> void:
 		_put(&"spark", _facing(q, 0.12, 0.12, true), Color(2.4, 1.3, 0.4, 1.0 - t), k % 4, 0.0, 0.0)
 	_light(c + Vector3(0, 1.0, 0), WARM, 7.0 * pow(1.0 - u, 2.0), r * 3.0 + 2.0)
 	mark(sd * MARK_KINDS, &"scorch", c, r * 1.25, SCORCH)
-
-
-# --- Storm ------------------------------------------------------------------------------------------------------
-## Lightning from `a` to `b`: a jagged bolt that re-strikes every few ticks, sparks at its end, a cold flicker.
-func _lightning(
-	a: Vector3,
-	b: Vector3,
-	fade: float,
-	age: float,
-	sd: int,
-	cold: Color,
-	width: float = 0.5,
-	lit: bool = true
-) -> void:
-	var strike := int(age / 3.0)
-	var span := a.distance_to(b)
-	var on := 0.75 + 0.25 * float((strike + sd) % 2)
-	var segs := clampi(int(span / 2.5) + 1, 1, 6)
-	var prev := a
-	for s in segs:
-		var t := float(s + 1) / segs
-		var nxt := a.lerp(b, t)
-		if s < segs - 1:
-			nxt += (
-				Vector3(
-					h(sd + strike, s) - 0.5,
-					(h(sd + strike, s + 9) - 0.5) * 0.6,
-					h(sd + strike, s + 17) - 0.5
-				)
-				* minf(span * 0.25, 0.9)
-			)
-		_put(
-			&"bolt",
-			_ribbon(prev, nxt, width * (0.8 + 0.4 * h(sd, s))),
-			Color(cold.r * 2.2, cold.g * 2.2, cold.b * 2.4, fade * on),
-			(strike + s + sd) % 4,
-			0.0,
-			0.0
-		)
-		prev = nxt
-	for j in _thin(&"spark", 3):
-		var q := (
-			b
-			+ (
-				Vector3(
-					h(sd + strike, j + 30) - 0.5,
-					h(sd + strike, j + 40) * 0.5,
-					h(sd + strike, j + 50) - 0.5
-				)
-				* 0.5
-			)
-		)
-		_put(
-			&"spark",
-			_facing(q, 0.16, 0.16, true, h(sd, j) * TAU),
-			Color(cold.r * 2.0, cold.g * 2.0, cold.b * 2.2, fade),
-			j % 4,
-			0.0,
-			0.0
-		)
-	if lit:
-		_light(b + Vector3(0, 0.6, 0), cold, 1.8 * fade * on, 4.0)
-
-
-## A crackling field: bolts arcing from near its middle out to its edge, re-striking, a cold light.
-func _storm_field(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
-	var strike := int(age / 4.0)
-	var n := clampi(int(round((3.0 + r * 2.0) * density)), 2, 10)
-	for k in n:
-		var a := TAU * (k + h(sd + strike, k)) / n
-		var p := (
-			c
-			+ Vector3(
-				(h(sd + strike, k + 3) - 0.5) * r * 0.5,
-				0.3 + 0.5 * h(sd + strike, k + 7),
-				(h(sd + strike, k + 5) - 0.5) * r * 0.5
-			)
-		)
-		var q := c + Vector3(cos(a) * r * 0.9, 0.08, sin(a) * r * 0.9)
-		_lightning(p, q, fade * 0.9, age, sd + k * 7, COLD, 0.45, false)
-	_light(c + Vector3(0, 0.8, 0), COLD, (1.4 + r * 0.5) * fade, r + 3.0)
-
-
-## A shock ring: lightning running round its edge at waist height, no ground fill.
-func _storm_ring(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
-	var n := clampi(int(r * 3.0 * density), 6, 18)  # P-13: Effects density, as its siblings
-	var y := Vector3(0, 0.35, 0)
-	for k in n:
-		var a0 := TAU * k / n
-		var a1 := TAU * (k + 1) / n
-		var p := c + y + Vector3(cos(a0), 0, sin(a0)) * r
-		var q := c + y + Vector3(cos(a1), 0, sin(a1)) * r
-		_put(
-			&"bolt",
-			_ribbon(p, q, 0.45),
-			Color(
-				COLD.r * 2.2,
-				COLD.g * 2.2,
-				COLD.b * 2.4,
-				fade * (0.7 + 0.3 * h(sd + int(age / 3.0), k))
-			),
-			(k + int(age / 3.0)) % 4,
-			0.0,
-			0.0
-		)
-	_light(c + Vector3(0, 0.6, 0), COLD, 1.6 * fade, r + 2.5)
-
-
-## A storm blast: bolts striking out from its middle to its edge, sparks, a cold flash.
-func _storm_burst(c: Vector3, r: float, u: float, sd: int) -> void:
-	var fade := 1.0 - u
-	var top := c + Vector3(0, 0.9, 0)
-	for k in 6:
-		var a := TAU * (k + h(sd, k)) / 6.0
-		_lightning(
-			top,
-			c + Vector3(cos(a), 0.05, sin(a)) * r * (0.6 + 0.4 * u),
-			fade,
-			u * 70.0,
-			sd + k,
-			COLD,
-			0.5,
-			false
-		)
-	_light(top, COLD, 5.0 * fade * fade, r * 2.5 + 2.0)
 
 
 # --- Frost ------------------------------------------------------------------------------------------------------

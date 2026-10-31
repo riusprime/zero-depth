@@ -351,11 +351,9 @@ func test_frost_stacks_are_ice_mist_at_the_feet_and_the_cage_stays_ours() -> voi
 	_layer.finish()
 
 
-func test_bleed_and_shock_stay_as_they_were() -> void:
-	_frame(
-		0.0, func() -> void: _layer.status(Vector3.ZERO, 0.4, {&"bleed": 2, &"shock": 2}, 4, 0.9)
-	)
-	assert_eq(_fx.live_count(), 0, "no pack effect for bleed or shock (N2, N1)")
+func test_bleed_stays_as_it_was() -> void:
+	_frame(0.0, func() -> void: _layer.status(Vector3.ZERO, 0.4, {&"bleed": 2}, 4, 0.9))
+	assert_eq(_fx.live_count(), 0, "no pack effect for bleed (N2); shock is VX6")
 
 
 func test_a_full_status_family_draws_the_old_flames_for_the_rest() -> void:

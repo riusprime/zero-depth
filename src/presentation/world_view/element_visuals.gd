@@ -32,6 +32,14 @@ const PACK_ELEMENTS := true
 ## The cloud scene's scale per metre of the sim's gas radius, the rings' per metre of the sim's radius.
 const FUMES_PER_M := 0.7
 const RING_PER_M := {&"ring_frost": 0.5, &"ring_fire": 0.55}
+## v0.10.0 VX6 (VFX_PACK N1): Arc Field and Storm Bombs bolts, and Arc Field shock field, are the pack lightning (the
+## ZdBolt, the vx6_field ripple, the VX1 storm spark); false keeps the box bolts and the pale disc, which also draw when
+## the pack has no room.
+const PACK_STORM := true
+const ARC_FIELD_PER_M := 0.5
+const ARC_STRIKE_S := 0.4
+const BOLT_LIFE_S := 0.2
+const BOLT_SPARK_SCALE := 0.09
 
 ## v0.6.0 MX3: AttackFormView draws the RING form's rings and every patch that names a spec (WorldViewRoot sets
 ## it); this view keeps the patches without one (Napalm Drone's).
@@ -39,6 +47,8 @@ var forms_drawn := false
 ## The pack effects (WorldViewRoot sets it); none: the old quads and rings.
 var pack_fx: PackFx = null
 var _holds := PackHold.new()
+var _field_holds := PackHold.new()  # the shock fields (VX6)
+var _clock := 0.0  # real seconds, for the fields' re-strikes (cosmetic)
 var _fires: Array[MeshInstance3D] = []
 var _fx := FxFade.new()
 var _template := SkillVisuals._make_template()
@@ -143,6 +153,8 @@ func _sync_fires(fx: Dictionary) -> void:
 		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(m)
 		_fires.append(m)
+	_field_holds.fx = pack_fx
+	_field_holds.begin()
 	for k in _fires.size():
 		var f := _fires[k]
 		f.visible = k < pos.size() and (k >= _spec_keys.size() or _spec_keys[k] == "")
@@ -158,8 +170,39 @@ func _sync_fires(fx: Dictionary) -> void:
 			_:
 				f.material_override = _fire_mat
 		var s := r[k] * (0.55 + 0.45 * left[k] / 1000.0)
+		if kind[k] == WorldReader.FIRE_FIELD and _pack_shock_field(pos[k], s):
+			f.visible = false  # (the pack's ripple and bolts draw it)
+			continue
 		f.position = SimPlane.to_3d(pos[k], FIRE_Y + 0.002 * (k % 4))
 		f.scale = Vector3(s, 1, s)
+	_field_holds.end()
+
+
+## v0.10.0 VX6 (N1): Arc Field's shock field of radius `r` at `at` as the pack's storm ripple,
+## held while the field lasts, with a short bolt striking inside it about every ARC_STRIKE_S. False: no pack room.
+func _pack_shock_field(at: Vector2, r: float) -> bool:
+	if not PACK_STORM or pack_fx == null:
+		return false
+	var key := _cloud_key(at) * 4
+	var c := SimPlane.to_3d(at, FIRE_Y + 0.03)
+	if (
+		_field_holds.touch(
+			key + 1, StormPack.FIELD, &"area", c, r * ARC_FIELD_PER_M, StormPack.colors()
+		)
+		== null
+	):
+		return false
+	var strike := int(_clock / ARC_STRIKE_S)
+	var phase := fposmod(_clock, ARC_STRIKE_S) / ARC_STRIKE_S
+	var bolt := _field_holds.touch(key + 2, StormPack.BOLT, &"bolt", c, 1.0, StormPack.colors())
+	if bolt != null:
+		var a := TAU * VfxCore.h(strike, key & 0xFFF)
+		var a2 := a + (VfxCore.h(strike, 7) - 0.5) * 1.2
+		var p := c + Vector3(cos(a), 0.0, sin(a)) * r * 0.2 + Vector3(0, 0.45, 0)
+		var q := c + Vector3(cos(a2), 0.0, sin(a2)) * r * (0.55 + 0.3 * VfxCore.h(strike, 3))
+		(bolt as ZdBolt).strength = 1.0 - 0.8 * phase
+		(bolt as ZdBolt).set_ends(p, q, strike * 31 + (key & 0xFF), 0.09)
+	return true
 
 
 ## v0.6.0 MX2: each growing ring as a thin torus at its radius now (the sim's number).
@@ -195,6 +238,8 @@ func _bolt(from: Vector2, to: Vector2, c: Color, thick: float, kind: StringName)
 	var d := to - from
 	if d.length() < 0.05:
 		return
+	if _pack_bolt(from, to, thick):
+		return
 	var side := Vector2(-d.y, d.x).normalized()
 	var pts: Array[Vector2] = [from]
 	for k in range(1, BOLT_SEGMENTS):
@@ -213,6 +258,26 @@ func _bolt(from: Vector2, to: Vector2, c: Color, thick: float, kind: StringName)
 		n.rotation = Vector3(0, atan2(seg.y, seg.x), 0)
 		n.scale = Vector3(seg.length(), thick, thick)
 		_add(n, c, 0.95, kind)
+
+
+## v0.10.0 VX6 (N1): the pack bolt from `from` to `to` (a bolt for BOLT_LIFE_S, fading, the storm spark at its
+## end), `thick` the old box thickness. False: no PackFx or no room in the bolt family (the boxes draw).
+func _pack_bolt(from: Vector2, to: Vector2, thick: float) -> bool:
+	if not PACK_STORM or pack_fx == null or not pack_fx.has_room(&"bolt"):
+		return false
+	var a := SimPlane.to_3d(from, SimPlane.CORE_HEIGHT + 0.3)
+	var b := SimPlane.to_3d(to, SimPlane.CORE_HEIGHT + 0.3)
+	var n := pack_fx.spawn(StormPack.BOLT, a, 1.0, StormPack.colors(), BOLT_LIFE_S + 0.05) as ZdBolt
+	if n == null:
+		return false
+	n.fade_time = BOLT_LIFE_S
+	n.strength = 1.0
+	n.set_ends(
+		a, b, roundi(from.x * 31.0 + to.y * 17.0 + to.x * 7.0), clampf(thick * 1.6, 0.07, 0.16)
+	)
+	if pack_fx.has_room(&"hit"):
+		pack_fx.spawn(StormPack.SPARK, b, BOLT_SPARK_SCALE, StormPack.colors())
+	return true
 
 
 func _ring(at: Vector2, r: float, c: Color, kind: StringName) -> void:
@@ -256,7 +321,8 @@ func _add(n: MeshInstance3D, c: Color, alpha: float, kind: StringName) -> void:
 	_fx.add(self, n, _template, c, alpha, kind, FX_FRAMES)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_clock += delta
 	_fx.step(1)
 
 
