@@ -75,6 +75,21 @@ Each step is *presentation only* unless it says otherwise. Each adds:
   - the warm-up's time behind the cover.
 - **The owner looks at the explosion before VX1 starts.**
 
+### Lead's calls after VX0 (2026-10-31; the owner approved continuing: "we can continue with the VX tasks", up to 5
+agents at once)
+- **I4 changes (lead, to confirm with the owner):** every effect goes through PackFx scenes, including every-shot ones
+  (hits, muzzle flashes, bolts). Lifting the pack's shaders into our MultiMesh pools would mean rewriting each pack
+  shader for per-instance animation; VX0's lab measured 24 hits or projectiles at +0.2–0.6 ms (lights off). Each
+  family has a cap, and past it the instance draws the OLD look (no live effect is taken over). If the final 20-enemy
+  measurement misses, the heaviest family moves into a pool then.
+- **PackFx API (lead):** `life` 0 holds an effect until `release()` (bolts, zones, statuses that follow something),
+  `has_room()`, and an `enemy_shot` family (cap 128) so the hero's bolts never starve hostile shots. Each step ships
+  its own table file, `data/vfx/pack_fx_vx<N>.tres`.
+- **VX-W, warm-up spread (lead, after the merges):** with ~100 ids the per-effect warm-up jobs would lengthen loads.
+  Warm one id a frame, and only the ids a floor can use (its biome's bosses, the hero's build); keep the cover moving
+  (owner O70).
+- **VX1–VX5 run at once,** each on its own files.
+
 ### VX1. Hits and flashes (R10–R17)
 - **Bolt impacts per element (R14) and every-shot muzzle flashes (R10):** I4 says these move the pack's shaders and
   textures into our MultiMesh pools (`VfxCore`, `HeroFx`), not a scene per shot.
