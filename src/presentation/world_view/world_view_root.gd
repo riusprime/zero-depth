@@ -366,6 +366,7 @@ func _setup_effects() -> void:
 			pack_fx.camera = rig.camera
 			add_child(pack_fx)
 			layer.pack_fx = pack_fx
+			element_fx.pack_fx = pack_fx  # v0.10.0 VX3: Toxic Fumes, Frost Nova and Ember Ward
 		attack_forms.vfx = layer
 		status_fx.use_vfx(layer)
 		layer.drawers.append(_draw_prop_fires)  # the fire props' flames (lighting pass, 2026-10-12)
