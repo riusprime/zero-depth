@@ -38,6 +38,12 @@ func test_pick_a_combo_pair_from_altars_and_chests() -> void:
 	w.arenas.cleared = w.floor_layout.arena_rooms.duplicate()
 	if Overrun.enabled(w):
 		w.arenas.cleared.append(w.floor_layout.overrun_room)
+	# TEST HELPER (labelled): v0.9.5 DR makes an arena room a locked room (Lockdowns) once the rules take the arenas;
+	# its reward waits for the lockdown to open (tests/e2e/test_e2e_lockdown.gd), so those rooms start open too.
+	if Lockdowns.takes_arenas(w):
+		for room in w.floor_layout.arena_rooms:
+			if not w.lockdown.cleared.has(room):
+				w.lockdown.cleared.append(room)
 	# TEST HELPER (labelled): with the arenas' rewards placed first (v0.5.5 AR) this floor's few mod cards no longer
 	# happen to hold a pair; the items that belong to no combo are held already, so the cards draw from combo items.
 	var paired := PackedInt32Array()
