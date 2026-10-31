@@ -4,11 +4,13 @@
 
 [resource]
 script = ExtResource("1_pace")
-floor_1_weights_permille = PackedInt32Array(1400, 1400, 400, 600, 20)
-floor_2_weights_permille = PackedInt32Array(1000, 1000, 1000, 1200, 100)
+floor_1_weights_permille = PackedInt32Array(1500, 1600, 900, 600, 20)
+floor_2_weights_permille = PackedInt32Array(1300, 1400, 1100, 1200, 100)
 floor_3_weights_permille = PackedInt32Array(900, 900, 1200, 1200, 300)
 deep_weights_permille = PackedInt32Array(800, 800, 1300, 1200, 600)
 level_ceilings = PackedInt32Array(2, 3, 5, 5)
 guaranteed_altars = PackedInt32Array(2, 0, 0, 0)
 jackpot_permille = 15
+altar_type_weights = PackedInt32Array(10, 30, 60, 10, 40, 50, 14, 43, 43, 14, 43, 43)
+chest_type_weights = PackedInt32Array(10, 25, 65, 10, 30, 60, 14, 43, 43, 14, 43, 43)
 id = &"pacing"

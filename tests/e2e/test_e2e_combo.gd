@@ -27,6 +27,11 @@ func test_pick_a_combo_pair_from_altars_and_chests() -> void:
 	# tests/unit/sim/test_offers.gd.
 	w.reward_table.altar_card_weights = PackedInt32Array([0, 1, 1000])
 	w.reward_table.chest_card_weights = PackedInt32Array([0, 1, 1000])
+	# v0.9.5 EP2: the pacing table now sets the card-type odds per stage; mods-only holds on every stage.
+	w.loot_pacing.altar_type_weights = PackedInt32Array(
+		[0, 1, 1000, 0, 1, 1000, 0, 1, 1000, 0, 1, 1000]
+	)
+	w.loot_pacing.chest_type_weights = w.loot_pacing.altar_type_weights.duplicate()
 	var offers := {}
 	# TEST HELPER (labelled): v0.5.5 AR locks the rewards in sealed arenas until their waves are cleared (that is
 	# tests/e2e/test_e2e_arenas.gd); this test is about the cards, so the floor's arenas start cleared.

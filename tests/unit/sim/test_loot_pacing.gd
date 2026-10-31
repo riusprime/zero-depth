@@ -48,8 +48,8 @@ func test_the_table_compiles_from_the_data_and_the_dev_panel_shows_it() -> void:
 	assert_eq(t.ceilings, PackedInt32Array([2, 3, 5, 5]), "ceilings 2/3/5, 5 deep")
 	assert_eq(t.guaranteed_altars, PackedInt32Array([2, 0, 0, 0]), "two altars on floor 1")
 	assert_eq(t.jackpot_permille, 15)
-	assert_eq(t.weights[0], PackedInt32Array([1400, 1400, 400, 600, 20]), "floor 1")
-	assert_eq(t.weights[1], PackedInt32Array([1000, 1000, 1000, 1200, 100]), "floor 2")
+	assert_eq(t.weights[0], PackedInt32Array([1500, 1600, 900, 600, 20]), "floor 1")
+	assert_eq(t.weights[1], PackedInt32Array([1300, 1400, 1100, 1200, 100]), "floor 2")
 	assert_eq(t.weights[2], PackedInt32Array([900, 900, 1200, 1200, 300]), "floor 3")
 	assert_eq(t.weights[3], PackedInt32Array([800, 800, 1300, 1200, 600]), "deep and loops")
 	var economy: Array = []
@@ -240,3 +240,60 @@ func test_the_overrun_and_the_epic_altar_offer_no_wand_card() -> void:
 			assert_ne(
 				Offers.type_of(c), Offers.MOD, "the epic altar: ability level-ups and stat cards"
 			)
+
+
+# --- v0.9.5 EP2: the card-type odds per stage ----------------------------------------------------------------------
+func test_card_type_weights_follow_the_stage() -> void:
+	var w := _world()
+	var altar := {1: [10, 30, 60], 2: [10, 40, 50], 3: [14, 43, 43], 4: [14, 43, 43]}
+	var chest := {1: [10, 25, 65], 2: [10, 30, 60], 3: [14, 43, 43], 4: [14, 43, 43]}
+	for f: int in altar:
+		w.floor_index = f
+		assert_eq(Array(LootPacing.card_type_weights(w, false)), altar[f], "altar, floor %d" % f)
+		assert_eq(Array(LootPacing.card_type_weights(w, true)), chest[f], "chest, floor %d" % f)
+	w.floor_index = 1
+	w.loop = 2
+	assert_eq(Array(LootPacing.card_type_weights(w, false)), [14, 43, 43], "altar, a later loop")
+	assert_eq(Array(LootPacing.card_type_weights(w, true)), [14, 43, 43], "chest, a later loop")
+
+
+func test_card_type_weights_fall_back_to_the_reward_table() -> void:
+	var w := _world()
+	var rt := w.reward_table
+	w.loot_pacing.altar_type_weights = PackedInt32Array()
+	w.loot_pacing.chest_type_weights = PackedInt32Array()
+	assert_eq(LootPacing.card_type_weights(w, false), rt.altar_card_weights, "empty: the altar's")
+	assert_eq(LootPacing.card_type_weights(w, true), rt.chest_card_weights, "empty: the chest's")
+	w.loot_pacing = null
+	assert_eq(LootPacing.card_type_weights(w, false), rt.altar_card_weights, "no table: altar's")
+	assert_eq(LootPacing.card_type_weights(w, true), rt.chest_card_weights, "no table: chest's")
+
+
+func test_a_bad_type_weights_row_is_refused() -> void:
+	var def: LootPacingDefinition = _repo.get_def(&"loot_pacing", &"pacing").duplicate()
+	def.altar_type_weights = PackedInt32Array([1, 2, 3])
+	assert_gt(def.validate().size(), 0, "wrong size")
+	def.altar_type_weights = PackedInt32Array([0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+	assert_gt(def.validate().size(), 0, "a stage sums to 0")
+	def.altar_type_weights = PackedInt32Array()
+	assert_eq(def.validate().size(), 0, "empty is legal")
+
+
+## Floor 1's altars lean to wand cards (more mods than stats); from floor 3 the two are about even.
+func test_the_altar_draws_lean_to_wand_cards_early_and_match_stats_later() -> void:
+	var shares := {}
+	for f in [1, 3]:
+		var w := _world(&"gun", 11, f)
+		var mods := 0
+		var stats := 0
+		for n in 300:
+			for code in Offers.draw(w, false, 3):
+				var kind := Offers.type_of(code)
+				if kind == Offers.MOD:
+					mods += 1
+				elif kind == Offers.STAT:
+					stats += 1
+		shares[f] = [mods, stats]
+	assert_gt(shares[1][0], shares[1][1], "floor 1: more mods than stats %s" % [shares[1]])
+	var pct: int = shares[3][0] * 100 / (shares[3][0] + shares[3][1])
+	assert_between(pct, 30, 60, "floor 3: mod share %d%% %s" % [pct, shares[3]])

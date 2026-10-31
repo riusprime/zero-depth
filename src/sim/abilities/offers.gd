@@ -95,7 +95,7 @@ static func draw(w: World, chest: bool, size: int) -> PackedInt32Array:
 	var rare := t.rare_weight_chest if chest else t.rare_weight_altar
 	if not enabled(w):
 		return ItemPool.draw_weighted(w, size, rare)
-	var weights := t.chest_card_weights if chest else t.altar_card_weights
+	var weights := LootPacing.card_type_weights(w, chest)  # v0.9.5 EP2: per stage
 	var rarity := t.chest_rarity_weights if chest else t.altar_rarity_weights
 	var epic := t.epic_permille_chest if chest else t.epic_permille_altar  # v0.8.0 RR
 	var legend := t.legendary_permille_chest if chest else t.legendary_permille_altar

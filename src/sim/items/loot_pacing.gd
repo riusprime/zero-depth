@@ -13,6 +13,8 @@ extends RefCounted
 ## - The jackpot (Offers.roll): per regular offer (an altar's or a chest's) one draw against jackpot_permille; on a hit
 ##   one card is replaced by a jackpot card (a held wand card at the ceiling, which it lifts one level past it, or a
 ##   mutation), recorded in World.loot_jackpots so the pick card says "Jackpot".
+## - The card-type odds (v0.9.5 EP2, card_type_weights): an altar's / chest's [ability, stat, mod] weights per stage, so
+##   floors 1-2 lean to wand cards and floor 3 on matches stats with them; without them, the reward table's.
 ## Dev and debug grants never come through here. Deterministic: draws only from w.rng_loot, only with a table.
 
 ## The stages, the index of every per-stage array of LootPacingTable.
@@ -27,6 +29,19 @@ static func stage(w: World) -> int:
 	if w.loop > 1 or Routes.is_deep(w):
 		return Stage.DEEP
 	return clampi(w.floor_index - 1, Stage.FLOOR_1, Stage.FLOOR_3)
+
+
+## The card-type weights [ability, stat, mod] of a chest's (`chest`) or an altar's draw (v0.9.5 EP2): this stage's row
+## of the pacing table, or the reward table's without a table or with an empty row.
+static func card_type_weights(w: World, chest: bool) -> PackedInt32Array:
+	var t := w.loot_pacing
+	var arr := PackedInt32Array()
+	if t != null:
+		arr = t.chest_type_weights if chest else t.altar_type_weights
+	if arr.is_empty():
+		return w.reward_table.chest_card_weights if chest else w.reward_table.altar_card_weights
+	var s := stage(w) * 3
+	return arr.slice(s, s + 3)
 
 
 ## The stage of the floor after this one (floor 3's next is the next loop: DEEP).
