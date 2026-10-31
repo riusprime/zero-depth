@@ -366,6 +366,7 @@ func _setup_effects() -> void:
 			pack_fx.camera = rig.camera
 			add_child(pack_fx)
 			layer.pack_fx = pack_fx
+			cast_fx.pack_fx = pack_fx  # VX1: the cast spark at the hand
 		attack_forms.vfx = layer
 		status_fx.use_vfx(layer)
 		layer.drawers.append(_draw_prop_fires)  # the fire props' flames (lighting pass, 2026-10-12)
@@ -534,6 +535,7 @@ func _setup_devices(palette: Dictionary) -> void:
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
 	hit_feel.hit_stop.kit = kit  # v0.8.0 GF3: the hit-stop holds the blade and its trail too
+	hit_feel.pack_fx = pack_fx  # VX1: the guard, weak-spot and death sparks
 	add_child(hit_feel)
 	if attack_forms.vfx != null:  # v0.8.0 GF2: the hits' impacts, in the effects layer's pools and budget
 		attack_forms.vfx.drawers.append(hit_feel.impacts.draw)
