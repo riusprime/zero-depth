@@ -216,3 +216,13 @@ func _first_material(n: Node) -> Material:
 		if m != null:
 			return m
 	return null
+
+
+## v0.10.0 lead: a held explosion outlives its animation (it plays again) until released.
+func test_a_held_effect_outlives_its_animation() -> void:
+	var fx := _fx()
+	var n := fx.spawn(EXPLOSION, Vector3.ZERO, 1.0, {}, 0.0)
+	await wait_seconds(4.0)
+	assert_true(fx.is_live(n), "still live after its animation's end")
+	fx.release(n)
+	assert_false(fx.is_live(n))

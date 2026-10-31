@@ -23,6 +23,11 @@ const TILES_PER_M := 0.6
 ## v0.9.0 VX V8: the impact's element extra plays every EXTRA_EVERY ticks (twice a second) for EXTRA_TICKS.
 const EXTRA_EVERY := 30.0
 const EXTRA_TICKS := 18.0
+## v0.10.0 VX2 (VFX_PACK R4): each beam is the pack's laser scene (beam_vfx) laid from its start to its end every
+## frame (false: the ribbons, for before/after shots). The scene's core radius per metre of the ribbon's width.
+const PACK_LASER := true
+const BEAM_RADIUS_PER_W := 0.12
+const BEAM_RADIUS_MIN := 0.04
 
 const BEAM_SHADER := """
 shader_type spatial;
@@ -85,6 +90,12 @@ var rings_shown := 0
 var mines_shown := 0
 ## The effects layer for the element accents (WorldViewRoot hands it in; null: the ribbons and impacts alone).
 var vfx: VfxLayer = null
+## v0.10.0 VX2: the pack the beams draw with (WorldViewRoot hands it in) and the beams it holds, by beam index.
+var pack_fx: PackFx = null:
+	set(v):
+		pack_fx = v
+		hold.pack = v if PACK_LASER else null
+var hold := FormPackHold.new()
 
 var _ribbons: Array[MeshInstance3D] = []
 var _ghost_ribbons: Array[MeshInstance3D] = []
@@ -199,6 +210,7 @@ func sync(reader: WorldReader) -> void:
 		_ghost_ribbons[k].visible = k < ghosts_shown
 	_muzzle.visible = shown > 0
 	if shown == 0:
+		hold.clear()  # v0.10.0 VX2: the pack's beams end with the fire
 		return
 	_muzzle.position = SimPlane.to_3d(_beams[0]["from"], HEIGHT)
 	_muzzle.scale = Vector3.ONE * MUZZLE_SIZE * (1.0 + 0.4 * (shown - 1))
@@ -223,22 +235,46 @@ func _place_ribbons() -> void:
 	var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
 	var view := Vector3(0, 1, 1).normalized() if cam == null else cam.global_transform.basis.z
 	var w := BeamLooks.width(look)
+	hold.begin()
 	for k in shown:
 		var b: Dictionary = _beams[k]
-		_lay(
-			_ribbons[k],
-			_beam_mat[k],
-			b["from"],
-			b["to"],
-			w * int(b.get("wmul", 1000)) / 1000.0,
-			view
-		)
+		var bw := w * int(b.get("wmul", 1000)) / 1000.0
+		if _pack_beam(k, b, bw):
+			_ribbons[k].visible = false
+			continue
+		_ribbons[k].visible = true
+		_lay(_ribbons[k], _beam_mat[k], b["from"], b["to"], bw, view)
+	hold.end()
 	for k in ghosts_shown:
 		var g: Dictionary = _ghosts[k]
 		_lay(_ghost_ribbons[k], _ghost_mat[k], g["from"], g["to"], w * 0.8, view)
 		_ghost_mat[k].set_shader_parameter(
 			&"energy", 1.2 * float(g["left"]) / maxf(1.0, float(g["total"]))
 		)
+
+
+## v0.10.0 VX2 (R4): beam `k` as the pack's laser: the scene stands at the beam's start, turned to its end
+## (-z along it), its length set to the trace and its core radius to the look's width (vfx_beam_controller). False:
+## the ribbon draws (no pack, no room, or too short to show).
+func _pack_beam(k: int, b: Dictionary, w: float) -> bool:
+	if not hold.active():
+		return false
+	var a := SimPlane.to_3d(b["from"], HEIGHT)
+	var along := SimPlane.to_3d(b["to"], HEIGHT) - a
+	var len := along.length()
+	if len < 0.01:
+		return false
+	var xf := Transform3D(Basis.looking_at(along / len, Vector3.UP), a)
+	var cols := {} if hold.has(k) else PackLooks.colors(_form.elements)
+	var n := hold.put(k, PackLooks.laser_id(_form.element), &"beam", xf, cols)
+	if n == null:
+		return false
+	n.set(&"beam_length", len)
+	var radius := maxf(BEAM_RADIUS_MIN, w * BEAM_RADIUS_PER_W)
+	if not is_equal_approx(float(n.get_meta(&"vx2_radius", -1.0)), radius):
+		n.set_meta(&"vx2_radius", radius)  # (the setter rebuilds the scene's shared meshes: only when it changes)
+		n.set(&"beam_radius", radius)
+	return true
 
 
 ## One ribbon from `p0` to `p1` (sim plane), `w` wide, facing the camera `view`.

@@ -130,6 +130,10 @@ func spawn(effect_id: StringName, pos: Vector3, scale := 1.0, colors := {}, life
 	else:
 		node.position = pos
 	_colour(node, info, colors, k)
+	# v0.10.0 lead (VX2-VX5's findings): a held effect keeps emitting and looping until release(); a timed one runs
+	# its scene's one pass (an animation-less scene's particles fire once).
+	for p in _particles(node):
+		p.one_shot = life != 0.0 and info["anim"] == null
 	_restart(node, info)
 	var left := float(info["life"]) if life < 0.0 else (INF if life == 0.0 else life)
 	_live.append({"node": node, "id": effect_id, "family": family, "left": left})
@@ -318,8 +322,13 @@ func _particles(node: Node3D) -> Array[GPUParticles3D]:
 
 
 func _on_anim_done(anim_name: StringName, node: Node3D) -> void:
-	if anim_name == ANIM:
-		_release(node)
+	if anim_name != ANIM:
+		return
+	for e in _live:
+		if e["node"] == node and is_inf(float(e["left"])):  # held: play again until the caller's release()
+			(_info[node]["anim"] as AnimationPlayer).play(ANIM)
+			return
+	_release(node)
 
 
 ## v0.10.0 lead (VX3's finding): the instances of one scene share its ShaderMaterials, so a recolour of one would

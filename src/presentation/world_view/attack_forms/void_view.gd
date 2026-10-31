@@ -35,6 +35,12 @@ const COLLAPSE_MAX := 6
 const RIM_TINT := 0.6
 const TRAIL_TINT := 0.55
 const ACCENT_DENSITY := 0.5
+## v0.10.0 VX2 (VFX_PACK R7): the shot's body (the dark core, the dust disc and the trail puffs) is the pack's huge orb
+## in the Void violet, and its collapse the pack's orb flash (the screen-distortion lens and the ground ring stay).
+## False: the old body, for before/after shots. The orbs' scales per metre of the lens (LENS_SIZE).
+const PACK_VOID := true
+const BODY_PER_LENS := 0.35
+const COLLAPSE_PER_LENS := 0.5
 
 const LENS_SHADER := """
 shader_type spatial;
@@ -112,6 +118,12 @@ var dust_on := true
 ## v0.9.0 VX V15: the element tint of the bent-light rim and the dust trail (the body stays violet).
 var rim_color := RIM
 var trail_color := VIOLET
+## v0.10.0 VX2: the pack the shots draw with (WorldViewRoot hands it in) and the orbs it holds, by shot id.
+var pack_fx: PackFx = null:
+	set(v):
+		pack_fx = v
+		hold.pack = v if PACK_VOID else null
+var hold := FormPackHold.new()
 
 var _cores: Array[MeshInstance3D] = []
 var _lenses: Array[MeshInstance3D] = []
@@ -231,6 +243,7 @@ func sync(reader: WorldReader) -> void:
 	_dir.clear()
 	_ids.clear()
 	_seen.clear()
+	hold.begin()
 	for v: Dictionary in shots:
 		if voids >= VOIDS_MAX:
 			break
@@ -252,6 +265,7 @@ func sync(reader: WorldReader) -> void:
 		voids += 1
 	for k in range(voids, VOIDS_MAX):
 		_hide_shot(k)
+	hold.end()
 	_collapse_gone()
 	_place_collapses()
 	_place_arcs(reader)  # v0.9.5 FC3: Ring
@@ -308,6 +322,14 @@ func _place_shot(k: int, p: Vector2, dir: Vector2, aura: float, id: int, g: floa
 		m.set_shader_parameter(&"strength", 0.55 / (t + 1))
 		m.set_shader_parameter(&"turn", spin + t * 1.7)
 		puffs += 1
+	if hold.active():  # v0.10.0 VX2 (R7): the pack's orb is the body; the lens and the ring stay
+		var xf := Transform3D(Basis.from_scale(Vector3.ONE * LENS_SIZE * BODY_PER_LENS * g), at)
+		var cols := {} if hold.has(id) else PackLooks.violet_colors()
+		if hold.put(id, &"vx2_void_body", &"projectile", xf, cols) != null:
+			core.visible = false
+			dust.visible = false
+			for t in TRAIL:
+				_trail[k * TRAIL + t].visible = false
 
 
 func _hide_shot(k: int) -> void:
@@ -324,7 +346,8 @@ func _collapse_gone() -> void:
 	for id: int in _born.keys():
 		if _seen.has(id):
 			continue
-		_gone.append([_last_at.get(id, Vector2.ZERO), _tick])
+		var last: Vector2 = _last_at.get(id, Vector2.ZERO)
+		_gone.append([last, _tick, _pack_collapse(last)])  # [place, tick, the pack's flash plays]
 		_born.erase(id)
 		_last_at.erase(id)
 	while _gone.size() > COLLAPSE_MAX:
@@ -336,6 +359,20 @@ func _collapse_gone() -> void:
 		else:
 			k += 1
 	collapses = _gone.size()
+
+
+## v0.10.0 VX2 (R7): a shot that left collapses in the pack's orb flash (violet); false: no pack or no room (the
+## layer's flash draws).
+func _pack_collapse(pos: Vector2) -> bool:
+	if not hold.active() or not pack_fx.has_room(&"impact"):
+		return false
+	var s := LENS_SIZE * COLLAPSE_PER_LENS
+	return (
+		pack_fx.spawn(
+			&"vx2_void_collapse", SimPlane.to_3d(pos, HEIGHT), s, PackLooks.violet_colors()
+		)
+		!= null
+	)
 
 
 func _place_collapses() -> void:
@@ -387,6 +424,8 @@ func draw_fx(layer: VfxCore) -> void:
 				var back := SimPlane.to_3d(_at[k] - _dir[k] * TRAIL_GAP_M * (t + 1), HEIGHT)
 				HeroFx.accent(layer, _form.kind, _form.element, back, d3, _ids[k] * 7 + t, 1.2)
 	for k in _gone.size():
+		if _gone[k][2]:
+			continue  # the pack's flash plays
 		var u := clampf((now - float(_gone[k][1])) / COLLAPSE_TICKS, 0.0, 1.0)
 		var at := SimPlane.to_3d(_gone[k][0], HEIGHT)
 		HeroFx.flash(layer, at, RIM, VIOLET.lerp(rim_color, 0.4), u, 1.1, 811 + k * 13, 5)

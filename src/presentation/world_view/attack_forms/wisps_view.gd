@@ -20,6 +20,12 @@ const HEIGHT := SimPlane.CORE_HEIGHT + 0.15
 const SIZE := 0.75
 const BOB_M := 0.06
 const FIRE_TICKS := 6.0
+## v0.10.0 VX2 (VFX_PACK R3): each wisp is the pack's small orb (magic_orb_small, the element's scene and colours) and
+## its firing flare the pack's magic_orb_flare (false: the glow quads and the layer's flash, for before/after shots).
+const PACK_WISPS := true
+## The pack orb's scale per metre of the old glow quad (SIZE and its swell with the charge).
+const ORB_PER_SIZE := 0.2
+const FLARE_PER_SIZE := 0.12
 
 const GLOW_SHADER := """
 shader_type spatial;
@@ -50,6 +56,12 @@ var wisps := 0
 var arcs := 0
 var places: Array[Vector2] = []
 var look := &"default"
+## v0.10.0 VX2: the pack the wisps draw with (WorldViewRoot hands it in) and the orbs it holds, by wisp index.
+var pack_fx: PackFx = null:
+	set(v):
+		pack_fx = v
+		hold.pack = v if PACK_WISPS else null
+var hold := FormPackHold.new()
 
 var _arcs: Array[MeshInstance3D] = []
 var _orbs: Array[MeshInstance3D] = []
@@ -60,6 +72,8 @@ var _form := FormLook.new()
 ## v0.9.0 VX: each wisp's last firing tick (-1: none yet), its angle round the hero, and the sim tick.
 var _fired: PackedFloat32Array = PackedFloat32Array()
 var _angle: PackedFloat32Array = PackedFloat32Array()
+## The tick each wisp's pack flare was started for (a wisp whose flare the pack drew has no layer flash).
+var _flared: PackedFloat32Array = PackedFloat32Array()
 var _tick := 0.0
 
 
@@ -83,6 +97,7 @@ func _init() -> void:
 		_mat.append(m)
 		_charge.append(0.0)
 		_fired.append(-100.0)
+		_flared.append(-200.0)
 		_angle.append(0.0)
 	_make_arcs()
 
@@ -156,6 +171,7 @@ func sync(reader: WorldReader) -> void:
 		_charge[k] = 1.6 if wait <= 0.0 else clampf(1.0 - wait / (period / 3.0), 0.0, 1.0)
 		if wait <= 0.0:
 			_fired[k] = _tick
+			_pack_flare(k, wd["pos"])
 		_angle[k] = TAU * float(int(wd.get("angle", 0))) / 4096.0
 		places.append(wd["pos"])
 	_place()
@@ -169,12 +185,29 @@ func _process(delta: float) -> void:
 
 
 func _place() -> void:
+	hold.begin()
 	for k in wisps:
 		var bob := BOB_M * sin(_time * 4.0 + k * 2.1)
 		var s := SIZE * (1.0 + 0.35 * _charge[k])
 		var at := SimPlane.to_3d(places[k], HEIGHT + bob)
 		_orbs[k].transform = Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * s), at)
 		_mat[k].set_shader_parameter(&"charge", _charge[k])
+		if hold.active():  # v0.10.0 VX2 (R3): the pack's small orb, held on the wisp, swelling with its charge
+			var cols := {} if hold.has(k) else PackLooks.colors(_form.elements)
+			var xf := Transform3D(Basis.from_scale(Vector3.ONE * s * ORB_PER_SIZE), at)
+			var id := PackLooks.id_of("small", _form.element)
+			_orbs[k].visible = hold.put(k, id, &"projectile", xf, cols) == null
+	hold.end()
+
+
+## v0.10.0 VX2 (R3): wisp `k` fired this tick at `pos`: the pack's flare (magic_orb_flare) once, at the wisp.
+func _pack_flare(k: int, pos: Vector2) -> void:
+	if not hold.active() or _flared[k] == _tick or not pack_fx.has_room(&"hit"):
+		return
+	_flared[k] = _tick
+	var at := SimPlane.to_3d(pos, HEIGHT)
+	var id := PackLooks.id_of("flare", _form.element)
+	pack_fx.spawn(id, at, SIZE * FLARE_PER_SIZE, PackLooks.colors(_form.elements))
 
 
 ## The effects layer's drawer (WorldViewRoot appends it): each wisp's element accent trailing along its orbit, and its
@@ -188,5 +221,5 @@ func draw_fx(layer: VfxCore) -> void:
 			var tangent := SimPlane.to_3d(Vector2(-sin(a), cos(a)), 0.0)
 			HeroFx.accent(layer, _form.kind, _form.element, at, tangent, 6007 + k * 13, 0.7)
 		var u := (now - _fired[k]) / FIRE_TICKS
-		if u >= 0.0 and u < 1.0:
+		if u >= 0.0 and u < 1.0 and _flared[k] != _fired[k]:
 			HeroFx.flash(layer, at, _form.core, _form.edge, u, 0.7, 6101 + k * 7, 3, false)

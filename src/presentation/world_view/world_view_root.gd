@@ -356,6 +356,15 @@ func _setup_views(palette: Dictionary) -> void:
 	add_child(seekers)  # v0.9.0 AF2
 
 
+## v0.10.0 VX2: the hero's shot and form views draw their projectiles, beams, zones and rings as pack effects; the
+## canvas also asks the pulses which bolts the pack already draws.
+func _hand_pack_to_hero_views() -> void:
+	for v: Object in [pulses, attack_forms, laser, lances, voids, runes, seekers, wisps]:
+		v.set("pack_fx", pack_fx)
+	attack_forms.pulse_hold = pulses.hold
+	pulses.forms = attack_forms
+
+
 ## The effects layer (real fire, explosions, lightning) and the views drawn into it or after it.
 func _setup_effects() -> void:
 	if stage.mood != null and VfxLayer.available():  # v0.5.9 art: real fire, explosions and lightning
@@ -368,6 +377,7 @@ func _setup_effects() -> void:
 			layer.pack_fx = pack_fx
 			cast_fx.pack_fx = pack_fx  # VX1: the cast spark at the hand
 			element_fx.pack_fx = pack_fx  # v0.10.0 VX3: Toxic Fumes, Frost Nova and Ember Ward
+			_hand_pack_to_hero_views()
 		attack_forms.vfx = layer
 		status_fx.use_vfx(layer)
 		layer.drawers.append(_draw_prop_fires)  # the fire props' flames (lighting pass, 2026-10-12)

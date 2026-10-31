@@ -138,6 +138,11 @@ func _projectile_look(reader: WorldReader, i: int) -> Dictionary:
 	return look if not look.is_empty() else _look_of(reader, String(WorldReader.ATTACK_BOLT))
 
 
+## v0.10.0 VX2: the look of live player projectile `i` (HeroPulseViews reads its elements for the pack's shot).
+func look_of_projectile(reader: WorldReader, i: int) -> Dictionary:
+	return _projectile_look(reader, i)
+
+
 func _sync_bolts(reader: WorldReader) -> void:
 	_live.clear()
 	var seen := {}
@@ -174,7 +179,7 @@ func _sync_bolts(reader: WorldReader) -> void:
 		_live.append(b)
 		var bt := reader.projectile_bounce_tick(i)
 		if bt >= 0 and _bounce_ticks.get(id, -1) != bt:
-			flash(p, (look["edge"] as Color).lerp(Color.WHITE, 0.5), 0.55)
+			flash(p, (look["edge"] as Color).lerp(Color.WHITE, 0.5), 0.55, -1.0, &"bounce")
 		_bounce_ticks[id] = bt
 	for d: Dictionary in [_trails, _bounce_ticks]:
 		for id in d.keys():
@@ -474,7 +479,7 @@ func _sync_crits(reader: WorldReader) -> void:
 		if e.tags & SimEvent.TAG_DOT or (e.tags & SimEvent.TAG_CRIT) == 0 or n >= 8:
 			continue
 		n += 1
-		flash(e.pos, AttackFormLooks.CRIT_FLASH, 0.8)
+		flash(e.pos, AttackFormLooks.CRIT_FLASH, 0.8, -1.0, &"crit")
 
 
 ## The child spec of `spec`'s first hook on `trigger` whose child has `form` ({} if none).
@@ -585,7 +590,7 @@ func _draw_cast(reader: WorldReader, m: Dictionary) -> void:
 	var start := float(m["tick"])
 	if bool(m["cast"]):
 		casts_drawn += 1
-		flash(pos, AttackFormLooks.CAST_SIGIL, 0.75, start)
+		flash(pos, AttackFormLooks.CAST_SIGIL, 0.75, start, &"sigil")  # v0.10.0 VX2 R13: a holy circle
 		spawn(
 			{"form": AttackFormLooks.RING, "radius_m": CAST_RING_M, "elements": look["elements"]},
 			pos,
