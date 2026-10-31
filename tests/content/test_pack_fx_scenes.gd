@@ -48,7 +48,8 @@ func test_the_pack_table_is_valid() -> void:
 	assert_eq(def.validate().size(), 0, "valid")
 	assert_gte(def.count(), 4)
 	for k in def.count():
-		assert_true(def.scenes[k].begins_with(ROOT + "/"), "%s is in the pack" % def.ids[k])
+		var ours: bool = def.scenes[k].begins_with("res://assets/vfx_zd/")  # (our own, in the pack style)
+		assert_true(ours or def.scenes[k].begins_with(ROOT + "/"), "%s is in the pack" % def.ids[k])
 	var repo := ContentRepository.load_all()
 	assert_not_null(repo.get_def(&"pack_fx", &"pack_fx"), "found through the repository")
 
