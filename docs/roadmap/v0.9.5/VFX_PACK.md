@@ -168,7 +168,9 @@ The catalog below is from a read of `src/presentation/world_view/` (written `W/`
   - **VX3:** zones, rings and status (R20–R30).
   - **VX4:** enemy shots (R31–R35).
   - **VX5:** bosses, shields and death (R36–R43).
-  - The gaps follow the N answers.
+  - **VX6:** lightning in the pack's style (N1).
+  - **VX7:** bleed, water, floor marks, the Glaive, Wave and void looks (N2, N4, N5, N8, N9).
+  - **VX8:** blade trails and slashes, with the Blade's forms (N3).
 - **Each step:**
   - one shot per thing the owner will look at;
   - the hitch probe after the warm-up;
@@ -178,9 +180,43 @@ The catalog below is from a read of `src/presentation/world_view/` (written `W/`
 
 | ID | Question | Proposal |
 |---|---|---|
-| I0 | Where does this land? | **I0:** v0.9.5, after PF5, steps VX0–VX5. Or move it to v0.10.0 |
+| I0 | Where does this land? | **I0:** v0.9.5, after PF5, steps VX0–VX5. Or move it to v0.10.0. **Answered: v0.10.0** |
+
+## Gaps built in the pack's style (owner, 2026-10-31)
+The owner asked: "the ones that dont have could be replaced with something you make based on what the new effects? like
+take that style and how they are built and build something new with that looks".
+
+It works: the Binbun effects are built from parts we can reuse rather than painted art:
+- a few shaders (`transparent.gdshader`, the dissolve, `alpha.gdshaderinc`);
+- tileable noise and gradient textures (`shared/texture/noise/*`, `gradient/*`);
+- GPUParticles3D with those materials;
+- simple meshes (quads, rings, cylinders, half-spheres) moved by an AnimationPlayer.
+
+A new effect is a new arrangement of those parts.
+
+**Built new, in the pack's style:**
+
+| Gap | How it's made |
+|---|---|
+| N1 lightning | Bolts, chains and forks: the laser shader on a jagged strip mesh rebuilt each strike, plus the `vfx_hit` spark. Shock status: small forks round the body |
+| N2 bleed | Drips: `poison_bubble` particles, red and falling. Splatter: the `poison_puddle` shader as a short-lived mark |
+| N3 blade trails and slashes | A ribbon mesh along the swing with the beam's scrolling noise. Lands with the Blade's forms, also v0.10.0 |
+| N4 Glaive disc, Wave crest, `nemesis_crescent` | `pulse_area`/`rim_area` materials on our shapes |
+| N5 void | The pack's rim and orb look round our body; the screen distortion stays ours (the pack has no distortion effect) |
+| N8 water | `ripple_area` and `pulse_area` shaders recoloured, plus `poison_bubble` spray in blue |
+| N9 floor marks | `fire_area`/`poison_puddle`/`ice_area` materials frozen at their last frame and faded slowly |
+
+**Stay ours** (the pack's style doesn't fit these):
+- N6 telegraphs: they must match the hit shape exactly and never drop. A later restyle of their fill with the ripple shader is possible.
+- N7 solid models.
+- N10 hit-stop, damage numbers, the dash trail.
 
 ## Decisions (owner, date)
 | ID | Answer | Built in |
 |---|---|---|
-| | | |
+| I0 | **v0.10.0** (owner, 2026-10-31: "This is v0.10.0") | |
+| I1–I6, I8, I9 | As proposed (owner, 2026-10-31: "all as proposed works") | |
+| R1–R43 | As proposed (owner, 2026-10-31) | |
+| I7 | The player's fire patches shift cooler through `ground_safe`; enemy and boss zones keep the warm hues (owner, 2026-10-31: "fire patches shift cooler") | |
+| I10 | The owner holds purchased licences for the Binbun packs (2026-10-31: "I do have a licences I purchased it"); the Magic Circles credits line goes in | |
+| N1–N10 | Built in the pack's style where it works (owner, 2026-10-31); the split is in "Gaps built in the pack's style" above | |

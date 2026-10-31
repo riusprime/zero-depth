@@ -62,7 +62,7 @@ only gate left.
 | G9 | Stress Mark rebuilt: an orange arc marks one side of nearby enemies; a hit from that side deals ×2 once; 8 s cooldown (like Fiora) | **Decide:** Q14 | SM |
 | G10 | Dash cooldown 10 s, Blink 15 s | **Direct:** see step CB | CB |
 | G11 | The sword (Blade) locked from the start, unlocked by a challenge (hard mode); its forms wait for v0.10.0 | **Decide:** Q15 | SL |
-| V1 | (2026-10-31) The new VFX pack (`newVFX/`) replaces the attack effects; recolour to match elements; list what has no replacement; a small cost test | **Decide:** G1 [`VFX_PACK.md`](VFX_PACK.md) (I0–I10, R1–R43, N1–N10); test in [evidence](evidence/VFX_PACK.md) | VX0–VX5 (after the answers) |
+| V1 | (2026-10-31) The new VFX pack (`newVFX/`) replaces the attack effects; recolour to match elements; list what has no replacement; a small cost test | **Decide:** G1 [`VFX_PACK.md`](VFX_PACK.md) (I0–I10, R1–R43, N1–N10); test in [evidence](evidence/VFX_PACK.md). **Answered 2026-10-31: all as proposed, lands in v0.10.0** | v0.10.0 VX0–VX8 |
 
 ## Design questions (asked 2026-10-25)
 Answer by number, e.g. "Q2 a, Q5 b with …". ← marks the lead's recommendation.
@@ -416,7 +416,7 @@ offers, `attack_slots.tres`, the forms). The order inside each list is the build
 ## Open items (what they block)
 - Q1–Q17 and the five G1s block their steps (the table above).
 - Q9 blocks HU, but not HM's mockups.
-- G1 VFX_PACK (2026-10-31) blocks VX0–VX5; I0 says where they land.
+- G1 VFX_PACK: answered 2026-10-31; its steps (VX0–VX8) are v0.10.0 scope, not v0.9.5.
 - EP4 waits for EP1 (it reads the pair levels).
 
 ## Verification
