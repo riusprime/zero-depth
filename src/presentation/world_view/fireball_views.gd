@@ -417,7 +417,7 @@ const SIGNATURE_ENERGY := 0.9
 ## "shot_<look>", data/vfx/pack_fx_vx4.tres) that follows its shot, faces its way and goes back to its pool when the
 ## shot ends; the dark edge MultiMesh stays under it (it marks a shot hostile). A shot the family has no room for draws
 ## the old MultiMesh core and trail. false: the old look everywhere (before/after shots, tests). The nemesis_crescent
-## has no pack look yet (gap N4) and draws as before.
+## draws the MultiMesh with the pack's rim material (VX7, PACK_CRESCENT).
 const PACK_SHOTS := true
 const PACK_FAMILY := &"enemy_shot"
 ## The radius (m) a pack scene's table scale is made for; a shot of radius r draws the scene at r / PACK_REF_RADIUS.
@@ -432,6 +432,13 @@ const PACK_HIDE := {
 const FLAME_LIFE_MIN := 0.4
 ## Looks without a pack effect (they stay the MultiMesh).
 const PACK_SKIP: Array[StringName] = [&"nemesis_crescent"]
+## v0.10.0 VX7 (VFX_PACK N4): the nemesis_crescent keeps its shape and takes a copy of the pack's rim_area_04 glow
+## material in its own colours (a sheet of UVs cut from where each point lies); false: the shader core as before.
+const PACK_CRESCENT := true
+const CRESCENT_KEY := &"nemesis_crescent"
+## The crescent mesh's reach along its flight (x, m): what its UV's v runs over.
+const CRESCENT_X0 := -0.05
+const CRESCENT_X1 := 0.5
 ## v0.8.0 AV: the dark shell's size over the core's.
 const EDGE_SCALE := 1.15
 const HEIGHT := 0.55
@@ -871,8 +878,18 @@ func _make_set(key: StringName) -> Dictionary:
 	var look := look_of(key).duplicate()
 	look["key"] = key  # v0.8.0 TX1: the materials pick the owner's textures by the look's key
 	var mesh := ProjectileMeshes.get_mesh(look.get("mesh", &"orb"))
+	var core_mesh: Mesh = mesh
+	var core_mat: Material = core_material(look)
+	if key == CRESCENT_KEY and PACK_CRESCENT and PackFx.available():
+		var worn := GapPack.material_copy(
+			GapPack.RIM_MAT,
+			{&"primary": look["core"], &"secondary": look["trail"], &"tertiary": look["edge"]}
+		)
+		if worn != null:
+			core_mat = worn
+			core_mesh = GapPack.planar_uv(mesh, CRESCENT_X0, CRESCENT_X1)
 	var specs := [
-		["core", mesh, core_material(look)],
+		["core", core_mesh, core_mat],
 		["edge", mesh, edge_material(look)],
 		["trail", ProjectileMeshes.get_mesh(&"ribbon"), trail_material(look)],
 	]

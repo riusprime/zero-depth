@@ -45,6 +45,12 @@ func _live_any(ids: Array[StringName]) -> int:
 	return n
 
 
+## The effects spawned that are not floor-mark effects (v0.10.0 VX7: a mark's decal carries a pack effect too, which
+## these tests do not count).
+func _spawned() -> int:
+	return _fx.spawned - _fx.live_count(&"mark")
+
+
 func test_the_table_has_every_vx3_id_with_its_scene() -> void:
 	for id: StringName in [
 		&"zone_fire_a",
@@ -88,7 +94,7 @@ func test_a_hero_fire_patch_is_one_held_area_in_ground_safe_colours() -> void:
 	var at := Vector3(2, 0, 1)
 	for k in 5:
 		_frame(float(k), func() -> void: _layer.field(&"fire", at, 1.2, 1.0, float(k), 7))
-	assert_eq(_fx.spawned, 1, "one effect for five frames of one patch")
+	assert_eq(_spawned(), 1, "one effect for five frames of one patch")
 	var ids: Array[StringName] = [&"zone_fire_a", &"zone_fire_b"]
 	assert_eq(_live_any(ids), 1)
 	assert_eq(_fx.live_count(&"area"), 1)
@@ -137,7 +143,7 @@ func test_a_patch_goes_back_when_it_is_no_longer_drawn() -> void:
 	assert_eq(_fx.live_count(&"area"), 0, "released the frame nothing drew it")
 	_frame(3.0, func() -> void: _layer.field(&"fire", Vector3.ZERO, 1.2, 1.0, 3.0, 3))
 	assert_eq(_fx.live_count(&"area"), 1, "and it comes back from the pool")
-	assert_eq(_fx.spawned, 2)
+	assert_eq(_spawned(), 2)
 
 
 func test_two_copies_of_one_patch_are_two_effects_and_overlap_thins() -> void:
@@ -196,10 +202,10 @@ func test_the_patch_falls_back_to_the_old_look_when_the_area_family_is_full() ->
 		_layer.field(&"venom", Vector3(k * 8.0, 0, 0), 1.2, 1.0, 0.0, 100 + k)
 	assert_eq(_fx.live_count(&"area"), cap)
 	var asked := _layer.sprites_asked
-	var spawned := _fx.spawned
+	var spawned := _spawned()
 	_layer.field(&"venom", Vector3(0, 0, 40), 1.2, 1.0, 0.0, 999)
 	_layer.finish()
-	assert_eq(_fx.spawned, spawned, "no room: nothing evicted")
+	assert_eq(_spawned(), spawned, "no room: nothing evicted")
 	assert_gt(_layer.sprites_asked, asked, "the old bubbles and splashes draw instead")
 
 
@@ -248,7 +254,7 @@ func test_frost_nova_and_ember_ward_play_their_pack_rings_once() -> void:
 func test_a_frost_burst_spawns_one_explosion_for_all_its_frames() -> void:
 	for k in 10:
 		_frame(float(k), func() -> void: _layer.burst(&"frost", Vector3.ZERO, 2.0, k / 10.0, 21))
-	assert_eq(_fx.spawned, 1)
+	assert_eq(_spawned(), 1)
 	assert_eq(_live(&"burst_frost").size(), 1)
 	assert_eq(_live(&"burst_frost")[0].get("primary_color"), ElementLooks.core(&"frost"))
 	assert_eq(_live(&"burst_shatter").size(), 0, "a plain frost burst has no ice patch")
@@ -258,7 +264,7 @@ func test_a_shatter_adds_a_small_ice_patch() -> void:
 	_frame(0.0, func() -> void: _layer.burst(&"shatter", Vector3.ZERO, 1.6, 0.0, 22))
 	assert_eq(_live(&"burst_frost").size(), 1)
 	assert_eq(_live(&"burst_shatter").size(), 1)
-	assert_eq(_fx.spawned, 2)
+	assert_eq(_spawned(), 2)
 
 
 func test_venom_and_bleed_bursts_are_a_bubble_and_a_short_puddle() -> void:
@@ -269,9 +275,9 @@ func test_venom_and_bleed_bursts_are_a_bubble_and_a_short_puddle() -> void:
 	assert_eq(_live(&"burst_bleed").size(), 1)
 	assert_eq(_live(&"burst_puddle").size(), 2)
 	assert_eq(_live(&"burst_bleed")[0].get("primary_color"), ElementLooks.core(&"bleed"))
-	assert_eq(_fx.spawned, 4, "no more on later frames")
+	assert_eq(_spawned(), 4, "no more on later frames")
 	_frame(2.0, func() -> void: _layer.burst(&"bleed", Vector3(8, 0, 0), 1.5, 0.2, 24))
-	assert_eq(_fx.spawned, 4)
+	assert_eq(_spawned(), 4)
 
 
 func test_wildfire_is_fire_area_03() -> void:
@@ -351,9 +357,10 @@ func test_frost_stacks_are_ice_mist_at_the_feet_and_the_cage_stays_ours() -> voi
 	_layer.finish()
 
 
-func test_bleed_stays_as_it_was() -> void:
+func test_bleed_is_the_vx7_drips() -> void:
 	_frame(0.0, func() -> void: _layer.status(Vector3.ZERO, 0.4, {&"bleed": 2}, 4, 0.9))
-	assert_eq(_fx.live_count(), 0, "no pack effect for bleed (N2); shock is VX6")
+	assert_eq(_fx.live_count(&"status"), 1, "bleed's drips (VX7 N2); shock is VX6's bolts")
+	assert_eq(_live(&"vx7_bleed_drips").size(), 1)
 
 
 func test_a_full_status_family_draws_the_old_flames_for_the_rest() -> void:

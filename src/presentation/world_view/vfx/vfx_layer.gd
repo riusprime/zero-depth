@@ -70,6 +70,13 @@ var _pack_smoke: Array[Array] = []  # [due tick, position, scale]
 var _views := VfxPackViews.new(self)
 ## v0.10.0 VX6: the storm looks, the pack's lightning (StormPack).
 var _storm := StormPack.new(self)
+## VX7: the bleed status and the void rifts in the pack's style (GapPack).
+var _gap := GapPack.new(self)
+
+
+## VX7: the marks' pack effects (VfxCore._lay_pack_marks).
+func _pack_fx() -> PackFx:
+	return pack_fx
 
 
 # --- Public: one call per form ----------------------------------------------------------------------------------
@@ -91,7 +98,7 @@ func field(
 		&"bleed":
 			_liquid_field(c, r, fade, age, sd, BLOOD, false)
 		&"void":
-			_void_field(c, r, fade, age, sd)
+			_gap.void_field(c, r, fade, age, sd)
 
 
 ## A ring of radius `r` at `c` now (its front), no fill.
@@ -110,7 +117,7 @@ func ring(kind: StringName, c: Vector3, r: float, fade: float, age: float, sd: i
 		&"bleed":
 			_liquid_ring(c, r, fade, age, sd, BLOOD)
 		&"void":
-			_void_ring(c, r, fade, age, sd)
+			_gap.void_ring(c, r, fade, age, sd)
 
 
 ## A line from `a` to `b` (a beam or a chain at body height).
@@ -129,7 +136,7 @@ func line(kind: StringName, a: Vector3, b: Vector3, fade: float, age: float, sd:
 		&"bleed":
 			_liquid_line(a, b, fade, age, sd, BLOOD, BLOOD_MARK)
 		&"void":
-			_void_line(a, b, fade, age, sd)
+			_gap.void_line(a, b, fade, age, sd)
 
 
 ## A burst of radius `r` at `c` (ground), `u` (0..1) through its life: a bomb landing or a blast.
@@ -168,7 +175,7 @@ func _burst_kind(kind: StringName, c: Vector3, r: float, u: float, sd: int) -> v
 		&"bleed":
 			_liquid_burst(c, r, u, sd, BLOOD, BLOOD_MARK, false)
 		&"void":
-			_void_burst(c, r, u, sd)
+			_gap.void_burst(c, r, u, sd)
 		_:
 			_explosion(c, r, u, sd)
 
@@ -218,15 +225,8 @@ func status(p: Vector3, r: float, on: Dictionary, sd: int, top: float = 0.9) -> 
 			false
 		)
 	var bleed: int = on.get(&"bleed", 0)
-	if bleed > 0:
-		_drips(p, r, top, age, sd, mini(3, 1 + bleed / 3), BLOOD)
-		mark(
-			_status_key(sd, 1, int(age / 120.0)),
-			_splat(sd + int(age / 120.0)),
-			p,
-			0.35 + r * 0.6,
-			BLOOD_MARK
-		)
+	if bleed > 0:  # v0.10.0 VX7: the pack's drips and splatter (GapPack), or the old drips
+		_gap.bleed_status(p, r, top, age, sd, bleed)
 	var poison: int = on.get(&"poison", 0)
 	if poison > 0 and not (PACK_STATUS and pack_fx != null and _views.poison(p, r, sd, top)):
 		_drips(p, r, top, age, sd + 3, mini(2, 1 + poison / 4), VENOM)
@@ -782,94 +782,3 @@ func _drips(p: Vector3, r: float, top: float, age: float, sd: int, n: int, col: 
 		var a := TAU * h(sd + 1, k)
 		var q := p + Vector3(cos(a) * r * 1.08, top * 0.9 * (1.0 - u * u), sin(a) * r * 1.08)
 		_put(&"splash", _facing(q, 0.22, 0.3, true), Color(col, 1.0 - u * 0.5), 3, 0.0, 0.0)
-
-
-# --- Void -------------------------------------------------------------------------------------------------------
-## A void patch: dark tendrils curling up out of it, a rift flickering open in its middle, a violet glow.
-func _void_field(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
-	var n := clampi(int(round((2.0 + r * r * 1.5) * density)), 2, 12)
-	for k in n:
-		var a := TAU * h(sd, k)
-		var d := sqrt(h(sd + 1, k)) * r * 0.8
-		_tendril(
-			c + Vector3(cos(a) * d, 0, sin(a) * d),
-			age,
-			sd + k * 3,
-			0.9 + 0.6 * h(sd + 2, k),
-			fade,
-			60.0
-		)
-	var open := 0.75 + 0.25 * sin(age * 0.2 + sd)
-	_put(
-		&"rift",
-		_facing(c + Vector3(0, 0.1, 0), r * 0.5 * open, r * 1.1, false),
-		Color(VOID_GLOW * 1.6, fade),
-		int(age / 20.0 + sd) % 4,
-		0.0,
-		h(sd, 9)
-	)
-	_light(c + Vector3(0, 0.7, 0), VOID_GLOW, 1.4 * fade, r + 2.5)
-	mark(sd * MARK_KINDS + 4, &"scorch", c, r * 1.1, VOID_MARK)
-
-
-## Tendrils curling up along a ring's front.
-func _void_ring(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
-	var n := clampi(int(r * 3.0 * density), 6, 18)
-	for k in n:
-		var a := TAU * (k + 0.4 * h(sd, k)) / n
-		_tendril(c + Vector3(cos(a), 0, sin(a)) * r, age, sd + k, 0.7, fade, 30.0)
-	_light(c + Vector3(0, 0.5, 0), VOID_GLOW, 1.2 * fade, r + 2.0)
-
-
-## A rift torn along a beam, tendrils where it ends.
-func _void_line(a: Vector3, b: Vector3, fade: float, age: float, sd: int) -> void:
-	var w := 0.8 * (0.85 + 0.15 * sin(age * 0.5 + sd))
-	_put(
-		&"rift",
-		_ribbon_tall(a, b, w),
-		Color(VOID_GLOW * 1.6, fade),
-		int(age / 8.0 + sd) % 4,
-		0.0,
-		h(sd, 1)
-	)
-	for k in 2:
-		_tendril(Vector3(b.x, 0, b.z), age, sd + k, 0.8, fade, 40.0)
-	_light(a.lerp(b, 0.5), VOID_GLOW, 1.5 * fade, a.distance_to(b) * 0.5 + 2.0)
-
-
-## A void blast: a rift tears open and closes, tendrils lash out, a violet flash, a dark mark.
-func _void_burst(c: Vector3, r: float, u: float, sd: int) -> void:
-	var open := clampf(u / 0.15, 0.0, 1.0) * (1.0 - clampf((u - 0.45) / 0.35, 0.0, 1.0))
-	if open > 0.0:
-		_put(
-			&"rift",
-			_facing(c, r * 0.6 * open, r * 1.6, false),
-			Color(VOID_GLOW * 2.0, 1.0),
-			sd % 4,
-			0.0,
-			h(sd, 1)
-		)
-	var n := int(round(6 * density))
-	for k in n:
-		var a := TAU * (k + h(sd + 2, k)) / maxf(n, 1)
-		var t := clampf(u * 1.5, 0.0, 1.0)
-		var p := c + Vector3(cos(a), 0, sin(a)) * r * 0.9 * t
-		_tendril(p, u * 70.0, sd + k, 1.1 * (1.0 - u * 0.5), 1.0 - u, 70.0)
-	_light(c + Vector3(0, 0.9, 0), VOID_GLOW, 5.0 * (1.0 - u) * (1.0 - u), r * 2.5 + 1.5)
-	mark(sd * MARK_KINDS + 4, &"scorch", c, r * 1.25, VOID_MARK)
-
-
-## A dark tendril curling up from `p` on a `period`-tick cycle, `size` tall.
-func _tendril(p: Vector3, age: float, sd: int, size: float, fade: float, period: float) -> void:
-	var u := fposmod(age + h(sd, 1) * period, period) / period
-	var s := size * (0.7 + 0.5 * u)
-	var flip := 1.0 if h(sd, 5) < 0.5 else -1.0
-	var xf := _facing(p, s * 0.6 * flip, s, false, (h(sd, 4) - 0.5) * 0.4)
-	_put(
-		&"tendril",
-		xf,
-		Color(VOID_TENDRIL, fade * sin(PI * u)),
-		int(h(sd, 3) * 4.0),
-		u * 0.3,
-		h(sd, 6)
-	)

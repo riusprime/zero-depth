@@ -41,6 +41,13 @@ const ACCENT_DENSITY := 0.5
 const PACK_VOID := true
 const BODY_PER_LENS := 0.35
 const COLLAPSE_PER_LENS := 0.5
+## v0.10.0 VX7 (VFX_PACK N5): violet sparks (the pack's orb flash, small) now and then along the dust trail, one every
+## SPARK_EVERY ticks a shot (Effects density Medium and High: with the dust), SPARK_PER_LENS of the lens' size.
+const PACK_SPARKS := true
+const SPARK_ID := &"vx7_void_spark"
+const SPARK_EVERY := 9
+const SPARK_PER_LENS := 0.15
+const SPARK_SIDE_M := 0.3
 
 const LENS_SHADER := """
 shader_type spatial;
@@ -110,6 +117,8 @@ static var _shaders := {}
 ## What the last sync drew (tests read them): the shots and the dust puffs behind them; v0.9.0 VX: the collapses
 ## playing, the shots' lens growth (0..1, the newest shot's) and whether the dust disc shows (Effects density Low: no).
 var voids := 0
+## v0.10.0 VX7: the pack's sparks spawned since the view began (the tests read it).
+var sparks := 0
 var arcs := 0
 var puffs := 0
 var collapses := 0
@@ -330,6 +339,22 @@ func _place_shot(k: int, p: Vector2, dir: Vector2, aura: float, id: int, g: floa
 			dust.visible = false
 			for t in TRAIL:
 				_trail[k * TRAIL + t].visible = false
+		_spark(id, p, dir)
+
+
+## v0.10.0 VX7: a violet spark on the dust trail of shot `id` (every SPARK_EVERY ticks, a place on the trail by turn).
+func _spark(id: int, p: Vector2, dir: Vector2) -> void:
+	var tick := int(_tick)
+	if not PACK_SPARKS or not dust_on or not hold.active() or (tick + id) % SPARK_EVERY != 0:
+		return
+	if not pack_fx.has_room(&"hit"):
+		return
+	var turn := tick / SPARK_EVERY + id
+	var back := p - dir * TRAIL_GAP_M * (turn % TRAIL + 1)
+	back += Vector2(-dir.y, dir.x) * SPARK_SIDE_M * (float((turn * 7) % 5) / 2.0 - 1.0)
+	var s := LENS_SIZE * SPARK_PER_LENS
+	if pack_fx.spawn(SPARK_ID, SimPlane.to_3d(back, HEIGHT), s, PackLooks.violet_colors()) != null:
+		sparks += 1
 
 
 func _hide_shot(k: int) -> void:

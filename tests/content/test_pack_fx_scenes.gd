@@ -4,6 +4,8 @@ extends GutTest
 ## that exist, in known families, with unique ids.
 
 const ROOT := "res://assets/BinbunVFX"
+## v0.10.0 VX7: new effects built in the pack's style (VFX_PACK "Gaps built in the pack's style").
+const OURS := "res://assets/vfx_zd"
 
 
 func _scenes(dir: String, out: PackedStringArray, in_effects: bool) -> void:
@@ -48,8 +50,10 @@ func test_the_pack_table_is_valid() -> void:
 	assert_eq(def.validate().size(), 0, "valid")
 	assert_gte(def.count(), 4)
 	for k in def.count():
-		var ours: bool = def.scenes[k].begins_with("res://assets/vfx_zd/")  # (our own, in the pack style)
-		assert_true(ours or def.scenes[k].begins_with(ROOT + "/"), "%s is in the pack" % def.ids[k])
+		assert_true(
+			def.scenes[k].begins_with(ROOT + "/") or def.scenes[k].begins_with(OURS + "/"),
+			"%s is in the pack (or our own scenes in the pack's style)" % def.ids[k]
+		)
 	var repo := ContentRepository.load_all()
 	assert_not_null(repo.get_def(&"pack_fx", &"pack_fx"), "found through the repository")
 
