@@ -1,8 +1,10 @@
 class_name ElementPairs
 extends RefCounted
 ## v0.9.5 EE3 (ELEMENTS.md X1-X10; the owner: "maybe we could add some special combinations so something else happens
-## when you have 2 level 3 elements they do something special"): two elements held together at Lv 3 turn on one named
-## pair rule. The elements are Fire (ember_core), Lightning (storm_core), Frost (frost_core), Venom (venom_core) and
+## when you have 2 level 3 elements they do something special"): two elements held together turn on one named pair
+## rule (v0.9.5 EP1: from Lv 1; the pair's level is the lower of the two elements' levels, and its strength scales by
+## table.level_permille: 40 / 70 / 100 % of the Lv 3 bonus; a chain pair acts on its first `level` jumps below Lv 3).
+## The elements are Fire (ember_core), Lightning (storm_core), Frost (frost_core), Venom (venom_core) and
 ## Bleed (shared_bleed); the Gun has two element slots, so on a Gun run one pair is on at most (the mask allows more for
 ## a Blade run). The mask is worked out when the wand compiles (Modifiers.compile) and a pair turning on emits PAIR_ON
 ## (the view's banner). The numbers are the table's (data/combos/element_pairs.tres, World.pair_table: none, no pairs).
@@ -24,7 +26,6 @@ const STORM := ElementLevelsFsf.STORM
 const FROST := ElementLevelsFsf.FROST
 const VENOM := 3
 const BLEED := 4
-const LV := 3
 const WINDOW := 60  # a budget's "second", in ticks
 const COUNT := 10
 const X1 := 0
@@ -82,18 +83,41 @@ static func element_level(w: World, e: int) -> int:
 	return ElementLevelsFsf.level(w, e)
 
 
-## The pairs whose two elements are both held at Lv 3 now (bit X each); 0 without the table.
+## Element `e` is held (a card of it is in the build).
+static func held_element(w: World, e: int) -> bool:
+	match e:
+		VENOM:
+			return ElementLevels.held(w, true)
+		BLEED:
+			return ElementLevels.held(w, false)
+	return ElementLevelsFsf.held(w, e)
+
+
+## The pairs whose two elements are both held now, at any level (bit X each); 0 without the table.
 static func mask(w: World) -> int:
 	if w.pair_table == null:
 		return 0
-	var lv := PackedInt32Array()
+	var held := PackedInt32Array()
 	for e in 5:
-		lv.append(element_level(w, e))
+		held.append(1 if held_element(w, e) else 0)
 	var m := 0
 	for x in COUNT:
-		if lv[ELEMENTS[x][0]] >= LV and lv[ELEMENTS[x][1]] >= LV:
+		if held[ELEMENTS[x][0]] == 1 and held[ELEMENTS[x][1]] == 1:
 			m |= 1 << x
 	return m
+
+
+## Each on pair's level (the lower of its elements' levels, 1-3) in 2 bits at 2*X; 0 without the table.
+static func levels(w: World) -> int:
+	if w.pair_table == null:
+		return 0
+	var m := mask(w)
+	var out := 0
+	for x in COUNT:
+		if (m >> x) & 1 == 1:
+			var lv := mini(element_level(w, ELEMENTS[x][0]), element_level(w, ELEMENTS[x][1]))
+			out |= clampi(lv, 1, 3) << (2 * x)
+	return out
 
 
 ## Pair `x` is on (worked out at the last compile; a world whose wand has not compiled yet compiles it first).
@@ -105,22 +129,51 @@ static func on(w: World, x: int) -> bool:
 	return (w.pair_mask >> x) & 1 == 1
 
 
-## The wand compiled (Modifiers.compile): the mask follows the cards' levels, a pair that just turned on is announced,
-## and a pair that turned off takes its clouds with it.
+## Pair `x`'s level 1-3 now: 0 while off; an older save's pair (no saved level) reads as Lv 3.
+static func level(w: World, x: int) -> int:
+	if not on(w, x):
+		return 0
+	var lv := (w.pair_levels >> (2 * x)) & 3
+	return 3 if lv == 0 else lv
+
+
+## Pair `x`'s strength, per mille of its Lv 3 bonus (1000 while off).
+static func scale(w: World, x: int) -> int:
+	var lv := level(w, x)
+	return w.pair_table.level_permille[lv - 1] if lv > 0 else 1000
+
+
+## A multiplier `m` per mille (1000 = none) grown by pair `x`'s level: Lv 3 is `m`, lower levels a share of its extra.
+static func bonus(w: World, x: int, m: int) -> int:
+	return 1000 + (m - 1000) * scale(w, x) / 1000
+
+
+## The wand compiled (Modifiers.compile): the mask and levels follow the cards, a pair that just turned on or grew a
+## level is announced (amount_applied: its level), and a pair that turned off takes its clouds with it.
 static func refresh(w: World) -> void:
 	var now := mask(w)
-	var added := now & ~w.pair_mask
+	var lv := levels(w)
+	var old_mask := w.pair_mask
+	var old_levels := w.pair_levels
 	w.pair_mask = now
+	w.pair_levels = lv
 	if (now >> X2) & 1 == 0:
 		w.pair_clouds = PackedInt32Array()
-	if added == 0 or w.actors.size() == 0:
+	if now == 0 or w.actors.size() == 0:
 		return
 	var pid := w.actors.ids[0]
 	for x in COUNT:
-		if (added >> x) & 1 == 1:
+		if (now >> x) & 1 == 0:
+			continue
+		var was := (old_levels >> (2 * x)) & 3
+		if was == 0:
+			was = 3 if (old_mask >> x) & 1 == 1 else 0
+		var nl := (lv >> (2 * x)) & 3
+		if nl > was:
 			var e := w.emit_event(SimEvent.Kind.PAIR_ON, pid, pid, pid, w.player_pos())
 			e.amount = x
 			e.effect_id = IDS[x]
+			e.amount_applied = nl
 
 
 # --- The budget ------------------------------------------------------------------------------------------------
@@ -173,7 +226,7 @@ static func thermal_shock(
 	e.root_id = root
 	e.amount = roundi(t.burst_radius_m * 1000.0)
 	e.effect_id = SimEvent.EFFECT_PAIR_BURST
-	var burst := maxi(1, dmg * t.burst_permille / 1000)
+	var burst := maxi(1, dmg * bonus(w, X1, t.burst_permille) / 1000)
 	for j in w.enemies_near(at, t.burst_radius_m):
 		Damage.hit(
 			w,
@@ -202,6 +255,7 @@ static func on_frozen_end(w: World, i: int) -> void:
 	if a.bleed_t[i] >= a.bleed_cd[i]:
 		ticks = 1 + (a.bleed_t[i] - a.bleed_cd[i]) / period
 	var total := m.bleed_damage * a.bleed_stacks[i] * ticks
+	total = total * scale(w, X7) / 1000
 	a.bleed_stacks[i] = 0
 	a.bleed_t[i] = 0
 	a.bleed_cd[i] = 0
@@ -234,7 +288,7 @@ static func on_burn_start(w: World, i: int) -> void:
 		clouds = clouds.slice(3)
 	clouds.append(roundi(a.pos_x[i] * 1000.0))
 	clouds.append(roundi(a.pos_y[i] * 1000.0))
-	clouds.append(t.cloud_ticks)
+	clouds.append(maxi(1, t.cloud_ticks * scale(w, X2) / 1000))
 	w.pair_clouds = clouds
 	var pid := a.ids[0]
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, pid, pid, a.ids[i], a.pos(i))
@@ -296,36 +350,43 @@ static func frozen_target(w: World, from: Vector2, reach: float, hit: PackedInt3
 ## Cold Circuit: the damage of a jump onto enemy `j`, `damage` plain.
 static func jump_damage(w: World, j: int, damage: int) -> int:
 	if w.actors.frozen_t[j] > 0 and on(w, X5):
-		return damage * w.pair_table.circuit_permille / 1000
+		return damage * bonus(w, X5, w.pair_table.circuit_permille) / 1000
 	return damage
 
 
 ## A chain jump landed on enemy `j` (Attacks._chain, root `root`): Ignition Arc burns, Neurotoxin poisons, Arterial Arc
-## bleeds it; each rule within its own budget.
-static func on_jump(w: World, j: int, root: int) -> void:
+## bleeds it; each rule within its own budget. `n` is the jump's 0-based index in its chain: a pair below Lv 3 acts on
+## its first `level` jumps only.
+static func on_jump(w: World, j: int, root: int, n: int) -> void:
 	if w.pair_table == null or w.pair_mask == 0 or w.actors.dead[j] == 1:
 		return
 	var t := w.pair_table
-	if on(w, X3) and _room(w, X3):
+	if on(w, X3) and _jumps(w, X3, n) and _room(w, X3):
 		Engines.add_burn(w, j, t.arc_burn_stacks, root, &"ignition_arc")
-	if on(w, X8) and _room(w, X8):
+	if on(w, X8) and _jumps(w, X8, n) and _room(w, X8):
 		Venom.add(w, j, t.arc_poison_stacks, root)
-	if on(w, X9) and _room(w, X9):
+	if on(w, X9) and _jumps(w, X9, n) and _room(w, X9):
 		Engines.add_bleed(w, j, t.arc_bleed_stacks, root)
+
+
+## Pair `x` acts on chain jump `n` (0-based): every jump at Lv 3, else the first `level` jumps.
+static func _jumps(w: World, x: int, n: int) -> bool:
+	var lv := level(w, x)
+	return lv >= 3 or n < lv
 
 
 # --- Numbers: X4, X6, X10 --------------------------------------------------------------------------------------
 ## Boiling Blood: a bleed tick `base` on enemy `i`.
 static func bleed_tick(w: World, i: int, base: int) -> int:
 	if w.actors.burn_stacks[i] > 0 and on(w, X4):
-		return base * w.pair_table.boil_permille / 1000
+		return base * bonus(w, X4, w.pair_table.boil_permille) / 1000
 	return base
 
 
 ## Black Ice: enemy `i`'s speed factor (1000 = unchanged).
 static func slow_permille(w: World, i: int) -> int:
 	if w.actors.poison_stacks[i] > 0 and on(w, X6):
-		return 1000 - w.pair_table.ice_slow_permille
+		return 1000 - w.pair_table.ice_slow_permille * scale(w, X6) / 1000
 	return 1000
 
 
@@ -345,7 +406,7 @@ static func attacker_mult(w: World, target: int, owner_id: int) -> int:
 		and a.bleed_stacks[target] >= t.sepsis_stacks
 		and on(w, X10)
 	):
-		return t.sepsis_permille
+		return bonus(w, X10, t.sepsis_permille)
 	return 1000
 
 
@@ -354,6 +415,7 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	if w.pair_mask == 0:
 		return
 	h.add_int(w.pair_mask)
+	h.add_int(w.pair_levels)
 	h.add_ints(w.pair_log)
 	h.add_ints(w.pair_clouds)
 	w.actors.hash_pair(h)

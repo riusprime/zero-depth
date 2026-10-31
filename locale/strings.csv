@@ -1373,25 +1373,25 @@ CAPTION_STRESS_BREAK,[weak point],[punto débil]
 RUN_SUMMARY_LOOPED,Looped ×%d,Bucles ×%d
 UI_PAIR_ON,Element pair,Par elemental
 PAIR_THERMAL_SHOCK,Thermal Shock,Choque Térmico
-PAIR_THERMAL_SHOCK_DESC,A foe burning and frozen bursts for x3 when hit.,Un enemigo ardiendo y helado estalla x3 al golpearlo.
+PAIR_THERMAL_SHOCK_DESC,A foe burning and frozen bursts when hit (up to x3).,Un enemigo ardiendo y helado estalla al golpe (hasta x3).
 PAIR_TOXIC_FUMES,Toxic Fumes,Humos Tóxicos
 PAIR_TOXIC_FUMES_DESC,A poisoned foe catching fire leaves a gas cloud.,Un envenenado que arde deja una nube de gas.
 PAIR_IGNITION_ARC,Ignition Arc,Arco Ígneo
-PAIR_IGNITION_ARC_DESC,Chain jumps set enemies on fire.,Los saltos de cadena prenden fuego.
+PAIR_IGNITION_ARC_DESC,Chain jumps set enemies on fire (more jumps per level).,Los saltos de cadena prenden fuego (más saltos por nivel).
 PAIR_BOILING_BLOOD,Boiling Blood,Sangre Hirviente
-PAIR_BOILING_BLOOD_DESC,Bleed ticks on burning enemies deal double.,El sangrado en enemigos ardiendo hace doble.
+PAIR_BOILING_BLOOD_DESC,Bleed ticks on burning enemies deal more (up to double).,El sangrado en enemigos ardiendo hace más (hasta doble).
 PAIR_COLD_CIRCUIT,Cold Circuit,Circuito Gélido
-PAIR_COLD_CIRCUIT_DESC,Chains seek frozen enemies and hit them double.,Las cadenas buscan helados y les hacen doble.
+PAIR_COLD_CIRCUIT_DESC,Chains seek frozen foes and hit them harder (up to double).,Las cadenas buscan helados y les pegan más (hasta doble).
 PAIR_BLACK_ICE,Black Ice,Hielo Negro
-PAIR_BLACK_ICE_DESC,Poisoned foes slow 20% more; frozen: poison holds.,Envenenados 20% más lentos; helados: el veneno dura.
+PAIR_BLACK_ICE_DESC,Poisoned foes slow up to 20% more; frozen: poison holds.,Envenenados hasta 20% más lentos; helados: el veneno dura.
 PAIR_BRITTLE,Brittle,Quebradizo
 PAIR_BRITTLE_DESC,A frozen foe shattered or dead bursts its bleed.,Un helado roto o muerto estalla su sangrado.
 PAIR_NEUROTOXIN,Neurotoxin,Neurotoxina
-PAIR_NEUROTOXIN_DESC,Chain jumps carry 1 poison stack.,Los saltos de cadena llevan 1 veneno.
+PAIR_NEUROTOXIN_DESC,Chain jumps carry poison (more jumps per level).,Los saltos de cadena llevan veneno (más saltos por nivel).
 PAIR_ARTERIAL_ARC,Arterial Arc,Arco Arterial
-PAIR_ARTERIAL_ARC_DESC,Chain jumps make enemies bleed.,Los saltos de cadena hacen sangrar.
+PAIR_ARTERIAL_ARC_DESC,Chain jumps make enemies bleed (more jumps per level).,Los saltos de cadena hacen sangrar (más saltos por nivel).
 PAIR_SEPSIS,Sepsis,Sepsis
-PAIR_SEPSIS_DESC,3+ poison and 3+ bleed stacks: +20% damage taken.,3+ de veneno y de sangrado: recibe +20% de daño.
+PAIR_SEPSIS_DESC,3+ poison and 3+ bleed stacks: up to +20% damage taken.,3+ de veneno y de sangrado: recibe hasta +20% de daño.
 ACH_SWORD_UNBOUND_NAME,Sword Unbound,Espada liberada
 ACH_SWORD_UNBOUND_DESC,Beat the Hollow Crown with the Gun.,Vence a la Corona Hueca con la Pistola.
 BUILD_BLADE_LOCKED,Beat the Hollow Crown with the Gun to unlock,Vence a la Corona Hueca con la Pistola para desbloquear

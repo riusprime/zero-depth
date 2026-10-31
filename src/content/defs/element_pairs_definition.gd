@@ -2,7 +2,9 @@ class_name ElementPairsDefinition
 extends ContentDef
 ## v0.9.5 EE3 (ELEMENTS.md X1-X10; the owner: "maybe we could add some special combinations so something else happens
 ## when you have 2 level 3 elements they do something special"): the numbers of the ten element pairs. A pair is on
-## while the Gun holds both of its elements at Lv 3 (Fire, Lightning, Frost, Venom, Bleed). One `.tres`
+## while the Gun holds both of its elements (Fire, Lightning, Frost, Venom, Bleed) at any level (v0.9.5 EP1); its pair
+## level is the lower of the two elements' levels, and level_permille scales its strength (the numbers below are Lv 3).
+## One `.tres`
 ## (data/combos/element_pairs.tres), compiled by WandCompiler into ElementPairTable (World.pair_table). Every number
 ## here is a starting value, editable without code; the names and one-line texts are the keys PAIR_<ID> and
 ## PAIR_<ID>_DESC in locale/strings.csv (ElementPairs.IDS).
@@ -22,6 +24,8 @@ extends ContentDef
 ##   brittle_radius_m, split evenly.
 ## - X10 Sepsis: an enemy with sepsis_stacks or more of both poison and bleed takes sepsis_permille from the hero.
 
+## A pair's strength at pair Lv 1/2/3, per mille of the Lv 3 bonus.
+@export var level_permille := PackedInt32Array([400, 700, 1000])
 @export var triggers_per_second := 4
 @export var burst_permille := 3000
 @export var burst_radius_m := 1.5
@@ -65,6 +69,19 @@ func validate() -> Array[ValidationIssue]:
 					&"range", resource_path, "%s is outside %d..%d" % [pair[0], pair[2], pair[3]]
 				)
 			)
+	var ok_levels := level_permille.size() == 3
+	if ok_levels:
+		for k in 3:
+			if level_permille[k] < 1 or level_permille[k] > 1000:
+				ok_levels = false
+			if k > 0 and level_permille[k] < level_permille[k - 1]:
+				ok_levels = false
+	if not ok_levels:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "level_permille needs 3 ascending values in 1..1000"
+			)
+		)
 	for pair: Array in [
 		["burst_radius_m", burst_radius_m],
 		["cloud_radius_m", cloud_radius_m],

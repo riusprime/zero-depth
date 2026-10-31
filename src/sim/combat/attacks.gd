@@ -576,7 +576,7 @@ static func _chain(w: World, spec: AttackSpec, ctx: AttackContext, first: int) -
 			landed += 1
 			_landed(w, spec, ctx, next, a.pos(next), n + 2)
 			if w.pair_mask != 0:
-				ElementPairs.on_jump(w, next, ctx.root)  # v0.9.5 EE3: Ignition Arc, Neurotoxin, Arterial Arc
+				ElementPairs.on_jump(w, next, ctx.root, n)  # v0.9.5 EE3: Ignition Arc, Neurotoxin, Arterial Arc
 		from = a.pos(next)
 	return landed
 
