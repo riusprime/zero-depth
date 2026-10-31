@@ -12,6 +12,9 @@ const SPARKS := 18
 const BLUE := Color("#2F6BFF")
 const BLUE_CORE := Color("#A8D4FF")
 const LIGHT_ENERGY := 5.0
+## v0.10.0 VX5 (R42): the flash is the pack's magic_orb_flash; false: the column, pool and sparks.
+const PACK_FLASH := true
+const PACK_SCALE := 1.0
 
 const COLUMN_SHADER := """
 shader_type spatial;
@@ -62,6 +65,7 @@ var _pool_mat := ShaderMaterial.new()
 var _spark_mat := StandardMaterial3D.new()
 var _dirs: Array[Vector3] = []
 var _t := DURATION_S
+var _packed := false
 
 
 func _init() -> void:
@@ -120,6 +124,22 @@ func play(at: Vector3) -> void:
 	position = at
 	_t = 0.0
 	visible = true
+	_packed = false
+	if PACK_FLASH:  # R42: the pack's flash orb in the blue (the column, pool and sparks give way; the light stays)
+		var pack := PackHold.find(self)
+		if pack != null and pack.has_room(&"impact"):
+			var where := global_position if is_inside_tree() else at
+			_packed = (
+				pack.spawn(
+					&"bx_flash",
+					where + Vector3(0, 0.9, 0),
+					PACK_SCALE,
+					{&"primary": BLUE_CORE, &"secondary": BLUE, &"tertiary": BLUE.darkened(0.3)}
+				)
+				!= null
+			)
+	for n: Node3D in [column, pool] + sparks:
+		n.visible = not _packed
 	_apply()
 
 

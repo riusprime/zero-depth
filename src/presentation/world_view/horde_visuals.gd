@@ -9,12 +9,16 @@ extends Node3D
 const TRACER_S := 0.18
 const MINE_RING_ALPHA := 0.45
 const BEAM_W := 0.06
+## v0.10.0 VX5 (R27): the Mender's heal beam is the pack's (the old box where its family is full); false: the box.
+const PACK_BEAMS := true
+const PACK_BEAM_HALF_W := 0.12
 ## The mines' blinking light, bright to dim (v0.8.0 Step FS: parsed once, not every frame).
 const MINE_LIGHT_HI := Color("#FF2A22")
 const MINE_LIGHT_LO := Color("#5A0E0B")
 
 var _mines := {}
 var _beams := {}
+var _hold: PackHold = null
 var _tracers: Array = []
 var _states := {}
 var _t := 0.0
@@ -40,6 +44,9 @@ func _ready() -> void:
 
 func sync(reader: WorldReader) -> void:
 	_sync_mines(reader)
+	_hold = PackHold.of(self, _hold) if PACK_BEAMS else null
+	if _hold != null:
+		_hold.begin()
 	var beams := {}
 	# v0.9.5 PF3: only a Mender (its beam) or a Sniper (its tracer) is read here.
 	var any := reader.any_kind(WorldReader.KIND_MENDER) or reader.any_kind(WorldReader.KIND_SNIPER)
@@ -60,6 +67,8 @@ func sync(reader: WorldReader) -> void:
 		if not beams.has(id):
 			_beams[id].queue_free()
 			_beams.erase(id)
+	if _hold != null:
+		_hold.end()
 	for id in _states.keys():  # bounded: forget snipers that are gone
 		if reader.actor_index(id) < 0:
 			_states.erase(id)
@@ -152,6 +161,13 @@ func _beam(id: int, from: Vector2, to: Vector2) -> void:
 		add_child(n)
 	var a := SimPlane.to_3d(from, 1.55)
 	var b := SimPlane.to_3d(to, 0.6)
+	var packed: Node3D = null
+	if _hold != null:
+		packed = _hold.hold(id, PackHold.beam_id(HordeAvatar.MEND), a, 1.0, {}, false)
+	n.visible = packed == null
+	if packed != null:
+		PackHold.beam_place(packed, a, b, PACK_BEAM_HALF_W)
+		return
 	var len := maxf(a.distance_to(b), 0.01)
 	(n.mesh as BoxMesh).size = Vector3(BEAM_W, BEAM_W, len)
 	n.position = (a + b) * 0.5

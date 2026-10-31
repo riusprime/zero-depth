@@ -25,6 +25,8 @@ const CORE := Color(0.95, 0.86, 1.0)
 const HOT := Color(1.0, 0.35, 0.55)
 const BEAM_Y := 0.9
 const MAX_ARMS := 5
+## v0.10.0 VX5 (R37): a violet pillar of light where an eruption strikes; false: none.
+const PACK_PILLARS := true
 const MAX_DISCS := 8
 const MAX_STRIPS := 8
 const MAX_SPIKES := 320
@@ -268,6 +270,20 @@ func _note_strikes() -> void:
 		if bool(e["striking"]) and not _struck.has(key):
 			_struck[key] = true
 			_ghosts.append([e["pos"], 0.0])
+			_pack_pillar(e)
+
+
+## R37: the pack's pillar of light, in the Fallen's violet, where an eruption strikes (spikes and floor ring stay).
+func _pack_pillar(e: Dictionary) -> void:
+	var pack := PackHold.find(self) if PACK_PILLARS else null
+	if pack == null or not pack.has_room(&"area"):
+		return
+	pack.spawn(
+		&"bx_pillar_fallen",
+		SimPlane.to_3d(e["pos"], 0.04),
+		clampf(float(e["radius"]) * 2.0 / 3.6, 0.5, 4.0),
+		{&"primary": VIOLET.lightened(0.5), &"secondary": VIOLET, &"tertiary": VIOLET.darkened(0.3)}
+	)
 
 
 func _lit_factor(p: Vector2) -> float:

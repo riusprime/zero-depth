@@ -24,6 +24,8 @@ const SHARD_Y := 1.9
 const AIM_RADIUS := 0.06
 const BOLT_RADIUS := 0.035
 const MAX_ARMS := 8
+## v0.10.0 VX5 (R27): the beams are the pack's (beam_vfx), the old cylinders where its family is full; false: all old.
+const PACK_BEAMS := true
 
 var _cross := {}
 var _shards := PackedVector2Array()
@@ -38,6 +40,7 @@ var _core_light := OmniLight3D.new()
 var _ring := MeshInstance3D.new()
 var _ring_mat := StandardMaterial3D.new()
 var _ends: Array = []
+var _hold: PackHold = null
 
 
 func _init() -> void:
@@ -178,7 +181,11 @@ func _process(_delta: float) -> void:
 ## True while any arm is drawn (an aim line or a beam; tests and the tour).
 func cross_drawn() -> bool:
 	for arm in _arms:
-		if (arm["core"] as Node3D).visible or (arm["aim"] as Node3D).visible:
+		if (
+			(arm["core"] as Node3D).visible
+			or (arm["aim"] as Node3D).visible
+			or arm.get("packed", false)
+		):
 			return true
 	return false
 
@@ -187,7 +194,7 @@ func cross_drawn() -> bool:
 func beam_count() -> int:
 	var n := 0
 	for arm in _arms:
-		n += 1 if (arm["core"] as Node3D).visible else 0
+		n += 1 if (arm["core"] as Node3D).visible or arm.get("packed", false) else 0
 	return n
 
 
@@ -222,12 +229,18 @@ func shard_flash_drawn() -> bool:
 func _draw(now: float) -> void:
 	_ends = []
 	var still := ViewPrefs.reduced_motion
+	_hold = PackHold.of(self, _hold) if PACK_BEAMS else null
+	if _hold != null:
+		_hold.begin()
 	for arm in _arms:
 		for key in ["core", "glow", "aim", "floor", "impact", "light"]:
 			(arm[key] as Node3D).visible = false
+		arm["packed"] = false
 	for n: Node3D in [_bolt_line, _shard_flash, _shard_light, _core_light, _ring]:
 		n.visible = false
 	if _cross.is_empty():
+		if _hold != null:
+			_hold.end()
 		return
 	var c := _cross
 	var p := float(c["progress"]) / 1000.0
@@ -247,6 +260,8 @@ func _draw(now: float) -> void:
 		_draw_arms(c, p, now, still, flicker)
 	_draw_bolt(c)
 	_draw_shard(c, flicker)
+	if _hold != null:
+		_hold.end()
 
 
 func _draw_arms(c: Dictionary, p: float, now: float, still: bool, flicker: float) -> void:
@@ -270,10 +285,17 @@ func _draw_arms(c: Dictionary, p: float, now: float, still: bool, flicker: float
 			continue
 		var core: MeshInstance3D = arm["core"]
 		var glow: MeshInstance3D = arm["glow"]
-		core.visible = true
-		glow.visible = true
-		_place(core, a, b, hw * 0.45)
-		_place(glow, a, b, hw * (1.05 + (0.0 if still else 0.08 * sin(now * 1.7 + k))))
+		var pack_beam: Node3D = null
+		if _hold != null:  # R27: the pack's beam (the colour's nearest scene) in place of the two cylinders
+			pack_beam = _hold.hold(k, PackHold.beam_id(BEAM), a, 1.0, {}, false)
+		if pack_beam != null:
+			PackHold.beam_place(pack_beam, a, b, hw)
+			arm["packed"] = true
+		else:
+			core.visible = true
+			glow.visible = true
+			_place(core, a, b, hw * 0.45)
+			_place(glow, a, b, hw * (1.05 + (0.0 if still else 0.08 * sin(now * 1.7 + k))))
 		var fl: MeshInstance3D = arm["floor"]
 		fl.visible = true
 		var len := Kin.length(to2 - from2)

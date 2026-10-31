@@ -22,6 +22,10 @@ const GOLD := Color("#F2C14E")
 const RIFT := Color("#9B5CFF")
 const BEAM := Color("#B8FFF4")
 const DUST := Color("#C9B79A")
+## v0.10.0 VX5: the arrival sigil is a MagicArea (R13) and the Conduit's beam the pack's (R27); false: the old ones.
+const PACK_SIGILS := true
+const PACK_BEAMS := true
+const SIGIL_R := 1.6
 
 ## Nodes alive, each [node, seconds left, seconds total, kind &"arrive" | &"beam" | &"dust"].
 var _fx: Array = []
@@ -113,10 +117,28 @@ func _process(delta: float) -> void:
 
 
 func _arrival(at: Vector2) -> void:
-	var sigil := _disc(1.6, GOLD, 0.85)
-	sigil.position = SimPlane.to_3d(at, Y)
-	add_child(sigil)
-	_fx.append([sigil, ARRIVE_S, ARRIVE_S, &"arrive"])
+	if PACK_SIGILS and MagicArea.kinds().has("circle"):
+		# R13: the sigil is a magic circle in the shadow element (it forms, fades and frees itself in about ARRIVE_S)
+		(
+			MagicArea
+			. add(
+				self,
+				"shadow_circle",
+				{
+					&"radius": SIGIL_R,
+					&"light": false,
+					&"one_shot": true,
+					&"appear": ARRIVE_S * 0.2,
+					&"duration": 0.0,
+					&"position": SimPlane.to_3d(at, Y),
+				}
+			)
+		)
+	else:
+		var sigil := _disc(SIGIL_R, GOLD, 0.85)
+		sigil.position = SimPlane.to_3d(at, Y)
+		add_child(sigil)
+		_fx.append([sigil, ARRIVE_S, ARRIVE_S, &"arrive"])
 	var ring := _ring(1.0, 1.25, GOLD)
 	ring.position = SimPlane.to_3d(at, Y + 0.01)
 	add_child(ring)
@@ -137,6 +159,14 @@ func _rift(id: int, tg: Dictionary) -> void:
 
 
 func _beam(o: Obb) -> void:
+	var pack := PackHold.find(self) if PACK_BEAMS else null
+	if pack != null and pack.has_room(&"beam"):  # R27: the pack's beam along the Conduit's line for BEAM_S
+		var from := SimPlane.to_3d(o.center - o.axis_u * o.half.x, 0.9)
+		var to := SimPlane.to_3d(o.center + o.axis_u * o.half.x, 0.9)
+		var pn := pack.spawn(PackHold.beam_id(BEAM), from, 1.0, {}, BEAM_S)
+		if pn != null:
+			PackHold.beam_place(pn, from, to, o.half.y * 0.7)
+			return
 	var n := Node3D.new()
 	var mi := MeshInstance3D.new()
 	var box := BoxMesh.new()
