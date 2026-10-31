@@ -1,0 +1,55 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://assets/BinbunVFX/shared/script/vfx_controller.gd" id="1_ctrl"]
+[ext_resource type="Material" path="res://assets/vfx_zd/bleed/drips_material.tres" id="2_mat"]
+
+[sub_resource type="Curve" id="Curve_alpha"]
+_data = [Vector2(0, 0), 0.0, 6.0, 0, 0, Vector2(0.15, 1), 0.0, 0.0, 0, 0, Vector2(0.8, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -4.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="CurveTexture" id="CurveTexture_alpha"]
+curve = SubResource("Curve_alpha")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_drips"]
+emission_shape = 3
+emission_box_extents = Vector3(0.3, 0.3, 0.3)
+direction = Vector3(0, -1, 0)
+spread = 12.0
+initial_velocity_min = 0.1
+initial_velocity_max = 0.5
+gravity = Vector3(0, -9.8, 0)
+scale_min = 0.2
+scale_max = 0.34
+alpha_curve = SubResource("CurveTexture_alpha")
+
+[sub_resource type="QuadMesh" id="QuadMesh_drip"]
+size = Vector2(0.5, 1.4)
+
+[sub_resource type="Animation" id="Animation_main"]
+resource_name = "main"
+length = 1.0
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_drips"]
+_data = {
+&"main": SubResource("Animation_main")
+}
+
+[node name="BleedDrips" type="Node3D"]
+script = ExtResource("1_ctrl")
+primary_color = Color(0.658824, 0.0627451, 0.164706, 1)
+secondary_color = Color(0.658824, 0.0627451, 0.164706, 1)
+tertiary_color = Color(0.368627, 0.0156863, 0.0705882, 1)
+light_enable = false
+
+[node name="Drips" type="GPUParticles3D" parent="."]
+material_override = ExtResource("2_mat")
+amount = 4
+lifetime = 0.55
+process_material = SubResource("ParticleProcessMaterial_drips")
+draw_pass_1 = SubResource("QuadMesh_drip")
+transform_align = 3
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_drips")
+}

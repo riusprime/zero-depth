@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PackFxDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/pack_fx_definition.gd" id="1_packfx"]
+
+[resource]
+script = ExtResource("1_packfx")
+id = &"pack_fx_vx7"
+ids = Array[StringName]([&"vx7_bleed_drips", &"vx7_bleed_splat", &"vx7_mark_frost", &"vx7_mark_splat", &"vx7_glaive_ring", &"vx7_wave_wash", &"vx7_void_rift", &"vx7_void_spark", &"vx7_tide_disc", &"vx7_tide_swell", &"vx7_tide_bubble"])
+scenes = PackedStringArray("res://assets/vfx_zd/bleed/drips.tscn", "res://assets/BinbunVFX/poison_effects/effects/poison_puddle/poison_puddle_vfx_01.tscn", "res://assets/BinbunVFX/ice_effects/effects/ice_area/ice_area_vfx_04.tscn", "res://assets/BinbunVFX/poison_effects/effects/poison_puddle/poison_puddle_vfx_05.tscn", "res://assets/BinbunVFX/magic_areas/effects/pulse_area/pulse_area_vfx_03.tscn", "res://assets/BinbunVFX/magic_areas/effects/ripple_area/ripple_area_vfx_02.tscn", "res://assets/BinbunVFX/magic_areas/effects/pulse_area/pulse_area_vfx_03.tscn", "res://assets/BinbunVFX/magic_orbs/effects/magic_orb_flash/magic_orb_flash_vfx_03.tscn", "res://assets/BinbunVFX/magic_areas/effects/ripple_area/ripple_area_vfx_02.tscn", "res://assets/BinbunVFX/magic_areas/effects/pulse_area/pulse_area_vfx_02.tscn", "res://assets/BinbunVFX/poison_effects/effects/poison_bubble/poison_bubble_vfx_05.tscn")
+families = Array[StringName]([&"status", &"mark", &"mark", &"mark", &"area", &"area", &"area", &"hit", &"area", &"area", &"status"])
+scales = PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+primary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)])
+secondary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)])
+tertiary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)])

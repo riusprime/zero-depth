@@ -31,6 +31,14 @@ const ARCS_MAX := 12
 const ARC_U := 0.7
 const ARC_FRONT := 0.754
 
+## v0.10.0 VX7 (VFX_PACK N4): the pack's ring (data/vfx/pack_fx_vx7.tres, pulse_area_03 in the disc's colours), held on
+## each disc, turning with it, over the disc and its afterimages (they stay). false: the disc as before.
+const PACK_RING := true
+const RING_ID := &"vx7_glaive_ring"
+## The ring's scale per metre of the disc's diameter (a pulse ring grows to about 2.2 m round), and its lift over it.
+const RING_PER_M := 0.4
+const RING_LIFT := 0.03
+
 const DISC_SHADER := """
 shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
@@ -66,6 +74,13 @@ var caught := 0
 ## v0.9.5 FC6: the lightning rings drawn now (the tests read it).
 var arcs := 0
 
+## v0.10.0 VX7: the pack effects (found through the parent, or set directly: tests, the shot tool) and the rings held
+## on the discs, by projectile id.
+var pack_fx: PackFx = null:
+	set(v):
+		pack_fx = v
+		ring_hold.pack = v if PACK_RING else null
+var ring_hold := FormPackHold.new()
 var _nodes: Array[MeshInstance3D] = []
 var _mats: Array[ShaderMaterial] = []
 var _ghosts: Array[MeshInstance3D] = []
@@ -167,6 +182,8 @@ func sync(reader: WorldReader) -> void:
 	_hero = reader.player_pos()
 	var changed := _form.refresh(reader)
 	look = _form.look
+	if pack_fx == null and PACK_RING:
+		pack_fx = GapPack.pack_of(self)
 	var low := ViewPrefs.effects_density == "low"  # V47: Low drops the afterimages
 	_pos.clear()
 	_back.clear()
@@ -213,6 +230,7 @@ func sync(reader: WorldReader) -> void:
 		if on:
 			_mats[k].set_shader_parameter(&"hot", 1.0 if _back[k] else 0.0)
 	_place()
+	_pack_rings()
 
 
 func _colour(k: int) -> void:
@@ -248,6 +266,33 @@ func _process(delta: float) -> void:
 	if discs > 0:
 		_spin += delta * 60.0 * SPIN
 		_place()
+		_turn_rings()
+
+
+## v0.10.0 VX7: the pack's ring on each disc (held; its colours are the disc's, read when it spawns).
+func _pack_rings() -> void:
+	ring_hold.begin()
+	if ring_hold.active():
+		for k in discs:
+			var cols := {&"primary": _form.core, &"secondary": _form.edge, &"tertiary": _form.deep}
+			ring_hold.put(_ids[k], RING_ID, &"area", _ring_xf(k), cols)
+	ring_hold.end()
+
+
+## Between syncs the rings turn with the discs (_spin runs on the frame's time).
+func _turn_rings() -> void:
+	if not ring_hold.active():
+		return
+	for k in discs:
+		var n := ring_hold.node(_ids[k])
+		if n != null and n.is_inside_tree():
+			n.global_transform = _ring_xf(k)
+
+
+func _ring_xf(k: int) -> Transform3D:
+	var s := -_spin if _back[k] else _spin
+	var basis := Basis(Vector3.UP, s).scaled(Vector3.ONE * SIZE * RING_PER_M)
+	return Transform3D(basis, SimPlane.to_3d(_pos[k], HEIGHT + RING_LIFT))
 
 
 func _place() -> void:

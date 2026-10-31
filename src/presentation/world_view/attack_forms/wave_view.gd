@@ -22,6 +22,16 @@ const UNROLL_TICKS := 4.0
 ## v0.9.0 VX: the foot's pieces a wave a frame at High (half at Medium).
 const FOOT_PIECES := 4
 
+## v0.10.0 VX7 (VFX_PACK N4): the crest takes the pack's pillar material (a copy, in the element's colours) on a sheet
+## whose UVs run like the pack's pillar (data/vfx/pack_fx_vx7.tres: the wash is the pack's ripple, held while the wave
+## lives). false: the shader crest and the flat wash as before.
+const PACK_WAVE := true
+const WASH_ID := &"vx7_wave_wash"
+## The ripple's scale per metre of half width (its ring is about 1.7 m round at scale 1) and how far behind the crest
+## its middle sits, in half widths.
+const WASH_PER_M := 0.52
+const WASH_BACK := 0.45
+
 const CREST_SHADER := """
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled;
@@ -58,6 +68,15 @@ var waves := 0
 var widths: Array[float] = []
 var look := &"default"
 
+## v0.10.0 VX7: the pack effects (found through the parent, or set directly), the washes held on the waves by shot id,
+## and whether the crests wear the pack's material.
+var pack_fx: PackFx = null:
+	set(v):
+		pack_fx = v
+		wash_hold.pack = v if PACK_WAVE else null
+var wash_hold := FormPackHold.new()
+var crest_packed := false
+var _pack_crest: Array[ShaderMaterial] = []
 var _crests: Array[MeshInstance3D] = []
 var _crest_mat: Array[ShaderMaterial] = []
 var _washes: Array[MeshInstance3D] = []
@@ -150,6 +169,11 @@ func sync(reader: WorldReader) -> void:
 	_tick = float(reader.tick())
 	var changed := _form.refresh(reader)
 	look = _form.look
+	if pack_fx == null and PACK_WAVE:
+		pack_fx = GapPack.pack_of(self)
+	if pack_fx != null and not crest_packed and PACK_WAVE:
+		_wear_pack_crest()
+		changed = true
 	var shots := reader.wave_shots()
 	waves = mini(shots.size(), WAVES_MAX)
 	widths.clear()
@@ -158,6 +182,7 @@ func sync(reader: WorldReader) -> void:
 	_half.clear()
 	_ids.clear()
 	_seen.clear()
+	wash_hold.begin()
 	for k in WAVES_MAX:
 		var on := k < waves
 		_crests[k].visible = on
@@ -166,6 +191,8 @@ func sync(reader: WorldReader) -> void:
 			_crest_mat[k].set_shader_parameter(&"core", _form.core)
 			_crest_mat[k].set_shader_parameter(&"edge", _form.edge)
 			_wash_mat[k].set_shader_parameter(&"edge", _form.edge)
+			if crest_packed:
+				GapPack.colour(_pack_crest[k], _crest_colors())
 		if not on:
 			continue
 		var s: Dictionary = shots[k]
@@ -181,6 +208,8 @@ func sync(reader: WorldReader) -> void:
 		_half.append(half)
 		_ids.append(id)
 		_place(k, s["pos"], s["dir"], half * maxf(grow, 0.05))
+		_pack_wash(k, id, half * maxf(grow, 0.05))
+	wash_hold.end()
 	for id: int in _born.keys():
 		if not _seen.has(id):
 			_born.erase(id)
@@ -193,6 +222,37 @@ func _place(k: int, pos: Vector2, dir: Vector2, half: float) -> void:
 	_crests[k].transform = Transform3D(Basis(x, Vector3.UP * CREST_H, z * half), base)
 	var behind := base - x * (WASH_LEN * 0.5)
 	_washes[k].transform = Transform3D(Basis(z * half * 2.0, Vector3.UP, x * WASH_LEN), behind)
+
+
+## v0.10.0 VX7: every crest takes a copy of the pack's pillar material on a sheet turned the pack's way up.
+func _wear_pack_crest() -> void:
+	var mesh := GapPack.flip_v(crest_mesh())
+	_pack_crest.clear()
+	for k in WAVES_MAX:
+		var m := GapPack.material_copy(GapPack.PILLAR_MAT, _crest_colors())
+		if m == null:
+			return  # (the pack's material is not there: the shader crest stays)
+		_pack_crest.append(m)
+		_crests[k].mesh = mesh
+		_crests[k].material_override = m
+	crest_packed = true
+
+
+func _crest_colors() -> Dictionary:
+	return {
+		&"primary": _form.edge.lightened(0.3), &"secondary": _form.edge, &"tertiary": _form.deep
+	}
+
+
+## v0.10.0 VX7: the wave's wash as the pack's ripple, held behind the crest (the flat wash hides while it shows).
+func _pack_wash(k: int, id: int, half: float) -> void:
+	if not wash_hold.active():
+		return
+	var x := SimPlane.to_3d(_dir[k], 0.0).normalized()
+	var at := SimPlane.to_3d(_pos[k], LIFT) - x * (half * WASH_BACK)
+	var xf := Transform3D(Basis.from_scale(Vector3.ONE * half * WASH_PER_M), at)
+	if wash_hold.put(id, WASH_ID, &"area", xf, _crest_colors()) != null:
+		_washes[k].visible = false
 
 
 ## The effects layer's drawer (WorldViewRoot appends it): at each wave's foot its element's accent, or a skim of dust
