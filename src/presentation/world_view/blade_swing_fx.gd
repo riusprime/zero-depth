@@ -10,11 +10,18 @@ extends Node3D
 ## - Timing from the sim's swing ticks (WorldReader.swing_tick / swing_active_tick / swing_sweep_ticks), drawn in frame
 ##   time; it decides nothing (EI-07). Reduced motion keeps it (a light, no movement of its own).
 
+## v0.10.0 VX8 (VFX_PACK N3): the cut also strikes a pack spark (vfx_hit_04) on the tip, gold or the
+## step's element; false: the old flare alone.
+const PACK_BLADE := true
 const POOL := 3
 ## The spark's size (metres across) riding the tip, at the cut's flare and the finisher's.
 const RIDE_SIZE := 0.32
 const CUT_SIZE := 0.62
 const FINISHER_SIZE := 0.85
+## The pack spark's scale at the cut and the finisher's, and the old flare's share left beside it.
+const PACK_CUT_SCALE := 0.2
+const PACK_FINISHER_SCALE := 0.32
+const PACK_FLARE_SHARE := 0.4
 ## The flare's fade (seconds) and the fade after the sweep (seconds).
 const FLARE_SECONDS := 0.1
 const FADE_SECONDS := 0.12
@@ -25,6 +32,8 @@ var kit: KitView
 ## Sparks started and cuts flared (tests).
 var started := 0
 var cuts := 0
+## Pack sparks struck on the cuts (tests).
+var pack_cuts := 0
 ## Each slot: {node, mat, live, sweeping, flare, fade, big}.
 var _slots: Array[Dictionary] = []
 var _next := 0
@@ -109,6 +118,8 @@ func sync(reader: WorldReader) -> void:
 		s["flare"] = 1.0
 		s["big"] = FINISHER_SIZE / CUT_SIZE if reader.is_finisher() else 1.0
 		cuts += 1
+		if _pack_cut(reader.is_finisher()):
+			s["flare"] = PACK_FLARE_SHARE
 	s["sweeping"] = t <= reader.swing_sweep_ticks() + 1
 	_last_t = t
 	_place(s)
@@ -154,3 +165,18 @@ func pool_size() -> int:
 ## The live spark's size now (tests: it flares on the cut).
 func spark_size() -> float:
 	return (_slots[_live]["node"] as Node3D).scale.x if _live >= 0 else 0.0
+
+
+## v0.10.0 VX8: the cut's pack spark (vx8_cut) on the blade's tip; false when the pack is off or its `hit`
+## family is full (the old flare then draws alone).
+func _pack_cut(finisher: bool) -> bool:
+	var pack := BladePack.pack_of(self) if PACK_BLADE and kit != null else null
+	if pack == null or not pack.has_room(&"hit"):
+		return false
+	var tint := kit.edge_color()  # the element's, the heat tier's, else the hero's blue-white: that is gold here
+	var colors := BladePack.colors_of(BladePack.GOLD if tint == ImpactFx.HERO else tint)
+	var scale := PACK_FINISHER_SCALE if finisher else PACK_CUT_SCALE
+	if pack.spawn(&"vx8_cut", kit.blade_tip_point(), scale, colors) == null:
+		return false
+	pack_cuts += 1
+	return true

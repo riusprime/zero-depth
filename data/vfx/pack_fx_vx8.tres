@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PackFxDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/pack_fx_definition.gd" id="1_packfx"]
+
+[resource]
+script = ExtResource("1_packfx")
+id = &"pack_fx_vx8"
+ids = Array[StringName]([&"vx8_cut", &"vx8_parry", &"vx8_erupt", &"vx8_counter", &"vx8_finisher", &"vx8_cleave_flash"])
+scenes = PackedStringArray("res://assets/BinbunVFX/impact_explosions/effects/hit/vfx_hit_04.tscn", "res://assets/BinbunVFX/impact_explosions/effects/hit/vfx_hit_04.tscn", "res://assets/BinbunVFX/impact_explosions/effects/impact/vfx_impact_02.tscn", "res://assets/BinbunVFX/magic_areas/effects/pulse_area/pulse_area_vfx_02.tscn", "res://assets/BinbunVFX/magic_areas/effects/pulse_area/pulse_area_vfx_01.tscn", "res://assets/BinbunVFX/muzzle_flash/effects/big_flash/big_flash_02.tscn")
+families = Array[StringName]([&"hit", &"hit", &"impact", &"area", &"area", &"impact"])
+scales = PackedFloat32Array(1, 1, 1, 1, 1, 1)
+primary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)])
+secondary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)])
+tertiary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)])
