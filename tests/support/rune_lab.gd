@@ -6,6 +6,28 @@ extends RefCounted
 
 const LONG := 1 << 24
 
+## v0.10.5 S14: the data's rune chance is 0 (the puzzle is off for now); a test that wants natural rune floors forces it
+## through the shared secrets def (the resource cache hands Main the same one) and puts it back in after_each.
+static var _saved_permille := -1
+static var _held: ContentRepository  # keeps the cached secrets def alive while it is forced
+
+
+static func force_chance(permille: int = 1000) -> void:
+	if _held == null:
+		_held = ContentRepository.load_all()
+	var secrets: SecretsDefinition = _held.get_def(&"secrets", &"secrets")
+	if _saved_permille < 0:
+		_saved_permille = secrets.rune_permille
+	secrets.rune_permille = permille
+
+
+static func restore_chance() -> void:
+	if _held != null:
+		var secrets: SecretsDefinition = _held.get_def(&"secrets", &"secrets")
+		secrets.rune_permille = _saved_permille
+		_held = null
+		_saved_permille = -1
+
 
 ## v0.9.0 FV: `floor` picks the run's floor; floor 1 is now 10-12 rooms and rarely holds two dead ends (a timed door
 ## and a rune puzzle both), so the tests that want both use a deeper one.

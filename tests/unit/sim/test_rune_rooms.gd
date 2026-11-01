@@ -83,7 +83,23 @@ func test_every_rune_puzzle_is_solvable_and_never_on_the_way() -> void:
 	assert_eq(bad, 0, "every rune puzzle solvable in at most 3 presses a pillar, off the way")
 	assert_gt(placed, SEEDS * 5 / 10, "most floors have a dead end that fits one")
 	assert_gt(both, 0, "some floors hold both puzzles")
-	assert_between(natural, SEEDS * 25 / 100, SEEDS * 35 / 100, "about 30 % of floors are tried")
+	assert_eq(natural, 0, "v0.10.5 S14: the data's chance is 0, so no floor is tried naturally")
+
+
+## v0.10.5 S14 (owner: "let's remove the puzzle for now"): floors generated as the run generates them (the call
+## FloorPlan.add_secrets makes, at the data's chance) place no rune puzzle room.
+func test_the_data_places_no_rune_puzzle_room_on_200_seeds() -> void:
+	var repo := ContentRepository.load_all()
+	var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
+	map.room_layouts = RunContentCompiler.compile_room_layouts(repo)
+	var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
+	assert_eq(secrets.rune_permille, 0, "the data's chance")
+	var placed := 0
+	for s in 200:
+		var f := _layout(7001 + s * 7919, map, BossArenaSpec.new(), 0)
+		if RuneRooms.mark(f, secrets.rune_permille, PackedInt32Array(), PackedVector2Array()) >= 0:
+			placed += 1
+	assert_eq(placed, 0, "no rune puzzle room on 200 seeds")
 
 
 func test_the_same_seed_marks_the_same_puzzle() -> void:
