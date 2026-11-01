@@ -46,6 +46,7 @@ func _initialize() -> void:
 		)
 	)
 	ProfileStore.use_shared(ProfileStore.new(""))
+	RunSaveStore.use_shared(RunSaveStore.new(""))
 	Main.fixed_seed = _seed
 	_main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
 	root.add_child(_main)
@@ -63,9 +64,22 @@ func _process(_delta: float) -> bool:
 		w.actors.hp[0] = w.actors.max_hp[0]  # SHOT HELPER (labelled): see the header.
 	match _step:
 		&"boot":
-			if _frame in [8, 14]:
+			# v0.10.5 S5: Play, then (the hub, v0.9.0 HB) to the Portal Machine, E, the Blade.
+			if _frame == 8:
 				_key(KEY_ENTER, true)
-			if _frame in [9, 15]:
+			if _frame == 9:
+				_key(KEY_ENTER, false)
+			if _main.hub != null and _main.driver == null and _step_frame % 60 == 20:
+				var hw := _main.hub.driver.world
+				hw.actors.set_pos(0, HubLayout.to_sim(Vector2(0.0, -3.4)))
+				hw.vel = Vector2.ZERO
+			if _main.hub != null and _main.driver == null and _step_frame % 60 == 40:
+				_key(KEY_E, true)
+			if _main.hub != null and _main.driver == null and _step_frame % 60 == 41:
+				_key(KEY_E, false)
+			if _main.hub != null and _main.driver == null and _step_frame % 60 == 55:
+				_key(KEY_ENTER, true)
+			if _main.hub != null and _main.driver == null and _step_frame % 60 == 56:
 				_key(KEY_ENTER, false)
 			if _main.driver != null and _step_frame > 60:
 				var w := _main.driver.world
@@ -170,6 +184,7 @@ func _key(code: Key, pressed: bool) -> void:
 	ev.keycode = code
 	ev.pressed = pressed
 	Input.parse_input_event(ev)
+	Input.flush_buffered_events()
 
 
 func _axis(axis: JoyAxis, value: float) -> void:
@@ -177,3 +192,4 @@ func _axis(axis: JoyAxis, value: float) -> void:
 	ev.axis = axis
 	ev.axis_value = value
 	Input.parse_input_event(ev)
+	Input.flush_buffered_events()

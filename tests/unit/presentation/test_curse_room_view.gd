@@ -71,9 +71,11 @@ func test_the_altar_is_its_own_dark_model_in_a_dark_pact_room() -> void:
 	var rect := w.floor_layout.rooms[w.ev.room[k]]
 	assert_not_null(room.shroud, "a dark shroud over its floor")
 	assert_eq(SimPlane.to_sim(room.shroud.position), rect.get_center(), "over the curse room")
-	var veil := (room.shroud.material_override as StandardMaterial3D).albedo_color
+	var veil: Color = (room.shroud.material_override as ShaderMaterial).get_shader_parameter("tint")
 	assert_lt(veil.get_luminance(), 0.05, "dark")
-	assert_gte(veil.a, 0.75, "darker than N17's veil (0.62)")
+	assert_lte(veil.a, 0.5, "v0.10.5 S5: 40 % lighter than v0.8.0 (0.78)")
+	assert_not_null(room.altar_light, "a key light on the altar")
+	assert_gte(room.altar_light.light_energy, 1.5, "bright enough to read the model")
 	assert_lt(room.cold.light_energy, 0.5, "a low light")
 	assert_false(room.cold.shadow_enabled, "no shadow (the light budget)")
 	assert_gt(room.cold.light_color.b, room.cold.light_color.r, "a cold one")
@@ -117,7 +119,7 @@ func test_the_four_purple_ritual_sigils_not_the_element_glyphs() -> void:
 		-1,
 		"out of the biome's fog (Frozen Shore's turned them into pale squares)"
 	)
-	assert_true((room.shroud.material_override as StandardMaterial3D).disable_fog, "the veil too")
+	assert_ne(CurseRoomView.SHROUD_SHADER.find("fog_disabled"), -1, "the veil too")
 	var big := room.sigils[0]
 	assert_eq(room.cells[0], 0, "the large one")
 	assert_almost_eq(

@@ -23,9 +23,12 @@ const GLYPH_Y := 1.45
 const GLYPH_ENERGY := 2.6
 const LIGHT_ENERGY := 1.3
 ## v0.8.0 N17: the curse altar's stone, and the owner's model that replaces it.
-const CURSE_STONE := Color("#1C1D24")
-const CURSE_TOP := Color("#2A2B36")
+const CURSE_STONE := Color("#4A4C5E")  # v0.10.5 S5: lifted from #1C1D24 (a black silhouette); starting value
+const CURSE_TOP := Color("#62647A")  # v0.10.5 S5: lifted from #2A2B36; starting value
 const CURSE_MODEL_ID := &"curse_altar"
+## v0.10.5 S5 (owner: "you can't even see the model"): the owner's altar texture is near black, so its copy of the
+## material also glows a little (a cool self-light); the shared material is untouched. Starting value.
+const CURSE_MODEL_LIFT := 0.22
 ## v0.8.0 N17 (owner, 2026-10-18: "give a little light on the floating symbol over the altar"): the altar's crystal
 ## light: cold violet, low, short, no shadow (BIOME_PERF_AND_LIGHT: never one of the 4 shadow casters), faded out with
 ## distance, pulsing gently with the room's glyphs (CurseRoomView.GLOW_SPEED; reduced motion: steady).
@@ -194,7 +197,7 @@ func make_curse_altar(k: int) -> Node3D:
 	var model := ShopModels.get_model(CURSE_MODEL_ID)
 	curse_uses_model = not model.is_empty()
 	if curse_uses_model:
-		var body := _mesh(model["mesh"], model["material"])
+		var body := _mesh(model["mesh"], _lifted(model["material"]))
 		body.name = "Model"
 		n.add_child(body)
 	else:
@@ -337,4 +340,17 @@ func _mesh(mesh: Mesh, mat: Material) -> MeshInstance3D:
 	var m := MeshInstance3D.new()
 	m.mesh = mesh
 	m.material_override = mat
+	return m
+
+
+static func _lifted(mat: Material) -> Material:
+	var std := mat as StandardMaterial3D
+	if std == null:
+		return mat
+	var m := std.duplicate() as StandardMaterial3D
+	m.emission_enabled = true
+	m.emission = Color(0.7, 0.66, 1.0)
+	if std.albedo_texture != null:
+		m.emission_texture = std.albedo_texture
+	m.emission_energy_multiplier = CURSE_MODEL_LIFT
 	return m

@@ -19,7 +19,34 @@ extends Node3D
 ## Once the altar's choice is taken everything fades to embers. Presentation only (EI-07): reads WorldReader's curse
 ## altar, its room, its crystals, the doorways and the altar's state.
 
-const SHROUD := Color(0.01, 0.006, 0.02, 0.78)
+## v0.10.5 S5 (owner: "too dark, you can't see the altar model ... no transition between the floor colors"). Starting
+## values, not measurements: the veil's alpha was 0.78 (now about 40 % less), the veil's edge fades out over FEATHER_M
+## beyond the room's rect (it was a hard straight cut), and a cold key light hangs over the altar so its model reads.
+const VEIL_ALPHA := 0.47  # starting value
+const SHROUD := Color(0.01, 0.006, 0.02, VEIL_ALPHA)
+const FEATHER_M := 1.5  # starting value: the veil's soft edge (m)
+const ALTAR_LIGHT := Color("#D8D2FF")  # starting value: a pale violet-white
+const ALTAR_LIGHT_ENERGY := 4.0  # starting value (was 2.0)
+const ALTAR_LIGHT_RANGE := 5.0  # starting value (m)
+const ALTAR_LIGHT_HEIGHT := 1.6  # starting value (m above the floor; was 2.6)
+## The light stands this far toward the camera (m, the iso camera's ground-back axis): it hits the faces we see.
+const ALTAR_LIGHT_FRONT := 0.8  # starting value
+## The veil: full inside the room, fading to nothing over `feather` m beyond its edge (no fog: a foggy biome would wash
+## it out to its fog colour).
+const SHROUD_SHADER := """shader_type spatial;
+render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
+uniform vec4 tint : source_color = vec4(0.0, 0.0, 0.0, 0.5);
+uniform vec2 half_room = vec2(5.0);
+uniform float feather = 1.5;
+varying vec2 local_xz;
+void vertex() { local_xz = VERTEX.xz; }
+void fragment() {
+	vec2 q = abs(local_xz) - half_room;
+	float d = length(max(q, vec2(0.0)));
+	ALBEDO = tint.rgb;
+	ALPHA = tint.a * (1.0 - smoothstep(0.0, feather, d));
+}
+"""
 const COLD := Color("#6E78E0")
 const SIGIL := Color("#A86BFF")
 const COLD_ENERGY := 0.45
@@ -53,6 +80,8 @@ const CRYSTAL_RED := Color("#E0365A")
 
 var shroud: MeshInstance3D
 var cold := OmniLight3D.new()
+## v0.10.5 S5: the key light over the altar.
+var altar_light := OmniLight3D.new()
 ## Every sigil drawn: the big floor one first, the ring's, then the wall ones.
 var sigils: Array[MeshInstance3D] = []
 ## The floor sigils (the big one and the ring), the first entries of `sigils`.
@@ -96,6 +125,18 @@ func setup(reader: WorldReader) -> void:
 	cold.distance_fade_length = 8.0
 	cold.position = SimPlane.to_3d(room.get_center(), COLD_HEIGHT)
 	add_child(cold)
+	altar_light.name = "AltarLight"
+	altar_light.light_color = ALTAR_LIGHT
+	altar_light.light_energy = ALTAR_LIGHT_ENERGY
+	altar_light.omni_range = ALTAR_LIGHT_RANGE
+	altar_light.shadow_enabled = false
+	altar_light.distance_fade_enabled = true
+	altar_light.distance_fade_begin = 30.0
+	altar_light.distance_fade_length = 8.0
+	altar_light.position = (
+		SimPlane.to_3d(at, ALTAR_LIGHT_HEIGHT) + Vector3(0.7071, 0.0, 0.7071) * ALTAR_LIGHT_FRONT
+	)
+	add_child(altar_light)
 	var big := _sigil(0, BIG_SIZE, true)
 	big.position = SimPlane.to_3d(at, 0.04)
 	_add(big, 0, 1.0)
@@ -313,14 +354,16 @@ func _build_shroud(room: Rect2) -> void:
 	shroud = MeshInstance3D.new()
 	shroud.name = "Shroud"
 	var plane := PlaneMesh.new()
-	plane.size = room.size
+	plane.size = room.size + Vector2.ONE * FEATHER_M * 2.0
 	shroud.mesh = plane
-	var m := StandardMaterial3D.new()
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	m.albedo_color = SHROUD
+	var sh := Shader.new()
+	sh.code = SHROUD_SHADER
+	var m := ShaderMaterial.new()
+	m.shader = sh
+	m.set_shader_parameter("tint", SHROUD)
+	m.set_shader_parameter("half_room", room.size * 0.5)
+	m.set_shader_parameter("feather", FEATHER_M)
 	m.render_priority = 2
-	m.disable_fog = true  # a foggy biome (Frozen Shore) would wash the veil out to its fog colour
 	shroud.material_override = m
 	shroud.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	shroud.position = SimPlane.to_3d(room.get_center(), 0.03)
