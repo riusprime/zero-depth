@@ -115,3 +115,29 @@ func test_the_same_seed_marks_the_same_puzzle() -> void:
 	assert_eq(a.walls.size(), walls, "the floor's walls are untouched")
 	assert_eq(RuneRooms.mark(a, 0, PackedInt32Array(), PackedVector2Array()), -1, "not drawn: none")
 	assert_eq(a.rune_room, -1)
+
+
+## v0.10.5 S14: a floor saved while it held a rune room, rebuilt at the data's chance 0, drops the puzzle cleanly.
+func test_an_old_saves_rune_room_is_dropped_on_load() -> void:
+	RuneLab.force_chance()
+	var repo := RuneLab._held
+	var w := SaveLab.build_floor(SaveLab.run_state(34, 2, &"blade", 0, repo), &"", repo)
+	assert_not_null(w.runes, "built with a rune room")
+	if w.runes == null:
+		RuneLab.restore_chance()
+		return
+	var pillars := w.runes.pillars.duplicate()
+	for i in 5:
+		w.step(InputFrame.new())
+	var snap := WorldSnapshot.take(w)
+	RuneLab.restore_chance()  # the data's chance: 0
+	var again := SaveLab.build_floor(SaveLab.run_state(34, 2, &"blade", 0, repo), &"", repo)
+	assert_null(again.runes, "rebuilt without a rune room")
+	assert_eq(WorldSnapshot.apply(again, snap), "", "the old save still loads")
+	assert_null(again.runes, "the restored rune state is dropped")
+	assert_eq(again.floor_layout.rune_room, -1)
+	for p in pillars:
+		assert_eq(again.interactables.enabled[p], 0, "no pillar takes a press")
+	for i in 30:
+		again.step(InputFrame.new())
+	assert_eq(again.tick, w.tick + 30 - 0, "and the floor plays on")

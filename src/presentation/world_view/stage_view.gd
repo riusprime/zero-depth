@@ -864,7 +864,7 @@ func _build_shards(
 		special.append(reader.floor_room(reader.timed_room()).get_center())
 		for k in reader.timed_switch_count():
 			clear.append(reader.interactable_pos(reader.timed_switch_entry(k)))
-	if reader.has_rune_puzzle():  # v0.9.0 RA: none in its hidden room or round the pillars
+	if reader.has_rune_puzzle() and reader.rune_room() >= 0:  # v0.9.0 RA: none in its hidden room or round the pillars
 		special.append(reader.floor_room(reader.rune_room()).get_center())
 		for k in reader.rune_pillar_count():
 			clear.append(reader.interactable_pos(reader.rune_pillar_entry(k)))

@@ -650,6 +650,7 @@ static func apply(base: World, snap: Dictionary) -> String:
 	if err != "":
 		return err
 	_pad_added(base)  # v0.6.0 MX2: an older save's stores get their new per-entry arrays
+	RuneAlignment.drop_orphan(base)  # v0.10.5 S14: a saved rune room the rebuilt floor no longer has
 	if not data.has(&"gamble_wins"):  # v0.8.0 N14 (O72): every use before N14 won a stat
 		base.gamble_wins = base.gamble_uses
 		base.gamble_fail_tick = -1
