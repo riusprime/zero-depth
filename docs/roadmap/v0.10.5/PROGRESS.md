@@ -7,8 +7,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.
 
 - The owner's v0.9.5 + v0.10.0 feedback and the theory audit are answered and planned (PLAN, THEORY_AUDIT,
   P1_ELEGANCE, O1_REMOVAL_LIST).
-- **Merged:** S1, S2, S3, S4 (verified here), S5, S14, S15 (check only).
-- **Building:** S5b, S6, S15b (Sonnet), O2a (Opus).
+- **Merged:** S1, S2, S3, S4, S6 (verified here), S5, S5b, S14, S15 (check only).
+- **Building:** S7, S9, S15b (Sonnet), O2a (Opus).
 - **Next:** O1's removal (approved), then the rest of wave 1.
 - **Waiting on the owner:** the G1/G2 drafts as they land.
 
@@ -31,6 +31,10 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
    - `godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/presentation/test_warden_avatar.gd,res://tests/unit/presentation/test_floor_receiver.gd,res://tests/e2e/test_e2e_arrival.gd,res://tests/unit/sim/test_chase_field.gd,res://tests/unit/presentation/test_melee_strikes.gd,res://tests/unit/presentation/test_windup_tells.gd,res://tests/unit/presentation/test_twin_warden_views.gd -gexit`:
      Scripts 7, Tests 42, Passing Tests 42, Asserts 12691.
    - `... -gdir=res://tests/golden -gexit`: Scripts 1, Tests 2, Passing Tests 2, Asserts 4.
+
+2. **S6 on this branch** (lead, at `6adc22e2`): `... -gdir=res://tests/golden -gexit`: Scripts 1, Tests 2, Passing
+   Tests 2, Asserts 4 (no golden moved). `... -gtest=res://tests/e2e/test_e2e_reward_cards.gd,res://tests/e2e/test_e2e_codex.gd
+   -gexit`: Scripts 2, Tests 5, Passing Tests 5, Asserts 112.
 
 ## Goldens changed on purpose
 - `tests/golden/fixtures/modifier_equivalence.json` (S1: the combo hit-stop 4,4,5,8 → 3,3,3,5 ticks; Blade-all now hits 139, damage 4160, kills 14)
