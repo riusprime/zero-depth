@@ -217,6 +217,8 @@ value or by an owner decision, and the change is noted here.
   utility) for 10 shards per level (was 25; M-LOOP, v0.4.0 TU) to free its slot for a later card: a way to change a build's direction, paid for. Starting values; evidence:
   `docs/roadmap/v0.5.0/evidence/SHOP.md`.
 
+- **Chests and free altars: +~12 % (v0.10.5 S7, owner 2026-11-01; starting value).** `extra_chest_permille` and `extra_altar_permille` (120 each, `data/rewards/floor.tres`) add whole extras plus a remainder chance after a floor's usual placement (`Rewards._place_extras`, loot stream); card rewards per chest/altar, shops, the boss altar and the epic altar are unchanged.
+
 ## E. Enemies and the stress matrix
 
 **The six slice behaviours.** The names are fixed; each behaviour's spec is decided by the owner in the Phase 0 of

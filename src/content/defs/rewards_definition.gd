@@ -11,6 +11,10 @@ extends ContentDef
 ## v0.5.5 EC (owner S1, "max 2 per floor and the rest should be chests"): at most this many of the floor's placed
 ## altars (0 = no cap); the altars rolled past it become chests, so the floor keeps its reward spots.
 @export var altars_cap := 2
+## v0.10.5 S7 (owner 2026-11-01, "10 to 15% more loot"; a starting value): per mille more chests / free altars a floor
+## holds than it rolls (120 = +12 %). Whole extras plus a remainder chance; needs a free item spot.
+@export_range(0, 1000) var extra_chest_permille := 0
+@export_range(0, 1000) var extra_altar_permille := 0
 ## v0.9.0 FV (owner Q24, "Scale with floor size"): smaller floors place fewer. Band k holds the floors of at most
 ## count_rooms[k] rooms (the start hall included, the boss room not; ascending) and draws altars and chests from its
 ## own inclusive ranges; a floor with more rooms than the last band draws from altars_min..chests_max above. Empty:

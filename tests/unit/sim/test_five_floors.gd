@@ -239,7 +239,7 @@ func _walk(f: FloorLayout, tag: String, rooms: bool) -> bool:
 
 
 ## Altars and chests by the floor's rooms (data/rewards: up to 11 rooms 2 altars and 1-2 chests, up to 14 rooms 2
-## and 2, more rooms 2-3 and 2-3 as in v0.8.0; at most 2 altars stand, S1), as placed on real floors of the run.
+## and 2, more rooms 2-3 and 2-3 as in v0.8.0; at most 2 altars stand, S1; v0.10.5 S7: plus up to one extra of each)
 func test_loot_follows_the_floor_size() -> void:
 	var t := ContentCompiler.compile_rewards(_repo.get_def(&"rewards", &"floor"))
 	assert_eq(t.counts_for(10), PackedInt32Array([2, 2, 1, 2]))
@@ -256,9 +256,10 @@ func test_loot_follows_the_floor_size() -> void:
 			var rooms := w.floor_layout.room_count() - 1
 			var c := t.counts_for(rooms)
 			var n := w.rewards.size()
-			assert_between(n, c[0] + c[2], c[1] + c[3], "floor %d (%d rooms)" % [f, rooms])
+			# v0.10.5 S7: up to one extra chest and one extra altar (Rewards._place_extras)
+			assert_between(n, c[0] + c[2], c[1] + c[3] + 2, "floor %d (%d rooms)" % [f, rooms])
 			var altars := w.rewards.kind.count(RewardStore.Kind.ALTAR)
-			assert_lte(altars, t.altars_cap, "at most two altars")
+			assert_lte(altars, t.altars_cap + 1, "at most two altars and the extra one")
 			sum += n
 		totals[f] = sum
 	assert_lt(totals[1], totals[5], "the small first floor holds less than the long last one")
