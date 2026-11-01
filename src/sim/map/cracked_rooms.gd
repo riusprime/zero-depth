@@ -16,6 +16,14 @@ extends RefCounted
 const STREAM := "map:cracked_wall"
 
 
+## v0.10.5 S15d: the chance (per mille) of a cracked wall on floor `floor_index` (1 = first): `per_floor`'s entry,
+## the last entry for a later floor or loop; 0 with no entries.
+static func chance(per_floor: PackedInt32Array, floor_index: int) -> int:
+	if per_floor.is_empty():
+		return 0
+	return per_floor[clampi(floor_index - 1, 0, per_floor.size() - 1)]
+
+
 ## Marks `f`'s cracked wall (FloorLayout.crack_*). Returns the hidden room, or -1.
 static func mark(f: FloorLayout, chance_permille: int, taken: PackedInt32Array) -> int:
 	clear(f)
