@@ -69,3 +69,6 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 - 2026-11-01: S5 merged (d9aa581f); the owner looked at the close-up: "it is like white weird, it is not right, you
   should be able to see the details no it is like whited out". Next: S5b (the altar's self-glow removed; its
   albedo brightened instead; the light softened) with a close-up for the owner.
+- 2026-11-01: after S15b the owner: "the secret room is to obvious now, can't we make it like a rune shine when you
+  pass by on both sides of the wall inner and outter just in case you can not see the inner due to perspective?"
+  → S15c: cracks subtle again, no always-on seam; runes on both faces shine when the hero is within 3.5 m.
