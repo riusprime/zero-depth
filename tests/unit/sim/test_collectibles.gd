@@ -102,6 +102,7 @@ func test_the_sixteen_are_the_doc() -> void:
 
 
 func test_how_often_each_can_appear_in_a_run() -> void:
+	RuneLab.force_chance()  # v0.10.5 S14: the data's rune chance is 0; the key is still armed when the puzzle is on
 	var floors := SaveLab.floors()
 	var runs := {}
 	for d in _defs:
@@ -130,6 +131,7 @@ func test_how_often_each_can_appear_in_a_run() -> void:
 			assert_gt(
 				runs[d.id], 0, "%s can appear in a run (%d of %d)" % [d.id, runs[d.id], SEEDS]
 			)
+	RuneLab.restore_chance()
 	assert_gt(purple_runs, 0, "a run can reach the Purple Portal")
 
 
@@ -195,6 +197,7 @@ func test_the_hidden_room_gives_its_stone() -> void:
 
 
 func test_the_rune_puzzle_gives_the_aligned_key_on_floor_4_or_5() -> void:
+	RuneLab.force_chance()  # v0.10.5 S14: the data's chance is 0
 	var w := _find(func(x: World) -> bool: return x.runes != null, [4, 5])
 	assert_not_null(w)
 	if w == null:
@@ -203,6 +206,7 @@ func test_the_rune_puzzle_gives_the_aligned_key_on_floor_4_or_5() -> void:
 	var early := _find(func(x: World) -> bool: return x.runes != null, [1, 2, 3])
 	if early != null:
 		assert_false(_armed(early).has(&"aligned_key"), "not before floor 4")
+	RuneLab.restore_chance()
 
 
 func test_the_timed_door_gives_the_sand_shell_from_floor_3() -> void:
