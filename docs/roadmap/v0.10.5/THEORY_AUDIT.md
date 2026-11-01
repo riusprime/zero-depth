@@ -1,6 +1,6 @@
 # G1 audit: improving Zero Depth from game-design theory
 
-**Status: waiting on the owner.** Nothing here is built before the answers arrive (OWNER_GATES §2).
+**Status: answered by the owner, 2026-11-01** (the Decisions table below); the work is planned in [`PLAN.md`](PLAN.md).
 
 ## The owner's request (2026-11-01)
 
@@ -81,4 +81,21 @@ out by the owner, 2026-11-01. The other IDs keep their numbers.
 
 | ID | Answer | Built in |
 |---|---|---|
+| P1 | "let's go through this one together" | v0.10.5 P1 (worksheet) |
+| P2 | "very nice idea, let's use the pending cards as this" (the 22 utility cards, D23) | v0.10.5 O9 |
+| P3 | Yes | v0.10.5 O10 |
+| P4 | Yes: show it; the danger triangles become a hazard-striped bar like the HP bar, green → red, blinking when full; the catch-up as a separate tag | v0.10.5 O6 |
+| P5 | Change: a dash refund on a perfect Vent | v0.10.5 S12 |
+| P6 | Yes, and shards stay on the floor instead of flying | v0.10.5 O7 |
+| P7 | Yes | v0.10.5 O11 |
+| P8 | Yes | v0.10.5 S13 |
+| P9 | Yes ("it will also help fps") | v0.10.5 O12 |
+| P10 | Yes | v0.10.5 O13 |
 | P11 | **Left out** (owner, 2026-11-01) | — |
+| P12 | Yes | v0.10.5 O14 |
+| P13 | Yes ("go for it") | v0.10.5 O5b |
+| P14 | Yes | v0.10.5 O15 |
+| P15 | Yes ("we can try sure") | v0.10.5 O16 |
+| P16 | Yes | v0.10.5 O16 |
+| P17 | Change: a smaller room in the hub's empty bottom area | v0.10.5 O17 |
+| P18 | Yes | v0.10.5 O18 |
