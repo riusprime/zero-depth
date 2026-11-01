@@ -14,6 +14,9 @@ var count_rooms := PackedInt32Array()
 var band_counts: Array[PackedInt32Array] = []
 ## v0.5.5 EC (S1): the most placed altars per floor (0 = no cap); the data ships 2.
 var altars_cap := 0
+## v0.10.5 S7: per mille more chests / free altars than the floor rolls (Rewards._place_extras); the data ships 120.
+var extra_chest_permille := 0
+var extra_altar_permille := 0
 ## Floor-1 chest prices by chest order; the last repeats.
 var chest_prices := PackedInt32Array([40, 60, 80])
 ## Each floor after the first adds this per mille of the floor-1 price.
