@@ -26,7 +26,7 @@ const VEIL_ALPHA := 0.47  # starting value
 const SHROUD := Color(0.01, 0.006, 0.02, VEIL_ALPHA)
 const FEATHER_M := 1.5  # starting value: the veil's soft edge (m)
 const ALTAR_LIGHT := Color("#D8D2FF")  # starting value: a pale violet-white
-const ALTAR_LIGHT_ENERGY := 4.0  # starting value (was 2.0)
+const ALTAR_LIGHT_ENERGY := 2.5  # starting value (S5b: was 4.0, flattened the shading)
 const ALTAR_LIGHT_RANGE := 5.0  # starting value (m)
 const ALTAR_LIGHT_HEIGHT := 1.6  # starting value (m above the floor; was 2.6)
 ## The light stands this far toward the camera (m, the iso camera's ground-back axis): it hits the faces we see.
