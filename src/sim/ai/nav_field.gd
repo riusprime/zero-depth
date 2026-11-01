@@ -14,7 +14,7 @@ extends RefCounted
 
 const CELL := 0.5
 const CLEARANCE := 0.6
-const PERIOD := 10
+const PERIOD := 12
 const UNREACHED := 1 << 30
 ## v0.4.0 SC: the world's floods stop this many steps (half-metre cells) from the player, about 80 m of path: a whole
 ## floor's flood cost up to ~11 ms every PERIOD ticks, while enemies spawn in the player's room or a neighbour. An
