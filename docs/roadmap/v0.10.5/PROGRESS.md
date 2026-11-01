@@ -7,8 +7,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.
 
 - The owner's v0.9.5 + v0.10.0 feedback and the theory audit are answered and planned (PLAN, THEORY_AUDIT,
   P1_ELEGANCE, O1_REMOVAL_LIST).
-- **Merged:** S1, S2, S3, S4, S6 (verified here), S5, S5b, S14, S15 (check only).
-- **Building:** S7, S9, S15b (Sonnet), O2a (Opus).
+- **Merged:** S1, S2, S3, S4, S5, S6 (verified here), S5b, S9, S10, S14, S15 (check only), O2a.
+- **Building:** S7, S12, S15b (Sonnet), O1 removal (Opus).
 - **Next:** O1's removal (approved), then the rest of wave 1.
 - **Waiting on the owner:** the G1/G2 drafts as they land.
 
@@ -22,6 +22,13 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 | S2 the Warden's slam band near-white again | d316f220 | see Verification 1 |
 | S3 the path refresh every 12 ticks | 3625d1a8 | see Verification 1 |
 | S4 the hero stands on the arrival receiver | cf0cd9e1 | see Verification 1; arrival shots looked at by the lead |
+| S5 + S5b a curse room you can see in; the altar shows its details | 3a80cafd, d9aa581f, fef99113 | Verification 3; S5b close-up shown to the owner |
+| S6 a boss core is Legendary 35 % of the time | 92668a8b | agent: test_core_theft 10/10 (200 seeds: 40 % legendary); Verification 2 |
+| S9 calmer walls (Night Rocks, Frozen Shore) | 04b1ed04 | agent: test_procedural_wall 13/13, content 16/16; busy-ness Night Rocks −28 %, Frozen Shore flat; shots shown to the owner |
+| S10 the plain Pulse bolt back; the shock Ring's sparks smaller, orbiting | 96a87b71 | agent: test_vx6_lightning 16/16, test_vx2_forms 15/15; which Ring the owner meant: asked |
+| S14 no rune puzzle room; an old save's rune room dropped cleanly | 7d265ab2, 6a5c4e8b | agent: 9 rune/save/schema files all pass (e.g. test_world_snapshot 15/15, test_old_saves 11/11) |
+| S15 cracked walls counted and framed (check only) | fae62444 | [evidence/S15_CRACKED_WALLS.md](evidence/S15_CRACKED_WALLS.md) |
+| O2a the Lantern Shade and the Clockwork Judge hittable more often | f59ee0f2 | [evidence/O2A_INVULNERABLE.md](evidence/O2A_INVULNERABLE.md): invulnerable share 37 → 13 % and 30 → 8 %; 23 scripts 198/198 |
 
 ## Verification
 1. **S2–S4 re-tested on this branch** (the agents' own runs were on an old base, `d33bc82a`, see History). Lead,
