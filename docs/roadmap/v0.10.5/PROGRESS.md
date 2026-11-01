@@ -7,10 +7,10 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.
 
 - The owner's v0.9.5 + v0.10.0 feedback and the theory audit are answered and planned (PLAN, THEORY_AUDIT,
   P1_ELEGANCE, O1_REMOVAL_LIST).
-- **Merged:** S1, S2, S3, S4, S5, S6 (verified here), S5b, S9, S10, S14, S15 (check only), O2a.
-- **Building:** S7, S12, S15b (Sonnet), O1 removal (Opus).
+- **Merged:** wave 1 except S7: S1–S6, S5b, S8–S15, S15b (S15, S13 check only), and O2a.
+- **Building:** S7 (Sonnet), O1 removal (Opus). Wave 2 drafts start as the Opus slot frees.
 - **Next:** O1's removal (approved), then the rest of wave 1.
-- **Waiting on the owner:** the G1/G2 drafts as they land.
+- **Waiting on the owner:** which Ring (S10); cracked walls per-floor chance (S15b); the G1/G2 drafts as they land.
 
 ## Owner decisions (2026-11-01)
 All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and P1_ELEGANCE "Owner's answers".
@@ -28,6 +28,10 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 | S10 the plain Pulse bolt back; the shock Ring's sparks smaller, orbiting | 96a87b71 | agent: test_vx6_lightning 16/16, test_vx2_forms 15/15; which Ring the owner meant: asked |
 | S14 no rune puzzle room; an old save's rune room dropped cleanly | 7d265ab2, 6a5c4e8b | agent: 9 rune/save/schema files all pass (e.g. test_world_snapshot 15/15, test_old_saves 11/11) |
 | S15 cracked walls counted and framed (check only) | fae62444 | [evidence/S15_CRACKED_WALLS.md](evidence/S15_CRACKED_WALLS.md) |
+| S8 + S11 OWNER_TODO trimmed; streams locked (EI-05) | 6035194a | docs only |
+| S12 a perfect Vent (≥ 90 heat) refunds the dash | 0a8e69bd | agent: test_heat 19/19, player kit 6/6, skill 13/13, e2e heat 1/1, golden 2/2 |
+| S13 room density measured (check only) | 3ceb5eaa | [evidence/ROOM_DENSITY.md](evidence/ROOM_DENSITY.md): none flagged; closest room_1x1_2 (75.9 % open) |
+| S15b cracked walls you can see (cracks on 4 faces, seam glow, cutaway fade); chance unchanged | fbd4b8b9 | agent: cracked rooms 2/2, schema 5/5, 2 e2e 1/1 each, golden 2/2; shot shown to the owner. Floor rates 3 / 21 / 8 % (no single chance reaches 1 in 3) |
 | O2a the Lantern Shade and the Clockwork Judge hittable more often | f59ee0f2 | [evidence/O2A_INVULNERABLE.md](evidence/O2A_INVULNERABLE.md): invulnerable share 37 → 13 % and 30 → 8 %; 23 scripts 198/198 |
 
 ## Verification
