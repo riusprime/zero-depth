@@ -184,8 +184,8 @@ answers.
   `data/combos`, `data/legendary`) that no run can offer today (not in a pool, a pacing table, a shop, a core, an
   event, a combo, a test fixture the game needs). Present the list to the lead, then remove them with their code
   paths, strings and tests. Old saves that name a removed card load without it (a migration, with a test).
-- **Also removed here (P1, owner 2026-11-01: "The combos can go away yeah, that's old"):** the 8 named combos and the
-  8 ability combos in `data/combos/` with their badges and code; the element pairs stay unless found unused. The
+- **Also removed here (P1, owner 2026-11-01: "The combos can go away yeah, that's old"; then, told 4 still form, "Keep those 4"):** the 12 combos that can no longer form, and the
+  combo code only they use. **Blood Harvest, Shatter Dash, Slipstream and Spiked Phase stay** (they still form), with their badges; the element pairs stay. The
   5 flat curses (Leaky Core, Price Gouge, Swarm Call, Swift Foes, Withering) go in the same step (owner: "Yes, cut the 5").
 - **Gate:** the removal list goes to the owner as one table before deleting.
 - **Done when:** the content, arch, old-save and every-card soak tests pass; D69's pool test ceiling matches.

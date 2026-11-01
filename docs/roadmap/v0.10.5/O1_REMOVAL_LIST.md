@@ -382,3 +382,7 @@ What the removal touches:
 - **Balance.** 7 curses stay (blood_price, brittle, fevered, glass_heart, heavy_hands, rooted, tunnel_vision). Check
   that the curse room and cursed chests still have enough choices, and whether `data/event_rules` sets a curse count
   that needs 3+ distinct curses.
+
+## Owner decision (2026-11-01)
+
+"Keep those 4": Blood Harvest, Shatter Dash, Slipstream and Spiked Phase stay, with their badge row and `combo_icon_view.gd`. The other 12 combos, the 60 retired card ids and the 5 flat curses are removed, with tombstones for saved indices (section 5.1).
