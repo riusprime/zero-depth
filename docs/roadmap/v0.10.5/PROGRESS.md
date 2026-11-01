@@ -32,6 +32,9 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 | S12 a perfect Vent (≥ 90 heat) refunds the dash | 0a8e69bd | agent: test_heat 19/19, player kit 6/6, skill 13/13, e2e heat 1/1, golden 2/2 |
 | S13 room density measured (check only) | 3ceb5eaa | [evidence/ROOM_DENSITY.md](evidence/ROOM_DENSITY.md): none flagged; closest room_1x1_2 (75.9 % open) |
 | S15b cracked walls you can see (cracks on 4 faces, seam glow, cutaway fade); chance unchanged | fbd4b8b9 | agent: cracked rooms 2/2, schema 5/5, 2 e2e 1/1 each, golden 2/2; shot shown to the owner. Floor rates 3 / 21 / 8 % (no single chance reaches 1 in 3) |
+| S15c cracked walls subtle; runes shine on every face within 3.5 m | f3b0c3d0, efd79f9e | agent: breakables view 2/2, 2 e2e 1/1 each, cracked rooms 2/2; far/near shots shown to the owner |
+| S15d cracked walls: a chance per floor (1000 / 350 / 750 ‰) | 4778b7ba | agent: 200 seeds → 11.5 / 28.5 / 31.0 %; cracked rooms 3/3, schema 5/5, content 7/7, e2e 1/1, golden 2/2 |
+| O18 a Lore page in the Codex (9 lines, en + es) | dc2c6404 | agent: 8 files all pass (codex 12/12, lore 3/3, locale 6/6, e2e codex 3/3); shot `build/shots/v0.10.5/codex_lore_es.png` |
 | O2a the Lantern Shade and the Clockwork Judge hittable more often | f59ee0f2 | [evidence/O2A_INVULNERABLE.md](evidence/O2A_INVULNERABLE.md): invulnerable share 37 → 13 % and 30 → 8 %; 23 scripts 198/198 |
 
 ## Verification

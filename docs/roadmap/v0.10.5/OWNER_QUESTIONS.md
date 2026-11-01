@@ -12,6 +12,9 @@ until the owner says so.
 
 | # | Step | The lead's pick | To go over |
 |---|---|---|---|
+| 1 | O18 Lore | The 9 lines in O18_LORE.md, written by the lead; a Lore page in the Codex; 4 open from the start, 5 unlock when met | Keep, edit or cut any line (en and es) |
+| 2 | O18 Lore | Runes' entry unlocks on the first boss kill or a solved rune puzzle (there is no rune-fragment event) | OK, or add a fragment event? |
+| 3 | S15d | Cracked walls 1000 / 350 / 750 ‰ per floor → 11.5 / 28.5 / 31 % (floor 1 capped by free dead ends) | OK? |
 
 ## Questions
 
