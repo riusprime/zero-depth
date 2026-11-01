@@ -46,6 +46,9 @@ const BLUE_LEAN := 0.35
 const PLAIN_LENGTH := 0.38
 ## v0.10.0 VX2: the pack draws the hero's shots in flight (false: the pulses of GF1, for before/after shots).
 const PACK_BOLTS := true
+## v0.10.5 S10 (owner, on the VFX pack): a shot with no element is drawn by the pulse (GF1's look, as before VX2); the
+## element shots keep the pack's projectiles. Starting value: true.
+const PLAIN_BOLT_IS_PULSE := true
 ## The Lance's ball (the pack's big orb) per metre of its radius.
 const BIG_PER_RADIUS := 1.7
 const TRAIL_SCALE := {"low": 0.45, "medium": 0.75, "high": 1.0}
@@ -230,6 +233,8 @@ func _pack_of(reader: WorldReader, i: int, lance: bool) -> Array:
 	var first := ElementLooks.first(elements)
 	if lance and not reader.projectile_is_wisp(i):
 		return [PackLooks.id_of("big", first), PackLooks.colors(elements), BIG_PER_RADIUS]
+	if first == &"" and PLAIN_BOLT_IS_PULSE:
+		return []  # v0.10.5 S10 (owner): the plain Pulse bolt keeps its pulse look (no pack effect)
 	var k: float = PackLooks.BOLT_PER_RADIUS[PackLooks.shaped(first)]
 	return [PackLooks.id_of("bolt", first), PackLooks.colors(elements), k]
 
@@ -237,7 +242,7 @@ func _pack_of(reader: WorldReader, i: int, lance: bool) -> Array:
 ## v0.10.0 VX2: whether the pack draws shot `id` now (at `p` on the plane, flying along `d`, core radius `r`): its pack
 ## projectile is kept on it, facing its flight. False: the pulse draws it (no pack, or the family was full).
 func _pack_draws(id: int, p: Vector2, d: Vector2, r: float) -> bool:
-	if not hold.active() or not _pk.has(id):
+	if not hold.active() or not _pk.has(id) or (_pk[id] as Array).is_empty():
 		return false
 	var pk: Array = _pk[id]
 	var xf := Transform3D(

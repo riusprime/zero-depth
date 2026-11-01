@@ -27,6 +27,11 @@ const FIELD_STRIKE_TICKS := 24.0
 const SHOCK_STRIKE_TICKS := 18.0
 const SHOCK_REACH_M := 0.5
 const SHOCK_FORKS := 2
+## v0.10.5 S10 (owner, on the VFX pack: "the sparks should go around it and be way smaller"): the shock ring's sparks
+## are short arcs that ride the ring's edge, orbiting round it (not bolts spanning the edge). Starting values.
+const RING_SPARK_SIZE := 0.33  # their length and width, over the old edge arcs (0.8 of each gap, width 0.4)
+const RING_SPARK_ORBIT_PER_TICK := 0.05  # radians per tick they travel round the ring
+const RING_SPARK_MAX := 6  # at most this many (the old 8 would crowd at a third of the size)
 
 var layer: VfxLayer
 var holds := PackHold.new()
@@ -225,14 +230,14 @@ func ring(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
 	if _pack():
 		rim = holds.touch(VfxPackViews.zkey(sd, 32, c), RING, &"area", c, r * AREA_PER_M, colors())
 	if rim != null:
-		var n := clampi(int(r * 1.5 * layer.density), 3, 8)
+		var n := clampi(int(r * 1.5 * layer.density), 3, RING_SPARK_MAX)
 		for k in n:
-			var a0 := TAU * k / n
-			var a1 := a0 + TAU / n * 0.8
+			var a0 := TAU * k / n + RING_SPARK_ORBIT_PER_TICK * age
+			var a1 := a0 + TAU / n * 0.8 * RING_SPARK_SIZE
 			var p := c + y + Vector3(cos(a0), 0, sin(a0)) * r
 			var q := c + y + Vector3(cos(a1), 0, sin(a1)) * r
 			var f := fade * (0.7 + 0.3 * VfxCore.h(sd + int(age / 3.0), k))
-			lightning(p, q, f, age, sd + k * 5, cold, 0.4, false, 0, false)
+			lightning(p, q, f, age, sd + k * 5, cold, 0.4 * RING_SPARK_SIZE, false, 0, false)
 		layer._light(c + Vector3(0, 0.6, 0), cold, 1.6 * fade, r + 2.5)
 		return
 	var n := clampi(int(r * 3.0 * layer.density), 6, 18)  # P-13: Effects density, as its siblings

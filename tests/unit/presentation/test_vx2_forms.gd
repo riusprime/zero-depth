@@ -104,8 +104,12 @@ func test_shots_in_flight_are_pack_projectiles_that_end_with_the_shot() -> void:
 	W.run(w, 2, 0, W.S)
 	view.sync(r)
 	assert_gt(view.count(), 0)
-	assert_eq(view.hold.count(), view.count(), "every shot has its effect")
+	assert_eq(view.hold.count(), 0, "S10: a plain shot (no element) keeps its pulse")
 	assert_eq(view.ball_count(view.looks()[0]), view.count())
+	for id: int in view._pk.keys():  # an element shot's pack effect (the elements need the form view: set by hand)
+		view._pk[id] = [&"vx2_bolt_storm", {}, 3.2]
+	view._draw(1.0)
+	assert_eq(view.hold.count(), view.count(), "every shot has its effect")
 	W.run(w, 90, 0, 0)
 	view.sync(r)
 	view._draw(1.0)
