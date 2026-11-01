@@ -63,6 +63,7 @@ enum Kind {
 	COLLECTIBLE,  # v0.9.0 CL: a collectible taken (Collectibles: pos, amount = its entry, effect_id = its id)
 	STRESS_BREAK,  # v0.9.5 SM: a weak side broken (StressMarks.on_hit: pos, amount = extra damage, amount_applied = side)
 	PAIR_ON,  # v0.9.5 EE3: an element pair turned on (ElementPairs.refresh: amount = its X index 0..9, effect_id = its id)
+	DASH_REFUND,  # v0.10.5 S12: a perfect Vent readied the dash (Heat.vent: amount = heat vented)
 }
 
 ## v0.9.5 EE1 (ElementLevels): a Contagion jump's STATUS_APPLY (source: the giver, target: the receiver), and the
