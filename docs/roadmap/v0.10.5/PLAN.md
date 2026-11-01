@@ -11,8 +11,8 @@ first build step).
   questions on the same day (recorded as the "Asked" column below).
 - **How work runs (owner, 2026-11-01):** "for small direct fixes or easy tasks deploy sonnet subagents, with a very
   precise and concise task to do so they don't have to think too much, if there is a more complex task deploy a opus
-  5.5 agent". Each step below names its agent: **S** = Sonnet (a precise brief, no design), **O** = Opus 5.5 (design
-  or several systems). At most two agents run at once; each works in its own worktree, which is removed after the
+  5.5 agent", then "max 3 sonnet agents and 1 opus at the same time". Each step below names its agent: **S** = Sonnet (a precise brief, no design), **O** = Opus 5.5 (design
+  or several systems). At most three Sonnet agents and one Opus run at once; each works in its own worktree, removed after the
   merge.
 - **Gates:** every **O** step that adds something new drafts a G1 list or G2 mockups first and stops for the owner.
   Nothing new is built before the owner's answer (OWNER_GATES).
@@ -284,8 +284,8 @@ answers.
   v0.10.0 (the full suite runs there).
 
 ## Order
-1. **Wave 1** (S1–S13), two Sonnet agents at a time, in this order: S1+S3, S2+S4, S5+S6, S7+S9, S10+S12,
-   S8+S11, S13.
+1. **Wave 1** (S1–S13), up to three Sonnet agents at a time (S1, S3, S2, then S4, S5, S6, S7, S9, S10, S12,
+   S8, S11, S13), while one Opus agent works through wave 2.
 2. **Drafts for the owner** (no code): O1's removal list, O2b's rule, O3, O5a/O5b, O6, O9, O10, O11, O13–O15,
    O17, O18, and the P1 worksheet.
 3. **Builds without a gate:** O2a, O4, O7, O12, O16.
