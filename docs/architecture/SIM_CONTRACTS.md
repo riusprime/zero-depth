@@ -1268,7 +1268,7 @@ Starting values; `EnemyAi` and `BossAi` hold the rules, `data/enemies` and `data
   still stops the tick it touches the player. Walkers face the player on their plan ticks and as they attack; the
   Warden turns every tick (its facing is its armour). Timers, windups, tracking and hits still run every tick. The
   plan fields are hashed with the other AI fields.
-- **The flow field (v0.4.0 SC).** One flood a `NavField.PERIOD` (10 ticks) from the player for every enemy, stopped
+- **The flow field (v0.4.0 SC).** One flood a `NavField.PERIOD` (12 ticks, 0.2 s; v0.10.5 S3, was 10) from the player for every enemy, stopped
   `NavField.WORLD_FLOOD_STEPS` (160 half-metre steps, ~80 m of path) out, and skipped when the player is still in
   the cell of the last flood (the walls don't change between builds, so the result would be the same). An enemy past
   the bound walks straight until it is back in reach. **v0.8.0 NF (owner O90, "A then"):** the periodic flood is
