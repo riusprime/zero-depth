@@ -24,6 +24,8 @@ var cleanse_price := 60
 ## (v0.9.0 EL: the elite's stagger, its HP bonus, the ambush's distance and Marked's hunt range are gone.)
 var core_window_ticks := 120
 var core_mod_weight := 10
+## v0.10.5 S6: the chance a boss's core is Legendary, in per mille (350 as shipped; else an Epic card).
+var boss_core_legendary_permille := 350
 var drop_offset_m := 0.9
 ## v0.8.0 N17 (owner O75: "they need to appear once max per floor and 40% of floors not all the time"): the chance a
 ## floor has a curse room, in per mille (Events.curse_site, on `map:curse_room`).

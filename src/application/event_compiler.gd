@@ -149,6 +149,7 @@ static func compile_rules(def: EventRulesDefinition) -> EventRules:
 	t.cleanse_price = def.cleanse_price
 	t.core_window_ticks = SimTick.seconds_to_ticks(def.core_window_seconds)  # v0.6.0 CU: core theft
 	t.core_mod_weight = def.core_mod_weight
+	t.boss_core_legendary_permille = roundi(def.boss_core_legendary_chance * 1000.0)  # v0.10.5 S6
 	t.drop_offset_m = def.drop_offset_m
 	t.event_floor_chance_permille = def.event_floor_chance_permille  # v0.9.5 AQ
 	t.events_max_per_run = def.events_max_per_run
