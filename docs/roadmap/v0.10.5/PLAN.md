@@ -81,11 +81,13 @@ in PROGRESS "Goldens changed on purpose".
 ### Wave 1: direct fixes (Sonnet, two at a time)
 
 #### S1. A snappier Blade (L13)
-- **Files:** `data/builds/blade.tres` (`hitstop_seconds`); `docs/roadmap/v0.8.0/evidence/N1_FIXES.md` for the N1
-  values.
-- **Task:** undo N1's +20 % on the Blade's hit-stop, then cut it 25 % more (starting value). Touch only the Blade
-  numbers; the Gun's and the runner's combo values stay.
-- **Done when:** the Blade tests and the combo e2e pass; the new value is in the PLAN's PROGRESS line.
+- **Files:** `data/player/runner.tres` (the four-slash combo, Blade-only melee) and `PlayerTable.default_combo`; the
+  view's `HitStop`. (Corrected by the lead, 2026-11-01: the pause is the combo's hit-stop, which N1 raised; Lunge
+  Cleave's 7 ticks in `data/builds/blade.tres` were never raised and stay.)
+- **Task:** combo hit-stop 4,4,5,8 → 3,3,3,5 ticks (N1 undone, then 25 % less, rounded; starting values); the
+  view's hold 2.4 → 2 frames and camera kick 0.072 → 0.06 m (N1 undone). The modifier-equivalence golden moves on
+  purpose.
+- **Done when:** the combo, player-kit, hit-feel and content tests pass; the golden is named in PROGRESS.
 
 #### S2. The Warden's slam band back (L14)
 - **Files:** the Warden slam view that installed `fx_dust_ring` (TX2, `TEXTURES_2.md`).
