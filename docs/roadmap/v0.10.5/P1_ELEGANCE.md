@@ -38,7 +38,7 @@ row whose verdict becomes **Merge** or **Cut** gets its own step.
 **Owner's answers (2026-11-01):**
 1. Shrine + fountain: "nah still random around the map": **no merge**, both stay as separate rooms placed at random.
 2. The five small rooms: "let's remove the puzzle for now, and i've never seen in game a cracked wall are you sure they spawn and are visible? we should keep them tho": **the rune puzzle room is removed for now; the rest stay; the cracked wall is checked (does it spawn, can you see it).** PLAN S14, S15.
-3. Curses: "Trim them". The lead's proposal (pending the owner's OK): keep the 7 trade-off curses (a drawback and
+3. Curses: "Trim them", then "Yes, cut the 5" (owner, 2026-11-01): keep the 7 trade-off curses (a drawback and
    an upside, so they change how you play) and cut the 5 flat ones (a drawback only).
 
    | Keep (trade-off) | Drawback → upside |
@@ -58,7 +58,7 @@ row whose verdict becomes **Merge** or **Cut** gets its own step.
    | Swarm Call | more enemies in every pack |
    | Swift Foes | enemies move faster |
    | Withering | you heal less |
-4. Combos: "The combos can go away yeah, that's old": **the 8 named combos and the 8 ability combos are retired** (with O1's removal). The element-pair reactions are not an old combo; they stay unless O1 finds them unused. Curses: the trim proposal below waits for the owner's OK.
+4. Combos: "The combos can go away yeah, that's old": **the 8 named combos and the 8 ability combos are retired** (with O1's removal). The element-pair reactions are not an old combo; they stay unless O1 finds them unused.
 
 **The five small special rooms** (`data/special_rooms/`):
 

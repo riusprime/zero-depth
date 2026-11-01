@@ -185,8 +185,8 @@ answers.
   event, a combo, a test fixture the game needs). Present the list to the lead, then remove them with their code
   paths, strings and tests. Old saves that name a removed card load without it (a migration, with a test).
 - **Also removed here (P1, owner 2026-11-01: "The combos can go away yeah, that's old"):** the 8 named combos and the
-  8 ability combos in `data/combos/` with their badges and code; the element pairs stay unless found unused. If the
-  owner approves the curse trim (P1_ELEGANCE.md), the 5 flat curses go in the same step.
+  8 ability combos in `data/combos/` with their badges and code; the element pairs stay unless found unused. The
+  5 flat curses (Leaky Core, Price Gouge, Swarm Call, Swift Foes, Withering) go in the same step (owner: "Yes, cut the 5").
 - **Gate:** the removal list goes to the owner as one table before deleting.
 - **Done when:** the content, arch, old-save and every-card soak tests pass; D69's pool test ceiling matches.
 
