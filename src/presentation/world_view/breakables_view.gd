@@ -27,7 +27,7 @@ const RED := Color("#8E2B1E")
 const FIRE := Color("#FF8A2A")
 const WALL_H := 3.0
 ## How dark the cracks are with no hit (very faint) and the share each hit adds.
-const CRACK_BASE := 0.15  # S15c starting value (S15b 0.85 was too obvious; S15 0.12)
+const CRACK_BASE := 0.06  # S15c starting value (S15b 0.85 was too obvious; S15 0.12)
 ## S15b starting values: the crack bars (was 2 x 4 cm), their colour (lighter than the slab).
 const CRACK_W := 0.06
 const CRACK_D := 0.08
@@ -36,10 +36,10 @@ const SEAM_COLOR := Color("#7FD8E8")
 const SHINE_RADIUS_M := 3.5
 const SHINE_IN_S := 0.4
 const SHINE_OUT_S := 0.8
-const SHINE_ENERGY := 1.2
-const SHINE_PULSE := 0.2  # +- share of the glow
+const SHINE_ENERGY := 2.0
+const SHINE_PULSE := 0.3  # +- share of the glow
 const SHINE_PERIOD_S := 2.0
-const SHINE_SIZE_M := 1.3
+const SHINE_FIT := 0.8  # a rune is this share of the smaller side of its face
 const SHINE_TEXTURE := "res://assets/textures/kit/rune_marking.png"
 const SLAB_FADE := 0.7  # the slab's dither when the cutaway picks it (starting value)
 const CRACK_DARK := 0.25
@@ -221,23 +221,32 @@ func _build_wall(reader: WorldReader) -> void:
 					bar.rotation.z = ang
 					bar.position += Vector3(cos(ang) * 0.3, sin(ang) * -0.3, 0)
 				bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# S15c: a rune on each passage face (host room side and hidden room side), invisible until the hero comes near.
+	# S15c: a rune on all four faces (both passage faces and both ends), invisible until the hero comes near.
 	_slab_center = reader.crack_door_center()
 	_rune_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_rune_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_rune_mat.albedo_color = Color(SEAM_COLOR, 0.0)
 	if ResourceLoader.exists(SHINE_TEXTURE):
 		_rune_mat.albedo_texture = load(SHINE_TEXTURE)
-	for face in [-1.0, 1.0]:
+	# faces: [position, yaw, size]: the two passage faces (+-x) and the two end faces (+-z), each fitted
+	var fit_x := minf(width, WALL_H) * SHINE_FIT
+	var fit_z := minf(half_x * 2.0, WALL_H) * SHINE_FIT
+	var faces := [
+		[Vector3(half_x + 0.03, WALL_H * 0.5, 0), PI * 0.5, fit_x],
+		[Vector3(-half_x - 0.03, WALL_H * 0.5, 0), -PI * 0.5, fit_x],
+		[Vector3(0, WALL_H * 0.5, width * 0.5 + 0.03), 0.0, fit_z],
+		[Vector3(0, WALL_H * 0.5, -width * 0.5 - 0.03), PI, fit_z],
+	]
+	for f: Array in faces:
 		var quad := MeshInstance3D.new()
 		quad.name = "Rune"
 		var qm := QuadMesh.new()
-		qm.size = Vector2(SHINE_SIZE_M, SHINE_SIZE_M)
+		qm.size = Vector2(float(f[2]), float(f[2]))
 		quad.mesh = qm
 		quad.material_override = _rune_mat
 		quad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		quad.position = Vector3(face * (half_x + 0.03), WALL_H * 0.5, 0)
-		quad.rotation.y = face * PI * 0.5
+		quad.position = f[0]
+		quad.rotation.y = f[1]
 		quad.visible = false
 		wall.add_child(quad)
 		_runes.append(quad)
