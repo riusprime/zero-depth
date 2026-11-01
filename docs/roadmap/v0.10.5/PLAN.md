@@ -161,6 +161,19 @@ in PROGRESS "Goldens changed on purpose".
   circle. Paste the output into `evidence/ROOM_DENSITY.md` with the command and the SHA. No room changes.
 - **Done when:** the evidence file; the owner picks the rooms to change.
 
+#### S14. No rune puzzle room for now (P1, owner 2026-11-01: "let's remove the puzzle for now")
+- **Files:** `data/special_rooms/rune_puzzle.tres` (`chance_permille`).
+- **Task:** set its chance to 0 so no floor places it; keep the code and the room for later. A saved floor that
+  already holds one still loads and works.
+- **Done when:** the generation tests pass (fix any that expect a rune room); a test that 200 seeds place none.
+
+#### S15. Do cracked walls spawn, and can you see them? (P1, owner: "i've never seen in game a cracked wall are you sure they spawn and are visible? we should keep them tho")
+- **Files:** `data/special_rooms/cracked_wall.tres` (25 % of floors), `CrackedRooms.mark`, its view.
+- **Task:** count over 200 seeds how many floors place a cracked wall and where; take one shot of one from the game
+  camera. Report the count, the shot, and any cause it can't be seen (hidden behind a wall, same texture as the
+  others, culled). No fix in this step.
+- **Done when:** the count and the shot reach the lead; the fix (if any) becomes its own step.
+
 ### Wave 2: the complex work (Opus)
 
 Each O step lists its gate. A step whose gate is a G1 or G2 stops at the draft; its build half runs after the owner
@@ -171,6 +184,9 @@ answers.
   `data/combos`, `data/legendary`) that no run can offer today (not in a pool, a pacing table, a shop, a core, an
   event, a combo, a test fixture the game needs). Present the list to the lead, then remove them with their code
   paths, strings and tests. Old saves that name a removed card load without it (a migration, with a test).
+- **Also removed here (P1, owner 2026-11-01: "The combos can go away yeah, that's old"):** the 8 named combos and the
+  8 ability combos in `data/combos/` with their badges and code; the element pairs stay unless found unused. If the
+  owner approves the curse trim (P1_ELEGANCE.md), the 5 flat curses go in the same step.
 - **Gate:** the removal list goes to the owner as one table before deleting.
 - **Done when:** the content, arch, old-save and every-card soak tests pass; D69's pool test ceiling matches.
 

@@ -35,6 +35,49 @@ row whose verdict becomes **Merge** or **Cut** gets its own step.
 | Hub + robes + rune fragments | 3 | 1 | The meta | Keep; O5a feeds it |
 | Codex + achievements | 2 | 1 | | Keep; O18 adds lore |
 
+**Owner's answers (2026-11-01):**
+1. Shrine + fountain: "nah still random around the map": **no merge**, both stay as separate rooms placed at random.
+2. The five small rooms: "let's remove the puzzle for now, and i've never seen in game a cracked wall are you sure they spawn and are visible? we should keep them tho": **the rune puzzle room is removed for now; the rest stay; the cracked wall is checked (does it spawn, can you see it).** PLAN S14, S15.
+3. Curses: "Trim them". The lead's proposal (pending the owner's OK): keep the 7 trade-off curses (a drawback and
+   an upside, so they change how you play) and cut the 5 flat ones (a drawback only).
+
+   | Keep (trade-off) | Drawback → upside |
+   |---|---|
+   | Blood Price | skills and Blink cost HP → +35 % ability damage |
+   | Brittle | getting hit stuns you → +20 % move speed |
+   | Fevered | heat fades slower → +40 % overclock damage |
+   | Glass Heart | −30 % max HP → +15 % crit chance |
+   | Heavy Hands | attack slower → a strong 4th hit |
+   | Rooted | no dash → +25 % dodge |
+   | Tunnel Vision | no minimap → +25 % shard gain |
+
+   | Cut (flat) | Drawback only |
+   |---|---|
+   | Leaky Core | heat fades faster |
+   | Price Gouge | everything costs more |
+   | Swarm Call | more enemies in every pack |
+   | Swift Foes | enemies move faster |
+   | Withering | you heal less |
+4. Combos: "The combos can go away yeah, that's old": **the 8 named combos and the 8 ability combos are retired** (with O1's removal). The element-pair reactions are not an old combo; they stay unless O1 finds them unused. Curses: the trim proposal below waits for the owner's OK.
+
+**The five small special rooms** (`data/special_rooms/`):
+
+| Room | What it is | How often |
+|---|---|---|
+| Lockdown | Doors seal when you enter; clear a 20–40 s fight (normal, elite or hazard) to leave | ≥ 1 a floor |
+| Timed door | A switch opens a door for a few seconds; reach the dead-end reward before it shuts | 35 % of floors |
+| Rune puzzle | Turn rune slabs to align them; a dead-end reward opens | 30 % of floors |
+| Cracked wall | A breakable wall hides a secret dead-end room | 25 % of floors |
+| Purple runes | Light the runes (with screen shake) to open the Deep (Purple) portal | floor 2: 50 %, floor 3: always |
+
+**The combos** (`data/combos/`, 17 files):
+- **8 named combos** (v0.3.0, two items together): Blood Harvest, Frozen Bastion, Plasma Arc, Resonance,
+  Shatter Dash, Shrapnel Storm, Slipstream, Spiked Phase.
+- **8 ability combos** (v0.4.0, two abilities at level 3 evolve): Storm Bombs, Napalm Drone, Glacier Ring,
+  Blink Charge, Blade Dance, Wingman, Superconductor, Ember Ward. Most of their abilities became wand cards in v0.7.0,
+  so many of these pairs may no longer be able to form.
+- **Element pairs** (one file): the element × element reactions.
+
 **Questions for the session:**
 1. Merge the shrine and the fountain into one pact room?
 2. Which of the five small special rooms stay?
