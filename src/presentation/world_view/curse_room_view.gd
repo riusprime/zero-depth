@@ -26,9 +26,11 @@ const VEIL_ALPHA := 0.47  # starting value
 const SHROUD := Color(0.01, 0.006, 0.02, VEIL_ALPHA)
 const FEATHER_M := 1.5  # starting value: the veil's soft edge (m)
 const ALTAR_LIGHT := Color("#D8D2FF")  # starting value: a pale violet-white
-const ALTAR_LIGHT_ENERGY := 2.0  # starting value
+const ALTAR_LIGHT_ENERGY := 4.0  # starting value (was 2.0)
 const ALTAR_LIGHT_RANGE := 5.0  # starting value (m)
-const ALTAR_LIGHT_HEIGHT := 2.6  # starting value (m above the floor)
+const ALTAR_LIGHT_HEIGHT := 1.6  # starting value (m above the floor; was 2.6)
+## The light stands this far toward the camera (m, the iso camera's ground-back axis): it hits the faces we see.
+const ALTAR_LIGHT_FRONT := 0.8  # starting value
 ## The veil: full inside the room, fading to nothing over `feather` m beyond its edge (no fog: a foggy biome would wash
 ## it out to its fog colour).
 const SHROUD_SHADER := """shader_type spatial;
@@ -131,7 +133,9 @@ func setup(reader: WorldReader) -> void:
 	altar_light.distance_fade_enabled = true
 	altar_light.distance_fade_begin = 30.0
 	altar_light.distance_fade_length = 8.0
-	altar_light.position = SimPlane.to_3d(at, ALTAR_LIGHT_HEIGHT)
+	altar_light.position = (
+		SimPlane.to_3d(at, ALTAR_LIGHT_HEIGHT) + Vector3(0.7071, 0.0, 0.7071) * ALTAR_LIGHT_FRONT
+	)
 	add_child(altar_light)
 	var big := _sigil(0, BIG_SIZE, true)
 	big.position = SimPlane.to_3d(at, 0.04)
