@@ -34,6 +34,9 @@ extends ContentDef
 ## v0.9.5 HT: Vent needs at least vent_min_heat and then waits vent_cooldown_seconds before it can go again.
 @export var vent_min_heat := 40.0
 @export var vent_cooldown_seconds := 6.0
+## v0.10.5 S12 (theory audit P5; owner 2026-11-01): starting value. A Vent at this many heat points or more (out of
+## max_heat) ends the dash cooldown at once.
+@export var perfect_vent_from := 90
 
 
 func category() -> StringName:
@@ -51,6 +54,7 @@ func validate() -> Array[ValidationIssue]:
 		["cool_per_second", cool_per_second],
 		["vent_min_heat", vent_min_heat],
 		["vent_cooldown_seconds", vent_cooldown_seconds],
+		["perfect_vent_from", perfect_vent_from],
 		["hot_reach_bonus", hot_reach_bonus],
 		["overclock_damage_bonus", overclock_damage_bonus],
 		["overheat_seconds", overheat_seconds],

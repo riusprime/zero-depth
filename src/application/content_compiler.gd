@@ -218,8 +218,7 @@ static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) 
 			t.lane_half_m = sp["half_width_m"]
 
 
-## The Arc Caster (v0.3.5 AI): its three spells, in the schema's order (bolt, spread, rune). v0.7.5 EF: the bolt
-## and the spread are slow fireball fans (compile_enemy_patterns); the rune stays a disc that erupts under you.
+## The Arc Caster (v0.3.5 AI): its spells in schema order (bolt, spread, rune); v0.7.5 EF: bolt and spread are fans.
 static func _compile_arc_caster(def: EnemyDefinition, t: EnemyTable) -> void:
 	var bp := def.behaviour_params
 	t.keep_min_m = bp["keep_min_m"]
@@ -997,4 +996,5 @@ static func compile_heat(def: HeatDefinition) -> HeatTable:
 	t.vent_damage_permille = int(round(def.vent_damage_per_heat * 1000.0))
 	t.vent_min_milli = int(round(def.vent_min_heat * HeatTable.MILLI))
 	t.vent_cooldown_ticks = SimTick.seconds_to_ticks(def.vent_cooldown_seconds)
+	t.perfect_vent_milli = def.perfect_vent_from * HeatTable.MILLI
 	return t

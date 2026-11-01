@@ -22,4 +22,5 @@ vent_radius_m = 2.5
 vent_damage_per_heat = 0.5
 vent_min_heat = 40.0
 vent_cooldown_seconds = 6.0
+perfect_vent_from = 90
 id = &"overclock"
