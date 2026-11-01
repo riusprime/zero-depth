@@ -57,6 +57,13 @@ static func shielded(w: World, i: int) -> bool:
 	var atk := BossAi.attack_of(w, i)
 	if atk != null and atk.move == BossAttackTable.Move.CROSS and BossPrism.in_window(w, i):
 		return false  # v0.8.0 FB2 (F7): the Cross's window, between two spins
+	if (
+		atk != null
+		and atk.shield_active_ticks >= 0
+		and s == EnemyAi.State.ACTIVE
+		and w.actors.state_t[i] >= atk.shield_active_ticks
+	):
+		return false  # v0.10.5 O2a (L3): the shield holds only the first part of the pattern
 	return atk != null and atk.shielded
 
 

@@ -27,6 +27,10 @@ extends AttackDefinition
 ## v0.7.5 BF1 (owner N15, "Shielded during big patterns"): the boss is shielded while it winds up and performs this
 ## attack (its signature pattern): hits spark off and deal nothing; it opens between patterns.
 @export var shielded := false
+## v0.10.5 O2a (owner L3: "invulnerable for too long, almost unhittable"): with `shielded`, >= 0 holds the shield
+## only through the windup and the first shield_seconds of the active time (then hits land while the pattern plays
+## out); -1 (the default) through the whole active time.
+@export var shield_seconds := -1.0
 ## v0.8.0 BS1 (owner O5; BOSS_SIGNATURES.md S2, S3): the death recap line for the attack's late part: the javelins
 ## coming back (a pattern with recall_seconds), an egg bursting (marks with egg_seconds and a pattern). Required
 ## with them; empty otherwise.
@@ -89,6 +93,8 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	for pair in [["active_seconds", active_seconds], ["recovery_seconds", recovery_seconds]]:
 		if pair[1] < 0.0 or (pair[1] > 0.0 and int(round(pair[1] * 60.0)) == 0):
 			issues.append(ValidationIssue.new(&"duration", path, where + "%s is invalid" % pair[0]))
+	if shield_seconds >= 0.0 and not shielded:
+		issues.append(ValidationIssue.new(&"range", path, where + "shield_seconds needs shielded"))
 	if damage <= 0:
 		issues.append(ValidationIssue.new(&"not_positive", path, where + "damage must be > 0"))
 	if weight <= 0:

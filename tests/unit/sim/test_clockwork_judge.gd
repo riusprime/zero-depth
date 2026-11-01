@@ -70,6 +70,7 @@ func test_the_data_is_the_approved_row() -> void:
 	var echo := t.attacks[t.attack_index(&"the_echo")]
 	assert_eq(echo.move, BossAttackTable.Move.ECHO)
 	assert_true(echo.shielded, "shielded during the signature")
+	assert_eq(echo.shield_active_ticks, 0, "v0.10.5 O2a (L3): shielded only while the path shows")
 	assert_eq(echo.damage, 20, "20 each")
 	assert_eq(echo.windup_ticks, 48, "the whole path shows 0.8 s before the first strike")
 	assert_eq([echo.echo_points, echo.echo_gap_ticks], [12, 15], "1 strike per 0.25 s of path")
@@ -234,10 +235,14 @@ func test_shielded_through_the_echo() -> void:
 	_walk(w, 200, _line)
 	BossLab.start(w, _i(w, aid), &"the_echo")
 	assert_true(BossDodge.shielded(w, _i(w, aid)), "while the path shows")
-	CombatLab.idle(w, 48 + 100)
-	assert_true(BossDodge.shielded(w, _i(w, aid)), "while the ghosts strike")
-	CombatLab.idle(w, 70)
-	assert_false(BossDodge.shielded(w, _i(w, aid)), "open after")
+	CombatLab.idle(w, 46)
+	assert_true(BossDodge.shielded(w, _i(w, aid)), "to the path's last ticks")
+	CombatLab.idle(w, 3)
+	assert_false(
+		BossDodge.shielded(w, _i(w, aid)), "v0.10.5 O2a (L3): open while the ghosts strike"
+	)
+	CombatLab.idle(w, 100)
+	assert_false(BossDodge.shielded(w, _i(w, aid)), "and after")
 
 
 func test_the_echo_comes_every_10_s_one_at_a_time_never_by_the_pick() -> void:
