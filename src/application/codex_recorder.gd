@@ -67,6 +67,7 @@ func observe(reader: WorldReader) -> void:
 	var leveled := _events(reader)
 	if not enabled:
 		return
+	_lore(reader)
 	_offers(reader)
 	if leveled:
 		_levels(reader)
@@ -98,6 +99,31 @@ func _scan_actors(reader: WorldReader) -> void:
 				store.unlock(&"enemies", enemy)
 
 
+## v0.10.5 O18: the Lore entries that unlock when their system is first met: a curse held, the Deep gate within sight,
+## a rune puzzle solved or a boss down (the Rune Fragments' sources; there is no fragment event, see `_events`), the
+## final arena entered, the Ascension portal within sight.
+func _lore(reader: WorldReader) -> void:
+	var me := reader.player_pos()
+	if not store.is_unlocked(&"lore", &"curses") and not reader.curses_owned().is_empty():
+		store.unlock(&"lore", &"curses")
+	if (
+		not store.is_unlocked(&"lore", &"deep")
+		and reader.has_deep_portal()
+		and reader.deep_portal_pos().distance_to(me) <= SEEN_M
+	):
+		store.unlock(&"lore", &"deep")
+	if not store.is_unlocked(&"lore", &"runes") and reader.rune_solved():
+		store.unlock(&"lore", &"runes")
+	if not store.is_unlocked(&"lore", &"crown") and reader.final_arena():
+		store.unlock(&"lore", &"crown")
+	if (
+		not store.is_unlocked(&"lore", &"ascension")
+		and reader.ascension_floor()
+		and reader.portal_pos().distance_to(me) <= SEEN_M
+	):
+		store.unlock(&"lore", &"ascension")
+
+
 ## The tick's events; true when a card was taken (its level may have changed).
 func _events(reader: WorldReader) -> bool:
 	var player_id := reader.actor_id(0)
@@ -117,6 +143,7 @@ func _events(reader: WorldReader) -> bool:
 				var boss := catalog.boss_of_kind(_kinds.get(e.target_id, -1))
 				if boss != &"":
 					store.add(&"bosses", boss, &"kills")
+				store.unlock(&"lore", &"runes")  # v0.10.5 O18: the first boss down earns the first Rune Fragments
 			SimEvent.Kind.PICKUP:
 				var id := _card_id(reader, e.amount)
 				if id != &"":
