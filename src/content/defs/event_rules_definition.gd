@@ -34,6 +34,10 @@ extends ContentDef
 ## the Ambush Cache's distance and Marked's hunt range went with them.
 @export var core_window_seconds := 3.0
 @export var core_mod_weight := 10
+## v0.10.5 S6 (owner 2026-11-01: "double legendary card is broken, we should nerf that a bit"): the chance a boss's
+## core is a Legendary card (0..1); otherwise an Epic card from the elite cores' pool. Starting value, not a
+## measurement. The boss's legendary altar is unchanged.
+@export var boss_core_legendary_chance := 0.35
 ## A drop (a core's card) lands this far from the next drop at the same spot.
 @export var drop_offset_m := 0.9
 ## v0.8.0 N17 (owner O75: "they need to appear once max per floor and 40% of floors not all the time"): the chance a
@@ -97,5 +101,11 @@ func validate() -> Array[ValidationIssue]:
 	if core_mod_weight < 0:
 		issues.append(
 			ValidationIssue.new(&"negative", resource_path, "core_mod_weight is negative")
+		)
+	if boss_core_legendary_chance < 0.0 or boss_core_legendary_chance > 1.0:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "boss_core_legendary_chance is outside 0..1"
+			)
 		)
 	return issues

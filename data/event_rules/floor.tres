@@ -17,6 +17,7 @@ defend_radius_m = 4.5
 cleanse_price = 60
 core_window_seconds = 3.0
 core_mod_weight = 10
+boss_core_legendary_chance = 0.35
 drop_offset_m = 0.9
 curse_room_floor_chance_permille = 400
 curse_room_deep_chance_permille = 1000

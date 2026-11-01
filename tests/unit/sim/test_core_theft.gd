@@ -128,8 +128,33 @@ func test_the_core_drops_30_percent_of_the_time() -> void:
 	assert_between(rate, 0.25, 0.35, "about 30 %")
 
 
+## v0.10.5 S6 (owner 2026-11-01): a boss's core is Legendary boss_core_legendary_chance (35 %) of the time, else Epic.
+func test_a_boss_core_is_legendary_about_35_percent_of_the_time() -> void:
+	var legendary := 0
+	var epic := 0
+	var seeds := 200
+	for s in seeds:
+		var w := EventLab.world(1000 + s, 1, &"blade")
+		var id := w.spawn_boss(0, w.player_pos() + Vector2(5, 0))
+		var card := w.cores.card[CoreTheft.entry_of(w, id)]
+		if CoreTheft.is_legendary_card(w, card):
+			legendary += 1
+		else:
+			epic += 1
+			if Offers.type_of(card) == Offers.STAT:
+				assert_eq(Offers.rarity_of(card), Stats.Rarity.EPIC, "an epic stat card")
+	var share := float(legendary) / seeds
+	gut.p(
+		"S6_BOSS_CORE| seeds=%d legendary=%d epic=%d share=%.3f" % [seeds, legendary, epic, share]
+	)
+	assert_gt(legendary, 0, "legendary occurs")
+	assert_gt(epic, 0, "non-legendary occurs")
+	assert_between(share, 0.25, 0.45, "about 35 %")
+
+
 func test_a_boss_core_is_legendary_and_its_phase_change_opens_the_window() -> void:
 	var w := _world()
+	w.ev.rules.boss_core_legendary_permille = 1000  # v0.10.5 S6: this test needs the legendary outcome
 	assert_not_null(w.legendary_table)
 	var id := w.spawn_boss(0, w.player_pos() + Vector2(5, 0))
 	var i := w.actors.index_of(id)

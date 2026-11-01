@@ -39,9 +39,22 @@ static func on_elite(w: World, i: int) -> void:
 static func on_boss(w: World, i: int) -> void:
 	if not enabled(w) or w.legendary_table == null:
 		return
-	var code := draw_legendary(w, w.ev.rng_elite)
+	# v0.10.5 S6 (owner 2026-11-01): legendary with rules.boss_core_legendary_permille, else an Epic card (the elite
+	# cores' pool); one extra draw on `ai:elite`.
+	var code := -1
+	if w.ev.rng_elite.chance_permille(w.ev.rules.boss_core_legendary_permille):
+		code = draw_legendary(w, w.ev.rng_elite)
+	else:
+		code = draw_card(w, w.ev.rng_elite, Stats.Rarity.EPIC)
 	if code >= 0:
 		w.cores.add(w.actors.ids[i], code, true)
+
+
+## A boss core's card is of the legendary tier (a legendary stat card or a legendary-tier mod).
+static func is_legendary_card(w: World, code: int) -> bool:
+	if Offers.type_of(code) == Offers.STAT:
+		return Offers.rarity_of(code) == Offers.LEGENDARY
+	return w.legendary_table != null and w.legendary_table.mods.has(code)
 
 
 ## A card for a core or a drop at `rarity` (a stat card's rarity): a mod in the pool or a stat under its cap, one
@@ -155,9 +168,10 @@ static func on_death(w: World, i: int) -> void:
 		var code := w.cores.card[k]
 		var boss := w.cores.boss[k] == 1
 		if not Shop.can_apply(w, code):  # the shop's rule, the one rule (audit G-6)
-			code = (
-				draw_legendary(w, w.ev.rng) if boss else draw_card(w, w.ev.rng, Stats.Rarity.RARE)
-			)
+			if boss and is_legendary_card(w, code):
+				code = draw_legendary(w, w.ev.rng)
+			else:
+				code = draw_card(w, w.ev.rng, Stats.Rarity.EPIC if boss else Stats.Rarity.RARE)
 		if code >= 0:
 			grant(w, code, a.pos(i), CoreState.Drop.BOSS_CORE if boss else CoreState.Drop.CORE)
 			w.cores.steal_tick = w.tick
