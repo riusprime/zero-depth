@@ -7,8 +7,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.
 
 - The owner's v0.9.5 + v0.10.0 feedback and the theory audit are answered and planned (PLAN, THEORY_AUDIT,
   P1_ELEGANCE, O1_REMOVAL_LIST).
-- **Merged and verified on this branch:** S1, S2, S3, S4.
-- **Building:** S5, S14, S15 (Sonnet), O2a (Opus).
+- **Merged:** S1, S2, S3, S4 (verified here), S5, S14, S15 (check only).
+- **Building:** S5b, S6, S15b (Sonnet), O2a (Opus).
 - **Next:** O1's removal (approved), then the rest of wave 1.
 - **Waiting on the owner:** the G1/G2 drafts as they land.
 

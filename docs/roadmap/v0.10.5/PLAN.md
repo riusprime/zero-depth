@@ -176,6 +176,17 @@ in PROGRESS "Goldens changed on purpose".
   others, culled). No fix in this step.
 - **Done when:** the count and the shot reach the lead; the fix (if any) becomes its own step.
 
+#### S15b. Cracked walls you can find (owner 2026-11-01, after S15: "Clear cracks + faint glow", "About 1 floor in 3")
+- **Why:** [`evidence/S15_CRACKED_WALLS.md`](evidence/S15_CRACKED_WALLS.md): 3 % / 20 % / 7.5 % of floors 1/2/3, and the
+  cracks are 2 cm bars at alpha 0.12 on two faces only.
+- **Task:** the chance set so each floor lands near 30 %; cracks ~6 × 8 cm at alpha 0.85 on all four faces; a faint
+  pulsing seam glow; the slab joins the wall cutaway. Starting values.
+- **Done when:** the re-measured rates, the cracked-room and view tests pass, one shot shows the cracks.
+
+#### S5b. The curse altar shows its details (owner 2026-11-01, after S5: "it is like white weird … like whited out")
+- **Task:** no self-glow on the altar model; its albedo brightened (×2.4, starting value) instead; the altar light
+  4.0 → 2.5. A close-up for the owner.
+
 ### Wave 2: the complex work (Opus)
 
 Each O step lists its gate. A step whose gate is a G1 or G2 stops at the draft; its build half runs after the owner
