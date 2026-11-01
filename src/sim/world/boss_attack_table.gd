@@ -105,6 +105,9 @@ var burn_ticks := 1
 var lock_ticks := 0
 var mark_gap_ticks := 0
 var shielded := false
+## v0.10.5 O2a: >= 0 drops a shielded attack's shield this many ticks into its active time (BossDodge.shielded); -1
+## keeps it up through the whole active time.
+var shield_active_ticks := -1
 var pattern: BulletPatternTable = null
 ## v0.8.0 PR (owner O84: "the all small balls he shoots should be shooted on a predictable pattern"): a `pattern`
 ## attack with fixed_aim >= 0 fires its waves from this angle (1/4096 turns, the world's frame) instead of at the

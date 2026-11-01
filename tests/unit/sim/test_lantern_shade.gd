@@ -83,7 +83,8 @@ func test_the_data_is_the_approved_row() -> void:
 	var lo := t.attacks[t.attack_index(&"lights_out")]
 	assert_true(lo.shielded, "shielded during the signature")
 	assert_eq(lo.dark_ticks, 240, "dark 4 s after the signature starts")
-	assert_eq(lo.windup_ticks + lo.active_ticks, 240, "the shield drops as the dark falls")
+	assert_eq(lo.windup_ticks + lo.active_ticks, 240, "the wisps play out until the dark falls")
+	assert_eq(lo.shield_active_ticks, 0, "v0.10.5 O2a (L3): shielded only through the telegraph")
 	for p in 3:
 		var sig := BossTide.signature_of(t, p)
 		assert_gt(t.attacks[sig].dark_ticks, 0, "Lights Out is phase %d's signature" % p)
@@ -165,10 +166,13 @@ func test_lights_out_is_shielded_and_the_dark_falls_4_s_after_it_starts() -> voi
 	_hold(w, Vector2(-3, 0), 2)
 	BossLab.start(w, _i(w, aid), &"lights_out")
 	var started := w.tick
-	assert_true(BossDodge.shielded(w, _i(w, aid)), "shielded while the light drains")
-	_hold(w, Vector2(-3, 0), 239)
+	assert_true(BossDodge.shielded(w, _i(w, aid)), "shielded through the telegraph")
+	_hold(w, Vector2(-3, 0), 58)
+	assert_true(BossDodge.shielded(w, _i(w, aid)), "to the telegraph's last ticks")
+	_hold(w, Vector2(-3, 0), 3)
+	assert_false(BossDodge.shielded(w, _i(w, aid)), "v0.10.5 O2a (L3): open while the light drains")
+	_hold(w, Vector2(-3, 0), 178)
 	assert_false(BossShade.dark(w), "not yet dark")
-	assert_true(BossDodge.shielded(w, _i(w, aid)), "still shielded")
 	_hold(w, Vector2(-3, 0), 2)
 	assert_true(BossShade.dark(w), "dark 4 s (240 ticks) after it started")
 	assert_eq(w.bosses.shade_at, -1)

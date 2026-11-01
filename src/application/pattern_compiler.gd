@@ -24,6 +24,8 @@ static func compile_boss_attack(
 	t.card = int(sp.get("card", -1))
 	t.lock_ticks = SimTick.seconds_to_ticks(def.lock_seconds)
 	t.shielded = def.shielded
+	if def.shield_seconds >= 0.0:  # v0.10.5 O2a: the shield drops this far into the active time
+		t.shield_active_ticks = SimTick.seconds_to_ticks(def.shield_seconds)
 	if sp.has("aim_degrees"):  # v0.8.0 PR (O84): a fixed aim, 1/4096 turns
 		t.fixed_aim = int(round(float(sp["aim_degrees"]) * 4096.0 / 360.0)) & 4095
 	t.mark_gap_ticks = SimTick.seconds_to_ticks(float(sp.get("stagger_seconds", 0.0)))

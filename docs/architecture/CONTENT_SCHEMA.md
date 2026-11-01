@@ -656,7 +656,10 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   take `lock_seconds: float` (0 = as before) and `shielded: bool`. With a lock, the marker follows the player's exact
   position (no lead) for `telegraph_seconds - lock_seconds`, then holds and flashes for `lock_seconds` (at least
   `MIN_TELEGRAPH_TICKS`, and under the telegraph) before it strikes. `shielded` (the signature pattern) keeps the boss
-  shielded through its windup and active time. Three new moves:
+  shielded through its windup and active time; v0.10.5 O2a (owner L3) adds `shield_seconds: float` (-1, the
+  default: as before; >= 0, needs `shielded`: the shield holds through the windup and only the first
+  `shield_seconds` of the active time; the Lantern Shade's Lights Out and the Clockwork Judge's echo 0). Three new
+  moves:
   - `pattern` (PROJECTILE): `pattern_id`, a `BulletPatternDefinition` id (§4b). The attack is active for the
     pattern's whole duration (`active_seconds` is a floor). `damage` is each fireball's.
   - `marks` (CIRCLE): `count` ground circles of `radius_m`, `stagger_seconds` apart, each tracked then locked

@@ -32,6 +32,7 @@ cooldown_seconds = 0.8
 cause_key = &"CAUSE_SHADE_DARK"
 opens_weak_point = true
 shielded = true
+shield_seconds = 0.0
 
 [sub_resource type="Resource" id="A_lights_out_3"]
 script = ExtResource("1_atk")
@@ -61,6 +62,7 @@ cooldown_seconds = 0.8
 cause_key = &"CAUSE_SHADE_DARK"
 opens_weak_point = true
 shielded = true
+shield_seconds = 0.0
 
 [sub_resource type="Resource" id="A_wisp_bloom"]
 script = ExtResource("1_atk")

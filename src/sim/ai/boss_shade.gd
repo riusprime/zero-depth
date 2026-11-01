@@ -12,6 +12,7 @@ extends RefCounted
 ## - NB4b (owner, PLAN "Owner decisions" NB4: "Dark comes and goes"): the dark lasts the table's dark_hold_ticks, then
 ##   lifts and the whole room is lit until the next Lights Out's dark (the lanterns stand, unburnt, meanwhile). A table
 ##   with no dark_hold_ticks keeps the dark until the Shade dies.
+## - v0.10.5 O2a (owner L3): Lights Out is shielded only through its telegraph (shield_seconds 0); the wisps fly open.
 ## - Hittable only when lit: in the dark a hit on the Shade sparks off (Damage, like a shield) unless its body touches
 ##   the light (unlit()); in the light it is hittable anywhere.
 ## - The Snuff (a `marks` attack with snuff): each struck circle puts out the lit lantern nearest its centre.
