@@ -74,3 +74,5 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
   → S15c: cracks subtle again, no always-on seam; runes on both faces shine when the hero is within 3.5 m.
 - 2026-11-01: the owner on cracked-wall frequency: "Yes, per floor" → S15d: a chance per floor index (floor 1
   1000 ‰, capped ~13 % by free dead ends; floors 2 and 3 tuned to ~30 %).
+- 2026-11-01: which Ring (S10): the owner: "The shock Ring", the one S10 changed (sparks ×0.33, at most 6, orbiting
+  the rim). The motion doesn't show in a still; the owner judges it in play.
