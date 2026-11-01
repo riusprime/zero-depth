@@ -12,11 +12,11 @@
 script = ExtResource("2_mood")
 wall_texture_m = 4.5
 wall_top_texture_m = 5.0
-wall_detail = 0.65
-wall_face_contrast = 0.8
-wall_top_contrast = 0.8
-wall_stone_scale = 1.2
-wall_breakage = 0.75
+wall_detail = 0.52
+wall_face_contrast = 0.64
+wall_top_contrast = 0.64
+wall_stone_scale = 1.38
+wall_breakage = 0.6
 wall_jitter = 0.75
 wall_fill_lump_m = 1.5
 wall_fill_noise = 0.75
