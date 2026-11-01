@@ -47,3 +47,6 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
   cut from `main` (`d33bc82a`, v0.9.0) instead of this branch; S2–S4 were merged (clean, tiny) and re-tested here
   (Verification 1); S1, S14, S15 were stopped and restarted on worktrees the agents make from this branch's SHA.
   S1's target was corrected (the combo's hit-stop, not Lunge Cleave's).
+- 2026-11-01: S5 merged (d9aa581f); the owner looked at the close-up: "it is like white weird, it is not right, you
+  should be able to see the details no it is like whited out". Next: S5b (the altar's self-glow removed; its
+  albedo brightened instead; the light softened) with a close-up for the owner.
