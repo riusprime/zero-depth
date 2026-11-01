@@ -36,7 +36,7 @@ func _layout(seed_value: int, run: RunState, floor_index: int) -> FloorLayout:
 	var none := PackedInt32Array()
 	TimedDoorRooms.mark(f, map.timed_door_permille, 900, speed, none, PackedVector2Array())
 	RuneRooms.mark(f, secrets.rune_permille, none, PackedVector2Array())
-	CrackedRooms.mark(f, secrets.crack_permille, none)
+	CrackedRooms.mark(f, CrackedRooms.chance(secrets.crack_floor_permille, 1), none)
 	PurpleRooms.mark(f, 500, none, PackedVector2Array())
 	var lock := RunContentCompiler.compile_lockdown(_repo.get_def(&"lockdown", &"lockdown"))
 	LockdownRooms.mark(f, lock, floor_index, none)

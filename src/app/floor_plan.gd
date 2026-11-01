@@ -17,7 +17,6 @@ enum Mode { FLOOR, NEW_RUN, CONTINUE }
 
 ## v0.9.0 DX: the SecretsDefinition numbers copied into SecretRules (same names).
 const RULE_FIELDS: Array[String] = [
-	"crack_permille",
 	"crack_hits",
 	"containers_max",
 	"container_drop_permille",
@@ -263,7 +262,8 @@ static func add_secrets(
 	if run.floor_rules > RunState.FLOOR_RULES_V090_TD:
 		var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
 		RuneAlignment.setup(w, secrets.rune_permille if secrets != null else 0)
-		Breakables.setup(w, secret_rules(secrets), run.floor_rules > RunState.FLOOR_RULES_V095_TS)  # v0.9.5 BK
+		var rules := secret_rules(secrets, run.floor_index)
+		Breakables.setup(w, rules, run.floor_rules > RunState.FLOOR_RULES_V095_TS)  # v0.9.5 BK
 	if run.floor_rules > RunState.FLOOR_RULES_V090_RA:  # v0.9.0 DP (owner Q26b): last, never a secret's room
 		var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
 		var chances := secrets.purple_floor_permille if secrets != null else PackedInt32Array()
@@ -285,12 +285,13 @@ static func add_secrets(
 
 
 ## v0.9.0 DX: the destructibles' numbers from the data (SecretRules' defaults without it).
-static func secret_rules(def: SecretsDefinition) -> SecretRules:
+static func secret_rules(def: SecretsDefinition, floor_index := 1) -> SecretRules:
 	var r := SecretRules.new()
 	if def == null:
 		return r
 	for f in RULE_FIELDS:
 		r.set(f, def.get(f))
+	r.crack_permille = CrackedRooms.chance(def.crack_floor_permille, floor_index)  # v0.10.5 S15d
 	return r
 
 
