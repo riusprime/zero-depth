@@ -31,6 +31,7 @@ const SECTIONS := {
 	&"enemies": [&"enemies"],
 	&"bosses": [&"bosses", &"final"],
 	&"biomes": [&"biomes"],
+	&"lore": [&"lore"],  # v0.10.5 O18
 }
 const WAND_TAG := "wand"
 const TRIGGER_TAG := "trigger"
@@ -126,6 +127,20 @@ static func build(repo: ContentRepository) -> CodexCatalog:
 					"name_key": def.name_key,
 					"desc_key": def.desc_key,
 					"palette": palette,
+				}
+			)
+		)
+	for id: StringName in CodexStore.LORE_IDS:  # v0.10.5 O18: one line per system
+		(
+			c
+			. _add(
+				{
+					"page": &"lore",
+					"section": &"lore",
+					"id": id,
+					"name_key": StringName("LORE_%s_TITLE" % String(id).to_upper()),
+					"desc_key": StringName("LORE_%s" % String(id).to_upper()),
+					"always": CodexStore.LORE_ALWAYS.has(id),
 				}
 			)
 		)

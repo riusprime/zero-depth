@@ -44,6 +44,7 @@ func _initialize() -> void:
 	codex.add(&"bosses", &"warlord", &"fights", 2)
 	codex.add(&"bosses", &"warlord", &"kills")
 	codex.add(&"biomes", &"ruins", &"visits", 3)
+	codex.unlock(&"lore", &"curses")
 	ProfileStore.use_shared(profile)
 	_main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
 	root.add_child(_main)
@@ -52,35 +53,11 @@ func _initialize() -> void:
 func _process(_delta: float) -> bool:
 	_frame += 1
 	match _frame:
-		10, 12, 14:
-			_tap(KEY_DOWN)  # Play -> Options -> Credits -> Codex
-		16:
-			_tap(KEY_ENTER)
+		10:
+			_main.show_codex(&"lore")  # shot setup: the Lore page opened directly (v0.10.5 O18)
 		30:
-			_shot("cards_locked")
+			_shot("lore")
 		31:
-			_tap(KEY_DOWN)  # the second row's first card: Pierce, met
-		40:
-			_shot("cards")
-		41:
-			_tap(KEY_E)
-		43, 45:
-			_tap(KEY_RIGHT)  # the Charger
-		50:
-			_shot("enemies")
-		51:
-			_tap(KEY_E)
-		53, 55, 57, 59, 61:
-			_tap(KEY_RIGHT)  # the Warlord
-		70:
-			_shot("bosses")
-		71:
-			_tap(KEY_E)
-		73, 75:
-			_tap(KEY_RIGHT)  # the Ruins
-		80:
-			_shot("biomes")
-		81:
 			quit(0)
 	return false
 

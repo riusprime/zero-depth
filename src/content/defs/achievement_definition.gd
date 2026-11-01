@@ -43,6 +43,7 @@ const CODEX_COUNTERS := {
 	&"enemies": [&"kills", &"deaths"],
 	&"bosses": [&"fights", &"kills", &"deaths"],
 	&"biomes": [&"visits"],
+	&"lore": [],
 }
 ## The page's groups, in order (the Achievements page's sections).
 const GROUPS: Array[StringName] = [

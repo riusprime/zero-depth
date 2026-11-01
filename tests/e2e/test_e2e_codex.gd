@@ -234,3 +234,26 @@ func test_the_codex_fills_in_a_run_and_opens_from_both_menus() -> void:
 	await e.frames(2)
 	assert_null(main.get_node_or_null("UI/CodexView"), "a click on Back leaves")
 	assert_not_null(main.hub, "back in the hub")
+
+
+## v0.10.5 O18: the Lore page, by key presses from the hub's Rune Archive: an "always" line is read (its title and
+## sentence), a line whose system was not met yet is a silhouette.
+func test_the_lore_page_opens_and_shows_its_open_lines() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	var walk := HubWalk.new(e)
+	await walk.enter()
+	await walk.use(&"archive")
+	var codex := main.get_node_or_null("UI/CodexView") as CodexView
+	assert_not_null(codex)
+	if codex == null:
+		return
+	for k in 5:  # Collectibles -> Cards -> Enemies -> Bosses -> Biomes -> Lore
+		await e.tap(KEY_E)
+	assert_eq(codex.page, &"lore", "E turns to the Lore page")
+	assert_eq(codex.tiles.size(), 9, "nine lines")
+	assert_false(codex.tiles[0].locked, "the first line is open from the start")
+	assert_eq(codex.tiles[0].name_label.text, tr("LORE_DEPTHS_TITLE"), "and named")
+	assert_eq(codex.desc_label.text, tr("LORE_DEPTHS"), "its sentence is shown")
+	assert_true(codex.tiles[8].locked, "the Ascension line waits for its system")
+	assert_eq(codex.tiles[8].name_label.text, "???")
