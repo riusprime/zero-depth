@@ -195,6 +195,7 @@ const ADDED_SINCE_V05 := {
 		&"pair_mask",  # v0.9.5 EE3 (the element pairs on, their budget and clouds; an older save has none)
 		&"pair_levels",  # v0.9.5 EP1 (an older save has none: its pairs read as Lv 3)
 		&"pair_log",
+		&"pairs_seen",  # v0.10.5 O15: an older save starts with none seen
 		&"pair_clouds",
 		&"mod_slots",
 		&"swap_code",
