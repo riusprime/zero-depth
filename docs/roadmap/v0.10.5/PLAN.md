@@ -315,6 +315,23 @@ answers.
 - The lead prepares a table of every system with two scores (experience 1–5, learning cost 1–5) and a one-line
   reason, and the owner and lead go through it together. Cuts or merges become their own steps.
 
+### Perf wave 2: fights with many enemies (owner, 2026-11-02)
+From [`evidence/PERF_PLAYLOG_2.md`](evidence/PERF_PLAYLOG_2.md). The owner: "the opening cards or shop dont bother me
+actually what feels worse is fights with a lot of enemies". Their answers to the lead's ten options:
+
+| # | Option | Owner | Step |
+|---|---|---|---|
+| 1 | Enemies in fewer pieces | "instead of making a so detailed shadow add something the shape of it that doesnt have that many parts, just 1 but shaped like it" | PA: each enemy's parts cast no shadow; one shadow-only mesh shaped like it casts it |
+| 2 | Blob shadows | "let's try sure" | PA: a blob option beside the shape proxy, shots of both |
+| 3 | Particles without shadows | "yes particles should not draw shadows" | PB |
+| 4 | Fewer torch shadows | "go for it" | PB |
+| 5 | Warmup pools out of the scene | "let's try it" | PC |
+| 6 | Crowds animated at half rate | "no" | — |
+| 7 | Interpolation only near the hero and camera | "let's try it" | PA |
+| 8 | Cheaper sun shadows | "let's try before and after" | PB: shots before/after for the owner to pick |
+| 9 | Enemy thinking spread over more ticks | "let's do it" | PD: changes play; goldens change on purpose |
+| 10 | Merged walls | "would it look different?" | answered, not built |
+
 ### R. Release
 - Version bump, patch notes en + es, What's New, ROADMAP row + History, PROGRESS final; one PR into `main` with
   v0.10.0 (the full suite runs there).
