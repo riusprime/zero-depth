@@ -3,14 +3,15 @@
 Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.10.0 there until the release step).
 
 ## Where we are
-(The lead keeps this block current at every push. Updated 2026-11-01.)
+(The lead keeps this block current at every push. Updated 2026-11-02, end of the overnight run.)
 
-- The owner's v0.9.5 + v0.10.0 feedback and the theory audit are answered and planned (PLAN, THEORY_AUDIT,
-  P1_ELEGANCE, O1_REMOVAL_LIST).
-- **Merged:** wave 1 except S7: S1–S6, S5b, S8–S15, S15b (S15, S13 check only), and O2a.
-- **Building:** S7 (Sonnet), O1 removal (Opus). Wave 2 drafts start as the Opus slot frees.
-- **Next:** O1's removal (approved), then the rest of wave 1.
-- **Waiting on the owner:** which Ring (S10); cracked walls per-floor chance (S15b); the G1/G2 drafts as they land.
+- **Every PLAN step is built and merged** on `claude/v0100-cleanup` (not pushed, owner: "Don't push"): wave 1
+  (S1–S15 + S5b, S15b–d), and wave 2 (O1, O2a, O2b, O3, O4, O5a/b, O6, O7a/b, O9–O18), plus D1, Q1, Q5 (measure), Q7
+  and the cross-step fixes. **O4b is not merged** (missed its targets; branch `v0105-o4b`, Q9).
+- **Overnight picks and questions:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) — 21 picks to keep or change, Q5–Q9 open.
+- **Biggest open item:** performance (Q5): 18 fps at 60 enemies on the owner's PC; the views sync every sim tick.
+- **Next:** the owner goes over OWNER_QUESTIONS and plays the build; then the release step (one PR into `main`, the
+  full suite on GitHub).
 
 ## Owner decisions (2026-11-01)
 All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and P1_ELEGANCE "Owner's answers".
@@ -62,6 +63,7 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 | Q5 where the frame time goes (measure only) | b0c9dabc | [evidence/PERF_Q5.md](evidence/PERF_Q5.md): 60 enemies 55.6 ms avg (18 fps), 20 enemies 12.6 ms (79 fps), 0: 4.75 ms; views sync every tick (3.6 ticks a frame × 9.3 ms) |
 | O7b kill shards lie on the floor (merge within 0.5 m, at most 24 a floor) until you come within 1.2 m × pickup range; left-over shards collected at the portal; bosses, chests, events stay instant | d36482f2 | [evidence/O7B_SHARD_PICKUPS.md](evidence/O7B_SHARD_PICKUPS.md): shard drops 12/12; batches 268/274, 32/34, 97/98, the failures pre-existing cross-step regressions (O17 player_hp_floor not in old saves, test_arenas altar cap from S7, a reward view colour) → fix queued; shot `build/shots/v0.10.5/shards_on_the_floor.jpg` |
 | Q7 the catch-up and boss pace have floor 4–5 entries (E 7000/11000, caps 3000/3500, boss E 11000/16000, pace 5130/5810) | 88026905 | evidence/O16_ECONOMY.md "Q7": floor 4 bosses 97.4 / 69.0 s (in band); **floor 5 bosses 57.7 / 58.4 s, under the 60 s target** (not retuned; a pace near 9000 would land ~90 s); catch-up + boss pace 23/23, content 166/166, golden 2/2 |
+| Cross-step fixes: old saves (O17 player_hp_floor), test_arenas (S7's extra altar), a reward view colour test | 25ceb930 | agent: old saves 11/11, e2e old save 1/1, world snapshot 16/16, arenas 16/16, reward views 9/9, golden 2/2 |
 | O2a the Lantern Shade and the Clockwork Judge hittable more often | f59ee0f2 | [evidence/O2A_INVULNERABLE.md](evidence/O2A_INVULNERABLE.md): invulnerable share 37 → 13 % and 30 → 8 %; 23 scripts 198/198 |
 
 ## Verification

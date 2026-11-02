@@ -8,6 +8,19 @@ option at each G1/G2 gate and builds it as starting values; every pick is listed
 Each entry: the step, what the lead picked and why in one line, and the question to go over. Nothing here is final
 until the owner says so.
 
+## Good morning: what happened
+
+- **Everything in the PLAN is built and merged** (details and evidence per step in [`PROGRESS.md`](PROGRESS.md)), except
+  **O4b**, which missed its targets and waits on Q9. Nothing is pushed.
+- **To see first** (shots in `build/shots/v0.10.5/`): the Prism's last phase (`prism_*.jpg`), the danger bar
+  (`danger_bar_*_en.png`), the Training Room (`training_room*.png`), the wand forecast (`wand_forecast.png`), loops
+  (`loop2_floor_card.png`, `hub_records.png`), shards on the floor (`shards_on_the_floor.jpg`), the cracked wall
+  (`cracked_wall_s15c_*.png`), the curse altar (`curse_altar_s5b.png`), the calmer walls (`walls_*`).
+- **To decide first:** **Q5 performance** (18 fps at 60 enemies; a clear first fix), Q9 (the director follow-up),
+  Q6–Q8 (the economy: shards pile up; floor 5).
+- **To play for feel:** O3 Prism, O11 (knockback, dash-cancel, quicker finisher), O2b boss pacing, O4 director,
+  O5 loop rules, O9 rule cards, O10 weaknesses, O15 duos, S12 perfect-Vent dash refund.
+
 ## Picks made overnight
 
 | # | Step | The lead's pick | To go over |
