@@ -49,6 +49,11 @@ var bolt_damage := 5
 var bolt_speed := 16.2 / 60.0
 var bolt_radius_m := 0.2
 var bolt_life_ticks := 40
+## v0.10.5 O11 (F1): the push a direct hit gives a normal enemy, in metres (the same as data/player/runner.tres).
+var hit_push_m := 0.15
+var finisher_push_m := 0.45
+var bolt_push_m := 0.06
+var bolt_crit_push_m := 0.12
 ## Builds (v0.3.0 L15, L16; ContentCompiler.apply_build): the weapons this run may use (WEAPON_* bits; both outside
 ## a run's build, so the kernel and lab worlds keep both), and each weapon's damage in per mille.
 var weapons := WEAPONS_ALL
@@ -93,7 +98,7 @@ static func default_combo() -> Array[SwingStep]:
 		SwingStep.make(SwingStep.Motion.SLASH_RIGHT_TO_LEFT, 2, 11, 683, 1.6, 10, 3, 0.0, 5),
 		SwingStep.make(SwingStep.Motion.SLASH_LEFT_TO_RIGHT, 3, 11, 683, 1.6, 10, 3, 0.0, 5),
 		SwingStep.make(SwingStep.Motion.THRUST, 4, 12, 228, 2.3, 12, 3, 0.35, 4),
-		SwingStep.make(SwingStep.Motion.SPIN, 7, 24, 2048, 1.9, 24, 5, 0.6, 9),
+		SwingStep.make(SwingStep.Motion.SPIN, 7, 18, 2048, 1.9, 24, 5, 0.6, 9),
 	]
 	return out
 

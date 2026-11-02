@@ -96,6 +96,10 @@ static func compile_player(def: PlayerDefinition) -> PlayerTable:
 	t.bolt_speed = p.bolt_speed_mps / SimTick.TICKS_PER_SECOND
 	t.bolt_radius_m = p.bolt_radius_m
 	t.bolt_life_ticks = SimTick.seconds_to_ticks(p.bolt_life_seconds)
+	t.hit_push_m = p.hit_push_m
+	t.finisher_push_m = p.finisher_push_m
+	t.bolt_push_m = p.bolt_push_m
+	t.bolt_crit_push_m = p.bolt_crit_push_m
 	return t
 
 

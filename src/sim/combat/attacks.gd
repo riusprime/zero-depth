@@ -293,6 +293,7 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 			hits += 1
 			_landed(w, spec, ctx, i, a.pos(i), hits)
 			BladeForms.on_arc_hit(w, spec, ctx, i)  # v0.6.5 WN4: Heavy's push
+			BladeForms.hit_push_arc(w, spec, ctx, i)  # v0.10.5 O11 (F1): the swing's own small push
 	BladeForms.on_arc(w, spec, ctx)  # v0.6.5 WN4: Parry Edge, the view's ghost slashes
 	if not w.mx.rem_uid.is_empty() or not spec.hooks.is_empty():  # v0.8.0 RM: cracks it crosses, its path
 		Remnants.on_arc(w, spec, ctx, reach)

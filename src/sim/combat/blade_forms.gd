@@ -132,6 +132,45 @@ static func on_arc_hit(w: World, spec: AttackSpec, ctx: AttackContext, i: int) -
 		_knock(w, i, ctx.origin, spec.knockback_m)
 
 
+## v0.10.5 O11 (F1): the hero's own swing (not an echo, a skill or a child slash) pushes the enemy it hit back a little:
+## PlayerTable.hit_push_m, the finisher's finisher_push_m. Same slide as Heavy's (a boss never; an elite half).
+static func hit_push_arc(w: World, spec: AttackSpec, ctx: AttackContext, i: int) -> void:
+	if spec.depth > 0 or ctx.step < 0 or ctx.effect_id != &"" or ctx.repeat or ctx.back:
+		return
+	var t := w.player
+	var m := t.finisher_push_m if PlayerKit.is_finisher(w, ctx.step) else t.hit_push_m
+	hit_push(w, i, ctx.origin, m)
+
+
+## v0.10.5 O11 (F1): the hero's bolt (projectile `pi`) that landed `got` damage on enemy `i` pushes it back, more on a
+## crit. Not a skill's, an ability's, a burst's or a chain's.
+static func hit_push_bolt(w: World, i: int, pi: int, got: int, from: Vector2, crit: bool) -> void:
+	var p := w.projectiles
+	if got <= 0 or p.owner[pi] != w.actors.ids[0]:
+		return
+	var skip := (
+		SimEvent.TAG_SKILL
+		| SimEvent.TAG_ABILITY
+		| SimEvent.TAG_AREA
+		| SimEvent.TAG_SHRAPNEL
+		| SimEvent.TAG_CHAIN
+	)
+	if (p.tags[pi] & skip) != 0 or (p.tags[pi] & SimEvent.TAG_PROJECTILE) == 0:
+		return
+	var t := w.player
+	hit_push(w, i, from, t.bolt_crit_push_m if crit else t.bolt_push_m)
+
+
+## v0.10.5 O11 (F1): push actor `i` away from `from` by `metres` (half for an elite; none for a boss, a dead actor or
+## one already sliding).
+static func hit_push(w: World, i: int, from: Vector2, metres: float) -> void:
+	if metres <= 0.0 or i <= 0:
+		return
+	if EliteAi.is_elite_kind(w.actors.kinds[i]):
+		metres *= 0.5
+	_knock(w, i, from, metres)
+
+
 ## Arc `spec` resolved (Attacks._arc, after its hits): Parry Edge cuts, and a slash no blade draws leaves its mark.
 static func on_arc(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	if spec.parry > 0:

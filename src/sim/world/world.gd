@@ -1660,6 +1660,7 @@ func _advance_actions() -> void:
 		input_buffer[DASH_SLOT] = 0  # v0.6.0 CU: Rooted (no dash), Brittle (stunned)
 	if input_buffer[DASH_SLOT] > 0 and dash_cooldown_left == 0 and not PlayerSkill.busy(self):
 		input_buffer[DASH_SLOT] = 0
+		PlayerKit.cancel_recovery(self)  # v0.10.5 O11 (F2): a dash ends the swing's recovery
 		dash_dir = PlayerKit.move_or_aim(self)
 		dash_root = 0  # Items: a new dash may hit every enemy once again.
 		dash_hit_ids = PackedInt32Array()
@@ -1931,6 +1932,7 @@ func _projectile_hits() -> void:
 					Attacks.projectile_effect(hit_spec, projectiles.tags[i]),  # v0.6.0 MX4: a hook's names it
 					Attacks.projectile_proc(hit_spec)  # v0.6.5 WN1: a hook's (a trigger's child) 50, then 25
 				)
+				var crit_now := last_hit_crit  # v0.10.5 O11: this bolt's own hit (read before any proc hits again)
 				hit_spec = null
 				hit_proc_permille = 1000
 				if pp != null:
@@ -1940,6 +1942,7 @@ func _projectile_hits() -> void:
 					killer_attack = projectiles.cause_of(i)  # v0.7.5 BF2: the recap names the shot's attack
 				# Items: Frost Core and Static Chain react to the player's landed bolts.
 				ItemProcs.on_bolt_hit(self, best_actor, i, got, a + v * best_t)
+				BladeForms.hit_push_bolt(self, best_actor, i, got, a, crit_now)  # v0.10.5 O11 (F1)
 				if pp != null:
 					pp.end(&"proj.procs")
 				LanceMods.on_hit(self, i, best_actor)  # v0.9.5 FC4: Split spits its shards

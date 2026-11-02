@@ -183,7 +183,7 @@ func test_the_finisher_has_the_biggest_hit_stop_and_the_longest_recovery() -> vo
 		assert_gt(fin.recovery_ticks(), t.step(k).recovery_ticks(), "recovery over step %d" % k)
 		assert_gt(fin.damage, t.step(k).damage, "damage over step %d" % k)
 	assert_eq(fin.hitstop_ticks, 5)  # v0.10.5 S1: 8 -> 5 (the combo is 3,3,3,5)
-	assert_eq(fin.recovery_ticks(), 24)
+	assert_eq(fin.recovery_ticks(), 18)  # v0.10.5 O11 (F3): 24 -> 18
 
 
 func test_the_thrust_steps_and_the_finisher_lunges_forward() -> void:

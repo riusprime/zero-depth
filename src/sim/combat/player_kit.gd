@@ -116,6 +116,19 @@ static func advance(w: World) -> void:
 	ItemProcs.advance_momentum(w)
 
 
+## v0.10.5 O11 (F2): a dash starting in a swing's RECOVERY (its hit already resolved) ends the swing; the combo step is
+## kept for the usual combo window (none after the finisher: the next press starts hit 1). Start-up and the active tick
+## are not cancellable (a dash starts after the kit has advanced, so the hit tick itself reads as swing_t = active + 1).
+## True if a swing was cancelled.
+static func cancel_recovery(w: World) -> bool:
+	# The dash runs after the kit: the hit tick itself reads as active_tick + 1.
+	if w.swing_t <= 0 or w.swing_t <= current_step(w).active_tick + 1:
+		return false
+	w.swing_t = 0
+	w.combo_window = w.player.combo_window_ticks if w.combo_step < w.player.combo.size() - 1 else 0
+	return true
+
+
 ## The hero may attack now: not guarding or dashing, not in the overheat stall (Heat), not stunned (v0.6.0 CU:
 ## Brittle), no skill committing (Kit, v0.3.5 K). v0.9.0 LZ: public, the Laser's beam reads it (Laser.firing).
 static func armed(w: World) -> bool:
