@@ -50,6 +50,8 @@ const NAMES: Array[StringName] = [
 	&"shatter",
 	&"bolt_fan",
 	&"pattern",
+	&"lances",  # v0.10.5 O3: her last phase
+	&"kneel",
 ]
 
 static var _lib := {}
@@ -168,4 +170,50 @@ static func library() -> Dictionary:
 			orbs
 		]:
 			_lib[c.name] = c
+		for c: BossClip in _last_phase():
+			_lib[c.name] = c
 	return _lib
+
+
+## v0.10.5 O3 (owner L6; O3_PRISM.md): her last phase's clips.
+## - lances: the Facet Lances: she gathers (the windup: she rises, "charge" glowing, the shards racing out, "spin"),
+##   holds aloft and flicks at each lance ("flare" pulses) while they strike, and sinks back to the float;
+## - kneel: the Shattered Kneel: she falls (the windup: a drop and a lurch), lies low and tilted, "open" 1 and the
+##   shards stilled ("spin" 0), trembling a little while her core shows, then rises back up (the recovery).
+static func _last_phase() -> Array[BossClip]:
+	var lances := BossClip.new(&"lances")
+	lances.strike = 0.2
+	lances.hold = 0.92
+	lances.shift(B, UP, [[0, 0], [0.12, -0.12, IO], [0.2, 0.6, BACK], [0.92, 0.5], [1, 0, IO]])
+	lances.stretch(B, [[0, 0], [0.12, -0.08], [0.2, 0.12, OUT3], [0.3, 0.05, OUT, S], [1, 0]])
+	lances.param(&"charge", [[0, 0], [0.2, 1.0, IN], [0.92, 0.6], [1, 0]])
+	lances.param(&"spin", [[0, 0.25], [0.2, 1.6, IN], [0.92, 1.2], [1, 0]])
+	var flare := [[0, 0], [0.2, 0.4]]
+	for k in 6:
+		var t := 0.2 + (0.92 - 0.2) * (k + 1) / 7.0
+		flare.append([t - 0.03, 0.3])
+		flare.append([t, 1.0, OUT3])
+	flare.append([1, 0])
+	lances.param(&"flare", flare)
+	var kneel := BossClip.new(&"kneel")
+	kneel.strike = 0.15
+	kneel.hold = 0.86
+	kneel.shift(
+		B,
+		UP,
+		[
+			[0, 0],
+			[0.05, 0.15, OUT],
+			[0.15, -0.95, IN3],
+			[0.2, -0.85, OUT, S],
+			[0.86, -0.9],
+			[1, 0, BACK]
+		]
+	)
+	kneel.turn(B, Z, [[0, 0], [0.15, 0.32, IN3], [0.86, 0.3], [1, 0, IO]])
+	kneel.turn(B, X, [[0, 0], [0.15, -0.18, IN3], [0.86, -0.16], [1, 0, IO]])
+	kneel.stretch(B, [[0, 0], [0.15, -0.14, IN3], [0.86, -0.12], [0.93, 0.08, OUT], [1, 0]])
+	kneel.param(&"open", [[0, 0], [0.15, 1.0, OUT], [0.86, 1.0], [1, 0]])
+	kneel.param(&"spin", [[0, 0.25], [0.15, 0.0], [0.86, 0.0], [1, 0]])
+	kneel.param(&"tremble", [[0, 0], [0.15, 0.6, OUT3], [0.3, 0.25], [0.86, 0.35], [1, 0]])
+	return [lances, kneel]

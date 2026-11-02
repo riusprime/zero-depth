@@ -103,7 +103,9 @@ func test_the_prism_is_a_skill_phase_in_data() -> void:
 		assert_true(a.shielded, "shielded while she casts")
 		assert_eq(a.fixed_aim, 0, "a fixed aim, not at the player")
 		assert_eq(a.pattern.look, &"crown_orb", "her own fireball look")
-	assert_eq(t.phase_attacks.size(), 1)
+	assert_eq(
+		t.phase_attacks.size(), 2, "v0.10.5 O3: her last phase from 50 % HP (test_prism_last.gd)"
+	)
 	var listed: Array[StringName] = []
 	for k in t.phase_attacks[0]:
 		listed.append(t.attacks[k].id)

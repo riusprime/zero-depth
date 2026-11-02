@@ -31,12 +31,15 @@ static func edge_distance(w: World, i: int) -> float:
 
 
 ## [per mille, tags] for a hit the player lands on boss i: the open weak point up close, else the ranged armour.
+## v0.10.5 O3: the Prism's open core while she kneels, up close (BossPrismLast).
 static func hit_mult(w: World, i: int) -> Array[int]:
 	var b := BossAi.entry_of(w, i)
 	if b < 0:
 		return [1000, 0]
 	var t: BossTable = w.boss_tables[w.bosses.table[b]]
 	var d := edge_distance(w, i)
+	if BossPrismLast.kneeling(w, i) and d <= t.weak_range_m:
+		return [BossPrismLast.core_mult(w, i), SimEvent.TAG_EXPOSED]
 	if w.bosses.exposed_t[b] > 0 and d <= t.weak_range_m:
 		return [t.weak_mult_permille, SimEvent.TAG_EXPOSED]
 	var pm := ranged_permille(t, d)

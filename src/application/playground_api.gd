@@ -114,6 +114,11 @@ func final_phase(phase: int) -> void:
 	_queue.append(func() -> void: final_phase_now(phase))
 
 
+## v0.10.5 O3 (owner L6): the fight goes to the Prism with her HP just under her last phase's threshold.
+func final_prism_last() -> void:
+	_queue.append(func() -> void: final_prism_last_now())
+
+
 func heal() -> void:
 	_queue.append(func() -> void: world.actors.hp[0] = world.actors.max_hp[0])
 
@@ -166,6 +171,19 @@ func final_phase_now(phase: int) -> bool:
 	if world.final_fight == null or world.final_fight.won:
 		return summon_final_now(phase)
 	FinalBoss.jump(world, phase)
+	return true
+
+
+## v0.10.5 O3: the Prism (body 1) with her HP one under her last phase's threshold (her fill is kept as she rises).
+func final_prism_last_now() -> bool:
+	if not final_phase_now(1):
+		return false
+	var i := FinalBoss.body_index(world)
+	if i < 0:
+		return false
+	var t := BossAi.table_of(world, i)
+	var last := t.phase_threshold[t.phase_threshold.size() - 1]
+	world.actors.hp[i] = maxi(1, world.actors.max_hp[i] * last / 1000 - 1)
 	return true
 
 

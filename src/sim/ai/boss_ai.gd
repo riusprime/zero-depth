@@ -651,6 +651,8 @@ static func resolve(w: World, i: int) -> void:
 			BossGaze.resolve(w, i, b, atk, st)
 		M.CROSS:  # v0.8.0 FB2: the Cross turns, the orbs fly, the bolts aim and fire
 			BossPrism.resolve(w, i, b, atk, st)
+		M.LANCES, M.KNEEL:  # v0.10.5 O3: her last phase's lances track and strike; her core cracks
+			BossPrismLast.resolve(w, i, b, atk, st)
 		M.MELT:  # v0.8.0 BS2 (S6): the outer ring melts for good
 			if st == 0:
 				BossLava.begin_melt(w, i)
@@ -872,7 +874,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return BossTwin.telegraph(w, i, atk, progress)
 	if BossJudge.is_move(atk.move):  # v0.9.0 NB3: the Verdict's square (tracked, locked); the echo's off the ground
 		return BossJudge.telegraph(w, i, atk, progress)
-	if atk.move in [M.GAZE, M.MELT, M.CROSS, M.TIDE]:  # v0.9.0 NB1: the tide (WorldReader.boss_tide)
+	if atk.move in [M.GAZE, M.MELT, M.CROSS, M.TIDE, M.LANCES, M.KNEEL]:  # NB1: the tide; O3: her last phase
 		# v0.8.0 BS2: nothing on the ground; drawn from WorldReader.boss_gaze / boss_melts / boss_cross.
 		return {"shape": &"signature", "ground": false, "progress": progress, "move": atk.move}
 	match atk.move:

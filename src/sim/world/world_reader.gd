@@ -188,6 +188,12 @@ const MOVE_COMBO := BossAttackTable.Move.COMBO  # v0.8.0 FB1 (the Colossus)
 const MOVE_SPIKE_CHASE := BossAttackTable.Move.SPIKE_CHASE
 const MOVE_SPIKE_BURST := BossAttackTable.Move.SPIKE_BURST
 const MOVE_CROSS := BossAttackTable.Move.CROSS  # v0.8.0 FB2 (the Prism)
+const MOVE_LANCES := BossAttackTable.Move.LANCES  # v0.10.5 O3 (the Prism's last phase)
+const MOVE_KNEEL := BossAttackTable.Move.KNEEL
+const EFFECT_PRISM_BURST := BossPrismLast.EFFECT_BURST
+const LANCE_TRACKING := BossPrismLast.TRACKING  # boss_lances: a lance's phase
+const LANCE_LOCKED := BossPrismLast.LOCKED
+const LANCE_STRIKING := BossPrismLast.STRIKING
 const MOVE_MIMIC_COMBO := BossAttackTable.Move.MIMIC_COMBO  # v0.8.0 FB3 (the Nemesis)
 const MOVE_MIMIC_SHOTS := BossAttackTable.Move.MIMIC_SHOTS
 const MOVE_CARD_CAST := BossAttackTable.Move.CARD_CAST
@@ -2002,6 +2008,31 @@ func boss_shards(i: int) -> PackedVector2Array:
 	if BossAi.entry_of(_w, i) < 0:
 		return PackedVector2Array()
 	return BossPrism.shards(_w, i)
+
+
+## v0.10.5 O3 (owner L6; O3_PRISM.md): boss i's Facet Lances: {} or {"winding", "progress", "half_width", "rims",
+## "lances" ([{"k", "phase", "progress", "from", "to"}])} (BossPrismLast.state).
+func boss_lances(i: int) -> Dictionary:
+	if not _is_boss(i):
+		return {}
+	return BossPrismLast.state(_w, i)
+
+
+## v0.10.5 O3: boss i's Shattered Kneel: {} or {"stage", "progress", "crack", "burst_tick", "range"}
+## (BossPrismLast.kneel_state).
+func boss_kneel(i: int) -> Dictionary:
+	if not _is_boss(i):
+		return {}
+	return BossPrismLast.kneel_state(_w, i)
+
+
+func _is_boss(i: int) -> bool:
+	return (
+		i >= 0
+		and i < _w.actors.size()
+		and BossAi.is_boss_kind(_w.actors.kinds[i])
+		and BossAi.entry_of(_w, i) >= 0
+	)
 
 
 ## v0.8.0 FB3 (FINAL_BOSS.md F6, F7): the Nemesis (boss i, a mimic body) for the views: {} or {"weapon", "stance",

@@ -37,6 +37,8 @@ enum Move {
 	VERDICT,  # v0.9.0 NB3: its tracked square, locked, a pendulum strike dropping on it (BossJudge)
 	WAVE,  # v0.9.5 BH4 (BOSSES_HARD.md T3): the Tidecaller's crossing wave (BossStream; never a boss's own attack)
 	INTERPHASE,  # v0.9.5 BH6 (HC5): a carrier of the Fallen's interphase hits (BossInterphase; never picked)
+	LANCES,  # v0.10.5 O3 (L6): the Prism's Facet Lances, her last phase (BossPrism)
+	KNEEL,  # v0.10.5 O3 (L6): the Prism's Shattered Kneel, her core open (BossPrism)
 }
 
 ## v0.8.0 FB3: the runs a Nemesis attack answers to (`weapon` below).
@@ -108,6 +110,17 @@ var shielded := false
 ## v0.10.5 O2a: >= 0 drops a shielded attack's shield this many ticks into its active time (BossDodge.shielded); -1
 ## keeps it up through the whole active time.
 var shield_active_ticks := -1
+## v0.10.5 O3 (owner L6, 2026-11-01: "Boring pattern"; O3_PRISM.md; BossPrism): a `lances` attack's `count` lances
+## start mark_gap_ticks apart from its active time's start; each one's line runs from its rim spot (distance_m from
+## her, `spread` turns apart round her from the player's side) through the player: it follows them for track_ticks,
+## holds for lock_ticks, then strikes for strike_ticks as a lane half_width_m each side, as far as length_m or a wall.
+var strike_ticks := 1
+## v0.10.5 O3 (L6: "something cooler while he's down"): a `kneel` attack: she is down (open) for its active time;
+## hits from within the weak range of her edge deal core_mult_permille; once she has lost crack_permille of her max HP
+## since it began her core bursts (burst_permille of her max HP, the world's own damage) and she rises.
+var crack_permille := 0
+var burst_permille := 0
+var core_mult_permille := 1000
 var pattern: BulletPatternTable = null
 ## v0.8.0 PR (owner O84: "the all small balls he shoots should be shooted on a predictable pattern"): a `pattern`
 ## attack with fixed_aim >= 0 fires its waves from this angle (1/4096 turns, the world's frame) instead of at the

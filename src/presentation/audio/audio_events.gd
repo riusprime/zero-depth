@@ -747,6 +747,10 @@ static func attack_cue(move: int) -> StringName:
 			return &"boss_twin_chain"
 		WorldReader.MOVE_ECHO:  # v0.9.0 NB3: the Judge's echo begins to replay
 			return &"boss_judge_echo"
+		WorldReader.MOVE_LANCES:  # v0.10.5 O3: the Prism's lances fly; she falls to her knees
+			return &"boss_laser"
+		WorldReader.MOVE_KNEEL:
+			return &"boss_slam"
 		WorldReader.MOVE_VERDICT:  # its pendulum drops
 			return &"boss_slam"
 	return &""

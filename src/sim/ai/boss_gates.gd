@@ -57,10 +57,13 @@ static func clamp_damage(w: World, i: int, amount: int, owner_id: int) -> int:
 
 ## BossAi._update_phase: boss i (entry b) reached phase `gate` (1 = the first gate): the transition starts, its
 ## attack and stagger stop, the adds are queued, and STATUS_APPLY (effect boss_phase_gate, amount = the gate) is
-## emitted for the views.
+## emitted for the views. v0.10.5 O3 (owner L6): a body with a spell rotation (the Prism) opens no gate: her last
+## phase only changes her rotation at her next spell (no pause, no adds).
 static func begin(w: World, i: int, b: int, gate: int) -> void:
 	var a := w.actors
 	var bs := w.bosses
+	if w.boss_tables[bs.table[b]].rotation:
+		return
 	bs.gate_t[b] = w.tuning.gate_ticks
 	bs.attack[b] = -1
 	bs.stagger_t[b] = 0

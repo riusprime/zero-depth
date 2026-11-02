@@ -8,6 +8,21 @@ extends RefCounted
 ## active time of an attack that isn't shielded) over the rotation's length.
 ## v0.8.0 FB3: a mimic body's numbers (the Nemesis: its echo, dash, stances, cards, its HP and hit from the build and
 ## the clamps on its copies of the player's attacks), in sim units.
+## v0.10.5 O3 (owner L6; O3_PRISM.md): the Prism's last phase: the Facet Lances' strike (their active time covers
+## every lance), the Shattered Kneel's crack, burst and core multiplier.
+
+
+## v0.10.5 O3: a boss attack's lance and kneel numbers (ContentCompiler.compile_boss_attack calls it).
+static func compile_attack(sp: Dictionary, t: BossAttackTable) -> void:
+	t.strike_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("strike_seconds", 0.0))))
+	t.crack_permille = int(sp.get("crack_permille", 0))
+	t.burst_permille = int(sp.get("burst_permille", 0))
+	t.core_mult_permille = int(sp.get("core_mult_permille", 1000))
+	if t.move == BossAttackTable.Move.LANCES:
+		t.active_ticks = maxi(
+			t.active_ticks,
+			(t.count - 1) * t.mark_gap_ticks + t.track_ticks + t.lock_ticks + t.strike_ticks
+		)
 
 
 static func compile_into(def: FinalBossDefinition, t: BossTable) -> void:
