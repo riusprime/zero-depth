@@ -446,6 +446,8 @@ var catch_up := CatchUpState.new()
 ## v0.8.0 N5 (owner O58): the intensity director's state (Intensity), hashed only when the spawner has its table.
 var intensity := IntensityState.new()
 var deep_elite_rooms := PackedInt32Array()
+## v0.10.5 O15: the pairing rows (indices into SpawnTable.pairings) that fired on this floor, in first-seen order.
+var pairs_seen := PackedInt32Array()
 ## v0.8.0 HS: the perf probe's phase timer (scripts/checks/perf_probe.gd --phases); null in play. Told where each tick
 ## phase begins and ends (begin/end with the phase's name), it never reads or writes state: not hashed, not copied.
 var phase_probe: Object = null
@@ -1416,6 +1418,8 @@ func state_hash() -> String:
 		catch_up.hash_into(h)
 	if spawner != null and spawner.intensity != null:  # v0.8.0 N5: only worlds whose spawner has the director
 		intensity.hash_into(h)
+	if not pairs_seen.is_empty():  # v0.10.5 O15: only once a duo fired
+		h.add_ints(pairs_seen)
 	if not deep_elite_rooms.is_empty():  # v0.5.5 DS (S5): only once a Deep room brought its elite.
 		h.add_ints(deep_elite_rooms)
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.

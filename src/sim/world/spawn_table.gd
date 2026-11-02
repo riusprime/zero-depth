@@ -34,6 +34,8 @@ var packs := PackedInt32Array()
 var curve: CurveTable
 ## v0.8.0 N5 (owner O58): the intensity director's numbers (null = off: packs come as before; Intensity).
 var intensity: IntensityTable
+## v0.10.5 O15: the authored enemy duos (null = off: packs come as before; Pairings).
+var pairings: PairingTable
 
 
 func tier_at(run_ticks: int) -> int:

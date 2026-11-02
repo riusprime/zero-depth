@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="PairingSetDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/pairing_set_definition.gd" id="1_set"]
+[ext_resource type="Script" path="res://src/content/defs/pairing_row.gd" id="2_row"]
+
+[sub_resource type="Resource" id="R_0"]
+script = ExtResource("2_row")
+lead_id = &"shield_bearer"
+partner_id = &"mender"
+from_floor = 3
+chance_permille = 300
+partners = 1
+placement = 0
+name_key = &"PAIR_SHIELD_WALL"
+
+[sub_resource type="Resource" id="R_1"]
+script = ExtResource("2_row")
+lead_id = &"charger"
+partner_id = &"mine_layer"
+from_floor = 2
+chance_permille = 250
+partners = 1
+placement = 0
+name_key = &"PAIR_MINEFIELD"
+
+[sub_resource type="Resource" id="R_2"]
+script = ExtResource("2_row")
+lead_id = &"swarmer"
+partner_id = &"sniper"
+from_floor = 3
+chance_permille = 250
+partners = 1
+placement = 1
+name_key = &"PAIR_PIN_AND_PICK"
+
+[sub_resource type="Resource" id="R_3"]
+script = ExtResource("2_row")
+lead_id = &"warden"
+partner_id = &"needle"
+from_floor = 1
+chance_permille = 250
+partners = 2
+placement = 2
+name_key = &"PAIR_SLAM_AND_SHOOT"
+
+[sub_resource type="Resource" id="R_4"]
+script = ExtResource("2_row")
+lead_id = &"arc_caster"
+partner_id = &"splitter"
+from_floor = 1
+chance_permille = 200
+partners = 1
+placement = 3
+name_key = &"PAIR_CROWD_THE_STORM"
+
+[sub_resource type="Resource" id="R_5"]
+script = ExtResource("2_row")
+lead_id = &"shield_bearer"
+partner_id = &"bomb_drone"
+from_floor = 2
+chance_permille = 250
+partners = 1
+placement = 4
+name_key = &"PAIR_OVER_THE_WALL"
+
+[resource]
+script = ExtResource("1_set")
+id = &"pairings"
+rows = Array[ExtResource("2_row")]([SubResource("R_0"), SubResource("R_1"), SubResource("R_2"), SubResource("R_3"), SubResource("R_4"), SubResource("R_5")])

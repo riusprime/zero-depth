@@ -1000,6 +1000,16 @@ func kind_alive(kind: int) -> bool:
 	return false
 
 
+## v0.10.5 O15: the name keys of the enemy duos that appeared on this floor, in first-seen order.
+func pairing_names() -> Array[StringName]:
+	var out: Array[StringName] = []
+	if _w.spawner == null or _w.spawner.pairings == null:
+		return out
+	for r in _w.pairs_seen:
+		out.append(_w.spawner.pairings.name_keys[r])
+	return out
+
+
 ## The locale key of enemy kind `kind`'s name (empty when it has no table).
 func enemy_name_key(kind: int) -> StringName:
 	var t := _w.enemy_table(kind)

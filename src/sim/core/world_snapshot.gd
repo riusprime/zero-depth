@@ -104,6 +104,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"BladeTable",  # v0.6.5 WN4
 	&"SimTuning",  # the dev panel's Step 6: the sim's designer numbers
 	&"IceField",  # v0.7.5 NB1: a floor's ice, laid from the floor seed at setup and never written in play
+	&"PairingTable",  # v0.10.5 O15: the enemy duos (SpawnTable.pairings)
 	&"IntensityTable",  # v0.8.0 N5: the intensity director's numbers (SpawnTable.intensity)
 	&"BulletPatternTable",  # v0.7.5 BF1: a boss attack's bullet pattern (BossAttackTable.pattern)
 	&"SlotTable",  # v0.9.0 AS: the wand's slot limits, caps and form × card table (content, read in play)
