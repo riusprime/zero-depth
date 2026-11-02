@@ -553,8 +553,7 @@ func _record_ascension(loop: int) -> void:
 		return
 	codex.add(ASCENSION_PAGE, &"ascended", &"times")
 	codex.raise_to(ASCENSION_PAGE, &"loop", &"best", loop)
-	if achievement_tracker != null:  # v0.7.5 AC: the Ascension achievements count each loop taken
-		achievement_tracker.report(&"runs:ascended")
+	MetaHooks.record_loop(self, loop)  # v0.7.5 AC's count; v0.10.5 O5a: loop achievements, records, robes
 
 
 func show_end_panel(won: bool) -> void:

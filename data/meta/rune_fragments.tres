@@ -10,5 +10,6 @@ secret = 2
 purple_portal = 3
 final_boss = 10
 collectible = 1
+loop_bonus_permille = 500
 portal_unlocks = Array[StringName]([&"gun_void"])
 id = &"rune_fragments"

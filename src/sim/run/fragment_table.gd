@@ -17,3 +17,5 @@ var purple_portal := 3
 var final_boss := 10
 ## Each collectible found (CL's hook: RuneFragments.add_collectibles).
 var collectible := 1
+## v0.10.5 O5a (owner L2): each loop past the first adds this per mille to every source (RuneFragments.loop_scaled).
+var loop_bonus_permille := 0

@@ -37,6 +37,7 @@ const STATS: Array[StringName] = [
 	&"final:no_hit_phase",  # a body beaten without a hit,
 	&"final:won_looped",  # and beaten after an Ascension loop
 	&"final:won_gun",  # v0.9.5 SL: beaten with the Gun (unlocks the Blade)
+	&"runs:loop_best",  # v0.10.5 O5a: the deepest loop reached (raised, not counted: RunRecords.LOOP_STAT)
 ]
 const CODEX_COUNTERS := {
 	&"cards": [&"offered", &"taken", &"level"],

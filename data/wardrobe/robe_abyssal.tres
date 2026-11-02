@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RobeDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/robe_definition.gd" id="1_robe"]
+
+[resource]
+script = ExtResource("1_robe")
+order = 10
+name_key = &"ROBE_ABYSSAL"
+cloak = Color(0.054902, 0.086275, 0.14902, 1)
+underside = Color(0.227451, 0.435294, 0.847059, 1)
+free = false
+unlock_hint_key = &"ROBE_ABYSSAL_HINT"
+id = &"abyssal"
