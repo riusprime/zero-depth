@@ -81,7 +81,8 @@ func _four(e: E2e) -> Main:
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
-	for id: StringName in [&"frost_core", &"blade_orbit", &"echo_slash", &"ember_core"]:  # v0.10.5 D1: Fire + Frost (Thermal Shock) in the replay
+	# v0.10.5 D1: Fire + Frost (Thermal Shock) in the replay
+	for id: StringName in [&"frost_core", &"blade_orbit", &"echo_slash", &"ember_core"]:
 		var guard := 0
 		while (
 			(
