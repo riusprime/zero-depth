@@ -3,8 +3,7 @@ extends RefCounted
 ## Turns definitions into the sim's plain tables, converting seconds to ticks once (CONTENT_SCHEMA §9).
 ## A build weapon id (BuildDefinition.WEAPON_IDS) to its PlayerTable weapon bit; any other id (empty) is 0.
 const WEAPON_BITS := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
-## Enemy behaviour ids (BehaviourSchemas.SCHEMAS) to actor kinds (a test checks the two key sets match).
-const ENEMY_KINDS := {
+const ENEMY_KINDS := {  # behaviour ids to actor kinds (a test checks the key sets match)
 	&"charger": ActorStore.Kind.CHARGER,
 	&"warden": ActorStore.Kind.WARDEN,
 	&"needle": ActorStore.Kind.NEEDLE,
@@ -717,6 +716,7 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.interact_radius_m = def.interact_radius_m
 	t.shard_tier_bonus_permille = int(round(def.shard_tier_bonus * 1000.0))
 	t.shard_tier_caps_at_peak = def.shard_tier_caps_at_peak  # O7a
+	t.shard_cap_min_ticks = SimTick.seconds_to_ticks(def.shard_cap_min_seconds)
 	t.shard_permille = int(round(def.shard_scale * 1000.0))  # v0.5.5 EC (S4)
 	t.boss_shards = def.boss_shards
 	t.altar_card_weights = def.altar_card_weights.duplicate()  # v0.4.0 BS

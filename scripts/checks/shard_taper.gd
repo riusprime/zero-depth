@@ -8,8 +8,9 @@ func _initialize() -> void:
 	var out := PackedStringArray()
 	var repo := ContentRepository.load_all()
 	for floor_n in [1, 2]:
-		var w := RunLab.new(repo, 78, &"gun").floor_world()
-		w.floor_index = floor_n
+		var lab := RunLab.new(repo, 78, &"gun")
+		lab.run.floor_index = floor_n
+		var w := lab.floor_world()
 		var c := w.spawner.curve
 		out.append("floor %d peak tick %d" % [floor_n, c.starts[c.phase_count() - 1]])
 		for capped in [false, true]:

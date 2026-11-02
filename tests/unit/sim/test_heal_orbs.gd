@@ -174,7 +174,7 @@ func test_floor_1_bosses_are_eased_and_their_room_heals_you() -> void:
 
 func test_shards_stop_growing_after_the_peak() -> void:
 	var w := RunLab.new(ContentRepository.load_all(), 78, &"gun").floor_world()
-	var peak := w.spawner.curve.starts[w.spawner.curve.phase_count() - 1]
+	var peak := w.reward_table.shard_cap_min_ticks  # v0.10.5 O7a: the cap (floor 1 peaks at 90 s, the minimum is 180 s)
 	w.run_ticks = peak
 	var at_peak := Rewards.shards_for_kill(w, KIND.CHARGER)
 	w.run_ticks = peak + 3600 * 2

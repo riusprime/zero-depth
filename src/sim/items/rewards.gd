@@ -44,7 +44,12 @@ static func shards_for_kill(w: World, kind: int) -> int:
 		tier = w.spawner.tier_at(w.run_ticks)
 		var c := w.spawner.curve
 		if w.reward_table.shard_tier_caps_at_peak and c != null:
-			tier = mini(tier, w.spawner.tier_at(c.starts[c.phase_count() - 1]))
+			tier = mini(
+				tier,
+				w.spawner.tier_at(
+					maxi(c.starts[c.phase_count() - 1], w.reward_table.shard_cap_min_ticks)
+				)
+			)
 	return _scaled(
 		w, (t.shards * (1000 + w.reward_table.shard_tier_bonus_permille * tier) + 500) / 1000
 	)

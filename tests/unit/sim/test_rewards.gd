@@ -195,6 +195,7 @@ func test_shard_tier_stops_at_the_peak_phase() -> void:
 	w.spawner.cap_by_floor = PackedInt32Array([0])
 	w.spawner.cap_max = 0
 	w.spawner.curve = CurveTable.new()
+	w.reward_table.shard_cap_min_ticks = 0
 	w.spawner.curve.starts = PackedInt32Array([0, 250])  # the peak starts at tier 2
 	w.run_ticks = 100
 	var before := Rewards.shards_for_kill(w, KIND.CHARGER)
@@ -208,6 +209,26 @@ func test_shard_tier_stops_at_the_peak_phase() -> void:
 	)
 	w.reward_table.shard_tier_caps_at_peak = false
 	assert_gt(Rewards.shards_for_kill(w, KIND.CHARGER), at_peak, "flag off: grows as before")
+	w.reward_table.shard_tier_caps_at_peak = true  # the table is shared
+	w.reward_table.shard_cap_min_ticks = 10800
+
+
+func test_shard_cap_is_at_least_three_minutes() -> void:
+	# v0.10.5 O7a: floor 1 peaks at 90 s and a later floor at 30 s; both cap at 180 s (shipped data).
+	var w := _world()
+	assert_eq(w.reward_table.shard_cap_min_ticks, 10800)
+	w.spawner = SpawnTable.new()
+	w.spawner.curve = CurveTable.new()
+	for peak in [5400, 1800]:
+		w.spawner.curve.starts = PackedInt32Array([0, peak])
+		w.run_ticks = 10800
+		var at_cap := Rewards.shards_for_kill(w, KIND.WARDEN)
+		w.run_ticks = 10800 + 3600 * 3
+		assert_eq(
+			Rewards.shards_for_kill(w, KIND.WARDEN), at_cap, "holds after 180 s (peak %d)" % peak
+		)
+		w.run_ticks = peak
+		assert_lt(Rewards.shards_for_kill(w, KIND.WARDEN), at_cap, "still growing at the peak")
 
 
 func test_a_boss_kind_pays_by_floor_not_tier() -> void:

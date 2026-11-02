@@ -51,6 +51,8 @@ extends ContentDef
 ## v0.10.5 O7a (theory audit P6, owner 2026-11-01): a kill's shard tier stops growing at the floor's peak phase, so
 ## staying longer no longer pays more. Starting value.
 @export var shard_tier_caps_at_peak := true
+## v0.10.5 O7a: ...but never before this many seconds of floor time (every floor's shards grow at least this long).
+@export var shard_cap_min_seconds := 180.0
 ## v0.5.5 EC (owner S4): every kill's shards × this (0.7: −30 %), rounded half up.
 @export var shard_scale := 0.7
 ## A boss kill pays boss_shards × the floor number (PLAN v0.3.0: 60 × floor).

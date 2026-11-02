@@ -37,6 +37,8 @@ var interact_radius_m := 1.6
 var shard_tier_bonus_permille := 250
 ## v0.10.5 O7a (P6): the shard tier stops at the floor's peak phase start (starting value, owner 2026-11-01).
 var shard_tier_caps_at_peak := true
+## v0.10.5 O7a: the cap tick is at least this many ticks (starting value 180 s).
+var shard_cap_min_ticks := 10800
 ## v0.5.5 EC (S4): every kill's shards × this per mille (the data ships 700: −30 %).
 var shard_permille := 1000
 ## A boss kill pays boss_shards × the floor number.
