@@ -1924,6 +1924,19 @@ PLAN NB: "Keep the empty hood" (no head lanterns: the room's edge lanterns and t
   what or how strong. The player gets no cue (owner: "the enemies are the real indicator"); `WorldReader.
   has_intensity`, `intensity` (0..1000), `intensity_mode`, `intensity_timer` exist for the dev panel (F10's Tools page:
   `DevPanel.intensity_text`).
+  **v0.10.5 O4 (owner D46, "Read your state live").** The quiet ends on its drawn time (it no longer waits for
+  `level ≤ relax_level`; on its end `level` drops to `relax_level` at most), and the first pack of the build-up waits
+  one build-up interval (`spawn_cd`). Every director tick `Intensity.count_kills` adds the kills since `kill_seen` to
+  the current one-second slot of `kill_ring` (`KILL_SLOTS` = 10; `ring_ticks` counts the ticks counted: only live
+  ticks outside `QUIET`; the first read only syncs), then `read_standing` sets `standing`: `STRUGGLING` when HP <
+  `struggle_hp_permille` of max, or with a full window, at least `slow_min_alive` enemies alive and window kills <
+  `slow_kill_permille` of the expected (`cap_now × expected_kill_permille / 1000`); `STRONG` when HP >
+  `strong_hp_permille` and (no full window yet, or kills ≥ the expected); else `BETWEEN`. Struggling: `BUILD_UP` peaks
+  at `struggle_peak_level`, the `PEAK` timer runs `struggle_peak_speed` ticks a tick, a `QUIET` begun while struggling
+  lasts `quiet_len × struggle_quiet_permille`, and `SpawnDirector` caps a pack at the row's largest (fixed pack or
+  `pack_max`) − `struggle_pack_cut`, at least 1 (`Intensity.pack_size`). The new fields are hashed and snapshotted
+  (`ADDED_SINCE_V05`: an older save starts with an empty window); `WorldReader.intensity_standing`; the dev panel adds
+  "struggling" or "strong".
 - **Boss phase gates (v0.5.5 DS, owner D7: mechanics HP can't skip).** Every boss has three phases at 1000 / 660 /
   330 ‰ of max HP (data). Damage on a boss stops at the next phase's threshold (`BossGates.clamp_damage` in
   `Damage._apply`, so a hit, a DoT tick or a burst all stop there; only the world's own hits, owner 0 such as the dev

@@ -165,6 +165,7 @@ static func _spawn_pack(w: World, t: SpawnTable, ticks: int, room: int) -> void:
 		size = w.rng_map.range_int(t.pack_min(w.floor_index), t.pack_max(w.floor_index))
 	if t.pack_cap_now(ticks) > 0:  # v0.4.0 TU: the phase's largest pack
 		size = mini(size, t.pack_cap_now(ticks))
+	size = Intensity.pack_size(w, t, entry, size)  # v0.10.5 O4 (owner D46): one smaller while the hero struggles
 	size = Elites.escort_size(w, size)  # v0.9.0 EL (ELITES.md E0): one smaller beside a room's elite
 	var spots := pack_spots(w, anchor, mini(size, room))
 	for k in spots.size():

@@ -25,3 +25,14 @@ var quiet_ticks_min := 600
 var quiet_ticks_max := 1200
 var relax_level := 300000
 var build_interval_permille := 1000
+## v0.10.5 O4 (owner D46): the hero's live state (Intensity.read_standing). HP shares and rates in per mille.
+var struggle_hp_permille := 400
+var strong_hp_permille := 700
+## The expected kills in the window: the cap now × this per mille.
+var expected_kill_permille := 200
+var slow_kill_permille := 500
+var slow_min_alive := 4
+var struggle_peak_level := 600000
+var struggle_peak_speed := 2
+var struggle_quiet_permille := 1500
+var struggle_pack_cut := 1
