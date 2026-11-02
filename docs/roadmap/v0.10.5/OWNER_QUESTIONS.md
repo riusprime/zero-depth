@@ -21,6 +21,7 @@ until the owner says so.
 | 7 | O14 | Floor shapes: floor 2's first Lockdown is an Elite one near the main path's middle; floor 3's room before the boss door spawns nothing while you stand in it | OK? |
 | 8 | O2b | Boss HP grows in line with your power (cap 3× expected), read at the boss door; floors 4–5 and loops reuse floor 3's pace (not measured); 11 picks in evidence/O2B_BOSS_PACE.md | OK? Especially pick 8: **threat T no longer raises boss HP**, only its damage cap |
 | 9 | O1 | The curse room's random curse price drew only the 5 cut (plain) curses; it now falls back to the 7 trade-off curses | OK, or a different price? |
+| 10 | O3 | The Prism had one phase; a last phase from 50 % HP (no gate): **Facet Lances** (6 lances from the room's edge, aim 0.45 s, lock 0.45 s, 26 dmg) and the **Shattered Kneel** (down 3 s, ×1.5 damage near her, a crack ring that bursts her core for 5 % bonus); 7 picks in evidence/O3_PRISM.md (the core burst is world damage, outside the pace cap) | Play it: cooler? Shots: build/shots/v0.10.5/prism_*.jpg |
 
 ## Questions
 
