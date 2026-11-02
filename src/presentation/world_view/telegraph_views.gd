@@ -97,6 +97,9 @@ void fragment() {
 }
 """
 
+## v0.10.5 O12: the enemies winding up or acting this tick (every telegraph, drawn here or told by an avatar): the
+## hostile threats that dim the hero's effects (HeroFxBudget).
+var threats := 0
 var _nodes := {}
 var _fill_mat := StandardMaterial3D.new()
 var _edge_mat := StandardMaterial3D.new()
@@ -201,9 +204,13 @@ static func look_of(reader: WorldReader, i: int, tg: Dictionary) -> StringName:
 
 func sync(reader: WorldReader) -> void:
 	var seen := {}
+	threats = 0
 	for i in range(reader.actor_count() if reader.any_telegraph() else 0):
 		var tg := reader.telegraph(i)
-		if tg.is_empty() or not tg.get("ground", true):
+		if tg.is_empty():
+			continue
+		threats += 1  # v0.10.5 O12: every windup counts, on the ground or told by its avatar
+		if not tg.get("ground", true):
 			continue  # v0.7.5 EF: a body or air cue ("cast", "lob") draws nothing on the ground
 		var id := reader.actor_id(i)
 		seen[id] = true

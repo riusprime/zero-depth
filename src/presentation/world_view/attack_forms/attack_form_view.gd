@@ -147,7 +147,7 @@ func _sync_bolts(reader: WorldReader) -> void:
 	_live.clear()
 	var seen := {}
 	for i in reader.projectile_count():
-		if _live.size() >= LIVE_BOLTS_MAX:
+		if _live.size() >= live_bolts_cap():
 			break  # v0.8.0 PF: the rest fly as their plain darts (draw_at's budget); their trails start when drawn
 		if (
 			reader.projectile_team(i) != 0
