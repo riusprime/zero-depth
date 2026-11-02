@@ -24,6 +24,12 @@ extends SceneTree
 ## The scenario: PlaygroundScenario's fixed room (seed 4404), 20 live enemies topped up each second at 7-12 m round the
 ## hero (the hero can't die), Glaive + Ring + Split Shot + Ember Core + Storm Core at level 3, the right mouse held,
 ## the aim sweeping a circle, the hero strafing left/right/up/down in 2 s legs.
+## v0.10.5 O12 (owner P9, the effect budget): --enemies=N keeps N live enemies (default ENEMIES); --heavy also grants
+## HEAVY_KEYS at level 5 (Twin, Halo, Rapid Fire, Wildfire, Chain Blast, the rune explosion: the most effects a frame);
+## --fx counts, per measured frame, the hero's effect instances (the forms' meshes and particles, the effects layer's
+## sprites, the hero's share of them when the layer keeps a hero budget, the pack's live instances by family) and the
+## hostile threats on screen (telegraphs, enemy shots) and the hero effects' opacity, and reports avg / p95 / max.
+##   ... -s scripts/checks/frame_probe.gd -- --biome=red_canyon --enemies=60 --heavy --fx --secs=20
 
 const OUT_DIR := "res://build/perf/"
 const DEFAULT_BIOMES := ["frozen_shore", "red_canyon"]
@@ -36,6 +42,29 @@ const BUILD_KEYS: Array[StringName] = [
 	&"ITEM_SPLIT_SHOT",
 	&"ITEM_EMBER_CORE",
 	&"ITEM_STORM_CORE",
+]
+## v0.10.5 O12: the extra cards of --heavy, at HEAVY_LEVEL.
+const HEAVY_KEYS: Array[StringName] = [
+	&"ITEM_GUN_TWIN",
+	&"ITEM_HALO_SHOT",
+	&"ITEM_GUN_RAPID_FIRE",
+	&"ITEM_WILDFIRE",
+	&"ITEM_CHAIN_BLAST",
+	&"ITEM_GUN_RUNE_EXPLOSION",
+]
+const HEAVY_LEVEL := 5
+## v0.10.5 O12: the pack families the hero's own effects use (enemy_shot is the hostile one).
+const HERO_PACK_FAMILIES: Array[StringName] = [
+	&"hit",
+	&"impact",
+	&"explosion",
+	&"area",
+	&"beam",
+	&"projectile",
+	&"status",
+	&"bolt",
+	&"trail",
+	&"mark"
 ]
 const KNOWN_AB := [
 	"wildfire",
@@ -93,6 +122,10 @@ var _stolen := {}
 var _proc_total_nodes := 0
 var _bk := {}  # bucket -> per-measured-frame microseconds
 var _phase_timer := PhaseTimer.new()
+var _enemies := ENEMIES  # --enemies=N (O12)
+var _heavy := false  # --heavy (O12)
+var _fx := false  # --fx (O12)
+var _fx_rows := {}  # counter name -> PackedFloat64Array, one value per measured frame
 
 
 func _initialize() -> void:
@@ -113,6 +146,12 @@ func _initialize() -> void:
 			_boss = int(s.trim_prefix("boss="))
 		elif s == "census":
 			_census = true
+		elif s.begins_with("enemies="):
+			_enemies = int(s.trim_prefix("enemies="))
+		elif s == "heavy":
+			_heavy = true
+		elif s == "fx":
+			_fx = true
 		elif s == "process":
 			_bd = true
 			_proc = true
@@ -159,6 +198,8 @@ func _process(delta: float) -> bool:
 			if _bd:
 				_collect(now)
 			_frames.append(dt_ms)
+			if _fx:
+				_count_fx()
 			var vp := root.get_viewport_rid()
 			_cpu += RenderingServer.viewport_get_measured_render_time_cpu(vp)
 			_gpu += RenderingServer.viewport_get_measured_render_time_gpu(vp)
@@ -210,7 +251,15 @@ func _setup_scenario() -> void:
 		if BUILD_KEYS.has(e["name_key"]):
 			_api.grant_now(e["code"], 3)
 			found[e["name_key"]] = true
-	for k in BUILD_KEYS:
+	if _heavy:
+		for e: Dictionary in _api.catalog():
+			if HEAVY_KEYS.has(e["name_key"]):
+				_api.grant_now(e["code"], HEAVY_LEVEL)
+				found[e["name_key"]] = true
+	var keys: Array[StringName] = BUILD_KEYS.duplicate()
+	if _heavy:
+		keys.append_array(HEAVY_KEYS)
+	for k in keys:
 		_build_names.append("%s%s" % [k, "" if found.has(k) else " (MISSING from the catalog)"])
 	_saved_atlas = int(
 		ProjectSettings.get_setting("rendering/lights_and_shadows/directional_shadow/size", 4096)
@@ -254,6 +303,7 @@ func _begin_measure(now: int) -> void:
 	_gpu = 0.0
 	_rs_n = 0
 	_bk.clear()
+	_fx_rows.clear()
 	PerfMarks.clear()
 	_phase_timer.reset()
 	_main.view.sync_profile.clear()
@@ -311,7 +361,7 @@ func _top_up() -> void:
 	if kinds.is_empty():
 		return
 	var tries := 0
-	while alive < ENEMIES and tries < 80:
+	while alive < _enemies and tries < maxi(80, _enemies * 3):
 		tries += 1
 		var ang := float(tries * 137) * 0.0174533 + float(w.tick) * 0.01
 		var dist := 7.0 + float((tries * 53) % 6)
@@ -431,7 +481,7 @@ func _finish_biome() -> void:
 		. append(
 			(
 				"scenario: Playground room seed 4404, Gun, %d live enemies, warm-up %.1f s, measured %.1f s"
-				% [ENEMIES, _warm, _secs]
+				% [_enemies, _warm, _secs]
 			)
 		)
 	)
@@ -440,6 +490,7 @@ func _finish_biome() -> void:
 			"build: "
 			+ ", ".join(_build_names)
 			+ " at level 3 (Glaive, Ring, Split, fire core, lightning core)"
+			+ (" + the --heavy cards at level %d" % HEAVY_LEVEL if _heavy else "")
 		)
 	)
 	lines.append(
@@ -502,6 +553,8 @@ func _finish_biome() -> void:
 				% [s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8]]
 			)
 		)
+	if _fx:
+		lines.append_array(_fx_lines())
 	if _census:
 		lines.append_array(_census_lines())
 	if _bd:
@@ -510,6 +563,8 @@ func _finish_biome() -> void:
 	var text := "\n".join(lines) + "\n"
 	print(text)
 	var tag := "" if _ab.is_empty() else "_ab-" + "-".join(_ab)
+	if _heavy or _enemies != ENEMIES:
+		tag += "_heavy%d" % _enemies
 	var f := FileAccess.open(
 		ProjectSettings.globalize_path(OUT_DIR + "%s_%s%s.txt" % [_sha, biome, tag]),
 		FileAccess.WRITE
@@ -532,6 +587,66 @@ func _ab_status() -> String:
 		else:
 			out.append("%s=on" % f)
 	return ", ".join(out)
+
+
+## v0.10.5 O12 (--fx): the effect instances drawn this frame, one value per counter.
+func _count_fx() -> void:
+	var v: WorldViewRoot = _main.view
+	var forms: AttackFormCanvas = v.attack_forms
+	_fx_add("forms_meshes", forms.meshes_drawn())
+	_fx_add("forms_particles", forms.particles_drawn())
+	var layer: VfxLayer = forms.vfx
+	if layer != null:
+		var n := 0
+		for id: StringName in layer.pools:
+			n += layer.used(id)
+		_fx_add("layer_sprites_all", n)
+		if &"hero_budget" in layer and layer.get(&"hero_budget") != null:
+			var b: Object = layer.get(&"hero_budget")
+			_fx_add("hero_sprites_drawn", b.get(&"used"))
+			_fx_add("hero_sprites_dimmed", b.get(&"dimmed"))
+			_fx_add("hero_sprites_skipped", b.get(&"skipped"))
+			_fx_add("hero_alpha_x100", float(b.get(&"alpha")) * 100.0)
+			_fx_add("hostile_threats", b.get(&"threats"))
+	var pack: PackFx = v.pack_fx
+	if pack != null:
+		var hero := 0
+		for fam in HERO_PACK_FAMILIES:
+			hero += pack.live_count(fam)
+		_fx_add("pack_hero_live", hero)
+		for fam in HERO_PACK_FAMILIES:
+			_fx_add("pack_%s" % fam, pack.live_count(fam))
+		_fx_add("pack_enemy_shot_live", pack.live_count(&"enemy_shot"))
+	_fx_add("telegraphs_drawn", v.telegraphs.count())
+
+
+func _fx_add(key: String, value: float) -> void:
+	var rows: PackedFloat64Array = _fx_rows.get(key, PackedFloat64Array())
+	rows.append(value)
+	_fx_rows[key] = rows  # a packed array is a value: store it back
+
+
+func _fx_lines() -> PackedStringArray:
+	var out: PackedStringArray = ["fx counts per measured frame (avg / p50 / p95 / max):"]
+	for key: String in _fx_rows:
+		var rows: PackedFloat64Array = (_fx_rows[key] as PackedFloat64Array).duplicate()
+		rows.sort()
+		var sum := 0.0
+		for x in rows:
+			sum += x
+		out.append(
+			(
+				"  %s: %.1f / %.0f / %.0f / %.0f"
+				% [
+					key,
+					sum / maxf(rows.size(), 1),
+					_pct(rows, 0.5),
+					_pct(rows, 0.95),
+					rows[rows.size() - 1] if rows.size() > 0 else 0.0
+				]
+			)
+		)
+	return out
 
 
 static func _pct(sorted: PackedFloat64Array, q: float) -> float:

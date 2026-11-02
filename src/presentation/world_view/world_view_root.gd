@@ -389,14 +389,16 @@ func _setup_effects() -> void:
 		strikes.vfx = layer  # v0.8.0 AV part 2: the strikes' sprites, lights, marks and explosions
 		layer.drawers.append(strikes.draw_fx)
 		layer.drawers.append(final_views.draw_fx)  # v0.8.0 TX2: the shatter's crystal burst
+		# v0.10.5 O12 (owner P9): the hero's own forms draw as hero_drawers, under the hero's effect budget
+		# (HeroFxBudget); the drawers above (enemy fireballs, spikes, boss strikes, props) never are.
 		laser.vfx = layer  # v0.9.0 LZ: the beam's element accent, the impact's sparks and light
-		layer.drawers.append(laser.draw_fx)
+		layer.hero_drawers.append(laser.draw_fx)
 		bombs.vfx = layer  # v0.9.0 BM: the blasts' element bursts
-		layer.drawers.append(bombs.draw_fx)
-		layer.drawers.append(lances.draw_fx)  # v0.9.0 AF1: the release's element accent and sparks
+		layer.hero_drawers.append(bombs.draw_fx)
+		layer.hero_drawers.append(lances.draw_fx)  # v0.9.0 AF1: the release's element accent and sparks
 		# v0.9.0 VX: the forms' element accents, launches, catches and collapses (HeroFx, VFX_AUDIT.md)
 		for v: Node in [voids, scatter, runes, glaives, seekers, waves, wisps]:
-			layer.drawers.append(Callable(v, &"draw_fx"))
+			layer.hero_drawers.append(Callable(v, &"draw_fx"))
 		seekers.vfx_on = true  # V29: the trail motes become the element's own sprites
 	element_fx.forms_drawn = true  # MX3 draws the spec forms (rings, spec patches, bombs)
 	ability_fx.forms_drawn = true
@@ -550,7 +552,7 @@ func _setup_devices(palette: Dictionary) -> void:
 	hit_feel.pack_fx = pack_fx  # VX1: the guard, weak-spot and death sparks
 	add_child(hit_feel)
 	if attack_forms.vfx != null:  # v0.8.0 GF2: the hits' impacts, in the effects layer's pools and budget
-		attack_forms.vfx.drawers.append(hit_feel.impacts.draw)
+		attack_forms.vfx.hero_drawers.append(hit_feel.impacts.draw)  # v0.10.5 O12: the hero's budget
 	actors.cull = cull  # v0.8.0 HV
 	status_fx.cull = cull
 	attack_forms.cull = cull
@@ -627,6 +629,8 @@ func sync() -> void:
 	_sync_view(&"elite_fx", elite_fx)  # v0.9.0 EL
 	if elite_fx.take_thud():  # v0.9.0 EL: the Breaker's slam near the hero (none with reduced motion)
 		rig.thud(EliteViews.THUD)
+	# v0.10.5 O12 (owner P9): the hostile threats on screen dim the hero's effects (HeroFxBudget), once a tick
+	attack_forms.budget.settle(HeroFxBudget.threats_of(telegraphs.threats, reader, cull))
 	_sync_view(&"attack_forms", attack_forms)  # v0.6.0 MX3
 	_sync_view(&"laser", laser)  # v0.9.0 LZ
 	_sync_view(&"bombs", bombs)  # v0.9.0 BM

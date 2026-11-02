@@ -115,6 +115,10 @@ var cast_forms := {}
 ## v0.8.0 PF: VfxLayer bursts merged into a live one, and the oldest dropped (BurstBudget), since the view began.
 var bursts_merged := 0
 var bursts_dropped := 0
+## v0.10.5 O12 (owner P9): the hero's effect budget (HeroFxBudget), also the effects layer's for the frame.
+var budget := HeroFxBudget.new()
+var _mesh_soft := 0
+var _part_soft := 0
 ## Live effects: {look, origin, angle, start, life, to, seed, own, kind, size, color}.
 var _effects: Array[Dictionary] = []
 ## The player's live bolts that carry a layer this frame: {id, pos, vel, look, trail: PackedVector2Array}.
@@ -191,6 +195,10 @@ func mesh_cap() -> int:
 
 func particle_cap() -> int:
 	return int(MAX_PARTICLES * particle_scale())
+
+
+func live_bolts_cap() -> int:
+	return mini(LIVE_BOLTS_MAX, HeroFxBudget.live_bolts_for(density))
 
 
 ## How many form meshes and particles the last drawn frame showed.
@@ -334,15 +342,19 @@ func draw_at(now: float) -> void:
 		p.begin()
 	_mesh_left = mesh_cap()
 	_part_left = particle_cap()
+	_mesh_soft = _mesh_left - int(_mesh_left * HeroFxBudget.SOFT)
+	_part_soft = _part_left - int(_part_left * HeroFxBudget.SOFT)
+	budget.begin(density)
 	if vfx != null:
 		vfx.density = particle_scale()
 		vfx.begin(now)
+		vfx.hero_begin(budget)  # v0.10.5 O12
 	forms_pack.hold.begin()  # v0.10.0 VX2: the held pack effects of this frame's forms
 	var bolts := 0
 	for b in _live:
 		# v0.8.0 PF: past LIVE_BOLTS_MAX a bolt keeps only its dart (ActorViews); the charging orb (id -1) always draws
 		if int(b["id"]) >= 0:
-			if bolts >= LIVE_BOLTS_MAX or _mesh_left <= 0:
+			if bolts >= live_bolts_cap() or _mesh_left <= 0:
 				continue
 			bolts += 1  # v0.8.0 HV: an off-screen bolt still counts, so the same bolts get their rims
 			if LiveBoltLook.off_screen(cull, b, LiveBoltLook.of(b["look"], self)):
@@ -379,6 +391,7 @@ func draw_at(now: float) -> void:
 	_keep = spent
 	forms_pack.hold.end()
 	if vfx != null:
+		vfx.hero_end()  # finish() draws the hero's drawers under the budget, then everyone else's
 		vfx.finish()
 	_drawn_meshes = mesh_cap() - _mesh_left
 	_drawn_particles = particle_cap() - _part_left
@@ -400,7 +413,7 @@ func _put(layer: StringName, xf: Transform3D, c: Color) -> bool:
 func _put_in(p: AttackFormPool, xf: Transform3D, c: Color) -> bool:
 	if _mesh_left <= 0:
 		return false
-	if not p.add(xf, c):
+	if not p.add(xf, budget.tint(c, _mesh_left <= _mesh_soft)):
 		return false
 	_mesh_left -= 1
 	return true
@@ -409,7 +422,8 @@ func _put_in(p: AttackFormPool, xf: Transform3D, c: Color) -> bool:
 func _put_particle(kind: StringName, xf: Transform3D, c: Color) -> bool:
 	if _part_left <= 0:
 		return false
-	if not (particle_pools[kind] as AttackFormPool).add(xf, c):
+	var p: AttackFormPool = particle_pools[kind]
+	if not p.add(xf, budget.tint(c, _part_left <= _part_soft)):
 		return false
 	_part_left -= 1
 	return true
