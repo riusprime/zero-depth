@@ -168,3 +168,38 @@ floor 5 HP per hit tick 19.1
   and the heal orbs enter the curves.
 - A "damage avoided" counter (the attacks whose hitbox the hero left), if the skill curve should be more than a
   constant bot's damage taken.
+
+## Q7: floors 4 and 5 get their own catch-up and boss-pace entries (2026-11-02, agent)
+
+- **Status:** RUN (probe, catch_up + boss_pace unit 23/23, content 166/166, golden 2/2). Boss pace target **MISSED on floor 5** (below).
+- **Derivation (starting values, no new measurement behind them):** floors 1-3 had E at entry = the previous floor's boss
+  E (2000, 4000), so E(4) = 7000, E(5) = 11000. Boss E steps were +2000, +3000, so +4000, +5000 = 11000 / 16000. Enemy
+  caps +0.5 a floor: 3000 / 3500. Boss pace steps +680 (O2b): 5130 / 5810. `boss_cap_permille` already had 5 entries.
+  `data/scaling/catch_up.tres` is the only data change; tests that pinned the 3-entry arrays now pin 5.
+- **Probe:** `scripts/checks/boss_pace_probe.gd` gained pools for floors 4-5 (tidecaller, twin_wardens, clockwork_judge,
+  lantern_shade). Command: `godot --headless --path . -s scripts/checks/boss_pace_probe.gd -- floors=4,5` (Godot 4.7.2,
+  Windows 11, the owner's PC; per-fight lines in `build/q7_probe.txt`, not tracked).
+
+```
+F4 tidecaller weak ALL | mean 97.3 s, min 95.7, max 98.7
+F4 tidecaller expected ALL | mean 97.4 s, min 95.7, max 98.7
+F4 tidecaller strong ALL | mean 97.4 s, min 95.7, max 98.7
+F4 tidecaller extreme ALL | mean 57.2 s, min 54.3, max 62.5
+F4 twin_wardens weak ALL | mean 69.0 s, min 67.1, max 70.0
+F4 twin_wardens expected ALL | mean 69.0 s, min 67.1, max 70.0
+F4 twin_wardens strong ALL | mean 69.0 s, min 67.1, max 70.0
+F4 twin_wardens extreme ALL | mean 45.3 s, min 41.5, max 48.9
+F5 clockwork_judge weak ALL | mean 57.7 s, min 49.5, max 68.6
+F5 clockwork_judge expected ALL | mean 57.7 s, min 49.5, max 68.6
+F5 clockwork_judge strong ALL | mean 57.7 s, min 49.5, max 68.6
+F5 clockwork_judge extreme ALL | mean 34.6 s, min 32.1, max 38.2
+F5 lantern_shade weak ALL | mean 58.4 s, min 53.5, max 63.9
+F5 lantern_shade expected ALL | mean 58.4 s, min 53.5, max 63.9
+F5 lantern_shade strong ALL | mean 58.4 s, min 53.5, max 63.9
+F5 lantern_shade extreme ALL | mean 29.2 s, min 26.1, max 32.0
+determinism: MATCH
+```
+
+- **Result:** floor 4 lands in 60-120 s (97.4 / 69.0 s means). Floor 5 means are 57.7 / 58.4 s, **under the 60 s floor**
+  (some seeds 49.5 s). Per the task, not retuned; a floor 5 pace of about 5810 x 90 / 58 = ~9000 would be the O2b-style
+  one-step correction, left for the lead/owner.
