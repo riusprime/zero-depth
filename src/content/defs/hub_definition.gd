@@ -33,6 +33,12 @@ extends ContentDef
 @export var gate_half_m := 1.6
 @export var alcove_at := Vector2(0.0, 15.2)
 @export var alcove_r := 2.2
+## v0.10.5 O17 (owner P17): the Training Room's door in the south rim (its gap's half width, m; 0: no door), how far
+## its short lane runs out past the rim (m: walking to its end enters the room), and the name shown near it.
+@export var training_door_half_m := 0.0
+@export var training_lane_m := 2.6
+@export var training_name_key: StringName = &"UI_TRAINING_ROOM"
+
 ## The stations on the rim (HubStationDefinition) and the hub's evolving states (HubStateDefinition). The state ids
 ## the view knows: gate_open, machine_looped, trophy_lit, trophy_crown.
 @export var stations: Array[HubStationDefinition] = []

@@ -123,6 +123,11 @@ func heal() -> void:
 	_queue.append(func() -> void: world.actors.hp[0] = world.actors.max_hp[0])
 
 
+## v0.10.5 O17: any command run between ticks like the others (the Training Room's, which answer with a line).
+func queue(c: Callable) -> void:
+	_queue.append(c)
+
+
 # --- Applied now (between ticks; the tests call these directly) ------------------------------------------------
 
 

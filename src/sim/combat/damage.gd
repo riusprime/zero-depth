@@ -213,6 +213,9 @@ static func _apply(
 	var target_id := a.ids[target]
 	# v0.5.5 DS (D7): a boss's HP stops at its next phase gate (BossGates).
 	var applied := mini(BossGates.clamp_damage(w, target, scaled, owner_id), a.hp[target])
+	if target == 0 and w.player_hp_floor > 0:  # v0.10.5 O17: the Training Room's hero can't die
+		applied = mini(applied, maxi(0, a.hp[0] - w.player_hp_floor))
+
 	a.hp[target] -= applied
 	BossTwin.share_hp(w, target)  # v0.9.0 NB2: the Twin Wardens' one HP: the twin holds what this body holds
 	PlayerRegen.note_combat(w, target, owner_id)  # Builds: combat stops the out-of-combat regen (L25).

@@ -170,7 +170,13 @@ func test_the_owners_hub_pieces_dress_the_ring() -> void:
 		var id: StringName = n.get_meta(&"model_id", &"")
 		if id != &"":
 			ids[id] = int(ids.get(id, 0)) + 1
-	assert_eq(ids.get(&"hub_wall_segment", 0), 11, "11 wall segments")
+	assert_eq(
+		ids.get(&"hub_wall_segment", 0),
+		10,
+		"10 wall segments (v0.10.5 O17: the south one is a door)"
+	)
+	assert_not_null(v.plan.get_node_or_null("TrainingDoor"), "the Training Room's door")
+
 	assert_eq(ids.get(&"hub_pillar_brazier", 0), _hub.pillars.size(), "a pillar per spot")
 	assert_eq(ids.get(&"hub_floor_rune", 0), 16, "16 floor runes")
 	assert_eq(ids.get(&"hub_sealed_gate", 0), 1, "the gate")
