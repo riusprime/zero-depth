@@ -108,6 +108,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"IntensityTable",  # v0.8.0 N5: the intensity director's numbers (SpawnTable.intensity)
 	&"BulletPatternTable",  # v0.7.5 BF1: a boss attack's bullet pattern (BossAttackTable.pattern)
 	&"SlotTable",  # v0.9.0 AS: the wand's slot limits, caps and form × card table (content, read in play)
+	&"ElementPairTable",  # v0.9.5 EE3 (World.pair_table; v0.10.5 D1: SaveLab worlds hold it now, as Main)
 	&"EliteTable",  # v0.9.0 EL: an elite archetype's ability and plain attack (EnemyTable.elite)
 	&"EliteRules",  # v0.9.0 EL: where elites appear and the core drop (EliteState.rules)
 	&"AffinityTable",  # v0.9.0 RB: the run's rune affinity's numbers (AffinityState.table)
