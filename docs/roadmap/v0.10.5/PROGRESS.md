@@ -56,6 +56,7 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 | O12 the hero's effects have a budget (sprites 160/110/60, bolts 96/64/32 by Effects density; dim past 75 %, skip past the cap; fade to 60 % when > 4 threats); hostile effects never touched | 1530c95a | [evidence/O12_EFFECT_BUDGET.md](evidence/O12_EFFECT_BUDGET.md): budget 10/10, e2e/content/arch/readable 27/27; **fps unchanged** (60 enemies, heavy wand, i7-10700K + RTX 3060: p50 54–63 ms, ~16–17 fps; render is ~14 ms of the frame, the main thread is the cost). Presentation folder 1271/1276: 4 stale tests from S1/O1/FX → fixed in 2e3d6b82 (blade feel 19/19, item visuals 1/1 after deleting 2 tests whose items O1 removed, seekers 5/5); test_item_cards fails only in the full folder run (not reproduced in chunks) |
 | O13 the wand forecast: a FORECAST block under the wand on the Build page (and "AFTER THE SWAP" on the Swap panel): the spell read left to right and its numbers, computed by the sim's own compile | e90fd495 | [evidence/O13_WAND_FORECAST.md](evidence/O13_WAND_FORECAST.md): 76/76 incl. test_wand_forecast (numbers = outcome for 6 wands, read-only, en+es) and the wand-build e2e through real input; arch+golden 6/6; shot `build/shots/v0.10.5/wand_forecast.png` |
 | O11a how each verb feels today (timings from the code) | 55eb28da | [evidence/O11A_FEEL_TODAY.md](evidence/O11A_FEEL_TODAY.md) |
+| O11 feel: hits push normal enemies back (Blade 0.15 m, finisher 0.45, bolt 0.06, crit 0.12; elites half, bosses none); a dash cancels a Blade swing's recovery; the finisher's recovery 24 → 18 ticks | 10ffc848 | agent: hit feel O11 9/9, combo 16, kit 6, skill 13, hit feel 3, blade combos 13, wand blade 16, content 7, golden replay 2, e2e blade feel/combo/wand blade pass |
 | O2a the Lantern Shade and the Clockwork Judge hittable more often | f59ee0f2 | [evidence/O2A_INVULNERABLE.md](evidence/O2A_INVULNERABLE.md): invulnerable share 37 → 13 % and 30 → 8 %; 23 scripts 198/198 |
 
 ## Verification
@@ -85,6 +86,7 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 
 ## Goldens changed on purpose
 - `tests/golden/fixtures/modifier_equivalence.json` (S1: the combo hit-stop 4,4,5,8 → 3,3,3,5 ticks; Blade-all now hits 139, damage 4160, kills 14)
+- `tests/golden/fixtures/modifier_equivalence.json` again (O11: the knockback and the finisher's recovery; blade_plain, gun_plain, both_plain, blade_wildfire_rider, gun_frost_core regenerated)
 
 ## Gates (owner)
 | Gate | Where | State |
