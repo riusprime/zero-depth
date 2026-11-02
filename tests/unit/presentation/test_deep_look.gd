@@ -5,6 +5,18 @@ extends GutTest
 
 const LONG := 1 << 24
 
+var _locale := ""
+
+
+## v0.10.5: the boss bar's text is read in English (the owner's PC runs the game in Spanish).
+func before_each() -> void:
+	_locale = TranslationServer.get_locale()
+	TranslationServer.set_locale("en")
+
+
+func after_each() -> void:
+	TranslationServer.set_locale(_locale)
+
 
 func _view(w: World, mood: bool) -> WorldViewRoot:
 	var biome: BiomeDefinition = ContentRepository.load_all().get_def(&"biomes", &"ruins")
