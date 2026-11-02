@@ -85,6 +85,12 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 | Cheaper nav flood (same steps, cheaper bookkeeping) | 13b7b3a0 | [evidence/HORDE_PERF.md](evidence/HORDE_PERF.md): flood alone 7.85 → 5.91 ms at 40 enemies; golden 2/2 and hash chains unchanged; nav/AI/move 91/91 |
 | Fireballs, elite effects, effect packs, telegraphs and status rings built at load (no first-use hitch) | 42b279c5, 8a1c9f38 | agents: test_first_use_warm 13/13 and the touched view tests; no timing (owner's to check) |
 | Fewer draw calls with the same look (empty effect batches no longer drawn; the menu warm-up viewport stops) | dbc748c6 | [evidence/DRAW_CALLS.md](evidence/DRAW_CALLS.md): red canyon 3D draws 342 → 271; shots `build/shots/v0.10.5/draw/`; unit 83/83, arch 4/4, e2e 7/7; timing noisy (3 agents running) |
+| The owner's second logged run | 163ac372 | [evidence/PERF_PLAYLOG_2.md](evidence/PERF_PLAYLOG_2.md): 41+ enemies 28.1 → 21.0 ms; light fights ~1 ms slower (nodes 5,988 → 8,303) |
+| PA (perf wave 2): each enemy casts one shaped shadow-only mesh (blob option, GameSettings `enemy_shadows`); physics interpolation only near the hero | e6be0ddb | [evidence/PA_SHADOWS.md](evidence/PA_SHADOWS.md): 60 enemies, enemy shadow draws 107 → 28 (blob 0); test_enemy_shadows 4/4, touched 99/100 (test_settings_profile fails the same on the untouched tree), e2e horde 2/2; timing noisy; shots `build/shots/v0.10.5/pa/` |
+| PB: particles cast no shadows (ParticleShadowOff); torch shadow budget 4 → 2; a cheaper sun shadow behind `game/render/cheap_sun_shadow` / `--cheap-sun` (off) | 65933c37 | [evidence/PB_SHADOWS.md](evidence/PB_SHADOWS.md): the fight's sun shadow pass 230 → 166 draws; tests 3/3, 6/6, e2e 2/2; timing noisy; shots `build/shots/v0.10.5/pb/` |
+| PC: idle effect pools wait outside the scene | f5cd06c9 | [evidence/PC_POOLS.md](evidence/PC_POOLS.md): nodes on a built floor 5,829 → 2,948; first-use warm 14/14, views 54/54, e2e elites 1/1 |
+| PD: enemies plan (`EnemyAi.PLAN_PERIOD` 4 → 8) and re-flood (`NavField.SLICES` 3 → 6) at half rate (owner: "let's do it") | 830222be | [evidence/PD_AI_RATE.md](evidence/PD_AI_RATE.md): ai+nav at 60 enemies 1.03 → 0.88 ms a tick; play check attacks 352 → 349, distance 10.92 → 10.68 m; no golden file changed; AI/nav 121/122 → test_horde fixed 6/6 |
+| Cross-step fix: the idle pools are freed with their floor (orphans 2,820 → 0; a freed-instance error on unload); the lock-flash test marks its look drawn | 7d7a0ae3 | agent: damage soak 1/1, ascension + final boss 3/3, unit 37/37; lead seams 617/617 (Verification 9) |
 
 ## Verification
 1. **S2–S4 re-tested on this branch** (the agents' own runs were on an old base, `d33bc82a`, see History). Lead,
@@ -121,6 +127,11 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
    stopped at lint: gdformat was not on the PATH; nothing ran.)
 8. **Lead seams after the perf fixes** (`wt-seams` at `ce9a7558`): `bash scripts/ci/seams.sh`: lint ok; Scripts 108,
    Tests 617, Passing Tests 617; "check_gut_log: ok (617 passing, minimum 1)".
+
+9. **Lead seams after perf wave 2** (`wt-seams`): at `026261bb` (PA–PD merged) 612/617: the damage soak's 2,820
+   orphans and a freed-instance error in it, ascension (2) and final boss (PC's out-of-tree pools not freed on unload),
+   and test_attack_visuals_2's float error; fixed in 7d7a0ae3. At `7d7a0ae3`: `bash scripts/ci/seams.sh`: lint ok;
+   Scripts 108, Tests 617, Passing Tests 617; "check_gut_log: ok (617 passing, minimum 1)".
 
 ## Goldens changed on purpose
 - `tests/golden/fixtures/modifier_equivalence.json` (S1: the combo hit-stop 4,4,5,8 → 3,3,3,5 ticks; Blade-all now hits 139, damage 4160, kills 14)
