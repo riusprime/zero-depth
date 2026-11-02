@@ -19,6 +19,8 @@ extends SceneTree
 ##   no_rig_merge     v0.9.5 PF5: the enemies' pieces as separate meshes (RigMerge off), to compare the merged rigs
 ##   wildfire         v0.10.0 VX0: also grants Wildfire (a burning kill spreads fire: the fire bursts judged here)
 ##   no_pack_fx       v0.10.0 VX0: the fire explosion draws as sprites (the pack's PackFx off), the "before" of VX0
+##   no_anim          v0.10.5 Q5: every AnimationMixer under the view inactive (re-applied once a second, so new
+##                    enemies too): what the AnimationPlayers cost the frame (the models stop animating)
 ##   planar_floor     NOT AVAILABLE: every biome's ground is world-triplanar (StageView._ground_material) and there
 ##                    is no planar path to switch to; the report says whether the floor is triplanar.
 ## The scenario: PlaygroundScenario's fixed room (seed 4404), 20 live enemies topped up each second at 7-12 m round the
@@ -76,7 +78,8 @@ const KNOWN_AB := [
 	"fx_low",
 	"planar_floor",
 	"no_rig_merge",
-	"no_burn_fx"
+	"no_burn_fx",
+	"no_anim"
 ]
 ## The strafe legs (move_left / move_right / move_up / move_down), each held STRAFE_S seconds.
 const STRAFE: Array[StringName] = [&"move_left", &"move_up", &"move_right", &"move_down"]
@@ -326,6 +329,18 @@ func _drive(now: int) -> void:
 	_aim(c)
 	if int(t) != int(t - 0.016):
 		_top_up()
+		if _ab.has("no_anim"):
+			_stop_mixers()
+
+
+## v0.10.5 Q5 (--ab=no_anim): every AnimationMixer under the view stops processing.
+func _stop_mixers() -> void:
+	var stack: Array[Node] = [_main.view]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		stack.append_array(n.get_children())
+		if n is AnimationMixer:
+			(n as AnimationMixer).active = false
 
 
 func _aim(at: Vector2) -> void:
