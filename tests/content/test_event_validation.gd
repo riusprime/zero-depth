@@ -17,7 +17,9 @@ func test_the_shipped_events_curses_and_rules_compile() -> void:
 		"eight events (v0.5.5 DS: Whispering Deep; v0.9.0 EL: no Ambush Cache)"
 	)
 	assert_eq(
-		repo.count(&"curses"), 7, "seven trade-offs (v0.9.0 EL: no Marked; v0.10.5 O1: no plain curse)"
+		repo.count(&"curses"),
+		7,
+		"seven trade-offs (v0.9.0 EL: no Marked; v0.10.5 O1: no plain curse)"
 	)
 	var events := EventCompiler.compile_events(repo)
 	assert_eq(events.size(), 9, "and the retired event's place kept")
