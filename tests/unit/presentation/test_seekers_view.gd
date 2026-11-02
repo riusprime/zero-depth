@@ -30,7 +30,7 @@ func test_a_volley_shows_three_needles_whose_trails_grow_then_go() -> void:
 		W.run(w, 1, 0, 0)
 		_view.sync(r)
 	assert_eq([_view.darts, _view.motes], [3, 3 * SeekersView.TRAIL], "each trails its motes")
-	W.run(w, 60, 0, 0)
+	W.run(w, 80, 0, 0)  # v0.10.0 FX: Seekers live 1.3 s (78 ticks)
 	_view.sync(r)
 	assert_eq([_view.darts, _view.motes], [0, 0], "gone")
 
