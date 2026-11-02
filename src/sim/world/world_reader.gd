@@ -1906,6 +1906,8 @@ func boss_invulnerable(i: int) -> bool:
 ## body counts its own gates only (owner O59: nothing on the bar hints how many bodies remain).
 func boss_shields_left(i: int) -> int:
 	var t := BossAi.table_of(_w, i)
+	if t.rotation:
+		return 0  # v0.10.5 O3: a spell-rotation body (the Prism) opens no gate (BossGates.begin): no phase is a shield
 	return maxi(0, t.phase_threshold.size() - 1 - boss_phase(i))
 
 
