@@ -68,18 +68,13 @@ func _process(_delta: float) -> bool:
 				and hud.visible
 				and _uncovered()
 			):
+				_step = 6  # the HUD shows from this frame: let it draw
+				_wait = _frame + 20
+		6:
+			var hud := _main.get_node_or_null("UI/Hud") as Hud
+			if _frame >= _wait:
 				_shot("loop2_floor_card")
 				print("loops: card ", hud.floor_card_text())
-				print(
-					"loops: dbg ",
-					hud.is_visible_in_tree(),
-					" ",
-					hud.get_path(),
-					" ",
-					_main.get_node("UI").get_children().map(
-						func(c): return "%s:%s" % [c.name, c.get(&"visible")]
-					)
-				)
 				quit(0)
 	return false
 

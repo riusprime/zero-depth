@@ -76,8 +76,8 @@ enemy element on the hero today).
 ### The HP step goes down: ×6 → ×3.5 a loop (enemies and bosses)
 
 Each rule now carries part of a loop's difficulty, so the numbers needn't: ×6 compounding is ×36 HP on loop 3 and ×1296
-on loop 5, which only inflates the fight's length. ×3.5 is ×12.25 on loop 3 and ×150 on loop 5, with one to four rules
-on top. Damage stays ×1.2. `loop_enemy_hp_permille` and `loop_boss_hp_permille` 6000 → 3500 in both run shapes.
+on loop 5 (capped at ×100 from loop 4), which only inflates the fight's length. ×3.5 is ×12.25 on loop 3 and ×42.9 on
+loop 4 (the ×100 cap from loop 5), with one to four rules on top. Damage stays ×1.2. `loop_enemy_hp_permille` and `loop_boss_hp_permille` 6000 → 3500 in both run shapes.
 
 ## Dev panel
 
