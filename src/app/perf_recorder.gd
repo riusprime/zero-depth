@@ -36,6 +36,7 @@ const LIGHT_COLS: PackedStringArray = [
 	"primitives",
 	"objects_drawn",
 	"vram_mb",
+	"rec_us",
 ]
 const FULL_COLS: PackedStringArray = [
 	"step_us",
@@ -76,6 +77,8 @@ var _timers: Array = []
 var _phases := PerfBreakdown.PhaseTimer.new()
 var _t_pre := 0
 var _t_post := 0
+## The recorder's own time on the main thread last frame (the row, the flush hand-off): its overhead, in the CSV.
+var _rec_us := 0
 var _layer: CanvasLayer
 var _label: Label
 
@@ -241,6 +244,7 @@ func _process(_delta: float) -> void:
 		_flash_until = 0
 		_label.text = tr("PERF_REC_ON")
 		_label.modulate = Color.WHITE
+	_rec_us = Time.get_ticks_usec() - now
 
 
 func _on_pre_draw() -> void:
@@ -314,6 +318,7 @@ func _row(now: int) -> String:
 		)
 	else:
 		vals.append_array(["", "", "", "", ""])
+	vals.append(str(_rec_us))
 	if full:
 		_full_cols(vals, dt_us, drv, w, view)
 	return ",".join(vals)

@@ -61,7 +61,7 @@ def _is_parent(key):
 class Frame:
     __slots__ = (
         "i", "t", "scene", "floor", "biome", "ms", "ticks", "enemies", "pp", "pe", "fx", "boss", "phase",
-        "mark", "cats", "bd",
+        "mark", "cats", "bd", "rec",
     )
 
 
@@ -97,6 +97,7 @@ def load(path):
             fr.boss = g(row, "boss") == "1"
             fr.phase = g(row, "boss_phase")
             fr.mark = g(row, "mark")
+            fr.rec = _num(g(row, "rec_us"), -1.0)
             fr.cats = {name: _num(row[c]) for name, c in cat_cols} if full else None
             fr.bd = None
             if full:
@@ -199,11 +200,15 @@ def summarize(path):
         return ["# Perf log %s" % name, "", "No frames in the file."]
     dur = frames[-1].t - frames[0].t
     marks = [f for f in frames if f.mark]
+    rec = sorted(f.rec for f in frames if f.rec >= 0)
     L += [
         "# Perf log %s" % name,
         "",
         "%d frames over %.1f s, %s log (%s), %d F9 marks. Times in ms unless marked."
         % (len(frames), dur, "full" if full else "light", os.path.basename(path), len(marks)),
+        "",
+        ("The recorder's own main-thread time: mean %.0f us, p99 %.0f us a frame." % (sum(rec) / len(rec), pct(rec, 0.99))
+         if rec else "The recorder's own time: not in this log."),
         "",
         "## Totals per scene and floor",
         "",
@@ -301,7 +306,7 @@ def _fake_csv(path, full, rows=40000):
     rnd = random.Random(7)
     light = ["frame", "t_s", "scene", "floor", "biome", "paused", "frame_ms", "ticks", "enemies", "proj_player",
              "proj_enemy", "fx", "boss", "boss_phase", "mark", "nodes", "draw_calls", "primitives", "objects_drawn",
-             "vram_mb"]
+             "vram_mb", "rec_us"]
     extra = ["step_us", "sim_us", "views_us", "listeners_us", "other_script_us", "engine_us", "draw_us", "bd"]
     t = 0.0
     with open(path, "w", newline="", encoding="utf-8") as f:
@@ -316,7 +321,7 @@ def _fake_csv(path, full, rows=40000):
             t += ms / 1000.0
             row = [i, "%.4f" % t, scene, 1 if scene == "run" else -1, "frozen_shore" if scene == "run" else "", 0,
                    "%.3f" % ms, 1, en, en * 2, en, en * 3, 0, -1, "1" if i == 20003 else "",
-                   "", "", "", "", ""]
+                   "", "", "", "", "", 40]
             if full:
                 sim = int(ms * 300)
                 views = int(ms * 200)
@@ -342,6 +347,7 @@ def self_check():
             "40000 frames": "40000 frames" in text,
             "the planted stutter": "6 frames, worst 70.0 ms" in text,
             "the mark": "mark 1 at" in text,
+            "the recorder's cost": "mean 40 us" in text,
             "the scenes": "| menu |" in text and "| run f1 frozen_shore |" in text,
             "the costs": ("| sim |" in text) if full else ("Light log" in text),
         }
