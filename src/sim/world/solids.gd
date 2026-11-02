@@ -10,7 +10,17 @@ extends RefCounted
 
 ## Owners of an entry (with the owner's own ref).
 enum Kind {
-	REWARD, EVENT, PYLON, RUNE_PILLAR, DAIS, MURAL, ASCENSION, LOOP_DEVICE, ARRIVAL, BREAKABLE
+	REWARD,
+	EVENT,
+	PYLON,
+	RUNE_PILLAR,
+	DAIS,
+	MURAL,
+	ASCENSION,
+	LOOP_DEVICE,
+	ARRIVAL,
+	BREAKABLE,
+	TERMINAL
 }
 
 ## Half the side of a 1.2 m prop (altars, chests, pedestals, pillars, the dais, the mural's plinth).

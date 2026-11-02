@@ -1431,3 +1431,27 @@ LORE_RULE_SHIELDED_TITLE,Shielded,Escudados
 LORE_RULE_SHIELDED,"They have seen your blade before. Now they face it with a guard.","Ya han visto tu arma. Ahora la reciben en guardia."
 LORE_RULE_POINT_BLANK_TITLE,Point Blank,A quemarropa
 LORE_RULE_POINT_BLANK,"The casters stopped keeping their distance. Distance never saved them.","Los lanzadores dejaron de guardar las distancias. La distancia nunca los salvó."
+UI_TRAINING_ROOM,Training Room,Sala de entrenamiento
+UI_TRAINING_TERMINAL,Training terminal,Terminal de entrenamiento
+UI_TRAINING_PROMPT_TERMINAL,Open the terminal,Abrir la terminal
+UI_TRAINING_EXIT,Back to the Rune Ring,Volver al Anillo de Runas
+UI_TRAINING_HINT,"Training Room · nothing here counts · E at the terminal","Sala de entrenamiento · aquí nada cuenta · E en la terminal"
+UI_TRAINING_NO_ENEMIES,Meet enemies in a run to train against them here.,Encuentra enemigos en una partida para entrenar contra ellos aquí.
+UI_TRAINING_ENEMY,Enemy,Enemigo
+UI_TRAINING_COUNT,Count,Cantidad
+UI_TRAINING_SPAWN,Spawn,Invocar
+UI_TRAINING_CLEAR,Clear enemies,Quitar enemigos
+UI_TRAINING_WEAPON,Weapon,Arma
+UI_TRAINING_NO_CARDS,See wand cards in a run to try them here.,Descubre cartas de varita en una partida para probarlas aquí.
+UI_TRAINING_CARD,Wand card,Carta de varita
+UI_TRAINING_LEVEL,Level,Nivel
+UI_TRAINING_ADD_CARD,Add card,Añadir carta
+UI_TRAINING_REMOVE_CARD,Remove last card,Quitar la última carta
+UI_TRAINING_ORDER,Wand order,Orden de la varita
+UI_TRAINING_RESET,Reset room,Reiniciar la sala
+UI_TRAINING_SPAWNED,Spawned: %s,Invocados: %s
+UI_TRAINING_CLEARED,Enemies cleared.,Enemigos eliminados.
+UI_TRAINING_CARD_ADDED,Added: %s,Añadida: %s
+UI_TRAINING_WAND_FULL,The wand is full: remove a card first.,La varita está llena: quita una carta primero.
+UI_TRAINING_CARD_REMOVED,Card removed.,Carta quitada.
+UI_TRAINING_NO_CARD,No wand card to remove.,No hay carta de varita que quitar.

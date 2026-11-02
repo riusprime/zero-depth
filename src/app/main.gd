@@ -44,6 +44,8 @@ var loads := CoverLoads.new()
 var playground: PlaygroundSession
 ## v0.9.0 HB (owner Q27): the hub while it runs (null otherwise: the menu, a run, the Playground).
 var hub: HubSession
+## v0.10.5 O17 (owner P17): the hub's Training Room while it runs (null otherwise).
+var training: TrainingSession
 ## The dev panel's tuning (docs/tools/DEV_PANEL.md): the owner's saved overrides, put in the content before compiling.
 ## v0.7.5 SM: a build with the panel locked (DevGate) ignores any tuning file left on the PC.
 var tuning := DevTuning.load_saved() if DevGate.enabled() else DevTuning.new()
@@ -145,6 +147,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		and not driver.reader.event_open()  # v0.5.0 EV: so does an event panel's
 		and not driver.reader.shop_open()  # v0.5.0 SH: so does the shop's
 		and not driver.reader.swapping()  # v0.6.0 MX2: so does the swap's skip
+		and not (training != null and training.is_panel_open())  # v0.10.5 O17: the terminal's own
 		and event.is_action_pressed(&"pause")
 	):
 		get_viewport().set_input_as_handled()
@@ -193,6 +196,7 @@ func _show_hub() -> void:
 	hub.options_requested.connect(show_options.bind(hub.open_pause))
 	hub.main_menu_requested.connect(show_main_menu)
 	hub.cue_requested.connect(audio.play)  # v0.9.5 RS1: the Runic Stone's hum
+	hub.training_requested.connect(TrainingFlow.enter.bind(self))  # v0.10.5 O17: the south door
 	loads.cover.unveil(FADE_SECONDS)
 	audio.set_ambience(HubSession.BIOME)
 
@@ -581,6 +585,9 @@ func run_biome_id() -> StringName:
 
 ## A new run with a new seed (v0.8.0 N1: random, or the next under a fixed mode), the same build, behind the cover (N3).
 func restart() -> void:
+	if training != null:  # v0.10.5 O17: the Training Room's Restart resets the room
+		TrainingFlow.reset(self, training.build_id)
+		return
 	if playground != null:  # v0.7.5 PG: the pause menu's Restart rebuilds the room
 		_end_stage()
 		_start_playground(_pg_build, _pg_biome)
@@ -823,8 +830,11 @@ func _sync_pause() -> void:
 		hub.set_held(_menu != null or _devm != null)
 	if driver != null:
 		driver.paused = (
-			_pause != null or _devm != null or (playground != null and playground.is_panel_open())
-		)
+			_pause != null
+			or _devm != null
+			or (playground != null and playground.is_panel_open())
+			or (training != null and training.is_panel_open())
+		)  # v0.10.5 O17
 
 
 # --- v0.7.5 PG: the Playground (owner N20, docs/tools/PLAYGROUND.md) ------------------------------------------------
@@ -898,29 +908,7 @@ func _set_playground_biome(id: StringName) -> void:
 
 
 func _playground_view(biome: BiomeDefinition) -> void:
-	view = WorldViewRoot.new()
-	view.name = "WorldView"
-	view.stage.prop_style = biome.id
-	view.stage.mood = biome.mood
-	view.stage.look = biome.look
-	if biome.look != null:
-		view.actors.enemy_tint = biome.look.enemy_tint
-	_biome_path = biome.resource_path
-	view.stage.lighting = GameSettings.get_value(profile, "lighting")
-	add_child(view)
-	var b := driver.reader.floor_bounds()
-	var half := maxf(maxf(-b.position.x, b.end.x), maxf(-b.position.y, b.end.y))
-	view.setup(driver.reader, biome.palette, half + 4.0)
-	view.rig.shake_enabled = GameSettings.get_value(profile, "shake") == "on"
-	view.ink.set_style(InkPass.style_from_setting(GameSettings.get_value(profile, "outline")))
-	var player_input := PlayerInput.new(view.rig, driver.reader)
-	player_input.name = "PlayerInput"
-	view.add_child(player_input)
-	driver.input_source = player_input.sample
-	driver.ticked.connect(view.sync)
-	driver.edited.connect(view.sync)
-	audio.detach()
-	audio.attach(driver.reader, biome.id)
+	var player_input := TrainingFlow.room_view(self, biome)
 	playground.set_biome(biome.id, player_input.mouse_world)
 
 
@@ -961,7 +949,7 @@ func _end_floor() -> void:
 		var kept := profile.save_file() or profile.path.is_empty()
 		codex.dirty = not kept
 		achievements.dirty = not kept
-	for n in [_hud, _end, _dev, _devm, playground, driver, get_node_or_null("Gallery")]:
+	for n in [_hud, _end, _dev, _devm, playground, training, driver, get_node_or_null("Gallery")]:
 		_drop(n)
 	if view != null and loads.busy():  # v0.8.0 N12 (O70): behind the cover, the old view is freed over frames
 		view.get_parent().remove_child(view)
@@ -969,7 +957,9 @@ func _end_floor() -> void:
 	else:
 		_drop(view)
 	playground = null
+	training = null
 	_hud = null
+
 	_end = null
 	_dev = null
 	_devm = null

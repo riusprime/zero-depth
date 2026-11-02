@@ -138,7 +138,37 @@ func test_the_hub_world_walks_the_hero_and_holds_it_in() -> void:
 	assert_eq(w.actors.size(), 1, "the hero alone: no enemy ever spawns")
 
 
+## v0.10.5 O17 (owner P17): the south rim has the Training Room's door: from the spawn, straight south, the hero walks
+## through it down its lane to its end in a few seconds; the lane's end wall holds it, and beside the door the rim does.
+func test_the_south_door_leads_down_its_lane_to_the_training_room() -> void:
+	var l := HubLayout.new(_hub)
+	assert_true(l.has_training_door())
+	var w := HubScenario.build(_repo, l, &"blade")
+	assert_false(l.in_training_door(w.player_pos()), "not at the spawn")
+	var ticks := 0
+	while not l.in_training_door(w.player_pos()) and ticks < 600:
+		w.step(_frame_toward(Vector2(0, -1)))
+		ticks += 1
+	assert_true(l.in_training_door(w.player_pos()), "south: down the lane")
+	assert_lt(ticks, 3 * 60, "within 3 s")
+	gut.p("O17: the spawn to the Training Room's door: %.2f s" % (ticks / 60.0))
+	for k in 240:
+		w.step(_frame_toward(Vector2(0, -1)))
+	var p := HubLayout.to_plan(w.player_pos())
+	assert_gt(p.y, -(_hub.radius_m + _hub.wall_m + _hub.training_lane_m), "the lane's end holds")
+	var side := HubScenario.build(_repo, l, &"blade")
+	while HubLayout.to_plan(side.player_pos()).x < _hub.training_door_half_m + 2.5:
+		side.step(_frame_toward(Vector2(1, 0)))
+	for k in 300:
+		side.step(_frame_toward(Vector2(0, -1)))
+
+	assert_false(l.in_training_door(side.player_pos()), "beside the door the rim holds")
+	assert_lt(HubLayout.to_plan(side.player_pos()).length(), _hub.radius_m, "inside the plaza")
+
+
 ## One tick's frame moving toward a plan direction (the screen's: the latch turns it onto the sim plane).
+
+
 ## v0.9.0 HB3: walking times on the bigger plaza stay short: from the spawn, the hero walking straight (round the
 ## machine where it is in the way) reaches the machine and every station in a few seconds of play (60 ticks a second).
 func test_walking_times_from_the_spawn_stay_short() -> void:

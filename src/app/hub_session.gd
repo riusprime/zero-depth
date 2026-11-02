@@ -20,6 +20,8 @@ signal options_requested
 signal main_menu_requested
 ## v0.9.5 RS1: a sound the hub asks Main to play (AudioDirector.play: cue, position or null, pitch).
 signal cue_requested(id: StringName, pos: Variant, pitch: float)
+## v0.10.5 O17 (owner P17): the hero walked down the south door's lane: Main opens the Training Room.
+signal training_requested
 
 const HUB_ID := &"rune_ring"
 ## The light the hub is drawn in (its biome's mood and palette).
@@ -56,6 +58,7 @@ var collectibles: Array[CollectibleDefinition] = []
 var keystone: CollectibleDefinition
 var _after_walk: Callable
 var _found_ticks := 0
+var _training_asked := false
 
 
 ## Builds the hub from the content and the profile (read only): `stores` = [CodexStore, AchievementStore,
@@ -125,7 +128,14 @@ func _on_tick() -> void:
 	at = layout.station_at(driver.reader.player_pos())
 	view.focus(at)
 	var keys := runic.keys(at, layout.keys_of(at))
+	var pos := driver.reader.player_pos()
+	if at == &"" and layout.near_training_door(pos):  # v0.10.5 O17: the door's name, no press (walk in)
+		keys = [hub.training_name_key, &""]
+	if layout.in_training_door(pos) and not _training_asked and not (held or overlay != null):
+		_training_asked = true
+		training_requested.emit()
 	runic.tick(at)
+
 	_take_keystone()
 	if _found_ticks > 0 and keystone != null:  # v0.9.0 CL: "Keystone · Added to the Rune Archive"
 		_found_ticks -= 1

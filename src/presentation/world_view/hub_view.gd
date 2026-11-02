@@ -126,6 +126,8 @@ func setup(
 	add_child(plan)
 	HubDressing.ground(plan, layout.hub)  # v0.9.0 HB3: the owner's floor, walls, pillars, props
 	HubDressing.walls(plan, layout.hub)
+	HubDressing.training_door(plan, layout.hub)  # v0.10.5 O17: the Training Room's south door
+
 	fires = HubDressing.pillars(plan, layout.hub)
 	HubDressing.props(plan, layout.hub)
 	_build_gate(bool(states.get(&"gate_open", false)))

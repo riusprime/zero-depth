@@ -99,6 +99,9 @@ props = Array[Dictionary]([{"at": Vector2(-5.132, 12.702), "half": Vector2(0.95,
 gate_half_m = 1.6
 alcove_at = Vector2(0, 19.8)
 alcove_r = 2.2
+training_door_half_m = 1.4
+training_lane_m = 2.6
+
 stations = Array[ExtResource("1_st")]([SubResource("S_archive"), SubResource("S_trophy"), SubResource("S_wardrobe"), SubResource("S_progression"), SubResource("S_runic")])
 states = Array[ExtResource("2_sa")]([SubResource("T_gate"), SubResource("T_looped"), SubResource("T_trophy"), SubResource("T_crown")])
 id = &"rune_ring"

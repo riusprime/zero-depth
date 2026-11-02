@@ -54,6 +54,8 @@ func walls() -> Array[Obb]:
 		var c := Vector2(cos(a), sin(a)) * r
 		if absf(c.x) < hub.gate_half_m + piece and c.y > 0.0:
 			continue  # the gate's gap in the north rim
+		if has_training_door() and absf(c.x) < hub.training_door_half_m + piece and c.y < 0.0:
+			continue  # v0.10.5 O17: the Training Room's door in the south rim
 		out.append(_plan_box(c, Vector2(hub.wall_m * 0.5, piece), a))
 	# The gate's posts either side of the gap, and its slab while sealed.
 	var gy := hub.radius_m + hub.wall_m * 0.5
@@ -83,6 +85,8 @@ func walls() -> Array[Obb]:
 		if c.y < ac.y - hub.alcove_r * 0.6 and absf(c.x - ac.x) < hub.gate_half_m + 0.3:
 			continue  # its doorway onto the corridor
 		out.append(_plan_box(c, Vector2(0.3, TAU * ar / 24.0 + 0.1), a))
+	if has_training_door():
+		out.append_array(_training_walls())
 	# The machine's base: a plan square (the owner's model's ring and steps stand on about 4 m).
 	out.append(_plan_box(Vector2.ZERO, Vector2.ONE * hub.machine_core_m, 0.0))
 	for s in hub.stations:
@@ -95,7 +99,54 @@ func walls() -> Array[Obb]:
 	return out
 
 
+## v0.10.5 O17 (owner P17): the hub has the Training Room's south door.
+func has_training_door() -> bool:
+	return hub.training_door_half_m > 0.0
+
+
+## v0.10.5 O17: the door's middle on the rim (plan m).
+func training_door() -> Vector2:
+	return Vector2(0.0, -(hub.radius_m + hub.wall_m * 0.5))
+
+
+## v0.10.5 O17: the hero at sim `pos` has walked down the door's lane to its end: the Training Room.
+func in_training_door(pos: Vector2) -> bool:
+	if not has_training_door():
+		return false
+	var p := to_plan(pos)
+	var end_y := training_door().y - hub.wall_m * 0.5 - hub.training_lane_m
+	return absf(p.x) < hub.training_door_half_m and p.y <= end_y + 1.0
+
+
+## v0.10.5 O17: the hero at sim `pos` is near the door (its name shows).
+func near_training_door(pos: Vector2) -> bool:
+	return has_training_door() and to_plan(pos).distance_to(training_door()) <= 3.0
+
+
+## v0.10.5 O17: the door's posts either side of its gap, the lane's walls past it and the wall across its end.
+func _training_walls() -> Array[Obb]:
+	var out: Array[Obb] = []
+	var half := hub.training_door_half_m
+	var gy := training_door().y
+	for side in [-1.0, 1.0]:
+		out.append(
+			_plan_box(Vector2(side * (half + 0.75), gy), Vector2(0.75, hub.wall_m * 0.5 + 0.3), 0.0)
+		)
+	var y0 := gy - hub.wall_m * 0.5
+	var y1 := y0 - hub.training_lane_m
+	for side in [-1.0, 1.0]:
+		out.append(
+			_plan_box(
+				Vector2(side * (half + 0.3), (y0 + y1) * 0.5), Vector2(0.3, (y0 - y1) * 0.5), 0.0
+			)
+		)
+	out.append(_plan_box(Vector2(0.0, y1 - 0.3), Vector2(half + 0.6, 0.3), 0.0))
+	return out
+
+
 ## v0.9.0 HB3 (owner: "looking into the middle, not all looking down"): how far a thing standing at plan point `at` is
+
+
 ## turned (radians, counter-clockwise on the plan) so its front, the plan's south when unturned, faces the plaza's
 ## middle.
 static func facing(at: Vector2) -> float:

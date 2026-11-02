@@ -141,6 +141,8 @@ static func walls(plan: Node3D, hub: HubDefinition) -> Node3D:
 		var a := span * k  # plan angle from east, counter-clockwise
 		if absf(wrapf(a - PI * 0.5, -PI, PI)) < 0.01:
 			continue  # the north gate's slot
+		if hub.training_door_half_m > 0.0 and absf(wrapf(a - PI * 1.5, -PI, PI)) < 0.01:
+			continue  # v0.10.5 O17: the Training Room's door (training_door fills the rest of the slot)
 		var south := sin(a) < -0.3
 		var seg := Node3D.new()
 		seg.name = "Wall%d" % k
@@ -162,7 +164,66 @@ static func walls(plan: Node3D, hub: HubDefinition) -> Node3D:
 	return root
 
 
+## v0.10.5 O17 (owner P17): the Training Room's south door, in the slot its wall segment left: low stone fillers from
+## the slot's ends to the door's posts (as low as the south rim), the two posts, the short lane past the rim (paved,
+## walled low, closed at its end) and a blue glow pooled at its end, the way in. Null when the hub has no door.
+static func training_door(plan: Node3D, hub: HubDefinition) -> Node3D:
+	var half := hub.training_door_half_m
+	if half <= 0.0:
+		return null
+	var root := Node3D.new()
+	root.name = "TrainingDoor"
+	plan.add_child(root)
+	var r := hub.radius_m + hub.wall_m * 0.5
+	var stone := paving(HubProps.STONE_LIT)  # stand-in pieces with the paving texture (no model yet)
+	var dark := paving(HubProps.STONE)
+	var slot_end := Vector2.from_angle(PI * 1.5 - TAU / SEGMENTS * 0.5) * r  # the slot's west end (plan)
+	for side in [-1.0, 1.0]:
+		var a := Vector2(side * (half + 1.5), -r)
+		var b := Vector2(side * absf(slot_end.x), slot_end.y)
+		var mid := (a + b) * 0.5
+		var filler := HubProps.box(
+			root,
+			"Filler%d" % (0 if side < 0.0 else 1),
+			Vector3((b - a).length() + 0.3, SOUTH_SHOWS, hub.wall_m),
+			stone,
+			Vector3(mid.x, SOUTH_SHOWS * 0.5, -mid.y)
+		)
+		filler.rotation.y = (b - a).angle()
+		HubProps.box(
+			root,
+			"Post%d" % (0 if side < 0.0 else 1),
+			Vector3(1.5, SOUTH_SHOWS + 0.3, hub.wall_m + 0.6),
+			dark,
+			Vector3(side * (half + 0.75), (SOUTH_SHOWS + 0.3) * 0.5, r)
+		)
+	var y0 := r + hub.wall_m * 0.5
+	var y1 := y0 + hub.training_lane_m
+	HubProps.box(
+		root,
+		"Lane",
+		Vector3(half * 2.0 + 1.2, 0.1, y1 - y0 + 0.8),
+		paving(HubProps.PLAZA.darkened(0.2)),
+		Vector3(0, -0.04, (y0 + y1) * 0.5)
+	)
+	for side in [-1.0, 1.0]:
+		HubProps.box(
+			root,
+			"LaneWall%d" % (0 if side < 0.0 else 1),
+			Vector3(0.6, 1.0, y1 - y0),
+			dark,
+			Vector3(side * (half + 0.3), 0.5, (y0 + y1) * 0.5)
+		)
+	HubProps.box(
+		root, "LaneEnd", Vector3(half * 2.0 + 1.2, 1.0, 0.6), dark, Vector3(0, 0.5, y1 + 0.3)
+	)
+	HubProps.glow(root, "Way", HubProps.BLUE, HubProps.BLUE_CORE, Vector3(0, 0.8, y1 - 0.6), 1.6)
+	return root
+
+
 ## The pillar braziers at the hub's `pillars`, each turned to the middle with its fire; returns the fires
+
+
 ## (HubProps.fire) so the view can flicker their lights.
 static func pillars(plan: Node3D, hub: HubDefinition) -> Array[Dictionary]:
 	var fires: Array[Dictionary] = []

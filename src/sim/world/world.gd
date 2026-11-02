@@ -59,6 +59,10 @@ var input_buffer := PackedInt32Array([0, 0, 0, 0])
 
 ## Dummy movers (kernel scenario): speed in metres per tick, shot period and life in ticks.
 var dummy_speed := 3.0 / SimTick.TICKS_PER_SECOND
+## v0.10.5 O17 (owner P17): the hero's HP never drops below this (0: off; the Training Room's 1, so the hero can't die
+## there). Set only by a world built for the Training Room; never in a run, a save or the hash.
+var player_hp_floor := 0
+
 var dummy_fire_period := 0
 var projectile_speed := 10.0 / SimTick.TICKS_PER_SECOND
 var projectile_life := 120
