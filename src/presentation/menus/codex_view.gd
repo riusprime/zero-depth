@@ -466,6 +466,22 @@ static func desc_of(ci: Object, e: Dictionary) -> String:
 	return ci.tr(key) % args
 
 
+## v0.10.5 O10 (owner P3; Matchups): an enemy entry's "Weak to: Laser" and "Resists: Glaive" lines (the id's
+## MATCHUP_<ID> key); "" for an entry with neither.
+static func matchup_text(ci: Object, e: Dictionary) -> String:
+	var lines := PackedStringArray()
+	for pair: Array in [["weak_to", "UI_CODEX_WEAK_TO"], ["resists", "UI_CODEX_RESISTS"]]:
+		var id: StringName = e.get(pair[0], &"")
+		if id != &"":
+			lines.append(ci.tr(pair[1]) % ci.tr(matchup_key(id)))
+	return "\n".join(lines)
+
+
+## The locale key of a matchup id's name (a form card's or an element's).
+static func matchup_key(id: StringName) -> String:
+	return "MATCHUP_%s" % String(id).to_upper()
+
+
 ## An entry's counts as lines ("Taken: 3"), the counters of its page; the highest level only on a card that levels.
 func counts_text(e: Dictionary) -> String:
 	var lines := PackedStringArray()
@@ -539,6 +555,9 @@ func _show(e: Dictionary) -> void:
 	name_label.text = "???" if locked else title_of(self, e)
 	section_label.text = section_text
 	desc_label.text = tr("UI_CODEX_LOCKED") if locked else desc_of(self, e)
+	var mu := "" if locked else matchup_text(self, e)  # v0.10.5 O10: an enemy's "Weak to / Resists"
+	if mu != "":
+		desc_label.text = mu if desc_label.text == "" else "%s\n%s" % [desc_label.text, mu]
 	counts_label.text = "" if locked else counts_text(e)
 
 

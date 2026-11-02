@@ -120,6 +120,10 @@ const TAG_SKILL := 2097152
 ## v0.4.0 BS: a hit from an ability (a bomb, a drone bolt or its chain, an orbit blade, the blink's landing shock,
 ## Combo Sword's finisher shockwave). Bit 24, clear of the bits a parallel step may take.
 const TAG_ABILITY := 16777216
+## v0.10.5 O10 (Matchups): the hit (or tick) struck the enemy's weakness (its weak_to form or element), or what it
+## resists. Bits 26 and 27, clear of the bits a parallel step may take.
+const TAG_WEAK_TO := 67108864
+const TAG_RESISTED := 134217728
 
 var seq := 0
 var tick := 0

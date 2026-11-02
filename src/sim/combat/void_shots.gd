@@ -156,7 +156,10 @@ static func _aura(w: World, pi: int) -> void:
 		if Laser.feeds(ModifierRuntime.count(w, COUNT_KEY), pm):
 			Attacks.land(w, spec, ctx, i, at, pos)
 			continue
+		var before := w.strike_spec  # v0.10.5 O10: a bare hit is still the Void's form (Matchups)
+		w.strike_spec = spec
 		var got := Attacks.land(w, _bare_spec(), ctx, i, at, pos)
+		w.strike_spec = before
 		if got > 0 and w.actors.dead[i] == 1:
 			Attacks.fire(w, spec, AttackSpec.Trigger.ON_KILL, ctx, pos)
 

@@ -147,7 +147,13 @@ static func tick_burns(w: World) -> void:
 		if a.burn_cd[i] <= 0:
 			a.burn_cd[i] = m.burn_period_ticks
 			Damage.tick_dot(
-				w, i, m.burn_damage * a.burn_stacks[i], a.ids[0], a.ids[0], EFFECT_EMBER_EDGE
+				w,
+				i,
+				m.burn_damage * a.burn_stacks[i],
+				a.ids[0],
+				a.ids[0],
+				EFFECT_EMBER_EDGE,
+				&"ember"
 			)
 		if a.burn_t[i] <= 0:
 			a.burn_stacks[i] = 0

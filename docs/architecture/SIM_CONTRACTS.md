@@ -322,6 +322,11 @@ is garbage-collected when its count reaches 0 and the queue holds none of its ev
    The Warden's armour is by the hit's direction against its facing: its front arc takes `front_mult_permille`
    (tag `ARMOURED`), its rear arc `rear_mult_permille` (tag `WEAK_SPOT`), the sides 1000. It never blocks (owner,
    2026-10-07). There is no flat per-hit reduction. Deathventory's flat Guard cut was regressive: it removed 50% of a 4-damage hit but only 9% of a 22-damage one (L7).
+   v0.10.5 O10 (owner P3; `Matchups`): then the kind's matchup: a player's direct hit whose attack carries the
+   enemy's `weak_to` form or element (the launch's or the landing spec's `modifier_ids` or `elements`) takes
+   `weak_permille` (tag `WEAK_TO`, bit 26), one carrying its `resists` id `resist_permille` (tag `RESISTED`, bit 27;
+   at least 1 when it had damage), both at once 1000. A damage-over-time tick of the player's takes the same by its
+   element (burn: `ember`, poison: `venom`, bleed: `bleed`). Normal enemy kinds only (not bosses or elites).
 4. Barrier absorbs first, then HP. `amount` is the request; `amount_applied` is what HP and barrier actually lost.
 5. Emit `DAMAGE`. If HP reaches 0 and the target is not already dead, mark it dead and emit **exactly one**
    `KILL`. Later lethal events against a dead target apply nothing.

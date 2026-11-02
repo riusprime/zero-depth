@@ -380,7 +380,8 @@ static func tick_statuses(w: World) -> void:
 					),
 					a.ids[0],
 					a.ids[0],
-					EFFECT_BLEED
+					EFFECT_BLEED,
+					&"bleed"  # v0.10.5 O10: the matchup's element
 				)
 			if a.bleed_t[i] <= 0:
 				a.bleed_stacks[i] = 0

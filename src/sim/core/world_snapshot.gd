@@ -42,6 +42,9 @@ const WORLD_KEPT := {
 	&"hit_spec": "transient within a tick (v0.6.0 MX2): null between ticks",
 	&"last_hit_crit": "transient within a hit (v0.6.5 WN1): read right after the hit that set it",
 	&"hit_proc_permille": "transient within a hit (v0.8.0 MR): 1000 between hits",
+	&"strike_spec": "transient within a launch (v0.10.5 O10): null between ticks",
+	&"matchup_permille": "transient within a hit (v0.10.5 O10): 1000 between hits",
+	&"matchup_tags": "transient within a hit (v0.10.5 O10): 0 between hits",
 	&"wand_table": "loadout",  # v0.6.5 WN1
 	&"blade_table": "loadout",  # v0.6.5 WN4
 	&"slot_table": "loadout",  # v0.9.0 AS

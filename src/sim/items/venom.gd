@@ -52,7 +52,8 @@ static func tick(w: World) -> void:
 				),
 				a.ids[0],
 				a.ids[0],
-				EFFECT_POISON
+				EFFECT_POISON,
+				&"venom"  # v0.10.5 O10: the matchup's element
 			)
 		if a.poison_t[i] <= 0:
 			a.poison_stacks[i] = 0

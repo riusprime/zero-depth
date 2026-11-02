@@ -251,17 +251,30 @@ Splitlings) are exempt. The phases are in `data/curves/floor_N.tres` (§H).
 | 2 | Shield Bearer, Bomb Drone, Mine Layer | Charger, Needle, Swarmer | Warden, Arc Caster, Splitter |
 | 3 | Mender, Sniper, Swarmer packs (of 8) | Charger, Needle, Swarmer | all of floors 1–2 |
 
-**Stress matrix** (S = stresses the engine, D = drains it, – = neutral). The rules are in
-[`../balance/SCORECARD.md`](../balance/SCORECARD.md) §4.
+**Stress matrix** (v0.10.5 O10, overnight pick, owner reviews; owner P3: "yes"). Rock-paper-scissors: every enemy
+kind is weak to one form or element (×1.25) and resists another (×0.75), per-mille multipliers in each enemy's data.
+Each of the seven ids is good against 2 kinds and bad against 2, so no build is best in every room (Schreiber,
+intransitive and situational). The reasons, the rule and the room mixes:
+[`../roadmap/v0.10.5/O10_STRESS_MATRIX.md`](../roadmap/v0.10.5/O10_STRESS_MATRIX.md). It replaces the engine table
+(Bleed / Guard, S / D), whose cells were never filled (retired GA citations); `stress_tags` stay in the data. The
+scorecard's rules are in [`../balance/SCORECARD.md`](../balance/SCORECARD.md) §4.
 
-| Enemy | Bleed (aggro) | Guard (control) | (next engine) |
-|---|---|---|---|
-| Charger | from GA | from GA | |
-| Warden | from GA | from GA | |
-| Needle | from GA | from GA | |
-| Disruptor | from GA | from GA | |
-| Splitter | from GA | from GA | |
-| Anchor | from GA | from GA | |
+| Enemy | Weak to (×1.25) | Resists (×0.75) |
+|---|---|---|
+| Charger | Lance | Venom |
+| Warden | Venom | Lightning |
+| Needle | Glaive | Wave |
+| Swarmer | Wave | Laser |
+| Arc Caster | Lance | Lightning |
+| Splitter | Venom | Glaive |
+| Splitling | Wave | Lance |
+| Hatchling | Fire | Lance |
+| Shield Bearer | Laser | Glaive |
+| Sniper | Laser | Wave |
+| Mender | Lightning | Fire |
+| Mine Layer | Glaive | Fire |
+| Bomb Drone | Fire | Venom |
+| Lens Drone | Lightning | Laser |
 
 ## F. Bosses
 

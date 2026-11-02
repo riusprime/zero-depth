@@ -132,6 +132,10 @@ static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 	var bp := def.behaviour_params
 	t.shards = def.shards
 	t.shards_by_floor = def.shards_by_floor
+	t.weak_to = def.weak_to  # v0.10.5 O10: the matchup (Matchups)
+	t.resists = def.resists
+	t.weak_permille = def.weak_permille
+	t.resist_permille = def.resist_permille
 	if def.attacks.is_empty():  # v0.4.0 EN: the Mender has no attack.
 		_compile_horde(def, t, {})
 		return t
