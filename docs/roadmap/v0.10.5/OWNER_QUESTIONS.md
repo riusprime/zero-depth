@@ -21,6 +21,12 @@ until the owner says so.
 - **To play for feel:** O3 Prism, O11 (knockback, dash-cancel, quicker finisher), O2b boss pacing, O4 director,
   O5 loop rules, O9 rule cards, O10 weaknesses, O15 duos, S12 perfect-Vent dash refund.
 
+## Answered 2026-11-02
+
+- **Q5:** "yes fix it": being built (sync the views once a frame, a cheaper sync).
+- **Q9:** "keep it out": O4b stays unmerged.
+- **Q6–Q8:** "i'll test it myself": no change until the owner's playtest.
+
 ## Picks made overnight
 
 | # | Step | The lead's pick | To go over |

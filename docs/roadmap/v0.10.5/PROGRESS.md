@@ -13,6 +13,14 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.
 - **Next:** the owner goes over OWNER_QUESTIONS and plays the build; then the release step (one PR into `main`, the
   full suite on GitHub).
 
+## Owner decisions (2026-11-02)
+- Q5: "Q5 yes fix it": fixes (1) sync the views once a frame and (2) a cheaper sync, as one step (`v0105-q5`).
+- Q9: "keep it out": O4b is not merged; the branch `v0105-o4b` stays only as a record.
+- Q6–Q8: "i'll test it myself": the economy (shards pile up, the floor 5 spike, floor 5's boss pace) waits on the
+  owner's playtest; no change.
+- The arrival altar: "you cant seem to fix that the arrival altar has a collision box, you can clearly see the character
+  half body inside it" → fixed (08189c2b).
+
 ## Owner decisions (2026-11-01)
 All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and P1_ELEGANCE "Owner's answers".
 
@@ -65,6 +73,7 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 | Q7 the catch-up and boss pace have floor 4–5 entries (E 7000/11000, caps 3000/3500, boss E 11000/16000, pace 5130/5810) | 88026905 | evidence/O16_ECONOMY.md "Q7": floor 4 bosses 97.4 / 69.0 s (in band); **floor 5 bosses 57.7 / 58.4 s, under the 60 s target** (not retuned; a pace near 9000 would land ~90 s); catch-up + boss pace 23/23, content 166/166, golden 2/2 |
 | Cross-step fixes: old saves (O17 player_hp_floor), test_arenas (S7's extra altar), a reward view colour test | 25ceb930 | agent: old saves 11/11, e2e old save 1/1, world snapshot 16/16, arenas 16/16, reward views 9/9, golden 2/2 |
 | O2a the Lantern Shade and the Clockwork Judge hittable more often | f59ee0f2 | [evidence/O2A_INVULNERABLE.md](evidence/O2A_INVULNERABLE.md): invulnerable share 37 → 13 % and 30 → 8 %; 23 scripts 198/198 |
+| The hero stands on floor 1's arrival altar, not half inside it (owner: "you can clearly see the character half body inside it"; S4 had fixed the later floors' receiver, not this altar): AltarStage.height_at (the owner's model's measured steps: 0.45 / 0.275 / 0.155 m), ActorViews draws actors on it (also the final approach's altar) | 08189c2b | lead: altar stage 11/11 (new test), portal transit view 4/4, e2e arrival 2/2 (new: the hero's node stands > 0.2 m up after the landing); lint clean |
 
 ## Verification
 1. **S2–S4 re-tested on this branch** (the agents' own runs were on an old base, `d33bc82a`, see History). Lead,
