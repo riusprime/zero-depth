@@ -124,6 +124,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"PickupStore",
 	&"MineStore",
 	&"HealOrbStore",  # v0.4.0 TU
+	&"ShardDropStore",  # v0.10.5 O7b
 	&"BossStore",
 	&"RewardStore",
 	&"AbilityState",
@@ -199,6 +200,7 @@ const ADDED_SINCE_V05 := {
 		&"pair_levels",  # v0.9.5 EP1 (an older save has none: its pairs read as Lv 3)
 		&"pair_log",
 		&"pairs_seen",  # v0.10.5 O15: an older save starts with none seen
+		&"shard_drops",  # v0.10.5 O7b: an older save's floor has no shards lying on it (the base's: empty)
 		&"pair_clouds",
 		&"mod_slots",
 		&"swap_code",
@@ -994,6 +996,8 @@ static func _make(cls: StringName) -> Object:
 			return MineStore.new()
 		&"HealOrbStore":
 			return HealOrbStore.new()
+		&"ShardDropStore":
+			return ShardDropStore.new()
 		&"BossStore":
 			return BossStore.new()
 		&"RewardStore":

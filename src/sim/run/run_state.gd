@@ -406,6 +406,7 @@ func finish_floor(w: World) -> void:
 	marked_done += Collectibles.marked(w)  # v0.9.0 CL: the Rune Rubbing counts the run's marked secrets
 	if w.purple != null and not purple_floors.has(run_floor()):  # v0.9.0 DP: one purple room a loop
 		purple_floors.append(run_floor())
+	ShardDrops.collect_all(w)  # v0.10.5 O7b: the shards left lying on the floor are taken with you
 	carry = RunCarry.take(w, table.heal_permille, table.shard_carry_permille)
 	var grown_from := _hp_bonus()
 	if Ascension.took_portal(w) and _has_final():  # FB1; v0.8.0 P2: the Ascension portal: the final arena

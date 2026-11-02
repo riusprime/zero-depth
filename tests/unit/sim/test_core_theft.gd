@@ -108,6 +108,7 @@ func test_a_kill_without_the_chance_gives_the_normal_drop() -> void:
 	_hit(w, i, w.actors.max_hp[i] * 10)
 	w.step(InputFrame.new())
 	assert_eq(w.rewards.size(), rewards, "no core")
+	ShardDrops.collect_all(w)  # v0.10.5 O7b: an elite's shards lie at the body until taken
 	assert_gt(w.shards, shards, "the shards, as any kill")
 
 
