@@ -110,10 +110,12 @@ func test_the_lance_charges_while_held_and_its_release_pierces_the_row() -> void
 	var before := w.player_pos()
 	await _release_at(e, cam.unproject_position(SimPlane.to_3d(at, SimPlane.CORE_HEIGHT)))
 	var bursts := 0
+	var burst_charge := 0
 	var balls := 0
 	for k in 60:  # the ball flies the row (7 m)
 		await e.frames(1)
 		bursts = maxi(bursts, main.view.lances.bursts)
+		burst_charge = maxi(burst_charge, main.view.lances.last_burst_charge)
 		balls = maxi(balls, w.projectiles.size())
 	var back := (before - w.player_pos()).dot(dir)
 	var hurt := []
@@ -134,7 +136,8 @@ func test_the_lance_charges_while_held_and_its_release_pierces_the_row() -> void
 	assert_eq(balls, 1, "the release fires one ball")
 	for h: int in hurt:
 		assert_gt(h, 0, "the ball pierced every enemy in the row")
-	assert_gt(bursts, 0, "the release burst is drawn")
+	# v0.10.0 VX2: the burst is the VFX pack's (a live quad count stays 0), so the view's release record stands in.
+	assert_gt(maxi(bursts, burst_charge), 0, "the release burst is drawn")
 	assert_gt(back, 0.3, "the hero was pushed back, away from the aim")
 
 

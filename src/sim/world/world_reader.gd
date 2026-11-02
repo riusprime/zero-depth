@@ -942,6 +942,11 @@ func intensity_timer() -> int:
 	return maxi(0, _w.intensity.timer) if has_intensity() else 0
 
 
+## v0.10.5 O4 (owner D46): how the director reads the hero now (IntensityState.Standing; BETWEEN without it).
+func intensity_standing() -> int:
+	return _w.intensity.standing if has_intensity() else IntensityState.Standing.BETWEEN
+
+
 # --- Difficulty curve (v0.4.0 TU, owner D1–D3) ------------------------------------------------------------------
 ## True when the floor's spawning follows a difficulty curve.
 func has_curve() -> bool:

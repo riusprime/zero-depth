@@ -26,4 +26,14 @@ static func compile(def: IntensityDirectorDefinition) -> IntensityTable:
 	t.quiet_ticks_max = SimTick.seconds_to_ticks(def.quiet_seconds_max)
 	t.relax_level = def.relax_intensity * 1000
 	t.build_interval_permille = def.build_interval_permille
+	# v0.10.5 O4 (owner D46): the hero's live state
+	t.struggle_hp_permille = def.struggle_hp_permille
+	t.strong_hp_permille = def.strong_hp_permille
+	t.expected_kill_permille = def.expected_kill_permille
+	t.slow_kill_permille = def.slow_kill_permille
+	t.slow_min_alive = def.slow_min_alive
+	t.struggle_peak_level = def.struggle_peak_intensity * 1000
+	t.struggle_peak_speed = def.struggle_peak_speed
+	t.struggle_quiet_permille = def.struggle_quiet_permille
+	t.struggle_pack_cut = def.struggle_pack_cut
 	return t

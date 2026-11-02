@@ -140,4 +140,6 @@ static func intensity_text(r: WorldReader) -> String:
 	var out := "intensity %d %s" % [r.intensity(), mode]
 	if r.intensity_timer() > 0:
 		out += " %.1f s" % (r.intensity_timer() / float(SimTick.TICKS_PER_SECOND))
+	if r.intensity_standing() != IntensityState.Standing.BETWEEN:  # v0.10.5 O4: "… struggling" or "… strong"
+		out += " " + String(IntensityState.Standing.keys()[r.intensity_standing()]).to_lower()
 	return out

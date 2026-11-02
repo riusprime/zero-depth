@@ -21,11 +21,16 @@ until the owner says so.
 | 7 | O14 | Floor shapes: floor 2's first Lockdown is an Elite one near the main path's middle; floor 3's room before the boss door spawns nothing while you stand in it | OK? |
 | 8 | O2b | Boss HP grows in line with your power (cap 3× expected), read at the boss door; floors 4–5 and loops reuse floor 3's pace (not measured); 11 picks in evidence/O2B_BOSS_PACE.md | OK? Especially pick 8: **threat T no longer raises boss HP**, only its damage cap |
 | 9 | O1 | The curse room's random curse price drew only the 5 cut (plain) curses; it now falls back to the 7 trade-off curses | OK, or a different price? |
+| 10 | O3 | The Prism had one phase; a last phase from 50 % HP (no gate): **Facet Lances** (6 lances from the room's edge, aim 0.45 s, lock 0.45 s, 26 dmg) and the **Shattered Kneel** (down 3 s, ×1.5 damage near her, a crack ring that bursts her core for 5 % bonus); 7 picks in evidence/O3_PRISM.md (the core burst is world damage, outside the pace cap) | Play it: cooler? Shots: build/shots/v0.10.5/prism_*.jpg |
+| 11 | O4 | Struggling = HP < 40 % or kills < 50 % of the expected rate (cap × 200 ‰ per 10 s); it gets a 600 peak (was 750), a faster peak clock, a ×1.5 quiet, packs one smaller; quiets end on their drawn time | Feel it on a weak build: still crowded? The next steps would be ramping the refill after a quiet and thinning leftovers (follow-up O4b, not built) |
+| 12 | O15 | Six enemy duos (O15_PAIRINGS.md): Shield wall, Minefield herd, Pin and pick, Slam and shoot, Crowd the storm, Over the wall; 20–30 % of a lead kind's packs, from the floor both are unlocked | Keep, cut or retune any duo |
+| 11 | O4 | Struggling = HP < 40 % or kills < 50 % of the expected rate (cap × 200 ‰ per 10 s); it gets a 600 peak (was 750), a faster peak clock, a ×1.5 quiet, packs one smaller; quiets end on their drawn time | Feel it on a weak build: still crowded? Next steps would be ramping the refill after a quiet and thinning leftovers (follow-up O4b, not built) |
+| 12 | O15 | Six enemy duos (O15_PAIRINGS.md): Shield wall, Minefield herd, Pin and pick, Slam and shoot, Crowd the storm, Over the wall; 20–30 % of a lead kind's packs, from the floor both are unlocked | Keep, cut or retune any duo |
 
 ## Questions
 
 | # | Step | Question |
-| Q1 | tests | Three sim tests fail on the branch before O2b too: `test_deep_bite` (gets the Spanish name on your PC's locale) and two `test_ascension` loop-scaling tests (expect floor-1 enemy HP from before v0.9.5 EP3's floor-1 ease). Update their expectations? (lead: yes, as direct fixes) |
+| Q1 | tests | Three sim tests fail on the branch before O2b too: `test_deep_bite` (gets the Spanish name on your PC's locale) and two `test_ascension` loop-scaling tests (expect floor-1 enemy HP from before v0.9.5 EP3's floor-1 ease). Update their expectations? **Done** (5acaebaf: locale set to en in the test; ascension expectations derived from the EP3 data; lance scatter counts the pack burst). No game bug. |
 | Q2 | O1 | `test_e2e_wand_build`: the replay was not exact with dev-granted frost_core, blade_orbit, echo_slash, ember_core, so the fixture was switched to other cards. A possible determinism bug in those cards, maybe older than O1. The lead queues an Opus check (follow-up D1) |
 | Q3 | O1 | Left in the code: the Bomb and Scatter form code (no live card reaches it), 28 shot/probe scripts naming removed ids. Remove them too? |
 | Q4 | O1 | Coverage lost: no live card exercises the v0.5 item engines, trigger cards in a wand, or blast merging. OK? |

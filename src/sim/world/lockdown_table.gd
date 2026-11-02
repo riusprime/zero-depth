@@ -41,6 +41,8 @@ var hazard_damage := 12
 ## and the room's floor area (m2) an enemy needs at once (ClosedFights.cap; 0: no cap).
 var min_cells := 2
 var area_per_enemy_m2 := 30.0
+## v0.10.5 O14: the floor (1-based) whose first Lockdown is a midpoint Elite set piece (0: off).
+var set_piece_floor := 0
 
 
 ## The formation size on floor `floor_index` (1-based; the last repeats).

@@ -44,6 +44,7 @@ static func compile_lockdown(def: LockdownDefinition) -> LockdownTable:
 	t.hazard_damage = def.hazard_damage
 	t.min_cells = def.min_cells  # v0.9.0 CF
 	t.area_per_enemy_m2 = def.area_per_enemy_m2
+	t.set_piece_floor = def.set_piece_floor  # v0.10.5 O14
 	return t
 
 

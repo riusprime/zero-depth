@@ -6,6 +6,17 @@ extends GutTest
 
 const LONG := 1 << 24
 
+var _locale := ""
+
+
+func before_each() -> void:
+	_locale = TranslationServer.get_locale()
+	TranslationServer.set_locale("en")
+
+
+func after_each() -> void:
+	TranslationServer.set_locale(_locale)
+
 
 func _deep(seed_value: int, f: int = 2) -> World:
 	return SaveLab.build_floor(SaveLab.run_state(seed_value, f, &"blade", Routes.Route.DEEP))

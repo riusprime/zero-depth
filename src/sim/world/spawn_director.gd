@@ -46,6 +46,8 @@ static func advance(w: World) -> void:
 	Intensity.advance(w)  # v0.8.0 N5 (owner O58): intensity and the build-up / peak / pull back / quiet rhythm
 	if w.spawn_cd > 0:
 		return
+	if _calm_antechamber(w, t):
+		return
 	if not Intensity.sending(w):  # v0.8.0 N5: pulling back or quiet: no new packs (the enemies out stay)
 		return
 	# v0.4.0 TU: the cap and the interval follow the floor's difficulty curve (SpawnTable.cap_now, interval_now).
@@ -56,6 +58,14 @@ static func advance(w: World) -> void:
 		return
 	w.spawn_cd = Intensity.interval(w, t.interval_now(ticks))  # v0.8.0 N5: the build-up's ramp
 	_spawn_pack(w, t, ticks, room)
+
+
+## v0.10.5 O14: whether the hero stands in the boss room's host room on the calm-antechamber floor.
+static func _calm_antechamber(w: World, t: SpawnTable) -> bool:
+	var f := w.floor_layout
+	if t.calm_antechamber_floor <= 0 or w.floor_index != t.calm_antechamber_floor or f == null:
+		return false
+	return f.boss_host_room >= 0 and f.room_of(w.player_pos()) == f.boss_host_room
 
 
 ## Spawn points at least min_distance_m from the player, in their stored order. On a floor, only in the player's
@@ -165,6 +175,7 @@ static func _spawn_pack(w: World, t: SpawnTable, ticks: int, room: int) -> void:
 		size = w.rng_map.range_int(t.pack_min(w.floor_index), t.pack_max(w.floor_index))
 	if t.pack_cap_now(ticks) > 0:  # v0.4.0 TU: the phase's largest pack
 		size = mini(size, t.pack_cap_now(ticks))
+	size = Intensity.pack_size(w, t, entry, size)  # v0.10.5 O4 (owner D46): one smaller while the hero struggles
 	size = Elites.escort_size(w, size)  # v0.9.0 EL (ELITES.md E0): one smaller beside a room's elite
 	var spots := pack_spots(w, anchor, mini(size, room))
 	for k in spots.size():

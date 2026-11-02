@@ -257,12 +257,16 @@ func test_loop_scaling_compounds_and_caps() -> void:
 	r.loop = 2
 	r.loop_floors = 3
 	var t := CombatLab.tables()
+	# EP3: floor 1 enemy HP is eased (data), then the loop factor, as scale_enemies composes them.
+	var floor1_pm := SpawnTable.scale(
+		SpawnTable.per_floor(r.table.enemy_hp_floor_permille, 1), r.table.loop_enemy_hp_permille
+	)
 	r.scale_enemies(t, 1)
 	for k in t.size():
 		assert_eq(
 			t[k].hp,
-			maxi(1, (base[k].hp * r.table.loop_enemy_hp_permille + 500) / 1000),
-			"loop 2 floor 1: floor 1's HP x the loop factor"
+			maxi(1, SpawnTable.scale(base[k].hp, floor1_pm)),
+			"loop 2 floor 1: floor 1's eased HP (EP3) x the loop factor"
 		)
 
 
@@ -302,19 +306,29 @@ func test_q6_loop_factors_from_the_data() -> void:
 
 
 ## v0.8.0 LS (owner Q6): on loop 2 and loop 3's floor 1, an enemy and a boss have HP x6 / x36 and damage x1.2 /
-## x1.44 of loop 1's unscaled floor-1 tables (no floor-1 ease past the first loop).
+## x1.44 of loop 1's unscaled floor-1 tables, after floor 1's own ease (EP3).
 func test_q6_loops_2_and_3_scale_an_enemy_and_a_boss() -> void:
 	var repo := _repo()
 	var base_e := CombatLab.tables()
 	var base_b := ContentCompiler.compile_bosses(repo)
 	var r := RunState.start(1, _run_table())
+	var hp_ease := SpawnTable.per_floor(r.table.enemy_hp_floor_permille, 1)  # EP3: floor 1 is eased
+	var dmg_ease := SpawnTable.per_floor(r.table.enemy_damage_floor_permille, 1)
 	for c: Array in [[2, 6000, 1200], [3, 36000, 1440]]:
 		r.loop = c[0]
 		r.loop_floors = 3 * (c[0] - 1)
 		var e := CombatLab.tables()
 		r.scale_enemies(e, 1)
-		assert_eq(e[0].hp, maxi(1, SpawnTable.scale(base_e[0].hp, c[1])), "loop %d enemy HP" % c[0])
-		assert_eq(e[0].damage, SpawnTable.scale(base_e[0].damage, c[2]), "loop %d enemy dmg" % c[0])
+		assert_eq(
+			e[0].hp,
+			maxi(1, SpawnTable.scale(base_e[0].hp, SpawnTable.scale(hp_ease, c[1]))),
+			"loop %d enemy HP" % c[0]
+		)
+		assert_eq(
+			e[0].damage,
+			SpawnTable.scale(base_e[0].damage, SpawnTable.scale(dmg_ease, c[2])),
+			"loop %d enemy dmg" % c[0]
+		)
 		var b := ContentCompiler.compile_bosses(repo)
 		r.scale_bosses(b, 1)
 		assert_eq(b[0].hp, base_b[0].hp * c[1] / 1000, "loop %d boss HP" % c[0])

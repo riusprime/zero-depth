@@ -1130,6 +1130,11 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   duration > 0 and at least a tick (`not_positive`, `duration_zero_ticks`); each min not above its max
   (`duration_range`). Compiled by `IntensityCompiler.compile` (ticks; intensity × 1000, per-second rates
   / 60) onto the run floors' `SpawnTable.intensity`.
+  v0.10.5 O4 (owner D46): `struggle_hp_permille` (400), `strong_hp_permille` (700), `expected_kill_permille` (200:
+  the expected kills in 10 s, per mille of the cap now), `slow_kill_permille` (500), `slow_min_alive` (4),
+  `struggle_peak_intensity` (600, at most `peak_intensity`: `intensity_order`), `struggle_peak_speed` (2, 1..10),
+  `struggle_quiet_permille` (1500, 1000..5000), `struggle_pack_cut` (1, 0..10); starting values. The quiet now ends on
+  its drawn time (SIM_CONTRACTS §11).
 
 - **`CatchUpDefinition`** (v0.5.5 DS, owner D4 and D7; `data/scaling/catch_up.tres`, category `scaling`, id
   `catch_up`): the hidden catch-up's numbers, all per mille ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §11):

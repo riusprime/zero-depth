@@ -22,4 +22,5 @@ hazard_radius = 1.3
 hazard_damage = 12
 min_cells = 2
 area_per_enemy_m2 = 30.0
+set_piece_floor = 2
 id = &"lockdown"
