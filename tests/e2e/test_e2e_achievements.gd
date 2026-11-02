@@ -3,7 +3,7 @@ extends GutTest
 ## unlocks and its toast shows; an enemy shot dead unlocks First Blood, whose toast follows; the pause menu's Codex
 ## turns (E) to the Achievements page, where First Blood is lit and a locked one is dimmed with its sentence; back in
 ## the main menu the Codex's Achievements tab (a mouse click) still has it (the profile, outside the run), the pad's
-## LB turns back to Biomes and B leaves.
+## LB turns back to Lore (v0.10.5 O18: the page before Achievements) and B leaves.
 
 
 func after_each() -> void:
@@ -89,7 +89,8 @@ func test_an_achievement_unlocks_by_play_toasts_and_is_on_the_codex_page() -> vo
 	assert_eq(toast.name_label.text, tr("ACH_KILLS_1_NAME"))
 	assert_eq(toast.header.text, tr("UI_ACH_TOAST"), "under its translated line")
 	assert_true(main.driver != null and not main.driver.paused, "the toast never paused the game")
-	# Pause -> Codex (Resume, Build, Restart, Options, Codex) -> E x4: Achievements.
+	# Pause -> Codex (Resume, Build, Restart, Options, Codex) -> E to the last page: Achievements (v0.10.5 O18's
+	# Lore page sits before it: E x5).
 	await e.tap(KEY_ESCAPE)
 	await e.frames(2)
 	for k in 4:
@@ -99,7 +100,7 @@ func test_an_achievement_unlocks_by_play_toasts_and_is_on_the_codex_page() -> vo
 	await e.frames(2)
 	var codex := main.get_node_or_null("UI/CodexView") as CodexView
 	assert_not_null(codex, "the Codex over the paused run")
-	for k in 4:
+	for k in codex.pages.find(CodexView.ACHIEVEMENTS):
 		await e.tap(KEY_E)
 	assert_eq(codex.page, CodexView.ACHIEVEMENTS, "E turns to the Achievements page")
 	var page := codex.achievements_page
@@ -144,7 +145,7 @@ func test_an_achievement_unlocks_by_play_toasts_and_is_on_the_codex_page() -> vo
 	assert_eq(codex.page, CodexView.ACHIEVEMENTS, "a click on the tab")
 	assert_true(codex.achievements_page.row(&"kills_1").unlocked, "still there: the profile")
 	await _pad(e, JOY_BUTTON_LEFT_SHOULDER)
-	assert_eq(codex.page, &"biomes", "LB turns back to Biomes")
+	assert_eq(codex.page, &"lore", "LB turns back to Lore (v0.10.5 O18)")
 	await _pad(e, JOY_BUTTON_RIGHT_SHOULDER)
 	assert_eq(codex.page, CodexView.ACHIEVEMENTS, "RB to Achievements")
 	await _pad(e, JOY_BUTTON_B)
