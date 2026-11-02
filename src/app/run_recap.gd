@@ -23,9 +23,18 @@ static func of(run: RunState, driver: SimDriver) -> Dictionary:
 		"true_ending": run.final_fight and driver.reader.final_won(),  # v0.8.0 FB1: the final boss beaten
 		"final_reached": run.final_fight,
 		"fragments": RuneFragments.total(run, w),  # v0.9.0 MP: Rune Fragments (the end panel banks them)
+		"rules": rule_keys(run),  # v0.10.5 O5b: the loop rules held (name keys)
 	}
 	if &"shards" in w:
 		out["shards"] = int(w.get(&"shards"))
 	out["threat"] = driver.reader.threat()  # v0.5.0 EV: threat T now, and the run's peak
 	out["threat_peak"] = driver.reader.threat_peak()
+	return out
+
+
+## v0.10.5 O5b: the name keys of the loop rules `run` holds, in the order drawn.
+static func rule_keys(run: RunState) -> PackedStringArray:
+	var out := PackedStringArray()
+	for id in run.loop_rules:
+		out.append(LoopRules.name_key(id))
 	return out

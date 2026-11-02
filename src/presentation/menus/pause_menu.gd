@@ -18,9 +18,13 @@ signal main_menu_pressed
 signal hub_pressed  # v0.9.0 HB: the in-run exit
 
 var run_line: Label
+## v0.10.5 O5b: the loop rules' line under the run's (hidden on loop 1).
+var rules_line: Label
 ## The run line's numbers, so a language switch (Options opened from here) words it again (v0.6.0 UP).
 var _run := []
 var _loop := 1  # v0.7.5 AP
+## v0.10.5 O5b: the loop rules' name keys.
+var _rules := PackedStringArray()
 
 
 func _init(to_hub: bool = true) -> void:
@@ -40,6 +44,9 @@ func _init(to_hub: bool = true) -> void:
 	run_line = add_note("")
 	run_line.name = "RunLine"
 	run_line.visible = false
+	rules_line = add_note("")
+	rules_line.name = "RulesLine"
+	rules_line.visible = false
 	add_hint("UI_PAUSE_HINT")
 
 
@@ -53,6 +60,36 @@ func show_run(floor_index: int, seconds: float, kills: int, shards: int, loop: i
 	run_line.visible = true
 
 
+## Main's pause: the run line from the recap (RunRecap.of) and, v0.10.5 O5b, the loop rules held (its "rules").
+func show_recap(recap: Dictionary) -> void:
+	if recap.is_empty():
+		return
+	show_run(
+		recap["floor"],
+		recap["seconds"],
+		recap["kills"],
+		int(recap.get("shards", 0)),
+		int(recap.get("loop", 1))  # v0.7.5 AP
+	)
+	show_rules(recap.get("rules", PackedStringArray()))
+
+
+## v0.10.5 O5b: "Loop rules: Quickened · Shielded" (name keys; none: the line hides).
+func show_rules(keys: PackedStringArray) -> void:
+	_rules = keys
+	rules_line.visible = not keys.is_empty()
+	_word_rules()
+
+
+func _word_rules() -> void:
+	var names := PackedStringArray()
+	for k in _rules:
+		names.append(tr(k))
+	rules_line.text = tr("UI_PAUSE_RULES") % " · ".join(names) if not names.is_empty() else ""
+
+
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		_word_rules()
 	if what == NOTIFICATION_TRANSLATION_CHANGED and not _run.is_empty():
 		run_line.text = Hud.loop_prefix(self, _loop) + tr("UI_PAUSE_RUN") % _run

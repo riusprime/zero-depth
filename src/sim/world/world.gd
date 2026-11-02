@@ -331,6 +331,12 @@ var loop := 1
 var run_floor := 0
 var loop_threat := 0
 var loop_cap_permille := 0
+## v0.10.5 O5b (owner P13; LoopRules): the run's loop rules on this floor (indices into LoopRules.POOL; RunState.prepare
+## sets them, so they are not saved apart from the snapshot) and SHIELDED's front multiplier and half-arc (1000 and 0:
+## no guard).
+var loop_rules := PackedInt32Array()
+var loop_shield_permille := 1000
+var loop_shield_half_arc := 0
 ## v0.9.0 SV (owner: "Hero grows each floor"): the max HP the floors cleared so far add before the max HP stat
 ## (Stats.max_hp_at). RunState.prepare sets it from the run's floor (RunState.floor_hp_bonus), so it is not saved: a
 ## resumed floor derives it again. 0 outside a run.
@@ -1426,6 +1432,10 @@ func state_hash() -> String:
 		if loop > 1:  # v0.7.5 AP: only past the first loop, so every loop-1 floor hashes as before
 			for v in [loop, run_floor, loop_threat, loop_cap_permille]:
 				h.add_int(v)
+			if not loop_rules.is_empty():  # v0.10.5 O5b: only once a loop drew a rule
+				h.add_ints(loop_rules)
+				h.add_int(loop_shield_permille)
+				h.add_int(loop_shield_half_arc)
 	if approach != null:  # v0.9.0 FA: only the final approach carries it
 		approach.hash_into(h)
 	if not interactables.is_empty():  # v0.9.0 IX: only worlds holding an interactable or a calm room

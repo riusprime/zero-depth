@@ -492,7 +492,8 @@ func _floor_live(nodes: Dictionary) -> void:
 		run.is_deep(),  # v0.5.0 RT: "Floor 2 · Deep"
 		driver.reader.shards_left_behind() if resume.is_empty() else 0,  # v0.5.5 EC (Q-S4)
 		run.loop,  # v0.7.5 AP: "Loop 2 · Floor 1"
-		RunCarry.hp_grown(run) if resume.is_empty() else 0  # v0.9.0 SV: "Max HP +15"
+		RunCarry.hp_grown(run) if resume.is_empty() else 0,  # v0.9.0 SV: "Max HP +15"
+		LoopRules.newest(run) if resume.is_empty() else &""  # v0.10.5 O5b: "New rule: …"
 	)
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))
@@ -718,15 +719,7 @@ func open_pause() -> void:
 	_pause.restart_pressed.connect(restart)
 	_pause.main_menu_pressed.connect(show_main_menu)
 	_pause.hub_pressed.connect(_show_hub)  # v0.9.0 HB (owner 2026-10-23): the run stays saved; Continue resumes it
-	var recap := run_recap()  # v0.5.5 A5: the run's line under the pause list
-	if not recap.is_empty():
-		_pause.show_run(
-			recap["floor"],
-			recap["seconds"],
-			recap["kills"],
-			int(recap.get("shards", 0)),
-			int(recap.get("loop", 1))  # v0.7.5 AP
-		)
+	_pause.show_recap(run_recap())  # v0.5.5 A5: the run's line under the pause list; v0.10.5 O5b: the loop rules
 	if driver.reader.has_gamble():  # v0.3.0 L19: the stats won at the gamble shrine.
 		var stats := GambleStatsPanel.new()
 		_pause.add_child(stats)

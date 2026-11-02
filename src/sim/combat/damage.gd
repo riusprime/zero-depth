@@ -43,6 +43,13 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 				return [def.front_mult_permille, tag]
 			if def.rear_half_arc > 0 and off >= 2048 - def.rear_half_arc:
 				return [def.rear_mult_permille, SimEvent.TAG_WEAK_SPOT]
+	elif (
+		w.loop_shield_half_arc > 0
+		and EnemyAi.is_enemy_kind(a.kinds[target])
+		and from != a.pos(target)
+		and Kin.angle_diff(to_attacker, a.facing[target]) <= w.loop_shield_half_arc
+	):
+		return [w.loop_shield_permille, SimEvent.TAG_ARMOURED]  # v0.10.5 O5b: SHIELDED's guarded front
 	return [1000, 0]
 
 

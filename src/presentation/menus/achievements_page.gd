@@ -141,6 +141,7 @@ func _show_head(head: Label) -> void:
 func focus_first() -> void:
 	if not rows.is_empty():
 		rows[0].grab_focus()
+		set_deferred(&"scroll_vertical", 0)  # v0.10.5 O5a: the Records block above the first row stays in view
 
 
 ## The row of achievement `id` (null when there's none).

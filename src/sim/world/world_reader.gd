@@ -1445,6 +1445,15 @@ func loop() -> int:
 	return _w.loop
 
 
+## v0.10.5 O5b: the loop rules on this floor (LoopRules.POOL ids, in the order drawn; none on loop 1).
+func loop_rules() -> Array[StringName]:
+	var out: Array[StringName] = []
+	for k in _w.loop_rules:
+		if k >= 0 and k < LoopRules.POOL.size():
+			out.append(LoopRules.POOL[k])
+	return out
+
+
 func run_floor() -> int:
 	return _w.run_floor_index()
 
