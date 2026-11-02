@@ -189,7 +189,9 @@ func test_the_pick_panel_shows_the_offer_with_rarity_frames() -> void:
 		)
 		var id := r.item_id(r.choice_items()[k])
 		assert_eq(
-			p.slot(k).colour_id(), CardFrames.frame_of(CardFrames.family(id)), "card %d colour" % k
+			p.slot(k).colour_id(),
+			CardFrames.frame_of(CardFrames.family(id, p.slot(k).face_type())),
+			"card %d colour" % k,
 		)
 	assert_eq(p.slot(1).card.gem.color, PickSlot.RARE, "the rare card's gem")
 	assert_gt(p.slot(1).card.glow_alpha(), p.slot(2).card.glow_alpha(), "the rare card glows more")
