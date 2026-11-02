@@ -79,6 +79,19 @@ func test_round_trip_at_floor_start_without_extras() -> void:
 		_round_trip(SaveLab.floor_world(77, f), SaveLab.floor_world(77, f), "floor %d start" % f)
 
 
+## v0.10.5 O15: a run saved after a duo fired reloads with the pairs it has seen.
+func test_round_trip_keeps_pairs_seen() -> void:
+	var w := SaveLab.floor_world(77, 1)
+	w.pairs_seen.append(1)
+	w.pairs_seen.append(3)
+	var base := SaveLab.floor_world(77, 1)
+	var restored := World.from_snapshot(bytes_to_var(var_to_bytes(WorldSnapshot.take(w))), base)
+	assert_not_null(restored, "the snapshot fits its base")
+	if restored != null:
+		assert_eq(restored.pairs_seen, PackedInt32Array([1, 3]), "pairs_seen round-trips")
+		assert_eq(restored.state_hash(), w.state_hash(), "hash equal")
+
+
 ## v0.5.0 RT: a Deep floor (its epic altar, extra chest and scaled tables) and a floor whose Deep gate was taken.
 func test_round_trip_on_a_deep_floor_and_after_the_deep_gate() -> void:
 	var d := SaveLab.build_floor(SaveLab.run_state(88, 2, &"blade", Routes.Route.DEEP))
