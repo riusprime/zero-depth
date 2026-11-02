@@ -12,11 +12,14 @@ extends RefCounted
 const HALF_RATE := {&"status_fx": 0, &"modifier_marks": 1}
 
 
-## Whether view `id` syncs on `tick`; a half-rate view's first sync (`seen` has no `id`) always runs.
+## Whether view `id` syncs on `tick`; a half-rate view's first sync (`seen` has no `id`) always runs. v0.10.5 Q5: the
+## views sync once a frame, and a frame can run several ticks, so a parity alone could skip a view for good (a steady
+## two ticks a frame lands on one parity): a view also syncs once two ticks or more passed since its last sync.
+## `seen` keeps each half-rate view's last synced tick.
 static func due(id: StringName, tick: int, seen: Dictionary) -> bool:
 	if not HALF_RATE.has(id):
 		return true
-	if not seen.has(id):
-		seen[id] = true
+	if not seen.has(id) or tick - int(seen[id]) >= 2 or tick % 2 == int(HALF_RATE[id]):
+		seen[id] = tick
 		return true
-	return tick % 2 == int(HALF_RATE[id])
+	return false

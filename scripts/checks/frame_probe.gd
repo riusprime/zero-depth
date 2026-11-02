@@ -843,23 +843,31 @@ func _class_histogram() -> PackedStringArray:
 
 
 ## --breakdown: every SimDriver.ticked listener (view sync, audio, codex, HUD, ...) called through a timer, in the
-## order it was connected.
+## order it was connected; v0.10.5 Q5: and every SimDriver.frame_ticked listener (the views' once-a-frame sync), as
+## "frame.<script>.<method>".
 func _time_listeners() -> void:
 	var drv := _main.driver
-	var cons := drv.ticked.get_connections()
+	_time_signal(drv.ticked, "tick")
+	_time_signal(drv.frame_ticked, "frame")
+
+
+func _time_signal(sig: Signal, prefix: String) -> void:
+	var cons := sig.get_connections()
 	for c: Dictionary in cons:
-		drv.ticked.disconnect(c["callable"])
+		sig.disconnect(c["callable"])
 	for c: Dictionary in cons:
 		var cb: Callable = c["callable"]
-		var key := StringName("tick.%s.%s" % [cb.get_object().get_class(), cb.get_method()])
+		var key := StringName("%s.%s.%s" % [prefix, cb.get_object().get_class(), cb.get_method()])
 		var script: Script = (cb.get_object() as Object).get_script()
 		if script != null:
-			key = StringName("tick.%s.%s" % [script.resource_path.get_file(), cb.get_method()])
+			key = StringName(
+				"%s.%s.%s" % [prefix, script.resource_path.get_file(), cb.get_method()]
+			)
 		var t := TimedListener.new()
 		t.cb = cb
 		t.key = key
 		_timers.append(t)
-		drv.ticked.connect(t.call_it)
+		sig.connect(t.call_it)
 
 
 class TimedListener:
