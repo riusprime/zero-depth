@@ -12,6 +12,9 @@ extends Control
 ## (WorldReader.wand_moved → Wand.moved_read, EI-07) and the read-back follows live. On Back, Main turns the change
 ## into the fewest wand moves (planned_moves → Wand.plan_moves) and queues them as input (InputLatch); they reach the
 ## sim one per tick once the game runs again (EI-03, EI-04; WAND_2.md "How a move reaches the sim").
+## v0.10.5 O13 (owner P10): the wand forecast (WandForecastView) between the row and the read-back: the spell left to
+## right and its key numbers, from the sim's own compile of the page's order (WorldReader.wand_forecast, EI-07),
+## following every move live. It needs the reader `open` is given (none: no forecast).
 
 signal back_pressed
 
@@ -22,6 +25,8 @@ const READ_W := 1180.0
 const READ_SIZE := 22
 
 var row := WandRow.new()
+## v0.10.5 O13: the forecast of the order on the page.
+var forecast := WandForecastView.new()
 ## v0.9.0 AS2 (G2 AS = B): the slot categories' pips over the wand.
 var pips := SlotPips.new()
 var _title := Label.new()
@@ -33,6 +38,7 @@ var _read := {}
 var _start := PackedInt32Array()
 var _slots := 0
 var _held_from := -1
+var _reader: WorldReader
 
 
 func _init() -> void:
@@ -62,6 +68,7 @@ func _init() -> void:
 	col.add_child(_note)
 	col.add_child(pips)
 	col.add_child(row)
+	col.add_child(forecast)
 	_read_back.name = "ReadBack"
 	_read_back.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_read_back.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -84,8 +91,10 @@ func _init() -> void:
 	row.tile_hovered.connect(_on_hover)
 
 
-## Shows `wand` (WorldReader.wand(), with any moves still waiting for a tick applied) over its `slots`.
-func open(wand: Dictionary, slots: int) -> void:
+## Shows `wand` (WorldReader.wand(), with any moves still waiting for a tick applied) over its `slots`; `reader`
+## (v0.10.5 O13) forecasts each order the page shows.
+func open(wand: Dictionary, slots: int, reader: WorldReader = null) -> void:
+	_reader = reader
 	_read = wand
 	_slots = slots
 	_start = order()
@@ -116,6 +125,15 @@ func read_back_text() -> String:
 	return _read_back.text
 
 
+## v0.10.5 O13: the forecast's spell line and numbers line now.
+func forecast_text() -> String:
+	return forecast.spell_text()
+
+
+func forecast_numbers_text() -> String:
+	return forecast.numbers_text()
+
+
 func focus_index() -> int:
 	return row.focus
 
@@ -141,6 +159,8 @@ func _refresh() -> void:
 	var lines := WorldReader.wand_describe(_read)
 	_read_back.text = WorldReader.wand_render(lines, func(k: StringName) -> String: return tr(k))
 	_read_back.custom_minimum_size.x = maxf(READ_W, row.row_width())
+	forecast.custom_minimum_size.x = _read_back.custom_minimum_size.x
+	forecast.show_forecast(_reader.wand_forecast(_read) if _reader != null else {})
 
 
 func note_text() -> String:

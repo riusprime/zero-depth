@@ -106,8 +106,8 @@ static func _shared_form(w: World, spec: AttackSpec, ctx: AttackContext) -> bool
 	var d0 := ctx.damage
 	var b0 := ctx.base_damage
 	if spec.seekers <= 0:  # v0.9.5 FC7b: a Seekers dart takes its share in thousandths (SeekerMods.milli_of, _bolts)
-		ctx.damage = maxi(1, (d0 * share + 500) / 1000)
-	ctx.base_damage = maxi(1, (b0 * share + 500) / 1000)
+		ctx.damage = share_of(d0, share)
+	ctx.base_damage = share_of(b0, share)
 	var landed := _form(w, spec, ctx)
 	ctx.damage = d0
 	ctx.base_damage = b0
@@ -260,6 +260,17 @@ static func shot_offsets(spec: AttackSpec) -> PackedInt32Array:
 	return out
 
 
+## v0.8.0 MR: `d` at a spec's share_permille `share` (rounded half up, at least 1; v0.10.5 O13: its own function, so
+## WandForecast reads the same number).
+static func share_of(d: int, share: int) -> int:
+	return maxi(1, (d * share + 500) / 1000)
+
+
+## v0.9.0 AS (ShotCap): each of `fit` shots that fire out of `want` carries the damage of the copies it took in.
+static func merged_damage(d: int, want: int, fit: int) -> int:
+	return d if fit >= want else maxi(1, (d * want + fit / 2) / fit)
+
+
 ## Each bolt's base damage: the spec's, or its damage_permille share when the shot splits (rounded half up, v0.8.0 RM
 ## lead fix; at least 1).
 static func bolt_base_damage(spec: AttackSpec) -> int:
@@ -357,7 +368,7 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	fit = ShotCap.room(w, fit, root)
 	if fit <= 0:
 		return
-	var dmg := ctx.damage if fit >= want else maxi(1, (ctx.damage * want + fit / 2) / fit)
+	var dmg := merged_damage(ctx.damage, want, fit)
 	if fit < want and w.slot_table != null:
 		r = r * ShotCap.grow_permille(want, fit, w.slot_table.merge_radius_max_permille) / 1000.0
 	if root and spec.blast_mm > 0:  # v0.9.5 FC2: the Bomb's Halo cross and Backfire drop wait

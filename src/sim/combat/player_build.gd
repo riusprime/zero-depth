@@ -43,14 +43,22 @@ static func melee_angle(w: World) -> int:
 
 ## A swing's damage under the build (the melee remainder carries over).
 static func melee_damage(w: World, base: int) -> int:
-	var pm := w.player.melee_damage_permille * Abilities.weapon_permille(w) / 1000  # v0.4.0: Combo Sword level
-	return _exact_share(w, base, pm, &"melee_residue")
+	return _exact_share(w, base, melee_permille(w), &"melee_residue")
+
+
+## v0.10.5 O13: the swing's damage factor (per mille; v0.4.0: Combo Sword level), read only (WandForecast).
+static func melee_permille(w: World) -> int:
+	return w.player.melee_damage_permille * Abilities.weapon_permille(w) / 1000
 
 
 ## A shot's damage per bolt under the build (the bolt remainder carries over, once per shot).
 static func bolt_damage(w: World, base: int) -> int:
-	var pm := w.player.bolt_damage_permille * Abilities.weapon_permille(w) / 1000  # v0.4.0: Pulse Gun level
-	return _exact_share(w, base, pm, &"bolt_residue")
+	return _exact_share(w, base, bolt_permille(w), &"bolt_residue")
+
+
+## v0.10.5 O13: the shot's damage factor (per mille; v0.4.0: Pulse Gun level), read only (WandForecast).
+static func bolt_permille(w: World) -> int:
+	return w.player.bolt_damage_permille * Abilities.weapon_permille(w) / 1000
 
 
 ## `base` x `pm` per mille, exact on average: the remainder in build_state field `residue` carries to the next

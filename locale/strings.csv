@@ -1455,3 +1455,51 @@ UI_TRAINING_CARD_ADDED,Added: %s,Añadida: %s
 UI_TRAINING_WAND_FULL,The wand is full: remove a card first.,La varita está llena: quita una carta primero.
 UI_TRAINING_CARD_REMOVED,Card removed.,Carta quitada.
 UI_TRAINING_NO_CARD,No wand card to remove.,No hay carta de varita que quitar.
+UI_FORECAST_TITLE,FORECAST,PREVISIÓN
+UI_FORECAST_AFTER,AFTER THE SWAP,TRAS EL CAMBIO
+UI_FORECAST_LINE,%s,%s
+UI_FORECAST_THEN,%s → %s,%s → %s
+UI_FORECAST_AND,"%s, %s","%s, %s"
+UI_FORECAST_COUNT,%s ×%s,%s ×%s
+UI_FORECAST_FORM_BOLT,Bolt,Proyectil
+UI_FORECAST_FORM_SLASH,Slash,Tajo
+UI_FORECAST_FORM_RING,Ring,Anillo
+UI_FORECAST_FORM_BEAM,Beam,Rayo
+UI_FORECAST_FORM_ZONE,Zone,Zona
+UI_FORECAST_FORM_ORBITER,Orbiting orb,Orbe en órbita
+UI_FORECAST_FORM_LOB,Lobbed bomb,Bomba lanzada
+UI_FORECAST_FORM_BURST,Burst,Estallido
+UI_FORECAST_FORM_WEAPON,A copy of your attack,Una copia de tu ataque
+UI_FORECAST_FORM_LASER,Laser,Láser
+UI_FORECAST_FORM_BOMB,Bomb,Bomba
+UI_FORECAST_FORM_LANCE,Lance,Lanza
+UI_FORECAST_FORM_GLAIVE,Glaive,Disco
+UI_FORECAST_FORM_SEEKERS,Seeker dart,Dardo rastreador
+UI_FORECAST_FORM_WAVE,Wave,Onda
+UI_FORECAST_FORM_WISPS,Wisp,Fuego fatuo
+UI_FORECAST_FORM_VOID,Void orb,Orbe del vacío
+UI_FORECAST_FORM_RUNE,Rune burst,Estallido rúnico
+UI_FORECAST_FORM_PELLETS,Pellets,Perdigones
+UI_FORECAST_BIG,big,tamaño grande
+UI_FORECAST_SMALL,small,tamaño pequeño
+UI_FORECAST_BURNS,burns,quema
+UI_FORECAST_SHOCKS,shocks,electrocuta
+UI_FORECAST_BLEEDS,bleeds,desangra
+UI_FORECAST_FREEZES,chills,congela
+UI_FORECAST_SLOWS,slows,ralentiza
+UI_FORECAST_POISONS,poisons,envenena
+UI_FORECAST_PIERCES,pierces %s,atraviesa %s
+UI_FORECAST_BOUNCES,bounces %s×,rebota %s×
+UI_FORECAST_CHAINS,jumps to %s more,salta a %s más
+UI_FORECAST_HOMES,homes in,persigue
+UI_FORECAST_RETURNS,comes back,vuelve
+UI_FORECAST_REPEATS,repeats ×%s,se repite ×%s
+UI_FORECAST_REPEAT,repeats once,se repite una vez
+UI_FORECAST_ON_HIT,on hit: %s,al impactar: %s
+UI_FORECAST_ON_KILL,on a kill: %s,al matar: %s
+UI_FORECAST_ON_END,where it ends: %s,donde termina: %s
+UI_FORECAST_ON_CRIT,on a crit: %s,con un crítico: %s
+UI_FORECAST_ON_LAUNCH,as it fires: %s,al disparar: %s
+UI_FORECAST_ON_NTH,every few attacks: %s,cada pocos ataques: %s
+UI_FORECAST_NUMBERS_GUN,Shots per attack %s · Damage each %s · Damage per second %s · Radius %s m,Disparos por ataque %s · Daño de cada uno %s · Daño por segundo %s · Radio %s m
+UI_FORECAST_NUMBERS_BLADE,Hits per swing %s · Damage per hit %s · Damage per second %s · Reach %s m,Golpes por tajo %s · Daño por golpe %s · Daño por segundo %s · Alcance %s m

@@ -29,7 +29,11 @@ static func swing_reach_m(w: World, step: int = -1) -> float:
 ## stat plus its wand rate bonus (Rapid Fire, Rapid Coil ...; a negative one counts) through the curve, then Heavy
 ## Hands (AttackRate.rate), rounded half up; never under AttackRate.MIN_SHOT_TICKS once changed.
 static func shot_period_ticks(w: World) -> int:
-	var spec := Modifiers.bolt(w)
+	return shot_period_of(w, Modifiers.bolt(w))
+
+
+## v0.10.5 O13: shot_period_ticks for any compiled bolt spec (WandForecast reads a wand not held yet with it).
+static func shot_period_of(w: World, spec: AttackSpec) -> int:
 	var base := BombMods.period(w, spec, spec.period_ticks)  # v0.9.5 FC2: the Bomb's Rapid Fire (0.6 s)
 	base = VoidMods.period(w, spec, base)  # v0.9.5 FC3: the Void's Rapid Fire (0.4 s)
 	base = RuneMods.period(w, spec, base)  # v0.9.5 FC5: the Rune Explosion's Big Shot (90) and Rapid Fire (42)

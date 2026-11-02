@@ -70,8 +70,12 @@ static func settle(s: AttackSpec) -> AttackSpec:
 # --- The swing ------------------------------------------------------------------------------------------------
 ## Combo step `k` as it swings now: the player table's, or a copy changed by its spec (class doc).
 static func step(w: World, k: int) -> SwingStep:
+	return step_of(w, k, Modifiers.step(w, k))
+
+
+## v0.10.5 O13: step for combo step `k` compiled as `s` (WandForecast reads a wand not held yet with it).
+static func step_of(w: World, k: int, s: AttackSpec) -> SwingStep:
 	var base: SwingStep = w.player.combo[k]
-	var s := Modifiers.step(w, k)
 	# v0.8.0 MR (O91): Flurry's burst is part of the step's raw wand bonus (FireRhythm), so the curve covers it
 	var wand := s.rate_bonus_permille + FireRhythm.swing_bonus(w, s) if s != null else 0
 	var t := table(w)

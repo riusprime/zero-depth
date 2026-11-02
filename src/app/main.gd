@@ -781,7 +781,7 @@ func _open_pause_build() -> void:
 	_pause_build = BuildPage.new()
 	_pause_build.back_pressed.connect(_close_pause_build)
 	ui.add_child(_pause_build)
-	_pause_build.open(wand, int(wand["slots"]))
+	_pause_build.open(wand, int(wand["slots"]), driver.reader)
 
 
 func _close_pause_build() -> void:

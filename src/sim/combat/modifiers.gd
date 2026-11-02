@@ -92,9 +92,15 @@ static func skill(w: World) -> AttackSpec:
 ## v0.9.0 LZ: a Form card's (the Laser) come first, wherever it sits, so it makes the Gun's shot itself, never a
 ## trigger's cast, and every Pattern, Secondary and Element card shapes the form.
 static func build_modifiers(w: World) -> Array[ModifierTable]:
+	return build_modifiers_of(w, w.mod_slots)
+
+
+## v0.10.5 O13: build_modifiers for the card codes `codes` in this order (a wand the player hasn't made yet: the Build
+## page's reorder, the Swap's answer; WandForecast). build_modifiers is this on the held wand, so the two can't differ.
+static func build_modifiers_of(w: World, codes: PackedInt32Array) -> Array[ModifierTable]:
 	var out: Array[ModifierTable] = []
 	var form: Array[ModifierTable] = []  # v0.9.0 LZ: the Form card shapes the root shot wherever it sits
-	for code in w.mod_slots:
+	for code in codes:
 		if Offers.type_of(code) == Offers.ABILITY:
 			var idx := Offers.ability_of(code)
 			if idx < w.ability_tables.size():

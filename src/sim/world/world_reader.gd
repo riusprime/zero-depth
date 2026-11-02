@@ -2929,6 +2929,23 @@ static func wand_swap_picks(leave: int, at: int) -> PackedInt32Array:
 	return Wand.swap_picks(leave, at)
 
 
+## v0.10.5 O13 (WandForecast.of_read): the wand forecast of a wand read (wand(), or a preview from wand_moved /
+## wand_swapped; {} = the held wand): "line" (the spell left to right) and "numbers_line" as translation keys and
+## their arguments, and "numbers" (shots, damage, period_ticks, per_second_x10, area_mm). It compiles the wand with the
+## sim's own compiler and writes nothing (EI-07).
+func wand_forecast(wand_read: Dictionary = {}) -> Dictionary:
+	return WandForecast.of_read(_w, wand_read if not wand_read.is_empty() else Wand.read(_w))
+
+
+## v0.10.5 O13: a forecast's two lines in words (Wand.render; `translate` is the view's tr): [the spell, the numbers].
+static func wand_forecast_text(forecast: Dictionary, translate: Callable) -> PackedStringArray:
+	if forecast.is_empty():
+		return PackedStringArray(["", ""])
+	var line: Array[Dictionary] = [forecast["line"]]
+	var nums: Array[Dictionary] = [forecast["numbers_line"]]
+	return PackedStringArray([Wand.render(line, translate), Wand.render(nums, translate)])
+
+
 ## v0.6.5 WN2: whether a move from slot `from` to slot `to` changes a wand of `n` cards (Wand.can_move).
 static func wand_can_move(n: int, from: int, to: int) -> bool:
 	return Wand.can_move(n, from, to)

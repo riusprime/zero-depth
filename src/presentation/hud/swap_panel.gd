@@ -37,6 +37,8 @@ const SKIP := WorldReader.MOD_SLOTS
 var row := WandRow.new()
 ## v0.9.0 AS2: the slot pips over the wand, and the category a limited Swap chooses in (0: any card).
 var pips := SlotPips.new()
+## v0.10.5 O13 (owner P10): the forecast of the wand the focused answer leaves ("after the swap"; WandForecastView).
+var forecast := WandForecastView.new()
 var _only := 0
 var _dim := MenuBackdrop.new()
 var _title := Label.new()
@@ -103,6 +105,8 @@ func _init() -> void:
 	pips_box.add_child(pips)
 	col.add_child(pips_box)
 	col.add_child(row_box)
+	forecast.custom_minimum_size = Vector2(1100, 0)
+	col.add_child(forecast)
 	col.add_child(_read_back)
 	var foot := HBoxContainer.new()
 	foot.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -217,6 +221,11 @@ func read_back_text() -> String:
 	return _read_back.text
 
 
+## v0.10.5 O13: the forecast's spell line now.
+func forecast_text() -> String:
+	return forecast.spell_text()
+
+
 ## The panel's content rect on screen (tests: it fits the 1920 x 1080 base at 8 slots).
 func content_rect() -> Rect2:
 	return _col.get_global_rect()
@@ -271,6 +280,10 @@ func _refresh() -> void:
 				outcome = WorldReader.wand_swapped(_wand, a.x, a.y)
 	var lines := WorldReader.wand_describe(outcome)
 	_read_back.text = WorldReader.wand_render(lines, func(k: StringName) -> String: return tr(k))
+	# v0.10.5 O13: the same outcome's forecast, from the sim's own compile of it (EI-07)
+	forecast.show_forecast(
+		_reader.wand_forecast(outcome) if _reader != null else {}, outcome != _wand
+	)
 	var title_key := "UI_SWAP_TITLE"
 	match _mode:
 		Mode.PLACE:
