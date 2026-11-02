@@ -1,3 +1,4 @@
+# gdlint: disable=max-file-lines
 class_name ContentCompiler
 extends RefCounted
 ## Turns definitions into the sim's plain tables, converting seconds to ticks once (CONTENT_SCHEMA §9).
@@ -967,6 +968,9 @@ static func compile_catch_up(def: CatchUpDefinition) -> CatchUpTable:
 	t.boss_expected_permille = def.boss_expected_power_permille.duplicate()
 	t.boss_cap_permille = def.boss_cap_permille.duplicate()
 	t.boss_spread_permille = def.boss_spread_permille
+	t.boss_pace_permille = def.boss_pace_permille.duplicate()  # v0.10.5 O2b (owner D38 (a))
+	t.boss_pace_cap_permille = def.boss_pace_cap_permille
+	t.boss_pace_min_permille = def.boss_pace_min_permille
 	t.threat_cap_permille = def.threat_cap_bonus_permille
 	t.ability_level_permille = def.ability_level_permille
 	t.item_permille = def.item_permille

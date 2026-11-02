@@ -21,6 +21,11 @@ extends RefCounted
 ##   boss cap (cap + threat_cap × T); max HP × m, its attacks' damage × sqrt(m) (ActorStore.power, BossAi.powered).
 ## v0.9.5 BH1 (owner Q2): the boss's m is read when its door starts to open (read_boss) and held to the spawn, its cap
 ## is 2.5 / 3.0 / 3.5 / 4.0 / 4.5 by floor, and a +-8 % spread is drawn once per boss fight.
+## v0.10.5 O2b (owner D38 (a): "fights should last 1-2 minutes", a one-shot "on very very rare ocassions"): with the
+## table's boss_pace_permille set, a floor boss's HP no longer takes m but the paced multiplier (pace_multiplier: the
+## floor's pace × P / E, P capped at boss_pace_cap_permille × E, at least boss_pace_min_permille), times the same
+## spread, so the fight lasts about as long at any power up to the cap and a far stronger build is quicker. Its
+## damage keeps × sqrt(m). The final boss's bodies keep m (FinalPace paces them).
 ## A world without World.catch_up_table (labs, kernel, arena) is untouched. Nothing here is shown to the player.
 
 ## v0.9.5 BH1 (Q2): the named stream of a boss fight's HP spread (see spread_stream).
@@ -180,11 +185,40 @@ static func read_boss(w: World) -> void:
 		cap_at(t.boss_cap_permille, t, w.floor_index, Curses.threat(w)) + w.loop_cap_permille
 	)  # v0.7.5 AP: each loop past the first raises the caps
 	var m := multiplier(s.boss_power, s.boss_expected, s.boss_cap)
-	var rng := RngStream.derive(w.seed_value, spread_stream(w))
-	s.boss = maxi(
-		1, m * (1000 + rng.range_int(-t.boss_spread_permille, t.boss_spread_permille)) / 1000
-	)
+	s.boss = maxi(1, m * spread_permille(w) / 1000)
 	s.boss_read = 1
+
+
+## The boss fight's HP spread, per mille: 1000 + one draw uniform in ±boss_spread_permille from its stream
+## (spread_stream; a fresh stream each call, so the same value for the same fight).
+static func spread_permille(w: World) -> int:
+	var sp := w.catch_up_table.boss_spread_permille
+	return 1000 + RngStream.derive(w.seed_value, spread_stream(w)).range_int(-sp, sp)
+
+
+## v0.10.5 O2b (owner D38 (a)): a floor boss's paced HP multiplier, per mille: pace × min(P, E × cap / 1000) / E, at
+## least lo. pace is the multiplier at P = E (data: boss_pace_permille); past cap × E the HP stops growing, so the
+## fight shortens in step with the extra power (a phase can melt only that far past the expected build).
+static func pace_multiplier(p: int, e: int, pace: int, cap: int, lo: int) -> int:
+	var ee := maxi(1, e)
+	var capped := mini(maxi(0, p), ee * maxi(1000, cap) / 1000)
+	return maxi(maxi(1, lo), pace * capped / ee)
+
+
+## The HP multiplier, per mille, of the boss read at the door (World.catch_up): the paced one × the spread when the
+## table paces bosses (and this is not the final fight), else the catch-up m (spread included). 1000 without a table.
+static func boss_hp_permille(w: World) -> int:
+	var t := w.catch_up_table
+	if t == null:
+		return 1000
+	var s := w.catch_up
+	if t.boss_pace_permille.is_empty() or w.final_fight != null:
+		return s.boss
+	var pace := CatchUpTable.at_floor(t.boss_pace_permille, w.floor_index)
+	var m := pace_multiplier(
+		s.boss_power, s.boss_expected, pace, t.boss_pace_cap_permille, t.boss_pace_min_permille
+	)
+	return maxi(1, m * spread_permille(w) / 1000)
 
 
 ## The named stream of a boss fight's HP spread: `boss:hp_spread`, keyed by the floor, the loop and (a final fight) the
@@ -194,8 +228,9 @@ static func spread_stream(w: World) -> String:
 	return "%s:%d:%d:%d" % [BOSS_SPREAD_STREAM, w.floor_index, w.loop, body]
 
 
-## Boss i just spawned: its m (read at the door when BossFlow stored one, else read now), then max HP × m and its
-## attacks' damage × sqrt(m) (ActorStore.power). No-op without a table.
+## Boss i just spawned: its m (read at the door when BossFlow stored one, else read now), then max HP × the paced
+## multiplier (boss_hp_permille; v0.10.5 O2b) and its attacks' damage × sqrt(m) (ActorStore.power). No-op without a
+## table.
 static func on_boss(w: World, i: int) -> void:
 	var t := w.catch_up_table
 	if t == null:
@@ -205,7 +240,7 @@ static func on_boss(w: World, i: int) -> void:
 		read_boss(w)
 	s.boss_read = 0
 	var a := w.actors
-	var hp := maxi(1, a.max_hp[i] * s.boss / 1000)
+	var hp := maxi(1, a.max_hp[i] * boss_hp_permille(w) / 1000)  # v0.10.5 O2b: paced
 	a.max_hp[i] = hp
 	a.hp[i] = hp
 	a.power[i] = damage_permille(s.boss)

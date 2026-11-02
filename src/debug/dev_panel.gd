@@ -127,6 +127,8 @@ static func catch_up_text(w: World) -> String:
 			"  boss x%.2f (P %d / E %d, cap x%.2f)"
 			% [s.boss / 1000.0, s.boss_power, s.boss_expected, s.boss_cap / 1000.0]
 		)
+		if not w.catch_up_table.boss_pace_permille.is_empty():  # v0.10.5 O2b: the paced boss HP
+			out += "  boss HP x%.2f (paced)" % (CatchUp.boss_hp_permille(w) / 1000.0)
 	return out
 
 

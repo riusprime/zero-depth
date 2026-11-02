@@ -369,6 +369,13 @@ Splitlings) are exempt. The phases are in `data/curves/floor_N.tres` (§H).
   meets enemies ×1.41: still easier. A build ten times stronger hits the cap and deletes the floor: the lucky run.
 - **Bosses (D6, D7)** take their own m when they spawn, against the power expected at the floor's end, with a higher
   cap (×2 / ×3 / ×4, +0.25 per T), and gates HP can't skip (§F).
+- **Boss fights of 1–2 minutes (v0.10.5 O2b, owner D38 (a); overnight pick, owner reviews).** A floor boss's HP no
+  longer takes m: when its door starts to open it reads your power P and sets HP × pace(floor) × P ÷ E (pace ×3.09 /
+  ×3.77 / ×4.45 on floors 1/2/3, later floors as floor 3; never under ×1; the same ±8 % spread), so the fight lasts
+  about 90 s (band 60–120 s) whether the build is weak or strong. Past 3× the expected power the HP stops growing, so
+  only a far stronger build is quicker (6× E: about 40–60 s) and deleting a phase stays very rare. Its damage keeps
+  × √m, the gates (66 % / 33 %, invulnerable shifts) stay, and the final boss keeps its own pace (FinalPace). All
+  numbers are starting values in `data/scaling/catch_up.tres`.
 - **Deep floors bite (S5).** A Deep floor: a violet haze over the biome's light, an elite in every combat room,
   +1 T (which raises both caps), the epic altar by the boss door, and a Deep-only event (Whispering Deep; v0.8.0
   N19: at the floor's curse altar, so every Deep floor has a curse room).
