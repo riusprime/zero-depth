@@ -46,6 +46,7 @@ until the owner says so.
 ## Questions
 
 | # | Step | Question |
+| Q9 | O4b | The director follow-up missed its targets (table in evidence/O4_DIRECTOR.md "O4b"): the weak hero's room is less crowded (alive 16.2 → 11.5) but the strong hero lost 22.5 % of its kills, because the test bot counts as "struggling" a third of the time. Not merged; branch `v0105-o4b`. Options: merge with a 900 ‰ cap, cut the cap only on low HP (not kill rate), or drop it | Which? |
 | Q6 | O16 | **Shards pile up**: the bot spends only 27 % of what it earns and still buys every chest; the bank reaches ~2088 by floor 5. More things to spend on (shop stock, rerolls), higher chest prices, or fewer shards? |
 | Q7 | O16 | `data/scaling/catch_up.tres` has 3 floors of entries but the run is 5 floors: floors 4–5 reuse floor 3's expected power, so the catch-up (and boss pace) stretch there (m 1.06, 1.32). Add floors 4–5 entries? (lead: yes, measured from the expected build) |
 | Q8 | O16 | Floor 5 is a spike: challenge ÷ power 0.31 / 0.45 / 0.43 / 0.49 / **0.69**. Ease floor 5, or is it the intended climax? |
