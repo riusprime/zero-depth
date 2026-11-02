@@ -11,81 +11,14 @@ const TICKS := 900
 const DUMMIES := 14
 
 ## The scenarios the equivalence fixture pins: [id, weapon, item ids, heat, extra ability ids].
+## v0.10.5 O1 (owner L23): the cases that held a deleted card (the v0.5 items and abilities, and the three "all" cases
+## that held them) went with those cards; their fixture entries were removed, the five below are unchanged.
 const CASES: Array = [
 	["blade_plain", &"blade", [], false, []],
 	["gun_plain", &"gun", [], false, []],
 	["both_plain", &"", [], false, []],
-	["blade_long_edge", &"blade", [&"long_edge"], false, []],
-	["blade_twin_arc", &"blade", [&"twin_arc"], false, []],
-	["blade_ember_edge", &"blade", [&"ember_edge"], false, []],
-	["blade_overcharge", &"blade", [&"overcharge"], false, []],
-	["blade_conductor", &"blade", [&"conductor"], false, []],
-	["blade_serrated_edge", &"blade", [&"serrated_edge"], false, []],
-	["blade_glacial_edge", &"blade", [&"glacial_edge"], false, []],
 	["blade_wildfire_rider", &"blade", [&"wildfire"], false, []],
-	["gun_splinter_shot", &"gun", [&"splinter_shot"], false, []],
-	["gun_rapid_coil", &"gun", [&"rapid_coil"], false, []],
-	["gun_ricochet_core", &"gun", [&"ricochet_core"], false, []],
-	["gun_static_chain", &"gun", [&"static_chain"], false, []],
 	["gun_frost_core", &"gun", [&"frost_core"], false, []],
-	["gun_cinder_shot", &"gun", [&"cinder_shot"], false, []],
-	["gun_barbed_bolts", &"gun", [&"barbed_bolts"], false, []],
-	["gun_glacial_rider", &"gun", [&"glacial_edge", &"cold_snap"], false, []],
-	[
-		"blade_all",
-		&"blade",
-		[
-			&"long_edge",
-			&"twin_arc",
-			&"ember_edge",
-			&"overcharge",
-			&"conductor",
-			&"serrated_edge",
-			&"glacial_edge",
-			&"wildfire",
-			&"cold_snap",
-			&"momentum",
-			&"executioner",
-		],
-		true,
-		[&"flame_trail", &"orbit_blades"],
-	],
-	[
-		"gun_all",
-		&"gun",
-		[
-			&"splinter_shot",
-			&"rapid_coil",
-			&"ricochet_core",
-			&"static_chain",
-			&"frost_core",
-			&"cinder_shot",
-			&"barbed_bolts",
-			&"wildfire",
-			&"thorn_mantle",
-		],
-		true,
-		[&"drone_buddy", &"arc_field"],
-	],
-	[
-		"both_all",
-		&"",
-		[
-			&"long_edge",
-			&"twin_arc",
-			&"ember_edge",
-			&"overcharge",
-			&"splinter_shot",
-			&"ricochet_core",
-			&"static_chain",
-			&"frost_core",
-			&"cinder_shot",
-			&"barbed_bolts",
-			&"serrated_edge",
-		],
-		true,
-		[],
-	],
 ]
 
 static var _repo: ContentRepository

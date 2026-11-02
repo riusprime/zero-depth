@@ -25,37 +25,20 @@ const COLORS := {
 }
 
 const ID_COLORS := {
-	&"long_edge": Color("#7FE7FF"),
-	&"twin_arc": Color("#B9A7FF"),
-	&"ember_edge": Color("#FF7A3D"),
-	&"splinter_shot": Color("#9DFF8A"),
-	&"rapid_coil": Color("#FFE36A"),
-	&"ricochet_core": Color("#FFFFFF"),
 	&"kinetic_dash": Color("#4FD8FF"),
-	&"overcharge": Color("#FF5FD2"),
 	&"vampiric_core": Color("#E8364F"),
-	&"static_chain": Color("#8FB8FF"),
 	&"momentum": Color("#FFB347"),
 	&"frost_core": Color("#BFF4FF"),
 	&"thorn_mantle": Color("#6FCB5A"),
 	&"executioner": Color("#C7C2D6"),
 	&"swift_feet": Color("#7CFFC9"),
 	&"phase_strike": Color("#C77DFF"),
-	&"cinder_shot": Color("#FFA24C"),
 	&"wildfire": Color("#FF4A2A"),
-	&"conductor": Color("#5C9DFF"),
-	&"serrated_edge": Color("#C8203A"),
-	&"barbed_bolts": Color("#FF6A86"),
-	&"glacial_edge": Color("#62C6F2"),
 	&"cold_snap": Color("#E4FAFF"),
 	&"bulwark": Color("#F2C14E"),
 	&"heat_sink": Color("#FF9A3C"),
 	&"thermal_edge": Color("#FFD27A"),
 	&"meltdown": Color("#FF3D1F"),
-	&"cluster_payload": Color("#FFA05A"),  # v0.5.0 CP: the ability mods (CardPoolIcons.MOD_COLORS)
-	&"overclocked_drone": Color("#FF6A3A"),
-	&"razor_orbit": Color("#E04A5E"),
-	&"afterimage": Color("#D2B8FF"),
 }
 
 ## Engine status colours (v0.3.0 G): the enemy effects, pips and the combo frame use them.
@@ -70,23 +53,11 @@ const STATUS_COLORS := {
 
 ## One colour per named combo (v0.3.0 G): its card frame, badge and payoff effect.
 const COMBO_COLORS := {
-	&"plasma_arc": Color("#FF8A5C"),
 	&"shatter_dash": Color("#A8EEFF"),
-	&"resonance": Color("#E07CFF"),
-	&"shrapnel_storm": Color("#C8FF8A"),
 	&"blood_harvest": Color("#FF3B5C"),
 	&"spiked_phase": Color("#9BE070"),
 	&"slipstream": Color("#7CFFE0"),
-	&"frozen_bastion": Color("#9FD8FF"),
 	# v0.4.0 AB: the ability combos.
-	&"storm_bombs": Color("#C8B4FF"),
-	&"napalm_drone": Color("#FF6A2A"),
-	&"glacier_ring": Color("#A8F0FF"),
-	&"blink_charge": Color("#D88CFF"),
-	&"blade_dance": Color("#E8F4FF"),
-	&"wingman": Color("#3AE0FF"),
-	&"superconductor": Color("#7CF6FF"),
-	&"ember_ward": Color("#FFB03A"),
 }
 
 ## The colour of an item this table doesn't know.

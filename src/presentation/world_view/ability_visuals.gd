@@ -2,77 +2,43 @@ class_name AbilityVisuals
 extends Node3D
 ## The abilities in the world (v0.4.0 BS). Reads WorldReader.ability_fx() only (EI-07); nothing here changes an
 ## outcome. Every shape is the sim's own number (bomb radius, blade points, shock radius).
-## - Bomb Lobber: each bomb in flight arcs from where it left to where it lands, and its landing circle shows on the
+## - Bombs: each bomb in flight arcs from where it left to where it lands, and its landing circle shows on the
 ##   ground from the throw (a ring with a fill that grows until it lands: the readable telegraph); a landing flashes
 ##   an orange disc.
-## - Drone Buddy: a small low-poly hovering bot in the hero's palette (white shell, cyan visor and rotor) at each
-##   drone's sim position, bobbing; a cyan flash at its muzzle when it fires, a cyan line when a bolt chains.
-## - Orbit Blades: a flat steel blade at each blade point, edge-on along the ring.
 ## - Blink's landing shock and Combo Sword's finisher wave: a ring that flashes out to the shock's radius.
-## - v0.4.0 AB: Glacier Ring turns the blades to ice; Blade Dance draws them bigger while it lasts. The new abilities'
-##   looks are ElementVisuals.
+## v0.10.5 O1 (owner L23): Drone Buddy's bots and Orbit Blades' steel went with those abilities.
 
 const BOMB_COLOR := Color("#FF8A3A")
 const BLINK_COLOR := Color("#B48CFF")
 const FX_FRAMES := 18
 const RING_Y := 0.03
-const DRONE_Y := 1.35
 const BOMB_ARC_M := 2.4
-const STEEL := Color("#D6E4F0")
-const ICE := Color("#A8F0FF")
-const DANCE_SCALE := 1.35
 
 ## v0.6.0 MX3: AttackFormView draws the bombs that name a spec (the LOB form) and every landing (WorldViewRoot sets
 ## it); this view keeps the drones, the orbit blades' steel and the rest.
 var forms_drawn := false
-var _drones: Array[Node3D] = []
-var _blades: Array[MeshInstance3D] = []
 var _bombs: Array[Node3D] = []
 var _fx := FxFade.new()
 var _fx_template := SkillVisuals._make_template()
-var _blade_mesh := PrismMesh.new()
-var _blade_mat := StandardMaterial3D.new()
 var _ring_mat := _fx_template.duplicate() as StandardMaterial3D
 var _fill_mat := _fx_template.duplicate() as StandardMaterial3D
 var _bomb_mat := StandardMaterial3D.new()
-var _shell_mat := StandardMaterial3D.new()
-var _core_mat := StandardMaterial3D.new()
 var _last_blast := -1
 var _bomb_keys := PackedStringArray()
 var _last_shock := -1
-var _last_chain := -1
 var _last_echo_at := -1
 var _last_echo := -1
-var _drone_fire := PackedInt32Array()
-var _t := 0.0
 
 
 func _init() -> void:
 	name = "AbilityVisuals"
-	_blade_mesh.size = Vector3(0.62, 0.05, 0.16)
-	_blade_mat.albedo_color = STEEL
-	_blade_mat.metallic = 0.6
-	_blade_mat.roughness = 0.3
 	_ring_mat.albedo_color = Color(BOMB_COLOR, 0.85)
 	_fill_mat.albedo_color = Color(BOMB_COLOR, 0.22)
 	_bomb_mat.albedo_color = Color("#2A2D33")
-	_shell_mat.albedo_color = ThemePalette.color(&"player_body")
-	_shell_mat.roughness = 0.8
-	_core_mat.albedo_color = ThemePalette.color(&"player_core")
-	_core_mat.emission_enabled = true
-	_core_mat.emission = ThemePalette.color(&"player_core")
-	_core_mat.emission_energy_multiplier = 1.4
 
 
 func sync(reader: WorldReader) -> void:
 	var fx := reader.ability_fx()
-	_sync_drones(fx)
-	_sync_blades(fx)
-	var el := reader.element_fx()  # v0.4.0 AB: Glacier Ring, Blade Dance
-	_blade_mat.albedo_color = ICE if el["glacier"] else STEEL
-	var big := DANCE_SCALE if el["dancing"] else 1.0
-	for b in _blades:
-		b.scale = Vector3(big, big, big)
 	_bomb_keys = reader.bomb_spec_keys() if forms_drawn else PackedStringArray()
 	_sync_bombs(fx, reader.tick())
 	var bt: PackedInt32Array = fx["blast_tick"]
@@ -87,10 +53,6 @@ func sync(reader: WorldReader) -> void:
 		_last_shock = int(fx["shock_tick"])
 		if _last_shock >= 0:
 			_flash_ring(fx["shock_pos"], float(fx["shock_r"]))
-	if int(fx["chain_tick"]) != _last_chain:
-		_last_chain = int(fx["chain_tick"])
-		if _last_chain >= 0:
-			_line(fx["chain_from"], fx["chain_to"])
 	_sync_echo(fx)
 
 
@@ -115,109 +77,6 @@ func bomb_count() -> int:
 
 func fx_count_of(kind: StringName) -> int:
 	return _fx.count_of(kind)
-
-
-# --- Drones -------------------------------------------------------------------------------------------------
-func _sync_drones(fx: Dictionary) -> void:
-	var pts: PackedVector2Array = fx["drones"]
-	var fires: PackedInt32Array = fx["drone_fire"]
-	while _drones.size() < pts.size():
-		var d := _make_drone()
-		add_child(d)
-		_drones.append(d)
-		_drone_fire.append(-1)
-	for k in _drones.size():
-		var d := _drones[k]
-		d.visible = k < pts.size()
-		if not d.visible:
-			continue
-		var bob := sin(_t * 3.0 + k * 1.7) * 0.08
-		var to := SimPlane.to_3d(pts[k], DRONE_Y + bob)
-		var step := to - d.position
-		d.position = to
-		if Vector2(step.x, step.z).length() > 0.002:
-			d.rotation.y = atan2(-step.z, step.x)
-		d.get_node("Rotor").rotation.y = _t * 22.0
-		if k < fires.size() and fires[k] != _drone_fire[k]:
-			_drone_fire[k] = fires[k]
-			if fires[k] >= 0:
-				_flash_disc(pts[k], 0.22, ThemePalette.color(&"player_core"), &"muzzle", DRONE_Y)
-
-
-## A hovering bot: a faceted white shell, a cyan visor band, a rotor disc on a short mast and two stub legs.
-func _make_drone() -> Node3D:
-	var root := Node3D.new()
-	root.name = "Drone"
-	var shell := MeshInstance3D.new()
-	var body := SphereMesh.new()
-	body.radius = 0.2
-	body.height = 0.32
-	body.radial_segments = 8
-	body.rings = 3
-	shell.mesh = body
-	shell.material_override = _shell_mat
-	root.add_child(shell)
-	var visor := MeshInstance3D.new()
-	var vb := BoxMesh.new()
-	vb.size = Vector3(0.1, 0.07, 0.3)
-	visor.mesh = vb
-	visor.position = Vector3(0.15, 0.02, 0)
-	visor.material_override = _core_mat
-	root.add_child(visor)
-	var mast := MeshInstance3D.new()
-	var mb := CylinderMesh.new()
-	mb.top_radius = 0.02
-	mb.bottom_radius = 0.02
-	mb.height = 0.14
-	mast.mesh = mb
-	mast.position = Vector3(0, 0.2, 0)
-	mast.material_override = _shell_mat
-	root.add_child(mast)
-	var rotor := MeshInstance3D.new()
-	rotor.name = "Rotor"
-	var rb := BoxMesh.new()
-	rb.size = Vector3(0.46, 0.015, 0.06)
-	rotor.mesh = rb
-	rotor.position = Vector3(0, 0.27, 0)
-	rotor.material_override = _core_mat
-	root.add_child(rotor)
-	for side in [-1.0, 1.0]:
-		var leg := MeshInstance3D.new()
-		var lb := BoxMesh.new()
-		lb.size = Vector3(0.05, 0.12, 0.05)
-		leg.mesh = lb
-		leg.position = Vector3(-0.04, -0.18, side * 0.1)
-		leg.material_override = _shell_mat
-		root.add_child(leg)
-	for c in root.get_children():
-		(c as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	return root
-
-
-# --- Orbit Blades -------------------------------------------------------------------------------------------
-func _sync_blades(fx: Dictionary) -> void:
-	var pts: PackedVector2Array = fx["blades"]
-	while _blades.size() < pts.size():
-		var b := MeshInstance3D.new()
-		b.mesh = _blade_mesh
-		b.material_override = _blade_mat
-		b.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		add_child(b)
-		_blades.append(b)
-	for k in _blades.size():
-		var b := _blades[k]
-		b.visible = k < pts.size()
-		if b.visible:
-			var rv := pts[k] - _centre(pts)  # edge-on along the ring: the tangent's yaw
-			b.position = SimPlane.to_3d(pts[k], SimPlane.CORE_HEIGHT)
-			b.rotation = Vector3(0, atan2(rv.x, -rv.y), 0)
-
-
-static func _centre(pts: PackedVector2Array) -> Vector2:
-	var c := Vector2.ZERO
-	for p in pts:
-		c += p
-	return c / maxf(1.0, pts.size())
 
 
 # --- Bombs --------------------------------------------------------------------------------------------------
@@ -320,24 +179,9 @@ func _flash_ring(at: Vector2, r: float) -> void:
 	_add(n, BLINK_COLOR, 0.9, &"shock")
 
 
-func _line(from: Vector2, to: Vector2) -> void:
-	var d := to - from
-	if d.length() < 0.05:
-		return
-	var n := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = Vector3.ONE
-	n.mesh = box
-	n.position = SimPlane.to_3d((from + to) * 0.5, SimPlane.CORE_HEIGHT)
-	n.rotation = Vector3(0, atan2(d.y, d.x), 0)
-	n.scale = Vector3(d.length(), 0.05, 0.05)
-	_add(n, ThemePalette.color(&"player_core"), 0.95, &"chain")
-
-
 func _add(n: MeshInstance3D, c: Color, alpha: float, kind: StringName) -> void:
 	_fx.add(self, n, _fx_template, c, alpha, kind, FX_FRAMES)
 
 
-func _process(delta: float) -> void:
-	_t += delta
+func _process(_delta: float) -> void:
 	_fx.step(1)

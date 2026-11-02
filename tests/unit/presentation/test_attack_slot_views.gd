@@ -73,7 +73,7 @@ func test_the_pick_card_wears_its_slot_and_a_ribbon_in_both_languages() -> void:
 		s.show_card(PickPanel.card_face(self, r, WandLab.code(w, &"storm_core")))
 		assert_eq([s.slot_text(), s.replaces_text()], [want[lang][4], ""], "%s: room left" % lang)
 		assert_false(s.card.ribbon.visible, "no ribbon with room")
-		s.show_card(PickPanel.card_face(self, r, WandLab.code(w, &"trigger_on_hit")))
+		s.show_card(PickPanel.card_face(self, r, WandLab.code(w, &"echo_slash")))
 		assert_eq(s.slot_text(), "", "%s: a free card has no tag" % lang)
 
 
@@ -91,7 +91,7 @@ func test_the_replaced_ribbon_burns_and_comes_back_whole() -> void:
 
 func test_the_wand_tiles_and_the_pips_read_the_slots() -> void:
 	TranslationServer.set_locale("en")
-	var w := _world([&"gun_ring", &"gun_swirl", &"ember_core", &"trigger_on_hit"])
+	var w := _world([&"gun_ring", &"gun_swirl", &"ember_core", &"echo_slash"])
 	var r := WorldReader.new(w)
 	var row := WandRow.new()
 	add_child_autofree(row)
@@ -107,7 +107,7 @@ func test_the_wand_tiles_and_the_pips_read_the_slots() -> void:
 	)
 	assert_eq(row.level_text(0), "Pattern", "the tag alone: v0.9.5 CLV, Ring doesn't level")
 	assert_eq(row.level_text(2), "Lv 1/3 · Element", "a 3-level card: its level, then the tag")
-	assert_eq(row.level_text(3), "", "a trigger: no tag")
+	assert_eq(row.level_text(3), "Lv 1", "a free card: its level, no tag")
 	var page := BuildPage.new()
 	add_child_autofree(page)
 	page.open(r.wand(), 8)

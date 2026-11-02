@@ -65,15 +65,15 @@ func test_an_elemental_cards_socket_wears_its_glyph() -> void:
 	var s := InlaySocket.new()
 	add_child_autofree(s)
 	s.size = Vector2(80, 80)
-	s.show_item(&"ember_edge", Color.ORANGE, Color.ORANGE)
+	s.show_item(&"ember_core", Color.ORANGE, Color.ORANGE)
 	assert_eq(s.element, &"ember")
-	assert_true(s.shows_glyph(), "a flame on Ember Edge")
-	s.show_item(&"glacial_edge", Color.CYAN, Color.CYAN)
+	assert_true(s.shows_glyph(), "a flame on Ember Core")
+	s.show_item(&"frost_core", Color.CYAN, Color.CYAN)
 	assert_eq(s.element, &"frost")
 	s.show_item(&"swift_feet", Color.GREEN, Color.GREEN)
 	assert_eq(s.element, &"", "a plain card")
 	assert_false(s.shows_glyph())
-	s.show_item(&"ember_edge", Color.ORANGE, Color.ORANGE)
+	s.show_item(&"ember_core", Color.ORANGE, Color.ORANGE)
 	s.size = Vector2(30, 30)
 	assert_false(s.shows_glyph(), "none on a socket too small to read it")
 
@@ -106,10 +106,9 @@ func test_the_spare_glyphs_lists_follow_the_content() -> void:
 
 
 func test_a_card_wears_the_star_the_element_or_the_crossed_blades() -> void:
-	assert_eq(ElementGlyphs.glyph_of(&"inferno_core"), &"star", "Legendary over its element")
-	assert_eq(ElementGlyphs.glyph_of(&"trigger_on_hit_twice"), &"star")
+	assert_eq(ElementGlyphs.glyph_of(&"chain_blast"), &"star", "Legendary over its element")
 	assert_eq(
-		ElementGlyphs.glyph_of(&"ember_edge"), &"ember", "an elemental Blade card keeps its element"
+		ElementGlyphs.glyph_of(&"ember_core"), &"ember", "an elemental Blade card keeps its element"
 	)
 	assert_eq(ElementGlyphs.glyph_of(&"flurry"), &"blades", "a plain Blade card")
 	assert_eq(ElementGlyphs.glyph_of(&"swift_feet"), &"", "a plain non-Blade card wears none")

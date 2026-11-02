@@ -176,7 +176,7 @@ func test_loop_one_boss_altar_gives_one_pick() -> void:
 
 
 func test_chain_blast_is_the_pre_nerf_explosive() -> void:
-	var w := WandLab.fight(&"gun", [&"gun_spread", &"split_shot", &"chain_blast"])
+	var w := WandLab.fight(&"gun", [&"gun_twin", &"split_shot", &"chain_blast"])
 	var bolt := Modifiers.bolt(w)
 	var blast: AttackHook = null
 	var split: AttackHook = null

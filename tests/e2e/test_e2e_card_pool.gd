@@ -1,14 +1,12 @@
 extends GutTest
-## The bigger card pool through real input (v0.5.0 CP): start a run, fill the four slots from the dev panel (Bomb
-## Lobber, Drone Buddy, Orbit Blades: so ability mods can come up and no altar opens with a new ability), then walk
+## The bigger card pool through real input (v0.5.0 CP): start a run, fill the four slots from the dev panel (Blink:
+## the utility slot is taken, so no altar opens with a new ability). v0.10.5 O1: the CP mod cards are gone, and so is
+## the CP_SEED altar's CP stat card; the altar's first card stands in for it, then walk
 ## (left stick only) from altar to altar, opening each with E, until one offers a v0.5.0 CP card: its face shows
 ## its own symbol, its translated name and its numbers; take it with the keyboard (arrows, Enter) and see it apply.
 
 const CP_STATS: Array[StringName] = [
 	&"glass_cannon", &"onrush", &"overkill", &"hoarder", &"fast_hands"
-]
-const CP_MODS: Array[StringName] = [
-	&"cluster_payload", &"overclocked_drone", &"razor_orbit", &"afterimage"
 ]
 ## v0.9.0 FV: floor 1 holds two altars (loot scales with its rooms), and neither of Main.STAGE_SEED's offers a CP
 ## card; CP_SEED's first altar does (found with this walk over the seeds after it).
@@ -33,18 +31,13 @@ func _grant(e: E2e, main: Main, id: StringName) -> void:
 	await e.frames(2)
 
 
-## The index of a CP card in `offer`, or -1.
+## The index of a CP stat card in `offer`, else the offer's first card (-1 when empty).
 static func _cp_card(w: World, offer: PackedInt32Array) -> int:
 	for k in offer.size():
 		var c := offer[k]
-		match Offers.type_of(c):
-			Offers.STAT:
-				if w.stat_tables[Offers.stat_of(c)].id in CP_STATS:
-					return k
-			Offers.MOD:
-				if w.item_tables[c].id in CP_MODS:
-					return k
-	return -1
+		if Offers.type_of(c) == Offers.STAT and w.stat_tables[Offers.stat_of(c)].id in CP_STATS:
+			return k
+	return 0 if offer.size() > 0 else -1
 
 
 func test_open_altars_until_a_new_card_is_offered_and_take_it() -> void:
@@ -55,10 +48,10 @@ func test_open_altars_until_a_new_card_is_offered_and_take_it() -> void:
 	var hud: Hud = main.get_node("UI/Hud")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
-	for id in [&"bomb_lobber", &"drone_buddy", &"orbit_blades"]:
+	for id in [&"blink"]:
 		await _grant(e, main, id)
 	await e.tap(KEY_QUOTELEFT)
-	assert_eq(w.ability_owned.size(), 4, "four slots full")
+	assert_eq(w.ability_owned.size(), 2, "the weapon and Blink (the one utility slot)")
 	# TEST HELPER (labelled): v0.5.5 AR locks the rewards in sealed arenas until their waves are cleared (that is
 	# tests/e2e/test_e2e_arenas.gd); this test is about the cards, so the floor's arenas start cleared.
 	w.arenas.cleared = w.floor_layout.arena_rooms.duplicate()
@@ -116,5 +109,5 @@ func test_open_altars_until_a_new_card_is_offered_and_take_it() -> void:
 	await e.frames(3)
 	if Offers.type_of(code) == Offers.STAT:
 		assert_ne(Stats.value(w, Offers.stat_of(code)), before, "the stat card applied")
-	else:
+	elif Offers.type_of(code) == Offers.MOD:
 		assert_true(w.items_owned.has(code), "the mod is owned")

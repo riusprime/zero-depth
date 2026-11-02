@@ -11,9 +11,7 @@ func _ctx(w: World, at: Vector2) -> AttackContext:
 
 
 func test_segments_anchors_and_marks_are_drawn_from_the_pool() -> void:
-	var w := W.world(
-		&"blade", [&"shared_faultline", &"shared_gravity_stitch"], [[Vector2(2.0, 0.0), 100000]]
-	)
+	var w := W.world(&"blade", [&"shared_faultline"], [[Vector2(2.0, 0.0), 100000]])
 	var reader := WorldReader.new(w)
 	var v := RemnantViews.new()
 	add_child_autofree(v)
@@ -21,10 +19,10 @@ func test_segments_anchors_and_marks_are_drawn_from_the_pool() -> void:
 	v.sync(reader)
 	assert_eq([v.drawn_segments, v.drawn_anchors, v.drawn_marks], [0, 0, 0], "nothing without one")
 	var s := Modifiers.step(w, 0)
-	for id: StringName in [&"shared_faultline", &"shared_gravity_stitch"]:
+	for id: StringName in [&"shared_faultline"]:
 		Remnants.on_hook(w, W.hook_of(s, id), _ctx(w, Vector2.ZERO), Vector2(2.0, 0.0), 1)
 	v.sync(reader)
-	assert_eq([v.drawn_segments, v.drawn_anchors, v.drawn_marks], [1, 1, 0])
+	assert_eq([v.drawn_segments, v.drawn_anchors, v.drawn_marks], [1, 0, 0])
 	assert_eq(v.get_child_count(), nodes, "pooled: no node made for a remnant")
 	var bar := v.get_node("Bar0") as MeshInstance3D
 	var mid := SimPlane.to_3d((w.mx.rem_a[0] + w.mx.rem_b[0]) * 0.5)

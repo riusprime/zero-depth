@@ -246,7 +246,7 @@ func test_swirl_turns_each_throw_and_it_still_comes_back() -> void:
 func test_the_glaive_replaces_the_other_forms() -> void:
 	var w := _slot_world()
 	var gl := W.item(w, &"gun_glaive")
-	for other: StringName in [&"gun_laser", &"gun_bomb", &"gun_void", &"gun_lance", &"gun_scatter"]:
+	for other: StringName in [&"gun_laser", &"gun_void", &"gun_lance"]:
 		var o := W.item(w, other)
 		assert_true(BuildSlots.take(w, o))
 		assert_eq(int(Offers.info(w, gl)["replaces"]), o, "the Glaive replaces %s" % other)

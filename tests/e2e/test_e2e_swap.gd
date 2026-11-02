@@ -1,11 +1,9 @@
 extends GutTest
 ## v0.6.0 MX2 (owner B7: "if you don't like one you have a swap button for the next you get and you can decide which
 ## one to swap"): through main.tscn and real input only. The dev panel (real clicks) fills the wand's slots (v0.6.5
-## WN1: four on floor 1, owner W6) with four ability modifiers, then grants an attack item: the Swap panel opens over
-## the play. The player picks the held modifier it replaces with the keyboard (1–8, Enter), the mouse (a click) or
-## the pad (d-pad, A), or skips (Esc, B). The HUD's four pips follow.
-
-const FOUR: Array = [&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field"]
+## WN1: four on floor 1, owner W6) with four wand cards (GrantMod), then grants an attack item: the Swap panel
+## opens over the play. The player picks the held modifier it replaces with the keyboard (1–8, Enter), the mouse (a
+## click) or the pad (d-pad, A), or skips (Esc, B). The HUD's four pips follow.
 
 
 func _click(e: E2e, main: Main, button: String) -> void:
@@ -20,14 +18,10 @@ func _to_swap(e: E2e) -> Main:
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
-	for id: StringName in FOUR:
-		var guard := 0
-		while w.ability_tables[main.driver.debug.ability_choice].id != id and guard < 20:
-			await _click(e, main, "NextAbility")
-			guard += 1
-		await _click(e, main, "GrantAbility")
+	for k in 4:
+		await _click(e, main, "GrantMod")
 		await e.frames(2)
-	assert_eq(w.mod_slots.size(), 4, "four ability modifiers fill floor 1's wand")
+	assert_eq(w.mod_slots.size(), 4, "four wand cards fill floor 1's wand")
 	var hud: Hud = main.get_node("UI/Hud")
 	await e.frames(2)
 	assert_eq(hud.build_hud.filled_pips(), 4, "four pips on the HUD")

@@ -192,8 +192,8 @@ func test_a_second_form_never_layers() -> void:
 
 func test_an_ember_status_and_element_stack_without_repeats() -> void:
 	var w := _world()
-	w.add_item(_idx(&"ember_edge"))
-	w.add_item(_idx(&"serrated_edge"))
+	w.add_item(_idx(&"ember_core"))
+	w.add_item(_idx(&"shared_bleed"))
 	var s := Modifiers.step(w, 0)
 	assert_eq(s.elements, PackedStringArray(["ember", "bleed"]), "in pick order")
 	assert_eq([s.stacks_of(&"burn"), s.stacks_of(&"bleed")], [1, 1])
@@ -208,8 +208,8 @@ func test_the_burn_engine_rides_on_the_blade_and_the_slow_on_the_bolt() -> void:
 	assert_eq(s.status_rider[s.status_index(&"burn")], 1)
 	assert_true(s.elements.is_empty(), "a rider is never drawn as an element")
 	var g := _world()
-	g.add_item(_idx(&"glacial_edge"))
-	assert_true(Modifiers.bolt(g).has_status(&"slow"), "Glacial Edge alone: bolt hits still slow")
+	g.add_item(_idx(&"cold_snap"))
+	assert_true(Modifiers.bolt(g).has_status(&"slow"), "Cold Snap alone: bolt hits still slow")
 	assert_false(Modifiers.bolt(_world()).has_status(&"slow"))
 
 
@@ -305,7 +305,7 @@ func test_the_spec_digest_is_hashed_once_the_build_has_a_modifier() -> void:
 		plain.state_hash(), h, "no modifier: the digest stays out (kernel goldens keep their hash)"
 	)
 	var w := _world()
-	w.add_item(_idx(&"long_edge"))
+	w.add_item(_idx(&"wide_arc"))
 	var with := w.state_hash()
 	w.attack_book.digest = "changed"
 	assert_ne(w.state_hash(), with, "with a modifier the digest is in the hash")
@@ -317,16 +317,16 @@ func test_picking_an_item_recompiles() -> void:
 	var w := _world()
 	var before := Modifiers.book(w)
 	assert_eq(Modifiers.bolt(w).bounces, 0)
-	w.add_item(_idx(&"ricochet_core"))
+	w.add_item(_idx(&"gun_ricochet"))
 	assert_null(w.attack_book, "the pick dropped the cache")
-	assert_eq(Modifiers.bolt(w).bounces, 1)
+	assert_gt(Modifiers.bolt(w).bounces, 0)
 	assert_ne(Modifiers.book(w), before)
-	assert_eq(Modifiers.book(w).modifier_ids, PackedStringArray(["ricochet_core"]))
+	assert_eq(Modifiers.book(w).modifier_ids, PackedStringArray(["gun_ricochet"]))
 
 
 func test_a_save_stores_the_items_and_the_specs_recompile_on_load() -> void:
 	var w := SaveLab.floor_world(44, 2, &"gun")
-	for id: StringName in [&"splinter_shot", &"static_chain", &"ricochet_core", &"cinder_shot"]:
+	for id: StringName in [&"gun_twin", &"storm_core", &"gun_ricochet", &"ember_core"]:
 		w.add_item(AttackScenario.item_index(w.item_tables, id))
 	SaveLab.run(w, FightBot.new(44), 500)
 	var digest := Modifiers.book(w).digest

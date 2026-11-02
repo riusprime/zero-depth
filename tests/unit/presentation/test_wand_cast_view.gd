@@ -1,8 +1,7 @@
 extends GutTest
 ## v0.6.5 WN5a (docs/design/WAND.md, the shared pool's "You see" column and rule 3's child spell): each shared card
-## shows on the spell (its element's core and particles; Explosive's blast cue), and a trigger's cast reads as a small
-## spell of its own where it fires: AttackFormView reads WorldReader.wand_casts and draws the sigil and the child
-## slash or blast once, a cast bolt flies with the &"cast" cue. Presentation only (EI-07): the view reads, the sim
+## shows on the spell (its element's core and particles; v0.10.5 O1: the trigger cards and Explosive are gone, so only
+## the cues, the sigil and the fire patch are tested). Presentation only (EI-07): the view reads, the sim
 ## decides.
 
 const W := preload("res://tests/support/mx4_world.gd")
@@ -13,7 +12,6 @@ const ELEMENTS: Array = [
 	[&"frost_core", &"frost"],
 	[&"venom_core", &"venom"],
 	[&"shared_bleed", &"bleed"],
-	[&"gravity_well", &"void"],
 ]
 
 var _view: AttackFormView
@@ -68,37 +66,6 @@ func test_each_shared_card_colours_the_spell_on_both_weapons() -> void:
 			assert_true(
 				AttackFormView.adds_layer(look), "%s: drawn over the plain %s" % [c[0], weapon]
 			)
-		var x := AttackFormLooks.compose(_spell(W.world(weapon, [&"shared_explosive"]), weapon))
-		assert_has(x["cues"], &"blast", "Explosive: the %s carries its blast" % weapon)
-
-
-func test_a_blade_on_hit_cast_draws_its_sigil_its_slash_and_its_blast() -> void:
-	var w := W.world(
-		&"blade", [&"trigger_on_hit", &"shared_explosive"], [[Vector2(1.6, 0.0), 5000]]
-	)
-	_play(w, &"blade", 30)
-	assert_gt(WandCasts.read(w).size(), 0, "the sim cast it")
-	assert_gt(_view.casts_drawn, 0, "the sigil where it fired")
-	assert_gt(int(_view.cast_forms.get(&"arc", 0)), 0, "the small slash")
-	assert_gt(int(_view.cast_forms.get(&"burst", 0)), 0, "its blast where it ends")
-	var drawn := _view.casts_drawn
-	_view.sync(WorldReader.new(w))
-	assert_eq(_view.casts_drawn, drawn, "each cast is drawn once")
-
-
-func test_a_gun_on_hit_cast_flies_with_its_cue() -> void:
-	var w := W.world(&"gun", [&"trigger_on_hit"], [[Vector2(2.5, 0.0), 5000]])
-	var r := WorldReader.new(w)
-	var bolt := r.attack_spec(WorldReader.ATTACK_BOLT)
-	var child: Dictionary = AttackFormView.hook_child(
-		bolt, AttackSpec.Trigger.ON_HIT, WorldReader.FORM_BOLT
-	)
-	assert_false(child.is_empty(), "the cast is a small bolt")
-	var look := AttackFormLooks.compose(child)
-	assert_has(look["cues"], &"cast")
-	assert_true(AttackFormView.adds_layer(look), "a cast bolt is drawn as one")
-	_play(w, &"gun", 20)
-	assert_gt(_view.casts_drawn, 0, "the sigil where it fired")
 
 
 ## v0.9.0 XP (owner Q11): Fire's kill leaves a burning patch, no burst.

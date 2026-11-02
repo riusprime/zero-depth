@@ -337,7 +337,7 @@ func test_the_lance_row_offers_only_its_cards() -> void:
 func test_the_lance_replaces_the_other_forms() -> void:
 	var w := _slot_world()
 	var lance := W.item(w, &"gun_lance")
-	for other: StringName in [&"gun_laser", &"gun_bomb", &"gun_void", &"gun_scatter"]:
+	for other: StringName in [&"gun_laser", &"gun_void", &"gun_rune_explosion"]:
 		var o := W.item(w, other)
 		assert_true(BuildSlots.take(w, o))
 		assert_eq(int(Offers.info(w, lance)["replaces"]), o, "the Lance replaces %s" % other)

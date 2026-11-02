@@ -233,7 +233,7 @@ func test_the_wisps_replace_the_other_forms() -> void:
 	var w := _slot_world()
 	var wi := W.item(w, &"gun_wisps")
 	for other: StringName in [
-		&"gun_laser", &"gun_bomb", &"gun_void", &"gun_lance", &"gun_scatter", &"gun_wave"
+		&"gun_laser", &"gun_void", &"gun_lance", &"gun_rune_explosion", &"gun_wave"
 	]:
 		var o := W.item(w, other)
 		assert_true(BuildSlots.take(w, o))

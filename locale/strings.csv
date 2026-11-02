@@ -60,26 +60,10 @@ UI_OPT_SKETCH,Sketch,Boceto
 UI_OPT_PAPER,Sketch + paper,Boceto + papel
 GATE_SEALED,Sealed.,Sellada.
 GATE_NAME,Gate,Puerta
-ITEM_LONG_EDGE,Long Edge,Filo Largo
-ITEM_LONG_EDGE_DESC,Your blade reaches farther.,Tu espada llega más lejos.
-ITEM_TWIN_ARC,Twin Arc,Arco Gemelo
-ITEM_TWIN_ARC_DESC,Your swings strike twice.,Tus tajos golpean dos veces.
-ITEM_EMBER_EDGE,Ember Edge,Filo de Brasa
-ITEM_EMBER_EDGE_DESC,Your hits set enemies on fire.,Tus golpes queman a los enemigos.
-ITEM_SPLINTER_SHOT,Splinter Shot,Disparo Astillado
-ITEM_SPLINTER_SHOT_DESC,Shoot a fan of bolts.,Disparas en abanico.
-ITEM_RAPID_COIL,Rapid Coil,Bobina Rápida
-ITEM_RAPID_COIL_DESC,Shoot faster.,Disparas más rápido.
-ITEM_RICOCHET_CORE,Ricochet Core,Núcleo de Rebote
-ITEM_RICOCHET_CORE_DESC,Your shots bounce off walls.,Tus disparos rebotan en las paredes.
 ITEM_KINETIC_DASH,Kinetic Dash,Impulso Cinético
 ITEM_KINETIC_DASH_DESC,Dash through enemies to hurt them.,Esquiva a través de los enemigos para dañarlos.
-ITEM_OVERCHARGE,Overcharge,Sobrecarga
-ITEM_OVERCHARGE_DESC,Your finisher hits harder and shocks.,Tu remate golpea más fuerte y electrocuta.
 ITEM_VAMPIRIC_CORE,Vampiric Core,Núcleo Vampírico
 ITEM_VAMPIRIC_CORE_DESC,Kills heal you.,Cada baja te cura.
-ITEM_STATIC_CHAIN,Static Chain,Cadena Estática
-ITEM_STATIC_CHAIN_DESC,Your shots shock and jump to other enemies.,Tus disparos electrocutan y saltan a otros.
 ITEM_MOMENTUM,Momentum,Inercia
 ITEM_MOMENTUM_DESC,Attack right after a dash to hit harder.,Ataca justo después de esquivar y pega más fuerte.
 ITEM_FROST_CORE,Frost,Escarcha
@@ -132,38 +116,20 @@ PICK_TITLE_CHEST,Chest · choose one for %d,Cofre · elige uno por %d
 PICK_HINT,"←/→ or 1-3 to choose · Enter or A to take · Esc or B to leave it for later","←/→ o 1-3 para elegir · Intro o A para cogerlo · Esc o B para dejarlo para luego"
 RARITY_COMMON,Common,Común
 RARITY_RARE,Rare,Raro
-ITEM_CINDER_SHOT,Cinder Shot,Disparo de Ceniza
-ITEM_CINDER_SHOT_DESC,Your shots set enemies on fire.,Tus disparos queman a los enemigos.
 ITEM_WILDFIRE,Wildfire,Incendio
 ITEM_WILDFIRE_DESC,Kills spread the fire.,Las bajas propagan el fuego.
-ITEM_CONDUCTOR,Conductor,Conductor
-ITEM_CONDUCTOR_DESC,Your swings shock and jump to other enemies.,Tus tajos electrocutan y saltan a otros.
-ITEM_SERRATED_EDGE,Serrated Edge,Filo Dentado
-ITEM_SERRATED_EDGE_DESC,Your swings bleed. Dash through to burst them.,Tus tajos desangran. Esquiva a través para reventarlos.
-ITEM_BARBED_BOLTS,Barbed Bolts,Proyectiles Lacerantes
-ITEM_BARBED_BOLTS_DESC,Your shots make enemies bleed.,Tus disparos desangran a los enemigos.
-ITEM_GLACIAL_EDGE,Glacial Edge,Filo Glacial
-ITEM_GLACIAL_EDGE_DESC,Your swings chill and freeze.,Tus tajos enfrían y congelan.
 ITEM_COLD_SNAP,Cold Snap,Ola de Frío
 ITEM_COLD_SNAP_DESC,Dashing chills enemies. Frozen ones take more.,Al esquivar enfrías. Los congelados sufren más.
 ITEM_BULWARK,Bulwark,Baluarte
 ITEM_BULWARK_DESC,Blocking powers up your next swing.,Bloquear potencia tu siguiente tajo.
-ITEM_COMBO_PLASMA_ARC,Plasma Arc,Arco de Plasma
-ITEM_COMBO_PLASMA_ARC_DESC,Shocking a burning enemy spreads the fire.,Electrocutar a un enemigo en llamas propaga el fuego.
 ITEM_COMBO_SHATTER_DASH,Shatter Dash,Esprint Quebrador
 ITEM_COMBO_SHATTER_DASH_DESC,Dash through frozen enemies to shatter them.,Esquiva a través de un congelado y rómpelo.
-ITEM_COMBO_RESONANCE,Resonance,Resonancia
-ITEM_COMBO_RESONANCE_DESC,Charged swings send a second wave.,Tus tajos cargados lanzan otra onda.
-ITEM_COMBO_SHRAPNEL_STORM,Shrapnel Storm,Tormenta de Metralla
-ITEM_COMBO_SHRAPNEL_STORM_DESC,Bouncing shots burst into shards.,Los disparos que rebotan estallan en esquirlas.
 ITEM_COMBO_BLOOD_HARVEST,Blood Harvest,Cosecha de Sangre
 ITEM_COMBO_BLOOD_HARVEST_DESC,Executions burst in blood and heal you.,Las ejecuciones estallan en sangre y te curan.
 ITEM_COMBO_SPIKED_PHASE,Spiked Phase,Fase Espinosa
 ITEM_COMBO_SPIKED_PHASE_DESC,Phase Strike also fires your thorns.,Golpe de Fase también lanza tus espinas.
 ITEM_COMBO_SLIPSTREAM,Slipstream,Estela
 ITEM_COMBO_SLIPSTREAM_DESC,Momentum hits recharge your dash.,Los golpes de Inercia recargan tu esquiva.
-ITEM_COMBO_FROZEN_BASTION,Frozen Bastion,Bastión Helado
-ITEM_COMBO_FROZEN_BASTION_DESC,Blocking chills the attacker.,Bloquear enfría al atacante.
 UI_COMBO_UNLOCKED,Combo,Combo
 BIOME_NIGHT_ROCKS,Night Rocks,Rocas Nocturnas
 BIOME_RED_CANYON,Red Canyon,Cañón Rojo
@@ -218,14 +184,6 @@ ITEM_THERMAL_EDGE,Thermal Edge,Filo Térmico
 ITEM_THERMAL_EDGE_DESC,You run Hot sooner.,Entras en Caliente antes.
 ITEM_MELTDOWN,Meltdown,Fusión
 ITEM_MELTDOWN_DESC,Overheating explodes instead of stalling you.,Sobrecalentarte explota en vez de bloquearte.
-ITEM_CLUSTER_PAYLOAD,Cluster Payload,Carga de racimo
-ITEM_CLUSTER_PAYLOAD_DESC,Your bombs split into smaller bombs.,Tus bombas se dividen en bombas más pequeñas.
-ITEM_OVERCLOCKED_DRONE,Overclocked Drone,Dron sobrealimentado
-ITEM_OVERCLOCKED_DRONE_DESC,Your drones fire faster the hotter you are.,Tus drones disparan más rápido con más calor.
-ITEM_RAZOR_ORBIT,Razor Orbit,Órbita afilada
-ITEM_RAZOR_ORBIT_DESC,Blade Dance makes enemies bleed.,La Danza de espadas desangra a los enemigos.
-ITEM_AFTERIMAGE,Blink Echo,Eco del Salto
-ITEM_AFTERIMAGE_DESC,Blinking leaves an echo that explodes.,Al teletransportarte dejas un eco que estalla.
 HUD_HEAT,HEAT,CALOR
 HUD_HEAT_HOT,HOT,CALIENTE
 HUD_HEAT_OVERCLOCK,OVERCLOCK,SOBRECARGA
@@ -366,12 +324,6 @@ ABILITY_COMBO_SWORD,Combo Sword,Combo de espada
 ABILITY_COMBO_SWORD_DESC,Increase damage of your combo and Lunge Cleave.,Aumenta el daño de tu combo y estocada.
 ABILITY_PULSE_GUN,Pulse Gun,Lanzapulsos
 ABILITY_PULSE_GUN_DESC,Increase the damage of your weapon and Scatter Blast.,Aumenta el daño de tus disparos y ráfaga.
-ABILITY_BOMB_LOBBER,Bomb Lobber,Lanzabombas
-ABILITY_BOMB_LOBBER_DESC,Throw bombs every 4th attack.,Lanza una bomba cada 4 ataques.
-ABILITY_DRONE_BUDDY,Drone Buddy,Compidron
-ABILITY_DRONE_BUDDY_DESC,A drone follows you and copies your attack.,Un pequeño dron te sigue y copia tu ataque.
-ABILITY_ORBIT_BLADES,Blade Dance,Danza de espadas
-ABILITY_ORBIT_BLADES_DESC,Three copies of your attack orbit you.,Tres copias de tu ataque orbitan a tu alrededor.
 ABILITY_BLINK,Blink,Destello
 ABILITY_BLINK_DESC,Teleport forward.,Teletranspórtate hacia delante.
 ABILITY_AEGIS,Aegis,Égida
@@ -431,28 +383,6 @@ CAUSE_SPLITTER,A Splitter's swipe cut you down.,El zarpazo de un Divisor te abat
 CAUSE_SHIELD_BEARER,A Shield Bearer's bash crushed you.,El golpe de escudo de un Portaescudos te aplastó.
 CAUSE_MINE_LAYER,A Mine Layer's mine blew you up.,Una mina de un Minador te hizo volar.
 CAUSE_SNIPER,A Sniper's shot took you down.,El disparo de un Francotirador te abatió.
-ABILITY_ARC_FIELD,Arc Field,Electromagnetismo
-ABILITY_ARC_FIELD_DESC,Your attacks leave a field where they land. Shock enemies.,Tus ataques crean un campo de choque al impactar. Conmociona enemigos.
-ABILITY_FROST_NOVA,Frost Nova,Nova de escarcha
-ABILITY_FROST_NOVA_DESC,Every 4 deaths throw a frost ring.,Cada 4 muertes lanza un anillo de escarcha.
-ABILITY_FLAME_TRAIL,Flame Trail,Senda Ígnea
-ABILITY_FLAME_TRAIL_DESC,Leave a flame trail after dashing or attacking.,Deja un rastro de llamas al esquivar o atacar.
-ABILITY_COMBO_STORM_BOMBS,Storm Bombs,Bombas de Tormenta
-ABILITY_COMBO_STORM_BOMBS_DESC,Your bombs chain lightning.,Tus bombas lanzan rayos en cadena.
-ABILITY_COMBO_NAPALM_DRONE,Napalm Drone,Dron de Napalm
-ABILITY_COMBO_NAPALM_DRONE_DESC,Drone shots set the ground on fire.,Los disparos del dron incendian el suelo.
-ABILITY_COMBO_GLACIER_RING,Glacier Ring,Anillo Glaciar
-ABILITY_COMBO_GLACIER_RING_DESC,Your orbiting blades chill enemies.,Tus espadas en órbita enfrían a los enemigos.
-ABILITY_COMBO_BLINK_CHARGE,Blink Charge,Carga de Destello
-ABILITY_COMBO_BLINK_CHARGE_DESC,Blinking leaves bombs behind.,Al teletransportarte dejas bombas atrás.
-ABILITY_COMBO_BLADE_DANCE,Whirling Steel,Torbellino de acero
-ABILITY_COMBO_BLADE_DANCE_DESC,Landing swings spreads your orbiting blades.,Tus tajos abren las espadas que te rodean.
-ABILITY_COMBO_WINGMAN,Wingman,Escolta
-ABILITY_COMBO_WINGMAN_DESC,Your drones fire with every shot.,Tus drones disparan contigo.
-ABILITY_COMBO_SUPERCONDUCTOR,Superconductor,Superconductor
-ABILITY_COMBO_SUPERCONDUCTOR_DESC,Lightning hits chilled enemies harder.,Los rayos pegan más fuerte a los enemigos helados.
-ABILITY_COMBO_EMBER_WARD,Ember Ward,Guarda de Brasas
-ABILITY_COMBO_EMBER_WARD_DESC,Blocking bursts fire around you.,Bloquear hace estallar fuego a tu alrededor.
 HUD_OVERRUN,OVERRUN,ASEDIO
 HUD_OVERRUN_CLEARED,Overrun cleared,Asedio superado
 MAP_LEGEND_OVERRUN,"Overrun (optional, harder)","Asedio (opcional, más difícil)"
@@ -557,16 +487,6 @@ EVENT_WHISPERING_DEEP,Whispering Deep,Abismo susurrante
 EVENT_WHISPERING_DEEP_DESC,"Down here the dark speaks, and it bargains.","Aquí abajo la oscuridad habla, y negocia."
 EVENT_WHISPERING_DEEP_LISTEN,Listen to the voice,Escuchar la voz
 EVENT_WHISPERING_DEEP_BLEED,Feed it your blood,Darle tu sangre
-CURSE_SWIFT_FOES,Swift Foes,Enemigos veloces
-CURSE_SWIFT_FOES_DESC,Enemies move faster,Los enemigos son más rápidos
-CURSE_WITHERING,Withering,Marchitamiento
-CURSE_WITHERING_DESC,You heal less,Te curas menos
-CURSE_LEAKY_CORE,Leaky Core,Núcleo con fugas
-CURSE_LEAKY_CORE_DESC,Your heat fades faster,Tu calor se disipa antes
-CURSE_SWARM_CALL,Swarm Call,Llamada del enjambre
-CURSE_SWARM_CALL_DESC,More enemies in every pack,Más enemigos en cada grupo
-CURSE_PRICE_GOUGE,Price Gouge,Precios abusivos
-CURSE_PRICE_GOUGE_DESC,Everything costs more,Todo cuesta más
 CURSE_ROOTED,Rooted,Enraizado
 CURSE_ROOTED_DESC,You can't dash,No puedes esprintar
 CURSE_ROOTED_UP,Sometimes dodge a hit,A veces esquivas un golpe
@@ -740,91 +660,33 @@ ITEM_VENOM_CORE,Venom,Veneno
 ITEM_VENOM_CORE_DESC,Poison. Lv2: it spreads. Lv3: it stacks.,Veneno. Nv2: se contagia. Nv3: se acumula.
 ITEM_ECHO_SLASH,Wave,Onda
 ITEM_ECHO_SLASH_DESC,Your slashes fly as crescents.,Tus tajos vuelan como medias lunas.
-ITEM_EDGE_ROUNDS,Edge Rounds,Balas Filo
-ITEM_EDGE_ROUNDS_DESC,Your shots pierce and slash where they hit.,Tus disparos atraviesan y cortan al impactar.
-ITEM_SHOCK_CIRCLES,Shock Circles,Círculos de Choque
-ITEM_SHOCK_CIRCLES_DESC,Your shots become shock rings.,Tus disparos se vuelven anillos eléctricos.
 ITEM_HALO_SHOT,Halo,Halo
 ITEM_HALO_SHOT_DESC,Fire in a full ring.,Disparas en anillo.
-ITEM_BOOMERANG,Boomerang,Bumerán
-ITEM_BOOMERANG_DESC,Your shots fly out and come back.,Tus disparos van y vuelven.
 ITEM_ORBIT_ROUNDS,Orbit,Órbita
 ITEM_ORBIT_ROUNDS_DESC,Your shots circle you before flying out.,Tus disparos te rodean antes de salir.
 ITEM_SPLIT_SHOT,Split,División
 ITEM_SPLIT_SHOT_DESC,Your shots split on hit.,Tus disparos se dividen al impactar.
-ITEM_TWIN_CAST,Twin Cast,Doble Lanzamiento
-ITEM_TWIN_CAST_DESC,Every attack repeats.,Cada ataque se repite.
-ITEM_REARGUARD,Rearguard,Retaguardia
-ITEM_REARGUARD_DESC,Your attacks also fire backwards.,Tus ataques también salen hacia atrás.
 ITEM_WIDE_ARC,Wide Arc,Arco Amplio
 ITEM_WIDE_ARC_DESC,Your slashes sweep wider and farther.,Tus tajos barren más amplio y más lejos.
-ITEM_GRAVITY_WELL,Void,Vacío
-ITEM_GRAVITY_WELL_DESC,Your shots may open a black hole.,Tus disparos pueden abrir un agujero negro.
-ITEM_SHATTER,Shatter,Estallido
-ITEM_SHATTER_DESC,Kills burst into shards.,Las bajas estallan en esquirlas.
-ITEM_AFTERSHOCK,Aftershock,Réplica
-ITEM_AFTERSHOCK_DESC,Your attacks end in a small blast.,Tus ataques acaban en una pequeña explosión.
-ITEM_SEEKER,Seeker,Buscador
-ITEM_SEEKER_DESC,Your attacks seek the nearest enemy.,Tus ataques buscan al enemigo más cercano.
 ITEM_LONG_SHADOW,Dodge Imprint,Huella de Esquiva
 ITEM_LONG_SHADOW_DESC,"After a dash, your next attack comes from where it began.","Tras esquivar, tu siguiente ataque sale de donde empezó."
-ITEM_PHASE_DASH,Phase Dash,Esquiva de Fase
-ITEM_PHASE_DASH_DESC,Dash untouchable and burst into shards.,Esquiva intocable y estalla en esquirlas.
-ITEM_EMBER_TRAIL,Ember Trail,Rastro de Brasas
-ITEM_EMBER_TRAIL_DESC,Walking leaves burning crystals.,Al caminar dejas cristales ardientes.
-ITEM_AETHER_SHELL,Aether Shell,Coraza de Éter
-ITEM_AETHER_SHELL_DESC,"Out of combat, a shield stops the next hit.","Fuera de combate, un escudo para el siguiente golpe."
-ITEM_ASCENSION,Ascension,Ascensión
-ITEM_ASCENSION_DESC,Wait before attacking to hit much harder.,Espera antes de atacar y pega mucho más fuerte.
-ITEM_RESONANCE_CORE,Resonance,Resonancia
-ITEM_RESONANCE_CORE_DESC,Enemies with more effects take more damage.,Los enemigos con más efectos sufren más daño.
-ITEM_HEAT_SINK_ROUNDS,Heat Sink Rounds,Balas Disipadoras
-ITEM_HEAT_SINK_ROUNDS_DESC,"At Overclock, fire an extra shot.","En Sobrecarga, disparas un proyectil extra."
-ITEM_MELTDOWN_EDGE,Meltdown Edge,Filo de Fusión
-ITEM_MELTDOWN_EDGE_DESC,Venting fires your attack all around you.,Purgar lanza tu ataque a tu alrededor.
-ITEM_MIRROR_DRONE,Mirror Drone,Dron Espejo
-ITEM_MIRROR_DRONE_DESC,Your drone copies your weapon and its cards.,Tu dron copia tu arma y sus cartas.
-ITEM_BOMB_ROUNDS,Bomb Rounds,Balas Bomba
-ITEM_BOMB_ROUNDS_DESC,Every 5th shot is a bomb.,"Cada 5 disparos, lanzas una bomba."
 ITEM_BLADE_ORBIT,Orbit Blades,Hojas en Órbita
 ITEM_BLADE_ORBIT_DESC,Your slashes throw blades that circle you.,Tus tajos sueltan espadas que te rodean.
-ITEM_SHORT_FUSE,Short Fuse,Mecha Corta
-ITEM_SHORT_FUSE_DESC,"Shorter reach, much more damage.","Menos alcance, mucho más daño."
-ITEM_TEMPEST_CORE,Tempest Core,Núcleo de Tempestad
-ITEM_TEMPEST_CORE_DESC,Lightning jumps to many more enemies.,El rayo salta a muchos más enemigos.
-ITEM_INFERNO_CORE,Inferno Core,Núcleo Infernal
-ITEM_INFERNO_CORE_DESC,Burn twice as hard. Kills erupt in flames.,Quemas el doble. Las bajas arden en grande.
-ITEM_ECHO_STORM,Echo Storm,Tormenta de Ecos
-ITEM_ECHO_STORM_DESC,Every slash flies as three crescents.,Cada tajo vuela como tres medias lunas.
 UI_DEV_NEXT_MOD,Next mod,Siguiente mod
-ITEM_TRIGGER_ON_HIT,On Hit,Al Impactar
-ITEM_TRIGGER_ON_HIT_DESC,Cards to its right cast on hit.,Las cartas a su derecha se lanzan al impactar.
-ITEM_TRIGGER_ON_KILL,On Kill,Al Matar
-ITEM_TRIGGER_ON_KILL_DESC,Cards to its right cast on kill.,Las cartas a su derecha se lanzan al matar.
-ITEM_TRIGGER_ON_END,On End,Al Terminar
-ITEM_TRIGGER_ON_END_DESC,Cards to its right cast where it ends.,Las cartas a su derecha se lanzan al terminar.
-ITEM_TRIGGER_ON_FINISHER,On Finisher,Al Rematar
-ITEM_TRIGGER_ON_FINISHER_DESC,Cards to its right cast on your finisher.,Las cartas a su derecha se lanzan al rematar.
 ITEM_GUN_BIG_SHOT,Big Shot,Disparo Grande
 ITEM_GUN_BIG_SHOT_DESC,"Bigger, stronger, slower shots.","Disparos más grandes, fuertes y lentos."
 ITEM_GUN_RAPID_FIRE,Rapid Fire,Fuego Rápido
 ITEM_GUN_RAPID_FIRE_DESC,"Smaller, weaker shots that fire faster the longer you hold.",Disparos pequeños y débiles que aceleran si mantienes.
 ITEM_GUN_TWIN,Twin,Gemelo
 ITEM_GUN_TWIN_DESC,"Fire twice, side by side.","Disparas dos veces, lado a lado."
-ITEM_GUN_SPREAD,Spread,Abanico
-ITEM_GUN_SPREAD_DESC,Fire in a fan.,Disparas en abanico.
 ITEM_GUN_RING,Ring,Anillo
 ITEM_GUN_RING_DESC,Your shot becomes a lightning ring.,Tu disparo se vuelve un anillo de rayos.
 ITEM_GUN_LASER,Laser,Láser
 ITEM_GUN_LASER_DESC,Hold to burn a beam.,Mantén para quemar con un rayo.
-ITEM_GUN_BOMB,Bomb,Bomba
-ITEM_GUN_BOMB_DESC,Throw bombs that burst.,Lanza bombas que estallan.
 ITEM_GUN_VOID,Void,Vacío
 ITEM_GUN_VOID_DESC,Throw black holes that tug at foes.,Lanza agujeros negros que atraen.
 ITEM_GUN_LANCE,Lance,Lanza
 ITEM_GUN_LANCE_DESC,"Hold to charge, release a piercing energy ball.","Mantén para cargar, suelta una bola de energía perforante."
-ITEM_GUN_SCATTER,Scatter,Metralla
-ITEM_GUN_SCATTER_DESC,"A cone of pellets, brutal up close.","Un cono de perdigones, brutal de cerca."
 ITEM_GUN_RUNE_EXPLOSION,Rune Explosion,Explosión Rúnica
 ITEM_GUN_RUNE_EXPLOSION_DESC,A violet rune shield bursts out of you.,Un escudo rúnico violeta estalla a tu alrededor.
 CAPTION_RUNE_BURST,[rune burst],[estallido rúnico]
@@ -848,8 +710,6 @@ ITEM_GUN_SPIRAL,Spiral,Espiral
 ITEM_GUN_SPIRAL_DESC,Your shots corkscrew.,Tus disparos avanzan en espiral.
 ITEM_GUN_MINE,Mine,Mina
 ITEM_GUN_MINE_DESC,Your shots stop and wait as mines.,Tus disparos se quedan como minas.
-ITEM_GUN_CHARGE,Charge,Carga
-ITEM_GUN_CHARGE_DESC,Hold to charge a bigger shot.,Mantén para cargar un disparo mayor.
 ITEM_GUN_ECHO,Echo,Eco
 ITEM_GUN_ECHO_DESC,Fire again a moment later.,Disparas otra vez un instante después.
 ITEM_GUN_BACKFIRE,Backfire,Tiro Trasero
@@ -950,14 +810,6 @@ ITEM_TRIGGER_ON_CRIT,On Crit,Al Crítico
 ITEM_TRIGGER_ON_CRIT_DESC,Cards to its right cast on a critical hit.,Las cartas a su derecha se lanzan con un crítico.
 ITEM_SHARED_BLEED,Bleed,Sangrado
 ITEM_SHARED_BLEED_DESC,Bleed. Lv2: hurts more on the move. Lv3: bursts.,Sangrado. Nv2: más daño si se mueve. Nv3: estalla.
-ITEM_SHARED_EXPLOSIVE,Explosive,Explosivo
-ITEM_SHARED_EXPLOSIVE_DESC,Your attack explodes where it ends.,Tu ataque estalla donde termina.
-ITEM_TRIGGER_ON_HIT_TWICE,On Hit ×2,Al Impactar ×2
-ITEM_TRIGGER_ON_HIT_TWICE_DESC,Cards to its right cast twice on hit.,Las cartas a su derecha se lanzan 2 veces al impactar.
-ITEM_TRIGGER_ON_KILL_TWICE,On Kill ×2,Al Matar ×2
-ITEM_TRIGGER_ON_KILL_TWICE_DESC,Cards to its right cast twice on kill.,Las cartas a su derecha se lanzan 2 veces al matar.
-ITEM_TRIGGER_ON_END_TWICE,On End ×2,Al Terminar ×2
-ITEM_TRIGGER_ON_END_TWICE_DESC,Cards to its right cast twice where it ends.,Las cartas a su derecha se lanzan 2 veces al terminar.
 UI_CODEX,Codex,Códice
 UI_CODEX_TITLE,Codex,Códice
 UI_CODEX_TAB_CARDS,Cards,Cartas
@@ -1215,14 +1067,8 @@ ITEM_GUN_THREADLINE,Threadline,Hilo Conector
 ITEM_GUN_THREADLINE_DESC,Shots fired close together are linked by a cutting thread.,Los disparos seguidos quedan unidos por un hilo cortante.
 ITEM_SHARED_FAULTLINE,Faultline,Falla
 ITEM_SHARED_FAULTLINE_DESC,Hits leave cracks; attacking across one makes it erupt.,Los golpes dejan grietas que estallan al cruzarlas.
-ITEM_SHARED_GRAVITY_STITCH,Gravity Stitch,Puntada Gravitatoria
-ITEM_SHARED_GRAVITY_STITCH_DESC,Hits leave anchors that pull enemies and bend your shots.,Los golpes dejan anclas que atraen y curvan disparos.
 ITEM_SHARED_STRESS_MARK,Stress Mark,Marca de Tensión
 ITEM_SHARED_STRESS_MARK_DESC,Nearby enemies show a weak side. Hit it for double damage.,Enemigos cercanos con lado débil. Golpéalo: daño doble.
-ITEM_MUT_DOUBLE_EXPOSURE,Double Exposure,Doble Exposición
-ITEM_MUT_DOUBLE_EXPOSURE_DESC,Mutation: an attack's path strikes again a moment later.,Mutación: el trazo de un ataque golpea otra vez al poco.
-ITEM_MUT_GRAND_FINALE,Grand Finale,Gran Final
-ITEM_MUT_GRAND_FINALE_DESC,Mutation: the remnants of cards to its left burst.,Mutación: estallan los restos de las cartas a su izquierda.
 UI_SLOT_FORM,Form,Forma
 UI_SLOT_PATTERN,Pattern,Patrón
 UI_SLOT_SECONDARY,Secondary,Secundaria

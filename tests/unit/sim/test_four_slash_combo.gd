@@ -268,39 +268,6 @@ func test_an_empty_or_huge_combo_is_reported() -> void:
 	assert_has(_codes(e), &"range")
 
 
-# --- Items ----------------------------------------------------------------------------------------------------
-func test_long_edge_scales_every_steps_reach() -> void:
-	var w := _world([K.LONG_EDGE])
-	var r := WorldReader.new(w)
-	for k in 4:
-		assert_almost_eq(r.swing_reach_m(k), w.player.step(k).reach_m * 1.35, 1e-5, "step %d" % k)
-		assert_eq(r.swing_shape(k)[1], r.swing_reach_m(k), "the drawn blade is the hit reach")
-		assert_eq(r.swing_shape(k)[0], w.player.step(k).half_arc, "and the hit arc")
-	# The thrust with Long Edge reaches 0.35 + 2.3 x 1.35 + 0.35 = 3.805 m.
-	_chain(w, 2)
-	w.add_dummy(w.player_pos() + Vector2(0.35 + 3.7, 0), 0.35, 500)
-	var after := w.last_event_seq()
-	_swing(w)
-	assert_eq(_amounts(_damage(w, after)), [12])
-
-
-func test_twin_arc_echoes_each_steps_own_shape() -> void:
-	# A dummy behind: the slashes and the thrust (and their echoes) miss it; the spin and its echo both hit.
-	var w := _world([K.TWIN_ARC])
-	w.add_dummy(Vector2(-1.2, 0), 0.35, 999)
-	var r := WorldReader.new(w)
-	var steps := []
-	for i in 4:
-		_swing(w)
-		while r.echo_pending():
-			w.step(_f())
-		steps.append(r.echo_step())
-	assert_eq(steps, [0, 1, 2, 3], "each echo keeps its step")
-	var d := _damage(w)
-	assert_eq(_amounts(d), [24, 12], "only the spin and its echo reach behind")
-	assert_eq(d[1].effect_id, &"twin_arc")
-
-
 func test_momentum_empowers_any_step() -> void:
 	# Chain three slashes, dash out, and the finisher started within the window deals 24 x 1.6.
 	var w := _world([K.MOMENTUM])

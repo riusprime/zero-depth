@@ -59,35 +59,6 @@ func _sx(id: StringName, i: int = 0) -> float:
 	return _view.pool(id).instance_transform(i).basis.x.length()
 
 
-func test_a_shock_field_is_a_zone_in_its_specs_look() -> void:
-	var w := _world(&"blade", [&"arc_field"], [], [[Vector2(1.8, 0), 5000]])
-	var r := WorldReader.new(w)
-	w.step(_f(P))
-	_view.sync(r)
-	for k in 30:
-		if w.ab.fire_kind.has(ElementAbilities.FIRE_FIELD):
-			break
-		w.step(_f())
-		_view.sync(r)
-	var k := Array(w.ab.fire_kind).find(ElementAbilities.FIRE_FIELD)
-	assert_gte(k, 0, "the swing left a field")
-	assert_ne(r.fire_spec_keys()[k], "", "the field names its spec")
-	_view.draw_at(float(r.tick()))
-	assert_eq(_view.pool(&"zone_fill").used, w.ab.fire_pos.size())
-	assert_almost_eq(_sx(&"zone_fill"), w.ab.fire_r[k], 0.0001, "drawn at the sim's radius")
-	var c := _view.pool(&"zone_rim").instance_color(0)
-	assert_false(AttackFormLooks.is_hostile_hue(c), "never a telegraph hue")
-	var el := ElementVisuals.new()
-	el.forms_drawn = true
-	add_child_autofree(el)
-	el.sync(r)
-	assert_eq(el.fire_count(), 0, "ElementVisuals leaves the spec patch to the forms")
-	var old := ElementVisuals.new()
-	add_child_autofree(old)
-	old.sync(r)
-	assert_eq(old.fire_count(), 1, "alone, it still draws it")
-
-
 ## v0.9.0 XP (owner Q11, "Burning ground on kill"): Fire's burning patch is a low flat zone in the ember look, at the
 ## sim's radius (no blast).
 func test_fires_burning_patch_is_an_ember_zone() -> void:
@@ -108,91 +79,6 @@ func test_fires_burning_patch_is_an_ember_zone() -> void:
 	assert_false(AttackFormLooks.is_hostile_hue(c), "never a telegraph hue")
 
 
-func test_a_frost_ring_is_drawn_at_the_sims_radius_now() -> void:
-	var enemies := []
-	for k in 4:
-		enemies.append([Vector2(1.2, -0.6 + 0.4 * k), 1])
-	enemies.append([Vector2(-2.5, 0), 5000])
-	var w := _world(&"blade", [&"frost_nova"], [], enemies)
-	var r := WorldReader.new(w)
-	w.step(_f(P))
-	_view.sync(r)
-	for k in 30:
-		if not r.rings_live().is_empty():
-			break
-		w.step(_f())
-		_view.sync(r)
-	assert_false(r.rings_live().is_empty(), "a ring")
-	w.step(_f())
-	_view.sync(r)
-	var ring: Dictionary = r.rings_live()[0]
-	_view.draw_at(float(r.tick()))
-	var want := ModifierAbilities.ring_radius(w, 0, r.tick())
-	assert_almost_eq(_sx(&"ring_fill"), want, 0.0001, "the drawn front is the hit front")
-	var look := AttackFormLooks.compose(r.attack_spec_at(ring["key"]), HeatLooks.TIER_COOL)
-	assert_eq(look["core"], AttackFormLooks.ELEMENT_CORE[&"frost"], "frost's core")
-
-
-func test_bombs_arc_over_their_blast_circle_and_land_in_their_look() -> void:
-	var w := _world(&"blade", [&"bomb_lobber"], [&"ember_edge"], [[Vector2(5, 0), 5000]])
-	var r := WorldReader.new(w)
-	for n in 4:
-		_swing(w, r)
-	var guard := 0
-	while w.ab.bomb_pos.is_empty() and w.ab.blast_tick.is_empty() and guard < 60:
-		w.step(_f())
-		_view.sync(r)
-		guard += 1
-	assert_false(w.ab.bomb_pos.is_empty(), "a bomb in flight")
-	if not w.ab.bomb_pos.is_empty():
-		_view.draw_at(float(r.tick()))
-		assert_eq(_view.pool(&"lob_body").used, w.ab.bomb_pos.size(), "one shell per bomb")
-		assert_almost_eq(_sx(&"lob_ground"), w.ab.bomb_r[0], 0.0001, "its blast circle")
-		var ab := AbilityVisuals.new()
-		ab.forms_drawn = true
-		add_child_autofree(ab)
-		ab.sync(r)
-		assert_eq(ab.bomb_count(), 0, "AbilityVisuals leaves the spec bomb to the forms")
-	while w.ab.blast_tick.is_empty() and guard < 120:
-		w.step(_f())
-		_view.sync(r)
-		guard += 1
-	assert_false(w.ab.blast_tick.is_empty(), "it landed")
-	_view.draw_at(float(w.ab.blast_tick[0]) + 2.0)
-	assert_gt(_view.pool(&"burst_fill").used, 0, "the landing flash")
-	var landing: Dictionary = {}
-	for e in _view._effects:
-		if e["kind"] == &"landing":
-			landing = e
-	assert_eq(
-		landing["look"]["core"], AttackFormLooks.ELEMENT_CORE[&"ember"], "the bomb burns: ember"
-	)
-
-
-func test_each_projectile_is_drawn_in_its_own_spec() -> void:
-	var w := _world(&"gun", [&"drone_buddy"], [&"ricochet_core"], [[Vector2(4, 0), 5000]])
-	var r := WorldReader.new(w)
-	var drone_key := ""
-	for k in 60:
-		w.step(_f())
-		_view.sync(r)
-		for i in r.projectile_count():
-			if r.projectile_team(i) == 0 and r.projectile_spec_key(i) != "":
-				drone_key = r.projectile_spec_key(i)
-		if drone_key != "" and _view.live_count() > 0:
-			break
-	assert_ne(drone_key, "", "the drone's bolts name their spec")
-	assert_gt(_view.live_count(), 0, "a bouncing bolt draws its cue layer")
-	var want := AttackFormLooks.compose(r.attack_spec_at(drone_key), r.heat_state().get("tier", 0))
-	var found := false
-	for b in _view._live:
-		found = found or b["look"]["cues"] == want["cues"]
-	assert_true(found, "the live look is its spec's")
-	assert_true(
-		(want["cues"] as Array).has(&"bounce_flash"), "the gun's ricochet rides the drone's copy"
-	)
-
-
 func test_the_reader_reads_keys_as_plain_data() -> void:
 	var w := _world(&"gun", [])
 	var r := WorldReader.new(w)
@@ -202,35 +88,6 @@ func test_the_reader_reads_keys_as_plain_data() -> void:
 	assert_eq(r.bomb_spec_keys().size(), w.ab.bomb_pos.size())
 	assert_eq(r.fire_spec_keys().size(), w.ab.fire_pos.size())
 	assert_true(r.rings_live().is_empty())
-
-
-## Owner, 2026-10-12 ("it goes buggy all around"): a patch keeps its seed for its whole life, so its flames, scorch and
-## light stay put when an older patch goes out and the sim's list shifts.
-func test_a_fire_patch_keeps_its_seed_when_an_older_one_goes_out() -> void:
-	var w := _world(&"blade", [&"flame_trail"])
-	var r := WorldReader.new(w)
-	var key := ""
-	for t: AbilityTable in w.ability_tables:
-		if t.id == &"flame_trail":
-			key = Modifiers.ability(w, t).key
-	assert_ne(key, "", "Flame Trail has a spec")
-	for k in 3:
-		ElementAbilities.add_fire(w, Vector2(k * 0.8, 1.0), 0.9, w.tick + 300, 1, 1, 0)
-		w.ab.fire_spec[k] = key
-	_view.sync(r)
-	var before := {}
-	for f: Dictionary in _view._live_forms:
-		if f["kind"] == &"zone":
-			before[f["pos"]] = f["seed"]
-	assert_eq(before.size(), 3)
-	ElementAbilities._remove_fire(w.ab, 0)
-	_view.sync(r)
-	var after := 0
-	for f: Dictionary in _view._live_forms:
-		if f["kind"] == &"zone":
-			assert_eq(f["seed"], before[f["pos"]], "same patch, same seed")
-			after += 1
-	assert_eq(after, 2)
 
 
 ## Audit P-19a: the bomb-look cache drops its oldest entries past 64, never wholesale, so a bomb in flight when the

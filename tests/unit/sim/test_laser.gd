@@ -263,12 +263,6 @@ func test_the_laser_replaces_the_orbs_and_a_held_off_card_stops_compiling() -> v
 	assert_true(s.has_status(&"burn"), "Fire does")
 
 
-func test_the_laser_card_shapes_the_shot_wherever_it_sits() -> void:
-	var w := _slot_world()
-	_take(w, [&"trigger_on_hit", &"gun_laser"])
-	assert_true(Laser.held(Modifiers.bolt(w)), "right of a trigger it still makes the Gun's shot")
-
-
 func test_a_later_form_card_replaces_the_laser() -> void:
 	var w := _slot_world()
 	var lab := W.item(w, &"gun_big_shot")  # a lab form (the next forms ship in later steps)

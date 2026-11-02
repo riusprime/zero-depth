@@ -241,9 +241,7 @@ func test_the_seekers_row_offers_only_its_cards() -> void:
 func test_the_seekers_replace_the_other_forms() -> void:
 	var w := _slot_world()
 	var sk := W.item(w, &"gun_seekers")
-	for other: StringName in [
-		&"gun_laser", &"gun_bomb", &"gun_void", &"gun_glaive", &"gun_scatter"
-	]:
+	for other: StringName in [&"gun_laser", &"gun_void", &"gun_glaive", &"gun_rune_explosion"]:
 		var o := W.item(w, other)
 		assert_true(BuildSlots.take(w, o))
 		assert_eq(int(Offers.info(w, sk)["replaces"]), o, "the Seekers replace %s" % other)

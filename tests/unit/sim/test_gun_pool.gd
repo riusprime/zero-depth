@@ -11,16 +11,13 @@ const CARDS: Array[StringName] = [
 	&"gun_big_shot",
 	&"gun_rapid_fire",
 	&"gun_twin",
-	&"gun_spread",
 	&"split_shot",
 	&"gun_pierce",
 	&"gun_ricochet",
 	&"gun_homing",
-	&"boomerang",
 	&"orbit_rounds",
 	&"gun_spiral",
 	&"gun_mine",
-	&"gun_charge",
 	&"gun_echo",
 	&"gun_backfire",
 	&"halo_shot",
@@ -44,7 +41,7 @@ func _pos(w: World, i: int) -> Vector2:
 	return Vector2(w.projectiles.pos_x[i], w.projectiles.pos_y[i])
 
 
-func test_the_sixteen_cards_are_gun_wand_cards() -> void:
+func test_the_thirteen_cards_are_gun_wand_cards() -> void:
 	var w := W.world(&"gun")
 	for id in CARDS:
 		var k := W.item(w, id)
@@ -113,20 +110,6 @@ func test_g3_twin_fires_two_side_by_side() -> void:
 	)
 
 
-func test_g4_spread_becomes_a_three_shot_fan() -> void:
-	var w := W.world(&"gun", [&"gun_spread"])
-	var s := Modifiers.bolt(w)
-	assert_eq([s.count, s.spread], [3, ContentCompiler.degrees_to_units(30.0)])
-	W.run(w, 1, 0, W.S)
-	var m := _mine(w)
-	assert_eq(m.size(), 3, "a fan")
-	var ys := []
-	for i in m:
-		ys.append(signf(w.projectiles.vel_y[i]))
-	ys.sort()
-	assert_eq(ys, [-1.0, 0.0, 1.0], "one each way and one straight")
-
-
 func test_g5_split_bursts_into_three_half_size_shards_at_the_hit() -> void:
 	var w := W.world(&"gun", [&"split_shot"], [[Vector2(2.0, 0.0), 2000]])
 	var k := W.hook_of(Modifiers.bolt(w), &"split_shot")
@@ -176,24 +159,6 @@ func test_g8_homing_curves_toward_the_nearest_enemy() -> void:
 	W.run(w, 1, 0, W.S)
 	W.run(w, 40)
 	assert_gt(W.damage(w, &"").size(), 0, "a bolt aimed along +x turns into the enemy off its line")
-
-
-func test_g9_boomerang_comes_back_through_you() -> void:
-	var w := W.world(&"gun", [&"boomerang"])
-	assert_eq(Modifiers.bolt(w).returns, 1)
-	W.run(w, 1, 0, W.S)
-	var far := 0.0
-	var near_end := 99.0
-	for t in Modifiers.bolt(w).life_ticks + 2:
-		w.step(W.frame())
-		var m := _mine(w)
-		if m.is_empty():
-			break
-		var d := _pos(w, m[0]).length()
-		far = maxf(far, d)
-		near_end = d
-	assert_gt(far, 3.0, "out")
-	assert_lt(near_end, 1.0, "and back to the player")
 
 
 func test_g10_orbit_circles_you_once_before_it_flies_out() -> void:
@@ -255,28 +220,6 @@ func test_g12_mine_stops_at_its_range_waits_and_explodes_on_contact() -> void:
 	assert_eq(_mine(lone).size(), 0, "then it's gone")
 
 
-func test_g13_charge_grows_while_held_and_fires_on_release() -> void:
-	var p := _plain()
-	var w := W.world(&"gun", [&"gun_charge"])
-	var s := Modifiers.bolt(w)
-	assert_eq([s.hold_ticks, s.hold_permille], [60, 3000])
-	W.run(w, 30, 0, W.S)
-	assert_eq(_mine(w).size(), 0, "holding charges, nothing fires yet")
-	assert_eq(w.mx.hold_t, 30)
-	assert_almost_eq(GunForms.charge_fraction(w), 0.5, 1e-6, "the view's swelling orb")
-	W.run(w, 1)
-	var m := _mine(w)
-	assert_eq(m.size(), 1, "the release fires")
-	assert_almost_eq(w.projectiles.radius[m[0]], p.radius_m * 2.0, 1e-5, "half charged: × 2")
-	assert_eq(w.projectiles.damage[m[0]], p.damage * 2)
-	var full := W.world(&"gun", [&"gun_charge"])
-	W.run(full, 61, 0, W.S)
-	var f := _mine(full)
-	assert_eq(f.size(), 1, "a full charge fires by itself")
-	assert_almost_eq(full.projectiles.radius[f[0]], p.radius_m * 3.0, 1e-5, "up to × 3 size")
-	assert_eq(full.projectiles.damage[f[0]], p.damage * 3, "and damage")
-
-
 func test_g14_echo_fires_again_later_at_sixty_percent() -> void:
 	var w := W.world(&"gun", [&"gun_echo"])
 	var s := Modifiers.bolt(w)
@@ -329,14 +272,11 @@ func test_the_view_reads_each_cards_look_on_the_bolt() -> void:
 	var want := {
 		&"gun_big_shot": ["width", 1.4],
 		&"gun_twin": ["cue", &"twin"],
-		&"gun_spread": ["count", 3],
 		&"gun_pierce": ["cue", &"streak"],
 		&"gun_ricochet": ["cue", &"bounce_flash"],
 		&"gun_homing": ["cue", &"curve"],
-		&"boomerang": ["cue", &"tether"],
 		&"gun_spiral": ["cue", &"helix"],
 		&"gun_mine": ["cue", &"mine"],
-		&"gun_charge": ["cue", &"swell"],
 		&"halo_shot": ["count", 4],
 	}
 	for id: StringName in want:

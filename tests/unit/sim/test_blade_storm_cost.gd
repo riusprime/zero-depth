@@ -1,9 +1,8 @@
 extends GutTest
 ## v0.8.0 PF2 (owner O9: "find a way … so the game doesn't have lag"; docs/roadmap/v0.8.0/evidence/PERF.md PF2): the
 ## Blade Storm build's cost.
-## - A cast-free line (WandTable.cast_free_lines: Blade Storm): a Blade Storm blade's hits cast no trigger's spell (a
-##   returning blade passes each enemy twice a throw, and each hit cast On Hit's slash); the slash and Wave's crescents
-##   still cast.
+## - A cast-free line (WandTable.cast_free_lines: Blade Storm): a Blade Storm blade's hits cast no trigger's spell
+##   (the trigger cards are retired in v0.10.5, so only the data row is checked).
 ## - A cap of its own (AttackSpec.alive_max, data/modifiers/blade_storm.tres: 36, one Double Slash swing's blades at
 ##   level 5): past it a throw is cut short with one LIMIT event; Blade Storm alone never reaches it.
 ## Mechanics only: no bot, no balance (P1).
@@ -63,36 +62,6 @@ func test_the_shipped_cast_free_line_is_blade_storm() -> void:
 	assert_eq(WandTable.new().cast_free_lines, [&"blade_storm"] as Array[StringName])
 	var t := WandCompiler.from_repo(WandLab.repo())
 	assert_eq(t.cast_free_lines, [&"blade_storm"] as Array[StringName], "data/wand/wand.tres")
-
-
-func test_storm_blades_cast_no_trigger_but_the_slash_does() -> void:
-	var w := WandLab.fight(&"blade", [&"blade_storm", &"trigger_on_hit", &"shared_explosive"])
-	var step := Modifiers.step(w, 0)
-	assert_not_null(_hook(step, &"trigger_on_hit"), "the slash's hit still casts")
-	var blades := _hook(step, &"blade_storm").child
-	assert_null(_hook(blades, &"trigger_on_hit"), "a Blade Storm blade's hit casts nothing")
-	assert_null(
-		_hook(blades, &"shared_explosive"), "and the cards right of the trigger don't reach it"
-	)
-
-
-func test_waves_still_cast() -> void:
-	var w := WandLab.fight(&"blade", [&"echo_slash", &"trigger_on_hit"])
-	var wave := _hook(Modifiers.step(w, 0), &"echo_slash").child
-	assert_not_null(_hook(wave, &"trigger_on_hit"), "only the cast-free line loses its casts")
-
-
-func test_a_storm_blade_hit_casts_nothing_in_play() -> void:
-	var w := _storm([&"blade_storm", &"trigger_on_hit"], 1)
-	var hits: Dictionary = _press(w, 60)["hits"]
-	assert_gt(int(hits.get(&"blade_storm", 0)), 0, "the blades hit")
-	var w2 := _storm([&"trigger_on_hit"], 1)
-	var plain: Dictionary = _press(w2, 60)["hits"]
-	assert_eq(
-		int(hits.get(&"trigger_on_hit", 0)),
-		int(plain.get(&"trigger_on_hit", 0)),
-		"the casts are the slashes' alone"
-	)
 
 
 # --- The cap of its own ------------------------------------------------------------------------------------------

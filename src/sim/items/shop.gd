@@ -159,20 +159,20 @@ static func rarity(w: World, code: int) -> int:
 
 ## v0.5.0 EV: every shop price goes through the prices curse (Curses.price); salvage refunds don't.
 static func price(w: World, code: int) -> int:
-	return Curses.price(w, w.shop_table.card_price(rarity(w, code), w.floor_index))
+	return w.shop_table.card_price(rarity(w, code), w.floor_index)
 
 
 static func heal_price(w: World) -> int:
-	return Curses.price(w, w.shop_table.heal_cost(w.floor_index))
+	return w.shop_table.heal_cost(w.floor_index)
 
 
 static func reroll_price(w: World) -> int:
-	return Curses.price(w, w.shop_table.reroll_cost(w.shop.rerolls))
+	return w.shop_table.reroll_cost(w.shop.rerolls)
 
 
 ## v0.5.0 EV: lifting the latest curse costs the rules' cleanse price x the floor (under the prices curse too).
 static func cleanse_price(w: World) -> int:
-	return Curses.price(w, w.ev.rules.cleanse_price * maxi(1, w.floor_index))
+	return w.ev.rules.cleanse_price * maxi(1, w.floor_index)
 
 
 ## HP the heal would restore now.
@@ -331,7 +331,6 @@ static func remove_item(w: World, idx: int) -> void:
 	var owned := w.items_owned.duplicate()
 	owned.remove_at(owned.find(idx))
 	var still := Engines.combos_for(w.combo_tables, owned)
-	still.append_array(AbilityCombos.earned(w))  # as Abilities.remove_slot: an ability combo keeps its place (G-23)
 	var keep := PackedInt32Array()
 	for c in w.combos_owned:
 		if still.has(c):

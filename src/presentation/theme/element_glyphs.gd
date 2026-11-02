@@ -31,42 +31,18 @@ const CELLS := {
 }
 ## Every card whose modifier names an element → that element (the first ELEMENT op's).
 const ELEMENT_OF := {
-	&"barbed_bolts": &"bleed",
 	&"chain_blast": &"ember",
-	&"cinder_shot": &"ember",
-	&"conductor": &"storm",
 	&"ember_core": &"ember",
-	&"ember_edge": &"ember",
-	&"ember_trail": &"ember",
 	&"frost_core": &"frost",
-	&"frost_nova": &"frost",
-	&"glacial_edge": &"frost",
-	&"gravity_well": &"void",
 	&"gun_ring": &"storm",
-	&"inferno_core": &"ember",
-	&"phase_dash": &"void",
-	&"razor_orbit": &"bleed",
-	&"serrated_edge": &"bleed",
 	&"shared_bleed": &"bleed",
-	&"shared_explosive": &"ember",
-	&"shock_circles": &"storm",
-	&"static_chain": &"storm",
 	&"storm_core": &"storm",
-	&"tempest_core": &"storm",
 	&"venom_core": &"venom",
 }
 
 ## v0.8.0 N1 (D42): the Legendary cards (ItemDefinition.Rarity.LEGENDARY); they wear the star burst.
 const LEGENDARY := {
 	&"chain_blast": true,
-	&"echo_storm": true,
-	&"inferno_core": true,
-	&"mut_double_exposure": true,  # v0.8.0 RM: the mutations (legendary tier)
-	&"mut_grand_finale": true,
-	&"tempest_core": true,
-	&"trigger_on_end_twice": true,
-	&"trigger_on_hit_twice": true,
-	&"trigger_on_kill_twice": true,
 }
 ## v0.8.0 N1 (D42): the Blade cards (requires_weapon blade) that name no element and aren't Legendary; they wear the
 ## crossed blades.
@@ -82,19 +58,13 @@ const BLADE_PLAIN := {
 	&"fissure": true,
 	&"flurry": true,
 	&"heavy": true,
-	&"long_edge": true,
 	&"long_shadow": true,
 	&"lunge_step": true,
 	&"momentum": true,
-	&"overcharge": true,
 	&"parry_edge": true,
-	&"rearguard": true,
 	&"riposte_chain": true,
-	&"seeker": true,
 	&"split_wave": true,
 	&"thrust": true,
-	&"twin_arc": true,
-	&"twin_cast": true,
 	&"whirl": true,
 	&"wide_arc": true,
 }

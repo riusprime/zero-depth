@@ -2,7 +2,7 @@ extends GutTest
 ## v0.6.0 MX4 (docs/design/MODIFIER_ENGINE.md §7, "Tests without bots"): the combinatorial smoke test over the cards
 ## as the player holds them (the items, so each brings its engine numbers: burn, shock, poison...), on the Blade and
 ## the Gun with heat on and the AttackScenario script (shooting, a swing every 9 ticks, a dash every 97, the Skill,
-## a vent, a walk): every modifier card alone (also with the six ability modifiers), every pair, and the M-list all at
+## a vent, a walk): every modifier card alone, every pair, and the M-list all at
 ## once. Each run: no crash, the launches per tick under the cap, a bounded number of live projectiles and queued
 ## launches; alone and all at once also the same digest and state hash when replayed. And a save's snapshot taken
 ## mid-fight (queued launches, poison, projectile behaviours in flight) restores to the same hash and plays on the
@@ -14,9 +14,6 @@ const MAX_LIVE_PROJECTILES := 400
 ## v0.8.0 BL (BLADE_AUDIT B3): a Blade slash's hit triggers cast twice, the second through the queue (with a legendary
 ## ×2 trigger: 4 casts, 3 queued), so a Blade build of triggers queues more than the 64 before (68 measured).
 const MAX_QUEUED := 96
-const ABILITY_MODS: Array = [
-	&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field", &"frost_nova", &"flame_trail"
-]
 
 var _cards: Array[StringName] = []
 var _m_list: Array[StringName] = []
@@ -25,9 +22,9 @@ var _m_list: Array[StringName] = []
 func before_all() -> void:
 	var w := AttackScenario.world(&"blade", [], true, [])
 	for t in w.item_tables:
-		if BuildSlots.is_slot_item(t):
+		if BuildSlots.is_slot_item(t) and not t.retired:
 			_cards.append(t.id)
-		if t.kind == ItemTable.Kind.MODIFIER and t.rarity != ItemTable.LEGENDARY:
+		if t.kind == ItemTable.Kind.MODIFIER and not t.retired and t.rarity != ItemTable.LEGENDARY:
 			_m_list.append(t.id)
 	_m_list.append(&"frost_core")
 
@@ -82,7 +79,7 @@ func _check(label: String, r: Dictionary) -> void:
 
 
 func test_every_card_is_a_modifier_and_the_m_list_is_shipped() -> void:
-	assert_eq(_m_list.size(), 30, "M1–M30")
+	assert_eq(_m_list.size(), 11, "v0.10.5 O1: the M-list cards left (was 30, M1–M30)")
 	for id: StringName in _m_list:
 		assert_has(_cards, id, "%s takes a slot" % id)
 
@@ -95,15 +92,6 @@ func test_every_card_alone_on_each_weapon_runs_and_replays() -> void:
 			_check(label, a)
 			var b := _run(_world(weapon, [id]), SOLO_TICKS)
 			assert_eq([b["digest"], b["hash"]], [a["digest"], a["hash"]], "%s: replays" % label)
-
-
-func test_every_card_with_the_six_ability_modifiers_runs() -> void:
-	for weapon: StringName in [&"blade", &"gun"]:
-		for id: StringName in _cards:
-			_check(
-				"%s + six abilities + %s" % [weapon, id],
-				_run(_world(weapon, [id], ABILITY_MODS), PAIR_TICKS)
-			)
 
 
 func test_every_pair_of_cards_runs() -> void:
@@ -130,7 +118,7 @@ func test_the_m_list_all_at_once_runs_and_replays() -> void:
 ## A save mid-fight: the snapshot restores into a fresh world with the same hash, and both play on the same.
 func test_a_snapshot_with_the_new_modifiers_round_trips() -> void:
 	var cards := [
-		&"venom_core", &"twin_cast", &"boomerang", &"long_shadow", &"edge_rounds", &"ascension"
+		&"venom_core", &"gun_echo", &"gun_glaive", &"long_shadow", &"orbit_rounds", &"gun_lance"
 	]
 	for weapon: StringName in [&"gun", &"blade"]:
 		var w := _world(weapon, cards)

@@ -33,47 +33,33 @@ func test_the_plain_attacks_look_as_before() -> void:
 func test_each_blade_item_looks_as_it_did() -> void:
 	var core := ThemePalette.color(&"player_core")
 	var cases := [
-		[&"conductor", core.lerp(ItemLooks.color(WorldReader.ITEM_CONDUCTOR), 0.7), 1.0, 6],
-		[&"serrated_edge", core.lerp(ItemLooks.color(WorldReader.ITEM_SERRATED_EDGE), 0.7), 1.0, 6],
-		[&"glacial_edge", core.lerp(ItemLooks.color(WorldReader.ITEM_GLACIAL_EDGE), 0.7), 1.0, 6],
-		[&"ember_edge", ItemLooks.color(WorldReader.ITEM_EMBER_EDGE), 1.0, 6],
-		[&"twin_arc", core, 1.0, 11],
-		[&"overcharge", core, 1.15, 6],
-		[&"long_edge", core, 1.0, 6],
+		[&"storm_core", core.lerp(ItemLooks.color(WorldReader.ITEM_CONDUCTOR), 0.7), 1.0, 6],
+		[&"shared_bleed", core.lerp(ItemLooks.color(WorldReader.ITEM_SERRATED_EDGE), 0.7), 1.0, 6],
+		[&"frost_core", core.lerp(ItemLooks.color(WorldReader.ITEM_GLACIAL_EDGE), 0.7), 1.0, 6],
+		[&"ember_core", ItemLooks.color(WorldReader.ITEM_EMBER_EDGE), 1.0, 6],
+		[&"double_slash", core, 1.0, 11],
+		[&"wide_arc", core, 1.0, 6],
 	]
 	for c: Array in cases:
 		var look := AttackView.blade_look_of(_reader([c[0]]))
 		assert_eq([look["color"], look["width"], look["trail"]], [c[1], c[2], c[3]], String(c[0]))
 	var both := core.lerp(ItemLooks.color(WorldReader.ITEM_CONDUCTOR), 0.7)
 	both = both.lerp(ItemLooks.color(WorldReader.ITEM_GLACIAL_EDGE), 0.7)
-	var look := AttackView.blade_look_of(_reader([&"glacial_edge", &"conductor"]))
+	var look := AttackView.blade_look_of(_reader([&"frost_core", &"storm_core"]))
 	assert_eq(look["color"], both, "the fixed tint order, whatever the pick order")
-
-
-func test_the_charged_swing_flares() -> void:
-	var spec := _reader([&"overcharge"]).attack_spec(&"blade_step_3")
-	var look := AttackView.blade_look(spec, true)
-	assert_eq(look["width"], 1.7)
-	var want := ThemePalette.color(&"player_core").lerp(
-		ItemLooks.color(WorldReader.ITEM_OVERCHARGE), 0.6
-	)
-	assert_eq(look["color"], want)
 
 
 func test_each_bolt_item_looks_as_it_did() -> void:
 	var core := ThemePalette.color(&"player_core")
-	var coil := AttackView.bolt_look_of(_reader([&"rapid_coil"]))
+	var coil := AttackView.bolt_look_of(_reader([&"gun_rapid_fire"]))
 	assert_eq(coil["size"], Vector3(0.62, 0.06, 0.06))
-	var split := AttackView.bolt_look_of(_reader([&"splinter_shot"]))
-	assert_eq(split["size"], Vector3(0.38, 0.07, 0.07) * Vector3(0.75, 1, 1))
-	assert_eq(split["color"], core.lerp(ItemLooks.color(WorldReader.ITEM_SPLINTER_SHOT), 0.5))
-	var rico := AttackView.bolt_look_of(_reader([&"ricochet_core"]))
+	var rico := AttackView.bolt_look_of(_reader([&"gun_ricochet"]))
 	assert_eq([rico["color"], rico["energy"]], [core.lerp(Color.WHITE, 0.6), 4.5])
-	var cinder := AttackView.bolt_look_of(_reader([&"cinder_shot"]))
+	var cinder := AttackView.bolt_look_of(_reader([&"ember_core"]))
 	assert_eq(cinder["color"], core.lerp(ItemLooks.color(WorldReader.ITEM_CINDER_SHOT), 0.55))
-	var barbed := AttackView.bolt_look_of(_reader([&"barbed_bolts"]))
+	var barbed := AttackView.bolt_look_of(_reader([&"shared_bleed"]))
 	assert_eq(barbed["color"], core.lerp(ItemLooks.color(WorldReader.ITEM_BARBED_BOLTS), 0.55))
-	for id: StringName in [&"static_chain", &"frost_core"]:
+	for id: StringName in [&"storm_core", &"frost_core"]:
 		var plain := AttackView.bolt_look_of(_reader([id]))
 		assert_eq(plain["color"], core, "%s: no bolt tint before the element art (MX stage 3)" % id)
 
@@ -86,7 +72,7 @@ func test_the_edge_takes_the_heat_tier() -> void:
 
 
 func test_the_reader_gives_plain_data() -> void:
-	var r := _reader([&"static_chain", &"long_edge"])
+	var r := _reader([&"storm_core", &"wide_arc"])
 	assert_eq(
 		r.attack_ids(),
 		PackedStringArray(

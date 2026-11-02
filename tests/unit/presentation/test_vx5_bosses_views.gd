@@ -1,5 +1,5 @@
 extends GutTest
-## v0.10.0 VX5, the views (R13, R19, R21, R27, R40, R42): the beams, the shell, the blink flash, the sigils, the shatter
+## v0.10.0 VX5, the views (R13, R19, R21, R27, R40, R42): the beams, the blink flash, the sigils, the shatter
 ## and the molten floor. Each replaced effect spawns its pack id, the held ones are let go the frame they end, and a
 ## full family keeps that instance's old look (the strikes are in test_vx5_bosses.gd).
 
@@ -95,21 +95,6 @@ func test_the_menders_beam_is_the_packs_and_its_box_gives_way() -> void:
 	v._hold.begin()
 	v._beam(6, Vector2.ZERO, Vector2(4, 0))
 	assert_true((v._beams[6] as Node3D).visible, "the box where the family is full")
-
-
-func test_the_aether_shell_is_a_held_forcefield() -> void:
-	var w := W.world(&"blade", [&"aether_shell"])
-	var o: ModifierOverlays = _under(ModifierOverlays.new())
-	W.run(w, 200)
-	o.sync(WorldReader.new(w))
-	assert_true(o.shown("shell"), "the barrier is up")
-	assert_eq(_fx.live_count(&"area"), 1, "the pack's forcefield")
-	assert_eq(o.shell.layers, 0, "the sphere gives way")
-	o.sync(WorldReader.new(w))
-	assert_eq(_fx.spawned, 1, "held, not respawned")
-	o._hold.begin()
-	o._hold.end()
-	assert_eq(_fx.live_count(&"area"), 0, "let go when the shell is down")
 
 
 func test_the_blink_flash_is_the_pack_flash_and_keeps_its_light() -> void:

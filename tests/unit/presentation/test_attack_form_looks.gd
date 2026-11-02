@@ -199,7 +199,7 @@ func test_the_plain_weapons_draw_nothing_extra() -> void:
 
 
 func test_an_element_on_the_blade_draws_its_arc_layer() -> void:
-	var w := AttackScenario.world(&"blade", [&"ember_edge"], false, [])
+	var w := AttackScenario.world(&"blade", [&"ember_core"], false, [])
 	var reader := WorldReader.new(w)
 	_press(w, InputFrame.PRIMARY)
 	_view.sync(reader)
@@ -218,7 +218,7 @@ func test_an_element_on_the_blade_draws_its_arc_layer() -> void:
 
 
 func test_an_element_on_the_bolt_rides_each_live_shot() -> void:
-	var w := _lab([&"cinder_shot"])
+	var w := _lab([&"ember_core"])
 	var reader := WorldReader.new(w)
 	_shoot(w, reader, 30)
 	var player_shots := 0

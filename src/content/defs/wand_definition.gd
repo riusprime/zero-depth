@@ -22,21 +22,21 @@ const MAX_SLOTS := 8
 @export var blade_hit_casts := 2
 @export var blade_cast_gap_seconds := 0.1
 ## v0.8.0 BL (B6): the hook cards (modifier ids) whose children never split or explode again.
-@export var once_per_line: Array[StringName] = [&"split_shot", &"shared_explosive"]
+@export var once_per_line: Array[StringName] = [&"split_shot"]
 ## v0.8.0 PF2 (owner O9: the Blade Storm build's lag): the hook cards (modifier ids) whose children cast no trigger's
 ## spell (a Blade Storm blade's hits don't cast On Hit's slash; the trigger still ends their spell).
 @export var cast_free_lines: Array[StringName] = [&"blade_storm"]
 ## v0.8.0 BL (B6): past this many blasts of blast_merge_ids in one tick, a blast within its radius of an earlier one
 ## merges into it (0 = never).
 @export var blast_merge_after := 8
-@export var blast_merge_ids: Array[StringName] = [&"shared_explosive"]
+@export var blast_merge_ids: Array[StringName] = []
 ## v0.8.0 MR (owner O91: "Extra projectiles must not each duplicate full damage and full-strength effects"): a
 ## secondary attack (Twin's second lane, Spread's and Halo's bolts past the centre one, Echo's repeat, Double Slash's
 ## repeats) feeds its statuses, its hooks' statuses and its trigger casts' damage at this per mille (SecondaryProc).
 @export var secondary_proc_permille := 500
 ## v0.8.0 MR (O91: "Clearly flag incompatible placements"): the cards (item ids) that do nothing right of a trigger (a
 ## repeat and a hold only act on the shot you fire): the wand's tiles and read-back flag them there (Wand.flags).
-@export var after_trigger_dead: Array[StringName] = [&"gun_echo", &"double_slash", &"gun_charge"]
+@export var after_trigger_dead: Array[StringName] = [&"gun_echo", &"double_slash"]
 ## v0.8.0 RM (owner O91: "Define inheritance, lifetimes, hit intervals and activation limits"; Remnants): the remnants
 ## alive at once in all and of each kind (SEGMENT, ANCHOR, MARK, FRAGMENT; a new one past a cap replaces the oldest),
 ## and the activations in one tick (past them, one LIMIT event; each activation's cast also counts toward the 256

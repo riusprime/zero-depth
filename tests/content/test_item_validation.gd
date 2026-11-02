@@ -16,9 +16,10 @@ func test_every_item_is_valid() -> void:
 	var repo := _repo()
 	assert_eq(
 		repo.count(&"items"),
-		117,
+		63,
 		(
-			"24 + the three heat items (L18) + four ability mods (v0.5.0 CP) + the M-list's 29 new cards"
+			"v0.10.5 O1: the 54 retired cards are gone (their saved indices stay as tombstones)."
+			+ " It was 117: 24 + the three heat items (L18) + four ability mods (v0.5.0 CP) + the M-list's 29 new cards"
 			+ " (Frost Core was one) + 3 legendary (v0.6.0 MX4) + the wand's 4 triggers (v0.6.5 WN1)"
 			+ " + the Gun pool's 12 new cards (v0.6.5 WN3; G5, G9, G10, G16 are M-list cards)"
 			+ " + the Blade pool's 12 new cards (v0.6.5 WN4) + the shared pool's 2 new (v0.6.5 WN5a:"
@@ -53,10 +54,10 @@ func test_items_compile_to_the_plan_numbers() -> void:
 	var by_id := {}
 	for t in ContentCompiler.compile_items(_repo()):
 		by_id[t.id] = t
-	assert_eq(_book(&"long_edge").spec(&"blade_step_0").reach_bonus_permille, 350)
-	var twin := _book(&"twin_arc").spec(&"blade_step_2")
-	assert_eq([twin.repeat_delay_ticks, twin.repeat_damage_permille], [6, 500])
-	var ember: ItemTable = by_id[&"ember_edge"]
+	assert_eq(_book(&"wide_arc").spec(&"blade_step_0").reach_bonus_permille, 300)
+	var twin := _book(&"double_slash").spec(&"blade_step_2")
+	assert_eq([twin.repeat_delay_ticks, twin.repeat_damage_permille], [9, 600])
+	var ember: ItemTable = by_id[&"ember_core"]
 	assert_eq(
 		[
 			ember.burn_damage,
@@ -66,16 +67,11 @@ func test_items_compile_to_the_plan_numbers() -> void:
 		],
 		[2, 30, 180, 5]
 	)
-	var split := _book(&"splinter_shot").spec(&"gun_bolt")
-	assert_eq([split.count, split.spread, split.damage_permille], [3, 137, 600])
-	assert_eq(_book(&"rapid_coil").spec(&"gun_bolt").rate_bonus_permille, 400)
-	assert_eq(_book(&"ricochet_core").spec(&"gun_bolt").bounces, 1)
+	var split := _book(&"gun_twin").spec(&"gun_bolt")
+	assert_eq(split.twin, 1)
+	assert_eq(_book(&"gun_rapid_fire").spec(&"gun_bolt").rate_bonus_permille, 300)
+	assert_eq(_book(&"gun_ricochet").spec(&"gun_bolt").bounces, 3)
 	assert_eq(by_id[&"kinetic_dash"].dash_hit_damage, 12)
-	var oc := _book(&"overcharge").spec(&"blade_step_3")
-	assert_eq([oc.nth_every, oc.nth_damage_permille], [4, 2000])
-	var wave: AttackHook = oc.hooks_on(AttackSpec.Trigger.ON_NTH)[0]
-	assert_eq([wave.child.form, wave.damage_permille], [AttackSpec.Form.BURST, 500])
-	assert_almost_eq(wave.child.radius_m, 2.0, 1e-6)
 
 
 func test_the_second_eight_compile_to_their_starting_values() -> void:
@@ -84,10 +80,6 @@ func test_the_second_eight_compile_to_their_starting_values() -> void:
 		by_id[t.id] = t
 	var v: ItemTable = by_id[&"vampiric_core"]
 	assert_eq([v.heal_per_kill, v.heal_cap, v.heal_window_ticks], [3, 15, 300])
-	var chain: AttackHook = _book(&"static_chain").spec(&"gun_bolt").hooks[0]
-	assert_eq([chain.trigger, chain.every, chain.damage], [AttackSpec.Trigger.ON_HIT, 3, 5])
-	assert_true(chain.child.seek, "the jump seeks the nearest other enemy")
-	assert_almost_eq(chain.child.reach_m, 4.0, 1e-6)
 	var mo: ItemTable = by_id[&"momentum"]
 	assert_eq([mo.momentum_window_ticks, mo.momentum_bonus_permille], [60, 600])
 	var f: ItemTable = by_id[&"frost_core"]
@@ -127,15 +119,15 @@ func test_every_item_has_name_and_description_strings() -> void:
 
 
 func test_bad_items_are_rejected() -> void:
-	var d := (load("res://data/items/splinter_shot.tres") as ItemDefinition).duplicate(true)
+	var d := (load("res://data/items/gun_twin.tres") as ItemDefinition).duplicate(true)
 	d.modifiers.clear()
 	assert_has(_codes(d), &"missing", "an attack item names its modifier (v0.6.0 MX1)")
-	var e := (load("res://data/items/ember_edge.tres") as ItemDefinition).duplicate(true)
+	var e := (load("res://data/items/ember_core.tres") as ItemDefinition).duplicate(true)
 	e.burn_period_seconds = 0.001
 	assert_has(_codes(e), &"duration_zero_ticks")
 	e.burn_max_stacks = 0
-	assert_has(_codes(e), &"not_positive")
-	var o := (load("res://data/items/overcharge.tres") as ItemDefinition).duplicate(true)
+	assert_has(_codes(e), &"range")
+	var o := (load("res://data/items/finisher_plus.tres") as ItemDefinition).duplicate(true)
 	o.desc_key = &""
 	assert_has(_codes(o), &"missing")
 
@@ -153,6 +145,3 @@ func test_bad_second_eight_items_are_rejected() -> void:
 	var s := (load("res://data/items/swift_feet.tres") as ItemDefinition).duplicate(true)
 	s.dash_cooldown_cut_permille = 1000
 	assert_has(_codes(s), &"range")
-	var c := (load("res://data/items/static_chain.tres") as ItemDefinition).duplicate(true)
-	c.stacks_per_hit = 0
-	assert_has(_codes(c), &"not_positive", "its jumps feed shock")

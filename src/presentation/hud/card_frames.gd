@@ -46,82 +46,35 @@ const TINT := {
 ## Every card in the game → its family. Mods (items), stat cards, abilities.
 const FAMILY_OF := {
 	# Mods
-	&"afterimage": &"dash",
-	&"barbed_bolts": &"projectile",
 	&"bulwark": &"damage",
-	&"cinder_shot": &"fire",
-	&"cluster_payload": &"area",
 	&"cold_snap": &"projectile",
-	&"conductor": &"area",
-	&"ember_edge": &"fire",
 	&"executioner": &"damage",
 	&"frost_core": &"projectile",
-	&"glacial_edge": &"projectile",
 	&"heat_sink": &"fire",
 	&"kinetic_dash": &"dash",
-	&"long_edge": &"area",
 	&"meltdown": &"fire",
 	&"momentum": &"dash",
-	&"overcharge": &"damage",
-	&"overclocked_drone": &"projectile",
 	&"phase_strike": &"dash",
-	&"rapid_coil": &"projectile",
-	&"razor_orbit": &"damage",
-	&"ricochet_core": &"projectile",
-	&"serrated_edge": &"damage",
-	&"splinter_shot": &"projectile",
-	&"static_chain": &"projectile",
 	&"swift_feet": &"dash",
 	&"thermal_edge": &"fire",
 	&"thorn_mantle": &"projectile",
-	&"twin_arc": &"time",
 	&"vampiric_core": &"healing",
 	&"wildfire": &"fire",
 	# v0.6.0 MX4: the M-list's modifier cards (trinkets indigo) and the boss tier's legendary ones
-	&"aether_shell": &"healing",
-	&"aftershock": &"area",
-	&"ascension": &"crit",
 	&"blade_orbit": &"damage",
-	&"bomb_rounds": &"area",
-	&"boomerang": &"trinket",
 	&"echo_slash": &"time",
-	&"echo_storm": &"time",
-	&"edge_rounds": &"damage",
 	&"ember_core": &"fire",
-	&"ember_trail": &"fire",
-	&"gravity_well": &"dash",
 	&"halo_shot": &"trinket",
-	&"heat_sink_rounds": &"fire",
-	&"inferno_core": &"fire",
 	&"long_shadow": &"dash",
-	&"meltdown_edge": &"fire",
-	&"mirror_drone": &"projectile",
 	&"orbit_rounds": &"trinket",
-	&"phase_dash": &"dash",
-	&"rearguard": &"projectile",
-	&"resonance_core": &"damage",
-	&"seeker": &"projectile",
-	&"shatter": &"projectile",
-	&"shock_circles": &"trinket",
-	&"short_fuse": &"trinket",
 	&"split_shot": &"projectile",
 	&"storm_core": &"area",
-	&"tempest_core": &"area",
-	&"twin_cast": &"time",
 	&"venom_core": &"damage",
 	&"wide_arc": &"area",
 	# v0.6.5 WN1: the wand's trigger cards (placeholder frame until WN5 gives them their look)
-	&"trigger_on_end": &"time",
-	&"trigger_on_finisher": &"time",
-	&"trigger_on_hit": &"time",
-	&"trigger_on_kill": &"time",
-	&"trigger_on_hit_twice": &"time",  # v0.6.5 WN5b: the legendary triggers
-	&"trigger_on_kill_twice": &"time",
-	&"trigger_on_end_twice": &"time",
 	# v0.6.5 WN3: the Gun pool's new cards (G5, G9, G10, G16 keep theirs above)
 	&"gun_backfire": &"projectile",
 	&"gun_big_shot": &"damage",
-	&"gun_charge": &"crit",
 	&"gun_echo": &"time",
 	&"gun_homing": &"projectile",
 	&"gun_mine": &"area",
@@ -129,16 +82,13 @@ const FAMILY_OF := {
 	&"gun_rapid_fire": &"projectile",
 	&"gun_ricochet": &"projectile",
 	&"gun_spiral": &"trinket",
-	&"gun_spread": &"projectile",
 	&"gun_twin": &"time",
 	&"gun_ring": &"area",  # v0.8.0 AO (owner O37): the order rule's Ring and Swirl
 	&"gun_laser": &"projectile",  # v0.9.0 LZ: the Laser form
-	&"gun_bomb": &"area",  # v0.9.0 BM: the Bomb form
 	&"gun_void": &"dash",  # v0.9.0 VP: the Void form (the retired Void card's family)
 	&"gun_wave": &"area",  # v0.9.0 AF3: the Wave form
 	&"gun_wisps": &"trinket",  # v0.9.0 AF3: the Wisps form (Orbit Rounds' family)
 	&"gun_lance": &"crit",  # v0.9.0 AF1: the Lance form (the retired Charge card's family)
-	&"gun_scatter": &"projectile",  # v0.9.0 AF1: the Scatter form
 	&"gun_rune_explosion": &"trinket",  # v0.9.5 FC0: the Rune Explosion form (replaces Scatter)
 	&"gun_glaive": &"trinket",  # v0.9.0 AF2: the Glaive form (the retired Boomerang card's family)
 	&"gun_seekers": &"projectile",  # v0.9.0 AF2: the Seekers form (the Homing card's family)
@@ -162,10 +112,7 @@ const FAMILY_OF := {
 	# v0.8.0 RM (owner O91): the remnant cards and the two mutations (Dodge Imprint and Fracture Bank keep theirs)
 	&"gun_threadline": &"projectile",
 	&"shared_faultline": &"area",
-	&"shared_gravity_stitch": &"time",
 	&"shared_stress_mark": &"damage",
-	&"mut_double_exposure": &"time",
-	&"mut_grand_finale": &"epic",
 	# Stat cards
 	&"area": &"area",
 	&"armour": &"economy",
@@ -187,18 +134,11 @@ const FAMILY_OF := {
 	&"shard_gain": &"economy",
 	# Abilities
 	&"aegis": &"time",
-	&"arc_field": &"area",
 	&"blink": &"dash",
-	&"bomb_lobber": &"area",
 	&"combo_sword": &"damage",
-	&"drone_buddy": &"projectile",
-	&"flame_trail": &"fire",
-	&"frost_nova": &"projectile",
-	&"orbit_blades": &"damage",
 	&"pulse_gun": &"projectile",
 	# v0.6.5 WN5a: the shared pool's new cards (S1-S4 and S6 keep their v0.6 cards' frames above)
 	&"shared_bleed": &"damage",
-	&"shared_explosive": &"area",
 	&"chain_blast": &"area",  # v0.8.0 RR: the Legendary pre-nerf Explosive
 }
 
