@@ -18,9 +18,12 @@ signal main_menu_pressed
 signal hub_pressed  # v0.9.0 HB: the in-run exit
 
 var run_line: Label
+## v0.10.5 O6 (owner P4): one sentence on the depths' answer (the floor's catch-up), shown only above ×1.
+var depths_line: Label
 ## The run line's numbers, so a language switch (Options opened from here) words it again (v0.6.0 UP).
 var _run := []
 var _loop := 1  # v0.7.5 AP
+var _depths := 1000
 
 
 func _init(to_hub: bool = true) -> void:
@@ -40,6 +43,12 @@ func _init(to_hub: bool = true) -> void:
 	run_line = add_note("")
 	run_line.name = "RunLine"
 	run_line.visible = false
+	depths_line = add_note("")
+	depths_line.name = "DepthsLine"
+	depths_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	depths_line.custom_minimum_size = Vector2(420, 0)
+	depths_line.add_theme_color_override("font_color", Color(DepthsTag.COLOR, 0.85))
+	depths_line.visible = false
 	add_hint("UI_PAUSE_HINT")
 
 
@@ -53,6 +62,36 @@ func show_run(floor_index: int, seconds: float, kills: int, shards: int, loop: i
 	run_line.visible = true
 
 
+## Main's recap (Main.run_recap: floor, seconds, kills, shards, loop; empty: no run line) and, on a floor, the depths'
+## answer from `reader` (v0.10.5 O6).
+func show_recap(recap: Dictionary, reader: WorldReader) -> void:
+	if not recap.is_empty():
+		show_run(
+			recap["floor"],
+			recap["seconds"],
+			recap["kills"],
+			int(recap.get("shards", 0)),
+			int(recap.get("loop", 1))  # v0.7.5 AP
+		)
+	if reader != null and reader.has_floor():
+		show_depths(reader.catch_up_permille())
+
+
+## v0.10.5 O6: "The depths answer ×1.41: your build is strong, so …" when the floor's m is above ×1; hidden otherwise.
+func show_depths(m_permille: int) -> void:
+	_depths = m_permille
+	depths_line.visible = DepthsTag.shows(m_permille)
+	depths_line.text = depths_text() if depths_line.visible else ""
+
+
+func depths_text() -> String:
+	return tr("UI_PAUSE_DEPTHS") % DepthsTag.multiplier_text(_depths)
+
+
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_TRANSLATION_CHANGED and not _run.is_empty():
+	if what != NOTIFICATION_TRANSLATION_CHANGED:
+		return
+	if not _run.is_empty():
 		run_line.text = Hud.loop_prefix(self, _loop) + tr("UI_PAUSE_RUN") % _run
+	if depths_line != null and depths_line.visible:
+		depths_line.text = depths_text()

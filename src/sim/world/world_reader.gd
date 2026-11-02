@@ -920,6 +920,12 @@ func tier() -> int:
 	return _w.spawner.danger_tier(_w.run_ticks) if _w.spawner != null else 0
 
 
+## v0.10.5 O6 (owner P4: the catch-up shown, D4 flipped): the floor's catch-up m on its enemies, per mille (1000 = ×1;
+## also 1000 without the catch-up table). Read only; the HUD's depths tag and the pause line show it.
+func catch_up_permille() -> int:
+	return _w.catch_up.enemy if _w.catch_up_table != null else 1000
+
+
 # --- The intensity director (v0.8.0 N5, owner O58) ---------------------------------------------------------------
 ## True when the floor's ordinary spawning has the intensity director. The player is never shown it (owner: "for now
 ## nothing, quietness, the enemies are the real indicator"); the dev panel (F10's Tools page) reads it.
@@ -2735,6 +2741,9 @@ func gamble_bonus(stat: int) -> int:
 func tier_progress() -> float:  # v0.3.0 UI (L23): 0 .. <1 through the danger tier
 	if _w.spawner == null:
 		return 0.0
+	var c := _w.spawner.curve
+	if c != null:  # v0.10.5 O6: through the overtime too (CurveTable.shown_permille_at), so the bar fills smoothly
+		return float(c.shown_permille_at(_w.run_ticks) % 1000) / 1000.0
 	return float(_w.spawner.danger_permille(_w.run_ticks) % 1000) / 1000.0  # v0.4.0 TU: the curve's
 
 

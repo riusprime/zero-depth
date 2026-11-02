@@ -57,6 +57,8 @@ var minimap := Minimap.new()
 var kit_hud := KitHud.new()
 ## v0.9.5 HU: the four ability squares (Attack, Skill, Dash, Blink), bottom right.
 var ability_squares := AbilitySquares.new()
+## v0.10.5 O6 (owner P4): the depths' answer (the floor's catch-up m), under the top plate's right end; hidden at ×1.
+var depths_tag := DepthsTag.new()
 ## v0.5.0 EV: the event prompt, status and panel, and threat T with the curses held.
 var events := EventHud.new()
 ## v0.4.0 AB: the Overrun room's banner (its kills, then what clearing it paid).
@@ -240,6 +242,7 @@ func sync(reader: WorldReader) -> void:
 		if _changed(&"wave", [&"HUD_TIME", secs]):
 			_wave.text = tr("HUD_TIME") % [secs / 60, secs % 60]
 		_danger.set_danger(reader.tier(), reader.tier_progress())
+		depths_tag.set_multiplier(reader.catch_up_permille())
 		var kills := reader.kills()
 		if _changed(&"left", [&"HUD_KILLS", kills]):
 			_left.text = tr("HUD_KILLS") % kills
@@ -253,6 +256,10 @@ func sync(reader: WorldReader) -> void:
 		if _changed(&"left", [&"HUD_ENEMIES", alive]):
 			_left.text = tr("HUD_ENEMIES") % alive
 	_danger.visible = reader.has_floor()
+	if not reader.has_floor():
+		depths_tag.visible = false
+	elif depths_tag.visible:
+		_place_depths_tag()
 	_gate.text = _gate_note(reader)
 	_floor.visible = reader.has_boss_room()
 	if _floor.visible:
@@ -380,7 +387,7 @@ func floor_text() -> String:
 	return _floor.text
 
 
-## v0.3.0 UI: the danger meter (tests read its tier, lit chevrons and segments).
+## v0.3.0 UI: the danger meter (tests read its tier; v0.10.5 O6: its fill, colour and blink).
 func danger_meter() -> DangerMeter:
 	return _danger
 
@@ -453,6 +460,17 @@ func _build_top() -> void:
 	_left.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_left.add_theme_color_override("font_color", Color(HudStyle.text_color(), 0.85))
 	row.add_child(_left)
+	add_child(depths_tag)
+
+
+## v0.10.5 O6 (G2 pick C): the tag hangs just under the top plate, right-aligned to its inner edge.
+func _place_depths_tag() -> void:
+	var tag_size := depths_tag.get_combined_minimum_size()
+	depths_tag.size = tag_size
+	depths_tag.position = Vector2(
+		_top_frame.position.x + _top_frame.size.x - tag_size.x - 18.0,
+		_top_frame.position.y + _top_frame.size.y + 3.0
+	)
 
 
 func gate_text() -> String:

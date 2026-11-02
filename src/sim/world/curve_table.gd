@@ -74,6 +74,33 @@ func overtime_tier_at(ticks: int) -> int:
 	return mini(tier, overtime_max_tier)
 
 
+## v0.10.5 O6: the danger tier × 1000 as the HUD's bar reads it: tier_permille_at, plus, at the peak (the last
+## phase, with an overtime), the share of the way to the overtime's next tier, so the bar fills smoothly instead of in
+## steps. Its whole tier is always tier_permille_at's. Read only; nothing in the sim uses it.
+func shown_permille_at(ticks: int) -> int:
+	var t := tier_permille_at(ticks)
+	var n := overtime_starts.size()
+	if n == 0 or phase_at(ticks) + 1 < starts.size():
+		return t
+	var i := 0
+	while i < n and ticks >= overtime_starts[i]:
+		i += 1
+	var from := starts[starts.size() - 1]
+	var to := overtime_starts[0]
+	if i == n:
+		var step := maxi(1, overtime_step)
+		from = overtime_starts[n - 1] + (ticks - overtime_starts[n - 1]) / step * step
+		to = from + step
+	elif i > 0:
+		from = overtime_starts[i - 1]
+		to = overtime_starts[i]
+	from = mini(from, ticks)
+	var next := maxi(t, overtime_tier_at(to) * 1000)
+	var whole := t / 1000 * 1000
+	var shown := t + (next - t) * (ticks - from) / maxi(1, to - from)
+	return clampi(shown, t, whole + 999)
+
+
 ## v0.9.5 DC: tiers above the base the overtime has reached at `tier`.
 func extra_tiers(tier: int) -> int:
 	return maxi(0, tier - OVERTIME_BASE_TIER) if not overtime_starts.is_empty() else 0

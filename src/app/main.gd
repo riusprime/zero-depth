@@ -720,14 +720,7 @@ func open_pause() -> void:
 	_pause.main_menu_pressed.connect(show_main_menu)
 	_pause.hub_pressed.connect(_show_hub)  # v0.9.0 HB (owner 2026-10-23): the run stays saved; Continue resumes it
 	var recap := run_recap()  # v0.5.5 A5: the run's line under the pause list
-	if not recap.is_empty():
-		_pause.show_run(
-			recap["floor"],
-			recap["seconds"],
-			recap["kills"],
-			int(recap.get("shards", 0)),
-			int(recap.get("loop", 1))  # v0.7.5 AP
-		)
+	_pause.show_recap(recap, driver.reader)  # v0.10.5 O6: and the depths' answer, in one sentence (above ×1)
 	if driver.reader.has_gamble():  # v0.3.0 L19: the stats won at the gamble shrine.
 		var stats := GambleStatsPanel.new()
 		_pause.add_child(stats)
