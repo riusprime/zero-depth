@@ -162,7 +162,11 @@ func test_rewards_fill_the_arenas_first_and_keep_two_altars() -> void:
 			if f.arena_rooms.has(f.room_of(w.rewards.pos(i))):
 				in_arena += 1
 				assert_true(Arenas.locked(w, i), "seed %d: an arena's reward is locked" % s)
-		assert_lte(altars, 2, "seed %d: S1's cap holds" % s)
+		# v0.10.5 S7: an extra altar is not held by the cap; at most the extras the capped altars can roll
+		# (cap x permille / 1000, rounded up: one with the shipped 120)
+		var t := w.reward_table
+		var extras := (t.altars_cap * t.extra_altar_permille + 999) / 1000
+		assert_lte(altars, t.altars_cap + extras, "seed %d: S1's cap, plus S7's extra altar" % s)
 		assert_eq(
 			in_arena, mini(arena_spots, w.rewards.size()), "seed %d: arena spots fill first" % s
 		)
