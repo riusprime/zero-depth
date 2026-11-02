@@ -33,8 +33,9 @@ const TARGET_MARGIN := 8 * ORTHO
 const SEED_CELLS := 2
 const SEED_CLEARANCE := 0.25
 ## v0.8.0 NF (owner O90, "A then"): the world's periodic flood is built over this many ticks (begin_build, advance),
-## at least SLICE_MIN cells of work a slice before the last.
-const SLICES := 3
+## at least SLICE_MIN cells of work a slice before the last. v0.10.5 PD (owner, perf wave 2 #9): 3 -> 6, so each
+## tick's share of the flood halves; the field enemies follow is swapped in up to 6 ticks after its flood tick.
+const SLICES := 6
 const SLICE_MIN := 64
 const STEPS: Array[Vector2i] = [
 	Vector2i(1, 0),
