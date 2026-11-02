@@ -11,7 +11,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.
   (owner, Q9: "keep it out").
 - **Overnight picks and questions:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md): 21 picks to keep or change; Q6–Q8 the owner
   tests in play.
-- **Performance (Q5):** 16 → ~23 fps at 60 enemies, 43 → ~64 at 20 (evidence/Q5_FIX.md); measured on a busy machine,
+- **Performance:** Q5 (views once a frame), the owner's logged run (PERF_PLAYLOG_1: 80 fps avg, 67 % engine+draw), then
+  fixes for its hitches, draw calls and the nav flood; the next logged run measures them. Q5: 16 → ~23 fps at 60 enemies (busy machine,
   a clean re-measure NOT YET RUN. Further fixes ranked in evidence/PERF_Q5.md §5 (3–5).
 - **Next:** the owner goes over OWNER_QUESTIONS and plays the build; then the release step (one PR into `main`, the
   full suite on GitHub).
@@ -78,6 +79,7 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 | O2a the Lantern Shade and the Clockwork Judge hittable more often | f59ee0f2 | [evidence/O2A_INVULNERABLE.md](evidence/O2A_INVULNERABLE.md): invulnerable share 37 → 13 % and 30 → 8 %; 23 scripts 198/198 |
 | The hero stands on floor 1's arrival altar, not half inside it (owner: "you can clearly see the character half body inside it"; S4 had fixed the later floors' receiver, not this altar): AltarStage.height_at (the owner's model's measured steps: 0.45 / 0.275 / 0.155 m), ActorViews draws actors on it (also the final approach's altar) | 08189c2b | lead: altar stage 11/11 (new test), portal transit view 4/4, e2e arrival 2/2 (new: the hero's node stands > 0.2 m up after the landing); lint clean |
 | Q5 the views sync once a frame, not every tick (SimDriver.frame_ticked; the HUD too; save, Codex, achievements, audio stay per tick; LatchedReader keeps one-tick shots and strikes for the next sync) and a cheaper actors sync | ee19605f (merge 2351a200) | [evidence/Q5_FIX.md](evidence/Q5_FIX.md): 60 enemies 62.6 → 43.8 ms (16.0 → 22.8 fps), 20 enemies 23.4 → 15.6 ms; **the machine was not idle** (the owner's editor and a game were open), so a clean re-measure is NOT YET RUN; p99 at 60 enemies worse (185 vs 102 ms, unexplained). Agent: presentation 1283/1283, arch+app 17/17, e2e 21/22 (the playground e2e failed before Q5 too: fixed in f19e9a4f, 1/1) |
+| A perf recorder for normal play (`--perf-log`, F9 marks, `scripts/perf/summarize_perf.py`); the owner's 25-min logged run | 5f861d50, 0a2e2756; f33df41c | [evidence/PERF_LOG.md](evidence/PERF_LOG.md), [evidence/PERF_PLAYLOG_1.md](evidence/PERF_PLAYLOG_1.md): 80 fps average, 67 % engine+draw || The HUD's cost split in the log (cause of the ~28 ms HUD frames not found by reading) | 274ad91d | agent: test_hud_perf_marks 2/2, HUD + recorder 52/53 (test_deep_look: the owner's Spanish locale, fixed in a149f6b2, 3/3), e2e perf log 1/1 || The cracked wall: breaks to a Ring-reshaped Skill (it sent no pellets; owner: "I could not open it shooting it with L2"); its runes are drawn and warmed from the load (owner: the 1.1 s freeze "occured when the secret door appeared") | 38ca26dc | agent: e2e L2 Gun + Blade 2/2, breakables 12/12, view 2/2, shader warmup 3/3, arch 4/4; **the freeze on the owner's GPU: NOT YET RUN** || Cheaper nav flood (same steps, cheaper bookkeeping) | 13b7b3a0 | [evidence/HORDE_PERF.md](evidence/HORDE_PERF.md): flood alone 7.85 → 5.91 ms at 40 enemies; golden 2/2 and hash chains unchanged; nav/AI/move 91/91 || Fireballs, elite effects, effect packs, telegraphs and status rings built at load (no first-use hitch) | 42b279c5, 8a1c9f38 | agents: test_first_use_warm 13/13 and the touched view tests; no timing (owner's to check) || Fewer draw calls with the same look (empty effect batches no longer drawn; the menu warm-up viewport stops) | dbc748c6 | [evidence/DRAW_CALLS.md](evidence/DRAW_CALLS.md): red canyon 3D draws 342 → 271; shots `build/shots/v0.10.5/draw/`; unit 83/83, arch 4/4, e2e 7/7; timing noisy (3 agents running) |
 
 ## Verification
 1. **S2–S4 re-tested on this branch** (the agents' own runs were on an old base, `d33bc82a`, see History). Lead,
@@ -112,6 +114,7 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 7. **Lead seams after the altar fix and Q5** (`wt-q5` at `2351a200`, from a clean worktree): `bash scripts/ci/seams.sh`:
    lint ok; Scripts 107, Tests 612, Passing Tests 612; "check_gut_log: ok (612 passing, minimum 1)". (The first try
    stopped at lint: gdformat was not on the PATH; nothing ran.)
+8. **Lead seams after the perf fixes** (`wt-seams` at `ce9a7558`): `bash scripts/ci/seams.sh`: lint ok; Scripts 108,   Tests 617, Passing Tests 617; "check_gut_log: ok (617 passing, minimum 1)".
 
 ## Goldens changed on purpose
 - `tests/golden/fixtures/modifier_equivalence.json` (S1: the combo hit-stop 4,4,5,8 → 3,3,3,5 ticks; Blade-all now hits 139, damage 4160, kills 14)
