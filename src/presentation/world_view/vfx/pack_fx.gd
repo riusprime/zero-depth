@@ -257,11 +257,35 @@ func _oldest(family: StringName) -> Dictionary:
 	return {}
 
 
+## v0.10.5 (PERF_PLAYLOG_1: a floor's first fireballs cost 47-53 ms of script, each new shot instancing its scene):
+## fills `effect_id`'s pool to `n` idle instances now (a floor's load, behind the cover), so the floor's first `n`
+## spawns take them instead of instancing mid-fight. Returns the instances it made (hidden, idle).
+func prefill(effect_id: StringName, n: int) -> Array[Node3D]:
+	var made: Array[Node3D] = []
+	var k := _def.row(effect_id) if _def != null else -1
+	if k < 0:
+		return made
+	var idle: Array = _idle.get(effect_id, [])
+	_idle[effect_id] = idle
+	while idle.size() < n:
+		var node := _make(_def.scenes[k])
+		if node == null:
+			break
+		idle.append(node)
+		made.append(node)
+	return made
+
+
 ## An idle instance of `effect_id`, or a new one.
 func _take(effect_id: StringName, scene_path: String) -> Node3D:
 	var idle: Array = _idle.get(effect_id, [])
 	if not idle.is_empty():
 		return idle.pop_back()
+	return _make(scene_path)
+
+
+## A new instance of the scene at `scene_path`: hidden, in the tree, its materials its own (null: no scene).
+func _make(scene_path: String) -> Node3D:
 	var scene := _scene(scene_path)
 	if scene == null:
 		return null

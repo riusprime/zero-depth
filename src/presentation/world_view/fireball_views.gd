@@ -428,8 +428,6 @@ const PACK_HIDE := {
 	&"prism_orb": ["Flare"],
 	&"crown_orb": ["Flare"],
 }
-## The least a pack flame's particle lifetime shrinks to for a small shot (its share of the scene's own).
-const FLAME_LIFE_MIN := 0.4
 ## Looks without a pack effect (they stay the MultiMesh).
 const PACK_SKIP: Array[StringName] = [&"nemesis_crescent"]
 ## v0.10.0 VX7 (VFX_PACK N4): the nemesis_crescent keeps its shape and takes a copy of the pack's rim_area_04 glow
@@ -490,6 +488,15 @@ var _lob_ids := {}  # look -> the lobbing drones' actor ids, in _lobs' order
 func _exit_tree() -> void:
 	for token in _packed.keys():
 		_unpack(token)
+
+
+## v0.10.5 (owner PERF_PLAYLOG_1: view.fireballs 53.1 ms on f1 and 47.3 ms on f2, the first time a look flew): every
+## look's three MultiMeshes and their materials, made at the floor's load (WorldViewRoot, behind the cover; then
+## ShaderWarmup draws each once), so a look's first shot builds nothing. Hidden until drawn (0 instances shown).
+func prepare() -> void:
+	for key: StringName in LOOKS:
+		if not _sets.has(key):
+			_sets[key] = _make_set(key)
 
 
 func sync(reader: WorldReader) -> void:
@@ -755,7 +762,7 @@ func _pack_shot(
 		var node := pack_fx.spawn(pid, at, scale_f, colors, 0.0)
 		if node == null:
 			return false
-		_keep_playing(node, node.scale.x)
+		FireballPack.keep_playing(node, node.scale.x)
 		for part: String in PACK_HIDE.get(key, []):
 			var child := node.get_node_or_null(part) as Node3D
 			if child != null:
@@ -783,39 +790,6 @@ static func _pack_colors(look: Dictionary) -> Dictionary:
 		&"secondary": trail,
 		&"tertiary": trail.darkened(0.25),
 	}
-
-
-## A held effect must not end by itself: PackFx makes a scene with no animation one-shot, and an animation's end gives
-## the effect back; here it loops until the shot ends. A flame or spark particle is not sized by its node's scale in
-## world space, so the node's own particle materials scale by `k` (the shot's size). (Colours: PackFx's; the pack's
-## shared ShaderMaterials are the lead's to make per-instance.)
-static func _keep_playing(node: Node3D, k: float) -> void:
-	var anim := node.get_node_or_null("AnimationPlayer") as AnimationPlayer
-	if anim != null and anim.has_animation(PackFx.ANIM):
-		anim.get_animation(PackFx.ANIM).loop_mode = Animation.LOOP_LINEAR
-	if not node.has_meta(&"vx4_own"):
-		node.set_meta(&"vx4_own", true)
-		node.set_meta(&"vx4_k", 1.0)
-		for c in node.get_children():
-			var gp := c as GPUParticles3D
-			if gp != null and gp.process_material is ParticleProcessMaterial:
-				gp.process_material = gp.process_material.duplicate()
-			if gp != null:  # (a smaller shot leaves a shorter flame: the trail is the distance flown in a lifetime)
-				gp.lifetime *= clampf(k * 1.6, FLAME_LIFE_MIN, 1.0)
-	var ratio := k / float(node.get_meta(&"vx4_k"))
-	if not is_equal_approx(ratio, 1.0):
-		node.set_meta(&"vx4_k", k)
-	for c in node.get_children():
-		var p := c as GPUParticles3D
-		if p == null:
-			continue
-		if not is_equal_approx(ratio, 1.0) and p.process_material is ParticleProcessMaterial:
-			var pm := p.process_material as ParticleProcessMaterial
-			pm.scale_min *= ratio
-			pm.scale_max *= ratio
-		if p.one_shot:
-			p.one_shot = false
-			p.restart()
 
 
 func _unpack(token: Variant) -> void:

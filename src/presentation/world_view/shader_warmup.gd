@@ -14,6 +14,8 @@ extends Node3D
 ## - v0.10.5 (the cracked wall's 1.1 s freeze, owner PERF_PLAYLOG_1): every piece under a node marked WARM_META, on any
 ##   material, shown or hidden (the cracked wall's runes, cracks and rubble, the hidden room's pieces): their
 ##   StandardMaterial3D variants (the runes' alpha + unshaded + texture) may be drawn nowhere else on the floor.
+##   v0.10.5 (the first fireballs and elite, PERF_PLAYLOG_1): with internal children and CPUParticles3D meshes too (a
+##   MagicArea's parts: EliteViews' pooled sigil); FireballViews.prepare's looks are its empty MultiMeshes.
 ## Every proxy sits in front of the camera (AT in its frame), scaled to TINY (well under a pixel): the draw is issued,
 ## nothing shows. A load builds the view hidden under the closed cover (Main), so the warm-up hangs beside the view
 ## (its parent), where it draws while the cover is still closed; without one (a tool's setup()) it hangs off the
@@ -102,7 +104,12 @@ func _from_view(n: Node, hidden: bool, warm: bool) -> void:
 		var mi := n as MeshInstance3D
 		if mi.mesh != null and (all or (off and _custom_shaded(mi))):
 			_mesh_proxy(mi)
-	for c in n.get_children():
+	elif n is CPUParticles3D and all:  # v0.10.5: a MagicArea's sparks (EliteViews' pooled sigil)
+		var cp := n as CPUParticles3D
+		if cp.mesh != null:
+			_particles_proxy(cp)
+	# v0.10.5: under a WARM_META node, a node's internal children too (a MagicArea builds its parts as internal ones)
+	for c in n.get_children(all):
 		_from_view(c, off, all)
 
 
@@ -132,6 +139,19 @@ func _mesh_proxy(mi: MeshInstance3D) -> void:
 	p.material_override = mi.material_override
 	for k in mi.get_surface_override_material_count():
 		p.set_surface_override_material(k, mi.get_surface_override_material(k))
+	_add(p)
+	hidden_proxies += 1
+
+
+func _particles_proxy(cp: CPUParticles3D) -> void:
+	var mat := cp.material_override
+	var key := "p/%d/%d" % [cp.mesh.get_instance_id(), mat.get_instance_id() if mat != null else 0]
+	if _seen.has(key):
+		return
+	_seen[key] = true
+	var p := MeshInstance3D.new()
+	p.mesh = cp.mesh
+	p.material_override = mat
 	_add(p)
 	hidden_proxies += 1
 

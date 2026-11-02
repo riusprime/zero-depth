@@ -312,6 +312,12 @@ func _queue_pack_warmup(q: ViewBuildQueue) -> void:
 		return
 	for id in pack_fx.pending_warm_ids():
 		q.add_next("pack_fx_warmup_%s" % id, pack_fx.warm.bind(id))
+	# v0.10.5 (owner PERF_PLAYLOG_1: the first fireballs and the first elite hitched): the shots' and the elite beam's
+	# pools filled now, one job an id, so their first spawns of the floor instance nothing.
+	for id in FireballPack.ids():
+		q.add_next("pack_prefill_%s" % id, FireballPack.prefill.bind(pack_fx, id))
+	for id in EliteViews.pack_ids():
+		q.add_next("pack_prefill_%s" % id, pack_fx.prefill.bind(id, EliteViews.PACK_PREFILL))
 
 
 func _setup_views(palette: Dictionary) -> void:
@@ -348,6 +354,7 @@ func _setup_views(palette: Dictionary) -> void:
 	events.setup(reader)
 	add_child(cores)  # v0.6.0 CU
 	add_child(elite_fx)  # v0.9.0 EL
+	elite_fx.prepare()  # v0.10.5: its rings and sigil made now, not at the first elite
 	add_child(attack_forms)  # v0.6.0 MX3
 	add_child(laser)  # v0.9.0 LZ
 	add_child(bombs)  # v0.9.0 BM
@@ -409,6 +416,7 @@ func _setup_effects() -> void:
 	add_child(modifier_marks)  # v0.6.0 MX4
 	add_child(blade_forms)  # v0.6.5 WN4
 	add_child(fireballs)  # v0.7.5 BF1
+	fireballs.prepare()  # v0.10.5: every look's MultiMeshes made now, not at its first shot
 	pulses.actors = actors
 	pulses.draw_on_sync = false  # each frame's _process draws the pulses
 	add_child(pulses)  # v0.8.0 GF1
