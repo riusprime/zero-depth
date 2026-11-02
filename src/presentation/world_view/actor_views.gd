@@ -83,6 +83,10 @@ var _proj_pooled := 0
 ## an unchanged look doesn't format its key again (a horde fires hundreds a second).
 var _proj_key: Array[String] = ["", ""]
 var _proj_key_of: Array = [[], []]
+## v0.10.5 Q5: each actor node's parts, read once from its metas (get_meta every sync was most of actors.update), by
+## id: [facing, bar, elite bar or null, dazed or null, hero avatar or null, enemy avatar or null, is a boss, the yaw
+## last written (INF: write it)].
+var _parts := {}
 
 
 func sync(reader: WorldReader) -> void:
@@ -108,24 +112,28 @@ func sync(reader: WorldReader) -> void:
 			if reader.actor_team(i) != 0:
 				tint_greys(node, enemy_tint)
 				role_glow(node, reader.actor_kind(i), role_glow_energy)  # v0.8.0 N1 (O39)
-		node.position = SimPlane.to_3d(reader.actor_pos(i))
+		var at := reader.actor_pos(i)
+		var pos := SimPlane.to_3d(at)
 		for g in grounds:
-			node.position.y = maxf(node.position.y, g.height_at(node.position))
+			pos.y = maxf(pos.y, g.height_at(pos))
+		node.position = pos  # v0.10.5 Q5: written once
 		var t_up := PerfMarks.start()
-		_update_actor(node, reader, i)
+		var parts := _parts_of(node, id)
+		_update_actor(node, reader, i, parts)
 		PerfMarks.add(&"actors.update", t_up)
 		if not leans.is_empty() and leans.has(id):
 			_lean(node, leans[id])
-		if node.has_meta(&"enemy_avatar"):  # v0.4.0 SC: off-screen crowds don't animate
+			parts[7] = INF  # the lean turned the facing's basis: the yaw is written again next sync
+		if parts[5] != null:  # v0.4.0 SC: off-screen crowds don't animate
 			var t_an := PerfMarks.start()
-			_animate_if_seen(node, id, reader.actor_pos(i), hero)
+			_animate_if_seen(node, id, at, hero)
 			PerfMarks.add(&"actors.animate", t_an)
 		if fresh:
 			node.reset_physics_interpolation()
 	_drop_missing(_actors, alive)
 	bar_chunks.keep_only(alive)
 	# A removed actor's flash and glow go with it (bounded).
-	for d: Dictionary in [_flash, _tint, _flash_hold, _shown, _anim_on]:
+	for d: Dictionary in [_flash, _tint, _flash_hold, _shown, _anim_on, _parts]:
 		for id in d.keys():
 			if not alive.has(id):
 				d.erase(id)
@@ -295,44 +303,70 @@ func _set_flash(node: Node3D, on: bool, id: int = -1) -> void:
 		)
 
 
-func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
-	var facing: Node3D = node.get_meta(&"facing")
-	facing.rotation = Vector3(0, SimPlane.yaw_of(reader.actor_facing(i)), 0)
+## v0.10.5 Q5: actor `id`'s parts (_parts), read from its node's metas the first time.
+func _parts_of(node: Node3D, id: int) -> Array:
+	var parts: Array = _parts.get(id, [])
+	if parts.is_empty():
+		parts = [
+			node.get_meta(&"facing"),
+			node.get_meta(&"bar"),
+			_meta_or_null(node, &"elite_bar"),
+			_meta_or_null(node, &"dazed"),
+			_meta_or_null(node, &"avatar"),
+			_meta_or_null(node, &"enemy_avatar"),
+			node.has_meta(&"boss"),
+			INF,
+		]
+		_parts[id] = parts
+	return parts
+
+
+func _update_actor(node: Node3D, reader: WorldReader, i: int, parts: Array = []) -> void:
+	if parts.is_empty():
+		parts = _parts_of(node, reader.actor_id(i))
+	var facing: Node3D = parts[0]
+	var yaw := SimPlane.yaw_of(reader.actor_facing(i))
+	if yaw != parts[7]:  # v0.10.5 Q5: write only what changed
+		facing.rotation = Vector3(0, yaw, 0)
+		parts[7] = yaw
 	var spawning := reader.actor_spawning(i)
+	var enemy_avatar: Object = parts[5]
 	# Enemy models play their own rise-in while spawning (v0.2.0 L17); the others stay hidden until they arrive.
-	var show_facing := not spawning or node.has_meta(&"enemy_avatar")
+	var show_facing := not spawning or enemy_avatar != null
 	if facing.visible != show_facing:  # v0.9.5 PF3: write only what changed
 		facing.visible = show_facing
 	# v0.4.0 SC: an enemy's bar shows once it is hurt (a crowd at full health draws none); the hero's always.
-	var bar: Node3D = node.get_meta(&"bar")
-	var hurt := reader.actor_hp(i) < reader.actor_max_hp(i) or reader.actor_team(i) == 0
-	var show_bar := not spawning and not node.has_meta(&"boss") and hurt
+	var bar: Node3D = parts[1]
+	var hp := reader.actor_hp(i)
+	var max_hp := reader.actor_max_hp(i)
+	var hero := reader.actor_team(i) == 0
+	var show_bar: bool = not spawning and not parts[6] and (hp < max_hp or hero)
 	if bar.visible != show_bar:
 		bar.visible = show_bar
-	if node.has_meta(&"elite_bar"):  # v0.9.0 EL: the elite's bar shows while it is out (gone while it has vanished)
+	if parts[2] != null:  # v0.9.0 EL: the elite's bar shows while it is out (gone while it has vanished)
 		bar.visible = false
-		var eb := node.get_meta(&"elite_bar") as EliteBar
+		var eb := parts[2] as EliteBar
 		eb.visible = not spawning and not reader.elite_vanished(i)
-		eb.set_fraction(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)))
+		eb.set_fraction(float(hp) / maxf(1.0, max_hp))
 	if bar.visible:  # v0.8.0 N4 (O57): its chunk and refill (BarChunks scales the bar to the trail's fill)
-		var frac := clampf(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)), 0.0, 1.0)
-		bar_chunks.feed(reader.actor_id(i), bar, frac, reader.actor_team(i) == 0)
-	if node.has_meta(&"dazed"):
-		var dz := node.get_meta(&"dazed") as Node3D
+		var frac := clampf(float(hp) / maxf(1.0, max_hp), 0.0, 1.0)
+		bar_chunks.feed(reader.actor_id(i), bar, frac, hero)
+	if parts[3] != null:
+		var dz := parts[3] as Node3D
 		var recovering := reader.actor_recovering(i)
 		if dz.visible != recovering:
 			dz.visible = recovering
 	if reader.actor_egg_permille(i) >= 0:  # v0.8.0 BS1 (S3): still an egg (BossSignatureViews draws it)
 		facing.visible = false
 		bar.visible = false
-	if node.has_meta(&"avatar"):
+	if parts[4] != null:
 		var t_pa := PerfMarks.start()
-		(node.get_meta(&"avatar") as PlayerAvatar).sync(reader)
+		(parts[4] as PlayerAvatar).sync(reader)
 		PerfMarks.add(&"actors.hero_sync", t_pa)
 	# Enemy models (v0.2.0 L17): each kind's own node, animated in frame time from the sim state.
-	if node.has_meta(&"enemy_avatar"):
+	if enemy_avatar != null:
 		var t_en := PerfMarks.start()
-		node.get_meta(&"enemy_avatar").sync(reader, i)
+		enemy_avatar.call(&"sync", reader, i)
 		PerfMarks.add(&"actors.enemy_sync", t_en)
 
 
@@ -768,3 +802,8 @@ func _projectile_material(c: Color, energy: float) -> StandardMaterial3D:
 		m.emission_energy_multiplier = energy
 		_proj_mats[key] = m
 	return _proj_mats[key]
+
+
+## v0.10.5 Q5: a meta's value, or null when the node has none (get_meta with a null default still reports an error).
+static func _meta_or_null(node: Node, key: StringName) -> Variant:
+	return node.get_meta(key) if node.has_meta(key) else null

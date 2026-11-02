@@ -73,7 +73,7 @@ static func start(main: Main, build_id: StringName) -> void:
 	main.ui.add_child(hud)
 	main.ui.move_child(hud, 0)
 	hud.sync(driver.reader)
-	driver.ticked.connect(main._on_playground_tick)
+	driver.frame_ticked.connect(main._on_playground_tick)  # v0.10.5 Q5: the HUD reads once a frame
 	driver.edited.connect(main._on_playground_tick)
 	main.audio.set_ambience(HubSession.BIOME)
 	main._sync_pause()
@@ -115,7 +115,8 @@ static func room_view(main: Main, biome: BiomeDefinition) -> PlayerInput:
 	player_input.name = "PlayerInput"
 	main.view.add_child(player_input)
 	main.driver.input_source = player_input.sample
-	main.driver.ticked.connect(main.view.sync)
+	main.driver.frame_ticked.connect(main.view.sync)  # v0.10.5 Q5: once a frame
+	main.driver.ticked.connect(main.view.note_tick)
 	main.driver.edited.connect(main.view.sync)
 	main.audio.detach()
 	main.audio.attach(main.driver.reader, biome.id)

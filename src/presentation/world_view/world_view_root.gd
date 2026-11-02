@@ -221,6 +221,8 @@ var profile_sync := false
 var sync_profile := {}
 ## v0.9.5 PF4: the decorative views at 30 Hz (ViewSchedule); false: every view every tick.
 var half_rate_enabled := true
+## v0.10.5 Q5 (tests): how many times sync ran.
+var syncs := 0
 var _half_synced := {}
 ## v0.8.0 P3 (O32): the floor's walls for the occlusion test, indexed once (Occlusion.build_index).
 var _occlusion_index := {}
@@ -268,7 +270,9 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 func queue_setup(
 	q: ViewBuildQueue, p_reader: WorldReader, palette: Dictionary, arena_half: float
 ) -> void:
-	reader = p_reader
+	# v0.10.5 Q5: the views read through a LatchedReader: they sync once a frame, and it shows them what lasted one
+	# tick in a tick they did not sync on (a Gun shot, an enemy's one-tick strike).
+	reader = LatchedReader.new(p_reader)
 	# v0.3.0 L13: the owner's boss models load with the stage, never on a spawn (v0.8.0 FB1: the final boss's three
 	# only where its fight is: the final arena, the Playground). v0.8.0 N12: with the kit's and the shop's models, on
 	# a worker (ViewWarmup).
@@ -597,8 +601,19 @@ func _sync_view(id: StringName, view: Object) -> void:
 	sync_profile[id] = float(sync_profile.get(id, 0.0)) + (Time.get_ticks_usec() - t0) / 1000.0
 
 
+## v0.10.5 Q5: called on every sim tick (SimDriver.ticked); keeps what lasts one tick for the next sync (LatchedReader).
+func note_tick() -> void:
+	if reader is LatchedReader:
+		(reader as LatchedReader).note()
+
+
+## Once a rendered frame that ran a tick (SimDriver.frame_ticked, v0.10.5 Q5), on the latest state; also on a
+## Playground edit (SimDriver.edited) and the first sync.
 func sync() -> void:
 	var t_all := PerfMarks.start()
+	syncs += 1
+	if reader is LatchedReader:
+		(reader as LatchedReader).settle()
 	cull.refresh(rig.camera)  # v0.8.0 HV
 	_sync_view(&"telegraphs", telegraphs)
 	_sync_view(&"challenge", challenge)

@@ -476,7 +476,8 @@ func _floor_live(nodes: Dictionary) -> void:
 	player_input.name = "PlayerInput"
 	view.add_child(player_input)
 	driver.input_source = player_input.sample
-	driver.ticked.connect(view.sync)
+	driver.frame_ticked.connect(view.sync)  # v0.10.5 Q5: the views sync once a frame, on the latest tick
+	driver.ticked.connect(view.note_tick)  # and keep what lasts one tick (ViewTickNotes)
 	codex_recorder.attach(driver.reader)  # v0.7.5 CX: the Codex reads every tick (after the save's entry check)
 	achievement_tracker.attach(driver.reader)  # v0.7.5 AC: and the achievements
 	audio.attach(driver.reader, biome.id)
@@ -501,6 +502,7 @@ func _floor_live(nodes: Dictionary) -> void:
 	)
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))
+	driver.frame_ticked.connect(_on_frame.bind(driver))  # v0.10.5 Q5: the HUD reads once a frame
 	if not loads.cover.showing():  # v0.8.0 N3 (O45): the cover that hid the load fades or opens on the new floor
 		loads.cover.cover_now(LoadingCover.Style.BLACK)
 	var portal := loads.cover.style != LoadingCover.Style.BLACK
@@ -511,13 +513,20 @@ func _floor_live(nodes: Dictionary) -> void:
 	hints.begin_floor(run.floor_index, driver.reader)  # v0.7.5 SM
 
 
+## v0.10.5 Q5: once a rendered frame that ran a tick (SimDriver.frame_ticked), after the views: the HUD reads the
+## latest tick (its pickups and DPS read the event log from their own cursors, so nothing between frames is lost).
+func _on_frame(from: SimDriver) -> void:
+	if from != driver or _hud == null:
+		return
+	_hud.sync(driver.reader)
+
+
 func _on_tick(from: SimDriver) -> void:
 	if from != driver or _hud == null:
 		return  # a stage that already ended, ticking once more before it's freed
 	saves.after_tick(driver.world, run, _stage_seed)  # v0.4.0 SV: a first entry into a room saves
 	codex_recorder.observe(driver.reader)  # v0.7.5 CX
 	MetaHooks.observe(self)  # v0.7.5 AC: the achievements; v0.9.0 CL: the collectibles taken, into the profile
-	_hud.sync(driver.reader)
 	hints.observe(driver.reader)  # v0.7.5 SM
 	var outcome := driver.reader.outcome()
 	if _end == null:
@@ -888,7 +897,7 @@ func _start_playground(build_id: StringName, biome_id: StringName) -> void:
 	ui.add_child(_hud)
 	ui.move_child(_hud, 0)
 	_hud.sync(driver.reader)
-	driver.ticked.connect(_on_playground_tick)
+	driver.frame_ticked.connect(_on_playground_tick)  # v0.10.5 Q5: the HUD reads once a frame
 	driver.edited.connect(_on_playground_tick)
 	_tweaked_run_check()
 
@@ -901,7 +910,8 @@ func _set_playground_biome(id: StringName) -> void:
 	var biome: BiomeDefinition = _content().get_def(&"biomes", id)
 	_pg_biome = id
 	PlaygroundScenario.lay_surface(driver.world, biome)
-	driver.ticked.disconnect(view.sync)
+	driver.frame_ticked.disconnect(view.sync)
+	driver.ticked.disconnect(view.note_tick)
 	driver.edited.disconnect(view.sync)
 	_drop(view)
 	_playground_view(biome)
