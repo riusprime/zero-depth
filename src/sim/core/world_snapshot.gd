@@ -667,6 +667,7 @@ static func apply(base: World, snap: Dictionary) -> String:
 		BuildSlots.migrate(base)
 	Modifiers.invalidate(base)  # v0.6.0 MX1: the restored build's specs compile on their next read
 	Events.drop_retired(base)  # v0.9.0 EL (Q25): an Ambush Cache pedestal closes, a held Marked curse goes
+	base.drop_retired_combos()  # v0.10.5 O1: a held combo deleted since the save (CardOrder.RETIRED_COMBOS) goes
 	CoreTheft.drop_plain(base)  # v0.9.0 EL: a pre-EL elite's core (a normal enemy's) goes; it drops nothing now
 	Curses.invalidate(base)  # v0.7.0 audit C-12: the curse sums are summed again from what was restored
 	# v0.5.5 AR: a sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),

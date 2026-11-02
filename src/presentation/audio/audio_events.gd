@@ -59,12 +59,8 @@ const DEATHS := {
 ## v0.4.0 AB: the element abilities' hits (and their combos') by effect: their own sound.
 const ELEMENT_CUES := {
 	&"arc_field": &"arc_field",
-	&"superconductor": &"arc_field",
 	&"frost_nova": &"frost_nova",
 	&"flame_trail": &"flame_trail",
-	&"napalm_drone": &"flame_trail",
-	&"ember_ward": &"flame_trail",
-	&"storm_bombs": &"arc_field",
 }
 
 var _last_seq := 0

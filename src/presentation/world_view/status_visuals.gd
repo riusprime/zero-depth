@@ -335,16 +335,10 @@ func _sync_payoffs(reader: WorldReader) -> void:
 		for to in reader.discharge_to():
 			_bolt_line(reader.discharge_from(), to, ItemLooks.status_color(&"shock"))
 		_ring(reader.discharge_from(), 0.8, ItemLooks.status_color(&"shock"))
-	if _changed(&"plasma", reader.plasma_tick()):
-		_bolt_line(reader.plasma_from(), reader.plasma_to(), ItemLooks.combo_color(&"plasma_arc"))
 	for kind: StringName in [&"shatter", &"burst", &"wildfire", &"harvest"]:
 		var p: Array = reader.payoff(kind)
 		if _changed(kind, p[0]):
 			_ring(p[1], 1.6, _payoff_color(kind))
-	if _changed(&"resonance", reader.resonance_tick()):
-		_ring(reader.player_pos(), reader.shockwave_radius_m(), ItemLooks.combo_color(&"resonance"))
-	if _changed(&"bastion", reader.bastion_tick()):
-		_ring(reader.player_pos(), 1.2, ItemLooks.combo_color(&"frozen_bastion"))
 	if _changed(&"slipstream", reader.slipstream_tick()):
 		_ring(reader.player_pos(), 0.9, ItemLooks.combo_color(&"slipstream"))
 
@@ -433,19 +427,10 @@ func _sync_payoff_shots(reader: WorldReader) -> void:
 		_shots.append(
 			[&"discharge", SimPlane.to_3d(reader.discharge_from(), 0.6), 0.8, now, 18.0, _frame, to]
 		)
-	if _changed(&"plasma", reader.plasma_tick()):
-		var to: Array = [SimPlane.to_3d(reader.plasma_to(), 0.6)]
-		_shots.append(
-			[&"discharge", SimPlane.to_3d(reader.plasma_from(), 0.6), 0.8, now, 18.0, _frame, to]
-		)
 	for kind: StringName in [&"shatter", &"burst", &"wildfire", &"harvest"]:
 		var p: Array = reader.payoff(kind)
 		if _changed(kind, p[0]):
 			_shots.append([kind, SimPlane.to_3d(p[1], 0.07), 1.6, now, 60.0, _frame + p[0], []])
-	if _changed(&"resonance", reader.resonance_tick()):
-		_ring(reader.player_pos(), reader.shockwave_radius_m(), ItemLooks.combo_color(&"resonance"))
-	if _changed(&"bastion", reader.bastion_tick()):
-		_ring(reader.player_pos(), 1.2, ItemLooks.combo_color(&"frozen_bastion"))
 	if _changed(&"slipstream", reader.slipstream_tick()):
 		_ring(reader.player_pos(), 0.9, ItemLooks.combo_color(&"slipstream"))
 

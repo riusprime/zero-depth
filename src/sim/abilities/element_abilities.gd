@@ -1,24 +1,13 @@
 class_name ElementAbilities
 extends RefCounted
-## Arc Field, Frost Nova and Flame Trail (v0.4.0 AB, PLAN "Abilities"): three auto abilities that feed the v0.3.0
-## status engines (Engines): shock stacks discharge at the threshold, frost stacks freeze, burn stacks tick as DoT.
-## Each borrows its engine's numbers (threshold, how long stacks last, the discharge, the freeze, the burn) from an
-## item (AbilityTable.engine): fold_engines folds them into World.item_mods, the stronger value winning, so an owned
-## item of the same engine still counts and the engine code stays the one place a status works.
-## v0.6.0 MX2 (owner B7): they are weapon modifiers now, launched from their specs (ModifierAbilities says when):
-## - Arc Field: your weapon attacks leave a shock field (form ZONE) where they end.
-## - Frost Nova: the frost element on your weapon, and a frost ring (form RING) on a kill streak.
-## - Flame Trail: your dash and your projectiles leave fire (form ZONE).
-## This file keeps the patches (the ZONE form's runner): add_zone lights one for a spec, add_fire for Napalm Drone
-## (the combo's own numbers); advance_fire puts them out and burns what stands in them. An enemy in a patch is hit
-## at most once every period_ticks of that patch's spec (Flame Trail's hit_ticks; FIRE_HIT_TICKS without one), per
-## patch kind, whatever patch of that kind it stands in; a field hits at most its spec's `count` enemies a tick. Each
-## patch hit is its own root, the player's (TAG_AREA | TAG_ABILITY for an ability's: stats and crit apply, never
-## heat), and runs its spec (statuses, hooks: Attacks.land).
+## The patches (v0.4.0 AB; v0.6.0 MX2: the ZONE form's runner): add_zone lights one for a spec; advance_fire puts
+## them out and burns what stands in them. An enemy in a patch is hit at most once every period_ticks of that
+## patch's spec (FIRE_HIT_TICKS without one), per patch kind, whatever patch of that kind it stands in; a field hits
+## at most its spec's `count` enemies a tick. Each patch hit is its own root, the player's, and runs its spec
+## (statuses, hooks: Attacks.land). fold_engines folds an owned ability's borrowed engine numbers into
+## World.item_mods (AbilityTable.engine). v0.10.5 O1 (owner L23): Arc Field, Frost Nova, Flame Trail and the
+## Napalm Drone and Superconductor combos are gone; their patch kinds keep their numbers (AbilityState.fire_kind).
 
-const EFFECT_ARC := &"arc_field"
-const EFFECT_NOVA := &"frost_nova"
-const EFFECT_FLAME := &"flame_trail"
 ## Fire patch kinds (AbilityState.fire_kind): Flame Trail's, Napalm Drone's, v0.6.0 MX2 Arc Field's shock field and
 ## any other spec's patch (a hook's zone).
 const FIRE_TRAIL := 0
@@ -134,7 +123,6 @@ static func advance_fire(w: World) -> void:
 			s.fire_ids.remove_at(k)
 			s.fire_next.remove_at(k)
 	var a := w.actors
-	var pid := a.ids[0]
 	var book := Modifiers.book(w) if not s.fire_spec.is_empty() else null
 	var fire_gap := fire_hit_ticks(w)  # one value for every patch this tick (audit G-16)
 	for k in s.fire_pos.size():
@@ -157,30 +145,19 @@ static func advance_fire(w: World) -> void:
 			s.fire_ids.append(mark)
 			s.fire_next.append(w.tick + gap)
 			var root := w.take_root()
-			if spec == null:  # Napalm Drone: the combo's numbers
-				var tags := SimEvent.TAG_AREA | SimEvent.TAG_ABILITY
-				var effect := EFFECT_FLAME if kind == FIRE_TRAIL else AbilityCombos.EFFECT_NAPALM
-				if Damage.hit(w, i, s.fire_dmg[k], pid, pid, root, tags, at, a.pos(i), effect) > 0:
-					Engines.add_burn(w, i, s.fire_stacks[k], root, effect)
+			if spec == null:  # v0.10.5 O1: only Napalm Drone (gone) lit a patch without a spec
 				continue
-			var dmg := s.fire_dmg[k]
-			var effect := spec.effect_id
-			if kind == FIRE_FIELD:  # v0.4.0 AB: Superconductor raises a field's hit on a chilled enemy
-				var up := AbilityCombos.arc_damage(w, i, dmg)
-				if up != dmg:
-					effect = AbilityCombos.EFFECT_SUPER
-					s.arc_super = 1
-				dmg = up
-			var ctx := AttackContext.make(at, 0, dmg, root, Attacks.lingering_tags(spec), effect)
+			var ctx := AttackContext.make(
+				at, 0, s.fire_dmg[k], root, Attacks.lingering_tags(spec), spec.effect_id
+			)
 			ctx.depth = s.fire_depth[k]
 			ctx.proc_pct = s.fire_proc[k]
 			Attacks.land(w, spec, ctx, i, at, a.pos(i))
 
 
-## Ticks between two fire hits on one enemy without a spec gap: Flame Trail's hit_ticks.
+## Ticks between two fire hits on one enemy without a spec gap (the tuning's; Flame Trail's own went in v0.10.5 O1).
 static func fire_hit_ticks(w: World) -> int:
-	var t := Abilities.owned_of_kind(w, AbilityTable.Kind.FLAME_TRAIL)
-	return t.hit_ticks if t != null and t.hit_ticks > 0 else w.tuning.fire_hit_ticks
+	return w.tuning.fire_hit_ticks
 
 
 # --- Reads --------------------------------------------------------------------------------------------------------
@@ -204,26 +181,11 @@ static func fx(w: World) -> Dictionary:
 		"fire_kind": s.fire_kind,
 		"fire_left": left,
 		"rings": ModifierAbilities.rings_now(w),  # v0.6.0 MX2: [centre, radius now] per ring
-		"storm_tick": s.storm_tick,
-		"storm_from": s.storm_from,
-		"storm_to": s.storm_to,
-		"ward_tick": s.ward_tick,
-		"ward_pos": s.ward_pos,
-		"ward_r": s.ward_r,
-		"charge_tick": s.charge_tick,
-		"charge_pos": s.charge_pos,
-		"glacier_tick": s.glacier_tick,
-		"wing_tick": s.wing_tick,
-		"dancing": AbilityCombos.dancing(w),
-		"glacier": Engines.has_combo(w, ComboTable.Effect.GLACIER_RING),
 	}
 
 
-## A patch's full life (for the fade): its spec's, or Napalm Drone's.
+## A patch's full life (for the fade): its spec's.
 static func _fire_life(w: World, k: int) -> int:
-	if w.ab.fire_kind[k] == FIRE_NAPALM:
-		var c := Engines.combo(w, ComboTable.Effect.NAPALM_DRONE)
-		return c.window_ticks if c != null else 1
 	var key := w.ab.fire_spec[k] if k < w.ab.fire_spec.size() else ""
 	var spec := Modifiers.book(w).find(key) if key != "" else null
 	if spec != null and spec.life_ticks > 0:

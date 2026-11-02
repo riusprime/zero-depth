@@ -97,22 +97,8 @@ static func after_swing(w: World, base: int, dmg: int) -> void:
 		w.echo_step = w.combo_step
 		w.echo_root = w.swing_root
 		w.echo_damage = maxi(1, dmg * spec.repeat_damage_permille / 1000)
-		w.echo_overcharged = w.swing_overcharged  # Engines: Resonance.
+		w.echo_overcharged = w.swing_overcharged  # hashed (World._hash_engines); Resonance read it until v0.10.5 O1
 		w.echo_wave = wave
-
-
-## Resonance's shockwave (Engines.on_echo): `dmg` to every enemy touching the disc of Overcharge's shockwave
-## (its ON_NTH burst's radius) around the player, at full proc (an engine payoff, not a hook).
-static func shockwave(w: World, dmg: int, root: int, effect: StringName) -> void:
-	var a := w.actors
-	var center := w.player_pos()
-	var radius := Modifiers.nth_burst_radius_m(w)
-	for i in w.aoe_candidates(center, radius):  # v0.8.0 HS: a superset, ascending (was every actor)
-		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
-			continue
-		if not AttackShapes.disc_touches(center, radius, a.pos(i), a.radius[i]):
-			continue
-		Damage.hit(w, i, dmg, a.ids[0], a.ids[0], root, SimEvent.TAG_AREA, center, a.pos(i), effect)
 
 
 ## Phase 4: counts down the pending Twin Arc echo and swings it (the same step's arc, re-tested from where the
@@ -125,7 +111,6 @@ static func advance_echo(w: World) -> void:
 		return
 	w.echo_tick = w.tick
 	PlayerKit.swing_arc(w, w.echo_angle, w.echo_damage, w.echo_root, EFFECT_TWIN_ARC, w.echo_step)
-	Engines.on_echo(w, w.echo_root)  # Engines: Resonance.
 
 
 ## A weapon step's hit landed on actor `i` and its spec burns (Ember Edge's modifier, or the burn rider;
@@ -216,7 +201,6 @@ static func bounce(w: World, i: int, at: Vector2, wall: Obb) -> void:
 	p.pos_y[i] = out.y
 	p.bounces[i] -= 1
 	p.bounce_tick[i] = w.tick
-	Engines.on_bounce(w, i)  # Engines: Shrapnel Storm.
 
 
 ## The outward normal of the face of `box` (grown by r) nearest to `at`: the axis with the smallest margin.

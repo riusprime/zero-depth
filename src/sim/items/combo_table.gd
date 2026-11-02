@@ -1,7 +1,7 @@
 class_name ComboTable
 extends RefCounted
 ## One named combo compiled to sim units (v0.3.0 G): its two items (indices into World.item_tables) and its
-## effect's numbers. Built from ComboDefinition by ContentCompiler.compile_combos. v0.4.0 AB: or its two abilities.
+## effect's numbers. Built from ComboDefinition by ContentCompiler.compile_combos.
 
 ## Appended, never renumbered (mirrors ComboDefinition.Effect).
 enum Effect {
@@ -25,13 +25,10 @@ enum Effect {
 
 var id := &""
 var effect := 0
+## v0.10.5 O1: a deleted combo's stub (CardOrder.RETIRED_COMBOS): no halves, never earned; a save's entry is dropped.
+var retired := false
 var item_a := -1
 var item_b := -1
-## v0.4.0 AB: an ability combo's two abilities (indices into World.ability_tables, -1 for an item combo) and the
-## level both must reach.
-var ability_a := -1
-var ability_b := -1
-var min_level := 3
 var name_key := &""
 var desc_key := &""
 var damage := 0
