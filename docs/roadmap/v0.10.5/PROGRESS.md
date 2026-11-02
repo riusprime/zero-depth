@@ -91,6 +91,11 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
    `76c587e8`; the first try at `dc1f6294` stopped on one lint line length, fixed in 76c587e8): `bash scripts/ci/seams.sh`:
    lint ok; Scripts 106, Tests 603, Passing Tests 603, Asserts 70981; "check_gut_log: ok (603 passing, minimum 1)".
 
+6. **Final lead seams, the whole overnight run merged** (`wt-seams` at `9d357dff`; the first try at `62107767` had 611/612:
+   test_layering caught O7b's shard view using the sim's ShardDrops directly, fixed in 9d357dff through WorldReader):
+   `bash scripts/ci/seams.sh`: lint ok; Scripts 107, Tests 612, Passing Tests 612, Asserts 71850;
+   "check_gut_log: ok (612 passing, minimum 1)". The full suite runs on GitHub with the release PR.
+
 ## Goldens changed on purpose
 - `tests/golden/fixtures/modifier_equivalence.json` (S1: the combo hit-stop 4,4,5,8 → 3,3,3,5 ticks; Blade-all now hits 139, damage 4160, kills 14)
 - `tests/golden/fixtures/modifier_equivalence.json` again (O11: the knockback and the finisher's recovery; blade_plain, gun_plain, both_plain, blade_wildfire_rider, gun_frost_core regenerated)
