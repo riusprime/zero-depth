@@ -21,6 +21,8 @@ var pack_min_by_floor := PackedInt32Array([1])
 var pack_max_by_floor := PackedInt32Array([1])
 var min_distance_m := 8.0
 var edge_band_m := 3.0
+## v0.10.5 O14: the floor (1-based; 0: off) on which no pack spawns while the hero is in the boss room's host room.
+var calm_antechamber_floor := 0
 ## The mix, parallel arrays: actor kind (ActorStore.Kind), weight, the tier it unlocks at, and its pack size
 ## (SpawnMixEntry.pack: 0 = the per-floor draw, > 0 = always that many, e.g. a Swarmer pack).
 var kinds := PackedInt32Array()

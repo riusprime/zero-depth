@@ -260,6 +260,7 @@ static func compile_spawning(def: SpawnDirectorDefinition, repo: ContentReposito
 	t.pack_max_by_floor = def.pack_max_by_floor.duplicate()
 	t.min_distance_m = def.min_distance_m
 	t.edge_band_m = def.edge_band_m
+	t.calm_antechamber_floor = def.calm_antechamber_floor  # v0.10.5 O14
 	for e in def.mix:
 		var enemy: EnemyDefinition = repo.get_def(&"enemies", e.enemy_id)
 		t.kinds.append(compile_enemy(enemy).kind)

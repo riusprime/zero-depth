@@ -285,6 +285,8 @@ func _lock_world(floor_index: int, elite: bool) -> World:
 			continue
 		if elite and not w.floor_layout.lockdown_kinds.has(LockdownTable.Kind.ELITE):
 			continue
+		if not elite and not _lock_room(w, false) >= 0:  # v0.10.5 O14: floor 2's first one is the Elite set piece
+			continue
 		LockLab.calm(w)
 		return w
 	return null
@@ -293,7 +295,7 @@ func _lock_world(floor_index: int, elite: bool) -> World:
 func _lock_room(w: World, elite: bool) -> int:
 	var f := w.floor_layout
 	for k in f.lockdown_rooms.size():
-		if not elite or f.lockdown_kinds[k] == LockdownTable.Kind.ELITE:
+		if (f.lockdown_kinds[k] == LockdownTable.Kind.ELITE) == elite:
 			return f.lockdown_rooms[k]
 	return -1
 

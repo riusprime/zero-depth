@@ -45,6 +45,9 @@ const MIN_WARN_SECONDS := 0.4
 ## rest come in as earlier ones die (ClosedFights). Starting values.
 @export var min_cells := 2
 @export var area_per_enemy_m2 := 30.0
+## v0.10.5 O14 (theory audit P12, Schell's interest curve): on this floor (1-based; 0 = off) the first Lockdown is an
+## Elite one, in the candidate nearest the main path's middle. A starting value.
+@export var set_piece_floor := 2
 
 
 func category() -> StringName:
@@ -64,6 +67,8 @@ func validate() -> Array[ValidationIssue]:
 		if v < 0:
 			issues.append(ValidationIssue.new(&"range", p, "kind weights are >= 0"))
 			break
+	if set_piece_floor < 0:
+		issues.append(ValidationIssue.new(&"range", p, "set_piece_floor >= 0"))
 	check_positive(issues, "waves", waves)
 	check_positive(issues, "burst_waves", burst_waves)
 	check_positive(issues, "burst_gap_seconds", burst_gap_seconds)
