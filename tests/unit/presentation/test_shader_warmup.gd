@@ -38,6 +38,15 @@ func _view() -> Array:
 	pool.multimesh = mm
 	pool.material_override = StandardMaterial3D.new()
 	root.add_child(pool)
+	var marked := Node3D.new()  # v0.10.5: a WARM_META node: its StandardMaterial3D pieces, shown or not, are drawn
+	marked.set_meta(ShaderWarmup.WARM_META, true)
+	root.add_child(marked)
+	for vis in [true, false]:
+		var piece := MeshInstance3D.new()
+		piece.mesh = quad
+		piece.material_override = StandardMaterial3D.new()
+		piece.visible = vis
+		marked.add_child(piece)
 	var actors := ActorViews.new()
 	root.add_child(actors)
 	return [root, cam, actors]
@@ -53,8 +62,8 @@ func test_the_warmup_draws_hidden_pieces_first_use_materials_and_each_horde_kind
 	autofree(w)
 	assert_eq(
 		w.hidden_proxies,
-		2,
-		"the hidden effect slot and the empty pool, not the drawn mesh or the model piece"
+		4,
+		"the hidden effect slot, the empty pool and the marked node's two pieces, not the drawn mesh or the model piece"
 	)
 	assert_gt(w.lazy_proxies, 5, "the hero pulse, fireball and boss strike shaders at least")
 	assert_eq(w.enemies, ShaderWarmup.HORDE_KINDS.size() + 2, "and a Charger and a Hatchling")

@@ -8,8 +8,9 @@ extends RefCounted
 ## - The cracked wall (FloorLayout.crack_*, CrackedRooms.mark): a wall section across a dead end's doorway, a barrier
 ##   from the floor's first tick (World.add_barrier, as the timed door's slab). Only the build's Skill wears it down
 ##   (on_skill, from PlayerSkill when the Skill lands: Lunge Cleave's fan touching it, or a Scatter Blast pellet ending
-##   on it), one hit a use, crack_hits (3) uses; nothing else does (no other attack reaches a wall). Broken, the barrier
-##   is gone for good and the hidden room behind (an epic altar or a chest, Secrets.place_reward from
+##   on it; v0.10.5: a Blast a Form card reshaped, the Ring's lightning ring, by that form's reach), one hit a use,
+##   crack_hits (3) uses; nothing else does (no other attack reaches a wall). Broken, the barrier is gone for good
+##   and the hidden room behind (an epic altar or a chest, Secrets.place_reward from
 ##   `loot:cracked_wall`; no enemy spawns) is open and seen. Nothing tells the player (Q23).
 ## - Containers (crates, urns, barrels): any of the hero's attacks breaks one in one hit (on_attack, from
 ##   Attacks.launch: an arc, a burst, a ray; and the hero's projectiles, swept each tick in advance). Each was rolled
@@ -267,11 +268,13 @@ static func on_skill(w: World, center: Vector2, angle: int, cleave: bool) -> voi
 	var touched := false
 	if cleave:
 		touched = Attacks.arc_touches(w, spec, center, angle, closest(wall, center), 0.05)
-	else:
+	elif not w.kit.pellet_ends.is_empty():
 		for e in w.kit.pellet_ends:
 			if Collide.circle_vs_obb(e, spec.radius_m + 0.1, wall) != Vector2.ZERO:
 				touched = true
 				break
+	else:
+		touched = _reshaped_touches(w, spec, center, angle, wall)
 	if not touched:
 		return
 	b.crack_hp -= 1
@@ -284,6 +287,24 @@ static func on_skill(w: World, center: Vector2, angle: int, cleave: bool) -> voi
 		var slab: Array[Obb] = [wall]
 		w.remove_barriers(slab)
 		b.crack_up = 0
+
+
+## v0.10.5 (owner: "I could not open it shooting it with L2"): a Scatter Blast that a Form card reshaped sends no
+## pellets (the Ring, "Your shot becomes a lightning ring", targets projectiles, and the Blast is one), so it reaches
+## the wall by its form: a ring, burst or zone round `center` out to its area radius; a lob where it lands; any other
+## form along `angle` for reach_m.
+static func _reshaped_touches(
+	w: World, spec: AttackSpec, center: Vector2, angle: int, wall: Obb
+) -> bool:
+	var r := Attacks.area_radius(w, spec)
+	match spec.form:
+		AttackSpec.Form.RING, AttackSpec.Form.BURST, AttackSpec.Form.ZONE:
+			return Collide.circle_vs_obb(center, r + 0.1, wall) != Vector2.ZERO
+		AttackSpec.Form.LOB:
+			var at := center + Kin.dir(angle) * spec.reach_m
+			return Collide.circle_vs_obb(at, r + 0.1, wall) != Vector2.ZERO
+	var to := center + Kin.dir(angle) * maxf(spec.reach_m, r)
+	return Collide.sweep_vs_obb(center, to, spec.radius_m + 0.1, wall) >= 0.0
 
 
 ## The point of box `o` nearest `p`.

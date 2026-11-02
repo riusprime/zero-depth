@@ -10,7 +10,10 @@ extends Node3D
 ## - the materials made only on first use (the hero pulse's core, glow and trail, the fireball's shaders, the boss
 ##   strike marks, the impact flare and the cast sigil);
 ## - one enemy of each horde kind and a Charger and Hatchling, built as ActorViews builds them (their shared
-##   EnemyLooks materials, this floor's tint).
+##   EnemyLooks materials, this floor's tint);
+## - v0.10.5 (the cracked wall's 1.1 s freeze, owner PERF_PLAYLOG_1): every piece under a node marked WARM_META, on any
+##   material, shown or hidden (the cracked wall's runes, cracks and rubble, the hidden room's pieces): their
+##   StandardMaterial3D variants (the runes' alpha + unshaded + texture) may be drawn nowhere else on the floor.
 ## Every proxy sits in front of the camera (AT in its frame), scaled to TINY (well under a pixel): the draw is issued,
 ## nothing shows. A load builds the view hidden under the closed cover (Main), so the warm-up hangs beside the view
 ## (its parent), where it draws while the cover is still closed; without one (a tool's setup()) it hangs off the
@@ -23,6 +26,8 @@ const FRAMES := 3
 const MAX_WAIT := 600
 ## At most this many proxies from the view's hidden pieces (each a draw for FRAMES frames).
 const MAX_PROXIES := 400
+## v0.10.5: a node with this meta has every mesh under it drawn here, whatever its material (see the list above).
+const WARM_META := &"shader_warm"
 const HORDE_KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
 	WorldReader.KIND_SPLITTER,
@@ -57,7 +62,7 @@ static func build(view_root: Node, camera: Camera3D, actors: ActorViews) -> Shad
 	w._camera = camera
 	w._quad.size = Vector2.ONE
 	for c in view_root.get_children():  # the root itself is hidden while a load builds it
-		w._from_view(c, false)
+		w._from_view(c, false, false)
 	w._first_use()
 	w._enemies(actors)
 	var host := view_root.get_parent() if view_root.is_inside_tree() else null
@@ -81,11 +86,13 @@ func _process(_delta: float) -> void:
 		queue_free()
 
 
-## The view's pieces not drawn now (`hidden`: under a hidden node; a MultiMesh showing no instance).
-func _from_view(n: Node, hidden: bool) -> void:
+## The view's pieces not drawn now (`hidden`: under a hidden node; a MultiMesh showing no instance), and every piece
+## under a WARM_META node (`warm`).
+func _from_view(n: Node, hidden: bool, warm: bool) -> void:
 	if hidden_proxies >= MAX_PROXIES or n == self:
 		return
 	var off := hidden or (n is Node3D and not (n as Node3D).visible)
+	var all := warm or n.has_meta(WARM_META)
 	if n is MultiMeshInstance3D:
 		var mmi := n as MultiMeshInstance3D
 		var mm := mmi.multimesh
@@ -93,10 +100,10 @@ func _from_view(n: Node, hidden: bool) -> void:
 			_multimesh_proxy(mm, mmi.material_override)
 	elif n is MeshInstance3D:
 		var mi := n as MeshInstance3D
-		if mi.mesh != null and off and _custom_shaded(mi):
+		if mi.mesh != null and (all or (off and _custom_shaded(mi))):
 			_mesh_proxy(mi)
 	for c in n.get_children():
-		_from_view(c, off)
+		_from_view(c, off, all)
 
 
 ## Whether a hidden piece draws with an effect's own shader (a ShaderMaterial: the ones made and compiled on first

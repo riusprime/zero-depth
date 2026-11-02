@@ -164,8 +164,6 @@ func _process(delta: float) -> void:
 			shine = maxf(0.0, shine - delta / SHINE_OUT_S)
 		var pulse := 1.0 + SHINE_PULSE * sin(TAU * Time.get_ticks_msec() / 1000.0 / SHINE_PERIOD_S)
 		_rune_mat.albedo_color = Color(SEAM_COLOR * (SHINE_ENERGY * pulse), shine)
-		for r in _runes:
-			r.visible = shine > 0.0
 	for k in range(_fx.size() - 1, -1, -1):
 		var fx: Array = _fx[k]
 		var node: Node3D = fx[0]
@@ -188,6 +186,9 @@ func _build_wall(reader: WorldReader) -> void:
 	root.name = "CrackedWall"
 	root.position = SimPlane.to_3d(reader.crack_door_center())
 	root.rotation.y = SimPlane.yaw_of(reader.crack_door_angle())
+	# v0.10.5 (owner PERF_PLAYLOG_1: a 1.1 s frame as the runes first shone): every piece here, the rubble too, is drawn
+	# once behind the loading cover (ShaderWarmup), so no material of the wall compiles mid-play.
+	root.set_meta(ShaderWarmup.WARM_META, true)
 	add_child(root)
 	var width := reader.crack_door_width()
 	var depth := maxf(reader.crack_door_depth(), 0.6) + 0.1
@@ -222,6 +223,7 @@ func _build_wall(reader: WorldReader) -> void:
 					bar.position += Vector3(cos(ang) * 0.3, sin(ang) * -0.3, 0)
 				bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	# S15c: a rune on all four faces (both passage faces and both ends), invisible until the hero comes near.
+	# v0.10.5: drawn from the floor's load at alpha 0 (was hidden until then: its first draw compiled its shader).
 	_slab_center = reader.crack_door_center()
 	_rune_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_rune_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -247,7 +249,6 @@ func _build_wall(reader: WorldReader) -> void:
 		quad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		quad.position = f[0]
 		quad.rotation.y = f[1]
-		quad.visible = false
 		wall.add_child(quad)
 		_runes.append(quad)
 	slab_spec = [
