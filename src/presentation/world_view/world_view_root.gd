@@ -310,6 +310,10 @@ func _warm_shaders() -> void:
 func _queue_pack_warmup(q: ViewBuildQueue) -> void:
 	if pack_fx == null:
 		return
+	# v0.10.5: every other id the floor can use gets a few idle instances first (PackPrefill), so its first spawns
+	# of the floor (and a warm-up below) take them.
+	for id in PackPrefill.ids(pack_fx, PackPrefill.boss_floor(reader)):
+		q.add_next("pack_prefill_%s" % id, PackPrefill.fill.bind(pack_fx, id))
 	for id in pack_fx.pending_warm_ids():
 		q.add_next("pack_fx_warmup_%s" % id, pack_fx.warm.bind(id))
 	# v0.10.5 (owner PERF_PLAYLOG_1: the first fireballs and the first elite hitched): the shots' and the elite beam's
@@ -324,6 +328,7 @@ func _setup_views(palette: Dictionary) -> void:
 	actors.outline_color = palette["outline"]
 	add_child(stage)
 	add_child(telegraphs)
+	telegraphs.prepare()  # v0.10.5: its shapes and look materials made now, not at the first windup
 	add_child(challenge)
 	add_child(actors)
 	add_child(kit)
@@ -339,6 +344,7 @@ func _setup_views(palette: Dictionary) -> void:
 	add_child(item_fx)
 	status_fx = StatusVisuals.new(actors)
 	add_child(status_fx)
+	status_fx.prepare()  # v0.10.5: its ring meshes and pooled rings made now, not at the first payoff
 	heat_fx = HeatVisuals.new(kit, actors)
 	add_child(heat_fx)
 	add_child(skill_fx)  # v0.3.5 K

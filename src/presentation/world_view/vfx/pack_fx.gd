@@ -59,6 +59,8 @@ static var warm_mode := &"menu"
 static var _scenes := {}  # scene path -> PackedScene, kept for the session
 static var _requested := {}  # scene path -> true, once asked of the loader threads
 static var _warmed := {}  # id -> true, once warm() ran it this session
+## v0.10.5: id -> the most instances of it live at once this session (PackPrefill sizes a floor's pools by it).
+static var _peak := {}
 
 ## The camera the warm-up places the effects in front of (WorldViewRoot sets it).
 var camera: Camera3D = null
@@ -69,6 +71,7 @@ var _def: PackFxDefinition
 var _idle := {}  # id -> Array[Node3D]
 var _live: Array[Dictionary] = []  # oldest first: {node, id, family, left}
 var _info := {}  # Node3D -> {anim, colors, speed, life, lights}
+var _live_n := {}  # id -> its live instances
 var _held := false
 var _warm_nodes: Array[Dictionary] = []  # {node, left: frames}
 var _last_tick := -1
@@ -163,6 +166,10 @@ func spawn(
 	_restart(node, info)
 	var left := float(info["life"]) / speed if life < 0.0 else (INF if life == 0.0 else life)
 	_live.append({"node": node, "id": effect_id, "family": family, "left": left})
+	var n_live := int(_live_n.get(effect_id, 0)) + 1
+	_live_n[effect_id] = n_live
+	if n_live > int(_peak.get(effect_id, 0)):
+		_peak[effect_id] = n_live
 	spawned += 1
 	return node
 
@@ -445,6 +452,7 @@ func _release(node: Node3D) -> void:
 		if _live[k]["node"] == node:
 			var id: StringName = _live[k]["id"]
 			_live.remove_at(k)
+			_live_n[id] = int(_live_n.get(id, 1)) - 1
 			node.visible = false
 			var anim := (_info[node] as Dictionary)["anim"] as AnimationPlayer
 			if anim != null:
@@ -471,6 +479,16 @@ func _focus() -> Vector3:
 	var hit := from + fwd * (-from.y / fwd.y)
 	var back := Vector3(-fwd.x, 0.0, -fwd.z).normalized()
 	return Vector3(hit.x, 0.0, hit.z) + back * WARM_AHEAD_M
+
+
+## v0.10.5: the most instances of `effect_id` that were live at once this session (0: not spawned yet).
+static func peak(effect_id: StringName) -> int:
+	return int(_peak.get(effect_id, 0))
+
+
+## The idle instances of `effect_id` waiting in the pool (tests).
+func idle_count(effect_id: StringName) -> int:
+	return (_idle.get(effect_id, []) as Array).size()
 
 
 ## True once `effect_id` has been through warm() this session.

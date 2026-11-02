@@ -33,6 +33,10 @@ const DRIPS := 3
 const CRYSTALS := 4
 const ORBS := 3
 const FX_FRAMES := 16
+## v0.10.5: the ring radii the payoffs draw (m), their meshes made by prepare(); and the fading pieces it pools (a
+## starting value: a discharge's bolt and its ring).
+const RING_RADII: Array[float] = [0.8, 0.9, 1.0, SPLASH_RADIUS_M, 1.6]
+const FX_PREFILL := 6
 ## v0.8.0 HV: a status's reach past the actor's radius for the cull: its flames and arcs (about 1.5 m over the body)
 ## and its light (VfxLayer._light_status: 3 m range).
 const STATUS_REACH_M := 3.5
@@ -72,6 +76,10 @@ var _plus_frost := false
 var _seen := {}
 var _fx: Array = []
 var _fx_template := SkillVisuals._make_template()
+## v0.10.5 (each payoff ring made a TorusMesh and a material): the ring meshes by radius (shared), and the idle fading
+## pieces (rings and bolt segments), each with its own material, reused instead of freed.
+var _tori := {}
+var _idle_fx: Array[MeshInstance3D] = []
 ## Actor id -> {on, r, node} for the vfx drawer.
 var _on := {}
 ## Payoffs drawn by the vfx layer: [kind, at (Vector3), radius, start tick, life, seed, to (Array of Vector3)].
@@ -518,36 +526,73 @@ func _bolt_line(a: Vector2, b: Vector2, c: Color) -> void:
 	for k in pts.size() - 1:
 		var from := pts[k]
 		var to := pts[k + 1]
-		var n := MeshInstance3D.new()
+		var n := _take_fx()
 		n.mesh = _box
 		var length := from.distance_to(to)
 		n.position = (from + to) * 0.5
 		n.scale = Vector3(0.05, 0.05, maxf(length, 0.01))
-		add_child(n)
 		if length > 0.001:
 			n.look_at_from_position(n.position, to, Vector3.UP)
 		_add_fx(n, c, 0.95, 0.0)
 
 
 func _ring(at: Vector2, radius: float, c: Color) -> void:
-	var n := MeshInstance3D.new()
-	var torus := TorusMesh.new()
-	torus.inner_radius = maxf(radius - 0.12, 0.05)
-	torus.outer_radius = radius
-	n.mesh = torus
+	var n := _take_fx()
+	n.mesh = _torus(radius)
 	n.position = SimPlane.to_3d(at, 0.2)
 	n.scale = Vector3(0.4, 0.08, 0.4)
-	add_child(n)
 	_add_fx(n, c, 0.85, 0.6)
 
 
 func _add_fx(n: MeshInstance3D, c: Color, a: float, grow: float) -> void:
-	var m := _fx_template.duplicate() as StandardMaterial3D
+	var m := n.material_override as StandardMaterial3D
 	m.albedo_color = Color(c, a)
-	n.material_override = m
+	_fx.append([n, m, FX_FRAMES, a, grow])
+
+
+## v0.10.5: the floor's load (WorldViewRoot): the payoff rings' meshes and FX_PREFILL idle pieces, so a floor's first
+## payoff makes no mesh, node or material.
+func prepare() -> void:
+	for r in RING_RADII:
+		_torus(r)
+	while _idle_fx.size() < FX_PREFILL:
+		_idle_fx.append(_new_fx())
+
+
+## The idle fading pieces waiting (tests).
+func idle_fx() -> int:
+	return _idle_fx.size()
+
+
+## The ring mesh of `radius` (shared by every ring that size; made once).
+func _torus(radius: float) -> TorusMesh:
+	var key := snappedf(radius, 0.01)
+	var torus: TorusMesh = _tori.get(key)
+	if torus == null:
+		torus = TorusMesh.new()
+		torus.inner_radius = maxf(key - 0.12, 0.05)
+		torus.outer_radius = key
+		_tori[key] = torus
+	return torus
+
+
+## An idle fading piece, shown at the origin, or a new one.
+func _take_fx() -> MeshInstance3D:
+	var n: MeshInstance3D = _idle_fx.pop_back() if not _idle_fx.is_empty() else _new_fx()
+	n.transform = Transform3D.IDENTITY
+	n.visible = true
+	return n
+
+
+## A hidden fading piece in the tree with its own material (each fades on its own).
+func _new_fx() -> MeshInstance3D:
+	var n := MeshInstance3D.new()
+	n.material_override = _fx_template.duplicate() as StandardMaterial3D
 	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	n.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	_fx.append([n, m, FX_FRAMES, a, grow])
+	n.visible = false
+	add_child(n)
+	return n
 
 
 func _process(_delta: float) -> void:
@@ -560,7 +605,9 @@ func _process(_delta: float) -> void:
 			var s: float = 1.0 - (1.0 - fx[4]) * f
 			(fx[0] as Node3D).scale = Vector3(s, 0.08, s)
 		if fx[2] <= 0:
-			(fx[0] as Node).queue_free()
+			var done := fx[0] as MeshInstance3D
+			done.visible = false
+			_idle_fx.append(done)
 			_fx.remove_at(k)
 
 
