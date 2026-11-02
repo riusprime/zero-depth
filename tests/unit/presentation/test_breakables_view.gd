@@ -29,6 +29,23 @@ func test_the_cracked_wall_its_room_and_the_markings() -> void:
 	assert_not_null(bv, "the view is built")
 	assert_true(bv.wall.visible, "the wall stands")
 	assert_false(bv.rubble.visible, "no rubble yet")
+	# v0.10.5 (the 1.1 s freeze as the runes first shone): the runes are drawn from the load, at alpha 0 (unseen), and
+	# the wall's pieces are marked for the load's shader warm-up, so nothing of it compiles mid-play.
+	var runes := bv._runes
+	assert_eq(runes.size(), 4, "a rune on each face")
+	for r: Node in runes:
+		var mi := r as MeshInstance3D
+		assert_true(mi.is_visible_in_tree(), "drawn from the load")
+		assert_eq(
+			(mi.material_override as StandardMaterial3D).albedo_color.a, 0.0, "at alpha 0: unseen"
+		)
+	assert_true(
+		bv.wall.get_parent().has_meta(ShaderWarmup.WARM_META), "the wall and rubble warmed at load"
+	)
+	for n in v.stage.hidden_nodes:
+		assert_true(
+			n.has_meta(ShaderWarmup.WARM_META), "the hidden room's %s warmed at load" % n.name
+		)
 	assert_almost_eq(bv.crack_shade, BreakablesView.CRACK_BASE, 0.001, "the cracks are faint")
 	assert_false(bv.revealed)
 	var held := 0

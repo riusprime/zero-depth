@@ -55,6 +55,30 @@ func test_the_guns_skill_breaks_it_too() -> void:
 	assert_eq(w.breakables.crack_broken, 1, "three Scatter Blasts break it")
 
 
+## v0.10.5 (owner: "I could not open it shooting it with L2"): the Ring card ("Your shot becomes a lightning ring")
+## reshapes the Gun's Scatter Blast into a ring round the hero, with no pellets; it still wears the wall, three uses.
+func test_the_guns_skill_reshaped_by_the_ring_breaks_it() -> void:
+	var w := CrackLab.world(&"gun")
+	if w == null:
+		return
+	assert_true(
+		w.add_item(AttackScenario.item_index(w.item_tables, &"gun_ring")), "the Ring card held"
+	)
+	w.step(InputFrame.new())
+	assert_eq(Modifiers.skill(w).form, AttackSpec.Form.RING, "the Blast is a ring now")
+	CrackLab.skill(w, 1.2)
+	assert_eq(w.kit.pellet_ends.size(), 0, "no pellets")
+	assert_eq(w.breakables.crack_hp, w.breakables.crack_max - 1, "one use, one hit")
+	CrackLab.skill(w, 1.2)
+	CrackLab.skill(w, 1.2)
+	assert_eq(w.breakables.crack_broken, 1, "three ring Blasts break it")
+	var far := CrackLab.world(&"gun")
+	far.add_item(AttackScenario.item_index(far.item_tables, &"gun_ring"))
+	far.step(InputFrame.new())
+	CrackLab.skill(far, Attacks.area_radius(far, Modifiers.skill(far)) + 1.5)
+	assert_eq(far.breakables.crack_hp, far.breakables.crack_max, "out of the ring's reach: no hit")
+
+
 func test_no_other_attack_marks_it() -> void:
 	for build: StringName in [&"blade", &"gun"]:
 		var w := CrackLab.world(build)
