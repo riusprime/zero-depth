@@ -77,6 +77,10 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
    owner's PC; godot/gdformat/gdlint put on PATH): `bash scripts/ci/seams.sh`: lint ok; Scripts 103, Tests 582,
    Passing Tests 582, Asserts 70020; "check_gut_log: ok (582 passing, minimum 1)".
 
+5. **Lead seams after O3–O6, O9, O10, O14, O15, D1, Q1, the locale/health-bar/pairs_seen fixes** (`wt-seams` at
+   `76c587e8`; the first try at `dc1f6294` stopped on one lint line length, fixed in 76c587e8): `bash scripts/ci/seams.sh`:
+   lint ok; Scripts 106, Tests 603, Passing Tests 603, Asserts 70981; "check_gut_log: ok (603 passing, minimum 1)".
+
 ## Goldens changed on purpose
 - `tests/golden/fixtures/modifier_equivalence.json` (S1: the combo hit-stop 4,4,5,8 → 3,3,3,5 ticks; Blade-all now hits 139, damage 4160, kills 14)
 
