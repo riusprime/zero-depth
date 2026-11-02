@@ -128,14 +128,22 @@ func test_a_boss_takes_its_own_m_with_the_boss_cap() -> void:
 	assert_eq(w.catch_up.boss_cap, 2500, "the boss cap on floor 1 (v0.9.5 BH1: ×2.5)")
 	var m := _with_spread(w, 2500)
 	assert_eq(w.catch_up.boss, m)
-	assert_eq(w.actors.max_hp[i], w.boss_tables[k].hp * m / 1000, "boss HP × m")
+	assert_eq(
+		w.actors.max_hp[i],
+		w.boss_tables[k].hp * _with_spread(w, 3090 * 3) / 1000,
+		"v0.10.5 O2b: boss HP × the paced multiplier (pace 3.09 × the 3× power cap)"
+	)
 	assert_eq(w.actors.power[i], CatchUp.damage_permille(m), "its attacks × sqrt(m)")
 	assert_eq(w.catch_up.enemy, 1000, "the floor's enemies keep their m")
 	var n := SaveLab.floor_world(35, 1)
 	var nid := n.spawn_boss(k, n.player_pos() + Vector2(8, 0))
 	var ni := n.actors.index_of(nid)
 	assert_eq(n.catch_up.boss, _with_spread(n, 1000), "a fresh build: ×1, then the spread")
-	assert_eq(n.actors.max_hp[ni], n.boss_tables[k].hp * n.catch_up.boss / 1000)
+	assert_eq(
+		n.actors.max_hp[ni],
+		n.boss_tables[k].hp * _with_spread(n, 3090 * 1000 / 2000) / 1000,
+		"v0.10.5 O2b: a fresh build is half the expected power: half the floor's pace"
+	)
 
 
 ## Audit G-12: a boss's scaled damage rounds half up, as an enemy's does (SpawnTable.scale).
@@ -203,7 +211,11 @@ func test_the_boss_m_is_read_at_the_door_not_at_the_spawn() -> void:
 	w.stat_values[Stats.Stat.DAMAGE] = 1000  # weaker after the door starts to open
 	var i := w.actors.index_of(w.spawn_boss(0, w.player_pos() + Vector2(8, 0)))
 	assert_eq(w.catch_up.boss, at_door, "the spawn used the door's m")
-	assert_eq(w.actors.max_hp[i], w.boss_tables[0].hp * at_door / 1000)
+	assert_eq(
+		w.actors.max_hp[i],
+		w.boss_tables[0].hp * _with_spread(w, 3090 * 3) / 1000,
+		"v0.10.5 O2b: the door's power paces its HP"
+	)
 	assert_eq(w.catch_up.boss_read, 0, "consumed by the spawn")
 	var j := w.actors.index_of(w.spawn_boss(0, w.player_pos() + Vector2(-8, 0)))
 	assert_ne(w.catch_up.boss, at_door, "the next boss reads its own m at its spawn")
@@ -261,3 +273,44 @@ func test_it_stays_hidden_from_the_player() -> void:
 	assert_false(reader.contains("catch_up"), "WorldReader exposes no catch-up")
 	for path in GdSource.files_under("res://src/presentation"):
 		assert_false(GdSource.read(path).contains("catch_up"), "%s never shows it" % path)
+
+
+## v0.10.5 O2b (owner D38 (a)): the paced HP multiplier is the floor's pace × P / E, never under its floor, and stops
+## growing at the power cap (3× E), so an extreme build's fight is shorter in step with its extra power.
+func test_the_pace_multiplier_bounds_and_the_extreme_cap() -> void:
+	assert_eq(CatchUp.pace_multiplier(2000, 2000, 3090, 3000, 1000), 3090, "P = E: the pace")
+	assert_eq(CatchUp.pace_multiplier(4000, 2000, 3090, 3000, 1000), 6180, "2× E: twice the HP")
+	assert_eq(CatchUp.pace_multiplier(1000, 2000, 3090, 3000, 1000), 1545, "half E: half")
+	assert_eq(CatchUp.pace_multiplier(100, 2000, 3090, 3000, 1000), 1000, "never under the floor")
+	assert_eq(CatchUp.pace_multiplier(0, 0, 3090, 3000, 0), 1, "never under 1, no division by 0")
+	var at_cap := CatchUp.pace_multiplier(6000, 2000, 3090, 3000, 1000)
+	assert_eq(at_cap, 3090 * 3, "3× E: the cap")
+	for p in [12000, 120000, 1 << 40]:
+		assert_eq(CatchUp.pace_multiplier(p, 2000, 3090, 3000, 1000), at_cap, "past the cap: flat")
+	assert_eq(
+		CatchUp.pace_multiplier(6000, 2000, 3090, 500, 1000), 3090, "a cap under 1× reads as 1×"
+	)
+	# fight time ~ HP / power: up to the cap it holds, past it it falls (6× E fights in half the time of 3× E)
+	var t3 := 1000 * CatchUp.pace_multiplier(6000, 2000, 3090, 3000, 1000) / 6000
+	var t6 := 1000 * CatchUp.pace_multiplier(12000, 2000, 3090, 3000, 1000) / 12000
+	assert_almost_eq(t6 * 2, t3, 2, "6× E: half the 3× fight")
+
+
+## v0.10.5 O2b: data/scaling/catch_up.tres paces floors 1-3 (floors past the table repeat floor 3), and a floor boss
+## spawned on a floor world takes the paced HP; the final fight and a table without a pace keep the catch-up m.
+func test_a_floor_boss_takes_the_paced_hp_from_data() -> void:
+	var w := SaveLab.floor_world(37, 2)
+	var t := w.catch_up_table
+	assert_eq(t.boss_pace_permille, PackedInt32Array([3090, 3770, 4450]))
+	assert_eq([t.boss_pace_cap_permille, t.boss_pace_min_permille], [3000, 1000])
+	assert_eq(CatchUpTable.at_floor(t.boss_pace_permille, 5), 4450, "floors 4-5 repeat floor 3")
+	_stats_at_base(w)
+	w.stat_values[Stats.Stat.DAMAGE] = 4000  # P = E(2)
+	var i := w.actors.index_of(w.spawn_boss(0, w.player_pos() + Vector2(8, 0)))
+	assert_eq(w.catch_up.boss_power, 4000)
+	assert_eq(w.actors.max_hp[i], w.boss_tables[0].hp * _with_spread(w, 3770) / 1000)
+	assert_eq(
+		w.actors.power[i], CatchUp.damage_permille(w.catch_up.boss), "its damage keeps × sqrt(m)"
+	)
+	t.boss_pace_permille = PackedInt32Array()  # test setup: pacing off
+	assert_eq(CatchUp.boss_hp_permille(w), w.catch_up.boss, "no pace: HP × m, as before")

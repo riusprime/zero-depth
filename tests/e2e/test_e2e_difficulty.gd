@@ -99,7 +99,13 @@ func test_a_strong_build_meets_the_hidden_catch_up_and_the_boss_gates() -> void:
 	)
 	assert_gt(m, 1000, "the strong build lifts the boss")
 	assert_eq(w.catch_up.boss, m, "its own m: P against floor 1's end, the boss cap")
-	assert_eq(w.actors.max_hp[bi], bt.hp * m / 1000, "boss HP × m")
+	# v0.10.5 O2b (owner D38 (a)): its HP is paced to the power read at the door (floor 1's pace, P capped at 3× E)
+	var paced := CatchUp.pace_multiplier(w.catch_up.boss_power, 2000, 3090, 3000, 1000)
+	assert_eq(
+		w.actors.max_hp[bi],
+		bt.hp * (paced * CatchUp.spread_permille(w) / 1000) / 1000,
+		"boss HP × the paced multiplier"
+	)
 	assert_eq(bt.phase_threshold, PackedInt32Array([1000, 660, 330]), "gates at 66 % and 33 %")
 	var reader := main.driver.reader
 	var marks := reader.boss_phase_thresholds(bi)
