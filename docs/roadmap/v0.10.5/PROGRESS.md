@@ -58,6 +58,10 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
    -gexit`: Scripts 3, Tests 23, Passing Tests 23, Asserts 2527. S5b changed only the altar material and light
    energy; its agent ran test_curse_room_view 10/10.
 
+4. **Lead seams after merging S1–S15d, O1, O2a, O2b, O7a, O18** (clean worktree `wt-seams` at `bdb2ec79`, the
+   owner's PC; godot/gdformat/gdlint put on PATH): `bash scripts/ci/seams.sh`: lint ok; Scripts 103, Tests 582,
+   Passing Tests 582, Asserts 70020; "check_gut_log: ok (582 passing, minimum 1)".
+
 ## Goldens changed on purpose
 - `tests/golden/fixtures/modifier_equivalence.json` (S1: the combo hit-stop 4,4,5,8 → 3,3,3,5 ticks; Blade-all now hits 139, damage 4160, kills 14)
 
