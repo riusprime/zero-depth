@@ -21,7 +21,9 @@ const BP := preload("res://tests/unit/sim/test_boss_pace.gd")
 const POOLS := {
 	1: [&"gatekeeper", &"warlord"],
 	2: [&"brood_mother", &"hive_lens"],
-	3: [&"siege_engine", &"foundry"]
+	3: [&"siege_engine", &"foundry"],
+	4: [&"tidecaller", &"twin_wardens"],
+	5: [&"clockwork_judge", &"lantern_shade"]
 }
 const LEVEL_NAMES := {500: "weak", 1000: "expected", 2000: "strong", 6000: "extreme"}
 

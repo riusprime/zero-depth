@@ -174,7 +174,9 @@ func test_the_boss_cap_table_by_floor() -> void:
 		assert_eq(CatchUpTable.at_floor(t.boss_cap_permille, f), 2000 + 500 * f, "floor %d" % f)
 	assert_eq(CatchUp.cap_at(t.boss_cap_permille, t, 5, 2), 4500 + 500, "+ 0.25 per Threat")
 	assert_eq(
-		t.boss_expected_permille, PackedInt32Array([2000, 4000, 7000]), "expected power unchanged"
+		t.boss_expected_permille,
+		PackedInt32Array([2000, 4000, 7000, 11000, 16000]),
+		"expected power (Q7: floors 4-5)"
 	)
 
 
@@ -302,14 +304,18 @@ func test_the_pace_multiplier_bounds_and_the_extreme_cap() -> void:
 	assert_almost_eq(t6 * 2, t3, 2, "6× E: half the 3× fight")
 
 
-## v0.10.5 O2b: data/scaling/catch_up.tres paces floors 1-3 (floors past the table repeat floor 3), and a floor boss
+## v0.10.5 O2b: data/scaling/catch_up.tres paces floors 1-5 (v0.10.5 Q7), and a floor boss
 ## spawned on a floor world takes the paced HP; the final fight and a table without a pace keep the catch-up m.
 func test_a_floor_boss_takes_the_paced_hp_from_data() -> void:
 	var w := SaveLab.floor_world(37, 2)
 	var t := w.catch_up_table
-	assert_eq(t.boss_pace_permille, PackedInt32Array([3090, 3770, 4450]))
+	assert_eq(t.boss_pace_permille, PackedInt32Array([3090, 3770, 4450, 5130, 5810]))
 	assert_eq([t.boss_pace_cap_permille, t.boss_pace_min_permille], [3000, 1000])
-	assert_eq(CatchUpTable.at_floor(t.boss_pace_permille, 5), 4450, "floors 4-5 repeat floor 3")
+	assert_eq(
+		CatchUpTable.at_floor(t.boss_pace_permille, 5),
+		5810,
+		"v0.10.5 Q7: floor 5 has its own entry"
+	)
 	_stats_at_base(w)
 	w.stat_values[Stats.Stat.DAMAGE] = 4000  # P = E(2)
 	var i := w.actors.index_of(w.spawn_boss(0, w.player_pos() + Vector2(8, 0)))
