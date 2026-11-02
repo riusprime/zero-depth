@@ -17,30 +17,65 @@ func _world() -> World:
 	return w
 
 
-func test_danger_meter_maps_tiers_to_lit_chevrons() -> void:
-	assert_eq(DangerMeter.lit_chevrons(0), 1, "tier 1 lights the first chevron")
-	assert_eq(DangerMeter.lit_chevrons(2), 3)
-	assert_eq(DangerMeter.lit_chevrons(DangerMeter.CHEVRONS - 1), DangerMeter.CHEVRONS)
-	assert_eq(DangerMeter.lit_chevrons(DangerMeter.CHEVRONS + 4), DangerMeter.CHEVRONS, "capped")
-	assert_false(DangerMeter.overdrive(DangerMeter.CHEVRONS - 1))
-	assert_true(DangerMeter.overdrive(DangerMeter.CHEVRONS), "past the last chevron: overdrive")
+## v0.10.5 O6 (owner P4): the bar fills with the tier and its progress, full at FULL_TIER.
+func test_the_danger_bar_fills_with_tier_and_progress() -> void:
+	assert_eq(DangerMeter.fill_of(0, 0.0), 0.0, "the floor's start: empty")
+	assert_almost_eq(DangerMeter.fill_of(2, 0.5), 2.5 / DangerMeter.FULL_TIER, 0.0001)
+	assert_eq(DangerMeter.fill_of(DangerMeter.FULL_TIER, 0.0), 1.0, "full at the full tier")
+	assert_eq(DangerMeter.fill_of(DangerMeter.FULL_TIER + 6, 0.9), 1.0, "capped past it")
+	assert_eq(DangerMeter.fill_of(-3, -1.0), 0.0)
+	assert_false(DangerMeter.is_full(DangerMeter.FULL_TIER - 1))
+	assert_true(DangerMeter.is_full(DangerMeter.FULL_TIER))
 
 
-func test_danger_meter_maps_progress_to_segments() -> void:
-	assert_eq(DangerMeter.lit_segments(0.0), 0)
-	assert_eq(DangerMeter.lit_segments(0.55), 5)
-	assert_eq(DangerMeter.lit_segments(0.999), DangerMeter.SEGMENTS - 1)
-	assert_eq(DangerMeter.lit_segments(1.0), DangerMeter.SEGMENTS)
-	assert_eq(DangerMeter.lit_segments(-1.0), 0)
+func test_the_danger_bar_runs_green_to_yellow_to_red() -> void:
+	var low := DangerMeter.color_at(0.0)
+	var mid := DangerMeter.color_at(0.5)
+	var high := DangerMeter.color_at(1.0)
+	assert_true(low.is_equal_approx(DangerMeter.GREEN))
+	assert_true(mid.is_equal_approx(DangerMeter.YELLOW))
+	assert_true(high.is_equal_approx(DangerMeter.RED))
+	assert_gt(low.g, low.r, "empty is green")
+	assert_gt(high.r, high.g * 2.0, "full is red")
+	var m := DangerMeter.new()
+	add_child_autofree(m)
+	m.set_danger(DangerMeter.FULL_TIER, 0.0)
+	assert_true(m.bar_color().is_equal_approx(DangerMeter.RED), "the full bar is red")
 
 
-func test_danger_runs_cool_to_hot() -> void:
-	assert_eq(DangerMeter.heat(0), 0.0)
-	assert_eq(DangerMeter.heat(DangerMeter.CHEVRONS - 1), 1.0)
-	var cool := HudStyle.danger_color(0.0)
-	var hot := HudStyle.danger_color(1.0)
-	assert_gt(cool.b, cool.r, "tier 1 is cool (blue over red)")
-	assert_gt(hot.r, hot.b, "the top tier is hot (red over blue)")
+func test_the_full_bar_blinks_slowly_and_holds_steady_red_under_reduced_motion() -> void:
+	var m := DangerMeter.new()
+	add_child_autofree(m)
+	m.set_danger(DangerMeter.FULL_TIER - 1, 0.9)
+	assert_false(m.blinking(), "not full: no blink")
+	assert_eq(m.level(), 1.0)
+	m.set_danger(DangerMeter.FULL_TIER, 0.0)
+	assert_true(m.blinking(), "full: it blinks")
+	var seen := PackedFloat32Array()
+	for k in 120:
+		m._process(1.0 / 60.0)
+		seen.append(m.level())
+	var lo := 1.0
+	for v in seen:
+		lo = minf(lo, v)
+	assert_almost_eq(lo, DangerMeter.BLINK_LOW, 0.02, "it dims to BLINK_LOW within 2 s")
+	assert_lte(DangerMeter.BLINK_HZ, 1.0, "slowly: at most once a second")
+	HudStyle.reduced_motion = true
+	assert_false(m.blinking(), "reduced motion: no blink")
+	for k in 30:
+		m._process(1.0 / 60.0)
+		assert_eq(m.level(), 1.0, "steady")
+	assert_true(m.bar_color().is_equal_approx(DangerMeter.RED), "steady red")
+
+
+func test_the_hazard_stripes_are_a_generated_diagonal_tile() -> void:
+	var t := DangerMeter.stripes()
+	assert_not_null(t)
+	var img := t.get_image()
+	assert_eq(img.get_size(), Vector2i(DangerMeter.STRIPE, DangerMeter.STRIPE))
+	assert_eq(img.get_pixel(0, 0).r, 1.0, "a light band")
+	assert_almost_eq(img.get_pixel(DangerMeter.STRIPE - 1, 0).r, DangerMeter.STRIPE_DARK, 0.01)
+	assert_eq(img.get_pixel(1, 2), img.get_pixel(2, 1), "the bands run diagonally")
 
 
 func test_the_reader_gives_progress_toward_the_next_tier() -> void:
@@ -58,11 +93,10 @@ func test_the_meter_pulses_when_the_tier_rises_and_shows_no_text() -> void:
 	add_child_autofree(m)
 	m.set_danger(0, 0.3)
 	assert_false(m.pulsing(), "the first reading is not a rise")
-	assert_eq(m.chevrons_lit(), 1)
-	assert_eq(m.segments_lit(), 3)
+	assert_almost_eq(m.fill(), 0.3 / DangerMeter.FULL_TIER, 0.0001)
 	m.set_danger(1, 0.0)
 	assert_true(m.pulsing(), "a new tier pulses")
-	assert_eq(m.chevrons_lit(), 2)
+	assert_almost_eq(m.fill(), 1.0 / DangerMeter.FULL_TIER, 0.0001)
 	for k in 60:
 		m._process(1.0 / 60.0)
 	assert_false(m.pulsing(), "the pulse fades")
@@ -220,14 +254,14 @@ func test_the_ember_stone_pause_menu() -> void:
 func test_the_danger_meter_shows_the_tier_number_from_tier_4_and_turns_red_at_10() -> void:
 	assert_false(DangerMeter.shows_number(3))
 	assert_true(DangerMeter.shows_number(4))
-	assert_false(DangerMeter.marks_red(9))
-	assert_true(DangerMeter.marks_red(10))
+	assert_false(DangerMeter.is_full(9))
+	assert_true(DangerMeter.is_full(10), "v0.10.5 O6: red (and full) at 10")
 	var m := DangerMeter.new()
 	add_child_autofree(m)
 	m.set_danger(3, 0.0)
 	m.set_danger(7, 0.0)
 	assert_true(m.pulsing(), "a rise pulses")
-	assert_eq(m.chevrons_lit(), DangerMeter.CHEVRONS, "the marks stay full")
+	assert_almost_eq(m.fill(), 0.7, 0.0001)
 	assert_eq(m.tier_shown(), 7)
 	assert_eq(tr("HUD_DANGER_TIER") % 7, "×7")
 

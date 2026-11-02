@@ -365,8 +365,15 @@ Splitlings) are exempt. The phases are in `data/curves/floor_N.tres` (§H).
 - **Hidden catch-up (v0.5.5 D4, owner: "Yes, but hidden").** On top of the regular scaling, each floor reads your
   build's power from its cards and abilities alone (never from how well you play) and compares it with a normal
   build's: enemies get HP × m and damage × √m, m = √(your power ÷ expected), at least ×1, at most ×1.5 / ×2 / ×2.5 on
-  floors 1/2/3 (+0.25 per threat T). m is fixed for the floor and never shown. A build twice as strong as expected
+  floors 1/2/3 (+0.25 per threat T). m is fixed for the floor ~~and never shown~~. A build twice as strong as expected
   meets enemies ×1.41: still easier. A build ten times stronger hits the cap and deletes the floor: the lucky run.
+- **The catch-up is shown (v0.10.5 O6; D4's "hidden" flipped).** Owner, theory audit P4 (2026-11-01): "let's try to
+  show it, also modify the triangles at the top to be a line filling up as a danger hazard texture, small kinda shaped
+  like hp but green to red blinking when full"; asked what the line shows: "Danger, plus a separate tag". So the floor's
+  m shows as a small tag under the top plate, "The depths answer ×1.41" / "Las profundidades responden ×1.41", hidden
+  at ×1, and the pause menu explains it in one sentence. The danger meter is a hazard-striped bar (green → yellow →
+  red, full at tier 10, blinking slowly when full; steady red under reduced motion). The boss's paced HP (O2b) is not
+  tagged. Overnight G2 pick C (`docs/roadmap/v0.10.5/evidence/O6_DANGER_BAR.md`); the owner reviews.
 - **Bosses (D6, D7)** take their own m when they spawn, against the power expected at the floor's end, with a higher
   cap (×2 / ×3 / ×4, +0.25 per T), and gates HP can't skip (§F).
 - **Boss fights of 1–2 minutes (v0.10.5 O2b, owner D38 (a); overnight pick, owner reviews).** A floor boss's HP no
