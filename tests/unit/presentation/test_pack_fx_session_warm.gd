@@ -34,6 +34,18 @@ func test_it_warms_the_table_one_id_at_a_time() -> void:
 	assert_false(w.done())
 
 
+## v0.10.5 (DRAW_CALLS.md): once every id is warmed the viewport stops rendering its empty world.
+func test_the_viewport_stops_once_everything_is_warmed() -> void:
+	var w := PackFxSessionWarm.new()
+	add_child_autofree(w)
+	assert_eq(w._viewport.render_target_update_mode, SubViewport.UPDATE_ALWAYS)
+	w._todo.clear()
+	await wait_frames(PackFxSessionWarm.STEP_FRAMES + 2)
+	assert_true(w.done())
+	assert_eq(w._viewport.render_target_update_mode, SubViewport.UPDATE_DISABLED)
+	assert_false(w.is_processing())
+
+
 func test_a_scene_kept_for_the_session_is_the_same_resource() -> void:
 	PackFx.request_scenes()
 	var fx := PackFx.new()
