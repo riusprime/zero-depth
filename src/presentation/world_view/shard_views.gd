@@ -64,7 +64,7 @@ func sync(reader: WorldReader) -> void:
 	var taken := PackedVector2Array()
 	for e in reader.events_since(_last_seq):
 		_last_seq = e.seq
-		if e.kind == SimEvent.Kind.SHARDS and e.effect_id == ShardDrops.EFFECT:
+		if e.kind == SimEvent.Kind.SHARDS and e.effect_id == WorldReader.SHARD_PICKUP_EFFECT:
 			taken.append(e.pos)
 		elif e.kind == SimEvent.Kind.SHARDS:
 			_burst(e.pos, mini(e.amount, MAX_PER_KILL), reader.seed_value() * 31 + e.seq)

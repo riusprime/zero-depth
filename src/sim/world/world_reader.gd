@@ -260,6 +260,8 @@ const CARD_MOD := Offers.MOD
 const CARD_ABILITY := Offers.ABILITY
 const CARD_STAT := Offers.STAT
 const CARD_CURSE := Offers.CURSE  # v0.6.0 CU: a trade-off curse card
+## v0.10.5 O7b: the SHARDS event's effect id when a lying drop is picked up (views tell it from an instant payout).
+const SHARD_PICKUP_EFFECT := ShardDrops.EFFECT
 ## v0.5.0 SH: a shop salvage entry's kind, and the shop's last action (ShopState.Action).
 const SHOP_SELL_MOD := Shop.SELL_MOD
 const SHOP_SELL_STAT := Shop.SELL_STAT
