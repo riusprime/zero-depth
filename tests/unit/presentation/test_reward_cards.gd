@@ -144,7 +144,7 @@ func test_a_pick_press_during_the_deal_skips_to_the_end_and_still_counts() -> vo
 	var w := _world()
 	var p := _altar(
 		w,
-		PackedInt32Array([_item(w, &"gun_pierce"), _item(w, &"gun_twin"), _item(w, &"gun_spread")])
+		PackedInt32Array([_item(w, &"gun_pierce"), _item(w, &"gun_twin"), _item(w, &"ember_core")])
 	)
 	var got := []
 	p.picked.connect(func(v: int) -> void: got.append(v))
@@ -162,7 +162,7 @@ func test_a_pick_press_during_the_deal_skips_to_the_end_and_still_counts() -> vo
 			0.01,
 			"in place"
 		)
-	var q := _altar(_world(), PackedInt32Array([_item(w, &"gun_pierce"), _item(w, &"gun_spread")]))
+	var q := _altar(_world(), PackedInt32Array([_item(w, &"gun_pierce"), _item(w, &"ember_core")]))
 	q._input(_key(KEY_2))
 	assert_true(q.deal.done(), "a focus key skips the deal too")
 	assert_eq(q.focus_index(), 1)
@@ -172,7 +172,7 @@ func test_the_epic_card_waits_in_the_panel_with_its_back_glowing() -> void:
 	var w := _world()
 	var twin := _item(w, &"gun_twin")  # Epic
 	assert_eq(w.item_tables[twin].tier(), ItemTable.TIER_EPIC)
-	var p := _altar(w, PackedInt32Array([twin, _item(w, &"gun_pierce"), _item(w, &"gun_spread")]))
+	var p := _altar(w, PackedInt32Array([twin, _item(w, &"gun_pierce"), _item(w, &"ember_core")]))
 	assert_true(p.deal.is_high(0))
 	var dimmest := 0.0
 	var glow := 0.0
@@ -190,7 +190,7 @@ func test_the_gain_line_is_the_forecast_and_the_outcome() -> void:
 	var w := _world()
 	var dmg := _stat(w, &"damage", Stats.Rarity.RARE)
 	var hp := _stat(w, &"max_hp", Stats.Rarity.EPIC)
-	var pierce := _item(w, &"gun_spread")  # v0.9.5 CLV: Pierce no longer levels
+	var pierce := _item(w, &"ember_core")  # v0.9.5 CLV: Pierce no longer levels
 	w.add_item(pierce)  # held at level 1: a level-up
 	var r := WorldReader.new(w)
 	var f_dmg := r.card_forecast(dmg)
@@ -249,7 +249,7 @@ func test_legendary_power_and_haste_say_their_nerfed_numbers() -> void:
 func test_numbers_count_up_from_the_old_value_on_focus() -> void:
 	var w := _world()
 	var dmg := _stat(w, &"damage", Stats.Rarity.EPIC)
-	var spread := _item(w, &"gun_spread")
+	var spread := _item(w, &"ember_core")
 	var p := _altar(w, PackedInt32Array([spread, dmg]))
 	p.skip_deal()
 	var f := WorldReader.new(w).card_forecast(dmg)
@@ -275,7 +275,7 @@ func test_every_tier_paints_the_whole_card_and_writes_its_word() -> void:
 		var c: Color = PickSlot.TIERS[tier]
 		var card := StoneCard.new(PickSlot.PICK_SCALE)
 		add_child_autofree(card)
-		card.show_face(&"gun_spread", "Spread", "x", &"projectile", tier, c, "Word %d" % tier)
+		card.show_face(&"ember_core", "Spread", "x", &"projectile", tier, c, "Word %d" % tier)
 		var box := card.panel_box()
 		assert_eq(box.fill, CardPaint.face(c), "tier %d: the face is its colour's stone" % tier)
 		assert_eq(box.edge, c, "tier %d: its frame" % tier)
@@ -328,7 +328,7 @@ func test_a_legendary_card_keeps_its_shine_and_a_rare_one_does_not() -> void:
 
 func test_hover_tilts_toward_the_cursor_and_sinks() -> void:
 	var w := _world()
-	var p := _altar(w, PackedInt32Array([_item(w, &"gun_pierce"), _item(w, &"gun_spread")]))
+	var p := _altar(w, PackedInt32Array([_item(w, &"gun_pierce"), _item(w, &"ember_core")]))
 	p.skip_deal()
 	p._process(1.0 / 60.0)
 	var fx := p.slot(0).card.fx
@@ -345,7 +345,7 @@ func test_hover_tilts_toward_the_cursor_and_sinks() -> void:
 func test_reduced_motion_deals_nothing_and_shows_the_faces() -> void:
 	HudStyle.reduced_motion = true
 	var w := _world()
-	var p := _altar(w, PackedInt32Array([_item(w, &"gun_twin"), _item(w, &"gun_spread")]))
+	var p := _altar(w, PackedInt32Array([_item(w, &"gun_twin"), _item(w, &"ember_core")]))
 	assert_true(p.deal.done(), "no deal")
 	for k in 2:
 		assert_true(p.slot(k).card.fx.face.visible, "card %d face up" % k)
@@ -358,7 +358,7 @@ func test_a_pick_burns_the_others_and_flies_the_icon_to_its_hud_slot() -> void:
 	var hud := Hud.new()
 	add_child_autofree(hud)
 	var r := WorldReader.new(w)
-	var spread := _item(w, &"gun_spread")
+	var spread := _item(w, &"ember_core")
 	w.add_reward(RewardStore.Kind.ALTAR, Vector2(1, 0), 0)
 	w.rewards.set_offer(
 		0, PackedInt32Array([_item(w, &"gun_pierce"), spread, _stat(w, &"damage", 0)])
@@ -381,7 +381,7 @@ func test_a_pick_burns_the_others_and_flies_the_icon_to_its_hud_slot() -> void:
 	var slot := Array(w.mod_slots).find(spread)
 	assert_gte(slot, 0, "Spread is in the wand")
 	assert_eq(fly.to, hud.build_hud.pip_rect(slot), "to its wand pip")
-	assert_eq(fly.id, &"gun_spread")
+	assert_eq(fly.id, &"ember_core")
 	_run(p, 0.3)
 	assert_true(p.slot(0).card.fx.burning(), "a card not picked burns")
 	assert_true(p.slot(2).card.fx.burning())

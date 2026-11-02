@@ -94,20 +94,17 @@ func test_every_wand_and_trigger_card_has_a_category() -> void:
 				else LootPacing.Category.TRIGGER
 			)
 			assert_eq(cat, want, "%s: T1–T4 trigger, the ×2 triggers advanced" % t.id)
-	for c in LootPacing.Category.values():
+	# v0.10.5 O1: no trigger or mutation card ships any more, so those two categories are unused.
+	for c in [LootPacing.Category.FORM, LootPacing.Category.ELEMENT, LootPacing.Category.ADVANCED]:
 		assert_true(seen.has(c), "category %d is used" % c)
 	for pair: Array in [
 		[&"gun_big_shot", LootPacing.Category.FORM],
-		[&"gun_spread", LootPacing.Category.FORM],
 		[&"wide_arc", LootPacing.Category.FORM],
 		[&"ember_core", LootPacing.Category.ELEMENT],
-		[&"gravity_well", LootPacing.Category.ELEMENT],
 		[&"gun_twin", LootPacing.Category.ADVANCED],
 		[&"gun_echo", LootPacing.Category.ADVANCED],
 		[&"finisher_plus", LootPacing.Category.ADVANCED],
 		[&"shared_faultline", LootPacing.Category.ADVANCED],
-		[&"trigger_on_hit", LootPacing.Category.TRIGGER],
-		[&"mut_grand_finale", LootPacing.Category.MUTATION],
 	]:
 		assert_eq(LootPacing.category(w, _it(w, pair[0])), pair[1], "%s" % pair[0])
 
@@ -147,7 +144,7 @@ func test_each_stage_weighs_each_category() -> void:
 	var plain := _world()
 	plain.loot_pacing = null
 	var rt := w.reward_table
-	var ids := [&"gun_big_shot", &"ember_core", &"gun_twin", &"trigger_on_hit"]  # form, element, advanced, trigger
+	var ids := [&"gun_big_shot", &"ember_core", &"gun_twin"]  # form, element, advanced
 	for s in 4:
 		w.floor_index = mini(s + 1, 3)
 		w.loop = 2 if s == 3 else 1
@@ -162,19 +159,6 @@ func test_each_stage_weighs_each_category() -> void:
 			)
 	var stat := Offers.stat_code(0, 0)
 	assert_eq(LootPacing.weight_permille(w, stat), 1000, "a stat card keeps its weight")
-
-
-func test_a_mutation_is_out_of_floor_ones_regular_draws() -> void:
-	var w := _world()
-	var rt := w.reward_table
-	for id: StringName in [&"mut_double_exposure", &"mut_grand_finale"]:
-		var k := _it(w, id)
-		var wt := ItemPool.card_weight(
-			w, k, rt.rare_weight_altar, rt.epic_permille_altar, rt.legendary_permille_altar
-		)
-		assert_eq(
-			wt, 0, "%s: floor 1's altar weight rounds to nothing (the jackpot lets one in)" % id
-		)
 
 
 # --- The ceilings across the sources -------------------------------------------------------------------------------

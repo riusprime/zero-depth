@@ -111,9 +111,7 @@ func test_epic_and_legendary_cards_get_the_gold_rim() -> void:
 	for tier in [2, CardFrames.LEGENDARY_TIER]:
 		c.show_face(&"wildfire", "W", "s", &"epic", tier, PickSlot.TIERS[tier], "t")
 		assert_eq(c.panel_box().rim, EmberStone.GOLD, "tier %d: the gold rim" % tier)
-	c.show_face(
-		&"frost_nova", "F", "s", &"projectile", 3, PickSlot.ABILITY, "t", "Lv 1", Color.CYAN
-	)
+	c.show_face(&"blink", "F", "s", &"projectile", 3, PickSlot.ABILITY, "t", "Lv 1", Color.CYAN)
 	assert_eq(c.socket.color, Color.CYAN, "the inlay ring wears the element's colour")
 	assert_eq(c.level_text(), "Lv 1", "the level badge is kept")
 	assert_true(Rect2(Vector2.ZERO, c.size).encloses(c.level_rect()), "the badge sits on the card")
@@ -167,17 +165,15 @@ func test_every_card_fits_in_english_and_spanish() -> void:
 	TranslationServer.set_locale(_locale)
 
 
-func test_frost_nova_in_spanish_reflows_clear_of_the_gem() -> void:
+func test_an_ability_card_in_spanish_reflows_clear_of_the_gem() -> void:
 	TranslationServer.set_locale("es")
 	var card := StoneCard.new(PickSlot.PICK_SCALE)
 	add_child_autofree(card)
-	var def: Resource = load("res://data/abilities/frost_nova.tres")
+	var def: Resource = load("res://data/abilities/blink.tres")
 	# v0.8.0 N16 (O74): the card texts are short now; the reflow is still proved on the long sentence MENU_G2 flagged
 	var sentence := LONG_ES
 	assert_gt(sentence.length(), 150, "the long sentence MENU_G2 flagged")
-	card.show_face(
-		&"frost_nova", tr(def.name_key), sentence, &"projectile", 3, PickSlot.ABILITY, "x"
-	)
+	card.show_face(&"blink", tr(def.name_key), sentence, &"projectile", 3, PickSlot.ABILITY, "x")
 	assert_true(card.text_fits(), "it fits")
 	assert_lte(card.desc_rect().end.y, card.gem_rect().position.y, "above the gem")
 	var f := HudStyle.font(false)

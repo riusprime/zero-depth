@@ -74,7 +74,7 @@ var blade := false
 var hit_casts := 2
 var cast_gap_ticks := 6
 ## v0.8.0 BL (B6): the hook cards a line takes once (WandTable.once_per_line).
-var once_per_line: Array[StringName] = [&"split_shot", &"shared_explosive"]
+var once_per_line: Array[StringName] = [&"split_shot"]
 ## v0.8.0 PF2: the hook cards whose children cast no trigger (WandTable.cast_free_lines).
 var cast_free_lines: Array[StringName] = [&"blade_storm"]
 ## v0.9.0 AS (owner Q13; ShotCap): the most shots one attack launches (0: no cap: a lab, a Blade run), and a merged

@@ -100,17 +100,6 @@ func test_no_forms_ground_mark_takes_a_hostile_hue() -> void:
 		AttackFormLooks.is_hostile_hue(v._ring_mat.get_shader_parameter(&"arm_color")),
 		"Void's ring"
 	)
-	for pair: Array in [[&"ember_core", "fire"], [&"shared_bleed", "bleed"]]:
-		var b: BombView = add_child_autofree(BombView.new())
-		var w := W.world(&"gun", [&"gun_bomb", pair[0]], [[Vector2(4.0, 0.0), 100000]])
-		var r := WorldReader.new(w)
-		b.sync(r)
-		W.run(w, 24, 0, W.S)
-		b.sync(r)
-		assert_eq(b.blasts, 1, "%s: a blast" % pair[1])
-		for p: StringName in [&"core", &"edge"]:
-			var c: Color = b._ring_mat[0].get_shader_parameter(p)
-			assert_false(AttackFormLooks.is_hostile_hue(c), "%s blast ring %s (V10)" % [pair[1], p])
 
 
 # --- V3, V27, V33, V35: the volley cues ----------------------------------------------------------------------------
@@ -146,11 +135,11 @@ func test_each_volley_gets_one_launch_cue_never_one_per_copy() -> void:
 		var pool := &"ring" if c[1] == &"halo" else &"glow"
 		assert_gt(_layer.used(pool), 0, "%s: drawn in the layer" % c[3])
 	var lance := _forms()
-	var lw := W.world(&"gun", [&"gun_scatter"], [])
+	var lw := W.world(&"gun", [&"gun_lance"], [])
 	var lr := WorldReader.new(lw)
 	W.run(lw, 1, 0, W.S)
 	lance.sync(lr)
-	assert_eq(lance.volley_cues, 0, "a form with its own launch (the Scatter's cone) gets none")
+	assert_eq(lance.volley_cues, 0, "a form with its own launch (the Lance) gets none")
 
 
 func test_the_halo_ring_is_ground_safe_and_low_density_drops_the_cues() -> void:
@@ -344,21 +333,6 @@ func test_a_spiral_bolt_and_a_full_charge_take_the_long_trail() -> void:
 
 
 # --- V22, V25, V26, V29, V30, V31, V47: the other forms ------------------------------------------------------------
-func test_the_scatter_cone_carries_its_elements_spray() -> void:
-	var v: ScatterView = add_child_autofree(ScatterView.new())
-	var w := W.world(&"gun", [&"gun_scatter", &"ember_core"])
-	var r := WorldReader.new(w)
-	v.sync(r)
-	W.run(w, 1, 0, W.S)
-	v.sync(r)
-	ViewPrefs.effects_density = "low"
-	v.sync(r)
-	assert_gt(v.cones, 0, "V47: Low keeps the cone")
-	_layer.begin(float(r.tick()) + 2.0)
-	v.draw_fx(_layer)
-	assert_gt(_layer.used(&"ember"), 0, "V22: an ember spray over the cone")
-
-
 func test_the_glaive_sheds_its_accent_loses_its_ghosts_at_low_and_flashes_on_the_catch() -> void:
 	var v: GlaiveView = add_child_autofree(GlaiveView.new())
 	var w := W.world(&"gun", [&"gun_glaive", &"venom_core"])

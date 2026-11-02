@@ -2,7 +2,8 @@ extends GutTest
 ## v0.6.5 WN5b (docs/design/WAND.md "What happens to the v0.6 cards"; CONTENT_SCHEMA "The wand"): the one table that
 ## retires the v0.6 cards (data/wand/migration.tres). Every v0.6 slot card and the six old ability modifiers either
 ## kept its id as a wand card (WN3/WN4) or has a row; every target is a card in the data or a pending shared-pool id;
-## a bad table is reported.
+## a bad table is reported. v0.10.5 O1: the retired cards' files are gone, so an old id needs no file (CardOrder keeps
+## their saved indices); only the targets are checked.
 
 ## WAND.md's "map directly" cards that kept their ids as wand cards (WN3, WN4): never in the table. (v0.9.0 AF2:
 ## Boomerang, one of them, is retired into the Glaive form: it has a row now.)
@@ -117,7 +118,11 @@ func test_a_bad_table_is_reported() -> void:
 	bad.pending = [&"shared_x"]
 	var defs: Array[ContentDef] = [bad]
 	var issues := WandMigrationDefinition.cross_check(defs)
-	assert_eq(issues.size(), 2, "the unknown card and the unknown target; a pending target is fine")
+	assert_eq(
+		issues.size(),
+		1,
+		"the unknown target; an old id needs no file (v0.10.5 O1); a pending target is fine"
+	)
 
 
 func _all() -> Array:

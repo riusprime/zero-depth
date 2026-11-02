@@ -156,7 +156,7 @@ func test_cards_and_elements_recolour_and_reshape_on_top() -> void:
 	var vp := _views(rp)
 	_shoot(plain, rp, vp, 3)
 	var plain_look: Array = (vp[1] as HeroPulseViews).look((vp[1] as HeroPulseViews).looks()[0])
-	for card: StringName in [&"cinder_shot", &"barbed_bolts", &"gun_rapid_fire"]:
+	for card: StringName in [&"ember_core", &"shared_bleed", &"gun_rapid_fire"]:
 		var w := _world([card])
 		var r := WorldReader.new(w)
 		var v := _views(r)
@@ -172,7 +172,7 @@ func test_cards_and_elements_recolour_and_reshape_on_top() -> void:
 	var rk: String = (vr[1] as HeroPulseViews).looks()[0]
 	assert_gt((vr[1] as HeroPulseViews).look(rk)[2], 1.0, "Rapid Fire draws it drawn out")
 	# The element layers (AttackFormView) still draw over the pulse: an ember shot adds its layer.
-	var ember := _world([&"cinder_shot"])
+	var ember := _world([&"ember_core"])
 	var re := WorldReader.new(ember)
 	var forms := AttackFormView.new()
 	add_child_autofree(forms)
@@ -271,11 +271,17 @@ func test_every_shot_casts_a_pooled_flourish() -> void:
 
 
 func test_rapid_shots_merge_into_one_flourish() -> void:
-	var w := _world([&"gun_rapid_fire", &"rapid_coil"])
+	var w := _world([&"gun_rapid_fire", &"gun_homing"])
 	# v0.8.0 SG: the attack-speed curve now holds these two cards at 6 ticks (MERGE_TICKS); with the knee lifted for
 	# this world only, they fire fast enough to merge, which is what this test is about.
 	w.tuning.attack_speed_knee_permille = 5000
 	w.tuning.attack_speed_knee2_permille = 5000
+	# v0.10.5 O1: Rapid Coil is gone, so the Attack Speed stat (a labelled test helper) bring it under MERGE_TICKS.
+	w.stat_values = PackedInt32Array(Stats.BASE)
+	var boosts := 0
+	while WorldReader.new(w).shot_period_ticks() >= HeroCastFx.MERGE_TICKS and boosts < 20:
+		w.stat_values[Stats.Stat.ATTACK_SPEED] += 100
+		boosts += 1
 	var r := WorldReader.new(w)
 	assert_lt(r.shot_period_ticks(), HeroCastFx.MERGE_TICKS, "fast enough to merge")
 	var fx := HeroCastFx.new()

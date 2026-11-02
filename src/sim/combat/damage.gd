@@ -231,7 +231,6 @@ static func _apply(
 		if target != 0 and owner_id == a.ids[0]:
 			ItemProcs.on_kill(w, k)  # Items: Vampiric Core.
 			Engines.on_kill(w, k, target, tags)  # Engines: Wildfire, Blood Harvest.
-			ModifierAbilities.on_kill(w)  # v0.6.0 MX2: Frost Nova's kill streak
 			Venom.on_kill(w, target, root_id)  # v0.6.0 MX4: Venom Core's spread
 			if w.pair_mask != 0 and a.frozen_t[target] > 0:
 				ElementPairs.on_frozen_end(w, target)  # v0.9.5 EE3: Brittle

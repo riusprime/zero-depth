@@ -212,7 +212,7 @@ func test_the_swing_that_tips_hot_keeps_its_reach() -> void:
 
 
 func test_overclock_hits_harder_leaves_embers_and_feeds_the_fire_engine() -> void:
-	var w := _world([&"cinder_shot"])
+	var w := _world([&"ember_core"])
 	w.heat.milli = 80 * M
 	var seq := w.last_event_seq()
 	_swing(w)
@@ -222,7 +222,7 @@ func test_overclock_hits_harder_leaves_embers_and_feeds_the_fire_engine() -> voi
 	assert_ne(hits[0].tags & SimEvent.TAG_OVERCLOCK, 0, "tagged Overclock")
 	assert_eq(w.heat.ember_tick, hits[0].tick, "an ember where it hit")
 	assert_eq(_events(w, SimEvent.Kind.STATUS_APPLY, Heat.EFFECT_OVERCLOCK, seq).size(), 1)
-	var cool := _world([&"cinder_shot"])
+	var cool := _world([&"ember_core"])
 	_swing(cool)
 	assert_eq(
 		w.actors.burn_stacks[1],
@@ -290,12 +290,11 @@ func test_the_vent_button_while_hot_vents_a_blast_and_resets_heat() -> void:
 
 
 func test_the_vent_blast_adds_no_heat_and_no_stacks_and_respects_ancestry() -> void:
-	var w := _world([&"serrated_edge"], [Vector2(1.5, 0)])
+	var w := _world([], [Vector2(1.5, 0)])
 	w.heat.milli = 60 * M
 	w.step(_f(0, V))
 	assert_eq(_events(w, SimEvent.Kind.HIT, Heat.EFFECT_VENT).size(), 1)
 	assert_eq(w.heat.milli, 0, "the blast's own hit adds no heat")
-	assert_eq(w.actors.bleed_stacks[1], 0, "and feeds no engine (a payoff)")
 	var v := _world([], [Vector2(1.5, 0)])
 	v.heat.milli = 60 * M
 	v.engine_chain.append(Heat.EFFECT_VENT)

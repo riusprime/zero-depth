@@ -27,12 +27,12 @@ func test_sources_rank_by_damage() -> void:
 	var t := DpsTally.new()
 	t.add(1, DpsTally.BASIC, 30)
 	t.add(1, &"bleed", 50)
-	t.add(2, &"orbit_blades", 20)
+	t.add(2, &"burn", 20)
 	t.add(3, &"bleed", 5)
 	var r := t.ranked()
 	assert_eq(r[0], [&"bleed", 55])
 	assert_eq(r[1], [DpsTally.BASIC, 30])
-	assert_eq(r[2], [&"orbit_blades", 20])
+	assert_eq(r[2], [&"burn", 20])
 
 
 func test_a_source_is_the_effect_id_or_the_basic_attack() -> void:

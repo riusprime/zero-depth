@@ -1,10 +1,10 @@
 extends GutTest
-## The shop through real input (v0.5.0 SH): start a run (God and Bomb Lobber from the dev panel, clicked with the
+## The shop through real input (v0.5.0 SH): start a run (God and Blink from the dev panel, clicked with the
 ## mouse: the dev route, so the walk is safe and there is an ability to salvage), walk with the left stick to the
 ## floor's shop (in a side room, on the minimap once seen; v0.8.0 SR: the biome's tent stall, its vendor behind the
 ## counter turning to you as you come up to it), see the prompt, press E: the shop panel opens with four priced cards
 ## and the world waits. Buy a card with the keyboard (arrows, Enter): it applies as a picked card, its slot reads Sold
-## and the vendor nods. Move down to the salvage list and salvage Bomb Lobber with the pad (d-pad, A): 25
+## and the vendor nods. Move down to the salvage list and salvage Blink with the pad (d-pad, A): 25
 ## shards per level back, the slot is free. B closes the shop and play resumes.
 
 
@@ -45,13 +45,13 @@ func test_walk_to_the_shop_buy_a_card_and_salvage_an_ability() -> void:
 	assert_eq(stall.vendor.biome, main.run_biome_id(), "the biome's vendor")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
-	while w.ability_tables[main.driver.debug.ability_choice].id != &"bomb_lobber":
+	while w.ability_tables[main.driver.debug.ability_choice].id != &"blink":
 		await _click(e, main, "NextAbility")
 	await _click(e, main, "GrantAbility")
 	await e.frames(2)
 	await e.tap(KEY_QUOTELEFT)
-	var bomb := Abilities.index_of_kind(w, AbilityTable.Kind.BOMB_LOBBER)
-	assert_true(Abilities.owned(w, bomb), "Bomb Lobber in slot 2")
+	var blink := Abilities.index_of_kind(w, AbilityTable.Kind.BLINK)
+	assert_true(Abilities.owned(w, blink), "Blink in slot 2")
 	assert_true(await e.walk_to(ShopPlacement.front(layout), 0.4), "walked up to the counter")
 	await e.frames(40)
 	assert_true(hud.minimap.state.is_discovered(w.shop.room), "its room is on the minimap")
@@ -100,15 +100,15 @@ func test_walk_to_the_shop_buy_a_card_and_salvage_an_ability() -> void:
 	assert_true(picked, "it applied as a picked card")
 	assert_true(stall.vendor.nodding(), "the vendor nods at the sale")
 	gut.p("bought %s for %d" % [Offers.info(w, code)["id"], cost])
-	# Salvage Bomb Lobber with the pad: down to the salvage list, along to it, A.
+	# Salvage Blink with the pad: down to the salvage list, along to it, A.
 	await _pad(e, JOY_BUTTON_DPAD_DOWN)
 	await _pad(e, JOY_BUTTON_DPAD_DOWN)
 	var list := Shop.sell_list(w)
 	var n := -1
 	for i in list.size():
-		if list[i][0] == Shop.SELL_ABILITY and w.ability_owned[list[i][1]] == bomb:
+		if list[i][0] == Shop.SELL_ABILITY and w.ability_owned[list[i][1]] == blink:
 			n = i
-	assert_gte(n, 0, "Bomb Lobber is in the salvage list")
+	assert_gte(n, 0, "Blink is in the salvage list")
 	var target := panel.index_of_value(InputFrame.PICK_SHOP_SELL + n)
 	assert_eq(int(panel.entry(panel.focus_index())["row"]), 2, "the focus is in the salvage list")
 	while panel.focus_index() != target:
@@ -118,10 +118,10 @@ func test_walk_to_the_shop_buy_a_card_and_salvage_an_ability() -> void:
 	var before := w.shards
 	var slots := w.ability_owned.size()
 	var refund := list[n][3]
-	assert_eq(refund, 10 * Abilities.level_of(w, bomb), "10 shards per level")
+	assert_eq(refund, 10 * Abilities.level_of(w, blink), "10 shards per level")
 	await _pad(e, JOY_BUTTON_A)
 	await e.frames(2)
-	assert_false(Abilities.owned(w, bomb), "Bomb Lobber salvaged")
+	assert_false(Abilities.owned(w, blink), "Blink salvaged")
 	assert_eq(w.shards, before + refund, "its refund paid")
 	assert_eq(w.ability_owned.size(), slots - 1, "its slot is free")
 	await _pad(e, JOY_BUTTON_B)

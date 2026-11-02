@@ -325,7 +325,7 @@ func test_the_void_replaces_the_orbs_the_laser_and_the_bomb() -> void:
 	var w := _slot_world()
 	var void_card := W.item(w, &"gun_void")
 	assert_eq(AttackSlots.form_id(w), &"orbs")
-	for other: StringName in [&"gun_laser", &"gun_bomb"]:
+	for other: StringName in [&"gun_laser"]:
 		var o := W.item(w, other)
 		assert_true(BuildSlots.take(w, o))
 		assert_eq(
@@ -344,10 +344,10 @@ func test_the_void_replaces_the_orbs_the_laser_and_the_bomb() -> void:
 
 
 # --- The floor black hole is gone -----------------------------------------------------------------------------------
-func test_the_old_void_card_is_retired_and_leaves_no_black_hole() -> void:
-	var w := W.world(&"gun", [&"gravity_well"], [[Vector2(4.0, 0.0), HP]])
+func test_the_floor_black_hole_is_gone() -> void:
+	var w := W.world(&"gun", [], [[Vector2(4.0, 0.0), HP]])
 	var s := Modifiers.bolt(w)
-	assert_false(VoidShots.is_void(s), "the retired card makes no Void shot")
+	assert_false(VoidShots.is_void(s), "no Void card, no Void shot")
 	assert_false(&"hole_permille" in AttackSpec.LATE_INT_FIELDS, "the black hole's fields are gone")
 	assert_false(ModifierOpDefinition.FIELD_STAGE.has(&"hole_chance_permille"))
 	W.run(w, 600, 0, W.S)

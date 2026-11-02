@@ -33,7 +33,7 @@ func test_each_tier_has_its_colour_and_word() -> void:
 	var w := _world()
 	var r := WorldReader.new(w)
 	var want := {
-		&"shared_explosive": [0, "RARITY_COMMON"],
+		&"gun_pierce": [0, "RARITY_COMMON"],
 		&"wildfire": [1, "RARITY_RARE"],
 		&"gun_twin": [2, "RARITY_EPIC"],
 		&"chain_blast": [CardFrames.LEGENDARY_TIER, "RARITY_LEGENDARY"],
@@ -56,7 +56,7 @@ func test_the_boss_altar_keeps_each_cards_tier_and_its_title_says_a_legendary() 
 	var w := _world()
 	var r := WorldReader.new(w)
 	var spread := PickPanel.legendary_face(
-		self, PickPanel.card_face(self, r, _code(w, &"gun_spread"))
+		self, PickPanel.card_face(self, r, _code(w, &"wide_arc"))
 	)
 	assert_eq(int(spread["tier"]), 0, "a common card stays common")
 	assert_eq(spread["tier_text"], "Modifier · Common", "v0.8.0 FL: no level-5 version")

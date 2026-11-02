@@ -6,14 +6,14 @@ extends GutTest
 ## sim holds after its picks (Wand.swap_picks) arrive one per tick.
 
 const EIGHT: Array = [
-	&"ember_edge",
-	&"trigger_on_hit",
-	&"long_edge",
-	&"twin_arc",
-	&"trigger_on_kill",
-	&"serrated_edge",
+	&"ember_core",
+	&"fissure",
 	&"wide_arc",
+	&"flurry",
+	&"frost_core",
+	&"heavy",
 	&"echo_slash",
+	&"blade_orbit",
 ]
 
 var _repo: ContentRepository
@@ -106,7 +106,7 @@ func test_the_swap_preview_is_what_the_sim_holds_after_its_picks() -> void:
 	for leave in 8:
 		for at in 8:
 			var w := _world()
-			Offers.apply(w, AttackScenario.item_index(w.item_tables, &"overcharge"))
+			Offers.apply(w, AttackScenario.item_index(w.item_tables, &"lunge_step"))
 			assert_true(BuildSlots.swapping(w))
 			var read := WorldReader.new(w).wand()
 			assert_false((read["incoming"] as Dictionary).is_empty(), "the read holds the offer")

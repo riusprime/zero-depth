@@ -5,20 +5,15 @@ extends Node3D
 ## radius, bolt ends). Materials are unshaded and transparent, made once; nothing toggles emission at runtime.
 ## - Arc Field: a jagged pale-blue bolt from the hero to each enemy struck (Superconductor: cyan-white and thicker).
 ## - Frost Nova: a frost ring and a pale disc out to the nova's radius.
-## - Fire patches: flat orange discs (Napalm Drone's deeper red) that shrink as they burn out. v0.6.0 MX2: Arc Field's
+## - Fire patches: flat orange discs that shrink as they burn out. v0.6.0 MX2: Arc Field's
 ##   shock field is a pale-blue disc, another spec's zone a pale-white one; a growing ring (the RING form: Frost Nova)
 ##   is a frost torus at its radius now.
-## - Storm Bombs: violet bolts from the blast to each enemy chained. Ember Ward: an orange ring burst. Blink Charge: a
-##   violet flash where you left. Wingman: a cyan flash at each drone.
+## v0.10.5 O1 (owner P1): the ability combos' looks (Storm Bombs, Ember Ward, Blink Charge, Wingman) went with them.
 
 const ARC_COLOR := Color("#9FC8FF")
 const SUPER_COLOR := Color("#7CF6FF")
 const NOVA_COLOR := Color("#BFF4FF")
 const FIRE_COLOR := Color("#FF7A3D")
-const NAPALM_COLOR := Color("#E8401A")
-const STORM_COLOR := Color("#C8B4FF")
-const WARD_COLOR := Color("#FFB03A")
-const CHARGE_COLOR := Color("#D88CFF")
 const GAS_COLOR := Color("#7CD65A")
 const GAS_Y := 0.03
 const MAX_CLOUDS := 16
@@ -53,7 +48,6 @@ var _fires: Array[MeshInstance3D] = []
 var _fx := FxFade.new()
 var _template := SkillVisuals._make_template()
 var _fire_mat := _template.duplicate() as StandardMaterial3D
-var _napalm_mat := _template.duplicate() as StandardMaterial3D
 var _field_mat := _template.duplicate() as StandardMaterial3D
 var _zone_mat := _template.duplicate() as StandardMaterial3D
 var _rings: Array[MeshInstance3D] = []
@@ -70,7 +64,6 @@ var _spec_keys := PackedStringArray()
 func _init() -> void:
 	name = "ElementVisuals"
 	_fire_mat.albedo_color = Color(FIRE_COLOR, 0.55)
-	_napalm_mat.albedo_color = Color(NAPALM_COLOR, 0.6)
 	_field_mat.albedo_color = Color(ARC_COLOR, 0.5)
 	_zone_mat.albedo_color = Color(Color.WHITE, 0.35)
 	_ring_mat.albedo_color = Color(NOVA_COLOR, 0.8)
@@ -91,7 +84,7 @@ func _init() -> void:
 	tex.height = 64
 	_gas_mat.albedo_texture = tex
 	_gas_mat.albedo_color = Color(GAS_COLOR, 0.7)
-	for k in [&"arc", &"nova", &"storm", &"ward", &"charge", &"wing"]:
+	for k in [&"arc", &"nova"]:
 		_last[k] = -1
 
 
@@ -111,18 +104,6 @@ func sync(reader: WorldReader) -> void:
 		if not _pack_ring(fx["nova_pos"], fx["nova_r"], &"ring_frost", &"frost"):
 			_ring(fx["nova_pos"], fx["nova_r"], NOVA_COLOR, &"nova")
 			_disc(fx["nova_pos"], fx["nova_r"], NOVA_COLOR, 0.25, &"nova")
-	if _edge(&"storm", fx["storm_tick"]):
-		for to: Vector2 in fx["storm_to"]:
-			_bolt(fx["storm_from"], to, STORM_COLOR, 0.07, &"storm")
-	if _edge(&"ward", fx["ward_tick"]):
-		if not _pack_ring(fx["ward_pos"], fx["ward_r"], &"ring_fire", &"fire"):
-			_ring(fx["ward_pos"], fx["ward_r"], WARD_COLOR, &"ward")
-			_disc(fx["ward_pos"], fx["ward_r"], WARD_COLOR, 0.35, &"ward")
-	if _edge(&"charge", fx["charge_tick"]):
-		_disc(fx["charge_pos"], 0.9, CHARGE_COLOR, 0.6, &"charge")
-	if _edge(&"wing", fx["wing_tick"]):
-		for p: Vector2 in reader.ability_fx()["drones"]:
-			_disc(p, 0.3, SUPER_COLOR, 0.8, &"wing", AbilityVisuals.DRONE_Y)
 
 
 # --- Reads (tests) ------------------------------------------------------------------------------------------------
@@ -161,8 +142,6 @@ func _sync_fires(fx: Dictionary) -> void:
 		if not f.visible:
 			continue
 		match kind[k]:
-			WorldReader.FIRE_NAPALM:
-				f.material_override = _napalm_mat
 			WorldReader.FIRE_FIELD:
 				f.material_override = _field_mat
 			WorldReader.FIRE_ZONE:

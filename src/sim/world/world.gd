@@ -929,12 +929,12 @@ func refresh_build(announce: bool) -> void:
 	_refresh_combos(announce)
 
 
-## Owns every combo whose two items are owned, and (v0.4.0 AB) every ability combo whose two abilities are at its
-## level (new ones appended in combo order); `announce` emits COMBO_UNLOCKED for each new one (amount = its combo
-## index).
+## Owns every combo whose two items are owned (new ones appended in combo order); `announce` emits COMBO_UNLOCKED
+## for each new one (amount = its combo index). v0.10.5 O1: a combo deleted since a save was written (a retired stub,
+## CardOrder.RETIRED_COMBOS) leaves combos_owned here, the first time the tables meet the restored state.
 func _refresh_combos(announce: bool) -> void:
+	drop_retired_combos()
 	var earned := Engines.combos_for(combo_tables, items_owned)
-	earned.append_array(AbilityCombos.earned(self))
 	for c in earned:
 		if combos_owned.has(c):
 			continue
@@ -944,6 +944,23 @@ func _refresh_combos(announce: bool) -> void:
 			var e := emit_event(SimEvent.Kind.COMBO_UNLOCKED, pid, pid, pid, player_pos())
 			e.amount = c
 			e.effect_id = combo_tables[c].id
+	combo_mask = 0
+	for c in combos_owned:
+		combo_mask |= 1 << combo_tables[c].effect
+
+
+## v0.10.5 O1: a held combo that was deleted (its table a retired stub, CardOrder.RETIRED_COMBOS) or is past the
+## tables goes (a carry or snapshot written before O1; WorldSnapshot.apply calls it too). No-op without tables.
+func drop_retired_combos() -> void:
+	if combo_tables.is_empty():
+		return
+	var kept := PackedInt32Array()
+	for c in combos_owned:
+		if c < combo_tables.size() and not combo_tables[c].retired:
+			kept.append(c)
+	if kept.size() == combos_owned.size():
+		return
+	combos_owned = kept
 	combo_mask = 0
 	for c in combos_owned:
 		combo_mask |= 1 << combo_tables[c].effect
@@ -1897,7 +1914,6 @@ func _projectile_hits() -> void:
 					killer_attack = projectiles.cause_of(i)  # v0.7.5 BF2: the recap names the shot's attack
 				# Items: Frost Core and Static Chain react to the player's landed bolts.
 				ItemProcs.on_bolt_hit(self, best_actor, i, got, a + v * best_t)
-				Abilities.on_bolt_hit(self, best_actor, i, got, a + v * best_t)  # v0.4.0: drone chain
 				if pp != null:
 					pp.end(&"proj.procs")
 				LanceMods.on_hit(self, i, best_actor)  # v0.9.5 FC4: Split spits its shards

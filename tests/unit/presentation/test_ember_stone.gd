@@ -209,10 +209,10 @@ func test_the_screens_fit_at_interface_size_110() -> void:
 	var pick := PickPanel.new()
 	add_child_autofree(pick)
 	TranslationServer.set_locale("es")
-	var nova: Resource = load("res://data/abilities/frost_nova.tres")
+	var blink_def: Resource = load("res://data/abilities/blink.tres")
 	for k in PickPanel.SLOTS:
-		var f := _face(&"frost_nova", 3)
-		f["sentence"] = tr(nova.desc_key)
+		var f := _face(&"blink", 3)
+		f["sentence"] = tr(blink_def.desc_key)
 		pick.slot(k).show_card(f)
 		pick.slot(k).visible = true
 	var col := pick.slot(0).get_parent().get_parent() as Control

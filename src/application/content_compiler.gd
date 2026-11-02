@@ -519,8 +519,8 @@ static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 ## Give it to the world with World.set_item_tables.
 static func compile_items(repo: ContentRepository) -> Array[ItemTable]:
 	var out: Array[ItemTable] = []
-	for def: ItemDefinition in ModifierCompiler.item_defs(repo):
-		out.append(compile_item(def, repo))
+	for slot in CardOrder.item_slots(repo):  # v0.10.5 O1: the frozen order, a deleted card's stub in its place
+		out.append(CardOrder.item_stub(slot) if slot is StringName else compile_item(slot, repo))
 	return WandCompiler.retire_items(repo, out)  # v0.6.5 WN5b: the old cards leave the offers
 
 
@@ -784,32 +784,25 @@ static func compile_shop(def: ShopDefinition) -> ShopTable:
 	return t
 
 
-## The named combos (v0.3.0 G), their item ids resolved to item indices (the order compile_items gives: by id);
-## v0.4.0 AB: an ability combo's ability ids to ability indices (compile_abilities). Combos naming an unknown item
-## or ability are left out (the validator reports them).
+## The named combos (v0.3.0 G), their item ids resolved to item indices (the order compile_items gives), in the frozen
+## combo order (CardOrder.COMBOS: a deleted combo is a retired stub). Combos naming an unknown item are left out (the
+## validator reports them).
 static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:
 	var index := {}
-	var items := ModifierCompiler.item_defs(repo)  # v0.6.0 MX4: the item index order
+	var items := CardOrder.item_ids(repo)  # v0.10.5 O1: the item index order (compile_items)
 	for k in items.size():
-		index[(items[k] as ItemDefinition).id] = k
-	var abilities := {}  # v0.4.0 AB: ability combos name abilities (compile_abilities order: by id)
-	var defs := repo.all_of(&"ability")
-	for k in defs.size():
-		abilities[(defs[k] as AbilityDefinition).id] = k
+		index[items[k]] = k
 	var out: Array[ComboTable] = []
-	for def: ComboDefinition in repo.all_of(&"combos"):
-		var t := ComboTable.new()
-		if def.is_ability_combo():
-			if not abilities.has(def.ability_a) or not abilities.has(def.ability_b):
-				continue
-			t.ability_a = abilities[def.ability_a]
-			t.ability_b = abilities[def.ability_b]
-			t.min_level = def.min_level
-		elif not index.has(def.item_a) or not index.has(def.item_b):
+	for slot in CardOrder.combo_slots(repo):  # v0.10.5 O1: a deleted combo's stub keeps its index
+		if slot is StringName:
+			out.append(CardOrder.combo_stub(slot))
 			continue
-		else:
-			t.item_a = index[def.item_a]
-			t.item_b = index[def.item_b]
+		var def: ComboDefinition = slot
+		var t := ComboTable.new()
+		if not index.has(def.item_a) or not index.has(def.item_b):
+			continue
+		t.item_a = index[def.item_a]
+		t.item_b = index[def.item_b]
 		t.id = def.id
 		t.effect = int(def.effect)
 		t.name_key = def.name_key
@@ -830,8 +823,10 @@ static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:
 ## to per mille, the start weapon to its PlayerTable.WEAPON_* bit.
 static func compile_abilities(repo: ContentRepository) -> Array[AbilityTable]:
 	var out: Array[AbilityTable] = []
-	for def: AbilityDefinition in repo.all_of(&"ability"):
-		out.append(compile_ability(def, repo))
+	for slot in CardOrder.ability_slots(repo):  # v0.10.5 O1: the six deleted abilities' stubs keep their indices
+		out.append(
+			CardOrder.ability_stub(slot) if slot is StringName else compile_ability(slot, repo)
+		)
 	return WandCompiler.retire_abilities(repo, out)  # v0.6.5 WN5b: the six old abilities too
 
 

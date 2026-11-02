@@ -444,6 +444,8 @@ static func roll(w: World, k: int) -> void:
 		var curse := t.curse[c]
 		if curse == CURSE_RANDOM:
 			curse = Curses.roll(w, cursed, Curses.Pool.PLAIN)  # v0.6.0 CU: an event's price is a plain curse
+			if curse < 0:  # v0.10.5 O1: the five flat curses are gone, so with no plain curse left any curse is drawn
+				curse = Curses.roll(w, cursed, Curses.Pool.ANY)
 		elif curse >= 0 and Curses.owned(w, curse):
 			curse = CURSE_NONE  # the panel shows the choice blocked (curse_block)
 		if curse >= 0:
@@ -506,7 +508,7 @@ static func shard_cost(w: World, k: int, c: int) -> int:
 	var t := table(w, k)
 	if t.cost[c] != Cost.SHARDS:
 		return 0
-	return Curses.price(w, t.cost_amount[c] * maxi(1, w.floor_index))
+	return t.cost_amount[c] * maxi(1, w.floor_index)
 
 
 ## Why choice c of pedestal k can't be taken now (OK when it can): its cost, then its reward, then its curse.

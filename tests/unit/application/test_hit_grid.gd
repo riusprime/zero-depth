@@ -1,17 +1,17 @@
 extends GutTest
 ## v0.8.0 HS (owner O89: "lag mostly comes from shooting hordes with multiple modifiers"): inside _projectile_hits the
-## area attacks (Explosive's blast, Static Chain's first jump, Wildfire, Blood Harvest, the shock jumps, Resonance)
+## area attacks (Rune Explosion's blast, Storm Core's jumps, Wildfire, Blood Harvest, the shock jumps)
 ## read a grid's candidates instead of every actor (World.aoe_candidates). The perf probe's horde build must give
 ## the same world, tick by tick, as the full scan, and the grid must never leave out a body in reach.
 
 const CARDS: Array[StringName] = [
 	&"gun_twin",
 	&"split_shot",
-	&"shared_explosive",
-	&"cinder_shot",
-	&"static_chain",
+	&"gun_ricochet",
+	&"storm_core",
 	&"ember_core",
 	&"wildfire",
+	&"gun_backfire",
 ]
 const HORDE := 110
 const TICKS := 360

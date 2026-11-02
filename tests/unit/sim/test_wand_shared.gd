@@ -182,37 +182,11 @@ func test_s5_the_moving_period_is_the_cards() -> void:
 	w.move_intent = Vector2i(1, 0)
 	assert_eq(Engines.bleed_period(w), SimTick.seconds_to_ticks(0.25), "moving: the card's period")
 	assert_lt(Engines.bleed_period(w), standing)
-	var plain := W.world(&"blade", [&"serrated_edge"])
+	var plain := W.world(&"blade")
 	plain.move_intent = Vector2i(1, 0)
 	assert_eq(
-		Engines.bleed_period(plain), plain.item_mods.bleed_period_ticks, "no card: v0.5's bleed"
+		Engines.bleed_period(plain), plain.item_mods.bleed_period_ticks, "no card: the bare period"
 	)
-
-
-func test_s7_explosive_blasts_where_the_spell_ends() -> void:
-	# The Blade: the slash's tip, with nothing hit; an enemy just past the reach takes the blast.
-	var b := W.world(&"blade", [&"shared_explosive"])
-	var tip := b.player.radius_m + Attacks.arc_reach_m(b, Modifiers.step(b, 0))
-	var past := W.world(&"blade", [&"shared_explosive"], [[Vector2(tip + 0.9, 0.0), 2000]])
-	_attack(past, &"blade")
-	var blast := W.damage(past, &"shared_explosive")
-	assert_gt(blast.size(), 0, "blade: the slash explodes at its tip")
-	assert_eq(W.damage(past, &"*").size(), blast.size(), "blade: the slash itself never reached it")
-	# The Gun: the bolt's end (the hit that stopped it); its neighbour is in the blast too.
-	var t := _target(&"gun")
-	var g := W.world(&"gun", [&"shared_explosive"], [[t, 2000], [t + Vector2(0.0, 1.0), 2000]])
-	_attack(g, &"gun")
-	assert_has(
-		W.targets(W.damage(g, &"shared_explosive")),
-		g.actors.ids[2],
-		"gun: the neighbour is blasted"
-	)
-	var marks := WandCasts.read(g)
-	assert_gt(marks.size(), 0, "the view gets the blast")
-	if not marks.is_empty():
-		var s := Modifiers.book(g).find(marks[0]["key"])
-		assert_eq(s.form, FORM.BURST)
-		assert_false(marks[0]["cast"], "a card's blast, not a trigger's cast")
 
 
 # --- Levels (WAND.md rule 6) ---------------------------------------------------------------------------------

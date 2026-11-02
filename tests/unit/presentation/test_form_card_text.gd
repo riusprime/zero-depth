@@ -109,7 +109,7 @@ func test_a_pair_is_empty_only_on_the_orbs() -> void:
 
 func test_other_cards_and_the_blade_have_no_line() -> void:
 	assert_eq(FormCardText.line_for(&"laser", &"ember_core"), "", "an element core")
-	assert_eq(FormCardText.line_for(&"laser", &"gun_bomb"), "", "a form card")
+	assert_eq(FormCardText.line_for(&"laser", &"gun_void"), "", "a form card")
 	assert_eq(FormCardText.line_for(&"", &"gun_ring"), "", "no form (the Blade)")
 	assert_eq(FormCardText.line_for(&"nope", &"gun_ring"), "", "an unknown form")
 

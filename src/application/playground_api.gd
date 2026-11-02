@@ -311,7 +311,8 @@ func catalog() -> Array[Dictionary]:
 			group = GROUP_ABILITY_MOD
 		_add_entry(out, k, group, CardLevels.is_card(world, k))
 	for a in world.ability_tables.size():
-		if world.ability_tables[a].start_weapon == 0:
+		var t := world.ability_tables[a]
+		if t.start_weapon == 0 and not t.retired:  # v0.10.5 O1: never a deleted ability's stub
 			_add_entry(out, Offers.ability_code(a), GROUP_ABILITY, true)
 	for s in world.stat_tables.size():
 		for r in STAT_RARITIES:

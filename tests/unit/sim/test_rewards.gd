@@ -90,6 +90,8 @@ func test_the_shipped_data() -> void:
 	var rare := []
 	var rare_cards := []
 	for it in _items:
+		if it.retired:  # v0.10.5 O1: a tombstone keeps an index, not a card
+			continue
 		if it.rarity == ItemTable.RARE and it.kind == ItemTable.Kind.MODIFIER:
 			rare_cards.append(String(it.id))  # v0.6.0 MX4
 		elif it.rarity == ItemTable.RARE:
@@ -100,19 +102,14 @@ func test_the_shipped_data() -> void:
 	assert_eq(
 		rare,
 		[
-			"afterimage",
 			"bulwark",
-			"cluster_payload",
 			"cold_snap",
-			"conductor",
 			"finisher_plus",  # v0.8.0 RM: Fracture Bank, rare
-			"gun_bomb",  # v0.9.0 BM: the Bomb form, rare
 			"gun_glaive",  # v0.9.0 AF2: the Glaive form, rare
 			"gun_lance",  # v0.9.0 AF1: the Lance form, rare
 			"gun_laser",  # v0.9.0 LZ: the Laser form, rare
 			"gun_ring",  # v0.8.0 AO: the order rule's Ring and Swirl, rare
 			"gun_rune_explosion",  # v0.9.5 FC0: the Rune Explosion form, rare
-			"gun_scatter",  # v0.9.0 AF1: the Scatter form, rare
 			"gun_seekers",  # v0.9.0 AF2: the Seekers form, rare
 			"gun_swirl",
 			"gun_threadline",  # v0.8.0 RM: the remnant cards, rare
@@ -120,10 +117,7 @@ func test_the_shipped_data() -> void:
 			"gun_wave",  # v0.9.0 AF3: the Wave form, rare
 			"gun_wisps",  # v0.9.0 AF3: the Wisps form, rare
 			"meltdown",
-			"overclocked_drone",
-			"razor_orbit",
 			"shared_faultline",
-			"shared_gravity_stitch",
 			"wildfire"
 		],
 		"the rare items (lead, 2026-10-07; Meltdown, v0.3.0 L18; the ability mods, v0.5.0 CP; v0.8.0 RR: Blade Storm is Epic)"
@@ -132,21 +126,9 @@ func test_the_shipped_data() -> void:
 	assert_eq(
 		rare_cards,
 		[
-			"aether_shell",
-			"ascension",
 			"blade_orbit",
-			"bomb_rounds",
-			"boomerang",
 			"halo_shot",
-			"heat_sink_rounds",
-			"meltdown_edge",  # v0.8.0 RM: Long Shadow is Dodge Imprint, common
-			"mirror_drone",
 			"orbit_rounds",
-			"phase_dash",
-			"resonance_core",
-			"seeker",
-			"shock_circles",
-			"short_fuse",
 		],
 		"v0.6.0 MX4: the trinkets, the merges and the rare M-list cards"
 	)
@@ -596,7 +578,7 @@ func test_validation() -> void:
 	it.name_key = &"A"
 	it.desc_key = &"B"
 	it.kind = ItemDefinition.Kind.LONG_EDGE
-	it.modifiers.append(&"long_edge")
+	it.modifiers.append(&"wide_arc")
 	it.tags = PackedStringArray(["blade"])
 	assert_eq(it.validate().size(), 0)
 	it.set("rarity", 7)

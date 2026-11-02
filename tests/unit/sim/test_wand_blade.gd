@@ -234,7 +234,7 @@ func test_b13_lunge_step_drives_you_forward() -> void:
 ## v0.8.0 RM (owner O91: "Rework Finisher+ into Fracture Bank"): the same id; every combo step carries its fragment
 ## hook, the finisher's extracts (test_remnants.gd, test_remnant_cards.gd).
 func test_b14_fracture_bank_lodges_and_the_finisher_extracts() -> void:
-	var w := _fight([&"finisher_plus", &"ember_edge"])
+	var w := _fight([&"finisher_plus", &"ember_core"])
 	var last := w.player.combo.size() - 1
 	var lodge := _hook(_step(w, 0), &"finisher_plus")
 	assert_not_null(lodge, "a combo step lodges")

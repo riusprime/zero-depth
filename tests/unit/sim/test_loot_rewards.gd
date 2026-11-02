@@ -64,7 +64,7 @@ func test_the_first_two_altars_of_floor_one_show_a_compatible_card() -> void:
 func test_the_guarantee_replaces_a_card_when_none_fits() -> void:
 	var w := _world(&"gun")
 	var triggers := PackedInt32Array(
-		[_it(w, &"trigger_on_hit"), _it(w, &"trigger_on_kill"), _it(w, &"trigger_on_end")]
+		[_it(w, &"wide_arc"), _it(w, &"double_slash"), _it(w, &"thrust")]
 	)
 	var out := LootPacing.guarantee(w, triggers.duplicate())
 	assert_eq(out.slice(0, 2), triggers.slice(0, 2), "the first two cards stay")
@@ -75,17 +75,11 @@ func test_the_guarantee_replaces_a_card_when_none_fits() -> void:
 	assert_eq(LootPacing.guarantee(again, triggers.duplicate()), triggers, "used up: no change")
 
 
-func test_a_trigger_a_mutation_and_a_dead_card_are_not_compatible() -> void:
+func test_the_other_weapons_card_is_not_compatible() -> void:
 	var w := _world(&"gun")
-	assert_false(LootPacing.compatible(w, _it(w, &"trigger_on_hit")), "a trigger")
-	assert_false(LootPacing.compatible(w, _it(w, &"mut_double_exposure")), "a mutation")
 	assert_false(LootPacing.compatible(w, _it(w, &"wide_arc")), "the Blade's card on a Gun run")
 	assert_true(LootPacing.compatible(w, _it(w, &"gun_echo")), "Echo, nothing left of it")
 	assert_true(w.wand_table.after_trigger_dead.has(&"gun_echo"))
-	_hold(w, &"trigger_on_hit", 1)
-	assert_false(
-		LootPacing.compatible(w, _it(w, &"gun_echo")), "Echo right of a trigger does nothing"
-	)
 	assert_true(LootPacing.compatible(w, _it(w, &"gun_big_shot")), "Big Shot still acts there")
 
 

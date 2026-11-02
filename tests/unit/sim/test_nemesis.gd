@@ -104,7 +104,7 @@ func test_the_blade_combo_swings_your_own_steps() -> void:
 
 
 func test_a_gun_run_volley_is_your_shot() -> void:
-	var w := NemesisLab.world(304, &"gun", [[&"gun_spread", 3]])
+	var w := NemesisLab.world(304, &"gun", [[&"halo_shot", 1]])
 	var i := _body(w)
 	w.actors.set_pos(0, w.actors.pos(i) + Vector2(7, 0))
 	var atk := NemesisLab.start(w, &"nemesis_volley")
@@ -279,8 +279,8 @@ func test_the_pick_is_deterministic_and_ignores_what_isnt_a_wand_card() -> void:
 		c.hash_into(h2)
 	assert_eq(h1.finish_hex(), h2.finish_hex(), "the same build casts the same cards")
 	var w := NemesisLab.world(315, &"gun")
-	var trig := NemesisLab.card(w, &"trigger_on_hit")
-	assert_false(CardLevels.is_card(w, trig), "a trigger is no wand card")
+	var trig := NemesisLab.card(w, &"momentum")
+	assert_false(CardLevels.is_card(w, trig), "a plain item is no wand card")
 	assert_eq(NemesisBuild.pick_cards(w, 3).size(), 0, "no cards, no casts")
 
 
@@ -366,9 +366,7 @@ func test_hostile_copies_never_split_explode_or_cast_again() -> void:
 
 
 func test_volleys_keep_the_caps_and_never_appear_on_the_player() -> void:
-	var w := NemesisLab.world(
-		320, &"gun", [[&"gun_spread", 5], [&"halo_shot", 5], [&"gun_twin", 5]]
-	)
+	var w := NemesisLab.world(320, &"gun", [[&"halo_shot", 5], [&"gun_twin", 5]])
 	var i := _body(w)
 	var t := _table(w)
 	for c in w.final_fight.casts:
@@ -393,7 +391,7 @@ func test_volleys_keep_the_caps_and_never_appear_on_the_player() -> void:
 			var d := Vector2(w.projectiles.pos_x[p], w.projectiles.pos_y[p]) - w.player_pos()
 			assert_gt(d.length(), safe - 0.6, "none spawned on the hero")
 	# The hostile cap: with this tick's shots full, nothing more is queued and one LIMIT is raised.
-	var w2 := NemesisLab.world(321, &"gun", [[&"gun_spread", 5]])
+	var w2 := NemesisLab.world(321, &"gun", [[&"halo_shot", 5]])
 	var j := _body(w2)
 	w2.actors.set_pos(0, w2.actors.pos(j) + Vector2(9, 0))
 	while w2.pending_projectiles() < BulletPatterns.MAX_SHOTS_PER_TICK:

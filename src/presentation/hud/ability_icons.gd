@@ -8,14 +8,8 @@ extends RefCounted
 const ABILITY_COLORS := {
 	&"combo_sword": Color("#9FE8FF"),
 	&"pulse_gun": Color("#5AD8FF"),
-	&"bomb_lobber": Color("#FF8A3A"),
-	&"drone_buddy": Color("#2BC4E2"),
-	&"orbit_blades": Color("#D6E4F0"),
 	&"blink": Color("#B48CFF"),
 	&"aegis": Color("#F4E27A"),
-	&"arc_field": Color("#9FC8FF"),
-	&"frost_nova": Color("#BFF4FF"),
-	&"flame_trail": Color("#FF7A3D"),
 }
 ## Stat card ids and their colours.
 const STAT_COLORS := {
@@ -93,32 +87,6 @@ static func shapes(id: StringName) -> Array:
 				),
 				_circle(Vector2(0.74, 0.46), 0.06, 0.0),
 				_circle(Vector2(0.88, 0.46), 0.04, 0.0),
-			]
-		&"bomb_lobber":
-			return [
-				_circle(Vector2(0.44, 0.6), 0.28, 0.0),
-				_circle(Vector2(0.36, 0.52), 0.07, 0.0, true),
-				_line([Vector2(0.62, 0.38), Vector2(0.72, 0.22), Vector2(0.84, 0.18)], 0.06),
-				_circle(Vector2(0.88, 0.14), 0.05, 0.0),
-			]
-		&"drone_buddy":
-			return [
-				_line([Vector2(0.2, 0.18), Vector2(0.8, 0.18)], 0.06),
-				_line([Vector2(0.5, 0.18), Vector2(0.5, 0.3)], 0.06),
-				_poly(
-					[Vector2(0.26, 0.3), Vector2(0.74, 0.3), Vector2(0.8, 0.62), Vector2(0.2, 0.62)]
-				),
-				_circle(Vector2(0.38, 0.44), 0.06, 0.0, true),
-				_circle(Vector2(0.62, 0.44), 0.06, 0.0, true),
-				_poly([Vector2(0.4, 0.62), Vector2(0.6, 0.62), Vector2(0.5, 0.86)]),
-			]
-		&"orbit_blades":
-			return [
-				_circle(Vector2(0.5, 0.5), 0.3, 0.035),
-				_circle(Vector2(0.5, 0.5), 0.09, 0.0),
-				_poly([Vector2(0.5, 0.06), Vector2(0.62, 0.22), Vector2(0.5, 0.28)]),
-				_poly([Vector2(0.88, 0.72), Vector2(0.7, 0.74), Vector2(0.7, 0.62)]),
-				_poly([Vector2(0.12, 0.72), Vector2(0.24, 0.58), Vector2(0.3, 0.7)]),
 			]
 		&"blink":
 			return [
@@ -201,51 +169,6 @@ static func shapes(id: StringName) -> Array:
 				_line([Vector2(0.16, 0.2), Vector2(0.28, 0.2)], 0.08, true),
 				_line([Vector2(0.72, 0.2), Vector2(0.84, 0.2)], 0.08, true),
 			]
-		&"arc_field":  # v0.4.0 AB: a bolt forking into three
-			return [
-				_line(
-					[
-						Vector2(0.5, 0.06),
-						Vector2(0.38, 0.36),
-						Vector2(0.56, 0.42),
-						Vector2(0.44, 0.62)
-					],
-					0.08
-				),
-				_line([Vector2(0.44, 0.62), Vector2(0.16, 0.9)], 0.06),
-				_line([Vector2(0.44, 0.62), Vector2(0.48, 0.94)], 0.06),
-				_line([Vector2(0.44, 0.62), Vector2(0.84, 0.88)], 0.06),
-				_circle(Vector2(0.16, 0.9), 0.05, 0.0),
-				_circle(Vector2(0.48, 0.94), 0.05, 0.0),
-				_circle(Vector2(0.84, 0.88), 0.05, 0.0),
-			]
-		&"frost_nova":  # a six-point flake inside a ring
-			var flake := [_circle(Vector2(0.5, 0.5), 0.42, 0.05)]
-			for k in 3:
-				var a := deg_to_rad(90.0 + 60.0 * k)
-				var d := Vector2(cos(a), sin(a)) * 0.3
-				flake.append(_line([Vector2(0.5, 0.5) - d, Vector2(0.5, 0.5) + d], 0.07))
-			return flake
-		&"flame_trail":  # three flames along a ground line
-			var out := [_line([Vector2(0.06, 0.86), Vector2(0.94, 0.86)], 0.05)]
-			for k in 3:
-				var x := 0.2 + 0.3 * k
-				var h := 0.3 + 0.12 * k
-				(
-					out
-					. append(
-						_poly(
-							[
-								Vector2(x - 0.11, 0.8),
-								Vector2(x - 0.07, 0.8 - h * 0.5),
-								Vector2(x, 0.8 - h),
-								Vector2(x + 0.07, 0.8 - h * 0.5),
-								Vector2(x + 0.11, 0.8),
-							]
-						)
-					)
-				)
-			return out
 	return [_circle(Vector2(0.5, 0.5), 0.3, 0.0)]
 
 

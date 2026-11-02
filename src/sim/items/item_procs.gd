@@ -101,8 +101,6 @@ static func chain_ready(w: World) -> bool:
 
 ## The effect id a projectile's hit carries: Thorn Mantle bolts name it, plain bolts don't.
 static func bolt_effect(tags: int) -> StringName:
-	if tags & SimEvent.TAG_ABILITY:  # v0.4.0 BS: a drone's bolt is the ability's, not a shot
-		return Abilities.EFFECT_DRONE
 	return EFFECT_THORN_MANTLE if tags & SimEvent.TAG_THORN else &""
 
 

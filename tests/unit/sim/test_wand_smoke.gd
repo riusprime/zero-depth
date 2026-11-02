@@ -1,7 +1,7 @@
 extends GutTest
 ## v0.6.5 WN1 (docs/design/WAND.md "How it's built" 1; MODIFIER_ENGINE §7 "Tests without bots"): the combinatorial
-## smoke test over the wand. Every card that takes a slot (the items of rewrites, the trigger cards, the six ability
-## modifiers) in every slot position of a full eight-card wand, on the Blade and the Gun, heat on, through the
+## smoke test over the wand. Every card that takes a slot (v0.10.5 O1: the trigger cards and the six ability
+## modifiers are gone) in every slot position of a full eight-card wand, on the Blade and the Gun, heat on, through the
 ## AttackScenario script. Each run: no crash, the launches per tick under the cap (the one LIMIT tick aside), a bounded
 ## number of live projectiles and queued launches, the card in its slot, and the same event digest and state hash
 ## when replayed; v0.8.0 RM: the remnants alive under their cap. Mechanics only: no bot, no balance (owner P1).
@@ -10,21 +10,17 @@ const TICKS := 60
 const POSITIONS := 8
 const MAX_LIVE_PROJECTILES := 400
 const MAX_QUEUED := 64
-const ABILITY_MODS: Array = [
-	&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field", &"frost_nova", &"flame_trail"
-]
-## The other seven cards of the wand (two triggers among them, so every position sits before, between and after
-## cuts); a card that is one of them takes the next spare's place.
+## The other seven cards of the wand; a card that is one of them takes the next spare's place.
 const FILLER: Array = [
 	&"split_shot",
-	&"trigger_on_hit",
+	&"fissure",
 	&"ember_core",
 	&"echo_slash",
-	&"trigger_on_kill",
+	&"shared_bleed",
 	&"halo_shot",
-	&"twin_cast",
-	&"seeker",
-	&"aftershock",
+	&"storm_core",
+	&"venom_core",
+	&"frost_core",
 ]
 
 var _cards: Array[StringName] = []
@@ -33,10 +29,8 @@ var _cards: Array[StringName] = []
 func before_all() -> void:
 	var w := AttackScenario.world(&"blade", [], true, [])
 	for t in w.item_tables:
-		if BuildSlots.is_slot_item(t):
+		if BuildSlots.is_slot_item(t) and not t.retired:
 			_cards.append(t.id)
-	for id: StringName in ABILITY_MODS:
-		_cards.append(id)
 
 
 func _wand(card: StringName, at: int) -> Array:
@@ -78,16 +72,10 @@ func _run(w: World) -> Dictionary:
 	}
 
 
-func test_the_cards_include_the_triggers_and_the_ability_modifiers() -> void:
-	for id: StringName in [
-		&"trigger_on_hit",
-		&"trigger_on_kill",
-		&"trigger_on_end",
-		&"trigger_on_finisher",
-		&"bomb_lobber"
-	]:
+func test_the_cards_are_the_live_wand_cards() -> void:
+	for id: StringName in FILLER:
 		assert_has(_cards, id)
-	assert_gt(_cards.size(), 50)
+	assert_gt(_cards.size(), 40)
 
 
 func test_every_card_in_every_slot_on_both_weapons_runs_and_replays() -> void:

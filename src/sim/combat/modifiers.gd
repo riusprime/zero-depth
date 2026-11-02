@@ -180,26 +180,9 @@ static func compile_for(w: World, mods: Array[ModifierTable]) -> AttackBook:
 	if w.heat != null:  # v0.6.0 MX4: Vent's blast
 		b.add(wand.spec(_base_vent(w)))
 	_riders(w, b)
-	var root := _weapon_root(w, b)
-	for idx in w.ability_owned:  # v0.6.0 MX2: the ability modifiers' attacks, carrying the weapon's
-		var t := w.ability_tables[idx]
-		var base := _base_ability(w, t, Abilities.level_of(w, idx))
-		if base == null:
-			continue
-		var s := wand.spec(base)
-		inherit(s, root, t.kind == AbilityTable.Kind.DRONE_BUDDY)
-		SpecForms.mirror(s, root)  # v0.6.0 MX4: Mirror Drone, Blade Orbit
-		b.add(s)
 	b.register()
 	b.seal()
 	return b
-
-
-## The weapon's own attack the abilities copy: the Gun's bolt on a Gun build, else the Blade's first step.
-static func _weapon_root(w: World, b: AttackBook) -> AttackSpec:
-	if PlayerBuild.has_gun(w) and not PlayerBuild.has_blade(w):
-		return b.spec(GUN_BOLT)
-	return b.spec(step_id(0)) if w.player.combo.size() > 0 else b.spec(GUN_BOLT)
 
 
 ## v0.6.0 MX2: `s` takes `root`'s statuses (not its riders; a status `s` already has stays), elements and ON_HIT /
@@ -228,70 +211,6 @@ static func inherit(s: AttackSpec, root: AttackSpec, copy: bool) -> void:
 		s.damage_permille = root.damage_permille
 		s.bounces = maxi(s.bounces, root.bounces)
 		s.pierce = maxi(s.pierce, root.pierce)
-
-
-## v0.6.0 MX2: ability `t` at `level` as an attack spec (null for the weapon and the utility). Its numbers are the
-## ability's v0.5 numbers at that level; the runtime factors (the area stat, Blade Dance, the cooldowns) stay with
-## the ability's driver (Abilities, ModifierAbilities).
-static func _base_ability(_w: World, t: AbilityTable, level: int) -> AttackSpec:
-	if not t.is_modifier():
-		return null
-	var s := AttackSpec.new()
-	s.id = t.id
-	s.effect_id = t.id
-	s.damage = Abilities.damage_at(t, level)
-	s.tags = PackedStringArray([TAG_ABILITY, "auto"])
-	var lvl_r := t.radius_m * t.radius_permille(level) / 1000.0
-	match t.kind:
-		AbilityTable.Kind.BOMB_LOBBER:
-			s.form = AttackSpec.Form.LOB
-			s.tags.append_array(["bomb", "area"])
-			s.radius_m = lvl_r
-			s.reach_m = t.range_m
-			s.life_ticks = t.duration_ticks
-			s.count = t.count(level)
-			s.period_ticks = t.cooldown_ticks
-		AbilityTable.Kind.DRONE_BUDDY:
-			s.form = AttackSpec.Form.BOLT
-			s.tags.append_array(["drone", "projectile"])
-			s.radius_m = Abilities.BOLT_RADIUS_M
-			s.speed = t.speed
-			s.reach_m = t.range_m
-			s.life_ticks = int(ceil(t.range_m / t.speed)) + 2
-			s.period_ticks = maxi(1, t.period_ticks * 1000 / t.rate_permille(level))
-		AbilityTable.Kind.ORBIT_BLADES:
-			s.form = AttackSpec.Form.ORBITER
-			s.tags.append_array(["orbit", "melee"])
-			s.count = t.count(level)
-			s.reach_m = lvl_r
-			s.radius_m = Abilities.BLADE_R
-			s.period_ticks = t.period_ticks
-		AbilityTable.Kind.ARC_FIELD:
-			s.form = AttackSpec.Form.ZONE
-			s.tags.append_array(["field", "area"])
-			s.radius_m = t.radius_m
-			s.reach_m = t.range_m
-			s.life_ticks = t.duration_ticks
-			s.period_ticks = t.hit_ticks
-			s.count = t.count(level)
-			s.set_status(&"shock", t.extra(level), 0)
-			s.elements.append("storm")
-		AbilityTable.Kind.FROST_NOVA:
-			s.form = AttackSpec.Form.RING
-			s.tags.append_array(["nova", "area"])
-			s.radius_m = lvl_r
-			s.life_ticks = RING_TICKS
-			s.set_status(&"frost", t.extra(level), 0)
-			s.elements.append("frost")
-		AbilityTable.Kind.FLAME_TRAIL:
-			s.form = AttackSpec.Form.ZONE
-			s.tags.append_array(["trail", "area"])
-			s.radius_m = lvl_r
-			s.life_ticks = maxi(1, t.duration_ticks * t.rate_permille(level) / 1000)
-			s.period_ticks = t.hit_ticks
-			s.set_status(&"burn", t.extra(level), 0)
-			s.elements.append("ember")
-	return s
 
 
 ## Hashes the build's specs once it has a modifier (worlds without one, the kernel goldens among them, keep their

@@ -164,15 +164,23 @@ static func boss_spot(w: World, r: float) -> Vector2:
 	return p + Vector2(6, 0)
 
 
-## v0.4.0 BS: picks the next compiled ability for grant_ability.
+## v0.4.0 BS: picks the next compiled ability for grant_ability. v0.10.5 O1: never a retired one (a deleted
+## ability's stub, CardOrder.RETIRED_ABILITIES).
 func next_ability() -> void:
-	if not world.ability_tables.is_empty():
-		ability_choice = (ability_choice + 1) % world.ability_tables.size()
+	var n := world.ability_tables.size()
+	for step in range(1, n + 1):
+		var k := (ability_choice + step) % n
+		if not world.ability_tables[k].retired:
+			ability_choice = k
+			return
 
 
-## Queues the chosen ability (a new slot, or one level up) for the next tick boundary.
+## Queues the chosen ability (a new slot, or one level up) for the next tick boundary (never a retired one).
 func grant_ability() -> void:
-	if not world.ability_tables.is_empty():
+	if (
+		ability_choice < world.ability_tables.size()
+		and not world.ability_tables[ability_choice].retired
+	):
 		_grants.append(ability_choice)
 
 
@@ -182,12 +190,13 @@ func grant_mod() -> void:
 	_mod_grants += 1
 
 
-## v0.6.0 MX4: picks the next modifier card (an item that takes a slot) for grant_mod, in item order.
+## v0.6.0 MX4: picks the next modifier card (an item that takes a slot) for grant_mod, in item order. v0.10.5 O1:
+## never a retired one (a deleted card's stub).
 func next_mod() -> void:
 	var n := world.item_tables.size()
 	for step in range(1, n + 1):
 		var k := (mod_choice + step) % n if mod_choice >= 0 else step - 1
-		if BuildSlots.is_slot_item(world.item_tables[k]):
+		if BuildSlots.is_slot_item(world.item_tables[k]) and not world.item_tables[k].retired:
 			mod_choice = k
 			return
 
@@ -300,6 +309,7 @@ func _apply_commands() -> void:
 		if (
 			mod_choice >= 0
 			and mod_choice < world.item_tables.size()
+			and not world.item_tables[mod_choice].retired
 			and CardLevels.can_take(world, mod_choice, CardLevels.MAX_LEVEL)
 		):  # v0.8.0 FL: no floor ceiling
 			Offers.apply(world, mod_choice)  # v0.6.0 MX4: the chosen card (v0.6.5 WN3: or its level-up)

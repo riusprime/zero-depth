@@ -4,28 +4,15 @@ extends RefCounted
 ## rather than a weapon, offered only while you own that ability (ItemTable.requires_ability). v0.6.0 MX2: each is a
 ## modifier card that takes one of the six slots (BuildSlots.is_slot_item). v0.6.0 MX4: all four are modifiers built
 ## from ops (data/modifiers/), so each carries the rest of the build:
-## - Cluster Payload (Bomb Lobber): an ON_END hook on the bomb spec, three bomblets lobbed evenly round the blast at
-##   its edge (Attacks._lob), each a share of the bomb's damage in a share of its radius; its hook never rides its
-##   own bomblets (lineage), so bomblets never split again.
-## - Overclocked Drone (Drone Buddy): the drone spec's heat_rate_permille: + per mille fire rate per heat point held.
-## - Razor Orbit (Orbit Blades): a STATUS op on the orbit spec (bleed; the engine's numbers from the item).
-## - Afterimage (Blink): an ON_LAUNCH hook on the blink spec that waits (its delay): the blink leaves an echo where it
+## - A blink spec's waiting ON_LAUNCH hook (its delay; Afterimage's, v0.5.0 CP): the blink leaves an echo where it
 ##   started that bursts that much later (the hook's burst, the area stat applied), drawn as before (World.ab.echo_*).
 ##   A blink while an echo waits bursts that one first.
+## - A bomb's ON_END bomblets carry EFFECT_CLUSTER (Abilities._land_bombs).
+## v0.10.5 O1 (owner L23): the four ability mods' cards (Cluster Payload, Overclocked Drone, Razor Orbit,
+## Afterimage) are gone with the abilities they changed; the hooks above are the generic ones that stay.
 
 const EFFECT_CLUSTER := &"cluster_payload"
 const EFFECT_AFTERIMAGE := &"afterimage"
-
-
-## Overclocked Drone: a drone period of `ticks` under the heat held now (never under 1 tick): the drone spec's rate
-## per heat point.
-static func drone_period(w: World, ticks: int) -> int:
-	var spec := Modifiers.ability(w, Abilities.owned_of_kind(w, AbilityTable.Kind.DRONE_BUDDY))
-	var per := spec.heat_rate_permille if spec != null else 0
-	var heat := Heat.points(w)
-	if per <= 0 or heat <= 0:
-		return ticks
-	return maxi(1, (ticks * 1000 + (1000 + per * heat) / 2) / (1000 + per * heat))
 
 
 ## The blink spec's waiting hook (Afterimage's echo), or null.

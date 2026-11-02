@@ -265,9 +265,6 @@ const SHOP_SELL := ShopState.Action.SELL
 const SHOP_SALVAGE := ShopState.Action.SALVAGE_ABILITY
 const ABILITY_COMBO_SWORD := AbilityTable.Kind.COMBO_SWORD
 const ABILITY_PULSE_GUN := AbilityTable.Kind.PULSE_GUN
-const ABILITY_BOMB_LOBBER := AbilityTable.Kind.BOMB_LOBBER
-const ABILITY_DRONE_BUDDY := AbilityTable.Kind.DRONE_BUDDY
-const ABILITY_ORBIT_BLADES := AbilityTable.Kind.ORBIT_BLADES
 const ABILITY_BLINK := AbilityTable.Kind.BLINK
 const ABILITY_AEGIS := AbilityTable.Kind.AEGIS
 ## v0.6.0 MX2: the weapon, the utility and the six modifier slots' abilities at most.
@@ -2491,8 +2488,8 @@ func combo_desc_key(combo_index: int) -> StringName:
 ## The two item ids a combo needs.
 func combo_item_ids(combo_index: int) -> Array[StringName]:
 	var c := _w.combo_tables[combo_index]
-	if c.ability_a >= 0:  # v0.4.0 AB: an ability combo's two abilities
-		return [_w.ability_tables[c.ability_a].id, _w.ability_tables[c.ability_b].id]
+	if c.item_a < 0:  # v0.10.5 O1: a retired combo's stub has no halves
+		return []
 	return [_w.item_tables[c.item_a].id, _w.item_tables[c.item_b].id]
 
 
@@ -2558,19 +2555,6 @@ func discharge_to() -> PackedVector2Array:
 	return _w.discharge_to
 
 
-## The last Plasma Arc: tick (-1 = never), from, to.
-func plasma_tick() -> int:
-	return _w.plasma_tick
-
-
-func plasma_from() -> Vector2:
-	return _w.plasma_from
-
-
-func plasma_to() -> Vector2:
-	return _w.plasma_to
-
-
 ## The last payoff of each kind: [tick (-1 = never), where]. Kinds: &"shatter", &"burst", &"wildfire", &"harvest".
 func payoff(kind: StringName) -> Array:
 	match kind:
@@ -2585,16 +2569,7 @@ func payoff(kind: StringName) -> Array:
 	return [-1, Vector2.ZERO]
 
 
-## The tick of the last Resonance wave, Shrapnel Storm burst, Spiked Phase ring, Slipstream refund and Frozen
-## Bastion chill (-1 = never).
-func resonance_tick() -> int:
-	return _w.resonance_tick
-
-
-func shrapnel_tick() -> int:
-	return _w.shrapnel_tick
-
-
+## The tick of the last Spiked Phase ring and Slipstream refund (-1 = never).
 func spiked_tick() -> int:
 	return _w.spiked_tick
 
@@ -2603,11 +2578,7 @@ func slipstream_tick() -> int:
 	return _w.slipstream_tick
 
 
-func bastion_tick() -> int:
-	return _w.bastion_tick
-
-
-## Projectile i is a Shrapnel Storm shard.
+## Projectile i is a shard (TAG_SHRAPNEL: the Lance's splinters and the like).
 func projectile_is_shard(i: int) -> bool:
 	return (_w.projectiles.tags[i] & SimEvent.TAG_SHRAPNEL) != 0
 
@@ -3189,7 +3160,7 @@ func curse_up_value_text(c: int) -> String:
 
 static func _effect_text(effect: int, amount: int) -> String:
 	match effect:
-		Curses.Effect.EXTRA_ENEMY, Curses.Effect.NO_DASH, Curses.Effect.NO_MINIMAP:
+		Curses.Effect.NO_DASH, Curses.Effect.NO_MINIMAP:
 			return str(amount)
 		Curses.Effect.HIT_STUN:
 			return str(snappedf(float(amount) / SimTick.TICKS_PER_SECOND, 0.01))

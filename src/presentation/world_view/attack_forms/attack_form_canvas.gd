@@ -141,8 +141,6 @@ var _looks_checked := false
 var _live_forms: Array[Dictionary] = []
 var _bomb_looks := {}
 var _last_blast := -1
-var _orbit_sig := ""
-var _orbit_look := {}
 ## v0.6.5 WN5a (AttackFormView._sync_casts): the newest cast mark drawn (its tick, and how many of that tick).
 var _cast_tick := -1
 var _cast_n := 0
@@ -985,9 +983,4 @@ func _draw_live_form(f: Dictionary, now: float) -> void:
 			var flight := maxf(1.0, float(f["land"]) - float(f["throw"]))
 			var sp := clampf((now - float(f["throw"])) / flight, 0.0, 1.0)
 			_lob_at(f["from"], f["pos"], sp, float(f["radius"]), look, pts)
-		&"orbit":
-			var slot := int(f["seed"]) * 16
-			for a: float in f["angles"]:
-				slot += 1
-				_orbiter_at(f["pos"], a, float(f["orbit"]), look, 1.0, pts, slot)
 	_emit(f, look, pts, now, fade)

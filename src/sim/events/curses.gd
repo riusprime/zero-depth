@@ -9,11 +9,8 @@ extends RefCounted
 ## calls it, and the shop's cleanse.
 ## Each effect is read where the sim computes it, through one hook here (a no-op without curses); a curse may carry
 ## a second drawback (effect_2) and an upside (up_effect), all summed by total():
-## - ENEMY_SPEED: normal enemies' movement (EnemyAi.move) x (1 + amount);
-## - REGEN: both regen sources (PlayerRegen, Stats regen) x (1 - amount);
-## - HEAT_DECAY: Overclock heat's decay per tick x (1 + amount);
-## - EXTRA_ENEMY: every spawn arrival brings `amount` more, under the alive cap (SpawnDirector);
-## - PRICES: chest, gamble shrine and event shard prices (and shops') x (1 + amount), rounded half up;
+## - ENEMY_SPEED, REGEN, HEAT_DECAY, EXTRA_ENEMY, PRICES: retired in v0.10.5 O1 with the five flat curses (owner P1:
+##   "Yes, cut the 5"; kept so the numbering never moves; no hook reads them);
 ## - ELITE_CHANCE: retired in v0.9.0 EL with the Marked curse (owner Q25; kept so the numbering never moves).
 ## v0.6.0 CU, the trade-off curses' effects (C1-C8):
 ## - NO_DASH: a dash press does nothing (World._advance_actions); DODGE: an enemy hit on the player is dodged with
@@ -196,32 +193,10 @@ static func roll(
 
 
 # --- Hooks ------------------------------------------------------------------------------------------------------
-static func enemy_speed_factor(w: World) -> float:
-	var a := total(w, Effect.ENEMY_SPEED)
-	return 1.0 if a == 0 else (1000 + a) / 1000.0
-
-
-static func regen(w: World, rate_permille: int) -> int:
-	var a := total(w, Effect.REGEN)
-	return rate_permille if a == 0 else maxi(0, rate_permille * (1000 - a) / 1000)
-
-
-## Overclock heat's decay per tick: Leaky Core speeds it up, Fevered (v0.6.0 CU) slows it down.
+## Overclock heat's decay per tick: Fevered (v0.6.0 CU) slows it down.
 static func heat_decay(w: World, per_tick: int) -> int:
-	var a := total(w, Effect.HEAT_DECAY)
-	var d := per_tick if a == 0 else per_tick * (1000 + a) / 1000
 	var linger := mini(total(w, Effect.HEAT_LINGER), 1000)
-	return d if linger == 0 else d * (1000 - linger) / 1000
-
-
-static func extra_enemies(w: World) -> int:
-	return total(w, Effect.EXTRA_ENEMY)
-
-
-## A shard price under the prices curse (shops call this too).
-static func price(w: World, base: int) -> int:
-	var a := total(w, Effect.PRICES)
-	return base if a == 0 else (base * (1000 + a) + 500) / 1000
+	return per_tick if linger == 0 else per_tick * (1000 - linger) / 1000
 
 
 ## v0.9.0 EL (owner Q25: "Remove it"): the curses whose ids are retired (their content deleted). Their places in

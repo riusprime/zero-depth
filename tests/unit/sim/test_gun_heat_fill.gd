@@ -23,8 +23,8 @@ func _ticks_to(w: World, target: int, cap: int = 1200) -> int:
 	return -1
 
 
-func test_holding_fire_14_seconds_fills_the_meter_with_orbs_bomb_and_laser() -> void:
-	for form: StringName in [&"", &"gun_bomb", &"gun_laser"]:
+func test_holding_fire_14_seconds_fills_the_meter_with_orbs_and_laser() -> void:
+	for form: StringName in [&"", &"gun_laser"]:
 		var w := _world([] if form == &"" else [form])
 		var n := _ticks_to(w, 100 * M)
 		assert_between(n, FILL_TICKS - 1, FILL_TICKS + 1, "%s: 14 s to full (%d ticks)" % [form, n])
@@ -41,9 +41,6 @@ func test_attack_speed_changes_nothing() -> void:
 	assert_between(
 		n, FILL_TICKS - 1, FILL_TICKS + 1, "a faster gun fills in the same 14 s (%d)" % n
 	)
-	var bomb := _world([&"gun_bomb", &"gun_rapid_fire"])
-	n = _ticks_to(bomb, 100 * M)
-	assert_between(n, FILL_TICKS - 1, FILL_TICKS + 1, "and so does a faster Bomb (%d)" % n)
 	var hits := _world([&"gun_rapid_fire", &"gun_twin"], [[Vector2(2.0, 0.0), 1000000]])
 	W.run(hits, 120, 0, W.S)
 	assert_between(
@@ -134,7 +131,6 @@ func test_hot_and_overclock_are_safe_on_every_form() -> void:
 	var forms: Array = [
 		&"",
 		&"gun_laser",
-		&"gun_bomb",
 		&"gun_void",
 		&"gun_lance",
 		&"gun_rune_explosion",

@@ -225,7 +225,7 @@ func test_a_full_wand_takes_no_new_card() -> void:
 func test_an_ability_goes_in_at_a_level_and_down_again() -> void:
 	var w := _world()
 	var pg := PlaygroundApi.new(w)
-	var a := _ability(w, AbilityTable.Kind.ORBIT_BLADES)
+	var a := _ability(w, AbilityTable.Kind.BLINK)
 	assert_gt(a, -1)
 	var code := Offers.ability_code(a)
 	assert_true(pg.grant_now(code, 4))

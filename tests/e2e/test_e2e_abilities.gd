@@ -1,13 +1,8 @@
 extends GutTest
 ## The build system through real input (v0.4.0 BS, owner F8, F9, F11): start a run (slot 1 = the Blade's Combo
 ## Sword), walk (left stick only) to the nearest altar, open it with E: its first card is a new ability; take an
-## auto ability with the keyboard (arrows, Enter). The HUD gains its slot, and the ability fires at the enemies that
-## come (its hits reach the damage numbers). v0.6.0 MX2: the six auto abilities are weapon modifiers, so the player
-## attacks (left mouse) and dashes while waiting: Bomb Lobber lobs on every 4th attack, Arc Field leaves its field
-## where an attack ends, Flame Trail's dash leaves fire, Frost Nova's frost element rides the swings (its stacks, or
-## its ring on a kill streak). Then the dev panel grants Blink, and Shift blinks. v0.6.5 WN5b: the six auto abilities
-## are retired (WAND.md "What happens to the v0.6 cards"), so the altar's ability card is now Blink or Aegis; the
-## auto branch below stays for a dev-panel build that still holds one.
+## ability with the keyboard (arrows, Enter); the HUD gains its slot. v0.10.5 O1: the six auto abilities are deleted,
+## so the altar's ability card is Blink or Aegis. Then the dev panel grants Blink, and Shift blinks.
 
 
 func after_each() -> void:
@@ -70,42 +65,8 @@ func test_pick_an_ability_card_at_an_altar_and_see_it_fire() -> void:
 			Offers.type_of(c) == Offers.ABILITY and w.ability_tables[Offers.ability_of(c)].retired,
 			"no retired ability card"
 		)
-	if not t.auto:  # v0.6.5 WN5b: the only new abilities left are the utilities (their use: test_e2e_utility)
-		assert_true(t.is_utility(), "%s is Blink or Aegis" % t.id)
-		return
-	var effect: StringName = {
-		AbilityTable.Kind.BOMB_LOBBER: Abilities.EFFECT_BOMB,
-		AbilityTable.Kind.DRONE_BUDDY: Abilities.EFFECT_DRONE,
-		AbilityTable.Kind.ORBIT_BLADES: Abilities.EFFECT_ORBIT,
-		AbilityTable.Kind.ARC_FIELD: ElementAbilities.EFFECT_ARC,  # v0.4.0 AB
-		AbilityTable.Kind.FROST_NOVA: ElementAbilities.EFFECT_NOVA,
-		AbilityTable.Kind.FLAME_TRAIL: ElementAbilities.EFFECT_FLAME,
-	}[t.kind]
-	var seq := w.last_event_seq()
-	var fired := false
-	var numbers := false
-	for k in 3600:
-		await e.frames(1)
-		if k % 20 == 0:  # v0.6.0 MX2: attack (the modifiers ride the weapon's attacks)
-			await e.mouse_button(MOUSE_BUTTON_LEFT, true)
-			await e.mouse_button(MOUSE_BUTTON_LEFT, false)
-		if k % 90 == 45:
-			await e.tap(KEY_SPACE)  # a dash (Flame Trail)
-		for ev in w.events_since(seq):
-			fired = fired or (ev.kind == SimEvent.Kind.DAMAGE and ev.effect_id == effect)
-		if t.kind == AbilityTable.Kind.FROST_NOVA and not fired:  # the frost element on the swings
-			for i in range(1, w.actors.size()):
-				fired = fired or w.actors.frost_stacks[i] > 0 or w.actors.frozen_t[i] > 0
-		seq = w.last_event_seq()
-		numbers = numbers or main.view.damage_numbers.showing() > 0
-		if fired and numbers:
-			break
-		if k % 600 == 599 and not fired:  # walk toward the nearest enemy so one comes within reach
-			var near := _nearest_enemy(w)
-			if near >= 0:
-				await e.walk_to(w.actors.pos(near), 2.0)
-	assert_true(fired, "%s hit an enemy" % t.id)
-	assert_true(numbers, "and its damage floated up")
+	# v0.10.5 O1: the auto abilities are deleted; the only abilities left are the utilities (their use: test_e2e_utility)
+	assert_true(t.is_utility(), "%s is Blink or Aegis" % t.id)
 
 
 func test_blink_card_then_shift_blinks() -> void:
@@ -137,19 +98,3 @@ func test_blink_card_then_shift_blinks() -> void:
 	assert_true(
 		hud.ability_squares.slot_of(&"blink")["cooling"], "the square's cooldown cover runs"
 	)
-
-
-func _nearest_enemy(w: World) -> int:
-	var best := -1
-	for i in range(1, w.actors.size()):
-		if w.actors.dead[i] == 1 or w.actors.teams[i] == ActorStore.TEAM_PLAYER:
-			continue
-		if (
-			best < 0
-			or (
-				w.actors.pos(i).distance_to(w.player_pos())
-				< w.actors.pos(best).distance_to(w.player_pos())
-			)
-		):
-			best = i
-	return best

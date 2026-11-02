@@ -29,7 +29,7 @@ func _ev(w: World, kind: int, card: StringName) -> Array[SimEvent]:
 
 
 func test_threadline_links_a_volley_and_consecutive_shots() -> void:
-	var w := W.world(&"gun", [&"gun_threadline", &"gun_spread"], [[Vector2(4.0, 0.0), 100000]])
+	var w := W.world(&"gun", [&"gun_threadline", &"gun_twin"], [[Vector2(4.0, 0.0), 100000]])
 	var most := 0
 	for t in 120:
 		w.step(W.frame(0, W.S))
@@ -67,30 +67,6 @@ func test_a_later_shot_across_a_crack_erupts_it() -> void:
 	)
 
 
-func test_gravity_stitch_pulls_enemies_and_bends_shots() -> void:
-	var w := W.world(&"gun", [&"shared_gravity_stitch"], [[Vector2(5.0, 0.0), 100000]])
-	var k := _hook(Modifiers.bolt(w), &"shared_gravity_stitch")
-	Remnants.on_hook(w, k, _ctx(w, Vector2(3.0, 0.0), 0, 10), Vector2(3.0, 0.0), 1)
-	assert_eq(w.mx.rem_kind, PackedInt32Array([K.ANCHOR]))
-	var pid := w.actors.ids[0]
-	w.queue_projectile(
-		pid, ActorStore.TEAM_PLAYER, Vector2(1.0, -1.5), Vector2(0.27, 0.0), 5, 0.1, 60, 2
-	)
-	W.run(w, 5)
-	var bent := false
-	for pi in w.projectiles.size():
-		if w.projectiles.team[pi] == ActorStore.TEAM_PLAYER:
-			bent = bent or w.projectiles.vel_y[pi] > 0.01
-	assert_true(bent, "the shot passing by turns toward it")
-	W.run(w, 15)
-	var d := w.actors.pos(1).distance_to(Vector2(3.0, 0.0))
-	# 1.5 m/s toward the anchor (0.5 m in 20 ticks); the bent shot's own hit may leave a second anchor that pulls too
-	assert_between(d, 1.0, 2.0 - 20 * 0.025 + 0.05, "pulled toward the anchor")
-	var first := w.mx.rem_uid[0]
-	W.run(w, 55)
-	assert_false(w.mx.rem_uid.has(first), "1.2 s, then gone")
-
-
 func test_fracture_bank_extracts_every_lodged_fragment() -> void:
 	var w := W.world(&"blade", [&"finisher_plus"], [[Vector2(2.0, 0.0), 100000]])
 	var lodge := _hook(Modifiers.step(w, 0), &"finisher_plus")
@@ -114,61 +90,6 @@ func test_fracture_bank_in_a_combo() -> void:
 	assert_gt(
 		_ev(w, SimEvent.Kind.REMNANT_ACTIVATE, &"finisher_plus").size(), 0, "finishers extract"
 	)
-
-
-func test_double_exposure_replays_a_slash_once() -> void:
-	var w := W.world(&"blade", [&"mut_double_exposure"])
-	var spec := Modifiers.step(w, 0)
-	var r := w.player.radius_m + Attacks.arc_reach_m(w, spec) * Remnants.PATH_REACH
-	w.add_dummy(Vector2(r - 0.1, 0.0), 0.35, 100000)
-	W.run(w, 1, W.P)
-	W.run(w, 10)
-	assert_eq(
-		_ev(w, SimEvent.Kind.REMNANT_SPAWN, &"mut_double_exposure").size(), Remnants.ARC_CHORDS
-	)
-	assert_eq(W.damage(w, &"mut_double_exposure").size(), 0, "not yet")
-	W.run(w, 40)
-	assert_eq(W.damage(w, &"mut_double_exposure").size(), 1, "0.6 s later the arc hurts once")
-	W.run(w, 120)
-	assert_eq(W.damage(w, &"mut_double_exposure").size(), 1, "its replay never replays")
-	assert_eq(w.mx.rem_uid.size(), 0)
-
-
-func test_double_exposure_replays_a_bolts_line() -> void:
-	var w := W.world(&"gun", [&"mut_double_exposure"], [[Vector2(3.0, 0.0), 100000]])
-	w.step(W.frame(0, W.S))
-	W.run(w, 80)
-	assert_gt(_ev(w, SimEvent.Kind.REMNANT_SPAWN, &"mut_double_exposure").size(), 0, "its line")
-	assert_gt(W.damage(w, &"mut_double_exposure").size(), 0, "hurts the enemy on it")
-
-
-func _finale(order: Array) -> World:
-	var w := W.world(&"blade", order, [[Vector2(2.0, 0.0), 100000]])
-	W.run(w, 100)
-	var k := _hook(Modifiers.step(w, 0), &"shared_faultline")
-	Remnants.on_hook(w, k, _ctx(w, Vector2.ZERO, 0, 20), Vector2(2.0, 0.0), 1)
-	W.run(w, 150)
-	return w
-
-
-func test_grand_finale_releases_the_remnants_left_of_it() -> void:
-	var w := _finale([&"shared_faultline", &"mut_grand_finale"])
-	assert_eq(w.mx.rem_uid.size(), 0, "consumed at 4 s")
-	var ends := _ev(w, SimEvent.Kind.REMNANT_END, &"shared_faultline")
-	assert_eq(ends[ends.size() - 1].amount, Remnants.END_CONSUMED)
-	assert_eq(_ev(w, SimEvent.Kind.REMNANT_ACTIVATE, &"mut_grand_finale").size(), 1)
-	var dmg := W.damage(w, &"mut_grand_finale")
-	assert_eq(dmg.size(), 1, "a 1.5 m burst on the enemy beside it")
-	assert_eq(dmg[0].amount, 12, "60 % of the hit that made it")
-
-
-func test_grand_finale_leaves_the_cards_right_of_it_and_past_a_trigger() -> void:
-	var right := _finale([&"mut_grand_finale", &"shared_faultline"])
-	assert_eq(right.mx.rem_uid.size(), 1, "a card right of it: left alone")
-	var other := _finale([&"shared_faultline", &"trigger_on_hit", &"mut_grand_finale"])
-	assert_eq(_hook(Modifiers.step(other, 0), &"shared_faultline").section, 0)
-	assert_eq(other.mx.rem_uid.size(), 1, "another trigger section: left alone")
-	assert_eq(W.damage(other, &"mut_grand_finale").size(), 0)
 
 
 func test_dodge_imprint_casts_the_next_attack_where_the_dash_began() -> void:
@@ -197,7 +118,7 @@ func test_dodge_imprint_casts_the_next_attack_where_the_dash_began() -> void:
 func _fight() -> World:
 	return W.world(
 		&"gun",
-		[&"gun_threadline", &"shared_faultline", &"shared_gravity_stitch"],
+		[&"gun_threadline", &"shared_faultline"],
 		[[Vector2(3.0, 0.4), 1000000], [Vector2(5.0, -0.6), 1000000]]
 	)
 
@@ -216,10 +137,10 @@ func test_the_same_seed_plays_to_the_same_hash() -> void:
 func test_a_snapshot_with_remnants_standing_round_trips() -> void:
 	var w := _fight()
 	var guard := 0
-	while w.mx.rem_uid.size() < 2 and guard < 600:
+	while w.mx.rem_uid.is_empty() and guard < 600:
 		w.step(W.frame(0, W.S))
 		guard += 1
-	assert_gte(w.mx.rem_uid.size(), 2, "remnants stand")
+	assert_gte(w.mx.rem_uid.size(), 1, "remnants stand")
 	var snap := WorldSnapshot.take(w)
 	var base := _fight()
 	assert_eq(WorldSnapshot.apply(base, snap), "")
@@ -231,7 +152,7 @@ func test_a_snapshot_with_remnants_standing_round_trips() -> void:
 
 
 func test_a_build_without_remnant_cards_never_touches_the_store() -> void:
-	var w := W.world(&"gun", [&"gun_spread"], [[Vector2(3.0, 0.0), 100000]])
+	var w := W.world(&"gun", [&"gun_twin"], [[Vector2(3.0, 0.0), 100000]])
 	W.run(w, 200, 0, W.S)
 	assert_false(w.mx.remnants_touched(), "no block in its hash")
 	assert_eq(W.events(w, SimEvent.Kind.REMNANT_SPAWN).size(), 0)

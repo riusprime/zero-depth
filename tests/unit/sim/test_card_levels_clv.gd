@@ -20,11 +20,9 @@ const ONE_LEVEL: Array[StringName] = [
 	&"gun_threadline",
 	&"shared_faultline",
 	&"gun_laser",
-	&"gun_bomb",
 	&"gun_void",
 	&"gun_lance",
 	&"gun_rune_explosion",
-	&"gun_scatter",
 	&"gun_glaive",
 	&"gun_seekers",
 	&"gun_wave",
@@ -57,7 +55,7 @@ func test_the_caps_come_from_the_data() -> void:
 	for id in THREE_LEVELS:
 		assert_eq(CardLevels.max_level(w, W.item(w, id)), 3, "%s: 3 levels" % id)
 	assert_eq(CardLevels.max_level(w, W.item(w, &"wide_arc")), 5, "a Blade card keeps 5 levels")
-	assert_eq(CardLevels.max_level(w, W.item(w, &"gun_spread")), 5, "a card not listed keeps 5")
+	assert_eq(CardLevels.max_level(w, W.item(w, &"chain_blast")), 5, "a card not listed keeps 5")
 
 
 func test_a_one_level_card_is_never_offered_once_held() -> void:

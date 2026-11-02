@@ -1027,7 +1027,6 @@ static func on_projectile_end(w: World, pi: int, at: Vector2) -> void:
 		_second_of(w, pi, ctx)  # v0.8.0 MR
 		_run(w, spec, AttackSpec.Trigger.ON_END, ctx, at, -1, 0)
 		Remnants.on_bolt_end(w, spec, pi, at)  # v0.8.0 RM: Double Exposure's path
-	ModifierAbilities.on_projectile_end(w, at)
 
 
 ## v0.8.0 MR (O91): projectile `pi`'s hit or end carries what the bolt was: secondary, a repeat's (ProjectileStore).

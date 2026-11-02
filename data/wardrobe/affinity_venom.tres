@@ -13,6 +13,6 @@ glyph = 3
 poison_jump_m = 3.0
 favoured_cards = Array[StringName]([&"venom_core"])
 favoured_permille = 1300
-disfavoured_cards = Array[StringName]([&"ember_core", &"cinder_shot", &"ember_edge", &"ember_trail", &"inferno_core", &"wildfire", &"chain_blast", &"shared_explosive"])
+disfavoured_cards = Array[StringName]([&"ember_core", &"wildfire", &"chain_blast"])
 disfavoured_permille = 700
 id = &"venom"

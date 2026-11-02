@@ -9,7 +9,7 @@ extends GutTest
 ## trimmed and plays on.
 
 const W := preload("res://tests/support/mx4_world.gd")
-const TRIGGERS: Array[StringName] = [&"trigger_on_hit_twice", &"trigger_on_hit", &"trigger_on_kill"]
+const TRIGGERS: Array[StringName] = [&"chain_blast", &"shared_faultline", &"shared_stress_mark"]
 
 
 ## A world of `weapon` with the shipped wand, its slot table and floor `f`'s slots (v0.9.0 FV: 5: eight), holding
@@ -115,13 +115,7 @@ func test_every_live_card_has_the_slot_the_owner_gave_it() -> void:
 		AttackSlots.ELEMENT:
 		[&"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"],
 		AttackSlots.FREE:
-		[
-			&"trigger_on_hit",
-			&"trigger_on_kill_twice",
-			&"mut_grand_finale",
-			&"echo_slash",
-			&"chain_blast"
-		],
+		[&"shared_faultline", &"shared_stress_mark", &"echo_slash", &"chain_blast"],
 	}
 	for cat: int in want:
 		for id: StringName in want[cat]:
@@ -244,7 +238,7 @@ func test_a_full_wand_asks_for_the_swap_only_for_a_card_whose_slot_has_room() ->
 		assert_true(BuildSlots.needs_swap(w, W.item(w, id)), "%s: choose in its slot" % id)
 	var frost := W.item(w, &"frost_core")
 	assert_eq(Array(AttackSlots.choices(w, frost)), [3, 4], "only the Elements, not any slot")
-	assert_true(BuildSlots.needs_swap(w, W.item(w, &"trigger_on_end")), "a free card still swaps")
+	assert_true(BuildSlots.needs_swap(w, W.item(w, &"echo_slash")), "a free card still swaps")
 	assert_false(BuildSlots.take(w, frost, 0), "Twin's slot is not an Element's")
 	assert_true(BuildSlots.take(w, frost, 3))
 	assert_eq(w.mod_slots.size(), 8)
@@ -293,7 +287,7 @@ func test_two_forms_never_coexist_in_a_spell() -> void:
 func test_a_second_form_card_replaces_the_first_and_its_table_rules_the_rest() -> void:
 	var w := _world()
 	var a := W.item(w, &"gun_big_shot")  # lab: two cards play two forms (the forms ship in later steps)
-	var b := W.item(w, &"gun_charge")
+	var b := W.item(w, &"gun_ricochet")
 	var twin := W.item(w, &"gun_twin")
 	var ember := W.item(w, &"ember_core")
 	var t := w.slot_table
@@ -314,7 +308,7 @@ func test_a_second_form_card_replaces_the_first_and_its_table_rules_the_rest() -
 	assert_false(ids.has(&"gun_twin"), "a held card off for the form is not compiled")
 	assert_true(ids.has(&"ember_core"), "one on is")
 	assert_eq(int(Offers.info(w, b)["replaces"]), a, "the second form says it replaces the first")
-	_take(w, [&"gun_charge"])
+	_take(w, [&"gun_ricochet"])
 	assert_false(w.items_owned.has(a), "two forms never coexist")
 	assert_eq(AttackSlots.form_id(w), &"lab_%d" % b)
 
@@ -424,20 +418,13 @@ func _fight(ids: Array, per_second: int) -> World:
 
 func test_the_worst_legal_builds_launch_at_most_forty_projectiles_a_second() -> void:
 	# Every Pattern with the two Secondaries that add shots (Split's children, Echo's repeat or Rapid Fire's rate),
-	# two Elements and three triggers that cast small shots on hits and kills, the Pattern left of the triggers and
+	# two Elements and three free cards (the triggers are retired in v0.10.5), the Pattern left of them and
 	# right of them (then every hit casts the whole Pattern). All at level 5 at the top attack speed.
 	var builds := {
 		"halo_split_rapid":
 		[&"halo_shot", &"split_shot", &"gun_rapid_fire", &"ember_core", &"storm_core"] + TRIGGERS,
 		"hit_then_halo_split_echo":
-		[
-			&"trigger_on_hit_twice",
-			&"halo_shot",
-			&"split_shot",
-			&"gun_echo",
-			&"storm_core",
-			&"ember_core"
-		],
+		[&"chain_blast", &"halo_shot", &"split_shot", &"gun_echo", &"storm_core", &"ember_core"],
 		"twin_split_echo":
 		[&"gun_twin", &"split_shot", &"gun_echo", &"ember_core", &"storm_core"] + TRIGGERS,
 		"ring_split_rapid":

@@ -12,7 +12,6 @@ extends GutTest
 ##   order the panel previewed. v0.8.0 N11 fix: the card comes while the hero is still arriving (under the cover);
 ##   the arrival still ends, then the Swap shows.
 
-const FOUR: Array = [&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field"]
 ## v0.6.5 WN5b: Blade wand cards only (a save holding retired v0.6 cards migrates when it is continued). v0.9.0 AS
 ## (owner Q6): one Pattern on the Blade (Whirl), so Thrust and Wide Arc gave way to Parry Edge and Frost.
 const EIGHT: Array = [
@@ -82,16 +81,22 @@ func _four(e: E2e) -> Main:
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
-	for id: StringName in FOUR:
+	for id: StringName in [&"heavy", &"whirl", &"flurry", &"parry_edge"]:
 		var guard := 0
-		while w.ability_tables[main.driver.debug.ability_choice].id != id and guard < 20:
-			await _click(e, main, "NextAbility")
+		while (
+			(
+				main.driver.debug.mod_choice < 0
+				or w.item_tables[main.driver.debug.mod_choice].id != id
+			)
+			and guard < 80
+		):
+			await _click(e, main, "NextMod")
 			guard += 1
-		await _click(e, main, "GrantAbility")
+		await _click(e, main, "GrantMod")
 		await e.frames(2)
 	await e.tap(KEY_QUOTELEFT)  # the dev panel closes (and with it the debug hooks: the frames alone drive the sim)
 	await e.frames(2)
-	assert_eq(w.mod_slots.size(), 4, "four ability modifiers fill floor 1's wand")
+	assert_eq(w.mod_slots.size(), 4, "four wand cards fill floor 1's wand")
 	return main
 
 

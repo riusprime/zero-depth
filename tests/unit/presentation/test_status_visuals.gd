@@ -93,20 +93,20 @@ func test_combo_card_shows_both_icons_in_a_special_frame() -> void:
 	var card := ComboCard.new()
 	add_child_autofree(card)
 	card.show_combo(
-		&"plasma_arc", &"ember_edge", &"static_chain", "Plasma Arc", "Arcs fire.", "Combo"
+		&"blood_harvest", &"vampiric_core", &"executioner", "Blood Harvest", "Kills burst.", "Combo"
 	)
 	assert_true(card.is_showing())
-	assert_eq(card.title_text(), "Plasma Arc")
+	assert_eq(card.title_text(), "Blood Harvest")
 	assert_eq(card.caption_text(), "Combo")
-	assert_eq(card.pair_ids(), [&"ember_edge", &"static_chain"])
+	assert_eq(card.pair_ids(), [&"vampiric_core", &"executioner"])
 	assert_false(card.icon.visible, "the pair replaces the single icon")
 	# v0.6.1 R1 (on purpose): the plaque nearest the combo's own colour replaces the thin outline
-	assert_eq(card.plaque_box().plaque, Plaques.nearest(ItemLooks.combo_color(&"plasma_arc")))
+	assert_eq(card.plaque_box().plaque, Plaques.nearest(ItemLooks.combo_color(&"blood_harvest")))
 	assert_true(card.text_fits(), "its text fits the plaque")
 	await wait_process_frames(2)
 	assert_eq(
 		card.pair.drawn,
-		ItemIcons.shapes(&"ember_edge").size() + ItemIcons.shapes(&"static_chain").size()
+		ItemIcons.shapes(&"vampiric_core").size() + ItemIcons.shapes(&"executioner").size()
 	)
 
 
@@ -160,9 +160,9 @@ func test_rebuilt_rows_drop_the_old_children_at_once() -> void:
 	var reader := WorldReader.new(w)
 	var hud := Hud.new()
 	add_child_autofree(hud)
-	w.add_item(0)
+	w.add_item(AttackScenario.item_index(w.item_tables, &"momentum"))  # v0.10.5 O1: indices 0 and 1 are tombstones
 	hud.sync(reader)
-	w.add_item(1)
+	w.add_item(AttackScenario.item_index(w.item_tables, &"swift_feet"))
 	hud.sync(reader)  # same frame: no process frame between the rebuilds
 	assert_eq(hud.item_icon_count(), 2)
 	for c in hud._items.get_children():

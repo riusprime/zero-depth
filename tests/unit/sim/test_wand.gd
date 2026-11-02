@@ -6,7 +6,7 @@ extends GutTest
 ## migrate; CatchUp.power reads the wand whatever its order.
 
 ## v0.6.5 WN5b: Blade wand cards (the v0.6 cards these tests held are retired and migrate at a floor's start).
-const FOUR: Array = [&"heavy", &"trigger_on_hit", &"wide_arc", &"double_slash"]
+const FOUR: Array = [&"heavy", &"fissure", &"wide_arc", &"double_slash"]
 
 var _repo: ContentRepository
 
@@ -74,15 +74,15 @@ func test_with_every_slot_full_a_new_card_opens_the_swap() -> void:
 	var w := _world(1)
 	_take(w, FOUR)
 	assert_true(BuildSlots.full(w), "four cards fill floor 1's wand")
-	var next := _it(w, &"overcharge")
+	var next := _it(w, &"flurry")
 	assert_true(BuildSlots.needs_swap(w, next))
 	Offers.apply(w, next)
 	assert_true(BuildSlots.swapping(w), "the Swap opens")
 	w.step(_pick(InputFrame.PICK_SWAP_BASE + 3))
-	assert_eq(_ids(w), [&"heavy", &"trigger_on_hit", &"wide_arc", &"overcharge"], "in place")
+	assert_eq(_ids(w), [&"heavy", &"fissure", &"wide_arc", &"flurry"], "in place")
 	var f2 := _world(2)
 	_take(f2, FOUR)
-	assert_false(BuildSlots.needs_swap(f2, _it(f2, &"overcharge")), "floor 2 has five slots (FV)")
+	assert_false(BuildSlots.needs_swap(f2, _it(f2, &"flurry")), "floor 2 has five slots (FV)")
 
 
 func test_the_held_cards_keep_their_order_into_the_next_floor() -> void:
@@ -109,33 +109,22 @@ func test_utility_and_stat_cards_stay_outside_the_wand() -> void:
 # --- The reorder is input ---------------------------------------------------------------------------------------
 func test_a_reorder_is_an_input_applied_at_its_tick() -> void:
 	var w := _world(1)
-	# The v0.6 cards on purpose (Ember Edge's element and rider; a lab take, no migration): retired, still in the data.
-	_take(w, [&"ember_edge", &"trigger_on_hit", &"long_edge", &"twin_arc"])
+	_take(w, [&"ember_core", &"fissure", &"wide_arc", &"flurry"])
 	var before := Modifiers.book(w).digest
 	var t0 := w.tick
 	w.step(_pick(InputFrame.wand_move(0, 2)))
 	assert_eq(w.tick, t0 + 1)
-	assert_eq(
-		_ids(w),
-		[&"trigger_on_hit", &"long_edge", &"ember_edge", &"twin_arc"],
-		"0 → 2: the rest shift"
-	)
+	assert_eq(_ids(w), [&"fissure", &"wide_arc", &"ember_core", &"flurry"], "0 → 2: the rest shift")
 	var b := Modifiers.book(w)
 	assert_ne(b.digest, before, "the wand compiled again in its new order")
-	assert_eq(b.modifier_ids[0], "trigger_on_hit")
-	var step := b.spec(&"blade_step_0")
-	assert_false(step.elements.has("ember"), "Ember Edge now sits right of the trigger")
-	# The v0.5 burn rider (the burn engine runs while Ember Edge is held) still burns a step: a known limit until
-	# the old cards migrate (WN5).
-	assert_eq(step.status_rider[step.status_index(&"burn")], 1, "only the v0.5 rider burns it")
-	assert_true(step.hooks[0].child.elements.has("ember"), "the child spell is the ember one")
+	assert_eq(b.modifier_ids[0], "fissure")
 
 
 func test_a_move_to_or_from_an_empty_slot_changes_nothing() -> void:
 	var w := _world(1)
-	_take(w, [&"ember_edge", &"long_edge"])
+	_take(w, [&"ember_core", &"wide_arc"])
 	var ref := _world(1)
-	_take(ref, [&"ember_edge", &"long_edge"])
+	_take(ref, [&"ember_core", &"wide_arc"])
 	for v in [InputFrame.wand_move(0, 3), InputFrame.wand_move(5, 0), InputFrame.wand_move(1, 1)]:
 		w.step(_pick(v))
 		ref.step(_pick(InputFrame.PICK_NONE))
@@ -146,19 +135,19 @@ func test_a_move_to_or_from_an_empty_slot_changes_nothing() -> void:
 func test_a_reorder_while_a_choice_waits_moves_and_answers_nothing() -> void:
 	var w := _world(1)
 	_take(w, FOUR)
-	Offers.apply(w, _it(w, &"overcharge"))
+	Offers.apply(w, _it(w, &"flurry"))
 	assert_true(BuildSlots.swapping(w))
 	w.step(_pick(InputFrame.wand_move(3, 0)))
 	assert_true(BuildSlots.swapping(w), "the Swap still waits: the move is not its answer")
-	assert_eq(_ids(w), [&"double_slash", &"heavy", &"trigger_on_hit", &"wide_arc"])
+	assert_eq(_ids(w), [&"double_slash", &"heavy", &"fissure", &"wide_arc"])
 	w.step(_pick(InputFrame.PICK_SWAP_BASE + 0))
-	assert_eq(_ids(w), [&"overcharge", &"heavy", &"trigger_on_hit", &"wide_arc"])
+	assert_eq(_ids(w), [&"flurry", &"heavy", &"fissure", &"wide_arc"])
 
 
 func test_a_run_with_reorders_replays_exactly() -> void:
 	var runs := []
 	for n in 3:
-		var w := WandLab.fight(&"gun", [&"ember_core", &"trigger_on_hit", &"split_shot"])
+		var w := WandLab.fight(&"gun", [&"ember_core", &"gun_pierce", &"split_shot"])
 		for t in 400:
 			var f := AttackScenario.frame(t)
 			if n < 2 and t == 120:
@@ -169,105 +158,6 @@ func test_a_run_with_reorders_replays_exactly() -> void:
 		runs.append([w.state_hash(), w.mod_slots.duplicate()])
 	assert_eq(runs[0], runs[1], "the same inputs, the same run")
 	assert_ne(runs[0][0], runs[2][0], "the reorders changed the run")
-
-
-# --- Reads ------------------------------------------------------------------------------------------------------
-func test_the_reader_gives_the_cards_their_levels_and_the_cuts() -> void:
-	var w := _world(5)  # v0.9.0 FV: eight slots on floor 5 (was floor 3)
-	_take(
-		w, [&"ember_edge", &"trigger_on_hit", &"bomb_lobber", &"trigger_on_finisher", &"long_edge"]
-	)
-	BuildSlots.take(w, WandLab.code(w, &"bomb_lobber"))  # level 2, no new slot
-	var r := WorldReader.new(w).wand()
-	assert_eq(r["weapon"], &"blade")
-	assert_eq(r["slots"], 8)
-	var ids := []
-	var levels := []
-	var triggers := []
-	for c: Dictionary in r["cards"]:
-		ids.append(c["id"])
-		levels.append(c["level"])
-		triggers.append(c["trigger"])
-	assert_eq(
-		ids,
-		[&"ember_edge", &"trigger_on_hit", &"bomb_lobber", &"trigger_on_finisher", &"long_edge"]
-	)
-	assert_eq(levels, [1, 1, 2, 1, 1])
-	assert_eq(triggers, [-1, WorldReader.WAND_ON_HIT, -1, WorldReader.WAND_ON_FINISHER, -1])
-	assert_eq(r["cuts"], PackedInt32Array([1, 3]))
-	var gun := _world(1, &"gun")
-	_take(gun, [&"trigger_on_finisher"])
-	assert_eq(
-		(WorldReader.new(gun).wand()["cards"] as Array)[0]["trigger"],
-		WorldReader.WAND_ON_CRIT,
-		"T4 on a Gun"
-	)
-
-
-func test_describe_reads_the_wand_back_as_keys() -> void:
-	var w := _world(1, &"gun")
-	_take(w, [&"split_shot", &"trigger_on_hit", &"ember_core"])
-	var lines := WorldReader.new(w).wand_read_back()
-	assert_eq(
-		lines,
-		[
-			{
-				"key": &"WAND_READ_FIRE",
-				"args":
-				[
-					{
-						"key": &"WAND_READ_SHAPED",
-						"args":
-						[
-							{"key": &"WAND_READ_BOLT", "args": []},
-							[{"key": &"ITEM_SPLIT_SHOT", "args": []}]
-						],
-					}
-				],
-			},
-			{
-				"key": &"WAND_READ_ON_HIT",
-				"args":
-				[
-					{
-						"key": &"WAND_READ_SHAPED",
-						"args":
-						[
-							{"key": &"WAND_READ_SMALL_BOLT", "args": []},
-							[{"key": &"ITEM_EMBER_CORE", "args": []}]
-						],
-					}
-				],
-			},
-		]
-	)
-	var plain := Wand.describe(Wand.read(_world(1)))
-	assert_eq(
-		plain,
-		[{"key": &"WAND_READ_FIRE", "args": [{"key": &"WAND_READ_SLASH", "args": []}]}],
-		"no cards"
-	)
-
-
-func test_the_read_back_renders_in_english_and_spanish() -> void:
-	var w := _world(1, &"gun")
-	_take(w, [&"split_shot", &"trigger_on_hit", &"ember_core"])
-	var lines := Wand.describe(Wand.read(w))
-	var was := TranslationServer.get_locale()
-	var tr_now := func(k: StringName) -> String: return TranslationServer.translate(k)
-	TranslationServer.set_locale("en")
-	var en := Wand.render(lines, tr_now)
-	TranslationServer.set_locale("es")
-	var es := Wand.render(lines, tr_now)
-	TranslationServer.set_locale(was)
-	assert_eq(en, "You fire a bolt shaped by Split. Each hit casts a small bolt shaped by Fire.")
-	assert_eq(
-		es,
-		(
-			"Disparas un proyectil moldeado por División. Cada impacto lanza un proyectil pequeño"
-			+ " moldeado por Fuego."
-		)
-	)
 
 
 func test_cards_past_a_third_trigger_read_as_unused() -> void:
@@ -291,12 +181,12 @@ func test_cards_past_a_third_trigger_read_as_unused() -> void:
 
 # --- Saves --------------------------------------------------------------------------------------------------------
 func test_a_snapshot_keeps_the_order_with_equal_hashes() -> void:
-	var w := WandLab.fight(&"gun", [&"ember_core", &"trigger_on_hit", &"split_shot"])
+	var w := WandLab.fight(&"gun", [&"ember_core", &"gun_pierce", &"split_shot"])
 	for t in 150:
 		w.step(AttackScenario.frame(t))
 	w.step(_pick(InputFrame.wand_move(2, 0)))
 	var snap := w.to_snapshot()
-	var base := WandLab.fight(&"gun", [&"ember_core", &"trigger_on_hit", &"split_shot"])
+	var base := WandLab.fight(&"gun", [&"ember_core", &"gun_pierce", &"split_shot"])
 	assert_eq(WorldSnapshot.apply(base, snap), "")
 	assert_eq(base.mod_slots, w.mod_slots, "the slot order")
 	assert_eq(base.state_hash(), w.state_hash(), "equal hashes")

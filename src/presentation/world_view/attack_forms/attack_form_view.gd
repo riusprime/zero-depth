@@ -284,7 +284,6 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 			)
 		)
 	_sync_blasts(ab)
-	_sync_orbit(reader, ab)
 
 
 ## v0.8.0 AO (owner O37: the triple circle "shocks and hits with lighting", the swirl's "storm"): the order rule's rings
@@ -401,38 +400,6 @@ func _sync_blasts(ab: Dictionary) -> void:
 		var old := _bomb_looks.keys()
 		for i in old.size() - 64:
 			_bomb_looks.erase(old[i])
-
-
-## The orbit blades (AbilityVisuals draws their steel): the ORBITER spec's element glow and trail round each.
-func _sync_orbit(reader: WorldReader, ab: Dictionary) -> void:
-	var blades: PackedVector2Array = ab["blades"]
-	if blades.is_empty():
-		return
-	if _orbit_sig != reader.attack_digest() + String(ElementLooks.energy_style) + str(_tier):
-		_orbit_sig = reader.attack_digest() + String(ElementLooks.energy_style) + str(_tier)
-		_orbit_look = {}
-		for id in reader.attack_ids():
-			var spec := reader.attack_spec(StringName(id))
-			if int(spec.get("form", -1)) == AttackFormLooks.ORBITER:
-				_orbit_look = AttackFormLooks.compose(spec, _tier)
-				break
-	if _orbit_look.is_empty() or not adds_layer(_orbit_look):
-		return
-	var angles := PackedFloat32Array()
-	var orbit := 0.0
-	for p in blades:
-		angles.append((p - _player).angle())
-		orbit = maxf(orbit, (p - _player).length())
-	_live_forms.append(
-		{
-			"kind": &"orbit",
-			"look": _orbit_look,
-			"pos": _player,
-			"angles": angles,
-			"orbit": orbit,
-			"seed": 4099
-		}
-	)
 
 
 ## Overcharge's shockwave: the charged step's ON_NTH burst, drawn at the sim's radius.

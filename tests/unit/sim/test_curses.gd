@@ -37,108 +37,25 @@ func test_the_shipped_curses() -> void:
 			"fevered",
 			"glass_heart",
 			"heavy_hands",
-			"leaky_core",
-			"price_gouge",
 			"rooted",
-			"swarm_call",
-			"swift_foes",
 			"tunnel_vision",
-			"withering",
 		],
-		"five plain curses and the seven trade-offs (v0.6.0 CU; v0.9.0 EL: Marked deleted)"
+		"the seven trade-offs (v0.6.0 CU; v0.9.0 EL: Marked deleted; v0.10.5 O1: the five plain ones deleted)"
 	)
 	var plain := []
 	for c in w.ev.curses:
 		if not c.is_trade_off() and not c.retired:
 			plain.append(String(c.id))
 	plain.sort()
-	assert_eq(plain, ["leaky_core", "price_gouge", "swarm_call", "swift_foes", "withering"])
+	assert_eq(plain, [], 'v0.10.5 O1 (owner P1: "Yes, cut the 5"): no plain curse is left')
 
 
-func test_swift_foes_enemies_move_15_percent_faster() -> void:
-	var steps := []
-	var curses := EventCompiler.compile_curses(EventLab.repo())
-	for cursed in [false, true]:
-		var w := CombatLab.world()
-		Events.setup(w, [] as Array[EventTable], curses, null)
-		if cursed:
-			Curses.add(w, EventLab.curse_index(w, &"swift_foes"))
-		var id := w.add_enemy(ActorStore.Kind.WARDEN, Vector2(8, 0))
-		w.actors.invuln[0] = 1 << 20
-		CombatLab.idle(w, SimTick.SPAWN_IN_TICKS + 4)
-		var i := w.actors.index_of(id)
-		var a := w.actors.pos(i)
-		CombatLab.idle(w, 10)
-		steps.append(w.actors.pos(w.actors.index_of(id)).distance_to(a))
-	gut.p("a Warden walks %.3f m in 10 ticks, %.3f m cursed" % steps)
-	assert_gt(steps[0], 0.05, "it walked")
-	assert_almost_eq(steps[1] / steps[0], 1.15, 0.02, "x1.15")
-
-
-func test_withering_cuts_both_regen_sources_by_20_percent() -> void:
-	var w := _world([&"withering"])
-	var v := _world()
-	assert_eq(PlayerRegen.rate_permille(w), PlayerRegen.rate_permille(v) * 800 / 1000)
-	assert_eq(Curses.regen(w, 50), 40)
-
-
-func test_leaky_core_heat_decays_twice_as_fast() -> void:
-	var drops := []
-	for curses in [[], [&"leaky_core"]]:
-		var w := _world(curses)
-		w.heat.milli = 40 * HeatTable.MILLI  # test setup
-		w.heat.idle = w.heat.table.cool_delay_ticks + 1
-		var before := w.heat.milli
-		Heat.advance(w)
-		drops.append(before - w.heat.milli)
-	assert_eq(drops[1], drops[0] * 2)
-
-
-func test_swarm_call_brings_one_more_enemy_per_arrival() -> void:
-	var counts := []
-	for curses in [[], [&"swarm_call"]]:
-		var w := _world(curses)
-		w.actors.invuln[0] = 1 << 20
-		w.actors.set_pos(0, w.floor_layout.rooms[w.ev.room[0]].get_center())  # a room with spawn points around
-		var n := 0
-		for t in 400:
-			var before := w.actors.size()
-			w.step(InputFrame.new())
-			if w.actors.size() > before:
-				n = w.actors.size() - before
-				break
-		counts.append(n)
-	assert_gt(counts[0], 0, "a spawn arrived")
-	assert_eq(counts[1], counts[0] + 1, "one more in the arrival")
-
-
-func test_price_gouge_raises_chest_shrine_and_event_prices_by_25_percent() -> void:
-	var w := _world([&"price_gouge"])
-	var v := _world()
-	for i in w.rewards.size():
-		assert_eq(Rewards.price_of(w, i), (v.rewards.price[i] * 1250 + 500) / 1000)
-	assert_eq(Gamble.price(w), (Gamble.price(v) * 1250 + 500) / 1000)
-	assert_eq(Curses.price(w, 100), 125, "shops call the same hook")
-	EventLab.set_event(w, &"scrap_heap")
-	assert_eq(Events.shard_cost(w, 0, 0), 44, "35 shards x 1.25, half up")
-	var chest := E2e.nearest_reward(w, RewardStore.Kind.CHEST)
-	if chest >= 0:
-		w.shards = Rewards.price_of(w, chest) - 1  # test setup: one short of the cursed price
-		assert_false(Rewards.can_afford(w, chest))
-
-
-func test_the_shop_prices_under_price_gouge_and_sells_a_cleanse() -> void:
-	var w := _world([&"price_gouge", &"withering"])
+## v0.10.5 O1: the prices curse (Price Gouge) is gone, so a cursed run's shop prices are the plain ones.
+func test_the_shop_sells_a_cleanse() -> void:
+	var w := _world([&"heavy_hands", &"rooted"])
 	var v := _world()
 	assert_true(Shop.present(w), "the floor has a shop")
-	assert_eq(Shop.heal_price(w), (Shop.heal_price(v) * 1250 + 500) / 1000, "heal x1.25")
-	assert_eq(Shop.reroll_price(w), (Shop.reroll_price(v) * 1250 + 500) / 1000, "reroll x1.25")
-	Shop.restock(w)
-	Shop.restock(v)
-	for k in w.shop.offer.size():
-		var code := w.shop.offer[k]
-		if code >= 0:
-			assert_eq(Shop.price(w, code), (Shop.price(v, code) * 1250 + 500) / 1000)
+	assert_eq(Shop.heal_price(w), Shop.heal_price(v), "no curse raises a price")
 	assert_eq(Shop.cleanse_price(v), 60, "60 shards on floor 1")
 	assert_eq(Shop.read(v)["cleanse_curse"], -1, "nothing to cleanse: no tile")
 	assert_false(Shop.cleanse(v), "refused without a curse")
@@ -146,7 +63,7 @@ func test_the_shop_prices_under_price_gouge_and_sells_a_cleanse() -> void:
 	assert_false(Shop.cleanse(w), "refused without the shards")
 	w.shards = 200
 	var cost := Shop.cleanse_price(w)
-	assert_eq(cost, 75, "60 x 1.25")
+	assert_eq(cost, 60)
 	var f := InputFrame.new()
 	f.pick = InputFrame.PICK_SHOP_CLEANSE
 	w.shop.open = true
@@ -154,7 +71,7 @@ func test_the_shop_prices_under_price_gouge_and_sells_a_cleanse() -> void:
 	assert_eq(w.shards, 200 - cost, "paid")
 	assert_eq(
 		w.curses_owned,
-		PackedInt32Array([EventLab.curse_index(w, &"price_gouge")]),
+		PackedInt32Array([EventLab.curse_index(w, &"heavy_hands")]),
 		"the latest lifted"
 	)
 	assert_eq(Curses.threat(w), 1)
@@ -171,11 +88,11 @@ func test_the_marked_curse_is_retired() -> void:
 		var c := Curses.roll(w)
 		assert_ne(c, k, "never drawn")
 	var carried := _world()
-	carried.curses_owned = PackedInt32Array([k, EventLab.curse_index(carried, &"swift_foes")])
+	carried.curses_owned = PackedInt32Array([k, EventLab.curse_index(carried, &"rooted")])
 	Curses.drop_retired(carried)
 	assert_eq(
 		carried.curses_owned,
-		PackedInt32Array([EventLab.curse_index(carried, &"swift_foes")]),
+		PackedInt32Array([EventLab.curse_index(carried, &"rooted")]),
 		"a held Marked curse goes, the others stay"
 	)
 	assert_eq(Curses.threat(carried), 1)
@@ -341,8 +258,9 @@ func test_elite_fights_are_readable() -> void:
 	var causes := {}
 	var jobs := [
 		[4242, 4, ActorStore.Kind.BREAKER, []],
-		[4243, 5, ActorStore.Kind.RIFT_HUNTER, [&"swift_foes"]],
-		[4244, 4, ActorStore.Kind.CONDUIT, [&"swarm_call"]],
+		# v0.10.5 O1: Swift Foes and Swarm Call are gone; Rooted (no dash) keeps the bot in reach
+		[4243, 5, ActorStore.Kind.RIFT_HUNTER, [&"rooted"]],
+		[4244, 4, ActorStore.Kind.CONDUIT, [&"rooted"]],
 	]
 	for job: Array in jobs:
 		var w := EventLab.world(job[0], job[1], &"blade", job[3])
