@@ -525,6 +525,7 @@ func _setup_devices(palette: Dictionary) -> void:
 		altar = AltarStage.new(AltarStage.arrival())
 		add_child(altar)
 		altar.setup(reader.floor_start_pos())
+		actors.grounds.append(altar)  # v0.10.5: the hero stands on it, not half inside it
 	elif reader.floor_receiver():
 		arrival_gate = PortalGate.new()
 		arrival_gate.name = "ArrivalGate"
@@ -545,6 +546,7 @@ func _setup_devices(palette: Dictionary) -> void:
 		approach_view = FinalApproachView.new()
 		add_child(approach_view)
 		approach_view.setup(reader, rig)
+		actors.grounds.append(approach_view.altar)  # v0.10.5: as floor 1's altar
 	rig.camera.add_child(ink)
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)

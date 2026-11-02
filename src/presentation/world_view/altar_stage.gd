@@ -52,6 +52,11 @@ const MODEL_TOP := 0.45
 const MODEL_SOCKETS: Array[float] = [-146.0, -83.0, -17.0, 35.0, 97.0, 161.0]
 const MODEL_SOCKET_R := 2.4
 const MODEL_JEWEL_Y := 0.46
+## v0.10.5 (owner: "you can clearly see the character half body inside it"): the owner's model's steps, measured from
+## the prepared model (the top of its stone at each distance from the centre): (out to this radius m, this height m).
+const MODEL_STEPS: Array[Vector2] = [
+	Vector2(2.58, 0.45), Vector2(2.95, 0.275), Vector2(3.25, 0.155)
+]
 ## The runes' slow bob (m, Hz) on the presentation's clock.
 const BOB := 0.06
 const BOB_HZ := 0.35
@@ -163,6 +168,23 @@ func setup(sim_pos: Vector2) -> void:
 	position = SimPlane.to_3d(sim_pos)
 	calm = ViewPrefs.reduced_motion
 	pose(progress, share)
+
+
+## v0.10.5 (owner: "you can clearly see the character half body inside it"): the height (m) of the altar's surface
+## under the floor point `at` (the altar's parent's frame), 0 off it. The sim has no height (ROADMAP §6), so
+## ActorViews draws whoever stands here on the stone instead of sunk into it (presentation only).
+func height_at(at: Vector3) -> float:
+	var d := Vector2(at.x - position.x, at.z - position.z).length()
+	if uses_model:
+		for s in MODEL_STEPS:
+			if d <= s.x:
+				return s.y
+		return 0.0
+	if d > RADIUS:
+		return 0.0
+	# The stand-in's tiers: tier k reaches RADIUS .. TOP_R out and stands STEP_H * (k + 1) high.
+	var k := clampi(int(floor((RADIUS - d) / (RADIUS - TOP_R) * float(STEPS - 1))), 0, STEPS - 1)
+	return STEP_H * (k + 1)
 
 
 ## The pose at the trigger's progress `p` (0..1; < 0: at rest), with `p_share` (0..1) of the runes lit at rest (the

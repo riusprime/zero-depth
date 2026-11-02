@@ -45,6 +45,9 @@ var bolt_look := {}
 ## v0.5.5 LK (owner A2): the heat tier (HeatLooks.TIER_*) read each sync; a new player bolt takes its colour
 ## (HeatLooks.attack_color: the bolt's own below Hot, orange at Hot, red at Overclock) and keeps it while it flies.
 var heat_tier := HeatLooks.TIER_COOL
+## v0.10.5 (owner: "you can clearly see the character half body inside it"): the floor's altars (floor 1's arrival
+## altar, the final approach's); an actor on one is drawn on its stone (AltarStage.height_at), not sunk into it.
+var grounds: Array[AltarStage] = []
 ## v0.7.5 NB1: the biome's cast on enemies (BiomeLook.enemy_tint): their grey and bone parts pulled toward its colour
 ## by its alpha (0: none). Red parts (v0.8.0 EC: the role-coloured parts, EnemyPalettes, all at or over
 ## GREY_SATURATION), rings and bars keep their colours, so identity never changes (PRESENTATION §3).
@@ -106,6 +109,8 @@ func sync(reader: WorldReader) -> void:
 				tint_greys(node, enemy_tint)
 				role_glow(node, reader.actor_kind(i), role_glow_energy)  # v0.8.0 N1 (O39)
 		node.position = SimPlane.to_3d(reader.actor_pos(i))
+		for g in grounds:
+			node.position.y = maxf(node.position.y, g.height_at(node.position))
 		var t_up := PerfMarks.start()
 		_update_actor(node, reader, i)
 		PerfMarks.add(&"actors.update", t_up)
