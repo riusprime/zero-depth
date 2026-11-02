@@ -267,12 +267,18 @@ func test_a_world_without_the_table_is_untouched() -> void:
 	assert_eq(w.actors.max_hp[i], w.boss_tables[0].hp)
 
 
-func test_it_stays_hidden_from_the_player() -> void:
-	# Presentation reads the sim only through WorldReader (EI-07, the layering test): no accessor, no view.
+## v0.10.5 O6 (owner P4, D4 flipped: "let's try to show it"): the catch-up is shown, read only through
+## WorldReader.catch_up_permille (EI-07), and the tag stays hidden at ×1.
+func test_it_is_shown_only_through_the_reader_and_only_above_x1() -> void:
 	var reader := GdSource.code_only(GdSource.read("res://src/sim/world/world_reader.gd"))
-	assert_false(reader.contains("catch_up"), "WorldReader exposes no catch-up")
+	assert_true(
+		reader.contains("func catch_up_permille"), "WorldReader exposes the catch-up as one getter"
+	)
 	for path in GdSource.files_under("res://src/presentation"):
-		assert_false(GdSource.read(path).contains("catch_up"), "%s never shows it" % path)
+		var code := GdSource.code_only(GdSource.read(path))
+		assert_false(code.contains(".catch_up."), "%s reads no catch-up state directly" % path)
+	assert_false(DepthsTag.shows(1000), "×1: no tag")
+	assert_true(DepthsTag.shows(1410), "above ×1: the tag shows")
 
 
 ## v0.10.5 O2b (owner D38 (a)): the paced HP multiplier is the floor's pace × P / E, never under its floor, and stops
