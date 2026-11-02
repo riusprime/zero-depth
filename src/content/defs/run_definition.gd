@@ -4,6 +4,11 @@ extends ContentDef
 ## biome never changes difficulty), how enemies and bosses scale with the floor number, and how much you heal
 ## between floors. Starting values the owner tunes.
 
+## v0.10.5 O5b: the loop rules content may name (the sim's LoopRules.POOL; a test keeps them equal).
+const LOOP_RULE_IDS: Array[StringName] = [
+	&"swift", &"lean_mending", &"elite_hunt", &"shielded", &"point_blank"
+]
+
 ## Floors in a run; the last floor's portal wins it.
 @export var floors := 3
 ## Biome ids, shuffled per run; floor f uses the f-th (cycling when there are fewer biomes than floors).
@@ -53,6 +58,19 @@ extends ContentDef
 ## damage × this per mille, on top of the floor's, the Deep and the loop factors; a Deep floor on loop 1 and a normal
 ## floor on loop 2 keep theirs. 1000 = no ease. Starting value 900.
 @export var loop_deep_ease_permille := 1000
+## v0.10.5 O5b (owner P13; docs/roadmap/v0.10.5/O5_LOOPS.md M1-M5): the rules a loop may add (LoopRules.POOL ids;
+## one drawn per loop past the first, without repeats; empty: loops add none) and their numbers (starting values):
+## SWIFT's enemy speed, LEAN_MENDING's heal-orb chance and heal, SHIELDED's front multiplier and half-arc, and
+## POINT_BLANK's bolt speed and keep distance, all per mille but the arc. v0.10.5 O5b also lowered the HP steps above
+## to ×3.5 (was ×6): the rules carry part of a loop's difficulty.
+@export var loop_rules: Array[StringName] = []
+@export var loop_swift_permille := 1200
+@export var loop_heal_chance_permille := 500
+@export var loop_heal_amount_permille := 2000
+@export var loop_shield_permille := 600
+@export var loop_shield_half_arc_degrees := 45.0
+@export var loop_bolt_permille := 1300
+@export var loop_keep_permille := 600
 ## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F1-F3): the final boss. End the run at the Ascension portal (any loop)
 ## leads to it: one fight in its own arena (final_arena, a FinalArenaDefinition id), its bodies in order
 ## (final_bosses: FinalBossDefinition ids, the Colossus, the Prism, the Nemesis), shown as one boss named
@@ -158,6 +176,11 @@ func validate() -> Array[ValidationIssue]:
 			ValidationIssue.new(&"range", resource_path, "loop_deep_ease_permille: 1..1000")
 		)
 	_check_shape(issues)
+	for id in loop_rules:  # v0.10.5 O5b
+		if not LOOP_RULE_IDS.has(id):
+			issues.append(ValidationIssue.new(&"unknown", resource_path, "loop rule %s" % id))
+	if loop_shield_half_arc_degrees < 0.0 or loop_shield_half_arc_degrees > 180.0:
+		issues.append(ValidationIssue.new(&"range", resource_path, "loop shield arc 0..180"))
 	if loop_threat < 0:
 		issues.append(ValidationIssue.new(&"negative", resource_path, "loop_threat is negative"))
 	if loop_catch_up_cap_permille < 0:

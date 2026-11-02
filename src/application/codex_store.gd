@@ -24,7 +24,21 @@ const PAGES: Array[StringName] = [&"cards", &"enemies", &"bosses", &"biomes", &"
 ## v0.10.5 O18: the Lore page's entries in order (one line per system), and the ones open from the start; the rest
 ## unlock when their system is first met (CodexRecorder). An "always" entry reads as unlocked without being stored.
 const LORE_IDS: Array[StringName] = [
-	&"depths", &"heat", &"wand", &"shards", &"curses", &"deep", &"runes", &"crown", &"ascension"
+	&"depths",
+	&"heat",
+	&"wand",
+	&"shards",
+	&"curses",
+	&"deep",
+	&"runes",
+	&"crown",
+	&"ascension",
+	# v0.10.5 O5b (O5_LOOPS.md R2): one line per loop rule (LoopRules.lore_id), unlocked when a loop first draws it
+	&"rule_swift",
+	&"rule_lean_mending",
+	&"rule_elite_hunt",
+	&"rule_shielded",
+	&"rule_point_blank",
 ]
 const LORE_ALWAYS: Array[StringName] = [&"depths", &"heat", &"wand", &"shards"]
 ## Each page's counters (what the page shows and what achievements may read).

@@ -152,6 +152,11 @@ var locked_cards: Array[StringName] = []
 var collected: Array[StringName] = []
 var collected_run: Array[StringName] = []
 var marked_done := 0
+## v0.10.5 O5b (owner P13): the loop rules the run holds (LoopRules.POOL ids, in the order drawn: one a loop past the
+## first) and the loop that drew the newest (the floor card announces it on that loop). Saved (RunSaver; an older
+## payload: none, so its floors rebuild as saved; its next loop draws one).
+var loop_rules: Array[StringName] = []
+var loop_rule_loop := 0
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:
@@ -268,6 +273,22 @@ func scale_enemies(tables: Array[EnemyTable], f: int = floor_index) -> void:
 		t.damage = SpawnTable.scale(t.damage, dmg_pm)
 		if t.elite != null:  # v0.9.0 EL: an elite's ability, plain attack and contact, by the same factor
 			t.elite.scale_damage(dmg_pm)
+		_remix_enemy(t)  # v0.10.5 O5b
+
+
+## v0.10.5 O5b (LoopRules SWIFT, POINT_BLANK): enemy table `t` under the run's loop rules.
+func _remix_enemy(t: EnemyTable) -> void:
+	if LoopRules.run_holds(self, LoopRules.SWIFT):
+		t.speed = t.speed * table.loop_swift_permille / 1000.0
+		t.charge_speed = t.charge_speed * table.loop_swift_permille / 1000.0
+	if (
+		LoopRules.run_holds(self, LoopRules.POINT_BLANK)
+		and (t.bolt_speed > 0.0 or t.spread_speed > 0.0)
+	):
+		t.bolt_speed = t.bolt_speed * table.loop_bolt_permille / 1000.0
+		t.spread_speed = t.spread_speed * table.loop_bolt_permille / 1000.0
+		t.keep_distance_m = t.keep_distance_m * table.loop_keep_permille / 1000.0
+		t.keep_min_m = t.keep_min_m * table.loop_keep_permille / 1000.0
 
 
 ## Scales freshly compiled boss tables for floor f by the bosses' own factors (not the enemies' tables, so nothing
@@ -316,6 +337,7 @@ func prepare(w: World) -> void:
 	w.run_floor = run_floor()
 	w.loop_threat = table.loop_threat * (loop - 1)
 	w.loop_cap_permille = table.loop_catch_up_cap_permille * (loop - 1)
+	_prepare_rules(w)  # v0.10.5 O5b
 	if w.boss_flow != null:  # v0.5.0 RT
 		w.boss_flow.deep = is_deep()
 		w.boss_flow.ascension = is_last_floor()  # v0.7.5 AP: the loop's last floor has the Ascension portal
@@ -329,6 +351,21 @@ func prepare(w: World) -> void:
 	elif w.floor_hp_bonus > 0:
 		Gamble.after_carry(w)
 		w.actors.hp[0] = w.actors.max_hp[0]
+
+
+## v0.10.5 O5b: the floor's loop rules (World.loop_rules), SHIELDED's numbers and LEAN_MENDING's heal orbs (the
+## floor's freshly compiled reward table).
+func _prepare_rules(w: World) -> void:
+	w.loop_rules = LoopRules.indices(loop_rules)
+	if LoopRules.held(w, LoopRules.SHIELDED):
+		w.loop_shield_permille = table.loop_shield_permille
+		w.loop_shield_half_arc = table.loop_shield_half_arc
+	if LoopRules.held(w, LoopRules.LEAN_MENDING) and w.reward_table != null:
+		var r := w.reward_table
+		r.heal_orb_chance_permille = (
+			r.heal_orb_chance_permille * table.loop_heal_chance_permille / 1000
+		)
+		r.heal_orb_heal_permille = r.heal_orb_heal_permille * table.loop_heal_amount_permille / 1000
 
 
 ## v0.9.0 SV: the floors' max HP growth on the current floor (RunCarry.floor_hp_bonus).
@@ -378,6 +415,7 @@ func finish_floor(w: World) -> void:
 		loop += 1
 		floor_index = 1
 		_draw_loop_biomes()
+		LoopRules.draw(self)  # v0.10.5 O5b (owner P13): each loop adds a rule
 	else:
 		floor_index += 1
 	floor_rules = FLOOR_RULES  # v0.7.5 MG: a new floor, always on today's rules

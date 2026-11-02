@@ -3,7 +3,9 @@ extends RefCounted
 ## v0.9.0 MP: where Main's run meets the profile's Rune Fragments and unlocks (MetaProgress), kept out of main.gd:
 ## - a floor's portal taken (finish_floor): when it was the Purple Portal, the profile records it once and the Void
 ##   joins the offers from the next floor on (RunState.locked_cards emptied), with a toast;
-## - the run's end (bank): the run's fragments go into the profile, shown on the run summary.
+## - the run's end (bank): the run's fragments go into the profile, shown on the run summary;
+## - v0.10.5 O5a (O5_LOOPS.md D1-D3, R1): the Loop device taken (record_loop): the deepest loop per weapon and the loop
+##   robes; the run's end: the fastest true ending per weapon, and the recap's "new record" lines and loop bonus.
 ## A tweaked run (the dev panel's balance edits) banks and unlocks nothing, as the Codex and the achievements.
 
 const UNLOCK_VOID := {
@@ -42,6 +44,7 @@ static func recap(main: Main) -> Dictionary:
 ## Banks the run's fragments (recap["fragments"]) into the profile and adds the balance after it
 ## (recap["fragments_total"]). Returns the recap.
 static func bank(main: Main, recap: Dictionary) -> Dictionary:
+	_records(main, recap)
 	if not recap.has("fragments"):
 		return recap
 	if not _tweaked(main):
@@ -51,6 +54,50 @@ static func bank(main: Main, recap: Dictionary) -> Dictionary:
 		recap["fragments"] = 0
 	recap["fragments_total"] = MetaProgress.fragments(main.profile)
 	return recap
+
+
+## v0.10.5 O5a: the Loop device took the run to loop `loop` (Main._record_ascension): the Ascension achievements'
+## counters, the weapon's deepest loop, and the loop robes it earned (a toast each). A tweaked run records nothing.
+static func record_loop(main: Main, loop: int) -> void:
+	if main.achievement_tracker != null:  # v0.7.5 AC: the Ascension achievements count each loop taken
+		main.achievement_tracker.report(&"runs:ascended")
+		main.achievement_tracker.raise(RunRecords.LOOP_STAT, loop)  # v0.10.5 O5a: loop_3, loop_5
+	if _tweaked(main) or main.run == null or main.profile == null:
+		return
+	RunRecords.note_loop(main.profile, main.run.build_id, loop, main.run.run_seed)
+	var earned := RunRecords.unlock_loop_robes(main.profile, loop)
+	var repo := ContentRepository.load_all() if not earned.is_empty() else null
+	for id in earned:
+		var def: RobeDefinition = repo.get_def(&"robe", id)
+		(
+			main
+			. toast
+			. push(
+				{
+					"id": StringName("robe_%s" % id),
+					"glyph": &"ascend",
+					"header_key": &"UI_ROBE_TOAST",
+					"name_key": def.name_key if def != null else &"ROBE_HIDDEN",
+					"desc_key": def.unlock_hint_key if def != null else &"",
+				}
+			)
+		)
+	main.profile.save_file()
+
+
+## v0.10.5 O5a: the recap's records (the fastest true ending noted now; the deepest loop noted when it was reached)
+## and the loop's fragment multiplier.
+static func _records(main: Main, recap: Dictionary) -> void:
+	if main.run == null or main.profile == null or recap.is_empty():
+		return
+	var run := main.run
+	recap["loop_bonus_permille"] = RuneFragments.loop_permille(run.fragment_table, run.loop)
+	if _tweaked(main):
+		return
+	recap["record_loop"] = RunRecords.holds_loop(main.profile, run.build_id, run.loop, run.run_seed)
+	if bool(recap.get("true_ending", false)):
+		var ticks := run.total_ticks(main.driver.world) if main.driver != null else 0
+		recap["record_time"] = RunRecords.note_win(main.profile, run.build_id, ticks, run.run_seed)
 
 
 ## Main's _on_tick: the achievements read the tick (AchievementTracker.observe), then the collectibles (bank_finds).

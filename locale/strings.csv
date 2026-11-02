@@ -1369,3 +1369,42 @@ PAIR_PIN_AND_PICK,Pin and pick,Inmovilizar y rematar
 PAIR_SLAM_AND_SHOOT,Slam and shoot,Golpe y disparo
 PAIR_CROWD_THE_STORM,Crowd the storm,Atestar la tormenta
 PAIR_OVER_THE_WALL,Over the wall,Por encima del muro
+UI_RECORDS_HEAD,Records,Récords
+UI_RECORD_LOOP,Deepest loop: %s,Ciclo más profundo: %s
+UI_RECORD_TIME,Fastest true ending: %s,Final verdadero más rápido: %s
+UI_RECORD_NONE,—,—
+UI_RECAP_RECORD_LOOP,New record: loop %d reached!,¡Nuevo récord: ciclo %d alcanzado!
+UI_RECAP_RECORD_TIME,New record: fastest true ending!,¡Nuevo récord: final verdadero más rápido!
+UI_RECAP_LOOP_BONUS,Loop bonus: ×%s Rune Fragments,Bonificación de ciclo: ×%s Fragmentos de Runa
+UI_RECAP_RULES,Loop rules: %s,Reglas del ciclo: %s
+UI_PAUSE_RULES,Loop rules: %s,Reglas del ciclo: %s
+UI_ROBE_TOAST,ROBE EARNED,TÚNICA GANADA
+ROBE_OUROBOROS,Ouroboros,Uróboros
+ROBE_OUROBOROS_HINT,Reach loop 3,Alcanza el ciclo 3
+ROBE_ABYSSAL,Abyssal,Abisal
+ROBE_ABYSSAL_HINT,Reach loop 5,Alcanza el ciclo 5
+ACH_LOOP_3_NAME,Third Turn,Tercera vuelta
+ACH_LOOP_3_DESC,Reach loop 3 in one run.,Alcanza el ciclo 3 en una partida.
+ACH_LOOP_5_NAME,Bottomless,Sin fondo
+ACH_LOOP_5_DESC,Reach loop 5 in one run.,Alcanza el ciclo 5 en una partida.
+HUD_LOOP_NEW_RULE,New rule: %s,Nueva regla: %s
+LOOP_RULE_SWIFT_NAME,Quickened,Acelerados
+LOOP_RULE_SWIFT_DESC,Enemies move and charge faster.,Los enemigos se mueven y cargan más rápido.
+LOOP_RULE_LEAN_MENDING_NAME,Lean Mending,Curación escasa
+LOOP_RULE_LEAN_MENDING_DESC,"Heal orbs drop half as often, but heal twice as much.","Los orbes de curación caen la mitad de veces, pero curan el doble."
+LOOP_RULE_ELITE_HUNT_NAME,Elite Hunt,Caza de élites
+LOOP_RULE_ELITE_HUNT_DESC,Elite rooms appear on every floor.,Las salas de élite aparecen en todos los pisos.
+LOOP_RULE_SHIELDED_NAME,Shielded,Escudados
+LOOP_RULE_SHIELDED_DESC,Enemies guard their front: strike from the side or behind.,Los enemigos protegen su frente: golpea por el lado o por detrás.
+LOOP_RULE_POINT_BLANK_NAME,Point Blank,A quemarropa
+LOOP_RULE_POINT_BLANK_DESC,Ranged enemies close in and shoot faster bolts.,Los enemigos a distancia se acercan y disparan proyectiles más rápidos.
+LORE_RULE_SWIFT_TITLE,Quickened,Acelerados
+LORE_RULE_SWIFT,"Each turn of the Depths, the things below learn your pace, and outrun it.","Con cada vuelta de las Profundidades, lo de abajo aprende tu ritmo, y lo supera."
+LORE_RULE_LEAN_MENDING_TITLE,Lean Mending,Curación escasa
+LORE_RULE_LEAN_MENDING,"The deeper loops give little back. What they give, they give all at once.","Los ciclos profundos devuelven poco. Lo que dan, lo dan de golpe."
+LORE_RULE_ELITE_HUNT_TITLE,Elite Hunt,Caza de élites
+LORE_RULE_ELITE_HUNT,"The strongest no longer wait at the bottom. They climb to meet you.","Los más fuertes ya no esperan en el fondo. Suben a tu encuentro."
+LORE_RULE_SHIELDED_TITLE,Shielded,Escudados
+LORE_RULE_SHIELDED,"They have seen your blade before. Now they face it with a guard.","Ya han visto tu arma. Ahora la reciben en guardia."
+LORE_RULE_POINT_BLANK_TITLE,Point Blank,A quemarropa
+LORE_RULE_POINT_BLANK,"The casters stopped keeping their distance. Distance never saved them.","Los lanzadores dejaron de guardar las distancias. La distancia nunca los salvó."

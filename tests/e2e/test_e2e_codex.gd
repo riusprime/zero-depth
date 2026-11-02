@@ -251,7 +251,9 @@ func test_the_lore_page_opens_and_shows_its_open_lines() -> void:
 	for k in 5:  # Collectibles -> Cards -> Enemies -> Bosses -> Biomes -> Lore
 		await e.tap(KEY_E)
 	assert_eq(codex.page, &"lore", "E turns to the Lore page")
-	assert_eq(codex.tiles.size(), 9, "nine lines")
+	assert_eq(
+		codex.tiles.size(), CodexStore.LORE_IDS.size(), "its lines (O5b: 14, the loop rules')"
+	)
 	assert_false(codex.tiles[0].locked, "the first line is open from the start")
 	assert_eq(codex.tiles[0].name_label.text, tr("LORE_DEPTHS_TITLE"), "and named")
 	assert_eq(codex.desc_label.text, tr("LORE_DEPTHS"), "its sentence is shown")

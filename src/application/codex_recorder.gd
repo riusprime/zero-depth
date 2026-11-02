@@ -122,6 +122,8 @@ func _lore(reader: WorldReader) -> void:
 		and reader.portal_pos().distance_to(me) <= SEEN_M
 	):
 		store.unlock(&"lore", &"ascension")
+	for id in reader.loop_rules():  # v0.10.5 O5b: a loop rule met
+		store.unlock(&"lore", LoopRules.lore_id(id))
 
 
 ## The tick's events; true when a card was taken (its level may have changed).

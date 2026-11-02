@@ -279,7 +279,7 @@ static func add_secrets(
 	# floor saved before EL (rules 1-14) has none. The rules are set on every floor (an elite's 30 % core drop).
 	var elite_rules := EliteCompiler.compile_rules(repo.get_def(&"elite_rules", &"rules"))
 	if run.floor_rules > RunState.FLOOR_RULES_V090_SH:
-		Elites.setup(w, elite_rules, run.floor_index)
+		Elites.setup(w, elite_rules, LoopRules.elite_floor(run))  # v0.10.5 O5b: ELITE_HUNT
 	else:
 		w.elite_rules = elite_rules
 

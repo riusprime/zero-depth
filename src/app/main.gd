@@ -492,7 +492,8 @@ func _floor_live(nodes: Dictionary) -> void:
 		run.is_deep(),  # v0.5.0 RT: "Floor 2 · Deep"
 		driver.reader.shards_left_behind() if resume.is_empty() else 0,  # v0.5.5 EC (Q-S4)
 		run.loop,  # v0.7.5 AP: "Loop 2 · Floor 1"
-		RunCarry.hp_grown(run) if resume.is_empty() else 0  # v0.9.0 SV: "Max HP +15"
+		RunCarry.hp_grown(run) if resume.is_empty() else 0,  # v0.9.0 SV: "Max HP +15"
+		LoopRules.newest(run) if resume.is_empty() else &""  # v0.10.5 O5b: "New rule: …"
 	)
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))
@@ -553,8 +554,7 @@ func _record_ascension(loop: int) -> void:
 		return
 	codex.add(ASCENSION_PAGE, &"ascended", &"times")
 	codex.raise_to(ASCENSION_PAGE, &"loop", &"best", loop)
-	if achievement_tracker != null:  # v0.7.5 AC: the Ascension achievements count each loop taken
-		achievement_tracker.report(&"runs:ascended")
+	MetaHooks.record_loop(self, loop)  # v0.7.5 AC's count; v0.10.5 O5a: loop achievements, records, robes
 
 
 func show_end_panel(won: bool) -> void:
@@ -719,7 +719,7 @@ func open_pause() -> void:
 	_pause.restart_pressed.connect(restart)
 	_pause.main_menu_pressed.connect(show_main_menu)
 	_pause.hub_pressed.connect(_show_hub)  # v0.9.0 HB (owner 2026-10-23): the run stays saved; Continue resumes it
-	var recap := run_recap()  # v0.5.5 A5: the run's line under the pause list
+	var recap := run_recap()  # v0.5.5 A5: the run's line under the pause list; v0.10.5 O5b: the loop rules
 	_pause.show_recap(recap, driver.reader)  # v0.10.5 O6: and the depths' answer, in one sentence (above ×1)
 	if driver.reader.has_gamble():  # v0.3.0 L19: the stats won at the gamble shrine.
 		var stats := GambleStatsPanel.new()

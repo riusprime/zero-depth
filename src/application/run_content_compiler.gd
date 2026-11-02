@@ -295,6 +295,14 @@ static func add_run_shape(t: RunTable, def: RunDefinition) -> RunTable:
 	t.wand_slots_per_floor = def.wand_slots_per_floor.duplicate()
 	t.max_hp_per_floor = def.max_hp_per_floor  # v0.9.0 SV: the hero grows each floor
 	t.max_hp_floor_cap = def.max_hp_floor_cap
+	t.loop_rules = def.loop_rules.duplicate()  # v0.10.5 O5b: the loop rules and their numbers
+	t.loop_swift_permille = def.loop_swift_permille
+	t.loop_heal_chance_permille = def.loop_heal_chance_permille
+	t.loop_heal_amount_permille = def.loop_heal_amount_permille
+	t.loop_shield_permille = def.loop_shield_permille
+	t.loop_shield_half_arc = ContentCompiler.degrees_to_units(def.loop_shield_half_arc_degrees)
+	t.loop_bolt_permille = def.loop_bolt_permille
+	t.loop_keep_permille = def.loop_keep_permille
 	return t
 
 

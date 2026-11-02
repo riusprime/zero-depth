@@ -208,6 +208,9 @@ const ADDED_SINCE_V05 := {
 		&"run_floor",
 		&"loop_threat",
 		&"loop_cap_permille",
+		&"loop_rules",  # v0.10.5 O5b: the loop rules (an older save has none: the base's, from RunState.prepare)
+		&"loop_shield_permille",
+		&"loop_shield_half_arc",
 		&"final_fight",  # v0.8.0 FB1: the final boss's fight (a save from before FB1 holds none: null, as the base's)
 		&"approach",  # v0.9.0 FA: the final approach (a save from before FA holds none: FloorPlan builds that one bare)
 		&"solids",  # v0.9.5 SB: a floor saved before SB has none (floor rules 1-17 build none in the base either)

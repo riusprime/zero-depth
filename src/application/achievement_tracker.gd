@@ -114,6 +114,14 @@ func report(key: StringName, by: int = 1) -> void:
 	_check(book.reading_stat(key))
 
 
+## v0.10.5 O5a: raises a run counter kept as a highest value (RunRecords.LOOP_STAT: the deepest loop reached).
+func raise(key: StringName, value: int) -> void:
+	if not enabled:
+		return
+	store.raise_stat(key, value)
+	_check(book.reading_stat(key))
+
+
 ## Reads one tick of `reader` (the floor attached; any other reader is ignored).
 func observe(reader: WorldReader) -> void:
 	if reader == null or reader != _reader:

@@ -14,7 +14,9 @@ static func total(run: RunState, w: World) -> int:
 ## CL's hook: `n` collectibles found in `run`, each worth FragmentTable.collectible.
 static func add_collectibles(run: RunState, n: int = 1) -> void:
 	if run.fragment_table != null:
-		run.fragments_done += run.fragment_table.collectible * n
+		run.fragments_done += loop_scaled(
+			run.fragment_table, run.fragment_table.collectible * n, run.loop
+		)
 
 
 ## The secrets found on floor `w`: the timed door opened, the rune puzzle solved, the cracked wall broken, the purple
@@ -37,6 +39,25 @@ static func secrets_found(w: World) -> int:
 static func of_floor(w: World, t: FragmentTable, cleared: bool) -> int:
 	if t == null or w == null:
 		return 0
+	return loop_scaled(t, _of_floor_base(w, t, cleared), w.loop)
+
+
+## v0.10.5 O5a (owner L2): `n` fragments earned on loop `loop`: × (1000 + loop_bonus_permille × (loop − 1)) / 1000,
+## rounded down (loop 1: n).
+static func loop_scaled(t: FragmentTable, n: int, loop: int) -> int:
+	if t == null or loop <= 1:
+		return n
+	return n * (1000 + t.loop_bonus_permille * (loop - 1)) / 1000
+
+
+## The loop's multiplier per mille (the recap's "Loop bonus" line; 1000 on loop 1 or without a table).
+static func loop_permille(t: FragmentTable, loop: int) -> int:
+	if t == null or loop <= 1:
+		return 1000
+	return 1000 + t.loop_bonus_permille * (loop - 1)
+
+
+static func _of_floor_base(w: World, t: FragmentTable, cleared: bool) -> int:
 	var n := secrets_found(w) * t.secret
 	if w.final_fight != null:
 		return n + (t.final_boss if w.final_fight.won else 0)

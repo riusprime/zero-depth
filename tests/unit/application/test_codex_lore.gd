@@ -1,9 +1,23 @@
 extends GutTest
-## v0.10.5 O18: the Codex's Lore page lists its nine entries in order; four are open on a fresh profile, the rest
+## v0.10.5 O18: the Codex's Lore page lists its nine entries in order (O5b: and one per loop rule); four are
+## open on a fresh profile, the rest
 ## unlock when their system is first met (CodexRecorder); each has a title and a line in both languages.
 
 const ORDER: Array[StringName] = [
-	&"depths", &"heat", &"wand", &"shards", &"curses", &"deep", &"runes", &"crown", &"ascension"
+	&"depths",
+	&"heat",
+	&"wand",
+	&"shards",
+	&"curses",
+	&"deep",
+	&"runes",
+	&"crown",
+	&"ascension",
+	&"rule_swift",
+	&"rule_lean_mending",
+	&"rule_elite_hunt",
+	&"rule_shielded",
+	&"rule_point_blank",
 ]
 const OPEN: Array[StringName] = [&"depths", &"heat", &"wand", &"shards"]
 

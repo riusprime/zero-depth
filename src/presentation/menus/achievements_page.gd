@@ -4,6 +4,8 @@ extends ScrollContainer
 ## to a line (AchievementRow). Unlocked ones are lit in gold; locked ones are dimmed and keep their sentence and how
 ## far along they are, so you know what to aim for; a hidden one (`hidden` in its data, today the Ascension pair)
 ## stays "???" until it unlocks. Reads the book only; it changes nothing.
+## v0.10.5 O5a (O5_LOOPS.md D3): a Records block first: the deepest loop and the fastest true ending per weapon
+## (RunRecords, from the book's profile).
 
 const GROUP_KEYS := {
 	&"run": "UI_ACH_GROUP_RUN",
@@ -68,6 +70,7 @@ func refresh() -> void:
 		c.queue_free()
 	rows.clear()
 	scroll_vertical = 0
+	_add_records()
 	var first_line := true
 	for g: StringName in book.groups():
 		var list := book.in_group(g)
@@ -100,6 +103,37 @@ func refresh() -> void:
 		first_line = false
 
 
+## v0.10.5 O5a: the Records head and its lines (RecordLine0, RecordLine1).
+func _add_records() -> void:
+	if book.store == null or book.store.profile == null:
+		return
+	var head := Label.new()
+	head.name = "Head_records"
+	head.text = "UI_RECORDS_HEAD"
+	head.add_theme_font_override("font", HudStyle.font(true))
+	head.add_theme_font_size_override("font_size", 18)
+	head.add_theme_color_override("font_color", MenuStyle.EMBER.lerp(Color.WHITE, 0.3))
+	_list.add_child(head)
+	var k := 0
+	for line in RunRecords.lines(self, book.store.profile):
+		var l := Label.new()
+		l.name = "RecordLine%d" % k
+		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		l.text = line
+		l.add_theme_font_size_override("font_size", 18)
+		_list.add_child(l)
+		k += 1
+
+
+## The Records block's lines as shown (tests and the shot read them).
+func record_lines() -> PackedStringArray:
+	var out := PackedStringArray()
+	for c in _list.get_children():
+		if String(c.name).begins_with("RecordLine"):
+			out.append((c as Label).text)
+	return out
+
+
 func _show_head(head: Label) -> void:
 	ensure_control_visible.call_deferred(head)
 
@@ -107,6 +141,7 @@ func _show_head(head: Label) -> void:
 func focus_first() -> void:
 	if not rows.is_empty():
 		rows[0].grab_focus()
+		set_deferred(&"scroll_vertical", 0)  # v0.10.5 O5a: the Records block above the first row stays in view
 
 
 ## The row of achievement `id` (null when there's none).

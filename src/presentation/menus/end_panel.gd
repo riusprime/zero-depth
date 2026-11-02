@@ -83,6 +83,15 @@ func _add_recap() -> void:
 		_line("Looped", tr("RUN_SUMMARY_LOOPED") % looped)
 	if recap.has("loops_cleared"):  # v0.7.5 AP: the Ascension loop
 		_line("Loops", tr("UI_RECAP_LOOPS") % recap["loops_cleared"])
+	if bool(recap.get("record_loop", false)):  # v0.10.5 O5a (D3): this run set the weapon's deepest loop
+		_line("RecordLoop", tr("UI_RECAP_RECORD_LOOP") % int(recap.get("loop", 1)))
+	if bool(recap.get("record_time", false)):  # and its fastest true ending
+		_line("RecordTime", tr("UI_RECAP_RECORD_TIME"))
+	if not (recap.get("rules", PackedStringArray()) as PackedStringArray).is_empty():  # v0.10.5 O5b
+		var names := PackedStringArray()
+		for k: String in recap["rules"]:
+			names.append(tr(k))
+		_line("Rules", tr("UI_RECAP_RULES") % " · ".join(names), 20)
 	if recap.has("seconds"):
 		var secs := int(recap["seconds"])
 		_line("Time", tr("UI_RECAP_TIME") % [secs / 60, secs % 60])
@@ -98,6 +107,9 @@ func _add_recap() -> void:
 				% [recap["fragments"], recap.get("fragments_total", recap["fragments"])]
 			)
 		)
+		var bonus := int(recap.get("loop_bonus_permille", 1000))  # v0.10.5 O5a: more fragments a loop
+		if bonus > 1000:
+			_line("LoopBonus", tr("UI_RECAP_LOOP_BONUS") % ("%.1f" % (bonus / 1000.0)), 20)
 	if recap.has("routes"):
 		_line("Route", tr("UI_RECAP_ROUTE") % route_text(self, recap["routes"]))
 	if recap.has("threat"):  # v0.5.0 EV: threat T now and the run's peak

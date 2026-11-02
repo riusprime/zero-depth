@@ -231,6 +231,9 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	for id: Variant in r.get("collected_run", []):
 		run.collected_run.append(StringName(String(id)))
 	run.marked_done = maxi(0, int(r.get("marked", 0)))
+	for id: Variant in r.get("loop_rules", []):  # v0.10.5 O5b: an older payload holds no loop rules
+		run.loop_rules.append(StringName(String(id)))
+	run.loop_rule_loop = int(r.get("loop_rule_loop", 0))
 	return run
 
 
@@ -287,6 +290,9 @@ static func payload_of(
 		out["run"]["collected_run"] = _ids(run.collected_run)
 	if run.marked_done > 0:  # v0.9.0 CL: the marked secrets the finished floors found
 		out["run"]["marked"] = run.marked_done
+	if not run.loop_rules.is_empty():  # v0.10.5 O5b: the loop rules (none: no key, as before)
+		out["run"]["loop_rules"] = _ids(run.loop_rules)
+		out["run"]["loop_rule_loop"] = run.loop_rule_loop
 	return out
 
 

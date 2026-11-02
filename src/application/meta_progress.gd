@@ -50,6 +50,7 @@ static func compile_table(repo: ContentRepository) -> FragmentTable:
 	t.purple_portal = d.purple_portal
 	t.final_boss = d.final_boss
 	t.collectible = d.collectible
+	t.loop_bonus_permille = d.loop_bonus_permille  # v0.10.5 O5a
 	return t
 
 

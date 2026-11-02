@@ -121,6 +121,7 @@ var _floor_card_title := HudStyle.label(56, true)
 var _floor_card_biome := HudStyle.label(22)
 var _floor_card_shards := HudStyle.label(18)  # v0.5.5 EC (Q-S4)
 var _floor_card_hp := HudStyle.label(18)  # v0.9.0 SV: "Max HP +15" on a floor the hero grew into
+var _floor_card_rule := HudStyle.label(22)  # v0.10.5 O5b: "New rule: Quickened" on a loop's first floor
 var _floor_card_left := 0.0
 var _biome_key := ""
 ## The floor card's [floor, deep, shards lost, loop, max HP gained], so a language switch can word it again (v0.6.0 UP).
@@ -322,13 +323,15 @@ func show_floor(
 	deep: bool = false,
 	shards_lost: int = 0,
 	loop: int = 1,
-	hp_gained: int = 0
+	hp_gained: int = 0,
+	rule: StringName = &""
 ) -> void:
 	_biome_key = biome_key
-	_floor_card_args = [floor_index, deep, shards_lost, loop, hp_gained]
+	_floor_card_args = [floor_index, deep, shards_lost, loop, hp_gained, rule]
 	_word_floor_card()
 	_floor_card_shards.visible = shards_lost > 0
 	_floor_card_hp.visible = hp_gained > 0  # v0.9.0 SV
+	_floor_card_rule.visible = rule != &""  # v0.10.5 O5b
 	_floor_card_left = FLOOR_CARD_SECONDS
 	_floor_card.modulate.a = 1.0
 	_floor_card.visible = true
@@ -348,6 +351,16 @@ func _word_floor_card() -> void:
 	_floor_card_shards.text = tr("HUD_SHARDS_HALVED") % shards_lost if shards_lost > 0 else ""
 	var hp_gained: int = _floor_card_args[4]
 	_floor_card_hp.text = tr("HUD_MAX_HP_GROWN") % hp_gained if hp_gained > 0 else ""
+	var rule: StringName = _floor_card_args[5]  # v0.10.5 O5b: the loop's new rule, and what it does
+	_floor_card_rule.text = (
+		(
+			(tr("HUD_LOOP_NEW_RULE") % tr("LOOP_RULE_%s_NAME" % String(rule).to_upper()))
+			+ "\n"
+			+ tr("LOOP_RULE_%s_DESC" % String(rule).to_upper())
+		)
+		if rule != &""
+		else ""
+	)
 
 
 func _notification(what: int) -> void:
@@ -380,6 +393,8 @@ func floor_card_text() -> String:
 	var out := "%s %s" % [_floor_card_title.text, _floor_card_biome.text]
 	if _floor_card_shards.visible:
 		out += " " + _floor_card_shards.text
+	if _floor_card_rule.visible:  # v0.10.5 O5b
+		out += " " + _floor_card_rule.text.replace("\n", " ")
 	return out + " " + _floor_card_hp.text if _floor_card_hp.visible else out
 
 
@@ -528,6 +543,12 @@ func _build_floor_card() -> void:
 	_floor_card_hp.add_theme_constant_override("outline_size", 4)
 	_floor_card_hp.visible = false
 	_floor_card.add_child(_floor_card_hp)
+	_floor_card_rule.name = "FloorCardRule"  # v0.10.5 O5b: the loop's new rule, in the Loop device's violet
+	_floor_card_rule.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_floor_card_rule.add_theme_color_override("font_color", DEEP_TEXT)
+	_floor_card_rule.add_theme_constant_override("outline_size", 6)
+	_floor_card_rule.visible = false
+	_floor_card.add_child(_floor_card_rule)
 	_floor_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
