@@ -27,6 +27,16 @@ static func _resources() -> int:
 	return int(Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT))
 
 
+## v0.10.5 PC: every Node, in the tree or not (the idle pool entries wait outside it; OBJECT_NODE_COUNT is the tree's).
+static func _nodes() -> int:
+	return int(
+		(
+			Performance.get_monitor(Performance.OBJECT_NODE_COUNT)
+			+ Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)
+		)
+	)
+
+
 func _fireballs(prepared: bool) -> Array:
 	var w := CombatLab.world()
 	var fb := FireballViews.new()
@@ -56,7 +66,8 @@ func test_the_load_makes_every_looks_set_and_fills_the_shot_pools() -> void:
 	var fb: FireballViews = r[1]
 	var pack: PackFx = r[2]
 	assert_eq((fb.get(&"_sets") as Dictionary).size(), FireballViews.LOOKS.size(), "a set per look")
-	assert_eq(fb.get_child_count(), 3 * FireballViews.LOOKS.size(), "three MultiMeshes a look")
+	assert_eq(fb.idle_outside(), 3 * FireballViews.LOOKS.size(), "three MultiMeshes a look")
+	assert_eq(fb.get_child_count(), 0, "waiting outside the tree")
 	for id in FireballPack.ids():
 		assert_eq(pack.pooled(id), FireballPack.PREFILL, "%s: its pool is filled" % id)
 	assert_eq(pack.live_count(), 0, "nothing shows")
@@ -67,13 +78,13 @@ func test_the_first_fireballs_build_nothing_after_the_load() -> void:
 	var w: World = r[0]
 	var fb: FireballViews = r[1]
 	var pack: PackFx = r[2]
-	var nodes := fb.get_child_count() + pack.get_child_count()
+	var nodes := _nodes()
 	var res := _resources()
 	_volley(w)
 	fb.sync(r[3])
 	assert_eq(pack.live_count(&"enemy_shot"), 2, "the arc plasma shots are pack effects")
 	assert_eq(fb.core_count(&"nemesis_crescent"), 2, "the crescents draw")
-	assert_eq(fb.get_child_count() + pack.get_child_count(), nodes, "no node made")
+	assert_eq(_nodes(), nodes, "no node made")
 	assert_eq(_resources() - res, 0, "no mesh, material or other resource made")
 
 
@@ -117,7 +128,7 @@ func test_the_first_elites_arrival_slam_rift_and_beam_build_nothing_after_the_lo
 	var r := _elites()
 	var ev: EliteViews = r[0]
 	var pack: PackFx = r[1]
-	var nodes := ev.get_child_count() + pack.get_child_count()
+	var nodes := _nodes()
 	var res := _resources()
 	ev._arrival(Vector2(3, 3))
 	ev._dust(Vector2(1, 1))
@@ -126,7 +137,7 @@ func test_the_first_elites_arrival_slam_rift_and_beam_build_nothing_after_the_lo
 	assert_eq(ev.fx_count(), 2, "the arrival's burst and the slam's dust")
 	assert_eq(ev.mark_count(), 1, "the rift")
 	assert_eq(pack.live_count(&"beam"), 1, "the Conduit's pack beam")
-	assert_eq(ev.get_child_count() + pack.get_child_count(), nodes, "no node made")
+	assert_eq(_nodes(), nodes, "no node made")
 	assert_eq(_resources() - res, 0, "no mesh, material or other resource made")
 	var area: MagicArea = null
 	for c in ev.get_children():
@@ -211,14 +222,14 @@ func test_the_first_use_of_every_floor_pack_id_builds_nothing_after_the_load() -
 	var ids := PackPrefill.ids(pack, true)
 	for id in ids:
 		PackPrefill.fill(pack, id)
-	var nodes := pack.get_child_count()
+	var nodes := _nodes()
 	var res := _resources()
 	var shown := 0
 	for id in ids:
 		if pack.spawn(id, Vector3(1, 0, 1)) != null:
 			shown += 1
 	assert_eq(shown, ids.size(), "every id plays")
-	assert_eq(pack.get_child_count(), nodes, "no node made")
+	assert_eq(_nodes(), nodes, "no node made")
 	assert_eq(_resources() - res, 0, "no mesh, material or other resource made")
 
 
@@ -243,14 +254,14 @@ func test_the_load_pools_every_prepared_telegraph_and_the_looks_materials() -> v
 	for pair: Array in TelegraphViews.PREPARED:
 		assert_eq(tv.idle_count(pair[0], pair[1]), TelegraphViews.POOL_N, "%s/%s pooled" % pair)
 	assert_eq(tv.count(), 0, "nothing shows")
-	var nodes := tv.get_child_count()
+	var nodes := _nodes()
 	var res := _resources()
 	var taken: Array[Node3D] = []
 	for pair: Array in TelegraphViews.PREPARED:
 		taken.append(tv._take(pair[0], pair[1]))
 	for look: StringName in BossStrikeLooks.LOOKS:
 		tv._look_pair(look)
-	assert_eq(tv.get_child_count(), nodes, "no node made")
+	assert_eq(_nodes(), nodes, "no node made")
 	assert_eq(_resources() - res, 0, "no mesh or material made")
 	for n in taken:
 		assert_true(n.visible, "shown")
@@ -269,15 +280,87 @@ func test_a_bosss_first_windup_builds_nothing_after_the_load() -> void:
 	CombatLab.idle(w, atk.windup_ticks - atk.lock_ticks + 2)
 	var tv: TelegraphViews = add_child_autofree(TelegraphViews.new())
 	tv.prepare()
-	var nodes := tv.get_child_count()
+	var nodes := _nodes()
 	var res := _resources()
+	var outside := tv.idle_outside()
 	tv.sync(WorldReader.new(w))
 	assert_eq(tv.count(), 1, "the slam's marks show")
-	assert_eq(tv.get_child_count(), nodes, "a pooled telegraph, no node made")
+	assert_eq(_nodes(), nodes, "a pooled telegraph, no node made")
 	assert_eq(_resources() - res, 0, "no mesh or material made")
+	assert_eq(tv.idle_outside(), outside - 1, "taken into the tree")
 	CombatLab.idle(w, atk.lock_ticks + 60)
 	tv.sync(WorldReader.new(w))
-	assert_eq(tv.get_child_count(), nodes, "it went back to its pool, not freed")
+	assert_eq(_nodes(), nodes, "it went back to its pool, not freed")
+	assert_eq(tv.idle_outside(), outside, "and waits outside the tree again")
+
+
+# --- v0.10.5 PC (owner PERF_PLAYLOG_2: ~2,300 idle pool nodes in the tree, paid for every frame) --------------------
+func test_idle_pool_entries_wait_outside_the_tree_after_the_load() -> void:
+	var holder: Holder = add_child_autofree(Holder.new())
+	var pack := PackFx.new()
+	holder.add_child(pack)
+	holder.pack_fx = pack
+	for id in FireballPack.ids():
+		FireballPack.prefill(pack, id)
+	for id in EliteViews.pack_ids():
+		pack.prefill(id, EliteViews.PACK_PREFILL)
+	for id in PackPrefill.ids(pack, true):
+		PackPrefill.fill(pack, id)
+	var ev := EliteViews.new()
+	holder.add_child(ev)
+	ev.prepare()
+	var tv := TelegraphViews.new()
+	holder.add_child(tv)
+	tv.prepare()
+	var actors := ActorViews.new()
+	holder.add_child(actors)
+	var fx := StatusVisuals.new(actors)
+	holder.add_child(fx)
+	fx.prepare()
+	var fb := FireballViews.new()
+	holder.add_child(fb)
+	fb.pack_fx = pack
+	fb.prepare()
+	var idle := 0
+	for id in pack.warm_ids():
+		idle += pack.idle_count(id)
+	if PackFx.available():
+		assert_gt(idle, 0, "the pack pools are filled")
+	assert_eq(pack.idle_outside(), idle, "every idle pack instance is outside the tree")
+	assert_eq(pack.get_child_count(), 0, "none of them in it")
+	for pool: Node in [ev, tv, fx, fb]:
+		var pieces: Array[Node] = pool.call(&"idle_pieces")
+		assert_gt(pieces.size(), 0, "%s: its pool is filled" % pool.get_class())
+		for n in pieces:
+			assert_false(
+				n.is_inside_tree(), "%s: an idle piece outside the tree" % pool.get_class()
+			)
+	assert_eq(tv.get_child_count(), 0, "no idle telegraph in the tree")
+	assert_eq(fx.get_child_count(), 0, "no idle status piece in the tree")
+	assert_eq(fb.get_child_count(), 0, "no idle fireball set in the tree")
+	for c in ev.get_children():
+		assert_true(
+			c.is_inside_tree() and (c as Node3D).visible, "only what shows is in the elite view"
+		)
+	# a spawn takes an instance into the tree; its release puts it back outside
+	var id := &"vx1_hit_frost"
+	if PackFx.available() and pack.idle_count(id) > 0:
+		var node := pack.spawn(id, Vector3.ZERO)
+		assert_true(node.is_inside_tree(), "a spawned instance is in the tree")
+		pack.release(node)
+		assert_false(node.is_inside_tree(), "a released one waits outside it")
+	# the load's warm-up still draws the idle pieces once (their meshes and materials, from outside the tree)
+	if RenderSwitches.SHADER_WARMUP:
+		var cam := Camera3D.new()
+		holder.add_child(cam)
+		cam.make_current()
+		var w := ShaderWarmup.build(holder, cam, null)
+		autofree(w)
+		assert_gte(
+			w.hidden_proxies,
+			3 + 2 + FireballViews.LOOKS.size(),
+			"the elite pools and the looks' sets"
+		)
 
 
 func test_the_first_payoff_rings_and_bolt_build_nothing_after_the_load() -> void:
@@ -285,12 +368,12 @@ func test_the_first_payoff_rings_and_bolt_build_nothing_after_the_load() -> void
 	var fx: StatusVisuals = add_child_autofree(StatusVisuals.new(actors))
 	fx.prepare()
 	assert_eq(fx.idle_fx(), StatusVisuals.FX_PREFILL)
-	var nodes := fx.get_child_count()
+	var nodes := _nodes()
 	var res := _resources()
 	for r in StatusVisuals.RING_RADII:
 		fx._ring(Vector2(1, 1), r, Color.RED)
 	assert_eq(fx.fx_count(), StatusVisuals.RING_RADII.size(), "the rings fade in")
-	assert_eq(fx.get_child_count(), nodes, "pooled rings, no node made")
+	assert_eq(_nodes(), nodes, "pooled rings, no node made")
 	assert_eq(_resources() - res, 0, "shared ring meshes, no mesh or material made")
 	for k in StatusVisuals.FX_FRAMES:
 		fx._process(1.0 / 60.0)
@@ -298,5 +381,5 @@ func test_the_first_payoff_rings_and_bolt_build_nothing_after_the_load() -> void
 	assert_eq(fx.idle_fx(), StatusVisuals.FX_PREFILL, "back in the pool")
 	fx._bolt_line(Vector2.ZERO, Vector2(3, 0), Color.CYAN)
 	assert_eq(fx.fx_count(), 4, "a bolt's four segments, from the pool")
-	assert_eq(fx.get_child_count(), nodes)
+	assert_eq(_nodes(), nodes)
 	assert_eq(_resources() - res, 0)

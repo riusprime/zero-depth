@@ -68,7 +68,10 @@ var spawned := 0
 var reused := 0
 
 var _def: PackFxDefinition
-var _idle := {}  # id -> Array[Node3D]
+## id -> Array[Node3D]. v0.10.5 PC (owner PERF_PLAYLOG_2: the filled pools put ~2,300 idle nodes in the tree, paid
+## for every frame): an idle instance waits outside the scene tree (kept here, freed with the pack) and joins it again
+## when spawned.
+var _idle := {}
 var _live: Array[Dictionary] = []  # oldest first: {node, id, family, left}
 var _info := {}  # Node3D -> {anim, colors, speed, life, lights}
 var _live_n := {}  # id -> its live instances
@@ -278,16 +281,45 @@ func prefill(effect_id: StringName, n: int) -> Array[Node3D]:
 		var node := _make(_def.scenes[k])
 		if node == null:
 			break
+		_park(node)
 		idle.append(node)
 		made.append(node)
 	return made
+
+
+## v0.10.5 PC: the idle instances waiting outside the tree (tests, scripts/checks/pool_node_count.gd).
+func idle_outside() -> int:
+	var n := 0
+	for id: StringName in _idle:
+		for node: Node3D in _idle[id]:
+			if node.get_parent() == null:
+				n += 1
+	return n
+
+
+## v0.10.5 PC: an idle instance leaves the tree (it was made in it: its scripts are ready, its parts built).
+func _park(node: Node3D) -> void:
+	if node.get_parent() == self:
+		remove_child(node)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:  # the idle instances outside the tree go with the pack
+		for id: StringName in _idle:
+			for node: Node3D in _idle[id]:
+				if is_instance_valid(node) and node.get_parent() == null:
+					node.free()
+		_idle.clear()
 
 
 ## An idle instance of `effect_id`, or a new one.
 func _take(effect_id: StringName, scene_path: String) -> Node3D:
 	var idle: Array = _idle.get(effect_id, [])
 	if not idle.is_empty():
-		return idle.pop_back()
+		var node: Node3D = idle.pop_back()
+		if node.get_parent() == null:
+			add_child(node)  # v0.10.5 PC: back in the tree
+		return node
 	return _make(scene_path)
 
 
@@ -402,7 +434,7 @@ func _on_anim_done(anim_name: StringName, node: Node3D) -> void:
 		if e["node"] == node and is_inf(float(e["left"])):  # held: play again until the caller's release()
 			(_info[node]["anim"] as AnimationPlayer).play(ANIM)
 			return
-	_release(node)
+	_release(node, true)  # (v0.10.5 PC: out of the tree after the player's signal, not inside it)
 
 
 ## v0.10.0 lead (VX3's finding): the instances of one scene share its ShaderMaterials, so a recolour of one would
@@ -447,7 +479,7 @@ func release(node: Node3D) -> void:
 
 
 ## Back to the pool, hidden.
-func _release(node: Node3D) -> void:
+func _release(node: Node3D, later := false) -> void:
 	for k in _live.size():
 		if _live[k]["node"] == node:
 			var id: StringName = _live[k]["id"]
@@ -462,7 +494,17 @@ func _release(node: Node3D) -> void:
 			if not _idle.has(id):
 				_idle[id] = []
 			(_idle[id] as Array).append(node)
+			if later:
+				_park_if_idle.call_deferred(node)
+			else:
+				_park(node)
 			return
+
+
+## v0.10.5 PC: a deferred park, unless a spawn took the instance again meanwhile.
+func _park_if_idle(node: Node3D) -> void:
+	if is_instance_valid(node) and not is_live(node):
+		_park(node)
 
 
 ## The ground point the camera looks at, a little toward the camera (inside the frame).

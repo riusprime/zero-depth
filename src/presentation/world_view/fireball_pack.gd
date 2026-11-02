@@ -29,6 +29,26 @@ static func prefill(pack: PackFx, id: StringName) -> void:
 		own_particles(node)
 
 
+## v0.10.5 PC (owner PERF_PLAYLOG_2: idle pool nodes in the tree cost every frame): FireballViews.prepare's sets wait
+## outside the tree until their look first draws. The set nodes outside it (`sets`: FireballViews._sets).
+static func detached(sets: Dictionary) -> Array[Node]:
+	var out: Array[Node] = []
+	for key: StringName in sets:
+		for part: String in ["core", "edge", "trail"]:
+			var mi: Node = sets[key][part]
+			if mi.get_parent() == null:
+				out.append(mi)
+	return out
+
+
+## A look's set (`set_parts`: its core, edge and trail) put in `view`'s tree, if it waits outside it.
+static func attach(view: Node, set_parts: Dictionary) -> void:
+	for part: String in ["core", "edge", "trail"]:
+		var mi: Node = set_parts[part]
+		if mi.get_parent() == null:
+			view.add_child(mi)
+
+
 ## A shot's own copy of each particle material (keep_playing scales them by the shot's size); once a node.
 static func own_particles(node: Node3D) -> void:
 	if node.has_meta(&"vx4_dup"):

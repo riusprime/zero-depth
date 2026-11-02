@@ -16,6 +16,8 @@ extends Node3D
 ##   StandardMaterial3D variants (the runes' alpha + unshaded + texture) may be drawn nowhere else on the floor.
 ##   v0.10.5 (the first fireballs and elite, PERF_PLAYLOG_1): with internal children and CPUParticles3D meshes too (a
 ##   MagicArea's parts: EliteViews' pooled sigil); FireballViews.prepare's looks are its empty MultiMeshes.
+##   v0.10.5 PC: and a view's idle_pieces(), the pool entries kept outside the tree (the walk runs at the view's build,
+##   so the proxies hold their meshes and materials; the pieces never need the tree to be drawn here).
 ## Every proxy sits in front of the camera (AT in its frame), scaled to TINY (well under a pixel): the draw is issued,
 ## nothing shows. A load builds the view hidden under the closed cover (Main), so the warm-up hangs beside the view
 ## (its parent), where it draws while the cover is still closed; without one (a tool's setup()) it hangs off the
@@ -111,6 +113,11 @@ func _from_view(n: Node, hidden: bool, warm: bool) -> void:
 	# v0.10.5: under a WARM_META node, a node's internal children too (a MagicArea builds its parts as internal ones)
 	for c in n.get_children(all):
 		_from_view(c, off, all)
+	# v0.10.5 PC (owner PERF_PLAYLOG_2): a pool's idle pieces wait outside the tree (EliteViews, TelegraphViews,
+	# StatusVisuals, FireballViews: idle_pieces()); drawn here once like its hidden children were
+	if n.has_method(&"idle_pieces"):
+		for c: Node in n.call(&"idle_pieces"):
+			_from_view(c, true, all)
 
 
 ## Whether a hidden piece draws with an effect's own shader (a ShaderMaterial: the ones made and compiled on first

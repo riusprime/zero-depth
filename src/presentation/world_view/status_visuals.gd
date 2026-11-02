@@ -579,20 +579,44 @@ func _torus(radius: float) -> TorusMesh:
 ## An idle fading piece, shown at the origin, or a new one.
 func _take_fx() -> MeshInstance3D:
 	var n: MeshInstance3D = _idle_fx.pop_back() if not _idle_fx.is_empty() else _new_fx()
+	if n.get_parent() == null:
+		add_child(n)  # (v0.10.5 PC: idle outside the tree)
 	n.transform = Transform3D.IDENTITY
 	n.visible = true
 	return n
 
 
-## A hidden fading piece in the tree with its own material (each fades on its own).
+## A hidden fading piece with its own material (each fades on its own); v0.10.5 PC: made outside the tree, _take_fx
+## puts it in.
 func _new_fx() -> MeshInstance3D:
 	var n := MeshInstance3D.new()
 	n.material_override = _fx_template.duplicate() as StandardMaterial3D
 	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	n.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	n.visible = false
-	add_child(n)
 	return n
+
+
+## v0.10.5 PC (owner PERF_PLAYLOG_2: idle pool nodes in the tree cost every frame): the idle pieces outside the tree
+## (ShaderWarmup draws them once at the load).
+func idle_pieces() -> Array[Node]:
+	var out: Array[Node] = []
+	for n in _idle_fx:
+		if n.get_parent() == null:
+			out.append(n)
+	return out
+
+
+## v0.10.5 PC: how many idle pieces wait outside the tree (tests, scripts/checks/pool_node_count.gd).
+func idle_outside() -> int:
+	return idle_pieces().size()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:  # the idle pieces outside the tree go with the view
+		for n in idle_pieces():
+			n.free()
+		_idle_fx.clear()
 
 
 func _process(_delta: float) -> void:
@@ -608,6 +632,7 @@ func _process(_delta: float) -> void:
 			var done := fx[0] as MeshInstance3D
 			done.visible = false
 			_idle_fx.append(done)
+			remove_child(done)  # (v0.10.5 PC: idle outside the tree)
 			_fx.remove_at(k)
 
 
