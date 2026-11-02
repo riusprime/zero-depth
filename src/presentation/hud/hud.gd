@@ -227,6 +227,89 @@ func sync(reader: WorldReader) -> void:
 	if locale != _shown_locale:  # P-7: words again in a new language
 		_shown_locale = locale
 		_shown.clear()
+	# v0.10.5: each part's cost goes to its own PerfMarks bucket "hud.<part>" (the perf log's `bd` column). Off, each
+	# is one bool check. The calls keep their order.
+	var t := PerfMarks.start()
+	_sync_hp(reader)
+	PerfMarks.add(&"hud.hp", t)
+	t = PerfMarks.start()
+	if reader.has_floor():
+		var secs := int(reader.run_seconds())
+		if _changed(&"wave", [&"HUD_TIME", secs]):
+			_wave.text = tr("HUD_TIME") % [secs / 60, secs % 60]
+		_danger.set_danger(reader.tier(), reader.tier_progress())
+		PerfMarks.add(&"hud.danger", t)
+		t = PerfMarks.start()
+		depths_tag.set_multiplier(reader.catch_up_permille())
+		PerfMarks.add(&"hud.depths", t)
+		t = PerfMarks.start()
+		var kills := reader.kills()
+		if _changed(&"left", [&"HUD_KILLS", kills]):
+			_left.text = tr("HUD_KILLS") % kills
+		PerfMarks.add(&"hud.danger", t)
+		t = PerfMarks.start()
+		_sync_items(reader)
+		_sync_combos(reader)
+		PerfMarks.add(&"hud.pickups", t)
+	else:
+		var wave := [&"HUD_WAVE", maxi(reader.wave_number(), 1), reader.wave_count()]
+		if _changed(&"wave", wave):
+			_wave.text = tr("HUD_WAVE") % [wave[1], wave[2]]
+		var alive := reader.enemies_alive()
+		if _changed(&"left", [&"HUD_ENEMIES", alive]):
+			_left.text = tr("HUD_ENEMIES") % alive
+		PerfMarks.add(&"hud.danger", t)
+	t = PerfMarks.start()
+	_danger.visible = reader.has_floor()
+	if not reader.has_floor():
+		depths_tag.visible = false
+	elif depths_tag.visible:
+		_place_depths_tag()
+	PerfMarks.add(&"hud.depths", t)
+	t = PerfMarks.start()
+	_sync_floor_lines(reader)
+	boss_bar.sync(reader)
+	heat_meter.sync(reader)
+	PerfMarks.add(&"hud.top", t)
+	t = PerfMarks.start()
+	minimap.sync(reader)
+	PerfMarks.add(&"hud.minimap", t)
+	t = PerfMarks.start()
+	_sync_rewards(reader)
+	gamble.sync(reader)
+	PerfMarks.add(&"hud.rewards", t)
+	t = PerfMarks.start()
+	kit_hud.sync(reader)  # v0.3.5 K
+	ability_squares.sync(reader)  # v0.9.5 HU
+	PerfMarks.add(&"hud.kit", t)
+	t = PerfMarks.start()
+	events.sync(reader)  # v0.5.0 EV
+	PerfMarks.add(&"hud.events", t)
+	t = PerfMarks.start()
+	overrun_hud.sync(reader)  # v0.4.0 AB
+	lockdown_hud.sync(reader)  # v0.9.0 LK
+	shrine_hud.sync(reader)  # v0.9.0 SH, HF
+	phase_hud.sync(reader)  # v0.4.0 TU
+	PerfMarks.add(&"hud.rooms", t)
+	t = PerfMarks.start()
+	shop.sync(reader)  # v0.5.0 SH
+	PerfMarks.add(&"hud.shop", t)
+	t = PerfMarks.start()
+	boss_door.sync(reader)  # v0.8.0 BD
+	interact.sync(reader)  # v0.9.0 IX
+	PerfMarks.add(&"hud.prompts", t)
+	t = PerfMarks.start()
+	build_hud.sync(reader)  # v0.6.0 MX2
+	PerfMarks.add(&"hud.build", t)
+	t = PerfMarks.start()
+	swap.sync(reader)
+	swap.input_enabled = not _landing  # v0.8.0 N11 fix: no answer to a Swap hidden under the arrival (it would be lost)
+	shop.panel.input_enabled = not reader.swapping()  # the shop waits under the swap
+	PerfMarks.add(&"hud.swap", t)
+
+
+## The HP bar, its text, the low-HP warning and the regen pulse.
+func _sync_hp(reader: WorldReader) -> void:
 	var hp := reader.player_hp()
 	var mx := maxi(1, reader.player_max_hp())
 	_hp_bar.set_fraction(float(hp) / mx)
@@ -238,61 +321,24 @@ func sync(reader: WorldReader) -> void:
 		_hp_text.text = tr("HUD_HP") % [hp, mx]
 		_hp_text.add_theme_color_override("font_color", hp_color)
 	_regen.sync(reader, Vector2(_hp_bar.size.x * _hp_bar.shown_fraction(), _hp_bar.size.y))
-	if reader.has_floor():
-		var secs := int(reader.run_seconds())
-		if _changed(&"wave", [&"HUD_TIME", secs]):
-			_wave.text = tr("HUD_TIME") % [secs / 60, secs % 60]
-		_danger.set_danger(reader.tier(), reader.tier_progress())
-		depths_tag.set_multiplier(reader.catch_up_permille())
-		var kills := reader.kills()
-		if _changed(&"left", [&"HUD_KILLS", kills]):
-			_left.text = tr("HUD_KILLS") % kills
-		_sync_items(reader)
-		_sync_combos(reader)
-	else:
-		var wave := [&"HUD_WAVE", maxi(reader.wave_number(), 1), reader.wave_count()]
-		if _changed(&"wave", wave):
-			_wave.text = tr("HUD_WAVE") % [wave[1], wave[2]]
-		var alive := reader.enemies_alive()
-		if _changed(&"left", [&"HUD_ENEMIES", alive]):
-			_left.text = tr("HUD_ENEMIES") % alive
-	_danger.visible = reader.has_floor()
-	if not reader.has_floor():
-		depths_tag.visible = false
-	elif depths_tag.visible:
-		_place_depths_tag()
+
+
+## The gate note at the bottom and the floor line at the top.
+func _sync_floor_lines(reader: WorldReader) -> void:
 	_gate.text = _gate_note(reader)
 	_floor.visible = reader.has_boss_room()
-	if _floor.visible:
-		var deep := reader.floor_is_deep()  # v0.5.0 RT: a Deep floor says so, in the Deep gate's violet
-		var floor_index := reader.floor_index()
-		var loop := reader.loop()
-		if _changed(&"floor", [floor_index, deep, _biome_key, loop]):
-			_floor.text = (
-				loop_prefix(self, loop)
-				+ tr("HUD_FLOOR_DEEP" if deep else "HUD_FLOOR") % [floor_index, tr(_biome_key)]
-			)  # v0.7.5 AP: "Loop 2 · Floor 1 · <biome>" past the first loop
-			if deep:
-				_floor.add_theme_color_override("font_color", DEEP_TEXT)
-	boss_bar.sync(reader)
-	heat_meter.sync(reader)
-	minimap.sync(reader)
-	_sync_rewards(reader)
-	gamble.sync(reader)
-	kit_hud.sync(reader)  # v0.3.5 K
-	ability_squares.sync(reader)  # v0.9.5 HU
-	events.sync(reader)  # v0.5.0 EV
-	overrun_hud.sync(reader)  # v0.4.0 AB
-	lockdown_hud.sync(reader)  # v0.9.0 LK
-	shrine_hud.sync(reader)  # v0.9.0 SH, HF
-	phase_hud.sync(reader)  # v0.4.0 TU
-	shop.sync(reader)  # v0.5.0 SH
-	boss_door.sync(reader)  # v0.8.0 BD
-	interact.sync(reader)  # v0.9.0 IX
-	build_hud.sync(reader)  # v0.6.0 MX2
-	swap.sync(reader)
-	swap.input_enabled = not _landing  # v0.8.0 N11 fix: no answer to a Swap hidden under the arrival (it would be lost)
-	shop.panel.input_enabled = not reader.swapping()  # the shop waits under the swap
+	if not _floor.visible:
+		return
+	var deep := reader.floor_is_deep()  # v0.5.0 RT: a Deep floor says so, in the Deep gate's violet
+	var floor_index := reader.floor_index()
+	var loop := reader.loop()
+	if _changed(&"floor", [floor_index, deep, _biome_key, loop]):
+		_floor.text = (
+			loop_prefix(self, loop)
+			+ tr("HUD_FLOOR_DEEP" if deep else "HUD_FLOOR") % [floor_index, tr(_biome_key)]
+		)  # v0.7.5 AP: "Loop 2 · Floor 1 · <biome>" past the first loop
+		if deep:
+			_floor.add_theme_color_override("font_color", DEEP_TEXT)
 
 
 func _process(delta: float) -> void:
