@@ -8,7 +8,16 @@ extends RefCounted
 ## still name the same curses and events. RETIRED_EVENTS' weight is drawn only when a floor saved before EL is rebuilt
 ## (`legacy`), so that floor's draws are the ones it was saved with.
 
-const RETIRED_CURSES: Array[StringName] = [&"marked_hunt"]
+## v0.10.5 O1 (owner P1: "Yes, cut the 5"): the five flat curses (Leaky Core, Price Gouge, Swarm Call, Swift Foes,
+## Withering) are retired the same way.
+const RETIRED_CURSES: Array[StringName] = [
+	&"marked_hunt",
+	&"leaky_core",
+	&"price_gouge",
+	&"swarm_call",
+	&"swift_foes",
+	&"withering",
+]
 const RETIRED_EVENTS := {&"ambush_cache": 10}
 
 

@@ -170,7 +170,7 @@ func test_event_plaques_fit_and_the_panel_fits_the_screen() -> void:
 	for lang in ["en", "es"]:
 		TranslationServer.set_locale(lang)
 		for id in EVENTS:
-			var w := EventLab.world(4242, 1, &"blade", [&"withering"])
+			var w := EventLab.world(4242, 1, &"blade", [&"heavy_hands"])
 			Stats.add_card(w, Stats.Stat.DAMAGE, 0)
 			EventLab.set_event(w, id)
 			EventLab.open(w)

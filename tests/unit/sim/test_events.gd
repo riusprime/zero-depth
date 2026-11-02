@@ -61,6 +61,10 @@ func test_unstable_core_trades_hp_or_a_curse_for_an_epic_stat_card() -> void:
 	EventLab.open(v)
 	var curse := v.ev.roll_curse[1]
 	assert_gte(curse, 0, "Embrace shows its curse before you take it")
+	assert_true(
+		v.ev.curses[curse].is_trade_off(),
+		"v0.10.5 O1: no plain curse is left, so the random price is drawn from the trade-offs"
+	)
 	EventLab.pick(v, 2)
 	assert_eq(v.curses_owned, PackedInt32Array([curse]), "Embrace takes the curse")
 	assert_eq(Curses.threat(v), 1, "T rises by 1")
@@ -123,7 +127,7 @@ func test_an_old_saves_ambush_marked_curse_and_elite_core_are_dropped_on_load() 
 	assert_eq(w.ev.events[ambush].weight, 0, "never drawn today")
 	EventLab.set_event(w, &"ambush_cache")  # test setup: the pedestal an old save's floor holds
 	var marked := EventLab.curse_index(w, &"marked_hunt")
-	w.curses_owned = PackedInt32Array([marked, EventLab.curse_index(w, &"swift_foes")])
+	w.curses_owned = PackedInt32Array([marked, EventLab.curse_index(w, &"rooted")])
 	var id := w.add_enemy(ActorStore.Kind.WARDEN, w.player_pos() + Vector2(4, 0))
 	w.cores.add(id, 0, false)  # test setup: an old ×2 HP elite's core
 	var snap := w.to_snapshot()
@@ -132,7 +136,7 @@ func test_an_old_saves_ambush_marked_curse_and_elite_core_are_dropped_on_load() 
 	assert_eq(base.ev.state[0], Events.State.DONE, "its Ambush Cache pedestal is closed")
 	assert_eq(
 		base.curses_owned,
-		PackedInt32Array([EventLab.curse_index(base, &"swift_foes")]),
+		PackedInt32Array([EventLab.curse_index(base, &"rooted")]),
 		"Marked is dropped, the rest kept"
 	)
 	assert_eq(base.cores.size(), 0, "the plain enemy's core is dropped")
@@ -191,14 +195,14 @@ func test_wandering_drone_pays_once_you_held_the_ring_for_20_seconds() -> void:
 
 
 func test_cleansing_font_lifts_the_latest_curse() -> void:
-	var w := _world(&"cleansing_font", [&"swift_foes", &"withering"])
+	var w := _world(&"cleansing_font", [&"rooted", &"heavy_hands"])
 	assert_eq(Curses.threat(w), 2)
 	EventLab.open(w)
 	assert_eq(Events.block(w, 0, 0), Events.NEED_SHARDS)
 	var hp := w.actors.hp[0]
 	EventLab.pick(w, 2)
 	assert_eq(hp - w.actors.hp[0], w.actors.max_hp[0] / 5, "20 % HP")
-	assert_eq(w.curses_owned, PackedInt32Array([EventLab.curse_index(w, &"swift_foes")]))
+	assert_eq(w.curses_owned, PackedInt32Array([EventLab.curse_index(w, &"rooted")]))
 	assert_eq(Curses.threat(w), 1, "T falls")
 	assert_eq(w.threat_peak, 2, "the peak stays")
 	var v := _world(&"cleansing_font")
@@ -261,12 +265,12 @@ func test_the_press_goes_to_an_altar_or_chest_first() -> void:
 
 
 func test_a_save_mid_defence_with_a_curse_restores_the_same_world() -> void:
-	var w := _world(&"wandering_drone", [&"swift_foes"])
+	var w := _world(&"wandering_drone", [&"rooted"])
 	EventLab.open(w)
 	EventLab.pick(w, 1)
 	EventLab.idle(w, 30)
 	var snap := w.to_snapshot()
-	var base := EventLab.world(SEED, 1, &"blade", [&"swift_foes"])
+	var base := EventLab.world(SEED, 1, &"blade", [&"rooted"])
 	EventLab.set_event(base, &"wandering_drone")
 	assert_eq(WorldSnapshot.apply(base, snap), "", "the snapshot applies")
 	assert_eq(base.state_hash(), w.state_hash(), "the same world, events and curses included")

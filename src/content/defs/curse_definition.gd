@@ -44,18 +44,28 @@ const EFFECTS: Array[StringName] = [
 	&"elite_rare_drop",
 ]
 ## v0.9.0 EL (owner Q25): the Marked curse's effects, retired with it (their places above stay; no curse may use them).
-const RETIRED: Array[StringName] = [&"elite_chance", &"elite_hunt", &"elite_rare_drop"]
+## v0.10.5 O1 (owner P1: "Yes, cut the 5"): the five flat curses' effects, retired with them.
+const RETIRED: Array[StringName] = [
+	&"elite_chance",
+	&"elite_hunt",
+	&"elite_rare_drop",
+	&"enemy_speed",
+	&"regen",
+	&"heat_decay",
+	&"extra_enemy",
+	&"prices",
+]
 ## Effects whose amount is a count (or an on/off flag of 1), not a percent.
-const COUNTS: Array[StringName] = [&"extra_enemy", &"no_dash", &"no_minimap", &"elite_rare_drop"]
+const COUNTS: Array[StringName] = [&"no_dash", &"no_minimap", &"elite_rare_drop"]
 ## Effects whose amount is in seconds.
 const SECONDS: Array[StringName] = [&"hit_stun"]
 ## Effects that cut a value by a percent (at most 90 %).
-const CUTS: Array[StringName] = [&"regen", &"attack_slow", &"max_hp_cut", &"heat_linger"]
+const CUTS: Array[StringName] = [&"attack_slow", &"max_hp_cut", &"heat_linger"]
 
 @export var name_key: StringName
 ## A sentence with one %s for the amount (or none for an on/off effect).
 @export var desc_key: StringName
-@export var effect: StringName = &"enemy_speed"
+@export var effect: StringName = &"no_dash"
 @export var amount := 15.0
 ## v0.6.0 CU: a second drawback (&"" = none).
 @export var effect_2: StringName = &""
@@ -106,7 +116,5 @@ func _check_effect(issues: Array[ValidationIssue], e: StringName, a: float) -> v
 	elif RETIRED.has(e):
 		issues.append(ValidationIssue.new(&"unknown", resource_path, "effect %s is retired" % e))
 	check_positive(issues, "amount", a)
-	if e == &"regen" and a > 100.0:
-		issues.append(ValidationIssue.new(&"range", resource_path, "regen cut is at most 100 %"))
-	elif CUTS.has(e) and e != &"regen" and a > 90.0:
+	if CUTS.has(e) and a > 90.0:
 		issues.append(ValidationIssue.new(&"range", resource_path, "%s is at most 90 %%" % e))

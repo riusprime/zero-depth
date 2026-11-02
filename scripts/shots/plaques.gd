@@ -111,9 +111,9 @@ func _build_hud(_lang: String) -> void:
 	_add(combo)
 	var defs := ContentRepository.load_all().all_of(&"combos")
 	var c: Resource = defs[0]
-	var a: StringName = c.item_a if c.item_a != &"" else c.ability_a
-	var b: StringName = c.item_b if c.item_b != &"" else c.ability_b
-	combo.show_combo(c.id, a, b, tr(c.name_key), tr(c.desc_key), tr("UI_COMBO_UNLOCKED"))
+	combo.show_combo(
+		c.id, c.item_a, c.item_b, tr(c.name_key), tr(c.desc_key), tr("UI_COMBO_UNLOCKED")
+	)
 	combo.place_bottom_centre(-196 - item.plaque_height() - 10)
 	var gamble := GambleCard.new()
 	_add(gamble)
@@ -136,7 +136,7 @@ func _build_hud(_lang: String) -> void:
 
 
 func _build_event() -> void:
-	var w := EventLab.world(4242, 1, &"blade", [&"withering"])
+	var w := EventLab.world(4242, 1, &"blade", [&"heavy_hands"])
 	EventLab.set_event(w, &"blood_price")
 	EventLab.open(w)
 	var panel := EventPanel.new()
@@ -180,7 +180,7 @@ func _build_shop() -> void:
 	)
 	cleanse.show_tile(
 		tr("SHOP_CLEANSE"),
-		tr("CURSE_WITHERING"),
+		tr("CURSE_HEAVY_HANDS"),
 		60,
 		true,
 		true,

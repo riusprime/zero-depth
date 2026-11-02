@@ -217,7 +217,7 @@ static func in_reach(w: World) -> bool:
 
 ## Shards for the next use on this floor.
 static func price(w: World) -> int:
-	return Curses.price(w, w.gamble_table.price(w.gamble_uses, w.floor_index))  # v0.5.0 EV
+	return w.gamble_table.price(w.gamble_uses, w.floor_index)
 
 
 static func can_afford(w: World) -> bool:

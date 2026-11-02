@@ -17,7 +17,7 @@ func test_the_shipped_events_curses_and_rules_compile() -> void:
 		"eight events (v0.5.5 DS: Whispering Deep; v0.9.0 EL: no Ambush Cache)"
 	)
 	assert_eq(
-		repo.count(&"curses"), 12, "five plain curses and seven trade-offs (v0.9.0 EL: no Marked)"
+		repo.count(&"curses"), 7, "seven trade-offs (v0.9.0 EL: no Marked; v0.10.5 O1: no plain curse)"
 	)
 	var events := EventCompiler.compile_events(repo)
 	assert_eq(events.size(), 9, "and the retired event's place kept")
@@ -35,8 +35,8 @@ func test_the_shipped_events_curses_and_rules_compile() -> void:
 	var by_id := {}
 	for c in curses:
 		by_id[c.id] = c
-	assert_eq(by_id[&"swift_foes"].amount, 150, "15 % in per mille")
-	assert_eq(by_id[&"swarm_call"].amount, 1, "a count stays a count")
+	assert_eq(by_id[&"heavy_hands"].amount, 200, "20 % in per mille")
+	assert_eq(by_id[&"tunnel_vision"].amount, 1, "a count stays a count")
 	var rules := EventCompiler.compile_rules(repo.get_def(&"event_rules", &"floor"))
 	assert_eq([rules.rooms_min, rules.rooms_max], [0, 1])  # v0.9.5 AQ: 0 or 1 event room a floor
 	assert_eq([rules.event_floor_chance_permille, rules.events_max_per_run], [300, 2])

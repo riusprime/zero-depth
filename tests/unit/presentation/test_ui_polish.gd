@@ -194,7 +194,7 @@ func test_the_options_back_row_is_left_aligned_like_the_categories() -> void:
 
 
 func test_the_threat_and_shrine_rows_follow_a_language_switch() -> void:
-	var w := EventLab.world(5, 1, &"blade", [&"swift_foes"])
+	var w := EventLab.world(5, 1, &"blade", [&"rooted"])
 	w.gamble_id = w.take_root()
 	w.gamble_pos = Vector2(0.8, 0)
 	Gamble.grant(w, GambleTable.Stat.MELEE)
@@ -298,7 +298,7 @@ func test_the_options_binding_cells_follow_a_language_switch() -> void:
 
 
 func test_the_pause_screen_follows_a_language_switch_from_its_options() -> void:
-	var w := EventLab.world(5, 1, &"blade", [&"swift_foes"])
+	var w := EventLab.world(5, 1, &"blade", [&"rooted"])
 	w.gamble_id = w.take_root()
 	w.gamble_pos = Vector2(0.8, 0)
 	Gamble.grant(w, GambleTable.Stat.MAX_HP)
@@ -323,7 +323,7 @@ func test_the_pause_screen_follows_a_language_switch_from_its_options() -> void:
 
 
 func test_the_threat_panel_wraps_long_lines_clear_of_the_top_plate() -> void:
-	var w := EventLab.world(5, 1, &"blade", [&"swift_foes"])
+	var w := EventLab.world(5, 1, &"blade", [&"rooted"])
 	var reader := WorldReader.new(w)
 	for id: StringName in [&"blood_price", &"brittle", &"glass_heart", &"tunnel_vision"]:
 		Curses.add(w, EventLab.curse_index(w, id))

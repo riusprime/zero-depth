@@ -168,7 +168,7 @@ static func can_afford(w: World, i: int) -> bool:
 
 ## Reward i's price now: its placed price under the prices curse (v0.5.0 EV).
 static func price_of(w: World, i: int) -> int:
-	return Curses.price(w, w.rewards.price[i])
+	return w.rewards.price[i]
 
 
 ## Tick phase 2b: a buffered interact press next to a reward opens it. True if the world is now choosing.
