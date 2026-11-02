@@ -281,6 +281,7 @@ static func compile_floor_spawning(repo: ContentRepository, floor_index: int) ->
 	if def != null:
 		t.curve = compile_curve(def, t, repo)
 	t.intensity = IntensityCompiler.compile(repo.get_def(&"intensity", &"director"))  # v0.8.0 N5 (owner O58)
+	t.pairings = compile_pairings(repo.get_def(&"pairing", &"pairings"), repo)  # v0.10.5 O15
 	return t
 
 
@@ -1000,4 +1001,20 @@ static func compile_heat(def: HeatDefinition) -> HeatTable:
 	t.vent_min_milli = int(round(def.vent_min_heat * HeatTable.MILLI))
 	t.vent_cooldown_ticks = SimTick.seconds_to_ticks(def.vent_cooldown_seconds)
 	t.perfect_vent_milli = def.perfect_vent_from * HeatTable.MILLI
+	return t
+
+
+## v0.10.5 O15: the enemy pairings with their enemy ids resolved to actor kinds (null def: none).
+static func compile_pairings(def: PairingSetDefinition, repo: ContentRepository) -> PairingTable:
+	if def == null:
+		return null
+	var t := PairingTable.new()
+	for r in def.rows:
+		t.lead.append(compile_enemy(repo.get_def(&"enemies", r.lead_id)).kind)
+		t.partner.append(compile_enemy(repo.get_def(&"enemies", r.partner_id)).kind)
+		t.from_floor.append(r.from_floor)
+		t.chance.append(r.chance_permille)
+		t.count.append(r.partners)
+		t.placement.append(r.placement)
+		t.name_keys.append(r.name_key)
 	return t

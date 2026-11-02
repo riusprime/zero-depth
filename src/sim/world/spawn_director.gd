@@ -148,6 +148,22 @@ static func pack_spots(w: World, anchor: Vector2, count: int) -> PackedVector2Ar
 	return out
 
 
+## v0.10.5 O15: whether `q` is a walkable spot of room `home` (-1: any), clear of walls, away from the hero, and not
+## in the boss room.
+static func spot_ok(w: World, q: Vector2, home: int, min_hero_m: float) -> bool:
+	if Kin.length(q - w.player_pos()) < min_hero_m:
+		return false
+	if w.floor_layout != null:
+		var qr := w.floor_layout.room_of(q)
+		if (
+			qr == w.floor_layout.boss_room
+			or w.floor_layout.arena_rooms.has(qr)
+			or (home >= 0 and qr != home)
+		):
+			return false
+	return _clear(w, q)
+
+
 static func _clear(w: World, q: Vector2) -> bool:
 	var r := PACK_CLEARANCE_M
 	for k in w.walls_near(Rect2(q.x - r, q.y - r, r * 2.0, r * 2.0)):
@@ -184,6 +200,12 @@ static func _spawn_pack(w: World, t: SpawnTable, ticks: int, room: int) -> void:
 		# v0.9.0 DP (owner Q24, Q26b): a Deep floor's room no longer brings an elite in its first pack (v0.5.5 DS's
 		# deep_elite is gone). World.deep_elite_rooms stays for the saves that hold it. v0.9.0 EL: no spawn becomes an
 		# elite any more (the Marked curse is gone); elites come from elite rooms (Elites).
+	# v0.10.5 O15: an authored duo's partners join the pack (only in the cap's slack left, so they are dropped first)
+	if t.pairings != null and not spots.is_empty():
+		var open_kinds := PackedInt32Array()
+		for k in open:
+			open_kinds.append(t.kinds[k])
+		Pairings.add_partners(w, t, kind, anchor, room - spots.size(), ticks, open_kinds)
 
 
 ## An enemy arriving now (actor i, just added): max HP and damage scaled by the danger tier (SpawnTable; the floor

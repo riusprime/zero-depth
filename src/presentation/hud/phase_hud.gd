@@ -72,6 +72,10 @@ func sync(reader: WorldReader) -> void:
 		if not _announced.has(kind) and reader.kind_alive(kind):
 			_announced[kind] = true
 			_queue.append(PackedStringArray(["HUD_NEW_ENEMY", String(reader.enemy_name_key(kind))]))
+	for key in reader.pairing_names():  # v0.10.5 O15: an enemy duo's first appearance in the run
+		if not _announced.has(key):
+			_announced[key] = true
+			_queue.append(PackedStringArray(["HUD_NEW_ENEMY", String(key)]))
 	if _left <= 0.0 and not _queue.is_empty():
 		_current = _queue.pop_front()
 		_left = ANNOUNCE_SECONDS
