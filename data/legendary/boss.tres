@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_leg")
-stat_cards = Array[StringName]([&"damage", &"crit_chance", &"crit_damage", &"attack_speed", &"area", &"max_hp", &"cooldowns", &"move_speed", &"armour", &"regen"])
+stat_cards = Array[StringName]([&"damage", &"crit_chance", &"close_quarters", &"attack_speed", &"third_strike", &"max_hp", &"reflex", &"adrenaline", &"heat_shield", &"vent_mend"])
 mods = Array[StringName]([])
 stat_weight = 60
 mod_weight = 40

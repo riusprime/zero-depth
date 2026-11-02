@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"scavenger"
+name_key = &"STAT_SCAVENGER"
+desc_key = &"STAT_SCAVENGER_DESC"
+amounts = PackedFloat32Array(25, 50, 80)
+cap = 150
+weight = 5
+id = &"scavenger"

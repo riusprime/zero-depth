@@ -9,5 +9,5 @@ name_key = &"STAT_CRIT_DAMAGE"
 desc_key = &"STAT_CRIT_DAMAGE_DESC"
 amounts = PackedFloat32Array(10, 20, 35)
 cap = 400
-weight = 7
+weight = 0
 id = &"crit_damage"

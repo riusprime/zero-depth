@@ -9,5 +9,5 @@ name_key = &"STAT_MOVE_SPEED"
 desc_key = &"STAT_MOVE_SPEED_DESC"
 amounts = PackedFloat32Array(4, 7, 10)
 cap = 1.6
-weight = 8
+weight = 0
 id = &"move_speed"

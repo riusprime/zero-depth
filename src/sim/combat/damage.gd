@@ -89,6 +89,7 @@ static func hit(
 		var out := Stats.outgoing(w, amount, tags)
 		amount = out[0]
 		tags |= out[1]
+		amount = RuleCards.outgoing(w, target, amount, tags, root_id, effect_id)  # v0.10.5 O9
 	# Items: Executioner is an attacker multiplier, applied before the target's (SIM_CONTRACTS §8 step 2).
 	var exec := ItemProcs.execute_mult(w, target, owner_id)
 	if exec != 1000:
@@ -136,6 +137,9 @@ static func hit(
 	if target == 0 and scaled > 0:
 		# v0.4.0 BS: armour; v0.8.0 N1 (D39): times the held weapon's damage taken (the Blade's -25 %), one rounding.
 		var taken := Stats.armour_permille(w) * PlayerBuild.taken_permille(w) / 1000
+		var shield := RuleCards.taken_permille(w)  # v0.10.5 O9: Heat Shield, while Hot
+		if shield != 1000:
+			taken = taken * shield / 1000
 		if taken != 1000:
 			scaled = maxi(1, (scaled * taken + 500) / 1000)
 		if w.affinity != null and owner_id != a.ids[0] and Affinities.ward_blocks(w):
@@ -245,6 +249,7 @@ static func _apply(
 			ItemProcs.on_kill(w, k)  # Items: Vampiric Core.
 			Engines.on_kill(w, k, target, tags)  # Engines: Wildfire, Blood Harvest.
 			Venom.on_kill(w, target, root_id)  # v0.6.0 MX4: Venom Core's spread
+			RuleCards.on_kill(w, target, tags, root_id)  # v0.10.5 O9: Adrenaline, Reflex, Scavenger
 			if w.pair_mask != 0 and a.frozen_t[target] > 0:
 				ElementPairs.on_frozen_end(w, target)  # v0.9.5 EE3: Brittle
 		BossTwin.fall_together(w, target, k)  # v0.9.0 NB2: its twin falls with it (its own KILL)

@@ -490,6 +490,8 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	if w.item_tables.is_empty() and w.ab.touched_ab():  # v0.4.0 AB: a world without items (_hash_engines)
 		h.add_ints(w.combos_owned)
 		w.actors.hash_statuses(h)
+	if w.ab.touched_rc():  # v0.10.5 O9: the rule cards' state
+		w.ab.hash_rc(h)
 
 
 ## Per slot (in slot order): the ability's id, name key, kind, auto, button, level, cooldown left and total, ready,

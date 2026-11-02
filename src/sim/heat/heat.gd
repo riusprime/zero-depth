@@ -275,7 +275,10 @@ static func vent(w: World) -> bool:
 	if s == null or not vent_ready(w):
 		return false
 	var heat := s.milli / HeatTable.MILLI
+	var mend := RuleCards.vent_hits(w, w.player_pos(), vent_radius_m(w))  # v0.10.5 O9: Vent Mend's condition
 	_blast(w, heat, 1000, w.take_root(), EFFECT_VENT)
+	if mend:
+		RuleCards.vent_mend(w)
 	w.kit.vent_cd = s.table.vent_cooldown_ticks  # v0.9.5 HT
 	if s.milli >= s.table.perfect_vent_milli:  # v0.10.5 S12: a perfect Vent readies the dash
 		w.dash_cooldown_left = 0

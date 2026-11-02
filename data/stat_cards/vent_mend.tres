@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"vent_mend"
+name_key = &"STAT_VENT_MEND"
+desc_key = &"STAT_VENT_MEND_DESC"
+amounts = PackedFloat32Array(2, 3.5, 5)
+cap = 10
+weight = 6
+id = &"vent_mend"

@@ -132,6 +132,14 @@ const FAMILY_OF := {
 	&"pickup_range": &"economy",
 	&"regen": &"healing",
 	&"shard_gain": &"economy",
+	# v0.10.5 O9: the rule cards that replace the flat stats
+	&"vent_mend": &"healing",
+	&"heat_shield": &"economy",
+	&"adrenaline": &"dash",
+	&"close_quarters": &"damage",
+	&"third_strike": &"damage",
+	&"reflex": &"time",
+	&"scavenger": &"economy",
 	# Abilities
 	&"aegis": &"time",
 	&"blink": &"dash",

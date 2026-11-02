@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"third_strike"
+name_key = &"STAT_THIRD_STRIKE"
+desc_key = &"STAT_THIRD_STRIKE_DESC"
+amounts = PackedFloat32Array(30, 50, 75)
+cap = 150
+weight = 8
+id = &"third_strike"

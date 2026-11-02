@@ -12,6 +12,9 @@ extends ContentDef
 ## v0.5.5 D9 (owner: heal orbs "as a card, so it is not perma enables only if you get it"): lifesprout, the only
 ## source of heal orbs: the first card gives kills its amount as a drop chance, every further card adds its `side`,
 ## up to `cap` (percent points).
+## v0.10.5 O9 (theory audit P2, owner "let's use the pending cards as this"): seven rule cards, Trigger -> Condition ->
+## Payoff (RuleCards), replace eight flat stats; the flat cards stay in the data with weight 0 (retired: never offered,
+## an old save's cards keep their effect).
 
 ## The stats in the sim's order (Stats.Stat mirrors it). Appended, never renumbered.
 const STATS: Array[StringName] = [
@@ -33,11 +36,22 @@ const STATS: Array[StringName] = [
 	&"hoarder",
 	&"fast_hands",
 	&"lifesprout",
+	# v0.10.5 O9 (theory audit P2): the rule cards that replace the flat stats (RuleCards)
+	&"vent_mend",
+	&"heat_shield",
+	&"adrenaline",
+	&"close_quarters",
+	&"third_strike",
+	&"reflex",
+	&"scavenger",
 ]
 ## The rule cards with a second number per rarity (`side`) and a `limit`. v0.5.5 D9: Lifesprout's side is what each
 ## further card adds to the heal-orb chance (its amount is the first card's chance).
 const SIDED: Array[StringName] = [&"glass_cannon", &"hoarder", &"lifesprout"]
-const LIMITED: Array[StringName] = [&"glass_cannon", &"overkill", &"hoarder"]
+## v0.10.5 O9: Adrenaline's and Close Quarters' limit is their reach in metres.
+const LIMITED: Array[StringName] = [
+	&"glass_cannon", &"overkill", &"hoarder", &"adrenaline", &"close_quarters"
+]
 const RARITIES := 3
 ## v0.8.0 SG: the multiplier stats a card may make additive (the points and cut stats already add or cut).
 const ADDITIVE_OK: Array[StringName] = [

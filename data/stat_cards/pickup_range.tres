@@ -9,5 +9,5 @@ name_key = &"STAT_PICKUP_RANGE"
 desc_key = &"STAT_PICKUP_RANGE_DESC"
 amounts = PackedFloat32Array(15, 30, 45)
 cap = 0
-weight = 4
+weight = 0
 id = &"pickup_range"
