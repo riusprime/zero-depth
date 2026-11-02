@@ -496,7 +496,24 @@ func _exit_tree() -> void:
 func prepare() -> void:
 	for key: StringName in LOOKS:
 		if not _sets.has(key):
-			_sets[key] = _make_set(key)
+			_sets[key] = _make_set(key, false)
+
+
+## v0.10.5 PC (owner PERF_PLAYLOG_2: idle pool nodes in the tree cost every frame): the prepared sets of the looks
+## not drawn yet wait outside the tree (ShaderWarmup draws them once at the load); a look joins it at its first draw.
+func idle_pieces() -> Array[Node]:
+	return FireballPack.detached(_sets)
+
+
+## v0.10.5 PC: how many set nodes wait outside the tree (tests, scripts/checks/pool_node_count.gd).
+func idle_outside() -> int:
+	return idle_pieces().size()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:  # (v0.10.5 PC: the sets outside the tree go with the view)
+		for n in idle_pieces():
+			n.free()
 
 
 func sync(reader: WorldReader) -> void:
@@ -733,6 +750,7 @@ func _draw(f: float) -> void:
 		_cores[key] = cores.size() / 12
 		_edges[key] = edges.size() / 12
 		_trails[key] = trails.size() / 12
+		FireballPack.attach(self, _sets[key])  # v0.10.5 PC: a prepared look's first draw puts its set in the tree
 		_fill(_sets[key]["core"], cores)
 		_fill(_sets[key]["edge"], edges)
 		_fill(_sets[key]["trail"], trails)
@@ -856,7 +874,7 @@ static func _fill(mi: MultiMeshInstance3D, buf: PackedFloat32Array) -> void:
 	mm.visible_instance_count = n
 
 
-func _make_set(key: StringName) -> Dictionary:
+func _make_set(key: StringName, attach := true) -> Dictionary:
 	var look := look_of(key).duplicate()
 	look["key"] = key  # v0.8.0 TX1: the materials pick the owner's textures by the look's key
 	var mesh := ProjectileMeshes.get_mesh(look.get("mesh", &"orb"))
@@ -889,7 +907,8 @@ func _make_set(key: StringName) -> Dictionary:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 		mi.extra_cull_margin = 2.0  # the shaders turn and stretch the pieces past their boxes
-		add_child(mi)
+		if attach:
+			add_child(mi)
 		out[s[0]] = mi
 	_motion = -1.0  # the new set takes the current motion on the next draw
 	return out

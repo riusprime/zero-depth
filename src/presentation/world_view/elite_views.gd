@@ -53,18 +53,22 @@ class PooledSigil:
 			return
 		super(delta)
 
-	## Hidden and still until play() (its sparks off).
+	## Hidden and still until play() (its sparks off); v0.10.5 PC: out of the tree (EliteViews keeps it).
 	func park() -> void:
 		_phase = IDLE
 		if _sparks != null:
 			_sparks.emitting = false
 		visible = false
 		set_process(false)
+		if get_parent() != null:
+			get_parent().remove_child(self)
 
 
 ## Nodes alive, each [node, seconds left, seconds total, kind &"arrive" | &"beam" | &"dust"].
 var _fx: Array = []
-## v0.10.5: idle rings by use (RINGS), and their shared meshes.
+## v0.10.5: idle rings by use (RINGS), and their shared meshes. v0.10.5 PC (owner PERF_PLAYLOG_2: idle pool nodes in
+## the tree cost every frame): the idle rings and the parked sigil wait outside the tree, kept here (freed with the
+## view).
 var _idle := {}
 var _meshes := {}
 var _sigil: PooledSigil = null
@@ -97,8 +101,7 @@ func prepare() -> void:
 		var idle: Array = _idle.get_or_add(use, [])
 		while idle.size() < int(PREFILL[use]):
 			var n := _new_ring(use)
-			n.visible = false
-			idle.append(n)
+			_park(n)
 	if _sigil == null and PACK_SIGILS and MagicArea.kinds().has("circle"):
 		_sigil = PooledSigil.new()
 		_sigil.element = "shadow"
@@ -205,6 +208,8 @@ func _arrival(at: Vector2) -> void:
 		if _sigil != null and not _sigil.visible:
 			_sigil.seed = randf() * 10.0  # (as MagicArea.add gives each new one)
 			_sigil.position = SimPlane.to_3d(at, Y)
+			if _sigil.get_parent() == null:
+				add_child(_sigil)  # (v0.10.5 PC: parked outside the tree)
 			_sigil.visible = true
 			_sigil.set_process(true)
 			_sigil.play()
@@ -296,6 +301,8 @@ func _ring_for(use: StringName) -> Node3D:
 	if idle.is_empty():
 		return _new_ring(use)
 	var n: Node3D = idle.pop_back()
+	if n.get_parent() == null:
+		add_child(n)  # (v0.10.5 PC: idle outside the tree)
 	n.transform = Transform3D.IDENTITY
 	var m := (n.get_child(0) as GeometryInstance3D).material_override as StandardMaterial3D
 	m.albedo_color = Color(RINGS[use][2] as Color, 0.7)
@@ -311,10 +318,37 @@ func _new_ring(use: StringName) -> Node3D:
 	return n
 
 
-## Back to its pool, hidden.
+## Back to its pool, hidden and out of the tree (v0.10.5 PC).
 func _park(n: Node3D) -> void:
 	n.visible = false
 	(_idle.get_or_add(n.get_meta(&"ring_use"), []) as Array).append(n)
+	if n.get_parent() == self:
+		remove_child(n)
+
+
+## v0.10.5 PC: the idle pieces outside the tree (ShaderWarmup draws them once at the load).
+func idle_pieces() -> Array[Node]:
+	var out: Array[Node] = []
+	for use: StringName in _idle:
+		for n: Node in _idle[use]:
+			if n.get_parent() == null:
+				out.append(n)
+	if _sigil != null and _sigil.get_parent() == null:
+		out.append(_sigil)
+	return out
+
+
+## v0.10.5 PC: how many idle pieces wait outside the tree (tests, scripts/checks/pool_node_count.gd).
+func idle_outside() -> int:
+	return idle_pieces().size()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:  # the pieces outside the tree go with the view
+		for n in idle_pieces():
+			n.free()
+		_idle.clear()
+		_sigil = null
 
 
 func _ring(inner: float, outer: float, c: Color) -> Node3D:
