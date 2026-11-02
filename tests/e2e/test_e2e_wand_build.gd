@@ -9,8 +9,9 @@ extends GutTest
 ##   and the same state hash (the moves are input, EI-04).
 ## - a run continued on its last floor (v0.9.0 FV: floor 5; a save on disk: 8 slots full) opens the Swap at 8
 ##   slots: it fits the screen, and an insert with the pad (X, d-pad, A, then the card that leaves, A) gives the
-##   order the panel previewed. v0.8.0 N11 fix: the card comes while the hero is still arriving (under the cover);
-##   the arrival still ends, then the Swap shows.
+##   order the panel previewed. v0.10.5 O13: the Build page's and the Swap's wand forecast (the spell left to right
+##   and its numbers) follows the reorder and is the forecast of the order the sim then holds. v0.8.0 N11 fix: the
+##   card comes while the hero is still arriving (under the cover); the arrival still ends, then the Swap shows.
 
 ## v0.6.5 WN5b: Blade wand cards only (a save holding retired v0.6 cards migrates when it is continued). v0.9.0 AS
 ## (owner Q6): one Pattern on the Blade (Whirl), so Thrust and Wide Arc gave way to Parry Edge and Frost.
@@ -127,6 +128,17 @@ func test_the_build_page_moves_cards_with_keyboard_mouse_and_pad_and_the_sim_get
 	var tick := w.tick
 	var first := page.read_back_text()
 	assert_true(first.begins_with("You fire a slash"), "the read-back: '%s'" % first)
+	# v0.10.5 O13: the forecast of the held wand, from the sim's compile of it
+	var cast_0 := page.forecast_text()
+	var nums_0 := page.forecast_numbers_text()
+	gut.p("forecast at open: %s | %s" % [cast_0, nums_0])
+	assert_true(cast_0.begins_with("Slash"), "the forecast reads the slash first: '%s'" % cast_0)
+	assert_string_contains(nums_0, "Damage per second")
+	assert_eq(
+		page.forecast.numbers(),
+		main.driver.reader.wand_forecast()["numbers"],
+		"the page's numbers are the held wand's"
+	)
 	assert_eq(page.row.slot_count(), 4, "floor 1's four slots")
 	var want := start.duplicate()
 	# Keyboard: Enter picks up slot 1, → → carries it to slot 3, Enter puts it down.
@@ -139,6 +151,12 @@ func test_the_build_page_moves_cards_with_keyboard_mouse_and_pad_and_the_sim_get
 	assert_eq(page.order(), want, "the keyboard moved slot 1 to slot 3")
 	assert_eq(page.held_index(), -1)
 	assert_ne(page.read_back_text(), first, "the read-back follows the move")
+	gut.p("forecast after a move: %s | %s" % [page.forecast_text(), page.forecast_numbers_text()])
+	assert_ne(
+		page.forecast_text() + page.forecast_numbers_text(),
+		cast_0 + nums_0,
+		"the forecast follows the move"
+	)
 	# Mouse: a drag from slot 4 onto slot 1.
 	await _drag(e, _centre(page, 3), _centre(page, 0))
 	want = _moved(want, 3, 0)
@@ -159,6 +177,8 @@ func test_the_build_page_moves_cards_with_keyboard_mouse_and_pad_and_the_sim_get
 	want = _moved(want, 0, 1)
 	assert_eq(page.order(), want, "the pad moved slot 1 to slot 2")
 	var preview := page.read_back_text()
+	var cast_preview := page.forecast.numbers()
+	var cast_words := page.forecast_text()
 	await e.frames(10)
 	assert_eq(w.tick, tick, "the sim stays paused on the Build page")
 	assert_eq(w.mod_slots, start, "and its wand waits for the moves as input")
@@ -178,6 +198,13 @@ func test_the_build_page_moves_cards_with_keyboard_mouse_and_pad_and_the_sim_get
 		r.wand_read_back(), func(k: StringName) -> String: return tr(k)
 	)
 	assert_eq(words, preview, "the sim's read-back is the page's preview")
+	var held := r.wand_forecast()
+	assert_eq(held["numbers"], cast_preview, "the forecast's numbers are the held wand's (O13)")
+	assert_eq(
+		WorldReader.wand_forecast_text(held, func(k: StringName) -> String: return tr(k))[0],
+		cast_words,
+		"and its spell line"
+	)
 	var hud: Hud = main.get_node("UI/Hud")
 	assert_eq(hud.build_hud.filled_pips(), 4)
 	# Replay: the snapshot plus the recorded frames give the same wand and the same state hash.
@@ -300,6 +327,10 @@ func test_the_swap_at_eight_slots_fits_the_screen_and_inserts_with_the_pad() -> 
 	for k in 8:
 		await _pad(e, JOY_BUTTON_DPAD_RIGHT)
 	var forecast := hud.swap.read_back_text()
+	var cast := hud.swap.forecast_text()  # v0.10.5 O13: the forecast after the swap
+	var cast_nums := hud.swap.forecast.numbers()
+	gut.p("swap forecast: %s | %s" % [cast, hud.swap.forecast.numbers_text()])
+	assert_false(cast.is_empty(), "the Swap shows a forecast")
 	await _pad(e, JOY_BUTTON_A)
 	await e.frames(6)
 	assert_false(hud.swap.is_open(), "answered")
@@ -311,3 +342,10 @@ func test_the_swap_at_eight_slots_fits_the_screen_and_inserts_with_the_pad() -> 
 		WorldReader.new(w).wand_read_back(), func(k: StringName) -> String: return tr(k)
 	)
 	assert_eq(words, forecast, "the panel's read-back forecast the outcome")
+	var after := WorldReader.new(w).wand_forecast()
+	assert_eq(after["numbers"], cast_nums, "the Swap's forecast numbers are the outcome's (O13)")
+	assert_eq(
+		WorldReader.wand_forecast_text(after, func(k: StringName) -> String: return tr(k))[0],
+		cast,
+		"and its spell line"
+	)

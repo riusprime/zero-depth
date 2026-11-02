@@ -197,7 +197,7 @@ func open_build_page() -> void:
 	build_page = BuildPage.new()
 	build_page.back_pressed.connect(close_build_page)
 	_ui.add_child(build_page)
-	build_page.open(wand, int(wand["slots"]))
+	build_page.open(wand, int(wand["slots"]), driver.reader)
 	_pause_changed()
 
 
