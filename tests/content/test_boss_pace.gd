@@ -8,6 +8,7 @@ extends GutTest
 ## superseded): The Fallen's attacks are classed too (its own hits outside its mimic windows).
 ## v0.9.5 BH4: the Tidecaller's crossing wave is one too (a hazard the owner set at 15 damage, seven hits: chip damage).
 ## v0.9.5 BH6: so are the Fallen's five interphase carriers (owner-set 15 damage hits: chip damage, no class).
+## v0.10.5 O3: and the Prism's Shattered Kneel (she is down: it never hits).
 const UNCLASSED := [
 	&"meltdown",
 	&"crossing_wave",
@@ -16,6 +17,7 @@ const UNCLASSED := [
 	&"fallen_dark",
 	&"fallen_erupt",
 	&"fallen_return",
+	&"prism_kneel",
 ]
 ## Per boss, the slow readable attacks BP left as they were: [id, telegraph seconds].
 const KEPT_SLOW := {
@@ -84,7 +86,7 @@ func test_every_boss_hit_kills_the_base_hero_in_its_class_hits() -> void:
 			seen += 1
 	assert_eq(
 		seen,
-		110,  # NB1: the Tidecaller's 7; NB2: the Twin Wardens' 5; NB3: the Judge's 6; NB4: the Shade's 8; BH2: +1
+		111,  # NB1: Tidecaller 7; NB2: Twin Wardens 5; NB3: Judge 6; NB4: Shade 8; BH2: +1; O3: facet_lances
 		(
 			"every classed attack of the six bosses and the final boss's three bodies (N2: 4 new, The Fallen's 9;"
 			+ " PR: the Prism's 3 orb spells in, cross_weave and prism_bolt_fan out)"

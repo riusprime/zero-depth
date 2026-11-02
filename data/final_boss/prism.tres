@@ -169,10 +169,62 @@ cooldown_seconds = 0.0
 cause_key = &"CAUSE_PRISM_ORBS"
 shielded = true
 
+[sub_resource type="Resource" id="A_facet_lances"]
+script = ExtResource("1_atk")
+id = &"facet_lances"
+shape = 2
+shape_params = {
+"count": 6,
+"distance_m": 9.0,
+"length_m": 40.0,
+"spread_degrees": 135.0,
+"stagger_seconds": 0.35,
+"strike_seconds": 0.15,
+"track_seconds": 0.45,
+"width_m": 0.9
+}
+telegraph_seconds = 0.8
+active_seconds = 2.9
+recovery_seconds = 0.3
+damage = 26
+hit_class = &"medium"
+move = &"lances"
+weight = 1
+cooldown_seconds = 0.0
+cause_key = &"CAUSE_PRISM_LANCE"
+lock_seconds = 0.45
+shielded = true
+
+[sub_resource type="Resource" id="A_prism_kneel"]
+script = ExtResource("1_atk")
+id = &"prism_kneel"
+shape = 0
+shape_params = {
+"burst_permille": 50,
+"core_mult_permille": 1500,
+"crack_permille": 80
+}
+telegraph_seconds = 0.6
+active_seconds = 3.0
+recovery_seconds = 0.6
+damage = 1
+move = &"kneel"
+weight = 1
+cooldown_seconds = 0.0
+cause_key = &"CAUSE_PRISM_LANCE"
+
 [sub_resource type="Resource" id="P_0"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 1000
 attack_ids = PackedStringArray("cross_ring", "crown_ring", "cross_spiral", "crown_spiral", "cross_flower", "crown_flower")
+entry_attack = &""
+speed_permille = 1000
+cooldown_permille = 1000
+
+[sub_resource type="Resource" id="P_1"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 500
+attack_ids = PackedStringArray("cross_ring", "crown_spiral", "facet_lances", "prism_kneel", "cross_flower", "crown_flower")
 entry_attack = &""
 speed_permille = 1000
 cooldown_permille = 1000
@@ -236,6 +288,6 @@ dash_read_seconds = 0.0
 gap_close_attack = &""
 gap_close_distance_m = 5.0
 gap_close_seconds = 2.0
-attacks = Array[ExtResource("1_atk")]([SubResource("A_cross_ring"), SubResource("A_cross_spiral"), SubResource("A_cross_flower"), SubResource("A_prism_bolt"), SubResource("A_crown_ring"), SubResource("A_crown_spiral"), SubResource("A_crown_flower")])
-phases = Array[ExtResource("2_ph")]([SubResource("P_0")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_cross_ring"), SubResource("A_cross_spiral"), SubResource("A_cross_flower"), SubResource("A_prism_bolt"), SubResource("A_crown_ring"), SubResource("A_crown_spiral"), SubResource("A_crown_flower"), SubResource("A_facet_lances"), SubResource("A_prism_kneel")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
 id = &"prism"

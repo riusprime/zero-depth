@@ -1022,6 +1022,7 @@ CAUSE_COLOSSUS_BOULDER,A boulder the Colossus threw crushed you.,Una roca que la
 CAUSE_PRISM_ORBS,The Prism's orbs caught you.,Los orbes de The Prism te alcanzaron.
 CAUSE_PRISM_BEAM,The Prism's turning Cross burned you.,La Cruz giratoria de The Prism te abrasó.
 CAUSE_PRISM_BOLT,The Prism's bolt struck you.,Un proyectil de The Prism te alcanzó.
+CAUSE_PRISM_LANCE,The Prism's facet lances pierced you.,Las lanzas de faceta de The Prism te atravesaron.
 CAUSE_NEMESIS_SLASH,The Fallen cut you down.,The Fallen te abatió de un tajo.
 CAUSE_NEMESIS_CRESCENTS,The Fallen's crescents caught you.,Las medialunas de The Fallen te alcanzaron.
 CAUSE_NEMESIS_CARD,The Fallen used your own card.,The Fallen usó tu propia carta.
@@ -1049,6 +1050,7 @@ HUD_BOSS_PHASE,Phase %d / %d,Fase %d / %d
 UI_PG_FINAL,Final boss,Jefe final
 UI_PG_FINAL_PHASE,Phase %d,Fase %d
 UI_PG_FINAL_HINT,Summons the Hollow Crown at the room's centre; a phase button jumps to that body.,Invoca a Hollow Crown en el centro de la sala; un botón de fase salta a ese cuerpo.
+UI_PG_FINAL_PRISM_LAST,The Prism's last phase,Última fase de The Prism
 ITEM_CHAIN_BLAST,Chain Blast,Explosión en cadena
 ITEM_CHAIN_BLAST_DESC,Your attack and its splits all explode.,Tu ataque y sus divisiones estallan.
 PICK_TITLE_BOSS,The boss's reward,La recompensa del jefe

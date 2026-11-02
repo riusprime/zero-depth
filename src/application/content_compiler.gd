@@ -57,6 +57,8 @@ const BOSS_MOVES := {
 	&"verdict": BossAttackTable.Move.VERDICT,
 	&"wave": BossAttackTable.Move.WAVE,  # v0.9.5 BH4
 	&"interphase": BossAttackTable.Move.INTERPHASE,  # v0.9.5 BH6
+	&"lances": BossAttackTable.Move.LANCES,  # v0.10.5 O3 (the Prism's last phase)
+	&"kneel": BossAttackTable.Move.KNEEL,
 }
 const ATTACK_WEAPONS := {  # v0.8.0 FB3: a Nemesis attack's `weapon`
 	"any": BossAttackTable.WEAPON_ANY,
@@ -691,6 +693,7 @@ static func compile_boss_attack(
 	t.burn_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("burn_seconds", 0.0))))
 	t.cell_m = float(sp.get("cell_m", 0.0))  # v0.7.5 BF3: a grid's cells
 	PatternCompiler.compile_boss_attack(def, repo, t)  # v0.7.5 BF1
+	FinalBodyCompiler.compile_attack(sp, t)  # v0.10.5 O3: the Prism's Facet Lances and Shattered Kneel
 	return t
 
 

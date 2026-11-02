@@ -319,6 +319,29 @@ const MOVES := {
 	{"shape": 2, "params": ["lengths_m", "thickness_m", "speed_mps", "shove_m", "clear_m"]},
 	## fallen_return).
 	&"interphase": {"shape": 2, "params": []},
+	## v0.10.5 O3 (owner L6, 2026-11-01: "Boring pattern"; O3_PRISM.md; BossPrism): the Prism's Facet Lances: `count`
+	## lances stagger_seconds apart, each from a rim spot distance_m from her (spread_degrees apart round her, the first
+	## on the player's side) through the player: it follows them for track_seconds, holds for the attack's lock, then
+	## strikes for strike_seconds as a lane width_m wide, as far as length_m or a wall. A lock is required.
+	&"lances":
+	{
+		"shape": 2,
+		"params":
+		[
+			"count",
+			"stagger_seconds",
+			"track_seconds",
+			"strike_seconds",
+			"distance_m",
+			"spread_degrees",
+			"length_m",
+			"width_m",
+		],
+	},
+	## v0.10.5 O3 (L6: "Needs something cooler while he's down"): the Prism's Shattered Kneel: down (open, nothing
+	## fired) for its active time; hits from within the weak point's range of her edge deal core_mult_permille; once
+	## she has lost crack_permille of her max HP since it began, her core bursts for burst_permille of it and she rises.
+	&"kneel": {"shape": 0, "params": ["crack_permille", "burst_permille", "core_mult_permille"]},
 }
 ## v0.8.0 FB3: the runs an attack's `weapon` may name.
 ## v0.8.0 N2 (owner O52): "own" is The Fallen's own kit, only outside its mimic windows.
@@ -342,6 +365,7 @@ const LOCKED_MOVES: Array[StringName] = [
 	&"card_cast",
 	&"chain_sweep",  # v0.9.0 NB2
 	&"verdict",  # v0.9.0 NB3
+	&"lances",  # v0.10.5 O3: the Facet Lances (each lance's lock)
 ]
 ## v0.8.0 FB1: the most spikes a line or a ray lays (steps).
 const MAX_STEPS := 16

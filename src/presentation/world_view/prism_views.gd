@@ -12,6 +12,8 @@ extends Node3D
 ##   its 0.4 s, then gone as the bolt flies (FireballViews draws the bolt);
 ## - a shard firing (an orb volley, a bolt's aim): a flash and a small light at the sim shard.
 ## Ticks are the sim's (the views pause with it); reduced motion: no flicker or pulse.
+## v0.10.5 O3 (owner L6; O3_PRISM.md): her last phase's Facet Lances and Shattered Kneel are drawn by its child
+## PrismLastViews (`last`), in this view's frame.
 
 const BEAM := Color(1.0, 0.16, 0.3)
 const BEAM_CORE := Color(1.0, 0.88, 0.92)
@@ -27,6 +29,7 @@ const MAX_ARMS := 8
 ## v0.10.0 VX5 (R27): the beams are the pack's (beam_vfx), the old cylinders where its family is full; false: all old.
 const PACK_BEAMS := true
 
+var last := PrismLastViews.new()
 var _cross := {}
 var _shards := PackedVector2Array()
 var _at := Vector2.ZERO
@@ -112,6 +115,7 @@ func _init() -> void:
 	_ring.name = "WindowRing"
 	_ring.visible = false
 	add_child(_ring)
+	add_child(last)
 
 
 func _cylinder(sh: Shader, c: Color, strength: float) -> MeshInstance3D:
@@ -170,11 +174,14 @@ func sync(reader: WorldReader) -> void:
 		_shards = reader.boss_shards(i)
 		_at = reader.actor_pos(i)
 		_radius = reader.actor_radius(i)
+		last.set_state(reader.boss_lances(i), reader.boss_kneel(i), _at, _radius, _tick)
+	else:
+		last.set_state({}, {}, _at, _radius, _tick)
 	_draw(float(_tick))
 
 
 func _process(_delta: float) -> void:
-	if not _cross.is_empty():
+	if not _cross.is_empty() or last.active():
 		_draw(float(_tick))
 
 
@@ -238,6 +245,7 @@ func _draw(now: float) -> void:
 		arm["packed"] = false
 	for n: Node3D in [_bolt_line, _shard_flash, _shard_light, _core_light, _ring]:
 		n.visible = false
+	last.draw(now, _hold)  # v0.10.5 O3: the lances, the kneel
 	if _cross.is_empty():
 		if _hold != null:
 			_hold.end()
