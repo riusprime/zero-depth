@@ -35,7 +35,7 @@ until the owner says so.
 
 | # | Step | Question |
 | Q1 | tests | Three sim tests fail on the branch before O2b too: `test_deep_bite` (gets the Spanish name on your PC's locale) and two `test_ascension` loop-scaling tests (expect floor-1 enemy HP from before v0.9.5 EP3's floor-1 ease). Update their expectations? **Done** (5acaebaf: locale set to en in the test; ascension expectations derived from the EP3 data; lance scatter counts the pack burst). No game bug. |
-| Q2 | O1 | `test_e2e_wand_build`: the replay was not exact with dev-granted frost_core, blade_orbit, echo_slash, ember_core, so the fixture was switched to other cards. A possible determinism bug in those cards, maybe older than O1. The lead queues an Opus check (follow-up D1) |
+| Q2 | O1 | `test_e2e_wand_build`: the replay was not exact with dev-granted frost_core, blade_orbit, echo_slash, ember_core, so the fixture was switched to other cards. A possible determinism bug in those cards, maybe older than O1. **Answered (D1):** not a game bug: the test helper didn't set the element-pair table; fixed |
 | Q3 | O1 | Left in the code: the Bomb and Scatter form code (no live card reaches it), 28 shot/probe scripts naming removed ids. Remove them too? |
 | Q4 | O1 | Coverage lost: no live card exercises the v0.5 item engines, trigger cards in a wand, or blast merging. OK? |
 |---|---|---|
