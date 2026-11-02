@@ -49,8 +49,8 @@ func test_the_shipped_stat_cards() -> void:
 	)
 	assert_eq(
 		[tables[Stats.Stat.CRIT_CHANCE].weight, tables[Stats.Stat.CRIT_DAMAGE].weight],
-		[8, 7],
-		"crit weights 8 and 7 (v0.8.0 SG)"
+		[8, 0],
+		"crit weights 8 and 7 (v0.8.0 SG); v0.10.5 O9: crit damage retired (weight 0, Close Quarters)"
 	)
 	for s in Stats.COUNT:
 		assert_eq(

@@ -615,11 +615,7 @@ static func take(w: World, k: int, c: int) -> void:
 
 ## The max HP stat falls by `permille` for the run (Blood Price); HP stays at most the new max.
 static func cut_max_hp(w: World, permille: int) -> void:
-	if w.stat_values.size() < Stats.COUNT:
-		var old := w.stat_values
-		w.stat_values = PackedInt32Array(Stats.BASE)
-		for k in old.size():
-			w.stat_values[k] = old[k]
+	Stats.grow(w, Stats.Stat.MAX_HP)  # v0.10.5 O9: as a card grows them (the pre-O9 size)
 	var v := w.stat_values[Stats.Stat.MAX_HP]
 	w.stat_values[Stats.Stat.MAX_HP] = maxi(1, (v * (1000 - permille) + 500) / 1000)
 	w.actors.max_hp[0] = maxi(1, Stats.max_hp(w))

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"close_quarters"
+name_key = &"STAT_CLOSE_QUARTERS"
+desc_key = &"STAT_CLOSE_QUARTERS_DESC"
+amounts = PackedFloat32Array(15, 25, 40)
+cap = 80
+weight = 8
+limit = 2.0
+id = &"close_quarters"

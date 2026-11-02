@@ -893,6 +893,8 @@ static func _apply_object(obj: Object, data: Dictionary, kept: Dictionary, where
 				continue  # v0.9.5 FC8: the Wave cards' rows (WaveMods lists them)
 			if class_of(obj) == &"ModifierState" and WispMods.SNAPSHOT_FIELDS.has(f):
 				continue  # v0.9.5 FC9: the Wisps cards' rows (WispMods lists them)
+			if class_of(obj) == &"AbilityState" and RuleCards.SNAPSHOT_FIELDS.has(f):
+				continue  # v0.10.5 O9: the rule cards' state (RuleCards lists it); an older save keeps the defaults
 			return "%s.%s: not in the snapshot" % [where, f]
 		var cur: Variant = obj.get(f)
 		var r: Array = _decode(cur, data[f], "%s.%s" % [where, f])

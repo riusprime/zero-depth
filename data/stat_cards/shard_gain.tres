@@ -9,5 +9,5 @@ name_key = &"STAT_SHARD_GAIN"
 desc_key = &"STAT_SHARD_GAIN_DESC"
 amounts = PackedFloat32Array(10, 20, 30)
 cap = 0
-weight = 6
+weight = 0
 id = &"shard_gain"

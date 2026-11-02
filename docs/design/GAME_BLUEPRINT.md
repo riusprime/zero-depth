@@ -208,6 +208,11 @@ value or by an owner decision, and the change is noted here.
   while you own their ability: Cluster Payload (Bomb Lobber), Overclocked Drone (Drone Buddy, with heat), Razor
   Orbit (Orbit Blades, bleed) and Afterimage (Blink). Stat cards are drawn by weight. Pairs:
   [`INTERACTIONS.md`](INTERACTIONS.md); evidence: `docs/roadmap/v0.5.0/evidence/CARD_POOL.md`.
+  **v0.10.5 O9 (theory audit P2, owner 2026-11-01; starting values):** seven more rule cards (Trigger → Condition →
+  Payoff) replace eight flat stats: Close Quarters (crit damage), Third Strike (area), Reflex (cooldowns), Adrenaline
+  (move speed), Vent Mend (regen), Heat Shield (armour), Scavenger (pickup range); shard gain goes to Hoarder. Four
+  plain stats stay as filler: damage, attack speed, max HP, crit chance. The retired cards keep their data at weight
+  0 (never offered; an old save's cards still count). G1: `docs/roadmap/v0.10.5/O9_RULE_CARDS.md`.
 - **Shops and salvage (v0.5.0 SH; ROADMAP v0.5.0 "Shops", "salvage").** One shop per floor, a terminal in a side
   room (never the start hall, the boss room or the room before the boss door; on the minimap once seen). Interact
   opens it and the world waits: **4 cards** from the chests' pools (slot rules hold; mods only with their ability)

@@ -365,6 +365,20 @@ STAT_FAST_HANDS,Fast Hands,Manos rápidas
 STAT_FAST_HANDS_DESC,-%s%% ability cooldowns,-%s %% de recarga de habilidades
 STAT_LIFESPROUT,Lifesprout,Brote vital
 STAT_LIFESPROUT_DESC,Kills may drop a heal orb: %s%% (+%s%% per extra card),Las bajas pueden soltar un orbe de curación: %s %% (+%s %% por carta extra)
+STAT_VENT_MEND,Vent Mend,Purga sanadora
+STAT_VENT_MEND_DESC,A Vent that hits an enemy heals %s%% max HP,Una purga que alcanza a un enemigo cura un %s %% de vida máxima
+STAT_HEAT_SHIELD,Heat Shield,Escudo térmico
+STAT_HEAT_SHIELD_DESC,-%s%% damage taken while HOT,-%s %% de daño recibido mientras estás CALIENTE
+STAT_ADRENALINE,Adrenaline,Adrenalina
+STAT_ADRENALINE_DESC,A kill within 3 m: +%s%% move speed for 1.5 s,Una baja a menos de 3 m: +%s %% de velocidad de movimiento durante 1.5 s
+STAT_CLOSE_QUARTERS,Close Quarters,Cuerpo a cuerpo
+STAT_CLOSE_QUARTERS_DESC,+%s%% damage to enemies within 2 m,+%s %% de daño a enemigos a menos de 2 m
+STAT_THIRD_STRIKE,Third Strike,Tercer golpe
+STAT_THIRD_STRIKE_DESC,"Every third attack in a row (1 s apart at most) deals +%s%%","Cada tercer ataque seguido (como mucho a 1 s) hace +%s %%"
+STAT_REFLEX,Reflex,Reflejos
+STAT_REFLEX_DESC,A kill while your dash recharges cuts %s%% of its cooldown,Una baja mientras tu esquiva se recarga le quita un %s %% de su recarga
+STAT_SCAVENGER,Scavenger,Carroñero
+STAT_SCAVENGER_DESC,Critical kills pay +%s%% shards,Las bajas críticas dan +%s %% de fragmentos
 RARITY_EPIC,Epic,Épico
 UI_CARD_ABILITY_NEW,New ability,Habilidad nueva
 UI_CARD_ABILITY_LEVEL,Level %d,Nivel %d

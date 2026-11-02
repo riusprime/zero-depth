@@ -12,6 +12,14 @@ const STAT_COLORS := {
 	&"hoarder": Color("#F2C14E"),
 	&"fast_hands": Color("#6AF0FF"),
 	&"lifesprout": Color("#7DF29C"),  # v0.5.5 EC (D9): green = healing (the card frame mapping)
+	# v0.10.5 O9: the rule cards that replace the flat stats
+	&"vent_mend": Color("#7DF29C"),
+	&"heat_shield": Color("#FFB45A"),
+	&"adrenaline": Color("#FFE45A"),
+	&"close_quarters": Color("#FF6A4A"),
+	&"third_strike": Color("#FF9A6A"),
+	&"reflex": Color("#6AF0FF"),
+	&"scavenger": Color("#F2C14E"),
 }
 
 
@@ -101,6 +109,72 @@ static func shapes(id: StringName) -> Array:
 					]
 				),
 				_circle(Vector2(0.5, 0.9), 0.08, 0.0),
+			]
+	return _rule_shapes(id)
+
+
+## v0.10.5 O9: the seven rule cards that replace the flat stats.
+static func _rule_shapes(id: StringName) -> Array:
+	match id:
+		&"vent_mend":  # a blast ring round a cross
+			return [
+				_circle(Vector2(0.5, 0.5), 0.38, 0.05),
+				_line([Vector2(0.5, 0.3), Vector2(0.5, 0.7)], 0.1),
+				_line([Vector2(0.3, 0.5), Vector2(0.7, 0.5)], 0.1),
+			]
+		&"heat_shield":  # a shield with a flame
+			return [
+				_poly(
+					[
+						Vector2(0.18, 0.14),
+						Vector2(0.82, 0.14),
+						Vector2(0.78, 0.6),
+						Vector2(0.5, 0.9),
+						Vector2(0.22, 0.6)
+					]
+				),
+				_poly(
+					[Vector2(0.5, 0.26), Vector2(0.64, 0.5), Vector2(0.5, 0.7), Vector2(0.36, 0.5)],
+					true
+				),
+			]
+		&"adrenaline":  # a bolt
+			return [
+				_poly(
+					[
+						Vector2(0.58, 0.06),
+						Vector2(0.22, 0.56),
+						Vector2(0.46, 0.56),
+						Vector2(0.38, 0.94),
+						Vector2(0.8, 0.4),
+						Vector2(0.54, 0.4)
+					]
+				),
+			]
+		&"close_quarters":  # two arrows meeting
+			return [
+				_poly([Vector2(0.06, 0.3), Vector2(0.44, 0.5), Vector2(0.06, 0.7)]),
+				_poly([Vector2(0.94, 0.3), Vector2(0.56, 0.5), Vector2(0.94, 0.7)]),
+			]
+		&"third_strike":  # three bars, the last one tall
+			return [
+				_line([Vector2(0.2, 0.62), Vector2(0.2, 0.86)], 0.12),
+				_line([Vector2(0.5, 0.5), Vector2(0.5, 0.86)], 0.12),
+				_line([Vector2(0.8, 0.14), Vector2(0.8, 0.86)], 0.16),
+			]
+		&"reflex":  # a clock hand turning back
+			return [
+				_circle(Vector2(0.5, 0.54), 0.34, 0.05),
+				_line([Vector2(0.5, 0.54), Vector2(0.5, 0.32)], 0.06),
+				_poly([Vector2(0.06, 0.2), Vector2(0.3, 0.12), Vector2(0.22, 0.36)]),
+			]
+		&"scavenger":  # a shard with a spark
+			return [
+				_poly(
+					[Vector2(0.4, 0.2), Vector2(0.62, 0.5), Vector2(0.4, 0.88), Vector2(0.18, 0.5)]
+				),
+				_line([Vector2(0.72, 0.1), Vector2(0.72, 0.34)], 0.05),
+				_line([Vector2(0.6, 0.22), Vector2(0.84, 0.22)], 0.05),
 			]
 	return [_circle(Vector2(0.5, 0.5), 0.3, 0.0)]
 

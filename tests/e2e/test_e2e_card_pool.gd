@@ -7,14 +7,28 @@ extends GutTest
 ## they needed are gone. An altar in a secret room still hidden (Secrets.hidden_rooms: v0.10.5 S15d's cracked walls
 ## put one behind CP_SEED's cracked wall) is not walked to: its way in must open first.
 
+## v0.10.5 O9: and the seven rule cards that replaced the flat stats (the same kind of card: own symbol, its numbers).
+## The flat cards' retirement moved the seed's draws (CP_SEED below).
 const CP_STATS: Array[StringName] = [
-	&"glass_cannon", &"onrush", &"overkill", &"hoarder", &"fast_hands"
+	&"glass_cannon",
+	&"onrush",
+	&"overkill",
+	&"hoarder",
+	&"fast_hands",
+	&"vent_mend",
+	&"heat_shield",
+	&"adrenaline",
+	&"close_quarters",
+	&"third_strike",
+	&"reflex",
+	&"scavenger",
 ]
 ## v0.9.0 FV: floor 1 holds two altars (loot scales with its rooms), and neither of Main.STAGE_SEED's offers a CP
 ## card; CP_SEED's first altar does (found with this walk over the seeds after it). v0.10.5 O1: 20261013, the first
 ## seed after 20261012 whose walk meets a CP stat card now (20261012's two open altars offer none since the CP mods and
-## the old abilities went; found by running this walk on 20261013-20261020: 20261013 and 20261015 do).
-const CP_SEED := 20261013
+## the old abilities went; found by running this walk on 20261013-20261020: 20261013 and 20261015 do). v0.10.5 O9:
+## 20261015 (20261013's and 20261014's walks meet none since the flat cards retired; 20261015's offers Vent Mend).
+const CP_SEED := 20261015
 
 
 func after_each() -> void:

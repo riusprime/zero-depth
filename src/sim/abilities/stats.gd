@@ -27,6 +27,9 @@ extends RefCounted
 ## Damage stats fold into one multiplier (damage_permille). v0.8.0 SG (owner O91): one additive bucket, (damage +
 ## onrush while moving + hoarder) x glass cannon; the curses stay explicit multipliers. Attack speed reads one curve
 ## with the attack's wand bonus (AttackRate).
+## v0.10.5 O9 (theory audit P2): seven more rule cards, VENT_MEND .. SCAVENGER (RuleCards has each Trigger -> Condition
+## -> Payoff); HEAT_SHIELD is a CUT, the rest ADD. The eight flat cards they replace keep their stats and tables at
+## weight 0 (never offered; an old save's cards still count).
 
 enum Stat {
 	MAX_HP,
@@ -47,18 +50,77 @@ enum Stat {
 	HOARDER,
 	FAST_HANDS,
 	LIFESPROUT,
+	# v0.10.5 O9 (theory audit P2): the rule cards that replace the flat stats (RuleCards has each rule)
+	VENT_MEND,
+	HEAT_SHIELD,
+	ADRENALINE,
+	CLOSE_QUARTERS,
+	THIRD_STRIKE,
+	REFLEX,
+	SCAVENGER,
 }
 enum Rarity { COMMON, RARE, EPIC, LEGENDARY }  # v0.5.5 AR: LEGENDARY, the boss's tier (X1b)
 
-const COUNT := 18
+const COUNT := 25
+## v0.10.5 O9: the stats before O9. A world's values grow to this many at its first card (grow), and past it only
+## for an O9 card, so a world without one keeps its value array, and its hash, as before.
+const LEGACY_COUNT := 18
 const MULT := 0
 const CUT := 1
 const ADD := 2
 const MODE: Array[int] = [
-	MULT, MULT, ADD, ADD, MULT, MULT, CUT, MULT, ADD, MULT, MULT, CUT, MULT, ADD, ADD, ADD, CUT, ADD
+	MULT,
+	MULT,
+	ADD,
+	ADD,
+	MULT,
+	MULT,
+	CUT,
+	MULT,
+	ADD,
+	MULT,
+	MULT,
+	CUT,
+	MULT,
+	ADD,
+	ADD,
+	ADD,
+	CUT,
+	ADD,
+	ADD,
+	CUT,
+	ADD,
+	ADD,
+	ADD,
+	ADD,
+	ADD
 ]
 const BASE: Array[int] = [
-	1000, 1000, 0, 0, 1000, 1000, 1000, 1000, 0, 1000, 1000, 1000, 1000, 0, 0, 0, 1000, 0
+	1000,
+	1000,
+	0,
+	0,
+	1000,
+	1000,
+	1000,
+	1000,
+	0,
+	1000,
+	1000,
+	1000,
+	1000,
+	0,
+	0,
+	0,
+	1000,
+	0,
+	0,
+	1000,
+	0,
+	0,
+	0,
+	0,
+	0
 ]
 ## v0.8.0 SG (owner O91): the stat rules a world's values follow (World.stat_rules): 0 before SG (damage, attack
 ## speed and Glass Cannon compounded), 1 since (their cards add). An older save rebuilds them (migrate_rules).
@@ -134,11 +196,7 @@ static func add_amount(w: World, s: int, a: int) -> void:
 	var t := table(w, s)
 	if t == null:
 		return
-	if w.stat_values.size() < COUNT:
-		var old := w.stat_values
-		w.stat_values = PackedInt32Array(BASE)
-		for k in old.size():
-			w.stat_values[k] = old[k]
+	grow(w, s)
 	var before_hp := max_hp(w)
 	w.stat_values[s] = stepped(t, s, w.stat_values[s], a)
 	if s == Stat.MAX_HP:
@@ -146,6 +204,18 @@ static func add_amount(w: World, s: int, a: int) -> void:
 		# Twin of _side's Glass Cannon push, without its floor of 1 (see there; audit G-17).
 		w.actors.max_hp[0] += gain
 		w.actors.hp[0] = mini(w.actors.max_hp[0], w.actors.hp[0] + maxi(0, gain))
+
+
+## v0.10.5 O9: makes room for stat `s` in the world's values: at least LEGACY_COUNT, more only for an O9 stat (the new
+## ones at their BASE).
+static func grow(w: World, s: int) -> void:
+	var n := maxi(LEGACY_COUNT, s + 1)
+	if w.stat_values.size() >= n:
+		return
+	var old := w.stat_values
+	w.stat_values = PackedInt32Array(BASE.slice(0, n))
+	for k in old.size():
+		w.stat_values[k] = old[k]
 
 
 ## v0.8.0 N8: stat `s`'s raw value `v` moved by `a` per mille within table `t`'s cap (add_amount's step, and the
@@ -168,6 +238,8 @@ static func at_cap(w: World, s: int) -> bool:
 		return true
 	if s == Stat.GLASS_CANNON and value(w, Stat.MAX_HP) <= t.limit_permille:
 		return true  # v0.5.0 CP: no more HP to trade
+	if (s == Stat.VENT_MEND or s == Stat.HEAT_SHIELD) and w.heat == null:
+		return true  # v0.10.5 O9: a world without heat has no Vent and is never Hot
 	if t.cap <= 0:
 		return false
 	match MODE[s]:
@@ -363,8 +435,13 @@ static func _scaled_m(w: World, s: int, metres: float) -> float:
 
 
 ## v0.8.0 N2 (owner O42): in The Fallen's mimic window the move speed is at most the base (FinalPace.move_cap).
+## v0.10.5 O9: Adrenaline's burst on top (RuleCards.rush_permille), still under the mimic cap.
 static func move_permille(w: World) -> int:
-	return FinalPace.move_cap(w, value(w, Stat.MOVE))
+	var v := value(w, Stat.MOVE)
+	var rush := RuleCards.rush_permille(w)
+	if rush > 0:
+		v = (v * (1000 + rush) + 500) / 1000
+	return FinalPace.move_cap(w, v)
 
 
 static func shards(w: World, amount: int) -> int:
@@ -402,7 +479,7 @@ static func migrate_rules(w: World) -> void:
 	if w.stat_rules >= RULES:
 		return
 	w.stat_rules = RULES
-	if w.stat_values.size() < COUNT:
+	if w.stat_values.size() < LEGACY_COUNT:
 		return  # no card and no win yet: every stat at its base
 	var redo := []
 	for s in ADDITIVE_STATS:
