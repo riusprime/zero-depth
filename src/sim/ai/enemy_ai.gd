@@ -56,7 +56,10 @@ const SIGHT_R_M := 0.05
 ## two bodies exactly apart before the hit check (phase 6), so an exact test missed by a rounding error (v0.3.5 AI).
 const CONTACT_SLOP_M := 0.02
 ## v0.4.0 SC: each enemy re-plans its walk every this many ticks, on the phase of its id (it moves every tick).
-const PLAN_PERIOD := 4
+## v0.10.5 PD (owner, perf wave 2 #9, "let's do it"): 4 -> 8, so a crowd's planning costs half its share a tick. The
+## attack checks, windups, hits and telegraphs still run every tick (think's state machine); only the walk's plan
+## slows down. Its wall check now runs on every plan: every 8 ticks, as before.
+const PLAN_PERIOD := 8
 ## v0.4.0 EN (starting values). A Sniper's line stops following the player this many ticks before it fires.
 const SNIPE_COMMIT_TICKS := 24
 ## After a shot a Sniper walks, this much faster, to a spot 45-90 degrees around the player (1/4096 turns), until it
@@ -374,8 +377,8 @@ static func plans_now(w: World, i: int) -> bool:
 
 ## v0.4.0 SC: the walk, planned every PLAN_PERIOD ticks (tick phase 3, before anything moves) and followed every
 ## tick by move(): the way _walk_dir picks, pushed off the enemies near it (through the actor grid World built this
-## tick) and, while a wall blocks the straight walk, along the flow field instead. The wall check itself runs every
-## other plan (it sweeps the line to the player).
+## tick) and, while a wall blocks the straight walk, along the flow field instead. The wall check (it sweeps the line
+## to the player) runs on every plan since v0.10.5 PD (it ran every other plan of 4 ticks: the same 8-tick rate).
 static func plan(w: World, i: int) -> void:
 	var a := w.actors
 	var t := w.enemy_table(a.kinds[i])
@@ -385,8 +388,7 @@ static func plan(w: World, i: int) -> void:
 		var reach := Vector2(w.tuning.ai_spread_radius_m, w.tuning.ai_spread_radius_m)
 		var push := _spread_over(w, i, w.actors_near(Rect2(at - reach, reach * 2.0)))
 		dir = _unit(dir + push * w.tuning.ai_spread_weight) * Kin.length(dir)
-		if posmod(w.tick, PLAN_PERIOD * 2) == posmod(a.ids[i], PLAN_PERIOD * 2):
-			a.plan_block[i] = 1 if _blocked(w, at, dir, t.radius_m) else 0
+		a.plan_block[i] = 1 if _blocked(w, at, dir, t.radius_m) else 0
 		if a.plan_block[i] == 1:
 			var flow := w.nav.direction(at)
 			if flow != Vector2.ZERO:
