@@ -167,6 +167,7 @@ const STATE_CLASSES: Array[StringName] = [
 ## the per-entry arrays to their store's size and migrates the build into the slots (BuildSlots.migrate). Any other
 ## missing field still fails.
 const ADDED_SINCE_V05 := {
+	&"IntensityState": [&"kill_ring", &"kill_seen", &"ring_ticks", &"standing"],  # v0.10.5 O4: an older save reads afresh
 	&"TimedDoor":
 	[
 		&"lever",  # v0.9.5 TS: a floor saved before TS has no lever and its 15 s timer (the base's, from the old rules)
