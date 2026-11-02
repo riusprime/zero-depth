@@ -3,13 +3,16 @@
 Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.10.0 there until the release step).
 
 ## Where we are
-(The lead keeps this block current at every push. Updated 2026-11-02, end of the overnight run.)
+(The lead keeps this block current at every push. Updated 2026-11-02, after the owner's answers.)
 
 - **Every PLAN step is built and merged** on `claude/v0100-cleanup` (not pushed, owner: "Don't push"): wave 1
   (S1–S15 + S5b, S15b–d), and wave 2 (O1, O2a, O2b, O3, O4, O5a/b, O6, O7a/b, O9–O18), plus D1, Q1, Q5 (measure), Q7
-  and the cross-step fixes. **O4b is not merged** (missed its targets; branch `v0105-o4b`, Q9).
-- **Overnight picks and questions:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) — 21 picks to keep or change, Q5–Q9 open.
-- **Biggest open item:** performance (Q5): 18 fps at 60 enemies on the owner's PC; the views sync every sim tick.
+  and the cross-step fixes; then the arrival altar fix and Q5 (the views sync once a frame). **O4b stays out**
+  (owner, Q9: "keep it out").
+- **Overnight picks and questions:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md): 21 picks to keep or change; Q6–Q8 the owner
+  tests in play.
+- **Performance (Q5):** 16 → ~23 fps at 60 enemies, 43 → ~64 at 20 (evidence/Q5_FIX.md); measured on a busy machine,
+  a clean re-measure NOT YET RUN. Further fixes ranked in evidence/PERF_Q5.md §5 (3–5).
 - **Next:** the owner goes over OWNER_QUESTIONS and plays the build; then the release step (one PR into `main`, the
   full suite on GitHub).
 
@@ -74,6 +77,7 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 | Cross-step fixes: old saves (O17 player_hp_floor), test_arenas (S7's extra altar), a reward view colour test | 25ceb930 | agent: old saves 11/11, e2e old save 1/1, world snapshot 16/16, arenas 16/16, reward views 9/9, golden 2/2 |
 | O2a the Lantern Shade and the Clockwork Judge hittable more often | f59ee0f2 | [evidence/O2A_INVULNERABLE.md](evidence/O2A_INVULNERABLE.md): invulnerable share 37 → 13 % and 30 → 8 %; 23 scripts 198/198 |
 | The hero stands on floor 1's arrival altar, not half inside it (owner: "you can clearly see the character half body inside it"; S4 had fixed the later floors' receiver, not this altar): AltarStage.height_at (the owner's model's measured steps: 0.45 / 0.275 / 0.155 m), ActorViews draws actors on it (also the final approach's altar) | 08189c2b | lead: altar stage 11/11 (new test), portal transit view 4/4, e2e arrival 2/2 (new: the hero's node stands > 0.2 m up after the landing); lint clean |
+| Q5 the views sync once a frame, not every tick (SimDriver.frame_ticked; the HUD too; save, Codex, achievements, audio stay per tick; LatchedReader keeps one-tick shots and strikes for the next sync) and a cheaper actors sync | ee19605f (merge 2351a200) | [evidence/Q5_FIX.md](evidence/Q5_FIX.md): 60 enemies 62.6 → 43.8 ms (16.0 → 22.8 fps), 20 enemies 23.4 → 15.6 ms; **the machine was not idle** (the owner's editor and a game were open), so a clean re-measure is NOT YET RUN; p99 at 60 enemies worse (185 vs 102 ms, unexplained). Agent: presentation 1283/1283, arch+app 17/17, e2e 21/22 (the playground e2e failed before Q5 too: fixed in f19e9a4f, 1/1) |
 
 ## Verification
 1. **S2–S4 re-tested on this branch** (the agents' own runs were on an old base, `d33bc82a`, see History). Lead,
@@ -104,6 +108,10 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
    test_layering caught O7b's shard view using the sim's ShardDrops directly, fixed in 9d357dff through WorldReader):
    `bash scripts/ci/seams.sh`: lint ok; Scripts 107, Tests 612, Passing Tests 612, Asserts 71850;
    "check_gut_log: ok (612 passing, minimum 1)". The full suite runs on GitHub with the release PR.
+
+7. **Lead seams after the altar fix and Q5** (`wt-q5` at `2351a200`, from a clean worktree): `bash scripts/ci/seams.sh`:
+   lint ok; Scripts 107, Tests 612, Passing Tests 612; "check_gut_log: ok (612 passing, minimum 1)". (The first try
+   stopped at lint: gdformat was not on the PATH; nothing ran.)
 
 ## Goldens changed on purpose
 - `tests/golden/fixtures/modifier_equivalence.json` (S1: the combo hit-stop 4,4,5,8 → 3,3,3,5 ticks; Blade-all now hits 139, damage 4160, kills 14)
