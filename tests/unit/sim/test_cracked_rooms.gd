@@ -120,4 +120,7 @@ func test_the_chance_is_read_by_floor_index() -> void:
 	assert_eq(CrackedRooms.chance(PackedInt32Array(), 1), 0, "no entries, no wall")
 	var secrets: SecretsDefinition = ContentRepository.load_all().get_def(&"secrets", &"secrets")
 	assert_eq(FloorPlan.secret_rules(secrets, 2).crack_permille, secrets.crack_floor_permille[1])
-	assert_eq(FloorPlan.secret_rules(secrets, 5).crack_permille, secrets.crack_floor_permille[2])
+	assert_eq(FloorPlan.secret_rules(secrets, 3).crack_permille, secrets.crack_floor_permille[2])
+	assert_eq(
+		FloorPlan.secret_rules(secrets, 5).crack_permille, 0, "none on floors 4-5 (v0.10.5 O14)"
+	)

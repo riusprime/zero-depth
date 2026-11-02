@@ -50,6 +50,22 @@ func test_floor_2_places_an_elite_lockdown_near_the_middle() -> void:
 			assert_ne(k, LockdownTable.Kind.ELITE, "floor 1 has no Elite Lockdown")
 
 
+func test_a_floor_2_saved_before_o14_keeps_its_lockdown_order() -> void:
+	var forced_old := 0
+	var forced_now := 0
+	for s in range(1, SEEDS + 1):
+		var run := SaveLab.run_state(s, 2, &"blade", 0, _repo)
+		run.floor_rules = RunState.FLOOR_RULES_V095_BK
+		assert_eq(RunSaver.lockdown_table(run, _repo).set_piece_floor, 0, "the set piece is off")
+		var old := SaveLab.build_floor(run, &"", _repo).floor_layout
+		if old.lockdown_kinds.has(LockdownTable.Kind.ELITE):  # Elite is floor 4+ in the data
+			forced_old += 1
+		if _build(s, 2).floor_layout.lockdown_kinds.has(LockdownTable.Kind.ELITE):
+			forced_now += 1
+	assert_eq(forced_old, 0, "no set piece under the previous rules")
+	assert_gt(forced_now, 0, "today's rules have it")
+
+
 func test_floor_3_spawns_nothing_in_the_boss_host_room() -> void:
 	var w := _build(3, 3)
 	var f := w.floor_layout
