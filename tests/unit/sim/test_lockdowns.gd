@@ -110,8 +110,12 @@ func test_placement_over_many_seeds() -> void:
 				gut.p("a room cut off on seed %d floor %d" % [s, floor_index])
 			if floor_index == 1 and (f.lockdown_kinds.has(1) or f.lockdown_kinds.has(2)):
 				bad += 1
-			if floor_index < 4 and f.lockdown_kinds.has(LockdownTable.Kind.ELITE):
-				bad += 1  # v0.9.0 EL (Q21): floors 4-5 only
+			if (
+				floor_index < 4
+				and floor_index != 2
+				and f.lockdown_kinds.has(LockdownTable.Kind.ELITE)
+			):
+				bad += 1  # v0.9.0 EL (Q21): floors 4-5 only (floor 2: the O14 set piece)
 		(
 			lines
 			. append(

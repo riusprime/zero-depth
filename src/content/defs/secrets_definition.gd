@@ -11,7 +11,7 @@ extends ContentDef
 ## the blast's radius (m) and its damage to enemies and to the hero.
 ## v0.10.5 S15d (owner: about 1 floor in 3): the cracked wall chance (per mille) by floor index, floor 1 first; a later
 ## floor or loop uses the last entry.
-@export var crack_floor_permille := PackedInt32Array([1000, 350, 750])
+@export var crack_floor_permille := PackedInt32Array([1000, 350, 750, 0, 0])
 @export var crack_hits := 3
 @export var containers_max := 2
 @export var container_drop_permille := 150
