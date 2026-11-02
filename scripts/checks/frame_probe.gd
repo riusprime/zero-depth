@@ -89,6 +89,7 @@ var _biomes: Array = []
 var _secs := 30.0
 var _warm := 3.0
 var _ab: PackedStringArray = []
+var _shadows := ""  # --enemy-shadows=proxy|blob (v0.10.5 PA)
 var _main: Main
 var _bi := -1
 var _phase := &"boot"
@@ -158,6 +159,8 @@ func _initialize() -> void:
 		elif s == "process":
 			_bd = true
 			_proc = true
+		elif s.begins_with("enemy-shadows="):  # v0.10.5 PA: "proxy" or "blob"
+			_shadows = s.trim_prefix("enemy-shadows=")
 		elif s.begins_with("ab="):
 			_ab = s.trim_prefix("ab=").split(",", false)
 	_biomes = Array(biome_arg.split(",", false))
@@ -171,6 +174,8 @@ func _initialize() -> void:
 	root.size = Vector2i(1920, 1080)
 	var profile := ProfileStore.new("")
 	profile.section("settings")["language"] = "en"
+	if not _shadows.is_empty():
+		profile.section("settings")["enemy_shadows"] = _shadows
 	ProfileStore.use_shared(profile)
 	RunSaveStore.use_shared(RunSaveStore.new(""))
 	_main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
@@ -512,6 +517,7 @@ func _finish_biome() -> void:
 		"floor: " + _floor_triplanar + " (no planar path exists: planar_floor NOT AVAILABLE)"
 	)
 	lines.append("flags: " + _ab_status())
+	lines.append("enemy_shadows: " + ViewPrefs.enemy_shadows)  # v0.10.5 PA
 	lines.append(
 		(
 			"frames=%d  avg_ms=%.3f  p50_ms=%.3f  p95_ms=%.3f  p99_ms=%.3f"

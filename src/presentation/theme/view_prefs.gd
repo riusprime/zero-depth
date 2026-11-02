@@ -11,6 +11,10 @@ static var effects_density := "high"
 ## v0.8.0 GF3 (owner O22): the Blade's hit-stop (HitStop: the hero's swing and the struck enemy held ~2 frames on a
 ## Blade hit, in the view only). Options -> Accessibility "Hit-stop"; reduced motion turns it off too.
 static var hit_stop := true
+## v0.10.5 PA (owner, perf wave 2): how a normal or elite enemy casts its shadow (EnemyShadows.MODES): "proxy", one
+## shadow-only mesh shaped like it, or "blob", a soft disc on the floor. Read when an enemy is built. Not in Options
+## yet (the owner picks from the shots); GameSettings key "enemy_shadows".
+static var enemy_shadows := "proxy"
 
 
 static func apply_settings(profile: ProfileStore) -> void:
@@ -19,6 +23,8 @@ static func apply_settings(profile: ProfileStore) -> void:
 	var d := String(GameSettings.get_value(profile, "effects_density"))
 	effects_density = d if GameSettings.EFFECTS_DENSITIES.has(d) else "high"
 	hit_stop = String(GameSettings.get_value(profile, "hit_stop")) != "off"
+	var es := String(GameSettings.get_value(profile, "enemy_shadows"))
+	enemy_shadows = es if EnemyShadows.MODES.has(es) else "proxy"
 	var m := StringName(String(GameSettings.get_value(profile, "colour_mode")))
 	ThemePalette.mode = m if ThemePalette.MODES.has(m) else &"off"
 

@@ -85,7 +85,7 @@ var _proj_key: Array[String] = ["", ""]
 var _proj_key_of: Array = [[], []]
 ## v0.10.5 Q5: each actor node's parts, read once from its metas (get_meta every sync was most of actors.update), by
 ## id: [facing, bar, elite bar or null, dazed or null, hero avatar or null, enemy avatar or null, is a boss, the yaw
-## last written (INF: write it)].
+## last written (INF: write it), the blob shadow or null (v0.10.5 PA)].
 var _parts := {}
 
 
@@ -171,6 +171,11 @@ func sync(reader: WorldReader) -> void:
 ## (ScreenCull.keeps: within its largest radius + the margin of the view, with hysteresis); without a camera, within
 ## ANIMATE_RADIUS_M of the hero as before. Turning back on, it runs a few short steps at once, so its smoothed pose has
 ## caught up before it can reach the screen (its own _process runs again before this frame is drawn).
+## v0.10.5 PA (owner, perf wave 2: "let's try it"): the same test decides its physics interpolation: an enemy the camera
+## could show (the view's rectangle + AVATAR_RADIUS_M + MARGIN_M, + HYSTERESIS_M while on: every enemy on screen and
+## ~10 m past its edges) keeps it; a far one is set to PHYSICS_INTERPOLATION_MODE_OFF, and back on (with
+## reset_physics_interpolation, so it never glides from where it was) when it comes near. The hero and the camera are
+## never touched.
 func _animate_if_seen(node: Node3D, id: int, pos: Vector2, hero: Vector2) -> void:
 	var avatar := node.get_meta(&"enemy_avatar") as Node
 	var was: bool = _anim_on.get(id, false)
@@ -179,8 +184,15 @@ func _animate_if_seen(node: Node3D, id: int, pos: Vector2, hero: Vector2) -> voi
 		on = cull.keeps(SimPlane.to_3d(pos), ScreenCull.AVATAR_RADIUS_M, was)
 	else:
 		on = (pos - hero).length() <= ANIMATE_RADIUS_M
+	var first := not _anim_on.has(id)
 	_anim_on[id] = on
 	avatar.set_process(on)
+	if first or on != was:  # v0.10.5 PA: physics interpolation only where it could show
+		node.physics_interpolation_mode = (
+			Node.PHYSICS_INTERPOLATION_MODE_INHERIT if on else Node.PHYSICS_INTERPOLATION_MODE_OFF
+		)
+		if on:
+			node.reset_physics_interpolation()
 	if on and not was and avatar.has_method(&"advance"):
 		for k in 4:
 			avatar.call(&"advance", 0.05)
@@ -316,6 +328,7 @@ func _parts_of(node: Node3D, id: int) -> Array:
 			_meta_or_null(node, &"enemy_avatar"),
 			node.has_meta(&"boss"),
 			INF,
+			_meta_or_null(node, &"blob"),
 		]
 		_parts[id] = parts
 	return parts
@@ -368,6 +381,11 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int, parts: Array = [])
 		var t_en := PerfMarks.start()
 		enemy_avatar.call(&"sync", reader, i)
 		PerfMarks.add(&"actors.enemy_sync", t_en)
+	if parts[8] != null:  # v0.10.5 PA: the blob goes with the body (an egg, a vanished elite)
+		var blob := parts[8] as Node3D
+		var shown := facing.visible and (enemy_avatar == null or (enemy_avatar as Node3D).visible)
+		if blob.visible != shown:
+			blob.visible = shown
 
 
 ## v0.4.0 SC: a projectile gone from the sim goes back to its look's pool (hidden) instead of being freed.
@@ -398,6 +416,8 @@ func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 		if not alive.has(id):
 			var node: Node3D = nodes[id]
 			nodes.erase(id)
+			if node.has_meta(&"blob"):  # v0.10.5 PA: a falling body's blob goes at once
+				(node.get_meta(&"blob") as Node3D).visible = false
 			# v0.7.5 BM: a boss whose body falls when it dies keeps drawing its fall a moment, then goes.
 			# (has_meta first: get_meta with a null default still reports a missing key, e.g. for a dummy)
 			var boss: Variant = (
@@ -685,11 +705,19 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			)
 			if is_player:
 				_add_core_panels(facing, size)
-	if not is_player:  # v0.9.5 PF4: only the largest rig pieces cast a shadow (the hero is unchanged)
-		ShadowTrim.trim(
-			facing, ShadowTrim.BOSS_KEEP if root.has_meta(&"boss") else ShadowTrim.ENEMY_KEEP
-		)
+	if not is_player and root.has_meta(&"boss"):  # v0.9.5 PF4: a boss's largest pieces cast its shadow
+		ShadowTrim.trim(facing, ShadowTrim.BOSS_KEEP)
+	elif not is_player:
 		RigMerge.merge_actor(root, kind)  # v0.9.5 PF5: the enemy's pieces become one skinned mesh
+		# v0.10.5 PA: its parts cast nothing; one stand-in shaped like it (or a blob) casts its shadow.
+		var host: Node3D = facing
+		if root.has_meta(&"enemy_avatar"):
+			host = root.get_meta(&"enemy_avatar")
+		var stand_in := EnemyShadows.apply(
+			root, facing, host, kind, radius, ViewPrefs.enemy_shadows
+		)
+		if stand_in != null and stand_in.name == EnemyShadows.BLOB_NAME:
+			root.set_meta(&"blob", stand_in)
 	# Floating health bar, as in the reference; it shrinks toward its centre as HP drops.
 	var bar_root := Node3D.new()
 	bar_root.position = Vector3(0, height + 0.55, 0)

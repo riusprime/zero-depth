@@ -46,6 +46,7 @@ const DEFAULTS := {
 	"hints": "on",  # v0.7.5 SM: the first-run hints (HintStore)
 	"ui_scale": "100",  # v0.7.5 SM: UI_SCALES
 	"hit_stop": "on",  # v0.8.0 GF3: the Blade's hit-stop, a look only (read by the view)
+	"enemy_shadows": "proxy",  # v0.10.5 PA: ViewPrefs.enemy_shadows ("proxy" or "blob"), a look only
 }
 
 

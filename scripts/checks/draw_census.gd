@@ -9,7 +9,7 @@ extends SceneTree
 ## costs). A light is read by hiding it (its light and its shadow passes); the sun's shadow by turning it off.
 ## Counts, not timings. Needs a renderer, off screen:
 ##   "$G" --path . --position -10000,-10000 --resolution 1920x1080 --windowed -s scripts/checks/draw_census.gd -- \
-##     --biome=red_canyon [--spots=5] [--tag=before] [--shot]
+##     --biome=red_canyon [--spots=5] [--tag=before] [--shot] [--enemy-shadows=proxy|blob]
 ## Writes only under build/ (build/perf/draw_census_<biome>[_<tag>].txt; with --shot one shot per spot, everything
 ## shown, in build/shots/v0.10.5/draw/<biome>_<tag>_<spot>.png) and prints the same report. Quits on every path.
 
@@ -41,6 +41,7 @@ var _biome := &"red_canyon"
 var _spots := 5
 var _tag := ""
 var _shot := false
+var _shadows := ""
 var _fight := -1
 var _main: Main
 var _frame := 0
@@ -72,9 +73,14 @@ func _initialize() -> void:
 			_tag = s.trim_prefix("tag=")
 		elif s == "shot":
 			_shot = true
+		elif s.begins_with("enemy-shadows="):  # v0.10.5 PA: "proxy" or "blob"
+			_shadows = s.trim_prefix("enemy-shadows=")
 		elif s.begins_with("fight="):
 			_fight = int(s.trim_prefix("fight="))
-	ProfileStore.use_shared(ProfileStore.new(""))
+	var profile := ProfileStore.new("")
+	if not _shadows.is_empty():
+		profile.section("settings")["enemy_shadows"] = _shadows
+	ProfileStore.use_shared(profile)
 	_main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
 	root.add_child(_main)
 
@@ -460,6 +466,7 @@ func _census_nodes() -> void:
 		vps.append(
 			"%s %s update=%d" % [sv.get_parent().name, str(sv.size), sv.render_target_update_mode]
 		)
+	_census.append("enemy_shadows: " + ViewPrefs.enemy_shadows)  # v0.10.5 PA
 	_census.append("SubViewports in the tree: %d %s" % [vps.size(), str(vps)])
 	var keys := counts.keys()
 	keys.sort_custom(func(a, b) -> bool: return counts[a] > counts[b])
