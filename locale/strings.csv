@@ -1340,3 +1340,22 @@ FORMCARD_WISPS_ORBIT,The wisps circle wider (3.5 m) and hurt what they touch,"Lo
 MENU_CREDITS,Credits,Créditos
 ROBE_RUNIC,Runic,Rúnica
 ROBE_RUNIC_HINT,Learn every line of the Runic Stone,Aprende todas las líneas de la Piedra rúnica
+UI_CODEX_TAB_LORE,Lore,Historia
+LORE_DEPTHS_TITLE,The Depths,Las Profundidades
+LORE_DEPTHS,"The Depths were a city once. Each floor down is older, and it remembers less of what it was.",Las Profundidades fueron una ciudad. Cada piso más abajo es más antiguo y recuerda menos de lo que fue.
+LORE_HEAT_TITLE,Overclock,Sobrecarga
+LORE_HEAT,Your core drinks the fight. Run it hot and it sings; let it boil and it bites back. Vent before it does.,"Tu núcleo bebe del combate. Si arde, canta; si hierve, muerde. Libéralo antes de que lo haga."
+LORE_WAND_TITLE,The Wand,La Varita
+LORE_WAND,"A spell is a sentence. Each card you set is a word, and the order is the grammar.","Un hechizo es una frase. Cada carta que colocas es una palabra, y el orden es la gramática."
+LORE_SHARDS_TITLE,Shards,Fragmentos
+LORE_SHARDS,Shards are what the Depths shed when something dies in them. Everyone down here trades in endings.,Los fragmentos son lo que las Profundidades sueltan cuando algo muere en ellas. Aquí abajo todos comercian con finales.
+LORE_CURSES_TITLE,Curses,Maldiciones
+LORE_CURSES,A curse is a bargain the Depths keep for you. The price never changes; only how much you can afford.,Una maldición es un trato que las Profundidades guardan por ti. El precio nunca cambia; solo lo que puedes pagar.
+LORE_DEEP_TITLE,The Deep,Lo Profundo
+LORE_DEEP,The violet gate leads where the light gives up. The rewards are real. So is everything else.,La puerta violeta lleva adonde la luz se rinde. Las recompensas son reales. Todo lo demás también.
+LORE_RUNES_TITLE,Runes,Runas
+LORE_RUNES,"The runes are the city's last memories, carved where it could not forget them. Gather them and it remembers you.","Las runas son los últimos recuerdos de la ciudad, grabados donde no podía olvidarlos. Reúnelas y te recordará."
+LORE_CROWN_TITLE,The Hollow Crown,La Corona Hueca
+LORE_CROWN,"The Hollow Crown went down first, to rule what lay beneath. It found nothing to rule, and kept descending.","La Corona Hueca bajó la primera, para reinar sobre lo de abajo. No encontró nada que gobernar, y siguió descendiendo."
+LORE_ASCENSION_TITLE,Ascension,Ascensión
+LORE_ASCENSION,"Up is not out. The Depths turn over, and the top becomes the bottom again, a little hungrier.","Subir no es salir. Las Profundidades se dan la vuelta, y lo de arriba vuelve a ser el fondo, con un poco más de hambre."

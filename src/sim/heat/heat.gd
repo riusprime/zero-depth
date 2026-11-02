@@ -277,6 +277,10 @@ static func vent(w: World) -> bool:
 	var heat := s.milli / HeatTable.MILLI
 	_blast(w, heat, 1000, w.take_root(), EFFECT_VENT)
 	w.kit.vent_cd = s.table.vent_cooldown_ticks  # v0.9.5 HT
+	if s.milli >= s.table.perfect_vent_milli:  # v0.10.5 S12: a perfect Vent readies the dash
+		w.dash_cooldown_left = 0
+		var pid: int = w.actors.ids[0]
+		w.emit_event(SimEvent.Kind.DASH_REFUND, pid, pid, pid, w.player_pos()).amount = heat
 	s.milli = 0
 	s.idle = 0
 	_retier(w)

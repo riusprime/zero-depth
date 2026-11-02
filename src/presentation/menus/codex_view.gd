@@ -18,6 +18,7 @@ const TAB_KEYS := {
 	&"enemies": "UI_CODEX_TAB_ENEMIES",
 	&"bosses": "UI_CODEX_TAB_BOSSES",
 	&"biomes": "UI_CODEX_TAB_BIOMES",
+	&"lore": "UI_CODEX_TAB_LORE",  # v0.10.5 O18
 	&"achievements": "UI_ACH_TAB",  # v0.7.5 AC
 	&"collectibles": "UI_CODEX_TAB_COLLECTIBLES",  # v0.9.0 CL
 }
@@ -39,6 +40,7 @@ const SECTION_KEYS := {
 	&"bosses": "UI_CODEX_TAB_BOSSES",
 	&"final": "UI_CODEX_SECTION_FINAL",  # v0.8.0 FB1: the final boss's bodies
 	&"biomes": "UI_CODEX_TAB_BIOMES",
+	&"lore": "UI_CODEX_TAB_LORE",
 }
 const COUNTER_KEYS := {
 	&"offered": "UI_CODEX_OFFERED",

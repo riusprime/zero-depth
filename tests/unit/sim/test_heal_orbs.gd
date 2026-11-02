@@ -172,9 +172,9 @@ func test_floor_1_bosses_are_eased_and_their_room_heals_you() -> void:
 	assert_eq(t2[0].hp, base[0].hp * 1200 / 1000, "floor 2 unchanged (v0.9.0 FV: +20 % a floor)")
 
 
-func test_shards_keep_growing_with_floor_time_after_the_peak() -> void:
+func test_shards_stop_growing_after_the_peak() -> void:
 	var w := RunLab.new(ContentRepository.load_all(), 78, &"gun").floor_world()
-	var peak := w.spawner.curve.starts[w.spawner.curve.phase_count() - 1]
+	var peak := w.reward_table.shard_cap_min_ticks  # v0.10.5 O7a: the cap (floor 1 peaks at 90 s, the minimum is 180 s)
 	w.run_ticks = peak
 	var at_peak := Rewards.shards_for_kill(w, KIND.CHARGER)
 	w.run_ticks = peak + 3600 * 2
@@ -182,7 +182,13 @@ func test_shards_keep_growing_with_floor_time_after_the_peak() -> void:
 	assert_gt(
 		w.spawner.danger_tier(w.run_ticks), w.spawner.danger_tier(peak), "the tier keeps rising"
 	)
-	assert_gt(Rewards.shards_for_kill(w, KIND.CHARGER), at_peak, "staying longer pays more shards")
+	assert_eq(
+		Rewards.shards_for_kill(w, KIND.CHARGER), at_peak, "v0.10.5 O7a: no more past the peak"
+	)
+	w.reward_table.shard_tier_caps_at_peak = false
+	assert_gt(
+		Rewards.shards_for_kill(w, KIND.CHARGER), at_peak, "flag off: staying longer pays more"
+	)
 
 
 func test_the_shipped_three_percent_base_drops_without_a_card() -> void:

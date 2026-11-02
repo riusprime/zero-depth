@@ -28,6 +28,8 @@ var vent_damage_permille := 500
 ## v0.9.5 HT: Vent needs this many milli-points, then waits this many ticks.
 var vent_min_milli := 40000
 var vent_cooldown_ticks := 360
+## v0.10.5 S12: a Vent from at least this many milli-points readies the dash at once.
+var perfect_vent_milli := 90000
 
 
 func max_milli() -> int:

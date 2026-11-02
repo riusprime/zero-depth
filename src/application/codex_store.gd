@@ -20,7 +20,13 @@ signal unlocked(page: StringName, id: StringName)
 
 const SECTION := "codex"
 const VERSION := 1
-const PAGES: Array[StringName] = [&"cards", &"enemies", &"bosses", &"biomes"]
+const PAGES: Array[StringName] = [&"cards", &"enemies", &"bosses", &"biomes", &"lore"]
+## v0.10.5 O18: the Lore page's entries in order (one line per system), and the ones open from the start; the rest
+## unlock when their system is first met (CodexRecorder). An "always" entry reads as unlocked without being stored.
+const LORE_IDS: Array[StringName] = [
+	&"depths", &"heat", &"wand", &"shards", &"curses", &"deep", &"runes", &"crown", &"ascension"
+]
+const LORE_ALWAYS: Array[StringName] = [&"depths", &"heat", &"wand", &"shards"]
 ## Each page's counters (what the page shows and what achievements may read).
 ## cards: offered (a pick, the shop or an event showed it), taken, level (the highest it reached in a run);
 ## enemies: kills, deaths (times it killed you); bosses: fights (times you met it), kills, deaths;
@@ -30,6 +36,7 @@ const COUNTERS := {
 	&"enemies": [&"kills", &"deaths"],
 	&"bosses": [&"fights", &"kills", &"deaths"],
 	&"biomes": [&"visits"],
+	&"lore": [],
 }
 
 var profile: ProfileStore
@@ -43,7 +50,7 @@ func _init(p_profile: ProfileStore) -> void:
 
 ## An empty Codex (the profile's fresh section; an old profile without the section reads as this).
 static func fresh() -> Dictionary:
-	return {"version": VERSION, "cards": {}, "enemies": {}, "bosses": {}, "biomes": {}}
+	return {"version": VERSION, "cards": {}, "enemies": {}, "bosses": {}, "biomes": {}, "lore": {}}
 
 
 ## The page's entries in the profile (repaired to a Dictionary when a hand-edited file broke it).
@@ -78,6 +85,8 @@ func version() -> int:
 
 
 func is_unlocked(page: StringName, id: StringName) -> bool:
+	if page == &"lore" and LORE_ALWAYS.has(id):  # v0.10.5 O18
+		return true
 	return _page(page).has(String(id))
 
 

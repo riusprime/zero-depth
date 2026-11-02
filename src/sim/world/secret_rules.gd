@@ -5,7 +5,7 @@ extends RefCounted
 ## values, so a world built without content gets the same floor. Setup copies the numbers play needs into Breakables
 ## itself (they ride the save with it); this object is not kept.
 
-## The share of floors with a cracked wall before a dead end (per mille), and the Skill hits it takes.
+## This floor's cracked wall chance (per mille; FloorPlan.secret_rules picks it by floor), and the Skill hits it takes.
 var crack_permille := 250
 var crack_hits := 3
 ## Breakable containers (crates, urns, barrels): at most this many a room, and the chance (per mille) one breaks open on

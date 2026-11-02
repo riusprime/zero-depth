@@ -35,7 +35,7 @@ func test_every_cracked_wall_is_off_the_way_and_opens_onto_its_room() -> void:
 		var seed_value := 7001 + s * 7919
 		var f := _layout(seed_value, map, spec, arenas.share_permille)
 		if RngStream.derive(seed_value, CrackedRooms.STREAM).chance_permille(
-			secrets.crack_permille
+			CrackedRooms.chance(secrets.crack_floor_permille, 2)
 		):
 			natural += 1
 		TimedDoorRooms.mark(f, 1000, 900, speed, PackedInt32Array(), PackedVector2Array())
@@ -63,14 +63,17 @@ func test_every_cracked_wall_is_off_the_way_and_opens_onto_its_room() -> void:
 		gut
 		. p(
 			(
-				"CRACKED_WALLS| seeds=%d placed_when_tried=%d with_timed_and_runes=%d natural_25pct=%d bad=%d"
+				"CRACKED_WALLS| seeds=%d placed_when_tried=%d with_timed_and_runes=%d natural_floor2=%d bad=%d"
 				% [SEEDS, placed, with_both, natural, bad]
 			)
 		)
 	)
 	assert_eq(bad, 0, "every cracked wall off the way, its room reachable once broken")
 	assert_gt(placed, SEEDS * 5 / 10, "most floors have a dead end that fits one")
-	assert_between(natural, SEEDS * 20 / 100, SEEDS * 30 / 100, "about 25 % of floors are tried")
+	var want := CrackedRooms.chance(secrets.crack_floor_permille, 2) * SEEDS / 1000
+	assert_between(
+		natural, want - SEEDS / 20, want + SEEDS / 20, "floor 2's share of floors are tried"
+	)
 
 
 ## The walk from the host's side of the doorway into the room's centre exists once the wall is gone.
@@ -105,3 +108,16 @@ func test_the_same_seed_marks_the_same_wall() -> void:
 	assert_eq(a.walls.size(), walls, "the floor's walls are untouched")
 	assert_eq(CrackedRooms.mark(a, 0, PackedInt32Array()), -1, "not drawn: none")
 	assert_eq(a.crack_room, -1)
+
+
+func test_the_chance_is_read_by_floor_index() -> void:
+	var per := PackedInt32Array([1000, 350, 750])
+	assert_eq(CrackedRooms.chance(per, 1), 1000, "floor 1 is entry 0")
+	assert_eq(CrackedRooms.chance(per, 2), 350)
+	assert_eq(CrackedRooms.chance(per, 3), 750)
+	assert_eq(CrackedRooms.chance(per, 4), 750, "a later floor uses the last entry")
+	assert_eq(CrackedRooms.chance(per, 9), 750)
+	assert_eq(CrackedRooms.chance(PackedInt32Array(), 1), 0, "no entries, no wall")
+	var secrets: SecretsDefinition = ContentRepository.load_all().get_def(&"secrets", &"secrets")
+	assert_eq(FloorPlan.secret_rules(secrets, 2).crack_permille, secrets.crack_floor_permille[1])
+	assert_eq(FloorPlan.secret_rules(secrets, 5).crack_permille, secrets.crack_floor_permille[2])

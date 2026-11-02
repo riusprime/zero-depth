@@ -12,10 +12,17 @@ first build step).
 - **How work runs (owner, 2026-11-01):** "for small direct fixes or easy tasks deploy sonnet subagents, with a very
   precise and concise task to do so they don't have to think too much, if there is a more complex task deploy a opus
   5.5 agent", then "max 3 sonnet agents and 1 opus at the same time". Each step below names its agent: **S** = Sonnet (a precise brief, no design), **O** = Opus 5.5 (design
-  or several systems). At most three Sonnet agents and one Opus run at once; each works in its own worktree, removed after the
+  or several systems). At most three Sonnet agents and one Opus run at once, or one Sonnet and two Opus (owner, 2026-11-01); each works in its own worktree, removed after the
   merge.
 - **Gates:** every **O** step that adds something new drafts a G1 list or G2 mockups first and stops for the owner.
   Nothing new is built before the owner's answer (OWNER_GATES).
+
+## Overnight mode (owner, 2026-11-01)
+
+"Keep going until you complete all of them, if you have any questions write them down and we go over them at the end";
+asked about the gates: **"Pick and build"** and **"Don't push"**. So every G1/G2 gate below is passed by the lead's recommended
+pick, built as starting values, and listed in [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) for the owner to keep or change.
+Nothing is pushed until the owner says so.
 
 ## Every owner line → where it lands
 

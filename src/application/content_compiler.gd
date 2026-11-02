@@ -3,8 +3,7 @@ extends RefCounted
 ## Turns definitions into the sim's plain tables, converting seconds to ticks once (CONTENT_SCHEMA §9).
 ## A build weapon id (BuildDefinition.WEAPON_IDS) to its PlayerTable weapon bit; any other id (empty) is 0.
 const WEAPON_BITS := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
-## Enemy behaviour ids (BehaviourSchemas.SCHEMAS) to actor kinds (a test checks the two key sets match).
-const ENEMY_KINDS := {
+const ENEMY_KINDS := {  # behaviour ids to actor kinds (a test checks the key sets match)
 	&"charger": ActorStore.Kind.CHARGER,
 	&"warden": ActorStore.Kind.WARDEN,
 	&"needle": ActorStore.Kind.NEEDLE,
@@ -58,8 +57,7 @@ const BOSS_MOVES := {
 	&"wave": BossAttackTable.Move.WAVE,  # v0.9.5 BH4
 	&"interphase": BossAttackTable.Move.INTERPHASE,  # v0.9.5 BH6
 }
-## v0.8.0 FB3: a Nemesis attack's `weapon`.
-const ATTACK_WEAPONS := {
+const ATTACK_WEAPONS := {  # v0.8.0 FB3: a Nemesis attack's `weapon`
 	"any": BossAttackTable.WEAPON_ANY,
 	"blade": BossAttackTable.WEAPON_BLADE,
 	"gun": BossAttackTable.WEAPON_GUN,
@@ -218,8 +216,7 @@ static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) 
 			t.lane_half_m = sp["half_width_m"]
 
 
-## The Arc Caster (v0.3.5 AI): its three spells, in the schema's order (bolt, spread, rune). v0.7.5 EF: the bolt
-## and the spread are slow fireball fans (compile_enemy_patterns); the rune stays a disc that erupts under you.
+## The Arc Caster (v0.3.5 AI): its spells in schema order (bolt, spread, rune); v0.7.5 EF: bolt and spread are fans.
 static func _compile_arc_caster(def: EnemyDefinition, t: EnemyTable) -> void:
 	var bp := def.behaviour_params
 	t.keep_min_m = bp["keep_min_m"]
@@ -718,6 +715,8 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.offer_size = def.offer_size
 	t.interact_radius_m = def.interact_radius_m
 	t.shard_tier_bonus_permille = int(round(def.shard_tier_bonus * 1000.0))
+	t.shard_tier_caps_at_peak = def.shard_tier_caps_at_peak  # O7a
+	t.shard_cap_min_ticks = SimTick.seconds_to_ticks(def.shard_cap_min_seconds)
 	t.shard_permille = int(round(def.shard_scale * 1000.0))  # v0.5.5 EC (S4)
 	t.boss_shards = def.boss_shards
 	t.altar_card_weights = def.altar_card_weights.duplicate()  # v0.4.0 BS
@@ -992,4 +991,5 @@ static func compile_heat(def: HeatDefinition) -> HeatTable:
 	t.vent_damage_permille = int(round(def.vent_damage_per_heat * 1000.0))
 	t.vent_min_milli = int(round(def.vent_min_heat * HeatTable.MILLI))
 	t.vent_cooldown_ticks = SimTick.seconds_to_ticks(def.vent_cooldown_seconds)
+	t.perfect_vent_milli = def.perfect_vent_from * HeatTable.MILLI
 	return t

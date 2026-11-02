@@ -37,9 +37,19 @@ static func shards_for_kill(w: World, kind: int) -> int:
 		return 0
 	if t.shards_by_floor:
 		return _scaled(w, t.shards * maxi(1, w.floor_index))
-	# v0.4.0 TU (owner D7, "staying longer still pays more shards"): the floor's plain 30 s tier, not the curve's,
-	# so shards keep growing after the curve peaks and holds.
-	var tier := w.spawner.tier_at(w.run_ticks) if w.spawner != null else 0
+	# v0.4.0 TU (owner D7): the floor's plain 30 s tier, not the curve's. v0.10.5 O7a (P6, owner 2026-11-01): capped at
+	# the tier of the floor's peak phase start, so staying longer stops paying more.
+	var tier := 0
+	if w.spawner != null:
+		tier = w.spawner.tier_at(w.run_ticks)
+		var c := w.spawner.curve
+		if w.reward_table.shard_tier_caps_at_peak and c != null:
+			tier = mini(
+				tier,
+				w.spawner.tier_at(
+					maxi(c.starts[c.phase_count() - 1], w.reward_table.shard_cap_min_ticks)
+				)
+			)
 	return _scaled(
 		w, (t.shards * (1000 + w.reward_table.shard_tier_bonus_permille * tier) + 500) / 1000
 	)
@@ -98,6 +108,42 @@ static func place(w: World, layout: FloorLayout) -> void:
 			chests += 1
 		var spot := w.solids.clear_of_doors(layout, layout.item_spots[order[k]])  # v0.9.5 SB: off the doorways
 		w.add_reward(kinds[k], spot, price)
+	_place_extras(w, layout, order, kinds, chests)
+
+
+## v0.10.5 S7 (owner 2026-11-01, "10 to 15% more loot"; a starting value): after the floor's usual placement, about
+## extra_chest_permille / extra_altar_permille per mille more chests and altars: n x permille / 1000 whole extras, plus
+## one more with the remainder's chance (one loot-stream draw per kind, only when there is a remainder). An extra takes
+## the next unused item spot (none left: none placed) and an extra altar is not held by altars_cap. Drawn last, so
+## the counts, order and prices above are unchanged.
+static func _place_extras(
+	w: World, layout: FloorLayout, order: PackedInt32Array, kinds: PackedInt32Array, chests: int
+) -> void:
+	var t := w.reward_table
+	var used := mini(kinds.size(), order.size())
+	var n_altar := 0
+	for k in used:
+		if kinds[k] == RewardStore.Kind.ALTAR:
+			n_altar += 1
+	var wants := [
+		[RewardStore.Kind.CHEST, (used - n_altar) * t.extra_chest_permille],
+		[RewardStore.Kind.ALTAR, n_altar * t.extra_altar_permille],
+	]
+	for want in wants:
+		var milli: int = want[1]
+		var extra := milli / 1000
+		if milli % 1000 > 0 and w.rng_loot.range_int(0, 999) < milli % 1000:
+			extra += 1
+		for e in extra:
+			if used >= order.size():
+				return
+			var price := 0
+			if want[0] == RewardStore.Kind.CHEST:
+				price = t.chest_price(chests, w.floor_index)
+				chests += 1
+			var spot := w.solids.clear_of_doors(layout, layout.item_spots[order[used]])
+			w.add_reward(want[0], spot, price)
+			used += 1
 
 
 ## v0.5.5 AR: `order` with the spots in arena rooms first (start_first among them), then the others (start_first

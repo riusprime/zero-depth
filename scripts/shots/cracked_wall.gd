@@ -10,6 +10,8 @@ const OUT := "res://build/shots/v0.10.5/cracked_wall/"
 
 var main: Main
 var seed_value := 40
+var dist := 3.0
+var tag := ""
 var _step := 0
 var _frames := 0
 var _wait := 0
@@ -20,6 +22,10 @@ func _initialize() -> void:
 		var kv := arg.split("=")
 		if kv.size() == 2 and kv[0] == "seed":
 			seed_value = int(kv[1])
+		if kv.size() == 2 and kv[0] == "dist":
+			dist = float(kv[1])
+		if kv.size() == 2 and kv[0] == "tag":
+			tag = kv[1]
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	ProfileStore.use_shared(ProfileStore.new(""))
 	RunSaveStore.use_shared(RunSaveStore.new(""))
@@ -46,13 +52,13 @@ func _process(_delta: float) -> bool:
 					main.driver.reader.arrival_progress() >= 0.9
 					or main.driver.reader.arrival_progress() < 0.0
 				):
-					CrackLab.face_wall(w, 3.0)
+					CrackLab.face_wall(w, dist)
 					_step = 2
 		2:
 			_wait += 1
-			if _wait == 90:
+			if _wait == 120:
 				var img := root.get_texture().get_image()
-				var path := OUT + "cracked_wall_seed%d.png" % seed_value
+				var path := OUT + "cracked_wall_seed%d%s.png" % [seed_value, tag]
 				img.save_png(path)
 				print("cracked_wall: ", ProjectSettings.globalize_path(path))
 				quit(0)

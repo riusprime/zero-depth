@@ -224,6 +224,7 @@ var half_rate_enabled := true
 var _half_synced := {}
 ## v0.8.0 P3 (O32): the floor's walls for the occlusion test, indexed once (Occlusion.build_index).
 var _occlusion_index := {}
+var _occ_specs: Array = []
 
 
 ## v0.8.0 LD: makes the parts not made yet for about `budget_ms` (one at least); true when every part is made.
@@ -723,17 +724,24 @@ func sync() -> void:
 		# v0.8.0 P3 (owner O32): the floor's walls indexed once (Occlusion.build_index), not all tested every tick.
 		if (
 			_occlusion_index.is_empty()
-			or _occlusion_index["count"] != stage.wall_specs.size()
+			or _occlusion_index["count"] != _occ_specs.size()
 			or _occlusion_index["pitch"] != rig.pitch_deg
 		):
-			_occlusion_index = Occlusion.build_index(rig.pitch_deg, stage.wall_specs)
-		stage.apply_occlusion(
-			Occlusion.select_in(
-				rig.toward_camera_on_plane(), _occlusion_index, focus, stage.wall_specs
-			)
+			_occ_specs = stage.wall_specs.duplicate()
+			if breakables != null and not breakables.slab_spec.is_empty():  # S15b: the cracked slab joins the walls
+				breakables.slab_index = _occ_specs.size()
+				_occ_specs.append(breakables.slab_spec)
+			_occlusion_index = Occlusion.build_index(rig.pitch_deg, _occ_specs)
+		var faded := Occlusion.select_in(
+			rig.toward_camera_on_plane(), _occlusion_index, focus, _occ_specs
 		)
+		stage.apply_occlusion(faded)
+		if breakables != null:  # S15b: the cracked slab fades with the walls
+			breakables.fade_slab(faded)
 	else:
 		stage.apply_occlusion(PackedInt32Array())
+		if breakables != null:
+			breakables.fade_slab(PackedInt32Array())
 	PerfMarks.add(&"sync.occlusion", t_occ)
 	PerfMarks.add(&"sync_all", t_all)
 

@@ -395,3 +395,20 @@ func test_gamble_heat_capacity_makes_each_attack_fill_less() -> void:
 	Heat.add(w, 10000)
 	assert_eq(plain, 10000)
 	assert_eq(w.heat.milli, 10000 * 1000 / 1160, "the same attack fills 1/1.16 as much")
+
+
+func test_only_a_perfect_vent_readies_the_dash() -> void:
+	var w := _world([], [Vector2(1.5, 0)])
+	w.heat.milli = 95 * M
+	w.dash_cooldown_left = 500
+	w.step(_f(0, V))
+	assert_eq(w.dash_cooldown_left, 0, "venting at 95 heat readies the dash")
+	var ev := _events(w, SimEvent.Kind.DASH_REFUND)
+	assert_eq(ev.size(), 1, "one DASH_REFUND event")
+	assert_eq(ev[0].amount, 95, "carrying the heat vented")
+	var low := _world([], [Vector2(1.5, 0)])
+	low.heat.milli = 80 * M
+	low.dash_cooldown_left = 500
+	low.step(_f(0, V))
+	assert_eq(low.dash_cooldown_left, 499, "an 80 heat Vent leaves the cooldown ticking")
+	assert_eq(_events(low, SimEvent.Kind.DASH_REFUND).size(), 0, "no refund event")

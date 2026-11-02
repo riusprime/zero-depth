@@ -300,6 +300,8 @@ static func add_run_shape(t: RunTable, def: RunDefinition) -> RunTable:
 ## v0.9.0 FV (owner Q24, "Scale with floor size"): the altar and chest counts by the floor's rooms onto `t`
 ## (ContentCompiler.compile_rewards).
 static func add_reward_bands(t: RewardTable, def: RewardsDefinition) -> RewardTable:
+	t.extra_chest_permille = def.extra_chest_permille  # v0.10.5 S7: the extra chests and altars
+	t.extra_altar_permille = def.extra_altar_permille
 	t.count_rooms = def.count_rooms.duplicate()
 	t.band_counts.clear()
 	for k in def.count_rooms.size():
