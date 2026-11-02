@@ -97,6 +97,8 @@ var kills := 0
 var mines := MineStore.new()
 ## Heal orbs on the floor (v0.4.0 TU, owner D8; HealOrbs), hashed once one was dropped.
 var orbs := HealOrbStore.new()
+## v0.10.5 O7b (owner P6; ShardDrops): kill shards lying on the floor, hashed once one was dropped.
+var shard_drops := ShardDropStore.new()
 ## v0.4.0 TU (owner D9): the share of max HP restored when the boss room seals (per mille; RunState.prepare sets it
 ## from the run's per-floor table: floor 1 full, later floors none). Setup, not hashed.
 var boss_room_heal_permille := 0
@@ -831,6 +833,7 @@ func step(frame: InputFrame) -> void:
 		Collectibles.advance(self)  # v0.9.0 CL: a source gives its collectible; the hero takes those in reach
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
 	HealOrbs.advance(self)  # v0.4.0 TU (D8): walking over a heal orb heals
+	ShardDrops.advance(self)  # v0.10.5 O7b (P6): walking near kill shards takes them
 	WaveDirector.advance(self)
 	if spawner != null:
 		if Arenas.holds_spawns(self) or Lockdowns.holds_spawns(self):  # v0.9.0 LK: a Lockdown too
@@ -1387,6 +1390,8 @@ func state_hash() -> String:
 		mines.hash_into(h)
 	if orbs.touched:  # v0.4.0 TU: only once a kill dropped a heal orb.
 		orbs.hash_into(h)
+	if shard_drops.touched:  # v0.10.5 O7b: only once a kill laid shards on the floor.
+		shard_drops.hash_into(h)
 	# Items, the second eight (v0.2.0 J).
 	for v in [heal_window_start, heal_window_used, heal_tick, chain_count, chain_root, chain_tick]:
 		h.add_int(v)

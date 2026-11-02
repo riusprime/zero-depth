@@ -997,6 +997,27 @@ func heal_orb_ids() -> PackedInt32Array:
 	return _w.orbs.ids
 
 
+## v0.10.5 O7b (owner P6; ShardDrops): kill shards lying on the floor, in drop order: where, their sequence numbers
+## (stable while a drop lies) and the shards each holds; and the hero's reach for them (pickup range included).
+func shard_drops() -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for k in _w.shard_drops.size():
+		out.append(_w.shard_drops.pos(k))
+	return out
+
+
+func shard_drop_seqs() -> PackedInt32Array:
+	return _w.shard_drops.seqs
+
+
+func shard_drop_amounts() -> PackedInt32Array:
+	return _w.shard_drops.amounts
+
+
+func shard_drop_reach() -> float:
+	return Stats.reach(_w, ShardDrops.REACH_M)
+
+
 ## True while a living enemy of `kind` is on the floor.
 func kind_alive(kind: int) -> bool:
 	var a := _w.actors

@@ -38,7 +38,8 @@ func _pick(w: World, pick: int) -> void:
 	_press(w, 0, pick)
 
 
-## Kills a fresh enemy of `kind` at (6, 0) this tick (it leaves the world in phase 9).
+## Kills a fresh enemy of `kind` at (6, 0) this tick (it leaves the world in phase 9). v0.10.5 O7b: its shards lie at
+## the body, so the hero then steps there to take them (and back to the origin).
 func _kill(w: World, kind: int) -> int:
 	w.add_enemy(kind, Vector2(6, 0))
 	var i := w.actors.size() - 1
@@ -46,6 +47,10 @@ func _kill(w: World, kind: int) -> int:
 	w.actors.dead[i] = 1
 	var before := w.shards
 	CombatLab.idle(w, 1)
+	assert_eq(w.shards, before, "O7b: lying at the body, not paid yet")
+	w.actors.set_pos(0, Vector2(6, 0))
+	CombatLab.idle(w, 1)
+	w.actors.set_pos(0, Vector2.ZERO)
 	return w.shards - before
 
 
@@ -148,7 +153,7 @@ func test_a_kill_pays_its_kinds_shards() -> void:
 		func(e: SimEvent) -> bool: return e.kind == SimEvent.Kind.SHARDS
 	)
 	assert_eq(paid.map(func(e: SimEvent) -> int: return e.amount), [2, 3, 4], "a SHARDS event each")
-	assert_eq(paid[0].pos, Vector2(6, 0), "at the body (the gems fly from there)")
+	assert_eq(paid[0].pos, Vector2(6, 0), "at the body (O7b: where they lay)")
 
 
 func test_shards_scale_with_the_danger_tier() -> void:

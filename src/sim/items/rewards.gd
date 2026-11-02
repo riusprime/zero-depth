@@ -61,7 +61,17 @@ static func _scaled(w: World, amount: int) -> int:
 	return amount if m == 1000 else (amount * m + 500) / 1000
 
 
-## Tick phase 9: actor i died. Pays its shards and emits SHARDS (amount = shards, at the body).
+## v0.10.5 O7b (P6): a kill of `kind` lays its shards on the floor (ShardDrops) rather than paying at once: a normal
+## enemy, not a boss nor a shards_by_floor kind.
+static func lies_on_floor(w: World, kind: int) -> bool:
+	if BossAi.is_boss_kind(kind) or not EnemyAi.is_enemy_kind(kind):
+		return false
+	var t := w.enemy_table(kind)
+	return t == null or not t.shards_by_floor
+
+
+## Tick phase 9: actor i died. Pays its shards and emits SHARDS (amount = shards, at the body); v0.10.5 O7b: a normal
+## enemy's shards lie at the body instead (ShardDrops), paid and announced when the hero takes them.
 static func on_kill(w: World, i: int) -> void:
 	var amount := Gamble.shard_gain(w, shards_for_kill(w, w.actors.kinds[i]))  # the shrine's shard gain
 	amount = Stats.shards(w, amount)  # v0.4.0 BS: the shard gain stat
@@ -69,6 +79,9 @@ static func on_kill(w: World, i: int) -> void:
 	HealOrbs.on_kill(w, i)  # v0.4.0 TU (D8): maybe a heal orb
 	amount = Affinities.shards(w, amount)  # v0.9.0 RB: A5 Guardian picks up fewer
 	if amount <= 0:
+		return
+	if lies_on_floor(w, w.actors.kinds[i]):  # v0.10.5 O7b (P6): a normal kill's shards lie at the body
+		ShardDrops.drop(w, w.actors.pos(i), amount)
 		return
 	w.shards += amount
 	var me := w.actors.ids[0]

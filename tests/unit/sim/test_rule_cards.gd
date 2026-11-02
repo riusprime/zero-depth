@@ -247,4 +247,7 @@ func test_scavenger_pays_more_shards_for_a_crit_kill() -> void:
 	assert_eq(w.shards, before, "not a crit: nothing")
 	RuleCards.on_kill(w, i, SimEvent.TAG_MELEE | SimEvent.TAG_CRIT, w.take_root())
 	var want := Affinities.shards(w, Stats.shards(w, (base * 800 + 500) / 1000))
-	assert_eq(w.shards, before + want, "a crit kill: +80 % of its shards")
+	assert_eq(w.shards, before, "v0.10.5 O7b: the bonus lies at the body")
+	assert_eq(w.shard_drops.total(), want, "a crit kill: +80 % of its shards, on the floor")
+	ShardDrops.collect_all(w)
+	assert_eq(w.shards, before + want, "paid when taken")
