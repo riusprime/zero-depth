@@ -36,6 +36,7 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 | S15d cracked walls: a chance per floor (1000 / 350 / 750 ‰) | 4778b7ba | agent: 200 seeds → 11.5 / 28.5 / 31.0 %; cracked rooms 3/3, schema 5/5, content 7/7, e2e 1/1, golden 2/2 |
 | O18 a Lore page in the Codex (9 lines, en + es) | dc2c6404 | agent: 8 files all pass (codex 12/12, lore 3/3, locale 6/6, e2e codex 3/3); shot `build/shots/v0.10.5/codex_lore_es.png` |
 | S7 about 12 % more chests and altars (extra_chest/altar_permille 120) | 59182df2 | agent: 200 seeds → altars +9–12 %, chests +10–15 %; five floors 8/8, rewards 24/24, loot 10/10, rarity 9/9, golden 2/2; lead re-ran the skipped e2e: test_e2e_floor 2/2, test_e2e_combo 1/1 pass; **test_e2e_card_pool fails** (walk_to altar 8, line 87; the test grants retired abilities) → handed to O1 with a reachability check of S7's extras |
+| O7a kill shards grow for at least 3 min a floor, then hold (the peak or 180 s) | 38aa3de7, cb5d8555 | agent: floor 1/2 shards per min 150 240 270 360 360… (was rising to 600 at min 8); rewards 26/26, heal orbs 11/11, loot 10/10, golden 2/2 |
 | O2a the Lantern Shade and the Clockwork Judge hittable more often | f59ee0f2 | [evidence/O2A_INVULNERABLE.md](evidence/O2A_INVULNERABLE.md): invulnerable share 37 → 13 % and 30 → 8 %; 23 scripts 198/198 |
 
 ## Verification

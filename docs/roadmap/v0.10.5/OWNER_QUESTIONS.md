@@ -17,6 +17,8 @@ until the owner says so.
 | 3 | S15d | Cracked walls 1000 / 350 / 750 ‰ per floor → 11.5 / 28.5 / 31 % (floor 1 capped by free dead ends) | OK? |
 | 4 | S7 | An extra altar can exceed the 2-altar cap (a floor can show 3 altars) | OK, or keep the cap at 2? |
 | 5 | O7 split | Shards: O7a caps the per-kill shard tier at the floor's peak (Sonnet); O7b makes shards real pickups lying on the floor like heal orbs (Opus, later) | OK? |
+| 6 | O7a | Kill shards hold after max(the floor's peak, 3 min): floors 2+ peak at 30 s, so a pure peak cap would have frozen them at once | OK, or another minimum? |
+| 7 | O14 | Floor shapes: floor 2's first Lockdown is an Elite one near the main path's middle; floor 3's room before the boss door spawns nothing while you stand in it | OK? |
 
 ## Questions
 
