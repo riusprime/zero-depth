@@ -58,7 +58,12 @@ func done() -> bool:
 
 func _process(_delta: float) -> void:
 	if _todo.is_empty():
-		set_process(false)
+		# v0.10.5 (DRAW_CALLS.md): the last effect drawn and back in its pool, the viewport stops rendering (it
+		# rendered its empty world every frame of the session, a whole extra 3D pass).
+		_frame += 1
+		if _frame % STEP_FRAMES == 0:
+			_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+			set_process(false)
 		return
 	_frame += 1
 	if _frame % STEP_FRAMES != 0 or not PackFx.scenes_ready(_todo[0]):
