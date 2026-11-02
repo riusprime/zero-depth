@@ -418,7 +418,7 @@ func _build_light() -> void:
 	light.shadow_enabled = true
 	light.shadow_blur = SHADOW_BLUR
 	light.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
-	light.directional_shadow_max_distance = 80.0
+	RenderSwitches.apply_sun(light)  # v0.10.5 PB: 80 m, or the cheaper sun (switch 8)
 	sun = light
 	add_child(light)
 

@@ -7,7 +7,10 @@ extends Node3D
 ## Presentation only.
 
 ## How many light props cast shadows at once (the ones nearest the camera's focus).
-const SHADOW_LIGHTS := 4
+## v0.10.5 PB (owner, perf wave 2 option 4: "go for it" on fewer torch shadows; evidence/DRAW_CALLS.md: 4 shadowed
+## torches were a quiet floor's biggest shadow source, 104 draws): 4 → 2. The two torches nearest the view still
+## throw the moving shadows round the hero; the rest light without one (RenderSwitches, switch 7: 4 is the old look).
+const SHADOW_LIGHTS := 2
 ## v0.8.0 P3 (owner O30, "Lighting sometimes changes abruptly … appearing to switch on and off"): a light joining or
 ## leaving the SHADOW_LIGHTS fades its shadow in or out over this long (s) instead of switching it (the joining one
 ## once the leaving one is out, so never more than SHADOW_LIGHTS cast), and one keeps its shadow until another is

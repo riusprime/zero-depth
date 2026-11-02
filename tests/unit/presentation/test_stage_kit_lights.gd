@@ -120,7 +120,9 @@ func test_a_caster_keeps_its_shadow_until_a_challenger_is_meaningfully_nearer() 
 	var placements: Array = []
 	for k in StageKit.SHADOW_LIGHTS:
 		placements.append(_light(Vector3(k, 0, 0)))
-	placements.append(_light(Vector3(-StageKit.SHADOW_LIGHTS, 0, 0)))  # the challenger
+	# v0.10.5 PB: the challenger 4 m past the row, so the test holds for any budget (written for 4, now 2)
+	var far_x := -float(StageKit.SHADOW_LIGHTS + 4)
+	placements.append(_light(Vector3(far_x, 0, 0)))  # the challenger
 	var kit := _kit(placements)
 	kit.set_shadows(true)
 	_run(kit, 40)
@@ -128,12 +130,12 @@ func test_a_caster_keeps_its_shadow_until_a_challenger_is_meaningfully_nearer() 
 	var challenger := kit.lights[StageKit.SHADOW_LIGHTS]
 	assert_true(keeper.shadow_enabled)
 	assert_false(challenger.shadow_enabled)
-	_look_at(Vector3(-0.6, 0, 0))  # the challenger is now a little nearer than the keeper
+	_look_at(Vector3(-3, 0, 0))  # the challenger is now a little nearer than the keeper (1 m)
 	_run_to_shadow_pick(kit)
 	_run(kit, 40)
 	assert_true(keeper.shadow_enabled, "a little nearer is not enough to swap")
 	assert_false(challenger.shadow_enabled)
-	_look_at(Vector3(-6, 0, 0))  # now much nearer
+	_look_at(Vector3(far_x, 0, 0))  # now much nearer
 	_run_to_shadow_pick(kit)
 	_run(kit, 80)
 	assert_false(keeper.shadow_enabled, "the keeper hands its shadow over")

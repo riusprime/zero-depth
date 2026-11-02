@@ -33,9 +33,52 @@ const RENDER_THREAD := false
 ## 5. Every effect, enemy and attack shader drawn once, tiny, behind the loading cover (ShaderWarmup), so the first
 ## shot, spawn or effect of a floor never compiles one mid-fight. Same pixels. false: compiled on first use again.
 const SHADER_WARMUP := true
+## v0.10.5 PB (owner, perf wave 2; docs/roadmap/v0.10.5/evidence/PB_SHADOWS.md):
+## 6. No particle system casts a shadow (ParticleShadowOff, under WorldViewRoot and HubView): sparks, smoke, motes
+## and the VFX pack's effects stop drawing into the sun's and the torches' shadow passes. false: the scenes' own.
+const PARTICLES_NO_SHADOW := true
+## 7. Two torches cast shadows at once, not four (StageKit.SHADOW_LIGHTS; set it back to 4 for the old look).
+## 8. A cheaper sun shadow, OFF by default so the owner can pick from shots: the project setting CHEAP_SUN_SETTING
+## (project.godot [game] render/cheap_sun_shadow=true), or `-- --cheap-sun` on the command line. On, the shadow
+## covers only the depth the iso view can show (the camera's near plane CHEAP_SUN_NEAR_M instead of 0.1, the ground
+## being 48-72 m away; the shadow's max distance CHEAP_SUN_MAX_M instead of 80), in a CHEAP_SUN_ATLAS atlas (4096
+## in project.godot) with CHEAP_SUN_FILTER soft filtering (project.godot: 4, high). Off: the project's values.
+const CHEAP_SUN_SETTING := "game/render/cheap_sun_shadow"
+const CHEAP_SUN_ARG := "--cheap-sun"
+const CHEAP_SUN_NEAR_M := 30.0
+const CHEAP_SUN_MAX_M := 76.0
+const CHEAP_SUN_ATLAS := 2048
+const CHEAP_SUN_FILTER := RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM
+## The sun's shadow max distance without the cheap sun (StageView._build_light).
+const SUN_MAX_M := 80.0
+## The iso camera's near plane without the cheap sun (IsoRig).
+const CAMERA_NEAR_M := 0.1
 
 ## The MSAA the 3D view had before HR (project.godot msaa_3d=2).
 const OLD_MSAA := Viewport.MSAA_2X
+
+## Switch 8, read once at start-up (the tests may set it).
+static var cheap_sun: bool = (
+	bool(ProjectSettings.get_setting(CHEAP_SUN_SETTING, false))
+	or OS.get_cmdline_user_args().has(CHEAP_SUN_ARG)
+)
+
+
+## The sun's shadow range under switch 8, and with it on the renderer's directional atlas and soft filter.
+static func apply_sun(light: DirectionalLight3D) -> void:
+	light.directional_shadow_max_distance = CHEAP_SUN_MAX_M if cheap_sun else SUN_MAX_M
+	if not cheap_sun:
+		return
+	var bits16 := bool(
+		ProjectSettings.get_setting("rendering/lights_and_shadows/directional_shadow/16_bits", true)
+	)
+	RenderingServer.directional_shadow_atlas_set_size(CHEAP_SUN_ATLAS, bits16)
+	RenderingServer.directional_soft_shadow_filter_set_quality(CHEAP_SUN_FILTER)
+
+
+## The iso camera's near plane under switch 8 (the orthographic camera's sun shadow covers near..max distance).
+static func camera_near() -> float:
+	return CHEAP_SUN_NEAR_M if cheap_sun else CAMERA_NEAR_M
 
 
 ## The game window's 3D MSAA under MSAA_OFF. Only the root window: a tool's own SubViewport keeps the MSAA it set.
