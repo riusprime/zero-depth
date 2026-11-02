@@ -48,7 +48,7 @@ func _init() -> void:
 	camera = Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.size = view_size
-	camera.near = 0.1
+	camera.near = RenderSwitches.camera_near()  # 0.1, or 30 m with the cheaper sun (v0.10.5 PB, switch 8)
 	# The directional shadow of an orthographic camera covers near..far, so a long far plane spreads the shadow
 	# map thin and the edges stair-step (v0.2.0 L2). At the default size and pitch the ground is 48-72 m away.
 	camera.far = 100.0

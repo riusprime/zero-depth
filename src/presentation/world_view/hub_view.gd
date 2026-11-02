@@ -112,6 +112,7 @@ func setup(
 	stage.mood = mood
 	stage.palette = palette
 	stage.lighting = lighting
+	add_child(ParticleShadowOff.new())  # v0.10.5 PB: the hub's particles cast no shadow
 	add_child(stage)
 	stage.build_lighting_only()
 	var fill := DirectionalLight3D.new()

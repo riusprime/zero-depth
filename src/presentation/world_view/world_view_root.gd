@@ -225,6 +225,8 @@ var half_rate_enabled := true
 var syncs := 0
 ## v0.10.5 (DRAW_CALLS.md): the effect pools with nothing in them leave the renderer (EmptyDrawCull).
 var empty_cull := EmptyDrawCull.new()
+## v0.10.5 PB: the particles under the view cast no shadow (ParticleShadowOff).
+var particle_shadows := ParticleShadowOff.new()
 var _half_synced := {}
 ## v0.8.0 P3 (O32): the floor's walls for the occlusion test, indexed once (Occlusion.build_index).
 var _occlusion_index := {}
@@ -329,6 +331,7 @@ func _queue_pack_warmup(q: ViewBuildQueue) -> void:
 func _setup_views(palette: Dictionary) -> void:
 	actors.outline_color = palette["outline"]
 	add_child(empty_cull)  # v0.10.5: first, so it hears every pool the views add (EmptyDrawCull)
+	add_child(particle_shadows)  # v0.10.5 PB: first too, so it hears every particle system the views add
 	add_child(stage)
 	add_child(telegraphs)
 	telegraphs.prepare()  # v0.10.5: its shapes and look materials made now, not at the first windup
