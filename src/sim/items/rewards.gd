@@ -37,9 +37,14 @@ static func shards_for_kill(w: World, kind: int) -> int:
 		return 0
 	if t.shards_by_floor:
 		return _scaled(w, t.shards * maxi(1, w.floor_index))
-	# v0.4.0 TU (owner D7, "staying longer still pays more shards"): the floor's plain 30 s tier, not the curve's,
-	# so shards keep growing after the curve peaks and holds.
-	var tier := w.spawner.tier_at(w.run_ticks) if w.spawner != null else 0
+	# v0.4.0 TU (owner D7): the floor's plain 30 s tier, not the curve's. v0.10.5 O7a (P6, owner 2026-11-01): capped at
+	# the tier of the floor's peak phase start, so staying longer stops paying more.
+	var tier := 0
+	if w.spawner != null:
+		tier = w.spawner.tier_at(w.run_ticks)
+		var c := w.spawner.curve
+		if w.reward_table.shard_tier_caps_at_peak and c != null:
+			tier = mini(tier, w.spawner.tier_at(c.starts[c.phase_count() - 1]))
 	return _scaled(
 		w, (t.shards * (1000 + w.reward_table.shard_tier_bonus_permille * tier) + 500) / 1000
 	)

@@ -20,6 +20,7 @@ own_weapon_card_permille = 1500
 offer_size = 3
 interact_radius_m = 1.6
 shard_tier_bonus = 0.25
+shard_tier_caps_at_peak = true
 shard_scale = 0.7
 altars_cap = 2
 extra_chest_permille = 120

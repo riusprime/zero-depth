@@ -58,8 +58,7 @@ const BOSS_MOVES := {
 	&"wave": BossAttackTable.Move.WAVE,  # v0.9.5 BH4
 	&"interphase": BossAttackTable.Move.INTERPHASE,  # v0.9.5 BH6
 }
-## v0.8.0 FB3: a Nemesis attack's `weapon`.
-const ATTACK_WEAPONS := {
+const ATTACK_WEAPONS := {  # v0.8.0 FB3: a Nemesis attack's `weapon`
 	"any": BossAttackTable.WEAPON_ANY,
 	"blade": BossAttackTable.WEAPON_BLADE,
 	"gun": BossAttackTable.WEAPON_GUN,
@@ -717,6 +716,7 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.offer_size = def.offer_size
 	t.interact_radius_m = def.interact_radius_m
 	t.shard_tier_bonus_permille = int(round(def.shard_tier_bonus * 1000.0))
+	t.shard_tier_caps_at_peak = def.shard_tier_caps_at_peak  # O7a
 	t.shard_permille = int(round(def.shard_scale * 1000.0))  # v0.5.5 EC (S4)
 	t.boss_shards = def.boss_shards
 	t.altar_card_weights = def.altar_card_weights.duplicate()  # v0.4.0 BS
