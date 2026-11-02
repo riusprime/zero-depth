@@ -601,8 +601,8 @@ func _new_fx() -> MeshInstance3D:
 ## (ShaderWarmup draws them once at the load).
 func idle_pieces() -> Array[Node]:
 	var out: Array[Node] = []
-	for n in _idle_fx:
-		if n.get_parent() == null:
+	for n: Variant in _idle_fx:  # (a Variant: freeing the view frees its in-tree pieces first)
+		if is_instance_valid(n) and (n as Node).get_parent() == null:
 			out.append(n)
 	return out
 

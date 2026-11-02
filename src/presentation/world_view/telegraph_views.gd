@@ -317,8 +317,8 @@ func _put_back(n: Node3D) -> void:
 func idle_pieces() -> Array[Node]:
 	var out: Array[Node] = []
 	for key: String in _pool:
-		for n: Node in _pool[key]:
-			if n.get_parent() == null:
+		for n: Variant in _pool[key]:  # (a Variant: freeing the view frees its in-tree pieces first)
+			if is_instance_valid(n) and (n as Node).get_parent() == null:
 				out.append(n)
 	return out
 

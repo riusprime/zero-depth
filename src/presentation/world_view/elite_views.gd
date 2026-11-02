@@ -330,10 +330,10 @@ func _park(n: Node3D) -> void:
 func idle_pieces() -> Array[Node]:
 	var out: Array[Node] = []
 	for use: StringName in _idle:
-		for n: Node in _idle[use]:
-			if n.get_parent() == null:
+		for n: Variant in _idle[use]:  # (a Variant: freeing the view frees its in-tree pieces first)
+			if is_instance_valid(n) and (n as Node).get_parent() == null:
 				out.append(n)
-	if _sigil != null and _sigil.get_parent() == null:
+	if is_instance_valid(_sigil) and _sigil.get_parent() == null:
 		out.append(_sigil)
 	return out
 

@@ -383,3 +383,34 @@ func test_the_first_payoff_rings_and_bolt_build_nothing_after_the_load() -> void
 	assert_eq(fx.fx_count(), 4, "a bolt's four segments, from the pool")
 	assert_eq(_nodes(), nodes)
 	assert_eq(_resources() - res, 0)
+
+
+## v0.10.5 (seams at 026261bb: 2,820 orphans in the damage soak): a floor's view freed the way a load frees it
+## (CoverLoads.free_slowly: its children first, deepest first) takes its pools' idle pieces outside the tree with it,
+## though some of the same pools' entries were in the tree and freed before their owner (a drawn fireball look's set,
+## a pack instance released by its animation and parked a frame later).
+func test_freeing_a_floors_view_leaves_no_orphan_pool_nodes() -> void:
+	var before := int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
+	var view := WorldViewRoot.new()
+	add_child(view)
+	var biome: BiomeDefinition = ContentRepository.load_all().get_def(&"biomes", &"ruins")
+	view.setup(WorldReader.new(SaveLab.floor_world(42, 1)), biome.palette, 40.0)
+	assert_gt(view.fireballs.idle_outside(), 0, "the looks' sets wait outside the tree")
+	FireballPack.attach(view.fireballs, view.fireballs._sets[FireballViews.LOOKS.keys()[0]])
+	if view.pack_fx != null and PackFx.available():
+		for id in view.pack_fx.warm_ids():
+			if view.pack_fx.idle_count(id) > 0:
+				var node := view.pack_fx.spawn(id, Vector3.ZERO)
+				view.pack_fx._release(node, true)  # (parked a frame later, as an animation's end does)
+				break
+	remove_child(view)
+	var loads := CoverLoads.new()
+	loads.cover.free()  # (the loads' own cover, out of the tree here; not a floor's)
+	await loads.free_slowly(get_tree(), view)
+	await get_tree().process_frame
+	assert_false(is_instance_valid(view), "the view is freed")
+	assert_eq(
+		int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)),
+		before,
+		"no pool piece outlives its floor"
+	)

@@ -221,6 +221,7 @@ func test_the_lock_flash_burns_hotter_than_the_windup_fill_and_holds_still_with_
 	var tv := TelegraphViews.new()
 	add_child_autofree(tv)
 	var pair := tv._look_pair(&"se_mortar")
+	tv._looks_live[&"se_mortar"] = true  # (v0.10.5 PC: _process pulses only the looks a sync drew)
 	tv._process(0.0)
 	var hot := float((pair[1] as ShaderMaterial).get_shader_parameter("heat"))
 	assert_gt(hot, float((pair[0] as ShaderMaterial).get_shader_parameter("heat")))

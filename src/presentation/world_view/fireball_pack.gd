@@ -35,8 +35,8 @@ static func detached(sets: Dictionary) -> Array[Node]:
 	var out: Array[Node] = []
 	for key: StringName in sets:
 		for part: String in ["core", "edge", "trail"]:
-			var mi: Node = sets[key][part]
-			if mi.get_parent() == null:
+			var mi: Variant = sets[key][part]  # (a Variant: freeing the view frees its in-tree sets first)
+			if is_instance_valid(mi) and (mi as Node).get_parent() == null:
 				out.append(mi)
 	return out
 

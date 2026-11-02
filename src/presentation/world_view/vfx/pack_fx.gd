@@ -289,12 +289,18 @@ func prefill(effect_id: StringName, n: int) -> Array[Node3D]:
 
 ## v0.10.5 PC: the idle instances waiting outside the tree (tests, scripts/checks/pool_node_count.gd).
 func idle_outside() -> int:
-	var n := 0
+	return idle_detached().size()
+
+
+## v0.10.5: those instances (WorldViewRoot.idle_pool_nodes). Not named idle_pieces: ShaderWarmup would walk them, and
+## the pack's own warm-up (WorldViewRoot._queue_pack_warmup) draws them.
+func idle_detached() -> Array[Node]:
+	var out: Array[Node] = []
 	for id: StringName in _idle:
-		for node: Node3D in _idle[id]:
-			if node.get_parent() == null:
-				n += 1
-	return n
+		for node: Variant in _idle[id]:
+			if is_instance_valid(node) and (node as Node).get_parent() == null:
+				out.append(node)
+	return out
 
 
 ## v0.10.5 PC: an idle instance leaves the tree (it was made in it: its scripts are ready, its parts built).
@@ -306,9 +312,9 @@ func _park(node: Node3D) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:  # the idle instances outside the tree go with the pack
 		for id: StringName in _idle:
-			for node: Node3D in _idle[id]:
-				if is_instance_valid(node) and node.get_parent() == null:
-					node.free()
+			for node: Variant in _idle[id]:  # (a Variant: freeing the pack frees its in-tree instances first)
+				if is_instance_valid(node) and (node as Node).get_parent() == null:
+					(node as Node).free()
 		_idle.clear()
 
 
@@ -502,9 +508,9 @@ func _release(node: Node3D, later := false) -> void:
 
 
 ## v0.10.5 PC: a deferred park, unless a spawn took the instance again meanwhile.
-func _park_if_idle(node: Node3D) -> void:
-	if is_instance_valid(node) and not is_live(node):
-		_park(node)
+func _park_if_idle(node: Variant) -> void:  # (a Variant: the instance may be freed meanwhile)
+	if is_instance_valid(node) and not is_live(node as Node3D):
+		_park(node as Node3D)
 
 
 ## The ground point the camera looks at, a little toward the camera (inside the frame).

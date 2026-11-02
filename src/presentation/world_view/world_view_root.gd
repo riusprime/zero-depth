@@ -254,6 +254,29 @@ static func drop_prebuilt() -> void:
 
 
 ## v0.8.0 LD: a part made ahead by prebuild() when there is one, else a new one.
+## v0.10.5 (seams at 026261bb): the nodes the pools keep outside the tree on a live floor, each piece with everything
+## under it (v0.10.5 PC: the idle entries wait outside it). The orphans a live floor holds on purpose: they go with the
+## view (each pool's NOTIFICATION_PREDELETE), and an orphan check counts the others (tests/e2e/test_e2e_damage_soak.gd).
+func idle_pool_nodes() -> int:
+	var pieces: Array[Node] = []
+	if pack_fx != null:
+		pieces.append_array(pack_fx.idle_detached())
+	for pool: Node in [telegraphs, status_fx, elite_fx, fireballs]:
+		if pool != null:
+			pieces.append_array(pool.call(&"idle_pieces"))
+	var n := 0
+	for p in pieces:
+		n += _subtree(p)
+	return n
+
+
+static func _subtree(n: Node) -> int:
+	var count := 1
+	for c in n.get_children(true):
+		count += _subtree(c)
+	return count
+
+
 static func _part(script: GDScript) -> Object:
 	if _made.has(script):
 		var o: Object = _made[script]
