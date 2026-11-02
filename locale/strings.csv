@@ -836,6 +836,15 @@ UI_CODEX_FIGHTS,Fought,Combates
 UI_CODEX_VISITS,Floors entered,Pisos visitados
 UI_CODEX_FOUND,Found %d / %d,Descubierto %d / %d
 UI_CODEX_LOCKED,Not found yet.,Aún sin descubrir.
+UI_CODEX_WEAK_TO,Weak to: %s,Débil contra: %s
+UI_CODEX_RESISTS,Resists: %s,Resiste: %s
+MATCHUP_GUN_LASER,Laser,Láser
+MATCHUP_GUN_LANCE,Lance,Lanza
+MATCHUP_GUN_WAVE,Wave,Oleada
+MATCHUP_GUN_GLAIVE,Glaive,Disco
+MATCHUP_EMBER,Fire,Fuego
+MATCHUP_STORM,Lightning,Rayo
+MATCHUP_VENOM,Venom,Veneno
 UI_CODEX_HINT,Arrows / stick move · Q E / LB RB page · Esc / B back,Flechas / stick mover · Q E / LB RB página · Esc / B volver
 ENEMY_CHARGER_DESC,Runs at you and charges.,Corre hacia ti y embiste.
 ENEMY_WARDEN_DESC,A slow rock golem.,Un gólem de roca lento.

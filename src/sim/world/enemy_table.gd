@@ -21,6 +21,11 @@ var damage := 0
 ## Economy (v0.3.0 E): shards per kill, scaled by the danger tier, or by the floor number when shards_by_floor.
 var shards := 0
 var shards_by_floor := false
+## v0.10.5 O10 (Matchups): the form or element id it is weak to and the one it resists (&"": none), per mille.
+var weak_to := &""
+var resists := &""
+var weak_permille := 1000
+var resist_permille := 1000
 ## Charger.
 var charge_speed := 0.0
 var charge_distance_m := 0.0

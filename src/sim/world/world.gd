@@ -383,6 +383,12 @@ var last_hit_crit := false
 ## WandTable.secondary_proc_permille; 1000 otherwise), which the engines' status feeds read. Transient within a hit
 ## (WorldSnapshot.WORLD_KEPT): 1000 between hits.
 var hit_proc_permille := 1000
+## v0.10.5 O10 (Matchups): the spec Attacks.launch is running (null outside a launch), and the matchup of the next
+## Damage.hit, set by the direct-hit callers (Attacks._hit, the projectile sweep) and taken (reset) by that hit, so
+## a hit nested in it is neutral. Transient within a hit (WorldSnapshot.WORLD_KEPT).
+var strike_spec: AttackSpec = null
+var matchup_permille := 1000
+var matchup_tags := 0
 ## v0.6.5 WN1 (Wand): the wand's numbers, the slots per floor and the trigger's child spell (loadout, not hashed; null
 ## = a lab world: six slots, the class defaults for the child spell).
 var wand_table: WandTable
@@ -1906,6 +1912,8 @@ func _projectile_hits() -> void:
 					pp.begin(&"proj.damage")
 				hit_spec = Attacks.projectile_spec(self, i)  # v0.6.0 MX2: the bolt's own spec feeds
 				hit_proc_permille = SecondaryProc.of_projectile(self, i)  # v0.8.0 MR: a secondary's
+				if projectiles.owner[i] == actors.ids[0]:
+					Matchups.arm(self, best_actor, hit_spec)  # v0.10.5 O10: the bolt's form and elements
 				var got := Damage.hit(
 					self,
 					best_actor,

@@ -82,6 +82,8 @@ static func build(repo: ContentRepository) -> CodexCatalog:
 					"desc_key": def.desc_key,
 					"kind": ContentCompiler.compile_enemy(def).kind,
 					"behaviour": def.behaviour_id,
+					"weak_to": def.weak_to,  # v0.10.5 O10: the matchup (CodexView.matchup_text)
+					"resists": def.resists,
 				}
 			)
 		)

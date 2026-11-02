@@ -179,6 +179,11 @@ class_name AttackDefinition extends Resource
   damage 8, 3 shards, 2 pulses 10 m/s after a 0.5-0.67 s line, keeps 6 m. v0.7.5 EF: its attack is a pattern (a ring
   of 6 slow orbs, `pattern_id` only; above), its windup still 0.5-0.67 s, with no line drawn.
 - `stress_tags` feed the enemy × archetype stress matrix in [`../balance/SCORECARD.md`](../balance/SCORECARD.md).
+- **Matchups** (v0.10.5 O10, owner P3): `@export var weak_to: StringName` and `resists` (a form card's modifier id, or an
+  element of `ModifierOpDefinition.ELEMENTS`; empty: none; never the same id; `EnemyDefinition.cross_check` checks
+  they exist), `weak_permille` (1001..2000, starting value 1250) and `resist_permille` (1..999, starting value 750).
+  The matrix: [`../roadmap/v0.10.5/O10_STRESS_MATRIX.md`](../roadmap/v0.10.5/O10_STRESS_MATRIX.md); the rule:
+  SIM_CONTRACTS §8 step 3.
 - **Shards** (v0.3.0 E): `@export var shards: int` (>= 0; Charger 3, Needle 4, Warden 6) is what a kill pays,
   × (1 + `shard_tier_bonus` × danger tier) rounded half up (v0.4.0 TU: the floor's plain 30 s tier, so shards keep
   growing after the difficulty curve holds at its peak; owner D7). `@export var shards_by_floor: bool` (bosses) pays

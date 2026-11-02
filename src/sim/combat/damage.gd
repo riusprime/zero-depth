@@ -71,6 +71,7 @@ static func hit(
 	proc_pct: int = 100
 ) -> int:
 	var a := w.actors
+	var mu := Matchups.take(w)  # v0.10.5 O10: this hit's matchup (armed by its caller), never a nested one's
 	if a.dead[target] == 1:
 		return 0
 	var target_id := a.ids[target]
@@ -129,6 +130,9 @@ static func hit(
 		m = [m[0] * c[0] / 1000, m[1] | c[1]]
 	h.tags |= m[1]
 	var scaled := amount * m[0] / 1000
+	if mu[1] != 0 and owner_id == a.ids[0] and target != 0:
+		h.tags |= mu[1]  # v0.10.5 O10: weak to its form or element, or resists it (Matchups)
+		scaled = Matchups.scale(scaled, mu[0])
 	if target == 0 and scaled > 0:
 		# v0.4.0 BS: armour; v0.8.0 N1 (D39): times the held weapon's damage taken (the Blade's -25 %), one rounding.
 		var taken := Stats.armour_permille(w) * PlayerBuild.taken_permille(w) / 1000
@@ -160,32 +164,34 @@ static func hit(
 
 ## A damage-over-time tick (SIM_CONTRACTS §8): DAMAGE with TAG_DOT and proc_pct 0, never a HIT, so it can't
 ## trigger on-hit effects. A status tick opens its own root. Ignores guard and armour; skips invulnerable or dead
-## targets. Returns the HP removed.
+## targets. Returns the HP removed. v0.10.5 O10: `element` names the status's element (burn: ember, poison: venom,
+## bleed: bleed; &"" none), which the target may be weak to or resist (Matchups).
 static func tick_dot(
-	w: World, target: int, amount: int, source_id: int, owner_id: int, effect_id: StringName
+	w: World,
+	target: int,
+	amount: int,
+	source_id: int,
+	owner_id: int,
+	effect_id: StringName,
+	element: StringName = &""
 ) -> int:
 	var a := w.actors
 	if a.dead[target] == 1 or a.invuln[target] > 0 or amount <= 0:
 		return 0
 	if owner_id != 0 and target != 0 and _blocked(w, target):  # v0.7.5 BF1: the shield holds
 		return 0
+	var tags := SimEvent.TAG_DOT
 	if owner_id == a.ids[0] and target != 0:
 		amount = Stats.dot(w, amount)  # v0.4.0 BS: the damage stat (a DoT tick never crits)
 		if w.pair_mask != 0:  # v0.9.5 EE3: Sepsis takes the ticks too
 			amount = amount * ElementPairs.attacker_mult(w, target, owner_id) / 1000
+		var mu := Matchups.dot_mult(w, target, element)
+		if mu[1] != 0:
+			amount = Matchups.scale(amount, mu[0])
+			tags |= mu[1]
 	var root := w.take_root()
 	return _apply(
-		w,
-		target,
-		amount,
-		source_id,
-		owner_id,
-		root,
-		SimEvent.TAG_DOT,
-		a.pos(target),
-		-1,
-		0,
-		effect_id
+		w, target, amount, source_id, owner_id, root, tags, a.pos(target), -1, 0, effect_id
 	)
 
 

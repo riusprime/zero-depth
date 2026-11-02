@@ -54,7 +54,16 @@ static var _wand_defaults := WandTable.new()
 ## instead; a root weapon or Skill attack takes Ascension's charge; a seeking arc snaps to the nearest enemy; then the
 ## form runs, its ON_LAUNCH hooks fire from the origin, a root attack fires back (Rearguard) and repeats (Twin Cast;
 ## the Blade's combo steps repeat through their Twin Arc echo, ItemEffects).
+## v0.10.5 O10: World.strike_spec names the spec while it runs (Matchups reads its form and elements).
 static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
+	var before := w.strike_spec
+	w.strike_spec = spec
+	var landed := _launch(w, spec, ctx)
+	w.strike_spec = before
+	return landed
+
+
+static func _launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	if not _count(w):
 		return false
 	if spec.form == AttackSpec.Form.WEAPON:
@@ -626,6 +635,7 @@ static func _hit(w: World, i: int, ctx: AttackContext, from: Vector2, at: Vector
 	var pid := w.actors.ids[0]
 	var pm0 := w.hit_proc_permille  # v0.8.0 MR (O91): a secondary attack's hit feeds at its proc
 	w.hit_proc_permille = SecondaryProc.of_ctx(w, ctx)
+	Matchups.arm(w, i, w.hit_spec, w.strike_spec)  # v0.10.5 O10: the landing spec's and the launch's
 	var got := Damage.hit(
 		w, i, ctx.damage, pid, pid, ctx.root, ctx.tags, from, at, ctx.effect_id, ctx.proc_pct
 	)
