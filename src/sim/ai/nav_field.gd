@@ -73,6 +73,9 @@ var _adj_start := PackedInt32Array()
 var _adj := PackedInt32Array()
 ## v0.8.0 P1: each step's cost (ORTHO or DIAG), beside _adj.
 var _adj_w := PackedByteArray()
+## v0.10.5 HP: where each cell's diagonals start in _adj (its side steps come first, ORTHO each; the rest DIAG), so the
+## flood's plain loop knows a step's cost and bucket per cell, not per step. Derived with _adj.
+var _adj_mid := PackedInt32Array()
 ## v0.8.0 P1: the walls the field was built from (the blocked-goal seeds check they don't cross one).
 var _walls: Array[Obb] = []
 ## v0.4.0 SC: the goal cell and step bound of the last flood (x = -1: none since the last build). A flood from the
@@ -490,6 +493,8 @@ func _run(limit: int) -> bool:
 	var adj := _adj
 	var adj_w := _adj_w
 	var adj_start := _adj_start
+	var adj_mid := _adj_mid
+	var sx := size.x
 	while (queued > 0 or cur <= last_seed) and cur <= bound and cur <= stop:
 		if work >= limit:
 			break
@@ -507,6 +512,19 @@ func _run(limit: int) -> bool:
 		work += count
 		# Far from the bound and with no extra cells, the step test is the distance alone (the common case).
 		var plain := open and cur + DIAG <= bound
+		# v0.10.5 HP: in the plain case the same steps run in the same order into the same buckets as before:
+		# cur + ORTHO's for the side steps and cur + DIAG's for the diagonals (two buckets, neither cur's, as
+		# RING > DIAG), their lengths held in locals while this bucket empties; a cell with all 8 steps (the open
+		# floor) takes them by offset (W, E, N, S, NW, NE, SW, SE: _build_adjacency's order), without the list.
+		var o_d := cur + ORTHO
+		var g_d := cur + DIAG
+		var o_b := o_d % RING
+		var g_b := g_d % RING
+		var o_base := o_b * n
+		var g_base := g_b * n
+		var lo := lens[o_b]
+		var lg := lens[g_b]
+		var pushed := -lo - lg
 		for q in count:
 			var k := ring[base + q]
 			if d[k] != cur:
@@ -517,15 +535,63 @@ func _run(limit: int) -> bool:
 				if left == 0:
 					stop = cur + TARGET_MARGIN
 			if plain:
-				for j in range(adj_start[k], adj_start[k + 1]):
-					var nk := adj[j]
-					var nd := cur + adj_w[j]
-					if nd < d[nk]:
-						d[nk] = nd
-						var nb := nd % RING
-						ring[nb * n + lens[nb]] = nk
-						lens[nb] += 1
-						queued += 1
+				var a0 := adj_start[k]
+				var a1 := adj_start[k + 1]
+				if a1 - a0 == 8:
+					var nk := k - 1
+					if o_d < d[nk]:
+						d[nk] = o_d
+						ring[o_base + lo] = nk
+						lo += 1
+					nk = k + 1
+					if o_d < d[nk]:
+						d[nk] = o_d
+						ring[o_base + lo] = nk
+						lo += 1
+					nk = k - sx
+					if o_d < d[nk]:
+						d[nk] = o_d
+						ring[o_base + lo] = nk
+						lo += 1
+					nk = k + sx
+					if o_d < d[nk]:
+						d[nk] = o_d
+						ring[o_base + lo] = nk
+						lo += 1
+					nk = k - sx - 1
+					if g_d < d[nk]:
+						d[nk] = g_d
+						ring[g_base + lg] = nk
+						lg += 1
+					nk = k - sx + 1
+					if g_d < d[nk]:
+						d[nk] = g_d
+						ring[g_base + lg] = nk
+						lg += 1
+					nk = k + sx - 1
+					if g_d < d[nk]:
+						d[nk] = g_d
+						ring[g_base + lg] = nk
+						lg += 1
+					nk = k + sx + 1
+					if g_d < d[nk]:
+						d[nk] = g_d
+						ring[g_base + lg] = nk
+						lg += 1
+				else:
+					var mid := adj_mid[k]
+					for j in range(a0, mid):
+						var nk := adj[j]
+						if o_d < d[nk]:
+							d[nk] = o_d
+							ring[o_base + lo] = nk
+							lo += 1
+					for j in range(mid, a1):
+						var nk := adj[j]
+						if g_d < d[nk]:
+							d[nk] = g_d
+							ring[g_base + lg] = nk
+							lg += 1
 			else:
 				for j in range(adj_start[k], adj_start[k + 1]):
 					var nk := adj[j]
@@ -536,6 +602,10 @@ func _run(limit: int) -> bool:
 						ring[nb * n + lens[nb]] = nk
 						lens[nb] += 1
 						queued += 1
+		if plain:
+			lens[o_b] = lo
+			lens[g_b] = lg
+			queued += pushed + lo + lg
 		queued -= count
 		lens[b] = 0
 		cur += 1
@@ -675,6 +745,8 @@ func _build_adjacency() -> void:
 	var sx := size.x
 	var sy := size.y
 	_adj_start.resize(sx * sy + 1)
+	var mids := PackedInt32Array()  # v0.10.5 HP: where each cell's diagonals start
+	mids.resize(sx * sy)
 	_adj.resize(0)
 	var out := PackedInt32Array()
 	out.resize(sx * sy * 8)
@@ -683,6 +755,7 @@ func _build_adjacency() -> void:
 	var n := 0
 	for k in sx * sy:
 		_adj_start[k] = n
+		mids[k] = n
 		if blocked[k] == 1:
 			continue
 		var cx := k % sx
@@ -708,6 +781,7 @@ func _build_adjacency() -> void:
 			out[n] = k + sx
 			wts[n] = ORTHO
 			n += 1
+		mids[k] = n
 		if n_ok and w_ok and blocked[k - sx - 1] == 0:
 			out[n] = k - sx - 1
 			wts[n] = DIAG
@@ -729,6 +803,7 @@ func _build_adjacency() -> void:
 	_adj = out
 	wts.resize(n)
 	_adj_w = wts
+	_adj_mid = mids
 
 
 ## The reference flood (a loop over STEPS), kept for the test that the fast flood matches it. Kept on purpose as the
