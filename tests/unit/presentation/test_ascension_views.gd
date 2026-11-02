@@ -4,6 +4,17 @@ extends GutTest
 ## visor blue or the Deep violet) and its column rises when the portal opens; the HUD, pause line and recap say
 ## "Loop N · " past the first loop, and the recap counts the loops cleared.
 
+var _locale := ""
+
+
+func before_each() -> void:
+	_locale = TranslationServer.get_locale()
+	TranslationServer.set_locale("en")
+
+
+func after_each() -> void:
+	TranslationServer.set_locale(_locale)
+
 
 ## v0.8.0 P2 (owner O28): the Loop device has its own look (green, apart from the portal's gold and lavender, the
 ## gate's blue and Deep's violet), smaller than the portal; dormant until the portal opens, then lit and turning;
