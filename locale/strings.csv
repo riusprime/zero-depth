@@ -1503,3 +1503,5 @@ UI_FORECAST_ON_LAUNCH,as it fires: %s,al disparar: %s
 UI_FORECAST_ON_NTH,every few attacks: %s,cada pocos ataques: %s
 UI_FORECAST_NUMBERS_GUN,Shots per attack %s · Damage each %s · Damage per second %s · Radius %s m,Disparos por ataque %s · Daño de cada uno %s · Daño por segundo %s · Radio %s m
 UI_FORECAST_NUMBERS_BLADE,Hits per swing %s · Damage per hit %s · Damage per second %s · Reach %s m,Golpes por tajo %s · Daño por golpe %s · Daño por segundo %s · Alcance %s m
+PERF_REC_ON,● PERF,● PERF
+PERF_REC_MARK,● PERF · mark %d,● PERF · marca %d

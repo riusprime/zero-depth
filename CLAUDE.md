@@ -146,6 +146,7 @@ godot --headless --path . -s scripts/checks/hitch_probe.gd             # real-ti
 godot --headless --path . -s scripts/bench/sim_bench.gd                # bench → paste into evidence
 godot --path . -s scripts/shots/tour.gd                                # screenshot tour (needs a renderer, not --headless) → build/shots/<version>/<lang>/
 gdformat --check src scripts tests && gdlint src scripts tests         # lint (pip install -r requirements-dev.txt)
+godot --path . -- --perf-log[=light]; python scripts/perf/summarize_perf.py <csv>   # log normal play, F9 marks (docs/process/PERF_LOG.md)
 ```
 
 Also: `godot --headless --path . -s scripts/content/build_patch_notes.gd` (after editing patch notes) and

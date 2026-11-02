@@ -46,6 +46,8 @@ var playground: PlaygroundSession
 var hub: HubSession
 ## v0.10.5 O17 (owner P17): the hub's Training Room while it runs (null otherwise).
 var training: TrainingSession
+## v0.10.5: the play recorder (`-- --perf-log` or `--perf-log=light`, docs/process/PERF_LOG.md); null without the flag.
+var perf: PerfRecorder
 ## The dev panel's tuning (docs/tools/DEV_PANEL.md): the owner's saved overrides, put in the content before compiling.
 ## v0.7.5 SM: a build with the panel locked (DevGate) ignores any tuning file left on the PC.
 var tuning := DevTuning.load_saved() if DevGate.enabled() else DevTuning.new()
@@ -106,6 +108,9 @@ func _ready() -> void:
 	add_child(GameCursor.new())  # v0.9.5 MC2: the cursor
 	PackFxSessionWarm.start(self)  # v0.10.0 VX-W: the VFX pack warms up behind the menu
 	show_main_menu()
+	var perf_mode := PerfRecorder.mode_of(OS.get_cmdline_user_args())
+	if perf_mode != "":
+		perf = PerfRecorder.attach(self, perf_mode == "full")
 
 
 func _notification(what: int) -> void:

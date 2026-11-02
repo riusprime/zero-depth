@@ -124,7 +124,7 @@ var _has_process := {}
 var _stolen := {}
 var _proc_total_nodes := 0
 var _bk := {}  # bucket -> per-measured-frame microseconds
-var _phase_timer := PhaseTimer.new()
+var _phase_timer := PerfBreakdown.PhaseTimer.new()
 var _enemies := ENEMIES  # --enemies=N (O12)
 var _heavy := false  # --heavy (O12)
 var _fx := false  # --fx (O12)
@@ -678,23 +678,7 @@ func _restore() -> void:
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
 
 
-# --- PF2: --breakdown ---------------------------------------------------------------------------------------------
-## The phase timer World.step reports to (World.phase_probe): probe-only, the sim never reads the clock.
-class PhaseTimer:
-	extends RefCounted
-	var us := {}
-	var _open := {}
-
-	func begin(k: StringName) -> void:
-		_open[k] = Time.get_ticks_usec()
-
-	func end(k: StringName) -> void:
-		us[k] = int(us.get(k, 0)) + Time.get_ticks_usec() - int(_open[k])
-
-	func reset() -> void:
-		us.clear()
-
-
+# --- PF2: --breakdown (the shared parts: PerfBreakdown) ----------------------------------------------------------
 ## Moves this frame's marks (PerfMarks, each view's sync, the sim's phases) into the per-frame series, then clears them.
 func _collect(now: int) -> void:
 	var n := _frames.size()
@@ -705,12 +689,7 @@ func _collect(now: int) -> void:
 		this["frame.draw_pre_to_post"] = float(_t_post - _t_pre)
 		this["frame.rest_after_draw"] = float(now - _t_post - phys)
 	_t_proc = now
-	for k: StringName in PerfMarks.us:
-		this[String(k)] = float(PerfMarks.us[k])
-	for k: StringName in _main.view.sync_profile:
-		this["view." + String(k)] = float(_main.view.sync_profile[k]) * 1000.0
-	for k: StringName in _phase_timer.us:
-		this["phase." + String(k)] = float(_phase_timer.us[k])
+	PerfBreakdown.gather(_main.view, _phase_timer, this)
 	this["count.projectiles"] = float(_main.driver.reader.projectile_count())
 	this["count.actors"] = float(_main.driver.reader.actor_count())
 	this["ticks"] = float(PerfMarks.calls.get(&"sim_step", 0))
@@ -730,9 +709,7 @@ func _collect(now: int) -> void:
 			var b: PackedFloat64Array = _bk[k]
 			b.append(0.0)
 			_bk[k] = b
-	PerfMarks.clear()
-	_phase_timer.reset()
-	_main.view.sync_profile.clear()
+	PerfBreakdown.clear(_main.view, _phase_timer)
 
 
 ## One row per bucket: mean over all frames, mean over the frames it ran in, p99 over all frames (microseconds).
@@ -846,39 +823,7 @@ func _class_histogram() -> PackedStringArray:
 ## order it was connected; v0.10.5 Q5: and every SimDriver.frame_ticked listener (the views' once-a-frame sync), as
 ## "frame.<script>.<method>".
 func _time_listeners() -> void:
-	var drv := _main.driver
-	_time_signal(drv.ticked, "tick")
-	_time_signal(drv.frame_ticked, "frame")
-
-
-func _time_signal(sig: Signal, prefix: String) -> void:
-	var cons := sig.get_connections()
-	for c: Dictionary in cons:
-		sig.disconnect(c["callable"])
-	for c: Dictionary in cons:
-		var cb: Callable = c["callable"]
-		var key := StringName("%s.%s.%s" % [prefix, cb.get_object().get_class(), cb.get_method()])
-		var script: Script = (cb.get_object() as Object).get_script()
-		if script != null:
-			key = StringName(
-				"%s.%s.%s" % [prefix, script.resource_path.get_file(), cb.get_method()]
-			)
-		var t := TimedListener.new()
-		t.cb = cb
-		t.key = key
-		_timers.append(t)
-		sig.connect(t.call_it)
-
-
-class TimedListener:
-	extends RefCounted
-	var cb: Callable
-	var key: StringName
-
-	func call_it() -> void:
-		var t0 := PerfMarks.start()
-		cb.call()
-		PerfMarks.add(key, t0)
+	PerfBreakdown.time_listeners(_main.driver, _timers)
 
 
 ## --census (PF3): what the draw calls are. Every visible GeometryInstance3D, grouped by the script that owns it (the
