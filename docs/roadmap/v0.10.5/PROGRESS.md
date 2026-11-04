@@ -3,7 +3,7 @@
 Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.10.0 there until the release step).
 
 ## Where we are
-(The lead keeps this block current at every push. Updated 2026-11-04, wave 3 started.)
+(The lead keeps this block current at every push. Updated 2026-11-04, wave 3 under way.)
 
 - **Every PLAN step is built and merged** on `claude/v0100-cleanup` (not pushed, owner: "Don't push"): wave 1
   (S1–S15 + S5b, S15b–d), and wave 2 (O1, O2a, O2b, O3, O4, O5a/b, O6, O7a/b, O9–O18), plus D1, Q1, Q5 (measure), Q7
@@ -14,10 +14,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.
 - **Performance:** Q5 (views once a frame), the owner's logged run (PERF_PLAYLOG_1: 80 fps avg, 67 % engine+draw), then
   fixes for its hitches, draw calls and the nav flood; the next logged run measures them. Q5: 16 → ~23 fps at 60 enemies (busy machine,
   a clean re-measure NOT YET RUN. Further fixes ranked in evidence/PERF_Q5.md §5 (3–5).
-- **Wave 3 (2026-11-04):** the owner played v0.10.5 and sent feedback (PLAN "Wave 3", F1–F25). Running (at most
-  2 Sonnet + 2 Opus, owner 2026-11-04): W3-S1 (floor 1's boss draw, the Warlord −5 %), W3-S2 (Seekers/Glaive/Laser
-  damage), W3-O1 (the secret room through L2), W3-O2 (Foundry lines vs volleys, the Hive Lens sweep). Queued: W3-S4,
-  W3-O3–O9. Gates: W3-O4 (progression G1), W3-O7 and W3-O9 (G2). The hub background: "Dark void + fog" (owner, 2026-11-04), in W3-O5.
+- **Wave 3 (2026-11-04):** the owner played v0.10.5 and sent feedback (PLAN "Wave 3", F1–F26). Merged: W3-S1,
+  W3-S2, W3-S4, W3-S5, W3-O1, W3-O2, W3-O5, W3-O11. Running (at most 2 Sonnet + 2 Opus): W3-O3 (Lance heat, two
+  stale bands), W3-O9 (shop: heal + reroll + 4 cards, then G2 layouts). Queued: W3-O4 (progression G1), W3-O6 (boss
+  border cost), W3-O7 (G2: purple bolt, Lance ball), W3-O8 (Void/Wave/Laser looks). Owner, 2026-11-04: floor 2
+  drawing the Hive Lens ~69 % (after W3-O11) is "Fine as is". The lead's `seams.sh` on the merged branch: NOT YET RUN.
 - **Then:** the release step (one PR into `main`, the full suite on GitHub).
 
 ## Owner decisions (2026-11-02)
