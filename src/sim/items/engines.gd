@@ -320,6 +320,9 @@ static func thermal_break(w: World, i: int, root: int) -> void:
 		return
 	var t := w.wand_table if w.wand_table != null else _wand_defaults
 	var stacks := a.burn_stacks[i]
+	# v0.10.5 W3-P1b: the hit is Fire's (its burn turned into one hit): it falls off by the elements the enemy carries
+	# now, before the break consumes the burn and the frost, and takes Fire's level share (ElementStack).
+	var el := ElementStack.mult(w, i, ElementStack.FIRE)
 	a.burn_stacks[i] = 0
 	a.burn_t[i] = 0
 	a.burn_cd[i] = 0
@@ -328,9 +331,8 @@ static func thermal_break(w: World, i: int, root: int) -> void:
 	a.frozen_t[i] = 0
 	_status(w, i, root, stacks, EFFECT_THERMAL_BREAK)
 	var pid := a.ids[0]
-	Damage.tick_dot(
-		w, i, t.thermal_base + t.thermal_per_burn * stacks, pid, pid, EFFECT_THERMAL_BREAK
-	)
+	var dmg := ElementStack.scale(t.thermal_base + t.thermal_per_burn * stacks, el)
+	Damage.tick_dot(w, i, dmg, pid, pid, EFFECT_THERMAL_BREAK)
 	end(w)
 
 
@@ -360,6 +362,7 @@ static func tick_statuses(w: World) -> void:
 	var a := w.actors
 	var m := w.item_mods
 	var period := bleed_period(w)  # v0.6.5 WN5a: S5 Bleed ticks faster while you move
+	ElementStack.tick(w)  # v0.10.5 W3-P1b: the Lightning charges run down
 	for i in range(1, a.size()):
 		if a.shock_stacks[i] > 0:
 			a.shock_t[i] -= 1

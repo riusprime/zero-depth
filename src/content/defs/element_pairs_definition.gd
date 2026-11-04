@@ -30,6 +30,9 @@ extends ContentDef
 ## An element's damage on an enemy already carrying k other elements counts at this share, per mille, for k = 0, 1, 2
 ## and 3 or more (ElementStack). 0..4 values, each 1..1000, never rising; empty = no falloff.
 @export var stack_falloff_permille := PackedInt32Array()
+## v0.10.5 W3-P1b: a hero Lightning hit (the Storm card's chain or strike) leaves its enemy charged this long, so
+## Lightning counts as carried in the others' falloff (ElementStack). 0 = no mark; 0..5 s.
+@export var storm_mark_seconds := 0.0
 @export var triggers_per_second := 4
 @export var burst_permille := 3000
 @export var burst_radius_m := 1.5
@@ -54,6 +57,11 @@ func category() -> StringName:
 
 func validate() -> Array[ValidationIssue]:
 	var issues := super.validate()
+	check_duration(issues, "storm_mark_seconds", storm_mark_seconds)  # v0.10.5 W3-P1b
+	if storm_mark_seconds > 5.0:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "storm_mark_seconds is outside 0..5 s")
+		)
 	for pair: Array in [
 		["triggers_per_second", triggers_per_second, 1, 60],
 		["cloud_stacks", cloud_stacks, 1, 8],

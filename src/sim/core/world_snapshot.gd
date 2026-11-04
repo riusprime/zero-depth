@@ -358,6 +358,7 @@ const ADDED_SINCE_V05 := {
 		&"bleed_x",
 		&"bleed_y",
 		&"gas_cd",  # v0.9.5 EE3
+		&"charged_t",  # v0.10.5 W3-P1b (ElementStack; an older save's enemies are not charged: 0)
 	],
 	# v0.8.0 FB3: the mimic body's state (an FB2 save has none: a fresh one, the build read at the Nemesis's next tick)
 	&"FinalFight":
@@ -779,6 +780,9 @@ static func _pad_added(w: World) -> void:
 	if a.gas_cd.size() != a.ids.size():  # v0.9.5 EE3: an older save's actors carry no gas clock
 		a.gas_cd.resize(a.ids.size())
 		a.gas_cd.fill(0)
+	if a.charged_t.size() != a.ids.size():  # v0.10.5 W3-P1b: an older save's enemies carry no charge
+		a.charged_t.resize(a.ids.size())
+		a.charged_t.fill(0)
 	var s := w.ab
 	while s.bomb_spec.size() < s.bomb_pos.size():
 		s.bomb_spec.append("")
