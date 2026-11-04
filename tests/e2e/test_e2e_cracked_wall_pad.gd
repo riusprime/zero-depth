@@ -18,7 +18,7 @@ func _click(e: E2e, main: Main, button: String) -> void:
 	await e.click_at(b.get_global_rect().get_center())
 
 
-func _break_with_l2(build: StringName, from_m: float) -> void:
+func _break_with_l2(build: StringName, from_m: float, aimed_away := false) -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot(null, null, SEED)
 	await e.start_from_menu(build)
@@ -34,6 +34,20 @@ func _break_with_l2(build: StringName, from_m: float) -> void:
 	await e.tap(KEY_QUOTELEFT)
 	var goal := CrackLab.before_wall(w, from_m)
 	var to_wall := (f.door_centers[f.crack_door] - goal).normalized()
+	if aimed_away:
+		# W3-O1: the owner fights with the right stick first: it aims away from the wall (a fight behind), then
+		# rests. Walking to the wall with the left stick turns the aim to it again (the right stick at rest).
+		var c := InputLatch.C45
+		var away := -to_wall
+		e.joy_axis(JOY_AXIS_RIGHT_X, (away.x + away.y) * c)
+		e.joy_axis(JOY_AXIS_RIGHT_Y, -(away.y - away.x) * c)
+		await e.frames(6)
+		e.joy_axis(JOY_AXIS_RIGHT_X, 0.0)
+		e.joy_axis(JOY_AXIS_RIGHT_Y, 0.0)
+		await e.frames(2)
+		assert_lt(
+			Kin.dir(w.aim_angle).dot(to_wall), -0.9, "the right stick aimed away from the wall"
+		)
 	var uses := 0
 	var shades: Array[float] = [view.crack_shade]
 	while b.crack_broken == 0 and uses < 6:
@@ -66,3 +80,10 @@ func test_the_guns_scatter_blast_on_l2_breaks_it() -> void:
 
 func test_the_blades_lunge_cleave_on_l2_breaks_it() -> void:
 	await _break_with_l2(&"blade", 1.4)
+
+
+## W3-O1 (owner, 2026-11-04: "Pressing L2 still doesn't seem to open the secret room after discovering it"): the Gun
+## aims with the right stick in a fight, so the stick last aimed away from the wall; walked up to it and L2 pressed with
+## the stick at rest, the Blast went the old aim's way (the stick's aim stayed at rest), never into the wall.
+func test_the_guns_l2_breaks_it_after_the_right_stick_aimed_away() -> void:
+	await _break_with_l2(&"gun", 1.4, true)
