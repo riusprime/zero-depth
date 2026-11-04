@@ -77,3 +77,14 @@ until the owner says so.
 | Q3 | O1 | Left in the code: the Bomb and Scatter form code (no live card reaches it), 28 shot/probe scripts naming removed ids. Remove them too? |
 | Q4 | O1 | Coverage lost: no live card exercises the v0.5 item engines, trigger cards in a wand, or blast merging. Also: two item-visual tests (bolts change with items; Ember Edge turns the Blade orange) were deleted because O1 removed their items. **Done (1b689626):** rewritten with live cards (gun_rapid_fire, gun_ricochet, ember_core), 3/3. |
 |---|---|---|
+
+## Wave 3 overnight (2026-11-04 → 05)
+
+Owner, 2026-11-04 night: "take into the plan to remake every single UI element into this new style even the main menu,
+all UI style components have to be remade, i'll go to sleep … keep working and if you have any questions write them
+down … 6 agents, 3 sonnet 3 opus at the same time". Picks made while the owner sleeps, to keep or change:
+
+| # | Step | The lead's pick | To go over |
+|---|---|---|---|
+| W1 | W3-P1b | The Blade's element stacking is fixed at its causes (measured), not by a blind retune; a target still missed by > 10 % stops and waits here | — |
+| W2 | W3-S10 | Bolt push halved and elites plan every 4 ticks (your answers); merged only once the golden's gun drop (82 → 59 hits) is explained | — |

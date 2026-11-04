@@ -398,7 +398,7 @@ Steps (S = Sonnet, O = Opus; at most 2 + 2 at once):
 - **W3-S8** the minimap arrow follows the walk (F30). Agents from now: at most 2 Sonnet + 3 Opus (owner, 2026-11-04: "let's elevate max opus agents to 3").
 - **W3-O13** G2: three UI styles for the whole UI (F29); the shop then rebuilt in layout A with the picked style.
 - **W3-O12** the VFX gallery (F28): a dev scene that plays every effect in the game and every unused pack effect, grouped and labelled, plus contact sheets.
-- **W3-O17** the in-run HUD in Astral (continuous HP bar with a medallion). **W3-O18** the menus (main, pause, options, recap, loading, credits). **W3-O19** the Build page, Codex, event panels, hub prompts and the remaining panels.
+- **W3-O17** the in-run HUD in Astral (continuous HP bar with a medallion). **W3-O18** the menus (main, pause, options, recap, loading, credits). **W3-O19** the Build page, Codex, event panels, hub prompts and the remaining panels. **W3-S13** the owner's 8 carved card backs (4 + 4 focused) on every face-down card. Owner, 2026-11-04 night: "remake every single UI element into this new style even the main menu, all UI style components have to be remade": W3-O20 audits every Control-based screen and component left after O17–O19 and restyles it; the dev panel is the only exception (dev only).
 - **W3-O11** the Brood Mother joins floor 1's pool (Gatekeeper, Warlord, Brood Mother) at floor-1 strength; floor 2 never draws a boss the run already met; old saves keep their bosses.
 
 ### R. Release
