@@ -56,6 +56,8 @@ var rig := IsoRig.new()
 var ink := InkPass.new()
 ## The plan frame: plan (x, y) is local (x, 0, -y) (HubLayout: the plan's north is the screen's top).
 var plan := Node3D.new()
+## v0.10.5 W3-O5 (owner F2): the dark void and fog past the walls.
+var void_view := HubVoid.new()
 var hero := Node3D.new()
 var avatar := PlayerAvatar.new()
 var machine := HubMachine.new()
@@ -114,7 +116,7 @@ func setup(
 	stage.lighting = lighting
 	add_child(ParticleShadowOff.new())  # v0.10.5 PB: the hub's particles cast no shadow
 	add_child(stage)
-	stage.build_lighting_only()
+	stage.build_lighting_only()  # v0.10.5 W3-O5 (owner F2): no biome backdrop; the void and fog (HubVoid)
 	var fill := DirectionalLight3D.new()
 	fill.name = "Fill"
 	fill.rotation_degrees = Vector3(-35.0, IsoRig.YAW_DEG, 0.0)  # along the camera's view
@@ -127,6 +129,17 @@ func setup(
 	add_child(plan)
 	HubDressing.ground(plan, layout.hub)  # v0.9.0 HB3: the owner's floor, walls, pillars, props
 	HubDressing.walls(plan, layout.hub)
+	var tex: Texture2D = (
+		load(HubDressing.GROUND_TEX) if ResourceLoader.exists(HubDressing.GROUND_TEX) else null
+	)
+	void_view.setup(
+		layout.hub.radius_m,
+		tex,
+		HubProps.PLAZA_SEAM.darkened(0.5),
+		HubDressing.GROUND_TILE_M,
+		mood.void_color if mood != null else palette.get("edge", Color(0.05, 0.04, 0.035))
+	)
+	plan.add_child(void_view)
 	HubDressing.training_door(plan, layout.hub)  # v0.10.5 O17: the Training Room's south door
 
 	fires = HubDressing.pillars(plan, layout.hub)

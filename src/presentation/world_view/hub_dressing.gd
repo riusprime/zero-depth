@@ -41,20 +41,24 @@ const PILLAR_STAND_IN_H := 3.2
 ## The floor's layers (m over the plaza's paving; the medallion over the walkway).
 const PATH_Y := 0.006
 const MEDALLION_Y := 0.012
+## v0.10.5 W3-O5 (owner F1: "visible black gaps between the inner circular floor and the walls"): the plaza's paving
+## reaches this far past its radius (m), under the whole wall (the prepared segment's foot reaches 2.14 m out; the
+## paving stopped 0.6 m out, so the dark ground past it showed in the wall's recesses).
+const PLAZA_PAST_WALL := 2.4
+## v0.10.5 W3-O5 (owner F1: "visible gaps between individual wall pieces"): the prepared segment spans its 30° only
+## at its foot (±15°); above it narrows to ±13.7°, so neighbours stood up to 0.8 m apart at their ends. Each segment is
+## stretched round the ring by this much (radius kept: its curve still sits on the plaza's ring), so the narrowest
+## band still reaches ±15° and the ends overlap; every other segment sits WALL_STAGGER further out (a share of its
+## radius, about 5 cm) so the overlapping faces never share a surface (no z-fighting).
+const WALL_SPREAD := 1.1
+const WALL_STAGGER := 1.003
 
 
 ## The plaza's floor (see the header) under `plan`.
+## v0.10.5 W3-O5: past the paving lies the void (HubVoid), not a darker ground.
 static func ground(plan: Node3D, hub: HubDefinition) -> void:
-	var outer := CylinderMesh.new()
-	outer.top_radius = hub.radius_m + 12.0
-	outer.bottom_radius = outer.top_radius
-	outer.height = 0.1
-	outer.radial_segments = 48
-	HubProps.mesh(
-		plan, "Outer", outer, paving(HubProps.PLAZA_SEAM.darkened(0.5)), Vector3(0, -0.07, 0)
-	)
 	var disc := CylinderMesh.new()
-	disc.top_radius = hub.radius_m + 0.6
+	disc.top_radius = hub.radius_m + PLAZA_PAST_WALL
 	disc.bottom_radius = disc.top_radius
 	disc.height = 0.1
 	disc.radial_segments = 96
@@ -136,6 +140,12 @@ static func walls(plan: Node3D, hub: HubDefinition) -> Node3D:
 	root.name = "Walls"
 	plan.add_child(root)
 	var m := ShopModels.get_model(&"hub_wall_segment")
+	var bent: Array[Mesh] = []
+	if not m.is_empty():
+		bent = [
+			spread_segment(m["mesh"], WALL_SPREAD, 1.0),
+			spread_segment(m["mesh"], WALL_SPREAD, WALL_STAGGER)
+		]
 	var span := TAU / SEGMENTS
 	for k in SEGMENTS:
 		var a := span * k  # plan angle from east, counter-clockwise
@@ -150,14 +160,18 @@ static func walls(plan: Node3D, hub: HubDefinition) -> Node3D:
 		seg.position.y = -(WALL_H - SOUTH_SHOWS) if south else 0.0
 		root.add_child(seg)
 		if not m.is_empty():
-			var mi := HubProps.mesh(seg, "Model", m["mesh"], m["material"], Vector3.ZERO)
+			var mi := HubProps.mesh(seg, "Model", bent[k % 2], m["material"], Vector3.ZERO)
 			mi.set_meta(&"model_id", &"hub_wall_segment")
 			continue
 		var r := hub.radius_m + hub.wall_m * 0.5
 		HubProps.box(
 			seg,
 			"Box",
-			Vector3(TAU * r / SEGMENTS + 0.1, WALL_H, hub.wall_m),
+			Vector3(
+				TAU * r / SEGMENTS * WALL_SPREAD,
+				WALL_H,
+				hub.wall_m * (WALL_STAGGER if k % 2 else 1.0)
+			),
 			HubProps.stone(HubProps.STONE_LIT),
 			Vector3(0, WALL_H * 0.5, r)
 		)
@@ -317,6 +331,43 @@ static func gate(plan: Node3D, hub: HubDefinition, gy: float) -> Dictionary:
 		Vector3(0, 1.05, 0)
 	)
 	return {"frame": root, "doors": seal, "model": false}
+
+
+## v0.10.5 W3-O5: a copy of the wall segment `mesh` (its middle on +z, round the plaza's centre) with every vertex's
+## angle round the centre times `spread` and its distance from the centre times `out`; normals and tangents turn with
+## their vertex.
+static func spread_segment(mesh: Mesh, spread: float, out: float) -> ArrayMesh:
+	var am := ArrayMesh.new()
+	for s in mesh.get_surface_count():
+		var arr := mesh.surface_get_arrays(s)
+		var vs: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		var ns: PackedVector3Array = (
+			arr[Mesh.ARRAY_NORMAL] if arr[Mesh.ARRAY_NORMAL] != null else PackedVector3Array()
+		)
+		var ts: PackedFloat32Array = (
+			arr[Mesh.ARRAY_TANGENT] if arr[Mesh.ARRAY_TANGENT] != null else PackedFloat32Array()
+		)
+		for i in vs.size():
+			var v := vs[i]
+			var a := atan2(v.x, v.z)
+			var turn := a * (spread - 1.0)
+			var r := Vector2(v.x, v.z).length() * out
+			vs[i] = Vector3(sin(a + turn) * r, v.y, cos(a + turn) * r)
+			if i < ns.size():
+				ns[i] = ns[i].rotated(Vector3.UP, turn)
+			if i * 4 + 3 < ts.size():
+				var t := Vector3(ts[i * 4], ts[i * 4 + 1], ts[i * 4 + 2]).rotated(Vector3.UP, turn)
+				ts[i * 4] = t.x
+				ts[i * 4 + 1] = t.y
+				ts[i * 4 + 2] = t.z
+		arr[Mesh.ARRAY_VERTEX] = vs
+		if not ns.is_empty():
+			arr[Mesh.ARRAY_NORMAL] = ns
+		if not ts.is_empty():
+			arr[Mesh.ARRAY_TANGENT] = ts
+		am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+		am.surface_set_material(am.get_surface_count() - 1, mesh.surface_get_material(s))
+	return am
 
 
 ## A floor strip `w` m wide along plan points `pts` (a closed ring when its ends meet), the walkway's texture across it
