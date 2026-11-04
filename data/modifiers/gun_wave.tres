@@ -37,7 +37,7 @@ script = ExtResource("2_op")
 op = 0
 stage = 5
 field = &"life_seconds"
-value = 1.8
+value = 0.9
 
 [sub_resource type="Resource" id="Op_6"]
 script = ExtResource("2_op")

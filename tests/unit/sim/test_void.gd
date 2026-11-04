@@ -297,7 +297,9 @@ func test_the_void_row_offers_only_its_cards() -> void:
 	var w := _slot_world()
 	assert_true(BuildSlots.take(w, W.item(w, &"gun_void")))
 	assert_eq(AttackSlots.form_id(w), &"void")
-	assert_true(ItemPool.usable(w, W.item(w, &"gun_ring")), "Void + Ring: on since FC3 (V1)")
+	var ring := W.item(w, &"gun_ring")
+	assert_true(AttackSlots.compatible(w, ring), "Void + Ring: on since FC3 (V1)")
+	assert_false(ItemPool.usable(w, ring), "v0.10.5 W3-P7: no gain measured, no longer offered")
 	for id: StringName in [
 		&"halo_shot", &"gun_spiral", &"gun_swirl", &"gun_pierce", &"gun_threadline"
 	]:
@@ -311,7 +313,11 @@ func test_the_void_row_offers_only_its_cards() -> void:
 			or cat in [AttackSlots.FREE, AttackSlots.FORM]
 		):
 			continue
-		assert_eq(AttackSlots.usable(w, idx), VOID_ON.has(it.id), "%s with the Void" % it.id)
+		assert_eq(AttackSlots.compatible(w, idx), VOID_ON.has(it.id), "%s with the Void" % it.id)
+		var pruned := w.slot_table.pruned(AttackSlots.form_row(w), idx)  # v0.10.5 W3-P7
+		assert_eq(
+			AttackSlots.usable(w, idx), VOID_ON.has(it.id) and not pruned, "%s offered" % it.id
+		)
 	var off := []
 	for id: StringName in [&"halo_shot", &"gun_spiral", &"gun_swirl", &"gun_pierce"]:
 		off.append(W.item(w, id))

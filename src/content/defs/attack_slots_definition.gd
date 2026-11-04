@@ -80,6 +80,15 @@ func validate() -> Array[ValidationIssue]:
 					)
 				)
 			cells[c] = true
+		var pruned := {}
+		for c in r.pruned:
+			if pruned.has(c):
+				issues.append(
+					ValidationIssue.new(
+						&"duplicate_id", resource_path, "%s: pruned card %s twice" % [r.id, c]
+					)
+				)
+			pruned[c] = true
 	if defaults != 1:
 		issues.append(
 			ValidationIssue.new(&"missing", resource_path, "exactly one form row has no card")
@@ -168,6 +177,15 @@ static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 						"%s: no live form card %s" % [r.id, r.card]
 					)
 				)
+			for c in r.pruned:  # v0.10.5 W3-P7: any live card but a Form card
+				if not live.get(c, &"") in [&"pattern", &"secondary", &"element", &"free"]:
+					issues.append(
+						ValidationIssue.new(
+							&"unknown_item",
+							t.resource_path,
+							"%s: no live non-form card %s to prune" % [r.id, c]
+						)
+					)
 			for c in r.allowed + r.ruled:
 				if not live.get(c, &"") in [&"pattern", &"secondary", &"element"]:
 					issues.append(

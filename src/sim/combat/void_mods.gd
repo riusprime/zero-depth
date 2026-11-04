@@ -9,7 +9,8 @@ extends RefCounted
 ## - At the spawn (World._apply_spawns -> on_spawn): a void with cards gets a row (kind K_SHOT) holding its aura and
 ##   pull radius (Big Shot's, Rapid Fire's) and its steering state.
 ## - In flight (ProjectileMoves.steer -> steer()): Orbit circles the hero once, Homing turns toward the densest group,
-##   Mine stops it at the aim point for mine_hold_ms.
+##   Mine stops it at the aim point for mine_hold_ms, its aura opening to mine_aura_mm there (v0.10.5 W3-P7: the one
+##   held void makes up for the stream it stops).
 ## - At its end (Attacks.on_projectile_end -> on_end): Ring queues a growing lightning ring (K_RING), Echo and Split
 ##   queue stationary voids (K_SPAWN rows, opened by advance() on the next tick). Those voids start no follow-ups.
 ## - Bounded: at most live_max voids per hero (the oldest ends first); no void pulls a boss (VoidShots.pull_permille).
@@ -82,15 +83,16 @@ const DEFAULTS := {
 	"rapid_life": 500,
 	"rapid_aura_mm": 700,
 	"rapid_damage": 700,
-	"split_dist_mm": 1500,
+	"split_dist_mm": 3000,
 	"split_life_ms": 1000,
 	"split_share": 400,
-	"split_aura_mm": 600,
+	"split_aura_mm": 1500,
 	"split_pull_mm": 1800,
 	"mine_hold_ms": 3000,
+	"mine_aura_mm": 2200,
 	"orbit_mm": 2500,
 	"orbit_ms": 1000,
-	"live_max": 6,
+	"live_max": 10,
 }
 
 
@@ -392,6 +394,7 @@ static func steer(w: World, pi: int) -> void:
 		p.vel_x[pi] = 0.0
 		p.vel_y[pi] = 0.0
 		p.life[pi] = ticks(param(w, "mine_hold_ms"))
+		s.vm_aura[k] = maxi(s.vm_aura[k], param(w, "mine_aura_mm"))
 		s.vm_kind[k] |= F_STOPPED
 		return
 	if m & HOMING and sp > 0.0:

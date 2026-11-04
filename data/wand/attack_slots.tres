@@ -9,6 +9,7 @@ id = &"orbs"
 card = &""
 allowed = Array[StringName]([&"gun_twin", &"halo_shot", &"gun_ring", &"gun_backfire", &"gun_pierce", &"gun_ricochet", &"gun_homing", &"gun_echo", &"gun_big_shot", &"gun_rapid_fire", &"split_shot", &"gun_mine", &"orbit_rounds", &"gun_threadline", &"gun_spiral", &"gun_swirl", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
 ruled = Array[StringName]([])
+pruned = Array[StringName]([&"gun_ricochet"])
 
 [sub_resource type="Resource" id="Form_laser"]
 script = ExtResource("2_row")
@@ -57,6 +58,7 @@ id = &"void"
 card = &"gun_void"
 allowed = Array[StringName]([&"gun_twin", &"gun_ring", &"gun_backfire", &"gun_ricochet", &"gun_homing", &"gun_echo", &"gun_big_shot", &"gun_rapid_fire", &"split_shot", &"gun_mine", &"orbit_rounds", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"])
 ruled = Array[StringName]([])
+pruned = Array[StringName]([&"gun_ring", &"gun_backfire", &"gun_ricochet", &"gun_homing", &"gun_echo", &"gun_rapid_fire", &"orbit_rounds", &"chain_blast", &"shared_stress_mark"])
 params = {
 "ring_mm": 3000,
 "ring_ms": 300,
@@ -80,15 +82,16 @@ params = {
 "rapid_life": 500,
 "rapid_aura_mm": 700,
 "rapid_damage": 700,
-"split_dist_mm": 1500,
+"split_dist_mm": 3000,
 "split_life_ms": 1000,
 "split_share": 400,
-"split_aura_mm": 600,
+"split_aura_mm": 1500,
 "split_pull_mm": 1800,
 "mine_hold_ms": 3000,
+"mine_aura_mm": 2200,
 "orbit_mm": 2500,
 "orbit_ms": 1000,
-"live_max": 6
+"live_max": 10
 }
 
 [sub_resource type="Resource" id="Form_lance"]

@@ -326,8 +326,11 @@ func test_an_incompatible_card_is_never_offered() -> void:
 	for k in 200:
 		w.rng_loot = RngStream.derive(k, "loot")
 		assert_false(ItemPool.draw_weighted(w, 3, 3).has(pierce), "draw %d" % k)
+	var t := w.slot_table
 	for idx in w.item_tables.size():  # the live table shuts nothing else on a Gun run
 		var it := w.item_tables[idx]
+		if t.pruned(t.default_form, idx):
+			continue  # v0.10.5 W3-P7: Orbs prunes Ricochet (test_pruned_pairs.gd)
 		if idx != pierce and not it.retired and it.requires_weapon != PlayerTable.WEAPON_BLADE:
 			assert_true(AttackSlots.usable(w, idx), "%s still offered" % it.id)
 

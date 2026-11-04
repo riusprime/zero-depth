@@ -95,7 +95,9 @@ func test_the_void_row_allows_the_ten_cards_and_keeps_five_off() -> void:
 	w.floor_index = 3
 	w.run_floor = 3
 	for id in VoidMods.CARD_IDS:
-		assert_true(AttackSlots.usable(w, W.item(w, id)), "%s is on" % id)
+		assert_true(AttackSlots.compatible(w, W.item(w, id)), "%s is on" % id)
+	for id in [&"gun_big_shot", &"split_shot", &"gun_mine"]:  # v0.10.5 W3-P7: the rest are no longer offered
+		assert_true(AttackSlots.usable(w, W.item(w, id)), "%s is offered" % id)
 	for id in [&"halo_shot", &"gun_pierce", &"gun_spiral", &"gun_swirl", &"gun_threadline"]:
 		assert_false(AttackSlots.usable(w, W.item(w, id)), "%s stays off" % id)
 
@@ -285,7 +287,9 @@ func test_v7_rapid_fire_throws_every_0_4_s_smaller_voids_with_half_the_life_at_7
 
 
 # --- V8 Split ---------------------------------------------------------------------------------------------------------
-func test_v8_split_makes_mini_voids_1_5_m_out_at_even_angles_for_1_s_at_40_percent() -> void:
+## v0.10.5 W3-P7 (the lead: Split stays on the Void, its numbers fixed): the minis land 3 m out (was 1.5) with a 1.5 m
+## aura (was 0.6), so they reach the enemies around the void's end.
+func test_v8_split_makes_mini_voids_3_m_out_at_even_angles_for_1_s_at_40_percent() -> void:
 	var w := _world([&"split_shot"])
 	W.run(w, 1, 0, W.S)
 	var id := w.projectiles.ids[_voids(w)[0]]
@@ -306,15 +310,15 @@ func test_v8_split_makes_mini_voids_1_5_m_out_at_even_angles_for_1_s_at_40_perce
 		)
 		/ 2.0
 	)
-	assert_almost_eq(Vector2(p.pos_x[minis[0]], p.pos_y[minis[0]]).distance_to(centre), 1.5, 0.05)
+	assert_almost_eq(Vector2(p.pos_x[minis[0]], p.pos_y[minis[0]]).distance_to(centre), 3.0, 0.05)
 	assert_eq(p.damage[minis[0]], 4, "40 % of 10")
 	assert_between(p.life[minis[0]], 58, 60, "1.0 s")
 	var read := VoidShots.read(w)
 	var found := 0
 	for v in read:
-		if absf(v["aura"] - 0.6) < 0.001:
+		if absf(v["aura"] - 1.5) < 0.001:
 			found += 1
-	assert_eq(found, 2, "a 0.6 m aura each")
+	assert_eq(found, 2, "a 1.5 m aura each")
 
 
 func test_v8_splits_level_sets_two_three_or_four_minis_at_0_120_240() -> void:
@@ -342,8 +346,8 @@ func test_v8_splits_level_sets_two_three_or_four_minis_at_0_120_240() -> void:
 		if w3.projectiles.vel_x[i] == 0.0:
 			spots.append(Vector2(w3.projectiles.pos_x[i], w3.projectiles.pos_y[i]))
 	assert_eq(spots.size(), 3)
-	assert_almost_eq(spots[0].distance_to(spots[1]), 1.5 * sqrt(3.0), 0.1, "120 degrees apart")
-	assert_almost_eq(spots[1].distance_to(spots[2]), 1.5 * sqrt(3.0), 0.1)
+	assert_almost_eq(spots[0].distance_to(spots[1]), 3.0 * sqrt(3.0), 0.1, "120 degrees apart")
+	assert_almost_eq(spots[1].distance_to(spots[2]), 3.0 * sqrt(3.0), 0.1)
 
 
 # --- V9 Mine ----------------------------------------------------------------------------------------------------------
@@ -357,6 +361,10 @@ func test_v9_mine_stops_at_the_aim_point_holds_3_s_its_aura_ticking_then_ends() 
 	assert_almost_eq(w.projectiles.pos_x[i], 3.0, 0.001, "the aim point: 300 cm out")
 	assert_eq(w.projectiles.vel_x[i], 0.0, "still")
 	assert_between(w.projectiles.life[i], 160, 180, "held for 3 s")
+	var aura := 0.0
+	for v in VoidShots.read(w):
+		aura = maxf(aura, v["aura"])
+	assert_almost_eq(aura, 2.2, 0.001, "v0.10.5 W3-P7: held, its aura opens to 2.2 m (from 1 m)")
 	var hits_a: int = _dealt(w, 1)[0]
 	W.run(w, 120, 0, 0)
 	var hits_b: int = _dealt(w, 1)[0]
@@ -401,7 +409,8 @@ func test_v10_orbit_circles_the_hero_once_at_2_5_m_in_1_s_then_flies_out_along_t
 
 
 # --- The bounds -------------------------------------------------------------------------------------------------------
-func test_no_hero_has_more_than_six_live_voids_the_oldest_ending_first() -> void:
+## v0.10.5 W3-P7: ten (was six), so Split's minis no longer end the void in flight.
+func test_no_hero_has_more_than_ten_live_voids_the_oldest_ending_first() -> void:
 	var w := _world(
 		[&"gun_rapid_fire", &"gun_backfire", &"split_shot", &"gun_echo", &"gun_ring", &"gun_twin"],
 		[Vector2(4.0, 0.5)]
@@ -415,8 +424,8 @@ func test_no_hero_has_more_than_six_live_voids_the_oldest_ending_first() -> void
 		var ids := []
 		for i in _voids(w):
 			ids.append(w.projectiles.ids[i])
-		assert_lte(ids.size(), 6, "tick %d" % w.tick)
-	assert_eq(most, 6, "the cap was reached")
+		assert_lte(ids.size(), 10, "tick %d" % w.tick)
+	assert_eq(most, 10, "the cap was reached")
 	assert_lte(rows, VoidMods.ROWS_MAX)
 
 

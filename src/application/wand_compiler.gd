@@ -114,6 +114,11 @@ static func compile_slots(def: AttackSlotsDefinition, items: Array[ItemTable]) -
 			if index.has(id):
 				cells[int(index[id])] = SlotTable.CELL_RULED
 		t.form_cells.append(cells)
+		var pruned := {}
+		for id in r.pruned:
+			if index.has(id):
+				pruned[int(index[id])] = true
+		t.form_pruned.append(pruned)
 		if not r.params.is_empty():
 			t.params[r.id] = r.params.duplicate()
 		if String(r.card).is_empty() and t.default_form < 0:

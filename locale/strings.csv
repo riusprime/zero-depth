@@ -736,7 +736,7 @@ ITEM_THRUST_DESC,"Stab farther and harder, but narrower.","Estocadas más largas
 ITEM_HEAVY,Heavy,Pesado
 ITEM_HEAVY_DESC,Slower swings that hit much harder.,Tajos más lentos que golpean mucho más fuerte.
 ITEM_FLURRY,Flurry,Ráfaga
-ITEM_FLURRY_DESC,"After a pause, a burst of fast, lighter swings.","Tras una pausa, una ráfaga de tajos rápidos y ligeros."
+ITEM_FLURRY_DESC,"After a pause, a burst of fast swings.","Tras una pausa, una ráfaga de tajos rápidos."
 ITEM_FISSURE,Fissure,Fisura
 ITEM_FISSURE_DESC,Your slashes crack the ground and it erupts.,Tus tajos agrietan el suelo y la grieta estalla.
 ITEM_CHAIN_CUT,Chain Cut,Corte en Cadena
@@ -748,7 +748,7 @@ ITEM_RIPOSTE_CHAIN_DESC,A slash kill strikes the next enemy.,Cada baja con tajo 
 ITEM_PARRY_EDGE,Parry Edge,Filo Desviador
 ITEM_PARRY_EDGE_DESC,Your slashes destroy enemy shots.,Tus tajos destruyen los disparos enemigos.
 ITEM_LUNGE_STEP,Lunge Step,Paso de Embestida
-ITEM_LUNGE_STEP_DESC,Each slash steps you forward.,Cada tajo te hace avanzar.
+ITEM_LUNGE_STEP_DESC,Each slash steps you forward and hits harder.,Cada tajo te hace avanzar y golpea más fuerte.
 ITEM_FINISHER_PLUS,Fracture Bank,Banco de Fracturas
 ITEM_FINISHER_PLUS_DESC,Combo hits lodge fragments; your finisher rips them out.,El combo clava fragmentos; el remate los arranca.
 ITEM_COUNTER,Counter,Contraataque
@@ -1291,7 +1291,7 @@ FORMCARD_VOID_ECHO,"A smaller void opens where it ended (60 %, half the life)","
 FORMCARD_VOID_BIG_SHOT,"1.3 m aura, pulls from 4 m, +20 % damage, slower","Aura de 1,3 m, atrae desde 4 m, +20 % de daño, más lento"
 FORMCARD_VOID_RAPID_FIRE,"Smaller voids every 0.4 s, half the life, -30 % damage","Vacíos menores cada 0,4 s, mitad de vida, -30 % de daño"
 FORMCARD_VOID_SPLIT,"When it ends, it splits into 2 to 4 mini voids (40 %)","Al terminar, se divide en 2 a 4 minivacíos (40 %)"
-FORMCARD_VOID_MINE,The void stops at the aim point and holds for 3 s,El vacío se detiene en el objetivo y aguanta 3 s
+FORMCARD_VOID_MINE,"The void stops at the aim point, widens and holds for 3 s","El vacío se detiene en el objetivo, se ensancha y aguanta 3 s"
 FORMCARD_VOID_ORBIT,The void circles you once (2.5 m) before flying out,"El vacío te rodea una vez (2,5 m) antes de salir"
 FORMCARD_LANCE_TWIN,Two lances per charge,Dos lanzas por carga
 FORMCARD_LANCE_HALO,A full charge fires 6 lances around you (50 % each),Una carga completa lanza 6 lanzas a tu alrededor (50 %)

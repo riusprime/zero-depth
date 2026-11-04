@@ -277,8 +277,8 @@ func test_l7_big_shot_is_twice_as_wide_hits_60_percent_harder_and_turns_slower()
 	W.run(w, 598, 0, W.S)
 	var plain := _world([], [Vector2(4.0, 0.0)])
 	W.run(plain, 600, 0, W.S)
-	assert_eq(_total(plain, 1), 460, "the plain beam: 4.6 a tick, 100 ticks")
-	assert_eq(_total(w, 1), 736, "+60 %: 7.36 a tick")
+	assert_eq(_total(plain, 1), 500, "the plain beam: 5.0 a tick, 100 ticks (W3-P5)")
+	assert_eq(_total(w, 1), 800, "+60 %: 8.0 a tick")
 	# turning: 70 % of follow_dps (720 degrees a second) -> 504
 	var t := _world([&"gun_big_shot"], [])
 	W.run(t, 1, 0, W.S, 0)
@@ -326,10 +326,10 @@ func test_l8_rapid_fire_quickens_from_0_1_s_to_0_05_s_over_2_s_and_thins() -> vo
 		late_total += int(h["amount"])
 	assert_between(
 		late_total,
-		# v0.10.5 W3-S2 (owner, 2026-11-04: Laser doesn't feel powerful): 52 → 60 a second (+-4 %).
-		58,
-		62,
-		"20 ticks a second at 65 % of 4.6: about 60 a second, about 1.3x a plain beam's 46"
+		# v0.10.5 W3-S2 (owner, 2026-11-04: Laser doesn't feel powerful): 52 → 60 a second (+-4 %); W3-P5: 65.
+		63,
+		67,
+		"20 ticks a second at 65 % of 5.0: about 65 a second, about 1.3x a plain beam's 50"
 	)
 	var early := _hits(w, 1).filter(func(h: Dictionary) -> bool: return h["tick"] < 30)
 	# v0.10.5 W3-P9: the ramp's fractions of a tick are carried (no longer rounded up to 6 while it starts): 6 in 0.5 s
@@ -384,7 +384,7 @@ func test_l10_mine_drops_one_a_second_at_the_tip_and_keeps_at_most_four() -> voi
 	var dealt := _hits_id(w, near)
 	assert_gt(dealt.size(), 0, "the burst hit it")
 	for h: Dictionary in dealt:
-		assert_eq(h["amount"], 23, "100 % of a tick (4.6) x 5")
+		assert_eq(h["amount"], 25, "100 % of a tick (5.0) x 5")
 	assert_lt(w.mx.lz_mine_at.size(), 4, "the mines that went off are gone")
 
 
@@ -423,7 +423,7 @@ func test_extra_beams_launch_no_projectiles_and_each_kind_hits_once_a_tick() -> 
 	assert_gt(_total(w, 4), 0, "Backfire")
 	var per := {}
 	for h: Dictionary in _hits(w, 1):
-		if h["amount"] == 4:
+		if h["amount"] == 5:  # v0.10.5 W3-P5: a main-beam tick is 5.0
 			per[h["tick"]] = int(per.get(h["tick"], 0)) + 1
 	assert_lte(per.values().max(), 1, "the main beam hits an enemy once a tick")
 	var most := 0

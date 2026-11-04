@@ -1,9 +1,9 @@
 extends GutTest
 ## v0.9.5 FC0 (owner: Rune Explosion replaces Scatter; FORM_COMBOS.md R0, R1): the Rune Explosion form. A ring centred
 ## on the hero grows 0 to 3.5 m over 21 ticks (linear, whole mm) every 1.1 s while the hero attacks; each enemy is hit
-## once per burst as the edge passes it, for 3.75 x an orb hit (3.0 before the DPS check), and shoved 0.4 m outward;
-## Twin adds smaller later bursts (70 % size and share, 0.2 s apart; Lv 3 two of them); at most 3 live; its heat is the
-## firing time only (v0.9.5 HT); a snapshot mid-burst plays on
+## once per burst as the edge passes it, for 8.5 x an orb hit (v0.10.5 W3-P5; 3.75 before, 3.0 before the DPS
+## check), and shoved 0.4 m outward; Twin adds smaller later bursts (70 % size and share, 0.2 s apart; Lv 3 two of
+## them); at most 3 live; its heat is the firing time only (v0.9.5 HT); a snapshot mid-burst plays on
 ## the same; an old save holding Scatter loads holding Rune Explosion.
 
 const W := preload("res://tests/support/mx4_world.gd")
@@ -57,7 +57,7 @@ func test_the_card_makes_the_shot_a_rune_burst() -> void:
 	assert_eq(s.rune_mm, 3500, "3.5 m")
 	assert_eq(s.rune_ticks, 21, "0.35 s")
 	assert_eq(s.period_ticks, 66, "every 1.1 s")
-	assert_eq(s.damage, orb.damage * 375 / 100, "3.75 x an orb hit (3.0 tuned up by the DPS check)")
+	assert_eq(s.damage, orb.damage * 850 / 100, "8.5 x an orb hit (v0.10.5 W3-P5: the single axis)")
 	_one(w, 5)
 	assert_eq(w.projectiles.size(), 0, "no bolt leaves the hero")
 
@@ -96,13 +96,13 @@ func test_each_enemy_is_hit_once_as_the_edge_passes_it() -> void:
 	assert_eq(t1 - t0, 6, "the nearer one first, six ticks apart")
 
 
-func test_it_hits_for_three_and_three_quarter_orb_hits() -> void:
+func test_it_hits_for_eight_and_a_half_orb_hits() -> void:
 	var o := _world([], [Vector2(2.0, 0.0)], true)
 	W.run(o, 8, 0, W.S)
 	var orb_hit: int = _dealt(o, 1)[1] / maxi(1, _dealt(o, 1)[0])
 	var w := _world([], [Vector2(2.0, 0.0)])
 	_one(w, 60)
-	assert_eq(_dealt(w, 1)[1], orb_hit * 375 / 100, "x3.75 one orb hit")
+	assert_eq(_dealt(w, 1)[1], orb_hit * 850 / 100, "x8.5 one orb hit")
 
 
 func test_a_hit_enemy_is_shoved_four_tenths_of_a_metre_outward() -> void:

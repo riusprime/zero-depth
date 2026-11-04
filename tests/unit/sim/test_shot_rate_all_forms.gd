@@ -43,13 +43,15 @@ func _builds(form: StringName) -> Array:
 	var probe := _world()
 	if form != &"":
 		assert_true(BuildSlots.take(probe, W.item(probe, form)), "took %s" % form)
+	# v0.10.5 W3-P7: a card the form prunes is no longer offered but still compiles when held (an old save, or one
+	# taken under another form), so the worst builds hold every compatible card.
 	var pats: Array = [&""]
 	for id in PATTERNS:
-		if AttackSlots.usable(probe, W.item(probe, id)):
+		if AttackSlots.compatible(probe, W.item(probe, id)):
 			pats.append(id)
 	var secs: Array = []
 	for id in SECONDARIES:
-		if AttackSlots.usable(probe, W.item(probe, id)):
+		if AttackSlots.compatible(probe, W.item(probe, id)):
 			secs.append(id)
 	var out: Array = []
 	for p: StringName in pats:

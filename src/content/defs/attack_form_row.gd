@@ -160,6 +160,7 @@ const VOID_KEYS: Array[String] = [
 	"split_aura_mm",
 	"split_pull_mm",
 	"mine_hold_ms",
+	"mine_aura_mm",
 	"orbit_mm",
 	"orbit_ms",
 	"live_max",
@@ -262,6 +263,11 @@ const LASER_KEYS: Array[String] = [
 @export var card: StringName = &""
 @export var allowed: Array[StringName] = []
 @export var ruled: Array[StringName] = []
+## v0.10.5 W3-P7 (owner, 2026-11-04: P7 "prune"; W3_O4_PROGRESSION_G1.md section c): cards that measured no gain (or a
+## loss) with this form. They are never offered while it is the run's form, but a held one still compiles as before
+## (an old save's wand, or a card taken under another form, keeps working). Any live Pattern, Secondary, Element or
+## Free card; a Pattern / Secondary / Element card here is usually also in `allowed`.
+@export var pruned: Array[StringName] = []
 ## v0.9.5 FC1: the form's own numbers for what its cards do (the Laser's: LaserMods.DEFAULTS names them and their units
 ## in their keys); every value a whole number above 0. Empty for the forms without any.
 @export var params: Dictionary = {}

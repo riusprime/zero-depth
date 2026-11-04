@@ -10,8 +10,8 @@ extends RefCounted
 ##   scales it) over rune_ticks (21 = 0.35 s), then lingers FADE_TICKS for the view's fade (no hits).
 ## - The hits: each enemy is hit once per burst, the tick the edge reaches it (edge >= centre distance - the enemy's
 ##   radius), as one Attacks.land hit under the spec (its elements' statuses, On Hit and On Kill hooks). The damage is
-##   the shot's (3.75 x an orb hit, the card multiplies it; 3.0 before the FC0 DPS check). Tags are area (no heat,
-##   Heat.NOT_ATTACK) and projectile (the Damage stat and crit apply as for the Bomb).
+##   the shot's (8.5 x an orb hit, the card multiplies it; 3.75 before v0.10.5 W3-P5, 3.0 before the FC0 DPS check).
+##   Tags are area (no heat, Heat.NOT_ATTACK) and projectile (the Damage stat and crit apply as for the Bomb).
 ## - The shove: a hit enemy slides PUSH_M outward along the hero-to-enemy line over PUSH_TICKS (bosses ignore it, as
 ##   they do the Blade's and Scatter Blast's); the next collision pass keeps it out of walls.
 ## - Twin (R1): `twin` more bursts follow the first, every TWIN_GAP_TICKS (0.2 s), each TWIN_SIZE_PERMILLE (70 %) of
