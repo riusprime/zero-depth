@@ -351,6 +351,11 @@ func aim_angle() -> int:
 	return _w.aim_angle
 
 
+## The player's walk intent this tick (InputFrame.move; zero when standing).
+func move_intent() -> Vector2i:
+	return _w.move_intent
+
+
 func is_dashing() -> bool:
 	return _w.is_dashing()
 
