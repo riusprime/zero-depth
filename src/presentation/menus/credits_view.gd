@@ -5,6 +5,8 @@ extends Control
 ## v0.5.5 A5; v0.8.0 MU: in the Ember stone look (MenuStyle) over the menu's ember backdrop (MenuBackdrop).
 ## v0.7.5 SM (N8): the app icon beside the title, and the generated licence list (LicenceListDefinition, built from
 ## the repo's manifests, fonts and addons by scripts/content/build_credits.gd) before the engine's notices.
+## v0.10.5 W3-O18: in Astral (AstralMenu): Astral's night behind, the title in letter-spaced Cinzel over a fading
+## hairline, the text in Atkinson, Back a lozenge plate.
 
 signal back_pressed
 
@@ -14,15 +16,19 @@ var text := RichTextLabel.new()
 func _init(credits: CreditsDefinition, licences: LicenceListDefinition = null) -> void:
 	name = "CreditsView"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	MenuStyle.apply(self)
-	add_child(MenuBackdrop.new())
+	AstralMenu.apply(self)
+	var backdrop := MenuBackdrop.new()
+	backdrop.astral = true
+	add_child(backdrop)
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	for side in ["left", "right", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + side, 80)
-	margin.add_theme_constant_override("margin_left", int(MenuStyle.LIST_LEFT))
+	margin.add_theme_constant_override("margin_left", int(AstralMenu.LEFT))
+	margin.add_theme_constant_override("margin_right", 360)
 	add_child(margin)
 	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 16)
 	margin.add_child(col)
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 16)
@@ -35,24 +41,27 @@ func _init(credits: CreditsDefinition, licences: LicenceListDefinition = null) -
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	head.add_child(icon)
 	var title := Label.new()
+	title.name = "Title"
 	title.text = "UI_CREDITS"
-	title.add_theme_font_override("font", HudStyle.font(true))
-	title.add_theme_font_size_override("font_size", 44)
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	AstralMenu.caps(title, AstralMenu.TITLE_SIZE, AstralCardArt.TEXT, 600, 0.3)
 	head.add_child(title)
+	col.add_child(AstralMenu.LeftRule.new(32.0))
 	var lines := Label.new()
 	lines.text = "%s\n%s" % [tr(credits.owner_key), tr(credits.made_with_key)]
 	lines.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	lines.add_theme_font_size_override("font_size", 24)
+	AstralMenu.body(lines, 20, AstralCardArt.TEXT)
 	col.add_child(lines)
 	text.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	text.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	text.add_theme_font_size_override("normal_font_size", 18)
+	text.add_theme_font_size_override("normal_font_size", 15)
+	text.add_theme_color_override("default_color", AstralCardArt.DIM)
 	text.text = legal_text(credits, licences)
 	col.add_child(text)
-	var back := Button.new()
+	var back := AstralButton.new(AstralButton.Kind.PLATE, 296.0)
 	back.name = "Back"
 	back.text = "UI_BACK"
-	back.custom_minimum_size = Vector2(240, 48)
+	back.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	back.pressed.connect(func() -> void: back_pressed.emit())
 	col.add_child(back)
 

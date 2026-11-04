@@ -8,15 +8,18 @@ extends MenuPanel
 ## black, the owner's logo over a column of cracked dark-stone plates on the left (StoneButton, the focused one lit
 ## blue), and on the right the owner's picture (assets/ui/menu/backdrop.png: the ruined portal, its red beam and the
 ## hero), drifting very slowly. Both pictures are cut by scripts/art/cut_menu_backdrop.py.
+## v0.10.5 W3-O18 (owner: "the rest of the UI ... should match the new style"): the list in Astral (MenuPanel.astral):
+## the rows are AstralButtons (letter-spaced Cinzel capitals, the focused one lit with a star and a tapered streak; a
+## hover takes the focus), a fading hairline under the logo, the hint and the version in Atkinson. The owner's logo
+## and picture stay as sent.
 signal continue_pressed
 signal play_pressed
 signal options_pressed
 signal credits_pressed
 signal quit_pressed
 
-## The column's left edge (the plate starts StoneButton.SIDE further in) and the gap between plates (1920 x 1080 base).
+## The column's left edge (1920 x 1080 base; a row's marker sits inside the row).
 const LEFT := 100.0
-const GAP := 17
 const LOGO := "res://assets/ui/menu/logo.png"
 const LOGO_W := 448.0  # owner, 2026-10-26: "make it 30% smaller and move it up a bit" (640 -> 448)
 const LOGO_LIFT := 56.0  # the space under the logo, so it sits higher over the plates
@@ -31,19 +34,14 @@ var _rows := 0
 
 
 func _init(version: String, show_continue: bool = false) -> void:
-	super()
+	super(true)  # v0.10.5 W3-O18: in Astral
 	name = "MainMenu"
-	slab.add_theme_stylebox_override("panel", StyleBoxEmpty.new())  # no slab: the plates are the list
 	slab.offset_left = LEFT
-	_column.add_theme_constant_override("separation", 30)
-	box.add_theme_constant_override("separation", GAP)
-	box.custom_minimum_size = Vector2(StoneButton.PLATE.x + StoneButton.SIDE * 2.0, 0)
+	box.custom_minimum_size = Vector2(LOGO_W, 0)
 	_column.custom_minimum_size = box.custom_minimum_size
 	box.add_child(_logo())
-	var lift := Control.new()
+	var lift := AstralMenu.LeftRule.new(LOGO_LIFT, 0.5)  # W3-O18: a fading hairline under the logo
 	lift.name = "LogoLift"
-	lift.custom_minimum_size = Vector2(0, LOGO_LIFT)
-	lift.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(lift)
 	var cont := add_button("UI_CONTINUE", func() -> void: continue_pressed.emit())
 	cont.name = "Continue"
@@ -58,21 +56,18 @@ func _init(version: String, show_continue: bool = false) -> void:
 	backdrop = _make_backdrop()
 	add_child(backdrop)
 	move_child(backdrop, 0)
-	var hint := add_hint("UI_MENU_HINT")
-	hint.modulate = Color(1, 1, 1, 0.55)
+	add_hint("UI_MENU_HINT")
 	version_label.text = version
 	version_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	version_label.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	version_label.position = Vector2(-140, -44)
-	version_label.add_theme_font_size_override("font_size", MenuStyle.HINT_SIZE)
-	version_label.add_theme_color_override("font_color", MenuStyle.HINT)
-	version_label.modulate = Color(1, 1, 1, 0.55)
+	AstralMenu.body(version_label, AstralMenu.NOTE_SIZE, Color(AstralCardArt.DIM, 0.7))
 	add_child(version_label)
 
 
-## The plates are StoneButtons (drawn in code), in the order they are added.
+## The rows are AstralButtons (drawn in code; v0.10.5 W3-O18, were StoneButtons), in the order they are added.
 func add_button(key: String, on_press: Callable) -> Button:
-	var b := StoneButton.new(_rows)
+	var b := AstralButton.new(AstralButton.Kind.ROW, AstralMenu.LIST_W - 40.0)
 	_rows += 1
 	b.text = key
 	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN

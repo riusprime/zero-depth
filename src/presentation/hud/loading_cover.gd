@@ -15,6 +15,8 @@ extends Control
 ## Reduced motion (ViewPrefs): a plain fade in the cover's colour, and the mark breathes instead of spinning.
 ## Presentation only: it reads the sim's portal progress (Main passes it) and its own screen clock; no outcome waits
 ## on it (EI-03), and it never takes the mouse, the focus or input. No text: the mark is a symbol.
+## v0.10.5 W3-O18 (the menus in Astral): the plain cover is Astral's ink, not black, and the mark is drawn in Astral:
+## a hairline ring, a thin arc turning round it and a small four-point star at its heart.
 
 ## HIDDEN: nothing drawn; COVERING: a portal's iris closing (set_closing); COVERED: the screen is covered (a load may
 ## run); UNVEILING: opening on what was loaded.
@@ -190,7 +192,7 @@ static func palette(p_style: int) -> Array[Color]:
 				LoopDevice.GREEN,
 				LoopDevice.GREEN.lightened(0.6)
 			]
-	return [Color.BLACK, Color.BLACK, Color(0.85, 0.85, 0.85)]
+	return [AstralChrome.INK, AstralChrome.INK, AstralCardArt.METAL]  # v0.10.5 W3-O18
 
 
 ## The style of the portal the hero is going into on this floor (the Loop device, the Ascension portal, the Deep gate,
@@ -246,11 +248,13 @@ func _process(delta: float) -> void:
 ## The loading mark: a three-quarter ring turning (reduced motion: a still ring that breathes).
 func _draw_mark() -> void:
 	var c := palette(style)[2]
-	var centre := mark.size * 0.5
+	var centre := (mark.size * 0.5).floor() + Vector2(0.5, 0.5)
 	if calm:
 		var a := 0.55 + 0.35 * sin(_spin * TAU * 0.5)
-		mark.draw_arc(centre, MARK_R, 0.0, TAU, 32, Color(c, a), MARK_W, true)
+		mark.draw_arc(centre, MARK_R, 0.0, TAU, 48, Color(c, a * 0.6), 1.0, true)
+		AstralChrome.star4(mark, centre, 6.0, Color(c, a), 0.2)
 		return
 	var start := _spin * TAU * MARK_SPIN
-	mark.draw_arc(centre, MARK_R, 0.0, TAU, 32, Color(c, 0.18), MARK_W, true)
-	mark.draw_arc(centre, MARK_R, start, start + TAU * 0.72, 24, Color(c, 0.95), MARK_W, true)
+	mark.draw_arc(centre, MARK_R, 0.0, TAU, 48, Color(c, 0.3), 1.0, true)
+	mark.draw_arc(centre, MARK_R, start, start + TAU * 0.3, 24, Color(c, 0.95), 2.0, true)
+	AstralChrome.star4(mark, centre, 6.0, Color(c, 0.9), 0.2)

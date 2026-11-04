@@ -228,13 +228,18 @@ func test_the_heat_bar_keeps_its_colours() -> void:
 
 ## v0.5.5 A5: the pause menu is a left-aligned list over the blurred game, with a key hint, the run's line, and no
 ## build cards beside it; v0.8.0 MU (owner O14, G2 "menu style B"): on a carved stone slab, Ember stone.
-func test_the_ember_stone_pause_menu() -> void:
+## v0.10.5 W3-O18 (owner: "the rest of the UI ... should match the new style"): in Astral, no slab; the focused row
+## marks itself (a star and a streak: AstralButton) instead of the ember diamond.
+func test_the_astral_pause_menu() -> void:
 	var m := PauseMenu.new()
 	add_child_autofree(m)
-	assert_eq(m.theme, MenuStyle.theme(), "the Ember stone theme")
-	assert_not_null(m.find_child("MenuBackdrop", true, false), "the game blurred behind")
-	assert_true(m.slab.get_theme_stylebox("panel") is StoneBox, "the list sits on a stone slab")
-	assert_true(m.slab.is_ancestor_of(m.box), "the rows are on the slab")
+	assert_eq(m.theme, AstralMenu.theme(), "the Astral theme")
+	assert_true(
+		(m.find_child("MenuBackdrop", true, false) as MenuBackdrop).astral,
+		"the game blurred behind, under Astral's ink"
+	)
+	assert_false(m.slab.get_theme_stylebox("panel") is StoneBox, "no stone slab")
+	assert_true(m.slab.is_ancestor_of(m.box), "the rows are in the list")
 	assert_eq(m.find_children("*", "StoneCard", true, false).size(), 0, "no cards beside it")
 	assert_eq(m.find_children("*", "BuildCard", true, false).size(), 0, "no build cards beside it")
 	for c in m.box.get_children():
@@ -247,8 +252,11 @@ func test_the_ember_stone_pause_menu() -> void:
 	assert_eq(m.run_line.text, tr("UI_PAUSE_RUN") % [2, 3, 42, 87, 146])
 	m.focus_first()
 	await wait_frames(2)
-	assert_true(m.marker.visible, "the ember diamond marks the focused row")
-	assert_lt(m.marker.global_position.x, (m.box.get_node("Resume") as Button).global_position.x)
+	var resume := m.box.get_node("Resume") as AstralButton
+	assert_not_null(resume, "the rows are Astral rows")
+	assert_true(resume.is_lit(), "the focused row is lit (its star and streak)")
+	assert_false((m.box.get_node("Build") as AstralButton).is_lit(), "the others are not")
+	assert_false(m.marker.visible, "no ember diamond")
 
 
 func test_the_danger_meter_shows_the_tier_number_from_tier_4_and_turns_red_at_10() -> void:
