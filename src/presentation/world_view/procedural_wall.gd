@@ -936,9 +936,10 @@ static func material(
 	var code := WallCalm.SHADER.replace("//BIAS", str(WallCalm.SOFT_BIAS))
 	if legacy_look:
 		code = code.replace("filter_linear_mipmap_anisotropic", "filter_linear")
-	sh.code = code.replace(
-		"//FADE", "ALPHA = %s;\n\tALPHA_HASH_SCALE = 1.0;" % FADED_ALPHA if faded else ""
-	)
+	# W3-S5: the see-through copy blends smoothly (alpha hash was grain) and writes depth, so it sorts with itself.
+	if faded:
+		code = code.replace("render_mode cull_back,", "render_mode cull_back, depth_draw_always,")
+	sh.code = code.replace("//FADE", "ALPHA = %s;" % FADED_ALPHA if faded else "")
 	var m := ShaderMaterial.new()
 	m.shader = sh
 	m.set_shader_parameter(&"face_tex", face)

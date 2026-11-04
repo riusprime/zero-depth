@@ -258,7 +258,8 @@ func _material(id: StringName, base: StandardMaterial3D, tint: Color) -> Standar
 		m.albedo_color = tint
 		_solid[key] = m
 		var f := m.duplicate() as StandardMaterial3D
-		f.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_HASH
+		f.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		f.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_ALWAYS
 		f.albedo_color.a = FADED_ALPHA
 		_faded[m] = f
 	return _solid[key]
