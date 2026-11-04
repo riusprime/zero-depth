@@ -324,3 +324,49 @@ it needs painted 9-slice art to reach its ref. Whichever wins, a set of line-art
 gain over these shots.
 
 Owner's pick: OWNER ONLY
+
+## Round 3 (W3-O13c): Astral cards
+
+The owner, 2026-11-04: "Astral I like the most but the shape of the cards is odd, that pointy top is bad." Astral is
+the style. This round changes only its card outline; the rest of round 2's Astral (palette, veil panels, lozenge
+plates, medallion with the dotted ring, focus contour and sparks, 1 px lines, 8 px grid, Cinzel titles) is kept.
+**Decide:** shape 1, 2 or 3. Nothing here is built.
+
+**How the shots were made.** `scripts/shots/mock_ui_cards.gd` reuses round 2's plumbing (`mock_ui_refs.gd`: the stage
+run, the real shop opened with E). `scripts/shots/mock_ui2/cards3.gd` draws the three outlines over round 2's card
+(`kit.gd` only gained a `_title_top()` hook so a shape can lower the title). Run on the owner's PC (RTX 3060) from base
+`0095049e` plus this step's scripts:
+
+```
+godot --path . --position -10000,-10000 --resolution 1920x1080 -s scripts/shots/mock_ui_cards.gd
+```
+
+Files (in `build/shots/v0.10.5/w3o13c/`, not tracked): `astral_card_<1|2|3>_shop.png` (four cards, the first
+focused), `astral_card_<1|2|3>_pick.png` (the altar's three, the first focused), and `cards_compare.png` (the focused
+card of each shape at 1.5×, side by side, I / II / III).
+
+**1. Tablet.** A tall rectangle whose top corners are chamfered on a soft curve (22 px), square sides, small cut
+corners at the foot and a shallow keel (8 px) at the bottom centre, the only point left. The crescent finial sits
+inside the card, just under the top edge, cupped upward between two small diamonds. The closest to round 2's crest:
+the same keel and finial, with the shoulders flattened. Build cost: a custom-drawn panel (or a 9-slice whose bottom
+middle holds the keel); medium. Gap: the finial inside the edge is small at 1×, and with the top flat the outline is
+quieter than the others.
+
+**2. Window (lead's pick).** A shallow round arch (34 px rise across the card) over straight sides, a short impost
+tick where the arch meets each side, and a flat foot with cut corners and a small notch (6 px) cut up into the centre.
+The crescent rests on the arch's crown, horns up. The most distinct silhouette of the three, and the most "astral": the
+arch reads as a window onto the sky, keeps round 2's soft curve and crowned finial, and has no point anywhere. The
+title sits 4 px lower to clear the arch. Build cost: the arch's rise changes with the card's width, so it is a
+custom-drawn panel (one `_draw` with the outline and the inner contour), not a `StyleBoxFlat`; medium-high. Gap: at
+the shop's 300 px cards the arch is shallow, so the shape relies on the crown crescent to read as an arch.
+
+**3. Seal.** A plain rectangle with 8 px cut corners and a double hairline frame (the inner line 5 px in, at 28–40%).
+A round medallion with a crescent breaks the top border at its centre; on focus a small star breaks the bottom edge.
+The most orderly, and the crispest (every edge is a whole-pixel hairline), but the closest to Observatory's frame, so
+the least Astral of the three. Build cost: low; one 9-slice for the frame plus the medallion as a texture on top.
+Gap: in a row of four, the four medallions on the top edge read like tabs.
+
+**Lead's pick: 2, Window.** It is the clearest answer to "no pointy top" while keeping what made Astral the owner's
+favourite (the curve and the crescent crown). 3 is the fallback if cost matters most.
+
+Owner's pick: OWNER ONLY
