@@ -361,7 +361,7 @@ the 3 + 1 rule above for this wave.
 | F18 | Forms don't always feel like an upgrade over the default; front-loaded power (Wave + Fire + Venom strong by floor 2), a plateau later, a few cards dominate, elements too strong; ideas (not solutions): more scaling, misc cards, Attack Speed back | **G1 first:** a measured progression audit with proposals, no code until the owner picks | W3-O4 |
 | F19 | Foundry: floor hazard lines overlap incoming projectiles, practically undodgeable | Fix: a hazard line and a volley never close the same space at once | W3-O2 |
 | F20 | Hive Lens: the rotating laser can start facing away; arbitrary, not threatening | Fix: it starts near the hero and sweeps through them | W3-O2 |
-| F21 | The Warlord on floor 1 practically every run | Measure the draw; fix a bias if there is one | W3-S1 |
+| F21 | The Warlord on floor 1 practically every run | Measured fair (154 / 146 of 300). Owner, 2026-11-04: "Add a third boss", **"Share one, scaled"**, **"Brood Mother"**: she joins floor 1's pool at floor-1 strength; a run never meets her twice | W3-S1, W3-O11 |
 | F22 | Boss durability feels good | Kept | — |
 | F23 | The Warlord ~5 % overtuned | Its attacks' damage −5 % (a starting value; O2b already paces its HP) | W3-S1 |
 | F24 | Shop: cards too big, crowded past 10, can't see cards and elements together, reroll cost unclear, no cohesive layout | **G2 first:** shop layout mockups for the owner to pick | W3-O9 |
@@ -382,6 +382,7 @@ Steps (S = Sonnet, O = Opus; at most 2 + 2 at once):
 - **W3-O7** G2: the purple enemy bolt and the Lance ball from `newVFX/`.
 - **W3-O8** Void with Split/Mine, Wave's forward look, the Laser's impact.
 - **W3-O9** G2: the shop layout.
+- **W3-O11** the Brood Mother joins floor 1's pool (Gatekeeper, Warlord, Brood Mother) at floor-1 strength; floor 2 never draws a boss the run already met; old saves keep their bosses.
 
 ### R. Release
 - Version bump, patch notes en + es, What's New, ROADMAP row + History, PROGRESS final; one PR into `main` with
