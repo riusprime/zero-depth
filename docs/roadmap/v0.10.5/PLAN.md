@@ -343,7 +343,7 @@ the 3 + 1 rule above for this wave.
 |---|---|---|---|
 | F1 | Black gaps between the hub's inner circular floor and the walls; gaps between wall pieces | Direct fix: close both | W3-O5 |
 | F2 | "The hub currently lacks a proper background" | Asked: a sky from the packs, or a dark void + fog. Owner, 2026-11-04: **"Dark void + fog"** | W3-O5 |
-| F3 | Pressing L2 still doesn't open the secret room after finding it (thought fixed) | Bug: reproduce through the owner's path, fix | W3-O1 |
+| F3 | Pressing L2 still doesn't open the secret room after finding it (thought fixed) | Bug: reproduce through the owner's path, fix. First cause found (a pad's old stick aim sticks) rejected by the owner: "I shot at the wall, actually seeing the blast hit it and it did not break or open"; the aim change is not merged. **No hint** (owner: "the idea is that it is hidden and unclear, so the player should not know how to open it in the beginning") | W3-O1 |
 | F4 | Fireballs look and feel excellent | Kept; the reference look for other bolts | — |
 | F5 | Ground fire pools (Fire + Bleed) too large, bright, frequent; hide enemies | Direct fix: smaller, dimmer, fewer at once | W3-S4 |
 | F6 | The purple enemy bolts are underwhelming next to the fireballs | VFX pass from the `newVFX/` packs, G2 shots | W3-O7 |
