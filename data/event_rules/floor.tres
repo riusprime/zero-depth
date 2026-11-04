@@ -14,7 +14,6 @@ cursed_chest_first_floor = 1
 cursed_chest_every_floors = 2
 cursed_chests_per_floor = 1
 defend_radius_m = 4.5
-cleanse_price = 60
 core_window_seconds = 3.0
 core_mod_weight = 10
 boss_core_legendary_chance = 0.35

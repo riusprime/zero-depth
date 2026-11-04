@@ -1,10 +1,10 @@
 class_name ShopTile
 extends PanelContainer
-## One button of the shop panel (v0.5.0 SH): the heal, the reroll or a salvage row. A title, and under it a detail line
-## and a price or refund with the shard icon. A disabled tile is dimmed and its price turns red when you can't afford
-## it. A mouse click or hover reports itself; the panel decides.
-## v0.6.1 R1: the tile is a stone plaque (PlaqueBox; crystal until v0.8.0 MU): a salvage row in its card's family
-## colour, the heal green, the reroll amber, the cleanse violet (Plaques.USE_FAMILY); the focused tile is drawn bright.
+## One button of the shop panel (v0.5.0 SH): the heal or the reroll (a salvage row until v0.10.5 W3-O9). A title,
+## and under it a detail line and a price or refund with the shard icon. A disabled tile is dimmed and its price
+## turns red when you can't afford it. A mouse click or hover reports itself; the panel decides.
+## v0.6.1 R1: the tile is a stone plaque (PlaqueBox; crystal until v0.8.0 MU): a card's row in its family colour,
+## the heal green, the reroll amber (Plaques.USE_FAMILY); the focused tile is drawn bright.
 ## The title and the detail step down in size until they fit the plaque's dark panel (en and es).
 
 signal clicked

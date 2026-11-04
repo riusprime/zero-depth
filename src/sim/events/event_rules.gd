@@ -19,7 +19,6 @@ var cursed_chest_first_floor := 1
 var cursed_chest_every_floors := 2
 var cursed_chests_per_floor := 1
 var defend_radius_m := 4.5
-var cleanse_price := 60
 ## v0.6.0 CU core theft: a boss's steal window (ticks), a mod core's draw weight and the spacing of drops at one spot.
 ## (v0.9.0 EL: the elite's stagger, its HP bonus, the ambush's distance and Marked's hunt range are gone.)
 var core_window_ticks := 120

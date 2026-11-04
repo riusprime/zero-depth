@@ -1,18 +1,24 @@
 extends SceneTree
 ## v0.5.0 SH screenshots (needs a renderer, not --headless): the shop terminal in its room, and the shop panel open
-## (stock, heal, reroll, salvage list). Shot setup only: it grants Bomb Lobber and two stat cards, gives 120 shards,
-## lowers HP and places the hero in front of the terminal directly; the real input path is
+## (stock, heal, reroll; v0.10.5 W3-O9: nothing else). Shot setup only: it grants Bomb Lobber and two stat cards,
+## gives 120 shards, lowers HP and places the hero in front of the terminal directly; the real input path is
 ## tests/e2e/test_e2e_shop.gd.
 ##   godot --path . -s scripts/shots/shop.gd   -> build/shots/v0.5.0/shop/
+##   godot --path . -s scripts/shots/shop.gd -- --out=res://build/shots/v0.10.5/w3o9/   (another folder)
 
-const OUT := "res://build/shots/v0.5.0/shop/"
+const OUT_DEFAULT := "res://build/shots/v0.5.0/shop/"
+
+var _out := OUT_DEFAULT
 
 var _main: Main
 var _frame := 0
 
 
 func _initialize() -> void:
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--out="):
+			_out = a.trim_prefix("--out=")
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_out))
 	print("shop: renderer=%s" % RenderingServer.get_current_rendering_method())
 	ProfileStore.use_shared(ProfileStore.new(""))
 	_main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
@@ -61,6 +67,6 @@ func _tap(code: Key) -> void:
 
 func _shot(name: String) -> void:
 	var img := root.get_viewport().get_texture().get_image()
-	var path := ProjectSettings.globalize_path(OUT + name + ".png")
+	var path := ProjectSettings.globalize_path(_out + name + ".png")
 	img.save_png(path)
 	print("shop: shot ", path)

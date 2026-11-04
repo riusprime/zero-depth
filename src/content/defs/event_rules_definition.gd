@@ -25,8 +25,6 @@ extends ContentDef
 @export var cursed_chests_per_floor := 1
 ## Wandering Drone: stay within this distance of the pedestal.
 @export var defend_radius_m := 4.5
-## The shop's cleanse: lifting the latest curse costs this many shards x the floor (SH's terminal).
-@export var cleanse_price := 60
 ## v0.6.0 CU core theft (PLAN v0.5.5 X2; SIGNATURE.md): a boss's steal window of core_window_seconds (v0.9.5 BH1, Q3:
 ## 3 s from the start of each phase change; it was 2 s from a stagger). An elite's core is a mod (each weighs
 ## core_mod_weight) or a rare stat card (its card weight).
@@ -96,8 +94,6 @@ func validate() -> Array[ValidationIssue]:
 				&"range", resource_path, "curse_room_deep_chance_permille is outside 0..1000"
 			)
 		)
-	if cleanse_price <= 0:
-		issues.append(ValidationIssue.new(&"range", resource_path, "cleanse_price must be > 0"))
 	if core_mod_weight < 0:
 		issues.append(
 			ValidationIssue.new(&"negative", resource_path, "core_mod_weight is negative")

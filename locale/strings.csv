@@ -585,15 +585,10 @@ SHOP_HEAL,Heal +%d HP,Curar +%d PV
 SHOP_HEAL_USED,Already healed here,Ya te curaste aquí
 SHOP_HEAL_FULL,Your HP is full,Tienes la vida al máximo
 SHOP_REROLL,Reroll the stock,Renovar el surtido
-SHOP_CLEANSE,Lift your latest curse,Quitar tu última maldición
-SHOP_SALVAGE,Salvage,Desguace
-SHOP_SALVAGE_NONE,Nothing to salvage yet,Aún no hay nada que desguazar
 SHOP_BUYS_LEFT,Buys left: %d,Compras restantes: %d
 SHOP_BUYS_DONE,No buys left (%d/%d),Sin compras (%d/%d)
 SHOP_REROLL_NONE,Nothing left to reroll,No queda nada que renovar
-SHOP_SELL_STAT,%s · %d held,%s · %d en tu poder
-SHOP_SELL_ABILITY,Frees the slot · level %d,Libera la ranura · nivel %d
-SHOP_HINT,"Arrows or 1-4 to choose · Enter or A to buy or sell · Esc or B to leave","Flechas o 1-4 para elegir · Intro o A para comprar o vender · Esc o B para salir"
+SHOP_HINT,"Arrows or 1-4 to choose · Enter or A to buy · Esc or B to leave","Flechas o 1-4 para elegir · Intro o A para comprar · Esc o B para salir"
 MAP_LEGEND_SHOP,Shop,Tienda
 HUD_FLOOR_DEEP,Floor %d · Deep · %s,Piso %d · Profundo · %s
 HUD_FLOOR_CARD_DEEP,Floor %d · Deep,Piso %d · Profundo

@@ -1,6 +1,6 @@
 class_name ShopTable
 extends RefCounted
-## The shop's compiled rules (v0.5.0 SH, ROADMAP "Shops", "salvage"), built from ShopDefinition by
+## The shop's compiled rules (v0.5.0 SH, ROADMAP "Shops"), built from ShopDefinition by
 ## ContentCompiler.compile_shop. The defaults equal the data's starting values, so a world built without content still
 ## has a sane shop. Integer math only: prices in shards, shares in per mille.
 
@@ -10,8 +10,7 @@ var offer_size := 4
 var rarity_prices := PackedInt32Array([30, 55, 90])
 ## Each floor after the first raises every price but the reroll by this share of the floor-1 price (x 1, 1.5, 2).
 var floor_price_step_permille := 500
-## v0.5.5 EC (owner S4): floors 2 and later multiply the stepped prices (cards, heal) by this too (x 1, 2.25, 3);
-## salvage refunds stay on the floor step alone.
+## v0.5.5 EC (owner S4): floors 2 and later multiply the stepped prices (cards, heal) by this too (x 1, 2.25, 3).
 var late_floor_permille := 1500
 ## v0.5.5 EC (owner S3): the most cards bought at one floor's shop (0 = no limit).
 var max_buys := 4
@@ -22,9 +21,6 @@ var heal_price := 40
 ## half up (20, 30, 45, 68 ...).
 var reroll_price := 20
 var reroll_step_permille := 500
-## Salvage: a mod or stat card sells for this share of its shop price; an ability refunds this much per level.
-var sell_permille := 400
-var ability_refund_per_level := 10
 ## The interact button opens the shop within this distance of the terminal.
 var interact_radius_m := 1.8
 ## v0.7.5 MG (owner N12, "the shop is also gonna be there every two … floors"): the shop stands on floor `first_floor`
@@ -49,12 +45,12 @@ func on_floor(floor_index: int) -> bool:
 ## The floor's price multiplier, per mille (1000 on floor 1): the floor step, and from floor 2 the late-floor
 ## multiplier on top (v0.5.5 EC, S4).
 func floor_step_permille(floor_index: int) -> int:
-	var step := sell_step_permille(floor_index)
+	var step := base_step_permille(floor_index)
 	return step if floor_index < 2 else scaled(step, late_floor_permille)
 
 
-## The floor step alone (1000, 1500, 2000), what salvage refunds go by (v0.5.5 EC: not the late-floor multiplier).
-func sell_step_permille(floor_index: int) -> int:
+## The floor step alone (1000, 1500, 2000), without the late-floor multiplier (WandMigration's refunds go by it).
+func base_step_permille(floor_index: int) -> int:
 	return 1000 + floor_price_step_permille * maxi(0, floor_index - 1)
 
 
@@ -78,10 +74,3 @@ func reroll_cost(uses: int) -> int:
 	for k in uses:
 		p = scaled(p, 1000 + reroll_step_permille)
 	return maxi(1, p)
-
-
-## What a card of `rarity` sells for on floor `floor_index` (its price under the floor step alone).
-func sell_price(rarity: int, floor_index: int) -> int:
-	var r := clampi(rarity, 0, mini(rarity_prices.size() - 1, 2))  # v0.8.0 RR: a legendary sells as an epic
-	var base := maxi(1, scaled(rarity_prices[r], sell_step_permille(floor_index)))
-	return scaled(base, sell_permille)

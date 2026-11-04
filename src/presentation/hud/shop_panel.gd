@@ -1,44 +1,35 @@
 class_name ShopPanel
 extends ModalPanel
 ## The shop panel (v0.5.0 SH): while the sim waits on the open shop, the stock (the pick's cards, PickSlot, in the
-## current CardStyle, with a price and the shard icon under each), the heal and the reroll, and the salvage list
-## (every mod, stat card and ability but the weapon you can sell, with its refund). It shows what the sim offers and
-## sends the player's choice as input (`picked` → InputLatch.note_pick → InputFrame.pick); it decides nothing.
+## current CardStyle, with a price and the shard icon under each), the heal and the reroll (v0.10.5 W3-O9, owner
+## 2026-11-04: nothing else; the salvage list and the curse lift are gone). It shows what the sim offers and sends the
+## player's choice as input (`picked` → InputLatch.note_pick → InputFrame.pick); it decides nothing.
 ## A card you can't afford or can't use, a spent heal and an unaffordable reroll are dimmed and send nothing.
 ## v0.5.5 EC (owner S2, S3): a line under the title shows how many cards you can still buy on this floor; at the limit
 ## it turns red and says so, the unsold cards and the reroll dim and send nothing. A reroll with every slot sold
 ## dims too ("Nothing left to reroll"): rerolls redraw only the unsold slots.
 ## - Mouse: hover focuses, a click acts.
 ## - Keyboard: arrows move the focus (left / right along a row, up / down between rows), 1-4 jump to a card, Enter
-##   buys or sells, Esc leaves.
+##   buys, Esc leaves.
 ## - Pad: d-pad or left stick moves the focus, A (Cross) acts, B (Circle) leaves.
 ## Space (dash) never confirms: the panel doesn't use ui_accept.
-## v0.6.1 R1: the services and the salvage rows are plaques (ShopTile); v0.8.0 MU: the plaques and the stock's
-## cards are carved Ember stone (PlaqueBox, StoneCard).
+## v0.6.1 R1: the services are plaques (ShopTile); v0.8.0 MU: the plaques and the stock's cards are carved Ember
+## stone (PlaqueBox, StoneCard).
 
 ## Key repeats (PanelInput.Echo): only the arrows repeat; a held Enter acts once.
 const ECHO := PanelInput.Echo.ARROWS
-const SALVAGE_COLUMNS := 4
-## v0.5.5 A4: the stock's cards are drawn a little smaller than the pick's, so the services and the salvage
-## list still fit under them at 1080p.
+## v0.5.5 A4: the stock's cards are drawn a little smaller than the pick's, so the services fit under them at 1080p.
 const CARD_SCALE := 0.92
 const POOR := Color("#FF5A4D")
-## v0.6.1 R1: a salvage plaque's width (px; four fit across at 1080p).
-const SELL_W := 340.0
 
 var heal_tile := ShopTile.new("ShopHeal", 360.0)
 var reroll_tile := ShopTile.new("ShopReroll", 360.0)
-## v0.5.0 EV: lift your latest curse (shown only while you hold one).
-var cleanse_tile := ShopTile.new("ShopCleanse", 360.0)
 var _dim := ColorRect.new()
 var _title := Label.new()
 var _shards := Label.new()
 var _buys := Label.new()
 var _hint := Label.new()
-var _salvage_title := Label.new()
-var _salvage_none := Label.new()
 var _cards := HBoxContainer.new()
-var _salvage := GridContainer.new()
 ## Focusable entries in reading order: {value, enabled, row, focus (Callable), node}.
 var _entries: Array[Dictionary] = []
 var _sig := ""
@@ -79,27 +70,14 @@ func _init() -> void:
 	services.add_theme_constant_override("separation", 16)
 	services.add_child(heal_tile)
 	services.add_child(reroll_tile)
-	services.add_child(cleanse_tile)
 	col.add_child(services)
-	col.add_child(_salvage_title)
-	_salvage.name = "ShopSalvage"
-	_salvage.columns = SALVAGE_COLUMNS
-	_salvage.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_salvage.add_theme_constant_override("h_separation", 12)
-	_salvage.add_theme_constant_override("v_separation", 10)
-	_salvage.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	col.add_child(_salvage)
-	col.add_child(_salvage_none)
 	col.add_child(_hint)
 	HudStyle.style_label(_title, 26, true)
 	HudStyle.style_label(_shards, 24, true)
-	HudStyle.style_label(_salvage_title, 19, true)
-	HudStyle.style_label(_salvage_none, 15)
 	HudStyle.style_label(_hint, 15)
 	HudStyle.style_label(_buys, 16)
 	_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
-	_salvage_none.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
-	style_labels([_title, _shards, _buys, _hint, _salvage_title, _salvage_none])
+	style_labels([_title, _shards, _buys, _hint])
 	visible = false
 
 
@@ -114,12 +92,9 @@ func sync(reader: WorldReader) -> void:
 	var sig := var_to_str(
 		[
 			s["stock"],
-			s["sell"],
 			s["heal_used"],
 			s["heal_amount"],
 			s["reroll_price"],
-			s["cleanse_curse"],
-			s["cleanse_price"],
 			s["buys_left"],
 			reader.shards(),
 			TranslationServer.get_locale()
@@ -165,14 +140,6 @@ func card_price_text(k: int) -> String:
 	return (_cards.get_child(k).get_child(1).get_child(1) as Label).text
 
 
-func salvage_count() -> int:
-	return _salvage.get_child_count()
-
-
-func salvage_tile(n: int) -> ShopTile:
-	return _salvage.get_child(n) as ShopTile
-
-
 func title_text() -> String:
 	return _title.text
 
@@ -188,7 +155,7 @@ func buys_at_limit() -> bool:
 
 func _render(reader: WorldReader, s: Dictionary) -> void:
 	_entries.clear()
-	for c in _cards.get_children() + _salvage.get_children():
+	for c in _cards.get_children():
 		c.get_parent().remove_child(c)
 		c.free()  # now, not at the frame's end: the panel re-renders from the tick, never from a child's signal
 	_title.text = tr("SHOP_TITLE")
@@ -207,13 +174,6 @@ func _render(reader: WorldReader, s: Dictionary) -> void:
 	for k in stock.size():
 		_add_card(reader, k, stock[k])
 	_render_services(s)
-	_salvage_title.text = tr("SHOP_SALVAGE")
-	var sells: Array = s["sell"]
-	_salvage_none.text = tr("SHOP_SALVAGE_NONE")
-	_salvage_none.visible = sells.is_empty()
-	_salvage.columns = clampi(sells.size(), 1, SALVAGE_COLUMNS)
-	for n in sells.size():
-		_add_sell(reader, n, sells[n])
 	for e in _entries:
 		var node: Control = e["node"]
 		for c in node.find_children("*", "Control", true, false):
@@ -299,7 +259,7 @@ func _render_services(s: Dictionary) -> void:
 		ShardIcon.MID,
 		Plaques.of_use(&"shop_reroll")
 	)
-	for t: ShopTile in [heal_tile, reroll_tile, cleanse_tile]:
+	for t: ShopTile in [heal_tile, reroll_tile]:
 		for sig: Signal in [t.hovered, t.clicked]:
 			for conn in sig.get_connections():
 				sig.disconnect(conn["callable"])
@@ -325,76 +285,6 @@ func _render_services(s: Dictionary) -> void:
 			"row": 1,
 			"focus": reroll_tile.set_focused,
 			"node": reroll_tile
-		}
-	)
-	_render_cleanse(s)
-
-
-## v0.5.0 EV: the paid cleanse, while a curse is held (its name on the tile; Shop.cleanse lifts the latest).
-func _render_cleanse(s: Dictionary) -> void:
-	var curse := int(s["cleanse_curse"])
-	cleanse_tile.visible = curse >= 0
-	if curse < 0:
-		return
-	var ok := _shards_now() >= int(s["cleanse_price"])
-	cleanse_tile.show_tile(
-		tr("SHOP_CLEANSE"),
-		tr(s["cleanse_name_key"]),
-		int(s["cleanse_price"]),
-		ok,
-		not ok,
-		false,
-		CurseLook.COLOR,
-		Plaques.of_use(&"shop_cleanse")
-	)
-	var c := _entries.size()
-	cleanse_tile.hovered.connect(func() -> void: _set_focus(c))
-	cleanse_tile.clicked.connect(func() -> void: _act(c))
-	_entries.append(
-		{
-			"value": InputFrame.PICK_SHOP_CLEANSE,
-			"enabled": ok,
-			"row": 1,
-			"focus": cleanse_tile.set_focused,
-			"node": cleanse_tile
-		}
-	)
-
-
-func _add_sell(reader: WorldReader, n: int, e: Dictionary) -> void:
-	var code := int(e["code"])
-	var face := PickPanel.card_face(self, reader, code)
-	var info := reader.card_info(code)
-	var detail := ""
-	match int(e["kind"]):
-		WorldReader.SHOP_SELL_MOD:
-			detail = tr("UI_CARD_MOD")
-		WorldReader.SHOP_SELL_STAT:
-			var rarity: String = tr(
-				["RARITY_COMMON", "RARITY_RARE", "RARITY_EPIC", "RARITY_LEGENDARY"][int(
-					info["rarity"]
-				)]
-			)
-			detail = tr("SHOP_SELL_STAT") % [rarity, int(e["ref"])]
-		WorldReader.SHOP_SELL_ABILITY:
-			var lvl := int(reader.abilities()[int(e["ref"])]["level"])
-			detail = tr("SHOP_SELL_ABILITY") % lvl
-	var tile := ShopTile.new("ShopSell%d" % (n + 1), SELL_W)
-	var plaque := Plaques.of_card(face["id"], int(face["type"]), int(face["tier"]))
-	tile.show_tile(
-		face["title"], detail, int(e["refund"]), true, false, true, face["color"], plaque
-	)
-	_salvage.add_child(tile)
-	var at := _entries.size()
-	tile.hovered.connect(func() -> void: _set_focus(at))
-	tile.clicked.connect(func() -> void: _act(at))
-	_entries.append(
-		{
-			"value": InputFrame.PICK_SHOP_SELL + n,
-			"enabled": true,
-			"row": 2 + n / SALVAGE_COLUMNS,
-			"focus": tile.set_focused,
-			"node": tile
 		}
 	)
 

@@ -524,20 +524,21 @@ steps non-negative, every stat known and listed once, the pool not empty.
 
 **Shop** (v0.5.0 SH, PLAN R1, R2; category `shop`, `data/shop/terminal.tres`): `ShopDefinition` holds `offer_size`
 (cards in the stock, 4), `rarity_prices` (floor 1's price for a common, rare and epic card: 30 / 55 / 90; v0.8.0 RR:
-an optional fourth for a legendary one, data 150; salvage refunds at most the epic price), `floor_price_step` (each later floor raises every price but the reroll by this
+an optional fourth for a legendary one, data 150), `floor_price_step` (each later floor raises every price but the reroll by this
 share of floor 1's: × 1, 1.5, 2), `heal_share` (0.3 of max HP, once per shop) and `heal_price` (40 × the floor
 step), `reroll_price` and `reroll_step` (20, then × 1.5 per use at that shop, rounded half up: 20, 30, 45, 68),
-`sell_share` (a mod or stat card sells for 0.4 of its shop price; a stat card one stack, the stat values rebuilt from
-the cards left so the caps hold), `ability_refund_per_level` (10 shards per level, was 25: a free ability plus a bought level-up must not salvage for profit, M-LOOP; for salvaging an ability, never the
-weapon; its slot frees for a later ability card) and `interact_radius_m`. The stock is drawn from `loot` by a chest's
+and `interact_radius_m`. v0.10.5 W3-O9 (owner, 2026-11-04: "it should only show the heal, reroll and the 4 cards,
+lifting the curse and selling is too broken"): `sell_share` and `ability_refund_per_level` are gone with salvage, and
+`EventRulesDefinition.cleanse_price` with the shop's curse lift (an older `.tres` that still sets them loads: the
+loader drops an unknown property). WandMigration keeps the old refund numbers as its own constants. The stock is drawn from `loot` by a chest's
 rules (`Offers.draw`: ability cards only while they can apply, mods only with their ability), and a mod in the stock
 is out of the item pool like one in an altar's offer. Placement is a pass of its own (`ShopPlacement.pick`, stream
 `shop_room`, never `map`): one per floor, never the start hall, the boss room or the room before the boss door, dead
-ends first. Validation: prices, the heal and reroll prices, the refund and the radius positive; three rarity prices;
-the steps non-negative; the shares in (0, 1]; `offer_size` 1–9. v0.5.5 EC: a reroll draws only the unsold slots (a
+ends first. Validation: prices, the heal and reroll prices and the radius positive; three rarity prices;
+the steps non-negative; `heal_share` in (0, 1]; `offer_size` 1–9. v0.5.5 EC: a reroll draws only the unsold slots (a
 bought slot stays sold for the floor, owner S2); `max_buys` (4, owner S3: cards bought at the floor's shop, the heal
 and rerolls don't count; 0 = no limit; ≥ 0); `late_floor_price` (1.5, owner S4: floors 2+ multiply the floor step
-by this: × 1, 2.25, 3; salvage refunds stay on the floor step alone; ≥ 1). v0.7.5 MG (owner N12, "the shop is
+by this: × 1, 2.25, 3; ≥ 1). v0.7.5 MG (owner N12, "the shop is
 also gonna be there every two … floors"): `first_floor` (1) and `every_floors` (2), both > 0: the shop stands on
 floor `first_floor` and every `every_floors` floors after it (`FloorCadence.on`, `ShopTable.on_floor`: floors 1, 3,
 5 …; a 3-floor run has two). The floor number keeps counting past the run's last floor, so an endless loop keeps

@@ -790,8 +790,6 @@ static func compile_shop(def: ShopDefinition) -> ShopTable:
 	t.heal_price = def.heal_price
 	t.reroll_price = def.reroll_price
 	t.reroll_step_permille = int(round(def.reroll_step * 1000.0))
-	t.sell_permille = int(round(def.sell_share * 1000.0))
-	t.ability_refund_per_level = def.ability_refund_per_level
 	t.interact_radius_m = def.interact_radius_m
 	t.first_floor = def.first_floor  # v0.7.5 MG (N12)
 	t.every_floors = def.every_floors

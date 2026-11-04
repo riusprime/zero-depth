@@ -66,8 +66,6 @@ func sync(reader: WorldReader) -> void:
 					WorldReader.SHOP_BUY,
 					WorldReader.SHOP_HEAL,
 					WorldReader.SHOP_REROLL,
-					WorldReader.SHOP_SELL,
-					WorldReader.SHOP_SALVAGE
 				]
 			)
 		):
