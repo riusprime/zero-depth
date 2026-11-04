@@ -151,11 +151,50 @@ func _draw_corner_ticks() -> void:
 		[e, Vector2(-1, 0), Vector2(0, -1)],
 		[Vector2(o.x, e.y), Vector2(1, 0), Vector2(0, -1)],
 	]
+	if HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O17: Astral's frame (1 px lines, small ornaments)
+		_draw_astral_ticks(arm)
+		return
 	for c: Array in corners:
 		var p: Vector2 = c[0]
 		var pts := PackedVector2Array([p + c[1] * arm, p, p + c[2] * arm])
 		draw_polyline(pts, MinimapStyle.SHADOW, 2.0 + MinimapStyle.SHADOW_WIDTH)
 		draw_polyline(pts, MinimapStyle.TICK, 2.0)
+
+
+## v0.10.5 W3-O17: the corner window in Astral: at each corner a 1 px silver L over a dark halo, a fainter inner L 4 px
+## in, and a small diamond on the corner; a four-point star under the window's foot and a diamond over its head.
+func _draw_astral_ticks(arm: float) -> void:
+	var w := roundf(size.x)
+	var h := roundf(size.y)
+	var halo := Color(MinimapStyle.SHADOW, 0.6)
+	for c: Array in [
+		[0.0, 0.0, 1.0, 1.0],
+		[w - 1.0, 0.0, -1.0, 1.0],
+		[w - 1.0, h - 1.0, -1.0, -1.0],
+		[0.0, h - 1.0, 1.0, -1.0]
+	]:
+		var x: float = c[0]
+		var y: float = c[1]
+		var sx: float = c[2]
+		var sy: float = c[3]
+		for k: Array in [
+			[0.0, MinimapStyle.TICK, arm], [4.0, Color(MinimapStyle.TICK, 0.3), arm * 0.5]
+		]:
+			var d: float = k[0]
+			var col: Color = k[1]
+			var a: float = k[2]
+			var px := x + sx * d
+			var py := y + sy * d
+			if d == 0.0:
+				draw_rect(Rect2(minf(px, px + sx * a) - 1.0, py - 1.0, a + 2.0, 3.0), halo)
+				draw_rect(Rect2(px - 1.0, minf(py, py + sy * a) - 1.0, 3.0, a + 2.0), halo)
+			AstralChrome.hline(self, px, px + sx * a, py, col)
+			AstralChrome.vline(self, px, py, py + sy * a, col)
+		AstralChrome.dia(self, Vector2(x + 0.5, y + 0.5), 3.0, MinimapStyle.TICK, HudStyle.A_INK)
+	AstralChrome.star4(self, Vector2(roundf(w * 0.5) + 0.5, h + 8.5), 6.0, MinimapStyle.TICK, 0.18)
+	AstralChrome.dia(
+		self, Vector2(roundf(w * 0.5) + 0.5, -5.5), 2.5, MinimapStyle.TICK, HudStyle.A_INK
+	)
 
 
 ## Sets the centre, scale and origin; returns the rect the floor is drawn in.

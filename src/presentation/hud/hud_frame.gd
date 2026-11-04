@@ -45,6 +45,8 @@ func _draw() -> void:
 				var pts := HudStyle.plate_points(Rect2(Vector2.ONE, size - Vector2(2, 2)))
 				pts.append(pts[0])
 				draw_polyline(pts, Color(tint, 0.6), 1.0, true)
+		HudStyle.Style.ASTRAL:
+			pass
 		HudStyle.Style.SLATE:
 			draw_rect(Rect2(Vector2.ZERO, size), HudStyle.panel_bg(style))
 			if warned:

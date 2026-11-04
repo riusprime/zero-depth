@@ -7,6 +7,10 @@ extends Control
 ## seconds left; a ready square has a lit border and flashes white for 0.15 s the tick it becomes ready. The binding
 ## glyph (the live binding of the last device used) sits in a pill at the bottom-left corner; Blink's charges at the
 ## top right. Reads WorldReader only (EI-07).
+## v0.10.5 W3-O17 (UI style Astral): in HudStyle.ASTRAL each square holds a round medallion instead of a box (the
+## round-2 mock's): an ink disc in a silver ring with a dotted inner ring, four small stars round it while ready;
+## cooling, a dark wedge over the part still cooling, a moon-blue arc outside with a diamond at its head, the seconds
+## in Cinzel; the binding in a 1 px key cap under it. Same squares, same places, same reads.
 
 const SIDE := 76.0
 const GAP := 6.0
@@ -27,6 +31,8 @@ const FLASH_ALPHA := 0.45
 const DECIMAL_BELOW := 10.0
 ## The PlayStation names of the pad glyphs.
 const PS_NAMES := {"RT": "R2", "LT": "L2", "RB": "R1", "LB": "L1"}
+## v0.10.5 W3-O17: ASTRAL's medallion radius inside a square (its cooldown arc runs 6 px outside it).
+const A_RADIUS := 29.0
 
 ## True while the last device used was a gamepad (tests set it).
 var pad_active := false
@@ -172,6 +178,9 @@ func _draw() -> void:
 
 
 func _square(r: Rect2, s: Dictionary) -> void:
+	if HudStyle.current == HudStyle.Style.ASTRAL:
+		_medallion(r, s)
+		return
 	var cooling: bool = s["cooling"]
 	var box := StyleBoxFlat.new()
 	box.bg_color = PLATE
@@ -208,6 +217,53 @@ func _square(r: Rect2, s: Dictionary) -> void:
 			22,
 			16,
 			Color.WHITE
+		)
+
+
+## v0.10.5 W3-O17: the square `r` as an Astral medallion (AstralHudParts.medallion), its icon, seconds, flash, charges
+## and key cap.
+func _medallion(r: Rect2, s: Dictionary) -> void:
+	var cooling: bool = s["cooling"]
+	var c := (r.get_center() - Vector2(0, 5)).round()
+	var rad := A_RADIUS
+	AstralHudParts.medallion(self, c, rad, float(s["share"]) if cooling else 0.0)
+	var ir := roundf(rad * 0.52)
+	var icol := HudStyle.A_TEXT if not cooling else Color(HudStyle.A_METAL, 0.3)
+	AbilitySquareIcons.draw(
+		self, s["icon"], Rect2(c - Vector2.ONE * ir, Vector2.ONE * ir * 2.0), icol
+	)
+	if cooling:
+		AstralHudParts.serif_text(
+			self,
+			seconds_text(float(s["seconds"])),
+			Vector2(r.position.x, c.y + 8.0),
+			22,
+			HudStyle.A_TEXT,
+			HORIZONTAL_ALIGNMENT_CENTER,
+			r.size.x,
+			0,
+			700
+		)
+	var f := float(_flash.get(s["id"], 0.0))
+	if f > 0.0:
+		var a := f / FLASH_SECONDS
+		draw_circle(c, rad, Color(HudStyle.A_LINE_HI, FLASH_ALPHA * a))
+		draw_arc(c, rad + 1.0, 0.0, TAU, 72, Color(HudStyle.A_LINE_HI, a), 2.0, true)
+	AstralHudParts.keycap(self, s["glyph"], Vector2(c.x, r.end.y - 1.0))
+	if int(s["charges"]) > 1:
+		var cc := c + Vector2(rad * 0.74, -rad * 0.74)
+		draw_circle(cc, 10.0, Color(HudStyle.A_INK, 0.92))
+		draw_arc(cc, 10.0, 0.0, TAU, 32, HudStyle.A_METAL, 1.0, true)
+		AstralHudParts.serif_text(
+			self,
+			str(s["charges"]),
+			cc + Vector2(-10, 5),
+			14,
+			HudStyle.A_TEXT,
+			HORIZONTAL_ALIGNMENT_CENTER,
+			20,
+			0,
+			700
 		)
 
 

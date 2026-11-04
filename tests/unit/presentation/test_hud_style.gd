@@ -165,7 +165,8 @@ func test_every_style_builds_every_piece() -> void:
 
 
 func test_the_calm_hud_has_plain_labels_and_thin_bars() -> void:
-	assert_eq(HudStyle.DEFAULT, HudStyle.Style.EMBER, "the owner's A5 pick B (2026-10-08)")
+	# v0.10.5 W3-O17: the shipped style is Astral (the owner's W3-O13b pick, 2026-11-04); EMBER was A5's pick B.
+	assert_eq(HudStyle.DEFAULT, HudStyle.Style.ASTRAL, "the owner's W3-O13b pick")
 	var hud := Hud.new()
 	add_child_autofree(hud)
 	hud.sync(WorldReader.new(_world()))
@@ -179,7 +180,11 @@ func test_the_calm_hud_has_plain_labels_and_thin_bars() -> void:
 		# StoneCard); every other HUD label stays plain type.
 		# v0.8.0 N8: the tablet's face hangs from the card's pivot (StoneCard → CardFx → Pivot → Face → Title)
 		var card_title := l.name == &"Title" and l.get_parent().get_parent().get_parent() is CardFx
-		assert_eq((l as Label).uppercase, card_title, "%s is plain type" % l.name)
+		# v0.10.5 W3-O17: Astral's titles (W3-O16's headings and plates) are Cinzel capitals by design
+		var f := l.get_theme_font(&"font") as FontVariation
+		var astral_title := f != null and f.base_font == AstralCardArt.serif().base_font
+		if not astral_title:
+			assert_eq((l as Label).uppercase, card_title, "%s is plain type" % l.get_path())
 	assert_lte(Hud.BAR.y, 12.0, "a thin HP bar (v0.9.5 HU: 15 percent bigger than 10)")
 	assert_lte(DangerMeter.SIZE.y, 16.0, "a slim danger meter")
 	assert_lte(BossBar.BAR.y, 10.0, "a thin boss bar")
@@ -189,8 +194,10 @@ func test_the_calm_hud_has_plain_labels_and_thin_bars() -> void:
 
 
 ## v0.5.5 A5: "ingame UI, heat, health and minimap from B": the HP and top plates are ember-lit stone slabs, HP is a
-## red bar, and the warning still visibly changes the fill.
+## red bar, and the warning still visibly changes the fill. v0.10.5 W3-O17: EMBER is no longer the default; it is
+## still a style, built here on purpose.
 func test_the_ember_stone_hud() -> void:
+	HudStyle.current = HudStyle.Style.EMBER
 	var hud := Hud.new()
 	add_child_autofree(hud)
 	hud.sync(WorldReader.new(_world()))
@@ -205,6 +212,43 @@ func test_the_ember_stone_hud() -> void:
 	assert_ne(hud.hp_bar().fill_color(), HudStyle.HP_RED, "the low-HP pulse shows on a red bar")
 	var pts := HudStyle.plate_points(Rect2(0, 0, 200, 60))
 	assert_eq(pts.size(), 8, "a chamfered (chipped) slab, not a rectangle")
+
+
+## v0.10.5 W3-O17 (owner, 2026-11-04: "and what about the rest of the UI? it should match the new style"; UI style
+## Astral, W3_O13_UI_STYLE_G2.md round 2): the HUD is unboxed (no slab), the HP bar is one continuous moon-blue bar with
+## the HP medallion at its left end and the weapon's name over it, the warning still changes the fill and tints the
+## medallion, the type is Astral's (Cinzel titles, Astral text colour), and nothing orange is left in the HUD's tokens.
+func test_the_astral_hud() -> void:
+	var hud := Hud.new()
+	add_child_autofree(hud)
+	var w := _world()
+	var r := WorldReader.new(w)
+	hud.sync(r)
+	await wait_process_frames(2)
+	var hp := hud.find_child("HpPlate", true, false) as HudFrame
+	assert_eq(hp.style, HudStyle.Style.ASTRAL)
+	assert_eq(hud.hp_bar().style, HudStyle.Style.ASTRAL, "the continuous Astral bar")
+	assert_eq(hud.hp_bar().color, HudStyle.A_HP, "HP is Astral's moon-blue")
+	assert_eq(HudStyle.text_color(), HudStyle.A_TEXT)
+	var medal := hud.find_child("HpMedal", true, false) as Control
+	assert_not_null(medal, "the HP medallion")
+	assert_almost_eq(
+		medal.get_global_rect().end.x, hp.get_global_rect().position.x, 1.0, "at the bar's left end"
+	)
+	assert_lt(medal.get_global_rect().end.y, hud.get_viewport_rect().size.y, "on screen")
+	var floor_label := hud.find_child("FloorLabel", true, false) as Label
+	assert_eq(
+		floor_label.get_theme_font(&"font"), HudStyle.serif(600, 5), "the floor line in Cinzel"
+	)
+	w.actors.hp[0] = r.player_max_hp() / 5
+	hud.sync(r)
+	for k in 7:
+		hud._process(1.0 / 60.0)
+	assert_ne(hud.hp_bar().fill_color(), HudStyle.A_HP, "the low-HP pulse shows on the bar")
+	assert_gt(medal.get("warn"), 0.0, "and on the medallion")
+	for c: Color in [HudStyle.A_HP, HudStyle.A_ACCENT, HudStyle.A_METAL, HudStyle.A_TEXT]:
+		assert_gt(c.b, c.r, "a cool token")
+	assert_gt(DangerMeter.YELLOW.b, 0.5, "the ramp's middle is a pale gold, not an orange")
 
 
 ## v0.5.5 A5 (owner: "we should remove the black background tho"): the corner minimap draws no panel; the full map

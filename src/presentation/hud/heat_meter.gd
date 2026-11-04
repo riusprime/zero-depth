@@ -13,12 +13,16 @@ extends Control
 ## Reads WorldReader.heat_state() only (EI-07); hidden when the world has no heat.
 ## v0.5.5 A5 (owner pick B "Ember stone"): the same straight bar, ticks and colours (HeatLooks, unchanged), set in
 ## a chipped stone slab with the ember line under it (HudStyle.draw_plate); the bar is inset by PAD.
+## v0.10.5 W3-O17 (UI style Astral): in HudStyle.ASTRAL no slab: a slim bar (an ink bed in a hairline frame), the fill
+## a 3 px line in Astral's warm tones (silver cool, the muted amber Hot, amber leaning rose in Overclock, rose-red
+## overheated), the thresholds as 1 px ticks, a small diamond at the overheat end, the zone's word in letter-spaced
+## Cinzel over the bar's left end and "VENT READY" over its right end while venting would blast. Same marks and reads.
 
 const SIZE := Vector2(420, 46)
 ## The bar's inset from the slab's sides (px).
 const PAD := 16.0
 ## The bar's thickness and the ticks' / cap's height (px).
-const BAR_H := 7.0
+const BAR_H := 5.0
 const TICK_H := 11.0
 const FLASH_S := 0.45
 const WARN_SHARE := 0.88
@@ -152,6 +156,9 @@ func _draw() -> void:
 	var mx := float(_s["max"])
 	var h := heat()
 	var pulse := HudStyle.pulse(_t * 1.5)
+	if HudStyle.current == HudStyle.Style.ASTRAL:
+		_draw_astral(r, mx, h, pulse)
+		return
 	if HudStyle.current == HudStyle.Style.EMBER:
 		HudStyle.draw_plate(self, Rect2(Vector2.ZERO, SIZE), true)
 	var track := Color(0, 0, 0, 0.6)
@@ -178,6 +185,89 @@ func _draw() -> void:
 	if not vent.is_empty():
 		_text(
 			Vector2(PAD, top), vent, Color(HeatLooks.WHITE_HOT, 0.95), HORIZONTAL_ALIGNMENT_CENTER
+		)
+
+
+## v0.10.5 W3-O17: the colour ASTRAL draws the fill in now (the same zones as fill_color, in Astral's tones).
+func astral_color() -> Color:
+	if _s.is_empty():
+		return HudStyle.A_METAL
+	if stalled():
+		return HudStyle.A_WARN
+	match int(_s["tier"]):
+		HeatLooks.TIER_HOT:
+			return HudStyle.A_HEAT
+		HeatLooks.TIER_OVERCLOCK:
+			return HudStyle.A_HEAT.lerp(HudStyle.A_WARN, 0.45)
+	return HudStyle.A_METAL.lerp(
+		HudStyle.A_HEAT, clampf(heat() / maxf(1.0, float(_s["hot"])), 0.0, 1.0) * 0.5
+	)
+
+
+func _draw_astral(r: Rect2, mx: float, h: float, pulse: float) -> void:
+	var o := Rect2(r.position.round(), r.size.round())
+	AstralHudParts.slim_bed(self, o, 0.34)
+	if stalled():
+		draw_rect(o, Color(HudStyle.A_WARN, 0.2 + 0.25 * pulse))
+	var fc := astral_color()
+	if stalled():
+		fc = Color(fc, 0.6 + 0.4 * pulse)
+	var fx := roundf(x_of(h))
+	if fx > o.position.x + 1.0:
+		var lit := Rect2(o.position.x + 1, o.position.y + 1, fx - o.position.x - 1, o.size.y - 2)
+		draw_rect(lit, fc)
+		if _flash > 0.0:
+			draw_rect(lit, Color(HudStyle.A_LINE_HI, 0.6 * _flash / FLASH_S))
+		AstralChrome.vline(self, fx - 1, o.position.y - 3, o.end.y + 3, fc.lightened(0.4))
+	for at: float in [float(_s["hot"]), float(_s["overclock"])]:
+		var tx := roundf(x_of(at))
+		var reached := h >= at
+		AstralChrome.vline(
+			self,
+			tx,
+			o.position.y - 4,
+			o.end.y + 4,
+			Color(HudStyle.A_HEAT, 0.95) if reached else Color(HudStyle.A_METAL, 0.4)
+		)
+	var near := h >= mx * WARN_SHARE or stalled()
+	var cap := Color(HudStyle.A_WARN, (0.45 + 0.55 * pulse) if near else 0.75)
+	AstralChrome.dia(
+		self,
+		Vector2(o.end.x + 7.5, o.get_center().y),
+		4.0,
+		cap,
+		Color(HudStyle.A_INK, 0.9) if not near else cap
+	)
+	var base := o.position.y - 9.0
+	var word_col := HudStyle.A_TEXT
+	match int(_s["tier"]):
+		HeatLooks.TIER_HOT:
+			word_col = HudStyle.A_HEAT
+		HeatLooks.TIER_OVERCLOCK:
+			word_col = HudStyle.A_HEAT.lerp(HudStyle.A_WARN, 0.45)
+		HeatLooks.TIER_OVERHEAT:
+			word_col = HudStyle.A_WARN
+	AstralHudParts.serif_text(
+		self,
+		tier_text(),
+		Vector2(o.position.x, base),
+		13,
+		word_col,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		5
+	)
+	var vent := vent_text()
+	if not vent.is_empty():
+		AstralHudParts.serif_text(
+			self,
+			vent,
+			Vector2(o.position.x, base),
+			12,
+			HudStyle.A_HEAT.lerp(HudStyle.A_LINE_HI, 0.35),
+			HORIZONTAL_ALIGNMENT_RIGHT,
+			o.size.x,
+			3
 		)
 
 

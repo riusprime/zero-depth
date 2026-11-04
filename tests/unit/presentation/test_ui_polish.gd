@@ -235,7 +235,9 @@ func test_the_build_row_sits_on_an_ember_slab_and_fits_in_both_languages() -> vo
 	add_child_autofree(hud)
 	var plate := hud.find_child("BuildPlate", true, false) as HudFrame
 	assert_not_null(plate, "the build row sits on a slab")
-	assert_eq(plate.style, HudStyle.Style.EMBER, "Ember stone")
+	assert_eq(
+		plate.style, HudStyle.Style.ASTRAL, "v0.10.5 W3-O17: the HUD's Astral style (unboxed)"
+	)
 	# The longest weapon name next to the longest utility name stays a small row on the left of the HUD.
 	var f := HudStyle.font(true)
 	var r := HudStyle.font(false)
