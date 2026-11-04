@@ -321,7 +321,7 @@ Order if approved: P9 probe and P6(a) check first (they may change the picture),
 | P3 | Approved; it is the way through the loops (see P4) | — |
 | P4 | **Not as written.** Owner: loops stay "A wall"; "to overcome loop difficulty we need a way of scale the player build further in strength so loops feel more difficult but possible to overcome, based on the strength of the build". So loop HP stays × 3.5 and the catch-up is unchanged; P3 (overlevels) is sized so a build that keeps investing can climb loop 2–3 and a weak one cannot | — |
 | P5 | Approved | — |
-| P6 | Approved | — |
+| P6 | Approved; measured (PROGRESS W3-P6): Storm × 1.65–3.80 on real bosses, Ring × 2.2 on a real floor: under the trim line, no trim | — |
 | P7 | Approved (prune) | — |
 | P8 | Not wanted: Q3 below | — |
 | P9 | Approved | — |
@@ -330,6 +330,7 @@ Order if approved: P9 probe and P6(a) check first (they may change the picture),
 Owner's answers to the questions (2026-11-04):
 - **Q1:** "Gun's Wave". (So the owner's run stacked Fire + Venom on the Gun's Wave; Bleed came from elsewhere.)
 - **Q2:** not answered yet.
+- **Lance ball (W3-O7):** "A: element fireball". **Violet bolt:** "before chosing i'd like to see comparations with new assets from the premade pack … that I added" → W3-O7b.
 - **Q3:** "we nerfed it so it doesnt get crazy and new attack forms are way slower so you never get +20 attacks in a
   second that's what I meant with that": the attack-speed nerf is intended; Haste stays as it is (P8 not wanted).
 - **Q4:** "A wall"; with P4 as above.
