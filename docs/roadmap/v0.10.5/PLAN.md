@@ -364,7 +364,7 @@ the 3 + 1 rule above for this wave.
 | F21 | The Warlord on floor 1 practically every run | Measured fair (154 / 146 of 300). Owner, 2026-11-04: "Add a third boss", **"Share one, scaled"**, **"Brood Mother"**: she joins floor 1's pool at floor-1 strength; a run never meets her twice | W3-S1, W3-O11 |
 | F22 | Boss durability feels good | Kept | — |
 | F23 | The Warlord ~5 % overtuned | Its attacks' damage −5 % (a starting value; O2b already paces its HP) | W3-S1 |
-| F24 | Shop: cards too big, crowded past 10, can't see cards and elements together, reroll cost unclear, no cohesive layout | **G2 first:** shop layout mockups for the owner to pick | W3-O9 |
+| F24 | Shop: cards too big, crowded past 10, can't see cards and elements together, reroll cost unclear, no cohesive layout | Owner, 2026-11-04: "we are gonna be removing the lift curse and the sell, it should only show the heal, reroll and the 4 cards, lifting the curse and selling is too broken". Then **G2:** layout mockups of that smaller shop | W3-O9 |
 | F26 | (owner, later on 2026-11-04) "when you are close to a wall the transparency effect so you can see through has a shit ton of grain, very ugly" | The fade is alpha hash (per-pixel on/off); a smooth 0.3 alpha blend instead | W3-S5 |
 | F25 | The purple portal on floor 4 of loop 1 to test; longer multi-loop runs | Owner playtest items (OWNER_TODO) | — |
 
@@ -382,7 +382,7 @@ Steps (S = Sonnet, O = Opus; at most 2 + 2 at once):
 - **W3-O6** the boss border's cost.
 - **W3-O7** G2: the purple enemy bolt and the Lance ball from `newVFX/`.
 - **W3-O8** Void with Split/Mine, Wave's forward look, the Laser's impact.
-- **W3-O9** G2: the shop layout.
+- **W3-O9** the shop sells only: heal, reroll and its 4 cards (the curse lift and selling removed; old saves load); then G2 mockups of the layout (reroll cost visible, cards smaller).
 - **W3-S5** see-through walls blend smoothly (no alpha-hash grain).
 - **W3-O11** the Brood Mother joins floor 1's pool (Gatekeeper, Warlord, Brood Mother) at floor-1 strength; floor 2 never draws a boss the run already met; old saves keep their bosses.
 
