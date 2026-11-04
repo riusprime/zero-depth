@@ -67,8 +67,8 @@ bolt_radius_m = 0.2
 bolt_life_seconds = 0.6666667
 hit_push_m = 0.15
 finisher_push_m = 0.45
-bolt_push_m = 0.06
-bolt_crit_push_m = 0.12
+bolt_push_m = 0.03
+bolt_crit_push_m = 0.06
 
 [resource]
 script = ExtResource("2_gn6h3")

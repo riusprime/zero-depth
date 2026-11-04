@@ -52,8 +52,8 @@ var bolt_life_ticks := 40
 ## v0.10.5 O11 (F1): the push a direct hit gives a normal enemy, in metres (the same as data/player/runner.tres).
 var hit_push_m := 0.15
 var finisher_push_m := 0.45
-var bolt_push_m := 0.06
-var bolt_crit_push_m := 0.12
+var bolt_push_m := 0.03
+var bolt_crit_push_m := 0.06
 ## Builds (v0.3.0 L15, L16; ContentCompiler.apply_build): the weapons this run may use (WEAPON_* bits; both outside
 ## a run's build, so the kernel and lab worlds keep both), and each weapon's damage in per mille.
 var weapons := WEAPONS_ALL
