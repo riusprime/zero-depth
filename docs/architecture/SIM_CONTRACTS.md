@@ -332,12 +332,16 @@ is garbage-collected when its count reaches 0 and the queue holds none of its ev
 6. On-hit triggers then see the `HIT` (step 2 of the drain).
 
 **Stats and crit (v0.4.0 BS, owner F9; `Stats`).** A hit the player owns on an enemy first takes the damage stat
-(`amount × damage / 1000`, half up) and then, unless it is a DoT tick, one crit roll on the `crit` stream:
+(`amount × damage`, in thousandths of a point) and then, unless it is a DoT tick, one crit roll on the `crit` stream:
 `range_int(0, 999) < chance`, chance = the player's base (data: 5 %) + crit-chance cards, at most 750. A crit
-multiplies by the crit multiplier (base 1500 + crit-damage cards, at most 4000), half up, and tags `HIT` and `DAMAGE`
+multiplies by the crit multiplier (base 1500 + crit-damage cards, at most 4000), and tags `HIT` and `DAMAGE`
 with `TAG_CRIT` (bit 16, reserved since v0.0.1). This sits before step 2's attacker multipliers, so it applies to
 every player source alike: swings, bolts, skills, abilities, vents and item payoffs (chains, shockwaves, thorns).
-DoT ticks the player owns take the damage stat but never crit. A hit the player takes is cut by armour after the
+DoT ticks the player owns take the damage stat but never crit. **v0.10.5 W3-P9** (owner, 2026-11-04: "lets do only A
+then"): the whole points dealt are the thousandths plus a carried remainder, divided by 1000 (rounded down), the new
+remainder kept for the next one (`Stats.carry_hit`: `World.dmg_carry` for hits, `World.dot_carry` for DoT ticks), so a
+7.3 hit lands 7, 7, 8 … and averages 7.3 exactly; a × 1.00 hit leaves the carry alone. Enemy damage is unchanged
+(it never passes `Stats`). A hit the player takes is cut by armour after the
 target multipliers (`× armour / 1000`, at least 1). Cards stack multiplicatively per card in per mille (two +10 % =
 1210) within their caps, except an `additive` card (**v0.8.0 SG**, owner O91: damage, attack speed and Glass Cannon;
 two +10 % = 1200). The damage multiplier is one additive bucket, `(DAMAGE + ONRUSH while moving + Hoarder's bonus) ×
@@ -346,7 +350,11 @@ Attack speed has one rule (`AttackRate`): the raw bonus = `ATTACK_SPEED − 1000
 `rate_bonus_permille` (a negative one counts); the effective bonus counts it in full up to `attack_speed_knee`
 (500), at `attack_speed_slope` (500 ‰) up to `attack_speed_knee2` (1500), at `attack_speed_slope2` (250 ‰) above
 (`SimTuning`, `data/tuning/sim.tres`); the rate `1000 + effective` (at least 1) then takes Heavy Hands' cut. The Gun's
-period is `base × 1000 / rate` half up (at least 2 ticks once changed), the Blade's whole swing (hit tick, sweep,
+period is `base × 1000 / rate` (at least 2 ticks once changed), kept in thousandths of a tick
+(`ItemEffects.shot_period_milli_of`; W3-P9): each shot sets its cooldown to that plus the carried remainder
+(`World.shot_carry`) in whole ticks (`ItemEffects.next_shot_cd`), so the shots average the exact period; the HUD and
+`shot_period_ticks` show it rounded half up, the wand forecast's damage a second uses the exact one. The carries are
+hashed once any leaves 0 (after `shot_cd`) and saved; an older save has 0. The Blade's whole swing (hit tick, sweep,
 recovery) scales by the same rate (at least `rate_min`), the drone's period reads the stat alone. A save made before
 SG (`World.stat_rules` 0) rebuilds DAMAGE, ATTACK_SPEED and GLASS_CANNON from `stat_cards` and the gamble stacks on
 load (`Stats.migrate_rules`). The other stats are read where the sim computes them (cooldowns: dash, skill, blink,

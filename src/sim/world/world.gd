@@ -50,6 +50,13 @@ var swing_root := 0
 var combo_step := 0
 var combo_window := 0
 var shot_cd := 0
+## v0.10.5 W3-P9 (owner, 2026-11-04: "lets do only A then"): the carried remainders, so a fraction the integer maths
+## drops is kept for the next one and every stat card counts: the player's hits (Stats.outgoing: the damage stat and
+## crits) and DoT ticks (Stats.dot) in thousandths of a point, and the Gun's shot period in thousandths of a tick
+## (ItemEffects.next_shot_cd). 0..999 each; hashed once any leaves 0; an older save has 0.
+var dmg_carry := 0
+var dot_carry := 0
+var shot_carry := 0
 ## Utility: blink cooldown, and the last blink (tick and start point) for the view.
 var blink_cd := 0
 var blink_tick := -1
@@ -1361,6 +1368,9 @@ func state_hash() -> String:
 	h.add_ints(input_buffer)
 	for v in [held_buttons, swing_t, swing_angle, swing_root, combo_step, combo_window, shot_cd]:
 		h.add_int(v)
+	if dmg_carry != 0 or dot_carry != 0 or shot_carry != 0:  # v0.10.5 W3-P9: only once a remainder was carried
+		for v in [dmg_carry, dot_carry, shot_carry]:
+			h.add_int(v)
 	for v in [wave_index, wave_timer, 1 if cleared else 0, killer_kind, killer_tags]:
 		h.add_int(v)
 	for v in [1 if spawner != null else 0, run_ticks, spawn_cd, kills]:

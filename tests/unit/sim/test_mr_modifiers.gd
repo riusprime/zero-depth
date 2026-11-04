@@ -214,10 +214,11 @@ func test_rapid_fire_ramps_while_held_and_resets_after_a_pause() -> void:
 	assert_gt(gaps.size(), 8)
 	assert_lt(gaps[gaps.size() - 1], gaps[0], "held fire comes faster: %s" % [gaps])
 	for k in range(1, gaps.size()):
-		assert_lte(gaps[k], gaps[k - 1], "never slower while held")
+		# v0.10.5 W3-P9: the period's fraction is carried, so a gap may be one tick over the one before
+		assert_lte(gaps[k], gaps[k - 1] + 1, "never slower while held (but the carried tick)")
 	W.run(w, 40)  # a pause past 0.4 s
 	var again := _shot_gaps(w, 40)
-	assert_eq(again[0], gaps[0], "the ramp starts over")
+	assert_lte(absi(again[0] - gaps[0]), 1, "the ramp starts over (within the carried tick)")
 	# v0.9.5 CLV: one level, no cap growth (a level asked for past the max stays at it)
 	assert_eq(Modifiers.bolt(w).ramp_cap_permille, 900, "no cap growth")
 

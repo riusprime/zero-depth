@@ -674,7 +674,7 @@ func beam_elements() -> PackedStringArray:
 ## v0.8.0 GF1 (owner O19): whether the Gun fired a shot in the last tick (the cooldown was just set to the full
 ## period: PlayerKit and GunForms set it on every shot, and it only counts down after). The hero's cast flourish.
 func shot_fired() -> bool:
-	return _w.shot_cd > 0 and _w.shot_cd == ItemEffects.shot_period_ticks(_w)
+	return _w.shot_cd > 0 and _w.shot_cd == ItemEffects.last_shot_cd(_w)  # v0.10.5 W3-P9
 
 
 func projectile_team(i: int) -> int:

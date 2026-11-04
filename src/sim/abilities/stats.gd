@@ -302,20 +302,35 @@ static func outgoing(w: World, amount: int, tags: int) -> Array[int]:
 	var ab := Curses.ability_damage_permille(w, tags)  # v0.6.0 CU: Blood Price
 	if ab != 1000:
 		m = (m * ab + 500) / 1000
-	if m != 1000:
-		amount = (amount * m + 500) / 1000
+	var milli := amount * m  # v0.10.5 W3-P9: thousandths of a point, carried (w.dmg_carry)
 	if tags & SimEvent.TAG_DOT:
-		return [amount, 0]
+		return [carry_hit(w, milli), 0]
 	var chance := crit_chance(w)
 	if chance <= 0 or w.rng_crit.range_int(0, 999) >= chance:
-		return [amount, 0]
-	return [(amount * crit_mult(w) + 500) / 1000, SimEvent.TAG_CRIT]
+		return [carry_hit(w, milli), 0]
+	return [carry_hit(w, milli * crit_mult(w) / 1000), SimEvent.TAG_CRIT]
 
 
-## A DoT tick the player owns: x damage only (DoT never crits).
+## v0.10.5 W3-P9 (owner: "lets do only A then"): a player hit of `milli` thousandths of a point, in whole points, the
+## fraction carried to the next hit (w.dmg_carry), so a 7.3 hit lands 7, 7, 8, 7, 7, 8 … and averages 7.3 exactly.
+## A hit at x 1.00 (a whole number of points) lands as it is and leaves the carry alone.
+static func carry_hit(w: World, milli: int) -> int:
+	if milli <= 0:
+		return milli / 1000
+	var t := milli + w.dmg_carry
+	w.dmg_carry = t % 1000
+	return t / 1000
+
+
+## A DoT tick the player owns: x damage only (DoT never crits). v0.10.5 W3-P9: its fraction is carried to the next
+## tick (w.dot_carry), as a hit's is.
 static func dot(w: World, amount: int) -> int:
 	var m := damage_permille(w)
-	return amount if m == 1000 else (amount * m + 500) / 1000
+	if m == 1000 or amount <= 0:
+		return amount
+	var t := amount * m + w.dot_carry
+	w.dot_carry = t % 1000
+	return t / 1000
 
 
 ## The player's damage multiplier now, per mille (v0.8.0 SG, owner O91): the bucket (damage_bucket: the damage stat

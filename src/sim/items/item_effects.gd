@@ -33,7 +33,30 @@ static func shot_period_ticks(w: World) -> int:
 
 
 ## v0.10.5 O13: shot_period_ticks for any compiled bolt spec (WandForecast reads a wand not held yet with it).
+## v0.10.5 W3-P9: shot_period_milli_of rounded half up (what the HUD shows; the shots average the exact period).
 static func shot_period_of(w: World, spec: AttackSpec) -> int:
+	return (shot_period_milli_of(w, spec) + 500) / 1000
+
+
+## v0.10.5 W3-P9 (owner: "lets do only A then"): the cooldown a shot fired now sets (PlayerKit, GunForms): the exact
+## period in thousandths of a tick plus the carried remainder (w.shot_carry), in whole ticks, the new remainder kept,
+## so a 6.62-tick period fires at 7, 7, 6, 7, 6 … ticks and averages 6.62.
+static func next_shot_cd(w: World) -> int:
+	var t := shot_period_milli_of(w, Modifiers.bolt(w)) + w.shot_carry
+	w.shot_carry = t % 1000
+	return maxi(1, t / 1000)
+
+
+## The cooldown the last shot set (next_shot_cd's, read back from the carry it left), while the period is unchanged.
+static func last_shot_cd(w: World) -> int:
+	var p := shot_period_milli_of(w, Modifiers.bolt(w))
+	var before := posmod(w.shot_carry - p, 1000)
+	return maxi(1, (p + before) / 1000)
+
+
+## v0.10.5 W3-P9: the period between shots of `spec`, in thousandths of a tick (exact: not rounded to whole ticks);
+## the forms' own periods, the rate (AttackRate.rate, form_rate) and Rapid Fire's quickening (LaserMods).
+static func shot_period_milli_of(w: World, spec: AttackSpec) -> int:
 	var base := BombMods.period(w, spec, spec.period_ticks)  # v0.9.5 FC2: the Bomb's Rapid Fire (0.6 s)
 	base = VoidMods.period(w, spec, base)  # v0.9.5 FC3: the Void's Rapid Fire (0.4 s)
 	base = RuneMods.period(w, spec, base)  # v0.9.5 FC5: the Rune Explosion's Big Shot (90) and Rapid Fire (42)
@@ -41,9 +64,10 @@ static func shot_period_of(w: World, spec: AttackSpec) -> int:
 	base = WaveMods.period(w, spec, base)  # v0.9.5 FC8: the Wave's Rapid Fire (0.55 s)
 	var r := AttackRate.rate(w, spec.rate_bonus_permille + FireRhythm.shot_bonus(w, spec))  # v0.8.0 MR: the ramp
 	r = AttackRate.form_rate(spec, r)  # v0.9.0 LZ: the Laser's ticks at half the bonus
+	var milli := base * 1000
 	if r != 1000:
-		base = maxi(mini(base, AttackRate.MIN_SHOT_TICKS), AttackRate.scaled(base, r))
-	return LaserMods.rapid_period(w, spec, base)  # v0.9.5 FC1: Rapid Fire's tick quickens while held
+		milli = maxi(mini(base, AttackRate.MIN_SHOT_TICKS) * 1000, base * 1000000 / maxi(1, r))
+	return LaserMods.rapid_period(w, spec, milli, 1000)  # v0.9.5 FC1: Rapid Fire's tick quickens while held
 
 
 ## Damage of each bolt in a shot: the full bolt, or a Splinter share (rounded down, at least 1).

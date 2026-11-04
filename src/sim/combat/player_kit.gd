@@ -114,7 +114,7 @@ static func advance(w: World) -> void:
 	# v0.9.5 FC4 (V9): a Void with Mine holds one void at a time (VoidMods.held)
 	elif shooting(w) and can_attack and w.swing_t == 0 and w.shot_cd == 0 and not VoidMods.held(w):
 		_fire_bolt(w)
-		w.shot_cd = ItemEffects.shot_period_ticks(w)
+		w.shot_cd = ItemEffects.next_shot_cd(w)  # v0.10.5 W3-P9: the period's fraction carried
 	ItemProcs.advance_momentum(w)
 
 

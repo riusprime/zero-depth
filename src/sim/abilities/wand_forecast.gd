@@ -84,15 +84,16 @@ static func _gun(w: World, book: AttackBook) -> Dictionary:
 	if spec.share_permille > 0 and spec.seekers <= 0:
 		d = Attacks.share_of(d, spec.share_permille)
 	d = Attacks.merged_damage(d, want, fit)
-	var period := ItemEffects.shot_period_of(w, spec)
+	var milli := ItemEffects.shot_period_milli_of(w, spec)  # v0.10.5 W3-P9: the exact period the shots average
 	var volley := fit * d + _repeat_damage(spec, fit * d)
 	var area_mm := int(round(_area_m(spec) * 1000.0))
 	var nums := {
 		"weapon": &"gun",
 		"shots": fit,
 		"damage": d,
-		"period_ticks": period,
-		"per_second_x10": _per_second_x10(volley, period),
+		"period_ticks": (milli + 500) / 1000,
+		"period_milli": milli,
+		"per_second_x10": _per_second_x10(volley * 1000, milli),
 		"area_mm": area_mm,
 	}
 	var base := Modifiers.base_bolt(w).radius_m
@@ -156,6 +157,8 @@ static func _repeat_damage(spec: AttackSpec, d: int) -> int:
 	return _repeats(spec) * d * spec.repeat_damage_permille / 1000
 
 
+## `damage` dealt every `period_ticks` (the Gun passes both x 1000: its period in thousandths of a tick), per second,
+## in tenths.
 static func _per_second_x10(damage: int, period_ticks: int) -> int:
 	if period_ticks <= 0:
 		return 0

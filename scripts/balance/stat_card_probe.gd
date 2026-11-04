@@ -3,7 +3,10 @@ extends SceneTree
 ## form (the Orbs) by less than its nominal gain. For each base (floor-3 stats, scripts/balance/progression_audit.gd's
 ## section c) and each rare stat card it prints what the card changed: the grant, the damage and attack-speed stats,
 ## the damage multiplier, the shot period in ticks, the bolt's base damage, the hits and the damage per hit on one
-## endless dummy 5 m ahead, and the single DPS ratio. Writes build/stat_card_probe.txt; copy numbers by hand.
+## endless dummy 5 m ahead, and the single DPS ratio. After the fix (W3-P9, the carried remainders) it also prints the
+## exact period (thousandths of a tick), the crit chance and multiplier, and "nominal": the ratio the card should give
+## (damage x, 1 / period and the crit expectation 1 + chance x (mult - 1), over the base's). Writes
+## build/stat_card_probe.txt; copy numbers by hand.
 ##   godot --headless --path . -s scripts/balance/stat_card_probe.gd -- seconds=12
 
 const AUDIT := preload("res://scripts/balance/progression_audit.gd")
@@ -38,7 +41,7 @@ func _initialize() -> void:
 	_line(
 		(
 			"base | card | missing | damage stat | damage x | rate | period t | bolt dmg | hits | dmg/hit"
-			+ " | single dps | x"
+			+ " | single dps | x | period milli | crit | crit x | nominal"
 		)
 	)
 	for b: Array in BASES:
@@ -66,7 +69,7 @@ func _line(s: String) -> void:
 func _row(base: String, card: String, r: Dictionary, b: Dictionary) -> void:
 	_line(
 		(
-			"%s | %s | %d | %d | %d | %d | %d | %d | %d | %.1f | %.1f | %.3f"
+			"%s | %s | %d | %d | %d | %d | %d | %d | %d | %.1f | %.1f | %.3f | %d | %d | %d | %.3f"
 			% [
 				base,
 				card,
@@ -80,6 +83,10 @@ func _row(base: String, card: String, r: Dictionary, b: Dictionary) -> void:
 				float(r["total"]) / maxf(1.0, float(r["hits"])),
 				r["dps"],
 				r["dps"] / maxf(0.01, b["dps"]),
+				r["milli"],
+				r["crit"],
+				r["crit_x"],
+				_expect(r) / maxf(0.000001, _expect(b)),
 			]
 		)
 	)
@@ -125,6 +132,9 @@ func _probe(weapon: StringName, tokens: Array) -> Dictionary:
 		"dmg_x": Stats.damage_permille(w),
 		"rate": AttackRate.weapon_rate(w),
 		"period": ItemEffects.shot_period_ticks(w),
+		"milli": ItemEffects.shot_period_milli_of(w, Modifiers.bolt(w)),
+		"crit": Stats.crit_chance(w),
+		"crit_x": Stats.crit_mult(w),
 		"bolt": ItemEffects.bolt_damage(w),
 		"hits": hits,
 		"total": tally.total,
@@ -147,3 +157,9 @@ func _stat_index(id: StringName) -> int:
 			if t[k] != null:
 				_stats[t[k].id] = k
 	return int(_stats.get(id, -1))
+
+
+## The damage a second a build should deal, up to one factor: damage x, the crit expectation, over the exact period.
+func _expect(r: Dictionary) -> float:
+	var crit := 1.0 + float(r["crit"]) / 1000.0 * (float(r["crit_x"]) - 1000.0) / 1000.0
+	return float(r["dmg_x"]) * crit / maxf(1.0, float(r["milli"]))

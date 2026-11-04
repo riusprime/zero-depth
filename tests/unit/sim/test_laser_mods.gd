@@ -332,7 +332,8 @@ func test_l8_rapid_fire_quickens_from_0_1_s_to_0_05_s_over_2_s_and_thins() -> vo
 		"20 ticks a second at 65 % of 4.6: about 60 a second, about 1.3x a plain beam's 46"
 	)
 	var early := _hits(w, 1).filter(func(h: Dictionary) -> bool: return h["tick"] < 30)
-	assert_lte(early.size(), 5, "10 a second at the start")
+	# v0.10.5 W3-P9: the ramp's fractions of a tick are carried (no longer rounded up to 6 while it starts): 6 in 0.5 s
+	assert_lte(early.size(), 6, "10 a second at the start, quickening")
 	W.run(w, 2, 0, 0)
 	assert_eq(w.mx.lz_hold, 0, "the ramp resets when the trigger is let go")
 
