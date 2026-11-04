@@ -372,10 +372,10 @@ Steps (S = Sonnet, O = Opus; at most 2 + 2 at once):
   attacks' damage × 0.95.
 - **W3-S2** form tuning: Seekers share 450 → 500 ‰ (per level 22 → 24); Glaive 1600 → 1840 ‰ (80 → 92); Laser beam
   800 → 920 ‰ (40 → 46).
-- **W3-S4** effects: impact particles ~0.2 s; ground fire pools smaller and dimmer; Chain Blast's look scaled by damage.
+- **W3-S4** (Opus: the effects come from the packs' scenes, an investigation) effects: impact particles ~0.2 s; ground fire pools smaller and dimmer; Chain Blast's look scaled by damage.
 - **W3-O1** the secret room through L2, as the owner plays it.
 - **W3-O2** Foundry lines vs volleys; the Hive Lens sweep.
-- **W3-O3** the Lance charge heat.
+- **W3-O3** the Lance charge heat; and the two stale bands found by W3-S2 (test_lance AF1 1.34×, test_gun_feel 0.70).
 - **W3-O4** G1: the progression audit (measured with the bots; proposals for front-loading, the plateau, diversity).
 - **W3-O5** the hub: the floor/wall and wall/wall gaps closed; a dark void with fog around it (F2).
 - **W3-O6** the boss border's cost.
