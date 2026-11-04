@@ -608,6 +608,8 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
 @export var gap_close_attack: StringName           # an attack id (empty = none), done when out of reach...
 @export var gap_close_distance_m: float            # ...beyond this from the boss's edge...
 @export var gap_close_seconds: float               # ...for this long
+# v0.10.5 W3-O2 (owner F19): the Foundry's. No flood/row_flood while its shots fly; no pattern while its lines/lava lie.
+@export var lines_clear_shots: bool                 # its floor lines and its shots never share the floor (false)
 # v0.9.0 NB1 (BOSSES_4_5.md N1): the Tidecaller's Pull on a cadence (0 = none; every phase then holds a `tide`).
 @export var signature_every_seconds: float         # the phase's first `tide` attack every this long, start to start
 @export var signature_first_seconds: float         # the first one this long after the boss starts fighting

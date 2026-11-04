@@ -175,10 +175,10 @@ const MOVES := {
 		"optional": ["lava_seconds", "lava_damage", "lava_burn_seconds", "ford_m"],
 	},
 	## v0.8.0 BS2 (owner O5, S4): the Hive Lens's Gaze: a beam from its eye, length_m long from its edge (stopped by
-	## walls), width_m wide, starting aimed away from the player (it keeps away through the windup: the eye
-	## brightens, a thin aim line shows), then turning a quarter turn every quarter_seconds, reversing every
-	## reverse_seconds, over the active time; it hurts once every burn_seconds. An optional pattern_id fires again
-	## every orb_every_seconds (its orbs, aimed at the player).
+	## walls), width_m wide, starting just behind the player in its turn (v0.10.5 W3-O2; it keeps so through the
+	## windup: the eye brightens, a thin aim line shows), then turning a quarter turn every quarter_seconds,
+	## reversing every reverse_seconds, over the active time; it hurts once every burn_seconds. An optional pattern_id
+	## fires again every orb_every_seconds (its orbs, aimed at the player).
 	&"gaze":
 	{
 		"shape": 2,

@@ -1485,10 +1485,11 @@ Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; al
   only the wall grid is rebuilt, never the flow field) and sets the field's extra cells again before its last flood
   is copied, so a restored fight steps exactly as the uninterrupted one (`test_boss_signatures.gd`).
 - **S4, the Hive Lens's Gaze (v0.8.0 BS2; `BossGaze`).** A new move, `gaze` (`BossAttackTable.Move.GAZE`, appended).
-  As its windup begins the beam's start angle is the angle to the player + 2048 (straight away; `actors.lock_a`) and
-  the ai stream picks the way it will turn (`BossStore.span`, ±1); every windup tick the start re-aims straight away
-  from the player, so on its first active tick the beam points away from where the player stands (it never starts
-  on you). Active tick `st`: its angle is `lock_a + way × along × 1024 / quarter_ticks` with `along` a triangle wave
+  As its windup begins the ai stream picks the way it will turn (`BossStore.span`, ±1), then the beam's start angle
+  is the angle to the player − way × `BossGaze.LEAD` (455, 40°; `actors.lock_a`): behind the player in its turn
+  (v0.10.5 W3-O2, owner F20; before it, the angle to the player + 2048, straight away). Every windup tick the start
+  re-aims so, so on its first active tick it never starts on you and its first sweep comes through where you stand
+  about `LEAD × quarter_ticks / 1024` ticks later. Active tick `st`: its angle is `lock_a + way × along × 1024 / quarter_ticks` with `along` a triangle wave
   of period `reverse_ticks` (`st % reverse` out, then back: integer maths), so it turns a quarter turn every
   `quarter_ticks` and reverses every `reverse_ticks`. The beam is a lane from the boss's edge along that angle, as
   long as `length_m` unless `EnemyAi.clear_run` (radius `half_width_m`) stops it on a wall (walls, pillars, the
