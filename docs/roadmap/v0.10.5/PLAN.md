@@ -384,6 +384,7 @@ Steps (S = Sonnet, O = Opus; at most 2 + 2 at once):
 - **W3-O8** Void with Split/Mine, Wave's forward look, the Laser's impact.
 - **W3-O9** the shop sells only: heal, reroll and its 4 cards (the curse lift and selling removed; old saves load); then G2 mockups of the layout (reroll cost visible, cards smaller).
 - **W3-S5** see-through walls blend smoothly (no alpha-hash grain).
+- **W3-P (owner, 2026-11-04: "Approve the set"; loops stay a wall)** the progression build from W3_O4_PROGRESSION_G1.md: W3-P9 + W3-P6 probes first (stat cards reading × 1.00; Blade Storm on a moving boss, Ring on the Orbs), then W3-P1 + W3-P2 (front-loading), W3-P5 + W3-P7 (forms, dead pairs), W3-P3 (overlevels: the way through the loops), then the audit re-run.
 - **W3-O11** the Brood Mother joins floor 1's pool (Gatekeeper, Warlord, Brood Mother) at floor-1 strength; floor 2 never draws a boss the run already met; old saves keep their bosses.
 
 ### R. Release
