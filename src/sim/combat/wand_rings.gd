@@ -92,6 +92,9 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 		var dir := Kin.dir(ang)
 		var from := ctx.origin + dir * edge
 		var ticks := _clear_ticks(w, from, dir, speed, flight)
+		if ctx.on_ring.is_valid():  # v0.10.5 W3-O1: the Skill's ring reaches the cracked wall where it flies
+			var end_r := ModifierAbilities.travel_radius(r, 1, ticks, ticks)
+			ctx.on_ring.call(from, from + dir * (speed * ticks), r * START_PERMILLE / 1000.0, end_r)
 		ModifierAbilities.add_ring(w, from, r, spec, c, 0, [dir * speed, orb, a0, 1, ticks, j])
 		if not own or j > 0:
 			ShotCap.spend(w, 1)  # an extra (ShotCap)

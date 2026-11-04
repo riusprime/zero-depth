@@ -72,11 +72,30 @@ func test_the_guns_skill_reshaped_by_the_ring_breaks_it() -> void:
 	CrackLab.skill(w, 1.2)
 	CrackLab.skill(w, 1.2)
 	assert_eq(w.breakables.crack_broken, 1, "three ring Blasts break it")
+	# v0.10.5 W3-O1 (owner: "I shot at the wall, actually seeing the blast hit it"): the ring flies along the aim to
+	# the first wall (WandRings), so it wears the wall from well past its radius; aimed away, it never does.
 	var far := CrackLab.world(&"gun")
 	far.add_item(AttackScenario.item_index(far.item_tables, &"gun_ring"))
 	far.step(InputFrame.new())
-	CrackLab.skill(far, Attacks.area_radius(far, Modifiers.skill(far)) + 1.5)
-	assert_eq(far.breakables.crack_hp, far.breakables.crack_max, "out of the ring's reach: no hit")
+	CrackLab.skill(far, Attacks.area_radius(far, Modifiers.skill(far)) + 2.0)
+	assert_eq(
+		far.breakables.crack_hp, far.breakables.crack_max - 1, "the flying ring reaches it from 4 m"
+	)
+	var away := CrackLab.world(&"gun")
+	away.add_item(AttackScenario.item_index(away.item_tables, &"gun_ring"))
+	away.step(InputFrame.new())
+	for k in 600:
+		if PlayerSkill.ready(away):
+			break
+		away.step(InputFrame.new())
+	CrackLab.face_wall(away, 1.2)
+	var back := (CrackLab.toward_wall(away) + 2048) & 4095
+	away.step(InputFrame.make(Vector2i.ZERO, back, 300, InputFrame.SKILL, InputFrame.SKILL))
+	for k in 40:
+		away.step(InputFrame.make(Vector2i.ZERO, back, 300, 0, 0))
+	assert_eq(
+		away.breakables.crack_hp, away.breakables.crack_max, "a ring flown away from it: no hit"
+	)
 
 
 func test_no_other_attack_marks_it() -> void:

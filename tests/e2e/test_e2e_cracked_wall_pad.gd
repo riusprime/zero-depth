@@ -18,7 +18,20 @@ func _click(e: E2e, main: Main, button: String) -> void:
 	await e.click_at(b.get_global_rect().get_center())
 
 
-func _break_with_l2(build: StringName, from_m: float) -> void:
+func _grant(e: E2e, main: Main, id: StringName) -> void:
+	var w := e.world()
+	var guard := 0
+	while (
+		(main.driver.debug.mod_choice < 0 or w.item_tables[main.driver.debug.mod_choice].id != id)
+		and guard < 160
+	):
+		await _click(e, main, "NextMod")
+		guard += 1
+	await _click(e, main, "GrantMod")
+	await e.frames(3)
+
+
+func _break_with_l2(build: StringName, from_m: float, card := &"") -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot(null, null, SEED)
 	await e.start_from_menu(build)
@@ -31,6 +44,11 @@ func _break_with_l2(build: StringName, from_m: float) -> void:
 	var view := main.view.breakables
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
+	if card != &"":
+		await _grant(e, main, card)
+		assert_eq(
+			Modifiers.skill(w).form, AttackSpec.Form.RING, "the Ring makes the Blast a flying ring"
+		)
 	await e.tap(KEY_QUOTELEFT)
 	var goal := CrackLab.before_wall(w, from_m)
 	var to_wall := (f.door_centers[f.crack_door] - goal).normalized()
@@ -66,3 +84,10 @@ func test_the_guns_scatter_blast_on_l2_breaks_it() -> void:
 
 func test_the_blades_lunge_cleave_on_l2_breaks_it() -> void:
 	await _break_with_l2(&"blade", 1.4)
+
+
+## W3-O1 (owner, 2026-11-04: "I shot at the wall, actually seeing the blast hit it and it did not break or open"): with
+## the Ring card the Blast is a ring that flies along the aim until the first wall (WandRings, owner O47). From 4 m the
+## ring flew into the wall and burst on it, but the wall counted only a ring round the hero (2 m), so it took no hit.
+func test_the_rings_flying_blast_on_l2_breaks_it_from_four_metres() -> void:
+	await _break_with_l2(&"gun", 4.0, &"gun_ring")

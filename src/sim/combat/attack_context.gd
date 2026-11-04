@@ -47,6 +47,9 @@ var wisp := false
 var lance_full := false
 var on_landed := Callable()
 var on_ray := Callable()
+## v0.10.5 W3-O1: each travelling ring this launch lays (WandRings.launch): on_ring(from, to, start_r, end_r), where it
+## leaves, where its flight ends (against the first wall on its line) and its radius at both (the Skill's cracked wall).
+var on_ring := Callable()
 
 
 static func make(

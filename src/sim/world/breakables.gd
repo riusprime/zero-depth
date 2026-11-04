@@ -259,7 +259,9 @@ static func hit(w: World, i: int) -> void:
 
 ## PlayerSkill, when a Skill use lands (`cleave`: Lunge Cleave's fan from `center` facing `angle`; else Scatter
 ## Blast, its pellets' ends in KitState.pellet_ends): one hit on the cracked wall if the use reached it.
-static func on_skill(w: World, center: Vector2, angle: int, cleave: bool) -> void:
+static func on_skill(
+	w: World, center: Vector2, angle: int, cleave: bool, rings: Array = []
+) -> void:
 	var b := w.breakables
 	if b == null or not b.has_crack() or b.crack_broken == 1:
 		return
@@ -273,6 +275,8 @@ static func on_skill(w: World, center: Vector2, angle: int, cleave: bool) -> voi
 			if Collide.circle_vs_obb(e, spec.radius_m + 0.1, wall) != Vector2.ZERO:
 				touched = true
 				break
+	elif not rings.is_empty():
+		touched = _rings_touch(rings, wall)
 	else:
 		touched = _reshaped_touches(w, spec, center, angle, wall)
 	if not touched:
@@ -305,6 +309,21 @@ static func _reshaped_touches(
 			return Collide.circle_vs_obb(at, r + 0.1, wall) != Vector2.ZERO
 	var to := center + Kin.dir(angle) * maxf(spec.reach_m, r)
 	return Collide.sweep_vs_obb(center, to, spec.radius_m + 0.1, wall) >= 0.0
+
+
+## v0.10.5 W3-O1 (owner, 2026-11-04: "I shot at the wall, actually seeing the blast hit it and it did not break or
+## open"): the Ring card's Blast is a ring that flies along the aim until the first wall on its line (WandRings, owner
+## O47), not a ring round the hero, so it reaches the wall where it flies: its disc along the flight (its start
+## radius) or where it stops (its radius then). Each entry is WandRings.launch's [from, to, start_r, end_r].
+static func _rings_touch(rings: Array, wall: Obb) -> bool:
+	for g: Array in rings:
+		var from: Vector2 = g[0]
+		var to: Vector2 = g[1]
+		if Collide.circle_vs_obb(to, float(g[3]) + 0.1, wall) != Vector2.ZERO:
+			return true
+		if Collide.sweep_vs_obb(from, to, float(g[2]) + 0.1, wall) >= 0.0:
+			return true
+	return false
 
 
 ## The point of box `o` nearest `p`.
