@@ -157,3 +157,27 @@ func test_the_views_draw_once_per_change() -> void:
 	await get_tree().process_frame
 	assert_eq(map.corner.draw_count(), drawn + 1, "a step redraws once")
 	assert_eq(map.get_child_count(), 2, "two Controls, no node per room")
+
+
+func test_the_arrow_follows_the_walk_not_only_the_aim() -> void:
+	var w := _floor(11)
+	var r := WorldReader.new(w)
+	var map := Minimap.new()
+	add_child_autofree(map)
+	# A fresh view with no walk points at the aim.
+	w.aim_angle = 0
+	map.sync(r)
+	await get_tree().process_frame
+	assert_almost_eq(map.corner.arrow_dir().x, 1.0, 0.001, "no walk: the aim (east)")
+	# Aim east while walking west: the arrow points west, and the view redraws.
+	var drawn := map.corner.draw_count()
+	w.move_intent = Vector2i(-1, 0)
+	map.sync(r)
+	await get_tree().process_frame
+	assert_almost_eq(map.corner.arrow_dir().x, -1.0, 0.001, "walking west: west")
+	assert_gt(map.corner.draw_count(), drawn, "the turn redraws")
+	# Stop walking: it stays west.
+	w.move_intent = Vector2i.ZERO
+	map.sync(r)
+	await get_tree().process_frame
+	assert_almost_eq(map.corner.arrow_dir().x, -1.0, 0.001, "standing: still west")

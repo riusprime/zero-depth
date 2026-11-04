@@ -64,3 +64,29 @@ func test_walking_into_a_room_reveals_it_and_tab_shows_the_full_map() -> void:
 	e.joy_button(JOY_BUTTON_BACK, false)
 	await e.frames(2)
 	assert_false(map.full_map_showing())
+
+
+## W3-S8 (owner): the corner map's arrow follows where the hero walks, not only the aim.
+func test_the_arrow_points_where_you_walk_not_where_you_aim() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu()
+	await e.frames(2)
+	var map := (main.get_node("UI/Hud") as Hud).minimap
+	var w := e.world()
+	# Aim to the screen's left edge, then walk to the screen's right.
+	await e.mouse_to(Vector2(40, 360))
+	await e.frames(3)
+	var aim := Vector2.from_angle(float(w.aim_angle) * TAU / 4096.0)
+	e.key(KEY_D, true)
+	await e.frames(12)
+	var walk := Vector2(w.move_intent).normalized()
+	var arrow := map.corner.arrow_dir()
+	gut.p("aim %s walk %s arrow %s" % [aim, walk, arrow])
+	assert_ne(w.move_intent, Vector2i.ZERO, "the hero is walking")
+	assert_lt(walk.dot(aim), 0.0, "walking away from the aim")
+	assert_gt(arrow.dot(walk), 0.99, "the arrow points where the hero walks")
+	e.key(KEY_D, false)
+	await e.frames(6)
+	assert_eq(w.move_intent, Vector2i.ZERO, "stopped")
+	assert_gt(map.corner.arrow_dir().dot(walk), 0.99, "standing still keeps the walk direction")

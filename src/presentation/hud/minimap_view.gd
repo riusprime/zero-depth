@@ -40,6 +40,9 @@ var _origin := Vector2.ZERO
 var _drawn_revision := -1
 var _drawn_player := Vector2.INF
 var _drawn_aim := -1
+var _drawn_move := Vector2i.ZERO
+## The arrow's last direction in the sim plane: the walk direction, else the last one, else the aim (W3-S8).
+var _arrow_dir := Vector2.ZERO
 var _drawn_size := Vector2.ZERO
 var _draws := 0
 
@@ -67,15 +70,18 @@ func refresh() -> void:
 	if reader == null or state == null or not is_visible_in_tree():
 		return
 	var px := (reader.player_pos() * _scale).round()
+	arrow_dir()
 	if (
 		state.revision != _drawn_revision
 		or px != _drawn_player
 		or reader.aim_angle() != _drawn_aim
+		or reader.move_intent() != _drawn_move
 		or size != _drawn_size
 	):
 		_drawn_revision = state.revision
 		_drawn_player = px
 		_drawn_aim = reader.aim_angle()
+		_drawn_move = reader.move_intent()
 		_drawn_size = size
 		queue_redraw()
 
@@ -376,9 +382,22 @@ func _draw_icons() -> void:
 				draw_icon(&"secret", at, k)
 
 
+## The arrow's direction in the sim plane. W3-S8 (owner): it follows where the player walks, not only the aim;
+## standing still keeps the last walk direction, and a fresh view with no walk shows the aim.
+func arrow_dir() -> Vector2:
+	if reader == null:
+		return _arrow_dir
+	var mv := Vector2(reader.move_intent())
+	if mv.length() > 0.1:
+		_arrow_dir = mv.normalized()
+	elif _arrow_dir == Vector2.ZERO:
+		var a := float(reader.aim_angle()) * TAU / 4096.0
+		_arrow_dir = Vector2(cos(a), sin(a))
+	return _arrow_dir
+
+
 func _draw_player() -> void:
-	var a := float(reader.aim_angle()) * TAU / 4096.0
-	var dir := _turn(Vector2(cos(a), sin(a))).normalized()
+	var dir := _turn(arrow_dir()).normalized()
 	_draw_player_arrow(to_map(reader.player_pos()), dir, _icon_scale())
 
 
