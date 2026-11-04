@@ -45,7 +45,7 @@ const GEM_Y := 58.0
 const TIER_BOTTOM := 16.0
 const TIER_SIZE := 14
 ## The rarity line never shrinks below this share of its size (it wraps to two lines instead).
-const TIER_FLOOR := 0.7
+const TIER_FLOOR := 0.85
 const TITLE_SIZES := [22, 21, 20, 19, 18, 17, 16, 15, 14, 13]
 const DESC_SIZES := [17, 16, 15, 14, 13, 12]
 ## v0.9.5 TX: the form line's type sizes.
@@ -497,7 +497,7 @@ func _place(socket_px: float, title_top: float) -> void:
 	var tier_font: Font = _tier.get_theme_font("font")
 	var tier_base := roundi(TIER_SIZE * s)
 	var tier_size := tier_base
-	var tier_floor := maxi(8, floori(tier_base * TIER_FLOOR))
+	var tier_floor := maxi(8, ceili(tier_base * TIER_FLOOR))
 	var tier_w := inner_width() if astral else w
 	var tier_x := (full.x - tier_w) * 0.5
 	# v0.10.5 W3-S12: the rarity line steps down to a floor, then wraps to two centred lines, inside the frame
@@ -524,6 +524,8 @@ func _place(socket_px: float, title_top: float) -> void:
 	)
 	_tier.size = Vector2(tier_w, tier_h)
 	tier_fit_size = tier_size
+	# a two-line rarity block takes the room under the gem: the gem rides up over it (the sentence ends above the gem)
+	gem.position.y = minf(gem.position.y, _tier.position.y - 2.0 * s - g)
 	# v0.8.0 N8: the title on top: one line if it fits at a readable size, else two.
 	var y := title_top * s
 	var t := _title.text.to_upper()

@@ -169,7 +169,7 @@ func test_the_glare_is_the_same_at_the_same_progress() -> void:
 
 
 ## v0.10.5 W3-S12 (the Blink card's "HABILIDAD NUEVA · RARO" ran past the frame): every card's rarity line and title
-## keep inside the carved frame's inner width, in both languages; the rarity line steps down to 70 % of its size,
+## keep inside the carved frame's inner width, in both languages; the rarity line steps down to 85 % of its size,
 ## then wraps to two lines.
 func _all_names() -> Array:
 	var out: Array = []
@@ -211,13 +211,17 @@ func test_card_titles_and_rarity_lines_fit_the_frame_in_every_language() -> void
 			var tier_font: Font = card.find_child("Tier", true, false).get_theme_font("font")
 			for line: String in _tier_lines():
 				card.show_face(&"blink", "Blink", "A sentence.", &"", 0, Color.WHITE, line)
-				var floor_px := floori(roundi(StoneCard.TIER_SIZE * scale_f) * StoneCard.TIER_FLOOR)
+				var floor_px := ceili(roundi(StoneCard.TIER_SIZE * scale_f) * StoneCard.TIER_FLOOR)
 				assert_lte(
 					card.tier_line_width(), inner + 1.0, "%s: '%s' fits %s" % [lang, line, inner]
 				)
+				assert_gte(card.tier_fit_size, floor_px, "'%s' stays at or above the floor" % line)
 				assert_gte(
-					card.tier_fit_size, mini(floor_px, card.tier_fit_size), "above the floor"
+					card.tier_rect().position.y,
+					card.gem_rect().end.y,
+					"%s: '%s' sits under the gem" % [lang, line]
 				)
+				assert_lte(card.tier_rect().end.y, card.size.y + 0.5, "inside the card's foot")
 				assert_lte(card.tier_rect().size.x, inner + 0.5, "the box is inside the frame")
 				if scale_f == 1.0:
 					var w := (
