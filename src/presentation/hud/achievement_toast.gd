@@ -6,6 +6,9 @@ extends Control
 ## unlocks wait their turn. It never takes the mouse, the focus or input (non-blocking), and it lives on the UI
 ## layer outside the HUD, so a toast for a floor's last moment carries over into the next floor. Its clock is the
 ## screen's (a look, never an outcome: EI-03).
+## v0.10.5 W3-O17 (UI style Astral): in HudStyle.ASTRAL the slab gives way to an Astral panel (`astral`): Astral's ink
+## fill in a 1 px contour with an inner contour 6 px in, a four-point star on its top edge, a crescent over the glyph;
+## the header in letter-spaced Cinzel small caps in the accent, the name in Cinzel, the sentence in Atkinson.
 
 const W := 460.0
 const PAD := Vector2(16, 12)
@@ -26,6 +29,8 @@ var desc_label := HudStyle.label(17)
 ## hidden and its clock stopped, so an unlock made while a floor loads (the biome's, on arrival) is seen when the cover
 ## opens, over the fade-in, instead of running out unseen behind it.
 var hold := Callable()
+## v0.10.5 W3-O17: the toast is drawn as an Astral panel (HudStyle.ASTRAL), not as the stone slab.
+var astral := HudStyle.current == HudStyle.Style.ASTRAL
 var _queue: Array[Dictionary] = []
 var _current := {}
 var _t := 0.0
@@ -63,13 +68,19 @@ func _init() -> void:
 	row.add_child(col)
 	header.name = "Header"
 	header.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	header.add_theme_color_override("font_color", HudStyle.EMBER_ACCENT)
+	if not astral:
+		header.add_theme_color_override("font_color", HudStyle.EMBER_ACCENT)
 	name_label.name = "Name"
 	desc_label.name = "Desc"
 	for l: Label in [name_label, desc_label]:
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc_label.max_lines_visible = 3
+	if astral:
+		HudStyle.serif_label(header, 12, 4, HudStyle.A_ACCENT)
+		HudStyle.serif_label(name_label, 20, 2, HudStyle.A_TEXT, 700)
+		desc_label.add_theme_font_size_override("font_size", 15)
+		desc_label.add_theme_color_override("font_color", Color(HudStyle.A_TEXT, 0.82))
 	for l: Label in [header, name_label, desc_label]:
 		l.custom_minimum_size = Vector2(TEXT_W, 0)
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -131,7 +142,26 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
+	if astral:
+		_draw_astral()
+		return
 	_box.draw(get_canvas_item(), Rect2(Vector2.ZERO, size))
+
+
+## v0.10.5 W3-O17: the Astral panel: ink, a contour, an inner contour, a star on its top edge, a crescent by the glyph
+func _draw_astral() -> void:
+	var r := Rect2(Vector2.ZERO, size.round())
+	draw_rect(r, AstralChrome.FILL)
+	AstralHudParts.frame(self, r, Color(HudStyle.A_LINE, 0.95))
+	AstralHudParts.frame(self, r.grow(-6.0), Color(HudStyle.A_LINE, 0.28))
+	AstralChrome.star4(
+		self, Vector2(roundf(r.size.x * 0.5) + 0.5, 0.5), 7.0, HudStyle.A_METAL, 0.18
+	)
+	var ic := Vector2(PAD.x + ICON * 0.5, r.size.y * 0.5)
+	draw_arc(ic, ICON * 0.5 + 4.0, 0.0, TAU, 64, Color(HudStyle.A_METAL, 0.55), 1.0, true)
+	AstralChrome.crescent(
+		self, ic + Vector2(0, -ICON * 0.5 - 10.0), 4.0, Color(HudStyle.A_METAL, 0.85)
+	)
 
 
 ## v0.8.0 MU: the toast's stone slab (tests).

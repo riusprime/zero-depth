@@ -8,6 +8,10 @@ extends Control
 ## here (no asset) in green → yellow → red as it fills. Full, it blinks slowly (reduced motion: steady red). A tier rise
 ## still brightens it for a moment, and from NUMBER_TIER the tier number stays beside it (v0.9.5 DC). It shows what
 ## WorldReader says (tier, tier_progress) and decides nothing.
+## v0.10.5 W3-O17 (UI style Astral; owner: "and what about the rest of the UI? it should match the new style"): in
+## HudStyle.ASTRAL the stripes give way to the round-2 mock's danger line: a slim ink bed in a hairline frame, a fill
+## 3 px line in the same ramp (Astral's muted tones: sage, pale gold, rose-red), a tick under the bed for each tier, a
+## diamond marker at the fill's end (filled and blinking once full) and the tier number in Cinzel. Same information.
 
 ## v0.9.5 DC (owner: "aim to a 10 minutes max per floor"): from this tier on the meter also shows the tier number
 ## ("×7"). v0.10.5 O6: the bar is full at FULL_TIER (data/curves/floor_N.tres: the overtime's last start, 600 s).
@@ -24,9 +28,12 @@ const BLINK_LOW := 0.3
 ## The hazard stripes: a period of STRIPE px at 45°, the dark band at STRIPE_DARK of the colour.
 const STRIPE := 10
 const STRIPE_DARK := 0.45
-const GREEN := Color("#4CD964")
-const YELLOW := Color("#F5D020")
-const RED := HudStyle.WARN
+## v0.10.5 W3-O17: the ramp in Astral's muted tones (no saturated green, no orange): sage, pale gold, rose-red.
+const GREEN := Color("#8CC9A6")
+const YELLOW := Color("#E2CB8E")
+const RED := HudStyle.A_WARN
+## ASTRAL: the tier number's size (Cinzel).
+const A_NUMBER_SIZE := 16
 
 static var _stripes: ImageTexture
 
@@ -151,18 +158,68 @@ func _draw() -> void:
 	var p := 0.0 if HudStyle.reduced_motion else _pulse
 	var h := bar_size.y
 	var top := floorf((size.y - h) * 0.5) if size.y > h else 0.0
-	draw_bar(self, Rect2(0, top, bar_size.x, h), fill(), level(), p)
+	var astral := style == HudStyle.Style.ASTRAL
+	if astral:
+		top = floorf((size.y - 14.0) * 0.5) if size.y > 14.0 else 0.0
+		draw_astral(self, Rect2(0, top, bar_size.x, 14.0), fill(), level(), p, FULL_TIER)
+	else:
+		draw_bar(self, Rect2(0, top, bar_size.x, h), fill(), level(), p)
 	if show_number and shows_number(_tier):
 		var num_col := bar_color()
 		if p > 0.0:
 			num_col = num_col.lerp(Color.WHITE, 0.5 * p)
 		var text := tr("HUD_DANGER_TIER") % _tier
+		if astral:
+			var base := Vector2(bar_size.x + 8.0, top + 13.0)
+			AstralHudParts.serif_text(
+				self,
+				text,
+				base,
+				A_NUMBER_SIZE,
+				num_col,
+				HORIZONTAL_ALIGNMENT_LEFT,
+				NUMBER_W,
+				0,
+				700
+			)
+			return
 		var font := HudStyle.font(true)
 		var at := Vector2(bar_size.x + 6.0, top + h * 0.5 + 5.0)
 		draw_string_outline(
 			font, at, text, HORIZONTAL_ALIGNMENT_LEFT, NUMBER_W, NUMBER_SIZE, 3, Color(0, 0, 0, 0.6)
 		)
 		draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, NUMBER_W, NUMBER_SIZE, num_col)
+
+
+## v0.10.5 W3-O17: ASTRAL's danger line on `c` in `r` (14 px tall): the slim bed in its hairline frame with end ticks,
+## a tick under it per tier (`tiers`; the passed ones lit), the fill a 3 px line in the ramp's colour at brightness
+## `lit` to `f`, and the diamond marker at its end, filled once full (it blinks with `lit`). `p` is the rise pulse.
+static func draw_astral(
+	c: CanvasItem, r: Rect2, f: float, lit: float, p: float = 0.0, tiers := FULL_TIER
+) -> void:
+	var x0 := roundf(r.position.x) + 4.0
+	var x1 := roundf(r.end.x) - 4.0
+	var y := roundf(r.position.y) + 4.0
+	var bed := Rect2(x0, y, x1 - x0, 5)
+	AstralHudParts.slim_bed(c, bed, 0.4)
+	var metal := HudStyle.A_METAL
+	AstralChrome.vline(c, x0 - 2, y - 3, y + 8, Color(metal, 0.6))
+	AstralChrome.vline(c, x1 + 1, y - 3, y + 8, Color(metal, 0.6))
+	var fx := roundf(x0 + (x1 - x0) * clampf(f, 0.0, 1.0))
+	for k in range(1, tiers):
+		var tx := roundf(x0 + (x1 - x0) * float(k) / tiers)
+		AstralChrome.vline(c, tx, y + 6, y + 9, Color(metal, 0.7 if tx <= fx else 0.28))
+	var col := color_at(f)
+	if p > 0.0:
+		col = col.lerp(Color.WHITE, 0.5 * p)
+	col = Color(col.r * lit, col.g * lit, col.b * lit, 1.0)
+	if fx > x0 + 1.0:
+		c.draw_rect(Rect2(x0 + 1, y + 1, fx - x0 - 1, 3), col)
+	var full := f >= 1.0
+	var mk := Vector2(fx + 0.5, y + 2.5)
+	AstralChrome.dia(
+		c, mk, 4.5, HudStyle.A_LINE_HI if not full else col, col if full else HudStyle.A_INK
+	)
 
 
 ## The bar on `c` in `r`: the HP bar's dark track and stone rim, the striped fill to `f` (0..1) in its colour at

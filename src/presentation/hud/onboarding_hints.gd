@@ -14,6 +14,8 @@ extends Control
 ## "Show hints: Off" hides it at once. The keys it names are the live bindings of the device used last (keyboard
 ## and mouse, or a pad), so a remap or a device switch shows at once. Its clock is the screen's (a look, never an
 ## outcome: EI-03); it reads WorldReader only (EI-07). Main owns it on the UI layer, so it outlives a floor.
+## v0.10.5 W3-O17 (UI style Astral): in HudStyle.ASTRAL the slab gives way to the store window's veil (AstralChrome:
+## ink fading at its sides between two fading hairlines, a star on the top one); "TIP" in tracked Cinzel, the accent.
 
 signal shown(id: StringName)
 
@@ -78,6 +80,9 @@ func _init() -> void:
 	add_child(col)
 	header.name = "Header"
 	header.add_theme_color_override("font_color", HudStyle.ACCENT)
+	if HudStyle.current == HudStyle.Style.ASTRAL:
+		HudStyle.serif_label(header, 13, 5, HudStyle.A_ACCENT)
+		line.add_theme_color_override("font_color", HudStyle.A_TEXT)
 	line.name = "Line"
 	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for l: Label in [header, line]:
@@ -320,6 +325,9 @@ func _fit() -> void:
 
 
 func _draw() -> void:
+	if HudStyle.current == HudStyle.Style.ASTRAL:
+		AstralChrome.veil(self, Rect2(Vector2.ZERO, size), 140.0)
+		return
 	HudStyle.draw_plate(self, Rect2(Vector2.ZERO, size), false)
 	draw_rect(
 		Rect2(Vector2(size.x * 0.3, 1.0), Vector2(size.x * 0.4, 2.0)), Color(HudStyle.ACCENT, 0.85)

@@ -63,7 +63,7 @@ func sync(reader: WorldReader) -> void:
 		_vent_sweep.queue_redraw()
 		if left > 0:
 			_vent.text += " %d" % ceili(left / float(SimTick.TICKS_PER_SECOND))
-		_vent.modulate = Color(HudStyle.HEAT[1], 1.0) if hot else Color(1, 1, 1, DIM_ALPHA)
+		_vent.modulate = _hot_color() if hot else Color(1, 1, 1, DIM_ALPHA)
 	_place()
 
 
@@ -110,3 +110,10 @@ func vent_text() -> String:
 ## The vent hint is lit (venting now would blast).
 func vent_lit() -> bool:
 	return _vent.visible and _vent.modulate.a > DIM_ALPHA + 0.01
+
+
+## The Vent hint's colour while venting would blast: the sand of HudStyle.HEAT; v0.10.5 W3-O17: Astral's muted amber.
+static func _hot_color() -> Color:
+	if HudStyle.current == HudStyle.Style.ASTRAL:
+		return HudStyle.A_HEAT
+	return Color(HudStyle.HEAT[1], 1.0)

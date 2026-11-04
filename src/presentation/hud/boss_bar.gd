@@ -17,6 +17,9 @@ extends Control
 ## rise fills it (the sim's own rise, L22). Replaces FB1's three segments. While
 ## the sim says the boss can't be hurt (WorldReader.boss_invulnerable) the bar turns INVULNERABLE's colour and says
 ## "Invulnerable", with the shields still to pass (WorldReader.boss_shields_left) when there are any.
+## v0.10.5 W3-O17 (UI style Astral): in HudStyle.ASTRAL no slab: the name in letter-spaced Cinzel between two stars
+## and fading hairlines, a small crescent over it, and the bar as one continuous fill in a hairline frame
+## (AstralHudParts.bar) in the colour mode's enemy colour; the lines under it in Atkinson. Same reads.
 
 const BAR := Vector2(560, 8)
 ## The bar while the boss can't be hurt: a cold steel blue, far from the HP red (and from the stagger's gold).
@@ -81,6 +84,11 @@ func _init() -> void:
 	visible = false
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if HudStyle.current == HudStyle.Style.ASTRAL:
+		HudStyle.serif_label(_name, 18, 5, HudStyle.A_TEXT)
+		HudStyle.serif_label(_stagger_label, 13, 3, HudStyle.A_ACCENT)
+		_sub.add_theme_color_override("font_color", HudStyle.A_DIM)
+		_name.resized.connect(queue_redraw)
 
 
 func sync(reader: WorldReader) -> void:
@@ -97,12 +105,12 @@ func sync(reader: WorldReader) -> void:
 	if not final:
 		_fallen.text = ""
 		# every sync, so a language switch renames the boss at once (v0.6.0 UP)
-		_name.text = tr(reader.boss_name_key(i))
+		_set_name(tr(reader.boss_name_key(i)))
 		var n := reader.boss_phase_thresholds(i).size()
 		_sub.text = tr("HUD_BOSS_PHASE") % [reader.boss_phase(i) + 1, n] if n > 1 else ""
 		return
 	# v0.8.0 FB1 / N4: the final boss: the fight's name over one bar for the body fighting now.
-	_name.text = tr(reader.final_name_key())
+	_set_name(tr(reader.final_name_key()))
 	# owner O59: the body's name only, never a count: the bodies to come are a surprise
 	_sub.text = tr(reader.final_segment_name_key(reader.final_phase()))
 	if reader.final_shattering():
@@ -115,6 +123,13 @@ func sync(reader: WorldReader) -> void:
 			_fallen.text = tr("HUD_FALLEN_WINDOW") % ceili(int(pace["window_left"]) / 60.0)
 		_:
 			_fallen.text = ""
+
+
+## The name (v0.10.5 W3-O17: a new one redraws the name's ornaments; an unchanged one writes nothing).
+func _set_name(t: String) -> void:
+	if _name.text != t:
+		_name.text = t
+		queue_redraw()
 
 
 ## v0.8.0 N4: the bar's fill (this phase's HP, or this body's), its motion and its invulnerable look.
@@ -197,6 +212,17 @@ func boss_name() -> String:
 
 
 func _draw() -> void:
+	if HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O17: the name's stars and rules, a crescent over it
+		var f := _name.get_theme_font(&"font")
+		var tw := f.get_string_size(_name.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+		var cx := roundf(BAR.x * 0.5)
+		var y := 13.5
+		for sx: float in [-1.0, 1.0]:
+			var ox := roundf(cx + sx * (tw * 0.5 + 22.0)) + 0.5
+			AstralChrome.star4(self, Vector2(ox, y), 6.0, HudStyle.A_METAL, 0.2)
+			AstralChrome.rule1(self, ox + sx * 12.0, 13.0, sx * 96.0, Color(HudStyle.A_METAL, 0.6))
+		AstralChrome.crescent(self, Vector2(cx + 0.5, -6.0), 5.0, Color(HudStyle.A_METAL, 0.85))
+		return
 	if HudStyle.current == HudStyle.Style.EMBER:
 		var h := 26.0 + BAR.y + 6.0 + 18.0
 		HudStyle.draw_plate(self, Rect2(-18, -4, BAR.x + 36, h + 10), true)

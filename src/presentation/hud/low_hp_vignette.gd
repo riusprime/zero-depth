@@ -50,8 +50,8 @@ func _draw() -> void:
 	var w := size.x
 	var h := size.y
 	var d := minf(w, h) * DEPTH
-	var edge := Color(HudStyle.WARN, 1.0)  # times self_modulate's alpha: edge_alpha()
-	var clear := Color(HudStyle.WARN, 0.0)
+	var edge := Color(HudStyle.warn(), 1.0)  # W3-O17: the style's warning; times self_modulate's alpha: edge_alpha()
+	var clear := Color(HudStyle.warn(), 0.0)
 	var o := [Vector2(0, 0), Vector2(w, 0), Vector2(w, h), Vector2(0, h)]
 	var i := [Vector2(d, d), Vector2(w - d, d), Vector2(w - d, h - d), Vector2(d, h - d)]
 	for k in 4:
