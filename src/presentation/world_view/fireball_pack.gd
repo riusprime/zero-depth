@@ -16,7 +16,7 @@ static func ids() -> Array[StringName]:
 	var out: Array[StringName] = []
 	for key: StringName in FireballViews.LOOKS:
 		if not FireballViews.PACK_SKIP.has(key):
-			out.append(StringName("shot_%s" % key))
+			out.append(CandidateLooks.bolt_id(key))  # v0.10.5 W3-O7: "shot_<key>", or a G2 candidate's
 	return out
 
 
