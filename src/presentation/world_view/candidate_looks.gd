@@ -9,7 +9,10 @@ extends RefCounted
 ##   underwhelming compared with fireballs"): the Twin Wardens' violet ember (BOLT_LOOKS; VX4 drew it with the pack's
 ##   mprojectile_basic_vfx_03, beside the amber twin's fire_ball_04). &"a" a violet fireball (fire_ball_04 recoloured:
 ##   assets/vfx_zd/tinted_fire); &"b" the pack's violet javelin (mprojectile_javelin_vfx_03); &"c" the pack's flare orb
-##   (magic_orb_flare_vfx_03, its star Flare left out).
+##   (magic_orb_flare_vfx_03, its star Flare left out). Round 2 (W3-O7b; owner: "comparisons with new assets from the
+##   premade pack"): &"d" the Ice pack's shard (ice_shard_vfx_02) in violet; &"e" the Ice pack's ball (ice_ball_vfx_01)
+##   in violet; &"f" the Magic Projectiles wave (mprojectile_wave_vfx_03); &"g" the Poison pack's bubble
+##   (poison_bubble_vfx_01, its Pop and Splats left out).
 ## - The Lance (owner: "Lance: projectile animation looks like a generic ball and feels worse than the available VFX
 ##   pack alternatives"): today the pack's big orb of the element (vx2_big_<element>). &"a" the recoloured fireball in
 ##   the element's colours; &"b" the pack's javelin of the element (vx2_jav_<element>); &"c" the pack's flare orb with
@@ -23,6 +26,10 @@ const BOLTS := {
 	&"a": [&"w3o7_bolt_a", []],
 	&"b": [&"w3o7_bolt_b", []],
 	&"c": [&"w3o7_bolt_c", ["Flare"]],
+	&"d": [&"w3o7_bolt_d", []],
+	&"e": [&"w3o7_bolt_e", []],
+	&"f": [&"w3o7_bolt_f", []],
+	&"g": [&"w3o7_bolt_g", ["Pop", "Splats"]],
 }
 ## Candidate -> [its table id (a "%s" takes the element's kind), its drawn size per metre of the ball's radius, true:
 ## the fireball's colours (its flame and rim the element's deep tone, its hot puffs and light its hot centre)].

@@ -9,8 +9,16 @@ extends SceneTree
 ##   godot --position -10000,-10000 --path . --fixed-fps 60 --audio-driver Dummy --resolution 1280x720 \
 ##     -s scripts/shots/w3o7_shots.gd
 ## Writes build/shots/v0.10.5/w3o7/ and prints each path.
+## v0.10.5 W3-O7b (round 2; the owner: "comparisons with new assets from the premade pack"): with `-- --round2`, only
+## the purple bolts, every candidate (now, a-g), into build/shots/v0.10.5/w3o7b/, then bolt_compare.png: each shot's
+## middle (COMPARE_CROP) in a labelled grid.
 
 const CANDIDATES: Array[StringName] = [&"", &"a", &"b", &"c"]
+const ROUND2: Array[StringName] = [&"", &"a", &"b", &"c", &"d", &"e", &"f", &"g"]
+## The part of a bolt shot the contact sheet keeps (the five shots and the floor round them), and its grid.
+const COMPARE_CROP := Rect2i(100, 30, 840, 500)
+const COMPARE_COLS := 4
+const COMPARE_LABEL_H := 44
 const SIZE := Vector2i(1280, 720)
 ## The Crossfire's shots (data/bullet_patterns/twin_wardens_crossfire: 0.2 m, 3 m/s): violet ones, amber ones.
 const BOLTS: Array[StringName] = [
@@ -44,9 +52,17 @@ var _phase := 0  # 0 bolts, 1 the Lance
 var _k := 0
 var _frame := 0
 var _charged: Image
+var _cands: Array[StringName] = CANDIDATES
+var _round2 := false
+var _shots: Array[Image] = []
+var _sheet: SubViewport
 
 
 func _initialize() -> void:
+	_round2 = OS.get_cmdline_user_args().has("--round2")
+	if _round2:
+		_cands = ROUND2
+		_dir = "res://build/shots/v0.10.5/w3o7b/"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	ViewPrefs.effects_density = "high"
 	_repo = ContentRepository.load_all()
@@ -74,8 +90,8 @@ func _item(id: StringName) -> int:
 func _build() -> void:
 	if _view != null:
 		_view.queue_free()
-	CandidateLooks.bolt = CANDIDATES[_k] if _phase == 0 else CandidateLooks.BOLT
-	CandidateLooks.lance = CANDIDATES[_k] if _phase == 1 else CandidateLooks.LANCE
+	CandidateLooks.bolt = _cands[_k] if _phase == 0 else CandidateLooks.BOLT
+	CandidateLooks.lance = _cands[_k] if _phase == 1 else CandidateLooks.LANCE
 	var t := ContentCompiler.compile_player(_repo.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(t, _repo.get_def(&"build", &"gun"))
 	t.crit_chance_permille = 0
@@ -113,6 +129,8 @@ func _build() -> void:
 
 
 func _process(_delta: float) -> bool:
+	if _sheet != null:
+		return _save_sheet()
 	if _phase == 0:
 		return _bolts()
 	return _lance()
@@ -128,7 +146,9 @@ func _bolts() -> bool:
 	_frame += 1
 	if _frame < BOLT_FRAMES:
 		return false
-	_save(_vp.get_texture().get_image(), "bolt_%s.png" % _name(CANDIDATES[_k]))
+	var img := _vp.get_texture().get_image()
+	_save(img, "bolt_%s.png" % _name(_cands[_k]))
+	_shots.append(img)
 	return _next()
 
 
@@ -148,7 +168,7 @@ func _lance() -> bool:
 	flight.convert(Image.FORMAT_RGB8)
 	sheet.blit_rect(_charged, Rect2i(Vector2i.ZERO, SIZE), Vector2i.ZERO)
 	sheet.blit_rect(flight, Rect2i(Vector2i.ZERO, SIZE), Vector2i(SIZE.x, 0))
-	_save(sheet, "lance_%s.png" % _name(CANDIDATES[_k]))
+	_save(sheet, "lance_%s.png" % _name(_cands[_k]))
 	return _next()
 
 
@@ -160,12 +180,72 @@ func _save(img: Image, file: String) -> void:
 
 func _next() -> bool:
 	_k += 1
-	if _k >= CANDIDATES.size():
+	if _k >= _cands.size():
 		_k = 0
 		_phase += 1
+		if _round2 and _phase == 1:
+			_view.queue_free()
+			_view = null
+			_build_sheet()
+			return false
 		if _phase > 1:
 			CandidateLooks.bolt = CandidateLooks.BOLT
 			CandidateLooks.lance = CandidateLooks.LANCE
 			return true
 	_build()
 	return false
+
+
+## Round 2's contact sheet: each bolt shot's middle, labelled with its candidate, in a grid (a viewport of
+## TextureRects and Labels, saved two frames later by _save_sheet).
+func _build_sheet() -> void:
+	var cell := COMPARE_CROP.size + Vector2i(0, COMPARE_LABEL_H)
+	var rows := ceili(float(_shots.size()) / COMPARE_COLS)
+	_sheet = SubViewport.new()
+	_sheet.size = Vector2i(cell.x * COMPARE_COLS, cell.y * rows)
+	_sheet.transparent_bg = false
+	_sheet.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	root.add_child(_sheet)
+	var bg := ColorRect.new()
+	bg.color = Color(0.08, 0.08, 0.1)
+	bg.size = Vector2(_sheet.size)
+	_sheet.add_child(bg)
+	for n in _shots.size():
+		var at := Vector2i((n % COMPARE_COLS) * cell.x, (n / COMPARE_COLS) * cell.y)
+		var rect := TextureRect.new()
+		rect.texture = ImageTexture.create_from_image(_shots[n].get_region(COMPARE_CROP))
+		rect.position = Vector2(at + Vector2i(0, COMPARE_LABEL_H))
+		_sheet.add_child(rect)
+		var label := Label.new()
+		label.text = "  %s" % _label(_cands[n])
+		label.position = Vector2(at)
+		label.size = Vector2(cell.x, COMPARE_LABEL_H)
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.add_theme_font_size_override("font_size", 26)
+		label.add_theme_color_override("font_color", Color.WHITE)
+		_sheet.add_child(label)
+	_frame = 0
+
+
+static func _label(c: StringName) -> String:
+	const NAMES := {
+		&"": "now: mprojectile_basic_vfx_03",
+		&"a": "A: violet fireball (tinted fire_ball_04)",
+		&"b": "B: javelin (mprojectile_javelin_vfx_03)",
+		&"c": "C: flare orb (magic_orb_flare_vfx_03)",
+		&"d": "D: ice shard (ice_shard_vfx_02)",
+		&"e": "E: ice ball (ice_ball_vfx_01)",
+		&"f": "F: wave (mprojectile_wave_vfx_03)",
+		&"g": "G: poison bubble (poison_bubble_vfx_01)",
+	}
+	return NAMES.get(c, String(c))
+
+
+func _save_sheet() -> bool:
+	_frame += 1
+	if _frame < 3:
+		return false
+	_save(_sheet.get_texture().get_image(), "bolt_compare.png")
+	CandidateLooks.bolt = CandidateLooks.BOLT
+	CandidateLooks.lance = CandidateLooks.LANCE
+	return true
