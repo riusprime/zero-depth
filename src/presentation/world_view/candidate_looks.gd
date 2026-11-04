@@ -16,7 +16,8 @@ extends RefCounted
 ##   its star flare (magic_orb_flare_vfx_02).
 
 const BOLT := &""
-const LANCE := &""
+## The owner picked A (the element fireball) on 2026-11-04.
+const LANCE := &"a"
 const BOLT_LOOKS: Array[StringName] = [&"warden_violet_ember"]
 ## Candidate -> [its table id, the parts of its scene left out].
 const BOLTS := {
