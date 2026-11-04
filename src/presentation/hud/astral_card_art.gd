@@ -1,6 +1,6 @@
 class_name AstralCardArt
 extends RefCounted
-## v0.10.5 W3-O15 (owner 2026-11-04: UI style Astral, W3_O13_UI_STYLE_G2.md round 2; his painted card art): the one
+## v0.10.5 W3-O15 (owner 2026-11-04: UI style Astral, W3_O13_UI_STYLE_G2.md round 2; the painted card art): the one
 ## file that loads the card art. The card icons (assets/ui/card_icons/icon_<card id>.png, cut from his sheets by
 ## scripts/art/split_sheets.py; a card without one shows icon_unknown), his four carved slate card frames and their
 ## focused twins (assets/ui/card_frames/frame_<1..4>[_focus].png, cut by scripts/art/cut_card_frames.py: each frame's

@@ -18,9 +18,9 @@ extends Control
 ## while the card is focused), the sentence, the gem and the rarity's word. The whole tablet is painted in its
 ## rarity's colour (CardPaint: the stone tinted, a frame line and the glow in it); the face hangs from a pivot
 ## (CardFx) that the pick panel deals, flips, tilts and burns; a focused card sinks a little instead of lifting.
-## v0.10.5 W3-O15 (owner 2026-11-04: UI style Astral; his painted card art): an Astral card (`astral`, the pick's and
+## v0.10.5 W3-O15 (owner 2026-11-04: UI style Astral; the painted card art): an Astral card (`astral`, the pick's and
 ## the shop's, PickSlot) wears one of the owner's four carved slate frames (AstralCardArt: chosen by the card's id, the
-## same every time; a 9-slice whose chamfered corners never stretch) in place of the stone tablet, his painted icon in
+## same every time; a 9-slice whose chamfered corners never stretch) in place of the stone tablet, the painted icon in
 ## an Astral medallion (AstralMedallion; icon_unknown for a card without one) in place of the inlay socket, the name in
 ## Cinzel and the sentence in Atkinson in Astral's colours. Focus swaps the frame for its focused twin (the icy rim)
 ## and lights the medallion (Astral's focus: a brighter contour, four stars round it). The stone tablet's box still
