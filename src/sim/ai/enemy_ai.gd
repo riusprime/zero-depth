@@ -60,6 +60,8 @@ const CONTACT_SLOP_M := 0.02
 ## attack checks, windups, hits and telegraphs still run every tick (think's state machine); only the walk's plan
 ## slows down. Its wall check now runs on every plan: every 8 ticks, as before.
 const PLAN_PERIOD := 8
+## (owner, 2026-11-04, W3-S10: elites plan every 4 ticks again; PD's 8 kept for the crowd)
+const ELITE_PLAN_PERIOD := 4
 ## v0.4.0 EN (starting values). A Sniper's line stops following the player this many ticks before it fires.
 const SNIPE_COMMIT_TICKS := 24
 ## After a shot a Sniper walks, this much faster, to a spot 45-90 degrees around the player (1/4096 turns), until it
@@ -372,7 +374,8 @@ static func _walk_dir(w: World, i: int, t: EnemyTable) -> Vector2:
 ## v0.4.0 SC: whether enemy i re-plans this tick. Each enemy re-plans every PLAN_PERIOD ticks, on the phase its
 ## id gives (id % PLAN_PERIOD), so a crowd's planning is spread evenly over the ticks; it still moves every tick.
 static func plans_now(w: World, i: int) -> bool:
-	return posmod(w.tick, PLAN_PERIOD) == posmod(w.actors.ids[i], PLAN_PERIOD)
+	var period := ELITE_PLAN_PERIOD if EliteAi.is_elite_kind(w.actors.kinds[i]) else PLAN_PERIOD
+	return posmod(w.tick, period) == posmod(w.actors.ids[i], period)
 
 
 ## v0.4.0 SC: the walk, planned every PLAN_PERIOD ticks (tick phase 3, before anything moves) and followed every

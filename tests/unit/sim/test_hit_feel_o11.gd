@@ -92,9 +92,9 @@ func _bolt_push(crit: bool) -> float:
 	return w.blade.k_step[0] * 8.0
 
 
-func test_a_bolt_pushes_006_m_and_a_crit_012_m() -> void:
-	assert_almost_eq(_bolt_push(false), 0.06, 0.001)
-	assert_almost_eq(_bolt_push(true), 0.12, 0.001)
+func test_a_bolt_pushes_003_m_and_a_crit_006_m() -> void:
+	assert_almost_eq(_bolt_push(false), 0.03, 0.001)
+	assert_almost_eq(_bolt_push(true), 0.06, 0.001)
 
 
 func test_the_values_are_in_the_data() -> void:
@@ -103,8 +103,8 @@ func test_the_values_are_in_the_data() -> void:
 	)
 	assert_almost_eq(t.hit_push_m, 0.15, 0.0001)
 	assert_almost_eq(t.finisher_push_m, 0.45, 0.0001)
-	assert_almost_eq(t.bolt_push_m, 0.06, 0.0001)
-	assert_almost_eq(t.bolt_crit_push_m, 0.12, 0.0001)
+	assert_almost_eq(t.bolt_push_m, 0.03, 0.0001)
+	assert_almost_eq(t.bolt_crit_push_m, 0.06, 0.0001)
 
 
 # --- F2 ---------------------------------------------------------------------------------------------------------

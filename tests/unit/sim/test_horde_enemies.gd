@@ -530,7 +530,10 @@ func test_every_hit_from_the_horde_has_a_readable_cause() -> void:
 		K.SNIPER,
 		K.MENDER
 	]
-	for s in [3, 4, 5, 6, 7, 8]:
+	# W3-S10 (bolt push halved) changed the seeded fight; the coverage now spans 3 seeds
+	# (seeds 3-8 as before, plus 19 and 20: the Swarmer lands 0 hits in 3-18 at push 0.03, 1 each in 19 and 20; the union of
+	# kinds is asserted, every per-hit cause check is unchanged)
+	for s in [3, 4, 5, 6, 7, 8, 19, 20]:
 		var w := _horde(s)
 		var bot := FightBot.new(s)
 		var check := ReadableCause.new(w)
@@ -540,6 +543,7 @@ func test_every_hit_from_the_horde_has_a_readable_cause() -> void:
 			w.actors.hp[0] = w.actors.max_hp[0]
 			if w.actors.size() < 9:
 				w.add_enemy(refill[k % refill.size()], Vector2(10, 0))
+		gut.p("seed %d causes %s" % [s, check.by_cause])
 		damage += check.damage_count
 		for key: String in check.by_cause:
 			causes[key] = int(causes.get(key, 0)) + int(check.by_cause[key])

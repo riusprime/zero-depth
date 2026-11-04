@@ -20,5 +20,5 @@ extends Resource
 ## Heavy card's knock ticks. A Blade hit, the Blade finisher, a Gun bolt and a Gun crit.
 @export var hit_push_m := 0.15  # starting value (O11, overnight pick)
 @export var finisher_push_m := 0.45  # starting value (O11, overnight pick)
-@export var bolt_push_m := 0.06  # starting value (O11, overnight pick)
-@export var bolt_crit_push_m := 0.12  # starting value (O11, overnight pick)
+@export var bolt_push_m := 0.03  # W3-S10 (owner): half of the O11 pick
+@export var bolt_crit_push_m := 0.06  # W3-S10 (owner): half of the O11 pick
