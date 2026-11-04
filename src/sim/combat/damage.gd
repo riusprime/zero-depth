@@ -108,6 +108,10 @@ static func hit(
 			amount = amount * el / 1000
 	if w.pair_mask != 0:  # v0.9.5 EE3: Sepsis, +20 % on an enemy deep in poison and bleed
 		amount = amount * ElementPairs.attacker_mult(w, target, owner_id) / 1000
+	if w.pair_table != null and target != 0 and owner_id == a.ids[0]:  # v0.10.5 W3-P1, P2
+		var el := ElementStack.of_id(effect_id)  # an element's own hit: its hook, strike or shard
+		if el != ElementStack.NONE:
+			amount = ElementStack.scale(amount, ElementStack.mult(w, target, el))
 	var h := w.emit_event(SimEvent.Kind.HIT, source_id, owner_id, target_id, at)
 	h.root_id = root_id
 	h.amount = amount
@@ -189,6 +193,10 @@ static func tick_dot(
 		amount = Stats.dot(w, amount)  # v0.4.0 BS: the damage stat (a DoT tick never crits)
 		if w.pair_mask != 0:  # v0.9.5 EE3: Sepsis takes the ticks too
 			amount = amount * ElementPairs.attacker_mult(w, target, owner_id) / 1000
+		if w.pair_table != null:  # v0.10.5 W3-P1, P2: an element's tick (or Exsanguinate's burst)
+			var el := ElementStack.of_id(element if element != &"" else effect_id)
+			if el != ElementStack.NONE:
+				amount = ElementStack.scale(amount, ElementStack.mult(w, target, el))
 		var mu := Matchups.dot_mult(w, target, element)
 		if mu[1] != 0:
 			amount = Matchups.scale(amount, mu[0])

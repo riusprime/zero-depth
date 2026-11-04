@@ -1342,6 +1342,16 @@ Deep floors and loops ≥ 2): `floor_1_weights_permille`, `floor_2_weights_permi
 data 2/3/5/5), `guaranteed_altars` (four, 0..8; data 2/0/0/0: the floor's first N regular altars show a card compatible
 with the wand), and `jackpot_permille` (0..1000; data 15). Compiled by `RunContentCompiler.compile_loot_pacing` into
 `LootPacingTable`; without the file, no pacing.
+v0.10.5 W3-P2 (the progression audit's P2, owner 2026-11-04): `element_ceilings` (0..16 values, 1..5, never falling;
+empty = none; data 1/2/2/3) is an element card's own level ceiling in loop 1 by floor (index 0 = floor 1, the last
+value past its end), under the stage's, and `element_ceiling_loops` (at least the row's top, at most 5; data 3) the
+one on every floor of loop 2 and later (`LootPacing.element_ceiling`).
+
+`ElementPairsDefinition` (v0.9.5 EE3; `data/combos/element_pairs.tres`) also holds, from v0.10.5 W3-P1 (P1),
+`stack_falloff_permille` (0..4 values, 1..1000, never rising; empty = none; data 1000/700/500/350): an element's own
+damage on an enemy carrying k other elements counts at entry k (the last for more; `ElementStack`). An element card's
+`ItemDefinition.el_level_permille` (W3-P2; empty = 1000, else one value per level, 100..3000; data Fire and Venom
+750/900/1150, Bleed 850/950/1050, Lightning 800/900/1100, Frost none) scales that damage by the card's level.
 
 `StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
 `max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,

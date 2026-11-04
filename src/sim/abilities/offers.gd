@@ -239,7 +239,8 @@ static func roll_legendary(w: World) -> PackedInt32Array:
 ## (LootPacing.next_ceiling), usable and in no other offer, not already in `out`.
 static func boss_upgrades(w: World, out: PackedInt32Array) -> PackedInt32Array:
 	var ups := PackedInt32Array()
-	for idx in ItemPool.available(w, true, LootPacing.next_ceiling(w)):
+	var el := LootPacing.element_ceiling(w, 1)  # v0.10.5 W3-P2: an element up to the next floor's own ceiling
+	for idx in ItemPool.available(w, true, LootPacing.next_ceiling(w), el):
 		if w.items_owned.has(idx) and CardLevels.is_card(w, idx) and not out.has(idx):
 			ups.append(idx)
 	return ups

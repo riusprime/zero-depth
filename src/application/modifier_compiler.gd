@@ -215,6 +215,7 @@ static func compile_item_extras(def: ItemDefinition, t: ItemTable) -> void:
 	t.el_shard_permille = def.el_shard_permille
 	t.el_shard_slow_ticks = SimTick.seconds_to_ticks(def.el_shard_slow_seconds)
 	t.el_shatters_per_second = def.el_shatters_per_second
+	t.el_level_permille = def.el_level_permille.duplicate()  # v0.10.5 W3-P2
 	t.bleed_move_period_ticks = SimTick.seconds_to_ticks(def.bleed_move_period_seconds)  # v0.6.5 WN5a
 	t.name_key_gun = def.name_key_gun
 	t.desc_key_gun = def.desc_key_gun

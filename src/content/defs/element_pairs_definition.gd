@@ -26,6 +26,10 @@ extends ContentDef
 
 ## A pair's strength at pair Lv 1/2/3, per mille of the Lv 3 bonus.
 @export var level_permille := PackedInt32Array([400, 700, 1000])
+## v0.10.5 W3-P1 (the progression audit's P1, owner 2026-11-04): elements add with diminishing returns on one target.
+## An element's damage on an enemy already carrying k other elements counts at this share, per mille, for k = 0, 1, 2
+## and 3 or more (ElementStack). 0..4 values, each 1..1000, never rising; empty = no falloff.
+@export var stack_falloff_permille := PackedInt32Array()
 @export var triggers_per_second := 4
 @export var burst_permille := 3000
 @export var burst_radius_m := 1.5
@@ -80,6 +84,19 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(
 				&"range", resource_path, "level_permille needs 3 ascending values in 1..1000"
+			)
+		)
+	var ok_falloff := stack_falloff_permille.size() <= 4
+	for k in stack_falloff_permille.size():
+		var v := stack_falloff_permille[k]
+		if v < 1 or v > 1000 or (k > 0 and v > stack_falloff_permille[k - 1]):
+			ok_falloff = false
+	if not ok_falloff:
+		issues.append(
+			ValidationIssue.new(
+				&"range",
+				resource_path,
+				"stack_falloff_permille: 0..4 values in 1..1000, never rising"
 			)
 		)
 	for pair: Array in [

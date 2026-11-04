@@ -132,9 +132,11 @@ static func attacker_mult(w: World, target: int, owner_id: int) -> int:
 		return 1000
 	var m := 1000
 	if a.burn_stacks[target] > 0 and level(w, FIRE) >= LV_3:
-		m = m * (1000 + card(w, FIRE).el_heat_permille) / 1000
+		var heat := 1000 + card(w, FIRE).el_heat_permille
+		m = m * ElementStack.bonus(w, target, ElementStack.FIRE, heat) / 1000  # v0.10.5 W3-P1
 	if a.frozen_t[target] > 0 and level(w, FROST) >= LV_2:
-		m = m * (1000 + card(w, FROST).el_frostbite_permille) / 1000
+		var bite := 1000 + card(w, FROST).el_frostbite_permille
+		m = m * ElementStack.bonus(w, target, ElementStack.FROST, bite) / 1000  # v0.10.5 W3-P1
 	return m
 
 

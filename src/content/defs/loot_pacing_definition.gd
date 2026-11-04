@@ -31,6 +31,13 @@ const WEIGHTED := 5
 ## reward table's.
 @export var altar_type_weights := PackedInt32Array([10, 30, 60, 10, 40, 50, 14, 43, 43, 14, 43, 43])
 @export var chest_type_weights := PackedInt32Array([10, 25, 65, 10, 30, 60, 14, 43, 43, 14, 43, 43])
+## v0.10.5 W3-P2 (the progression audit's P2, owner 2026-11-04: element levels follow the floor): an element card's
+## (loot_category element) own level ceiling in the first loop, by floor (index 0 = floor 1; floors past the end use
+## the last), on top of the stage's ceiling; empty = none. Data 1 / 2 / 2 / 3: Lv 1 on floor 1, Lv 2 on floors 2-3,
+## Lv 3 from floor 4.
+@export var element_ceilings := PackedInt32Array()
+## v0.10.5 W3-P2: the element ceiling on every floor of loop 2 and later (W3-P3 adds overlevels later).
+@export var element_ceiling_loops := 5
 
 
 func category() -> StringName:
@@ -89,4 +96,16 @@ func validate() -> Array[ValidationIssue]:
 				issues.append(
 					ValidationIssue.new(&"range", resource_path, "a stage's type weights sum > 0")
 				)
+	var prev := 1  # v0.10.5 W3-P2
+	var ok_el := element_ceilings.size() <= 16
+	for c in element_ceilings:
+		ok_el = ok_el and c >= 1 and c <= 5 and c >= prev
+		prev = maxi(prev, c)
+	ok_el = ok_el and element_ceiling_loops >= prev and element_ceiling_loops <= 5
+	if not ok_el:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "element ceilings: 1..5, never falling, loops' at the top"
+			)
+		)
 	return issues

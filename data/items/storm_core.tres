@@ -18,4 +18,5 @@ modifiers = Array[StringName]([&"storm_core"])
 loot_category = &"element"
 slot_category = &"element"
 level_max = 3
+el_level_permille = PackedInt32Array(800, 900, 1100)
 id = &"storm_core"

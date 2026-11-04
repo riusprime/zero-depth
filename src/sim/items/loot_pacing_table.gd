@@ -23,3 +23,7 @@ var jackpot_permille := 15
 ## draw, 3 per stage; empty = the reward table's weights.
 var altar_type_weights := PackedInt32Array()
 var chest_type_weights := PackedInt32Array()
+## v0.10.5 W3-P2: an element card's level ceiling in loop 1 by floor (index 0 = floor 1, the last for floors past it),
+## and on every floor of loop 2 and later; empty = no element ceiling (the stage's alone).
+var element_ceilings := PackedInt32Array()
+var element_ceiling_loops := 5

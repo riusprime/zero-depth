@@ -21,4 +21,5 @@ modifiers = Array[StringName]([&"shared_bleed"])
 loot_category = &"element"
 slot_category = &"element"
 level_max = 3
+el_level_permille = PackedInt32Array(850, 950, 1050)
 id = &"shared_bleed"
