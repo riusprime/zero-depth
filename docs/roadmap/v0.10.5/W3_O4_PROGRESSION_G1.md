@@ -320,7 +320,7 @@ Order if approved: P9 probe and P6(a) check first (they may change the picture),
 | P2 | Approved | — |
 | P3 | Approved; it is the way through the loops (see P4) | — |
 | P4 | **Not as written.** Owner: loops stay "A wall"; "to overcome loop difficulty we need a way of scale the player build further in strength so loops feel more difficult but possible to overcome, based on the strength of the build". So loop HP stays × 3.5 and the catch-up is unchanged; P3 (overlevels) is sized so a build that keeps investing can climb loop 2–3 and a weak one cannot | — |
-| P5 | Approved | — |
+| P5 | Approved; built (W3-P5). Wave: its run halved (10.8 → 5.4 m), owner 2026-11-04: "Keep shorter reach" | W3-P5 |
 | P6 | Approved; measured (PROGRESS W3-P6): Storm × 1.65–3.80 on real bosses, Ring × 2.2 on a real floor: under the trim line, no trim | — |
 | P7 | Approved (prune) | — |
 | P8 | Not wanted: Q3 below | — |
