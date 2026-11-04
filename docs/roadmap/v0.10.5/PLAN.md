@@ -370,6 +370,7 @@ the 3 + 1 rule above for this wave.
 | F32 | (owner, on round 2) "Astral I like the most but the shape of the cards is odd, that pointy top is bad" | **Astral** is the UI style. Its card shape is redone (no pointed top): 3 card-shape variants in Astral to pick from, then the UI rework | W3-O13c |
 | F33 | (owner, 2026-11-04) O11 bolt knockback: "Smaller push"; PD and elites: "Elites plan every 4" | Bolt push halved (0.06 → 0.03 m, crit 0.12 → 0.06); elites plan every 4 ticks, normal enemies stay at 8 | W3-S10 |
 | F34 | (owner, 2026-11-04) the generated card icons (6 sheets) and 8 carved card frames (4 normal + 4 focused): "make sure to not lose the burn effect when picking one, we should modify it into a glare kind of particle effect more than a burn, but burn like with a noise texture dissolve as the one I attached" | The Astral cards use the owner's frames and icons; the pick burn becomes a noise dissolve with a glare edge and a particle burst | W3-O15 |
+| F35 | (owner, 2026-11-04) "and what about the rest of the UI? it should match the new style" | The whole UI goes Astral: the HUD, then the menus, then the Build page, Codex, events and hub prompts | W3-O17, W3-O18, W3-O19 |
 | F30 | (owner) "the minimap … should match where the character is looking but walking in a direction does not change it … match it to the player's direction always not just aiming" | The arrow follows the walk; standing, it keeps the last direction | W3-S8 |
 | F27 | (owner, later 2026-11-04) "swap Lance name to fireball if it gonna look like a fireball" | Display names only (en + es), ids unchanged | W3-S7 |
 | F28 | (owner) "i'd like to see which assets from the pack we did not use that could be used, could there be a repository of how all of the current effects look in the game for the premade pack and the already used or original from the game enemies, and effects from all abilities and enemies so I can compare" | An in-game VFX gallery (dev): every effect in use (abilities, forms, elements, enemies, bosses) and every unused pack effect, live and as labelled contact sheets | W3-O12 |
@@ -397,6 +398,7 @@ Steps (S = Sonnet, O = Opus; at most 2 + 2 at once):
 - **W3-S8** the minimap arrow follows the walk (F30). Agents from now: at most 2 Sonnet + 3 Opus (owner, 2026-11-04: "let's elevate max opus agents to 3").
 - **W3-O13** G2: three UI styles for the whole UI (F29); the shop then rebuilt in layout A with the picked style.
 - **W3-O12** the VFX gallery (F28): a dev scene that plays every effect in the game and every unused pack effect, grouped and labelled, plus contact sheets.
+- **W3-O17** the in-run HUD in Astral (continuous HP bar with a medallion). **W3-O18** the menus (main, pause, options, recap, loading, credits). **W3-O19** the Build page, Codex, event panels, hub prompts and the remaining panels.
 - **W3-O11** the Brood Mother joins floor 1's pool (Gatekeeper, Warlord, Brood Mother) at floor-1 strength; floor 2 never draws a boss the run already met; old saves keep their bosses.
 
 ### R. Release
