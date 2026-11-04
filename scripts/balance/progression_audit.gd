@@ -29,13 +29,28 @@ const RESPAWN_TICKS := 60
 const ENDLESS := 0
 
 const GUN_FORMS: Array[StringName] = [
-	&"", &"gun_laser", &"gun_void", &"gun_lance", &"gun_rune_explosion", &"gun_glaive",
-	&"gun_seekers", &"gun_wave", &"gun_wisps",
+	&"",
+	&"gun_laser",
+	&"gun_void",
+	&"gun_lance",
+	&"gun_rune_explosion",
+	&"gun_glaive",
+	&"gun_seekers",
+	&"gun_wave",
+	&"gun_wisps",
 ]
 ## Blade forms (loot_category form). Counter and Parry Edge answer enemy attacks; the dummies never attack.
 const BLADE_FORMS: Array[StringName] = [
-	&"", &"echo_slash", &"blade_orbit", &"chain_cut", &"fissure", &"flurry", &"heavy", &"lunge_step",
-	&"counter", &"parry_edge",
+	&"",
+	&"echo_slash",
+	&"blade_orbit",
+	&"chain_cut",
+	&"fissure",
+	&"flurry",
+	&"heavy",
+	&"lunge_step",
+	&"counter",
+	&"parry_edge",
 ]
 const ELEMENTS: Array[StringName] = [
 	&"ember_core", &"venom_core", &"shared_bleed", &"storm_core", &"frost_core"
@@ -52,21 +67,46 @@ const TRACKS := {
 		["gun_twin:2", "gun_pierce:1", "gun_homing:1"],
 		["gun_twin:3", "gun_pierce:1", "gun_homing:1", "split_shot:1"],
 		["gun_twin:3", "gun_pierce:1", "gun_homing:1", "split_shot:2", "chain_blast:1"],
-		["gun_twin:3", "gun_pierce:1", "gun_homing:1", "split_shot:3", "chain_blast:2", "shared_faultline:1"],
+		[
+			"gun_twin:3",
+			"gun_pierce:1",
+			"gun_homing:1",
+			"split_shot:3",
+			"chain_blast:2",
+			"shared_faultline:1"
+		],
 	],
 	"gun_void_fire_venom":
 	[
 		&"gun",
 		["gun_void:1", "ember_core:1", "venom_core:1"],
 		["gun_void:1", "ember_core:2", "venom_core:2", "chain_blast:1"],
-		["gun_void:1", "ember_core:3", "venom_core:3", "chain_blast:2", "split_shot:1", "gun_twin:1"],
 		[
-			"gun_void:1", "ember_core:3", "venom_core:3", "chain_blast:3", "split_shot:2", "gun_twin:2",
+			"gun_void:1",
+			"ember_core:3",
+			"venom_core:3",
+			"chain_blast:2",
+			"split_shot:1",
+			"gun_twin:1"
+		],
+		[
+			"gun_void:1",
+			"ember_core:3",
+			"venom_core:3",
+			"chain_blast:3",
+			"split_shot:2",
+			"gun_twin:2",
 			"gun_homing:1"
 		],
 		[
-			"gun_void:1", "ember_core:3", "venom_core:3", "chain_blast:4", "split_shot:3", "gun_twin:3",
-			"gun_homing:1", "gun_echo:1"
+			"gun_void:1",
+			"ember_core:3",
+			"venom_core:3",
+			"chain_blast:4",
+			"split_shot:3",
+			"gun_twin:3",
+			"gun_homing:1",
+			"gun_echo:1"
 		],
 	],
 	"gun_wave_fire_venom":
@@ -74,14 +114,32 @@ const TRACKS := {
 		&"gun",
 		["gun_wave:1", "ember_core:1", "venom_core:1"],
 		["gun_wave:1", "ember_core:2", "venom_core:2", "chain_blast:1"],
-		["gun_wave:1", "ember_core:3", "venom_core:3", "chain_blast:2", "split_shot:1", "gun_twin:1"],
 		[
-			"gun_wave:1", "ember_core:3", "venom_core:3", "chain_blast:3", "split_shot:2", "gun_twin:2",
+			"gun_wave:1",
+			"ember_core:3",
+			"venom_core:3",
+			"chain_blast:2",
+			"split_shot:1",
+			"gun_twin:1"
+		],
+		[
+			"gun_wave:1",
+			"ember_core:3",
+			"venom_core:3",
+			"chain_blast:3",
+			"split_shot:2",
+			"gun_twin:2",
 			"gun_homing:1"
 		],
 		[
-			"gun_wave:1", "ember_core:3", "venom_core:3", "chain_blast:4", "split_shot:3", "gun_twin:3",
-			"gun_homing:1", "gun_echo:1"
+			"gun_wave:1",
+			"ember_core:3",
+			"venom_core:3",
+			"chain_blast:4",
+			"split_shot:3",
+			"gun_twin:3",
+			"gun_homing:1",
+			"gun_echo:1"
 		],
 	],
 	"blade_plain":
@@ -91,21 +149,46 @@ const TRACKS := {
 		["wide_arc:2", "double_slash:2", "finisher_plus:1"],
 		["wide_arc:3", "double_slash:3", "finisher_plus:2", "riposte_chain:1"],
 		["wide_arc:4", "double_slash:4", "finisher_plus:3", "riposte_chain:2", "blade_storm:1"],
-		["wide_arc:5", "double_slash:5", "finisher_plus:4", "riposte_chain:3", "blade_storm:2", "split_wave:1"],
+		[
+			"wide_arc:5",
+			"double_slash:5",
+			"finisher_plus:4",
+			"riposte_chain:3",
+			"blade_storm:2",
+			"split_wave:1"
+		],
 	],
 	"blade_wave_elements":
 	[
 		&"blade",
 		["echo_slash:1", "ember_core:1", "venom_core:1"],
 		["echo_slash:2", "ember_core:2", "venom_core:2", "chain_blast:1"],
-		["echo_slash:3", "ember_core:3", "venom_core:3", "chain_blast:2", "shared_bleed:1", "split_wave:1"],
 		[
-			"echo_slash:4", "ember_core:3", "venom_core:3", "chain_blast:3", "shared_bleed:2", "split_wave:2",
+			"echo_slash:3",
+			"ember_core:3",
+			"venom_core:3",
+			"chain_blast:2",
+			"shared_bleed:1",
+			"split_wave:1"
+		],
+		[
+			"echo_slash:4",
+			"ember_core:3",
+			"venom_core:3",
+			"chain_blast:3",
+			"shared_bleed:2",
+			"split_wave:2",
 			"storm_core:1"
 		],
 		[
-			"echo_slash:5", "ember_core:3", "venom_core:3", "chain_blast:4", "shared_bleed:3", "split_wave:3",
-			"storm_core:2", "frost_core:1"
+			"echo_slash:5",
+			"ember_core:3",
+			"venom_core:3",
+			"chain_blast:4",
+			"shared_bleed:3",
+			"split_wave:3",
+			"storm_core:2",
+			"frost_core:1"
 		],
 	],
 	"blade_wave_no_elements":
@@ -114,9 +197,21 @@ const TRACKS := {
 		["echo_slash:1", "wide_arc:1"],
 		["echo_slash:2", "wide_arc:2", "double_slash:1"],
 		["echo_slash:3", "wide_arc:3", "double_slash:2", "finisher_plus:1", "split_wave:1"],
-		["echo_slash:4", "wide_arc:4", "double_slash:3", "finisher_plus:2", "split_wave:2", "blade_storm:1"],
 		[
-			"echo_slash:5", "wide_arc:5", "double_slash:4", "finisher_plus:3", "split_wave:3", "blade_storm:2",
+			"echo_slash:4",
+			"wide_arc:4",
+			"double_slash:3",
+			"finisher_plus:2",
+			"split_wave:2",
+			"blade_storm:1"
+		],
+		[
+			"echo_slash:5",
+			"wide_arc:5",
+			"double_slash:4",
+			"finisher_plus:3",
+			"split_wave:3",
+			"blade_storm:2",
 			"riposte_chain:1"
 		],
 	],
@@ -139,21 +234,67 @@ const BASES: Array = [
 ]
 ## Section c's cards per weapon.
 const GUN_CARDS: Array[StringName] = [
-	&"gun_twin", &"halo_shot", &"gun_ring", &"gun_backfire", &"gun_pierce", &"gun_ricochet", &"gun_homing",
-	&"gun_echo", &"gun_big_shot", &"gun_rapid_fire", &"split_shot", &"gun_mine", &"orbit_rounds",
-	&"gun_threadline", &"gun_spiral", &"gun_swirl", &"chain_blast", &"shared_faultline", &"shared_stress_mark",
-	&"ember_core", &"venom_core", &"shared_bleed", &"storm_core", &"frost_core",
+	&"gun_twin",
+	&"halo_shot",
+	&"gun_ring",
+	&"gun_backfire",
+	&"gun_pierce",
+	&"gun_ricochet",
+	&"gun_homing",
+	&"gun_echo",
+	&"gun_big_shot",
+	&"gun_rapid_fire",
+	&"split_shot",
+	&"gun_mine",
+	&"orbit_rounds",
+	&"gun_threadline",
+	&"gun_spiral",
+	&"gun_swirl",
+	&"chain_blast",
+	&"shared_faultline",
+	&"shared_stress_mark",
+	&"ember_core",
+	&"venom_core",
+	&"shared_bleed",
+	&"storm_core",
+	&"frost_core",
 ]
 const BLADE_CARDS: Array[StringName] = [
-	&"echo_slash", &"blade_orbit", &"chain_cut", &"fissure", &"flurry", &"heavy", &"lunge_step", &"thrust",
-	&"whirl", &"wide_arc", &"double_slash", &"split_wave", &"blade_storm", &"finisher_plus", &"riposte_chain",
-	&"chain_blast", &"shared_faultline", &"shared_stress_mark", &"ember_core", &"venom_core", &"shared_bleed",
-	&"storm_core", &"frost_core",
+	&"echo_slash",
+	&"blade_orbit",
+	&"chain_cut",
+	&"fissure",
+	&"flurry",
+	&"heavy",
+	&"lunge_step",
+	&"thrust",
+	&"whirl",
+	&"wide_arc",
+	&"double_slash",
+	&"split_wave",
+	&"blade_storm",
+	&"finisher_plus",
+	&"riposte_chain",
+	&"chain_blast",
+	&"shared_faultline",
+	&"shared_stress_mark",
+	&"ember_core",
+	&"venom_core",
+	&"shared_bleed",
+	&"storm_core",
+	&"frost_core",
 ]
 ## Section c/d's stat-only cards (rare: floor 3's rarity in three_curves.gd's bot): [stat, rarity].
 const STAT_CARDS: Array = [
-	["damage", 1], ["attack_speed", 1], ["crit_chance", 1], ["crit_damage", 1], ["glass_cannon", 1],
-	["onrush", 1], ["third_strike", 1], ["close_quarters", 1], ["overkill", 1],
+	["damage", 1],
+	["attack_speed", 1],
+	["crit_chance", 1],
+	["crit_damage", 1],
+	["glass_cannon", 1],
+	["onrush", 1],
+	["third_strike", 1],
+	["close_quarters", 1],
+	["overkill", 1],
 ]
 
 var _repo: ContentRepository
@@ -164,6 +305,9 @@ var _floor_hp := PackedInt32Array()
 var _loop_hp := 3500
 var _cu: CatchUpTable
 var _out := PackedStringArray()
+var _items := {}
+var _tables: Array = []
+var _stats := {}
 
 
 func _initialize() -> void:
@@ -178,7 +322,9 @@ func _initialize() -> void:
 	var probe := PlaygroundScenario.build(_repo, &"gun", _biome)
 	_base_hp = probe.enemy_table(ActorStore.Kind.CHARGER).hp
 	var section := String(args.get("section", "all"))
-	_line("progression_audit section=%s seconds=%.1f crowd base hp %d" % [section, _seconds, _base_hp])
+	_line(
+		"progression_audit section=%s seconds=%.1f crowd base hp %d" % [section, _seconds, _base_hp]
+	)
 	if section in ["a", "all"]:
 		_section_a()
 	if section in ["b", "all"]:
@@ -221,9 +367,15 @@ func _section_a() -> void:
 					(
 						"%s | %s | %s | %.1f | %.2f | %.1f | %.2f | %s | %d"
 						% [
-							weapon, "default" if form == &"" else str(form), "-" if form == &"" else str(lv),
-							r["single"], r["single"] / maxf(0.01, base["single"]), r["crowd"],
-							r["crowd"] / maxf(0.01, base["crowd"]), r["clear"], r["p"],
+							weapon,
+							"default" if form == &"" else str(form),
+							"-" if form == &"" else str(lv),
+							r["single"],
+							r["single"] / maxf(0.01, base["single"]),
+							r["crowd"],
+							r["crowd"] / maxf(0.01, base["crowd"]),
+							r["clear"],
+							r["p"],
 						]
 					)
 				)
@@ -233,8 +385,12 @@ func _section_a() -> void:
 func _section_b(args: Dictionary) -> void:
 	var part := String(args.get("part", "all"))
 	if part in ["pairs", "all"]:
-		_line("## b1: form x element (the element at Lv 1 / Lv 3; no stats; crowd HP %d)" % _base_hp)
-		_line("weapon | form | element | Lv | single dps | x form alone | crowd dps | x form alone | clear s")
+		_line(
+			"## b1: form x element (the element at Lv 1 / Lv 3; no stats; crowd HP %d)" % _base_hp
+		)
+		_line(
+			"weapon | form | element | Lv | single dps | x form alone | crowd dps | x form alone | clear s"
+		)
 		for weapon: StringName in [&"gun", &"blade"]:
 			var forms: Array = (
 				[&"", &"gun_void", &"gun_wave", &"gun_laser", &"gun_seekers", &"gun_glaive"]
@@ -242,7 +398,9 @@ func _section_b(args: Dictionary) -> void:
 				else [&"", &"echo_slash", &"flurry", &"heavy"]
 			)
 			for form: StringName in forms:
-				var ft: Array = [] if form == &"" else ["%s:%d" % [form, 1 if weapon == &"gun" else 3]]
+				var ft: Array = (
+					[] if form == &"" else ["%s:%d" % [form, 1 if weapon == &"gun" else 3]]
+				)
 				var alone := _both(weapon, ft, _base_hp)
 				for el: StringName in ELEMENTS:
 					for lv: int in [1, 3]:
@@ -253,22 +411,41 @@ func _section_b(args: Dictionary) -> void:
 							(
 								"%s | %s | %s | %d | %.1f | %.2f | %.1f | %.2f | %s"
 								% [
-									weapon, "default" if form == &"" else str(form), el, lv, r["single"],
-									r["single"] / maxf(0.01, alone["single"]), r["crowd"],
-									r["crowd"] / maxf(0.01, alone["crowd"]), r["clear"],
+									weapon,
+									"default" if form == &"" else str(form),
+									el,
+									lv,
+									r["single"],
+									r["single"] / maxf(0.01, alone["single"]),
+									r["crowd"],
+									r["crowd"] / maxf(0.01, alone["crowd"]),
+									r["clear"],
 								]
 							)
 						)
-		_line("## b2: element stacking on one form (each step adds one element at Lv 3; crowd HP %d)" % _base_hp)
-		_line("weapon | build | single dps | x previous | x form alone | crowd dps | x previous | x form alone")
+		_line(
+			(
+				"## b2: element stacking on one form (each step adds one element at Lv 3; crowd HP %d)"
+				% _base_hp
+			)
+		)
+		_line(
+			"weapon | build | single dps | x previous | x form alone | crowd dps | x previous | x form alone"
+		)
 		for st: Array in [
-			[&"blade", "echo_slash:3"], [&"blade", ""], [&"gun", "gun_void:1"], [&"gun", "gun_wave:1"]
+			[&"blade", "echo_slash:3"],
+			[&"blade", ""],
+			[&"gun", "gun_void:1"],
+			[&"gun", "gun_wave:1"]
 		]:
 			var toks: Array = [] if st[1] == "" else [st[1]]
 			var first := _both(st[0], toks, _base_hp)
 			var prev := first
 			_line(
-				"%s | %s | %.1f | - | 1.00 | %.1f | - | 1.00" % [st[0], "+".join(toks), first["single"], first["crowd"]]
+				(
+					"%s | %s | %.1f | - | 1.00 | %.1f | - | 1.00"
+					% [st[0], "+".join(toks), first["single"], first["crowd"]]
+				)
 			)
 			for el: StringName in ELEMENTS:
 				toks.append("%s:3" % el)
@@ -277,9 +454,14 @@ func _section_b(args: Dictionary) -> void:
 					(
 						"%s | %s | %.1f | %.2f | %.2f | %.1f | %.2f | %.2f"
 						% [
-							st[0], "+".join(toks), r["single"], r["single"] / maxf(0.01, prev["single"]),
-							r["single"] / maxf(0.01, first["single"]), r["crowd"],
-							r["crowd"] / maxf(0.01, prev["crowd"]), r["crowd"] / maxf(0.01, first["crowd"]),
+							st[0],
+							"+".join(toks),
+							r["single"],
+							r["single"] / maxf(0.01, prev["single"]),
+							r["single"] / maxf(0.01, first["single"]),
+							r["crowd"],
+							r["crowd"] / maxf(0.01, prev["crowd"]),
+							r["crowd"] / maxf(0.01, first["crowd"]),
 						]
 					)
 				)
@@ -287,10 +469,14 @@ func _section_b(args: Dictionary) -> void:
 	if part in ["tracks", "all"]:
 		var loops := int(args.get("loops", 3))
 		var only := String(args.get("tracks", ""))
-		_line("## b3: stacked builds by floor and loop (the floor's crowd HP x the catch-up m read at floor entry)")
 		_line(
-			"track | loop | floor | cards | stats | P entry | m | crowd hp | single dps | crowd dps | clear s"
-			+ " | eff single | eff crowd"
+			"## b3: stacked builds by floor and loop (the floor's crowd HP x the catch-up m read at floor entry)"
+		)
+		_line(
+			(
+				"track | loop | floor | cards | stats | P entry | m | crowd hp | single dps | crowd dps | clear s"
+				+ " | eff single | eff crowd"
+			)
 		)
 		for name: String in TRACK_ORDER:
 			if only != "" and not (name in only.split(",")):
@@ -305,7 +491,9 @@ func _section_b(args: Dictionary) -> void:
 					toks.append_array(stats)
 					var threat := 2 * (loop - 1)
 					var cap := CatchUp.cap_at(_cu.cap_permille, _cu, f, threat) + 500 * (loop - 1)
-					var m := CatchUp.multiplier(p_entry, CatchUpTable.at_floor(_cu.expected_permille, f), cap)
+					var m := CatchUp.multiplier(
+						p_entry, CatchUpTable.at_floor(_cu.expected_permille, f), cap
+					)
 					var hp := _crowd_hp(f, loop, m)
 					var r := _both(weapon, toks, hp)
 					# effective: the DPS over the floor's enemy HP factor (hp / base hp), so 1.0 = today's DPS against
@@ -315,8 +503,19 @@ func _section_b(args: Dictionary) -> void:
 						(
 							"%s | %d | %d | %d | %d | %d | %d | %d | %.1f | %.1f | %s | %.2f | %.2f"
 							% [
-								name, loop, f, (tr[f] as Array).size(), stats.size(), p_entry, m, hp,
-								r["single"], r["crowd"], r["clear"], r["single"] / factor, r["crowd"] / factor,
+								name,
+								loop,
+								f,
+								(tr[f] as Array).size(),
+								stats.size(),
+								p_entry,
+								m,
+								hp,
+								r["single"],
+								r["crowd"],
+								r["clear"],
+								r["single"] / factor,
+								r["crowd"] / factor,
 							]
 						)
 					)
@@ -353,7 +552,12 @@ static func _stat_tokens(loop: int, f: int) -> Array:
 func _section_c(args: Dictionary) -> void:
 	var hp := _crowd_hp(3, 1, 1000)
 	var only := String(args.get("bases", ""))
-	_line("## c: marginal gain of one card on a floor-3 build (floor-3 stats: 9 cards; crowd HP %d)" % hp)
+	_line(
+		(
+			"## c: marginal gain of one card on a floor-3 build (floor-3 stats: 9 cards; crowd HP %d)"
+			% hp
+		)
+	)
 	_line("base | card | Lv | single x | crowd x | P x | real/P single | real/P crowd")
 	for b: Array in BASES:
 		if only != "" and not (String(b[0]) in only.split(",")):
@@ -374,7 +578,7 @@ func _section_c(args: Dictionary) -> void:
 			if idx < 0:
 				continue
 			var lmax := mini(3, _level_max(c))  # floor 3's ceiling is 5; elements cap at 3
-			for lv: int in ([1] if lmax <= 1 else [1, lmax]):
+			for lv: int in [1] if lmax <= 1 else [1, lmax]:
 				var toks := base_toks.duplicate()
 				var replaced := false
 				for k in toks.size():
@@ -393,7 +597,16 @@ func _section_c(args: Dictionary) -> void:
 				_line(
 					(
 						"%s | %s | %d | %.2f | %.2f | %.2f | %.2f | %.2f"
-						% [b[0], c, lv, sx, cx, px, (sx - 1.0) / maxf(0.001, px - 1.0), (cx - 1.0) / maxf(0.001, px - 1.0)]
+						% [
+							b[0],
+							c,
+							lv,
+							sx,
+							cx,
+							px,
+							(sx - 1.0) / maxf(0.001, px - 1.0),
+							(cx - 1.0) / maxf(0.001, px - 1.0)
+						]
 					)
 				)
 		for sc: Array in STAT_CARDS:
@@ -406,7 +619,15 @@ func _section_c(args: Dictionary) -> void:
 			_line(
 				(
 					"%s | stat %s (rare) | - | %.2f | %.2f | %.2f | %.2f | %.2f"
-					% [b[0], sc[0], sx, cx, px, (sx - 1.0) / maxf(0.001, px - 1.0), (cx - 1.0) / maxf(0.001, px - 1.0)]
+					% [
+						b[0],
+						sc[0],
+						sx,
+						cx,
+						px,
+						(sx - 1.0) / maxf(0.001, px - 1.0),
+						(cx - 1.0) / maxf(0.001, px - 1.0)
+					]
 				)
 			)
 
@@ -414,10 +635,14 @@ func _section_c(args: Dictionary) -> void:
 # --- d: past the staircase ------------------------------------------------------------------------------------
 func _section_d(args: Dictionary) -> void:
 	var extra_floors := int(args.get("extra", 15))
-	_line("## d: the floor-5 builds plus more stat floors (3 epic offence cards a floor), single dps (endless dummy)")
 	_line(
-		"track | extra floors | stat cards | damage % | attack speed raw % | rate % | crit % | single dps"
-		+ " | x at floor 5"
+		"## d: the floor-5 builds plus more stat floors (3 epic offence cards a floor), single dps (endless dummy)"
+	)
+	_line(
+		(
+			"track | extra floors | stat cards | damage % | attack speed raw % | rate % | crit % | single dps"
+			+ " | x at floor 5"
+		)
 	)
 	for name: String in ["gun_void_fire_venom", "blade_wave_elements", "gun_orbs_plain"]:
 		var tr: Array = TRACKS[name]
@@ -439,9 +664,15 @@ func _section_d(args: Dictionary) -> void:
 				(
 					"%s | %d | %d | %d | %d | %d | %d | %.1f | %.2f"
 					% [
-						name, extra, stats.size(), Stats.value(w, Stats.Stat.DAMAGE) / 10 - 100,
-						AttackRate.stat_bonus(w) / 10, CatchUp.rate_permille(w) / 10 - 100,
-						Stats.crit_chance(w) / 10, r["dps"], r["dps"] / maxf(0.01, first),
+						name,
+						extra,
+						stats.size(),
+						Stats.value(w, Stats.Stat.DAMAGE) / 10 - 100,
+						AttackRate.stat_bonus(w) / 10,
+						CatchUp.rate_permille(w) / 10 - 100,
+						Stats.crit_chance(w) / 10,
+						r["dps"],
+						r["dps"] / maxf(0.01, first),
 					]
 				)
 			)
@@ -605,18 +836,12 @@ func _determinism() -> String:
 	return "MATCH" if a["hash"] == b["hash"] else "MISMATCH"
 
 
-var _items := {}
-
-
 func _item_idx(id: StringName) -> int:
 	if _items.is_empty():
 		var t := ContentCompiler.compile_items(_repo)
 		for k in t.size():
 			_items[t[k].id] = k
 	return int(_items.get(id, -1))
-
-
-var _tables: Array = []
 
 
 func _level_max(id: StringName) -> int:
@@ -627,9 +852,6 @@ func _level_max(id: StringName) -> int:
 		return 1
 	var m: int = _tables[idx].level_max
 	return CardLevels.MAX_LEVEL if m <= 0 else m
-
-
-var _stats := {}
 
 
 func _stat_index(id: StringName) -> int:
