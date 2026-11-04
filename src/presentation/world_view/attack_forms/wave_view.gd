@@ -31,6 +31,13 @@ const WASH_ID := &"vx7_wave_wash"
 ## its middle sits, in half widths.
 const WASH_PER_M := 0.52
 const WASH_BACK := 0.45
+## v0.10.5 W3-O8 (owner F12, 2026-11-04: "the wave effect is barely visible when attacking forward/upward; mostly the
+## ground circle can be seen"): the pack's pillar material culls back faces (its shader's default), and a crest rolling
+## away from the camera shows the camera its back, so only the ripple on the ground read. The pack crest's sheet is
+## two-sided (double_sided(): each face again, wound the other way), so it reads in every aim; and its top leans
+## PACK_LEAN_M forward (a rolling crest), so a wave aimed across the screen, its sheet edge-on to the camera, still
+## shows a band along its flight.
+const PACK_LEAN_M := 0.5
 
 const CREST_SHADER := """
 shader_type spatial;
@@ -128,8 +135,8 @@ static func _shader(code: String) -> Shader:
 
 
 ## A unit crest: a sheet across z from -1 to 1, 0 to 1 up, bowed forward along +x at its middle (a rolling front).
-## UV.x = across (0..1), UV.y = up (0..1).
-static func crest_mesh() -> ArrayMesh:
+## UV.x = across (0..1), UV.y = up (0..1). W3-O8: `lean`, how far its top stands forward of its foot (m).
+static func crest_mesh(lean: float = 0.1) -> ArrayMesh:
 	var steps := 12
 	var verts := PackedVector3Array()
 	var uvs := PackedVector2Array()
@@ -142,8 +149,8 @@ static func crest_mesh() -> ArrayMesh:
 		var xb := 0.25 * (1.0 - zb * zb)
 		var p0 := Vector3(xa, 0.0, za)
 		var p1 := Vector3(xb, 0.0, zb)
-		var p2 := Vector3(xb + 0.1, 1.0, zb)
-		var p3 := Vector3(xa + 0.1, 1.0, za)
+		var p2 := Vector3(xb + lean, 1.0, zb)
+		var p3 := Vector3(xa + lean, 1.0, za)
 		verts.append_array([p0, p1, p2, p0, p2, p3])
 		uvs.append_array(
 			[
@@ -224,9 +231,29 @@ func _place(k: int, pos: Vector2, dir: Vector2, half: float) -> void:
 	_washes[k].transform = Transform3D(Basis(z * half * 2.0, Vector3.UP, x * WASH_LEN), behind)
 
 
+## W3-O8: a copy of `mesh` (one surface of triangles) with each triangle added again wound the other way (the same UVs),
+## so a material that culls back faces draws it from both sides.
+static func double_sided(mesh: ArrayMesh) -> ArrayMesh:
+	var arrays := mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
+	var n := verts.size()
+	for k in range(0, n, 3):
+		for j in [0, 2, 1]:
+			verts.append(verts[k + j])
+			uvs.append(uvs[k + j])
+	var out_arr := []
+	out_arr.resize(Mesh.ARRAY_MAX)
+	out_arr[Mesh.ARRAY_VERTEX] = verts
+	out_arr[Mesh.ARRAY_TEX_UV] = uvs
+	var out := ArrayMesh.new()
+	out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, out_arr)
+	return out
+
+
 ## v0.10.0 VX7: every crest takes a copy of the pack's pillar material on a sheet turned the pack's way up.
 func _wear_pack_crest() -> void:
-	var mesh := GapPack.flip_v(crest_mesh())
+	var mesh := double_sided(GapPack.flip_v(crest_mesh(PACK_LEAN_M)))
 	_pack_crest.clear()
 	for k in WAVES_MAX:
 		var m := GapPack.material_copy(GapPack.PILLAR_MAT, _crest_colors())

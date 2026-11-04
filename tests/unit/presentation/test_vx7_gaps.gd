@@ -186,6 +186,15 @@ func test_a_wave_wears_the_pack_crest_and_a_held_ripple_wash() -> void:
 	var mat := crest.material_override as ShaderMaterial
 	assert_true(mat.shader.resource_path.ends_with("transparent.gdshader"), "the pack's shader")
 	assert_eq(mat.get_shader_parameter(&"primary_color"), view._form.edge.lightened(0.3))
+	var sheet: PackedVector3Array = (crest.mesh as ArrayMesh).surface_get_arrays(0)[
+		Mesh.ARRAY_VERTEX
+	]
+	var one: PackedVector3Array = WaveView.crest_mesh().surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	assert_eq(
+		sheet.size(),
+		one.size() * 2,
+		"v0.10.5 W3-O8: the pack crest is two-sided (it culls back faces)"
+	)
 	assert_eq(_live(&"vx7_wave_wash").size(), 1, "the wash is the held ripple")
 	assert_false((view.get(&"_washes")[0] as MeshInstance3D).visible, "the flat wash hides")
 	W.run(w, 200, 0, 0)
