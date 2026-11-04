@@ -164,6 +164,7 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
    orphans and a freed-instance error in it, ascension (2) and final boss (PC's out-of-tree pools not freed on unload),
    and test_attack_visuals_2's float error; fixed in 7d7a0ae3. At `7d7a0ae3`: `bash scripts/ci/seams.sh`: lint ok;
    Scripts 108, Tests 617, Passing Tests 617; "check_gut_log: ok (617 passing, minimum 1)".
+10. **Lead seams after wave 3** (`wt-seams` at `07779914`: everything through W3-S9; W3-S10 and W3-A1 not yet in): `bash scripts/ci/seams.sh` with godot and gdtoolkit put on PATH: lint ok; Scripts 109, Tests 625, Passing Tests 624, Failing 1, Asserts 73312/73313. The failure: test_e2e_damage_soak "[3] expected to equal [0]: no orphan nodes but the live floor's idle pool entries" → W3-S11.
 
 ## Goldens changed on purpose
 - `tests/golden/fixtures/modifier_equivalence.json` (S1: the combo hit-stop 4,4,5,8 → 3,3,3,5 ticks; Blade-all now hits 139, damage 4160, kills 14)
