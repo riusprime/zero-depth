@@ -232,7 +232,7 @@ func _pack_of(reader: WorldReader, i: int, lance: bool) -> Array:
 			elements = PackedStringArray(look["elements"])
 	var first := ElementLooks.first(elements)
 	if lance and not reader.projectile_is_wisp(i):
-		return [PackLooks.id_of("big", first), PackLooks.colors(elements), BIG_PER_RADIUS]
+		return CandidateLooks.lance_pack(first, PackLooks.colors(elements), BIG_PER_RADIUS)  # v0.10.5 W3-O7 (G2)
 	if first == &"" and PLAIN_BOLT_IS_PULSE:
 		return []  # v0.10.5 S10 (owner): the plain Pulse bolt keeps its pulse look (no pack effect)
 	var k: float = PackLooks.BOLT_PER_RADIUS[PackLooks.shaped(first)]

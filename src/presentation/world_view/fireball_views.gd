@@ -773,7 +773,7 @@ func _pack_shot(
 		_packed.erase(token)  # (PackFx took it back: its pool may hand it to another shot)
 		slot = {}
 	if slot.is_empty():
-		var pid := StringName("shot_%s" % key)
+		var pid := CandidateLooks.bolt_id(key)  # v0.10.5 W3-O7: "shot_<key>", or a G2 candidate's
 		if not pack_fx.has_id(pid) or not pack_fx.has_room(PACK_FAMILY):
 			return false
 		var colors := _pack_colors(look)
@@ -781,7 +781,7 @@ func _pack_shot(
 		if node == null:
 			return false
 		FireballPack.keep_playing(node, node.scale.x)
-		for part: String in PACK_HIDE.get(key, []):
+		for part: String in CandidateLooks.bolt_hide(key, PACK_HIDE.get(key, [])):
 			var child := node.get_node_or_null(part) as Node3D
 			if child != null:
 				child.visible = false
