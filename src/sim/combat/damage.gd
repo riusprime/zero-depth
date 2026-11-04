@@ -129,6 +129,8 @@ static func hit(
 		return 0
 	if target == 0 and owner_id != a.ids[0] and ModifierRuntime.absorb(w):  # v0.6.0 MX4: Aether Shell
 		return 0
+	if w.pair_table != null and owner_id == a.ids[0]:  # v0.10.5 W3-P1b: a landed Lightning hit charges
+		ElementStack.on_hit(w, target, ElementStack.of_id(effect_id))
 	var m := target_mult(w, target, from)
 	if owner_id == a.ids[0] and BossAi.is_boss_kind(a.kinds[target]):
 		var c := BossChallenge.hit_mult(w, target)  # BX (L17): ranged armour, the weak point.

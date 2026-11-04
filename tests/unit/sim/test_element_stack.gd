@@ -90,6 +90,7 @@ func test_an_elements_hits_fall_off_and_the_plain_attack_does_not() -> void:
 	for pair: Array in [
 		[&"storm_core", 500], [&"storm_strike", 500], [&"ember_core", 700], [&"", 1000]
 	]:
+		a.charged_t[1] = 0  # v0.10.5 W3-P1b: a Lightning hit charges its enemy; each hit here reads the same two
 		var before := a.hp[1]
 		Damage.hit(w, 1, 1000, a.ids[0], a.ids[0], w.take_root(), 0, a.pos(0), a.pos(1), pair[0])
 		assert_eq(before - a.hp[1], pair[1], "%s on a burning, poisoned enemy" % pair[0])

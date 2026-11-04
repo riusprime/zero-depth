@@ -7,3 +7,4 @@ script = ExtResource("1_pairs")
 id = &"element_pairs"
 level_permille = PackedInt32Array(400, 700, 1000)
 stack_falloff_permille = PackedInt32Array(1000, 700, 500, 350)
+storm_mark_seconds = 1.0

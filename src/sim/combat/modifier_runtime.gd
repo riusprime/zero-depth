@@ -286,5 +286,6 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	ElementLevels.hash_into(w, h)  # v0.9.5 EE1
 	ElementLevelsFsf.hash_into(w, h)  # v0.9.5 EE2
 	ElementPairs.hash_into(w, h)  # v0.9.5 EE3
+	ElementStack.hash_into(w, h)  # v0.10.5 W3-P1b
 	ProjectileMoves.hash_into(w, h)
 	BladeForms.hash_into(w, h)  # v0.6.5 WN4

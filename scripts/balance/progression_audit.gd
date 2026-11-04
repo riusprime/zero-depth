@@ -424,6 +424,7 @@ func _section_b(args: Dictionary) -> void:
 								]
 							)
 						)
+	if part in ["pairs", "stacks", "all"]:  # v0.10.5 W3-P1b: part=stacks runs b2 alone
 		_line(
 			(
 				"## b2: element stacking on one form (each step adds one element at Lv 3; crowd HP %d)"
@@ -433,12 +434,17 @@ func _section_b(args: Dictionary) -> void:
 		_line(
 			"weapon | build | single dps | x previous | x form alone | crowd dps | x previous | x form alone"
 		)
-		for st: Array in [
+		var stacks: Array = [
 			[&"blade", "echo_slash:3"],
 			[&"blade", ""],
 			[&"gun", "gun_void:1"],
 			[&"gun", "gun_wave:1"]
-		]:
+		]
+		var pick := String(args.get("stacks", ""))  # v0.10.5 W3-P1b: stacks=1,2 runs only those (0-based)
+		for si in stacks.size():
+			if pick != "" and not (str(si) in pick.split(",")):
+				continue
+			var st: Array = stacks[si]
 			var toks: Array = [] if st[1] == "" else [st[1]]
 			var first := _both(st[0], toks, _base_hp)
 			var prev := first

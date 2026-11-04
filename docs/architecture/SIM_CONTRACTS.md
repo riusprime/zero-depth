@@ -1186,11 +1186,14 @@ extra draw on `loot`).
 - **Elements stack with falloff (v0.10.5 W3-P1, P1; `ElementStack`).** The hero's element damage on an enemy that
   carries k other elements counts at `ElementPairTable.stack_falloff_permille[k]` (data 1000/700/500/350, k = 0..3+),
   times the element card's `el_level_permille` at its level (P2). Carried: Fire burning, Venom poisoned, Bleed
-  bleeding, Frost frost stacks or frozen, Lightning shocked (the Storm card leaves no status, so it never counts against
-  the others). An element's damage: its status ticks (`Damage.tick_dot` by its element, Exsanguinate's burst), its hits
-  by effect id (`ember_core` ground, `storm_core` chain, `storm_strike`, `frost_shard`; `Damage.hit` after Sepsis,
-  before the target's multiplier) and the bonus part of Heat sync and Frostbite. Rounded to nearest, a hit that had
-  damage keeps 1. Pair rules (X1-X10) unchanged. Only with `World.pair_table`; stateless (no save, no hash change).
+  bleeding, Frost frost stacks or frozen, Lightning shocked or charged (W3-P1b: a hero Lightning hit charges its enemy
+  for `storm_mark_ticks`, data 1 s, `ActorStore.charged_t`; the Storm card leaves no status of its own). An element's
+  damage: its status ticks (`Damage.tick_dot` by its element, Exsanguinate's burst), its hits by effect id
+  (`ember_core` ground, `storm_core` chain, `storm_strike`, `frost_shard`; `Damage.hit` after Sepsis, before the
+  target's multiplier), the bonus part of Heat sync and Frostbite, and (W3-P1b) Thermal Break's hit, counted as Fire's
+  with k read before the break consumes the burn and the frost. Rounded to nearest, a hit that had damage keeps 1. Pair
+  rules (X1-X10) unchanged. Only with `World.pair_table`. State (W3-P1b): the charge clocks, saved (an older save loads
+  uncharged) and hashed only while an enemy is charged.
 
 ## 9. What presentation receives
 

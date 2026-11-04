@@ -5,15 +5,17 @@ extends RefCounted
 ## - P1, the falloff: each element's damage on an enemy that already carries k OTHER elements counts at
 ##   ElementPairTable.stack_falloff_permille[k] (data 1000 / 700 / 500 / 350 for k = 0 / 1 / 2 / 3+). An enemy carries
 ##   Fire while it burns, Venom while poisoned, Bleed while bleeding, Frost while it has frost stacks or is frozen, and
-##   Lightning while shocked (the Storm card leaves no status of its own, so its chain and strike hits fall off on a
-##   carrying enemy but never count against the others). The pair rules (X1-X10) are untouched; a pair's own damage
-##   (bursts, Sepsis) is not an element's.
+##   Lightning while shocked or charged (W3-P1b: the Storm card leaves no status of its own, so a hero Lightning hit
+##   leaves its enemy charged for ElementPairTable.storm_mark_ticks, ActorStore.charged_t). The pair rules (X1-X10) are
+##   untouched; a pair's own damage (bursts, Sepsis) is not an element's.
 ## - P2, the level shift: an element's damage at its card's level n counts at the card's el_level_permille[n - 1]
 ##   (ItemTable; empty = 1000 at every level), so part of Lv 1's power moves to Lv 2-3.
 ## An element's damage: its status ticks (burn, poison, bleed, Exsanguinate's burst), its hook hits (Fire's burning
-## ground, Lightning's chain beam), Overcharge's strike and Shatter's shards (Damage.hit by effect id), and the bonus
-## part of Heat sync and Frostbite (ElementLevelsFsf.attacker_mult). Only the hero's damage on an enemy, only with the
-## pair table (World.pair_table: none, as before). Stateless: nothing to save or hash. Integers, rounded to nearest.
+## ground, Lightning's chain beam), Overcharge's strike and Shatter's shards (Damage.hit by effect id), the bonus
+## part of Heat sync and Frostbite (ElementLevelsFsf.attacker_mult), and (W3-P1b) Thermal Break's hit, Fire's: its
+## burn turned into one hit, read before the break consumes the burn and the frost (Engines.thermal_break). Only the
+## hero's damage on an enemy, only with the pair table (World.pair_table: none, as before). State: the charge clocks
+## (saved; hashed only while an enemy is charged). Integers, rounded to nearest.
 
 const NONE := -1
 const FIRE := ElementPairs.FIRE
@@ -52,7 +54,7 @@ static func carries(w: World, i: int, e: int) -> bool:
 		FROST:
 			return a.frost_stacks[i] > 0 or a.frozen_t[i] > 0
 		STORM:
-			return a.shock_stacks[i] > 0
+			return a.shock_stacks[i] > 0 or a.charged_t[i] > 0
 	return false
 
 
@@ -110,3 +112,29 @@ static func bonus(w: World, i: int, e: int, bonus_mult: int) -> int:
 	if bonus_mult == 1000 or w.pair_table == null:
 		return bonus_mult
 	return 1000 + (bonus_mult - 1000) * falloff_permille(w, i, e) / 1000
+
+
+## W3-P1b: a hero Lightning hit of element `e` landed on enemy `i` (Damage.hit): it is charged for storm_mark_ticks.
+static func on_hit(w: World, i: int, e: int) -> void:
+	if e != STORM or i <= 0 or w.pair_table == null or w.pair_table.storm_mark_ticks <= 0:
+		return
+	w.actors.charged_t[i] = w.pair_table.storm_mark_ticks
+
+
+## W3-P1b, tick phase 8 (Engines.tick_statuses): the charges run down.
+static func tick(w: World) -> void:
+	if w.pair_table == null or w.pair_table.storm_mark_ticks <= 0:
+		return
+	var a := w.actors
+	for i in range(1, a.size()):
+		if a.charged_t[i] > 0:
+			a.charged_t[i] -= 1
+
+
+## W3-P1b (ModifierRuntime.hash_into): the charge clocks, only while an enemy is charged (so every world without one
+## hashes as before).
+static func hash_into(w: World, h: StateHasher) -> void:
+	for v in w.actors.charged_t:
+		if v > 0:
+			w.actors.hash_stack(h)
+			return

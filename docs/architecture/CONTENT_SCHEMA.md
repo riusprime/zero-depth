@@ -1352,6 +1352,8 @@ one on every floor of loop 2 and later (`LootPacing.element_ceiling`).
 damage on an enemy carrying k other elements counts at entry k (the last for more; `ElementStack`). An element card's
 `ItemDefinition.el_level_permille` (W3-P2; empty = 1000, else one value per level, 100..3000; data Fire and Venom
 750/900/1150, Bleed 850/950/1050, Lightning 800/900/1100, Frost none) scales that damage by the card's level.
+W3-P1b adds `storm_mark_seconds` (0..5 s; 0 = none; data 1.0): how long a hero Lightning hit leaves its enemy
+charged, so Lightning counts as carried in the others' falloff.
 
 `StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
 `max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,
