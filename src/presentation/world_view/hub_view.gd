@@ -88,11 +88,11 @@ var _veins_on := false
 
 
 ## v0.9.5 (seams): the member nodes are parented only by setup(); a view freed without it (a test) frees them too,
-## so none is left an orphan.
+## so none is left an orphan (v0.10.5 W3-S11: the void too).
 func _notification(what: int) -> void:
 	if what != NOTIFICATION_PREDELETE:
 		return
-	for n: Variant in [avatar, machine, ink, stage, rig, plan, hero]:
+	for n: Variant in [avatar, machine, ink, stage, rig, plan, hero, void_view]:
 		AvatarBase.free_if_loose(n)
 
 
