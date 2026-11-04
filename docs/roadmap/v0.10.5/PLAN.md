@@ -365,6 +365,8 @@ the 3 + 1 rule above for this wave.
 | F22 | Boss durability feels good | Kept | — |
 | F23 | The Warlord ~5 % overtuned | Its attacks' damage −5 % (a starting value; O2b already paces its HP) | W3-S1 |
 | F24 | Shop: cards too big, crowded past 10, can't see cards and elements together, reroll cost unclear, no cohesive layout | Owner, 2026-11-04: "we are gonna be removing the lift curse and the sell, it should only show the heal, reroll and the 4 cards, lifting the curse and selling is too broken". Then **G2:** layout mockups of that smaller shop | W3-O9 |
+| F27 | (owner, later 2026-11-04) "swap Lance name to fireball if it gonna look like a fireball" | Display names only (en + es), ids unchanged | W3-S7 |
+| F28 | (owner) "i'd like to see which assets from the pack we did not use that could be used, could there be a repository of how all of the current effects look in the game for the premade pack and the already used or original from the game enemies, and effects from all abilities and enemies so I can compare" | An in-game VFX gallery (dev): every effect in use (abilities, forms, elements, enemies, bosses) and every unused pack effect, live and as labelled contact sheets | W3-O12 |
 | F26 | (owner, later on 2026-11-04) "when you are close to a wall the transparency effect so you can see through has a shit ton of grain, very ugly" | The fade is alpha hash (per-pixel on/off); a smooth 0.3 alpha blend instead | W3-S5 |
 | F25 | The purple portal on floor 4 of loop 1 to test; longer multi-loop runs | Owner playtest items (OWNER_TODO) | — |
 
@@ -385,6 +387,8 @@ Steps (S = Sonnet, O = Opus; at most 2 + 2 at once):
 - **W3-O9** the shop sells only: heal, reroll and its 4 cards (the curse lift and selling removed; old saves load); then G2 mockups of the layout (reroll cost visible, cards smaller).
 - **W3-S5** see-through walls blend smoothly (no alpha-hash grain).
 - **W3-P (owner, 2026-11-04: "Approve the set"; loops stay a wall)** the progression build from W3_O4_PROGRESSION_G1.md: W3-P9 + W3-P6 probes first (stat cards reading × 1.00; Blade Storm on a moving boss, Ring on the Orbs), then W3-P1 + W3-P2 (front-loading), W3-P5 + W3-P7 (forms, dead pairs), W3-P3 (overlevels: the way through the loops), then the audit re-run.
+- **W3-S6** the Lance ball is look A (owner). **W3-S7** the Lance is named Fireball (en, es).
+- **W3-O12** the VFX gallery (F28): a dev scene that plays every effect in the game and every unused pack effect, grouped and labelled, plus contact sheets.
 - **W3-O11** the Brood Mother joins floor 1's pool (Gatekeeper, Warlord, Brood Mother) at floor-1 strength; floor 2 never draws a boss the run already met; old saves keep their bosses.
 
 ### R. Release
