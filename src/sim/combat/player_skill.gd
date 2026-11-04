@@ -165,8 +165,11 @@ static func _blast(w: World, t: SkillTable) -> void:
 		return Gamble.shot_damage(w, PlayerBuild.bolt_damage(w, spec.damage))
 	ctx.on_ray = func(end: Vector2) -> void: k.pellet_ends.append(end)
 	ctx.on_landed = func(target: int) -> void: _knock(w, target, origin, t)
+	var rings: Array = []  # v0.10.5 W3-O1: the Ring card's flying rings ([from, to, start_r, end_r] each)
+	ctx.on_ring = func(from: Vector2, to: Vector2, r0: float, r1: float) -> void:
+		rings.append([from, to, r0, r1])
 	Attacks.launch(w, spec, ctx)
-	Breakables.on_skill(w, origin, k.skill_angle, false)  # v0.9.0 DX (Q23): a pellet ending on a cracked wall
+	Breakables.on_skill(w, origin, k.skill_angle, false, rings)  # v0.9.0 DX (Q23): a pellet ending on a cracked wall
 
 
 ## Twin: BladeForms._knock / _advance_knock (the Heavy card's push, BladeState.k_*). Kept apart on purpose (audit
