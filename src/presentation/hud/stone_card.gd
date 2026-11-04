@@ -44,6 +44,8 @@ const GEM := 18.0
 const GEM_Y := 58.0
 const TIER_BOTTOM := 16.0
 const TIER_SIZE := 14
+## The rarity line never shrinks below this share of its size (it wraps to two lines instead).
+const TIER_FLOOR := 0.7
 const TITLE_SIZES := [22, 21, 20, 19, 18, 17, 16, 15, 14, 13]
 const DESC_SIZES := [17, 16, 15, 14, 13, 12]
 ## v0.9.5 TX: the form line's type sizes.
@@ -69,6 +71,7 @@ var tier := 0
 var focused := false
 ## Sizes picked by the last layout (tests check the text fits), and whether it needed the compact layout.
 var title_size := 0
+var tier_fit_size := 0
 var desc_size := 0
 var compact := false
 ## v0.8.0 N8: the pivot the face hangs from (the deal, flip, tilt, light and burn).
@@ -425,6 +428,39 @@ func frame_texture() -> Texture2D:
 
 ## Places the slab, the title, the socket, the gain line, the sentence and the foot for scale_factor and fits the
 ## text sizes; a sentence that does not fit at the smallest size takes the compact layout (a smaller socket).
+## v0.10.5 W3-S12: the width (px, this card's scale) between the carved frame's 9-slice margins: the text stays inside.
+func inner_width() -> float:
+	var k := SIZE.x / AstralCardArt.BODY_W
+	return (SIZE.x - 2.0 * (AstralCardArt.MARGIN_X - AstralCardArt.PAD.x) * k) * scale_factor
+
+
+## The title's box, in this card's pixels (tests).
+func title_box() -> Vector2:
+	return _title_box
+
+
+## The rarity line's box, in this card's pixels (tests).
+func tier_rect() -> Rect2:
+	return Rect2(_tier.position, _tier.size)
+
+
+## The rarity line's widest line at the size picked (tests).
+func tier_line_width() -> float:
+	var f: Font = _tier.get_theme_font("font")
+	if _tier.autowrap_mode == TextServer.AUTOWRAP_OFF:
+		return f.get_string_size(_tier.text, HORIZONTAL_ALIGNMENT_LEFT, -1, tier_fit_size).x
+	var flags := (
+		TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE
+	)
+	return (
+		f
+		. get_multiline_string_size(
+			_tier.text, HORIZONTAL_ALIGNMENT_LEFT, _tier.size.x, tier_fit_size, -1, flags
+		)
+		. x
+	)
+
+
 func _layout() -> void:
 	compact = false
 	_place(SOCKET, TITLE_TOP)
@@ -441,6 +477,9 @@ func _place(socket_px: float, title_top: float) -> void:
 	fx.lay_out(full)
 	var w := (SIZE.x - MARGIN * 2.0) * s
 	var x := MARGIN * s
+	if astral:  # v0.10.5 W3-S12: the title keeps inside the carved frame's inner width
+		w = inner_width()
+		x = (full.x - w) * 0.5
 	var bold := HudStyle.font(true)
 	var regular := HudStyle.font(false)
 	var serif: Font = _title.get_theme_font("font") if astral else bold
@@ -455,24 +494,36 @@ func _place(socket_px: float, title_top: float) -> void:
 	gem.custom_minimum_size = Vector2(g, g)
 	gem.size = Vector2(g, g)
 	gem.position = Vector2((full.x - g) * 0.5, full.y - GEM_Y * s - g * 0.5)
-	var tier_size := roundi(TIER_SIZE * s)
+	var tier_font: Font = _tier.get_theme_font("font")
+	var tier_base := roundi(TIER_SIZE * s)
+	var tier_size := tier_base
+	var tier_floor := maxi(8, floori(tier_base * TIER_FLOOR))
+	var tier_w := inner_width() if astral else w
+	var tier_x := (full.x - tier_w) * 0.5
+	# v0.10.5 W3-S12: the rarity line steps down to a floor, then wraps to two centred lines, inside the frame
 	while (
-		tier_size > 10
+		tier_size > tier_floor
 		and (
-			(
-				_tier
-				. get_theme_font("font")
-				. get_string_size(_tier.text, HORIZONTAL_ALIGNMENT_LEFT, -1, tier_size)
-				. x
-			)
-			> w
+			tier_font.get_string_size(_tier.text, HORIZONTAL_ALIGNMENT_LEFT, -1, tier_size).x
+			> tier_w
 		)
 	):
 		tier_size -= 1
+	var tier_lines := 1
+	if tier_font.get_string_size(_tier.text, HORIZONTAL_ALIGNMENT_LEFT, -1, tier_size).x > tier_w:
+		tier_lines = 2
+	_tier.clip_text = false
+	_tier.autowrap_mode = (
+		TextServer.AUTOWRAP_WORD_SMART if tier_lines > 1 else TextServer.AUTOWRAP_OFF
+	)
+	_tier.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	_tier.add_theme_font_size_override("font_size", tier_size)
-	var tier_h := _tier.get_theme_font("font").get_height(tier_size)
-	_tier.position = Vector2(x, full.y - (TIER_BOTTOM + (10.0 if astral else 0.0)) * s - tier_h)
-	_tier.size = Vector2(w, tier_h)
+	var tier_h := tier_font.get_height(tier_size) * tier_lines
+	_tier.position = Vector2(
+		tier_x, full.y - (TIER_BOTTOM + (10.0 if astral else 0.0)) * s - tier_h
+	)
+	_tier.size = Vector2(tier_w, tier_h)
+	tier_fit_size = tier_size
 	# v0.8.0 N8: the title on top: one line if it fits at a readable size, else two.
 	var y := title_top * s
 	var t := _title.text.to_upper()

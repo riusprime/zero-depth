@@ -7,7 +7,7 @@ extends SceneTree
 ##   godot --path . --position -10000,-10000 --resolution 1920x1080 -s scripts/shots/w3o16_astral_store.gd [-- es]
 ## Writes build/shots/v0.10.5/w3o16/{pick,shop,shop_heal,swap}[_es].png.
 
-const OUT := "res://build/shots/v0.10.5/w3o16/"
+const OUT_DEFAULT := "res://build/shots/v0.10.5/w3o16/"
 const SETTLE := 30
 const EIGHT: Array = [
 	&"heavy",
@@ -20,6 +20,7 @@ const EIGHT: Array = [
 	&"echo_slash",
 ]
 
+var _out := OUT_DEFAULT
 var _repo: ContentRepository
 var _stage := 0
 var _wait := 0
@@ -30,7 +31,9 @@ var _suffix := ""
 
 
 func _initialize() -> void:
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
+	if OS.get_cmdline_user_args().has("w3s12"):
+		_out = "res://build/shots/v0.10.5/w3s12/"
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_out))
 	var lang := "es" if OS.get_cmdline_user_args().has("es") else "en"
 	_suffix = "_es" if lang == "es" else ""
 	TranslationServer.set_locale(lang)
@@ -167,6 +170,6 @@ func _show_swap() -> void:
 func _grab(shot: String) -> void:
 	var img := root.get_texture().get_image()
 	img.convert(Image.FORMAT_RGB8)
-	var path := OUT + "%s%s.png" % [shot, _suffix]
+	var path := _out + "%s%s.png" % [shot, _suffix]
 	img.save_png(path)
 	print("w3o16: ", path, " ", img.get_size())
