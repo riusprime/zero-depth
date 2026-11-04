@@ -1500,3 +1500,38 @@ UI_FORECAST_NUMBERS_GUN,Shots per attack %s · Damage each %s · Damage per seco
 UI_FORECAST_NUMBERS_BLADE,Hits per swing %s · Damage per hit %s · Damage per second %s · Reach %s m,Golpes por tajo %s · Daño por golpe %s · Daño por segundo %s · Alcance %s m
 PERF_REC_ON,● PERF,● PERF
 PERF_REC_MARK,● PERF · mark %d,● PERF · marca %d
+UI_FXG_OPEN,Effects,Efectos
+UI_FXG_GROUP_HERO,Hero: attacks · elements · skills · dash · vent,Héroe: ataques · elementos · habilidades · esquiva · purga
+UI_FXG_GROUP_ENEMIES,Enemies: shots · attacks · telegraphs,Enemigos: disparos · ataques · avisos
+UI_FXG_GROUP_BOSSES,Bosses: every attack,Jefes: cada ataque
+UI_FXG_GROUP_PACK_USED,Pack effects in use (each PackFx row),Efectos del pack en uso (cada fila de PackFx)
+UI_FXG_GROUP_PACK_UNUSED,Pack effects not in use,Efectos del pack sin usar
+UI_FXG_ATTACK,attack,ataque
+UI_FXG_SKILL,skill,habilidad
+UI_FXG_DASH,dash,esquiva
+UI_FXG_VENT,vent,purga
+UI_FXG_SRC_VIEW,game view (WorldViewRoot) · %s,vista del juego (WorldViewRoot) · %s
+UI_FXG_SRC_ACTOR,game view (WorldViewRoot) · %s,vista del juego (WorldViewRoot) · %s
+UI_FXG_USE_BUILD,the %s build,la build %s
+UI_FXG_USE_ABILITY,ability card %s,carta de habilidad %s
+UI_FXG_USE_CARD,card · tags: %s,carta · etiquetas: %s
+UI_FXG_USE_ENEMY,enemy (every floor that spawns it),enemigo (cada piso que lo genera)
+UI_FXG_USE_BOSS,boss fight,combate de jefe
+UI_FXG_PHASE_FIRST,first phase,primera fase
+UI_FXG_PHASE_LAST,last phase,última fase
+UI_FXG_USE_ROW,PackFx row (%s) · family %s · code: %s,fila de PackFx (%s) · familia %s · código: %s
+UI_FXG_USE_NONE,unused · played as a %s,sin usar · se reproduce como %s
+UI_FXG_PREV_GROUP,◀◀ Group,◀◀ Grupo
+UI_FXG_PREV,◀ Previous,◀ Anterior
+UI_FXG_NEXT,Next ▶,Siguiente ▶
+UI_FXG_NEXT_GROUP,Group ▶▶,Grupo ▶▶
+UI_FXG_GRID,Grid,Cuadrícula
+UI_FXG_BACK,Back,Volver
+UI_FXG_HINT,←/→ entry (page) · ↑/↓ group · G or Y grid · click a cell to open it · Esc or B back,←/→ entrada (página) · ↑/↓ grupo · G o Y cuadrícula · clic en una celda para abrirla · Esc o B volver
+UI_FXG_EMPTY,Nothing in this group,Nada en este grupo
+UI_FXG_HEAD,Group %d/%d: %s · entry %d/%d,Grupo %d/%d: %s · entrada %d/%d
+UI_FXG_HEAD_GRID,Group %d/%d: %s · page %d/%d · %d entries,Grupo %d/%d: %s · página %d/%d · %d entradas
+UI_FXG_SOURCE,Source,Origen
+UI_FXG_USE,Used by,Lo usa
+UI_FXG_SEEN,Pack effects drawn here: %s,Efectos del pack dibujados aquí: %s
+UI_FXG_SEEN_NONE,none (code looks only),ninguno (solo looks de código)
