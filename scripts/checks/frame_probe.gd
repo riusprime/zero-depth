@@ -21,6 +21,9 @@ extends SceneTree
 ##   no_pack_fx       v0.10.0 VX0: the fire explosion draws as sprites (the pack's PackFx off), the "before" of VX0
 ##   no_anim          v0.10.5 Q5: every AnimationMixer under the view inactive (re-applied once a second, so new
 ##                    enemies too): what the AnimationPlayers cost the frame (the models stop animating)
+##   low_hp           v0.10.5 W3-O6: the hero held at 20 % HP (god mode keeps them alive), so the low-HP screen-edge
+##                    warning (LowHpVignette) and the HP bar's red pulse stay on: the border's cost against a run
+##                    without the flag
 ##   planar_floor     NOT AVAILABLE: every biome's ground is world-triplanar (StageView._ground_material) and there
 ##                    is no planar path to switch to; the report says whether the floor is triplanar.
 ## The scenario: PlaygroundScenario's fixed room (seed 4404), 20 live enemies topped up each second at 7-12 m round the
@@ -79,7 +82,8 @@ const KNOWN_AB := [
 	"planar_floor",
 	"no_rig_merge",
 	"no_burn_fx",
-	"no_anim"
+	"no_anim",
+	"low_hp"
 ]
 ## The strafe legs (move_left / move_right / move_up / move_down), each held STRAFE_S seconds.
 const STRAFE: Array[StringName] = [&"move_left", &"move_up", &"move_right", &"move_down"]
@@ -320,6 +324,9 @@ func _begin_measure(now: int) -> void:
 ## Strafe, aim and refill the enemies, once per frame (cheap: the refill runs once a second).
 func _drive(now: int) -> void:
 	var t := (now - _t0) / 1e6
+	if _ab.has("low_hp"):  # W3-O6: the probe (not the sim) holds the hero's HP at 20 %
+		var a := _main.driver.world.actors
+		a.hp[0] = maxi(1, a.max_hp[0] / 5)
 	if _boss >= 0:  # PF4: the boss shot: stand still, the boss stays in view
 		_aim(Vector2(1400, 500))
 		return
