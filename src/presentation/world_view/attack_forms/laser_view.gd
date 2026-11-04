@@ -47,13 +47,20 @@ uniform float length_m = 1.0;
 uniform float tiles = 0.6;
 uniform float scroll = 2.0;
 uniform float energy = 1.7;
+uniform float core_frac = 1.0;
+uniform float glow = 0.0;
 void fragment() {
-	vec2 uv = vec2(UV.x * length_m * tiles - TIME * scroll, UV.y);
-	vec4 t = texture(strip, uv);
+	// v0.10.5 W3-O8: the strip draws in the ribbon's middle core_frac (the core), a soft halo fills the rest.
+	float y = (UV.y - 0.5) / core_frac + 0.5;
+	float inside = step(0.0, y) * step(y, 1.0);
+	vec2 uv = vec2(UV.x * length_m * tiles - TIME * scroll, clamp(y, 0.0, 1.0));
+	vec4 t = texture(strip, uv) * inside;
 	float ends = smoothstep(0.0, 0.04, UV.x) * smoothstep(1.0, 0.97, UV.x);
 	// v0.9.0 VX: three tones, the outer glow in the element's deep tone, the body its colour, the centre white-hot.
 	vec3 body = mix(deep.rgb, edge.rgb, smoothstep(0.0, 0.35, t.r));
-	ALBEDO = mix(body, core.rgb, smoothstep(0.35, 1.0, t.r)) * t.a * energy * ends;
+	vec3 col = mix(body, core.rgb, smoothstep(0.35, 1.0, t.r)) * t.a * energy * ends;
+	float halo = exp(-pow((UV.y - 0.5) * 2.0, 2.0) * 3.0) * glow;
+	ALBEDO = col + mix(deep.rgb, edge.rgb, 0.6) * halo * energy * ends;
 }
 """
 const IMPACT_SHADER := """
@@ -93,6 +100,11 @@ var look := &"default"
 var impacts := 0
 ## v0.10.0 FX: the points of the drawn beams' centre lines (more than 2 a beam: a curve).
 var points_shown := 0
+## v0.10.5 W3-O8 (LaserWeight): the start flash now (0..1), the ribbons' width factor now and the impact's sparks
+## drawn in the last effects frame (the tests read them).
+var flash_now := 0.0
+var width_now := 1.0
+var sparks_drawn := 0
 ## What the last sync showed of the cards' extras (tests read them): ghost ribbons, rings, mines.
 var ghosts_shown := 0
 var rings_shown := 0
@@ -120,6 +132,8 @@ var _impact_mat: Array[ShaderMaterial] = []
 var _beams: Array[Dictionary] = []
 var _look_set := &""
 var _form := FormLook.new()
+var _tick := 0.0
+var _fire_start := 0.0
 
 
 func _init() -> void:
@@ -197,6 +211,9 @@ func sync(reader: WorldReader) -> void:
 		else:
 			_beams.append(b)
 	_beams = _join(_beams)
+	_tick = float(reader.tick())
+	if _beams.size() > 0 and shown == 0:
+		_fire_start = _tick  # W3-O8: a firing starts (the flash)
 	_ghosts = reader.laser_ghosts()
 	_mines = reader.laser_mines()
 	ghosts_shown = mini(_ghosts.size(), GHOSTS_MAX)
@@ -222,18 +239,30 @@ func sync(reader: WorldReader) -> void:
 	for k in _ghost_ribbons.size():
 		_ghost_ribbons[k].visible = k < ghosts_shown
 	_muzzle.visible = shown > 0
+	flash_now = LaserWeight.flash(_tick - _fire_start) if shown > 0 else 0.0
+	width_now = LaserWeight.width_mul(_tick, flash_now)
 	if shown == 0:
 		hold.clear()  # v0.10.0 VX2: the pack's beams end with the fire
 		return
+	var glow := LaserWeight.glow(ViewPrefs.effects_density)
+	for k in shown:
+		_beam_mat[k].set_shader_parameter(&"glow", glow)
+	var grow := 1.0 + LaserWeight.FLASH_GROW * flash_now
 	_muzzle.position = SimPlane.to_3d(_beams[0]["from"], HEIGHT)
-	_muzzle.scale = Vector3.ONE * MUZZLE_SIZE * (1.0 + 0.4 * (shown - 1))
+	_muzzle.scale = Vector3.ONE * MUZZLE_SIZE * (1.0 + 0.4 * (shown - 1)) * grow
 	for k in shown:
 		var b: Dictionary = _beams[k]
 		var hits: PackedInt32Array = b["hits"]
 		if bool(b.get("impact", hits.size() > 0 or bool(b["wall"]))):
 			_impacts[k].visible = true
 			_impacts[k].position = SimPlane.to_3d(b["to"], HEIGHT)
-			_impacts[k].scale = Vector3.ONE * IMPACT_SIZE
+			_impacts[k].scale = (
+				Vector3.ONE
+				* IMPACT_SIZE
+				* LaserWeight.IMPACT_MUL
+				* LaserWeight.width_mul(_tick, 0.0)
+				* grow
+			)
 			impacts += 1
 	_place_ribbons()
 
@@ -248,6 +277,7 @@ func _place_ribbons() -> void:
 	var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
 	var view := Vector3(0, 1, 1).normalized() if cam == null else cam.global_transform.basis.z
 	var w := BeamLooks.width(look)
+	var wide := w * LaserWeight.GLOW_WIDTH * width_now  # W3-O8: the core in the middle, the halo around it
 	hold.begin()
 	for k in shown:
 		var b: Dictionary = _beams[k]
@@ -256,7 +286,9 @@ func _place_ribbons() -> void:
 			_ribbons[k].visible = false
 			continue
 		_ribbons[k].visible = true
-		_lay_path(_ribbons[k], _beam_mat[k], b["pts"], bw, view)
+		_lay_path(
+			_ribbons[k], _beam_mat[k], b["pts"], wide * int(b.get("wmul", 1000)) / 1000.0, view
+		)
 	hold.end()
 	for k in ghosts_shown:
 		var g: Dictionary = _ghosts[k]
@@ -429,6 +461,7 @@ func _style(k: int) -> void:
 	bm.set_shader_parameter(&"deep", _form.glow)
 	bm.set_shader_parameter(&"scroll", BeamLooks.scroll(l))
 	bm.set_shader_parameter(&"tiles", TILES_PER_M)
+	bm.set_shader_parameter(&"core_frac", 1.0 / LaserWeight.GLOW_WIDTH)
 	var m := _impact_mat[k]
 	m.set_shader_parameter(&"core", _form.core)
 	m.set_shader_parameter(&"edge", _form.edge)
@@ -453,6 +486,7 @@ func _style_ghost(k: int) -> void:
 ## light. The default energy beam adds sparks and its light only.
 func draw_fx(layer: VfxCore) -> void:
 	_draw_extras(layer)
+	sparks_drawn = 0
 	if shown == 0:
 		return
 	var fx := layer as VfxLayer
@@ -480,14 +514,14 @@ func draw_fx(layer: VfxCore) -> void:
 				i = j
 		if not _impacts[k].visible:
 			continue
-		for j in 3:
-			var t := fposmod(now * 0.37 + j * 0.33, 1.0)
-			var off := (
-				Vector3(cos(j * 2.1 + now * 0.3), 0.3 + t, sin(j * 2.1 + now * 0.3)) * 0.35 * t
-			)
-			var c := Color(col.r * 2.0, col.g * 2.0, col.b * 2.0, 1.0 - t)
-			layer.sprite(&"spark", e + off, 0.22 * (1.0 - t), c, j % 4, 0.0)
-		layer.light_merged(e + Vector3(0, 0.4, 0), col, 1.6, 3.0, 1.5)
+		var n := LaserWeight.sparks(ViewPrefs.effects_density)  # W3-O8: hit sparks thrown from the impact
+		for j in n:
+			var sp: Array = LaserWeight.spark_offset(j, n, now + k * 5.0)
+			var t: float = sp[1]
+			var c := Color(col.r * 2.2, col.g * 2.2, col.b * 2.2, 1.0 - t)
+			layer.sprite(&"spark", e + sp[0], 0.3 * (1.0 - t) + 0.06, c, j % 4, 0.0)
+			sparks_drawn += 1
+		layer.light_merged(e + Vector3(0, 0.4, 0), col, 1.6 + 1.2 * flash_now, 3.0, 1.5)
 		# v0.9.0 VX V8: the element's extra at the beam's end (HeroFx.impact, V4's), at most twice a second per beam,
 		# never on every damage tick: one plays every EXTRA_EVERY ticks and lasts EXTRA_TICKS.
 		var u := fposmod(now + k * 7.0, EXTRA_EVERY) / EXTRA_TICKS

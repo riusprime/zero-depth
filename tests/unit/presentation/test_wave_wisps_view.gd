@@ -97,3 +97,29 @@ func test_the_wisps_orbs_chirp_and_the_heros_shot_stays_the_orbs() -> void:
 			shot = i
 	assert_gte(shot, 0, "a wisp's orb in flight")
 	assert_eq(r.projectile_look(shot), "", "drawn by the pulses as an orb")
+
+
+## v0.10.5 W3-O8 (owner F12: "the wave effect is barely visible when attacking forward/upward; mostly the ground circle
+## can be seen"): the pack crest's material culls back faces, so its sheet is two-sided (each triangle again, wound the
+## other way) and leans forward, so it reads aimed away from the camera and across the screen too.
+func test_w3o8_the_crest_sheet_is_two_sided_and_leans_forward() -> void:
+	var one := WaveView.crest_mesh(WaveView.PACK_LEAN_M)
+	var two := WaveView.double_sided(one)
+	var a: PackedVector3Array = one.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var b: PackedVector3Array = two.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	assert_eq(b.size(), a.size() * 2, "every triangle twice")
+	var n := a.size()
+	for k in range(0, n, 3):
+		var front := (a[k + 1] - a[k]).cross(a[k + 2] - a[k])
+		var back := (b[n + k + 1] - b[n + k]).cross(b[n + k + 2] - b[n + k])
+		assert_almost_eq(front.dot(back), -front.length_squared(), 1e-4, "wound the other way")
+	var uv_a: PackedVector2Array = one.surface_get_arrays(0)[Mesh.ARRAY_TEX_UV]
+	var uv_b: PackedVector2Array = two.surface_get_arrays(0)[Mesh.ARRAY_TEX_UV]
+	assert_eq(uv_b[n], uv_a[0], "the same UVs")
+	var top := 0.0
+	for v in a:
+		if v.y > 0.99 and absf(v.z) > 0.99:
+			top = v.x  # (an end of the top edge: no bow there)
+	assert_almost_eq(top, WaveView.PACK_LEAN_M, 1e-4, "its top stands forward of its foot")
+	var plain: PackedVector3Array = WaveView.crest_mesh().surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	assert_eq(plain.size(), a.size(), "the shader crest (cull disabled) keeps one side")

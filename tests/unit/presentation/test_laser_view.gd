@@ -134,3 +134,62 @@ func test_v095_fc1_the_cards_extra_paths_ghosts_rings_and_mines_are_drawn() -> v
 	W.run(w3, 2, 0, 0)
 	_view.sync(r3)
 	assert_eq(_view.shown, 0, "let go: none")
+
+
+## v0.10.5 W3-O8 (owner F14: the Laser "doesn't feel as powerful or impactful as other attack forms"): a beam with
+## weight. The ribbon is a core with a halo round it (by Effects density), its width pulses slightly, a firing starts
+## with a flash (the muzzle and the impact bigger, fading in FLASH_TICKS) and the impact throws sparks (by density).
+func test_w3o8_the_beam_has_a_core_a_glow_a_pulse_a_start_flash_and_hit_sparks() -> void:
+	var was := ViewPrefs.effects_density
+	ViewPrefs.effects_density = "high"
+	var layer: VfxLayer = add_child_autofree(VfxLayer.new())
+	var w := _world()
+	var r := WorldReader.new(w)
+	W.run(w, 1, 0, W.S)
+	_view.sync(r)
+	assert_eq(_view.shown, 1)
+	assert_almost_eq(_view.flash_now, 1.0, 1e-4, "a firing starts with the flash")
+	var mat: ShaderMaterial = _view.get("_beam_mat")[0]
+	assert_almost_eq(
+		float(mat.get_shader_parameter(&"core_frac")),
+		1.0 / LaserWeight.GLOW_WIDTH,
+		1e-4,
+		"the core"
+	)
+	assert_eq(float(mat.get_shader_parameter(&"glow")), LaserWeight.glow("high"), "the halo")
+	var muzzle: MeshInstance3D = _view.get("_muzzle")
+	var big := muzzle.scale.x
+	_view.draw_fx(layer)
+	assert_eq(_view.sparks_drawn, LaserWeight.sparks("high"), "the impact throws its sparks")
+	var widths: Array[float] = []
+	for k in 22:
+		W.run(w, 1, 0, W.S)
+		_view.sync(r)
+		if _view.flash_now == 0.0:
+			widths.append(_view.width_now)
+	assert_eq(_view.flash_now, 0.0, "the flash is over")
+	assert_lt(muzzle.scale.x, big, "the muzzle settles")
+	assert_gt(widths.max() - widths.min(), LaserWeight.PULSE, "the width pulses")
+	assert_lt(widths.max(), 1.0 + LaserWeight.PULSE + 0.001, "slightly")
+	ViewPrefs.effects_density = "low"
+	_view.sync(r)
+	_view.draw_fx(layer)
+	assert_eq(_view.sparks_drawn, LaserWeight.sparks("low"), "fewer at Low")
+	assert_eq(float(mat.get_shader_parameter(&"glow")), LaserWeight.glow("low"))
+	W.run(w, 2, 0, 0)
+	_view.sync(r)
+	W.run(w, 1, 0, W.S)
+	_view.sync(r)
+	assert_almost_eq(_view.flash_now, 1.0, 1e-4, "a new firing flashes again")
+	ViewPrefs.effects_density = was
+
+
+func test_w3o8_laser_weight_numbers() -> void:
+	assert_eq(LaserWeight.flash(0.0), 1.0)
+	assert_eq(LaserWeight.flash(LaserWeight.FLASH_TICKS), 0.0)
+	assert_lt(LaserWeight.flash(4.0), LaserWeight.flash(2.0), "fading")
+	assert_lt(LaserWeight.sparks("low"), LaserWeight.sparks("high"))
+	for j in 5:
+		var s: Array = LaserWeight.spark_offset(j, 5, 7.0)
+		assert_lte((s[0] as Vector3).length(), LaserWeight.SPARK_REACH_M + 0.6, "near the impact")
+		assert_between(float(s[1]), 0.0, 1.0)
