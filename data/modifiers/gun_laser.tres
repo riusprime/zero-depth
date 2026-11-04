@@ -42,8 +42,8 @@ script = ExtResource("2_op")
 op = 0
 stage = 3
 field = &"beam_permille"
-value = 800.0
-per_level = 40.0
+value = 920.0
+per_level = 46.0
 
 [sub_resource type="Resource" id="Op_7"]
 script = ExtResource("2_op")

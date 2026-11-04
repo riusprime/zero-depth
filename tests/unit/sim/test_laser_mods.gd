@@ -109,7 +109,7 @@ func test_l1_halo_fans_three_short_beams_where_the_beam_ends() -> void:
 	W.run(w2, 60, 0, W.S)
 	assert_gt(_total(w2, 2), 0, "a fan beam reaches the enemy beside the tip")
 	for h: Dictionary in _hits(w2, 2):
-		assert_eq(h["amount"], 1, "40 % of 4, at least 1")
+		assert_between(h["amount"], 1, 2, "40 % of 4.6 (1.84): 1 or 2 with the carry")
 
 
 # --- L2 Ring ---------------------------------------------------------------------------------------------------------
@@ -277,8 +277,8 @@ func test_l7_big_shot_is_twice_as_wide_hits_60_percent_harder_and_turns_slower()
 	W.run(w, 598, 0, W.S)
 	var plain := _world([], [Vector2(4.0, 0.0)])
 	W.run(plain, 600, 0, W.S)
-	assert_eq(_total(plain, 1), 400, "the plain beam: 4 a tick, 100 ticks")
-	assert_eq(_total(w, 1), 640, "+60 %: 6.4 a tick")
+	assert_eq(_total(plain, 1), 460, "the plain beam: 4.6 a tick, 100 ticks")
+	assert_eq(_total(w, 1), 736, "+60 %: 7.36 a tick")
 	# turning: 70 % of follow_dps (720 degrees a second) -> 504
 	var t := _world([&"gun_big_shot"], [])
 	W.run(t, 1, 0, W.S, 0)
@@ -326,9 +326,10 @@ func test_l8_rapid_fire_quickens_from_0_1_s_to_0_05_s_over_2_s_and_thins() -> vo
 		late_total += int(h["amount"])
 	assert_between(
 		late_total,
-		50,
-		54,
-		"20 ticks a second at 65 % of 4: 52 a second, about 1.3x a plain beam's 40"
+		# v0.10.5 W3-S2 (owner, 2026-11-04: Laser doesn't feel powerful): 52 → 60 a second (+-4 %).
+		58,
+		62,
+		"20 ticks a second at 65 % of 4.6: about 60 a second, about 1.3x a plain beam's 46"
 	)
 	var early := _hits(w, 1).filter(func(h: Dictionary) -> bool: return h["tick"] < 30)
 	assert_lte(early.size(), 5, "10 a second at the start")
@@ -382,7 +383,7 @@ func test_l10_mine_drops_one_a_second_at_the_tip_and_keeps_at_most_four() -> voi
 	var dealt := _hits_id(w, near)
 	assert_gt(dealt.size(), 0, "the burst hit it")
 	for h: Dictionary in dealt:
-		assert_eq(h["amount"], 20, "100 % of a tick x 5")
+		assert_eq(h["amount"], 23, "100 % of a tick (4.6) x 5")
 	assert_lt(w.mx.lz_mine_at.size(), 4, "the mines that went off are gone")
 
 
