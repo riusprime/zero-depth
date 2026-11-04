@@ -19,7 +19,7 @@ extends SceneTree
 
 const BP := preload("res://tests/unit/sim/test_boss_pace.gd")
 const POOLS := {
-	1: [&"gatekeeper", &"warlord"],
+	1: [&"gatekeeper", &"warlord", &"brood_mother"],  # v0.10.5 W3-O11: she joins floor 1's pool
 	2: [&"brood_mother", &"hive_lens"],
 	3: [&"siege_engine", &"foundry"],
 	4: [&"tidecaller", &"twin_wardens"],

@@ -99,6 +99,14 @@ const FLOOR_RULES_V095_TS := 21
 const FLOOR_RULES_V095_BK := 22
 ## v0.10.5 O14: 23 is today's: floor 2's first Lockdown is the Elite midpoint set piece (RunSaver.lockdown_table).
 const FLOOR_RULES_V0105_O14 := 23
+## v0.10.5 W3-O11 (owner F21, "Share one, scaled"): the run's boss draw rules, for the whole run (a floor's rules reset
+## each floor, but the bosses met on the floors before are redrawn on each floor, so they must draw as they did). 1 is
+## today's: a floor draws from its pool a boss the run has not met yet (floor 1's pool shares the Brood Mother with
+## floor 2's). 0, a payload saved before O11 (no `boss_draw` key): each pool without the bosses a deeper pool also
+## names, and a floor with its own pool ignores the bosses met, so the run meets the bosses it was going to.
+const BOSS_DRAW := 1
+const BOSS_DRAW_V0105_O11 := 1
+const BOSS_DRAW_LEGACY := 0
 
 var run_seed := 0
 var table: RunTable
@@ -157,6 +165,8 @@ var marked_done := 0
 ## payload: none, so its floors rebuild as saved; its next loop draws one).
 var loop_rules: Array[StringName] = []
 var loop_rule_loop := 0
+## v0.10.5 W3-O11: see BOSS_DRAW (FloorShape.boss reads it). Saved (RunSaver; an older payload: BOSS_DRAW_LEGACY).
+var boss_draw := BOSS_DRAW
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:

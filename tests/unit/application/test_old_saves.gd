@@ -380,3 +380,56 @@ func test_a_floor_saved_before_ts_keeps_its_timed_door() -> void:
 	assert_eq(WorldSnapshot.apply(base, snap), "", "an old snapshot fits")
 	assert_eq(base.timed.open_ticks, 900, "its door keeps its 15 s")
 	assert_eq(base.state_hash(), old.state_hash(), "same state")
+
+
+## v0.10.5 W3-O11 (owner F21, "Share one, scaled"): floor 1's pool shares the Brood Mother with floor 2's. A run saved
+## before O11 (no `boss_draw` key) meets every floor's boss it would have then: floor 1 from the Gatekeeper and the
+## Warlord, each floor from its own pool on its `boss_<f>` stream, whatever was met. A floor-2 save of such a run
+## where today's rules would differ resumes on its own boss (the snapshot fits, the same state); a new run's payload
+## keeps today's rules.
+func test_a_run_saved_before_o11_keeps_its_bosses() -> void:
+	var repo := ContentRepository.load_all()
+	var ids: Array = ContentCompiler.compile_bosses(repo).map(
+		func(t: BossTable) -> StringName: return t.id
+	)
+	var pools := RunContentCompiler.compile_boss_pools(repo, SaveLab.floors())
+	var brood := ids.find(&"brood_mother")
+	assert_true(pools[0].has(brood) and pools[1].has(brood), "floors 1 and 2 share her")
+	var then: Array[PackedInt32Array] = []
+	for p in pools:
+		then.append(p.duplicate())
+	then[0] = PackedInt32Array([ids.find(&"gatekeeper"), ids.find(&"warlord")])
+	var differs := -1
+	for s in 300:
+		var old := SaveLab.run_state(1 + s, 1, &"blade", 0, repo)
+		old.boss_draw = RunState.BOSS_DRAW_LEGACY
+		var now := SaveLab.run_state(1 + s, 1, &"blade", 0, repo)
+		for f in range(1, 6):
+			var b := FloorShape.boss(old, pools, f)
+			assert_eq(
+				b, old.pick_boss(then[f - 1], f), "seed %d floor %d: the boss of then" % [1 + s, f]
+			)
+		if differs < 0 and FloorShape.boss(now, pools, 2) != FloorShape.boss(old, pools, 2):
+			differs = 1 + s
+	assert_gt(differs, 0, "some run's floor 2 differs under today's rules")
+	# A floor-2 save of that run, written before O11 (no `boss_draw` key).
+	var run := SaveLab.run_state(differs, 2, &"blade", 0, repo)
+	run.boss_draw = RunState.BOSS_DRAW_LEGACY
+	var w := SaveLab.build_floor(run, &"", repo)
+	CombatLab.idle(w, 30)
+	var p := RunSaver.payload_of(w, run, 99, PackedByteArray([1]))
+	assert_eq(int(p["run"]["boss_draw"]), RunState.BOSS_DRAW_LEGACY, "it saves its rules")
+	(p["run"] as Dictionary).erase("boss_draw")
+	var back := SaveLab.run_from(p)
+	assert_eq(back.boss_draw, RunState.BOSS_DRAW_LEGACY, "a payload without the key: the old draw")
+	assert_eq(FloorShape.boss(back, pools, 2), FloorShape.boss(run, pools, 2))
+	var w2 := SaveLab.build_floor(back, &"", repo)
+	assert_eq(WorldSnapshot.apply(w2, p["world"]), "", "the old snapshot fits")
+	assert_eq(w2.state_hash(), w.state_hash(), "Continue resumes the same state")
+	# Today's run saves and resumes on today's rules.
+	var fresh := SaveLab.run_state(differs, 1, &"blade", 0, repo)
+	assert_eq(fresh.boss_draw, RunState.BOSS_DRAW)
+	assert_eq(RunState.BOSS_DRAW, RunState.BOSS_DRAW_V0105_O11)
+	var wf := SaveLab.build_floor(fresh, &"", repo)
+	var q := RunSaver.payload_of(wf, fresh, 99, PackedByteArray([1]))
+	assert_eq(SaveLab.run_from(q).boss_draw, RunState.BOSS_DRAW, "a new payload keeps today's draw")

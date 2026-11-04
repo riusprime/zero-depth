@@ -79,7 +79,11 @@ func test_pools_hold_the_first_boss_per_floor() -> void:
 	var want := {1: &"gatekeeper", 2: &"brood_mother", 3: &"siege_engine"}
 	for f in want:
 		var pool := ContentCompiler.compile_boss_pool(repo, f)
-		assert_eq(pool.size(), 2, "floor %d" % f)
+		assert_eq(
+			pool.size(),
+			3 if f == 1 else 2,
+			"floor %d (v0.10.5 W3-O11: floor 1 shares the Brood Mother)" % f
+		)
 		assert_eq(tables[pool[0]].id, want[f])
 		assert_true(pool.has(BossTable.pick(pool, RngStream.new(5))))
 	assert_eq(BossTable.pick(PackedInt32Array(), RngStream.new(5)), -1)

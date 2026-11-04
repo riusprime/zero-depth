@@ -126,7 +126,8 @@ func test_a_run_never_meets_a_boss_twice() -> void:
 			var b := FloorShape.boss(r, pools, f)
 			assert_gte(b, 0, "seed %d floor %d has a boss" % [s, f])
 			assert_true(pools[f - 1].has(b), "floor %d: its own pool" % f)
-			if f <= 3:
+			# v0.10.5 W3-O11: floor 2 draws as before unless floor 1 took the Brood Mother they share
+			if f == 1 or f == 3 or (f == 2 and not pools[1].has(met[0])):
 				assert_eq(b, r.pick_boss(pools[f - 1], f), "floor %d: the same draw as before" % f)
 			assert_false(b in met, "seed %d floor %d: not met before" % [s, f])
 			met.append(b)
