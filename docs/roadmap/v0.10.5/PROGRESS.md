@@ -94,6 +94,7 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 | PC: idle effect pools wait outside the scene | f5cd06c9 | [evidence/PC_POOLS.md](evidence/PC_POOLS.md): nodes on a built floor 5,829 → 2,948; first-use warm 14/14, views 54/54, e2e elites 1/1 |
 | PD: enemies plan (`EnemyAi.PLAN_PERIOD` 4 → 8) and re-flood (`NavField.SLICES` 3 → 6) at half rate (owner: "let's do it") | 830222be | [evidence/PD_AI_RATE.md](evidence/PD_AI_RATE.md): ai+nav at 60 enemies 1.03 → 0.88 ms a tick; play check attacks 352 → 349, distance 10.92 → 10.68 m; no golden file changed; AI/nav 121/122 → test_horde fixed 6/6 |
 | Cross-step fix: the idle pools are freed with their floor (orphans 2,820 → 0; a freed-instance error on unload); the lock-flash test marks its look drawn | 7d7a0ae3 | agent: damage soak 1/1, ascension + final boss 3/3, unit 37/37; lead seams 617/617 (Verification 9) |
+| W3-O2 the Foundry's floor lines and its shots are never down together (a pick that would overlap waits; `lines_clear_shots`, Foundry only); the Hive Lens Gaze starts 40° behind you in its turn and reaches you in ~0.9 s (was ~4 s, from facing away) | dfdfb3ae (merge c32df910) | agent: new test_boss_fair_lines (3 seeds × 3 min: 0 overlap ticks; with the rule off they overlap), boss batches 48/48, 56/56, 53/53, content+arch+golden 172/172, e2e 8/8, 6/6, 13/13, views 48/48; lint clean; no golden changed; no shots |
 
 ## Verification
 1. **S2–S4 re-tested on this branch** (the agents' own runs were on an old base, `d33bc82a`, see History). Lead,
