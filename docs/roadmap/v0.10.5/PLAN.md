@@ -342,7 +342,7 @@ the 3 + 1 rule above for this wave.
 | # | Owner line (close) | Decision | Step |
 |---|---|---|---|
 | F1 | Black gaps between the hub's inner circular floor and the walls; gaps between wall pieces | Direct fix: close both | W3-O5 |
-| F2 | "The hub currently lacks a proper background" | Owner question (what kind) | Q-F2 |
+| F2 | "The hub currently lacks a proper background" | Asked: a sky from the packs, or a dark void + fog. Owner, 2026-11-04: **"Dark void + fog"** | W3-O5 |
 | F3 | Pressing L2 still doesn't open the secret room after finding it (thought fixed) | Bug: reproduce through the owner's path, fix | W3-O1 |
 | F4 | Fireballs look and feel excellent | Kept; the reference look for other bolts | — |
 | F5 | Ground fire pools (Fire + Bleed) too large, bright, frequent; hide enemies | Direct fix: smaller, dimmer, fewer at once | W3-S4 |
@@ -377,7 +377,7 @@ Steps (S = Sonnet, O = Opus; at most 2 + 2 at once):
 - **W3-O2** Foundry lines vs volleys; the Hive Lens sweep.
 - **W3-O3** the Lance charge heat.
 - **W3-O4** G1: the progression audit (measured with the bots; proposals for front-loading, the plateau, diversity).
-- **W3-O5** the hub's floor/wall and wall/wall gaps.
+- **W3-O5** the hub: the floor/wall and wall/wall gaps closed; a dark void with fog around it (F2).
 - **W3-O6** the boss border's cost.
 - **W3-O7** G2: the purple enemy bolt and the Lance ball from `newVFX/`.
 - **W3-O8** Void with Split/Mine, Wave's forward look, the Laser's impact.

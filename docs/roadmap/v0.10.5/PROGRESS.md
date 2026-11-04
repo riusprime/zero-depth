@@ -17,7 +17,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.
 - **Wave 3 (2026-11-04):** the owner played v0.10.5 and sent feedback (PLAN "Wave 3", F1–F25). Running (at most
   2 Sonnet + 2 Opus, owner 2026-11-04): W3-S1 (floor 1's boss draw, the Warlord −5 %), W3-S2 (Seekers/Glaive/Laser
   damage), W3-O1 (the secret room through L2), W3-O2 (Foundry lines vs volleys, the Hive Lens sweep). Queued: W3-S4,
-  W3-O3–O9. Gates: W3-O4 (progression G1), W3-O7 and W3-O9 (G2). Owner question: Q-F2 (the hub background).
+  W3-O3–O9. Gates: W3-O4 (progression G1), W3-O7 and W3-O9 (G2). The hub background: "Dark void + fog" (owner, 2026-11-04), in W3-O5.
 - **Then:** the release step (one PR into `main`, the full suite on GitHub).
 
 ## Owner decisions (2026-11-02)
