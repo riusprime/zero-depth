@@ -8,10 +8,12 @@ var _density := ""
 func before_each() -> void:
 	_density = ViewPrefs.effects_density
 	ViewPrefs.effects_density = "high"
+	CandidateLooks.bolt = &""  # VX4's own rows (the owner's W3-O7 pick is tested in test_w3o7_candidates)
 
 
 func after_each() -> void:
 	ViewPrefs.effects_density = _density
+	CandidateLooks.bolt = CandidateLooks.BOLT
 
 
 func _looks() -> Array[StringName]:

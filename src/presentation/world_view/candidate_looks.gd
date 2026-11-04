@@ -18,7 +18,8 @@ extends RefCounted
 ##   the element's colours; &"b" the pack's javelin of the element (vx2_jav_<element>); &"c" the pack's flare orb with
 ##   its star flare (magic_orb_flare_vfx_02).
 
-const BOLT := &""
+## The owner picked A (the violet fireball) on 2026-11-04, after round 2 (D–G).
+const BOLT := &"a"
 ## The owner picked A (the element fireball) on 2026-11-04, then B (the element javelin):
 ## "lance should not be fireball it should be option B".
 const LANCE := &"b"

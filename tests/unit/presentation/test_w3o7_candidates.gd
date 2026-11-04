@@ -17,9 +17,10 @@ func _colors(a: Color, b: Color, c: Color) -> Dictionary:
 
 
 func test_todays_looks_stay_the_default() -> void:
-	assert_eq(CandidateLooks.BOLT, &"", "the purple bolt: today's look until the owner picks")
+	assert_eq(CandidateLooks.BOLT, &"a", "the purple bolt: the owner picked A (2026-11-04)")
 	assert_eq(CandidateLooks.LANCE, &"b", "the Lance: the owner picked B (2026-11-04)")
 	CandidateLooks.lance = &""
+	CandidateLooks.bolt = &""  # today's looks, still reachable by the switch
 	assert_eq(CandidateLooks.bolt_id(VIOLET), &"shot_warden_violet_ember")
 	var pk := CandidateLooks.lance_pack(
 		&"", PackLooks.colors(PackedStringArray()), HeroPulseViews.BIG_PER_RADIUS

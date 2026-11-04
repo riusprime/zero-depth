@@ -4,7 +4,7 @@ Owner, 2026-11-04: "Purple enemy bolts: the recently changed projectiles feel vi
 fireballs." "Lance: projectile animation looks like a generic ball and feels worse than the available VFX pack
 alternatives." The fireballs (F4: kept, the reference) are the bar.
 
-**Decision: Lance: B, the element javelin (owner, 2026-11-04: first A, then "lance should not be fireball it should be option B").** The Bolt pick is still open.
+**Decision: Lance: B, the element javelin (owner, 2026-11-04: first A, then "lance should not be fireball it should be option B").** **Bolt: A, the violet fireball** (owner, 2026-11-04, after round 2).
 
 **Status: G2, waiting on the owner's pick. Today's looks stay the default.** Nothing below changes the game until the
 lead sets the pick.
