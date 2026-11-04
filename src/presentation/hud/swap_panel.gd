@@ -20,6 +20,9 @@ extends ModalPanel
 ## v0.9.0 AS2 (owner "Let me choose"; G2 AS = B): the slot pips over the wand (SlotPips), and a Swap for a full
 ## Secondary or Element slot (the wand read's "swap_slot") is limited to that slot's cards: the others are dimmed and
 ## can't be chosen, Insert is off, the title says which slot; the sim takes only those answers (BuildSlots.swap_answer).
+## v0.10.5 W3-O16 (owner 2026-11-04: the shop and the pick in Astral; the Swap's chrome with them): the game blurred
+## under Astral's cool ink (MenuBackdrop.astral), the title as an Astral heading over a rule, the wand row's tiles,
+## pips and forecast in Astral (WandRow.astral, SlotPips.astral, WandForecastView.set_astral), Skip an Astral plate.
 
 signal moved(value: int)
 
@@ -30,7 +33,7 @@ const ECHO := PanelInput.Echo.ARROWS
 
 ## A held card's tile (the row's) and the Skip tile.
 const TILE := WandRow.TILE
-const SKIP_TILE := Vector2(140, 52)
+const SKIP_TILE := Vector2(224, 56)
 ## The Skip tile's index (past the held slots; the wand has up to WorldReader.MOD_SLOTS = 8).
 const SKIP := WorldReader.MOD_SLOTS
 
@@ -41,7 +44,7 @@ var pips := SlotPips.new()
 var forecast := WandForecastView.new()
 var _only := 0
 var _dim := MenuBackdrop.new()
-var _title := Label.new()
+var _title := AstralChrome.Heading.new(24)
 var _hint := Label.new()
 var _hint2 := Label.new()
 var _read_back := Label.new()
@@ -50,6 +53,7 @@ var _col := VBoxContainer.new()
 var _skip := PanelContainer.new()
 var _skip_key: Label
 var _skip_name: Label
+var _skip_lit := false
 ## The reader last shown (read only), so a language switch words the open panel again (v0.6.0 UP).
 var _reader: WorldReader
 ## The wand as the panel shows it: the sim's read with this panel's reorders applied (they reach the sim a tick later).
@@ -68,26 +72,29 @@ func _init() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dim.mouse_filter = Control.MOUSE_FILTER_STOP  # the game under it takes no clicks
+	_dim.astral = true  # v0.10.5 W3-O16: the game blurred under Astral's cool ink
 	add_child(_dim)
 	_col.name = "Column"
 	_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	var col := _centred_column(_col, 12)
-	_title.add_theme_font_override("font", HudStyle.font(true))
-	_title.add_theme_font_size_override("font_size", 26)
-	_title.add_theme_color_override("font_color", MenuStyle.TEXT)
+	_title.splits = [": ", " · "]  # "Your 8 modifier slots are full" ◆ "swap one?"
 	for l: Label in [_hint, _hint2]:
 		l.add_theme_font_size_override("font_size", MenuStyle.HINT_SIZE)
-		l.add_theme_color_override("font_color", MenuStyle.HINT)
+		l.add_theme_color_override("font_color", AstralCardArt.DIM)
 	_read_back.name = "ReadBack"
 	_read_back.add_theme_font_size_override("font_size", 18)
-	_read_back.add_theme_color_override("font_color", MenuStyle.DIM)
+	_read_back.add_theme_color_override("font_color", AstralCardArt.DIM)
 	_read_back.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_read_back.custom_minimum_size = Vector2(1100, 0)
-	for l: Label in [_title, _hint, _hint2, _read_back]:  # the menus' soft outline, readable over the blurred game
-		l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.55))
+	for l: Label in [_hint, _hint2, _read_back]:  # a soft ink outline, readable over the blurred game
+		l.add_theme_color_override("font_outline_color", Color(AstralChrome.INK, 0.6))
 		l.add_theme_constant_override("outline_size", 4)
-	style_labels([_title, _hint, _hint2, _read_back])
+	style_labels([_hint, _hint2, _read_back])
 	col.add_child(_title)
+	col.add_child(AstralChrome.Rule.new(420.0))
+	row.astral = true  # v0.10.5 W3-O16: the wand row, its pips and its forecast in Astral
+	pips.astral = true
+	forecast.set_astral()
 	var card_box := CenterContainer.new()
 	card_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_card = PickSlot.new(0, 0.8)
@@ -111,7 +118,7 @@ func _init() -> void:
 	var foot := HBoxContainer.new()
 	foot.alignment = BoxContainer.ALIGNMENT_CENTER
 	foot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	foot.add_theme_constant_override("separation", 18)
+	foot.add_theme_constant_override("separation", 40)
 	_make_skip()
 	foot.add_child(_skip)
 	var hints := VBoxContainer.new()
@@ -131,14 +138,27 @@ func _make_skip() -> void:
 	_skip.name = "SwapSkip"
 	_skip.custom_minimum_size = SKIP_TILE
 	_skip.mouse_filter = Control.MOUSE_FILTER_STOP
-	var box := VBoxContainer.new()
+	# v0.10.5 W3-O16: Skip is an Astral plate (AstralChrome.plate), its key and its name inside the tips.
+	var pad := StyleBoxEmpty.new()
+	pad.content_margin_left = roundf(SKIP_TILE.y * AstralChrome.TIP)
+	pad.content_margin_right = roundf(SKIP_TILE.y * AstralChrome.TIP)
+	_skip.add_theme_stylebox_override("panel", pad)
+	_skip.draw.connect(
+		func() -> void: AstralChrome.plate(_skip, Rect2(Vector2.ZERO, _skip.size), _skip_lit)
+	)
+	var box := HBoxContainer.new()
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_constant_override("separation", 12)
 	_skip.add_child(box)
-	_skip_key = WandRow.make_label(13, false, MenuStyle.DIM)
+	_skip_key = WandRow.make_label(13, false, AstralCardArt.DIM)
 	_skip_key.text = tr("UI_SWAP_SKIP_KEY")
-	_skip_name = WandRow.make_label(15, true, MenuStyle.TEXT)
+	_skip_name = WandRow.make_label(17, true, AstralCardArt.TEXT)
+	_skip_name.add_theme_font_override("font", AstralCardArt.serif(600, 3))
+	_skip_name.uppercase = true
 	_skip_name.text = tr("UI_SWAP_SKIP")
+	for l: Label in [_skip_key, _skip_name]:
+		l.add_theme_color_override("font_outline_color", Color(AstralChrome.INK, 0.6))
 	box.add_child(_skip_key)
 	box.add_child(_skip_name)
 	_skip.gui_input.connect(_on_skip_input)
@@ -194,7 +214,7 @@ func mode() -> int:
 
 ## The title as shown (tests).
 func title_text() -> String:
-	return _title.text
+	return _title.full_text()
 
 
 ## v0.9.0 AS2: the held slots this Swap may replace (all of them, or a full Secondary or Element slot's cards).
@@ -292,9 +312,10 @@ func _refresh() -> void:
 			title_key = "UI_SWAP_LEAVE"
 		Mode.CARRY:
 			title_key = "UI_SWAP_CARRY"
-	_title.text = tr(title_key) % _count if title_key == "UI_SWAP_TITLE" else tr(title_key)
+	var title := tr(title_key) % _count if title_key == "UI_SWAP_TITLE" else tr(title_key)
 	if _only != 0 and _mode == Mode.CHOOSE:
-		_title.text = tr("UI_SWAP_TITLE_SLOT") % tr(WorldReader.SLOT_TAG_KEYS[_only])
+		title = tr("UI_SWAP_TITLE_SLOT") % tr(WorldReader.SLOT_TAG_KEYS[_only])
+	_title.set_text(title)
 	_hint.text = tr("UI_SWAP_HINT")
 	_hint2.text = tr("UI_SWAP_HINT_MORE")
 	_style_skip(_focus == SKIP)
@@ -381,9 +402,16 @@ func _set_focus(k: int) -> void:
 
 
 func _style_skip(on: bool) -> void:
-	_skip.add_theme_stylebox_override(
-		"panel", MenuStyle.tile_slab(MenuStyle.EMBER, on, false, 41, Vector2(8, 6))
+	_skip_lit = on
+	_skip_name.add_theme_color_override(
+		"font_color", AstralCardArt.TEXT if on else Color(AstralCardArt.TEXT, 0.86)
 	)
+	_skip.queue_redraw()
+
+
+## v0.10.5 W3-O16: whether the Skip plate is lit (tests).
+func skip_lit() -> bool:
+	return _skip_lit
 
 
 ## Enter / A: answer (CHOOSE: replace the focused card; LEAVE: the focused card leaves), put a carried card down, or

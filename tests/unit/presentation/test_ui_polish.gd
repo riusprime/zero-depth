@@ -252,20 +252,20 @@ func test_the_build_row_sits_on_an_ember_slab_and_fits_in_both_languages() -> vo
 		assert_lt(row, 700.0, "%s: the build row stays on the left (%d px)" % [lang, int(row)])
 
 
-func test_the_swap_panel_wears_ember_stone_and_its_names_fit_the_tiles() -> void:
+func test_the_swap_panel_wears_astral_and_its_names_fit_the_tiles() -> void:
 	var swap := SwapPanel.new()
 	add_child_autofree(swap)
 	assert_true(swap.get_child(0) is MenuBackdrop, "the game blurred and dimmed behind")
+	assert_true((swap.get_child(0) as MenuBackdrop).astral, "v0.10.5 W3-O16: under Astral's ink")
 	assert_eq((swap.get_child(0) as Control).mouse_filter, Control.MOUSE_FILTER_STOP)
+	assert_false(swap.skip_lit(), "Skip unlit before it has the focus")
 	swap.call("_set_focus", SwapPanel.SKIP)
-	var off := swap.tile(0).get_theme_stylebox("panel") as StoneBox
-	var on := swap.tile(SwapPanel.SKIP).get_theme_stylebox("panel") as StoneBox
-	assert_not_null(off, "a stone tile")
-	assert_not_null(on)
-	if off != null and on != null:
+	# v0.10.5 W3-O16 (on purpose): Astral tiles (AstralChrome.FrameBox) and an Astral Skip plate, not Ember stone
+	var off := swap.row.astral_box(0)
+	assert_not_null(off, "an Astral tile")
+	if off != null:
 		assert_eq(off.focus, 0.0, "an unfocused tile is unlit")
-		assert_eq(on.focus, 1.0, "the focused tile is ember-lit")
-		assert_gt(on.dim, off.dim, "and brighter")
+	assert_true(swap.skip_lit(), "the focused Skip plate is lit")
 	# Tile names wrap by word; every word of every slot name fits a tile, in both languages. v0.8.0 N18 (owner O76:
 	# "Shrink long words to fit"): at the size the tile draws it (WandRow.NAME_SIZE, or smaller for a word too long,
 	# never under TextFit.WORD_FLOOR of it).

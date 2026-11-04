@@ -16,6 +16,15 @@ var _numbers := Label.new()
 var _forecast := {}
 
 
+## v0.10.5 W3-O16: on the Swap (Astral): the title dim, the spell in Astral's accent, the numbers in its text colour.
+func set_astral() -> void:
+	_title.add_theme_color_override("font_color", AstralCardArt.DIM)
+	_spell.add_theme_color_override("font_color", AstralCardArt.ACCENT)
+	_numbers.add_theme_color_override("font_color", AstralCardArt.TEXT)
+	for l: Label in [_title, _spell, _numbers]:
+		l.add_theme_color_override("font_outline_color", Color(AstralChrome.INK, 0.6))
+
+
 func _init() -> void:
 	name = "Forecast"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE

@@ -77,8 +77,8 @@ func _build() -> void:
 	var panel := PickPanel.new()
 	ui.add_child(panel)
 	_built.append(panel)
-	panel._title.text = tr("PICK_TITLE_CHEST") % 40
-	panel._hint.text = tr("PICK_HINT")
+	panel._title.set_text(tr("PICK_TITLE_CHEST") % 40)
+	panel._hint.label.text = tr("PICK_HINT")
 	panel._count = 3
 	panel.visible = true
 	for k in 3:

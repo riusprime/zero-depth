@@ -139,14 +139,15 @@ func test_gamble_lines_fit_in_english_and_spanish() -> void:
 
 
 func test_shop_plaques_fit_in_english_and_spanish() -> void:
+	# v0.10.5 W3-O16 (on purpose): the plates are the shop's Astral plates, at the width the shop draws them
 	for lang in ["en", "es"]:
 		TranslationServer.set_locale(lang)
-		var heal := ShopTile.new("Heal", 360.0)
+		var heal := ShopTile.new("Heal", ShopPanel.PLATE_W)
 		add_child_autofree(heal)
 		for d in ["", tr("SHOP_HEAL_USED"), tr("SHOP_HEAL_FULL")]:
 			heal.show_tile(tr("SHOP_HEAL") % 120, d, 120, true)
 			assert_true(heal.text_fits(), "%s heal '%s'" % [lang, d])
-		var reroll := ShopTile.new("Reroll", 360.0)
+		var reroll := ShopTile.new("Reroll", ShopPanel.PLATE_W)
 		add_child_autofree(reroll)
 		for d in ["", tr("SHOP_REROLL_NONE")]:
 			reroll.show_tile(tr("SHOP_REROLL"), d, 120, true)

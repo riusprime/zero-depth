@@ -15,20 +15,35 @@ extends ModalPanel
 ## Space (dash) never confirms: the panel doesn't use ui_accept.
 ## v0.6.1 R1: the services are plaques (ShopTile); v0.8.0 MU: the plaques and the stock's cards are carved Ember
 ## stone (PlaqueBox, StoneCard).
+## v0.10.5 W3-O16 (owner 2026-11-04: "Yes, go on"; the shop's layout A, W3_O9_SHOP_G2.md, in the Astral style,
+## W3_O13_UI_STYLE_G2.md): one store window (AstralChrome.veil: an ink veil between two fading hairlines). Its header
+## holds the sigil and the letter-spaced title at the left, the buys left (the line and one diamond pip per buy) and
+## the wallet (Astral's shard, the shards in large Cinzel) at the right, over a rule; then the 4 cards in a row, each
+## with its price tag hung under it (the shard and the price between short fading hairlines); then the heal and the
+## reroll as wide Astral plates, the price big at their right; the hint line between hairlines closes the window.
 
 ## Key repeats (PanelInput.Echo): only the arrows repeat; a held Enter acts once.
 const ECHO := PanelInput.Echo.ARROWS
 ## v0.5.5 A4: the stock's cards are drawn a little smaller than the pick's, so the services fit under them at 1080p.
 const CARD_SCALE := 0.92
-const POOR := Color("#FF5A4D")
+const POOR := AstralCardArt.POOR
+## v0.10.5 W3-O16: the window's padding, the gap between cards and between the two plates, a plate's width (px).
+const PAD := Vector2(64, 32)
+const CARD_GAP := 24
+const PLATE_GAP := 64
+const PLATE_W := 512.0
+const PRICE_SIZE := 24
 
-var heal_tile := ShopTile.new("ShopHeal", 360.0)
-var reroll_tile := ShopTile.new("ShopReroll", 360.0)
+var heal_tile := ShopTile.new("ShopHeal", PLATE_W)
+var reroll_tile := ShopTile.new("ShopReroll", PLATE_W)
 var _dim := ColorRect.new()
-var _title := Label.new()
+var _heading := AstralChrome.Heading.new(30)
 var _shards := Label.new()
+var _wallet_icon := ShardIcon.new(30.0, true)
 var _buys := Label.new()
-var _hint := Label.new()
+var _pips := AstralChrome.Pips.new()
+var _hint := AstralChrome.Hint.new(200.0)
+var _window := PanelContainer.new()
 var _cards := HBoxContainer.new()
 ## Focusable entries in reading order: {value, enabled, row, focus (Callable), node}.
 var _entries: Array[Dictionary] = []
@@ -45,40 +60,95 @@ func _init() -> void:
 	name = "ShopPanel"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_add_dim(_dim, 0.5)
-	var col := _centred_column(VBoxContainer.new(), 14)
-	var head := HBoxContainer.new()
-	head.alignment = BoxContainer.ALIGNMENT_CENTER
-	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	head.add_theme_constant_override("separation", 10)
-	head.add_child(_title)
-	var icon := ShardIcon.new(26.0)
-	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	head.add_child(icon)
-	head.add_child(_shards)
-	col.add_child(head)
-	_buys.name = "ShopBuys"
-	col.add_child(_buys)
+	_add_dim(_dim, 0.55)
+	_dim.color = Color(AstralChrome.INK, 0.55)  # v0.10.5 W3-O16: Astral's ink, not black
+	var outer := _centred_column(VBoxContainer.new(), 0)
+	_window.name = "ShopWindow"
+	_window.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var veil := StyleBoxEmpty.new()
+	veil.content_margin_left = PAD.x
+	veil.content_margin_right = PAD.x
+	veil.content_margin_top = PAD.y
+	veil.content_margin_bottom = PAD.y
+	_window.add_theme_stylebox_override("panel", veil)
+	_window.draw.connect(
+		func() -> void: AstralChrome.veil(_window, Rect2(Vector2.ZERO, _window.size))
+	)
+	outer.add_child(_window)
+	var col := VBoxContainer.new()
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_theme_constant_override("separation", 16)
+	_window.add_child(col)
+	col.add_child(_header())
+	col.add_child(AstralChrome.Rule.new())
 	_cards.name = "ShopCards"
 	_cards.alignment = BoxContainer.ALIGNMENT_CENTER
 	_cards.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_cards.add_theme_constant_override("separation", 16)
+	_cards.add_theme_constant_override("separation", CARD_GAP)
 	col.add_child(_cards)
 	var services := HBoxContainer.new()
+	services.name = "ShopServices"
 	services.alignment = BoxContainer.ALIGNMENT_CENTER
 	services.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	services.add_theme_constant_override("separation", 16)
+	services.add_theme_constant_override("separation", PLATE_GAP)
+	heal_tile.icon_kind = &"heal"
+	reroll_tile.icon_kind = &"reroll"
 	services.add_child(heal_tile)
 	services.add_child(reroll_tile)
+	var services_gap := Control.new()
+	services_gap.custom_minimum_size = Vector2(0, 8)
+	services_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(services_gap)
 	col.add_child(services)
+	var hint_gap := Control.new()
+	hint_gap.custom_minimum_size = Vector2(0, 8)
+	hint_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(hint_gap)
 	col.add_child(_hint)
-	HudStyle.style_label(_title, 26, true)
-	HudStyle.style_label(_shards, 24, true)
-	HudStyle.style_label(_hint, 15)
-	HudStyle.style_label(_buys, 16)
-	_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
-	style_labels([_title, _shards, _buys, _hint])
 	visible = false
+
+
+## The header: the sigil and the title at the left; the buys left, their pips, a hairline and the wallet at the right.
+func _header() -> Control:
+	var head := HBoxContainer.new()
+	head.name = "ShopHeader"
+	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	head.add_theme_constant_override("separation", 16)
+	head.add_child(_heading)
+	var fill := Control.new()
+	fill.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	head.add_child(fill)
+	_buys.name = "ShopBuys"
+	_buys.add_theme_font_override("font", HudStyle.font(false))
+	_buys.add_theme_font_size_override("font_size", 16)
+	_buys.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_buys.size_flags_vertical = Control.SIZE_FILL
+	head.add_child(_buys)
+	_pips.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(_pips)
+	var bar := Control.new()
+	bar.custom_minimum_size = Vector2(17, 40)
+	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.draw.connect(
+		func() -> void: AstralChrome.vline(bar, 8, 0, bar.size.y, Color(AstralCardArt.LINE, 0.8))
+	)
+	head.add_child(bar)
+	_wallet_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(_wallet_icon)
+	_shards.name = "ShopWallet"
+	_shards.add_theme_font_override("font", AstralCardArt.serif(600, 1))
+	_shards.add_theme_font_size_override("font_size", 34)
+	_shards.add_theme_color_override("font_color", AstralCardArt.TEXT)
+	_shards.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_shards.size_flags_vertical = Control.SIZE_FILL
+	head.add_child(_shards)
+	for l: Label in [_buys, _shards]:
+		l.add_theme_color_override("font_outline_color", Color(AstralChrome.INK, 0.6))
+		l.add_theme_constant_override("outline_size", 4)
+	style_labels([_shards, _buys])
+	return head
 
 
 ## Opens, refreshes or closes from the sim's state.
@@ -141,7 +211,7 @@ func card_price_text(k: int) -> String:
 
 
 func title_text() -> String:
-	return _title.text
+	return _heading.full_text()
 
 
 ## v0.5.5 EC (S3): the buys line ("Cards you can still buy on this floor: 3", or the limit's message).
@@ -158,18 +228,20 @@ func _render(reader: WorldReader, s: Dictionary) -> void:
 	for c in _cards.get_children():
 		c.get_parent().remove_child(c)
 		c.free()  # now, not at the frame's end: the panel re-renders from the tick, never from a child's signal
-	_title.text = tr("SHOP_TITLE")
+	_heading.set_text(tr("SHOP_TITLE"))
 	_shards_cache = reader.shards()
 	_shards.text = str(_shards_cache)
-	_hint.text = tr("SHOP_HINT")
+	_hint.label.text = tr("SHOP_HINT")
 	var left := int(s["buys_left"])
 	_limit = left == 0
 	_buys.visible = left >= 0
+	_pips.visible = left >= 0 and int(s.get("max_buys", 0)) > 0
+	_pips.show_pips(maxi(left, 0), int(s.get("max_buys", 0)))
 	if _limit:
 		_buys.text = tr("SHOP_BUYS_DONE") % [int(s["bought"]), int(s["max_buys"])]
 	else:
 		_buys.text = tr("SHOP_BUYS_LEFT") % left
-	_buys.add_theme_color_override("font_color", POOR if _limit else Color(1, 1, 1, 0.8))
+	_buys.add_theme_color_override("font_color", POOR if _limit else AstralCardArt.DIM)
 	var stock: Array = s["stock"]
 	for k in stock.size():
 		_add_card(reader, k, stock[k])
@@ -185,17 +257,26 @@ func _add_card(reader: WorldReader, k: int, c: Dictionary) -> void:
 	var box := VBoxContainer.new()
 	box.name = "ShopCard%d" % (k + 1)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.add_theme_constant_override("separation", 6)
+	box.add_theme_constant_override("separation", 4)
 	var slot := PickSlot.new(k, CARD_SCALE)
 	box.add_child(slot)
+	# v0.10.5 W3-O16: the price tag hung under the card: Astral's shard and the price, short hairlines either side.
 	var row := HBoxContainer.new()
+	row.name = "PriceTag"
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", 6)
-	var icon := ShardIcon.new(20.0)
-	var price := HudStyle.label(18, true)
+	row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	row.add_theme_constant_override("separation", 8)
+	var icon := ShardIcon.new(22.0, true)
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var price := Label.new()
+	price.add_theme_font_override("font", AstralCardArt.serif(600, 1))
+	price.add_theme_font_size_override("font_size", PRICE_SIZE)
+	price.add_theme_color_override("font_outline_color", Color(AstralChrome.INK, 0.6))
+	price.add_theme_constant_override("outline_size", 3)
 	price.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	row.add_child(icon)
 	row.add_child(price)
+	row.draw.connect(_draw_tag.bind(row))
 	box.add_child(row)
 	_cards.add_child(box)
 	var sold: bool = c["sold"]
@@ -217,9 +298,9 @@ func _add_card(reader: WorldReader, k: int, c: Dictionary) -> void:
 		slot.show_card(PickPanel.card_face(self, reader, int(c["code"])))
 		price.text = str(c["price"]) if c["can_apply"] else tr("SHOP_CANT_USE")
 		icon.visible = c["can_apply"]
-	price.add_theme_color_override(
-		"font_color", POOR if not sold and c["can_apply"] and not c["affordable"] else Color.WHITE
-	)
+	var poor: bool = not sold and c["can_apply"] and not c["affordable"]
+	price.add_theme_color_override("font_color", POOR if poor else AstralCardArt.TEXT)
+	icon.tint = POOR if poor else AstralCardArt.ACCENT
 	slot.modulate = Color(1, 1, 1, 1.0 if ok else 0.45)
 	slot.set_meta(GameCursor.META_INVALID, not ok)  # v0.9.5 MC2: INVALID over a card you can't buy
 	var at := _entries.size()
@@ -344,6 +425,20 @@ func _set_focus(k: int) -> void:
 	_focus = k
 	for i in _entries.size():
 		(_entries[i]["focus"] as Callable).call(i == k)
+	for box in _cards.get_children():
+		(box.get_child(1) as Control).queue_redraw()  # v0.10.5 W3-O16: the focused card's price tag lights
+
+
+## v0.10.5 W3-O16: a card's price tag: short hairlines fading out either side, brighter under the focused card.
+func _draw_tag(row: Control) -> void:
+	var slot := row.get_parent().get_child(0) as PickSlot
+	var lit := slot != null and slot.focused
+	var col := Color(AstralCardArt.LINE_HI if lit else AstralCardArt.METAL, 0.8 if lit else 0.45)
+	var y := roundf(row.size.y * 0.5)
+	AstralChrome.rule1(row, -12.0, y, -56.0, col)
+	AstralChrome.rule1(row, row.size.x + 12.0, y, 56.0, col)
+	AstralChrome.dia(row, Vector2(-8.5, y + 0.5), 2.0, col, col)
+	AstralChrome.dia(row, Vector2(roundf(row.size.x) + 8.5, y + 0.5), 2.0, col, col)
 
 
 func _act(k: int) -> void:

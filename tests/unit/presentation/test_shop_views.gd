@@ -78,9 +78,9 @@ func test_the_panel_shows_the_stock_in_card_style_with_prices() -> void:
 		var price := Shop.price(w, w.shop.offer[k])
 		assert_eq(p.card_price_text(k), str(price))
 		assert_eq(bool(p.entry(k)["enabled"]), price <= 40, "dimmed when unaffordable")
-	# v0.6.1 R1 (on purpose): the services are plaques (v0.8.0 MU: carved stone), coloured by the family table
-	assert_eq(p.heal_tile.panel_box().plaque, Plaques.of_use(&"shop_heal"), "the heal: green")
-	assert_eq(p.reroll_tile.panel_box().plaque, Plaques.of_use(&"shop_reroll"), "the reroll: amber")
+	# v0.10.5 W3-O16 (on purpose): the services are Astral plates (ShopTile), the heal's and the reroll's icons
+	assert_eq(p.heal_tile.icon_kind, &"heal", "the heal plate")
+	assert_eq(p.reroll_tile.icon_kind, &"reroll", "the reroll plate")
 	for t: ShopTile in [p.heal_tile, p.reroll_tile]:
 		assert_true(t.text_fits(), "%s fits its plaque" % t.name)
 	assert_false(

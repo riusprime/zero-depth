@@ -99,7 +99,16 @@ func test_a_held_card_shows_its_level_up_on_the_pick_and_its_pip() -> void:
 		"altar %d offers %s; card %d (%s)" % [r, Array(offer), card, reader.card_info(card)["id"]]
 	)
 	assert_eq(_held_level(reader, card), 0, "not held yet")
-	assert_eq(panel.slot(k).card.level_text(), tr("UI_WAND_LEVEL") % 1, "not held: Lv 1")
+	# v0.9.5 CLV (CARD_LEVELS C14; evidence/CLV.md: a 3-level card reads "Lv 1/3"): a wand card with fewer than five
+	# levels names its cap when new; any other levelled card reads "Lv 1". CLV moved the text on purpose and
+	# missed this assert (it predates CLV), so the altar's 3-level card failed it.
+	var cap := int(reader.card_info(card).get("max_level", 5))
+	var lv1: String = (
+		tr("UI_WAND_LEVEL_OF") % [1, cap]
+		if bool(reader.card_info(card).get("wand", false)) and cap < 5
+		else tr("UI_WAND_LEVEL") % 1
+	)
+	assert_eq(panel.slot(k).card.level_text(), lv1, "not held: %s" % lv1)
 	var card_rect := Rect2(Vector2.ZERO, panel.slot(k).card.size)
 	assert_true(
 		card_rect.grow(1.0).encloses(panel.slot(k).card.level_rect()), "the badge sits on the card"

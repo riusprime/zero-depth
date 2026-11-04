@@ -39,6 +39,7 @@ uniform float has_wall = 0.0;
 uniform float wall_gain = 0.62;
 uniform sampler2D spark_tex : filter_linear_mipmap;
 uniform float has_spark_tex = 0.0;
+uniform float astral = 0.0;
 const vec3 EMBER = vec3(0.92, 0.68, 0.45);
 const vec3 HOTCORE = vec3(1.0, 0.86, 0.66);
 
@@ -132,16 +133,17 @@ void fragment() {
 	vec2 px = SCREEN_UV * screen;
 	vec2 uv = SCREEN_UV;
 	vec3 g = textureLod(screen_tex, SCREEN_UV, lod).rgb;
-	vec3 over = mix(g, vec3(0.02, 0.013, 0.01), mix(dark_left, dark_right, smoothstep(0.0, 0.85, uv.x)));
+	vec3 ink = mix(vec3(0.02, 0.013, 0.01), vec3(0.027, 0.035, 0.075), astral);
+	vec3 over = mix(g, ink, mix(dark_left, dark_right, smoothstep(0.0, 0.85, uv.x)));
 	over *= 0.78 + 0.22 * uv.y;
-	over += EMBER * pow(uv.y, 3.0) * 0.16;
+	over += EMBER * pow(uv.y, 3.0) * 0.16 * (1.0 - astral);
 	// Nothing behind (the main menu): the screen is one flat colour. Five fixed probes, the same for every pixel.
 	vec3 p0 = textureLod(screen_tex, vec2(0.5, 0.5), 4.0).rgb;
 	float spread = length(textureLod(screen_tex, vec2(0.2, 0.25), 4.0).rgb - p0);
 	spread = max(spread, length(textureLod(screen_tex, vec2(0.8, 0.3), 4.0).rgb - p0));
 	spread = max(spread, length(textureLod(screen_tex, vec2(0.3, 0.8), 4.0).rgb - p0));
 	spread = max(spread, length(textureLod(screen_tex, vec2(0.75, 0.75), 4.0).rgb - p0));
-	float empty = max(scene, 1.0 - smoothstep(0.004, 0.03, spread));
+	float empty = max(scene, 1.0 - smoothstep(0.004, 0.03, spread)) * (1.0 - astral);
 	vec3 col = mix(over, stone_scene(px, uv, screen), empty);
 	col += sparks * spark_layer(px, screen, 46.0, 0.05, 0.0);
 	col += sparks * 0.6 * spark_layer(px + vec2(23.0, 0.0), screen, 71.0, 0.035, 5.0);
@@ -160,6 +162,13 @@ var own_scene := false:
 	set(v):
 		own_scene = v
 		_mat.set_shader_parameter(&"scene", 1.0 if v else 0.0)
+## v0.10.5 W3-O16 (the Swap in the Astral style): the game blurred and sunk into Astral's cool ink, evenly from top
+## to bottom: no ember glow, no sparks, never the ember scene.
+var astral := false:
+	set(v):
+		astral = v
+		_mat.set_shader_parameter(&"astral", 1.0 if v else 0.0)
+		_mat.set_shader_parameter(&"sparks", 0.0 if v else SPARKS)
 var _mat := ShaderMaterial.new()
 
 

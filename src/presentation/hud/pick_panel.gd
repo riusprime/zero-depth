@@ -44,9 +44,10 @@ var layout := Layout.ROW_CENTRE
 ## v0.8.0 N8: the deal's timeline (CardDeal).
 var deal := CardDeal.new()
 var _dim := ColorRect.new()
-var _title := Label.new()
-var _price_icon := ShardIcon.new(26.0)
-var _hint := Label.new()
+## v0.10.5 W3-O16: the Astral heading (AstralChrome.Heading), a chest price's shard and the hint line.
+var _title := AstralChrome.Heading.new(32)
+var _price_icon := ShardIcon.new(28.0, true)
+var _hint := AstralChrome.Hint.new(200.0, 16)
 ## v0.8.0 N8: the high cards' light rays, on one layer under every card.
 var _rays := Control.new()
 var _slots: Array[PickSlot] = []
@@ -72,6 +73,7 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dim_base = 0.18 if layout == Layout.ROW_LOW else DIM
 	_add_dim(_dim, _dim_base)
+	_dim.color = Color(AstralChrome.INK, _dim_base)  # v0.10.5 W3-O16: Astral's ink, not black
 	_rays.name = "Rays"
 	_rays.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_rays.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -79,32 +81,30 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 	add_child(_rays)
 	var col := VBoxContainer.new()
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.add_theme_constant_override("separation", 14)
+	col.add_theme_constant_override("separation", 16)
+	# v0.10.5 W3-O16 (Astral): the sigil and the letter-spaced title (a chest's price with Astral's shard after it),
+	# a rule under it, the cards, and the hint between fading hairlines.
 	var head := HBoxContainer.new()
 	head.alignment = BoxContainer.ALIGNMENT_CENTER
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	head.add_theme_constant_override("separation", 10)
+	head.add_theme_constant_override("separation", 12)
 	head.add_child(_title)
 	head.add_child(_price_icon)
 	_price_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	col.add_child(head)
-	var groove := MenuPanel.TitleGroove.new(true)  # v0.8.0 MU: the Ember stone title's glowing groove
-	groove.custom_minimum_size = Vector2(0, 12)
-	col.add_child(groove)
+	col.add_child(AstralChrome.Rule.new(400.0))
 	var cards: BoxContainer = (
 		VBoxContainer.new() if layout == Layout.COLUMN_RIGHT else HBoxContainer.new()
 	)
 	cards.alignment = BoxContainer.ALIGNMENT_CENTER
 	cards.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	cards.add_theme_constant_override("separation", 18)
+	cards.add_theme_constant_override("separation", 32)
 	col.add_child(cards)
+	var gap := Control.new()  # room for the dealt fan's drop over the hint
+	gap.custom_minimum_size = Vector2(0, 16)
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(gap)
 	col.add_child(_hint)
-	HudStyle.style_label(_title, 28, true)  # v0.3.5 F16: the HUD's plain type
-	_title.add_theme_color_override("font_shadow_color", Color(EmberStone.EMBER, 0.3))  # v0.8.0 MU
-	_title.add_theme_constant_override("shadow_outline_size", 12)
-	HudStyle.style_label(_hint, 15)
-	_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
-	style_labels([_title, _hint])
 	for k in SLOTS:
 		var s := PickSlot.new(k)
 		s.clicked.connect(_on_clicked)
@@ -156,23 +156,24 @@ func sync(reader: WorldReader) -> void:
 		var curse := reader.choice_curse(k)  # v0.5.0 EV: a cursed chest card says so
 		s.show_curse(CurseLook.down_line(self, reader, curse) if curse >= 0 else "")  # v0.6.0 CU
 	var chest := reader.reward_kind(r) == WorldReader.REWARD_CHEST
-	_title.text = (
+	var title := (
 		tr("PICK_TITLE_CHEST") % reader.reward_price(r) if chest else tr("PICK_TITLE_ALTAR")
 	)
 	if reader.reward_is_epic(r):  # v0.5.0 RT
-		_title.text = tr("PICK_TITLE_EPIC_ALTAR")
+		title = tr("PICK_TITLE_EPIC_ALTAR")
 	if legendary:  # v0.5.5 AR (X1b): the boss's reward; v0.8.0 RR: says when it holds a Legendary card
-		_title.text = boss_title(self, _slots.slice(0, _count), reader.legendary_picks_left())
+		title = boss_title(self, _slots.slice(0, _count), reader.legendary_picks_left())
 	var drop := reader.reward_drop_kind(r)  # v0.6.0 CU: a stolen core, Marked's card
 	if drop == WorldReader.DROP_CORE or drop == WorldReader.DROP_BOSS_CORE:
-		_title.text = tr("PICK_TITLE_CORE")
+		title = tr("PICK_TITLE_CORE")
 	elif drop == WorldReader.DROP_ELITE_CARD:
-		_title.text = tr("PICK_TITLE_ELITE_DROP")
+		title = tr("PICK_TITLE_ELITE_DROP")
 	var dealt := reader.choice_dealt()  # v0.8.0 N7 (owner O61): a chest deals its one card, no choice
 	if dealt:
-		_title.text = tr("PICK_TITLE_CHEST_DEALT")
+		title = tr("PICK_TITLE_CHEST_DEALT")
 	_price_icon.visible = chest and not dealt
-	_hint.text = tr("PICK_HINT_DEALT" if dealt else "PICK_HINT")
+	_title.set_text(title)
+	_hint.label.text = tr("PICK_HINT_DEALT" if dealt else "PICK_HINT")
 	_dealt = dealt
 	_answer = InputFrame.PICK_NONE
 	_set_focus(0)
@@ -362,7 +363,7 @@ func slot(k: int) -> PickSlot:
 
 
 func title_text() -> String:
-	return _title.text
+	return _title.full_text()
 
 
 func _input(event: InputEvent) -> void:

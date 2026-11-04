@@ -14,6 +14,8 @@ const PIP := 14.0
 const LIT := Color("#EBAE72")
 const EMPTY := Color(0.8, 0.72, 0.63, 0.7)
 
+## v0.10.5 W3-O16: on the Swap (Astral): Astral's accent and text in place of the ember.
+var astral := false
 var _counts: Array = []
 var _form := ""
 
@@ -23,6 +25,8 @@ class Dots:
 	extends Control
 	var held := 0
 	var limit := 0
+	var lit := LIT
+	var empty := EMPTY
 
 	func _init(p_held: int, p_limit: int) -> void:
 		held = p_held
@@ -36,9 +40,9 @@ class Dots:
 		for k in limit:
 			var c := Vector2(r + k * (PIP + 5.0), size.y * 0.5)
 			if k < held:
-				draw_circle(c, r, LIT)
+				draw_circle(c, r, lit)
 			else:
-				draw_arc(c, r - 1.0, 0.0, TAU, 20, EMPTY, 1.6, true)
+				draw_arc(c, r - 1.0, 0.0, TAU, 20, empty, 1.6, true)
 
 
 func _init() -> void:
@@ -94,7 +98,7 @@ func _rebuild() -> void:
 		var held := _held(e)
 		var g := SlotGlyph.new(GLYPH)
 		g.slot = cat
-		g.color = LIT
+		g.color = AstralCardArt.ACCENT if astral else LIT
 		g.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		add_child(g)
 		var l := Label.new()
@@ -102,9 +106,12 @@ func _rebuild() -> void:
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		l.text = _label_of(cat)
 		l.add_theme_font_size_override("font_size", TYPE_SIZE)
-		l.add_theme_color_override("font_color", MenuStyle.TEXT)
+		l.add_theme_color_override("font_color", AstralCardArt.TEXT if astral else MenuStyle.TEXT)
 		add_child(l)
 		var d := Dots.new(held, int(e[2]))
+		if astral:
+			d.lit = AstralCardArt.ACCENT
+			d.empty = Color(AstralCardArt.METAL, 0.6)
 		add_child(d)
 		if e != _counts.back():
 			var gap := Control.new()
