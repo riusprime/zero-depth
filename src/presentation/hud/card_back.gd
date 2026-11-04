@@ -15,6 +15,19 @@ var glow := 0.0:
 			_box.under = 0.2 + 1.4 * v
 			_box.focus = 0.9 * v
 			queue_redraw()
+## v0.10.5 W3-S13 (owner 2026-11-04: his carved card backs): an Astral back wears his carved slate back (one of four,
+## the same variant as the card's front, its focused twin while the card is focused) instead of the stone slab, with
+## the rarity as a small gem at the medallion. `variant` is set by the card (AstralCardArt.variant_of its id).
+var astral := false
+var variant := 1:
+	set(v):
+		variant = clampi(v, 1, AstralCardArt.FRAMES)
+		_sync_art()
+var focused := false:
+	set(v):
+		focused = v
+		_sync_art()
+var _art: NinePatchRect
 var _box := StoneBox.new()
 
 
@@ -24,6 +37,46 @@ func _init() -> void:
 	_box.chip = 3.5
 	_box.cracks = 2
 	_box.pattern = 401
+
+
+## Turns the Astral look on: the carved back replaces the stone slab.
+func set_astral(on: bool) -> void:
+	astral = on
+	if on and _art == null:
+		_art = NinePatchRect.new()
+		_art.name = "Art"
+		_art.show_behind_parent = true  # the tier gem (this control's own draw) lies over the carved art
+		_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_art.patch_margin_left = AstralCardArt.MARGIN_X
+		_art.patch_margin_right = AstralCardArt.MARGIN_X
+		_art.patch_margin_top = AstralCardArt.MARGIN_Y
+		_art.patch_margin_bottom = AstralCardArt.MARGIN_Y
+		add_child(_art)
+	if _art != null:
+		_art.visible = on
+	_sync_art()
+	queue_redraw()
+
+
+## The carved back's texture now (null when not Astral): tests read it.
+func art_texture() -> Texture2D:
+	return _art.texture if astral and _art != null else null
+
+
+func _sync_art() -> void:
+	if _art == null:
+		return
+	_art.texture = AstralCardArt.back(variant, focused)
+	var k := size.x / AstralCardArt.BODY_W
+	if k > 0.0:  # the same scale and padding as the front's frame, so a back and a front line up
+		_art.scale = Vector2(k, k)
+		_art.position = -AstralCardArt.PAD * k
+		_art.size = size / k + AstralCardArt.PAD * 2.0
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED:
+		_sync_art()
 
 
 ## Paints the back for tier `p_tier` (PickSlot.TIERS) in its colour.
@@ -42,9 +95,29 @@ func box() -> StoneBox:
 
 
 func _draw() -> void:
+	var c := size * 0.5
+	if astral:  # the carved back is the art; the rarity is a small gem at its medallion
+		var g := minf(size.x, size.y) * 0.05
+		var gem := PackedVector2Array(
+			[
+				c + Vector2(0, -g),
+				c + Vector2(g * 0.7, 0),
+				c + Vector2(0, g),
+				c + Vector2(-g * 0.7, 0)
+			]
+		)
+		draw_colored_polygon(gem, Color(color.lerp(Color.WHITE, 0.25), 0.55 + 0.4 * glow))
+		draw_polyline(
+			PackedVector2Array([gem[0], gem[1], gem[2], gem[3], gem[0]]),
+			Color(AstralCardArt.LINE_HI, 0.5),
+			1.5,
+			true
+		)
+		if glow > 0.0:
+			draw_circle(c, g * 2.2, Color(color, 0.18 * glow))
+		return
 	var r := Rect2(Vector2.ZERO, size)
 	draw_style_box(_box, r)
-	var c := size * 0.5
 	var s := minf(size.x, size.y) * 0.2
 	var ring := PackedVector2Array()
 	for k in 33:

@@ -249,3 +249,33 @@ func test_card_titles_and_rarity_lines_fit_the_frame_in_every_language() -> void
 					longest[lang + "_title"] = "'%s' at %d px" % [title, card.title_size]
 	TranslationServer.set_locale("en")
 	gut.p("longest: %s" % longest)
+
+
+func test_the_face_down_card_wears_the_carved_back_of_its_fronts_variant() -> void:
+	var s := _slot(&"wildfire")
+	var back := s.card.fx.back
+	var v := AstralCardArt.variant_of(&"wildfire")
+	assert_true(back.astral, "the pick's back is an Astral back")
+	assert_eq(back.variant, v, "the back's variant is the front's")
+	assert_eq(back.art_texture().resource_path, "res://assets/ui/card_backs/back_%d.png" % v)
+	assert_eq(back.art_texture().get_size(), AstralCardArt.CANVAS, "on the fronts' canvas")
+	s.set_focused(true)
+	assert_eq(back.art_texture().resource_path, "res://assets/ui/card_backs/back_%d_focus.png" % v)
+	s.set_focused(false)
+	assert_eq(back.art_texture().resource_path, "res://assets/ui/card_backs/back_%d.png" % v)
+	var seen := {}
+	for d: ContentDef in _repo.all_of(&"items"):
+		var slot := _slot(d.id)
+		assert_eq(slot.card.fx.back.variant, slot.card.frame_variant, "%s: back = front" % d.id)
+		seen[slot.card.fx.back.variant] = true
+	assert_eq(seen.size(), AstralCardArt.FRAMES, "all four backs are worn")
+
+
+func test_a_stone_card_keeps_its_stone_back_and_the_tier_shows_as_a_gem() -> void:
+	var plain := StoneCard.new()
+	add_child_autofree(plain)
+	assert_false(plain.fx.back.astral)
+	assert_null(plain.fx.back.art_texture())
+	var s := _slot(&"heavy")
+	s.show_card(_face(&"heavy", 4))
+	assert_eq(s.card.fx.back.tier, 4, "the tier still paints the back")

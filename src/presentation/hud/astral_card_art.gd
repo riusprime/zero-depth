@@ -10,6 +10,7 @@ extends RefCounted
 
 const ICON_DIR := "res://assets/ui/card_icons/"
 const FRAME_DIR := "res://assets/ui/card_frames/"
+const BACK_DIR := "res://assets/ui/card_backs/"
 const NOISE := "res://assets/ui/fx/dissolve_noise.png"
 const UNKNOWN := &"unknown"
 const CINZEL := "res://assets/fonts/cinzel/Cinzel-Variable.ttf"
@@ -41,6 +42,7 @@ const GLARE_BLUE := Color("#9FB4F2")
 
 static var _icons := {}
 static var _frames := {}
+static var _backs := {}
 static var _noise: Texture2D
 static var _cinzel: FontFile
 static var _serif := {}
@@ -81,6 +83,14 @@ static func frame(variant: int, focused: bool) -> Texture2D:
 	if not _frames.has(key):
 		_frames[key] = load(FRAME_DIR + key + ".png")
 	return _frames[key]
+
+
+## Card back `variant` (1..4), focused or not (v0.10.5 W3-S13): on the frames' canvas, so a back and a front line up.
+static func back(variant: int, focused: bool) -> Texture2D:
+	var key := "back_%d%s" % [clampi(variant, 1, FRAMES), "_focus" if focused else ""]
+	if not _backs.has(key):
+		_backs[key] = load(BACK_DIR + key + ".png")
+	return _backs[key]
 
 
 static func noise() -> Texture2D:

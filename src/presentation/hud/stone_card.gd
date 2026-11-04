@@ -186,6 +186,8 @@ func _init(p_scale: float = 1.0, p_astral: bool = false) -> void:
 	remove_child(_root)
 	fx = CardFx.new(_root)  # v0.8.0 N8: the face hangs from the pivot (its shine is the face's last child)
 	add_child(fx)
+	if astral:  # v0.10.5 W3-S13: face down it wears the owner's carved back
+		fx.back.set_astral(true)
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_layout()
@@ -254,6 +256,7 @@ func show_face(
 	fx.glare_seed = id  # v0.10.5 W3-O15: each card's glare its own
 	if astral:  # v0.10.5 W3-O15
 		frame_variant = AstralCardArt.variant_of(id)
+		fx.back.variant = frame_variant
 		medallion.show_card(id)
 		_title.add_theme_color_override("font_color", AstralCardArt.TEXT)
 		_tier.add_theme_color_override("font_color", AstralCardArt.rarity(tier))
@@ -417,6 +420,7 @@ func _apply() -> void:
 	_root.modulate = Color.WHITE if focused else Color(0.9, 0.9, 0.9)
 	if astral:  # v0.10.5 W3-O15: the focused twin of the card's frame, and the medallion lit
 		frame.texture = AstralCardArt.frame(frame_variant, focused)
+		fx.back.focused = focused
 		medallion.focused = focused
 		_root.modulate = Color.WHITE if focused else Color(0.86, 0.86, 0.9)
 
