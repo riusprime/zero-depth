@@ -120,6 +120,7 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 | W3-O13b G2 round 2 (round 1 rejected: "childish rounded gradient boxes"): four styles after the owner's references — Slate, Eclipse, Astral, Observatory (recommended); Cinzel titles, 8 px grid, 1 px lines, continuous HP bar with a medallion; honest gaps: the game's icons are flat, the look stays flatter than the painted refs: [W3_O13_UI_STYLE_G2.md](W3_O13_UI_STYLE_G2.md) "Round 2" | fb60b80f (merge 68e1a476), bb480b58 | agent: 24 shots `build/shots/v0.10.5/w3o13b/`; lint clean; mockups only. Lead looked at observatory_sheet. **Gate: the owner** |
 | W3-O14 a World is freed with its view: ViewBuildQueue kept its finished jobs, two of which bound the queue itself (a RefCounted cycle holding the reader and the World); it now drops them when done | 7c4b8674 | agent: probe 13890 objects + World alive → 13211, freed; 2-floor run through main.tscn 29973 (floor 1's World alive) → 26902 (freed); new tests failed first (unit 0/3, e2e 0/1), after: unit + queue 8/8, arch 4/4, e2e world freed + portal 2/2, run flow/floor/loading cover 6/6; lint clean |
 | W3-O13c G2 round 3: three Astral card shapes without the pointed top: Tablet, Window (agent's pick), Seal | 51b4cde8 | agent: shots `build/shots/v0.10.5/w3o13c/` (shop + pick per shape, cards_compare); lint clean; mockups only. **Gate: the owner** |
+| W3-P9 (option A) every stat card counts: the player's hits, DoT ticks and shot period carry their fractions (World.dmg_carry/dot_carry/shot_carry, hashed when non-zero, old saves load as 0); the shot cap counts the exact period; WandForecast reads it | da7199dd (merge 3060adc1) | agent: probe on the Orbs: damage 1.000 → 1.116 (nominal 1.115), attack speed 1.000 → 1.109, glass cannon 1.144 → 1.263; **the floor-3 Orbs base DPS 64.7 → 57.3** (its rounding had favoured it); golden modifier_equivalence re-recorded on purpose (5 cases); new test_carried_remainders 7/7; golden+content+arch 172/172, e2e 12/12, touched sim 109/109, shot-cap files 150/150. Pre-existing on the base: gun_feel, lance (O11 push), locked_rooms, loop_deep_ease, boss_hard (javelin 24 vs 25: W3-S1's −5 %), curses → W3-S9 |
 
 ## Verification
 1. **S2–S4 re-tested on this branch** (the agents' own runs were on an old base, `d33bc82a`, see History). Lead,
@@ -165,6 +166,7 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 ## Goldens changed on purpose
 - `tests/golden/fixtures/modifier_equivalence.json` (S1: the combo hit-stop 4,4,5,8 → 3,3,3,5 ticks; Blade-all now hits 139, damage 4160, kills 14)
 - `tests/golden/fixtures/modifier_equivalence.json` again (O11: the knockback and the finisher's recovery; blade_plain, gun_plain, both_plain, blade_wildfire_rider, gun_frost_core regenerated)
+- `tests/golden/fixtures/modifier_equivalence.json` again (W3-P9: crits and hits carry their fractions; blade_plain 181/4002/10 → 186/3968/11, gun_plain 449 → 445, both_plain 3716 → 3715, gun_frost_core 449 → 445, blade_wildfire_rider digest)
 
 ## Gates (owner)
 | Gate | Where | State |
