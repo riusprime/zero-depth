@@ -21,8 +21,9 @@ BACKS = os.path.join(ROOT, "art_raw", "frames", "card_backs_8.webp")
 OUT = os.path.join(ROOT, "assets", "ui", "card_frames")
 OUT_BACKS = os.path.join(ROOT, "assets", "ui", "card_backs")
 FX = os.path.join(ROOT, "assets", "ui", "fx")
-CANVAS = (360, 480)
+CANVAS = (400, 520)
 NOISE_SIZE = 512
+FADE = 16  # px: the canvas's outer ring fades to transparent
 
 
 def _runs(v):
@@ -55,12 +56,14 @@ def frames(sheet=SHEET, out=OUT, prefix="frame"):
     for ri, (y1, y2) in enumerate(rows):
         cols = cols_of[ri]
         for ci, (x1, x2) in enumerate(cols):
-            pad = 32
+            pad = 60
             # never reach past the midpoint to the neighbouring card (the glows can touch)
             wx1 = max(0, x1 - pad, (cols[ci - 1][1] + x1) // 2 if ci > 0 else 0)
             wx2 = min(px.shape[1], x2 + pad, (x2 + cols[ci + 1][0]) // 2 if ci < 3 else px.shape[1])
-            sx1, sy1 = wx1, max(0, y1 - pad)
-            sub = px[sy1 : y2 + pad, wx1:wx2]
+            wy1 = max(0, y1 - pad, (rows[ri - 1][1] + y1) // 2 if ri > 0 else 0)  # nor to the other row's
+            wy2 = min(px.shape[0], y2 + pad, (y2 + rows[ri + 1][0]) // 2 if ri < len(rows) - 1 else px.shape[0])
+            sx1, sy1 = wx1, wy1
+            sub = px[sy1:wy2, wx1:wx2]
             body = sub[..., 3] >= 128
             ys, xs = np.nonzero(body)
             bx1, bx2, by1, by2 = xs.min(), xs.max() + 1, ys.min(), ys.max() + 1
@@ -68,9 +71,15 @@ def frames(sheet=SHEET, out=OUT, prefix="frame"):
             canvas = np.zeros((ch, cw, 4), dtype=np.uint8)
             ox, oy = cx - cw // 2, cy - ch // 2
             # copy only this frame's neighbourhood (the sheet's other frames are > 30 px away)
-            lx1, ly1 = max(ox, wx1), max(oy, y1 - pad)
-            lx2, ly2 = min(ox + cw, wx2), min(oy + ch, y2 + pad)
+            lx1, ly1 = max(ox, wx1), max(oy, wy1)
+            lx2, ly2 = min(ox + cw, wx2), min(oy + ch, wy2)
             canvas[ly1 - oy : ly2 - oy, lx1 - ox : lx2 - ox] = px[ly1:ly2, lx1:lx2]
+            # the sheet itself clips a glow at its own edge (a back at the sheet's bottom): fade the outer ring to 0
+            dx = np.minimum(np.arange(cw), cw - 1 - np.arange(cw))
+            dy = np.minimum(np.arange(ch), ch - 1 - np.arange(ch))
+            ramp = np.minimum(dx[None, :], dy[:, None])
+            fade = np.clip(ramp / float(FADE), 0.0, 1.0)
+            canvas[..., 3] = (canvas[..., 3] * fade).astype(np.uint8)
             name = "%s_%d%s.png" % (prefix, ci + 1, "_focus" if ri else "")
             Image.fromarray(canvas, "RGBA").save(os.path.join(out, name))
             edge = np.concatenate([canvas[0, :, 3], canvas[-1, :, 3], canvas[:, 0, 3], canvas[:, -1, 3]])

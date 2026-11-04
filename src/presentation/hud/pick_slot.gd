@@ -49,7 +49,8 @@ func _init(p_index: int, p_scale: float = PICK_SCALE) -> void:
 	index = p_index
 	name = "PickSlot%d" % (p_index + 1)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	add_theme_constant_override("separation", 2)
+	# W3-S14: the slot number sits below the tilted, glowing card, not on its edge
+	add_theme_constant_override("separation", 20)
 	card = StoneCard.new(p_scale, true)  # v0.10.5 W3-O15: the Astral card (the owner's frame and icon)
 	add_child(card)
 	_key.text = str(p_index + 1)
