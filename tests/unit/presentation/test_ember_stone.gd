@@ -58,11 +58,11 @@ func test_the_ember_glow_is_apart_from_the_heat_colours() -> void:
 
 func test_no_crystal_art_is_left_in_the_ui() -> void:
 	# v0.9.5 MM: the one UI art is the owner's main-menu logo and backdrop (assets/ui/menu, MainMenu only).
-	# v0.10.5 W3-O15 (owner 2026-11-04): and his painted card art (card_frames, card_icons, fx), loaded by
-	# AstralCardArt only.
+	# v0.10.5 W3-O15, W3-S13 (owner 2026-11-04): and the painted card art (card_frames, card_icons, card_backs, fx),
+	# loaded by AstralCardArt only.
 	assert_eq(
 		Array(DirAccess.get_directories_at("res://assets/ui")),
-		["card_frames", "card_icons", "cursors", "fx", "menu"],
+		["card_backs", "card_frames", "card_icons", "cursors", "fx", "menu"],
 		"the crystal frames and plaques retired"
 	)
 	for dir: String in PRESENTATION:
