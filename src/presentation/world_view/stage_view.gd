@@ -152,8 +152,7 @@ func _build_environment_and_light() -> void:
 
 ## v0.9.0 HB: only the mood's environment, grade, vignette and sun (the hub draws its own ground and props).
 func build_lighting_only() -> void:
-	_build_environment_and_light()
-	BiomeBackdrop.attach(self)  # v0.9.5 BG
+	_build_environment_and_light()  # v0.10.5 W3-O5 (owner F2): no biome backdrop; the hub's HubVoid
 
 
 func _build_floor_ground(reader: WorldReader, arena_half: float) -> void:

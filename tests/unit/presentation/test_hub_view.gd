@@ -203,6 +203,62 @@ func test_the_owners_hub_pieces_dress_the_ring() -> void:
 
 ## v0.9.0 HB2: the walk into the portal: the hero climbs the steps (its node rises), the portal flares, the hero
 ## shrinks into the ring, and walk_finished fires once, in about 2-3 s; the World is never stepped by it.
+## v0.10.5 W3-O5 (owner F1): the paving reaches under the whole wall (no dark ground in its recesses), and each wall
+## segment reaches past its 30° at every height so neighbours overlap (no gap), every other one a little further out
+## (no shared surface to z-fight).
+func test_the_floor_meets_the_walls_and_the_walls_meet() -> void:
+	var v := _view({})
+	var plaza := v.plan.get_node("Plaza") as MeshInstance3D
+	var models := v.plan.get_node("Walls").find_children("Model", "MeshInstance3D", true, false)
+	assert_eq(models.size(), 10, "the owner's wall is installed")
+	var reach := 0.0
+	var half_span := 0.0
+	for s in (models[0] as MeshInstance3D).mesh.get_surface_count():
+		var arr := (models[0] as MeshInstance3D).mesh.surface_get_arrays(s)
+		for p: Vector3 in arr[Mesh.ARRAY_VERTEX]:
+			reach = maxf(reach, Vector2(p.x, p.z).length())
+			if p.y > 1.0 and p.y < 3.0:
+				half_span = maxf(half_span, absf(atan2(p.x, p.z)))
+	assert_gt(
+		(plaza.mesh as CylinderMesh).top_radius, reach, "the paving reaches past the wall's foot"
+	)
+	assert_gt(rad_to_deg(half_span), 15.0, "a segment's middle reaches past its 30° (overlap)")
+	var radii: Array[float] = []
+	for k in 2:
+		var arr := (models[k] as MeshInstance3D).mesh.surface_get_arrays(0)
+		radii.append(Vector2(arr[Mesh.ARRAY_VERTEX][0].x, arr[Mesh.ARRAY_VERTEX][0].z).length())
+	assert_ne(radii[0], radii[1], "neighbours sit at different radii (no z-fighting)")
+	assert_null(v.plan.get_node_or_null("Outer"), "no dark ground disc past the walls")
+
+
+## v0.10.5 W3-O5 (owner F2, "Dark void + fog"): past the walls a dark void with drifting fog, not the biome's backdrop;
+## reduced motion stills the drift.
+func test_a_dark_void_with_fog_round_the_hub() -> void:
+	var v := _view({})
+	var backdrops := v.find_children("*", "Node3D", true, false).filter(
+		func(n: Node) -> bool: return n is BiomeBackdrop
+	)
+	assert_eq(backdrops.size(), 0, "no biome backdrop")
+	var vd := v.void_view
+	assert_eq(vd.get_parent(), v.plan)
+	assert_not_null(vd.apron, "the apron fading into the void")
+	assert_eq(vd.fog.size(), HubVoid.FOG_LAYERS.size(), "a fog sheet per layer")
+	for mi in vd.fog:
+		var m := mi.material_override as ShaderMaterial
+		assert_gt(
+			float(m.get_shader_parameter(&"inner")), _hub.radius_m, "the fog stays past the walls"
+		)
+		assert_eq(mi.cast_shadow, GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
+	ViewPrefs.reduced_motion = true
+	vd._sync()
+	var speed := float(
+		(vd.fog[0].material_override as ShaderMaterial).get_shader_parameter(&"speed")
+	)
+	ViewPrefs.reduced_motion = false
+	vd._sync()
+	assert_eq(speed, 0.0, "reduced motion stills the fog")
+
+
 func test_the_walk_into_the_portal() -> void:
 	var v := _view({})
 	watch_signals(v)
