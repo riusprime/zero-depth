@@ -85,7 +85,7 @@ static func hold(w: World, can_fire: bool, fire: Callable) -> void:
 	Heat.fire_ticks(w, w.mx.hold_t)  # v0.10.5 W3-O3: the charge that fires adds its firing time (Q12)
 	w.mx.hold_t = 0
 	fire.call(pm)
-	w.shot_cd = ItemEffects.shot_period_ticks(w)
+	w.shot_cd = ItemEffects.next_shot_cd(w)  # v0.10.5 W3-P9: the period's fraction carried
 
 
 ## 0..1: how far the shot in the barrel has charged (the view's swelling orb; 0 when not charging).

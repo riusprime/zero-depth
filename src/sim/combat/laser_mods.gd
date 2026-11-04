@@ -159,11 +159,12 @@ static func width_permille(w: World, m: int) -> int:
 	return f
 
 
-## Rapid Fire: the tick period `base` shortens to rapid_period_ms over rapid_ramp_ms of holding.
-static func rapid_period(w: World, spec: AttackSpec, base: int) -> int:
+## Rapid Fire: the tick period `base` shortens to rapid_period_ms over rapid_ramp_ms of holding. `unit`: `base` is in
+## 1/unit ticks (v0.10.5 W3-P9: ItemEffects reads the period in thousandths with unit 1000).
+static func rapid_period(w: World, spec: AttackSpec, base: int, unit: int = 1) -> int:
 	if not Laser.held(spec) or mask(spec) & RAPID == 0:
 		return base
-	var quick := ticks(param(w, "rapid_period_ms"))
+	var quick := ticks(param(w, "rapid_period_ms")) * unit
 	if base <= quick:
 		return base
 	var ramp := ticks(param(w, "rapid_ramp_ms"))

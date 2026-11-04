@@ -244,6 +244,9 @@ const ADDED_SINCE_V05 := {
 		&"gamble_wins",  # v0.8.0 N14: an older save's shrine counts its uses as wins (apply), and never failed
 		&"gamble_fail_tick",
 		&"stat_rules",  # v0.8.0 SG: an older save's stat rules are 0 (apply rebuilds them: Stats.migrate_rules)
+		&"dmg_carry",  # v0.10.5 W3-P9: the carried remainders (an older save carries none: 0)
+		&"dot_carry",
+		&"shot_carry",
 	],
 	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
 	&"BossFlow":

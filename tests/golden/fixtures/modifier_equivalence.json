@@ -1,31 +1,31 @@
 {
   "blade_plain": {
-    "damage": 4002,
-    "digest": "38bbd00d8084d0bf2828a7c026b609b26377ab2987676aa461215c7dc999943f",
-    "hits": 181,
-    "kills": 10
+    "damage": 3968,
+    "digest": "b414b533aa1ec156f2d21435a9776428231ad8c58985e72c56cc17e3232aab61",
+    "hits": 186,
+    "kills": 11
   },
   "blade_wildfire_rider": {
     "damage": 4160,
-    "digest": "d0e25aa413b2e8caa472462de8b36eaff140558b1d4b72b391ab1c024bd2b659",
+    "digest": "a13792b664612f5c8786dc03bc2cfe5c7c4e217c2f3c47147767228100ff88d8",
     "hits": 131,
     "kills": 14
   },
   "both_plain": {
-    "damage": 3716,
-    "digest": "646ea5f5de91bcb116af36e14ff9d5a7791b449d5eb0a826b6888bcfe2e6ff05",
+    "damage": 3715,
+    "digest": "77c14c1df3f49006b03514a524fa155c69caea3003a9a02a2990011f576010fb",
     "hits": 210,
     "kills": 5
   },
   "gun_frost_core": {
-    "damage": 449,
-    "digest": "8d95d2c2147af0c91982d96e81b630a469b21d20b5b5aba3fa0e40264e56a521",
+    "damage": 445,
+    "digest": "842e04f5a409bb0ad82e62e7bae459f38d31e8aced435d70cf91daec0e14d5a5",
     "hits": 82,
     "kills": 0
   },
   "gun_plain": {
-    "damage": 449,
-    "digest": "f1a7270159f8496d1c64977d19228544f964191b83966b540b2902f096d80349",
+    "damage": 445,
+    "digest": "95f61809e734e3b5b322530ec75e5ab60a3b4cd303d1149d3e30173858408ef4",
     "hits": 82,
     "kills": 0
   }
