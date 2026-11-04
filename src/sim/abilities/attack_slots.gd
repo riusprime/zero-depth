@@ -15,7 +15,8 @@ extends RefCounted
 ##   Taking a card you hold levels it up as before.
 ## - The form × card table (C60–C66): the run's form is the held Form card's row, else the default row (Orbs, the Gun's
 ##   own shot). A Pattern, Secondary or Element card whose cell is off for that form is never offered (usable(), read by
-##   ItemPool.usable) and, if held, never compiled (compiles(), read by Modifiers.build_modifiers). The table is the
+##   ItemPool.usable) and, if held, never compiled (compiles(), read by Modifiers.build_modifiers). A card the row
+##   prunes (v0.10.5 W3-P7) is never offered either, but compiles when held. The table is the
 ##   Gun's: a Blade run has no form, and every card reads as on there.
 ## - An old save (trim(), on load after WandMigration): a wand saved before AS may hold more cards of a category than
 ##   its limit; the leftmost ones up to the limit stay and the rest leave the build, refunded as shards (the shop's
@@ -147,9 +148,13 @@ static func compatible(w: World, idx: int) -> bool:
 	return w.slot_table.cell(r, idx) != SlotTable.CELL_OFF
 
 
-## Item `idx` may be offered (ItemPool.usable, C66): it works with the form, and its category's limit isn't 0.
+## Item `idx` may be offered (ItemPool.usable, C66): it works with the form, its category's limit isn't 0, and the
+## form doesn't prune it (v0.10.5 W3-P7: a card that measured no gain with the form; held, it still compiles).
 static func usable(w: World, idx: int) -> bool:
-	return compatible(w, idx) and limit(w, category(w, idx)) != 0
+	if not compatible(w, idx) or limit(w, category(w, idx)) == 0:
+		return false
+	var r := form_row(w)
+	return r < 0 or not w.slot_table.pruned(r, idx)
 
 
 ## Held card `code` is compiled (Modifiers.build_modifiers): every card but an item the form can't use.

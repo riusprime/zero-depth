@@ -155,22 +155,23 @@ func test_b2_heavy_slows_less_from_level_3_and_not_at_5() -> void:
 	assert_eq(BladeForms.step(w, 0).ticks, BladeForms.step(plain, 0).ticks, "level 5: full speed")
 
 
-func test_b2_flurry_deals_85_percent_at_every_level_since_mr() -> void:
+## v0.10.5 W3-P5 (owner, P5: "Flurry ≥ 1.1 both and gains with levels"): × 1.35, +5 % a level (× 0.85 flat before).
+func test_b2_flurry_deals_135_percent_and_gains_5_a_level() -> void:
 	var plain := Modifiers.step(WandLab.fight(&"blade", []), 0).damage
 	var w := WandLab.fight(&"blade", [&"flurry"])
 	var got := []
 	for lvl in range(1, 6):
 		_at(w, &"flurry", lvl)
 		got.append(Modifiers.step(w, 0).damage)
-	# v0.8.0 MR (O91): Flurry is a burst now, ×0.85 at every level (its levels add burst swings)
+	# v0.8.0 MR (O91): Flurry is a burst now (its levels add burst swings); W3-P5: its damage gains with levels too
 	assert_eq(
 		got,
 		[
-			plain * 850 / 1000,
-			plain * 850 / 1000,
-			plain * 850 / 1000,
-			plain * 850 / 1000,
-			plain * 850 / 1000
+			plain * 1350 / 1000,
+			plain * 1400 / 1000,
+			plain * 1450 / 1000,
+			plain * 1500 / 1000,
+			plain * 1550 / 1000
 		]
 	)
 

@@ -5,9 +5,9 @@ extends RefCounted
 ## the Wave form, the Gun's shot as a wide band (AttackSpec.wave_mm, set by the Wave card,
 ## data/modifiers/gun_wave.tres). Not the Blade's Wave (the Echo Slash card, echo_slash): this one is the Gun's, id
 ## gun_wave, and carries no "wave" tag, so Split Wave never reads it.
-## - The shot: the Gun's bolt, one every 0.9 s (attack speed at half its bonus, AttackRate.form_rate) at 6 m/s, as far
-##   as an orb flies (10.8 m). It passes through enemies (World's projectile pass skips them, as the Void's); a wall or
-##   the end of its flight ends it.
+## - The shot: the Gun's bolt, one every 0.9 s (attack speed at half its bonus, AttackRate.form_rate) at 6 m/s, for
+##   5.4 m (v0.10.5 W3-P5: half an orb's 10.8 m, so the Void stays the crowd top; owner, P5). It passes through
+##   enemies (World's projectile pass skips them, as the Void's); a wall or the end of its flight ends it.
 ## - The band: wave_mm wide (3 m; the area stat scales it), centred on the shot and square to its flight, DEPTH_M deep.
 ##   Every enemy whose body the band rolls over takes the shot's hit once (Attacks.land: its elements, its On Hit and
 ##   On Kill hooks); the wait is per shot and enemy for the rest of the shot's flight (ModifierState.void_*, the

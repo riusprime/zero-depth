@@ -74,7 +74,10 @@ func test_the_card_makes_the_shot_a_wide_slow_wave() -> void:
 	assert_almost_eq(s.speed * SimTick.TICKS_PER_SECOND, 6.0, 0.01, "6 m/s")
 	assert_eq(s.period_ticks, 54, "every 0.9 s")
 	assert_almost_eq(
-		s.speed * s.life_ticks, orb.speed * orb.life_ticks, 0.11, "as far as an orb flies"
+		s.speed * s.life_ticks * 2.0,
+		orb.speed * orb.life_ticks,
+		0.11,
+		"v0.10.5 W3-P5: half as far as an orb flies (5.4 m)"
 	)
 	assert_eq(s.damage, orb.damage * 6, "× 6 an orb hit (the class doc: one target about the orbs)")
 	assert_false(s.has_tag(&"wave"), "not the Blade's wave: Split Wave never reads it")
@@ -86,7 +89,7 @@ func test_the_card_makes_the_shot_a_wide_slow_wave() -> void:
 
 
 func test_it_rolls_through_every_enemy_once() -> void:
-	var at: Array = [Vector2(2.0, 0.0), Vector2(4.0, 0.3), Vector2(6.0, -0.3), Vector2(9.0, 0.0)]
+	var at: Array = [Vector2(1.5, 0.0), Vector2(2.5, 0.3), Vector2(3.5, -0.3), Vector2(4.5, 0.0)]
 	var w := _world([], at)
 	W.run(w, 1, 0, W.S)
 	assert_eq(_waves(w).size(), 1, "one wave a shot")
@@ -94,9 +97,9 @@ func test_it_rolls_through_every_enemy_once() -> void:
 	for k in [1, 2, 3, 4]:
 		assert_eq(_dealt(w, k), [1, 30], "enemy %d: one hit of 30 as the wave rolls over" % k)
 	assert_eq(_waves(w).size(), 0, "gone at the end of its flight")
-	var far := _world([], [Vector2(12.0, 0.0)])
+	var far := _world([], [Vector2(7.0, 0.0)])
 	_one(far, 250)
-	assert_eq(_dealt(far, 1)[0], 0, "past its 10.8 m: missed")
+	assert_eq(_dealt(far, 1)[0], 0, "past its 5.4 m (v0.10.5 W3-P5): missed")
 
 
 func test_it_flies_along_the_aim() -> void:

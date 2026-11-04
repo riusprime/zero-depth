@@ -22,7 +22,7 @@ script = ExtResource("2_op")
 op = 4
 stage = 3
 field = &"damage"
-value = 3750.0
+value = 8500.0
 
 [sub_resource type="Resource" id="Op_4"]
 script = ExtResource("2_op")

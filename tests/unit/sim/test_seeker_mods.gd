@@ -78,7 +78,7 @@ func test_each_card_sets_its_bit_and_a_plain_seekers_has_none() -> void:
 				s.bounces,
 				s.pierce
 			],
-			[1, 3, 18, 78, 500, 0, 0],
+			[1, 3, 18, 78, 900, 0, 0],  # v0.10.5 W3-P5: share 90 %
 			"its generic ops are skipped (%s)" % SeekerMods.CARD_IDS[k]
 		)
 		assert_true(s.hooks.is_empty(), "no hook from %s" % SeekerMods.CARD_IDS[k])
@@ -172,7 +172,7 @@ func test_s3_ring_makes_a_one_metre_ring_of_30_percent_at_each_hit() -> void:
 	for e in W.events(w, SimEvent.Kind.DAMAGE):
 		if e.tags & SimEvent.TAG_AREA:
 			area += 1
-			assert_lte(e.amount, 1, "30 % of a 2.25 dart is 0.675: a whole point now and then")
+			assert_lte(e.amount, 2, "W3-P5: 30 % of a 4.05 dart is 1.2: one, and two now and then")
 	assert_gt(area, 0, "rings landed")
 	for e in W.events(plain, SimEvent.Kind.DAMAGE):
 		assert_false(e.tags & SimEvent.TAG_AREA != 0, "a plain dart makes none")
@@ -260,7 +260,7 @@ func test_s6_echo_sends_a_second_volley_18_ticks_later_at_half_and_it_follows_no
 	var total := 0
 	for i in d:
 		total += w.projectiles.damage[i]
-	assert_eq(total, 11, "3 x 2.5 + 3 x 1.25 = 11.25: eleven whole, 0.25 carried")
+	assert_eq(total, 20, "W3-P5: 3 x 4.5 + 3 x 2.25 = 20.25: twenty whole, 0.25 carried")
 	assert_eq(w.mx.sk_carry, 250)
 	for k in w.mx.sk_kind.size():
 		if w.mx.sk_kind[k] & SeekerMods.KIND_MASK == SeekerMods.K_BALL and w.mx.sk_born[k] > 10:
@@ -473,14 +473,15 @@ func test_fc7b_the_carry_keeps_the_fractions_four_darts_of_2_25_deal_nine() -> v
 
 func test_fc7b_a_plain_volley_deals_2_25_a_dart_and_a_card_level_changes_damage() -> void:
 	var w := _world([])
-	assert_eq(_volley_damage(w), 7, "3 x 2.5 = 7.5: seven, 0.5 carried")
+	# v0.10.5 W3-P5: the base share is 90 % (was 50 %).
+	assert_eq(_volley_damage(w), 13, "3 x 4.5 = 13.5: thirteen, 0.5 carried")
 	assert_eq(w.mx.sk_carry, 500)
 	var lv := _world([])
-	Modifiers.bolt(lv).share_permille = 550  # three levels up (+5 % each)
-	assert_eq(_volley_damage(lv), 8, "3 x 2.75 = 8.25: the levels count now")
+	Modifiers.bolt(lv).share_permille = 1029  # three levels up (+4.3 % each)
+	assert_eq(_volley_damage(lv), 15, "3 x 5.145 = 15.4: the levels count now")
 	var twin := _volley_damage(_world([&"gun_twin"]))
-	assert_eq(twin, 9, "Twin: 9.0 a volley against the plain 7.5 (x 1.2)")
-	assert_eq(_volley_damage(_world([&"gun_rapid_fire"])), 8)
+	assert_eq(twin, 16, "Twin: 16.2 a volley against the plain 13.5 (x 1.2)")
+	assert_eq(_volley_damage(_world([&"gun_rapid_fire"])), 14)
 
 
 func test_fc7b_the_carry_is_hashed_only_while_set_and_round_trips_a_save() -> void:

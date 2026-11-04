@@ -1,7 +1,8 @@
 # gdlint: disable=max-public-methods
 extends GutTest
 ## v0.9.5 FC8 (FORM_COMBOS.md W1-W8): what eight cards do to the Wave form (WaveMods), one test a row with the table's
-## numbers. A plain wave deals 30 a hit, rolls 0.1 m a tick for 108 ticks (10.8 m) from 0.65 m out, is 3 m wide
+## numbers. A plain wave deals 30 a hit, rolls 0.1 m a tick for 54 ticks (5.4 m; v0.10.5 W3-P5, 10.8 m before) from
+## 0.65 m out, is 3 m wide
 ## (1.5 m a side, 0.5 m deep), and is thrown every 54 ticks; aim 0 is +x, the hero stands at the origin, the dummies are
 ## 0.35 m wide. A dummy 4 m out takes its hit on tick 28 of the throw.
 
@@ -61,7 +62,7 @@ func test_each_card_sets_its_bit_and_a_plain_wave_has_none() -> void:
 		assert_eq(WaveMods.mask(s), WaveMods.CARD_BITS[k], "%s" % WaveMods.CARD_IDS[k])
 		assert_eq(
 			[s.wave_mm, s.period_ticks, s.life_ticks, s.homing, s.spiral, s.bounces],
-			[3000, 54, 108, 0, 0, 0],
+			[3000, 54, 54, 0, 0, 0],  # v0.10.5 W3-P5: 5.4 m
 			"its generic ops are skipped (%s)" % WaveMods.CARD_IDS[k]
 		)
 		assert_true(s.hooks.is_empty(), "no hook from %s" % WaveMods.CARD_IDS[k])
@@ -105,16 +106,16 @@ func test_a_plain_wave_leaves_no_state() -> void:
 
 # --- W1 Ricochet ------------------------------------------------------------------------------------------------------
 func test_w1_ricochet_reflects_off_the_first_wall_and_rolls_back_once() -> void:
-	var at := [Vector2(2.0, 0.0), Vector2(-1.5, 0.0)]
+	var at := [Vector2(1.3, 0.0), Vector2(-1.5, 0.0)]  # W3-P5: the wall nearer, inside the 5.4 m run
 	var plain := _world([], at)
-	plain.add_wall_now(Obb.make(Vector2(3.0, 0.0), Vector2(0.2, 4.0), 0))
+	plain.add_wall_now(Obb.make(Vector2(2.0, 0.0), Vector2(0.2, 4.0), 0))
 	_throw(plain, RUN)
 	assert_eq(_hits(plain, 1).size(), 1, "the plain wave hits the near one")
 	assert_eq(
 		_hits(plain, 2).size(), 0, "and ends at the wall, never reaching the one behind the hero"
 	)
 	var w := _world([&"gun_ricochet"], at)
-	w.add_wall_now(Obb.make(Vector2(3.0, 0.0), Vector2(0.2, 4.0), 0))
+	w.add_wall_now(Obb.make(Vector2(2.0, 0.0), Vector2(0.2, 4.0), 0))
 	_throw(w)
 	assert_eq(w.projectiles.bounces[_waves(w)[0]], 1, "one bounce")
 	var turned := false
@@ -134,16 +135,17 @@ func test_w1_ricochet_reflects_off_the_first_wall_and_rolls_back_once() -> void:
 
 func test_w1_ricochet_bounces_only_once() -> void:
 	var w := _world([&"gun_ricochet"], [])
-	w.add_wall_now(Obb.make(Vector2(3.0, 0.0), Vector2(0.2, 4.0), 0))
-	w.add_wall_now(Obb.make(Vector2(-3.0, 0.0), Vector2(0.2, 4.0), 0))
+	w.add_wall_now(Obb.make(Vector2(2.0, 0.0), Vector2(0.2, 4.0), 0))  # W3-P5: inside the 5.4 m run
+	w.add_wall_now(Obb.make(Vector2(-2.0, 0.0), Vector2(0.2, 4.0), 0))
 	_throw(w, RUN)
 	assert_true(_waves(w).is_empty(), "the second wall ends it")
 
 
 # --- W2 Homing --------------------------------------------------------------------------------------------------------
 func test_w2_homing_bends_toward_the_biggest_group_at_45_degrees_a_second() -> void:
-	var cluster := [Vector2(6.0, 3.5), Vector2(6.6, 3.5), Vector2(6.0, 4.2)]
-	var at := [Vector2(4.0, 0.0)]
+	# v0.10.5 W3-P5: nearer, inside the 5.4 m run
+	var cluster := [Vector2(4.0, 2.4), Vector2(4.5, 2.4), Vector2(4.0, 2.9)]
+	var at := [Vector2(3.0, 0.0)]
 	at.append_array(cluster)
 	var plain := _world([], at)
 	_throw(plain, RUN)
@@ -319,6 +321,7 @@ func test_w7_mine_hits_what_walks_into_it_once() -> void:
 func test_w8_spiral_sways_08_m_a_side_with_a_one_second_period() -> void:
 	var w := _world([&"gun_spiral"], [])
 	_throw(w)
+	w.projectiles.life[_waves(w)[0]] = 108  # TEST HELPER: the 10.8 m run of before W3-P5, so a full period fits
 	var ys := []
 	var xs := []
 	for k in 70:

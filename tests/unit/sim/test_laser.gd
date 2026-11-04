@@ -60,7 +60,7 @@ func test_the_card_makes_the_guns_shot_a_held_beam() -> void:
 	assert_eq(s.form, AttackSpec.Form.BEAM)
 	assert_eq(s.period_ticks, 6, "10 ticks a second")
 	assert_almost_eq(s.reach_m, 9.0, 0.001, "9 m")
-	assert_eq([s.beam_permille, s.rate_scale_permille, s.move_permille], [920, 500, 750])
+	assert_eq([s.beam_permille, s.rate_scale_permille, s.move_permille], [1000, 500, 750])  # W3-P5
 	var it := w.item_tables[W.item(w, &"gun_laser")]
 	assert_eq(it.slot_category, AttackSlots.FORM, "a Form card")
 	var def: ItemDefinition = W.repo().get_def(&"items", &"gun_laser")
@@ -73,7 +73,7 @@ func test_held_fire_ticks_ten_times_a_second_and_beats_the_orbs_on_one_target() 
 	W.run(w, 720, 0, W.S)
 	var beam := _dealt(w, 1, 120, 720)
 	assert_eq(beam[0], 100, "10 ticks a second over 10 s")
-	assert_eq(beam[1], 460, "each tick 4.6 (920 per mille of the orb's 5)")
+	assert_eq(beam[1], 500, "each tick 5.0 (v0.10.5 W3-P5: 1000 per mille of the orb's 5)")
 	var o := _world([], [4.0], true)
 	W.run(o, 720, 0, W.S)
 	var orbs := _dealt(o, 1, 120, 720)
@@ -84,8 +84,8 @@ func test_held_fire_ticks_ten_times_a_second_and_beats_the_orbs_on_one_target() 
 			% [beam[1], beam[0], orbs[1], orbs[0], ratio]
 		)
 	)
-	# v0.10.5 W3-S2 (owner, 2026-11-04: Laser doesn't feel powerful): 1.2 → 1.4×.
-	assert_between(ratio, 1.3, 1.5, "about 1.4 × the orbs' single-target DPS (Q8)")
+	# v0.10.5 W3-S2 (owner, 2026-11-04: Laser doesn't feel powerful): 1.2 → 1.4×; W3-P5 (its crowd ≥ the orbs'): 1.54×.
+	assert_between(ratio, 1.45, 1.65, "about 1.55 × the orbs' single-target DPS (Q8)")
 
 
 func test_the_beam_stops_at_the_first_enemy() -> void:
@@ -129,9 +129,7 @@ func test_twin_gives_two_beams_and_three_at_level_three() -> void:
 		var s := Modifiers.bolt(w)
 		var beams := Laser.trace(w, s, w.player_pos(), 0)
 		assert_eq([beams.size(), s.share_permille], expect[lvl], "Twin Lv %d" % lvl)
-		assert_eq(
-			Laser.milli_of(s, 5), 46 * int(expect[lvl][1]) / 10, "each beam's share of the tick"
-		)
+		assert_eq(Laser.milli_of(s, 5), 5 * int(expect[lvl][1]), "each beam's share of the tick")
 	var two := _world([&"gun_twin"], [])
 	var p: Array[Dictionary] = Laser.trace(two, Modifiers.bolt(two), two.player_pos(), 0)
 	var gap := (p[1]["from"] as Vector2) - (p[0]["from"] as Vector2)
@@ -144,7 +142,7 @@ func test_a_twin_beam_on_one_target_deals_its_share_and_feeds_as_a_second() -> v
 	W.run(w, 720, 0, W.S)
 	var two := _dealt(w, 1, 120, 720)
 	assert_eq(two[0], 200, "both beams tick on a wide-enough target")
-	assert_eq(two[1], 644, "2 × 4.6 × 70 %")
+	assert_eq(two[1], 700, "2 × 5.0 × 70 %")
 
 
 func test_attack_speed_raises_the_tick_rate_at_half_its_value() -> void:

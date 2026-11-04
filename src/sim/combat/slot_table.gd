@@ -22,6 +22,8 @@ var merge_radius_max_permille := 2000
 var form_ids: Array[StringName] = []
 var form_cards := PackedInt32Array()
 var form_cells: Array[Dictionary] = []
+## v0.10.5 W3-P7: per form, the item indices never offered with it (AttackFormRow.pruned; index -> true).
+var form_pruned: Array[Dictionary] = []
 ## v0.9.5 FC1: each form's own numbers (form id -> { key (String) -> int }; the Laser's: LaserMods.param).
 var params := {}
 ## The default form's row (the one without a card), or -1.
@@ -38,3 +40,8 @@ func cell(row: int, idx: int) -> int:
 ## The row of the form card `idx` sets, or -1.
 func row_of_card(idx: int) -> int:
 	return form_cards.find(idx) if idx >= 0 else -1
+
+
+## v0.10.5 W3-P7: item `idx` is never offered while form `row` is the run's form (AttackFormRow.pruned).
+func pruned(row: int, idx: int) -> bool:
+	return row >= 0 and row < form_pruned.size() and form_pruned[row].has(idx)

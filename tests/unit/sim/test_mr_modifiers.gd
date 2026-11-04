@@ -249,7 +249,7 @@ func test_flurry_is_a_burst_of_three_swings_after_a_pause() -> void:
 		[s.burst_permille, s.burst_swings, s.burst_pause_ticks, s.rate_bonus_permille],
 		[800, 3, 36, 0]
 	)
-	assert_eq(s.damage, Modifiers.step(plain, 0).damage * 850 / 1000, "×0.85 at every level")
+	assert_eq(s.damage, Modifiers.step(plain, 0).damage * 1350 / 1000, "×1.35 at Lv 1 (W3-P5)")
 	var places := []
 	var fast := []
 	for t in 200:
