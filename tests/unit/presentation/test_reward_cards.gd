@@ -387,11 +387,18 @@ func test_a_pick_burns_the_others_and_flies_the_icon_to_its_hud_slot() -> void:
 	assert_true(p.slot(2).card.fx.burning())
 	assert_false(p.slot(1).card.fx.burning(), "the picked one doesn't")
 	assert_gt(p.slot(0).card.fx.burn, 0.2)
+	assert_not_null(
+		p.slot(0).card.fx.glare, "v0.10.5 W3-O15: a glare flies off the dissolving card"
+	)
+	assert_null(p.slot(1).card.fx.glare, "none off the picked one")
 	_run(p, 1.0)
 	assert_false(p.outro_playing(), "the outro ends")
 	assert_false(p.visible)
 	for k in 3:
 		assert_false(p.slot(k).card.fx.burning(), "the cards are whole for the next deal")
+		assert_null(p.slot(k).card.fx.glare, "and the glare is gone")
+	await get_tree().process_frame
+	assert_eq(p.find_children("*", "GlareBurst", true, false).size(), 0, "its nodes freed")
 
 
 func test_a_cancel_neither_burns_nor_flies() -> void:

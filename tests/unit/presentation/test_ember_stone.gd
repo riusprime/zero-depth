@@ -58,9 +58,11 @@ func test_the_ember_glow_is_apart_from_the_heat_colours() -> void:
 
 func test_no_crystal_art_is_left_in_the_ui() -> void:
 	# v0.9.5 MM: the one UI art is the owner's main-menu logo and backdrop (assets/ui/menu, MainMenu only).
+	# v0.10.5 W3-O15 (owner 2026-11-04): and his painted card art (card_frames, card_icons, fx), loaded by
+	# AstralCardArt only.
 	assert_eq(
 		Array(DirAccess.get_directories_at("res://assets/ui")),
-		["cursors", "menu"],
+		["card_frames", "card_icons", "cursors", "fx", "menu"],
 		"the crystal frames and plaques retired"
 	)
 	for dir: String in PRESENTATION:
@@ -68,7 +70,7 @@ func test_no_crystal_art_is_left_in_the_ui() -> void:
 			if not f.ends_with(".gd"):
 				continue
 			var src := FileAccess.get_file_as_string(dir + "/" + f)
-			if f != "main_menu.gd":
+			if f not in ["main_menu.gd", "astral_card_art.gd"]:
 				assert_false(src.contains("assets/ui/"), "%s loads no UI art" % f)
 			for gone in ["CrystalCard", "BuildArt", "glass_panel", "GlassMarker"]:
 				assert_false(
