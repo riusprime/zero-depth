@@ -324,7 +324,7 @@ Order if approved: P9 probe and P6(a) check first (they may change the picture),
 | P6 | Approved; measured (PROGRESS W3-P6): Storm × 1.65–3.80 on real bosses, Ring × 2.2 on a real floor: under the trim line, no trim | — |
 | P7 | Approved (prune) | — |
 | P8 | Not wanted: Q3 below | — |
-| P9 | Approved | — |
+| P9 | Approved; probed (two roundings). Owner, 2026-11-04: "lets do only A then": carry the damage and shot-timer remainders (not tenths, not a bigger slower bolt) | — |
 | P10 | Not recommended, not picked | — |
 
 Owner's answers to the questions (2026-11-04):
