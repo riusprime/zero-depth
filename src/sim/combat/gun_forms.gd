@@ -68,7 +68,11 @@ static func hold(w: World, can_fire: bool, fire: Callable) -> void:
 	var spec := Modifiers.bolt(w)
 	var held := PlayerKit.shooting(w) and can_fire and w.swing_t == 0
 	var full := LanceMods.hold_ticks(w, spec)  # v0.9.5 FC4: Big Shot and Rapid Fire move a Lance's full charge
+	if held and w.shot_cd > 0:
+		Heat.fire_tick(w)  # v0.9.5 HT: the period held after a release is firing time, as for every form
 	if held and w.shot_cd == 0:
+		if w.mx.hold_t < full:
+			Heat.charge_tick(w)  # v0.10.5 W3-O3: no heat while charging; its heat comes on the release
 		w.mx.hold_t = mini(w.mx.hold_t + 1, full)
 		if w.mx.hold_t < full or Lance.is_lance(spec):  # v0.9.0 AF1: a full Lance waits
 			return
@@ -78,6 +82,7 @@ static func hold(w: World, can_fire: bool, fire: Callable) -> void:
 		w.mx.hold_t = 0
 		return
 	var pm := charge_permille(spec, w.mx.hold_t, full)
+	Heat.fire_ticks(w, w.mx.hold_t)  # v0.10.5 W3-O3: the charge that fires adds its firing time (Q12)
 	w.mx.hold_t = 0
 	fire.call(pm)
 	w.shot_cd = ItemEffects.shot_period_ticks(w)

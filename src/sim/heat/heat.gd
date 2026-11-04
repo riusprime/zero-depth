@@ -185,6 +185,23 @@ static func fire_tick(w: World) -> void:
 	add(w, g)
 
 
+## v0.10.5 W3-O3 (owner, 2026-11-04: holding the Lance "can generate enough heat to overheat without actually
+## firing"): `n` ticks of firing at once, the charge a charging Gun just released (GunForms.hold); the same heat as
+## `n` fire_tick calls.
+static func fire_ticks(w: World, n: int) -> void:
+	for k in n:
+		fire_tick(w)
+
+
+## v0.10.5 W3-O3: a tick a charging Gun's charge grows: no heat (it comes with the release, fire_ticks), and the
+## meter doesn't cool while the attack is being charged (a charge that fires counts as firing the whole time). A full
+## charge waiting adds nothing and cools as idle.
+static func charge_tick(w: World) -> void:
+	var s := w.heat
+	if s != null and s.stall == 0 and not w.player_dead():
+		s.idle = 0
+
+
 ## Adds `milli` heat (from the attack with root `root`); reaching the overheat point overheats.
 static func add(w: World, milli: int, root: int = 0) -> void:
 	var s := w.heat
