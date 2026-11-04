@@ -141,6 +141,8 @@ static func compile_loot_pacing(def: LootPacingDefinition) -> LootPacingTable:
 	t.jackpot_permille = def.jackpot_permille
 	t.altar_type_weights = def.altar_type_weights.duplicate()  # v0.9.5 EP2
 	t.chest_type_weights = def.chest_type_weights.duplicate()
+	t.element_ceilings = def.element_ceilings.duplicate()  # v0.10.5 W3-P2
+	t.element_ceiling_loops = def.element_ceiling_loops
 	return t
 
 

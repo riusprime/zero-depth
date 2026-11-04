@@ -57,7 +57,8 @@ const ELEMENTS: Array[StringName] = [
 ]
 
 ## Stacked builds by floor: [weapon, [floor 1 tokens], ..., [floor 5 tokens]]; each floor lists the whole build
-## ("id:level"). Slots by floor 4/5/6/7/8 (data/wand/wand.tres); levels under the ceilings 2/3/5/5/5
+## ("id:level"). Slots by floor 4/5/6/7/8 (data/wand/wand.tres); levels under the ceilings 2/3/5/5/5 and (v0.10.5
+## W3-P2) the element ceilings 1/2/2/3/3
 ## (data/rewards/pacing.tres; Gun forms and pattern/secondary cards have level_max 1, elements and Split/Twin/Halo 3).
 const TRACKS := {
 	"gun_orbs_plain":
@@ -83,8 +84,8 @@ const TRACKS := {
 		["gun_void:1", "ember_core:2", "venom_core:2", "chain_blast:1"],
 		[
 			"gun_void:1",
-			"ember_core:3",
-			"venom_core:3",
+			"ember_core:2",
+			"venom_core:2",
 			"chain_blast:2",
 			"split_shot:1",
 			"gun_twin:1"
@@ -116,8 +117,8 @@ const TRACKS := {
 		["gun_wave:1", "ember_core:2", "venom_core:2", "chain_blast:1"],
 		[
 			"gun_wave:1",
-			"ember_core:3",
-			"venom_core:3",
+			"ember_core:2",
+			"venom_core:2",
 			"chain_blast:2",
 			"split_shot:1",
 			"gun_twin:1"
@@ -165,8 +166,8 @@ const TRACKS := {
 		["echo_slash:2", "ember_core:2", "venom_core:2", "chain_blast:1"],
 		[
 			"echo_slash:3",
-			"ember_core:3",
-			"venom_core:3",
+			"ember_core:2",
+			"venom_core:2",
 			"chain_blast:2",
 			"shared_bleed:1",
 			"split_wave:1"

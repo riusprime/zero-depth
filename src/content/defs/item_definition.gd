@@ -248,6 +248,10 @@ const SLOT_CATEGORIES: Array[StringName] = [&"free", &"form", &"pattern", &"seco
 @export var el_shard_permille := 0
 @export var el_shard_slow_seconds := 0.0
 @export var el_shatters_per_second := 0
+## v0.10.5 W3-P2 (the progression audit's P2, owner 2026-11-04): an element card's own damage at Lv 1, 2, 3, per mille
+## of its numbers (ElementStack.level_permille: its ticks, hook hits, strikes and shards), so part of Lv 1's power
+## moves to Lv 2-3. Empty = 1000 at every level; else one value per level (level_max), each 100..3000.
+@export var el_level_permille := PackedInt32Array()
 # --- v0.6.5 WN5a (docs/design/WAND.md, the shared pool and the triggers).
 ## S5 Bleed: the bleed's period while you move (walking or dashing; 0 = the same as standing). Shorter: it ticks
 ## faster while you move.
@@ -464,6 +468,16 @@ func _check_element_levels(issues: Array[ValidationIssue]) -> void:
 	neg = neg or el_wound_move_mm < 0 or el_burst_stacks < 0
 	if neg:
 		issues.append(ValidationIssue.new(&"range", resource_path, "el_* fields are >= 0"))
+	if not el_level_permille.is_empty():  # v0.10.5 W3-P2
+		var ok_row := el_level_permille.size() == maxi(1, level_max)
+		for v in el_level_permille:
+			ok_row = ok_row and v >= 100 and v <= 3000
+		if not ok_row:
+			issues.append(
+				ValidationIssue.new(
+					&"range", resource_path, "el_level_permille: one value per level, 100..3000"
+				)
+			)
 	if venom:
 		var ok := el_jump_seconds > 0.0 and el_jump_range_m > 0.0 and el_jumps_per_second > 0
 		ok = ok and el_stack_bonus_permille > 0 and el_stack_cap > 0

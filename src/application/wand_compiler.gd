@@ -128,6 +128,7 @@ static func pairs(repo: ContentRepository) -> ElementPairTable:
 		return null
 	var t := ElementPairTable.new()
 	t.level_permille = def.level_permille.duplicate()
+	t.stack_falloff_permille = def.stack_falloff_permille.duplicate()  # v0.10.5 W3-P1
 	t.triggers_per_second = def.triggers_per_second
 	t.burst_permille = def.burst_permille
 	t.burst_radius_m = def.burst_radius_m

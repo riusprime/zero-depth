@@ -1176,6 +1176,21 @@ extra draw on `loot`).
   floor, in `WorldSnapshot.ADDED_SINCE_V05` (an older save: 0 and none). Economy unchanged: reward counts, prices and
   shards. The Overrun's ability cards and the Deep epic altar's ability level-ups and epic stat cards hold no wand card,
   so pacing does not reach them.
+- **Element ceilings (v0.10.5 W3-P2; the progression audit's P2).** An element card (category ELEMENT) also stays
+  below `LootPacing.element_ceiling` (`element_ceilings` by loop-1 floor, data 1/2/2/3: Lv 1 on floor 1, Lv 2 on
+  floors 2-3, Lv 3 from floor 4; `element_ceiling_loops`, data 3, from loop 2), on top of the stage's.
+  `CardLevels.can_take(w, idx, ceiling, element_ceiling)`: the boss's upgrade passes the next floor's
+  (`element_ceiling(w, 1)`), the jackpot one past this floor's (and an element at its own ceiling, `ceiling_of`, is a
+  jackpot card); a `ceiling` given alone holds for elements too (the dev panel's `MAX_LEVEL` grant). A held card above
+  its ceiling (an older save) keeps its level; it is only not offered again. Stateless: nothing new saved or hashed.
+- **Elements stack with falloff (v0.10.5 W3-P1, P1; `ElementStack`).** The hero's element damage on an enemy that
+  carries k other elements counts at `ElementPairTable.stack_falloff_permille[k]` (data 1000/700/500/350, k = 0..3+),
+  times the element card's `el_level_permille` at its level (P2). Carried: Fire burning, Venom poisoned, Bleed
+  bleeding, Frost frost stacks or frozen, Lightning shocked (the Storm card leaves no status, so it never counts against
+  the others). An element's damage: its status ticks (`Damage.tick_dot` by its element, Exsanguinate's burst), its hits
+  by effect id (`ember_core` ground, `storm_core` chain, `storm_strike`, `frost_shard`; `Damage.hit` after Sepsis,
+  before the target's multiplier) and the bonus part of Heat sync and Frostbite. Rounded to nearest, a hit that had
+  damage keeps 1. Pair rules (X1-X10) unchanged. Only with `World.pair_table`; stateless (no save, no hash change).
 
 ## 9. What presentation receives
 

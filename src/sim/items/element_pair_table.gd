@@ -4,6 +4,9 @@ extends RefCounted
 ## as ticks, set at setup and never written in play (World.pair_table).
 
 var level_permille := PackedInt32Array([400, 700, 1000])  # v0.9.5 EP1: strength at pair Lv 1/2/3
+## v0.10.5 W3-P1: an element's damage on an enemy carrying k other elements, per mille, k = 0, 1, 2, 3+ (ElementStack;
+## empty = no falloff).
+var stack_falloff_permille := PackedInt32Array()
 var triggers_per_second := 4
 var burst_permille := 3000
 var burst_radius_m := 1.5

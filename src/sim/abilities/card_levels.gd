@@ -37,10 +37,18 @@ static func level(w: World, idx: int) -> int:
 ## LootPacing.ceiling, MAX_LEVEL without a pacing table), or below `ceiling` when given (at most MAX_LEVEL; the
 ## boss's upgrade and a jackpot pass a higher one, the dev panel's grants MAX_LEVEL). Every card source's check:
 ## ItemPool.available, Shop.can_apply (the shop, an event's cards, a core's drop).
-static func can_take(w: World, idx: int, ceiling: int = -1) -> bool:
+## v0.10.5 W3-P2: an element card also stays below its own ceiling (LootPacing.element_ceiling: this floor's, or
+## `element_ceiling` when given: the next floor's for the boss's upgrade, one past for a jackpot; a `ceiling` given
+## alone holds for elements too: the dev panel's MAX_LEVEL grant).
+static func can_take(w: World, idx: int, ceiling: int = -1, element_ceiling: int = -1) -> bool:
 	if not w.items_owned.has(idx):
 		return true
 	var cap := mini(ceiling if ceiling > 0 else LootPacing.ceiling(w), max_level(w, idx))
+	if LootPacing.category(w, idx) == LootPacing.Category.ELEMENT:
+		var el := element_ceiling
+		if el <= 0:
+			el = ceiling if ceiling > 0 else LootPacing.element_ceiling(w)
+		cap = mini(cap, el)
 	return is_card(w, idx) and level(w, idx) < cap
 
 

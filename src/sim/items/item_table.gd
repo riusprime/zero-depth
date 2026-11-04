@@ -176,6 +176,7 @@ var el_shard_range_m := 0.0
 var el_shard_permille := 0
 var el_shard_slow_ticks := 0
 var el_shatters_per_second := 0
+var el_level_permille := PackedInt32Array()  # v0.10.5 W3-P2: an element card's damage share by level (ElementStack)
 ## v0.6.5 WN5a: S5 Bleed's period while the player moves (0 = none), and T4's face on a Gun run (empty = name_key /
 ## desc_key; Offers.item_keys picks the run's).
 var bleed_move_period_ticks := 0

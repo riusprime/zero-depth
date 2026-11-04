@@ -385,15 +385,22 @@ func test_x4_bleed_ticks_on_a_burning_enemy_deal_double() -> void:
 		var w := _pair(ElementPairs.X4, [[Vector2(4, 0), BIG], [Vector2(4, 3), BIG]])
 		if not pair_on:
 			w.pair_mask = 0
-		_bleed(w, 1)
-		_bleed(w, 2)
+		_bleed(w, 1, 4)  # v0.10.5 W3-P1: 4 stacks, so the falloff's share shows through the rounding
+		_bleed(w, 2, 4)
 		_burn(w, 1)
 		w.actors.burn_cd[1] = 100000  # no burn tick in the way
 		var burning := _first_bleed_tick(w, 1)
 		w.actors.burn_stacks[1] = 0
 		tick.append([burning, _dmg(w, 2, Engines.EFFECT_BLEED)[0].amount])
-	assert_eq(tick[0][0], tick[0][1], "the pair off: a burning enemy bleeds as any")
-	assert_eq(tick[1][0], tick[1][1] * 2, "the pair on: double on the burning one")
+	# v0.10.5 W3-P1 + P2 (ElementStack): a bleed tick counts at Bleed Lv 3's 1050 per mille, and on a burning enemy
+	# (one other element) at 70 % of that; Boiling Blood's double comes before the falloff.
+	var lv := 1050
+	var hot := 700 * lv / 1000
+	assert_eq(tick[0][1], ElementStack.scale(4, lv), "a bleed tick on a plain enemy")
+	assert_eq(
+		tick[0][0], ElementStack.scale(4, hot), "the pair off: on a burning enemy, the falloff"
+	)
+	assert_eq(tick[1][0], ElementStack.scale(8, hot), "the pair on: double, then the falloff")
 
 
 # --- X5 Cold Circuit -------------------------------------------------------------------------------------------
