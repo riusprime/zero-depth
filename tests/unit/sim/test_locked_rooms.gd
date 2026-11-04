@@ -66,7 +66,12 @@ func test_an_arena_room_is_a_locked_room_on_rules_20_and_a_wave_arena_on_rules_1
 	assert_eq(
 		now.floor_layout.arena_rooms, old.floor_layout.arena_rooms, "the same rooms: same count"
 	)
-	assert_eq(now.floor_layout.lockdown_rooms, old.floor_layout.lockdown_rooms)
+	# v0.10.5 Step O14 (c50c07ab, PLAN P12; FLOOR_RULES 23) moves floor 2's first Lockdown to the Elite set piece
+	# near the main path's middle, so the Lockdown rooms are compared on rules 22, the last before it.
+	var run22 := SaveLab.run_state(seed_value, 2)
+	run22.floor_rules = RunState.FLOOR_RULES_V095_BK
+	var pre_o14 := SaveLab.build_floor(run22)
+	assert_eq(pre_o14.floor_layout.lockdown_rooms, old.floor_layout.lockdown_rooms)
 	var room := now.floor_layout.arena_rooms[0]
 	LockLab.calm(now)
 	LockLab.calm(old)

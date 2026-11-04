@@ -56,7 +56,8 @@ func test_loop_2_deep_enemies_are_ten_percent_weaker() -> void:
 	var t := _run_table()
 	var hp_pm := SpawnTable.scale(SpawnTable.per_floor(t.enemy_hp_floor_permille, 2), 1250)
 	var dmg_pm := SpawnTable.scale(SpawnTable.per_floor(t.enemy_damage_floor_permille, 2), 1250)
-	hp_pm = SpawnTable.scale(hp_pm, 6000)
+	# The loop HP step is ×3.5 (was ×6): v0.10.5 Step O5b (9f59d7ed, PLAN P13; evidence/O5_LOOPS.md item 7).
+	hp_pm = SpawnTable.scale(hp_pm, 3500)
 	dmg_pm = SpawnTable.scale(dmg_pm, 1200)
 	var plain_hp := hp_pm
 	var plain_dmg := dmg_pm

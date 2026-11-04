@@ -152,7 +152,8 @@ func test_the_javelin_fan_winds_up_0_6_s_with_two_fans_0_3_s_apart() -> void:
 			[2, 18],
 			"%s: two fans, 0.3 s apart" % id
 		)
-		assert_eq(atk.damage, 25, "%s: damage unchanged" % id)
+		# 25 → 24: v0.10.5 W3-S1 (7b9f33ff, PLAN Wave 3 F23) cut the Warlord's attacks −5 % on purpose.
+		assert_eq(atk.damage, 24, "%s: damage (W3-S1: −5 %%)" % id)
 
 
 func test_the_first_fan_aims_ahead_of_the_hero_and_the_second_where_they_are() -> void:
