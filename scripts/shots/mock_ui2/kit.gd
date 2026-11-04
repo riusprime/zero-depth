@@ -773,18 +773,10 @@ func _card(r: Rect2, face: Dictionary, focused: bool, price := -1, ok := true) -
 	var title := String(face.get("title", ""))
 	var tf := _serif(600, 3)
 	var tfs := _fit(tf, title.to_upper(), int(19 * s), r.size.x - 40 * s, 12)
-	_text(
-		tf,
-		title.to_upper(),
-		cx,
-		y0 + (52 if style == "astral" else 44) * s,
-		tfs,
-		Color(p["text"], dim_k),
-		1
-	)
+	_text(tf, title.to_upper(), cx, y0 + _title_top() * s, tfs, Color(p["text"], dim_k), 1)
 	var lv := String(face.get("level_text", ""))
 	if lv != "":
-		_body(lv, cx, y0 + (74 if style == "astral" else 66) * s, int(13 * s), p["dim"], 1, true)
+		_body(lv, cx, y0 + (_title_top() + 22) * s, int(13 * s), p["dim"], 1, true)
 	# Medallion and icon
 	var mc := Vector2(cx, roundf(y0 + 140 * s))
 	var mr := roundf(58 * s)
@@ -835,3 +827,8 @@ func _card(r: Rect2, face: Dictionary, focused: bool, price := -1, ok := true) -
 			Color(p["line"] if not focused else p["metal"], 0.8)
 		)
 		_price(price, cx, r.end.y - 18 * s, int(24 * s), ok)
+
+
+## How far below the card's top its title's baseline sits (unscaled).
+func _title_top() -> float:
+	return 52.0 if style == "astral" else 44.0
