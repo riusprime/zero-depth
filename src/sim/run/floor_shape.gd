@@ -28,12 +28,23 @@ static func size_floor(run: RunState, p: FloorParams, f: int) -> FloorParams:
 ## its own pool when it has one (RunState.pick_boss, as before FV), else one of the pools' bosses not yet met on the
 ## loop's floors before it, so a run never meets a boss twice (any of them once every one is met). Drawn from the same
 ## `boss_<run floor>` stream. -1 when no pool names a boss.
+## v0.10.5 W3-O11 (owner F21): a floor's own pool loses the bosses already met too (floor 1's pool shares the Brood
+## Mother with floor 2's: when floor 1 drew her, floor 2 draws its other boss); a pool that holds none of them draws
+## exactly as before. A run saved before O11 (RunState.BOSS_DRAW_LEGACY) draws as it did then: each pool without the
+## bosses a deeper pool also names (floor 1: the Gatekeeper and the Warlord), the bosses met not read.
 static func boss(run: RunState, pools: Array[PackedInt32Array], f: int) -> int:
-	if f >= 1 and f <= pools.size() and not pools[f - 1].is_empty():
-		return run.pick_boss(pools[f - 1], run.run_floor(f))
+	var own := f >= 1 and f <= pools.size() and not pools[f - 1].is_empty()
+	if own and run.boss_draw == RunState.BOSS_DRAW_LEGACY:
+		return run.pick_boss(_without_deeper(pools, f), run.run_floor(f))
 	var met := PackedInt32Array()
 	for k in range(1, f):
 		met.append(boss(run, pools, k))
+	if own:
+		var left := PackedInt32Array()
+		for b in pools[f - 1]:
+			if not met.has(b):
+				left.append(b)
+		return run.pick_boss(left if not left.is_empty() else pools[f - 1], run.run_floor(f))
 	var all := PackedInt32Array()
 	var fresh := PackedInt32Array()
 	for p in pools:
@@ -43,3 +54,16 @@ static func boss(run: RunState, pools: Array[PackedInt32Array], f: int) -> int:
 				if not met.has(b):
 					fresh.append(b)
 	return run.pick_boss(fresh if not fresh.is_empty() else all, run.run_floor(f))
+
+
+## v0.10.5 W3-O11: floor f's pool without the bosses a deeper floor's pool also names (the pool before O11 shared
+## one; the whole pool if that would empty it).
+static func _without_deeper(pools: Array[PackedInt32Array], f: int) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for b in pools[f - 1]:
+		var deeper := false
+		for k in range(f, pools.size()):
+			deeper = deeper or pools[k].has(b)
+		if not deeper:
+			out.append(b)
+	return out if not out.is_empty() else pools[f - 1]

@@ -844,7 +844,9 @@ Compiled by `PatternCompiler.compile_pattern` into a `BulletPatternTable` (sim u
   recap line).
 - `BossPoolDefinition` (`data/boss_pools/floor_<n>.tres`): `floor_index` and the `boss_ids` that floor draws from.
   Since v0.4.0 BO each pool holds two: floor 1 Gatekeeper and Warlord, floor 2 Brood Mother and Hive Lens, floor 3
-  Siege Engine and Foundry. A run draws each floor's boss from its own stream (`RunState.pick_boss`).
+  Siege Engine and Foundry. A run draws each floor's boss from its own stream (`RunState.pick_boss`). v0.10.5 W3-O11
+  (owner F21): a boss may sit in two pools (floor 1 adds the Brood Mother, shared with floor 2); a floor never draws
+  a boss the run has met (`FloorShape.boss`), and a run saved before O11 (no `run.boss_draw`) draws as it did then.
 - Changed from the earlier sketch (`enemy: EnemyDefinition`, `stagger_threshold`, `arena_template_id`) when the
   bosses were built (v0.3.0 C): the numbers live on the boss itself and the arena is the cells and template the
   floor generator reads.
