@@ -323,7 +323,7 @@ shape for the altar's cards only, so a free pick feels different from a purchase
 it needs painted 9-slice art to reach its ref. Whichever wins, a set of line-art medallion icons is the biggest single
 gain over these shots.
 
-Owner's pick: OWNER ONLY
+Owner's pick: **Astral** (owner, 2026-11-04: "Astral I like the most but the shape of the cards is odd, that pointy top is bad") → round 3.
 
 ## Round 3 (W3-O13c): Astral cards
 
