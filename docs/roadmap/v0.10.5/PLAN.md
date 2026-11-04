@@ -332,6 +332,57 @@ actually what feels worse is fights with a lot of enemies". Their answers to the
 | 9 | Enemy thinking spread over more ticks | "let's do it" | PD: changes play; goldens change on purpose |
 | 10 | Merged walls | "would it look different?" | answered, not built |
 
+### Wave 3: the v0.10.5 playtest (owner, 2026-11-04)
+The owner played the v0.10.5 build and sent a consolidated feedback list (hub, VFX and performance, attack forms,
+progression, bosses, shop). It lands here, not in a new version: v0.10.5 is not released yet, and its one release PR
+carries it. **How work runs (owner, 2026-11-04):** "max at the same time 2 sonnet sub agents 2 opus subagents, sonnet
+should be for lighter tasks easy direct fixes and very specific specs … opus can handle more heavy tasks." Replaces
+the 3 + 1 rule above for this wave.
+
+| # | Owner line (close) | Decision | Step |
+|---|---|---|---|
+| F1 | Black gaps between the hub's inner circular floor and the walls; gaps between wall pieces | Direct fix: close both | W3-O5 |
+| F2 | "The hub currently lacks a proper background" | Owner question (what kind) | Q-F2 |
+| F3 | Pressing L2 still doesn't open the secret room after finding it (thought fixed) | Bug: reproduce through the owner's path, fix | W3-O1 |
+| F4 | Fireballs look and feel excellent | Kept; the reference look for other bolts | — |
+| F5 | Ground fire pools (Fire + Bleed) too large, bright, frequent; hide enemies | Direct fix: smaller, dimmer, fewer at once | W3-S4 |
+| F6 | The purple enemy bolts are underwhelming next to the fireballs | VFX pass from the `newVFX/` packs, G2 shots | W3-O7 |
+| F7 | Some animations and attacks far less polished than others | Folded into W3-O7 / W3-O8 | — |
+| F8 | Chain Blast explosions too big for their damage; 5–6 a second with Seekers/Split hide the fight | Direct fix: the blast's look scales with the hit's damage (big for slow heavy shots) | W3-S4 |
+| F9 | The boss red border seems to drop the frame rate | Perf: measure, then a cheaper border | W3-O6 |
+| F10 | Attack particles linger for seconds after impact; ~0.2 s | Direct fix: impact particles gone within ~0.2 s | W3-S4 |
+| F11 | Void: visual bugs with Split and Mine; S-tier on purpose | Bug: fix the look only, power kept | W3-O8 |
+| F12 | Wave: barely visible attacking forward/up (mostly the ground circle shows) | VFX fix | W3-O8 |
+| F13 | Seekers slightly weak, "only a small buff" | +11 % (share 450 → 500 ‰), a starting value | W3-S2 |
+| F14 | Laser doesn't feel powerful or impactful | +15 % damage (a starting value) now; its impact look in W3-O8 | W3-S2, W3-O8 |
+| F15 | Glaive feels excellent but lacks damage without elements | +15 % damage (a starting value) | W3-S2 |
+| F16 | The Lance's ball looks generic; the packs have better | VFX from `newVFX/`, G2 shots | W3-O7 |
+| F17 | Holding the Lance charge can overheat without firing | Bug fix | W3-O3 |
+| F18 | Forms don't always feel like an upgrade over the default; front-loaded power (Wave + Fire + Venom strong by floor 2), a plateau later, a few cards dominate, elements too strong; ideas (not solutions): more scaling, misc cards, Attack Speed back | **G1 first:** a measured progression audit with proposals, no code until the owner picks | W3-O4 |
+| F19 | Foundry: floor hazard lines overlap incoming projectiles, practically undodgeable | Fix: a hazard line and a volley never close the same space at once | W3-O2 |
+| F20 | Hive Lens: the rotating laser can start facing away; arbitrary, not threatening | Fix: it starts near the hero and sweeps through them | W3-O2 |
+| F21 | The Warlord on floor 1 practically every run | Measure the draw; fix a bias if there is one | W3-S1 |
+| F22 | Boss durability feels good | Kept | — |
+| F23 | The Warlord ~5 % overtuned | Its attacks' damage −5 % (a starting value; O2b already paces its HP) | W3-S1 |
+| F24 | Shop: cards too big, crowded past 10, can't see cards and elements together, reroll cost unclear, no cohesive layout | **G2 first:** shop layout mockups for the owner to pick | W3-O9 |
+| F25 | The purple portal on floor 4 of loop 1 to test; longer multi-loop runs | Owner playtest items (OWNER_TODO) | — |
+
+Steps (S = Sonnet, O = Opus; at most 2 + 2 at once):
+- **W3-S1** the Warlord: a 300-seed table of floor 1's boss draw (fix any bias in the draw, the owner's ids stay); its
+  attacks' damage × 0.95.
+- **W3-S2** form tuning: Seekers share 450 → 500 ‰ (per level 22 → 24); Glaive 1600 → 1840 ‰ (80 → 92); Laser beam
+  800 → 920 ‰ (40 → 46).
+- **W3-S4** effects: impact particles ~0.2 s; ground fire pools smaller and dimmer; Chain Blast's look scaled by damage.
+- **W3-O1** the secret room through L2, as the owner plays it.
+- **W3-O2** Foundry lines vs volleys; the Hive Lens sweep.
+- **W3-O3** the Lance charge heat.
+- **W3-O4** G1: the progression audit (measured with the bots; proposals for front-loading, the plateau, diversity).
+- **W3-O5** the hub's floor/wall and wall/wall gaps.
+- **W3-O6** the boss border's cost.
+- **W3-O7** G2: the purple enemy bolt and the Lance ball from `newVFX/`.
+- **W3-O8** Void with Split/Mine, Wave's forward look, the Laser's impact.
+- **W3-O9** G2: the shop layout.
+
 ### R. Release
 - Version bump, patch notes en + es, What's New, ROADMAP row + History, PROGRESS final; one PR into `main` with
   v0.10.0 (the full suite runs there).
