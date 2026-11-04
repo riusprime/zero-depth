@@ -32,6 +32,8 @@ var steps := 0
 var longest_step_ms := 0.0
 var _jobs: Array[Dictionary] = []
 var _next := 0
+## The jobs run and dropped (_release).
+var _ran := 0
 var _insert_at := -1
 var _task := -1
 var _task_from := 0
@@ -60,7 +62,7 @@ func done() -> bool:
 
 
 func size() -> int:
-	return _jobs.size()
+	return _ran + _jobs.size()
 
 
 ## Runs jobs for about `budget_ms` of this frame; true when every job ran.
@@ -103,6 +105,8 @@ func _step(budget_ms: float, from: int) -> bool:
 		_run(j)
 		if (Time.get_ticks_usec() - from) / 1000.0 >= budget_ms:
 			break
+	if done():
+		_release()
 	return done()
 
 
@@ -110,6 +114,16 @@ func _step(budget_ms: float, from: int) -> bool:
 func run_all() -> void:
 	while _next < _jobs.size():
 		_run(_jobs[_next])
+	_release()
+
+
+## v0.10.5 W3-O14: the jobs that ran are dropped. A job is a Callable that may bind this queue (WorldViewRoot's
+## pack warm-up, StageKit's kit) and the view's reader: kept, they made a cycle (queue -> job -> queue) that held the
+## reader, and so the floor's whole World, after its view was freed.
+func _release() -> void:
+	_ran += _jobs.size()
+	_jobs.clear()
+	_next = 0
 
 
 func _run(j: Dictionary) -> void:
