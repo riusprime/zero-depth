@@ -186,3 +186,39 @@ func test_overclock_counts_the_area_forms_own_hits_only() -> void:
 	assert_false(
 		Heat.overclock_counts(form_area, &"overclock_heat"), "an effect's payoff (the Vent blast)"
 	)
+
+
+## v0.10.5 W3-O3 (owner, 2026-11-04: "Lance charged attack: holding the firing button can generate enough heat to
+## overheat without actually firing"): holding the Lance's charge adds no heat by itself; with nothing fired the meter
+## stays at 0 however long SHOOT is held, near enemies or not.
+func test_holding_the_lance_charge_without_releasing_adds_no_heat() -> void:
+	for enemies: Array in [[], FAR, [[Vector2(2.0, 0.0), 1000000]]]:
+		var w := _world([&"gun_lance"], enemies)
+		assert_true(Lance.active(w), "the Lance is the shot")
+		W.run(w, 1800, 0, W.S)  # 30 s held: past 14 s of fire, the old overheat
+		assert_eq(w.heat.milli, 0, "%d enemies: no heat from holding" % enemies.size())
+		assert_false(Heat.stalled(w), "%d enemies: no overheat" % enemies.size())
+		assert_eq(W.events(w, SimEvent.Kind.LANCE).size(), 0, "nothing was fired")
+
+
+## The heat of a charge comes with its release, at the Q12 rate (a firing tick each tick of the charge that fired, and
+## each held tick of the period after it, as every form); a charge dropped by a dash adds nothing.
+func test_a_released_lance_charge_adds_its_firing_time() -> void:
+	var w := _world([&"gun_lance"])
+	W.run(w, 72, 0, W.S)
+	assert_eq(w.heat.milli, 0, "charging: nothing yet")
+	W.run(w, 1)
+	assert_eq(W.events(w, SimEvent.Kind.LANCE).size(), 1, "released")
+	var one := 72 * 100 * M / FILL_TICKS
+	assert_between(w.heat.milli, one - 1, one + 1, "the 72 charge ticks' heat on release")
+	W.run(w, 24 + 72, 0, W.S)
+	W.run(w, 1)
+	# The release tick (SHOOT up) is the period's first: 23 held period ticks, then 72 of charge (the 96th waits full).
+	var two := (72 + 23 + 72) * 100 * M / FILL_TICKS
+	assert_between(w.heat.milli, two - 1, two + 1, "the period held and the next charge")
+	var d := _world([&"gun_lance"])
+	W.run(d, 40, 0, W.S)
+	W.run(d, 1, W.D, W.S)
+	W.run(d, 30)
+	assert_eq(W.events(d, SimEvent.Kind.LANCE).size(), 0, "the dash dropped the charge")
+	assert_eq(d.heat.milli, 0, "a dropped charge adds no heat")

@@ -107,6 +107,10 @@ func test_the_lance_charges_while_held_and_its_release_pierces_the_row() -> void
 	var charge := main.view.reader.lance_charge()
 	for id in row:
 		assert_eq(a.hp[a.index_of(id)], a.max_hp[a.index_of(id)], "held: nothing fired yet")
+	# v0.10.5 W3-O3 (owner, 2026-11-04: holding the Lance "can generate enough heat to overheat without actually
+	# firing"): 1.5 s held, past the full charge, and the meter hasn't moved; the release brings the charge's heat.
+	assert_not_null(w.heat, "a Gun run has heat")
+	assert_eq(w.heat.milli, 0, "holding the charge adds no heat")
 	var before := w.player_pos()
 	await _release_at(e, cam.unproject_position(SimPlane.to_3d(at, SimPlane.CORE_HEIGHT)))
 	var bursts := 0
@@ -134,6 +138,7 @@ func test_the_lance_charges_while_held_and_its_release_pierces_the_row() -> void
 	assert_gt(charge, 0.9, "it charged while held")
 	assert_true(circle, "the charging circle is drawn while held")
 	assert_eq(balls, 1, "the release fires one ball")
+	assert_gt(w.heat.milli, 0, "the charge that fired adds its heat")
 	for h: int in hurt:
 		assert_gt(h, 0, "the ball pierced every enemy in the row")
 	# v0.10.0 VX2: the burst is the VFX pack's (a live quad count stays 0), so the view's release record stands in.
