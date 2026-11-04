@@ -5,10 +5,10 @@
 [resource]
 script = ExtResource("1_packfx")
 id = &"pack_fx_w3o7"
-ids = Array[StringName]([&"w3o7_bolt_a", &"w3o7_bolt_b", &"w3o7_bolt_c", &"w3o7_lance_a", &"w3o7_lance_c"])
-scenes = PackedStringArray("res://assets/vfx_zd/tinted_fire/tinted_fire_ball.tscn", "res://assets/BinbunVFX/magic_projectiles/effects/mprojectile_javelin/mprojectile_javelin_vfx_03.tscn", "res://assets/BinbunVFX/magic_orbs/effects/magic_orb_flare/magic_orb_flare_vfx_03.tscn", "res://assets/vfx_zd/tinted_fire/tinted_fire_ball.tscn", "res://assets/BinbunVFX/magic_orbs/effects/magic_orb_flare/magic_orb_flare_vfx_02.tscn")
-families = Array[StringName]([&"enemy_shot", &"enemy_shot", &"enemy_shot", &"projectile", &"projectile"])
-scales = PackedFloat32Array(0.35, 0.8, 0.4, 1, 1)
-primary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)])
-secondary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)])
-tertiary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)])
+ids = Array[StringName]([&"w3o7_bolt_a", &"w3o7_bolt_b", &"w3o7_bolt_c", &"w3o7_lance_a", &"w3o7_lance_c", &"w3o7_bolt_d", &"w3o7_bolt_e", &"w3o7_bolt_f", &"w3o7_bolt_g"])
+scenes = PackedStringArray("res://assets/vfx_zd/tinted_fire/tinted_fire_ball.tscn", "res://assets/BinbunVFX/magic_projectiles/effects/mprojectile_javelin/mprojectile_javelin_vfx_03.tscn", "res://assets/BinbunVFX/magic_orbs/effects/magic_orb_flare/magic_orb_flare_vfx_03.tscn", "res://assets/vfx_zd/tinted_fire/tinted_fire_ball.tscn", "res://assets/BinbunVFX/magic_orbs/effects/magic_orb_flare/magic_orb_flare_vfx_02.tscn", "res://assets/BinbunVFX/ice_effects/effects/ice_shard/ice_shard_vfx_02.tscn", "res://assets/BinbunVFX/ice_effects/effects/ice_ball/ice_ball_vfx_01.tscn", "res://assets/BinbunVFX/magic_projectiles/effects/mprojectile_wave/mprojectile_wave_vfx_03.tscn", "res://assets/BinbunVFX/poison_effects/effects/poison_bubble/poison_bubble_vfx_01.tscn")
+families = Array[StringName]([&"enemy_shot", &"enemy_shot", &"enemy_shot", &"projectile", &"projectile", &"enemy_shot", &"enemy_shot", &"enemy_shot", &"enemy_shot"])
+scales = PackedFloat32Array(0.35, 0.8, 0.4, 1, 1, 0.4, 0.35, 0.5, 0.4)
+primary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)])
+secondary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)])
+tertiary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)])

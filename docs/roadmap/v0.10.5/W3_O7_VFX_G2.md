@@ -120,3 +120,63 @@ Lint: `gdformat --check` and `gdlint` clean on the six touched scripts.
 
 Feel in motion, and whether A beats the javelin in a real Crossfire: OWNER ONLY. Frame time with a full violet
 Crossfire on candidate A: NOT YET RUN.
+
+## Round 2 (W3-O7b): the owner's new packs
+
+Owner, 2026-11-04: "before choosing i'd like to see comparisons with new assets from the premade pack … that I added."
+Same switch (`CandidateLooks.BOLT := &"d"` … `&"g"`), same table (`data/vfx/pack_fx_w3o7.tres`, four `enemy_shot` rows,
+so the session warm-up and the floor's prefill take them as round 1's). The default stays today's look.
+
+**What the `newVFX/` zips hold.** Every zip was listed (`unzip -l`); the eleven attack and pickup packs were extracted,
+each into its own folder outside the repo, and compared file by file with `assets/BinbunVFX/`. The packs already
+installed in VX0 (Fire, Beam, Ice, Magic Orbs, GreenExtra = Magic Projectiles, Impact, Magic Area, Muzzle Flash,
+Poison, Smoke) have **the same effect scenes byte for byte**; the only differences are the shared shaders (VX0 inlined
+their `#include`s), Godot re-save order in shared noise/gradient `.tres` files, and each pack's demo scene (not
+installed). So there is no newer version of any installed effect. The zips not installed are not projectiles: Loot
+(floating and ground pickup glows), Portal, Hologram, Card, Glass UI, Grass, Skies, Transitions, UltimateToon (toon
+surface materials) and magic-circles (floor circles). Round 2 therefore draws on the owner's installed packs' effects
+that were never tried for the bolt (Ice, Poison, the Magic Projectiles wave). No vendor file was copied and the asset
+manifest is unchanged.
+
+**Shots.** `build/shots/v0.10.5/w3o7b/` (not tracked): `bolt_now.png`, `bolt_a.png` … `bolt_g.png` (re-rendered with
+round 1's framing: three violet embers beside two amber fireballs, Ruins, Effects High), `round1/` (round 1's four
+files copied for side by side), and **`bolt_compare.png`**: every candidate's middle, labelled, in one grid.
+
+```
+godot --position -10000,-10000 --path . --fixed-fps 60 --audio-driver Dummy --resolution 1280x720 -s scripts/shots/w3o7_shots.gd -- --round2
+```
+Run at `a7fdcbeb` + this step's changes on the owner's PC; it printed the nine paths above.
+
+**D — the Ice pack's shard, in violet. ← recommended of round 2.** `ice_shard_vfx_02` (GodotIceVFX) at 0.4: an
+amethyst crystal head with a long violet mist trail. Cost: 1 mesh, 2 particle emitters (24 + 32 = 56 particles), about
+A's. The trail is as long as the fireball's, so the volley reads as one family of two kinds (flame, crystal) and the
+direction is clear; the head is a sharp shape the round-1 looks don't have.
+
+**E — the Ice pack's ball, in violet.** `ice_ball_vfx_01` (GodotIceVFX) at 0.35: a pale glassy violet orb with a wide
+mist plume. Cost: 2 meshes, 1 emitter (32 particles). The plume is much wider and softer than the fireball's flame:
+in a dense Crossfire it would smear into a violet haze.
+
+**F — the Magic Projectiles wave.** `mprojectile_wave_vfx_03` (GreenExtra) at 0.5: a lilac head with short curled
+wave ribbons behind. Cost: 4 meshes, no particles. Close to today's look in size and brightness; it does not answer
+"underwhelming".
+
+**G — the Poison pack's bubble, in violet.** `poison_bubble_vfx_01` (PoisonVFX) at 0.4, its Pop and Splats left out:
+a dark wobbling violet bubble, no trail. Cost: 1 mesh drawn, no particles. Dim against the warm floor and no direction;
+not recommended.
+
+Overall, A (the violet fireball) stays the round-1 recommendation; D is the strongest new option if the owner wants
+the violet twin to read as a different element from the amber one.
+
+Tests (owner PC, Windows, `a7fdcbeb` + this step):
+```
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=<round 1's 13 presentation files> -gexit
+Scripts 13, Tests 133, Passing Tests 133, Asserts 18326, Orphans 6
+```
+(The 6 orphans are `BarChunks` nodes, 2 each in three files (test_shader_warmup, test_enemy_fireball_views and one more), code
+this step does not touch; test_w3o7_candidates alone: `Tests 6, Passing Tests 6, Asserts 128`, no orphans.)
+```
+godot ... -gdir=res://tests/arch -ginclude_subdirs -gexit      Scripts 2, Tests 4, Passing Tests 4, Asserts 19395
+godot ... -gdir=res://tests/content -ginclude_subdirs -gexit   Scripts 31, Tests 166, Passing Tests 166, Asserts 12813
+```
+Lint: `gdformat --check` and `gdlint` clean on candidate_looks.gd and w3o7_shots.gd.
+Feel in motion: OWNER ONLY. Frame time with a full Crossfire on D: NOT YET RUN.
