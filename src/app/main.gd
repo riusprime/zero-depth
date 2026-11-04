@@ -665,6 +665,7 @@ func _toggle_master_panel() -> void:
 	_devm.changed.connect(_on_tuning_changed)
 	_devm.playground_requested.connect(_open_playground_from_panel)
 	_devm.galleries_requested.connect(show_gallery)  # v0.9.0 HB: off the main menu, onto F10 (off a run)
+	_devm.effects_gallery_requested.connect(EffectsGallery.open.bind(self))  # v0.10.5 W3-O12
 	_devm.restart_requested.connect(_restart_floor)
 	_devm.close_requested.connect(_close_master_panel)
 	ui.add_child(_devm)

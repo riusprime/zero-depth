@@ -15,6 +15,8 @@ signal close_requested
 signal playground_requested
 ## v0.9.0 HB (owner Q27: the small menu): the galleries open from here too (off a run, debug builds only).
 signal galleries_requested
+## v0.10.5 W3-O12: the Effects gallery (every effect in the game and every unused pack effect), beside the Galleries.
+signal effects_gallery_requested
 
 const ROW_H := 26.0
 
@@ -101,6 +103,11 @@ func _top_bar() -> Control:
 			gl.text = "UI_GALLERIES"
 			gl.pressed.connect(func() -> void: galleries_requested.emit())
 			bar.add_child(gl)
+			var fx := Button.new()
+			fx.name = "EffectsGallery"
+			fx.text = "UI_FXG_OPEN"
+			fx.pressed.connect(func() -> void: effects_gallery_requested.emit())
+			bar.add_child(fx)
 	for spec: Array in [
 		["UI_DEVM_RESTART", func() -> void: restart_requested.emit()],
 		["UI_DEVM_RESET_ALL", reset_all],
