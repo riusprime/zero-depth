@@ -69,7 +69,7 @@ func test_the_card_makes_the_shot_three_homing_darts() -> void:
 	assert_eq(s.count, 3, "3 darts")
 	assert_eq(s.period_ticks, 18, "every 0.3 s")
 	assert_eq(s.homing, roundi(360.0 * 4096.0 / 360.0 / 60.0), "homing 360 °/s")
-	assert_eq(s.share_permille, 450, "45 % an orb hit each")
+	assert_eq(s.share_permille, 500, "50 % an orb hit each")
 	assert_almost_eq(
 		s.speed * s.life_ticks,
 		13.0,
@@ -90,7 +90,7 @@ func test_a_volley_is_three_darts_and_the_centre_one_alone_is_primary() -> void:
 	var primary := 0
 	for i in p:
 		primary += 1 if w.projectiles.second_of(i) == 0 else 0
-		assert_eq(w.projectiles.damage[i], 2, "45 % of 5, rounded")
+		assert_between(w.projectiles.damage[i], 2, 3, "50 % of 5 = 2.5: 2 or 3 with the carry")
 	assert_eq(primary, 1, "the rest are secondary: their statuses at the lower proc")
 
 

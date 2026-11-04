@@ -168,11 +168,11 @@ func test_g3_backfire_throws_a_second_disc_straight_behind_at_full_damage() -> v
 		if w.projectiles.vel_x[i] < 0.0:
 			behind = i
 	assert_gte(behind, 0, "one flies straight back")
-	assert_eq(w.projectiles.damage[behind], 8, "100 %")
+	assert_eq(w.projectiles.damage[behind], 9, "100 %")
 	assert_eq(w.projectiles.vel_y[behind], 0.0)
 	W.run(w, 60, 0, 0)
 	assert_eq(_hits(w, 1).size(), 2, "the disc behind hit the enemy there out and back")
-	assert_eq(_total(_hits(w, 1)), 16)
+	assert_eq(_total(_hits(w, 1)), 18)
 
 
 func test_g3_backfire_under_halo_adds_nothing_the_disc_at_180_is_there() -> void:
@@ -278,10 +278,10 @@ func test_g6_echo_sends_a_second_disc_18_ticks_later_at_half() -> void:
 	var w := _world([&"gun_echo"], [Vector2(4.0, 0.0)])
 	_throw(w, 62)
 	var h := _hits(w, 1)
-	assert_eq(h[0][1], 8)
+	assert_eq(h[0][1], 9)
 	assert_eq(h[1][0] - h[0][0], 18, "18 ticks later")
 	assert_eq(h[1][1], 4, "at 50 %")
-	assert_eq(_total(h), 8 + 4 + 8 + 4, "out and back, the disc and its echo")
+	assert_eq(_total(h), 9 + 4 + 9 + 4, "out and back, the disc and its echo")
 
 
 func test_g6_echo_starts_no_follow_ups() -> void:
@@ -304,7 +304,7 @@ func test_g7_big_shot_is_a_third_bigger_slower_and_stronger() -> void:
 	var i := _discs(w)[0]
 	assert_almost_eq(w.projectiles.radius[i], 0.45, 0.001, "radius x 1.5")
 	assert_almost_eq(w.projectiles.vel_x[i], 0.175, 0.001, "speed x 0.75")
-	assert_eq(w.projectiles.damage[i], 12, "damage x 1.6")
+	assert_eq(w.projectiles.damage[i], 14, "damage x 1.6")
 
 
 # --- G8 Rapid Fire ----------------------------------------------------------------------------------------------------
@@ -322,7 +322,7 @@ func test_g8_rapid_fire_throws_every_27_ticks_smaller_faster_and_weaker() -> voi
 	var i := 0
 	assert_almost_eq(w.projectiles.radius[i], 0.21, 0.001, "radius x 0.7")
 	assert_almost_eq(absf(w.projectiles.vel_x[i]), 0.29167, 0.001, "speed x 1.25")
-	assert_eq(w.projectiles.damage[i], 5, "damage x 0.7")
+	assert_eq(w.projectiles.damage[i], 6, "damage x 0.7")
 
 
 func test_g8_rapid_fire_with_big_shot_multiplies_both() -> void:
@@ -331,7 +331,7 @@ func test_g8_rapid_fire_with_big_shot_multiplies_both() -> void:
 	var i := _discs(w)[0]
 	assert_almost_eq(w.projectiles.radius[i], 0.3 * 1.5 * 0.7, 0.001)
 	assert_almost_eq(w.projectiles.vel_x[i], 0.2333 * 0.75 * 1.25, 0.001)
-	assert_eq(w.projectiles.damage[i], 8, "8 x 1.6 x 0.7")
+	assert_eq(w.projectiles.damage[i], 10, "9.2 x 1.6 x 0.7")
 
 
 # --- G9 Split ---------------------------------------------------------------------------------------------------------
@@ -402,7 +402,7 @@ func test_g10_mine_hits_an_enemy_at_the_far_point_each_30_ticks() -> void:
 	var h := _hits(w, 1)
 	assert_gte(h.size(), 3, "while it spins it keeps hitting")
 	for x: Array in h:
-		assert_eq(x[1], 8)
+		assert_eq(x[1], 9)
 	assert_gte(h[1][0] - h[0][0], 30, "a hit at most once per 30 ticks")
 
 
