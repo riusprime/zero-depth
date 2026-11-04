@@ -11,6 +11,7 @@ extends VBoxContainer
 ## slot in its rarity line ("Pattern · Modifier · Rare", PickPanel.slot_face) and, when that slot is full, wears a
 ## ribbon across it (StoneCard.show_ribbon): "Replaces Twin", which burns away when this card is picked
 ## (burn_replaced, the pick panel's outro), or "Choose one to replace" (a full Secondary or Element slot: the Swap).
+## v0.10.5 W3-O15: the card is an Astral card (StoneCard.astral: the owner's carved frame and painted icon).
 
 signal clicked(slot: int)
 signal hovered(slot: int)
@@ -49,7 +50,7 @@ func _init(p_index: int, p_scale: float = PICK_SCALE) -> void:
 	name = "PickSlot%d" % (p_index + 1)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	add_theme_constant_override("separation", 2)
-	card = StoneCard.new(p_scale)
+	card = StoneCard.new(p_scale, true)  # v0.10.5 W3-O15: the Astral card (the owner's frame and icon)
 	add_child(card)
 	_key.text = str(p_index + 1)
 	_key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -184,7 +185,7 @@ func burn_replaced(t: float) -> void:
 	r.use_parent_material = false
 	r.material = _old_burn
 	_old_burn.set_shader_parameter("burn", t)
-	_old_burn.set_shader_parameter("edge_color", Color("#FF8A3D"))
+	_old_burn.set_shader_parameter("edge_color", AstralCardArt.GLARE)  # v0.10.5 W3-O15: the glare edge
 	_old_burn.set_shader_parameter("rect_pos", r.get_global_transform().origin)
 	_old_burn.set_shader_parameter("rect_size", r.get_global_rect().size.max(Vector2.ONE))
 

@@ -17,7 +17,7 @@ the ornament gems use the card rarity colours of `pick_slot.gd`.
 1. **n8n:** for each row, `POST` the row's `request_json` to `endpoint` (auth header from an n8n credential), decode
    `data[0].b64_json` and save it as `art_raw/sheets/<image_name>` (`art_raw/` is git-ignored). Run row 1 first and
    approve its look before the others.
-2. **Split:** `python -I scripts/art/split_sheets.py` (needs `pip install pillow`; `--only <asset_id>` for one row,
+2. **Split:** `python -I scripts/art/split_sheets.py` (needs `pip install pillow numpy`; it cuts each icon centred on its own pixels, since the generated icons cross the grid lines; `--only <asset_id>` for one row,
    `--dry-run` to list the files). It cuts each sheet by `grid` in reading order into the names in `cells`, resized to
    `cell_final_size`: card icons to `assets/ui/card_icons/icon_<card id>.png` (256x256), ornaments to
    `assets/ui/card_ornaments/` (128x128).

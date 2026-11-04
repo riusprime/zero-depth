@@ -18,6 +18,13 @@ extends Control
 ## while the card is focused), the sentence, the gem and the rarity's word. The whole tablet is painted in its
 ## rarity's colour (CardPaint: the stone tinted, a frame line and the glow in it); the face hangs from a pivot
 ## (CardFx) that the pick panel deals, flips, tilts and burns; a focused card sinks a little instead of lifting.
+## v0.10.5 W3-O15 (owner 2026-11-04: UI style Astral; his painted card art): an Astral card (`astral`, the pick's and
+## the shop's, PickSlot) wears one of the owner's four carved slate frames (AstralCardArt: chosen by the card's id, the
+## same every time; a 9-slice whose chamfered corners never stretch) in place of the stone tablet, his painted icon in
+## an Astral medallion (AstralMedallion; icon_unknown for a card without one) in place of the inlay socket, the name in
+## Cinzel and the sentence in Atkinson in Astral's colours. Focus swaps the frame for its focused twin (the icy rim)
+## and lights the medallion (Astral's focus: a brighter contour, four stars round it). The stone tablet's box still
+## holds the card's colours (panel_box) and the socket its place and ring colour, only hidden.
 
 ## The tablet's size at scale 1 (px at the 1920 x 1080 base); the pick draws it at PickSlot.PICK_SCALE.
 const SIZE := Vector2(275, 450)
@@ -66,6 +73,12 @@ var desc_size := 0
 var compact := false
 ## v0.8.0 N8: the pivot the face hangs from (the deal, flip, tilt, light and burn).
 var fx: CardFx
+## v0.10.5 W3-O15: an Astral card (the owner's frame and icon), its frame (NinePatchRect), which of the four it wears
+## (AstralCardArt.variant_of) and its medallion (both null on a stone card, the Codex's).
+var astral := false
+var frame: NinePatchRect
+var frame_variant := 1
+var medallion: AstralMedallion
 var _root := Control.new()
 var _slab := Panel.new()
 var _box := StoneBox.new()
@@ -92,9 +105,10 @@ var _shown := 1.0
 var _showing := false
 
 
-func _init(p_scale: float = 1.0) -> void:
+func _init(p_scale: float = 1.0, p_astral: bool = false) -> void:
 	name = "StoneCard"
 	scale_factor = p_scale
+	astral = p_astral
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	custom_minimum_size = SIZE * scale_factor
 	_root.name = "Face"
@@ -164,12 +178,38 @@ func _init(p_scale: float = 1.0) -> void:
 	_form.visible = false
 	_root.add_child(_form)
 	_root.add_child(ribbon)
+	if astral:
+		_build_astral()
 	remove_child(_root)
 	fx = CardFx.new(_root)  # v0.8.0 N8: the face hangs from the pivot (its shine is the face's last child)
 	add_child(fx)
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_layout()
+
+
+## v0.10.5 W3-O15: the owner's frame under everything, the medallion in the socket's place, Astral's type.
+func _build_astral() -> void:
+	frame = NinePatchRect.new()
+	medallion = AstralMedallion.new()
+	frame.name = "Frame"
+	frame.patch_margin_left = AstralCardArt.MARGIN_X
+	frame.patch_margin_right = AstralCardArt.MARGIN_X
+	frame.patch_margin_top = AstralCardArt.MARGIN_Y
+	frame.patch_margin_bottom = AstralCardArt.MARGIN_Y
+	frame.texture = AstralCardArt.frame(frame_variant, false)
+	_root.add_child(frame)
+	_root.move_child(frame, 0)
+	_slab.visible = false
+	socket.visible = false
+	_root.add_child(medallion)
+	_root.move_child(medallion, socket.get_index() + 1)
+	_title.add_theme_font_override("font", AstralCardArt.serif(650, 2))
+	_title.add_theme_color_override("font_outline_color", Color(0.02, 0.03, 0.08, 0.7))
+	_desc.add_theme_color_override("font_color", AstralCardArt.TEXT)
+	_desc.add_theme_color_override("font_outline_color", Color(0.02, 0.03, 0.08, 0.6))
+	_tier.add_theme_font_override("font", AstralCardArt.serif(600, 2))
+	_level_box.bg_color = Color("#0D1120", 0.84)
 
 
 ## Shows a card: `id`, translated `title` and `sentence`, its `fam` (CardFrames.family), `tier` (PickSlot.TIERS
@@ -208,6 +248,14 @@ func show_face(
 		socket.element = &"star"
 	gem.color = tier_color
 	gem.visible = id != &""
+	fx.glare_seed = id  # v0.10.5 W3-O15: each card's glare its own
+	if astral:  # v0.10.5 W3-O15
+		frame_variant = AstralCardArt.variant_of(id)
+		medallion.show_card(id)
+		_title.add_theme_color_override("font_color", AstralCardArt.TEXT)
+		_tier.add_theme_color_override("font_color", AstralCardArt.rarity(tier))
+		_level.add_theme_color_override("font_color", AstralCardArt.ACCENT)
+		_level_box.border_color = Color(AstralCardArt.LINE, 0.8)
 	_box.pattern = hash(id) % 997
 	_box.inlay = c
 	_box.rim = (
@@ -263,7 +311,9 @@ func show_gain(gain: Dictionary) -> void:
 	_count = 1.0
 	_gain.visible = CardGain.shows(gain)
 	_gain.text = CardGain.final_text(self, gain) if _gain.visible else ""
-	_gain.add_theme_color_override("font_color", EmberStone.EMBER.lightened(0.35))
+	_gain.add_theme_color_override(
+		"font_color", AstralCardArt.ACCENT if astral else EmberStone.EMBER.lightened(0.35)
+	)
 	_layout()
 
 
@@ -362,6 +412,15 @@ func _apply() -> void:
 	socket.glow = 1.0 if focused else 0.0
 	fx.set_hover(fx.tilt, 1.0 if focused else 0.0)  # v0.8.0 N8: the focused card sinks a little
 	_root.modulate = Color.WHITE if focused else Color(0.9, 0.9, 0.9)
+	if astral:  # v0.10.5 W3-O15: the focused twin of the card's frame, and the medallion lit
+		frame.texture = AstralCardArt.frame(frame_variant, focused)
+		medallion.focused = focused
+		_root.modulate = Color.WHITE if focused else Color(0.86, 0.86, 0.9)
+
+
+## v0.10.5 W3-O15: the frame shown now (tests: the variant per id, the focused twin).
+func frame_texture() -> Texture2D:
+	return frame.texture if astral else null
 
 
 ## Places the slab, the title, the socket, the gain line, the sentence and the foot for scale_factor and fits the
@@ -384,6 +443,13 @@ func _place(socket_px: float, title_top: float) -> void:
 	var x := MARGIN * s
 	var bold := HudStyle.font(true)
 	var regular := HudStyle.font(false)
+	var serif: Font = _title.get_theme_font("font") if astral else bold
+	if astral:  # v0.10.5 W3-O15: the owner's frame, its corners scaled with the card (k), its glow round it
+		var k := full.x / AstralCardArt.BODY_W
+		frame.scale = Vector2(k, k)
+		frame.position = -AstralCardArt.PAD * k
+		frame.size = full / k + AstralCardArt.PAD * 2.0
+		medallion.k = s
 	# The foot: the gem over the rarity words.
 	var g := GEM * s
 	gem.custom_minimum_size = Vector2(g, g)
@@ -392,25 +458,33 @@ func _place(socket_px: float, title_top: float) -> void:
 	var tier_size := roundi(TIER_SIZE * s)
 	while (
 		tier_size > 10
-		and bold.get_string_size(_tier.text, HORIZONTAL_ALIGNMENT_LEFT, -1, tier_size).x > w
+		and (
+			(
+				_tier
+				. get_theme_font("font")
+				. get_string_size(_tier.text, HORIZONTAL_ALIGNMENT_LEFT, -1, tier_size)
+				. x
+			)
+			> w
+		)
 	):
 		tier_size -= 1
 	_tier.add_theme_font_size_override("font_size", tier_size)
-	var tier_h := bold.get_height(tier_size)
-	_tier.position = Vector2(x, full.y - TIER_BOTTOM * s - tier_h)
+	var tier_h := _tier.get_theme_font("font").get_height(tier_size)
+	_tier.position = Vector2(x, full.y - (TIER_BOTTOM + (10.0 if astral else 0.0)) * s - tier_h)
 	_tier.size = Vector2(w, tier_h)
 	# v0.8.0 N8: the title on top: one line if it fits at a readable size, else two.
 	var y := title_top * s
 	var t := _title.text.to_upper()
 	var sizes := _scaled(TITLE_SIZES)
 	var one: Array = sizes.slice(0, 5)
-	title_size = TextFit.fit_size(bold, t, w, bold.get_height(one[0]) + 1.0, one, 1)
-	if TextFit.text_height(bold, t, w, title_size) > bold.get_height(title_size) + 1.0:
+	title_size = TextFit.fit_size(serif, t, w, serif.get_height(one[0]) + 1.0, one, 1)
+	if TextFit.text_height(serif, t, w, title_size) > serif.get_height(title_size) + 1.0:
 		title_size = TextFit.fit_size(
-			bold, t, w, bold.get_height(sizes[0]) * 2.0 + 1.0, sizes, TITLE_MAX_LINES
+			serif, t, w, serif.get_height(sizes[0]) * 2.0 + 1.0, sizes, TITLE_MAX_LINES
 		)
-	title_size = mini(title_size, TextFit.word_fit_size(bold, t, w, title_size))  # v0.8.0 N18: a long word shrinks
-	var th := maxf(TextFit.text_height(bold, t, w, title_size), bold.get_height(title_size))
+	title_size = mini(title_size, TextFit.word_fit_size(serif, t, w, title_size))  # v0.8.0 N18: a long word shrinks
+	var th := maxf(TextFit.text_height(serif, t, w, title_size), serif.get_height(title_size))
 	_title.add_theme_font_size_override("font_size", title_size)
 	_title.position = Vector2(x, y)
 	_title.size = Vector2(w, th)
@@ -422,6 +496,10 @@ func _place(socket_px: float, title_top: float) -> void:
 	var side := socket_px * s
 	socket.position = Vector2((full.x - side) * 0.5, y)
 	socket.size = Vector2(side, side)
+	if astral:
+		medallion.position = socket.position
+		medallion.size = socket.size
+		medallion.fit()
 	y += side + 8.0 * s
 	# What gets better (old → new), when the card has a number.
 	if _gain.visible:

@@ -10,7 +10,8 @@ extends Node2D
 ## - Light: the white flash as a high card lands, the light rays rising behind it, and a Legendary card's looping
 ##   holographic shine across its face (a still gloss under reduced motion).
 ## - Burn: a card not picked burns away from its foot (a dissolve with an ember edge, shared by every part of the
-##   face through use_parent_material), and the picked one's icon flies to the HUD (CardFly).
+##   face through use_parent_material), and the picked one's icon flies to the HUD (CardFly). v0.10.5 W3-O15: the
+##   burn is a noise-texture dissolve with a glare edge, and a GlareBurst of sparkles and streaks flies off the card.
 
 const RAYS := 14
 ## Rays reach this share of the card's height past its centre; turn this fast (radians a second).
@@ -22,30 +23,32 @@ const TILT_TURN := 0.045
 const SINK_SCALE := 0.965
 const SINK_PX := 5.0
 
+## v0.10.5 W3-O15 (owner 2026-11-04: "a glare kind of particle effect more than a burn, but burn like with a noise
+## texture dissolve"): the card dissolves along the owner's cloud noise (AstralCardArt.noise), a little from its foot
+## first, with a thin bright silver / moon-blue glare at the edge and a soft halo just inside it. Same trigger and
+## timing as N8's burn; the glare's sparkles and streaks are a GlareBurst.
 const BURN_SHADER := """
 shader_type canvas_item;
 uniform float burn : hint_range(0.0, 1.0) = 0.0;
-uniform vec4 edge_color : source_color = vec4(1.0, 0.55, 0.15, 1.0);
+uniform vec4 edge_color : source_color = vec4(0.86, 0.89, 1.0, 1.0);
 uniform vec2 rect_pos = vec2(0.0);
 uniform vec2 rect_size = vec2(300.0, 500.0);
-float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-float noise(vec2 p) {
-	vec2 i = floor(p); vec2 f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
-	float a = mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x);
-	float b = mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0)), u.x);
-	return mix(a, b, u.y);
-}
+uniform sampler2D noise_tex : filter_linear, repeat_disable;
 varying vec2 local;
 void vertex() { local = (MODEL_MATRIX * vec4(VERTEX, 0.0, 1.0)).xy; }
 void fragment() {
 	vec2 q = (local - rect_pos) / rect_size;
-	float n = noise(q * vec2(9.0, 14.0)) * 0.32 + noise(q * 31.0) * 0.14;
-	float front = (1.0 - q.y) * 0.9 + n;
-	float t = burn * 1.55 - 0.1;
+	vec2 uv = vec2(0.08, 0.04) + q * vec2(0.55, 0.9);
+	uv = 1.0 - abs(1.0 - mod(uv, 2.0));  // mirrored past the card (the frame's glow): no smeared edge rows
+	float n = texture(noise_tex, uv).r;
+	float front = n * 0.8 + (1.0 - clamp(q.y, 0.0, 1.0)) * 0.2;
+	float t = burn * 1.2 - 0.1;
 	if (front < t) { discard; }
-	float e = smoothstep(t + 0.09, t, front);
-	COLOR.rgb = mix(COLOR.rgb, edge_color.rgb * 1.6, e);
-	COLOR.rgb *= 1.0 - 0.35 * smoothstep(t + 0.3, t, front);
+	float edge = smoothstep(t + 0.035, t, front);
+	float halo = smoothstep(t + 0.14, t, front);
+	vec3 glare = mix(vec3(0.62, 0.71, 0.95), edge_color.rgb, edge);
+	COLOR.rgb = mix(COLOR.rgb + glare * halo * 0.45, glare * 1.35, edge);
+	COLOR.a = max(COLOR.a, edge * 0.9 * step(0.02, COLOR.a));
 }
 """
 const HOLO_SHADER := """
@@ -84,6 +87,9 @@ var tilt := Vector2.ZERO
 var sink := 0.0
 var rays := 0.0
 var burn := 0.0
+## v0.10.5 W3-O15: the glare's sparkles while the card dissolves (null otherwise) and its seed (the card's id).
+var glare: GlareBurst
+var glare_seed := &""
 var _burn_mat: ShaderMaterial
 var _spin := 0.0
 var _animate := true
@@ -197,6 +203,7 @@ func shine_moves() -> bool:
 ## 0..1 of the burn (0: whole; 1: gone). Every part of the face burns along one front.
 func set_burn(t: float) -> void:
 	burn = clampf(t, 0.0, 1.0)
+	_set_glare(burn)
 	if burn <= 0.0:
 		if _burn_mat != null:
 			face.material = null
@@ -204,12 +211,11 @@ func set_burn(t: float) -> void:
 			_burn_mat = null
 		return
 	if _burn_mat == null:
-		_burn_mat = ShaderMaterial.new()
-		_burn_mat.shader = _burner()
+		_burn_mat = burn_material()
 		face.material = _burn_mat
 		_share_material(true)
 	_burn_mat.set_shader_parameter("burn", burn)
-	_burn_mat.set_shader_parameter("edge_color", tier_color.lerp(Color("#FF8A3D"), 0.6))
+	_burn_mat.set_shader_parameter("edge_color", AstralCardArt.GLARE)
 	_burn_mat.set_shader_parameter("rect_pos", face.get_global_transform().origin)
 	_burn_mat.set_shader_parameter(
 		"rect_size",
@@ -226,7 +232,21 @@ func burning() -> bool:
 static func burn_material() -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = _burner()
+	m.set_shader_parameter("noise_tex", AstralCardArt.noise())
 	return m
+
+
+## v0.10.5 W3-O15: the glare's sparkles follow the dissolve (0 or 1: none, its node freed).
+func _set_glare(t: float) -> void:
+	if t <= 0.0 or t >= 1.0:
+		if glare != null:
+			glare.queue_free()
+			glare = null
+		return
+	if glare == null:
+		glare = GlareBurst.new(card_size, glare_seed, ViewPrefs.effects_density)
+		add_child(glare)
+	glare.progress = t
 
 
 func _share_material(on: bool) -> void:
