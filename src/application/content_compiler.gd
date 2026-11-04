@@ -645,6 +645,7 @@ static func _compile_boss_challenge(def: BossDefinition, t: BossTable) -> void:
 	t.gap_attack = (
 		t.attack_index(def.gap_close_attack) if not String(def.gap_close_attack).is_empty() else -1
 	)
+	t.lines_clear_shots = def.lines_clear_shots  # v0.10.5 W3-O2 (F19)
 	PatternCompiler.compile_cadence(def, t)  # v0.9.0 NB1: the Tidecaller's Pull
 	for k in def.attacks.size():
 		var a := def.attacks[k]

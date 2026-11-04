@@ -110,8 +110,8 @@ static func think(w: World, i: int) -> void:
 			a.facing[i] = (
 				aim if t.turn_rate <= 0 else Kin.turn_toward(a.facing[i], aim, t.turn_rate)
 			)
-			var punish := BossChallenge.punish_due(w, b, t)
-			var gap := BossChallenge.gap_close_due(w, b, t)  # v0.3.5 AI (F3): the gap-closer
+			var punish := BossLava.unless_closing(w, i, BossChallenge.punish_due(w, b, t))  # W3-O2: or waits
+			var gap := BossLava.unless_closing(w, i, BossChallenge.gap_close_due(w, b, t))  # AI (F3): gap-closer
 			var sig := BossTide.due(w, i, b, t, a.cd[i])  # v0.9.0 NB1: the cadence (NB3: -2 holds the rest)
 			if sig >= 0:
 				start_attack(w, i, sig)
@@ -126,7 +126,7 @@ static func think(w: World, i: int) -> void:
 				var k := (
 					BossPrism.next_spell(w, i, b, t)
 					if t.rotation
-					else _choose(w, b, t, Kin.length(to_player))
+					else _choose(w, i, b, t, Kin.length(to_player))
 				)
 				if k >= 0:
 					start_attack(w, i, k)
@@ -134,7 +134,7 @@ static func think(w: World, i: int) -> void:
 			var atk: BossAttackTable = t.attacks[bs.attack[b]]
 			if BossDodge.is_marker_move(atk.move):  # v0.7.5 BF1: each marker tracks, then locks
 				BossDodge.track_marks(w, b, atk, a.state_t[i])
-			elif atk.move == M.GAZE:  # v0.8.0 BS2 (S4): it starts aimed away from you, wherever you go
+			elif atk.move == M.GAZE:  # v0.10.5 W3-O2 (F20): it starts just behind you in its turn, wherever you go
 				BossGaze.keep_away(w, i)
 			elif atk.move == M.CROSS:  # v0.8.0 FB2: the arms keep you between two of them
 				BossPrism.keep_away(w, i)
@@ -281,9 +281,11 @@ static func _update_phase(w: World, i: int, b: int, t: BossTable) -> void:
 
 ## The next attack: the phase's entry attack if one waits, else a weighted pick (ai stream) among the phase's attacks
 ## whose range band holds the player, not repeating the last one when there is a choice. -1 = none in range.
-static func _choose(w: World, b: int, t: BossTable, dist: float) -> int:
+static func _choose(w: World, i: int, b: int, t: BossTable, dist: float) -> int:
 	var bs := w.bosses
 	if bs.entry[b] >= 0:
+		if BossLava.closes_escape(w, i, bs.entry[b]):  # v0.10.5 W3-O2 (F19): it waits (BossLava.hold)
+			return -1
 		var e := bs.entry[b]
 		bs.entry[b] = -1
 		return e
@@ -307,7 +309,7 @@ static func _choose(w: World, b: int, t: BossTable, dist: float) -> int:
 	for k in open:
 		weights.append(t.attacks[k].weight)
 	var pick := w.rng_ai.pick_weighted(weights)
-	return open[pick] if pick >= 0 else -1
+	return BossLava.hold(w, i, b, open[pick]) if pick >= 0 else -1
 
 
 ## Starts attack k now (its windup), locking its aim and areas. Public for tests and the dev panel.
@@ -393,7 +395,7 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 		M.MARKS, M.ROW_LANES:  # v0.7.5 BF1: every marker starts on the player
 			for k in atk.count:
 				bs.set_pt(b, k, w.player_pos())
-		M.GAZE:  # v0.8.0 BS2 (S4): aimed away from the player; the way it turns
+		M.GAZE:  # v0.8.0 BS2 (S4): the way it turns; W3-O2: aimed just behind the player in it
 			BossGaze.lock(w, i, b)
 		M.CROSS:  # v0.8.0 FB2: its way (the other way from her last), its speed (her HP), off the player
 			BossPrism.lock(w, i, b)

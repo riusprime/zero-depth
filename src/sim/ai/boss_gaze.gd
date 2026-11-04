@@ -4,29 +4,37 @@ extends RefCounted
 ## S4, approved 2026-10-14; SIM_CONTRACTS §10f): the Hive Lens's Gaze, a `gaze` attack. A continuous beam from its
 ## eye's edge, as long as its length_m unless a wall stops it (EnemyAi.clear_run: the room's walls, the Gatekeeper's
 ## pillars, a sealed door), half_width_m each side. Through its windup the eye brightens and a thin aim line shows
-## where the beam will start: straight away from the player, re-aimed every tick, so it never starts on you. Then it
-## turns a quarter turn (1024) every quarter_ticks, one way (the ai stream picks which as the windup begins),
-## reversing every reverse_ticks, for its active time, hurting a player it touches once every burn_ticks; its orbs
-## (the attack's pattern) fire again every orb_every_ticks, aimed at the player, while it turns. Drawn and hit alike
-## (beam(): EI-07). Pure: integer angles (Kin), the ai stream only for the turn's way.
+## where the beam will start, re-aimed every tick so it never starts on you. Then it turns a quarter turn (1024) every
+## quarter_ticks, one way (the ai stream picks which as the windup begins), reversing every reverse_ticks, for its
+## active time, hurting a player it touches once every burn_ticks; its orbs (the attack's pattern) fire again every
+## orb_every_ticks, aimed at the player, while it turns. Drawn and hit alike (beam(): EI-07). Pure: integer angles
+## (Kin), the ai stream only for the turn's way.
+## v0.10.5 W3-O2 (owner F20, 2026-11-04: the laser "sometimes begins facing away from the player"; it should be
+## "something the player needs to actively dodge"). The rule: the beam starts LEAD (40 degrees) BEHIND the player in
+## the way it will turn, so it never starts on you but its first sweep comes through you about LEAD / speed after it
+## opens (53 ticks, 0.89 s, at a quarter every 2 s): dash through it or run ahead of it. Damage and speed unchanged.
+## Before W3-O2 it started straight away from the player (a half turn), so its first pass came only after ~4 s.
 
-## The beam starts this far round from the player (a half turn: straight away).
-const AWAY := 2048
+## v0.10.5 W3-O2 (F20): the beam starts this far round from the player (1/4096 turns: 40 degrees), behind them in
+## the way it turns.
+const LEAD := 455
 ## Returning orbs carry this cause (BossSignatures.LATE_CAUSE + the attack): the recap names the orbs, not the beam.
 const ORB_CAUSE := BossSignatures.LATE_CAUSE
 
 
-## BossAi._lock, as the windup begins: aimed away from the player; the way it will turn (BossStore.span, +1 or -1).
+## BossAi._lock, as the windup begins: the way it will turn (BossStore.span, +1 or -1; W3-O2: drawn first, since the
+## start depends on it), then the start, LEAD behind the player in that way.
 static func lock(w: World, i: int, b: int) -> void:
-	keep_away(w, i)
 	w.bosses.span[b] = 1 if w.rng_ai.range_int(0, 1) == 0 else -1
+	keep_away(w, i)
 
 
-## Each windup tick (BossAi.think): the start keeps straight away from the player, wherever they go.
+## Each windup tick (BossAi.think): the start keeps LEAD behind the player in the beam's turn, wherever they go.
 static func keep_away(w: World, i: int) -> void:
 	var a := w.actors
 	if not w.player_dead():
-		a.lock_a[i] = (Kin.angle_of(w.player_pos() - a.pos(i)) + AWAY) & 4095
+		var way := w.bosses.span[BossAi.entry_of(w, i)]
+		a.lock_a[i] = (Kin.angle_of(w.player_pos() - a.pos(i)) - way * LEAD) & 4095
 	a.facing[i] = a.lock_a[i]
 
 

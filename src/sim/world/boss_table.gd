@@ -80,6 +80,10 @@ var dash_read_ticks := 0
 var gap_distance_m := 0.0
 var gap_ticks := 0
 var gap_attack := -1
+## v0.10.5 W3-O2 (owner F19; BossLava.closes_escape): true makes the boss keep its floor lines (its `flood` and
+## `row_flood` lanes and the molten floor they leave) and its shots apart in time: no line attack starts while any of
+## its shots fly, and no `pattern` volley starts while its lines burn or its lava lies (the pick waits). The Foundry.
+var lines_clear_shots := false
 ## v0.9.0 NB1 (BOSSES_4_5.md N1; BossTide): a boss with sig_every_ticks > 0 performs its phase's signature (its first
 ## `tide` attack) on a cadence, every sig_every_ticks from one start to the next, the first sig_first_ticks after it
 ## rises, instead of by the weighted pick (0 = no cadence: every other boss).
