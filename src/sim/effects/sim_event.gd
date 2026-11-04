@@ -17,8 +17,8 @@ extends RefCounted
 ## where it started). VENT: the Vent button vented (amount = heat points vented). VENT_COLD: the Vent button under
 ## Hot did nothing (the cold click).
 ## v0.5.0 SH: SHOP_BUY: shards spent at the shop (amount = the price, effect_id = the card's id, or &"shop_heal" /
-## &"shop_reroll"; a bought card also emits PICKUP from the terminal). SHOP_SALVAGE: shards back for a mod, a stat
-## card or an ability (amount = the refund, effect_id = its id, target_id = the card code).
+## &"shop_reroll"; a bought card also emits PICKUP from the terminal). SHOP_SALVAGE: retired with selling (v0.10.5
+## W3-O9), never emitted; it keeps its place so the kinds after it keep their numbers.
 ## v0.4.0 BS: PICKUP's amount is a card code (Offers): under 1000 an item (as before), 1000 + i ability i, 2000 + stat
 ## x 10 + rarity a stat card. A HIT with TAG_CRIT was a critical hit.
 ## v0.8.0 N14 (owner O72): GAMBLE_FAIL: a paid use of the gamble shrine failed (no stat); source = the shrine's id,
@@ -51,7 +51,7 @@ enum Kind {
 	VENT,
 	VENT_COLD,
 	SHOP_BUY,
-	SHOP_SALVAGE,
+	SHOP_SALVAGE,  # v0.10.5 W3-O9: retired, never emitted
 	GAMBLE_FAIL,
 	BOSS_DOOR_OPENING,
 	BOSS_DOOR_OPENED,

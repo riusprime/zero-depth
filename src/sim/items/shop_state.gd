@@ -4,6 +4,8 @@ extends RefCounted
 ## while it is), the stock (card codes, Offers; SOLD for a bought slot), the heal and reroll counters, and the last
 ## action and refusal for the views. A new floor starts it fresh. Hashed once the floor has a shop.
 
+## v0.10.5 W3-O9: SELL, SALVAGE_ABILITY and CLEANSE are retired (the shop no longer sells cards back or lifts a
+## curse) but keep their numbers, so the actions after them and an old save's last_action read as they did.
 enum Action { NONE, BUY, HEAL, REROLL, SELL, SALVAGE_ABILITY, OPEN, CLOSE, CLEANSE }
 ## v0.5.5 EC: why the last refusal happened (the view's message): anything else, or the floor's buy limit.
 enum Deny { OTHER, LIMIT }

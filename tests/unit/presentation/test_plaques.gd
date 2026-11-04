@@ -141,13 +141,6 @@ func test_gamble_lines_fit_in_english_and_spanish() -> void:
 func test_shop_plaques_fit_in_english_and_spanish() -> void:
 	for lang in ["en", "es"]:
 		TranslationServer.set_locale(lang)
-		var sell := ShopTile.new("Sell", ShopPanel.SELL_W)
-		add_child_autofree(sell)
-		for r in _defs(CARD_DIRS):
-			for detail in [tr("UI_CARD_MOD"), tr("SHOP_SELL_STAT") % [tr("RARITY_LEGENDARY"), 3]]:
-				sell.show_tile(tr(r.name_key), detail, 120, true, false, true)
-				assert_true(sell.text_fits(), "%s %s / %s fits" % [lang, r.id, detail])
-				assert_gte(sell.title_size, MIN_TEXT, "%s %s: title size" % [lang, r.id])
 		var heal := ShopTile.new("Heal", 360.0)
 		add_child_autofree(heal)
 		for d in ["", tr("SHOP_HEAL_USED"), tr("SHOP_HEAL_FULL")]:
@@ -158,11 +151,6 @@ func test_shop_plaques_fit_in_english_and_spanish() -> void:
 		for d in ["", tr("SHOP_REROLL_NONE")]:
 			reroll.show_tile(tr("SHOP_REROLL"), d, 120, true)
 			assert_true(reroll.text_fits(), "%s reroll '%s'" % [lang, d])
-		var cleanse := ShopTile.new("Cleanse", 360.0)
-		add_child_autofree(cleanse)
-		for r in _defs(["res://data/curses"]):
-			cleanse.show_tile(tr("SHOP_CLEANSE"), tr(r.name_key), 120, true)
-			assert_true(cleanse.text_fits(), "%s cleanse %s" % [lang, r.id])
 	TranslationServer.set_locale(_locale)
 
 

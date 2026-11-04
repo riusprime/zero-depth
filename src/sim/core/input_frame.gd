@@ -14,13 +14,10 @@ const SKILL := 64
 ## `pick` values (v0.3.0 E): no pick this tick, or cancel the open altar/chest choice. 1..3 take that card.
 const PICK_NONE := 0
 const PICK_CANCEL := -1
-## v0.5.0 SH, while the shop is open: 1..4 buy that card, the heal, the reroll, or sell entry PICK_SHOP_SELL + n of
-## the salvage list (Shop.sell_list); PICK_CANCEL closes the shop.
+## v0.5.0 SH, while the shop is open: 1..4 buy that card, the heal or the reroll; PICK_CANCEL closes the shop.
+## v0.10.5 W3-O9: 22 (the curse lift) and 100 and up (selling) are retired; the shop refuses them.
 const PICK_SHOP_HEAL := 20
 const PICK_SHOP_REROLL := 21
-## v0.5.0 EV: while the shop is open and a curse is held, pay to lift the latest curse (Shop.cleanse).
-const PICK_SHOP_CLEANSE := 22
-const PICK_SHOP_SELL := 100
 ## v0.6.0 MX2 (BuildSlots): while a swap choice is open (a modifier offered with every slot full), replace held
 ## modifier slot n (PICK_SWAP_BASE + n; v0.6.5 WN1: n = 0..7, the wand grows to 8), or skip it.
 const PICK_SWAP_BASE := 30

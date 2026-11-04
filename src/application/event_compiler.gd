@@ -155,7 +155,6 @@ static func compile_rules(def: EventRulesDefinition) -> EventRules:
 	t.cursed_chest_every_floors = def.cursed_chest_every_floors
 	t.cursed_chests_per_floor = def.cursed_chests_per_floor
 	t.defend_radius_m = def.defend_radius_m
-	t.cleanse_price = def.cleanse_price
 	t.core_window_ticks = SimTick.seconds_to_ticks(def.core_window_seconds)  # v0.6.0 CU: core theft
 	t.core_mod_weight = def.core_mod_weight
 	t.boss_core_legendary_permille = roundi(def.boss_core_legendary_chance * 1000.0)  # v0.10.5 S6

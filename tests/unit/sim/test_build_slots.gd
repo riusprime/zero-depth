@@ -204,18 +204,12 @@ func test_the_shop_buy_swaps_and_pays_only_then() -> void:
 	assert_lt(w.shards, 1000, "paid on the swap")
 
 
-func test_salvage_frees_a_modifier_slot() -> void:
+## Removing a held modifier (Shop.remove_item: the playground's removal, a migrated card's) frees its slot.
+func test_removing_a_modifier_frees_its_slot() -> void:
 	var w := _world()
 	_fill(w)
-	w.shop_table = ContentCompiler.compile_shop(_repo.get_def(&"shop", &"terminal"))
-	var sells := Shop.sell_list(w)
-	var n := -1
-	for k in sells.size():
-		if sells[k][0] == Shop.SELL_MOD:
-			n = k
-			break
-	assert_gt(n, -1, "a modifier on the salvage list")
-	Shop.remove_item(w, sells[n][1])  # what Shop.sell does for a card
+	assert_true(BuildSlots.full(w))
+	Shop.remove_item(w, w.items_owned[0])
 	assert_eq(w.mod_slots.size(), 5, "its slot is free")
 	assert_false(BuildSlots.full(w))
 

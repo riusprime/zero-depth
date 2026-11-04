@@ -1,7 +1,7 @@
 # gdlint: disable=max-public-methods
 class_name Shop
 extends RefCounted
-## The shop and salvage (v0.5.0 PLAN R1, R2; ROADMAP "Shops", "salvage"). One terminal per floor in a side room
+## The shop (v0.5.0 PLAN R1, R2; ROADMAP "Shops"). One terminal per floor in a side room
 ## (ShopPlacement). The interact button within reach opens it; while it is open the world waits (like an altar's
 ## pick: only the shop's actions run, the tick still counts), and every action is an InputFrame.pick value.
 ## - Stock: ShopTable.offer_size cards drawn on the first open from the loot stream by a chest's rules
@@ -12,26 +12,20 @@ extends RefCounted
 ## - Heal: heal_permille of max HP, once per shop, for heal_price x the floor step; refused at full HP.
 ## - Reroll: a new card in every unsold slot for reroll_price, x (1 + step) per use at this shop. v0.5.5 EC (owner
 ##   S2): a bought slot stays SOLD for the floor; a reroll with no unsold slot, or with no buys left, is refused.
-## - Buy limit (v0.5.5 EC, owner S3): at most ShopTable.max_buys cards bought at the floor's shop (the heal, rerolls,
-##   cleanses and salvage don't count); a buy past it is refused with ShopState.Deny.LIMIT for the view's message.
+## - Buy limit (v0.5.5 EC, owner S3): at most ShopTable.max_buys cards bought at the floor's shop (the heal and
+##   rerolls don't count); a buy past it is refused with ShopState.Deny.LIMIT for the view's message.
 ## - Prices (v0.5.5 EC, owner S4): floors 2-3 multiply the floor step by late_floor_permille (ShopTable).
-## - Salvage (sell_list): an owned mod or stat card sells for sell_permille of its shop price (a stat card: one
-##   stack, the stat values rebuilt from the cards left, so the caps hold); an ability that is not the build's
-##   weapon frees its slot for ability_refund_per_level x its level (a later ability card can take the slot). Mods
-##   of a salvaged ability stay owned (inert until you own it again) and can be sold.
 ## - Refusals (unaffordable, nothing to do) change nothing but ShopState.denied_tick, for the view.
-## Every purchase emits SHOP_BUY, every sale SHOP_SALVAGE; a bought card also emits PICKUP, the heal HEAL.
+## - v0.10.5 W3-O9 (owner, 2026-11-04: "it should only show the heal, reroll and the 4 cards, lifting the curse and
+##   selling is too broken"): the shop sells only those. Salvage (selling a card back) and the paid curse lift are
+##   gone; their old pick values (22, 100 and up) are refused like any other unknown pick, and ShopState.Action keeps
+##   their numbers so an old save's last action still reads.
+## Every purchase emits SHOP_BUY; a bought card also emits PICKUP, the heal HEAL.
 
-## A sell_list entry: [kind, ref, card code, refund]. MOD: ref = the item index; STAT: ref = how many of that card
-## are held; ABILITY: ref = the slot.
-const SELL_MOD := 0
-const SELL_STAT := 1
-const SELL_ABILITY := 2
 ## Spawn points this close to the terminal are dropped, so no enemy appears inside it.
 const SPAWN_CLEAR_M := 1.6
 const EFFECT_HEAL := &"shop_heal"
 const EFFECT_REROLL := &"shop_reroll"
-const EFFECT_CLEANSE := &"shop_cleanse"  # v0.5.0 EV
 
 
 static func present(w: World) -> bool:
@@ -135,10 +129,6 @@ static func choose(w: World, frame: InputFrame) -> void:
 		heal(w)
 	elif v == InputFrame.PICK_SHOP_REROLL:
 		reroll(w)
-	elif v == InputFrame.PICK_SHOP_CLEANSE:
-		cleanse(w)
-	elif v >= InputFrame.PICK_SHOP_SELL:
-		sell(w, v - InputFrame.PICK_SHOP_SELL)
 	else:
 		_deny(w)
 
@@ -157,7 +147,7 @@ static func rarity(w: World, code: int) -> int:
 	return int(Offers.info(w, code)["rarity"])
 
 
-## v0.5.0 EV: every shop price goes through the prices curse (Curses.price); salvage refunds don't.
+## v0.5.0 EV: every shop price goes through the prices curse (Curses.price).
 static func price(w: World, code: int) -> int:
 	return w.shop_table.card_price(rarity(w, code), w.floor_index)
 
@@ -168,11 +158,6 @@ static func heal_price(w: World) -> int:
 
 static func reroll_price(w: World) -> int:
 	return w.shop_table.reroll_cost(w.shop.rerolls)
-
-
-## v0.5.0 EV: lifting the latest curse costs the rules' cleanse price x the floor (under the prices curse too).
-static func cleanse_price(w: World) -> int:
-	return w.ev.rules.cleanse_price * maxi(1, w.floor_index)
 
 
 ## HP the heal would restore now.
@@ -258,74 +243,6 @@ static func reroll(w: World) -> bool:
 	return true
 
 
-## v0.5.0 EV: pays cleanse_price to lift the latest curse (Curses.cleanse). Refused without a curse or the shards.
-static func cleanse(w: World) -> bool:
-	var cost := cleanse_price(w)
-	if w.curses_owned.is_empty() or w.shards < cost:
-		return _deny(w)
-	w.shards -= cost
-	_spend(w, cost, EFFECT_CLEANSE)
-	var c := w.curses_owned[w.curses_owned.size() - 1]
-	Curses.cleanse(w)
-	_note(w, ShopState.Action.CLEANSE, c)
-	return true
-
-
-## What can be sold now, in a fixed order: mods (pickup order), stat cards (one entry per card, first-taken
-## order), then abilities but the weapon (slot order). Each entry is [kind, ref, code, refund].
-static func sell_list(w: World) -> Array[PackedInt32Array]:
-	var out: Array[PackedInt32Array] = []
-	var t := w.shop_table
-	for idx in w.items_owned:
-		out.append(
-			PackedInt32Array([SELL_MOD, idx, idx, t.sell_price(rarity(w, idx), w.floor_index)])
-		)
-	var seen := PackedInt32Array()
-	for code in w.stat_cards:
-		if seen.has(code):
-			continue
-		seen.append(code)
-		var n := w.stat_cards.count(code)
-		var refund := t.sell_price(Offers.rarity_of(code), w.floor_index)
-		out.append(PackedInt32Array([SELL_STAT, n, code, refund]))
-	for s in w.ability_owned.size():
-		var at := w.ability_tables[w.ability_owned[s]]
-		if at.start_weapon != 0:
-			continue
-		var refund := t.ability_refund_per_level * w.ability_levels[s]
-		out.append(
-			PackedInt32Array([SELL_ABILITY, s, Offers.ability_code(w.ability_owned[s]), refund])
-		)
-	return out
-
-
-## Sells sell_list entry n. True if sold.
-static func sell(w: World, n: int) -> bool:
-	var list := sell_list(w)
-	if n < 0 or n >= list.size():
-		return _deny(w)
-	var entry := list[n]
-	var code := entry[2]
-	var id: StringName = Offers.info(w, code)["id"]
-	match entry[0]:
-		SELL_MOD:
-			remove_item(w, entry[1])
-		SELL_STAT:
-			remove_stat_card(w, code)
-		SELL_ABILITY:
-			Abilities.remove_slot(w, entry[1])  # its level, cooldown and floor state go
-	w.shards += entry[3]
-	var pid := w.actors.ids[0]
-	var e := w.emit_event(SimEvent.Kind.SHOP_SALVAGE, w.shop.id, pid, code, w.shop.pos)
-	e.amount = entry[3]
-	e.effect_id = id
-	var action := (
-		ShopState.Action.SALVAGE_ABILITY if entry[0] == SELL_ABILITY else ShopState.Action.SELL
-	)
-	_note(w, action, code)
-	return true
-
-
 ## Drops owned item `idx`: its modifiers go, and so does every combo it completed.
 static func remove_item(w: World, idx: int) -> void:
 	var owned := w.items_owned.duplicate()
@@ -367,7 +284,7 @@ static func rebuild_stats(w: World, cards: PackedInt32Array) -> void:
 
 
 # --- Read (WorldReader.shop) ------------------------------------------------------------------------------------
-## Plain data for the views: the terminal, the stock with prices, the heal and reroll, the sell list.
+## Plain data for the views: the terminal, the stock with prices, the heal and the reroll.
 static func read(w: World) -> Dictionary:
 	var stock: Array[Dictionary] = []
 	for code in w.shop.offer:
@@ -379,10 +296,6 @@ static func read(w: World) -> Dictionary:
 			c["can_apply"] = can_apply(w, code)
 			c["affordable"] = w.shards >= c["price"]
 		stock.append(c)
-	var latest := _latest_curse(w)  # once (audit G-16)
-	var sells: Array[Dictionary] = []
-	for e in sell_list(w):
-		sells.append({"kind": e[0], "ref": e[1], "code": e[2], "refund": e[3]})
 	return {
 		"open": w.shop.open,
 		"stock": stock,
@@ -390,27 +303,17 @@ static func read(w: World) -> Dictionary:
 		"heal_amount": heal_amount(w),
 		"heal_used": w.shop.heal_used,
 		"reroll_price": reroll_price(w),
-		"cleanse_price": cleanse_price(w),  # v0.5.0 EV
-		"cleanse_curse": latest,
-		"cleanse_name_key": w.ev.curses[latest].name_key if latest >= 0 else &"",
 		"rerolls": w.shop.rerolls,
 		"unsold": unsold(w),  # v0.5.5 EC (S2)
 		"bought": w.shop.bought,  # v0.5.5 EC (S3)
 		"max_buys": w.shop_table.max_buys,
 		"buys_left": buys_left(w),
 		"denied_reason": w.shop.denied_reason,
-		"sell": sells,
 		"last_action": w.shop.last_action,
 		"last_tick": w.shop.last_tick,
 		"last_value": w.shop.last_value,
 		"denied_tick": w.shop.denied_tick,
 	}
-
-
-## The curse a cleanse would lift (the latest held, with a table), or -1.
-static func _latest_curse(w: World) -> int:
-	var n := w.curses_owned.size()
-	return w.curses_owned[n - 1] if n > 0 and w.curses_owned[n - 1] < w.ev.curses.size() else -1
 
 
 static func _spend(w: World, cost: int, what: StringName) -> void:

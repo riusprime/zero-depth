@@ -217,10 +217,10 @@ value or by an owner decision, and the change is noted here.
   room (never the start hall, the boss room or the room before the boss door; on the minimap once seen). Interact
   opens it and the world waits: **4 cards** from the chests' pools (slot rules hold; mods only with their ability)
   priced by rarity × floor (30 / 55 / 90 × 1, 1.5, 2), a **heal** (30 % max HP, once, 40 × floor) and a **reroll**
-  (20, +50 % per use). A bought card applies exactly as a picked one. **Salvage** at the same panel: sell a mod or
-  a stat card (one stack) for 40 % of its price, or salvage an ability (not the weapon; v0.6.0 MX2: a modifier, or the
-  utility) for 10 shards per level (was 25; M-LOOP, v0.4.0 TU) to free its slot for a later card: a way to change a build's direction, paid for. Starting values; evidence:
-  `docs/roadmap/v0.5.0/evidence/SHOP.md`.
+  (20, +50 % per use). A bought card applies exactly as a picked one. Starting values; evidence:
+  `docs/roadmap/v0.5.0/evidence/SHOP.md`. v0.10.5 W3-O9 (owner, 2026-11-04: "it should only show the heal, reroll
+  and the 4 cards, lifting the curse and selling is too broken"): **salvage** (selling a card back) and the paid
+  curse lift are gone; the shop is the heal, the reroll and its 4 cards. The Cleansing Font event still lifts a curse.
 
 - **Chests and free altars: +~12 % (v0.10.5 S7, owner 2026-11-01; starting value).** `extra_chest_permille` and `extra_altar_permille` (120 each, `data/rewards/floor.tres`) add whole extras plus a remainder chance after a floor's usual placement (`Rewards._place_extras`, loot stream); card rewards per chest/altar, shops, the boss altar and the epic altar are unchanged.
 

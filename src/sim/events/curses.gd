@@ -6,7 +6,7 @@ extends RefCounted
 ## which brings its own upside. World.curses_owned lists the curses held (indices into World.ev.curses, in the order
 ## taken; no curse twice) and lasts the run (RunCarry). T is the sum of the held curses' threat; World.threat_peak is
 ## the highest T the run reached (M-THREAT). cleanse() lifts one, drawback and upside together: the Cleansing Font
-## calls it, and the shop's cleanse.
+## calls it (the shop's paid lift is gone, v0.10.5 W3-O9).
 ## Each effect is read where the sim computes it, through one hook here (a no-op without curses); a curse may carry
 ## a second drawback (effect_2) and an upside (up_effect), all summed by total():
 ## - ENEMY_SPEED, REGEN, HEAT_DECAY, EXTRA_ENEMY, PRICES: retired in v0.10.5 O1 with the five flat curses (owner P1:
@@ -141,8 +141,8 @@ static func add(w: World, c: int) -> bool:
 	return true
 
 
-## Lifts a held curse: `c`, or the latest taken when c < 0. False when there is none to lift. The hook a shop
-## calls (PLAN R1); the Cleansing Font uses it. T falls; its peak stays (M-THREAT counts what was chosen). v0.6.0 CU:
+## Lifts a held curse: `c`, or the latest taken when c < 0. False when there is none to lift. The Cleansing Font
+## uses it (the shop did until v0.10.5 W3-O9). T falls; its peak stays (M-THREAT counts what was chosen). v0.6.0 CU:
 ## a trade-off curse goes whole (its upside too); lifting Glass Heart gives the max HP back, not the HP.
 static func cleanse(w: World, c: int = -1) -> bool:
 	if w.curses_owned.is_empty():

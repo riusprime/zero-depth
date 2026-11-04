@@ -433,3 +433,66 @@ func test_a_run_saved_before_o11_keeps_its_bosses() -> void:
 	var wf := SaveLab.build_floor(fresh, &"", repo)
 	var q := RunSaver.payload_of(wf, fresh, 99, PackedByteArray([1]))
 	assert_eq(SaveLab.run_from(q).boss_draw, RunState.BOSS_DRAW, "a new payload keeps today's draw")
+
+
+## v0.10.5 W3-O9 (owner, 2026-11-04: "we are gonna be removing the lift curse and the sell"): a floor saved mid-shop
+## right after a sale, an ability salvaged or a curse lift (ShopState.last_action SELL / SALVAGE_ABILITY / CLEANSE, a
+## sold slot, the lift's record in EventState) loads: the snapshot fits, Continue resumes the same state, the shop is
+## still open and offers only its 4 cards, the heal and the reroll; the old sell and lift picks are refused.
+func test_a_floor_saved_mid_shop_after_a_sale_or_a_lift_loads() -> void:
+	var repo := ContentRepository.load_all()
+	var run := SaveLab.run_state(41, 1, &"blade", 0, repo)
+	var w := SaveLab.build_floor(run, &"", repo)
+	assert_true(w.shop.present(), "floor 1 has its shop")
+	# TEST SETUP (labelled): the shop as a pre-W3-O9 build left it after a sale; the sim can no longer sell.
+	Shop.restock(w)
+	w.shop.open = true
+	w.shop.offer[0] = ShopState.SOLD
+	w.shop.bought = 1
+	var retired := [
+		ShopState.Action.SELL, ShopState.Action.SALVAGE_ABILITY, ShopState.Action.CLEANSE
+	]
+	for action: int in retired:
+		w.shop.last_action = action
+		w.shop.last_tick = w.tick
+		w.shop.last_value = 12
+		w.ev.cleanse_tick = w.tick
+		w.ev.cleanse_last = 0
+		var p := RunSaver.payload_of(w, run, 99, PackedByteArray([1]))
+		var back := SaveLab.run_from(p)
+		var w2 := SaveLab.build_floor(back, &"", repo)
+		assert_eq(WorldSnapshot.apply(w2, p["world"]), "", "action %d: the snapshot fits" % action)
+		assert_eq(
+			w2.state_hash(), w.state_hash(), "action %d: Continue resumes the same state" % action
+		)
+		assert_true(w2.shop.open, "still shopping")
+		var s := WorldReader.new(w2).shop()
+		assert_eq(int(s["last_action"]), action, "the old action still reads")
+		assert_eq((s["stock"] as Array).size(), 4)
+		assert_false(s.has("sell") or s.has("cleanse_curse"), "nothing to sell or lift")
+		var shards := w2.shards
+		for v in [22, 100]:
+			var f := InputFrame.new()
+			f.pick = v
+			w2.step(f)
+			assert_eq(w2.shop.denied_tick, w2.tick - 1, "pick %d refused" % v)
+		assert_eq(w2.shards, shards, "nothing paid or refunded")
+
+
+## v0.10.5 W3-O9: selling is gone, but an old save's unmatched card is still refunded at the old salvage numbers
+## (WandMigration.refund_of): an item 40 % of its rarity's price under the floor step alone (a rare: 22 / 33 / 44 on
+## floors 1-3), an ability 10 shards per level.
+func test_the_migration_refunds_keep_the_old_salvage_numbers() -> void:
+	var repo := ContentRepository.load_all()
+	var w := SaveLab.build_floor(SaveLab.run_state(41, 1, &"blade", 0, repo), &"", repo)
+	var rare := -1
+	for i in w.item_tables.size():
+		if rare < 0 and Shop.rarity(w, i) == 1 and not w.item_tables[i].retired:
+			rare = i
+	assert_gt(rare, -1)
+	var got := []
+	for f in [1, 2, 3]:
+		w.floor_index = f
+		got.append(WandMigration.refund_of(w, rare))
+	assert_eq(got, [22, 33, 44])
+	assert_eq([WandMigration.REFUND_PERMILLE, WandMigration.ABILITY_REFUND_PER_LEVEL], [400, 10])

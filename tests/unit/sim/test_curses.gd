@@ -2,7 +2,8 @@
 extends GutTest
 ## v0.5.0 EV (PLAN R4; PD-05): the plain curses, each one's effect where the sim computes it; threat T (one per curse,
 ## its peak, the carry to the next floor, the run's record per floor); cursed chest offers (how many, what they hold,
-## taking the cursed card takes the curse, the other cards are clean); the shop's cleanse hook; and (v0.9.0 EL) the
+## taking the cursed card takes the curse, the other cards are clean); the cleanse hook (the Cleansing Font's; the
+## shop's lift is gone, v0.10.5 W3-O9); and (v0.9.0 EL) the
 ## three elite archetypes' fights pass the readable-cause check with the same bars as test_readable_cause.gd.
 ## v0.6.0 CU (owner S6): a cursed offer's card is a trade-off curse card (no epic stat card); the trade-off curses
 ## themselves are tested in test_trade_off_curses.gd. v0.9.0 EL (owner Q25): Marked (C8) and the Ambush Cache are
@@ -51,30 +52,25 @@ func test_the_shipped_curses() -> void:
 
 
 ## v0.10.5 O1: the prices curse (Price Gouge) is gone, so a cursed run's shop prices are the plain ones.
-func test_the_shop_sells_a_cleanse() -> void:
+## v0.10.5 W3-O9 (owner, 2026-11-04: "lifting the curse and selling is too broken"): the shop no longer lifts a
+## curse. With curses held, the old cleanse pick (22) is refused: nothing paid, nothing lifted, T unchanged.
+func test_the_shop_no_longer_lifts_a_curse() -> void:
 	var w := _world([&"heavy_hands", &"rooted"])
 	var v := _world()
 	assert_true(Shop.present(w), "the floor has a shop")
 	assert_eq(Shop.heal_price(w), Shop.heal_price(v), "no curse raises a price")
-	assert_eq(Shop.cleanse_price(v), 60, "60 shards on floor 1")
-	assert_eq(Shop.read(v)["cleanse_curse"], -1, "nothing to cleanse: no tile")
-	assert_false(Shop.cleanse(v), "refused without a curse")
-	w.shards = 10  # test setup
-	assert_false(Shop.cleanse(w), "refused without the shards")
-	w.shards = 200
-	var cost := Shop.cleanse_price(w)
-	assert_eq(cost, 60)
+	assert_false(Shop.read(w).has("cleanse_curse"), "no lift tile to show")
+	w.shards = 200  # test setup
+	var held := w.curses_owned.duplicate()
+	var t := Curses.threat(w)
 	var f := InputFrame.new()
-	f.pick = InputFrame.PICK_SHOP_CLEANSE
+	f.pick = 22  # the retired PICK_SHOP_CLEANSE
 	w.shop.open = true
 	w.step(f)
-	assert_eq(w.shards, 200 - cost, "paid")
-	assert_eq(
-		w.curses_owned,
-		PackedInt32Array([EventLab.curse_index(w, &"heavy_hands")]),
-		"the latest lifted"
-	)
-	assert_eq(Curses.threat(w), 1)
+	assert_eq(w.shards, 200, "nothing paid")
+	assert_eq(w.curses_owned, held, "both curses held")
+	assert_eq(Curses.threat(w), t)
+	assert_eq(w.shop.denied_tick, w.tick - 1, "refused")
 
 
 ## v0.9.0 EL (owner Q25): Marked is deleted. Its place in the curse table stays (a save's indices still name the same
@@ -106,7 +102,7 @@ func test_threat_counts_curses_and_carries_to_the_next_floor() -> void:
 	assert_true(Curses.add(w, 4))
 	assert_eq(Curses.threat(w), 2)
 	assert_eq(w.threat_peak, 2)
-	assert_true(Curses.cleanse(w), "the shop's hook lifts one")
+	assert_true(Curses.cleanse(w), "the hook (the Cleansing Font) lifts one")
 	assert_eq(w.curses_owned, PackedInt32Array([2]), "the latest goes first")
 	assert_eq(Curses.threat(w), 1)
 	assert_eq(w.threat_peak, 2, "the peak keeps what was chosen")

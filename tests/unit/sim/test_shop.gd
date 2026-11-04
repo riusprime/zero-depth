@@ -1,9 +1,9 @@
 extends GutTest
-## v0.5.0 SH (PLAN R1, R2): the shop and salvage in the sim. Prices by rarity x floor step; the interact button by
-## the terminal opens it and the world waits; a bought card applies exactly as a picked card; the heal (once), the
-## reroll (rising price); selling a mod or a stat card (40 % of its price; a stat stack removed, values rebuilt) and
-## salvaging an ability (10 shards per level, M-LOOP; the slot frees for a later card); refusals change nothing; every
-## action is deterministic, emits its SimEvent and is in the hash.
+## v0.5.0 SH (PLAN R1, R2): the shop in the sim. Prices by rarity x floor step; the interact button by the terminal
+## opens it and the world waits; a bought card applies exactly as a picked card; the heal (once), the reroll (rising
+## price); refusals change nothing; every action is deterministic, emits its SimEvent and is in the hash.
+## v0.10.5 W3-O9 (owner, 2026-11-04: "it should only show the heal, reroll and the 4 cards"): selling and the curse
+## lift are gone; their old pick values are refused.
 
 var _repo: ContentRepository
 var _shop: ShopTable
@@ -70,7 +70,6 @@ func test_the_data_compiles_to_the_starting_values() -> void:
 	assert_eq(_shop.offer_size, 4)
 	assert_eq(_shop.rarity_prices, PackedInt32Array([30, 55, 90, 150]), "v0.8.0 RR: + legendary")
 	assert_eq([_shop.heal_permille, _shop.heal_price, _shop.reroll_price], [300, 40, 20])
-	assert_eq([_shop.sell_permille, _shop.ability_refund_per_level], [400, 10])
 
 
 func test_prices_by_rarity_and_floor() -> void:
@@ -80,10 +79,9 @@ func test_prices_by_rarity_and_floor() -> void:
 		for r in 3:
 			row.append(_shop.card_price(r, f))
 		row.append(_shop.heal_cost(f))
-		row.append(_shop.sell_price(1, f))
 		by_floor.append(row)
-	# v0.5.5 EC (owner S4): floors 2-3 x 1.5 on top of the floor step (x 2.25, x 3); refunds stay on the step.
-	assert_eq(by_floor, [[30, 55, 90, 40, 22], [68, 124, 203, 90, 33], [90, 165, 270, 120, 44]])
+	# v0.5.5 EC (owner S4): floors 2-3 x 1.5 on top of the floor step (x 2.25, x 3).
+	assert_eq(by_floor, [[30, 55, 90, 40], [68, 124, 203, 90], [90, 165, 270, 120]])
 	var rerolls := []
 	for u in 5:
 		rerolls.append(_shop.reroll_cost(u))
@@ -255,34 +253,36 @@ func test_the_reroll_draws_a_new_stock_at_a_rising_price() -> void:
 	assert_eq(twin.state_hash(), w.state_hash())
 
 
-func test_sell_a_mod_for_forty_percent_and_lose_its_combos() -> void:
-	var w := _world(4)
-	var c := 0
-	while w.combo_tables[c].item_a < 0:  # v0.4.0 AB: skip the ability combos (they pair abilities, not items)
-		c += 1
-	var combo: ComboTable = w.combo_tables[c]
-	w.add_item(combo.item_a)
-	w.add_item(combo.item_b)
-	assert_true(w.combos_owned.has(c), "the combo is on")
+## v0.10.5 W3-O9 (owner, 2026-11-04: "it should only show the heal, reroll and the 4 cards, lifting the curse and
+## selling is too broken"): the open shop offers exactly its 4 cards, the heal and the reroll. A sellable build adds
+## nothing; the retired picks (22: the curse lift; 100 and up: selling) are refused and change nothing but the
+## refusal's tick (test_curses: the same with a curse held).
+func test_the_shop_offers_only_the_heal_the_reroll_and_four_cards() -> void:
+	var w := _world(8)
+	Abilities.grant(w, Abilities.index_of_kind(w, AbilityTable.Kind.DRONE_BUDDY))
+	Stats.add_card(w, Stats.Stat.DAMAGE, 0)
 	_open(w)
-	var list := Shop.sell_list(w)
-	assert_eq(list[0][0], Shop.SELL_MOD)
-	assert_eq(list[0][1], combo.item_a)
-	var refund := _shop.sell_price(Shop.rarity(w, combo.item_a), 1)
-	assert_eq(list[0][3], refund)
-	_pick(w, InputFrame.PICK_SHOP_SELL + 0)
-	assert_false(w.items_owned.has(combo.item_a), "sold")
-	assert_true(w.items_owned.has(combo.item_b))
-	assert_false(w.combos_owned.has(c), "its combo is gone")
-	assert_eq(w.shards, 1000 + refund)
-	var ev := _events(w, SimEvent.Kind.SHOP_SALVAGE)
-	assert_eq(ev.size(), 1)
-	assert_eq(ev[0].amount, refund)
-	assert_eq(ev[0].effect_id, w.item_tables[combo.item_a].id)
-	assert_true(ItemPool.available(w).has(combo.item_a), "it can be found again")
+	var r := Shop.read(w)
+	assert_eq((r["stock"] as Array).size(), 4, "four cards")
+	for key in ["sell", "cleanse_price", "cleanse_curse", "cleanse_name_key"]:
+		assert_false(r.has(key), "%s is gone" % key)
+	for key in ["heal_price", "heal_amount", "reroll_price"]:
+		assert_true(r.has(key), "%s stays" % key)
+	var owned := w.ability_owned.duplicate()
+	var cards := w.stat_cards.duplicate()
+	for v in [22, 100, 101]:
+		var shards := w.shards
+		_pick(w, v)
+		assert_eq(w.shop.denied_tick, w.tick - 1, "pick %d is refused" % v)
+		assert_eq(w.shards, shards, "pick %d: no shards move" % v)
+		assert_eq(w.ability_owned, owned, "pick %d: the build stays" % v)
+		assert_eq(w.stat_cards, cards)
+		assert_true(w.shop.open, "still shopping")
+	assert_eq(_events(w, SimEvent.Kind.SHOP_SALVAGE).size(), 0, "nothing is ever sold")
 
 
-func test_sell_a_stat_card_removes_one_stack_and_rebuilds() -> void:
+## Shop.remove_stat_card (the playground's card removal; it was selling's): one stack goes and the values rebuild.
+func test_removing_a_stat_card_drops_one_stack_and_rebuilds() -> void:
 	var w := _world(4)
 	var dmg := Stats.Stat.DAMAGE
 	var hp := Stats.Stat.MAX_HP
@@ -294,94 +294,16 @@ func test_sell_a_stat_card_removes_one_stack_and_rebuilds() -> void:
 	Stats.add_card(only, dmg, 0)
 	Stats.add_card(only, hp, 2)
 	Stats.add_card(only, dmg, 2)
-	_open(w)
-	var list := Shop.sell_list(w)
 	var common_dmg := Offers.stat_code(dmg, 0)
-	var n := -1
-	for k in list.size():
-		if list[k][0] == Shop.SELL_STAT and list[k][2] == common_dmg:
-			n = k
-	assert_gte(n, 0)
-	assert_eq(list[n][1], 2, "two of that card held: one entry")
-	_pick(w, InputFrame.PICK_SHOP_SELL + n)
+	Shop.remove_stat_card(w, common_dmg)
 	assert_eq(w.stat_values, only.stat_values, "as if the last one was never taken")
 	assert_eq(w.stat_cards.count(common_dmg), 1, "one stack left")
-	assert_eq(w.shards, 1000 + _shop.sell_price(0, 1))
-	# Max HP follows the max HP card's sale; HP stays at most the new max.
-	list = Shop.sell_list(w)
-	for k in list.size():
-		if list[k][2] == Offers.stat_code(hp, 2):
-			n = k
 	var before_max := w.actors.max_hp[0]
 	w.actors.hp[0] = before_max
-	_pick(w, InputFrame.PICK_SHOP_SELL + n)
+	Shop.remove_stat_card(w, Offers.stat_code(hp, 2))
 	assert_lt(w.actors.max_hp[0], before_max, "max HP falls")
 	assert_eq(w.actors.max_hp[0], (w.player.hp * Stats.value(w, hp) + 500) / 1000)
 	assert_eq(w.actors.hp[0], w.actors.max_hp[0], "HP at most the new max")
-
-
-func test_selling_at_the_cap_frees_the_stat_again() -> void:
-	var w := _world(4)
-	var s := Stats.Stat.CRIT_CHANCE
-	var guard := 0
-	while not Stats.at_cap(w, s) and guard < 60:
-		Stats.add_card(w, s, 2)
-		guard += 1
-	assert_true(Stats.at_cap(w, s), "at the cap")
-	_open(w)
-	var list := Shop.sell_list(w)
-	_pick(w, InputFrame.PICK_SHOP_SELL + list.size() - 1)
-	assert_false(Stats.at_cap(w, s), "one stack fewer: under the cap again")
-
-
-func test_salvage_an_ability_frees_its_slot() -> void:
-	var w := _world(8)
-	var bomb := Abilities.index_of_kind(w, AbilityTable.Kind.BOMB_LOBBER)
-	var drone := Abilities.index_of_kind(w, AbilityTable.Kind.DRONE_BUDDY)
-	var orbit := Abilities.index_of_kind(w, AbilityTable.Kind.ORBIT_BLADES)
-	var blink := Abilities.index_of_kind(w, AbilityTable.Kind.BLINK)
-	for idx in [bomb, drone, orbit]:
-		Abilities.grant(w, idx)
-	Abilities.grant(w, drone)
-	Abilities.grant(w, drone)
-	assert_true(Abilities.can_take(w, blink), "v0.6.0 MX2: the utility pick sits outside the slots")
-	_open(w)
-	var list := Shop.sell_list(w)
-	var kinds := []
-	for e in list:
-		if e[0] == Shop.SELL_ABILITY:
-			kinds.append(w.ability_tables[w.ability_owned[e[1]]].kind)
-	assert_eq(
-		kinds,
-		[
-			AbilityTable.Kind.BOMB_LOBBER,
-			AbilityTable.Kind.DRONE_BUDDY,
-			AbilityTable.Kind.ORBIT_BLADES
-		],
-		"every ability but the weapon"
-	)
-	var n := list.size() - 2  # Drone Buddy, level 3
-	assert_eq(list[n][3], 30, "10 shards per level")
-	_pick(w, InputFrame.PICK_SHOP_SELL + n)
-	assert_false(Abilities.owned(w, drone))
-	assert_eq(w.ability_owned.size(), 3)
-	assert_eq(w.ab.cd.size(), 3, "the cooldowns follow the slots")
-	assert_true(w.ab.drone_pos.is_empty(), "the drones go")
-	assert_eq(w.shards, 1030)
-	assert_true(Abilities.can_take(w, blink), "a later ability card can take the slot")
-	assert_eq(_events(w, SimEvent.Kind.SHOP_SALVAGE)[0].effect_id, w.ability_tables[drone].id)
-	assert_true(Abilities.grant(w, blink))
-	assert_eq(w.ability_owned.size(), 4)
-
-
-func test_the_weapon_is_never_salvaged() -> void:
-	var w := _world(8, &"gun")
-	_open(w)
-	for e in Shop.sell_list(w):
-		assert_ne(e[0], Shop.SELL_ABILITY, "only the weapon is owned: nothing to salvage")
-	_pick(w, InputFrame.PICK_SHOP_SELL + 0)
-	assert_eq(w.ability_owned.size(), 1)
-	assert_eq(w.shards, 1000)
 
 
 func test_same_inputs_same_hash_and_the_shop_is_hashed() -> void:
@@ -394,7 +316,6 @@ func test_same_inputs_same_hash_and_the_shop_is_hashed() -> void:
 		_pick(w, InputFrame.PICK_SHOP_REROLL)
 		w.actors.hp[0] = 20
 		_pick(w, InputFrame.PICK_SHOP_HEAL)
-		_pick(w, InputFrame.PICK_SHOP_SELL)
 		_pick(w, InputFrame.PICK_CANCEL)
 	assert_eq(a.state_hash(), b.state_hash(), "deterministic")
 	var h := a.state_hash()
@@ -482,3 +403,22 @@ func test_at_most_max_buys_cards_per_floor() -> void:
 	var next := _world(35)
 	_open(next)
 	assert_eq(Shop.buys_left(next), 4, "a new floor's shop starts fresh")
+
+
+## v0.10.5 W3-O9: sell_share and ability_refund_per_level left ShopDefinition, and cleanse_price
+## EventRulesDefinition. A .tres written before (the pre-W3-O9 data, kept as text here) still loads and validates.
+func test_an_old_shop_tres_with_the_sell_fields_still_loads() -> void:
+	var old := (
+		FileAccess.get_file_as_string("res://data/shop/terminal.tres")
+		+ "sell_share = 0.4\nability_refund_per_level = 10\n"
+	)
+	var path := "user://w3o9_old_terminal.tres"
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	f.store_string(old)
+	f.close()
+	var def := ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE) as ShopDefinition
+	assert_not_null(def, "it loads")
+	assert_eq(def.validate().size(), 0, "and validates")
+	assert_eq(ContentCompiler.compile_shop(def).offer_size, 4)
+	assert_false("sell_share" in def, "the field is gone")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))

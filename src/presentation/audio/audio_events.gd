@@ -502,8 +502,6 @@ func _events(reader: WorldReader, out: Array) -> void:
 				pass
 			SimEvent.Kind.SHOP_BUY:  # v0.5.0 SH: a purchase, the heal or a reroll
 				out.append([&"shop_buy", null, 1.0])
-			SimEvent.Kind.SHOP_SALVAGE:  # v0.5.0 SH: a sale or an ability salvaged
-				out.append([&"shop_sell", null, 1.0])
 			SimEvent.Kind.GAMBLE_FAIL:  # v0.8.0 N14 (O72): the shrine's fizzle (Vent's cold click, lower)
 				out.append([&"gamble_fail", e.pos, 1.0])  # v0.9.5 SS: its own crack
 			SimEvent.Kind.HEAL:  # v0.4.0 EN: a Mender's beam lands a heal on an ally

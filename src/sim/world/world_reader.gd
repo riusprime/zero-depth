@@ -262,15 +262,10 @@ const CARD_STAT := Offers.STAT
 const CARD_CURSE := Offers.CURSE  # v0.6.0 CU: a trade-off curse card
 ## v0.10.5 O7b: the SHARDS event's effect id when a lying drop is picked up (views tell it from an instant payout).
 const SHARD_PICKUP_EFFECT := ShardDrops.EFFECT
-## v0.5.0 SH: a shop salvage entry's kind, and the shop's last action (ShopState.Action).
-const SHOP_SELL_MOD := Shop.SELL_MOD
-const SHOP_SELL_STAT := Shop.SELL_STAT
-const SHOP_SELL_ABILITY := Shop.SELL_ABILITY
+## v0.5.0 SH: the shop's last action (ShopState.Action; v0.10.5 W3-O9: selling and the curse lift are gone).
 const SHOP_BUY := ShopState.Action.BUY
 const SHOP_HEAL := ShopState.Action.HEAL
 const SHOP_REROLL := ShopState.Action.REROLL
-const SHOP_SELL := ShopState.Action.SELL
-const SHOP_SALVAGE := ShopState.Action.SALVAGE_ABILITY
 const ABILITY_COMBO_SWORD := AbilityTable.Kind.COMBO_SWORD
 const ABILITY_PULSE_GUN := AbilityTable.Kind.PULSE_GUN
 const ABILITY_BLINK := AbilityTable.Kind.BLINK
@@ -3388,7 +3383,7 @@ func shop_denied_tick() -> int:
 
 
 ## Everything the shop panel shows (Shop.read): stock (code, sold, price, can_apply, affordable), heal (price,
-## amount, used), reroll (price, rerolls), sell (kind SHOP_SELL_*, ref, code, refund) and the last action / refusal.
+## amount, used), reroll (price, rerolls) and the last action / refusal.
 func shop() -> Dictionary:
 	return Shop.read(_w)
 
