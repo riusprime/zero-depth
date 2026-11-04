@@ -25,7 +25,9 @@ extends RefCounted
 
 ## v0.10.0 VX1: a bolt's and a slash's impact are the pack's scenes (false: the old sprites, for before/after shots).
 const PACK_HITS := true
-const LIFE_TICKS := 18.0
+## v0.10.5 W3-S4 (owner F10: "approximately 0.2 seconds"; was 18): an impact's sprites are gone this many ticks after
+## its hit (the pack's scenes: PackFx.SHORT).
+const LIFE_TICKS := 13.0
 const MAX_LIVE := 32
 const FULL := 8
 const THIN := 0.35

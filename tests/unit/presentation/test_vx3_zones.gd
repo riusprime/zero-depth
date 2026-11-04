@@ -103,8 +103,8 @@ func test_a_hero_fire_patch_is_one_held_area_in_ground_safe_colours() -> void:
 	assert_not_null(mat, "the patch's own tinted material")
 	var core: Color = mat.get_shader_parameter(&"edge_color")
 	var deep: Color = mat.get_shader_parameter(&"main_color")
-	assert_eq(core, AttackFormLooks.ground_safe(ElementLooks.core(&"ember")))
-	assert_eq(deep, AttackFormLooks.ground_safe(ElementLooks.deep(&"ember")))
+	assert_eq(core, VfxPackViews.dim_fire(AttackFormLooks.ground_safe(ElementLooks.core(&"ember"))))  # W3-S4: dimmed
+	assert_eq(deep, VfxPackViews.dim_fire(AttackFormLooks.ground_safe(ElementLooks.deep(&"ember"))))
 	assert_false(AttackFormLooks.is_hostile_hue(core), "I7: not a telegraph's hue")
 	assert_false(AttackFormLooks.is_hostile_hue(deep), "I7: the deep tone leaned cooler too")
 

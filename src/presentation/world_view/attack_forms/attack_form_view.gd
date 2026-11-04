@@ -44,16 +44,32 @@ const SEEKER_FAN := 0.55
 ## A muzzle spark this far out along the aim (m); a Halo volley's ground ring this wide (radius, m).
 const MUZZLE_M := 0.55
 const HALO_RING_M := 0.8
+## v0.10.5 W3-S4 (owner F5, 2026-11-04: fire pools "appear frequently ... visually overwhelming"): at most PATCH_MAX of
+## the hero's spec patches (fire, bleed ...) draw at once, the newest; past the newest PATCH_FULL the older ones fade to
+## PATCH_DIM (VfxLayer draws a faded patch smaller and dimmer). Scaled by the Effects density (PATCH_DENSITY), never
+## below one. The sim's patches (their radius, damage, life) are unchanged.
+const PATCH_FULL := 5
+const PATCH_MAX := 8
+const PATCH_DIM := 0.4
+const PATCH_DENSITY := {"low": 0.5, "medium": 0.75, "high": 1.0}
 
 ## v0.8.0 AO: the shock arcs and storm strikes laid since the view began, one per arc per sync (for the tests).
 var ring_arcs_drawn := 0
 ## v0.9.0 VX: the volley cues (muzzle sparks, Halo rings) started since the view began (the tests).
 var volley_cues := 0
+## v0.10.5 W3-S4 (owner F8): the hook blasts' size by their damage and their per-second budget (BlastLook).
+var blasts := BlastLook.new()
 ## v0.9.0 VX V48: the Gun shot's look, read once per build.
 var _form := FormLook.new()
 
 
 # --- Live wiring ----------------------------------------------------------------------------------------------
+## W3-S4 (F5): [full, max] patches drawn at the Effects density `density`.
+static func patch_caps(density: String) -> Array:
+	var k: float = PATCH_DENSITY.get(density, 1.0)
+	return [maxi(1, roundi(PATCH_FULL * k)), maxi(1, roundi(PATCH_MAX * k))]
+
+
 func sync(reader: WorldReader) -> void:
 	_tick = reader.tick()
 	_tier = reader.heat_tier()
@@ -239,7 +255,11 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 	var fire_pos: PackedVector2Array = el["fire_pos"]
 	var fire_r: PackedFloat32Array = el["fire_r"]
 	var fire_left: PackedInt32Array = el["fire_left"]
+	var caps := patch_caps(ViewPrefs.effects_density)
 	for k in fire_pos.size():
+		var rank := fire_pos.size() - 1 - k  # W3-S4 (F5): 0 the newest (the sim appends its patches)
+		if rank >= caps[1]:
+			continue
 		var look := _look_of(reader, fire_keys[k])
 		if look.is_empty():
 			continue  # Napalm Drone's patches have no spec: ElementVisuals draws them
@@ -251,8 +271,9 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 					"look": look,
 					"pos": fire_pos[k],
 					"radius": fire_r[k],
-					"fade": clampf(fire_left[k] / 150.0, 0.0, 1.0),
+					"fade":
 					# By place only: a patch's index in the sim's list shifts when an older one goes out, and an
+					clampf(fire_left[k] / 150.0, 0.0, 1.0) * (1.0 if rank < caps[0] else PATCH_DIM),
 					# index seed made every later patch's flames jump (owner, 2026-10-12: "it goes buggy all around").
 					"seed": _seed_at(fire_pos[k], 0),
 				}
@@ -443,6 +464,8 @@ func _sync_crits(reader: WorldReader) -> void:
 		_last_seq = e.seq
 		if e.kind != SimEvent.Kind.DAMAGE or e.owner_id != player_id or e.target_id == player_id:
 			continue
+		if not e.tags & SimEvent.TAG_DOT:  # W3-S4 (F8): the hits a blast's weight is read from
+			blasts.note(e.tick, e.amount, e.pos, (e.tags & SimEvent.TAG_AREA) != 0)
 		if e.tags & SimEvent.TAG_DOT or (e.tags & SimEvent.TAG_CRIT) == 0 or n >= 8:
 			continue
 		n += 1
@@ -565,6 +588,10 @@ func _draw_cast(reader: WorldReader, m: Dictionary) -> void:
 			{"start": start, "life": float(CAST_RING_TICKS), "radius": CAST_RING_M}
 		)
 	var form := int(look["form"])
+	if form == AttackFormLooks.BURST:
+		look = _blast_look(look, pos, int(m["tick"]))
+		if look.is_empty():
+			return
 	if form == AttackFormLooks.ARC or form == AttackFormLooks.BURST:
 		var name: StringName = AttackFormLooks.FORM_NAMES[form]
 		cast_forms[name] = int(cast_forms.get(name, 0)) + 1
@@ -574,3 +601,17 @@ func _draw_cast(reader: WorldReader, m: Dictionary) -> void:
 			SimPlane.yaw_of(int(m["angle"])),
 			{"start": start, "own": CAST_OWN_M, "look": look}
 		)
+
+
+## v0.10.5 W3-S4 (owner F8): a hook blast's look drawn at its damage's weight (its radius MIN_R..1 of the sim's, its
+## light and pieces dimmed: "w"), a small pop past the second's budget, {} when the budget leaves it out (BlastLook).
+func _blast_look(look: Dictionary, pos: Vector2, tick: int) -> Dictionary:
+	var r: float = look["radius"]
+	var a := blasts.admit(tick, pos, ViewPrefs.effects_density)
+	if a == BlastLook.NONE:
+		return {}
+	var w := blasts.weight(tick, pos, r) if a == BlastLook.FULL else 0.0
+	var out := look.duplicate()
+	out["radius"] = r * BlastLook.radius_k(w)
+	out["w"] = w
+	return out

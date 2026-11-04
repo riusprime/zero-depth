@@ -43,6 +43,15 @@ const FROST_ZONES: Array[StringName] = [
 const VENOM_ZONES: Array[StringName] = [&"zone_venom_a", &"zone_venom_b"]
 const FIRE_ZONES: Array[StringName] = [&"zone_fire_a", &"zone_fire_b"]
 const FOE_FIRE_ZONES: Array[StringName] = [&"zone_fire_foe_a", &"zone_fire_foe_b"]
+## v0.10.5 W3-S4 (owner F5, 2026-11-04: the fire pools are "visually overwhelming, obscure enemies, and draw too much
+## attention"): the hero's fire patch is drawn at FIRE_DRAW_R of the sim's radius (the sim's is unchanged), its colours
+## at FIRE_DIM (no white-hot core: the glow is the edge's colour; the scene's emission is twice its albedo), its wave at
+## FIRE_ALPHA, its rising sparks at FIRE_SPARKS, its light at FIRE_LIGHT. An enemy's patch (a threat) keeps its look.
+const FIRE_DRAW_R := 0.8
+const FIRE_DIM := 0.5
+const FIRE_ALPHA := 0.55
+const FIRE_SPARKS := 0.35
+const FIRE_LIGHT := 0.4
 ## A shatter's ice patch and a Wildfire's flames last this long (s).
 const SHATTER_S := 0.9
 const WILDFIRE_S := 1.0
@@ -164,10 +173,19 @@ static func tint_fire_area(node: Node3D, hostile: bool) -> void:
 		return
 	var cols := kind_colors(&"fire", true)
 	var mat := src.duplicate() as ShaderMaterial  # (the scene's own is shared by every instance)
-	mat.set_shader_parameter(&"main_color", cols[&"tertiary"])
-	mat.set_shader_parameter(&"edge_color", cols[&"primary"])
-	mat.set_shader_parameter(&"glow_color", cols[&"secondary"])
+	mat.set_shader_parameter(&"main_color", dim_fire(cols[&"tertiary"]))
+	mat.set_shader_parameter(&"edge_color", dim_fire(cols[&"primary"]))
+	mat.set_shader_parameter(&"glow_color", dim_fire(cols[&"primary"]))  # W3-S4 (F5): no white-hot core
 	wave.material_override = mat
+	wave.transparency = 1.0 - FIRE_ALPHA
+	var sparks := node.get_node_or_null("sparks") as GPUParticles3D
+	if sparks != null:
+		sparks.amount_ratio = FIRE_SPARKS
+
+
+## v0.10.5 W3-S4 (F5): a hero fire patch's colour `c` at FIRE_DIM (its alpha kept).
+static func dim_fire(c: Color) -> Color:
+	return Color(c.r * FIRE_DIM, c.g * FIRE_DIM, c.b * FIRE_DIM, c.a)
 
 
 # --- Zones and rings ---------------------------------------------------------------------------------------------
@@ -176,6 +194,7 @@ static func tint_fire_area(node: Node3D, hostile: bool) -> void:
 func fire(c: Vector3, r: float, fade: float, age: float, sd: int, hostile: bool) -> bool:
 	var ids := FOE_FIRE_ZONES if hostile else FIRE_ZONES
 	var id: StringName = ids[absi(sd) % ids.size()]
+	var k := 1.0 if hostile else FIRE_DRAW_R  # W3-S4 (F5)
 	# Overlapping patches (a dash's Flame Trail) stay about one layer: one that another patch covers draws no flames.
 	if layer._claim(&"fire_zone", c, maxf(VfxLayer.FLAME_SPACING, r), sd):
 		var node := zone_holds.touch(
@@ -183,7 +202,7 @@ func fire(c: Vector3, r: float, fade: float, age: float, sd: int, hostile: bool)
 			id,
 			&"area",
 			c,
-			r * float(ZONE_PER_M[id]) * (0.5 + 0.5 * fade),
+			r * k * float(ZONE_PER_M[id]) * (0.5 + 0.5 * fade),
 			{},
 			tint_fire_area.bind(hostile)
 		)
@@ -192,7 +211,7 @@ func fire(c: Vector3, r: float, fade: float, age: float, sd: int, hostile: bool)
 	layer._light_merged(
 		c + Vector3(0, 0.9, 0),
 		VfxLayer.WARM,
-		(2.6 + r) * fade * (0.85 + 0.15 * sin(age * 0.9 + sd)),
+		(2.6 + r) * fade * (0.85 + 0.15 * sin(age * 0.9 + sd)) * (1.0 if hostile else FIRE_LIGHT),
 		r + 3.5,
 		2.5
 	)

@@ -870,7 +870,7 @@ func _draw_burst(e: Dictionary, look: Dictionary, age: float) -> void:
 	for off: float in look["angles"]:
 		var c := SimPlane.to_3d(_ground_at(e, look, off), GROUND_H)
 		if kind != &"":
-			vfx.burst(kind, c, big_r, t, int(e["seed"]) * 13 + int(off * 100.0))
+			vfx.burst(kind, c, big_r, t, int(e["seed"]) * 13 + int(off * 100.0), look.get("w", 1.0))
 			continue
 		var r := big_r * (0.5 + 0.5 * grow)
 		_put(

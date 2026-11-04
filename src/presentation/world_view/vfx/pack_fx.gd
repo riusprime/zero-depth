@@ -50,6 +50,30 @@ const HOLD_S := 0.1
 const LIFE_MARGIN_S := 0.1
 const ANIM := &"main"
 const WARM_AHEAD_M := 2.0
+## v0.10.5 W3-S4 (owner F10, 2026-11-04: attack particles "remain visible for several seconds after impact ...
+## approximately 0.2 seconds would feel more appropriate"): a player hit's scenes (the bolt and slash hits, the heavy
+## impacts, the guard / weak / deflect sparks, the forms' crit, bounce and rune hits) ran their own 0.8-1.3 s (an
+## animated scene's particles re-emitted for all of it, an impact's smoke lived 1.2 s). Now each plays whole within
+## [seconds] (its scene sped up) and goes back to its pool once the draw time is [ticks] sim ticks past its spawn
+## (follow() reads VfxCore.now, so it pauses and replays with the sim; no Timer). Starting values.
+const SHORT := {
+	&"vx1_hit_ember": [0.2, 15.0],
+	&"vx1_hit_frost": [0.2, 15.0],
+	&"vx1_hit_storm": [0.2, 15.0],
+	&"vx1_hit_venom": [0.2, 15.0],
+	&"vx1_hit_bleed": [0.2, 15.0],
+	&"vx1_hit_plain": [0.2, 15.0],
+	&"vx1_slash": [0.2, 15.0],
+	&"vx1_guard": [0.2, 15.0],
+	&"vx1_weak": [0.2, 15.0],
+	&"vx1_deflect": [0.2, 15.0],
+	&"vx1_impact_ember": [0.25, 18.0],
+	&"vx1_impact_frost": [0.25, 18.0],
+	&"vx1_impact_other": [0.25, 18.0],
+	&"vx2_hit_rune": [0.2, 15.0],
+	&"vx2_hit_bounce": [0.2, 15.0],
+	&"vx2_hit_crit": [0.2, 15.0],
+}
 
 static var _shared: PackFxDefinition
 ## How floor loads warm the pack (VX-W): &"menu" (PackFxSessionWarm warms at the main menu; a load warms what is
@@ -79,6 +103,7 @@ var _held := false
 var _warm_nodes: Array[Dictionary] = []  # {node, left: frames}
 var _last_tick := -1
 var _tick_at_ms := 0
+var _now := 0.0  # the draw time (sim ticks) of the last follow()
 
 
 func _init(def: PackFxDefinition = null) -> void:
@@ -162,13 +187,20 @@ func spawn(
 	_colour(node, info, colors, k)
 	# v0.10.0 lead (VX2-VX5's findings): a held effect keeps emitting and looping until release(); a timed one runs
 	# its scene's one pass (an animation-less scene's particles fire once).
+	var short: Array = SHORT.get(effect_id, []) if life != 0.0 else []
 	for p in _particles(node):
-		p.one_shot = life != 0.0 and info["anim"] == null
+		p.one_shot = life != 0.0 and (info["anim"] == null or not short.is_empty())
 		p.local_coords = not WORLD_SPACE.has(family)
+	var left := float(info["life"]) / speed if life < 0.0 else (INF if life == 0.0 else life)
+	var entry := {"node": node, "id": effect_id, "family": family, "left": left}
+	if not short.is_empty():  # W3-S4 (F10): the whole scene within short[0] s, gone short[1] ticks on
+		var s: float = short[0]
+		speed = maxf(speed, float(info["life"]) / s)
+		entry["left"] = minf(left, s + LIFE_MARGIN_S)
+		entry["until"] = _now + float(short[1])
 	info["mul"] = speed
 	_restart(node, info)
-	var left := float(info["life"]) / speed if life < 0.0 else (INF if life == 0.0 else life)
-	_live.append({"node": node, "id": effect_id, "family": family, "left": left})
+	_live.append(entry)
 	var n_live := int(_live_n.get(effect_id, 0)) + 1
 	_live_n[effect_id] = n_live
 	if n_live > int(_peak.get(effect_id, 0)):
@@ -219,6 +251,19 @@ func follow(now: float) -> void:
 		_last_tick = tick
 		_tick_at_ms = ms
 	set_held(float(ms - _tick_at_ms) / 1000.0 > HOLD_S)
+	_expire(now)
+
+
+## v0.10.5 W3-S4 (F10): the draw time is `now` (sim ticks): the SHORT effects whose ticks are up go back to their pool.
+func _expire(now: float) -> void:
+	_now = now
+	var done: Array[Node3D] = []
+	for e in _live:
+		# (a draw time far before it: a new floor's world, its ticks started again)
+		if e.has("until") and (now >= float(e["until"]) or now < float(e["until"]) - 120.0):
+			done.append(e["node"])
+	for n in done:
+		_release(n)
 
 
 ## Pause (I8): live instances stop (speed_scale 0) while held and run again after.

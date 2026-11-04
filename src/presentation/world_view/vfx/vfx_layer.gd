@@ -28,6 +28,8 @@ const FIRE_PATCH_TINT := Color(1.0, 0.667, 0.2, 0.9)
 ## The closest two flames of different patches stand in one frame (m): overlapping patches (a dash's Flame Trail)
 ## thin out to about one layer of flames (owner, 2026-10-12: "that's too much fire").
 const FLAME_SPACING := 0.8
+## v0.10.5 W3-S4 (F5): the hero's fire-patch flames at this much of their height and brightness.
+const FIRE_LOW := 0.6
 ## Mark keys: an effect's seed times MARK_KINDS plus its kind, so two marks of one effect never collide.
 const MARK_KINDS := 8
 ## v0.8.0 PF (owner O9: Spread + Split + Explosive "goes two FPS … maybe we can stop applying some effects"): the
@@ -40,6 +42,8 @@ const BURST_FULL := 12
 const BURST_MAX := 32
 const BURST_MERGE_M := 1.2
 const BURST_THIN := 0.3
+## v0.10.5 W3-S4 (F8): a burst lighter than this (a small pop) has no light.
+const POP_LIGHT_W := 0.5
 ## v0.10.0 VX0 (VFX_PACK R18): the fire explosion's fireball, debris and smoke are the pack's effects (PackFx);
 ## false keeps the sprite explosion (the before shots).
 const PACK_EXPLOSION := true
@@ -65,6 +69,7 @@ var pack_fx: PackFx = null
 ## VX3: how many of the guard orbs the pack draws this frame (StatusVisuals hides that many of its own).
 var guard_orbs_packed := 0
 var _pack_seen := {}  # seed -> the tick the burst was last drawn
+var _burst_weight := 1.0  # W3-S4: the burst being drawn's weight (burst())
 ## VX3: the pack's zones, bursts and statuses (VfxPackViews).
 var _views := VfxPackViews.new(self)
 ## v0.10.0 VX6: the storm looks, the pack's lightning (StormPack).
@@ -134,7 +139,9 @@ func line(kind: StringName, a: Vector3, b: Vector3, fade: float, age: float, sd:
 
 
 ## A burst of radius `r` at `c` (ground), `u` (0..1) through its life: a bomb landing or a blast.
-func burst(kind: StringName, c: Vector3, r: float, u: float, sd: int) -> void:
+## v0.10.5 W3-S4 (owner F8): `weight` (0..1, BlastLook: a hook blast's damage) dims it: its pieces at BURST_THIN..1 of
+## the density, its light at `weight` (none below POP_LIGHT_W: a small pop). The caller sizes `r`.
+func burst(kind: StringName, c: Vector3, r: float, u: float, sd: int, weight := 1.0) -> void:
 	bursts_asked += 1
 	var full := bursts_drawn < BURST_FULL
 	if not _claim(&"burst", c, BURST_MERGE_M) and not full:
@@ -148,9 +155,13 @@ func burst(kind: StringName, c: Vector3, r: float, u: float, sd: int) -> void:
 	if not full:
 		density = base * BURST_THIN
 		_lights_off = true
+	density *= lerpf(BURST_THIN, 1.0, clampf(weight, 0.0, 1.0))
+	_lights_off = _lights_off or weight < POP_LIGHT_W
+	_burst_weight = clampf(weight, 0.0, 1.0)
 	_burst_kind(kind, c, r, u, sd)
 	density = base
 	_lights_off = false
+	_burst_weight = 1.0
 
 
 func _burst_kind(kind: StringName, c: Vector3, r: float, u: float, sd: int) -> void:
@@ -280,11 +291,14 @@ static func _splat(k: int) -> StringName:
 func _fire(c: Vector3, r: float, fade: float, age: float, sd: int, hostile := false) -> void:
 	if PACK_ZONES and pack_fx != null and _views.fire(c, r, fade, age, sd, hostile):
 		return
+	# v0.10.5 W3-S4 (owner F5): the hero's flames inside FIRE_DRAW_R of the patch, lower and dimmer (VfxPackViews).
+	var dr := r * (1.0 if hostile else VfxPackViews.FIRE_DRAW_R)
+	var low := 1.0 if hostile else FIRE_LOW
 	var n := clampi(int(round((3.0 + r * r * 2.0) * density)), 3, 16)
 	for k in n:
 		var a := TAU * h(sd, k)
 		# The first three flames make a taller core near the centre, so the patch reads as one blaze.
-		var d := sqrt(h(sd + 3, k)) * r * (0.3 if k < 3 else 0.85)
+		var d := sqrt(h(sd + 3, k)) * dr * (0.3 if k < 3 else 0.85)
 		var p := c + Vector3(cos(a) * d, 0.0, sin(a) * d)
 		# Each flame breathes on its own beat and swaps its shape now and then.
 		var beat := 0.85 + 0.15 * sin(age * (0.35 + 0.2 * h(sd + 5, k)) + TAU * h(sd + 7, k))
@@ -294,15 +308,21 @@ func _fire(c: Vector3, r: float, fade: float, age: float, sd: int, hostile := fa
 			* beat
 			* fade
 			* (1.25 if k < 3 else 1.0)
+			* low
 		)
-		if _flame(p, hgt, k, age, sd, fade) and k % 2 == 0:
+		if _flame(p, hgt, k, age, sd, fade * low) and k % 2 == 0:
 			_embers(p, age, sd + k * 13, 1, fade)
 	if _claim(&"fire_smoke", c, 1.6):
 		_smoke(c + Vector3(0, 0.5, 0), age, sd + 77, 0.35 + r * 0.25, fade * 0.45, 70.0)
 	_light_merged(
 		c + Vector3(0, 0.9, 0),
 		WARM,
-		(2.6 + r) * fade * (0.85 + 0.15 * sin(age * 0.9 + sd)),
+		(
+			(2.6 + r)
+			* fade
+			* (0.85 + 0.15 * sin(age * 0.9 + sd))
+			* (1.0 if hostile else VfxPackViews.FIRE_LIGHT)
+		),
 		r + 3.5,
 		2.5
 	)
@@ -498,7 +518,7 @@ func _explosion_rest(c: Vector3, r: float, u: float, sd: int) -> void:
 			c + Vector3(cos(a) * r * 1.3 * t, 0.3 + 1.6 * t - 1.8 * t * t, sin(a) * r * 1.3 * t)
 		)
 		_put(&"spark", _facing(q, 0.12, 0.12, true), Color(2.4, 1.3, 0.4, 1.0 - t), k % 4, 0.0, 0.0)
-	_light(c + Vector3(0, 1.0, 0), WARM, 7.0 * pow(1.0 - u, 2.0), r * 3.0 + 2.0)
+	_light(c + Vector3(0, 1.0, 0), WARM, 7.0 * pow(1.0 - u, 2.0) * _burst_weight, r * 3.0 + 2.0)
 	mark(sd * MARK_KINDS, &"scorch", c, r * 1.25, SCORCH)
 
 
