@@ -4,7 +4,7 @@ extends RefCounted
 ## file that loads the card art. The card icons (assets/ui/card_icons/icon_<card id>.png, cut from his sheets by
 ## scripts/art/split_sheets.py; a card without one shows icon_unknown), his four carved slate card frames and their
 ## focused twins (assets/ui/card_frames/frame_<1..4>[_focus].png, cut by scripts/art/cut_card_frames.py: each frame's
-## body centred on one 360 x 480 canvas, so a frame and its twin line up), the pick dissolve's noise
+## body centred on one 400 x 520 canvas, so a frame and its twin line up), the pick dissolve's noise
 ## (assets/ui/fx/dissolve_noise.png), Astral's palette and its Cinzel titles. A card's frame is chosen by its id, the
 ## same every time. Presentation only (EI-07): nothing here changes an outcome.
 
@@ -16,13 +16,13 @@ const UNKNOWN := &"unknown"
 const CINZEL := "res://assets/fonts/cinzel/Cinzel-Variable.ttf"
 const FRAMES := 4
 ## The frame canvas (px), the frame body's padding inside it (the focused glow's room) and the body's mean width.
-const CANVAS := Vector2(360, 480)
-const PAD := Vector2(24, 23)
+const CANVAS := Vector2(400, 520)
+const PAD := Vector2(44, 43)
 const BODY_W := 312.0
 ## The 9-slice margins (canvas px): the padding plus the chamfered corners and their carved ornaments, which never
 ## stretch; only the plain slate between them does.
-const MARGIN_X := 80
-const MARGIN_Y := 84
+const MARGIN_X := 100
+const MARGIN_Y := 104
 
 ## Astral's tokens (W3_O13_UI_STYLE_G2.md, Astral).
 const TEXT := Color("#ECEEFA")
