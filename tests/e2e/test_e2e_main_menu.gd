@@ -20,14 +20,14 @@ func test_the_five_plates_and_the_focus() -> void:
 	var menu: MainMenu = main.get_node("UI/MainMenu")
 	var names := []
 	for c in menu.box.get_children():
-		if c is StoneButton:
+		if c is AstralButton:  # v0.10.5 W3-O18: Astral rows
 			names.append(String(c.name))
 	assert_eq(names, ["Continue", "Play", "Options", "Credits", "Quit"])
 	assert_true(
 		(menu.box.get_node("Continue") as Button).disabled, "no save: Continue is greyed out"
 	)
 	assert_eq(_focused(main).name, &"Play", "and skipped: Play has the focus")
-	assert_true((_focused(main) as StoneButton).is_lit())
+	assert_true((_focused(main) as AstralButton).is_lit())
 	await e.tap(KEY_DOWN)
 	assert_eq(_focused(main).name, &"Options")
 	await e.tap(KEY_DOWN)

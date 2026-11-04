@@ -134,18 +134,22 @@ func test_every_menu_is_on_ember_stone() -> void:
 	assert_not_null(main.backdrop.texture, "v0.9.5 MM: the owner's picture is behind the main menu")
 	assert_null(main.find_child("MenuBackdrop", true, false), "and no ember backdrop")
 	var repo := ContentRepository.load_all()
+	var picker := BuildPicker.new(_defs("res://data/builds"), &"blade")
+	add_child_autofree(picker)
+	assert_eq(picker.theme, t, "the build picker wears the Ember stone theme")
+	assert_not_null(picker.find_child("MenuBackdrop", true, false), "the build picker's backdrop")
+	# v0.10.5 W3-O18 (owner: "the rest of the UI ... should match the new style"): these menus are Astral now.
 	for screen: Control in [
 		PauseMenu.new(),
 		EndPanel.new(false, 0),
 		OptionsMenu.new(ProfileStore.new("")),
 		CreditsView.new(repo.get_def(&"credits", &"main"), repo.get_def(&"licences", &"generated")),
-		BuildPicker.new(_defs("res://data/builds"), &"blade"),
 	]:
 		add_child_autofree(screen)
-		assert_eq(screen.theme, t, "%s wears the Ember stone theme" % screen.name)
-		assert_not_null(
-			screen.find_child("MenuBackdrop", true, false), "%s: the backdrop" % screen.name
-		)
+		assert_eq(screen.theme, AstralMenu.theme(), "%s wears the Astral theme" % screen.name)
+		var bd := screen.find_child("MenuBackdrop", true, false) as MenuBackdrop
+		assert_not_null(bd, "%s: the backdrop" % screen.name)
+		assert_true(bd.astral, "%s: under Astral's ink" % screen.name)
 
 
 func test_focus_is_visible_for_mouse_and_pad_under_every_colour_mode() -> void:

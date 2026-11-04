@@ -594,7 +594,7 @@ func test_options_accessibility_has_the_hit_stop_row() -> void:
 	var c := menu.find_child("hit_stop", true, false) as OptionCycler
 	assert_not_null(c, "a Hit-stop row under Accessibility")
 	var row := c.get_parent()
-	var label := row.get_child(0) as Label
+	var label := row.get_node("Label") as Label  # v0.10.5 W3-O18: an Astral row starts with its focus mark
 	assert_eq(label.text, "UI_HIT_STOP", "its label is the translated key")
 	assert_ne(tr("UI_HIT_STOP"), "UI_HIT_STOP", "with an English string")
 

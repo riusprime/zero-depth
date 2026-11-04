@@ -10,6 +10,13 @@ extends Control
 ## TABS (categories across the top) and LIST (every section in one scrolling column).
 ## v0.8.0 MU (Ember stone, MenuStyle): the blurred, ember-lit game (or the menu's own ember scene) behind, a carved
 ## stone slab set to the left, warm type, the focused row and the open category ember-lit slabs.
+## v0.10.5 W3-O18 (owner: "the rest of the UI ... should match the new style"): in Astral (AstralMenu; the round-2
+## mock's options): the game (or Astral's own night) under cool ink, the screen an ink veil between two fading
+## hairlines; the categories a strip of Cinzel tabs (the open one underlined in the accent, the focused one starred);
+## field labels in small Cinzel capitals that light with their row; volumes hairline tracks with an accent fill and a
+## diamond knob, the value at the right; on/off choices Astral switches, longer choices a field between two chevrons;
+## the binding cells thin frames; Back and the resets lozenge plates. The layout, the focus order and the input are
+## unchanged.
 
 signal back_pressed
 ## A setting changed (its GameSettings key); Main applies what lives in the view (shake, outline, view prefs).
@@ -57,8 +64,9 @@ func _init(profile: ProfileStore, p_layout: int = Layout.SIDEBAR, _over_game: bo
 	_profile = profile
 	layout = p_layout
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	MenuStyle.apply(self)
-	var backdrop := MenuBackdrop.new()  # over the game it blurs it; over the main menu, its own ember scene
+	AstralMenu.apply(self)  # v0.10.5 W3-O18
+	var backdrop := MenuBackdrop.new()  # over the game it blurs it; over the main menu, its own scene
+	backdrop.astral = true
 	add_child(backdrop)
 	for id in SECTIONS:
 		sections[id] = _build_section(id)
@@ -71,16 +79,16 @@ func _init(profile: ProfileStore, p_layout: int = Layout.SIDEBAR, _over_game: bo
 
 func _build_frame() -> void:
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(1180, 680) if layout != Layout.LIST else Vector2(900, 760)
+	panel.custom_minimum_size = Vector2(1280, 744) if layout != Layout.LIST else Vector2(960, 792)
 	panel.set_anchors_preset(Control.PRESET_CENTER_LEFT)
-	panel.offset_left = MenuStyle.LIST_LEFT - 24.0
+	panel.offset_left = AstralMenu.LEFT - 40.0
 	panel.offset_top = -panel.custom_minimum_size.y * 0.5
 	panel.offset_bottom = panel.custom_minimum_size.y * 0.5
 	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	add_child(panel)
 	var pad := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
-		pad.add_theme_constant_override("margin_" + side, 24)
+		pad.add_theme_constant_override("margin_" + side, 0)
 	panel.add_child(pad)
 	_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -88,7 +96,7 @@ func _build_frame() -> void:
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	var body := VBoxContainer.new()
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	body.add_theme_constant_override("separation", 18)
+	body.add_theme_constant_override("separation", 24)
 	_scroll.add_child(body)
 	for id in SECTIONS:
 		body.add_child(sections[id])
@@ -98,13 +106,14 @@ func _build_frame() -> void:
 	match layout:
 		Layout.SIDEBAR:
 			var row := HBoxContainer.new()
-			row.add_theme_constant_override("separation", 28)
+			row.add_theme_constant_override("separation", 40)
 			pad.add_child(row)
 			var side := VBoxContainer.new()
-			side.custom_minimum_size = Vector2(280, 0)
-			side.add_theme_constant_override("separation", 10)
+			side.custom_minimum_size = Vector2(296, 0)
+			side.add_theme_constant_override("separation", 8)
 			row.add_child(side)
 			side.add_child(_title())
+			side.add_child(AstralMenu.LeftRule.new(32.0))
 			for id in SECTIONS:
 				side.add_child(_tab(id))
 			var gap := Control.new()
@@ -137,35 +146,30 @@ func _build_frame() -> void:
 			col.add_child(_back)
 
 
-func _title() -> Label:
-	var l := Label.new()
-	l.text = "UI_OPTIONS"
-	l.add_theme_font_override("font", HudStyle.font(true))
-	l.add_theme_font_size_override("font_size", 44)
-	l.horizontal_alignment = (
-		HORIZONTAL_ALIGNMENT_LEFT if layout == Layout.SIDEBAR else HORIZONTAL_ALIGNMENT_CENTER
-	)
-	return l
+## v0.10.5 W3-O18: the sigil and "OPTIONS" in letter-spaced Cinzel (its label named "Title").
+func _title() -> Control:
+	var head := AstralMenu.Title.new(AstralMenu.PANEL_TITLE_SIZE)
+	head.label.text = "UI_OPTIONS"
+	if layout != Layout.SIDEBAR:
+		head.alignment = BoxContainer.ALIGNMENT_CENTER
+	return head
 
 
 func _tab(id: StringName) -> Button:
-	var b := _button(SECTION_KEYS[id], func() -> void: _open(id))
+	var b := AstralButton.new(AstralButton.Kind.TAB, 200.0 if layout == Layout.TABS else 0.0)
+	b.text = SECTION_KEYS[id]
+	b.pressed.connect(func() -> void: _open(id))
 	b.name = "Tab" + String(id).capitalize()
 	b.toggle_mode = true
 	b.focus_entered.connect(func() -> void: _select(id))
-	if layout == Layout.TABS:
-		b.custom_minimum_size = Vector2(200, 48)
-	else:
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	tabs[id] = b
 	return b
 
 
+## v0.10.5 W3-O18: Back and the resets are Astral lozenge plates.
 func _button(key: String, on_press: Callable) -> Button:
-	var b := Button.new()
+	var b := AstralButton.new(AstralButton.Kind.PLATE, 296.0)
 	b.text = key
-	b.custom_minimum_size = Vector2(0, 48)
-	b.add_theme_font_size_override("font_size", 22)
 	b.pressed.connect(on_press)
 	return b
 
@@ -230,12 +234,12 @@ func _build_section(id: StringName) -> VBoxContainer:
 	var box := VBoxContainer.new()
 	box.name = "Section" + String(id).capitalize()
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	box.add_theme_constant_override("separation", 10)
+	box.add_theme_constant_override("separation", 8)
 	var head := Label.new()
 	head.text = SECTION_KEYS[id]
-	head.add_theme_font_size_override("font_size", 28)
-	head.modulate = Color(0.55, 0.85, 0.95)
+	AstralMenu.caps(head, AstralMenu.SECTION_SIZE, AstralCardArt.TEXT, 600, 0.28)  # v0.10.5 W3-O18
 	box.add_child(head)
+	box.add_child(AstralMenu.LeftRule.new(16.0, 0.45))
 	match id:
 		&"audio":
 			for key: String in VOLUMES:
@@ -270,14 +274,11 @@ func _hints_reset(box: Control) -> void:
 	var row := _row(box, "UI_RESET_HINTS_LABEL")
 	var b := _button("UI_RESET_HINTS", func() -> void: pass)
 	b.name = "ResetHints"
-	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b.add_theme_font_size_override("font_size", 20)
-	b.custom_minimum_size = Vector2(0, 40)
+	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	var done := Label.new()
 	done.name = "HintsResetDone"
 	done.text = "UI_HINTS_RESET_DONE"
-	done.add_theme_font_size_override("font_size", 18)
-	done.modulate = Color(1.0, 0.85, 0.45)
+	AstralMenu.body(done, AstralMenu.NOTE_SIZE, AstralCardArt.ACCENT)
 	done.visible = false
 	b.pressed.connect(
 		func() -> void:
@@ -290,29 +291,43 @@ func _hints_reset(box: Control) -> void:
 
 
 func _row(box: Control, label_key: String) -> HBoxContainer:
-	var row := HBoxContainer.new()
+	var row := AstralMenu.FieldRow.new()  # v0.10.5 W3-O18: lit with its control
 	row.add_theme_constant_override("separation", 16)
+	row.custom_minimum_size = Vector2(0, 48)
 	var l := Label.new()
+	l.name = "Label"
 	l.text = label_key
 	l.custom_minimum_size = Vector2(LABEL_W, 0)
-	l.add_theme_font_size_override("font_size", 20)
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	AstralMenu.caps(l, AstralMenu.LABEL_SIZE, AstralCardArt.DIM, 600, 0.24)  # v0.10.5 W3-O18
 	row.add_child(l)
 	box.add_child(row)
 	return row
+
+
+## v0.10.5 W3-O18: a row's label lights while its control has the focus (Astral: focus reads by brightness).
+static func _light_label(row: HBoxContainer, c: Control) -> void:
+	var l := row.get_node("Label") as Label
+	var lit := func(on: bool) -> void:
+		l.add_theme_color_override("font_color", AstralCardArt.TEXT if on else AstralCardArt.DIM)
+		if row is AstralMenu.FieldRow:
+			(row as AstralMenu.FieldRow).lit = on
+	c.focus_entered.connect(lit.bind(true))
+	c.focus_exited.connect(lit.bind(false))
 
 
 func _note(box: Control, key: String) -> void:
 	var l := Label.new()
 	l.text = key
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.add_theme_font_size_override("font_size", 16)
-	l.modulate = Color(1, 1, 1, 0.65)
+	AstralMenu.body(l, AstralMenu.NOTE_SIZE, AstralCardArt.DIM)
 	box.add_child(l)
 
 
 func _slider(box: Control, label_key: String, key: String) -> StepSlider:
 	var row := _row(box, label_key)
 	var s := StepSlider.new()
+	s.astral = true  # v0.10.5 W3-O18
 	s.name = key.replace("/", "_")
 	s.min_value = 0
 	s.max_value = 100
@@ -322,17 +337,21 @@ func _slider(box: Control, label_key: String, key: String) -> StepSlider:
 	s.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	s.value = float(GameSettings.get_value(_profile, key))
 	var shown := Label.new()
+	shown.name = "Value"
 	shown.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	shown.custom_minimum_size = Vector2(56, 0)
-	shown.text = "%d" % int(s.value)
+	shown.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	AstralMenu.body(shown, 15, AstralCardArt.TEXT, true)
+	shown.text = "%d %%" % int(s.value)
 	s.value_changed.connect(
 		func(v: float) -> void:
-			shown.text = "%d" % int(v)
+			shown.text = "%d %%" % int(v)
 			GameSettings.set_value(_profile, key, int(v))
 			setting_changed.emit(key)
 	)
 	row.add_child(s)
 	row.add_child(shown)
+	_light_label(row, s)
 	return s
 
 
@@ -342,14 +361,16 @@ func _cycler(box: Control, label_key: String, key: String, values: Array) -> Opt
 		keys.append("UI_OPT_" + String(v).to_upper())
 	var c := OptionCycler.new(values, keys, String(GameSettings.get_value(_profile, key)))
 	c.name = key
+	c.astral = true  # v0.10.5 W3-O18
 	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	c.add_theme_font_size_override("font_size", 20)
 	c.changed.connect(
 		func(v: String) -> void:
 			GameSettings.set_value(_profile, key, v)
 			setting_changed.emit(key)
 	)
-	_row(box, label_key).add_child(c)
+	var row := _row(box, label_key)
+	row.add_child(c)
+	_light_label(row, c)
 	return c
 
 
@@ -360,7 +381,7 @@ func _controls(box: Control) -> void:
 		l.text = k
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.modulate = Color(1, 1, 1, 0.7)
+		AstralMenu.caps(l, AstralMenu.LABEL_SIZE, AstralCardArt.DIM, 600, 0.24)
 		head.add_child(l)
 	for action in InputRebind.ACTIONS:
 		var row := _row(box, InputLabels.action_key(action))
@@ -370,7 +391,7 @@ func _controls(box: Control) -> void:
 			b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			b.custom_minimum_size = Vector2(0, 40)
-			b.add_theme_font_size_override("font_size", 18)
+			b.add_theme_font_size_override("font_size", 16)
 			if InputRebind.has_slot(action, device):
 				b.pressed.connect(_start_capture.bind(action, device))
 			else:
@@ -378,13 +399,15 @@ func _controls(box: Control) -> void:
 				b.focus_mode = Control.FOCUS_NONE
 			bind_buttons["%s/%s" % [action, device]] = b
 			row.add_child(b)
+			if not b.disabled:
+				_light_label(row, b)
 	status.name = "RemapStatus"
 	status.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	status.add_theme_font_size_override("font_size", 18)
-	status.modulate = Color(1.0, 0.85, 0.45)
+	AstralMenu.body(status, AstralMenu.NOTE_SIZE, AstralCardArt.ACCENT)
 	box.add_child(status)
 	var reset := _button("UI_REMAP_RESET", _on_reset)
 	reset.name = "ResetControls"
+	reset.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	box.add_child(reset)
 	_refresh_bindings()
 

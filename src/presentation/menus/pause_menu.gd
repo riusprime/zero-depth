@@ -31,7 +31,7 @@ var _rules := PackedStringArray()
 
 
 func _init(to_hub: bool = true) -> void:
-	super()
+	super(true)  # v0.10.5 W3-O18: in Astral
 	name = "PauseMenu"
 	add_backdrop()
 	add_title("UI_PAUSED")
@@ -51,7 +51,7 @@ func _init(to_hub: bool = true) -> void:
 	depths_line.name = "DepthsLine"
 	depths_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	depths_line.custom_minimum_size = Vector2(420, 0)
-	depths_line.add_theme_color_override("font_color", Color(DepthsTag.COLOR, 0.85))
+	depths_line.add_theme_color_override("font_color", AstralMenu.HEAT)  # W3-O18: Astral's amber
 	depths_line.visible = false
 	rules_line = add_note("")
 	rules_line.name = "RulesLine"

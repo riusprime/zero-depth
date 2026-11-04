@@ -39,7 +39,7 @@ func test_the_rows_and_where_the_focus_starts() -> void:
 	add_child_autofree(m)
 	var rows := []
 	for c in m.box.get_children():
-		if c is StoneButton:
+		if c is AstralButton:  # v0.10.5 W3-O18: the main menu's rows are Astral rows
 			rows.append(String(c.name))
 	assert_eq(rows, ["Continue", "Play", "Options", "Credits", "Quit"])
 	m.focus_first()
