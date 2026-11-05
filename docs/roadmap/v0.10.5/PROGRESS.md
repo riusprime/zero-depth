@@ -159,6 +159,8 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 | W3-Q6/Q7/Q8 views skip unchanged work; the bolt and the actors no longer lag a tick on multi-tick frames (the owner's "appears at some spots and flickers"); payoffs off screen cost nothing; fireballs draw once | 9f39f323, 814b489d, 90357c48 | agents: presentation folder 1371–1375 passing; evidence PERF_Q6.md, PERF_Q7.md; timing on an idle PC NOT YET RUN |
 | W3-S18 Halo + Homing: Halo's bolts × 2.6 reach with Homing | a661268c | agent: 3/3 new; golden/arch pass |
 | W3-S19 the Wisps: small orbs, no left-behind flares (a v0.10.0 VX2 bug) | fc73d95f | agent: 39/39 + 8/8 + arch 4/4; check 249 → 0 stray frames |
+| W3-S20 five Binbun pack shaders keep the node's scale in their billboard (owner, after the before/after sheets: "Yes, merge it"); 31 effects now draw at the asked size | de9720e1 | agent: presentation 226/226, arch 4/4; sheets build/shots/v0.10.5/w3s20/ |
+| W3-S21 effects shrunk by S20 sized to their attacks: Guard orb ORB_SCALE 0.07 → 0.25, frost status MIST_PER_M 0.12 → 0.7 (+ lift), frost burst 0.22 → 0.45, Shade wisp row 0.28 → 0.55; the Prism/Crown orbs stay small; the gallery script ignores stray input; vx3_zones shot script parses again (675053d2) | 98095abb | agent: presentation 443/443, arch 4/4; contact build/shots/v0.10.5/w3s21/contact.png (lead looked) |
 
 ## Verification
 1. **S2–S4 re-tested on this branch** (the agents' own runs were on an old base, `d33bc82a`, see History). Lead,
