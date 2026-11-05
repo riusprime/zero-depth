@@ -102,9 +102,11 @@ static func advance(w: World) -> void:
 		ItemProcs.on_swing_start(w)  # Items: Momentum.
 		Engines.on_swing_start(w)  # Engines: Bulwark's guard charges.
 		FireRhythm.on_swing(w)  # v0.8.0 MR (O91): Flurry's burst
+		# v0.10.5 W3-P10e: every 5th root attack calls a meteor. Read only (melee_permille): melee_damage would
+		# use up the swing's carried remainder before the swing hits.
 		Starfall.on_root_attack(
-			w, PlayerBuild.melee_damage(w, Modifiers.step(w, w.combo_step).damage)
-		)  # v0.10.5 W3-P10e: every 5th root attack calls a meteor
+			w, Modifiers.step(w, w.combo_step).damage * PlayerBuild.melee_permille(w) / 1000
+		)
 	# Shooting: while held (and not swinging), a bolt every shot_period_ticks; the first one comes at once.
 	# v0.9.5 HT: the primary attack is active (every form): heat fills by firing time. v0.10.5 W3-O3: a charging Gun
 	# (the Lance, Charge) counts its firing time in GunForms.hold, so holding a charge that never fires adds nothing.
