@@ -143,6 +143,8 @@ static func compile_loot_pacing(def: LootPacingDefinition) -> LootPacingTable:
 	t.chest_type_weights = def.chest_type_weights.duplicate()
 	t.element_ceilings = def.element_ceilings.duplicate()  # v0.10.5 W3-P2
 	t.element_ceiling_loops = def.element_ceiling_loops
+	t.overlevels_per_loop = def.overlevels_per_loop  # v0.10.5 W3-P3
+	t.overlevel_permille = def.overlevel_permille.duplicate()
 	return t
 
 

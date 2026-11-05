@@ -237,7 +237,11 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			if face["wand"]:  # v0.7.5 SM (N8): a wand card's level, and the level taking it gives
 				face["held_level"] = held_level(reader, code)
 				face["level_text"] = level_text(
-					ci, face["held_level"], face["held_level"] + 1, int(info.get("max_level", 5))
+					ci,
+					face["held_level"],
+					face["held_level"] + 1,
+					int(info.get("max_level", 5)),
+					int(info.get("base_max", 0)),  # v0.10.5 W3-P3: an overlevel says so
 				)
 			slot_face(ci, reader, info, face)  # v0.9.0 AS
 			form_face(reader, info, face)  # v0.9.5 TX
@@ -309,13 +313,20 @@ static func held_level(reader: WorldReader, code: int) -> int:
 
 
 ## v0.7.5 SM (N8): the level badge: "Lv N" for a card not held (N is the level it arrives at), "Lv N → M" when
-## taking it raises a held card from N to M.
-static func level_text(ci: Object, held: int, to: int, cap: int = 5) -> String:
+## taking it raises a held card from N to M. v0.10.5 W3-P3: a level past the card's own max (`base`, 0: none) is an
+## overlevel: the badge adds "✦ overlevel" (UI_CARD_OVERLEVEL).
+static func level_text(ci: Object, held: int, to: int, cap: int = 5, base: int = 0) -> String:
+	var s := ""
 	if held <= 0 or held >= to:
 		if cap < 5:  # v0.9.5 CLV: a card of 3 levels reads "Lv 1/3"
-			return ci.tr("UI_WAND_LEVEL_OF") % [maxi(held, to), cap]
-		return ci.tr("UI_WAND_LEVEL") % maxi(held, to)
-	return ci.tr("UI_CARD_LEVEL_UP") % [held, to]
+			s = ci.tr("UI_WAND_LEVEL_OF") % [maxi(held, to), cap]
+		else:
+			s = ci.tr("UI_WAND_LEVEL") % maxi(held, to)
+	else:
+		s = ci.tr("UI_CARD_LEVEL_UP") % [held, to]
+	if base > 0 and maxi(held, to) > base:
+		s += " " + ci.tr("UI_CARD_OVERLEVEL")
+	return s
 
 
 ## v0.5.5 AR (X1b): a card of the boss's legendary altar. v0.8.0 RR (owner O33): it keeps its own tier (a Legendary

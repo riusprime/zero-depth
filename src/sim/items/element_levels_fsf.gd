@@ -49,7 +49,7 @@ static func held(w: World, which: int) -> bool:
 ## The held card's level, 1 without one.
 static func level(w: World, which: int) -> int:
 	var idx := _find(w, which)
-	return CardLevels.level(w, idx) if idx >= 0 else 1
+	return CardLevels.base_level(w, idx) if idx >= 0 else 1  # W3-P3: overlevels never add rules
 
 
 ## The held card's table, or null.

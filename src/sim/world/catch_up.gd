@@ -81,7 +81,7 @@ static func wand_rate_bonus(w: World) -> int:
 	for code in w.items_owned:
 		if code < 0 or code >= w.item_tables.size():
 			continue
-		var lvl := CardLevels.level(w, code)
+		var lvl := CardLevels.base_level(w, code)  # v0.10.5 W3-P3: overlevels never shift the catch-up
 		for m in w.item_tables[code].modifiers:
 			for o in m.ops:
 				if o.op == ModifierOp.Op.ADD and o.field == &"rate_bonus_permille":
@@ -97,7 +97,7 @@ static func power_level(w: World, s: int) -> int:
 	if Offers.type_of(code) != Offers.MOD or code >= w.item_tables.size():
 		return BuildSlots.level_at(w, s)
 	var t := w.item_tables[code]
-	var up := CardLevels.level(w, code) - 1  # v0.6.5 WN3: a wand card's levels past the first
+	var up := CardLevels.base_level(w, code) - 1  # v0.6.5 WN3 (W3-P3: overlevels not counted: the catch-up as before)
 	if t.kind != ItemTable.Kind.MODIFIER and t.kind != ItemTable.Kind.WAND:
 		return 1
 	match t.rarity:

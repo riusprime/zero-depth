@@ -227,7 +227,7 @@ func clear_now(dummies: bool) -> int:
 ## Takes `code` as a found card would, then sets its level. False when it can't go in: the wand is full (the
 ## Playground opens no Swap: remove a card first), the build already has a utility, or the code is unknown.
 func grant_now(code: int, level: int = 1) -> bool:
-	level = clampi(level, 1, CardLevels.MAX_LEVEL)
+	level = clampi(level, 1, CardLevels.MAX_LEVEL + CardLevels.overlevel_room(world))  # W3-P3: set_level caps it
 	match Offers.type_of(code):
 		Offers.MOD:
 			return _grant_item(code, level)

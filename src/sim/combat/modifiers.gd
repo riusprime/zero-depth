@@ -106,10 +106,14 @@ static func build_modifiers_of(w: World, codes: PackedInt32Array) -> Array[Modif
 			if idx < w.ability_tables.size():
 				out.append_array(w.ability_tables[idx].modifiers)
 		elif code < w.item_tables.size() and AttackSlots.compiles(w, code):  # v0.9.0 AS: the form's table
-			var lvl := CardLevels.level(w, code)  # v0.6.5 WN3: a wand card at its level
+			var lvl := CardLevels.base_level(w, code)  # v0.6.5 WN3: a wand card at its level (W3-P3: at most its max)
+			# v0.10.5 W3-P3: its overlevels grow its main number; an element's grows in ElementStack.level_permille
+			var over := 1000
+			if LootPacing.category(w, code) != LootPacing.Category.ELEMENT:
+				over = CardLevels.overlevel_now(w, code)
 			var to := form if AttackSlots.category(w, code) == AttackSlots.FORM else out
 			for m in w.item_tables[code].modifiers:
-				to.append(m.at(lvl))
+				to.append(m.at(lvl).overlevelled(over))
 	form.append_array(out)
 	return form
 
@@ -150,7 +154,7 @@ static func weapon_damage(w: World) -> int:
 	var s := weapon_attack(w)
 	if s == null:
 		return 1
-	var pm := Abilities.weapon_permille(w)
+	var pm := Abilities.weapon_permille(w) * CardLevels.weapon_overlevel_permille(w) / 1000  # W3-P3: overlevels
 	if s.form == AttackSpec.Form.ARC and s.has_tag(&"melee"):
 		pm = w.player.melee_damage_permille * pm / 1000
 		return maxi(1, s.damage * pm / 1000)

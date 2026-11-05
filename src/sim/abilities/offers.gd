@@ -380,8 +380,10 @@ static func info(w: World, code: int) -> Dictionary:
 		"rarity": rarity,
 		"level": 0,
 		"amount": 0,
-		"wand": CardLevels.is_card(w, code) and CardLevels.max_level(w, code) > 1,  # v0.9.5 CLV: a card with levels
-		"max_level": CardLevels.max_level(w, code) if CardLevels.is_card(w, code) else 1,
+		"wand": CardLevels.is_card(w, code) and CardLevels.cap(w, code) > 1,  # v0.9.5 CLV: a card with levels
+		# v0.10.5 W3-P3: its cap now (overlevels included) and its own max_level (past it: overlevels)
+		"max_level": CardLevels.cap(w, code) if CardLevels.is_card(w, code) else 1,
+		"base_max": CardLevels.max_level(w, code) if CardLevels.is_card(w, code) else 1,
 		# v0.9.0 AS (owner Q5, Q14): its slot tag on this run (AttackSlots: 0 none) and, when its slot is full, the
 		# card taking it replaces (its code, -1 for none; AttackSlots.replaces)
 		"slot": AttackSlots.tag(w, code),

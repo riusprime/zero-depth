@@ -95,12 +95,9 @@ static func element_ceiling(w: World, ahead: int = 0) -> int:
 
 
 ## v0.10.5 W3-P2: the highest level held item `idx` is offered up to now: the stage's ceiling, and an element card's
-## own (element_ceiling) under it.
+## own (element_ceiling) under it; W3-P3: the card's own cap with this loop's overlevels (CardLevels.offer_cap).
 static func ceiling_of(w: World, idx: int) -> int:
-	var cap := ceiling(w)
-	if category(w, idx) == Category.ELEMENT:
-		cap = mini(cap, element_ceiling(w))
-	return cap
+	return CardLevels.offer_cap(w, idx)
 
 
 static func _ceiling_at(w: World, s: int) -> int:

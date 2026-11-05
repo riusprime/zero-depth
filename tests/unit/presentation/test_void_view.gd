@@ -124,13 +124,14 @@ func test_w3o8_split_minis_are_smaller_still_and_collapse_from_their_size() -> v
 		W.run(w, 1, 0, W.S if k == 0 else 0)
 		_view.sync(r)
 		for j in _view.voids:
-			if _view.sizes[j] < 1.0 and not _view.moving[j]:
+			if _view.sizes[j] != 1.0 and not _view.moving[j]:
 				mini_size = _view.sizes[j]
 				mini_puffs = _view.puffs
 		for c in _view.collapse_sizes:
 			assert_lte(c, VoidView.SIZE_MAX, "a collapse never outgrows the body it was drawn at")
-	assert_almost_eq(mini_size, VoidView.body_size(0.6), 0.001, "a mini (0.6 m aura) at its size")
-	assert_lt(mini_size, 1.0, "smaller than the void it came from")
+	# W3-P5 (ee6cf2ce): Split minis open with a 1.5 m aura (was 0.6 m), so they draw larger than the plain Void.
+	assert_almost_eq(mini_size, VoidView.body_size(1.5), 0.001, "a mini (1.5 m aura) at its size")
+	assert_gt(mini_size, 1.0, "sized by its own aura, not by the void it came from")
 	assert_eq(mini_puffs, 0, "a still mini has no dust trail")
 	assert_eq(VoidView.body_size(1.0), 1.0, "the plain Void keeps its look")
 	assert_eq(
