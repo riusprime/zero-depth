@@ -164,11 +164,8 @@ func _draw_zones() -> void:
 	# Ember Ward's ring (ElementVisuals): played again every 50 frames
 	if _frame % 50 == 2:
 		var ward := _pos(4, 1.6)
-		if _view.element_fx.pack_fx != null:
+		if _view.element_fx.pack_fx != null:  # the old look's WARD_COLOR is gone (the pack draws the ward)
 			_view.element_fx._pack_ring(ward, 1.0, &"ring_fire", &"fire")
-		else:
-			_view.element_fx._ring(ward, 1.0, ElementVisuals.WARD_COLOR, &"ward")
-			_view.element_fx._disc(ward, 1.0, ElementVisuals.WARD_COLOR, 0.35, &"ward")
 
 
 func _draw_status() -> void:
