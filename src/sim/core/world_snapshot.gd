@@ -74,6 +74,7 @@ const WORLD_KEPT := {
 }
 ## Content tables: compiled from content at setup, read-only in play (the guard test checks they don't change).
 const LOADOUT_CLASSES: Array[StringName] = [
+	&"StarboundTable",  # v0.10.5 W3-P10b: the Starbound cards (content, compiled at setup)
 	&"PlayerTable",
 	&"EnemyTable",
 	&"EncounterTable",
