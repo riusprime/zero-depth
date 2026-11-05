@@ -164,6 +164,32 @@ func burst(kind: StringName, c: Vector3, r: float, u: float, sd: int, weight := 
 	_burst_weight = 1.0
 
 
+## v0.10.5 W3-Q7: only the floor mark burst(kind, c, r, ...) leaves (the same key, texture, size and colour), for a
+## burst wholly off screen whose pieces are not drawn (StatusVisuals' payoffs): the mark is there when the camera
+## arrives. A kind that leaves none does nothing.
+func burst_mark(kind: StringName, c: Vector3, r: float, sd: int) -> void:
+	match kind:
+		&"frost", &"shatter":
+			mark(sd * MARK_KINDS + 1, &"frost_burst", c, r * 1.35, FROST_MARK)
+		&"venom":
+			mark(sd * MARK_KINDS + 2, _splat(sd), c, r * 1.3, VENOM_MARK)
+		&"bleed":
+			mark(sd * MARK_KINDS + 2, _splat(sd), c, r * 1.3, BLOOD_MARK)
+		&"storm", &"void":
+			pass
+		_:  # the fire explosions (wildfire, the default): the scorch of _explosion_rest
+			mark(sd * MARK_KINDS, &"scorch", c, r * 1.25, SCORCH)
+
+
+## v0.10.5 W3-Q7: only the floor mark line(kind, a, b, ...) leaves at `b`, for a line wholly off screen.
+func line_mark(kind: StringName, b: Vector3, sd: int) -> void:
+	match kind:
+		&"venom":
+			mark(sd * MARK_KINDS + 2, _splat(sd), Vector3(b.x, 0.0, b.z), 0.7, VENOM_MARK)
+		&"bleed":
+			mark(sd * MARK_KINDS + 2, _splat(sd), Vector3(b.x, 0.0, b.z), 0.7, BLOOD_MARK)
+
+
 func _burst_kind(kind: StringName, c: Vector3, r: float, u: float, sd: int) -> void:
 	match kind:
 		&"storm":
@@ -511,9 +537,10 @@ func _explosion_sprites(c: Vector3, r: float, u: float, sd: int) -> void:
 
 ## The explosion's sparks, light flash and scorch mark (the same with the sprite or the pack fireball).
 func _explosion_rest(c: Vector3, r: float, u: float, sd: int) -> void:
-	for k in _thin(&"spark", int(round(10 * density))):
+	var t := clampf(u * 2.2, 0.0, 1.0)
+	# v0.10.5 W3-Q7: past t = 1 (the last 55 % of a burst) every spark is wholly clear (alpha 1 - t): none is laid out
+	for k in _thin(&"spark", int(round(10 * density))) if t < 1.0 else 0:
 		var a := TAU * h(sd + 10, k)
-		var t := clampf(u * 2.2, 0.0, 1.0)
 		var q := (
 			c + Vector3(cos(a) * r * 1.3 * t, 0.3 + 1.6 * t - 1.8 * t * t, sin(a) * r * 1.3 * t)
 		)

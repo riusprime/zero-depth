@@ -180,34 +180,56 @@ func _rebuild() -> void:
 	var total := 0.0
 	for poly in polys:
 		total += _poly_len(poly)
+	# v0.10.5 W3-Q7 (a strike's bolts are rebuilt every frame they grow): each point's side, half-width factor and v
+	# are worked out once for both layers, its length along the line kept as it goes (it re-summed the line up to every
+	# point, through a new Array each); the same sums in the same order, so the same mesh.
+	var pts := PackedVector3Array()
+	var sides := PackedVector3Array()
+	var thins := PackedFloat32Array()
+	var tapers := PackedFloat32Array()
+	var uvs := PackedVector2Array()
+	var idx := PackedInt32Array()
+	var run := 0.0
+	for pi in polys.size():
+		var poly: Array = polys[pi]
+		var thin := 1.0 if pi == 0 else 0.55
+		var base := pts.size() * 2
+		var along := 0.0
+		for i in poly.size():
+			var p: Vector3 = poly[i]
+			if i > 0:
+				along += p.distance_to(poly[i - 1] as Vector3)
+			var t: Vector3 = (
+				(poly[mini(i + 1, poly.size() - 1)] as Vector3) - (poly[maxi(i - 1, 0)] as Vector3)
+			)
+			var s := t.cross(view)
+			s = s.normalized() if s.length() > 0.0001 else Vector3.UP
+			var taper := 1.0 if pi == 0 else 1.0 - 0.8 * float(i) / (poly.size() - 1)
+			pts.append(p)
+			sides.append(s)
+			thins.append(thin)
+			tapers.append(taper)
+			var v := (run + along) / maxf(total, 0.001)
+			uvs.append(Vector2(0.0, v))
+			uvs.append(Vector2(1.0, v))
+		for i in poly.size() - 1:
+			var o := base + i * 2
+			idx.append(o)
+			idx.append(o + 1)
+			idx.append(o + 2)
+			idx.append(o + 1)
+			idx.append(o + 3)
+			idx.append(o + 2)
+		run += along
 	for layer in 2:
 		var w := width * (SHELL if layer == 0 else 1.0) * 0.5
 		var verts := PackedVector3Array()
-		var uvs := PackedVector2Array()
-		var idx := PackedInt32Array()
-		var run := 0.0
-		for pi in polys.size():
-			var poly: Array = polys[pi]
-			var thin := 1.0 if pi == 0 else 0.55
-			var base := verts.size()
-			for i in poly.size():
-				var p: Vector3 = poly[i]
-				var t: Vector3 = (
-					(poly[mini(i + 1, poly.size() - 1)] as Vector3)
-					- (poly[maxi(i - 1, 0)] as Vector3)
-				)
-				var s := t.cross(view)
-				s = s.normalized() if s.length() > 0.0001 else Vector3.UP
-				var taper := 1.0 if pi == 0 else 1.0 - 0.8 * float(i) / (poly.size() - 1)
-				verts.append(p - s * w * thin * taper)
-				verts.append(p + s * w * thin * taper)
-				var v := (run + _poly_len(poly.slice(0, i + 1))) / maxf(total, 0.001)
-				uvs.append(Vector2(0.0, v))
-				uvs.append(Vector2(1.0, v))
-			for i in poly.size() - 1:
-				var o := base + i * 2
-				idx.append_array([o, o + 1, o + 2, o + 1, o + 3, o + 2])
-			run += _poly_len(poly)
+		verts.resize(pts.size() * 2)
+		for k in pts.size():
+			var s := sides[k]
+			var d := s * w * thins[k] * tapers[k]
+			verts[k * 2] = pts[k] - d
+			verts[k * 2 + 1] = pts[k] + d
 		var arrays := []
 		arrays.resize(Mesh.ARRAY_MAX)
 		arrays[Mesh.ARRAY_VERTEX] = verts

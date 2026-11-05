@@ -36,6 +36,8 @@ const RING_SPARK_MAX := 6  # at most this many (the old 8 would crowd at a third
 var layer: VfxLayer
 var holds := PackHold.new()
 var _seen := {}  # seed -> bolts asked for it this frame
+## v0.10.5 W3-Q7: colors() made once (ElementLooks' storm entries are constants), not for every bolt a frame.
+var _cols := colors()
 
 
 func _init(p_layer: VfxLayer) -> void:
@@ -99,14 +101,12 @@ func _bolt(
 		return false
 	var n: int = _seen.get(sd, 0)
 	_seen[sd] = n + 1
-	var setup := Callable()
-	if spark:
-		setup = func(_node: Node3D) -> void: _spark(b)
-	var node := (
-		holds.touch(((sd * 64 + n) * 8) + 1, BOLT, &"bolt", a, 1.0, colors(), setup) as ZdBolt
-	)
+	# v0.10.5 W3-Q7: the hit spark on the bolt's first touch (PackHold.spawned), not a new closure per bolt a frame
+	var node := holds.touch(((sd * 64 + n) * 8) + 1, BOLT, &"bolt", a, 1.0, _cols) as ZdBolt
 	if node == null:
 		return false
+	if spark and holds.spawned:
+		_spark(b)
 	node.strength = fade
 	node.set_ends(a, b, sd * 13 + n + mix, minf(width * WIDTH_PER_M, WIDTH_MAX))
 	return true
@@ -116,7 +116,7 @@ func _bolt(
 func _spark(at: Vector3) -> void:
 	var fx := layer.pack_fx
 	if fx != null and fx.has_id(SPARK) and fx.has_room(&"hit"):
-		fx.spawn(SPARK, at, SPARK_SCALE, colors())
+		fx.spawn(SPARK, at, SPARK_SCALE, _cols)
 
 
 ## The old look: a jagged bolt of sprites that re-strikes every few ticks, sparks at its end, a cold flicker.
@@ -187,9 +187,7 @@ func field(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
 	var cold := VfxLayer.COLD
 	var area: Node3D = null
 	if _pack():
-		area = holds.touch(
-			VfxPackViews.zkey(sd, 31, c), FIELD, &"area", c, r * AREA_PER_M, colors()
-		)
+		area = holds.touch(VfxPackViews.zkey(sd, 31, c), FIELD, &"area", c, r * AREA_PER_M, _cols)
 	if area != null:
 		var strike := int(age / FIELD_STRIKE_TICKS)
 		var phase := fposmod(age, FIELD_STRIKE_TICKS) / FIELD_STRIKE_TICKS
@@ -228,7 +226,7 @@ func ring(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
 	var y := Vector3(0, 0.35, 0)
 	var rim: Node3D = null
 	if _pack():
-		rim = holds.touch(VfxPackViews.zkey(sd, 32, c), RING, &"area", c, r * AREA_PER_M, colors())
+		rim = holds.touch(VfxPackViews.zkey(sd, 32, c), RING, &"area", c, r * AREA_PER_M, _cols)
 	if rim != null:
 		var n := clampi(int(r * 1.5 * layer.density), 3, RING_SPARK_MAX)
 		for k in n:
@@ -273,7 +271,7 @@ func burst(c: Vector3, r: float, u: float, sd: int) -> void:
 		mode = layer._views.once(VfxPackViews.bkey(sd, 11), &"area")
 		if mode == VfxPackViews.ONCE_SPAWN:
 			var scale := r * AREA_PER_M * (VfxLayer.PACK_THIN_SCALE if layer._lights_off else 1.0)
-			PackHold.play(layer.pack_fx, BURST, c, scale, colors())
+			PackHold.play(layer.pack_fx, BURST, c, scale, _cols)
 	if mode != VfxPackViews.ONCE_OLD:
 		var n := 3 + absi(sd) % 3
 		for k in n:
@@ -300,7 +298,7 @@ func shock(p: Vector3, r: float, sd: int, age: float, top: float) -> bool:
 	var reach := maxf(SHOCK_REACH_M, r + 0.2)
 	var nodes: Array[ZdBolt] = []
 	for k in SHOCK_FORKS:
-		var node := holds.touch(VfxPackViews.skey(sd, 40 + k), BOLT, &"bolt", centre, 1.0, colors())
+		var node := holds.touch(VfxPackViews.skey(sd, 40 + k), BOLT, &"bolt", centre, 1.0, _cols)
 		if node == null:
 			return false  # (the forks already drawn go back when this frame ends)
 		nodes.append(node as ZdBolt)

@@ -112,3 +112,32 @@ func test_the_enemy_looks_differ_from_each_other_and_the_bosses() -> void:
 			var b: Dictionary = FireballViews.LOOKS[other]
 			var d := _dist(a["core"], b["core"]) + _dist(a["trail"], b["trail"])
 			assert_gt(d, 0.3, "%s and %s read apart" % [key, other])
+
+
+## v0.10.5 W3-Q7: with draw_on_sync off (WorldViewRoot) a sync draws nothing; the frame's one draw is the effects
+## layer's draw_lights (inside VfxLayer.finish, so the lights are this frame's), and _process the same frame adds none.
+func test_without_draw_on_sync_the_balls_draw_once_a_frame() -> void:
+	var s := _world(K.ARC_CASTER, Vector2(8, 0))
+	var w: World = s[0]
+	var fb: FireballViews = _views()[0]
+	fb.draw_on_sync = false
+	fb.set_process(false)
+	var vfx: VfxLayer = add_child_autofree(VfxLayer.new())
+	var reader := WorldReader.new(w)
+	for k in 900:
+		w.step(InputFrame.new())
+		w.actors.hp[0] = w.actors.max_hp[0]
+		if reader.projectile_count() > 0:
+			break
+	assert_gt(reader.projectile_count(), 0, "a plasma ball flies")
+	var before := fb.draws
+	fb.sync(reader)
+	assert_eq(fb.draws, before, "the sync draws nothing")
+	fb.draw_lights(vfx)
+	assert_eq(fb.draws, before + 1, "the layer's draw_lights draws the frame")
+	assert_gt(fb.ball_count(&"arc_plasma"), 0, "the ball is drawn")
+	fb._process(0.0)
+	assert_eq(fb.draws, before + 1, "and _process draws it no second time that frame")
+	await get_tree().process_frame
+	fb._process(0.0)
+	assert_eq(fb.draws, before + 2, "the next frame draws again")

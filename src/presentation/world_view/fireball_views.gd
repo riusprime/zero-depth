@@ -1,3 +1,4 @@
+# gdlint: disable=max-file-lines
 class_name FireballViews
 extends Node3D
 ## v0.7.5 BF1 (owner N15; BOSS_FIGHTS.md "Readable"): the hostile fireballs (WorldReader.projectile_look not empty;
@@ -453,6 +454,10 @@ const RAIN_ARC_Y := 2.2
 var vfx: VfxCore
 ## v0.10.0 VX4: the pack effects (the effects layer's, or set directly: tests, the shot tool); none: the old look.
 var pack_fx: PackFx = null
+## v0.10.5 W3-Q7: false (WorldViewRoot): one draw a frame, by draw_lights (in VfxLayer.finish: the lights are this
+## frame's) or _process, not in sync at fraction 1.0 as well; true (tests, the shot tool) draws in sync too.
+var draw_on_sync := true
+var draws := 0  # (tests)
 ## Per look: {"core", "edge", "trail": MultiMeshInstance3D}.
 var _sets := {}
 ## This tick's and the last tick's positions by projectile id, and the order drawn this tick (per look).
@@ -483,6 +488,7 @@ var _trail_width := 1.0
 var _packed := {}
 var _packed_seen := {}
 var _lob_ids := {}  # look -> the lobbing drones' actor ids, in _lobs' order
+var _drawn_at := -1  # the frame last drawn; -1: a sync since (its last balls may need clearing)
 
 
 func _exit_tree() -> void:
@@ -518,6 +524,7 @@ func _notification(what: int) -> void:
 
 func sync(reader: WorldReader) -> void:
 	_before = _now
+	var latched := reader as LatchedReader  # v0.10.5 W3-Q7: the places a tick before (a frame of several ticks)
 	_now = {}
 	_drawn = {}
 	for i in reader.projectile_count():
@@ -529,7 +536,10 @@ func sync(reader: WorldReader) -> void:
 		_now[id] = p
 		_vel[id] = reader.projectile_vel(i)
 		_radius[id] = reader.projectile_radius(i)
-		if not _before.has(id):
+		var was: Variant = latched.projectile_pos_before(id) if latched != null else null
+		if was != null:
+			_before[id] = was  # v0.10.5 W3-Q7: drawn between the last two ticks, not from the last sync
+		elif not _before.has(id):
 			_before[id] = p  # a new ball appears where it spawned
 		var list: PackedInt32Array = _drawn.get(key, PackedInt32Array())
 		list.append(id)  # a packed array is a value: written back
@@ -559,11 +569,17 @@ func sync(reader: WorldReader) -> void:
 	for key in _drawn:
 		if not _sets.has(key):
 			_sets[key] = _make_set(key)
-	_draw(1.0)
+	_drawn_at = -1
+	if draw_on_sync:
+		_draw(1.0)
 
 
 func _process(_delta: float) -> void:
-	if not _now.is_empty() or not _lobs.is_empty() or not _rain.is_empty():
+	var frame := Engine.get_process_frames()
+	if frame == _drawn_at and not draw_on_sync:
+		return  # (draw_lights drew this frame)
+	if _drawn_at < 0 or not _now.is_empty() or not _lobs.is_empty() or not _rain.is_empty():
+		_drawn_at = frame
 		_draw(Engine.get_physics_interpolation_fraction())
 
 
@@ -649,6 +665,8 @@ func light_requests() -> int:
 
 ## v0.8.0 AV: a VfxCore drawer (WorldViewRoot adds it): the big ones' lights, into the layer's light budget.
 func draw_lights(layer: VfxCore) -> void:
+	if not draw_on_sync:
+		_process(0.0)  # v0.10.5 W3-Q7: the frame's draw first (this view's _process comes after the layer's finish)
 	for w: Array in _light_wants:
 		layer.light_merged(w[0], w[1], w[2], w[3], w[4])
 
@@ -662,6 +680,7 @@ static func rain_point(from: Vector2, to: Vector2, f: float) -> Vector3:
 
 
 func _draw(f: float) -> void:
+	draws += 1
 	var trail_scale: float = TRAIL_SCALE.get(ViewPrefs.effects_density, 1.0)
 	var width: float = TRAIL_WIDTH.get(ViewPrefs.effects_density, 1.0)
 	var thin := ViewPrefs.effects_density == "low"

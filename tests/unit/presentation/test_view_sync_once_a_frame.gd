@@ -141,3 +141,43 @@ func test_a_half_rate_view_still_syncs_at_two_ticks_a_frame() -> void:
 		for t in 40:  # one tick a frame: every other tick, as before
 			runs += 1 if ViewSchedule.due(id, t, seen) else 0
 		assert_between(runs, 20, 21, "%s at one tick a frame: half the ticks" % id)
+
+
+## v0.10.5 W3-Q7 (owner playtest: the Gun's bolt "lags or sticks", "flickers"): on a frame that ran two ticks the shot
+## views drew a shot from its place at the last sync, a tick or more behind, then caught up the next frame. They now
+## draw it between its places at the last two ticks, as on a one-tick frame; a one-tick frame is unchanged.
+func test_a_shot_is_drawn_between_the_last_two_ticks_when_a_frame_ran_several() -> void:
+	var w := _gun_world()
+	var reader := LatchedReader.new(WorldReader.new(w))
+	var pulses := HeroPulseViews.new()
+	add_child_autofree(pulses)
+	pulses.set_process(false)
+	var places := []  # the shot's place at each tick
+	var id := -1
+	for k in 8:
+		w.step(_shoot(k))
+		reader.note()
+		var r := WorldReader.new(w)
+		if id < 0 and r.projectile_count() > 0:
+			id = r.projectile_id(0)
+		var i := -1
+		for j in r.projectile_count():
+			if r.projectile_id(j) == id:
+				i = j
+		places.append(r.projectile_pos(i) if i >= 0 else Vector2.INF)
+		if k == 2 or k == 3 or k == 5:  # syncs after ticks 2 and 3 (one tick apart), then after 5 (two ticks)
+			reader.settle()
+			pulses.sync(reader)
+			if k == 3:
+				assert_eq(
+					pulses._before[id], places[2], "a one-tick frame: from the last sync's place"
+				)
+			if k == 5:
+				assert_ne(places[4], places[3], "the shot moved between the ticks")
+				assert_eq(
+					pulses._before[id],
+					places[4],
+					"a two-tick frame: from the tick before the latest"
+				)
+	assert_gte(id, 0, "the Gun fired")
+	assert_eq(pulses._now[id], places[5], "to the latest")

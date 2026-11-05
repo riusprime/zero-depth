@@ -8,8 +8,13 @@ extends RefCounted
 ## - Loops: the pack's effects are one-shot in PackFx (they end with their animation); a held one must keep going, so
 ##   its "main" animation loops and its particles stop being one-shot (the pack's own controller does the same).
 
+## v0.10.5 W3-Q7: the lookup's "none" (not a new empty Dictionary on every touch).
+const _NONE := {}
+
 var fx: PackFx = null
 var held := 0  # held effects now (tests)
+## v0.10.5 W3-Q7: whether the last touch() spawned its effect (its first touch; the caller sets the new one up).
+var spawned := false
 var _items := {}  # key -> {node, id, frame, data}
 var _frame := 0
 
@@ -31,9 +36,10 @@ func touch(
 	colors: Dictionary = {},
 	setup: Callable = Callable()
 ) -> Node3D:
+	spawned = false
 	if fx == null or not is_instance_valid(fx):
 		return null
-	var it: Dictionary = _items.get(key, {})
+	var it: Dictionary = _items.get(key, _NONE)
 	if not it.is_empty():
 		var node: Node3D = it["node"]
 		if is_instance_valid(node) and it["id"] == id and _is_live(node):
@@ -48,6 +54,7 @@ func touch(
 	if n == null:
 		return null
 	loop(n)
+	spawned = true
 	if setup.is_valid():
 		setup.call(n)
 	_items[key] = {"node": n, "id": id, "frame": _frame, "scale": scale, "data": {}}
