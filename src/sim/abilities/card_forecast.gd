@@ -7,7 +7,9 @@ extends RefCounted
 ##   max HP in HP through Stats.max_hp_at, crit through Stats.total_at, the rest per mille). v0.8.0 SG (owner O91,
 ##   "Show actual marginal gains on cards"): damage shows the additive bucket (Stats.bucket_at: the damage stat and
 ##   Hoarder's bonus now, Onrush's movement left out), attack speed the weapon attack's rate after the curve with its
-##   wand bonus and Heavy Hands counted (AttackRate.rate_at);
+##   wand bonus and Heavy Hands counted (AttackRate.rate_at); v0.10.5 W3-P10a: the step within the loop's cap
+##   (Stats.cap_of), and an attack-speed card past the curve's top (loop 2 on) also gives the damage bucket now and
+##   after ("dmg_old", "dmg_new": Stats.bucket_at with the stat's overflow);
 ## - an ability card: its level now (0: new) and after (Abilities.level_after);
 ## - a wand card: its level now (0: not held) and after (CardLevels.level_after; v0.8.0 FL: the boss's altar's
 ##   level-5 rule is gone, so every source takes it one level up); v0.10.5 W3-P3: and its overlevel multiplier now and
@@ -34,7 +36,8 @@ static func of(w: World, code: int, _reward: int = -1) -> Dictionary:
 			if t == null:
 				return out
 			var v := Stats.value(w, s)
-			var after := Stats.stepped(t, s, v, Stats.card_amount(w, s, Offers.rarity_of(code)))
+			var amount := Stats.card_amount(w, s, Offers.rarity_of(code))
+			var after := Stats.stepped(t, s, v, amount, Stats.cap_of(w, s, t))  # v0.10.5 W3-P10a: the loop's cap
 			out["stat"] = s
 			if s == Stats.Stat.MAX_HP:
 				out["kind"] = KIND_HP
@@ -49,6 +52,10 @@ static func of(w: World, code: int, _reward: int = -1) -> Dictionary:
 				out["kind"] = KIND_PERMILLE
 				out["old"] = AttackRate.rate_at(w, v, wand)
 				out["new"] = AttackRate.rate_at(w, after, wand)
+				if AttackRate.overflow_at(w, after) > 0:  # v0.10.5 W3-P10a: past the curve's top, the damage bucket
+					var d := Stats.value(w, Stats.Stat.DAMAGE)
+					out["dmg_old"] = Stats.bucket_at(w, d, false, v)
+					out["dmg_new"] = Stats.bucket_at(w, d, false, after)
 			else:
 				out["kind"] = KIND_PERMILLE
 				out["old"] = Stats.total_at(w, s, v)

@@ -22,8 +22,14 @@ extends RefCounted
 ## chain it opened (ancestry, World.hook_chain); and at most MAX_LAUNCHES_PER_TICK launches run in one tick (then one
 ## LIMIT event, and the rest of the tick's launches are dropped). The engines' own guards (ProcLedger, Engines.begin)
 ## still hold for every status and payoff a hook's hits set off.
+## v0.10.5 W3-P10a (owner W7, G1 A5): the deepest level is a read of the loop (hook_depth): MAX_HOOK_DEPTH (2) in
+## loop 1, 3 at loop 2, 4 from loop 3; the proc keeps halving (100 → 50 → 25 → 12 → 6). The launch cap and ShotCap
+## stay as they are.
 
+## Loop 1's deepest hook level (hook_depth reads the loop's).
 const MAX_HOOK_DEPTH := 2
+## v0.10.5 W3-P10a: the deepest level from loop 3 on.
+const MAX_HOOK_DEPTH_LOOPS := 4
 const MAX_LAUNCHES_PER_TICK := 256
 const EFFECT_LAUNCH_CAP := &"attack_launch_cap"
 ## v0.8.0 PF (owner O9: Spread + Split + Explosive "goes two FPS"): the player's projectiles alive at once, at most
@@ -858,13 +864,21 @@ static func fire(w: World, spec: AttackSpec, trigger: int, ctx: AttackContext, a
 		_run(w, spec, trigger, ctx, at, -1, 0)
 
 
+## v0.10.5 W3-P10a (owner W7, G1 A5): world `w`'s deepest hook level: 2 in loop 1, one more a loop, at most
+## MAX_HOOK_DEPTH_LOOPS (3 at loop 2, 4 from loop 3). The compile (WandCompile.max_depth, Modifiers.inherit) and the
+## runtime guards (run_hook, Remnants) read it, so a loop-2 build compiles and launches one level deeper.
+static func hook_depth(w: World) -> int:
+	return clampi(MAX_HOOK_DEPTH + w.loop - 1, MAX_HOOK_DEPTH, MAX_HOOK_DEPTH_LOOPS)
+
+
 ## Launches hook `k`'s child from `at` under the guard (class doc). Returns true if it landed.
 static func run_hook(
 	w: World, k: AttackHook, parent: AttackContext, at: Vector2, exclude: int
 ) -> bool:
 	if k.remnant != null:  # v0.8.0 RM: a remnant hook leaves (or activates) its remnant instead
 		return Remnants.on_hook(w, k, parent, at, exclude)
-	if parent.depth + 1 > MAX_HOOK_DEPTH or k.child.depth > MAX_HOOK_DEPTH:
+	var deepest := hook_depth(w)  # v0.10.5 W3-P10a: the loop's
+	if parent.depth + 1 > deepest or k.child.depth > deepest:
 		return false
 	if parent.repeat and not parent.back and k.child.recast != 0:
 		return false  # v0.8.0 MR (O91): a repeat never casts a trigger's later cast

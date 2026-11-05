@@ -60,10 +60,10 @@ static func hook_base(c: AttackSpec, parent: AttackSpec) -> void:
 
 
 ## A compiled combo step: its carry children (Finisher+'s shockwave) take the slash's payload. Returns `s`.
-static func settle(s: AttackSpec) -> AttackSpec:
+static func settle(s: AttackSpec, max_depth := Modifiers.MAX_DEPTH) -> AttackSpec:
 	for k in s.hooks:
 		if k.child.carry > 0:
-			Modifiers.inherit(k.child, s, false)
+			Modifiers.inherit(k.child, s, false, max_depth)
 	return s
 
 

@@ -30,6 +30,11 @@ extends RefCounted
 ## v0.10.5 O9 (theory audit P2): seven more rule cards, VENT_MEND .. SCAVENGER (RuleCards has each Trigger -> Condition
 ## -> Payoff); HEAT_SHIELD is a CUT, the rest ADD. The eight flat cards they replace keep their stats and tables at
 ## weight 0 (never offered; an old save's cards still count).
+## v0.10.5 W3-P10a (owner W7, G1 A1-A4; loop 1 unchanged): from loop 2 the caps lift (cap_of). Crit chance is capped
+## at 200 %; past 100 % the one `crit` roll also picks a double crit (roll < chance - 1000): the crit multiplier twice,
+## at most x10, TAG_CRIT and TAG_DOUBLE_CRIT. The crit multiplier's cap is x6 at loop 2, x8 from loop 3. Attack speed
+## has no cap: its raw bonus past the rate curve's top (AttackRate) adds no rate but +10 per mille damage per 20 (in
+## the damage bucket, bucket_at).
 
 enum Stat {
 	MAX_HP,
@@ -128,6 +133,17 @@ const RULES := 1
 const ADDITIVE_STATS: Array[int] = [Stat.DAMAGE, Stat.ATTACK_SPEED, Stat.GLASS_CANNON]
 ## Hoarder counts shards in steps of this many.
 const HOARD_STEP := 100
+## v0.10.5 W3-P10a (owner W7, G1 A1/A3): the loops' caps (cap_of). From loop 2 crit chance is capped at 200 % (past
+## 100 % a double crit's chance), and the crit multiplier at x6 (loop 2) and x8 (loop 3 on); a double crit's
+## multiplier (the crit multiplier twice) is at most x10.
+const CRIT_CHANCE_CAP_LOOPS := 2000
+const CRIT_MULT_CAP_LOOP2 := 6000
+const CRIT_MULT_CAP_LOOP3 := 8000
+const DOUBLE_CRIT_MAX := 10000
+## v0.10.5 W3-P10a (G1 A4): every HASTE_STEP per mille of raw attack speed past the curve's top adds HASTE_DAMAGE per
+## mille to the damage bucket (AttackRate.overflow_at).
+const HASTE_STEP := 20
+const HASTE_DAMAGE := 10
 const EFFECT_OVERKILL := &"overkill"
 ## One HP of stat regen in the accumulator: per mille x ticks per second.
 const REGEN_UNIT := 1000 * SimTick.TICKS_PER_SECOND
@@ -198,7 +214,7 @@ static func add_amount(w: World, s: int, a: int) -> void:
 		return
 	grow(w, s)
 	var before_hp := max_hp(w)
-	w.stat_values[s] = stepped(t, s, w.stat_values[s], a)
+	w.stat_values[s] = stepped(t, s, w.stat_values[s], a, cap_of(w, s, t))
 	if s == Stat.MAX_HP:
 		var gain := max_hp(w) - before_hp
 		# Twin of _side's Glass Cannon push, without its floor of 1 (see there; audit G-17).
@@ -219,16 +235,33 @@ static func grow(w: World, s: int) -> void:
 
 
 ## v0.8.0 N8: stat `s`'s raw value `v` moved by `a` per mille within table `t`'s cap (add_amount's step, and the
-## pick card's forecast: CardForecast). Pure.
-static func stepped(t: StatTable, s: int, v: int, a: int) -> int:
+## pick card's forecast: CardForecast). Pure. v0.10.5 W3-P10a: `cap` is the loop's (cap_of; -1: the table's).
+static func stepped(t: StatTable, s: int, v: int, a: int, cap := -1) -> int:
+	var c := t.cap if cap < 0 else cap
 	match MODE[s]:
 		MULT:
 			v = v + a if t.additive else (v * (1000 + a) + 500) / 1000
-			return mini(v, t.cap) if t.cap > 0 else v
+			return mini(v, c) if c > 0 else v
 		CUT:
 			v = (v * (1000 - a) + 500) / 1000
-			return maxi(v, t.cap) if t.cap > 0 else v
+			return maxi(v, c) if c > 0 else v
 	return v + a
+
+
+## v0.10.5 W3-P10a (owner W7, G1 A1/A3/A4): stat `s`'s cap in world `w` (table `t`'s, per mille; 0 = none). Loop 1:
+## the table's. From loop 2: crit chance at least CRIT_CHANCE_CAP_LOOPS, the crit multiplier at least
+## CRIT_MULT_CAP_LOOP2 (CRIT_MULT_CAP_LOOP3 from loop 3), attack speed none. A table without a cap stays without.
+static func cap_of(w: World, s: int, t: StatTable) -> int:
+	if t == null or t.cap <= 0 or w.loop < 2:
+		return t.cap if t != null else 0
+	match s:
+		Stat.CRIT_CHANCE:
+			return maxi(t.cap, CRIT_CHANCE_CAP_LOOPS)
+		Stat.CRIT_DAMAGE:
+			return maxi(t.cap, CRIT_MULT_CAP_LOOP2 if w.loop == 2 else CRIT_MULT_CAP_LOOP3)
+		Stat.ATTACK_SPEED:
+			return 0
+	return t.cap
 
 
 ## True when another card of `s` would change nothing (offers skip it).
@@ -240,14 +273,15 @@ static func at_cap(w: World, s: int) -> bool:
 		return true  # v0.5.0 CP: no more HP to trade
 	if (s == Stat.VENT_MEND or s == Stat.HEAT_SHIELD) and w.heat == null:
 		return true  # v0.10.5 O9: a world without heat has no Vent and is never Hot
-	if t.cap <= 0:
+	var cap := cap_of(w, s, t)  # v0.10.5 W3-P10a: the loop's
+	if cap <= 0:
 		return false
 	match MODE[s]:
 		MULT:
-			return value(w, s) >= t.cap
+			return value(w, s) >= cap
 		CUT:
-			return value(w, s) <= t.cap
-	return total(w, s) >= t.cap
+			return value(w, s) <= cap
+	return total(w, s) >= cap
 
 
 ## An ADD stat's total with the player's base (crit chance and crit damage in per mille).
@@ -281,22 +315,38 @@ static func max_hp_at(w: World, v: int) -> int:
 
 
 # --- Damage ----------------------------------------------------------------------------------------------------
-## Crit chance now, per mille (base + cards, at most the cap).
+## Crit chance now, per mille (base + cards, at most the cap; v0.10.5 W3-P10a: the loop's, cap_of).
 static func crit_chance(w: World) -> int:
-	var t := table(w, Stat.CRIT_CHANCE)
+	var cap := cap_of(w, Stat.CRIT_CHANCE, table(w, Stat.CRIT_CHANCE))
 	var c := total(w, Stat.CRIT_CHANCE) + Curses.crit_chance(w)  # v0.6.0 CU: Glass Heart
-	return mini(c, t.cap) if t != null and t.cap > 0 else c
+	return mini(c, cap) if cap > 0 else c
 
 
-## A crit's multiplier now, per mille (base 1500 + cards, at most the cap).
+## A crit's multiplier now, per mille (base 1500 + cards, at most the cap; v0.10.5 W3-P10a: the loop's, cap_of).
 static func crit_mult(w: World) -> int:
-	var t := table(w, Stat.CRIT_DAMAGE)
+	var cap := cap_of(w, Stat.CRIT_DAMAGE, table(w, Stat.CRIT_DAMAGE))
 	var c := total(w, Stat.CRIT_DAMAGE)
-	return mini(c, t.cap) if t != null and t.cap > 0 else c
+	return mini(c, cap) if cap > 0 else c
+
+
+## v0.10.5 W3-P10a (owner W7, G1 A1): a double crit's multiplier now, per mille: the crit multiplier twice, at most
+## DOUBLE_CRIT_MAX (x10).
+static func double_crit_mult(w: World) -> int:
+	var m := crit_mult(w)
+	return mini(m * m / 1000, DOUBLE_CRIT_MAX)
+
+
+## v0.10.5 W3-P10a: the chance now that a hit is a double crit, per mille (crit chance past 100 %; 0 in loop 1).
+static func double_crit_chance(w: World) -> int:
+	if w.loop < 2:
+		return 0
+	return clampi(crit_chance(w) - 1000, 0, 1000)
 
 
 ## A hit the player owns, before the target's multipliers (Damage.hit): x damage, then the crit roll. Returns
-## [amount, extra tags]. The roll draws the `crit` stream only when the chance is above 0.
+## [amount, extra tags]. The roll draws the `crit` stream only when the chance is above 0. v0.10.5 W3-P10a (owner
+## W7, G1 A1): the same one roll picks none / crit / double: a chance over 1000 always crits, and a roll under
+## chance - 1000 is a double crit (double_crit_mult, TAG_CRIT | TAG_DOUBLE_CRIT).
 static func outgoing(w: World, amount: int, tags: int) -> Array[int]:
 	var m := damage_permille(w)
 	var ab := Curses.ability_damage_permille(w, tags)  # v0.6.0 CU: Blood Price
@@ -306,8 +356,16 @@ static func outgoing(w: World, amount: int, tags: int) -> Array[int]:
 	if tags & SimEvent.TAG_DOT:
 		return [carry_hit(w, milli), 0]
 	var chance := crit_chance(w)
-	if chance <= 0 or w.rng_crit.range_int(0, 999) >= chance:
+	if chance <= 0:
 		return [carry_hit(w, milli), 0]
+	var roll := w.rng_crit.range_int(0, 999)
+	if roll >= chance:
+		return [carry_hit(w, milli), 0]
+	if w.loop >= 2 and roll < chance - 1000:  # v0.10.5 W3-P10a: a double crit, from loop 2 only
+		return [
+			carry_hit(w, milli * double_crit_mult(w) / 1000),
+			SimEvent.TAG_CRIT | SimEvent.TAG_DOUBLE_CRIT
+		]
 	return [carry_hit(w, milli * crit_mult(w) / 1000), SimEvent.TAG_CRIT]
 
 
@@ -345,10 +403,18 @@ static func damage_bucket(w: World, moving: bool) -> int:
 	return bucket_at(w, value(w, Stat.DAMAGE), moving)
 
 
-## damage_bucket() with the damage stat at raw value `v` (CardForecast's after-card number).
-static func bucket_at(w: World, v: int, moving: bool) -> int:
-	var b := v + hoard_bonus(w)
+## damage_bucket() with the damage stat at raw value `v` (CardForecast's after-card number). v0.10.5 W3-P10a (G1 A4):
+## plus the haste overflow's damage with the attack-speed stat at `speed_v` (-1: its value now; haste_damage_at).
+static func bucket_at(w: World, v: int, moving: bool, speed_v := -1) -> int:
+	var sv := value(w, Stat.ATTACK_SPEED) if speed_v < 0 else speed_v
+	var b := v + hoard_bonus(w) + haste_damage_at(w, sv)
 	return b + value(w, Stat.ONRUSH) if moving else b
+
+
+## v0.10.5 W3-P10a (owner W7, G1 A4): the damage the attack-speed stat at raw value `speed_v` adds past the rate
+## curve's top, per mille: HASTE_DAMAGE per full HASTE_STEP of AttackRate.overflow_at (0 in loop 1).
+static func haste_damage_at(w: World, speed_v: int) -> int:
+	return AttackRate.overflow_at(w, speed_v) / HASTE_STEP * HASTE_DAMAGE
 
 
 ## Bucket `b` x glass cannon, per mille.

@@ -3,8 +3,8 @@ extends RefCounted
 ## v0.6.0 MX1 (MODIFIER_ENGINE §1–§2; SIM_CONTRACTS §5b): an attack a spec spawns. On its trigger (AttackSpec.Trigger)
 ## it launches `child`, a full spec the build's modifiers also rewrote (Modifiers.compile), with this damage: flat
 ## `damage`, or `damage_permille` of the parent's base damage (at least 1). Attacks.run_hook guards the recursion:
-## depth at most Attacks.MAX_HOOK_DEPTH, the proc coefficient halving at each level (100 → 50 → 25), a hook never
-## inside its own chain (ancestry), and the per-tick launch cap.
+## depth at most Attacks.hook_depth (the loop's), the proc coefficient halving at each level (100 → 50 → 25), a hook
+## never inside its own chain (ancestry), and the per-tick launch cap.
 
 const WHEN_ALWAYS := 0
 const WHEN_OVERCLOCK := 1

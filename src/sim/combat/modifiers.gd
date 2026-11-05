@@ -23,7 +23,7 @@ extends RefCounted
 ## Rules (design §2): numeric ops change one field (SET, ADD, MAX, MIN, MUL_PERMILLE); SET_FORM changes the form (a
 ## later form op layers); STATUS sets a status the spec's hits feed; ELEMENT adds an element the view draws
 ## (stacking, no repeats); HOOK adds a child attack at depth + 1, compiled by its own card and the cards to its right
-## (v0.6.5 WN1; none below MAX_DEPTH, so compiling always ends).
+## (v0.6.5 WN1; none below MAX_DEPTH, so compiling always ends; v0.10.5 W3-P10a: the loop's WandCompile.max_depth).
 ##
 ## Riders (the v0.5 rules kept exact): a Blade step's hits burn whenever the burn engine runs (Wildfire or Flame
 ## Trail with no Ember Edge did that before MX1), and the bolt's hits slow whenever the slow runs (Glacial Edge or
@@ -180,7 +180,7 @@ static func compile_for(w: World, mods: Array[ModifierTable]) -> AttackBook:
 		b.modifier_ids.append(String(m.id))
 	var wand := WandCompile.for_world(w, mods)  # v0.6.5 WN1: slot order, triggers cut the wand
 	for k in w.player.combo.size():
-		b.add(BladeForms.settle(wand.spec(base_step(w, k))))  # v0.6.5 WN4: Finisher+'s carry
+		b.add(BladeForms.settle(wand.spec(base_step(w, k)), wand.max_depth))  # v0.6.5 WN4: Finisher+'s carry
 	b.add(wand.spec(base_bolt(w)))
 	var sk := _base_skill(w)
 	if sk != null:
@@ -197,7 +197,8 @@ static func compile_for(w: World, mods: Array[ModifierTable]) -> AttackBook:
 
 ## v0.6.0 MX2: `s` takes `root`'s statuses (not its riders; a status `s` already has stays), elements and ON_HIT /
 ## ON_KILL hooks (shared, as compiled for the weapon); with `copy`, a bolt root's pattern and behaviour too.
-static func inherit(s: AttackSpec, root: AttackSpec, copy: bool) -> void:
+## v0.10.5 W3-P10a: the hooks only while `s` is shallower than `max_depth` (the compile's: WandCompile.max_depth).
+static func inherit(s: AttackSpec, root: AttackSpec, copy: bool, max_depth := MAX_DEPTH) -> void:
 	if root == null:
 		return
 	for k in root.status_ids.size():
@@ -211,7 +212,7 @@ static func inherit(s: AttackSpec, root: AttackSpec, copy: bool) -> void:
 	for m in root.modifier_ids:
 		if not s.modifier_ids.has(m):
 			s.modifier_ids.append(m)
-	if s.depth < MAX_DEPTH:
+	if s.depth < max_depth:
 		for h in root.hooks:
 			if h.trigger == AttackSpec.Trigger.ON_HIT or h.trigger == AttackSpec.Trigger.ON_KILL:
 				s.hooks.append(h)

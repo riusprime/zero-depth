@@ -124,6 +124,9 @@ const TAG_ABILITY := 16777216
 ## resists. Bits 26 and 27, clear of the bits a parallel step may take.
 const TAG_WEAK_TO := 67108864
 const TAG_RESISTED := 134217728
+## v0.10.5 W3-P10a (owner W7, G1 A1): a double crit (Stats.outgoing, from loop 2: the crit multiplier twice), always
+## with TAG_CRIT. Bit 29, leaving 28 for a step that runs in parallel.
+const TAG_DOUBLE_CRIT := 536870912
 
 var seq := 0
 var tick := 0

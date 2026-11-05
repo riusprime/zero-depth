@@ -144,7 +144,8 @@ var form: int = Form.ARC
 var tags := PackedStringArray()
 ## The modifier ids that rewrote it, in the order they applied (for the view and the tests).
 var modifier_ids := PackedStringArray()
-## Hook depth: 0 for a root attack, 1 for an attack a hook of a root spawns, 2 for one below that (the deepest).
+## Hook depth: 0 for a root attack, 1 for an attack a hook of a root spawns, 2 for one below that (loop 1's deepest;
+## v0.10.5 W3-P10a: one level more a loop, Attacks.hook_depth).
 var depth := 0
 ## Form ops taken so far: the first sets `form`, each later one layers (an ON_END hook in its form).
 var form_layers := 0
