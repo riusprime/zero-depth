@@ -13,6 +13,14 @@ const FLAG_REPEAT := 1
 const FLAG_AT_PLAYER := 2
 ## v0.8.0 MR (owner O91): a secondary attack (an Echo's repeat, a Double Slash echo: SecondaryProc).
 const FLAG_SECONDARY := 4
+## v0.10.5 W3-P10k: a Starbound Echo Cast repeat (its damage merges when ShotCap has no room: Attacks._bolts), a full
+## Lance charge, and the launch's Blade combo step + 1 (0: none) and size per mille (0: 1000) packed above them.
+const FLAG_ECHO_CAST := 8
+const FLAG_LANCE_FULL := 16
+const STEP_SHIFT := 8
+const STEP_MASK := 0xFF
+const SIZE_SHIFT := 16
+const SIZE_MASK := 0x7FFF
 
 ## The queued launches, oldest first (parallel arrays): the spec's AttackBook key, the tick it fires, where from and
 ## which way, its damage and base damage, root, SimEvent tags, effect id, hook level (depth, proc), flags, the hook id

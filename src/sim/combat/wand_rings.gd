@@ -64,10 +64,14 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var own := ctx.depth == 0 and not ctx.repeat and not ctx.back  # the player's own shot (ShotCap)
 	var fit := ShotCap.room(w, n, own)
 	if fit <= 0:
+		if ctx.echo_cast:  # v0.10.5 W3-P10k: an Echo Cast repeat's rings merge into the next own launch
+			Starbound.carry_echo(w, ring_damage(spec, ctx.damage) * n)
 		return
 	var dmg := ring_damage(spec, ctx.damage)
 	if fit < n:
 		dmg = maxi(1, (dmg * n + fit / 2) / fit)
+	if own and w.starbound_echo_carry > 0:  # v0.10.5 W3-P10k: shared by the rings that fly
+		dmg += (Starbound.take_echo(w) + fit / 2) / fit
 	var speed := spec.speed if spec.speed > 0.0 else SpecForms.BOLT_SPEED
 	var flight := spec.ring_flight if spec.ring_flight > 0 else SpecForms.BOLT_TICKS
 	var rng: RngStream = stream(w) if spec.swirl > 0 else null

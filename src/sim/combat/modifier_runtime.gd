@@ -57,7 +57,9 @@ static func queue_repeat(w: World, spec: AttackSpec, ctx: AttackContext) -> void
 
 ## v0.10.5 W3-P10b (Starbound B3, Echo Cast): root attack `spec` launched with `ctx` comes again `repeats` times at its
 ## whole damage, the first `delay` ticks later and each next REPEAT_GAP_TICKS after the one before, from where the
-## player is then: a repeat (it never repeats) at the secondary proc, as Twin Cast's.
+## player is then: a repeat (it never repeats) at the secondary proc, as Twin Cast's. W3-P10k: it keeps the launch's
+## Lance charge (size, full) and Blade combo step (packed in its flags, ModifierState.STEP_SHIFT, SIZE_SHIFT), and is
+## marked FLAG_ECHO_CAST (Attacks._bolts merges its damage when ShotCap has no room).
 static func queue_again(
 	w: World, spec: AttackSpec, ctx: AttackContext, repeats: int, delay: int
 ) -> void:
@@ -68,10 +70,31 @@ static func queue_again(
 	c.radius_m = ctx.radius_m
 	c.muzzle_m = ctx.muzzle_m
 	var flags := ModifierState.FLAG_REPEAT | ModifierState.FLAG_SECONDARY
+	flags |= ModifierState.FLAG_ECHO_CAST
+	flags |= pack_echo(ctx)
 	if ctx.origin == w.player_pos():
 		flags |= ModifierState.FLAG_AT_PLAYER
 	for n in repeats:
 		_queue(w, spec.key, w.tick + delay + n * REPEAT_GAP_TICKS, c, flags, "")
+
+
+## W3-P10k: an Echo Cast repeat's queue flags past FLAG_SECONDARY: its launch's full Lance charge, combo step + 1
+## (0: none) and size per mille (0: 1000).
+static func pack_echo(ctx: AttackContext) -> int:
+	var f := ModifierState.FLAG_LANCE_FULL if ctx.lance_full else 0
+	f |= clampi(ctx.step + 1, 0, ModifierState.STEP_MASK) << ModifierState.STEP_SHIFT
+	if ctx.size_permille != 1000:
+		f |= clampi(ctx.size_permille, 1, ModifierState.SIZE_MASK) << ModifierState.SIZE_SHIFT
+	return f
+
+
+## W3-P10k: queued Echo Cast repeat flags `flags` back onto its launch context `c` (pack_echo's reverse).
+static func unpack_echo(c: AttackContext, flags: int) -> void:
+	c.echo_cast = true
+	c.lance_full = (flags & ModifierState.FLAG_LANCE_FULL) != 0
+	c.step = ((flags >> ModifierState.STEP_SHIFT) & ModifierState.STEP_MASK) - 1
+	var size := (flags >> ModifierState.SIZE_SHIFT) & ModifierState.SIZE_MASK
+	c.size_permille = size if size > 0 else 1000
 
 
 ## v0.8.0 BL (BLADE_AUDIT B1, Double Slash +1 repeat a level): a combo step's spec repeats `spec.repeats` times.
@@ -149,6 +172,8 @@ static func advance(w: World) -> void:
 			continue
 		c.repeat = (flags & ModifierState.FLAG_REPEAT) != 0
 		c.secondary = (flags & ModifierState.FLAG_SECONDARY) != 0  # v0.8.0 MR (O91; SecondaryProc)
+		if flags & ModifierState.FLAG_ECHO_CAST:  # v0.10.5 W3-P10k: Echo Cast's repeat, as its launch
+			unpack_echo(c, flags)
 		if flags & ModifierState.FLAG_AT_PLAYER:
 			c.origin = w.player_pos()
 		if hook != "":

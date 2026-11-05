@@ -376,6 +376,8 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var root := ctx.depth == 0 and not ctx.repeat and not ctx.back  # the player's own shot (ShotCap)
 	fit = ShotCap.room(w, fit, root)
 	if fit <= 0:
+		if ctx.echo_cast:  # v0.10.5 W3-P10k: an Echo Cast repeat's volley merges into the next own shot
+			Starbound.carry_echo(w, ctx.damage * want)
 		return
 	var dmg := merged_damage(ctx.damage, want, fit)
 	if fit < want and w.slot_table != null:
@@ -430,6 +432,8 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				return
 			var muzzle := ctx.origin + dir * gap + Vector2(-dir.y, dir.x) * side
 			var dart_dmg := SeekerMods.take(w, milli) if spec.seekers > 0 else dmg
+			if root and w.starbound_echo_carry > 0:  # v0.10.5 W3-P10k: the merged Echo Cast repeats
+				dart_dmg = mini(dart_dmg + Starbound.take_echo(w), Starbound.ECHO_CARRY_MAX)
 			w.queue_projectile(
 				w.actors.ids[0],
 				ActorStore.TEAM_PLAYER,

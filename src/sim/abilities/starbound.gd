@@ -7,10 +7,12 @@ extends RefCounted
 ##   the loop (20 % at loop 2, 30 % from loop 3), in place of one of its cards; drawn from a named stream of its own
 ##   per altar ("loot:starbound:<loop>:<floor>:<reward id>", derived from the floor's seed), so the loop-1 loot
 ##   stream and every loop-1 offer stay as they were (T3). Taking it is the normal pick (Rewards.choose).
-## - B1 Arc Jump: a direct hit of yours (a weapon hit: no effect id, proc 100, melee or projectile) jumps to the nearest
-##   living enemy within reach_m of the one just hit that this chain hasn't hit (ties: the lower index), amount jumps a
-##   stack, each at share_permille of the jump before (the first: of the hit). A jump hits but never jumps again
-##   (EFFECT_ARC_JUMP: an already-scaled hit, Damage.hit, that feeds no status).
+## - B1 Arc Jump: the first direct hit of a root of yours (a weapon hit: no effect id, proc 100, melee or projectile;
+##   one chain a root, World.starbound_jump_roots) jumps to the nearest living enemy within reach_m of the one just hit
+##   that this chain hasn't hit (ties: the lower index), amount jumps a stack, each at share_permille of the jump before
+##   (the first: of the hit before the struck enemy's own multipliers, W3-P10k). A jump hits but never jumps again
+##   (EFFECT_ARC_JUMP: an already-scaled hit, Damage.hit, that feeds no status; each target applies its own
+##   multipliers).
 ## - B2 Rising Edge: each crit of yours adds amount crit damage a stack, at most cap a stack, until the room is
 ##   cleared (Stats.crit_mult adds it past the crit-damage cap).
 ## - B3 Echo Cast: a root weapon attack repeats (the Gun Echo path: ModifierRuntime.queue_again, the REPEAT bit, a
@@ -24,6 +26,8 @@ extends RefCounted
 ## - C6 Supernova (Constellations.SUPERNOVA): every stack counts twice (stacks(), the one read all five use).
 ## "The room is cleared": no living enemy in the hero's room (FloorLayout.room_of, its rect grown by
 ## Arenas.ROOM_MARGIN_M), with no arena or Lockdown sealed; checked each tick while a counter is above 0 (advance).
+## W3-P10k: between rooms (a corridor, a doorway) no living enemy within CORRIDOR_CLEAR_M of the hero nor in a room
+## whose grown rect holds the hero, so a walk down a corridor away from the fight resets the counters too.
 ## The view (V1-V3) reads the bursts and jumps of World.starbound_fx_* (never hashed). Integer maths; no randomness
 ## but the named streams above (EI-05).
 
@@ -39,6 +43,13 @@ const EFFECT_ARC_JUMP := &"starbound_arc_jump"
 const EFFECT_DETONATION := &"starbound_detonation"
 const EFFECT_BURST_CAP := &"starbound_burst_cap"
 const BURSTS_PER_TICK := 24
+## W3-P10k: Arc Jump remembers this many roots that already jumped (one chain a root; its hits come close together).
+const JUMP_ROOTS_MAX := 16
+## W3-P10k: a hero between rooms (a corridor) has cleared the room once no living enemy is within this many metres
+## (a starting value), nor in a room whose edge (grown by Arenas.ROOM_MARGIN_M) the hero stands in (a doorway).
+const CORRIDOR_CLEAR_M := 10.0
+## W3-P10k: Echo Cast's merged damage is kept within this (an int32 shot's damage).
+const ECHO_CARRY_MAX := 1 << 30
 ## Echo Cast's first repeat this many ticks after the attack (0.17 s), each next ModifierRuntime.REPEAT_GAP_TICKS later.
 const ECHO_DELAY_TICKS := 10
 const STREAM_OFFER := "loot:starbound"
@@ -135,10 +146,12 @@ static func _slot(w: World, i: int, out: PackedInt32Array) -> int:
 
 
 # --- The rules ----------------------------------------------------------------------------------------------------
-## Damage.hit: a hit of the player's landed on actor `i` (got > 0): `scaled` before its HP, its tags, effect and proc.
-## A crit counts for Rising Edge; a direct hit (a weapon hit) jumps (Arc Jump).
+## Damage.hit: a hit of the player's landed on actor `i` (got > 0): `carried` its amount before i's own multipliers
+## (W3-P10k: after the damage stat and the crit; no weak spot, Hunter's Sky, boss challenge or matchup of i's, and not
+## clamped to its HP), its tags, effect and proc. A crit counts for Rising Edge; the first direct hit (a weapon hit) of
+## a root jumps (Arc Jump: one chain a root, as every proc).
 static func on_player_hit(
-	w: World, i: int, scaled: int, tags: int, effect_id: StringName, proc_pct: int, root: int
+	w: World, i: int, carried: int, tags: int, effect_id: StringName, proc_pct: int, root: int
 ) -> void:
 	if tags & SimEvent.TAG_CRIT and stacks(w, RISING_EDGE) > 0:
 		w.starbound_crits = mini(w.starbound_crits + 1, _count_cap(w, RISING_EDGE))
@@ -148,8 +161,20 @@ static func on_player_hit(
 		and (tags & SimEvent.TAG_DOT) == 0
 		and (tags & (SimEvent.TAG_MELEE | SimEvent.TAG_PROJECTILE)) != 0
 	)
-	if direct and stacks(w, ARC_JUMP) > 0:
-		_arc_jump(w, i, scaled, root)
+	if direct and stacks(w, ARC_JUMP) > 0 and _first_of_root(w, root):
+		_arc_jump(w, i, carried, root)
+
+
+## W3-P10k: true the first time root `root` asks (it is remembered, the last JUMP_ROOTS_MAX roots); root 0 always.
+static func _first_of_root(w: World, root: int) -> bool:
+	if root == 0:
+		return true
+	if w.starbound_jump_roots.has(root):
+		return false
+	if w.starbound_jump_roots.size() >= JUMP_ROOTS_MAX:
+		w.starbound_jump_roots.remove_at(0)
+	w.starbound_jump_roots.append(root)
+	return true
 
 
 ## B1: up to amount x stacks jumps from actor i, each at share_permille of the one before.
@@ -273,6 +298,19 @@ static func echo_cast(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 		ModifierRuntime.queue_again(w, spec, ctx, reps, ECHO_DELAY_TICKS)
 
 
+## W3-P10k (B3; the class doc of ShotCap: shots past it merge and keep the damage): an Echo Cast repeat with no shot
+## room left keeps its volley's damage `dmg` (raw, before the hit's multipliers) for the next own shot (take_echo).
+static func carry_echo(w: World, dmg: int) -> void:
+	w.starbound_echo_carry = mini(w.starbound_echo_carry + maxi(0, dmg), ECHO_CARRY_MAX)
+
+
+## The merged Echo Cast damage, taken by the player's own next shot (Attacks._bolts, WandRings.launch), emptied.
+static func take_echo(w: World) -> int:
+	var d := w.starbound_echo_carry
+	w.starbound_echo_carry = 0
+	return d
+
+
 ## The crit-damage bonus now, per mille (B2: Stats.crit_mult adds it).
 static func crit_bonus(w: World) -> int:
 	return _ramp(w, RISING_EDGE, w.starbound_crits)
@@ -309,23 +347,34 @@ static func advance(w: World) -> void:
 		w.starbound_kills = 0
 
 
-## No living enemy in the hero's room, and no arena or Lockdown sealed (false between rooms, in a doorway).
+## No living enemy in the hero's room, and no arena or Lockdown sealed. W3-P10k: between rooms, no living enemy within
+## CORRIDOR_CLEAR_M of the hero nor in a room whose grown rect holds the hero (a doorway).
 static func room_cleared(w: World) -> bool:
 	if w.arenas.sealed() or (w.lockdown != null and w.lockdown.sealed()):
 		return false
 	var a := w.actors
-	var rect := Rect2()
+	var rects: Array[Rect2] = []
+	var near := -1.0
+	var me := w.player_pos()
 	var whole := w.floor_layout == null or w.floor_layout.rooms.is_empty()
 	if not whole:
-		var room := w.floor_layout.room_of(w.player_pos())
-		if room < 0:
-			return false
-		rect = w.floor_layout.rooms[room].grow(Arenas.ROOM_MARGIN_M)
+		var room := w.floor_layout.room_of(me)
+		if room >= 0:
+			rects.append(w.floor_layout.rooms[room].grow(Arenas.ROOM_MARGIN_M))
+		else:
+			near = CORRIDOR_CLEAR_M
+			for r in w.floor_layout.rooms:
+				if r.grow(Arenas.ROOM_MARGIN_M).has_point(me):
+					rects.append(r.grow(Arenas.ROOM_MARGIN_M))
 	for i in range(1, a.size()):
 		if a.dead[i] != 0 or a.teams[i] == ActorStore.TEAM_PLAYER:
 			continue
-		if whole or rect.has_point(a.pos(i)):
+		var p := a.pos(i)
+		if whole or (near >= 0.0 and Kin.length(p - me) <= near + a.radius[i]):
 			return false
+		for r in rects:
+			if r.has_point(p):
+				return false
 	return true
 
 
@@ -346,6 +395,8 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	h.add_ints(w.starbound)
 	for v in [w.starbound_crits, w.starbound_kills, w.starbound_burst_tick, w.starbound_bursts]:
 		h.add_int(v)
+	h.add_ints(w.starbound_jump_roots)  # v0.10.5 W3-P10k
+	h.add_int(w.starbound_echo_carry)
 
 
 ## For the HUD and the pick (WorldReader.starbound): each card's id, picks, stacks in play, and the room counters.

@@ -4,7 +4,8 @@ extends RefCounted
 ## enemies"; Q5 "fire lv3 ok"; docs/roadmap/v0.10.5/W3_W7_LOOP_POWER_G1.md rows C4, C4b, V1, V2): the Starfall
 ## Constellation (Constellations.STARFALL). The numbers are the constants below, in one place.
 ## - Starfall: every STAR_EVERY-th crit of the hero drops a star on the nearest other living enemy (not the crit's
-##   target; ties: lowest index) for STAR_PERMILLE of the amount that crit dealt. The star is a player hit that was
+##   target; ties: lowest index) for STAR_PERMILLE of the amount that crit dealt (W3-P10k: before its target's own
+##   multipliers, Damage.hit). The star is a player hit that was
 ##   already scaled (Damage.hit's splash path): it never rolls a crit and never counts toward the five (no recursion).
 ##   No other enemy: nothing. World.starfall_crits counts the crits.
 ## - Meteor (Starfall held AND the Fire card, ember_core, at Lv >= METEOR_FIRE_LEVEL): the star is replaced. Every
