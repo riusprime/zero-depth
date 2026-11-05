@@ -1085,6 +1085,7 @@ UI_GAIN_LEVEL_NEW,New · Level %d,Nuevo · Nivel %d
 UI_GAIN_HP,%d → %d HP,%d → %d PV
 UI_GAIN_ARROW,%s → %s,%s → %s
 UI_GAIN_PERCENT,%s%%,%s %%
+UI_GAIN_HASTE_DAMAGE,+%s%% damage (attack speed past its top),+%s %% de daño (velocidad de ataque más allá de su tope)
 UI_CURSE_ALTAR_OPEN,Touch,Tocar
 ITEM_GUN_THREADLINE,Threadline,Hilo Conector
 ITEM_GUN_THREADLINE_DESC,Shots fired close together are linked by a cutting thread.,Los disparos seguidos quedan unidos por un hilo cortante.
