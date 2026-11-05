@@ -78,6 +78,11 @@ const SHORT := {
 	&"p10l_star_hit": [0.2, 15.0],
 }
 
+## v0.10.5 W3-P10m (owner: "don't get crazy with visuals for explosions"): the pack scene's child nodes an id never
+## shows (the meteor's landing drops vfx_impact_01's white-hot Core sphere, its smoke and its tall streaks; the
+## pack's files stay as they are).
+const HIDE := {&"p10l_meteor_land": ["Core", "Smoke", "Impact_Streaks2"]}
+
 static var _shared: PackFxDefinition
 ## How floor loads warm the pack (VX-W): &"menu" (PackFxSessionWarm warms at the main menu; a load warms what is
 ## left), &"session" (the first load warms everything, later loads nothing), &"load" (every load warms every id: VX0),
@@ -182,6 +187,10 @@ func spawn(
 	if node == null:
 		return null
 	var info: Dictionary = _info[node]
+	for hidden: String in HIDE.get(effect_id, []):
+		var child := node.get_node_or_null(hidden) as Node3D
+		if child != null:
+			child.visible = false
 	node.scale = Vector3.ONE * scale * _def.scales[k]
 	if node.is_inside_tree():
 		node.global_position = pos

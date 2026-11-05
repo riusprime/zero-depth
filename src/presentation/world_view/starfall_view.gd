@@ -38,7 +38,7 @@ const METEOR_HEAD_SCALE := 0.55
 const STAR_HEAD_SCALE := 0.8
 const STAR_HIT_SCALE := 0.8
 ## The landing burst's scale per metre of the meteor's radius (vfx_impact_01's ring is ~1.7 m in radius at 1).
-const BURST_PER_M := 0.6
+const BURST_PER_M := 0.45
 ## How long a star's sparkle counts against MAX_DRAWN (ticks; PackFx.SHORT ends it at the same tick).
 const SPARK_TICKS := 15
 
