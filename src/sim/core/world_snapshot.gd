@@ -247,6 +247,7 @@ const ADDED_SINCE_V05 := {
 		&"dmg_carry",  # v0.10.5 W3-P9: the carried remainders (an older save carries none: 0)
 		&"dot_carry",
 		&"shot_carry",
+		&"constellations",  # v0.10.5 W3-P10: the held Constellations (an older save holds none)
 	],
 	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
 	&"BossFlow":

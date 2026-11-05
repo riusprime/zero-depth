@@ -57,6 +57,8 @@ var shot_cd := 0
 var dmg_carry := 0
 var dot_carry := 0
 var shot_carry := 0
+## v0.10.5 W3-P10: the held Constellations, ids in pick order (Constellations; owner W7).
+var constellations := PackedInt32Array()
 ## Utility: blink cooldown, and the last blink (tick and start point) for the view.
 var blink_cd := 0
 var blink_tick := -1
