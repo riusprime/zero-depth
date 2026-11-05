@@ -5,6 +5,8 @@ extends RefCounted
 ## (WorldReader.card_forecast: the same steps the take runs), so the card says what you get:
 ## - a stat card: "100% → 112%" (per mille as percent), max HP "100 → 110 HP";
 ## - an ability or a wand card: "Level 2 → 3", or "New · Level 1" for one not held;
+## - an attack-speed card past the rate curve's top (loop 2 on; its rate gain is 0): the damage it gives instead,
+##   "+5% damage (attack speed past its top)" (v0.10.5 W3-P10n; the forecast's dmg_old, dmg_new);
 ## - any other card: no line.
 ## While a card is hovered or focused its new number counts up from the old one (value_at; COUNT_S); under reduced
 ## motion it shows the new number at once. Presentation only (EI-07).
@@ -39,6 +41,8 @@ static func text(ci: Object, gain: Dictionary, value: int) -> String:
 		WorldReader.GAIN_HP:
 			return ci.tr("UI_GAIN_HP") % [old, value]
 		WorldReader.GAIN_PERMILLE:
+			if gives_damage(gain):
+				return ci.tr("UI_GAIN_HASTE_DAMAGE") % GambleIcons.percent(damage_gain(gain))
 			return ci.tr("UI_GAIN_ARROW") % [percent(ci, old), percent(ci, value)]
 	return ""
 
@@ -50,3 +54,17 @@ static func final_text(ci: Object, gain: Dictionary) -> String:
 
 static func percent(ci: Object, permille: int) -> String:
 	return ci.tr("UI_GAIN_PERCENT") % GambleIcons.percent(permille)
+
+
+## v0.10.5 W3-P10n: an attack-speed card whose rate no longer rises (past the curve's top) but whose damage does.
+static func gives_damage(gain: Dictionary) -> bool:
+	return (
+		gain.has("dmg_new")
+		and int(gain.get("new", 0)) <= int(gain.get("old", 0))
+		and int(gain["dmg_new"]) > int(gain.get("dmg_old", 0))
+	)
+
+
+## The damage that card gives, per mille (the bucket's new - old).
+static func damage_gain(gain: Dictionary) -> int:
+	return int(gain.get("dmg_new", 0)) - int(gain.get("dmg_old", 0))
