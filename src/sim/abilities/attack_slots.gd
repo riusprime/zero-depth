@@ -48,7 +48,10 @@ static func limit(w: World, cat: int) -> int:
 	if t == null or cat <= FREE or cat > ELEMENT:
 		return -1
 	var lim := t.gun_limits if gun(w) else t.blade_limits
-	return lim[cat - 1] if cat - 1 < lim.size() else -1
+	var n := lim[cat - 1] if cat - 1 < lim.size() else -1
+	if cat == ELEMENT and n >= 0:  # v0.10.5 W3-P10c: C1 Prism, one Element slot more per Prism held
+		n += Constellations.count(w, Constellations.PRISM)
+	return n
 
 
 ## The run is a Gun run (the Gun without the Blade): the forms and the table are the Gun's.

@@ -72,7 +72,12 @@ static func falloff_permille(w: World, i: int, e: int) -> int:
 	var t := w.pair_table
 	if t == null or t.stack_falloff_permille.is_empty():
 		return 1000
-	var k := mini(others(w, i, e), t.stack_falloff_permille.size() - 1)
+	var n := others(w, i, e)
+	# v0.10.5 W3-P10c: C1 Prism on a run without an Element limit (the Blade's): prism_falloff_steps steps softer each
+	var prisms := Constellations.count(w, Constellations.PRISM) if n > 0 else 0
+	if prisms > 0 and AttackSlots.limit(w, AttackSlots.ELEMENT) < 0:
+		n = maxi(0, n - t.prism_falloff_steps * prisms)
+	var k := mini(n, t.stack_falloff_permille.size() - 1)
 	return t.stack_falloff_permille[k]
 
 

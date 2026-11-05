@@ -7,6 +7,8 @@ var level_permille := PackedInt32Array([400, 700, 1000])  # v0.9.5 EP1: strength
 ## v0.10.5 W3-P1: an element's damage on an enemy carrying k other elements, per mille, k = 0, 1, 2, 3+ (ElementStack;
 ## empty = no falloff).
 var stack_falloff_permille := PackedInt32Array()
+## v0.10.5 W3-P10c: C1 Prism on a Blade run: the falloff steps (k) each Prism held takes off (ElementStack).
+var prism_falloff_steps := 1
 var storm_mark_ticks := 0  # v0.10.5 W3-P1b: how long a Lightning hit leaves its enemy charged (0 = none)
 var triggers_per_second := 4
 var burst_permille := 3000

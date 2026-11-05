@@ -30,6 +30,9 @@ extends ContentDef
 ## An element's damage on an enemy already carrying k other elements counts at this share, per mille, for k = 0, 1, 2
 ## and 3 or more (ElementStack). 0..4 values, each 1..1000, never rising; empty = no falloff.
 @export var stack_falloff_permille := PackedInt32Array()
+## v0.10.5 W3-P10c (owner W7, C1 Prism): on a run without an Element limit (the Blade's), each Prism held makes the
+## falloff this many steps softer: an element counts as if its enemy carried that many fewer other elements. 0..3.
+@export var prism_falloff_steps := 1
 ## v0.10.5 W3-P1b: a hero Lightning hit (the Storm card's chain or strike) leaves its enemy charged this long, so
 ## Lightning counts as carried in the others' falloff (ElementStack). 0 = no mark; 0..5 s.
 @export var storm_mark_seconds := 0.0
@@ -106,6 +109,10 @@ func validate() -> Array[ValidationIssue]:
 				resource_path,
 				"stack_falloff_permille: 0..4 values in 1..1000, never rising"
 			)
+		)
+	if prism_falloff_steps < 0 or prism_falloff_steps > 3:  # v0.10.5 W3-P10c
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "prism_falloff_steps must be 0..3")
 		)
 	for pair: Array in [
 		["burst_radius_m", burst_radius_m],

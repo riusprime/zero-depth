@@ -65,6 +65,7 @@ static func overlevels(w: World, idx: int) -> int:
 
 ## W3-P3: what `n` overlevels make item `idx`'s main number, per mille: 1000 + its category's overlevel_permille × n
 ## (linear, not compounding); 1000 for n <= 0, without a pacing table, or for a category without an entry.
+## v0.10.5 W3-P10c: C2 Twin Star makes each step Constellations.TWIN_STAR_OVERLEVEL_MULT times as big.
 static func overlevel_permille(w: World, idx: int, n: int) -> int:
 	var t := w.loot_pacing
 	if n <= 0 or t == null:
@@ -72,7 +73,10 @@ static func overlevel_permille(w: World, idx: int, n: int) -> int:
 	var cat := LootPacing.category(w, idx)
 	if cat <= 0 or cat > t.overlevel_permille.size():
 		return 1000
-	return 1000 + maxi(0, t.overlevel_permille[cat - 1]) * n
+	var step := maxi(0, t.overlevel_permille[cat - 1])
+	if Constellations.has(w, Constellations.TWIN_STAR):
+		step *= Constellations.TWIN_STAR_OVERLEVEL_MULT
+	return 1000 + step * n
 
 
 ## W3-P3: item `idx`'s overlevel multiplier now, per mille (the compile's and the forecast's one function).

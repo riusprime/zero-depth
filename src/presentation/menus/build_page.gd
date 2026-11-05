@@ -34,6 +34,8 @@ var forecast := WandForecastView.new()
 var pips := SlotPips.new()
 var _title := Label.new()
 var _note := Label.new()
+## v0.10.5 W3-P10c: the held Constellations ("Constellation: Prism ×2 · Glass Sky"; hidden while none).
+var _stars := Label.new()
 var _read_back := Label.new()
 var _hint: Label
 var _back := Button.new()
@@ -76,6 +78,11 @@ func _init() -> void:
 	_note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(_note)
 	col.add_child(AstralUi.LeftRule.new(560.0))
+	_stars.name = "Constellations"
+	_stars.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	AstralUi.caps(_stars, 15, AstralCardArt.ACCENT)
+	_stars.visible = false
+	col.add_child(_stars)
 	col.add_child(pips)
 	col.add_child(row)
 	col.add_child(forecast)
@@ -110,7 +117,27 @@ func open(wand: Dictionary, slots: int, reader: WorldReader = null) -> void:
 	row.held = -1
 	row.focus = 0 if card_count() > 0 else -1
 	_held_from = -1
+	_show_constellations(reader.constellations() if reader != null else PackedInt32Array())
 	_refresh()
+
+
+## v0.10.5 W3-P10c: the held Constellations line (`held`: ids in pick order; Prism held twice reads "Prism ×2").
+func _show_constellations(held: PackedInt32Array) -> void:
+	var names := PackedStringArray()
+	var seen := PackedInt32Array()
+	for id in held:
+		if seen.has(id):
+			continue
+		seen.append(id)
+		var n := held.count(id)
+		names.append(tr(WorldReader.constellation_name_key(id)) + (" ×%d" % n if n > 1 else ""))
+	_stars.text = tr("CONSTELLATION_KIND") + ": " + " · ".join(names)
+	_stars.visible = not names.is_empty()
+
+
+## The held Constellations line ("" while none): tests.
+func constellations_text() -> String:
+	return _stars.text if _stars.visible else ""
 
 
 func card_count() -> int:

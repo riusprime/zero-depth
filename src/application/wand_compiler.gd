@@ -134,6 +134,7 @@ static func pairs(repo: ContentRepository) -> ElementPairTable:
 	var t := ElementPairTable.new()
 	t.level_permille = def.level_permille.duplicate()
 	t.stack_falloff_permille = def.stack_falloff_permille.duplicate()  # v0.10.5 W3-P1
+	t.prism_falloff_steps = def.prism_falloff_steps  # v0.10.5 W3-P10c
 	t.storm_mark_ticks = SimTick.seconds_to_ticks(def.storm_mark_seconds)  # v0.10.5 W3-P1b
 	t.triggers_per_second = def.triggers_per_second
 	t.burst_permille = def.burst_permille

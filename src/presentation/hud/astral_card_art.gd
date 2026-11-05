@@ -15,6 +15,9 @@ const NOISE := "res://assets/ui/fx/dissolve_noise.png"
 const UNKNOWN := &"unknown"
 const CINZEL := "res://assets/fonts/cinzel/Cinzel-Variable.ttf"
 const FRAMES := 4
+## v0.10.5 W3-P10c: the Constellation cards' frame variant and their ids' prefix (Constellations.card_id).
+const CONSTELLATION := 101
+const CONSTELLATION_PREFIX := "const_"
 ## The frame canvas (px), the frame body's padding inside it (the focused glow's room) and the body's mean width.
 const CANVAS := Vector2(400, 520)
 const PAD := Vector2(44, 43)
@@ -69,25 +72,34 @@ static func has_icon(id: StringName) -> bool:
 
 
 ## Which of the four frames card `id` wears (1..4): the same for an id every time (a sum of its characters).
+## v0.10.5 W3-P10c: a Constellation card (an id `const_<name>`, Constellations.card_id) wears the owner's violet
+## Constellation frame and back (CONSTELLATION; one drawing each: its focus is the game's own look, owner).
 static func variant_of(id: StringName) -> int:
 	var s := String(id)
+	if s.begins_with(CONSTELLATION_PREFIX):
+		return CONSTELLATION
 	var h := 0
 	for i in s.length():
 		h = (h * 31 + s.unicode_at(i)) % 100003
 	return 1 + h % FRAMES
 
 
-## Frame `variant` (1..4), focused or not.
+## Frame `variant` (1..4, or CONSTELLATION), focused or not.
 static func frame(variant: int, focused: bool) -> Texture2D:
 	var key := "frame_%d%s" % [clampi(variant, 1, FRAMES), "_focus" if focused else ""]
+	if variant == CONSTELLATION:
+		key = "frame_constellation"
 	if not _frames.has(key):
 		_frames[key] = load(FRAME_DIR + key + ".png")
 	return _frames[key]
 
 
-## Card back `variant` (1..4), focused or not (v0.10.5 W3-S13): on the frames' canvas, so a back and a front line up.
+## Card back `variant` (1..4, or CONSTELLATION), focused or not (v0.10.5 W3-S13): on the frames' canvas, so a back
+## and a front line up.
 static func back(variant: int, focused: bool) -> Texture2D:
 	var key := "back_%d%s" % [clampi(variant, 1, FRAMES), "_focus" if focused else ""]
+	if variant == CONSTELLATION:
+		key = "back_constellation"
 	if not _backs.has(key):
 		_backs[key] = load(BACK_DIR + key + ".png")
 	return _backs[key]
