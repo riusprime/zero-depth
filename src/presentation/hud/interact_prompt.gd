@@ -6,6 +6,10 @@ extends Control
 ## A string key's text splits at its first " · ": the verb before, the cost (or other short tail) after it.
 ## Fades in 0.12 s when shown, out when hidden. Reads only (WorldReader); the press goes out as input.
 ## The device follows the last event as AbilitySquares tracks it (AbilitySquares.pad_after).
+## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): Astral's look: the verb and the cost in
+## letter-spaced Cinzel capitals in Astral's text colour (a price you can't pay in its muted rose); the key an Astral
+## chip (an ink fill, a 1 px frame and an inner frame, square corners), a pad button an ink disc in a 1 px ring with
+## a faint inner ring, its letter or shape in the face's colour softened toward Astral's silver.
 
 const ACTION := &"interact"
 const FADE_S := 0.12
@@ -15,7 +19,7 @@ const FONT_PX := 18
 const GLYPH_PX := 26.0
 const REF_H := 1080.0
 const SEP := " · "
-const POOR := Color(1.0, 0.45, 0.4)
+const POOR := AstralCardArt.POOR  # v0.10.5 W3-O19 (was a bright red)
 ## The Xbox face buttons (index -> letter, colour) and the PlayStation ones (index -> shape, colour).
 const XBOX := {
 	JOY_BUTTON_A: ["A", Color(0.35, 0.78, 0.38)],
@@ -60,8 +64,10 @@ func _init() -> void:
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		HudStyle.style_label(l, FONT_PX, true)
+		l.uppercase = true  # v0.10.5 W3-O19: Cinzel capitals
+		l.add_theme_font_override("font", AstralUi.serif(700, FONT_PX))
 		l.add_theme_constant_override("outline_size", 6)
-		l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+		l.add_theme_color_override("font_outline_color", Color(AstralChrome.INK, 0.85))
 		_row.add_child(l)
 	pad_active = not Input.get_connected_joypads().is_empty()
 	joy_name = Input.get_joy_name(0) if pad_active else ""
@@ -101,7 +107,7 @@ func show_prompt(
 	_verb.text = text if cut < 0 else text.substr(0, cut)
 	_cost.text = "" if cut < 0 else text.substr(cut + SEP.length())
 	_cost.visible = cut >= 0
-	var col := POOR if poor else tint
+	var col := POOR if poor else (AstralCardArt.TEXT if tint == Color.WHITE else tint)
 	_verb.add_theme_color_override("font_color", col)
 	_cost.add_theme_color_override("font_color", col if poor else col.darkened(0.12))
 	_glyph.visible = glyph
@@ -226,17 +232,17 @@ class GlyphView:
 		var rad := minf(r.size.x, r.size.y) * 0.5
 		var fnt := get_theme_default_font()
 		var col: Color = spec["color"]
-		if spec["style"] == &"key":
-			var sb := StyleBoxFlat.new()
-			sb.bg_color = Color(0.14, 0.15, 0.18, 0.95)
-			sb.border_color = Color(0.85, 0.87, 0.92)
-			sb.set_border_width_all(2)
-			sb.set_corner_radius_all(int(rad * 0.3))
-			draw_style_box(sb, r.grow(-1.0))
-			_centered(fnt, String(spec["label"]), c, int(rad * 1.0), Color(0.95, 0.96, 1.0))
+		if spec["style"] == &"key":  # v0.10.5 W3-O19: an Astral chip
+			var o := Rect2(r.position.round(), r.size.round())
+			draw_rect(o, Color(AstralChrome.INK, 0.9))
+			draw_rect(o.grow(-0.5), AstralCardArt.METAL, false, 1.0)
+			draw_rect(o.grow(-3.5), Color(AstralCardArt.METAL, 0.28), false, 1.0)
+			_centered(fnt, String(spec["label"]), c, int(rad * 1.0), AstralCardArt.TEXT)
 			return
-		draw_circle(c, rad, Color(0.1, 0.1, 0.13, 0.95))
-		draw_arc(c, rad - 1.0, 0.0, TAU, 28, col, 2.0)
+		col = col.lerp(AstralCardArt.METAL, 0.35)  # v0.10.5 W3-O19: the face's colour softened
+		draw_circle(c, rad, Color(AstralChrome.INK, 0.9))
+		draw_arc(c, rad - 0.5, 0.0, TAU, 48, AstralCardArt.METAL, 1.0, true)
+		draw_arc(c, rad - 3.5, 0.0, TAU, 48, Color(AstralCardArt.METAL, 0.28), 1.0, true)
 		var s: StringName = spec["shape"]
 		var w := rad * 0.12 + 1.5
 		var q := rad * 0.45

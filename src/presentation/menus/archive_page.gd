@@ -30,7 +30,7 @@ func _init(p_defs: Array[CollectibleDefinition], p_found: Array[bool]) -> void:
 	add_child(_list)
 	var panel := PanelContainer.new()
 	panel.name = "Detail"
-	panel.add_theme_stylebox_override("panel", MenuStyle.stone_panel(Vector2(22, 22)))
+	panel.add_theme_stylebox_override("panel", AstralUi.PanelBox.new(Vector2(24, 32)))  # v0.10.5 W3-O19
 	panel.custom_minimum_size = Vector2(520, 0)
 	panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	add_child(panel)
@@ -38,13 +38,11 @@ func _init(p_defs: Array[CollectibleDefinition], p_found: Array[bool]) -> void:
 	info.add_theme_constant_override("separation", 10)
 	panel.add_child(info)
 	name_label.name = "EntryName"
-	name_label.add_theme_font_override("font", HudStyle.font(true))
-	name_label.add_theme_font_size_override("font_size", 30)
+	AstralUi.title(name_label, 26)  # v0.10.5 W3-O19: Cinzel, small caps under it, Atkinson body
 	shelf_label.name = "Shelf"
-	shelf_label.add_theme_font_size_override("font_size", MenuStyle.NOTE_SIZE)
-	shelf_label.add_theme_color_override("font_color", MenuStyle.DIM)
+	AstralUi.caps(shelf_label, AstralUi.LABEL_SIZE)
 	lore_label.name = "Lore"
-	lore_label.add_theme_font_size_override("font_size", 22)
+	AstralUi.body(lore_label, 20)
 	for l: Label in [name_label, shelf_label, lore_label]:
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -81,9 +79,7 @@ func refresh(p_found: Array[bool] = found) -> void:
 		head.name = "Head_%s" % shelf
 		head.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		head.text = "%s   %d / %d" % [tr(CollectibleBook.SHELF_KEYS[shelf]), have, here.size()]
-		head.add_theme_font_override("font", HudStyle.font(true))
-		head.add_theme_font_size_override("font_size", 18)
-		head.add_theme_color_override("font_color", MenuStyle.EMBER.lerp(Color.WHITE, 0.3))
+		AstralUi.caps(head, 15, AstralCardArt.METAL)  # v0.10.5 W3-O19: Cinzel small caps
 		_list.add_child(head)
 		var row := HBoxContainer.new()
 		row.name = "Row_%s" % shelf

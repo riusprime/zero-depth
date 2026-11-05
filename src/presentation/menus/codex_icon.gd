@@ -3,6 +3,8 @@ extends Control
 ## v0.7.5 CX: one Codex entry's picture: a card's icon (ItemIcons, which falls through to the abilities' and the stat
 ## cards' symbols) in its colour, an enemy's or boss's emblem (CodexGlyphs), or a biome's landscape in its palette.
 ## A locked entry is the same shape as a dark silhouette. Draws only (EI-07).
+## v0.10.5 W3-O19 (every UI element in Astral): a card with a painted icon (AstralCardArt, the cards' own) shows it,
+## a dark silhouette while locked; the hostile and the lore colours are Astral's (no red, orange or ember).
 
 ## A locked entry's silhouette colour.
 const SILHOUETTE := Color(0.17, 0.19, 0.24)
@@ -26,8 +28,12 @@ func show_entry(p_entry: Dictionary, p_locked: bool) -> void:
 ## The entry's colour when unlocked (a card's own colour, the hostile reds).
 static func color_of(e: Dictionary) -> Color:
 	var page: StringName = e.get("page", &"")
-	if page == &"lore":  # v0.10.5 O18: carved ember, not a hostile red
-		return MenuStyle.EMBER.lerp(Color.WHITE, 0.2)
+	if page == &"lore":  # v0.10.5 O18: not a hostile red (W3-O19: Astral's accent)
+		return AstralCardArt.ACCENT
+	if page == &"enemies":  # v0.10.5 W3-O19: Astral's muted rose
+		return AstralCardArt.POOR
+	if page == &"bosses":  # v0.10.5 W3-O19: the legendary pale gold
+		return AstralCardArt.rarity(4)
 	if page != &"cards":
 		return CodexGlyphs.color(page)
 	var id: StringName = e["id"]
@@ -48,7 +54,14 @@ func _draw() -> void:
 	var c := SILHOUETTE if locked else color_of(entry)
 	match page:
 		&"cards":
-			drawn = ItemIcons.draw(self, entry["id"], r, c)
+			if AstralCardArt.has_icon(entry["id"]):  # v0.10.5 W3-O19: the card's painted icon
+				var s := minf(r.size.x, r.size.y) * 1.25
+				var at := Rect2(r.get_center() - Vector2(s, s) * 0.5, Vector2(s, s))
+				var tint := Color(SILHOUETTE, 1.0) if locked else Color.WHITE
+				draw_texture_rect(AstralCardArt.icon(entry["id"]), at, false, tint)
+				drawn = 1
+			else:
+				drawn = ItemIcons.draw(self, entry["id"], r, c)
 		&"enemies":
 			var shapes := CodexGlyphs.shapes(page, entry.get("behaviour", &""))
 			drawn = CodexGlyphs.draw(self, shapes, r, c)

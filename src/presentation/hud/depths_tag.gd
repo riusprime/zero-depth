@@ -4,8 +4,10 @@ extends HBoxContainer
 ## tag beside the danger bar that names the floor's catch-up, "The depths answer ×1.4" (HUD_DEPTHS_ANSWER), hidden at
 ## ×1. A small ember rune (a downward chevron drawn here) leads it. `short` words it as the multiplier alone (a G2
 ## variant). It shows WorldReader.catch_up_permille() and decides nothing.
+## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): Astral's muted amber (the heat's, the one warm
+## colour) in place of the bright ember gold; the rune a 1 px chevron outline over ink, the line in Cinzel small caps.
 
-const COLOR := Color("#F2B33D")
+const COLOR := Color("#D6A878")
 const FONT_SIZE := 13
 const RUNE := Vector2(10, 9)
 
@@ -27,11 +29,13 @@ class _Rune:
 	func _draw() -> void:
 		var w := RUNE.x
 		var h := RUNE.y
-		draw_colored_polygon(
-			PackedVector2Array([Vector2(0, 0), Vector2(w, 0), Vector2(w * 0.5, h)]),
-			Color(COLOR, 0.95)
+		var tri := PackedVector2Array(
+			[Vector2(0.5, 0.5), Vector2(w - 0.5, 0.5), Vector2(w * 0.5, h - 0.5)]
 		)
-		draw_rect(Rect2(w * 0.5 - 1, 2, 2, 3), Color(0.08, 0.05, 0.03, 0.9))
+		draw_colored_polygon(tri, Color(AstralChrome.INK, 0.8))
+		tri.append(tri[0])
+		draw_polyline(tri, Color(COLOR, 0.95), 1.0, true)
+		draw_rect(Rect2(floorf(w * 0.5), 2, 1, 3), Color(COLOR, 0.95))
 
 
 func _init() -> void:
@@ -42,7 +46,7 @@ func _init() -> void:
 	label.name = "DepthsLabel"
 	label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_color_override("font_color", COLOR)
+	AstralUi.caps(label, FONT_SIZE, COLOR)  # v0.10.5 W3-O19
 	add_child(label)
 	visible = false
 

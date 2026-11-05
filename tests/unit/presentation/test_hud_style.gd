@@ -179,7 +179,14 @@ func test_the_calm_hud_has_plain_labels_and_thin_bars() -> void:
 		# StoneCard); every other HUD label stays plain type.
 		# v0.8.0 N8: the tablet's face hangs from the card's pivot (StoneCard → CardFx → Pivot → Face → Title)
 		var card_title := l.name == &"Title" and l.get_parent().get_parent().get_parent() is CardFx
-		assert_eq((l as Label).uppercase, card_title, "%s is plain type" % l.name)
+		# v0.10.5 W3-O19 (on purpose, owner 2026-11-04 night: every UI element in Astral): Astral's titles, heads and
+		# prompts (the event panel's, the depths tag, the interact prompt) are letter-spaced Cinzel capitals
+		var f := (l as Label).get_theme_font("font") as FontVariation
+		var cinzel := (
+			f != null and f.base_font != null and f.base_font.resource_path == AstralCardArt.CINZEL
+		)
+		if (l as Label).uppercase:
+			assert_true(card_title or cinzel, "%s is plain type" % l.name)
 	assert_lte(Hud.BAR.y, 12.0, "a thin HP bar (v0.9.5 HU: 15 percent bigger than 10)")
 	assert_lte(DangerMeter.SIZE.y, 16.0, "a slim danger meter")
 	assert_lte(BossBar.BAR.y, 10.0, "a thin boss bar")

@@ -23,6 +23,7 @@ func set_astral() -> void:
 	_numbers.add_theme_color_override("font_color", AstralCardArt.TEXT)
 	for l: Label in [_title, _spell, _numbers]:
 		l.add_theme_color_override("font_outline_color", Color(AstralChrome.INK, 0.6))
+	AstralUi.caps(_title, TITLE_SIZE - 2)  # v0.10.5 W3-O19: the title in Cinzel small caps
 
 
 func _init() -> void:
@@ -51,6 +52,7 @@ func _init() -> void:
 	for l: Label in [_title, _spell, _numbers]:
 		l.add_theme_constant_override("outline_size", 4)
 		l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.6))
+	set_astral()  # v0.10.5 W3-O19: Astral is the default (the Build page's too)
 
 
 ## Shows `forecast` (WorldReader.wand_forecast; {} hides it). `after`: the Swap's title ("after the swap").

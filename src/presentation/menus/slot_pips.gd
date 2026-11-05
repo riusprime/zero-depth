@@ -15,7 +15,8 @@ const LIT := Color("#EBAE72")
 const EMPTY := Color(0.8, 0.72, 0.63, 0.7)
 
 ## v0.10.5 W3-O16: on the Swap (Astral): Astral's accent and text in place of the ember.
-var astral := false
+## v0.10.5 W3-O19: Astral is the default (the Build page's too).
+var astral := true
 var _counts: Array = []
 var _form := ""
 

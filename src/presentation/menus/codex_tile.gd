@@ -5,6 +5,10 @@ extends Button
 ## both in the card's colour (CardFrames) or the page's colour; the focused tile is ember-lit. A locked entry is a dark,
 ## unlit tablet with a silhouette named "???". It is a Button, so the keyboard, the mouse and the pad reach it through
 ## the focus.
+## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): an Astral tile (AstralUi.TileBox: a 1 px frame,
+## an inner frame 6 px in, a medallion ring with a dotted inner ring round the picture; focus: the frame and the ring
+## brighten, a second frame 6 px outside, four small stars round the ring); a locked one drawn fainter. Its name in
+## Astral's type.
 
 const SIZE := Vector2(116, 128)
 const ICON := 46.0
@@ -42,8 +46,7 @@ func _init() -> void:
 	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	name_label.max_lines_visible = 2
 	name_label.custom_minimum_size = Vector2(SIZE.x - 12, 0)
-	name_label.add_theme_font_override("font", HudStyle.font(true))
-	name_label.add_theme_font_size_override("font_size", NAME_SIZE)
+	AstralUi.body(name_label, NAME_SIZE)  # v0.10.5 W3-O19
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(name_label)
 	mouse_entered.connect(func() -> void: grab_focus())
@@ -57,7 +60,9 @@ func show_entry(p_entry: Dictionary, title: String, p_locked: bool) -> void:
 	picture.show_entry(p_entry, p_locked)
 	name_label.text = "???" if p_locked else title
 	TextFit.fit_label_words(name_label, SIZE.x - 12.0, NAME_SIZE)  # v0.8.0 N18: a long word shrinks
-	name_label.add_theme_color_override("font_color", MenuStyle.DIM if p_locked else MenuStyle.TEXT)
+	name_label.add_theme_color_override(
+		"font_color", AstralCardArt.DIM if p_locked else AstralCardArt.TEXT
+	)
 	_tint = tint_of(p_entry)
 	_style()
 
@@ -75,17 +80,16 @@ static func tint_of(e: Dictionary) -> Color:
 	return CodexIcon.color_of(e)
 
 
+## v0.10.5 W3-O19: Astral tiles; the ring in Astral's line (no family colour: the picture keeps its own).
 func _style() -> void:
-	var pattern := hash(entry.get("id", &"")) % 89
-	var normal := MenuStyle.tile_slab(_tint, false, locked, pattern)
-	var lit := MenuStyle.tile_slab(_tint, true, locked, pattern)
-	var hover := MenuStyle.tile_slab(_tint, false, locked, pattern)
-	hover.focus = 0.45
-	hover.dim = 1.0
+	var quiet := 0.55 if locked else 1.0
+	var normal := AstralUi.TileBox.new(0.0, quiet)
+	var lit := AstralUi.TileBox.new(1.0, quiet)
+	var hover := AstralUi.TileBox.new(0.0, minf(1.0, quiet + 0.25))
+	hover.rim = AstralCardArt.ACCENT
 	var ring := Rect2(Vector2((SIZE.x - SOCKET) * 0.5, SOCKET_TOP), Vector2(SOCKET, SOCKET))
-	for b: StoneBox in [normal, lit, hover]:
+	for b: AstralUi.TileBox in [normal, lit, hover]:
 		b.ring = ring
-		b.ring_color = Color(_tint, 0.35) if locked else _tint
 	add_theme_stylebox_override("normal", normal)
 	add_theme_stylebox_override("hover", hover)
 	add_theme_stylebox_override("pressed", lit)

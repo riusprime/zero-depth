@@ -22,6 +22,7 @@ func _init(id: StringName, title_key: String, line_key: String) -> void:
 	box.add_child(l)
 	add_button("UI_BACK", func() -> void: back_pressed.emit()).name = "Back"
 	add_hint("UI_MENU_HINT")
+	AstralUi.dress(self)  # v0.10.5 W3-O19 (owner: every UI element in Astral): the station in the Astral style
 
 
 func _unhandled_input(event: InputEvent) -> void:

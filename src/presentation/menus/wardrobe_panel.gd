@@ -75,6 +75,7 @@ func _init(
 	add_button("UI_BACK", func() -> void: back_pressed.emit()).name = "Back"
 	add_hint("UI_MENU_HINT")
 	_show_desc()
+	AstralUi.dress(self)  # v0.10.5 W3-O19 (owner: every UI element in Astral): the station in the Astral style
 
 
 func _row(label_key: String) -> HBoxContainer:
@@ -120,7 +121,7 @@ func _show_desc() -> void:
 	for a: AffinityDefinition in _affinities:
 		if a.id == affinity:
 			desc.text = "%s\n%s" % [tr(a.desc_key), tr(a.cost_key)]
-			desc.add_theme_color_override("font_color", MenuStyle.TEXT)
+			desc.add_theme_color_override("font_color", AstralCardArt.TEXT)  # v0.10.5 W3-O19
 			return
 	desc.text = ""
 
