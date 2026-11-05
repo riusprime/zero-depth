@@ -94,3 +94,14 @@ down … 6 agents, 3 sonnet 3 opus at the same time". Picks made while the owner
 | W6 | W3-O20 | The dev panel (F10, debug builds only) stays as it is; every player-facing screen is restyled | OK? |
 | W7 | W3-P3 | Overlevels are in (from loop 2 a card's cap +1 a loop, +15 % each), but they don't meet "difficult but possible": at loop 2's floor 5 a strong build is at ~53 % of its loop-1 power and ~25 % at loop 3. About +40 % per overlevel would get the Gun Void stack there; your Blade needs more (its power is mostly elements). Also, the gain follows how many "weapon" cards a build holds, so a plain Orbs build gains the most. Options: (a) raise the step (e.g. +35–40 %) and accept the uneven gains; (b) a different scaling for loops (e.g. overlevels that also lift elements and shares more); (c) soften the wall a bit after all (loop HP × 3.5 → × 3) with +15 % kept | Which? |
 | W8 | W3-O20 | The final UI sweep drew a new Astral cursor set (ink dart with a silver line, a ring reticle for aiming, rose when invalid) — it replaces the cursor sheet you supplied earlier (your sheet and its cutter script are still in the repo, so going back is one switch) | Keep the Astral cursors, or yours? |
+
+**Answered 2026-11-05** (owner, in chat):
+- **W3:** "keep it": the late Blade stays at 673 at floor 5.
+- **W4:** "yes": the Options categories stay a vertical list.
+- **W5:** "yes": the main menu keeps the owner's logo and red-portal picture.
+- **W6:** "yes": the dev panel stays unstyled.
+- **W8:** "help me with a prompt for a matching cursor": the owner will generate a cursor sheet in the card-icon style
+  from the prompt in [`docs/art/prompts/CURSORS.md`](../../art/prompts/CURSORS.md). The Astral cursors stay until it arrives.
+- **W7:** open. "loops should be fun visually and broken builds, we have to add or modify the game to get this wow
+  moment at how strong you can get in loops. maybe adding some stackable cards, that make your attack jumps to a
+  closer enemy, growing crit damage, attack speed, more attacks". The lead and the owner brainstorm it before any design.
