@@ -1521,6 +1521,11 @@ func constellations() -> PackedInt32Array:
 	return _w.constellations.duplicate()
 
 
+## v0.10.5 W3-P10g: Starfall's star is Meteor now (Starfall held, Fire at Lv 3; the Codex's Meteor entry).
+func meteor_on() -> bool:
+	return Starfall.meteor_on(_w)
+
+
 static func constellation_name_key(id: int) -> String:
 	return Constellations.name_key(id)
 
