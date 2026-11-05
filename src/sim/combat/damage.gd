@@ -86,12 +86,18 @@ static func hit(
 	)  # v0.9.5 EE3: a pair burst is already scaled; v0.10.5 W3-P10b/e: so are a Starbound jump and burst, a star
 	var was_frozen := a.frozen_t[target] > 0 and owner_id == a.ids[0]  # v0.9.5 EE2: Shatter breaks what was frozen
 	var was_hot := a.burn_stacks[target] > 0  # v0.9.5 EE3: Thermal Shock reads it before this hit's own statuses
+	var raw := amount
 	if w.stress != null and owner_id == a.ids[0] and target != 0:  # v0.9.5 SM: a struck weak side, before crit
 		amount = StressMarks.on_hit(w, target, amount, tags, from, at, effect_id)
+	# v0.10.5 W3-P10k: the hit before any of this target's multipliers (after the damage stat and the crit, without its
+	# weak side): an Arc Jump and a Starfall star are sized from it, so the next target applies only its own.
+	var carried := amount
 	if owner_id == a.ids[0] and target != 0 and not splash:  # v0.4.0 BS: damage stats, crit (Stats)
+		var stressed := amount
 		var out := Stats.outgoing(w, amount, tags)
 		amount = out[0]
 		tags |= out[1]
+		carried = amount if stressed == raw else amount * raw / maxi(1, stressed)
 		amount = RuleCards.outgoing(w, target, amount, tags, root_id, effect_id)  # v0.10.5 O9
 	# Items: Executioner is an attacker multiplier, applied before the target's (SIM_CONTRACTS §8 step 2).
 	var exec := ItemProcs.execute_mult(w, target, owner_id)
@@ -162,7 +168,7 @@ static func hit(
 			w, target, scaled, source_id, owner_id, root_id, h.tags, at, h.seq, 1, effect_id
 		)
 		if h.tags & SimEvent.TAG_CRIT and owner_id == a.ids[0] and target != 0 and not splash:
-			Starfall.on_crit(w, target, scaled, root_id)  # v0.10.5 W3-P10e: every 5th crit calls a star
+			Starfall.on_crit(w, target, carried, root_id)  # v0.10.5 W3-P10e: every 5th crit calls a star
 	if target == 0 and m[1] & SimEvent.TAG_GUARDED:
 		ItemProcs.on_guard_block(w)  # Items: Phase Strike.
 		Engines.on_guard_block(w, owner_id, root_id)  # Engines: Bulwark, Frozen Bastion.
@@ -176,7 +182,7 @@ static func hit(
 		if a.dead[target] == 1 and not splash:
 			Stats.overkill(w, target, scaled - got, root_id)  # v0.5.0 CP: the Overkill card
 		if not w.starbound.is_empty():  # v0.10.5 W3-P10b: Rising Edge counts a crit, Arc Jump jumps
-			Starbound.on_player_hit(w, target, scaled, h.tags, effect_id, proc_pct, root_id)
+			Starbound.on_player_hit(w, target, carried, h.tags, effect_id, proc_pct, root_id)
 	w.last_hit_crit = (h.tags & SimEvent.TAG_CRIT) != 0  # v0.6.5 WN1: ON_CRIT reads it (after any nested hit)
 	return got
 

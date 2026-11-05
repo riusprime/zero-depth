@@ -194,7 +194,8 @@ static func exsanguinate(w: World, i: int, period: int) -> void:
 	var ticks := 0
 	if a.bleed_t[i] >= a.bleed_cd[i]:
 		ticks = 1 + (a.bleed_t[i] - a.bleed_cd[i]) / period
-	var dmg := w.item_mods.bleed_damage * a.bleed_stacks[i] * ticks
+	# v0.10.5 W3-P10k: Deep Wounds' x 1.25 on each tick the burst deals at once, as on the ticks themselves
+	var dmg := deep_dot(w, w.item_mods.bleed_damage * a.bleed_stacks[i]) * ticks
 	a.bleed_stacks[i] = 0
 	a.bleed_t[i] = 0
 	a.bleed_cd[i] = 0

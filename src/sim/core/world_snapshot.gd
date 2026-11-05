@@ -263,6 +263,8 @@ const ADDED_SINCE_V05 := {
 		&"starbound_kills",
 		&"starbound_burst_tick",
 		&"starbound_bursts",
+		&"starbound_jump_roots",  # v0.10.5 W3-P10k: an older save has none
+		&"starbound_echo_carry",
 		&"starbound_fx_kind",
 		&"starbound_fx_tick",
 		&"starbound_fx_from",

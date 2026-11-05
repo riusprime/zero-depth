@@ -86,3 +86,21 @@ func test_exsanguinate_bursts_at_the_lifted_cap() -> void:
 	Engines.add_bleed(w, 1, 3, 102)
 	assert_eq(W.damage(w, ElementLevels.EFFECT_EXSANGUINATE).size(), 1, "the 20th stack bursts")
 	assert_eq(w.actors.bleed_stacks[1], 0)
+
+
+## v0.10.5 W3-P10k: Deep Wounds' x 1.25 reaches Exsanguinate's burst (each tick it deals at once).
+func test_exsanguinate_burst_deals_125_percent() -> void:
+	var w := _world([&"shared_bleed"], true, 3)
+	var a := w.actors
+	Engines.add_bleed(w, 1, 19, 100)
+	var period := Engines.bleed_period(w)
+	var ticks := 1 + (a.bleed_t[1] - a.bleed_cd[1]) / period if a.bleed_t[1] >= a.bleed_cd[1] else 0
+	var per_tick := w.item_mods.bleed_damage * 20
+	Engines.add_bleed(w, 1, 1, 101)
+	var burst := W.damage(w, ElementLevels.EFFECT_EXSANGUINATE)
+	assert_eq(burst.size(), 1, "the 20th stack bursts")
+	assert_gt(ticks, 0)
+	assert_eq(Stats.damage_permille(w), 1000, "no damage stat: the burst as dealt")
+	var deep := ElementLevels.deep_dot(w, per_tick) * ticks
+	assert_eq(burst[0].amount, deep, "each tick of the burst at x 1.25")
+	assert_gt(deep, per_tick * ticks)

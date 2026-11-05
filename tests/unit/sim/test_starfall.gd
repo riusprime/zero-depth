@@ -206,3 +206,28 @@ func test_deterministic_and_hashed() -> void:
 	assert_eq(plain.state_hash(), before, "and not before")
 	plain.meteors = PackedInt32Array([10, 100, 1000, 1000])
 	assert_ne(plain.state_hash(), before, "a pending meteor is hashed")
+
+
+## v0.10.5 W3-P10k: the star is sized from the crit before its target's own multipliers (Hunter's Sky on an elite),
+## and the star's target applies its own once.
+func test_the_star_carries_no_bonus_of_the_crit_target_and_applies_its_own() -> void:
+	for elite_first in [true, false]:
+		var w := _world(
+			&"gun", [], [[Vector2(3, 0), BIG], [Vector2(6, 0), BIG], [Vector2(3, 2), BIG]]
+		)
+		w.constellations.append(Constellations.HUNTERS_SKY)
+		w.player.crit_chance_permille = 1000
+		var a := w.actors
+		a.kinds[1 if elite_first else 3] = ActorStore.Kind.BREAKER
+		var dealt := 0
+		for k in 5:
+			dealt = _crit_hit(w, 1)
+		var star := BIG - a.hp[3]
+		assert_eq(W.events(w, SimEvent.Kind.STAR).size(), 1)
+		if elite_first:
+			assert_eq(
+				Constellations.scale(star, 1500), dealt, "the elite's x 1.5 stays on the elite"
+			)
+			assert_lt(star, dealt)
+		else:
+			assert_eq(star, Constellations.scale(dealt, 1500), "the elite star target: x 1.5 once")

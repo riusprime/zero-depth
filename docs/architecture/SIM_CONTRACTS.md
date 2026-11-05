@@ -925,7 +925,7 @@ a burst; its child drawn ember). Each levels 1–5 (§8f's `CardLevels`). Everyt
 while the player moves (`World.move_intent` not zero, or dashing) the bleed ticks every `min(bleed_period,
 bleed_move_period)` ticks, else every `bleed_period`; a bleeding enemy's countdown is clamped to the moving period
 when it applies. Without the card the bleed is v0.5's exactly.
-**Deep Wounds (v0.10.5 W3-P10d).** While the run holds the Constellation (`Constellations.DEEP_WOUNDS`), a stack cap that exists is lifted (`ElementLevels.bleed_cap` 20, `poison_cap` 15, `burn_cap` 10; every stack add reads these, never `item_mods.*_max_stacks` directly; a run without the element still has none) and each bleed, venom and burn DoT tick deals x1.25 (`ElementLevels.deep_dot`, 1250 per mille, rounded half up, before `Stats.dot`). Exsanguinate's burst waits for the lifted bleed cap. Without the Constellation nothing changes.
+**Deep Wounds (v0.10.5 W3-P10d).** While the run holds the Constellation (`Constellations.DEEP_WOUNDS`), a stack cap that exists is lifted (`ElementLevels.bleed_cap` 20, `poison_cap` 15, `burn_cap` 10; every stack add reads these, never `item_mods.*_max_stacks` directly; a run without the element still has none) and each bleed, venom and burn DoT tick deals x1.25 (`ElementLevels.deep_dot`, 1250 per mille, rounded half up, before `Stats.dot`). Exsanguinate's burst waits for the lifted bleed cap, and (W3-P10k) deals x1.25 too: each tick it deals at once is `deep_dot` of the stacks' tick damage. Without the Constellation nothing changes.
 
 **Order fixes the shared cards needed** (WN1's known limits):
 - **Riders** (§8b) ride only on an engine something outside the wand runs: an owned item that is not a wand card
@@ -1255,28 +1255,40 @@ starting value.
   jackpot card, or appended to a short offer.
 - **C6 Supernova.** `Starbound.stacks(w, k)` is the one read every rule uses: the picks, × 2 while
   `Constellations.has(w, Constellations.SUPERNOVA)`.
-- **B1 Arc Jump.** A direct hit of the player's (`Damage.hit`, landed, on an enemy: no effect id, proc 100, melee or
-  projectile, not a DoT) jumps `amount × stacks` times: each to the nearest living non-player actor whose body is
+- **B1 Arc Jump.** The first direct hit of a root of the player's (`Damage.hit`, landed, on an enemy: no effect id,
+  proc 100, melee or projectile, not a DoT; W3-P10k: one chain a root, as every proc: `World.starbound_jump_roots`
+  keeps the last `Starbound.JUMP_ROOTS_MAX` (16) roots that jumped, saved and hashed; root 0 always jumps) jumps `amount × stacks` times: each to the nearest living non-player actor whose body is
   within `reach_m` (4 m) of the actor just hit and that this chain hasn't hit (ties: the lower index), at
-  `share_permille` (700) of the jump before (the first: of the hit's damage before the target's HP, integer, down).
+  `share_permille` (700) of the jump before (the first: W3-P10k, of the hit's amount before any of the struck enemy's own multipliers: after the damage stat
+  and the crit, without its Stress Mark side, weak spot or armour, boss challenge, matchup or Hunter's Sky, and not
+  clamped to its HP; integer, down). Each jumped-to enemy applies its own multipliers once (`Damage.hit`).
   A jump is a hit with effect `starbound_arc_jump` and no tags: already scaled (no damage stat, no crit), in
   `Engines.PAYOFFS` (no status), and never a direct hit, so it never jumps again. The chain stops at a 0 damage or
   when no new enemy is in reach.
 - **B2 Rising Edge.** Each landed player crit adds 1 to `World.starbound_crits` (at most `cap / amount`, 50);
   `Stats.crit_mult` adds `min(crits × amount, cap) × stacks` (+3 % a crit, at most +150 % a stack) after the
-  crit-damage cap.
+  crit-damage cap. W3-P10k: `CatchUp.power` reads `Stats.crit_mult` without it (`Starbound.crit_bonus`), so the room
+  count never raises a boss's HP (Fervour's haste never reached `CatchUp.rate_permille`).
 - **B3 Echo Cast.** A root weapon launch (`Attacks.launch`: depth 0, not a repeat nor a back copy, a `weapon` spec:
   the Gun's shot, each Blade step) repeats: `amount × stacks` per mille (+25 % a stack), each whole 1000 a sure repeat
   and the rest one draw for one more, at most `cap` (3). `ModifierRuntime.queue_again` queues them as Twin Cast's
   repeats: the whole damage, `REPEAT | SECONDARY`, from where the player is then, the first `Starbound.ECHO_DELAY_TICKS`
-  (10) later and each next `REPEAT_GAP_TICKS` after; a repeat never repeats.
+  (10) later and each next `REPEAT_GAP_TICKS` after; a repeat never repeats. W3-P10k: a repeat keeps its launch's
+  Lance charge (`size_permille`, `lance_full`) and Blade combo step (`ctx.step`), packed into its queue flags
+  (`ModifierState.FLAG_LANCE_FULL`, `STEP_SHIFT`, `SIZE_SHIFT`), and is marked `FLAG_ECHO_CAST`. On a Gun run, a
+  repeat whose volley gets no room from `ShotCap.room` (the per-second extras budget full) is not dropped: its damage
+  (per-shot damage × shots, raw) is added to `World.starbound_echo_carry` (saved, hashed, at most 2^30), and the
+  player's own next shot takes it all (`Attacks._bolts`: the first shot of the next root volley; `WandRings.launch`:
+  shared by the rings that fly). Twin Cast's repeats keep the old rule (dropped).
 - **B4 Fervour.** Each player kill adds 1 to `World.starbound_kills` (at most 30); `AttackRate.rate_at` adds
   `min(kills × amount, cap) × stacks` per mille (+2 % a kill, at most +60 % a stack) to the raw bonus before the curve,
   so it counts toward the overflow past the curve too.
 - **The room reset.** Tick phase 9, after the arenas, while either counter is above 0: when no arena or Lockdown is
-  sealed, the hero stands in a room (`FloorLayout.room_of`; in a doorway: no reset) and no living non-player actor is
-  in that room's rect (grown by `Arenas.ROOM_MARGIN_M`; a world without a layout: none alive anywhere), both counters
-  go to 0. A new floor starts at 0 (not carried).
+  sealed, the hero stands in a room (`FloorLayout.room_of`) and no living non-player actor is in that room's rect
+  (grown by `Arenas.ROOM_MARGIN_M`; a world without a layout: none alive anywhere), both counters go to 0. W3-P10k:
+  between rooms (a corridor or a doorway) the counters go to 0 when no living non-player actor's body is within
+  `Starbound.CORRIDOR_CLEAR_M` (10 m, a starting value) of the hero nor inside any room whose grown rect holds the
+  hero, so a corridor no longer freezes them. A new floor starts at 0 (not carried).
 - **B5 Detonation.** A player kill of actor i (`Damage._apply`) bursts at its position for
   `max_hp[i] × amount × stacks / 1000` (20 % a stack) on every living non-player actor whose body is within `reach_m`
   (2 m), bosses and elites (`BossAi.is_boss_kind`, an elite kind or an elite of `World.elites`) at `share_permille`
@@ -1952,7 +1964,7 @@ PLAN NB: "Keep the empty hood" (no head lanterns: the room's edge lanterns and t
   `KIND_LANTERN_SHADE`. The darkness drawn is the view's (`ShadeViews`); the dark never hides a marker (the dark
   pass draws before every see-through thing), and a Shade wisp within 4 m of the player always shows its outline.
 
-**Starfall and Meteor (v0.10.5 W3-P10e; owner W7: "Starfall ... evolves into a every 5 attack a meteor falls from the sky into the enemies", Q5 "fire lv3 ok"; `Starfall`, `src/sim/items/starfall.gd`).** With the Starfall Constellation held, every 5th crit of the hero (`World.starfall_crits`, counted in `Damage.hit` after the hit landed) drops a star on the nearest other living enemy (squared distance, ties the lowest index) for 100 % of the amount that crit dealt. The star is a hit with `EFFECT_STAR`, already scaled like a splash: it skips `Stats.outgoing`, so it never rolls a crit and never counts toward the five. Holding Fire (`ember_core`) at Lv 3 or more (`ElementLevelsFsf.level`) replaces the star with Meteor: every 5th root attack (`World.meteor_attacks`; a Blade swing's start or a Gun shot's release in `PlayerKit`, never a repeat, child or hook) picks the enemy within 8 m with the most other enemies within 2.5 m (ties the lowest index), and 24 ticks later (`World.meteors`, 4 ints each: land tick, base hit, x mm, y mm; saved) every enemy within 2.5 m of where it stood takes 300 % of the attack's base hit as a normal player hit (its own crit roll, the damage stat; `EFFECT_METEOR`, ascending index) and gains one burn stack. Events for the view: `STAR`, `METEOR_LAUNCH`, `METEOR_LAND` (appended `SimEvent.Kind`s). The counters and the pending list are hashed only once any is non-zero, so a run without Starfall hashes as before.
+**Starfall and Meteor (v0.10.5 W3-P10e; owner W7: "Starfall ... evolves into a every 5 attack a meteor falls from the sky into the enemies", Q5 "fire lv3 ok"; `Starfall`, `src/sim/items/starfall.gd`).** With the Starfall Constellation held, every 5th crit of the hero (`World.starfall_crits`, counted in `Damage.hit` after the hit landed) drops a star on the nearest other living enemy (squared distance, ties the lowest index) for 100 % of the amount that crit dealt (W3-P10k: before the crit target's own multipliers, as Arc Jump's first jump, so the star's target applies only its own). The star is a hit with `EFFECT_STAR`, already scaled like a splash: it skips `Stats.outgoing`, so it never rolls a crit and never counts toward the five. Holding Fire (`ember_core`) at Lv 3 or more (`ElementLevelsFsf.level`) replaces the star with Meteor: every 5th root attack (`World.meteor_attacks`; a Blade swing's start or a Gun shot's release in `PlayerKit`, never a repeat, child or hook) picks the enemy within 8 m with the most other enemies within 2.5 m (ties the lowest index), and 24 ticks later (`World.meteors`, 4 ints each: land tick, base hit, x mm, y mm; saved) every enemy within 2.5 m of where it stood takes 300 % of the attack's base hit as a normal player hit (its own crit roll, the damage stat; `EFFECT_METEOR`, ascending index) and gains one burn stack. Events for the view: `STAR`, `METEOR_LAUNCH`, `METEOR_LAND` (appended `SimEvent.Kind`s). The counters and the pending list are hashed only once any is non-zero, so a run without Starfall hashes as before.
 
 ## 11. Scaling and threat
 

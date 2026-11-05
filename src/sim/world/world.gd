@@ -76,6 +76,10 @@ var starbound_crits := 0
 var starbound_kills := 0
 var starbound_burst_tick := -1
 var starbound_bursts := 0
+## v0.10.5 W3-P10k: the roots that already started an Arc Jump chain (the last Starbound.JUMP_ROOTS_MAX: one chain a
+## root), and the damage of Echo Cast repeats that had no shot room left (ShotCap), merged into the next own shot.
+var starbound_jump_roots := PackedInt32Array()
+var starbound_echo_carry := 0
 ## The view's recent bursts and jumps (Starbound.FX_*: kind, start tick, from, to), at most Starbound.FX_MAX, the
 ## oldest dropped: presentation only, never hashed.
 var starbound_fx_kind := PackedInt32Array()

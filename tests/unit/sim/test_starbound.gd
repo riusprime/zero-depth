@@ -311,3 +311,139 @@ func test_the_picks_are_hashed_and_saved_and_loop_one_hashes_as_before() -> void
 	assert_eq(WorldSnapshot.apply(base, snap), "")
 	assert_eq(base.starbound, w.starbound, "restored")
 	assert_eq(base.state_hash(), w.state_hash(), "replay-exact")
+
+
+# --- v0.10.5 W3-P10k: the review fixes ------------------------------------------------------------------------------
+## A jump is sized from the hit before the struck enemy's own multipliers (Hunter's Sky's x 1.5 on an elite stays on
+## the elite); each jumped-to enemy applies its own once.
+func test_arc_jump_carries_no_target_bonus_and_each_target_applies_its_own() -> void:
+	var w := _world()
+	w.constellations.append(Constellations.HUNTERS_SKY)
+	var a := w.add_dummy(Vector2(2, 0), 0.3, 100000)
+	var b := w.add_dummy(Vector2(5, 0), 0.3, 100000)
+	var c := w.add_dummy(Vector2(8.5, 0), 0.3, 100000)
+	w.actors.kinds[w.actors.index_of(a)] = ActorStore.Kind.BREAKER
+	w.actors.kinds[w.actors.index_of(c)] = ActorStore.Kind.BREAKER
+	_take(w, Starbound.ARC_JUMP, 2)
+	_hit(w, a, 1000)
+	assert_eq(_lost(w, a), 1500, "the elite: x 1.5")
+	assert_eq(_lost(w, b), 700, "70 % of the 1000 before a's bonus, not of 1500")
+	assert_eq(_lost(w, c), 735, "70 % of 700, then c's own x 1.5 once")
+
+
+## One jump chain a root, as every proc: the second direct hit of the same root does not jump.
+func test_arc_jump_jumps_once_a_root() -> void:
+	var w := _world()
+	var a := w.add_dummy(Vector2(2, 0), 0.3, 100000)
+	var b := w.add_dummy(Vector2(5, 0), 0.3, 100000)
+	_take(w, Starbound.ARC_JUMP)
+	var pid := w.actors.ids[0]
+	var i := w.actors.index_of(a)
+	var root := w.take_root()
+	for k in 3:
+		Damage.hit(w, i, 1000, pid, pid, root, SimEvent.TAG_MELEE, Vector2.ZERO, w.actors.pos(i))
+	assert_eq(_lost(w, b), 700, "three hits of one root: one chain")
+	_hit(w, a, 1000)
+	assert_eq(_lost(w, b), 1400, "a new root: a new chain")
+	assert_eq(w.starbound_jump_roots.size(), 2)
+	for k in Starbound.JUMP_ROOTS_MAX + 4:
+		_hit(w, a, 10)
+	assert_eq(w.starbound_jump_roots.size(), Starbound.JUMP_ROOTS_MAX, "the list stays small")
+
+
+## Rising Edge's room count is how the build is played, never the loadout: the boss's HP (CatchUp.power) ignores it.
+func test_rising_edge_never_raises_the_build_power() -> void:
+	var w := _world()
+	w.catch_up_table = ContentCompiler.compile_catch_up(_repo.get_def(&"scaling", &"catch_up"))
+	w.player.crit_chance_permille = 300
+	var d := w.add_dummy(Vector2(2, 0), 0.3, 1000000)
+	_take(w, Starbound.RISING_EDGE)
+	var p0 := CatchUp.power(w)
+	var m0 := Stats.crit_mult(w)
+	for k in 20:
+		Starbound.on_player_hit(
+			w, w.actors.index_of(d), 10, SimEvent.TAG_MELEE | SimEvent.TAG_CRIT, &"", 100, 1
+		)
+	assert_gt(Stats.crit_mult(w), m0, "the crits ramp crit damage")
+	assert_eq(CatchUp.power(w), p0, "but not the power the boss is sized from")
+
+
+## Between rooms the counters reset once no enemy is near the hero (nor in a room whose edge the hero stands in).
+func test_the_room_counters_reset_in_a_corridor_away_from_the_fight() -> void:
+	var w := _world()
+	var lay := FloorLayout.new()
+	lay.rooms.append(Rect2(-20, -5, 30, 10))
+	lay.rooms.append(Rect2(30, -5, 10, 10))
+	w.floor_layout = lay
+	_take(w, Starbound.RISING_EDGE)
+	var far := w.add_dummy(Vector2(35, 0), 0.3, 1000)
+	var near := w.add_dummy(Vector2(25, 0), 0.3, 1000)
+	var inside := w.add_dummy(Vector2(-15, 0), 0.3, 1000)
+	w.actors.set_pos(0, Vector2(20, 0))
+	w.starbound_crits = 5
+	Starbound.advance(w)
+	assert_eq(w.starbound_crits, 5, "an enemy 5 m away in the corridor: kept")
+	w.actors.dead[w.actors.index_of(near)] = 1
+	w.actors.set_pos(0, Vector2(10.05, 0))
+	Starbound.advance(w)
+	assert_eq(w.starbound_crits, 5, "in room 0's doorway, an enemy left in room 0: kept")
+	w.actors.set_pos(0, Vector2(20, 0))
+	Starbound.advance(w)
+	assert_eq(w.starbound_crits, 0, "in the corridor, the nearest enemy 15 m off: reset")
+	assert_eq(w.actors.dead[w.actors.index_of(far)], 0)
+	assert_eq(w.actors.dead[w.actors.index_of(inside)], 0)
+
+
+## A repeat keeps its launch's Lance charge and Blade step (packed in its queue flags), so it looks like its attack.
+func test_an_echo_cast_repeat_keeps_its_charge_and_step() -> void:
+	var w := _world(&"gun")
+	_take(w, Starbound.ECHO_CAST, 4)
+	var spec := Modifiers.bolt(w)
+	var ctx := AttackContext.make(
+		w.player_pos(), 0, 50, w.take_root(), SimEvent.TAG_PROJECTILE, &""
+	)
+	ctx.step = 2
+	ctx.size_permille = 1700
+	ctx.lance_full = true
+	ModifierRuntime.queue_again(w, spec, ctx, 1, 10)
+	var c := AttackContext.make(Vector2.ZERO, 0, 1, 1, 0, &"")
+	ModifierRuntime.unpack_echo(c, w.mx.q_flags[w.mx.q_flags.size() - 1])
+	assert_eq([c.step, c.size_permille, c.lance_full, c.echo_cast], [2, 1700, true, true])
+	var big := AttackContext.make(
+		w.player_pos(), 0, 50, w.take_root(), SimEvent.TAG_PROJECTILE, &""
+	)
+	big.size_permille = 2000
+	Attacks.launch(w, spec, big)
+	var r0: float = w._pending_projectiles[w._pending_projectiles.size() - 1][5]
+	w.tick += 200
+	ModifierRuntime.advance(w)
+	var r1: float = w._pending_projectiles[w._pending_projectiles.size() - 1][5]
+	assert_almost_eq(r1, r0, 0.0001, "the repeat's bolt is as big as the charged shot's")
+
+
+## With no shot room left (ShotCap's per-second extras), an Echo Cast repeat merges into the next own shot.
+func test_an_echo_cast_repeat_with_no_shot_room_merges_into_the_next_shot() -> void:
+	var w := _world(&"gun")
+	w.wand_table = WandCompiler.from_repo(_repo)
+	w.slot_table = WandCompiler.slots(_repo, w.item_tables)
+	w.slot_table.shots_per_second_max = ShotCap.reserve(w)  # no extras at all
+	_take(w, Starbound.ECHO_CAST, 4)
+	var spec := Modifiers.bolt(w)
+	var shot := func() -> int:
+		var n := w._pending_projectiles.size()
+		var c := AttackContext.make(
+			w.player_pos(), 0, 50, w.take_root(), SimEvent.TAG_PROJECTILE, &""
+		)
+		Attacks.launch(w, spec, c)
+		assert_eq(w._pending_projectiles.size(), n + 1, "the player's own shot fires")
+		return w._pending_projectiles[n][4]
+	var d0: int = shot.call()
+	var n0 := w._pending_projectiles.size()
+	w.tick += 200
+	ModifierRuntime.advance(w)
+	assert_eq(w._pending_projectiles.size(), n0, "the repeat had no room: no shot")
+	var kept := w.starbound_echo_carry
+	assert_gt(kept, 0, "its damage is kept")
+	var d1: int = shot.call()
+	assert_eq(d1, d0 + kept, "the next own shot carries it")
+	assert_eq(w.starbound_echo_carry, 0)

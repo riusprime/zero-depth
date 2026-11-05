@@ -41,7 +41,10 @@ static func power(w: World) -> int:
 	# v0.8.0 SG (owner O91): the additive bucket (damage + Onrush, always counted; Hoarder not), x Glass Cannon
 	p = p * (Stats.value(w, Stats.Stat.DAMAGE) + Stats.value(w, Stats.Stat.ONRUSH)) / 1000
 	p = p * Stats.value(w, Stats.Stat.GLASS_CANNON) / 1000
-	p = p * expected_crit(w, Stats.crit_chance(w), Stats.crit_mult(w)) / base_crit(w)
+	# v0.10.5 W3-P10k: the loadout's crit damage, without Rising Edge's room count (how it is played; Fervour's haste
+	# never reaches rate_permille)
+	var crit_m := Stats.crit_mult(w) - Starbound.crit_bonus(w)
+	p = p * expected_crit(w, Stats.crit_chance(w), crit_m) / base_crit(w)
 	# v0.8.0 SG: the effective rate, the stat and the wand's rate bonus through the curve (no curse: the curses were
 	# never counted)
 	p = p * rate_permille(w) / 1000
