@@ -7,7 +7,8 @@ extends SceneTree
 ## A tool, not a test. Needs a renderer (no --headless), off screen:
 ##   godot --position -10000,-10000 --path . --fixed-fps 60 --audio-driver Dummy --resolution 1920x1080 \
 ##     -s scripts/shots/vfx_gallery.gd -- --sheets
-## Prints each path it writes.
+## Prints each path it writes. The gallery's own keys are off for the run, and the group and page are pinned each
+## frame (W3-S21: stray input once switched them mid-run, so `--groups=` sheets showed another group).
 
 const DIR := "res://build/shots/v0.10.5/w3o12/"
 ## When a page's picture is taken. A hero page: at its stages' tick HERO_TICK (Shoot held, a swing and the recipe's
@@ -24,6 +25,7 @@ var _gallery: EffectsGallery
 var _groups: Array[int] = []
 var _g := 0
 var _frame := 0
+var _page := 0
 var _max_pages := 0
 var _written := 0
 
@@ -50,7 +52,24 @@ func _initialize() -> void:
 	_gallery = EffectsGallery.new(EffectsCatalog.build())
 	root.add_child(_gallery)
 	_gallery.grid = true
+	_mute_input()
 	_gallery.set_group(_groups[0])
+
+
+## The gallery's keys and clicks (group, page, grid) are off: only this script turns its pages.
+func _mute_input() -> void:
+	_gallery.set_process_unhandled_input(false)
+	_gallery.set_process_input(false)
+
+
+## Puts the gallery back on this run's group and page if anything moved it; true when it had to.
+func _pin() -> bool:
+	if _gallery.group == _groups[_g] and _gallery.page == _page:
+		return false
+	_gallery.set_group(_groups[_g])
+	for i in _page:
+		_gallery.next()
+	return true
 
 
 func _ready_to_shoot() -> bool:
@@ -65,6 +84,9 @@ func _ready_to_shoot() -> bool:
 func _process(_delta: float) -> bool:
 	if _gallery == null:
 		return true
+	_mute_input()
+	if _pin():
+		_frame = 0
 	_frame += 1
 	if not _ready_to_shoot() and _frame < MAX_FRAMES:
 		return false
@@ -80,8 +102,10 @@ func _process(_delta: float) -> bool:
 	_written += 1
 	if _gallery.page + 1 < n:
 		_gallery.next()
+		_page += 1
 		return false
 	_g += 1
+	_page = 0
 	if _g >= _groups.size():
 		print("vfx_gallery: %d sheets" % _written)
 		return true
