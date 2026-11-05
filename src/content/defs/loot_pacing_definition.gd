@@ -36,8 +36,15 @@ const WEIGHTED := 5
 ## the last), on top of the stage's ceiling; empty = none. Data 1 / 2 / 2 / 3: Lv 1 on floor 1, Lv 2 on floors 2-3,
 ## Lv 3 from floor 4.
 @export var element_ceilings := PackedInt32Array()
-## v0.10.5 W3-P2: the element ceiling on every floor of loop 2 and later (W3-P3 adds overlevels later).
+## v0.10.5 W3-P2: the element ceiling on every floor of loop 2 and later (W3-P3: overlevels lift past it from loop 2).
 @export var element_ceiling_loops := 5
+## v0.10.5 W3-P3 (the progression audit's P3, owner 2026-11-04: loops stay "a wall", the build grows to meet them):
+## overlevels. From loop 2 every wand card's level cap rises this many levels a loop past its own level_max (0: none),
+## and each overlevel adds its category's per mille below to the card's main number [form, element, advanced,
+## trigger, mutation] (CardLevels.overlevel_permille): an element its damage, any other card its damage or share ops
+## (ModifierTable.overlevelled), a card with neither the damage of the attacks it shapes. Starting values.
+@export var overlevels_per_loop := 0
+@export var overlevel_permille := PackedInt32Array()
 
 
 func category() -> StringName:
@@ -106,6 +113,18 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(
 				&"range", resource_path, "element ceilings: 1..5, never falling, loops' at the top"
+			)
+		)
+	var ok_over := overlevels_per_loop >= 0 and overlevels_per_loop <= 3  # v0.10.5 W3-P3
+	ok_over = ok_over and (overlevel_permille.is_empty() or overlevel_permille.size() == WEIGHTED)
+	for v in overlevel_permille:
+		ok_over = ok_over and v >= 0 and v <= 1000
+	if not ok_over:
+		issues.append(
+			ValidationIssue.new(
+				&"range",
+				resource_path,
+				"overlevels: 0..3 a loop; per mille 0..1000, one per category"
 			)
 		)
 	return issues

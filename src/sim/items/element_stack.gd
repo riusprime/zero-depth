@@ -85,10 +85,11 @@ static func level_permille(w: World, e: int) -> int:
 		var t := w.item_tables[idx]
 		if t.id != id or not CardLevels.is_card(w, idx):
 			continue
+		var over := CardLevels.overlevel_now(w, idx)  # v0.10.5 W3-P3: each overlevel past Lv 3 adds to the share
 		var row := t.el_level_permille
 		if row.is_empty():
-			return 1000
-		return row[clampi(CardLevels.level(w, idx), 1, row.size()) - 1]
+			return over
+		return row[clampi(CardLevels.base_level(w, idx), 1, row.size()) - 1] * over / 1000
 	return 1000
 
 

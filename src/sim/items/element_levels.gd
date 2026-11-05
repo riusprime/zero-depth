@@ -50,7 +50,7 @@ static func level(w: World, venom: bool) -> int:
 			(t.poison_max_stacks if venom else t.bleed_max_stacks) > 0
 			and CardLevels.is_card(w, idx)
 		):
-			return CardLevels.level(w, idx)
+			return CardLevels.base_level(w, idx)  # v0.10.5 W3-P3: overlevels grow the damage, not the rules
 	return 1
 
 

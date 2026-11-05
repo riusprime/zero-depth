@@ -27,3 +27,8 @@ var chest_type_weights := PackedInt32Array()
 ## and on every floor of loop 2 and later; empty = no element ceiling (the stage's alone).
 var element_ceilings := PackedInt32Array()
 var element_ceiling_loops := 5
+## v0.10.5 W3-P3 (overlevels; CardLevels.overlevel_room): every wand card's cap rises this many levels a loop past the
+## first (0: no overlevels), and each overlevel adds its category's per mille to the card's main number [form,
+## element, advanced, trigger, mutation] (a category's index − 1; CardLevels.overlevel_permille).
+var overlevels_per_loop := 0
+var overlevel_permille := PackedInt32Array()
