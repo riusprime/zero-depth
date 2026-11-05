@@ -18,7 +18,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.
   `claude/v0100-cleanup` (not pushed): the fixes (W3-S1…S17, W3-O1…O14), the progression set (P1/P2, P1b, P3, P5/P7,
   P9), the card icons and frames from the owner's art, and the whole UI in the Astral style (W3-O15–O20; the dev
   panels excepted). Two progression targets are missed and wait on the owner (OWNER_QUESTIONS W3 the late Blade,
-  W7 the loop wall); also W4–W6, W8. Seams 625/625 at 74032c53 (Verification 11); a re-run after W3-O20 follows.
+  W7 the loop wall); also W4–W6, W8. Seams 625/625 with everything merged (a97f851c, Verification 12).
 - **Next:** the owner answers the overnight questions and plays the build (the new UI, the progression changes).
 - **Then:** the release step (one PR into `main`, the full suite on GitHub).
 
@@ -189,6 +189,7 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 11. **Lead seams after wave 3's fixes, the progression steps and the UI rework (HUD, menus, Build/Codex/events)** (`wt-seams` at `74032c53`: through W3-S16; W3-P3 and W3-S17 merged after): `bash scripts/ci/seams.sh`: lint ok; Scripts 109, Tests 625, Passing Tests 625, Asserts 74172; "check_gut_log: ok (625 passing, minimum 1)".
 - `tests/golden/fixtures/modifier_equivalence.json` (S1: the combo hit-stop 4,4,5,8 → 3,3,3,5 ticks; Blade-all now hits 139, damage 4160, kills 14)
 - `tests/golden/fixtures/modifier_equivalence.json` again (O11: the knockback and the finisher's recovery; blade_plain, gun_plain, both_plain, blade_wildfire_rider, gun_frost_core regenerated)
+12. **Lead seams with all of wave 3 merged** (`wt-seams` at `a97f851c`: through W3-O20, W3-P3, W3-S17): `bash scripts/ci/seams.sh`: lint ok; Scripts 109, Tests 625, Passing Tests 625, Asserts 74354; "check_gut_log: ok (625 passing, minimum 1)".
 - `tests/golden/fixtures/modifier_equivalence.json` again (W3-P9: crits and hits carry their fractions; blade_plain 181/4002/10 → 186/3968/11, gun_plain 449 → 445, both_plain 3716 → 3715, gun_frost_core 449 → 445, blade_wildfire_rider digest)
 - `tests/golden/fixtures/modifier_equivalence.json` again (W3-S10: the bolt push halved; gun_plain and gun_frost_core 445 → 317 damage, 82 → 59 hits; both_plain 3715 → 3757, kills 5 → 7)
 
