@@ -409,6 +409,13 @@ Steps (S = Sonnet, O = Opus; at most 2 + 2 at once):
   saves"): new run data needs no migration for saves made before it; a new field is listed where the snapshot asks,
   and an old-save test the change breaks may be updated rather than worked around.
 
+- **W3-S18 (owner playtest, 2026-11-05: "homing + halo is weird because the back attacks are too short in reach and do
+  the curve but do not reach the enemy, we should increase the reach of halo a bit so attacks can get to hit front
+  enemies if homing is active")**: with Homing held, Halo's bolts reach far enough to turn and hit enemies in front.
+  Also reported: "visual bugs with fireball default attack" (details asked). **W3-P10k:** the review's findings on the
+  loop-power code (jumps/stars carry no target's bonus, one Arc Jump chain a root, Rising Edge out of the boss's HP,
+  Echo Cast repeats merge under ShotCap, Exsanguinate takes Deep Wounds, repeats keep their Lance/Blade context).
+
 ### R. Release
 - Version bump, patch notes en + es, What's New, ROADMAP row + History, PROGRESS final; one PR into `main` with
   v0.10.0 (the full suite runs there).
