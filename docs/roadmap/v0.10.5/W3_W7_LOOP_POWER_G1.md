@@ -5,7 +5,8 @@ moment at how strong you can get in loops. maybe adding some stackable cards, th
 closer enemy, growing crit damage, attack speed, more attacks". After the brainstorm: "Ookay A + B + C but don't get
 crazy with visuals for explosions".
 
-**Status: DRAFT, waiting on the owner row by row.** Nothing here is built. Every number is a starting value, not a
+**Status: APPROVED** (owner, 2026-11-05: the set A + B + C, the Constellation notes and Q1–Q5 below; Gravity Well
+dropped). Building as W3-P10. Every number is a starting value, not a
 measurement.
 
 ## Why loops feel flat (from W3-P3, OWNER_QUESTIONS W7)
@@ -47,12 +48,13 @@ waits here, not retuned blind.
 ## B. Starbound cards: stackable, loop-only
 
 A new card kind, **Starbound**. It is offered only from loop 2, with no level cap: each pick adds a stack. It works
-with both weapons. It shows in the normal card picks as one of the four cards with its own frame accent, and is never
-in the shop.
+with both weapons. It shows in the normal card picks as one of the four cards, on the owner's gold Starbound frame and back
+(`assets/ui/card_frames/frame_starbound.png`, `assets/ui/card_backs/back_starbound.png`; the game's own focus look
+on top, owner: "maybe we can skip this and add the own game selection"), and is never in the shop.
 
 | # | Card | What a stack does | Starting value | Owner |
 |---|---|---|---|---|
-| B0 | **Offer rate** | the chance that one of a pick's four cards is a Starbound card | loop 2: 35 %, loop 3+: 50 % | |
+| B0 | **Offer rate** | the chance that one of a pick's four cards is a Starbound card | loop 2: 20 %, loop 3+: 30 % (owner Q1: "normal picks, but a lower chance") | |
 | B1 | **Arc Jump** (your idea) | each direct hit of yours jumps to the nearest enemy within 4 m that this chain hasn't hit; + 1 jump a stack; each jump deals 70 % of the one before. A jump hits but doesn't jump again (one activation per root, as every proc). Chain Cut (Blade) stays as it is; Arc Jump adds on top | 4 m, 70 %, + 1 jump a stack | |
 | B2 | **Rising Edge** | each of your crits adds crit damage until the room is cleared, then resets | + 3 % a crit a stack, at most + 150 % a stack | |
 | B3 | **Echo Cast** | a chance that an attack repeats (as Gun Echo's repeat: the REPEAT bit, a repeat never repeats); + 25 % a stack; past 100 % the repeat is sure and the rest is the chance of a second | + 25 % a stack, at most 3 repeats | |
@@ -69,9 +71,10 @@ in the shop.
 
 ## C. Constellations: one rule-breaker a loop
 
-When a loop starts (through the loop gate, before floor 1), the player picks **1 of 3 Constellations** on a pick
-screen in the Astral style. Each changes one rule for the rest of the run. They stack across loops. A run never offers
-one it already holds.
+When a loop starts (through the loop gate, before floor 1), the player picks **1 of 3 Constellations**, free (owner Q2: "When you
+get to the new loop you get a free selection"), on the owner's violet Constellation cards
+(`frame_constellation.png`, `back_constellation.png`). Each changes one rule for the rest of the run. They stack across loops. A run never offers
+one it already holds (Prism excepted, once). A pick is permanent and never rerolled (owner Q3).
 
 Owner, 2026-11-05, on the first pool: "Resonance doesnt make sense since the element interaction already does that, but
 maybe that card could unlock a third or fourth element"; "Skill tide is very weak for a 'constellation' card"; "orb
@@ -96,14 +99,14 @@ run's picks vary more:
 
 | # | Constellation | The rule it breaks | Starting value | Owner |
 |---|---|---|---|---|
-| C6 | **Supernova** | every Starbound card (B1–B5) counts each stack twice | × 2 stacks | |
-| C7 | **Gravity Well** | every 8 s your attacks pull enemies within 5 m toward where they land, for 0.5 s, grouping them for area hits | 8 s, 5 m, 0.5 s | |
-| C8 | **Hunter's Sky** | elites and bosses take more damage from you | + 50 % | |
+| C6 | **Supernova** | every Starbound card (B1–B5) counts each stack twice | × 2 stacks | OK |
+| ~~C7~~ | ~~Gravity Well~~ | dropped (owner Q4: "no") | — | no |
+| C8 | **Hunter's Sky** | elites and bosses take more damage from you | + 50 % | OK |
 
 ## What it needs besides the sim
 
-- **Strings:** names and texts for 5 Starbound cards and 9 Constellations (C1–C8 and Meteor), `en` and `es`.
-- **Art:** 14 icons (5 cards and 9 Constellations) as one new sheet row in `docs/art/prompts/ZD_CARD_ICONS.xlsx`, in
+- **Strings:** names and texts for 5 Starbound cards and 8 Constellations (C1–C6, C8 and Meteor), `en` and `es`.
+- **Art:** 13 icons (5 cards and 8 Constellations) as one new sheet row in `docs/art/prompts/ZD_CARD_ICONS.xlsx`, in
   the card-icon style, for your n8n workflow. Until then each uses `icon_unknown`.
 - **Codex** entries, and the Build page lists the held Constellations.
 - **Saves and determinism:** stacks and Constellations are saved, hashed and replay-exact. Old saves load with none.
@@ -113,16 +116,20 @@ run's picks vary more:
 
 1. **A** (Opus): the overflow rules and the double-crit number.
 2. **B** (Opus): the Starbound card kind, its offers, then B1–B5 and the V-rules.
-3. **C** (Opus): the pick screen, C1–C8 and Meteor. C can run beside B, since their files barely overlap.
+3. **C** (Opus): the pick screen, C1–C6, C8 and Meteor. C can run beside B, since their files barely overlap.
 4. **Art row and strings** (Sonnet).
 5. **Measure** T1–T3 with the W3-P3 probe, then report. A missed target waits here.
 
-## Questions for the owner
+## Questions for the owner (answered 2026-11-05)
 
 | # | Question | Owner |
 |---|---|---|
-| Q1 | Starbound cards in the normal picks (B0), or only from a special chest or the boss pick? | |
-| Q2 | Constellations at the start of each loop, or after each loop's final boss instead? | |
-| Q3 | Can a Constellation pick be rerolled (with shards), or is it fixed? | |
-| Q4 | Keep C6–C8, or drop any of them? | |
-| Q5 | What evolves Starfall into Meteor? (a) holding Fire at Lv 3 (the lead's pick: a meteor is fire, and it's reachable in loop 2); (b) picking a second Constellation, Glass Sky or Twin Star (loop 3 at the earliest); (c) 25 Starfall stars dropped in the run | |
+| Q1 | Starbound cards in the normal picks, or a special chest / the boss pick? | "normal picks, but a lower chance" (B0 lowered) |
+| Q2 | Constellations at the start of each loop, or after each loop's final boss? | "When you get to the new loop you get a free selection" |
+| Q3 | Can a Constellation pick be rerolled? | "Contellation is something you get permanent and can not be rerolled" |
+| Q4 | Keep C6–C8? | Supernova OK, Hunter's Sky OK, Gravity Well no |
+| Q5 | What evolves Starfall into Meteor? | "fire lv3 ok": holding Fire at Lv 3 |
+
+The owner's card art (2026-11-05): `art_raw/frames/card_special_6.webp` (git-ignored), top row the Constellation card,
+bottom row the Starbound card, each front / back / selected front. Cut with `python scripts/art/cut_card_frames.py
+--special` to the frame size of the W3-O15 frames; the selected fronts are not used.

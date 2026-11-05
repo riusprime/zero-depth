@@ -7,6 +7,10 @@ same 4 focused (an icy blue rim and glow). Each frame's body (alpha >= 128) is c
 all 8, so a frame and its focused twin line up and the glow has room: assets/ui/card_frames/frame_<1..4>.png and
 frame_<1..4>_focus.png. art_raw/frames/dissolve_noise.webp (1254x1254 grey cloud noise) is saved as a 512x512 grey
 PNG, assets/ui/fx/dissolve_noise.png, and its seams are measured (printed). Pixels are copied as they are.
+--special (v0.10.5 W3-P10, owner 2026-11-05): art_raw/frames/card_special_6.webp (1536x1024, alpha), 3 x 2: the top row
+the Constellation card (front, back, selected front), the bottom row the Starbound card. The front and back of each
+go to assets/ui/card_frames/frame_<kind>.png and assets/ui/card_backs/back_<kind>.png; the selected fronts are not cut
+(owner: "maybe we can skip this and add the own game selection").
 """
 import os
 import sys
@@ -18,11 +22,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 SHEET = os.path.join(ROOT, "art_raw", "frames", "card_frames_8.webp")
 NOISE = os.path.join(ROOT, "art_raw", "frames", "dissolve_noise.webp")
 BACKS = os.path.join(ROOT, "art_raw", "frames", "card_backs_8.webp")
+SPECIAL = os.path.join(ROOT, "art_raw", "frames", "card_special_6.webp")
 OUT = os.path.join(ROOT, "assets", "ui", "card_frames")
 OUT_BACKS = os.path.join(ROOT, "assets", "ui", "card_backs")
 FX = os.path.join(ROOT, "assets", "ui", "fx")
 CANVAS = (400, 520)
 NOISE_SIZE = 512
+SPECIAL_SCALE = 433.0 / 457.0  # --special: body height to the W3-O15 frames
 FADE = 16  # px: the canvas's outer ring fades to transparent
 
 
@@ -39,7 +45,7 @@ def _runs(v):
     return out
 
 
-def frames(sheet=SHEET, out=OUT, prefix="frame"):
+def frames(sheet=SHEET, out=OUT, prefix="frame", ncols=4, name_of=None):
     px = np.asarray(Image.open(sheet).convert("RGBA"))
     a = px[..., 3]
     rows = _runs((a > 16).any(1))
@@ -47,9 +53,9 @@ def frames(sheet=SHEET, out=OUT, prefix="frame"):
     cols_of = []
     for y1, y2 in rows:
         cols = _runs((a[y1:y2] > 16).any(0))
-        if len(cols) != 4:  # the focused row's glows touch: take the bodies (alpha >= 128) and cut between them
+        if len(cols) != ncols:  # the focused row's glows touch: take the bodies (alpha >= 128) and cut between them
             cols = _runs((a[y1:y2] >= 128).any(0))
-        assert len(cols) == 4, cols
+        assert len(cols) == ncols, cols
         cols_of.append(cols)
     os.makedirs(out, exist_ok=True)
     cw, ch = CANVAS
@@ -59,7 +65,7 @@ def frames(sheet=SHEET, out=OUT, prefix="frame"):
             pad = 60
             # never reach past the midpoint to the neighbouring card (the glows can touch)
             wx1 = max(0, x1 - pad, (cols[ci - 1][1] + x1) // 2 if ci > 0 else 0)
-            wx2 = min(px.shape[1], x2 + pad, (x2 + cols[ci + 1][0]) // 2 if ci < 3 else px.shape[1])
+            wx2 = min(px.shape[1], x2 + pad, (x2 + cols[ci + 1][0]) // 2 if ci < ncols - 1 else px.shape[1])
             wy1 = max(0, y1 - pad, (rows[ri - 1][1] + y1) // 2 if ri > 0 else 0)  # nor to the other row's
             wy2 = min(px.shape[0], y2 + pad, (y2 + rows[ri + 1][0]) // 2 if ri < len(rows) - 1 else px.shape[0])
             sx1, sy1 = wx1, wy1
@@ -81,6 +87,18 @@ def frames(sheet=SHEET, out=OUT, prefix="frame"):
             fade = np.clip(ramp / float(FADE), 0.0, 1.0)
             canvas[..., 3] = (canvas[..., 3] * fade).astype(np.uint8)
             name = "%s_%d%s.png" % (prefix, ci + 1, "_focus" if ri else "")
+            if name_of is not None:
+                dest = name_of(ri, ci)
+                if dest is None:
+                    continue
+                out, name = dest
+                # this sheet's cards are drawn larger than the W3-O15 frames (body ~339x457 vs 302x433): scale the
+                # canvas about its centre so the body is as tall as theirs (SPECIAL_SCALE), the width follows
+                big = Image.fromarray(canvas, "RGBA")
+                sw, sh = round(cw * SPECIAL_SCALE), round(ch * SPECIAL_SCALE)
+                small = big.resize((sw, sh), Image.LANCZOS)
+                canvas = np.zeros((ch, cw, 4), dtype=np.uint8)
+                canvas[(ch - sh) // 2 : (ch - sh) // 2 + sh, (cw - sw) // 2 : (cw - sw) // 2 + sw] = np.asarray(small)
             Image.fromarray(canvas, "RGBA").save(os.path.join(out, name))
             edge = np.concatenate([canvas[0, :, 3], canvas[-1, :, 3], canvas[:, 0, 3], canvas[:, -1, 3]])
             print(
@@ -105,7 +123,18 @@ def noise():
 
 
 if __name__ == "__main__":
-    if "--backs" in sys.argv:  # v0.10.5 W3-S13: card_backs_8.webp -> assets/ui/card_backs/back_<1..4>[_focus].png
+    if "--special" in sys.argv:
+        kinds = ("constellation", "starbound")
+
+        def _special(ri, ci):
+            if ci == 0:
+                return OUT, "frame_%s.png" % kinds[ri]
+            if ci == 1:
+                return OUT_BACKS, "back_%s.png" % kinds[ri]
+            return None
+
+        frames(SPECIAL, OUT, "special", 3, _special)
+    elif "--backs" in sys.argv:  # v0.10.5 W3-S13: card_backs_8.webp -> assets/ui/card_backs/back_<1..4>[_focus].png
         frames(BACKS, OUT_BACKS, "back")
     else:
         frames()
