@@ -234,7 +234,7 @@ func _build(node: Node3D, r: float) -> Dictionary:
 
 ## v0.9.5 EE2: the "+" (one bigger dot, beside the bar's right end) of `status` (plus_fire or plus_frost).
 func _update_plus(v: Dictionary, status: StringName, on: bool) -> void:
-	var dots: Array = v["dots_" + String(status)]
+	var dots: Array = v[&"dots_plus_fire" if status == &"plus_fire" else &"dots_plus_frost"]
 	if on and dots.is_empty():
 		var p := _piece(
 			v["root"], _dot, Vector3(1.7, 1.7, 1.7), StringName("dot_" + String(status))

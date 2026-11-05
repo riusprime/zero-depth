@@ -106,26 +106,34 @@ func dying() -> bool:
 	return _die_t >= 0.0
 
 
+## v0.10.5 W3-Q6: the values straight to _apply (no Dictionary per elite per sync).
 func sync(reader: WorldReader, i: int) -> void:
-	apply_state(
-		{
-			"tick": reader.tick(),
-			"state": reader.actor_state(i),
-			"pick": reader.elite_attack(i),
-			"windup": windup_progress(reader, i),
-			"vanished": reader.elite_vanished(i),
-			"vulnerable": reader.elite_vulnerable(i),
-		}
+	_apply(
+		reader.actor_state(i),
+		reader.elite_attack(i),
+		windup_progress(reader, i),
+		reader.elite_vanished(i),
+		reader.elite_vulnerable(i),
 	)
 
 
 ## The same as sync() from plain values (tests drive the avatar with this).
 func apply_state(s: Dictionary) -> void:
-	_state = int(s["state"])
-	_pick = int(s.get("pick", WorldReader.ELITE_BASIC))
-	_progress = clampf(float(s.get("windup", 0.0)), 0.0, 1.0)
-	_vanished = bool(s.get("vanished", false))
-	_vulnerable = bool(s.get("vulnerable", false))
+	_apply(
+		int(s["state"]),
+		int(s.get("pick", WorldReader.ELITE_BASIC)),
+		float(s.get("windup", 0.0)),
+		bool(s.get("vanished", false)),
+		bool(s.get("vulnerable", false)),
+	)
+
+
+func _apply(state: int, pick: int, windup: float, vanished: bool, vulnerable: bool) -> void:
+	_state = state
+	_pick = pick
+	_progress = clampf(windup, 0.0, 1.0)
+	_vanished = vanished
+	_vulnerable = vulnerable
 	strike_note(_state)
 	if _fresh:
 		_fresh = false

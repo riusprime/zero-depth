@@ -97,12 +97,16 @@ func _is_live(node: Node3D) -> bool:
 
 
 func _move(node: Node3D, pos: Vector3, scale: float, it: Dictionary) -> void:
-	var was := node.global_position if node.is_inside_tree() else node.position
-	if node.is_inside_tree():
-		node.global_position = pos
-	else:
-		node.position = pos
-	PackFx.settle(node, was, pos)
+	# v0.10.5 W3-Q6: an effect touched where it already stands (its body did not move since the last frame) is not
+	# placed again (no transform write down its particles, no jump test)
+	if it.get("pos", Vector3.INF) != pos:
+		it["pos"] = pos
+		var was := node.global_position if node.is_inside_tree() else node.position
+		if node.is_inside_tree():
+			node.global_position = pos
+		else:
+			node.position = pos
+		PackFx.settle(node, was, pos)
 	if not is_equal_approx(float(it["scale"]), scale):
 		it["scale"] = scale
 		node.scale = Vector3.ONE * scale

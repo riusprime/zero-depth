@@ -405,27 +405,51 @@ func finish() -> void:
 	hero_begin()
 	for d in hero_drawers:
 		if d.is_valid():
+			var t_d := PerfMarks.start()
 			d.call(self)
+			if PerfMarks.on:  # v0.10.5 W3-Q6: each drawer's share, in the frame probe's --breakdown
+				PerfMarks.add(_drawer_key("vfx.hero.", d), t_d)
 	hero_end()
 	for d in drawers:
 		if d.is_valid():
+			var t_d := PerfMarks.start()
 			d.call(self)
+			if PerfMarks.on:
+				PerfMarks.add(_drawer_key("vfx.", d), t_d)
+	var t_end := PerfMarks.start()
 	_flush_status_lights()
+	# v0.10.5 W3-Q6: a pool's count and a light's settings are written only when they change (each write is a
+	# RenderingServer call, and a moved light a transform update)
 	for p: Dictionary in _pool_list:
-		(p["mm"] as MultiMesh).visible_instance_count = int(p["used"])
+		var mm := p["mm"] as MultiMesh
+		if mm.visible_instance_count != int(p["used"]):
+			mm.visible_instance_count = int(p["used"])
 	_light_wants.sort_custom(_brighter)
 	for k in lights.size():
 		var l := lights[k]
 		if k < _light_wants.size():
 			var w: Array = _light_wants[k]
-			l.position = w[0]
-			l.light_color = w[1]
-			l.light_energy = w[2]
-			l.omni_range = w[3]
+			if l.position != w[0]:
+				l.position = w[0]
+			if l.light_color != w[1]:
+				l.light_color = w[1]
+			if l.light_energy != w[2]:
+				l.light_energy = w[2]
+			if l.omni_range != w[3]:
+				l.omni_range = w[3]
 			l.visible = true
 		else:
 			l.visible = false
 	_lay_marks()
+	PerfMarks.add(&"vfx.finish_rest", t_end)
+
+
+## v0.10.5 W3-Q6: a drawer's bucket in the frame probe's --breakdown (its script's file and method).
+static func _drawer_key(prefix: String, d: Callable) -> StringName:
+	var o := d.get_object()
+	var sc: Script = o.get_script() if o != null else null
+	var file := sc.resource_path.get_file().get_basename() if sc != null else "?"
+	return StringName(prefix + file + "." + String(d.get_method()))
 
 
 ## The light sort: the brighter request first.
