@@ -73,21 +73,37 @@ When a loop starts (through the loop gate, before floor 1), the player picks **1
 screen in the Astral style. Each changes one rule for the rest of the run. They stack across loops. A run never offers
 one it already holds.
 
-| # | Constellation | The rule it breaks | Needs | Owner |
+Owner, 2026-11-05, on the first pool: "Resonance doesnt make sense since the element interaction already does that, but
+maybe that card could unlock a third or fourth element"; "Skill tide is very weak for a 'constellation' card"; "orb
+communion - meh"; "overkill tide - we already have a card that does that" (the Overkill stat card); "twin star sounds
+fun"; "Glass sky could be great"; "Starfall could be great if getting it with something else unlocked something like a
+meteor and that starfall evolves into a every 5 attack a meteor falls from the sky into the enemies"; "Heart of the
+engine - meh, I think increasing the max amount of stacks an enemie can have and increasing the damage would be better
+for very large HP for example 20 bleed stacks or 15 venom". Dropped: Resonance (as written), Skill Tide, Orb
+Communion, Overkill Tide, Heart of the Engine.
+
+| # | Constellation | The rule it breaks | Starting value | Owner |
 |---|---|---|---|---|
-| C1 | **Resonance** | every element you apply also applies your other held elements at half stacks | the element tables | |
-| C2 | **Skill Tide** | every 10th attack also casts your Skill, with no cooldown spent | the Skill cast path | |
-| C3 | **Orb Communion** | your orbiting attacks (Blade Orbit, Orbit Rounds, Wisps) carry your weapon's elements and crit | the orb hits | |
-| C4 | **Overkill Tide** | damage past a kill carries on to the nearest enemy within 4 m | the damage pipeline | |
-| C5 | **Twin Star** | your overlevels count twice (+ 30 % instead of + 15 %) | CardLevels | |
-| C6 | **Glass Sky** | + 100 % damage, max HP halved | Stats | |
-| C7 | **Starfall** | every 5th crit drops a star on the nearest other enemy for 100 % of that hit (drawn as a thin falling line, V-rules apply) | the crit roll | |
-| C8 | **Heart of the Engine** | your engines (bleed, guard, …) gain stacks 50 % faster | Engines | |
+| C1 | **Prism** (from Resonance) | **Gun:** + 1 Element slot (2 → 3), so a third element and its pairs turn on. Prism can be offered again in a later loop: a fourth slot (the only Constellation offered twice). **Blade** (no element limit already): instead the element falloff (W3-P1: each extra element on one enemy counts less) is one step softer per pick | Gun 2 → 3 → 4 slots; Blade falloff − 1 step a pick | |
+| C2 | **Twin Star** | your overlevels count twice | + 30 % per overlevel instead of + 15 % | |
+| C3 | **Glass Sky** | + 100 % damage, max HP halved | × 2 damage, × 0.5 max HP | |
+| C4 | **Starfall** | every 5th crit drops a star on the nearest other enemy for 100 % of that hit: a thin falling line, no blast | every 5th crit, 100 % | |
+| C4b | **Meteor** (Starfall evolved) | Starfall plus the evolve condition (Q5) turns into Meteor: every 5th attack a meteor falls on the densest group of enemies within 8 m, 300 % of the attack's hit in a 2.5 m circle, and burns if you hold Fire. Drawn as one falling streak plus the existing small blast (the V-rules, no shake, no flash) | every 5th attack, 300 %, 2.5 m | |
+| C5 | **Deep Wounds** (from Heart of the Engine) | your damage-over-time elements stack much higher and each stack hits harder, for the loops' big HP | bleed 8 → 20 stacks, venom 8 → 15, burn 5 → 10; + 25 % damage per stack | |
+
+The pool is five, and a loop offers three, so a run that loops three times sees most of it. Three more to judge, so a
+run's picks vary more:
+
+| # | Constellation | The rule it breaks | Starting value | Owner |
+|---|---|---|---|---|
+| C6 | **Supernova** | every Starbound card (B1–B5) counts each stack twice | × 2 stacks | |
+| C7 | **Gravity Well** | every 8 s your attacks pull enemies within 5 m toward where they land, for 0.5 s, grouping them for area hits | 8 s, 5 m, 0.5 s | |
+| C8 | **Hunter's Sky** | elites and bosses take more damage from you | + 50 % | |
 
 ## What it needs besides the sim
 
-- **Strings:** names and texts for 5 Starbound cards and 8 Constellations, `en` and `es`.
-- **Art:** 13 icons (5 cards and 8 Constellations) as one new sheet row in `docs/art/prompts/ZD_CARD_ICONS.xlsx`, in
+- **Strings:** names and texts for 5 Starbound cards and 9 Constellations (C1–C8 and Meteor), `en` and `es`.
+- **Art:** 14 icons (5 cards and 9 Constellations) as one new sheet row in `docs/art/prompts/ZD_CARD_ICONS.xlsx`, in
   the card-icon style, for your n8n workflow. Until then each uses `icon_unknown`.
 - **Codex** entries, and the Build page lists the held Constellations.
 - **Saves and determinism:** stacks and Constellations are saved, hashed and replay-exact. Old saves load with none.
@@ -97,7 +113,7 @@ one it already holds.
 
 1. **A** (Opus): the overflow rules and the double-crit number.
 2. **B** (Opus): the Starbound card kind, its offers, then B1–B5 and the V-rules.
-3. **C** (Opus): the pick screen and C1–C8. C can run beside B, since their files barely overlap.
+3. **C** (Opus): the pick screen, C1–C8 and Meteor. C can run beside B, since their files barely overlap.
 4. **Art row and strings** (Sonnet).
 5. **Measure** T1–T3 with the W3-P3 probe, then report. A missed target waits here.
 
@@ -108,4 +124,5 @@ one it already holds.
 | Q1 | Starbound cards in the normal picks (B0), or only from a special chest or the boss pick? | |
 | Q2 | Constellations at the start of each loop, or after each loop's final boss instead? | |
 | Q3 | Can a Constellation pick be rerolled (with shards), or is it fixed? | |
-| Q4 | Any of C1–C8 to drop, or one of your own to add? | |
+| Q4 | Keep C6–C8, or drop any of them? | |
+| Q5 | What evolves Starfall into Meteor? (a) holding Fire at Lv 3 (the lead's pick: a meteor is fire, and it's reachable in loop 2); (b) picking a second Constellation, Glass Sky or Twin Star (loop 3 at the earliest); (c) 25 Starfall stars dropped in the run | |
