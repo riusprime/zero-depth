@@ -86,6 +86,7 @@ func _init(
 	status.custom_minimum_size = Vector2(MenuStyle.LIST_W, 0)
 	status.add_theme_color_override("font_color", MenuStyle.TEXT)
 	add_hint("UI_MENU_HINT")
+	AstralUi.dress(self)  # v0.10.5 W3-O19 (owner: every UI element in Astral): the station in the Astral style
 
 
 ## The line under the list (a translation key, its argument put in when the line has a %s).

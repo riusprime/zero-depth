@@ -87,21 +87,46 @@ func _draw() -> void:
 			_draw_line()
 
 
+## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): an Astral panel: an ink fill, a 1 px frame in
+## Astral's line with an inner frame 4 px in, a small diamond on its top edge, the tail outlined in the same line.
 func _panel(box: Rect2) -> void:
-	var fill := Color(0.04, 0.03, 0.08, 0.72)
-	draw_rect(box, fill)
-	draw_rect(box, Color(VIOLET, 0.35), false, 2.0)
-	var tip := Vector2(clampf(anchor_px.x, box.position.x + 14, box.end.x - 14), box.end.y)
-	draw_colored_polygon(
-		PackedVector2Array([tip + Vector2(-8, 0), tip + Vector2(8, 0), anchor_px]), fill
+	var o := Rect2(box.position.round(), box.size.round())
+	var fill := Color(AstralChrome.INK, 0.82)
+	var line := Color(AstralCardArt.LINE, 0.95)
+	draw_rect(o, fill)
+	var tip := Vector2(roundf(clampf(anchor_px.x, o.position.x + 14, o.end.x - 14)), o.end.y)
+	var tail := PackedVector2Array([tip + Vector2(-8, -1), tip + Vector2(8, -1), anchor_px])
+	draw_colored_polygon(tail, fill)
+	draw_rect(o.grow(-0.5), line, false, 1.0)
+	draw_rect(o.grow(-4.5), Color(line, 0.28), false, 1.0)
+	draw_rect(Rect2(tip.x - 7, o.end.y - 1, 15, 1), fill)
+	draw_polyline(
+		PackedVector2Array([tip + Vector2(-8, -0.5), anchor_px, tip + Vector2(8, -0.5)]),
+		line,
+		1.0,
+		true
+	)
+	AstralChrome.dia(
+		self,
+		Vector2(roundf(o.get_center().x) + 0.5, o.position.y + 0.5),
+		3.5,
+		AstralCardArt.METAL,
+		AstralChrome.INK
 	)
 
 
 func _draw_dots() -> void:
 	var box := Rect2(anchor_px + Vector2(-34, -62), Vector2(68, 30))
-	draw_rect(box, Color(0.04, 0.03, 0.08, 0.5))
+	draw_rect(box, Color(AstralChrome.INK, 0.6))  # v0.10.5 W3-O19: Astral's ink, three faint diamonds
+	draw_rect(box.grow(-0.5), Color(AstralCardArt.LINE, 0.5), false, 1.0)
 	for i in 3:
-		draw_circle(box.position + Vector2(17 + i * 17, 15), 3.0, Color(0.7, 0.7, 0.8, 0.45))
+		AstralChrome.dia(
+			self,
+			box.position + Vector2(17.5 + i * 17, 15.5),
+			3.0,
+			Color(0, 0, 0, 0),
+			Color(AstralCardArt.METAL, 0.5)
+		)
 
 
 func _draw_line() -> void:
@@ -137,5 +162,4 @@ func _glyph(g: int, at: Vector2, a: float) -> void:
 		var pts := PackedVector2Array()
 		for p in s:
 			pts.append(at + Vector2(p.x * sx, p.y * sy))
-		draw_polyline(pts, Color(VIOLET, 0.25 * a), 7.0, true)
-		draw_polyline(pts, Color(VIOLET.lightened(0.45), a), 2.0, true)
+		draw_polyline(pts, Color(VIOLET.lerp(AstralCardArt.ACCENT, 0.55), a), 1.6, true)  # v0.10.5 W3-O19: no glow

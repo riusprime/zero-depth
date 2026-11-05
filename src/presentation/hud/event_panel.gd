@@ -11,6 +11,10 @@ extends ModalPanel
 ## on the left, the reward and the curse on the right. Its colour is the reward's family (a card's own, the card frames'
 ## table; Plaques.USE_FAMILY for shards, a chest, overclock, a cleanse and Leave); a choice that carries a curse wears
 ## the curse colour. The text steps down in size until it fits the plaque's dark panel (en and es).
+## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): the panel in the Astral style: Astral's cool
+## ink over the game, the event's name as an Astral heading (a sigil, Cinzel capitals) over a rule, its line and the
+## hint in Atkinson's greys, each choice an Astral plaque (PlaqueBox draws Astral now) with its heads in small caps,
+## the cost in Astral's muted rose, the reward in its accent (no red or mint); the curse keeps the curse colour.
 
 ## Key repeats (PanelInput.Echo): a held key's repeats are not the panel's.
 const ECHO := PanelInput.Echo.IGNORE
@@ -35,11 +39,12 @@ const SIZES := {
 }
 const BOLD := ["Title", "RewardTitle", "CursedHead"]
 const MIN_SIZE := 10
-const COST := Color("#FF7A6B")
-const GAIN := Color("#8FE3A1")
+## v0.10.5 W3-O19: Astral's muted rose and accent (were a red and a mint).
+const COST := AstralCardArt.POOR
+const GAIN := AstralCardArt.ACCENT
 
 var _dim := ColorRect.new()
-var _title := HudStyle.label(28, true)
+var _title := HudStyle.label(AstralUi.PANEL_TITLE_SIZE, true)
 var _desc := HudStyle.label(16)
 var _hint := HudStyle.label(15)
 var _row := VBoxContainer.new()
@@ -58,12 +63,20 @@ func _init() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_add_dim(_dim, 0.5)
+	_dim.color = Color(AstralChrome.INK, 0.62)  # v0.10.5 W3-O19: Astral's cool ink
 	var col := _centred_column(VBoxContainer.new(), 12)
 	style_labels([_title, _desc, _hint])
-	_title.add_theme_color_override("font_color", EventPedestalViews.GLOW.lerp(Color.WHITE, 0.35))
-	_desc.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
-	_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
-	col.add_child(_title)
+	AstralUi.title(_title, AstralUi.PANEL_TITLE_SIZE)  # v0.10.5 W3-O19
+	AstralUi.body(_desc, 17, AstralCardArt.DIM)
+	AstralUi.body(_hint, AstralUi.HINT_SIZE, AstralUi.HINT)
+	var head := HBoxContainer.new()
+	head.alignment = BoxContainer.ALIGNMENT_CENTER
+	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	head.add_theme_constant_override("separation", 14)
+	head.add_child(AstralUi.Sigil.new(11.0))
+	head.add_child(_title)
+	col.add_child(head)
+	col.add_child(AstralChrome.Rule.new(360.0))
 	col.add_child(_desc)
 	_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -155,9 +168,7 @@ static func choice_lines(ci: Object, reader: WorldReader, k: int, c: int) -> Dic
 				var face := PickPanel.card_face(ci, reader, code)
 				out["reward_title"] = "%s · %s" % [face["title"], face["tier_text"]]
 				out["reward"] = face["sentence"]
-				out["color"] = PickSlot.TIERS[clampi(
-					int(face["tier"]), 0, PickSlot.TIERS.size() - 1
-				)]
+				out["color"] = AstralCardArt.rarity(int(face["tier"]))  # v0.10.5 W3-O19: Astral's rarity
 				out["plaque"] = Plaques.of_card(face["id"], int(face["type"]), int(face["tier"]))
 	var curse := reader.event_choice_curse(k, c)
 	if curse >= 0:
@@ -179,7 +190,7 @@ static func leave_lines(ci: Object) -> Dictionary:
 		"cost": "",
 		"reward_title": "",
 		"reward": ci.tr("UI_EVENT_LEAVE_DESC"),
-		"color": Color(1, 1, 1, 0.7),
+		"color": AstralCardArt.DIM,
 		"curse": "",
 		"block": "",
 		"plaque": Plaques.of_use(&"event_leave"),
@@ -246,18 +257,18 @@ func _add_card(lines: Dictionary, value: int, ok: bool) -> void:
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	head.add_theme_constant_override("separation", 8)
 	left.add_child(head)
-	head.add_child(_text("Key", str(k + 1), Color(1, 1, 1, 0.55)))
-	var title := _text("Title", lines["title"], Color.WHITE)
+	head.add_child(_text("Key", str(k + 1), AstralCardArt.DIM))
+	var title := _text("Title", lines["title"], AstralCardArt.TEXT)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(title)
 	if not String(lines["cost"]).is_empty():
-		left.add_child(_text("CostHead", tr("UI_EVENT_COST"), Color(1, 1, 1, 0.5)))
+		left.add_child(_text("CostHead", tr("UI_EVENT_COST"), AstralCardArt.DIM))
 		left.add_child(_text("Cost", lines["cost"], COST))
 	if not ok:
-		left.add_child(_text("Block", lines["block"], Color(1, 1, 1, 0.6)))
+		left.add_child(_text("Block", lines["block"], AstralCardArt.DIM))
 		card.modulate = Color(1, 1, 1, 0.55)
 	if value != InputFrame.PICK_CANCEL:
-		right.add_child(_text("RewardHead", tr("UI_EVENT_REWARD"), Color(1, 1, 1, 0.5)))
+		right.add_child(_text("RewardHead", tr("UI_EVENT_REWARD"), AstralCardArt.DIM))
 	if not String(lines["reward_title"]).is_empty():
 		right.add_child(_text("RewardTitle", lines["reward_title"], lines["color"]))
 	right.add_child(_text("Reward", lines["reward"], Color(lines["color"], 0.9)))
@@ -298,6 +309,11 @@ static func _right_w() -> float:
 
 func _text(line_name: String, text: String, c: Color) -> Label:
 	var l := HudStyle.label(SIZES[line_name], BOLD.has(line_name))
+	if line_name in ["CostHead", "RewardHead", "Title"]:  # v0.10.5 W3-O19: heads and the title in Cinzel
+		l.uppercase = line_name != "Title"
+		l.add_theme_font_override("font", AstralUi.serif(600, SIZES[line_name]))
+	l.add_theme_color_override("font_outline_color", Color(AstralChrome.INK, 0.6))
+	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	l.name = line_name
 	l.text = text
 	# v0.8.0 N19: the key and the "Cursed" mark sit in a row with no width of their own: they never wrap (N17's shots

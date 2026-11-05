@@ -58,7 +58,8 @@ var fresh := -1
 var only_slot := 0
 ## v0.10.5 W3-O16 (owner 2026-11-04: the Swap in the Astral style): Astral tiles (AstralChrome.FrameBox: a 1 px frame,
 ## an inner frame, Astral's focus) and type, the cuts and brackets as thin accent lines. The Build page keeps Ember.
-var astral := false:
+## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): Astral is the default (the Build page's too).
+var astral := true:
 	set(v):
 		astral = v
 		for k in _tiles.size():
@@ -74,6 +75,8 @@ var _wand := {}
 var _slots := 0
 var _tiles: Array[PanelContainer] = []
 var _sockets: Array[InlaySocket] = []
+## v0.10.5 W3-O19: an Astral row's icons: the card's painted icon in an Astral medallion, in the socket's place.
+var _medals: Array[AstralMedallion] = []
 var _keys: Array[Label] = []
 var _names: Array[Label] = []
 var _levels: Array[Label] = []
@@ -102,8 +105,7 @@ func _init() -> void:
 		b.max_lines_visible = 2
 		add_child(b)
 		_brackets.append(b)
-	for k in _tiles.size():  # every tile wears the stone look from the start
-		_style(k)
+	astral = astral  # v0.10.5 W3-O19: every tile wears its look (Astral by default) and type from the start
 
 
 func _make_tile(k: int) -> void:
@@ -126,6 +128,12 @@ func _make_tile(k: int) -> void:
 	icon.custom_minimum_size = Vector2(SOCKET, SOCKET)
 	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	box.add_child(icon)
+	var medal := AstralMedallion.new()  # v0.10.5 W3-O19
+	medal.custom_minimum_size = Vector2(SOCKET, SOCKET)
+	medal.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	medal.visible = false
+	box.add_child(medal)
+	_medals.append(medal)
 	var nm := make_label(NAME_SIZE, true, MenuStyle.TEXT)
 	nm.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	nm.max_lines_visible = 2
@@ -294,7 +302,9 @@ func _refresh() -> void:
 				_levels[k].text = tr(dead_reason(k))
 			var col := AbilityIcons.color(id) if ability else ItemLooks.color_of_id(id)
 			_sockets[k].show_item(id, col, col)
-			_sockets[k].visible = true
+			_sockets[k].visible = not astral
+			_medals[k].show_card(id)  # v0.10.5 W3-O19: the painted icon on an Astral row
+			_medals[k].visible = astral
 			var tint := CardFrames.tint(CardFrames.frame_of(CardFrames.family(id, int(c["type"]))))
 			t.set_meta(&"tint", tint)
 			t.set_meta(&"empty", false)
@@ -303,6 +313,7 @@ func _refresh() -> void:
 			_keys[k].text = str(k + 1)
 			_levels[k].text = ""
 			_sockets[k].visible = false
+			_medals[k].visible = false
 			t.set_meta(&"tint", Color(MenuStyle.DIM, 0.3))
 			t.set_meta(&"empty", true)
 		TextFit.fit_label_words(_names[k], TILE.x - 16.0, NAME_SIZE)  # v0.8.0 N18: a long word shrinks
@@ -363,6 +374,7 @@ func _style(k: int) -> void:
 			box.rim = EmberStone.GOLD
 		t.add_theme_stylebox_override("panel", box)
 	_sockets[k].glow = 1.0 if lit else 0.0
+	_medals[k].focused = lit
 	t.modulate = Color(1, 1, 1, 0.42) if k == leaving else Color.WHITE
 	if k != leaving and dead_reason(k) != &"":  # v0.8.0 MR (O91): a card that can't act here is dimmed
 		t.modulate = Color(0.62, 0.6, 0.58, 0.78)

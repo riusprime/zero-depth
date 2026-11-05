@@ -50,6 +50,7 @@ func _init(
 	add_button("UI_BACK", func() -> void: back_pressed.emit()).name = "Back"
 	add_hint("UI_MENU_HINT")
 	show_state(owned, fragments, void_open, prices)
+	AstralUi.dress(self)  # v0.10.5 W3-O19 (owner: every UI element in Astral): the station in the Astral style
 
 
 func _label(node_name: String, font_size: int, color: Color) -> Label:

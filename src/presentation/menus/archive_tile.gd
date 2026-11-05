@@ -15,6 +15,7 @@ func _init() -> void:
 	custom_minimum_size = SIZE
 	focus_mode = Control.FOCUS_ALL
 	flat = true
+	add_theme_stylebox_override("focus", StyleBoxEmpty.new())  # v0.10.5 W3-O19: the tile draws its own focus
 	text = ""
 	auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	mouse_entered.connect(grab_focus)
@@ -33,7 +34,11 @@ func _draw() -> void:
 	var c := SIZE * 0.5
 	var focus := has_focus()
 	var col := def.color if def != null and found else Color(0.16, 0.17, 0.2)
-	draw_style_box(MenuStyle.tile_slab(col, focus, not found), Rect2(Vector2.ZERO, SIZE))
+	# v0.10.5 W3-O19: an Astral frame (the focus its brighter frame and outer contour), the rune keeps its colour
+	draw_style_box(
+		AstralChrome.FrameBox.new(1.0 if focus else 0.0, 1.0 if found else 0.6),
+		Rect2(Vector2.ZERO, SIZE)
+	)
 	if found:  # the glow behind: wide and faint, then tight and bright
 		for k in 6:
 			var r := 46.0 - k * 6.0
@@ -57,7 +62,5 @@ func _draw() -> void:
 	else:
 		var font := HudStyle.font(true)
 		draw_string(
-			font, c + Vector2(-10, 12), "?", HORIZONTAL_ALIGNMENT_CENTER, 20, 34, MenuStyle.DIM
+			font, c + Vector2(-10, 12), "?", HORIZONTAL_ALIGNMENT_CENTER, 20, 34, AstralCardArt.DIM
 		)
-	if focus:
-		draw_rect(Rect2(Vector2(2, 2), SIZE - Vector2(4, 4)), MenuStyle.EMBER, false, 2.0)

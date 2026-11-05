@@ -15,6 +15,9 @@ extends Control
 ## v0.10.5 O13 (owner P10): the wand forecast (WandForecastView) between the row and the read-back: the spell left to
 ## right and its key numbers, from the sim's own compile of the page's order (WorldReader.wand_forecast, EI-07),
 ## following every move live. It needs the reader `open` is given (none: no forecast).
+## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): the page in the Astral style (AstralUi): the
+## game blurred under Astral's cool ink, a sigil and the title in Cinzel over a rule, the wand row, its pips and its
+## forecast in Astral (their default now), the read-back in Atkinson, Back an Astral plate.
 
 signal back_pressed
 
@@ -44,8 +47,10 @@ var _reader: WorldReader
 func _init() -> void:
 	name = "BuildPage"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	MenuStyle.apply(self)
-	add_child(MenuBackdrop.new())
+	AstralUi.apply(self)
+	var backdrop := MenuBackdrop.new()
+	backdrop.astral = true  # v0.10.5 W3-O19: the game blurred under Astral's cool ink
+	add_child(backdrop)
 	var outer := VBoxContainer.new()  # the column sits on the left like the menus' list, centred top to bottom
 	outer.set_anchors_preset(Control.PRESET_FULL_RECT)
 	outer.offset_left = MenuStyle.LIST_LEFT
@@ -58,14 +63,19 @@ func _init() -> void:
 	col.add_theme_constant_override("separation", 18)
 	outer.add_child(col)
 	_title.text = "UI_BUILD_TITLE"
-	_title.add_theme_font_override("font", HudStyle.font(true))
-	_title.add_theme_font_size_override("font_size", MenuStyle.TITLE_SIZE)
-	_title.add_theme_constant_override("outline_size", 6)
-	col.add_child(_title)
+	_title.name = "Title"
+	AstralUi.title(_title)
+	var head := HBoxContainer.new()  # v0.10.5 W3-O19: a sigil, the title, the slots note beside it
+	head.name = "Head"
+	head.add_theme_constant_override("separation", 16)
+	head.add_child(AstralUi.Sigil.new(13.0))
+	head.add_child(_title)
+	col.add_child(head)
 	_note.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	_note.add_theme_font_size_override("font_size", MenuStyle.NOTE_SIZE)
-	_note.add_theme_color_override("font_color", MenuStyle.DIM)
-	col.add_child(_note)
+	AstralUi.caps(_note, 15)
+	_note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(_note)
+	col.add_child(AstralUi.LeftRule.new(560.0))
 	col.add_child(pips)
 	col.add_child(row)
 	col.add_child(forecast)
@@ -73,17 +83,16 @@ func _init() -> void:
 	_read_back.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_read_back.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_read_back.custom_minimum_size = Vector2(READ_W, 0)
-	_read_back.add_theme_font_size_override("font_size", READ_SIZE)
-	_read_back.add_theme_color_override("font_color", MenuStyle.TEXT)
+	AstralUi.body(_read_back, READ_SIZE)
 	col.add_child(_read_back)
-	_hint = MenuStyle.hint("UI_BUILD_HINT")
+	_hint = AstralUi.hint("UI_BUILD_HINT")
 	col.add_child(_hint)
 	_back.name = "Back"
 	_back.text = "UI_BACK"
 	_back.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_back.focus_mode = Control.FOCUS_NONE  # the page owns the keys and the pad; Back is the mouse's way out
 	_back.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	_back.add_theme_font_size_override("font_size", MenuStyle.BUTTON_SIZE)
+	AstralUi.plate_button(_back)  # v0.10.5 W3-O19: an Astral plate
 	_back.pressed.connect(func() -> void: back_pressed.emit())
 	col.add_child(_back)
 	row.tile_clicked.connect(_on_click)

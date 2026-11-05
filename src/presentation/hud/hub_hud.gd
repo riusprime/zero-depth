@@ -3,10 +3,13 @@ extends Control
 ## v0.9.0 HB: the hub's HUD, the shared interact prompt's look (InteractPromptHud): the station the hero stands at,
 ## its name above, the short prompt below ("[E / X] Start a run"), and nothing else (no health, no map: the hub has no
 ## fight). The key hint for the pause sits small in a corner. Reads only; the press is the hub's (HubSession).
+## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): the station's name in letter-spaced Cinzel over
+## a fading hairline with a star (AstralChrome.Rule), the corner hint in Atkinson's cool grey.
 
 var _name := Label.new()
 var _prompt := InteractPrompt.new()
 var _hint := Label.new()
+var _rule := AstralChrome.Rule.new(180.0)
 
 
 func _init() -> void:
@@ -25,21 +28,27 @@ func _init() -> void:
 		add_child(l)
 	_name.name = "StationName"
 	_name.position = Vector2(-450, -158)
-	HudStyle.style_label(_name, 28, true)
+	AstralUi.title(_name, 26)  # v0.10.5 W3-O19
+	_rule.name = "StationRule"
+	_rule.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_rule.position = Vector2(-180, -120)
+	_rule.size = Vector2(360, 16)
+	_rule.visible = false
+	add_child(_rule)
 	add_child(_prompt)
 	_hint.name = "Hint"
 	_hint.text = "HUB_HINT"
 	_hint.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_hint.position = Vector2(28, 22)
 	_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	HudStyle.style_label(_hint, 18, false)
-	_hint.modulate = Color(1, 1, 1, 0.7)
+	AstralUi.body(_hint, AstralUi.HINT_SIZE + 1, AstralUi.HINT)  # v0.10.5 W3-O19
 	add_child(_hint)
 
 
 ## The station shown: its name and prompt keys (&"" hides both).
 func show_station(name_key: StringName, prompt_key: StringName, reader: WorldReader = null) -> void:
 	_name.visible = name_key != &""
+	_rule.visible = _name.visible
 	if _name.visible:
 		_name.text = tr(name_key)
 	if prompt_key != &"":

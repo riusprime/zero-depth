@@ -81,9 +81,7 @@ func refresh() -> void:
 		head.name = "Head_%s" % g
 		head.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		head.text = "%s   %d / %d" % [tr(GROUP_KEYS.get(g, "UI_ACH_TAB")), have, list.size()]
-		head.add_theme_font_override("font", HudStyle.font(true))
-		head.add_theme_font_size_override("font_size", 18)
-		head.add_theme_color_override("font_color", MenuStyle.EMBER.lerp(Color.WHITE, 0.3))
+		AstralUi.caps(head, 15, AstralCardArt.METAL)  # v0.10.5 W3-O19: Cinzel small caps
 		_list.add_child(head)
 		var grid := GridContainer.new()
 		grid.name = "Grid_%s" % g
@@ -110,9 +108,7 @@ func _add_records() -> void:
 	var head := Label.new()
 	head.name = "Head_records"
 	head.text = "UI_RECORDS_HEAD"
-	head.add_theme_font_override("font", HudStyle.font(true))
-	head.add_theme_font_size_override("font_size", 18)
-	head.add_theme_color_override("font_color", MenuStyle.EMBER.lerp(Color.WHITE, 0.3))
+	AstralUi.caps(head, 15, AstralCardArt.METAL)  # v0.10.5 W3-O19: Cinzel small caps
 	_list.add_child(head)
 	var k := 0
 	for line in RunRecords.lines(self, book.store.profile):
