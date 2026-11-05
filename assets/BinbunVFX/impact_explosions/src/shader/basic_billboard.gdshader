@@ -22,6 +22,12 @@ void vertex() {
         MODEL_MATRIX[3]
     );
     MODELVIEW_MATRIX = modified_model_view;
+    // Zero Depth v0.10.5 W3-S20: keep the node's scale (the pack's billboard dropped it).
+    MODELVIEW_MATRIX = MODELVIEW_MATRIX * mat4(
+        vec4(length(MODEL_MATRIX[0].xyz), 0.0, 0.0, 0.0),
+        vec4(0.0, length(MODEL_MATRIX[1].xyz), 0.0, 0.0),
+        vec4(0.0, 0.0, length(MODEL_MATRIX[2].xyz), 0.0),
+        vec4(0.0, 0.0, 0.0, 1.0));
 }
 
 void fragment() {
