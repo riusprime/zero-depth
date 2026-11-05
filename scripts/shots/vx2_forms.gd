@@ -140,7 +140,6 @@ func _build() -> void:
 			_view.voids,
 			_view.runes,
 			_view.seekers,
-			_view.wisps
 		]:
 			v.set("pack_fx", null)
 		_view.attack_forms.pulse_hold = null

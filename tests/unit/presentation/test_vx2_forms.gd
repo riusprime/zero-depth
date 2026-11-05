@@ -191,14 +191,39 @@ func test_the_rune_explosion_has_a_pack_dome() -> void:
 	assert_eq(_fx.live_count(&"area"), 1)
 
 
-func test_the_wisps_are_pack_orbs() -> void:
+## v0.10.5 W3-S19 (owner playtest: "it also leaves like a trail of replicas of the attack when you move"): the wisps
+## spawned a timed pack flare per shot where they fired (about 1 s, about 2 m across), left behind by the walking
+## hero. Now the wisps take no pack (nothing of theirs outlives its frame), and every orb and trail ghost they show
+## stays on their orbit round where the hero is, while the hero walks and the wisps fire.
+func test_the_wisps_leave_nothing_behind_while_the_hero_walks() -> void:
 	var view: WispsView = add_child_autofree(WispsView.new())
-	view.pack_fx = _fx
-	var w := W.world(&"gun", [&"gun_wisps"])
-	W.run(w, 5, 0, 0)
-	view.sync(WorldReader.new(w))
-	assert_gt(view.wisps, 0)
-	assert_eq(view.hold.count(), view.wisps)
+	assert_false("pack_fx" in view, "the wisps draw no pack effect")
+	var w := W.world(&"gun", [&"gun_wisps"], [[Vector2(3.0, 0.0), 100000]])
+	var reader := WorldReader.new(w)
+	var fired := 0
+	var trails := 0
+	for t in 150:
+		var mv := Vector2i(127, 0) if (t / 30) % 2 == 0 else Vector2i(0, 127)
+		W.run(w, 1, 0, 0, 0, mv)
+		view.sync(reader)
+		for wd: Dictionary in reader.wisps():
+			if float(wd["wait"]) <= 0.0:
+				fired += 1
+		trails = maxi(trails, view.trail_shown)
+		var hero := SimPlane.to_3d(reader.player_pos())
+		var reach := 0.0
+		for p in view.places:
+			reach = maxf(reach, p.distance_to(reader.player_pos()))
+		for n: Node in view.get_children():
+			var g := n as MeshInstance3D
+			if g == null or not g.visible or g.mesh is PlaneMesh:
+				continue
+			var d := Vector2(g.position.x - hero.x, g.position.z - hero.z).length()
+			assert_lt(d, reach + 0.05, "tick %d: a wisp's orb or trail on its orbit" % t)
+	assert_eq(view.wisps, 3)
+	assert_gt(fired, 3, "the wisps fired while the hero walked")
+	assert_eq(trails, 3 * WispsView.TRAIL_N, "each orbiting wisp trails")
+	assert_eq(_fx.live_count(), 0, "nothing in the pack")
 
 
 func test_crit_and_bounce_flashes_are_pack_hits_and_fall_back_when_full() -> void:
