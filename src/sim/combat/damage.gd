@@ -80,6 +80,7 @@ static func hit(
 		effect_id == Stats.EFFECT_OVERKILL
 		or effect_id == SimEvent.EFFECT_FROST_SHARD
 		or effect_id == SimEvent.EFFECT_PAIR_BURST
+		or effect_id == SimEvent.EFFECT_STAR
 	)  # v0.9.5 EE3: a pair burst is already scaled
 	var was_frozen := a.frozen_t[target] > 0 and owner_id == a.ids[0]  # v0.9.5 EE2: Shatter breaks what was frozen
 	var was_hot := a.burn_stacks[target] > 0  # v0.9.5 EE3: Thermal Shock reads it before this hit's own statuses
@@ -156,6 +157,8 @@ static func hit(
 		got = _apply(
 			w, target, scaled, source_id, owner_id, root_id, h.tags, at, h.seq, 1, effect_id
 		)
+		if h.tags & SimEvent.TAG_CRIT and owner_id == a.ids[0] and target != 0 and not splash:
+			Starfall.on_crit(w, target, scaled, root_id)  # v0.10.5 W3-P10e: every 5th crit calls a star
 	if target == 0 and m[1] & SimEvent.TAG_GUARDED:
 		ItemProcs.on_guard_block(w)  # Items: Phase Strike.
 		Engines.on_guard_block(w, owner_id, root_id)  # Engines: Bulwark, Frozen Bastion.

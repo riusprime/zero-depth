@@ -64,6 +64,9 @@ enum Kind {
 	STRESS_BREAK,  # v0.9.5 SM: a weak side broken (StressMarks.on_hit: pos, amount = extra damage, amount_applied = side)
 	PAIR_ON,  # v0.9.5 EE3: an element pair turned on (ElementPairs.refresh: amount = its X index 0..9, effect_id = its id)
 	DASH_REFUND,  # v0.10.5 S12: a perfect Vent readied the dash (Heat.vent: amount = heat vented)
+	STAR,  # v0.10.5 W3-P10e: Starfall's star fell (Starfall.on_crit: pos = the target, amount = the crit's amount)
+	METEOR_LAUNCH,  # v0.10.5 W3-P10e: a meteor called (pos = where it lands, amount = ticks to land)
+	METEOR_LAND,  # v0.10.5 W3-P10e: a meteor landed (pos, amount = radius in mm)
 }
 
 ## v0.9.5 EE1 (ElementLevels): a Contagion jump's STATUS_APPLY (source: the giver, target: the receiver), and the
@@ -80,6 +83,9 @@ const EFFECT_FROST_SHARD := &"frost_shard"
 ## in mm; also its hits' effect) and a Toxic Fumes cloud laid (STATUS_APPLY, amount = radius in mm).
 const EFFECT_PAIR_BURST := &"pair_burst"
 const EFFECT_PAIR_CLOUD := &"pair_cloud"
+## v0.10.5 W3-P10e (Starfall): a star's hit (already scaled: no crit) and a meteor's hits.
+const EFFECT_STAR := &"starfall_star"
+const EFFECT_METEOR := &"meteor"
 const TAG_MELEE := 1
 const TAG_PROJECTILE := 2
 const TAG_DOT := 4

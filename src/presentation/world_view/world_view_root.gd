@@ -40,6 +40,7 @@ static var parts: Array[GDScript] = [
 	AttackFormView,
 	LaserView,  # v0.9.0 LZ
 	BombView,  # v0.9.0 BM
+	StarfallView,  # v0.10.5 W3-P10e
 	VoidView,  # v0.9.0 VP
 	WaveView,  # v0.9.0 AF3
 	WispsView,  # v0.9.0 AF3
@@ -162,6 +163,8 @@ var pack_fx: PackFx = null
 var laser: LaserView = _part(LaserView)
 ## v0.9.0 BM (owner C §6.3): the bombs in flight and their blasts, per element.
 var bombs: BombView = _part(BombView)
+## v0.10.5 W3-P10e: Starfall's stars and Meteor (plain lines and the small blast ring).
+var starfall: StarfallView = _part(StarfallView)
 ## v0.9.0 VP (owner C §6.4): the Void shots in flight, travelling lensing spheres, and the enemies leaning into them.
 var voids: VoidView = _part(VoidView)
 ## v0.9.0 AF3 (owner Q7): the Wave's rolling bands; the wisps circling the hero.
@@ -393,6 +396,7 @@ func _setup_views(palette: Dictionary) -> void:
 	add_child(attack_forms)  # v0.6.0 MX3
 	add_child(laser)  # v0.9.0 LZ
 	add_child(bombs)  # v0.9.0 BM
+	add_child(starfall)  # v0.10.5 W3-P10e
 	add_child(voids)  # v0.9.0 VP
 	add_child(waves)  # v0.9.0 AF3
 	add_child(wisps)  # v0.9.0 AF3
@@ -694,6 +698,7 @@ func sync() -> void:
 	_sync_view(&"attack_forms", attack_forms)  # v0.6.0 MX3
 	_sync_view(&"laser", laser)  # v0.9.0 LZ
 	_sync_view(&"bombs", bombs)  # v0.9.0 BM
+	_sync_view(&"starfall", starfall)  # v0.10.5 W3-P10e
 	_sync_view(&"voids", voids)  # v0.9.0 VP
 	_sync_view(&"waves", waves)  # v0.9.0 AF3
 	_sync_view(&"wisps", wisps)  # v0.9.0 AF3

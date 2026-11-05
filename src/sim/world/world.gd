@@ -59,6 +59,11 @@ var dot_carry := 0
 var shot_carry := 0
 ## v0.10.5 W3-P10: the held Constellations, ids in pick order (Constellations; owner W7).
 var constellations := PackedInt32Array()
+## v0.10.5 W3-P10e (Starfall): the hero's crits counted, the root attacks counted for Meteor, and the meteors in the
+## air (Starfall.METEOR_FIELDS ints each). Hashed once any leaves 0 / empty; an older save has none.
+var starfall_crits := 0
+var meteor_attacks := 0
+var meteors := PackedInt32Array()
 ## Utility: blink cooldown, and the last blink (tick and start point) for the view.
 var blink_cd := 0
 var blink_tick := -1
@@ -801,6 +806,7 @@ func step(frame: InputFrame) -> void:
 	if affinity != null:
 		Affinities.dash_shock(self, before_move)  # v0.9.0 RB: A2 Storm's crackle
 	Abilities.advance(self)  # v0.4.0 BS: auto abilities, the blink shock, stat regen.
+	Starfall.advance(self)  # v0.10.5 W3-P10e: the meteors due land
 	if pp != null:
 		pp.end(&"dash_abilities")
 		pp.begin(&"statuses")
@@ -1373,6 +1379,10 @@ func state_hash() -> String:
 	if dmg_carry != 0 or dot_carry != 0 or shot_carry != 0:  # v0.10.5 W3-P9: only once a remainder was carried
 		for v in [dmg_carry, dot_carry, shot_carry]:
 			h.add_int(v)
+	if starfall_crits != 0 or meteor_attacks != 0 or not meteors.is_empty():  # v0.10.5 W3-P10e
+		h.add_int(starfall_crits)
+		h.add_int(meteor_attacks)
+		h.add_ints(meteors)
 	for v in [wave_index, wave_timer, 1 if cleared else 0, killer_kind, killer_tags]:
 		h.add_int(v)
 	for v in [1 if spawner != null else 0, run_ticks, spawn_cd, kills]:
