@@ -217,6 +217,12 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   (`World.seed_value`) when a build-up reaches its peak, and draws two numbers from it: the peak's length, then the
   quiet's. No stream is stored (the cycle count is state), so the draws replay exactly after a resume and never move
   any other stream. A sub-stream of `ai` like `ai:room:k`; not in EI-05's list either (flagged with `map:ice`, D13).
+- **The Starbound streams (v0.10.5 W3-P10b (owner W7)).** `Starbound` derives, from the floor's seed
+  (`World.seed_value`), `loot:starbound:<loop>:<floor>:<reward id>` (one per regular altar: its chance of a Starbound
+  card, then which of the five by weight; `Starbound.offer_card`, a pure function, so the e2e can read it before the
+  altar opens) and `combat:starbound_echo:<tick>:<launch>` (Echo Cast's chance of its extra repeat, one draw per root
+  weapon launch, only when the chance is not whole). No stream is stored; nothing draws before loop 2, so no loop-1
+  draw moves (T3). Sub-streams of `loot` and `combat`; not in EI-05's list either (flagged with `map:ice`).
 - **Per-room generation seeds.** `FloorGenerator` derives one sub-seed per room from the `map` stream, so changing
   one room's template never shifts any other room.
 - The `cosmetic` stream lives in presentation (particle jitter, camera shake noise, pitch jitter). It is derived
@@ -1194,6 +1200,65 @@ extra draw on `loot`).
   with k read before the break consumes the burn and the frost. Rounded to nearest, a hit that had damage keeps 1. Pair
   rules (X1-X10) unchanged. Only with `World.pair_table`. State (W3-P1b): the charge clocks, saved (an older save loads
   uncharged) and hashed only while an enemy is charged.
+
+## 8n. Starbound cards (v0.10.5 W3-P10b (owner W7))
+
+The loop-only card kind ([`W3_W7_LOOP_POWER_G1.md`](../roadmap/v0.10.5/W3_W7_LOOP_POWER_G1.md) §B, B0–B5, V1–V3,
+C6, T3). Code: `Starbound` (src/sim/abilities); data: `StarboundDefinition` (CONTENT_SCHEMA §8); every number is a
+starting value.
+
+- **The card.** An `Offers` code of its own, `STARBOUND_BASE (4000) + k`, type `Offers.STARBOUND`, k in
+  `StarboundDefinition.CARDS` order (Arc Jump 0, Rising Edge 1, Echo Cast 2, Fervour 3, Detonation 4). Both weapons;
+  no slot, no swap, no level cap: each pick adds one stack (`World.starbound`, five counts, empty until the first
+  pick; run-long through `RunCarry`). Taken through the normal pick (`Rewards.choose` → `BuildSlots.take`). Never in
+  a chest, the shop, an epic or a boss altar.
+- **The offer (B0).** `Offers.roll` of a regular altar, after the guarantee and the jackpot: from loop 2
+  (`World.loop >= 2`), with `RewardTable.starbound_permille[loop - 2]` (the last entry for later loops; data 200 at
+  loop 2, 300 from loop 3), one card of the offer is a Starbound card (the five by `weight`), drawn on the altar's
+  own stream (§5): in place of the last card that is neither the leading fresh ability, the only compatible card nor a
+  jackpot card, or appended to a short offer.
+- **C6 Supernova.** `Starbound.stacks(w, k)` is the one read every rule uses: the picks, × 2 while
+  `Constellations.has(w, Constellations.SUPERNOVA)`.
+- **B1 Arc Jump.** A direct hit of the player's (`Damage.hit`, landed, on an enemy: no effect id, proc 100, melee or
+  projectile, not a DoT) jumps `amount × stacks` times: each to the nearest living non-player actor whose body is
+  within `reach_m` (4 m) of the actor just hit and that this chain hasn't hit (ties: the lower index), at
+  `share_permille` (700) of the jump before (the first: of the hit's damage before the target's HP, integer, down).
+  A jump is a hit with effect `starbound_arc_jump` and no tags: already scaled (no damage stat, no crit), in
+  `Engines.PAYOFFS` (no status), and never a direct hit, so it never jumps again. The chain stops at a 0 damage or
+  when no new enemy is in reach.
+- **B2 Rising Edge.** Each landed player crit adds 1 to `World.starbound_crits` (at most `cap / amount`, 50);
+  `Stats.crit_mult` adds `min(crits × amount, cap) × stacks` (+3 % a crit, at most +150 % a stack) after the
+  crit-damage cap.
+- **B3 Echo Cast.** A root weapon launch (`Attacks.launch`: depth 0, not a repeat nor a back copy, a `weapon` spec:
+  the Gun's shot, each Blade step) repeats: `amount × stacks` per mille (+25 % a stack), each whole 1000 a sure repeat
+  and the rest one draw for one more, at most `cap` (3). `ModifierRuntime.queue_again` queues them as Twin Cast's
+  repeats: the whole damage, `REPEAT | SECONDARY`, from where the player is then, the first `Starbound.ECHO_DELAY_TICKS`
+  (10) later and each next `REPEAT_GAP_TICKS` after; a repeat never repeats.
+- **B4 Fervour.** Each player kill adds 1 to `World.starbound_kills` (at most 30); `AttackRate.rate_at` adds
+  `min(kills × amount, cap) × stacks` per mille (+2 % a kill, at most +60 % a stack) to the raw bonus before the curve,
+  so it counts toward the overflow past the curve too.
+- **The room reset.** Tick phase 9, after the arenas, while either counter is above 0: when no arena or Lockdown is
+  sealed, the hero stands in a room (`FloorLayout.room_of`; in a doorway: no reset) and no living non-player actor is
+  in that room's rect (grown by `Arenas.ROOM_MARGIN_M`; a world without a layout: none alive anywhere), both counters
+  go to 0. A new floor starts at 0 (not carried).
+- **B5 Detonation.** A player kill of actor i (`Damage._apply`) bursts at its position for
+  `max_hp[i] × amount × stacks / 1000` (20 % a stack) on every living non-player actor whose body is within `reach_m`
+  (2 m), bosses and elites (`BossAi.is_boss_kind`, an elite kind or an elite of `World.elites`) at `share_permille`
+  (500) of it (at least 1). A burst is a hit with effect `starbound_detonation` and no tags (already scaled, no status,
+  no jump). A burst's kill queues the next burst; the queue drains inside the first kill's call (`World.sb_burst_*`,
+  transient, empty between hits). At most `Starbound.BURSTS_PER_TICK` (24) bursts a tick (`World.starbound_bursts`
+  counts the asked ones per `starbound_burst_tick`); past it the burst is dropped, and the first one dropped leaves
+  one LIMIT event (effect `starbound_burst_cap`, amount 24).
+- **What the view reads (V1–V3).** `World.starbound_fx_*` (kind `FX_BURST` / `FX_JUMP`, its tick, from, to; the last
+  96, never hashed; `WorldReader.starbound_fx`). AttackFormView draws a burst as the hook blast (BlastLook's W3
+  size) tinted moon-blue `#8FB8E8`, no particles, no flash, no shake, at most 8 a frame; a jump as a thin moon-blue
+  line for 0.15 s, at most 16 a frame. Rising Edge, Echo Cast and Fervour draw nothing in the world: the HUD's buff
+  row (`StarboundHud`) shows the crits, the stacks and the kills. The pick shows a Starbound card on the owner's gold
+  frame and back (`AstralCardArt.STARBOUND`; no focused twin, the game's own focus look), its kind line
+  (`STARBOUND_KIND`) and its stacks as the level badge.
+- **State.** `World.starbound`, `starbound_crits`, `starbound_kills`, `starbound_burst_tick`, `starbound_bursts`:
+  saved (an older save holds none, `ADDED_SINCE_V05`) and hashed only once a card was taken (`Starbound.hash_into`),
+  so every loop-1 world hashes as before (T3). `World.starbound_tables` is loadout.
 
 ## 9. What presentation receives
 

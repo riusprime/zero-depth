@@ -260,6 +260,15 @@ const CARD_MOD := Offers.MOD
 const CARD_ABILITY := Offers.ABILITY
 const CARD_STAT := Offers.STAT
 const CARD_CURSE := Offers.CURSE  # v0.6.0 CU: a trade-off curse card
+const CARD_STARBOUND := Offers.STARBOUND  # v0.10.5 W3-P10b: a Starbound card (loop 2+)
+## v0.10.5 W3-P10b: the Starbound cards (starbound()'s order) and the view's log kinds (starbound_fx).
+const STARBOUND_ARC_JUMP := Starbound.ARC_JUMP
+const STARBOUND_RISING_EDGE := Starbound.RISING_EDGE
+const STARBOUND_ECHO_CAST := Starbound.ECHO_CAST
+const STARBOUND_FERVOUR := Starbound.FERVOUR
+const STARBOUND_DETONATION := Starbound.DETONATION
+const STARBOUND_FX_BURST := Starbound.FX_BURST
+const STARBOUND_FX_JUMP := Starbound.FX_JUMP
 ## v0.10.5 O7b: the SHARDS event's effect id when a lying drop is picked up (views tell it from an instant payout).
 const SHARD_PICKUP_EFFECT := ShardDrops.EFFECT
 ## v0.5.0 SH: the shop's last action (ShopState.Action; v0.10.5 W3-O9: selling and the curse lift are gone).
@@ -3020,6 +3029,30 @@ func utility_id() -> StringName:
 ## A card code's face (Offers.info: type CARD_*, id, kind, name_key, desc_key, rarity 0..2, level, amount).
 func card_info(code: int) -> Dictionary:
 	return Offers.info(_w, code)
+
+
+## v0.10.5 W3-P10b: the Starbound cards held (Starbound.read: each card's id, picks and stacks; the room's crits and
+## kills, and the crit-damage and haste bonuses they give now).
+func starbound() -> Dictionary:
+	return Starbound.read(_w)
+
+
+## v0.10.5 W3-P10b: Starbound card k's numbers ({} for none): its id, reach (m), amount and cap.
+func starbound_table(k: int) -> Dictionary:
+	var t := Starbound.table(_w, k)
+	if t == null:
+		return {}
+	return {"id": t.id, "reach_m": t.reach_m, "amount": t.amount, "cap": t.cap}
+
+
+## v0.10.5 W3-P10b (V1-V3): the recent Detonation bursts and Arc Jump jumps (kind Starbound.FX_*, start tick, from, to).
+func starbound_fx() -> Dictionary:
+	return {
+		"kind": _w.starbound_fx_kind.duplicate(),
+		"tick": _w.starbound_fx_tick.duplicate(),
+		"from": _w.starbound_fx_from.duplicate(),
+		"to": _w.starbound_fx_to.duplicate(),
+	}
 
 
 ## v0.9.5 TX: the Gun form fired now (the held Form card's row id: &"orbs", &"laser" ...; &"" on a Blade run), for the

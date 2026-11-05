@@ -1372,6 +1372,21 @@ v0.8.0 SG (owner O91) adds `additive` (bool, default false; only for the multipl
 `attack_speed`, `area`, `move_speed`, `shard_gain`, `pickup_range`, `glass_cannon`, else `range`): the cards add
 their amounts instead of compounding. Shipped on `damage`, `attack_speed` and `glass_cannon`.
 
+`StarboundDefinition` (v0.10.5 W3-P10b (owner W7); `data/starbound/`, category `starbound`): a Starbound card, the
+loop-only card kind ([`W3_W7_LOOP_POWER_G1.md`](../roadmap/v0.10.5/W3_W7_LOOP_POWER_G1.md) §B). The `id` names the
+card and its rule, one of `starbound_arc_jump`, `starbound_rising_edge`, `starbound_echo_cast`, `starbound_fervour`,
+`starbound_detonation` (else `unknown`; `ContentCompiler.compile_starbound` indexes them in that order and compiles
+none unless all five are there). `name_key`, `desc_key` (required; the sentence is shown as written, no `%s`),
+`weight` (≥ 0; draw weight among the five), and per stack: `amount` (> 0; Arc Jump's jumps, the others percent),
+`cap` (> 0 for `rising_edge` and `fervour` in percent, for `echo_cast` the most repeats; 0 for the others, else
+`range`), `reach_m` and `share` (> 0 and 0..100 percent for `arc_jump` (the jump reach, the share of the hit before)
+and `detonation` (the burst radius, the share bosses and elites take); 0 for the others, else `range`). Shipped:
+Arc Jump 1 jump, 4 m, 70 %; Rising Edge +3 % crit damage a crit, at most +150 %; Echo Cast +25 %, at most 3
+repeats; Fervour +2 % haste a kill, at most +60 %; Detonation 20 % of max HP, 2 m, bosses and elites 50 %. Rules:
+`Starbound` (src/sim/abilities; SIM_CONTRACTS §8n). `RewardsDefinition.starbound_permille` (v0.10.5 W3-P10b;
+0..1000 each, else `range`; data [200, 300]): a regular altar's chance per mille of a Starbound card, one entry a
+loop from loop 2, the last for every later loop.
+
 `RewardsDefinition` (v0.4.0 BS) gains `altar_card_weights` and `chest_card_weights` ([ability, stat, mod]) and
 `altar_rarity_weights` and `chest_rarity_weights` ([common, rare, epic]): 3 weights ≥ 0, not all 0.
 

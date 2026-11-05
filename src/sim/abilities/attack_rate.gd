@@ -53,7 +53,8 @@ static func rate(w: World, wand: int) -> int:
 
 ## rate() with the attack-speed stat at raw value `stat_v` (CardForecast's after-card number).
 static func rate_at(w: World, stat_v: int, wand: int) -> int:
-	var r := maxi(1, 1000 + curve(w.tuning, stat_v - 1000 + wand))
+	# v0.10.5 W3-P10b: Fervour's haste adds to the raw bonus (Starbound.haste_bonus)
+	var r := maxi(1, 1000 + curve(w.tuning, stat_v - 1000 + wand + Starbound.haste_bonus(w)))
 	return Curses.attack_speed(w, r)  # v0.6.0 CU: Heavy Hands multiplies the rate
 
 

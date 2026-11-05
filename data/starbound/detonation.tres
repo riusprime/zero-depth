@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="StarboundDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/starbound_definition.gd" id="1_star"]
+
+[resource]
+script = ExtResource("1_star")
+name_key = &"STARBOUND_DETONATION"
+desc_key = &"STARBOUND_DETONATION_DESC"
+amount = 20.0
+reach_m = 2.0
+share = 50.0
+id = &"starbound_detonation"

@@ -44,6 +44,9 @@ extends ContentDef
 @export var own_weapon_card_permille := 1500
 ## Cards an altar offers (v0.8.0 N7, owner O61: a chest deals one card, Offers.CHEST_CARDS).
 @export var offer_size := 3
+## v0.10.5 W3-P10b (owner W7, Q1: "normal picks, but a lower chance"): the chance per mille that a regular altar's
+## offer holds a Starbound card, from loop 2: one entry a loop (loop 2, loop 3 ..), the last for every later loop.
+@export var starbound_permille := PackedInt32Array([200, 300])
 ## The interact button opens an altar or chest within this distance of the player.
 @export var interact_radius_m := 1.6
 ## A kill's shards × (1 + shard_tier_bonus × danger tier).
@@ -115,6 +118,11 @@ func validate() -> Array[ValidationIssue]:
 	check_positive(issues, "own_weapon_card_permille", own_weapon_card_permille)  # v0.8.0 BL
 	if offer_size < 1 or offer_size > 3:
 		issues.append(ValidationIssue.new(&"range", resource_path, "offer_size is 1..3"))
+	for v in starbound_permille:  # v0.10.5 W3-P10b
+		if v < 0 or v > 1000:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "starbound_permille is 0..1000")
+			)
 	check_positive(issues, "interact_radius_m", interact_radius_m)
 	if altars_cap < 0:
 		issues.append(ValidationIssue.new(&"negative", resource_path, "altars_cap is negative"))

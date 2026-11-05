@@ -32,6 +32,8 @@ var legendary_permille_altar := 0
 ## v0.8.0 BL (BLADE_AUDIT B5): the run's own weapon's wand cards weigh this per mille against a shared card's 1000.
 var own_weapon_card_permille := 1500
 var offer_size := 3
+## v0.10.5 W3-P10b: a regular altar's Starbound chance per mille, loop 2, loop 3 .. (the last repeats; Starbound).
+var starbound_permille := PackedInt32Array([200, 300])
 var interact_radius_m := 1.6
 ## A kill's shards × (1000 + bonus × tier) / 1000, rounded half up.
 var shard_tier_bonus_permille := 250

@@ -292,7 +292,8 @@ static func crit_chance(w: World) -> int:
 static func crit_mult(w: World) -> int:
 	var t := table(w, Stat.CRIT_DAMAGE)
 	var c := total(w, Stat.CRIT_DAMAGE)
-	return mini(c, t.cap) if t != null and t.cap > 0 else c
+	var capped := mini(c, t.cap) if t != null and t.cap > 0 else c
+	return capped + Starbound.crit_bonus(w)  # v0.10.5 W3-P10b: Rising Edge, past the cap
 
 
 ## A hit the player owns, before the target's multipliers (Damage.hit): x damage, then the crit roll. Returns

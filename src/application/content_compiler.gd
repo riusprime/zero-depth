@@ -728,6 +728,7 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.legendary_permille_altar = int(round(def.legendary_weight_altar * 1000.0))
 	t.own_weapon_card_permille = def.own_weapon_card_permille  # v0.8.0 BL (B5)
 	t.offer_size = def.offer_size
+	t.starbound_permille = def.starbound_permille.duplicate()  # v0.10.5 W3-P10b
 	t.interact_radius_m = def.interact_radius_m
 	t.shard_tier_bonus_permille = int(round(def.shard_tier_bonus * 1000.0))
 	t.shard_tier_caps_at_peak = def.shard_tier_caps_at_peak  # O7a
@@ -916,6 +917,31 @@ static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 		t.amounts.append((t.amounts[Stats.Rarity.EPIC] * legend + 500) / 1000)
 		t.side.append((t.side[Stats.Rarity.EPIC] * legend + 500) / 1000)
 		out[s] = t
+	return out
+
+
+## v0.10.5 W3-P10b (owner W7): the Starbound cards, indexed by StarboundDefinition.CARDS (Starbound's order); empty when
+## the content has none, or misses one (a world without them never offers one). Percent to per mille (x 10); Arc Jump's
+## jumps and Echo Cast's most repeats as they are.
+static func compile_starbound(repo: ContentRepository) -> Array[StarboundTable]:
+	var out: Array[StarboundTable] = []
+	for k in StarboundDefinition.CARDS.size():
+		var def: StarboundDefinition = repo.get_def(&"starbound", StarboundDefinition.CARDS[k])
+		if def == null:
+			out.clear()
+			return out
+		var t := StarboundTable.new()
+		t.id = def.id
+		t.card = k
+		t.name_key = def.name_key
+		t.desc_key = def.desc_key
+		t.weight = def.weight
+		var counted := k == Starbound.ARC_JUMP
+		t.amount = int(round(def.amount)) if counted else int(round(def.amount * 10.0))
+		t.cap = int(round(def.cap)) if k == Starbound.ECHO_CAST else int(round(def.cap * 10.0))
+		t.reach_m = def.reach_m
+		t.share_permille = int(round(def.share * 10.0))
+		out.append(t)
 	return out
 
 

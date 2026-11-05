@@ -22,6 +22,7 @@ const FIELDS: Array[StringName] = [
 	&"card_levels",  # v0.6.5 WN3: the wand cards' levels
 	&"stat_rules",  # v0.8.0 SG: the rules stat_values follow (a carry without it is from before SG)
 	&"events_seen",  # v0.9.5 AQ: the events placed this run (a carry without it: none)
+	&"starbound",  # v0.10.5 W3-P10b: the Starbound picks (a carry without it: none)
 ]
 const HP := &"hp"
 ## v0.5.5 EC (owner Q-S4): the shards the portal left behind, written to the next floor's World.shards_left_behind

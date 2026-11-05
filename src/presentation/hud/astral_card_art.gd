@@ -15,6 +15,12 @@ const NOISE := "res://assets/ui/fx/dissolve_noise.png"
 const UNKNOWN := &"unknown"
 const CINZEL := "res://assets/fonts/cinzel/Cinzel-Variable.ttf"
 const FRAMES := 4
+## v0.10.5 W3-P10b (owner W7): a Starbound card (an id starting STARBOUND_PREFIX) wears the owner's gold Starbound frame
+## and back (frame_starbound.png, back_starbound.png, on the same canvas) as variant STARBOUND; it has no focused twin,
+## so the game's own focus look (the lift, the glow, the light) shows the focus. Its moon-blue (V1, V3, the HUD row).
+const STARBOUND := 5
+const STARBOUND_PREFIX := "starbound_"
+const STARBOUND_BLUE := Color("#8FB8E8")
 ## The frame canvas (px), the frame body's padding inside it (the focused glow's room) and the body's mean width.
 const CANVAS := Vector2(400, 520)
 const PAD := Vector2(44, 43)
@@ -71,6 +77,8 @@ static func has_icon(id: StringName) -> bool:
 ## Which of the four frames card `id` wears (1..4): the same for an id every time (a sum of its characters).
 static func variant_of(id: StringName) -> int:
 	var s := String(id)
+	if s.begins_with(STARBOUND_PREFIX):
+		return STARBOUND
 	var h := 0
 	for i in s.length():
 		h = (h * 31 + s.unicode_at(i)) % 100003
@@ -79,6 +87,10 @@ static func variant_of(id: StringName) -> int:
 
 ## Frame `variant` (1..4), focused or not.
 static func frame(variant: int, focused: bool) -> Texture2D:
+	if variant == STARBOUND:  # v0.10.5 W3-P10b: the gold frame, no focused twin
+		if not _frames.has("frame_starbound"):
+			_frames["frame_starbound"] = load(FRAME_DIR + "frame_starbound.png")
+		return _frames["frame_starbound"]
 	var key := "frame_%d%s" % [clampi(variant, 1, FRAMES), "_focus" if focused else ""]
 	if not _frames.has(key):
 		_frames[key] = load(FRAME_DIR + key + ".png")
@@ -87,6 +99,10 @@ static func frame(variant: int, focused: bool) -> Texture2D:
 
 ## Card back `variant` (1..4), focused or not (v0.10.5 W3-S13): on the frames' canvas, so a back and a front line up.
 static func back(variant: int, focused: bool) -> Texture2D:
+	if variant == STARBOUND:  # v0.10.5 W3-P10b: the gold back, no focused twin
+		if not _backs.has("back_starbound"):
+			_backs["back_starbound"] = load(BACK_DIR + "back_starbound.png")
+		return _backs["back_starbound"]
 	var key := "back_%d%s" % [clampi(variant, 1, FRAMES), "_focus" if focused else ""]
 	if not _backs.has(key):
 		_backs[key] = load(BACK_DIR + key + ".png")

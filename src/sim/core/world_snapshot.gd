@@ -65,6 +65,12 @@ const WORLD_KEPT := {
 	&"_hit_grid_state": "transient within a tick (v0.8.0 HS): 0 between ticks",
 	&"_every_index": "derived (v0.8.0 HS): 1 .. n - 1, rebuilt from the actor count",
 	&"floor_hp_bonus": "rebuilt (v0.9.0 SV): RunState.prepare derives it from the run's floor",
+	&"starbound_tables": "loadout",  # v0.10.5 W3-P10b
+	&"sb_burst_pos":
+	"transient within a hit (v0.10.5 W3-P10b): Detonation's chain, empty between hits",
+	&"sb_burst_dmg": "transient within a hit (v0.10.5 W3-P10b)",
+	&"sb_burst_root": "transient within a hit (v0.10.5 W3-P10b)",
+	&"sb_draining": "transient within a hit (v0.10.5 W3-P10b): false between hits",
 }
 ## Content tables: compiled from content at setup, read-only in play (the guard test checks they don't change).
 const LOADOUT_CLASSES: Array[StringName] = [
@@ -248,6 +254,15 @@ const ADDED_SINCE_V05 := {
 		&"dot_carry",
 		&"shot_carry",
 		&"constellations",  # v0.10.5 W3-P10: the held Constellations (an older save holds none)
+		&"starbound",  # v0.10.5 W3-P10b: the Starbound picks and counters (an older save holds none)
+		&"starbound_crits",
+		&"starbound_kills",
+		&"starbound_burst_tick",
+		&"starbound_bursts",
+		&"starbound_fx_kind",
+		&"starbound_fx_tick",
+		&"starbound_fx_from",
+		&"starbound_fx_to",
 	],
 	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
 	&"BossFlow":

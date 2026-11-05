@@ -192,6 +192,8 @@ static func _apply(w: World, code: int) -> void:
 			Stats.add_card(w, Offers.stat_of(code), Offers.rarity_of(code))
 		Offers.CURSE:
 			Curses.add(w, Offers.curse_of(code))  # v0.6.0 CU: the trade-off curse, drawback and upside
+		Offers.STARBOUND:
+			Starbound.take(w, Offers.starbound_of(code))  # v0.10.5 W3-P10b: one more stack, no slot
 	sync(w)
 
 

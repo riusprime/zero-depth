@@ -79,6 +79,7 @@ var lockdown_hud := LockdownHud.new()
 var shrine_hud := ShrineHud.new()
 ## v0.4.0 TU: the difficulty phase's name, and the line announcing a new phase or a new enemy kind.
 var phase_hud := PhaseHud.new()
+var starbound_hud := StarboundHud.new()  # v0.10.5 W3-P10b: the Starbound buff row, above the combo row
 ## v0.5.0 SH: the shop's prompt and panel.
 var shop := ShopHud.new()
 ## v0.8.0 BD (O83): the boss door's interact prompt.
@@ -191,6 +192,7 @@ func _init() -> void:
 	_combos.offset_right = -28
 	_combos.offset_top = -ITEMS_LIFT - ROW_ICON - 12
 	_combos.offset_bottom = -ITEMS_LIFT - ROW_ICON - 12
+	add_child(starbound_hud)  # v0.10.5 W3-P10b: it places itself (StarboundHud.LIFT)
 	_build_pair_title()
 	add_child(_combo_card)
 	_combo_card.place_bottom_centre(-196 - ItemCard.HEIGHT - 10)  # v0.6.1 R1: above the taller item plaque
@@ -270,6 +272,7 @@ func sync(reader: WorldReader) -> void:
 		t = PerfMarks.start()
 		_sync_items(reader)
 		_sync_combos(reader)
+		starbound_hud.sync(reader)  # v0.10.5 W3-P10b
 		PerfMarks.add(&"hud.pickups", t)
 	else:
 		var wave := [&"HUD_WAVE", maxi(reader.wave_number(), 1), reader.wave_count()]
