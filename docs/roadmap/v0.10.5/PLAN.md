@@ -416,6 +416,12 @@ Steps (S = Sonnet, O = Opus; at most 2 + 2 at once):
   loop-power code (jumps/stars carry no target's bonus, one Arc Jump chain a root, Rising Edge out of the boss's HP,
   Echo Cast repeats merge under ShotCap, Exsanguinate takes Deep Wounds, repeats keep their Lance/Blade context).
 
+- **W3-P10l (owner, 2026-11-05: "for the meteor we could use some of the new vfx premade pack"; "same with starfall,
+  let's rely on those that look better")**: the meteor and Starfall's star take their look from the owner's new packs
+  (`newVFX/`), plain (no shake, no flash, nothing lingering). **W3-Q7** fixed the bolt's "appears at some spots and
+  flickers" (a shot drawn a tick behind on multi-tick frames, since Q5); **W3-Q8** the same lag for the hero and
+  enemies. Agents: at most 3 Sonnet + 5 Opus (owner, 2026-11-05: "increase limit on opus agents +2").
+
 ### R. Release
 - Version bump, patch notes en + es, What's New, ROADMAP row + History, PROGRESS final; one PR into `main` with
   v0.10.0 (the full suite runs there).
