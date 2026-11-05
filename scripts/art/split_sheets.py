@@ -3,7 +3,7 @@
 Run from the repo root: python -I scripts/art/split_sheets.py [--workbook PATH] [--only ASSET_ID] [--dry-run]
 Reads the "Prompts" sheet of docs/art/prompts/ZD_CARD_ICONS.xlsx (stdlib only: an xlsx is a zip of XML). For each
 row whose sheet exists at <sheet_folder>/<image_name>, cuts it by `grid` (columns x rows) into equal cells in
-reading order (left to right, top to bottom), names them by the row's `cells` list, resizes each to
+reading order (left to right, top to bottom), names them by the row's `cells` list (an empty name "" skips that cell), resizes each to
 `cell_final_size` (Lanczos, alpha kept) and writes them to `cells_folder`. A row whose sheet is missing is skipped
 and listed. Needs Pillow and numpy (pip install pillow numpy) except with --dry-run.
 
@@ -164,15 +164,17 @@ def main():
             missing.append(os.path.relpath(src, ROOT))
             continue
         if a.dry_run:
-            for name in cells:
+            for name in filter(None, cells):
                 print("would write", os.path.join(r["cells_folder"], name))
             continue
         os.makedirs(out, exist_ok=True)
         sheet = image.open(src).convert("RGBA")
         for i, cell in enumerate(cut_cells(sheet, cols, rows)):
+            if not cells[i]:  # an empty cell (name "") is not written
+                continue
             cell.resize((fw, fh), image.LANCZOS).save(os.path.join(out, cells[i]))
             written += 1
-        print("%s: %d cells -> %s" % (r["image_name"], len(cells), r["cells_folder"]))
+        print("%s: %d cells -> %s" % (r["image_name"], len(list(filter(None, cells))), r["cells_folder"]))
     print("written:", written)
     for m in missing:
         print("missing sheet (skipped):", m)

@@ -54,7 +54,12 @@ func _draw() -> void:
 	var c := SILHOUETTE if locked else color_of(entry)
 	match page:
 		&"cards":
-			if AstralCardArt.has_icon(entry["id"]):  # v0.10.5 W3-O19: the card's painted icon
+			# v0.10.5 W3-O19: the card's painted icon; W3-P10f: a Starbound card or Constellation always shows one
+			# (icon_unknown until its art lands)
+			if (
+				AstralCardArt.has_icon(entry["id"])
+				or entry["section"] in [&"starbound", &"constellations"]
+			):
 				var s := minf(r.size.x, r.size.y) * 1.25
 				var at := Rect2(r.get_center() - Vector2(s, s) * 0.5, Vector2(s, s))
 				var tint := Color(SILHOUETTE, 1.0) if locked else Color.WHITE

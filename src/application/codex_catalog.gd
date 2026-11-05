@@ -27,12 +27,34 @@ const SECTIONS := {
 		&"utilities",
 		&"abilities",
 		&"passives",
+		&"starbound",  # v0.10.5 W3-P10f
+		&"constellations",
 	],
 	&"enemies": [&"enemies"],
 	&"bosses": [&"bosses", &"final"],
 	&"biomes": [&"biomes"],
 	&"lore": [&"lore"],  # v0.10.5 O18
 }
+## v0.10.5 W3-P10f: the Starbound cards and the Constellations (G1 §B, §C). A Starbound card is listed from its
+## ItemDefinition when the content has one (item_section), else from this list; a Constellation is a run rule, not
+## content, so its entries are always this list (icon `icon_<id>.png`, falling back to `icon_unknown`).
+const STARBOUND_IDS: Array[StringName] = [
+	&"starbound_arc_jump",
+	&"starbound_rising_edge",
+	&"starbound_echo_cast",
+	&"starbound_fervour",
+	&"starbound_detonation",
+]
+const CONSTELLATION_IDS: Array[StringName] = [
+	&"const_prism",
+	&"const_twin_star",
+	&"const_glass_sky",
+	&"const_starfall",
+	&"const_meteor",
+	&"const_deep_wounds",
+	&"const_supernova",
+	&"const_hunters_sky",
+]
 const WAND_TAG := "wand"
 const TRIGGER_TAG := "trigger"
 
@@ -67,6 +89,11 @@ static func build(repo: ContentRepository) -> CodexCatalog:
 		sorted[&"utilities" if util else &"abilities"].append(_ability_entry(def, util))
 	for def: StatCardDefinition in repo.all_of(&"stat_card"):
 		sorted[&"stats"].append(_stat_entry(def))
+	for id: StringName in STARBOUND_IDS:
+		if repo.get_def(&"items", id) == null:
+			sorted[&"starbound"].append(_run_rule_entry(&"starbound", id, 2))
+	for id: StringName in CONSTELLATION_IDS:
+		sorted[&"constellations"].append(_run_rule_entry(&"constellations", id, 3))
 	for s: StringName in SECTIONS[&"cards"]:
 		for e: Dictionary in sorted[s]:
 			c._add(e)
@@ -177,6 +204,8 @@ static func retired_ids(repo: ContentRepository) -> Dictionary:
 
 ## The Cards page section of an item.
 static func item_section(def: ItemDefinition) -> StringName:
+	if STARBOUND_IDS.has(def.id):
+		return &"starbound"
 	if def.rarity == ItemDefinition.Rarity.LEGENDARY:
 		return &"legendary"
 	if def.tags.has(TRIGGER_TAG):
@@ -189,6 +218,22 @@ static func item_section(def: ItemDefinition) -> StringName:
 				return &"blade"
 		return &"shared"
 	return &"passives"
+
+
+## A Starbound card or Constellation listed without a definition: the keys are STARBOUND_<ID> / CONST_<NAME> (+ _DESC).
+static func _run_rule_entry(section: StringName, id: StringName, rarity: int) -> Dictionary:
+	var key := String(id).to_upper()
+	return {
+		"page": &"cards",
+		"section": section,
+		"id": id,
+		"name_key": StringName(key),
+		"alt_name_key": &"",
+		"desc_key": StringName(key + "_DESC"),
+		"type": Offers.MOD,
+		"rarity": rarity,
+		"leveled": false,
+	}
 
 
 static func _item_entry(def: ItemDefinition) -> Dictionary:

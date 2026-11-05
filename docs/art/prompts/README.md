@@ -34,6 +34,8 @@ the ornament gems use the card rarity colours of `pick_slot.gd`.
 | 5 | card_icons_5_stats | 4x4, 1920x1920 | 16 stat cards |
 | 6 | card_icons_6_heat_curses | 4x3, 1920x1440 | 3 Heat passives, Vent Mend, 7 trade-off curses, the fallback `icon_unknown` |
 | 7 | card_ornaments | 4x4, 1920x1920 | shard, heal, reroll, divider, 5 rarity gems x normal/focused, buys-left pip on/off |
+| 8 | card_icons_8_starbound | 4x2, 1920x960 | 5 Starbound cards in gold (cells 6 to 8 empty and transparent; the cut skips them) |
+| 9 | card_icons_9_constellations | 4x2, 1920x960 | 8 Constellations in violet starlight with fine constellation lines (Meteor adds Fire's accent) |
 
 The cards are every card a run can offer: the 63 items (`data/items`), the abilities Aegis, Blink and Combo Sword
 (level-ups) plus the Pulse Gun (never offered, but its weapon shows in the HUD), the 17 stat cards with a non-zero
@@ -137,3 +139,16 @@ have no icon.
 | card_icons_6_heat_curses | 10 | `unknown` | — | fallback | A card with no icon yet. | a smooth, sealed, blank oval rune stone with light leaking from one thin seam around it. |
 | card_icons_6_heat_curses | 11 | `heavy_hands` | Heavy Hands | curse | You attack slower / Every 4th hit hits harder | an armoured gauntlet chained to a heavy round iron weight (a curse: darker, more ink and slate). |
 | card_icons_6_heat_curses | 12 | `fevered` | Fevered | curse | Heat fades slower / Overclock hits harder | a lantern holding a trapped, churning heat haze that cannot escape, wisps curling inside its glass (a curse: darker, more ink and slate). |
+| card_icons_8_starbound | 1 | `starbound_arc_jump` | Arc Jump | starbound | Hits jump to a nearby enemy, +1 jump per stack. | a bolt of golden light leaping in a zigzag arc between three small glowing star points, a spark at each point. |
+| card_icons_8_starbound | 2 | `starbound_rising_edge` | Rising Edge | starbound | Crits raise crit damage until the room is cleared. | a sharp four-pointed star-blade rising above three stacked upward chevrons that grow larger toward the top. |
+| card_icons_8_starbound | 3 | `starbound_echo_cast` | Echo Cast | starbound | +25 % chance to repeat an attack. | a bold four-pointed star with two fainter, smaller copies trailing behind it in a diagonal row like echoes. |
+| card_icons_8_starbound | 4 | `starbound_fervour` | Fervour | starbound | Kills raise attack speed until the room is cleared. | a tall tongue of gold and amber flame shaped like a rising star, ringed by three fast curved motion arcs. |
+| card_icons_8_starbound | 5 | `starbound_detonation` | Detonation | starbound | Killed enemies burst for a share of their max HP. | a small faceted gold orb cracking open in a starburst, shards and sparks radiating outward in a ring. |
+| card_icons_9_constellations | 1 | `const_prism` | Prism | constellation | Gun: one more element slot. Blade: stacked elements weaken less. | a triangular crystal prism, one beam entering on the left and splitting into a fan of fine rays. |
+| card_icons_9_constellations | 2 | `const_twin_star` | Twin Star | constellation | Overlevels count double. | two identical four-pointed stars side by side joined by one thin line. |
+| card_icons_9_constellations | 3 | `const_glass_sky` | Glass Sky | constellation | Double damage, half max HP. | a cracked crystal dome with hairline cracks, a bright star shining through the largest crack. |
+| card_icons_9_constellations | 4 | `const_starfall` | Starfall | constellation | Every 5th crit strikes another enemy. | a bright falling star with a long curved tail striking toward a second, smaller star. |
+| card_icons_9_constellations | 5 | `const_meteor` | Meteor | constellation | Every 5th attack calls a meteor (Starfall with Fire Lv 3). | a burning stone falling at a steep angle with a streaming tail. **FIRE accent.** |
+| card_icons_9_constellations | 6 | `const_deep_wounds` | Deep Wounds | constellation | Bleed, venom and burn stack higher and hurt more. | three parallel slash marks tearing open a crystal, small drops of light welling from the cuts. |
+| card_icons_9_constellations | 7 | `const_supernova` | Supernova | constellation | Starbound cards count twice. | a huge star bursting, a ring shockwave around it and eight long rays. |
+| card_icons_9_constellations | 8 | `const_hunters_sky` | Hunter's Sky | constellation | +50 % damage to elites and bosses. | a bow-shaped crescent moon drawn taut with one arrow of light, aimed at a large star inside a targeting ring. |
