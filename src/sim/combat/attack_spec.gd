@@ -296,6 +296,9 @@ var aim_offset := 0
 ## bodies untouchable (Phase Dash, 1).
 var chains := 0
 var homing := 0
+## v0.10.5 W3-S18: Halo's extra reach (per mille of its halved range) once this spec also homes. Compile-time only
+## (SpecForms.halo_homing_reach spends it, so it is never hashed or copied: life_ticks carries the result).
+var halo_homing_permille := 0
 var returns := 0
 var orbit_ticks := 0
 var intangible := 0

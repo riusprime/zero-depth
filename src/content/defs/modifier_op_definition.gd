@@ -100,6 +100,8 @@ const FIELD_STAGE := {
 	&"resonance_permille": [3, &"resonance_permille", ""],
 	&"heat_rate_permille": [5, &"heat_rate_permille", ""],
 	&"range": [5, &"range", ""],
+	# v0.10.5 W3-S18: Halo's reach when the bolt also homes (SpecForms.halo_homing_reach)
+	&"halo_homing_reach_permille": [5, &"halo_homing_permille", ""],
 	# v0.6.5 WN3 (the Gun pool: GunForms)
 	&"twin": [1, &"twin", ""],
 	&"spiral_degrees": [2, &"spiral", "turns"],
