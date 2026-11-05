@@ -16,6 +16,12 @@ const LV_STACK := 3  # Virulence, Exsanguinate
 const EFFECT_JUMP := SimEvent.EFFECT_VENOM_JUMP
 const EFFECT_EXSANGUINATE := SimEvent.EFFECT_EXSANGUINATE
 const MM := 1000
+## v0.10.5 W3-P10d (owner W7: "increasing the max amount of stacks an enemie can have and increasing the damage would
+## be better for very large HP for example 20 bleed stacks or 15 venom"): the Deep Wounds Constellation's numbers.
+const DEEP_BLEED_CAP := 20
+const DEEP_VENOM_CAP := 15
+const DEEP_BURN_CAP := 10
+const DEEP_DOT_PERMILLE := 1250
 
 
 ## The owned wand card whose table `poison` (Venom) or bleed (else) engine runs, or null.
@@ -59,19 +65,37 @@ static func active(w: World) -> bool:
 	return level(w, true) >= LV_SPREAD or level(w, false) >= LV_SPREAD
 
 
-## The poison stack cap now: the engine's, or Virulence's.
+## The poison stack cap now: the engine's, or Virulence's; Deep Wounds lifts a cap that exists.
 static func poison_cap(w: World) -> int:
 	var cap := w.item_mods.poison_max_stacks
 	if level(w, true) >= LV_STACK:
 		cap = mini(cap, card(w, true).el_stack_cap)
-	return cap
+	return _deep(w, cap, DEEP_VENOM_CAP)
 
 
-## The bleed stack cap now: the engine's, or Exsanguinate's.
+## The bleed stack cap now: the engine's, or Exsanguinate's; Deep Wounds lifts a cap that exists.
 static func bleed_cap(w: World) -> int:
 	var cap := w.item_mods.bleed_max_stacks
 	if level(w, false) >= LV_STACK:
 		cap = mini(cap, card(w, false).el_stack_cap)
+	return _deep(w, cap, DEEP_BLEED_CAP)
+
+
+## The burn stack cap now: the engine's; Deep Wounds lifts a cap that exists.
+static func burn_cap(w: World) -> int:
+	return _deep(w, w.item_mods.burn_max_stacks, DEEP_BURN_CAP)
+
+
+## A DoT tick's damage (bleed, venom, burn): Deep Wounds deals DEEP_DOT_PERMILLE of it (rounded half up).
+static func deep_dot(w: World, amount: int) -> int:
+	if amount <= 0 or not Constellations.has(w, Constellations.DEEP_WOUNDS):
+		return amount
+	return (amount * DEEP_DOT_PERMILLE + 500) / 1000
+
+
+static func _deep(w: World, cap: int, lifted: int) -> int:
+	if cap > 0 and Constellations.has(w, Constellations.DEEP_WOUNDS):
+		return maxi(cap, lifted)
 	return cap
 
 
@@ -162,7 +186,10 @@ static func exsanguinate(w: World, i: int, period: int) -> void:
 		return
 	var a := w.actors
 	var t := card(w, false)
-	if a.bleed_stacks[i] < t.el_burst_stacks or a.dead[i] == 1:
+	var burst := t.el_burst_stacks
+	if Constellations.has(w, Constellations.DEEP_WOUNDS):
+		burst = maxi(burst, bleed_cap(w))  # v0.10.5 W3-P10d: the burst waits for the lifted cap
+	if a.bleed_stacks[i] < burst or a.dead[i] == 1:
 		return
 	var ticks := 0
 	if a.bleed_t[i] >= a.bleed_cd[i]:

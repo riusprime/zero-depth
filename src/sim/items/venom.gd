@@ -47,8 +47,11 @@ static func tick(w: World) -> void:
 			Damage.tick_dot(
 				w,
 				i,
-				ElementLevels.poison_tick(
-					w, m.poison_damage * a.poison_stacks[i], a.poison_stacks[i]
+				ElementLevels.deep_dot(
+					w,
+					ElementLevels.poison_tick(
+						w, m.poison_damage * a.poison_stacks[i], a.poison_stacks[i]
+					)
 				),
 				a.ids[0],
 				a.ids[0],
