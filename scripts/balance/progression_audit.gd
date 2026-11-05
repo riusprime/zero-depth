@@ -90,17 +90,10 @@ const TRACKS := {
 	[
 		&"gun",
 		["gun_twin:1", "gun_pierce:1"],
-		["gun_twin:2", "gun_pierce:1", "gun_homing:1"],
-		["gun_twin:3", "gun_pierce:1", "gun_homing:1", "split_shot:1"],
-		["gun_twin:3", "gun_pierce:1", "gun_homing:1", "split_shot:2", "chain_blast:1"],
-		[
-			"gun_twin:3",
-			"gun_pierce:1",
-			"gun_homing:1",
-			"split_shot:3",
-			"chain_blast:2",
-			"shared_faultline:1"
-		],
+		["gun_twin:2", "gun_pierce:1"],
+		["gun_twin:3", "gun_pierce:1", "split_shot:1"],
+		["gun_twin:3", "gun_pierce:1", "split_shot:2", "chain_blast:1"],
+		["gun_twin:3", "gun_pierce:1", "split_shot:3", "chain_blast:2", "shared_faultline:1"],
 	],
 	"gun_void_fire_venom":
 	[
@@ -131,8 +124,7 @@ const TRACKS := {
 			"chain_blast:4",
 			"split_shot:3",
 			"gun_twin:3",
-			"gun_homing:1",
-			"gun_echo:1"
+			"gun_homing:1"
 		],
 	],
 	"gun_wave_fire_venom":
@@ -164,8 +156,7 @@ const TRACKS := {
 			"chain_blast:4",
 			"split_shot:3",
 			"gun_twin:3",
-			"gun_homing:1",
-			"gun_echo:1"
+			"gun_homing:1"
 		],
 	],
 	"blade_plain":
@@ -398,6 +389,8 @@ var _sb_rate := PackedInt32Array()
 var _sb_tables: Array[StarboundTable] = []
 var _consts := PackedInt32Array()
 var _sb := PackedInt32Array()
+
+var _refused_seen := {}
 
 
 func _initialize() -> void:
@@ -1011,6 +1004,16 @@ func _both(weapon: StringName, tokens: Array, hp: int) -> Dictionary:
 	}
 
 
+## The slot category of card `id` on world `w`, for the REFUSED line ("-" for a stat card or an unknown id).
+func _slot_name(w: World, id: String) -> String:
+	var idx := _item_idx(StringName(id)) if id != "s" else -1
+	return (
+		["free", "form", "pattern", "secondary", "element"][w.item_tables[idx].slot_category]
+		if idx >= 0
+		else "-"
+	)
+
+
 ## A Playground world holding `tokens` ("id:level" cards, "s:<stat>:<rarity>" stat cards), in order.
 func _world(weapon: StringName, tokens: Array) -> World:
 	var w := PlaygroundScenario.build(_repo, weapon, _biome)
@@ -1039,6 +1042,15 @@ func _world(weapon: StringName, tokens: Array) -> World:
 			ok = idx >= 0 and api.grant_now(idx, int(p[1]))
 		if not ok:
 			missing += 1
+			var key := "%s %s" % [weapon, tok]
+			if not _refused_seen.has(key):  # once per weapon and card: the loop builds many worlds
+				_refused_seen[key] = true
+				_line(
+					(
+						"REFUSED %s (%s) in a build of %d cards"
+						% [key, _slot_name(w, p[0]), tokens.size()]
+					)
+				)
 	w.set_meta(&"missing", missing)
 	w.set_meta(&"api", api)
 	return w
