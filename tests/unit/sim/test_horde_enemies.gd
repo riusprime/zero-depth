@@ -532,7 +532,7 @@ func test_every_hit_from_the_horde_has_a_readable_cause() -> void:
 	]
 	# W3-S10 (bolt push halved) changed the seeded fight; the coverage now spans 8 seeds (3-8 as before, plus 19
 	# and 20: the Swarmer lands 0 hits in 3-18 at push 0.03, 1 each in 19 and 20); the union of
-	# kinds is asserted, every per-hit cause check is unchanged)
+	# kinds is asserted, every per-hit cause check is unchanged
 	for s in [3, 4, 5, 6, 7, 8, 19, 20]:
 		var w := _horde(s)
 		var bot := FightBot.new(s)
