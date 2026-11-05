@@ -117,10 +117,11 @@ func test_a_starbound_card_wears_the_gold_frame_and_its_stacks() -> void:
 	var face := PickPanel.card_face(self, reader, code)
 	assert_eq(int(face["type"]), WorldReader.CARD_STARBOUND)
 	assert_eq(face["id"], &"starbound_rising_edge")
-	assert_eq(face["tier_text"], tr("STARBOUND_KIND"), "the kind line")
-	assert_eq(
-		face["level_text"], tr("UI_CARD_LEVEL_UP") % [2, 3], "two stacks, the third after the pick"
-	)
+	# W3-P10j: no level badge on the gold frame; the held stacks ride the kind line
+	assert_eq(face["tier_text"], "%s ×2" % tr("STARBOUND_KIND"), "the kind line, two stacks held")
+	assert_eq(face["level_text"], "", "no badge to overlap the title")
+	var first := PickPanel.card_face(self, reader, Offers.starbound_code(Starbound.ECHO_CAST))
+	assert_eq(first["tier_text"], tr("STARBOUND_KIND"), "a first stack: the plain kind line")
 	var s := PickSlot.new(0)
 	add_child_autofree(s)
 	s.show_card(face)

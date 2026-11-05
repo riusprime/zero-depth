@@ -58,7 +58,6 @@ const PATCH_DENSITY := {"low": 0.5, "medium": 0.75, "high": 1.0}
 const SB_BURSTS_MAX := 8
 const SB_JUMPS_MAX := 16
 const SB_JUMP_TICKS := 9.0
-const SB_JUMP_THICK := 0.04
 
 ## v0.8.0 AO: the shock arcs and storm strikes laid since the view began, one per arc per sync (for the tests).
 var ring_arcs_drawn := 0
@@ -73,6 +72,7 @@ var blasts := BlastLook.new()
 var _form := FormLook.new()
 var _sb_tick := -1
 var _sb_n := 0
+var _sb_pool: StarboundFx
 
 
 # --- Live wiring ----------------------------------------------------------------------------------------------
@@ -98,6 +98,8 @@ func sync(reader: WorldReader) -> void:
 	_sync_casts(reader)  # v0.6.5 WN5a: the wand's small spells where they are cast
 	_sync_volley(reader)  # v0.9.0 VX V3, V27, V33, V35
 	_sync_starbound(reader)  # v0.10.5 W3-P10b: Detonation's bursts and Arc Jump's lines (V1-V3)
+	if _sb_pool != null:
+		_sb_pool.sync(_tick)
 
 
 ## A look adds something over the v0.5 blade or dart only with an element, a cue or a damage weight.
@@ -675,25 +677,20 @@ static func sb_look(form: int) -> Dictionary:
 
 
 func _sb_burst(reader: WorldReader, at: Vector2, tick: int) -> int:
-	var look := sb_look(AttackFormLooks.BURST)
 	var t := reader.starbound_table(WorldReader.STARBOUND_DETONATION)
-	look["radius"] = float(t.get("reach_m", 2.0))
-	look = _blast_look(look, at, tick)
-	if look.is_empty():
-		return 0
+	_sb_fx().add_burst(at, tick, float(t.get("reach_m", 2.0)))
 	sb_bursts_drawn += 1
-	spawn({}, at, 0.0, {"start": float(tick), "own": CAST_OWN_M, "look": look})
 	return 1
 
 
 func _sb_jump(from: Vector2, to: Vector2, tick: int) -> void:
-	var look := sb_look(AttackFormLooks.BEAM)
-	look["thick"] = SB_JUMP_THICK
-	look["energy"] = float(look["energy"]) * 0.6
 	sb_jumps_drawn += 1
-	spawn(
-		{},
-		from,
-		(to - from).angle(),
-		{"start": float(tick), "to": to, "life": SB_JUMP_TICKS, "look": look}
-	)
+	_sb_fx().add_jump(from, to, tick)
+
+
+## W3-P10j: the Starbound ring and line pool (StarboundFx), made on first use.
+func _sb_fx() -> StarboundFx:
+	if _sb_pool == null:
+		_sb_pool = StarboundFx.new()
+		add_child(_sb_pool)
+	return _sb_pool

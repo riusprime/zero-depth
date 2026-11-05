@@ -36,6 +36,8 @@ func _process(_delta: float) -> bool:
 		return true
 	if _main != null and _main.driver != null:
 		_main.driver.world.actors.invuln[0] = 2  # shot setup: the hero can't be hurt
+		if _stage >= 7:
+			_hide_banners()
 	if _wait > 0:
 		_wait -= 1
 		return false
@@ -178,7 +180,7 @@ func _effects(w: World) -> void:
 	var t := w.tick
 	for at: Vector2 in [Vector2(3.0, -1.5), Vector2(5.5, -0.5), Vector2(4.0, 0.5)]:
 		w.starbound_fx_kind.append(Starbound.FX_BURST)
-		w.starbound_fx_tick.append(t - 2)
+		w.starbound_fx_tick.append(t - 6)
 		w.starbound_fx_from.append(me + at)
 		w.starbound_fx_to.append(me + at)
 	w.starbound_fx_kind.append(Starbound.FX_JUMP)
@@ -206,3 +208,17 @@ func _contact() -> void:
 		img.resize(960, 540, Image.INTERPOLATE_LANCZOS)
 		sheet.blit_rect(img, Rect2i(0, 0, 960, 540), Vector2i((k % 2) * 960, (k / 2) * 540))
 	sheet.save_png(ProjectSettings.globalize_path(OUT + "contact.png"))
+
+
+## W3-P10j: the first-run tips and the "New:" rule banner would cover the effects: hide them for the shot.
+func _hide_banners() -> void:
+	_main.hints.visible = false
+	var todo: Array[Node] = [_main]
+	while not todo.is_empty():
+		var n: Node = todo.pop_back()
+		todo.append_array(n.get_children())
+		if n is Label and (n as Label).text.begins_with("New"):
+			var c := n as Control
+			c.visible = false
+			if c.get_parent() is Control and (c.get_parent() as Control).get_child_count() == 1:
+				(c.get_parent() as Control).visible = false
