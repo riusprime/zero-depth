@@ -428,6 +428,7 @@ func _setup_effects() -> void:
 			layer.pack_fx = pack_fx
 			cast_fx.pack_fx = pack_fx  # VX1: the cast spark at the hand
 			element_fx.pack_fx = pack_fx  # v0.10.0 VX3: Toxic Fumes, Frost Nova and Ember Ward
+			starfall.pack_fx = pack_fx  # v0.10.5 W3-P10l: the meteor's fire and the star's spark
 			_hand_pack_to_hero_views()
 		attack_forms.vfx = layer
 		status_fx.use_vfx(layer)

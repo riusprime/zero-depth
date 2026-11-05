@@ -10,6 +10,7 @@ extends SceneTree
 
 const OUT := "res://build/shots/v0.10.5/w3p10i/"
 const SETTLE := 30
+const FALL_STEPS := 12
 const MAX_FRAMES := 4000
 const NAMES := ["constellation_pick", "starbound_pick", "starbound_hud", "effects"]
 
@@ -17,6 +18,7 @@ var _repo: ContentRepository
 var _frame := 0
 var _stage := 0
 var _wait := 0
+var _falls := 0
 var _top: Control
 var _main: Main
 
@@ -81,9 +83,17 @@ func _process(_delta: float) -> bool:
 			_main.driver.step_once()
 			_wait = 3
 		7:
-			_effects(_main.driver.world)
+			_meteor(_main.driver.world)  # W3-P10l: it falls for FALL_STEPS ticks first, so its flames trail behind it
 			_main.driver.step_once()
-			_wait = 4
+			_falls = FALL_STEPS
+		8:
+			if _falls > 0:
+				_falls -= 1
+				_stage -= 1  # (this stage again next frame, one tick further)
+			else:
+				_effects(_main.driver.world)
+				_wait = 4
+			_main.driver.step_once()
 		9:
 			_shot(NAMES[3])
 			_contact()
@@ -174,7 +184,8 @@ func _spawn_dummies(w: World) -> void:
 	w.dummy_speed = 0.0
 
 
-## Shot setup: three bursts, an Arc Jump line and a meteor part-way down, on the dummies' spots.
+## Shot setup: three bursts, an Arc Jump line, a meteor part-way down and one landing, and two of Starfall's stars
+## (one mid-fall, one reaching its target), on the dummies' spots.
 func _effects(w: World) -> void:
 	var me := w.player_pos()
 	var t := w.tick
@@ -187,9 +198,21 @@ func _effects(w: World) -> void:
 	w.starbound_fx_tick.append(w.tick - 1)
 	w.starbound_fx_from.append(me + Vector2(5.0, 2.5))
 	w.starbound_fx_to.append(me + Vector2(6.5, 1.0))
-	var e := w.emit_event(SimEvent.Kind.METEOR_LAUNCH, 0, 0, 0, me + Vector2(4.0, 2.0))
+	# W3-P10l: a meteor landing (its fire burst), a star mid-fall and one reaching its target (its sparkle)
+	var land := w.emit_event(SimEvent.Kind.METEOR_LAND, 0, 0, 0, me + Vector2(1.5, -3.0))
+	land.amount = 2500
+	land.tick = w.tick - 2
+	var star := w.emit_event(SimEvent.Kind.STAR, 0, 0, 0, me + Vector2(5.5, -0.5))
+	star.tick = w.tick - 5
+	var hit := w.emit_event(SimEvent.Kind.STAR, 0, 0, 0, me + Vector2(3.0, -1.5))
+	hit.tick = w.tick - StarfallView.STAR_TICKS
+
+
+## W3-P10l: a meteor part-way down (50 ticks into its 90 when the shot is taken).
+func _meteor(w: World) -> void:
+	var e := w.emit_event(SimEvent.Kind.METEOR_LAUNCH, 0, 0, 0, w.player_pos() + Vector2(4.0, 2.0))
 	e.amount = 90
-	e.tick = w.tick - 50
+	e.tick = w.tick - 50 + FALL_STEPS + 2
 
 
 func _shot(shot_name: String) -> void:

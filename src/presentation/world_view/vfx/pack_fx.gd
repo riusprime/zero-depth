@@ -73,6 +73,9 @@ const SHORT := {
 	&"vx2_hit_rune": [0.2, 15.0],
 	&"vx2_hit_bounce": [0.2, 15.0],
 	&"vx2_hit_crit": [0.2, 15.0],
+	# v0.10.5 W3-P10l (owner W7: nothing lingers): the meteor's landing burst and the star's hit sparkle
+	&"p10l_meteor_land": [0.4, 27.0],
+	&"p10l_star_hit": [0.2, 15.0],
 }
 
 static var _shared: PackFxDefinition
