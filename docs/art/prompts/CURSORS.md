@@ -8,8 +8,10 @@ The game needs seven states (`src/presentation/ui/game_cursor.gd`), cut to 32, 4
 one hotspot at the tip, so every pointer is drawn the same size, pointing the same way, with its tip in the same
 spot of its cell. The aim reticle's hotspot is its centre.
 
-When the sheet arrives, `scripts/art/cut_cursor_sheet.py` gets a grid mode for it (its cells are pixel boxes of the
-old v0.9.5 sheet), and the Astral cursors are swapped for it.
+When the sheet arrives, cut it with `python scripts/art/cut_cursor_sheet.py --grid` (reads
+`art_raw/sheets/cursors_astral.png`, writes `assets/ui/cursors/<state>_<32|48|64>.png` and `hotspots.json`, and a
+contact sheet to `build/shots/v0.10.5/cursors/contact.png`; `--sheet`, `--out` override). The Astral cursors are
+then swapped for it.
 
 ## Prompt
 
