@@ -51,7 +51,8 @@ func _set_hp_permille(w: World, permille: int) -> void:
 
 
 func test_the_shipped_starting_values() -> void:
-	var def: IntensityDirectorDefinition = _repo().get_def(&"intensity", &"director")
+	# A copy: get_def() hands out the cached shared resource, and the edit below must not leak to other tests.
+	var def: IntensityDirectorDefinition = _repo().get_def(&"intensity", &"director").duplicate()
 	assert_eq(def.validate(), [] as Array[ValidationIssue])
 	var t := IntensityCompiler.compile(def)
 	assert_eq([t.struggle_hp_permille, t.strong_hp_permille], [400, 700])
