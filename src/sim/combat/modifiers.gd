@@ -254,6 +254,9 @@ static func _base_vent(w: World) -> AttackSpec:
 
 ## One numeric op on `s` (SET, ADD, MAX, MIN, MUL_PERMILLE on an AttackSpec field, or the virtual `range`).
 static func numeric(s: AttackSpec, op: ModifierOp) -> void:
+	if op.field == &"halo_homing_permille":  # v0.10.5 W3-S18: spent at the end of the compile (SpecForms)
+		s.halo_homing_permille = int(op.value)
+		return
 	if op.field == &"range":  # v0.6.0 MX4: the form's own range field (SpecForms.range_of)
 		if op.op == ModifierOp.Op.MUL_PERMILLE:
 			SpecForms.scale_range(s, op.value)

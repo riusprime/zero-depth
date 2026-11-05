@@ -181,6 +181,7 @@ func run(s: AttackSpec, from: int) -> AttackSpec:
 				applied = true
 		if applied and not s.modifier_ids.has(String(m.id)):
 			s.modifier_ids.append(String(m.id))
+	SpecForms.halo_homing_reach(s)  # v0.10.5 W3-S18: Halo's back shots, with Homing
 	SpecForms.settle(s)
 	return s
 

@@ -41,6 +41,22 @@ static func scale_range(s: AttackSpec, permille: float) -> void:
 			s.reach_m = s.reach_m * permille / 1000.0
 
 
+## v0.10.5 W3-S18 (owner, 2026-11-05, playtesting: "homing + halo is weird because the back attacks are too short in
+## reach and do the curve but do not reach the enemy, we should increase the reach of halo a bit so attacks can get to
+## hit front enemies if homing is active"): a Halo bolt has half the Gun's flight (20 of 40 ticks, 5.4 m). Homing turns
+## it 102/4096 of a turn a tick (540 deg/s), a circle of radius 1.72 m, so the U-turn alone is half a circle: 20 ticks,
+## the whole flight, and the bolt dies facing the enemy. A pursuit from straight behind needs 42 ticks to reach an
+## enemy 6 m ahead (the back bolt keeps sight, HOME_M 8 m, of enemies up to about 5.5 m ahead: it starts 0.6 m behind
+## the hero and swings 1.7 m out). So with Homing, Halo's halved range is scaled by `halo_homing_permille` (2600: 20 ->
+## 52 ticks, 14 m, a margin over the 42-45 the pursuit needs). Without Homing Halo keeps its half range. Run after
+## every card, so the order of the two cards does not matter; spent once.
+static func halo_homing_reach(s: AttackSpec) -> void:
+	var p := s.halo_homing_permille
+	s.halo_homing_permille = 0
+	if p > 0 and s.homing > 0 and s.form == FORM.BOLT:
+		scale_range(s, p)
+
+
 ## `s` becomes form `to`, keeping its range (see the class doc). Its other fields (payload, pattern, hooks) stay.
 static func change_form(s: AttackSpec, to: int) -> void:
 	var from := s.form
