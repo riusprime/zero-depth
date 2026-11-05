@@ -3,7 +3,7 @@
 Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.10.0 there until the release step).
 
 ## Where we are
-(The lead keeps this block current at every push. Updated 2026-11-04, wave 3 under way.)
+(The lead keeps this block current at every push. Updated 2026-11-05, wave 3 built overnight.)
 
 - **Every PLAN step is built and merged** on `claude/v0100-cleanup` (not pushed, owner: "Don't push"): wave 1
   (S1–S15 + S5b, S15b–d), and wave 2 (O1, O2a, O2b, O3, O4, O5a/b, O6, O7a/b, O9–O18), plus D1, Q1, Q5 (measure), Q7
@@ -14,11 +14,12 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.
 - **Performance:** Q5 (views once a frame), the owner's logged run (PERF_PLAYLOG_1: 80 fps avg, 67 % engine+draw), then
   fixes for its hitches, draw calls and the nav flood; the next logged run measures them. Q5: 16 → ~23 fps at 60 enemies (busy machine,
   a clean re-measure NOT YET RUN. Further fixes ranked in evidence/PERF_Q5.md §5 (3–5).
-- **Wave 3 (2026-11-04):** the owner played v0.10.5 and sent feedback (PLAN "Wave 3", F1–F26). Merged: W3-S1,
-  W3-S2, W3-S4, W3-S5, W3-O1, W3-O2, W3-O5, W3-O11. Running (at most 2 Sonnet + 2 Opus): W3-O3 (Lance heat, two
-  stale bands), W3-O9 (shop: heal + reroll + 4 cards, then G2 layouts). Queued: W3-O4 (progression G1), W3-O6 (boss
-  border cost), W3-O7 (G2: purple bolt, Lance ball), W3-O8 (Void/Wave/Laser looks). Owner, 2026-11-04: floor 2
-  drawing the Hive Lens ~69 % (after W3-O11) is "Fine as is". The lead's `seams.sh` on the merged branch: NOT YET RUN.
+- **Wave 3 (2026-11-04 → 05):** the owner's v0.10.5 playtest (PLAN "Wave 3", F1–F35), all built and merged on
+  `claude/v0100-cleanup` (not pushed): the fixes (W3-S1…S17, W3-O1…O14), the progression set (P1/P2, P1b, P3, P5/P7,
+  P9), the card icons and frames from the owner's art, and the whole UI in the Astral style (W3-O15–O20; the dev
+  panels excepted). Two progression targets are missed and wait on the owner (OWNER_QUESTIONS W3 the late Blade,
+  W7 the loop wall); also W4–W6, W8. Seams 625/625 at 74032c53 (Verification 11); a re-run after W3-O20 follows.
+- **Next:** the owner answers the overnight questions and plays the build (the new UI, the progression changes).
 - **Then:** the release step (one PR into `main`, the full suite on GitHub).
 
 ## Owner decisions (2026-11-02)
