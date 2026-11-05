@@ -24,8 +24,10 @@ const ZONE_PER_M := {
 	&"ring_venom": 0.5,
 	&"ring_bleed": 0.55,
 }
+## v0.10.5 W3-S21: burst_frost was 0.22, sized while the scene's billboard dust kept its own 4 m whatever the scale
+## (W3-S20); at 0.45 the dust spans about the blast's diameter again.
 const BURST_PER_M := {
-	&"burst_frost": 0.22,
+	&"burst_frost": 0.45,
 	&"burst_shatter": 0.4,
 	&"burst_venom": 0.7,
 	&"burst_bleed": 0.7,
@@ -57,12 +59,17 @@ const SHATTER_S := 0.9
 const WILDFIRE_S := 1.0
 ## A poisoned enemy pops a bubble about this often (ticks, plus up to as much again).
 const BUBBLE_TICKS := 70.0
-## A body's flames per metre of its height, its mist per metre of its radius.
+## A body's flames per metre of its height, its mist per metre of its radius. v0.10.5 W3-S21: the mist was 0.12, sized
+## while the pack's billboards ignored the scale (each mist puff drew 2.5-3 m, W3-S20); at 0.7 a 0.4 m body's cloud is
+## puffs ~0.85 m spread ~0.55 m round the feet, about twice the body across. MIST_LIFT (per unit of the mist's scale,
+## the scene's emission half-height) sets the cloud on the floor: the small puffs no longer reach above it from below.
 const FLAME_PER_M := 0.8
-const MIST_PER_M := 0.12
-## The guard orbs: how many circle the body, and their scale.
+const MIST_PER_M := 0.7
+const MIST_LIFT := 1.0
+## The guard orbs: how many circle the body, and their scale. v0.10.5 W3-S21: was 0.07 (the orb's 2 m star flare drew
+## at full size whatever the scale, W3-S20; at 0.07 it is 0.14 m); 0.25 draws a ~0.5 m gold orb.
 const ORBS := 3
-const ORB_SCALE := 0.07
+const ORB_SCALE := 0.25
 ## The element each effects kind is drawn in (the pack's effects take ElementLooks' colours).
 const KIND_ELEMENT := {
 	&"fire": &"ember",
@@ -347,13 +354,14 @@ func poison(p: Vector3, r: float, sd: int, top: float) -> bool:
 ## Frost (R30): ice mist at the feet.
 func frost(p: Vector3, r: float, sd: int) -> bool:
 	var id: StringName = FROSTS[absi(sd) % FROSTS.size()]
+	var s := maxf(r, 0.4) * MIST_PER_M
 	return (
 		status_holds.touch(
 			skey(sd, 3),
 			id,
 			&"status",
-			p + Vector3(0, 0.05, 0),
-			maxf(r, 0.4) * MIST_PER_M,
+			p + Vector3(0, 0.05 + s * MIST_LIFT, 0),
+			s,
 			kind_colors(&"frost", false)
 		)
 		!= null
