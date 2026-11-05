@@ -152,7 +152,7 @@ static func on_melee_hit(w: World, i: int, root: int, stacks: int = 1) -> void:
 	var lit := a.burn_stacks[i] == 0
 	if lit:
 		a.burn_cd[i] = m.burn_period_ticks
-	a.burn_stacks[i] = mini(a.burn_stacks[i] + stacks, m.burn_max_stacks)
+	a.burn_stacks[i] = mini(a.burn_stacks[i] + stacks, ElementLevels.burn_cap(w))
 	a.burn_t[i] = Affinities.burn_ticks(w, m.burn_duration_ticks)  # v0.9.0 RB: A1 Ember
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[0], a.ids[0], a.ids[i], a.pos(i))
 	e.root_id = root
@@ -177,7 +177,7 @@ static func tick_burns(w: World) -> void:
 			Damage.tick_dot(
 				w,
 				i,
-				m.burn_damage * a.burn_stacks[i],
+				ElementLevels.deep_dot(w, m.burn_damage * a.burn_stacks[i]),
 				a.ids[0],
 				a.ids[0],
 				EFFECT_EMBER_EDGE,

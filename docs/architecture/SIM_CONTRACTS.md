@@ -919,6 +919,7 @@ a burst; its child drawn ember). Each levels 1–5 (§8f's `CardLevels`). Everyt
 while the player moves (`World.move_intent` not zero, or dashing) the bleed ticks every `min(bleed_period,
 bleed_move_period)` ticks, else every `bleed_period`; a bleeding enemy's countdown is clamped to the moving period
 when it applies. Without the card the bleed is v0.5's exactly.
+**Deep Wounds (v0.10.5 W3-P10d).** While the run holds the Constellation (`Constellations.DEEP_WOUNDS`), a stack cap that exists is lifted (`ElementLevels.bleed_cap` 20, `poison_cap` 15, `burn_cap` 10; every stack add reads these, never `item_mods.*_max_stacks` directly; a run without the element still has none) and each bleed, venom and burn DoT tick deals x1.25 (`ElementLevels.deep_dot`, 1250 per mille, rounded half up, before `Stats.dot`). Exsanguinate's burst waits for the lifted bleed cap. Without the Constellation nothing changes.
 
 **Order fixes the shared cards needed** (WN1's known limits):
 - **Riders** (§8b) ride only on an engine something outside the wand runs: an owned item that is not a wand card
