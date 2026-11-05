@@ -1,3 +1,4 @@
+# gdlint: disable=max-file-lines
 extends SceneTree
 ## v0.10.5 W3-O4 (PLAN F18, a G1: measure, change nothing): the progression audit's numbers. Owner 2026-11-04: forms
 ## don't always beat the default, Wave/Void + Fire + Venom is huge by floor 2, power plateaus across loops, a few cards
@@ -28,8 +29,26 @@ extends SceneTree
 ## table so the cap holds. d adds the floor-5 build at loop 2 / 3 with every overlevel taken. over=0: no overlevels
 ## (the cards at their floor-5 levels, the world in loop 1: the numbers before W3-P3). over_permille=N probes another
 ## overlevel step (every category; the data unchanged). out=<name> names the file.
-## Prints lines and writes build/progression_audit/<section>.txt; copy numbers into the audit by hand.
+## v0.10.5 W3-P10h (docs/roadmap/v0.10.5/W3_W7_LOOP_POWER_G1.md T1-T3): b3's looped rows can also hold the loop-only
+## power of W3-P10 (p10=1, the default; p10=0 the W3-P3 rows as before; p10=both each track's loops 2+ both ways, the
+## same loop-1 rows and P chain up to loop 2):
+## - the Constellation pick: at each loop's start (2..), the offer the run seed `const_seed` (default 1) draws
+##   (Constellations.offer, the shipped rule), answered by the track's fixed preference (P10: the first offered id in
+##   its order); const_offer=0 takes the preference's best still offerable id instead (no draw). A Gun track's Prism
+##   adds its next element card (P10 "prism", Lv 1; it then takes overlevels like the others).
+## - the Starbound cards: a regular altar's offer holds one with the loop's chance (rewards floor.tres
+##   starbound_permille: 20 % at loop 2, 30 % from loop 3); the probe takes `sb_altars` (default 2: the floor's regular
+##   altars) offers a floor and so floor(chance x sb_altars x floors so far) Starbound picks by a floor of the loop
+##   (2 at loop 2's floor 5, 3 more at loop 3's), each in place of one of that floor's overlevel picks (the altar's),
+##   always taken, its card round robin over the track's Starbound preference (P10 "starbound"). The card the stream
+##   would draw is not modelled: the preference stands in for it.
+## The b3 summary prints each track's floor-5 power against the HP (eff single / eff crowd) at loops 2 and 3 as a % of
+## loop 1's. The W3-P10 A rules (overflow) are sim rules: the probe picks them up as they are in the tree it runs on.
+## Weak builds for T2: gun_stats_only and blade_stats_only (the default attack, the stat cards only).
+## Prints lines and writes build/<dir>/<out>.txt (dir default progression_audit); copy numbers into the audit by hand.
 ##   godot --headless --path . -s scripts/balance/progression_audit.gd -- section=a seconds=12
+##   godot --headless --path . -s scripts/balance/progression_audit.gd -- section=b part=tracks p10=both
+##     dir=balance/w3p10h out=b3_p10   (W3-P10h)
 
 const RESPAWN_TICKS := 60
 const ENDLESS := 0
@@ -222,6 +241,9 @@ const TRACKS := {
 			"riposte_chain:1"
 		],
 	],
+	# W3-P10h (T2): weak builds, no engine: the default attack and the stat cards only.
+	"gun_stats_only": [&"gun", [], [], [], [], []],
+	"blade_stats_only": [&"blade", [], [], [], [], []],
 }
 const TRACK_ORDER: Array[String] = [
 	"gun_orbs_plain",
@@ -230,7 +252,53 @@ const TRACK_ORDER: Array[String] = [
 	"blade_plain",
 	"blade_wave_no_elements",
 	"blade_wave_elements",
+	"gun_stats_only",
+	"blade_stats_only",
 ]
+## W3-P10h: each track's W3-P10 policy: "const" its Constellation preference (best first), "prism" the element card a
+## Gun run's first / second Prism adds, "starbound" its Starbound cards, round robin.
+const C_PRISM := Constellations.PRISM
+const C_TWIN := Constellations.TWIN_STAR
+const C_GLASS := Constellations.GLASS_SKY
+const C_STAR := Constellations.STARFALL
+const C_DEEP := Constellations.DEEP_WOUNDS
+const C_NOVA := Constellations.SUPERNOVA
+const C_HUNT := Constellations.HUNTERS_SKY
+const GUN_ELEMENTS_P10 := {
+	"const": [C_TWIN, C_PRISM, C_GLASS, C_DEEP, C_STAR, C_NOVA, C_HUNT],
+	"prism": ["shared_bleed:1", "storm_core:1"],
+	"starbound": [Starbound.ECHO_CAST, Starbound.DETONATION, Starbound.ARC_JUMP],
+}
+const BLADE_PLAIN_P10 := {
+	"const": [C_TWIN, C_GLASS, C_NOVA, C_STAR, C_HUNT, C_DEEP, C_PRISM],
+	"prism": [],
+	"starbound": [Starbound.FERVOUR, Starbound.RISING_EDGE, Starbound.ARC_JUMP],
+}
+const WEAK_P10 := {
+	"const": [C_GLASS, C_NOVA, C_STAR, C_HUNT, C_TWIN, C_DEEP, C_PRISM],
+	"prism": [],
+	"starbound": [Starbound.RISING_EDGE, Starbound.FERVOUR, Starbound.ARC_JUMP],
+}
+const P10 := {
+	"gun_orbs_plain":
+	{
+		"const": [C_TWIN, C_GLASS, C_NOVA, C_STAR, C_HUNT, C_PRISM, C_DEEP],
+		"prism": [],
+		"starbound": [Starbound.ARC_JUMP, Starbound.ECHO_CAST, Starbound.RISING_EDGE],
+	},
+	"gun_void_fire_venom": GUN_ELEMENTS_P10,
+	"gun_wave_fire_venom": GUN_ELEMENTS_P10,
+	"blade_plain": BLADE_PLAIN_P10,
+	"blade_wave_no_elements": BLADE_PLAIN_P10,
+	"blade_wave_elements":
+	{
+		"const": [C_DEEP, C_PRISM, C_TWIN, C_GLASS, C_STAR, C_NOVA, C_HUNT],
+		"prism": [],
+		"starbound": [Starbound.DETONATION, Starbound.ECHO_CAST, Starbound.ARC_JUMP],
+	},
+	"gun_stats_only": WEAK_P10,
+	"blade_stats_only": WEAK_P10,
+}
 
 ## Section c's floor-3 bases: [name, weapon, tokens].
 const BASES: Array = [
@@ -320,6 +388,16 @@ var _pacing: LootPacingTable
 var _over := true
 var _over_per_floor := 2
 var _loop := 1
+## W3-P10h: the p10 mode ("1", "0", "both"), the Constellation draw, the Starbound model, and the next fight's
+## Constellations (in pick order) and Starbound picks (by card).
+var _p10 := "1"
+var _const_seed := 1
+var _const_offer := true
+var _sb_altars := 2
+var _sb_rate := PackedInt32Array()
+var _sb_tables: Array[StarboundTable] = []
+var _consts := PackedInt32Array()
+var _sb := PackedInt32Array()
 
 
 func _initialize() -> void:
@@ -337,6 +415,13 @@ func _initialize() -> void:
 	if args.has("over_permille"):  # a probe of another overlevel value (the shipped data stays as it is)
 		var pm := int(args["over_permille"])
 		_pacing.overlevel_permille = PackedInt32Array([pm, pm, pm, pm, pm])
+	_p10 = String(args.get("p10", "1"))
+	_const_seed = int(args.get("const_seed", 1))
+	_const_offer = int(args.get("const_offer", 1)) != 0
+	_sb_altars = int(args.get("sb_altars", 2))
+	var rewards: RewardsDefinition = _repo.get_def(&"rewards", &"floor")
+	_sb_rate = rewards.starbound_permille
+	_sb_tables = ContentCompiler.compile_starbound(_repo)
 	var probe := PlaygroundScenario.build(_repo, &"gun", _biome)
 	_base_hp = probe.enemy_table(ActorStore.Kind.CHARGER).hp
 	var section := String(args.get("section", "all"))
@@ -352,11 +437,10 @@ func _initialize() -> void:
 	if section in ["d", "all"]:
 		_section_d(args)
 	_line("determinism: %s" % _determinism())
-	DirAccess.make_dir_recursive_absolute(
-		ProjectSettings.globalize_path("res://build/progression_audit")
-	)
+	var dir := "res://build/%s" % String(args.get("dir", "progression_audit"))  # W3-P10h
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir))
 	var out_name := String(args.get("out", section))  # W3-P3
-	var f := FileAccess.open("res://build/progression_audit/%s.txt" % out_name, FileAccess.WRITE)
+	var f := FileAccess.open("%s/%s.txt" % [dir, out_name], FileAccess.WRITE)
 	if f != null:
 		f.store_string("\n".join(_out) + "\n")
 		f.close()
@@ -500,62 +584,202 @@ func _section_b(args: Dictionary) -> void:
 		_line(
 			(
 				"track | loop | floor | cards | stats | P entry | m | crowd hp | single dps | crowd dps | clear s"
-				+ " | eff single | eff crowd | card levels"
+				+ " | eff single | eff crowd | card levels | P10 | constellations | starbound picks | missing"
 			)
 		)
+		var modes: Array = [false, true] if _p10 == "both" else ([false] if _p10 == "0" else [true])
+		var summary: Array = []
 		for name: String in TRACK_ORDER:
 			if only != "" and not (name in only.split(",")):
 				continue
 			var tr: Array = TRACKS[name]
-			var weapon: StringName = tr[0]
-			var p_entry := _fresh_p(weapon)
-			for loop in range(1, loops + 1):
-				for f in range(1, 6):
-					var toks := _loop_tokens(tr, loop, f)  # W3-P3: loop 2 on: the floor-5 cards, overlevels taken
-					var stats := _stat_tokens(loop, f)
-					toks.append_array(stats)
-					var threat := 2 * (loop - 1)
-					var cap := CatchUp.cap_at(_cu.cap_permille, _cu, f, threat) + 500 * (loop - 1)
-					var m := CatchUp.multiplier(
-						p_entry, CatchUpTable.at_floor(_cu.expected_permille, f), cap
-					)
-					var hp := _crowd_hp(f, loop, m)
-					_loop = loop if _over else 1
-					var r := _both(weapon, toks, hp)
-					_loop = 1
-					# effective: the DPS over the floor's enemy HP factor (hp / base hp), so 1.0 = today's DPS against
-					# floor 1's plain HP.
-					var factor := float(hp) / float(_base_hp)
-					_line(
-						(
-							"%s | %d | %d | %d | %d | %d | %d | %d | %.1f | %.1f | %s | %.2f | %.2f | %s"
-							% [
-								name,
-								loop,
-								f,
-								toks.size() - stats.size(),
-								stats.size(),
-								p_entry,
-								m,
-								hp,
-								r["single"],
-								r["crowd"],
-								r["clear"],
-								r["single"] / factor,
-								r["crowd"] / factor,
-								_levels_of(toks),
-							]
-						)
-					)
-					p_entry = r["p"]
+			var p_entry := _fresh_p(weapon_of(tr))
+			var l1 := {}
+			for f in range(1, 6):  # loop 1: the same rows either way (W3-P10 acts from loop 2, T3)
+				l1 = _track_row(name, 1, f, p_entry, false)
+				p_entry = l1["p"]
+			var p_l1 := p_entry
+			for p10: bool in modes:
+				p_entry = p_l1
+				var f5 := {1: l1}
+				for loop in range(2, loops + 1):
+					for f in range(1, 6):
+						var row := _track_row(name, loop, f, p_entry, p10)
+						p_entry = row["p"]
+						if f == 5:
+							f5[loop] = row
+				summary.append([name, p10, f5])
+		_b3_summary(summary, loops)
+
+
+## W3-P10h: one b3 row of track `name` (printed): floor f of loop `loop`, P `p_entry` at its entry, with (p10) the
+## track's Constellations and Starbound picks by then. {p, single, crowd, consts, sb}: eff single / crowd.
+func _track_row(name: String, loop: int, f: int, p_entry: int, p10: bool) -> Dictionary:
+	var tr: Array = TRACKS[name]
+	var weapon := weapon_of(tr)
+	var pname := name if p10 else ""
+	var toks := _loop_tokens(tr, loop, f, pname)  # W3-P3: loop 2 on: the floor-5 cards, overlevels taken
+	var stats := _stat_tokens(loop, f)
+	toks.append_array(stats)
+	var threat := 2 * (loop - 1)
+	var cap := CatchUp.cap_at(_cu.cap_permille, _cu, f, threat) + 500 * (loop - 1)
+	var m := CatchUp.multiplier(p_entry, CatchUpTable.at_floor(_cu.expected_permille, f), cap)
+	var hp := _crowd_hp(f, loop, m)
+	_loop = loop if (_over or p10) else 1
+	_consts = _consts_at(pname, loop)
+	_sb = _sb_at(pname, loop, f)
+	var r := _both(weapon, toks, hp)
+	var consts := _consts
+	var sb := _sb
+	_loop = 1
+	_consts = PackedInt32Array()
+	_sb = PackedInt32Array()
+	# effective: the DPS over the floor's enemy HP factor (hp / base hp), so 1.0 = today's DPS against floor 1's plain
+	# HP.
+	var factor := float(hp) / float(_base_hp)
+	_line(
+		(
+			"%s | %d | %d | %d | %d | %d | %d | %d | %.1f | %.1f | %s | %.2f | %.2f | %s | %s | %s | %s | %d"
+			% [
+				name,
+				loop,
+				f,
+				toks.size() - stats.size(),
+				stats.size(),
+				p_entry,
+				m,
+				hp,
+				r["single"],
+				r["crowd"],
+				r["clear"],
+				r["single"] / factor,
+				r["crowd"] / factor,
+				_levels_of(toks),
+				"on" if p10 else "off",
+				_const_names(consts),
+				_sb_text(sb),
+				r["missing"],
+			]
+		)
+	)
+	return {
+		"p": r["p"],
+		"single": r["single"] / factor,
+		"crowd": r["crowd"] / factor,
+		"consts": consts,
+		"sb": sb,
+	}
+
+
+## W3-P10h: each track's floor-5 power against the HP at loops 2.. as a % of its loop-1 floor 5 (T1: 80-120 % for a
+## strong build; T2: under 50 % at loop 2 for a weak one).
+func _b3_summary(summary: Array, loops: int) -> void:
+	_line(
+		"## b3 summary: floor-5 eff (dps / (crowd hp / base hp)) at loop L as % of loop 1 floor 5"
+	)
+	var head := "track | P10 | L1 F5 eff single | L1 F5 eff crowd"
+	for loop in range(2, loops + 1):
+		head += " | L%d F5 single %% | L%d F5 crowd %%" % [loop, loop]
+	_line(head + " | constellations | starbound picks (last row)")
+	for s: Array in summary:
+		var f5: Dictionary = s[2]
+		var base: Dictionary = f5[1]
+		var row := (
+			"%s | %s | %.2f | %.2f" % [s[0], "on" if s[1] else "off", base["single"], base["crowd"]]
+		)
+		var last: Dictionary = base
+		for loop in range(2, loops + 1):
+			var r: Dictionary = f5[loop]
+			row += (
+				" | %.0f | %.0f"
+				% [
+					100.0 * r["single"] / maxf(0.001, base["single"]),
+					100.0 * r["crowd"] / maxf(0.001, base["crowd"])
+				]
+			)
+			last = r
+		_line(row + " | %s | %s" % [_const_names(last["consts"]), _sb_text(last["sb"])])
+
+
+static func weapon_of(tr: Array) -> StringName:
+	return tr[0]
+
+
+## W3-P10h: the Constellations track `name` holds in loop `loop` (none for "" or loop 1), in pick order: each loop's
+## offer (Constellations.offer on _const_seed; const_offer=0: every id still offerable) answered by P10's preference.
+func _consts_at(name: String, loop: int) -> PackedInt32Array:
+	var held := PackedInt32Array()
+	if name == "":
+		return held
+	var pref: Array = P10[name]["const"]
+	for l in range(2, loop + 1):
+		var offer := (
+			Constellations.offer(_const_seed, l, held)
+			if _const_offer
+			else Constellations.offerable(held)
+		)
+		if offer.is_empty():
+			continue
+		var pick := offer[0]
+		for id: int in pref:
+			if offer.has(id):
+				pick = id
+				break
+		held.append(pick)
+	return held
+
+
+## W3-P10h: Starbound picks on floor f of loop `loop` (class doc: floor(chance x sb_altars x floors) so far, less the
+## floors before).
+func _sb_floor(loop: int, f: int) -> int:
+	if loop < Starbound.FROM_LOOP or _sb_rate.is_empty():
+		return 0
+	var rate := _sb_rate[mini(loop - Starbound.FROM_LOOP, _sb_rate.size() - 1)]
+	return rate * _sb_altars * f / 1000 - rate * _sb_altars * (f - 1) / 1000
+
+
+## W3-P10h: the Starbound picks by card track `name` holds at floor f of loop `loop` (round robin over its preference).
+func _sb_at(name: String, loop: int, f: int) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	if name == "":
+		return out
+	out.resize(Starbound.COUNT)
+	var pref: Array = P10[name]["starbound"]
+	var n := 0
+	for l in range(Starbound.FROM_LOOP, loop + 1):
+		for ff in range(1, (5 if l < loop else f) + 1):
+			for k in _sb_floor(l, ff):
+				out[pref[n % pref.size()]] += 1
+				n += 1
+	return out
+
+
+static func _const_names(ids: PackedInt32Array) -> String:
+	var out := PackedStringArray()
+	for id in ids:
+		out.append(String(Constellations.NAMES.get(id, "?")))
+	return "-" if out.is_empty() else "+".join(out)
+
+
+static func _sb_text(sb: PackedInt32Array) -> String:
+	if sb.is_empty():
+		return "-"
+	var names := ["arc", "edge", "echo", "fervour", "deto"]
+	var out := PackedStringArray()
+	for k in sb.size():
+		if sb[k] > 0:
+			out.append("%s x%d" % [names[k], sb[k]])
+	return "-" if out.is_empty() else " ".join(out)
 
 
 ## W3-P3: track `tr`'s cards on floor f of loop `loop`: loop 1 its floor's build; later loops its floor-5 build, with
 ## (when _over) _over_per_floor level-ups a floor from loop 2 on, round robin over the cards in build order, each up to
 ## its cap that loop (level_max + loop - 1, CardLevels.cap's rule with the shipped one overlevel a loop).
-func _loop_tokens(tr: Array, loop: int, f: int) -> Array:
+## W3-P10h: with `p10` (a track name), each loop's Prism adds the track's next P10 "prism" card at that loop's start,
+## and each floor's Starbound picks (_sb_floor) take the place of as many of its overlevel picks.
+func _loop_tokens(tr: Array, loop: int, f: int, p10: String = "") -> Array:
 	var toks: Array = (tr[mini(5, f) if loop <= 1 else 5] as Array).duplicate()
-	if loop <= 1 or not _over:
+	if loop <= 1 or (not _over and p10 == ""):
 		return toks
 	var ids: Array[StringName] = []
 	var lv: Array[int] = []
@@ -564,9 +788,22 @@ func _loop_tokens(tr: Array, loop: int, f: int) -> Array:
 		ids.append(StringName(p[0]))
 		lv.append(int(p[1]))
 	var rr := 0
+	var prisms := 0
 	for l in range(2, loop + 1):
+		if p10 != "":
+			var adds: Array = P10[p10]["prism"]
+			var held := _consts_at(p10, l).count(Constellations.PRISM)
+			while prisms < held:
+				if prisms < adds.size():
+					var p := String(adds[prisms]).split(":")
+					ids.append(StringName(p[0]))
+					lv.append(int(p[1]))
+				prisms += 1
+		if not _over:
+			continue
 		for ff in 5 if l < loop else f:
-			for k in _over_per_floor:
+			var picks := _over_per_floor - (_sb_floor(l, ff + 1) if p10 != "" else 0)
+			for k in maxi(0, picks):
 				for tries in ids.size():
 					var c := rr % ids.size()
 					rr += 1
@@ -780,6 +1017,14 @@ func _world(weapon: StringName, tokens: Array) -> World:
 	if _loop > 1:  # W3-P3: the loop and the shipped pacing table, so the cards can hold their overlevels
 		w.loop = _loop
 		w.loot_pacing = _pacing
+	if not _consts.is_empty() or not _sb.is_empty():  # W3-P10h: the loop's Constellations, then its Starbound cards
+		w.starbound_tables = _sb_tables
+		for id in _consts:
+			w.constellation_offer = PackedInt32Array([id])
+			Constellations.take(w, 0)
+		for k in _sb.size():
+			for n in _sb[k]:
+				Starbound.take(w, k)
 	var api := PlaygroundApi.new(w)
 	api.god = true
 	var missing := 0
