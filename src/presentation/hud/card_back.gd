@@ -21,7 +21,7 @@ var glow := 0.0:
 var astral := false
 var variant := 1:
 	set(v):
-		variant = clampi(v, 1, AstralCardArt.FRAMES)
+		variant = clampi(v, 1, AstralCardArt.STARBOUND)  # v0.10.5 W3-P10b: the gold Starbound back too
 		_sync_art()
 var focused := false:
 	set(v):

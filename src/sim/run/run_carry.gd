@@ -23,6 +23,7 @@ const FIELDS: Array[StringName] = [
 	&"stat_rules",  # v0.8.0 SG: the rules stat_values follow (a carry without it is from before SG)
 	&"events_seen",  # v0.9.5 AQ: the events placed this run (a carry without it: none)
 	&"constellations",  # v0.10.5 W3-P10c: the held Constellations (a carry without it: none)
+	&"starbound",  # v0.10.5 W3-P10b: the Starbound picks (a carry without it: none)
 ]
 const HP := &"hp"
 ## v0.10.5 W3-P10c: a new loop's Constellation offer (RunState.finish_floor writes it: World.constellation_offer).

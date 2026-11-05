@@ -221,6 +221,12 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			face["tier_text"] = ci.tr(RARITY_KEYS[clampi(face["tier"], 0, 3)])
 			if face["tier"] == WorldReader.RARITY_LEGENDARY:  # v0.5.5 AR: tier 3 is the ability's; legendary has its own
 				face["tier"] = CardFrames.LEGENDARY_TIER
+		WorldReader.CARD_STARBOUND:  # v0.10.5 W3-P10b: the gold Starbound card (AstralCardArt), its stacks as Lv
+			face["tier"] = 1  # its rarity line in the moon-blue (AstralCardArt.RARITY), no high-card wait
+			face["color"] = AstralCardArt.STARBOUND_BLUE
+			face["tier_text"] = ci.tr("STARBOUND_KIND")
+			face["held_level"] = int(info.get("stacks", 0))
+			face["level_text"] = level_text(ci, face["held_level"], face["held_level"] + 1)
 		WorldReader.CARD_CURSE:  # v0.6.0 CU: a trade-off curse card: its name, its upside, rare
 			face["sentence"] = CurseLook.up_sentence(ci, reader, int(info["curse"]))
 			face["color"] = CurseLook.COLOR

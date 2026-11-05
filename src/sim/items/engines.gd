@@ -44,6 +44,8 @@ const PAYOFFS: Array[StringName] = [
 	EFFECT_BLOOD_HARVEST,
 	&"heat_vent",  # Heat.EFFECT_VENT (v0.3.0 L18)
 	&"meltdown",  # Heat.EFFECT_MELTDOWN
+	&"starbound_arc_jump",  # v0.10.5 W3-P10b: Starbound.EFFECT_ARC_JUMP (a jump feeds no status)
+	&"starbound_detonation",  # Starbound.EFFECT_DETONATION
 ]
 
 ## ProcLedger codes (appended, never renumbered: they are hashed). Stack feeds use CODE_FEED + source.

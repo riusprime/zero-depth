@@ -18,6 +18,7 @@ legendary_weight_chest = 0.05
 legendary_weight_altar = 0.02
 own_weapon_card_permille = 1500
 offer_size = 3
+starbound_permille = PackedInt32Array(200, 300)
 interact_radius_m = 1.6
 shard_tier_bonus = 0.25
 shard_tier_caps_at_peak = true

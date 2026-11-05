@@ -55,6 +55,25 @@ static func queue_repeat(w: World, spec: AttackSpec, ctx: AttackContext) -> void
 		_queue(w, spec.key, w.tick + spec.repeat_delay_ticks + n * REPEAT_GAP_TICKS, c, flags, "")
 
 
+## v0.10.5 W3-P10b (Starbound B3, Echo Cast): root attack `spec` launched with `ctx` comes again `repeats` times at its
+## whole damage, the first `delay` ticks later and each next REPEAT_GAP_TICKS after the one before, from where the
+## player is then: a repeat (it never repeats) at the secondary proc, as Twin Cast's.
+static func queue_again(
+	w: World, spec: AttackSpec, ctx: AttackContext, repeats: int, delay: int
+) -> void:
+	var c := AttackContext.make(
+		ctx.origin, ctx.angle, ctx.damage, ctx.root, ctx.tags, ctx.effect_id
+	)
+	c.base_damage = ctx.base_damage
+	c.radius_m = ctx.radius_m
+	c.muzzle_m = ctx.muzzle_m
+	var flags := ModifierState.FLAG_REPEAT | ModifierState.FLAG_SECONDARY
+	if ctx.origin == w.player_pos():
+		flags |= ModifierState.FLAG_AT_PLAYER
+	for n in repeats:
+		_queue(w, spec.key, w.tick + delay + n * REPEAT_GAP_TICKS, c, flags, "")
+
+
 ## v0.8.0 BL (BLADE_AUDIT B1, Double Slash +1 repeat a level): a combo step's spec repeats `spec.repeats` times.
 ## The first repeat stays the step's own echo (ItemEffects.after_swing, World.echo_*); the others are queued here, each
 ## REPEAT_GAP_TICKS after the one before, from where the player is then, at repeat_damage_permille of `dmg`, as the

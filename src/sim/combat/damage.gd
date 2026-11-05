@@ -81,7 +81,9 @@ static func hit(
 		or effect_id == SimEvent.EFFECT_FROST_SHARD
 		or effect_id == SimEvent.EFFECT_PAIR_BURST
 		or effect_id == SimEvent.EFFECT_STAR
-	)  # v0.9.5 EE3: a pair burst is already scaled
+		or effect_id == Starbound.EFFECT_ARC_JUMP
+		or effect_id == Starbound.EFFECT_DETONATION
+	)  # v0.9.5 EE3: a pair burst is already scaled; v0.10.5 W3-P10b/e: so are a Starbound jump and burst, a star
 	var was_frozen := a.frozen_t[target] > 0 and owner_id == a.ids[0]  # v0.9.5 EE2: Shatter breaks what was frozen
 	var was_hot := a.burn_stacks[target] > 0  # v0.9.5 EE3: Thermal Shock reads it before this hit's own statuses
 	if w.stress != null and owner_id == a.ids[0] and target != 0:  # v0.9.5 SM: a struck weak side, before crit
@@ -173,6 +175,8 @@ static func hit(
 			ElementLevelsFsf.shatter(w, target, scaled, h.tags, effect_id)  # v0.9.5 EE2: Frost Lv 3
 		if a.dead[target] == 1 and not splash:
 			Stats.overkill(w, target, scaled - got, root_id)  # v0.5.0 CP: the Overkill card
+		if not w.starbound.is_empty():  # v0.10.5 W3-P10b: Rising Edge counts a crit, Arc Jump jumps
+			Starbound.on_player_hit(w, target, scaled, h.tags, effect_id, proc_pct, root_id)
 	w.last_hit_crit = (h.tags & SimEvent.TAG_CRIT) != 0  # v0.6.5 WN1: ON_CRIT reads it (after any nested hit)
 	return got
 
@@ -271,6 +275,8 @@ static func _apply(
 			RuleCards.on_kill(w, target, tags, root_id)  # v0.10.5 O9: Adrenaline, Reflex, Scavenger
 			if w.pair_mask != 0 and a.frozen_t[target] > 0:
 				ElementPairs.on_frozen_end(w, target)  # v0.9.5 EE3: Brittle
+			if not w.starbound.is_empty():
+				Starbound.on_kill(w, target, root_id)  # v0.10.5 W3-P10b: Fervour, Detonation
 		BossTwin.fall_together(w, target, k)  # v0.9.0 NB2: its twin falls with it (its own KILL)
 	if target != 0 and not (tags & SimEvent.TAG_DOT):
 		BossTwin.on_hit(w, target, applied, owner_id)  # v0.9.0 NB2: a hit on one Warden angers the other

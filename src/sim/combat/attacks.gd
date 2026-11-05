@@ -88,6 +88,14 @@ static func _launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		and spec.repeat_delay_ticks > 0
 	):
 		ModifierRuntime.queue_repeat(w, spec, ctx)  # v0.9.5 FC9: a wisp's shot echoes like an orb
+	if (
+		ctx.depth == 0
+		and not ctx.repeat
+		and not ctx.back
+		and not w.starbound.is_empty()
+		and spec.has_tag(&"weapon")
+	):
+		Starbound.echo_cast(w, spec, ctx)  # v0.10.5 W3-P10b: Echo Cast, the Gun's shot and the Blade's steps
 	return landed
 
 

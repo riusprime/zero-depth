@@ -67,6 +67,26 @@ var meteors := PackedInt32Array()
 ## v0.10.5 W3-P10c: the loop's Constellation offer (ids; empty: none open). While it holds any, the world runs only
 ## the pick (Constellations.choose). A new loop's floor 1 gets it from the carry (RunState.finish_floor).
 var constellation_offer := PackedInt32Array()
+## v0.10.5 W3-P10b (Starbound; owner W7): the compiled Starbound cards (loadout), the picks of each (run-long,
+## RunCarry; empty until the first), the crits and kills counted since the room was last cleared (Rising Edge,
+## Fervour), and Detonation's bursts this tick (its cap). Hashed once a card was taken.
+var starbound_tables: Array[StarboundTable] = []
+var starbound := PackedInt32Array()
+var starbound_crits := 0
+var starbound_kills := 0
+var starbound_burst_tick := -1
+var starbound_bursts := 0
+## The view's recent bursts and jumps (Starbound.FX_*: kind, start tick, from, to), at most Starbound.FX_MAX, the
+## oldest dropped: presentation only, never hashed.
+var starbound_fx_kind := PackedInt32Array()
+var starbound_fx_tick := PackedInt32Array()
+var starbound_fx_from := PackedVector2Array()
+var starbound_fx_to := PackedVector2Array()
+## Detonation's bursts waiting within one kill's chain (transient within a hit: empty between hits).
+var sb_burst_pos := PackedVector2Array()
+var sb_burst_dmg := PackedInt32Array()
+var sb_burst_root := PackedInt32Array()
+var sb_draining := false
 ## Utility: blink cooldown, and the last blink (tick and start point) for the view.
 var blink_cd := 0
 var blink_tick := -1
@@ -845,6 +865,8 @@ func step(frame: InputFrame) -> void:
 	Events.advance(self)  # v0.5.0 EV: a defence held.
 	CoreTheft.advance(self)  # v0.6.0 CU: the gone carriers, staggers and steal windows, drops taken
 	Arenas.advance(self)  # v0.5.5 AR: sealed arenas (the Overrun too): the seal, the waves, the clear
+	if not starbound.is_empty():
+		Starbound.advance(self)  # v0.10.5 W3-P10b: a cleared room resets Rising Edge and Fervour
 	if lockdown != null:
 		Lockdowns.advance(self)  # v0.9.0 LK: the seal, the formations, the safety, the cap, the open
 	if shrine != null:
@@ -1468,6 +1490,8 @@ func state_hash() -> String:
 		catch_up.hash_into(h)
 	if spawner != null and spawner.intensity != null:  # v0.8.0 N5: only worlds whose spawner has the director
 		intensity.hash_into(h)
+	if not starbound.is_empty():  # v0.10.5 W3-P10b: only once a Starbound card was taken (loop 2+)
+		Starbound.hash_into(self, h)
 	if not pairs_seen.is_empty():  # v0.10.5 O15: only once a duo fired
 		h.add_ints(pairs_seen)
 	if not deep_elite_rooms.is_empty():  # v0.5.5 DS (S5): only once a Deep room brought its elite.

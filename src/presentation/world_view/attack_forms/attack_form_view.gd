@@ -53,14 +53,26 @@ const PATCH_MAX := 8
 const PATCH_DIM := 0.4
 const PATCH_DENSITY := {"low": 0.5, "medium": 0.75, "high": 1.0}
 
+## v0.10.5 W3-P10b (owner W7, "don't get crazy with visuals for explosions"): at most this many Detonation bursts (V2)
+## and Arc Jump lines (V3) are drawn a frame; a line lasts SB_JUMP_TICKS (0.15 s). The rest deal their damage undrawn.
+const SB_BURSTS_MAX := 8
+const SB_JUMPS_MAX := 16
+const SB_JUMP_TICKS := 9.0
+const SB_JUMP_THICK := 0.04
+
 ## v0.8.0 AO: the shock arcs and storm strikes laid since the view began, one per arc per sync (for the tests).
 var ring_arcs_drawn := 0
+## v0.10.5 W3-P10b: the Starbound bursts and lines drawn since the view began (the tests).
+var sb_bursts_drawn := 0
+var sb_jumps_drawn := 0
 ## v0.9.0 VX: the volley cues (muzzle sparks, Halo rings) started since the view began (the tests).
 var volley_cues := 0
 ## v0.10.5 W3-S4 (owner F8): the hook blasts' size by their damage and their per-second budget (BlastLook).
 var blasts := BlastLook.new()
 ## v0.9.0 VX V48: the Gun shot's look, read once per build.
 var _form := FormLook.new()
+var _sb_tick := -1
+var _sb_n := 0
 
 
 # --- Live wiring ----------------------------------------------------------------------------------------------
@@ -85,6 +97,7 @@ func sync(reader: WorldReader) -> void:
 	_sync_mx2_forms(reader)
 	_sync_casts(reader)  # v0.6.5 WN5a: the wand's small spells where they are cast
 	_sync_volley(reader)  # v0.9.0 VX V3, V27, V33, V35
+	_sync_starbound(reader)  # v0.10.5 W3-P10b: Detonation's bursts and Arc Jump's lines (V1-V3)
 
 
 ## A look adds something over the v0.5 blade or dart only with an element, a cue or a damage weight.
@@ -615,3 +628,72 @@ func _blast_look(look: Dictionary, pos: Vector2, tick: int) -> Dictionary:
 	out["radius"] = r * BlastLook.radius_k(w)
 	out["w"] = w
 	return out
+
+
+## v0.10.5 W3-P10b (V1-V3): the sim's new Detonation bursts, as the hook blast Chain Blast draws (its W3 size by the
+## blast budget, BlastLook) tinted moon-blue, no particles, no flash, no shake: at most SB_BURSTS_MAX a frame; and its
+## new Arc Jump jumps, each a thin moon-blue line for SB_JUMP_TICKS, at most SB_JUMPS_MAX a frame. Reads only.
+func _sync_starbound(reader: WorldReader) -> void:
+	var fx := reader.starbound_fx()
+	var kinds: PackedInt32Array = fx["kind"]
+	var ticks: PackedInt32Array = fx["tick"]
+	if kinds.is_empty():
+		return
+	if ticks[ticks.size() - 1] < _sb_tick:
+		_sb_tick = -1  # a new floor's world: its ticks start again
+		_sb_n = 0
+	var bursts := 0
+	var jumps := 0
+	var at_tick := 0
+	var last := -1
+	for k in kinds.size():
+		var t := ticks[k]
+		at_tick = at_tick + 1 if t == last else 1
+		last = t
+		if t < _sb_tick or (t == _sb_tick and at_tick <= _sb_n):
+			continue
+		var from: Vector2 = fx["from"][k]
+		if kinds[k] == WorldReader.STARBOUND_FX_BURST and bursts < SB_BURSTS_MAX:
+			bursts += _sb_burst(reader, from, t)
+		elif kinds[k] == WorldReader.STARBOUND_FX_JUMP and jumps < SB_JUMPS_MAX:
+			jumps += 1
+			_sb_jump(from, fx["to"][k], t)
+	_sb_tick = last
+	_sb_n = at_tick
+
+
+static func sb_look(form: int) -> Dictionary:
+	var look := AttackFormLooks.compose({"form": form, "radius_m": 0.0})
+	var blue := AstralCardArt.STARBOUND_BLUE
+	for key: String in ["core", "rim", "edge"]:
+		look[key] = blue
+	look["ground"] = AttackFormLooks.ground_safe(blue)
+	look["ground_edge"] = look["ground"]
+	look["particles"] = []
+	look["cues"] = []
+	return look
+
+
+func _sb_burst(reader: WorldReader, at: Vector2, tick: int) -> int:
+	var look := sb_look(AttackFormLooks.BURST)
+	var t := reader.starbound_table(WorldReader.STARBOUND_DETONATION)
+	look["radius"] = float(t.get("reach_m", 2.0))
+	look = _blast_look(look, at, tick)
+	if look.is_empty():
+		return 0
+	sb_bursts_drawn += 1
+	spawn({}, at, 0.0, {"start": float(tick), "own": CAST_OWN_M, "look": look})
+	return 1
+
+
+func _sb_jump(from: Vector2, to: Vector2, tick: int) -> void:
+	var look := sb_look(AttackFormLooks.BEAM)
+	look["thick"] = SB_JUMP_THICK
+	look["energy"] = float(look["energy"]) * 0.6
+	sb_jumps_drawn += 1
+	spawn(
+		{},
+		from,
+		(to - from).angle(),
+		{"start": float(tick), "to": to, "life": SB_JUMP_TICKS, "look": look}
+	)
