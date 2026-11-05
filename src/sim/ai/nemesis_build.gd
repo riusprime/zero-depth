@@ -121,7 +121,7 @@ static func pick_cards(w: World, n: int) -> Array[PackedInt32Array]:
 		if w.item_tables[code].retired:
 			continue
 		held.append(
-			PackedInt32Array([code, CardLevels.level(w, code), w.item_tables[code].rarity, s])
+			PackedInt32Array([code, CardLevels.base_level(w, code), w.item_tables[code].rarity, s])  # W3-P3
 		)
 	for a in range(1, held.size()):  # an insertion sort: stable, no comparator
 		var k := a

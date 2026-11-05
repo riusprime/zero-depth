@@ -235,3 +235,51 @@ func test_a_held_wand_card_shows_lv_n_to_n_plus_1_and_its_pip() -> void:
 	assert_eq(PickPanel.held_level(reader, card), 2, "taking it levelled the card")
 	await e.frames(2)
 	assert_eq(hud.build_hud.pip_level_text(Array(w.mod_slots).find(card)), "2", "its pip says 2")
+
+
+## v0.10.5 W3-P3 (overlevels): on a later loop an altar offers a held card at its own max again, its badge reads
+## "Lv N → N+1 ✦ overlevel", and taking it (number key, Enter) lifts it past its max.
+func test_a_later_loop_offers_a_held_card_past_its_max() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu(&"gun")
+	var w := e.world()
+	var reader: WorldReader = main.driver.reader
+	var hud: Hud = main.get_node("UI/Hud")
+	var panel := hud.pick_panel()
+	await e.tap(KEY_QUOTELEFT)
+	await _click(e, main, "God")  # TEST HELPER: the walk between rewards must not end the run
+	await e.tap(KEY_QUOTELEFT)
+	w.loop = 2  # TEST HELPER (labelled, as test_e2e_nemesis.gd): the run's second loop, so the caps are one higher
+	var found := await _find_wand_offer(e, w, reader, panel)
+	var r: int = found[0]
+	var k: int = found[1]
+	assert_gte(r, 0, "an altar offers a wand card")
+	if r < 0:
+		return
+	var card := w.rewards.offer_of(r)[k]
+	var own := CardLevels.max_level(w, card)
+	gut.p("reward %d offers %s (its own max Lv %d)" % [r, reader.card_info(card)["id"], own])
+	await e.tap(KEY_ESCAPE)
+	await e.frames(3)
+	await e.tap(KEY_QUOTELEFT)
+	await e.frames(2)
+	await _grant(e, main, card)
+	await e.tap(KEY_QUOTELEFT)
+	await e.frames(2)
+	CardLevels.set_level(w, card, own)  # TEST HELPER (labelled): the card at its own max, as loop 1 leaves it
+	assert_eq(PickPanel.held_level(reader, card), own)
+	await e.walk_to(w.rewards.pos(r), w.reward_table.interact_radius_m * 0.6)
+	await e.tap(KEY_E)
+	await e.frames(3)
+	assert_true(panel.is_open(), "the same reward again")
+	assert_eq(Array(w.rewards.offer_of(r))[k], card, "it still offers the card")
+	var cap := own + 1
+	var want := tr("UI_CARD_LEVEL_UP") % [own, cap] + " " + tr("UI_CARD_OVERLEVEL")
+	assert_eq(panel.slot(k).card.level_text(), want, "Lv %d → %d, an overlevel" % [own, cap])
+	await e.tap(KEY_1 + k)
+	await e.tap(KEY_ENTER)
+	await e.frames(4)
+	assert_false(panel.is_open(), "taken")
+	assert_eq(PickPanel.held_level(reader, card), cap, "taking it lifted the card past its max")
+	assert_eq(CardLevels.overlevels(w, card), 1)

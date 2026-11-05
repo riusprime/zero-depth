@@ -10,7 +10,8 @@ extends RefCounted
 ##   wand bonus and Heavy Hands counted (AttackRate.rate_at);
 ## - an ability card: its level now (0: new) and after (Abilities.level_after);
 ## - a wand card: its level now (0: not held) and after (CardLevels.level_after; v0.8.0 FL: the boss's altar's
-##   level-5 rule is gone, so every source takes it one level up);
+##   level-5 rule is gone, so every source takes it one level up); v0.10.5 W3-P3: and its overlevel multiplier now and
+##   after ("over_old", "over_new", per mille: CardLevels.overlevel_permille, the compile's own; 1000 below its max);
 ## - any other card (a passive mod, a trigger, a curse): no number (KIND_NONE).
 ## gain(): a stat card's shown amount, the forecast's new − old for attack speed (what the card really adds after
 ## the curve), else the card's amount (Offers.info's "amount", the card's sentence).
@@ -63,6 +64,13 @@ static func of(w: World, code: int, _reward: int = -1) -> Dictionary:
 				out["kind"] = KIND_LEVEL
 				out["old"] = held
 				out["new"] = CardLevels.level_after(w, code)
+				# v0.10.5 W3-P3: past its max a level is an overlevel: its main number now and after, per mille (the
+				# compile's own CardLevels.overlevel_permille)
+				var base := CardLevels.max_level(w, code)
+				out["over_old"] = CardLevels.overlevel_permille(w, code, maxi(0, held - base))
+				out["over_new"] = CardLevels.overlevel_permille(
+					w, code, maxi(0, int(out["new"]) - base)
+				)
 	return out
 
 

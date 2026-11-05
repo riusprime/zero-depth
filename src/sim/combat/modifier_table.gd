@@ -60,3 +60,34 @@ func at(level: int) -> ModifierTable:
 	for o in ops:
 		t.ops.append(o.at_level(level))
 	return t
+
+
+## v0.10.5 W3-P3: the card's main number is a share of the hit (a hook's child, Twin's or Halo's share:
+## ModifierOp.is_share), which its overlevels grow here; a card without one grows the weapon's damage factor instead
+## (CardLevels.weapon_overlevel_permille).
+func has_share() -> bool:
+	for o in ops:
+		if o.is_share():
+			return true
+	return false
+
+
+## v0.10.5 W3-P3 (overlevels; CardLevels.overlevel_permille): this card with each share × `permille` / 1000
+## (ModifierOp.overlevelled); itself at 1000 or below, or without a share. Compile-time only
+## (Modifiers.build_modifiers_of).
+func overlevelled(permille: int) -> ModifierTable:
+	if permille <= 1000 or not has_share():
+		return self
+	var t := ModifierTable.new()
+	t.id = id
+	t.family = family
+	t.rarity = rarity
+	t.target = target.duplicate()
+	t.stage = stage
+	t.overlay = overlay
+	t.order_kind = order_kind
+	t.alt_target = alt_target.duplicate()
+	for o in ops:
+		var g := o.overlevelled(permille)
+		t.ops.append(g if g != null else o)
+	return t

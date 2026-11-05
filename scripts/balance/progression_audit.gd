@@ -22,6 +22,12 @@ extends SceneTree
 ## - c: each card's marginal gain (Lv 1, and at its floor-3 ceiling) added to four typical floor-3 builds, single and
 ##   crowd, next to the change in the catch-up's P (what the hidden scaling sees of it).
 ## - d: the end of the staircase: the floor-5 stack plus N more stat-card floors (3 a floor) and its stats read back.
+## v0.10.5 W3-P3 (overlevels): from loop 2, b3's tracks hold their floor-5 cards (a loop never takes cards away) and
+## take `over_per_floor` level-ups a floor (default 2: an altar's and a chest's pick), round robin over the cards in
+## build order, each up to its cap that loop (level_max + loop − 1); the world is on that loop with the shipped pacing
+## table so the cap holds. d adds the floor-5 build at loop 2 / 3 with every overlevel taken. over=0: no overlevels
+## (the cards at their floor-5 levels, the world in loop 1: the numbers before W3-P3). over_permille=N probes another
+## overlevel step (every category; the data unchanged). out=<name> names the file.
 ## Prints lines and writes build/progression_audit/<section>.txt; copy numbers into the audit by hand.
 ##   godot --headless --path . -s scripts/balance/progression_audit.gd -- section=a seconds=12
 
@@ -309,6 +315,11 @@ var _out := PackedStringArray()
 var _items := {}
 var _tables: Array = []
 var _stats := {}
+## W3-P3: the shipped pacing table (overlevels), whether b3/d take overlevels, how many a floor, the fights' loop.
+var _pacing: LootPacingTable
+var _over := true
+var _over_per_floor := 2
+var _loop := 1
 
 
 func _initialize() -> void:
@@ -320,6 +331,12 @@ func _initialize() -> void:
 	_floor_hp = run_def.enemy_hp_floor_permille
 	_loop_hp = run_def.loop_enemy_hp_permille
 	_cu = ContentCompiler.compile_catch_up(_repo.get_def(&"scaling", &"catch_up"))
+	_pacing = RunContentCompiler.compile_loot_pacing(_repo.get_def(&"loot_pacing", &"pacing"))
+	_over = int(args.get("over", 1)) != 0
+	_over_per_floor = int(args.get("over_per_floor", 2))
+	if args.has("over_permille"):  # a probe of another overlevel value (the shipped data stays as it is)
+		var pm := int(args["over_permille"])
+		_pacing.overlevel_permille = PackedInt32Array([pm, pm, pm, pm, pm])
 	var probe := PlaygroundScenario.build(_repo, &"gun", _biome)
 	_base_hp = probe.enemy_table(ActorStore.Kind.CHARGER).hp
 	var section := String(args.get("section", "all"))
@@ -338,7 +355,8 @@ func _initialize() -> void:
 	DirAccess.make_dir_recursive_absolute(
 		ProjectSettings.globalize_path("res://build/progression_audit")
 	)
-	var f := FileAccess.open("res://build/progression_audit/%s.txt" % section, FileAccess.WRITE)
+	var out_name := String(args.get("out", section))  # W3-P3
+	var f := FileAccess.open("res://build/progression_audit/%s.txt" % out_name, FileAccess.WRITE)
 	if f != null:
 		f.store_string("\n".join(_out) + "\n")
 		f.close()
@@ -482,7 +500,7 @@ func _section_b(args: Dictionary) -> void:
 		_line(
 			(
 				"track | loop | floor | cards | stats | P entry | m | crowd hp | single dps | crowd dps | clear s"
-				+ " | eff single | eff crowd"
+				+ " | eff single | eff crowd | card levels"
 			)
 		)
 		for name: String in TRACK_ORDER:
@@ -493,7 +511,7 @@ func _section_b(args: Dictionary) -> void:
 			var p_entry := _fresh_p(weapon)
 			for loop in range(1, loops + 1):
 				for f in range(1, 6):
-					var toks: Array = (tr[f] as Array).duplicate()
+					var toks := _loop_tokens(tr, loop, f)  # W3-P3: loop 2 on: the floor-5 cards, overlevels taken
 					var stats := _stat_tokens(loop, f)
 					toks.append_array(stats)
 					var threat := 2 * (loop - 1)
@@ -502,18 +520,20 @@ func _section_b(args: Dictionary) -> void:
 						p_entry, CatchUpTable.at_floor(_cu.expected_permille, f), cap
 					)
 					var hp := _crowd_hp(f, loop, m)
+					_loop = loop if _over else 1
 					var r := _both(weapon, toks, hp)
+					_loop = 1
 					# effective: the DPS over the floor's enemy HP factor (hp / base hp), so 1.0 = today's DPS against
 					# floor 1's plain HP.
 					var factor := float(hp) / float(_base_hp)
 					_line(
 						(
-							"%s | %d | %d | %d | %d | %d | %d | %d | %.1f | %.1f | %s | %.2f | %.2f"
+							"%s | %d | %d | %d | %d | %d | %d | %d | %.1f | %.1f | %s | %.2f | %.2f | %s"
 							% [
 								name,
 								loop,
 								f,
-								(tr[f] as Array).size(),
+								toks.size() - stats.size(),
 								stats.size(),
 								p_entry,
 								m,
@@ -523,10 +543,49 @@ func _section_b(args: Dictionary) -> void:
 								r["clear"],
 								r["single"] / factor,
 								r["crowd"] / factor,
+								_levels_of(toks),
 							]
 						)
 					)
 					p_entry = r["p"]
+
+
+## W3-P3: track `tr`'s cards on floor f of loop `loop`: loop 1 its floor's build; later loops its floor-5 build, with
+## (when _over) _over_per_floor level-ups a floor from loop 2 on, round robin over the cards in build order, each up to
+## its cap that loop (level_max + loop - 1, CardLevels.cap's rule with the shipped one overlevel a loop).
+func _loop_tokens(tr: Array, loop: int, f: int) -> Array:
+	var toks: Array = (tr[mini(5, f) if loop <= 1 else 5] as Array).duplicate()
+	if loop <= 1 or not _over:
+		return toks
+	var ids: Array[StringName] = []
+	var lv: Array[int] = []
+	for tok: String in toks:
+		var p := tok.split(":")
+		ids.append(StringName(p[0]))
+		lv.append(int(p[1]))
+	var rr := 0
+	for l in range(2, loop + 1):
+		for ff in 5 if l < loop else f:
+			for k in _over_per_floor:
+				for tries in ids.size():
+					var c := rr % ids.size()
+					rr += 1
+					if lv[c] < _level_max(ids[c]) + (l - 1) * _pacing.overlevels_per_loop:
+						lv[c] += 1
+						break
+	var out: Array = []
+	for c in ids.size():
+		out.append("%s:%d" % [ids[c], lv[c]])
+	return out
+
+
+## W3-P3: the card levels of `toks` ("id:level"; stat cards left out), joined by "/".
+static func _levels_of(toks: Array) -> String:
+	var out := PackedStringArray()
+	for tok: String in toks:
+		if not tok.begins_with("s:"):
+			out.append(tok.split(":")[1])
+	return "/".join(out)
 
 
 ## Crowd HP on floor f of loop `loop` at catch-up m (per mille).
@@ -648,7 +707,7 @@ func _section_d(args: Dictionary) -> void:
 	_line(
 		(
 			"track | extra floors | stat cards | damage % | attack speed raw % | rate % | crit % | single dps"
-			+ " | x at floor 5"
+			+ " | x at floor 5 | W3-P3: dps with the loop's overlevels (loop 1 + extra / 5) | x at floor 5 | card levels"
 		)
 	)
 	for name: String in ["gun_void_fire_venom", "blade_wave_elements", "gun_orbs_plain"]:
@@ -667,9 +726,15 @@ func _section_d(args: Dictionary) -> void:
 			var r := _fight(w, weapon, true, ENDLESS)
 			if extra == 0:
 				first = r["dps"]
+			var ol := 1 + extra / 5  # W3-P3: the loop these extra floors reach, at its floor 5
+			var otoks := _loop_tokens(tr, ol, 5)
+			otoks.append_array(stats)
+			_loop = ol if _over else 1
+			var ro := _fight(_world(weapon, otoks), weapon, true, ENDLESS)
+			_loop = 1
 			_line(
 				(
-					"%s | %d | %d | %d | %d | %d | %d | %.1f | %.2f"
+					"%s | %d | %d | %d | %d | %d | %d | %.1f | %.2f | %.1f | %.2f | %s"
 					% [
 						name,
 						extra,
@@ -680,6 +745,9 @@ func _section_d(args: Dictionary) -> void:
 						Stats.crit_chance(w) / 10,
 						r["dps"],
 						r["dps"] / maxf(0.01, first),
+						ro["dps"],
+						ro["dps"] / maxf(0.01, first),
+						_levels_of(otoks),
 					]
 				)
 			)
@@ -709,6 +777,9 @@ func _both(weapon: StringName, tokens: Array, hp: int) -> Dictionary:
 ## A Playground world holding `tokens` ("id:level" cards, "s:<stat>:<rarity>" stat cards), in order.
 func _world(weapon: StringName, tokens: Array) -> World:
 	var w := PlaygroundScenario.build(_repo, weapon, _biome)
+	if _loop > 1:  # W3-P3: the loop and the shipped pacing table, so the cards can hold their overlevels
+		w.loop = _loop
+		w.loot_pacing = _pacing
 	var api := PlaygroundApi.new(w)
 	api.god = true
 	var missing := 0
