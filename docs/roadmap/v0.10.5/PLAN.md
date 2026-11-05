@@ -422,6 +422,10 @@ Steps (S = Sonnet, O = Opus; at most 2 + 2 at once):
   flickers" (a shot drawn a tick behind on multi-tick frames, since Q5); **W3-Q8** the same lag for the hero and
   enemies. Agents: at most 3 Sonnet + 5 Opus (owner, 2026-11-05: "increase limit on opus agents +2").
 
+- **W3-S19 (owner playtest, 2026-11-05: "wisps orbiting VFX is very bad too it also leaves like a trail of replicas of
+  the attack when you move on the spot that is pretty bad … usually there are 4-5")**: find and fix the left-behind
+  copies, and give the Wisps a small bright orb look (from the owner's packs).
+
 ### R. Release
 - Version bump, patch notes en + es, What's New, ROADMAP row + History, PROGRESS final; one PR into `main` with
   v0.10.0 (the full suite runs there).
