@@ -1536,3 +1536,33 @@ UI_FXG_SOURCE,Source,Origen
 UI_FXG_USE,Used by,Lo usa
 UI_FXG_SEEN,Pack effects drawn here: %s,Efectos del pack dibujados aquí: %s
 UI_FXG_SEEN_NONE,none (code looks only),ninguno (solo looks de código)
+STARBOUND_KIND,Starbound,Estelar
+CONSTELLATION_KIND,Constellation,Constelación
+CONST_PICK_TITLE,Choose a Constellation,Elige una constelación
+CONST_PICK_HINT,Yours for the rest of the run,Tuya para el resto de la partida
+STARBOUND_ARC_JUMP,Arc Jump,Salto de arco
+STARBOUND_ARC_JUMP_DESC,Hits jump to a nearby enemy. +1 jump per stack.,Los golpes saltan a un enemigo cercano. +1 salto por acumulación.
+STARBOUND_RISING_EDGE,Rising Edge,Filo creciente
+STARBOUND_RISING_EDGE_DESC,Crits raise your crit damage until the room is cleared.,Los críticos aumentan tu daño crítico hasta limpiar la sala.
+STARBOUND_ECHO_CAST,Echo Cast,Eco de lanzamiento
+STARBOUND_ECHO_CAST_DESC,+25 % chance to repeat an attack.,+25 % de probabilidad de repetir un ataque.
+STARBOUND_FERVOUR,Fervour,Fervor
+STARBOUND_FERVOUR_DESC,Kills raise your attack speed until the room is cleared.,Las bajas aumentan tu velocidad de ataque hasta limpiar la sala.
+STARBOUND_DETONATION,Detonation,Detonación
+STARBOUND_DETONATION_DESC,Killed enemies burst for a share of their max HP.,Los enemigos abatidos estallan con parte de su vida máxima.
+CONST_PRISM,Prism,Prisma
+CONST_PRISM_DESC,Gun: one more element slot. Blade: stacked elements weaken less.,Pistola: una ranura de elemento más. Espada: los elementos apilados se debilitan menos.
+CONST_TWIN_STAR,Twin Star,Estrella gemela
+CONST_TWIN_STAR_DESC,Overlevels count double.,Los sobreniveles cuentan doble.
+CONST_GLASS_SKY,Glass Sky,Cielo de cristal
+CONST_GLASS_SKY_DESC,"Double damage, half max HP.","Doble de daño, mitad de vida máxima."
+CONST_STARFALL,Starfall,Lluvia de estrellas
+CONST_STARFALL_DESC,Every 5th crit strikes another enemy.,Cada 5.º crítico golpea a otro enemigo.
+CONST_METEOR,Meteor,Meteoro
+CONST_METEOR_DESC,Every 5th attack calls a meteor. Starfall with Fire Lv 3.,Cada 5.º ataque invoca un meteoro. Lluvia de estrellas con Fuego Nv 3.
+CONST_DEEP_WOUNDS,Deep Wounds,Heridas profundas
+CONST_DEEP_WOUNDS_DESC,"Bleed, venom and burn stack higher and hurt more.","El sangrado, el veneno y las quemaduras se acumulan más y duelen más."
+CONST_SUPERNOVA,Supernova,Supernova
+CONST_SUPERNOVA_DESC,Starbound cards count twice.,Las cartas Estelares cuentan doble.
+CONST_HUNTERS_SKY,Hunter's Sky,Cielo del cazador
+CONST_HUNTERS_SKY_DESC,+50 % damage to elites and bosses.,+50 % de daño a élites y jefes.

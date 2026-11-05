@@ -133,7 +133,17 @@ func test_the_catalog_lists_the_content_by_pool_without_retired_cards() -> void:
 	assert_eq(
 		c.sections(&"cards"),
 		(
-			[&"gun", &"blade", &"shared", &"legendary", &"stats", &"utilities", &"passives"]
+			[
+				&"gun",
+				&"blade",
+				&"shared",
+				&"legendary",
+				&"stats",
+				&"utilities",
+				&"passives",
+				&"starbound",
+				&"constellations"
+			]
 			as Array[StringName]
 		),
 		"the pools in order (no other abilities today)"
@@ -272,3 +282,15 @@ func test_a_reader_from_another_floor_is_ignored() -> void:
 		other.step(InputFrame.new())
 		rec.observe(r2)
 	assert_false(store.is_unlocked(&"enemies", &"charger"))
+
+
+## v0.10.5 W3-P10f: the Starbound cards and Constellations are listed, with their keys.
+func test_starbound_and_constellation_entries() -> void:
+	var c := CodexCatalog.build(ContentRepository.load_all())
+	assert_eq(
+		c.section_entries(&"cards", &"constellations").size(), CodexCatalog.CONSTELLATION_IDS.size()
+	)
+	var e: Dictionary = c.entry(&"cards", &"const_prism")
+	assert_eq(e["name_key"], &"CONST_PRISM")
+	assert_eq(e["desc_key"], &"CONST_PRISM_DESC")
+	assert_eq(c.entry(&"cards", &"starbound_arc_jump")["section"], &"starbound")

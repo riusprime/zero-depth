@@ -41,6 +41,8 @@ const SECTION_KEYS := {
 	&"utilities": "UI_CODEX_SECTION_UTILITIES",
 	&"abilities": "UI_CODEX_SECTION_ABILITIES",
 	&"passives": "UI_CODEX_SECTION_PASSIVES",
+	&"starbound": "STARBOUND_KIND",  # v0.10.5 W3-P10f
+	&"constellations": "CONSTELLATION_KIND",
 	&"enemies": "UI_CODEX_TAB_ENEMIES",
 	&"bosses": "UI_CODEX_TAB_BOSSES",
 	&"final": "UI_CODEX_SECTION_FINAL",  # v0.8.0 FB1: the final boss's bodies
