@@ -179,6 +179,12 @@ void vertex(){
 				MAIN_CAM_INV_VIEW_MATRIX[1],
 				MAIN_CAM_INV_VIEW_MATRIX[2],
 				MODEL_MATRIX[3]);
+		// Zero Depth v0.10.5 W3-S20: keep the node's scale (the pack's billboard dropped it).
+		MODELVIEW_MATRIX = MODELVIEW_MATRIX * mat4(
+				vec4(length(MODEL_MATRIX[0].xyz), 0.0, 0.0, 0.0),
+				vec4(0.0, length(MODEL_MATRIX[1].xyz), 0.0, 0.0),
+				vec4(0.0, 0.0, length(MODEL_MATRIX[2].xyz), 0.0),
+				vec4(0.0, 0.0, 0.0, 1.0));
 		MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
 	}
 }
