@@ -136,7 +136,9 @@ func test_the_hero_fires_too_and_the_wisps_add_damage() -> void:
 			)
 		)
 	)
-	assert_gt(ratio, 1.2, "the orbs plus three wisps' 80 % orbs")
+	# W3-S10 (owner F33) halved the bolt push (0.06 -> 0.03 m): the target stays in the orbs' reach, so the orbs alone
+	# deal more (605 -> 925) and the wisps' share is smaller (ratio 1.221 -> 1.147). The wisps still add over 10 %.
+	assert_gt(ratio, 1.1, "the orbs plus three wisps' 80 % orbs")
 	var idle := _world([], [Vector2(4.0, 0.0)])
 	W.run(idle, 1800, 0, 0)
 	var alone := _dealt(idle, 1, 120, 1800)
