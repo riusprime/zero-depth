@@ -401,6 +401,8 @@ Steps (S = Sonnet, O = Opus; at most 2 + 2 at once):
 - **W3-O17** the in-run HUD in Astral (continuous HP bar with a medallion). **W3-O18** the menus (main, pause, options, recap, loading, credits). **W3-O19** the Build page, Codex, event panels, hub prompts and the remaining panels. **W3-S13** the owner's 8 carved card backs (4 + 4 focused) on every face-down card. Owner, 2026-11-04 night: "remake every single UI element into this new style even the main menu, all UI style components have to be remade": W3-O20 audits every Control-based screen and component left after O17–O19 and restyles it; the dev panel is the only exception (dev only).
 - **W3-O11** the Brood Mother joins floor 1's pool (Gatekeeper, Warlord, Brood Mother) at floor-1 strength; floor 2 never draws a boss the run already met; old saves keep their bosses.
 
+- **W3-P10 (owner, 2026-11-05, W7: "A + B + C but don't get crazy with visuals for explosions")** loop power: overflow past the caps (A), stackable loop-only Starbound cards (B: Arc Jump, Rising Edge, Echo Cast, Fervour, Detonation, with plain explosions), and one Constellation pick a loop (C). G1 first: [`W3_W7_LOOP_POWER_G1.md`](W3_W7_LOOP_POWER_G1.md), approved row by row before any code.
+
 ### R. Release
 - Version bump, patch notes en + es, What's New, ROADMAP row + History, PROGRESS final; one PR into `main` with
   v0.10.0 (the full suite runs there).

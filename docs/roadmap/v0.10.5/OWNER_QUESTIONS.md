@@ -105,3 +105,5 @@ down … 6 agents, 3 sonnet 3 opus at the same time". Picks made while the owner
 - **W7:** open. "loops should be fun visually and broken builds, we have to add or modify the game to get this wow
   moment at how strong you can get in loops. maybe adding some stackable cards, that make your attack jumps to a
   closer enemy, growing crit damage, attack speed, more attacks". The lead and the owner brainstorm it before any design.
+  After the brainstorm: "Ookay A + B + C but don't get crazy with visuals for explosions" (A overflow past the caps,
+  B stackable loop-only cards, C a rule-breaker pick each loop): drafted as [`W3_W7_LOOP_POWER_G1.md`](W3_W7_LOOP_POWER_G1.md) (W3-P10).
