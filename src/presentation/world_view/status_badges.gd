@@ -24,6 +24,10 @@ static var _icons := {}
 var badges := {}
 var _root: Node3D
 var _bar_y := 1.3
+## v0.10.5 W3-Q6: the row last laid out (its statuses in order, each one's count, and the right it was laid along): an
+## update that would lay out the same row writes nothing.
+var _shown_key := PackedInt32Array()
+var _shown_right := Vector3.INF
 
 
 func _init(root: Node3D, bar_y: float) -> void:
@@ -40,6 +44,14 @@ func update(stacks: Dictionary, right: Vector3) -> void:
 	var local_right := right
 	if _root.is_inside_tree():
 		local_right = (_root.global_transform.basis.inverse() * right).normalized()
+	var key := PackedInt32Array()
+	for s in on:
+		key.append(ORDER.find(s))
+		key.append(int(stacks[s]))
+	if key == _shown_key and local_right == _shown_right:
+		return
+	_shown_key = key
+	_shown_right = local_right
 	var left0 := -(on.size() - 1) * 0.5 * BADGE_M
 	for s: StringName in badges:
 		if not on.has(s):

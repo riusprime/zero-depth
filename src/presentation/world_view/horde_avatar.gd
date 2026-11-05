@@ -199,24 +199,27 @@ func setup(p_kind: int, outline_color: Color, technique: StringName = &"outline"
 	_pose()
 
 
+## v0.10.5 W3-Q6: the values straight to _apply (no Dictionary per enemy per sync).
 func sync(reader: WorldReader, i: int) -> void:
-	apply_state(
-		{
-			"tick": reader.tick(),
-			"state": reader.actor_state(i),
-			"healing": reader.actor_heal_target(i) >= 0,
-			"windup": windup_progress(reader, i),
-		}
+	_apply(
+		reader.tick(),
+		reader.actor_state(i),
+		reader.actor_heal_target(i) >= 0,
+		windup_progress(reader, i),
 	)
 
 
 ## The same as sync(), from plain values (tests drive the avatar with this); "windup" (0..1, optional) is the
 ## windup's progress.
 func apply_state(s: Dictionary) -> void:
-	var tick: int = s["tick"]
-	var state: int = s["state"]
-	_healing = bool(s.get("healing", false))
-	_tell_p = clampf(float(s.get("windup", 0.0)), 0.0, 1.0)
+	_apply(
+		int(s["tick"]), int(s["state"]), bool(s.get("healing", false)), float(s.get("windup", 0.0))
+	)
+
+
+func _apply(tick: int, state: int, healing: bool, windup: float) -> void:
+	_healing = healing
+	_tell_p = clampf(windup, 0.0, 1.0)
 	if _fresh or state != _state:
 		_state = state
 		_state_tick = tick

@@ -99,6 +99,10 @@ var _idle := {}
 var _live: Array[Dictionary] = []  # oldest first: {node, id, family, left}
 var _info := {}  # Node3D -> {anim, colors, speed, life, lights}
 var _live_n := {}  # id -> its live instances
+## v0.10.5 W3-Q6: the live instances by instance id, and how many each family has live, kept with _live, so is_live
+## and has_room (every held effect asks them every frame) read one key instead of walking every live effect.
+var _live_ids := {}
+var _family_n := {}
 var _held := false
 var _warm_nodes: Array[Dictionary] = []  # {node, left: frames}
 var _last_tick := -1
@@ -145,11 +149,7 @@ func cap_for(family: StringName) -> int:
 func live_count(family: StringName = &"") -> int:
 	if family == &"":
 		return _live.size()
-	var n := 0
-	for e in _live:
-		if e["family"] == family:
-			n += 1
-	return n
+	return int(_family_n.get(family, 0))
 
 
 ## The instances of `effect_id` the pool holds (live or idle).
@@ -201,6 +201,9 @@ func spawn(
 	info["mul"] = speed
 	_restart(node, info)
 	_live.append(entry)
+	entry["iid"] = node.get_instance_id()
+	_live_ids[entry["iid"]] = true
+	_family_n[family] = int(_family_n.get(family, 0)) + 1
 	var n_live := int(_live_n.get(effect_id, 0)) + 1
 	_live_n[effect_id] = n_live
 	if n_live > int(_peak.get(effect_id, 0)):
@@ -512,10 +515,7 @@ static func settle(node: Node3D, was: Vector3, now_at: Vector3) -> void:
 
 ## v0.10.0 lead: `node` is playing (not back in its pool, not taken over past a cap).
 func is_live(node: Node3D) -> bool:
-	for e in _live:
-		if e["node"] == node:
-			return true
-	return false
+	return node != null and _live_ids.has(node.get_instance_id())
 
 
 ## v0.10.0: the family has a free slot (a caller with a fallback look draws that instead of reusing the oldest).
@@ -534,7 +534,10 @@ func _release(node: Node3D, later := false) -> void:
 	for k in _live.size():
 		if _live[k]["node"] == node:
 			var id: StringName = _live[k]["id"]
+			var fam: StringName = _live[k]["family"]
+			_live_ids.erase(_live[k]["iid"])
 			_live.remove_at(k)
+			_family_n[fam] = int(_family_n.get(fam, 1)) - 1
 			_live_n[id] = int(_live_n.get(id, 1)) - 1
 			node.visible = false
 			var anim := (_info[node] as Dictionary)["anim"] as AnimationPlayer

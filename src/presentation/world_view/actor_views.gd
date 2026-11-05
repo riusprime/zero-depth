@@ -130,13 +130,21 @@ func sync(reader: WorldReader) -> void:
 			PerfMarks.add(&"actors.animate", t_an)
 		if fresh:
 			node.reset_physics_interpolation()
-	_drop_missing(_actors, alive)
-	bar_chunks.keep_only(alive)
-	# A removed actor's flash and glow go with it (bounded).
-	for d: Dictionary in [_flash, _tint, _flash_hold, _shown, _anim_on, _parts]:
-		for id in d.keys():
-			if not alive.has(id):
-				d.erase(id)
+	# v0.10.5 W3-Q6: every live actor has its node by now, so as many nodes as live actors means none is gone: no walk
+	# over the nodes' and the per-id state's keys on a sync where nobody died.
+	if _actors.size() != alive.size():
+		_drop_missing(_actors, alive)
+		bar_chunks.keep_only(alive)
+		# A removed actor's flash and glow go with it (bounded).
+		for d: Dictionary in [_flash, _flash_hold, _shown, _anim_on, _parts]:
+			for id in d.keys():
+				if not alive.has(id):
+					d.erase(id)
+	elif bar_chunks.trail_count() > alive.size():
+		bar_chunks.keep_only(alive)
+	for id in _tint.keys():  # (set_tint may name an id with no node: walked whenever a glow is held)
+		if not alive.has(id):
+			_tint.erase(id)
 	var live := {}
 	for i in reader.projectile_count():
 		if reader.projectile_look(i) != "":
@@ -161,10 +169,12 @@ func sync(reader: WorldReader) -> void:
 		_proj_last[id] = p
 		if fresh:
 			node.reset_physics_interpolation()
-	_pool_missing(live)
-	for id in _proj_last.keys():
-		if not live.has(id):
-			_proj_last.erase(id)
+	if _projectiles.size() != live.size():  # W3-Q6: every live shot has its node: equal sizes, none ended
+		_pool_missing(live)
+	if _proj_last.size() != live.size():
+		for id in _proj_last.keys():
+			if not live.has(id):
+				_proj_last.erase(id)
 
 
 ## v0.8.0 HV (owner O89: never skipped on screen): an enemy model animates while the camera could show it
