@@ -402,6 +402,12 @@ Steps (S = Sonnet, O = Opus; at most 2 + 2 at once):
 - **W3-O11** the Brood Mother joins floor 1's pool (Gatekeeper, Warlord, Brood Mother) at floor-1 strength; floor 2 never draws a boss the run already met; old saves keep their bosses.
 
 - **W3-P10 (owner, 2026-11-05, W7: "A + B + C but don't get crazy with visuals for explosions")** loop power: overflow past the caps (A), stackable loop-only Starbound cards (B: Arc Jump, Rising Edge, Echo Cast, Fervour, Detonation, with plain explosions), and one Constellation pick a loop (C). G1 first: [`W3_W7_LOOP_POWER_G1.md`](W3_W7_LOOP_POWER_G1.md), approved row by row before any code.
+  Approved 2026-11-05 (the G1's Q1–Q5). Six agents (owner: "go with the same 6 agents structur 3 sonnet 3 opus"):
+  W3-P10a overflow (A), W3-P10b Starbound cards (B), W3-P10c the Constellation pick + Prism, Twin Star, Glass Sky,
+  Hunter's Sky, W3-P10d Deep Wounds, W3-P10e Starfall + Meteor, W3-P10f strings, Codex and the icon prompt row.
+  **Old saves** (owner, 2026-11-05: "older saves don't matter we are in development phase nobody will play old
+  saves"): new run data needs no migration for saves made before it; a new field is listed where the snapshot asks,
+  and an old-save test the change breaks may be updated rather than worked around.
 
 ### R. Release
 - Version bump, patch notes en + es, What's New, ROADMAP row + History, PROGRESS final; one PR into `main` with
