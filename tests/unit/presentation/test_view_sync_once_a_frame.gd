@@ -181,3 +181,57 @@ func test_a_shot_is_drawn_between_the_last_two_ticks_when_a_frame_ran_several() 
 				)
 	assert_gte(id, 0, "the Gun fired")
 	assert_eq(pulses._now[id], places[5], "to the latest")
+
+
+## v0.10.5 W3-Q8: what the actor node's physics interpolation starts from: a reset sets its previous place to where
+## the node stands at that moment (seen here by a child, as the reset reaches every node under the actor's).
+class ResetProbe:
+	extends Node3D
+	var seen: Array = []
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_RESET_PHYSICS_INTERPOLATION:
+			seen.append((get_parent() as Node3D).position)
+
+
+## v0.10.5 W3-Q8 (the hero and the enemies judder under 60 fps): on a frame that ran two ticks the actor nodes were
+## interpolated from the last sync's place, a tick or more behind, then caught up the next frame. Their interpolation
+## now starts from the tick before the latest, as on a one-tick frame; a one-tick frame and a still actor are unchanged.
+func test_an_actor_is_drawn_between_the_last_two_ticks_when_a_frame_ran_several() -> void:
+	var w := World.new(3, PlayerTable.starting_values())
+	w.dummy_speed = 0.0
+	var still := w.add_dummy(Vector2(4.0, 3.0), 0.35, 500)
+	var reader := LatchedReader.new(WorldReader.new(w))
+	var views := ActorViews.new()
+	add_child_autofree(views)
+	views.set_process(false)
+	reader.settle()
+	views.sync(reader)
+	var hero := w.actors.ids[0]
+	var node := views.actor_node(hero)
+	var probe := ResetProbe.new()
+	node.add_child(probe)
+	var probe_still := ResetProbe.new()
+	views.actor_node(still).add_child(probe_still)
+	var walk := InputFrame.make(Vector2i(127, 0), 0, 300, 0, 0)
+	var places := []  # the hero's place at each tick
+	for k in 6:
+		w.step(walk)
+		reader.note()
+		places.append(SimPlane.to_3d(w.player_pos()))
+		if k == 2 or k == 3 or k == 5:  # syncs after ticks 2 and 3 (one tick apart), then after 5 (two ticks)
+			probe.seen.clear()
+			probe_still.seen.clear()
+			reader.settle()
+			views.sync(reader)
+			assert_eq(node.position, places[k], "the node stands at the latest tick")
+			if k == 3:
+				assert_eq(probe.seen, [], "a one-tick frame: from the last sync's place, as before")
+			if k == 5:
+				assert_ne(places[4], places[3], "the hero moved between the ticks")
+				assert_eq(
+					probe.seen,
+					[places[4]],
+					"a two-tick frame: the interpolation starts from the tick before the latest"
+				)
+				assert_eq(probe_still.seen, [], "a still actor is left as it is")

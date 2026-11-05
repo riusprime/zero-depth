@@ -96,6 +96,7 @@ func sync(reader: WorldReader) -> void:
 	var alive := {}
 	var hero := reader.player_pos()
 	var leans := reader.void_leans()  # v0.9.0 VP: empty unless a Void shot pulls someone
+	var latched := reader as LatchedReader  # v0.10.5 W3-Q8
 	for i in reader.actor_count():
 		var id := reader.actor_id(i)
 		alive[id] = true
@@ -116,6 +117,10 @@ func sync(reader: WorldReader) -> void:
 		var pos := SimPlane.to_3d(at)
 		for g in grounds:
 			pos.y = maxf(pos.y, g.height_at(pos))
+		if latched != null and not fresh and node.is_physics_interpolated_and_enabled():
+			var t_tb := PerfMarks.start()
+			_start_from_tick_before(node, latched.actor_pos_before(i))
+			PerfMarks.add(&"actors.tick_before", t_tb)
 		node.position = pos  # v0.10.5 Q5: written once
 		var t_up := PerfMarks.start()
 		var parts := _parts_of(node, id)
@@ -175,6 +180,24 @@ func sync(reader: WorldReader) -> void:
 		for id in _proj_last.keys():
 			if not live.has(id):
 				_proj_last.erase(id)
+
+
+## v0.10.5 W3-Q8 (the hero and the enemies judder under 60 fps): the views sync once a frame (Q5), so on a frame that
+## ran two ticks or more the physics interpolation's previous place was the last sync's, two ticks or more back: the
+## node was drawn a tick or more behind, then caught up on the next frame. Its previous place is set to the tick
+## before the latest (`before`, LatchedReader.actor_pos_before), so it is drawn between the last two ticks as on a
+## one-tick frame. Nothing when `before` is null (a one-tick frame: the last sync's place is that tick's) or is where
+## the node already stands (the ticks already made that its previous place: a still actor costs nothing).
+func _start_from_tick_before(node: Node3D, before: Variant) -> void:
+	if before == null:
+		return
+	var b := SimPlane.to_3d(before as Vector2)
+	for g in grounds:
+		b.y = maxf(b.y, g.height_at(b))
+	if node.position.is_equal_approx(b):
+		return
+	node.position = b
+	node.reset_physics_interpolation()
 
 
 ## v0.8.0 HV (owner O89: never skipped on screen): an enemy model animates while the camera could show it

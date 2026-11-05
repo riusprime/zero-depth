@@ -18,6 +18,9 @@ extends WorldReader
 ## the next frame caught up: it stuttered whenever the game ran under 60 fps. Each tick's shot places are noted, and
 ## projectile_pos_before(id) gives the place at the tick before the latest for such a frame, so the shot is drawn
 ## between the last two ticks as on a one-tick frame.
+## v0.10.5 W3-Q8: the same for the actors (the hero, the enemies, the elites, the bosses), whose nodes Godot's physics
+## interpolation moved from where the last sync put them: each tick's actor places are noted, and actor_pos_before(i)
+## gives actor i's place at the tick before the latest for such a frame (ActorViews starts the interpolation there).
 
 var _shots := 0
 var _active := {}
@@ -36,6 +39,13 @@ var _ticks := 0
 var _multi := false
 var _was := {}
 var _was_made := false
+## v0.10.5 W3-Q8: the actors (id, place) at the latest tick and the one before, and the earlier tick's places by id.
+var _a_last_ids := PackedInt32Array()
+var _a_last_pos := PackedVector2Array()
+var _a_was_ids := PackedInt32Array()
+var _a_was_pos := PackedVector2Array()
+var _a_was := {}
+var _a_was_made := false
 
 
 func _init(r: WorldReader) -> void:
@@ -61,6 +71,16 @@ func note() -> void:
 	for i in n:
 		_last_ids[i] = super.projectile_id(i)
 		_last_pos[i] = super.projectile_pos(i)
+	_a_was_ids = _a_last_ids
+	_a_was_pos = _a_last_pos
+	var m := super.actor_count()
+	_a_last_ids = PackedInt32Array()
+	_a_last_pos = PackedVector2Array()
+	_a_last_ids.resize(m)
+	_a_last_pos.resize(m)
+	for i in m:
+		_a_last_ids[i] = super.actor_id(i)
+		_a_last_pos[i] = super.actor_pos(i)
 
 
 ## At the start of each sync: the one-tick facts of the ticks noted since the last sync. A sync with no tick noted
@@ -74,6 +94,7 @@ func settle() -> void:
 	_multi = _ticks >= 2
 	_ticks = 0
 	_was_made = false
+	_a_was_made = false
 
 
 ## v0.10.5 W3-Q7: shot `id`'s place at the tick before the latest when this sync's frame ran two ticks or more (the
@@ -88,6 +109,19 @@ func projectile_pos_before(id: int) -> Variant:
 		for k in _was_ids.size():
 			_was[_was_ids[k]] = _was_pos[k]
 	return _was.get(id)
+
+
+## v0.10.5 W3-Q8: actor i's place at the tick before the latest when this sync's frame ran two ticks or more (its
+## node's interpolation starts there); null on a one-tick frame or for an actor that was not there then.
+func actor_pos_before(i: int) -> Variant:
+	if not _multi:
+		return null
+	if not _a_was_made:
+		_a_was_made = true
+		_a_was.clear()
+		for k in _a_was_ids.size():
+			_a_was[_a_was_ids[k]] = _a_was_pos[k]
+	return _a_was.get(super.actor_id(i))
 
 
 func shot_fired() -> bool:
