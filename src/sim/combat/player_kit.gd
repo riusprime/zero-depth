@@ -102,6 +102,9 @@ static func advance(w: World) -> void:
 		ItemProcs.on_swing_start(w)  # Items: Momentum.
 		Engines.on_swing_start(w)  # Engines: Bulwark's guard charges.
 		FireRhythm.on_swing(w)  # v0.8.0 MR (O91): Flurry's burst
+		Starfall.on_root_attack(
+			w, PlayerBuild.melee_damage(w, Modifiers.step(w, w.combo_step).damage)
+		)  # v0.10.5 W3-P10e: every 5th root attack calls a meteor
 	# Shooting: while held (and not swinging), a bolt every shot_period_ticks; the first one comes at once.
 	# v0.9.5 HT: the primary attack is active (every form): heat fills by firing time. v0.10.5 W3-O3: a charging Gun
 	# (the Lance, Charge) counts its firing time in GunForms.hold, so holding a charge that never fires adds nothing.
@@ -226,6 +229,7 @@ static func _fire_bolt(w: World, charge: int = 1000) -> void:
 	if lance:  # v0.9.0 AF1b: the Lance's ball grows x 1 to x 2 while its damage grows x 1 to x 11.6
 		ctx.size_permille = Lance.size_permille(spec, charge) * LanceMods.wide(w, spec) / 1000  # v0.9.5 FC4: Big Shot
 		ctx.lance_full = LanceMods.is_full(spec, charge)
+	Starfall.on_root_attack(w, dmg)  # v0.10.5 W3-P10e: every 5th root attack calls a meteor
 	Attacks.launch(w, spec, ctx)
 	if lance:
 		Lance.on_release(w, spec, charge, spec.radius_m * ctx.size_permille / 1000.0)

@@ -248,6 +248,9 @@ const ADDED_SINCE_V05 := {
 		&"dot_carry",
 		&"shot_carry",
 		&"constellations",  # v0.10.5 W3-P10: the held Constellations (an older save holds none)
+		&"starfall_crits",  # v0.10.5 W3-P10e: Starfall's counters and the meteors in the air
+		&"meteor_attacks",
+		&"meteors",
 	],
 	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
 	&"BossFlow":
