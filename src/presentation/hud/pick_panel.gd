@@ -226,7 +226,11 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			face["color"] = AstralCardArt.STARBOUND_BLUE
 			face["tier_text"] = ci.tr("STARBOUND_KIND")
 			face["held_level"] = int(info.get("stacks", 0))
-			face["level_text"] = level_text(ci, face["held_level"], face["held_level"] + 1)
+			# W3-P10j: the gold frame's inner edge is narrower than the stone card's, so an "Lv N" badge sat over the
+			# title and the corner ornaments: no badge; stacks already held read "Starbound ×N" on the rarity line.
+			face["level_text"] = ""
+			if face["held_level"] > 0:
+				face["tier_text"] = "%s ×%d" % [face["tier_text"], face["held_level"]]
 		WorldReader.CARD_CURSE:  # v0.6.0 CU: a trade-off curse card: its name, its upside, rare
 			face["sentence"] = CurseLook.up_sentence(ci, reader, int(info["curse"]))
 			face["color"] = CurseLook.COLOR
