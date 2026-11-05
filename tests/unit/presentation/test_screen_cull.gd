@@ -131,6 +131,35 @@ func test_status_effects_draw_until_wholly_off_screen() -> void:
 	assert_eq(fx.statuses_culled, 1, "wholly off screen: skipped")
 
 
+## v0.10.5 W3-Q7: an item payoff in flight (an Exsanguinate splash) is drawn until wholly off screen, its reach its
+## widest light; one past it draws nothing but still leaves its floor mark.
+func test_payoffs_draw_until_wholly_off_screen() -> void:
+	var w := World.new(3, PlayerTable.starting_values())
+	var radius := StatusVisuals.SPLASH_RADIUS_M
+	var reach := radius * StatusVisuals.SHOT_REACH_PER_M + StatusVisuals.SHOT_REACH_M
+	reach += ScreenCull.MARGIN_M
+	var reader := WorldReader.new(w)
+	var vfx: VfxLayer = add_child_autofree(VfxLayer.new())
+	var actors: ActorViews = add_child_autofree(ActorViews.new())
+	var fx: StatusVisuals = add_child_autofree(StatusVisuals.new(actors))
+	fx.use_vfx(vfx)
+	fx.cull = _cull
+	var id := w.actors.ids[0]
+	for gap: float in [0.0, reach - 0.1, reach + 5.0]:
+		var at := SimPlane.to_sim(_right_edge() + _right() * gap)
+		var e := w.emit_event(SimEvent.Kind.DAMAGE, id, id, id, at)
+		e.effect_id = SimEvent.EFFECT_EXSANGUINATE
+		e.amount = 40
+	fx.sync(reader)
+	assert_eq(fx.shot_count(), 3, "three splashes in flight")
+	vfx.begin(5.0)
+	vfx.finish()
+	assert_eq(fx.shots_drawn, 2, "on the edge and at edge + reach + margin - 0.1 m: drawn")
+	assert_eq(fx.shots_culled, 1, "wholly off screen: skipped")
+	assert_eq(vfx.marks(), 3, "the skipped one still leaves its splat on the floor")
+	assert_eq(fx.shot_count(), 3, "and stays in flight (it may come into view)")
+
+
 func test_attack_forms_draw_until_wholly_off_screen() -> void:
 	var view: AttackFormView = add_child_autofree(AttackFormView.new())
 	view.set_process(false)

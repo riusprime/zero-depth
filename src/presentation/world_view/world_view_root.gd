@@ -454,6 +454,7 @@ func _setup_effects() -> void:
 	ability_fx.forms_drawn = true
 	add_child(modifier_marks)  # v0.6.0 MX4
 	add_child(blade_forms)  # v0.6.5 WN4
+	fireballs.draw_on_sync = false  # v0.10.5 W3-Q7: drawn once a frame (draw_lights or _process), not in sync too
 	add_child(fireballs)  # v0.7.5 BF1
 	fireballs.prepare()  # v0.10.5: every look's MultiMeshes made now, not at its first shot
 	pulses.actors = actors

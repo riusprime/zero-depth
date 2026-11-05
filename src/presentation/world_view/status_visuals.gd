@@ -40,6 +40,11 @@ const FX_PREFILL := 6
 ## v0.8.0 HV: a status's reach past the actor's radius for the cull: its flames and arcs (about 1.5 m over the body)
 ## and its light (VfxLayer._light_status: 3 m range).
 const STATUS_REACH_M := 3.5
+## v0.10.5 W3-Q7: a payoff's reach past its point for the cull: a burst's widest light (VfxLayer._explosion_rest:
+## r * 3 + 2 m) and its rising smoke; a line's length and the light at its far end (StormPack.lightning: 4 m).
+const SHOT_REACH_PER_M := 3.0
+const SHOT_REACH_M := 2.5
+const SHOT_LINE_REACH_M := 4.0
 
 ## P-9: the pieces the effects layer draws instead (hidden under the new look).
 const VFX_DRAWN: Array[String] = ["embers", "drips", "crystals", "sparks"]
@@ -55,6 +60,9 @@ var cull: ScreenCull
 ## v0.8.0 HV: statuses drawn into the effects layer last frame, and skipped as off screen (tests, the perf probe).
 var statuses_drawn := 0
 var statuses_culled := 0
+## v0.10.5 W3-Q7: payoffs drawn into the effects layer last frame, and skipped as off screen (tests, the perf probe).
+var shots_drawn := 0
+var shots_culled := 0
 ## Kept for the view's life, one per look (see the class note).
 var _mats := {}
 var _box := BoxMesh.new()
@@ -461,34 +469,74 @@ func _draw_vfx(layer: VfxCore) -> void:
 			continue
 		statuses_drawn += 1
 		fx.status(ground, r, s["on"], id, float(s["top"]))
-	var keep: Array = []
+	# v0.10.5 W3-Q7: the payoffs in flight, kept in place (no new Array a frame); one wholly off screen (past its reach
+	# + ScreenCull.MARGIN_M) draws nothing but the floor mark it leaves, so the mark is there when the camera arrives
+	shots_drawn = 0
+	shots_culled = 0
+	var n := 0
 	for shot: Array in _shots:
 		var u := (fx.now() - float(shot[3])) / float(shot[4])
 		if u > 1.0:
 			continue
-		keep.append(shot)
+		_shots[n] = shot
+		n += 1
 		u = maxf(u, 0.0)
-		match shot[0]:
-			&"discharge":
-				for to: Vector3 in shot[6]:
-					fx.line(&"storm", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
-			&"jump":
-				var to: Vector3 = (shot[6] as Array)[0]
-				fx.line(&"venom", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
-			&"strike":
-				var top: Vector3 = (shot[6] as Array)[0]
-				fx.line(&"storm", top, shot[1], 1.0 - u, u * float(shot[4]), int(shot[5]))
-				fx.burst(&"storm", shot[1], shot[2], u, int(shot[5]))
-			&"shard":
-				var to: Vector3 = (shot[6] as Array)[0]
-				fx.line(&"frost", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
-			&"shatter":  # v0.10.0 VX3: the frost burst and a small ice patch
-				fx.burst(&"shatter", shot[1], shot[2], u, int(shot[5]))
-			&"wildfire":  # v0.10.0 VX3: fire_area_03 (the fire sprites' explosion without room)
-				fx.burst(&"wildfire", shot[1], shot[2], u, int(shot[5]))
-			_:
-				fx.burst(&"bleed", shot[1], shot[2], u, int(shot[5]))
-	_shots = keep
+		if cull != null and not cull.shows(shot[1], _shot_reach(shot)):
+			shots_culled += 1
+			_shot_mark(fx, shot)
+			continue
+		shots_drawn += 1
+		_draw_shot(fx, shot, u)
+	_shots.resize(n)
+
+
+## v0.10.5 W3-Q7: how far past its point a payoff can show: a line's length and the light at its far end, a burst's
+## widest light and smoke.
+static func _shot_reach(shot: Array) -> float:
+	var reach := 0.0
+	for to: Vector3 in shot[6]:
+		reach = maxf(reach, (shot[1] as Vector3).distance_to(to) + SHOT_LINE_REACH_M)
+	match shot[0]:
+		&"discharge", &"jump", &"shard":
+			return reach
+	return maxf(reach, float(shot[2]) * SHOT_REACH_PER_M + SHOT_REACH_M)
+
+
+## The floor mark an off-screen payoff leaves (the one _draw_shot's burst or line would lay).
+static func _shot_mark(fx: VfxLayer, shot: Array) -> void:
+	var sd := int(shot[5])
+	match shot[0]:
+		&"jump":
+			fx.line_mark(&"venom", (shot[6] as Array)[0], sd)
+		&"shatter", &"wildfire":
+			fx.burst_mark(shot[0], shot[1], float(shot[2]), sd)
+		&"discharge", &"strike", &"shard":
+			pass  # (storm and frost lines and the storm burst leave none)
+		_:
+			fx.burst_mark(&"bleed", shot[1], float(shot[2]), sd)
+
+
+func _draw_shot(fx: VfxLayer, shot: Array, u: float) -> void:
+	match shot[0]:
+		&"discharge":
+			for to: Vector3 in shot[6]:
+				fx.line(&"storm", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
+		&"jump":
+			var to: Vector3 = (shot[6] as Array)[0]
+			fx.line(&"venom", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
+		&"strike":
+			var top: Vector3 = (shot[6] as Array)[0]
+			fx.line(&"storm", top, shot[1], 1.0 - u, u * float(shot[4]), int(shot[5]))
+			fx.burst(&"storm", shot[1], shot[2], u, int(shot[5]))
+		&"shard":
+			var to: Vector3 = (shot[6] as Array)[0]
+			fx.line(&"frost", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
+		&"shatter":  # v0.10.0 VX3: the frost burst and a small ice patch
+			fx.burst(&"shatter", shot[1], shot[2], u, int(shot[5]))
+		&"wildfire":  # v0.10.0 VX3: fire_area_03 (the fire sprites' explosion without room)
+			fx.burst(&"wildfire", shot[1], shot[2], u, int(shot[5]))
+		_:
+			fx.burst(&"bleed", shot[1], shot[2], u, int(shot[5]))
 
 
 ## The payoffs the effects layer is drawing (tests).

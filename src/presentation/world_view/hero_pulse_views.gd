@@ -122,6 +122,7 @@ var _new_of: Array = []
 
 func sync(reader: WorldReader) -> void:
 	_before = _now
+	var latched := reader as LatchedReader  # v0.10.5 W3-Q7: the places a tick before (a frame of several ticks)
 	_now = {}
 	_drawn = {}
 	var lance := hold.active() and reader.lance_active()
@@ -143,7 +144,10 @@ func sync(reader: WorldReader) -> void:
 		_now[id] = p
 		_vel[id] = reader.projectile_vel(i)
 		_radius[id] = reader.projectile_radius(i)
-		if not _before.has(id):
+		var was: Variant = latched.projectile_pos_before(id) if latched != null else null
+		if was != null:
+			_before[id] = was  # v0.10.5 W3-Q7: drawn between the last two ticks, not from the last sync
+		elif not _before.has(id):
 			_before[id] = p  # a new shot appears where it was fired
 		if not _key.has(id):
 			_key[id] = _fresh_key()

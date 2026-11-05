@@ -12,6 +12,12 @@ extends WorldReader
 ## v0.10.5 W3-Q6: telegraph(i) is read by several views in one sync (the telegraphs, the enemy models' windups, the
 ## elites, the lobs, the bosses' cues): each actor's is worked out once per tick and handed to them all, until the
 ## next tick, note or settle (a Playground edit syncs through settle). Callers only read it.
+## v0.10.5 W3-Q7 (owner playtest, 2026-11-05: the fireball bolt "appears at some spots and flickers", "lags or
+## sticks"): the shot views draw a shot between its place at the last sync and its place now, by the frame's fraction
+## of the latest tick. A frame that ran two ticks or more put it up to a tick or more behind (a Gun bolt ~0.3 m), then
+## the next frame caught up: it stuttered whenever the game ran under 60 fps. Each tick's shot places are noted, and
+## projectile_pos_before(id) gives the place at the tick before the latest for such a frame, so the shot is drawn
+## between the last two ticks as on a one-tick frame.
 
 var _shots := 0
 var _active := {}
@@ -20,6 +26,16 @@ var _shot := false
 var _struck := {}
 var _tg := {}
 var _tg_tick := -1
+## v0.10.5 W3-Q7: the shots (id, place) at the latest tick and the one before, the ticks noted since the last sync,
+## whether this sync's frame ran two or more, and the earlier tick's places by id (made at its first ask).
+var _last_ids := PackedInt32Array()
+var _last_pos := PackedVector2Array()
+var _was_ids := PackedInt32Array()
+var _was_pos := PackedVector2Array()
+var _ticks := 0
+var _multi := false
+var _was := {}
+var _was_made := false
 
 
 func _init(r: WorldReader) -> void:
@@ -34,6 +50,17 @@ func note() -> void:
 	for i in super.actor_count():
 		if super.actor_state(i) == STATE_ACTIVE:
 			_active[super.actor_id(i)] = true
+	_ticks += 1
+	_was_ids = _last_ids
+	_was_pos = _last_pos
+	var n := super.projectile_count()
+	_last_ids = PackedInt32Array()
+	_last_pos = PackedVector2Array()
+	_last_ids.resize(n)
+	_last_pos.resize(n)
+	for i in n:
+		_last_ids[i] = super.projectile_id(i)
+		_last_pos[i] = super.projectile_pos(i)
 
 
 ## At the start of each sync: the one-tick facts of the ticks noted since the last sync. A sync with no tick noted
@@ -44,6 +71,23 @@ func settle() -> void:
 	_shots = 0
 	_struck = _active
 	_active = {}
+	_multi = _ticks >= 2
+	_ticks = 0
+	_was_made = false
+
+
+## v0.10.5 W3-Q7: shot `id`'s place at the tick before the latest when this sync's frame ran two ticks or more (the
+## shot views draw it from there); null on a one-tick frame (the last sync's place is that tick's) or for a shot that
+## was not flying then.
+func projectile_pos_before(id: int) -> Variant:
+	if not _multi:
+		return null
+	if not _was_made:
+		_was_made = true
+		_was.clear()
+		for k in _was_ids.size():
+			_was[_was_ids[k]] = _was_pos[k]
+	return _was.get(id)
 
 
 func shot_fired() -> bool:
