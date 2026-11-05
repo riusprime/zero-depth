@@ -955,7 +955,7 @@ ACH_ASCEND_5_DESC,Start a new loop 5 times.,Empieza un nuevo ciclo 5 veces.
 HUD_LOOP,Loop %d,Ciclo %d
 UI_RECAP_LOOPS,Loops cleared: %d,Ciclos superados: %d
 UI_CARD_LEVEL_UP,Lv %d → %d,Nv %d → %d
-UI_CARD_OVERLEVEL,✦ overlevel,✦ sobrenivel
+UI_CARD_OVERLEVEL,+ overlevel,+ sobrenivel
 UI_UI_SCALE,Interface size,Tamaño de la interfaz
 UI_OPT_90,90 %,90 %
 UI_OPT_110,110 %,110 %

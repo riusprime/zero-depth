@@ -238,7 +238,7 @@ func test_a_held_wand_card_shows_lv_n_to_n_plus_1_and_its_pip() -> void:
 
 
 ## v0.10.5 W3-P3 (overlevels): on a later loop an altar offers a held card at its own max again, its badge reads
-## "Lv N → N+1 ✦ overlevel", and taking it (number key, Enter) lifts it past its max.
+## "Lv N → N+1 + overlevel", and taking it (number key, Enter) lifts it past its max.
 func test_a_later_loop_offers_a_held_card_past_its_max() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
