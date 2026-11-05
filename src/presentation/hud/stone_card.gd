@@ -54,9 +54,10 @@ const TITLE_MAX_LINES := 2
 const LEVEL_SIZE := 14
 ## v0.10.5 W3-O20: an Astral card's level badge: its right edge this far in from the frame's body, its top, and the
 ## most of the body's width it may take (card px at scale 1).
-const LEVEL_INSET := 22.0
-const LEVEL_TOP := 30.0
-const LEVEL_SHARE := 0.62
+const LEVEL_INSET := 6.0
+const LEVEL_TOP := 14.0
+const LEVEL_SHARE := 0.92
+const LEVEL_FLOOR := 0.8
 const TEXT := Color("#EDE3D6")
 ## The ember glow under the tablet by tier (PickSlot.TIERS: common, rare, epic, ability, legendary).
 const UNDER := [0.18, 0.42, 0.55, 0.42, 0.8]
@@ -615,20 +616,37 @@ func _place(socket_px: float, title_top: float) -> void:
 
 ## v0.10.5 W3-O20 (lead: the loop-2 overlevel badge "Lv 3 → 4 + overlevel" overhung the card's top-right corner): an
 ## Astral card's level badge sits inside the frame's body, its right edge clear of the carved corner; a badge wider than
-## LEVEL_SHARE of the body steps its size down (to 10 px at least) until it fits.
+## LEVEL_SHARE of the body steps its size down to LEVEL_FLOOR of its size, then wraps to two right-aligned lines (as
+## the rarity line). Measured with the font itself: the Label's own minimum size lags while the card is out of the tree.
 func _place_astral_level(full: Vector2, s: float) -> void:
 	var iw := inner_width()
 	var right := (full.x + iw) * 0.5 - LEVEL_INSET * s
 	var room := iw * LEVEL_SHARE
-	var fs := maxi(10, roundi(LEVEL_SIZE * s))
-	var ls := _level.get_combined_minimum_size()
-	while ls.x > room and fs > 10:
+	var f := _level.get_theme_font("font")
+	var pad := _level_box.content_margin_left + _level_box.content_margin_right
+	var base := maxi(10, roundi(LEVEL_SIZE * s))
+	var floor_px := maxi(10, ceili(base * LEVEL_FLOOR))
+	var fs := base
+	var tw := f.get_string_size(_level.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + pad
+	while tw > room and fs > floor_px:
 		fs -= 1
-		_level.add_theme_font_size_override("font_size", fs)
-		_level.reset_size()
-		ls = _level.get_combined_minimum_size()
-	_level.size = ls
-	_level.position = Vector2(right - ls.x, LEVEL_TOP * s)
+		tw = f.get_string_size(_level.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + pad
+	_level.add_theme_font_size_override("font_size", fs)
+	var lines := 1
+	_level.autowrap_mode = TextServer.AUTOWRAP_OFF
+	if tw > room:
+		_level.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_level.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		tw = room
+		lines = 2
+	else:
+		_level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var h := (
+		f.get_height(fs) * lines + _level_box.content_margin_top + _level_box.content_margin_bottom
+	)
+	_level.custom_minimum_size = Vector2(tw, 0)
+	_level.size = Vector2(tw, h)
+	_level.position = Vector2(right - tw, LEVEL_TOP * s)
 
 
 func _scaled(sizes: Array) -> Array:
