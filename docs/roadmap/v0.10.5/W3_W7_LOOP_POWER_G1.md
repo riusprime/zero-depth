@@ -28,7 +28,8 @@ measurement.
 | # | Target | Owner |
 |---|---|---|
 | T1 | A **strong** build (the W3-P3 tracks: Gun Void stack, Blade elements, Orbs) at loop 2 floor 5 and at loop 3 floor 5 is at **80–120 %** of its loop-1 floor-5 power against the HP | |
-| T2 | A **weak** build (no engine, plain stat cards) stays under 50 % at loop 2 floor 5: loops are still a wall for a build that didn't come together (W3-P4, "A wall") | |
+| T2 | ~~A **weak** build (no engine, plain stat cards) stays under 50 % at loop 2 floor 5: loops are still a wall for a build that didn't come together (W3-P4, "A wall")~~ | no |
+|  | **T2 dropped** (owner, 2026-11-05, W9: "(a) Accept as is"): the loop systems lift every build alike, so a weak build keeps its loop-1 standing (it stays weak in absolute terms) | |
 | T3 | Loop 1 is unchanged: every loop-1 number in the goldens stays the same (all of A, B and C act from loop 2 only) | |
 
 The measure is the W3-P3 loop probe, on the same tracks and seeds, before and after. A missed target is reported and
