@@ -107,3 +107,28 @@ down … 6 agents, 3 sonnet 3 opus at the same time". Picks made while the owner
   closer enemy, growing crit damage, attack speed, more attacks". The lead and the owner brainstorm it before any design.
   After the brainstorm: "Ookay A + B + C but don't get crazy with visuals for explosions" (A overflow past the caps,
   B stackable loop-only cards, C a rule-breaker pick each loop): drafted as [`W3_W7_LOOP_POWER_G1.md`](W3_W7_LOOP_POWER_G1.md) (W3-P10).
+
+## W3-P10 loop power: the measured result (2026-11-05)
+
+The loop probe with every W3-P10 step merged (`progression_audit.gd section=b part=tracks p10=both loops=3`, one run on
+the owner's PC, determinism MATCH; raw: build/balance/w3p10h/stdout_withA.txt). Floor-5 power as % of the same
+build's loop-1 floor-5 power (single target / crowd):
+
+| Build | Loop 2 without → with | Loop 3 without → with |
+|---|---|---|
+| Gun Void, Fire + Venom | 53/69 → 107/99 | 29/45 → 99/113 |
+| Gun Wave, Fire + Venom | 62/78 → 107/121 | 26/53 → 100/132 |
+| Gun Orbs | 48/76 → 66/91 | 30/64 → 286/134 |
+| Blade plain | 30/92 → 71/105 | 12/67 → 65/112 |
+| Blade with elements | 54/98 → 66/120 | 24/81 → 39/112 |
+| Weak Gun (stat cards only) | 54/53 → 103/107 | 24/22 → 90/169 |
+| Weak Blade (stat cards only) | 50/43 → 69/100 | 22/17 → 51/111 |
+
+T1 (strong builds 80–120 %): the Gun builds meet it (Wave crowd 121–132 % a little over, Orbs single 286 % at loop 3
+an outlier); the Blade's single-target numbers miss it (39–71 %). T2 (weak builds < 50 % at loop 2): **missed**
+(69–107 %). The probe's choices are coarse (every Starbound card offered is taken, a fixed preference, one seed).
+
+| # | Question | Owner |
+|---|---|---|
+| W9 | The new systems lift every build about equally, so a weak build keeps its loop-1 standing instead of hitting a wall (it stays weak in absolute terms: its loop-1 power is a third of a strong build's). (a) accept: loops keep each build where loop 1 left it; (b) make Starbound / Constellation gains scale with the build's own engines (weak builds gain less); (c) offer Starbound cards less (e.g. 10 % / 20 %) | |
+| W10 | The Blade against one target stays at 39–71 % in loops (crowds are fine). Tune it now, or after your playtest? | |
