@@ -184,6 +184,7 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 10. **Lead seams after wave 3** (`wt-seams` at `07779914`: everything through W3-S9; W3-S10 and W3-A1 not yet in): `bash scripts/ci/seams.sh` with godot and gdtoolkit put on PATH: lint ok; Scripts 109, Tests 625, Passing Tests 624, Failing 1, Asserts 73312/73313. The failure: test_e2e_damage_soak "[3] expected to equal [0]: no orphan nodes but the live floor's idle pool entries" → W3-S11.
 
 ## Goldens changed on purpose
+11. **Lead seams after wave 3's fixes, the progression steps and the UI rework (HUD, menus, Build/Codex/events)** (`wt-seams` at `74032c53`: through W3-S16; W3-P3 and W3-S17 merged after): `bash scripts/ci/seams.sh`: lint ok; Scripts 109, Tests 625, Passing Tests 625, Asserts 74172; "check_gut_log: ok (625 passing, minimum 1)".
 - `tests/golden/fixtures/modifier_equivalence.json` (S1: the combo hit-stop 4,4,5,8 → 3,3,3,5 ticks; Blade-all now hits 139, damage 4160, kills 14)
 - `tests/golden/fixtures/modifier_equivalence.json` again (O11: the knockback and the finisher's recovery; blade_plain, gun_plain, both_plain, blade_wildfire_rider, gun_frost_core regenerated)
 - `tests/golden/fixtures/modifier_equivalence.json` again (W3-P9: crits and hits carry their fractions; blade_plain 181/4002/10 → 186/3968/11, gun_plain 449 → 445, both_plain 3716 → 3715, gun_frost_core 449 → 445, blade_wildfire_rider digest)
