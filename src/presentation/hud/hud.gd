@@ -1,3 +1,4 @@
+# gdlint: disable=max-file-lines
 class_name Hud
 extends Control
 ## The fight's HUD (PLAN v0.1.0 Step 5): health (bottom left; the ability squares bottom right), wave and enemies left
