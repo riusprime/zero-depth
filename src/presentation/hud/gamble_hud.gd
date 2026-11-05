@@ -6,6 +6,8 @@ extends Control
 ## mouse. v0.8.0 N14 (owner O72): a spent shrine says so; a failed use shows a short "It failed" line. v0.8.0 N18
 ## (owner O76: the game stops explaining): N14's odds line under the prompt (wins and chance to fail) is gone, and a
 ## spent shrine's prompt is the one word "Spent".
+## v0.10.5 W3-O20 (UI style Astral): in HudStyle.ASTRAL the "It failed" line is letter-spaced Cinzel in Astral's rose;
+## the card and the stats panel draw their own Astral look.
 
 const POOR := Color("#FF5A4D")
 ## The stats panel stays this long (s) after a win, even once you walk away.
@@ -40,6 +42,8 @@ func _init() -> void:
 	_fail.add_theme_constant_override("outline_size", 8)
 	_fail.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 	HudStyle.font_color(_fail, FAIL_COLOR)
+	if HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O20: letter-spaced Cinzel in Astral's rose
+		HudStyle.serif_label(_fail, 32, 6, AstralCardArt.POOR)
 	_fail.visible = false
 	add_child(_fail)
 	# The card rises above the player (the screen's centre): over the shrine, where you stand to use it.

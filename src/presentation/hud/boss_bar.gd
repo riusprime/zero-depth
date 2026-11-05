@@ -20,6 +20,7 @@ extends Control
 ## v0.10.5 W3-O17 (UI style Astral): in HudStyle.ASTRAL no slab: the name in letter-spaced Cinzel between two stars
 ## and fading hairlines, a small crescent over it, and the bar as one continuous fill in a hairline frame
 ## (AstralHudParts.bar) in the colour mode's enemy colour; the lines under it in Atkinson. Same reads.
+## v0.10.5 W3-O20: the lines under the bar (the phase, Invulnerable, The Fallen's window) in Cinzel, Astral's tones.
 
 const BAR := Vector2(560, 8)
 ## The bar while the boss can't be hurt: a cold steel blue, far from the HP red (and from the stagger's gold).
@@ -87,7 +88,12 @@ func _init() -> void:
 	if HudStyle.current == HudStyle.Style.ASTRAL:
 		HudStyle.serif_label(_name, 18, 5, HudStyle.A_TEXT)
 		HudStyle.serif_label(_stagger_label, 13, 3, HudStyle.A_ACCENT)
-		_sub.add_theme_color_override("font_color", HudStyle.A_DIM)
+		# v0.10.5 W3-O20: the lines under the bar in Cinzel too, in Astral's tones (no violet, no steel)
+		HudStyle.serif_label(_sub, 16, 3, HudStyle.A_DIM)
+		HudStyle.serif_label(_shield, 16, 3, HudStyle.A_ACCENT)
+		HudStyle.serif_label(_fallen, 18, 4, HudStyle.A_LINE_HI)
+		for l: Label in [_sub, _shield]:
+			l.size.y = 22
 		_name.resized.connect(queue_redraw)
 
 
@@ -209,6 +215,12 @@ func fallen_text() -> String:
 
 func boss_name() -> String:
 	return _name.text
+
+
+## v0.10.5 W3-O20: the bar's lowest line's bottom (px, in its parent; Hud stacks the phase line under it).
+func bottom() -> float:
+	var low: Label = _fallen if _fallen.text != "" else _sub
+	return position.y + low.position.y + low.get_combined_minimum_size().y
 
 
 func _draw() -> void:

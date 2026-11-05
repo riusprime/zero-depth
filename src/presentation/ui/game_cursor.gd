@@ -8,6 +8,10 @@ extends Node
 ## The textures load once per size class (32 px below 900 px of window height, 48, 64 from 1440). The hardware cursor
 ## is set only when the state or the size changes; a frame costs one hovered-control lookup.
 ## When a pad was the last device used, the cursor is hidden during a run and comes back on mouse motion.
+## v0.10.5 W3-O20 (owner 2026-11-04 night: every UI element Astral): the sprites are Astral now, drawn by
+## scripts/art/astral_cursors.py (a slim ink dart with a 1 px silver contour and a small star; the aim a thin ring with
+## four ticks and a diamond; invalid in Astral's rose) in place of the stone arrowhead; the states, sizes and hotspots
+## (hotspots.json) are the same.
 
 enum State { DEFAULT, HOVER, CLICK, DISABLED, AIM, INTERACT, INVALID }
 

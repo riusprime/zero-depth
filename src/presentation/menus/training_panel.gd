@@ -142,6 +142,7 @@ func _cycler(
 	row.add_child(l)
 	var c := OptionCycler.new(ids, keys, current)
 	c.name = n
+	c.astral = true  # v0.10.5 W3-O20: Astral's chevrons and hairline (OptionCycler), as in Options
 	c.custom_minimum_size = Vector2(300, ROW_H)
 	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	c.add_theme_font_size_override("font_size", ROW_FONT)

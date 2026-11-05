@@ -15,7 +15,8 @@ extends Control
 ## its family's colour in `ring_color`), the plate draws nothing, and the weapon's name moves onto the HP row (Hud) so
 ## the row shows the utility and the pips.
 
-const PIP := 20.0
+## v0.10.5 W3-O20: 24 (was 20), so the level (HudStyle.MIN_LABEL, 17) fits inside the diamond.
+const PIP := 24.0
 const GAP := 4.0
 ## v0.6.5 WN2: a trigger's cut between pips (px wide).
 const CUT_W := 2.0

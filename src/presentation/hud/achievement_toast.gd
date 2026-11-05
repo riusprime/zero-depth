@@ -79,7 +79,7 @@ func _init() -> void:
 	if astral:
 		HudStyle.serif_label(header, 12, 4, HudStyle.A_ACCENT)
 		HudStyle.serif_label(name_label, 20, 2, HudStyle.A_TEXT, 700)
-		desc_label.add_theme_font_size_override("font_size", 15)
+		desc_label.add_theme_font_size_override("font_size", HudStyle.MIN_LABEL)  # v0.10.5 W3-O20 (was 15)
 		desc_label.add_theme_color_override("font_color", Color(HudStyle.A_TEXT, 0.82))
 	for l: Label in [header, name_label, desc_label]:
 		l.custom_minimum_size = Vector2(TEXT_W, 0)

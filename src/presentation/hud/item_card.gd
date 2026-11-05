@@ -6,6 +6,8 @@ extends PanelContainer
 ## v0.6.1 R1: the card is a wide plaque (Plaques, PlaqueBox; v0.8.0 MU: a carved Ember stone slab with a glowing
 ## groove in the card's family colour, CardFrames.family); the name and the sentence step down in size until they
 ## fit the plaque's margins (en and es).
+## v0.10.5 W3-O20 (UI style Astral): in HudStyle.ASTRAL the name is letter-spaced Cinzel in Astral's silver-white, the
+## sentence silver-white, the caption dim; the icon keeps its colour toned toward Astral's silver (HudStyle.tone).
 
 const WIDTH := 600.0
 ## The plaque's height (px at the 1920 x 1080 base).
@@ -19,9 +21,11 @@ const GROW := [
 const ICON := 44.0
 const GAP := 12
 const PAD := 4.0
-const NAME_SIZES := [21, 20, 19, 18, 17, 16, 15]
-const DESC_SIZES := [15, 14, 13, 12]
-const CAPTION_SIZE := 13
+## v0.10.5 W3-O20: nothing under HudStyle.MIN_LABEL (17; 12 to 15 read 8 to 10 px at 720p); a longer line grows the
+## plaque (GROW) instead.
+const NAME_SIZES := [21, 20, 19, 18, 17]
+const DESC_SIZES := [18, 17]
+const CAPTION_SIZE := 17
 const FADE_S := 0.15
 const SLIDE_PX := 14.0
 
@@ -66,16 +70,20 @@ func _init() -> void:
 	text.add_child(head)
 	_name.name = "Title"
 	_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_name.add_theme_font_override("font", HudStyle.font(true))
+	_name.add_theme_font_override("font", name_font())
 	_caption.add_theme_font_override("font", HudStyle.font(false))
 	_caption.add_theme_font_size_override("font_size", CAPTION_SIZE)
-	_caption.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+	_caption.add_theme_color_override(
+		"font_color", HudStyle.pick(HudStyle.A_DIM, Color(1, 1, 1, 0.6))
+	)
 	_caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	head.add_child(_name)
 	head.add_child(_caption)
 	_desc.name = "Desc"
 	_desc.add_theme_font_override("font", HudStyle.font(false))
-	_desc.add_theme_color_override("font_color", Color(0.86, 0.88, 0.92))
+	_desc.add_theme_color_override(
+		"font_color", HudStyle.pick(HudStyle.A_TEXT, Color(0.86, 0.88, 0.92))
+	)
 	_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.add_child(_desc)
 	for l: Label in [_name, _caption, _desc]:
@@ -96,7 +104,9 @@ func show_item(
 	icon.set_item(id, c)
 	_box.set_plaque(plaque if plaque != &"" else Plaques.of_card(id))
 	_name.text = title
-	_name.add_theme_color_override("font_color", c.lerp(Color.WHITE, 0.35))
+	_name.add_theme_color_override(
+		"font_color", HudStyle.pick(HudStyle.A_TEXT, c.lerp(Color.WHITE, 0.35))
+	)
 	_desc.text = sentence
 	_caption.text = caption
 	_caption.visible = caption != ""
@@ -106,6 +116,13 @@ func show_item(
 		visible = true
 		_shown = 0.0
 		_apply()
+
+
+## v0.10.5 W3-O20: the name's face (Cinzel in ASTRAL, else Atkinson bold); the fit measures with it.
+static func name_font() -> Font:
+	if HudStyle.current == HudStyle.Style.ASTRAL:
+		return HudStyle.serif(650, 2)
+	return HudStyle.font(true)
 
 
 func hide_card() -> void:
@@ -146,7 +163,7 @@ func text_box() -> Vector2:
 ## True when the name (one line beside the caption) and the sentence fit the plaque's text box at the sizes picked.
 func text_fits() -> bool:
 	var box := text_box()
-	var bold := HudStyle.font(true)
+	var bold := name_font()
 	var regular := HudStyle.font(false)
 	var name_w := box.x - _caption_w()
 	var one_line := bold.get_string_size(_name.text, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size).x
@@ -181,7 +198,7 @@ func _fit() -> void:
 ## Picks the largest name and sentence sizes that fit the plaque's text box at its height now.
 func _fit_sizes() -> void:
 	var box := text_box()
-	var bold := HudStyle.font(true)
+	var bold := name_font()
 	var regular := HudStyle.font(false)
 	var name_w := box.x - _caption_w()
 	name_size = TextFit.fit_width(bold, _name.text, name_w, NAME_SIZES)

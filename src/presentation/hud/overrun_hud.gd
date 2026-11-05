@@ -4,6 +4,8 @@ extends VBoxContainer
 ## near the top of the screen (red "OVERRUN" in the Overrun, amber "ARENA" elsewhere) with the wave you're on and how
 ## many enemies are left; when it clears, a line saying the doors and the reward are open (the Overrun: what it paid),
 ## for a few seconds. Reads WorldReader.arenas() and overrun() only; it decides nothing.
+## v0.10.5 W3-O20 (UI style Astral): in HudStyle.ASTRAL the title is letter-spaced Cinzel over a fading hairline
+## (HudStyle.astral_banner), the Overrun in the rose warning, an arena in the muted amber.
 
 const CLEARED_SECONDS := 4.0
 const RED := Color("#FF4A5A")
@@ -27,6 +29,7 @@ func _init() -> void:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		add_child(l)
+	HudStyle.astral_banner(self, title, progress)  # v0.10.5 W3-O20
 	visible = false
 
 
@@ -56,7 +59,10 @@ func sync(reader: WorldReader) -> void:
 
 func _set_title(over: bool) -> void:
 	title.text = tr("HUD_OVERRUN" if over else "HUD_ARENA")
-	HudStyle.font_color(title, RED if over else AMBER)
+	HudStyle.font_color(
+		title,
+		HudStyle.pick(HudStyle.A_WARN, RED) if over else HudStyle.pick(HudStyle.A_HEAT, AMBER)
+	)
 
 
 func _process(delta: float) -> void:

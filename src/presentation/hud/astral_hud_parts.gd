@@ -158,19 +158,20 @@ static func medallion(ci: CanvasItem, c: Vector2, r: float, share: float) -> voi
 	)
 
 
-## A key cap centred on `c`: the binding's short name in Atkinson bold 13 in a 1 px frame on ink.
+## A key cap centred on `c`: the binding's short name in Atkinson bold at HudStyle.MIN_LABEL (v0.10.5 W3-O20: 13
+## read ~9 px at 720p) in a 1 px frame on ink.
 static func keycap(ci: CanvasItem, text: String, c: Vector2) -> void:
 	if text == "":
 		return
 	var f := HudStyle.font(true)
-	var fs := 13
-	var w := maxf(22.0, f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 12.0)
-	var r := Rect2(Vector2(roundf(c.x - w * 0.5), roundf(c.y - 10.0)), Vector2(roundf(w), 20))
+	var fs := HudStyle.MIN_LABEL
+	var w := maxf(24.0, f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 12.0)
+	var r := Rect2(Vector2(roundf(c.x - w * 0.5), roundf(c.y - 12.0)), Vector2(roundf(w), 24))
 	ci.draw_rect(r, Color(HudStyle.A_INK, 0.85))
 	_frame(ci, r, Color(HudStyle.A_METAL, 0.7))
 	ci.draw_string(
 		f,
-		Vector2(r.position.x, r.position.y + 15.0),
+		Vector2(r.position.x, r.position.y + 18.0),
 		text,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		r.size.x,
@@ -192,6 +193,7 @@ static func serif_text(
 	track := 2,
 	wght := 600
 ) -> void:
+	fs = maxi(fs, HudStyle.MIN_LABEL)  # v0.10.5 W3-O20: nothing under ~11 px at 720p
 	var f := HudStyle.serif(wght, track)
 	ci.draw_string_outline(f, base, text, align, w, fs, 4, Color(HudStyle.A_INK, 0.75))
 	ci.draw_string(f, base, text, align, w, fs, col)

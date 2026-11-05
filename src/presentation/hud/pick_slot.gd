@@ -55,7 +55,7 @@ func _init(p_index: int, p_scale: float = PICK_SCALE) -> void:
 	add_child(card)
 	_key.text = str(p_index + 1)
 	_key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_key.add_theme_font_size_override("font_size", 15)
+	_key.add_theme_font_size_override("font_size", HudStyle.MIN_LABEL)  # v0.10.5 W3-O20: 15 read ~10 px at 720p
 	_key.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_key.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_key)
@@ -204,7 +204,7 @@ func _build_curse(s: float) -> void:
 	var mark := CardMark.new(12.0)
 	mark.color = CurseLook.COLOR
 	_curse.add_child(mark)
-	_curse_text.add_theme_font_size_override("font_size", 14)
+	_curse_text.add_theme_font_size_override("font_size", HudStyle.MIN_LABEL)  # v0.10.5 W3-O20 (was 14)
 	_curse_text.add_theme_color_override("font_color", CurseLook.COLOR.lerp(Color.WHITE, 0.3))
 	_curse_text.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_curse_text.mouse_filter = Control.MOUSE_FILTER_IGNORE

@@ -3,9 +3,12 @@ extends PanelContainer
 ## v0.7.5 PG (owner N20; pick "Total + per-source"): the Playground's DPS meter on the right of the screen. DPS over the
 ## last 5 s, the average since the first hit, the total and the time, then the sources by damage with their share.
 ## Counted by DpsTally from the event log; Reset starts again. Never takes the mouse.
+## v0.10.5 W3-O20 (UI style Astral; the training room is player-facing): HudStyle's Astral side panel (ink, a contour
+## and an inner contour, the accent as a short line on top), the title in letter-spaced Cinzel, the DPS in Cinzel, the
+## lines in Atkinson (HudStyle.MIN_LABEL and up) in Astral's silver-white and grey.
 
 const ROWS := 10
-const WIDTH := 300
+const WIDTH := 340
 
 var tally := DpsTally.new()
 ## A source's name key by its effect id (the cards', abilities' and engines' names; the app layer fills it).
@@ -21,28 +24,35 @@ func _init() -> void:
 	set_anchors_preset(Control.PRESET_CENTER_RIGHT)
 	custom_minimum_size = Vector2(WIDTH, 0)
 	position = Vector2(-WIDTH - 16, -120)
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color(0.05, 0.06, 0.09, 0.78)
-	bg.set_corner_radius_all(6)
-	bg.set_content_margin_all(10)
-	add_theme_stylebox_override("panel", bg)
+	add_theme_stylebox_override(
+		"panel", HudStyle.side_panel_box(Vector2(18, 14), HudStyle.A_ACCENT)
+	)
 	var box := VBoxContainer.new()
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(box)
 	var title := Label.new()
 	title.text = "UI_PG_DPS_TITLE"
-	title.add_theme_color_override("font_color", Color(0.7, 0.85, 1.0))
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	HudStyle.serif_label(title, 18, 4, HudStyle.A_TEXT)
 	box.add_child(title)
 	_recent = _label(box, "Recent", 30)
-	_summary = _label(box, "Summary", 15)
-	_sources = _label(box, "Sources", 14)
+	HudStyle.serif_label(_recent, 24, 1, HudStyle.A_LINE_HI)  # fits "0 DPS (ÚLTIMOS 5 S)" in WIDTH
+	_recent.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_summary = _label(box, "Summary", 16)
+	_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_sources = _label(box, "Sources", 16)
+	_sources.add_theme_color_override("font_color", HudStyle.A_DIM)
+
+
+func _draw() -> void:
+	HudStyle.draw_side_panel(self, HudStyle.A_ACCENT)
 
 
 func _label(box: Control, n: String, size: int) -> Label:
 	var l := Label.new()
 	l.name = n
 	l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	l.add_theme_font_size_override("font_size", size)
+	HudStyle.style_label(l, size)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(l)
 	return l

@@ -52,6 +52,11 @@ const DESC_SIZES := [17, 16, 15, 14, 13, 12]
 const FORM_SIZES := [14, 13, 12, 11]
 const TITLE_MAX_LINES := 2
 const LEVEL_SIZE := 14
+## v0.10.5 W3-O20: an Astral card's level badge: its right edge this far in from the frame's body, its top, and the
+## most of the body's width it may take (card px at scale 1).
+const LEVEL_INSET := 22.0
+const LEVEL_TOP := 30.0
+const LEVEL_SHARE := 0.62
 const TEXT := Color("#EDE3D6")
 ## The ember glow under the tablet by tier (PickSlot.TIERS: common, rare, epic, ability, legendary).
 const UNDER := [0.18, 0.42, 0.55, 0.42, 0.8]
@@ -601,8 +606,29 @@ func _place(socket_px: float, title_top: float) -> void:
 	_level.add_theme_font_size_override("font_size", maxi(10, roundi(LEVEL_SIZE * s)))
 	_level.reset_size()
 	var ls := _level.get_combined_minimum_size()
+	if astral:  # v0.10.5 W3-O20: inside the frame's body (a long overlevel badge stepped down, as the rarity line)
+		_place_astral_level(full, s)
+		return
 	_level.size = ls
 	_level.position = Vector2(full.x - ls.x - 16.0 * s, 9.0 * s)
+
+
+## v0.10.5 W3-O20 (lead: the loop-2 overlevel badge "Lv 3 → 4 + overlevel" overhung the card's top-right corner): an
+## Astral card's level badge sits inside the frame's body, its right edge clear of the carved corner; a badge wider than
+## LEVEL_SHARE of the body steps its size down (to 10 px at least) until it fits.
+func _place_astral_level(full: Vector2, s: float) -> void:
+	var iw := inner_width()
+	var right := (full.x + iw) * 0.5 - LEVEL_INSET * s
+	var room := iw * LEVEL_SHARE
+	var fs := maxi(10, roundi(LEVEL_SIZE * s))
+	var ls := _level.get_combined_minimum_size()
+	while ls.x > room and fs > 10:
+		fs -= 1
+		_level.add_theme_font_size_override("font_size", fs)
+		_level.reset_size()
+		ls = _level.get_combined_minimum_size()
+	_level.size = ls
+	_level.position = Vector2(right - ls.x, LEVEL_TOP * s)
 
 
 func _scaled(sizes: Array) -> Array:

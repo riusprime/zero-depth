@@ -2,6 +2,8 @@ class_name AchievementIcon
 extends Control
 ## v0.7.5 AC: an achievement's glyph (AchievementGlyphs) in a small diamond-cut badge: warm gold when unlocked, a dark
 ## silhouette when locked, a "?" badge when hidden and locked. Draws only.
+## v0.10.5 W3-O20 (UI style Astral; the toast's gold badge was the last warm thing on the HUD): in HudStyle.ASTRAL an
+## unlocked badge is Astral's silver-lilac (HudStyle.A_ACCENT) instead of the gold.
 
 const GOLD := Color("#F2C46A")
 const LOCKED := Color(0.36, 0.4, 0.46)
@@ -26,7 +28,7 @@ func show_glyph(g: StringName, p_unlocked: bool, p_hidden: bool = false) -> void
 
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
-	var c := GOLD if unlocked else LOCKED
+	var c := HudStyle.pick(HudStyle.A_ACCENT, GOLD) if unlocked else LOCKED
 	var ring := HudStyle.plate_points(r.grow(-1.0), minf(size.x, size.y) * 0.22)
 	draw_colored_polygon(ring, Color(c, 0.14 if unlocked else 0.08))
 	var loop := ring.duplicate()

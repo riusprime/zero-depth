@@ -491,6 +491,7 @@ func _floor_live(nodes: Dictionary) -> void:
 	_hud.minimap.state.preset = saves.rooms.duplicate()  # v0.4.0 SV: the rooms already entered
 	ui.add_child(_hud)
 	ui.move_child(_hud, 0)
+	hints.stack_under = _hud.phase_hud  # v0.10.5 W3-O20: a top hint sits under the phase lines
 	_hud.pick_panel().picked.connect(driver.latch.note_pick)  # Rewards: a pick is input.
 	_hud.shop.panel.picked.connect(driver.latch.note_pick)  # v0.5.0 SH: so is a shop action.
 	_hud.swap.picked.connect(driver.latch.note_pick)  # v0.6.0 MX2: so is a swap answer.

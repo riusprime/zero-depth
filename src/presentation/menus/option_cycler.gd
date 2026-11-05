@@ -72,6 +72,11 @@ func _show() -> void:
 	queue_redraw()
 
 
+## v0.10.5 W3-O20: the word the Astral look draws (a subclass adds to it: the Wardrobe's locked robe).
+func shown_word() -> String:
+	return tr(label_keys[index])
+
+
 func _astral_look() -> void:
 	if not astral:
 		return
@@ -99,7 +104,7 @@ func _draw() -> void:
 	var lit := not disabled and (has_focus() or is_hovered())
 	var y := roundf(size.y * 0.5)
 	var line := AstralCardArt.LINE_HI if lit else AstralCardArt.LINE
-	var word := tr(label_keys[index])
+	var word := shown_word()
 	var font := AstralMenu.sans(true)
 	var fs := 15 if is_switch() else AstralMenu.BODY_SIZE
 	var ascent := font.get_ascent(fs)

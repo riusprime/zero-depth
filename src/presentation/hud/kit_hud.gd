@@ -6,6 +6,7 @@ extends Control
 ## is one of the ability squares now (AbilitySquares).
 ## Reads WorldReader only (EI-07); the keys come from the live bindings (InputRebind), so a remap shows at once.
 ## v0.5.5 A5: it sits on a small HudFrame slab of its own (the HUD's Ember stone look), beside its anchor.
+## v0.10.5 W3-O20 (UI style Astral): in HudStyle.ASTRAL the hint is letter-spaced Cinzel (HudStyle.MIN_LABEL), no slab.
 
 const GAP := 16.0
 const FONT_SIZE := 14
@@ -38,6 +39,8 @@ func _init() -> void:
 	_vent.name = "VentHint"
 	_vent.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	HudStyle.style_label(_vent, FONT_SIZE, true)
+	if HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O20: letter-spaced Cinzel, as the heat word
+		HudStyle.serif_label(_vent, FONT_SIZE, 3, HudStyle.A_TEXT)
 	_vent_plate.name = "VentPlate"
 	_vent_plate.add_child(_vent)
 	_vent_sweep.name = "VentSweep"

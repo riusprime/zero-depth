@@ -5,6 +5,8 @@ extends PanelContainer
 ## then its line ("+6 % melee damage") for a moment before it fades. It decides nothing about the game.
 ## v0.6.1 R1: the card is a stone plaque (PlaqueBox; crystal until v0.8.0 MU) in the stat's family colour
 ## (Plaques.GAMBLE_FAMILY → the card frames' table), dimmer while it spins; the line steps down in size to fit.
+## v0.10.5 W3-O20 (UI style Astral): in HudStyle.ASTRAL the title is letter-spaced Cinzel in Astral's grey, the line
+## Astral's silver-white (the stat's own colour stays on its icon, on an Astral tile).
 
 const SPIN_S := 0.9
 const HOLD_S := 2.4
@@ -13,7 +15,7 @@ const ICON := 56.0
 const WIDTH := 560.0
 const HEIGHT := 140.0
 const GAP := 14
-const TITLE_SIZE := 14
+const TITLE_SIZE := 17  # v0.10.5 W3-O20: HudStyle.MIN_LABEL (14 read ~9 px at 720p)
 const LINE_SIZES := [24, 23, 22, 21, 20, 19, 18, 17, 16]
 
 var icon := GambleIconView.new(&"", ICON)
@@ -48,6 +50,8 @@ func _init() -> void:
 	_title.add_theme_font_override("font", HudStyle.font(false))
 	_title.add_theme_font_size_override("font_size", TITLE_SIZE)
 	_title.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+	if HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O20
+		HudStyle.serif_label(_title, TITLE_SIZE, 4, HudStyle.A_DIM)
 	_line.add_theme_font_override("font", HudStyle.font(true))
 	_line.add_theme_font_size_override("font_size", LINE_SIZES[0])
 	for l: Label in [_title, _line]:
@@ -141,7 +145,9 @@ func _show(id: StringName, landed: bool) -> void:
 	if landed:
 		line_size = fit_line(_text)
 		_line.add_theme_font_size_override("font_size", line_size)
-	_line.add_theme_color_override("font_color", c.lerp(Color.WHITE, 0.35))
+	_line.add_theme_color_override(
+		"font_color", HudStyle.pick(HudStyle.A_TEXT, c.lerp(Color.WHITE, 0.35))
+	)
 	if not landed:
 		icon.scale = Vector2.ONE
 
@@ -161,9 +167,16 @@ static func fit_line(text: String) -> int:
 	return TextFit.fit_width(HudStyle.font(true), text, text_width(), LINE_SIZES)
 
 
+## v0.10.5 W3-O20: the title's face (Cinzel in ASTRAL, else Atkinson).
+static func title_font() -> Font:
+	if HudStyle.current == HudStyle.Style.ASTRAL:
+		return HudStyle.serif(600, 4)
+	return HudStyle.font(false)
+
+
 ## True when `text` fits one line of the text column at its fitted size, under the title (tests).
 static func line_fits(text: String) -> bool:
 	var f := HudStyle.font(true)
 	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fit_line(text)).x
-	var h := f.get_height(fit_line(text)) + HudStyle.font(false).get_height(TITLE_SIZE)
+	var h := f.get_height(fit_line(text)) + title_font().get_height(TITLE_SIZE)
 	return w <= text_width() + 0.5 and h <= Plaques.content_size(HEIGHT, WIDTH).y + 0.5

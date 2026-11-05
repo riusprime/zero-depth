@@ -143,26 +143,18 @@ func test_the_shrine_stats_panel_wears_the_menu_style_in_the_pause_menu() -> voi
 	pause.add_child(stats)
 	stats.place_top_right(84)
 	assert_true(stats.in_menu, "in the pause menu")
-	_assert_stone(stats.get_theme_stylebox("panel"), "shrine stats")
+	# v0.10.5 W3-O20: Astral: the HUD's Astral side panel in the pause too (it draws itself on an empty box)
+	assert_true(
+		stats.get_theme_stylebox("panel") is StyleBoxEmpty, "shrine stats: the Astral panel"
+	)
 	var threat := ThreatPanel.new()
 	pause.add_child(threat)
 	assert_true(threat.in_menu)
-	_assert_stone(threat.get_theme_stylebox("panel"), "threat")
+	assert_true(threat.get_theme_stylebox("panel") is StyleBoxEmpty, "threat: the Astral panel")
 	var hud_threat := ThreatPanel.new()
 	add_child_autofree(hud_threat)
 	assert_false(hud_threat.in_menu)
 	assert_true(hud_threat.get_theme_stylebox("panel") is StyleBoxEmpty)
-
-
-## v0.8.0 MU: in a menu a side panel is the menus' carved stone slab (Ember stone).
-func _assert_stone(box: StyleBox, what: String) -> void:
-	assert_true(box is StoneBox, "%s: a stone slab" % what)
-	if box is StoneBox:
-		var stone := box as StoneBox
-		var panel := MenuStyle.theme().get_stylebox("panel", "PanelContainer") as StoneBox
-		assert_eq(stone.fill, panel.fill, "%s: the menus' stone" % what)
-		assert_eq(stone.under, panel.under, "%s: the menus' ember glow" % what)
-		assert_gt(stone.content_margin_left, 0.0, "%s: padded" % what)
 
 
 func test_the_floor_card_follows_a_language_switch() -> void:

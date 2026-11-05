@@ -46,6 +46,9 @@ func _init(
 		keys.append(String(Wardrobe.HIDDEN_NAME if masked else r.name_key))
 	robe_cycler = LockCycler.new(ids, keys, String(current_robe), unlocked)
 	robe_cycler.name = "Robe"
+	robe_cycler.astral = true  # v0.10.5 W3-O20: Astral's chevrons and hairline (OptionCycler)
+	robe_cycler.custom_minimum_size = Vector2(300, 40)
+	robe_cycler.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	robe_cycler.changed.connect(_on_robe)
 	_row("WARDROBE_ROBE").add_child(robe_cycler)
 	lock_note = Label.new()
@@ -62,6 +65,9 @@ func _init(
 		akeys.append(String(a.name_key))
 	affinity_cycler = OptionCycler.new(aids, akeys, String(current_aff))
 	affinity_cycler.name = "Affinity"
+	affinity_cycler.astral = true  # v0.10.5 W3-O20: Astral's chevrons and hairline (OptionCycler), as in Options
+	affinity_cycler.custom_minimum_size = Vector2(300, 40)
+	affinity_cycler.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	affinity_cycler.changed.connect(_on_affinity)
 	_row("WARDROBE_AFFINITY").add_child(affinity_cycler)
 	desc = Label.new()
@@ -149,8 +155,12 @@ class LockCycler:
 	func is_unlocked() -> bool:
 		return index >= unlocked.size() or unlocked[index]
 
-	func _show() -> void:
+	func shown_word() -> String:
 		var t := tr(label_keys[index])
 		if not is_unlocked():
 			t = "%s  ·  %s" % [t, tr("WARDROBE_LOCKED")]
-		text = "‹  %s  ›" % t
+		return t
+
+	func _show() -> void:
+		text = "‹  %s  ›" % shown_word()
+		queue_redraw()

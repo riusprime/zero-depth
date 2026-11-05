@@ -29,7 +29,10 @@ func set_combo(a: StringName, b: StringName, c: Color) -> void:
 
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
-	if tile:
+	if tile and HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O20: Astral's tile
+		HudStyle.draw_astral_tile(self, r, color)
+		r = r.grow(-size.x * 0.1)
+	elif tile:
 		var box := StyleBoxFlat.new()
 		box.bg_color = Color(0.03, 0.04, 0.07, 0.8)
 		box.set_corner_radius_all(0)  # v0.3.5 F16: square, like the cards
@@ -49,9 +52,9 @@ func _draw() -> void:
 	var side := minf(r.size.x, r.size.y) * 0.64
 	var first := Rect2(r.position, Vector2(side, side))
 	var second := Rect2(r.end - Vector2(side, side), Vector2(side, side))
-	drawn = ItemIcons.draw(self, item_a, first, _color(item_a))
+	drawn = ItemIcons.draw(self, item_a, first, HudStyle.tone(_color(item_a)))
 	draw_circle(second.get_center(), side * 0.56, Color(0.03, 0.04, 0.07, 0.9))
-	drawn += ItemIcons.draw(self, item_b, second.grow(-side * 0.08), _color(item_b))
+	drawn += ItemIcons.draw(self, item_b, second.grow(-side * 0.08), HudStyle.tone(_color(item_b)))
 
 
 ## An item's colour, or (v0.4.0 AB: an ability combo) the ability's.

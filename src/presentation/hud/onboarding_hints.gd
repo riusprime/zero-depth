@@ -22,6 +22,8 @@ signal shown(id: StringName)
 const W := 720.0
 const PAD := Vector2(20, 12)
 const TOP := 150.0
+## v0.10.5 W3-O20: the gap under the phase lines when the hint stacks under them (px).
+const STACK_GAP := 10.0
 ## While a centre panel is open (a pick, the Swap, the shop, an event) the slab sits low instead, its bottom this far
 ## above the screen's bottom edge: under the panel's key line, over the heat meter, so it never covers the panel's
 ## title or its cards.
@@ -44,6 +46,9 @@ var header := HudStyle.label(13, true)
 var line := HudStyle.label(20, true)
 ## The device used last (InputRebind.KBM or PAD): the keys named follow it.
 var device := InputRebind.KBM
+## v0.10.5 W3-O20: the HUD's phase lines (Hud.phase_hud; Main sets it, may be null): a top hint sits under the ones
+## shown (the W3-O17 boss shot: the tip and the phase's announcement drew over each other at the same height).
+var stack_under: Control
 var _current := &""
 var _queue: Array[StringName] = []
 var _t := 0.0
@@ -244,11 +249,26 @@ func _process(delta: float) -> void:
 ## Top centre, or low while a centre panel is open (LOW_BOTTOM).
 func _place() -> void:
 	var h := size.y  # read first: moving one offset resizes the box
-	var y := TOP
+	var y := top_y()
 	if _panel_open:
 		y = get_viewport_rect().size.y - LOW_BOTTOM - h
 	offset_top = y
 	offset_bottom = y + h
+
+
+## v0.10.5 W3-O20: the top hint's top (px): TOP, or under the phase lines shown (`stack_under`'s visible children).
+func top_y() -> float:
+	var y := TOP
+	if (
+		stack_under == null
+		or not is_instance_valid(stack_under)
+		or not stack_under.is_visible_in_tree()
+	):
+		return y
+	for c in stack_under.get_children():
+		if c is Control and (c as Control).visible:
+			y = maxf(y, (c as Control).get_global_rect().end.y + STACK_GAP)
+	return y
 
 
 ## The slab sits low (a centre panel is open).

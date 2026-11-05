@@ -78,6 +78,12 @@ const A_INK := Color("#070913")
 const A_WARN := Color("#E0566C")
 ## ASTRAL's heal: a pale moon-green (the gain line's family, no mint), for the regen pulse and the max-HP line.
 const A_HEAL := Color("#A8DCC4")
+## v0.10.5 W3-O20: ASTRAL's water (a shrine's cleanse): a cold moon-blue, apart from the lilac accent.
+const A_WATER := Color("#9CC8E8")
+## v0.10.5 W3-O20 (owner 2026-11-04 night: every UI element Astral; the 720p shots read 13 px labels as ~9 px): the
+## smallest HUD type (px at the 1920 x 1080 base). The HUD's label helpers raise a smaller size to it, so no HUD text
+## draws under 11 px at 1280 x 720 (17 x 2/3 = 11.3).
+const MIN_LABEL := 17
 ## The ember glow's height over the ember line (px).
 const EMBER_GLOW := 14.0
 
@@ -187,6 +193,7 @@ static func serif(wght: int = 600, track: int = 2) -> FontVariation:
 static func serif_label(
 	l: Label, size: int, track: int = 2, col: Color = A_TEXT, wght := 600
 ) -> void:
+	size = maxi(size, MIN_LABEL)  # v0.10.5 W3-O20
 	l.add_theme_font_override("font", serif(wght, track))
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", col)
@@ -199,6 +206,8 @@ static func serif_label(
 
 ## The style's type on a label: font, size, colour and a soft outline for legibility over the floor.
 static func style_label(l: Label, size: int, bold: bool = false, s: Style = current) -> void:
+	if s == Style.ASTRAL:
+		size = maxi(size, MIN_LABEL)  # v0.10.5 W3-O20
 	l.add_theme_font_override("font", font(bold, s))
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", text_color(s))
@@ -218,6 +227,41 @@ static func label(size: int, bold: bool = false, s: Style = current) -> Label:
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	style_label(l, size, bold, s)
 	return l
+
+
+## v0.10.5 W3-O20: an icon's or a name's own colour `c` (an item's family, a stat) toned toward ASTRAL's silver, so it
+## keeps its hue but sits in the palette; other styles keep `c`.
+static func tone(c: Color, s: Style = current) -> Color:
+	return Color(c.lerp(A_METAL, 0.45), c.a) if s == Style.ASTRAL else c
+
+
+## v0.10.5 W3-O20: a small icon tile in ASTRAL (GambleIconView, ItemIconView, ComboIconView): AstralChrome.FrameBox
+## (ink, a 1 px frame, an inner frame, a small diamond on top), its frame tinted by the icon's `c`.
+static func draw_astral_tile(ci: CanvasItem, r: Rect2, c: Color) -> void:
+	var box := AstralChrome.FrameBox.new()
+	box.rim = Color(A_LINE.lerp(c, 0.4), 0.95)
+	ci.draw_style_box(box, r)
+
+
+## v0.10.5 W3-O20: `a` in ASTRAL, else `other` (the banners' and side panels' colours).
+static func pick(a: Color, other: Color, s: Style = current) -> Color:
+	return a if s == Style.ASTRAL else other
+
+
+## v0.10.5 W3-O20: a top banner (Lockdown, the arena, a shrine) in ASTRAL: its `title` in letter-spaced Cinzel, its
+## `line` in Atkinson, and a fading hairline with a small star between them (AstralChrome.Rule) in `box`. Other styles
+## keep their labels as they are.
+static func astral_banner(box: BoxContainer, title: Label, line: Label, s: Style = current) -> void:
+	if s != Style.ASTRAL:
+		return
+	serif_label(title, 28, 6, A_TEXT)
+	style_label(line, 18, false, s)
+	var rule := AstralChrome.Rule.new(150.0)
+	rule.name = "BannerRule"
+	rule.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	box.add_child(rule)
+	box.move_child(rule, title.get_index() + 1)
+	box.add_theme_constant_override("separation", 0)
 
 
 ## The chamfered outline of a stone slab in `r` (corners cut unevenly, so the slabs read as chipped stone).

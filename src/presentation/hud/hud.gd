@@ -32,6 +32,8 @@ const ROW_ICON := 40.0
 ## Rewards (v0.3.0 E): the shard counter (top right) pulses this long when it grows.
 const SHARD_PULSE_S := 0.3
 const POOR := Color("#FF5A4D")
+## v0.10.5 W3-O20: the gap between the top centre's stacked lines (px).
+const STACK_GAP := 6.0
 
 ## v0.3.0 G: a combo's card stays this long, above the item card; its badges sit in a row above the item icons.
 const COMBO_CARD_SECONDS := 4.0
@@ -308,6 +310,7 @@ func sync(reader: WorldReader) -> void:
 	lockdown_hud.sync(reader)  # v0.9.0 LK
 	shrine_hud.sync(reader)  # v0.9.0 SH, HF
 	phase_hud.sync(reader)  # v0.4.0 TU
+	_stack_top_centre()  # v0.10.5 W3-O20
 	PerfMarks.add(&"hud.rooms", t)
 	t = PerfMarks.start()
 	shop.sync(reader)  # v0.5.0 SH
@@ -977,3 +980,18 @@ func _sync_pair_badges(reader: WorldReader) -> void:
 		col_box.add_child(lv)
 		plate.add_child(col_box)
 		_combos.add_child(plate)
+
+
+## v0.10.5 W3-O20 (the W3-O17 boss shot: the phase line drew over the boss bar's lines, the tips over the phase's
+## announcement): the top centre's lines stack. The phase line (PhaseHud, its announcement under it) sits under
+## whichever of the boss bar and the room banners (arena, Lockdown, shrine) is shown, PhaseHud.TOP at the least; the
+## first-run tips (OnboardingHints.stack_under) sit under the phase's lines in turn. A look only (EI-07).
+func _stack_top_centre() -> void:
+	var y := PhaseHud.TOP
+	if boss_bar.visible:
+		y = maxf(y, boss_bar.bottom() + STACK_GAP)
+	for b: Control in [overrun_hud, lockdown_hud, shrine_hud]:
+		if b.visible:
+			y = maxf(y, b.offset_top + b.get_combined_minimum_size().y + STACK_GAP)
+	if phase_hud.offset_top != y:
+		phase_hud.offset_top = y

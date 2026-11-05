@@ -142,12 +142,10 @@ func test_every_menu_is_on_ember_stone() -> void:
 	assert_not_null(main.backdrop.texture, "v0.9.5 MM: the owner's picture is behind the main menu")
 	assert_null(main.find_child("MenuBackdrop", true, false), "and no ember backdrop")
 	var repo := ContentRepository.load_all()
-	var picker := BuildPicker.new(_defs("res://data/builds"), &"blade")
-	add_child_autofree(picker)
-	assert_eq(picker.theme, t, "the build picker wears the Ember stone theme")
-	assert_not_null(picker.find_child("MenuBackdrop", true, false), "the build picker's backdrop")
-	# v0.10.5 W3-O18 (owner: "the rest of the UI ... should match the new style"): these menus are Astral now.
+	# v0.10.5 W3-O18 (owner: "the rest of the UI ... should match the new style"): these menus are Astral now;
+	# W3-O20: the build picker too.
 	for screen: Control in [
+		BuildPicker.new(_defs("res://data/builds"), &"blade"),
 		PauseMenu.new(),
 		EndPanel.new(false, 0),
 		OptionsMenu.new(ProfileStore.new("")),

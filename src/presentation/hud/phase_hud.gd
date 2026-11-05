@@ -14,6 +14,9 @@ extends VBoxContainer
 ## Cinzel, silver-white.
 
 const ANNOUNCE_SECONDS := 4.0
+## v0.10.5 W3-O20: the phase line's top when nothing is over it (px at the 1920 x 1080 base; Hud stacks it lower
+## under the boss bar or a room banner).
+const TOP := 150.0
 const NEW_COLOR := Color("#FFD27A")
 ## The banner plaque's height (px at the 1920 x 1080 base).
 const BANNER_H := 96.0
@@ -36,7 +39,8 @@ func _init() -> void:
 	set_anchors_preset(Control.PRESET_CENTER_TOP)
 	grow_horizontal = Control.GROW_DIRECTION_BOTH
 	alignment = BoxContainer.ALIGNMENT_CENTER
-	offset_top = 150
+	offset_top = TOP
+	add_theme_constant_override("separation", 8)  # v0.10.5 W3-O20: the veil's star clears the larger phase line
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for l: Label in [phase_label, announce]:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
