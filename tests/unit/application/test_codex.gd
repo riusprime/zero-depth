@@ -294,3 +294,31 @@ func test_starbound_and_constellation_entries() -> void:
 	assert_eq(e["name_key"], &"CONST_PRISM")
 	assert_eq(e["desc_key"], &"CONST_PRISM_DESC")
 	assert_eq(c.entry(&"cards", &"starbound_arc_jump")["section"], &"starbound")
+
+
+## v0.10.5 W3-P10g: a taken Starbound card and a picked Constellation unlock their entries; Meteor needs Fire 3.
+func test_starbound_and_constellations_unlock() -> void:
+	var lab := RunLab.new(ContentRepository.load_all(), 7, &"gun")
+	var w := lab.floor_world()
+	var parts := _rec(w)
+	var store: CodexStore = parts[0]
+	var rec: CodexRecorder = parts[1]
+	var r: WorldReader = parts[2]
+	w.starbound_tables = ContentCompiler.compile_starbound(ContentRepository.load_all())
+	rec.observe(r)
+	assert_false(store.is_unlocked(&"cards", &"starbound_fervour"))
+	assert_false(store.is_unlocked(&"cards", &"const_prism"))
+	var e := w.emit_event(SimEvent.Kind.PICKUP, 0, w.actors.ids[0], w.actors.ids[0], Vector2.ZERO)
+	e.amount = Offers.STARBOUND_BASE + Starbound.FERVOUR
+	w.constellations.append(Constellations.PRISM)
+	rec.observe(r)
+	assert_true(store.is_unlocked(&"cards", &"starbound_fervour"))
+	assert_eq(store.count(&"cards", &"starbound_fervour", &"taken"), 1)
+	assert_true(store.is_unlocked(&"cards", &"const_prism"))
+	assert_false(store.is_unlocked(&"cards", &"const_twin_star"))
+	assert_false(store.is_unlocked(&"cards", &"const_meteor"), "Starfall not held yet")
+	w.constellations.append(Constellations.STARFALL)
+	rec.observe(r)
+	assert_true(store.is_unlocked(&"cards", &"const_starfall"))
+	assert_false(r.meteor_on())
+	assert_false(store.is_unlocked(&"cards", &"const_meteor"), "Starfall without Fire 3")

@@ -124,6 +124,17 @@ func _lore(reader: WorldReader) -> void:
 		store.unlock(&"lore", &"ascension")
 	for id in reader.loop_rules():  # v0.10.5 O5b: a loop rule met
 		store.unlock(&"lore", LoopRules.lore_id(id))
+	_constellations(reader)
+
+
+## v0.10.5 W3-P10g: a Constellation picked unlocks its Codex entry; Meteor when Starfall's star turns into it.
+func _constellations(reader: WorldReader) -> void:
+	for id in reader.constellations():
+		var card := WorldReader.constellation_card_id(id)
+		if catalog.has(&"cards", card):
+			store.unlock(&"cards", card)
+	if reader.meteor_on() and catalog.has(&"cards", &"const_meteor"):
+		store.unlock(&"cards", &"const_meteor")
 
 
 ## The tick's events; true when a card was taken (its level may have changed).
