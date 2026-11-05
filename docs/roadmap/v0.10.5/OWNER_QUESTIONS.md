@@ -131,4 +131,4 @@ an outlier); the Blade's single-target numbers miss it (39–71 %). T2 (weak bui
 | # | Question | Owner |
 |---|---|---|
 | W9 | The new systems lift every build about equally, so a weak build keeps its loop-1 standing instead of hitting a wall (it stays weak in absolute terms: its loop-1 power is a third of a strong build's). (a) accept: loops keep each build where loop 1 left it; (b) make Starbound / Constellation gains scale with the build's own engines (weak builds gain less); (c) offer Starbound cards less (e.g. 10 % / 20 %) | **(a) "Accept as is"** (2026-11-05) |
-| W10 | The Blade against one target stays at 39–71 % in loops (crowds are fine). Tune it now, or after your playtest? | |
+| W10 | The Blade against one target stays at 39–71 % in loops (crowds are fine). Tune it now, or after your playtest? | **After the playtest** (owner, 2026-11-05: "W10 after I play it"). Left as measured until then. |
