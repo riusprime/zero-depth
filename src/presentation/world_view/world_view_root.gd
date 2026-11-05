@@ -410,7 +410,7 @@ func _setup_views(palette: Dictionary) -> void:
 ## v0.10.0 VX2: the hero's shot and form views draw their projectiles, beams, zones and rings as pack effects; the
 ## canvas also asks the pulses which bolts the pack already draws.
 func _hand_pack_to_hero_views() -> void:
-	for v: Object in [pulses, attack_forms, laser, lances, voids, runes, seekers, wisps]:
+	for v: Object in [pulses, attack_forms, laser, lances, voids, runes, seekers]:  # (W3-S19: not the wisps)
 		v.set("pack_fx", pack_fx)
 	attack_forms.pulse_hold = pulses.hold
 	pulses.forms = attack_forms
