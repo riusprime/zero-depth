@@ -93,6 +93,7 @@ static func build_floor(
 	w.pair_table = WandCompiler.pairs(repo)  # v0.9.5 EE3, as Main (FloorPlan)
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)
+	w.starbound_tables = ContentCompiler.compile_starbound(repo)  # v0.10.5 W3-P10b, as FloorPlan
 	w.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB, as Main
 	w.legendary_table = RunContentCompiler.compile_legendary(
 		repo.get_def(&"legendary", &"boss"), w.stat_tables, w.item_tables  # v0.5.5 AR (X1b), as Main
