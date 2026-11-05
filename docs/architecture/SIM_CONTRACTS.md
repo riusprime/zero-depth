@@ -368,6 +368,30 @@ bombs; attack speed: shot period, drone period, the Blade's swing; area: swing a
 radii; move speed; shard gain; pickup range: reward, shrine and pickup reach; regen: per mille of max HP per second,
 in and out of combat). Worlds whose player has no crit and no cards (the kernel goldens) never roll.
 
+**The loops lift the caps (v0.10.5 W3-P10a, owner W7;
+[`W3_W7_LOOP_POWER_G1.md`](../roadmap/v0.10.5/W3_W7_LOOP_POWER_G1.md) A1–A5).** Loop 1 is unchanged; from
+`World.loop` 2 the caps are the loop's (`Stats.cap_of`, read by the step, `at_cap`, the crit reads and the card
+forecast):
+- **Double crit (A1).** The crit-chance cap is 2000 (`CRIT_CHANCE_CAP_LOOPS`). Still one roll on the `crit` stream
+  per hit (`range_int(0, 999)`): a chance up to 1000 works as before; past 1000 every hit crits, and a roll
+  `< chance − 1000` is a **double crit**: the crit multiplier twice (`crit_mult² / 1000`), at most 10000
+  (`DOUBLE_CRIT_MAX`, `Stats.double_crit_mult`), tagged `TAG_CRIT` and `TAG_DOUBLE_CRIT` (bit 29) on `HIT` and
+  `DAMAGE`. Its damage number is the crit's, 25 % bigger, ice-white `#CFE4FF` with a thin ink `#0E131C` edge
+  (`DamageNumbers`); nothing else new in the world.
+- **Crit damage (A3).** The crit multiplier's cap is 6000 at loop 2 and 8000 from loop 3 (4000 in loop 1).
+- **Haste overflow (A4).** The attack-speed stat has no cap. The curve's top is `attack_speed_knee2` (raw 1500:
+  effective +1000, the rate +100 %; `AttackRate.top`), where loop 1's 2.5 cap sits. The stat's raw bonus past it adds
+  no rate (`AttackRate.rated` holds the stat at `1000 + top` for every rate read, the catch-up's too) and goes into the
+  damage bucket instead: + 10 ‰ per full 20 ‰ past the top (`AttackRate.overflow_at`, `Stats.haste_damage_at`, in
+  `Stats.bucket_at`, so hits and DoT ticks take it with the damage stat). An attack-speed card's forecast past the
+  top also gives the bucket before and after (`CardForecast` `dmg_old`, `dmg_new`).
+- **Deeper chains (A5).** The deepest hook level is `Attacks.hook_depth(w)`: 2 in loop 1, 3 at loop 2, 4 from loop
+  3 (`MAX_HOOK_DEPTH_LOOPS`). The compile builds that deep (`WandCompile.max_depth`, `Modifiers.inherit`; the Nemesis
+  copy stays at 2), the run-time guards (`Attacks.run_hook`, `Remnants`) and the wand read (`Wand.read` "depth":
+  `flags`, `describe`) read it, and `RunState.prepare` drops the cached book from loop 2. The proc keeps halving
+  (100 → 50 → 25 → 12 → 6); `MAX_LAUNCHES_PER_TICK` (256) and ShotCap are unchanged.
+- Overlevels (A6) are unchanged.
+
 **Abilities (v0.4.0 BS, owner F8; `Abilities`).** Auto abilities run in phase 6, after the projectile sweeps, so
 `World.enemies_near` can use the uniform grid of this tick's bodies; their hits carry `TAG_ABILITY` (bit 24) and an
 effect id (`bomb_lobber`, `drone_buddy`, `drone_chain`, `orbit_blades`, `blink_shock`, `combo_sword_wave`), so they
@@ -437,7 +461,7 @@ one's ops in order (**v0.6.5 WN1: replaced by the wand's left-to-right slot orde
 spec only if the spec carries every tag of its `target` (empty = all).
 Ops: `SET`, `ADD`, `MAX`, `MIN`, `MUL_PERMILLE` (integer fields stay integers: `c × v / 1000`), `SET_FORM`,
 `STATUS` (the last op in pick order sets a status's stacks and `every`), `ELEMENT` (appended once), `HOOK` (a child
-spec built from the op and compiled through every modifier at `depth + 1`; none at depth 2). **Form layering**
+spec built from the op and compiled through every modifier at `depth + 1`; none at depth 2, the loop's depth from v0.10.5 W3-P10a, §8). **Form layering**
 (design §2, owner B8): the first `SET_FORM` sets the form; each later one never replaces it but adds an `ON_END`
 hook whose child is a copy of the spec in the new form, compiled through the stages after `FORM`. **Riders** keep two
 v0.5 rules exact: a weapon step's hits burn whenever the burn engine runs (Wildfire, Flame Trail's borrowed engine),
@@ -467,7 +491,8 @@ of one launch); `ON_NTH` when an Nth combo step resolves (Overcharge's shockwave
 resolves, from where it ends. A player projectile's hit runs the bolt spec's `ON_HIT` hooks (MX1: a projectile does
 not carry its spec, so every player projectile reads the Gun bolt's, which is v0.5's Static Chain rule); an `every`
 there counts landed bolts on `World.chain_count`, at most once per root (`World.chain_root`). Every hook launch goes
-through `Attacks.run_hook`: its child runs at `depth + 1` (at most `MAX_HOOK_DEPTH` = 2) with half the parent's proc
+through `Attacks.run_hook`: its child runs at `depth + 1` (at most `MAX_HOOK_DEPTH` = 2; v0.10.5 W3-P10a (owner W7):
+the loop's `Attacks.hook_depth`, 3 at loop 2 and 4 from loop 3, §8) with half the parent's proc
 coefficient, so `HIT.proc_pct` is 100 for a root attack, 50 for a hook's attack and 25 below that (`Damage.hit`'s new
 `proc_pct` argument; `DAMAGE` keeps 100, `DOT` 0); a hook never runs while its own id is in `World.hook_chain`
 (ancestry; empty between ticks); at most `MAX_LAUNCHES_PER_TICK` = 256 launches run in one tick, then one `LIMIT`
@@ -604,7 +629,7 @@ Overclock). A hook op's `hook_ops` shape the child before the build compiles it 
 an element). A bolt child of an arc is a crescent as wide as the arc; a bolt child of a hit leaves from past the enemy
 it hit. **Lineage** is the ancestry guard at compile time: a modifier never adds its hook to a spec its own hook made
 (Split Shot's splits never split, Cluster Payload's bomblets never split, Aftershock never blasts its own blast); the
-run-time guard is unchanged (depth ≤ 2, proc 100 → 50 → 25, `World.hook_chain`, 256 launches a tick).
+run-time guard is unchanged (depth ≤ 2, the loop's from v0.10.5 W3-P10a §8, proc 100 → 50 → 25, `World.hook_chain`, 256 launches a tick).
 
 **A form change keeps the attack's reach** (`SpecForms.change_form`, the first `SET_FORM` and every layer): the range
 the spec had (an arc's reach, a bolt's speed × life, a ring's, burst's or zone's radius, a beam's or lob's reach)
@@ -747,7 +772,7 @@ last step's `ON_HIT`; no other spec gets a child but the cut still ends it) and 
 `World.last_hit_crit`, which `Damage.hit` sets as it returns). A trigger reaches every spec built to its left (an
 earlier Split card's splits get the cut too). A second trigger nests once more: the attack at depth 0, its child at
 1, the child's child at 2; a third casts nothing and the cards past it reach nothing. The run-time guard is §8b's:
-depth ≤ 2, proc 100 → 50 → 25 (v0.6.5 WN1: a hook's projectile now carries it on its `HIT` too,
+depth ≤ 2 (the loop's from v0.10.5 W3-P10a, §8), proc 100 → 50 → 25 (v0.6.5 WN1: a hook's projectile now carries it on its `HIT` too,
 `Attacks.projectile_proc`), the ancestry chain, 256 launches a tick. A spec the trigger's target doesn't reach (the
 moments: the dash, walking, a blink, the body) reads past it, so a dash card right of a trigger still rewrites the
 dash. No randomness is drawn (EI-05).

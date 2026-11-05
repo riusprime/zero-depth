@@ -57,10 +57,14 @@ extends RefCounted
 ##   Finale's reach) and, for a FINISHER remnant, whether the spec is the combo's finisher (it extracts; the other steps
 ##   lodge). A remnant left on a hit is an ON_HIT hook; a link, a path or a consumer is ON_REMNANT (Remnants finds it).
 
+## Loop 1's deepest level (Attacks.MAX_HOOK_DEPTH); max_depth is the compile's.
 const MAX_DEPTH := 2
 
 ## The cards in slot order.
 var mods: Array[ModifierTable] = []
+## v0.10.5 W3-P10a (owner W7, G1 A5): the deepest hook level this compile builds (for_world: Attacks.hook_depth, the
+## loop's; a lab compile without a world: MAX_DEPTH).
+var max_depth := MAX_DEPTH
 ## A Gun run: T4 cuts on a crit (its trigger_gun); otherwise on the Blade's finisher.
 var gun := false
 ## The Blade's last combo step (ON_FINISHER's spec), &"" without a combo.
@@ -87,6 +91,7 @@ var merge_radius_max_permille := 2000
 static func for_world(w: World, p_mods: Array[ModifierTable]) -> WandCompile:
 	var c := WandCompile.new()
 	c.mods = p_mods
+	c.max_depth = Attacks.hook_depth(w)  # v0.10.5 W3-P10a
 	c.gun = PlayerBuild.has_gun(w) and not PlayerBuild.has_blade(w)
 	var n := w.player.combo.size()
 	if n > 0:
@@ -201,13 +206,13 @@ func apply(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> void:
 			if not s.elements.has(String(op.element)):
 				s.elements.append(String(op.element))
 		ModifierOp.Op.HOOK:
-			if s.depth < MAX_DEPTH and not s.lineage.has(String(m.id)):  # v0.6.0 MX4: lineage
+			if s.depth < max_depth and not s.lineage.has(String(m.id)):  # v0.6.0 MX4: lineage
 				if not once_more(s, m.id):  # v0.8.0 BL (B6)
 					s.hooks.append(_hook(s, m, op, i))
 		ModifierOp.Op.TRIGGER:
 			pass  # a trigger is a card of its own (run cuts there)
 		ModifierOp.Op.REMNANT:  # v0.8.0 RM: a hook that leaves a remnant (class doc)
-			if op.remnant == null or s.depth >= MAX_DEPTH or s.lineage.has(String(m.id)):
+			if op.remnant == null or s.depth >= max_depth or s.lineage.has(String(m.id)):
 				return
 			if not once_more(s, m.id):
 				s.hooks.append(_remnant(s, m, op, i))
@@ -276,6 +281,7 @@ func _hook(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> AttackHoo
 	SpecForms.hook_base(c, s)  # v0.6.0 MX2: the lingering forms' times; MX4: a bolt's flight, an arc's width
 	BladeForms.hook_base(c, s)  # v0.6.5 WN4: a spin's wave flies all round
 	var shape := WandCompile.new()  # v0.6.0 MX4: the child's own shape (a count, a status, an element...)
+	shape.max_depth = max_depth  # v0.10.5 W3-P10a
 	for o in op.child_ops:
 		shape.apply(c, m, o, -1)
 	c.lineage = s.lineage.duplicate()  # v0.6.0 MX4: this modifier's hook never rides its own child
@@ -345,7 +351,7 @@ func section_of(i: int) -> int:
 
 ## Trigger card `m` at slot `i` ends `s` (class doc): the cards to its right build the child spell it casts.
 func _cut(s: AttackSpec, m: ModifierTable, i: int) -> void:
-	if child_base == null or s.depth >= MAX_DEPTH or s.lineage.has(String(m.id)):
+	if child_base == null or s.depth >= max_depth or s.lineage.has(String(m.id)):
 		return
 	if cast_free(s):  # v0.8.0 PF2: Blade Storm's blades cast nothing
 		return

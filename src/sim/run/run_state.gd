@@ -344,6 +344,8 @@ func prepare(w: World) -> void:
 		table.boss_room_heal_floor_permille, run_floor()
 	)  # TU (D9); v0.7.5 AP: the run's first floor only
 	w.loop = loop  # v0.7.5 AP: the loop, the run's floor, the loop's threat and catch-up cap
+	if loop > 1:  # v0.10.5 W3-P10a: the compile reads the loop (Attacks.hook_depth); never a stale loop-1 book
+		Modifiers.invalidate(w)
 	w.run_floor = run_floor()
 	w.loop_threat = table.loop_threat * (loop - 1)
 	w.loop_cap_permille = table.loop_catch_up_cap_permille * (loop - 1)

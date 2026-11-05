@@ -33,6 +33,14 @@ const WEAK_TO_COLOR := Color("#FF4F7A")
 const WEAK_TO_SIZE := 48
 const RESISTED_COLOR := Color(0.55, 0.57, 0.6)
 const RESISTED_SIZE := 29
+## v0.10.5 W3-P10a (owner W7, G1 A2): a double crit (TAG_DOUBLE_CRIT): the crit number 25 % bigger, ice-white,
+## with a thin ink edge instead of the thick dark one. Nothing else new in the world.
+const DOUBLE_CRIT_SIZE := 86
+const DOUBLE_CRIT_COLOR := Color("#CFE4FF")
+const DOUBLE_CRIT_EDGE := Color("#0E131C")
+const DOUBLE_CRIT_EDGE_SIZE := 4
+const EDGE_SIZE := 10
+const EDGE_COLOR := Color(0, 0, 0, 0.85)
 ## The throw: how far out to the side (m, along the screen), how high its peak (m) and where in its life it peaks;
 ## the cosmetic spread on both (0.2: 80-120 %).
 const THROW_OUT_M := 0.9
@@ -83,6 +91,10 @@ func sync(reader: WorldReader) -> void:
 			continue
 		var weak := int(_weak.get(e.target_id, -1)) == e.tick
 		var crit := (e.tags & SimEvent.TAG_CRIT) != 0
+		if e.tags & SimEvent.TAG_DOUBLE_CRIT:  # v0.10.5 W3-P10a: ice-white, bigger, a thin ink edge
+			show_number(e.pos, e.amount, true, DOUBLE_CRIT_COLOR, DOUBLE_CRIT_SIZE, true)
+			_weak.erase(e.target_id)
+			continue
 		var look := matchup_look(e.tags, crit)
 		show_number(e.pos, e.amount, crit, WEAK_COLOR if weak else look[0], look[1])
 		_weak.erase(e.target_id)
@@ -101,8 +113,9 @@ static func matchup_look(tags: int, crit: bool) -> Array:
 
 
 ## Throws `amount` from `at` (crit: bigger, yellow, a shake and a vanish). `size` > 0: that font size instead.
+## v0.10.5 W3-P10a: `double`, a double crit's thin ink edge (DOUBLE_CRIT_EDGE).
 func show_number(
-	at: Vector2, amount: int, crit: bool, tint := Color(0, 0, 0, 0), size := 0
+	at: Vector2, amount: int, crit: bool, tint := Color(0, 0, 0, 0), size := 0, double := false
 ) -> void:
 	var l: Label3D
 	if _labels.size() < POOL:
@@ -111,8 +124,6 @@ func show_number(
 		l.no_depth_test = true
 		l.fixed_size = false
 		l.pixel_size = 0.005
-		l.outline_size = 10
-		l.outline_modulate = Color(0, 0, 0, 0.85)
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 		add_child(l)
@@ -127,6 +138,8 @@ func show_number(
 	var k := _next
 	l = _labels[k]
 	l.text = str(amount)
+	l.outline_size = DOUBLE_CRIT_EDGE_SIZE if double else EDGE_SIZE  # v0.10.5 W3-P10a: per number (pooled)
+	l.outline_modulate = DOUBLE_CRIT_EDGE if double else EDGE_COLOR
 	l.font_size = size if size > 0 else (CRIT_SIZE if crit else SIZE)
 	l.modulate = tint if tint.a > 0.0 else (CRIT_COLOR if crit else COLOR)
 	_from[k] = SimPlane.to_3d(at, 1.3 if crit else 1.1)

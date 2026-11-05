@@ -152,7 +152,9 @@ static func compile_card(w: World, t: BossTable, code: int, level: int) -> Nemes
 		mods.append(m.at(level))
 	var gun := weapon_of(w) == BossAttackTable.WEAPON_GUN
 	var base := Modifiers.base_bolt(w) if gun else Modifiers.base_step(w, 0)
-	var s := WandCompile.for_world(w, mods).spec(base)
+	var wc := WandCompile.for_world(w, mods)
+	wc.max_depth = WandCompile.MAX_DEPTH  # v0.10.5 W3-P10a: the loops deepen the player's hooks, not the copy's
+	var s := wc.spec(base)
 	if not gun:
 		BladeForms.settle(s)
 	var c := from_spec(w, t, s, base.damage)

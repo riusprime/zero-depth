@@ -208,6 +208,8 @@ static func read(w: World) -> Dictionary:
 		"slot_counts": AttackSlots.counts(w),
 		# v0.9.0 AS2: the slot category the waiting swap is limited to (AttackSlots.choice_category; 0: any slot)
 		"swap_slot": AttackSlots.choice_category(w, w.swap_code) if BuildSlots.swapping(w) else 0,
+		# v0.10.5 W3-P10a (owner W7, G1 A5): the deepest hook level the compile builds (the loop's; flags, describe)
+		"depth": Attacks.hook_depth(w),
 	}
 
 
@@ -258,14 +260,16 @@ static func dead_after_trigger(w: World, id: Variant) -> bool:
 ## why it can't act where it sits: DEAD_AFTER_TRIGGER (a card that does nothing right of a trigger, there),
 ## DEAD_TOO_DEEP (past the third trigger: the compile casts nothing that deep), or &"" (it acts). A trigger card is
 ## never flagged. The wand's tiles dim a flagged card and show the reason; describe() leaves its effect out.
+## v0.10.5 W3-P10a (owner W7, G1 A5): "too deep" is past the read's "depth" (the loop's: a trigger more a loop).
 static func flags(wand: Dictionary) -> Array[StringName]:
 	var out: Array[StringName] = []
 	var cuts := 0
+	var deepest := depth_of(wand)
 	for c: Dictionary in wand.get("cards", []):
 		if int(c["trigger"]) >= 0:
 			out.append(&"")
 			cuts += 1
-		elif cuts > WandCompile.MAX_DEPTH:
+		elif cuts > deepest:
 			out.append(DEAD_TOO_DEEP)
 		elif cuts > 0 and bool(c.get("after_trigger_dead", false)):
 			out.append(DEAD_AFTER_TRIGGER)
@@ -313,22 +317,27 @@ static func describe(wand: Dictionary) -> Array[Dictionary]:
 	var small := &"WAND_READ_SMALL_BOLT" if gun else &"WAND_READ_SMALL_SLASH"
 	for k in triggers.size():
 		var names: Array = segments[k + 1]
-		if k >= WandCompile.MAX_DEPTH:
+		if k >= depth_of(wand):
 			if not names.is_empty():
 				lines.append({"key": &"WAND_READ_UNUSED", "args": [names]})
 			continue
 		var key: StringName = TRIGGER_KEYS.get(triggers[k], &"WAND_READ_ON_HIT")
 		lines.append({"key": key, "args": [_spell(small, names)]})
-	lines.append_array(_remnant_lines(cards, why))  # v0.8.0 RM
+	lines.append_array(_remnant_lines(cards, why, depth_of(wand)))  # v0.8.0 RM
 	if not dead.is_empty():
 		lines.append({"key": &"WAND_READ_DEAD", "args": [dead]})
 	return lines
 
 
+## v0.10.5 W3-P10a: a wand read's deepest hook level (its "depth"; loop 1's WandCompile.MAX_DEPTH without one).
+static func depth_of(wand: Dictionary) -> int:
+	return int(wand.get("depth", WandCompile.MAX_DEPTH))
+
+
 ## v0.8.0 RM (owner O91): a line per remnant card that acts where it sits: what it leaves and what its remnants release
 ## (a burst shaped by the cards right of it in its trigger section), or that it pulls, or (Grand Finale) that it
 ## releases the remnants to its left.
-static func _remnant_lines(cards: Array, why: Array[StringName]) -> Array[Dictionary]:
+static func _remnant_lines(cards: Array, why: Array[StringName], deepest: int) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var cuts := 0
 	for n in cards.size():
@@ -337,7 +346,7 @@ static func _remnant_lines(cards: Array, why: Array[StringName]) -> Array[Dictio
 			cuts += 1
 			continue
 		var kind := int(c.get("remnant", REMNANT_NONE))
-		if kind == REMNANT_NONE or why[n] != &"" or cuts > WandCompile.MAX_DEPTH:
+		if kind == REMNANT_NONE or why[n] != &"" or cuts > deepest:
 			continue
 		var me := {"key": c["name_key"], "args": []}
 		if kind == REMNANT_PULLS:

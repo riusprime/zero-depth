@@ -126,7 +126,7 @@ static func compatible(w: World, idx: int) -> bool:
 	for k in at:
 		if Wand.trigger_of(w, w.mod_slots[k]) >= 0:
 			cuts += 1
-	if cuts > WandCompile.MAX_DEPTH:
+	if cuts > Attacks.hook_depth(w):  # v0.10.5 W3-P10a: the loop's
 		return false
 	return cuts == 0 or not Wand.dead_after_trigger(w, w.item_tables[idx].id)
 
