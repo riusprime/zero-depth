@@ -492,9 +492,9 @@ func _floor_live(nodes: Dictionary) -> void:
 	ui.add_child(_hud)
 	ui.move_child(_hud, 0)
 	hints.stack_under = _hud.phase_hud  # v0.10.5 W3-O20: a top hint sits under the phase lines
-	_hud.pick_panel().picked.connect(driver.latch.note_pick)  # Rewards: a pick is input.
-	_hud.shop.panel.picked.connect(driver.latch.note_pick)  # v0.5.0 SH: so is a shop action.
-	_hud.swap.picked.connect(driver.latch.note_pick)  # v0.6.0 MX2: so is a swap answer.
+	# Rewards: a pick is input; so is a shop action (v0.5.0 SH), a swap answer (v0.6.0 MX2), a Constellation (W3-P10c)
+	for p: ModalPanel in [_hud.pick_panel(), _hud.shop.panel, _hud.swap, _hud.constellation]:
+		p.picked.connect(driver.latch.note_pick)
 	_hud.swap.moved.connect(driver.latch.queue_wand_move)  # v0.6.5 WN2: and its reorders and inserts.
 	_hud.sync(driver.reader)
 	_hud.show_floor(

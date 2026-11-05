@@ -277,7 +277,10 @@ static func max_hp_at(w: World, v: int) -> int:
 	var cut := Curses.max_hp_permille(w)  # v0.6.0 CU: Glass Heart
 	if cut != 1000:
 		base = maxi(1, (base * cut + 500) / 1000)
-	return base + Gamble.hook_bonus(w, GambleTable.Stat.MAX_HP)
+	var total_hp := base + Gamble.hook_bonus(w, GambleTable.Stat.MAX_HP)
+	if Constellations.has(w, Constellations.GLASS_SKY):  # v0.10.5 W3-P10c: C3 Glass Sky halves it
+		total_hp = maxi(1, Constellations.scale(total_hp, Constellations.GLASS_SKY_HP_PERMILLE))
+	return total_hp
 
 
 # --- Damage ----------------------------------------------------------------------------------------------------
@@ -351,10 +354,13 @@ static func bucket_at(w: World, v: int, moving: bool) -> int:
 	return b + value(w, Stat.ONRUSH) if moving else b
 
 
-## Bucket `b` x glass cannon, per mille.
+## Bucket `b` x glass cannon, per mille. v0.10.5 W3-P10c: x C3 Glass Sky's damage when held.
 static func damage_at(w: World, b: int) -> int:
 	var g := value(w, Stat.GLASS_CANNON)
-	return b if g == 1000 else (b * g + 500) / 1000
+	var m := b if g == 1000 else (b * g + 500) / 1000
+	if Constellations.has(w, Constellations.GLASS_SKY):
+		m = m * Constellations.GLASS_SKY_DAMAGE_PERMILLE / 1000
+	return m
 
 
 ## Hoarder's bonus now, per mille: per full 100 shards held, at most the limit's shards counted.

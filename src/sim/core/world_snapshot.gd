@@ -251,6 +251,7 @@ const ADDED_SINCE_V05 := {
 		&"starfall_crits",  # v0.10.5 W3-P10e: Starfall's counters and the meteors in the air
 		&"meteor_attacks",
 		&"meteors",
+		&"constellation_offer",  # v0.10.5 W3-P10c: a loop's open Constellation pick (an older save has none)
 	],
 	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
 	&"BossFlow":

@@ -141,6 +141,8 @@ static func hit(
 	if mu[1] != 0 and owner_id == a.ids[0] and target != 0:
 		h.tags |= mu[1]  # v0.10.5 O10: weak to its form or element, or resists it (Matchups)
 		scaled = Matchups.scale(scaled, mu[0])
+	if owner_id == a.ids[0] and target != 0:  # v0.10.5 W3-P10c: C8 Hunter's Sky on elites and bosses
+		scaled = Constellations.scale(scaled, Constellations.hunt_permille(w, target))
 	if target == 0 and scaled > 0:
 		# v0.4.0 BS: armour; v0.8.0 N1 (D39): times the held weapon's damage taken (the Blade's -25 %), one rounding.
 		var taken := Stats.armour_permille(w) * PlayerBuild.taken_permille(w) / 1000
@@ -206,6 +208,7 @@ static func tick_dot(
 		if mu[1] != 0:
 			amount = Matchups.scale(amount, mu[0])
 			tags |= mu[1]
+		amount = Constellations.scale(amount, Constellations.hunt_permille(w, target))  # v0.10.5 W3-P10c: C8
 	var root := w.take_root()
 	return _apply(
 		w, target, amount, source_id, owner_id, root, tags, a.pos(target), -1, 0, effect_id

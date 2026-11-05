@@ -1498,6 +1498,32 @@ func loop_rules() -> Array[StringName]:
 	return out
 
 
+## v0.10.5 W3-P10c: a loop's Constellation pick is open (the world waits for it), its ids, and the held ones in pick
+## order (Constellations; their names: Constellations.name_key, desc_key; their art: card_id).
+func constellation_open() -> bool:
+	return Constellations.open(_w)
+
+
+func constellation_offer() -> PackedInt32Array:
+	return _w.constellation_offer.duplicate()
+
+
+func constellations() -> PackedInt32Array:
+	return _w.constellations.duplicate()
+
+
+static func constellation_name_key(id: int) -> String:
+	return Constellations.name_key(id)
+
+
+static func constellation_desc_key(id: int) -> String:
+	return Constellations.desc_key(id)
+
+
+static func constellation_card_id(id: int) -> StringName:
+	return Constellations.card_id(id)
+
+
 func run_floor() -> int:
 	return _w.run_floor_index()
 

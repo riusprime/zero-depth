@@ -427,6 +427,8 @@ func finish_floor(w: World) -> void:
 		floor_index = 1
 		_draw_loop_biomes()
 		LoopRules.draw(self)  # v0.10.5 O5b (owner P13): each loop adds a rule
+		# v0.10.5 W3-P10c (owner W7): the new loop's floor 1 opens with a free Constellation pick (none left: none)
+		carry[RunCarry.OFFER] = Constellations.offer(run_seed, loop, w.constellations)
 	else:
 		floor_index += 1
 	floor_rules = FLOOR_RULES  # v0.7.5 MG: a new floor, always on today's rules

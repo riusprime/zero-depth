@@ -227,3 +227,65 @@ func test_the_ascension_portal_leads_to_the_final_arena() -> void:
 	assert_eq(main.run.loop, 1, "no new loop")
 	assert_eq(main.codex.count(&"runs", &"ascended", &"times"), 0, "no loop counted")
 	assert_eq(get_errors().size(), 0, "no engine or script error")
+
+
+## v0.10.5 W3-P10c (owner W7, Q2 "When you get to the new loop you get a free selection", Q3 "can not be rerolled"):
+## loop 2's floor 1 opens the Constellation pick once the hero lands: three violet cards; Esc passes to the pause menu
+## and back (no skip); 2 then Enter takes the second card; the Build page lists it.
+func test_a_new_loop_opens_a_free_constellation_pick() -> void:
+	var e := E2e.new(self)
+	var main := await _boot_on_last_floor(e)
+	if not await _to_the_devices(e, main):
+		return
+	assert_true(await _onto_loop(e, main), "stepping onto the Loop device takes it")
+	var frames := 0
+	while main.run.loop == 1 and frames < 300:
+		await e.frames(1)
+		frames += 1
+	assert_eq(main.run.loop, 2, "loop 2")
+	assert_true(await e.landed(), "the hero lands")
+	await e.frames(3)
+	var w := e.world()
+	var offer := w.constellation_offer.duplicate()
+	assert_eq(
+		offer, Constellations.offer(main.run.run_seed, 2, PackedInt32Array()), "the loop's offer"
+	)
+	var hud: Hud = main.get_node("UI/Hud")
+	var panel := hud.constellation
+	assert_true(panel.is_open() and panel.visible, "the pick is open")
+	assert_eq(panel.card_count(), 3, "three cards")
+	assert_eq(panel.offer(), offer, "the sim's offer")
+	assert_eq(panel.title_text(), tr("CONST_PICK_TITLE"))
+	assert_eq(
+		panel.slot(0).card.frame_texture().resource_path,
+		"res://assets/ui/card_frames/frame_constellation.png",
+		"on the owner's violet frame"
+	)
+	var at := w.player_pos()
+	await e.tap(KEY_ESCAPE)  # no skip: the pause menu takes it
+	assert_not_null(main.get_node_or_null("UI/PauseMenu"), "Esc pauses")
+	await e.tap(KEY_ESCAPE)
+	await e.frames(2)
+	assert_null(main.get_node_or_null("UI/PauseMenu"), "Esc resumes")
+	assert_true(Constellations.open(w), "the pick still waits")
+	assert_eq(w.player_pos(), at, "and the world with it")
+	await e.tap(KEY_2)
+	await e.tap(KEY_ENTER)
+	await e.frames(3)
+	assert_eq(w.constellations, PackedInt32Array([offer[1]]), "2, Enter: the second card")
+	assert_false(Constellations.open(w), "the pick closed")
+	await e.frames(60)
+	assert_false(panel.visible, "the panel went")
+	await e.tap(KEY_ESCAPE)
+	await e.tap(KEY_DOWN)
+	await e.tap(KEY_ENTER)
+	await e.frames(2)
+	var page := main.get_node_or_null("UI/BuildPage") as BuildPage
+	assert_not_null(page, "the Build page")
+	if page != null:
+		assert_string_contains(
+			page.constellations_text(),
+			tr(WorldReader.constellation_name_key(offer[1])),
+			"it lists the held Constellation"
+		)
+	assert_eq(get_errors().size(), 0, "no engine or script error")

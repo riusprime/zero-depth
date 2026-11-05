@@ -1196,6 +1196,41 @@ extra draw on `loot`).
   rules (X1-X10) unchanged. Only with `World.pair_table`. State (W3-P1b): the charge clocks, saved (an older save loads
   uncharged) and hashed only while an enemy is charged.
 
+## 8n. Constellations (v0.10.5 W3-P10c; owner W7, [`W3_W7_LOOP_POWER_G1.md`](../roadmap/v0.10.5/W3_W7_LOOP_POWER_G1.md) §C, Q2, Q3)
+
+v0.10.5 W3-P10c (owner W7): one rule-breaker a loop, `Constellations` (`src/sim/run/constellations.gd`).
+- **The pick.** When the run enters a new loop (`RunState.finish_floor`, the Loop device), `Constellations.offer`
+  draws up to 3 ids the run may still take, without repeats, on the named stream `constellation_<loop>` of the run
+  seed, and writes them into the carry (`RunCarry.OFFER`); the loop's floor 1 opens with them
+  (`World.constellation_offer`). The ids: Prism 1, Twin Star 2, Glass Sky 3, Starfall 4, Deep Wounds 5, Supernova 6,
+  Hunter's Sky 8 (7, Gravity Well, dropped). A run holds each once, Prism twice at most (`PRISM_MAX`); fewer than 3
+  left offers what is left, none left opens no pick. Owner Q2 ("when you get to the new loop you get a free
+  selection"): free. Owner Q3 ("can not be rerolled"): no reroll, no skip.
+- **The tick.** Phase 1a, after the freeze check and before the rewards' choice: while an offer is open and the hero
+  has landed, the world runs only `Constellations.choose`; `InputFrame.pick` 1..n takes that card, anything else
+  (`PICK_CANCEL` included) waits; the tick still counts. A pick appends the id to `World.constellations` (pick order;
+  carried, `RunCarry.FIELDS`) and closes the offer.
+- **State, save, hash.** `World.constellations` and `World.constellation_offer` are in the world snapshot's list
+  (an older save holds none; no migration, owner 2026-11-05). Hashed (`Constellations.hash_into`: both sizes and
+  ids) only once either holds an id, so a loop-1 world hashes as before.
+- **C1 Prism.** A Gun run's Element limit (`AttackSlots.limit`, data 2) + 1 per Prism held (2 → 3 → 4), so a third
+  and fourth element, and the pairs they make (`ElementPairs.mask` follows the held elements). A run without an
+  Element limit (the Blade's): the W3-P1 falloff (§8m, `ElementStack.falloff_permille`) counts k, the other elements
+  on the enemy, as `k − prism_falloff_steps × Prisms` (at least 0); `ElementPairsDefinition.prism_falloff_steps`,
+  data 1 (0..3): one Prism makes 700 / 500 / 350 read 1000 / 700 / 500.
+- **C2 Twin Star.** Each overlevel's step × 2 (`CardLevels.overlevel_permille`: + 150 → + 300 per mille an
+  overlevel), which the compile and the pick card's forecast both read; the pick recompiles the wand.
+- **C3 Glass Sky.** The hero's damage multiplier × 2 (`Stats.damage_at`: every hit and damage-over-time tick the hero
+  owns, and the forecasts that read it) and max HP × 0.5 (`Stats.max_hp_at`, after the curses and the shrine, at
+  least 1). At the pick the max HP falls by the difference and HP is clamped into 1..max.
+- **C8 Hunter's Sky.** The hero's hits (`Damage.hit`, after the target's multiplier and the matchup) and
+  damage-over-time ticks (`Damage.tick_dot`) on an elite (`EliteAi.is_elite_kind`) or a boss (`BossAi.is_boss_kind`)
+  × 1.5, rounded to nearest.
+- Starfall (and Meteor), Deep Wounds and Supernova are offered by this pick; their effects are their own steps'.
+- Presentation: `ConstellationPanel` (the pick's look on the owner's violet Constellation frame and back, icon
+  `icon_const_<name>.png` else `icon_unknown`; mouse, keys, pad; a cancel passes on to the pause menu) and the Build
+  page's held line, both through `WorldReader.constellation_open / constellation_offer / constellations`.
+
 ## 9. What presentation receives
 
 Presentation sees the sim only through `WorldReader`, a read-only facade over `World`

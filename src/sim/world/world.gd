@@ -64,6 +64,9 @@ var constellations := PackedInt32Array()
 var starfall_crits := 0
 var meteor_attacks := 0
 var meteors := PackedInt32Array()
+## v0.10.5 W3-P10c: the loop's Constellation offer (ids; empty: none open). While it holds any, the world runs only
+## the pick (Constellations.choose). A new loop's floor 1 gets it from the carry (RunState.finish_floor).
+var constellation_offer := PackedInt32Array()
 ## Utility: blink cooldown, and the last blink (tick and start point) for the view.
 var blink_cd := 0
 var blink_tick := -1
@@ -712,10 +715,14 @@ func step(frame: InputFrame) -> void:
 	# v0.8.0 N11 fix: while the hero arrives, phase 1c's hold comes before any choice: a swap opened meanwhile (the dev
 	# panel's grant) waits for the landing, instead of freezing the arrival with the HUD hidden.
 	var arriving := boss_flow != null and boss_flow.arrive_left > 0
-	# 1b. Rewards: while a 3-card choice is open, only the pick runs; the tick still counts.
+	# 1b. Rewards: while a 3-card choice is open, only the pick runs; the tick still counts. v0.10.5 W3-P10c: a new
+	# loop's Constellation pick (free, no skip) waits first.
 	var granting := swap_code >= 0 and swap_source == BuildSlots.Source.GRANT
-	if (granting or choosing >= 0) and not arriving:
-		if granting:  # v0.6.0 MX2: a swap with no panel of its own waits first
+	var starry := not constellation_offer.is_empty()
+	if (starry or granting or choosing >= 0) and not arriving:
+		if starry:
+			Constellations.choose(self, frame)
+		elif granting:  # v0.6.0 MX2: a swap with no panel of its own waits first
 			BuildSlots.choose_grant(self, frame)
 		else:
 			Rewards.choose(self, frame)
@@ -1477,6 +1484,7 @@ func state_hash() -> String:
 				h.add_ints(loop_rules)
 				h.add_int(loop_shield_permille)
 				h.add_int(loop_shield_half_arc)
+	Constellations.hash_into(self, h)  # v0.10.5 W3-P10c: only once a Constellation is held or offered
 	if approach != null:  # v0.9.0 FA: only the final approach carries it
 		approach.hash_into(h)
 	if not interactables.is_empty():  # v0.9.0 IX: only worlds holding an interactable or a calm room

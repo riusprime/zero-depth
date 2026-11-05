@@ -71,6 +71,7 @@ var ability_squares := AbilitySquares.new()
 var depths_tag := DepthsTag.new()
 ## v0.5.0 EV: the event prompt, status and panel, and threat T with the curses held.
 var events := EventHud.new()
+var constellation := ConstellationPanel.new()  # v0.10.5 W3-P10c: a new loop's Constellation pick
 ## v0.4.0 AB: the Overrun room's banner (its kills, then what clearing it paid).
 var overrun_hud := OverrunHud.new()
 ## v0.9.0 LK: the Lockdown banner (sealed: its formations and enemies left; then the exits open).
@@ -221,6 +222,7 @@ func _init() -> void:
 	add_child(_pick)  # after the loop: the pick takes mouse input
 	add_child(events)  # v0.5.0 EV: so do the event panel's cards; a choice is input, like a pick
 	events.panel.picked.connect(_pick.picked.emit)
+	add_child(constellation)  # v0.10.5 W3-P10c
 	add_child(shop)  # v0.5.0 SH: so does the shop panel
 	add_child(boss_door)  # v0.8.0 BD
 	add_child(interact)  # v0.9.0 IX
@@ -744,6 +746,7 @@ func _sync_rewards(reader: WorldReader) -> void:
 	else:
 		_prompt.hide_prompt()
 	_pick.sync(reader)
+	constellation.sync(reader)  # v0.10.5 W3-P10c
 
 
 ## The item card (tests and shot scripts read it).
