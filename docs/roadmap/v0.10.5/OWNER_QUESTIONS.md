@@ -158,4 +158,4 @@ timed on the owner's hardware.
 
 | # | Question | Owner |
 |---|---|---|
-| V4 | Draw the minimap's rooms and doors once into a picture when the map changes (it looks the same; each frame then draws the picture and the arrow), estimated −77 to −83 % of the frame's objects at a floor's end. Build it? | |
+| V4 | Draw the minimap's rooms and doors once into a picture when the map changes (it looks the same; each frame then draws the picture and the arrow), estimated −77 to −83 % of the frame's objects at a floor's end. Build it? | **"Yes"** (2026-11-06): W3-V3 |

@@ -448,6 +448,11 @@ lights stay). A starting estimate, not a measurement.
   to floor (median ~2,700 → ~9,200 with no hero shot out), with flat nodes. Extend `scripts/checks/draw_census.gd` to
   read a later floor after the hero has cleared and walked it (floor index, rooms cleared), split the drawn objects by
   source, and name what piles up. Measure and report; the fix is its own step once the owner has seen it.
+  Found (21c300f8, [`evidence/DRAW_GROWTH.md`](evidence/DRAW_GROWTH.md)): the corner minimap, ~470 objects per room.
+- **W3-V3 (Opus; owner, 2026-11-06, V4: "Yes")**: the minimap draws its rooms, doors and icons once into a texture
+  when `MinimapState.revision` changes; each frame draws that texture and the hero's arrow. The same look (shots
+  before / after), the same behaviour (the full map view too, if it shares the code). Proved by `draw_growth.gd`'s
+  counts before / after and the minimap's tests and e2e.
 
 ### R. Release
 - Version bump, patch notes en + es, What's New, ROADMAP row + History, PROGRESS final; one PR into `main` with
