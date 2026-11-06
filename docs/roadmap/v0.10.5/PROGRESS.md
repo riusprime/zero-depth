@@ -3,17 +3,14 @@
 Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.10.0 there until the release step).
 
 ## Where we are
-(The lead keeps this block current at every push. Updated 2026-11-06, pushed to GitHub at the owner's request.)
+(The lead keeps this block current at every push. Updated 2026-11-06, the release step.)
 
-- **Every PLAN step is built and merged** on `claude/v0100-cleanup`, pushed 2026-11-06 (owner: "if … everything's
-  ready push it to github"): wave 1, wave 2 (O4b stays out, Q9), wave 3 (F1–F35: W3-S, W3-O, the progression set,
-  the Astral UI, W3-P10 loop power), and perf wave 3 (W3-V1 the census, W3-V3 the minimap cache, W3-V4a–d Enemy VAT
-  for 13 regular kinds, on by default). Seams 637/637 at 0b8cad8e (Verification 20).
-- **Waiting on the owner:** OWNER_QUESTIONS V3 (the horde kinds cast no shadow: add them or leave them), W10 (the
-  Blade single target in loops, after the playtest), the cursor sheet (W8). The fps gain from the minimap fix and VAT
-  on the owner's PC is NOT YET RUN (a `--perf-log` run measures it).
-- **Next:** the owner plays the build; W10 after that playtest.
-- **Then:** the release step (version bump, patch notes, one PR into `main`, the full suite on GitHub).
+- **v0.10.5 is built and released to a PR into `main`** (owner: "Yes, start release"), carrying v0.9.5, v0.10.0 and
+  v0.10.5: version 0.10.5, patch notes en/es, [`PLAYTEST.md`](PLAYTEST.md). Seams 637/637 at 65f94a24
+  (Verification 22). The full suite runs on the PR; `tests/MIN_TEST_COUNT` is raised from its green total.
+- **Waiting on the owner:** the v0.10.5 playtest ([`PLAYTEST.md`](PLAYTEST.md)); the cursor sheet (W8). W10 (the
+  Blade against one target in loops) moves to a later version.
+- **Next:** fix any red shard on the PR, merge, then the owner plays.
 
 ## Owner decisions (2026-11-02)
 - Q5: "Q5 yes fix it": fixes (1) sync the views once a frame and (2) a cheaper sync, as one step (`v0105-q5`).
@@ -221,6 +218,11 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
     Passing Tests 8, Asserts 504". Lint ok. Shot: `scripts/shots/horde_enemies.gd` (the Shield Bearer and the
     Splitters cast a shadow onto the floor). The fps cost: the same draws as before (the stand-ins were drawn
     underground); not timed.
+22. **Release step** (owner, 2026-11-06: "Yes, start release"): version 0.10.5, patch notes for v0.10.0 and v0.10.5
+    (en, es) and v0.9.5's Performance section, the What's New copies rebuilt; `test_patch_notes`, `test_content_valid`,
+    `test_game_version`: "Tests 12, Passing Tests 12". Lead seams (`wt-seams` at `65f94a24`): `bash scripts/ci/seams.sh`:
+    lint ok, "Tests 637, Passing Tests 637, Asserts 75753; check_gut_log: ok (637 passing, minimum 1)". The screenshot
+    tour: NOT RUN. The full suite: on the PR into `main`.
 - `tests/golden/fixtures/modifier_equivalence.json` again (W3-P9: crits and hits carry their fractions; blade_plain 181/4002/10 → 186/3968/11, gun_plain 449 → 445, both_plain 3716 → 3715, gun_frost_core 449 → 445, blade_wildfire_rider digest)
 - `tests/golden/fixtures/modifier_equivalence.json` again (W3-S10: the bolt push halved; gun_plain and gun_frost_core 445 → 317 damage, 82 → 59 hits; both_plain 3715 → 3757, kills 5 → 7)
 
