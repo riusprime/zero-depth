@@ -17,6 +17,7 @@ func after_each() -> void:
 	ViewPrefs.reduced_motion = false
 	ViewPrefs.hit_stop = true
 	ViewPrefs.effects_density = "high"
+	ViewPrefs.enemy_vat = false  # apply_settings turns it on (the game default)
 
 
 func _press(w: World, aim: int = 0) -> void:
