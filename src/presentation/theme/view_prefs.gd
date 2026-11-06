@@ -15,9 +15,17 @@ static var hit_stop := true
 ## shadow-only mesh shaped like it, or "blob", a soft disc on the floor. Read when an enemy is built. Not in Options
 ## yet (the owner picks from the shots); GameSettings key "enemy_shadows".
 static var enemy_shadows := "proxy"
+## v0.10.5 W3-V1 (owner, 2026-11-06: the enemy VAT pilot): the VatCrowd.KINDS enemies (the Swarmer) drawn as one
+## MultiMesh posed from baked textures (VatCrowd) instead of a node per piece. Off (the old path) until the owner signs
+## the look off; GameSettings key "enemy_vat" ("on" / "off"), the launch flag `-- --enemy-vat=on|off` over it, and the
+## dev panel's switch (rebuilds those enemies at once).
+static var enemy_vat := false
 
 
 static func apply_settings(profile: ProfileStore) -> void:
+	DebugApi.register_view_switch(
+		&"enemy_vat", "UI_DEV_ENEMY_VAT", flip_enemy_vat, func() -> bool: return enemy_vat
+	)
 	reduced_motion = String(GameSettings.get_value(profile, "reduced_motion")) == "on"
 	HudStyle.reduced_motion = reduced_motion  # v0.3.0 UI: steady HUD pulses
 	var d := String(GameSettings.get_value(profile, "effects_density"))
@@ -25,8 +33,17 @@ static func apply_settings(profile: ProfileStore) -> void:
 	hit_stop = String(GameSettings.get_value(profile, "hit_stop")) != "off"
 	var es := String(GameSettings.get_value(profile, "enemy_shadows"))
 	enemy_shadows = es if EnemyShadows.MODES.has(es) else "proxy"
+	enemy_vat = String(GameSettings.get_value(profile, "enemy_vat")) == "on"
+	for a in OS.get_cmdline_user_args():  # v0.10.5 W3-V1: the launch flag wins (a logged A/B run)
+		if a.begins_with("--enemy-vat="):
+			enemy_vat = a.trim_prefix("--enemy-vat=") == "on"
 	var m := StringName(String(GameSettings.get_value(profile, "colour_mode")))
 	ThemePalette.mode = m if ThemePalette.MODES.has(m) else &"off"
+
+
+## v0.10.5 W3-V1: the dev panel's enemy VAT switch (ActorViews rebuilds those enemies on its next sync).
+static func flip_enemy_vat() -> void:
+	enemy_vat = not enemy_vat
 
 
 ## How many of `n` sparks a burst throws.

@@ -246,6 +246,12 @@ func _enemies(actors: ActorViews) -> void:
 		add_child(h)
 		RigMerge.merge(h, kind)  # v0.9.5 PF5: the merged body draws on a skinned variant of its shaders
 		enemies += 1
+		if ViewPrefs.enemy_vat and VatCrowd.supports(kind):  # v0.10.5 W3-V1: its VAT body (and bake) too
+			add_child(
+				VatCrowd.warm_proxy(
+					kind, actors.enemy_tint, ActorViews.role_glow_energy, actors.outline_color
+				)
+			)
 	for kind in [WorldReader.KIND_CHARGER, WorldReader.KIND_HATCHLING]:  # the Charger's shared look too
 		var c := ChargerAvatar.new()
 		c.enemy_tint = actors.enemy_tint

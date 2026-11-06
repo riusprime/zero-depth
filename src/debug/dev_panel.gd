@@ -62,6 +62,14 @@ func _init(p_api: DebugApi) -> void:
 		b.focus_mode = Control.FOCUS_NONE
 		b.pressed.connect(spec[2])
 		col.add_child(b)
+	for id: StringName in DebugApi.view_switches:  # v0.10.5 W3-V1: the views' own switches
+		var sw: Array = DebugApi.view_switches[id]
+		var b := Button.new()
+		b.name = "Switch_" + String(id)
+		b.text = sw[0]
+		b.focus_mode = Control.FOCUS_NONE
+		b.pressed.connect(sw[1])
+		col.add_child(b)
 	_boss.name = "BossChoice"
 	_boss.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	col.add_child(_boss)
@@ -84,13 +92,14 @@ func _init(p_api: DebugApi) -> void:
 
 func _process(_delta: float) -> void:
 	_info.text = (
-		"seed %d  tick %d  %d fps  %d ticks/frame%s"
+		"seed %d  tick %d  %d fps  %d ticks/frame%s%s"
 		% [
 			api.world.seed_value,
 			api.world.tick,
 			Engine.get_frames_per_second(),
 			api.ticks_last_frame,
-			"  [paused]" if api.paused else ""
+			"  [paused]" if api.paused else "",
+			switch_text(),
 		]
 	)
 	var w := api.world
@@ -112,6 +121,15 @@ func _process(_delta: float) -> void:
 	_mod.text = tr(w.item_tables[mc].name_key) if mc >= 0 and mc < w.item_tables.size() else ""
 	_catch_up.text = catch_up_text(w)
 	_intensity.text = intensity_text(WorldReader.new(w))
+
+
+## v0.10.5 W3-V1: the view switches' states ("  enemy_vat on"), developers only.
+static func switch_text() -> String:
+	var out := ""
+	for id: StringName in DebugApi.view_switches:
+		var on: bool = (DebugApi.view_switches[id] as Array)[2].call()
+		out += "  %s %s" % [id, "on" if on else "off"]
+	return out
 
 
 ## v0.5.5 DS: "m ×1.41 (P 2000 / E 1000, cap ×1.75) · boss ×1.20 (P … / E …, cap …)", or "" without the table.

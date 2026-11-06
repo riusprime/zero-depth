@@ -59,6 +59,9 @@ var hero_look := {}
 ## v0.8.0 HV (owner O89): the camera's view (WorldViewRoot refreshes it each tick): an enemy model animates unless it
 ## is wholly out of the picture (ScreenCull.keeps, past its largest radius + the margin, with hysteresis).
 var cull: ScreenCull
+## v0.10.5 W3-V1 (the enemy VAT pilot): the crowd drawing the VatCrowd.KINDS enemies while ViewPrefs.enemy_vat is on
+## (null until the first).
+var vat_crowd: VatCrowd
 var _actors := {}
 var _projectiles := {}
 var _proj_last := {}
@@ -87,10 +90,15 @@ var _proj_key_of: Array = [[], []]
 ## id: [facing, bar, elite bar or null, dazed or null, hero avatar or null, enemy avatar or null, is a boss, the yaw
 ## last written (INF: write it), the blob shadow or null (v0.10.5 PA)].
 var _parts := {}
+## v0.10.5 W3-V1: the switch's value the actors were built with (a flip rebuilds them).
+var _vat_on := ViewPrefs.enemy_vat
 
 
 func sync(reader: WorldReader) -> void:
 	heat_tier = reader.heat_tier()
+	if _vat_on != ViewPrefs.enemy_vat:  # v0.10.5 W3-V1: the dev switch flipped: those kinds are built again
+		_vat_on = ViewPrefs.enemy_vat
+		_rebuild_vat_kinds()
 	if bar_chunks.get_parent() == null:
 		add_child(bar_chunks)
 	var alive := {}
@@ -421,6 +429,27 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int, parts: Array = [])
 			blob.visible = shown
 
 
+## v0.10.5 W3-V1: drops every actor node of a VatCrowd kind (marked "vat_kind"), so the next sync builds each again
+## with the switch's new value (in the same sync: they are missing from _actors).
+func _rebuild_vat_kinds() -> void:
+	for id: int in _actors.keys():
+		var node: Node3D = _actors[id]
+		if not node.has_meta(&"vat_kind"):
+			continue
+		_actors.erase(id)
+		node.queue_free()
+		for d: Dictionary in [_flash, _flash_hold, _shown, _anim_on, _parts]:
+			d.erase(id)
+
+
+## v0.10.5 W3-V1: the VAT crowd (made with the first VAT enemy).
+func _vat_crowd() -> VatCrowd:
+	if vat_crowd == null:
+		vat_crowd = VatCrowd.new()
+		add_child(vat_crowd)
+	return vat_crowd
+
+
 ## v0.4.0 SC: a projectile gone from the sim goes back to its look's pool (hidden) instead of being freed.
 func _pool_missing(live: Dictionary) -> void:
 	for id in _projectiles.keys():
@@ -712,6 +741,9 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			var horde := HordeAvatar.new()
 			horde.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials (tint_greys, role_glow)
 			horde.role_glow = role_glow_energy
+			if VatCrowd.supports(kind):  # v0.10.5 W3-V1: drawn by the VAT crowd while the switch is on
+				horde.vat = ViewPrefs.enemy_vat
+				root.set_meta(&"vat_kind", true)
 			horde.setup(kind, outline_color, technique)
 			facing.add_child(horde)
 			height = horde.height
@@ -740,6 +772,15 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 				_add_core_panels(facing, size)
 	if not is_player and root.has_meta(&"boss"):  # v0.9.5 PF4: a boss's largest pieces cast its shadow
 		ShadowTrim.trim(facing, ShadowTrim.BOSS_KEEP)
+	elif not is_player and _vat_avatar(root) != null:
+		# v0.10.5 W3-V1: the crowd draws the body and its proxy shadow; a blob stays a node of the actor's.
+		var vat_avatar := _vat_avatar(root)
+		var blob := ViewPrefs.enemy_shadows == "blob"
+		if blob:
+			root.set_meta(
+				&"blob", EnemyShadows.apply(root, facing, vat_avatar, kind, radius, "blob")
+			)
+		_vat_crowd().add(root, facing, vat_avatar, outline_color, not blob)
 	elif not is_player:
 		RigMerge.merge_actor(root, kind)  # v0.9.5 PF5: the enemy's pieces become one skinned mesh
 		# v0.10.5 PA: its parts cast nothing; one stand-in shaped like it (or a blob) casts its shadow.
@@ -863,6 +904,12 @@ func _projectile_material(c: Color, energy: float) -> StandardMaterial3D:
 		m.emission_energy_multiplier = energy
 		_proj_mats[key] = m
 	return _proj_mats[key]
+
+
+## v0.10.5 W3-V1: the actor's avatar when a VAT crowd draws it, else null.
+static func _vat_avatar(root: Node3D) -> HordeAvatar:
+	var h := _meta_or_null(root, &"enemy_avatar") as HordeAvatar
+	return h if h != null and h.vat else null
 
 
 ## v0.10.5 Q5: a meta's value, or null when the node has none (get_meta with a null default still reports an error).
