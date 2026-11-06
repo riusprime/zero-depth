@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 class_name HordeAvatar
 extends AvatarBase
 ## The six horde kinds (v0.4.0 EN), code-built low-poly in the enemy sheet's red and grey (no concept sheet yet; the
@@ -80,6 +81,14 @@ const BOB_M := 0.015
 const SWARMER_LEG_RATE := 22.0
 const SWARMER_LEG_PHASE := 1.7
 const SWARMER_LEG_SWING := 0.25
+## v0.10.5 W3-V4b: the Sniper's barrel angle spans [SNIPER_AIM_MIN, SNIPER_AIM_MIN + SNIPER_AIM_SPAN] (radians: the
+## windup's -0.04 and the crouch's -0.12 down, the strike's +0.12 up); its VAT grid runs over that span.
+const SNIPER_AIM_MIN := -0.16
+const SNIPER_AIM_SPAN := 0.28
+## v0.10.5 W3-V4b: the owner's models whose legs walk (the Mender floats).
+const MODEL_LEG_KINDS: Array[int] = [
+	WorldReader.KIND_SPLITTER, WorldReader.KIND_SPLITLING, WorldReader.KIND_SHIELD_BEARER
+]
 
 ## v0.8.0 HR: the code bodies' meshes, one per shape for every enemy (keyed by their vertices), and the boxes by size.
 static var _meshes := {}
@@ -134,6 +143,13 @@ var _model_scale := 1.0
 var _vat_lift := 0.0
 ## v0.10.5 W3-V1: the crouch pose_at() poses at (< 0: none, the windup's own).
 var _bake_crouch := -1.0
+## v0.10.5 W3-V4b: the body is the owner's model (set by setup() even when `vat` builds no node).
+var _is_model := false
+## v0.10.5 W3-V4b (the VAT kinds past the Swarmer): the body's whole transform in the avatar's space (its pivot's
+## place, lean and scale and, on a model, the model's sway and death shrink past its rest scale) and the drives the
+## crowd's shader poses the parts at (vat_drives), both from the last _pose().
+var _vat_body := Transform3D.IDENTITY
+var _vat_d := Vector4.ZERO
 
 
 static func height_of(p_kind: int) -> float:
@@ -160,13 +176,13 @@ static func model_id(p_kind: int) -> StringName:
 
 ## v0.8.0 MI: true when the body is the owner's model.
 func has_model() -> bool:
-	return model != null
+	return _is_model
 
 
 ## v0.8.0 MI: starts the death (the owner's model only): the body sinks and tips over DEATH_SECONDS, the Splitter's
 ## halves fly apart (its two Splitlings are already in the sim). False for the code-made body (it goes at once).
 func die() -> bool:
-	if model == null:
+	if not _is_model:
 		return false
 	_die_t = 0.0
 	return true
@@ -183,6 +199,10 @@ func setup(p_kind: int, outline_color: Color, technique: StringName = &"outline"
 	_technique = technique
 	height = height_of(kind)
 	if vat:  # v0.10.5 W3-V1: no nodes; the crowd draws the body
+		var m := EnemyModels.get_model(model_id(kind))
+		_is_model = not m.is_empty()  # v0.10.5 W3-V4b: the owner's model's numbers, no node
+		if _is_model:
+			_model_scale = float(m["scale"])
 		_pose()
 		return
 	body = Node3D.new()
@@ -197,6 +217,7 @@ func setup(p_kind: int, outline_color: Color, technique: StringName = &"outline"
 	_glow_mat = EnemyLooks.accent(glow, glow, 1.5)
 	if not owner_model.is_empty():
 		_build_model(owner_model)
+		_is_model = true
 		if kind == WorldReader.KIND_SPLITLING:
 			body.scale = Vector3.ONE * SPLITLING_SCALE
 	else:
@@ -257,7 +278,7 @@ func advance(delta: float) -> void:
 	_t += dt
 	if _die_t >= 0.0:
 		_die_t += dt
-	if model != null and is_inside_tree():  # v0.8.0 MI: the walk's pace from how fast the body moves
+	if _is_model and is_inside_tree():  # v0.8.0 MI: the walk's pace from how fast the body moves
 		var at := global_position
 		var speed := (
 			0.0
@@ -310,7 +331,7 @@ func crouch_amount() -> float:
 
 ## v0.8.0 TG: the Sniper's muzzle glow (0 when cold; always 0 for the other kinds).
 func muzzle_energy() -> float:
-	return _muzzle_e if parts.has("muzzle") else 0.0
+	return _muzzle_e if kind == WorldReader.KIND_SNIPER else 0.0
 
 
 ## v0.10.5 W3-V1: the frame-time clock the pose runs on (seconds; the VAT crowd reads the legs' phase from it).
@@ -344,25 +365,27 @@ func _pose() -> void:
 	var telling := TELL_KINDS.has(kind) and _state == WorldReader.STATE_WINDUP
 	var tell := tell_glow(_tell_p, _t, calm) if telling else 1.0
 	var energy := (1.5 + _wind * 3.0) * tell + _strike * 2.0
-	if vat:  # v0.10.5 W3-V1: the crowd draws the body (VatCrowd); only the numbers it reads
+	if vat and kind == WorldReader.KIND_SWARMER:  # v0.10.5 W3-V1: the crowd draws the body; its numbers only
 		_vat_lift = bob - (1.0 - _rise) * height
 		_set_glow(energy * lerpf(0.2, 1.0, _rise))
 		return
 	# The crouch sinks the body by a share of its height and draws it back from the way it will strike.
-	body.position = Vector3(
+	# (v0.10.5 W3-V4b: the body's place `bp` and lean `brz` are reckoned first and set once, _place_body: on its
+	# node, or as the VAT crowd's instance transform.)
+	var bp := Vector3(
 		-_wind * 0.06 - crouch * 0.08 * height + _strike * 0.12,
 		bob - (1.0 - _rise) * height - crouch * 0.1 * height,
 		0
 	)
-	body.rotation.z = crouch * 0.12
-	if model != null:  # v0.8.0 MI: the owner's model's parts
-		_pose_model(energy, calm)
+	var brz := crouch * 0.12
+	if _is_model:  # v0.8.0 MI: the owner's model's parts
+		_pose_model(energy, calm, bp, brz)
 		return
 	match kind:
 		WorldReader.KIND_SWARMER:
 			# v0.8.0 P1: rears up with the mandibles gaping, then lunges and bites them shut.
-			body.rotation.z += _wind * 0.25 - _strike * 0.2
-			body.position.x += _strike * 0.08
+			brz += _wind * 0.25 - _strike * 0.2
+			bp.x += _strike * 0.08
 			for k in 2:
 				var m: Node3D = parts["mandible%d" % k]
 				m.rotation.y = (0.15 + _wind * 0.85 - _strike * 0.75) * (1.0 if k == 0 else -1.0)
@@ -379,27 +402,110 @@ func _pose() -> void:
 			var claws := parts["claws"] as Node3D
 			claws.rotation.z = _wind * 1.1 - _strike * 0.85
 			claws.position.x = CLAW_PIVOT.x - _wind * 0.06 + _strike * 0.14
-			body.rotation.z += _wind * 0.1 - _strike * 0.16
+			brz += _wind * 0.1 - _strike * 0.16
 		WorldReader.KIND_SHIELD_BEARER:
 			# v0.8.0 P1: the shield draws back and tips up, the body leans in behind it; then the shield slams out.
 			var shield := parts["shield"] as Node3D
 			shield.position.x = 0.5 - _wind * 0.24 + _strike * 0.38
 			shield.rotation.z = _wind * 0.22 - _strike * 0.12
-			body.rotation.z += -_wind * 0.06 - _strike * 0.12
+			brz += -_wind * 0.06 - _strike * 0.12
 		WorldReader.KIND_MENDER:
-			body.position.y += 0.18 + sin(_t * 2.2) * 0.06
+			bp.y += 0.18 + sin(_t * 2.2) * 0.06
 			(parts["cross"] as Node3D).rotation.y = _t * 2.0
 			energy = 1.5 + (2.5 + sin(_t * 9.0) if _healing else 0.0)
 		WorldReader.KIND_MINE_LAYER:
-			(parts["hopper"] as Node3D).position.y = 0.42 - _wind * 0.25
-			(parts["mine"] as Node3D).visible = _strike < 0.5
+			# v0.10.5 W3-V4b: the drives (the windup, the mine shown) through _pose_parts, as the VAT bake poses it.
+			_pose_parts(Vector4(_wind, 1.0 if _strike < 0.5 else 0.0, 0.0, 0.0))
 		WorldReader.KIND_SNIPER:
-			(parts["barrel"] as Node3D).rotation.z = -_wind * 0.04 + _strike * 0.12 - crouch * 0.12
 			var charge := smoothstep(0.0, 1.0, _tell_p) if telling else 0.0
 			var muzzle := MUZZLE_ENERGY * charge * tell / (1.0 + TELL_GLOW_CLIMB + TELL_GLOW_FLASH)
 			_set_muzzle(maxf(muzzle, _strike * MUZZLE_ENERGY))
-			(parts["muzzle"] as Node3D).scale = Vector3.ONE * (0.4 + 0.6 * maxf(charge, _strike))
+			# v0.10.5 W3-V4b: the drives (the barrel's angle, the muzzle's size) through _pose_parts.
+			_pose_parts(
+				Vector4(
+					-_wind * 0.04 + _strike * 0.12 - crouch * 0.12,
+					0.4 + 0.6 * maxf(charge, _strike),
+					0.0,
+					0.0
+				)
+			)
+	_place_body(bp, brz)
 	_set_glow(energy * lerpf(0.2, 1.0, _rise))
+
+
+## v0.10.5 W3-V4b: sets the body's place `bp` and lean `brz` and, on the owner's model, its sway `mrx` and death
+## shrink `ms` (x its rest scale) on the nodes; a VAT avatar keeps them as one transform for its crowd (vat_offset).
+func _place_body(bp: Vector3, brz: float, mrx := 0.0, ms := 1.0) -> void:
+	if not vat:
+		body.position = bp
+		body.rotation.z = brz
+		if model != null:
+			model.rotation = Vector3(mrx, 0, 0)
+			model.scale = Vector3.ONE * _model_scale * ms
+		return
+	var bs := SPLITLING_SCALE if kind == WorldReader.KIND_SPLITLING else 1.0
+	var xf := Transform3D(
+		Basis.from_euler(Vector3(0, 0, brz)) * Basis.from_scale(Vector3.ONE * bs), bp
+	)
+	if _is_model:
+		xf = (
+			xf
+			* Transform3D(
+				Basis.from_euler(Vector3(mrx, 0, 0)) * Basis.from_scale(Vector3.ONE * ms),
+				Vector3.ZERO
+			)
+		)
+	_vat_body = xf
+
+
+## v0.10.5 W3-V4b: the moving parts of the kinds past the Swarmer, posed from their drives `d` (natural units):
+## - the owner's models: the windup raise x, the strike y, the death z (the Splitter's), the legs' swing w (-1..1, x
+##   WALK_SWING); the Mender's: the crystal raised x (0 / 1) and the cross's turn w (radians);
+## - the Mine Layer: the windup x (the hopper lowers), the mine shown y (0 / 1);
+## - the Sniper: the barrel's angle x (radians), the muzzle's size y.
+## The live pose (_pose) and the VAT bake (vat_bake_pose) both pose through here; a VAT avatar keeps `d` in its grid's
+## units (vat_drives) instead.
+func _pose_parts(d: Vector4) -> void:
+	if vat:
+		_vat_d = HordeVat.grid_of(self, d)
+		return
+	if model != null:
+		for pname: String in parts:
+			var n := parts[pname] as Node3D
+			n.position = _rest[pname]
+			n.rotation = Vector3.ZERO
+		if MODEL_LEG_KINDS.has(kind):
+			(parts["leg_l"] as Node3D).rotation.z = d.w * WALK_SWING
+			(parts["leg_r"] as Node3D).rotation.z = -d.w * WALK_SWING
+	match kind:
+		WorldReader.KIND_SHIELD_BEARER:
+			# The shield lifts and draws back through the windup (held raised: O25), then bashes out at the hit.
+			var shield := parts["shield"] as Node3D
+			shield.position += Vector3(-d.x * 0.12 + d.y * 0.3, d.x * 0.1, 0)
+			shield.rotation.z = d.x * 0.3 - d.y * 0.18
+		WorldReader.KIND_SPLITTER, WorldReader.KIND_SPLITLING:
+			# The seam gapes through the windup; the claws lift up and out (held), then chop forward and down.
+			var gap := 0.012 + d.x * 0.045 + d.z * 0.4
+			for side: Array in [["half_l", "arm_l", -1.0], ["half_r", "arm_r", 1.0]]:
+				var s: float = side[2]
+				var half := parts[side[0]] as Node3D
+				var arm := parts[side[1]] as Node3D
+				half.position.z += gap * s
+				half.rotation.x = -s * d.z * 0.6
+				arm.position.z += gap * s
+				arm.rotation.x = -s * (d.x * 0.55 - d.y * 0.2)
+				arm.rotation.z = d.x * 0.7 - d.y * 0.9
+				arm.rotation.y = s * d.y * 0.55
+		WorldReader.KIND_MENDER:
+			# The cross over it turns; healing raises its crystals.
+			(parts["cross"] as Node3D).rotation.y = d.w
+			(parts["crystal"] as Node3D).position.y += d.x * 0.1
+		WorldReader.KIND_MINE_LAYER:
+			(parts["hopper"] as Node3D).position.y = 0.42 - d.x * 0.25
+			(parts["mine"] as Node3D).visible = d.y > 0.5
+		WorldReader.KIND_SNIPER:
+			(parts["barrel"] as Node3D).rotation.z = d.x
+			(parts["muzzle"] as Node3D).scale = Vector3.ONE * d.y
 
 
 ## v0.9.5 PF5: the hit flash and the accent glow are each written to a list of pieces (RigMerge swaps merged
@@ -422,10 +528,11 @@ func _set_glow(e: float) -> void:
 
 
 func _set_muzzle(e: float) -> void:
-	if e == _muzzle_e or _muzzle_piece == null:
+	if e == _muzzle_e:
 		return
 	_muzzle_e = e
-	_muzzle_piece.set_instance_shader_parameter(EnemyLooks.GLOW, e)
+	if _muzzle_piece != null:  # (v0.10.5 W3-V4b: a VAT Sniper has none; the crowd reads muzzle_energy)
+		_muzzle_piece.set_instance_shader_parameter(EnemyLooks.GLOW, e)
 
 
 # --- v0.8.0 MI: the owner's models ----------------------------------------------------------------------------------
@@ -485,52 +592,85 @@ func _body_material(c: Color, tex: Texture2D, outline_m: float) -> ShaderMateria
 ## v0.8.0 MI: the model's parts in this frame's pose (model units, about a metre each; +X the front, each part turning
 ## about its own pivot). What drives each move is the same as the code body's: the windup's raise-and-hold (_wind),
 ## the strike's snap (_strike), the Mender's heal, the walk's pace (_walk) and the death (_die_t).
-func _pose_model(energy: float, calm: bool) -> void:
-	var swing := sin(_walk_t) * WALK_SWING * _walk
+## (v0.10.5 W3-V4b: the body's moves are reckoned into `bp` / `brz` and the model's sway and shrink, set by
+## _place_body; the parts' through _pose_parts: the same arithmetic as before, split so the VAT bake poses the parts.)
+func _pose_model(energy: float, calm: bool, bp: Vector3, brz: float) -> void:
 	var d := clampf(_die_t / DEATH_SECONDS, 0.0, 1.0) if _die_t >= 0.0 else 0.0
-	model.rotation = Vector3.ZERO
-	for pname: String in parts:
-		var n := parts[pname] as Node3D
-		n.position = _rest[pname]
-		n.rotation = Vector3.ZERO
-	if parts.has("leg_l"):
-		(parts["leg_l"] as Node3D).rotation.z = swing
-		(parts["leg_r"] as Node3D).rotation.z = -swing
-		body.position.y += absf(sin(_walk_t)) * 0.025 * _walk
+	var mrx := 0.0
+	var drives := Vector4(_wind, _strike, 0.0, sin(_walk_t) * _walk)
+	if MODEL_LEG_KINDS.has(kind):
+		bp.y += absf(sin(_walk_t)) * 0.025 * _walk
 	match kind:
 		WorldReader.KIND_SHIELD_BEARER:
-			# The shield lifts and draws back through the windup (held raised: O25), then bashes out at the hit.
-			var shield := parts["shield"] as Node3D
-			shield.position += Vector3(-_wind * 0.12 + _strike * 0.3, _wind * 0.1, 0)
-			shield.rotation.z = _wind * 0.3 - _strike * 0.18
-			body.rotation.z += -_strike * 0.05
+			brz += -_strike * 0.05
 		WorldReader.KIND_SPLITTER, WorldReader.KIND_SPLITLING:
-			# The seam gapes through the windup; the claws lift up and out (held), then chop forward and down.
-			var gap := 0.012 + _wind * 0.045 + d * 0.4
-			for side: Array in [["half_l", "arm_l", -1.0], ["half_r", "arm_r", 1.0]]:
-				var s: float = side[2]
-				var half := parts[side[0]] as Node3D
-				var arm := parts[side[1]] as Node3D
-				half.position.z += gap * s
-				half.rotation.x = -s * d * 0.6
-				arm.position.z += gap * s
-				arm.rotation.x = -s * (_wind * 0.55 - _strike * 0.2)
-				arm.rotation.z = _wind * 0.7 - _strike * 0.9
-				arm.rotation.y = s * _strike * 0.55
+			drives.z = d  # the halves fly apart as it dies
 		WorldReader.KIND_MENDER:
 			# It floats and sways; the cross over it turns; healing raises its crystals and lights them.
-			body.position.y += 0.22 + (0.0 if calm else sin(_t * 2.2) * 0.06)
+			bp.y += 0.22 + (0.0 if calm else sin(_t * 2.2) * 0.06)
 			if not calm:
-				model.rotation.x = sin(_t * 1.3) * 0.05
-			(parts["cross"] as Node3D).rotation.y = _t * 2.0
-			var lift := 1.0 if _healing else 0.0
-			(parts["crystal"] as Node3D).position.y += lift * 0.1
+				mrx = sin(_t * 1.3) * 0.05
+			drives = Vector4(1.0 if _healing else 0.0, 0.0, 0.0, _t * 2.0)
 			energy = 1.5 + (2.5 + sin(_t * 9.0) if _healing else 0.0)
-	model.scale = Vector3.ONE * _model_scale * (1.0 - 0.35 * d)
 	if d > 0.0:
-		body.rotation.z += d * 0.7
-		body.position.y += d * 0.04 * height  # tips over above the ground (no sinking through it)
+		brz += d * 0.7
+		bp.y += d * 0.04 * height  # tips over above the ground (no sinking through it)
+	_place_body(bp, brz, mrx, 1.0 - 0.35 * d)
+	_pose_parts(drives)
 	_set_glow(energy * lerpf(0.2, 1.0, _rise) * (1.0 - d))
+
+
+# --- v0.10.5 W3-V4b: the VAT kinds past the Swarmer (HordeVat, VatBake, VatCrowd) ---------------------------------
+
+
+## VatBake: poses the parts at stance grid point `u` and gait phase `phase` (0..1) through the same code as the live
+## pose (the body's own moves are the crowd's instance transform, vat_offset, so the model stays at its rest scale).
+## The Swarmer: pose_at, as the pilot baked it. Tools only (built with its pieces).
+func vat_bake_pose(u: Vector3, phase: float) -> void:
+	if kind == WorldReader.KIND_SWARMER:
+		pose_at(u.x, u.y, u.z, VatBake.gait_period(kind) * phase, 1.0)
+		return
+	_pose_parts(HordeVat.natural(kind, u, phase))
+	if model != null:
+		model.transform = Transform3D(Basis.from_scale(Vector3.ONE * _model_scale), Vector3.ZERO)
+
+
+## VatCrowd: the drives this instance's shader poses it at (the stance grid's x, y, z, the gait's w; VatLooks).
+func vat_drives(pose: Dictionary) -> Vector4:
+	if kind == WorldReader.KIND_SWARMER:
+		return Vector4(
+			clampf(windup_pose(), 0.0, 1.0),
+			clampf(strike_pose(), 0.0, 1.0),
+			clampf(crouch_amount(), 0.0, 1.0),
+			VatBake.gait_phase(pose, anim_time())
+		)
+	return _vat_d
+
+
+## VatCrowd: the body's transform in the avatar's space past the baked pose (the Swarmer's: its lift).
+func vat_offset() -> Transform3D:
+	if kind == WorldReader.KIND_SWARMER:
+		return Transform3D(Basis.IDENTITY, Vector3(0, _vat_lift, 0))
+	return _vat_body
+
+
+## Tools and tests (VatBake.pose_error_full, HordeVat.sample): poses from every input at once, as advance() would
+## have left them: {wind, strike, crouch, t, rise, die (s into the death, < 0 alive), walk, walk_t, healing, tell,
+## winding}.
+func pose_with(s: Dictionary) -> void:
+	_wind = s["wind"]
+	_strike = s["strike"]
+	_bake_crouch = s["crouch"]
+	_t = s["t"]
+	_rise = s["rise"]
+	_die_t = s["die"]
+	_walk = s["walk"]
+	_walk_t = s["walk_t"]
+	_healing = s["healing"]
+	_tell_p = s["tell"]
+	_state = WorldReader.STATE_WINDUP if s["winding"] else WorldReader.STATE_MOVE
+	_pose()
+	_bake_crouch = -1.0
 
 
 # --- the six builds -----------------------------------------------------------------------------------------------

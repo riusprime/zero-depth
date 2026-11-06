@@ -64,7 +64,9 @@ static func reference_avatar(
 
 ## The joints of `avatar` (built with its pieces): [[node, grid], ...] in bone order (a parent before its children).
 static func joint_spec(avatar: HordeAvatar) -> Array:
-	var out: Array = []
+	var out: Array = HordeVat.joint_spec(avatar)  # v0.10.5 W3-V4b: the other horde kinds declare theirs
+	if not out.is_empty():
+		return out
 	match avatar.kind:
 		WorldReader.KIND_SWARMER:
 			out.append([avatar.body, GRID_STANCE])
@@ -79,7 +81,7 @@ static func joint_spec(avatar: HordeAvatar) -> Array:
 static func joints(avatar: HordeAvatar) -> Array:
 	var spec := joint_spec(avatar)
 	var out: Array = []
-	var slots := {GRID_STANCE: 0, GRID_GAIT: 0}
+	var slots := {GRID_NONE: 0, GRID_STANCE: 0, GRID_GAIT: 0}
 	var index := {}
 	for j: Array in spec:
 		var node: Node3D = j[0]
@@ -117,10 +119,14 @@ static func bake(avatar: HordeAvatar) -> Dictionary:
 	for j: Dictionary in js:
 		if j["grid"] == GRID_STANCE:
 			n_stance += 1
-		else:
+		elif j["grid"] == GRID_GAIT:
 			n_gait += 1
-	var rows_stance := STANCE_N.x * STANCE_N.y * STANCE_N.z
-	var gait_n := GAIT_N if n_gait > 0 else 0
+	# v0.10.5 W3-V4b: each kind's own grids (HordeVat.grids; the Swarmer's: STANCE_N, GAIT_N) and its own
+	# pose over them (vat_bake_pose; the Swarmer's: pose_at, as before).
+	var grids := HordeVat.grids(avatar.kind)
+	var sn: Vector3i = grids[0]
+	var rows_stance := sn.x * sn.y * sn.z
+	var gait_n: int = grids[1] if n_gait > 0 else 0
 	var period := gait_period(avatar.kind)
 	var img := Image.create_empty(
 		maxi(maxi(n_stance, n_gait), 1) * 3,
@@ -128,43 +134,53 @@ static func bake(avatar: HordeAvatar) -> Dictionary:
 		false,
 		Image.FORMAT_RGBAF
 	)
-	for ic in STANCE_N.z:
-		for i_s in STANCE_N.y:
-			for iw in STANCE_N.x:
-				avatar.pose_at(
-					float(iw) / float(STANCE_N.x - 1),
-					float(i_s) / float(STANCE_N.y - 1),
-					float(ic) / float(STANCE_N.z - 1),
-					0.0,
-					1.0
+	for ic in sn.z:
+		for i_s in sn.y:
+			for iw in sn.x:
+				avatar.vat_bake_pose(
+					Vector3(
+						float(iw) / float(sn.x - 1),
+						float(i_s) / float(sn.y - 1),
+						float(ic) / float(sn.z - 1)
+					),
+					0.0
 				)
-				var row := iw + STANCE_N.x * (i_s + STANCE_N.y * ic)
+				var row := iw + sn.x * (i_s + sn.y * ic)
 				for j: Dictionary in js:
 					if j["grid"] == GRID_STANCE:
 						_write(img, j["slot"], row, local_of(avatar, js, j))
 	for it in gait_n:
-		avatar.pose_at(0.0, 0.0, 0.0, period * float(it) / float(gait_n), 1.0)
+		avatar.vat_bake_pose(Vector3.ZERO, float(it) / float(gait_n))
 		for j: Dictionary in js:
 			if j["grid"] == GRID_GAIT:
 				_write(img, j["slot"], rows_stance + it, local_of(avatar, js, j))
-	return {
+	var out := {
 		"texture": ImageTexture.create_from_image(img),
 		"image": img,
-		"stance": STANCE_N,
+		"stance": sn,
 		"gait": gait_n,
 		"gait_row": rows_stance,
 		"period": period,
 	}
+	var tex := HordeVat.texture(avatar)  # v0.10.5 W3-V4b: the owner's model's colour map (VatLooks samples it)
+	if tex != null:
+		out["albedo_tex"] = tex
+	return out
 
 
 ## Joint `j`'s transform now, relative to its parent joint (or the avatar): the chain of node transforms between.
+## v0.10.5 W3-V4b: a hidden joint (the Mine Layer's mine once dropped) is folded to a point (a zero basis), so its
+## triangles draw nothing.
 static func local_of(avatar: Node3D, js: Array, j: Dictionary) -> Transform3D:
 	var stop: Node = avatar if j["parent"] < 0 else (js[j["parent"]] as Dictionary)["node"]
 	var xf := Transform3D.IDENTITY
 	var n: Node = j["node"]
+	var hidden := not (n as Node3D).visible
 	while n != stop and n != null:
 		xf = (n as Node3D).transform * xf
 		n = n.get_parent()
+	if hidden:
+		xf.basis = Basis(Vector3.ZERO, Vector3.ZERO, Vector3.ZERO)
 	return xf
 
 
@@ -238,13 +254,26 @@ static func build_mesh(avatar: HordeAvatar) -> ArrayMesh:
 	var c1 := PackedFloat32Array()
 	var c2 := PackedFloat32Array()
 	var index := PackedInt32Array()
+	var textured := HordeVat.texture(avatar) != null  # v0.10.5 W3-V4b: the owner's model's UVs too
+	var uvs := PackedVector2Array()
 	for p: Dictionary in pieces(avatar, js):
 		var mi: MeshInstance3D = p["node"]
 		var s: int = p["surface"]
 		var look := surface_look(mi, s)
 		var l0 := PackedFloat32Array(look[0])
 		var l1 := PackedFloat32Array(look[1])
+		if HordeVat.alt_glow(avatar, mi):  # v0.10.5 W3-V4b: the Sniper's muzzle (mode 2: VatLooks' second glow)
+			l0[3] = 2.0
 		var arrays := mi.mesh.surface_get_arrays(s)
+		if textured:
+			var uv: Variant = arrays[Mesh.ARRAY_TEX_UV]
+			var nv: int = (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
+			if uv is PackedVector2Array and (uv as PackedVector2Array).size() == nv:
+				uvs.append_array(uv)
+			else:
+				var zero := PackedVector2Array()
+				zero.resize(nv)
+				uvs.append_array(zero)
 		var xf: Transform3D = p["xf"]
 		var nb := xf.basis.inverse().transposed()
 		var v: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
@@ -303,6 +332,8 @@ static func build_mesh(avatar: HordeAvatar) -> ArrayMesh:
 	out[Mesh.ARRAY_CUSTOM1] = c1
 	out[Mesh.ARRAY_CUSTOM2] = c2
 	out[Mesh.ARRAY_INDEX] = index
+	if textured:
+		out[Mesh.ARRAY_TEX_UV] = uvs
 	var flags := (
 		(Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT)
 		| (Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM1_SHIFT)
@@ -323,9 +354,7 @@ static func surface_look(mi: MeshInstance3D, s: int) -> Array:
 	if m == null or m.shader == null:
 		push_error("VatBake: %s has no EnemyLooks material" % mi.get_path())
 		return [[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]
-	var code := m.shader.code
-	if code.contains("texture_albedo"):
-		push_error("VatBake: %s is textured (not baked yet)" % mi.get_path())
+	var code := m.shader.code  # (v0.10.5 W3-V4b: a textured plate's map is the pose's albedo_tex, VatLooks)
 	var albedo: Color = m.get_shader_parameter("albedo")
 	var emission: Color = m.get_shader_parameter("emission")
 	var energy := float(m.get_shader_parameter("emission_energy"))
@@ -407,6 +436,14 @@ static func gait_phase(pose: Dictionary, t: float) -> float:
 static func eval_vertices(
 	pose: Dictionary, mesh: ArrayMesh, d: Vector4, lift: float
 ) -> PackedVector3Array:
+	return eval_vertices_at(pose, mesh, d, Transform3D(Basis.IDENTITY, Vector3(0, lift, 0)))
+
+
+## v0.10.5 W3-V4b: eval_vertices with the body's whole instance transform `offset` (HordeAvatar.vat_offset) for the
+## lift.
+static func eval_vertices_at(
+	pose: Dictionary, mesh: ArrayMesh, d: Vector4, offset: Transform3D
+) -> PackedVector3Array:
 	var arrays := mesh.surface_get_arrays(0)
 	var v: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var c2: PackedFloat32Array = arrays[Mesh.ARRAY_CUSTOM2]
@@ -421,7 +458,7 @@ static func eval_vertices(
 			var m := eval_local(pose, key.x, key.y, d)
 			if key.z >= 0:
 				m = eval_local(pose, key.z, key.w, d) * m
-			cache[key] = Transform3D(Basis.IDENTITY, Vector3(0, lift, 0)) * m
+			cache[key] = offset * m
 		out[k] = (cache[key] as Transform3D) * v[k]
 	return out
 
@@ -485,3 +522,74 @@ static func pose_error(
 		"vertices": count / maxi(1, samples),
 		"samples": samples,
 	}
+
+
+## v0.10.5 W3-V4b: pose_error for the kinds past the Swarmer: over `samples` random sets of every input the pose reads
+## (HordeVat.sample: the windup raise, the strike, the crouch, the clock, the rise-in, the death, the walk,
+## the heal, the tell), both avatars posed by pose_with, the VAT side through the baked texture at its own drives and
+## instance transform (vat_drives, vat_offset). A vertex of a hidden piece (the dropped mine) must fold to its joint's
+## point on the VAT side instead: `hidden_spread_m` is how far apart those land (0: drawn as nothing). {max_m, mean_m,
+## worst (the inputs), vertices, samples, hidden, hidden_spread_m}.
+static func pose_error_full(
+	live: HordeAvatar,
+	vat: HordeAvatar,
+	pose: Dictionary,
+	mesh: ArrayMesh,
+	samples: int,
+	seed_value: int,
+	t_max := 20.0
+) -> Dictionary:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var worst := 0.0
+	var sum := 0.0
+	var count := 0
+	var hidden := 0
+	var spread := 0.0
+	var at := {}
+	var ps := pieces(live, joints(live))
+	for i in samples:
+		var s := HordeVat.sample(rng, t_max)
+		live.pose_with(s)
+		vat.pose_with(s)
+		var a := live_vertices(live)
+		var b := eval_vertices_at(pose, mesh, vat.vat_drives(pose), vat.vat_offset())
+		var k0 := 0
+		for p: Dictionary in ps:
+			var mi: MeshInstance3D = p["node"]
+			var nv: int = (
+				(mi.mesh.surface_get_arrays(p["surface"])[Mesh.ARRAY_VERTEX] as PackedVector3Array)
+				. size()
+			)
+			if not _shown(mi, live):
+				hidden += nv
+				for k in range(k0, k0 + nv):
+					spread = maxf(spread, b[k].distance_to(b[k0]))
+			else:
+				for k in range(k0, k0 + nv):
+					var e := a[k].distance_to(b[k])
+					sum += e
+					count += 1
+					if e > worst:
+						worst = e
+						at = s.duplicate()
+						at["vertex"] = k
+			k0 += nv
+	return {
+		"max_m": worst,
+		"mean_m": sum / maxf(1.0, count),
+		"worst": at,
+		"vertices": (count + hidden) / maxi(1, samples),
+		"samples": samples,
+		"hidden": hidden,
+		"hidden_spread_m": spread,
+	}
+
+
+## Whether `n` and every node above it up to `avatar` is visible (the avatar may be out of the tree).
+static func _shown(n: Node, avatar: Node) -> bool:
+	while n != null and n != avatar:
+		if n is Node3D and not (n as Node3D).visible:
+			return false
+		n = n.get_parent()
+	return true

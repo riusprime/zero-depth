@@ -5,6 +5,8 @@ extends SceneTree
 ## in metres, with the same vertex posed through the baked texture the way the shader samples it (VatBake.eval_*,
 ## the shader's arithmetic on the CPU). Run twice: normal and reduced motion. Headless is fine (no renderer needed):
 ##   APPDATA=<temp> godot --headless --path . -s scripts/checks/vat_bake_report.gd [-- --samples=4000]
+## v0.10.5 W3-V4b: every VatCrowd kind; the kinds past the Swarmer are posed from every input their pose reads at once
+## (HordeAvatar.pose_with over HordeVat.sample: the death, the walk, the heal, the tell too; VatBake.pose_error_full).
 ## Writes build/vat/<sha>_bake.txt (never into docs) and prints it. The GPU's own sampling is checked by the
 ## side-by-side shots (scripts/shots/vat_sheet.gd), not here.
 
@@ -31,7 +33,10 @@ func _initialize() -> void:
 		)
 	)
 	for kind: int in VatCrowd.KINDS:
-		lines.append_array(_report(kind))
+		if VatCrowd.supports(kind):
+			lines.append_array(_report(kind))
+		else:
+			lines.append("kind %d: not drawn by VAT here (its model file is missing)" % kind)
 	var text := "\n".join(lines) + "\n"
 	print(text)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT_DIR))
@@ -63,7 +68,7 @@ func _report(kind: int) -> PackedStringArray:
 		out
 		. append(
 			(
-				"kind %d: %d joints, %d vertices, %d triangles, pose texture %dx%d RGBAF (%d KiB)"
+				"kind %d: %d joints, %d vertices, %d triangles, pose texture %dx%d RGBAF (%d KiB), grids %s"
 				% [
 					kind,
 					js.size(),
@@ -72,6 +77,7 @@ func _report(kind: int) -> PackedStringArray:
 					img.get_width(),
 					img.get_height(),
 					img.get_data().size() / 1024,
+					HordeVat.grids(kind),
 				]
 			)
 		)
@@ -79,7 +85,12 @@ func _report(kind: int) -> PackedStringArray:
 	out.append("  bake ms (this machine, once a session): poses %.1f, mesh %.1f" % [t_pose, t_mesh])
 	for calm: bool in [false, true]:
 		ViewPrefs.reduced_motion = calm
-		var e := VatBake.pose_error(live, vat, pose, mesh, _samples, SEED)
+		var full := kind != WorldReader.KIND_SWARMER
+		var e := (
+			VatBake.pose_error_full(live, vat, pose, mesh, _samples, SEED)
+			if full
+			else VatBake.pose_error(live, vat, pose, mesh, _samples, SEED)
+		)
 		(
 			out
 			. append(
@@ -89,6 +100,13 @@ func _report(kind: int) -> PackedStringArray:
 				)
 			)
 		)
+		if full:
+			out.append(
+				(
+					"    hidden vertices (all samples): %d, folded to within %.7f m"
+					% [e["hidden"], e["hidden_spread_m"]]
+				)
+			)
 		out.append("    worst at %s" % [e["worst"]])
 	ViewPrefs.reduced_motion = false
 	live.free()

@@ -9,6 +9,9 @@ extends RefCounted
 ## Per instance (VatCrowd): INSTANCE_CUSTOM = (windup raise, strike, crouch, gait phase 0..1); COLOR = the hit value's
 ## rgb (EnemyLooks.hit_value) and in alpha the accent glow g, as g when the hit is off and -(1 + g) when it shows. The
 ## mesh has no vertex colours, so COLOR in the vertex stage is the instance's alone.
+## v0.10.5 W3-V4b: a vertex whose mode (CUSTOM0.a) is 2 is an accent glowing at INSTANCE_CUSTOM.w instead (the
+## Sniper's muzzle: its own glow, and no gait); a pose with an `albedo_tex` (the owner's models) draws the textured
+## variant: each plate's albedo times that map at the mesh's UV, as EnemyLooks.body's textured plates.
 ## The stencil outline pass (EnemyLooks._OUTLINE: grown along the normal, drawn where the stencil is not 1) follows
 ## when ActorLooks.OUTLINES is on, posed the same way; an accent draws none (its triangles fold to a point there).
 ## Presentation only (EI-07).
@@ -88,6 +91,7 @@ void vertex() {
 	zd_hit = COLOR.rgb;
 	zd_shown = COLOR.a < 0.0 ? 1.0 : 0.0;
 	zd_glow = COLOR.a < 0.0 ? -COLOR.a - 1.0 : COLOR.a;
+	zd_glow = CUSTOM0.a > 1.5 ? INSTANCE_CUSTOM.w : zd_glow;
 }
 
 void fragment() {
@@ -117,6 +121,14 @@ void fragment() {
 }
 """
 
+## v0.10.5 W3-V4b: the textured variant (the owner's models: their plates are textured, their accents are not).
+const _TEX := "uniform sampler2D zd_tex : source_color, filter_linear_mipmap, repeat_enable;\n"
+## (sampled for every fragment, outside the branch, so its mip level is never read from a neighbour that skipped it)
+const _TEX_ALBEDO := (
+	"vec3 zd_tx = texture(zd_tex, UV).rgb;\n"
+	+ "\tALBEDO = zd_albedo * (zd_accent > 0.5 ? vec3(1.0) : zd_tx);"
+)
+
 static var _shaders := {}
 
 
@@ -135,7 +147,15 @@ static func material(pose: Dictionary, outline: Color, outline_m: float) -> Shad
 	if not ActorLooks.OUTLINES:
 		head = head.replace("stencil_mode write, compare_always, 1;\n", "")
 	var m := ShaderMaterial.new()
-	m.shader = _shader("body%d" % int(ActorLooks.OUTLINES), head + _POSE + _BODY)
+	var tex: Texture2D = pose.get("albedo_tex")
+	if tex != null:  # v0.10.5 W3-V4b: the owner's models: every plate times their colour map, as EnemyLooks.body
+		m.shader = _shader(
+			"body%d_tex" % int(ActorLooks.OUTLINES),
+			head + _TEX + _POSE + _BODY.replace("ALBEDO = zd_albedo;", _TEX_ALBEDO)
+		)
+		m.set_shader_parameter("zd_tex", tex)
+	else:
+		m.shader = _shader("body%d" % int(ActorLooks.OUTLINES), head + _POSE + _BODY)
 	_set_pose(m, pose)
 	if ActorLooks.OUTLINES and outline_m > 0.0:
 		var o := ShaderMaterial.new()

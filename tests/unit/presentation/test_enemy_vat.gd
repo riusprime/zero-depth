@@ -6,6 +6,15 @@ extends GutTest
 
 const SW := ActorStore.Kind.SWARMER
 const DT := 1.0 / 60.0
+## v0.10.5 W3-V4b: the other horde kinds.
+const OTHERS: Array[int] = [
+	WorldReader.KIND_SPLITTER,
+	WorldReader.KIND_SPLITLING,
+	WorldReader.KIND_SHIELD_BEARER,
+	WorldReader.KIND_MENDER,
+	WorldReader.KIND_MINE_LAYER,
+	WorldReader.KIND_SNIPER,
+]
 
 var _vat := false
 var _calm := false
@@ -173,3 +182,148 @@ func test_flipping_the_switch_rebuilds_them_on_the_old_path() -> void:
 	views.vat_crowd._process(DT)
 	assert_eq(views.vat_crowd.count(), 0, "the crowd let them go")
 	assert_eq(views.vat_crowd.drawn, 0)
+
+
+# --- v0.10.5 W3-V4b: the other horde kinds ------------------------------------------------------------------------
+
+
+func test_every_other_horde_kind_bakes_within_2_mm() -> void:
+	for kind in OTHERS:
+		assert_true(VatCrowd.supports(kind), "kind %d is drawn by VAT" % kind)
+		var pose := VatBake.pose_for(kind)
+		var mesh := VatBake.mesh_for(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+		var live := VatBake.reference_avatar(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+		var vat := HordeAvatar.new()
+		vat.vat = true
+		vat.setup(kind, Color.BLACK)
+		assert_eq(vat.has_model(), live.has_model(), "kind %d: the same body" % kind)
+		var e := VatBake.pose_error_full(live, vat, pose, mesh, 40, 11)
+		assert_eq(e["vertices"], mesh.surface_get_array_len(0), "kind %d: every vertex" % kind)
+		# 2 mm: about an eighth of a pixel at the game's camera; the report gives the real numbers.
+		assert_lt(float(e["max_m"]), 0.002, "kind %d within 2 mm: %s" % [kind, e])
+		assert_lt(
+			float(e["hidden_spread_m"]), 1e-6, "kind %d: a hidden piece folds to a point" % kind
+		)
+		assert_eq(pose.has("albedo_tex"), live.has_model(), "kind %d: a model's colour map" % kind)
+		live.free()
+		vat.free()
+
+
+func test_the_mine_layer_s_dropped_mine_draws_nothing() -> void:
+	var kind := WorldReader.KIND_MINE_LAYER
+	var pose := VatBake.pose_for(kind)
+	var mesh := VatBake.mesh_for(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+	var vat := HordeAvatar.new()
+	vat.vat = true
+	vat.setup(kind, Color.BLACK)
+	var s := HordeVat.sample(RandomNumberGenerator.new())
+	s["strike"] = 0.0
+	vat.pose_with(s)
+	var shown := VatBake.eval_vertices_at(pose, mesh, vat.vat_drives(pose), vat.vat_offset())
+	s["strike"] = 1.0
+	vat.pose_with(s)
+	var dropped := VatBake.eval_vertices_at(pose, mesh, vat.vat_drives(pose), vat.vat_offset())
+	var folded := 0
+	for k in shown.size():
+		if not shown[k].is_equal_approx(dropped[k]):
+			folded += 1
+	assert_gt(folded, 0, "the mine's vertices move")
+	assert_eq(vat.vat_drives(pose).y, 0.0, "hidden: the mine's drive is 0")
+	vat.free()
+
+
+func test_vat_kinds_keep_the_old_drives_through_a_fight_and_a_death() -> void:
+	for kind in OTHERS:
+		var holder_live := Node3D.new()
+		var holder_vat := Node3D.new()
+		add_child_autofree(holder_live)
+		add_child_autofree(holder_vat)
+		var live := HordeAvatar.new()
+		live.setup(kind, Color.BLACK)
+		var vat := HordeAvatar.new()
+		vat.vat = true
+		vat.setup(kind, Color.BLACK)
+		holder_live.add_child(live)
+		holder_vat.add_child(vat)
+		live.set_process(false)
+		vat.set_process(false)
+		assert_eq(vat.find_children("*", "MeshInstance3D", true, false).size(), 0, "no pieces")
+		var pose := VatBake.pose_for(kind)
+		var mesh := VatBake.mesh_for(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+		var states := [
+			EnemyAi.State.MOVE, EnemyAi.State.WINDUP, EnemyAi.State.ACTIVE, EnemyAi.State.RECOVER
+		]
+		var worst := 0.0
+		for k in 150:
+			var st: int = states[mini(int(k / 30.0), 3)] if k < 120 else EnemyAi.State.MOVE
+			var p := clampf(float(k - 30) / 30.0, 0.0, 1.0) if st == EnemyAi.State.WINDUP else 0.0
+			if k == 130 and live.has_model():
+				assert_true(live.die() and vat.die(), "kind %d: its model falls" % kind)
+			for h: Node3D in [holder_live, holder_vat]:
+				h.position.x += 1.5 / 60.0  # walking
+			for a: HordeAvatar in [live, vat]:
+				a.apply_state({"tick": k, "state": st, "windup": p, "healing": k > 100})
+				a.advance(DT)
+			assert_eq(
+				vat.glow_energy(), live.glow_energy(), "kind %d tick %d: the glow" % [kind, k]
+			)
+			assert_eq(vat.muzzle_energy(), live.muzzle_energy(), "kind %d: the muzzle" % kind)
+			var a_v := VatBake.live_vertices(live)
+			var b_v := VatBake.eval_vertices_at(pose, mesh, vat.vat_drives(pose), vat.vat_offset())
+			var k0 := 0
+			for piece: Dictionary in VatBake.pieces(live, VatBake.joints(live)):
+				var mi: MeshInstance3D = piece["node"]
+				var nv := (
+					(
+						mi.mesh.surface_get_arrays(piece["surface"])[Mesh.ARRAY_VERTEX]
+						as PackedVector3Array
+					)
+					. size()
+				)
+				if mi.is_visible_in_tree():  # (the dropped mine: folded, drawn as nothing)
+					for v in range(k0, k0 + nv):
+						worst = maxf(worst, a_v[v].distance_to(b_v[v]))
+				k0 += nv
+		assert_lt(worst, 0.002, "kind %d: the VAT pose follows the old one (%f m)" % [kind, worst])
+		assert_eq(vat.dying(), live.dying(), "kind %d: dying alike" % kind)
+
+
+func test_actor_views_draw_every_horde_kind_through_the_crowd_and_let_the_models_fall() -> void:
+	ViewPrefs.enemy_vat = true
+	var w := CombatLab.world()
+	var ids: Array[int] = []
+	for k in OTHERS.size():
+		ids.append(w.add_enemy(OTHERS[k], Vector2(2.0 + k * 1.5, 3.0)))
+	var views: ActorViews = add_child_autofree(ActorViews.new())
+	views.set_process(false)
+	views.sync(WorldReader.new(w))
+	assert_eq(views.vat_crowd.count(), OTHERS.size(), "every kind")
+	assert_eq(views.vat_crowd.looks(), OTHERS.size(), "one look (one MultiMesh) per kind")
+	var avatars := {}
+	for k in OTHERS.size():
+		var node := views.actor_node(ids[k])
+		var avatar := node.get_meta(&"enemy_avatar") as HordeAvatar
+		assert_true(avatar.vat, "kind %d" % OTHERS[k])
+		assert_eq(avatar.find_children("*", "MeshInstance3D", true, false).size(), 0)
+		avatars[OTHERS[k]] = avatar
+	views.vat_crowd._process(DT)
+	assert_eq(views.vat_crowd.drawn, OTHERS.size())
+	assert_eq(views.vat_crowd.shadows_drawn, OTHERS.size(), "their proxy shadows")
+	for t in w.tuning.spawn_in_ticks + 1:  # past the spawn's grace, then each one killed
+		w.step(InputFrame.new())
+	for id in ids:
+		var i := w.actors.index_of(id)
+		var at := w.actors.pos(i)
+		Damage.hit(w, i, 1 << 20, 0, 0, w.take_root(), 0, at, at)
+	for t in 120:
+		if w.actors.index_of(ids[2]) < 0:
+			break
+		w.step(InputFrame.new())
+	assert_lt(w.actors.index_of(ids[2]), 0, "the sim let the Shield Bearer go")
+	views.sync(WorldReader.new(w))
+	views.vat_crowd._process(DT)
+	var shield := avatars[WorldReader.KIND_SHIELD_BEARER] as HordeAvatar
+	var sniper := avatars[WorldReader.KIND_SNIPER] as HordeAvatar
+	assert_true(shield.dying(), "the Shield Bearer's model falls")
+	assert_false(views.vat_crowd.instance_of(shield).is_empty(), "drawn while it falls")
+	assert_true(views.vat_crowd.instance_of(sniper).is_empty(), "a code body goes at once")

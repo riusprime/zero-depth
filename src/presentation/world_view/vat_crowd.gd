@@ -17,7 +17,16 @@ extends Node3D
 ## Presentation only (EI-07): it reads the avatars, never the sim.
 
 ## The kinds a VAT crowd can draw (the pilot: the Swarmer, the most numerous horde kind: a pack of 8).
-const KINDS: Array[int] = [WorldReader.KIND_SWARMER]
+## v0.10.5 W3-V4b (owner, 2026-11-06: "can we apply it to the rest of the enemies"): the other horde kinds.
+const KINDS: Array[int] = [
+	WorldReader.KIND_SWARMER,
+	WorldReader.KIND_SPLITTER,
+	WorldReader.KIND_SPLITLING,
+	WorldReader.KIND_SHIELD_BEARER,
+	WorldReader.KIND_MENDER,
+	WorldReader.KIND_MINE_LAYER,
+	WorldReader.KIND_SNIPER,
+]
 ## After every node's _process (the avatars' frame-time animation runs at 0).
 const PROCESS_PRIORITY := 1000
 const START_CAPACITY := 32
@@ -35,8 +44,13 @@ var _looks := {}
 var _shadows := {}
 
 
+## v0.10.5 W3-V4b: a kind drawn by the owner's model is baked from that model; without its file (EnemyModels) the
+## code-built stand-in stays on the old path.
 static func supports(kind: int) -> bool:
-	return KINDS.has(kind)
+	if not KINDS.has(kind):
+		return false
+	var model := HordeAvatar.model_id(kind)
+	return model == &"" or EnemyModels.has_model(model)
 
 
 func _init() -> void:
@@ -164,8 +178,8 @@ func _write(s: Dictionary, body: bool) -> int:
 			* (e[1] as Node3D).transform
 			* avatar.transform
 		)
-		if body:
-			xf = xf.translated_local(Vector3(0, avatar.vat_lift(), 0))
+		if body:  # v0.10.5 W3-V4b: the body's own moves (the Swarmer's: its lift)
+			xf = xf * avatar.vat_offset()
 		var o := n * stride
 		var b := xf.basis
 		buf[o] = b.x.x
@@ -186,10 +200,11 @@ func _write(s: Dictionary, body: bool) -> int:
 			buf[o + 13] = c.g
 			buf[o + 14] = c.b
 			buf[o + 15] = c.a
-			buf[o + 16] = clampf(avatar.windup_pose(), 0.0, 1.0)
-			buf[o + 17] = clampf(avatar.strike_pose(), 0.0, 1.0)
-			buf[o + 18] = clampf(avatar.crouch_amount(), 0.0, 1.0)
-			buf[o + 19] = VatBake.gait_phase(s["pose"], avatar.anim_time())
+			var d := avatar.vat_drives(s["pose"])  # v0.10.5 W3-V4b: each kind's own
+			buf[o + 16] = d.x
+			buf[o + 17] = d.y
+			buf[o + 18] = d.z
+			buf[o + 19] = d.w
 		n += 1
 	if n > 0:
 		mm.buffer = buf
