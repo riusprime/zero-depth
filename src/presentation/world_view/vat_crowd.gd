@@ -257,6 +257,7 @@ static func warm_proxy(
 	mm.set_instance_custom_data(0, Color(0, 0, 0, 0))
 	var mmi := MultiMeshInstance3D.new()
 	mmi.name = "VatWarm"
+	mmi.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # set outside the physics step, like the crowd's
 	mmi.multimesh = mm
 	mmi.material_override = VatLooks.material(
 		VatBake.pose_for(kind), outline, HordeAvatar.OUTLINE_M
