@@ -25,6 +25,63 @@ const GRIDS := {
 }
 
 
+## v0.10.5 W3-V4b (on W3-V4a's general path): the VatBake rig of `a` (built with its pieces; see VatBake's class
+## notes), its key "horde<kind>" as the pilot's. Four drives (vat_grid_drives): the stance grid over x, y, z, the gait
+## loop over w (a kind without a gait has no gait grid; the Sniper's w is its muzzle's glow, read by VatLooks' mode 3).
+## The body is the root joint, on the stance grid but always the identity (its moves are the instance's, vat_offset);
+## a hidden joint (the dropped mine) is baked folded to a point (a zero basis), so its triangles draw nothing.
+static func rig(a: HordeAvatar) -> Dictionary:
+	var g: Array = grids(a.kind)
+	var sn: Vector3i = g[0]
+	var gait: int = g[1]
+	var js: Array = []
+	var index := {}
+	for j: Array in joint_spec(a):
+		var node: Node3D = j[0]
+		var parent := -1
+		var up := node.get_parent()
+		while up != null and up != a:
+			if index.has(up):
+				parent = index[up]
+				break
+			up = up.get_parent()
+		index[node] = js.size()
+		var grid: int = j[1]
+		js.append({"grid": maxi(grid, VatBake.GRID_STANCE), "parent": parent, "frame": node})
+	var axes: Array = [[[0, sn.x, false], [1, sn.y, false], [2, sn.z, false]]]
+	if gait > 0:
+		axes.append([[3, gait, true]])
+	var out := {
+		"key": "horde%d" % a.kind,
+		"drives": 4,
+		"grids": axes,
+		"joints": js,
+		"row": func(gi: int, d: PackedFloat64Array) -> Array: return _row(a, js, gi, d),
+		"scaled": false,
+		"outline_m": HordeAvatar.OUTLINE_M,
+	}
+	var tex := texture(a)
+	if tex != null:
+		out["albedo_tex"] = tex
+	return out
+
+
+static func _row(a: HordeAvatar, js: Array, g: int, d: PackedFloat64Array) -> Array:
+	a.vat_bake_pose(Vector3(d[0], d[1], d[2]), d[3])
+	var out: Array = []
+	for j: Dictionary in js:
+		if j["grid"] != g:
+			continue
+		if j["frame"] == a.body:
+			out.append(Transform3D.IDENTITY)
+			continue
+		var xf := VatBake.local_of(a, js, j)
+		if not (j["frame"] as Node3D).visible:
+			xf.basis = Basis(Vector3.ZERO, Vector3.ZERO, Vector3.ZERO)
+		out.append(xf)
+	return out
+
+
 ## `kind`'s grids: [stance samples (Vector3i), gait samples] (the Swarmer's: VatBake.STANCE_N, GAIT_N).
 static func grids(kind: int) -> Array:
 	return GRIDS.get(kind, [VatBake.STANCE_N, VatBake.GAIT_N])
@@ -93,15 +150,22 @@ static func natural(kind: int, u: Vector3, phase: float) -> Vector4:
 
 
 ## The owner's model's colour map for `a` (its plates are textured; VatLooks samples it), or null.
-static func texture(a: HordeAvatar) -> Texture2D:
-	if not a.has_model():
+static func texture(avatar: Node3D) -> Texture2D:
+	var a := avatar as HordeAvatar
+	if a == null or not a.has_model():
 		return null
 	return EnemyModels.get_model(HordeAvatar.model_id(a.kind)).get("texture")
 
 
 ## True for the piece of `a` whose glow is the instance's second one (the Sniper's muzzle: the drives' w).
-static func alt_glow(a: HordeAvatar, piece: Node) -> bool:
-	return a.kind == WorldReader.KIND_SNIPER and piece != null and piece.name == &"Muzzle"
+static func alt_glow(avatar: Node3D, piece: Node) -> bool:
+	var a := avatar as HordeAvatar
+	return (
+		a != null
+		and a.kind == WorldReader.KIND_SNIPER
+		and piece != null
+		and piece.name == &"Muzzle"
+	)
 
 
 ## A random set of HordeAvatar.pose_with's inputs (the bake report, tests): about a third dying, a quarter fully risen.

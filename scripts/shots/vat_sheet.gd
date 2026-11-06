@@ -7,15 +7,59 @@ extends SceneTree
 ## Needs a renderer (NOT --headless); off screen:
 ##   APPDATA=<temp> godot --path . --resolution 1920x1080 --position -10000,-10000 -s scripts/shots/vat_sheet.gd
 ## Writes build/shots/<version>/vat/vat_sheet.png and vat_diff.txt.
-## v0.10.5 W3-V4b: `-- --kind=<name>` (splitter, splitling, shield_bearer, mender, mine_layer, sniper; swarmer the
-## default) draws that kind in its own states (KIND_PLANS: the walk, the death, the heal, the mine dropped, the muzzle)
-## into vat_sheet_<name>.png and vat_diff_<name>.txt; `--version-dir=<v>` writes under build/shots/<v>/vat/.
+## v0.10.5 W3-V4a: `-- --kind=charger` draws the Charger's states instead (CHARGER_PLAN: its run, wind-up, lunge,
+## recovery and daze, and one Hatchling), into vat_sheet_charger.png and vat_diff_charger.txt; `--out=<res:// dir>`
+## writes elsewhere than build/shots/<version>/vat/.
+## v0.10.5 W3-V4b: `-- --kind=<name>` (splitter, splitling, shield_bearer, mender, mine_layer, sniper) draws that kind
+## in its own states (KIND_PLANS: the walk, the death, the heal, the mine dropped, the muzzle) into
+## vat_sheet_<name>.png and vat_diff_<name>.txt; `--version-dir=<v>` writes under build/shots/<v>/vat/. Every horde
+## sheet also gives each state's largest vertex error (the shader's arithmetic on the CPU).
 
 const CELL := Vector2i(220, 220)
 const COLS := 4
 const DT := 1.0 / 60.0
+const KIND := WorldReader.KIND_SWARMER
+## The states: [label, build: {tint, role} or {}, steps].
+const PLAN := [
+	["idle", {}, "idle"],
+	["scuttle (t 1.37 s)", {}, "scuttle"],
+	["windup 31 %", {}, "windup_early"],
+	["windup 90 % (flash)", {}, "windup_late"],
+	["strike snap (0.05 s)", {}, "strike_snap"],
+	["strike out (0.15 s)", {}, "strike_out"],
+	["strike easing back", {}, "strike_back"],
+	["flinch at its peak", {}, "flinch"],
+	["Blade knock", {}, "knock"],
+	["hit flash", {}, "flash"],
+	["status tint (burn)", {}, "tint"],
+	["rise-in, half way", {}, "spawn"],
+	["biome cast + role glow", {"tint": Color(0.45, 0.65, 1.0, 0.5), "role": 0.45}, "idle"],
+	["reduced motion + flinch", {}, "calm"],
+]
+## v0.10.5 W3-V4a: the Charger's states (build "hatchling": the Brood Mother's, at two thirds of the size).
+const CHARGER_PLAN := [
+	["idle (t 1.5 s)", {}, "idle"],
+	["idle fidget (t 3.9 s)", {}, "fidget"],
+	["run 3 m/s", {}, "run"],
+	["windup 31 %", {}, "windup_early"],
+	["windup 90 % (flash)", {}, "windup_late"],
+	["lunge snap (0.05 s)", {}, "strike_snap"],
+	["charge 15 m/s", {}, "charge"],
+	["recovery (0.2 s in)", {}, "recover"],
+	["dazed (1 s in)", {}, "dazed"],
+	["flinch at its peak", {}, "flinch"],
+	["Blade knock", {}, "knock"],
+	["hit flash", {}, "flash"],
+	["status tint (burn)", {}, "tint"],
+	["rise-in, half way", {}, "spawn"],
+	["biome cast + role glow", {"tint": Color(0.45, 0.65, 1.0, 0.5), "role": 0.45}, "run"],
+	["reduced motion + windup", {}, "calm"],
+	["Hatchling, run", {"hatchling": true}, "run"],
+	["Hatchling, charge", {"hatchling": true}, "charge"],
+]
+
+## v0.10.5 W3-V4b: the other horde kinds by name (--kind=<name>).
 const KINDS := {
-	"swarmer": WorldReader.KIND_SWARMER,
 	"splitter": WorldReader.KIND_SPLITTER,
 	"splitling": WorldReader.KIND_SPLITLING,
 	"shield_bearer": WorldReader.KIND_SHIELD_BEARER,
@@ -114,31 +158,37 @@ const PLAN := [
 ]
 
 var _dir := ""
-var _kind := WorldReader.KIND_SWARMER
-var _name := "swarmer"
 var _pairs: Array = []  # [label, live SubViewport, vat SubViewport]
 var _frame := 0
+var _kind := KIND
+var _suffix := ""
 
 
 func _initialize() -> void:
-	var version := GameVersion.label()
+	_dir = "res://build/shots/%s/vat/" % GameVersion.label()
+	var plan: Array = PLAN
 	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("--kind="):
-			_name = arg.trim_prefix("--kind=")
+		if arg == "--kind=charger":
+			_kind = WorldReader.KIND_CHARGER
+			_suffix = "_charger"
+			plan = CHARGER_PLAN
+		elif arg.begins_with("--kind=") and KINDS.has(arg.trim_prefix("--kind=")):
+			var kname := arg.trim_prefix("--kind=")
+			_kind = KINDS[kname]
+			_suffix = "_" + kname
+			match kname:
+				"splitter", "splitling", "shield_bearer":
+					plan = KIND_PLANS["melee_model"]
+				_:
+					plan = KIND_PLANS[kname]
 		elif arg.begins_with("--version-dir="):
-			version = arg.trim_prefix("--version-dir=")
-	_kind = KINDS[_name]
-	_dir = "res://build/shots/%s/vat/" % version
+			_dir = "res://build/shots/%s/vat/" % arg.trim_prefix("--version-dir=")
+		elif arg.begins_with("--out="):
+			_dir = arg.trim_prefix("--out=").trim_suffix("/") + "/"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	var grid := GridContainer.new()
 	grid.columns = COLS
 	root.add_child(grid)
-	var plan: Array = PLAN
-	match _name:
-		"splitter", "splitling", "shield_bearer":
-			plan = KIND_PLANS["melee_model"]
-		"mender", "mine_layer", "sniper":
-			plan = KIND_PLANS[_name]
 	for spec: Array in plan:
 		var cell := VBoxContainer.new()
 		var label := Label.new()
@@ -200,7 +250,10 @@ func _world(row: HBoxContainer, vat: bool, build: Dictionary, steps: String) -> 
 	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
 	cam.size = 1.15
 	var look := Vector3(0.15, 0.12, 0)
-	if _kind != WorldReader.KIND_SWARMER:  # v0.10.5 W3-V4b: framed to the kind's height
+	if _kind == WorldReader.KIND_CHARGER:  # v0.10.5 W3-V4a: a longer, taller body
+		cam.size = 1.9
+		look = Vector3(0.05, 0.35, 0)
+	elif _kind != WorldReader.KIND_SWARMER:  # v0.10.5 W3-V4b: framed to the horde kind's height
 		var h := HordeAvatar.height_of(_kind)
 		cam.size = maxf(1.15, h * 1.7)
 		look = Vector3(0.0, h * 0.5, 0)
@@ -217,11 +270,8 @@ func _world(row: HBoxContainer, vat: bool, build: Dictionary, steps: String) -> 
 	var facing := Node3D.new()
 	facing.rotation.y = 0.6
 	actor.add_child(facing)
-	var a := HordeAvatar.new()
-	a.enemy_tint = build.get("tint", Color(0, 0, 0, 0))
-	a.role_glow = float(build.get("role", 0.0))
-	a.vat = vat
-	a.setup(_kind, Color("#1A1A22"))
+	var a := _avatar(vat, build)
+	var kind: int = a.get(&"kind")
 	facing.add_child(a)
 	a.set_process(false)
 	if vat:
@@ -229,16 +279,49 @@ func _world(row: HBoxContainer, vat: bool, build: Dictionary, steps: String) -> 
 		scene.add_child(crowd)
 		crowd.add(actor, facing, a, Color("#1A1A22"), true)
 	else:
-		EnemyShadows.apply(actor, facing, a, _kind, 0.25, "proxy")
-	_drive(a, steps, actor)
-	if vat:
+		EnemyShadows.apply(actor, facing, a, kind, 0.25, "proxy")
+	if a is ChargerAvatar:
+		_drive_charger(a as ChargerAvatar, steps)
+	else:
+		_drive(a as HordeAvatar, steps, actor)
+	if vat and a is HordeAvatar:
+		var h := a as HordeAvatar
 		print(
 			(
 				"%s: lift %.3f m, raise %.2f, strike %.2f"
-				% [steps, a.vat_lift(), a.windup_pose(), a.strike_pose()]
+				% [steps, h.vat_lift(), h.windup_pose(), h.strike_pose()]
 			)
 		)
+	elif vat:
+		var c := a as ChargerAvatar
+		print("%s: lift %.3f m, drives %s" % [steps, c.vat_lift(), c.vat_drives()])
 	return vp
+
+
+## v0.10.5 W3-V4a: the avatar a cell shows (`vat`: drawn by a VatCrowd), as ActorViews builds it.
+func _avatar(vat: bool, build: Dictionary) -> AvatarBase:
+	var tint: Color = build.get("tint", Color(0, 0, 0, 0))
+	var role := float(build.get("role", 0.0))
+	if _kind == WorldReader.KIND_CHARGER:
+		var c := ChargerAvatar.new()
+		c.enemy_tint = tint
+		c.role_glow = role
+		c.vat = vat
+		var hatch := bool(build.get("hatchling", false))
+		c.setup(
+			Color("#1A1A22"),
+			&"outline",
+			WorldReader.KIND_HATCHLING if hatch else WorldReader.KIND_CHARGER
+		)
+		if hatch:
+			c.scale = Vector3.ONE * 0.66
+		return c
+	var a := HordeAvatar.new()
+	a.enemy_tint = tint
+	a.role_glow = role
+	a.vat = vat
+	a.setup(_kind, Color("#1A1A22"))
+	return a
 
 
 ## The calls a state is made of (both avatars of a pair get the same ones).
@@ -303,7 +386,75 @@ func _drive(a: HordeAvatar, steps: String, actor: Node3D) -> void:
 	ViewPrefs.reduced_motion = false
 
 
-func _run(a: HordeAvatar, frames: int) -> void:
+## v0.10.5 W3-V4a: the Charger's calls (both avatars of a pair get the same ones): its sim states and positions, one
+## a tick, as ActorViews.sync gives them.
+func _drive_charger(a: ChargerAvatar, steps: String) -> void:
+	var tick := 0
+	var x := 0.0
+	if steps == "spawn":  # spawned sunk, then half risen (RISE_TIME 0.35 s)
+		a.apply_state({"tick": 0, "pos": Vector2.ZERO, "state": WorldReader.STATE_SPAWN})
+		_run(a, 2)
+		for k in 10:
+			a.apply_state({"tick": 1 + k, "pos": Vector2.ZERO, "state": WorldReader.STATE_MOVE})
+			_run(a, 1)
+		return
+	if steps == "calm":
+		ViewPrefs.reduced_motion = true
+	var idle := 234 if steps == "fidget" else 90
+	var speed := 0.05 if steps in ["run", "charge", "strike_snap", "recover", "dazed"] else 0.0
+	for k in idle:
+		tick += 1
+		x += speed
+		a.apply_state({"tick": tick, "pos": Vector2(x, 0), "state": WorldReader.STATE_MOVE})
+		_run(a, 1)
+	match steps:
+		"windup_early", "windup_late", "strike_snap", "charge", "recover", "dazed", "calm":
+			var n := (
+				15 if steps == "windup_early" else (43 if steps in ["windup_late", "calm"] else 48)
+			)
+			for k in n:
+				tick += 1
+				a.apply_state(
+					{
+						"tick": tick,
+						"pos": Vector2(x, 0),
+						"state": WorldReader.STATE_WINDUP,
+						"windup": float(k + 1) / 48.0
+					}
+				)
+				_run(a, 1)
+			if steps in ["windup_early", "windup_late", "calm"]:
+				ViewPrefs.reduced_motion = false
+				return
+			var active := 3 if steps == "strike_snap" else 18
+			for k in active:
+				tick += 1
+				x += 0.25  # the charge: 15 m/s
+				a.apply_state(
+					{"tick": tick, "pos": Vector2(x, 0), "state": WorldReader.STATE_ACTIVE}
+				)
+				_run(a, 1)
+			if steps in ["recover", "dazed"]:
+				for k in 12 if steps == "recover" else 60:
+					tick += 1
+					a.apply_state(
+						{"tick": tick, "pos": Vector2(x, 0), "state": WorldReader.STATE_RECOVER}
+					)
+					_run(a, 1)
+		"flinch":
+			a.flinch(Vector2(1.0, 0.4), 1.0)
+			_run(a, 3)
+		"knock":
+			a.flinch(Vector2(1.0, 0.4), 1.0, 1.0)
+			_run(a, 3)
+		"flash":
+			a.show_hit(true, Color.WHITE, 1.6)
+		"tint":
+			a.show_hit(true, Color(1.0, 0.45, 0.1), 1.2)
+	ViewPrefs.reduced_motion = false
+
+
+func _run(a: AvatarBase, frames: int) -> void:
 	for k in frames:
 		a.advance(DT)
 		a.advance_flinch(DT)
@@ -312,12 +463,15 @@ func _run(a: HordeAvatar, frames: int) -> void:
 ## v0.10.5 W3-V4b: the largest distance (m) between the old avatar's posed vertices and the VAT one's, the shader's
 ## arithmetic run on the CPU (VatBake.eval_vertices_at) at the drives it was drawn with; a hidden piece is skipped.
 func _vertex_error(live_vp: SubViewport, vat_vp: SubViewport) -> float:
-	var live := live_vp.find_children("*", "HordeAvatar", true, false)[0] as HordeAvatar
+	var lives := live_vp.find_children("*", "HordeAvatar", true, false)
+	if lives.is_empty():
+		return -1.0  # the Charger's sheet: its own check (the bake report)
+	var live := lives[0] as HordeAvatar
 	var vat := vat_vp.find_children("*", "HordeAvatar", true, false)[0] as HordeAvatar
 	var pose := VatBake.pose_for(_kind)
 	var mesh := VatBake.mesh_for(_kind, vat.enemy_tint, vat.role_glow, Color("#1A1A22"))
 	var a := VatBake.live_vertices(live)
-	var b := VatBake.eval_vertices_at(pose, mesh, vat.vat_drives(pose), vat.vat_offset())
+	var b := VatBake.eval_vertices_at(pose, mesh, VatBake.drives_of(vat, pose), vat.vat_offset())
 	var worst := 0.0
 	var k0 := 0
 	for p: Dictionary in VatBake.pieces(live, VatBake.joints(live)):
@@ -338,12 +492,11 @@ func _vertex_error(live_vp: SubViewport, vat_vp: SubViewport) -> float:
 func _finish() -> void:
 	var lines: PackedStringArray = []
 	lines.append("vat sheet: old (left) vs VAT (right), %dx%d px each, msaa 4x" % [CELL.x, CELL.y])
-	lines[0] += "  kind=%s (%d)" % [_name, _kind]
 	var proxy := VatCrowd.shadow_mesh(_kind)  # the old path's shadow stand-in (EnemyShadows), cached per kind
 	lines.append(
 		(
-			"%s shadow proxy aabb (avatar space, m): %s (top y %.3f; the floor is y 0)"
-			% [_name, proxy.get_aabb(), proxy.get_aabb().end.y]
+			"kind %d shadow proxy aabb (avatar space, m): %s (top y %.3f; the floor is y 0)"
+			% [_kind, proxy.get_aabb(), proxy.get_aabb().end.y]
 		)
 	)
 	lines.append(
@@ -379,14 +532,13 @@ func _finish() -> void:
 			)
 		)
 	var sheet := root.get_texture().get_image()
-	var suffix := "" if _name == "swarmer" else "_" + _name
-	var png := ProjectSettings.globalize_path(_dir + "vat_sheet%s.png" % suffix)
+	var png := ProjectSettings.globalize_path(_dir + "vat_sheet%s.png" % _suffix)
 	sheet.save_png(png)
 	var text := "\n".join(lines) + "\n"
 	print(text)
 	print("sheet: " + png)
 	var f := FileAccess.open(
-		ProjectSettings.globalize_path(_dir + "vat_diff%s.txt" % suffix), FileAccess.WRITE
+		ProjectSettings.globalize_path(_dir + "vat_diff%s.txt" % _suffix), FileAccess.WRITE
 	)
 	if f != null:
 		f.store_string(text)

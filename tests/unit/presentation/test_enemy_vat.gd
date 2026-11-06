@@ -3,8 +3,11 @@ extends GutTest
 ## pose code (VatBake, VatLooks, VatCrowd) behind ViewPrefs.enemy_vat, the old path the default. The bake matches the
 ## live pose (the shader's arithmetic run on the CPU), a VAT avatar keeps every drive the old one shows, and ActorViews
 ## draws, flashes, flinches and rebuilds them through the crowd.
+## v0.10.5 W3-V4a: the same for the Charger and the Hatchling (ChargerVat's rig: twelve drives, the eight past the
+## fourth in a drive texture), and the old Charger pose is untouched (test_charger_pose_hv).
 
 const SW := ActorStore.Kind.SWARMER
+const CH := ActorStore.Kind.CHARGER
 const DT := 1.0 / 60.0
 ## v0.10.5 W3-V4b: the other horde kinds.
 const OTHERS: Array[int] = [
@@ -116,8 +119,8 @@ func test_actor_views_draw_vat_swarmers_through_one_multimesh() -> void:
 	var views: ActorViews = made[0]
 	var ids: Array[int] = made[1]
 	assert_not_null(views.vat_crowd, "a crowd")
-	assert_eq(views.vat_crowd.count(), 3, "the three Swarmers, not the Charger")
-	assert_eq(views.vat_crowd.looks(), 1, "one look, one MultiMesh")
+	assert_eq(views.vat_crowd.count(), 4, "the three Swarmers and (v0.10.5 W3-V4a) the Charger")
+	assert_eq(views.vat_crowd.looks(), 2, "one look per kind, one MultiMesh each")
 	for k in 3:
 		var node := views.actor_node(ids[k])
 		var avatar := node.get_meta(&"enemy_avatar") as HordeAvatar
@@ -126,11 +129,12 @@ func test_actor_views_draw_vat_swarmers_through_one_multimesh() -> void:
 		assert_null(
 			node.find_child(String(EnemyShadows.PROXY_NAME), true, false), "the crowd casts it"
 		)
-	var charger := views.actor_node(ids[3]).get_meta(&"enemy_avatar") as Node
-	assert_gt(charger.find_children("*", "MeshInstance3D", true, false).size(), 3, "the old path")
+	var charger := views.actor_node(ids[3]).get_meta(&"enemy_avatar") as ChargerAvatar
+	assert_true(charger.vat, "v0.10.5 W3-V4a: the Charger too")
+	assert_eq(charger.find_children("*", "MeshInstance3D", true, false).size(), 0)
 	views.vat_crowd._process(DT)
-	assert_eq(views.vat_crowd.drawn, 3)
-	assert_eq(views.vat_crowd.shadows_drawn, 3, "their proxy shadows")
+	assert_eq(views.vat_crowd.drawn, 4)
+	assert_eq(views.vat_crowd.shadows_drawn, 4, "their proxy shadows")
 	var first := views.actor_node(ids[0])
 	var inst := views.vat_crowd.instance_of(first.get_meta(&"enemy_avatar"))
 	var at: Vector3 = (inst["xf"] as Transform3D).origin
@@ -184,6 +188,93 @@ func test_flipping_the_switch_rebuilds_them_on_the_old_path() -> void:
 	assert_eq(views.vat_crowd.drawn, 0)
 
 
+# --- v0.10.5 W3-V4a: the Charger and the Hatchling ----------------------------------------------------------------
+
+
+func test_the_charger_bake_matches_the_live_pose() -> void:
+	for kind: int in [CH, ActorStore.Kind.HATCHLING]:
+		var pose := VatBake.pose_for(kind)
+		var mesh := VatBake.mesh_for(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+		var live := VatBake.reference_of(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+		var vat := VatBake.vat_avatar_of(kind, Color.BLACK)
+		assert_eq(pose["key"], "charger", "the Charger and the Hatchling share one bake")
+		assert_eq(int(pose["drive_texels"]), 2, "eight drives past the fourth")
+		assert_true(mesh.get_meta(&"two_sided"), "its shell is drawn from both sides")
+		var e := VatBake.pose_error(live, vat, pose, mesh, 60, 11)
+		assert_eq(e["vertices"], mesh.surface_get_array_len(0), "every vertex compared")
+		# 15.7 mm is a pixel at the game's camera; the report gives the real number.
+		assert_lt(float(e["max_m"]), 0.008, "under half a pixel: %s" % [e])
+		live.free()
+		vat.free()
+
+
+func test_a_vat_charger_has_no_pieces_and_the_same_drives() -> void:
+	var live := ChargerAvatar.new()
+	live.setup(Color.BLACK)
+	var vat := ChargerAvatar.new()
+	vat.vat = true
+	vat.setup(Color.BLACK)
+	add_child_autofree(live)
+	add_child_autofree(vat)
+	live.set_process(false)
+	vat.set_process(false)
+	assert_eq(vat.find_children("*", "Node3D", true, false).size(), 0, "no nodes at all")
+	var states := [
+		EnemyAi.State.SPAWN,
+		EnemyAi.State.MOVE,
+		EnemyAi.State.WINDUP,
+		EnemyAi.State.ACTIVE,
+		EnemyAi.State.RECOVER,
+		EnemyAi.State.MOVE,
+	]
+	for k in 180:
+		var st: int = states[mini(int(k / 30.0), 5)]
+		var p := clampf(float(k - 60) / 30.0, 0.0, 1.0) if st == EnemyAi.State.WINDUP else 0.0
+		for a: ChargerAvatar in [live, vat]:
+			a.apply_state({"tick": k, "pos": Vector2(0.05 * k, 0.0), "state": st, "windup": p})
+			a.advance(DT)
+		assert_eq(vat.vat_drives(), live.vat_drives(), "tick %d: the drives" % k)
+		assert_eq(vat.vat_lift(), live.vat_lift(), "tick %d: the lift" % k)
+		assert_eq(vat.visor_energy(), live.visor_energy(), "tick %d: the visor" % k)
+		assert_eq(vat.windup_amount(), live.windup_amount(), "tick %d: the raise" % k)
+	assert_almost_eq(live.vat_lift(), live._model.position.y, 1e-6, "the lift is the sink")
+
+
+func test_actor_views_draw_vat_chargers_and_hatchlings() -> void:
+	ViewPrefs.enemy_vat = true
+	var w := CombatLab.world()
+	var ids: Array[int] = []
+	ids.append(w.add_enemy(CH, Vector2(2.0, 3.0)))
+	ids.append(w.add_enemy(CH, Vector2(4.0, 3.0)))
+	ids.append(w.add_enemy(ActorStore.Kind.HATCHLING, Vector2(-2.0, 3.0)))
+	var views: ActorViews = add_child_autofree(ActorViews.new())
+	views.set_process(false)
+	views.sync(WorldReader.new(w))
+	assert_eq(views.vat_crowd.count(), 3)
+	assert_eq(views.vat_crowd.looks(), 2, "a look per kind (their palettes differ)")
+	for id in ids:
+		var node := views.actor_node(id)
+		var avatar := node.get_meta(&"enemy_avatar") as ChargerAvatar
+		assert_true(avatar.vat)
+		if avatar.kind == WorldReader.KIND_CHARGER:
+			assert_true(node.has_meta(&"dazed"), "the dazed ring stays the actor's")
+	views.vat_crowd._process(DT)
+	assert_eq(views.vat_crowd.drawn, 3)
+	var hatch := views.actor_node(ids[2]).get_meta(&"enemy_avatar") as ChargerAvatar
+	var inst := views.vat_crowd.instance_of(hatch)
+	assert_almost_eq(
+		(inst["xf"] as Transform3D).basis.get_scale(),
+		Vector3.ONE * 0.66,
+		Vector3.ONE * 1e-3,
+		"the Hatchling at two thirds of the size"
+	)
+	assert_eq(inst["drives"] as PackedFloat32Array, hatch.vat_drives(), "all twelve drives sent")
+	views.flash(ids[0])
+	views.vat_crowd._process(DT)
+	var first := views.actor_node(ids[0]).get_meta(&"enemy_avatar") as ChargerAvatar
+	assert_lt((views.vat_crowd.instance_of(first)["color"] as Color).a, 0.0, "the hit shows")
+
+
 # --- v0.10.5 W3-V4b: the other horde kinds ------------------------------------------------------------------------
 
 
@@ -219,16 +310,16 @@ func test_the_mine_layer_s_dropped_mine_draws_nothing() -> void:
 	var s := HordeVat.sample(RandomNumberGenerator.new())
 	s["strike"] = 0.0
 	vat.pose_with(s)
-	var shown := VatBake.eval_vertices_at(pose, mesh, vat.vat_drives(pose), vat.vat_offset())
+	var shown := VatBake.eval_vertices_at(pose, mesh, vat.vat_grid_drives(), vat.vat_offset())
 	s["strike"] = 1.0
 	vat.pose_with(s)
-	var dropped := VatBake.eval_vertices_at(pose, mesh, vat.vat_drives(pose), vat.vat_offset())
+	var dropped := VatBake.eval_vertices_at(pose, mesh, vat.vat_grid_drives(), vat.vat_offset())
 	var folded := 0
 	for k in shown.size():
 		if not shown[k].is_equal_approx(dropped[k]):
 			folded += 1
 	assert_gt(folded, 0, "the mine's vertices move")
-	assert_eq(vat.vat_drives(pose).y, 0.0, "hidden: the mine's drive is 0")
+	assert_eq(vat.vat_grid_drives()[1], 0.0, "hidden: the mine's drive is 0")
 	vat.free()
 
 
@@ -269,7 +360,7 @@ func test_vat_kinds_keep_the_old_drives_through_a_fight_and_a_death() -> void:
 			)
 			assert_eq(vat.muzzle_energy(), live.muzzle_energy(), "kind %d: the muzzle" % kind)
 			var a_v := VatBake.live_vertices(live)
-			var b_v := VatBake.eval_vertices_at(pose, mesh, vat.vat_drives(pose), vat.vat_offset())
+			var b_v := VatBake.eval_vertices_at(pose, mesh, vat.vat_grid_drives(), vat.vat_offset())
 			var k0 := 0
 			for piece: Dictionary in VatBake.pieces(live, VatBake.joints(live)):
 				var mi: MeshInstance3D = piece["node"]

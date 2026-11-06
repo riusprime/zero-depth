@@ -261,6 +261,12 @@ func _enemies(actors: ActorViews) -> void:
 		add_child(c)
 		RigMerge.merge(c, kind)
 		enemies += 1
+		if ViewPrefs.enemy_vat and VatCrowd.supports(kind):  # v0.10.5 W3-V4a: its VAT body (and bake) too
+			add_child(
+				VatCrowd.warm_proxy(
+					kind, actors.enemy_tint, ActorViews.role_glow_energy, actors.outline_color
+				)
+			)
 	_merged_kinds(actors)
 
 

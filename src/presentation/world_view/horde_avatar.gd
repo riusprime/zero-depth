@@ -635,16 +635,10 @@ func vat_bake_pose(u: Vector3, phase: float) -> void:
 		model.transform = Transform3D(Basis.from_scale(Vector3.ONE * _model_scale), Vector3.ZERO)
 
 
-## VatCrowd: the drives this instance's shader poses it at (the stance grid's x, y, z, the gait's w; VatLooks).
-func vat_drives(pose: Dictionary) -> Vector4:
-	if kind == WorldReader.KIND_SWARMER:
-		return Vector4(
-			clampf(windup_pose(), 0.0, 1.0),
-			clampf(strike_pose(), 0.0, 1.0),
-			clampf(crouch_amount(), 0.0, 1.0),
-			VatBake.gait_phase(pose, anim_time())
-		)
-	return _vat_d
+## VatBake.drives_of (the kinds past the Swarmer; the Swarmer's are VatBake's own): the four drives this instance's
+## shader poses it at (HordeVat: the stance grid's x, y, z, the gait's w), from the last _pose().
+func vat_grid_drives() -> PackedFloat32Array:
+	return PackedFloat32Array([_vat_d.x, _vat_d.y, _vat_d.z, _vat_d.w])
 
 
 ## VatCrowd: the body's transform in the avatar's space past the baked pose (the Swarmer's: its lift).

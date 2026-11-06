@@ -6,7 +6,10 @@ extends SceneTree
 ## with the last tick's place (what a one-frame-stale read would give). Needs a renderer, vsync off:
 ##   APPDATA=<temp> godot --path . --position -10000,-10000 -s scripts/checks/vat_motion_check.gd
 ## Prints the result; writes build/vat/motion_check.txt.
-## v0.10.5 W3-V4b: one avatar of every VatCrowd kind, each under its own actor (all moved alike), every one checked.
+## v0.10.5 W3-V4a: `-- --kind=charger` checks a VAT Charger instead (its twelve drives), into
+## build/vat/motion_check_charger.txt.
+## v0.10.5 W3-V4b: without --kind, one avatar of every VatCrowd kind, each under its own actor (all moved alike), every
+## one checked (and the worst per kind printed).
 
 const SPEED := 3.0
 const FRAMES := 600
@@ -15,7 +18,8 @@ const FRAMES := 600
 class Checker:
 	extends Node
 	var crowd: VatCrowd
-	var avatars: Array[HordeAvatar] = []
+	var avatars: Array[Node3D] = []
+	var worst := {}
 	var prev := 0.0
 	var cur := 0.0
 	var err_interp := PackedFloat64Array()
@@ -33,8 +37,11 @@ class Checker:
 				continue
 			var x: float = (inst["xf"] as Transform3D).origin.x
 			fractions[snappedf(f, 0.1)] = true
-			err_interp.append(absf(x - lerpf(prev, cur, f)))
+			var e := absf(x - lerpf(prev, cur, f))
+			err_interp.append(e)
 			err_tick.append(absf(x - cur))
+			var kind: int = avatar.get(&"kind")
+			worst[kind] = maxf(float(worst.get(kind, 0.0)), e)
 
 
 class Mover:
@@ -51,6 +58,7 @@ class Mover:
 
 var _checker: Checker
 var _frame := 0
+var _suffix := ""
 
 
 func _initialize() -> void:
@@ -60,13 +68,16 @@ func _initialize() -> void:
 	var cam := Camera3D.new()
 	scene.add_child(cam)
 	cam.position = Vector3(0, 5, 8)
+	var charger := OS.get_cmdline_user_args().has("--kind=charger")
+	_suffix = "_charger" if charger else ""
 	var crowd := VatCrowd.new()
 	scene.add_child(crowd)
 	_checker = Checker.new()
 	_checker.crowd = crowd
 	var mover := Mover.new()
 	mover.checker = _checker
-	for kind: int in VatCrowd.KINDS:
+	var kinds: Array[int] = [WorldReader.KIND_CHARGER] if charger else VatCrowd.KINDS
+	for kind in kinds:
 		if not VatCrowd.supports(kind):
 			continue
 		var actor := Node3D.new()
@@ -74,11 +85,9 @@ func _initialize() -> void:
 		scene.add_child(actor)
 		var facing := Node3D.new()
 		actor.add_child(facing)
-		var a := HordeAvatar.new()
-		a.vat = true
-		a.setup(kind, Color.BLACK)
+		var a := VatBake.vat_avatar_of(kind, Color.BLACK)
 		facing.add_child(a)
-		a.apply_state({"tick": 0, "state": WorldReader.STATE_MOVE})
+		a.call(&"apply_state", {"tick": 0, "pos": Vector2.ZERO, "state": WorldReader.STATE_MOVE})
 		crowd.add(actor, facing, a, Color.BLACK, false)
 		_checker.avatars.append(a)
 		mover.actors.append(actor)
@@ -115,11 +124,13 @@ func _process(_delta: float) -> bool:
 	lines.append(
 		"instance x vs the last tick's place: max %.5f m, mean %.5f m" % _stats(_checker.err_tick)
 	)
+	lines.append("worst per kind (m, vs the interpolated place): %s" % [_checker.worst])
 	var text := "\n".join(lines) + "\n"
 	print(text)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://build/vat/"))
 	var f := FileAccess.open(
-		ProjectSettings.globalize_path("res://build/vat/motion_check.txt"), FileAccess.WRITE
+		ProjectSettings.globalize_path("res://build/vat/motion_check%s.txt" % _suffix),
+		FileAccess.WRITE
 	)
 	if f != null:
 		f.store_string(text)

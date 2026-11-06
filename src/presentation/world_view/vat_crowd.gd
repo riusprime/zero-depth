@@ -14,12 +14,19 @@ extends Node3D
 ## A hidden actor (an egg, a vanished one) or a freed one draws nothing. Its shadow (ViewPrefs.enemy_shadows "proxy")
 ## is one more MultiMesh per kind of the same rest-pose stand-in EnemyShadows gives a node enemy (SHADOWS_ONLY), at the
 ## avatar's transform (no lift), as the stand-in followed the avatar; "blob" keeps the blob node on the actor.
+## v0.10.5 W3-V4a (owner, 2026-11-06: VAT for every regular enemy): any avatar with a VatBake rig (a HordeAvatar's, or
+## its own vat_rig(): the Charger and the Hatchling). The drives are VatBake.drives_of (the avatar's vat_drives(), or a
+## horde avatar's four); a rig with more than four sends the rest in a per-look drive texture, one row per instance
+## (written with the buffer, in the same order), and its lift is the avatar's vat_lift().
 ## Presentation only (EI-07): it reads the avatars, never the sim.
 
-## The kinds a VAT crowd can draw (the pilot: the Swarmer, the most numerous horde kind: a pack of 8).
-## v0.10.5 W3-V4b (owner, 2026-11-06: "can we apply it to the rest of the enemies"): the other horde kinds.
+## The kinds a VAT crowd can draw (the pilot: the Swarmer, the most numerous horde kind: a pack of 8; v0.10.5 W3-V4a:
+## the Charger and the Brood Mother's Hatchling).
+## v0.10.5 W3-V4b: the other horde kinds (HordeVat).
 const KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
+	WorldReader.KIND_CHARGER,
+	WorldReader.KIND_HATCHLING,
 	WorldReader.KIND_SPLITTER,
 	WorldReader.KIND_SPLITLING,
 	WorldReader.KIND_SHIELD_BEARER,
@@ -39,13 +46,14 @@ const BOX_M := 500.0
 ## The instances drawn by the last frame (bodies, shadows; tests, probes).
 var drawn := 0
 var shadows_drawn := 0
-## The body sets by look key and the shadow sets by kind: {mmi, mm, entries [[root, facing, avatar]], buf, stride}.
+## The body sets by look key and the shadow sets by kind: {mmi, mm, entries [[root, facing, avatar]], buf, stride,
+## pose, drawn; a rig with more than four drives: dbuf, dtex, mat (its drive texture's floats, the texture)}.
 var _looks := {}
 var _shadows := {}
 
 
-## v0.10.5 W3-V4b: a kind drawn by the owner's model is baked from that model; without its file (EnemyModels) the
-## code-built stand-in stays on the old path.
+## v0.10.5 W3-V4b: a horde kind drawn by the owner's model is baked from that model; without its file (EnemyModels)
+## the code-built stand-in stays on the old path.
 static func supports(kind: int) -> bool:
 	if not KINDS.has(kind):
 		return false
@@ -61,13 +69,15 @@ func _init() -> void:
 
 ## Draws `avatar` (built with `vat` on, under `facing` under the actor `root`) in the look it was built with; with
 ## `shadow`, its proxy shadow too.
-func add(root: Node3D, facing: Node3D, avatar: HordeAvatar, outline: Color, shadow: bool) -> void:
-	var kind := avatar.kind
+func add(root: Node3D, facing: Node3D, avatar: AvatarBase, outline: Color, shadow: bool) -> void:
+	var kind: int = avatar.get(&"kind")
 	var key := VatBake.look_key(kind, avatar.enemy_tint, avatar.role_glow, outline)
 	if not _looks.has(key):
 		var mesh := VatBake.mesh_for(kind, avatar.enemy_tint, avatar.role_glow, outline)
 		var pose := VatBake.pose_for(kind)
-		var mat := VatLooks.material(pose, outline, HordeAvatar.OUTLINE_M)
+		var mat := VatLooks.material(
+			pose, outline, pose["outline_m"], bool(mesh.get_meta(&"two_sided", false))
+		)
 		_looks[key] = _new_set(mesh, mat, true, pose)
 	(_looks[key]["entries"] as Array).append([root, facing, avatar])
 	if shadow:
@@ -81,7 +91,7 @@ func add(root: Node3D, facing: Node3D, avatar: HordeAvatar, outline: Color, shad
 
 ## The rest-pose shadow stand-in of `kind` (EnemyShadows': the same mesh a node enemy casts with).
 static func shadow_mesh(kind: int) -> ArrayMesh:
-	var ref := VatBake.reference_avatar(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+	var ref := VatBake.reference_of(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 	var mesh := EnemyShadows.proxy_mesh(kind, ref)
 	ref.free()
 	return mesh
@@ -111,8 +121,9 @@ func instances() -> Array[MultiMeshInstance3D]:
 
 
 ## The values `avatar`'s body instance was last drawn with (tests; read back from the buffer written, so it holds
-## without a renderer): {xf, color, custom}, or {} when it was not drawn.
-func instance_of(avatar: HordeAvatar) -> Dictionary:
+## without a renderer): {xf, color, custom, drives (all of them: custom's four, then the drive texture's)}, or {} when
+## it was not drawn.
+func instance_of(avatar: Node3D) -> Dictionary:
 	for s: Dictionary in _looks.values():
 		var buf: PackedFloat32Array = s["buf"]
 		var k := 0
@@ -123,7 +134,15 @@ func instance_of(avatar: HordeAvatar) -> Dictionary:
 				if k >= int(s["drawn"]):
 					return {}
 				var o := k * BODY_STRIDE
+				var drives := PackedFloat32Array(
+					[buf[o + 16], buf[o + 17], buf[o + 18], buf[o + 19]]
+				)
+				if s.has("dbuf"):
+					var dn: int = int((s["pose"] as Dictionary)["drive_texels"]) * 4
+					var db: PackedFloat32Array = s["dbuf"]
+					drives.append_array(db.slice(k * dn, k * dn + dn))
 				return {
+					"drives": drives,
 					"xf":
 					Transform3D(
 						Vector3(buf[o], buf[o + 4], buf[o + 8]),
@@ -166,11 +185,18 @@ func _write(s: Dictionary, body: bool) -> int:
 		mm.instance_count = cap
 		buf.resize(cap * stride)
 	var inv := (s["mmi"] as Node3D).global_transform.affine_inverse()
+	var pose: Dictionary = s["pose"]
+	var dn := int(pose.get("drive_texels", 0)) * 4 if body else 0
+	var dbuf := PackedFloat32Array()
+	if dn > 0:
+		dbuf = s["dbuf"]
+		if dbuf.size() < mm.instance_count * dn:
+			dbuf.resize(mm.instance_count * dn)
 	var n := 0
 	for e: Array in entries:
 		if not _drawable(e):
 			continue
-		var avatar: HordeAvatar = e[2]
+		var avatar: AvatarBase = e[2]
 		var root: Node3D = e[0]
 		var xf: Transform3D = (
 			inv
@@ -178,8 +204,10 @@ func _write(s: Dictionary, body: bool) -> int:
 			* (e[1] as Node3D).transform
 			* avatar.transform
 		)
-		if body:  # v0.10.5 W3-V4b: the body's own moves (the Swarmer's: its lift)
-			xf = xf * avatar.vat_offset()
+		if body and avatar is HordeAvatar:  # v0.10.5 W3-V4b: the body's own moves (the Swarmer's: its lift)
+			xf = xf * (avatar as HordeAvatar).vat_offset()
+		elif body:
+			xf = xf.translated_local(Vector3(0, float(avatar.call(&"vat_lift")), 0))
 		var o := n * stride
 		var b := xf.basis
 		buf[o] = b.x.x
@@ -195,23 +223,42 @@ func _write(s: Dictionary, body: bool) -> int:
 		buf[o + 10] = b.z.z
 		buf[o + 11] = xf.origin.z
 		if body:
-			var c := VatLooks.instance_color(avatar.hit_look(), avatar.glow_energy())
+			var c := VatLooks.instance_color(avatar.hit_look(), float(avatar.call(&"glow_energy")))
 			buf[o + 12] = c.r
 			buf[o + 13] = c.g
 			buf[o + 14] = c.b
 			buf[o + 15] = c.a
-			var d := avatar.vat_drives(s["pose"])  # v0.10.5 W3-V4b: each kind's own
-			buf[o + 16] = d.x
-			buf[o + 17] = d.y
-			buf[o + 18] = d.z
-			buf[o + 19] = d.w
+			var d := VatBake.drives_of(avatar, pose)
+			for k in 4:
+				buf[o + 16 + k] = d[k] if k < d.size() else 0.0
+			for k in dn:
+				dbuf[n * dn + k] = d[4 + k] if 4 + k < d.size() else 0.0
 		n += 1
 	if n > 0:
 		mm.buffer = buf
+		if dn > 0:
+			_upload_drives(s, dbuf, dn / 4, mm.instance_count)
 	mm.visible_instance_count = n
 	s["buf"] = buf  # (a packed array is copied on write: the set keeps the one written)
+	if dn > 0:
+		s["dbuf"] = dbuf
 	s["drawn"] = n
 	return n
+
+
+## v0.10.5 W3-V4a: the drive texture of set `s` (`texels` wide, a row per instance of its capacity) from `dbuf`; a new
+## texture (given to the material) when the capacity grew.
+func _upload_drives(s: Dictionary, dbuf: PackedFloat32Array, texels: int, rows: int) -> void:
+	var img := Image.create_from_data(
+		texels, rows, false, Image.FORMAT_RGBAF, dbuf.slice(0, texels * rows * 4).to_byte_array()
+	)
+	var tex: ImageTexture = s.get("dtex")
+	if tex != null and tex.get_height() == rows:
+		tex.update(img)
+		return
+	tex = ImageTexture.create_from_image(img)
+	s["dtex"] = tex
+	VatLooks.set_drives(s["mat"], tex)
 
 
 static func _alive(e: Array) -> bool:
@@ -251,9 +298,23 @@ func _new_set(mesh: Mesh, mat: Material, body: bool, pose := {}) -> Dictionary:
 	var buf := PackedFloat32Array()
 	var stride := BODY_STRIDE if body else SHADOW_STRIDE
 	buf.resize(START_CAPACITY * stride)
-	return {
+	var out := {
 		"mmi": mmi, "mm": mm, "entries": [], "buf": buf, "stride": stride, "pose": pose, "drawn": 0
 	}
+	if body and int(pose.get("drive_texels", 0)) > 0:
+		out["dbuf"] = PackedFloat32Array()
+		out["mat"] = mat
+		VatLooks.set_drives(mat, _zero_drives(int(pose["drive_texels"])))
+	return out
+
+
+## v0.10.5 W3-V4a: a drive texture of one still instance (every drive 0).
+static func _zero_drives(texels: int) -> ImageTexture:
+	var data := PackedFloat32Array()
+	data.resize(texels * 4)
+	return ImageTexture.create_from_image(
+		Image.create_from_data(texels, 1, false, Image.FORMAT_RGBAF, data.to_byte_array())
+	)
 
 
 ## v0.10.5 W3-V1 (ShaderWarmup): one still instance of `kind` in this look, so its shader variant compiles behind the
@@ -265,7 +326,8 @@ static func warm_proxy(
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
 	mm.use_custom_data = true
-	mm.mesh = VatBake.mesh_for(kind, tint, role_glow, outline)
+	var mesh := VatBake.mesh_for(kind, tint, role_glow, outline)
+	mm.mesh = mesh
 	mm.instance_count = 1
 	mm.set_instance_transform(0, Transform3D.IDENTITY)
 	mm.set_instance_color(0, VatLooks.instance_color(EnemyLooks.HIT_OFF, 1.5))
@@ -274,8 +336,12 @@ static func warm_proxy(
 	mmi.name = "VatWarm"
 	mmi.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # set outside the physics step, like the crowd's
 	mmi.multimesh = mm
-	mmi.material_override = VatLooks.material(
-		VatBake.pose_for(kind), outline, HordeAvatar.OUTLINE_M
+	var pose := VatBake.pose_for(kind)
+	var mat := VatLooks.material(
+		pose, outline, pose["outline_m"], bool(mesh.get_meta(&"two_sided", false))
 	)
+	if int(pose["drive_texels"]) > 0:
+		VatLooks.set_drives(mat, _zero_drives(int(pose["drive_texels"])))
+	mmi.material_override = mat
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return mmi
