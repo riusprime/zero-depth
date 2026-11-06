@@ -139,4 +139,26 @@ func _rewards_signature(reader: WorldReader) -> String:
 		)
 	var a := reader.arenas()  # v0.5.5 AR: an arena sealing or clearing redraws its mark
 	parts.append("a%d/%d" % [a["sealed"], (a["cleared"] as PackedInt32Array).size()])
+	# v0.10.5 W3-V3: the rest of what the map's icons show, so the cached map layer redraws for it too (before, the
+	# view redrew on the player's next pixel anyway): the Overrun cleared, an event spent, the Deep gate opening, the
+	# shrine site, a secret found.
+	var o := reader.overrun()
+	parts.append("o%d%d" % [int(o["active"]), int(o["cleared"])])
+	for e in reader.event_count():
+		parts.append("e%d" % reader.event_state(e))
+	parts.append(
+		(
+			"g%d%d%d"
+			% [
+				int(reader.has_deep_portal()),
+				int(reader.gate_open(WorldReader.ROUTE_DEEP)),
+				int(reader.has_shrine_site())
+			]
+		)
+	)
+	if reader.affinity_maps_secrets():
+		var found := 0
+		for s: Dictionary in reader.secret_spots():
+			found += 1 if bool(s["found"]) else 0
+		parts.append("s%d" % found)
 	return ",".join(parts)

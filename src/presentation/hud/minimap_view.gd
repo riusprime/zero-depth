@@ -4,6 +4,13 @@ extends Control
 ## the player moves a pixel or turns: no nodes per room. The corner map is a window that scrolls with you at a fixed
 ## scale; the full map fits the whole floor in the middle of the screen, with a legend. Both turn with the iso camera
 ## (up on the map is up on screen). Reads WorldReader and a MinimapState; writes neither.
+## v0.10.5 W3-V3 (DRAW_GROWTH: ~470 drawn objects per room found, 85-88 % of a late floor's frame): the rooms, doors,
+## icons (and the full map's backdrop, panel and legend) are drawn once into a texture, a SubViewport rendered once
+## (UPDATE_ONCE) each time MinimapState.revision, the view's size, its screen scale or the language changes. Each
+## frame draws that texture (one object; the corner scrolls it under the hero, snapped to whole screen pixels) and,
+## live, the hero's arrow and the corner ticks. The texture is rendered at the screen's own pixel density, so it is
+## never scaled; it holds premultiplied colour and is drawn with a premultiplied-alpha blend, which composites exactly
+## as drawing the shapes straight onto the screen did. A floor too big for a texture falls back to the direct draw.
 
 const C45 := 0.70710678118654752
 ## Door sides: direction from room .x to room .y for door angles 0, 1024, 2048, 3072.
@@ -27,6 +34,11 @@ const LEGEND: Array = [
 ## v0.9.0 RB: A4 Astral's secret mark (the void violet) and its legend row, shown only with Astral.
 const SECRET := Color("#A982FF")
 const LEGEND_SECRET: Array = [&"secret", "MAP_LEGEND_SECRET"]
+## W3-V3: the corner layer's margin around the floor's rooms (px at the corner's scale): the stubs (34 px at most),
+## their heads, the glow and the icons' halos all fit inside it.
+const LAYER_MARGIN := 48.0
+## W3-V3: the largest texture side the layer uses; a bigger floor draws directly, as before.
+const LAYER_MAX_PX := 8192
 
 ## True for the full map.
 var full := false
@@ -46,11 +58,58 @@ var _arrow_dir := Vector2.ZERO
 var _drawn_size := Vector2.ZERO
 var _draws := 0
 
+## W3-V3: where the draw calls go (this view, or the layer while it is rendered).
+var _ci: CanvasItem
+## The layer: a SubViewport holding one Node2D that draws the map's static part; the image shows its texture.
+var _layer_vp := SubViewport.new()
+var _layer := MapLayer.new()
+var _image := Control.new()
+## The layer is in use (false: drawn directly); what it was rendered for; how many times it was rendered.
+var _cached := false
+var _layer_key := ""
+var _layer_draws := 0
+## The layer's extent in this view's units (the corner: map units with the sim origin at 0; the full map: the view),
+## and the screen pixels per unit it was rendered at.
+var _layer_frame := Rect2()
+var _layer_px := 1.0
+## The sub-pixel phase (screen px) the layer was rendered at.
+var _layer_sub := Vector2.ZERO
+var _locale_gen := 0
+
+
+## W3-V3: the Node2D inside the layer's SubViewport; its draw is the view's static part.
+class MapLayer:
+	extends Node2D
+	var view: MinimapView
+
+	func _draw() -> void:
+		if view != null:
+			view.draw_layer(self)
+
 
 func _init(p_full: bool = false) -> void:
 	full = p_full
 	name = "FullMap" if full else "Minimap"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ci = self
+	_layer_vp.name = "MapLayerViewport"
+	_layer_vp.transparent_bg = true
+	_layer_vp.disable_3d = true
+	_layer_vp.size = Vector2i.ONE
+	_layer_vp.render_target_clear_mode = SubViewport.CLEAR_MODE_ALWAYS
+	_layer_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	_layer.view = self
+	_layer_vp.add_child(_layer)
+	add_child(_layer_vp)
+	_image.name = "MapLayerImage"
+	_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_image.show_behind_parent = true  # under the arrow and ticks this view draws itself
+	_image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST  # one texel per screen pixel
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+	_image.material = mat
+	_image.draw.connect(_draw_image)
+	add_child(_image)
 	if full:
 		set_anchors_preset(Control.PRESET_FULL_RECT)
 		visible = false
@@ -71,8 +130,10 @@ func refresh() -> void:
 		return
 	var px := (reader.player_pos() * _scale).round()
 	arrow_dir()
+	var rendered := _sync_layer()
 	if (
-		state.revision != _drawn_revision
+		rendered
+		or state.revision != _drawn_revision
 		or px != _drawn_player
 		or reader.aim_angle() != _drawn_aim
 		or reader.move_intent() != _drawn_move
@@ -84,11 +145,125 @@ func refresh() -> void:
 		_drawn_move = reader.move_intent()
 		_drawn_size = size
 		queue_redraw()
+		_image.queue_redraw()
 
 
 ## How many times it has drawn (tests check it doesn't redraw every frame for nothing).
 func draw_count() -> int:
 	return _draws
+
+
+## W3-V3: how many times the map's static layer was rendered (once per change of the map, not per step).
+func layer_draw_count() -> int:
+	return _layer_draws
+
+
+## W3-V3: the static layer is in use (false: the floor is drawn directly, as before).
+func layer_cached() -> bool:
+	return _cached
+
+
+## W3-V3: screen pixels per unit of this view (the window's stretch and every parent's scale).
+func _screen_xf() -> Transform2D:
+	return get_viewport().get_final_transform() * get_global_transform_with_canvas()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		_locale_gen += 1  # the full map's legend is in the layer
+
+
+## W3-V3: renders the layer again when what it shows changed. True when it did.
+func _sync_layer() -> bool:
+	if not reader.has_floor():
+		return false
+	var s := absf(_screen_xf().get_scale().x)
+	var key := "%d|%s|%s|%d" % [state.revision, size, s, _locale_gen]
+	if key == _layer_key:
+		return false
+	_layer_key = key
+	var frame := Rect2(Vector2.ZERO, size)
+	if not full:
+		var lo := Vector2.INF
+		var hi := -Vector2.INF
+		for r in reader.floor_room_count():
+			for c in _corners(reader.floor_room(r)):
+				var t := _turn(c) * MinimapStyle.CORNER_PX_PER_M
+				lo = lo.min(t)
+				hi = hi.max(t)
+		frame = Rect2(lo, hi - lo).grow(LAYER_MARGIN)
+	var px := Vector2i((frame.size * s).ceil())
+	_cached = (
+		s > 0.0
+		and not (not full and draws_backdrop())  # a corner panel would scroll with the map: draw directly
+		and px.x >= 1
+		and px.y >= 1
+		and px.x <= LAYER_MAX_PX
+		and px.y <= LAYER_MAX_PX
+	)
+	if not _cached:
+		return true
+	_layer_frame = frame
+	_layer_px = s
+	_layer_vp.size = px
+	_layer_sub = _layer_screen_at()
+	_layer_sub -= _layer_sub.floor()
+	_layer_vp.canvas_transform = Transform2D(
+		0.0, Vector2(s, s), 0.0, _layer_sub - frame.position * s
+	)
+	if "oversampling_override" in _layer_vp:  # the legend's text rasterised at the screen's density
+		_layer_vp.set(&"oversampling_override", s)
+	_layer.queue_redraw()
+	_layer_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+	return true
+
+
+## W3-V3: where the layer's top-left corner falls this frame, in screen pixels (not rounded): the corner scrolls
+## the map under the hero (the sim origin at size / 2 - turn(hero)), the full map holds it still.
+func _layer_screen_at() -> Vector2:
+	var at := _layer_frame.position
+	if not full:
+		at += size * 0.5 - _turn(reader.player_pos()) * MinimapStyle.CORNER_PX_PER_M
+	return get_viewport().get_final_transform() * _image.get_global_transform_with_canvas() * at
+
+
+## W3-V3: the layer's texture, placed on whole screen pixels so its pixels land 1:1 on the screen's. The layer was
+## rendered shifted by the sub-pixel phase the map had then (_layer_sub), so while the hero stands where it was
+## rendered the map sits exactly where the direct draw put it; walking, it is within half a pixel, as the direct
+## draw's own redraw-per-pixel was.
+func _draw_image() -> void:
+	if not _cached or reader == null or state == null or not reader.has_floor():
+		return
+	var xf := get_viewport().get_final_transform() * _image.get_global_transform_with_canvas()
+	var at := xf.affine_inverse() * (_layer_screen_at() - _layer_sub).round()
+	_image.draw_texture_rect(
+		_layer_vp.get_texture(), Rect2(at, Vector2(_layer_vp.size) / _layer_px), false
+	)
+
+
+## W3-V3: the static part, drawn into the layer `ci` (MapLayer._draw): in the corner, at the corner's scale with the
+## sim origin at 0; the full map as the view lays it out.
+func draw_layer(ci: CanvasItem) -> void:
+	if reader == null or state == null or not reader.has_floor():
+		return
+	_layer_draws += 1
+	_ci = ci
+	if full:
+		var map_rect := _place()
+		_draw_full_panel(map_rect)
+		_draw_rooms()
+		_draw_doors()
+		_draw_icons()
+		_draw_legend(Vector2(map_rect.end.x + 40, map_rect.position.y))
+	else:
+		_scale = MinimapStyle.CORNER_PX_PER_M
+		_centre = Vector2.ZERO
+		_origin = Vector2.ZERO
+		_draw_rooms()
+		_draw_doors()
+		_draw_icons()
+		_place()  # back to the live frame (to_map for the hero)
+	_ci = self
 
 
 ## Where sim point p lands in this view's pixels.
@@ -112,26 +287,37 @@ func _draw() -> void:
 	if reader == null or state == null or not reader.has_floor():
 		return
 	var map_rect := _place()
+	if not _cached:  # W3-V3: else the layer (drawn behind this view by _image) holds all of this
+		if full:
+			_draw_full_panel(map_rect)
+		elif draws_backdrop():
+			draw_style_box(_panel(), Rect2(Vector2.ZERO, size))
+		_draw_rooms()
+		_draw_doors()
+		_draw_icons()
+	_draw_player()
+	if full:
+		if not _cached:
+			_draw_legend(Vector2(map_rect.end.x + 40, map_rect.position.y))
+	else:
+		_draw_corner_ticks()
+
+
+func _panel() -> StyleBoxFlat:
 	var panel := StyleBoxFlat.new()
 	panel.bg_color = MinimapStyle.PANEL
 	panel.border_color = MinimapStyle.PANEL_EDGE
 	panel.set_border_width_all(1)
 	panel.set_corner_radius_all(MinimapStyle.CORNER_RADIUS)
-	if full:
-		draw_rect(Rect2(Vector2.ZERO, size), MinimapStyle.BACKDROP)
-		var whole := map_rect.grow(24)
-		whole.size.x += MinimapStyle.LEGEND_WIDTH
-		draw_style_box(panel, whole)
-	elif draws_backdrop():
-		draw_style_box(panel, Rect2(Vector2.ZERO, size))
-	_draw_rooms()
-	_draw_doors()
-	_draw_icons()
-	_draw_player()
-	if full:
-		_draw_legend(Vector2(map_rect.end.x + 40, map_rect.position.y))
-	else:
-		_draw_corner_ticks()
+	return panel
+
+
+## The full map's dimmed backdrop and its panel around the floor and the legend.
+func _draw_full_panel(map_rect: Rect2) -> void:
+	_ci.draw_rect(Rect2(Vector2.ZERO, size), MinimapStyle.BACKDROP)
+	var whole := map_rect.grow(24)
+	whole.size.x += MinimapStyle.LEGEND_WIDTH
+	_ci.draw_style_box(_panel(), whole)
 
 
 ## True when this view draws a dark panel behind the map: the full map only (v0.5.5 A5: the corner map floats).
@@ -157,8 +343,8 @@ func _draw_corner_ticks() -> void:
 	for c: Array in corners:
 		var p: Vector2 = c[0]
 		var pts := PackedVector2Array([p + c[1] * arm, p, p + c[2] * arm])
-		draw_polyline(pts, MinimapStyle.SHADOW, 2.0 + MinimapStyle.SHADOW_WIDTH)
-		draw_polyline(pts, MinimapStyle.TICK, 2.0)
+		_ci.draw_polyline(pts, MinimapStyle.SHADOW, 2.0 + MinimapStyle.SHADOW_WIDTH)
+		_ci.draw_polyline(pts, MinimapStyle.TICK, 2.0)
 
 
 ## v0.10.5 W3-O17: the corner window in Astral: at each corner a 1 px silver L over a dark halo, a fainter inner L 4 px
@@ -186,8 +372,8 @@ func _draw_astral_ticks(arm: float) -> void:
 			var px := x + sx * d
 			var py := y + sy * d
 			if d == 0.0:
-				draw_rect(Rect2(minf(px, px + sx * a) - 1.0, py - 1.0, a + 2.0, 3.0), halo)
-				draw_rect(Rect2(px - 1.0, minf(py, py + sy * a) - 1.0, 3.0, a + 2.0), halo)
+				_ci.draw_rect(Rect2(minf(px, px + sx * a) - 1.0, py - 1.0, a + 2.0, 3.0), halo)
+				_ci.draw_rect(Rect2(px - 1.0, minf(py, py + sy * a) - 1.0, 3.0, a + 2.0), halo)
 			AstralChrome.hline(self, px, px + sx * a, py, col)
 			AstralChrome.vline(self, px, py, py + sy * a, col)
 		AstralChrome.dia(self, Vector2(x + 0.5, y + 0.5), 3.0, MinimapStyle.TICK, HudStyle.A_INK)
@@ -242,13 +428,15 @@ func _draw_rooms() -> void:
 		if not state.is_discovered(r) or r == state.current:
 			continue
 		if not draws_backdrop():
-			draw_colored_polygon(_poly(reader.floor_room(r)), MinimapStyle.ROOM_WASH)
-		draw_colored_polygon(_poly(reader.floor_room(r)), MinimapStyle.ROOM_FILL)
+			_ci.draw_colored_polygon(_poly(reader.floor_room(r)), MinimapStyle.ROOM_WASH)
+		_ci.draw_colored_polygon(_poly(reader.floor_room(r)), MinimapStyle.ROOM_FILL)
 		_outline(r, MinimapStyle.ROOM_EDGE, MinimapStyle.LINE)
 	if state.is_discovered(state.current):
 		if not draws_backdrop():
-			draw_colored_polygon(_poly(reader.floor_room(state.current)), MinimapStyle.ROOM_WASH)
-		draw_colored_polygon(_poly(reader.floor_room(state.current)), MinimapStyle.CURRENT_FILL)
+			_ci.draw_colored_polygon(
+				_poly(reader.floor_room(state.current)), MinimapStyle.ROOM_WASH
+			)
+		_ci.draw_colored_polygon(_poly(reader.floor_room(state.current)), MinimapStyle.CURRENT_FILL)
 		_outline(state.current, MinimapStyle.CURRENT_EDGE, 2.0)
 
 
@@ -278,11 +466,11 @@ func _outline(room: int, col: Color, width: float) -> void:
 		for c in cuts:
 			if c.x > t:
 				MinimapStyle.glow_line(
-					self, to_map(a + along * t), to_map(a + along * c.x), col, width
+					_ci, to_map(a + along * t), to_map(a + along * c.x), col, width
 				)
 			t = maxf(t, c.y)
 		if t < length:
-			MinimapStyle.glow_line(self, to_map(a + along * t), to_map(b), col, width)
+			MinimapStyle.glow_line(_ci, to_map(a + along * t), to_map(b), col, width)
 
 
 ## Door rect dr meets the wall face from a to b (an axis-aligned segment).
@@ -304,7 +492,7 @@ func _draw_doors() -> void:
 		var rect := reader.floor_door_rect(i)
 		var side := SIDES[(reader.floor_door_angle(i) / 1024) % 4]
 		var d := reader.floor_door_rooms(i)
-		draw_colored_polygon(_poly(rect), MinimapStyle.ROOM_FILL)
+		_ci.draw_colored_polygon(_poly(rect), MinimapStyle.ROOM_FILL)
 		var half := rect.size * 0.5
 		var across := Vector2(side.y, side.x).abs() * half
 		var depth := side.abs() * half
@@ -312,7 +500,7 @@ func _draw_doors() -> void:
 		for s: float in [-1.0, 1.0]:
 			var e := c + across * s
 			MinimapStyle.glow_line(
-				self, to_map(e - depth), to_map(e + depth), MinimapStyle.ROOM_EDGE
+				_ci, to_map(e - depth), to_map(e + depth), MinimapStyle.ROOM_EDGE
 			)
 		var boss := i == boss_door
 		if boss or over_doors.has(i):
@@ -353,18 +541,18 @@ func _draw_boss_door(rect: Rect2, side: Vector2, col: Color = MinimapStyle.BOSS)
 	var across := Vector2(side.y, side.x).abs() * rect.size * 0.5
 	var c := rect.get_center()
 	var w := 3.0 if full else 2.5
-	MinimapStyle.glow_line(self, to_map(c - across), to_map(c + across), col, w)
+	MinimapStyle.glow_line(_ci, to_map(c - across), to_map(c + across), col, w)
 
 
 func _arrow(a: Vector2, b: Vector2, col: Color, head: float, width: float = 2.0) -> void:
-	MinimapStyle.glow_line(self, a, b, col, width)
+	MinimapStyle.glow_line(_ci, a, b, col, width)
 	var dir := (b - a).normalized()
 	var n := Vector2(-dir.y, dir.x)
 	var h := maxf(head, 5.0)
 	var tri := PackedVector2Array(
 		[b + dir * h * 0.6, b - dir * h * 0.4 + n * h * 0.5, b - dir * h * 0.4 - n * h * 0.5]
 	)
-	draw_colored_polygon(tri, col)
+	_ci.draw_colored_polygon(tri, col)
 
 
 func _icon_scale() -> float:
@@ -451,11 +639,11 @@ func _draw_player_arrow(p: Vector2, dir: Vector2, k: float) -> void:
 			p - dir * s * 0.6 - n * s * 0.65
 		]
 	)
-	draw_circle(p, s * 1.3, Color(MinimapStyle.PLAYER, 0.18))
+	_ci.draw_circle(p, s * 1.3, Color(MinimapStyle.PLAYER, 0.18))
 	var halo := tri.duplicate()
 	halo.append(tri[0])
-	draw_polyline(halo, MinimapStyle.SHADOW, MinimapStyle.SHADOW_WIDTH, true)  # v0.5.5 A5
-	draw_colored_polygon(tri, MinimapStyle.PLAYER)
+	_ci.draw_polyline(halo, MinimapStyle.SHADOW, MinimapStyle.SHADOW_WIDTH, true)  # v0.5.5 A5
+	_ci.draw_colored_polygon(tri, MinimapStyle.PLAYER)
 
 
 ## One legend or map icon at p, `k` times the corner size.
@@ -466,21 +654,23 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 			_draw_player_arrow(p, Vector2(0, -1), k)
 		&"room":
 			var r := Rect2(p - Vector2(s * 1.6, s), Vector2(s * 3.2, s * 2))
-			draw_rect(r, MinimapStyle.ROOM_FILL)
-			draw_rect(r, MinimapStyle.ROOM_EDGE, false, MinimapStyle.LINE)
+			_ci.draw_rect(r, MinimapStyle.ROOM_FILL)
+			_ci.draw_rect(r, MinimapStyle.ROOM_EDGE, false, MinimapStyle.LINE)
 		&"unexplored":
 			_arrow(p - Vector2(s * 1.6, 0), p + Vector2(s * 0.8, 0), MinimapStyle.UNEXPLORED, s)
 		&"altar":
 			var dia := PackedVector2Array(
 				[p + Vector2(0, -s), p + Vector2(s, 0), p + Vector2(0, s), p + Vector2(-s, 0)]
 			)
-			draw_circle(p, s * 1.5, Color(MinimapStyle.ALTAR, MinimapStyle.GLOW_ALPHA))
-			draw_colored_polygon(dia, MinimapStyle.ALTAR)
+			_ci.draw_circle(p, s * 1.5, Color(MinimapStyle.ALTAR, MinimapStyle.GLOW_ALPHA))
+			_ci.draw_colored_polygon(dia, MinimapStyle.ALTAR)
 		&"chest":
-			draw_circle(p, s * 1.5, Color(MinimapStyle.CHEST, MinimapStyle.GLOW_ALPHA))
-			draw_rect(Rect2(p - Vector2(s, s * 0.75), Vector2(s * 2, s * 1.5)), MinimapStyle.CHEST)
+			_ci.draw_circle(p, s * 1.5, Color(MinimapStyle.CHEST, MinimapStyle.GLOW_ALPHA))
+			_ci.draw_rect(
+				Rect2(p - Vector2(s, s * 0.75), Vector2(s * 2, s * 1.5)), MinimapStyle.CHEST
+			)
 		&"chest_poor":
-			draw_rect(
+			_ci.draw_rect(
 				Rect2(p - Vector2(s, s * 0.75), Vector2(s * 2, s * 1.5)),
 				MinimapStyle.CHEST_POOR,
 				false,
@@ -488,44 +678,44 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 			)
 		&"boss":
 			MinimapStyle.glow_line(
-				self, p - Vector2(s * 1.6, 0), p + Vector2(s * 1.6, 0), MinimapStyle.BOSS, 3.0
+				_ci, p - Vector2(s * 1.6, 0), p + Vector2(s * 1.6, 0), MinimapStyle.BOSS, 3.0
 			)
 		&"portal":
-			draw_circle(p, s * 1.9, Color(MinimapStyle.PORTAL_OPEN, 0.25))
-			draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_OPEN, 2.0, true)
-			draw_circle(p, s * 0.55, MinimapStyle.PORTAL_OPEN)
+			_ci.draw_circle(p, s * 1.9, Color(MinimapStyle.PORTAL_OPEN, 0.25))
+			_ci.draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_OPEN, 2.0, true)
+			_ci.draw_circle(p, s * 0.55, MinimapStyle.PORTAL_OPEN)
 		&"shrine":
 			var tri := PackedVector2Array(
 				[p + Vector2(0, -s * 1.2), p + Vector2(s, s * 0.8), p + Vector2(-s, s * 0.8)]
 			)
-			draw_circle(p, s * 1.5, Color(MinimapStyle.SHRINE, MinimapStyle.GLOW_ALPHA))
-			draw_colored_polygon(tri, MinimapStyle.SHRINE)
+			_ci.draw_circle(p, s * 1.5, Color(MinimapStyle.SHRINE, MinimapStyle.GLOW_ALPHA))
+			_ci.draw_colored_polygon(tri, MinimapStyle.SHRINE)
 		&"portal_deep":
-			draw_circle(p, s * 1.9, Color(MinimapStyle.PORTAL_DEEP, 0.25))
-			draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_DEEP_RIM, 2.0, true)
-			draw_circle(p, s * 0.55, MinimapStyle.PORTAL_DEEP)
+			_ci.draw_circle(p, s * 1.9, Color(MinimapStyle.PORTAL_DEEP, 0.25))
+			_ci.draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_DEEP_RIM, 2.0, true)
+			_ci.draw_circle(p, s * 0.55, MinimapStyle.PORTAL_DEEP)
 		&"event", &"event_spent":
 			var hexa := PackedVector2Array()
 			for j in 6:
 				hexa.append(p + Vector2(cos(TAU * j / 6.0), sin(TAU * j / 6.0)) * s * 1.1)
 			var col := MinimapStyle.EVENT if kind == &"event" else Color(MinimapStyle.EVENT, 0.35)
 			if kind == &"event":
-				draw_circle(p, s * 1.6, Color(MinimapStyle.EVENT, MinimapStyle.GLOW_ALPHA))
-			draw_colored_polygon(hexa, col)
-			draw_circle(p, s * 0.35, Color(0.05, 0.05, 0.08, 0.9))
+				_ci.draw_circle(p, s * 1.6, Color(MinimapStyle.EVENT, MinimapStyle.GLOW_ALPHA))
+			_ci.draw_colored_polygon(hexa, col)
+			_ci.draw_circle(p, s * 0.35, Color(0.05, 0.05, 0.08, 0.9))
 		&"overrun", &"overrun_cleared":  # v0.4.0 AB: a red crossed-swords mark in a square
 			var col := MinimapStyle.OVERRUN if kind == &"overrun" else MinimapStyle.PORTAL_SEALED
 			if kind == &"overrun":
-				draw_circle(p, s * 1.6, Color(col, MinimapStyle.GLOW_ALPHA))
-			draw_rect(Rect2(p - Vector2(s, s), Vector2(s * 2, s * 2)), col, false, 2.0)
-			draw_line(p - Vector2(s, s) * 0.7, p + Vector2(s, s) * 0.7, col, 2.0)
-			draw_line(p + Vector2(-s, s) * 0.7, p + Vector2(s, -s) * 0.7, col, 2.0)
+				_ci.draw_circle(p, s * 1.6, Color(col, MinimapStyle.GLOW_ALPHA))
+			_ci.draw_rect(Rect2(p - Vector2(s, s), Vector2(s * 2, s * 2)), col, false, 2.0)
+			_ci.draw_line(p - Vector2(s, s) * 0.7, p + Vector2(s, s) * 0.7, col, 2.0)
+			_ci.draw_line(p + Vector2(-s, s) * 0.7, p + Vector2(s, -s) * 0.7, col, 2.0)
 		&"arena", &"arena_cleared":  # v0.5.5 AR: an amber square with a bar across its doors' line
 			var col := MinimapStyle.ARENA if kind == &"arena" else MinimapStyle.PORTAL_SEALED
 			if kind == &"arena":
-				draw_circle(p, s * 1.6, Color(col, MinimapStyle.GLOW_ALPHA))
-			draw_rect(Rect2(p - Vector2(s, s), Vector2(s * 2, s * 2)), col, false, 2.0)
-			draw_rect(Rect2(p - Vector2(s * 0.45, s * 0.45), Vector2(s * 0.9, s * 0.9)), col)
+				_ci.draw_circle(p, s * 1.6, Color(col, MinimapStyle.GLOW_ALPHA))
+			_ci.draw_rect(Rect2(p - Vector2(s, s), Vector2(s * 2, s * 2)), col, false, 2.0)
+			_ci.draw_rect(Rect2(p - Vector2(s * 0.45, s * 0.45), Vector2(s * 0.9, s * 0.9)), col)
 		&"shop":  # v0.5.0 SH: a storefront (a box under a roof), in the shards' violet
 			var house := PackedVector2Array(
 				[
@@ -536,25 +726,25 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 					p + Vector2(-s * 1.1, -s * 0.3)
 				]
 			)
-			draw_circle(p, s * 1.6, Color(MinimapStyle.SHOP, MinimapStyle.GLOW_ALPHA))
-			draw_colored_polygon(house, MinimapStyle.SHOP)
-			draw_rect(
+			_ci.draw_circle(p, s * 1.6, Color(MinimapStyle.SHOP, MinimapStyle.GLOW_ALPHA))
+			_ci.draw_colored_polygon(house, MinimapStyle.SHOP)
+			_ci.draw_rect(
 				Rect2(p + Vector2(-s * 0.3, s * 0.1), Vector2(s * 0.6, s * 0.8)), MinimapStyle.PANEL
 			)
 		&"portal_sealed":
-			draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_SEALED, 1.5, true)
+			_ci.draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_SEALED, 1.5, true)
 		&"secret":  # v0.9.0 RB: A4 Astral's mark, a violet four-point star in a glow
 			var star := PackedVector2Array()
 			for j in 8:
 				var rr := s * (1.3 if j % 2 == 0 else 0.4)
 				star.append(p + Vector2(cos(TAU * j / 8.0), sin(TAU * j / 8.0)) * rr)
-			draw_circle(p, s * 1.7, Color(SECRET, MinimapStyle.GLOW_ALPHA))
-			draw_colored_polygon(star, SECRET)
+			_ci.draw_circle(p, s * 1.7, Color(SECRET, MinimapStyle.GLOW_ALPHA))
+			_ci.draw_colored_polygon(star, SECRET)
 
 
 func _draw_legend(at: Vector2) -> void:
 	var font := get_theme_default_font()
-	draw_string(
+	_ci.draw_string(
 		font,
 		at + Vector2(0, MinimapStyle.TITLE_SIZE),
 		tr("MAP_TITLE"),
@@ -569,7 +759,7 @@ func _draw_legend(at: Vector2) -> void:
 		rows.append(LEGEND_SECRET)
 	for row: Array in rows:
 		draw_icon(row[0], Vector2(at.x + 16, y), 1.4)
-		draw_string(
+		_ci.draw_string(
 			font,
 			Vector2(at.x + 44, y + MinimapStyle.FONT_SIZE * 0.35),
 			tr(row[1]),
@@ -579,7 +769,7 @@ func _draw_legend(at: Vector2) -> void:
 			MinimapStyle.TEXT_DIM
 		)
 		y += 38
-	draw_string(
+	_ci.draw_string(
 		font,
 		Vector2(at.x, y + 18),
 		tr("MAP_ROOMS") % [state.discovered_count(), reader.floor_room_count()],
