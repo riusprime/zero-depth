@@ -6,6 +6,8 @@ extends SceneTree
 ## with the last tick's place (what a one-frame-stale read would give). Needs a renderer, vsync off:
 ##   APPDATA=<temp> godot --path . --position -10000,-10000 -s scripts/checks/vat_motion_check.gd
 ## Prints the result; writes build/vat/motion_check.txt.
+## v0.10.5 W3-V4a: `-- --kind=charger` checks a VAT Charger instead (its twelve drives), into
+## build/vat/motion_check_charger.txt.
 
 const SPEED := 3.0
 const FRAMES := 600
@@ -14,7 +16,7 @@ const FRAMES := 600
 class Checker:
 	extends Node
 	var crowd: VatCrowd
-	var avatar: HordeAvatar
+	var avatar: Node3D
 	var prev := 0.0
 	var cur := 0.0
 	var err_interp := PackedFloat64Array()
@@ -48,6 +50,7 @@ class Mover:
 
 var _checker: Checker
 var _frame := 0
+var _suffix := ""
 
 
 func _initialize() -> void:
@@ -61,11 +64,13 @@ func _initialize() -> void:
 	scene.add_child(actor)
 	var facing := Node3D.new()
 	actor.add_child(facing)
-	var a := HordeAvatar.new()
-	a.vat = true
-	a.setup(WorldReader.KIND_SWARMER, Color.BLACK)
+	var charger := OS.get_cmdline_user_args().has("--kind=charger")
+	_suffix = "_charger" if charger else ""
+	var a := VatBake.vat_avatar_of(
+		WorldReader.KIND_CHARGER if charger else WorldReader.KIND_SWARMER, Color.BLACK
+	)
 	facing.add_child(a)
-	a.apply_state({"tick": 0, "state": WorldReader.STATE_MOVE})
+	a.call(&"apply_state", {"tick": 0, "pos": Vector2.ZERO, "state": WorldReader.STATE_MOVE})
 	var crowd := VatCrowd.new()
 	scene.add_child(crowd)
 	crowd.add(actor, facing, a, Color.BLACK, false)
@@ -108,7 +113,8 @@ func _process(_delta: float) -> bool:
 	print(text)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://build/vat/"))
 	var f := FileAccess.open(
-		ProjectSettings.globalize_path("res://build/vat/motion_check.txt"), FileAccess.WRITE
+		ProjectSettings.globalize_path("res://build/vat/motion_check%s.txt" % _suffix),
+		FileAccess.WRITE
 	)
 	if f != null:
 		f.store_string(text)
