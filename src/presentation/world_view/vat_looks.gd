@@ -14,6 +14,9 @@ extends RefCounted
 ## scale (the Charger's lunge stretch) turns its normals by the inverse transpose, as the scene does; a mesh with
 ## two-sided pieces (the Charger's cull_disabled shell) draws with cull_disabled and drops the back faces of its
 ## one-sided ones (CUSTOM2.y).
+## v0.10.5 W3-V4b: mode 3 is an accent glowing at the instance's drive 3 (INSTANCE_CUSTOM.w) instead of COLOR's (the
+## Sniper's muzzle: its own glow; that rig has no gait); a pose with an `albedo_tex` (the owner's models) draws the
+## textured variant: each plate's (mode 0) albedo times that map at the mesh's UV, as EnemyLooks.body's textured plates.
 ## The stencil outline pass (EnemyLooks._OUTLINE: grown along the normal, drawn where the stencil is not 1) follows
 ## when ActorLooks.OUTLINES is on, posed the same way; an accent draws none (its triangles fold to a point there).
 ## Presentation only (EI-07).
@@ -135,6 +138,7 @@ const _BODY_VERTEX := """
 	zd_hit = COLOR.rgb;
 	zd_shown = COLOR.a < 0.0 ? 1.0 : 0.0;
 	zd_glow = COLOR.a < 0.0 ? -COLOR.a - 1.0 : COLOR.a;
+	zd_glow = CUSTOM0.a > 2.5 ? INSTANCE_CUSTOM.w : zd_glow;
 	zd_one_sided = CUSTOM2.y;
 }
 
@@ -149,7 +153,9 @@ const _BODY_FRAGMENT := """
 	METALLIC = 0.0;
 	SPECULAR = 0.5;
 	ROUGHNESS = 1.0;
-	EMISSION = zd_mode > 1.5 ? vec3(0.0) : (zd_mode > 0.5 ? zd_emit * zd_glow : mix(zd_emit, zd_hit, zd_shown));
+	EMISSION = zd_mode > 2.5 || (zd_mode > 0.5 && zd_mode < 1.5)
+		? zd_emit * zd_glow
+		: (zd_mode > 1.5 ? vec3(0.0) : mix(zd_emit, zd_hit, zd_shown));
 }
 """
 const _OUTLINE_HEAD := """shader_type spatial;
@@ -169,6 +175,14 @@ void fragment() {
 	ALPHA = albedo.a;
 }
 """
+
+## v0.10.5 W3-V4b: the textured variant (the owner's models: their plates are textured, their accents are not), the
+## map sampled for every fragment, outside the branch, so its mip level is never read from a neighbour that skipped it.
+const _TEX := "uniform sampler2D zd_tex : source_color, filter_linear_mipmap, repeat_enable;\n"
+const _TEX_ALBEDO := (
+	"vec3 zd_tx = texture(zd_tex, UV).rgb;\n"
+	+ "\tALBEDO = zd_albedo * (zd_mode > 0.5 ? vec3(1.0) : zd_tx);"
+)
 
 static var _shaders := {}
 
@@ -193,18 +207,26 @@ static func material(
 	if two_sided:
 		head = head.replace("cull_back", "cull_disabled")
 	var m := ShaderMaterial.new()
+	var tex: Texture2D = pose.get("albedo_tex")
 	m.shader = _shader(
-		"body%d%d" % [int(ActorLooks.OUTLINES), int(two_sided)],
+		"body%d%d%d" % [int(ActorLooks.OUTLINES), int(two_sided), int(tex != null)],
 		(
 			head
+			+ (_TEX if tex != null else "")
 			+ _POSE
 			+ _BODY_VARYINGS
 			+ _DRIVES
 			+ _BODY_VERTEX
 			+ (_ONE_SIDED if two_sided else "")
-			+ _BODY_FRAGMENT
+			+ (
+				_BODY_FRAGMENT.replace("ALBEDO = zd_albedo;", _TEX_ALBEDO)
+				if tex != null
+				else _BODY_FRAGMENT
+			)
 		)
 	)
+	if tex != null:
+		m.set_shader_parameter("zd_tex", tex)
 	_set_pose(m, pose)
 	if ActorLooks.OUTLINES and outline_m > 0.0:
 		var o := ShaderMaterial.new()

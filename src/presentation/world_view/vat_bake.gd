@@ -137,6 +137,8 @@ static func rig_of(avatar: Node3D) -> Dictionary:
 ## stance grid (drives 0, 1, 2: the windup raise, the strike, the crouch; at the clock 0, fully risen) and the gait
 ## grid (drive 3: the legs' phase over gait_period), each read from its nodes after HordeAvatar.pose_at.
 static func horde_rig(avatar: HordeAvatar) -> Dictionary:
+	if avatar.kind != WorldReader.KIND_SWARMER:  # v0.10.5 W3-V4b: the other horde kinds' (HordeVat)
+		return HordeVat.rig(avatar)
 	var js: Array = []
 	var index := {}
 	for j: Array in joint_spec(avatar):
@@ -290,6 +292,8 @@ static func bake(avatar: Node3D) -> Dictionary:
 		"outline_m": float(rig.get("outline_m", HordeAvatar.OUTLINE_M)),
 		"key": rig.get("key", ""),
 	}
+	if rig.has("albedo_tex"):  # v0.10.5 W3-V4b: the owner's model's colour map (VatLooks' textured variant)
+		out["albedo_tex"] = rig["albedo_tex"]
 	if rig.has("period"):  # the pilot's (VatCrowd's horde drives, tests)
 		var gait: Dictionary = table[GRID_GAIT]
 		out["period"] = rig["period"]
@@ -396,8 +400,12 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 	var ps := pieces(avatar, js)
 	var looks: Array = []
 	var any_two := false
+	var textured := avatar is HordeAvatar and HordeVat.texture(avatar) != null  # v0.10.5 W3-V4b: UVs too
+	var uvs := PackedVector2Array()
 	for p: Dictionary in ps:
 		var look := surface_look(p["node"], p["surface"])
+		if HordeVat.alt_glow(avatar, p["node"]):  # v0.10.5 W3-V4b: the Sniper's muzzle (VatLooks' mode 3)
+			(look[0] as Array)[3] = 3.0
 		looks.append(look)
 		any_two = any_two or bool(look[2])
 	for i in ps.size():
@@ -411,6 +419,14 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 		var xf: Transform3D = p["xf"]
 		var nb := xf.basis.inverse().transposed()
 		var v: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		if textured:
+			var uv: Variant = arrays[Mesh.ARRAY_TEX_UV]
+			if uv is PackedVector2Array and (uv as PackedVector2Array).size() == v.size():
+				uvs.append_array(uv)
+			else:
+				var zero := PackedVector2Array()
+				zero.resize(v.size())
+				uvs.append_array(zero)
 		var nr: Variant = arrays[Mesh.ARRAY_NORMAL]
 		var base := verts.size()
 		var jp := PackedFloat32Array(
@@ -458,6 +474,8 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 	out[Mesh.ARRAY_CUSTOM1] = c1
 	out[Mesh.ARRAY_CUSTOM2] = c2
 	out[Mesh.ARRAY_INDEX] = index
+	if textured:
+		out[Mesh.ARRAY_TEX_UV] = uvs
 	var flags := (
 		(Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT)
 		| (Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM1_SHIFT)
@@ -490,9 +508,7 @@ static func surface_look(mi: MeshInstance3D, s: int) -> Array:
 	if m == null or m.shader == null:
 		push_error("VatBake: %s has no EnemyLooks material" % mi.get_path())
 		return [[0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], false]
-	var code := m.shader.code
-	if code.contains("texture_albedo"):
-		push_error("VatBake: %s is textured (not baked yet)" % mi.get_path())
+	var code := m.shader.code  # (v0.10.5 W3-V4b: a textured plate's map is the pose's albedo_tex, VatLooks)
 	var albedo: Color = m.get_shader_parameter("albedo")
 	var emission: Color = m.get_shader_parameter("emission")
 	var energy := float(m.get_shader_parameter("emission_energy"))
@@ -608,6 +624,8 @@ static func drives_of(avatar: Node3D, pose: Dictionary) -> PackedFloat32Array:
 	if avatar.has_method(&"vat_drives"):
 		return avatar.call(&"vat_drives")
 	var h := avatar as HordeAvatar
+	if h.kind != WorldReader.KIND_SWARMER:  # v0.10.5 W3-V4b: the other horde kinds' (HordeVat)
+		return h.vat_grid_drives()
 	return PackedFloat32Array(
 		[
 			clampf(h.windup_pose(), 0.0, 1.0),
@@ -622,6 +640,14 @@ static func drives_of(avatar: Node3D, pose: Dictionary) -> PackedFloat32Array:
 static func eval_vertices(
 	pose: Dictionary, mesh: ArrayMesh, dv: Variant, lift: float
 ) -> PackedVector3Array:
+	return eval_vertices_at(pose, mesh, dv, Transform3D(Basis.IDENTITY, Vector3(0, lift, 0)))
+
+
+## v0.10.5 W3-V4b: eval_vertices with the body's whole instance transform `offset` (HordeAvatar.vat_offset) for the
+## lift.
+static func eval_vertices_at(
+	pose: Dictionary, mesh: ArrayMesh, dv: Variant, offset: Transform3D
+) -> PackedVector3Array:
 	var d := _drives(dv)
 	var arrays := mesh.surface_get_arrays(0)
 	var v: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
@@ -632,7 +658,7 @@ static func eval_vertices(
 	for k in v.size():
 		var j := int(c2[k * 4])
 		if not cache.has(j):
-			cache[j] = Transform3D(Basis.IDENTITY, Vector3(0, lift, 0)) * eval_chain(pose, j, d)
+			cache[j] = offset * eval_chain(pose, j, d)
 		out[k] = (cache[j] as Transform3D) * v[k]
 	return out
 
@@ -707,3 +733,74 @@ static func pose_error(
 		"vertices": count / maxi(1, samples),
 		"samples": samples,
 	}
+
+
+## v0.10.5 W3-V4b: pose_error for the kinds past the Swarmer: over `samples` random sets of every input the pose reads
+## (HordeVat.sample: the windup raise, the strike, the crouch, the clock, the rise-in, the death, the walk,
+## the heal, the tell), both avatars posed by pose_with, the VAT side through the baked texture at its own drives and
+## instance transform (vat_drives, vat_offset). A vertex of a hidden piece (the dropped mine) must fold to its joint's
+## point on the VAT side instead: `hidden_spread_m` is how far apart those land (0: drawn as nothing). {max_m, mean_m,
+## worst (the inputs), vertices, samples, hidden, hidden_spread_m}.
+static func pose_error_full(
+	live: HordeAvatar,
+	vat: HordeAvatar,
+	pose: Dictionary,
+	mesh: ArrayMesh,
+	samples: int,
+	seed_value: int,
+	t_max := 20.0
+) -> Dictionary:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var worst := 0.0
+	var sum := 0.0
+	var count := 0
+	var hidden := 0
+	var spread := 0.0
+	var at := {}
+	var ps := pieces(live, joints(live))
+	for i in samples:
+		var s := HordeVat.sample(rng, t_max)
+		live.pose_with(s)
+		vat.pose_with(s)
+		var a := live_vertices(live)
+		var b := eval_vertices_at(pose, mesh, vat.vat_grid_drives(), vat.vat_offset())
+		var k0 := 0
+		for p: Dictionary in ps:
+			var mi: MeshInstance3D = p["node"]
+			var nv: int = (
+				(mi.mesh.surface_get_arrays(p["surface"])[Mesh.ARRAY_VERTEX] as PackedVector3Array)
+				. size()
+			)
+			if not _shown(mi, live):
+				hidden += nv
+				for k in range(k0, k0 + nv):
+					spread = maxf(spread, b[k].distance_to(b[k0]))
+			else:
+				for k in range(k0, k0 + nv):
+					var e := a[k].distance_to(b[k])
+					sum += e
+					count += 1
+					if e > worst:
+						worst = e
+						at = s.duplicate()
+						at["vertex"] = k
+			k0 += nv
+	return {
+		"max_m": worst,
+		"mean_m": sum / maxf(1.0, count),
+		"worst": at,
+		"vertices": (count + hidden) / maxi(1, samples),
+		"samples": samples,
+		"hidden": hidden,
+		"hidden_spread_m": spread,
+	}
+
+
+## Whether `n` and every node above it up to `avatar` is visible (the avatar may be out of the tree).
+static func _shown(n: Node, avatar: Node) -> bool:
+	while n != null and n != avatar:
+		if n is Node3D and not (n as Node3D).visible:
+			return false
+		n = n.get_parent()
+	return true

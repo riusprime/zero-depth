@@ -22,8 +22,17 @@ extends Node3D
 
 ## The kinds a VAT crowd can draw (the pilot: the Swarmer, the most numerous horde kind: a pack of 8; v0.10.5 W3-V4a:
 ## the Charger and the Brood Mother's Hatchling).
+## v0.10.5 W3-V4b: the other horde kinds (HordeVat).
 const KINDS: Array[int] = [
-	WorldReader.KIND_SWARMER, WorldReader.KIND_CHARGER, WorldReader.KIND_HATCHLING
+	WorldReader.KIND_SWARMER,
+	WorldReader.KIND_CHARGER,
+	WorldReader.KIND_HATCHLING,
+	WorldReader.KIND_SPLITTER,
+	WorldReader.KIND_SPLITLING,
+	WorldReader.KIND_SHIELD_BEARER,
+	WorldReader.KIND_MENDER,
+	WorldReader.KIND_MINE_LAYER,
+	WorldReader.KIND_SNIPER,
 ]
 ## After every node's _process (the avatars' frame-time animation runs at 0).
 const PROCESS_PRIORITY := 1000
@@ -43,8 +52,13 @@ var _looks := {}
 var _shadows := {}
 
 
+## v0.10.5 W3-V4b: a horde kind drawn by the owner's model is baked from that model; without its file (EnemyModels)
+## the code-built stand-in stays on the old path.
 static func supports(kind: int) -> bool:
-	return KINDS.has(kind)
+	if not KINDS.has(kind):
+		return false
+	var model := HordeAvatar.model_id(kind)
+	return model == &"" or EnemyModels.has_model(model)
 
 
 func _init() -> void:
@@ -190,7 +204,9 @@ func _write(s: Dictionary, body: bool) -> int:
 			* (e[1] as Node3D).transform
 			* avatar.transform
 		)
-		if body:
+		if body and avatar is HordeAvatar:  # v0.10.5 W3-V4b: the body's own moves (the Swarmer's: its lift)
+			xf = xf * (avatar as HordeAvatar).vat_offset()
+		elif body:
 			xf = xf.translated_local(Vector3(0, float(avatar.call(&"vat_lift")), 0))
 		var o := n * stride
 		var b := xf.basis

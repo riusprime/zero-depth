@@ -8,6 +8,8 @@ extends SceneTree
 ## Prints the result; writes build/vat/motion_check.txt.
 ## v0.10.5 W3-V4a: `-- --kind=charger` checks a VAT Charger instead (its twelve drives), into
 ## build/vat/motion_check_charger.txt.
+## v0.10.5 W3-V4b: without --kind, one avatar of every VatCrowd kind, each under its own actor (all moved alike), every
+## one checked (and the worst per kind printed).
 
 const SPEED := 3.0
 const FRAMES := 600
@@ -16,7 +18,8 @@ const FRAMES := 600
 class Checker:
 	extends Node
 	var crowd: VatCrowd
-	var avatar: Node3D
+	var avatars: Array[Node3D] = []
+	var worst := {}
 	var prev := 0.0
 	var cur := 0.0
 	var err_interp := PackedFloat64Array()
@@ -27,25 +30,30 @@ class Checker:
 		process_priority = VatCrowd.PROCESS_PRIORITY + 1
 
 	func _process(_delta: float) -> void:
-		var inst := crowd.instance_of(avatar)
-		if inst.is_empty():
-			return
-		var x: float = (inst["xf"] as Transform3D).origin.x
 		var f := Engine.get_physics_interpolation_fraction()
-		fractions[snappedf(f, 0.1)] = true
-		err_interp.append(absf(x - lerpf(prev, cur, f)))
-		err_tick.append(absf(x - cur))
+		for avatar in avatars:
+			var inst := crowd.instance_of(avatar)
+			if inst.is_empty():
+				continue
+			var x: float = (inst["xf"] as Transform3D).origin.x
+			fractions[snappedf(f, 0.1)] = true
+			var e := absf(x - lerpf(prev, cur, f))
+			err_interp.append(e)
+			err_tick.append(absf(x - cur))
+			var kind: int = avatar.get(&"kind")
+			worst[kind] = maxf(float(worst.get(kind, 0.0)), e)
 
 
 class Mover:
 	extends Node
-	var actor: Node3D
+	var actors: Array[Node3D] = []
 	var checker: Checker
 
 	func _physics_process(_delta: float) -> void:
-		checker.prev = actor.position.x
-		actor.position.x += SPEED / 60.0
-		checker.cur = actor.position.x
+		checker.prev = actors[0].position.x
+		for actor in actors:
+			actor.position.x += SPEED / 60.0
+		checker.cur = actors[0].position.x
 
 
 var _checker: Checker
@@ -60,27 +68,30 @@ func _initialize() -> void:
 	var cam := Camera3D.new()
 	scene.add_child(cam)
 	cam.position = Vector3(0, 5, 8)
-	var actor := Node3D.new()
-	scene.add_child(actor)
-	var facing := Node3D.new()
-	actor.add_child(facing)
 	var charger := OS.get_cmdline_user_args().has("--kind=charger")
 	_suffix = "_charger" if charger else ""
-	var a := VatBake.vat_avatar_of(
-		WorldReader.KIND_CHARGER if charger else WorldReader.KIND_SWARMER, Color.BLACK
-	)
-	facing.add_child(a)
-	a.call(&"apply_state", {"tick": 0, "pos": Vector2.ZERO, "state": WorldReader.STATE_MOVE})
 	var crowd := VatCrowd.new()
 	scene.add_child(crowd)
-	crowd.add(actor, facing, a, Color.BLACK, false)
 	_checker = Checker.new()
 	_checker.crowd = crowd
-	_checker.avatar = a
-	scene.add_child(_checker)
 	var mover := Mover.new()
-	mover.actor = actor
 	mover.checker = _checker
+	var kinds: Array[int] = [WorldReader.KIND_CHARGER] if charger else VatCrowd.KINDS
+	for kind in kinds:
+		if not VatCrowd.supports(kind):
+			continue
+		var actor := Node3D.new()
+		actor.position.z = -1.5 * mover.actors.size()
+		scene.add_child(actor)
+		var facing := Node3D.new()
+		actor.add_child(facing)
+		var a := VatBake.vat_avatar_of(kind, Color.BLACK)
+		facing.add_child(a)
+		a.call(&"apply_state", {"tick": 0, "pos": Vector2.ZERO, "state": WorldReader.STATE_MOVE})
+		crowd.add(actor, facing, a, Color.BLACK, false)
+		_checker.avatars.append(a)
+		mover.actors.append(actor)
+	scene.add_child(_checker)
 	scene.add_child(mover)
 
 
@@ -89,15 +100,19 @@ func _process(_delta: float) -> bool:
 	if _frame < FRAMES:
 		return false
 	var lines: PackedStringArray = []
-	lines.append(
-		(
-			"physics interpolation: %s  frames compared: %d  fps ~%d  fraction buckets seen: %d"
-			% [
-				is_physics_interpolation_enabled(),
-				_checker.err_interp.size(),
-				Engine.get_frames_per_second(),
-				_checker.fractions.size()
-			]
+	(
+		lines
+		. append(
+			(
+				"physics interpolation: %s  kinds: %d  instances compared: %d  fps ~%d  fraction buckets seen: %d"
+				% [
+					is_physics_interpolation_enabled(),
+					_checker.avatars.size(),
+					_checker.err_interp.size(),
+					Engine.get_frames_per_second(),
+					_checker.fractions.size()
+				]
+			)
 		)
 	)
 	lines.append(
@@ -109,6 +124,7 @@ func _process(_delta: float) -> bool:
 	lines.append(
 		"instance x vs the last tick's place: max %.5f m, mean %.5f m" % _stats(_checker.err_tick)
 	)
+	lines.append("worst per kind (m, vs the interpolated place): %s" % [_checker.worst])
 	var text := "\n".join(lines) + "\n"
 	print(text)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://build/vat/"))
