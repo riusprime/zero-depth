@@ -74,9 +74,9 @@ const _BODY := """
 varying vec3 zd_albedo;
 varying vec3 zd_emit;
 varying vec3 zd_hit;
-flat varying float zd_accent;
-flat varying float zd_shown;
-flat varying float zd_glow;
+varying flat float zd_accent;
+varying flat float zd_shown;
+varying flat float zd_glow;
 
 void vertex() {
 	mat4 m = zd_joint(CUSTOM2, INSTANCE_CUSTOM);

@@ -51,7 +51,9 @@ static func gait_period(kind: int) -> float:
 
 
 ## A reference avatar of `kind`, built with its pieces as ActorViews builds one (not in the tree; the caller frees it).
-static func reference(kind: int, tint: Color, role_glow: float, outline: Color) -> HordeAvatar:
+static func reference_avatar(
+	kind: int, tint: Color, role_glow: float, outline: Color
+) -> HordeAvatar:
 	var a := HordeAvatar.new()
 	a.enemy_tint = tint
 	a.role_glow = role_glow
@@ -99,7 +101,7 @@ static func joints(avatar: HordeAvatar) -> Array:
 static func pose_for(kind: int) -> Dictionary:
 	if _poses.has(kind):
 		return _poses[kind]
-	var a := reference(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+	var a := reference_avatar(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 	var entry := bake(a)
 	a.free()
 	_poses[kind] = entry
@@ -178,7 +180,7 @@ static func mesh_for(kind: int, tint: Color, role_glow: float, outline: Color) -
 	var key := look_key(kind, tint, role_glow, outline)
 	if _meshes.has(key):
 		return _meshes[key]
-	var a := reference(kind, tint, role_glow, outline)
+	var a := reference_avatar(kind, tint, role_glow, outline)
 	var mesh := build_mesh(a)
 	a.free()
 	_meshes[key] = mesh
@@ -369,9 +371,9 @@ static func eval_local(pose: Dictionary, slot: int, grid: int, d: Vector4) -> Tr
 			_add_rows(rows, img, slot, ix.x + n.x * (ix.y + n.y * ix.z), w)
 	else:
 		var nt: int = pose["gait"]
-		var u := (d.w - floor(d.w)) * nt
+		var u: float = (d.w - floor(d.w)) * nt
 		var i0 := int(floor(u)) % nt
-		var f := u - floor(u)
+		var f: float = u - floor(u)
 		_add_rows(rows, img, slot, int(pose["gait_row"]) + i0, 1.0 - f)
 		_add_rows(rows, img, slot, int(pose["gait_row"]) + (i0 + 1) % nt, f)
 	return Transform3D(
@@ -397,7 +399,7 @@ static func gait_phase(pose: Dictionary, t: float) -> float:
 	var period: float = pose["period"]
 	if period <= 0.0:
 		return 0.0
-	var u := t / period
+	var u: float = t / period
 	return u - floor(u)
 
 

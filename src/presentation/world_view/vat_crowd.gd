@@ -67,7 +67,7 @@ func add(root: Node3D, facing: Node3D, avatar: HordeAvatar, outline: Color, shad
 
 ## The rest-pose shadow stand-in of `kind` (EnemyShadows': the same mesh a node enemy casts with).
 static func shadow_mesh(kind: int) -> ArrayMesh:
-	var ref := VatBake.reference(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+	var ref := VatBake.reference_avatar(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 	var mesh := EnemyShadows.proxy_mesh(kind, ref)
 	ref.free()
 	return mesh

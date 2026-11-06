@@ -12,7 +12,6 @@ const CELL := Vector2i(220, 220)
 const COLS := 4
 const DT := 1.0 / 60.0
 const KIND := WorldReader.KIND_SWARMER
-const S := WorldReader
 ## The states: [label, build: {tint, role} or {}, steps].
 const PLAN := [
 	["idle", {}, "idle"],
@@ -101,8 +100,8 @@ func _world(row: HBoxContainer, vat: bool, build: Dictionary, steps: String) -> 
 	scene.add_child(floor_mi)
 	var cam := Camera3D.new()
 	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
-	cam.size = 0.85
-	var look := Vector3(0, 0.15, 0)
+	cam.size = 1.15
+	var look := Vector3(0.15, 0.12, 0)
 	var dir := (
 		Basis(Vector3.UP, deg_to_rad(45.0))
 		* Basis(Vector3.RIGHT, deg_to_rad(-35.26))
@@ -130,6 +129,13 @@ func _world(row: HBoxContainer, vat: bool, build: Dictionary, steps: String) -> 
 	else:
 		EnemyShadows.apply(actor, facing, a, KIND, 0.25, "proxy")
 	_drive(a, steps)
+	if vat:
+		print(
+			(
+				"%s: lift %.3f m, raise %.2f, strike %.2f"
+				% [steps, a.vat_lift(), a.windup_pose(), a.strike_pose()]
+			)
+		)
 	return vp
 
 
@@ -137,19 +143,19 @@ func _world(row: HBoxContainer, vat: bool, build: Dictionary, steps: String) -> 
 func _drive(a: HordeAvatar, steps: String) -> void:
 	var tick := 0
 	if steps == "spawn":  # spawned sunk, then half risen (2.5 a second)
-		a.apply_state({"tick": 0, "state": S.STATE_SPAWN})
+		a.apply_state({"tick": 0, "state": WorldReader.STATE_SPAWN})
 		_run(a, 2)
 		for k in 12:
-			a.apply_state({"tick": 1 + k, "state": S.STATE_MOVE})
+			a.apply_state({"tick": 1 + k, "state": WorldReader.STATE_MOVE})
 			_run(a, 1)
 		return
 	if steps == "calm":
 		ViewPrefs.reduced_motion = true
-	a.apply_state({"tick": tick, "state": S.STATE_MOVE})
+	a.apply_state({"tick": tick, "state": WorldReader.STATE_MOVE})
 	var idle := 82 if steps == "scuttle" else 60
 	for k in idle:
 		tick += 1
-		a.apply_state({"tick": tick, "state": S.STATE_MOVE})
+		a.apply_state({"tick": tick, "state": WorldReader.STATE_MOVE})
 		_run(a, 1)
 	match steps:
 		"windup_early", "windup_late", "strike_snap", "strike_out", "strike_back":
@@ -157,19 +163,19 @@ func _drive(a: HordeAvatar, steps: String) -> void:
 			for k in n:
 				tick += 1
 				a.apply_state(
-					{"tick": tick, "state": S.STATE_WINDUP, "windup": float(k + 1) / 48.0}
+					{"tick": tick, "state": WorldReader.STATE_WINDUP, "windup": float(k + 1) / 48.0}
 				)
 				_run(a, 1)
 			if steps.begins_with("strike"):
 				var active := 3 if steps == "strike_snap" else 9
 				for k in active:
 					tick += 1
-					a.apply_state({"tick": tick, "state": S.STATE_ACTIVE})
+					a.apply_state({"tick": tick, "state": WorldReader.STATE_ACTIVE})
 					_run(a, 1)
 				if steps == "strike_back":
 					for k in 22:  # out of ACTIVE: the hold, then part of the ease back
 						tick += 1
-						a.apply_state({"tick": tick, "state": S.STATE_RECOVER})
+						a.apply_state({"tick": tick, "state": WorldReader.STATE_RECOVER})
 						_run(a, 1)
 		"flinch", "calm":
 			a.flinch(Vector2(1.0, 0.4), 1.0)
@@ -193,6 +199,13 @@ func _run(a: HordeAvatar, frames: int) -> void:
 func _finish() -> void:
 	var lines: PackedStringArray = []
 	lines.append("vat sheet: old (left) vs VAT (right), %dx%d px each, msaa 4x" % [CELL.x, CELL.y])
+	var proxy := VatCrowd.shadow_mesh(KIND)  # the old path's shadow stand-in (EnemyShadows), cached per kind
+	lines.append(
+		(
+			"swarmer shadow proxy aabb (avatar space, m): %s (top y %.3f; the floor is y 0)"
+			% [proxy.get_aabb(), proxy.get_aabb().end.y]
+		)
+	)
 	lines.append("state | max channel diff (0-255) | pixels off by > 8 | share")
 	for p: Array in _pairs:
 		var a := (p[1] as SubViewport).get_texture().get_image()

@@ -38,7 +38,7 @@ func test_the_old_path_stays_the_default() -> void:
 func test_the_bake_matches_the_live_pose() -> void:
 	var pose := VatBake.pose_for(SW)
 	var mesh := VatBake.mesh_for(SW, Color(0, 0, 0, 0), 0.0, Color.BLACK)
-	var live := VatBake.reference(SW, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+	var live := VatBake.reference_avatar(SW, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 	var vat := HordeAvatar.new()
 	vat.vat = true
 	vat.setup(SW, Color.BLACK)

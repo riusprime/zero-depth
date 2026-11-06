@@ -54,7 +54,7 @@ func _report(kind: int) -> PackedStringArray:
 	var mesh := VatBake.mesh_for(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 	var t_mesh := (Time.get_ticks_usec() - t0) / 1000.0
 	var img: Image = pose["image"]
-	var live := VatBake.reference(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+	var live := VatBake.reference_avatar(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 	var vat := HordeAvatar.new()
 	vat.vat = true
 	vat.setup(kind, Color.BLACK)
