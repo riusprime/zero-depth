@@ -443,6 +443,11 @@ lights stay). A starting estimate, not a measurement.
   don't change (presentation only, EI-07). **While the owner plays the logged run, the agent reads, designs, writes
   code and lints only: no Godot runs** (they would disturb the owner's timing).
 - Then, only if the owner keeps it: the other horde kinds and the stand-alone enemies, a few per step.
+- **W3-V2 (Opus, after W3-V1's measurements; owner, 2026-11-06: "Yes, after VAT"): what the late floors draw.**
+  [`evidence/PERF_PLAYLOG_4.md`](evidence/PERF_PLAYLOG_4.md): the objects drawn climb within each floor and from floor
+  to floor (median ~2,700 → ~9,200 with no hero shot out), with flat nodes. Extend `scripts/checks/draw_census.gd` to
+  read a later floor after the hero has cleared and walked it (floor index, rooms cleared), split the drawn objects by
+  source, and name what piles up. Measure and report; the fix is its own step once the owner has seen it.
 
 ### R. Release
 - Version bump, patch notes en + es, What's New, ROADMAP row + History, PROGRESS final; one PR into `main` with
