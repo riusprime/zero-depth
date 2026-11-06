@@ -720,3 +720,34 @@ PR). Lint: `gdformat --check` and `gdlint` on src, scripts and tests are clean.
 ### Owner
 
 - Are the VAT Needle, Warden, Arc Caster and Bomb Drone the same look as the old ones (the four sheets)? `OWNER ONLY`
+
+## V4d: the mixed horde, VAT off / on (lead, 2026-11-06)
+
+Owner's PC (i7-10700K, RTX 3060), a clean detached checkout at `292a7ecd` (every V4 step merged), one run each, run
+alone (the seams started after). The probe's enemies cycle through the Playground's whole list
+(`PlaygroundApi.enemy_choices`: every non-boss kind, **the elites and the Lens Drone included**), so only about half
+the bodies are VAT ones (`vat_bodies_last_frame` 32 of 60, 41 of 100). A real floor sends mostly horde kinds and at
+most ~2 elites, so this mix is harder on VAT than play.
+
+```
+G=.../Godot_v4.7.2-stable_win64_console.exe; APPDATA=.../appdata-probe
+$G --path . --resolution 1920x1080 --windowed --position -10000,-10000 -s scripts/checks/frame_probe.gd -- \
+  --biome=red_canyon --enemies=$n --enemy-vat=$v --secs=30      (n = 60, 100; v = off, on)
+n=60 vat=off: frames=982  avg_ms=30.580 p50_ms=29.848 p95_ms=45.644 p99_ms=60.037 1pct_low_fps=12.6 max_ms=147.402 avg_fps=32.7
+              render_cpu_ms_avg=2.466 render_gpu_ms_avg=9.547; samples (draws, objects, …, nodes): 1643/20686/…/4616, 1487/20870/…/4547, 1349/20981/…/4472
+n=60 vat=on:  enemy_vat: on vat_bodies_last_frame: 32; frames=1036 avg_ms=28.962 p50_ms=29.237 p95_ms=42.982 p99_ms=51.962 1pct_low_fps=17.8 max_ms=69.221 avg_fps=34.5
+              render_cpu_ms_avg=2.124 render_gpu_ms_avg=9.395; samples: 1099/19354/…/3608, 1127/19472/…/3689, 991/19704/…/3591
+n=100 vat=off: frames=538 avg_ms=55.771 p50_ms=53.391 p95_ms=77.350 p99_ms=100.482 1pct_low_fps=7.5 max_ms=166.656 avg_fps=17.9
+              render_cpu_ms_avg=3.234 render_gpu_ms_avg=16.382
+n=100 vat=on: vat_bodies_last_frame: 41; frames=621 avg_ms=48.389 p50_ms=47.960 p95_ms=73.779 p99_ms=86.836 1pct_low_fps=11.2 max_ms=93.823 avg_fps=20.7
+              render_cpu_ms_avg=2.645 render_gpu_ms_avg=14.380
+```
+
+| enemies (mixed) | avg fps off → on | 1 % low fps | max ms | draw calls (samples) | nodes |
+|---|---|---|---|---|---|
+| 60 | 32.7 → 34.5 (+5 %) | 12.6 → 17.8 | 147 → 69 | ~1,350–1,640 → ~990–1,130 | ~4,500 → ~3,600 |
+| 100 | 17.9 → 20.7 (+16 %) | 7.5 → 11.2 | 167 → 94 | — | — |
+
+Against the Swarmer-only pilot (+30 % at 60 and 100): far less on this mix, where half the bodies stay on the old
+path and the frame is led by what VAT doesn't touch (the ranged kinds' shots, telegraphs, the AI). A probe weighted
+like a real floor's spawns is NOT YET RUN. How it plays: OWNER ONLY.
