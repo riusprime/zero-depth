@@ -1,0 +1,80 @@
+[gd_resource type="Resource" script_class="PatchNotesDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/patch_notes_definition.gd" id="1_br8hp"]
+
+[resource]
+script = ExtResource("1_br8hp")
+version = "0.10.0"
+body_en = "# Zero Depth v0.10.0 — A New Look for Attacks
+_2026-10-31_ · Every attack, hit, element and boss strike has a new look, and a cleanup pass keeps fights readable.
+
+## New Features
+### A new look for attacks
+Attacks now draw from a licensed set of effect packs, recoloured to each element. Where the packs had nothing, new effects were built in their style.
+- **Hits and flashes:** impacts, slash hits, guard sparks, muzzle and cast flashes, crit and bounce flashes, and rune sigils.
+- **Your shots:** the orbs take their element's look, and so do Seekers, Wisps, the Lance, Rune Explosion and the other forms.
+- **Zones and status:** fire patches, frost and venom fields, the Toxic Fumes cloud, bleed pools, rings, and burn, poison and frost on enemies. Your own fire patches are a cooler colour.
+- **Enemy shots:** all 18 enemy shot looks are new, and keep their warm colours so you can tell them from yours.
+- **Bosses:** strikes, beams, pillars, fire lanes, the molten floor, shells, blinks, sigils and the final shatter.
+- **Lightning** in the same style: strikes, chains, fields, rings, bursts and the shock on enemies.
+- **Also new:** bleed drips, the Glaive's ring, the Wave's crest and wash, and the Tidecaller's water.
+- **The Blade** leaves a ribbon trail along each swing, with cut sparks, form crescents, eruptions, rings and the Lunge Cleave.
+- The Magic Circles credit is in the credits.
+
+### Status stacks you can read
+Burn, bleed, poison, shock and frost now show as small icons with an \"xN\" count in a row over an enemy's health bar. They replace the old shock pips and the poison and bleed dots.
+
+## The Gun
+- **Laser with Homing** is one curved beam. It leaves along your aim at once and bends toward its targets, instead of turning your aim. It only bends toward enemies you can see, no more than 90° off your aim, and its curve is smoother.
+- **Seekers** search 12 m (was 10.8 m), their darts live 1.3 s (was 1 s), and they only go for enemies you can see.
+- **The Void** keeps its v0.9.5 look.
+
+## Cleaner fights
+- A kill shows the old lit chunks, with no smoke or flash, and fire explosions leave no smoke behind.
+- Effects are drawn at their right size: no more large white starbursts or oversized flashes.
+- Enemy lob and rain shots keep their own effects: a landed shot's trail no longer jumps to the next one and streaks across the screen.
+- **The Foundry:** its fire no longer draws twice on the molten floor.
+- **Blink** flashes in 0.28 s (was 1.1 s at each end).
+- Frost and splat marks, bleed splats and the puddles after venom and bleed bursts no longer carry extra effects on top.
+
+## Performance
+- Effects warm up once a session at the main menu, so they don't stall the first time they appear and floors load faster.
+- Each effect's own light is switched off; effects are pooled and reused, with a cap per kind that follows your Effects density setting.
+"
+body_es = "# Zero Depth v0.10.0 — Un nuevo aspecto para los ataques
+_2026-10-31_ · Cada ataque, golpe, elemento y golpe de jefe tiene un aspecto nuevo, y una pasada de limpieza mantiene los combates legibles.
+
+## Novedades
+### Un nuevo aspecto para los ataques
+Los ataques usan ahora un conjunto de paquetes de efectos con licencia, recoloreados para cada elemento. Donde los paquetes no tenían nada, se crearon efectos nuevos en su estilo.
+- **Golpes y destellos:** impactos, golpes de corte, chispas de guardia, fogonazos de disparo y de lanzamiento, destellos de crítico y de rebote, y sellos rúnicos.
+- **Tus disparos:** los orbes toman el aspecto de su elemento, y también los Buscadores, los Fuegos fatuos, la Lanza, la Explosión Rúnica y las demás formas.
+- **Zonas y estados:** charcos de fuego, campos de escarcha y de veneno, la nube de Humos Tóxicos, charcos de sangre, anillos, y quemadura, veneno y escarcha sobre los enemigos. Tus propios charcos de fuego tienen un color más frío.
+- **Disparos enemigos:** los 18 aspectos de disparo enemigo son nuevos y conservan sus colores cálidos, para distinguirlos de los tuyos.
+- **Jefes:** golpes, rayos, pilares, carriles de fuego, el suelo fundido, caparazones, teletransportes, sellos y el estallido final.
+- **El rayo** en el mismo estilo: descargas, cadenas, campos, anillos, estallidos y la descarga sobre los enemigos.
+- **También nuevo:** gotas de sangrado, el anillo del Disco, la cresta y la estela de la Oleada, y el agua de The Tidecaller.
+- **La Espada** deja una estela de cinta en cada tajo, con chispas de corte, medialunas de forma, erupciones, anillos y la Estocada Tajante.
+- El crédito de Magic Circles está en los créditos.
+
+### Acumulaciones de estado que se leen
+La quemadura, el sangrado, el veneno, la descarga y la escarcha se muestran ahora como pequeños iconos con un contador \"xN\", en fila sobre la barra de vida del enemigo. Sustituyen a las antiguas marcas de descarga y a los puntos de veneno y sangrado.
+
+## La Pistola
+- **El Láser con Teledirigido** es un solo rayo curvo. Sale enseguida en la dirección en que apuntas y se curva hacia sus objetivos, en lugar de girar tu puntería. Solo se curva hacia enemigos que puedes ver, a no más de 90° de tu puntería, y su curva es más suave.
+- **Los Buscadores** buscan a 12 m (antes 10.8 m), sus dardos duran 1.3 s (antes 1 s) y solo van a por enemigos que puedes ver.
+- **El Vacío** conserva su aspecto de la v0.9.5.
+
+## Combates más limpios
+- Una baja muestra los trozos iluminados de antes, sin humo ni destello, y las explosiones de fuego no dejan humo.
+- Los efectos se dibujan a su tamaño correcto: se acabaron los grandes destellos blancos en estrella y los fogonazos enormes.
+- Los disparos enemigos en parábola y en lluvia conservan sus propios efectos: la estela de un disparo que ha caído ya no salta al siguiente ni cruza la pantalla.
+- **The Foundry:** su fuego ya no se dibuja dos veces sobre el suelo fundido.
+- **El Destello** brilla durante 0.28 s (antes 1.1 s en cada extremo).
+- Las marcas de escarcha y las salpicaduras, las manchas de sangrado y los charcos tras los estallidos de veneno y sangrado ya no llevan efectos extra encima.
+
+## Rendimiento
+- Los efectos se preparan una vez por sesión en el menú principal, así que no se atascan la primera vez que aparecen y los pisos cargan más rápido.
+- La luz propia de cada efecto está apagada; los efectos se guardan y se reutilizan, con un límite por tipo que sigue tu ajuste de densidad de efectos.
+"
+id = &"v0_10_0"
