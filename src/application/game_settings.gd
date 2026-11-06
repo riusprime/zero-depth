@@ -47,7 +47,7 @@ const DEFAULTS := {
 	"ui_scale": "100",  # v0.7.5 SM: UI_SCALES
 	"hit_stop": "on",  # v0.8.0 GF3: the Blade's hit-stop, a look only (read by the view)
 	"enemy_shadows": "proxy",  # v0.10.5 PA: ViewPrefs.enemy_shadows ("proxy" or "blob"), a look only
-	"enemy_vat": "off",  # v0.10.5 W3-V1: ViewPrefs.enemy_vat ("on" / "off"), a look only
+	"enemy_vat": "on",  # v0.10.5 W3-V1: ViewPrefs.enemy_vat ("on" / "off"), a look only (on: owner, 2026-11-06)
 }
 
 

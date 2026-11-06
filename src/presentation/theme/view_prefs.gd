@@ -16,10 +16,10 @@ static var hit_stop := true
 ## yet (the owner picks from the shots); GameSettings key "enemy_shadows".
 static var enemy_shadows := "proxy"
 ## v0.10.5 W3-V1 (owner, 2026-11-06: the enemy VAT pilot): the VatCrowd.KINDS enemies (W3-V4a: every kind it lists)
-## drawn as one MultiMesh per look posed from baked textures (VatCrowd) instead of a node per piece. Off (the old
-## path) until the owner signs the look off; GameSettings key "enemy_vat" ("on" / "off"), the launch flag
+## drawn as one MultiMesh per look posed from baked textures (VatCrowd) instead of a node per piece. On by default
+## (owner, 2026-11-06: "Yes, make it default"); "off" is the old path. GameSettings key "enemy_vat", the launch flag
 ## `-- --enemy-vat=on|off` over it, and the dev panel's switch (rebuilds those enemies at once).
-static var enemy_vat := false
+static var enemy_vat := false  # until apply_settings reads the profile (the game: on unless "off")
 
 
 static func apply_settings(profile: ProfileStore) -> void:
@@ -33,7 +33,7 @@ static func apply_settings(profile: ProfileStore) -> void:
 	hit_stop = String(GameSettings.get_value(profile, "hit_stop")) != "off"
 	var es := String(GameSettings.get_value(profile, "enemy_shadows"))
 	enemy_shadows = es if EnemyShadows.MODES.has(es) else "proxy"
-	enemy_vat = String(GameSettings.get_value(profile, "enemy_vat")) == "on"
+	enemy_vat = String(GameSettings.get_value(profile, "enemy_vat")) != "off"
 	for a in OS.get_cmdline_user_args():  # v0.10.5 W3-V1: the launch flag wins (a logged A/B run)
 		if a.begins_with("--enemy-vat="):
 			enemy_vat = a.trim_prefix("--enemy-vat=") == "on"
