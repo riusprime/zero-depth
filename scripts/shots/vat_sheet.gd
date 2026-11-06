@@ -14,6 +14,9 @@ extends SceneTree
 ## in its own states (KIND_PLANS: the walk, the death, the heal, the mine dropped, the muzzle) into
 ## vat_sheet_<name>.png and vat_diff_<name>.txt; `--version-dir=<v>` writes under build/shots/<v>/vat/. Every horde
 ## sheet also gives each state's largest vertex error (the shader's arithmetic on the CPU).
+## v0.10.5 W3-V4c: `-- --kind=<name>` (needle, warden, arc_caster, bomb_drone) draws that stand-alone kind in
+## SOLO_PLAN's states (its walk, wind-up, attack, recovery) into vat_sheet_<name>.png and vat_diff_<name>.txt, with
+## the vertex error.
 
 const CELL := Vector2i(220, 220)
 const COLS := 4
@@ -140,6 +143,37 @@ const KIND_PLANS := {
 	],
 }
 
+## v0.10.5 W3-V4c: the stand-alone kinds by name (--kind=<name>), their states, and their framing
+## [camera size, look height].
+const SOLO := {
+	"needle": WorldReader.KIND_NEEDLE,
+	"warden": WorldReader.KIND_WARDEN,
+	"arc_caster": WorldReader.KIND_ARC_CASTER,
+	"bomb_drone": WorldReader.KIND_BOMB_DRONE,
+}
+const SOLO_FRAME := {
+	WorldReader.KIND_NEEDLE: [1.5, 0.4],
+	WorldReader.KIND_WARDEN: [2.6, 0.75],
+	WorldReader.KIND_ARC_CASTER: [1.9, 0.65],
+	WorldReader.KIND_BOMB_DRONE: [2.8, 1.1],
+}
+const SOLO_PLAN := [
+	["idle (t 1.5 s)", {}, "idle"],
+	["walking", {}, "walk"],
+	["windup 31 %", {}, "windup_early"],
+	["windup 90 % (flash)", {}, "windup_late"],
+	["attack (0.05 s)", {}, "strike_snap"],
+	["attack (0.15 s)", {}, "strike_out"],
+	["recovery (0.4 s in)", {}, "recover"],
+	["flinch at its peak", {}, "flinch"],
+	["Blade knock", {}, "knock"],
+	["hit flash", {}, "flash"],
+	["status tint (burn)", {}, "tint"],
+	["rise-in, half way", {}, "spawn"],
+	["biome cast + role glow", CAST, "walk"],
+	["reduced motion + windup", {}, "calm"],
+]
+
 var _dir := ""
 var _pairs: Array = []  # [label, live SubViewport, vat SubViewport]
 var _frame := 0
@@ -164,6 +198,10 @@ func _initialize() -> void:
 					plan = KIND_PLANS["melee_model"]
 				_:
 					plan = KIND_PLANS[kname]
+		elif arg.begins_with("--kind=") and SOLO.has(arg.trim_prefix("--kind=")):  # v0.10.5 W3-V4c
+			_kind = SOLO[arg.trim_prefix("--kind=")]
+			_suffix = "_" + arg.trim_prefix("--kind=")
+			plan = SOLO_PLAN
 		elif arg.begins_with("--version-dir="):
 			_dir = "res://build/shots/%s/vat/" % arg.trim_prefix("--version-dir=")
 		elif arg.begins_with("--out="):
@@ -236,6 +274,9 @@ func _world(row: HBoxContainer, vat: bool, build: Dictionary, steps: String) -> 
 	if _kind == WorldReader.KIND_CHARGER:  # v0.10.5 W3-V4a: a longer, taller body
 		cam.size = 1.9
 		look = Vector3(0.05, 0.35, 0)
+	elif SoloVat.is_solo(_kind):  # v0.10.5 W3-V4c
+		cam.size = SOLO_FRAME[_kind][0]
+		look = Vector3(0.0, SOLO_FRAME[_kind][1], 0)
 	elif _kind != WorldReader.KIND_SWARMER:  # v0.10.5 W3-V4b: framed to the horde kind's height
 		var h := HordeAvatar.height_of(_kind)
 		cam.size = maxf(1.15, h * 1.7)
@@ -263,6 +304,14 @@ func _world(row: HBoxContainer, vat: bool, build: Dictionary, steps: String) -> 
 		crowd.add(actor, facing, a, Color("#1A1A22"), true)
 	else:
 		EnemyShadows.apply(actor, facing, a, kind, 0.25, "proxy")
+	a.name = "Avatar"
+	if SoloVat.is_solo(_kind):  # v0.10.5 W3-V4c
+		_drive_solo(a, steps)
+		if vat:
+			print(
+				"%s: lift %.3f m, drives %s" % [steps, a.call(&"vat_lift"), a.call(&"vat_drives")]
+			)
+		return vp
 	if a is ChargerAvatar:
 		_drive_charger(a as ChargerAvatar, steps)
 	else:
@@ -285,6 +334,14 @@ func _world(row: HBoxContainer, vat: bool, build: Dictionary, steps: String) -> 
 func _avatar(vat: bool, build: Dictionary) -> AvatarBase:
 	var tint: Color = build.get("tint", Color(0, 0, 0, 0))
 	var role := float(build.get("role", 0.0))
+	if SoloVat.is_solo(_kind):  # v0.10.5 W3-V4c: as ActorViews builds one (its cast on its own materials after)
+		var s: AvatarBase = VatBake.vat_avatar_of(_kind, Color("#1A1A22")) if vat else null
+		if s == null:
+			s = VatBake.reference_of(_kind, tint, role, Color("#1A1A22"))
+			s.set_process(true)
+		s.enemy_tint = tint
+		s.role_glow = role
+		return s
 	if _kind == WorldReader.KIND_CHARGER:
 		var c := ChargerAvatar.new()
 		c.enemy_tint = tint
@@ -437,6 +494,101 @@ func _drive_charger(a: ChargerAvatar, steps: String) -> void:
 	ViewPrefs.reduced_motion = false
 
 
+## v0.10.5 W3-V4c: a stand-alone kind's calls (both avatars of a pair get the same ones): its sim states and positions,
+## one a tick, as ActorViews.sync gives them; the flash and the tint as ActorViews._set_flash makes them (the old path
+## on its own materials, VAT through show_hit).
+func _drive_solo(a: AvatarBase, steps: String) -> void:
+	var tick := 0
+	var x := 0.0
+	var speed: float = (
+		{
+			WorldReader.KIND_NEEDLE: 3.2,
+			WorldReader.KIND_WARDEN: 1.6,
+			WorldReader.KIND_ARC_CASTER: 2.0,
+			WorldReader.KIND_BOMB_DRONE: 2.5,
+		}[_kind]
+		/ 60.0
+	)
+	if steps == "spawn":
+		a.call(&"apply_state", _solo_state(tick, x, WorldReader.STATE_SPAWN, 0.0))
+		_run(a, 2)
+		for k in 12:
+			tick += 1
+			a.call(&"apply_state", _solo_state(tick, x, WorldReader.STATE_MOVE, 0.0))
+			_run(a, 1)
+		return
+	if steps == "calm":
+		ViewPrefs.reduced_motion = true
+	for k in 90:
+		tick += 1
+		if steps == "walk":
+			x += speed
+		a.call(&"apply_state", _solo_state(tick, x, WorldReader.STATE_MOVE, 0.0))
+		_run(a, 1)
+	match steps:
+		"windup_early", "windup_late", "calm", "strike_snap", "strike_out", "recover":
+			var n := (
+				9 if steps == "windup_early" else (27 if steps in ["windup_late", "calm"] else 30)
+			)
+			for k in n:
+				tick += 1
+				a.call(
+					&"apply_state",
+					_solo_state(tick, x, WorldReader.STATE_WINDUP, float(k + 1) / 30.0)
+				)
+				_run(a, 1)
+			if steps.begins_with("strike") or steps == "recover":
+				for k in 3 if steps == "strike_snap" else 9:
+					tick += 1
+					a.call(&"apply_state", _solo_state(tick, x, WorldReader.STATE_ACTIVE, 0.0))
+					_run(a, 1)
+			if steps == "recover":
+				for k in 24:
+					tick += 1
+					a.call(&"apply_state", _solo_state(tick, x, WorldReader.STATE_RECOVER, 0.0))
+					_run(a, 1)
+		"flinch":
+			a.flinch(Vector2(1.0, 0.4), 1.0)
+			_run(a, 3)
+		"knock":
+			a.flinch(Vector2(1.0, 0.4), 1.0, 1.0)
+			_run(a, 3)
+		"flash":
+			_solo_flash(a, Color.WHITE, 1.6)
+		"tint":
+			_solo_flash(a, Color(1.0, 0.45, 0.1), 1.2)
+	ViewPrefs.reduced_motion = false
+
+
+static func _solo_state(tick: int, x: float, state: int, windup: float) -> Dictionary:
+	return {"tick": tick, "pos": Vector2(x, 0), "state": state, "windup": windup, "radius": 2.4}
+
+
+static func _solo_flash(a: AvatarBase, c: Color, energy: float) -> void:
+	if bool(a.get(&"vat")):
+		a.show_hit(true, c, energy)
+		return
+	for m in a.body_materials:
+		m.emission = c
+		m.emission_energy_multiplier = energy
+
+
+## v0.10.5 W3-V4c: the largest vertex error (m) of a stand-alone kind's pair: the old avatar's posed vertices against
+## the shader's arithmetic on the CPU at the VAT one's drives and lift (pieces() skips nothing of the old path's but its
+## shadow stand-in, which comes last).
+func _solo_error(live_vp: SubViewport, vat_vp: SubViewport) -> float:
+	var live := live_vp.find_child("Avatar", true, false) as AvatarBase
+	var vat := vat_vp.find_child("Avatar", true, false) as AvatarBase
+	var pose := VatBake.pose_for(_kind)
+	var mesh := VatBake.mesh_for(_kind, vat.enemy_tint, vat.role_glow, Color("#1A1A22"))
+	var a := VatBake.live_vertices(live)
+	var b := VatBake.eval_vertices(pose, mesh, VatBake.drives_of(vat, pose), vat.call(&"vat_lift"))
+	var worst := 0.0
+	for k in mini(a.size(), b.size()):
+		worst = maxf(worst, a[k].distance_to(b[k]))
+	return worst
+
+
 func _run(a: AvatarBase, frames: int) -> void:
 	for k in frames:
 		a.advance(DT)
@@ -446,6 +598,8 @@ func _run(a: AvatarBase, frames: int) -> void:
 ## v0.10.5 W3-V4b: the largest distance (m) between the old avatar's posed vertices and the VAT one's, the shader's
 ## arithmetic run on the CPU (VatBake.eval_vertices_at) at the drives it was drawn with; a hidden piece is skipped.
 func _vertex_error(live_vp: SubViewport, vat_vp: SubViewport) -> float:
+	if SoloVat.is_solo(_kind):  # v0.10.5 W3-V4c
+		return _solo_error(live_vp, vat_vp)
 	var lives := live_vp.find_children("*", "HordeAvatar", true, false)
 	if lives.is_empty():
 		return -1.0  # the Charger's sheet: its own check (the bake report)

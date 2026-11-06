@@ -30,8 +30,10 @@ extends RefCounted
 ## mesh: every piece's surfaces merged into one surface in its joint's space, with per-vertex CUSTOM0 = albedo (linear)
 ## + mode (0 a body plate: the hit flash and rest glow; 1 an accent: the glow; 2 a plain plate: neither), CUSTOM1 =
 ## emission (linear; a plate's times its rest energy) + outline flag, CUSTOM2 = joint, one-sided (1: its back faces are
-## not drawn, in a mesh that also has two-sided pieces). eval_* run the shader's arithmetic on the CPU (the bake
-## report's pose error, the tests). Presentation only (EI-07).
+## not drawn, in a mesh that also has two-sided pieces), v0.10.5 W3-V4c: glow source (0: the instance's glow; k: drive
+## k - 1), unshaded (1: VatLooks draws its albedo as is). v0.10.5 W3-V4c: the stand-alone kinds' StandardMaterial3D
+## pieces take their looks from SoloVat.surface_look (with vertex colours where their material takes them). eval_* run
+## the shader's arithmetic on the CPU (the bake report's pose error, the tests). Presentation only (EI-07).
 
 const GRID_NONE := -1
 const GRID_STANCE := 0
@@ -81,6 +83,8 @@ static func reference_avatar(
 ## v0.10.5 W3-V4a: a reference avatar of any VAT `kind` (reference_avatar's, or a ChargerAvatar for the Charger and
 ## the Hatchling).
 static func reference_of(kind: int, tint: Color, role_glow: float, outline: Color) -> AvatarBase:
+	if SoloVat.is_solo(kind):  # v0.10.5 W3-V4c: the Needle, Warden, Arc Caster, Bomb Drone
+		return SoloVat.reference_of(kind, tint, role_glow, outline)
 	if is_charger(kind):
 		var c := ChargerAvatar.new()
 		c.enemy_tint = tint
@@ -94,6 +98,8 @@ static func reference_of(kind: int, tint: Color, role_glow: float, outline: Colo
 ## v0.10.5 W3-V4a: a VAT avatar of `kind` (no pieces), as ActorViews builds one with the switch on (tools, tests; not
 ## in the tree; the caller frees it).
 static func vat_avatar_of(kind: int, outline: Color) -> AvatarBase:
+	if SoloVat.is_solo(kind):  # v0.10.5 W3-V4c
+		return SoloVat.vat_avatar_of(kind, outline)
 	if is_charger(kind):
 		var c := ChargerAvatar.new()
 		c.vat = true
@@ -376,6 +382,8 @@ static func pieces(avatar: Node3D, js: Array) -> Array:
 
 static func _collect(n: Node, avatar: Node, index: Dictionary, out: Array) -> void:
 	for c in n.get_children():
+		if c.has_meta(SoloVat.LIVE):  # v0.10.5 W3-V4c: a node the VAT avatar keeps (a ground disc, the dust)
+			continue
 		var mi := c as MeshInstance3D
 		if mi != null and mi.mesh != null:
 			var xf := Transform3D.IDENTITY
@@ -429,16 +437,29 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 				uvs.append_array(zero)
 		var nr: Variant = arrays[Mesh.ARRAY_NORMAL]
 		var base := verts.size()
+		# v0.10.5 W3-V4c: an accent's glow source (0: the instance's; k: drive k - 1) and the unshaded flag
 		var jp := PackedFloat32Array(
-			[float(p["joint"]), 1.0 if any_two and not bool(look[2]) else 0.0, 0.0, 0.0]
+			[
+				float(p["joint"]),
+				1.0 if any_two and not bool(look[2]) else 0.0,
+				float(look[3]) if look.size() > 3 else 0.0,
+				float(look[4]) if look.size() > 4 else 0.0,
+			]
 		)
+		# v0.10.5 W3-V4c: a material taking its mesh's vertex colours as albedo (the Warden's facets): albedo x colour
+		var vc: Variant = arrays[Mesh.ARRAY_COLOR] if look.size() > 5 and bool(look[5]) else null
+		var has_vc := vc is PackedColorArray and (vc as PackedColorArray).size() == v.size()
 		for k in v.size():
 			verts.append(xf * v[k])
 			var n := Vector3.UP
 			if nr is PackedVector3Array and (nr as PackedVector3Array).size() == v.size():
 				n = (nb * (nr as PackedVector3Array)[k]).normalized()
 			norms.append(n)
-			c0.append_array(l0)
+			if has_vc:
+				var col: Color = (vc as PackedColorArray)[k]
+				c0.append_array([l0[0] * col.r, l0[1] * col.g, l0[2] * col.b, l0[3]])
+			else:
+				c0.append_array(l0)
 			c1.append_array(l1)
 			c2.append_array(jp)
 		var ix: Variant = arrays[Mesh.ARRAY_INDEX]
@@ -495,6 +516,8 @@ static func surface_look(mi: MeshInstance3D, s: int) -> Array:
 	var std := mi.material_override as StandardMaterial3D
 	if std == null:
 		std = mi.get_surface_override_material(s) as StandardMaterial3D
+	if std != null and std.albedo_texture == null and std.has_meta(SoloVat.LOOK):
+		return SoloVat.surface_look(std)
 	if std != null and std.albedo_texture == null and not std.emission_enabled:
 		var c := std.albedo_color.srgb_to_linear()
 		return [
@@ -663,7 +686,8 @@ static func eval_vertices_at(
 	return out
 
 
-## Every piece vertex of `avatar` (posed, with its pieces) in its own space, in build_mesh's order.
+## Every piece vertex of `avatar` (posed, with its pieces) in its own space, in build_mesh's order. v0.10.5 W3-V4c: a
+## hidden node folds what hangs from it to its origin (what a VAT kind draws for it: the Bomb Drone's dropped bomb).
 static func live_vertices(avatar: Node3D) -> PackedVector3Array:
 	var out := PackedVector3Array()
 	for p: Dictionary in pieces(avatar, joints(avatar)):
@@ -672,6 +696,8 @@ static func live_vertices(avatar: Node3D) -> PackedVector3Array:
 		var up: Node = mi
 		while up != avatar:
 			xf = (up as Node3D).transform * xf
+			if not (up as Node3D).visible:
+				xf = Transform3D(Basis() * 0.0, (up as Node3D).position)
 			up = up.get_parent()
 		var v: PackedVector3Array = mi.mesh.surface_get_arrays(p["surface"])[Mesh.ARRAY_VERTEX]
 		out.append_array(xf * v)

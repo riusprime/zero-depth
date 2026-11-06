@@ -511,3 +511,212 @@ The motion check ran on the resolved tree just before the merge commit, with the
 - No sheet's numbers moved because of the merge, so the sheets in `build/shots/v0.10.5/vat/` stay the `7d966626` ones.
 - One fix: the sheet now prints "—" for the vertex-error column of the Charger's sheet, which has none, instead of a
   number.
+
+## V4c: the Needle, the Warden, the Arc Caster and the Bomb Drone (`SoloVat`)
+
+- Machine: the owner's PC (i7-10700K, RTX 3060), Godot 4.7.2 stable, Forward+, Windows. Other agents ran on the PC
+  at the same time, so nothing here is a timing (no frame_probe: V4d's).
+- Build: the working tree of branch `v0105-vat-c` on top of `078fd6e9`. V4b merged as a fast-forward, so there is no
+  merge commit. All of it is in the step's commit (`v0.10.5 W3-V4c: …`). The reports print `sha=078fd6e9`.
+- Raw outputs (in the worktree, not tracked):
+  - `build/vat/bake_v4c_final.log` (= `build/vat/078fd6e9_bake.txt`);
+  - `build/vat/motion_v4c.log`;
+  - `build/vat/tests_v4c.txt` and `build/vat/tests_v4c_rerun.txt`;
+  - `build/vat/old_vs_new.log`;
+  - `build/shots/v0.10.5/vat/vat_sheet_<kind>.png` and `vat_diff_<kind>.txt` for needle, warden, arc_caster and
+    bomb_drone.
+
+### What was built
+
+- **One-number joints (`SoloVat`).** Each avatar's pose code now first works out the plain numbers its pose is made
+  of: angles, heights, slides, a scale. Those are its raw drives (`_vd`). It then writes its nodes from them; the old
+  path is otherwise unchanged. Its rig gives each node's transform as a chain of joints, one number each, as the
+  node's position, rotation (Y, X, Z) and scale compose it: a turn about one axis, a slide, or a stretch. So the
+  composed chain is the node's own transform for any mix of the numbers, and only each grid's sampling is
+  approximate. A slide or a stretch is linear, so it is exact on two samples. VatCrowd sends each drive as 0..1 over
+  its [lo, hi] (loops wrapped).
+- **The Needle.** 19 drives:
+  - the body's shift and height;
+  - its lean, as a rotation vector's x and z on one 9 x 9 grid (the walk direction's axis turns with the walk);
+  - its pitch and the barrel's slide;
+  - per leg, the IK's yaw and its thigh and shin angles. These are full-circle loops of 256 samples, because the IK
+    can turn them anywhere;
+  - the muzzle's glow.
+
+  A leg's root sits at the body's hip with none of the body's turn. Its chain is the body's, then the hip, then the
+  pitch and the lean undone, then its yaw. The IK was split into `leg_ik` (numbers) and `_place_leg` (nodes);
+  `body_xf` and `lean_basis` are shared by both paths.
+- **The Warden.** 11 drives: the walk's sin and cos (times the walk), the sink, the chest's shift, height, lean and
+  breath (a stretch), the arms' roll, each arm's swing, and the elbows. The spawn-in's drop is the exact lift. Its
+  rocks keep their facet colours: albedo times the vertex colour, as their material takes it. The dust ring stays a
+  node of the VAT Warden's (`SoloVat.LIVE`).
+- **The Arc Caster.** 7 drives: the sway, the kick, the staff's pitch, the orbit (a loop) and each shard's height. The
+  sway and rise-in height is the lift.
+- **The Bomb Drone.** 4 drives: the hull's roll and pitch, the rotors' spin (a loop), and the bomb's scale. The hover
+  and bob is the lift. Once the bomb is dropped it is folded to a point (scale 0), where the old path hides its node.
+  `VatBake.live_vertices` now folds a hidden node's pieces the same way. The ground disc stays a node.
+- **Looks.** The pieces are these avatars' own StandardMaterial3D, not EnemyLooks':
+  - The body plates (`body_materials`) are read from a reference avatar after ActorViews' own `tint_greys` and
+    `role_glow`. They are mode 0: the flash and tints come per instance (`hit_look`), as on the shared-material kinds.
+  - The lit glowing pieces are accents (mode 1).
+- **Shader changes (VatLooks), as flags, not mode numbers.** V4b's mode 3 (the Sniper's muzzle) and V4a's mode 2
+  (plain plate) are untouched:
+  - Up to 32 drives (a second `mat4 e` from drive texels 3..6). The Needle needs 19; the old cap was 16.
+  - `CUSTOM2.z > 0`: an accent glows at drive `z - 1` instead of the instance glow. This is the Needle's muzzle, its
+    second glow. It is a general form of V4b's mode 3, which the lead may fold into it.
+  - `CUSTOM2.w = 1`: drawn unshaded, which means ALBEDO 0, SPECULAR 0 and EMISSION = the albedo. These are the
+    Warden's cracks, the Arc Caster's crystal and the Bomb Drone's fuse, which are unshaded StandardMaterial3D on
+    the old path. An unshaded material ignores its emission, which the sheets bear out.
+- **ActorViews.** `_solo_vat` sets `vat`, `vat_kind`, the cast and the role glow, and `hit_look` for these four.
+  ShaderWarmup warms their VAT bodies when the switch is on, and VatCrowd.KINDS lists them. The switch stays off by
+  default.
+- **The Lens Drone stays on the old path.** Its pod is the owner's textured GLB on StandardMaterial3D surfaces, and
+  only the Hive Lens makes them: three, at half its HP. V4b's textured variant reads a HordeAvatar's map
+  (`HordeVat.texture`), so it would need its own wiring for a non-horde avatar. That is not worth it for three
+  drones in one boss fight.
+
+### 0. The old path is unchanged
+
+A scratch script (`build/vat/old_vs_new.gd`, untracked) loads the four avatar scripts from `931ff6a2` (with the
+`class_name` line removed). It drives each old and new avatar with the same random 300 ticks of states and
+positions (`apply_state` / `advance`), 3 runs each. Every 10th tick, it compares every visible piece vertex in the
+avatar's frame.
+```
+APPDATA=C:/Users/extri/Desktop/zerodepth/appdata-vat-c Godot_v4.7.2-stable_win64_console.exe --headless --path . -s build/vat/old_vs_new.gd
+needle: old vs new node pose, max 0.000000133 m over 3 x 300 ticks, every 10th compared
+warden: old vs new node pose, max 0.000000238 m over 3 x 300 ticks, every 10th compared
+arc_caster: old vs new node pose, max 0.000000607 m over 3 x 300 ticks, every 10th compared
+bomb_drone: old vs new node pose, max 0.000000908 m over 3 x 300 ticks, every 10th compared
+```
+That is float rounding: under a micrometre. An earlier run of the same script read global transforms before the
+nodes were in the tree and printed 0 for every kind. That run was meaningless, and was fixed to compose transforms
+up to the avatar.
+
+### 1. Pose error (the bake against the live pose)
+
+```
+APPDATA=C:/Users/extri/Desktop/zerodepth/appdata-vat-c Godot_v4.7.2-stable_win64_console.exe --headless --path . -s scripts/checks/vat_bake_report.gd
+```
+Below, an excerpt for the four new kinds. Each sample sets every state variable of the avatar anywhere in its range,
+mixed freely (`vat_sample`).
+```
+kind 4 (rig needle): 33 joints, 19 drives, 3744 vertices, 1260 triangles, pose texture 34x3194 RGBAF (1696 KiB)
+  reduced_motion=false samples=4000 vertices/sample=3744  max_error_m=0.000217  mean_error_m=0.0000409
+  reduced_motion=true samples=4000 vertices/sample=3744  max_error_m=0.000217  mean_error_m=0.0000409
+kind 3 (rig warden): 20 joints, 11 drives, 2166 vertices, 730 triangles, pose texture 22x472 RGBAF (162 KiB)
+  reduced_motion=false samples=4000 vertices/sample=2166  max_error_m=0.000224  mean_error_m=0.0000349
+  reduced_motion=true samples=4000 vertices/sample=2166  max_error_m=0.000224  mean_error_m=0.0000349
+kind 9 (rig arc_caster): 7 joints, 7 drives, 1020 vertices, 344 triangles, pose texture 14x251 RGBAF (54 KiB)
+  reduced_motion=false samples=4000 vertices/sample=1020  max_error_m=0.000100  mean_error_m=0.0000173
+  reduced_motion=true samples=4000 vertices/sample=1020  max_error_m=0.000100  mean_error_m=0.0000173
+kind 10 (rig bomb_drone): 7 joints, 4 drives, 1848 vertices, 624 triangles, pose texture 12x166 RGBAF (31 KiB)
+  reduced_motion=false samples=4000 vertices/sample=1848  max_error_m=0.000056  mean_error_m=0.0000112
+  reduced_motion=true samples=4000 vertices/sample=1848  max_error_m=0.000056  mean_error_m=0.0000112
+```
+The same run gives the nine earlier kinds, unchanged from V4b's numbers. Max error in mm (reduced motion off / on):
+
+| Kind | max error (mm) |
+|---|---|
+| Swarmer | 0.455 / 0.455 |
+| Charger, Hatchling | 4.157 / 4.162 |
+| Splitter | 1.126 |
+| Splitling | 0.698 |
+| Shield Bearer | 0.248 |
+| Mender | 0.194 |
+| Mine Layer | 0 |
+| Sniper | 0.038 |
+
+| Kind | max error | mean | pixels at the game camera (15.7 mm a pixel) |
+|---|---|---|---|
+| Needle | 0.217 mm | 0.041 mm | 0.014 px |
+| Warden | 0.224 mm | 0.035 mm | 0.014 px |
+| Arc Caster | 0.100 mm | 0.017 mm | 0.006 px |
+| Bomb Drone | 0.056 mm | 0.011 mm | 0.004 px |
+
+### 2. Side-by-side sheets, old path (left) vs VAT (right): for the owner (G2)
+
+```
+APPDATA=<own dir per kind> Godot_v4.7.2-stable_win64_console.exe --path . --resolution 1920x1300 --windowed --position -10000,-10000 -s scripts/shots/vat_sheet.gd -- --kind=<needle|warden|arc_caster|bomb_drone>
+```
+`GameVersion.label()` reads v0.9.0 in this tree, so the first four runs wrote under `build/shots/v0.9.0/vat/`. The
+files were moved by hand to `build/shots/v0.10.5/vat/`; the Bomb Drone's re-run used
+`--out=res://build/shots/v0.10.5/vat`. Each sheet has 14 states: idle, walking, windup 31 % / 90 %, the attack at
+0.05 and 0.15 s, the recovery, the flinch, the Blade knock, the hit flash, the burn tint, the rise-in, the biome cast
+with the role glow, and reduced motion. The table gives the worst state per sheet. Each cell is 48,400 pixels; the
+raw lines are in `vat_diff_<kind>.txt`.
+
+| Kind | most pixels off by > 8 / 255 in any state | max channel diff | max vertex error (CPU) |
+|---|---|---|---|
+| Needle | 15 (windup 31 %) | 198 (attack 0.05 s: 11 px, at the muzzle's edge) | 0.134 mm |
+| Warden | 9 (idle) | 164 (windup 31 %: 7 px) | 0.150 mm |
+| Arc Caster | 42 (cast + role glow) | 134 (the crystal's edge pixels) | 0.100 mm |
+| Bomb Drone (after the fix below) | 4 (recovery, burn tint) | 148 (flinch: 2 px) | 0.054 mm |
+
+**A bug the tests found, now fixed.** The VAT Bomb Drone first built no eye material, so its eye glowed at 1.0
+instead of 2.2. Its first sheet had up to 18 pixels off. The table row is the re-run after the fix, for example:
+```
+idle (t 1.5 s) | 25 | 2 | 0.0000 | 0.050
+windup 90 % (flash) | 0 | 0 | 0.0000 | 0.048
+flinch at its peak | 148 | 2 | 0.0000 | 0.042
+```
+
+### 3. Moving check (all 13 kinds)
+
+```
+APPDATA=…-m Godot_v4.7.2-stable_win64_console.exe --path . --position -10000,-10000 --resolution 1920x1080 --windowed -s scripts/checks/vat_motion_check.gd
+physics interpolation: true  kinds: 13  instances compared: 7787  fps ~1  fraction buckets seen: 11
+instance x vs this frame's interpolated place: max 0.00000 m, mean 0.00000 m
+instance x vs the last tick's place: max 0.04993 m, mean 0.02520 m
+```
+The fps column is the engine counter on a shared machine, not a timing.
+
+### 4. Tests
+
+```
+APPDATA=…-t Godot_v4.7.2-stable_win64_console.exe --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gexit -gtest=<27 files>
+```
+The 27 files:
+- unit/presentation: test_enemy_vat_more (new), test_enemy_vat, test_charger_pose_hv, test_needle_avatar,
+  test_warden_avatar, test_new_enemy_avatars, test_melee_strikes, test_windup_tells, test_damage_flash,
+  test_hit_impact, test_enemy_shadows, test_rig_merge, test_enemy_palettes, test_shader_warmup,
+  test_first_use_warm, test_colour_modes, test_crowd_view, test_health_bars, test_bosses_2_views,
+  test_telegraph_parity;
+- unit/application: test_dev_panel;
+- arch/test_layering and content/test_locale_coverage;
+- e2e: test_e2e_enemies, test_e2e_new_enemies, test_e2e_enemy_fireballs, test_e2e_horde_enemies.
+
+First run:
+```
+Tests               165
+Passing Tests       163
+Failing Tests         2
+Asserts           40697/40878
+Orphans               6
+```
+Its two failures, both in the new file:
+- The VAT Bomb Drone's glow was 1.0 against 2.2. That was the bug above, fixed in `bomb_drone_avatar.gd`.
+- The test compared the crowd's drives padded to whole texels (20) with the 19 sent. The test now compares the
+  first 19.
+
+The re-run of the files they reach (test_enemy_vat_more, test_new_enemy_avatars, test_bosses_2_views):
+```
+Tests                25
+Passing Tests        25
+Asserts            4358
+```
+The other 24 files were not run again after the fix; it only changes the Bomb Drone's setup and the new test. The 6
+orphans are 2 each in test_first_use_warm, test_hit_impact and test_shader_warmup, the files V4a and V4b already
+reported them in. They were not checked against `078fd6e9` untouched. Not run: the full suite (GitHub runs it on the
+PR). Lint: `gdformat --check` and `gdlint` on src, scripts and tests are clean.
+
+### Not done / could not match
+
+- The Lens Drone stays on the old path (see What was built).
+- No frame_probe (V4d).
+- No e2e drives main.tscn with the switch on (as in V4a and V4b); `test_enemy_vat_more` covers ActorViews with it on.
+- The Needle's `foot_positions()` and the Warden's `fist_height()` read nodes. A VAT avatar has none, so they give
+  nothing or 0. Only tests read them, on the old path.
+
+### Owner
+
+- Are the VAT Needle, Warden, Arc Caster and Bomb Drone the same look as the old ones (the four sheets)? `OWNER ONLY`

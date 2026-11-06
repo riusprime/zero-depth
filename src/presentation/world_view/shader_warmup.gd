@@ -267,6 +267,13 @@ func _enemies(actors: ActorViews) -> void:
 					kind, actors.enemy_tint, ActorViews.role_glow_energy, actors.outline_color
 				)
 			)
+	if ViewPrefs.enemy_vat:  # v0.10.5 W3-V4c: the stand-alone kinds' VAT bodies (and bakes) too
+		for kind in SoloVat.KINDS:
+			add_child(
+				VatCrowd.warm_proxy(
+					kind, actors.enemy_tint, ActorViews.role_glow_energy, actors.outline_color
+				)
+			)
 	_merged_kinds(actors)
 
 

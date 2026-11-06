@@ -652,6 +652,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			# The rock golem (owner, v0.2.0 L17): its own node, animated in frame time.
 			height = 1.25
 			var warden := WardenAvatar.new()
+			_solo_vat(root, warden, kind)  # v0.10.5 W3-V4c
 			warden.setup(outline_color, technique)
 			facing.add_child(warden)
 			root.set_meta(&"enemy_avatar", warden)
@@ -659,6 +660,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_NEEDLE:
 			# The walking turret (v0.2.0 L17): its own node under the facing, animated in frame time.
 			var needle := NeedleAvatar.new()
+			_solo_vat(root, needle, kind)  # v0.10.5 W3-V4c
 			needle.setup(outline_color, technique)
 			facing.add_child(needle)
 			height = NeedleAvatar.HEIGHT
@@ -667,6 +669,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_ARC_CASTER:
 			# The Arc Caster (v0.3.5 AI): a robed caster with a staff, its own node under the facing.
 			var caster := ArcCasterAvatar.new()
+			_solo_vat(root, caster, kind)  # v0.10.5 W3-V4c
 			caster.setup(outline_color, technique)
 			facing.add_child(caster)
 			height = ArcCasterAvatar.HEIGHT
@@ -675,6 +678,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_BOMB_DRONE:
 			# The Bomb Drone (v0.3.5 AI): drawn hovering, its shadow on the ground where the sim has it.
 			var drone := BombDroneAvatar.new()
+			_solo_vat(root, drone, kind)  # v0.10.5 W3-V4c
 			drone.setup(outline_color, technique)
 			facing.add_child(drone)
 			height = BombDroneAvatar.HEIGHT
@@ -910,6 +914,20 @@ func _projectile_material(c: Color, energy: float) -> StandardMaterial3D:
 		m.emission_energy_multiplier = energy
 		_proj_mats[key] = m
 	return _proj_mats[key]
+
+
+## v0.10.5 W3-V4c: a Needle, Warden, Arc Caster or Bomb Drone `avatar` (before its setup) drawn by the VAT crowd while
+## the switch is on: it takes the floor's cast and role glow for its baked look (its own materials take them after it
+## is built, tint_greys / role_glow, on the old path) and the flash and tints per instance (hit_look).
+func _solo_vat(root: Node3D, avatar: AvatarBase, kind: int) -> void:
+	if not VatCrowd.supports(kind):
+		return
+	root.set_meta(&"vat_kind", true)
+	avatar.set(&"vat", ViewPrefs.enemy_vat)
+	if ViewPrefs.enemy_vat:
+		avatar.enemy_tint = enemy_tint
+		avatar.role_glow = role_glow_energy
+		root.set_meta(&"hit_look", avatar)
 
 
 ## v0.10.5 W3-V1: the actor's avatar when a VAT crowd draws it, else null (v0.10.5 W3-V4a: any avatar with `vat` on).

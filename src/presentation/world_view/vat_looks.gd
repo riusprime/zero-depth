@@ -17,6 +17,10 @@ extends RefCounted
 ## v0.10.5 W3-V4b: mode 3 is an accent glowing at the instance's drive 3 (INSTANCE_CUSTOM.w) instead of COLOR's (the
 ## Sniper's muzzle: its own glow; that rig has no gait); a pose with an `albedo_tex` (the owner's models) draws the
 ## textured variant: each plate's (mode 0) albedo times that map at the mesh's UV, as EnemyLooks.body's textured plates.
+## v0.10.5 W3-V4c: up to 32 drives (the drive texture's first three texels fill d, the next four e); CUSTOM2.z > 0
+## makes an accent glow at drive CUSTOM2.z - 1 instead of the instance's glow (the Needle's muzzle: a second glow), and
+## CUSTOM2.w = 1 draws a piece unshaded, as an unshaded StandardMaterial3D shows it: its albedo as is, no light, no
+## flash (the Warden's cracks, the Arc Caster's crystal, the Bomb Drone's fuse). Flags, not new mode numbers.
 ## The stencil outline pass (EnemyLooks._OUTLINE: grown along the normal, drawn where the stencil is not 1) follows
 ## when ActorLooks.OUTLINES is on, posed the same way; an accent draws none (its triangles fold to a point there).
 ## Presentation only (EI-07).
@@ -28,7 +32,12 @@ uniform sampler2D zd_drives : filter_nearest;
 uniform int zd_drive_texels = 0;
 uniform bool zd_scaled = false;
 
-mat4 zd_local(int slot, int grid, mat4 d) {
+float zd_drive(int di, mat4 d, mat4 e) {
+	int k = di < 16 ? di : di - 16;
+	return di < 16 ? d[k / 4][k - (k / 4) * 4] : e[k / 4][k - (k / 4) * 4];
+}
+
+mat4 zd_local(int slot, int grid, mat4 d, mat4 e) {
 	if (grid < 0) {
 		return mat4(1.0);
 	}
@@ -46,7 +55,7 @@ mat4 zd_local(int slot, int grid, mat4 d) {
 		if (di < 0 || na < 2) {
 			continue;
 		}
-		float v = d[di / 4][di - (di / 4) * 4];
+		float v = zd_drive(di, d, e);
 		if (((loops >> a) & 1) == 1) {
 			float u = fract(v) * float(na);
 			int k0 = int(floor(u)) % na;
@@ -86,14 +95,14 @@ mat4 zd_local(int slot, int grid, mat4 d) {
 	);
 }
 
-mat4 zd_chain(int j, mat4 d) {
+mat4 zd_chain(int j, mat4 d, mat4 e) {
 	mat4 m = mat4(1.0);
 	for (int k = 0; k < 32; k++) {
 		if (j < 0) {
 			break;
 		}
 		vec4 jt = texelFetch(zd_pose, ivec2(j, 0), 0);
-		m = zd_local(int(jt.y), int(jt.x), d) * m;
+		m = zd_local(int(jt.y), int(jt.x), d, e) * m;
 		j = int(jt.z);
 	}
 	return m;
@@ -110,10 +119,14 @@ vec3 zd_normal(mat4 m, vec3 n) {
 ## The instance's drives and its pose (vertex stage only: INSTANCE_CUSTOM, INSTANCE_ID).
 const _DRIVES := """
 	mat4 d = mat4(INSTANCE_CUSTOM, vec4(0.0), vec4(0.0), vec4(0.0));
+	mat4 e = mat4(0.0);
 	for (int k = 0; k < min(zd_drive_texels, 3); k++) {
 		d[k + 1] = texelFetch(zd_drives, ivec2(k, INSTANCE_ID), 0);
 	}
-	mat4 m = zd_chain(int(CUSTOM2.x), d);
+	for (int k = 3; k < min(zd_drive_texels, 7); k++) {
+		e[k - 3] = texelFetch(zd_drives, ivec2(k, INSTANCE_ID), 0);
+	}
+	mat4 m = zd_chain(int(CUSTOM2.x), d, e);
 """
 const _BODY_HEAD := """shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx;
@@ -127,6 +140,7 @@ varying flat float zd_mode;
 varying flat float zd_shown;
 varying flat float zd_glow;
 varying flat float zd_one_sided;
+varying flat float zd_unshaded;
 
 void vertex() {"""
 const _BODY_VERTEX := """
@@ -140,6 +154,8 @@ const _BODY_VERTEX := """
 	zd_glow = COLOR.a < 0.0 ? -COLOR.a - 1.0 : COLOR.a;
 	zd_glow = CUSTOM0.a > 2.5 ? INSTANCE_CUSTOM.w : zd_glow;
 	zd_one_sided = CUSTOM2.y;
+	zd_glow = CUSTOM2.z > 0.5 ? zd_drive(int(CUSTOM2.z + 0.5) - 1, d, e) : zd_glow;
+	zd_unshaded = CUSTOM2.w;
 }
 
 void fragment() {"""
@@ -151,11 +167,15 @@ const _ONE_SIDED := """
 const _BODY_FRAGMENT := """
 	ALBEDO = zd_albedo;
 	METALLIC = 0.0;
-	SPECULAR = 0.5;
+	SPECULAR = zd_unshaded > 0.5 ? 0.0 : 0.5;
 	ROUGHNESS = 1.0;
 	EMISSION = zd_mode > 2.5 || (zd_mode > 0.5 && zd_mode < 1.5)
 		? zd_emit * zd_glow
 		: (zd_mode > 1.5 ? vec3(0.0) : mix(zd_emit, zd_hit, zd_shown));
+	if (zd_unshaded > 0.5) {
+		ALBEDO = vec3(0.0);
+		EMISSION = zd_albedo;
+	}
 }
 """
 const _OUTLINE_HEAD := """shader_type spatial;
