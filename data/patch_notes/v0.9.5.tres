@@ -77,7 +77,10 @@ Homing, Halo, Ring, Backfire, Ricochet, Echo, Big Shot, Rapid Fire, Split, Mine 
 - Every Gun firing sound varies its pitch by up to 12 %.
 
 ## Performance
-PERFORMANCE_TBD
+- Enemies are no longer drawn through walls and floors (their see-through silhouette is gone).
+- Enemies have no outlines, and only their biggest pieces cast a shadow.
+- Each enemy is drawn as one mesh instead of many pieces; their animations look exactly the same.
+- Background effects update less often, and views with nothing to do skip their work.
 "
 body_es = "# Zero Depth v0.9.5 — Jefes más duros, Pistola más profunda
 _2026-10-26_ · Jefes que devuelven el golpe, todas las formas de la Pistola aceptan las cartas, una piedra en el refugio que habla y un mundo más fácil de leer.
@@ -151,6 +154,9 @@ Teledirigido, Halo, Anillo, Tiro Trasero, Rebote, Eco, Disparo Grande, Fuego Rá
 - Cada sonido de disparo de la Pistola varía su tono hasta un 12 %.
 
 ## Rendimiento
-PERFORMANCE_TBD
+- Los enemigos ya no se dibujan a través de paredes y suelos (su silueta transparente ya no está).
+- Los enemigos no tienen contorno, y solo sus piezas más grandes proyectan sombra.
+- Cada enemigo se dibuja como una sola malla en lugar de muchas piezas; sus animaciones se ven exactamente igual.
+- Los efectos de fondo se actualizan con menos frecuencia, y las vistas sin nada que hacer se saltan su trabajo.
 "
 id = &"v0_9_5"
