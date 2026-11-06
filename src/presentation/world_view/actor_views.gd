@@ -627,6 +627,9 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			var avatar := ChargerAvatar.new()
 			avatar.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials
 			avatar.role_glow = role_glow_energy
+			if VatCrowd.supports(kind):  # v0.10.5 W3-V4a: drawn by the VAT crowd while the switch is on
+				avatar.vat = ViewPrefs.enemy_vat
+				root.set_meta(&"vat_kind", true)
 			avatar.setup(outline_color, technique)
 			root.set_meta(&"hit_look", avatar)
 			facing.add_child(avatar)
@@ -690,6 +693,9 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			var hatch := ChargerAvatar.new()
 			hatch.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials
 			hatch.role_glow = role_glow_energy
+			if VatCrowd.supports(kind):  # v0.10.5 W3-V4a: drawn by the VAT crowd while the switch is on
+				hatch.vat = ViewPrefs.enemy_vat
+				root.set_meta(&"vat_kind", true)
 			hatch.setup(outline_color, technique, WorldReader.KIND_HATCHLING)  # v0.8.0 EC: its colours
 			root.set_meta(&"hit_look", hatch)
 			hatch.scale = Vector3.ONE * 0.66
@@ -906,10 +912,10 @@ func _projectile_material(c: Color, energy: float) -> StandardMaterial3D:
 	return _proj_mats[key]
 
 
-## v0.10.5 W3-V1: the actor's avatar when a VAT crowd draws it, else null.
-static func _vat_avatar(root: Node3D) -> HordeAvatar:
-	var h := _meta_or_null(root, &"enemy_avatar") as HordeAvatar
-	return h if h != null and h.vat else null
+## v0.10.5 W3-V1: the actor's avatar when a VAT crowd draws it, else null (v0.10.5 W3-V4a: any avatar with `vat` on).
+static func _vat_avatar(root: Node3D) -> AvatarBase:
+	var a := _meta_or_null(root, &"enemy_avatar") as AvatarBase
+	return a if a != null and &"vat" in a and bool(a.get(&"vat")) else null
 
 
 ## v0.10.5 Q5: a meta's value, or null when the node has none (get_meta with a null default still reports an error).

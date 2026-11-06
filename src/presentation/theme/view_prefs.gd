@@ -15,10 +15,10 @@ static var hit_stop := true
 ## shadow-only mesh shaped like it, or "blob", a soft disc on the floor. Read when an enemy is built. Not in Options
 ## yet (the owner picks from the shots); GameSettings key "enemy_shadows".
 static var enemy_shadows := "proxy"
-## v0.10.5 W3-V1 (owner, 2026-11-06: the enemy VAT pilot): the VatCrowd.KINDS enemies (the Swarmer) drawn as one
-## MultiMesh posed from baked textures (VatCrowd) instead of a node per piece. Off (the old path) until the owner signs
-## the look off; GameSettings key "enemy_vat" ("on" / "off"), the launch flag `-- --enemy-vat=on|off` over it, and the
-## dev panel's switch (rebuilds those enemies at once).
+## v0.10.5 W3-V1 (owner, 2026-11-06: the enemy VAT pilot): the VatCrowd.KINDS enemies (W3-V4a: every kind it lists)
+## drawn as one MultiMesh per look posed from baked textures (VatCrowd) instead of a node per piece. Off (the old
+## path) until the owner signs the look off; GameSettings key "enemy_vat" ("on" / "off"), the launch flag
+## `-- --enemy-vat=on|off` over it, and the dev panel's switch (rebuilds those enemies at once).
 static var enemy_vat := false
 
 

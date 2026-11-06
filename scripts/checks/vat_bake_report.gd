@@ -1,7 +1,8 @@
 extends SceneTree
-## v0.10.5 W3-V1 (the enemy VAT pilot): bakes the pilot kind's pose code (VatBake, as the game does) and measures how
-## far the baked pose is from the live one: over SAMPLES random drive sets (the windup raise, the strike, the crouch,
-## the clock, the rise-in) the real avatar is posed by its own code (HordeAvatar.pose_at) and every vertex compared,
+## v0.10.5 W3-V1 (the enemy VAT pilot): bakes each VAT kind's pose code (VatBake, as the game does) and measures how
+## far the baked pose is from the live one: over SAMPLES random states (a horde kind: the windup raise, the strike, the
+## crouch, the clock, the rise-in; v0.10.5 W3-V4a, the Charger and the Hatchling: every drive of its rig, mixed
+## freely, ChargerVat.sample) the real avatar is posed by its own code and every vertex compared,
 ## in metres, with the same vertex posed through the baked texture the way the shader samples it (VatBake.eval_*,
 ## the shader's arithmetic on the CPU). Run twice: normal and reduced motion. Headless is fine (no renderer needed):
 ##   APPDATA=<temp> godot --headless --path . -s scripts/checks/vat_bake_report.gd [-- --samples=4000]
@@ -26,10 +27,11 @@ func _initialize() -> void:
 	lines.append("vat bake report  sha=%s  godot=%s" % [sha, Engine.get_version_info()["string"]])
 	lines.append(
 		(
-			"grids: stance %s (wind x strike x crouch), gait %d samples a loop"
+			"horde grids: stance %s (wind x strike x crouch), gait %d samples a loop"
 			% [VatBake.STANCE_N, VatBake.GAIT_N]
 		)
 	)
+	lines.append("charger grids [[drive, samples, loops], ...]: %s" % [ChargerVat.GRIDS])
 	for kind: int in VatCrowd.KINDS:
 		lines.append_array(_report(kind))
 	var text := "\n".join(lines) + "\n"
@@ -54,19 +56,19 @@ func _report(kind: int) -> PackedStringArray:
 	var mesh := VatBake.mesh_for(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 	var t_mesh := (Time.get_ticks_usec() - t0) / 1000.0
 	var img: Image = pose["image"]
-	var live := VatBake.reference_avatar(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
-	var vat := HordeAvatar.new()
-	vat.vat = true
-	vat.setup(kind, Color.BLACK)
+	var live := VatBake.reference_of(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+	var vat := VatBake.vat_avatar_of(kind, Color.BLACK)
 	var js := VatBake.joints(live)
 	(
 		out
 		. append(
 			(
-				"kind %d: %d joints, %d vertices, %d triangles, pose texture %dx%d RGBAF (%d KiB)"
+				"kind %d (rig %s): %d joints, %d drives, %d vertices, %d triangles, pose texture %dx%d RGBAF (%d KiB)"
 				% [
 					kind,
+					pose["key"],
 					js.size(),
+					pose["drives"],
 					mesh.surface_get_array_len(0),
 					mesh.surface_get_array_index_len(0) / 3,
 					img.get_width(),
