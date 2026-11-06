@@ -140,3 +140,13 @@ Lead's answer: bake the current pose code into textures and draw each kind as on
 a tolerance the owner judges from side-by-side shots, not bit-exact; a pilot enemy first, measured. **Owner, 2026-11-06:
 the elites stay as they are** ("there is only 2 at max while playing a normal run"); bosses are out too. Waits on the
 owner's full `--perf-log` run (the slowdown over a run) before it is planned.
+
+**W3-V1 measured** ([`evidence/VAT_PILOT.md`](evidence/VAT_PILOT.md), merged 57e6fe44, off by default): frame_probe,
+red_canyon, Swarmers only, one run each: 20 → 105.5 / 118.9 fps (off / on), 60 → 43.9 / 57.0, 100 → 32.5 / 42.3; 1 %
+lows 6.7 → 26.2 at 60. Pose error max 0.46 mm (a pixel is ~15.7 mm).
+
+| # | Question | Owner |
+|---|---|---|
+| V1 | The shot sheet (`build/shots/v0.10.5/vat/vat_sheet.png`, 14 states, old left, VAT right): the same look? (G2) | |
+| V2 | Keep VAT, and roll it out to the other horde kinds and the stand-alone enemies, a few per step? | |
+| V3 | Swarmers cast no shadow today (the stand-in is built while the body is still sunk for the rise-in, 9–33 cm under the floor). Give them their shadow back (a small cost), or leave them shadowless? | |
