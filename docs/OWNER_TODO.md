@@ -4,7 +4,8 @@ Only what is **still open**: tests, decisions and art. Anything you answered or 
 answers live in [`roadmap/v0.8.0/PLAN.md`](roadmap/v0.8.0/PLAN.md) (owner lines O39–O50 and "Owner decisions"). Last
 rewritten 2026-10-16 from your annotated copy, v0.8.0 (branch `claude/lucid-fermat-9wv2tf`).
 
-**Being built (v0.10.5):** the owner's 2026-11-01 answers are planned in [`roadmap/v0.10.5/PLAN.md`](roadmap/v0.10.5/PLAN.md).
+- [ ] **The v0.10.5 playtest (2026-11-06):** the build, what to try and the questions are in
+  [`roadmap/v0.10.5/PLAYTEST.md`](roadmap/v0.10.5/PLAYTEST.md) (branch `claude/v0100-cleanup`, then its PR into `main`).
 
 **How to deliver art:** drop the `.glb` (with its textures) or `.png` into `unprocessed_images/` (or the repo root),
 named by the **id** below, and say so in chat. The lead installs, sizes, lists and tests it. Every item has a

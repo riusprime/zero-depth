@@ -472,6 +472,10 @@ lights stay). A starting estimate, not a measurement.
 ### R. Release
 - Version bump, patch notes en + es, What's New, ROADMAP row + History, PROGRESS final; one PR into `main` with
   v0.10.0 (the full suite runs there).
+- **Done 2026-11-06** (owner: "Yes, start release"): version 0.10.5 (project.godot, export_presets.cfg), patch notes
+  for v0.10.0 and v0.10.5 (en, es) with their What's New copies, ROADMAP status, rows and History, README status,
+  OWNER_TODO's playtest item, [`PLAYTEST.md`](PLAYTEST.md). W10 moves to a later version (owner: "w10, after playtest
+  for future versions"). The screenshot tour is NOT RUN. `tests/MIN_TEST_COUNT` is raised from the PR's green total.
 
 ## Order
 1. **Wave 1** (S1–S13), up to three Sonnet agents at a time (S1, S3, S2, then S4, S5, S6, S7, S9, S10, S12,
