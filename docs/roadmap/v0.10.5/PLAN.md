@@ -443,6 +443,17 @@ lights stay). A starting estimate, not a measurement.
   don't change (presentation only, EI-07). **While the owner plays the logged run, the agent reads, designs, writes
   code and lints only: no Godot runs** (they would disturb the owner's timing).
 - Then, only if the owner keeps it: the other horde kinds and the stand-alone enemies, a few per step.
+- **W3-V4 (owner, 2026-11-06: "animations looks fine … I think this is a way to go, can we apply it to the rest of the
+  enemies and test it?"): VAT for every regular enemy** (the elites and bosses stay out). The same bar as W3-V1 per
+  kind: the bake's max pose error, a side-by-side sheet of its states, the tests and e2e that reach it, then one
+  frame_probe of a mixed horde (every kind) at 60 / 100 VAT off / on, run alone. The switch covers all kinds; the
+  old path stays the default until the owner signs off again. Split by avatar file:
+  - **V4a (Opus):** the Charger and the Hatchling (`charger_avatar.gd`), and the shared VAT path made general (any
+    avatar can declare its joints, drives and grids).
+  - **V4b (Opus, beside V4a):** the other horde kinds (`horde_avatar.gd`: Splitter / Splitling, Shield Bearer,
+    Mender, Mine Layer, Sniper) on the Swarmer's path.
+  - **V4c (Opus, after V4a merges):** the Needle, Warden, Arc Caster, Bomb Drone and Lens Drone, on V4a's path.
+  - **V4d (lead):** the mixed-horde measurement and the merged seams.
 - **W3-V2 (Opus, after W3-V1's measurements; owner, 2026-11-06: "Yes, after VAT"): what the late floors draw.**
   [`evidence/PERF_PLAYLOG_4.md`](evidence/PERF_PLAYLOG_4.md): the objects drawn climb within each floor and from floor
   to floor (median ~2,700 → ~9,200 with no hero shot out), with flat nodes. Extend `scripts/checks/draw_census.gd` to

@@ -147,8 +147,8 @@ lows 6.7 → 26.2 at 60. Pose error max 0.46 mm (a pixel is ~15.7 mm).
 
 | # | Question | Owner |
 |---|---|---|
-| V1 | The shot sheet (`build/shots/v0.10.5/vat/vat_sheet.png`, 14 states, old left, VAT right): the same look? (G2) | |
-| V2 | Keep VAT, and roll it out to the other horde kinds and the stand-alone enemies, a few per step? | |
+| V1 | The shot sheet (`build/shots/v0.10.5/vat/vat_sheet.png`, 14 states, old left, VAT right): the same look? (G2) | **"animations looks fine"** (2026-11-06) |
+| V2 | Keep VAT, and roll it out to the other horde kinds and the stand-alone enemies, a few per step? | **Yes**: "I think this is a way to go, can we apply it to the rest of the enemies and test it?" (2026-11-06): W3-V4 |
 | V3 | Swarmers cast no shadow today (the stand-in is built while the body is still sunk for the rise-in, 9–33 cm under the floor). Give them their shadow back (a small cost), or leave them shadowless? | |
 
 **W3-V2 found** ([`evidence/DRAW_GROWTH.md`](evidence/DRAW_GROWTH.md)): the objects that pile up over a floor are the
