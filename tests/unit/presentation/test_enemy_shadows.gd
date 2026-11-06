@@ -14,6 +14,40 @@ const KINDS: Array[int] = [
 	ActorStore.Kind.SNIPER,
 ]
 
+## v0.10.5 W3-V5 (owner, V3: "yes"): every stand-in is merged from the standing body, not the rise-in's sunk one
+## (merged while sunk, the horde kinds' stand-ins sat 0–33 cm under the floor and cast nothing).
+const ALL_KINDS: Array[int] = [
+	ActorStore.Kind.CHARGER,
+	ActorStore.Kind.HATCHLING,
+	ActorStore.Kind.NEEDLE,
+	ActorStore.Kind.WARDEN,
+	ActorStore.Kind.ARC_CASTER,
+	ActorStore.Kind.BOMB_DRONE,
+	ActorStore.Kind.LENS_DRONE,
+	ActorStore.Kind.SWARMER,
+	ActorStore.Kind.SPLITTER,
+	ActorStore.Kind.SPLITLING,
+	ActorStore.Kind.SHIELD_BEARER,
+	ActorStore.Kind.MENDER,
+	ActorStore.Kind.MINE_LAYER,
+	ActorStore.Kind.SNIPER,
+]
+const VAT_KINDS: Array[int] = [
+	ActorStore.Kind.CHARGER,
+	ActorStore.Kind.HATCHLING,
+	ActorStore.Kind.NEEDLE,
+	ActorStore.Kind.WARDEN,
+	ActorStore.Kind.ARC_CASTER,
+	ActorStore.Kind.BOMB_DRONE,
+	ActorStore.Kind.SWARMER,
+	ActorStore.Kind.SPLITTER,
+	ActorStore.Kind.SPLITLING,
+	ActorStore.Kind.SHIELD_BEARER,
+	ActorStore.Kind.MENDER,
+	ActorStore.Kind.MINE_LAYER,
+	ActorStore.Kind.SNIPER,
+]
+
 var _mode := ""
 
 
@@ -118,3 +152,58 @@ func test_far_enemies_drop_interpolation_and_near_ones_keep_it() -> void:
 	assert_true(views.actor_node(far).is_physics_interpolated(), "come near: interpolated again")
 	var hero := views.actor_node(w.actors.ids[0])
 	assert_true(hero.is_physics_interpolated(), "the hero always")
+
+
+func _assert_standing(mesh: Mesh, what: String) -> void:
+	assert_not_null(mesh, what)
+	if mesh == null:
+		return
+	var box := mesh.get_aabb()
+	gut.p("%s: proxy y %.3f .. %.3f" % [what, box.position.y, box.end.y])
+	assert_gt(box.end.y, 0.2, what + ": its top is above the floor")
+	assert_gt(box.position.y, -0.05, what + ": not sunk under the floor")
+
+
+func test_every_stand_in_is_the_standing_body() -> void:
+	ViewPrefs.enemy_shadows = "proxy"
+	var w := CombatLab.world()
+	var ids: Array[int] = []
+	for k in ALL_KINDS.size():
+		ids.append(w.add_enemy(ALL_KINDS[k], Vector2(3.0 * (k + 1), 2.0)))
+	ids.append(Elites.spawn(w, ActorStore.Kind.BREAKER, Vector2(6.0, 8.0), Elites.Source.DEV))
+	var views: ActorViews = add_child_autofree(ActorViews.new())
+	views.set_process(false)
+	views.sync(WorldReader.new(w))
+	for i in ids.size():
+		var casters := _casters(views.actor_node(ids[i]))
+		assert_eq(casters.size(), 1, "id %d: one caster" % ids[i])
+		if casters.size() == 1:
+			_assert_standing((casters[0] as MeshInstance3D).mesh, "id %d" % ids[i])
+
+
+func test_every_vat_stand_in_is_the_standing_body() -> void:
+	for kind in VAT_KINDS:
+		_assert_standing(VatCrowd.shadow_mesh(kind), "VAT kind %d" % kind)
+
+
+func test_a_spawning_enemy_still_rises_in_after_its_shadow_is_built() -> void:
+	ViewPrefs.enemy_shadows = "proxy"
+	var w := CombatLab.world()
+	var ids: Array[int] = []
+	for k in ALL_KINDS.size():
+		ids.append(w.add_enemy(ALL_KINDS[k], Vector2(3.0 * (k + 1), 2.0)))
+	var reader := WorldReader.new(w)
+	var views: ActorViews = add_child_autofree(ActorViews.new())
+	views.set_process(false)
+	views.sync(reader)
+	var spawning := 0
+	for id: int in ids:
+		var i := w.actors.index_of(id)
+		if reader.actor_state(i) != WorldReader.STATE_SPAWN:
+			continue
+		spawning += 1
+		var avatar: Object = views.actor_node(id).get_meta(&"enemy_avatar")
+		assert_almost_eq(
+			float(avatar.get(&"_rise")), 0.0, 0.001, "id %d: still sunk for its rise-in" % id
+		)
+	assert_gt(spawning, 0, "some enemies are spawning")

@@ -210,6 +210,17 @@ All in PLAN "Every owner line → where it lands", THEORY_AUDIT "Decisions" and 
 18. **Lead seams with W3-V3 merged** (`wt-seams` at `0f85ce5e`, the minimap drawn once per change): `bash scripts/ci/seams.sh`: lint ok, "Scripts 110, Tests 637, Passing Tests 637, Asserts 75490; check_gut_log: ok (637 passing, minimum 1)". W3-V3's counts and shots: [`evidence/MINIMAP_CACHE.md`](evidence/MINIMAP_CACHE.md) (the minimap 486 → 4,966–6,710 objects over a floor before, 51 after). W3-V4a merged after it (931ff6a2); its seams come with V4b/V4c.
 19. **Lead seams with every W3-V4 step merged** (`wt-seams` at `292a7ecd`: V4a Charger/Hatchling and the general path, V4b the six horde kinds, V4c Needle/Warden/Arc Caster/Bomb Drone; the Lens Drone stays on the old path; VAT off by default): `bash scripts/ci/seams.sh`: lint ok, "Scripts 110, Tests 637, Passing Tests 637, Asserts 75755; check_gut_log: ok (637 passing, minimum 1)". The mixed horde VAT off / on (V4d): [`evidence/VAT_ROLLOUT.md`](evidence/VAT_ROLLOUT.md). Owner, 2026-11-06, on V4d: "that is super great even if the cost doesnt come mainly from those". Making VAT the default waits on the owner.
 20. **Enemy VAT on by default** (owner, 2026-11-06: "Yes, make it default"; `0b8cad8e`): GameSettings `enemy_vat` defaults to "on" and `main.gd` applies it at boot (ViewPrefs.apply_settings); the static default stays off for code that skips the settings (unit tests keep the old path). `tests/unit/application`: "Scripts 28, Tests 223, Passing Tests 223". The enemy e2e (`test_e2e_enemies`, `test_e2e_horde_enemies`, `test_e2e_training_room`, `test_e2e_heat`, through main.tscn, so VAT on): "Scripts 4, Tests 6, Passing Tests 6". Seams at `0b8cad8e`: lint ok, "Scripts 110, Tests 637, Passing Tests 637, Asserts 75713; check_gut_log: ok (637 passing, minimum 1)".
+21. **W3-V5: the enemies' shadows stand on the floor** (owner, 2026-11-06, V3: "yeah we [want] shadow yes"; build
+    SHA 43739fe2 + the change, owner's PC). Before the fix the new test printed the stand-ins' y range (m, avatar
+    space): Swarmer -0.327 .. -0.090, Splitter -0.949 .. 0.000, Sniper -1.299 .. -0.320, Arc Caster -1.100 .. 0.244,
+    the elite (Breaker) -1.559 .. 1.040; after it every kind's bottom is at -0.002 or above (the drones hover:
+    1.051 and 1.461). `godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=<the 14 enemy
+    presentation files> -gexit`: "Tests 104, Passing Tests 104, Asserts 10823" after the stale default test was updated (it still
+    asserted VAT off; it had failed since 0b8cad8e: `["on"] expected to equal ["off"]`); the enemy e2e
+    (`test_e2e_enemies`, `_horde_enemies`, `_new_enemies`, `_training_room`, `_heat`, `_playground`): "Tests 8,
+    Passing Tests 8, Asserts 504". Lint ok. Shot: `scripts/shots/horde_enemies.gd` (the Shield Bearer and the
+    Splitters cast a shadow onto the floor). The fps cost: the same draws as before (the stand-ins were drawn
+    underground); not timed.
 - `tests/golden/fixtures/modifier_equivalence.json` again (W3-P9: crits and hits carry their fractions; blade_plain 181/4002/10 → 186/3968/11, gun_plain 449 → 445, both_plain 3716 → 3715, gun_frost_core 449 → 445, blade_wildfire_rider digest)
 - `tests/golden/fixtures/modifier_equivalence.json` again (W3-S10: the bolt push halved; gun_plain and gun_frost_core 445 → 317 damage, 82 → 59 hits; both_plain 3715 → 3757, kills 5 → 7)
 

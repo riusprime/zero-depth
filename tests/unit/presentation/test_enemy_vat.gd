@@ -1,8 +1,8 @@
 extends GutTest
 ## v0.10.5 W3-V1 (owner, 2026-11-06: the enemy VAT pilot): the Swarmer drawn as one MultiMesh posed from its baked
-## pose code (VatBake, VatLooks, VatCrowd) behind ViewPrefs.enemy_vat, the old path the default. The bake matches the
-## live pose (the shader's arithmetic run on the CPU), a VAT avatar keeps every drive the old one shows, and ActorViews
-## draws, flashes, flinches and rebuilds them through the crowd.
+## pose code (VatBake, VatLooks, VatCrowd) behind ViewPrefs.enemy_vat (on by default since 2026-11-06). The bake
+## matches the live pose (the shader's arithmetic run on the CPU), a VAT avatar keeps every drive the old one shows,
+## and ActorViews draws, flashes, flinches and rebuilds them through the crowd.
 ## v0.10.5 W3-V4a: the same for the Charger and the Hatchling (ChargerVat's rig: twelve drives, the eight past the
 ## fourth in a drive texture), and the old Charger pose is untouched (test_charger_pose_hv).
 
@@ -34,17 +34,18 @@ func after_each() -> void:
 	ViewPrefs.reduced_motion = _calm
 
 
-func test_the_old_path_stays_the_default() -> void:
-	assert_eq(GameSettings.DEFAULTS["enemy_vat"], "off")
+func test_vat_is_the_default_and_can_be_turned_off() -> void:
+	# v0.10.5 (owner, 2026-11-06: "Yes, make it default"): on unless the profile says "off".
+	assert_eq(GameSettings.DEFAULTS["enemy_vat"], "on")
 	var p := ProfileStore.new("")
 	ViewPrefs.apply_settings(p)
-	assert_false(ViewPrefs.enemy_vat, "off unless the owner turns it on")
-	p.section("settings")["enemy_vat"] = "on"
+	assert_true(ViewPrefs.enemy_vat, "on by default")
+	p.section("settings")["enemy_vat"] = "off"
 	ViewPrefs.apply_settings(p)
-	assert_true(ViewPrefs.enemy_vat)
+	assert_false(ViewPrefs.enemy_vat, "off when the profile says so")
 	assert_true(DebugApi.view_switches.has(&"enemy_vat"), "the dev panel's switch")
 	ViewPrefs.flip_enemy_vat()
-	assert_false(ViewPrefs.enemy_vat)
+	assert_true(ViewPrefs.enemy_vat)
 
 
 func test_the_bake_matches_the_live_pose() -> void:

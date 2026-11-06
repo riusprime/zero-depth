@@ -131,7 +131,7 @@ an outlier); the Blade's single-target numbers miss it (39–71 %). T2 (weak bui
 | # | Question | Owner |
 |---|---|---|
 | W9 | The new systems lift every build about equally, so a weak build keeps its loop-1 standing instead of hitting a wall (it stays weak in absolute terms: its loop-1 power is a third of a strong build's). (a) accept: loops keep each build where loop 1 left it; (b) make Starbound / Constellation gains scale with the build's own engines (weak builds gain less); (c) offer Starbound cards less (e.g. 10 % / 20 %) | **(a) "Accept as is"** (2026-11-05) |
-| W10 | The Blade against one target stays at 39–71 % in loops (crowds are fine). Tune it now, or after your playtest? | **After the playtest** (owner, 2026-11-05: "W10 after I play it"). Left as measured until then. |
+| W10 | The Blade against one target stays at 39–71 % in loops (crowds are fine). Tune it now, or after your playtest? | **After the playtest** (owner, 2026-11-05: "W10 after I play it"). Left as measured until then. **Moved to a future version** (owner, 2026-11-06: "w10, after playtest for future versions"). |
 
 ### Enemy VAT (asked 2026-11-06, not planned yet)
 
@@ -149,7 +149,7 @@ lows 6.7 → 26.2 at 60. Pose error max 0.46 mm (a pixel is ~15.7 mm).
 |---|---|---|
 | V1 | The shot sheet (`build/shots/v0.10.5/vat/vat_sheet.png`, 14 states, old left, VAT right): the same look? (G2) | **"animations looks fine"** (2026-11-06) |
 | V2 | Keep VAT, and roll it out to the other horde kinds and the stand-alone enemies, a few per step? | **Yes**: "I think this is a way to go, can we apply it to the rest of the enemies and test it?" (2026-11-06): W3-V4; **on by default**: "Yes, make it default" (2026-11-06, 0b8cad8e) |
-| V3 | Swarmers cast no shadow today (the stand-in is built while the body is still sunk for the rise-in, 9–33 cm under the floor). Give them their shadow back (a small cost), or leave them shadowless? | |
+| V3 | Swarmers cast no shadow today (the stand-in is built while the body is still sunk for the rise-in, 9–33 cm under the floor). Give them their shadow back (a small cost), or leave them shadowless? | **"yeah we [want] shadow yes"** (2026-11-06): W3-V5, the one-piece shadow built from the standing body |
 
 **W3-V2 found** ([`evidence/DRAW_GROWTH.md`](evidence/DRAW_GROWTH.md)): the objects that pile up over a floor are the
 corner minimap's. Each discovered room adds ~470 drawn objects and ~7 draw calls, redrawn nearly every frame; at the

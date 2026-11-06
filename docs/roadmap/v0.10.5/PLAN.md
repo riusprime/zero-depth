@@ -454,6 +454,10 @@ lights stay). A starting estimate, not a measurement.
     Mender, Mine Layer, Sniper) on the Swarmer's path.
   - **V4c (Opus, after V4a merges):** the Needle, Warden, Arc Caster, Bomb Drone and Lens Drone, on V4a's path.
   - **V4d (lead):** the mixed-horde measurement and the merged seams.
+- **W3-V5 (lead; owner, 2026-11-06, V3: "yeah we [want] shadow yes"): the enemies' one-piece shadows stand on the
+  floor.** The stand-in was merged from a freshly built avatar, posed sunk for the rise-in, so every horde kind's (and
+  the Arc Caster's and the elites') sat partly or wholly under the floor. `EnemyShadows.proxy_mesh` now poses a fresh
+  avatar standing for the merge and puts it back. Same draw count (the stand-in was drawn before too, underground).
 - **W3-V2 (Opus, after W3-V1's measurements; owner, 2026-11-06: "Yes, after VAT"): what the late floors draw.**
   [`evidence/PERF_PLAYLOG_4.md`](evidence/PERF_PLAYLOG_4.md): the objects drawn climb within each floor and from floor
   to floor (median ~2,700 → ~9,200 with no hero shot out), with flat nodes. Extend `scripts/checks/draw_census.gd` to

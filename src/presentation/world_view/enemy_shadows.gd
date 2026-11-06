@@ -63,10 +63,39 @@ static func proxy_mesh(kind: int, host: Node3D) -> ArrayMesh:
 	if _cache.has(kind):
 		return _cache[kind]
 	var casters: Array = []
+	var stood := _stand(host)
 	_collect(host, Transform3D.IDENTITY, casters)
+	if stood:
+		_unstand(host as AvatarBase)
 	var mesh := _merge(casters)
 	_cache[kind] = mesh
 	return mesh
+
+
+## v0.10.5 W3-V5 (owner, V3: "yes"): a fresh avatar is built posed for the rise-in, sunk under the floor; merged so,
+## the stand-in sat under the floor and cast nothing. It is posed standing for the merge (its first state as a
+## standing one: every avatar rises fully then), then put back to a fresh, unsynced one (its first real sync poses it
+## from the sim's state, as before). Presentation only. False: `host` is not a fresh avatar (left as it is).
+static func _stand(host: Node3D) -> bool:
+	var a := host as AvatarBase
+	if a == null or not a._fresh or not a.has_method(&"apply_state"):
+		return false
+	a.apply_state(_state_dict(WorldReader.STATE_MOVE))
+	return true
+
+
+## Back to a fresh avatar posed for the rise-in, as setup() left it.
+static func _unstand(a: AvatarBase) -> void:
+	a._fresh = true
+	a.apply_state(_state_dict(WorldReader.STATE_SPAWN))
+	a._fresh = true
+	a._last_tick = -1
+	a._last_pos = Vector2.ZERO
+	a._vel = Vector2.ZERO
+
+
+static func _state_dict(state: int) -> Dictionary:
+	return {"tick": 0, "state": state, "pos": Vector2.ZERO, "windup": 0.0}
 
 
 ## Every GeometryInstance3D under `n` stops casting.
