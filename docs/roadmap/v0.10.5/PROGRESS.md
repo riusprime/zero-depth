@@ -3,24 +3,17 @@
 Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0100-cleanup` (v0.10.5 builds on v0.10.0 there until the release step).
 
 ## Where we are
-(The lead keeps this block current at every push. Updated 2026-11-05, wave 3 built overnight.)
+(The lead keeps this block current at every push. Updated 2026-11-06, pushed to GitHub at the owner's request.)
 
-- **Every PLAN step is built and merged** on `claude/v0100-cleanup` (not pushed, owner: "Don't push"): wave 1
-  (S1–S15 + S5b, S15b–d), and wave 2 (O1, O2a, O2b, O3, O4, O5a/b, O6, O7a/b, O9–O18), plus D1, Q1, Q5 (measure), Q7
-  and the cross-step fixes; then the arrival altar fix and Q5 (the views sync once a frame). **O4b stays out**
-  (owner, Q9: "keep it out").
-- **Overnight picks and questions:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md): 21 picks to keep or change; Q6–Q8 the owner
-  tests in play.
-- **Performance:** Q5 (views once a frame), the owner's logged run (PERF_PLAYLOG_1: 80 fps avg, 67 % engine+draw), then
-  fixes for its hitches, draw calls and the nav flood; the next logged run measures them. Q5: 16 → ~23 fps at 60 enemies (busy machine,
-  a clean re-measure NOT YET RUN. Further fixes ranked in evidence/PERF_Q5.md §5 (3–5).
-- **Wave 3 (2026-11-04 → 05):** the owner's v0.10.5 playtest (PLAN "Wave 3", F1–F35), all built and merged on
-  `claude/v0100-cleanup` (not pushed): the fixes (W3-S1…S17, W3-O1…O14), the progression set (P1/P2, P1b, P3, P5/P7,
-  P9), the card icons and frames from the owner's art, and the whole UI in the Astral style (W3-O15–O20; the dev
-  panels excepted). Two progression targets are missed and wait on the owner (OWNER_QUESTIONS W3 the late Blade,
-  W7 the loop wall); also W4–W6, W8. Seams 625/625 with everything merged (a97f851c, Verification 12).
-- **Next:** the owner plays the build (the new UI, the progression changes, the loop power); W10 (the Blade single target in loops) after that playtest.
-- **Then:** the release step (one PR into `main`, the full suite on GitHub).
+- **Every PLAN step is built and merged** on `claude/v0100-cleanup`, pushed 2026-11-06 (owner: "if … everything's
+  ready push it to github"): wave 1, wave 2 (O4b stays out, Q9), wave 3 (F1–F35: W3-S, W3-O, the progression set,
+  the Astral UI, W3-P10 loop power), and perf wave 3 (W3-V1 the census, W3-V3 the minimap cache, W3-V4a–d Enemy VAT
+  for 13 regular kinds, on by default). Seams 637/637 at 0b8cad8e (Verification 20).
+- **Waiting on the owner:** OWNER_QUESTIONS V3 (the horde kinds cast no shadow: add them or leave them), W10 (the
+  Blade single target in loops, after the playtest), the cursor sheet (W8). The fps gain from the minimap fix and VAT
+  on the owner's PC is NOT YET RUN (a `--perf-log` run measures it).
+- **Next:** the owner plays the build; W10 after that playtest.
+- **Then:** the release step (version bump, patch notes, one PR into `main`, the full suite on GitHub).
 
 ## Owner decisions (2026-11-02)
 - Q5: "Q5 yes fix it": fixes (1) sync the views once a frame and (2) a cheaper sync, as one step (`v0105-q5`).
