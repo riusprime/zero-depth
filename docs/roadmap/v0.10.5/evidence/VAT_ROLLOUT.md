@@ -430,3 +430,84 @@ alike, these kinds cast no proxy shadow. Not fixed (out of scope; `OWNER ONLY` w
 
 - Are the six kinds the same look on VAT (the sheets)? `OWNER ONLY`
 - Should the horde kinds cast a shadow (§5)? `OWNER ONLY`
+
+### After merging V4a (`931ff6a2`) into V4b: the six kinds on the general rig
+
+The merge commit is `9033db86`.
+
+**How the six kinds were moved onto V4a's rig API:**
+- `VatBake.horde_rig` hands any horde kind but the Swarmer to `HordeVat.rig`. That rig has the key `horde<kind>` and
+  4 drives. Its grids are the stance grid over drives 0–2 and, when the kind has one, a gait loop over drive 3. Its
+  joints are `HordeVat.joint_spec`'s.
+  - The body is the root joint. It sits on the stance grid but is always baked as the identity, because its moves are
+    the instance's `vat_offset`.
+  - A hidden joint is baked with a zero basis.
+  - The rig carries the model's colour map (`albedo_tex`).
+- `VatBake.drives_of` reads these kinds' four drives from `HordeAvatar.vat_grid_drives()`. The old
+  `vat_drives(pose)` was renamed so it no longer clashes with V4a's no-argument `vat_drives` hook.
+- `VatCrowd` moves a `HordeAvatar` instance by `vat_offset()`. For the Swarmer that is its lift, the same transform
+  as before.
+- `VatLooks` adds the textured variant.
+
+**Mode 2 reconciled:** V4a's mode 2 (a plain plate: no flash, no glow) is unchanged. The Sniper's muzzle, which glows
+at the instance's drive 3, moved to **mode 3**. The shader takes `zd_glow` from `INSTANCE_CUSTOM.w` when the mode is
+above 2.5. Emission is then:
+- mode 1 or 3: glow;
+- mode 2: none;
+- mode 0: the flash mix.
+
+**Bake report at `9033db86`, all nine kinds** (same command, 4,000 samples):
+```
+vat bake report  sha=9033db86  godot=4.7.2-stable (official)
+kind 11 (rig horde11): 9 joints, 4 drives, 1380 vertices, 464 triangles, pose texture 18x455 RGBAF (127 KiB)
+  reduced_motion=false samples=4000 vertices/sample=1380  max_error_m=0.000455  mean_error_m=0.0000702
+kind 2 (rig charger): 78 joints, 12 drives, 3219 vertices, 1073 triangles, pose texture 78x5006 RGBAF (6101 KiB)
+  reduced_motion=false samples=4000 vertices/sample=3219  max_error_m=0.004157  mean_error_m=0.0002325
+  reduced_motion=true samples=4000 vertices/sample=3219  max_error_m=0.004162  mean_error_m=0.0002324
+kind 5 (rig charger): (the same as kind 2)
+kind 12 (rig horde12): 7 joints, 4 drives, 15204 vertices, 5068 triangles, pose texture 15x1427 RGBAF (334 KiB)
+  reduced_motion=false samples=4000 vertices/sample=15204  max_error_m=0.001126  mean_error_m=0.0001307
+kind 13 (rig horde13): 7 joints, 4 drives, 15204 vertices, 5068 triangles, pose texture 15x1427 RGBAF (334 KiB)
+  reduced_motion=false samples=4000 vertices/sample=15204  max_error_m=0.000698  mean_error_m=0.0000811
+kind 14 (rig horde14): 4 joints, 4 drives, 15033 vertices, 5011 triangles, pose texture 6x212 RGBAF (19 KiB)
+  reduced_motion=false samples=4000 vertices/sample=15033  max_error_m=0.000248  mean_error_m=0.0000267
+kind 15 (rig horde15): 3 joints, 4 drives, 15039 vertices, 5013 triangles, pose texture 6x58 RGBAF (5 KiB)
+  reduced_motion=false samples=4000 vertices/sample=15039  max_error_m=0.000194  mean_error_m=0.0000020
+kind 16 (rig horde16): 3 joints, 4 drives, 756 vertices, 256 triangles, pose texture 9x10 RGBAF (1 KiB)
+  reduced_motion=false samples=4000 vertices/sample=756  max_error_m=0.000000  mean_error_m=0.0000000
+    hidden vertices (all samples): 191328, folded to within 0.0000000 m
+kind 17 (rig horde17): 3 joints, 4 drives, 816 vertices, 276 triangles, pose texture 9x70 RGBAF (9 KiB)
+  reduced_motion=false samples=4000 vertices/sample=816  max_error_m=0.000038  mean_error_m=0.0000024
+```
+- **Reduced motion:** the same as the normal run for every horde kind. The Charger's reduced-motion line is shown
+  above.
+- **Unchanged numbers:** every error equals its pre-merge value.
+  - The Swarmer: 0.455 mm.
+  - The Charger: 4.157 mm; the Hatchling: 4.157 mm in its own space, which is 2.74 mm on screen. These match V4a's
+    section.
+  - The six kinds: the numbers in §1 above.
+- **Texture sizes:** they grew by a table row and, for some kinds, a few texels, because of V4a's joint and grid
+  tables.
+
+**Motion check, all nine kinds** (V4a's `--kind=charger` is kept):
+```
+physics interpolation: true  kinds: 9  instances compared: 5391  fps ~495  fraction buckets seen: 11
+instance x vs this frame's interpolated place: max 0.00000 m, mean 0.00000 m
+instance x vs the last tick's place: max 0.04994 m, mean 0.02472 m
+worst per kind (m, vs the interpolated place): { 11: 0.00000011997223, 2: 0.00000011997223, 5: 0.00000011997223, 12: 0.00000011997223, 13: 0.00000011997223, 14: 0.00000011997223, 15: 0.00000011997223, 16: 0.00000011997223, 17: 0.00000011997223 }
+```
+The motion check ran on the resolved tree just before the merge commit, with the same code.
+
+**Tests on the resolved tree** (V4a's 23 files, plus `test_e2e_heat`), in two runs at once, each with its own APPDATA:
+- run A (13 unit/presentation files): `Tests 106, Passing 106, Asserts 9169, Orphans 7`. V4a also reported 7.
+- run B (the other 11): `Tests 40, Passing 40, Asserts 27328`.
+
+**Sheets:** all eight were re-drawn into `build/tmp/sheets_merge/`.
+- The CPU vertex-error column is unchanged for the Splitter, Splitling, Shield Bearer, Mine Layer, Sniper and
+  Swarmer.
+- The Mender's column varies run to run. It also varied between the pre-merge runs: idle was 0.140 mm, then
+  0.096 mm, and is 0.173 mm now. Every value stays within its bake maximum of 0.194 mm.
+- The pixel counts vary run to run by a few edge pixels.
+- No sheet's numbers moved because of the merge, so the sheets in `build/shots/v0.10.5/vat/` stay the `7d966626` ones.
+- One fix: the sheet now prints "—" for the vertex-error column of the Charger's sheet, which has none, instead of a
+  number.

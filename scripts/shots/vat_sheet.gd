@@ -139,23 +139,6 @@ const KIND_PLANS := {
 		["reduced motion + flinch", {}, "calm"],
 	],
 }
-## The states: [label, build: {tint, role} or {}, steps].
-const PLAN := [
-	["idle", {}, "idle"],
-	["scuttle (t 1.37 s)", {}, "scuttle"],
-	["windup 31 %", {}, "windup_early"],
-	["windup 90 % (flash)", {}, "windup_late"],
-	["strike snap (0.05 s)", {}, "strike_snap"],
-	["strike out (0.15 s)", {}, "strike_out"],
-	["strike easing back", {}, "strike_back"],
-	["flinch at its peak", {}, "flinch"],
-	["Blade knock", {}, "knock"],
-	["hit flash", {}, "flash"],
-	["status tint (burn)", {}, "tint"],
-	["rise-in, half way", {}, "spawn"],
-	["biome cast + role glow", {"tint": Color(0.45, 0.65, 1.0, 0.5), "role": 0.45}, "idle"],
-	["reduced motion + flinch", {}, "calm"],
-]
 
 var _dir := ""
 var _pairs: Array = []  # [label, live SubViewport, vat SubViewport]
@@ -521,13 +504,13 @@ func _finish() -> void:
 					off += 1
 		lines.append(
 			(
-				"%s | %d | %d | %.4f | %.3f"
+				"%s | %d | %d | %.4f | %s"
 				% [
 					p[0],
 					worst,
 					off,
 					float(off) / float(a.get_width() * a.get_height()),
-					_vertex_error(p[1], p[2]) * 1000.0
+					_mm(_vertex_error(p[1], p[2]))
 				]
 			)
 		)
@@ -544,3 +527,8 @@ func _finish() -> void:
 		f.store_string(text)
 		f.close()
 	quit(0)
+
+
+## A vertex error (m) in mm, or "—" when the sheet's kind has none here (the Charger: its bake report gives it).
+static func _mm(e: float) -> String:
+	return "—" if e < 0.0 else "%.3f" % (e * 1000.0)
