@@ -106,6 +106,10 @@ var layout_door_depth := 3.0
 ## 35 %), and the door's timer in ticks (15 s at 60 Hz). MapDefinition's numbers.
 var timed_door_permille := 350
 var timed_door_ticks := 900
+## v0.9.5 TS: the switches' rooms are 1..timed_switch_steps_max steps from the host (0: both in the host, before TS)
+## and the lever's open time in ticks (0: no lever).
+var timed_switch_steps_max := 0
+var timed_lever_ticks := 0
 
 
 static func defaults() -> FloorParams:

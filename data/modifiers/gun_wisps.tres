@@ -22,8 +22,7 @@ script = ExtResource("2_op")
 op = 0
 stage = 3
 field = &"wisp_permille"
-value = 400.0
-per_level = 20.0
+value = 800.0
 
 [resource]
 script = ExtResource("1_mod")

@@ -12,7 +12,8 @@ extends GutTest
 ## a little slower; the Gun's heat a shot x9/7), so the twelve cases that hold the Gun were re-recorded with the same
 ## generator; the ten Blade-only cases still match, unchanged. v0.8.0 RM: blade_all, gun_all and both_all re-recorded on
 ## purpose (they hold Fire + Frost, which now Thermal Break, and the reworked Fracture Bank; the share rounds half up);
-## the other 19 cases unchanged.
+## the other 19 cases unchanged. v0.10.5 O1 (owner L23): the 17 cases that held a deleted card were removed with their
+## fixture entries (not re-recorded); the five that remain match as before.
 
 const FIXTURE := "res://tests/golden/fixtures/modifier_equivalence.json"
 
@@ -42,9 +43,9 @@ func test_every_case_matches_the_v0_5_outcome() -> void:
 
 
 func test_the_cases_use_the_migrated_items() -> void:
-	var w := AttackScenario.world(&"", [&"long_edge", &"static_chain"], false, [])
+	var w := AttackScenario.world(&"", [&"frost_core", &"ember_core"], false, [])
 	assert_eq(
 		Modifiers.book(w).modifier_ids,
-		PackedStringArray(["long_edge", "static_chain"]),
+		PackedStringArray(["frost_core", "ember_core"]),
 		"in pick order"
 	)

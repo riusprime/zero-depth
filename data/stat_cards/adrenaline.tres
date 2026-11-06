@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"adrenaline"
+name_key = &"STAT_ADRENALINE"
+desc_key = &"STAT_ADRENALINE_DESC"
+amounts = PackedFloat32Array(15, 25, 40)
+cap = 60
+weight = 7
+limit = 3.0
+id = &"adrenaline"

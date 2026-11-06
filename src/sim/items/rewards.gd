@@ -37,9 +37,19 @@ static func shards_for_kill(w: World, kind: int) -> int:
 		return 0
 	if t.shards_by_floor:
 		return _scaled(w, t.shards * maxi(1, w.floor_index))
-	# v0.4.0 TU (owner D7, "staying longer still pays more shards"): the floor's plain 30 s tier, not the curve's,
-	# so shards keep growing after the curve peaks and holds.
-	var tier := w.spawner.tier_at(w.run_ticks) if w.spawner != null else 0
+	# v0.4.0 TU (owner D7): the floor's plain 30 s tier, not the curve's. v0.10.5 O7a (P6, owner 2026-11-01): capped at
+	# the tier of the floor's peak phase start, so staying longer stops paying more.
+	var tier := 0
+	if w.spawner != null:
+		tier = w.spawner.tier_at(w.run_ticks)
+		var c := w.spawner.curve
+		if w.reward_table.shard_tier_caps_at_peak and c != null:
+			tier = mini(
+				tier,
+				w.spawner.tier_at(
+					maxi(c.starts[c.phase_count() - 1], w.reward_table.shard_cap_min_ticks)
+				)
+			)
 	return _scaled(
 		w, (t.shards * (1000 + w.reward_table.shard_tier_bonus_permille * tier) + 500) / 1000
 	)
@@ -51,7 +61,17 @@ static func _scaled(w: World, amount: int) -> int:
 	return amount if m == 1000 else (amount * m + 500) / 1000
 
 
-## Tick phase 9: actor i died. Pays its shards and emits SHARDS (amount = shards, at the body).
+## v0.10.5 O7b (P6): a kill of `kind` lays its shards on the floor (ShardDrops) rather than paying at once: a normal
+## enemy, not a boss nor a shards_by_floor kind.
+static func lies_on_floor(w: World, kind: int) -> bool:
+	if BossAi.is_boss_kind(kind) or not EnemyAi.is_enemy_kind(kind):
+		return false
+	var t := w.enemy_table(kind)
+	return t == null or not t.shards_by_floor
+
+
+## Tick phase 9: actor i died. Pays its shards and emits SHARDS (amount = shards, at the body); v0.10.5 O7b: a normal
+## enemy's shards lie at the body instead (ShardDrops), paid and announced when the hero takes them.
 static func on_kill(w: World, i: int) -> void:
 	var amount := Gamble.shard_gain(w, shards_for_kill(w, w.actors.kinds[i]))  # the shrine's shard gain
 	amount = Stats.shards(w, amount)  # v0.4.0 BS: the shard gain stat
@@ -59,6 +79,9 @@ static func on_kill(w: World, i: int) -> void:
 	HealOrbs.on_kill(w, i)  # v0.4.0 TU (D8): maybe a heal orb
 	amount = Affinities.shards(w, amount)  # v0.9.0 RB: A5 Guardian picks up fewer
 	if amount <= 0:
+		return
+	if lies_on_floor(w, w.actors.kinds[i]):  # v0.10.5 O7b (P6): a normal kill's shards lie at the body
+		ShardDrops.drop(w, w.actors.pos(i), amount)
 		return
 	w.shards += amount
 	var me := w.actors.ids[0]
@@ -96,7 +119,44 @@ static func place(w: World, layout: FloorLayout) -> void:
 		if kinds[k] == RewardStore.Kind.CHEST:
 			price = t.chest_price(chests, w.floor_index)
 			chests += 1
-		w.add_reward(kinds[k], layout.item_spots[order[k]], price)
+		var spot := w.solids.clear_of_doors(layout, layout.item_spots[order[k]])  # v0.9.5 SB: off the doorways
+		w.add_reward(kinds[k], spot, price)
+	_place_extras(w, layout, order, kinds, chests)
+
+
+## v0.10.5 S7 (owner 2026-11-01, "10 to 15% more loot"; a starting value): after the floor's usual placement, about
+## extra_chest_permille / extra_altar_permille per mille more chests and altars: n x permille / 1000 whole extras, plus
+## one more with the remainder's chance (one loot-stream draw per kind, only when there is a remainder). An extra takes
+## the next unused item spot (none left: none placed) and an extra altar is not held by altars_cap. Drawn last, so
+## the counts, order and prices above are unchanged.
+static func _place_extras(
+	w: World, layout: FloorLayout, order: PackedInt32Array, kinds: PackedInt32Array, chests: int
+) -> void:
+	var t := w.reward_table
+	var used := mini(kinds.size(), order.size())
+	var n_altar := 0
+	for k in used:
+		if kinds[k] == RewardStore.Kind.ALTAR:
+			n_altar += 1
+	var wants := [
+		[RewardStore.Kind.CHEST, (used - n_altar) * t.extra_chest_permille],
+		[RewardStore.Kind.ALTAR, n_altar * t.extra_altar_permille],
+	]
+	for want in wants:
+		var milli: int = want[1]
+		var extra := milli / 1000
+		if milli % 1000 > 0 and w.rng_loot.range_int(0, 999) < milli % 1000:
+			extra += 1
+		for e in extra:
+			if used >= order.size():
+				return
+			var price := 0
+			if want[0] == RewardStore.Kind.CHEST:
+				price = t.chest_price(chests, w.floor_index)
+				chests += 1
+			var spot := w.solids.clear_of_doors(layout, layout.item_spots[order[used]])
+			w.add_reward(want[0], spot, price)
+			used += 1
 
 
 ## v0.5.5 AR: `order` with the spots in arena rooms first (start_first among them), then the others (start_first
@@ -150,7 +210,11 @@ static func nearest(w: World) -> int:
 	for i in w.rewards.size():
 		if Arenas.locked(w, i):  # v0.5.5 AR: locked until its arena clears
 			continue
-		var d := Kin.length(w.rewards.pos(i) - p)
+		# v0.9.5 SB: measured to the footprint's surface, not its centre (the hero cannot stand on it)
+		var d := (
+			Kin.length(w.rewards.pos(i) - p)
+			- Solids.reach_bonus(w, Solids.Kind.REWARD, w.rewards.ids[i])
+		)
 		if d <= best_d and (best < 0 or d < best_d):
 			best = i
 			best_d = d
@@ -163,7 +227,7 @@ static func can_afford(w: World, i: int) -> bool:
 
 ## Reward i's price now: its placed price under the prices curse (v0.5.0 EV).
 static func price_of(w: World, i: int) -> int:
-	return Curses.price(w, w.rewards.price[i])
+	return w.rewards.price[i]
 
 
 ## Tick phase 2b: a buffered interact press next to a reward opens it. True if the world is now choosing.
@@ -227,11 +291,11 @@ static func choose(w: World, frame: InputFrame) -> void:
 		if s < 0:
 			return  # skipped: back to the cards
 		replace = s
-	elif w.rewards.rolled[i] == RewardStore.DEALT:  # v0.8.0 N7: any answer takes the dealt card
+	elif w.rewards.rolled[i] == RewardStore.DEALT:  # v0.8.0 N7: any other answer takes the dealt card
 		if frame.pick == InputFrame.PICK_NONE:
 			return
-		if frame.pick == InputFrame.PICK_CANCEL and BuildSlots.needs_swap(w, offer[0]):
-			_resume(w)  # a card that needs the swap may wait: the chest stays shut, unpaid
+		if frame.pick == InputFrame.PICK_CANCEL:
+			_resume(w)  # v0.9.5 CD (owner: "you should be able to reject it"): the chest stays shut, unpaid, card kept
 			return
 		k = 0
 	elif frame.pick == InputFrame.PICK_CANCEL:
@@ -244,6 +308,7 @@ static func choose(w: World, frame: InputFrame) -> void:
 		return
 	_take(w, i, k, replace)
 	if not BossReward.another_pick(w, i):  # v0.8.0 RR: a later loop's boss altar gives more picks
+		w.solids.remove(w, Solids.Kind.REWARD, w.rewards.ids[i])  # v0.9.5 SB: its footprint goes with it
 		w.rewards.remove_at(i)
 	_resume(w)
 

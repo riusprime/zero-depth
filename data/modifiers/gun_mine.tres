@@ -8,8 +8,7 @@ script = ExtResource("2_op")
 op = 0
 stage = 2
 field = &"mine_seconds"
-value = 3.0
-per_level = 0.5
+value = 4.0
 
 [sub_resource type="Resource" id="Op_2"]
 script = ExtResource("2_op")
@@ -19,8 +18,7 @@ form = 7
 hook_trigger = 3
 hook_tags = PackedStringArray("area")
 hook_radius_m = 1.2
-hook_damage_permille = 1000
-per_level = 100.0
+hook_damage_permille = 1200
 hook_effect = &"gun_mine"
 
 [resource]

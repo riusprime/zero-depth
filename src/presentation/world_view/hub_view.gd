@@ -10,7 +10,7 @@ extends Node3D
 ## all the interactive things, looking into the middle … decoration, floor … different walls"): a 16 m plaza, the
 ## runes on the centre medallion's sockets 7.8 m out, every station along the top half turned to the middle, and the
 ## owner's floor, walls, pillar braziers, gate and props (HubDressing). The camera sees more (VIEW_SIZE) and leans a
-## little more toward the hero.
+## little more toward the hero. v0.9.5 (owner: "a bit of zoom at the hub … like a 15%"): 22.5 → 19.1 m.
 ## v0.9.0 HB2 (owner: "click, choose weapon and then the character walks upstairs towards the portal and crosses
 ## it"): walk_into_portal() moves the hero up the machine's steps and through its ring (HubPortalWalk), the portal
 ## flaring and the camera easing in; `walk_finished` when the hero is through (HubSession starts the run's load).
@@ -25,12 +25,14 @@ const CAMERA_LEAN := 0.25
 ## along the top and the spawn.
 const CAMERA_BIAS := Vector2(0.0, 4.4)
 ## v0.9.0 HB3: the hub's view height (m; the run's 17 m showed a 25 m plaza, this one is 32 m).
-const VIEW_SIZE := 22.5
+const VIEW_SIZE := 19.1
 ## v0.9.0 HB2: during the walk the camera eases toward the machine's ring and closes in this much (1: none).
 const WALK_ZOOM := 1.18
 ## A soft fill from the camera's side (no shadows), so the stations' fronts read against the mood's back light.
 const FILL_ENERGY := 0.45
 const RUNE_R := 0.38
+## v0.9.5 RS1: how long (s) the Runic Stone's pulse lasts.
+const PULSE_S := 1.2
 ## v0.9.0 HB3: a lit rune: the owner's stone with its carved grooves glowing (the albedo's dark grooves -> `glow`).
 const RUNE_SHADER := """
 shader_type spatial;
@@ -54,6 +56,8 @@ var rig := IsoRig.new()
 var ink := InkPass.new()
 ## The plan frame: plan (x, y) is local (x, 0, -y) (HubLayout: the plan's north is the screen's top).
 var plan := Node3D.new()
+## v0.10.5 W3-O5 (owner F2): the dark void and fog past the walls.
+var void_view := HubVoid.new()
 var hero := Node3D.new()
 var avatar := PlayerAvatar.new()
 var machine := HubMachine.new()
@@ -78,6 +82,18 @@ var _walk_told := false
 var _rune_dark: Material
 var _rune_lit: ShaderMaterial
 var _t := 0.0
+## v0.9.5 RS1: seconds into the Runic Stone's pulse (-1: none) and whether its veins are lit.
+var _pulse_t := -1.0
+var _veins_on := false
+
+
+## v0.9.5 (seams): the member nodes are parented only by setup(); a view freed without it (a test) frees them too,
+## so none is left an orphan (v0.10.5 W3-S11: the void too).
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_PREDELETE:
+		return
+	for n: Variant in [avatar, machine, ink, stage, rig, plan, hero, void_view]:
+		AvatarBase.free_if_loose(n)
 
 
 ## Builds the hub: `states` from HubFlags.states (state id -> bool, &"runes" -> Array[bool]), `trophies` one bool per
@@ -98,8 +114,9 @@ func setup(
 	stage.mood = mood
 	stage.palette = palette
 	stage.lighting = lighting
+	add_child(ParticleShadowOff.new())  # v0.10.5 PB: the hub's particles cast no shadow
 	add_child(stage)
-	stage.build_lighting_only()
+	stage.build_lighting_only()  # v0.10.5 W3-O5 (owner F2): no biome backdrop; the void and fog (HubVoid)
 	var fill := DirectionalLight3D.new()
 	fill.name = "Fill"
 	fill.rotation_degrees = Vector3(-35.0, IsoRig.YAW_DEG, 0.0)  # along the camera's view
@@ -112,6 +129,19 @@ func setup(
 	add_child(plan)
 	HubDressing.ground(plan, layout.hub)  # v0.9.0 HB3: the owner's floor, walls, pillars, props
 	HubDressing.walls(plan, layout.hub)
+	var tex: Texture2D = (
+		load(HubDressing.GROUND_TEX) if ResourceLoader.exists(HubDressing.GROUND_TEX) else null
+	)
+	void_view.setup(
+		layout.hub.radius_m,
+		tex,
+		HubProps.PLAZA_SEAM.darkened(0.5),
+		HubDressing.GROUND_TILE_M,
+		mood.void_color if mood != null else palette.get("edge", Color(0.05, 0.04, 0.035))
+	)
+	plan.add_child(void_view)
+	HubDressing.training_door(plan, layout.hub)  # v0.10.5 O17: the Training Room's south door
+
 	fires = HubDressing.pillars(plan, layout.hub)
 	HubDressing.props(plan, layout.hub)
 	_build_gate(bool(states.get(&"gate_open", false)))
@@ -176,6 +206,7 @@ func _process(delta: float) -> void:
 	_t += delta
 	for i in fires.size():
 		HubProps.flicker(fires[i], _t, float(i) * 1.7)
+	_advance_pulse(delta)
 	if walk != null:
 		_advance_walk(delta)
 
@@ -450,7 +481,72 @@ static func build_station(
 			return HubStations.wardrobe(root, s.half, s.height_m)
 		&"progression":
 			return HubStations.progression(root, s.half, s.height_m)
-	return HubStations.credits(root, s.half, s.height_m)
+	return HubStations.runic(root, s.half, s.height_m)  # v0.9.5 RS1: the Runic Stone (was the Credits stone)
+
+
+## v0.9.5 RS1 (RUNIC_STONE.md S3): the Runic Stone's veins lit violet (awake) or dark (locked: no glow at all).
+func set_runic(awake: bool) -> void:
+	_veins_on = awake
+	_apply_veins(0.0)
+
+
+## v0.9.5 RS1 (S5): the veins flare once (about 1.2 s) and settle.
+func pulse_runic() -> void:
+	if _veins_on:
+		_pulse_t = 0.0
+
+
+## v0.9.5 RS2 (S6): the full stone's ring of the 24 runes around its base, turning slowly (RuneRingView), shown or gone.
+func set_runic_full(full: bool) -> void:
+	var st: Dictionary = stations.get(&"runic", {})
+	if st.is_empty():
+		return
+	var root := st["root"] as Node3D
+	var ring := root.get_node_or_null("RuneRing")
+	if full and ring == null:
+		ring = RuneRingView.new(float(st.get("radius", 1.0)) + 0.45)
+		ring.position = Vector3(0, 0.07, 0)
+		root.add_child(ring)
+	elif not full and ring != null:
+		ring.queue_free()
+
+
+## Whether the Runic Stone's veins are lit now.
+func runic_lit() -> bool:
+	var ring: Variant = (stations.get(&"runic", {}) as Dictionary).get("ring")
+	return ring is MeshInstance3D and (ring as MeshInstance3D).visible
+
+
+## Where the Runic Stone's top is on the 3D floor (the speech bubble's tail).
+func runic_top() -> Vector3:
+	var st: Dictionary = stations.get(&"runic", {})
+	if st.is_empty():
+		return Vector3.ZERO
+	var top := float(st.get("height", 1.7)) + 0.3
+	return (st["root"] as Node3D).global_position + Vector3(0, top, 0)
+
+
+func _advance_pulse(delta: float) -> void:
+	if _pulse_t < 0.0:
+		return
+	_pulse_t += delta
+	var k := 0.0
+	if _pulse_t >= PULSE_S:
+		_pulse_t = -1.0
+	else:
+		k = sin(PI * _pulse_t / PULSE_S)
+	_apply_veins(k)
+
+
+func _apply_veins(pulse: float) -> void:
+	var st: Dictionary = stations.get(&"runic", {})
+	if st.is_empty():
+		return
+	var ring := st["ring"] as MeshInstance3D
+	ring.visible = _veins_on
+	var energy := (2.2 + 4.0 * pulse) if _veins_on else 0.0
+	(ring.material_override as StandardMaterial3D).emission_energy_multiplier = energy
+	(st["light"] as OmniLight3D).light_energy = (0.5 + 1.6 * pulse) if _veins_on else 0.0
 
 
 func _set_trophy_states(lit: bool, crown: bool) -> void:

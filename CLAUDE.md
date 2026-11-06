@@ -1,8 +1,8 @@
 # CLAUDE.md
 
 A real-time, low-poly isometric action roguelike in **Godot 4.7 (3D)**. The simulation is a deterministic 2D plane
-stepped at 60 Hz, and a fixed orthographic iso camera draws it. The game is untitled; the token `{{TITLE}}`
-stands in for the name in `README.md`, `project.godot` and `export_presets.cfg`.
+stepped at 60 Hz, and a fixed orthographic iso camera draws it. The game is called **Zero Depth** (owner, 2026-10-26; the same in Spanish).
+`config/name` and `export_presets.cfg` carry it; `UserDirMigration` copies the saves from the pre-name folder.
 
 The owner is **Rius**. They decide what the game is; you build it, prove it and report honestly. The process
 copies what worked in the owner's previous game, Deathventory ("DV"). The rules exist because of what didn't:
@@ -146,6 +146,7 @@ godot --headless --path . -s scripts/checks/hitch_probe.gd             # real-ti
 godot --headless --path . -s scripts/bench/sim_bench.gd                # bench → paste into evidence
 godot --path . -s scripts/shots/tour.gd                                # screenshot tour (needs a renderer, not --headless) → build/shots/<version>/<lang>/
 gdformat --check src scripts tests && gdlint src scripts tests         # lint (pip install -r requirements-dev.txt)
+godot --path . -- --perf-log[=light]; python scripts/perf/summarize_perf.py <csv>   # log normal play, F9 marks (docs/process/PERF_LOG.md)
 ```
 
 Also: `godot --headless --path . -s scripts/content/build_patch_notes.gd` (after editing patch notes) and

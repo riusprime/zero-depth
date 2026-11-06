@@ -9,10 +9,15 @@ extends RefCounted
 ##   the same place in the wand; a target already held, or met twice, levels up instead (WAND.md rule 6): the levels
 ##   add (an ability its level, a legendary card CardLevels.MAX_LEVEL, any other card 1), at most MAX_LEVEL;
 ## - a card without a match (an empty target, or one not in the data yet) is refunded as shards: what the shop's
-##   salvage pays for it on this floor (ShopTable.sell_price by its rarity for an item; ability_refund_per_level × its
-##   level for an ability; Shop.sell_list's numbers).
+##   salvage paid for it on this floor (refund_of; v0.10.5 W3-O9 removed selling from the shop, so its two numbers,
+##   REFUND_PERMILLE and ABILITY_REFUND_PER_LEVEL, live here, equal to the data they came from).
 ## A world without the wand table (a lab) or without rows changes nothing. Deterministic, idempotent (a migrated
 ## build holds no retired card), no randomness (EI-05).
+
+## The refund of a card without a match (refund_of): the old salvage's share of an item's price and an ability's
+## shards per level (data/shop/terminal.tres sell_share 0.4, ability_refund_per_level 10 until v0.10.5 W3-O9).
+const REFUND_PERMILLE := 400
+const ABILITY_REFUND_PER_LEVEL := 10
 
 
 ## Rewrites `w`'s build (class doc). Returns the shards refunded (0 when nothing was retired).
@@ -115,12 +120,16 @@ static func _levels(w: World, code: int) -> int:
 	return 1
 
 
-## The shards a card without a match refunds: the shop's salvage price for it on this floor (Shop.sell_list).
+## The shards a card without a match refunds: what the shop's salvage paid for it on this floor before v0.10.5 W3-O9
+## (an item: REFUND_PERMILLE of its rarity's price under the floor step alone, a legendary as an epic; an ability:
+## ABILITY_REFUND_PER_LEVEL x its level).
 static func refund_of(w: World, code: int) -> int:
-	var st := w.shop_table if w.shop_table != null else ShopTable.new()
 	if Offers.type_of(code) == Offers.ABILITY:
-		return st.ability_refund_per_level * maxi(1, Abilities.level_of(w, Offers.ability_of(code)))
-	return st.sell_price(Shop.rarity(w, code), w.floor_index)
+		return ABILITY_REFUND_PER_LEVEL * maxi(1, Abilities.level_of(w, Offers.ability_of(code)))
+	var st := w.shop_table if w.shop_table != null else ShopTable.new()
+	var r := clampi(Shop.rarity(w, code), 0, mini(st.rarity_prices.size() - 1, 2))
+	var base := maxi(1, ShopTable.scaled(st.rarity_prices[r], st.base_step_permille(w.floor_index)))
+	return ShopTable.scaled(base, REFUND_PERMILLE)
 
 
 ## Card `code` leaves the build: an ability with its slot state (Abilities.remove_slot), an item with its combos.

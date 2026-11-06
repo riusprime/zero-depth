@@ -70,7 +70,9 @@ static func setup(w: World, t: LockdownTable, floor_index: int) -> void:
 ## without a table or a marked room.
 static func begin(w: World, t: LockdownTable) -> void:
 	var f := w.floor_layout
-	if f == null or t == null or f.lockdown_rooms.is_empty():
+	if f == null or t == null:
+		return
+	if f.lockdown_rooms.is_empty() and not (t.takes_arenas and not f.arena_rooms.is_empty()):
 		return
 	var s := LockdownState.new()
 	s.table = t
@@ -88,6 +90,19 @@ static func taken_rooms(w: World) -> PackedInt32Array:
 		out.append(w.floor_layout.room_of(w.gamble_pos))
 	out.append_array(Shrines.taken_rooms(w))  # v0.9.0 HF: the fountain's room
 	return out
+
+
+## v0.9.5 DR (owner Q6): whether the floor's arena rooms are locked rooms (rules 20+: the Lockdown table takes them).
+static func takes_arenas(w: World) -> bool:
+	return w.lockdown != null and w.lockdown.table.takes_arenas
+
+
+## Whether `room` is a locked room on this floor: a Lockdown room, or (rules 20+) an arena room.
+static func is_locked_room(w: World, room: int) -> bool:
+	var f := w.floor_layout
+	if w.lockdown == null or f == null or room < 0:
+		return false
+	return f.lockdown_rooms.has(room) or (takes_arenas(w) and f.arena_rooms.has(room))
 
 
 static func is_open(w: World, room: int) -> bool:
@@ -113,7 +128,7 @@ static func advance(w: World) -> void:
 	var f := w.floor_layout
 	if not s.sealed():
 		var room := f.room_of(w.player_pos())
-		if room >= 0 and f.lockdown_rooms.has(room) and not s.cleared.has(room):
+		if is_locked_room(w, room) and not s.cleared.has(room):
 			_seal(w, room)
 		return
 	if w.tick - s.sealed_tick >= s.table.cap_ticks:
@@ -125,6 +140,10 @@ static func advance(w: World) -> void:
 	if s.next_wave_tick >= 0:
 		if w.tick >= s.next_wave_tick:
 			_spawn_wave(w)
+			if s.table.burst_gap_ticks > 0 and s.wave < s.waves:  # v0.9.5 DR: the next formation, whoever is left
+				s.next_wave_tick = w.tick + s.table.burst_gap_ticks
+		elif s.wave > 0 and not s.later_kinds.is_empty():
+			_refill(w)
 		return
 	if not s.later_kinds.is_empty():  # v0.9.0 CF: the formation's rest comes in as earlier ones die
 		_refill(w)
@@ -141,10 +160,12 @@ static func _seal(w: World, room: int) -> void:
 	var s := w.lockdown
 	var t := s.table
 	s.room = room
-	s.kind = LockdownRooms.kind_of(w.floor_layout, room)
+	s.kind = maxi(0, LockdownRooms.kind_of(w.floor_layout, room))  # v0.9.5 DR: an arena room is a Normal one
 	s.sealed_tick = w.tick
 	s.wave = 0
 	s.waves = maxi(1, t.waves)
+	if t.burst_gap_ticks > 0:  # v0.9.5 DR (Q6): one burst, two formations 1 s apart
+		s.waves = maxi(1, t.burst_waves)
 	if s.kind == LockdownTable.Kind.ELITE:  # v0.9.0 EL (Q21): one formation, the elite and its escort
 		s.waves = 1
 	s.members = PackedInt32Array()
@@ -199,7 +220,7 @@ static func _spawn_wave(w: World) -> void:
 			break
 		kinds.append(w.spawner.kinds[open[pick]])
 	# v0.9.0 CF: as many as the room holds at once stand in a formation of that many; the rest wait (_refill)
-	var now := ClosedFights.first_batch(w, kinds, at_once(w))
+	var now := _batch(w, kinds)
 	var first := spots if now >= kinds.size() else formation_spots(w, shape, now)
 	for k in kinds.size():
 		if k < now:
@@ -207,6 +228,27 @@ static func _spawn_wave(w: World) -> void:
 		else:
 			s.later_kinds.append(kinds[k])
 			s.later_pos.append(spots[k])
+
+
+## How many of the new formation's `kinds` come out now: as many as the room holds at once beside the fighters still
+## standing (v0.9.5 DR: a burst's second formation arrives while the first fights; none while members wait).
+static func _batch(w: World, kinds: PackedInt32Array) -> int:
+	var s := w.lockdown
+	var out := 0
+	if s.wave > 1:
+		if not s.later_kinds.is_empty():
+			return 0
+		for i in fighters(w):
+			out += ClosedFights.weight(w, i)
+	var limit := at_once(w)
+	var n := 0
+	for k in kinds:
+		var wt := ClosedFights.queued_weight(w, k)
+		if not ClosedFights.may_add(out, wt, limit):
+			break
+		out += wt
+		n += 1
+	return n
 
 
 ## v0.9.0 CF: how many enemies (by weight) the sealed room holds at once: its floor area over area_per_enemy_m2.
@@ -452,10 +494,16 @@ static func read(w: World) -> Dictionary:
 	var f := w.floor_layout
 	if s == null or f == null:
 		return {"active": false}
+	var rooms := f.lockdown_rooms.duplicate()
+	var kinds := f.lockdown_kinds.duplicate()
+	if takes_arenas(w):  # v0.9.5 DR: the arena rooms are locked rooms (Normal)
+		for r in f.arena_rooms:
+			rooms.append(r)
+			kinds.append(LockdownTable.Kind.NORMAL)
 	return {
 		"active": true,
-		"rooms": f.lockdown_rooms.duplicate(),
-		"kinds": f.lockdown_kinds.duplicate(),
+		"rooms": rooms,
+		"kinds": kinds,
 		"sealed": s.room,
 		"kind": s.kind,
 		"sealed_tick": s.sealed_tick,

@@ -1,11 +1,11 @@
 keys,en,es
-UI_TITLE,{{TITLE}},{{TITLE}}
+UI_TITLE,Zero Depth,Zero Depth
 UI_PLAY,Play,Jugar
 UI_CONTINUE,Continue,Continuar
 UI_OPTIONS,Options,Opciones
 UI_CREDITS,Credits,Créditos
 UI_GALLERIES,Galleries,Galerías
-UI_QUIT,Quit,Salir
+UI_QUIT,Exit,Salir
 UI_PAUSED,PAUSED,PAUSA
 UI_RESUME,Resume,Continuar
 UI_MAIN_MENU,Main menu,Menú principal
@@ -41,6 +41,8 @@ ENEMY_CHARGER,Charger,Embestidor
 ENEMY_WARDEN,Warden,Guardián
 ENEMY_NEEDLE,Needle,Aguja
 HUD_HP,HP %d / %d,PV %d / %d
+HUD_DANGER_TIER,×%d,×%d
+HUD_DEPTHS_ANSWER,The depths answer ×%s,Las profundidades responden ×%s
 HUD_DASH,Dash,Esprint
 HUD_UTILITY,Utility,Habilidad
 HUD_WAVE,Wave %d / %d,Oleada %d / %d
@@ -59,30 +61,14 @@ UI_OPT_SKETCH,Sketch,Boceto
 UI_OPT_PAPER,Sketch + paper,Boceto + papel
 GATE_SEALED,Sealed.,Sellada.
 GATE_NAME,Gate,Puerta
-ITEM_LONG_EDGE,Long Edge,Filo Largo
-ITEM_LONG_EDGE_DESC,Your blade reaches farther.,Tu espada llega más lejos.
-ITEM_TWIN_ARC,Twin Arc,Arco Gemelo
-ITEM_TWIN_ARC_DESC,Your swings strike twice.,Tus tajos golpean dos veces.
-ITEM_EMBER_EDGE,Ember Edge,Filo de Brasa
-ITEM_EMBER_EDGE_DESC,Your hits set enemies on fire.,Tus golpes queman a los enemigos.
-ITEM_SPLINTER_SHOT,Splinter Shot,Disparo Astillado
-ITEM_SPLINTER_SHOT_DESC,Shoot a fan of bolts.,Disparas en abanico.
-ITEM_RAPID_COIL,Rapid Coil,Bobina Rápida
-ITEM_RAPID_COIL_DESC,Shoot faster.,Disparas más rápido.
-ITEM_RICOCHET_CORE,Ricochet Core,Núcleo de Rebote
-ITEM_RICOCHET_CORE_DESC,Your shots bounce off walls.,Tus disparos rebotan en las paredes.
 ITEM_KINETIC_DASH,Kinetic Dash,Impulso Cinético
 ITEM_KINETIC_DASH_DESC,Dash through enemies to hurt them.,Esquiva a través de los enemigos para dañarlos.
-ITEM_OVERCHARGE,Overcharge,Sobrecarga
-ITEM_OVERCHARGE_DESC,Your finisher hits harder and shocks.,Tu remate golpea más fuerte y electrocuta.
 ITEM_VAMPIRIC_CORE,Vampiric Core,Núcleo Vampírico
 ITEM_VAMPIRIC_CORE_DESC,Kills heal you.,Cada baja te cura.
-ITEM_STATIC_CHAIN,Static Chain,Cadena Estática
-ITEM_STATIC_CHAIN_DESC,Your shots shock and jump to other enemies.,Tus disparos electrocutan y saltan a otros.
 ITEM_MOMENTUM,Momentum,Inercia
 ITEM_MOMENTUM_DESC,Attack right after a dash to hit harder.,Ataca justo después de esquivar y pega más fuerte.
 ITEM_FROST_CORE,Frost,Escarcha
-ITEM_FROST_CORE_DESC,Your hits slow and freeze enemies.,Tus golpes ralentizan y congelan.
+ITEM_FROST_CORE_DESC,Freezes. Lv2: frozen take more. Lv3: shatters.,Congela. Nv2: congelados reciben más. Nv3: estalla.
 ITEM_THORN_MANTLE,Thorn Mantle,Manto de Espinas
 ITEM_THORN_MANTLE_DESC,Getting hit fires bolts all around you.,Al recibir un golpe disparas a tu alrededor.
 ITEM_EXECUTIONER,Executioner,Verdugo
@@ -123,46 +109,28 @@ CAUSE_SIEGE_CROSS,The Siege Engine's turret cross burned you down.,La cruz de to
 CAUSE_SIEGE_GRID,The Siege Engine's mortars caught you.,Los morteros de The Siege Engine te pillaron.
 UI_DEV_SPAWN_BOSS,Spawn boss,Invocar jefe
 UI_DEV_NEXT_BOSS,Next boss,Siguiente jefe
-REWARD_OPEN_ALTAR,[E / X] Open the altar,[E / X] Abrir el altar
-REWARD_OPEN_CHEST,[E / X] Open the chest · %d shards,[E / X] Abrir el cofre · %d fragmentos
+REWARD_OPEN_ALTAR,Open,Abrir
+REWARD_OPEN_CHEST,Open · %d ◆,Abrir · %d ◆
 REWARD_TOO_POOR,Not enough shards · %d / %d,No tienes fragmentos suficientes · %d / %d
 PICK_TITLE_ALTAR,Altar · choose one,Altar · elige uno
 PICK_TITLE_CHEST,Chest · choose one for %d,Cofre · elige uno por %d
 PICK_HINT,"←/→ or 1-3 to choose · Enter or A to take · Esc or B to leave it for later","←/→ o 1-3 para elegir · Intro o A para cogerlo · Esc o B para dejarlo para luego"
 RARITY_COMMON,Common,Común
 RARITY_RARE,Rare,Raro
-ITEM_CINDER_SHOT,Cinder Shot,Disparo de Ceniza
-ITEM_CINDER_SHOT_DESC,Your shots set enemies on fire.,Tus disparos queman a los enemigos.
 ITEM_WILDFIRE,Wildfire,Incendio
 ITEM_WILDFIRE_DESC,Kills spread the fire.,Las bajas propagan el fuego.
-ITEM_CONDUCTOR,Conductor,Conductor
-ITEM_CONDUCTOR_DESC,Your swings shock and jump to other enemies.,Tus tajos electrocutan y saltan a otros.
-ITEM_SERRATED_EDGE,Serrated Edge,Filo Dentado
-ITEM_SERRATED_EDGE_DESC,Your swings bleed. Dash through to burst them.,Tus tajos desangran. Esquiva a través para reventarlos.
-ITEM_BARBED_BOLTS,Barbed Bolts,Proyectiles Lacerantes
-ITEM_BARBED_BOLTS_DESC,Your shots make enemies bleed.,Tus disparos desangran a los enemigos.
-ITEM_GLACIAL_EDGE,Glacial Edge,Filo Glacial
-ITEM_GLACIAL_EDGE_DESC,Your swings chill and freeze.,Tus tajos enfrían y congelan.
 ITEM_COLD_SNAP,Cold Snap,Ola de Frío
 ITEM_COLD_SNAP_DESC,Dashing chills enemies. Frozen ones take more.,Al esquivar enfrías. Los congelados sufren más.
 ITEM_BULWARK,Bulwark,Baluarte
 ITEM_BULWARK_DESC,Blocking powers up your next swing.,Bloquear potencia tu siguiente tajo.
-ITEM_COMBO_PLASMA_ARC,Plasma Arc,Arco de Plasma
-ITEM_COMBO_PLASMA_ARC_DESC,Shocking a burning enemy spreads the fire.,Electrocutar a un enemigo en llamas propaga el fuego.
 ITEM_COMBO_SHATTER_DASH,Shatter Dash,Esprint Quebrador
 ITEM_COMBO_SHATTER_DASH_DESC,Dash through frozen enemies to shatter them.,Esquiva a través de un congelado y rómpelo.
-ITEM_COMBO_RESONANCE,Resonance,Resonancia
-ITEM_COMBO_RESONANCE_DESC,Charged swings send a second wave.,Tus tajos cargados lanzan otra onda.
-ITEM_COMBO_SHRAPNEL_STORM,Shrapnel Storm,Tormenta de Metralla
-ITEM_COMBO_SHRAPNEL_STORM_DESC,Bouncing shots burst into shards.,Los disparos que rebotan estallan en esquirlas.
 ITEM_COMBO_BLOOD_HARVEST,Blood Harvest,Cosecha de Sangre
 ITEM_COMBO_BLOOD_HARVEST_DESC,Executions burst in blood and heal you.,Las ejecuciones estallan en sangre y te curan.
 ITEM_COMBO_SPIKED_PHASE,Spiked Phase,Fase Espinosa
 ITEM_COMBO_SPIKED_PHASE_DESC,Phase Strike also fires your thorns.,Golpe de Fase también lanza tus espinas.
 ITEM_COMBO_SLIPSTREAM,Slipstream,Estela
 ITEM_COMBO_SLIPSTREAM_DESC,Momentum hits recharge your dash.,Los golpes de Inercia recargan tu esquiva.
-ITEM_COMBO_FROZEN_BASTION,Frozen Bastion,Bastión Helado
-ITEM_COMBO_FROZEN_BASTION_DESC,Blocking chills the attacker.,Bloquear enfría al atacante.
 UI_COMBO_UNLOCKED,Combo,Combo
 BIOME_NIGHT_ROCKS,Night Rocks,Rocas Nocturnas
 BIOME_RED_CANYON,Red Canyon,Cañón Rojo
@@ -217,21 +185,13 @@ ITEM_THERMAL_EDGE,Thermal Edge,Filo Térmico
 ITEM_THERMAL_EDGE_DESC,You run Hot sooner.,Entras en Caliente antes.
 ITEM_MELTDOWN,Meltdown,Fusión
 ITEM_MELTDOWN_DESC,Overheating explodes instead of stalling you.,Sobrecalentarte explota en vez de bloquearte.
-ITEM_CLUSTER_PAYLOAD,Cluster Payload,Carga de racimo
-ITEM_CLUSTER_PAYLOAD_DESC,Your bombs split into smaller bombs.,Tus bombas se dividen en bombas más pequeñas.
-ITEM_OVERCLOCKED_DRONE,Overclocked Drone,Dron sobrealimentado
-ITEM_OVERCLOCKED_DRONE_DESC,Your drones fire faster the hotter you are.,Tus drones disparan más rápido con más calor.
-ITEM_RAZOR_ORBIT,Razor Orbit,Órbita afilada
-ITEM_RAZOR_ORBIT_DESC,Blade Dance makes enemies bleed.,La Danza de espadas desangra a los enemigos.
-ITEM_AFTERIMAGE,Blink Echo,Eco del Salto
-ITEM_AFTERIMAGE_DESC,Blinking leaves an echo that explodes.,Al teletransportarte dejas un eco que estalla.
 HUD_HEAT,HEAT,CALOR
 HUD_HEAT_HOT,HOT,CALIENTE
 HUD_HEAT_OVERCLOCK,OVERCLOCK,SOBRECARGA
 HUD_HEAT_OVERHEAT,OVERHEAT,SOBRECALENTADO
 HUD_HEAT_VENT,VENT READY,PURGA LISTA
 HUD_HEAT_VENT_BLINK,VENT READY,PURGA LISTA
-UI_GAMBLE_USE,[E / X] Tempt fortune · %d shards,[E / X] Tentar a la fortuna · %d fragmentos
+UI_GAMBLE_USE,Gamble · %d ◆,Apostar · %d ◆
 UI_GAMBLE_SPENT,Spent,Agotado
 UI_GAMBLE_BLOCKED,Spent,Agotado
 UI_GAMBLE_SPENT_TAG,Spent,Agotado
@@ -365,12 +325,6 @@ ABILITY_COMBO_SWORD,Combo Sword,Combo de espada
 ABILITY_COMBO_SWORD_DESC,Increase damage of your combo and Lunge Cleave.,Aumenta el daño de tu combo y estocada.
 ABILITY_PULSE_GUN,Pulse Gun,Lanzapulsos
 ABILITY_PULSE_GUN_DESC,Increase the damage of your weapon and Scatter Blast.,Aumenta el daño de tus disparos y ráfaga.
-ABILITY_BOMB_LOBBER,Bomb Lobber,Lanzabombas
-ABILITY_BOMB_LOBBER_DESC,Throw bombs every 4th attack.,Lanza una bomba cada 4 ataques.
-ABILITY_DRONE_BUDDY,Drone Buddy,Compidron
-ABILITY_DRONE_BUDDY_DESC,A drone follows you and copies your attack.,Un pequeño dron te sigue y copia tu ataque.
-ABILITY_ORBIT_BLADES,Blade Dance,Danza de espadas
-ABILITY_ORBIT_BLADES_DESC,Three copies of your attack orbit you.,Tres copias de tu ataque orbitan a tu alrededor.
 ABILITY_BLINK,Blink,Destello
 ABILITY_BLINK_DESC,Teleport forward.,Teletranspórtate hacia delante.
 ABILITY_AEGIS,Aegis,Égida
@@ -411,6 +365,20 @@ STAT_FAST_HANDS,Fast Hands,Manos rápidas
 STAT_FAST_HANDS_DESC,-%s%% ability cooldowns,-%s %% de recarga de habilidades
 STAT_LIFESPROUT,Lifesprout,Brote vital
 STAT_LIFESPROUT_DESC,Kills may drop a heal orb: %s%% (+%s%% per extra card),Las bajas pueden soltar un orbe de curación: %s %% (+%s %% por carta extra)
+STAT_VENT_MEND,Vent Mend,Purga sanadora
+STAT_VENT_MEND_DESC,A Vent that hits an enemy heals %s%% max HP,Una purga que alcanza a un enemigo cura un %s %% de vida máxima
+STAT_HEAT_SHIELD,Heat Shield,Escudo térmico
+STAT_HEAT_SHIELD_DESC,-%s%% damage taken while HOT,-%s %% de daño recibido mientras estás CALIENTE
+STAT_ADRENALINE,Adrenaline,Adrenalina
+STAT_ADRENALINE_DESC,A kill within 3 m: +%s%% move speed for 1.5 s,Una baja a menos de 3 m: +%s %% de velocidad de movimiento durante 1.5 s
+STAT_CLOSE_QUARTERS,Close Quarters,Cuerpo a cuerpo
+STAT_CLOSE_QUARTERS_DESC,+%s%% damage to enemies within 2 m,+%s %% de daño a enemigos a menos de 2 m
+STAT_THIRD_STRIKE,Third Strike,Tercer golpe
+STAT_THIRD_STRIKE_DESC,"Every third attack in a row (1 s apart at most) deals +%s%%","Cada tercer ataque seguido (como mucho a 1 s) hace +%s %%"
+STAT_REFLEX,Reflex,Reflejos
+STAT_REFLEX_DESC,A kill while your dash recharges cuts %s%% of its cooldown,Una baja mientras tu esquiva se recarga le quita un %s %% de su recarga
+STAT_SCAVENGER,Scavenger,Carroñero
+STAT_SCAVENGER_DESC,Critical kills pay +%s%% shards,Las bajas críticas dan +%s %% de fragmentos
 RARITY_EPIC,Epic,Épico
 UI_CARD_ABILITY_NEW,New ability,Habilidad nueva
 UI_CARD_ABILITY_LEVEL,Level %d,Nivel %d
@@ -430,28 +398,6 @@ CAUSE_SPLITTER,A Splitter's swipe cut you down.,El zarpazo de un Divisor te abat
 CAUSE_SHIELD_BEARER,A Shield Bearer's bash crushed you.,El golpe de escudo de un Portaescudos te aplastó.
 CAUSE_MINE_LAYER,A Mine Layer's mine blew you up.,Una mina de un Minador te hizo volar.
 CAUSE_SNIPER,A Sniper's shot took you down.,El disparo de un Francotirador te abatió.
-ABILITY_ARC_FIELD,Arc Field,Electromagnetismo
-ABILITY_ARC_FIELD_DESC,Your attacks leave a field where they land. Shock enemies.,Tus ataques crean un campo de choque al impactar. Conmociona enemigos.
-ABILITY_FROST_NOVA,Frost Nova,Nova de escarcha
-ABILITY_FROST_NOVA_DESC,Every 4 deaths throw a frost ring.,Cada 4 muertes lanza un anillo de escarcha.
-ABILITY_FLAME_TRAIL,Flame Trail,Senda Ígnea
-ABILITY_FLAME_TRAIL_DESC,Leave a flame trail after dashing or attacking.,Deja un rastro de llamas al esquivar o atacar.
-ABILITY_COMBO_STORM_BOMBS,Storm Bombs,Bombas de Tormenta
-ABILITY_COMBO_STORM_BOMBS_DESC,Your bombs chain lightning.,Tus bombas lanzan rayos en cadena.
-ABILITY_COMBO_NAPALM_DRONE,Napalm Drone,Dron de Napalm
-ABILITY_COMBO_NAPALM_DRONE_DESC,Drone shots set the ground on fire.,Los disparos del dron incendian el suelo.
-ABILITY_COMBO_GLACIER_RING,Glacier Ring,Anillo Glaciar
-ABILITY_COMBO_GLACIER_RING_DESC,Your orbiting blades chill enemies.,Tus espadas en órbita enfrían a los enemigos.
-ABILITY_COMBO_BLINK_CHARGE,Blink Charge,Carga de Destello
-ABILITY_COMBO_BLINK_CHARGE_DESC,Blinking leaves bombs behind.,Al teletransportarte dejas bombas atrás.
-ABILITY_COMBO_BLADE_DANCE,Whirling Steel,Torbellino de acero
-ABILITY_COMBO_BLADE_DANCE_DESC,Landing swings spreads your orbiting blades.,Tus tajos abren las espadas que te rodean.
-ABILITY_COMBO_WINGMAN,Wingman,Escolta
-ABILITY_COMBO_WINGMAN_DESC,Your drones fire with every shot.,Tus drones disparan contigo.
-ABILITY_COMBO_SUPERCONDUCTOR,Superconductor,Superconductor
-ABILITY_COMBO_SUPERCONDUCTOR_DESC,Lightning hits chilled enemies harder.,Los rayos pegan más fuerte a los enemigos helados.
-ABILITY_COMBO_EMBER_WARD,Ember Ward,Guarda de Brasas
-ABILITY_COMBO_EMBER_WARD_DESC,Blocking bursts fire around you.,Bloquear hace estallar fuego a tu alrededor.
 HUD_OVERRUN,OVERRUN,ASEDIO
 HUD_OVERRUN_CLEARED,Overrun cleared,Asedio superado
 MAP_LEGEND_OVERRUN,"Overrun (optional, harder)","Asedio (opcional, más difícil)"
@@ -500,6 +446,7 @@ CAUSE_TIDECALLER_PULL,The Tidecaller's tide dragged you into its rings.,La marea
 CAUSE_TIDECALLER_RINGS,The Tidecaller's bubble rings closed over you.,Los anillos de burbujas de The Tidecaller se cerraron sobre ti.
 CAUSE_TIDECALLER_UNDERTOW,The Tidecaller's undertow pulled you under.,La resaca de The Tidecaller te hundió.
 CAUSE_TIDECALLER_SLAM,The Tidecaller's shell crushed you.,El caparazón de The Tidecaller te aplastó.
+CAUSE_TIDECALLER_WAVE,The Tidecaller's wave swept you off your feet.,La ola de The Tidecaller te arrolló.
 CAPTION_TELEGRAPH_TIDECALLER,[Warning: the Tidecaller's bell tolls],[Aviso: la campana de The Tidecaller tañe]
 BOSS_TWIN_WARDENS,The Twin Wardens,The Twin Wardens
 BOSS_TWIN_WARDENS_DESC,"Two stone knights, one life, one burning chain.","Dos caballeros de piedra, una sola vida, una cadena ardiente."
@@ -555,16 +502,6 @@ EVENT_WHISPERING_DEEP,Whispering Deep,Abismo susurrante
 EVENT_WHISPERING_DEEP_DESC,"Down here the dark speaks, and it bargains.","Aquí abajo la oscuridad habla, y negocia."
 EVENT_WHISPERING_DEEP_LISTEN,Listen to the voice,Escuchar la voz
 EVENT_WHISPERING_DEEP_BLEED,Feed it your blood,Darle tu sangre
-CURSE_SWIFT_FOES,Swift Foes,Enemigos veloces
-CURSE_SWIFT_FOES_DESC,Enemies move faster,Los enemigos son más rápidos
-CURSE_WITHERING,Withering,Marchitamiento
-CURSE_WITHERING_DESC,You heal less,Te curas menos
-CURSE_LEAKY_CORE,Leaky Core,Núcleo con fugas
-CURSE_LEAKY_CORE_DESC,Your heat fades faster,Tu calor se disipa antes
-CURSE_SWARM_CALL,Swarm Call,Llamada del enjambre
-CURSE_SWARM_CALL_DESC,More enemies in every pack,Más enemigos en cada grupo
-CURSE_PRICE_GOUGE,Price Gouge,Precios abusivos
-CURSE_PRICE_GOUGE_DESC,Everything costs more,Todo cuesta más
 CURSE_ROOTED,Rooted,Enraizado
 CURSE_ROOTED_DESC,You can't dash,No puedes esprintar
 CURSE_ROOTED_UP,Sometimes dodge a hit,A veces esquivas un golpe
@@ -589,11 +526,12 @@ CURSE_BRITTLE_UP,Move faster,Te mueves más rápido
 UI_CURSE_UPSIDE,Trade-off,Compensación
 UI_CARD_CURSE,Curse,Maldición
 HUD_DODGE,DODGE,ESQUIVA
+STATUS_STACK_COUNT,x%d,x%d
 HUD_STUNNED,STUNNED,ATURDIDO
 PICK_TITLE_CORE,Stolen core · take it,Núcleo robado · tómalo
 PICK_TITLE_ELITE_DROP,Elite's card · take it,Carta de élite · tómala
 UI_DEV_SPAWN_ELITE,Spawn the next elite,Invocar la siguiente élite
-UI_EVENT_OPEN,[E / X] Inspect: %s,[E / X] Examinar: %s
+UI_EVENT_OPEN,Inspect · %s,Examinar · %s
 UI_EVENT_HINT,←/→ or 1-3 to choose · Enter or A to take · Esc or B to leave,←/→ o 1-3 para elegir · Intro o A para aceptar · Esc o B para irte
 UI_EVENT_COST,Cost,Coste
 UI_EVENT_REWARD,Reward,Recompensa
@@ -624,12 +562,15 @@ UI_RECAP_THREAT,Threat: %d (peak %d),Amenaza: %d (máximo %d)
 MAP_LEGEND_EVENT,Event,Evento
 CAPTION_CURSE,[curse],[maldición]
 CAPTION_AMBUSH,[ambush],[emboscada]
+CAPTION_GAMBLE_FAIL,[shrine fails],[el santuario falla]
+CAPTION_GAMBLE_WIN,[shrine pays out],[el santuario premia]
 UI_DEV_CURSE_CHEST,Curse next chest,Maldecir el próximo cofre
-SHOP_PROMPT,[E / X] Open the shop,[E / X] Abrir la tienda
-BOSS_DOOR_PROMPT,[E / X] Open the door,[E / X] Abrir la puerta
-APPROACH_PYLON_PROMPT,[E / X] Awaken,[E / X] Despertar
-TIMED_SWITCH_PROMPT,[E / X] Activate,[E / X] Activar
-RUNE_PILLAR_PROMPT,[E / X] Turn,[E / X] Girar
+SHOP_PROMPT,Shop,Comprar
+BOSS_DOOR_PROMPT,Open,Abrir
+APPROACH_PYLON_PROMPT,Awaken,Despertar
+TIMED_SWITCH_PROMPT,Activate,Activar
+TIMED_LEVER_PROMPT,Pull,Tirar
+RUNE_PILLAR_PROMPT,Turn,Girar
 CAUSE_EXPLOSIVE_BARREL,An explosive barrel,Un barril explosivo
 CAUSE_LOCKDOWN_HAZARD,A Lockdown's hazard,Un peligro del Bloqueo
 HUD_LOCKDOWN,LOCKDOWN,BLOQUEO
@@ -644,23 +585,18 @@ SHOP_HEAL,Heal +%d HP,Curar +%d PV
 SHOP_HEAL_USED,Already healed here,Ya te curaste aquí
 SHOP_HEAL_FULL,Your HP is full,Tienes la vida al máximo
 SHOP_REROLL,Reroll the stock,Renovar el surtido
-SHOP_CLEANSE,Lift your latest curse,Quitar tu última maldición
-SHOP_SALVAGE,Salvage,Desguace
-SHOP_SALVAGE_NONE,Nothing to salvage yet,Aún no hay nada que desguazar
 SHOP_BUYS_LEFT,Buys left: %d,Compras restantes: %d
 SHOP_BUYS_DONE,No buys left (%d/%d),Sin compras (%d/%d)
 SHOP_REROLL_NONE,Nothing left to reroll,No queda nada que renovar
-SHOP_SELL_STAT,%s · %d held,%s · %d en tu poder
-SHOP_SELL_ABILITY,Frees the slot · level %d,Libera la ranura · nivel %d
-SHOP_HINT,"Arrows or 1-4 to choose · Enter or A to buy or sell · Esc or B to leave","Flechas o 1-4 para elegir · Intro o A para comprar o vender · Esc o B para salir"
+SHOP_HINT,"Arrows or 1-4 to choose · Enter or A to buy · Esc or B to leave","Flechas o 1-4 para elegir · Intro o A para comprar · Esc o B para salir"
 MAP_LEGEND_SHOP,Shop,Tienda
 HUD_FLOOR_DEEP,Floor %d · Deep · %s,Piso %d · Profundo · %s
 HUD_FLOOR_CARD_DEEP,Floor %d · Deep,Piso %d · Profundo
 HUD_SHARDS_HALVED,-%d shards,-%d fragmentos
 HUD_MAX_HP_GROWN,Max HP +%d,Vida máxima +%d
 HUD_PORTALS_OPEN,Two portals are open.,Hay dos portales abiertos.
-REWARD_OPEN_EPIC_ALTAR,[E / X] Open the epic altar,[E / X] Abrir el altar épico
-REWARD_OPEN_DROP,[E / X] Take the card,[E / X] Tomar la carta
+REWARD_OPEN_EPIC_ALTAR,Open,Abrir
+REWARD_OPEN_DROP,Take,Tomar
 PICK_TITLE_EPIC_ALTAR,Epic altar · choose one,Altar épico · elige uno
 MAP_LEGEND_PORTAL_DEEP,Deep portal (violet in red),Portal profundo (violeta en rojo)
 UI_RECAP_ROUTE,Route: %s,Ruta: %s
@@ -674,6 +610,7 @@ PHASE_SWARM,The swarm,El enjambre
 PHASE_PEAK,Full horde,Horda completa
 HUD_NEW_ENEMY,New: %s,Nuevo: %s
 UI_DEV_NEXT_PHASE,Next difficulty phase,Siguiente fase de dificultad
+UI_DEV_ENEMY_VAT,Enemy VAT,VAT de enemigos
 HUD_ARENA,ARENA,ARENA
 HUD_ARENA_WAVE,Wave %d / %d · %d left,Oleada %d / %d · quedan %d
 HUD_ARENA_CLEARED,Arena cleared,Arena superada
@@ -691,6 +628,7 @@ UI_SWAP_SKIP_KEY,Esc,Esc
 UI_SWAP_LEVEL,Level %d,Nivel %d
 UI_DEV_GRANT_MOD,Grant attack mod,Dar mod de ataque
 UI_PAUSE_RUN,Floor %d · %02d:%02d · %d kills · %d shards,Piso %d · %02d:%02d · %d bajas · %d fragmentos
+UI_PAUSE_DEPTHS,"The depths answer ×%s: your build is strong, so this floor's enemies have more HP and hit harder.","Las profundidades responden ×%s: tu construcción es fuerte, así que los enemigos de este piso tienen más vida y pegan más fuerte."
 UI_PAUSE_HINT,Enter / A to choose · Esc / B to resume,Intro / A para elegir · Esc / B para continuar
 UI_MENU_HINT,Enter / A to choose,Intro / A para elegir
 HUD_KEY_MOUSE_LEFT,LMB,Clic izq.
@@ -727,98 +665,43 @@ HUD_KEY_PAD_RS_LEFT,RS left,SD izq.
 HUD_KEY_PAD_RS_RIGHT,RS right,SD der.
 HUD_KEY_PAD_OTHER,Pad,Mando
 ITEM_STORM_CORE,Lightning,Rayo
-ITEM_STORM_CORE_DESC,Your hits chain lightning.,Tus golpes lanzan rayos en cadena.
+ITEM_STORM_CORE_DESC,"Chains. Lv2: +1 jump. Lv3: every 6th hit, a strike.","Encadena. Nv2: +1 salto. Nv3: cada 6.º golpe, un rayo."
 ITEM_EMBER_CORE,Fire,Fuego
-ITEM_EMBER_CORE_DESC,Your hits burn. Burning foes leave fire behind.,Tus golpes queman. Los enemigos en llamas dejan fuego.
+ITEM_EMBER_CORE_DESC,Burns. Lv2: wider fire. Lv3: burning foes take more.,Quema. Nv2: fuego más amplio. Nv3: quemados reciben más.
 ITEM_VENOM_CORE,Venom,Veneno
-ITEM_VENOM_CORE_DESC,Your hits poison. Poison spreads on death.,Tus golpes envenenan. El veneno salta al morir.
+ITEM_VENOM_CORE_DESC,Poison. Lv2: it spreads. Lv3: it stacks.,Veneno. Nv2: se contagia. Nv3: se acumula.
 ITEM_ECHO_SLASH,Wave,Onda
 ITEM_ECHO_SLASH_DESC,Your slashes fly as crescents.,Tus tajos vuelan como medias lunas.
-ITEM_EDGE_ROUNDS,Edge Rounds,Balas Filo
-ITEM_EDGE_ROUNDS_DESC,Your shots pierce and slash where they hit.,Tus disparos atraviesan y cortan al impactar.
-ITEM_SHOCK_CIRCLES,Shock Circles,Círculos de Choque
-ITEM_SHOCK_CIRCLES_DESC,Your shots become shock rings.,Tus disparos se vuelven anillos eléctricos.
 ITEM_HALO_SHOT,Halo,Halo
 ITEM_HALO_SHOT_DESC,Fire in a full ring.,Disparas en anillo.
-ITEM_BOOMERANG,Boomerang,Bumerán
-ITEM_BOOMERANG_DESC,Your shots fly out and come back.,Tus disparos van y vuelven.
 ITEM_ORBIT_ROUNDS,Orbit,Órbita
 ITEM_ORBIT_ROUNDS_DESC,Your shots circle you before flying out.,Tus disparos te rodean antes de salir.
 ITEM_SPLIT_SHOT,Split,División
 ITEM_SPLIT_SHOT_DESC,Your shots split on hit.,Tus disparos se dividen al impactar.
-ITEM_TWIN_CAST,Twin Cast,Doble Lanzamiento
-ITEM_TWIN_CAST_DESC,Every attack repeats.,Cada ataque se repite.
-ITEM_REARGUARD,Rearguard,Retaguardia
-ITEM_REARGUARD_DESC,Your attacks also fire backwards.,Tus ataques también salen hacia atrás.
 ITEM_WIDE_ARC,Wide Arc,Arco Amplio
 ITEM_WIDE_ARC_DESC,Your slashes sweep wider and farther.,Tus tajos barren más amplio y más lejos.
-ITEM_GRAVITY_WELL,Void,Vacío
-ITEM_GRAVITY_WELL_DESC,Your shots may open a black hole.,Tus disparos pueden abrir un agujero negro.
-ITEM_SHATTER,Shatter,Estallido
-ITEM_SHATTER_DESC,Kills burst into shards.,Las bajas estallan en esquirlas.
-ITEM_AFTERSHOCK,Aftershock,Réplica
-ITEM_AFTERSHOCK_DESC,Your attacks end in a small blast.,Tus ataques acaban en una pequeña explosión.
-ITEM_SEEKER,Seeker,Buscador
-ITEM_SEEKER_DESC,Your attacks seek the nearest enemy.,Tus ataques buscan al enemigo más cercano.
 ITEM_LONG_SHADOW,Dodge Imprint,Huella de Esquiva
 ITEM_LONG_SHADOW_DESC,"After a dash, your next attack comes from where it began.","Tras esquivar, tu siguiente ataque sale de donde empezó."
-ITEM_PHASE_DASH,Phase Dash,Esquiva de Fase
-ITEM_PHASE_DASH_DESC,Dash untouchable and burst into shards.,Esquiva intocable y estalla en esquirlas.
-ITEM_EMBER_TRAIL,Ember Trail,Rastro de Brasas
-ITEM_EMBER_TRAIL_DESC,Walking leaves burning crystals.,Al caminar dejas cristales ardientes.
-ITEM_AETHER_SHELL,Aether Shell,Coraza de Éter
-ITEM_AETHER_SHELL_DESC,"Out of combat, a shield stops the next hit.","Fuera de combate, un escudo para el siguiente golpe."
-ITEM_ASCENSION,Ascension,Ascensión
-ITEM_ASCENSION_DESC,Wait before attacking to hit much harder.,Espera antes de atacar y pega mucho más fuerte.
-ITEM_RESONANCE_CORE,Resonance,Resonancia
-ITEM_RESONANCE_CORE_DESC,Enemies with more effects take more damage.,Los enemigos con más efectos sufren más daño.
-ITEM_HEAT_SINK_ROUNDS,Heat Sink Rounds,Balas Disipadoras
-ITEM_HEAT_SINK_ROUNDS_DESC,"At Overclock, fire an extra shot.","En Sobrecarga, disparas un proyectil extra."
-ITEM_MELTDOWN_EDGE,Meltdown Edge,Filo de Fusión
-ITEM_MELTDOWN_EDGE_DESC,Venting fires your attack all around you.,Purgar lanza tu ataque a tu alrededor.
-ITEM_MIRROR_DRONE,Mirror Drone,Dron Espejo
-ITEM_MIRROR_DRONE_DESC,Your drone copies your weapon and its cards.,Tu dron copia tu arma y sus cartas.
-ITEM_BOMB_ROUNDS,Bomb Rounds,Balas Bomba
-ITEM_BOMB_ROUNDS_DESC,Every 5th shot is a bomb.,"Cada 5 disparos, lanzas una bomba."
 ITEM_BLADE_ORBIT,Orbit Blades,Hojas en Órbita
 ITEM_BLADE_ORBIT_DESC,Your slashes throw blades that circle you.,Tus tajos sueltan espadas que te rodean.
-ITEM_SHORT_FUSE,Short Fuse,Mecha Corta
-ITEM_SHORT_FUSE_DESC,"Shorter reach, much more damage.","Menos alcance, mucho más daño."
-ITEM_TEMPEST_CORE,Tempest Core,Núcleo de Tempestad
-ITEM_TEMPEST_CORE_DESC,Lightning jumps to many more enemies.,El rayo salta a muchos más enemigos.
-ITEM_INFERNO_CORE,Inferno Core,Núcleo Infernal
-ITEM_INFERNO_CORE_DESC,Burn twice as hard. Kills erupt in flames.,Quemas el doble. Las bajas arden en grande.
-ITEM_ECHO_STORM,Echo Storm,Tormenta de Ecos
-ITEM_ECHO_STORM_DESC,Every slash flies as three crescents.,Cada tajo vuela como tres medias lunas.
 UI_DEV_NEXT_MOD,Next mod,Siguiente mod
-ITEM_TRIGGER_ON_HIT,On Hit,Al Impactar
-ITEM_TRIGGER_ON_HIT_DESC,Cards to its right cast on hit.,Las cartas a su derecha se lanzan al impactar.
-ITEM_TRIGGER_ON_KILL,On Kill,Al Matar
-ITEM_TRIGGER_ON_KILL_DESC,Cards to its right cast on kill.,Las cartas a su derecha se lanzan al matar.
-ITEM_TRIGGER_ON_END,On End,Al Terminar
-ITEM_TRIGGER_ON_END_DESC,Cards to its right cast where it ends.,Las cartas a su derecha se lanzan al terminar.
-ITEM_TRIGGER_ON_FINISHER,On Finisher,Al Rematar
-ITEM_TRIGGER_ON_FINISHER_DESC,Cards to its right cast on your finisher.,Las cartas a su derecha se lanzan al rematar.
 ITEM_GUN_BIG_SHOT,Big Shot,Disparo Grande
 ITEM_GUN_BIG_SHOT_DESC,"Bigger, stronger, slower shots.","Disparos más grandes, fuertes y lentos."
 ITEM_GUN_RAPID_FIRE,Rapid Fire,Fuego Rápido
 ITEM_GUN_RAPID_FIRE_DESC,"Smaller, weaker shots that fire faster the longer you hold.",Disparos pequeños y débiles que aceleran si mantienes.
 ITEM_GUN_TWIN,Twin,Gemelo
 ITEM_GUN_TWIN_DESC,"Fire twice, side by side.","Disparas dos veces, lado a lado."
-ITEM_GUN_SPREAD,Spread,Abanico
-ITEM_GUN_SPREAD_DESC,Fire in a fan.,Disparas en abanico.
 ITEM_GUN_RING,Ring,Anillo
 ITEM_GUN_RING_DESC,Your shot becomes a lightning ring.,Tu disparo se vuelve un anillo de rayos.
 ITEM_GUN_LASER,Laser,Láser
 ITEM_GUN_LASER_DESC,Hold to burn a beam.,Mantén para quemar con un rayo.
-ITEM_GUN_BOMB,Bomb,Bomba
-ITEM_GUN_BOMB_DESC,Throw bombs that burst.,Lanza bombas que estallan.
 ITEM_GUN_VOID,Void,Vacío
 ITEM_GUN_VOID_DESC,Throw black holes that tug at foes.,Lanza agujeros negros que atraen.
 ITEM_GUN_LANCE,Lance,Lanza
 ITEM_GUN_LANCE_DESC,"Hold to charge, release a piercing energy ball.","Mantén para cargar, suelta una bola de energía perforante."
-ITEM_GUN_SCATTER,Scatter,Metralla
-ITEM_GUN_SCATTER_DESC,"A cone of pellets, brutal up close.","Un cono de perdigones, brutal de cerca."
+ITEM_GUN_RUNE_EXPLOSION,Rune Explosion,Explosión Rúnica
+ITEM_GUN_RUNE_EXPLOSION_DESC,A violet rune shield bursts out of you.,Un escudo rúnico violeta estalla a tu alrededor.
+CAPTION_RUNE_BURST,[rune burst],[estallido rúnico]
 ITEM_GUN_GLAIVE,Glaive,Disco
 ITEM_GUN_GLAIVE_DESC,A spinning disc that flies out and back.,Un disco giratorio que va y vuelve.
 ITEM_GUN_SEEKERS,Seekers,Buscadores
@@ -839,8 +722,6 @@ ITEM_GUN_SPIRAL,Spiral,Espiral
 ITEM_GUN_SPIRAL_DESC,Your shots corkscrew.,Tus disparos avanzan en espiral.
 ITEM_GUN_MINE,Mine,Mina
 ITEM_GUN_MINE_DESC,Your shots stop and wait as mines.,Tus disparos se quedan como minas.
-ITEM_GUN_CHARGE,Charge,Carga
-ITEM_GUN_CHARGE_DESC,Hold to charge a bigger shot.,Mantén para cargar un disparo mayor.
 ITEM_GUN_ECHO,Echo,Eco
 ITEM_GUN_ECHO_DESC,Fire again a moment later.,Disparas otra vez un instante después.
 ITEM_GUN_BACKFIRE,Backfire,Tiro Trasero
@@ -856,7 +737,7 @@ ITEM_THRUST_DESC,"Stab farther and harder, but narrower.","Estocadas más largas
 ITEM_HEAVY,Heavy,Pesado
 ITEM_HEAVY_DESC,Slower swings that hit much harder.,Tajos más lentos que golpean mucho más fuerte.
 ITEM_FLURRY,Flurry,Ráfaga
-ITEM_FLURRY_DESC,"After a pause, a burst of fast, lighter swings.","Tras una pausa, una ráfaga de tajos rápidos y ligeros."
+ITEM_FLURRY_DESC,"After a pause, a burst of fast swings.","Tras una pausa, una ráfaga de tajos rápidos."
 ITEM_FISSURE,Fissure,Fisura
 ITEM_FISSURE_DESC,Your slashes crack the ground and it erupts.,Tus tajos agrietan el suelo y la grieta estalla.
 ITEM_CHAIN_CUT,Chain Cut,Corte en Cadena
@@ -868,7 +749,7 @@ ITEM_RIPOSTE_CHAIN_DESC,A slash kill strikes the next enemy.,Cada baja con tajo 
 ITEM_PARRY_EDGE,Parry Edge,Filo Desviador
 ITEM_PARRY_EDGE_DESC,Your slashes destroy enemy shots.,Tus tajos destruyen los disparos enemigos.
 ITEM_LUNGE_STEP,Lunge Step,Paso de Embestida
-ITEM_LUNGE_STEP_DESC,Each slash steps you forward.,Cada tajo te hace avanzar.
+ITEM_LUNGE_STEP_DESC,Each slash steps you forward and hits harder.,Cada tajo te hace avanzar y golpea más fuerte.
 ITEM_FINISHER_PLUS,Fracture Bank,Banco de Fracturas
 ITEM_FINISHER_PLUS_DESC,Combo hits lodge fragments; your finisher rips them out.,El combo clava fragmentos; el remate los arranca.
 ITEM_COUNTER,Counter,Contraataque
@@ -895,6 +776,7 @@ UI_BUILD_TITLE,BUILD,CONSTRUCCIÓN
 UI_BUILD_SLOTS,%d of %d slots,%d de %d huecos
 UI_BUILD_HINT,←→ choose · Enter pick up / put down · mouse: drag or click twice · pad: A pick up · d-pad move · A drop · Esc / B back,←→ elegir · Intro coger / soltar · ratón: arrastra o haz dos clics · mando: A coger · cruceta mover · A soltar · Esc / B volver
 UI_WAND_LEVEL,Lv %d,Nv %d
+UI_WAND_LEVEL_OF,Lv %d/%d,Nv %d/%d
 UI_WAND_NEW,New,Nueva
 UI_WAND_ORDER_SHAPE,← shape,← forma
 UI_WAND_ORDER_COUNT,← count,← número
@@ -939,15 +821,7 @@ UI_DEVM_G_SIM,"Timings, AI and caps","Tiempos, IA y límites"
 ITEM_TRIGGER_ON_CRIT,On Crit,Al Crítico
 ITEM_TRIGGER_ON_CRIT_DESC,Cards to its right cast on a critical hit.,Las cartas a su derecha se lanzan con un crítico.
 ITEM_SHARED_BLEED,Bleed,Sangrado
-ITEM_SHARED_BLEED_DESC,"Your hits bleed, faster while you move.","Desangras, y más rápido si te mueves."
-ITEM_SHARED_EXPLOSIVE,Explosive,Explosivo
-ITEM_SHARED_EXPLOSIVE_DESC,Your attack explodes where it ends.,Tu ataque estalla donde termina.
-ITEM_TRIGGER_ON_HIT_TWICE,On Hit ×2,Al Impactar ×2
-ITEM_TRIGGER_ON_HIT_TWICE_DESC,Cards to its right cast twice on hit.,Las cartas a su derecha se lanzan 2 veces al impactar.
-ITEM_TRIGGER_ON_KILL_TWICE,On Kill ×2,Al Matar ×2
-ITEM_TRIGGER_ON_KILL_TWICE_DESC,Cards to its right cast twice on kill.,Las cartas a su derecha se lanzan 2 veces al matar.
-ITEM_TRIGGER_ON_END_TWICE,On End ×2,Al Terminar ×2
-ITEM_TRIGGER_ON_END_TWICE_DESC,Cards to its right cast twice where it ends.,Las cartas a su derecha se lanzan 2 veces al terminar.
+ITEM_SHARED_BLEED_DESC,Bleed. Lv2: hurts more on the move. Lv3: bursts.,Sangrado. Nv2: más daño si se mueve. Nv3: estalla.
 UI_CODEX,Codex,Códice
 UI_CODEX_TITLE,Codex,Códice
 UI_CODEX_TAB_CARDS,Cards,Cartas
@@ -972,6 +846,15 @@ UI_CODEX_FIGHTS,Fought,Combates
 UI_CODEX_VISITS,Floors entered,Pisos visitados
 UI_CODEX_FOUND,Found %d / %d,Descubierto %d / %d
 UI_CODEX_LOCKED,Not found yet.,Aún sin descubrir.
+UI_CODEX_WEAK_TO,Weak to: %s,Débil contra: %s
+UI_CODEX_RESISTS,Resists: %s,Resiste: %s
+MATCHUP_GUN_LASER,Laser,Láser
+MATCHUP_GUN_LANCE,Lance,Lanza
+MATCHUP_GUN_WAVE,Wave,Oleada
+MATCHUP_GUN_GLAIVE,Glaive,Disco
+MATCHUP_EMBER,Fire,Fuego
+MATCHUP_STORM,Lightning,Rayo
+MATCHUP_VENOM,Venom,Veneno
 UI_CODEX_HINT,Arrows / stick move · Q E / LB RB page · Esc / B back,Flechas / stick mover · Q E / LB RB página · Esc / B volver
 ENEMY_CHARGER_DESC,Runs at you and charges.,Corre hacia ti y embiste.
 ENEMY_WARDEN_DESC,A slow rock golem.,Un gólem de roca lento.
@@ -1073,6 +956,7 @@ ACH_ASCEND_5_DESC,Start a new loop 5 times.,Empieza un nuevo ciclo 5 veces.
 HUD_LOOP,Loop %d,Ciclo %d
 UI_RECAP_LOOPS,Loops cleared: %d,Ciclos superados: %d
 UI_CARD_LEVEL_UP,Lv %d → %d,Nv %d → %d
+UI_CARD_OVERLEVEL,+ overlevel,+ sobrenivel
 UI_UI_SCALE,Interface size,Tamaño de la interfaz
 UI_OPT_90,90 %,90 %
 UI_OPT_110,110 %,110 %
@@ -1160,10 +1044,16 @@ CAUSE_COLOSSUS_BOULDER,A boulder the Colossus threw crushed you.,Una roca que la
 CAUSE_PRISM_ORBS,The Prism's orbs caught you.,Los orbes de The Prism te alcanzaron.
 CAUSE_PRISM_BEAM,The Prism's turning Cross burned you.,La Cruz giratoria de The Prism te abrasó.
 CAUSE_PRISM_BOLT,The Prism's bolt struck you.,Un proyectil de The Prism te alcanzó.
+CAUSE_PRISM_LANCE,The Prism's facet lances pierced you.,Las lanzas de faceta de The Prism te atravesaron.
 CAUSE_NEMESIS_SLASH,The Fallen cut you down.,The Fallen te abatió de un tajo.
 CAUSE_NEMESIS_CRESCENTS,The Fallen's crescents caught you.,Las medialunas de The Fallen te alcanzaron.
 CAUSE_NEMESIS_CARD,The Fallen used your own card.,The Fallen usó tu propia carta.
 CAUSE_NEMESIS_SHOTS,The Fallen shot you with your own gun.,The Fallen te disparó con tu propia arma.
+CAUSE_FALLEN_RAYS,The Fallen's rays cut you down as it hid.,Los rayos de The Fallen te cortaron mientras se ocultaba.
+CAUSE_FALLEN_RAIN,The Fallen's rain of spikes and orbs caught you.,La lluvia de pinchos y orbes de The Fallen te alcanzó.
+CAUSE_FALLEN_DARK,A drifting orb in the dark took you.,Un orbe a la deriva en la oscuridad te alcanzó.
+CAUSE_FALLEN_ERUPTION,The ground burst under you as The Fallen hid.,El suelo estalló bajo tus pies mientras The Fallen se ocultaba.
+CAUSE_FALLEN_RETURN,The Fallen slammed back down on you.,The Fallen cayó de vuelta sobre ti.
 ACH_FINAL_BOSS_NAME,Crown Breaker,Rompecoronas
 ACH_FINAL_BOSS_DESC,Beat the Hollow Crown.,Derrota a Hollow Crown.
 ACH_FINAL_NO_HIT_NAME,Untouched,Intocable
@@ -1182,32 +1072,28 @@ HUD_BOSS_PHASE,Phase %d / %d,Fase %d / %d
 UI_PG_FINAL,Final boss,Jefe final
 UI_PG_FINAL_PHASE,Phase %d,Fase %d
 UI_PG_FINAL_HINT,Summons the Hollow Crown at the room's centre; a phase button jumps to that body.,Invoca a Hollow Crown en el centro de la sala; un botón de fase salta a ese cuerpo.
+UI_PG_FINAL_PRISM_LAST,The Prism's last phase,Última fase de The Prism
 ITEM_CHAIN_BLAST,Chain Blast,Explosión en cadena
 ITEM_CHAIN_BLAST_DESC,Your attack and its splits all explode.,Tu ataque y sus divisiones estallan.
 PICK_TITLE_BOSS,The boss's reward,La recompensa del jefe
 PICK_TITLE_BOSS_LEGENDARY,The boss left a Legendary card,El jefe dejó una carta legendaria
 PICK_TITLE_BOSS_MORE,%s · %d more,%s · %d más
 PICK_TITLE_CHEST_DEALT,Chest · it gave you this,Cofre · te ha dado esto
-PICK_HINT_DEALT,"Enter, A or a click to take it","Intro, A o un clic para cogerla"
+PICK_HINT_DEALT,"Enter, A or a click to take it · Esc or B to leave it for later","Intro, A o un clic para cogerla · Esc o B para dejarla para luego"
 PICK_JACKPOT,Jackpot,Premio gordo
 UI_GAIN_LEVEL,Level %d → %d,Nivel %d → %d
 UI_GAIN_LEVEL_NEW,New · Level %d,Nuevo · Nivel %d
 UI_GAIN_HP,%d → %d HP,%d → %d PV
 UI_GAIN_ARROW,%s → %s,%s → %s
 UI_GAIN_PERCENT,%s%%,%s %%
-UI_CURSE_ALTAR_OPEN,[E / X] Touch the altar,[E / X] Tocar el altar
+UI_GAIN_HASTE_DAMAGE,+%s%% damage (attack speed past its top),+%s %% de daño (velocidad de ataque más allá de su tope)
+UI_CURSE_ALTAR_OPEN,Touch,Tocar
 ITEM_GUN_THREADLINE,Threadline,Hilo Conector
 ITEM_GUN_THREADLINE_DESC,Shots fired close together are linked by a cutting thread.,Los disparos seguidos quedan unidos por un hilo cortante.
 ITEM_SHARED_FAULTLINE,Faultline,Falla
 ITEM_SHARED_FAULTLINE_DESC,Hits leave cracks; attacking across one makes it erupt.,Los golpes dejan grietas que estallan al cruzarlas.
-ITEM_SHARED_GRAVITY_STITCH,Gravity Stitch,Puntada Gravitatoria
-ITEM_SHARED_GRAVITY_STITCH_DESC,Hits leave anchors that pull enemies and bend your shots.,Los golpes dejan anclas que atraen y curvan disparos.
 ITEM_SHARED_STRESS_MARK,Stress Mark,Marca de Tensión
-ITEM_SHARED_STRESS_MARK_DESC,Hits mark foes; hit from another side to break the mark.,Los golpes marcan; golpea desde otro lado para romperla.
-ITEM_MUT_DOUBLE_EXPOSURE,Double Exposure,Doble Exposición
-ITEM_MUT_DOUBLE_EXPOSURE_DESC,Mutation: an attack's path strikes again a moment later.,Mutación: el trazo de un ataque golpea otra vez al poco.
-ITEM_MUT_GRAND_FINALE,Grand Finale,Gran Final
-ITEM_MUT_GRAND_FINALE_DESC,Mutation: the remnants of cards to its left burst.,Mutación: estallan los restos de las cartas a su izquierda.
+ITEM_SHARED_STRESS_MARK_DESC,Nearby enemies show a weak side. Hit it for double damage.,Enemigos cercanos con lado débil. Golpéalo: daño doble.
 UI_SLOT_FORM,Form,Forma
 UI_SLOT_PATTERN,Pattern,Patrón
 UI_SLOT_SECONDARY,Secondary,Secundaria
@@ -1220,11 +1106,11 @@ UI_SWAP_TITLE_SLOT,Your %s slots are full: choose one to replace,Tus huecos de %
 SHRINE_BLOOD_NAME,Blood Shrine,Santuario de Sangre
 SHRINE_CHAOS_NAME,Chaos Shrine,Santuario del Caos
 FOUNTAIN_NAME,Healing Fountain,Fuente curativa
-SHRINE_BLOOD_PROMPT,[E / X] Blood Shrine · give %d HP for an upgrade,[E / X] Santuario de Sangre · da %d PV por una mejora
-SHRINE_BLOOD_LOW,Blood Shrine · too weak (needs %d HP),Santuario de Sangre · demasiado débil (necesitas %d PV)
-SHRINE_CHAOS_PROMPT,[E / X] Chaos Shrine · fight %d enemies for an upgrade,[E / X] Santuario del Caos · lucha contra %d enemigos por una mejora
-FOUNTAIN_PROMPT,[E / X] Healing Fountain · drink (+%d HP · one use),[E / X] Fuente curativa · beber (+%d PV · un solo uso)
-FOUNTAIN_FULL,Healing Fountain · you are at full health,Fuente curativa · tienes la salud al máximo
+SHRINE_BLOOD_PROMPT,Pray · −%d HP,Rezar · −%d PV
+SHRINE_BLOOD_LOW,Too weak · needs %d HP,Muy débil · necesitas %d PV
+SHRINE_CHAOS_PROMPT,Challenge · %d foes,Desafiar · %d enemigos
+FOUNTAIN_PROMPT,Drink · +%d HP,Beber · +%d PV
+FOUNTAIN_FULL,Full health,Salud al máximo
 SHRINE_BLOOD_DONE,−%d HP · an upgrade rises,−%d PV · surge una mejora
 SHRINE_BLOOD_DENIED,Too weak to bleed,Demasiado débil para sangrar
 SHRINE_CHAOS_LEFT,Survive the challenge · %d left,Supera el desafío · quedan %d
@@ -1238,17 +1124,17 @@ HUB_TITLE,The Rune Ring,El Anillo de Runas
 UI_TO_HUB,To the Rune Ring,Al Anillo de Runas
 HUB_HINT,Walk to a station · [E / X] to use it · Esc / Start: menu,Camina hasta una estación · [E / X] para usarla · Esc / Start: menú
 HUB_PORTAL_MACHINE,Portal Machine,Máquina de Portales
-HUB_PROMPT_PORTAL,[E / X] Start a run,[E / X] Empezar una partida
+HUB_PROMPT_PORTAL,Start,Empezar
 HUB_ARCHIVE,Rune Archive,Archivo de Runas
-HUB_PROMPT_ARCHIVE,[E / X] Open the Archive,[E / X] Abrir el Archivo
+HUB_PROMPT_ARCHIVE,Open,Abrir
 HUB_TROPHY,Trophy Area,Sala de Trofeos
-HUB_PROMPT_TROPHY,[E / X] See the achievements,[E / X] Ver los logros
+HUB_PROMPT_TROPHY,View,Ver
 HUB_WARDROBE,Wardrobe,Vestidor
-HUB_PROMPT_WARDROBE,[E / X] Open the wardrobe,[E / X] Abrir el vestidor
+HUB_PROMPT_WARDROBE,Open,Abrir
 HUB_PROGRESSION,Progression Station,Estación de Progreso
-HUB_PROMPT_PROGRESSION,[E / X] Use the station,[E / X] Usar la estación
-HUB_CREDITS,Credits Stone,Piedra de los Créditos
-HUB_PROMPT_CREDITS,[E / X] Read the credits,[E / X] Leer los créditos
+HUB_PROMPT_PROGRESSION,Use,Usar
+HUB_RUNIC_STONE,Runic Stone,Piedra rúnica
+HUB_PROMPT_RUNIC_READ,Read,Leer
 HUB_WARDROBE_SOON,Robes and rune affinities will hang here. Nothing to wear yet.,Aquí colgarán las túnicas y las afinidades rúnicas. Aún no hay nada que ponerse.
 HUB_PROGRESSION_SOON,Rune Fragments will be spent here. The console is still dark.,Aquí se gastarán los Fragmentos de Runa. La consola sigue apagada.
 ELITE_BREAKER,The Breaker,El Quebrantador
@@ -1355,3 +1241,330 @@ COLLECTIBLE_SHELF_HUB,Rune Ring shelf,Estante del Anillo
 COLLECTIBLE_TOAST,ADDED TO THE RUNE ARCHIVE,AÑADIDO AL ARCHIVO DE RUNAS
 UI_CODEX_TAB_COLLECTIBLES,Collectibles,Coleccionables
 PROGRESSION_REVEALED,Revealed: %s. Wear it at the Wardrobe.,Revelada: %s. Póntela en el Vestidor.
+CAPTION_STRESS_BREAK,[weak point],[punto débil]
+RUN_SUMMARY_LOOPED,Looped ×%d,Bucles ×%d
+UI_PAIR_ON,Element pair!,¡Par elemental!
+UI_PAIR_LEVEL,Element pair · Lv %d,Par elemental · Nv %d
+UI_PAIR_PREVIEW_ON,Pair: %s,Par: %s
+UI_PAIR_PREVIEW_UP,%s → Lv %d,%s → Nv %d
+UI_PAIR_BIG,Element pair! %s,¡Par elemental! %s
+PAIR_THERMAL_SHOCK,Thermal Shock,Choque Térmico
+PAIR_THERMAL_SHOCK_DESC,A foe burning and frozen bursts when hit (up to x3).,Un enemigo ardiendo y helado estalla al golpe (hasta x3).
+PAIR_TOXIC_FUMES,Toxic Fumes,Humos Tóxicos
+PAIR_TOXIC_FUMES_DESC,A poisoned foe catching fire leaves a gas cloud.,Un envenenado que arde deja una nube de gas.
+PAIR_IGNITION_ARC,Ignition Arc,Arco Ígneo
+PAIR_IGNITION_ARC_DESC,Chain jumps set enemies on fire (more jumps per level).,Los saltos de cadena prenden fuego (más saltos por nivel).
+PAIR_BOILING_BLOOD,Boiling Blood,Sangre Hirviente
+PAIR_BOILING_BLOOD_DESC,Bleed ticks on burning enemies deal more (up to double).,El sangrado en enemigos ardiendo hace más (hasta doble).
+PAIR_COLD_CIRCUIT,Cold Circuit,Circuito Gélido
+PAIR_COLD_CIRCUIT_DESC,Chains seek frozen foes and hit them harder (up to double).,Las cadenas buscan helados y les pegan más (hasta doble).
+PAIR_BLACK_ICE,Black Ice,Hielo Negro
+PAIR_BLACK_ICE_DESC,Poisoned foes slow up to 20% more; frozen: poison holds.,Envenenados hasta 20% más lentos; helados: el veneno dura.
+PAIR_BRITTLE,Brittle,Quebradizo
+PAIR_BRITTLE_DESC,A frozen foe shattered or dead bursts its bleed.,Un helado roto o muerto estalla su sangrado.
+PAIR_NEUROTOXIN,Neurotoxin,Neurotoxina
+PAIR_NEUROTOXIN_DESC,Chain jumps carry poison (more jumps per level).,Los saltos de cadena llevan veneno (más saltos por nivel).
+PAIR_ARTERIAL_ARC,Arterial Arc,Arco Arterial
+PAIR_ARTERIAL_ARC_DESC,Chain jumps make enemies bleed (more jumps per level).,Los saltos de cadena hacen sangrar (más saltos por nivel).
+PAIR_SEPSIS,Sepsis,Sepsis
+PAIR_SEPSIS_DESC,3+ poison and 3+ bleed stacks: up to +20% damage taken.,3+ de veneno y de sangrado: recibe hasta +20% de daño.
+ACH_SWORD_UNBOUND_NAME,Sword Unbound,Espada liberada
+ACH_SWORD_UNBOUND_DESC,Beat the Hollow Crown with the Gun.,Vence a la Corona Hueca con la Pistola.
+BUILD_BLADE_LOCKED,Beat the Hollow Crown with the Gun to unlock,Vence a la Corona Hueca con la Pistola para desbloquear
+FORMCARD_OFF,Does nothing on this form,No hace nada con esta forma
+FORMCARD_LASER_TWIN,Two beams burn side by side,Dos rayos arden lado a lado
+FORMCARD_LASER_PIERCE,The beam burns through every enemy,El rayo atraviesa a todos los enemigos
+FORMCARD_LASER_HALO,"The beam's end fans 3 short beams (3 m, 40 %)","El final del rayo abre 3 rayos cortos (3 m, 40 %)"
+FORMCARD_LASER_RING,A 1.4 m lightning ring rides the beam's tip (50 %),"Un anillo de rayos de 1,4 m viaja en la punta (50 %)"
+FORMCARD_LASER_BACKFIRE,A 4.5 m beam also burns behind you,"Un rayo de 4,5 m también arde a tu espalda"
+FORMCARD_LASER_RICOCHET,The beam reflects off the first wall and keeps its reach,El rayo se refleja en la primera pared y sigue
+FORMCARD_LASER_HOMING,"The beam bends to the nearest enemy; with Pierce, up to 5","El rayo se curva al enemigo más cercano; con Perforación, hasta 5"
+FORMCARD_LASER_ECHO,Where the beam swept strikes again 0.4 s later (50 %),"Donde pasó el rayo golpea otra vez 0,4 s después (50 %)"
+FORMCARD_LASER_BIG_SHOT,"A beam twice as wide, +60 % damage, slower to turn","Un rayo el doble de ancho, +60 % de daño, gira más lento"
+FORMCARD_LASER_RAPID_FIRE,"Ticks faster over 2 s held; thinner beam, -35 % damage","Golpea más rápido en 2 s; rayo fino, -35 % de daño"
+FORMCARD_LASER_SPLIT,"The first enemy hit forks the beam in 2 (4 m, 50 %)","El primer enemigo golpeado bifurca el rayo en 2 (4 m, 50 %)"
+FORMCARD_LASER_MINE,"The tip drops a mine every 1.0 s (1.5 m burst, up to 4)","La punta suelta una mina cada 1,0 s (1,5 m, hasta 4)"
+FORMCARD_LASER_SPIRAL,"The beam wiggles side to side (12 degrees, twice a second)","El rayo ondula de lado a lado (12 grados, 2 veces por segundo)"
+FORMCARD_VOID_TWIN,Two voids per cast,Dos vacíos por lanzamiento
+FORMCARD_VOID_RING,"When it ends, it collapses in a 3 m lightning ring (60 %)","Al terminar, colapsa en un anillo de rayos de 3 m (60 %)"
+FORMCARD_VOID_BACKFIRE,A second void opens straight behind you,Un segundo vacío se abre justo a tu espalda
+FORMCARD_VOID_RICOCHET,The void bounces off walls and keeps drifting,El vacío rebota en las paredes y sigue a la deriva
+FORMCARD_VOID_HOMING,The void drifts toward the densest group within 6 m,El vacío va hacia el grupo más denso a menos de 6 m
+FORMCARD_VOID_ECHO,"A smaller void opens where it ended (60 %, half the life)","Un vacío menor se abre donde terminó (60 %, mitad de vida)"
+FORMCARD_VOID_BIG_SHOT,"1.3 m aura, pulls from 4 m, +20 % damage, slower","Aura de 1,3 m, atrae desde 4 m, +20 % de daño, más lento"
+FORMCARD_VOID_RAPID_FIRE,"Smaller voids every 0.4 s, half the life, -30 % damage","Vacíos menores cada 0,4 s, mitad de vida, -30 % de daño"
+FORMCARD_VOID_SPLIT,"When it ends, it splits into 2 to 4 mini voids (40 %)","Al terminar, se divide en 2 a 4 minivacíos (40 %)"
+FORMCARD_VOID_MINE,"The void stops at the aim point, widens and holds for 3 s","El vacío se detiene en el objetivo, se ensancha y aguanta 3 s"
+FORMCARD_VOID_ORBIT,The void circles you once (2.5 m) before flying out,"El vacío te rodea una vez (2,5 m) antes de salir"
+FORMCARD_LANCE_TWIN,Two lances per charge,Dos lanzas por carga
+FORMCARD_LANCE_HALO,A full charge fires 6 lances around you (50 % each),Una carga completa lanza 6 lanzas a tu alrededor (50 %)
+FORMCARD_LANCE_RING,A 2 m lightning ring bursts where the lance ends (50 %),Un anillo de rayos de 2 m estalla donde acaba la lanza (50 %)
+FORMCARD_LANCE_BACKFIRE,Also fires a lance behind you (50 %),También lanza una lanza a tu espalda (50 %)
+FORMCARD_LANCE_RICOCHET,A full charge bounces off one wall and keeps going,Una carga completa rebota en una pared y sigue
+FORMCARD_LANCE_HOMING,The lance bends gently toward the nearest enemy ahead,La lanza se curva hacia el enemigo más cercano al frente
+FORMCARD_LANCE_ECHO,A ghost lance repeats the line 0.4 s later (50 %),"Una lanza fantasma repite la línea 0,4 s después (50 %)"
+FORMCARD_LANCE_BIG_SHOT,"Twice as wide, +60 % damage, +0.3 s to charge","El doble de ancha, +60 % de daño, +0,3 s de carga"
+FORMCARD_LANCE_RAPID_FIRE,"Charges 40 % faster, -30 % damage","Carga un 40 % más rápido, -30 % de daño"
+FORMCARD_LANCE_SPLIT,"Each enemy pierced spits 2 shards sideways (25 %, 3 m)","Cada enemigo atravesado lanza 2 esquirlas al lado (25 %, 3 m)"
+FORMCARD_RUNE_EXPLOSION_TWIN,"A second, smaller shield (70 %) follows 0.2 s later","Un segundo escudo menor (70 %) llega 0,2 s después"
+FORMCARD_RUNE_EXPLOSION_RING,"The edge holds as a lightning ring for 0.8 s, hitting again","El borde se queda 0,8 s como anillo de rayos y golpea de nuevo"
+FORMCARD_RUNE_EXPLOSION_RICOCHET,"At full size the shield shrinks back, hitting again (50 %)","Al llegar al tamaño máximo, el escudo se encoge y golpea (50 %)"
+FORMCARD_RUNE_EXPLOSION_HOMING,The burst is cast on the nearest enemy within 6 m,La explosión se lanza sobre el enemigo más cercano a 6 m
+FORMCARD_RUNE_EXPLOSION_ECHO,A rune glyph bursts again 0.6 s later (60 %),"Un glifo rúnico estalla otra vez 0,6 s después (60 %)"
+FORMCARD_RUNE_EXPLOSION_BIG_SHOT,"5 m radius, +60 % damage, every 1.5 s","Radio de 5 m, +60 % de daño, cada 1,5 s"
+FORMCARD_RUNE_EXPLOSION_RAPID_FIRE,"2.5 m radius, -30 % damage, every 0.7 s","Radio de 2,5 m, -30 % de daño, cada 0,7 s"
+FORMCARD_RUNE_EXPLOSION_SPLIT,"Each enemy hit throws 2 rune shards outward (25 %, 4 m)","Cada enemigo golpeado lanza 2 esquirlas rúnicas (25 %, 4 m)"
+FORMCARD_RUNE_EXPLOSION_MINE,Leaves a rune trap (4 s); an enemy sets off a 2 m burst,Deja una trampa rúnica (4 s); un enemigo causa una explosión de 2 m
+FORMCARD_GLAIVE_TWIN,Two discs per throw,Dos discos por lanzamiento
+FORMCARD_GLAIVE_SWIRL,The disc swirls at random on its way,El disco gira al azar en su trayecto
+FORMCARD_GLAIVE_HALO,4 discs fly out in a cross and come back (50 % each),4 discos salen en cruz y vuelven (50 % cada uno)
+FORMCARD_GLAIVE_RING,The disc carries a 1 m lightning ring around itself (40 %),El disco lleva un anillo de rayos de 1 m (40 %)
+FORMCARD_GLAIVE_BACKFIRE,A second disc is thrown behind you,Se lanza un segundo disco a tu espalda
+FORMCARD_GLAIVE_RICOCHET,The disc bounces off walls twice before it turns home,El disco rebota 2 veces en las paredes antes de volver
+FORMCARD_GLAIVE_HOMING,"The disc curves to an enemy out, and another coming back",El disco se curva a un enemigo de ida y a otro de vuelta
+FORMCARD_GLAIVE_ECHO,A second disc follows the same path 0.3 s later (50 %),"Un segundo disco sigue el mismo camino 0,3 s después (50 %)"
+FORMCARD_GLAIVE_BIG_SHOT,"A bigger, slower disc, +60 % damage","Un disco mayor y más lento, +60 % de daño"
+FORMCARD_GLAIVE_RAPID_FIRE,"A smaller, faster disc every 0.45 s, -30 % damage","Un disco menor y rápido cada 0,45 s, -30 % de daño"
+FORMCARD_GLAIVE_SPLIT,On its first hit it sheds 2 small discs (30 %),En el primer impacto suelta 2 discos pequeños (30 %)
+FORMCARD_GLAIVE_MINE,At its far point it spins in place for 1.2 s,"En su punto más lejano gira en el sitio 1,2 s"
+FORMCARD_GLAIVE_ORBIT,The disc circles you once (2.5 m) before flying out,"El disco te rodea una vez (2,5 m) antes de salir"
+FORMCARD_SEEKERS_TWIN,"6 darts per volley, 60 % each","6 dardos por salva, 60 % cada uno"
+FORMCARD_SEEKERS_HALO,"The darts leave in all directions, then turn to targets",Los dardos salen en todas direcciones y luego buscan
+FORMCARD_SEEKERS_RING,Each dart's hit makes a 1 m lightning ring (30 %),Cada impacto crea un anillo de rayos de 1 m (30 %)
+FORMCARD_SEEKERS_PIERCE,A dart goes through its target and seeks 2 more,Un dardo atraviesa su objetivo y busca 2 más
+FORMCARD_SEEKERS_RICOCHET,Darts bounce off walls (up to 3) and keep seeking,Los dardos rebotan en las paredes (hasta 3) y siguen buscando
+FORMCARD_SEEKERS_ECHO,A second volley follows 0.3 s later (50 %),"Una segunda salva llega 0,3 s después (50 %)"
+FORMCARD_SEEKERS_BIG_SHOT,"2 big darts, +100 % damage each","2 dardos grandes, +100 % de daño cada uno"
+FORMCARD_SEEKERS_RAPID_FIRE,"5 small darts, -35 % damage each","5 dardos pequeños, -35 % de daño cada uno"
+FORMCARD_SEEKERS_SPLIT,"On a hit, a dart splits in 2 that seek others (35 %)","Al impactar, el dardo se divide en 2 que buscan otros (35 %)"
+FORMCARD_SEEKERS_MINE,"Darts hang in the air for 0.6 s, then dive together","Los dardos quedan 0,6 s en el aire y se lanzan a la vez"
+FORMCARD_SEEKERS_ORBIT,Darts circle you once (2.5 m) before launching,"Los dardos te rodean una vez (2,5 m) antes de lanzarse"
+FORMCARD_WAVE_TWIN,Two waves per cast,Dos oleadas por lanzamiento
+FORMCARD_WAVE_BACKFIRE,A second wave rolls out behind you,Una segunda oleada sale a tu espalda
+FORMCARD_WAVE_RICOCHET,The wave reflects off one wall and rolls on,La oleada se refleja en una pared y sigue
+FORMCARD_WAVE_HOMING,The wave bends toward the biggest group in front,La oleada se curva hacia el grupo mayor al frente
+FORMCARD_WAVE_ECHO,A second wave follows 0.4 s later (50 %),"Una segunda oleada llega 0,4 s después (50 %)"
+FORMCARD_WAVE_BIG_SHOT,"5 m wide, +60 % damage, slower","5 m de ancho, +60 % de daño, más lenta"
+FORMCARD_WAVE_RAPID_FIRE,"2 m wide, every 0.55 s, -30 % damage","2 m de ancho, cada 0,55 s, -30 % de daño"
+FORMCARD_WAVE_SPLIT,At the end of its run it splits into 2 waves at 45 degrees,Al final de su recorrido se divide en 2 oleadas a 45 grados
+FORMCARD_WAVE_MINE,The wave stops 4 m out and churns in place for 1.5 s,"La oleada se detiene a 4 m y se agita en el sitio 1,5 s"
+FORMCARD_WAVE_SPIRAL,The wave snakes left and right as it rolls,La oleada serpentea a izquierda y derecha al avanzar
+FORMCARD_WISPS_TWIN,A fourth wisp joins the circle,Un cuarto fuego fatuo se une al círculo
+FORMCARD_WISPS_HALO,"6 wisps circle you, 60 % damage each","6 fuegos fatuos te rodean, 60 % de daño cada uno"
+FORMCARD_WISPS_RING,A wisp's hit makes a 1 m lightning ring,El impacto de un fuego fatuo crea un anillo de rayos de 1 m
+FORMCARD_WISPS_PIERCE,The wisps' shots pass through enemies,Los disparos de los fuegos fatuos atraviesan enemigos
+FORMCARD_WISPS_RICOCHET,The wisps' shots bounce off walls,Los disparos de los fuegos fatuos rebotan en las paredes
+FORMCARD_WISPS_HOMING,The wisps' shots curve toward enemies,Los disparos de los fuegos fatuos persiguen enemigos
+FORMCARD_WISPS_ECHO,Each wisp shot fires again a moment later,Cada disparo de fuego fatuo se repite al instante
+FORMCARD_WISPS_BIG_SHOT,"The wisps' shots are bigger, stronger, slower",Los disparos de los fuegos fatuos son mayores y más fuertes
+FORMCARD_WISPS_RAPID_FIRE,The wisps' shots are smaller and weaker,Los disparos de los fuegos fatuos son menores y más débiles
+FORMCARD_WISPS_SPLIT,The wisps' shots split on hit,Los disparos de los fuegos fatuos se dividen al impactar
+FORMCARD_WISPS_SPIRAL,The wisps' shots corkscrew,Los disparos de los fuegos fatuos avanzan en espiral
+FORMCARD_WISPS_MINE,Each wisp drops a mine every 2 s,Cada fuego fatuo suelta una mina cada 2 s
+FORMCARD_WISPS_ORBIT,The wisps circle wider (3.5 m) and hurt what they touch,"Los fuegos fatuos giran más amplio (3,5 m) y dañan al tocar"
+MENU_CREDITS,Credits,Créditos
+ROBE_RUNIC,Runic,Rúnica
+ROBE_RUNIC_HINT,Learn every line of the Runic Stone,Aprende todas las líneas de la Piedra rúnica
+UI_CODEX_TAB_LORE,Lore,Historia
+LORE_DEPTHS_TITLE,The Depths,Las Profundidades
+LORE_DEPTHS,"The Depths were a city once. Each floor down is older, and it remembers less of what it was.",Las Profundidades fueron una ciudad. Cada piso más abajo es más antiguo y recuerda menos de lo que fue.
+LORE_HEAT_TITLE,Overclock,Sobrecarga
+LORE_HEAT,Your core drinks the fight. Run it hot and it sings; let it boil and it bites back. Vent before it does.,"Tu núcleo bebe del combate. Si arde, canta; si hierve, muerde. Libéralo antes de que lo haga."
+LORE_WAND_TITLE,The Wand,La Varita
+LORE_WAND,"A spell is a sentence. Each card you set is a word, and the order is the grammar.","Un hechizo es una frase. Cada carta que colocas es una palabra, y el orden es la gramática."
+LORE_SHARDS_TITLE,Shards,Fragmentos
+LORE_SHARDS,Shards are what the Depths shed when something dies in them. Everyone down here trades in endings.,Los fragmentos son lo que las Profundidades sueltan cuando algo muere en ellas. Aquí abajo todos comercian con finales.
+LORE_CURSES_TITLE,Curses,Maldiciones
+LORE_CURSES,A curse is a bargain the Depths keep for you. The price never changes; only how much you can afford.,Una maldición es un trato que las Profundidades guardan por ti. El precio nunca cambia; solo lo que puedes pagar.
+LORE_DEEP_TITLE,The Deep,Lo Profundo
+LORE_DEEP,The violet gate leads where the light gives up. The rewards are real. So is everything else.,La puerta violeta lleva adonde la luz se rinde. Las recompensas son reales. Todo lo demás también.
+LORE_RUNES_TITLE,Runes,Runas
+LORE_RUNES,"The runes are the city's last memories, carved where it could not forget them. Gather them and it remembers you.","Las runas son los últimos recuerdos de la ciudad, grabados donde no podía olvidarlos. Reúnelas y te recordará."
+LORE_CROWN_TITLE,The Hollow Crown,La Corona Hueca
+LORE_CROWN,"The Hollow Crown went down first, to rule what lay beneath. It found nothing to rule, and kept descending.","La Corona Hueca bajó la primera, para reinar sobre lo de abajo. No encontró nada que gobernar, y siguió descendiendo."
+LORE_ASCENSION_TITLE,Ascension,Ascensión
+LORE_ASCENSION,"Up is not out. The Depths turn over, and the top becomes the bottom again, a little hungrier.","Subir no es salir. Las Profundidades se dan la vuelta, y lo de arriba vuelve a ser el fondo, con un poco más de hambre."
+PAIR_SHIELD_WALL,Shield wall,Muro de escudos
+PAIR_MINEFIELD,Minefield herd,Rebaño al campo minado
+PAIR_PIN_AND_PICK,Pin and pick,Inmovilizar y rematar
+PAIR_SLAM_AND_SHOOT,Slam and shoot,Golpe y disparo
+PAIR_CROWD_THE_STORM,Crowd the storm,Atestar la tormenta
+PAIR_OVER_THE_WALL,Over the wall,Por encima del muro
+UI_RECORDS_HEAD,Records,Récords
+UI_RECORD_LOOP,Deepest loop: %s,Ciclo más profundo: %s
+UI_RECORD_TIME,Fastest true ending: %s,Final verdadero más rápido: %s
+UI_RECORD_NONE,—,—
+UI_RECAP_RECORD_LOOP,New record: loop %d reached!,¡Nuevo récord: ciclo %d alcanzado!
+UI_RECAP_RECORD_TIME,New record: fastest true ending!,¡Nuevo récord: final verdadero más rápido!
+UI_RECAP_LOOP_BONUS,Loop bonus: ×%s Rune Fragments,Bonificación de ciclo: ×%s Fragmentos de Runa
+UI_RECAP_RULES,Loop rules: %s,Reglas del ciclo: %s
+UI_PAUSE_RULES,Loop rules: %s,Reglas del ciclo: %s
+UI_ROBE_TOAST,ROBE EARNED,TÚNICA GANADA
+ROBE_OUROBOROS,Ouroboros,Uróboros
+ROBE_OUROBOROS_HINT,Reach loop 3,Alcanza el ciclo 3
+ROBE_ABYSSAL,Abyssal,Abisal
+ROBE_ABYSSAL_HINT,Reach loop 5,Alcanza el ciclo 5
+ACH_LOOP_3_NAME,Third Turn,Tercera vuelta
+ACH_LOOP_3_DESC,Reach loop 3 in one run.,Alcanza el ciclo 3 en una partida.
+ACH_LOOP_5_NAME,Bottomless,Sin fondo
+ACH_LOOP_5_DESC,Reach loop 5 in one run.,Alcanza el ciclo 5 en una partida.
+HUD_LOOP_NEW_RULE,New rule: %s,Nueva regla: %s
+LOOP_RULE_SWIFT_NAME,Quickened,Acelerados
+LOOP_RULE_SWIFT_DESC,Enemies move and charge faster.,Los enemigos se mueven y cargan más rápido.
+LOOP_RULE_LEAN_MENDING_NAME,Lean Mending,Curación escasa
+LOOP_RULE_LEAN_MENDING_DESC,"Heal orbs drop half as often, but heal twice as much.","Los orbes de curación caen la mitad de veces, pero curan el doble."
+LOOP_RULE_ELITE_HUNT_NAME,Elite Hunt,Caza de élites
+LOOP_RULE_ELITE_HUNT_DESC,Elite rooms appear on every floor.,Las salas de élite aparecen en todos los pisos.
+LOOP_RULE_SHIELDED_NAME,Shielded,Escudados
+LOOP_RULE_SHIELDED_DESC,Enemies guard their front: strike from the side or behind.,Los enemigos protegen su frente: golpea por el lado o por detrás.
+LOOP_RULE_POINT_BLANK_NAME,Point Blank,A quemarropa
+LOOP_RULE_POINT_BLANK_DESC,Ranged enemies close in and shoot faster bolts.,Los enemigos a distancia se acercan y disparan proyectiles más rápidos.
+LORE_RULE_SWIFT_TITLE,Quickened,Acelerados
+LORE_RULE_SWIFT,"Each turn of the Depths, the things below learn your pace, and outrun it.","Con cada vuelta de las Profundidades, lo de abajo aprende tu ritmo, y lo supera."
+LORE_RULE_LEAN_MENDING_TITLE,Lean Mending,Curación escasa
+LORE_RULE_LEAN_MENDING,"The deeper loops give little back. What they give, they give all at once.","Los ciclos profundos devuelven poco. Lo que dan, lo dan de golpe."
+LORE_RULE_ELITE_HUNT_TITLE,Elite Hunt,Caza de élites
+LORE_RULE_ELITE_HUNT,"The strongest no longer wait at the bottom. They climb to meet you.","Los más fuertes ya no esperan en el fondo. Suben a tu encuentro."
+LORE_RULE_SHIELDED_TITLE,Shielded,Escudados
+LORE_RULE_SHIELDED,"They have seen your blade before. Now they face it with a guard.","Ya han visto tu arma. Ahora la reciben en guardia."
+LORE_RULE_POINT_BLANK_TITLE,Point Blank,A quemarropa
+LORE_RULE_POINT_BLANK,"The casters stopped keeping their distance. Distance never saved them.","Los lanzadores dejaron de guardar las distancias. La distancia nunca los salvó."
+UI_TRAINING_ROOM,Training Room,Sala de entrenamiento
+UI_TRAINING_TERMINAL,Training terminal,Terminal de entrenamiento
+UI_TRAINING_PROMPT_TERMINAL,Open the terminal,Abrir la terminal
+UI_TRAINING_EXIT,Back to the Rune Ring,Volver al Anillo de Runas
+UI_TRAINING_HINT,"Training Room · nothing here counts · E at the terminal","Sala de entrenamiento · aquí nada cuenta · E en la terminal"
+UI_TRAINING_NO_ENEMIES,Meet enemies in a run to train against them here.,Encuentra enemigos en una partida para entrenar contra ellos aquí.
+UI_TRAINING_ENEMY,Enemy,Enemigo
+UI_TRAINING_COUNT,Count,Cantidad
+UI_TRAINING_SPAWN,Spawn,Invocar
+UI_TRAINING_CLEAR,Clear enemies,Quitar enemigos
+UI_TRAINING_WEAPON,Weapon,Arma
+UI_TRAINING_NO_CARDS,See wand cards in a run to try them here.,Descubre cartas de varita en una partida para probarlas aquí.
+UI_TRAINING_CARD,Wand card,Carta de varita
+UI_TRAINING_LEVEL,Level,Nivel
+UI_TRAINING_ADD_CARD,Add card,Añadir carta
+UI_TRAINING_REMOVE_CARD,Remove last card,Quitar la última carta
+UI_TRAINING_ORDER,Wand order,Orden de la varita
+UI_TRAINING_RESET,Reset room,Reiniciar la sala
+UI_TRAINING_SPAWNED,Spawned: %s,Invocados: %s
+UI_TRAINING_CLEARED,Enemies cleared.,Enemigos eliminados.
+UI_TRAINING_CARD_ADDED,Added: %s,Añadida: %s
+UI_TRAINING_WAND_FULL,The wand is full: remove a card first.,La varita está llena: quita una carta primero.
+UI_TRAINING_CARD_REMOVED,Card removed.,Carta quitada.
+UI_TRAINING_NO_CARD,No wand card to remove.,No hay carta de varita que quitar.
+UI_FORECAST_TITLE,FORECAST,PREVISIÓN
+UI_FORECAST_AFTER,AFTER THE SWAP,TRAS EL CAMBIO
+UI_FORECAST_LINE,%s,%s
+UI_FORECAST_THEN,%s → %s,%s → %s
+UI_FORECAST_AND,"%s, %s","%s, %s"
+UI_FORECAST_COUNT,%s ×%s,%s ×%s
+UI_FORECAST_FORM_BOLT,Bolt,Proyectil
+UI_FORECAST_FORM_SLASH,Slash,Tajo
+UI_FORECAST_FORM_RING,Ring,Anillo
+UI_FORECAST_FORM_BEAM,Beam,Rayo
+UI_FORECAST_FORM_ZONE,Zone,Zona
+UI_FORECAST_FORM_ORBITER,Orbiting orb,Orbe en órbita
+UI_FORECAST_FORM_LOB,Lobbed bomb,Bomba lanzada
+UI_FORECAST_FORM_BURST,Burst,Estallido
+UI_FORECAST_FORM_WEAPON,A copy of your attack,Una copia de tu ataque
+UI_FORECAST_FORM_LASER,Laser,Láser
+UI_FORECAST_FORM_BOMB,Bomb,Bomba
+UI_FORECAST_FORM_LANCE,Lance,Lanza
+UI_FORECAST_FORM_GLAIVE,Glaive,Disco
+UI_FORECAST_FORM_SEEKERS,Seeker dart,Dardo rastreador
+UI_FORECAST_FORM_WAVE,Wave,Onda
+UI_FORECAST_FORM_WISPS,Wisp,Fuego fatuo
+UI_FORECAST_FORM_VOID,Void orb,Orbe del vacío
+UI_FORECAST_FORM_RUNE,Rune burst,Estallido rúnico
+UI_FORECAST_FORM_PELLETS,Pellets,Perdigones
+UI_FORECAST_BIG,big,tamaño grande
+UI_FORECAST_SMALL,small,tamaño pequeño
+UI_FORECAST_BURNS,burns,quema
+UI_FORECAST_SHOCKS,shocks,electrocuta
+UI_FORECAST_BLEEDS,bleeds,desangra
+UI_FORECAST_FREEZES,chills,congela
+UI_FORECAST_SLOWS,slows,ralentiza
+UI_FORECAST_POISONS,poisons,envenena
+UI_FORECAST_PIERCES,pierces %s,atraviesa %s
+UI_FORECAST_BOUNCES,bounces %s×,rebota %s×
+UI_FORECAST_CHAINS,jumps to %s more,salta a %s más
+UI_FORECAST_HOMES,homes in,persigue
+UI_FORECAST_RETURNS,comes back,vuelve
+UI_FORECAST_REPEATS,repeats ×%s,se repite ×%s
+UI_FORECAST_REPEAT,repeats once,se repite una vez
+UI_FORECAST_ON_HIT,on hit: %s,al impactar: %s
+UI_FORECAST_ON_KILL,on a kill: %s,al matar: %s
+UI_FORECAST_ON_END,where it ends: %s,donde termina: %s
+UI_FORECAST_ON_CRIT,on a crit: %s,con un crítico: %s
+UI_FORECAST_ON_LAUNCH,as it fires: %s,al disparar: %s
+UI_FORECAST_ON_NTH,every few attacks: %s,cada pocos ataques: %s
+UI_FORECAST_NUMBERS_GUN,Shots per attack %s · Damage each %s · Damage per second %s · Radius %s m,Disparos por ataque %s · Daño de cada uno %s · Daño por segundo %s · Radio %s m
+UI_FORECAST_NUMBERS_BLADE,Hits per swing %s · Damage per hit %s · Damage per second %s · Reach %s m,Golpes por tajo %s · Daño por golpe %s · Daño por segundo %s · Alcance %s m
+PERF_REC_ON,● PERF,● PERF
+PERF_REC_MARK,● PERF · mark %d,● PERF · marca %d
+UI_FXG_OPEN,Effects,Efectos
+UI_FXG_GROUP_HERO,Hero: attacks · elements · skills · dash · vent,Héroe: ataques · elementos · habilidades · esquiva · purga
+UI_FXG_GROUP_ENEMIES,Enemies: shots · attacks · telegraphs,Enemigos: disparos · ataques · avisos
+UI_FXG_GROUP_BOSSES,Bosses: every attack,Jefes: cada ataque
+UI_FXG_GROUP_PACK_USED,Pack effects in use (each PackFx row),Efectos del pack en uso (cada fila de PackFx)
+UI_FXG_GROUP_PACK_UNUSED,Pack effects not in use,Efectos del pack sin usar
+UI_FXG_ATTACK,attack,ataque
+UI_FXG_SKILL,skill,habilidad
+UI_FXG_DASH,dash,esquiva
+UI_FXG_VENT,vent,purga
+UI_FXG_SRC_VIEW,game view (WorldViewRoot) · %s,vista del juego (WorldViewRoot) · %s
+UI_FXG_SRC_ACTOR,game view (WorldViewRoot) · %s,vista del juego (WorldViewRoot) · %s
+UI_FXG_USE_BUILD,the %s build,la build %s
+UI_FXG_USE_ABILITY,ability card %s,carta de habilidad %s
+UI_FXG_USE_CARD,card · tags: %s,carta · etiquetas: %s
+UI_FXG_USE_ENEMY,enemy (every floor that spawns it),enemigo (cada piso que lo genera)
+UI_FXG_USE_BOSS,boss fight,combate de jefe
+UI_FXG_PHASE_FIRST,first phase,primera fase
+UI_FXG_PHASE_LAST,last phase,última fase
+UI_FXG_USE_ROW,PackFx row (%s) · family %s · code: %s,fila de PackFx (%s) · familia %s · código: %s
+UI_FXG_USE_NONE,unused · played as a %s,sin usar · se reproduce como %s
+UI_FXG_PREV_GROUP,◀◀ Group,◀◀ Grupo
+UI_FXG_PREV,◀ Previous,◀ Anterior
+UI_FXG_NEXT,Next ▶,Siguiente ▶
+UI_FXG_NEXT_GROUP,Group ▶▶,Grupo ▶▶
+UI_FXG_GRID,Grid,Cuadrícula
+UI_FXG_BACK,Back,Volver
+UI_FXG_HINT,←/→ entry (page) · ↑/↓ group · G or Y grid · click a cell to open it · Esc or B back,←/→ entrada (página) · ↑/↓ grupo · G o Y cuadrícula · clic en una celda para abrirla · Esc o B volver
+UI_FXG_EMPTY,Nothing in this group,Nada en este grupo
+UI_FXG_HEAD,Group %d/%d: %s · entry %d/%d,Grupo %d/%d: %s · entrada %d/%d
+UI_FXG_HEAD_GRID,Group %d/%d: %s · page %d/%d · %d entries,Grupo %d/%d: %s · página %d/%d · %d entradas
+UI_FXG_SOURCE,Source,Origen
+UI_FXG_USE,Used by,Lo usa
+UI_FXG_SEEN,Pack effects drawn here: %s,Efectos del pack dibujados aquí: %s
+UI_FXG_SEEN_NONE,none (code looks only),ninguno (solo looks de código)
+STARBOUND_KIND,Starbound,Estelar
+CONSTELLATION_KIND,Constellation,Constelación
+CONST_PICK_TITLE,Choose a Constellation,Elige una constelación
+CONST_PICK_HINT,Yours for the rest of the run,Tuya para el resto de la partida
+STARBOUND_ARC_JUMP,Arc Jump,Salto de arco
+STARBOUND_ARC_JUMP_DESC,Hits jump to a nearby enemy. +1 jump per stack.,Los golpes saltan a un enemigo cercano. +1 salto por acumulación.
+STARBOUND_RISING_EDGE,Rising Edge,Filo creciente
+STARBOUND_RISING_EDGE_DESC,Crits raise your crit damage until the room is cleared.,Los críticos aumentan tu daño crítico hasta limpiar la sala.
+STARBOUND_ECHO_CAST,Echo Cast,Eco de lanzamiento
+STARBOUND_ECHO_CAST_DESC,+25 % chance to repeat an attack.,+25 % de probabilidad de repetir un ataque.
+STARBOUND_FERVOUR,Fervour,Fervor
+STARBOUND_FERVOUR_DESC,Kills raise your attack speed until the room is cleared.,Las bajas aumentan tu velocidad de ataque hasta limpiar la sala.
+STARBOUND_DETONATION,Detonation,Detonación
+STARBOUND_DETONATION_DESC,Killed enemies burst for a share of their max HP.,Los enemigos abatidos estallan con parte de su vida máxima.
+CONST_PRISM,Prism,Prisma
+CONST_PRISM_DESC,Gun: one more element slot. Blade: stacked elements weaken less.,Pistola: una ranura de elemento más. Espada: los elementos apilados se debilitan menos.
+CONST_TWIN_STAR,Twin Star,Estrella gemela
+CONST_TWIN_STAR_DESC,Overlevels count double.,Los sobreniveles cuentan doble.
+CONST_GLASS_SKY,Glass Sky,Cielo de cristal
+CONST_GLASS_SKY_DESC,"Double damage, half max HP.","Doble de daño, mitad de vida máxima."
+CONST_STARFALL,Starfall,Lluvia de estrellas
+CONST_STARFALL_DESC,Every 5th crit strikes another enemy.,Cada 5.º crítico golpea a otro enemigo.
+CONST_METEOR,Meteor,Meteoro
+CONST_METEOR_DESC,Every 5th attack calls a meteor. Starfall with Fire Lv 3.,Cada 5.º ataque invoca un meteoro. Lluvia de estrellas con Fuego Nv 3.
+CONST_DEEP_WOUNDS,Deep Wounds,Heridas profundas
+CONST_DEEP_WOUNDS_DESC,"Bleed, venom and burn stack higher and hurt more.","El sangrado, el veneno y las quemaduras se acumulan más y duelen más."
+CONST_SUPERNOVA,Supernova,Supernova
+CONST_SUPERNOVA_DESC,Starbound cards count twice.,Las cartas Estelares cuentan doble.
+CONST_HUNTERS_SKY,Hunter's Sky,Cielo del cazador
+CONST_HUNTERS_SKY_DESC,+50 % damage to elites and bosses.,+50 % de daño a élites y jefes.

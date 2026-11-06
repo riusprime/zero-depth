@@ -6,9 +6,10 @@ extends Resource
 ## iso view), +x its east (the screen's right).
 
 ## What the interact opens (Main wires each one): the run's build pick, the Codex, the Codex on its Achievements page,
-## the credits, or a stand-in panel (the Wardrobe until RB, the Progression Station until MP).
+## the Runic Stone (v0.9.5 RS1: it speaks in runes; HubSession handles it), or a stand-in panel (the Wardrobe,
+## the Progression Station).
 const PANELS: Array[StringName] = [
-	&"portal", &"codex", &"achievements", &"credits", &"wardrobe", &"progression"
+	&"portal", &"codex", &"achievements", &"runic", &"wardrobe", &"progression"
 ]
 
 @export var id: StringName

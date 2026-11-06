@@ -26,7 +26,7 @@ const AIM_SHIMMER := 3
 ## coloured parts) to `core` (its white-hot parts).
 const FLARE := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 uniform sampler2D sheet : filter_linear_mipmap;
 uniform vec4 color : source_color = vec4(1.0);
 uniform vec4 core : source_color = vec4(1.0);
@@ -51,7 +51,7 @@ void fragment() {
 ## A flat quad on the floor (the cast sigil): one cell of a 2 x 2 sheet, turning slowly, faded by `alpha`.
 const SIGIL := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 uniform sampler2D sheet : filter_linear_mipmap;
 uniform vec4 color : source_color = vec4(1.0);
 uniform vec4 core : source_color = vec4(1.0);
@@ -70,9 +70,27 @@ void fragment() {
 ## Where the textures are looked up (tests point it elsewhere to see the code looks).
 static var dir := DIR
 static var _shaders := {}
+static var _soft_dot: GradientTexture2D
 
 
 ## The texture `id` (assets/textures/vfx/<id>.png), or null when it isn't installed (the code look stays).
+## v0.9.5 SQ: a round soft dot (white centre, transparent edge), shared by the untextured particle quads so their
+## corners stay clear and no lit square shows round them.
+static func soft_dot() -> GradientTexture2D:
+	if _soft_dot == null:
+		var g := Gradient.new()
+		g.offsets = PackedFloat32Array([0.0, 0.35, 1.0])
+		g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0.6), Color(1, 1, 1, 0)])
+		_soft_dot = GradientTexture2D.new()
+		_soft_dot.gradient = g
+		_soft_dot.fill = GradientTexture2D.FILL_RADIAL
+		_soft_dot.fill_from = Vector2(0.5, 0.5)
+		_soft_dot.fill_to = Vector2(1.0, 0.5)
+		_soft_dot.width = 64
+		_soft_dot.height = 64
+	return _soft_dot
+
+
 static func get_tex(id: String) -> Texture2D:
 	var path := dir + id + ".png"
 	return load(path) if ResourceLoader.exists(path) else null

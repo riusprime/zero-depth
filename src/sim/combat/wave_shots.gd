@@ -5,9 +5,9 @@ extends RefCounted
 ## the Wave form, the Gun's shot as a wide band (AttackSpec.wave_mm, set by the Wave card,
 ## data/modifiers/gun_wave.tres). Not the Blade's Wave (the Echo Slash card, echo_slash): this one is the Gun's, id
 ## gun_wave, and carries no "wave" tag, so Split Wave never reads it.
-## - The shot: the Gun's bolt, one every 0.9 s (attack speed at half its bonus, AttackRate.form_rate) at 6 m/s, as far
-##   as an orb flies (10.8 m). It passes through enemies (World's projectile pass skips them, as the Void's); a wall or
-##   the end of its flight ends it.
+## - The shot: the Gun's bolt, one every 0.9 s (attack speed at half its bonus, AttackRate.form_rate) at 6 m/s, for
+##   5.4 m (v0.10.5 W3-P5: half an orb's 10.8 m, so the Void stays the crowd top; owner, P5). It passes through
+##   enemies (World's projectile pass skips them, as the Void's); a wall or the end of its flight ends it.
 ## - The band: wave_mm wide (3 m; the area stat scales it), centred on the shot and square to its flight, DEPTH_M deep.
 ##   Every enemy whose body the band rolls over takes the shot's hit once (Attacks.land: its elements, its On Hit and
 ##   On Kill hooks); the wait is per shot and enemy for the rest of the shot's flight (ModifierState.void_*, the
@@ -44,6 +44,11 @@ static func half_m(w: World, s: AttackSpec) -> float:
 	return Stats.area(w, s.wave_mm / 2000.0)
 
 
+## Half the band of wave projectile `pi` now (m): its own width (v0.9.5 FC8 WaveMods: Big Shot, Rapid Fire, a child).
+static func half_of(w: World, pi: int) -> float:
+	return Stats.area(w, WaveMods.band_mm(w, pi, Attacks.projectile_spec(w, pi)) / 2000.0)
+
+
 ## Tick phase 6 (ModifierRuntime.advance, after VoidShots.advance clears the waits that are over): each Wave shot's
 ## band hits what it rolls over.
 static func advance(w: World) -> void:
@@ -73,13 +78,11 @@ static func _waiting(s: ModifierState, shot: int, foe: int) -> bool:
 static func covered(w: World, pi: int) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	var p := w.projectiles
-	var v := Vector2(p.vel_x[pi], p.vel_y[pi])
-	var speed := Kin.length(v)
-	if speed <= 0.0:
+	var dir := WaveMods.heading(w, pi)  # v0.9.5 FC8: a Mine churning in place keeps its heading
+	if dir == Vector2.ZERO:
 		return out
-	var dir := v / speed
 	var at := Vector2(p.pos_x[pi], p.pos_y[pi])
-	var half := half_m(w, Attacks.projectile_spec(w, pi))
+	var half := half_of(w, pi)
 	var a := w.actors
 	for i in w.enemies_near(at, half + DEPTH_M):
 		var off := a.pos(i) - at
@@ -119,7 +122,8 @@ static func _band(w: World, pi: int) -> void:
 		s.void_foe.append(aid)
 		s.void_next.append(w.tick + p.life[pi] + 2)  # gone with the shot (VoidShots.advance drops it)
 		if ctx == null:
-			var ang := Kin.angle_of(Vector2(p.vel_x[pi], p.vel_y[pi]))
+			var vel := Vector2(p.vel_x[pi], p.vel_y[pi])
+			var ang := Kin.angle_of(vel if vel != Vector2.ZERO else WaveMods.heading(w, pi))
 			ctx = AttackContext.make(at, ang, p.damage[pi], w.take_root(), p.tags[pi], &"")
 			ctx.depth = spec.depth
 			ctx.proc_pct = maxi(1, 100 >> spec.depth)
@@ -134,16 +138,15 @@ static func read(w: World) -> Array[Dictionary]:
 		return out
 	var p := w.projectiles
 	for pi in _shots(w):
-		var v := Vector2(p.vel_x[pi], p.vel_y[pi])
-		var sp := Kin.length(v)
+		var dir := WaveMods.heading(w, pi)
 		(
 			out
 			. append(
 				{
 					"id": p.ids[pi],
 					"pos": Vector2(p.pos_x[pi], p.pos_y[pi]),
-					"dir": v / sp if sp > 0.0 else Vector2.RIGHT,
-					"half": half_m(w, Attacks.projectile_spec(w, pi)),
+					"dir": dir if dir != Vector2.ZERO else Vector2.RIGHT,
+					"half": half_of(w, pi),
 					"depth": DEPTH_M,
 				}
 			)

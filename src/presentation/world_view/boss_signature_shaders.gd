@@ -8,7 +8,7 @@ extends RefCounted
 
 const BEAM := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, fog_disabled;
 uniform vec4 color : source_color = vec4(1.0, 0.22, 0.52, 1.0);
 uniform vec4 core : source_color = vec4(1.0, 0.86, 0.95, 1.0);
 uniform float strength = 1.0;
@@ -50,7 +50,7 @@ void fragment() {
 
 const FLOOR := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, fog_disabled;
 uniform vec4 color : source_color = vec4(1.0, 0.22, 0.52, 1.0);
 void fragment() {
 	float across = 1.0 - abs(UV.y - 0.5) * 2.0;
@@ -82,7 +82,7 @@ void fragment() {
 
 const SPARK := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, fog_disabled;
 varying float age;
 void vertex() {
 	age = INSTANCE_CUSTOM.r;

@@ -42,6 +42,8 @@ const STRIKE_SNAP_S := 0.07
 const STRIKE_HOLD_S := 0.12
 const STRIKE_BACK_S := 0.35
 
+## v0.9.5 PF5: the skeleton of this avatar's merged body (RigMerge), or null while its pieces draw as they were built.
+var merged_rig: MergedRig
 ## The outlined body materials (ActorViews flashes them on a hit).
 var body_materials: Array[StandardMaterial3D] = []
 ## v0.8.0 HR (O89): for an avatar on EnemyLooks' shared materials (the horde kinds, the Charger and Hatchling): the
@@ -79,10 +81,11 @@ var _strike_end_s := -1.0
 
 func _process(delta: float) -> void:
 	var dt := consume_hold(delta)
-	if dt <= 0.0:
-		return
-	advance(dt)
-	advance_flinch(dt)
+	if dt > 0.0:
+		advance(dt)
+		advance_flinch(dt)
+	if merged_rig != null:  # v0.9.5 PF5: the merged mesh follows the nodes just posed (sync may have moved them too)
+		merged_rig.update_bones()
 
 
 ## v0.8.0 GF3: holds the pose still for `seconds` of frame time (the longer of this and a hold already running; never
@@ -297,18 +300,16 @@ func _track_motion(tick: int, pos: Vector2, teleport_speed: float) -> void:
 	_last_pos = pos
 
 
-## One outlined, flashable body piece under `parent` (its material in body_materials), and with technique "xray"
-## its silhouette in the team colour through walls. Unlike BossParts.piece, the vertex colours are not the albedo
-## unless asked. v0.8.0 HR (O89): the silhouette is a pass of the piece's own material (EnemyLooks.xray, shared per
-## team colour, shrunk as the twin was), no longer a second MeshInstance3D with its own material.
+## One outlined, flashable body piece under `parent` (its material in body_materials). Unlike BossParts.piece, the
+## vertex colours are not the albedo unless asked. v0.9.5 PF1: no X-ray silhouette is drawn.
 func _outlined(
 	parent: Node3D,
 	mesh: Mesh,
 	at: Vector3,
 	c: Color,
 	outline: Color,
-	team: Color,
-	technique: StringName,
+	_team: Color,
+	_technique: StringName,
 	outline_m: float,
 	vertex_colors := false,
 	piece_name := ""
@@ -324,8 +325,6 @@ func _outlined(
 	piece.material_override = mat
 	parent.add_child(piece)
 	body_materials.append(ActorViews.flashable(mat))
-	if technique == &"xray":
-		EnemyLooks.chain_xray(mat, EnemyLooks.xray(team, EnemyLooks.XRAY_SHRINK, 0.0))
 	return piece
 
 
@@ -339,6 +338,15 @@ func show_hit(on: bool, c: Color = Color.WHITE, energy: float = 0.0) -> void:
 	_hit = v
 	for piece in _hit_pieces:
 		piece.set_instance_shader_parameter(EnemyLooks.HIT, v)
+
+
+## v0.9.5 PF5 (RigMerge): how this avatar's rig may be merged into one skinned mesh. "keep": the pieces that must stay
+## nodes of their own (a per-instance shader value of their own, a mesh swapped at runtime, a node added or freed at
+## runtime); "sets": the live lists of pieces that get a per-instance shader value written together (the hit flash on
+## the body plates, an accent glow on the glowing ones): RigMerge swaps a merged piece for the merged mesh in each list
+## it was in, so those writes reach the merged mesh. Each avatar overrides what it needs.
+func rig_spec() -> Dictionary:
+	return {"keep": [], "sets": [_hit_pieces]}
 
 
 ## v0.8.0 HR: the HIT now on the body pieces (tests: Vector4 rgb the linear emission x energy, w 1 = shown).
@@ -366,23 +374,17 @@ func body_looks() -> Array[ShaderMaterial]:
 
 
 ## v0.8.0 HR: the shared body material (EnemyLooks.body) for a plate of `p_kind` in colour `c` (times `tex` when
-## given), outlined in `outline` `outline_m` thick, then `xray_pass`; `two_sided`: drawn from both sides. The biome's
+## given), outlined in `outline` `outline_m` thick; `two_sided`: drawn from both sides. The biome's
 ## cast pulls a grey plate toward enemy_tint and a role-coloured one rests at role_glow of its own colour, as
 ## ActorViews.tint_greys and role_glow did to the avatar's own materials.
 func shared_body(
-	p_kind: int,
-	c: Color,
-	tex: Texture2D,
-	outline: Color,
-	outline_m: float,
-	xray_pass: Material,
-	two_sided := false
+	p_kind: int, c: Color, tex: Texture2D, outline: Color, outline_m: float, two_sided := false
 ) -> ShaderMaterial:
 	var albedo := ActorViews.grey_tinted(c, enemy_tint)
 	var rest: Array = ActorViews.NO_GLOW
 	if role_glow > 0.0 and EnemyPalettes.KIND_IDS.has(p_kind) and ActorViews.role_glows(albedo):
 		rest = [Color(albedo, 1.0), role_glow]
-	return EnemyLooks.body(albedo, tex, rest[0], rest[1], outline, outline_m, xray_pass, two_sided)
+	return EnemyLooks.body(albedo, tex, rest[0], rest[1], outline, outline_m, two_sided)
 
 
 ## An opaque body material with the stencil outline.
@@ -390,33 +392,14 @@ static func outline_material(c: Color, outline: Color, outline_m: float) -> Stan
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = c
 	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = outline
-	mat.stencil_outline_thickness = outline_m
+	ActorLooks.outline(mat, outline, outline_m)
 	return mat
 
 
-## A body piece's X-ray twin: the same mesh a little smaller, drawn in the team colour where walls hide it (the
-## Charger's merged body still uses it; _outlined chains EnemyLooks.xray onto the piece's material instead).
-static func xray_twin(
-	parent: Node3D, mesh: Mesh, c: Color, team: Color, at: Vector3 = Vector3.ZERO
-) -> MeshInstance3D:
-	var ghost := MeshInstance3D.new()
-	ghost.mesh = mesh
-	var gm := StandardMaterial3D.new()
-	gm.albedo_color = c
-	gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-	gm.stencil_color = Color(team, 0.85)
-	ghost.material_override = gm
-	ghost.position = at
-	ghost.scale = Vector3.ONE * 0.96
-	ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	parent.add_child(ghost)
-	return ghost
-
-
-## A face, visor or glow marks the stencil like the body pieces do, so the X-ray twins behind it stay hidden.
+## A face, visor or glow marks the stencil like the body pieces do.
 static func write_stencil(m: StandardMaterial3D) -> void:
+	if not ActorLooks.OUTLINES:
+		return
 	m.stencil_mode = BaseMaterial3D.STENCIL_MODE_CUSTOM
 	m.stencil_flags = BaseMaterial3D.STENCIL_FLAG_WRITE
 	m.stencil_compare = BaseMaterial3D.STENCIL_COMPARE_ALWAYS
@@ -470,3 +453,10 @@ static func flat_mesh(tris: Array, centre: Vector3) -> ArrayMesh:
 	var m := ArrayMesh.new()
 	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return m
+
+
+## v0.9.5 (seams): frees a node built in a member initializer and never parented (its owner freed before setup), so
+## it is not left an orphan; anything already in the tree is left to its parent.
+static func free_if_loose(n: Variant) -> void:
+	if is_instance_valid(n) and (n as Node).get_parent() == null:
+		(n as Node).free()

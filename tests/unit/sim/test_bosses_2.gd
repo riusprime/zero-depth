@@ -8,7 +8,7 @@ extends GutTest
 const S := EnemyAi.State
 const NEW_BOSSES: Array[StringName] = [&"warlord", &"hive_lens", &"foundry"]
 const POOLS := {
-	1: [&"gatekeeper", &"warlord"],
+	1: [&"gatekeeper", &"warlord", &"brood_mother"],  # v0.10.5 W3-O11: she joins floor 1
 	2: [&"brood_mother", &"hive_lens"],
 	3: [&"siege_engine", &"foundry"]
 }

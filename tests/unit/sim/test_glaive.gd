@@ -10,6 +10,17 @@ const HP := 1000000
 const GLAIVE_ON: Array[StringName] = [
 	&"gun_twin",
 	&"gun_swirl",
+	&"halo_shot",  # v0.9.5 FC6: the eleven cards of GlaiveMods
+	&"gun_ring",
+	&"gun_backfire",
+	&"gun_ricochet",
+	&"gun_homing",
+	&"gun_echo",
+	&"gun_big_shot",
+	&"gun_rapid_fire",
+	&"split_shot",
+	&"gun_mine",
+	&"orbit_rounds",
 	&"ember_core",
 	&"storm_core",
 	&"frost_core",
@@ -58,7 +69,7 @@ func test_the_card_makes_the_shot_a_returning_disc() -> void:
 	assert_eq(s.count, 1, "one disc")
 	assert_eq(s.period_ticks, 42, "every 0.7 s")
 	assert_almost_eq(s.speed * s.life_ticks / 2.0, 7.0, 0.01, "7 m out")
-	assert_eq(s.share_permille, 1600, "× 1.6 an orb hit a pass")
+	assert_eq(s.share_permille, 2300, "× 2.3 an orb hit a pass (v0.10.5 W3-P5; 1.84 before)")
 	var def: ItemDefinition = W.repo().get_def(&"items", &"gun_glaive")
 	assert_eq([def.rarity, def.requires_weapon], [ItemDefinition.Rarity.RARE, &"gun"])
 	assert_eq(w.item_tables[W.item(w, &"gun_glaive")].slot_category, AttackSlots.FORM)
@@ -113,7 +124,7 @@ func test_it_hits_on_both_ways_at_one_point_six_an_orb_hit() -> void:
 	W.run(w, 1, 0, W.S)
 	W.run(w, 70, 0, 0)
 	var got := _dealt(w, 1)
-	assert_eq(got, [2, 16], "one hit out, one back: 8 each (× 1.6 of 5)")
+	assert_eq(got, [2, 24], "one hit out, one back: 12 each (× 2.3 of 5)")
 	var row := _world([], [Vector2(2.0, 0.0), Vector2(3.5, 0.0), Vector2(5.0, 0.0)])
 	W.run(row, 1, 0, W.S)
 	W.run(row, 70, 0, 0)
@@ -235,7 +246,7 @@ func test_swirl_turns_each_throw_and_it_still_comes_back() -> void:
 func test_the_glaive_replaces_the_other_forms() -> void:
 	var w := _slot_world()
 	var gl := W.item(w, &"gun_glaive")
-	for other: StringName in [&"gun_laser", &"gun_bomb", &"gun_void", &"gun_lance", &"gun_scatter"]:
+	for other: StringName in [&"gun_laser", &"gun_void", &"gun_lance"]:
 		var o := W.item(w, other)
 		assert_true(BuildSlots.take(w, o))
 		assert_eq(int(Offers.info(w, gl)["replaces"]), o, "the Glaive replaces %s" % other)

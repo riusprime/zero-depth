@@ -1,0 +1,5 @@
+{
+  "licence": "Binbun VFX packs (Fire, Beam, Ice, Magic Orbs, Magic Projectiles, Impact, Magic Area, Muzzle Flash, Poison, Smoke), purchased and licensed by the owner (Rius)",
+  "files_total": 871,
+  "notes": "v0.10.0 VX0 (docs/roadmap/v0.9.5/VFX_PACK.md I1): the attack packs' effect scenes and sources at the paths the scenes load; the packs' demo scenes are not installed. files_total counts every file here except the .import and .uid files."
+}

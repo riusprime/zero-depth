@@ -14,8 +14,8 @@ const STAGES := 4
 const WEIGHTED := 5
 
 ## Draw-weight multipliers, per mille, per category [form, element, advanced, trigger, mutation], one row per stage.
-@export var floor_1_weights_permille := PackedInt32Array([1400, 1400, 400, 600, 20])
-@export var floor_2_weights_permille := PackedInt32Array([1000, 1000, 1000, 1200, 100])
+@export var floor_1_weights_permille := PackedInt32Array([1500, 1600, 900, 600, 20])
+@export var floor_2_weights_permille := PackedInt32Array([1300, 1400, 1100, 1200, 100])
 @export var floor_3_weights_permille := PackedInt32Array([900, 900, 1200, 1200, 300])
 @export var deep_weights_permille := PackedInt32Array([800, 800, 1300, 1200, 600])
 ## The highest level a held wand card can be offered up to, per stage [floor 1, floor 2, floor 3, deep/loops]. A held
@@ -26,6 +26,25 @@ const WEIGHTED := 5
 ## The chance, per mille, that a regular offer (an altar's or a chest's) holds a jackpot card: a held wand card one
 ## level past the ceiling, or a mutation.
 @export var jackpot_permille := 15
+## v0.9.5 EP2 (owner 2026-10-31: wand cards early so a build forms, then stats matched with them): each stage's
+## card-type weights [ability, stat, mod] for altars / chests, 4 stages in order (floor 1, 2, 3, deep); empty = the
+## reward table's.
+@export var altar_type_weights := PackedInt32Array([10, 30, 60, 10, 40, 50, 14, 43, 43, 14, 43, 43])
+@export var chest_type_weights := PackedInt32Array([10, 25, 65, 10, 30, 60, 14, 43, 43, 14, 43, 43])
+## v0.10.5 W3-P2 (the progression audit's P2, owner 2026-11-04: element levels follow the floor): an element card's
+## (loot_category element) own level ceiling in the first loop, by floor (index 0 = floor 1; floors past the end use
+## the last), on top of the stage's ceiling; empty = none. Data 1 / 2 / 2 / 3: Lv 1 on floor 1, Lv 2 on floors 2-3,
+## Lv 3 from floor 4.
+@export var element_ceilings := PackedInt32Array()
+## v0.10.5 W3-P2: the element ceiling on every floor of loop 2 and later (W3-P3: overlevels lift past it from loop 2).
+@export var element_ceiling_loops := 5
+## v0.10.5 W3-P3 (the progression audit's P3, owner 2026-11-04: loops stay "a wall", the build grows to meet them):
+## overlevels. From loop 2 every wand card's level cap rises this many levels a loop past its own level_max (0: none),
+## and each overlevel adds its category's per mille below to the card's main number [form, element, advanced,
+## trigger, mutation] (CardLevels.overlevel_permille): an element its damage, any other card its damage or share ops
+## (ModifierTable.overlevelled), a card with neither the damage of the attacks it shapes. Starting values.
+@export var overlevels_per_loop := 0
+@export var overlevel_permille := PackedInt32Array()
 
 
 func category() -> StringName:
@@ -70,4 +89,42 @@ func validate() -> Array[ValidationIssue]:
 			issues.append(ValidationIssue.new(&"range", resource_path, "guarantees are 0..8"))
 	if jackpot_permille < 0 or jackpot_permille > 1000:
 		issues.append(ValidationIssue.new(&"range", resource_path, "jackpot_permille 0..1000"))
+	for tw in [altar_type_weights, chest_type_weights]:
+		if tw.size() != 0 and tw.size() != STAGES * 3:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "type weights: empty or 3 per stage")
+			)
+			continue
+		for v in tw:
+			if v < 0:
+				issues.append(ValidationIssue.new(&"range", resource_path, "type weights are >= 0"))
+		for s in tw.size() / 3:
+			if tw[s * 3] + tw[s * 3 + 1] + tw[s * 3 + 2] <= 0:
+				issues.append(
+					ValidationIssue.new(&"range", resource_path, "a stage's type weights sum > 0")
+				)
+	var prev := 1  # v0.10.5 W3-P2
+	var ok_el := element_ceilings.size() <= 16
+	for c in element_ceilings:
+		ok_el = ok_el and c >= 1 and c <= 5 and c >= prev
+		prev = maxi(prev, c)
+	ok_el = ok_el and element_ceiling_loops >= prev and element_ceiling_loops <= 5
+	if not ok_el:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "element ceilings: 1..5, never falling, loops' at the top"
+			)
+		)
+	var ok_over := overlevels_per_loop >= 0 and overlevels_per_loop <= 3  # v0.10.5 W3-P3
+	ok_over = ok_over and (overlevel_permille.is_empty() or overlevel_permille.size() == WEIGHTED)
+	for v in overlevel_permille:
+		ok_over = ok_over and v >= 0 and v <= 1000
+	if not ok_over:
+		issues.append(
+			ValidationIssue.new(
+				&"range",
+				resource_path,
+				"overlevels: 0..3 a loop; per mille 0..1000, one per category"
+			)
+		)
 	return issues

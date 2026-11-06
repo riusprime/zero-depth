@@ -3,13 +3,13 @@ extends Control
 ## v0.8.0 N8 (owner O62, "when it's picked, its icon flies to its slot on the HUD"): the layer the picked cards'
 ## icons fly over (CardFly), and where each lands: the HUD slot the card went to, read from the sim after the take
 ## (EI-07: it only reads):
-## - an ability card: that ability's slot in the ability row (AbilityHud);
+## - an ability card: its ability square when it has one (Blink, Aegis; AbilitySquares), else the HP plate;
 ## - a card in the wand (a wand card, a modifier): its pip in the build row (BuildHud);
 ## - a mod held outside the wand: its icon in the carried row, bottom right;
 ## - anything else (a stat card, a curse): the HP plate.
 ## Under reduced motion nothing flies.
 
-var abilities: AbilityHud
+var squares: AbilitySquares
 var build: BuildHud
 var items: Control
 var plate: Control
@@ -41,11 +41,10 @@ func launch(reader: WorldReader, code: int, from: Rect2) -> CardFly:
 ## The HUD rect (global px) card `code` landed in (see the class comment).
 func slot_rect_for(reader: WorldReader, code: int) -> Rect2:
 	var info := reader.card_info(code)
-	if int(info["type"]) == WorldReader.CARD_ABILITY and abilities != null:
-		for k in WorldReader.ABILITY_SLOTS:
-			var s := abilities.slot(k)
-			if s.ability_id == info["id"] and s.is_visible_in_tree():
-				return s.get_global_rect()
+	if int(info["type"]) == WorldReader.CARD_ABILITY and squares != null:
+		var sq := squares.rect_of(&"blink")
+		if sq.size.x > 0.0 and (info["id"] == &"blink" or info["id"] == &"aegis"):
+			return sq
 	if build != null and build.is_visible_in_tree():
 		var slots: Array = reader.build()["slots"]
 		for k in slots.size():

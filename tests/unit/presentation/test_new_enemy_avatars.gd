@@ -17,12 +17,12 @@ func test_both_are_built_flashable_and_outlined() -> void:
 	var avatars: Array[Node3D] = [ArcCasterAvatar.new(), BombDroneAvatar.new()]
 	for avatar in avatars:
 		var name: String = avatar.get_script().get_global_name()
-		avatar.setup(Color.BLACK, &"xray")
+		avatar.setup(Color.BLACK, &"outline")
 		assert_gt(avatar.body_materials.size(), 5, name)
 		for m: StandardMaterial3D in avatar.body_materials:
 			assert_true(m.emission_enabled, "%s: a hit flash changes energy only" % name)
 			assert_eq(m.emission_energy_multiplier, 0.0, "%s: dark until flashed" % name)
-			assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "%s: outlined" % name)
+			assert_eq(m.stencil_mode, ActorLooks.outline_mode(), "%s: outlined" % name)
 		avatar.free()
 
 

@@ -44,19 +44,47 @@ const SEEKER_FAN := 0.55
 ## A muzzle spark this far out along the aim (m); a Halo volley's ground ring this wide (radius, m).
 const MUZZLE_M := 0.55
 const HALO_RING_M := 0.8
+## v0.10.5 W3-S4 (owner F5, 2026-11-04: fire pools "appear frequently ... visually overwhelming"): at most PATCH_MAX of
+## the hero's spec patches (fire, bleed ...) draw at once, the newest; past the newest PATCH_FULL the older ones fade to
+## PATCH_DIM (VfxLayer draws a faded patch smaller and dimmer). Scaled by the Effects density (PATCH_DENSITY), never
+## below one. The sim's patches (their radius, damage, life) are unchanged.
+const PATCH_FULL := 5
+const PATCH_MAX := 8
+const PATCH_DIM := 0.4
+const PATCH_DENSITY := {"low": 0.5, "medium": 0.75, "high": 1.0}
+
+## v0.10.5 W3-P10b (owner W7, "don't get crazy with visuals for explosions"): at most this many Detonation bursts (V2)
+## and Arc Jump lines (V3) are drawn a frame; a line lasts SB_JUMP_TICKS (0.15 s). The rest deal their damage undrawn.
+const SB_BURSTS_MAX := 8
+const SB_JUMPS_MAX := 16
+const SB_JUMP_TICKS := 9.0
 
 ## v0.8.0 AO: the shock arcs and storm strikes laid since the view began, one per arc per sync (for the tests).
 var ring_arcs_drawn := 0
+## v0.10.5 W3-P10b: the Starbound bursts and lines drawn since the view began (the tests).
+var sb_bursts_drawn := 0
+var sb_jumps_drawn := 0
 ## v0.9.0 VX: the volley cues (muzzle sparks, Halo rings) started since the view began (the tests).
 var volley_cues := 0
+## v0.10.5 W3-S4 (owner F8): the hook blasts' size by their damage and their per-second budget (BlastLook).
+var blasts := BlastLook.new()
 ## v0.9.0 VX V48: the Gun shot's look, read once per build.
 var _form := FormLook.new()
+var _sb_tick := -1
+var _sb_n := 0
+var _sb_pool: StarboundFx
 
 
 # --- Live wiring ----------------------------------------------------------------------------------------------
+## W3-S4 (F5): [full, max] patches drawn at the Effects density `density`.
+static func patch_caps(density: String) -> Array:
+	var k: float = PATCH_DENSITY.get(density, 1.0)
+	return [maxi(1, roundi(PATCH_FULL * k)), maxi(1, roundi(PATCH_MAX * k))]
+
+
 func sync(reader: WorldReader) -> void:
 	_tick = reader.tick()
-	_tier = HeatLooks.tier_of(reader.heat_state())
+	_tier = reader.heat_tier()
 	_looks_checked = false
 	_player = reader.player_pos()
 	set_density(ViewPrefs.effects_density)
@@ -69,6 +97,9 @@ func sync(reader: WorldReader) -> void:
 	_sync_mx2_forms(reader)
 	_sync_casts(reader)  # v0.6.5 WN5a: the wand's small spells where they are cast
 	_sync_volley(reader)  # v0.9.0 VX V3, V27, V33, V35
+	_sync_starbound(reader)  # v0.10.5 W3-P10b: Detonation's bursts and Arc Jump's lines (V1-V3)
+	if _sb_pool != null:
+		_sb_pool.sync(_tick)
 
 
 ## A look adds something over the v0.5 blade or dart only with an element, a cue or a damage weight.
@@ -138,11 +169,16 @@ func _projectile_look(reader: WorldReader, i: int) -> Dictionary:
 	return look if not look.is_empty() else _look_of(reader, String(WorldReader.ATTACK_BOLT))
 
 
+## v0.10.0 VX2: the look of live player projectile `i` (HeroPulseViews reads its elements for the pack's shot).
+func look_of_projectile(reader: WorldReader, i: int) -> Dictionary:
+	return _projectile_look(reader, i)
+
+
 func _sync_bolts(reader: WorldReader) -> void:
 	_live.clear()
 	var seen := {}
 	for i in reader.projectile_count():
-		if _live.size() >= LIVE_BOLTS_MAX:
+		if _live.size() >= live_bolts_cap():
 			break  # v0.8.0 PF: the rest fly as their plain darts (draw_at's budget); their trails start when drawn
 		if (
 			reader.projectile_team(i) != 0
@@ -174,7 +210,7 @@ func _sync_bolts(reader: WorldReader) -> void:
 		_live.append(b)
 		var bt := reader.projectile_bounce_tick(i)
 		if bt >= 0 and _bounce_ticks.get(id, -1) != bt:
-			flash(p, (look["edge"] as Color).lerp(Color.WHITE, 0.5), 0.55)
+			flash(p, (look["edge"] as Color).lerp(Color.WHITE, 0.5), 0.55, -1.0, &"bounce")
 		_bounce_ticks[id] = bt
 	for d: Dictionary in [_trails, _bounce_ticks]:
 		for id in d.keys():
@@ -234,7 +270,11 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 	var fire_pos: PackedVector2Array = el["fire_pos"]
 	var fire_r: PackedFloat32Array = el["fire_r"]
 	var fire_left: PackedInt32Array = el["fire_left"]
+	var caps := patch_caps(ViewPrefs.effects_density)
 	for k in fire_pos.size():
+		var rank := fire_pos.size() - 1 - k  # W3-S4 (F5): 0 the newest (the sim appends its patches)
+		if rank >= caps[1]:
+			continue
 		var look := _look_of(reader, fire_keys[k])
 		if look.is_empty():
 			continue  # Napalm Drone's patches have no spec: ElementVisuals draws them
@@ -246,8 +286,9 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 					"look": look,
 					"pos": fire_pos[k],
 					"radius": fire_r[k],
-					"fade": clampf(fire_left[k] / 150.0, 0.0, 1.0),
+					"fade":
 					# By place only: a patch's index in the sim's list shifts when an older one goes out, and an
+					clampf(fire_left[k] / 150.0, 0.0, 1.0) * (1.0 if rank < caps[0] else PATCH_DIM),
 					# index seed made every later patch's flames jump (owner, 2026-10-12: "it goes buggy all around").
 					"seed": _seed_at(fire_pos[k], 0),
 				}
@@ -279,7 +320,6 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 			)
 		)
 	_sync_blasts(ab)
-	_sync_orbit(reader, ab)
 
 
 ## v0.8.0 AO (owner O37: the triple circle "shocks and hits with lighting", the swirl's "storm"): the order rule's rings
@@ -398,38 +438,6 @@ func _sync_blasts(ab: Dictionary) -> void:
 			_bomb_looks.erase(old[i])
 
 
-## The orbit blades (AbilityVisuals draws their steel): the ORBITER spec's element glow and trail round each.
-func _sync_orbit(reader: WorldReader, ab: Dictionary) -> void:
-	var blades: PackedVector2Array = ab["blades"]
-	if blades.is_empty():
-		return
-	if _orbit_sig != reader.attack_digest() + String(ElementLooks.energy_style) + str(_tier):
-		_orbit_sig = reader.attack_digest() + String(ElementLooks.energy_style) + str(_tier)
-		_orbit_look = {}
-		for id in reader.attack_ids():
-			var spec := reader.attack_spec(StringName(id))
-			if int(spec.get("form", -1)) == AttackFormLooks.ORBITER:
-				_orbit_look = AttackFormLooks.compose(spec, _tier)
-				break
-	if _orbit_look.is_empty() or not adds_layer(_orbit_look):
-		return
-	var angles := PackedFloat32Array()
-	var orbit := 0.0
-	for p in blades:
-		angles.append((p - _player).angle())
-		orbit = maxf(orbit, (p - _player).length())
-	_live_forms.append(
-		{
-			"kind": &"orbit",
-			"look": _orbit_look,
-			"pos": _player,
-			"angles": angles,
-			"orbit": orbit,
-			"seed": 4099
-		}
-	)
-
-
 ## Overcharge's shockwave: the charged step's ON_NTH burst, drawn at the sim's radius.
 func _sync_burst(reader: WorldReader) -> void:
 	var oc := reader.overcharge_tick()
@@ -471,10 +479,12 @@ func _sync_crits(reader: WorldReader) -> void:
 		_last_seq = e.seq
 		if e.kind != SimEvent.Kind.DAMAGE or e.owner_id != player_id or e.target_id == player_id:
 			continue
+		if not e.tags & SimEvent.TAG_DOT:  # W3-S4 (F8): the hits a blast's weight is read from
+			blasts.note(e.tick, e.amount, e.pos, (e.tags & SimEvent.TAG_AREA) != 0)
 		if e.tags & SimEvent.TAG_DOT or (e.tags & SimEvent.TAG_CRIT) == 0 or n >= 8:
 			continue
 		n += 1
-		flash(e.pos, AttackFormLooks.CRIT_FLASH, 0.8)
+		flash(e.pos, AttackFormLooks.CRIT_FLASH, 0.8, -1.0, &"crit")
 
 
 ## The child spec of `spec`'s first hook on `trigger` whose child has `form` ({} if none).
@@ -499,6 +509,7 @@ func _sync_volley(reader: WorldReader) -> void:
 	if (
 		reader.lance_active()
 		or reader.scatter_active()
+		or reader.rune_active()  # v0.9.5 FC0: RuneExplosionView draws the burst
 		or reader.glaive_active()
 		or reader.bomb_active()
 		or reader.void_active()
@@ -584,7 +595,7 @@ func _draw_cast(reader: WorldReader, m: Dictionary) -> void:
 	var start := float(m["tick"])
 	if bool(m["cast"]):
 		casts_drawn += 1
-		flash(pos, AttackFormLooks.CAST_SIGIL, 0.75, start)
+		flash(pos, AttackFormLooks.CAST_SIGIL, 0.75, start, &"sigil")  # v0.10.0 VX2 R13: a holy circle
 		spawn(
 			{"form": AttackFormLooks.RING, "radius_m": CAST_RING_M, "elements": look["elements"]},
 			pos,
@@ -592,6 +603,10 @@ func _draw_cast(reader: WorldReader, m: Dictionary) -> void:
 			{"start": start, "life": float(CAST_RING_TICKS), "radius": CAST_RING_M}
 		)
 	var form := int(look["form"])
+	if form == AttackFormLooks.BURST:
+		look = _blast_look(look, pos, int(m["tick"]))
+		if look.is_empty():
+			return
 	if form == AttackFormLooks.ARC or form == AttackFormLooks.BURST:
 		var name: StringName = AttackFormLooks.FORM_NAMES[form]
 		cast_forms[name] = int(cast_forms.get(name, 0)) + 1
@@ -601,3 +616,81 @@ func _draw_cast(reader: WorldReader, m: Dictionary) -> void:
 			SimPlane.yaw_of(int(m["angle"])),
 			{"start": start, "own": CAST_OWN_M, "look": look}
 		)
+
+
+## v0.10.5 W3-S4 (owner F8): a hook blast's look drawn at its damage's weight (its radius MIN_R..1 of the sim's, its
+## light and pieces dimmed: "w"), a small pop past the second's budget, {} when the budget leaves it out (BlastLook).
+func _blast_look(look: Dictionary, pos: Vector2, tick: int) -> Dictionary:
+	var r: float = look["radius"]
+	var a := blasts.admit(tick, pos, ViewPrefs.effects_density)
+	if a == BlastLook.NONE:
+		return {}
+	var w := blasts.weight(tick, pos, r) if a == BlastLook.FULL else 0.0
+	var out := look.duplicate()
+	out["radius"] = r * BlastLook.radius_k(w)
+	out["w"] = w
+	return out
+
+
+## v0.10.5 W3-P10b (V1-V3): the sim's new Detonation bursts, as the hook blast Chain Blast draws (its W3 size by the
+## blast budget, BlastLook) tinted moon-blue, no particles, no flash, no shake: at most SB_BURSTS_MAX a frame; and its
+## new Arc Jump jumps, each a thin moon-blue line for SB_JUMP_TICKS, at most SB_JUMPS_MAX a frame. Reads only.
+func _sync_starbound(reader: WorldReader) -> void:
+	var fx := reader.starbound_fx()
+	var kinds: PackedInt32Array = fx["kind"]
+	var ticks: PackedInt32Array = fx["tick"]
+	if kinds.is_empty():
+		return
+	if ticks[ticks.size() - 1] < _sb_tick:
+		_sb_tick = -1  # a new floor's world: its ticks start again
+		_sb_n = 0
+	var bursts := 0
+	var jumps := 0
+	var at_tick := 0
+	var last := -1
+	for k in kinds.size():
+		var t := ticks[k]
+		at_tick = at_tick + 1 if t == last else 1
+		last = t
+		if t < _sb_tick or (t == _sb_tick and at_tick <= _sb_n):
+			continue
+		var from: Vector2 = fx["from"][k]
+		if kinds[k] == WorldReader.STARBOUND_FX_BURST and bursts < SB_BURSTS_MAX:
+			bursts += _sb_burst(reader, from, t)
+		elif kinds[k] == WorldReader.STARBOUND_FX_JUMP and jumps < SB_JUMPS_MAX:
+			jumps += 1
+			_sb_jump(from, fx["to"][k], t)
+	_sb_tick = last
+	_sb_n = at_tick
+
+
+static func sb_look(form: int) -> Dictionary:
+	var look := AttackFormLooks.compose({"form": form, "radius_m": 0.0})
+	var blue := AstralCardArt.STARBOUND_BLUE
+	for key: String in ["core", "rim", "edge"]:
+		look[key] = blue
+	look["ground"] = AttackFormLooks.ground_safe(blue)
+	look["ground_edge"] = look["ground"]
+	look["particles"] = []
+	look["cues"] = []
+	return look
+
+
+func _sb_burst(reader: WorldReader, at: Vector2, tick: int) -> int:
+	var t := reader.starbound_table(WorldReader.STARBOUND_DETONATION)
+	_sb_fx().add_burst(at, tick, float(t.get("reach_m", 2.0)))
+	sb_bursts_drawn += 1
+	return 1
+
+
+func _sb_jump(from: Vector2, to: Vector2, tick: int) -> void:
+	sb_jumps_drawn += 1
+	_sb_fx().add_jump(from, to, tick)
+
+
+## W3-P10j: the Starbound ring and line pool (StarboundFx), made on first use.
+func _sb_fx() -> StarboundFx:
+	if _sb_pool == null:
+		_sb_pool = StarboundFx.new()
+		add_child(_sb_pool)
+	return _sb_pool

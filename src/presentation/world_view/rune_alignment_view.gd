@@ -83,7 +83,10 @@ func setup(reader: WorldReader, stage: StageView, cover: Color) -> void:
 	_room_light.omni_range = 9.0
 	_room_light.light_energy = 1.6
 	_room_light.shadow_enabled = false
-	_room_light.position = SimPlane.to_3d(reader.floor_room(reader.rune_room()).get_center(), 2.6)
+	if reader.rune_room() >= 0:  # v0.10.5 S14: an old save's dropped room has none
+		_room_light.position = SimPlane.to_3d(
+			reader.floor_room(reader.rune_room()).get_center(), 2.6
+		)
 	_room_light.visible = false
 	add_child(_room_light)
 	for k in reader.rune_pillar_count():
@@ -119,7 +122,7 @@ func sync(reader: WorldReader) -> void:
 	if solved and not revealed:
 		revealed = true
 		_room_light.visible = true
-		if _stage != null:
+		if _stage != null and reader.rune_room() >= 0:
 			_stage.reveal_hidden(reader.rune_room())
 
 

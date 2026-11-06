@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 class_name BossStore
 extends RefCounted
 ## The live bosses' own state (v0.3.0 C), beside their actor entry (which holds the position, HP, the AI state and
@@ -157,6 +158,25 @@ var shade_until := -1
 var lamp_x := PackedFloat32Array()
 var lamp_y := PackedFloat32Array()
 var lamp_t := PackedInt32Array()
+## v0.9.5 BH4 (BossStream): the Tidecaller's streams. One entry per live boss with them (its actor id, the tick its next
+## ring is due, the rings fired and the tick its next waves form), and one per crossing wave on the floor (its boss's
+## actor id, its wave attack, the tick it formed, the way it travels (1/4096 turns), 1 once it has hit the player,
+## the middle of its starting line on the wall, its length, and how far its middle travels). Hashed only while any
+## exists
+## (WorldSnapshot.ADDED_SINCE_V05: an older save has none).
+var str_boss := PackedInt32Array()
+var str_ring_due := PackedInt32Array()
+var str_ring_n := PackedInt32Array()
+var str_wave_due := PackedInt32Array()
+var wv_boss := PackedInt32Array()
+var wv_atk := PackedInt32Array()
+var wv_from := PackedInt32Array()
+var wv_dir := PackedInt32Array()
+var wv_hit := PackedInt32Array()
+var wv_x := PackedFloat32Array()
+var wv_y := PackedFloat32Array()
+var wv_len := PackedFloat32Array()
+var wv_run := PackedFloat32Array()
 
 
 func size() -> int:
@@ -244,6 +264,48 @@ func hash_into(h: StateHasher) -> void:
 		h.add_f32s(lamp_x)
 		h.add_f32s(lamp_y)
 		h.add_ints(lamp_t)
+	if not str_boss.is_empty() or not wv_boss.is_empty():  # v0.9.5 BH4: only while a Tidecaller's streams run
+		h.add_int(-6)
+		for f: StringName in [&"str_boss", &"str_ring_due", &"str_ring_n", &"str_wave_due"]:
+			h.add_ints(get(f))
+		for f: StringName in [&"wv_boss", &"wv_atk", &"wv_from", &"wv_dir", &"wv_hit"]:
+			h.add_ints(get(f))
+		for f: StringName in [&"wv_x", &"wv_y", &"wv_len", &"wv_run"]:
+			h.add_f32s(get(f))
+
+
+## v0.9.5 BH4: the stream entry of boss `boss_id`, or -1.
+func str_of(boss_id: int) -> int:
+	return str_boss.find(boss_id)
+
+
+## v0.9.5 BH4: a new stream entry for boss `boss_id` (rings and waves due at the given ticks).
+func add_stream(boss_id: int, ring_due: int, wave_due: int) -> int:
+	str_boss.append(boss_id)
+	str_ring_due.append(ring_due)
+	str_ring_n.append(0)
+	str_wave_due.append(wave_due)
+	return str_boss.size() - 1
+
+
+## v0.9.5 BH4: removes stream entry k.
+func remove_stream(k: int) -> void:
+	for f: StringName in [&"str_boss", &"str_ring_due", &"str_ring_n", &"str_wave_due"]:
+		var ai: PackedInt32Array = get(f)
+		ai.remove_at(k)
+		set(f, ai)
+
+
+## v0.9.5 BH4: removes crossing wave k.
+func remove_wave(k: int) -> void:
+	for f: StringName in [&"wv_boss", &"wv_atk", &"wv_from", &"wv_dir", &"wv_hit"]:
+		var ai: PackedInt32Array = get(f)
+		ai.remove_at(k)
+		set(f, ai)
+	for f: StringName in [&"wv_x", &"wv_y", &"wv_len", &"wv_run"]:
+		var af: PackedFloat32Array = get(f)
+		af.remove_at(k)
+		set(f, af)
 
 
 ## v0.9.0 NB4: forgets the Lantern Shade's light (its boss gone: the room relights).

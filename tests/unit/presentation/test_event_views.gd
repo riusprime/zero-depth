@@ -66,7 +66,7 @@ func test_the_drone_ring_and_elite_crowns_follow_the_sim() -> void:
 
 func test_the_panel_shows_every_event_with_costs_rewards_curses_and_leave() -> void:
 	for id in EVENTS:
-		var w := EventLab.world(4242, 1, &"blade", [&"withering"])
+		var w := EventLab.world(4242, 1, &"blade", [&"heavy_hands"])
 		Stats.add_card(w, Stats.Stat.DAMAGE, 0)  # test setup: a raised stat for Echo Mirror
 		EventLab.set_event(w, id)
 		EventLab.open(w)
@@ -118,14 +118,14 @@ func test_a_cursed_chest_card_is_marked_and_the_others_are_clean() -> void:
 
 
 func test_the_threat_panel_lists_curses_and_the_recap_counts_t() -> void:
-	var w := EventLab.world(5, 1, &"blade", [&"swift_foes", &"price_gouge"])
+	var w := EventLab.world(5, 1, &"blade", [&"rooted", &"tunnel_vision"])
 	var reader := WorldReader.new(w)
 	var panel := ThreatPanel.new()
 	add_child_autofree(panel)
 	panel.sync(reader)
 	assert_eq(panel.title_text(), tr("UI_THREAT") % 2)
 	assert_eq(panel.row_count(), 2)
-	Curses.add(w, EventLab.curse_index(w, &"withering"))
+	Curses.add(w, EventLab.curse_index(w, &"heavy_hands"))
 	panel.sync(reader)
 	assert_eq(panel.row_count(), 3)
 	assert_true(panel.note_text().begins_with(tr("UI_CURSE_GAINED")), "a new curse flashes a note")
@@ -147,8 +147,8 @@ func test_every_event_and_curse_string_is_in_both_languages() -> void:
 		if d.is_trade_off():
 			keys.append(String(d.up_desc_key))  # v0.6.0 CU: the upside's sentence
 	# v0.5.5 DS: Whispering Deep and its two choices; v0.6.0 CU: 13 curses, 8 of them with an upside
-	# v0.9.0 EL: the Ambush Cache (2 keys and its choice) and Marked (3) deleted
-	assert_eq(keys.size(), 8 * 2 + 13 + 12 * 2 + 7)
+	# v0.9.0 EL: the Ambush Cache (2 keys and its choice) and Marked (3) deleted; v0.10.5 O1: the five plain curses
+	assert_eq(keys.size(), 8 * 2 + 13 + 7 * 2 + 7)
 	for k in keys:
 		assert_true(rows.has(k), "%s is in strings.csv" % k)
 		if rows.has(k):

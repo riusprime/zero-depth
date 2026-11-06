@@ -665,6 +665,26 @@
       "loop": false
     },
     {
+      "id": "gamble_fail",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/gamble_fail.wav",
+      "sha256": "7761074a2ae5821a3ea6ebf0bf51a2f9509175e22cd99175fc62ad0157d44b6e",
+      "seconds": 0.7,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -14.36,
+      "loop": false
+    },
+    {
+      "id": "gamble_win",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/gamble_win.wav",
+      "sha256": "42b60a6e35542b32986de026f95175ce8bd6c227c31647b92763aedaf363d528",
+      "seconds": 0.6,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -12.61,
+      "loop": false
+    },
+    {
       "id": "boss_floor_burst",
       "kind": "sfx",
       "path": "assets/audio/sfx/boss_floor_burst.wav",
@@ -1015,6 +1035,16 @@
       "loop": false
     },
     {
+      "id": "rune_burst",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/rune_burst.wav",
+      "sha256": "60ca36ac536eae9451f17bf21e079209e44f185c780a56c16a6731fac7681360",
+      "seconds": 0.53,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -12.96,
+      "loop": false
+    },
+    {
       "id": "pillar_turn",
       "kind": "sfx",
       "path": "assets/audio/sfx/pillar_turn.wav",
@@ -1222,6 +1252,16 @@
       "seconds": 0.65,
       "peak_dbfs": -1.0,
       "rms_dbfs": -16.06,
+      "loop": false
+    },
+    {
+      "id": "stress_break",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/stress_break.wav",
+      "sha256": "3048de635e8d346f02de64b5bbbb2983199892a56f015ae572f655cc5bc806f8",
+      "seconds": 0.3,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -17.72,
       "loop": false
     },
     {

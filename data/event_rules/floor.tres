@@ -4,8 +4,8 @@
 
 [resource]
 script = ExtResource("1_rules")
-rooms_min = 1
-rooms_max = 2
+rooms_min = 0
+rooms_max = 1
 interact_radius_m = 1.6
 clear_radius_m = 1.0
 reward_gap_m = 3.0
@@ -14,10 +14,12 @@ cursed_chest_first_floor = 1
 cursed_chest_every_floors = 2
 cursed_chests_per_floor = 1
 defend_radius_m = 4.5
-cleanse_price = 60
-core_window_seconds = 2.0
+core_window_seconds = 3.0
 core_mod_weight = 10
+boss_core_legendary_chance = 0.35
 drop_offset_m = 0.9
 curse_room_floor_chance_permille = 400
 curse_room_deep_chance_permille = 1000
+event_floor_chance_permille = 300
+events_max_per_run = 2
 id = &"floor"

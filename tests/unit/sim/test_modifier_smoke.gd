@@ -11,10 +11,12 @@ extends GutTest
 const SOLO_TICKS := 300
 const PAIR_TICKS := 120
 const MAX_LIVE_PROJECTILES := 400
-## v0.6.0 MX2: the six ability modifiers (each a slot), held at level 3 in the runs that use them.
-const ABILITY_MODS: Array = [
-	&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field", &"frost_nova", &"flame_trail"
-]
+## v0.9.5 CLV: how far launch attempts may pass the cap in the tick it holds (one attack's fan-out: the Gun's
+## shots_per_attack_max is 12; measured 261 = cap + 5 with every card at once).
+const FAN_OUT_SLACK := 16
+## v0.6.0 MX2: the six ability modifiers (each a slot), held at level 3 in the runs that use them. v0.10.5 O1: they
+## are gone, so the runs hold none.
+const ABILITY_MODS: Array = []
 const FORM := AttackSpec.Form
 const OP := ModifierOp.Op
 const STAGE := ModifierTable.Stage
@@ -31,8 +33,7 @@ func before_all() -> void:
 	for m in _mods:
 		var k := AttackScenario.item_index(w.item_tables, m.id)
 		if k < 0 or w.item_tables[k].kind != ItemTable.Kind.MODIFIER:
-			if not m.id in [&"cluster_payload", &"overclocked_drone", &"afterimage"]:
-				_first.append(m)
+			_first.append(m)
 
 
 ## Runs the script for `ticks` on a `weapon` run with `mods` compiled onto its attacks. Returns {digest, hash,
@@ -91,27 +92,19 @@ func _check(label: String, r: Dictionary, cap_ok: bool = false) -> void:
 		assert_eq(r["limits"], 0, "%s: no LIMIT" % label)
 	else:  # v0.6.0 MX4: all 51 at once may reach the launch cap: the cap holding is one LIMIT a tick at most
 		assert_lte(r["limits"], r["capped_ticks"], "%s: only the launch cap's LIMIT" % label)
+	# v0.9.5 CLV: launch_count counts attempts; Attacks._count refuses every one past the cap, but the fan-out loop that
+	# crosses it still tries its remaining copies (at most one attack's worth, FAN_OUT_SLACK), so attempts may pass the
+	# cap by that much and no more.
 	assert_lte(
-		r["max_launches"], Attacks.MAX_LAUNCHES_PER_TICK + 1, "%s: launches per tick" % label
+		r["max_launches"],
+		Attacks.MAX_LAUNCHES_PER_TICK + FAN_OUT_SLACK,
+		"%s: launch attempts per tick" % label
 	)
 	assert_lte(r["max_projectiles"], MAX_LIVE_PROJECTILES, "%s: live projectiles" % label)
 
 
 func test_every_modifier_is_shipped_and_compiled() -> void:
-	assert_eq(
-		_mods.size(),
-		104,
-		(
-			"the 14 migrated attack items (MX1), Frost Nova's frost, Razor Orbit (MX2); MX4: the M-list's"
-			+ " 29 new, 3 legendary, Cluster Payload, Overclocked Drone, Afterimage; v0.6.5 WN1: 4 triggers;"
-			+ " v0.6.5 WN3: the Gun pool's 12 new; WN4: the Blade pool's 12 new; WN5a: the shared pool's 2"
-			+ " new (Bleed, Explosive); WN5b: 3 legendary triggers; v0.8.0 BL: Blade Storm, Riposte Chain;"
-			+ " v0.8.0 AO: Ring, Swirl; v0.8.0 RR: Chain Blast; v0.8.0 RM: Threadline, Faultline, Gravity Stitch,"
-			+ " Stress Mark, Double Exposure, Grand Finale; v0.9.0 LZ, BM, VP, AF1: Laser, Bomb, Void, Lance,"
-			+ " Scatter; v0.9.0 AF2: Glaive, Seekers"
-			+ "; v0.9.0 AF3: Wave, Wisps"
-		)
-	)
+	assert_eq(_mods.size(), 50, "v0.10.5 O1: the modifiers left in data/modifiers (was 105)")
 
 
 func test_every_modifier_alone_on_each_weapon_runs_and_replays() -> void:
@@ -211,16 +204,3 @@ func test_every_form_as_a_layer_runs_on_every_attack() -> void:
 					"%s + form %d then %d" % [weapon, a, b],
 					_run(weapon, one, PAIR_TICKS, ABILITY_MODS)
 				)
-
-
-func test_the_ability_specs_are_compiled_and_carry_the_weapon() -> void:
-	var five := ABILITY_MODS.slice(0, 5)  # Ember Edge takes the sixth slot
-	var w := AttackScenario.world(&"blade", [&"ember_edge"], false, five)
-	assert_eq(w.mod_slots.size(), 6)
-	for id: StringName in five:
-		var s := Modifiers.book(w).spec(id)
-		assert_not_null(s, "%s has a spec" % id)
-		if s != null:
-			assert_true(s.has_tag(&"ability"), "%s is an ability's" % id)
-			assert_true(s.elements.has("ember"), "%s carries the Blade's ember" % id)
-			assert_ne(s.key, "", "%s is filed by key" % id)

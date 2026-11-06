@@ -116,6 +116,23 @@ func test_continue_floor_4_and_fight_the_tidecaller_through_its_pull() -> void:
 	)
 	assert_gt(main.view.tides.strength(), 0.3, "the water drawn round it")
 	assert_true(hud.boss_bar.visible, "its bar")
+	# v0.9.5 BH4: the ring stream and the crossing waves run beside its attacks, in the real boss room: a wave's foam line
+	# is drawn at a wall of the room, then the band crosses it.
+	var line_seen := false
+	var band_seen := false
+	var room := w.bosses.arena
+	for k in 60 * 10:
+		await e.frames(1)
+		line_seen = line_seen or main.view.tide_waves.lines_shown() > 0
+		band_seen = band_seen or main.view.tide_waves.bands_shown() > 0
+		if line_seen and band_seen:
+			break
+	assert_true(room.has_area(), "the boss room's rectangle is the waves' room")
+	assert_true(line_seen, "a wave's foam line was drawn on the floor")
+	assert_true(band_seen, "and the wave crossed the room")
+	var rings := w.bosses.str_ring_n
+	assert_false(rings.is_empty(), "the ring stream is running")
+	assert_gt(rings[0], 0, "and has fired")
 	# The tide over and the shell down, the hero closes in and strikes.
 	for k in 400:
 		if not reader.boss_shielded(w.actors.index_of(bid)):

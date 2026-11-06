@@ -44,9 +44,10 @@ var layout := Layout.ROW_CENTRE
 ## v0.8.0 N8: the deal's timeline (CardDeal).
 var deal := CardDeal.new()
 var _dim := ColorRect.new()
-var _title := Label.new()
-var _price_icon := ShardIcon.new(26.0)
-var _hint := Label.new()
+## v0.10.5 W3-O16: the Astral heading (AstralChrome.Heading), a chest price's shard and the hint line.
+var _title := AstralChrome.Heading.new(32)
+var _price_icon := ShardIcon.new(28.0, true)
+var _hint := AstralChrome.Hint.new(200.0, 16)
 ## v0.8.0 N8: the high cards' light rays, on one layer under every card.
 var _rays := Control.new()
 var _slots: Array[PickSlot] = []
@@ -72,6 +73,7 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dim_base = 0.18 if layout == Layout.ROW_LOW else DIM
 	_add_dim(_dim, _dim_base)
+	_dim.color = Color(AstralChrome.INK, _dim_base)  # v0.10.5 W3-O16: Astral's ink, not black
 	_rays.name = "Rays"
 	_rays.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_rays.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -79,32 +81,30 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 	add_child(_rays)
 	var col := VBoxContainer.new()
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.add_theme_constant_override("separation", 14)
+	col.add_theme_constant_override("separation", 16)
+	# v0.10.5 W3-O16 (Astral): the sigil and the letter-spaced title (a chest's price with Astral's shard after it),
+	# a rule under it, the cards, and the hint between fading hairlines.
 	var head := HBoxContainer.new()
 	head.alignment = BoxContainer.ALIGNMENT_CENTER
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	head.add_theme_constant_override("separation", 10)
+	head.add_theme_constant_override("separation", 12)
 	head.add_child(_title)
 	head.add_child(_price_icon)
 	_price_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	col.add_child(head)
-	var groove := MenuPanel.TitleGroove.new(true)  # v0.8.0 MU: the Ember stone title's glowing groove
-	groove.custom_minimum_size = Vector2(0, 12)
-	col.add_child(groove)
+	col.add_child(AstralChrome.Rule.new(400.0))
 	var cards: BoxContainer = (
 		VBoxContainer.new() if layout == Layout.COLUMN_RIGHT else HBoxContainer.new()
 	)
 	cards.alignment = BoxContainer.ALIGNMENT_CENTER
 	cards.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	cards.add_theme_constant_override("separation", 18)
+	cards.add_theme_constant_override("separation", 32)
 	col.add_child(cards)
+	var gap := Control.new()  # room for the dealt fan's drop over the hint
+	gap.custom_minimum_size = Vector2(0, 16)
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(gap)
 	col.add_child(_hint)
-	HudStyle.style_label(_title, 28, true)  # v0.3.5 F16: the HUD's plain type
-	_title.add_theme_color_override("font_shadow_color", Color(EmberStone.EMBER, 0.3))  # v0.8.0 MU
-	_title.add_theme_constant_override("shadow_outline_size", 12)
-	HudStyle.style_label(_hint, 15)
-	_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
-	style_labels([_title, _hint])
 	for k in SLOTS:
 		var s := PickSlot.new(k)
 		s.clicked.connect(_on_clicked)
@@ -156,23 +156,24 @@ func sync(reader: WorldReader) -> void:
 		var curse := reader.choice_curse(k)  # v0.5.0 EV: a cursed chest card says so
 		s.show_curse(CurseLook.down_line(self, reader, curse) if curse >= 0 else "")  # v0.6.0 CU
 	var chest := reader.reward_kind(r) == WorldReader.REWARD_CHEST
-	_title.text = (
+	var title := (
 		tr("PICK_TITLE_CHEST") % reader.reward_price(r) if chest else tr("PICK_TITLE_ALTAR")
 	)
 	if reader.reward_is_epic(r):  # v0.5.0 RT
-		_title.text = tr("PICK_TITLE_EPIC_ALTAR")
+		title = tr("PICK_TITLE_EPIC_ALTAR")
 	if legendary:  # v0.5.5 AR (X1b): the boss's reward; v0.8.0 RR: says when it holds a Legendary card
-		_title.text = boss_title(self, _slots.slice(0, _count), reader.legendary_picks_left())
+		title = boss_title(self, _slots.slice(0, _count), reader.legendary_picks_left())
 	var drop := reader.reward_drop_kind(r)  # v0.6.0 CU: a stolen core, Marked's card
 	if drop == WorldReader.DROP_CORE or drop == WorldReader.DROP_BOSS_CORE:
-		_title.text = tr("PICK_TITLE_CORE")
+		title = tr("PICK_TITLE_CORE")
 	elif drop == WorldReader.DROP_ELITE_CARD:
-		_title.text = tr("PICK_TITLE_ELITE_DROP")
+		title = tr("PICK_TITLE_ELITE_DROP")
 	var dealt := reader.choice_dealt()  # v0.8.0 N7 (owner O61): a chest deals its one card, no choice
 	if dealt:
-		_title.text = tr("PICK_TITLE_CHEST_DEALT")
+		title = tr("PICK_TITLE_CHEST_DEALT")
 	_price_icon.visible = chest and not dealt
-	_hint.text = tr("PICK_HINT_DEALT" if dealt else "PICK_HINT")
+	_title.set_text(title)
+	_hint.label.text = tr("PICK_HINT_DEALT" if dealt else "PICK_HINT")
 	_dealt = dealt
 	_answer = InputFrame.PICK_NONE
 	_set_focus(0)
@@ -220,6 +221,16 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			face["tier_text"] = ci.tr(RARITY_KEYS[clampi(face["tier"], 0, 3)])
 			if face["tier"] == WorldReader.RARITY_LEGENDARY:  # v0.5.5 AR: tier 3 is the ability's; legendary has its own
 				face["tier"] = CardFrames.LEGENDARY_TIER
+		WorldReader.CARD_STARBOUND:  # v0.10.5 W3-P10b: the gold Starbound card (AstralCardArt), its stacks as Lv
+			face["tier"] = 1  # its rarity line in the moon-blue (AstralCardArt.RARITY), no high-card wait
+			face["color"] = AstralCardArt.STARBOUND_BLUE
+			face["tier_text"] = ci.tr("STARBOUND_KIND")
+			face["held_level"] = int(info.get("stacks", 0))
+			# W3-P10j: the gold frame's inner edge is narrower than the stone card's, so an "Lv N" badge sat over the
+			# title and the corner ornaments: no badge; stacks already held read "Starbound ×N" on the rarity line.
+			face["level_text"] = ""
+			if face["held_level"] > 0:
+				face["tier_text"] = "%s ×%d" % [face["tier_text"], face["held_level"]]
 		WorldReader.CARD_CURSE:  # v0.6.0 CU: a trade-off curse card: its name, its upside, rare
 			face["sentence"] = CurseLook.up_sentence(ci, reader, int(info["curse"]))
 			face["color"] = CurseLook.COLOR
@@ -235,9 +246,50 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			face["tier_text"] = "%s · %s" % [ci.tr(kind_key), rarity] if run else rarity
 			if face["wand"]:  # v0.7.5 SM (N8): a wand card's level, and the level taking it gives
 				face["held_level"] = held_level(reader, code)
-				face["level_text"] = level_text(ci, face["held_level"], face["held_level"] + 1)
+				face["level_text"] = level_text(
+					ci,
+					face["held_level"],
+					face["held_level"] + 1,
+					int(info.get("max_level", 5)),
+					int(info.get("base_max", 0)),  # v0.10.5 W3-P3: an overlevel says so
+				)
 			slot_face(ci, reader, info, face)  # v0.9.0 AS
+			form_face(reader, info, face)  # v0.9.5 TX
+			pair_face(ci, reader, code, face)  # v0.9.5 EP4
 	return face
+
+
+## v0.9.5 TX: a Pattern or Secondary Gun card says what it does on the form held now (FormCardText): face["form_line"]
+## under the generic sentence, in the form's colour (face["form_color"]). Orbs, the Blade and every other card: none.
+static func form_face(reader: WorldReader, info: Dictionary, face: Dictionary) -> void:
+	var slot := int(info.get("slot", WorldReader.SLOT_NONE))
+	if slot != WorldReader.SLOT_PATTERN and slot != WorldReader.SLOT_SECONDARY:
+		return
+	var form := reader.attack_form_id()
+	var line := FormCardText.line_for(form, face["id"])
+	if line.is_empty():
+		return
+	face["form_line"] = line
+	face["form_color"] = FormCardText.accent_for(form)
+
+
+## v0.9.5 EP4 (owner: "some kind of notification when you select it and see that you got the element combination"): an
+## element card that would turn on or raise a pair says so under the sentence ("Pair: Thermal Shock", "Thermal Shock
+## -> Lv 2") in the pair's colour, unless the card already has a form line. `code` is the item's index.
+static func pair_face(ci: Object, reader: WorldReader, code: int, face: Dictionary) -> void:
+	if face.has("form_line"):
+		return
+	var pv := reader.pair_preview(code)
+	if pv.size() < 2:
+		return
+	var x := pv[0]
+	var lv := pv[1]
+	var pname: String = ci.tr(reader.pair_name_key(x))
+	if lv <= 1:
+		face["form_line"] = ci.tr("UI_PAIR_PREVIEW_ON") % pname
+	else:
+		face["form_line"] = ci.tr("UI_PAIR_PREVIEW_UP") % [pname, lv]
+	face["form_color"] = ItemLooks.combo_color(reader.pair_id(x))
 
 
 ## v0.9.0 AS (owner Q5, Q14: "Short line + slot tag"; C67, C87): a Form, Pattern, Secondary or Element card's slot tag
@@ -271,11 +323,20 @@ static func held_level(reader: WorldReader, code: int) -> int:
 
 
 ## v0.7.5 SM (N8): the level badge: "Lv N" for a card not held (N is the level it arrives at), "Lv N → M" when
-## taking it raises a held card from N to M.
-static func level_text(ci: Object, held: int, to: int) -> String:
+## taking it raises a held card from N to M. v0.10.5 W3-P3: a level past the card's own max (`base`, 0: none) is an
+## overlevel: the badge adds "✦ overlevel" (UI_CARD_OVERLEVEL).
+static func level_text(ci: Object, held: int, to: int, cap: int = 5, base: int = 0) -> String:
+	var s := ""
 	if held <= 0 or held >= to:
-		return ci.tr("UI_WAND_LEVEL") % maxi(held, to)
-	return ci.tr("UI_CARD_LEVEL_UP") % [held, to]
+		if cap < 5:  # v0.9.5 CLV: a card of 3 levels reads "Lv 1/3"
+			s = ci.tr("UI_WAND_LEVEL_OF") % [maxi(held, to), cap]
+		else:
+			s = ci.tr("UI_WAND_LEVEL") % maxi(held, to)
+	else:
+		s = ci.tr("UI_CARD_LEVEL_UP") % [held, to]
+	if base > 0 and maxi(held, to) > base:
+		s += " " + ci.tr("UI_CARD_OVERLEVEL")
+	return s
 
 
 ## v0.5.5 AR (X1b): a card of the boss's legendary altar. v0.8.0 RR (owner O33): it keeps its own tier (a Legendary
@@ -323,7 +384,7 @@ func slot(k: int) -> PickSlot:
 
 
 func title_text() -> String:
-	return _title.text
+	return _title.full_text()
 
 
 func _input(event: InputEvent) -> void:

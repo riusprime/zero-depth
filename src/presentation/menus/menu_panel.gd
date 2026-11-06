@@ -6,6 +6,10 @@ extends Control
 ## left-aligned title over a glowing groove, plain warm rows, the focused row an ember-lit slab with a small ember
 ## diamond beside it (EmberMarker), and small notes and key hints under the list.
 ## Keyboard, mouse and pad all work through the focus, as before.
+## v0.10.5 W3-O18 (owner: "the rest of the UI ... should match the new style"): `astral` (the main menu, the pause
+## menus, the run recap) draws it in Astral (AstralMenu) instead: no slab, the title in letter-spaced Cinzel after the
+## sigil over a fading hairline, the rows AstralButtons (a star and a tapered streak mark the focused one), notes and
+## hints in Atkinson under a second hairline, the game under Astral's cool ink.
 
 var box := VBoxContainer.new()
 ## The notes and key hints under the list (not buttons, so `box` keeps the title and the rows only).
@@ -13,11 +17,17 @@ var footer := VBoxContainer.new()
 var marker := EmberMarker.new()
 ## The stone slab the list sits on.
 var slab := PanelContainer.new()
+## v0.10.5 W3-O18: drawn in Astral (AstralMenu).
+var astral := false
 var _column := VBoxContainer.new()
 
 
-func _init() -> void:
+func _init(p_astral: bool = false) -> void:
+	astral = p_astral
 	set_anchors_preset(Control.PRESET_FULL_RECT)
+	if astral:
+		_init_astral()
+		return
 	MenuStyle.apply(self)
 	slab.name = "Slab"
 	slab.set_anchors_preset(Control.PRESET_CENTER_LEFT)
@@ -41,16 +51,50 @@ func _init() -> void:
 	add_child(marker)
 
 
+## v0.10.5 W3-O18: the Astral list: no slab, rows on a 56 px pitch, a hairline between the list and its notes.
+func _init_astral() -> void:
+	AstralMenu.apply(self)
+	slab.name = "Slab"
+	slab.set_anchors_preset(Control.PRESET_CENTER_LEFT)
+	var open := StyleBoxEmpty.new()
+	open.content_margin_top = 32
+	open.content_margin_bottom = 32
+	slab.add_theme_stylebox_override("panel", open)
+	slab.offset_left = AstralMenu.LEFT
+	slab.grow_vertical = Control.GROW_DIRECTION_BOTH
+	add_child(slab)
+	_column.name = "Column"
+	_column.custom_minimum_size = Vector2(AstralMenu.LIST_W, 0)
+	_column.add_theme_constant_override("separation", 16)
+	slab.add_child(_column)
+	box.add_theme_constant_override("separation", 0)
+	box.custom_minimum_size = Vector2(AstralMenu.LIST_W, 0)
+	_column.add_child(box)
+	footer.name = "Footer"
+	footer.add_theme_constant_override("separation", 8)
+	footer.add_child(AstralMenu.LeftRule.new(24.0, 0.35))
+	_column.add_child(footer)
+	marker.visible = false
+	add_child(marker)
+
+
 ## The backdrop behind the menu (MenuBackdrop: the blurred, ember-lit game, or with nothing behind the menu's own
 ## ember-lit stone scene); drawn under everything else.
 func add_backdrop() -> MenuBackdrop:
 	var b := MenuBackdrop.new()
+	b.astral = astral  # v0.10.5 W3-O18
 	add_child(b)
 	move_child(b, 0)
 	return b
 
 
 func add_title(key: String) -> Label:
+	if astral:  # v0.10.5 W3-O18: the sigil, the title in Cinzel, a fading hairline under it
+		var head := AstralMenu.Title.new(AstralMenu.TITLE_SIZE, true)
+		head.label.text = key
+		box.add_child(head)
+		box.add_child(AstralMenu.LeftRule.new(40.0))
+		return head.label
 	var l := Label.new()
 	l.text = key
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -68,6 +112,12 @@ func add_title(key: String) -> Label:
 
 
 func add_button(key: String, on_press: Callable) -> Button:
+	if astral:  # v0.10.5 W3-O18
+		var r := AstralButton.new(AstralButton.Kind.ROW, AstralMenu.LIST_W)
+		r.text = key
+		r.pressed.connect(on_press)
+		box.add_child(r)
+		return r
 	var b := Button.new()
 	b.text = key
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -86,6 +136,8 @@ func add_note(text: String) -> Label:
 	l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	l.add_theme_font_size_override("font_size", MenuStyle.NOTE_SIZE)
 	l.add_theme_color_override("font_color", MenuStyle.DIM)
+	if astral:
+		AstralMenu.body(l, AstralMenu.NOTE_SIZE, AstralCardArt.DIM)
 	footer.add_child(l)
 	return l
 
@@ -93,6 +145,8 @@ func add_note(text: String) -> Label:
 ## The small key hint at the bottom of the list (a translation key).
 func add_hint(key: String) -> Label:
 	var l := MenuStyle.hint(key)
+	if astral:
+		AstralMenu.body(l, AstralMenu.NOTE_SIZE, Color(AstralCardArt.DIM, 0.75))
 	footer.add_child(l)
 	return l
 
@@ -105,6 +159,8 @@ func focus_first() -> void:
 
 
 func _process(_delta: float) -> void:
+	if astral:  # the rows mark their own focus
+		return
 	var f := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
 	marker.follow(f as Button if f is Button and box.is_ancestor_of(f) else null)
 

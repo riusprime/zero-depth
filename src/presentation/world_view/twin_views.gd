@@ -30,7 +30,7 @@ const LASH_SECONDS := 0.45
 const BURN_SECONDS := 0.35
 const LANE_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 
 uniform vec4 tint : source_color = vec4(1.0, 0.7, 0.3, 1.0);
 uniform float alpha = 0.0;
@@ -48,7 +48,7 @@ void fragment() {
 """
 const SPOT_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 
 uniform vec4 tint : source_color = vec4(1.0, 0.9, 0.6, 1.0);
 uniform float alpha = 0.0;

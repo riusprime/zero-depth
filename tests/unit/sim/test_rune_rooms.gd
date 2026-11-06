@@ -83,7 +83,23 @@ func test_every_rune_puzzle_is_solvable_and_never_on_the_way() -> void:
 	assert_eq(bad, 0, "every rune puzzle solvable in at most 3 presses a pillar, off the way")
 	assert_gt(placed, SEEDS * 5 / 10, "most floors have a dead end that fits one")
 	assert_gt(both, 0, "some floors hold both puzzles")
-	assert_between(natural, SEEDS * 25 / 100, SEEDS * 35 / 100, "about 30 % of floors are tried")
+	assert_eq(natural, 0, "v0.10.5 S14: the data's chance is 0, so no floor is tried naturally")
+
+
+## v0.10.5 S14 (owner: "let's remove the puzzle for now"): floors generated as the run generates them (the call
+## FloorPlan.add_secrets makes, at the data's chance) place no rune puzzle room.
+func test_the_data_places_no_rune_puzzle_room_on_200_seeds() -> void:
+	var repo := ContentRepository.load_all()
+	var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
+	map.room_layouts = RunContentCompiler.compile_room_layouts(repo)
+	var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
+	assert_eq(secrets.rune_permille, 0, "the data's chance")
+	var placed := 0
+	for s in 200:
+		var f := _layout(7001 + s * 7919, map, BossArenaSpec.new(), 0)
+		if RuneRooms.mark(f, secrets.rune_permille, PackedInt32Array(), PackedVector2Array()) >= 0:
+			placed += 1
+	assert_eq(placed, 0, "no rune puzzle room on 200 seeds")
 
 
 func test_the_same_seed_marks_the_same_puzzle() -> void:
@@ -99,3 +115,29 @@ func test_the_same_seed_marks_the_same_puzzle() -> void:
 	assert_eq(a.walls.size(), walls, "the floor's walls are untouched")
 	assert_eq(RuneRooms.mark(a, 0, PackedInt32Array(), PackedVector2Array()), -1, "not drawn: none")
 	assert_eq(a.rune_room, -1)
+
+
+## v0.10.5 S14: a floor saved while it held a rune room, rebuilt at the data's chance 0, drops the puzzle cleanly.
+func test_an_old_saves_rune_room_is_dropped_on_load() -> void:
+	RuneLab.force_chance()
+	var repo := RuneLab._held
+	var w := SaveLab.build_floor(SaveLab.run_state(34, 2, &"blade", 0, repo), &"", repo)
+	assert_not_null(w.runes, "built with a rune room")
+	if w.runes == null:
+		RuneLab.restore_chance()
+		return
+	var pillars := w.runes.pillars.duplicate()
+	for i in 5:
+		w.step(InputFrame.new())
+	var snap := WorldSnapshot.take(w)
+	RuneLab.restore_chance()  # the data's chance: 0
+	var again := SaveLab.build_floor(SaveLab.run_state(34, 2, &"blade", 0, repo), &"", repo)
+	assert_null(again.runes, "rebuilt without a rune room")
+	assert_eq(WorldSnapshot.apply(again, snap), "", "the old save still loads")
+	assert_null(again.runes, "the restored rune state is dropped")
+	assert_eq(again.floor_layout.rune_room, -1)
+	for p in pillars:
+		assert_eq(again.interactables.enabled[p], 0, "no pillar takes a press")
+	for i in 30:
+		again.step(InputFrame.new())
+	assert_eq(again.tick, w.tick + 30 - 0, "and the floor plays on")

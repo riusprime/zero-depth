@@ -5,6 +5,8 @@ extends MenuPanel
 ## kills, shards (only when the run counts them), the items you held and the killing cause.
 ## v0.5.5 A5; v0.8.0 MU (Ember stone, MenuStyle): the game blurred behind, the title, recap and buttons on a stone slab.
 ## v0.9.0 HB (owner Q27, W48): its second row goes to the hub (Restart stays one press, focused first).
+## v0.10.5 W3-O18: in Astral (MenuPanel.astral): the cause in Atkinson, the recap's lines quieter under it, a fading
+## hairline before the rows.
 
 signal restart_pressed
 signal hub_pressed
@@ -38,7 +40,7 @@ var recap := {}
 func _init(
 	won: bool, killer_kind: int, cause_key: StringName = &"", p_recap: Dictionary = {}
 ) -> void:
-	super()
+	super(true)  # v0.10.5 W3-O18: in Astral
 	name = "EndPanel"
 	recap = p_recap
 	add_backdrop()
@@ -56,6 +58,9 @@ func _init(
 		cause.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_INHERIT
 	if not recap.is_empty():
 		_add_recap()
+	var gap := AstralMenu.LeftRule.new(40.0, 0.35)
+	gap.name = "RowsRule"
+	box.add_child(gap)
 	add_button("UI_RESTART", func() -> void: restart_pressed.emit()).name = "Restart"
 	add_button("UI_TO_HUB", func() -> void: hub_pressed.emit()).name = "Hub"  # v0.9.0 HB (Q27, W48)
 	add_hint("UI_MENU_HINT")
@@ -78,8 +83,20 @@ func _add_recap() -> void:
 				+ tr("UI_RECAP_FLOOR") % [recap["floor"], recap.get("floors", recap["floor"])]
 			)
 		)
+	var looped := clampi(int(recap.get("loop", 1)) - 1, 0, 3)  # v0.9.5 BH1 (Q11): the loops that eased the fight
+	if looped >= 1:
+		_line("Looped", tr("RUN_SUMMARY_LOOPED") % looped)
 	if recap.has("loops_cleared"):  # v0.7.5 AP: the Ascension loop
 		_line("Loops", tr("UI_RECAP_LOOPS") % recap["loops_cleared"])
+	if bool(recap.get("record_loop", false)):  # v0.10.5 O5a (D3): this run set the weapon's deepest loop
+		_line("RecordLoop", tr("UI_RECAP_RECORD_LOOP") % int(recap.get("loop", 1)))
+	if bool(recap.get("record_time", false)):  # and its fastest true ending
+		_line("RecordTime", tr("UI_RECAP_RECORD_TIME"))
+	if not (recap.get("rules", PackedStringArray()) as PackedStringArray).is_empty():  # v0.10.5 O5b
+		var names := PackedStringArray()
+		for k: String in recap["rules"]:
+			names.append(tr(k))
+		_line("Rules", tr("UI_RECAP_RULES") % " · ".join(names), 20)
 	if recap.has("seconds"):
 		var secs := int(recap["seconds"])
 		_line("Time", tr("UI_RECAP_TIME") % [secs / 60, secs % 60])
@@ -95,6 +112,9 @@ func _add_recap() -> void:
 				% [recap["fragments"], recap.get("fragments_total", recap["fragments"])]
 			)
 		)
+		var bonus := int(recap.get("loop_bonus_permille", 1000))  # v0.10.5 O5a: more fragments a loop
+		if bonus > 1000:
+			_line("LoopBonus", tr("UI_RECAP_LOOP_BONUS") % ("%.1f" % (bonus / 1000.0)), 20)
 	if recap.has("routes"):
 		_line("Route", tr("UI_RECAP_ROUTE") % route_text(self, recap["routes"]))
 	if recap.has("threat"):  # v0.5.0 EV: threat T now and the run's peak
@@ -131,5 +151,13 @@ func _line(line_name: String, text: String, font_size: int = 24) -> Label:
 	l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	l.add_theme_font_size_override("font_size", font_size)
+	# v0.10.5 W3-O18: the cause (26) bright, the recap (24) in body text, the small lines (20) dim.
+	match font_size:
+		26:
+			AstralMenu.body(l, 22, AstralCardArt.TEXT)
+		24:
+			AstralMenu.body(l, 18, Color(AstralCardArt.TEXT, 0.88))
+		_:
+			AstralMenu.body(l, AstralMenu.NOTE_SIZE + 1, AstralCardArt.DIM)
 	box.add_child(l)
 	return l

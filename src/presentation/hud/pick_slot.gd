@@ -11,6 +11,7 @@ extends VBoxContainer
 ## slot in its rarity line ("Pattern · Modifier · Rare", PickPanel.slot_face) and, when that slot is full, wears a
 ## ribbon across it (StoneCard.show_ribbon): "Replaces Twin", which burns away when this card is picked
 ## (burn_replaced, the pick panel's outro), or "Choose one to replace" (a full Secondary or Element slot: the Swap).
+## v0.10.5 W3-O15: the card is an Astral card (StoneCard.astral: the owner's carved frame and painted icon).
 
 signal clicked(slot: int)
 signal hovered(slot: int)
@@ -48,12 +49,13 @@ func _init(p_index: int, p_scale: float = PICK_SCALE) -> void:
 	index = p_index
 	name = "PickSlot%d" % (p_index + 1)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	add_theme_constant_override("separation", 2)
-	card = StoneCard.new(p_scale)
+	# W3-S14: the slot number sits below the tilted, glowing card, not on its edge
+	add_theme_constant_override("separation", 20)
+	card = StoneCard.new(p_scale, true)  # v0.10.5 W3-O15: the Astral card (the owner's frame and icon)
 	add_child(card)
 	_key.text = str(p_index + 1)
 	_key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_key.add_theme_font_size_override("font_size", 15)
+	_key.add_theme_font_size_override("font_size", HudStyle.MIN_LABEL)  # v0.10.5 W3-O20: 15 read ~10 px at 720p
 	_key.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_key.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_key)
@@ -145,6 +147,7 @@ func _render() -> void:
 		_face.get("color", Color(0, 0, 0, 0))  # v0.8.0 MU: the element's colour on the inlay ring
 	)
 	card.show_gain(_face.get("gain", {}))  # v0.8.0 N8: what gets better, old → new
+	card.show_form_line(_face.get("form_line", ""), _face.get("form_color", Color.WHITE))  # v0.9.5 TX
 	_show_slot_line()
 	_apply()
 
@@ -183,7 +186,7 @@ func burn_replaced(t: float) -> void:
 	r.use_parent_material = false
 	r.material = _old_burn
 	_old_burn.set_shader_parameter("burn", t)
-	_old_burn.set_shader_parameter("edge_color", Color("#FF8A3D"))
+	_old_burn.set_shader_parameter("edge_color", AstralCardArt.GLARE)  # v0.10.5 W3-O15: the glare edge
 	_old_burn.set_shader_parameter("rect_pos", r.get_global_transform().origin)
 	_old_burn.set_shader_parameter("rect_size", r.get_global_rect().size.max(Vector2.ONE))
 
@@ -201,7 +204,7 @@ func _build_curse(s: float) -> void:
 	var mark := CardMark.new(12.0)
 	mark.color = CurseLook.COLOR
 	_curse.add_child(mark)
-	_curse_text.add_theme_font_size_override("font_size", 14)
+	_curse_text.add_theme_font_size_override("font_size", HudStyle.MIN_LABEL)  # v0.10.5 W3-O20 (was 14)
 	_curse_text.add_theme_color_override("font_color", CurseLook.COLOR.lerp(Color.WHITE, 0.3))
 	_curse_text.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_curse_text.mouse_filter = Control.MOUSE_FILTER_IGNORE

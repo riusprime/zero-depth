@@ -13,7 +13,12 @@ const SEED := 34
 const FLOOR := 2
 
 
+func before_each() -> void:
+	RuneLab.force_chance()  # v0.10.5 S14: the data's chance is 0; the saved floor is built with it forced
+
+
 func after_each() -> void:
+	RuneLab.restore_chance()
 	E2e.center_sticks()
 
 

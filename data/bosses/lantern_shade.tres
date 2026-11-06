@@ -9,11 +9,11 @@ script = ExtResource("1_atk")
 id = &"lights_out"
 shape = 4
 shape_params = {
-"dark_lasts_seconds": 8.0,
+"dark_lasts_seconds": 9.0,
 "dark_seconds": 4.0,
 "inset_m": 1.5,
 "lamp_m": 3.0,
-"lamp_seconds": 6.0,
+"lamp_seconds": 4.0,
 "lamps": 4,
 "light_m": 3.5,
 "pattern_id": "shade_lights_out_wisps",
@@ -32,17 +32,18 @@ cooldown_seconds = 0.8
 cause_key = &"CAUSE_SHADE_DARK"
 opens_weak_point = true
 shielded = true
+shield_seconds = 0.0
 
 [sub_resource type="Resource" id="A_lights_out_3"]
 script = ExtResource("1_atk")
 id = &"lights_out_3"
 shape = 4
 shape_params = {
-"dark_lasts_seconds": 8.0,
+"dark_lasts_seconds": 9.0,
 "dark_seconds": 4.0,
 "inset_m": 1.5,
 "lamp_m": 3.0,
-"lamp_seconds": 6.0,
+"lamp_seconds": 4.0,
 "lamps": 4,
 "light_m": 3.5,
 "pattern_id": "shade_lights_out_wisps_3",
@@ -61,6 +62,7 @@ cooldown_seconds = 0.8
 cause_key = &"CAUSE_SHADE_DARK"
 opens_weak_point = true
 shielded = true
+shield_seconds = 0.0
 
 [sub_resource type="Resource" id="A_wisp_bloom"]
 script = ExtResource("1_atk")
@@ -126,7 +128,7 @@ shape = 0
 shape_params = {
 "count": 1,
 "radius_m": 1.8,
-"snuff": 1,
+"snuff": 2,
 "stagger_seconds": 0.6
 }
 telegraph_seconds = 1.6
@@ -149,7 +151,7 @@ shape = 0
 shape_params = {
 "count": 2,
 "radius_m": 1.8,
-"snuff": 1,
+"snuff": 2,
 "stagger_seconds": 0.6
 }
 telegraph_seconds = 1.6
@@ -215,7 +217,7 @@ script = ExtResource("3_boss")
 name_key = &"BOSS_LANTERN_SHADE"
 desc_key = &"BOSS_LANTERN_SHADE_DESC"
 hp = 2400
-radius_m = 1.2
+radius_m = 1.50
 move_speed_mps = 1.4
 turn_rate_dps = 70.0
 keep_distance_m = 0.0

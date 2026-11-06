@@ -1,18 +1,34 @@
 extends GutTest
-## The bigger card pool through real input (v0.5.0 CP): start a run, fill the four slots from the dev panel (Bomb
-## Lobber, Drone Buddy, Orbit Blades: so ability mods can come up and no altar opens with a new ability), then walk
-## (left stick only) from altar to altar, opening each with E, until one offers a v0.5.0 CP card: its face shows
-## its own symbol, its translated name and its numbers; take it with the keyboard (arrows, Enter) and see it apply.
+## The bigger card pool through real input (v0.5.0 CP): start a run, take Blink from the dev panel (the utility slot is
+## taken, so no altar opens with a new ability), then walk (left stick only) from altar to altar, opening each with E,
+## until one offers a v0.5.0 CP stat card: its face shows its own symbol, its
+## translated name and its numbers; take it with the keyboard (arrows, Enter) and see it apply.
+## v0.10.5 O1: the CP mod cards (Cluster Payload, Overclocked Drone, Razor Orbit, Afterimage) and the old abilities
+## they needed are gone. An altar in a secret room still hidden (Secrets.hidden_rooms: v0.10.5 S15d's cracked walls
+## put one behind CP_SEED's cracked wall) is not walked to: its way in must open first.
 
+## v0.10.5 O9: and the seven rule cards that replaced the flat stats (the same kind of card: own symbol, its numbers).
+## The flat cards' retirement moved the seed's draws (CP_SEED below).
 const CP_STATS: Array[StringName] = [
-	&"glass_cannon", &"onrush", &"overkill", &"hoarder", &"fast_hands"
-]
-const CP_MODS: Array[StringName] = [
-	&"cluster_payload", &"overclocked_drone", &"razor_orbit", &"afterimage"
+	&"glass_cannon",
+	&"onrush",
+	&"overkill",
+	&"hoarder",
+	&"fast_hands",
+	&"vent_mend",
+	&"heat_shield",
+	&"adrenaline",
+	&"close_quarters",
+	&"third_strike",
+	&"reflex",
+	&"scavenger",
 ]
 ## v0.9.0 FV: floor 1 holds two altars (loot scales with its rooms), and neither of Main.STAGE_SEED's offers a CP
-## card; CP_SEED's first altar does (found with this walk over the seeds after it).
-const CP_SEED := 20261012
+## card; CP_SEED's first altar does (found with this walk over the seeds after it). v0.10.5 O1: 20261013, the first
+## seed after 20261012 whose walk meets a CP stat card now (20261012's two open altars offer none since the CP mods and
+## the old abilities went; found by running this walk on 20261013-20261020: 20261013 and 20261015 do). v0.10.5 O9:
+## 20261015 (20261013's and 20261014's walks meet none since the flat cards retired; 20261015's offers Vent Mend).
+const CP_SEED := 20261015
 
 
 func after_each() -> void:
@@ -33,17 +49,12 @@ func _grant(e: E2e, main: Main, id: StringName) -> void:
 	await e.frames(2)
 
 
-## The index of a CP card in `offer`, or -1.
+## The index of a CP stat card in `offer`, or -1.
 static func _cp_card(w: World, offer: PackedInt32Array) -> int:
 	for k in offer.size():
 		var c := offer[k]
-		match Offers.type_of(c):
-			Offers.STAT:
-				if w.stat_tables[Offers.stat_of(c)].id in CP_STATS:
-					return k
-			Offers.MOD:
-				if w.item_tables[c].id in CP_MODS:
-					return k
+		if Offers.type_of(c) == Offers.STAT and w.stat_tables[Offers.stat_of(c)].id in CP_STATS:
+			return k
 	return -1
 
 
@@ -55,10 +66,10 @@ func test_open_altars_until_a_new_card_is_offered_and_take_it() -> void:
 	var hud: Hud = main.get_node("UI/Hud")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
-	for id in [&"bomb_lobber", &"drone_buddy", &"orbit_blades"]:
+	for id in [&"blink"]:
 		await _grant(e, main, id)
 	await e.tap(KEY_QUOTELEFT)
-	assert_eq(w.ability_owned.size(), 4, "four slots full")
+	assert_eq(w.ability_owned.size(), 2, "the weapon and Blink (the one utility slot)")
 	# TEST HELPER (labelled): v0.5.5 AR locks the rewards in sealed arenas until their waves are cleared (that is
 	# tests/e2e/test_e2e_arenas.gd); this test is about the cards, so the floor's arenas start cleared.
 	w.arenas.cleared = w.floor_layout.arena_rooms.duplicate()
@@ -72,6 +83,8 @@ func test_open_altars_until_a_new_card_is_offered_and_take_it() -> void:
 		for i in w.rewards.size():
 			if w.rewards.kind[i] != RewardStore.Kind.ALTAR or w.rewards.ids[i] in visited:
 				continue
+			if Secrets.hidden_rooms(w).has(w.floor_layout.room_of(w.rewards.pos(i))):
+				continue  # behind a secret room's sealed way in
 			if (
 				altar < 0
 				or (
@@ -116,5 +129,5 @@ func test_open_altars_until_a_new_card_is_offered_and_take_it() -> void:
 	await e.frames(3)
 	if Offers.type_of(code) == Offers.STAT:
 		assert_ne(Stats.value(w, Offers.stat_of(code)), before, "the stat card applied")
-	else:
+	elif Offers.type_of(code) == Offers.MOD:
 		assert_true(w.items_owned.has(code), "the mod is owned")

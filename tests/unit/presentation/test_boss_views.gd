@@ -8,7 +8,7 @@ const DT := 1.0 / 60.0
 var avatars := [GatekeeperAvatar, BroodMotherAvatar, SiegeEngineAvatar]
 
 
-func _avatar(cls: Variant, technique: StringName = &"xray") -> BossAvatar:
+func _avatar(cls: Variant, technique: StringName = &"outline") -> BossAvatar:
 	var a: BossAvatar = cls.new()
 	a.setup(Color("#1A1A22"), technique)
 	add_child_autofree(a)
@@ -37,9 +37,12 @@ func test_each_model_builds_flashable_outlined_pieces() -> void:
 		assert_gt(a.body_materials.size(), 15, "%s has its body pieces" % name)
 		for m in a.body_materials:
 			assert_true(m.emission_enabled, "%s: flashable (emission on, energy only)" % name)
-			assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "%s: outlined" % name)
-		var o := _avatar(cls, &"outline")
-		assert_lt(_count_meshes(o), _count_meshes(a), "%s: xray adds silhouette twins" % name)
+			assert_eq(m.stencil_mode, ActorLooks.outline_mode(), "%s: outlined" % name)
+		assert_eq(
+			_count_meshes(a),
+			_count_meshes(_avatar(cls)),
+			"%s: no silhouette twins (v0.9.5 PF1)" % name
+		)
 
 
 func test_the_parts_the_sheet_shows() -> void:
@@ -76,9 +79,7 @@ func test_windup_stagger_and_burrow_drive_the_pose() -> void:
 			a.advance(DT)
 		assert_gt(a.windup_amount(), 0.5, "%s winds up" % a.get_script().get_global_name())
 		for t in 40:
-			a.apply_state(
-				{"tick": 41 + t, "pos": Vector2.ZERO, "state": WorldReader.STATE_STAGGERED}
-			)
+			a.apply_state({"tick": 41 + t, "pos": Vector2.ZERO, "state": WorldReader.STATE_GATE})
 			a.advance(DT)
 		assert_gt(a.stagger_amount(), 0.8)
 		for t in 40:
@@ -200,10 +201,11 @@ func test_the_boss_bar_shows_while_a_boss_lives() -> void:
 	assert_almost_eq(
 		hud.boss_bar.hp_fraction(), 0.0, 0.001, "v0.8.0 N4: the first phase's bar is empty there"
 	)
-	assert_almost_eq(
-		hud.boss_bar.stagger_fraction(), 1.0, 0.01, "612 > 300: staggered, the meter shows full"
+	assert_ne(
+		w.actors.state[i],
+		BossAi.STAGGERED,
+		"v0.9.5 BH1: a boss never staggers (no meter on the bar)"
 	)
-	assert_true(reader.boss_staggered(i))
 	Damage.hit(w, i, 99999, 0, 0, 1, 0, Vector2(6, 5), w.actors.pos(i))  # the world's kill: past the gates
 	w.step(InputFrame.new())
 	hud.sync(reader)

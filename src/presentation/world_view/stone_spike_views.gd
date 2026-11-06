@@ -152,7 +152,7 @@ func sync(reader: WorldReader) -> void:
 		_strikes.clear()
 		_seen.clear()
 	_tick = reader.tick()
-	for i in reader.actor_count():
+	for i in range(reader.actor_count() if reader.any_boss() else 0):
 		var tg := reader.telegraph(i)
 		var mv := int(tg.get("move", -1))
 		if (

@@ -57,7 +57,9 @@ func feed(id: int, pivot: Node3D, f: float, snap: bool = false) -> void:
 		if snap:
 			t.snap(f)
 	t.set_target(f)
-	pivot.scale = Vector3(maxf(t.fill, 0.001), 1, 1)
+	var sx := maxf(t.fill, 0.001)
+	if pivot.scale.x != sx:  # v0.10.5 W3-Q6: a bar at rest is not written again every sync
+		pivot.scale = Vector3(sx, 1, 1)
 
 
 ## Actor `id`'s bar is gone (its actor, or hidden): its trail goes.

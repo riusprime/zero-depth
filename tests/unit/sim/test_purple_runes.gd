@@ -156,12 +156,12 @@ func test_no_deep_gate_unless_the_runes_are_awakened() -> void:
 	var f := w.floor_layout
 	assert_true(f.has_deep_portal, "the Deep gate's spot is placed")
 	assert_false(w.boss_flow.routes, "but not earned")
-	var walls := w.walls.size()
+	var walls := _walls(w)
 	_beat_boss(w)
 	assert_eq(_opened_amount(w), 0, "the boss opened the gate alone")
 	assert_false(w.boss_flow.gate_open(Routes.Route.DEEP), "no Deep gate")
 	assert_true(w.boss_flow.gate_open(Routes.Route.NORMAL))
-	assert_eq(w.walls.size(), walls, "no Deep gate footprint")
+	assert_eq(_walls(w), walls, "no Deep gate footprint")
 
 
 func test_awakened_runes_open_the_purple_portal_beside_the_gate() -> void:
@@ -175,12 +175,12 @@ func test_awakened_runes_open_the_purple_portal_beside_the_gate() -> void:
 	assert_eq(
 		reader.interact_prompt_key(), &"APPROACH_PYLON_PROMPT", "the prompt by the dais: Awaken"
 	)
-	var walls := w.walls.size()
+	var walls := _walls(w)
 	w.step(_press())
 	assert_true(PurpleRunes.earned(w), "one press awakens the runes")
 	assert_gte(w.purple.lit_tick, 0, "at that tick")
 	assert_true(w.boss_flow.routes, "the floor earned the Purple Portal")
-	assert_eq(w.walls.size(), walls + 1, "the Deep gate's footprint stands")
+	assert_eq(_walls(w), walls + 1, "the Deep gate's footprint stands")
 	assert_eq(w.interactables.enabled[w.purple.entry], 0, "the dais takes no more presses")
 	var tick := w.purple.lit_tick
 	w.step(_press())
@@ -220,9 +220,7 @@ func test_a_floor_saved_before_dp_keeps_the_deep_gate() -> void:
 	assert_true(w.boss_flow.routes, "the Deep gate on every floor before the last, as saved")
 	var now := SaveLab.floor_world(1, 1)
 	assert_false(now.boss_flow.routes, "today's floor 1 has none")
-	assert_eq(
-		w.walls.size(), now.walls.size() + 1, "its footprint stands from the start, as before"
-	)
+	assert_eq(_walls(w), _walls(now) + 1, "its footprint stands from the start, as before")
 
 
 func test_a_save_after_the_awakening_resumes_exactly() -> void:
@@ -241,7 +239,7 @@ func test_a_save_after_the_awakening_resumes_exactly() -> void:
 	assert_eq(WorldSnapshot.apply(base, snap), "", "a save with the Deep gate's footprint fits")
 	assert_eq(base.state_hash(), w.state_hash(), "same state")
 	assert_true(PurpleRunes.earned(base) and base.boss_flow.routes, "still earned")
-	assert_eq(base.walls.size(), w.walls.size())
+	assert_eq(_walls(base), _walls(w))
 	_beat_boss(w)
 	_beat_boss(base)
 	assert_eq(base.state_hash(), w.state_hash(), "and the boss opens both the same")
@@ -261,3 +259,8 @@ func test_the_run_records_the_floor_that_held_it() -> void:
 	assert_eq(
 		SaveLab.run_from(old).purple_floors, PackedInt32Array(), "an older payload has had none"
 	)
+
+
+## v0.9.5 SB: the walls that are not a solid prop's footprint (a prop joins the walls once the hero is clear of it).
+func _walls(w: World) -> int:
+	return w.walls.size()

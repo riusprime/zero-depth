@@ -13,11 +13,19 @@ const WAND_FLOOR := 99
 const SURFACE_PATCHES := Vector2i(5, 7)
 
 
-static func build(repo: ContentRepository, build_id: StringName, biome: BiomeDefinition) -> World:
+## v0.10.5 O17: `cells` the room's size and `surface` whether its biome's ice or starglow is laid (the Training Room's
+## smaller room has none).
+static func build(
+	repo: ContentRepository,
+	build_id: StringName,
+	biome: BiomeDefinition,
+	cells: Vector2i = CELLS,
+	surface: bool = true
+) -> World:
 	var table := ContentCompiler.compile_player(repo.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(table, repo.get_def(&"build", build_id))
 	var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
-	var layout := FloorGenerator.one_room(SEED, CELLS, map)
+	var layout := FloorGenerator.one_room(SEED, cells, map)
 	var w := World.new(SEED, table, layout.start_pos)
 	w.set_walls(layout.walls)
 	w.floor_layout = layout
@@ -33,6 +41,7 @@ static func build(repo: ContentRepository, build_id: StringName, biome: BiomeDef
 	w.wand_table = WandCompiler.from_repo(repo)
 	w.blade_table = BladeCompiler.from_repo(repo)
 	w.slot_table = WandCompiler.slots(repo, w.item_tables)  # v0.9.0 AS
+	w.pair_table = WandCompiler.pairs(repo)  # v0.9.5 EE3
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)
 	w.dummy_speed = 0.0  # the dummies stand still and never shoot (dummy_fire_period stays 0)
@@ -40,7 +49,10 @@ static func build(repo: ContentRepository, build_id: StringName, biome: BiomeDef
 	Abilities.start_floor(w)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))
 	w.tuning = RunContentCompiler.compile_sim_tuning(repo.get_def(&"tuning", &"sim"))
-	lay_surface(w, biome)
+	if surface:
+		lay_surface(w, biome)
+	else:
+		w.ice = null
 	return w
 
 

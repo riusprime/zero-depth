@@ -64,7 +64,7 @@ func test_the_first_two_altars_of_floor_one_show_a_compatible_card() -> void:
 func test_the_guarantee_replaces_a_card_when_none_fits() -> void:
 	var w := _world(&"gun")
 	var triggers := PackedInt32Array(
-		[_it(w, &"trigger_on_hit"), _it(w, &"trigger_on_kill"), _it(w, &"trigger_on_end")]
+		[_it(w, &"wide_arc"), _it(w, &"double_slash"), _it(w, &"thrust")]
 	)
 	var out := LootPacing.guarantee(w, triggers.duplicate())
 	assert_eq(out.slice(0, 2), triggers.slice(0, 2), "the first two cards stay")
@@ -75,17 +75,11 @@ func test_the_guarantee_replaces_a_card_when_none_fits() -> void:
 	assert_eq(LootPacing.guarantee(again, triggers.duplicate()), triggers, "used up: no change")
 
 
-func test_a_trigger_a_mutation_and_a_dead_card_are_not_compatible() -> void:
+func test_the_other_weapons_card_is_not_compatible() -> void:
 	var w := _world(&"gun")
-	assert_false(LootPacing.compatible(w, _it(w, &"trigger_on_hit")), "a trigger")
-	assert_false(LootPacing.compatible(w, _it(w, &"mut_double_exposure")), "a mutation")
 	assert_false(LootPacing.compatible(w, _it(w, &"wide_arc")), "the Blade's card on a Gun run")
 	assert_true(LootPacing.compatible(w, _it(w, &"gun_echo")), "Echo, nothing left of it")
 	assert_true(w.wand_table.after_trigger_dead.has(&"gun_echo"))
-	_hold(w, &"trigger_on_hit", 1)
-	assert_false(
-		LootPacing.compatible(w, _it(w, &"gun_echo")), "Echo right of a trigger does nothing"
-	)
 	assert_true(LootPacing.compatible(w, _it(w, &"gun_big_shot")), "Big Shot still acts there")
 
 
@@ -94,10 +88,9 @@ func test_a_jackpot_lifts_a_card_past_the_ceiling_and_says_so() -> void:
 	var w := _world(&"gun")
 	w.loot_pacing.jackpot_permille = 1000
 	w.loot_pacing.guaranteed_altars = PackedInt32Array([0, 0, 0, 0])
-	var big := _hold(w, &"gun_big_shot", 2)
+	var big := _hold(w, &"gun_twin", 2)  # v0.9.5 CLV: Twin levels (1–3); Big Shot no longer does
 	var pool := LootPacing.jackpot_pool(w, PackedInt32Array())
 	assert_has(pool, big, "the held card at the ceiling")
-	assert_has(pool, _it(w, &"mut_grand_finale"), "a mutation")
 	for c in pool:
 		assert_true(
 			c == big or LootPacing.category(w, c) == LootPacing.Category.MUTATION, "only those"
@@ -152,7 +145,7 @@ func test_the_boss_altar_offers_an_upgrade_an_advanced_or_trigger_card_and_a_leg
 ) -> void:
 	var w := _world(&"gun")
 	w.legendary_table.card_permille = 0
-	var big := _hold(w, &"gun_big_shot", 2)
+	var big := _hold(w, &"gun_twin", 2)  # v0.9.5 CLV: a 3-level card
 	var offer := Offers.roll_legendary(w)
 	assert_eq(offer.size(), 3)
 	assert_eq(
@@ -173,11 +166,9 @@ func test_the_boss_altar_offers_an_upgrade_an_advanced_or_trigger_card_and_a_leg
 		assert_eq(CardLevels.level(w, offer[1]), 1, "a new card at level 1")
 	var top := _world(&"gun")
 	top.legendary_table.card_permille = 0
-	_hold(top, &"gun_big_shot", 3)
+	_hold(top, &"gun_twin", 3)
 	for c in Offers.roll_legendary(top):
-		assert_ne(
-			c, _it(top, &"gun_big_shot"), "at floor 2's ceiling: no upgrade from floor 1's boss"
-		)
+		assert_ne(c, _it(top, &"gun_twin"), "at floor 2's ceiling: no upgrade from floor 1's boss")
 
 
 func test_the_boss_altars_legendary_chance_takes_the_cards_place() -> void:

@@ -6,6 +6,8 @@ extends RefCounted
 ## - ABILITY_BASE + i: ability i (a new one into a free slot, or a level-up of one you own);
 ## - STAT_BASE + stat x 10 + rarity: a stat card;
 ## - CURSE_BASE + c (v0.6.0 CU, owner S6): trade-off curse c, a cursed chest's cursed card (Curses.on_offer_rolled).
+## - STARBOUND_BASE + k (v0.10.5 W3-P10b, owner W7): Starbound card k, in a regular altar's offer from loop 2 only
+##   (Starbound.into_offer, its own named stream; never in a chest or the shop).
 ## Rolling (once per reward, on its first open, from the loot stream only): a free altar's first card is a new
 ## ability while a slot is free and one can be offered; every other card picks its type by the source's weights
 ## (RewardTable: [ability, stat, mod] for altars and chests), then an ability card uniformly among those that can
@@ -18,10 +20,13 @@ extends RefCounted
 const ABILITY_BASE := 1000
 const STAT_BASE := 2000
 const CURSE_BASE := 3000
+## v0.10.5 W3-P10b (owner W7): STARBOUND_BASE + k, Starbound card k (Starbound: offered from loop 2 only).
+const STARBOUND_BASE := 4000
 const MOD := 0
 const ABILITY := 1
 const STAT := 2
 const CURSE := 3
+const STARBOUND := 4
 ## A stat card's rarity: epic (v0.5.0 RT's epic altar offers only these).
 const EPIC := 2
 ## v0.5.5 AR (X1b): the boss-only legendary rarity (BossReward's altar offers only legendary cards).
@@ -36,6 +41,8 @@ static func enabled(w: World) -> bool:
 
 
 static func type_of(code: int) -> int:
+	if code >= STARBOUND_BASE:
+		return STARBOUND
 	if code >= CURSE_BASE:
 		return CURSE
 	if code >= STAT_BASE:
@@ -62,6 +69,15 @@ static func curse_of(code: int) -> int:
 	return code - CURSE_BASE
 
 
+## v0.10.5 W3-P10b: the card for Starbound card k, and back.
+static func starbound_code(k: int) -> int:
+	return STARBOUND_BASE + k
+
+
+static func starbound_of(code: int) -> int:
+	return code - STARBOUND_BASE
+
+
 static func ability_of(code: int) -> int:
 	return code - ABILITY_BASE
 
@@ -86,6 +102,8 @@ static func roll(w: World, i: int) -> PackedInt32Array:
 		out = draw(w, true, CHEST_CARDS)  # v0.8.0 N7
 	else:
 		out = LootPacing.guarantee(w, draw(w, false, w.reward_table.offer_size))
+		out = LootPacing.jackpot(w, i, out)
+		return Starbound.into_offer(w, i, out)  # v0.10.5 W3-P10b: loop 2+ only, its own stream
 	return LootPacing.jackpot(w, i, out)
 
 
@@ -95,7 +113,7 @@ static func draw(w: World, chest: bool, size: int) -> PackedInt32Array:
 	var rare := t.rare_weight_chest if chest else t.rare_weight_altar
 	if not enabled(w):
 		return ItemPool.draw_weighted(w, size, rare)
-	var weights := t.chest_card_weights if chest else t.altar_card_weights
+	var weights := LootPacing.card_type_weights(w, chest)  # v0.9.5 EP2: per stage
 	var rarity := t.chest_rarity_weights if chest else t.altar_rarity_weights
 	var epic := t.epic_permille_chest if chest else t.epic_permille_altar  # v0.8.0 RR
 	var legend := t.legendary_permille_chest if chest else t.legendary_permille_altar
@@ -239,7 +257,8 @@ static func roll_legendary(w: World) -> PackedInt32Array:
 ## (LootPacing.next_ceiling), usable and in no other offer, not already in `out`.
 static func boss_upgrades(w: World, out: PackedInt32Array) -> PackedInt32Array:
 	var ups := PackedInt32Array()
-	for idx in ItemPool.available(w, true, LootPacing.next_ceiling(w)):
+	var el := LootPacing.element_ceiling(w, 1)  # v0.10.5 W3-P2: an element up to the next floor's own ceiling
+	for idx in ItemPool.available(w, true, LootPacing.next_ceiling(w), el):
 		if w.items_owned.has(idx) and CardLevels.is_card(w, idx) and not out.has(idx):
 			ups.append(idx)
 	return ups
@@ -353,6 +372,20 @@ static func info(w: World, code: int) -> Dictionary:
 				# v0.5.0 CP: a rule card's second number
 				"side": st.side[rarity_of(code)] if rarity_of(code) < st.side.size() else 0,
 			}
+		STARBOUND:  # v0.10.5 W3-P10b: a Starbound card: its stacks so far and after the pick (`level`)
+			var k := starbound_of(code)
+			var sb := Starbound.table(w, k)
+			return {
+				"type": STARBOUND,
+				"id": sb.id if sb != null else &"",
+				"kind": k,
+				"name_key": sb.name_key if sb != null else &"",
+				"desc_key": sb.desc_key if sb != null else &"",
+				"rarity": LEGENDARY,
+				"level": Starbound.picks(w, k) + 1,
+				"amount": sb.amount if sb != null else 0,
+				"stacks": Starbound.picks(w, k),
+			}
 		CURSE:  # v0.6.0 CU: a trade-off curse card, rare-level: its face is the upside (the panel adds the drawback)
 			var ct := w.ev.curses[curse_of(code)]
 			return {
@@ -379,7 +412,10 @@ static func info(w: World, code: int) -> Dictionary:
 		"rarity": rarity,
 		"level": 0,
 		"amount": 0,
-		"wand": CardLevels.is_card(w, code),  # v0.6.5 WN5b: a wand card (it levels up)
+		"wand": CardLevels.is_card(w, code) and CardLevels.cap(w, code) > 1,  # v0.9.5 CLV: a card with levels
+		# v0.10.5 W3-P3: its cap now (overlevels included) and its own max_level (past it: overlevels)
+		"max_level": CardLevels.cap(w, code) if CardLevels.is_card(w, code) else 1,
+		"base_max": CardLevels.max_level(w, code) if CardLevels.is_card(w, code) else 1,
 		# v0.9.0 AS (owner Q5, Q14): its slot tag on this run (AttackSlots: 0 none) and, when its slot is full, the
 		# card taking it replaces (its code, -1 for none; AttackSlots.replaces)
 		"slot": AttackSlots.tag(w, code),

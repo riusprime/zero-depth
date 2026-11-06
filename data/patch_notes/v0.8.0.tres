@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_q5kg8")
 version = "0.8.0"
-body_en = "# {{TITLE}} v0.8.0 — Fights and Feel
+body_en = "# Zero Depth v0.8.0 — Fights and Feel
 _2026-10-22_ · A final boss, bosses with a mechanic of their own, a balance pass on every build, and floors that look and run better.
 
 ## New Features
@@ -71,7 +71,7 @@ Cards were rebalanced for every build.
 - The Codex and local achievements.
 - Bigger floors, up to 20 rooms.
 "
-body_es = "# {{TITLE}} v0.8.0 — Combates y sensaciones
+body_es = "# Zero Depth v0.8.0 — Combates y sensaciones
 _2026-10-22_ · Un jefe final, jefes con una mecánica propia, un reajuste de todas las builds y pisos que se ven y van mejor.
 
 ## Novedades

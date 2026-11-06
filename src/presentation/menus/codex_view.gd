@@ -10,6 +10,11 @@ extends Control
 ## tile, click a page, Back. It reads the catalog (the content) and the profile's counters; it changes nothing. v0.7.5
 ## AC: given an AchievementBook, a fifth page, Achievements (AchievementsPage), follows the four. v0.9.0 CL: the last
 ## page, Collectibles (ArchivePage), is the Rune Archive's shelves (the hub's Archive opens on it: page_of).
+## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): the Codex in the Astral style (AstralUi): the
+## game blurred under Astral's cool ink, a sigil and the title in Cinzel, the pages as tabs on a hairline (the one shown
+## underlined with a diamond, focus lit as a row), the sections' heads in small caps, the tiles Astral frames with a
+## medallion ring (CodexTile), the detail an Astral veil holding the Astral card (StoneCard astral: the owner's frame
+## and painted icon) or the emblem in an Astral frame, the counts in Astral's accent, Back an Astral plate.
 
 signal back_pressed
 
@@ -18,6 +23,7 @@ const TAB_KEYS := {
 	&"enemies": "UI_CODEX_TAB_ENEMIES",
 	&"bosses": "UI_CODEX_TAB_BOSSES",
 	&"biomes": "UI_CODEX_TAB_BIOMES",
+	&"lore": "UI_CODEX_TAB_LORE",  # v0.10.5 O18
 	&"achievements": "UI_ACH_TAB",  # v0.7.5 AC
 	&"collectibles": "UI_CODEX_TAB_COLLECTIBLES",  # v0.9.0 CL
 }
@@ -35,10 +41,13 @@ const SECTION_KEYS := {
 	&"utilities": "UI_CODEX_SECTION_UTILITIES",
 	&"abilities": "UI_CODEX_SECTION_ABILITIES",
 	&"passives": "UI_CODEX_SECTION_PASSIVES",
+	&"starbound": "STARBOUND_KIND",  # v0.10.5 W3-P10f
+	&"constellations": "CONSTELLATION_KIND",
 	&"enemies": "UI_CODEX_TAB_ENEMIES",
 	&"bosses": "UI_CODEX_TAB_BOSSES",
 	&"final": "UI_CODEX_SECTION_FINAL",  # v0.8.0 FB1: the final boss's bodies
 	&"biomes": "UI_CODEX_TAB_BIOMES",
+	&"lore": "UI_CODEX_TAB_LORE",
 }
 const COUNTER_KEYS := {
 	&"offered": "UI_CODEX_OFFERED",
@@ -70,12 +79,14 @@ var archive_page: ArchivePage
 var tabs := {}
 var tiles: Array[CodexTile] = []
 var progress := Label.new()
-var card := StoneCard.new(1.0)
+var card := StoneCard.new(1.0, true)  # v0.10.5 W3-O19: the Astral card (the owner's frame and icon)
 var emblem := CodexIcon.new()
 var name_label := Label.new()
 var section_label := Label.new()
 var desc_label := Label.new()
 var counts_label := Label.new()
+## v0.10.5 W3-O19: an enemy's "Weak to / Resists" on lines of their own, in Astral's accent.
+var matchup_label := Label.new()
 var back := Button.new()
 var _scroll := ScrollContainer.new()
 var _list := VBoxContainer.new()
@@ -98,8 +109,10 @@ func _init(
 	if not catalog.collectibles.is_empty():  # v0.9.0 CL
 		pages.append(COLLECTIBLES)
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	MenuStyle.apply(self)
-	add_child(MenuBackdrop.new())
+	AstralUi.apply(self)
+	var backdrop := MenuBackdrop.new()
+	backdrop.astral = true  # v0.10.5 W3-O19: the game blurred under Astral's cool ink
+	add_child(backdrop)
 	var margin := MarginContainer.new()
 	margin.name = "Margin"
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -115,6 +128,10 @@ func _init(
 	margin.add_child(col)
 	col.add_child(_header())
 	col.add_child(_tab_row())
+	var tab_rule := AstralUi.LeftRule.new(1180.0)  # v0.10.5 W3-O19: the tabs stand on a hairline
+	tab_rule.name = "TabRule"
+	tab_rule.custom_minimum_size = Vector2(0, 8)
+	col.add_child(tab_rule)
 	var body := HBoxContainer.new()
 	_body = body
 	body.name = "Body"
@@ -147,11 +164,10 @@ func _init(
 	back.name = "Back"
 	back.text = "UI_BACK"
 	back.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	back.custom_minimum_size = Vector2(200, 48)
-	back.add_theme_font_size_override("font_size", MenuStyle.BUTTON_SIZE)
+	AstralUi.plate_button(back)  # v0.10.5 W3-O19: an Astral plate
 	back.pressed.connect(func() -> void: back_pressed.emit())
 	foot.add_child(back)
-	var hint := MenuStyle.hint("UI_CODEX_HINT")
+	var hint := AstralUi.hint("UI_CODEX_HINT")
 	hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	foot.add_child(hint)
 	_build_page()
@@ -159,21 +175,31 @@ func _init(
 
 func _header() -> Control:
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 28)
+	row.add_theme_constant_override("separation", 16)
+	row.add_child(AstralUi.Sigil.new(13.0))  # v0.10.5 W3-O19
 	var title := Label.new()
 	title.name = "Title"
 	title.text = "UI_CODEX_TITLE"
-	title.add_theme_font_override("font", HudStyle.font(true))
-	title.add_theme_font_size_override("font_size", MenuStyle.TITLE_SIZE)
-	title.add_theme_constant_override("outline_size", 6)
+	AstralUi.title(title)
 	row.add_child(title)
 	progress.name = "Progress"
 	progress.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	progress.size_flags_vertical = Control.SIZE_SHRINK_END
-	progress.add_theme_font_size_override("font_size", MenuStyle.NOTE_SIZE + 3)
-	progress.add_theme_color_override("font_color", MenuStyle.DIM)
+	progress.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	AstralUi.caps(progress, 15)
 	row.add_child(progress)
 	return row
+
+
+## v0.10.5 W3-O19: the tabs' look: the page shown underlined with a filled diamond, focus and hover lit as a row.
+func _style_tabs() -> void:
+	for p: StringName in tabs:
+		var b: Button = tabs[p]
+		var on := p == page
+		b.add_theme_stylebox_override("normal", AstralUi.TabBox.new(on, 0.0))
+		b.add_theme_stylebox_override("hover", AstralUi.TabBox.new(on, 0.5))
+		for s: String in ["focus", "pressed", "hover_pressed"]:
+			b.add_theme_stylebox_override(s, AstralUi.TabBox.new(on, 1.0))
+		b.add_theme_color_override("font_color", AstralCardArt.TEXT if on else AstralCardArt.DIM)
 
 
 func _tab_row() -> Control:
@@ -184,8 +210,9 @@ func _tab_row() -> Control:
 		var b := Button.new()
 		b.name = "Tab%s" % String(p).capitalize()
 		b.text = TAB_KEYS[p]
-		b.custom_minimum_size = Vector2(0, 48)
-		b.add_theme_font_size_override("font_size", MenuStyle.BUTTON_SIZE - 2)
+		b.custom_minimum_size = Vector2(0, 40)
+		b.add_theme_font_override("font", AstralUi.serif(600, AstralUi.TAB_SIZE + 1))  # v0.10.5 W3-O19
+		b.add_theme_font_size_override("font_size", AstralUi.TAB_SIZE + 1)
 		b.focus_entered.connect(_set_page.bind(p))
 		b.pressed.connect(func() -> void: focus_first())
 		row.add_child(b)
@@ -196,7 +223,7 @@ func _tab_row() -> Control:
 func _detail() -> Control:
 	var panel := PanelContainer.new()
 	panel.name = "Detail"
-	panel.add_theme_stylebox_override("panel", MenuStyle.stone_panel(Vector2(22, 22)))
+	panel.add_theme_stylebox_override("panel", AstralUi.PanelBox.new(Vector2(24, 32)))  # v0.10.5 W3-O19
 	panel.custom_minimum_size = Vector2(DETAIL_W, 0)
 	panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	var row := HBoxContainer.new()
@@ -207,7 +234,9 @@ func _detail() -> Control:
 	row.add_child(_visual)
 	_visual.add_child(card)
 	_emblem_box.name = "Emblem"
-	_emblem_box.add_theme_stylebox_override("panel", MenuStyle.stone_panel(Vector2(14, 14)))
+	_emblem_box.add_theme_stylebox_override(
+		"panel", AstralChrome.FrameBox.new(0.0, 1.0, Vector2(14, 14))  # v0.10.5 W3-O19
+	)
 	_emblem_box.position = Vector2((StoneCard.SIZE.x - EMBLEM - 28) * 0.5, 0)
 	_emblem_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	emblem.custom_minimum_size = Vector2(EMBLEM, EMBLEM)
@@ -219,22 +248,21 @@ func _detail() -> Control:
 	info.add_theme_constant_override("separation", 10)
 	row.add_child(info)
 	name_label.name = "EntryName"
-	name_label.add_theme_font_override("font", HudStyle.font(true))
-	name_label.add_theme_font_size_override("font_size", 30)
+	AstralUi.title(name_label, 26)  # v0.10.5 W3-O19: Cinzel, small caps under it, Atkinson body
 	section_label.name = "Section"
-	section_label.add_theme_font_size_override("font_size", MenuStyle.NOTE_SIZE)
-	section_label.add_theme_color_override("font_color", MenuStyle.DIM)
+	AstralUi.caps(section_label, AstralUi.LABEL_SIZE)
 	desc_label.name = "Desc"
-	desc_label.add_theme_font_size_override("font_size", 20)
+	AstralUi.body(desc_label, 18)
 	counts_label.name = "Counts"
-	counts_label.add_theme_font_size_override("font_size", 20)
-	counts_label.add_theme_color_override("font_color", MenuStyle.EMBER.lerp(Color.WHITE, 0.45))
-	for l: Label in [name_label, section_label, desc_label, counts_label]:
+	AstralUi.body(counts_label, 17, AstralCardArt.DIM)
+	matchup_label.name = "Matchup"
+	AstralUi.body(matchup_label, 17, AstralCardArt.ACCENT)
+	for l: Label in [name_label, section_label, desc_label, matchup_label, counts_label]:
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.custom_minimum_size = Vector2(INFO_W, 0)
 		info.add_child(l)
-		if l == desc_label:
+		if l == matchup_label:
 			info.add_child(HSeparator.new())
 	return panel
 
@@ -338,9 +366,7 @@ func _build_page() -> void:
 		head.name = "Head_%s" % s
 		head.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		head.text = "%s   %d / %d" % [tr(SECTION_KEYS[s]), have, rows.size()]
-		head.add_theme_font_override("font", HudStyle.font(true))
-		head.add_theme_font_size_override("font_size", 18)
-		head.add_theme_color_override("font_color", MenuStyle.EMBER.lerp(Color.WHITE, 0.3))
+		AstralUi.caps(head, 15, AstralCardArt.METAL)  # v0.10.5 W3-O19: Cinzel small caps
 		_list.add_child(head)
 		var grid := GridContainer.new()
 		grid.name = "Grid_%s" % s
@@ -366,8 +392,7 @@ func _build_page() -> void:
 	for p: StringName in tabs:
 		var b: Button = tabs[p]
 		b.focus_neighbor_bottom = b.get_path_to(tiles[0]) if not tiles.is_empty() else NodePath()
-		var lit := MenuStyle.EMBER.lerp(Color.WHITE, 0.35)
-		b.add_theme_color_override("font_color", lit if p == page else MenuStyle.DIM)
+	_style_tabs()
 	if not tiles.is_empty():
 		_show(tiles[0].entry)
 
@@ -422,8 +447,7 @@ func _build_achievements() -> void:
 	for p: StringName in tabs:
 		var b: Button = tabs[p]
 		b.focus_neighbor_bottom = b.get_path_to(first)
-		var lit := MenuStyle.EMBER.lerp(Color.WHITE, 0.35)
-		b.add_theme_color_override("font_color", lit if p == page else MenuStyle.DIM)
+	_style_tabs()
 
 
 ## v0.9.0 CL: the Collectibles page in the body's place; up from its first shelf goes to its tab.
@@ -439,8 +463,7 @@ func _build_archive() -> void:
 	for p: StringName in tabs:
 		var b: Button = tabs[p]
 		b.focus_neighbor_bottom = b.get_path_to(first)
-		var lit := MenuStyle.EMBER.lerp(Color.WHITE, 0.35)
-		b.add_theme_color_override("font_color", lit if p == page else MenuStyle.DIM)
+	_style_tabs()
 
 
 ## An entry's name: its own key, and a card with a Gun face shows both ("On Finisher / On Crit").
@@ -462,6 +485,22 @@ static func desc_of(ci: Object, e: Dictionary) -> String:
 	if nums.size() > 1 and nums[1] > 0:
 		args.append(GambleIcons.percent(nums[1]))
 	return ci.tr(key) % args
+
+
+## v0.10.5 O10 (owner P3; Matchups): an enemy entry's "Weak to: Laser" and "Resists: Glaive" lines (the id's
+## MATCHUP_<ID> key); "" for an entry with neither.
+static func matchup_text(ci: Object, e: Dictionary) -> String:
+	var lines := PackedStringArray()
+	for pair: Array in [["weak_to", "UI_CODEX_WEAK_TO"], ["resists", "UI_CODEX_RESISTS"]]:
+		var id: StringName = e.get(pair[0], &"")
+		if id != &"":
+			lines.append(ci.tr(pair[1]) % ci.tr(matchup_key(id)))
+	return "\n".join(lines)
+
+
+## The locale key of a matchup id's name (a form card's or an element's).
+static func matchup_key(id: StringName) -> String:
+	return "MATCHUP_%s" % String(id).to_upper()
 
 
 ## An entry's counts as lines ("Taken: 3"), the counters of its page; the highest level only on a card that levels.
@@ -537,6 +576,9 @@ func _show(e: Dictionary) -> void:
 	name_label.text = "???" if locked else title_of(self, e)
 	section_label.text = section_text
 	desc_label.text = tr("UI_CODEX_LOCKED") if locked else desc_of(self, e)
+	var mu := "" if locked else matchup_text(self, e)  # v0.10.5 O10: an enemy's "Weak to / Resists"
+	matchup_label.text = mu  # v0.10.5 W3-O19: on its own lines, in the accent
+	matchup_label.visible = mu != ""
 	counts_label.text = "" if locked else counts_text(e)
 
 

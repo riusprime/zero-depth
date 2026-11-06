@@ -65,13 +65,16 @@ static func card_weight(
 ## The item indices that may still be drawn, ascending. v0.6.0 MX4: a legendary item only with `legendary` (the
 ## boss's tier and a boss's core; v0.8.0 RR: an altar's, a chest's and the shop's draw at their legendary weight,
 ## Offers.draw; events and elites never draw one). v0.8.0 FL: a held wand card only below the floor's level ceiling
-## (LootPacing.ceiling), or below `ceiling` when given (the boss's upgrade, a jackpot).
-static func available(w: World, legendary: bool = false, ceiling: int = -1) -> PackedInt32Array:
+## (LootPacing.ceiling), or below `ceiling` when given (the boss's upgrade, a jackpot); v0.10.5 W3-P2: an element card
+## below `element_ceiling` (CardLevels.can_take).
+static func available(
+	w: World, legendary: bool = false, ceiling: int = -1, element_ceiling: int = -1
+) -> PackedInt32Array:
 	var left := PackedInt32Array()
 	for idx in w.item_tables.size():
 		if (
 			(legendary or w.item_tables[idx].rarity != ItemTable.LEGENDARY)
-			and CardLevels.can_take(w, idx, ceiling)  # v0.6.5 WN3: a held wand card below its ceiling too
+			and CardLevels.can_take(w, idx, ceiling, element_ceiling)  # v0.6.5 WN3: a held card below its ceiling
 			and not w.pickups.item.has(idx)
 			and not w.rewards.offer.has(idx)
 			and not w.ev.roll_card.has(idx)  # v0.5.0 EV: a mod an event panel shows

@@ -35,6 +35,10 @@ enum Move {
 	CHAIN_SWEEP,  # v0.9.0 NB2: their chain's line tracks the player, locks and lashes (BossTwin)
 	ECHO,  # v0.9.0 NB3 (BOSSES_4_5.md N3): the Clockwork Judge's echo of the player's path (BossJudge)
 	VERDICT,  # v0.9.0 NB3: its tracked square, locked, a pendulum strike dropping on it (BossJudge)
+	WAVE,  # v0.9.5 BH4 (BOSSES_HARD.md T3): the Tidecaller's crossing wave (BossStream; never a boss's own attack)
+	INTERPHASE,  # v0.9.5 BH6 (HC5): a carrier of the Fallen's interphase hits (BossInterphase; never picked)
+	LANCES,  # v0.10.5 O3 (L6): the Prism's Facet Lances, her last phase (BossPrism)
+	KNEEL,  # v0.10.5 O3 (L6): the Prism's Shattered Kneel, her core open (BossPrism)
 }
 
 ## v0.8.0 FB3: the runs a Nemesis attack answers to (`weapon` below).
@@ -103,6 +107,20 @@ var burn_ticks := 1
 var lock_ticks := 0
 var mark_gap_ticks := 0
 var shielded := false
+## v0.10.5 O2a: >= 0 drops a shielded attack's shield this many ticks into its active time (BossDodge.shielded); -1
+## keeps it up through the whole active time.
+var shield_active_ticks := -1
+## v0.10.5 O3 (owner L6, 2026-11-01: "Boring pattern"; O3_PRISM.md; BossPrism): a `lances` attack's `count` lances
+## start mark_gap_ticks apart from its active time's start; each one's line runs from its rim spot (distance_m from
+## her, `spread` turns apart round her from the player's side) through the player: it follows them for track_ticks,
+## holds for lock_ticks, then strikes for strike_ticks as a lane half_width_m each side, as far as length_m or a wall.
+var strike_ticks := 1
+## v0.10.5 O3 (L6: "something cooler while he's down"): a `kneel` attack: she is down (open) for its active time;
+## hits from within the weak range of her edge deal core_mult_permille; once she has lost crack_permille of her max HP
+## since it began her core bursts (burst_permille of her max HP, the world's own damage) and she rises.
+var crack_permille := 0
+var burst_permille := 0
+var core_mult_permille := 1000
 var pattern: BulletPatternTable = null
 ## v0.8.0 PR (owner O84: "the all small balls he shoots should be shooted on a predictable pattern"): a `pattern`
 ## attack with fixed_aim >= 0 fires its waves from this angle (1/4096 turns, the world's frame) instead of at the
@@ -213,3 +231,34 @@ var square_half_m := 0.0
 ## attack with snuff puts out the lit lantern nearest each struck circle (the Snuff).
 var dark_ticks := 0
 var snuff := false
+## v0.9.5 BH2 (BOSSES_HARD.md B1-B5; BossHard): a `row_lanes` attack with second_ticks > 0 follows each cross with a
+## second one second_ticks after it strikes, shifted second_offset_m. A `pattern` with lead_ticks > 0 aims its first
+## wave that many ticks ahead of the player's movement and every later wave at them. A `leap` with last_lead_ticks > 0
+## aims its last leap that far ahead, and one with last_radius_bonus_permille > 0 lands that last leap that much
+## wider. A `lanes` attack with beam_turn_milli > 0 burns its whole active time, turning toward the player by that
+## many 1/4096 turns x 1000 a tick. A `grid` with safe_cells > 0 strikes all but that many cells of its board (inside
+## its outer ring) each volley.
+var second_ticks := 0
+var second_offset_m := 0.0
+var lead_ticks := 0
+var last_lead_ticks := 0
+var last_radius_bonus_permille := 0
+var beam_turn_milli := 0
+var safe_cells := 0
+## v0.9.5 BH3 (BOSSES_HARD.md B8; BossTwin): a `crossfire` with lines_turn_milli > 0 aims both bodies' lines at the
+## player and, for lines_ticks of its windup, turns each toward them by at most that many 1/4096 turns x 1000 a tick;
+## the crossing point of the lines is the safe spot, and the fans fire along the last aim.
+var lines_ticks := 0
+var lines_turn_milli := 0
+## v0.9.5 BH3 (B10; BossShade): a `marks` Snuff puts out the snuff_count lit lanterns nearest each struck circle.
+var snuff_count := 0
+## v0.9.5 BH4 (BOSSES_HARD.md T1; BossTide): the most a `tide` attack moves the player (metres per tick; 0 = BossTide's
+## own ceiling).
+var tide_max := 0.0
+## v0.9.5 BH4 (T3; BossStream): a `wave`'s lengths (metres), thickness, speed (metres per tick), shove (metres along its
+## travel) and the clear distance from the player's projection on its wall; its telegraph is windup_ticks.
+var wave_lengths := PackedFloat32Array()
+var wave_thick_m := 0.0
+var wave_speed := 0.0
+var wave_shove_m := 0.0
+var wave_clear_m := 0.0

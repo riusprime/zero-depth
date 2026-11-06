@@ -14,8 +14,7 @@ script = ExtResource("2_op")
 op = 0
 stage = 5
 field = &"radius_m"
-value = 1.4
-per_level = 0.2
+value = 2.0
 
 [sub_resource type="Resource" id="Op_3"]
 script = ExtResource("2_op")

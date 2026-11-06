@@ -28,9 +28,10 @@ const SLOTS := 6
 
 
 # --- What a card is ------------------------------------------------------------------------------------------
-## An item that takes a modifier slot: it changes attacks (it names modifiers) or it is an ability's mod.
+## An item that takes a modifier slot: it changes attacks (it names modifiers) or it is an ability's mod. v0.10.5 O1:
+## or a deleted card's stub (every one was a modifier card), so an old carry keeps its pick order (WandMigration).
 static func is_slot_item(t: ItemTable) -> bool:
-	return not t.modifiers.is_empty() or t.requires_ability >= 0
+	return not t.modifiers.is_empty() or t.requires_ability >= 0 or t.retired
 
 
 ## Card `code` (Offers code) is a modifier card.
@@ -191,6 +192,8 @@ static func _apply(w: World, code: int) -> void:
 			Stats.add_card(w, Offers.stat_of(code), Offers.rarity_of(code))
 		Offers.CURSE:
 			Curses.add(w, Offers.curse_of(code))  # v0.6.0 CU: the trade-off curse, drawback and upside
+		Offers.STARBOUND:
+			Starbound.take(w, Offers.starbound_of(code))  # v0.10.5 W3-P10b: one more stack, no slot
 	sync(w)
 
 

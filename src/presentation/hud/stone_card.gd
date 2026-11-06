@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 class_name StoneCard
 extends Control
 ## A pick card as a carved stone tablet (v0.8.0 MU, owner O14 "we're just throwing away the shard cards"; G2 pick
@@ -17,6 +18,13 @@ extends Control
 ## while the card is focused), the sentence, the gem and the rarity's word. The whole tablet is painted in its
 ## rarity's colour (CardPaint: the stone tinted, a frame line and the glow in it); the face hangs from a pivot
 ## (CardFx) that the pick panel deals, flips, tilts and burns; a focused card sinks a little instead of lifting.
+## v0.10.5 W3-O15 (owner 2026-11-04: UI style Astral; the painted card art): an Astral card (`astral`, the pick's and
+## the shop's, PickSlot) wears one of the owner's four carved slate frames (AstralCardArt: chosen by the card's id, the
+## same every time; a 9-slice whose chamfered corners never stretch) in place of the stone tablet, the painted icon in
+## an Astral medallion (AstralMedallion; icon_unknown for a card without one) in place of the inlay socket, the name in
+## Cinzel and the sentence in Atkinson in Astral's colours. Focus swaps the frame for its focused twin (the icy rim)
+## and lights the medallion (Astral's focus: a brighter contour, four stars round it). The stone tablet's box still
+## holds the card's colours (panel_box) and the socket its place and ring colour, only hidden.
 
 ## The tablet's size at scale 1 (px at the 1920 x 1080 base); the pick draws it at PickSlot.PICK_SCALE.
 const SIZE := Vector2(275, 450)
@@ -36,10 +44,20 @@ const GEM := 18.0
 const GEM_Y := 58.0
 const TIER_BOTTOM := 16.0
 const TIER_SIZE := 14
+## The rarity line never shrinks below this share of its size (it wraps to two lines instead).
+const TIER_FLOOR := 0.85
 const TITLE_SIZES := [22, 21, 20, 19, 18, 17, 16, 15, 14, 13]
 const DESC_SIZES := [17, 16, 15, 14, 13, 12]
+## v0.9.5 TX: the form line's type sizes.
+const FORM_SIZES := [14, 13, 12, 11]
 const TITLE_MAX_LINES := 2
 const LEVEL_SIZE := 14
+## v0.10.5 W3-O20: an Astral card's level badge: its right edge this far in from the frame's body, its top, and the
+## most of the body's width it may take (card px at scale 1).
+const LEVEL_INSET := 6.0
+const LEVEL_TOP := 14.0
+const LEVEL_SHARE := 0.92
+const LEVEL_FLOOR := 0.8
 const TEXT := Color("#EDE3D6")
 ## The ember glow under the tablet by tier (PickSlot.TIERS: common, rare, epic, ability, legendary).
 const UNDER := [0.18, 0.42, 0.55, 0.42, 0.8]
@@ -59,10 +77,17 @@ var tier := 0
 var focused := false
 ## Sizes picked by the last layout (tests check the text fits), and whether it needed the compact layout.
 var title_size := 0
+var tier_fit_size := 0
 var desc_size := 0
 var compact := false
 ## v0.8.0 N8: the pivot the face hangs from (the deal, flip, tilt, light and burn).
 var fx: CardFx
+## v0.10.5 W3-O15: an Astral card (the owner's frame and icon), its frame (NinePatchRect), which of the four it wears
+## (AstralCardArt.variant_of) and its medallion (both null on a stone card, the Codex's).
+var astral := false
+var frame: NinePatchRect
+var frame_variant := 1
+var medallion: AstralMedallion
 var _root := Control.new()
 var _slab := Panel.new()
 var _box := StoneBox.new()
@@ -75,6 +100,10 @@ var _level_box := StyleBoxFlat.new()
 ## v0.8.0 N8: the gain line (old → new) and its numbers (WorldReader.card_forecast), the count-up's progress (1: done).
 var _gain := Label.new()
 var _gain_data := {}
+## v0.9.5 TX: what a Pattern or Secondary Gun card does on the form held (FormCardText), under the sentence, in the
+## form's colour; hidden for any other card.
+var _form := Label.new()
+var _form_box := Vector2.ZERO
 ## v0.8.0 N8: the boxes the layout gave the title and the sentence (a Label grows past its box to hold its text, so
 ## the fit is checked against these).
 var _title_box := Vector2.ZERO
@@ -85,9 +114,10 @@ var _shown := 1.0
 var _showing := false
 
 
-func _init(p_scale: float = 1.0) -> void:
+func _init(p_scale: float = 1.0, p_astral: bool = false) -> void:
 	name = "StoneCard"
 	scale_factor = p_scale
+	astral = p_astral
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	custom_minimum_size = SIZE * scale_factor
 	_root.name = "Face"
@@ -146,13 +176,51 @@ func _init(p_scale: float = 1.0) -> void:
 	_gain.add_theme_constant_override("outline_size", 4)
 	_gain.visible = false
 	_root.add_child(_gain)
+	_form.name = "FormLine"
+	_form.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_form.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	_form.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_form.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_form.add_theme_font_override("font", HudStyle.font(true))
+	_form.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
+	_form.add_theme_constant_override("outline_size", 3)
+	_form.visible = false
+	_root.add_child(_form)
 	_root.add_child(ribbon)
+	if astral:
+		_build_astral()
 	remove_child(_root)
 	fx = CardFx.new(_root)  # v0.8.0 N8: the face hangs from the pivot (its shine is the face's last child)
 	add_child(fx)
+	if astral:  # v0.10.5 W3-S13: face down it wears the owner's carved back
+		fx.back.set_astral(true)
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_layout()
+
+
+## v0.10.5 W3-O15: the owner's frame under everything, the medallion in the socket's place, Astral's type.
+func _build_astral() -> void:
+	frame = NinePatchRect.new()
+	medallion = AstralMedallion.new()
+	frame.name = "Frame"
+	frame.patch_margin_left = AstralCardArt.MARGIN_X
+	frame.patch_margin_right = AstralCardArt.MARGIN_X
+	frame.patch_margin_top = AstralCardArt.MARGIN_Y
+	frame.patch_margin_bottom = AstralCardArt.MARGIN_Y
+	frame.texture = AstralCardArt.frame(frame_variant, false)
+	_root.add_child(frame)
+	_root.move_child(frame, 0)
+	_slab.visible = false
+	socket.visible = false
+	_root.add_child(medallion)
+	_root.move_child(medallion, socket.get_index() + 1)
+	_title.add_theme_font_override("font", AstralCardArt.serif(650, 2))
+	_title.add_theme_color_override("font_outline_color", Color(0.02, 0.03, 0.08, 0.7))
+	_desc.add_theme_color_override("font_color", AstralCardArt.TEXT)
+	_desc.add_theme_color_override("font_outline_color", Color(0.02, 0.03, 0.08, 0.6))
+	_tier.add_theme_font_override("font", AstralCardArt.serif(600, 2))
+	_level_box.bg_color = Color("#0D1120", 0.84)
 
 
 ## Shows a card: `id`, translated `title` and `sentence`, its `fam` (CardFrames.family), `tier` (PickSlot.TIERS
@@ -191,6 +259,15 @@ func show_face(
 		socket.element = &"star"
 	gem.color = tier_color
 	gem.visible = id != &""
+	fx.glare_seed = id  # v0.10.5 W3-O15: each card's glare its own
+	if astral:  # v0.10.5 W3-O15
+		frame_variant = AstralCardArt.variant_of(id)
+		fx.back.variant = frame_variant
+		medallion.show_card(id)
+		_title.add_theme_color_override("font_color", AstralCardArt.TEXT)
+		_tier.add_theme_color_override("font_color", AstralCardArt.rarity(tier))
+		_level.add_theme_color_override("font_color", AstralCardArt.ACCENT)
+		_level_box.border_color = Color(AstralCardArt.LINE, 0.8)
 	_box.pattern = hash(id) % 997
 	_box.inlay = c
 	_box.rim = (
@@ -228,12 +305,27 @@ func show_ribbon(text: String) -> void:
 	_layout()
 
 
+## v0.9.5 TX: the form line under the sentence ("" hides it) in the form's colour.
+func show_form_line(text: String, c: Color = Color.WHITE) -> void:
+	_form.text = text
+	_form.visible = text != ""
+	_form.add_theme_color_override("font_color", c.lerp(Color.WHITE, 0.2))
+	_layout()
+
+
+## v0.9.5 TX: the form line as shown ("" for none).
+func form_text() -> String:
+	return _form.text if _form.visible else ""
+
+
 func show_gain(gain: Dictionary) -> void:
 	_gain_data = gain
 	_count = 1.0
 	_gain.visible = CardGain.shows(gain)
 	_gain.text = CardGain.final_text(self, gain) if _gain.visible else ""
-	_gain.add_theme_color_override("font_color", EmberStone.EMBER.lightened(0.35))
+	_gain.add_theme_color_override(
+		"font_color", AstralCardArt.ACCENT if astral else EmberStone.EMBER.lightened(0.35)
+	)
 	_layout()
 
 
@@ -332,10 +424,53 @@ func _apply() -> void:
 	socket.glow = 1.0 if focused else 0.0
 	fx.set_hover(fx.tilt, 1.0 if focused else 0.0)  # v0.8.0 N8: the focused card sinks a little
 	_root.modulate = Color.WHITE if focused else Color(0.9, 0.9, 0.9)
+	if astral:  # v0.10.5 W3-O15: the focused twin of the card's frame, and the medallion lit
+		frame.texture = AstralCardArt.frame(frame_variant, focused)
+		fx.back.focused = focused
+		medallion.focused = focused
+		_root.modulate = Color.WHITE if focused else Color(0.86, 0.86, 0.9)
+
+
+## v0.10.5 W3-O15: the frame shown now (tests: the variant per id, the focused twin).
+func frame_texture() -> Texture2D:
+	return frame.texture if astral else null
 
 
 ## Places the slab, the title, the socket, the gain line, the sentence and the foot for scale_factor and fits the
 ## text sizes; a sentence that does not fit at the smallest size takes the compact layout (a smaller socket).
+## v0.10.5 W3-S12: the width (px, this card's scale) between the carved frame's 9-slice margins: the text stays inside.
+func inner_width() -> float:
+	var k := SIZE.x / AstralCardArt.BODY_W
+	return (SIZE.x - 2.0 * (AstralCardArt.MARGIN_X - AstralCardArt.PAD.x) * k) * scale_factor
+
+
+## The title's box, in this card's pixels (tests).
+func title_box() -> Vector2:
+	return _title_box
+
+
+## The rarity line's box, in this card's pixels (tests).
+func tier_rect() -> Rect2:
+	return Rect2(_tier.position, _tier.size)
+
+
+## The rarity line's widest line at the size picked (tests).
+func tier_line_width() -> float:
+	var f: Font = _tier.get_theme_font("font")
+	if _tier.autowrap_mode == TextServer.AUTOWRAP_OFF:
+		return f.get_string_size(_tier.text, HORIZONTAL_ALIGNMENT_LEFT, -1, tier_fit_size).x
+	var flags := (
+		TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE
+	)
+	return (
+		f
+		. get_multiline_string_size(
+			_tier.text, HORIZONTAL_ALIGNMENT_LEFT, _tier.size.x, tier_fit_size, -1, flags
+		)
+		. x
+	)
+
+
 func _layout() -> void:
 	compact = false
 	_place(SOCKET, TITLE_TOP)
@@ -352,35 +487,67 @@ func _place(socket_px: float, title_top: float) -> void:
 	fx.lay_out(full)
 	var w := (SIZE.x - MARGIN * 2.0) * s
 	var x := MARGIN * s
+	if astral:  # v0.10.5 W3-S12: the title keeps inside the carved frame's inner width
+		w = inner_width()
+		x = (full.x - w) * 0.5
 	var bold := HudStyle.font(true)
 	var regular := HudStyle.font(false)
+	var serif: Font = _title.get_theme_font("font") if astral else bold
+	if astral:  # v0.10.5 W3-O15: the owner's frame, its corners scaled with the card (k), its glow round it
+		var k := full.x / AstralCardArt.BODY_W
+		frame.scale = Vector2(k, k)
+		frame.position = -AstralCardArt.PAD * k
+		frame.size = full / k + AstralCardArt.PAD * 2.0
+		medallion.k = s
 	# The foot: the gem over the rarity words.
 	var g := GEM * s
 	gem.custom_minimum_size = Vector2(g, g)
 	gem.size = Vector2(g, g)
 	gem.position = Vector2((full.x - g) * 0.5, full.y - GEM_Y * s - g * 0.5)
-	var tier_size := roundi(TIER_SIZE * s)
+	var tier_font: Font = _tier.get_theme_font("font")
+	var tier_base := roundi(TIER_SIZE * s)
+	var tier_size := tier_base
+	var tier_floor := maxi(8, ceili(tier_base * TIER_FLOOR))
+	var tier_w := inner_width() if astral else w
+	var tier_x := (full.x - tier_w) * 0.5
+	# v0.10.5 W3-S12: the rarity line steps down to a floor, then wraps to two centred lines, inside the frame
 	while (
-		tier_size > 10
-		and bold.get_string_size(_tier.text, HORIZONTAL_ALIGNMENT_LEFT, -1, tier_size).x > w
+		tier_size > tier_floor
+		and (
+			tier_font.get_string_size(_tier.text, HORIZONTAL_ALIGNMENT_LEFT, -1, tier_size).x
+			> tier_w
+		)
 	):
 		tier_size -= 1
+	var tier_lines := 1
+	if tier_font.get_string_size(_tier.text, HORIZONTAL_ALIGNMENT_LEFT, -1, tier_size).x > tier_w:
+		tier_lines = 2
+	_tier.clip_text = false
+	_tier.autowrap_mode = (
+		TextServer.AUTOWRAP_WORD_SMART if tier_lines > 1 else TextServer.AUTOWRAP_OFF
+	)
+	_tier.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	_tier.add_theme_font_size_override("font_size", tier_size)
-	var tier_h := bold.get_height(tier_size)
-	_tier.position = Vector2(x, full.y - TIER_BOTTOM * s - tier_h)
-	_tier.size = Vector2(w, tier_h)
+	var tier_h := tier_font.get_height(tier_size) * tier_lines
+	_tier.position = Vector2(
+		tier_x, full.y - (TIER_BOTTOM + (10.0 if astral else 0.0)) * s - tier_h
+	)
+	_tier.size = Vector2(tier_w, tier_h)
+	tier_fit_size = tier_size
+	# a two-line rarity block takes the room under the gem: the gem rides up over it (the sentence ends above the gem)
+	gem.position.y = minf(gem.position.y, _tier.position.y - 2.0 * s - g)
 	# v0.8.0 N8: the title on top: one line if it fits at a readable size, else two.
 	var y := title_top * s
 	var t := _title.text.to_upper()
 	var sizes := _scaled(TITLE_SIZES)
 	var one: Array = sizes.slice(0, 5)
-	title_size = TextFit.fit_size(bold, t, w, bold.get_height(one[0]) + 1.0, one, 1)
-	if TextFit.text_height(bold, t, w, title_size) > bold.get_height(title_size) + 1.0:
+	title_size = TextFit.fit_size(serif, t, w, serif.get_height(one[0]) + 1.0, one, 1)
+	if TextFit.text_height(serif, t, w, title_size) > serif.get_height(title_size) + 1.0:
 		title_size = TextFit.fit_size(
-			bold, t, w, bold.get_height(sizes[0]) * 2.0 + 1.0, sizes, TITLE_MAX_LINES
+			serif, t, w, serif.get_height(sizes[0]) * 2.0 + 1.0, sizes, TITLE_MAX_LINES
 		)
-	title_size = mini(title_size, TextFit.word_fit_size(bold, t, w, title_size))  # v0.8.0 N18: a long word shrinks
-	var th := maxf(TextFit.text_height(bold, t, w, title_size), bold.get_height(title_size))
+	title_size = mini(title_size, TextFit.word_fit_size(serif, t, w, title_size))  # v0.8.0 N18: a long word shrinks
+	var th := maxf(TextFit.text_height(serif, t, w, title_size), serif.get_height(title_size))
 	_title.add_theme_font_size_override("font_size", title_size)
 	_title.position = Vector2(x, y)
 	_title.size = Vector2(w, th)
@@ -392,6 +559,10 @@ func _place(socket_px: float, title_top: float) -> void:
 	var side := socket_px * s
 	socket.position = Vector2((full.x - side) * 0.5, y)
 	socket.size = Vector2(side, side)
+	if astral:
+		medallion.position = socket.position
+		medallion.size = socket.size
+		medallion.fit()
 	y += side + 8.0 * s
 	# What gets better (old → new), when the card has a number.
 	if _gain.visible:
@@ -411,6 +582,17 @@ func _place(socket_px: float, title_top: float) -> void:
 		ribbon.size = Vector2(full.x + 2.0 * RIBBON_OVERHANG * s, rh)
 		ribbon.position = Vector2(-RIBBON_OVERHANG * s, bottom - rh)
 		bottom -= rh + 8.0 * s
+	if _form.visible:  # v0.9.5 TX: the form line takes the foot of the text area; the sentence keeps the rest
+		var fsizes := _scaled(FORM_SIZES)
+		var fs := TextFit.fit_size(
+			regular, _form.text, w, regular.get_height(fsizes[0]) * 3.0, fsizes, 3
+		)
+		var fh := TextFit.text_height(regular, _form.text, w, fs)
+		_form.add_theme_font_size_override("font_size", fs)
+		_form.position = Vector2(x, bottom - fh)
+		_form.size = Vector2(w, fh)
+		_form_box = Vector2(w, fh)
+		bottom -= fh + 6.0 * s
 	var desc_h := maxf(bottom - y, 0.0)
 	var dsizes := _scaled(DESC_SIZES)
 	desc_size = TextFit.fit_size(regular, _desc.text, w, desc_h, dsizes)
@@ -418,12 +600,53 @@ func _place(socket_px: float, title_top: float) -> void:
 	_desc.position = Vector2(x, y)
 	_desc.size = Vector2(w, desc_h)
 	_desc_box = Vector2(w, desc_h)
+	if _form.visible:  # v0.9.5 TX: the form line sits right under the sentence (not at the foot)
+		var used := minf(desc_h, TextFit.text_height(regular, _desc.text, w, desc_size))
+		_form.position.y = y + used + 8.0 * s
 	# v0.7.5 SM: the level badge top right, above the title.
 	_level.add_theme_font_size_override("font_size", maxi(10, roundi(LEVEL_SIZE * s)))
 	_level.reset_size()
 	var ls := _level.get_combined_minimum_size()
+	if astral:  # v0.10.5 W3-O20: inside the frame's body (a long overlevel badge stepped down, as the rarity line)
+		_place_astral_level(full, s)
+		return
 	_level.size = ls
 	_level.position = Vector2(full.x - ls.x - 16.0 * s, 9.0 * s)
+
+
+## v0.10.5 W3-O20 (lead: the loop-2 overlevel badge "Lv 3 → 4 + overlevel" overhung the card's top-right corner): an
+## Astral card's level badge sits inside the frame's body, its right edge clear of the carved corner; a badge wider than
+## LEVEL_SHARE of the body steps its size down to LEVEL_FLOOR of its size, then wraps to two right-aligned lines (as
+## the rarity line). Measured with the font itself: the Label's own minimum size lags while the card is out of the tree.
+func _place_astral_level(full: Vector2, s: float) -> void:
+	var iw := inner_width()
+	var right := (full.x + iw) * 0.5 - LEVEL_INSET * s
+	var room := iw * LEVEL_SHARE
+	var f := _level.get_theme_font("font")
+	var pad := _level_box.content_margin_left + _level_box.content_margin_right
+	var base := maxi(10, roundi(LEVEL_SIZE * s))
+	var floor_px := maxi(10, ceili(base * LEVEL_FLOOR))
+	var fs := base
+	var tw := f.get_string_size(_level.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + pad
+	while tw > room and fs > floor_px:
+		fs -= 1
+		tw = f.get_string_size(_level.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + pad
+	_level.add_theme_font_size_override("font_size", fs)
+	var lines := 1
+	_level.autowrap_mode = TextServer.AUTOWRAP_OFF
+	if tw > room:
+		_level.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_level.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		tw = room
+		lines = 2
+	else:
+		_level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var h := (
+		f.get_height(fs) * lines + _level_box.content_margin_top + _level_box.content_margin_bottom
+	)
+	_level.custom_minimum_size = Vector2(tw, 0)
+	_level.size = Vector2(tw, h)
+	_level.position = Vector2(right - tw, LEVEL_TOP * s)
 
 
 func _scaled(sizes: Array) -> Array:

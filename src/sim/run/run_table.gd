@@ -41,6 +41,15 @@ var loop_threat := 0
 var loop_catch_up_cap_permille := 0
 ## v0.8.0 P3 (owner O35): a Deep floor past loop 1: enemies' and bosses' HP and damage × this per mille (1000: none).
 var loop_deep_ease_permille := 1000
+## v0.10.5 O5b (RunDefinition, LoopRules): the rules a loop may add and their numbers (the arc in angle units).
+var loop_rules: Array[StringName] = []
+var loop_swift_permille := 1000
+var loop_heal_chance_permille := 1000
+var loop_heal_amount_permille := 1000
+var loop_shield_permille := 1000
+var loop_shield_half_arc := 0
+var loop_bolt_permille := 1000
+var loop_keep_permille := 1000
 ## v0.8.0 FB1 (RunDefinition): the final boss's bodies (FinalBossDefinition ids, in order; empty = none: End the run
 ## ends it at once), its name key, its arena (a FinalArenaDefinition id) and the shatter between two bodies (ticks).
 var final_bosses: Array[StringName] = []

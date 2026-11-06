@@ -93,6 +93,34 @@ const SHELL_SECTION := [
 	Vector2(-0.62, 0.84),
 ]
 
+## v0.10.5 W3-V4c (SoloVat): the raw drives (_vd) and their specs [lo, hi, loop]: the walk's swing (sin and cos of
+## the phase, times the walk), the spawn-in's sink, the chest's shift, height, lean and breath, the arms' roll (both,
+## mirrored), each arm's swing, the elbows' bend.
+const SW := 0
+const CW := 1
+const SINK := 2
+const CHX := 3
+const HIP := 4
+const LEAN := 5
+const BREATH := 6
+const ROLL := 7
+const SWING0 := 8
+const ELBOW := 10
+const VAT_DRIVES := [
+	[-1.02, 1.02, false],
+	[-1.02, 1.02, false],
+	[0.0, 1.0, false],
+	[-0.075, 0.02, false],
+	[0.05, 0.36, false],
+	[-0.5, 0.33, false],
+	[-1.02, 1.02, false],
+	[-0.01, 0.83, false],
+	[-0.22, 2.8, false],
+	[-0.22, 2.8, false],
+	[-0.12, 0.84, false],
+]
+const VAT_SAMPLES := [33, 9, 17, 2, 2, 65, 2, 33, 129, 129, 49]
+
 ## Body meshes, built once and shared by every Warden.
 static var _meshes := {}
 
@@ -105,13 +133,17 @@ var fists: Array[Node3D] = []
 var legs: Array[Node3D] = []
 ## v0.8.0 P1: the impact's dust ring (hidden between slams).
 var dust: MeshInstance3D
+## v0.10.5 W3-V4c (owner, 2026-11-06: VAT for every regular enemy): true (set before setup(), ActorViews from
+## ViewPrefs.enemy_vat): a VatCrowd draws the body from baked poses; setup() builds only the dust ring.
+var vat := false
+var kind := WorldReader.KIND_WARDEN
 
 var _body := Node3D.new()
 var _chest := Node3D.new()
 var _elbows: Array[Node3D] = []
 var _visor_mat := StandardMaterial3D.new()
 var _crack_mat := StandardMaterial3D.new()
-var _technique := &"xray"
+var _technique := &"outline"
 var _outline := Color.BLACK
 # Sim state from the last sync.
 var _state := WorldReader.STATE_MOVE
@@ -129,13 +161,24 @@ var _shake := 0.0
 var _slam_r := SLAM_RADIUS
 var _dust_t := -1.0
 var _dust_mat := StandardMaterial3D.new()
+var _vd := PackedFloat32Array()
+var _lift := 0.0
 
 
-## Builds the model. technique "xray" adds a team-coloured silhouette twin to every body piece.
-func setup(outline_color: Color, technique: StringName = &"xray") -> void:
+## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
+func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_outline = outline_color
 	_technique = technique
+	_vd.resize(VAT_DRIVES.size())
+	if vat:  # v0.10.5 W3-V4c: the crowd draws the body; the dust ring stays a node
+		_body.free()
+		_body = null
+		_chest.free()
+		_chest = null
+		_build_dust()
+		_pose(0.0)
+		return
 	add_child(_body)
 	_chest.position.y = HIP_Y
 	_body.add_child(_chest)
@@ -191,7 +234,7 @@ func apply_state(s: Dictionary) -> void:
 ## Advances the animation by `delta` seconds of frame time.
 func advance(delta: float) -> void:
 	var dt := clampf(delta, 0.0, 0.05)
-	if dt <= 0.0 or shell == null:
+	if dt <= 0.0 or (shell == null and not vat):
 		return
 	_t += dt
 	_speed = lerpf(_speed, _vel.length(), _rate(10.0, dt))
@@ -266,32 +309,126 @@ func _pose(dt: float) -> void:
 	# Spawn-in: up out of the ground, leaning back as it comes.
 	var sink := 1.0 - _rise
 	sink = sink * sink * (3.0 - 2.0 * sink)
-	_body.position = Vector3(0, -1.35 * sink, 0)
-	_body.rotation = Vector3(s * 0.06 * _walk, 0, -0.25 * sink)
+	# v0.10.5 W3-V4c: the pose's numbers first (the VAT drives and the lift), then the nodes from them (the old path).
+	_lift = -1.35 * sink
+	_vd[SW] = s * _walk
+	_vd[CW] = cos(_phase) * _walk
+	_vd[SINK] = sink
 	var tremble := 0.0 if calm else sin(_t * 47.0) * 0.012 * _raise * smoothstep(0.6, 1.0, _windup)
-	_chest.position = Vector3(tremble - tell_c * 0.05, hip, 0)
+	_vd[CHX] = tremble - tell_c * 0.05
+	_vd[HIP] = hip
 	# The chest leans back to heave the fists up, then pitches forward into the slam.
-	var lean := 0.06 * _walk + _raise * RAISE_LEAN - _slam * SLAM_PITCH - _shake * 0.05
-	_chest.rotation = Vector3(-s * 0.05 * _walk, cos(_phase) * 0.06 * _walk, lean)
-	_chest.scale = Vector3(1.0, 1.0 + breath * 0.012, 1.0 + breath * 0.01)
+	_vd[LEAN] = 0.06 * _walk + _raise * RAISE_LEAN - _slam * SLAM_PITCH - _shake * 0.05
+	_vd[BREATH] = breath
+	# Raised, the arms come in over the head so the fists meet; slammed, they swing out to the front corners.
+	_vd[ROLL] = _raise * 0.42 + _slam * 0.4
+	for k in 2:
+		var side := -1.0 if k == 0 else 1.0
+		# Walking: the arms swing against the legs; idle: they hang, a little forward.
+		var hang := 0.12 + side * s * 0.28 * _walk + breath * 0.02
+		_vd[SWING0 + k] = lerpf(lerpf(hang, ARM_UP, _raise), ARM_SLAM, _slam)
+	_vd[ELBOW] = _raise * 0.7 + 0.12 * (1.0 - busy) - _slam * 0.1
 	var winding := _state == WorldReader.STATE_WINDUP
 	var tell := tell_glow(_windup, _t, calm) if winding else 1.0
 	_visor_mat.emission_energy_multiplier = (2.4 + 4.0 * _raise) * tell + 2.0 * _shake
 	_crack_mat.emission_energy_multiplier = 1.8 + 0.5 * sin(_t * 3.4) + 1.5 * _raise
+	if vat:
+		return
+	_body.position = Vector3(0, _lift, 0)
+	_body.rotation = Vector3(0.06 * _vd[SW], 0, -0.25 * sink)
+	_chest.position = Vector3(_vd[CHX], hip, 0)
+	_chest.rotation = Vector3(-0.05 * _vd[SW], 0.06 * _vd[CW], _vd[LEAN])
+	_chest.scale = _chest_scale(breath)
 	for k in arms.size():
 		var side := -1.0 if k == 0 else 1.0
-		# Walking: the arms swing against the legs; idle: they hang, a little forward.
-		var hang := 0.12 + side * s * 0.28 * _walk + breath * 0.02
-		var swing := lerpf(lerpf(hang, ARM_UP, _raise), ARM_SLAM, _slam)
-		# Raised, they come in over the head so the fists meet; slammed, they swing out to the front corners.
-		var roll := -side * (_raise * 0.42 + _slam * 0.4)
-		arms[k].rotation = Vector3(roll, 0, swing)
-		_elbows[k].rotation = Vector3(0, 0, _raise * 0.7 + 0.12 * (1.0 - busy) - _slam * 0.1)
-		arms[k].position = SHOULDER * Vector3(1, 1, side) + Vector3(0, breath * 0.01, 0)
+		arms[k].rotation = Vector3(-side * _vd[ROLL], 0, _vd[SWING0 + k])
+		_elbows[k].rotation = Vector3(0, 0, _vd[ELBOW])
+		arms[k].position = _shoulder(side, breath)
 	for k in legs.size():
 		var sgn := -1.0 if k == 0 else 1.0
-		legs[k].rotation = Vector3(0, 0, s * 0.42 * _walk * sgn)
+		legs[k].rotation = Vector3(0, 0, 0.42 * sgn * _vd[SW])
 		legs[k].position = Vector3(0, hip, sgn * 0.19)
+
+
+## v0.10.5 W3-V4c: the chest's breath (its scale) and a shoulder's place (`side` -1 left, 1 right), from the breath.
+static func _chest_scale(breath: float) -> Vector3:
+	return Vector3(1.0, 1.0 + breath * 0.012, 1.0 + breath * 0.01)
+
+
+static func _shoulder(side: float, breath: float) -> Vector3:
+	return SHOULDER * Vector3(1, 1, side) + Vector3(0, breath * 0.01, 0)
+
+
+# --- v0.10.5 W3-V4c: the VAT rig (SoloVat) -----------------------------------------------------------------------
+
+
+## The spawn-in's sink (m): the whole body's lift VatCrowd moves the instance by (the dust ring is its own node).
+func vat_lift() -> float:
+	return _lift
+
+
+func vat_drives() -> PackedFloat32Array:
+	return SoloVat.normalized(_vd, VAT_DRIVES)
+
+
+## The visor's glow (the cracks are unshaded).
+func glow_energy() -> float:
+	return _visor_mat.emission_energy_multiplier
+
+
+## Each node's transform split into its one-number parts as its position, rotation (Y, X, Z) and scale compose them:
+## the body (sway, then the sink's tilt), the chest (shift, height, the walk's yaw and roll, the lean, the breath),
+## the arms (shoulder with the breath, roll, swing), the elbows, the legs (hip height, swing).
+func vat_rig() -> Dictionary:
+	var x := Vector3.RIGHT
+	var y := Vector3.UP
+	var z := Vector3.BACK
+	var j: Array = [
+		[SW, -1, null, SoloVat.turn(x, 0.06)],
+		[SINK, 0, _body, SoloVat.turn(z, -0.25)],
+		[CHX, 1, null, SoloVat.slide(x)],
+		[HIP, 2, null, SoloVat.slide(y)],
+		[CW, 3, null, SoloVat.turn(y, 0.06)],
+		[SW, 4, null, SoloVat.turn(x, -0.05)],
+		[LEAN, 5, null, SoloVat.turn(z)],
+		[BREATH, 6, _chest, SoloVat.stretch_by(Vector3.ONE, _chest_scale(1.0) - Vector3.ONE)],
+	]
+	for k in arms.size():
+		var side := -1.0 if k == 0 else 1.0
+		var shoulder := _shoulder(side, 0.0)
+		j.append([BREATH, 7, null, SoloVat.slide(_shoulder(side, 1.0) - shoulder, shoulder)])
+		j.append([ROLL, j.size() - 1, null, SoloVat.turn(x, -side)])
+		j.append([SWING0 + k, j.size() - 1, arms[k], SoloVat.turn(z)])
+		j.append(
+			[ELBOW, j.size() - 1, _elbows[k], SoloVat.turn(z, 1.0, SoloVat.at(_elbows[k].position))]
+		)
+	for k in legs.size():
+		var sgn := -1.0 if k == 0 else 1.0
+		j.append([HIP, 1, null, SoloVat.slide(y, Vector3(0, 0, sgn * 0.19))])
+		j.append([SW, j.size() - 1, legs[k], SoloVat.turn(z, 0.42 * sgn)])
+	var grids: Array = []
+	for d in VAT_DRIVES.size():
+		grids.append([[d, VAT_SAMPLES[d]]])
+	return SoloVat.rig("warden", VAT_DRIVES, grids, j, OUTLINE_M, true)
+
+
+func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
+	var ranges := {
+		"_t": [0.0, 40.0],
+		"_phase": [0.0, 40.0],
+		"_walk": [0.0, 1.0],
+		"_raise": [0.0, 1.0],
+		"_slam": [0.0, 1.0],
+		"_rise": [0.0, 1.0],
+		"_shake": [0.0, 1.0],
+		"_windup": [0.0, 1.0],
+		"_state": [WorldReader.STATE_MOVE, WorldReader.STATE_WINDUP],
+	}
+	return SoloVat.sample(self, rng, ranges, _pose.bind(0.0))
+
+
+func vat_set(s: Dictionary) -> void:
+	SoloVat.apply(self, s, _pose.bind(0.0))
 
 
 ## v0.8.0 P1: 0..1 how far the impact's dust ring has run (-1: none showing).
@@ -328,16 +465,9 @@ func _advance_dust(dt: float) -> void:
 func _build_dust() -> void:
 	dust = MeshInstance3D.new()
 	dust.name = "SlamDust"
+	dust.set_meta(SoloVat.LIVE, true)  # v0.10.5 W3-V4c: a node of a VAT Warden's too, not baked
 	dust.mesh = _dust_mesh()
-	# v0.8.0 TX2: the owner's dust ring (fx_dust_ring's first cell) on a flat quad, its ragged ring at the same unit
-	# radius (it sits at BossStrikeShapes.DUST_RING_R of the quad's side), tinted the same neutral dust.
-	var tex := BossStrikeMeshes.texture("fx_dust_ring")
-	if tex != null:
-		var q := PlaneMesh.new()
-		q.size = Vector2.ONE / BossStrikeShapes.DUST_RING_R
-		dust.mesh = q
-		_dust_mat.albedo_texture = tex
-		_dust_mat.uv1_scale = Vector3(0.5, 0.5, 1.0)
+	# v0.10.5 S2: the code-made near-white band again (the owner's beige fx_dust_ring stays for the other slams).
 	_dust_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_dust_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_dust_mat.cull_mode = BaseMaterial3D.CULL_DISABLED

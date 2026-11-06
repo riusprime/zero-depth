@@ -74,8 +74,13 @@ func test_take_hits_die_and_restart_with_no_errors_or_growth() -> void:
 	assert_gt(hits, DEATHS * 2, "the wanderer was hit again and again (%d hits)" % hits)
 	assert_eq(swapped, 0, "no hit swapped a shader on the wanderer")
 	assert_eq(get_errors().size(), 0, "no engine or script error while taking damage")
+	# v0.10.5 PC: the live floor's idle pool entries wait outside the tree on purpose (freed with its view)
+	var held: int = main.view.idle_pool_nodes()
+	assert_gt(held, 0, "the live floor's pools hold idle entries outside the tree")
 	assert_eq(
-		int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)), 0, "no orphan nodes"
+		int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)) - held,
+		0,
+		"no orphan nodes but the live floor's idle pool entries"
 	)
 	assert_lt(
 		absi(nodes - start_nodes),
@@ -91,7 +96,11 @@ func _nodes_outside_stage(main: Main) -> int:
 	var total := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 	var stall: Node = main.view.shop_stall
 	var stall_nodes := _subtree_size(stall) if is_instance_valid(stall) else 0
-	return total - _subtree_size(main.view.stage) - stall_nodes
+	# v0.10.0: the pack's effect pools (PackFx) are kept and reused, and the first floor of a headless run also holds
+	# the warm-up's instances there (no menu warm without a renderer); a pool is not a leak, so it is left out too.
+	var pack: Node = main.view.get("pack_fx")
+	var pack_nodes := _subtree_size(pack) if is_instance_valid(pack) else 0
+	return total - _subtree_size(main.view.stage) - stall_nodes - pack_nodes
 
 
 func _subtree_size(n: Node) -> int:

@@ -39,7 +39,6 @@ const WALK_SWING := 0.32
 ## The Conduit floats this high (m) while it isn't overloaded.
 const FLOAT_M := 0.3
 const DEATH_SECONDS := 0.6
-const XRAY_GROW := -0.02
 
 var kind := WorldReader.KIND_BREAKER
 var height := 2.6
@@ -48,11 +47,10 @@ var model: Node3D
 var parts := {}
 var _rest := {}
 var _glow_mat: ShaderMaterial
-var _xray: Material
 var _glow_pieces: Array[GeometryInstance3D] = []
 var _glow_e := -1.0
 var _outline := Color.BLACK
-var _technique := &"xray"
+var _technique := &"outline"
 var _state := WorldReader.STATE_SPAWN
 var _pick := WorldReader.ELITE_BASIC
 var _progress := 0.0
@@ -79,7 +77,7 @@ func has_model() -> bool:
 	return model != null
 
 
-func setup(p_kind: int, outline_color: Color, technique: StringName = &"xray") -> void:
+func setup(p_kind: int, outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	kind = p_kind
 	_outline = outline_color
@@ -88,15 +86,8 @@ func setup(p_kind: int, outline_color: Color, technique: StringName = &"xray") -
 	body = Node3D.new()
 	add_child(body)
 	var owner_model := EnemyModels.get_model(MODEL_IDS.get(kind, &""))
-	if _technique == &"xray":
-		var team := ThemePalette.color(&"enemy_body")
-		_xray = (
-			EnemyLooks.xray(team, EnemyLooks.XRAY_SHRINK, 0.0)
-			if owner_model.is_empty()
-			else EnemyLooks.xray(team, 1.0, XRAY_GROW / maxf(float(owner_model["scale"]), 0.0001))
-		)
 	var accent: Color = ACCENTS.get(kind, Color.WHITE)
-	_glow_mat = EnemyLooks.accent(accent, accent, 1.5, _xray)
+	_glow_mat = EnemyLooks.accent(accent, accent, 1.5)
 	if owner_model.is_empty():
 		_build_stand_in(accent)
 	else:
@@ -115,26 +106,34 @@ func dying() -> bool:
 	return _die_t >= 0.0
 
 
+## v0.10.5 W3-Q6: the values straight to _apply (no Dictionary per elite per sync).
 func sync(reader: WorldReader, i: int) -> void:
-	apply_state(
-		{
-			"tick": reader.tick(),
-			"state": reader.actor_state(i),
-			"pick": reader.elite_attack(i),
-			"windup": windup_progress(reader, i),
-			"vanished": reader.elite_vanished(i),
-			"vulnerable": reader.elite_vulnerable(i),
-		}
+	_apply(
+		reader.actor_state(i),
+		reader.elite_attack(i),
+		windup_progress(reader, i),
+		reader.elite_vanished(i),
+		reader.elite_vulnerable(i),
 	)
 
 
 ## The same as sync() from plain values (tests drive the avatar with this).
 func apply_state(s: Dictionary) -> void:
-	_state = int(s["state"])
-	_pick = int(s.get("pick", WorldReader.ELITE_BASIC))
-	_progress = clampf(float(s.get("windup", 0.0)), 0.0, 1.0)
-	_vanished = bool(s.get("vanished", false))
-	_vulnerable = bool(s.get("vulnerable", false))
+	_apply(
+		int(s["state"]),
+		int(s.get("pick", WorldReader.ELITE_BASIC)),
+		float(s.get("windup", 0.0)),
+		bool(s.get("vanished", false)),
+		bool(s.get("vulnerable", false)),
+	)
+
+
+func _apply(state: int, pick: int, windup: float, vanished: bool, vulnerable: bool) -> void:
+	_state = state
+	_pick = pick
+	_progress = clampf(windup, 0.0, 1.0)
+	_vanished = vanished
+	_vulnerable = vulnerable
 	strike_note(_state)
 	if _fresh:
 		_fresh = false
@@ -267,6 +266,12 @@ func _pose_model(ability: bool, calm: bool) -> void:
 				(parts["shards"] as Node3D).rotation.y = -_t * 0.9
 
 
+## v0.9.5 PF5: the hit flash and the accent glow are each written to a list of pieces (RigMerge swaps merged
+## pieces in them).
+func rig_spec() -> Dictionary:
+	return {"keep": [], "sets": [_hit_pieces, _glow_pieces]}
+
+
 func _set_glow(e: float) -> void:
 	if e == _glow_e:
 		return
@@ -278,7 +283,7 @@ func _set_glow(e: float) -> void:
 ## The owner's model (EnemyModels.get_model): each part a node at its pivot, `base` on the shared body material (the
 ## hit flash and the biome's cast), `glow` on the accent.
 func _build_model(m: Dictionary) -> void:
-	var base := shared_body(kind, Color.WHITE, m["texture"], _outline, 0.0, _xray)
+	var base := shared_body(kind, Color.WHITE, m["texture"], _outline, 0.0)
 	model = Node3D.new()
 	model.name = "Model"
 	_model_scale = float(m["scale"])
@@ -314,7 +319,7 @@ func _build_stand_in(accent: Color) -> void:
 	var piece := MeshInstance3D.new()
 	piece.mesh = box
 	piece.position = Vector3(0, height * 0.5, 0)
-	piece.material_override = shared_body(kind, accent.darkened(0.6), null, _outline, 0.02, _xray)
+	piece.material_override = shared_body(kind, accent.darkened(0.6), null, _outline, 0.02)
 	body.add_child(piece)
 	_hit_pieces.append(piece)
 	var band := BoxMesh.new()

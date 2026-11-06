@@ -9,5 +9,5 @@ name_key = &"STAT_AREA"
 desc_key = &"STAT_AREA_DESC"
 amounts = PackedFloat32Array(8, 15, 25)
 cap = 2.5
-weight = 8
+weight = 0
 id = &"area"

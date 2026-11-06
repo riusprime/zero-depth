@@ -103,7 +103,9 @@ func test_the_prism_is_a_skill_phase_in_data() -> void:
 		assert_true(a.shielded, "shielded while she casts")
 		assert_eq(a.fixed_aim, 0, "a fixed aim, not at the player")
 		assert_eq(a.pattern.look, &"crown_orb", "her own fireball look")
-	assert_eq(t.phase_attacks.size(), 1)
+	assert_eq(
+		t.phase_attacks.size(), 2, "v0.10.5 O3: her last phase from 50 % HP (test_prism_last.gd)"
+	)
 	var listed: Array[StringName] = []
 	for k in t.phase_attacks[0]:
 		listed.append(t.attacks[k].id)
@@ -361,7 +363,7 @@ func test_the_orbs_fly_from_her_centre_at_a_fixed_angle() -> void:
 				dirs.append(Kin.angle_of(v))
 		dirs.sort()
 		sets.append(dirs)
-	assert_eq((sets[0] as Array).size(), 4 * 24, "four rings of 24 orbs (32 less 4 gaps of 2)")
+	assert_eq((sets[0] as Array).size(), 4 * 16, "four rings of 16 orbs (28 less 4 gaps of 3)")
 	assert_eq(sets[0], sets[1], "the same orbs wherever the player stands")
 
 
@@ -450,7 +452,7 @@ func test_the_three_orb_patterns_are_dodgeable_but_not_easy() -> void:
 				assert_gte(
 					c, 2.0 * hero, "%s wave %d: a gap of 2+ hero widths (%.2f m)" % [id, kw, c]
 				)
-				assert_lte(c, 3.0 * hero, "%s wave %d: but not wide open (%.2f m)" % [id, kw, c])
+				assert_lte(c, 5.0 * hero, "%s wave %d: but not wide open (%.2f m)" % [id, kw, c])
 			if kw == 0:
 				var shots := BulletPatterns.wave_shots(pat, kw, Vector2.ZERO, 0, 1.75)
 				for v: Vector2 in shots[1]:
@@ -562,9 +564,9 @@ func test_her_hp_is_the_formula_of_the_measured_dps() -> void:
 	var secs_at := FinalPace.seconds_at(100000, t)
 	assert_eq(secs_at, 3938, "120 s × sqrt(30 / 100), in ticks (the integer root: 0.547)")
 	var expect := 100 * secs_at / 60 * t.window_permille / 1000
-	# v0.8.0 PR (O84): the rotation's open share, 0.180 (was the Cross's 0.294)
-	assert_eq(FinalBoss.dps_hp_of(w, t), expect, "100 dps × 65.6 s × 0.180 window share")
-	assert_eq(expect, 1181)
+	# v0.9.5 BH5 (HC3): the rotation's open share, 0.287 (a 3.5 s window and 2 s open after each orb spell; was 0.180)
+	assert_eq(FinalBoss.dps_hp_of(w, t), expect, "100 dps × 65.6 s × 0.287 window share")
+	assert_eq(expect, 1883)
 	FinalBoss.jump(w, 1)
 	var i := FinalLab.body(w)
 	assert_eq(w.actors.max_hp[i], expect, "she rises with it")
@@ -791,7 +793,7 @@ func test_the_bolts_fire_only_in_the_window() -> void:
 		if _hostile(w, "crown_bolt").size() > n:
 			fired += 1
 			assert_true(BossPrism.in_window(w, i), "a bolt flies only in the window")
-	assert_eq(fired, 2, "two bolts in each 2.5 s window")
+	assert_eq(fired, 3, "three bolts in each 3.5 s window")
 
 
 # --- determinism and saves ----------------------------------------------------------------------------------------

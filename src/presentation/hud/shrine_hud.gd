@@ -5,6 +5,8 @@ extends VBoxContainer
 ## prompt; this shows what the press did, for a few seconds: Blood's price paid and its altar risen (or that you are
 ## too weak), the Chaos challenge's enemies left while it is fought and then its altar, the fountain's heal (or that
 ## you are at full health). Reads WorldReader.shrine() only; it decides nothing.
+## v0.10.5 W3-O20 (UI style Astral): in HudStyle.ASTRAL the title is letter-spaced Cinzel over a fading hairline
+## (HudStyle.astral_banner); Blood in the rose warning, Chaos in the lilac accent, the fountain a cold moon-blue.
 
 const LINE_SECONDS := 3.5
 const BLOOD := Color("#FF5A6A")
@@ -28,6 +30,7 @@ func _init() -> void:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		add_child(l)
+	HudStyle.astral_banner(self, title, detail)  # v0.10.5 W3-O20
 	visible = false
 
 
@@ -53,7 +56,7 @@ func sync(reader: WorldReader) -> void:
 	_seen = now
 	if int(d["chaos_phase"]) == 1:
 		title.text = tr("SHRINE_CHAOS_NAME")
-		HudStyle.font_color(title, CHAOS)
+		HudStyle.font_color(title, _chaos())
 		detail.text = tr("SHRINE_CHAOS_LEFT") % int(d["chaos_alive"])
 		visible = true
 	else:
@@ -65,23 +68,23 @@ func _show(k: int, d: Dictionary, blood: bool) -> void:
 	match k:
 		0:  # used: Blood paid (Chaos's start shows the count instead)
 			title.text = tr("SHRINE_BLOOD_NAME" if blood else "SHRINE_CHAOS_NAME")
-			HudStyle.font_color(title, BLOOD if blood else CHAOS)
+			HudStyle.font_color(title, _blood() if blood else _chaos())
 			detail.text = tr("SHRINE_BLOOD_DONE") % int(d["paid"]) if blood else ""
 		1:
 			title.text = tr("SHRINE_BLOOD_NAME")
-			HudStyle.font_color(title, BLOOD)
+			HudStyle.font_color(title, _blood())
 			detail.text = tr("SHRINE_BLOOD_DENIED")
 		2:
 			title.text = tr("SHRINE_CHAOS_NAME")
-			HudStyle.font_color(title, CHAOS)
+			HudStyle.font_color(title, _chaos())
 			detail.text = tr("SHRINE_CHAOS_DONE")
 		3:
 			title.text = tr("FOUNTAIN_NAME")
-			HudStyle.font_color(title, WATER)
+			HudStyle.font_color(title, HudStyle.pick(HudStyle.A_WATER, WATER))
 			detail.text = tr("FOUNTAIN_DONE") % int(d["fountain_healed"])
 		_:
 			title.text = tr("FOUNTAIN_NAME")
-			HudStyle.font_color(title, WATER)
+			HudStyle.font_color(title, HudStyle.pick(HudStyle.A_WATER, WATER))
 			detail.text = tr("FOUNTAIN_DENIED")
 
 
@@ -93,3 +96,12 @@ func line() -> String:
 func _process(delta: float) -> void:
 	if _left > 0.0:
 		_left -= delta  # the next sync hides the line
+
+
+## v0.10.5 W3-O20: Blood's and Chaos's title colours (ASTRAL: the rose warning, the lilac accent).
+static func _blood() -> Color:
+	return HudStyle.pick(HudStyle.A_WARN, BLOOD)
+
+
+static func _chaos() -> Color:
+	return HudStyle.pick(HudStyle.A_ACCENT, CHAOS)

@@ -16,3 +16,9 @@ extends Resource
 ## The bolt's hit radius, which is also the blue pulse's drawn radius (v0.8.0 GF1: what you see is what hits).
 @export var bolt_radius_m := 0.2
 @export var bolt_life_seconds := 0.6666667
+## v0.10.5 O11 (F1): a direct hit pushes a normal enemy back this many metres (an elite half, a boss none), over the
+## Heavy card's knock ticks. A Blade hit, the Blade finisher, a Gun bolt and a Gun crit.
+@export var hit_push_m := 0.15  # starting value (O11, overnight pick)
+@export var finisher_push_m := 0.45  # starting value (O11, overnight pick)
+@export var bolt_push_m := 0.03  # W3-S10 (owner): half of the O11 pick
+@export var bolt_crit_push_m := 0.06  # W3-S10 (owner): half of the O11 pick

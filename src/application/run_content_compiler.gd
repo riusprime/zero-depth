@@ -32,6 +32,8 @@ static func compile_lockdown(def: LockdownDefinition) -> LockdownTable:
 	t.kind_floor_min = def.kind_floor_min.duplicate()
 	t.waves = def.waves
 	t.wave_sizes = def.wave_sizes.duplicate()
+	t.burst_waves = def.burst_waves  # v0.9.5 DR
+	t.burst_gap_ticks = maxi(1, SimTick.seconds_to_ticks(def.burst_gap_seconds))
 	t.first_wave_ticks = SimTick.seconds_to_ticks(def.first_wave_seconds)
 	t.wave_gap_ticks = SimTick.seconds_to_ticks(def.wave_gap_seconds)
 	t.stuck_ticks = maxi(1, SimTick.seconds_to_ticks(def.stuck_seconds))
@@ -42,6 +44,7 @@ static func compile_lockdown(def: LockdownDefinition) -> LockdownTable:
 	t.hazard_damage = def.hazard_damage
 	t.min_cells = def.min_cells  # v0.9.0 CF
 	t.area_per_enemy_m2 = def.area_per_enemy_m2
+	t.set_piece_floor = def.set_piece_floor  # v0.10.5 O14
 	return t
 
 
@@ -136,6 +139,12 @@ static func compile_loot_pacing(def: LootPacingDefinition) -> LootPacingTable:
 	t.ceilings = def.level_ceilings.duplicate()
 	t.guaranteed_altars = def.guaranteed_altars.duplicate()
 	t.jackpot_permille = def.jackpot_permille
+	t.altar_type_weights = def.altar_type_weights.duplicate()  # v0.9.5 EP2
+	t.chest_type_weights = def.chest_type_weights.duplicate()
+	t.element_ceilings = def.element_ceilings.duplicate()  # v0.10.5 W3-P2
+	t.element_ceiling_loops = def.element_ceiling_loops
+	t.overlevels_per_loop = def.overlevels_per_loop  # v0.10.5 W3-P3
+	t.overlevel_permille = def.overlevel_permille.duplicate()
 	return t
 
 
@@ -177,6 +186,9 @@ static func compile_sim_tuning(def: SimTuningDefinition) -> SimTuning:
 	t.attack_speed_knee2_permille = def.attack_speed_knee2_permille
 	t.attack_speed_slope_permille = def.attack_speed_slope_permille
 	t.attack_speed_slope2_permille = def.attack_speed_slope2_permille
+	t.loop_ease_max = def.loop_ease_max  # v0.9.5 BH2: the final fight's loop ease (was FinalPace constants)
+	t.loop_time_ease_permille = def.loop_time_ease_permille
+	t.loop_damage_ease_permille = def.loop_damage_ease_permille
 	return t
 
 
@@ -273,6 +285,8 @@ static func compile_map(def: MapDefinition) -> FloorParams:
 	p.place_attempts = def.place_attempts
 	p.timed_door_permille = def.timed_door_permille  # v0.9.0 TD
 	p.timed_door_ticks = def.timed_door_ticks
+	p.timed_switch_steps_max = def.timed_switch_steps_max  # v0.9.5 TS
+	p.timed_lever_ticks = def.timed_lever_ticks
 	return p
 
 
@@ -285,12 +299,22 @@ static func add_run_shape(t: RunTable, def: RunDefinition) -> RunTable:
 	t.wand_slots_per_floor = def.wand_slots_per_floor.duplicate()
 	t.max_hp_per_floor = def.max_hp_per_floor  # v0.9.0 SV: the hero grows each floor
 	t.max_hp_floor_cap = def.max_hp_floor_cap
+	t.loop_rules = def.loop_rules.duplicate()  # v0.10.5 O5b: the loop rules and their numbers
+	t.loop_swift_permille = def.loop_swift_permille
+	t.loop_heal_chance_permille = def.loop_heal_chance_permille
+	t.loop_heal_amount_permille = def.loop_heal_amount_permille
+	t.loop_shield_permille = def.loop_shield_permille
+	t.loop_shield_half_arc = ContentCompiler.degrees_to_units(def.loop_shield_half_arc_degrees)
+	t.loop_bolt_permille = def.loop_bolt_permille
+	t.loop_keep_permille = def.loop_keep_permille
 	return t
 
 
 ## v0.9.0 FV (owner Q24, "Scale with floor size"): the altar and chest counts by the floor's rooms onto `t`
 ## (ContentCompiler.compile_rewards).
 static func add_reward_bands(t: RewardTable, def: RewardsDefinition) -> RewardTable:
+	t.extra_chest_permille = def.extra_chest_permille  # v0.10.5 S7: the extra chests and altars
+	t.extra_altar_permille = def.extra_altar_permille
 	t.count_rooms = def.count_rooms.duplicate()
 	t.band_counts.clear()
 	for k in def.count_rooms.size():

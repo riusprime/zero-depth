@@ -12,4 +12,5 @@ requires_weapon = &"gun"
 modifiers = Array[StringName]([&"gun_echo"])
 loot_category = &"advanced"
 slot_category = &"secondary"
+level_max = 1
 id = &"gun_echo"

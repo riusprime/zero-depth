@@ -162,6 +162,7 @@ func interact(w: World) -> void:
 	w.consume_buffered(InputFrame.INTERACT)
 	door = Door.OPENING
 	door_press_tick = w.tick
+	CatchUp.read_boss(w)  # v0.9.5 BH1 (H2, Q2): the boss's HP is read as the door starts to open
 	w.emit_event(SimEvent.Kind.BOSS_DOOR_OPENING, 0, 0, 0, f.boss_door_center)
 
 
@@ -309,7 +310,11 @@ func advance(w: World) -> void:
 			if ascension:  # v0.8.0 P2 (O28): the Ascension portal or the Loop device, no menu
 				if in_portal(f, p):
 					enter_ascension(w, Ascension.Choice.ASCENSION)
-				elif Ascension.on_loop_device(f, p):
+				elif (
+					Ascension.touching_loop_device(f, p, w.actors.radius[0])  # v0.9.5 SB: a solid device
+					if w.solids.on
+					else Ascension.on_loop_device(f, p)
+				):
 					enter_ascension(w, Ascension.Choice.LOOP)
 				return
 			if portal_form_progress(w.tick) < 1.0:  # v0.9.0 PT (C4): the gates are still forming

@@ -12,7 +12,7 @@ const FACET_TINT := 0.14
 var body_materials: Array[StandardMaterial3D] = []
 var glow_materials: Array[StandardMaterial3D] = []
 var _outline := Color.BLACK
-var _technique := &"xray"
+var _technique := &"outline"
 var _outline_m := 0.03
 
 
@@ -50,26 +50,11 @@ func piece(
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = c
 	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = _outline
-	mat.stencil_outline_thickness = _outline_m
+	ActorLooks.outline(mat, _outline, _outline_m)
 	mat.vertex_color_use_as_albedo = mesh is ArrayMesh
 	body.material_override = mat
 	parent.add_child(body)
 	body_materials.append(ActorViews.flashable(mat))
-	if _technique == &"xray":
-		var ghost := MeshInstance3D.new()
-		ghost.mesh = mesh
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = c
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		gm.stencil_color = Color(ThemePalette.color(&"enemy_body"), 0.85)
-		ghost.material_override = gm
-		ghost.position = at
-		ghost.rotation = rot
-		ghost.scale = scl * 0.96
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(ghost)
 	return body
 
 
@@ -93,10 +78,7 @@ func glow(
 	m.emission_enabled = true
 	m.emission = c
 	m.emission_energy_multiplier = energy
-	m.stencil_mode = BaseMaterial3D.STENCIL_MODE_CUSTOM
-	m.stencil_flags = BaseMaterial3D.STENCIL_FLAG_WRITE
-	m.stencil_compare = BaseMaterial3D.STENCIL_COMPARE_ALWAYS
-	m.stencil_reference = 1
+	AvatarBase.write_stencil(m)
 	n.material_override = m
 	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(n)

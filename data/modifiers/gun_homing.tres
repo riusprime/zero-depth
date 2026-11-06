@@ -8,8 +8,7 @@ script = ExtResource("2_op")
 op = 1
 stage = 2
 field = &"homing_dps"
-value = 360.0
-per_level = 90.0
+value = 540.0
 
 [resource]
 script = ExtResource("1_mod")

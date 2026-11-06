@@ -39,7 +39,10 @@ static func setup(
 	if PurpleRooms.mark(f, chance_permille, taken, avoid_spots(w)) < 0:
 		return
 	var p := PurpleRunes.new()
-	p.entry = w.interactables.add(Interactables.Kind.PURPLE_DAIS, f.purple_pos, DAIS_REACH_M, 0)
+	p.entry = w.interactables.add(
+		Interactables.Kind.PURPLE_DAIS, f.purple_pos, DAIS_REACH_M + w.solids.bonus(), 0
+	)
+	w.solids.add_square(Solids.Kind.DAIS, 0, f.purple_pos)  # v0.9.5 SB: the dais is solid
 	w.purple = p
 
 

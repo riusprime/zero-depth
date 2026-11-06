@@ -44,9 +44,10 @@ static func setup(w: World, chance_permille: int) -> void:
 	r.target = f.rune_target.duplicate()
 	for k in f.rune_pillars.size():
 		var i := w.interactables.add(
-			Interactables.Kind.RUNE_PILLAR, f.rune_pillars[k], PILLAR_REACH_M, k
+			Interactables.Kind.RUNE_PILLAR, f.rune_pillars[k], PILLAR_REACH_M + w.solids.bonus(), k
 		)
 		w.interactables.state[i] = f.rune_start[k]
+		w.solids.add_square(Solids.Kind.RUNE_PILLAR, k, f.rune_pillars[k])  # v0.9.5 SB
 		r.pillars.append(i)
 	r.calm_k = w.interactables.add_calm_room(f.rune_host)
 	Secrets.drop_spawns(w, f.rune_room)
@@ -97,3 +98,18 @@ func hash_into(h: StateHasher) -> void:
 		h.add_int(v)
 	h.add_ints(pillars)
 	h.add_ints(target)
+
+
+## v0.10.5 S14 (owner: the rune puzzle is off for now): a floor saved with a rune room, rebuilt at chance 0, has
+## no `rune_room` in its layout; the restored state would point at room -1. The puzzle goes: its pillars take no press,
+## its calm ends and `w.runes` is cleared. The pillar props and a standing slab stay as inert scenery (their walls
+## came back with the snapshot's walls); the reward stays where it lay.
+static func drop_orphan(w: World) -> void:
+	var r := w.runes
+	if r == null or w.floor_layout == null or w.floor_layout.rune_room >= 0:
+		return
+	for p in r.pillars:
+		if p >= 0 and p < w.interactables.enabled.size():
+			w.interactables.enabled[p] = 0
+	w.interactables.solve_calm(r.calm_k)
+	w.runes = null

@@ -62,6 +62,8 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 		var map: Array = ModifierOpDefinition.FIELD_STAGE[d.field]  # [stage, sim field, unit]
 		o.field = map[1]
 		o.value = _units(d, map, d.value)
+		for v in d.level_values:  # v0.9.5 CLV: each level's value in sim units
+			o.level_values.append(_units(d, map, v))
 		if d.per_level != 0.0:  # v0.6.5 WN3: the step per level, in the same units
 			o.per_level = _units(d, map, d.value + d.per_level) - o.value
 			if d.op == ModifierOpDefinition.Op.MUL_PERMILLE:
@@ -186,6 +188,34 @@ static func compile_item_extras(def: ItemDefinition, t: ItemTable) -> void:
 	t.poison_ticks = SimTick.seconds_to_ticks(def.poison_seconds)
 	t.poison_max_stacks = def.poison_max_stacks
 	t.poison_spread_m = def.poison_spread_m
+	t.el_jump_ticks = SimTick.seconds_to_ticks(def.el_jump_seconds)  # v0.9.5 EE1
+	t.el_jump_range_m = def.el_jump_range_m
+	t.el_jump_gap_ticks = (
+		maxi(1, SimTick.TICKS_PER_SECOND / def.el_jumps_per_second)
+		if def.el_jumps_per_second > 0
+		else 0
+	)
+	t.el_stack_cap = def.el_stack_cap
+	t.el_stack_bonus_permille = def.el_stack_bonus_permille
+	t.el_wound_move_mm = def.el_wound_move_mm
+	t.el_wound_bonus_permille = def.el_wound_bonus_permille
+	t.el_burst_stacks = def.el_burst_stacks
+	t.el_patch_wide_permille = def.el_patch_wide_permille  # v0.9.5 EE2
+	t.el_patch_extra_ticks = SimTick.seconds_to_ticks(def.el_patch_extra_seconds)
+	t.el_heat_permille = def.el_heat_permille
+	t.el_fork_chains = def.el_fork_chains
+	t.el_fork_range_m = def.el_fork_range_m
+	t.el_strike_every = def.el_strike_every
+	t.el_strike_radius_m = def.el_strike_radius_m
+	t.el_strike_permille = def.el_strike_permille
+	t.el_strikes_per_second = def.el_strikes_per_second
+	t.el_frostbite_permille = def.el_frostbite_permille
+	t.el_shard_count = def.el_shard_count
+	t.el_shard_range_m = def.el_shard_range_m
+	t.el_shard_permille = def.el_shard_permille
+	t.el_shard_slow_ticks = SimTick.seconds_to_ticks(def.el_shard_slow_seconds)
+	t.el_shatters_per_second = def.el_shatters_per_second
+	t.el_level_permille = def.el_level_permille.duplicate()  # v0.10.5 W3-P2
 	t.bleed_move_period_ticks = SimTick.seconds_to_ticks(def.bleed_move_period_seconds)  # v0.6.5 WN5a
 	t.name_key_gun = def.name_key_gun
 	t.desc_key_gun = def.desc_key_gun

@@ -4,6 +4,13 @@ extends Node
 ## (max_physics_steps_per_frame = 4) slows the game on a long hitch instead of skipping time.
 
 signal ticked
+## v0.10.5 Q5 (owner: "Q5 yes fix it"): once a rendered frame that ran one tick or more, after them (from _process,
+## before the views' own _process): the world views sync here, once, on the latest state. A frame that falls behind
+## runs several ticks, and syncing the views on each of them paid the whole sync again (PERF_Q5 §5). What happened
+## between two frames still reaches the views: they read the event log from their own cursor (events_since), and
+## WorldViewRoot.note_tick (on `ticked`) keeps the facts that last one tick. The gameplay listeners (the save, the
+## Codex, the achievements, the HUD, the audio) stay on `ticked`.
+signal frame_ticked
 ## v0.7.5 PG: Playground commands changed the World between ticks (also while paused): the views read it again.
 signal edited
 
@@ -42,7 +49,12 @@ func _input(event: InputEvent) -> void:
 func _process(_delta: float) -> void:
 	if debug != null:
 		debug.ticks_last_frame = ticks_this_frame
+	var ran := ticks_this_frame
 	ticks_this_frame = 0
+	if ran > 0:
+		var t0 := PerfMarks.start()
+		frame_ticked.emit()
+		PerfMarks.add(&"frame_synced", t0)
 
 
 func _physics_process(_delta: float) -> void:
@@ -56,7 +68,9 @@ func _physics_process(_delta: float) -> void:
 		return
 	if hold.is_valid() and reader.arriving() and hold.call():
 		return
+	var t_phys := PerfMarks.start()
 	step_once()
+	PerfMarks.add(&"step_once", t_phys)
 
 
 ## One tick: close the latched frame, then step the world.
@@ -77,6 +91,10 @@ func step_once() -> void:
 	if playground != null:
 		playground.apply_pending()  # v0.7.5 PG: so do the Playground's (and its upkeep)
 	last_frame = latch.close_frame(move, aim, dist)
+	var t0 := PerfMarks.start()
 	world.step(last_frame)
+	PerfMarks.add(&"sim_step", t0)
 	ticks_this_frame += 1
+	t0 = PerfMarks.start()
 	ticked.emit()
+	PerfMarks.add(&"ticked_all", t0)

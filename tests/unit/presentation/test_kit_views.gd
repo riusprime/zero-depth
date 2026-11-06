@@ -34,27 +34,10 @@ func _hud() -> KitHud:
 	return h
 
 
-func test_the_hud_shows_the_skill_with_its_key_and_cooldown() -> void:
+func test_the_vent_hint_is_hidden_without_heat() -> void:  # v0.9.5 HU: the skill pip moved into AbilitySquares
 	var h := _hud()
 	h.sync(WorldReader.new(World.new(5, PlayerTable.starting_values())))
-	assert_false(h.skill_visible(), "no build skill, no pip")
 	assert_false(h.vent_visible(), "no heat, no vent hint")
-	var w := _world(&"blade")
-	var r := WorldReader.new(w)
-	h.sync(r)
-	assert_true(h.skill_visible())
-	assert_eq(h.skill_text(), tr("HUD_KEY_HINT") % ["Q", tr("SKILL_LUNGE_CLEAVE")])
-	assert_almost_eq(h.skill_fill(), 1.0, 1e-6, "ready: full")
-	w.step(_f(InputFrame.SKILL))
-	h.sync(r)
-	assert_lt(h.skill_fill(), 0.01, "just used: empty")
-	for k in 120:
-		w.step(_f())
-	h.sync(r)
-	assert_almost_eq(h.skill_fill(), 121.0 / 240.0, 0.01, "half way through the 4 s cooldown")
-	var g := _world(&"gun")
-	h.sync(WorldReader.new(g))
-	assert_eq(h.skill_text(), tr("HUD_KEY_HINT") % ["Q", tr("SKILL_SCATTER_BLAST")])
 
 
 func test_the_vent_hint_shows_the_key_and_lights_when_hot() -> void:
@@ -73,6 +56,30 @@ func test_the_vent_hint_shows_the_key_and_lights_when_hot() -> void:
 	h.sync(r)
 	assert_eq(h.vent_text(), tr("HUD_KEY_HINT") % ["G", tr("HUD_VENT")], "a remap shows at once")
 	InputDefaults.apply()
+
+
+func test_the_vent_plate_dims_under_40_and_counts_its_6_second_cooldown() -> void:  # v0.9.5 HT
+	var h := _hud()
+	var w := _world(&"blade", [], true)
+	var r := WorldReader.new(w)
+	w.heat.milli = 39 * HeatTable.MILLI
+	h.sync(r)
+	assert_false(h.vent_lit(), "under 40: dim")
+	w.heat.milli = 60 * HeatTable.MILLI
+	h.sync(r)
+	assert_true(h.vent_lit(), "40 or more: lit")
+	w.step(_f(InputFrame.VENT))
+	w.heat.milli = 60 * HeatTable.MILLI
+	h.sync(r)
+	assert_false(h.vent_lit(), "on cooldown: dim even with the heat")
+	assert_string_ends_with(h.vent_text(), " 6", "6 seconds left")
+	assert_almost_eq(h.vent_sweep_share(), 1.0, 0.01, "a full wedge just after the vent")
+	for k in 180:
+		w.step(_f())
+	w.heat.milli = 60 * HeatTable.MILLI
+	h.sync(r)
+	assert_string_ends_with(h.vent_text(), " 3", "3 seconds left")
+	assert_almost_eq(h.vent_sweep_share(), 0.5, 0.02, "half the wedge")
 
 
 func test_the_cleave_forecast_uses_the_hits_numbers_then_flashes() -> void:
@@ -134,7 +141,11 @@ func test_the_skills_and_the_cold_vent_have_sounds() -> void:
 	cev.prime(cr)
 	c.step(_f(InputFrame.VENT))
 	assert_eq(cr.vent_cold_tick(), 0)
-	assert_has(cev.collect(cr).map(func(x: Array) -> StringName: return x[0]), &"vent_cold")
+	assert_does_not_have(
+		cev.collect(cr).map(func(x: Array) -> StringName: return x[0]),
+		&"vent_cold",
+		"v0.9.5 HT: a refused Vent press is silent"
+	)
 	var d := AudioDirector.new()
 	add_child_autofree(d)
 	for id: StringName in [&"skill_lunge_cleave", &"skill_scatter_blast", &"vent_cold"]:

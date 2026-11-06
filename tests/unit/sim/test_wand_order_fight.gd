@@ -7,13 +7,34 @@ extends GutTest
 const TICKS := 600
 
 
-func _with_book(weapon: StringName, mods: Array) -> World:
-	var w := WandLab.fight(weapon, [])
+func _with_book(weapon: StringName, mods: Array, held: Array = []) -> World:
+	var w := WandLab.fight(weapon, held)
 	var typed: Array[ModifierTable] = []
 	for m: ModifierTable in mods:
 		typed.append(m)
 	w.attack_book = Modifiers.compile_for(w, typed)  # synthetic cards (WN3 ships Big Shot)
 	return w
+
+
+## v0.10.5 O1: the trigger cards are retired, so a synthetic one stands in (the TRIGGER op the shipped cards held).
+func _trig(id: StringName) -> ModifierTable:
+	var o := ModifierOp.new()
+	o.op = ModifierOp.Op.TRIGGER
+	o.stage = ModifierTable.Stage.HOOK
+	match id:
+		&"trigger_on_kill":
+			o.trigger = AttackSpec.Trigger.ON_KILL
+		&"trigger_on_end":
+			o.trigger = AttackSpec.Trigger.ON_END
+		&"trigger_on_finisher":
+			o.trigger = AttackSpec.Trigger.ON_FINISHER
+			o.trigger_gun = AttackSpec.Trigger.ON_CRIT
+		_:
+			o.trigger = AttackSpec.Trigger.ON_HIT
+	var m := WandLab.mod(id, [], [o] as Array[ModifierOp])
+	m.family = &"time"
+	m.stage = ModifierTable.Stage.HOOK
+	return m
 
 
 func test_big_split_and_split_big_fight_differently() -> void:
@@ -30,10 +51,11 @@ func test_big_split_and_split_big_fight_differently() -> void:
 
 
 func test_fire_on_hit_x_and_on_hit_fire_x_fight_differently() -> void:
-	var first := [&"ember_core", &"trigger_on_hit", &"split_shot"]
-	var second := [&"trigger_on_hit", &"ember_core", &"split_shot"]
-	var wa := WandLab.fight(&"gun", first)
-	var wb := WandLab.fight(&"gun", second)
+	var ember := WandLab.card(&"ember_core")
+	var split := WandLab.card(&"split_shot")
+	var held := [&"ember_core", &"split_shot"]  # owned, so the burn engine's numbers apply
+	var wa := _with_book(&"gun", [ember, _trig(&"trigger_on_hit"), split], held)
+	var wb := _with_book(&"gun", [_trig(&"trigger_on_hit"), ember, split], held)
 	assert_true(Modifiers.bolt(wa).has_status(&"burn"), "Fire left of the trigger: the shot burns")
 	assert_false(Modifiers.bolt(wb).has_status(&"burn"), "Fire right of it: the shot doesn't")
 	var a := WandLab.run(wa, TICKS)
@@ -45,7 +67,9 @@ func test_fire_on_hit_x_and_on_hit_fire_x_fight_differently() -> void:
 			0,
 			"the child spell lands where hits land"
 		)
-	var again := WandLab.run(WandLab.fight(&"gun", second), TICKS)
+	var again := WandLab.run(
+		_with_book(&"gun", [_trig(&"trigger_on_hit"), ember, split], held), TICKS
+	)
 	assert_eq([again["digest"], again["hash"]], [b["digest"], b["hash"]], "replays")
 
 
@@ -59,7 +83,7 @@ func test_every_trigger_casts_in_a_fight() -> void:
 		[&"blade", &"trigger_on_end"],
 		[&"blade", &"trigger_on_finisher"],  # the combo's last step
 	]:
-		var r := WandLab.run(WandLab.fight(case[0], [case[1]]), 900)
+		var r := WandLab.run(_with_book(case[0], [_trig(case[1])]), 900)
 		assert_gt(
 			int((r["hits_by_effect"] as Dictionary).get(case[1], 0)),
 			0,
@@ -68,7 +92,7 @@ func test_every_trigger_casts_in_a_fight() -> void:
 
 
 func test_a_trigger_child_hits_at_the_lower_proc_coefficient() -> void:
-	var w := WandLab.fight(&"gun", [&"trigger_on_hit", &"trigger_on_kill"])
+	var w := _with_book(&"gun", [_trig(&"trigger_on_hit"), _trig(&"trigger_on_kill")])
 	var seen := 0
 	var procs := {}
 	for t in TICKS:

@@ -21,6 +21,9 @@ const RING_M := 0.6
 const LIGHT_RANGE := 9.0
 ## v0.8.0 TX2: seconds the owner's crystal shatter bursts flare (draw_fx).
 const BURST_FX_S := 0.55
+## v0.10.0 VX5 (R19): the body's shatter is the pack's explosion_07 (the owner's crystal sprites where its family is
+## full); false: the sprites.
+const PACK_SHATTER := true
 
 const SHADER := """
 shader_type spatial;
@@ -59,6 +62,7 @@ var _bursts := 0
 ## v0.8.0 TX2: where the last burst was and the burst body's radius (draw_fx).
 var _burst_at := Vector3.ZERO
 var _burst_r := 1.0
+var _burst_packed := false
 
 
 func _init() -> void:
@@ -149,7 +153,12 @@ func ring_amount() -> float:
 ## (fx_crystal_shatter) flaring where the body burst over its first BURST_FX_S, a big one in the middle and three
 ## smaller round it, growing as they fade. Frame time like the shards; nothing without the texture.
 func draw_fx(layer: VfxCore) -> void:
-	if _age < 0.0 or _age >= BURST_FX_S or not VfxCore.has_tex("fx_crystal_shatter"):
+	if (
+		_age < 0.0
+		or _age >= BURST_FX_S
+		or _burst_packed
+		or not VfxCore.has_tex("fx_crystal_shatter")
+	):
 		return
 	var u := _age / BURST_FX_S
 	var fade := (1.0 - u) * (1.0 - u)
@@ -174,6 +183,22 @@ func _burst(at: Vector3, radius: float, tick: int) -> void:
 	_age = 0.0
 	_burst_at = at
 	_burst_r = radius
+	_burst_packed = false
+	var pack := BossPackHold.find(self) if PACK_SHATTER else null
+	if pack != null and pack.has_room(&"explosion"):  # R19: the pack's burst, in the shatter's colour
+		_burst_packed = (
+			pack.spawn(
+				&"bx_shatter",
+				at + Vector3(0, 1.0, 0),
+				clampf((radius * 2.0 + 2.5) / 3.0, 0.8, 4.0),
+				{
+					&"primary": GLOW.lightened(0.5),
+					&"secondary": GLOW,
+					&"tertiary": GLOW.darkened(0.3)
+				}
+			)
+			!= null
+		)
 	_rise = -1.0
 	_shards.clear()
 	var sd := tick * 37 + _bursts * 101

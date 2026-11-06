@@ -112,6 +112,14 @@ var phase_radius_m := 0.0
 var phase_guard_window_ticks := 0
 ## Engines (v0.3.0 G; see ItemDefinition for each field). Tags are for views and docs, never for gameplay.
 var tags := PackedStringArray()
+## v0.9.5 CLV: the card's level cap (0: CardLevels.MAX_LEVEL; see CardLevels.max_level).
+var level_max := 0
+## v0.9.5 SM: the Stress Mark card (mark_radius_m > 0; see ItemDefinition).
+var mark_radius_m := 0.0
+var mark_half_angle_deg := 45.0
+var mark_mult_permille := 1000
+var mark_cooldown_ticks := 0
+var mark_boss_marks := 1
 var stacks_per_hit := 0
 var shock_threshold := 0
 var shock_ticks := 0
@@ -143,6 +151,32 @@ var poison_period_ticks := 1
 var poison_ticks := 0
 var poison_max_stacks := 0
 var poison_spread_m := 0.0
+## v0.9.5 EE1: what Venom and Bleed gain at Lv 2 and 3 (see ItemDefinition; ElementLevels). Ticks, not seconds.
+var el_jump_ticks := 0
+var el_jump_range_m := 0.0
+var el_jump_gap_ticks := 0
+var el_stack_cap := 0
+var el_stack_bonus_permille := 0
+var el_wound_move_mm := 0
+var el_wound_bonus_permille := 0
+var el_burst_stacks := 0
+## v0.9.5 EE2: what Fire, Lightning and Frost gain at Lv 2 and 3 (see ItemDefinition; ElementLevelsFsf). Ticks.
+var el_patch_wide_permille := 0
+var el_patch_extra_ticks := 0
+var el_heat_permille := 0
+var el_fork_chains := 0
+var el_fork_range_m := 0.0
+var el_strike_every := 0
+var el_strike_radius_m := 0.0
+var el_strike_permille := 0
+var el_strikes_per_second := 0
+var el_frostbite_permille := 0
+var el_shard_count := 0
+var el_shard_range_m := 0.0
+var el_shard_permille := 0
+var el_shard_slow_ticks := 0
+var el_shatters_per_second := 0
+var el_level_permille := PackedInt32Array()  # v0.10.5 W3-P2: an element card's damage share by level (ElementStack)
 ## v0.6.5 WN5a: S5 Bleed's period while the player moves (0 = none), and T4's face on a Gun run (empty = name_key /
 ## desc_key; Offers.item_keys picks the run's).
 var bleed_move_period_ticks := 0

@@ -115,6 +115,8 @@ func test_item_and_combo_plaques_fit_in_english_and_spanish() -> void:
 				grown.append("%s %s %d" % [lang, r.id, card.plaque_height()])
 			assert_gte(card.desc_size, MIN_TEXT, "%s %s: sentence size" % [lang, r.id])
 		for r in _defs(["res://data/combos"]):
+			if not r is ComboDefinition:  # v0.9.5 EE3: element_pairs.tres is the pairs' numbers (test_pair_banner)
+				continue
 			var a: StringName = r.item_a if r.item_a != &"" else r.ability_a
 			var b: StringName = r.item_b if r.item_b != &"" else r.ability_b
 			combo.show_combo(r.id, a, b, tr(r.name_key), tr(r.desc_key), tr("UI_COMBO_UNLOCKED"))
@@ -137,30 +139,19 @@ func test_gamble_lines_fit_in_english_and_spanish() -> void:
 
 
 func test_shop_plaques_fit_in_english_and_spanish() -> void:
+	# v0.10.5 W3-O16 (on purpose): the plates are the shop's Astral plates, at the width the shop draws them
 	for lang in ["en", "es"]:
 		TranslationServer.set_locale(lang)
-		var sell := ShopTile.new("Sell", ShopPanel.SELL_W)
-		add_child_autofree(sell)
-		for r in _defs(CARD_DIRS):
-			for detail in [tr("UI_CARD_MOD"), tr("SHOP_SELL_STAT") % [tr("RARITY_LEGENDARY"), 3]]:
-				sell.show_tile(tr(r.name_key), detail, 120, true, false, true)
-				assert_true(sell.text_fits(), "%s %s / %s fits" % [lang, r.id, detail])
-				assert_gte(sell.title_size, MIN_TEXT, "%s %s: title size" % [lang, r.id])
-		var heal := ShopTile.new("Heal", 360.0)
+		var heal := ShopTile.new("Heal", ShopPanel.PLATE_W)
 		add_child_autofree(heal)
 		for d in ["", tr("SHOP_HEAL_USED"), tr("SHOP_HEAL_FULL")]:
 			heal.show_tile(tr("SHOP_HEAL") % 120, d, 120, true)
 			assert_true(heal.text_fits(), "%s heal '%s'" % [lang, d])
-		var reroll := ShopTile.new("Reroll", 360.0)
+		var reroll := ShopTile.new("Reroll", ShopPanel.PLATE_W)
 		add_child_autofree(reroll)
 		for d in ["", tr("SHOP_REROLL_NONE")]:
 			reroll.show_tile(tr("SHOP_REROLL"), d, 120, true)
 			assert_true(reroll.text_fits(), "%s reroll '%s'" % [lang, d])
-		var cleanse := ShopTile.new("Cleanse", 360.0)
-		add_child_autofree(cleanse)
-		for r in _defs(["res://data/curses"]):
-			cleanse.show_tile(tr("SHOP_CLEANSE"), tr(r.name_key), 120, true)
-			assert_true(cleanse.text_fits(), "%s cleanse %s" % [lang, r.id])
 	TranslationServer.set_locale(_locale)
 
 
@@ -168,7 +159,7 @@ func test_event_plaques_fit_and_the_panel_fits_the_screen() -> void:
 	for lang in ["en", "es"]:
 		TranslationServer.set_locale(lang)
 		for id in EVENTS:
-			var w := EventLab.world(4242, 1, &"blade", [&"withering"])
+			var w := EventLab.world(4242, 1, &"blade", [&"heavy_hands"])
 			Stats.add_card(w, Stats.Stat.DAMAGE, 0)
 			EventLab.set_event(w, id)
 			EventLab.open(w)
@@ -197,13 +188,15 @@ func test_the_banner_plaque_grows_with_its_line() -> void:
 	await wait_process_frames(2)
 	assert_gt(hud.banner.size.x, hud.announce.size.x, "the plaque around the line")
 	assert_lt(hud.banner.size.x, 1920.0)
-	assert_true(hud.banner.get_theme_stylebox("panel") is PlaqueBox)
+	# v0.10.5 W3-O17/W3-O20: Astral: the line sits on the store window's veil (the banner draws it on an empty box)
+	assert_true(hud.banner.get_theme_stylebox("panel") is StyleBoxEmpty)
 
 
 func test_build_cards_and_title_fit_in_english_and_spanish() -> void:
 	var builds := _defs(["res://data/builds"])
 	assert_eq(builds.size(), 2)
-	var bold := HudStyle.font(true)
+	# v0.10.5 W3-O20: the title is Astral's letter-spaced Cinzel (AstralUi.title), with no plaque round it.
+	var head := AstralUi.serif(600, BuildPicker.TITLE_FONT, true)
 	for lang in ["en", "es"]:
 		TranslationServer.set_locale(lang)
 		for b in builds:
@@ -213,13 +206,10 @@ func test_build_cards_and_title_fit_in_english_and_spanish() -> void:
 			)
 		var title := tr("UI_CHOOSE_BUILD")
 		var w := (
-			bold.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, BuildPicker.TITLE_FONT).x
+			head.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, BuildPicker.TITLE_FONT).x
 		)
-		var box := Plaques.content_size(
-			BuildPicker.TITLE_PLAQUE.y, BuildPicker.TITLE_PLAQUE.x, 10.0
-		)
-		assert_lt(w, box.x, "%s: the title fits its plaque" % lang)
-		assert_lt(bold.get_height(BuildPicker.TITLE_FONT), box.y + 12.0)
+		assert_lt(w, BuildPicker.TITLE_PLAQUE.x, "%s: the title fits its room" % lang)
+		assert_lt(head.get_height(BuildPicker.TITLE_FONT), BuildPicker.TITLE_PLAQUE.y)
 	TranslationServer.set_locale(_locale)
 
 
@@ -232,25 +222,35 @@ func test_the_build_picker_title_is_choose_your_weapon() -> void:
 	TranslationServer.set_locale(_locale)
 
 
-func test_the_build_picker_is_carved_stone_with_no_crystal_art() -> void:
+## v0.10.5 W3-O20 (owner 2026-11-04 night: "remake every single UI element into this new style"): the build picker is
+## Astral: the menus' Astral theme, Astral's own night behind, no plaque under the title, the cards Astral cards (the
+## owner's slate frame, its focused twin on focus), Back a lozenge plate. (Was: carved stone, no crystal art.)
+func test_the_build_picker_is_astral() -> void:
 	var picker := BuildPicker.new(_defs(["res://data/builds"]), &"blade")
 	add_child_autofree(picker)
 	picker.settle()
-	assert_not_null(picker.find_child("MenuBackdrop", true, false), "the ember backdrop behind")
-	assert_eq(picker.theme, MenuStyle.theme(), "the menus' theme")
+	var bd := picker.find_child("MenuBackdrop", true, false) as MenuBackdrop
+	assert_not_null(bd, "the backdrop behind")
+	assert_true(bd.astral, "Astral's night")
+	assert_eq(picker.theme, AstralMenu.theme(), "the menus' Astral theme")
 	assert_eq(picker.title_label().text, "UI_CHOOSE_BUILD")
-	assert_true(picker.title_plaque().get_theme_stylebox("panel") is PlaqueBox, "a stone plaque")
+	assert_false(
+		picker.title_plaque().get_theme_stylebox("panel") is PlaqueBox, "no plaque under the title"
+	)
+	assert_not_null(picker.title_plaque().find_child("Rule", true, false), "a hairline under it")
+	assert_true(picker.find_child("Back", true, false) is AstralButton, "Back is an Astral plate")
 	assert_eq(picker.find_children("*", "TextureRect", true, false).size(), 0, "no crystal art")
 	assert_eq(picker.cards[0].custom_minimum_size, BuildCard.SIZE)
-	for c in picker.cards:
-		assert_true(c.panel_box() is StoneBox, "%s: a stone tablet" % c.name)
 	var card := Rect2(Vector2.ZERO, BuildCard.SIZE)
 	assert_true(card.encloses(BuildCard.emblem_rect()) and card.encloses(BuildCard.text_rect()))
 	assert_lt(BuildCard.emblem_rect().end.y, BuildCard.text_rect().position.y, "symbol above text")
 	var h := BuildCard.SIZE.y + BuildPicker.TITLE_PLAQUE.y + 200.0
 	assert_lt(h, 1080.0, "title, cards, hint and Back fit 1080 px")
+	var idle := picker.cards[0].panel_box()
+	assert_eq(idle.texture, AstralCardArt.frame(1, false), "the Blade wears the owner's frame")
 	picker.cards[0].grab_focus()
 	picker.cards[0].seek(5.0)
-	assert_eq(picker.cards[0].panel_box().focus, 0.0, "the box reads the focus on draw")
+	assert_eq(picker.cards[0].lit, 0.0, "the card reads the focus on draw")
 	await wait_process_frames(2)
-	assert_gt(picker.cards[0].panel_box().focus, 0.0, "the focused card lights up")
+	assert_gt(picker.cards[0].lit, 0.0, "the focused card lights up")
+	assert_eq(picker.cards[0].panel_box().texture, AstralCardArt.frame(1, true), "its focused twin")

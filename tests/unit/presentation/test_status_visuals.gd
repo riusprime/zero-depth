@@ -47,7 +47,8 @@ func test_each_status_shows_its_pieces_and_they_go_when_it_ends() -> void:
 	w.guard_charges = 2
 	fx.sync(s[0])
 	assert_eq(fx.shown(id, &"embers"), StatusVisuals.EMBERS, "a full burn: every ember")
-	assert_eq(fx.shown(id, &"pips_lit"), 3, "one lit pip per shock stack")
+	assert_eq(fx.badge(id, &"shock"), 3, "v0.10.0 FX: the shock badge reads x3")
+	assert_eq(fx.badge(id, &"burn"), 5, "the burn badge x5")
 	assert_eq(fx.shown(id, &"drips"), 3)
 	assert_eq(fx.shown(id, &"crystals"), 2, "one crystal per frost stack")
 	assert_eq(fx.shown(id, &"shell"), 0)
@@ -92,20 +93,20 @@ func test_combo_card_shows_both_icons_in_a_special_frame() -> void:
 	var card := ComboCard.new()
 	add_child_autofree(card)
 	card.show_combo(
-		&"plasma_arc", &"ember_edge", &"static_chain", "Plasma Arc", "Arcs fire.", "Combo"
+		&"blood_harvest", &"vampiric_core", &"executioner", "Blood Harvest", "Kills burst.", "Combo"
 	)
 	assert_true(card.is_showing())
-	assert_eq(card.title_text(), "Plasma Arc")
+	assert_eq(card.title_text(), "Blood Harvest")
 	assert_eq(card.caption_text(), "Combo")
-	assert_eq(card.pair_ids(), [&"ember_edge", &"static_chain"])
+	assert_eq(card.pair_ids(), [&"vampiric_core", &"executioner"])
 	assert_false(card.icon.visible, "the pair replaces the single icon")
 	# v0.6.1 R1 (on purpose): the plaque nearest the combo's own colour replaces the thin outline
-	assert_eq(card.plaque_box().plaque, Plaques.nearest(ItemLooks.combo_color(&"plasma_arc")))
+	assert_eq(card.plaque_box().plaque, Plaques.nearest(ItemLooks.combo_color(&"blood_harvest")))
 	assert_true(card.text_fits(), "its text fits the plaque")
 	await wait_process_frames(2)
 	assert_eq(
 		card.pair.drawn,
-		ItemIcons.shapes(&"ember_edge").size() + ItemIcons.shapes(&"static_chain").size()
+		ItemIcons.shapes(&"vampiric_core").size() + ItemIcons.shapes(&"executioner").size()
 	)
 
 
@@ -159,10 +160,89 @@ func test_rebuilt_rows_drop_the_old_children_at_once() -> void:
 	var reader := WorldReader.new(w)
 	var hud := Hud.new()
 	add_child_autofree(hud)
-	w.add_item(0)
+	w.add_item(AttackScenario.item_index(w.item_tables, &"momentum"))  # v0.10.5 O1: indices 0 and 1 are tombstones
 	hud.sync(reader)
-	w.add_item(1)
+	w.add_item(AttackScenario.item_index(w.item_tables, &"swift_feet"))
 	hud.sync(reader)  # same frame: no process frame between the rebuilds
 	assert_eq(hud.item_icon_count(), 2)
 	for c in hud._items.get_children():
 		assert_false(c.is_queued_for_deletion(), "no freed icon left in the row")
+
+
+## v0.9.5 EE1: the stack count shows (v0.10.0 FX: as an icon and "xN", not a dot a stack), a Contagion jump draws
+## an arc, the Exsanguinate burst a red ring and a deep red number.
+func test_element_level_visuals() -> void:
+	var w := _world()
+	var s := _views(w)
+	var fx: StatusVisuals = s[2]
+	var a := w.actors
+	var id := a.ids[1]
+	a.poison_stacks[1] = 3
+	a.bleed_stacks[1] = 4
+	fx.sync(s[0])
+	assert_eq(fx.badge(id, &"poison"), 3, "poison x3")
+	assert_eq(fx.badge(id, &"bleed"), 4, "bleed x4")
+	a.poison_stacks[1] = 0
+	a.bleed_stacks[1] = 9
+	fx.sync(s[0])
+	assert_eq(fx.badge(id, &"poison"), 0, "gone with its stacks")
+	assert_eq(fx.badge(id, &"bleed"), 9, "the count follows, past the old 5 dots")
+	var before := fx.fx_count()
+	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, id, a.ids[0], a.ids[2], a.pos(2))
+	e.effect_id = SimEvent.EFFECT_VENOM_JUMP
+	fx.sync(s[0])
+	assert_eq(fx.fx_count(), before + 4, "a jump draws its arc (4 segments)")
+	var d := w.emit_event(SimEvent.Kind.DAMAGE, a.ids[0], a.ids[0], id, a.pos(1))
+	d.effect_id = SimEvent.EFFECT_EXSANGUINATE
+	d.amount = 40
+	d.tags = SimEvent.TAG_DOT
+	fx.sync(s[0])
+	assert_eq(fx.fx_count(), before + 5, "the burst adds its ring")
+	var nums := DamageNumbers.new()
+	add_child_autofree(nums)
+	nums.sync(s[0])
+	assert_eq(nums.showing(), 1, "the burst's number shows although it is a DoT")
+	var label: Label3D = null
+	for c in nums.get_children():
+		if c is Label3D and (c as Label3D).visible:
+			label = c
+	assert_eq(label.modulate, DamageNumbers.EXSANGUINATE_COLOR, "in deep red")
+
+
+## v0.9.5 EE2: a burning enemy at Fire Lv 3 (Heat sync) and a frozen one at Frost Lv 3 (Shatter) carry a "+" by the bar;
+## an Overcharge strike, a Shatter and its shard draw their bolt, rings and streak.
+func test_fire_storm_frost_level_visuals() -> void:
+	var w := _world()
+	var s := _views(w)
+	var fx: StatusVisuals = s[2]
+	var a := w.actors
+	var fire := AttackScenario.item_index(w.item_tables, &"ember_core")
+	var frost := AttackScenario.item_index(w.item_tables, &"frost_core")
+	a.burn_stacks[1] = 2
+	a.frozen_t[2] = 100
+	CardLevels.set_level(w, fire, 2)
+	CardLevels.set_level(w, frost, 2)
+	fx.sync(s[0])
+	assert_eq(fx.shown(a.ids[1], &"dots_plus_fire"), 0, "no + at Lv 2")
+	assert_eq(fx.shown(a.ids[2], &"dots_plus_frost"), 0)
+	CardLevels.set_level(w, fire, 3)
+	CardLevels.set_level(w, frost, 3)
+	fx.sync(s[0])
+	assert_eq(fx.shown(a.ids[1], &"dots_plus_fire"), 1, "a + on the burning enemy at Lv 3")
+	assert_eq(fx.shown(a.ids[2], &"dots_plus_frost"), 1, "and on the frozen one")
+	a.burn_stacks[1] = 0
+	fx.sync(s[0])
+	assert_eq(fx.shown(a.ids[1], &"dots_plus_fire"), 0, "it goes with the burn")
+	var before := fx.fx_count()
+	var strike := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[0], a.ids[0], a.ids[1], a.pos(1))
+	strike.effect_id = SimEvent.EFFECT_STORM_STRIKE
+	strike.amount = 1500
+	fx.sync(s[0])
+	assert_gt(fx.fx_count(), before, "a strike draws its bolt and ring")
+	before = fx.fx_count()
+	var shatter := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[0], a.ids[0], a.ids[2], a.pos(2))
+	shatter.effect_id = SimEvent.EFFECT_FROST_SHATTER
+	var shard := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[2], a.ids[0], a.ids[1], a.pos(1))
+	shard.effect_id = SimEvent.EFFECT_FROST_SHARD
+	fx.sync(s[0])
+	assert_gt(fx.fx_count(), before + 1, "a shatter's ring and its shard's streak")

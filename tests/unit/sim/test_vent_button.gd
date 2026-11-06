@@ -112,5 +112,5 @@ func test_overheated_the_vent_button_does_nothing() -> void:
 	var seq := w.last_event_seq()
 	w.step(_f(0, V))
 	assert_eq(_events(w, SimEvent.Kind.HIT, Heat.EFFECT_VENT, seq).size(), 0)
-	assert_eq(_events(w, SimEvent.Kind.VENT_COLD, &"", seq).size(), 1, "a cold click")
+	assert_eq(_events(w, SimEvent.Kind.VENT_COLD, &"", seq).size(), 1, "a (silent) cold event")
 	assert_true(Heat.stalled(w), "the stall runs on")

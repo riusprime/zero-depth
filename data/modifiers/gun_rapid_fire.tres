@@ -36,8 +36,7 @@ script = ExtResource("2_op")
 op = 0
 stage = 5
 field = &"ramp_cap_permille"
-value = 600.0
-per_level = 150.0
+value = 900.0
 
 [sub_resource type="Resource" id="Op_6"]
 script = ExtResource("2_op")

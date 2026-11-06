@@ -70,6 +70,7 @@ func validate() -> Array[ValidationIssue]:
 		seen[r.id] = true
 		if String(r.card).is_empty():
 			defaults += 1
+		issues.append_array(_check_params(r))
 		var cells := {}
 		for c in r.allowed + r.ruled:
 			if cells.has(c):
@@ -79,11 +80,64 @@ func validate() -> Array[ValidationIssue]:
 					)
 				)
 			cells[c] = true
+		var pruned := {}
+		for c in r.pruned:
+			if pruned.has(c):
+				issues.append(
+					ValidationIssue.new(
+						&"duplicate_id", resource_path, "%s: pruned card %s twice" % [r.id, c]
+					)
+				)
+			pruned[c] = true
 	if defaults != 1:
 		issues.append(
 			ValidationIssue.new(&"missing", resource_path, "exactly one form row has no card")
 		)
 	return issues
+
+
+## v0.9.5 FC1: a form row's params are whole numbers above 0 named for something the form reads; the Laser row has
+## every number LaserMods reads.
+func _check_params(r: AttackFormRow) -> Array[ValidationIssue]:
+	var issues: Array[ValidationIssue] = []
+	for k in r.params:
+		var v: Variant = r.params[k]
+		if not (v is int) or int(v) <= 0:
+			issues.append(
+				ValidationIssue.new(
+					&"range", resource_path, "%s: param %s is a whole number > 0" % [r.id, k]
+				)
+			)
+		var keys := _keys_of(r.id)
+		if not keys.is_empty() and not keys.has(String(k)):
+			issues.append(
+				ValidationIssue.new(&"unknown_key", resource_path, "%s: no param %s" % [r.id, k])
+			)
+	for k in _keys_of(r.id):
+		if not r.params.has(k):
+			issues.append(
+				ValidationIssue.new(&"missing", resource_path, "%s: param %s missing" % [r.id, k])
+			)
+	return issues
+
+
+## The param keys form `id` must carry (v0.9.5 FC1 Laser, FC2 Bomb, FC3 Void, FC4 Lance, FC5 Rune, FC6 Glaive); none for
+## the other forms.
+func _keys_of(id: StringName) -> Array[String]:
+	var by_form := {
+		&"laser": AttackFormRow.LASER_KEYS,
+		&"bomb": AttackFormRow.BOMB_KEYS,
+		&"void": AttackFormRow.VOID_KEYS,
+		&"lance": AttackFormRow.LANCE_KEYS,
+		&"rune_explosion": AttackFormRow.RUNE_KEYS,
+		&"glaive": AttackFormRow.GLAIVE_KEYS,
+		&"wave": AttackFormRow.WAVE_KEYS,
+		&"seekers": AttackFormRow.SEEKER_KEYS,
+		&"wisps": AttackFormRow.WISP_KEYS,
+	}
+	var keys: Array[String] = []
+	keys.assign(by_form.get(id, []))
+	return keys
 
 
 ## v0.9.0 AS: every live card (an item the migration table doesn't retire) that takes a wand slot (it names modifiers)
@@ -123,6 +177,15 @@ static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 						"%s: no live form card %s" % [r.id, r.card]
 					)
 				)
+			for c in r.pruned:  # v0.10.5 W3-P7: any live card but a Form card
+				if not live.get(c, &"") in [&"pattern", &"secondary", &"element", &"free"]:
+					issues.append(
+						ValidationIssue.new(
+							&"unknown_item",
+							t.resource_path,
+							"%s: no live non-form card %s to prune" % [r.id, c]
+						)
+					)
 			for c in r.allowed + r.ruled:
 				if not live.get(c, &"") in [&"pattern", &"secondary", &"element"]:
 					issues.append(

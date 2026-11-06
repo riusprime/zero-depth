@@ -57,9 +57,11 @@ func test_the_table_retires_43_cards_and_marks_them() -> void:
 		abilities += 1 if t.retired else 0
 	assert_eq(
 		[items, abilities],
-		[42, 6],
+		[54, 6],
 		(
-			"48 rows: 42 items (v0.9.0: Spread, Explosive, the old Void, Charge, Boomerang) and the six old"
+			"60 rows: 54 items (v0.9.0: Spread, Explosive, the old Void, Charge, Boomerang; v0.9.5: ten,"
+			+ " the Scatter and the Bomb)"
+			+ " and the six old"
 			+ " ability modifiers"
 		)
 	)
@@ -193,7 +195,11 @@ func test_a_carry_into_the_next_floor_migrates_at_its_start() -> void:
 	RunCarry.apply(w, carry)
 	Abilities.start_floor(w)
 	assert_eq(_ids(w), [&"gun_twin", &"gun_rapid_fire", &"gun_mine"], "v0.9.0 TW: Spread is Twin")
-	assert_eq(_levels(w), [1, 1, 2], "Bomb Lobber and its Cluster Payload: Mine at level 2")
+	assert_eq(
+		_levels(w),
+		[1, 1, 1],
+		"Bomb Lobber and its Cluster Payload: Mine has one level now (v0.9.5 CLV)"
+	)
 
 
 ## v0.9.0 TW (owner Q8: Twin and Spread merged into one card): Spread is retired; a held Spread becomes Twin in its
@@ -213,6 +219,34 @@ func test_a_held_spread_becomes_twin_and_is_never_offered() -> void:
 	WandMigration.run(both)
 	assert_eq(_ids(both), [&"gun_twin"])
 	assert_eq(_levels(both), [2], "a Twin already held levels up")
+
+
+## v0.9.5 FC0 (owner: "The shotgun form, the scatter has to go, we are gonna be replacing it with rune explosion"): an
+## old save holding the Scatter loads holding the Rune Explosion in its place; the Scatter is never offered again.
+func test_a_held_scatter_becomes_rune_explosion_and_is_never_offered() -> void:
+	var w := _floor(&"gun")
+	var scatter := _it(w, &"gun_scatter")
+	assert_true(w.item_tables[scatter].retired, "the Scatter is retired")
+	assert_does_not_have(ItemPool.available(w), scatter, "never offered")
+	assert_has(ItemPool.available(w), _it(w, &"gun_rune_explosion"), "the Rune Explosion is")
+	_take(w, [&"gun_twin", &"gun_scatter"])
+	WandMigration.run(w)
+	assert_eq(_ids(w), [&"gun_twin", &"gun_rune_explosion"], "in the Scatter's place")
+	assert_eq(AttackSlots.form_id(w), &"rune_explosion", "the shot is the Rune Explosion")
+
+
+## v0.9.5 BR (owner: "let's just remove the bomb I didnt quite enjoy playing it"): an old save holding the Bomb loads
+## holding the Void in its place; the Bomb is never offered again.
+func test_a_held_bomb_becomes_void_and_is_never_offered() -> void:
+	var w := _floor(&"gun")
+	var bomb := _it(w, &"gun_bomb")
+	assert_true(w.item_tables[bomb].retired, "the Bomb is retired")
+	assert_does_not_have(ItemPool.available(w), bomb, "never offered")
+	assert_has(ItemPool.available(w), _it(w, &"gun_void"), "the Void is")
+	_take(w, [&"gun_twin", &"gun_bomb"])
+	WandMigration.run(w)
+	assert_eq(_ids(w), [&"gun_twin", &"gun_void"], "in the Bomb's place")
+	assert_eq(AttackSlots.form_id(w), &"void", "the shot is the Void")
 
 
 ## v0.9.0 XP (owner Q11: "Both": Fire's kill blast and the Explosive card go): Explosive is retired, never offered on
@@ -357,11 +391,11 @@ func test_the_legendary_tier_offers_advanced_and_trigger_cards_and_the_legendary
 ## v0.8.0 FL (owner O91: "remove automatic level-5 grants"): a wand card taken at the boss's altar levels as anywhere.
 func test_a_wand_card_taken_at_the_legendary_altar_is_one_level_up() -> void:
 	var w := _floor(&"gun")
-	var big := _it(w, &"gun_big_shot")
-	_take(w, [&"gun_big_shot"])
+	var big := _it(w, &"gun_twin")
+	_take(w, [&"gun_twin"])
 	var id := w.add_reward(RewardStore.Kind.LEGENDARY, w.player_pos() + Vector2(0.5, 0), 0)
 	var r := w.rewards.index_of(id)
-	w.rewards.set_offer(r, PackedInt32Array([big]))  # the roll is the loot stream's; this test needs Big Shot
+	w.rewards.set_offer(r, PackedInt32Array([big]))  # the roll is the loot stream's; this test needs Twin
 	var f := InputFrame.new()
 	f.pressed = InputFrame.INTERACT
 	w.step(f)
@@ -379,21 +413,43 @@ func test_a_wand_card_taken_at_the_legendary_altar_is_one_level_up() -> void:
 	assert_eq(CardLevels.level(alt, big), 1, "a fresh card is level 1")
 
 
-func test_the_legendary_triggers_cast_their_spell_twice() -> void:
-	var w := WandLab.fight(&"gun", [&"trigger_on_hit_twice"])
-	var hooks := []
-	for k in Modifiers.bolt(w).hooks:
-		if k.id == &"trigger_on_hit_twice":
-			hooks.append(k.delay_ticks)
-	assert_eq(hooks, [0, 9], "two casts per hit, the second 0.15 s later")
-	var once := WandLab.run(WandLab.fight(&"gun", [&"trigger_on_hit"]), 600)
-	var twice := WandLab.run(WandLab.fight(&"gun", [&"trigger_on_hit_twice"]), 600)
-	var n1 := int((once["hits_by_effect"] as Dictionary).get(&"trigger_on_hit", 0))
-	var n2 := int((twice["hits_by_effect"] as Dictionary).get(&"trigger_on_hit_twice", 0))
-	assert_gt(n1, 0)
-	assert_gt(n2, n1, "×2 lands more child hits than On Hit (%d vs %d)" % [n2, n1])
-	var again := WandLab.run(WandLab.fight(&"gun", [&"trigger_on_hit_twice"]), 600)
-	assert_eq([again["digest"], again["hash"]], [twice["digest"], twice["hash"]], "replays")
-	for id: StringName in [&"trigger_on_kill_twice", &"trigger_on_end_twice"]:
-		var r := WandLab.run(WandLab.fight(&"blade", [id]), 900)
-		assert_gt(int((r["hits_by_effect"] as Dictionary).get(id, 0)), 0, "%s casts" % id)
+## v0.9.5 RC (owner: "Gravity stich, double trail have to go ... the mutations one were not good" and "we are
+## removing all on end, on finisher, on hit, and on kill cards"): the ten cards are retired through migration.tres,
+## with no card in their place. A wand holding some of them loads with them gone, the slots closed up, the rest kept,
+## and their salvage price refunded; none is ever offered; no row lands on them.
+func test_the_trigger_cards_the_mutations_and_gravity_stitch_are_retired_and_dropped() -> void:
+	var gone: Array[StringName] = [
+		&"trigger_on_hit",
+		&"mut_double_exposure",
+		&"shared_gravity_stitch",
+		&"mut_grand_finale",
+		&"trigger_on_kill",
+		&"trigger_on_end",
+		&"trigger_on_finisher",
+		&"trigger_on_hit_twice",
+		&"trigger_on_kill_twice",
+		&"trigger_on_end_twice",
+	]
+	for weapon: StringName in [&"gun", &"blade"]:
+		var w := _floor(weapon)
+		for id in gone:
+			assert_true(w.item_tables[_it(w, id)].retired, "%s is retired (%s)" % [id, weapon])
+			assert_does_not_have(ItemPool.available(w), _it(w, id), "%s: never offered" % id)
+	var g := _floor(&"gun")
+	_take(g, [&"gun_homing", &"ember_core"])
+	for id: StringName in [&"trigger_on_hit", &"mut_double_exposure", &"shared_gravity_stitch"]:
+		g.add_item(_it(g, id))  # TEST HELPER: a save from before RC held them
+	BuildSlots.sync(g)
+	var expect := 0
+	for id: StringName in [&"trigger_on_hit", &"mut_double_exposure", &"shared_gravity_stitch"]:
+		expect += WandMigration.refund_of(g, _it(g, id))
+	var shards := g.shards
+	assert_eq(WandMigration.run(g), expect, "their salvage price comes back")
+	assert_eq(g.shards, shards + expect)
+	assert_eq(_ids(g), [&"gun_homing", &"ember_core"], "the rest kept, the slots closed up")
+	for id: StringName in gone:
+		assert_false(g.items_owned.has(_it(g, id)), "%s no longer held" % id)
+	assert_eq(WandMigration.run(g), 0, "idempotent")
+	var t := g.wand_table
+	for id: StringName in t.migrate_blade + t.migrate_gun:
+		assert_false(gone.has(id), "no row lands on %s" % id)

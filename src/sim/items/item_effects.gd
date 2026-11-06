@@ -29,13 +29,45 @@ static func swing_reach_m(w: World, step: int = -1) -> float:
 ## stat plus its wand rate bonus (Rapid Fire, Rapid Coil ...; a negative one counts) through the curve, then Heavy
 ## Hands (AttackRate.rate), rounded half up; never under AttackRate.MIN_SHOT_TICKS once changed.
 static func shot_period_ticks(w: World) -> int:
-	var spec := Modifiers.bolt(w)
-	var base := spec.period_ticks
+	return shot_period_of(w, Modifiers.bolt(w))
+
+
+## v0.10.5 O13: shot_period_ticks for any compiled bolt spec (WandForecast reads a wand not held yet with it).
+## v0.10.5 W3-P9: shot_period_milli_of rounded half up (what the HUD shows; the shots average the exact period).
+static func shot_period_of(w: World, spec: AttackSpec) -> int:
+	return (shot_period_milli_of(w, spec) + 500) / 1000
+
+
+## v0.10.5 W3-P9 (owner: "lets do only A then"): the cooldown a shot fired now sets (PlayerKit, GunForms): the exact
+## period in thousandths of a tick plus the carried remainder (w.shot_carry), in whole ticks, the new remainder kept,
+## so a 6.62-tick period fires at 7, 7, 6, 7, 6 … ticks and averages 6.62.
+static func next_shot_cd(w: World) -> int:
+	var t := shot_period_milli_of(w, Modifiers.bolt(w)) + w.shot_carry
+	w.shot_carry = t % 1000
+	return maxi(1, t / 1000)
+
+
+## The cooldown the last shot set (next_shot_cd's, read back from the carry it left), while the period is unchanged.
+static func last_shot_cd(w: World) -> int:
+	var p := shot_period_milli_of(w, Modifiers.bolt(w))
+	var before := posmod(w.shot_carry - p, 1000)
+	return maxi(1, (p + before) / 1000)
+
+
+## v0.10.5 W3-P9: the period between shots of `spec`, in thousandths of a tick (exact: not rounded to whole ticks);
+## the forms' own periods, the rate (AttackRate.rate, form_rate) and Rapid Fire's quickening (LaserMods).
+static func shot_period_milli_of(w: World, spec: AttackSpec) -> int:
+	var base := BombMods.period(w, spec, spec.period_ticks)  # v0.9.5 FC2: the Bomb's Rapid Fire (0.6 s)
+	base = VoidMods.period(w, spec, base)  # v0.9.5 FC3: the Void's Rapid Fire (0.4 s)
+	base = RuneMods.period(w, spec, base)  # v0.9.5 FC5: the Rune Explosion's Big Shot (90) and Rapid Fire (42)
+	base = GlaiveMods.period(w, spec, base)  # v0.9.5 FC6: the Glaive's Rapid Fire (0.45 s)
+	base = WaveMods.period(w, spec, base)  # v0.9.5 FC8: the Wave's Rapid Fire (0.55 s)
 	var r := AttackRate.rate(w, spec.rate_bonus_permille + FireRhythm.shot_bonus(w, spec))  # v0.8.0 MR: the ramp
 	r = AttackRate.form_rate(spec, r)  # v0.9.0 LZ: the Laser's ticks at half the bonus
-	if r == 1000:
-		return base
-	return maxi(mini(base, AttackRate.MIN_SHOT_TICKS), AttackRate.scaled(base, r))
+	var milli := base * 1000
+	if r != 1000:
+		milli = maxi(mini(base, AttackRate.MIN_SHOT_TICKS) * 1000, base * 1000000 / maxi(1, r))
+	return LaserMods.rapid_period(w, spec, milli, 1000)  # v0.9.5 FC1: Rapid Fire's tick quickens while held
 
 
 ## Damage of each bolt in a shot: the full bolt, or a Splinter share (rounded down, at least 1).
@@ -93,22 +125,8 @@ static func after_swing(w: World, base: int, dmg: int) -> void:
 		w.echo_step = w.combo_step
 		w.echo_root = w.swing_root
 		w.echo_damage = maxi(1, dmg * spec.repeat_damage_permille / 1000)
-		w.echo_overcharged = w.swing_overcharged  # Engines: Resonance.
+		w.echo_overcharged = w.swing_overcharged  # hashed (World._hash_engines); Resonance read it until v0.10.5 O1
 		w.echo_wave = wave
-
-
-## Resonance's shockwave (Engines.on_echo): `dmg` to every enemy touching the disc of Overcharge's shockwave
-## (its ON_NTH burst's radius) around the player, at full proc (an engine payoff, not a hook).
-static func shockwave(w: World, dmg: int, root: int, effect: StringName) -> void:
-	var a := w.actors
-	var center := w.player_pos()
-	var radius := Modifiers.nth_burst_radius_m(w)
-	for i in w.aoe_candidates(center, radius):  # v0.8.0 HS: a superset, ascending (was every actor)
-		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
-			continue
-		if not AttackShapes.disc_touches(center, radius, a.pos(i), a.radius[i]):
-			continue
-		Damage.hit(w, i, dmg, a.ids[0], a.ids[0], root, SimEvent.TAG_AREA, center, a.pos(i), effect)
 
 
 ## Phase 4: counts down the pending Twin Arc echo and swings it (the same step's arc, re-tested from where the
@@ -121,7 +139,6 @@ static func advance_echo(w: World) -> void:
 		return
 	w.echo_tick = w.tick
 	PlayerKit.swing_arc(w, w.echo_angle, w.echo_damage, w.echo_root, EFFECT_TWIN_ARC, w.echo_step)
-	Engines.on_echo(w, w.echo_root)  # Engines: Resonance.
 
 
 ## A weapon step's hit landed on actor `i` and its spec burns (Ember Edge's modifier, or the burn rider;
@@ -132,14 +149,17 @@ static func on_melee_hit(w: World, i: int, root: int, stacks: int = 1) -> void:
 	if m.burn_max_stacks <= 0 or a.dead[i] == 1 or a.burn_root[i] == root:
 		return
 	a.burn_root[i] = root
-	if a.burn_stacks[i] == 0:
+	var lit := a.burn_stacks[i] == 0
+	if lit:
 		a.burn_cd[i] = m.burn_period_ticks
-	a.burn_stacks[i] = mini(a.burn_stacks[i] + stacks, m.burn_max_stacks)
+	a.burn_stacks[i] = mini(a.burn_stacks[i] + stacks, ElementLevels.burn_cap(w))
 	a.burn_t[i] = Affinities.burn_ticks(w, m.burn_duration_ticks)  # v0.9.0 RB: A1 Ember
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[0], a.ids[0], a.ids[i], a.pos(i))
 	e.root_id = root
 	e.amount = a.burn_stacks[i]
 	e.effect_id = EFFECT_EMBER_EDGE
+	if lit and w.pair_mask != 0:
+		ElementPairs.on_burn_start(w, i)  # v0.9.5 EE3: Toxic Fumes
 
 
 ## Phase 8: burns tick. Every period each burning actor takes burn_damage × stacks as DoT; when the burn runs
@@ -155,7 +175,13 @@ static func tick_burns(w: World) -> void:
 		if a.burn_cd[i] <= 0:
 			a.burn_cd[i] = m.burn_period_ticks
 			Damage.tick_dot(
-				w, i, m.burn_damage * a.burn_stacks[i], a.ids[0], a.ids[0], EFFECT_EMBER_EDGE
+				w,
+				i,
+				ElementLevels.deep_dot(w, m.burn_damage * a.burn_stacks[i]),
+				a.ids[0],
+				a.ids[0],
+				EFFECT_EMBER_EDGE,
+				&"ember"
 			)
 		if a.burn_t[i] <= 0:
 			a.burn_stacks[i] = 0
@@ -209,7 +235,6 @@ static func bounce(w: World, i: int, at: Vector2, wall: Obb) -> void:
 	p.pos_y[i] = out.y
 	p.bounces[i] -= 1
 	p.bounce_tick[i] = w.tick
-	Engines.on_bounce(w, i)  # Engines: Shrapnel Storm.
 
 
 ## The outward normal of the face of `box` (grown by r) nearest to `at`: the axis with the smallest margin.

@@ -130,6 +130,36 @@ var ring_seen := PackedInt32Array()
 var lob_count := 0
 var streak_n := 0
 var streak_last := -1
+# --- v0.10.5 O9 (RuleCards). Hashed after everything above, once any leaves its default (touched_rc). ---
+## Adrenaline: the burst lasts until this tick. Third Strike: the attacks in the row, the last one's tick and root,
+## and the root that hits harder. Reflex: the last root that cut the dash. Vent Mend: the last heal's tick (views).
+var rc_rush_until := 0
+var rc_strike_n := 0
+var rc_strike_last := -1
+var rc_strike_root := 0
+var rc_bonus_root := 0
+var rc_reflex_root := 0
+var rc_mend_tick := -1
+
+
+## v0.10.5 O9: any RuleCards field away from its default.
+func touched_rc() -> bool:
+	return (
+		rc_rush_until != 0
+		or rc_strike_n != 0
+		or rc_strike_last != -1
+		or rc_strike_root != 0
+		or rc_bonus_root != 0
+		or rc_reflex_root != 0
+		or rc_mend_tick != -1
+	)
+
+
+func hash_rc(h: StateHasher) -> void:
+	for v in [rc_rush_until, rc_strike_n, rc_strike_last, rc_strike_root, rc_bonus_root]:
+		h.add_int(v)
+	h.add_int(rc_reflex_root)
+	h.add_int(rc_mend_tick)
 
 
 func touched() -> bool:

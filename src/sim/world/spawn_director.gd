@@ -46,6 +46,8 @@ static func advance(w: World) -> void:
 	Intensity.advance(w)  # v0.8.0 N5 (owner O58): intensity and the build-up / peak / pull back / quiet rhythm
 	if w.spawn_cd > 0:
 		return
+	if _calm_antechamber(w, t):
+		return
 	if not Intensity.sending(w):  # v0.8.0 N5: pulling back or quiet: no new packs (the enemies out stay)
 		return
 	# v0.4.0 TU: the cap and the interval follow the floor's difficulty curve (SpawnTable.cap_now, interval_now).
@@ -56,6 +58,14 @@ static func advance(w: World) -> void:
 		return
 	w.spawn_cd = Intensity.interval(w, t.interval_now(ticks))  # v0.8.0 N5: the build-up's ramp
 	_spawn_pack(w, t, ticks, room)
+
+
+## v0.10.5 O14: whether the hero stands in the boss room's host room on the calm-antechamber floor.
+static func _calm_antechamber(w: World, t: SpawnTable) -> bool:
+	var f := w.floor_layout
+	if t.calm_antechamber_floor <= 0 or w.floor_index != t.calm_antechamber_floor or f == null:
+		return false
+	return f.boss_host_room >= 0 and f.room_of(w.player_pos()) == f.boss_host_room
 
 
 ## Spawn points at least min_distance_m from the player, in their stored order. On a floor, only in the player's
@@ -138,6 +148,22 @@ static func pack_spots(w: World, anchor: Vector2, count: int) -> PackedVector2Ar
 	return out
 
 
+## v0.10.5 O15: whether `q` is a walkable spot of room `home` (-1: any), clear of walls, away from the hero, and not
+## in the boss room.
+static func spot_ok(w: World, q: Vector2, home: int, min_hero_m: float) -> bool:
+	if Kin.length(q - w.player_pos()) < min_hero_m:
+		return false
+	if w.floor_layout != null:
+		var qr := w.floor_layout.room_of(q)
+		if (
+			qr == w.floor_layout.boss_room
+			or w.floor_layout.arena_rooms.has(qr)
+			or (home >= 0 and qr != home)
+		):
+			return false
+	return _clear(w, q)
+
+
 static func _clear(w: World, q: Vector2) -> bool:
 	var r := PACK_CLEARANCE_M
 	for k in w.walls_near(Rect2(q.x - r, q.y - r, r * 2.0, r * 2.0)):
@@ -165,7 +191,7 @@ static func _spawn_pack(w: World, t: SpawnTable, ticks: int, room: int) -> void:
 		size = w.rng_map.range_int(t.pack_min(w.floor_index), t.pack_max(w.floor_index))
 	if t.pack_cap_now(ticks) > 0:  # v0.4.0 TU: the phase's largest pack
 		size = mini(size, t.pack_cap_now(ticks))
-	size += Curses.extra_enemies(w)  # v0.5.0 EV curse (Swarm Call): one more in every pack, under the cap
+	size = Intensity.pack_size(w, t, entry, size)  # v0.10.5 O4 (owner D46): one smaller while the hero struggles
 	size = Elites.escort_size(w, size)  # v0.9.0 EL (ELITES.md E0): one smaller beside a room's elite
 	var spots := pack_spots(w, anchor, mini(size, room))
 	for k in spots.size():
@@ -174,6 +200,12 @@ static func _spawn_pack(w: World, t: SpawnTable, ticks: int, room: int) -> void:
 		# v0.9.0 DP (owner Q24, Q26b): a Deep floor's room no longer brings an elite in its first pack (v0.5.5 DS's
 		# deep_elite is gone). World.deep_elite_rooms stays for the saves that hold it. v0.9.0 EL: no spawn becomes an
 		# elite any more (the Marked curse is gone); elites come from elite rooms (Elites).
+	# v0.10.5 O15: an authored duo's partners join the pack (only in the cap's slack left, so they are dropped first)
+	if t.pairings != null and not spots.is_empty():
+		var open_kinds := PackedInt32Array()
+		for k in open:
+			open_kinds.append(t.kinds[k])
+		Pairings.add_partners(w, t, kind, anchor, room - spots.size(), ticks, open_kinds)
 
 
 ## An enemy arriving now (actor i, just added): max HP and damage scaled by the danger tier (SpawnTable; the floor

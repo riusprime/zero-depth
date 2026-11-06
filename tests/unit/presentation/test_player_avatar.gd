@@ -95,13 +95,8 @@ func test_visor_is_centred_and_landscape_in_the_upper_face() -> void:
 	assert_between(v.z / face.size.z, 0.3, 0.5, "about 40% of the face's width")
 
 
-func test_xray_twins_only_with_the_xray_technique() -> void:
-	var xray := _avatar()
-	var plain := PlayerAvatar.new()
-	plain.setup(Color.BLACK, &"outline")
-	add_child_autofree(plain)
-	assert_gt(_count_xray(xray), 1, "hood and cloak have an X-ray twin")
-	assert_eq(_count_xray(plain), 0)
+func test_no_xray_twins() -> void:
+	assert_eq(_count_xray(_avatar()), 0, "no X-ray silhouette (v0.9.5 PF1)")
 
 
 func _count_xray(n: Node) -> int:
@@ -110,8 +105,6 @@ func _count_xray(n: Node) -> int:
 		if child is MeshInstance3D:
 			var m := (child as MeshInstance3D).material_override as StandardMaterial3D
 			if m != null and m.stencil_mode == BaseMaterial3D.STENCIL_MODE_XRAY:
-				c += 1
-			elif m != null and EnemyLooks.xray_of(m) != null:  # v0.8.0 HR: a pass of its own material
 				c += 1
 		c += _count_xray(child)
 	return c

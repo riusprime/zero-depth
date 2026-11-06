@@ -17,6 +17,7 @@ func after_each() -> void:
 	ViewPrefs.reduced_motion = false
 	ViewPrefs.hit_stop = true
 	ViewPrefs.effects_density = "high"
+	ViewPrefs.enemy_vat = false  # apply_settings turns it on (the game default)
 
 
 func _press(w: World, aim: int = 0) -> void:
@@ -419,7 +420,7 @@ func _swing_until_hit(s: Array) -> int:
 	return -1
 
 
-func test_a_blade_hit_holds_the_hero_s_swing_and_the_struck_enemy_for_2_4_frames() -> void:
+func test_a_blade_hit_holds_the_hero_s_swing_and_the_struck_enemy_for_2_frames() -> void:
 	var s := _setup()
 	var actors: ActorViews = s[2]
 	var feel: HitFeel = s[3]
@@ -450,21 +451,20 @@ func test_a_blade_hit_holds_the_hero_s_swing_and_the_struck_enemy_for_2_4_frames
 		)
 		assert_almost_eq(hero.body_yaw(), hero_yaw, 1e-5, "frame %d: its head and swing too" % f)
 		assert_true(actors.is_flashing(id), "frame %d: still flashing" % f)
-	# v0.8.0 N1 (owner O48, +20 %): the hold is 2.4 frames, so the third frame holds its first 0.4 and runs on.
-	assert_true(feel.hit_stop.holding(), "2 whole frames held, 0.4 of a frame left")
+	# v0.10.5 S1 (owner: "blade is still pause"): the hold is back to exactly 2 frames, so it lets go after the second.
 	enemy._process(DT)
 	hero._process(DT)
 	kit._process(DT)
 	actors._process(DT)
 	feel.hit_stop.advance(DT)
-	assert_false(feel.hit_stop.holding(), "2.4 frames, then it lets go")
+	assert_false(feel.hit_stop.holding(), "2 frames, then it lets go")
 	assert_false(enemy.holding())
 	assert_false(hero.holding())
 	assert_false(kit.holding())
 	# It runs on from where it stopped: the flinch carries on down from its peak, no jump back.
 	enemy._process(DT)
 	assert_false(enemy.transform.is_equal_approx(pose), "the enemy moves again")
-	assert_gt(enemy.flinch_amount(), 0.6, "on from the peak, not reset")
+	assert_gt(enemy.flinch_amount(), 0.3, "on from the peak, not reset")
 	# The flash runs its own frames after the hold.
 	for f in actors.flash_frames:
 		actors._process(DT)
@@ -595,7 +595,7 @@ func test_options_accessibility_has_the_hit_stop_row() -> void:
 	var c := menu.find_child("hit_stop", true, false) as OptionCycler
 	assert_not_null(c, "a Hit-stop row under Accessibility")
 	var row := c.get_parent()
-	var label := row.get_child(0) as Label
+	var label := row.get_node("Label") as Label  # v0.10.5 W3-O18: an Astral row starts with its focus mark
 	assert_eq(label.text, "UI_HIT_STOP", "its label is the translated key")
 	assert_ne(tr("UI_HIT_STOP"), "UI_HIT_STOP", "with an English string")
 

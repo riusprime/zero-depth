@@ -57,15 +57,21 @@ func test_the_ember_glow_is_apart_from_the_heat_colours() -> void:
 
 
 func test_no_crystal_art_is_left_in_the_ui() -> void:
-	assert_false(
-		DirAccess.dir_exists_absolute("res://assets/ui"), "the crystal frames and plaques retired"
+	# v0.9.5 MM: the one UI art is the owner's main-menu logo and backdrop (assets/ui/menu, MainMenu only).
+	# v0.10.5 W3-O15, W3-S13 (owner 2026-11-04): and the painted card art (card_frames, card_icons, card_backs, fx),
+	# loaded by AstralCardArt only.
+	assert_eq(
+		Array(DirAccess.get_directories_at("res://assets/ui")),
+		["card_backs", "card_frames", "card_icons", "cursors", "fx", "menu"],
+		"the crystal frames and plaques retired"
 	)
 	for dir: String in PRESENTATION:
 		for f in DirAccess.get_files_at(dir):
 			if not f.ends_with(".gd"):
 				continue
 			var src := FileAccess.get_file_as_string(dir + "/" + f)
-			assert_false(src.contains("assets/ui/"), "%s loads no UI art" % f)
+			if f not in ["main_menu.gd", "astral_card_art.gd"]:
+				assert_false(src.contains("assets/ui/"), "%s loads no UI art" % f)
 			for gone in ["CrystalCard", "BuildArt", "glass_panel", "GlassMarker"]:
 				assert_false(
 					src.contains(gone + ".") or src.contains(gone + "("), "%s: no %s" % [f, gone]
@@ -88,22 +94,22 @@ func test_every_card_surface_is_carved_stone() -> void:
 	add_child_autofree(item)
 	item.show_item(&"wildfire", "Wildfire", "Kills spread burn.", Color.ORANGE)
 	assert_true(item.plaque_box() is StoneBox, "the item plaque")
-	var shop := ShopTile.new("T")
-	add_child_autofree(shop)
-	assert_true(shop.panel_box() is StoneBox, "a shop tile")
+	# v0.10.5 W3-O16 (on purpose): the shop's heal and reroll are Astral plates now (test_astral_store.gd)
 	var gamble := GambleCard.new()
 	add_child_autofree(gamble)
 	assert_true(gamble.plaque_box() is StoneBox, "the shrine card")
+	# v0.10.5 W3-O19 (on purpose, owner 2026-11-04 night: every UI element in Astral): the Codex's tiles and the
+	# wand's tiles are Astral frames now, the codex tile's picture in a medallion ring
 	var tile := CodexTile.new()
 	add_child_autofree(tile)
 	tile.show_entry({"page": &"cards", "id": &"wildfire", "type": Offers.MOD}, "Wildfire", false)
 	for s in ["normal", "hover", "focus"]:
-		assert_true(tile.get_theme_stylebox(s) is StoneBox, "codex tile %s" % s)
-	assert_gt((tile.get_theme_stylebox("normal") as StoneBox).ring_color.a, 0.0, "its inlay ring")
+		assert_true(tile.get_theme_stylebox(s) is AstralUi.TileBox, "codex tile %s" % s)
+	assert_gt((tile.get_theme_stylebox("normal") as AstralUi.TileBox).ring.size.x, 0.0, "its ring")
 	var row := WandRow.new()
 	add_child_autofree(row)
 	row.show_wand({"cards": []}, 4)
-	assert_true(row.tile_box(0) is StoneBox, "a wand tile")
+	assert_true(row.astral_box(0) is AstralChrome.FrameBox, "a wand tile")
 	var hud := BuildHud.new()
 	add_child_autofree(hud)
 	assert_true(hud.pip_box(0) is StoneBox, "a wand pip")
@@ -114,9 +120,15 @@ func test_every_card_surface_is_carved_stone() -> void:
 	var view := CodexView.new(catalog, CodexStore.new(ProfileStore.new("")))
 	add_child_autofree(view)
 	assert_true(view.card is StoneCard, "the Codex's card")
+	# v0.10.5 W3-O19 (on purpose): the Codex's card is the Astral card, the owner's frame and painted icon
+	assert_true(view.card.astral, "the Astral card")
 	for t: TextureRect in view.find_children("*", "TextureRect", true, false):
 		var path := t.texture.resource_path if t.texture != null else ""
-		assert_false(path.contains("assets/ui"), "%s: no crystal art (%s)" % [t.get_path(), path])
+		var owners := path.contains("card_icons") or path.contains("card_frames")
+		assert_false(
+			path.contains("assets/ui") and not owners,
+			"%s: no crystal art (%s)" % [t.get_path(), path]
+		)
 
 
 func test_every_menu_is_on_ember_stone() -> void:
@@ -127,23 +139,23 @@ func test_every_menu_is_on_ember_stone() -> void:
 	assert_true(t.get_stylebox("normal", "Button") is StyleBoxEmpty, "a plain row is type only")
 	var main := MainMenu.new("v", false)
 	add_child_autofree(main)
-	var bd := main.find_child("MenuBackdrop", true, false) as MenuBackdrop
-	assert_not_null(bd, "the main menu has a backdrop")
-	assert_true(bd.own_scene, "of its own: the ember-lit stone scene (nothing is behind it)")
-	assert_true(main.slab.get_theme_stylebox("panel") is StoneBox, "its list on a slab")
+	assert_not_null(main.backdrop.texture, "v0.9.5 MM: the owner's picture is behind the main menu")
+	assert_null(main.find_child("MenuBackdrop", true, false), "and no ember backdrop")
 	var repo := ContentRepository.load_all()
+	# v0.10.5 W3-O18 (owner: "the rest of the UI ... should match the new style"): these menus are Astral now;
+	# W3-O20: the build picker too.
 	for screen: Control in [
+		BuildPicker.new(_defs("res://data/builds"), &"blade"),
 		PauseMenu.new(),
 		EndPanel.new(false, 0),
 		OptionsMenu.new(ProfileStore.new("")),
 		CreditsView.new(repo.get_def(&"credits", &"main"), repo.get_def(&"licences", &"generated")),
-		BuildPicker.new(_defs("res://data/builds"), &"blade"),
 	]:
 		add_child_autofree(screen)
-		assert_eq(screen.theme, t, "%s wears the Ember stone theme" % screen.name)
-		assert_not_null(
-			screen.find_child("MenuBackdrop", true, false), "%s: the backdrop" % screen.name
-		)
+		assert_eq(screen.theme, AstralMenu.theme(), "%s wears the Astral theme" % screen.name)
+		var bd := screen.find_child("MenuBackdrop", true, false) as MenuBackdrop
+		assert_not_null(bd, "%s: the backdrop" % screen.name)
+		assert_true(bd.astral, "%s: under Astral's ink" % screen.name)
 
 
 func test_focus_is_visible_for_mouse_and_pad_under_every_colour_mode() -> void:
@@ -167,12 +179,13 @@ func test_focus_is_visible_for_mouse_and_pad_under_every_colour_mode() -> void:
 		lit.focus, hover.focus, "a hovered row (mouse) half lit, so the focus still stands out"
 	)
 	assert_gt(hover.focus, 0.0)
+	# v0.10.5 W3-O19 (on purpose): the codex and wand tiles are Astral frames; focus brightens the frame
 	var tile := CodexTile.new()
 	add_child_autofree(tile)
 	tile.show_entry({"page": &"enemies", "id": &"charger"}, "Charger", false)
 	assert_gt(
-		(tile.get_theme_stylebox("focus") as StoneBox).focus,
-		(tile.get_theme_stylebox("normal") as StoneBox).focus,
+		(tile.get_theme_stylebox("focus") as AstralUi.TileBox).focus,
+		(tile.get_theme_stylebox("normal") as AstralUi.TileBox).focus,
 		"a focused codex tile is lit"
 	)
 	var row := WandRow.new()
@@ -180,8 +193,8 @@ func test_focus_is_visible_for_mouse_and_pad_under_every_colour_mode() -> void:
 	row.show_wand({"cards": []}, 4)
 	row.focus = 2
 	row.refresh_marks()
-	assert_eq(row.tile_box(2).focus, 1.0, "the focused wand tile is lit")
-	assert_eq(row.tile_box(1).focus, 0.0)
+	assert_eq(row.astral_box(2).focus, 1.0, "the focused wand tile is lit")
+	assert_eq(row.astral_box(1).focus, 0.0)
 
 
 func test_reduced_motion_stops_the_sparks_and_the_flicker() -> void:
@@ -207,10 +220,10 @@ func test_the_screens_fit_at_interface_size_110() -> void:
 	var pick := PickPanel.new()
 	add_child_autofree(pick)
 	TranslationServer.set_locale("es")
-	var nova: Resource = load("res://data/abilities/frost_nova.tres")
+	var blink_def: Resource = load("res://data/abilities/blink.tres")
 	for k in PickPanel.SLOTS:
-		var f := _face(&"frost_nova", 3)
-		f["sentence"] = tr(nova.desc_key)
+		var f := _face(&"blink", 3)
+		f["sentence"] = tr(blink_def.desc_key)
 		pick.slot(k).show_card(f)
 		pick.slot(k).visible = true
 	var col := pick.slot(0).get_parent().get_parent() as Control

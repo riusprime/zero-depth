@@ -9,7 +9,7 @@ extends GutTest
 ## trimmed and plays on.
 
 const W := preload("res://tests/support/mx4_world.gd")
-const TRIGGERS: Array[StringName] = [&"trigger_on_hit_twice", &"trigger_on_hit", &"trigger_on_kill"]
+const TRIGGERS: Array[StringName] = [&"chain_blast", &"shared_faultline", &"shared_stress_mark"]
 
 
 ## A world of `weapon` with the shipped wand, its slot table and floor `f`'s slots (v0.9.0 FV: 5: eight), holding
@@ -59,10 +59,9 @@ func test_the_data_holds_the_owners_limits_caps_and_the_orbs_row() -> void:
 			[
 				&"orbs",
 				&"laser",
-				&"bomb",
 				&"void",
 				&"lance",
-				&"scatter",
+				&"rune_explosion",  # v0.9.5 FC0: replaces the Scatter
 				&"glaive",
 				&"seekers",
 				&"wave",
@@ -116,13 +115,7 @@ func test_every_live_card_has_the_slot_the_owner_gave_it() -> void:
 		AttackSlots.ELEMENT:
 		[&"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"],
 		AttackSlots.FREE:
-		[
-			&"trigger_on_hit",
-			&"trigger_on_kill_twice",
-			&"mut_grand_finale",
-			&"echo_slash",
-			&"chain_blast"
-		],
+		[&"shared_faultline", &"shared_stress_mark", &"echo_slash", &"chain_blast"],
 	}
 	for cat: int in want:
 		for id: StringName in want[cat]:
@@ -148,7 +141,7 @@ func test_twin_then_halo_halo_takes_twins_place_and_twin_leaves() -> void:
 	assert_false(w.items_owned.has(twin), "Twin left the build (it burns)")
 	assert_eq(CardLevels.level(w, halo), 1)
 	var s := Modifiers.bolt(w)
-	assert_eq([s.count, s.twin], [3, 0], "the shot is Halo's, no Twin lane")
+	assert_eq([s.count, s.twin], [4, 0], "the shot is Halo's, no Twin lane")
 	assert_true(BuildSlots.take(w, twin), "and back: Twin replaces Halo")
 	assert_eq(_ids(w), [&"gun_pierce", &"gun_twin", &"ember_core"])
 
@@ -245,7 +238,7 @@ func test_a_full_wand_asks_for_the_swap_only_for_a_card_whose_slot_has_room() ->
 		assert_true(BuildSlots.needs_swap(w, W.item(w, id)), "%s: choose in its slot" % id)
 	var frost := W.item(w, &"frost_core")
 	assert_eq(Array(AttackSlots.choices(w, frost)), [3, 4], "only the Elements, not any slot")
-	assert_true(BuildSlots.needs_swap(w, W.item(w, &"trigger_on_end")), "a free card still swaps")
+	assert_true(BuildSlots.needs_swap(w, W.item(w, &"echo_slash")), "a free card still swaps")
 	assert_false(BuildSlots.take(w, frost, 0), "Twin's slot is not an Element's")
 	assert_true(BuildSlots.take(w, frost, 3))
 	assert_eq(w.mod_slots.size(), 8)
@@ -294,7 +287,7 @@ func test_two_forms_never_coexist_in_a_spell() -> void:
 func test_a_second_form_card_replaces_the_first_and_its_table_rules_the_rest() -> void:
 	var w := _world()
 	var a := W.item(w, &"gun_big_shot")  # lab: two cards play two forms (the forms ship in later steps)
-	var b := W.item(w, &"gun_charge")
+	var b := W.item(w, &"gun_ricochet")
 	var twin := W.item(w, &"gun_twin")
 	var ember := W.item(w, &"ember_core")
 	var t := w.slot_table
@@ -315,7 +308,7 @@ func test_a_second_form_card_replaces_the_first_and_its_table_rules_the_rest() -
 	assert_false(ids.has(&"gun_twin"), "a held card off for the form is not compiled")
 	assert_true(ids.has(&"ember_core"), "one on is")
 	assert_eq(int(Offers.info(w, b)["replaces"]), a, "the second form says it replaces the first")
-	_take(w, [&"gun_charge"])
+	_take(w, [&"gun_ricochet"])
 	assert_false(w.items_owned.has(a), "two forms never coexist")
 	assert_eq(AttackSlots.form_id(w), &"lab_%d" % b)
 
@@ -333,8 +326,11 @@ func test_an_incompatible_card_is_never_offered() -> void:
 	for k in 200:
 		w.rng_loot = RngStream.derive(k, "loot")
 		assert_false(ItemPool.draw_weighted(w, 3, 3).has(pierce), "draw %d" % k)
+	var t := w.slot_table
 	for idx in w.item_tables.size():  # the live table shuts nothing else on a Gun run
 		var it := w.item_tables[idx]
+		if t.pruned(t.default_form, idx):
+			continue  # v0.10.5 W3-P7: Orbs prunes Ricochet (test_pruned_pairs.gd)
 		if idx != pierce and not it.retired and it.requires_weapon != PlayerTable.WEAPON_BLADE:
 			assert_true(AttackSlots.usable(w, idx), "%s still offered" % it.id)
 
@@ -351,15 +347,15 @@ func test_twelve_shots_an_attack_extra_copies_merge_and_keep_the_damage() -> voi
 	var free := Modifiers.bolt(lab)
 	var free_shards := W.hook_of(free, &"split_shot").child
 	assert_eq(
-		[ShotCap.shots(free), ShotCap.shots(free_shards)], [7, 7], "Halo 5 × Split 5 = 49 before AS"
+		[ShotCap.shots(free), ShotCap.shots(free_shards)], [8, 4], "Halo 8 × Split 4 = 32 before AS"
 	)
 	var s := Modifiers.bolt(w)
 	var shards := W.hook_of(s, &"split_shot").child
-	assert_eq(ShotCap.shots(s), 7, "Halo's seven fit")
+	assert_eq(ShotCap.shots(s), 8, "Halo's eight fit")
 	assert_lte(ShotCap.shots(s) * ShotCap.shots(shards), 12, "pattern × Split children ≤ 12")
-	assert_eq(ShotCap.shots(shards), 1, "the seven shards merged into one")
+	assert_eq(ShotCap.shots(shards), 1, "the four shards merged into one")
 	var base := free_shards.share_permille if free_shards.share_permille > 0 else 1000
-	assert_eq(shards.share_permille, base * 7, "it carries the seven's damage")
+	assert_eq(shards.share_permille, base * 4, "it carries the four's damage")
 	assert_gt(shards.radius_m, free_shards.radius_m, "and is bigger")
 	var big := AttackSpec.new()
 	big.form = AttackSpec.Form.BOLT
@@ -425,20 +421,13 @@ func _fight(ids: Array, per_second: int) -> World:
 
 func test_the_worst_legal_builds_launch_at_most_forty_projectiles_a_second() -> void:
 	# Every Pattern with the two Secondaries that add shots (Split's children, Echo's repeat or Rapid Fire's rate),
-	# two Elements and three triggers that cast small shots on hits and kills, the Pattern left of the triggers and
+	# two Elements and three free cards (the triggers are retired in v0.10.5), the Pattern left of them and
 	# right of them (then every hit casts the whole Pattern). All at level 5 at the top attack speed.
 	var builds := {
 		"halo_split_rapid":
 		[&"halo_shot", &"split_shot", &"gun_rapid_fire", &"ember_core", &"storm_core"] + TRIGGERS,
 		"hit_then_halo_split_echo":
-		[
-			&"trigger_on_hit_twice",
-			&"halo_shot",
-			&"split_shot",
-			&"gun_echo",
-			&"storm_core",
-			&"ember_core"
-		],
+		[&"chain_blast", &"halo_shot", &"split_shot", &"gun_echo", &"storm_core", &"ember_core"],
 		"twin_split_echo":
 		[&"gun_twin", &"split_shot", &"gun_echo", &"ember_core", &"storm_core"] + TRIGGERS,
 		"ring_split_rapid":

@@ -46,6 +46,9 @@ func _init(
 		keys.append(String(Wardrobe.HIDDEN_NAME if masked else r.name_key))
 	robe_cycler = LockCycler.new(ids, keys, String(current_robe), unlocked)
 	robe_cycler.name = "Robe"
+	robe_cycler.astral = true  # v0.10.5 W3-O20: Astral's chevrons and hairline (OptionCycler)
+	robe_cycler.custom_minimum_size = Vector2(300, 40)
+	robe_cycler.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	robe_cycler.changed.connect(_on_robe)
 	_row("WARDROBE_ROBE").add_child(robe_cycler)
 	lock_note = Label.new()
@@ -62,6 +65,9 @@ func _init(
 		akeys.append(String(a.name_key))
 	affinity_cycler = OptionCycler.new(aids, akeys, String(current_aff))
 	affinity_cycler.name = "Affinity"
+	affinity_cycler.astral = true  # v0.10.5 W3-O20: Astral's chevrons and hairline (OptionCycler), as in Options
+	affinity_cycler.custom_minimum_size = Vector2(300, 40)
+	affinity_cycler.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	affinity_cycler.changed.connect(_on_affinity)
 	_row("WARDROBE_AFFINITY").add_child(affinity_cycler)
 	desc = Label.new()
@@ -75,6 +81,7 @@ func _init(
 	add_button("UI_BACK", func() -> void: back_pressed.emit()).name = "Back"
 	add_hint("UI_MENU_HINT")
 	_show_desc()
+	AstralUi.dress(self)  # v0.10.5 W3-O19 (owner: every UI element in Astral): the station in the Astral style
 
 
 func _row(label_key: String) -> HBoxContainer:
@@ -96,9 +103,18 @@ func focus_first() -> void:
 func _on_robe(id: String) -> void:
 	var open := robe_cycler.is_unlocked()
 	lock_note.visible = not open
+	lock_note.text = _note_for(id)
 	if open:
 		worn_robe = StringName(id)
 		picked.emit(worn_robe, affinity)
+
+
+## The note under a locked robe: its own hint (v0.9.5 RS2: the Runic robe is earned, not bought) or the shop's.
+func _note_for(id: String) -> String:
+	for r: RobeDefinition in _robes:
+		if String(r.id) == id and not String(r.unlock_hint_key).is_empty():
+			return String(r.unlock_hint_key)
+	return "WARDROBE_LOCKED_NOTE"
 
 
 func _on_affinity(id: String) -> void:
@@ -111,7 +127,7 @@ func _show_desc() -> void:
 	for a: AffinityDefinition in _affinities:
 		if a.id == affinity:
 			desc.text = "%s\n%s" % [tr(a.desc_key), tr(a.cost_key)]
-			desc.add_theme_color_override("font_color", MenuStyle.TEXT)
+			desc.add_theme_color_override("font_color", AstralCardArt.TEXT)  # v0.10.5 W3-O19
 			return
 	desc.text = ""
 
@@ -139,8 +155,12 @@ class LockCycler:
 	func is_unlocked() -> bool:
 		return index >= unlocked.size() or unlocked[index]
 
-	func _show() -> void:
+	func shown_word() -> String:
 		var t := tr(label_keys[index])
 		if not is_unlocked():
 			t = "%s  ·  %s" % [t, tr("WARDROBE_LOCKED")]
-		text = "‹  %s  ›" % t
+		return t
+
+	func _show() -> void:
+		text = "‹  %s  ›" % shown_word()
+		queue_redraw()

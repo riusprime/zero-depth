@@ -29,7 +29,7 @@ const FILING_S := 0.6
 const PIVOT_H := 5.5
 const ECHO_MARKER_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 
 uniform vec4 gold : source_color = vec4(1.0, 0.78, 0.3, 1.0);
 uniform vec4 hot : source_color = vec4(1.0, 0.95, 0.72, 1.0);

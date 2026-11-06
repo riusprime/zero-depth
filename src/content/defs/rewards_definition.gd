@@ -11,6 +11,10 @@ extends ContentDef
 ## v0.5.5 EC (owner S1, "max 2 per floor and the rest should be chests"): at most this many of the floor's placed
 ## altars (0 = no cap); the altars rolled past it become chests, so the floor keeps its reward spots.
 @export var altars_cap := 2
+## v0.10.5 S7 (owner 2026-11-01, "10 to 15% more loot"; a starting value): per mille more chests / free altars a floor
+## holds than it rolls (120 = +12 %). Whole extras plus a remainder chance; needs a free item spot.
+@export_range(0, 1000) var extra_chest_permille := 0
+@export_range(0, 1000) var extra_altar_permille := 0
 ## v0.9.0 FV (owner Q24, "Scale with floor size"): smaller floors place fewer. Band k holds the floors of at most
 ## count_rooms[k] rooms (the start hall included, the boss room not; ascending) and draws altars and chests from its
 ## own inclusive ranges; a floor with more rooms than the last band draws from altars_min..chests_max above. Empty:
@@ -40,10 +44,18 @@ extends ContentDef
 @export var own_weapon_card_permille := 1500
 ## Cards an altar offers (v0.8.0 N7, owner O61: a chest deals one card, Offers.CHEST_CARDS).
 @export var offer_size := 3
+## v0.10.5 W3-P10b (owner W7, Q1: "normal picks, but a lower chance"): the chance per mille that a regular altar's
+## offer holds a Starbound card, from loop 2: one entry a loop (loop 2, loop 3 ..), the last for every later loop.
+@export var starbound_permille := PackedInt32Array([200, 300])
 ## The interact button opens an altar or chest within this distance of the player.
 @export var interact_radius_m := 1.6
 ## A kill's shards × (1 + shard_tier_bonus × danger tier).
 @export var shard_tier_bonus := 0.25
+## v0.10.5 O7a (theory audit P6, owner 2026-11-01): a kill's shard tier stops growing at the floor's peak phase, so
+## staying longer no longer pays more. Starting value.
+@export var shard_tier_caps_at_peak := true
+## v0.10.5 O7a: ...but never before this many seconds of floor time (every floor's shards grow at least this long).
+@export var shard_cap_min_seconds := 180.0
 ## v0.5.5 EC (owner S4): every kill's shards × this (0.7: −30 %), rounded half up.
 @export var shard_scale := 0.7
 ## A boss kill pays boss_shards × the floor number (PLAN v0.3.0: 60 × floor).
@@ -56,7 +68,8 @@ extends ContentDef
 @export var chest_rarity_weights := PackedInt32Array([40, 40, 20])
 ## v0.4.0 TU (owner D8): a normal enemy's kill drops a heal orb with this chance; walking over it (within
 ## heal_orb_reach_m, × pickup range) heals heal_orb_heal of max HP. v0.5.5 EC (owner D9): heal_orb_chance is only a
-## base under the Lifesprout stat card's chance; the shipped data has 0, so orbs drop only with the card.
+## base under the Lifesprout stat card's chance; v0.9.5 EP3 (owner 2026-10-31, "a bit of healing from
+## the beginning"): the shipped base is 3 % a kill; Lifesprout adds to it.
 @export var heal_orb_chance := 0.0
 @export var heal_orb_heal := 0.25
 @export var heal_orb_reach_m := 0.9
@@ -105,6 +118,11 @@ func validate() -> Array[ValidationIssue]:
 	check_positive(issues, "own_weapon_card_permille", own_weapon_card_permille)  # v0.8.0 BL
 	if offer_size < 1 or offer_size > 3:
 		issues.append(ValidationIssue.new(&"range", resource_path, "offer_size is 1..3"))
+	for v in starbound_permille:  # v0.10.5 W3-P10b
+		if v < 0 or v > 1000:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "starbound_permille is 0..1000")
+			)
 	check_positive(issues, "interact_radius_m", interact_radius_m)
 	if altars_cap < 0:
 		issues.append(ValidationIssue.new(&"negative", resource_path, "altars_cap is negative"))

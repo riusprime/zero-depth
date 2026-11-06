@@ -50,6 +50,7 @@ static func compile_table(repo: ContentRepository) -> FragmentTable:
 	t.purple_portal = d.purple_portal
 	t.final_boss = d.final_boss
 	t.collectible = d.collectible
+	t.loop_bonus_permille = d.loop_bonus_permille  # v0.10.5 O5a
 	return t
 
 
@@ -94,7 +95,9 @@ static func locked_items(ids: Array[StringName], items: Array[ItemTable]) -> Pac
 ## What the Progression Station sells: the robes not free, in Wardrobe order (the four, then the two epic robes;
 ## PD-06: nothing that is a stat).
 static func wares(repo: ContentRepository) -> Array:
-	return Wardrobe.robes(repo).filter(func(r: RobeDefinition) -> bool: return not r.free)
+	return Wardrobe.robes(repo).filter(
+		func(r: RobeDefinition) -> bool: return not r.free and String(r.unlock_hint_key).is_empty()
+	)
 
 
 ## v0.9.0 MP2 (owner, PLAN "Owner decisions" MP2: "ascending cost starting from 75 and 25 more each one, then 250 the

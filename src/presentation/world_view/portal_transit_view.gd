@@ -511,6 +511,8 @@ func _build() -> void:
 	_mote_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	_mote_mat.vertex_color_use_as_albedo = true
 	_mote_mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	_mote_mat.albedo_texture = FxTextures.soft_dot()
+	_mote_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
 	var quad := QuadMesh.new()
 	quad.size = Vector2(0.12, 0.12)
 	quad.material = _mote_mat

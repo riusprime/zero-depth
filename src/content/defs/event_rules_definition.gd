@@ -6,6 +6,11 @@ extends ContentDef
 ## Event rooms per floor.
 @export var rooms_min := 1
 @export var rooms_max := 2
+## v0.9.5 AQ (owner: event altars "more special like the curse room"): when events_max_per_run > 0, a floor has an event
+## room on event_floor_chance_permille of floors (rooms_max of them), at most events_max_per_run a run, never the same
+## event twice. 0 keeps the old draw (rooms_min..rooms_max every floor).
+@export var event_floor_chance_permille := 1000
+@export var events_max_per_run := 0
 ## The pedestal: interact reach, and the clearance it keeps from walls and from the floor's altars and chests.
 @export var interact_radius_m := 1.6
 @export var clear_radius_m := 1.0
@@ -20,14 +25,17 @@ extends ContentDef
 @export var cursed_chests_per_floor := 1
 ## Wandering Drone: stay within this distance of the pedestal.
 @export var defend_radius_m := 4.5
-## The shop's cleanse: lifting the latest curse costs this many shards x the floor (SH's terminal).
-@export var cleanse_price := 60
-## v0.6.0 CU core theft (PLAN v0.5.5 X2; SIGNATURE.md): a boss's own stagger opens a steal window of
-## core_window_seconds. An elite's core is a mod (each weighs core_mod_weight) or a rare stat card (its card weight).
+## v0.6.0 CU core theft (PLAN v0.5.5 X2; SIGNATURE.md): a boss's steal window of core_window_seconds (v0.9.5 BH1, Q3:
+## 3 s from the start of each phase change; it was 2 s from a stagger). An elite's core is a mod (each weighs
+## core_mod_weight) or a rare stat card (its card weight).
 ## v0.9.0 EL (owner Q25): an elite no longer staggers (its 30 % drop: data/elites/rules.tres); the elite HP bonus,
 ## the Ambush Cache's distance and Marked's hunt range went with them.
-@export var core_window_seconds := 2.0
+@export var core_window_seconds := 3.0
 @export var core_mod_weight := 10
+## v0.10.5 S6 (owner 2026-11-01: "double legendary card is broken, we should nerf that a bit"): the chance a boss's
+## core is a Legendary card (0..1); otherwise an Epic card from the elite cores' pool. Starting value, not a
+## measurement. The boss's legendary altar is unchanged.
+@export var boss_core_legendary_chance := 0.35
 ## A drop (a core's card) lands this far from the next drop at the same spot.
 @export var drop_offset_m := 0.9
 ## v0.8.0 N17 (owner O75: "they need to appear once max per floor and 40% of floors not all the time"): the chance a
@@ -47,6 +55,14 @@ func validate() -> Array[ValidationIssue]:
 	var issues := super.validate()
 	if rooms_min < 0 or rooms_max < rooms_min:
 		issues.append(ValidationIssue.new(&"range", resource_path, "0 <= rooms_min <= rooms_max"))
+	if event_floor_chance_permille < 0 or event_floor_chance_permille > 1000:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "event_floor_chance_permille is outside 0..1000"
+			)
+		)
+	if events_max_per_run < 0:
+		issues.append(ValidationIssue.new(&"range", resource_path, "events_max_per_run is below 0"))
 	for f: Array in [
 		["interact_radius_m", interact_radius_m],
 		["clear_radius_m", clear_radius_m],
@@ -78,10 +94,14 @@ func validate() -> Array[ValidationIssue]:
 				&"range", resource_path, "curse_room_deep_chance_permille is outside 0..1000"
 			)
 		)
-	if cleanse_price <= 0:
-		issues.append(ValidationIssue.new(&"range", resource_path, "cleanse_price must be > 0"))
 	if core_mod_weight < 0:
 		issues.append(
 			ValidationIssue.new(&"negative", resource_path, "core_mod_weight is negative")
+		)
+	if boss_core_legendary_chance < 0.0 or boss_core_legendary_chance > 1.0:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "boss_core_legendary_chance is outside 0..1"
+			)
 		)
 	return issues

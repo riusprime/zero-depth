@@ -23,6 +23,8 @@ const METAL := Color("#2B2F35")
 const RADIUS := 1.1
 const DISC_H := 0.16
 const LANDING_R := 0.6
+## With the owner's model: the height (m) its top surface is sunk to, just above the floor (no z-fighting).
+const MODEL_TOP_Y := 0.02
 const ARM_R := 0.98
 const ARMS := 4
 const LIGHT_IDLE := 0.7
@@ -130,14 +132,18 @@ func _build() -> void:
 	body.name = "Body"
 	add_child(body)
 	var model := ShopModels.get_model(MODEL_ID)
+	var top := DISC_H + 0.03
 	if not model.is_empty():
 		uses_model = true
-		var mi := _mesh("Model", model["mesh"], model["material"], Vector3.ZERO, body)
+		# v0.10.5 S4 (owner): the hero's feet are at y = 0 (the sim has no height), so the model sinks until its
+		# top is just above the floor: the hero stands on it, not half inside it.
+		var sink: float = MODEL_TOP_Y - (model["aabb"] as AABB).end.y
+		var mi := _mesh("Model", model["mesh"], model["material"], Vector3(0, sink, 0), body)
+		top = MODEL_TOP_Y + 0.01
 		mi.material_override = null
 		mi.set_surface_override_material(0, model["material"])
 	else:
 		_build_stand_in()
-	var top := DISC_H + 0.03
 	var lm := CylinderMesh.new()
 	lm.top_radius = LANDING_R
 	lm.bottom_radius = LANDING_R
@@ -238,6 +244,8 @@ func _build_dust() -> void:
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.vertex_color_use_as_albedo = true
 	mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	mat.albedo_texture = FxTextures.soft_dot()
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
 	var quad := QuadMesh.new()
 	quad.size = Vector2(0.22, 0.22)
 	quad.material = mat

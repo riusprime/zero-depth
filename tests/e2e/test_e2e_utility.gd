@@ -47,7 +47,7 @@ func test_a_run_starts_without_a_utility_and_shift_does_nothing() -> void:
 	assert_eq(w.blink_tick, -1, "nor blink")
 	assert_lt(w.player_pos().distance_to(start), 0.01)
 	var hud: Hud = main.get_node("UI/Hud")
-	assert_eq(hud.ability_hud.filled_count(), 1, "the HUD shows one filled slot")
+	assert_false(hud.ability_squares.shown().has(&"blink"), "the HUD shows no utility square")
 
 
 func test_aegis_guards_with_shift_or_the_left_bumper() -> void:

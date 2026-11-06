@@ -13,6 +13,12 @@ extends RefCounted
 ##   EMBER - "Ember stone": chipped dark stone slabs with a warm ember line and glow along the bottom of the
 ##           important plates (HP, the top plate, heat); warm type. The minimap has no plate (owner: "we should
 ##           remove the black background"): it floats over the game with a dark halo under its lines.
+## v0.10.5 W3-O17 (owner, 2026-11-04: "and what about the rest of the UI? it should match the new style"; the UI style
+## Astral, W3_O13_UI_STYLE_G2.md round 2; the HP bar after ref 04: "a continuous bar not split in parts") adds the
+## fifth, shipped:
+##   ASTRAL - unboxed: no slabs; thin crisp 1 px lines in lilac-tinted silver, four-point stars, diamonds and
+##            crescents (AstralChrome, AstralHudParts); Cinzel for titles and numbers, Atkinson for small text; a faint
+##            ink wash under the top and bottom rows; one moon-blue accent, heat the only warm colour (a muted amber).
 ## Swapping is one line: DEFAULT below (or set `HudStyle.current` before the HUD is built).
 ##
 ## Shared helpers for other HUD pieces:
@@ -27,10 +33,11 @@ extends RefCounted
 ##                                               ability slots and the boss bar draw their own).
 ## No outcome depends on any of this (EI-07): it only draws what WorldReader says.
 
-enum Style { LINE, BARE, SLATE, EMBER }
+enum Style { LINE, BARE, SLATE, EMBER, ASTRAL }
 
-## The shipped style (owner picks from the G2 mockups; one constant to swap). BARE was the v0.3.5 pick.
-const DEFAULT := Style.EMBER
+## The shipped style (owner picks from the G2 mockups; one constant to swap). BARE was the v0.3.5 pick, EMBER the
+## v0.5.5 A5 pick, ASTRAL the v0.10.5 W3-O13b pick (built in W3-O17).
+const DEFAULT := Style.ASTRAL
 ## Low-HP warning (L24): below this share of max HP the HP bar pulses red (starting value).
 const LOW_HP_PERCENT := 30
 ## Warning pulses per second (starting value).
@@ -56,6 +63,27 @@ const HP_RED := Color("#E0503F")
 ## The low-HP pulse on the red bar: toward a hot pale tone, so the warning reads on a bar that is already red.
 const HP_WARN_HOT := Color("#FFD9C9")
 const CHAMFER := 6.0
+## ASTRAL's tokens (W3_O13_UI_STYLE_G2.md round 2, Astral; AstralCardArt holds the same): text / dim, contour /
+## focused contour, the moon-blue accent, the silver of the ornaments, the HP bar, the heat's muted amber, the ink under
+## the lines, and the warning (low HP, the full danger bar): a muted rose-red, the palette's "too poor" deepened.
+const A_TEXT := Color("#ECEEFA")
+const A_DIM := Color("#9095B4")
+const A_LINE := Color("#6E76A0")
+const A_LINE_HI := Color("#E4E6FF")
+const A_ACCENT := Color("#B5BDF0")
+const A_METAL := Color("#C9CCE6")
+const A_HP := Color("#B4BFF0")
+const A_HEAT := Color("#D6A878")
+const A_INK := Color("#070913")
+const A_WARN := Color("#E0566C")
+## ASTRAL's heal: a pale moon-green (the gain line's family, no mint), for the regen pulse and the max-HP line.
+const A_HEAL := Color("#A8DCC4")
+## v0.10.5 W3-O20: ASTRAL's water (a shrine's cleanse): a cold moon-blue, apart from the lilac accent.
+const A_WATER := Color("#9CC8E8")
+## v0.10.5 W3-O20 (owner 2026-11-04 night: every UI element Astral; the 720p shots read 13 px labels as ~9 px): the
+## smallest HUD type (px at the 1920 x 1080 base). The HUD's label helpers raise a smaller size to it, so no HUD text
+## draws under 11 px at 1280 x 720 (17 x 2/3 = 11.3).
+const MIN_LABEL := 17
 ## The ember glow's height over the ember line (px).
 const EMBER_GLOW := 14.0
 
@@ -67,16 +95,30 @@ static var _fonts := {}
 
 
 static func accent(s: Style = current) -> Color:
+	if s == Style.ASTRAL:
+		return A_ACCENT
 	return EMBER_ACCENT if s == Style.EMBER else ACCENT
 
 
 static func text_color(s: Style = current) -> Color:
+	if s == Style.ASTRAL:
+		return A_TEXT
 	return EMBER_TEXT if s == Style.EMBER else TEXT
 
 
 ## Secondary text and unlit parts.
-static func dim(_s: Style = current) -> Color:
-	return Color(TEXT, 0.3)
+static func dim(s: Style = current) -> Color:
+	return A_DIM if s == Style.ASTRAL else Color(TEXT, 0.3)
+
+
+## The warning colour (low HP, a full danger bar): ASTRAL's muted rose-red, else WARN.
+static func warn(s: Style = current) -> Color:
+	return A_WARN if s == Style.ASTRAL else WARN
+
+
+## The heal colour (the regen pulse, the max-HP line): ASTRAL's pale moon-green, else REGEN.
+static func heal(s: Style = current) -> Color:
+	return A_HEAL if s == Style.ASTRAL else REGEN
 
 
 ## A plate's fill (SLATE and EMBER draw plates).
@@ -94,17 +136,21 @@ static func font_color(l: Control, c: Color) -> void:
 
 ## The HUD HP bar's fill: EMBER's red, else the player's bar token.
 static func hp_color(s: Style = current) -> Color:
+	if s == Style.ASTRAL:
+		return A_HP
 	return HP_RED if s == Style.EMBER else ThemePalette.color(&"player_bar")
 
 
 ## The colour a warned bar pulses toward (the low-HP warning).
 static func warn_pulse(s: Style = current) -> Color:
+	if s == Style.ASTRAL:
+		return A_WARN
 	return HP_WARN_HOT if s == Style.EMBER else WARN
 
 
 ## The hairline under a group (LINE) and a bar's track edge.
-static func line(_s: Style = current) -> Color:
-	return Color(TEXT, 0.28)
+static func line(s: Style = current) -> Color:
+	return Color(A_METAL, 0.4) if s == Style.ASTRAL else Color(TEXT, 0.28)
 
 
 ## 0 (cool) .. 1 (hot), through HEAT.
@@ -137,12 +183,36 @@ static func font(bold: bool = false, s: Style = current) -> FontVariation:
 	return v
 
 
+## ASTRAL's title type: Cinzel (its lowercase are small capitals, so a label needs no uppercase) at weight `wght`,
+## letter-spaced `track` px (AstralCardArt.serif: the cards' and the menus' face).
+static func serif(wght: int = 600, track: int = 2) -> FontVariation:
+	return AstralCardArt.serif(wght, track)
+
+
+## A label in ASTRAL's title type: Cinzel at `size`, tracked, in `col`, with a thin dark outline for the floor.
+static func serif_label(
+	l: Label, size: int, track: int = 2, col: Color = A_TEXT, wght := 600
+) -> void:
+	size = maxi(size, MIN_LABEL)  # v0.10.5 W3-O20
+	l.add_theme_font_override("font", serif(wght, track))
+	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_color_override("font_color", col)
+	l.add_theme_color_override("font_outline_color", Color(A_INK, 0.8))
+	l.add_theme_constant_override("outline_size", 4 if size < 30 else 6)
+	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.45))
+	l.add_theme_constant_override("shadow_offset_x", 0)
+	l.add_theme_constant_override("shadow_offset_y", 2)
+
+
 ## The style's type on a label: font, size, colour and a soft outline for legibility over the floor.
 static func style_label(l: Label, size: int, bold: bool = false, s: Style = current) -> void:
+	if s == Style.ASTRAL:
+		size = maxi(size, MIN_LABEL)  # v0.10.5 W3-O20
 	l.add_theme_font_override("font", font(bold, s))
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", text_color(s))
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.72))
+	var ink := Color(A_INK, 0.8) if s == Style.ASTRAL else Color(0, 0, 0, 0.72)
+	l.add_theme_color_override("font_outline_color", ink)
 	l.add_theme_constant_override("outline_size", 4 if size < 30 else 6)
 	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.35))
 	l.add_theme_constant_override("shadow_offset_x", 1)
@@ -157,6 +227,41 @@ static func label(size: int, bold: bool = false, s: Style = current) -> Label:
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	style_label(l, size, bold, s)
 	return l
+
+
+## v0.10.5 W3-O20: an icon's or a name's own colour `c` (an item's family, a stat) toned toward ASTRAL's silver, so it
+## keeps its hue but sits in the palette; other styles keep `c`.
+static func tone(c: Color, s: Style = current) -> Color:
+	return Color(c.lerp(A_METAL, 0.45), c.a) if s == Style.ASTRAL else c
+
+
+## v0.10.5 W3-O20: a small icon tile in ASTRAL (GambleIconView, ItemIconView, ComboIconView): AstralChrome.FrameBox
+## (ink, a 1 px frame, an inner frame, a small diamond on top), its frame tinted by the icon's `c`.
+static func draw_astral_tile(ci: CanvasItem, r: Rect2, c: Color) -> void:
+	var box := AstralChrome.FrameBox.new()
+	box.rim = Color(A_LINE.lerp(c, 0.4), 0.95)
+	ci.draw_style_box(box, r)
+
+
+## v0.10.5 W3-O20: `a` in ASTRAL, else `other` (the banners' and side panels' colours).
+static func pick(a: Color, other: Color, s: Style = current) -> Color:
+	return a if s == Style.ASTRAL else other
+
+
+## v0.10.5 W3-O20: a top banner (Lockdown, the arena, a shrine) in ASTRAL: its `title` in letter-spaced Cinzel, its
+## `line` in Atkinson, and a fading hairline with a small star between them (AstralChrome.Rule) in `box`. Other styles
+## keep their labels as they are.
+static func astral_banner(box: BoxContainer, title: Label, line: Label, s: Style = current) -> void:
+	if s != Style.ASTRAL:
+		return
+	serif_label(title, 28, 6, A_TEXT)
+	style_label(line, 18, false, s)
+	var rule := AstralChrome.Rule.new(150.0)
+	rule.name = "BannerRule"
+	rule.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	box.add_child(rule)
+	box.move_child(rule, title.get_index() + 1)
+	box.add_theme_constant_override("separation", 0)
 
 
 ## The chamfered outline of a stone slab in `r` (corners cut unevenly, so the slabs read as chipped stone).
@@ -182,7 +287,7 @@ static func plate_points(r: Rect2, cut: float = CHAMFER) -> PackedVector2Array:
 ## its slab with draw_side_panel) padded by `margin`; the older styles keep the flat dark box with an `accent` top.
 static func side_panel_box(margin: Vector2, accent: Color, s: Style = current) -> StyleBox:
 	var box: StyleBox
-	if s == Style.EMBER:
+	if s == Style.EMBER or s == Style.ASTRAL:  # v0.10.5 W3-O17: ASTRAL draws its panel too (draw_side_panel)
 		box = StyleBoxEmpty.new()
 	else:
 		var flat := StyleBoxFlat.new()
@@ -200,6 +305,13 @@ static func side_panel_box(margin: Vector2, accent: Color, s: Style = current) -
 ## EMBER: a side panel's stone slab over its whole rect, with its `accent` (the shrine's or the curses' colour) as a
 ## short line along the top, the way an ability slot carries its colour.
 static func draw_side_panel(c: Control, accent: Color, s: Style = current) -> void:
+	if s == Style.ASTRAL:  # v0.10.5 W3-O17: Astral's ink panel, a contour, an inner contour, the accent on its top
+		var r := Rect2(Vector2.ZERO, c.size.round())
+		c.draw_rect(r, AstralChrome.FILL)
+		AstralHudParts.frame(c, r, Color(A_LINE, 0.95))
+		AstralHudParts.frame(c, r.grow(-6.0), Color(A_LINE, 0.25))
+		AstralChrome.hline(c, 12.0, 12.0 + roundf(r.size.x * 0.3), 3.0, Color(accent, 0.85))
+		return
 	if s != Style.EMBER:
 		return
 	draw_plate(c, Rect2(Vector2.ZERO, c.size))

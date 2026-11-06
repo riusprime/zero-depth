@@ -17,10 +17,9 @@ extends SceneTree
 const FORMS: Array = [
 	[&"orbs", &""],
 	[&"laser", &"gun_laser"],
-	[&"bomb", &"gun_bomb"],
 	[&"void", &"gun_void"],
 	[&"lance", &"gun_lance"],
-	[&"scatter", &"gun_scatter"],
+	[&"rune_explosion", &"gun_rune_explosion"],  # v0.9.5 FC0: replaces the Scatter
 	[&"glaive", &"gun_glaive"],
 	[&"seekers", &"gun_seekers"],
 	[&"wave", &"gun_wave"],

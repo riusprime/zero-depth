@@ -50,19 +50,26 @@ func test_each_enemy_replans_only_on_its_own_phase() -> void:
 			last[id] = plan
 	assert_gt(changed, 100, "plans change as the player moves")
 	assert_eq(
-		changed_off_phase, 0, "an enemy's plan changes only on ticks where tick % 4 == id % 4"
+		changed_off_phase,
+		0,
+		"an enemy's plan changes only on ticks where tick % PLAN_PERIOD == id % PLAN_PERIOD"
 	)
 
 
 func test_plans_are_spread_evenly_over_the_ticks() -> void:
 	var w := _crowd(40)
-	var per_phase := [0, 0, 0, 0]
+	var per_phase := []
+	per_phase.resize(EnemyAi.PLAN_PERIOD)
+	per_phase.fill(0)
 	for i in range(1, w.actors.size()):
 		for t in EnemyAi.PLAN_PERIOD:
 			w.tick = t
 			if EnemyAi.plans_now(w, i):
 				per_phase[t] += 1
-	assert_eq(per_phase, [10, 10, 10, 10], "a quarter of the crowd plans each tick")
+	var even := []
+	even.resize(EnemyAi.PLAN_PERIOD)
+	even.fill(40 / EnemyAi.PLAN_PERIOD)
+	assert_eq(per_phase, even, "an even share of the crowd plans each tick (v0.10.5 PD: an eighth)")
 
 
 func test_enemies_still_move_every_tick() -> void:

@@ -40,7 +40,7 @@ void fragment() {
 	float glow = exp(-d * d * 5.0) * 0.8 + exp(-d * 9.0) * 0.6;
 	float hot = exp(-d * d * 40.0);
 	float k = strength * (1.0 + pulse * 0.15 * sin(TIME * 2.3));
-	ALBEDO = (color.rgb * glow + core.rgb * hot) * k;
+	ALBEDO = (color.rgb * glow + core.rgb * hot) * k * (1.0 - smoothstep(0.8, 1.0, d));
 }
 """
 

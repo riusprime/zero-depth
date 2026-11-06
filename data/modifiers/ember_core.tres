@@ -56,7 +56,7 @@ hook_trigger = 1
 hook_tags = PackedStringArray("area", "ground")
 hook_radius_m = 1.2
 hook_damage_permille = 150
-per_level = 50.0
+per_level = 0.0
 hook_effect = &"ember_core"
 hook_ops = Array[Resource]([SubResource("Op_3"), SubResource("Op_5"), SubResource("Op_6"), SubResource("Op_7"), SubResource("Op_8")])
 

@@ -5,27 +5,15 @@
 
 [sub_resource type="Resource" id="Op_1"]
 script = ExtResource("2_op")
-op = 10
-stage = 4
-form = 7
-hook_tags = PackedStringArray("area")
-hook_radius_m = 0.1
-hook_damage_permille = 1000
-hook_effect = &"shared_stress_mark"
-per_level = 200.0
-remnant_kind = 2
-remnant_spawn = 2
-remnant_activate = 3
-remnant_seconds = 3.0
-remnant_max = 48
-remnant_charges = 1
-remnant_turn_degrees = 90.0
-remnant_stagger = true
+op = 1
+stage = 1
+field = &"count"
+value = 0.0
 
 [resource]
 script = ExtResource("1_mod")
 family = &"damage"
 target = PackedStringArray()
-stage = 4
+stage = 1
 ops = Array[ExtResource("2_op")]([SubResource("Op_1")])
 id = &"shared_stress_mark"

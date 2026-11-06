@@ -84,7 +84,7 @@ func test_saving_with_no_moves_writes_the_same_positions() -> void:
 func test_a_moved_handle_saves_at_its_plan_point() -> void:
 	var e := _editor()
 	var target := Vector2(-6.25, 9.5)
-	var h: Node3D = e.plan.get_node("Station_credits")
+	var h: Node3D = e.plan.get_node("Station_runic")
 	# Dragged in the viewport: placed where the game draws plan point `target` (HubLayout -> SimPlane).
 	h.global_position = SimPlane.to_3d(HubLayout.to_sim(target))
 	var p: Node3D = e.plan.get_node("Prop_3_%s" % _hub.props[3]["id"])
@@ -93,7 +93,7 @@ func test_a_moved_handle_saves_at_its_plan_point() -> void:
 	var after := _saved()
 	var credits: HubStationDefinition = null
 	for s in after.stations:
-		if s.id == &"credits":
+		if s.id == &"runic":
 			credits = s
 	assert_almost_eq(credits.at, target, Vector2.ONE * 0.0011)
 	assert_eq(after.props[3]["at"], Vector2(1.235, 2.0), "rounded to 3 decimals")

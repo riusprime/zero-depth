@@ -1,11 +1,13 @@
 extends GutTest
-## The shop through real input (v0.5.0 SH): start a run (God and Bomb Lobber from the dev panel, clicked with the
-## mouse: the dev route, so the walk is safe and there is an ability to salvage), walk with the left stick to the
+## The shop through real input (v0.5.0 SH): start a run (God and Blink from the dev panel, clicked with the mouse: the
+## dev route, so the walk is safe and the build holds an ability you once could sell), walk with the left stick to the
 ## floor's shop (in a side room, on the minimap once seen; v0.8.0 SR: the biome's tent stall, its vendor behind the
 ## counter turning to you as you come up to it), see the prompt, press E: the shop panel opens with four priced cards
 ## and the world waits. Buy a card with the keyboard (arrows, Enter): it applies as a picked card, its slot reads Sold
-## and the vendor nods. Move down to the salvage list and salvage Bomb Lobber with the pad (d-pad, A): 25
-## shards per level back, the slot is free. B closes the shop and play resumes.
+## and the vendor nods. v0.10.5 W3-O9 (owner, 2026-11-04: "it should only show the heal, reroll and the 4 cards"): the
+## panel holds exactly the 4 cards, the heal and the reroll, no salvage list and no curse lift; move down to the reroll
+## with the pad (d-pad, A): its price shows on it and is paid, the unsold cards redraw, Blink stays. B closes the shop
+## and play resumes.
 
 
 func after_each() -> void:
@@ -25,7 +27,7 @@ func _pad(e: E2e, button: JoyButton) -> void:
 	await e.frames(2)
 
 
-func test_walk_to_the_shop_buy_a_card_and_salvage_an_ability() -> void:
+func test_walk_to_the_shop_buy_a_card_and_reroll() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
@@ -45,13 +47,13 @@ func test_walk_to_the_shop_buy_a_card_and_salvage_an_ability() -> void:
 	assert_eq(stall.vendor.biome, main.run_biome_id(), "the biome's vendor")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
-	while w.ability_tables[main.driver.debug.ability_choice].id != &"bomb_lobber":
+	while w.ability_tables[main.driver.debug.ability_choice].id != &"blink":
 		await _click(e, main, "NextAbility")
 	await _click(e, main, "GrantAbility")
 	await e.frames(2)
 	await e.tap(KEY_QUOTELEFT)
-	var bomb := Abilities.index_of_kind(w, AbilityTable.Kind.BOMB_LOBBER)
-	assert_true(Abilities.owned(w, bomb), "Bomb Lobber in slot 2")
+	var blink := Abilities.index_of_kind(w, AbilityTable.Kind.BLINK)
+	assert_true(Abilities.owned(w, blink), "Blink in slot 2")
 	assert_true(await e.walk_to(ShopPlacement.front(layout), 0.4), "walked up to the counter")
 	await e.frames(40)
 	assert_true(hud.minimap.state.is_discovered(w.shop.room), "its room is on the minimap")
@@ -100,30 +102,32 @@ func test_walk_to_the_shop_buy_a_card_and_salvage_an_ability() -> void:
 	assert_true(picked, "it applied as a picked card")
 	assert_true(stall.vendor.nodding(), "the vendor nods at the sale")
 	gut.p("bought %s for %d" % [Offers.info(w, code)["id"], cost])
-	# Salvage Bomb Lobber with the pad: down to the salvage list, along to it, A.
+	# v0.10.5 W3-O9: only the 4 cards, the heal and the reroll.
+	var values := []
+	for i in 6:
+		values.append(int(panel.entry(i)["value"]))
+	assert_eq(values, [1, 2, 3, 4, InputFrame.PICK_SHOP_HEAL, InputFrame.PICK_SHOP_REROLL])
+	assert_eq(panel.index_of_value(6), -1, "nothing after the reroll")
+	assert_null(panel.find_child("ShopSalvage", true, false), "no salvage list")
+	# Reroll with the pad: down to the services, along to the reroll, A.
 	await _pad(e, JOY_BUTTON_DPAD_DOWN)
 	await _pad(e, JOY_BUTTON_DPAD_DOWN)
-	var list := Shop.sell_list(w)
-	var n := -1
-	for i in list.size():
-		if list[i][0] == Shop.SELL_ABILITY and w.ability_owned[list[i][1]] == bomb:
-			n = i
-	assert_gte(n, 0, "Bomb Lobber is in the salvage list")
-	var target := panel.index_of_value(InputFrame.PICK_SHOP_SELL + n)
-	assert_eq(int(panel.entry(panel.focus_index())["row"]), 2, "the focus is in the salvage list")
+	assert_eq(int(panel.entry(panel.focus_index())["row"]), 1, "down stays on the services row")
+	var target := panel.index_of_value(InputFrame.PICK_SHOP_REROLL)
 	while panel.focus_index() != target:
 		await _pad(
 			e, JOY_BUTTON_DPAD_RIGHT if panel.focus_index() < target else JOY_BUTTON_DPAD_LEFT
 		)
+	var price := Shop.reroll_price(w)
+	assert_eq(panel.reroll_tile.price.text, str(price), "the reroll's price on its button")
 	var before := w.shards
-	var slots := w.ability_owned.size()
-	var refund := list[n][3]
-	assert_eq(refund, 10 * Abilities.level_of(w, bomb), "10 shards per level")
 	await _pad(e, JOY_BUTTON_A)
 	await e.frames(2)
-	assert_false(Abilities.owned(w, bomb), "Bomb Lobber salvaged")
-	assert_eq(w.shards, before + refund, "its refund paid")
-	assert_eq(w.ability_owned.size(), slots - 1, "its slot is free")
+	assert_eq(w.shards, before - price, "the reroll paid")
+	assert_eq(w.shop.rerolls, 1)
+	assert_eq(w.shop.offer[k], ShopState.SOLD, "the bought slot stays sold")
+	assert_eq(w.shop.last_action, ShopState.Action.REROLL, "the unsold cards redrew")
+	assert_true(Abilities.owned(w, blink), "Blink stays: nothing is sold")
 	await _pad(e, JOY_BUTTON_B)
 	await e.frames(2)
 	assert_false(w.shop.open, "B closed the shop")

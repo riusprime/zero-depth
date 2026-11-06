@@ -95,7 +95,7 @@ func test_heavy_whirl_and_whirl_heavy_make_the_same_crushing_spin() -> void:
 	for w: World in [a, b]:
 		assert_eq(BladeForms.step(w, 0).motion, MOTION.SPIN)
 		assert_eq(_step(w).directions, AttackSpec.DIR_CIRCLE)
-		assert_eq(_step(w).damage_mul_permille, 1700)
+		assert_eq(_step(w).damage_mul_permille, 2000)  # v0.10.5 W3-P5
 	assert_eq(_step(a).damage, _step(b).damage, "shape and weight cards commute")
 	assert_eq(BladeForms.step(a, 0).ticks, BladeForms.step(b, 0).ticks)
 	assert_eq(_run(a)["hits"], _run(b)["hits"], "the same fight")

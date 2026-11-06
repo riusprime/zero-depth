@@ -57,12 +57,15 @@ func setup(name_text: String) -> void:
 ## The HP share now (0..1). A drop holds the chunk; a heal moves both.
 func set_fraction(frac: float) -> void:
 	var f := clampf(frac, 0.0, 1.0)
+	var before_shown := _shown
+	var before_frac := _frac
 	if f < _frac:
 		_hold = HOLD_S
 	else:
 		_shown = maxf(_shown, f)
 	_frac = f
-	_layout()
+	if f != before_frac or _shown != before_shown:  # v0.9.5 PF3: the layout is a function of these two only
+		_layout()
 
 
 func fraction() -> float:

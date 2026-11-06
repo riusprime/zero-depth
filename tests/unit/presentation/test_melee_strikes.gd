@@ -15,7 +15,7 @@ func _melee() -> Array:
 	charger.setup(Color.BLACK)
 	out.append(["charger", charger, charger.windup_amount, charger.strike_swing])
 	var hatch := ChargerAvatar.new()
-	hatch.setup(Color.BLACK, &"xray", WorldReader.KIND_HATCHLING)
+	hatch.setup(Color.BLACK, &"outline", WorldReader.KIND_HATCHLING)
 	out.append(["hatchling", hatch, hatch.windup_amount, hatch.strike_swing])
 	for kind: int in HordeAvatar.STRIKE_KINDS:
 		var h := HordeAvatar.new()

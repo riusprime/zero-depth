@@ -36,7 +36,7 @@ func _layout(seed_value: int, run: RunState, floor_index: int) -> FloorLayout:
 	var none := PackedInt32Array()
 	TimedDoorRooms.mark(f, map.timed_door_permille, 900, speed, none, PackedVector2Array())
 	RuneRooms.mark(f, secrets.rune_permille, none, PackedVector2Array())
-	CrackedRooms.mark(f, secrets.crack_permille, none)
+	CrackedRooms.mark(f, CrackedRooms.chance(secrets.crack_floor_permille, 1), none)
 	PurpleRooms.mark(f, 500, none, PackedVector2Array())
 	var lock := RunContentCompiler.compile_lockdown(_repo.get_def(&"lockdown", &"lockdown"))
 	LockdownRooms.mark(f, lock, floor_index, none)
@@ -164,9 +164,10 @@ func test_floors_1_to_3_have_no_elites_on_real_floors() -> void:
 			var w := SaveLab.floor_world(s, f)
 			assert_null(w.elites, "seed %d floor %d: no elite rooms" % [s, f])
 			assert_false(WorldReader.new(w).elites()["active"])
-			assert_false(
-				w.floor_layout.lockdown_kinds.has(LockdownTable.Kind.ELITE), "no Elite Lockdown"
-			)
+			if f != 2:  # v0.10.5 O14: floor 2's first Lockdown is the Elite set piece
+				assert_false(
+					w.floor_layout.lockdown_kinds.has(LockdownTable.Kind.ELITE), "no Elite Lockdown"
+				)
 			for i in range(1, w.actors.size()):
 				assert_false(EliteAi.is_elite_kind(w.actors.kinds[i]))
 

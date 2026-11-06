@@ -1,6 +1,7 @@
 extends GutTest
-## v0.3.0 G: the eight named combos (unlock, each effect with the shipped numbers), and a soak of all 24 items
-## against real enemies: no LIMIT from the watchdog, deterministic. Aim angle 0 = +x.
+## v0.3.0 G: the named combos (unlock, each effect with the shipped numbers), and a soak of every live item against
+## real enemies: no LIMIT from the watchdog, deterministic. Aim angle 0 = +x. v0.10.5 O1 (owner P1: "Keep those 4"):
+## Blood Harvest, Shatter Dash, Slipstream and Spiked Phase remain; the other combos' tests went with them.
 
 const P := InputFrame.PRIMARY
 const S := InputFrame.SHOOT
@@ -16,8 +17,8 @@ var _combos: Array[ComboTable] = []
 func before_all() -> void:
 	var repo := ContentRepository.load_all()
 	_tables = ContentCompiler.compile_items(repo)
-	for c in ContentCompiler.compile_combos(repo):  # the item combos (v0.4.0 AB's ability pairs: test_abilities_ab)
-		if c.ability_a < 0:
+	for c in ContentCompiler.compile_combos(repo):  # v0.10.5 O1: the live combos (not the deleted ones' stubs)
+		if not c.retired:
 			_combos.append(c)
 
 
@@ -89,41 +90,41 @@ func _dash(w: World, aim: int) -> void:
 
 
 # --- Data and unlocking ---------------------------------------------------------------------------------------
-func test_eight_combos_each_with_its_own_effect() -> void:
-	assert_eq(_combos.size(), 8)
+func test_four_combos_each_with_its_own_effect() -> void:
+	assert_eq(_combos.size(), 4)
 	var effects := {}
 	var pairs := {}
 	for c in _combos:
 		effects[c.effect] = c.id
 		assert_ne(c.item_a, c.item_b, String(c.id))
 		pairs[mini(c.item_a, c.item_b) * 100 + maxi(c.item_a, c.item_b)] = true
-	assert_eq(effects.size(), 8, "mechanically distinct: one effect each")
-	assert_eq(pairs.size(), 8, "no pair twice")
+	assert_eq(effects.size(), 4, "mechanically distinct: one effect each")
+	assert_eq(pairs.size(), 4, "no pair twice")
 
 
 func test_owning_both_items_unlocks_the_combo_once() -> void:
-	var w := _world([K.EMBER_EDGE])
+	var w := _world([K.MOMENTUM])
 	assert_eq(w.combos_owned.size(), 0)
-	assert_false(Engines.has_combo(w, E.PLASMA_ARC))
-	w.add_item(_index(K.CONDUCTOR))
+	assert_false(Engines.has_combo(w, E.SLIPSTREAM))
+	w.add_item(_index(K.SWIFT_FEET))
 	var ev := _events(w, SimEvent.Kind.COMBO_UNLOCKED)
 	assert_eq(ev.size(), 1)
-	assert_eq(ev[0].amount, _combo_index(E.PLASMA_ARC))
-	assert_eq(ev[0].effect_id, &"plasma_arc")
-	assert_eq(w.combos_owned, PackedInt32Array([_combo_index(E.PLASMA_ARC)]))
-	assert_true(Engines.has_combo(w, E.PLASMA_ARC))
-	w.add_item(_index(K.LONG_EDGE))
+	assert_eq(ev[0].amount, _combo_index(E.SLIPSTREAM))
+	assert_eq(ev[0].effect_id, &"slipstream")
+	assert_eq(w.combos_owned, PackedInt32Array([_combo_index(E.SLIPSTREAM)]))
+	assert_true(Engines.has_combo(w, E.SLIPSTREAM))
+	w.add_item(_index(K.WILDFIRE))
 	assert_eq(_events(w, SimEvent.Kind.COMBO_UNLOCKED).size(), 1, "no repeat")
 	var r := WorldReader.new(w)
-	assert_eq(r.combo_item_ids(w.combos_owned[0]), [&"ember_edge", &"conductor"])
-	assert_eq(r.combo_name_key(w.combos_owned[0]), &"ITEM_COMBO_PLASMA_ARC")
+	assert_eq(r.combo_item_ids(w.combos_owned[0]), [&"momentum", &"swift_feet"])
+	assert_eq(r.combo_name_key(w.combos_owned[0]), &"ITEM_COMBO_SLIPSTREAM")
 
 
 func test_carried_items_bring_their_combos_without_a_new_card() -> void:
 	var w := _world()
-	var owned := PackedInt32Array([_index(K.TWIN_ARC), _index(K.OVERCHARGE)])
+	var owned := PackedInt32Array([_index(K.VAMPIRIC_CORE), _index(K.EXECUTIONER)])
 	w.set_items_owned(owned)
-	assert_true(Engines.has_combo(w, E.RESONANCE))
+	assert_true(Engines.has_combo(w, E.BLOOD_HARVEST))
 	assert_eq(_events(w, SimEvent.Kind.COMBO_UNLOCKED).size(), 0)
 	var v := World.new(5, PlayerTable.starting_values())
 	v.set_item_tables(_tables)
@@ -135,53 +136,16 @@ func test_carried_items_bring_their_combos_without_a_new_card() -> void:
 	assert_eq(_events(v, SimEvent.Kind.COMBO_UNLOCKED).size(), 0)
 
 
-func test_all_24_items_own_all_8_combos() -> void:
+func test_every_live_item_owns_all_4_combos() -> void:
 	var w := _world()
 	for k in _tables.size():
-		w.add_item(k)
-	assert_eq(w.combos_owned.size(), 8)
-	assert_eq(_events(w, SimEvent.Kind.COMBO_UNLOCKED).size(), 8)
+		if not _tables[k].retired:
+			w.add_item(k)
+	assert_eq(w.combos_owned.size(), 4)
+	assert_eq(_events(w, SimEvent.Kind.COMBO_UNLOCKED).size(), 4)
 
 
 # --- Each combo -----------------------------------------------------------------------------------------------
-func test_plasma_arc_shocking_a_burning_enemy_arcs_fire() -> void:
-	var w := _world(
-		[K.EMBER_EDGE, K.CONDUCTOR], [Vector2(1.2, 0), Vector2(2.2, 1.5), Vector2(1.2, 6)]
-	)
-	var a := w.actors
-	a.burn_stacks[1] = 2
-	a.burn_t[1] = 100
-	var root := w.take_root()
-	Engines.add_shock(w, 1, 1, root)
-	var arc := _events(w, SimEvent.Kind.DAMAGE, &"plasma_arc")
-	assert_eq(_amounts(arc), [8])
-	assert_eq(arc[0].target_id, a.ids[2], "the nearest other enemy within 4 m")
-	assert_eq(a.burn_stacks[2], 1, "and sets it burning")
-	assert_eq(a.shock_stacks[2], 0, "the arc is a payoff: it feeds no shock")
-	Engines.add_shock(w, 1, 1, root)
-	assert_eq(_events(w, SimEvent.Kind.DAMAGE, &"plasma_arc").size(), 1, "once per root")
-	a.burn_stacks[3] = 0
-	Engines.add_shock(w, 3, 1, w.take_root())
-	assert_eq(_events(w, SimEvent.Kind.DAMAGE, &"plasma_arc").size(), 1, "not burning: no arc")
-
-
-## Audit G-5: a shock with nobody in reach doesn't spend the chain's arc; a later shock on that chain still arcs.
-func test_plasma_arc_with_no_target_keeps_its_one_arc() -> void:
-	var w := _world([K.EMBER_EDGE, K.CONDUCTOR], [Vector2(1.2, 0), Vector2(1.2, 20)])
-	var a := w.actors
-	a.burn_stacks[1] = 2
-	a.burn_t[1] = 100
-	var root := w.take_root()
-	Engines.add_shock(w, 1, 1, root)
-	assert_eq(_events(w, SimEvent.Kind.DAMAGE, &"plasma_arc").size(), 0, "nobody in reach")
-	a.set_pos(2, Vector2(2.2, 1.5))
-	Engines.add_shock(w, 1, 1, root)
-	var arc := _events(w, SimEvent.Kind.DAMAGE, &"plasma_arc")
-	assert_eq(arc.size(), 1, "the same chain arcs once someone is in reach")
-	if arc.size() == 1:
-		assert_eq(arc[0].target_id, a.ids[2])
-
-
 func test_shatter_dash_breaks_a_frozen_enemy() -> void:
 	var w := _world([K.FROST_CORE, K.KINETIC_DASH], [Vector2(2.0, 0)])
 	var a := w.actors
@@ -193,37 +157,6 @@ func test_shatter_dash_breaks_a_frozen_enemy() -> void:
 	var v := _world([K.FROST_CORE, K.KINETIC_DASH], [Vector2(2.0, 0)])
 	_dash(v, 0)
 	assert_eq(_events(v, SimEvent.Kind.DAMAGE, &"shatter_dash").size(), 0, "not frozen: no shatter")
-
-
-func test_resonance_the_echo_of_a_charged_swing_sends_a_wave() -> void:
-	var w := _world([K.TWIN_ARC, K.OVERCHARGE])
-	for k in 3:
-		_swing(w)
-	assert_eq(_events(w, SimEvent.Kind.DAMAGE, &"resonance").size(), 0, "plain swings' echoes")
-	_swing(w)
-	var waves := _events(w, SimEvent.Kind.DAMAGE, &"overcharge")
-	var res := _events(w, SimEvent.Kind.DAMAGE, &"resonance")
-	assert_eq(waves.size(), 1, "the 4th swing's shockwave")
-	assert_eq(_amounts(res), _amounts(waves), "and its echo's, at full share")
-	assert_gt(res[0].tick, waves[0].tick, "0.1 s later")
-	assert_eq(res[0].root_id, waves[0].root_id, "inside the swing's chain")
-
-
-func test_shrapnel_storm_bounced_bolts_burst_once() -> void:
-	var w := _world([K.SPLINTER_SHOT, K.RICOCHET_CORE], [])
-	var walls: Array[Obb] = [Obb.make(Vector2(3.0, 0), Vector2(0.25, 4.0), 0)]
-	w.set_walls(walls)
-	var shards := {}
-	w.step(_f(S, 0, 0))
-	for t in 60:
-		w.step(_f(0, 0, 0))
-		var p := w.projectiles
-		for i in p.size():
-			if p.tags[i] & SimEvent.TAG_SHRAPNEL:
-				shards[p.ids[i]] = p.bounces[i]
-	assert_eq(shards.size(), 6, "three bolts bounce, each bursts into two shards")
-	for id in shards:
-		assert_eq(shards[id], 0, "shards never bounce, so never burst again")
 
 
 func test_blood_harvest_an_execution_bursts_and_heals_once() -> void:
@@ -275,26 +208,10 @@ func test_slipstream_a_momentum_hit_refunds_the_dash_once_per_window() -> void:
 	assert_eq(_events(w, SimEvent.Kind.STATUS_APPLY, &"slipstream").size(), 1, "within 1.5 s: no")
 	assert_gt(w.dash_cooldown_left, 0)
 	_idle(w, 100)
+	w.dash_cooldown_left = 0  # the test is about the window, not the 10 s recharge
 	_dash(w, 2048)
 	_swing(w, 2048)
 	assert_eq(_events(w, SimEvent.Kind.STATUS_APPLY, &"slipstream").size(), 2, "the window passed")
-
-
-func test_frozen_bastion_guard_blocks_chill_the_attacker() -> void:
-	var w := _world([K.BULWARK, K.GLACIAL_EDGE], [Vector2(1.2, 0), Vector2(6, 0)], 0)
-	w.player.utility = PlayerTable.Utility.GUARD
-	var a := w.actors
-	w.step(_f(U))
-	assert_true(w.guarding())
-	Damage.hit(w, 0, 20, a.ids[1], a.ids[1], 70, 0, Vector2(3, 0), a.pos(0))
-	assert_eq(a.frost_stacks[1], 2)
-	a.invuln[0] = 0
-	Damage.hit(w, 0, 20, a.ids[1], a.ids[1], 71, 0, Vector2(3, 0), a.pos(0))
-	assert_true(Engines.frozen(w, 1), "two blocks: four stacks freeze it")
-	a.invuln[0] = 0
-	Damage.hit(w, 0, 20, a.ids[2], a.ids[2], 72, 0, Vector2(3, 0), a.pos(0))
-	assert_eq(a.frost_stacks[2], 0, "6 m away: beyond the 4 m reach")
-	assert_eq(w.guard_charges, 3)
 
 
 # --- All 24 items against enemies -----------------------------------------------------------------------------
@@ -314,7 +231,8 @@ func _soak(seed_value: int) -> Array:
 	w.set_item_tables(_tables)
 	w.set_combo_tables(_combos)
 	for k in _tables.size():
-		w.add_item(k)
+		if not _tables[k].retired:  # v0.10.5 O1: a deleted card's stub does nothing
+			w.add_item(k)
 	var kinds := [ActorStore.Kind.CHARGER, ActorStore.Kind.NEEDLE, ActorStore.Kind.WARDEN]
 	var most := 0
 	var seq := w.last_event_seq()
@@ -366,7 +284,9 @@ func test_all_24_items_for_5000_ticks_raise_no_limit_and_repeat_exactly() -> voi
 	# real watchdog. T-FUZZ keeps its stricter 256 for real-sized builds.
 	assert_lt(a[2], Engines.MAX_EVENTS_PER_TICK, "under the per-tick watchdog")
 	assert_gt(w.kills, 20, "it really fought")
-	for fx: StringName in [&"shock_discharge", &"bleed", &"freeze", &"plasma_arc", &"resonance"]:
+	for fx: StringName in [
+		&"shock_discharge", &"bleed", &"freeze", &"shatter_dash", &"blood_harvest"
+	]:
 		var n := 0
 		for e in w.events_since(0):
 			if e.effect_id == fx:

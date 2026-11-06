@@ -114,8 +114,18 @@ func final_phase(phase: int) -> void:
 	_queue.append(func() -> void: final_phase_now(phase))
 
 
+## v0.10.5 O3 (owner L6): the fight goes to the Prism with her HP just under her last phase's threshold.
+func final_prism_last() -> void:
+	_queue.append(func() -> void: final_prism_last_now())
+
+
 func heal() -> void:
 	_queue.append(func() -> void: world.actors.hp[0] = world.actors.max_hp[0])
+
+
+## v0.10.5 O17: any command run between ticks like the others (the Training Room's, which answer with a line).
+func queue(c: Callable) -> void:
+	_queue.append(c)
 
 
 # --- Applied now (between ticks; the tests call these directly) ------------------------------------------------
@@ -169,6 +179,19 @@ func final_phase_now(phase: int) -> bool:
 	return true
 
 
+## v0.10.5 O3: the Prism (body 1) with her HP one under her last phase's threshold (her fill is kept as she rises).
+func final_prism_last_now() -> bool:
+	if not final_phase_now(1):
+		return false
+	var i := FinalBoss.body_index(world)
+	if i < 0:
+		return false
+	var t := BossAi.table_of(world, i)
+	var last := t.phase_threshold[t.phase_threshold.size() - 1]
+	world.actors.hp[i] = maxi(1, world.actors.max_hp[i] * last / 1000 - 1)
+	return true
+
+
 ## The actor index under `at` (not the player), or -1.
 func actor_at(at: Vector2) -> int:
 	var a := world.actors
@@ -204,7 +227,7 @@ func clear_now(dummies: bool) -> int:
 ## Takes `code` as a found card would, then sets its level. False when it can't go in: the wand is full (the
 ## Playground opens no Swap: remove a card first), the build already has a utility, or the code is unknown.
 func grant_now(code: int, level: int = 1) -> bool:
-	level = clampi(level, 1, CardLevels.MAX_LEVEL)
+	level = clampi(level, 1, CardLevels.MAX_LEVEL + CardLevels.overlevel_room(world))  # W3-P3: set_level caps it
 	match Offers.type_of(code):
 		Offers.MOD:
 			return _grant_item(code, level)
@@ -311,7 +334,8 @@ func catalog() -> Array[Dictionary]:
 			group = GROUP_ABILITY_MOD
 		_add_entry(out, k, group, CardLevels.is_card(world, k))
 	for a in world.ability_tables.size():
-		if world.ability_tables[a].start_weapon == 0:
+		var t := world.ability_tables[a]
+		if t.start_weapon == 0 and not t.retired:  # v0.10.5 O1: never a deleted ability's stub
 			_add_entry(out, Offers.ability_code(a), GROUP_ABILITY, true)
 	for s in world.stat_tables.size():
 		for r in STAT_RARITIES:

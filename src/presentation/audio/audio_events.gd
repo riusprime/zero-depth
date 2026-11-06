@@ -13,6 +13,8 @@ const HEARTBEAT_TICKS := 54
 const BOSS_PITCH := 0.8
 ## v0.9.0 AF1b: the Lance's charge-up hum starts once a charge passes this (a tap stays quiet).
 const LANCE_HUM_AT := 0.1
+## v0.9.5 BH4: a Tidecaller wave's whoosh is the tide cue at this pitch.
+const WAVE_PITCH := 1.35
 ## A crit's hit is pitched up, so it rings sharper (v0.4.0 BS).
 const CRIT_PITCH := 1.6
 ## v0.9.0 DS (owner C35, Q19): `boss_door_impact.wav` peaks about 0.3 s in, so its cue starts this many ticks before
@@ -57,12 +59,8 @@ const DEATHS := {
 ## v0.4.0 AB: the element abilities' hits (and their combos') by effect: their own sound.
 const ELEMENT_CUES := {
 	&"arc_field": &"arc_field",
-	&"superconductor": &"arc_field",
 	&"frost_nova": &"frost_nova",
 	&"flame_trail": &"flame_trail",
-	&"napalm_drone": &"flame_trail",
-	&"ember_ward": &"flame_trail",
-	&"storm_bombs": &"arc_field",
 }
 
 var _last_seq := 0
@@ -75,6 +73,8 @@ var _echo_t := {}
 var _shade_dark := false
 var _shade_lit: Array[bool] = []
 var _projectiles := {}
+## v0.9.5 FC0: the rune bursts heard so far (their uids).
+var _rune_seen := {}
 ## v0.3.5 AI: where each enemy's area spell (a rune, a bomb) is aimed, from its telegraph at the windup.
 var _targets := {}
 ## v0.4.0 EN: each mine's last fuse (-1 idle), so arming and blowing play once.
@@ -85,6 +85,8 @@ var _echo_tick := -1
 var _blink_tick := -1
 var _choosing := false
 var _denied_tick := -1
+## v0.9.5 SS: the gamble shrine's last win tick heard.
+var _gamble_win_tick := -1
 var _shop_open := false
 var _shop_denied := -1
 var _heartbeat_left := 0
@@ -127,6 +129,8 @@ var _lance_hum := false
 var _shrine := [-1, -1]
 ## v0.9.0 EL: the last elite arrival's tick, for its cue's edge.
 var _elite_arrive := -1
+## v0.9.5 BH4: the Tidecaller waves heard so far (formed tick x 4 + wall), each whooshing once as it leaves its wall.
+var _waves_heard := {}
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -138,6 +142,7 @@ func prime(reader: WorldReader) -> void:
 	_blink_tick = reader.blink_tick()
 	_choosing = reader.choosing()
 	_denied_tick = reader.reward_denied_tick()
+	_gamble_win_tick = reader.gamble_tick()
 	_shop_open = reader.shop_open()
 	_shop_denied = reader.shop_denied_tick()
 	_heartbeat_left = 0
@@ -164,6 +169,8 @@ func prime(reader: WorldReader) -> void:
 	_lance_hum = reader.lance_charge() >= LANCE_HUM_AT
 	_shrine = shrine_marks(reader)
 	_elite_arrive = elite_arrive_tick(reader)
+	_waves_heard.clear()
+	_waves(reader, [])
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -193,6 +200,7 @@ func collect(reader: WorldReader) -> Array:
 	_final_approach(reader, out)
 	_timed_door(reader, out)
 	_rune_puzzle(reader, out)
+	_waves(reader, out)  # v0.9.5 BH4
 	_purple_runes(reader, out)  # v0.9.0 DP
 	_breakables(reader, out)
 	_lockdown(reader, out)  # v0.9.0 LK
@@ -470,7 +478,7 @@ func _events(reader: WorldReader, out: Array) -> void:
 					out.append([DEATHS[_kinds[e.target_id]], e.pos, 1.0])
 			SimEvent.Kind.PICKUP:
 				out.append([&"item_pickup", null, 1.0])
-			SimEvent.Kind.COMBO_UNLOCKED:
+			SimEvent.Kind.COMBO_UNLOCKED, SimEvent.Kind.PAIR_ON:  # v0.9.5 EE3: a pair shares the combo's chime
 				out.append([&"combo_unlock", null, 1.0])
 			SimEvent.Kind.BOSS_DEFEATED:
 				out.append([&"boss_death", e.pos, 1.0])
@@ -488,28 +496,57 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"blink_out", null, 0.7])
 			SimEvent.Kind.SKILL_USED:  # v0.3.5 K: the build skill, by its kind
 				out.append([skill_cue(e.amount), e.pos, 1.0])
-			SimEvent.Kind.VENT_COLD:  # v0.3.5 K: Vent pressed under Hot
-				out.append([&"vent_cold", null, 1.0])
+			SimEvent.Kind.DASH_REFUND:  # v0.10.5 S12: a perfect Vent readies the dash (the combo chime, lower)
+				out.append([&"combo_unlock", null, 0.8])
+			SimEvent.Kind.VENT_COLD:  # v0.9.5 HT: a refused Vent press is silent (it was a click under Hot)
+				pass
 			SimEvent.Kind.SHOP_BUY:  # v0.5.0 SH: a purchase, the heal or a reroll
 				out.append([&"shop_buy", null, 1.0])
-			SimEvent.Kind.SHOP_SALVAGE:  # v0.5.0 SH: a sale or an ability salvaged
-				out.append([&"shop_sell", null, 1.0])
 			SimEvent.Kind.GAMBLE_FAIL:  # v0.8.0 N14 (O72): the shrine's fizzle (Vent's cold click, lower)
-				out.append([&"vent_cold", e.pos, 0.8])
+				out.append([&"gamble_fail", e.pos, 1.0])  # v0.9.5 SS: its own crack
 			SimEvent.Kind.HEAL:  # v0.4.0 EN: a Mender's beam lands a heal on an ally
 				if e.target_id != player_id:
 					out.append([&"mender_heal", e.pos, 1.0])
 			SimEvent.Kind.STATUS_APPLY:  # v0.8.0 FB3: the Nemesis dashes with the hero's dash cue, lower
 				if e.effect_id == WorldReader.EFFECT_NEMESIS_DASH:
 					out.append([&"dash", e.pos, 0.8])
+				elif e.effect_id == SimEvent.EFFECT_STORM_STRIKE:  # v0.9.5 EE2: Overcharge's strike (the arc cue)
+					out.append([&"arc_field", e.pos, 1.0])
+				elif e.effect_id == SimEvent.EFFECT_FROST_SHATTER:  # v0.9.5 EE2: Shatter (the frost nova's)
+					out.append([&"frost_nova", e.pos, 1.0])
 				elif e.effect_id == WorldReader.EFFECT_TWIN_ANGER:  # v0.9.0 NB2: a Warden's chain jerks taut
 					out.append([&"boss_twin_chain", e.pos, 0.75])
+				else:
+					_fallen_cue(e, out)
 			SimEvent.Kind.BLAST:  # v0.9.0 BM: a bomb bursts
 				out.append([&"bomb_blast", e.pos, 1.0])
 			SimEvent.Kind.LANCE:  # v0.9.0 AF1b: a Lance released, its whoosh
 				out.append([&"lance_release", e.pos, 1.0])
 			SimEvent.Kind.COLLECTIBLE:  # v0.9.0 CL: a collectible taken (the combo unlock's chime, a placeholder)
 				out.append([&"combo_unlock", null, 1.0])
+			SimEvent.Kind.STRESS_BREAK:  # v0.9.5 SM: a Stress Mark side broken, a metallic ting
+				out.append([&"stress_break", e.pos, 1.0])
+
+
+## v0.9.5 BH6: the Fallen's interphase: it vanishes with the phase cue, the beams open with the laser's, an eruption
+## strikes with the spikes' floor burst, the dark falls with the Shade's snuff, the rain with the mortar's, and the
+## slam back down with the heavy slam.
+func _fallen_cue(e: SimEvent, out: Array) -> void:
+	match e.effect_id:
+		WorldReader.EFFECT_FALLEN_VANISH:
+			out.append([&"boss_phase", null, 1.0])
+		WorldReader.EFFECT_FALLEN_BEAMS:
+			out.append([&"boss_laser", e.pos, 1.0])
+		WorldReader.EFFECT_FALLEN_ERUPT:
+			out.append([&"boss_floor_burst", e.pos, 0.9])
+		WorldReader.EFFECT_FALLEN_DARK:
+			out.append([&"boss_shade_snuff", null, 1.0])
+		WorldReader.EFFECT_FALLEN_RAIN:
+			out.append([&"boss_mortar", e.pos, 0.8])
+		WorldReader.EFFECT_FALLEN_LINE:
+			out.append([&"boss_floor_burst", e.pos, 0.7])
+		WorldReader.EFFECT_FALLEN_RETURN:
+			out.append([&"boss_slam", e.pos, 1.0])
 
 
 ## Mines (v0.4.0 EN): a beep as one arms, the blast when an armed one goes off the floor.
@@ -567,8 +604,6 @@ func _scan_actors(reader: WorldReader, out: Array) -> void:
 			var cue := attack_cue(reader.boss_move(i))
 			if cue != &"":
 				out.append([cue, at, 1.0])
-		elif st == WorldReader.STATE_STAGGERED:
-			out.append([&"boss_stagger", null, 1.0])
 		if phase > was_phase:
 			out.append([&"boss_phase", null, 1.0])
 
@@ -710,6 +745,10 @@ static func attack_cue(move: int) -> StringName:
 			return &"boss_twin_chain"
 		WorldReader.MOVE_ECHO:  # v0.9.0 NB3: the Judge's echo begins to replay
 			return &"boss_judge_echo"
+		WorldReader.MOVE_LANCES:  # v0.10.5 O3: the Prism's lances fly; she falls to her knees
+			return &"boss_laser"
+		WorldReader.MOVE_KNEEL:
+			return &"boss_slam"
 		WorldReader.MOVE_VERDICT:  # its pendulum drops
 			return &"boss_slam"
 	return &""
@@ -801,6 +840,15 @@ func _scan_projectiles(reader: WorldReader, out: Array) -> void:
 		out.append([cue, reader.player_pos(), 1.0])
 	if wisp:
 		out.append([&"wisp_fire", reader.player_pos(), 1.0])
+	# v0.9.5 FC0: each new rune burst booms once (the burst's own uid, so Twin's later ones sound too).
+	var bursts := {}
+	var burst_new := false
+	for b in reader.rune_bursts():
+		bursts[b["uid"]] = true
+		burst_new = burst_new or not _rune_seen.has(b["uid"])
+	_rune_seen = bursts
+	if burst_new:
+		out.append([&"rune_burst", reader.player_pos(), 1.0])
 	if hostile:
 		out.append([&"enemy_fire", null, 1.0])
 
@@ -818,6 +866,10 @@ func _rewards(reader: WorldReader, out: Array) -> void:
 	if denied != _denied_tick and denied >= 0:
 		out.append([&"chest_refuse", null, 1.0])
 	_denied_tick = denied
+	if reader.gamble_tick() != _gamble_win_tick:  # v0.9.5 SS: the shrine pays out
+		if reader.gamble_tick() >= 0:
+			out.append([&"gamble_win", reader.gamble_pos(), 1.0])
+		_gamble_win_tick = reader.gamble_tick()
 	var shop := reader.shop_open()  # v0.5.0 SH: the terminal wakes; a refused action buzzes
 	if shop and not _shop_open:
 		out.append([&"shop_open", null, 1.0])
@@ -871,3 +923,19 @@ func _event_rooms(reader: WorldReader, out: Array) -> void:
 		if reader.event_done_tick() >= 0:
 			out.append([&"event_done", null, 1.0])
 		_done_tick = reader.event_done_tick()
+
+
+## v0.9.5 BH4: a Tidecaller wave leaving its wall whooshes once (the tide's cue, pitched up), where it leaves; the
+## marks of
+## waves that are gone are dropped.
+func _waves(reader: WorldReader, out: Array) -> void:
+	var live := {}
+	for wv in reader.boss_waves():
+		var key := int(wv["formed"]) * 4 + int(wv["wall"])
+		live[key] = true
+		if int(wv["telegraph"]) < 0 and not _waves_heard.has(key):
+			_waves_heard[key] = true
+			out.append([&"boss_tide_pull", wv["pos"], WAVE_PITCH])
+	for key: int in _waves_heard.keys():
+		if not live.has(key):
+			_waves_heard.erase(key)

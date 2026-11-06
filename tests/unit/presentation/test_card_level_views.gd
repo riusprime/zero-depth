@@ -69,7 +69,7 @@ func test_a_wand_card_reads_lv_1_then_lv_n_to_n_plus_1() -> void:
 func test_an_item_that_does_not_level_and_a_stat_card_show_no_badge() -> void:
 	var w := _world([])
 	var r := WorldReader.new(w)
-	var item := WandLab.code(w, &"ember_edge")
+	var item := WandLab.code(w, &"momentum")
 	assert_false(bool(r.card_info(item)["wand"]))
 	assert_eq(PickPanel.card_face(self, r, item)["level_text"], "", "no level, no badge")
 	var stat := Offers.STAT_BASE  # the first stat card, common
@@ -79,10 +79,10 @@ func test_an_item_that_does_not_level_and_a_stat_card_show_no_badge() -> void:
 func test_an_ability_card_follows_the_same_rule() -> void:
 	var w := _world([])
 	var r := WorldReader.new(w)
-	var bomb := WandLab.code(w, &"bomb_lobber")
-	assert_eq(PickPanel.card_face(self, r, bomb)["level_text"], "Lv 1")
-	assert_true(BuildSlots.take(w, bomb))
-	assert_eq(PickPanel.card_face(self, r, bomb)["level_text"], "Lv 1 → 2")
+	var blink := WandLab.code(w, &"blink")
+	assert_eq(PickPanel.card_face(self, r, blink)["level_text"], "Lv 1")
+	assert_true(BuildSlots.take(w, blink))
+	assert_eq(PickPanel.card_face(self, r, blink)["level_text"], "Lv 1 → 2")
 
 
 func test_the_badge_fits_on_the_card_at_the_pick_and_shop_scales() -> void:
@@ -123,7 +123,7 @@ func test_the_badge_fits_on_the_card_at_the_pick_and_shop_scales() -> void:
 
 
 func test_the_hud_pips_and_the_build_row_show_a_wand_cards_level() -> void:
-	var w := _world([&"wide_arc", &"ember_edge"])
+	var w := _world([&"wide_arc", &"gun_ring"])
 	var code := WandLab.code(w, &"wide_arc")
 	assert_true(CardLevels.set_level(w, code, 4))
 	var r := WorldReader.new(w)
@@ -132,8 +132,28 @@ func test_the_hud_pips_and_the_build_row_show_a_wand_cards_level() -> void:
 	hud.sync(r)
 	var k := Array(w.mod_slots).find(code)
 	assert_eq(hud.pip_level_text(k), "4", "the wand card's pip says its level")
-	assert_eq(hud.pip_level_text(Array(w.mod_slots).find(WandLab.code(w, &"ember_edge"))), "")
+	assert_eq(hud.pip_level_text(Array(w.mod_slots).find(WandLab.code(w, &"gun_ring"))), "")
 	var row := WandRow.new()
 	add_child_autofree(row)
 	row.show_wand(r.wand(), 8)
 	assert_eq(row.level_text(k), "Lv 4", "and its tile on the Build page")
+
+
+## v0.9.5 CLV: a card of one level wears no level badge (its pick card never says "level up"); a card of three levels
+## reads "Lv 1/3" when new and "Lv 1 → 2" when taking it again, and its Build row reads "Lv 2/3".
+func test_a_one_level_card_has_no_badge_and_a_three_level_card_reads_n_of_3() -> void:
+	var w := _world([])
+	var r := WorldReader.new(w)
+	var pierce := WandLab.code(w, &"gun_pierce")
+	assert_false(bool(r.card_info(pierce)["wand"]), "Pierce has no levels")
+	assert_eq(PickPanel.card_face(self, r, pierce)["level_text"], "", "no badge when new")
+	assert_true(BuildSlots.take(w, pierce))
+	assert_eq(PickPanel.card_face(self, r, pierce)["level_text"], "", "none when held either")
+	var twin := WandLab.code(w, &"gun_twin")
+	assert_eq(int(r.card_info(twin)["max_level"]), 3)
+	assert_eq(PickPanel.card_face(self, r, twin)["level_text"], "Lv 1/3", "new: Lv 1/3")
+	assert_true(BuildSlots.take(w, twin))
+	assert_eq(PickPanel.card_face(self, r, twin)["level_text"], "Lv 1 → 2", "held: Lv 1 → 2")
+	TranslationServer.set_locale("es")
+	assert_eq(PickPanel.level_text(self, 0, 1, 3), "Nv 1/3", "in Spanish")
+	TranslationServer.set_locale("en")

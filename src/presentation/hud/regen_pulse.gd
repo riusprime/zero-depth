@@ -12,7 +12,7 @@ var _on := false
 
 func _init() -> void:
 	name = "RegenPulse"
-	color = HudStyle.REGEN
+	color = HudStyle.heal()  # v0.10.5 W3-O17: Astral's pale moon-green in ASTRAL
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	modulate.a = 0.0
 

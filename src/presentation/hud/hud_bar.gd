@@ -9,10 +9,15 @@ extends Control
 ## The chunk's light layer (brighter while a big hit's light lasts).
 const CHUNK := Color(1, 0.97, 0.9, 0.42)
 const CHUNK_BIG := Color(1, 1, 0.92, 0.78)
+## v0.10.5 W3-O17: ASTRAL's chunk (the damage just taken): silver-white leaning rose, apart from the moon-blue fill.
+const A_CHUNK := Color("#E2ACC4", 0.42)
+const A_CHUNK_BIG := Color("#E3C2DA", 0.8)
 
 var style: HudStyle.Style
 var color := Color.WHITE
 var warn := false
+## v0.10.5 W3-O17: ASTRAL draws a small star past the bar's end.
+var end_star := true
 var trail := HealthBarTrail.new()
 var _t := 0.0
 
@@ -54,6 +59,8 @@ func fill_color() -> Color:
 
 
 func chunk_color() -> Color:
+	if style == HudStyle.Style.ASTRAL:
+		return A_CHUNK_BIG if trail.big > 0.0 else A_CHUNK
 	return CHUNK_BIG if trail.big > 0.0 else CHUNK
 
 
@@ -69,6 +76,19 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var w := size.x
 	var h := size.y
+	if style == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O17: one continuous fill in a hairline frame (AstralHudParts)
+		var f0 := w * trail.fill
+		AstralHudParts.bar(
+			self,
+			Rect2(0, 0, w, h),
+			f0,
+			fill_color(),
+			f0,
+			f0 + w * trail.chunk_size(),
+			chunk_color(),
+			end_star
+		)
+		return
 	var ember := style == HudStyle.Style.EMBER
 	draw_rect(Rect2(0, 0, w, h), Color(0, 0, 0, 0.6) if ember else Color(0, 0, 0, 0.42))
 	if trail.chunk_size() > 0.0:

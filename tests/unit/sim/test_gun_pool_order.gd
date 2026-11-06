@@ -55,13 +55,15 @@ func test_big_split_is_a_big_shot_with_normal_shards_split_big_makes_big_shards(
 	var plain := _bolt([])
 	var a := _bolt([&"gun_big_shot", &"split_shot"])
 	var b := _bolt([&"split_shot", &"gun_big_shot"])
-	assert_almost_eq(a.radius_m, plain.radius_m * 2.0, 1e-5, "Big·Split: the shot is big")
-	assert_almost_eq(b.radius_m, plain.radius_m * 2.0, 1e-5, "Split·Big: so is this one")
+	assert_almost_eq(a.radius_m, plain.radius_m * 2.2, 1e-5, "Big·Split: the shot is big")
+	assert_almost_eq(b.radius_m, plain.radius_m * 2.2, 1e-5, "Split·Big: so is this one")
 	var sa := _hook(a, &"split_shot").child
 	var sb := _hook(b, &"split_shot").child
 	assert_almost_eq(sa.radius_m, 0.08, 1e-5, "Big·Split: the shards are the card's half size")
-	assert_almost_eq(sb.radius_m, 0.16, 1e-5, "Split·Big: Big reaches the shards built to its left")
-	assert_eq([sa.damage_mul_permille, sb.damage_mul_permille], [1000, 1600])
+	assert_almost_eq(
+		sb.radius_m, 0.176, 1e-5, "Split·Big: Big reaches the shards built to its left"
+	)
+	assert_eq([sa.damage_mul_permille, sb.damage_mul_permille], [1000, 1800])
 	var fa := _fight([&"gun_big_shot", &"split_shot"])
 	var fb := _fight([&"split_shot", &"gun_big_shot"])
 	assert_ne(fa["digest"], fb["digest"], "the two orders fight differently")
@@ -72,15 +74,15 @@ func test_big_split_is_a_big_shot_with_normal_shards_split_big_makes_big_shards(
 func test_spread_homing_is_the_same_either_way_split_homing_is_not() -> void:
 	# Two cards that both rewrite the one bolt commute (a fan of seeking bolts both ways); a card that builds a child
 	# (Split) makes the order matter: Homing reaches the shards only from its right.
-	var a := _bolt([&"gun_spread", &"gun_homing"])
-	var b := _bolt([&"gun_homing", &"gun_spread"])
+	var a := _bolt([&"halo_shot", &"gun_homing"])
+	var b := _bolt([&"gun_homing", &"halo_shot"])
 	assert_eq(
 		[a.count, a.spread, a.homing], [b.count, b.spread, b.homing], "a fan of seeking bolts"
 	)
-	assert_eq(a.count, 3)
+	assert_eq(a.count, 4)
 	assert_gt(a.homing, 0)
-	var fa := _fight([&"gun_spread", &"gun_homing"])
-	var fb := _fight([&"gun_homing", &"gun_spread"])
+	var fa := _fight([&"halo_shot", &"gun_homing"])
+	var fb := _fight([&"gun_homing", &"halo_shot"])
 	assert_eq(fa["digest"], fb["digest"], "the same fight's events")
 	var c := _bolt([&"split_shot", &"gun_homing"])
 	var d := _bolt([&"gun_homing", &"split_shot"])
@@ -93,27 +95,10 @@ func test_spread_homing_is_the_same_either_way_split_homing_is_not() -> void:
 
 
 func test_split_spread_fans_the_shards_spread_split_splits_the_fan() -> void:
-	var a := _bolt([&"gun_spread", &"split_shot"])
-	var b := _bolt([&"split_shot", &"gun_spread"])
-	assert_eq([a.count, _hook(a, &"split_shot").child.count], [3, 3], "a fan, each splitting in 3")
-	assert_eq([b.count, _hook(b, &"split_shot").child.count], [3, 5], "a fan whose shards fan in 5")
-
-
-func test_a_trigger_cuts_the_gun_cards_too() -> void:
-	# Big · ON HIT · Spread: a big shot whose hits cast a small fan; Spread · ON HIT · Big: a fan whose hits cast a big
-	# small bolt.
-	var a := _bolt([&"gun_big_shot", &"trigger_on_hit", &"gun_spread"])
-	var b := _bolt([&"gun_spread", &"trigger_on_hit", &"gun_big_shot"])
-	var ca := _hook(a, &"trigger_on_hit").child
-	var cb := _hook(b, &"trigger_on_hit").child
-	assert_eq([a.count, ca.count], [1, 3], "the shot is one, its child a fan")
-	assert_eq([b.count, cb.count], [3, 1], "the shot a fan, its child one")
-	assert_gt(a.radius_m, b.radius_m, "Big left of the cut: the shot is big")
-	assert_gt(cb.radius_m, ca.radius_m, "Big right of it: the child is")
-	assert_ne(
-		_fight([&"gun_big_shot", &"trigger_on_hit", &"gun_spread"])["digest"],
-		_fight([&"gun_spread", &"trigger_on_hit", &"gun_big_shot"])["digest"]
-	)
+	var a := _bolt([&"halo_shot", &"split_shot"])
+	var b := _bolt([&"split_shot", &"halo_shot"])
+	assert_eq([a.count, _hook(a, &"split_shot").child.count], [4, 2], "a fan, each splitting in 2")
+	assert_eq([b.count, _hook(b, &"split_shot").child.count], [4, 8], "a fan whose shards fan in 8")
 
 
 func test_mine_then_split_vs_split_then_mine() -> void:
@@ -128,7 +113,7 @@ func test_mine_then_split_vs_split_then_mine() -> void:
 # --- Levels -------------------------------------------------------------------------------------------------------
 func test_a_duplicate_levels_the_card_up_without_a_slot() -> void:
 	var w := _world()
-	var k := _it(w, &"gun_spread")
+	var k := _it(w, &"gun_twin")
 	assert_true(BuildSlots.take(w, k))
 	assert_eq([CardLevels.level(w, k), w.mod_slots.size()], [1, 1])
 	assert_false(BuildSlots.needs_swap(w, k), "a held card never needs a swap")
@@ -137,25 +122,24 @@ func test_a_duplicate_levels_the_card_up_without_a_slot() -> void:
 	assert_eq([CardLevels.level(w, k), w.mod_slots.size()], [2, 1], "level 2, the same one slot")
 	assert_ne(w.state_hash(), h, "the level is hashed")
 	var s := Modifiers.bolt(w)
-	# v0.8.0 MR (O91): +2 shots at level 1, +1 a level after
-	assert_eq([s.count, s.spread], [4, ContentCompiler.degrees_to_units(40.0)], "+1 shot, +10°")
+	assert_eq(s.share_permille, 900, "v0.9.5 CLV: Twin's lane share is 900 at level 2")
 	assert_eq(int((Wand.read(w)["cards"] as Array)[0]["level"]), 2, "the wand reads the level")
 
 
-func test_levels_stop_at_five_and_the_card_leaves_the_offers() -> void:
+func test_levels_stop_at_the_cap_and_the_card_leaves_the_offers() -> void:
 	var w := _world()
-	var k := _it(w, &"gun_pierce")
+	var k := _it(w, &"gun_twin")
 	assert_has(ItemPool.available(w), k, "offered")
 	BuildSlots.take(w, k)
-	assert_has(ItemPool.available(w), k, "held below level 5: its level-up is offered")
+	assert_has(ItemPool.available(w), k, "held below its cap: its level-up is offered")
 	assert_true(Shop.can_apply(w, k), "the shop sells the level-up")
 	for n in 6:
 		BuildSlots.take(w, k)
-	assert_eq(CardLevels.level(w, k), CardLevels.MAX_LEVEL)
-	assert_eq(Modifiers.bolt(w).pierce, 2 + 4, "+1 a level")
-	assert_does_not_have(ItemPool.available(w), k, "at level 5 it's no longer offered")
+	assert_eq(CardLevels.level(w, k), 3, "Twin has three levels")
+	assert_eq(Modifiers.bolt(w).share_permille, 750, "Lv 3")
+	assert_does_not_have(ItemPool.available(w), k, "at its cap it's no longer offered")
 	assert_false(Shop.can_apply(w, k))
-	var old := _it(w, &"splinter_shot")  # v0.6.5 WN5a: Ember Core is S1 Fire now (it levels)
+	var old := _it(w, &"gun_pierce")  # a one-level card
 	BuildSlots.take(w, old)
 	assert_does_not_have(ItemPool.available(w), old, "a card without levels still leaves once held")
 
@@ -163,21 +147,18 @@ func test_levels_stop_at_five_and_the_card_leaves_the_offers() -> void:
 func test_each_gun_card_grows_with_its_level() -> void:
 	# The level's step per card (per_level in its data): level 3 against level 1 on the compiled bolt.
 	var grows := {
-		&"gun_big_shot": [&"damage_mul_permille", 1600, 1800],
+		&"gun_big_shot": [&"damage_mul_permille", 1800, 1800],
 		# v0.8.0 MR (O91): Rapid Fire's ramp cap grows (its base rate doesn't); Twin's lane share and Spread's +1
-		&"gun_rapid_fire": [&"ramp_cap_permille", 600, 900],
-		&"gun_twin": [&"share_permille", 600, 800],  # v0.9.0 TW: +10 % a level
-		&"gun_spread": [&"count", 3, 5],
-		&"gun_pierce": [&"pierce", 2, 4],
-		&"gun_ricochet": [&"bounces", 2, 4],
-		&"gun_spiral": [&"damage_mul_permille", 1000, 1200],
-		&"gun_mine": [&"mine_ticks", 180, 240],
-		&"gun_charge": [&"hold_permille", 3000, 3500],
-		&"gun_echo": [&"repeat_damage_permille", 500, 600],
-		&"gun_backfire": [&"damage_mul_permille", 1000, 1200],
-		&"boomerang": [&"damage_mul_permille", 1000, 1200],
-		&"orbit_rounds": [&"damage_mul_permille", 1000, 1200],
-		&"halo_shot": [&"count", 3, 5],
+		&"gun_rapid_fire": [&"ramp_cap_permille", 900, 900],
+		&"gun_twin": [&"share_permille", 700, 750],  # v0.9.5 CLV: 700, 900, 750
+		&"gun_pierce": [&"pierce", 4, 4],
+		&"gun_ricochet": [&"bounces", 3, 3],
+		&"gun_spiral": [&"damage_mul_permille", 1200, 1200],
+		&"gun_mine": [&"mine_ticks", 240, 240],
+		&"gun_echo": [&"repeat_damage_permille", 600, 600],
+		&"gun_backfire": [&"damage_mul_permille", 1200, 1200],
+		&"orbit_rounds": [&"damage_mul_permille", 1200, 1200],
+		&"halo_shot": [&"count", 4, 8],
 	}
 	for id: StringName in grows:
 		var g: Array = grows[id]
@@ -193,23 +174,27 @@ func test_each_gun_card_grows_with_its_level() -> void:
 	BuildSlots.take(w, hm)
 	var turn := Modifiers.bolt(w).homing
 	BuildSlots.take(w, hm)
-	assert_gt(Modifiers.bolt(w).homing, turn, "Homing turns harder")
+	assert_eq(Modifiers.bolt(w).homing, turn, "Homing has no second level")
 	var sp := _it(w, &"split_shot")
 	BuildSlots.take(w, sp)
 	BuildSlots.take(w, sp)
-	assert_eq(_hook(Modifiers.bolt(w), &"split_shot").child.count, 4, "Split: +1 shard a level")
+	assert_eq(
+		_hook(Modifiers.bolt(w), &"split_shot").child.count, 3, "Split: +1 shard a level (Lv 2: 3)"
+	)
 	var mn := _world()
 	var m := _it(mn, &"gun_mine")
 	BuildSlots.take(mn, m)
 	BuildSlots.take(mn, m)
 	assert_eq(
-		_hook(Modifiers.bolt(mn), &"gun_mine").damage_permille, 1100, "the mine's blast +10 %"
+		_hook(Modifiers.bolt(mn), &"gun_mine").damage_permille,
+		1200,
+		"the mine's blast, fixed at 120 %"
 	)
 
 
 func test_levels_travel_with_the_carry_and_a_snapshot() -> void:
 	var w := _world()
-	var k := _it(w, &"gun_big_shot")
+	var k := _it(w, &"gun_twin")
 	for n in 3:
 		BuildSlots.take(w, k)
 	var carry := RunCarry.take(w, 0)
@@ -217,7 +202,7 @@ func test_levels_travel_with_the_carry_and_a_snapshot() -> void:
 	RunCarry.apply(next, carry)
 	Abilities.start_floor(next)
 	assert_eq(CardLevels.level(next, k), 3, "into the next floor")
-	assert_eq(Modifiers.bolt(next).damage_mul_permille, 1800)
+	assert_eq(Modifiers.bolt(next).share_permille, 750)
 	for t in 30:
 		w.step(AttackScenario.frame(t))
 	var snap := w.to_snapshot()
@@ -232,11 +217,11 @@ func test_levels_travel_with_the_carry_and_a_snapshot() -> void:
 
 
 func test_a_snapshot_mid_charge_and_with_waiting_mines_plays_on_the_same() -> void:
-	var w := WandLab.fight(&"gun", [&"gun_charge", &"gun_mine", &"gun_spiral"])
+	var w := WandLab.fight(&"gun", [&"gun_lance", &"gun_mine", &"gun_spiral"])
 	for t in 200:
 		w.step(AttackScenario.frame(t))
 	var snap := w.to_snapshot()
-	var base := WandLab.fight(&"gun", [&"gun_charge", &"gun_mine", &"gun_spiral"])
+	var base := WandLab.fight(&"gun", [&"gun_lance", &"gun_mine", &"gun_spiral"])
 	assert_eq(WorldSnapshot.apply(base, snap), "")
 	assert_eq(base.state_hash(), w.state_hash())
 	for t in range(200, 420):

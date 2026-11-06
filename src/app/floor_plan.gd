@@ -17,7 +17,6 @@ enum Mode { FLOOR, NEW_RUN, CONTINUE }
 
 ## v0.9.0 DX: the SecretsDefinition numbers copied into SecretRules (same names).
 const RULE_FIELDS: Array[String] = [
-	"crack_permille",
 	"crack_hits",
 	"containers_max",
 	"container_drop_permille",
@@ -174,8 +173,10 @@ func _build_world() -> void:
 	w.wand_table = WandCompiler.for_run(repo, run.table)  # v0.6.5 WN1; v0.9.0 FV: 4 → 8 over five floors
 	w.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4: the Blade pool's runner numbers
 	w.slot_table = WandCompiler.slots(repo, w.item_tables)  # v0.9.0 AS: slot limits, caps, compatibility
+	w.pair_table = WandCompiler.pairs(repo)  # v0.9.5 EE3: the element pairs' numbers
 	w.ability_tables = ContentCompiler.compile_abilities(repo)  # v0.4.0 BS: the four slots,
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)  # the stat cards,
+	w.starbound_tables = ContentCompiler.compile_starbound(repo)  # v0.10.5 W3-P10b: the Starbound cards (loop 2+),
 	w.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB
 	w.legendary_table = RunContentCompiler.compile_legendary(
 		repo.get_def(&"legendary", &"boss"), w.stat_tables, w.item_tables
@@ -189,7 +190,11 @@ func _build_world() -> void:
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
 	# v0.5.0 EV: event rooms and curses, after the carry and the heat; v0.8.0 N17, N19: an old save keeps its rooms
 	EventCompiler.setup(
-		w, repo, FloorScenario.curse_room_rules_of(run), FloorScenario.retired_events_of(run)
+		w,
+		repo,
+		FloorScenario.curse_room_rules_of(run),
+		FloorScenario.retired_events_of(run),
+		FloorScenario.rare_events_of(run)
 	)
 	if arena_def == null:
 		add_secrets(w, repo, run, table.move_speed)  # v0.9.0 TD, RA, DX
@@ -244,11 +249,22 @@ static func add_secrets(
 		Shrines.setup(w, shrines, run.floor_index, rules)
 	if run.floor_rules > RunState.FLOOR_RULES_V080_BD:
 		var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
-		TimedDoor.setup(w, map.timed_door_permille, map.timed_door_ticks, move_speed)
+		if run.floor_rules > RunState.FLOOR_RULES_V095_DR:  # v0.9.5 TS (owner Q7): spread switches, 20 s, a lever
+			TimedDoor.setup(
+				w,
+				map.timed_door_permille,
+				map.timed_door_ticks,
+				move_speed,
+				map.timed_switch_steps_max,
+				map.timed_lever_ticks
+			)
+		else:  # a floor saved under rules 10-20: both switches by the door, 15 s, no lever
+			TimedDoor.setup(w, map.timed_door_permille, TimedDoor.LEGACY_TICKS, move_speed)
 	if run.floor_rules > RunState.FLOOR_RULES_V090_TD:
 		var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
 		RuneAlignment.setup(w, secrets.rune_permille if secrets != null else 0)
-		Breakables.setup(w, secret_rules(secrets))
+		var rules := secret_rules(secrets, run.floor_index)
+		Breakables.setup(w, rules, run.floor_rules > RunState.FLOOR_RULES_V095_TS)  # v0.9.5 BK
 	if run.floor_rules > RunState.FLOOR_RULES_V090_RA:  # v0.9.0 DP (owner Q26b): last, never a secret's room
 		var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
 		var chances := secrets.purple_floor_permille if secrets != null else PackedInt32Array()
@@ -264,18 +280,19 @@ static func add_secrets(
 	# floor saved before EL (rules 1-14) has none. The rules are set on every floor (an elite's 30 % core drop).
 	var elite_rules := EliteCompiler.compile_rules(repo.get_def(&"elite_rules", &"rules"))
 	if run.floor_rules > RunState.FLOOR_RULES_V090_SH:
-		Elites.setup(w, elite_rules, run.floor_index)
+		Elites.setup(w, elite_rules, LoopRules.elite_floor(run))  # v0.10.5 O5b: ELITE_HUNT
 	else:
 		w.elite_rules = elite_rules
 
 
 ## v0.9.0 DX: the destructibles' numbers from the data (SecretRules' defaults without it).
-static func secret_rules(def: SecretsDefinition) -> SecretRules:
+static func secret_rules(def: SecretsDefinition, floor_index := 1) -> SecretRules:
 	var r := SecretRules.new()
 	if def == null:
 		return r
 	for f in RULE_FIELDS:
 		r.set(f, def.get(f))
+	r.crack_permille = CrackedRooms.chance(def.crack_floor_permille, floor_index)  # v0.10.5 S15d
 	return r
 
 

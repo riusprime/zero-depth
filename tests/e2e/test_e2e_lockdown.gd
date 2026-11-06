@@ -20,7 +20,7 @@ func _click(e: E2e, main: Main, button: String) -> void:
 
 func _seed() -> int:
 	for s in range(1, 40):
-		if SaveLab.floor_world(s, FLOOR).lockdown != null:
+		if not SaveLab.floor_world(s, FLOOR).floor_layout.lockdown_rooms.is_empty():
 			return s
 	return -1
 
@@ -60,11 +60,11 @@ func test_walk_into_a_lockdown_see_the_bars_clear_it_and_they_rise() -> void:
 	await e.frames(30)
 	assert_eq(view.bars_down(room), 1.0, "the bars came down into its doorways")
 	assert_true(view.bars_visible(room))
+	# v0.10.5 O14 (c50c07ab): floor 2's first Lockdown is now an Elite set piece, which shows the plain banner;
+	# only a Hazard one reads HAZARD LOCKDOWN. The old `kind == 0` check took every other kind to be Hazard.
 	assert_true(hud.lockdown_hud.visible, "the banner")
-	assert_eq(
-		hud.lockdown_hud.title.text,
-		tr("HUD_LOCKDOWN") if w.lockdown.kind == 0 else tr("HUD_LOCKDOWN_HAZARD")
-	)
+	var hazard: bool = w.lockdown.kind == LockdownTable.Kind.HAZARD
+	assert_eq(hud.lockdown_hud.title.text, tr("HUD_LOCKDOWN_HAZARD" if hazard else "HUD_LOCKDOWN"))
 	var sealed_tick := w.lockdown.sealed_tick
 	var clicks := 0
 	while w.lockdown.sealed() and clicks < 12:

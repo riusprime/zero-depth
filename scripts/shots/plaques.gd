@@ -7,7 +7,7 @@ extends SceneTree
 ##   02_hud_<lang>_<w>x<h>.png     - over the main menu: the item plaque (a long ability sentence), the combo
 ##                                    plaque, the shrine plaque and the phase banner, filled directly;
 ##   03_event_<lang>_<w>x<h>.png   - an event panel (Blood Price, a cursed choice) from the test lab's world;
-##   04_shop_<lang>_<w>x<h>.png    - the shop's service and salvage plaques, filled directly.
+##   04_shop_<lang>_<w>x<h>.png    - the shop's service plaques (heal, reroll), filled directly.
 ## A tool, not a test: the real input paths are tests/e2e. Evidence copies are made by hand. It quits on every path
 ## (a frame cap ends it if a step never happens).
 
@@ -111,9 +111,9 @@ func _build_hud(_lang: String) -> void:
 	_add(combo)
 	var defs := ContentRepository.load_all().all_of(&"combos")
 	var c: Resource = defs[0]
-	var a: StringName = c.item_a if c.item_a != &"" else c.ability_a
-	var b: StringName = c.item_b if c.item_b != &"" else c.ability_b
-	combo.show_combo(c.id, a, b, tr(c.name_key), tr(c.desc_key), tr("UI_COMBO_UNLOCKED"))
+	combo.show_combo(
+		c.id, c.item_a, c.item_b, tr(c.name_key), tr(c.desc_key), tr("UI_COMBO_UNLOCKED")
+	)
 	combo.place_bottom_centre(-196 - item.plaque_height() - 10)
 	var gamble := GambleCard.new()
 	_add(gamble)
@@ -136,7 +136,7 @@ func _build_hud(_lang: String) -> void:
 
 
 func _build_event() -> void:
-	var w := EventLab.world(4242, 1, &"blade", [&"withering"])
+	var w := EventLab.world(4242, 1, &"blade", [&"heavy_hands"])
 	EventLab.set_event(w, &"blood_price")
 	EventLab.open(w)
 	var panel := EventPanel.new()
@@ -162,8 +162,7 @@ func _build_shop() -> void:
 	col.add_child(services)
 	var heal := ShopTile.new("Heal", 360.0)
 	var reroll := ShopTile.new("Reroll", 360.0)
-	var cleanse := ShopTile.new("Cleanse", 360.0)
-	for t: ShopTile in [heal, reroll, cleanse]:
+	for t: ShopTile in [heal, reroll]:
 		services.add_child(t)
 	heal.show_tile(
 		tr("SHOP_HEAL") % 30,
@@ -178,44 +177,7 @@ func _build_shop() -> void:
 	reroll.show_tile(
 		tr("SHOP_REROLL"), "", 20, true, false, false, ShardIcon.MID, Plaques.of_use(&"shop_reroll")
 	)
-	cleanse.show_tile(
-		tr("SHOP_CLEANSE"),
-		tr("CURSE_WITHERING"),
-		60,
-		true,
-		true,
-		false,
-		CurseLook.COLOR,
-		Plaques.of_use(&"shop_cleanse")
-	)
 	reroll.set_focused(true)
-	var grid := GridContainer.new()
-	grid.columns = ShopPanel.SALVAGE_COLUMNS
-	grid.add_theme_constant_override("h_separation", 12)
-	grid.add_theme_constant_override("v_separation", 10)
-	col.add_child(grid)
-	var ids := [
-		&"wildfire",
-		&"frost_core",
-		&"vampiric_core",
-		&"momentum",
-		&"crit_chance",
-		&"area",
-		&"blink",
-		&"cooldowns"
-	]
-	var repo := ContentRepository.load_all()
-	for id: StringName in ids:
-		var name_key := ""
-		for kind in [&"items", &"stat_card", &"ability"]:
-			for d: Resource in repo.all_of(kind):
-				if d.id == id:
-					name_key = d.name_key
-		var t := ShopTile.new("Sell", ShopPanel.SELL_W)
-		grid.add_child(t)
-		t.show_tile(
-			tr(name_key), tr("UI_CARD_MOD"), 12, true, false, true, Color.WHITE, Plaques.of_card(id)
-		)
 
 
 func _clear() -> void:

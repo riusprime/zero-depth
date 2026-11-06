@@ -1,11 +1,11 @@
 # gdlint: disable=max-public-methods
 extends GutTest
 ## v0.9.0 NB1 (owner Q24 "ok go for those"; docs/roadmap/v0.9.0/BOSSES_4_5.md row N1): The Tidecaller, floor 4's boss.
-## The Pull (shielded): after the bell's windup the room pulls the player toward it at 1.2 m/s for 3 s, then pushes
-## out at 1.0 m/s for 2 s (phase 3: 1.5 / 1.2), every 9 s; never faster than 1.5 m/s, never pressing the player into
-## a wall or a corner; its Tide Rings fire only in the pull and bend toward it; none spawn in the push. The Undertow:
-## a tracked circle that drags the player 1 m toward its centre when it strikes. Phases at 66 % and 33 %, determinism,
-## a mid-pull save, and the death lines.
+## The Pull (shielded): after the bell's windup the room pulls the player toward it at 1.7 m/s for 3 s, then pushes
+## out at 1.4 m/s for 2 s (phase 3: 2.0 / 1.7), every 8 s (v0.9.5 BH4); never faster than its data's 2.2 m/s, never
+## pressing the player into a wall or a corner; its rings (BH4: a stream all fight, BossStream) bend toward it in the
+## pull. The Undertow: a tracked circle that drags the player 1 m toward its centre when it strikes. Phases at 66 %
+## and 33 %, determinism, a mid-pull save, and the death lines.
 
 const S := EnemyAi.State
 const LONG := 1 << 20
@@ -32,13 +32,14 @@ func _fight(player_at: Vector2, boss_at := Vector2.ZERO, room := 0.0) -> Array:
 
 
 ## The boss picks nothing on its own (no phase list, no cadence, no punish): only what a test starts.
-func _hush(w: World, aid: int) -> void:
+func _hush(w: World, aid: int, keep_streams := false) -> void:
 	var t := BossAi.table_of(w, _i(w, aid))
 	for k in t.phase_attacks.size():
 		t.phase_attacks[k] = PackedInt32Array()
 	t.punish_ticks = 0
 	t.gap_ticks = 0
 	t.sig_every_ticks = 0
+	t.streams = t.streams and keep_streams  # v0.9.5 BH4: no rings or waves unless a test wants them
 
 
 func _i(w: World, aid: int) -> int:
@@ -49,8 +50,8 @@ func _until_active(w: World, aid: int, limit: int = 200) -> void:
 	CombatLab.until(w, func(x: World) -> bool: return x.actors.state[_i(x, aid)] == S.ACTIVE, limit)
 
 
-func _start_pull(w: World, aid: int, attack := &"the_pull") -> void:
-	_hush(w, aid)
+func _start_pull(w: World, aid: int, attack := &"the_pull", streams := false) -> void:
+	_hush(w, aid, streams)
 	BossLab.start(w, _i(w, aid), attack)
 	_until_active(w, aid)
 
@@ -63,19 +64,20 @@ func test_the_data_is_the_approved_row() -> void:
 	var t := ContentCompiler.compile_boss(def, repo)
 	assert_eq(t.kind, ActorStore.Kind.TIDECALLER)
 	assert_eq(t.phase_threshold, PackedInt32Array([1000, 660, 330]), "phases at 66 % and 33 %")
-	assert_eq(t.sig_every_ticks, 540, "every 9 s")
+	assert_eq(t.sig_every_ticks, 480, "every 8 s")
 	var pull := t.attacks[t.attack_index(&"the_pull")]
 	assert_eq(pull.move, BossAttackTable.Move.TIDE)
 	assert_true(pull.shielded, "shielded during the signature")
-	assert_almost_eq(pull.tide_pull * 60.0, 1.2, 0.0001, "pull 1.2 m/s")
-	assert_almost_eq(pull.tide_push * 60.0, 1.0, 0.0001, "push 1.0 m/s")
+	assert_almost_eq(pull.tide_pull * 60.0, 1.7, 0.0001, "pull 1.7 m/s")
+	assert_almost_eq(pull.tide_push * 60.0, 1.4, 0.0001, "push 1.4 m/s")
 	assert_eq([pull.tide_pull_ticks, pull.tide_push_ticks], [180, 120], "3 s, then 2 s")
 	assert_eq(pull.active_ticks, 300)
-	assert_lt(pull.pattern.duration_ticks(), pull.tide_pull_ticks, "every ring inside the pull")
+	assert_null(pull.pattern, "the Pull has no rings of its own (they run all fight)")
+	assert_almost_eq(BossTide.cap_of(pull) * 60.0, 2.2, 0.0001, "the drift cap is data: 2.2 m/s")
 	var late := t.attacks[t.attack_index(&"the_pull_3")]
-	assert_almost_eq(late.tide_pull * 60.0, 1.5, 0.0001, "phase 3 pull 1.5")
-	assert_almost_eq(late.tide_push * 60.0, 1.2, 0.0001, "phase 3 push 1.2")
-	assert_lt(late.pattern.duration_ticks(), late.tide_pull_ticks)
+	assert_almost_eq(late.tide_pull * 60.0, 2.0, 0.0001, "phase 3 pull 2.0")
+	assert_almost_eq(late.tide_push * 60.0, 1.7, 0.0001, "phase 3 push 1.7")
+	assert_null(late.pattern)
 	assert_eq(BossTide.signature_of(t, 2), t.attack_index(&"the_pull_3"), "phase 3's signature")
 	assert_eq(t.phase_entry[1], t.attack_index(&"the_pull"), "phase 2 opens with the Pull")
 	assert_eq(t.phase_entry[2], t.attack_index(&"the_pull_3"))
@@ -94,10 +96,10 @@ func test_bad_tide_numbers_are_errors() -> void:
 		true
 	)
 	var pull := def.attack(&"the_pull")
-	pull.shape_params["pull_mps"] = 1.6
+	pull.shape_params["pull_mps"] = 2.3
 	pull.shielded = false
 	var codes := def.validate().map(func(v: ValidationIssue) -> StringName: return v.code)
-	assert_has(codes, &"range", "over the 1.5 m/s cap")
+	assert_has(codes, &"range", "over the 2.2 m/s cap")
 	assert_has(codes, &"missing", "a tide is shielded")
 	def = (repo.get_def(&"bosses", &"tidecaller") as BossDefinition).duplicate(true)
 	def.signature_every_seconds = 5.0
@@ -113,7 +115,7 @@ func test_the_pull_draws_you_in_then_the_push_drives_you_out() -> void:
 	var d0 := w.player_pos().distance_to(w.actors.pos(i))
 	CombatLab.idle(w, 60)
 	var d1 := w.player_pos().distance_to(w.actors.pos(i))
-	assert_almost_eq(d0 - d1, 1.2, 0.05, "1.2 m in the pull's first second")
+	assert_almost_eq(d0 - d1, 1.7, 0.05, "1.7 m in the pull's first second")
 	assert_eq(BossTide.phase_of(w, i), BossTide.PULL)
 	CombatLab.idle(w, 119)
 	assert_eq(BossTide.phase_of(w, i), BossTide.PULL, "the pull lasts 3 s")
@@ -122,7 +124,7 @@ func test_the_pull_draws_you_in_then_the_push_drives_you_out() -> void:
 	var d2 := w.player_pos().distance_to(w.actors.pos(i))
 	CombatLab.idle(w, 60)
 	var d3 := w.player_pos().distance_to(w.actors.pos(i))
-	assert_almost_eq(d3 - d2, 1.0, 0.05, "1.0 m out in the push's first second")
+	assert_almost_eq(d3 - d2, 1.4, 0.05, "1.4 m out in the push's first second")
 	CombatLab.idle(w, 60)
 	assert_eq(BossTide.phase_of(w, i), BossTide.NONE, "over after 2 s")
 	var d4 := w.player_pos().distance_to(w.actors.pos(i))
@@ -137,7 +139,7 @@ func test_the_drift_is_capped_and_stops_at_the_body_and_for_a_dash() -> void:
 	var i := _i(w, s[1])
 	var atk := BossAi.attack_of(w, i)
 	atk.tide_pull = 5.0 / 60.0  # a mistuned 5 m/s
-	assert_almost_eq(Kin.length(BossTide.drift_of(w, i)), 1.5 / 60.0, 0.00001, "capped at 1.5 m/s")
+	assert_almost_eq(Kin.length(BossTide.drift_of(w, i)), 2.2 / 60.0, 0.00001, "capped at 2.2 m/s")
 	w.actors.set_pos(
 		0, w.actors.pos(i) + Vector2(-(w.actors.radius[i] + w.player.radius_m + 0.2), 0)
 	)
@@ -163,14 +165,15 @@ func test_the_push_never_drives_you_into_a_corner_or_onto_a_wall() -> void:
 		assert_lte(worst, before + 0.0001, "%s: never pressed closer to a wall" % start)
 
 
-func test_the_rings_fire_only_in_the_pull_and_bend_toward_it() -> void:
+func test_the_rings_never_stop_and_bend_toward_it_in_the_pull() -> void:
 	var s := _fight(Vector2(-9, 0))
 	var w: World = s[0]
-	_start_pull(w, s[1])
+	_start_pull(w, s[1], &"the_pull", true)
 	var i := _i(w, s[1])
 	var id := w.actors.ids[i]
 	var pull := BossAi.attack_of(w, i).tide_pull_ticks
-	var fired_in_pull := _shots_of(w, id)  # the first ring fired on the pull's first tick
+	var fired_in_pull := 0
+	var fired_in_push := 0
 	var turned := 0
 	var headings := {}
 	for k in pull + 120:
@@ -180,7 +183,7 @@ func test_the_rings_fire_only_in_the_pull_and_bend_toward_it() -> void:
 		if k < pull:
 			fired_in_pull += maxi(born, 0)
 		else:
-			assert_lte(born, 0, "no ring spawns in the push (tick %d)" % k)
+			fired_in_push += maxi(born, 0)
 		if k < pull:
 			for j in w.projectiles.size():
 				if w.projectiles.owner[j] != id:
@@ -190,7 +193,8 @@ func test_the_rings_fire_only_in_the_pull_and_bend_toward_it() -> void:
 				if headings.has(key) and headings[key] != a:
 					turned += 1
 				headings[key] = a
-	assert_gt(fired_in_pull, 20, "its rings fly in the pull")
+	assert_gt(fired_in_pull, 9, "its rings fly in the pull")
+	assert_gt(fired_in_push, 9, "and in the push: the stream never stops")
 	assert_gt(turned, 0, "and bend toward it")
 
 
@@ -262,7 +266,7 @@ func test_shielded_through_the_pull() -> void:
 	assert_false(BossDodge.shielded(w, _i(w, aid)), "open after")
 
 
-func test_the_pull_comes_every_9_s_and_never_by_the_pick() -> void:
+func test_the_pull_comes_every_8_s_and_never_by_the_pick() -> void:
 	var s := _fight(Vector2(-7, 0))
 	var w: World = s[0]
 	var aid: int = s[1]
@@ -280,8 +284,8 @@ func test_the_pull_comes_every_9_s_and_never_by_the_pick() -> void:
 	assert_gte(starts.size(), 3, "three Pulls in 30 s")
 	assert_between(starts[0], 170, 260, "the first about 3 s in")
 	for k in range(1, starts.size()):
-		# Due 9 s after the last start; it starts at the boss's first free moment (another attack may be running).
-		assert_between(starts[k] - starts[k - 1], 540, 780, "every 9 s, start to start")
+		# Due 8 s after the last start; it starts at the boss's first free moment (another attack may be running).
+		assert_between(starts[k] - starts[k - 1], 480, 720, "every 8 s, start to start")
 	for k in t.attacks.size():
 		if t.attacks[k].move == BossAttackTable.Move.TIDE:
 			assert_true(BossTide.on_cadence(t, t.attacks[k]), "the pick leaves it out")

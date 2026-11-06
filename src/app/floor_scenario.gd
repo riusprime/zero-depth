@@ -69,6 +69,10 @@ static func build(
 	if run != null and run.is_last_floor():  # v0.8.0 P2 (O28): the Loop device beside the Ascension portal
 		Ascension.place_loop_device(layout)
 	var w := World.new(seed_value, player, layout.start_pos)
+	w.solids.on = Solids.rules_on(run)  # v0.9.5 SB: the props that look solid are solid
+	if layout.has_loop_device:  # the Loop device is one of them (Ascension.touching_loop_device enters it)
+		var loop := Ascension.loop_footprint(layout)
+		w.solids.add(Solids.Kind.LOOP_DEVICE, 0, loop.center, loop.half, loop.angle)
 	var walls: Array[Obb] = layout.walls.duplicate()
 	walls.append(gate_collider(layout))
 	if deep_now:
@@ -166,6 +170,12 @@ static func legacy_curse_room_of(run: RunState) -> bool:
 ## keeps the retired Ambush Cache's weight (EventCompiler.setup's `legacy`); false for today's floors and no run.
 static func retired_events_of(run: RunState) -> bool:
 	return run != null and run.floor_rules <= RunState.FLOOR_RULES_V090_SH
+
+
+## v0.9.5 AQ: whether run `run`'s current floor draws rare event rooms (floor rules 19+); false for a floor saved under
+## rules 1-18 (1-2 event rooms, repeats allowed). True for no run.
+static func rare_events_of(run: RunState) -> bool:
+	return run == null or run.floor_rules > RunState.FLOOR_RULES_V095_SB
 
 
 ## v0.8.0 N19 (O80): the curse-room rules run `run`'s current floor was built under (Events.CURSE_RULES_*): before

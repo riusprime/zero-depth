@@ -1,0 +1,118 @@
+extends SceneTree
+## v0.10.5 W3-V1 (the enemy VAT pilot): bakes each VAT kind's pose code (VatBake, as the game does) and measures how
+## far the baked pose is from the live one: over SAMPLES random states (a horde kind: the windup raise, the strike, the
+## crouch, the clock, the rise-in; v0.10.5 W3-V4a, the Charger and the Hatchling: every drive of its rig, mixed
+## freely, ChargerVat.sample) the real avatar is posed by its own code and every vertex compared,
+## in metres, with the same vertex posed through the baked texture the way the shader samples it (VatBake.eval_*,
+## the shader's arithmetic on the CPU). Run twice: normal and reduced motion. Headless is fine (no renderer needed):
+##   APPDATA=<temp> godot --headless --path . -s scripts/checks/vat_bake_report.gd [-- --samples=4000]
+## v0.10.5 W3-V4b: the horde kinds past the Swarmer are posed from every input their pose reads at once
+## (HordeAvatar.pose_with over HordeVat.sample: the death, the walk, the heal, the tell too; VatBake.pose_error_full).
+## Writes build/vat/<sha>_bake.txt (never into docs) and prints it. The GPU's own sampling is checked by the
+## side-by-side shots (scripts/shots/vat_sheet.gd), not here.
+
+const OUT_DIR := "res://build/vat/"
+const SEED := 4404
+
+var _samples := 4000
+
+
+func _initialize() -> void:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--samples="):
+			_samples = int(a.trim_prefix("--samples="))
+	var sha := "nosha"
+	var git: Array = []
+	if OS.execute("git", ["rev-parse", "--short", "HEAD"], git) == 0 and git.size() > 0:
+		sha = String(git[0]).strip_edges()
+	var lines: PackedStringArray = []
+	lines.append("vat bake report  sha=%s  godot=%s" % [sha, Engine.get_version_info()["string"]])
+	lines.append(
+		(
+			"horde grids: stance %s (wind x strike x crouch), gait %d samples a loop"
+			% [VatBake.STANCE_N, VatBake.GAIT_N]
+		)
+	)
+	lines.append("charger grids [[drive, samples, loops], ...]: %s" % [ChargerVat.GRIDS])
+	lines.append("other horde grids [stance, gait] by kind: %s" % [HordeVat.GRIDS])
+	for kind: int in VatCrowd.KINDS:
+		if VatCrowd.supports(kind):
+			lines.append_array(_report(kind))
+		else:
+			lines.append("kind %d: not drawn by VAT here (its model file is missing)" % kind)
+	var text := "\n".join(lines) + "\n"
+	print(text)
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT_DIR))
+	var f := FileAccess.open(
+		ProjectSettings.globalize_path(OUT_DIR + "%s_bake.txt" % sha), FileAccess.WRITE
+	)
+	if f != null:
+		f.store_string(text)
+		f.close()
+	quit(0)
+
+
+func _report(kind: int) -> PackedStringArray:
+	var out: PackedStringArray = []
+	VatBake.clear_cache()
+	var t0 := Time.get_ticks_usec()
+	var pose := VatBake.pose_for(kind)
+	var t_pose := (Time.get_ticks_usec() - t0) / 1000.0
+	t0 = Time.get_ticks_usec()
+	var mesh := VatBake.mesh_for(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+	var t_mesh := (Time.get_ticks_usec() - t0) / 1000.0
+	var img: Image = pose["image"]
+	var live := VatBake.reference_of(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+	var vat := VatBake.vat_avatar_of(kind, Color.BLACK)
+	var js := VatBake.joints(live)
+	(
+		out
+		. append(
+			(
+				"kind %d (rig %s): %d joints, %d drives, %d vertices, %d triangles, pose texture %dx%d RGBAF (%d KiB)"
+				% [
+					kind,
+					pose["key"],
+					js.size(),
+					pose["drives"],
+					mesh.surface_get_array_len(0),
+					mesh.surface_get_array_index_len(0) / 3,
+					img.get_width(),
+					img.get_height(),
+					img.get_data().size() / 1024,
+				]
+			)
+		)
+	)
+	out.append("  bake ms (this machine, once a session): poses %.1f, mesh %.1f" % [t_pose, t_mesh])
+	for calm: bool in [false, true]:
+		ViewPrefs.reduced_motion = calm
+		var full := live is HordeAvatar and kind != WorldReader.KIND_SWARMER  # v0.10.5 W3-V4b
+		var e := (
+			VatBake.pose_error_full(
+				live as HordeAvatar, vat as HordeAvatar, pose, mesh, _samples, SEED
+			)
+			if full
+			else VatBake.pose_error(live, vat, pose, mesh, _samples, SEED)
+		)
+		(
+			out
+			. append(
+				(
+					"  reduced_motion=%s samples=%d vertices/sample=%d  max_error_m=%.6f  mean_error_m=%.7f"
+					% [calm, e["samples"], e["vertices"], e["max_m"], e["mean_m"]]
+				)
+			)
+		)
+		if full:
+			out.append(
+				(
+					"    hidden vertices (all samples): %d, folded to within %.7f m"
+					% [e["hidden"], e["hidden_spread_m"]]
+				)
+			)
+		out.append("    worst at %s" % [e["worst"]])
+	ViewPrefs.reduced_motion = false
+	live.free()
+	vat.free()
+	return out

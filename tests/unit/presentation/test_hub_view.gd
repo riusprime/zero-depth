@@ -24,7 +24,7 @@ func _view(states: Dictionary, trophies: Array[bool] = [false, true]) -> HubView
 
 func test_every_station_and_the_machine_are_drawn() -> void:
 	var v := _view({})
-	for id: StringName in [&"archive", &"trophy", &"wardrobe", &"progression", &"credits"]:
+	for id: StringName in [&"archive", &"trophy", &"wardrobe", &"progression", &"runic"]:
 		assert_true(v.stations.has(id), "%s is drawn" % id)
 		assert_not_null(v.plan.get_node_or_null("Station_%s" % id))
 	assert_not_null(v.machine.altar, "the stand-in machine stands on SA's altar")
@@ -44,6 +44,8 @@ func test_the_glows_are_layered() -> void:
 	var v := _view({})
 	for id: StringName in v.stations:
 		var g: Dictionary = v.stations[id]["glow"]
+		if id == &"runic":  # v0.9.5 RS1: the Runic Stone has no halo (its veins are a ring)
+			continue
 		assert_true(
 			g.has("halo") and g.has("pool") and g.has("light"), "%s: halo, floor pool, light" % id
 		)
@@ -55,12 +57,33 @@ func test_focus_brightens_the_station() -> void:
 	var v := _view({})
 	v.focus(&"archive")
 	var arch: Dictionary = v.stations[&"archive"]["glow"]
-	var cred: Dictionary = v.stations[&"credits"]["glow"]
-	assert_gt(
-		(arch["light"] as OmniLight3D).light_energy, (cred["light"] as OmniLight3D).light_energy
+	assert_gt((arch["light"] as OmniLight3D).light_energy, 0.0)
+	assert_true(
+		(v.stations[&"runic"]["glow"] as Dictionary).is_empty(), "the Runic Stone has no halo"
 	)
 	v.focus(HubLayout.MACHINE)
 	assert_eq(v.machine.focus, 1.0, "the machine wakes when the hero stands at it")
+
+
+## v0.9.5 RS1 (RUNIC_STONE.md S2, S3): locked, the stone is dark (no veins, no light); awake, its veins glow violet and
+## a pulse flares them once and settles.
+func test_the_runic_stone_is_dark_locked_and_violet_awake() -> void:
+	var v := _view({})
+	var st: Dictionary = v.stations[&"runic"]
+	assert_false(v.runic_lit(), "locked: no veins")
+	assert_eq((st["light"] as OmniLight3D).light_energy, 0.0)
+	v.set_runic(true)
+	assert_true(v.runic_lit(), "awake: the veins are lit")
+	var mat := (st["ring"] as MeshInstance3D).material_override as StandardMaterial3D
+	assert_eq(mat.emission, HubStations.RUNE_VIOLET, "violet #9B6BFF")
+	var calm := mat.emission_energy_multiplier
+	v.pulse_runic()
+	v._advance_pulse(HubView.PULSE_S * 0.5)
+	assert_gt(mat.emission_energy_multiplier, calm, "the pulse flares them")
+	v._advance_pulse(HubView.PULSE_S)
+	assert_eq(mat.emission_energy_multiplier, calm, "and they settle")
+	v.set_runic(false)
+	assert_false(v.runic_lit())
 
 
 func test_the_states_and_hooks_change_the_hub() -> void:
@@ -147,7 +170,13 @@ func test_the_owners_hub_pieces_dress_the_ring() -> void:
 		var id: StringName = n.get_meta(&"model_id", &"")
 		if id != &"":
 			ids[id] = int(ids.get(id, 0)) + 1
-	assert_eq(ids.get(&"hub_wall_segment", 0), 11, "11 wall segments")
+	assert_eq(
+		ids.get(&"hub_wall_segment", 0),
+		10,
+		"10 wall segments (v0.10.5 O17: the south one is a door)"
+	)
+	assert_not_null(v.plan.get_node_or_null("TrainingDoor"), "the Training Room's door")
+
 	assert_eq(ids.get(&"hub_pillar_brazier", 0), _hub.pillars.size(), "a pillar per spot")
 	assert_eq(ids.get(&"hub_floor_rune", 0), 16, "16 floor runes")
 	assert_eq(ids.get(&"hub_sealed_gate", 0), 1, "the gate")
@@ -174,6 +203,62 @@ func test_the_owners_hub_pieces_dress_the_ring() -> void:
 
 ## v0.9.0 HB2: the walk into the portal: the hero climbs the steps (its node rises), the portal flares, the hero
 ## shrinks into the ring, and walk_finished fires once, in about 2-3 s; the World is never stepped by it.
+## v0.10.5 W3-O5 (owner F1): the paving reaches under the whole wall (no dark ground in its recesses), and each wall
+## segment reaches past its 30° at every height so neighbours overlap (no gap), every other one a little further out
+## (no shared surface to z-fight).
+func test_the_floor_meets_the_walls_and_the_walls_meet() -> void:
+	var v := _view({})
+	var plaza := v.plan.get_node("Plaza") as MeshInstance3D
+	var models := v.plan.get_node("Walls").find_children("Model", "MeshInstance3D", true, false)
+	assert_eq(models.size(), 10, "the owner's wall is installed")
+	var reach := 0.0
+	var half_span := 0.0
+	for s in (models[0] as MeshInstance3D).mesh.get_surface_count():
+		var arr := (models[0] as MeshInstance3D).mesh.surface_get_arrays(s)
+		for p: Vector3 in arr[Mesh.ARRAY_VERTEX]:
+			reach = maxf(reach, Vector2(p.x, p.z).length())
+			if p.y > 1.0 and p.y < 3.0:
+				half_span = maxf(half_span, absf(atan2(p.x, p.z)))
+	assert_gt(
+		(plaza.mesh as CylinderMesh).top_radius, reach, "the paving reaches past the wall's foot"
+	)
+	assert_gt(rad_to_deg(half_span), 15.0, "a segment's middle reaches past its 30° (overlap)")
+	var radii: Array[float] = []
+	for k in 2:
+		var arr := (models[k] as MeshInstance3D).mesh.surface_get_arrays(0)
+		radii.append(Vector2(arr[Mesh.ARRAY_VERTEX][0].x, arr[Mesh.ARRAY_VERTEX][0].z).length())
+	assert_ne(radii[0], radii[1], "neighbours sit at different radii (no z-fighting)")
+	assert_null(v.plan.get_node_or_null("Outer"), "no dark ground disc past the walls")
+
+
+## v0.10.5 W3-O5 (owner F2, "Dark void + fog"): past the walls a dark void with drifting fog, not the biome's backdrop;
+## reduced motion stills the drift.
+func test_a_dark_void_with_fog_round_the_hub() -> void:
+	var v := _view({})
+	var backdrops := v.find_children("*", "Node3D", true, false).filter(
+		func(n: Node) -> bool: return n is BiomeBackdrop
+	)
+	assert_eq(backdrops.size(), 0, "no biome backdrop")
+	var vd := v.void_view
+	assert_eq(vd.get_parent(), v.plan)
+	assert_not_null(vd.apron, "the apron fading into the void")
+	assert_eq(vd.fog.size(), HubVoid.FOG_LAYERS.size(), "a fog sheet per layer")
+	for mi in vd.fog:
+		var m := mi.material_override as ShaderMaterial
+		assert_gt(
+			float(m.get_shader_parameter(&"inner")), _hub.radius_m, "the fog stays past the walls"
+		)
+		assert_eq(mi.cast_shadow, GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
+	ViewPrefs.reduced_motion = true
+	vd._sync()
+	var speed := float(
+		(vd.fog[0].material_override as ShaderMaterial).get_shader_parameter(&"speed")
+	)
+	ViewPrefs.reduced_motion = false
+	vd._sync()
+	assert_eq(speed, 0.0, "reduced motion stills the fog")
+
+
 func test_the_walk_into_the_portal() -> void:
 	var v := _view({})
 	watch_signals(v)
@@ -198,7 +283,7 @@ func test_the_small_menu_and_the_end_panel_rows() -> void:
 	for c in m.box.get_children():
 		if c is Button:
 			rows.append(String(c.name))
-	assert_eq(rows, ["Continue", "Play", "Options", "Quit"])
+	assert_eq(rows, ["Continue", "Play", "Options", "Credits", "Quit"])  # v0.9.5 RS1: Credits is back
 	assert_true((m.box.get_node("Continue") as Button).disabled)
 	var with_save := MainMenu.new("v", true)
 	add_child_autofree(with_save)

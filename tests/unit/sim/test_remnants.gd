@@ -30,7 +30,7 @@ func _ev(w: World, kind: int, card: StringName) -> Array[SimEvent]:
 
 # --- The cards compile into remnant hooks ---------------------------------------------------------------------------
 func test_each_card_compiles_a_remnant_hook_with_its_rule() -> void:
-	var gun := W.world(&"gun", [&"gun_threadline", &"shared_faultline", &"shared_gravity_stitch"])
+	var gun := W.world(&"gun", [&"gun_threadline", &"shared_faultline"])
 	var bolt := Modifiers.bolt(gun)
 	var thread := _hook(bolt, &"gun_threadline")
 	assert_not_null(thread, "Threadline rides the bolt")
@@ -46,24 +46,20 @@ func test_each_card_compiles_a_remnant_hook_with_its_rule() -> void:
 	assert_eq([crack.trigger, crack.remnant.kind], [AttackSpec.Trigger.ON_HIT, K.SEGMENT])
 	assert_eq([crack.remnant.life_ticks, crack.remnant.charges], [180, 1])
 	assert_almost_eq(crack.child.radius_m, 1.2, 0.001, "a 1.2 m eruption")
-	var anchor := _hook(bolt, &"shared_gravity_stitch")
-	assert_eq([anchor.remnant.kind, anchor.remnant.activate], [K.ANCHOR, A.PULL])
-	assert_eq([anchor.remnant.life_ticks, anchor.remnant.max_alive], [72, 4])
-	assert_eq([thread.slot, crack.slot, anchor.slot], [0, 1, 2], "their wand slots")
-	assert_eq([thread.section, crack.section, anchor.section], [0, 0, 0], "no trigger: one section")
+	assert_eq([thread.slot, crack.slot], [0, 1], "their wand slots")
+	assert_eq([thread.section, crack.section], [0, 0], "no trigger: one section")
 
 
 func test_levels_grow_caps_lives_and_shares() -> void:
-	var w := W.world(&"gun", [&"gun_threadline", &"shared_faultline", &"shared_gravity_stitch"])
-	for id: StringName in [&"gun_threadline", &"shared_faultline", &"shared_gravity_stitch"]:
+	var w := W.world(&"gun", [&"gun_threadline", &"shared_faultline"])
+	for id: StringName in [&"gun_threadline", &"shared_faultline"]:
 		Offers.apply(w, W.item(w, id))
 		Offers.apply(w, W.item(w, id))
 	var bolt := Modifiers.bolt(w)
-	assert_eq(_hook(bolt, &"gun_threadline").remnant.max_alive, 10, "level 3: 6 + 2 + 2 threads")
-	assert_eq(_hook(bolt, &"shared_faultline").remnant.max_alive, 8, "level 3: 6 + 1 + 1 cracks")
-	assert_eq(_hook(bolt, &"shared_faultline").damage_permille, 1000, "80 % + 10 % a level")
-	var st := _hook(bolt, &"shared_gravity_stitch").remnant
-	assert_eq([st.life_ticks, st.max_alive], [72 + 36, 6], "+0.3 s and +1 anchor a level")
+	# v0.9.5 CLV: Threadline and Faultline have one level: fixed 6 threads / 8 cracks at 100 %, no growth
+	assert_eq(_hook(bolt, &"gun_threadline").remnant.max_alive, 6, "one level: 6 threads")
+	assert_eq(_hook(bolt, &"shared_faultline").remnant.max_alive, 8, "one level: 8 cracks")
+	assert_eq(_hook(bolt, &"shared_faultline").damage_permille, 1000, "100 %")
 
 
 func test_fracture_bank_lodges_on_combo_steps_and_extracts_on_the_finisher() -> void:
@@ -95,16 +91,16 @@ func test_each_card_cap_replaces_the_oldest() -> void:
 	var w := W.world(&"blade", [&"shared_faultline"], [[Vector2(2.0, 0.0), 100000]])
 	var k := _hook(Modifiers.step(w, 0), &"shared_faultline")
 	var first := -1
-	for n in 7:
+	for n in 9:  # v0.9.5 CLV: Faultline's cap is a fixed 8
 		Remnants.on_hook(w, k, _ctx(w, Vector2.ZERO, 0, 10), Vector2(2.0, 0.1 * n), 1)
 		if n == 0:
 			first = w.mx.rem_uid[0]
-	assert_eq(w.mx.rem_uid.size(), 6, "6 cracks at most")
+	assert_eq(w.mx.rem_uid.size(), 8, "8 cracks at most")
 	assert_false(w.mx.rem_uid.has(first), "the oldest was replaced")
 	var ends := _ev(w, SimEvent.Kind.REMNANT_END, &"shared_faultline")
 	assert_eq(ends.size(), 1)
 	assert_eq(ends[0].amount, Remnants.END_REPLACED)
-	assert_eq(_ev(w, SimEvent.Kind.REMNANT_SPAWN, &"shared_faultline").size(), 7)
+	assert_eq(_ev(w, SimEvent.Kind.REMNANT_SPAWN, &"shared_faultline").size(), 9)
 
 
 func test_the_kind_cap_and_the_total_cap_hold() -> void:

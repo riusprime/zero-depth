@@ -17,8 +17,8 @@ extends RefCounted
 ## where it started). VENT: the Vent button vented (amount = heat points vented). VENT_COLD: the Vent button under
 ## Hot did nothing (the cold click).
 ## v0.5.0 SH: SHOP_BUY: shards spent at the shop (amount = the price, effect_id = the card's id, or &"shop_heal" /
-## &"shop_reroll"; a bought card also emits PICKUP from the terminal). SHOP_SALVAGE: shards back for a mod, a stat
-## card or an ability (amount = the refund, effect_id = its id, target_id = the card code).
+## &"shop_reroll"; a bought card also emits PICKUP from the terminal). SHOP_SALVAGE: retired with selling (v0.10.5
+## W3-O9), never emitted; it keeps its place so the kinds after it keep their numbers.
 ## v0.4.0 BS: PICKUP's amount is a card code (Offers): under 1000 an item (as before), 1000 + i ability i, 2000 + stat
 ## x 10 + rarity a stat card. A HIT with TAG_CRIT was a critical hit.
 ## v0.8.0 N14 (owner O72): GAMBLE_FAIL: a paid use of the gamble shrine failed (no stat); source = the shrine's id,
@@ -51,7 +51,7 @@ enum Kind {
 	VENT,
 	VENT_COLD,
 	SHOP_BUY,
-	SHOP_SALVAGE,
+	SHOP_SALVAGE,  # v0.10.5 W3-O9: retired, never emitted
 	GAMBLE_FAIL,
 	BOSS_DOOR_OPENING,
 	BOSS_DOOR_OPENED,
@@ -61,8 +61,31 @@ enum Kind {
 	BLAST,  # v0.9.0 BM: a bomb burst (Bomb.blast: pos, amount = radius in mm, effect_id = the bomb's spec key)
 	LANCE,  # v0.9.0 AF1b: a Lance ball released (Lance.on_release: pos = muzzle, amount = radius mm, amount_applied = aim)
 	COLLECTIBLE,  # v0.9.0 CL: a collectible taken (Collectibles: pos, amount = its entry, effect_id = its id)
+	STRESS_BREAK,  # v0.9.5 SM: a weak side broken (StressMarks.on_hit: pos, amount = extra damage, amount_applied = side)
+	PAIR_ON,  # v0.9.5 EE3: an element pair turned on (ElementPairs.refresh: amount = its X index 0..9, effect_id = its id)
+	DASH_REFUND,  # v0.10.5 S12: a perfect Vent readied the dash (Heat.vent: amount = heat vented)
+	STAR,  # v0.10.5 W3-P10e: Starfall's star fell (Starfall.on_crit: pos = the target, amount = the crit's amount)
+	METEOR_LAUNCH,  # v0.10.5 W3-P10e: a meteor called (pos = where it lands, amount = ticks to land)
+	METEOR_LAND,  # v0.10.5 W3-P10e: a meteor landed (pos, amount = radius in mm)
 }
 
+## v0.9.5 EE1 (ElementLevels): a Contagion jump's STATUS_APPLY (source: the giver, target: the receiver), and the
+## Exsanguinate burst's DAMAGE (a DoT the number still shows).
+const EFFECT_VENOM_JUMP := &"venom_jump"
+const EFFECT_EXSANGUINATE := &"exsanguinate"
+## v0.9.5 EE2 (ElementLevelsFsf): an Overcharge strike (its STATUS_APPLY at the centre, and its hits' effect), a
+## Shatter (STATUS_APPLY on the broken enemy, amount = shards) and one shard (STATUS_APPLY, source: the broken enemy,
+## target: the one it hits; also the shard hit's effect).
+const EFFECT_STORM_STRIKE := &"storm_strike"
+const EFFECT_FROST_SHATTER := &"frost_shatter"
+const EFFECT_FROST_SHARD := &"frost_shard"
+## v0.9.5 EE3 (ElementPairs): a pair burst (X1 Thermal Shock, X7 Brittle: STATUS_APPLY at the centre, amount = radius
+## in mm; also its hits' effect) and a Toxic Fumes cloud laid (STATUS_APPLY, amount = radius in mm).
+const EFFECT_PAIR_BURST := &"pair_burst"
+const EFFECT_PAIR_CLOUD := &"pair_cloud"
+## v0.10.5 W3-P10e (Starfall): a star's hit (already scaled: no crit) and a meteor's hits.
+const EFFECT_STAR := &"starfall_star"
+const EFFECT_METEOR := &"meteor"
 const TAG_MELEE := 1
 const TAG_PROJECTILE := 2
 const TAG_DOT := 4
@@ -103,6 +126,13 @@ const TAG_SKILL := 2097152
 ## v0.4.0 BS: a hit from an ability (a bomb, a drone bolt or its chain, an orbit blade, the blink's landing shock,
 ## Combo Sword's finisher shockwave). Bit 24, clear of the bits a parallel step may take.
 const TAG_ABILITY := 16777216
+## v0.10.5 O10 (Matchups): the hit (or tick) struck the enemy's weakness (its weak_to form or element), or what it
+## resists. Bits 26 and 27, clear of the bits a parallel step may take.
+const TAG_WEAK_TO := 67108864
+const TAG_RESISTED := 134217728
+## v0.10.5 W3-P10a (owner W7, G1 A1): a double crit (Stats.outgoing, from loop 2: the crit multiplier twice), always
+## with TAG_CRIT. Bit 29, leaving 28 for a step that runs in parallel.
+const TAG_DOUBLE_CRIT := 536870912
 
 var seq := 0
 var tick := 0

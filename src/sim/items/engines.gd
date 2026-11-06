@@ -28,14 +28,10 @@ const EFFECT_FROST := &"frost"
 const EFFECT_FREEZE := &"freeze"
 const EFFECT_COLD_SNAP := &"cold_snap"
 const EFFECT_BULWARK := &"bulwark"
-const EFFECT_PLASMA_ARC := &"plasma_arc"
 const EFFECT_SHATTER_DASH := &"shatter_dash"
-const EFFECT_RESONANCE := &"resonance"
-const EFFECT_SHRAPNEL_STORM := &"shrapnel_storm"
 const EFFECT_BLOOD_HARVEST := &"blood_harvest"
 const EFFECT_SPIKED_PHASE := &"spiked_phase"
 const EFFECT_SLIPSTREAM := &"slipstream"
-const EFFECT_FROZEN_BASTION := &"frozen_bastion"
 ## v0.8.0 RM (owner O91: "Make Fire+Frost's Thermal Break a natural elemental reaction"): an enemy both burning and
 ## chilled or frozen breaks (thermal_break): its DAMAGE event's and its shatter's (STATUS_APPLY) effect id.
 const EFFECT_THERMAL_BREAK := &"thermal_break"
@@ -44,11 +40,12 @@ const EFFECT_THERMAL_BREAK := &"thermal_break"
 const PAYOFFS: Array[StringName] = [
 	EFFECT_DISCHARGE,
 	EFFECT_BLEED_BURST,
-	EFFECT_PLASMA_ARC,
 	EFFECT_SHATTER_DASH,
 	EFFECT_BLOOD_HARVEST,
 	&"heat_vent",  # Heat.EFFECT_VENT (v0.3.0 L18)
 	&"meltdown",  # Heat.EFFECT_MELTDOWN
+	&"starbound_arc_jump",  # v0.10.5 W3-P10b: Starbound.EFFECT_ARC_JUMP (a jump feeds no status)
+	&"starbound_detonation",  # Starbound.EFFECT_DETONATION
 ]
 
 ## ProcLedger codes (appended, never renumbered: they are hashed). Stack feeds use CODE_FEED + source.
@@ -57,12 +54,9 @@ const CODE_FEED_SHOCK := 8
 const CODE_FEED_BLEED := 16
 const CODE_FEED_FROST := 24
 const CODE_DISCHARGE := 32
-const CODE_PLASMA := 33
 const CODE_SHATTER := 34
 const CODE_BURST := 35
 const CODE_WILDFIRE := 36
-const CODE_RESONANCE := 37
-const CODE_SHRAPNEL := 38
 const CODE_BLOOD := 39
 const CODE_SPIKED := 40
 ## v0.6.0 MX4: Venom Core's poison feed (+ source; after the hook feeds' 48..53).
@@ -99,7 +93,7 @@ static func combo(w: World, effect: int) -> ComboTable:
 static func combos_for(tables: Array[ComboTable], owned: PackedInt32Array) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for c in tables.size():
-		if tables[c].item_a < 0:  # v0.4.0 AB: an ability combo (AbilityCombos.earned)
+		if tables[c].item_a < 0:  # a retired combo stub (v0.10.5 O1)
 			continue
 		if owned.has(tables[c].item_a) and owned.has(tables[c].item_b):
 			out.append(c)
@@ -198,10 +192,8 @@ static func source_of(tags: int, effect_id: StringName) -> int:
 		return SRC_NONE
 	if tags & SimEvent.TAG_CHAIN:
 		return SRC_CHAIN
-	if effect_id == ItemEffects.EFFECT_OVERCHARGE or effect_id == EFFECT_RESONANCE:
+	if effect_id == ItemEffects.EFFECT_OVERCHARGE:
 		return SRC_WAVE
-	if effect_id == Abilities.EFFECT_ORBIT:
-		return SRC_ORBIT
 	if tags & SimEvent.TAG_MELEE:
 		return SRC_MELEE
 	if tags & SimEvent.TAG_PROJECTILE:
@@ -220,11 +212,14 @@ static func add_burn(w: World, i: int, n: int, root: int, effect: StringName) ->
 	var m := w.item_mods
 	if m.burn_max_stacks <= 0 or a.dead[i] == 1 or n <= 0:
 		return
-	if a.burn_stacks[i] == 0:
+	var lit := a.burn_stacks[i] == 0
+	if lit:
 		a.burn_cd[i] = m.burn_period_ticks
-	a.burn_stacks[i] = mini(a.burn_stacks[i] + n, m.burn_max_stacks)
+	a.burn_stacks[i] = mini(a.burn_stacks[i] + n, ElementLevels.burn_cap(w))
 	a.burn_t[i] = Affinities.burn_ticks(w, m.burn_duration_ticks)  # v0.9.0 RB: A1 Ember
 	_status(w, i, root, a.burn_stacks[i], effect)
+	if lit and w.pair_mask != 0:
+		ElementPairs.on_burn_start(w, i)  # v0.9.5 EE3: Toxic Fumes
 	thermal_break(w, i, root)  # v0.8.0 RM: fire on a chilled enemy
 
 
@@ -238,8 +233,6 @@ static func add_shock(w: World, i: int, n: int, root: int) -> void:
 	a.shock_stacks[i] = mini(a.shock_stacks[i] + n, m.shock_threshold)
 	a.shock_t[i] = m.shock_ticks
 	_status(w, i, root, a.shock_stacks[i], EFFECT_SHOCK)
-	if a.burn_stacks[i] > 0 and has_combo(w, ComboTable.Effect.PLASMA_ARC):
-		plasma_arc(w, i, root)
 	if a.shock_stacks[i] >= m.shock_threshold:
 		discharge(w, i, root)
 
@@ -280,9 +273,11 @@ static func add_bleed(w: World, i: int, n: int, root: int) -> void:
 		return
 	if a.bleed_stacks[i] == 0:
 		a.bleed_cd[i] = m.bleed_period_ticks
-	a.bleed_stacks[i] = mini(a.bleed_stacks[i] + n, m.bleed_max_stacks)
+		ElementLevels.on_bleed_start(w, i)  # v0.9.5 EE1: Open wounds starts from where it stands
+	a.bleed_stacks[i] = mini(a.bleed_stacks[i] + n, ElementLevels.bleed_cap(w))
 	a.bleed_t[i] = m.bleed_ticks
 	_status(w, i, root, a.bleed_stacks[i], EFFECT_BLEED)
+	ElementLevels.exsanguinate(w, i, bleed_period(w))  # v0.9.5 EE1: Bleed Lv 3 bursts at the cap
 
 
 ## Adds frost stacks (refreshed; each one also chills: the slow runs). No stacks build while frozen. At the
@@ -327,6 +322,9 @@ static func thermal_break(w: World, i: int, root: int) -> void:
 		return
 	var t := w.wand_table if w.wand_table != null else _wand_defaults
 	var stacks := a.burn_stacks[i]
+	# v0.10.5 W3-P1b: the hit is Fire's (its burn turned into one hit): it falls off by the elements the enemy carries
+	# now, before the break consumes the burn and the frost, and takes Fire's level share (ElementStack).
+	var el := ElementStack.mult(w, i, ElementStack.FIRE)
 	a.burn_stacks[i] = 0
 	a.burn_t[i] = 0
 	a.burn_cd[i] = 0
@@ -335,9 +333,8 @@ static func thermal_break(w: World, i: int, root: int) -> void:
 	a.frozen_t[i] = 0
 	_status(w, i, root, stacks, EFFECT_THERMAL_BREAK)
 	var pid := a.ids[0]
-	Damage.tick_dot(
-		w, i, t.thermal_base + t.thermal_per_burn * stacks, pid, pid, EFFECT_THERMAL_BREAK
-	)
+	var dmg := ElementStack.scale(t.thermal_base + t.thermal_per_burn * stacks, el)
+	Damage.tick_dot(w, i, dmg, pid, pid, EFFECT_THERMAL_BREAK)
 	end(w)
 
 
@@ -367,6 +364,7 @@ static func tick_statuses(w: World) -> void:
 	var a := w.actors
 	var m := w.item_mods
 	var period := bleed_period(w)  # v0.6.5 WN5a: S5 Bleed ticks faster while you move
+	ElementStack.tick(w)  # v0.10.5 W3-P1b: the Lightning charges run down
 	for i in range(1, a.size()):
 		if a.shock_stacks[i] > 0:
 			a.shock_t[i] -= 1
@@ -380,7 +378,18 @@ static func tick_statuses(w: World) -> void:
 			if a.bleed_cd[i] <= 0:
 				a.bleed_cd[i] = period
 				Damage.tick_dot(
-					w, i, m.bleed_damage * a.bleed_stacks[i], a.ids[0], a.ids[0], EFFECT_BLEED
+					w,
+					i,
+					ElementLevels.deep_dot(
+						w,
+						ElementPairs.bleed_tick(
+							w, i, ElementLevels.bleed_tick(w, i, m.bleed_damage * a.bleed_stacks[i])  # v0.9.5 EE3: Boiling Blood
+						)
+					),
+					a.ids[0],
+					a.ids[0],
+					EFFECT_BLEED,
+					&"bleed"  # v0.10.5 O10: the matchup's element
 				)
 			if a.bleed_t[i] <= 0:
 				a.bleed_stacks[i] = 0
@@ -441,26 +450,14 @@ static func attacker_mult(w: World, target: int, owner_id: int) -> int:
 
 
 # --- Guard charges (Bulwark) ----------------------------------------------------------------------------------
-## The guard reduced a hit from `owner_id` (root `root`): store a charge; Frozen Bastion chills the attacker.
-static func on_guard_block(w: World, owner_id: int, root: int) -> void:
-	var a := w.actors
+## The guard reduced a hit from `owner_id` (root `root`): store a charge.
+static func on_guard_block(w: World, _owner_id: int, root: int) -> void:
 	if w.player_dead():
 		return
 	var cap := Abilities.charge_max(w)  # v0.4.0 BS: Aegis stores charges like Bulwark
 	if cap > 0 and w.guard_charges < cap:
 		w.guard_charges += 1
 		_status(w, 0, root, w.guard_charges, EFFECT_BULWARK)
-	AbilityCombos.on_guard_block(w, root)  # v0.4.0 AB: Ember Ward
-	var c := combo(w, ComboTable.Effect.FROZEN_BASTION)
-	var k := a.index_of(owner_id)
-	if c == null or k <= 0 or a.dead[k] == 1 or a.teams[k] == ActorStore.TEAM_PLAYER:
-		return
-	if Kin.length(a.pos(k) - w.player_pos()) > c.radius_m:
-		return
-	if begin(w, EFFECT_FROZEN_BASTION):
-		w.bastion_tick = w.tick
-		add_frost(w, k, c.stacks, root, EFFECT_FROZEN_BASTION)
-		end(w)
 
 
 ## A swing starts: it takes every stored guard charge.
@@ -598,76 +595,6 @@ static func _harvest_heal(w: World, heal: int, kill: SimEvent) -> void:
 
 
 # --- Combo payoffs on other items' moments --------------------------------------------------------------------
-## Plasma Arc: shocking burning enemy `i` arcs to the nearest other enemy within reach: damage and burn stacks.
-static func plasma_arc(w: World, i: int, root: int) -> void:
-	var a := w.actors
-	var c := combo(w, ComboTable.Effect.PLASMA_ARC)
-	var to := nearest_enemies(w, i, a.pos(i), c.radius_m, 1)
-	if to.is_empty():
-		return  # nobody in reach: the chain keeps its arc for a later shock (audit G-5)
-	if not w.proc_ledger.try_mark(root, CODE_PLASMA, a.ids[i], w.tick):
-		return
-	if not begin(w, EFFECT_PLASMA_ARC):
-		return
-	var j := to[0]
-	var pid := a.ids[0]
-	w.plasma_tick = w.tick
-	w.plasma_from = a.pos(i)
-	w.plasma_to = a.pos(j)
-	Damage.hit(
-		w, j, c.damage, pid, pid, root, SimEvent.TAG_CHAIN, a.pos(i), a.pos(j), EFFECT_PLASMA_ARC
-	)
-	add_burn(w, j, c.stacks, root, EFFECT_PLASMA_ARC)
-	end(w)
-
-
-## Resonance: the Twin Arc echo of an Overcharge swing (root `root`) sends a second shockwave.
-static func on_echo(w: World, root: int) -> void:
-	var c := combo(w, ComboTable.Effect.RESONANCE)
-	if c == null or not w.echo_overcharged:
-		return
-	if not w.proc_ledger.try_mark(root, CODE_RESONANCE, 0, w.tick):
-		return
-	if begin(w, EFFECT_RESONANCE):
-		w.resonance_tick = w.tick
-		var dmg := maxi(1, w.echo_wave * c.share_permille / 1000)
-		ItemEffects.shockwave(w, dmg, root, EFFECT_RESONANCE)
-		end(w)
-
-
-## Shrapnel Storm: player bolt `pi` just bounced: it bursts into `count` shards fanned around its new heading
-## (once per bolt; shards never burst again and never bounce).
-static func on_bounce(w: World, pi: int) -> void:
-	var p := w.projectiles
-	var c := combo(w, ComboTable.Effect.SHRAPNEL_STORM)
-	if c == null or p.team[pi] != ActorStore.TEAM_PLAYER or p.tags[pi] & SimEvent.TAG_SHRAPNEL:
-		return
-	if not w.proc_ledger.try_mark(p.root_id[pi], CODE_SHRAPNEL, 0, w.tick):
-		return
-	if not begin(w, EFFECT_SHRAPNEL_STORM):
-		return
-	var v := Vector2(p.vel_x[pi], p.vel_y[pi])
-	var speed := Kin.length(v)
-	var heading := Kin.angle_of(v)
-	var at := Vector2(p.pos_x[pi], p.pos_y[pi])
-	var dmg := maxi(1, p.damage[pi] * c.share_permille / 1000)
-	var half := c.spread / 2
-	w.shrapnel_tick = w.tick
-	for k in c.count:
-		var off := 0 if c.count == 1 else -half + 2 * half * k / (c.count - 1)
-		w.queue_projectile(
-			p.owner[pi],
-			ActorStore.TEAM_PLAYER,
-			at,
-			Kin.dir(heading + off) * speed,
-			dmg,
-			p.radius[pi],
-			maxi(1, w.player.bolt_life_ticks / 2),
-			SimEvent.TAG_PROJECTILE | SimEvent.TAG_SHRAPNEL
-		)
-	end(w)
-
-
 ## Spiked Phase: a Phase Strike discharge (root `root`) also releases the Thorn Mantle ring.
 static func on_phase(w: World, root: int) -> void:
 	var c := combo(w, ComboTable.Effect.SPIKED_PHASE)

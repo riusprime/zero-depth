@@ -137,6 +137,13 @@ func test_the_hero_lands_on_the_altar_then_the_floor_starts() -> void:
 			cued += 1
 	assert_eq(cued, 1, "the altar's sound played once")
 	assert_eq(w.run_ticks, 0, "the run's clock waited")
+	# v0.10.5 (owner: "you can clearly see the character half body inside it"): the hero stands on the altar's top.
+	var hero_node := view.actors.actor_node(reader.actor_id(0))
+	assert_gt(
+		hero_node.position.y,
+		0.2,
+		"on the altar, not half inside it (%.2f m)" % hero_node.position.y
+	)
 	var landed_tick := w.tick
 	# Play: the stick moves the hero, the HUD shows, and the horde comes after.
 	var at := w.player_pos()

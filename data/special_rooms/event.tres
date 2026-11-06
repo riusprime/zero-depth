@@ -8,8 +8,8 @@ code = "Events.pick_rooms"
 order = 6
 stream = &"map:event"
 placement = 2
-count_min = 1
-count_max = 2
+count_min = 0
+count_max = 1
 avoid = Array[StringName]([&"start", &"boss", &"boss_host", &"portal", &"overrun", &"shop", &"arena", &"shrine", &"curse"])
 sources = {
 "count_max": "event_rules/floor:rooms_max",

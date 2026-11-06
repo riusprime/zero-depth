@@ -22,6 +22,10 @@ const MIN_WARN_SECONDS := 0.4
 ## Formations per Lockdown, and each formation's size on floors 1-5 (the last repeats).
 @export var waves := 3
 @export var wave_sizes := PackedInt32Array([5, 5, 5, 6, 6])
+## v0.9.5 DR (owner Q6: "only locked rooms, where enemies spawn, no rounds"): a locked room fights one burst of
+## burst_waves formations (each wave_sizes[floor] enemies), the next burst_gap_seconds after the one before.
+@export var burst_waves := 2
+@export var burst_gap_seconds := 1.0
 ## Seconds from the seal (the bars dropping) to the first formation, and from a formation's last kill to the next.
 @export var first_wave_seconds := 1.0
 @export var wave_gap_seconds := 0.75
@@ -41,6 +45,9 @@ const MIN_WARN_SECONDS := 0.4
 ## rest come in as earlier ones die (ClosedFights). Starting values.
 @export var min_cells := 2
 @export var area_per_enemy_m2 := 30.0
+## v0.10.5 O14 (theory audit P12, Schell's interest curve): on this floor (1-based; 0 = off) the first Lockdown is an
+## Elite one, in the candidate nearest the main path's middle. A starting value.
+@export var set_piece_floor := 2
 
 
 func category() -> StringName:
@@ -60,7 +67,11 @@ func validate() -> Array[ValidationIssue]:
 		if v < 0:
 			issues.append(ValidationIssue.new(&"range", p, "kind weights are >= 0"))
 			break
+	if set_piece_floor < 0:
+		issues.append(ValidationIssue.new(&"range", p, "set_piece_floor >= 0"))
 	check_positive(issues, "waves", waves)
+	check_positive(issues, "burst_waves", burst_waves)
+	check_positive(issues, "burst_gap_seconds", burst_gap_seconds)
 	issues.append_array(ArenaDefinition.wave_size_issues(p, wave_sizes))
 	for f in [
 		"stuck_seconds", "cap_seconds", "hazard_every_seconds", "hazard_radius", "hazard_damage"

@@ -59,6 +59,8 @@ FILES=(
 	tests/e2e/test_e2e_curse_room.gd # v0.8.0: N17 (the curse room) meets the shrine, events, floor rules and old saves here
 	tests/e2e/test_e2e_wand_build.gd # v0.8.0: a Swap given mid-arrival (N11) froze the landing under the hidden HUD here
 	tests/e2e/test_e2e_achievements.gd # v0.8.0 N18: N12's long loads ran the biome toast out behind the shut cover here
+	tests/e2e/test_e2e_combo.gd # v0.9.5: DR made arenas lockdowns; this test's helper went red unseen until EP
+	tests/e2e/test_e2e_element_pairs.gd # v0.9.5: EP1 (pairs from Lv 1) meets EP4 (the notice), the pick panel and the HUD here
 )
 LIST="$(printf 'res://%s\n' "${FILES[@]}" | paste -sd, -)"
 set +e

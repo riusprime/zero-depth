@@ -70,7 +70,7 @@ func sync(reader: WorldReader) -> void:
 	var seen := {}
 	var lobs := {}
 	var boulders := {}
-	for i in reader.actor_count():
+	for i in range(reader.actor_count() if reader.any_boss() else 0):
 		if not WorldReader.is_boss_kind(reader.actor_kind(i)):
 			continue
 		var id := reader.actor_id(i)

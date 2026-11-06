@@ -18,6 +18,8 @@ const NOT_GROUND := [
 	WorldReader.MOVE_TIDE,  # v0.9.0 NB1: the Pull is the whole room's current (TideViews), not a marker
 	WorldReader.MOVE_CROSSFIRE,  # v0.9.0 NB2: the Wardens' fans (their gaps: TwinViews), not a marker
 	WorldReader.MOVE_ECHO,  # v0.9.0 NB3: the Judge's echo, its path and ghost strikes drawn by JudgeViews
+	BossAttackTable.Move.WAVE,  # v0.9.5 BH4: the crossing waves, drawn by TideWaveViews (never a boss's own strike)
+	BossAttackTable.Move.INTERPHASE,  # v0.9.5 BH6: the Fallen's interphase carriers, drawn by InterphaseViews
 ]
 
 
@@ -219,6 +221,7 @@ func test_the_lock_flash_burns_hotter_than_the_windup_fill_and_holds_still_with_
 	var tv := TelegraphViews.new()
 	add_child_autofree(tv)
 	var pair := tv._look_pair(&"se_mortar")
+	tv._looks_live[&"se_mortar"] = true  # (v0.10.5 PC: _process pulses only the looks a sync drew)
 	tv._process(0.0)
 	var hot := float((pair[1] as ShaderMaterial).get_shader_parameter("heat"))
 	assert_gt(hot, float((pair[0] as ShaderMaterial).get_shader_parameter("heat")))

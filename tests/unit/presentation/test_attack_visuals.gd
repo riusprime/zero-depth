@@ -265,8 +265,12 @@ func test_only_the_shock_lanes_raise_spikes() -> void:
 		var reader := WorldReader.new(w)
 		var spikes := StoneSpikeViews.new()
 		add_child_autofree(spikes)
+		var e := BossAi.entry_of(w, i)
+		var started := w.bosses.attack[e]
 		for t in 200:
 			w.step(InputFrame.new())
+			if w.bosses.attack[e] != started:
+				break  # v0.9.5 BH2: the AI's next pick may be the (faster) shock lanes, which do raise spikes
 			spikes.sync(reader)
 			assert_eq(spikes.strike_count(), 0, "%s raises no spikes" % attack_id)
 

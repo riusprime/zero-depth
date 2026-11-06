@@ -157,3 +157,58 @@ func test_the_views_draw_once_per_change() -> void:
 	await get_tree().process_frame
 	assert_eq(map.corner.draw_count(), drawn + 1, "a step redraws once")
 	assert_eq(map.get_child_count(), 2, "two Controls, no node per room")
+
+
+func test_the_arrow_follows_the_walk_not_only_the_aim() -> void:
+	var w := _floor(11)
+	var r := WorldReader.new(w)
+	var map := Minimap.new()
+	add_child_autofree(map)
+	# A fresh view with no walk points at the aim.
+	w.aim_angle = 0
+	map.sync(r)
+	await get_tree().process_frame
+	assert_almost_eq(map.corner.arrow_dir().x, 1.0, 0.001, "no walk: the aim (east)")
+	# Aim east while walking west: the arrow points west, and the view redraws.
+	var drawn := map.corner.draw_count()
+	w.move_intent = Vector2i(-1, 0)
+	map.sync(r)
+	await get_tree().process_frame
+	assert_almost_eq(map.corner.arrow_dir().x, -1.0, 0.001, "walking west: west")
+	assert_gt(map.corner.draw_count(), drawn, "the turn redraws")
+	# Stop walking: it stays west.
+	w.move_intent = Vector2i.ZERO
+	map.sync(r)
+	await get_tree().process_frame
+	assert_almost_eq(map.corner.arrow_dir().x, -1.0, 0.001, "standing: still west")
+
+
+## v0.10.5 W3-V3 (DRAW_GROWTH): the rooms, doors and icons go into one texture, rendered again only when the map
+## changes (a room found), not on the hero's every step; the view draws that texture and the arrow.
+func test_the_map_layer_renders_once_per_map_change_not_per_step() -> void:
+	var w := _floor(11)
+	var r := WorldReader.new(w)
+	var map := Minimap.new()
+	add_child_autofree(map)
+	map.sync(r)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	assert_true(map.corner.layer_cached(), "the corner map uses its layer")
+	var layer := map.corner.layer_draw_count()
+	assert_eq(layer, 1, "the layer rendered once for the floor")
+	var drawn := map.corner.draw_count()
+	for k in 4:
+		w.actors.set_pos(0, w.player_pos() + Vector2(0.5, 0))
+		map.sync(r)
+		await get_tree().process_frame
+	assert_gt(map.corner.draw_count(), drawn, "the steps redraw the view (the arrow, the scroll)")
+	assert_eq(map.corner.layer_draw_count(), layer, "but not the layer")
+	var st := map.state
+	var start := w.floor_layout.start_room
+	var d := r.floor_door_rooms(st.unknown_doors(r)[0])
+	w.actors.set_pos(0, r.floor_room(d.y if d.x == start else d.x).get_center())
+	map.sync(r)
+	await get_tree().process_frame
+	assert_eq(
+		map.corner.layer_draw_count(), layer + 1, "a room found renders the layer again, once"
+	)

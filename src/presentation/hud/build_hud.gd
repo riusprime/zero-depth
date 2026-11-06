@@ -11,15 +11,19 @@ extends Control
 ## its family's colour round its level (InlaySocket's ring), an empty one is an unlit chip.
 ## v0.6.5 WN2: the pips are the wand's slots in order (left to right, as the wand reads); a trigger card's pip wears a
 ## small "›" and a thin ember cut stands after it (the cards to its right are what it casts).
+## v0.10.5 W3-O17 (UI style Astral): in HudStyle.ASTRAL a pip is a small diamond (AstralHudParts.Pip, still a StoneBox:
+## its family's colour in `ring_color`), the plate draws nothing, and the weapon's name moves onto the HP row (Hud) so
+## the row shows the utility and the pips.
 
-const PIP := 20.0
+## v0.10.5 W3-O20: 24 (was 20), so the level (HudStyle.MIN_LABEL, 17) fits inside the diamond.
+const PIP := 24.0
 const GAP := 4.0
 ## v0.6.5 WN2: a trigger's cut between pips (px wide).
 const CUT_W := 2.0
 ## v0.6.5 WN2: the mark on a trigger card's pip.
 const TRIGGER_MARK := "›"
-## Above the anchor's top edge (px): clears the ability row (AbilityHud).
-const LIFT := 12.0 + AbilityHud.SLOT + AbilityHud.PIP * 2.0 + AbilityHud.LIFT + 8.0
+## Above the anchor's top edge (px).
+const LIFT := 12.0
 
 ## The HP plate the row sits over (Hud sets it; may be null).
 var anchor: Control
@@ -34,6 +38,11 @@ var _levels: Array[Label] = []
 ## v0.6.5 WN2: the cut after each pip (shown after a trigger card's).
 var _cuts: Array[ColorRect] = []
 var _filled := 0
+## PF2: what the pips were last written from, so a tick that changed nothing writes nothing (each write redraws a stone
+## box and re-lays the row), and where the plate was last put.
+var _sig: Array = []
+var _placed_at := Vector2(-1.0, -1.0)
+var _dirty := true
 
 
 func _init() -> void:
@@ -49,12 +58,18 @@ func _init() -> void:
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_row.add_child(l)
+	if HudStyle.current == HudStyle.Style.ASTRAL:
+		HudStyle.serif_label(_utility, 13, 3, HudStyle.A_DIM)
 	for k in WorldReader.MOD_SLOTS:
 		var p := Panel.new()
 		p.name = "ModPip%d" % (k + 1)
 		p.custom_minimum_size = Vector2(PIP, PIP)
 		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var box := StoneBox.new()
+		var box: StoneBox = (
+			AstralHudParts.Pip.new()
+			if HudStyle.current == HudStyle.Style.ASTRAL
+			else StoneBox.new()
+		)
 		box.pattern = 3 + k * 5
 		box.cut = 4.0
 		box.chip = 1.0
@@ -86,23 +101,32 @@ func _init() -> void:
 
 
 func sync(reader: WorldReader) -> void:
-	var weapon := reader.weapon_id()
-	var abilities := reader.abilities()
-	visible = weapon != &"" or not abilities.is_empty()
+	visible = reader.has_abilities()  # the weapon is one of them
 	if not visible:
 		return
+	var sig := [reader.pips_key(), TranslationServer.get_locale()]
+	if sig == _sig:
+		_place()
+		return
+	_sig = sig
+	_dirty = true
+	var weapon := reader.weapon_id()
+	var abilities := reader.abilities()
+	var b := reader.build()
+	var cuts: PackedInt32Array = reader.wand()["cuts"]  # v0.6.5 WN2: the trigger cards' slots
 	var names := {}
 	for a: Dictionary in abilities:
 		names[a["id"]] = a["name_key"]
 	_weapon.text = tr(names.get(weapon, &"")) if weapon != &"" else ""
+	_weapon.visible = HudStyle.current != HudStyle.Style.ASTRAL  # W3-O17: on the HP row instead
 	var util := reader.utility_id()
 	_utility.text = "· %s" % tr(names[util]) if util != &"" and names.has(util) else ""
+	if HudStyle.current == HudStyle.Style.ASTRAL and _utility.text != "":
+		_utility.text = tr(names[util])
 	_utility.visible = _utility.text != ""
-	var b := reader.build()
 	var slots: Array = b["slots"]
 	_filled = mini(slots.size(), _pips.size())
 	var shown := maxi(int(b["max"]), slots.size())  # v0.6.5 WN1: the wand's slots now (4 → 6 → 8)
-	var cuts: PackedInt32Array = reader.wand()["cuts"]  # v0.6.5 WN2: the trigger cards' slots
 	for k in _pips.size():
 		_pips[k].visible = k < shown
 		var box := _boxes[k]
@@ -131,6 +155,10 @@ func _place() -> void:
 	var origin := Vector2(28, get_viewport_rect().size.y - 330)
 	if anchor != null and anchor.is_inside_tree():
 		origin = anchor.get_global_rect().position - Vector2(0, LIFT + PIP)
+	if origin == _placed_at and not _dirty:
+		return
+	_placed_at = origin
+	_dirty = false
 	_plate.size = _plate.get_combined_minimum_size()
 	_plate.global_position = origin - Vector2(0, (_plate.size.y - PIP) * 0.5)
 

@@ -12,6 +12,8 @@ extends RefCounted
 ## period, the Blade's whole swing and the retired drone's period all read it, and so do the cards' forecast
 ## (CardForecast), the HUD (WorldReader) and the hidden catch-up (CatchUp.power): one function, EI-07. Integer
 ## maths only.
+## v0.10.5 W3-P10a (owner W7, G1 A4): from loop 2 the stat has no cap; its raw bonus past the curve's top (top: +100 %
+## rate) adds no rate (rated) and becomes damage instead (overflow_at; Stats.haste_damage_at, the damage bucket).
 
 ## The shipped curve (SimTuning's defaults; data/tuning/sim.tres sets them for the dev panel).
 const KNEE := 500
@@ -41,9 +43,28 @@ static func _part(span: int, slope: int) -> int:
 	return (span * slope + 500) / 1000
 
 
-## The attack-speed stat's raw bonus now, per mille (its value − 1000).
+## v0.10.5 W3-P10a (owner W7, G1 A4): the curve's top, the raw bonus where the rate reaches +100 % (knee2: the
+## shipped curve's 500 + 1000 x 50 % = 1000 there). Loop 1's stat cap (2.5, a raw 1500) sits on it.
+static func top(t: SimTuning) -> int:
+	return maxi(t.attack_speed_knee_permille, t.attack_speed_knee2_permille)
+
+
+## v0.10.5 W3-P10a: the attack-speed stat at raw value `stat_v` as the rate counts it: from loop 2 (no stat cap) at
+## most the curve's top (1000 + top); loop 1 as it is (its cap holds it there).
+static func rated(w: World, stat_v: int) -> int:
+	return mini(stat_v, 1000 + top(w.tuning)) if w.loop >= 2 else stat_v
+
+
+## v0.10.5 W3-P10a (owner W7, G1 A4): the attack-speed stat's raw bonus at value `stat_v` past the curve's top, per
+## mille (from loop 2; 0 in loop 1). It adds no rate (rated); Stats.haste_damage_at turns it into damage.
+static func overflow_at(w: World, stat_v: int) -> int:
+	return maxi(0, stat_v - 1000 - top(w.tuning)) if w.loop >= 2 else 0
+
+
+## The attack-speed stat's raw bonus now, per mille (its value − 1000; v0.10.5 W3-P10a: at most the curve's top, the
+## overflow past it is damage, overflow_at).
 static func stat_bonus(w: World) -> int:
-	return Stats.value(w, Stats.Stat.ATTACK_SPEED) - 1000
+	return rated(w, Stats.value(w, Stats.Stat.ATTACK_SPEED)) - 1000
 
 
 ## The rate, per mille, of an attack with wand bonus `wand` and the stat at its value now.
@@ -53,7 +74,11 @@ static func rate(w: World, wand: int) -> int:
 
 ## rate() with the attack-speed stat at raw value `stat_v` (CardForecast's after-card number).
 static func rate_at(w: World, stat_v: int, wand: int) -> int:
-	var r := maxi(1, 1000 + curve(w.tuning, stat_v - 1000 + wand))
+	# v0.10.5 W3-P10b: Fervour's haste adds to the raw bonus (Starbound.haste_bonus); W3-P10a: the rate stops at the
+	# curve's top from loop 2 (rated)
+	var r := maxi(
+		1, 1000 + curve(w.tuning, rated(w, stat_v + Starbound.haste_bonus(w)) - 1000 + wand)
+	)
 	return Curses.attack_speed(w, r)  # v0.6.0 CU: Heavy Hands multiplies the rate
 
 

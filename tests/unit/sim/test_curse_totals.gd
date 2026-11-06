@@ -4,7 +4,7 @@ extends GutTest
 ## plain loop over the held curses gives, even when the cache was filled before the change.
 
 const IDS: Array[StringName] = [
-	&"brittle", &"glass_heart", &"heavy_hands", &"swift_foes", &"price_gouge"
+	&"brittle", &"glass_heart", &"heavy_hands", &"rooted", &"tunnel_vision"
 ]
 
 

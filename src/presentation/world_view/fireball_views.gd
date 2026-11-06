@@ -1,3 +1,4 @@
+# gdlint: disable=max-file-lines
 class_name FireballViews
 extends Node3D
 ## v0.7.5 BF1 (owner N15; BOSS_FIGHTS.md "Readable"): the hostile fireballs (WorldReader.projectile_look not empty;
@@ -413,6 +414,31 @@ const LIGHT_RANGE := 3.5
 const LIGHT_MERGE := 2.5
 const SIGNATURE_LIGHTS := 3
 const SIGNATURE_ENERGY := 0.9
+## v0.10.0 VX4 (VFX_PACK R31-R35): each look's core and trail are a held pack effect (PackFx, family enemy_shot, id
+## "shot_<look>", data/vfx/pack_fx_vx4.tres) that follows its shot, faces its way and goes back to its pool when the
+## shot ends; the dark edge MultiMesh stays under it (it marks a shot hostile). A shot the family has no room for draws
+## the old MultiMesh core and trail. false: the old look everywhere (before/after shots, tests). The nemesis_crescent
+## draws the MultiMesh with the pack's rim material (VX7, PACK_CRESCENT).
+const PACK_SHOTS := true
+const PACK_FAMILY := &"enemy_shot"
+## The radius (m) a pack scene's table scale is made for; a shot of radius r draws the scene at r / PACK_REF_RADIUS.
+const PACK_REF_RADIUS := 0.18
+## Parts of a pack scene a look leaves out: the big orbs' Flare is a star-shaped burst that draws at a fixed size (it
+## ignores the node's scale), some 7 times a gem's; it would drown the shots around it.
+const PACK_HIDE := {
+	&"prism_orb": ["Flare"],
+	&"crown_orb": ["Flare"],
+}
+## Looks without a pack effect (they stay the MultiMesh).
+const PACK_SKIP: Array[StringName] = [&"nemesis_crescent"]
+## v0.10.0 VX7 (VFX_PACK N4): the nemesis_crescent keeps its shape and takes a copy of the pack's rim_area_04 glow
+## material in its own colours (a sheet of UVs cut from where each point lies); false: the shader core as before.
+const PACK_CRESCENT := true
+
+const CRESCENT_KEY := &"nemesis_crescent"
+## The crescent mesh's reach along its flight (x, m): what its UV's v runs over.
+const CRESCENT_X0 := -0.05
+const CRESCENT_X1 := 0.5
 ## v0.8.0 AV: the dark shell's size over the core's.
 const EDGE_SCALE := 1.15
 const HEIGHT := 0.55
@@ -426,6 +452,12 @@ const RAIN_ARC_Y := 2.2
 
 ## v0.8.0 AV: the effects layer the big ones ask for light from (WorldViewRoot sets it with the new look; null: none).
 var vfx: VfxCore
+## v0.10.0 VX4: the pack effects (the effects layer's, or set directly: tests, the shot tool); none: the old look.
+var pack_fx: PackFx = null
+## v0.10.5 W3-Q7: false (WorldViewRoot): one draw a frame, by draw_lights (in VfxLayer.finish: the lights are this
+## frame's) or _process, not in sync at fraction 1.0 as well; true (tests, the shot tool) draws in sync too.
+var draw_on_sync := true
+var draws := 0  # (tests)
 ## Per look: {"core", "edge", "trail": MultiMeshInstance3D}.
 var _sets := {}
 ## This tick's and the last tick's positions by projectile id, and the order drawn this tick (per look).
@@ -436,6 +468,8 @@ var _radius := {}
 var _vel := {}
 ## Balls and trails drawn per look in the last draw (kept here: a headless renderer keeps no MultiMesh state).
 var _balls := {}
+var _edges := {}
+var _cores := {}
 var _trails := {}
 ## v0.7.5 EF: the lobbed fireballs in the air this tick, per look (3D positions).
 var _lobs := {}
@@ -449,10 +483,48 @@ var _signature := &""
 var _motion := -1.0
 ## v0.8.0 AV: the trail strips' width factor in the last draw (tests: Low narrows them).
 var _trail_width := 1.0
+## Shot (a projectile id, or "lob:<look>:n" / "rain:<look>:n") -> {"node": Node3D, "s": float}; and the shots seen in
+## the draw in progress.
+var _packed := {}
+var _packed_seen := {}
+var _lob_ids := {}  # look -> the lobbing drones' actor ids, in _lobs' order
+var _drawn_at := -1  # the frame last drawn; -1: a sync since (its last balls may need clearing)
+
+
+func _exit_tree() -> void:
+	for token in _packed.keys():
+		_unpack(token)
+
+
+## v0.10.5 (owner PERF_PLAYLOG_1: view.fireballs 53.1 ms on f1 and 47.3 ms on f2, the first time a look flew): every
+## look's three MultiMeshes and their materials, made at the floor's load (WorldViewRoot, behind the cover; then
+## ShaderWarmup draws each once), so a look's first shot builds nothing. Hidden until drawn (0 instances shown).
+func prepare() -> void:
+	for key: StringName in LOOKS:
+		if not _sets.has(key):
+			_sets[key] = _make_set(key, false)
+
+
+## v0.10.5 PC (owner PERF_PLAYLOG_2: idle pool nodes in the tree cost every frame): the prepared sets of the looks
+## not drawn yet wait outside the tree (ShaderWarmup draws them once at the load); a look joins it at its first draw.
+func idle_pieces() -> Array[Node]:
+	return FireballPack.detached(_sets)
+
+
+## v0.10.5 PC: how many set nodes wait outside the tree (tests, scripts/checks/pool_node_count.gd).
+func idle_outside() -> int:
+	return idle_pieces().size()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:  # (v0.10.5 PC: the sets outside the tree go with the view)
+		for n in idle_pieces():
+			n.free()
 
 
 func sync(reader: WorldReader) -> void:
 	_before = _now
+	var latched := reader as LatchedReader  # v0.10.5 W3-Q7: the places a tick before (a frame of several ticks)
 	_now = {}
 	_drawn = {}
 	for i in reader.projectile_count():
@@ -464,7 +536,10 @@ func sync(reader: WorldReader) -> void:
 		_now[id] = p
 		_vel[id] = reader.projectile_vel(i)
 		_radius[id] = reader.projectile_radius(i)
-		if not _before.has(id):
+		var was: Variant = latched.projectile_pos_before(id) if latched != null else null
+		if was != null:
+			_before[id] = was  # v0.10.5 W3-Q7: drawn between the last two ticks, not from the last sync
+		elif not _before.has(id):
 			_before[id] = p  # a new ball appears where it spawned
 		var list: PackedInt32Array = _drawn.get(key, PackedInt32Array())
 		list.append(id)  # a packed array is a value: written back
@@ -494,11 +569,17 @@ func sync(reader: WorldReader) -> void:
 	for key in _drawn:
 		if not _sets.has(key):
 			_sets[key] = _make_set(key)
-	_draw(1.0)
+	_drawn_at = -1
+	if draw_on_sync:
+		_draw(1.0)
 
 
 func _process(_delta: float) -> void:
-	if not _now.is_empty() or not _lobs.is_empty() or not _rain.is_empty():
+	var frame := Engine.get_process_frames()
+	if frame == _drawn_at and not draw_on_sync:
+		return  # (draw_lights drew this frame)
+	if _drawn_at < 0 or not _now.is_empty() or not _lobs.is_empty() or not _rain.is_empty():
+		_drawn_at = frame
 		_draw(Engine.get_physics_interpolation_fraction())
 
 
@@ -519,7 +600,8 @@ func lob_count() -> int:
 ## arc), each a bigger ball of its look.
 func _sync_lobs(reader: WorldReader) -> void:
 	_lobs = {}
-	for i in reader.actor_count():
+	_lob_ids = {}
+	for i in range(reader.actor_count() if reader.any_kind(WorldReader.KIND_BOMB_DRONE) else 0):
 		if reader.actor_kind(i) != WorldReader.KIND_BOMB_DRONE:
 			continue
 		var tg := reader.telegraph(i)
@@ -531,6 +613,9 @@ func _sync_lobs(reader: WorldReader) -> void:
 		var list: Array = _lobs.get(key, [])
 		list.append(SimPlane.to_3d(at, HEIGHT + LOB_RISE * 4.0 * p * (1.0 - p)))
 		_lobs[key] = list
+		var ids: Array = _lob_ids.get(key, [])
+		ids.append(reader.actor_id(i))  # v0.10.0 FX: the drone's id names its lob's effect (not its place in the list)
+		_lob_ids[key] = ids
 		if not _drawn.has(key):
 			_drawn[key] = PackedInt32Array()
 
@@ -545,6 +630,17 @@ func trail_count(key: StringName) -> int:
 	return _trails.get(key, 0)
 
 
+## v0.10.0 VX4: the dark edges drawn for a look in the last draw (one a shot, pack effect or not).
+func edge_count(key: StringName) -> int:
+	return _edges.get(key, 0)
+
+
+## v0.10.0 VX4: the MultiMesh cores drawn (the shots without a pack effect).
+func core_count(key: StringName) -> int:
+	return _cores.get(key, 0)
+
+
+## Shots drawn for a look (pack effect or MultiMesh core).
 func ball_count(key: StringName) -> int:
 	return _balls.get(key, 0)
 
@@ -569,6 +665,8 @@ func light_requests() -> int:
 
 ## v0.8.0 AV: a VfxCore drawer (WorldViewRoot adds it): the big ones' lights, into the layer's light budget.
 func draw_lights(layer: VfxCore) -> void:
+	if not draw_on_sync:
+		_process(0.0)  # v0.10.5 W3-Q7: the frame's draw first (this view's _process comes after the layer's finish)
 	for w: Array in _light_wants:
 		layer.light_merged(w[0], w[1], w[2], w[3], w[4])
 
@@ -582,14 +680,28 @@ static func rain_point(from: Vector2, to: Vector2, f: float) -> Vector3:
 
 
 func _draw(f: float) -> void:
+	draws += 1
 	var trail_scale: float = TRAIL_SCALE.get(ViewPrefs.effects_density, 1.0)
 	var width: float = TRAIL_WIDTH.get(ViewPrefs.effects_density, 1.0)
 	var thin := ViewPrefs.effects_density == "low"
 	_trail_width = width
 	_update_motion()
 	_light_wants.clear()
+	_packed_seen.clear()
+	if pack_fx == null and vfx is VfxLayer:  # (WorldViewRoot hands the layer over, which holds the pack effects)
+		pack_fx = (vfx as VfxLayer).pack_fx
 	for key in _drawn:
 		var ids: PackedInt32Array = _drawn[key]
+		# PF2: a look with nothing in the air now and nothing drawn last time has nothing to write (its three
+		# MultiMeshes already show 0 instances)
+		if (
+			ids.is_empty()
+			and not _lobs.has(key)
+			and not _rain.has(key)
+			and int(_balls.get(key, 0)) == 0
+			and int(_trails.get(key, 0)) == 0
+		):
+			continue
 		var look := look_of(key)
 		var cores := PackedFloat32Array()
 		var edges := PackedFloat32Array()
@@ -606,9 +718,11 @@ func _draw(f: float) -> void:
 			var dir := v.normalized() if v.length() > 0.00001 else Vector2.RIGHT
 			var at := SimPlane.to_3d(p, HEIGHT)
 			var basis := _along(dir)
-			cores.append_array(
-				_row(Transform3D(_scaled(basis, Vector3(r * float(look["tip"]), r, r)), at))
-			)
+			var packed := _pack_shot(id, key, look, at, dir, r / PACK_REF_RADIUS)
+			if not packed:
+				cores.append_array(
+					_row(Transform3D(_scaled(basis, Vector3(r * float(look["tip"]), r, r)), at))
+				)
 			edges.append_array(
 				_row(
 					Transform3D(
@@ -619,7 +733,7 @@ func _draw(f: float) -> void:
 			if signature and lit < SIGNATURE_LIGHTS and n % 6 == 0:
 				lit += 1
 				_light_wants.append([at, glow, SIGNATURE_ENERGY, LIGHT_RANGE, LIGHT_MERGE * 1.6])
-			if thin and n % 2 == 1:
+			if packed or (thin and n % 2 == 1):  # (a pack effect has its own trail)
 				continue
 			var len: float = look["trail_m"] * trail_scale
 			var back := SimPlane.to_3d(p - dir * (len * 0.5 + r * 0.6), HEIGHT)
@@ -630,24 +744,96 @@ func _draw(f: float) -> void:
 					)
 				)
 			)
+		var lob_n := 0
+		var lob_ids: Array = _lob_ids.get(key, [])
 		for at: Vector3 in _lobs.get(key, []):
 			var lr := LOB_RADIUS * size
-			cores.append_array(_row(Transform3D(Basis().scaled(Vector3.ONE * lr), at)))
+			var lid: int = lob_ids[lob_n] if lob_n < lob_ids.size() else -1 - lob_n
+			var lob_token := "lob:%s:%d" % [key, lid]  # v0.10.0 FX: by the drone, not the list index
+			lob_n += 1
+			if not _pack_shot(lob_token, key, look, at, Vector2.RIGHT, lr / PACK_REF_RADIUS):
+				cores.append_array(_row(Transform3D(Basis().scaled(Vector3.ONE * lr), at)))
 			edges.append_array(_row(Transform3D(Basis().scaled(Vector3.ONE * lr * EDGE_SCALE), at)))
 			_light_wants.append([at, glow, LIGHT_ENERGY, LIGHT_RANGE, LIGHT_MERGE])
 		for d: Array in _rain.get(key, []):  # v0.7.5 BF3: the drops in the air, on their arc
 			var r: float = 0.22 * size
 			var at := rain_point(d[0], d[1], d[2] + d[3] * f)
-			cores.append_array(_row(Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * r), at)))
+			var rain_token := "rain:%s:%s:%s" % [key, d[0], d[1]]  # v0.10.0 FX: by the drop, as the lobs
+			if not _pack_shot(rain_token, key, look, at, Vector2.RIGHT, r / PACK_REF_RADIUS):
+				cores.append_array(_row(Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * r), at)))
 			edges.append_array(
 				_row(Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * r * EDGE_SCALE), at))
 			)
 			_light_wants.append([at, glow, LIGHT_ENERGY, LIGHT_RANGE, LIGHT_MERGE])
-		_balls[key] = cores.size() / 12
+		_balls[key] = edges.size() / 12  # (one a shot, pack effect or MultiMesh core)
+		_cores[key] = cores.size() / 12
+		_edges[key] = edges.size() / 12
 		_trails[key] = trails.size() / 12
+		FireballPack.attach(self, _sets[key])  # v0.10.5 PC: a prepared look's first draw puts its set in the tree
 		_fill(_sets[key]["core"], cores)
 		_fill(_sets[key]["edge"], edges)
 		_fill(_sets[key]["trail"], trails)
+	for token in _packed.keys():  # v0.10.0 VX4: the shots that ended give their effect back
+		if not _packed_seen.has(token):
+			_unpack(token)
+
+
+## v0.10.0 VX4: the pack effect that draws the shot `token` of look `key` at `at`, facing `dir`, `scale_f` times its
+## table scale. It spawns when the shot first draws (held), follows it and is released when the shot stops drawing
+## (_draw). false (the caller draws the old core and trail): no pack, the look has no pack effect, or the family is
+## full.
+func _pack_shot(
+	token: Variant, key: StringName, look: Dictionary, at: Vector3, dir: Vector2, scale_f: float
+) -> bool:
+	if not PACK_SHOTS or pack_fx == null or PACK_SKIP.has(key):
+		return false
+	var slot: Dictionary = _packed.get(token, {})
+	if not slot.is_empty() and not (slot["node"] as Node3D).visible:
+		_packed.erase(token)  # (PackFx took it back: its pool may hand it to another shot)
+		slot = {}
+	if slot.is_empty():
+		var pid := CandidateLooks.bolt_id(key)  # v0.10.5 W3-O7: "shot_<key>", or a G2 candidate's
+		if not pack_fx.has_id(pid) or not pack_fx.has_room(PACK_FAMILY):
+			return false
+		var colors := _pack_colors(look)
+		var node := pack_fx.spawn(pid, at, scale_f, colors, 0.0)
+		if node == null:
+			return false
+		FireballPack.keep_playing(node, node.scale.x)
+		for part: String in CandidateLooks.bolt_hide(key, PACK_HIDE.get(key, [])):
+			var child := node.get_node_or_null(part) as Node3D
+			if child != null:
+				child.visible = false
+		slot = {"node": node, "s": node.scale.x, "fx": pack_fx}  # (PackFx set scale_f times the table's)
+		_packed[token] = slot
+	var n := slot["node"] as Node3D
+	var s: float = float(slot["s"])
+	var t := Transform3D(_scaled(_along(dir), Vector3.ONE * s), at)
+	var was := n.global_position if n.is_inside_tree() else n.position
+	if n.is_inside_tree():
+		n.global_transform = t
+	else:
+		n.transform = t
+	PackFx.settle(n, was, at)  # v0.10.0 FX: a jump starts its trail again
+	_packed_seen[token] = true
+	return true
+
+
+## The look's own colours for the pack scene's three (a scene without them, the fire balls, keeps its own).
+static func _pack_colors(look: Dictionary) -> Dictionary:
+	var trail: Color = look["trail"]
+	return {
+		&"primary": look["core"],
+		&"secondary": trail,
+		&"tertiary": trail.darkened(0.25),
+	}
+
+
+func _unpack(token: Variant) -> void:
+	var slot: Dictionary = _packed.get(token, {})
+	_packed.erase(token)
+	if not slot.is_empty() and is_instance_valid(slot["fx"]):
+		(slot["fx"] as PackFx).release(slot["node"] as Node3D)
 
 
 ## v0.8.0 AV: reduced motion stills the swirl, the turning and the wobble (set on every look when it changes).
@@ -707,12 +893,22 @@ static func _fill(mi: MultiMeshInstance3D, buf: PackedFloat32Array) -> void:
 	mm.visible_instance_count = n
 
 
-func _make_set(key: StringName) -> Dictionary:
+func _make_set(key: StringName, attach := true) -> Dictionary:
 	var look := look_of(key).duplicate()
 	look["key"] = key  # v0.8.0 TX1: the materials pick the owner's textures by the look's key
 	var mesh := ProjectileMeshes.get_mesh(look.get("mesh", &"orb"))
+	var core_mesh: Mesh = mesh
+	var core_mat: Material = core_material(look)
+	if key == CRESCENT_KEY and PACK_CRESCENT and PackFx.available():
+		var worn := GapPack.material_copy(
+			GapPack.RIM_MAT,
+			{&"primary": look["core"], &"secondary": look["trail"], &"tertiary": look["edge"]}
+		)
+		if worn != null:
+			core_mat = worn
+			core_mesh = GapPack.planar_uv(mesh, CRESCENT_X0, CRESCENT_X1)
 	var specs := [
-		["core", mesh, core_material(look)],
+		["core", core_mesh, core_mat],
 		["edge", mesh, edge_material(look)],
 		["trail", ProjectileMeshes.get_mesh(&"ribbon"), trail_material(look)],
 	]
@@ -730,7 +926,8 @@ func _make_set(key: StringName) -> Dictionary:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 		mi.extra_cull_margin = 2.0  # the shaders turn and stretch the pieces past their boxes
-		add_child(mi)
+		if attach:
+			add_child(mi)
 		out[s[0]] = mi
 	_motion = -1.0  # the new set takes the current motion on the next draw
 	return out

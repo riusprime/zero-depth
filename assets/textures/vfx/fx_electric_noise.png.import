@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://die62vppy7b4p"
-path.s3tc="res://.godot/imported/fx_electric_noise.png-425a10fcd04086f5176e522e86df07fd.s3tc.ctex"
+path="res://.godot/imported/fx_electric_noise.png-425a10fcd04086f5176e522e86df07fd.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/textures/vfx/fx_electric_noise.png"
-dest_files=["res://.godot/imported/fx_electric_noise.png-425a10fcd04086f5176e522e86df07fd.s3tc.ctex"]
+dest_files=["res://.godot/imported/fx_electric_noise.png-425a10fcd04086f5176e522e86df07fd.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

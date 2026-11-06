@@ -6,6 +6,10 @@ extends RefCounted
 
 signal reseed_requested(seed_value: int)
 
+## v0.10.5 W3-V1: the view switches the dev panel shows (it cannot see the views; a view registers its own, e.g.
+## ViewPrefs' enemy VAT): id -> [the button's text key, a Callable that flips it, a Callable returning it (bool)].
+static var view_switches := {}
+
 var world: World
 var paused := false
 var ticks_last_frame := 0
@@ -37,6 +41,13 @@ var _curse_chest := false
 ## v0.6.0 CU (TEST HELPER, dev runs only); v0.9.0 EL: the next elite archetype to spawn (-1 none), and the one after.
 var _elite_pending := -1
 var _elite_next := 0
+
+
+## v0.10.5 W3-V1: adds (or replaces) a dev panel view switch (see view_switches).
+static func register_view_switch(
+	id: StringName, label_key: String, flip: Callable, state: Callable
+) -> void:
+	view_switches[id] = [label_key, flip, state]
 
 
 func _init(p_world: World) -> void:
@@ -164,15 +175,23 @@ static func boss_spot(w: World, r: float) -> Vector2:
 	return p + Vector2(6, 0)
 
 
-## v0.4.0 BS: picks the next compiled ability for grant_ability.
+## v0.4.0 BS: picks the next compiled ability for grant_ability. v0.10.5 O1: never a retired one (a deleted
+## ability's stub, CardOrder.RETIRED_ABILITIES).
 func next_ability() -> void:
-	if not world.ability_tables.is_empty():
-		ability_choice = (ability_choice + 1) % world.ability_tables.size()
+	var n := world.ability_tables.size()
+	for step in range(1, n + 1):
+		var k := (ability_choice + step) % n
+		if not world.ability_tables[k].retired:
+			ability_choice = k
+			return
 
 
-## Queues the chosen ability (a new slot, or one level up) for the next tick boundary.
+## Queues the chosen ability (a new slot, or one level up) for the next tick boundary (never a retired one).
 func grant_ability() -> void:
-	if not world.ability_tables.is_empty():
+	if (
+		ability_choice < world.ability_tables.size()
+		and not world.ability_tables[ability_choice].retired
+	):
 		_grants.append(ability_choice)
 
 
@@ -182,12 +201,13 @@ func grant_mod() -> void:
 	_mod_grants += 1
 
 
-## v0.6.0 MX4: picks the next modifier card (an item that takes a slot) for grant_mod, in item order.
+## v0.6.0 MX4: picks the next modifier card (an item that takes a slot) for grant_mod, in item order. v0.10.5 O1:
+## never a retired one (a deleted card's stub).
 func next_mod() -> void:
 	var n := world.item_tables.size()
 	for step in range(1, n + 1):
 		var k := (mod_choice + step) % n if mod_choice >= 0 else step - 1
-		if BuildSlots.is_slot_item(world.item_tables[k]):
+		if BuildSlots.is_slot_item(world.item_tables[k]) and not world.item_tables[k].retired:
 			mod_choice = k
 			return
 
@@ -217,7 +237,7 @@ static func arena_door_outside(w: World, m: float) -> Vector2:
 		return Vector2.INF
 	var best := Vector2.INF
 	for room in f.arena_rooms:
-		if Arenas.is_cleared(w, room):
+		if Arenas.is_cleared(w, room) or Lockdowns.is_open(w, room):
 			continue
 		var doors := ArenaRooms.doors_of(f, room)
 		if doors.is_empty():
@@ -300,6 +320,7 @@ func _apply_commands() -> void:
 		if (
 			mod_choice >= 0
 			and mod_choice < world.item_tables.size()
+			and not world.item_tables[mod_choice].retired
 			and CardLevels.can_take(world, mod_choice, CardLevels.MAX_LEVEL)
 		):  # v0.8.0 FL: no floor ceiling
 			Offers.apply(world, mod_choice)  # v0.6.0 MX4: the chosen card (v0.6.5 WN3: or its level-up)

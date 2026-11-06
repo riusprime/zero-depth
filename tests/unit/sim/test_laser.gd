@@ -11,6 +11,17 @@ const HP := 1000000
 const LASER_ON: Array[StringName] = [
 	&"gun_twin",
 	&"gun_pierce",
+	&"halo_shot",  # v0.9.5 FC1: the eleven cards LaserMods reads
+	&"gun_ring",
+	&"gun_backfire",
+	&"gun_ricochet",
+	&"gun_homing",
+	&"gun_echo",
+	&"gun_big_shot",
+	&"gun_rapid_fire",
+	&"split_shot",
+	&"gun_mine",
+	&"gun_spiral",
 	&"ember_core",
 	&"storm_core",
 	&"frost_core",
@@ -49,7 +60,7 @@ func test_the_card_makes_the_guns_shot_a_held_beam() -> void:
 	assert_eq(s.form, AttackSpec.Form.BEAM)
 	assert_eq(s.period_ticks, 6, "10 ticks a second")
 	assert_almost_eq(s.reach_m, 9.0, 0.001, "9 m")
-	assert_eq([s.beam_permille, s.rate_scale_permille, s.move_permille], [800, 500, 750])
+	assert_eq([s.beam_permille, s.rate_scale_permille, s.move_permille], [1000, 500, 750])  # W3-P5
 	var it := w.item_tables[W.item(w, &"gun_laser")]
 	assert_eq(it.slot_category, AttackSlots.FORM, "a Form card")
 	var def: ItemDefinition = W.repo().get_def(&"items", &"gun_laser")
@@ -62,7 +73,7 @@ func test_held_fire_ticks_ten_times_a_second_and_beats_the_orbs_on_one_target() 
 	W.run(w, 720, 0, W.S)
 	var beam := _dealt(w, 1, 120, 720)
 	assert_eq(beam[0], 100, "10 ticks a second over 10 s")
-	assert_eq(beam[1], 400, "each tick 4 (800 per mille of the orb's 5)")
+	assert_eq(beam[1], 500, "each tick 5.0 (v0.10.5 W3-P5: 1000 per mille of the orb's 5)")
 	var o := _world([], [4.0], true)
 	W.run(o, 720, 0, W.S)
 	var orbs := _dealt(o, 1, 120, 720)
@@ -73,7 +84,8 @@ func test_held_fire_ticks_ten_times_a_second_and_beats_the_orbs_on_one_target() 
 			% [beam[1], beam[0], orbs[1], orbs[0], ratio]
 		)
 	)
-	assert_between(ratio, 1.1, 1.3, "about 1.2 × the orbs' single-target DPS (Q8)")
+	# v0.10.5 W3-S2 (owner, 2026-11-04: Laser doesn't feel powerful): 1.2 → 1.4×; W3-P5 (its crowd ≥ the orbs'): 1.54×.
+	assert_between(ratio, 1.45, 1.65, "about 1.55 × the orbs' single-target DPS (Q8)")
 
 
 func test_the_beam_stops_at_the_first_enemy() -> void:
@@ -84,12 +96,12 @@ func test_the_beam_stops_at_the_first_enemy() -> void:
 
 
 func test_pierce_passes_through_as_many_as_it_allows() -> void:
-	var w := _world([&"gun_pierce"], [2.0, 3.5, 5.0, 6.5])
-	assert_eq(Modifiers.bolt(w).pierce, 2, "Pierce Lv 1: through 2")
+	var w := _world([&"gun_pierce"], [1.5, 2.5, 3.5, 4.5, 5.5, 6.5])
+	assert_eq(Modifiers.bolt(w).pierce, 4, "Pierce: through 4")
 	W.run(w, 60, 0, W.S)
-	for k in [1, 2, 3]:
+	for k in [1, 2, 3, 4, 5]:
 		assert_gt(_dealt(w, k)[1], 0, "enemy %d is hit" % k)
-	assert_eq(_dealt(w, 4)[1], 0, "the fourth is past Pierce")
+	assert_eq(_dealt(w, 6)[1], 0, "the sixth is past Pierce")
 
 
 func test_a_wall_stops_the_beam_and_it_reaches_nine_metres() -> void:
@@ -108,16 +120,16 @@ func test_a_wall_stops_the_beam_and_it_reaches_nine_metres() -> void:
 	assert_gt(_dealt(near, 1)[1], 0, "within 9 m")
 
 
-func test_twin_gives_two_beams_and_three_at_level_five() -> void:
+func test_twin_gives_two_beams_and_three_at_level_three() -> void:
 	var w := _world([&"gun_twin"], [])
 	var twin := W.item(w, &"gun_twin")
-	var expect := {1: [2, 600], 2: [2, 700], 3: [2, 800], 4: [2, 900], 5: [3, 700]}
+	var expect := {1: [2, 700], 2: [2, 900], 3: [3, 750]}
 	for lvl: int in expect:
 		CardLevels.set_level(w, twin, lvl)
 		var s := Modifiers.bolt(w)
 		var beams := Laser.trace(w, s, w.player_pos(), 0)
 		assert_eq([beams.size(), s.share_permille], expect[lvl], "Twin Lv %d" % lvl)
-		assert_eq(Laser.milli_of(s, 5), 4 * int(expect[lvl][1]), "each beam's share of the tick")
+		assert_eq(Laser.milli_of(s, 5), 5 * int(expect[lvl][1]), "each beam's share of the tick")
 	var two := _world([&"gun_twin"], [])
 	var p: Array[Dictionary] = Laser.trace(two, Modifiers.bolt(two), two.player_pos(), 0)
 	var gap := (p[1]["from"] as Vector2) - (p[0]["from"] as Vector2)
@@ -130,7 +142,7 @@ func test_a_twin_beam_on_one_target_deals_its_share_and_feeds_as_a_second() -> v
 	W.run(w, 720, 0, W.S)
 	var two := _dealt(w, 1, 120, 720)
 	assert_eq(two[0], 200, "both beams tick on a wide-enough target")
-	assert_eq(two[1], 480, "2 × 4 × 60 %")
+	assert_eq(two[1], 700, "2 × 5.0 × 70 %")
 
 
 func test_attack_speed_raises_the_tick_rate_at_half_its_value() -> void:
@@ -239,7 +251,7 @@ func test_the_laser_row_offers_only_its_cards() -> void:
 
 func test_the_laser_replaces_the_orbs_and_a_held_off_card_stops_compiling() -> void:
 	var w := _slot_world()
-	_take(w, [&"halo_shot", &"gun_ricochet", &"ember_core"])
+	_take(w, [&"orbit_rounds", &"gun_swirl", &"ember_core"])
 	assert_eq(AttackSlots.form_id(w), &"orbs")
 	var laser := W.item(w, &"gun_laser")
 	assert_true(ItemPool.usable(w, laser), "offered on the orbs")
@@ -248,16 +260,8 @@ func test_the_laser_replaces_the_orbs_and_a_held_off_card_stops_compiling() -> v
 	assert_eq(AttackSlots.form_id(w), &"laser")
 	var s := Modifiers.bolt(w)
 	assert_true(Laser.held(s), "the Gun's shot is the beam")
-	assert_eq(
-		[s.directions, s.bounces], [AttackSpec.DIR_FORWARD, 0], "Halo and Ricochet don't compile"
-	)
+	assert_eq([s.orbit_ticks, s.swirl], [0, 0], "Orbit and Swirl don't compile")
 	assert_true(s.has_status(&"burn"), "Fire does")
-
-
-func test_the_laser_card_shapes_the_shot_wherever_it_sits() -> void:
-	var w := _slot_world()
-	_take(w, [&"trigger_on_hit", &"gun_laser"])
-	assert_true(Laser.held(Modifiers.bolt(w)), "right of a trigger it still makes the Gun's shot")
 
 
 func test_a_later_form_card_replaces_the_laser() -> void:

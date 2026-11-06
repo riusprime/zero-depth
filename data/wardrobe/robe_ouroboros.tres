@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RobeDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/robe_definition.gd" id="1_robe"]
+
+[resource]
+script = ExtResource("1_robe")
+order = 9
+name_key = &"ROBE_OUROBOROS"
+cloak = Color(0.121569, 0.305882, 0.352941, 1)
+underside = Color(0.372549, 0.788235, 0.721569, 1)
+free = false
+unlock_hint_key = &"ROBE_OUROBOROS_HINT"
+id = &"ouroboros"

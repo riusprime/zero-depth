@@ -12,8 +12,8 @@ extends RefCounted
 ##   on_hook: CONTACT, HIT), between consecutive projectiles (LINK: Attacks._bolts marks them, World._apply_spawns
 ##   links them, on_link), or along the attack's path once it is done (PATH: on_arc, on_bolt_end).
 ## - Inheritance: a remnant keeps the hook level of the attack that left it: its activation is that attack's child
-##   (depth + 1, proc halved; Attacks.MAX_HOOK_DEPTH bounds it: an attack at the deepest level leaves none), its cast
-##   runs with the card's id on World.hook_chain (a remnant's cast never leaves the same remnant; its child spec's
+##   (depth + 1, proc halved; Attacks.hook_depth, the loop's, bounds it: one at the deepest level leaves none), its
+##   cast runs with the card's id on World.hook_chain (a remnant's cast never leaves the same remnant; its child spec's
 ##   lineage holds the card too), and a replay (DELAY) launches as a repeat (it never replays or recasts).
 ## - Limits (WandTable, data/wand/wand.tres): each card's own cap (its rule's max_alive), a cap per kind and
 ##   remnant_max in all; a new one past a cap replaces the oldest (REMNANT_END, END_REPLACED). At most
@@ -86,7 +86,7 @@ static func on_hook(
 	w: World, k: AttackHook, parent: AttackContext, at: Vector2, exclude: int
 ) -> bool:
 	if (
-		parent.depth + 1 > Attacks.MAX_HOOK_DEPTH
+		parent.depth + 1 > Attacks.hook_depth(w)
 		or w.hook_chain.has(String(k.id))
 		or w.player_dead()
 	):
@@ -211,7 +211,7 @@ static func on_link(w: World, pi: int, key: String) -> void:
 	var p := w.projectiles
 	var prev := p.ids.find(s.link_id) if s.link_id >= 0 else -1
 	var linked := prev >= 0 and s.link_key == key and w.tick - s.link_tick <= k.remnant.link_ticks
-	if linked and k.child.depth <= Attacks.MAX_HOOK_DEPTH:
+	if linked and k.child.depth <= Attacks.hook_depth(w):
 		var ctx := _ctx_of(w, k, p.root_id[pi], p.damage[pi])
 		var n := _add(w, k, ctx, p.damage[pi])
 		var a := Vector2(p.pos_x[prev], p.pos_y[prev])
@@ -243,7 +243,7 @@ static func on_arc(w: World, spec: AttackSpec, ctx: AttackContext, reach: float)
 					_erupt(w, n, p, ctx.angle, ctx.damage, ctx.root)
 					break
 	var k := _path_of(spec)
-	if k == null or ctx.depth + 1 > Attacks.MAX_HOOK_DEPTH or w.hook_chain.has(String(k.id)):
+	if k == null or ctx.depth + 1 > Attacks.hook_depth(w) or w.hook_chain.has(String(k.id)):
 		return
 	var r := edge + reach * PATH_REACH
 	var half := spec.half_arc
@@ -265,7 +265,7 @@ static func on_arc(w: World, spec: AttackSpec, ctx: AttackContext, reach: float)
 ## it was fired) when the spec has one.
 static func on_bolt_end(w: World, spec: AttackSpec, pi: int, at: Vector2) -> void:
 	var k := _path_of(spec)
-	if k == null or spec.depth + 1 > Attacks.MAX_HOOK_DEPTH or w.hook_chain.has(String(k.id)):
+	if k == null or spec.depth + 1 > Attacks.hook_depth(w) or w.hook_chain.has(String(k.id)):
 		return
 	var p := w.projectiles
 	var v := Vector2(p.vel_x[pi], p.vel_y[pi])
@@ -676,7 +676,7 @@ static func _release(w: World, k: AttackHook, uid: int) -> void:
 	e.effect_id = k.id
 	e.amount = dmg
 	_end(w, n, END_CONSUMED)
-	if c.depth > Attacks.MAX_HOOK_DEPTH or w.hook_chain.has(String(k.id)):
+	if c.depth > Attacks.hook_depth(w) or w.hook_chain.has(String(k.id)):
 		return
 	w.hook_chain.append(String(k.id))
 	Attacks.launch(w, k.child, c)

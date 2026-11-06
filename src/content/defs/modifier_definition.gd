@@ -211,10 +211,29 @@ func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) 
 				&"range", resource_path, "%s: per_level on a numeric op or a hook" % where
 			)
 		)
+	if not o.level_values.is_empty():  # v0.9.5 CLV
+		if not o.is_numeric() or o.level_values.size() > 5:
+			issues.append(
+				ValidationIssue.new(
+					&"range", resource_path, "%s: level_values: a numeric op, 1..5 entries" % where
+				)
+			)
+		elif o.op != ModifierOpDefinition.Op.ADD and _has_negative(o.level_values):
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "%s: level_values below 0" % where)
+			)
 	if o.per_level_after < 1 or o.per_level_after > 4:  # v0.8.0 BL (B2): the steps start above 1..4
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "%s: per_level_after is 1..4" % where)
 		)
+
+
+## v0.9.5 CLV: any entry of `values` is below 0.
+static func _has_negative(values: PackedFloat32Array) -> bool:
+	for v in values:
+		if v < 0.0:
+			return true
+	return false
 
 
 ## v0.8.0 RM (Remnants): a remnant's numbers are in range, and its cast (unless it never casts: an anchor's pull) is

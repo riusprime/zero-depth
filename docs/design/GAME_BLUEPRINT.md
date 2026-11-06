@@ -208,14 +208,21 @@ value or by an owner decision, and the change is noted here.
   while you own their ability: Cluster Payload (Bomb Lobber), Overclocked Drone (Drone Buddy, with heat), Razor
   Orbit (Orbit Blades, bleed) and Afterimage (Blink). Stat cards are drawn by weight. Pairs:
   [`INTERACTIONS.md`](INTERACTIONS.md); evidence: `docs/roadmap/v0.5.0/evidence/CARD_POOL.md`.
+  **v0.10.5 O9 (theory audit P2, owner 2026-11-01; starting values):** seven more rule cards (Trigger → Condition →
+  Payoff) replace eight flat stats: Close Quarters (crit damage), Third Strike (area), Reflex (cooldowns), Adrenaline
+  (move speed), Vent Mend (regen), Heat Shield (armour), Scavenger (pickup range); shard gain goes to Hoarder. Four
+  plain stats stay as filler: damage, attack speed, max HP, crit chance. The retired cards keep their data at weight
+  0 (never offered; an old save's cards still count). G1: `docs/roadmap/v0.10.5/O9_RULE_CARDS.md`.
 - **Shops and salvage (v0.5.0 SH; ROADMAP v0.5.0 "Shops", "salvage").** One shop per floor, a terminal in a side
   room (never the start hall, the boss room or the room before the boss door; on the minimap once seen). Interact
   opens it and the world waits: **4 cards** from the chests' pools (slot rules hold; mods only with their ability)
   priced by rarity × floor (30 / 55 / 90 × 1, 1.5, 2), a **heal** (30 % max HP, once, 40 × floor) and a **reroll**
-  (20, +50 % per use). A bought card applies exactly as a picked one. **Salvage** at the same panel: sell a mod or
-  a stat card (one stack) for 40 % of its price, or salvage an ability (not the weapon; v0.6.0 MX2: a modifier, or the
-  utility) for 10 shards per level (was 25; M-LOOP, v0.4.0 TU) to free its slot for a later card: a way to change a build's direction, paid for. Starting values; evidence:
-  `docs/roadmap/v0.5.0/evidence/SHOP.md`.
+  (20, +50 % per use). A bought card applies exactly as a picked one. Starting values; evidence:
+  `docs/roadmap/v0.5.0/evidence/SHOP.md`. v0.10.5 W3-O9 (owner, 2026-11-04: "it should only show the heal, reroll
+  and the 4 cards, lifting the curse and selling is too broken"): **salvage** (selling a card back) and the paid
+  curse lift are gone; the shop is the heal, the reroll and its 4 cards. The Cleansing Font event still lifts a curse.
+
+- **Chests and free altars: +~12 % (v0.10.5 S7, owner 2026-11-01; starting value).** `extra_chest_permille` and `extra_altar_permille` (120 each, `data/rewards/floor.tres`) add whole extras plus a remainder chance after a floor's usual placement (`Rewards._place_extras`, loot stream); card rewards per chest/altar, shops, the boss altar and the epic altar are unchanged.
 
 ## E. Enemies and the stress matrix
 
@@ -249,17 +256,30 @@ Splitlings) are exempt. The phases are in `data/curves/floor_N.tres` (§H).
 | 2 | Shield Bearer, Bomb Drone, Mine Layer | Charger, Needle, Swarmer | Warden, Arc Caster, Splitter |
 | 3 | Mender, Sniper, Swarmer packs (of 8) | Charger, Needle, Swarmer | all of floors 1–2 |
 
-**Stress matrix** (S = stresses the engine, D = drains it, – = neutral). The rules are in
-[`../balance/SCORECARD.md`](../balance/SCORECARD.md) §4.
+**Stress matrix** (v0.10.5 O10, overnight pick, owner reviews; owner P3: "yes"). Rock-paper-scissors: every enemy
+kind is weak to one form or element (×1.25) and resists another (×0.75), per-mille multipliers in each enemy's data.
+Each of the seven ids is good against 2 kinds and bad against 2, so no build is best in every room (Schreiber,
+intransitive and situational). The reasons, the rule and the room mixes:
+[`../roadmap/v0.10.5/O10_STRESS_MATRIX.md`](../roadmap/v0.10.5/O10_STRESS_MATRIX.md). It replaces the engine table
+(Bleed / Guard, S / D), whose cells were never filled (retired GA citations); `stress_tags` stay in the data. The
+scorecard's rules are in [`../balance/SCORECARD.md`](../balance/SCORECARD.md) §4.
 
-| Enemy | Bleed (aggro) | Guard (control) | (next engine) |
-|---|---|---|---|
-| Charger | from GA | from GA | |
-| Warden | from GA | from GA | |
-| Needle | from GA | from GA | |
-| Disruptor | from GA | from GA | |
-| Splitter | from GA | from GA | |
-| Anchor | from GA | from GA | |
+| Enemy | Weak to (×1.25) | Resists (×0.75) |
+|---|---|---|
+| Charger | Lance | Venom |
+| Warden | Venom | Lightning |
+| Needle | Glaive | Wave |
+| Swarmer | Wave | Laser |
+| Arc Caster | Lance | Lightning |
+| Splitter | Venom | Glaive |
+| Splitling | Wave | Lance |
+| Hatchling | Fire | Lance |
+| Shield Bearer | Laser | Glaive |
+| Sniper | Laser | Wave |
+| Mender | Lightning | Fire |
+| Mine Layer | Glaive | Fire |
+| Bomb Drone | Fire | Venom |
+| Lens Drone | Lightning | Laser |
 
 ## F. Bosses
 
@@ -363,10 +383,24 @@ Splitlings) are exempt. The phases are in `data/curves/floor_N.tres` (§H).
 - **Hidden catch-up (v0.5.5 D4, owner: "Yes, but hidden").** On top of the regular scaling, each floor reads your
   build's power from its cards and abilities alone (never from how well you play) and compares it with a normal
   build's: enemies get HP × m and damage × √m, m = √(your power ÷ expected), at least ×1, at most ×1.5 / ×2 / ×2.5 on
-  floors 1/2/3 (+0.25 per threat T). m is fixed for the floor and never shown. A build twice as strong as expected
+  floors 1/2/3 (+0.25 per threat T). m is fixed for the floor ~~and never shown~~. A build twice as strong as expected
   meets enemies ×1.41: still easier. A build ten times stronger hits the cap and deletes the floor: the lucky run.
+- **The catch-up is shown (v0.10.5 O6; D4's "hidden" flipped).** Owner, theory audit P4 (2026-11-01): "let's try to
+  show it, also modify the triangles at the top to be a line filling up as a danger hazard texture, small kinda shaped
+  like hp but green to red blinking when full"; asked what the line shows: "Danger, plus a separate tag". So the floor's
+  m shows as a small tag under the top plate, "The depths answer ×1.41" / "Las profundidades responden ×1.41", hidden
+  at ×1, and the pause menu explains it in one sentence. The danger meter is a hazard-striped bar (green → yellow →
+  red, full at tier 10, blinking slowly when full; steady red under reduced motion). The boss's paced HP (O2b) is not
+  tagged. Overnight G2 pick C (`docs/roadmap/v0.10.5/evidence/O6_DANGER_BAR.md`); the owner reviews.
 - **Bosses (D6, D7)** take their own m when they spawn, against the power expected at the floor's end, with a higher
   cap (×2 / ×3 / ×4, +0.25 per T), and gates HP can't skip (§F).
+- **Boss fights of 1–2 minutes (v0.10.5 O2b, owner D38 (a); overnight pick, owner reviews).** A floor boss's HP no
+  longer takes m: when its door starts to open it reads your power P and sets HP × pace(floor) × P ÷ E (pace ×3.09 /
+  ×3.77 / ×4.45 on floors 1/2/3, later floors as floor 3; never under ×1; the same ±8 % spread), so the fight lasts
+  about 90 s (band 60–120 s) whether the build is weak or strong. Past 3× the expected power the HP stops growing, so
+  only a far stronger build is quicker (6× E: about 40–60 s) and deleting a phase stays very rare. Its damage keeps
+  × √m, the gates (66 % / 33 %, invulnerable shifts) stay, and the final boss keeps its own pace (FinalPace). All
+  numbers are starting values in `data/scaling/catch_up.tres`.
 - **Deep floors bite (S5).** A Deep floor: a violet haze over the biome's light, an elite in every combat room,
   +1 T (which raises both caps), the epic altar by the boss door, and a Deep-only event (Whispering Deep; v0.8.0
   N19: at the floor's curse altar, so every Deep floor has a curse room).

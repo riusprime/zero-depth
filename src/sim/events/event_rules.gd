@@ -5,6 +5,9 @@ extends RefCounted
 
 var rooms_min := 1
 var rooms_max := 2
+## v0.9.5 AQ: see EventRulesDefinition. events_max_per_run 0 = the old draw (rooms_min..rooms_max every floor).
+var event_floor_chance_permille := 1000
+var events_max_per_run := 0
 var interact_radius_m := 1.6
 var clear_radius_m := 1.0
 var reward_gap_m := 3.0
@@ -16,11 +19,12 @@ var cursed_chest_first_floor := 1
 var cursed_chest_every_floors := 2
 var cursed_chests_per_floor := 1
 var defend_radius_m := 4.5
-var cleanse_price := 60
 ## v0.6.0 CU core theft: a boss's steal window (ticks), a mod core's draw weight and the spacing of drops at one spot.
 ## (v0.9.0 EL: the elite's stagger, its HP bonus, the ambush's distance and Marked's hunt range are gone.)
 var core_window_ticks := 120
 var core_mod_weight := 10
+## v0.10.5 S6: the chance a boss's core is Legendary, in per mille (350 as shipped; else an Epic card).
+var boss_core_legendary_permille := 350
 var drop_offset_m := 0.9
 ## v0.8.0 N17 (owner O75: "they need to appear once max per floor and 40% of floors not all the time"): the chance a
 ## floor has a curse room, in per mille (Events.curse_site, on `map:curse_room`).

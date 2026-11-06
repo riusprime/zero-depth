@@ -12,6 +12,7 @@ extends RefCounted
 ## - NB4b (owner, PLAN "Owner decisions" NB4: "Dark comes and goes"): the dark lasts the table's dark_hold_ticks, then
 ##   lifts and the whole room is lit until the next Lights Out's dark (the lanterns stand, unburnt, meanwhile). A table
 ##   with no dark_hold_ticks keeps the dark until the Shade dies.
+## - v0.10.5 O2a (owner L3): Lights Out is shielded only through its telegraph (shield_seconds 0); the wisps fly open.
 ## - Hittable only when lit: in the dark a hit on the Shade sparks off (Damage, like a shield) unless its body touches
 ##   the light (unlit()); in the light it is hittable anywhere.
 ## - The Snuff (a `marks` attack with snuff): each struck circle puts out the lit lantern nearest its centre.
@@ -156,24 +157,27 @@ static func unlit(w: World, i: int) -> bool:
 	return not lit(w, w.actors.pos(i), w.actors.radius[i])
 
 
-## Tick phase 6, a Snuff circle at c struck (BossDodge.resolve_marks): the lit lantern nearest c goes out.
+## Tick phase 6, a Snuff circle at c struck (BossDodge.resolve_marks): the atk.snuff_count lit lanterns nearest c go
+## out (v0.9.5 BH3, B10: two; one before).
 static func snuff(w: World, atk: BossAttackTable, c: Vector2) -> void:
 	if not atk.snuff or not dark(w):
 		return
 	var bs := w.bosses
-	var best := -1
-	var best_d := INF
-	for k in bs.lamp_t.size():
-		if bs.lamp_t[k] <= 0:
-			continue
-		var d := Kin.length(Vector2(bs.lamp_x[k], bs.lamp_y[k]) - c)
-		if d < best_d:
-			best_d = d
-			best = k
-	if best >= 0:
-		var lt := bs.lamp_t
+	var lt := bs.lamp_t
+	for n in maxi(1, atk.snuff_count):
+		var best := -1
+		var best_d := INF
+		for k in lt.size():
+			if lt[k] <= 0:
+				continue
+			var d := Kin.length(Vector2(bs.lamp_x[k], bs.lamp_y[k]) - c)
+			if d < best_d:
+				best_d = d
+				best = k
+		if best < 0:
+			break
 		lt[best] = 0
-		bs.lamp_t = lt
+	bs.lamp_t = lt
 
 
 ## World._remove_dead (through BossSignatures.on_boss_gone): the room relights.
@@ -190,7 +194,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 static func state(w: World) -> Dictionary:
 	var bs := w.bosses
 	if bs.shade_boss < 0:
-		return {}
+		return BossInterphase.light(w)  # v0.9.5 BH6: the Fallen's Lights Out interphase shows the same dark
 	var i := w.actors.index_of(bs.shade_boss)
 	if i < 0:
 		return {}

@@ -189,3 +189,35 @@ func test_no_loose_decoration_on_the_altar() -> void:
 	var out := AltarStage.clear_decor([near, far, cover], Vector2.ZERO, AltarStage.RADIUS)
 	assert_eq(out, [far, cover], "the decoration on it goes; the rest stays")
 	assert_eq(AltarStage.clear_decor([near], Vector2.ZERO, 0.0), [near], "no altar: untouched")
+
+
+## v0.10.5 (owner: "you can clearly see the character half body inside it"): whoever stands on the altar is drawn on
+## its stone: the top at its centre, lower on the outer steps, the floor off it; ActorViews lifts the hero there.
+func test_the_hero_stands_on_the_altar_not_inside_it() -> void:
+	var a := _altar()
+	a.position = Vector3(10, 0, 4)
+	assert_true(a.uses_model, "arrival_altar is listed")
+	assert_almost_eq(
+		a.height_at(Vector3(10, 0, 4)), AltarStage.MODEL_TOP, 0.001, "the centre: the top"
+	)
+	var outer := a.height_at(Vector3(10 + 3.1, 0, 4))
+	assert_between(outer, 0.05, AltarStage.MODEL_TOP - 0.05, "an outer step: lower than the top")
+	assert_eq(a.height_at(Vector3(10 + 3.6, 0, 4)), 0.0, "off the altar: the floor")
+	var w := CombatLab.world()
+	var reader := WorldReader.new(w)
+	var views := ActorViews.new()
+	add_child_autofree(views)
+	views.set_process(false)
+	var on := AltarStage.new(AltarStage.arrival())
+	add_child_autofree(on)
+	on.setup(reader.player_pos())
+	views.sync(reader)
+	var hero := views.actor_node(w.actors.ids[0])
+	assert_almost_eq(
+		hero.position.y, 0.0, 0.001, "no altar on the floor: the hero's feet on the floor"
+	)
+	views.grounds.append(on)
+	views.sync(reader)
+	assert_almost_eq(
+		hero.position.y, AltarStage.MODEL_TOP, 0.001, "on the altar: on its top, not half inside it"
+	)

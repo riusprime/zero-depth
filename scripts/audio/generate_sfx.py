@@ -751,6 +751,28 @@ def s_boss_shade_relight(r):
     return echo(x, 90, 0.3, 0.25, 3000, 0.3)
 
 
+def s_gamble_fail(r):
+    """v0.9.5 SS: the Fortune shrine failing: a short low thud, a falling FM sweep (420 to 110 Hz) and a crackle."""
+    n = n_of(0.55)
+    sweep = fm(curve(420, 110, n), 1.5, curve(3.0, 0.8, n, "lin"), n) * env(n, 0.004, 0.3) * 0.8
+    m = n_of(0.12)
+    thud = one_pole_lp(osc(curve(95, 45, m), "sine", m), 400) * env(m, 0.002, 0.05) * 0.9
+    crack = bandpass(noise(r, n), curve(3200, 500, n), 1.2) * env(n, 0.002, 0.2)
+    gate = (noise(r, n) > -0.2).astype(float)  # crackle: the noise chops in and out
+    crackle = crack * one_pole_lp(gate, 1500) * 0.55
+    x = bitcrush(soft_clip(mix(sweep, thud, crackle), 1.3), 7, 2)
+    return echo(x, 70, 0.3, 0.2, 2500, 0.15)
+
+
+def s_gamble_win(r):
+    """v0.9.5 SS: the Fortune shrine paying out: a bright rising two-note chime a fifth apart, with a shimmer tail."""
+    m = n_of(0.33)
+    first = metal_ping(0.33, 1046.5, 2.0, 1.4, 0.16) * 0.55
+    second = at(metal_ping(0.33, 1568.0, 2.0, 1.4, 0.2) * 0.55, 0.12)
+    shimmer = at(bandpass(noise(r, m), curve(5200, 8000, m), 6.0) * env(m, 0.1, 0.2) * 0.25, 0.12)
+    return echo(mix(first, second, shimmer), 60, 0.4, 0.3, 6000, 0.15)
+
+
 def s_boss_floor_burst(r):
     """v0.4.0 BO: a flood's lanes bursting up (spears through the floor, molten metal): a crack and a hiss."""
     n = n_of(0.7)
@@ -1182,6 +1204,20 @@ def s_wisp_fire(r):
     return mix(blip, air)
 
 
+def s_rune_burst(r):
+    """v0.9.5 FC0 (owner: Rune Explosion, a violet shield bursting from the hero; the agent's placeholder): 0.5 s, a
+    soft low whoomp (a sine falling 120 to 55 Hz), a rising airy shimmer (noise swept 900 to 4200 Hz as the ring grows)
+    and a short glassy tail (two FM chimes) as it fades."""
+    n = n_of(0.5)
+    whoomp = osc(curve(120.0, 55.0, n), "sine", n) * env(n, 0.006, 0.22) * 0.9
+    shimmer = bandpass(noise(r, n), curve(900.0, 4200.0, n, "lin"), 3.0) * env(n, 0.12, 0.3) * 0.5
+    m = n_of(0.3)
+    chime = fm(1175.0, 2.0, 1.2 * np.exp(-np.arange(m) / RATE / 0.1), m) * env(m, 0.002, 0.14) * 0.22
+    chime2 = fm(1568.0, 2.0, 1.0 * np.exp(-np.arange(m) / RATE / 0.1), m) * env(m, 0.002, 0.12) * 0.15
+    tail = mix(at(chime, 0.2, n), at(chime2, 0.23, n))
+    return mix(whoomp, shimmer, tail)
+
+
 def s_purple_runes(r):
     """v0.9.0 DP (owner Q26b; the lead's placeholder for the purple runes awakening): 1.7 s: six glassy FM chimes
     rising one every 0.15 s (as the ring of runes lights, PurpleRuneView.STEP_S) over a swelling violet drone, then a
@@ -1373,6 +1409,17 @@ def s_elite_beam(r):
     return mix(zap, burst, at(tail, 0.05))
 
 
+def s_stress_break(r):
+    """v0.9.5 SM (the Stress Mark's weak side broken): 0.3 s, a sharp metallic ting (two inharmonic FM partials that
+    ring and fade) on a short noise crack."""
+    n = n_of(0.3)
+    ting = metal_ping(0.3, 2350.0, 1.47, 3.0, 0.12) * 0.55
+    ting2 = metal_ping(0.3, 3620.0, 1.62, 2.0, 0.07) * 0.3
+    c = n_of(0.03)
+    crack = one_pole_hp(noise(r, c), 2000.0) * env(c, 0.0005, 0.012) * 0.6
+    return mix(pad_to(ting, n), pad_to(ting2, n), crack)
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -1440,6 +1487,8 @@ SFX = [
     ("boss_telegraph_lantern_shade", s_boss_telegraph_lantern_shade),  # v0.9.0 NB4
     ("boss_shade_snuff", s_boss_shade_snuff),
     ("boss_shade_relight", s_boss_shade_relight),
+    ("gamble_fail", s_gamble_fail),  # v0.9.5 SS
+    ("gamble_win", s_gamble_win),
     ("boss_floor_burst", s_boss_floor_burst),
     ("boss_slam", s_boss_slam),
     ("boss_laser", s_boss_laser),
@@ -1475,6 +1524,7 @@ SFX = [
     ("void_hum", s_void_hum),
     ("wave_fire", s_wave_fire),  # v0.9.0 AF3
     ("wisp_fire", s_wisp_fire),
+    ("rune_burst", s_rune_burst),  # v0.9.5 FC0
     ("pillar_turn", s_pillar_turn),
     ("wall_break", s_wall_break),
     ("container_break", s_container_break),
@@ -1496,6 +1546,7 @@ SFX = [
     ("elite_slash", s_elite_slash),
     ("elite_charge", s_elite_charge),
     ("elite_beam", s_elite_beam),
+    ("stress_break", s_stress_break),  # v0.9.5 SM
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------

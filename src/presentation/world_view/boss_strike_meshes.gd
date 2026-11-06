@@ -103,7 +103,7 @@ void fragment() {
 ## INSTANCE_CUSTOM: r the alpha (plus 2 for a beam), g seed, b brightness, a the colour (pack).
 const GLOW := """
 shader_type spatial;
-render_mode unshaded, %s, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, %s, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
 uniform float motion = 1.0;

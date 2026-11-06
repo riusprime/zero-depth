@@ -7,7 +7,7 @@
 script = ExtResource("2_op")
 op = 4
 field = &"damage"
-value = 1700.0
+value = 2000.0
 per_level = 100.0
 
 [sub_resource type="Resource" id="Op_2"]

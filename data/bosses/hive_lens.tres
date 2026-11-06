@@ -148,10 +148,11 @@ shape_params = {
 "count": 1,
 "length_m": 30.0,
 "spread_degrees": 0.0,
+"turn_dps": 40.0,
 "width_m": 1.0
 }
 telegraph_seconds = 1.1
-active_seconds = 0.3
+active_seconds = 1.2
 recovery_seconds = 1.2
 damage = 50
 hit_class = &"big"
@@ -172,10 +173,11 @@ shape_params = {
 "count": 3,
 "length_m": 30.0,
 "spread_degrees": 28.0,
+"turn_dps": 40.0,
 "width_m": 1.0
 }
 telegraph_seconds = 1.1
-active_seconds = 0.3
+active_seconds = 1.2
 recovery_seconds = 1.2
 damage = 34
 hit_class = &"medium"

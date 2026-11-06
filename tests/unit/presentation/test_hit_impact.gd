@@ -142,7 +142,7 @@ func test_reduced_motion_flinches_smaller() -> void:
 	for calm: bool in [false, true]:
 		ViewPrefs.reduced_motion = calm
 		var a := ChargerAvatar.new()
-		a.setup(Color.BLACK, &"xray")
+		a.setup(Color.BLACK, &"outline")
 		add_child_autofree(a)
 		a.set_process(false)
 		a.flinch(Vector2.UP)

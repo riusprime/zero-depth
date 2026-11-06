@@ -32,9 +32,11 @@ static func validate(
 	a: BossAttackDefinition, issues: Array[ValidationIssue], path: String, where: String
 ) -> void:
 	var sp := a.shape_params
-	if sp.has("snuff") and (a.move != &"marks" or not int(sp["snuff"]) in [0, 1]):
+	if sp.has("snuff") and (a.move != &"marks" or not int(sp["snuff"]) in [0, 1, 2]):
 		issues.append(
-			ValidationIssue.new(&"range", path, where + "snuff is 0 or 1 on a marks attack")
+			ValidationIssue.new(
+				&"range", path, where + "snuff is 0, 1 or 2 (lanterns put out) on a marks attack"
+			)
 		)
 	if not is_lights_out(a):
 		return

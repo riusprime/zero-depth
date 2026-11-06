@@ -115,7 +115,9 @@ script = ExtResource("1_atk")
 id = &"leap_chain"
 shape = 0
 shape_params = {
-"chain": 2,
+"chain": 3,
+"last_lead_seconds": 0.35,
+"last_radius_bonus_permille": 200,
 "radius_m": 2.2,
 "range_m": 12.0
 }

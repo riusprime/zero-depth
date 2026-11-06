@@ -2,7 +2,8 @@ extends GutTest
 ## v0.6.5 WN5b (docs/design/WAND.md "What happens to the v0.6 cards"; CONTENT_SCHEMA "The wand"): the one table that
 ## retires the v0.6 cards (data/wand/migration.tres). Every v0.6 slot card and the six old ability modifiers either
 ## kept its id as a wand card (WN3/WN4) or has a row; every target is a card in the data or a pending shared-pool id;
-## a bad table is reported.
+## a bad table is reported. v0.10.5 O1: the retired cards' files are gone, so an old id needs no file (CardOrder keeps
+## their saved indices); only the targets are checked.
 
 ## WAND.md's "map directly" cards that kept their ids as wand cards (WN3, WN4): never in the table. (v0.9.0 AF2:
 ## Boomerang, one of them, is retired into the Glaive form: it has a row now.)
@@ -45,11 +46,13 @@ func test_the_shipped_table_is_discovered_and_valid() -> void:
 	assert_eq(WandMigrationDefinition.cross_check(defs), [])
 	assert_eq(
 		m.old_ids.size(),
-		48,
+		60,
 		(
 			"the v0.6 cards it retires: 13 + 4 + 17 + 3 + 6 (WAND.md table); v0.9.0: Spread (into Twin),"
 			+ " Explosive (into Fire), the old Void (into the Void form; refunded on the Blade), Charge (into"
-			+ " the Lance; refunded on the Blade), Boomerang (into the Glaive; refunded on the Blade)"
+			+ " the Lance; refunded on the Blade), Boomerang (into the Glaive; refunded on the Blade);"
+			+ " v0.9.5 RC: Gravity Stitch, the mutations and the trigger cards leave, dropped (no card in their place);"
+			+ " v0.9.5 FC0: the Scatter (into the Rune Explosion); v0.9.5 BR: the Bomb (into the Void)"
 		)
 	)
 
@@ -115,7 +118,11 @@ func test_a_bad_table_is_reported() -> void:
 	bad.pending = [&"shared_x"]
 	var defs: Array[ContentDef] = [bad]
 	var issues := WandMigrationDefinition.cross_check(defs)
-	assert_eq(issues.size(), 2, "the unknown card and the unknown target; a pending target is fine")
+	assert_eq(
+		issues.size(),
+		1,
+		"the unknown target; an old id needs no file (v0.10.5 O1); a pending target is fine"
+	)
 
 
 func _all() -> Array:

@@ -49,6 +49,10 @@ func _initialize() -> void:
 			]
 		)
 	)
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--warm="):
+			PackFx.warm_mode = StringName(a.trim_prefix("--warm="))
+	print("load_probe: pack warm mode %s" % PackFx.warm_mode)
 	ViewBuildQueue.probe = true  # v0.8.0 LD: the frame breakdown's hooks (off in the game)
 	CoverLoads.probe = true
 	ProfileStore.use_shared(ProfileStore.new(""))
@@ -331,7 +335,7 @@ func _menu_loads() -> void:
 
 func _run() -> void:
 	await _frames(5)
-	await _idle(5000)
+	await _idle(_idle_ms())
 	await _load(
 		"new_run",
 		func() -> void: main.loads.behind(self, main.ui, main._covered_start, Main.FADE_SECONDS)
@@ -375,3 +379,11 @@ func _run() -> void:
 		)
 	)
 	quit(0)
+
+
+## The menu's idle time before the first load (ms): 5000, or --idle=<ms> (VX-W: the time the menu has to warm the pack).
+func _idle_ms() -> int:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--idle="):
+			return int(a.trim_prefix("--idle="))
+	return 5000

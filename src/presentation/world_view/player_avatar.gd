@@ -124,7 +124,7 @@ var runes: AffinityRunes
 var epic: EpicRobeView
 var _style := &""
 var _outline := Color.BLACK
-var _technique := &"xray"
+var _technique := &"outline"
 var _hood_mat: StandardMaterial3D
 
 var _pelvis := Node3D.new()
@@ -190,9 +190,16 @@ var _acc_fin := false
 var _accent := Vector3.ZERO
 
 
-## Builds the model. technique "xray" adds a team-coloured silhouette twin to the hood and the cloak (as
-## ActorViews does for its body pieces); the legs, mostly under the cloak, have none.
-func setup(outline_color: Color, technique: StringName = &"xray") -> void:
+## v0.9.5 (seams): the rig's joints are parented only by setup(); an avatar freed without it frees them too.
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_PREDELETE:
+		return
+	for n: Variant in [_leg_root, _head_yaw, _pelvis]:
+		AvatarBase.free_if_loose(n)
+
+
+## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
+func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_outline = outline_color
 	_technique = technique
@@ -312,6 +319,7 @@ func cloth_drive() -> Array:
 ## Reads the player's state after a sim tick.
 func sync(reader: WorldReader) -> void:
 	var sk := reader.skill_state()
+	var step := reader.swing_step()  # v0.9.5 PF3: one lookup for the four numbers (each read rebuilt the step)
 	apply_state(
 		{
 			"skill_kind": int(sk.get("kind", -1)),
@@ -324,17 +332,17 @@ func sync(reader: WorldReader) -> void:
 			"aim": reader.aim_angle(),
 			"dashing": reader.is_dashing(),
 			"swing_t": reader.swing_tick(),
-			"swing_ticks": reader.swing_ticks(),
+			"swing_ticks": step.ticks,
 			"swing_angle": reader.swing_angle(),
 			"combo": reader.combo_step(),
-			"motion": reader.swing_motion(),
-			"sweep_ticks": reader.swing_sweep_ticks(),
+			"motion": step.motion,
+			"sweep_ticks": step.sweep_ticks,
 			"guarding": reader.guarding(),
 			"dead": reader.player_dead(),
 			"gun": reader.weapon_id() == &"pulse_gun",
 			"shooting": reader.shooting(),
 			"shot": reader.shot_fired(),  # v0.8.0 GF1: the cast accent
-			"active_tick": reader.swing_active_tick(),  # v0.8.0 GF3: the swing accent
+			"active_tick": step.active_tick,  # v0.8.0 GF3: the swing accent
 			"finisher": reader.is_finisher(),
 			"swing_form": reader.blade_swing(),  # v0.6.5 WN4: Lunge Step drives in, Heavy braces
 		}

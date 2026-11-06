@@ -14,6 +14,7 @@ class FakeReader:
 	var floor_i := 1
 	var arena := {"active": true, "sealed": -1, "cleared": PackedInt32Array()}
 	var over := {"cleared": false}
+	var lock := {"active": true, "sealed": -1, "cleared": PackedInt32Array()}  # v0.9.5 DR
 	var steal := -1
 	var cards := 0
 	var weapon := &"gun"
@@ -30,6 +31,9 @@ class FakeReader:
 
 	func overrun() -> Dictionary:
 		return over
+
+	func lockdown() -> Dictionary:
+		return lock
 
 	func steal_tick() -> int:
 		return steal
@@ -179,7 +183,7 @@ func test_the_book_expands_one_per_boss_and_biome_from_the_data() -> void:
 	assert_true(book.has(&"biome_frozen_shore"))
 	assert_true(book.has(&"boss_warlord"))
 	assert_eq(book.size(), repo.count(&"achievements") - 2 + bosses + biomes)
-	assert_between(book.size(), 30, 45, "a starting set of about 30")
+	assert_between(book.size(), 30, 50, "a starting set of about 30")
 	assert_eq(book.groups()[0], &"run", "the page's groups in order")
 	assert_eq(book.groups()[book.groups().size() - 1], &"ascension")
 
@@ -284,6 +288,28 @@ func test_a_child_spells_kill_counts_and_a_plain_kill_does_not() -> void:
 	tracker.observe(r)
 	assert_eq(store.stat(&"kills:child_spell"), 1, "a hook's hit (proc 50) killed it")
 	assert_true((p["got"] as Array).has(&"trigger_kill"))
+
+
+## v0.9.5 DR: the locked rooms (lockdowns, and the arena rooms on floor rules 20) count as sealed rooms too.
+func test_a_locked_room_clear_counts_as_a_sealed_room() -> void:
+	var p := _parts()
+	var wr := _attached(p)
+	var w: World = wr[0]
+	var r: FakeReader = wr[1]
+	var store: AchievementStore = p["store"]
+	r.lock["sealed"] = 3
+	_tick(p, w, r)
+	r.lock["sealed"] = -1
+	r.lock["cleared"] = PackedInt32Array([3])
+	_tick(p, w, r)
+	assert_eq(store.stat(&"rooms:sealed_cleared"), 1, "the locked room counts")
+	assert_eq(store.stat(&"rooms:no_hit"), 1, "and clean")
+	r.arena["sealed"] = 5
+	_tick(p, w, r)
+	r.arena["sealed"] = -1
+	r.arena["cleared"] = PackedInt32Array([5])
+	_tick(p, w, r)
+	assert_eq(store.stat(&"rooms:sealed_cleared"), 2, "an arena still counts")
 
 
 func test_a_sealed_room_cleared_without_a_hit_counts_clean() -> void:

@@ -85,7 +85,7 @@ func test_the_gun_cards_scale_the_new_shot() -> void:
 	assert_almost_eq(base.radius_m, 0.2, 1e-6)
 	assert_eq(base.damage, 5)
 	var big := _compiled(w, &"gun_big_shot")
-	assert_almost_eq(big.radius_m, 0.4, 1e-5, "Big Shot: x2 size")
+	assert_almost_eq(big.radius_m, 0.44, 1e-5, "Big Shot: x2.2 size")  # v0.9.5 CLV: Big Shot 2.2 size
 	assert_almost_eq(big.speed, base.speed * 0.75, 1e-6, "-25 % speed")
 	var rapid := _compiled(w, &"gun_rapid_fire")
 	# v0.8.0 MR (O91): sustained fire: x0.7 size, +30 % rate, ramping while held (test_mr_modifiers.gd)

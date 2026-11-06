@@ -16,8 +16,9 @@ enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST, WEAPON }
 ## v0.6.5 WN1 (the wand's triggers): ON_CRIT, a landed critical hit (Attacks); ON_FINISHER is compile-time only
 ## (WandCompile turns it into the combo's last step's ON_HIT).
 ## v0.8.0 RM: ON_REMNANT, a remnant hook that no moment fires (Remnants finds it: a link, a path, a consumer).
+## v0.9.5 FC9: ON_WISP, the Wisps' Mine card's mine, which no moment fires (WispMods drops it from each wisp).
 enum Trigger {
-	ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER, ON_REMNANT
+	ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER, ON_REMNANT, ON_WISP
 }
 
 ## Numeric fields a modifier op may change (sim names; ModifierTable.FIELD_OF maps the content names), and which of
@@ -79,6 +80,9 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	&"ring_share_permille",
 	&"swirl",
 	&"swirl_group",
+	# v0.9.5 FC0 (owner: Rune Explosion; RuneExplosion): the burst's radius (mm) and growth (ticks)
+	&"rune_mm",
+	&"rune_ticks",
 	&"ring_flight",  # v0.8.0 N3 (owner O47: the travelling ring's flight, ticks)
 	# v0.8.0 MR (owner O91: extra bolts share the damage; a repeat never repeats; Rapid Fire's and Flurry's rhythms)
 	&"share_permille",
@@ -140,7 +144,8 @@ var form: int = Form.ARC
 var tags := PackedStringArray()
 ## The modifier ids that rewrote it, in the order they applied (for the view and the tests).
 var modifier_ids := PackedStringArray()
-## Hook depth: 0 for a root attack, 1 for an attack a hook of a root spawns, 2 for one below that (the deepest).
+## Hook depth: 0 for a root attack, 1 for an attack a hook of a root spawns, 2 for one below that (loop 1's deepest;
+## v0.10.5 W3-P10a: one level more a loop, Attacks.hook_depth).
 var depth := 0
 ## Form ops taken so far: the first sets `form`, each later one layers (an ON_END hook in its form).
 var form_layers := 0
@@ -241,6 +246,11 @@ var wave_mm := 0
 var wisps := 0
 var wisp_ticks := 0
 var wisp_permille := 0
+## v0.9.5 FC0 (owner: "a violet explosion that comes out of the player as an energy kind like shield that grown";
+## RuneExplosion): rune_mm, the Gun's shot is a rune burst centred on the hero that grows to rune_mm (the area stat
+## scales it) over rune_ticks, hitting each enemy once as its edge passes.
+var rune_mm := 0
+var rune_ticks := 0
 
 # --- payload
 ## Damage per hit (a share `damage_permille` of it when the shot splits into count > 1 bolts, rounded down, at least
@@ -287,6 +297,9 @@ var aim_offset := 0
 ## bodies untouchable (Phase Dash, 1).
 var chains := 0
 var homing := 0
+## v0.10.5 W3-S18: Halo's extra reach (per mille of its halved range) once this spec also homes. Compile-time only
+## (SpecForms.halo_homing_reach spends it, so it is never hashed or copied: life_ticks carries the result).
+var halo_homing_permille := 0
 var returns := 0
 var orbit_ticks := 0
 var intangible := 0
@@ -549,4 +562,5 @@ func read() -> Dictionary:
 		"seekers": seekers,
 		"wave_mm": wave_mm,  # v0.9.0 AF3
 		"wisps": wisps,
+		"rune_mm": rune_mm,  # v0.9.5 FC0
 	}

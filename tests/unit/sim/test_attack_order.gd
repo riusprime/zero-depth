@@ -14,7 +14,6 @@ extends GutTest
 
 const W := preload("res://tests/support/mx4_world.gd")
 const RING := &"gun_ring"
-const SPREAD := &"gun_spread"
 const SWIRL := &"gun_swirl"
 ## v0.9.0 AS: the orders a legal wand holds (one Pattern), by name.
 const ORDERS := {
@@ -22,7 +21,7 @@ const ORDERS := {
 	"ring_swirl": [RING, SWIRL],
 	"swirl_ring": [SWIRL, RING],
 }
-const RADIUS := 1.4
+const RADIUS := 2.0  # v0.9.5 CLV: the Ring card is fixed at 2.0 m
 
 
 func _bolt(ids: Array) -> AttackSpec:
@@ -62,7 +61,6 @@ func test_ring_swirl_and_spread_are_gun_wand_cards_of_their_order_kind() -> void
 	var w := W.world(&"gun")
 	var want := {
 		RING: ModifierTable.OrderKind.SHAPE,
-		SPREAD: ModifierTable.OrderKind.COUNT,
 		&"halo_shot": ModifierTable.OrderKind.COUNT,
 		SWIRL: ModifierTable.OrderKind.MOTION,
 		&"gun_big_shot": ModifierTable.OrderKind.FREE,
@@ -106,9 +104,9 @@ func test_swirl_right_of_the_ring_throws_it_left_of_the_ring_makes_it_wobble() -
 		[AttackSpec.Form.BOLT, 1],
 		"Swirl alone: a bolt that leaves at random"
 	)
-	var lab := _bolt([SPREAD, RING])  # a lab's count left of the Ring (no legal wand holds it): not taken in
+	var lab := _bolt([&"halo_shot", RING])  # a lab's count left of the Ring (no legal wand holds it)
 	assert_eq(
-		[lab.form, lab.count], [AttackSpec.Form.RING, 3], "v0.9.0 AS: no pulses, the count stays"
+		[lab.form, lab.count], [AttackSpec.Form.RING, 4], "v0.9.0 AS: no pulses, the count stays"
 	)
 
 
@@ -212,8 +210,8 @@ func test_the_launchs_rings_share_a_root_and_the_next_launch_takes_a_new_one() -
 
 # --- Caps ----------------------------------------------------------------------------------------------------------
 func test_the_ring_cap_holds_and_leaves_a_limit_event() -> void:
-	var w := W.world(&"gun", [RING, SPREAD, &"halo_shot", SWIRL])
-	for id: StringName in [SPREAD, &"halo_shot"]:
+	var w := W.world(&"gun", [RING, &"gun_twin", &"halo_shot", &"gun_echo", SWIRL])
+	for id: StringName in [&"gun_twin", &"halo_shot"]:
 		CardLevels.set_level(w, W.item(w, id), CardLevels.MAX_LEVEL)
 	Modifiers.invalidate(w)
 	var most := 0
@@ -260,17 +258,15 @@ func test_a_ring_from_before_n3_is_a_plain_ring_that_grows_where_it_was() -> voi
 
 # --- The old cards stay as they were ----------------------------------------------------------------------------
 func test_the_old_cards_results_dont_move() -> void:
-	# Spread and Halo are COUNT cards now, but without a Ring nothing reads that: their bolts are as before.
-	for ids: Array in [[SPREAD], [&"halo_shot"], [SPREAD, &"halo_shot"], [&"halo_shot", SPREAD]]:
+	# Halo is a COUNT card now, but without a Ring nothing reads that: its bolt is as before.
+	for ids: Array in [[&"halo_shot"]]:
 		var s := _bolt(ids)
 		assert_eq([s.form, s.ring_layout, s.swirl, s.ring_flight], [AttackSpec.Form.BOLT, 0, 0, 0])
-	assert_eq(_bolt([&"halo_shot", SPREAD]).count, 5, "Halo · Spread: 3 + 2")
-	assert_eq(_bolt([SPREAD, &"halo_shot"]).count, 9, "Spread · Halo: 3 × 3")
 
 
 # --- The wand's read ----------------------------------------------------------------------------------------------
 func test_the_wand_read_marks_each_cards_order_kind() -> void:
-	var w := W.world(&"gun", [SWIRL, RING, SPREAD, &"gun_big_shot"])
+	var w := W.world(&"gun", [SWIRL, RING, &"halo_shot", &"gun_big_shot"])
 	var cards: Array = Wand.read(w)["cards"]
 	var kinds := []
 	for c: Dictionary in cards:

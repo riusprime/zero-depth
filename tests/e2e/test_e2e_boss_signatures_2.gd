@@ -58,7 +58,10 @@ func test_the_hive_lens_turns_its_gaze_round_the_room() -> void:
 		await e.frames(1)
 		if w.actors.index_of(bid) < 0:
 			break
-		if (main.view.signatures.get_node("GazeBeam") as Node3D).visible:
+		if (
+			(main.view.signatures.get_node("GazeBeam") as Node3D).visible
+			or main.view.signatures._gaze_packed
+		):
 			beam = true
 			break
 	assert_true(beam, "the Gaze's beam drawn")

@@ -17,6 +17,13 @@ var kind_floor_min := PackedInt32Array([1, 2, 4])
 ## The encounter: `waves` formations, each wave_sizes[floor] enemies (1-based; the last repeats).
 var waves := 3
 var wave_sizes := PackedInt32Array([5, 5, 5, 6, 6])
+## v0.9.5 DR (owner Q6): a locked room fights one burst: `burst_waves` formations (each wave_sizes[floor] enemies),
+## the next `burst_gap_ticks` after the one before whether or not anyone is left (0: the longer fight above, a floor
+## saved under rules 1-19), and `takes_arenas` makes the floor's arena rooms locked rooms (a floor saved under rules
+## 1-19 keeps its arenas).
+var burst_waves := 2
+var burst_gap_ticks := 60
+var takes_arenas := true
 ## Ticks from the seal to the first formation, and from a formation's last kill to the next.
 var first_wave_ticks := 60
 var wave_gap_ticks := 45
@@ -34,6 +41,8 @@ var hazard_damage := 12
 ## and the room's floor area (m2) an enemy needs at once (ClosedFights.cap; 0: no cap).
 var min_cells := 2
 var area_per_enemy_m2 := 30.0
+## v0.10.5 O14: the floor (1-based) whose first Lockdown is a midpoint Elite set piece (0: off).
+var set_piece_floor := 0
 
 
 ## The formation size on floor `floor_index` (1-based; the last repeats).

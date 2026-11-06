@@ -9,8 +9,14 @@ extends VBoxContainer
 ## sync, so a language switch while "New: Charger" shows turns it into "Nuevo: Cargador" at once.
 ## v0.6.1 R1: the announcement sits in a stone plaque (v0.8.0 MU; the banner's gold, Plaques.USE_FAMILY); the
 ## plaque's plain middle stretches to the line's width.
+## v0.10.5 W3-O17 (UI style Astral): in HudStyle.ASTRAL the phase line is letter-spaced Cinzel small caps (the mock's
+## "CALM") and the announcement sits on the store window's veil (AstralChrome.veil) instead of the stone plaque, in
+## Cinzel, silver-white.
 
 const ANNOUNCE_SECONDS := 4.0
+## v0.10.5 W3-O20: the phase line's top when nothing is over it (px at the 1920 x 1080 base; Hud stacks it lower
+## under the boss bar or a room banner).
+const TOP := 150.0
 const NEW_COLOR := Color("#FFD27A")
 ## The banner plaque's height (px at the 1920 x 1080 base).
 const BANNER_H := 96.0
@@ -33,7 +39,8 @@ func _init() -> void:
 	set_anchors_preset(Control.PRESET_CENTER_TOP)
 	grow_horizontal = Control.GROW_DIRECTION_BOTH
 	alignment = BoxContainer.ALIGNMENT_CENTER
-	offset_top = 150
+	offset_top = TOP
+	add_theme_constant_override("separation", 8)  # v0.10.5 W3-O20: the veil's star clears the larger phase line
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for l: Label in [phase_label, announce]:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -52,6 +59,18 @@ func _init() -> void:
 	add_child(banner)
 	phase_label.add_theme_color_override("font_color", Color(HudStyle.text_color(), 0.7))
 	announce.add_theme_color_override("font_color", NEW_COLOR)
+	if HudStyle.current == HudStyle.Style.ASTRAL:
+		HudStyle.serif_label(phase_label, 12, 4, HudStyle.A_DIM)
+		HudStyle.serif_label(announce, 20, 4, HudStyle.A_LINE_HI)
+		var box := StyleBoxEmpty.new()
+		box.content_margin_left = 120
+		box.content_margin_right = 120
+		box.content_margin_top = 12
+		box.content_margin_bottom = 12
+		banner.add_theme_stylebox_override("panel", box)
+		banner.draw.connect(
+			func() -> void: AstralChrome.veil(banner, Rect2(Vector2.ZERO, banner.size), 110.0)
+		)
 	announce.visible = false
 	visible = false
 
@@ -72,6 +91,10 @@ func sync(reader: WorldReader) -> void:
 		if not _announced.has(kind) and reader.kind_alive(kind):
 			_announced[kind] = true
 			_queue.append(PackedStringArray(["HUD_NEW_ENEMY", String(reader.enemy_name_key(kind))]))
+	for key in reader.pairing_names():  # v0.10.5 O15: an enemy duo's first appearance in the run
+		if not _announced.has(key):
+			_announced[key] = true
+			_queue.append(PackedStringArray(["HUD_NEW_ENEMY", String(key)]))
 	if _left <= 0.0 and not _queue.is_empty():
 		_current = _queue.pop_front()
 		_left = ANNOUNCE_SECONDS

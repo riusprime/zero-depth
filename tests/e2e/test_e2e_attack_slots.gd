@@ -132,3 +132,37 @@ func test_a_third_secondary_opens_the_swap_to_choose_which_goes() -> void:
 	assert_true(w.items_owned.has(ric), "Ricochet is held")
 	assert_false(w.items_owned.has(homing), "Homing, the one chosen, left the build")
 	assert_eq(Array(w.mod_slots), [pierce, ric], "in Homing's slot")
+
+
+## v0.9.5 TX: with the Laser held, an altar's Ring card says what Ring does on the Laser (FORMCARD_LASER_RING) under its
+## generic sentence, and a Homing card its own line; with no Form card (the Orbs) neither shows a form line.
+func test_an_altar_card_shows_what_it_does_on_the_held_form() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu(&"gun")
+	var w := e.world()
+	var hud: Hud = main.get_node("UI/Hud")
+	var ring := _item(w, &"gun_ring")
+	var homing := _item(w, &"gun_homing")
+	# TEST HELPER (labelled): the run already holds the Laser form card, and the altar's offer is forced to Ring, Homing.
+	assert_true(BuildSlots.take(w, _item(w, &"gun_laser")))
+	var i := E2e.nearest_reward(w, RewardStore.Kind.ALTAR)
+	assert_gte(i, 0, "an altar on the floor")
+	w.rewards.set_offer(i, PackedInt32Array([ring, homing, _item(w, &"ember_core")]))
+	assert_true(await e.walk_to(w.rewards.pos(i), w.reward_table.interact_radius_m * 0.6))
+	await e.tap(KEY_E)
+	await e.frames(2)
+	var panel := hud.pick_panel()
+	assert_true(panel.is_open())
+	for k in 240:
+		if panel.deal.done():
+			break
+		await e.frames(1)
+	assert_eq(main.driver.reader.attack_form_id(), &"laser")
+	assert_eq(panel.slot(0).card.form_text(), tr("FORMCARD_LASER_RING"), "Ring's line on the Laser")
+	assert_ne(panel.slot(0).card.form_text(), "")
+	assert_eq(panel.slot(1).card.form_text(), tr("FORMCARD_LASER_HOMING"), "Homing's line")
+	assert_eq(panel.slot(2).card.form_text(), "", "an element core has no form line")
+	assert_ne(
+		panel.slot(0).card.desc_text(), panel.slot(0).card.form_text(), "under its own sentence"
+	)

@@ -155,22 +155,23 @@ func test_b2_heavy_slows_less_from_level_3_and_not_at_5() -> void:
 	assert_eq(BladeForms.step(w, 0).ticks, BladeForms.step(plain, 0).ticks, "level 5: full speed")
 
 
-func test_b2_flurry_deals_85_percent_at_every_level_since_mr() -> void:
+## v0.10.5 W3-P5 (owner, P5: "Flurry ≥ 1.1 both and gains with levels"): × 1.35, +5 % a level (× 0.85 flat before).
+func test_b2_flurry_deals_135_percent_and_gains_5_a_level() -> void:
 	var plain := Modifiers.step(WandLab.fight(&"blade", []), 0).damage
 	var w := WandLab.fight(&"blade", [&"flurry"])
 	var got := []
 	for lvl in range(1, 6):
 		_at(w, &"flurry", lvl)
 		got.append(Modifiers.step(w, 0).damage)
-	# v0.8.0 MR (O91): Flurry is a burst now, ×0.85 at every level (its levels add burst swings)
+	# v0.8.0 MR (O91): Flurry is a burst now (its levels add burst swings); W3-P5: its damage gains with levels too
 	assert_eq(
 		got,
 		[
-			plain * 850 / 1000,
-			plain * 850 / 1000,
-			plain * 850 / 1000,
-			plain * 850 / 1000,
-			plain * 850 / 1000
+			plain * 1350 / 1000,
+			plain * 1400 / 1000,
+			plain * 1450 / 1000,
+			plain * 1500 / 1000,
+			plain * 1550 / 1000
 		]
 	)
 
@@ -187,34 +188,6 @@ func test_b2_thrust_arc_widens_from_level_3_to_the_full_arc_at_5() -> void:
 		[plain * 400 / 1000, plain * 400 / 1000, plain * 600 / 1000, plain * 800 / 1000, plain],
 		"×0.4, wider each level from 3, the whole arc at 5"
 	)
-
-
-# --- B3 --------------------------------------------------------------------------------------------------------
-func test_b3_a_blade_slash_hit_casts_a_trigger_twice() -> void:
-	var w := WandLab.fight(&"blade", [&"trigger_on_hit", &"shared_explosive"])
-	var casts := _hooks(Modifiers.step(w, 0), &"trigger_on_hit")
-	assert_eq(casts.size(), 2, "twice per slash hit")
-	assert_eq(casts[0].delay_ticks, 0)
-	assert_eq(casts[1].delay_ticks, w.wand_table.blade_cast_gap_ticks, "the second a moment later")
-	var kill := WandLab.fight(&"blade", [&"trigger_on_kill", &"shared_explosive"])
-	assert_eq(_hooks(Modifiers.step(kill, 0), &"trigger_on_kill").size(), 2, "On Kill too")
-	var fin := WandLab.fight(&"blade", [&"trigger_on_finisher", &"shared_explosive"])
-	var last := Modifiers.step(fin, fin.player.combo.size() - 1)
-	assert_eq(_hooks(last, &"trigger_on_finisher").size(), 2, "On Finisher's hits too")
-
-
-func test_b3_the_gun_and_a_slash_end_cast_once() -> void:
-	var g := WandLab.fight(&"gun", [&"trigger_on_hit", &"shared_explosive"])
-	assert_eq(_hooks(Modifiers.bolt(g), &"trigger_on_hit").size(), 1, "the Gun's bolt: once")
-	var e := WandLab.fight(&"blade", [&"trigger_on_end", &"shared_explosive"])
-	assert_eq(_hooks(Modifiers.step(e, 0), &"trigger_on_end").size(), 1, "a slash's end: once")
-
-
-func test_b3_a_slash_hit_casts_the_spell_twice_in_play() -> void:
-	var w := _solo([&"trigger_on_hit"], [Vector2(1.3, 0.0)])
-	var hits := _swing(w, 60)
-	assert_eq(int(hits.get(&"", 0)), 1, "one slash hit")
-	assert_eq(int(hits.get(&"trigger_on_hit", 0)), 2, "two child slashes from it")
 
 
 # --- B4 --------------------------------------------------------------------------------------------------------
@@ -274,7 +247,6 @@ func test_b4_the_new_cards_take_the_last_indices() -> void:
 	assert_eq([defs[n - 2].id, defs[n - 1].id], [&"blade_storm", &"riposte_chain"])
 	for k in n - 2:
 		assert_eq((defs[k] as ItemDefinition).index_wave, 0, "%s keeps its index" % defs[k].id)
-	assert_eq(defs[n - 3].id, &"trigger_on_kill_twice", "the v0.6.5 order ends where it did")
 	for k in range(n, defs.size()):
 		assert_gt((defs[k] as ItemDefinition).index_wave, 1, "%s: a later wave" % defs[k].id)
 
@@ -286,61 +258,8 @@ func test_b5_the_runs_own_cards_weigh_one_and_a_half() -> void:
 	assert_eq(b.reward_table.own_weapon_card_permille, 1500, "data/rewards/floor.tres")
 	assert_eq(ItemPool.card_weight(b, _code(b, &"double_slash"), 3), 1500, "a Blade card")
 	assert_eq(ItemPool.card_weight(b, _code(b, &"shared_bleed"), 3), 1000, "a shared card")
-	assert_eq(ItemPool.card_weight(b, _code(b, &"trigger_on_hit"), 3), 1000, "a trigger")
 	assert_eq(ItemPool.card_weight(b, _code(b, &"blade_storm"), 3), 4500, "a rare Blade card")
 	var g := WandLab.fight(&"gun", [])
-	assert_eq(ItemPool.card_weight(g, _code(g, &"gun_spread"), 3), 1500, "a Gun card on a Gun run")
-
-
-# --- B6 --------------------------------------------------------------------------------------------------------
-func test_b6_splits_neither_split_nor_explode_again() -> void:
-	var w := WandLab.fight(&"gun", [&"gun_spread", &"split_shot", &"shared_explosive"])
-	var bolt := Modifiers.bolt(w)
-	assert_not_null(_hook(bolt, &"split_shot"), "the shot splits")
-	assert_not_null(_hook(bolt, &"shared_explosive"), "the shot explodes")
-	var split := _hook(bolt, &"split_shot").child
-	assert_null(_hook(split, &"shared_explosive"), "its splits don't explode")
-	assert_null(_hook(split, &"split_shot"), "nor split")
-
-
-func test_b6_a_split_cast_does_not_explode_but_the_shots_cast_does() -> void:
-	var w := WandLab.fight(&"gun", [&"split_shot", &"trigger_on_hit", &"shared_explosive"])
-	var bolt := Modifiers.bolt(w)
-	var cast := _hook(bolt, &"trigger_on_hit").child
-	assert_not_null(_hook(cast, &"shared_explosive"), "the shot's hit casts an exploding spell")
-	var split := _hook(bolt, &"split_shot").child
-	var split_cast := _hook(split, &"trigger_on_hit").child
-	assert_null(_hook(split_cast, &"shared_explosive"), "a split's cast: no blast again")
-
-
-func test_b6_blasts_past_eight_in_a_tick_merge_when_they_overlap() -> void:
-	var w := WandLab.world(&"gun")
-	var k := AttackHook.new()
-	k.id = &"shared_explosive"
-	k.child = AttackSpec.new()
-	k.child.radius_m = 1.4
-	var got := []
-	for n in 11:
-		got.append(Attacks.merged(w, k, Vector2(0.1 * n, 0.0)))
-	assert_eq(got, [false, false, false, false, false, false, false, false, true, true, true])
-	assert_false(Attacks.merged(w, k, Vector2(9.0, 0.0)), "a blast away from the others goes off")
-	assert_eq(w.blast_merged, 3)
-	var other := AttackHook.new()
-	other.id = &"split_shot"
-	other.child = k.child
-	assert_false(Attacks.merged(w, other, Vector2.ZERO), "only Explosive's blasts merge")
-	w.tick += 1
-	assert_false(Attacks.merged(w, k, Vector2.ZERO), "a new tick starts again")
-
-
-func test_b6_the_owners_build_merges_blasts_in_play() -> void:
-	# v0.8.0 MR: Spread is +1 a level now (7 at level 5), so Halo joins to keep a big volley (7 × 3 × 2 = 42 bolts)
-	var w := WandLab.fight(&"gun", [&"gun_spread", &"halo_shot", &"shared_explosive", &"gun_twin"])
-	_at(w, &"gun_spread", 5)
-	var merged := 0
-	for t in 300:
-		w.step(AttackScenario.frame(t))
-		if w.blast_tick == w.tick - 1:
-			merged += w.blast_merged
-			assert_lte(w.blast_pos.size(), 64, "the per-tick marks stay small")
-	assert_gt(merged, 0, "42 bolts a volley: the blasts past 8 that overlap merge")
+	assert_eq(
+		ItemPool.card_weight(g, _code(g, &"gun_twin"), 3), 4500, "a rare Gun card on a Gun run"
+	)

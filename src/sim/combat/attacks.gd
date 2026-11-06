@@ -1,3 +1,4 @@
+# gdlint: disable=max-file-lines
 class_name Attacks
 extends RefCounted
 ## v0.6.0 MX1 (docs/design/MODIFIER_ENGINE.md §7; SIM_CONTRACTS §5b): the one entry point that runs an attack from
@@ -21,8 +22,14 @@ extends RefCounted
 ## chain it opened (ancestry, World.hook_chain); and at most MAX_LAUNCHES_PER_TICK launches run in one tick (then one
 ## LIMIT event, and the rest of the tick's launches are dropped). The engines' own guards (ProcLedger, Engines.begin)
 ## still hold for every status and payoff a hook's hits set off.
+## v0.10.5 W3-P10a (owner W7, G1 A5): the deepest level is a read of the loop (hook_depth): MAX_HOOK_DEPTH (2) in
+## loop 1, 3 at loop 2, 4 from loop 3; the proc keeps halving (100 → 50 → 25 → 12 → 6). The launch cap and ShotCap
+## stay as they are.
 
+## Loop 1's deepest hook level (hook_depth reads the loop's).
 const MAX_HOOK_DEPTH := 2
+## v0.10.5 W3-P10a: the deepest level from loop 3 on.
+const MAX_HOOK_DEPTH_LOOPS := 4
 const MAX_LAUNCHES_PER_TICK := 256
 const EFFECT_LAUNCH_CAP := &"attack_launch_cap"
 ## v0.8.0 PF (owner O9: Spread + Split + Explosive "goes two FPS"): the player's projectiles alive at once, at most
@@ -53,7 +60,16 @@ static var _wand_defaults := WandTable.new()
 ## instead; a root weapon or Skill attack takes Ascension's charge; a seeking arc snaps to the nearest enemy; then the
 ## form runs, its ON_LAUNCH hooks fire from the origin, a root attack fires back (Rearguard) and repeats (Twin Cast;
 ## the Blade's combo steps repeat through their Twin Arc echo, ItemEffects).
+## v0.10.5 O10: World.strike_spec names the spec while it runs (Matchups reads its form and elements).
 static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
+	var before := w.strike_spec
+	w.strike_spec = spec
+	var landed := _launch(w, spec, ctx)
+	w.strike_spec = before
+	return landed
+
+
+static func _launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	if not _count(w):
 		return false
 	if spec.form == AttackSpec.Form.WEAPON:
@@ -71,8 +87,21 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		_run(w, spec, AttackSpec.Trigger.ON_LAUNCH, ctx, ctx.origin, -1, 0)
 	if ctx.depth == 0 and not ctx.back and spec.back_permille > 0:
 		_back(w, spec, ctx)
-	if ctx.depth == 0 and not ctx.repeat and ctx.step < 0 and spec.repeat_delay_ticks > 0:
-		ModifierRuntime.queue_repeat(w, spec, ctx)
+	if (
+		ctx.depth == 0
+		and (not ctx.repeat or ctx.wisp)
+		and ctx.step < 0
+		and spec.repeat_delay_ticks > 0
+	):
+		ModifierRuntime.queue_repeat(w, spec, ctx)  # v0.9.5 FC9: a wisp's shot echoes like an orb
+	if (
+		ctx.depth == 0
+		and not ctx.repeat
+		and not ctx.back
+		and not w.starbound.is_empty()
+		and spec.has_tag(&"weapon")
+	):
+		Starbound.echo_cast(w, spec, ctx)  # v0.10.5 W3-P10b: Echo Cast, the Gun's shot and the Blade's steps
 	return landed
 
 
@@ -83,13 +112,16 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 static func _shared_form(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	if Laser.held(spec):  # v0.9.0 LZ: the Laser's tick shares its damage per beam itself (dithered)
 		return Laser.fire(w, spec, ctx)
+	if RuneExplosion.is_rune(spec):  # v0.9.5 FC0: the bursts take the whole shot; Twin's share is theirs
+		return RuneExplosion.fire(w, spec, ctx)
 	var share := spec.share_permille
 	if share <= 0:
 		return _form(w, spec, ctx)
 	var d0 := ctx.damage
 	var b0 := ctx.base_damage
-	ctx.damage = maxi(1, (d0 * share + 500) / 1000)
-	ctx.base_damage = maxi(1, (b0 * share + 500) / 1000)
+	if spec.seekers <= 0:  # v0.9.5 FC7b: a Seekers dart takes its share in thousandths (SeekerMods.milli_of, _bolts)
+		ctx.damage = share_of(d0, share)
+	ctx.base_damage = share_of(b0, share)
 	var landed := _form(w, spec, ctx)
 	ctx.damage = d0
 	ctx.base_damage = b0
@@ -242,6 +274,17 @@ static func shot_offsets(spec: AttackSpec) -> PackedInt32Array:
 	return out
 
 
+## v0.8.0 MR: `d` at a spec's share_permille `share` (rounded half up, at least 1; v0.10.5 O13: its own function, so
+## WandForecast reads the same number).
+static func share_of(d: int, share: int) -> int:
+	return maxi(1, (d * share + 500) / 1000)
+
+
+## v0.9.0 AS (ShotCap): each of `fit` shots that fire out of `want` carries the damage of the copies it took in.
+static func merged_damage(d: int, want: int, fit: int) -> int:
+	return d if fit >= want else maxi(1, (d * want + fit / 2) / fit)
+
+
 ## Each bolt's base damage: the spec's, or its damage_permille share when the shot splits (rounded half up, v0.8.0 RM
 ## lead fix; at least 1).
 static func bolt_base_damage(spec: AttackSpec) -> int:
@@ -275,6 +318,7 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 			hits += 1
 			_landed(w, spec, ctx, i, a.pos(i), hits)
 			BladeForms.on_arc_hit(w, spec, ctx, i)  # v0.6.5 WN4: Heavy's push
+			BladeForms.hit_push_arc(w, spec, ctx, i)  # v0.10.5 O11 (F1): the swing's own small push
 	BladeForms.on_arc(w, spec, ctx)  # v0.6.5 WN4: Parry Edge, the view's ghost slashes
 	if not w.mx.rem_uid.is_empty() or not spec.hooks.is_empty():  # v0.8.0 RM: cracks it crosses, its path
 		Remnants.on_arc(w, spec, ctx, reach)
@@ -291,7 +335,32 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 		offsets = Abilities.shot_offsets(w, offsets)  # Pulse Gun L5: twin bolts (the weapon's own shots)
 	if spec.swirl > 0:
 		offsets = WandRings.swirl_offsets(w, offsets)  # v0.8.0 AO: Swirl, each bolt at a random angle
+	var lm := 0  # v0.9.5 FC4: the Lance's cards (LanceMods), the player's own release only
+	if spec.lance > 0 and ctx.depth == 0 and not ctx.repeat and not ctx.back:
+		lm = LanceMods.mask(spec)
+		var halo := LanceMods.halo_offsets(w, lm, ctx.lance_full)
+		if not halo.is_empty():
+			offsets = halo
+	# v0.9.5 FC6: the Glaive's cards (GlaiveMods), the player's own throw only; Halo's four discs
+	var gm := (
+		GlaiveMods.mask(spec)
+		if spec.glaive > 0 and ctx.depth == 0 and not ctx.repeat and not ctx.back
+		else 0
+	)
+	if gm & GlaiveMods.HALO != 0:
+		offsets = GlaiveMods.halo_offsets(w, gm)
+	# v0.9.5 FC7: the Seekers' cards (SeekerMods), the player's own volley only; the darts' count and angles
+	var sm := (
+		SeekerMods.mask(spec)
+		if spec.seekers > 0 and ctx.depth == 0 and not ctx.repeat and not ctx.back
+		else 0
+	)
+	if sm != 0:
+		offsets = SeekerMods.offsets(w, spec, sm)
 	var r := spec.radius_m * ctx.size_permille / 1000.0  # v0.6.5 WN3: a charged shot (G13)
+	r = r * GlaiveMods.wide(w, gm) / 1000.0  # v0.9.5 FC6: Big Shot x 1.5, Rapid Fire x 0.7
+	if sm != 0:
+		r = r * SeekerMods.wide(w, sm) / 1000.0  # v0.9.5 FC7: Big Shot x 1.5, Rapid Fire x 0.7
 	var gap := t.radius_m + r + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
 	var lanes := GunForms.lanes(spec, r)  # v0.6.5 WN3: G3 Twin, side by side
 	var turns := GunForms.lane_turns(spec)  # v0.9.0 TW: three copies fan
@@ -313,10 +382,43 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var root := ctx.depth == 0 and not ctx.repeat and not ctx.back  # the player's own shot (ShotCap)
 	fit = ShotCap.room(w, fit, root)
 	if fit <= 0:
+		if ctx.echo_cast:  # v0.10.5 W3-P10k: an Echo Cast repeat's volley merges into the next own shot
+			Starbound.carry_echo(w, ctx.damage * want)
 		return
-	var dmg := ctx.damage if fit >= want else maxi(1, (ctx.damage * want + fit / 2) / fit)
+	var dmg := merged_damage(ctx.damage, want, fit)
 	if fit < want and w.slot_table != null:
 		r = r * ShotCap.grow_permille(want, fit, w.slot_table.merge_radius_max_permille) / 1000.0
+	if root and spec.blast_mm > 0:  # v0.9.5 FC2: the Bomb's Halo cross and Backfire drop wait
+		BombMods.on_throw(w, spec, ctx.origin, ctx.angle, dmg)
+	var speed := BombMods.speed(w, spec) if spec.blast_mm > 0 else spec.speed  # v0.9.5 FC2: Big Shot's slower throw
+	var life := spec.life_ticks
+	var bounces := spec.bounces
+	var own := root
+	if spec.void_mm > 0 and not spec.modifier_ids.is_empty():  # v0.9.5 FC3: the Void's cards (VoidMods)
+		dmg = VoidMods.share(dmg, VoidMods.damage_permille(w, VoidMods.mask(spec)))
+		speed = VoidMods.speed(w, spec)
+		life = VoidMods.life(w, spec)
+		bounces = VoidMods.bounces(w, spec)
+	if lm != 0:  # v0.9.5 FC4: Big Shot, Rapid Fire, a full Halo's share, Ricochet's bounce
+		dmg = LanceMods.share(dmg, LanceMods.damage_permille(w, lm, ctx.lance_full))
+		bounces = LanceMods.bounces(w, lm, ctx.lance_full, bounces)
+	if gm != 0:  # v0.9.5 FC6: Halo's, Big Shot's and Rapid Fire's share, speed and lap; Ricochet's bounces
+		dmg = GlaiveMods.share(dmg, GlaiveMods.damage_permille(w, gm))
+		speed = GlaiveMods.speed(w, spec, gm)
+		life = GlaiveMods.life(w, spec, gm)
+		bounces = GlaiveMods.bounces(w, gm, bounces)
+	var wvm := WaveMods.mask(spec) if spec.wave_mm > 0 else 0  # v0.9.5 FC8: the Wave's cards (WaveMods)
+	if wvm != 0:  # Big Shot's and Rapid Fire's damage and speed; Ricochet's one bounce
+		dmg = WaveMods.share(dmg, WaveMods.damage_permille(w, wvm))
+		speed = WaveMods.speed(w, spec, wvm)
+		bounces = WaveMods.bounces(w, wvm, bounces)
+	var milli := 0  # v0.9.5 FC7b: a Seekers dart's damage in thousandths (the carry deals the whole part per dart)
+	if spec.seekers > 0:
+		var sh := spec.share_permille if spec.share_permille > 0 else 1000
+		milli = SeekerMods.milli_of(dmg, sh) * SeekerMods.damage_permille(w, sm) / 1000
+	if sm != 0:  # v0.9.5 FC7: Orbit's and Mine's wait; Ricochet's bounces (Twin, Big Shot, Rapid Fire: the milli)
+		life = SeekerMods.life(w, spec, sm)
+		bounces = SeekerMods.bounces(w, sm, bounces)
 	var q := -1
 	var picked := 0
 	for oi in offsets.size():
@@ -335,18 +437,36 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 			if not _shot_room(w):
 				return
 			var muzzle := ctx.origin + dir * gap + Vector2(-dir.y, dir.x) * side
+			var dart_dmg := SeekerMods.take(w, milli) if spec.seekers > 0 else dmg
+			if root and w.starbound_echo_carry > 0:  # v0.10.5 W3-P10k: the merged Echo Cast repeats
+				dart_dmg = mini(dart_dmg + Starbound.take_echo(w), Starbound.ECHO_CARRY_MAX)
 			w.queue_projectile(
 				w.actors.ids[0],
 				ActorStore.TEAM_PLAYER,
 				muzzle,
-				dir * spec.speed,
-				dmg,
+				dir * speed,
+				dart_dmg,
 				r,
-				maxi(1, spec.life_ticks),
+				maxi(1, life),
 				ctx.tags,
-				spec.bounces,
+				bounces,
 				spec.key
 			)
+			if spec.seekers > 0:
+				w.set_pending_milli(milli)  # v0.9.5 FC7b: for its Ring and Split shares
+			if lm & LanceMods.ECHO != 0:  # v0.9.5 FC4: Echo's ghost lance waits on this line
+				LanceMods.add_echo(w, muzzle, (ctx.angle + off + turns[li]) & 4095, dmg, r, bounces)
+			if gm & GlaiveMods.ECHO != 0:  # v0.9.5 FC6: Echo's ghost disc waits on this line
+				GlaiveMods.add_echo(
+					w, muzzle, (ctx.angle + off + turns[li]) & 4095, dmg, r, bounces
+				)
+			if wvm & WaveMods.ECHO != 0 and ctx.depth == 0 and not ctx.repeat:
+				# v0.9.5 FC8: Echo's ghost wave waits on this line
+				WaveMods.add_echo(w, muzzle, (ctx.angle + off + turns[li]) & 4095, dmg, r, bounces)
+			if sm & SeekerMods.ECHO != 0:  # v0.9.5 FC7: Echo's ghost dart waits on this line
+				SeekerMods.add_echo(
+					w, muzzle, (ctx.angle + off + turns[li]) & 4095, milli, r, bounces
+				)
 			if root:
 				root = false  # the volley's first shot is the player's own; the rest are extras
 			else:
@@ -354,10 +474,24 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 			var kind := kind0
 			if spec.share_permille > 0 and (oi != centre or li != lane_c):
 				kind |= ProjectileStore.SECONDARY
+			if ctx.extra_pierce + SeekerMods.pierce(w, sm) > 0:  # v0.9.5 FC7: Pierce, two more enemies
+				w.set_pending_pierce(ctx.extra_pierce + SeekerMods.pierce(w, sm))
 			if kind != 0:
 				w.set_pending_second(kind)
 			if link != null:
 				w.set_pending_link(link.child.key)
+	if own and VoidMods.mask(spec) & VoidMods.BACKFIRE != 0 and _shot_room(w):
+		ShotCap.spend(w, 1)  # v0.9.5 FC3: Backfire's second void
+		VoidMods.back_throw(w, spec, ctx, dmg, r, gap)
+	# v0.9.5 FC4: Backfire's lance behind (a full Halo already has one at 180 degrees)
+	var halo_full := lm & LanceMods.HALO != 0 and ctx.lance_full
+	if own and lm & LanceMods.BACKFIRE != 0 and not halo_full and _shot_room(w):
+		ShotCap.spend(w, 1)
+		LanceMods.back_throw(w, spec, ctx, dmg, r, gap, life, bounces)
+	# v0.9.5 FC6: Backfire's disc behind (a Halo already has one at 180 degrees)
+	if own and gm & GlaiveMods.BACKFIRE != 0 and gm & GlaiveMods.HALO == 0 and _shot_room(w):
+		ShotCap.spend(w, 1)
+		GlaiveMods.back_throw(w, spec, ctx, dmg, r, gap, speed, life, bounces)
 
 
 ## v0.8.0 PF2: how many more of `spec`'s bolts may launch now under its alive_max (-1: no cap of its own).
@@ -423,8 +557,9 @@ static func _burst(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 static func _seek(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var a := w.actors
 	var best := -1
-	var best_d := spec.reach_m
-	for j in w.aoe_candidates(ctx.origin, spec.reach_m):  # v0.8.0 HS: a superset, ascending
+	var reach := ElementLevelsFsf.fork_reach(w, spec)  # v0.9.5 EE2: Lightning Lv 2, Fork
+	var best_d := reach
+	for j in w.aoe_candidates(ctx.origin, reach):  # v0.8.0 HS: a superset, ascending
 		if j == ctx.exclude or a.teams[j] == ActorStore.TEAM_PLAYER or a.dead[j] == 1:
 			continue
 		var d := Kin.length(a.pos(j) - ctx.origin)
@@ -454,22 +589,33 @@ static func _chain(w: World, spec: AttackSpec, ctx: AttackContext, first: int) -
 		hit.append(ctx.exclude)
 	var from := a.pos(first)
 	var landed := 0
-	for n in spec.chains:
+	var reach := ElementLevelsFsf.fork_reach(w, spec)  # v0.9.5 EE2: Lightning Lv 2, Fork
+	for n in ElementLevelsFsf.fork_chains(w, spec):
 		var next := -1
-		var nd := spec.reach_m
-		for j in w.enemies_near(from, spec.reach_m):
-			var d := Kin.length(a.pos(j) - from)
-			if not hit.has(j) and d <= nd and (next < 0 or d < nd):
-				next = j
-				nd = d
+		var nd := reach
+		if w.pair_mask != 0:  # v0.9.5 EE3: Cold Circuit jumps to a frozen enemy first
+			next = ElementPairs.frozen_target(w, from, reach, hit)
+		if next < 0:
+			for j in w.enemies_near(from, reach):
+				var d := Kin.length(a.pos(j) - from)
+				if not hit.has(j) and d <= nd and (next < 0 or d < nd):
+					next = j
+					nd = d
 		if next < 0:
 			break
 		hit.append(next)
 		w.chain_from = from
 		w.chain_to = a.pos(next)
-		if _hit(w, next, ctx, from, a.pos(next)) > 0:
+		var dmg0 := ctx.damage
+		if w.pair_mask != 0:
+			ctx.damage = ElementPairs.jump_damage(w, next, dmg0)  # v0.9.5 EE3: Cold Circuit's double
+		var got := _hit(w, next, ctx, from, a.pos(next))
+		ctx.damage = dmg0
+		if got > 0:
 			landed += 1
 			_landed(w, spec, ctx, next, a.pos(next), n + 2)
+			if w.pair_mask != 0:
+				ElementPairs.on_jump(w, next, ctx.root, n)  # v0.9.5 EE3: Ignition Arc, Neurotoxin, Arterial Arc
 		from = a.pos(next)
 	return landed
 
@@ -519,6 +665,7 @@ static func _hit(w: World, i: int, ctx: AttackContext, from: Vector2, at: Vector
 	var pid := w.actors.ids[0]
 	var pm0 := w.hit_proc_permille  # v0.8.0 MR (O91): a secondary attack's hit feeds at its proc
 	w.hit_proc_permille = SecondaryProc.of_ctx(w, ctx)
+	Matchups.arm(w, i, w.hit_spec, w.strike_spec)  # v0.10.5 O10: the landing spec's and the launch's
 	var got := Damage.hit(
 		w, i, ctx.damage, pid, pid, ctx.root, ctx.tags, from, at, ctx.effect_id, ctx.proc_pct
 	)
@@ -595,7 +742,9 @@ static func land_lob(
 ## A patch at ctx.origin (ElementAbilities keeps it and burns what stands in it, phase 6).
 static func _zone(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var life := spec.life_ticks if spec.life_ticks > 0 else Modifiers.HOOK_ZONE_TICKS
-	ElementAbilities.add_zone(w, ctx.origin, area_radius(w, spec), life, spec, ctx)
+	life += ElementLevelsFsf.patch_extra_ticks(w, spec)  # v0.9.5 EE2: Fire Lv 2, Wildfire
+	var r := ElementLevelsFsf.patch_radius(w, spec, area_radius(w, spec))
+	ElementAbilities.add_zone(w, ctx.origin, r, life, spec, ctx)
 
 
 ## A ring from ctx.origin (ModifierAbilities grows it, phase 6). v0.8.0 AO: a ring a SHAPE card made lays its rings
@@ -727,13 +876,21 @@ static func fire(w: World, spec: AttackSpec, trigger: int, ctx: AttackContext, a
 		_run(w, spec, trigger, ctx, at, -1, 0)
 
 
+## v0.10.5 W3-P10a (owner W7, G1 A5): world `w`'s deepest hook level: 2 in loop 1, one more a loop, at most
+## MAX_HOOK_DEPTH_LOOPS (3 at loop 2, 4 from loop 3). The compile (WandCompile.max_depth, Modifiers.inherit) and the
+## runtime guards (run_hook, Remnants) read it, so a loop-2 build compiles and launches one level deeper.
+static func hook_depth(w: World) -> int:
+	return clampi(MAX_HOOK_DEPTH + w.loop - 1, MAX_HOOK_DEPTH, MAX_HOOK_DEPTH_LOOPS)
+
+
 ## Launches hook `k`'s child from `at` under the guard (class doc). Returns true if it landed.
 static func run_hook(
 	w: World, k: AttackHook, parent: AttackContext, at: Vector2, exclude: int
 ) -> bool:
 	if k.remnant != null:  # v0.8.0 RM: a remnant hook leaves (or activates) its remnant instead
 		return Remnants.on_hook(w, k, parent, at, exclude)
-	if parent.depth + 1 > MAX_HOOK_DEPTH or k.child.depth > MAX_HOOK_DEPTH:
+	var deepest := hook_depth(w)  # v0.10.5 W3-P10a: the loop's
+	if parent.depth + 1 > deepest or k.child.depth > deepest:
 		return false
 	if parent.repeat and not parent.back and k.child.recast != 0:
 		return false  # v0.8.0 MR (O91): a repeat never casts a trigger's later cast
@@ -768,6 +925,7 @@ static func run_hook(
 	w.hook_chain.append(String(k.id))
 	var landed := launch(w, k.child, c)
 	w.hook_chain.remove_at(w.hook_chain.size() - 1)
+	ElementLevelsFsf.overcharge(w, k, parent, exclude)  # v0.9.5 EE2: Lightning Lv 3, the strike
 	return landed
 
 
@@ -902,6 +1060,12 @@ static func on_projectile_end(w: World, pi: int, at: Vector2) -> void:
 	var spec := projectile_spec(w, pi)
 	if Bomb.is_bomb(spec) and Bomb.touches(w, pi):
 		Bomb.blast(w, spec, pi, at)  # v0.9.0 BM: the bomb bursts where it ends
+	if spec != null and spec.void_mm > 0:
+		VoidMods.on_end(w, spec, pi, at)  # v0.9.5 FC3: Ring, Echo and Split queue
+	if spec != null and spec.lance > 0:
+		LanceMods.on_end(w, spec, pi, at)  # v0.9.5 FC4: Ring
+	if spec != null and spec.wave_mm > 0:
+		WaveMods.on_end(w, spec, pi, at)  # v0.9.5 FC8: Split's two waves
 	if spec != null and not spec.hooks.is_empty():
 		var p := w.projectiles
 		var ang := Kin.angle_of(Vector2(p.vel_x[pi], p.vel_y[pi]))
@@ -911,7 +1075,6 @@ static func on_projectile_end(w: World, pi: int, at: Vector2) -> void:
 		_second_of(w, pi, ctx)  # v0.8.0 MR
 		_run(w, spec, AttackSpec.Trigger.ON_END, ctx, at, -1, 0)
 		Remnants.on_bolt_end(w, spec, pi, at)  # v0.8.0 RM: Double Exposure's path
-	ModifierAbilities.on_projectile_end(w, at)
 
 
 ## v0.8.0 MR (O91): projectile `pi`'s hit or end carries what the bolt was: secondary, a repeat's (ProjectileStore).

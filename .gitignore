@@ -22,3 +22,6 @@ __pycache__/
 # Agent worktrees and personal settings (local only); the project's shared settings are tracked
 .claude/*
 !.claude/settings.json
+
+# Raw image-workflow sheets (docs/art/prompts; split into assets/ by scripts/art/split_sheets.py)
+art_raw/

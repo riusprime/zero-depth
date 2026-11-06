@@ -172,7 +172,7 @@ func sync(reader: WorldReader) -> void:
 	_tick = reader.tick()
 	_incoming.clear()
 	var alive := {}
-	for i in reader.actor_count():
+	for i in range(reader.actor_count() if reader.any_boss() else 0):
 		var kind := reader.actor_kind(i)
 		if not WorldReader.is_boss_kind(kind):
 			continue
@@ -367,6 +367,11 @@ func _keep_up(reader: WorldReader) -> void:
 		)
 		if on and s.has("lane"):
 			s["to"] = reader.actor_pos(i)
+		if on and s.has("lanes") and s["kind"] == &"beam":
+			# v0.9.5 BH2 (B4): a turning beam is drawn where it is now (the telegraph's lanes while it burns)
+			var tg := reader.telegraph(i)
+			if tg.get("shape", &"") == &"lanes":
+				s["lanes"] = tg["obbs"]
 		if not on:
 			s["end"] = _tick
 

@@ -4,9 +4,13 @@ extends GutTest
 ## new one with the six full needs a swap (the altar's pick, the shop, a grant with no panel), which replaces the
 ## chosen slot in place or skips. Saves from before MX2 migrate deterministically; the slots round-trip a snapshot.
 
+## v0.10.5 O1: the six ability modifiers are gone; six live Blade cards fill the slots (none shares a slot category
+## that would replace another).
 const MODS: Array = [
-	&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field", &"frost_nova", &"flame_trail"
+	&"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed", &"echo_slash"
 ]
+## A seventh card, one the six don't hold.
+const SEVENTH := &"blade_orbit"
 
 var _repo: ContentRepository
 
@@ -44,7 +48,7 @@ func _it(w: World, id: StringName) -> int:
 
 func _fill(w: World) -> void:
 	for id: StringName in MODS:
-		assert_true(BuildSlots.take(w, _ab(w, id)), "takes %s" % id)
+		assert_true(BuildSlots.take(w, _it(w, id)), "takes %s" % id)
 
 
 func _pick(v: int) -> InputFrame:
@@ -56,11 +60,9 @@ func _pick(v: int) -> InputFrame:
 func test_what_takes_a_slot() -> void:
 	var w := _world()
 	for id: StringName in MODS:
-		assert_true(BuildSlots.is_modifier(w, _ab(w, id)), "%s is a modifier" % id)
+		assert_true(BuildSlots.is_modifier(w, _it(w, id)), "%s is a modifier" % id)
 	for id: StringName in [&"combo_sword", &"pulse_gun", &"blink", &"aegis"]:
 		assert_false(BuildSlots.is_modifier(w, _ab(w, id)), "%s takes no slot" % id)
-	for id: StringName in [&"ricochet_core", &"ember_edge", &"razor_orbit", &"cluster_payload"]:
-		assert_true(BuildSlots.is_modifier(w, _it(w, id)), "item %s is a modifier" % id)
 	for id: StringName in [&"momentum", &"executioner", &"bulwark", &"kinetic_dash", &"wildfire"]:
 		assert_false(BuildSlots.is_modifier(w, _it(w, id)), "item %s takes no slot" % id)
 	assert_false(BuildSlots.is_modifier(w, Offers.stat_code(0, 0)), "a stat card takes no slot")
@@ -75,33 +77,32 @@ func test_the_start_holds_the_weapon_and_no_slot() -> void:
 
 func test_six_slots_fill_in_pick_order_and_compile_in_that_order() -> void:
 	var w := _world()
-	BuildSlots.take(w, _it(w, &"ember_edge"))
-	BuildSlots.take(w, _ab(w, &"frost_nova"))
-	BuildSlots.take(w, _it(w, &"long_edge"))
+	BuildSlots.take(w, _it(w, &"ember_core"))
+	BuildSlots.take(w, _it(w, &"frost_core"))
+	BuildSlots.take(w, _it(w, &"echo_slash"))
 	assert_eq(
 		w.mod_slots,
-		PackedInt32Array([_it(w, &"ember_edge"), _ab(w, &"frost_nova"), _it(w, &"long_edge")])
+		PackedInt32Array([_it(w, &"ember_core"), _it(w, &"frost_core"), _it(w, &"echo_slash")])
 	)
 	assert_eq(
 		Modifiers.book(w).modifier_ids,
-		PackedStringArray(["ember_edge", "frost_nova", "long_edge"]),
+		PackedStringArray(["ember_core", "frost_core", "echo_slash"]),
 		"the layer order is the pick order"
 	)
 
 
 func test_a_held_modifier_levels_up_without_a_slot() -> void:
 	var w := _world()
-	var bomb := _ab(w, &"bomb_lobber")
-	BuildSlots.take(w, bomb)
-	BuildSlots.take(w, bomb)
-	BuildSlots.take(w, bomb)
+	var ember := _it(w, &"ember_core")
+	BuildSlots.take(w, ember)
+	BuildSlots.take(w, ember)
+	BuildSlots.take(w, ember)
 	assert_eq(w.mod_slots.size(), 1)
 	assert_eq(BuildSlots.level_at(w, 0), 3)
-	_fill(w)  # five more new ones: the bomb's level-ups never took a slot
+	_fill(w)  # five more new ones: Ember's level-ups never took a slot
 	assert_eq(w.mod_slots.size(), 6)
-	assert_eq(BuildSlots.level_at(w, 0), 4, "_fill took the bomb once more: a level-up")
-	assert_true(BuildSlots.take(w, bomb), "a level-up with the six full needs no swap")
-	assert_eq(BuildSlots.level_at(w, 0), 5)
+	assert_eq(BuildSlots.level_at(w, 0), 3, "Ember is at its top level (3)")
+	assert_false(BuildSlots.needs_swap(w, ember), "a held card with the six full needs no swap")
 
 
 func test_the_utility_and_stat_cards_take_no_slot() -> void:
@@ -122,7 +123,7 @@ func test_the_utility_and_stat_cards_take_no_slot() -> void:
 func test_a_seventh_modifier_needs_a_swap_and_replaces_in_place() -> void:
 	var w := _world()
 	_fill(w)
-	var ember := _it(w, &"ember_edge")
+	var ember := _it(w, &"blade_orbit")
 	assert_true(BuildSlots.needs_swap(w, ember))
 	assert_false(BuildSlots.take(w, ember), "no slot named: nothing changes")
 	assert_false(w.items_owned.has(ember))
@@ -131,13 +132,13 @@ func test_a_seventh_modifier_needs_a_swap_and_replaces_in_place() -> void:
 	assert_eq(w.mod_slots[2], ember, "it takes the replaced slot's place in the order")
 	assert_false(BuildSlots.held(w, dropped), "the replaced one left the build")
 	assert_eq(w.mod_slots.size(), 6)
-	assert_true(Modifiers.book(w).modifier_ids.has("ember_edge"))
+	assert_true(Modifiers.book(w).modifier_ids.has("blade_orbit"))
 
 
 func test_a_grant_with_no_panel_opens_the_swap_and_waits() -> void:
 	var w := _world()
 	_fill(w)
-	var ember := _it(w, &"ember_edge")
+	var ember := _it(w, &"blade_orbit")
 	Offers.apply(w, ember)
 	assert_true(BuildSlots.swapping(w))
 	assert_eq(w.swap_source, BuildSlots.Source.GRANT)
@@ -154,17 +155,17 @@ func test_a_grant_skip_leaves_the_card() -> void:
 	var w := _world()
 	_fill(w)
 	var before := w.mod_slots.duplicate()
-	Offers.apply(w, _it(w, &"ember_edge"))
+	Offers.apply(w, _it(w, &"blade_orbit"))
 	w.step(_pick(InputFrame.PICK_SWAP_SKIP))
 	assert_false(BuildSlots.swapping(w))
 	assert_eq(w.mod_slots, before)
-	assert_false(w.items_owned.has(_it(w, &"ember_edge")))
+	assert_false(w.items_owned.has(_it(w, &"blade_orbit")))
 
 
 func test_the_altar_pick_swaps_or_skips_back_to_the_cards() -> void:
 	var w := _world()
 	_fill(w)
-	var ember := _it(w, &"ember_edge")
+	var ember := _it(w, &"blade_orbit")
 	var dmg := Offers.stat_code(Stats.Stat.DAMAGE, 0)
 	var rid := w.add_reward(RewardStore.Kind.ALTAR, Vector2(1, 0), 0)
 	var i := w.rewards.index_of(rid)
@@ -203,39 +204,14 @@ func test_the_shop_buy_swaps_and_pays_only_then() -> void:
 	assert_lt(w.shards, 1000, "paid on the swap")
 
 
-func test_salvage_frees_a_modifier_slot() -> void:
+## Removing a held modifier (Shop.remove_item: the playground's removal, a migrated card's) frees its slot.
+func test_removing_a_modifier_frees_its_slot() -> void:
 	var w := _world()
 	_fill(w)
-	w.shop_table = ContentCompiler.compile_shop(_repo.get_def(&"shop", &"terminal"))
-	var sells := Shop.sell_list(w)
-	var n := -1
-	for k in sells.size():
-		if sells[k][0] == Shop.SELL_ABILITY:
-			n = k
-			break
-	assert_gt(n, -1, "a modifier on the salvage list")
-	Abilities.remove_slot(w, sells[n][1])  # what Shop.sell does for an ability
+	assert_true(BuildSlots.full(w))
+	Shop.remove_item(w, w.items_owned[0])
 	assert_eq(w.mod_slots.size(), 5, "its slot is free")
 	assert_false(BuildSlots.full(w))
-
-
-# --- Migration and saves ----------------------------------------------------------------------------------------
-## A v0.5 carry: the weapon, three ability slots and five attack items, no mod_slots.
-func _old_carry(w: World) -> Dictionary:
-	var owned := PackedInt32Array([Offers.ability_of(_ab(w, &"combo_sword"))])
-	for id: StringName in [&"bomb_lobber", &"orbit_blades", &"arc_field"]:
-		owned.append(Offers.ability_of(_ab(w, id)))
-	var items := PackedInt32Array()
-	for id: StringName in [
-		&"long_edge", &"ember_edge", &"twin_arc", &"momentum", &"overcharge", &"conductor"
-	]:
-		items.append(_it(w, id))
-	return {
-		&"ability_owned": owned,
-		&"ability_levels": PackedInt32Array([1, 2, 3, 1]),
-		&"items_owned": items,
-		&"hp": 50,
-	}
 
 
 func _fresh_floor() -> World:
@@ -247,44 +223,11 @@ func _fresh_floor() -> World:
 	return w
 
 
-func test_a_v0_5_carry_migrates_into_six_slots_deterministically() -> void:
-	var runs: Array = []
-	for n in 2:
-		var w := _fresh_floor()
-		var probe := _world()
-		RunCarry.apply(w, _old_carry(probe))
-		w.ability_tables = ContentCompiler.compile_abilities(_repo)  # as Main: after the carry
-		w.stat_tables = ContentCompiler.compile_stat_cards(_repo)
-		Abilities.start_floor(w)
-		runs.append(
-			[w.mod_slots.duplicate(), w.items_owned.duplicate(), w.ability_levels.duplicate()]
-		)
-	var w := _world()
-	var want := PackedInt32Array(
-		[
-			_ab(w, &"bomb_lobber"),
-			_ab(w, &"orbit_blades"),
-			_ab(w, &"arc_field"),
-			_it(w, &"long_edge"),
-			_it(w, &"ember_edge"),
-			_it(w, &"twin_arc"),
-		]
-	)
-	assert_eq(
-		runs[0][0], want, "the abilities in slot order, then the attack items in pickup order"
-	)
-	assert_false((runs[0][1] as PackedInt32Array).has(_it(w, &"overcharge")), "past six: dropped")
-	assert_false((runs[0][1] as PackedInt32Array).has(_it(w, &"conductor")))
-	assert_true((runs[0][1] as PackedInt32Array).has(_it(w, &"momentum")), "a plain item stays")
-	assert_eq(runs[0][2], PackedInt32Array([1, 2, 3, 1]), "levels kept")
-	assert_eq(runs[0], runs[1], "deterministic")
-
-
 func test_a_carry_with_slots_keeps_their_order() -> void:
 	var w := _world()
-	BuildSlots.take(w, _it(w, &"ember_edge"))
-	BuildSlots.take(w, _ab(w, &"bomb_lobber"))
-	BuildSlots.take(w, _it(w, &"long_edge"))
+	BuildSlots.take(w, _it(w, &"blade_orbit"))
+	BuildSlots.take(w, _it(w, &"ember_core"))
+	BuildSlots.take(w, _it(w, &"echo_slash"))
 	var carry := RunCarry.take(w, 0)
 	var next := _fresh_floor()
 	RunCarry.apply(next, carry)
@@ -297,7 +240,7 @@ func test_a_carry_with_slots_keeps_their_order() -> void:
 func test_the_slots_round_trip_a_snapshot_with_equal_hashes() -> void:
 	var w := _world()
 	_fill(w)
-	Offers.apply(w, _it(w, &"long_edge"))  # a swap waiting
+	Offers.apply(w, _it(w, &"blade_orbit"))  # a swap waiting
 	var snap := w.to_snapshot()
 	var base := _world()
 	assert_eq(WorldSnapshot.apply(base, snap), "")
@@ -308,9 +251,7 @@ func test_the_slots_round_trip_a_snapshot_with_equal_hashes() -> void:
 
 func test_a_snapshot_without_the_slots_migrates() -> void:
 	var w := _world()
-	for id: StringName in [&"bomb_lobber", &"orbit_blades", &"arc_field"]:
-		Abilities.grant(w, Offers.ability_of(_ab(w, id)))
-	for id: StringName in [&"long_edge", &"ember_edge", &"twin_arc", &"overcharge"]:
+	for id: StringName in MODS + [SEVENTH]:
 		w.add_item(_it(w, id))
 	assert_eq(w.mod_slots.size(), 7, "add_item never caps (tests and labs)")
 	var snap := w.to_snapshot()
@@ -321,18 +262,20 @@ func test_a_snapshot_without_the_slots_migrates() -> void:
 	var base := _world()
 	assert_eq(WorldSnapshot.apply(base, snap), "", "an older snapshot restores")
 	assert_eq(base.mod_slots.size(), 6, "into six slots")
-	assert_eq(base.mod_slots[0], _ab(w, &"bomb_lobber"), "the abilities first")
-	assert_eq(base.mod_slots[5], _it(w, &"twin_arc"), "then the items, the last past six dropped")
-	assert_false(base.items_owned.has(_it(w, &"overcharge")))
+	assert_eq(base.mod_slots[0], _it(w, &"ember_core"), "the first pick first")
+	assert_eq(
+		base.mod_slots[5], _it(w, &"echo_slash"), "then in pickup order, the last past six dropped"
+	)
+	assert_false(base.items_owned.has(_it(w, SEVENTH)))
 
 
 func test_catch_up_reads_the_modifier_levels() -> void:
 	var w := _world()
 	w.catch_up_table = CatchUpTable.new()
 	var p0 := CatchUp.power(w)
-	BuildSlots.take(w, _ab(w, &"bomb_lobber"))
+	BuildSlots.take(w, _ab(w, &"blink"))  # the utility's levels count (the modifier abilities are gone)
 	var p1 := CatchUp.power(w)
-	BuildSlots.take(w, _ab(w, &"bomb_lobber"))
+	BuildSlots.take(w, _ab(w, &"blink"))
 	var p2 := CatchUp.power(w)
 	assert_eq(p1 - p0, p0 * w.catch_up_table.ability_level_permille / 1000, "+ one modifier level")
 	assert_eq(p2 - p1, p1 - p0, "+ per level")

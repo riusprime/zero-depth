@@ -11,7 +11,8 @@ const ICON := 56.0
 const NAME_SIZE := 21
 const DESC_SIZE := 17
 const STATE_W := 150.0
-const UNLOCKED := Color("#F2C46A")
+## v0.10.5 W3-O19: Astral's legendary pale gold (was a warm gold).
+const UNLOCKED := Color("#E2CB8E")
 
 var entry := {}
 var unlocked := false
@@ -45,10 +46,9 @@ func _init() -> void:
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(text)
 	name_label.name = "Name"
-	name_label.add_theme_font_override("font", HudStyle.font(true))
-	name_label.add_theme_font_size_override("font_size", NAME_SIZE)
+	AstralUi.caps(name_label, NAME_SIZE - 2, AstralCardArt.TEXT)  # v0.10.5 W3-O19: Cinzel
 	desc_label.name = "Desc"
-	desc_label.add_theme_font_size_override("font_size", DESC_SIZE)
+	AstralUi.body(desc_label, DESC_SIZE)
 	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc_label.max_lines_visible = 2
 	for l: Label in [name_label, desc_label]:
@@ -89,25 +89,25 @@ func show_entry(a: Dictionary, book: AchievementBook) -> void:
 		state_label.text = tr("UI_ACH_LOCKED")
 	else:
 		state_label.text = "%d / %d" % [book.progress(a), book.goal(a)]
-	name_label.add_theme_color_override("font_color", MenuStyle.TEXT if unlocked else MenuStyle.DIM)
-	desc_label.add_theme_color_override(
-		"font_color", MenuStyle.TEXT.lerp(MenuStyle.DIM, 0.3) if unlocked else MenuStyle.HINT
+	name_label.add_theme_color_override(
+		"font_color", AstralCardArt.TEXT if unlocked else AstralCardArt.DIM
 	)
-	state_label.add_theme_color_override("font_color", UNLOCKED if unlocked else MenuStyle.HINT)
+	desc_label.add_theme_color_override(
+		"font_color", AstralCardArt.TEXT.lerp(AstralCardArt.DIM, 0.3) if unlocked else AstralUi.HINT
+	)
+	state_label.add_theme_color_override("font_color", UNLOCKED if unlocked else AstralUi.HINT)
 	_style()
 
 
+## v0.10.5 W3-O19: an Astral frame (AstralChrome.FrameBox), an unlocked one's in the pale gold, a locked one fainter.
 func _style() -> void:
-	var tint := UNLOCKED if unlocked else Color(MenuStyle.DIM, 0.5)
-	var pattern := hash(entry.get("id", &"")) % 83
-	var normal := MenuStyle.tile_slab(tint, false, not unlocked, pattern)
-	var lit := MenuStyle.tile_slab(tint, true, not unlocked, pattern)
-	var hover := MenuStyle.tile_slab(tint, false, not unlocked, pattern)
-	hover.focus = 0.45
-	hover.dim = 1.0
-	for b: StoneBox in [normal, lit, hover]:
-		b.cut = 12.0
-		b.rim = Color(EmberStone.GOLD, 0.7) if unlocked else Color(0, 0, 0, 0)
+	var quiet := 1.0 if unlocked else 0.6
+	var normal := AstralChrome.FrameBox.new(0.0, quiet)
+	var lit := AstralChrome.FrameBox.new(1.0, quiet)
+	var hover := AstralChrome.FrameBox.new(0.0, minf(1.0, quiet + 0.25))
+	hover.rim = AstralCardArt.ACCENT
+	if unlocked:
+		normal.rim = Color(UNLOCKED, 0.7)
 	add_theme_stylebox_override("normal", normal)
 	add_theme_stylebox_override("hover", hover)
 	add_theme_stylebox_override("pressed", lit)

@@ -41,17 +41,12 @@ const BUILDS := {
 	# v0.9.0 TW: Split in the retired Spread's place.
 	"gun_multiplication": [&"gun", [&"gun_twin", &"split_shot", &"halo_shot"], false],
 	"blade_multiplication": [&"blade", [&"echo_slash", &"double_slash", &"split_wave"], false],
-	"gun_charged": [&"gun", [&"gun_charge", &"gun_big_shot"], false],
+	"gun_charged": [&"gun", [&"gun_lance", &"gun_big_shot"], false],  # v0.10.5 O1: the Lance for the retired Charge
 	"blade_charged": [&"blade", [&"heavy"], false],
-	"gun_remnant":
-	[
-		&"gun",
-		[&"shared_faultline", &"shared_gravity_stitch", &"shared_stress_mark", &"mut_grand_finale"],
-		false
-	],
-	"blade_remnant":
-	[&"blade", [&"shared_faultline", &"shared_stress_mark", &"mut_grand_finale"], false],
-	"gun_returning": [&"gun", [&"boomerang"], false],
+	# v0.10.5 O1: Gravity Stitch and Grand Finale are gone; the Threadline is the Gun's live remnant card.
+	"gun_remnant": [&"gun", [&"shared_faultline", &"shared_stress_mark", &"gun_threadline"], false],
+	"blade_remnant": [&"blade", [&"shared_faultline", &"shared_stress_mark"], false],
+	"gun_returning": [&"gun", [&"gun_glaive"], false],  # v0.10.5 O1: the Glaive for the retired Boomerang
 	"blade_returning": [&"blade", [&"blade_storm"], false],
 	"gun_status": [&"gun", [&"ember_core", &"frost_core", &"venom_core"], false],
 	"blade_status": [&"blade", [&"ember_core", &"frost_core", &"venom_core"], false],

@@ -34,22 +34,6 @@ func test_the_new_behaviours_are_cues_on_the_spec() -> void:
 	assert_true(AttackFormView.adds_layer(look), "a cue draws over the plain dart")
 
 
-func test_a_charging_shot_swells_in_the_barrel() -> void:
-	var w := Mx4World.world(&"gun", [&"gun_charge"])
-	var r := WorldReader.new(w)
-	_step(w, r, 10, S)
-	assert_almost_eq(r.gun_charge(), 10.0 / 60.0, 1e-6)
-	_view.draw_at(float(r.tick()))
-	assert_eq(_view.live_count(), 1, "the orb is drawn while nothing has fired")
-	var small := _view.pool(&"bolt_core").instance_transform(0).basis.x.length()
-	_step(w, r, 40, S)
-	_view.draw_at(float(r.tick()))
-	var big := _view.pool(&"bolt_core").instance_transform(0).basis.x.length()
-	assert_gt(big, small * 1.5, "it grows as the charge does")
-	_step(w, r, 1)
-	assert_eq(r.gun_charge(), 0.0, "released: fired")
-
-
 func test_a_charged_bolt_is_drawn_bigger_than_its_spec() -> void:
 	var look := AttackFormLooks.compose({"form": AttackFormLooks.BOLT, "radius_m": 0.16})
 	assert_almost_eq(AttackFormView.live_scale(look, 0.32), 2.0, 1e-6)

@@ -12,6 +12,12 @@ extends Control
 ## (WorldReader.wand_moved → Wand.moved_read, EI-07) and the read-back follows live. On Back, Main turns the change
 ## into the fewest wand moves (planned_moves → Wand.plan_moves) and queues them as input (InputLatch); they reach the
 ## sim one per tick once the game runs again (EI-03, EI-04; WAND_2.md "How a move reaches the sim").
+## v0.10.5 O13 (owner P10): the wand forecast (WandForecastView) between the row and the read-back: the spell left to
+## right and its key numbers, from the sim's own compile of the page's order (WorldReader.wand_forecast, EI-07),
+## following every move live. It needs the reader `open` is given (none: no forecast).
+## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): the page in the Astral style (AstralUi): the
+## game blurred under Astral's cool ink, a sigil and the title in Cinzel over a rule, the wand row, its pips and its
+## forecast in Astral (their default now), the read-back in Atkinson, Back an Astral plate.
 
 signal back_pressed
 
@@ -22,10 +28,14 @@ const READ_W := 1180.0
 const READ_SIZE := 22
 
 var row := WandRow.new()
+## v0.10.5 O13: the forecast of the order on the page.
+var forecast := WandForecastView.new()
 ## v0.9.0 AS2 (G2 AS = B): the slot categories' pips over the wand.
 var pips := SlotPips.new()
 var _title := Label.new()
 var _note := Label.new()
+## v0.10.5 W3-P10c: the held Constellations ("Constellation: Prism ×2 · Glass Sky"; hidden while none).
+var _stars := Label.new()
 var _read_back := Label.new()
 var _hint: Label
 var _back := Button.new()
@@ -33,13 +43,16 @@ var _read := {}
 var _start := PackedInt32Array()
 var _slots := 0
 var _held_from := -1
+var _reader: WorldReader
 
 
 func _init() -> void:
 	name = "BuildPage"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	MenuStyle.apply(self)
-	add_child(MenuBackdrop.new())
+	AstralUi.apply(self)
+	var backdrop := MenuBackdrop.new()
+	backdrop.astral = true  # v0.10.5 W3-O19: the game blurred under Astral's cool ink
+	add_child(backdrop)
 	var outer := VBoxContainer.new()  # the column sits on the left like the menus' list, centred top to bottom
 	outer.set_anchors_preset(Control.PRESET_FULL_RECT)
 	outer.offset_left = MenuStyle.LIST_LEFT
@@ -52,31 +65,41 @@ func _init() -> void:
 	col.add_theme_constant_override("separation", 18)
 	outer.add_child(col)
 	_title.text = "UI_BUILD_TITLE"
-	_title.add_theme_font_override("font", HudStyle.font(true))
-	_title.add_theme_font_size_override("font_size", MenuStyle.TITLE_SIZE)
-	_title.add_theme_constant_override("outline_size", 6)
-	col.add_child(_title)
+	_title.name = "Title"
+	AstralUi.title(_title)
+	var head := HBoxContainer.new()  # v0.10.5 W3-O19: a sigil, the title, the slots note beside it
+	head.name = "Head"
+	head.add_theme_constant_override("separation", 16)
+	head.add_child(AstralUi.Sigil.new(13.0))
+	head.add_child(_title)
+	col.add_child(head)
 	_note.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	_note.add_theme_font_size_override("font_size", MenuStyle.NOTE_SIZE)
-	_note.add_theme_color_override("font_color", MenuStyle.DIM)
-	col.add_child(_note)
+	AstralUi.caps(_note, 15)
+	_note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(_note)
+	col.add_child(AstralUi.LeftRule.new(560.0))
+	_stars.name = "Constellations"
+	_stars.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	AstralUi.caps(_stars, 15, AstralCardArt.ACCENT)
+	_stars.visible = false
+	col.add_child(_stars)
 	col.add_child(pips)
 	col.add_child(row)
+	col.add_child(forecast)
 	_read_back.name = "ReadBack"
 	_read_back.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_read_back.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_read_back.custom_minimum_size = Vector2(READ_W, 0)
-	_read_back.add_theme_font_size_override("font_size", READ_SIZE)
-	_read_back.add_theme_color_override("font_color", MenuStyle.TEXT)
+	AstralUi.body(_read_back, READ_SIZE)
 	col.add_child(_read_back)
-	_hint = MenuStyle.hint("UI_BUILD_HINT")
+	_hint = AstralUi.hint("UI_BUILD_HINT")
 	col.add_child(_hint)
 	_back.name = "Back"
 	_back.text = "UI_BACK"
 	_back.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_back.focus_mode = Control.FOCUS_NONE  # the page owns the keys and the pad; Back is the mouse's way out
 	_back.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	_back.add_theme_font_size_override("font_size", MenuStyle.BUTTON_SIZE)
+	AstralUi.plate_button(_back)  # v0.10.5 W3-O19: an Astral plate
 	_back.pressed.connect(func() -> void: back_pressed.emit())
 	col.add_child(_back)
 	row.tile_clicked.connect(_on_click)
@@ -84,15 +107,37 @@ func _init() -> void:
 	row.tile_hovered.connect(_on_hover)
 
 
-## Shows `wand` (WorldReader.wand(), with any moves still waiting for a tick applied) over its `slots`.
-func open(wand: Dictionary, slots: int) -> void:
+## Shows `wand` (WorldReader.wand(), with any moves still waiting for a tick applied) over its `slots`; `reader`
+## (v0.10.5 O13) forecasts each order the page shows.
+func open(wand: Dictionary, slots: int, reader: WorldReader = null) -> void:
+	_reader = reader
 	_read = wand
 	_slots = slots
 	_start = order()
 	row.held = -1
 	row.focus = 0 if card_count() > 0 else -1
 	_held_from = -1
+	_show_constellations(reader.constellations() if reader != null else PackedInt32Array())
 	_refresh()
+
+
+## v0.10.5 W3-P10c: the held Constellations line (`held`: ids in pick order; Prism held twice reads "Prism ×2").
+func _show_constellations(held: PackedInt32Array) -> void:
+	var names := PackedStringArray()
+	var seen := PackedInt32Array()
+	for id in held:
+		if seen.has(id):
+			continue
+		seen.append(id)
+		var n := held.count(id)
+		names.append(tr(WorldReader.constellation_name_key(id)) + (" ×%d" % n if n > 1 else ""))
+	_stars.text = tr("CONSTELLATION_KIND") + ": " + " · ".join(names)
+	_stars.visible = not names.is_empty()
+
+
+## The held Constellations line ("" while none): tests.
+func constellations_text() -> String:
+	return _stars.text if _stars.visible else ""
 
 
 func card_count() -> int:
@@ -114,6 +159,15 @@ func planned_moves() -> PackedInt32Array:
 
 func read_back_text() -> String:
 	return _read_back.text
+
+
+## v0.10.5 O13: the forecast's spell line and numbers line now.
+func forecast_text() -> String:
+	return forecast.spell_text()
+
+
+func forecast_numbers_text() -> String:
+	return forecast.numbers_text()
 
 
 func focus_index() -> int:
@@ -141,6 +195,8 @@ func _refresh() -> void:
 	var lines := WorldReader.wand_describe(_read)
 	_read_back.text = WorldReader.wand_render(lines, func(k: StringName) -> String: return tr(k))
 	_read_back.custom_minimum_size.x = maxf(READ_W, row.row_width())
+	forecast.custom_minimum_size.x = _read_back.custom_minimum_size.x
+	forecast.show_forecast(_reader.wand_forecast(_read) if _reader != null else {})
 
 
 func note_text() -> String:

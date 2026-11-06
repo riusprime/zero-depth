@@ -175,7 +175,7 @@ func test_wave_sizes_follow_the_floor() -> void:
 
 func test_clearing_every_wave_opens_the_doors_and_pays() -> void:
 	var w := _floor(21)
-	var walls := w.walls.size()
+	var walls := w.walls.size()  # v0.9.5 SB: the props' footprints are not doors
 	_enter(w)
 	assert_eq(w.walls.size(), walls + w.arenas.barriers.size(), "the barriers stand")
 	var waves := w.arenas.waves
@@ -189,6 +189,7 @@ func test_clearing_every_wave_opens_the_doors_and_pays() -> void:
 	assert_eq(w.overrun.kills, waves * 4, "every Overrun kill counted")
 	assert_gt(w.overrun.shards_in, 0)
 	assert_eq(w.overrun.bonus, w.overrun.shards_in, "their shards paid again: x2")
+	ShardDrops.collect_all(w)  # v0.10.5 O7b: the kills' shards lie in the room until taken; the bonus is paid at once
 	assert_eq(w.shards - shards_before, w.overrun.shards_in * 2)
 	var r := w.rewards.index_of(w.overrun.reward_id)
 	assert_gte(r, 0, "an altar appeared")

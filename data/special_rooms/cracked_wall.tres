@@ -9,13 +9,13 @@ code = "CrackedRooms.mark"
 order = 10
 stream = &"map:cracked_wall"
 entry = &"cracked_wall"
-placement = 0
-chance_permille = 250
+placement = 1
+floor_chance_permille = PackedInt32Array(1000, 350, 750, 0, 0)
 dead_end = true
 uses_host = true
 avoid = Array[StringName]([&"start", &"boss", &"boss_host", &"portal", &"overrun", &"shop", &"curse", &"arena", &"reward", &"event", &"shrine", &"fountain", &"timed_door", &"timed_door_host", &"rune_puzzle", &"rune_puzzle_host"])
 host_avoid = Array[StringName]([&"start", &"boss", &"overrun", &"shop", &"curse", &"arena", &"timed_door", &"timed_door_host", &"rune_puzzle", &"rune_puzzle_host"])
 sources = {
-"chance_permille": "secrets/secrets:crack_permille"
+"floor_chance_permille": "secrets/secrets:crack_floor_permille"
 }
 id = &"cracked_wall"

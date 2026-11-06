@@ -13,4 +13,5 @@ requires_weapon = &"gun"
 modifiers = Array[StringName]([&"split_shot"])
 loot_category = &"advanced"
 slot_category = &"secondary"
+level_max = 3
 id = &"split_shot"

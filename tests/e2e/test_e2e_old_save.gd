@@ -50,7 +50,7 @@ func test_continue_a_v0_6_1_save_and_its_old_cards_are_wand_cards() -> void:
 			double_slash = i
 	assert_gt(double_slash, -1)
 	var refund := (
-		w.shop_table.ability_refund_per_level * 1 + WandMigration.refund_of(w, double_slash)
+		WandMigration.ABILITY_REFUND_PER_LEVEL * 1 + WandMigration.refund_of(w, double_slash)
 	)
 	assert_eq(
 		w.shards, saved_shards + refund, "the Drone and Double Slash refunded at the salvage price"

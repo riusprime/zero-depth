@@ -25,8 +25,8 @@ func test_the_run_is_five_floors_with_the_stretched_curve() -> void:
 	var t := _table()
 	assert_eq(t.id, &"five_floors")
 	assert_eq(t.floors, 5)
-	assert_eq(t.enemy_hp_floor_permille, PackedInt32Array([1000, 1380, 1900, 2620, 3610]))
-	assert_eq(t.enemy_damage_floor_permille, PackedInt32Array([1000, 1180, 1400, 1660, 1960]))
+	assert_eq(t.enemy_hp_floor_permille, PackedInt32Array([850, 1380, 1900, 2620, 3610]))
+	assert_eq(t.enemy_damage_floor_permille, PackedInt32Array([850, 1180, 1400, 1660, 1960]))
 	assert_eq(t.boss_hp_per_floor_permille, 200, "boss +20 % HP a floor: 1.8 on floor 5")
 	assert_eq(t.boss_damage_per_floor_permille, 100, "boss +10 % damage a floor: 1.4 on 5")
 	assert_eq(t.rooms_min_by_floor, PackedInt32Array(ROOMS_MIN))
@@ -40,11 +40,11 @@ func test_the_run_is_five_floors_with_the_stretched_curve() -> void:
 	assert_true(old.rooms_min_by_floor.is_empty(), "its floors keep data/map's 15-19 rooms")
 
 
-## Floor 5 ends where floor 3 ended: an enemy of 1000 HP and 1000 damage on floors 1-5; a boss +20 % HP and +10 %
-## damage a floor, floor 1's boss eased to 800 per mille.
+## Floor 5 ends where floor 3 ended: an enemy of 1000 HP and 1000 damage on floors 2-5 (v0.9.5 EP3: floor 1 is
+## x0.85); a boss +20 % HP and +10 % damage a floor, floor 1's boss eased to 800 per mille.
 func test_enemies_and_bosses_scale_per_floor() -> void:
-	var hp := [1000, 1380, 1900, 2620, 3610]
-	var dmg := [1000, 1180, 1400, 1660, 1960]
+	var hp := [850, 1380, 1900, 2620, 3610]
+	var dmg := [850, 1180, 1400, 1660, 1960]
 	for f in range(1, 6):
 		var r := RunState.start(3, _table())
 		r.floor_index = f
@@ -126,7 +126,8 @@ func test_a_run_never_meets_a_boss_twice() -> void:
 			var b := FloorShape.boss(r, pools, f)
 			assert_gte(b, 0, "seed %d floor %d has a boss" % [s, f])
 			assert_true(pools[f - 1].has(b), "floor %d: its own pool" % f)
-			if f <= 3:
+			# v0.10.5 W3-O11: floor 2 draws as before unless floor 1 took the Brood Mother they share
+			if f == 1 or f == 3 or (f == 2 and not pools[1].has(met[0])):
 				assert_eq(b, r.pick_boss(pools[f - 1], f), "floor %d: the same draw as before" % f)
 			assert_false(b in met, "seed %d floor %d: not met before" % [s, f])
 			met.append(b)
@@ -239,7 +240,7 @@ func _walk(f: FloorLayout, tag: String, rooms: bool) -> bool:
 
 
 ## Altars and chests by the floor's rooms (data/rewards: up to 11 rooms 2 altars and 1-2 chests, up to 14 rooms 2
-## and 2, more rooms 2-3 and 2-3 as in v0.8.0; at most 2 altars stand, S1), as placed on real floors of the run.
+## and 2, more rooms 2-3 and 2-3 as in v0.8.0; at most 2 altars stand, S1; v0.10.5 S7: plus up to one extra of each)
 func test_loot_follows_the_floor_size() -> void:
 	var t := ContentCompiler.compile_rewards(_repo.get_def(&"rewards", &"floor"))
 	assert_eq(t.counts_for(10), PackedInt32Array([2, 2, 1, 2]))
@@ -256,9 +257,10 @@ func test_loot_follows_the_floor_size() -> void:
 			var rooms := w.floor_layout.room_count() - 1
 			var c := t.counts_for(rooms)
 			var n := w.rewards.size()
-			assert_between(n, c[0] + c[2], c[1] + c[3], "floor %d (%d rooms)" % [f, rooms])
+			# v0.10.5 S7: up to one extra chest and one extra altar (Rewards._place_extras)
+			assert_between(n, c[0] + c[2], c[1] + c[3] + 2, "floor %d (%d rooms)" % [f, rooms])
 			var altars := w.rewards.kind.count(RewardStore.Kind.ALTAR)
-			assert_lte(altars, t.altars_cap, "at most two altars")
+			assert_lte(altars, t.altars_cap + 1, "at most two altars and the extra one")
 			sum += n
 		totals[f] = sum
 	assert_lt(totals[1], totals[5], "the small first floor holds less than the long last one")

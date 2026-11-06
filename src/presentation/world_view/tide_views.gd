@@ -16,6 +16,23 @@ const BUBBLES := 72
 const SEA := Color(0.45, 1.0, 0.76)
 const DEEP := Color(0.03, 0.16, 0.16)
 const TOLL_RINGS := 3
+## v0.10.0 VX7 (VFX_PACK N8): the current's disc is the pack's ripple (ripple_area_02, held while the tide runs: rings
+## running in on a pull and out on a push), the push's swell the pack's pulse (pulse_area_02), the bubbles' spray the
+## pack's poison bubble in blue (pops now and then over the disc); data/vfx/pack_fx_vx7.tres. Each falls back to the old
+## look when PackFx has no room. false: the old looks. The bell's toll rings, the light and the sim are untouched.
+const PACK_WATER := true
+const DISC_ID := &"vx7_tide_disc"
+const SWELL_ID := &"vx7_tide_swell"
+const BUBBLE_ID := &"vx7_tide_bubble"
+## Scale per metre of the radius it fills (a ripple's rings reach about 1.7 m at scale 1, a pulse ring's 2.2 m).
+const DISC_PER_M := 0.6
+const SWELL_PER_M := 0.45
+## A pop's scale, and how many a second at full strength (half at Low density).
+const POP_SCALE := 0.35
+const POPS_PER_S := 5.0
+const WATER_PRIMARY := Color("#7FE0FF")
+const WATER_SECONDARY := Color("#2A8CE0")
+const WATER_TERTIARY := Color("#123F9A")
 const TIDE_SHADER := """
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled;
@@ -49,6 +66,18 @@ void fragment() {
 }
 """
 
+## v0.10.0 VX7: the pack effects (found through the parent, or set directly: tests, the shot tool); the held disc;
+## whether the swell now rolling is the pack's pulse (the torus hides), a push's swell not yet started; the pops owed.
+var pack_fx: PackFx = null:
+	set(v):
+		pack_fx = v
+		water_hold.pack = v if PACK_WATER else null
+var water_hold := FormPackHold.new()
+var swell_packed := false
+var pops := 0
+var _swell_due := false
+var _pop_owed := 0.0
+var _disc_packed := false
 var _disc := MeshInstance3D.new()
 var _disc_mat := ShaderMaterial.new()
 var _bubbles := MultiMeshInstance3D.new()
@@ -147,6 +176,7 @@ func sync(reader: WorldReader) -> void:
 	var phase := int(_tide["phase"])
 	if phase == WorldReader.TIDE_PUSH and _last_phase != WorldReader.TIDE_PUSH:
 		_swell_t = 0.0
+		_swell_due = true
 	_last_phase = phase
 
 
@@ -167,16 +197,23 @@ func advance(delta: float) -> void:
 	_toll = move_toward(_toll, 1.0 if tolling else 0.0, delta * 3.0)
 	_swell_t = minf(1.0, _swell_t + delta / 1.2)
 	var shown := _strength > 0.01
-	_disc.visible = shown
+	if pack_fx == null and PACK_WATER:
+		pack_fx = GapPack.pack_of(self)
+	water_hold.begin()
+	_disc_packed = shown and _pack_disc()
+	_disc.visible = shown and not _disc_packed
 	_disc.position = _centre + Vector3(0, 0.03, 0)
 	_disc_mat.set_shader_parameter("flow", _flow)
 	_disc_mat.set_shader_parameter("strength", _strength)
 	_disc_mat.set_shader_parameter("clock", _clock)
 	_light.position = _centre + Vector3(0, 1.4, 0)
 	_light.light_energy = 2.4 * maxf(_strength, _toll * 0.8)
+	_pack_swell()
+	water_hold.end()
 	_draw_bubbles(shown)
+	_pack_pops(delta, shown)
 	_draw_toll(float(_tide.get("progress", 0)) / 1000.0 if tolling else 0.0)
-	_swell.visible = _swell_t < 1.0
+	_swell.visible = _swell_t < 1.0 and not swell_packed
 	if _swell.visible:
 		var r := lerpf(1.5, RADIUS * 0.8, ease(_swell_t, 0.6))
 		_swell.position = _centre + Vector3(0, 0.12 + 0.25 * sin(_swell_t * PI), 0)
@@ -184,12 +221,70 @@ func advance(delta: float) -> void:
 		_swell_mat.albedo_color = Color(SEA, 0.55 * (1.0 - _swell_t))
 
 
+## v0.10.0 VX7: the disc as the pack's ripple, held at the tide's centre, sized to the current's reach and strength, its
+## rings running in on a pull (its speed negative) and out on a push. False: no pack or no room (the shader disc draws).
+func _pack_disc() -> bool:
+	if not water_hold.active():
+		return false
+	var s := RADIUS * DISC_PER_M * (0.3 + 0.7 * _strength)
+	var xf := Transform3D(Basis.from_scale(Vector3.ONE * s), _centre + Vector3(0, 0.04, 0))
+	var cols := {
+		&"primary": WATER_PRIMARY, &"secondary": WATER_SECONDARY, &"tertiary": WATER_TERTIARY
+	}
+	var n := water_hold.put(&"disc", DISC_ID, &"area", xf, cols)
+	if n == null:
+		return false
+	var want := -1.0 if _flow > 0.0 else 1.0
+	if not is_equal_approx(float(n.get(&"speed_scale")), want):
+		n.set(&"speed_scale", want)
+	return true
+
+
+## v0.10.0 VX7: a push's swell is the pack's pulse (once, when the push starts); the torus hides while it rolls.
+func _pack_swell() -> void:
+	if _swell_due:
+		_swell_due = false
+		swell_packed = false
+		if water_hold.active() and pack_fx.has_id(SWELL_ID) and pack_fx.has_room(&"area"):
+			var s := RADIUS * 0.8 * SWELL_PER_M
+			var cols := {
+				&"primary": WATER_PRIMARY,
+				&"secondary": WATER_SECONDARY,
+				&"tertiary": WATER_TERTIARY
+			}
+			swell_packed = (pack_fx.spawn(SWELL_ID, _centre + Vector3(0, 0.1, 0), s, cols) != null)
+	if _swell_t >= 1.0:
+		swell_packed = false
+
+
+## v0.10.0 VX7: the spray as bubbles popping over the disc (blue), POPS_PER_S a second at full strength; true when the
+## pack draws it (the old droplets hide). Each pop lands on its own spoke and radius.
+func _pack_pops(delta: float, shown: bool) -> void:
+	var on := shown and water_hold.active() and pack_fx.has_id(BUBBLE_ID)
+	if not on or not pack_fx.has_room(&"status"):
+		_pop_owed = 0.0
+		return
+	var rate := POPS_PER_S * (0.5 if ViewPrefs.effects_density == "low" else 1.0)
+	_pop_owed += delta * rate * _strength
+	while _pop_owed >= 1.0:
+		_pop_owed -= 1.0
+		var spoke := TAU * fposmod(pops * 0.618034, 1.0)
+		var r := lerpf(2.5, RADIUS * 0.85, fposmod(pops * 0.3819, 1.0))
+		var at := _centre + Vector3(cos(spoke) * r, 0.15, sin(spoke) * r)
+		var cols := {
+			&"primary": WATER_PRIMARY, &"secondary": WATER_SECONDARY, &"tertiary": WATER_TERTIARY
+		}
+		pack_fx.spawn(BUBBLE_ID, at, POP_SCALE, cols)
+		pops += 1
+
+
 ## Droplets riding the current: each on its own spoke and radius, sliding in (pull) or out (push), bobbing.
 func _draw_bubbles(shown: bool) -> void:
 	var mm := _bubbles.multimesh
 	var n := BUBBLES / 2 if ViewPrefs.effects_density == "low" else BUBBLES
-	mm.visible_instance_count = n if shown else 0
-	if not shown:
+	var popped := water_hold.active() and pack_fx.has_id(BUBBLE_ID) and pack_fx.has_room(&"status")
+	mm.visible_instance_count = n if shown and not popped else 0
+	if not shown or popped:
 		return
 	for k in n:
 		var spoke := TAU * fposmod(k * 0.618034, 1.0)

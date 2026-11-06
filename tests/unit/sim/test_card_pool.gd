@@ -99,19 +99,6 @@ func test_bad_rule_cards_are_rejected() -> void:
 	assert_eq(d.validate().size(), 2, "a plain stat has no side and no limit")
 
 
-func test_bad_ability_mods_are_rejected() -> void:
-	var c := (load("res://data/items/cluster_payload.tres") as ItemDefinition).duplicate(true)
-	assert_eq(c.validate(), [])
-	c.requires_ability = &"no_such_ability"
-	assert_eq(c.validate().size(), 1, "an unknown ability")
-	c.requires_ability = &""
-	assert_eq(c.validate().size(), 1, "an ability mod names its ability")
-	c.requires_ability = &"bomb_lobber"
-	c.modifiers.clear()  # v0.6.0 MX4: the bomblets are its modifier's ops now
-	assert_eq(c.validate().size(), 1, "it names its modifier")
-	assert_eq(ItemDefinition.ability_kind(&"orbit_blades"), AbilityDefinition.Kind.ORBIT_BLADES)
-
-
 # --- Rule stat cards ----------------------------------------------------------------------------------------
 func test_glass_cannon_trades_max_hp_for_damage_down_to_its_floor() -> void:
 	var w := _world()
@@ -172,121 +159,9 @@ func test_hoarder_counts_whole_hundreds_of_shards_up_to_its_limit() -> void:
 
 
 func test_fast_hands_cuts_auto_ability_cooldowns_only() -> void:
+	# v0.10.5 O1: no auto ability ships any more; the stat's two readers are checked directly.
 	var w := _world([Vector2(3, 0)])
-	var s := w.ability_owned.size()
-	_grant(w, AbilityTable.Kind.BOMB_LOBBER)
-	var drone := _grant(w, AbilityTable.Kind.DRONE_BUDDY)
 	Stats.add_card(w, Stats.Stat.FAST_HANDS, Stats.Rarity.RARE)
-	w.step(_f())
-	for k in 4:  # v0.6.0 MX2: Bomb Lobber lobs on the fourth weapon attack
-		ModifierAbilities.on_attack(w, w.player_pos())
-	assert_eq(w.ab.cd[s], 129, "Bomb Lobber: 150 ticks x 0.86")
-	assert_eq(Abilities.drone_period(w, w.ability_tables[drone]), 17, "drone: 20 x 0.86")
+	assert_eq(Stats.auto_cooldown(w, 150), 129, "150 ticks x 0.86")
+	assert_eq(Stats.auto_period(w, 20), 17, "20 x 0.86")
 	assert_eq(Stats.cooldown(w, 150), 150, "the cooldowns stat (blink, skill, dash) is untouched")
-
-
-# --- Ability mods -------------------------------------------------------------------------------------------
-func test_ability_mods_are_offered_only_with_their_ability() -> void:
-	var w := _world()
-	Heat.enable(w, ContentCompiler.compile_heat(_repo.get_def(&"heat", &"overclock")))
-	var pairs := {
-		&"cluster_payload": AbilityTable.Kind.BOMB_LOBBER,
-		&"overclocked_drone": AbilityTable.Kind.DRONE_BUDDY,
-		&"razor_orbit": AbilityTable.Kind.ORBIT_BLADES,
-		&"afterimage": AbilityTable.Kind.BLINK,
-	}
-	for id: StringName in pairs:
-		assert_false(ItemPool.available(w).has(_item(w, id)), "%s: not before its ability" % id)
-	for id: StringName in pairs:
-		var v := _world()  # a fresh run each: four slots can't hold them all
-		Heat.enable(v, ContentCompiler.compile_heat(_repo.get_def(&"heat", &"overclock")))
-		_grant(v, pairs[id])
-		# v0.6.5 WN5b: the four mods are retired with the abilities (WAND.md): never offered, even then.
-		assert_false(ItemPool.available(v).has(_item(v, id)), "%s: retired" % id)
-
-
-func test_cluster_payload_splits_each_bomb_into_bomblets_that_never_split() -> void:
-	var w := _world([Vector2(-6, 0), Vector2(-6.6, 0.5), Vector2(-6.4, -0.6)])
-	_grant(w, AbilityTable.Kind.BOMB_LOBBER)
-	w.add_item(_item(w, &"cluster_payload"))
-	w.step(_f())
-	for k in 4:  # v0.6.0 MX2: Bomb Lobber lobs on the fourth weapon attack
-		ModifierAbilities.on_attack(w, w.player_pos())
-	_run(w, 37)
-	assert_eq(_damage(w, Abilities.EFFECT_BOMB).size(), 3, "the bomb lands on the three")
-	assert_eq(w.ab.bomb_pos.size(), 3, "three bomblets in the air")
-	assert_eq(w.ab.bomb_split, PackedInt32Array([0, 0, 0]), "bomblets never split")
-	assert_almost_eq(w.ab.bomb_r[0], 1.0, 1e-5, "half the radius")
-	assert_eq(w.ab.bomb_dmg[0], 8, "40 % of 22 (v0.6.0 MX4: a hook's share rounds down)")
-	_run(w, 15)
-	var bits := _damage(w, AbilityMods.EFFECT_CLUSTER)
-	assert_gt(bits.size(), 0, "the bomblets landed on the cluster")
-	for e in bits:
-		assert_eq(e.amount, 8)
-	assert_eq(w.ab.bomb_pos.size(), 0, "and nothing more")
-
-
-func test_overclocked_drone_fires_faster_with_heat() -> void:
-	var w := _world()
-	Heat.enable(w, ContentCompiler.compile_heat(_repo.get_def(&"heat", &"overclock")))
-	var d := _grant(w, AbilityTable.Kind.DRONE_BUDDY)
-	var t := w.ability_tables[d]
-	w.heat.milli = 50 * HeatTable.MILLI
-	assert_eq(Abilities.drone_period(w, t), 20, "no mod: heat changes nothing")
-	w.add_item(_item(w, &"overclocked_drone"))
-	assert_eq(Abilities.drone_period(w, t), 14, "50 heat x 0.8 %: +40 % fire rate")
-	w.heat.milli = 0
-	assert_eq(Abilities.drone_period(w, t), 20, "cold: the base period")
-
-
-func test_razor_orbit_makes_blade_touches_bleed() -> void:
-	var plain := _world([Vector2(1.6, 0)])
-	_grant(plain, AbilityTable.Kind.ORBIT_BLADES)
-	_run(plain, 60)
-	assert_eq(plain.actors.bleed_stacks[1], 0, "plain blades don't bleed")
-	var w := _world([Vector2(1.6, 0)])
-	_grant(w, AbilityTable.Kind.ORBIT_BLADES)
-	w.add_item(_item(w, &"razor_orbit"))
-	_run(w, 60)
-	assert_eq(
-		_damage(w, Abilities.EFFECT_ORBIT).size(), _damage(plain, Abilities.EFFECT_ORBIT).size()
-	)
-	assert_gt(w.actors.bleed_stacks[1], 0, "a bleed stack per touch")
-
-
-func test_afterimage_bursts_where_the_blink_started() -> void:
-	var w := _world([Vector2(0, 1.0)])
-	_grant(w, AbilityTable.Kind.BLINK)
-	w.add_item(_item(w, &"afterimage"))
-	var start := w.player_pos()
-	w.step(_f(U, Vector2i(SimTick.MOVE_MAX, 0)))
-	assert_gt(w.player_pos().x, 3.0, "blinked away")
-	assert_eq(w.ab.echo_pos, start, "the echo waits at the start")
-	_run(w, 22)
-	assert_eq(_damage(w, AbilityMods.EFFECT_AFTERIMAGE).size(), 0, "not yet (0.4 s)")
-	_run(w, 2)
-	var burst := _damage(w, AbilityMods.EFFECT_AFTERIMAGE)
-	assert_eq(burst.size(), 1, "it burst on the dummy by the start")
-	assert_eq(burst[0].amount, 18)
-	assert_eq(w.ab.echo_at, -1, "and is spent")
-	assert_eq(Abilities.fx(w)["echo_tick"], w.ab.echo_tick, "the view sees the burst")
-
-
-func test_new_state_is_hashed_and_deterministic() -> void:
-	var a := _world([Vector2(-5, 0)])
-	var b := _world([Vector2(-5, 0)])
-	for w in [a, b]:
-		_grant(w, AbilityTable.Kind.BOMB_LOBBER)
-		_grant(w, AbilityTable.Kind.BLINK)
-		w.add_item(_item(w, &"cluster_payload"))
-		w.add_item(_item(w, &"afterimage"))
-		for k in Stats.COUNT:
-			Stats.add_card(w, k, Stats.Rarity.RARE)
-	for k in 120:
-		var f := _f(U if k == 5 else 0, Vector2i(0, SimTick.MOVE_MAX) if k < 10 else Vector2i.ZERO)
-		a.step(f)
-		b.step(f)
-	assert_eq(a.state_hash(), b.state_hash())
-	var before := a.state_hash()
-	a.ab.echo_tick += 1
-	assert_ne(a.state_hash(), before, "Afterimage's state is in the hash")

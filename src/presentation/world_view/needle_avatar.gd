@@ -52,12 +52,50 @@ const KIND := WorldReader.KIND_NEEDLE
 const GREY_LIGHT := Color("#6D625C")
 const DARK := Color("#3A383C")
 const HOLE := Color("#141417")
+## v0.10.5 W3-V4c (SoloVat): the raw drives (_vd) and their specs [lo, hi, loop]: the body's shift and height, its
+## lean (a turn's rotation vector, x and z), its pitch, the barrel's slide, each leg's yaw and its thigh and shin
+## angles (LEG0 + 3 k + 0 / 1 / 2: loops, the IK may turn them anywhere), and the muzzle's glow (sent as it is: the
+## bore's accent reads it).
+const AX := 0
+const AY := 1
+const LX := 2
+const LZ := 3
+const PITCH := 4
+const BARREL := 5
+const LEG0 := 6
+const MUZZLE := 18
+const LEG_SAMPLES := 256
+const VAT_DRIVES := [
+	[-0.1, 0.01, false],
+	[-0.42, 0.06, false],
+	[-0.075, 0.075, false],
+	[-0.075, 0.075, false],
+	[-0.33, 0.2, false],
+	[0.16, 0.27, false],
+	[-PI, PI, true],
+	[-PI, PI, true],
+	[-PI, PI, true],
+	[-PI, PI, true],
+	[-PI, PI, true],
+	[-PI, PI, true],
+	[-PI, PI, true],
+	[-PI, PI, true],
+	[-PI, PI, true],
+	[-PI, PI, true],
+	[-PI, PI, true],
+	[-PI, PI, true],
+	[0.0, 0.0, false],
+]
 
 ## Parts, read by tests and by ActorViews (flash materials).
 var body: Node3D
 var barrel: Node3D
 var legs: Array[Node3D] = []
 var feet: Array[Node3D] = []
+## v0.10.5 W3-V4c (owner, 2026-11-06: VAT for every regular enemy): true (set before setup(), ActorViews from
+## ViewPrefs.enemy_vat): a VatCrowd draws the body from baked poses; setup() builds no piece.
+var vat := false
+var kind := KIND
 
 var _eye_mat := StandardMaterial3D.new()
 var _hole_mat := StandardMaterial3D.new()
@@ -82,12 +120,18 @@ var _heat := 0.0
 var _kick := 0.0
 # v0.8.0 TG: the windup's progress (0..1) from the last sync; -1 when the caller gave none.
 var _tell_p := -1.0
+var _vd := PackedFloat32Array()
 
 
-## Builds the model. technique "xray" adds a team-coloured silhouette twin to the cube, the pods and the barrel
-## (as ActorViews does for its body pieces); the thin legs have none.
-func setup(outline_color: Color, technique: StringName = &"xray") -> void:
+## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
+func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	_vd.resize(VAT_DRIVES.size())
+	if vat:  # v0.10.5 W3-V4c: the crowd draws the body; the legs' hips and rest spots only
+		for k in 4:
+			_leg_spots(k)
+		_pose(0.0)
+		return
 	var team := ThemePalette.color(&"enemy_body")
 	body = Node3D.new()
 	add_child(body)
@@ -169,7 +213,7 @@ func apply_state(s: Dictionary) -> void:
 ## Advances the animation by `delta` seconds of frame time.
 func advance(delta: float) -> void:
 	var dt := clampf(delta, 0.0, 0.05)
-	if dt <= 0.0 or body == null:
+	if dt <= 0.0 or (body == null and not vat):
 		return
 	_t += dt
 	_vel_s = _vel_s.lerp(Vector3(_vel.x, 0, -_vel.y), _rate(12.0, dt))
@@ -192,7 +236,7 @@ func advance(delta: float) -> void:
 
 ## The barrel's recoil: how far it has slid back into the collar, in metres (0 at rest).
 func barrel_recoil() -> float:
-	return -barrel.position.x + (BODY * 0.5 + 0.06)
+	return -_vd[BARREL] + (BODY * 0.5 + 0.06)
 
 
 ## The eyes' current glow (emission energy).
@@ -251,19 +295,19 @@ func _pose(dt: float) -> void:
 	var calm := ViewPrefs.reduced_motion
 	var crouch := crouch_amount()
 	var y := hum + bob - _brace * 0.06 - crouch * 0.06 - (1.0 - _rise) * 0.24 + kick * 0.01
-	# Lean into the walk; brace leans back a little; each shot rocks the nose up.
-	var lean := (
-		Basis(Vector3.UP.cross(move_dir).normalized(), 0.07 * _walk) if _walk > 0.001 else Basis()
-	)
-	var pitch := Basis(
-		Vector3.BACK, _brace * 0.05 - crouch * 0.1 + kick * 0.12 - (1.0 - _rise) * 0.2
-	)
-	# Pivot about the hips, so a pitch rocks the cube instead of swinging it about the ground.
-	var b := lean * pitch
-	var pivot := Vector3(0, HIP.y, 0)
-	var at := Vector3(-kick * 0.035 - _brace * 0.015 - crouch * 0.04, y, 0)
-	body.transform = Transform3D(b, at + pivot - b * pivot)
-	barrel.position.x = BODY * 0.5 + 0.06 - kick * 0.09
+	# v0.10.5 W3-V4c: the pose's numbers first (the VAT drives), then the nodes from them (the old path).
+	# Lean into the walk (a turn about the axis across the walk, as its rotation vector's x and z); brace leans back a
+	# little; each shot rocks the nose up.
+	var lean := Vector3.ZERO
+	if _walk > 0.001:
+		lean = Vector3.UP.cross(move_dir).normalized() * 0.07 * _walk
+	_vd[LX] = lean.x
+	_vd[LZ] = lean.z
+	_vd[PITCH] = _brace * 0.05 - crouch * 0.1 + kick * 0.12 - (1.0 - _rise) * 0.2
+	_vd[AX] = -kick * 0.035 - _brace * 0.015 - crouch * 0.04
+	_vd[AY] = y
+	_vd[BARREL] = BODY * 0.5 + 0.06 - kick * 0.09
+	var bxf := body_xf(_vd[AX], _vd[AY], _vd[LX], _vd[LZ], _vd[PITCH])
 	# Glow: the eyes and the muzzle brighten through the wind-up, flare on each shot, cool down after.
 	var cool := 1.0 if _state == WorldReader.STATE_RECOVER else 0.0
 	var pulse := 0.0 if calm else 0.15 * sin(_t * 3.0)
@@ -273,8 +317,12 @@ func _pose(dt: float) -> void:
 		((2.0 + pulse + _charge * 4.0) * tell + kick * 3.0 - cool * 0.8) * lerpf(0.2, 1.0, _rise)
 	)
 	_hole_mat.emission_energy_multiplier = maxf(_charge * 3.5 * tell, _heat * 2.0) + kick * 6.0
+	_vd[MUZZLE] = _hole_mat.emission_energy_multiplier
+	if not vat:
+		body.transform = bxf
+		barrel.position.x = _vd[BARREL]
 	# The legs: each foot steps around its rest spot, then IK from the hip (on the moving body) to the foot.
-	for k in legs.size():
+	for k in _hips.size():
 		var p := fposmod(_phase + (0.5 if k % 2 == 1 else 0.0), 1.0)
 		var u := 1.0 - 4.0 * p if p < 0.5 else -1.0 + 4.0 * (p - 0.5)
 		var lift := 0.0 if p < 0.5 else sin((p - 0.5) * TAU) * LIFT
@@ -282,16 +330,38 @@ func _pose(dt: float) -> void:
 		var foot := Vector3(rest.x, 0.0, rest.z) * lerpf(0.55, 1.0, _rise)
 		foot += move_dir * u * STRIDE * 0.5 * _walk
 		foot.y = lift * _walk
-		_solve_leg(k, body.transform * _hips[k], foot)
+		var hip := bxf * _hips[k]
+		var ik := leg_ik(hip, foot)
+		for a in 3:
+			_vd[LEG0 + 3 * k + a] = ik[a]
+		if not vat:
+			_place_leg(k, hip, ik)
 
 
-## Places leg k's root at the hip, turns it toward the foot and bends thigh, knee and ankle to reach it (two-bone
-## IK, knee up and out like the reference's).
-func _solve_leg(k: int, hip: Vector3, foot: Vector3) -> void:
-	var root := legs[k]
-	root.position = hip
+## v0.10.5 W3-V4c: the body's transform from its numbers: shifted by (ax, ay), pivoting about the hips, so a pitch
+## rocks the cube instead of swinging it about the ground; its turn is the lean (rotation vector (lx, 0, lz)) after
+## the pitch about Z.
+static func body_xf(ax: float, ay: float, lx: float, lz: float, pitch: float) -> Transform3D:
+	var pivot := Vector3(0, HIP.y, 0)
+	return (
+		Transform3D(lean_basis(lx, lz), Vector3(ax, ay, 0) + pivot)
+		* Transform3D(Basis(Vector3.BACK, pitch), Vector3.ZERO)
+		* Transform3D(Basis.IDENTITY, -pivot)
+	)
+
+
+## v0.10.5 W3-V4c: the lean's turn from its rotation vector (lx, 0, lz) (none at zero).
+static func lean_basis(lx: float, lz: float) -> Basis:
+	var r := Vector3(lx, 0, lz)
+	var a := r.length()
+	return Basis(r / a, a) if a > 1e-9 else Basis.IDENTITY
+
+
+## Two-bone IK from the hip to the foot (knee up and out like the reference's): the leg's yaw toward the foot and the
+## thigh's and shin's angles (v0.10.5 W3-V4c: the numbers only; _place_leg writes them).
+static func leg_ik(hip: Vector3, foot: Vector3) -> Vector3:
 	var flat := Vector2(foot.x - hip.x, foot.z - hip.z)
-	root.rotation = Vector3(0, atan2(-flat.y, flat.x), 0)
+	var yaw := atan2(-flat.y, flat.x)
 	var d := flat.length()
 	var dz := foot.y + ANKLE_H - hip.y
 	var r := clampf(Vector2(d, dz).length(), 0.05, THIGH_LEN + SHIN_LEN - 0.001)
@@ -300,9 +370,105 @@ func _solve_leg(k: int, hip: Vector3, foot: Vector3) -> void:
 	var a1 := base + acos(clampf(cos_a, -1.0, 1.0))
 	var knee := Vector2(cos(a1), sin(a1)) * THIGH_LEN
 	var a2 := atan2(dz - knee.y, d - knee.x)
-	_thighs[k].rotation = Vector3(0, 0, a1)
-	_knees[k].rotation = Vector3(0, 0, a2 - a1)
-	_ankles[k].rotation = Vector3(0, 0, -a2)
+	return Vector3(yaw, a1, a2)
+
+
+## Places leg k's root at the hip, turns it toward the foot and bends thigh, knee and ankle by `ik` (leg_ik's).
+func _place_leg(k: int, hip: Vector3, ik: Vector3) -> void:
+	legs[k].position = hip
+	legs[k].rotation = Vector3(0, ik.x, 0)
+	_thighs[k].rotation = Vector3(0, 0, ik.y)
+	_knees[k].rotation = Vector3(0, 0, ik.z - ik.y)
+	_ankles[k].rotation = Vector3(0, 0, -ik.z)
+
+
+# --- v0.10.5 W3-V4c: the VAT rig (SoloVat) -----------------------------------------------------------------------
+
+
+## The Needle stands on its feet: nothing lifts the whole body.
+func vat_lift() -> float:
+	return 0.0
+
+
+func vat_drives() -> PackedFloat32Array:
+	return SoloVat.normalized(_vd, VAT_DRIVES)
+
+
+## The eyes' glow (the instance's; the muzzle's is the MUZZLE drive).
+func glow_energy() -> float:
+	return _eye_mat.emission_energy_multiplier
+
+
+## The body: its shift and height, the lean about the hips' pivot, the pitch (body_xf's parts); the barrel slides on
+## it. A leg's root sits at the body's hip with no turn of the body's (the body's chain, the hip, then the pitch and
+## the lean undone), turned by its yaw; the thigh turns by a1, the knee by a2 - a1 (-a1 then a2), the ankle by -a2.
+func vat_rig() -> Dictionary:
+	var pivot := Vector3(0, HIP.y, 0)
+	var z := Vector3.BACK
+	var j: Array = [
+		[AX, -1, null, SoloVat.slide(Vector3.RIGHT)],
+		[AY, 0, null, SoloVat.slide(Vector3.UP)],
+		[2, 1, null, _lean_joint.bind(pivot, false)],
+		[3, 2, body, SoloVat.turn(z, 1.0, Transform3D.IDENTITY, SoloVat.at(-pivot))],
+		[4, 3, barrel, SoloVat.slide(Vector3.RIGHT, Vector3(0, BARREL_Y, 0))],
+	]
+	for k in legs.size():
+		var g := 5 + 3 * k
+		j.append([3, 3, null, SoloVat.turn(z, -1.0, SoloVat.at(_hips[k]))])
+		j.append([2, j.size() - 1, null, _lean_joint.bind(Vector3.ZERO, true)])
+		j.append([g, j.size() - 1, legs[k], SoloVat.turn(Vector3.UP)])
+		j.append([g + 1, j.size() - 1, _thighs[k], SoloVat.turn(z)])
+		j.append(
+			[g + 1, j.size() - 1, null, SoloVat.turn(z, -1.0, SoloVat.at(Vector3(THIGH_LEN, 0, 0)))]
+		)
+		j.append([g + 2, j.size() - 1, _knees[k], SoloVat.turn(z)])
+		j.append(
+			[
+				g + 2,
+				j.size() - 1,
+				_ankles[k],
+				SoloVat.turn(z, -1.0, SoloVat.at(Vector3(SHIN_LEN, 0, 0)))
+			]
+		)
+	# Grids: 0 AX, 1 AY, 2 the lean (LX x LZ), 3 PITCH, 4 BARREL, then per leg its yaw, a1, a2.
+	var grids: Array = [[[AX, 2]], [[AY, 2]], [[LX, 9], [LZ, 9]], [[PITCH, 33]], [[BARREL, 2]]]
+	for d in range(LEG0, MUZZLE):
+		grids.append([[d, LEG_SAMPLES]])
+	return SoloVat.rig("needle", VAT_DRIVES, grids, j, OUTLINE_M, false)
+
+
+## The lean's joint at its grid's values (lx, lz): the turn at the pivot, or (`inverse`) the turn undone.
+static func _lean_joint(v: Array, at: Vector3, inverse: bool) -> Transform3D:
+	var b := lean_basis(v[0], v[1])
+	return Transform3D(b.inverse() if inverse else b, at)
+
+
+func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
+	var dir := rng.randf() * TAU
+	var ranges := {
+		"_vel_s": Vector3(cos(dir), 0, sin(dir)) * rng.randf() * 4.0,
+		"_t": [0.0, 40.0],
+		"_walk": [0.0, 1.0],
+		"_phase": [0.0, 1.0],
+		"_rise": [0.0, 1.0],
+		"_brace": [0.0, 1.0],
+		"_charge": [0.0, 1.0],
+		"_kick": [0.0, 1.0],
+		"_heat": [0.0, 1.0],
+		"_tell_p": [0.0, 1.0],
+		"_state":
+		[
+			WorldReader.STATE_MOVE,
+			WorldReader.STATE_WINDUP,
+			WorldReader.STATE_ACTIVE,
+			WorldReader.STATE_RECOVER
+		],
+	}
+	return SoloVat.sample(self, rng, ranges, _pose.bind(0.0))
+
+
+func vat_set(s: Dictionary) -> void:
+	SoloVat.apply(self, s, _pose.bind(0.0))
 
 
 func _build_barrel(outline_color: Color, team: Color, technique: StringName) -> void:
@@ -336,6 +502,7 @@ func _build_barrel(outline_color: Color, team: Color, technique: StringName) -> 
 	_hole_mat.emission_enabled = true
 	_hole_mat.emission = shot
 	_hole_mat.emission_energy_multiplier = 0.0
+	_hole_mat.set_meta(SoloVat.GLOW, MUZZLE + 1)  # v0.10.5 W3-V4c: a VAT Needle's bore glows at its MUZZLE drive
 	write_stencil(_hole_mat)
 	var hole := MeshInstance3D.new()
 	var hb := BoxMesh.new()
@@ -350,10 +517,7 @@ func _build_barrel(outline_color: Color, team: Color, technique: StringName) -> 
 ## One leg: a root at the hip (turned toward the foot), the hip hub, the thigh, the knee joint, the shin, and the
 ## flat foot under an ankle that keeps it level.
 func _build_leg(k: int, outline_color: Color, team: Color) -> void:
-	var sx := 1.0 if k < 2 else -1.0
-	var sz := 1.0 if k == 1 or k == 2 else -1.0
-	_hips.append(Vector3(HIP.x * sx, HIP.y, HIP.z * sz))
-	_rests.append(Vector3(FOOT.x * sx, 0.0, FOOT.z * sz))
+	_leg_spots(k)
 	var root := Node3D.new()
 	add_child(root)
 	legs.append(root)
@@ -398,6 +562,14 @@ func _build_leg(k: int, outline_color: Color, team: Color) -> void:
 	ankle.add_child(foot)
 	_piece(foot, fm, Vector3.ZERO, GREY_LIGHT, outline_color, team, &"outline")
 	feet.append(foot)
+
+
+## Leg k's hip (under the cube's corner) and its foot's rest spot (front-left, front-right, back-right, back-left).
+func _leg_spots(k: int) -> void:
+	var sx := 1.0 if k < 2 else -1.0
+	var sz := 1.0 if k == 1 or k == 2 else -1.0
+	_hips.append(Vector3(HIP.x * sx, HIP.y, HIP.z * sz))
+	_rests.append(Vector3(FOOT.x * sx, 0.0, FOOT.z * sz))
 
 
 func _piece(

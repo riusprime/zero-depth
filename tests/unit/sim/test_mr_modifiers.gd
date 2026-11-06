@@ -66,12 +66,12 @@ func _plain_bolt_damage() -> int:
 func test_twin_lanes_each_deal_sixty_percent_and_the_second_is_secondary() -> void:
 	var d := _plain_bolt_damage()
 	var w := W.world(&"gun", [&"gun_twin"])
-	assert_eq(Modifiers.bolt(w).share_permille, 600)
+	assert_eq(Modifiers.bolt(w).share_permille, 700)  # v0.9.5 CLV: Twin level 1 is 70 %
 	W.run(w, 1, 0, W.S)
 	var m := _mine(w)
 	assert_eq(m.size(), 2)
 	for i in m:
-		assert_eq(w.projectiles.damage[i], maxi(1, d * 600 / 1000), "each lane 60 %")
+		assert_eq(w.projectiles.damage[i], maxi(1, (d * 700 + 500) / 1000), "each lane 70 %")
 	assert_eq(w.projectiles.second_of(m[0]), 0, "the first lane is the primary")
 	assert_eq(
 		w.projectiles.second_of(m[1]), ProjectileStore.SECONDARY, "the second lane is secondary"
@@ -84,18 +84,19 @@ func test_twin_copies_and_share_by_level() -> void:
 	var d := _plain_bolt_damage()
 	var w := W.world(&"gun", [&"gun_twin"])
 	var got := []
-	for lvl in range(1, 6):
+	# v0.9.5 CLV: Twin has 3 levels: 2 copies at 70 %, 2 at 90 %, 3 at 75 %
+	for lvl in range(1, 4):
 		_at(w, &"gun_twin", lvl)
 		var s := Modifiers.bolt(w)
 		got.append([s.twin + 1, s.share_permille])
-	assert_eq(got, [[2, 600], [2, 700], [2, 800], [2, 900], [3, 700]])
+	assert_eq(got, [[2, 700], [2, 900], [3, 750]])
 	W.run(w, 1, 0, W.S)
 	var m := _mine(w)
-	assert_eq(m.size(), 3, "level 5: three copies")
+	assert_eq(m.size(), 3, "level 3: three copies")
 	var p := w.projectiles
 	var turns := []
 	for i in m:
-		assert_eq(p.damage[i], maxi(1, (d * 700 + 500) / 1000), "each copy 70 %")
+		assert_eq(p.damage[i], maxi(1, (d * 750 + 500) / 1000), "each copy 75 %")
 		turns.append(Kin.angle_of(Vector2(p.vel_x[i], p.vel_y[i])))
 	turns.sort()  # 0 (straight), then one fanned left (+), then one fanned right (just under a full turn)
 	assert_eq(turns[0], 0, "the middle copy flies straight")
@@ -111,7 +112,7 @@ func test_twin_copies_and_share_by_level() -> void:
 
 func test_twin_two_copies_fly_side_by_side() -> void:
 	var w := W.world(&"gun", [&"gun_twin"])
-	_at(w, &"gun_twin", 4)
+	_at(w, &"gun_twin", 2)  # v0.9.5 CLV: two copies at levels 1-2 (level 3 fans three)
 	W.run(w, 1, 0, W.S)
 	var m := _mine(w)
 	assert_eq(m.size(), 2)
@@ -121,34 +122,13 @@ func test_twin_two_copies_fly_side_by_side() -> void:
 	assert_gt(absf(p.pos_y[m[0]] - p.pos_y[m[1]]), 0.1, "apart, across the aim")
 
 
-func test_spread_is_two_more_then_one_a_level_each_bolt_a_share() -> void:
-	var d := _plain_bolt_damage()
-	var w := W.world(&"gun", [&"gun_spread"])
-	var got := []
-	for lvl in range(1, 6):
-		_at(w, &"gun_spread", lvl)
-		var s := Modifiers.bolt(w)
-		got.append([s.count, s.share_permille])
-	assert_eq(got, [[3, 550], [4, 580], [5, 610], [6, 640], [7, 670]])
-	_at(w, &"gun_spread", 1)
-	W.run(w, 1, 0, W.S)
-	var m := _mine(w)
-	assert_eq(m.size(), 3)
-	var kinds := []
-	for i in m:
-		# v0.8.0 RM lead fix: a share rounds half up (Attacks._shared_form).
-		assert_eq(w.projectiles.damage[i], maxi(1, (d * 550 + 500) / 1000), "each bolt 55 %")
-		kinds.append(w.projectiles.second_of(i))
-	assert_eq(kinds, [1, 0, 1], "only the centre bolt is primary")
-
-
 func test_halo_ring_bolts_deal_forty_percent() -> void:
 	var d := _plain_bolt_damage()
 	var w := W.world(&"gun", [&"halo_shot"])
 	assert_eq(Modifiers.bolt(w).share_permille, 400)
 	W.run(w, 1, 0, W.S)
 	var m := _mine(w)
-	assert_eq(m.size(), 3)
+	assert_eq(m.size(), 4)  # v0.9.5 CLV: Halo level 1 is 4 bolts
 	assert_eq(w.projectiles.damage[m[0]], maxi(1, d * 400 / 1000))
 	assert_eq(
 		[w.projectiles.second_of(m[0]), w.projectiles.second_of(m[1])],
@@ -158,28 +138,29 @@ func test_halo_ring_bolts_deal_forty_percent() -> void:
 
 
 func test_shares_multiply_down_the_wand_and_the_view_weighs_them() -> void:
-	var w := W.world(&"gun", [&"gun_twin", &"gun_spread"])
+	var w := W.world(&"gun", [&"gun_twin", &"halo_shot"])
 	var s := Modifiers.bolt(w)
-	assert_eq(s.share_permille, 600 * 550 / 1000)
-	assert_eq(s.damage_mul_permille, 600 * 550 / 1000, "the view's weight is each bolt's")
+	# v0.9.5 CLV: Twin level 1 is 70 %
+	assert_eq(s.share_permille, 700 * 400 / 1000)
+	assert_eq(s.damage_mul_permille, 700 * 400 / 1000, "the view's weight is each bolt's")
 
 
 func test_echo_repeats_at_half_as_a_secondary_repeat() -> void:
 	var w := W.world(&"gun", [&"gun_echo"])
 	var s := Modifiers.bolt(w)
-	assert_eq(s.repeat_damage_permille, 500)
+	assert_eq(s.repeat_damage_permille, 600)  # v0.9.5 CLV: Echo is fixed at 60 %
 	W.run(w, 1, 0, W.S)
 	W.run(w, 18)
 	var m := _mine(w)
 	assert_eq(m.size(), 2)
-	assert_eq(w.projectiles.damage[m[1]], s.damage * 500 / 1000)
+	assert_eq(w.projectiles.damage[m[1]], s.damage * 600 / 1000)
 	assert_eq(
 		w.projectiles.second_of(m[1]),
 		ProjectileStore.SECONDARY | ProjectileStore.REPEAT,
 		"secondary, and a repeat's"
 	)
-	_at(w, &"gun_echo", 5)
-	assert_eq(Modifiers.bolt(w).repeat_damage_permille, 700, "+5 % a level")
+	# v0.9.5 CLV: one level, no +5 % a level
+	assert_eq(Modifiers.bolt(w).repeat_damage_permille, 600, "no growth")
 
 
 func test_double_slash_repeats_at_sixty_percent() -> void:
@@ -220,45 +201,26 @@ func test_a_secondary_lane_feeds_half_the_bleed() -> void:
 	assert_lt(half, full, "the second lane at 50 % feeds less")
 
 
-# --- 2. A repeat never repeats -------------------------------------------------------------------------------
-func test_a_later_cast_is_a_repeat_and_casts_its_triggers_once() -> void:
-	var w := WandLab.fight(&"blade", [&"trigger_on_hit", &"trigger_on_kill", &"shared_explosive"])
-	var casts := _hooks(Modifiers.step(w, 0), &"trigger_on_hit")
-	assert_eq(casts.size(), 2, "a slash hit casts twice")
-	assert_eq([casts[0].child.recast, casts[1].child.recast], [0, 1], "the second cast is a repeat")
-	assert_eq(
-		_hooks(casts[0].child, &"trigger_on_kill").size(), 2, "the first cast's slash casts twice"
-	)
-	assert_eq(_hooks(casts[1].child, &"trigger_on_kill").size(), 1, "the repeat's casts once")
-
-
-func test_a_double_slash_echo_launches_no_later_cast() -> void:
-	var w := _solo(&"blade", [&"double_slash", &"trigger_on_hit"], [Vector2(1.3, 0.0)])
-	var hits := _swing(w, 90)
-	assert_eq(int(hits.get(&"", 0)), 1, "one slash")
-	assert_eq(int(hits.get(ItemEffects.EFFECT_TWIN_ARC, 0)), 1, "one echo")
-	assert_eq(int(hits.get(&"trigger_on_hit", 0)), 3, "the slash casts twice, its echo once")
-
-
 # --- 3. Rapid Fire and Flurry --------------------------------------------------------------------------------
 func test_rapid_fire_ramps_while_held_and_resets_after_a_pause() -> void:
 	var w := W.world(&"gun", [&"gun_rapid_fire"])
 	var s := Modifiers.bolt(w)
 	assert_eq(
 		[s.rate_bonus_permille, s.ramp_permille, s.ramp_cap_permille, s.ramp_reset_ticks],
-		[300, 100, 600, 24]
+		[300, 100, 900, 24]  # v0.9.5 CLV: Rapid Fire's cap is fixed at 900
 	)
 	assert_eq(s.damage, Modifiers.bolt(W.world(&"gun")).damage * 850 / 1000)
 	var gaps := _shot_gaps(w, 150)
 	assert_gt(gaps.size(), 8)
 	assert_lt(gaps[gaps.size() - 1], gaps[0], "held fire comes faster: %s" % [gaps])
 	for k in range(1, gaps.size()):
-		assert_lte(gaps[k], gaps[k - 1], "never slower while held")
+		# v0.10.5 W3-P9: the period's fraction is carried, so a gap may be one tick over the one before
+		assert_lte(gaps[k], gaps[k - 1] + 1, "never slower while held (but the carried tick)")
 	W.run(w, 40)  # a pause past 0.4 s
 	var again := _shot_gaps(w, 40)
-	assert_eq(again[0], gaps[0], "the ramp starts over")
-	_at(w, &"gun_rapid_fire", 5)
-	assert_eq(Modifiers.bolt(w).ramp_cap_permille, 1200, "+15 % cap a level")
+	assert_lte(absi(again[0] - gaps[0]), 1, "the ramp starts over (within the carried tick)")
+	# v0.9.5 CLV: one level, no cap growth (a level asked for past the max stays at it)
+	assert_eq(Modifiers.bolt(w).ramp_cap_permille, 900, "no cap growth")
 
 
 ## Holds Shoot `ticks` ticks: the gaps (ticks) between the player's shots.
@@ -287,7 +249,7 @@ func test_flurry_is_a_burst_of_three_swings_after_a_pause() -> void:
 		[s.burst_permille, s.burst_swings, s.burst_pause_ticks, s.rate_bonus_permille],
 		[800, 3, 36, 0]
 	)
-	assert_eq(s.damage, Modifiers.step(plain, 0).damage * 850 / 1000, "×0.85 at every level")
+	assert_eq(s.damage, Modifiers.step(plain, 0).damage * 1350 / 1000, "×1.35 at Lv 1 (W3-P5)")
 	var places := []
 	var fast := []
 	for t in 200:
@@ -333,24 +295,6 @@ func test_split_wave_alone_throws_crescents_from_each_slash_hit() -> void:
 	assert_gt(
 		int(_swing(play, 60).get(&"split_wave", 0)), 0, "the crescents hit past the first enemy"
 	)
-
-
-# --- 5. Placement flags --------------------------------------------------------------------------------------
-func test_echo_double_slash_and_charge_right_of_a_trigger_are_flagged() -> void:
-	for pair: Array in [
-		[&"gun", &"gun_echo"], [&"gun", &"gun_charge"], [&"blade", &"double_slash"]
-	]:
-		var after := WandLab.fight(pair[0], [&"trigger_on_hit", pair[1]])
-		var read := Wand.read(after)
-		assert_eq(Wand.flags(read), [&"", Wand.DEAD_AFTER_TRIGGER], "%s after a trigger" % pair[1])
-		var lines := Wand.describe(read)
-		assert_eq(lines[lines.size() - 1]["key"], &"WAND_READ_DEAD", "the read-back says so")
-		var before := WandLab.fight(pair[0], [pair[1], &"trigger_on_hit"])
-		assert_eq(Wand.flags(Wand.read(before)), [&"", &""], "%s before it acts" % pair[1])
-	var moved := WorldReader.wand_moved(
-		Wand.read(WandLab.fight(&"gun", [&"gun_echo", &"trigger_on_hit"])), 0, 1
-	)
-	assert_eq(Wand.flags(moved), [&"", Wand.DEAD_AFTER_TRIGGER], "a preview flags it too")
 
 
 func test_flag_keys_have_text() -> void:

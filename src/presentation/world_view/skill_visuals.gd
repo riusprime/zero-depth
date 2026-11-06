@@ -18,6 +18,12 @@ extends Node3D
 ## Hot, orange at Hot, red at Overclock.
 ## Nothing here changes an outcome.
 
+## v0.10.0 VX8 (VFX_PACK N3): the cleave's sweep ribbon takes the swing trail's look (BladePack's ribbon material)
+## and its hit flashes big_flash_02 (vx8_cleave_flash) beside the fan; false (or the pack full/off): the old looks.
+const PACK_BLADE := true
+## The pack flash's scale per metre of the cleave's reach, and how far along the reach it sits.
+const FLASH_PER_M := 0.9
+const FLASH_AT := 0.6
 ## Effect lives in sim ticks.
 const FX_TICKS := 16
 const TRACER_TICKS := 9
@@ -57,6 +63,11 @@ var _edge := MeshInstance3D.new()
 var _edge_mat: StandardMaterial3D
 ## The sweep as of the last sync: [progress 0..1, strength 0..1, half arc (1/4096 turns), outer radius m].
 var _sweep_state: Array = [0.0, 0.0, 0, 0.0]
+## v0.10.0 VX8: the sweep ribbon's pack material (own), whether it draws now (a slot is claimed), its scroll and tint.
+var _ribbon_mat: ShaderMaterial
+var _ribbon_on := false
+var _phase := 0.0
+var _ribbon_tint := Color(0, 0, 0, 0)
 
 
 func _init() -> void:
@@ -110,7 +121,7 @@ static func cleave_progress(running: int, move_ticks: int, since_hit: int) -> Ve
 
 
 func sync(reader: WorldReader) -> void:
-	_tier = HeatLooks.tier_of(reader.heat_state())
+	_tier = reader.heat_tier()
 	var tick := reader.tick()
 	if _last_tick >= 0 and tick > _last_tick:
 		_age(tick - _last_tick)
@@ -131,6 +142,7 @@ func sync(reader: WorldReader) -> void:
 			if cleave:
 				_streak(s["from"], s["hit_pos"], STREAK_TICKS)
 				_fan(s["hit_pos"], int(s["angle"]), int(s["half_arc"]), float(s["reach_m"]), reader)
+				_flash(s, reader)
 			else:
 				_blast(s, reader)
 		_last_hit = hit
@@ -192,6 +204,7 @@ func _show_forecast(s: Dictionary, reader: WorldReader) -> void:
 
 
 func _hide_sweep() -> void:
+	_release_ribbon()
 	_sweep_state = [0.0, 0.0, 0, 0.0]
 	_sweep_mesh.clear_surfaces()
 	_edge.visible = false
@@ -212,6 +225,7 @@ func _show_sweep(s: Dictionary, reader: WorldReader, tick: int) -> void:
 	_sweep_mesh.clear_surfaces()
 	if p <= 0.0 or strength <= 0.0:
 		_edge.visible = false
+		_release_ribbon()
 		return
 	var centre: Vector2 = reader.player_pos() if running > 0 else s["hit_pos"]
 	var at := SimPlane.to_3d(centre, 0.07)
@@ -220,14 +234,17 @@ func _show_sweep(s: Dictionary, reader: WorldReader, tick: int) -> void:
 	var start := aim - half
 	var now := start + 2.0 * half * p
 	var c := fx_color()
+	_use_ribbon(c)
 	var n := maxi(2, ceili(CLEAVE_SEGMENTS * p))
 	_sweep_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
 	for k in n + 1:
 		var f := float(k) / n  # 0 at the starting edge, 1 at the blade
 		var yaw := lerpf(start, now, f)
 		var out := Vector3(cos(yaw), 0, -sin(yaw))
+		_sweep_mesh.surface_set_uv(Vector2(f, 0.0))
 		_sweep_mesh.surface_set_color(Color(c, 0.08 * strength * f))
 		_sweep_mesh.surface_add_vertex(at + out * r_in)
+		_sweep_mesh.surface_set_uv(Vector2(f, 1.0))
 		_sweep_mesh.surface_set_color(
 			Color(c.lightened(0.15), strength * (0.12 + 0.75 * pow(f, 1.6)))
 		)
@@ -308,6 +325,61 @@ func _add(
 ## Ages every effect by `ticks` sim ticks: it fades with its life and goes when the life is out.
 func _age(ticks: int) -> void:
 	_fx.step(ticks)
+
+
+## The noise along the sweep ribbon runs while it draws.
+func _process(delta: float) -> void:
+	if _ribbon_on:
+		_phase += delta * BladePack.SCROLL_PER_S
+		_ribbon_mat.set_shader_parameter(&"phase", _phase)
+
+
+## v0.10.0 VX8: the sweep draws with the pack's ribbon (a slot of the `trail` family), tinted `c`; with no pack or no
+## free slot the old ribbon draws.
+func _use_ribbon(c: Color) -> void:
+	if not _ribbon_on:
+		if not PACK_BLADE or not is_inside_tree():
+			return
+		if not BladePack.claim_ribbon(BladePack.pack_of(self)):
+			return
+		if _ribbon_mat == null:
+			_ribbon_mat = BladePack.trail_material()
+		_ribbon_on = true
+		_sweep.material_override = _ribbon_mat
+	if c != _ribbon_tint:
+		_ribbon_tint = c
+		BladePack.tint(_ribbon_mat, c)
+
+
+func _release_ribbon() -> void:
+	if not _ribbon_on:
+		return
+	_ribbon_on = false
+	_sweep.material_override = _sweep_mat
+	BladePack.free_ribbon()
+
+
+func _exit_tree() -> void:
+	_release_ribbon()
+
+
+## True while the pack's ribbon draws the sweep (tests).
+func ribbon_active() -> bool:
+	return _ribbon_on
+
+
+## The cleave's hit flash: big_flash_02 on the fan, in the skill's colour; the old fan flash draws beside it.
+func _flash(s: Dictionary, reader: WorldReader) -> void:
+	var pack := BladePack.pack_of(self) if PACK_BLADE else null
+	if pack == null or not pack.has_room(&"impact"):
+		return
+	var a := TAU * float(int(s["angle"])) / 4096.0
+	var reach := float(s["reach_m"])
+	var dist := reader.player_radius() + reach * FLASH_AT
+	var at: Vector2 = s["hit_pos"] + Vector2(cos(a), sin(a)) * dist
+	var c := fx_color()
+	var colors := {&"primary": c.lerp(HOT, 0.6), &"secondary": c, &"tertiary": c.darkened(0.35)}
+	pack.spawn(&"vx8_cleave_flash", SimPlane.to_3d(at, EDGE_HEIGHT), reach * FLASH_PER_M, colors)
 
 
 static func _make_template() -> StandardMaterial3D:

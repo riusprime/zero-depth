@@ -27,6 +27,10 @@ extends AttackDefinition
 ## v0.7.5 BF1 (owner N15, "Shielded during big patterns"): the boss is shielded while it winds up and performs this
 ## attack (its signature pattern): hits spark off and deal nothing; it opens between patterns.
 @export var shielded := false
+## v0.10.5 O2a (owner L3: "invulnerable for too long, almost unhittable"): with `shielded`, >= 0 holds the shield
+## only through the windup and the first shield_seconds of the active time (then hits land while the pattern plays
+## out); -1 (the default) through the whole active time.
+@export var shield_seconds := -1.0
 ## v0.8.0 BS1 (owner O5; BOSS_SIGNATURES.md S2, S3): the death recap line for the attack's late part: the javelins
 ## coming back (a pattern with recall_seconds), an egg bursting (marks with egg_seconds and a pattern). Required
 ## with them; empty otherwise.
@@ -89,6 +93,8 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	for pair in [["active_seconds", active_seconds], ["recovery_seconds", recovery_seconds]]:
 		if pair[1] < 0.0 or (pair[1] > 0.0 and int(round(pair[1] * 60.0)) == 0):
 			issues.append(ValidationIssue.new(&"duration", path, where + "%s is invalid" % pair[0]))
+	if shield_seconds >= 0.0 and not shielded:
+		issues.append(ValidationIssue.new(&"range", path, where + "shield_seconds needs shielded"))
 	if damage <= 0:
 		issues.append(ValidationIssue.new(&"not_positive", path, where + "damage must be > 0"))
 	if weight <= 0:
@@ -136,6 +142,8 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	_validate_twin(issues, path, where)
 	_validate_judge(issues, path, where)
 	ShadeRules.validate(self, issues, path, where)  # v0.9.0 NB4: Lights Out, the Snuff
+	HardRules.validate(self, issues, path, where)  # v0.9.5 BH2: the five harder spells
+	PrismRules.validate(self, issues, path, where)  # v0.10.5 O3: the Prism's last phase
 
 
 ## v0.8.0 BP (owner O27): a known hit class; a big attack never chains (its punish window follows it); orb_damage only
@@ -380,6 +388,7 @@ func _validate_lock(issues: Array[ValidationIssue], path: String, where: String)
 		issues.append(ValidationIssue.new(&"range", path, where + "a grid's count must be odd"))
 	if (
 		move == &"grid"
+		and not shape_params.has("safe_cells")  # v0.9.5 BH2: HardRules checks that board
 		and float(shape_params.get("cell_m", 0.0)) < 2.0 * float(shape_params.get("radius_m", 0.0))
 	):
 		issues.append(ValidationIssue.new(&"no_gap", path, where + "a grid's circles overlap"))
@@ -425,14 +434,19 @@ func _validate_nemesis(issues: Array[ValidationIssue], path: String, where: Stri
 func _validate_tide(issues: Array[ValidationIssue], path: String, where: String) -> void:
 	var sp := shape_params
 	if move == &"tide":
+		var cap := float(sp.get("max_mps", BossSchemas.TIDE_MAX_MPS))  # v0.9.5 BH4: the drift cap is data
+		if cap <= 0.0 or cap > BossSchemas.TIDE_MAX_MPS:
+			issues.append(
+				ValidationIssue.new(
+					&"range", path, where + "max_mps: 0..%.1f m/s" % BossSchemas.TIDE_MAX_MPS
+				)
+			)
 		for k in ["pull_mps", "push_mps"]:
 			var v := float(sp.get(k, 0.0))
-			if v <= 0.0 or v > BossSchemas.TIDE_MAX_MPS:
+			if v <= 0.0 or v > cap:
 				issues.append(
 					ValidationIssue.new(
-						&"range",
-						path,
-						where + "%s: over 0, at most %.1f m/s" % [k, BossSchemas.TIDE_MAX_MPS]
+						&"range", path, where + "%s: over 0, at most %.1f m/s" % [k, cap]
 					)
 				)
 		for k in ["pull_seconds", "push_seconds"]:

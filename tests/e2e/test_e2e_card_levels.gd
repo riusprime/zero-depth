@@ -99,7 +99,16 @@ func test_a_held_card_shows_its_level_up_on_the_pick_and_its_pip() -> void:
 		"altar %d offers %s; card %d (%s)" % [r, Array(offer), card, reader.card_info(card)["id"]]
 	)
 	assert_eq(_held_level(reader, card), 0, "not held yet")
-	assert_eq(panel.slot(k).card.level_text(), tr("UI_WAND_LEVEL") % 1, "not held: Lv 1")
+	# v0.9.5 CLV (CARD_LEVELS C14; evidence/CLV.md: a 3-level card reads "Lv 1/3"): a wand card with fewer than five
+	# levels names its cap when new; any other levelled card reads "Lv 1". CLV moved the text on purpose and
+	# missed this assert (it predates CLV), so the altar's 3-level card failed it.
+	var cap := int(reader.card_info(card).get("max_level", 5))
+	var lv1: String = (
+		tr("UI_WAND_LEVEL_OF") % [1, cap]
+		if bool(reader.card_info(card).get("wand", false)) and cap < 5
+		else tr("UI_WAND_LEVEL") % 1
+	)
+	assert_eq(panel.slot(k).card.level_text(), lv1, "not held: %s" % lv1)
 	var card_rect := Rect2(Vector2.ZERO, panel.slot(k).card.size)
 	assert_true(
 		card_rect.grow(1.0).encloses(panel.slot(k).card.level_rect()), "the badge sits on the card"
@@ -184,6 +193,10 @@ func test_a_held_wand_card_shows_lv_n_to_n_plus_1_and_its_pip() -> void:
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")  # TEST HELPER: the walk between rewards must not end the run
 	await e.tap(KEY_QUOTELEFT)
+	# TEST HELPER (labelled, v0.9.5 CLV): every wand card has its default five levels here, so any altar offers a
+	# levelled one; the badge format of 1-level and 3-level cards is test_card_level_views.gd's job.
+	for t in w.item_tables:
+		t.level_max = 0
 	var found := await _find_wand_offer(e, w, reader, panel)
 	var r: int = found[0]
 	var k: int = found[1]
@@ -222,3 +235,51 @@ func test_a_held_wand_card_shows_lv_n_to_n_plus_1_and_its_pip() -> void:
 	assert_eq(PickPanel.held_level(reader, card), 2, "taking it levelled the card")
 	await e.frames(2)
 	assert_eq(hud.build_hud.pip_level_text(Array(w.mod_slots).find(card)), "2", "its pip says 2")
+
+
+## v0.10.5 W3-P3 (overlevels): on a later loop an altar offers a held card at its own max again, its badge reads
+## "Lv N → N+1 + overlevel", and taking it (number key, Enter) lifts it past its max.
+func test_a_later_loop_offers_a_held_card_past_its_max() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu(&"gun")
+	var w := e.world()
+	var reader: WorldReader = main.driver.reader
+	var hud: Hud = main.get_node("UI/Hud")
+	var panel := hud.pick_panel()
+	await e.tap(KEY_QUOTELEFT)
+	await _click(e, main, "God")  # TEST HELPER: the walk between rewards must not end the run
+	await e.tap(KEY_QUOTELEFT)
+	w.loop = 2  # TEST HELPER (labelled, as test_e2e_nemesis.gd): the run's second loop, so the caps are one higher
+	var found := await _find_wand_offer(e, w, reader, panel)
+	var r: int = found[0]
+	var k: int = found[1]
+	assert_gte(r, 0, "an altar offers a wand card")
+	if r < 0:
+		return
+	var card := w.rewards.offer_of(r)[k]
+	var own := CardLevels.max_level(w, card)
+	gut.p("reward %d offers %s (its own max Lv %d)" % [r, reader.card_info(card)["id"], own])
+	await e.tap(KEY_ESCAPE)
+	await e.frames(3)
+	await e.tap(KEY_QUOTELEFT)
+	await e.frames(2)
+	await _grant(e, main, card)
+	await e.tap(KEY_QUOTELEFT)
+	await e.frames(2)
+	CardLevels.set_level(w, card, own)  # TEST HELPER (labelled): the card at its own max, as loop 1 leaves it
+	assert_eq(PickPanel.held_level(reader, card), own)
+	await e.walk_to(w.rewards.pos(r), w.reward_table.interact_radius_m * 0.6)
+	await e.tap(KEY_E)
+	await e.frames(3)
+	assert_true(panel.is_open(), "the same reward again")
+	assert_eq(Array(w.rewards.offer_of(r))[k], card, "it still offers the card")
+	var cap := own + 1
+	var want := tr("UI_CARD_LEVEL_UP") % [own, cap] + " " + tr("UI_CARD_OVERLEVEL")
+	assert_eq(panel.slot(k).card.level_text(), want, "Lv %d → %d, an overlevel" % [own, cap])
+	await e.tap(KEY_1 + k)
+	await e.tap(KEY_ENTER)
+	await e.frames(4)
+	assert_false(panel.is_open(), "taken")
+	assert_eq(PickPanel.held_level(reader, card), cap, "taking it lifted the card past its max")
+	assert_eq(CardLevels.overlevels(w, card), 1)

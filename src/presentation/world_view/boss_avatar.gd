@@ -46,6 +46,8 @@ const RISE_FLOURISH_SECONDS := 1.0
 const DEFAULT_ACTIVE_TICKS := 6
 const DEFAULT_RECOVER_TICKS := 60
 const STAGGER_CLIP_SECONDS := 1.2
+## v0.9.5 BH1 (Q3): the kneel at a phase change (the 1 s gate) dips the model by this much.
+const KNEEL_DIP := 0.15
 const SHIELD_CLIP_SECONDS := 0.4
 ## v0.8.0 GF2 (owner O20: "the enemy should flinch"): the player's hits play the flinch clip, a light additive layer;
 ## a hit restarts it only once the last one has faded to FLINCH_RETRIGGER (so steady fire keeps it twitching instead
@@ -149,8 +151,8 @@ var _shield_t := 0.0
 var _recall := -1.0
 
 
-## Builds the model. technique "xray" adds a team-coloured silhouette twin to every body piece.
-func setup(outline_color: Color, technique: StringName = &"xray") -> void:
+## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
+func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	parts = BossParts.new(outline_color, technique)
 	model.name = "Model"
@@ -358,7 +360,7 @@ func advance(delta: float) -> void:
 		wind_target = smoothstep(0.0, 0.8, _windup)
 	_wind = lerpf(_wind, wind_target, _rate(10.0 if wind_target > _wind else 6.0, dt))
 	_hit = move_toward(_hit, 0.0, dt * 2.2)
-	var stag := 1.0 if _state == WorldReader.STATE_STAGGERED else 0.0
+	var stag := 1.0 if _kneeling() else 0.0  # v0.9.5 BH1: the kneel (the phase gate's 1 s) is the old stagger's slump
 	_stagger = lerpf(_stagger, stag, _rate(7.0, dt))
 	_late = move_toward(_late, 1.0 if _boss_phase > 0 else 0.0, dt)
 	_flinch = move_toward(_flinch, 0.0, dt * 3.5)
@@ -377,6 +379,7 @@ func advance(delta: float) -> void:
 	if _airborne:
 		lift = 4.0 * _leap * (1.0 - _leap) * LEAP_HEIGHT
 	model.position = Vector3(0, -3.2 * rise - 3.0 * _sink * _sink + lift - 0.12 * _stagger, 0)
+	model.scale.y = BossModels.SIZE_SCALE * (1.0 - KNEEL_DIP * _stagger)  # v0.9.5 BH1: the kneel dips the boss
 	model.visible = _sink < 0.98
 
 
@@ -535,7 +538,7 @@ func _build_body() -> void:
 
 
 ## v0.7.5 BM: the owner's rigged model as delivered, its own skeleton and skin, under a node that turns, scales and
-## lifts it into our frame; dressed like the others (flashable, outlined, the glow overlay, the X-ray twin).
+## lifts it into our frame; dressed like the others (flashable, outlined, the glow overlay).
 func _build_skinned(m: Dictionary) -> void:
 	pivot = Node3D.new()
 	pivot.name = "Body"
@@ -588,17 +591,15 @@ func _build_imported(m: Dictionary) -> void:
 
 
 ## Dresses the owner's skinned mesh: its own material kept (texture and all), duplicated, made flashable (no drawn
-## outline since v0.7.5), the glow overlay, shadows on, and with the X-ray technique a twin on the same skeleton.
-## `units` is the mesh's metres per unit (the twin shrinks by 4 cm along its normals in metres).
-func _dress(mi: MeshInstance3D, material: StandardMaterial3D, units: float = 1.0) -> void:
+## outline since v0.7.5), the glow overlay, shadows on.
+## `units` is kept for callers (it sized the X-ray twin's shrink).
+func _dress(mi: MeshInstance3D, material: StandardMaterial3D, _units: float = 1.0) -> void:
 	var mat: StandardMaterial3D = (
 		material.duplicate() as StandardMaterial3D if material != null else StandardMaterial3D.new()
 	)
 	# v0.7.5 (owner: "remove the stroke outline around the bosses model, it is ugly"): no drawn outline on the
 	# owner's models. The outline stencil mode stays, at zero thickness, so the X-ray twin's stencil is unchanged.
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = parts.outline_color()
-	mat.stencil_outline_thickness = 0.0
+	ActorLooks.outline(mat, parts.outline_color(), 0.0)
 	mi.material_override = ActorViews.flashable(mat)
 	glow_overlay = StandardMaterial3D.new()
 	glow_overlay.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -608,24 +609,6 @@ func _dress(mi: MeshInstance3D, material: StandardMaterial3D, units: float = 1.0
 	mi.material_overlay = glow_overlay
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	parts.body_materials.append(mat)
-	if parts.technique() == &"xray":
-		var ghost := MeshInstance3D.new()
-		ghost.name = "XrayTwin"
-		ghost.mesh = mi.mesh
-		ghost.skin = mi.skin
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = Color("#6B5F5B")
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		# Shrunk along its normals (the skinned twin shares the body's surface, so it would z-fight with it).
-		gm.grow = true
-		gm.grow_amount = -0.04 / maxf(units, 0.0001)
-		gm.stencil_color = Color(ThemePalette.color(&"enemy_body"), 0.85)
-		ghost.material_override = gm
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		ghost.extra_cull_margin = mi.extra_cull_margin
-		mi.get_parent().add_child(ghost)
-		ghost.transform = mi.transform
-		ghost.skeleton = mi.skeleton  # a sibling: the same path reaches the skeleton
 
 
 ## Nodes the code-built body creates up front (freed when the owner's model is used instead).
@@ -668,6 +651,12 @@ func _pose_imported(dt: float) -> void:
 	)
 
 
+## v0.9.5 BH1: the boss kneels at a phase change (the sim's 1 s gate). A save made before BH1 may still hold a
+## STAGGERED boss: it slumps the same way.
+func _kneeling() -> bool:
+	return _state == WorldReader.STATE_GATE or _state == WorldReader.STATE_STAGGERED
+
+
 ## v0.8.0 FB1: extra glow over the windup's (0 for most bodies; FinalBodyAvatar's shatter).
 func _extra_glow() -> float:
 	return 0.0
@@ -675,7 +664,7 @@ func _extra_glow() -> float:
 
 ## The clips' clocks that run in frame time: the stagger's, the shielded hold's, the gate's roar, the rise.
 func _advance_clips(dt: float, spawning: bool) -> void:
-	_stagger_secs = _stagger_secs + dt if _state == WorldReader.STATE_STAGGERED else 0.0
+	_stagger_secs = _stagger_secs + dt if _kneeling() else 0.0
 	if _shielded:
 		_shield_t = minf(1.0, _shield_t + dt / SHIELD_CLIP_SECONDS)
 	elif _shield_hold < 0.01:

@@ -7,7 +7,7 @@ extends Node
 ## run's, from the one movement code, and the World is pure and holds nothing of a run; the stations are presentation
 ## reading the hero's position. The hub never touches a run's save (RunSaver never sees this World) and reads the
 ## profile only (HubFlags).
-## The stations whose panels Main owns (the Portal Machine's build pick, the Codex, the achievements, the credits) go
+## The stations whose panels Main owns (the Portal Machine's build pick, the Codex, the achievements) go
 ## out as `station_used`; the stand-in panels (the Wardrobe, the Progression Station) and the hub's pause menu (Esc /
 ## Start: Resume, Options, Main menu) are this node's own (`overlay`).
 ## v0.9.0 CL (COLLECTIBLES.md #16, W47): the Archive's shelf lights each collectible found (HubView.show_found); once
@@ -18,6 +18,10 @@ extends Node
 signal station_used(id: StringName, panel: StringName)
 signal options_requested
 signal main_menu_requested
+## v0.9.5 RS1: a sound the hub asks Main to play (AudioDirector.play: cue, position or null, pitch).
+signal cue_requested(id: StringName, pos: Variant, pitch: float)
+## v0.10.5 O17 (owner P17): the hero walked down the south door's lane: Main opens the Training Room.
+signal training_requested
 
 const HUB_ID := &"rune_ring"
 ## The light the hub is drawn in (its biome's mood and palette).
@@ -35,6 +39,7 @@ var flags: HubFlags
 var driver: HubDriver
 var view: HubView
 var hud: HubHud
+var runic: HubRunic
 var ui: CanvasLayer
 var player_input: PlayerInput
 ## The station the hero stands at now (&"": none).
@@ -53,6 +58,7 @@ var collectibles: Array[CollectibleDefinition] = []
 var keystone: CollectibleDefinition
 var _after_walk: Callable
 var _found_ticks := 0
+var _training_asked := false
 
 
 ## Builds the hub from the content and the profile (read only): `stores` = [CodexStore, AchievementStore,
@@ -70,7 +76,7 @@ func setup(
 	layout = HubLayout.new(hub, bool(states.get(&"gate_open", false)))
 	driver = HubDriver.new()
 	driver.name = "HubDriver"
-	var build_id := StringName(profile.section("loadout").get("build", "blade"))
+	var build_id := Wardrobe.build_of(profile)
 	driver.setup(HubScenario.build(repo, layout, build_id))
 	add_child(driver)
 	var bosses := (stores[2] as CodexCatalog).section_entries(&"bosses", &"bosses").map(
@@ -104,6 +110,10 @@ func setup(
 	hud = HubHud.new()
 	ui.add_child(hud)
 	ui.move_child(hud, 0)
+	runic = HubRunic.new()  # v0.9.5 RS1: the Runic Stone (was the Credits stone)
+	add_child(runic)
+	runic.setup(self, stores)
+	runic.cue_requested.connect(cue_requested.emit)
 	_on_tick()
 
 
@@ -117,12 +127,20 @@ func _on_tick() -> void:
 	view.sync()
 	at = layout.station_at(driver.reader.player_pos())
 	view.focus(at)
-	var keys := layout.keys_of(at)
+	var keys := runic.keys(at, layout.keys_of(at))
+	var pos := driver.reader.player_pos()
+	if at == &"" and layout.near_training_door(pos):  # v0.10.5 O17: the door's name, no press (walk in)
+		keys = [hub.training_name_key, &""]
+	if layout.in_training_door(pos) and not _training_asked and not (held or overlay != null):
+		_training_asked = true
+		training_requested.emit()
+	runic.tick(at)
+
 	_take_keystone()
 	if _found_ticks > 0 and keystone != null:  # v0.9.0 CL: "Keystone · Added to the Rune Archive"
 		_found_ticks -= 1
 		keys = [keystone.name_key, CollectibleBook.HEADER_KEY]
-	hud.show_station(keys[0], keys[1])
+	hud.show_station(keys[0], keys[1], driver.reader)
 
 
 ## v0.9.0 CL: the shelf's niches, the floor runes (one per collectible found) and the Keystone, from the profile.
@@ -171,7 +189,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif at != &"" and event.is_action_pressed(&"interact"):
 		get_viewport().set_input_as_handled()
 		var panel := layout.panel_of(at)
-		if at in STAND_INS:
+		if at == HubRunic.STATION:
+			runic.press()  # v0.9.5 RS1: the stone speaks (or hums) in the hub; no panel
+		elif at in STAND_INS:
 			_open_stand_in(at)
 		else:
 			station_used.emit(at, panel)

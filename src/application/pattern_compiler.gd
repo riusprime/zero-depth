@@ -24,6 +24,8 @@ static func compile_boss_attack(
 	t.card = int(sp.get("card", -1))
 	t.lock_ticks = SimTick.seconds_to_ticks(def.lock_seconds)
 	t.shielded = def.shielded
+	if def.shield_seconds >= 0.0:  # v0.10.5 O2a: the shield drops this far into the active time
+		t.shield_active_ticks = SimTick.seconds_to_ticks(def.shield_seconds)
 	if sp.has("aim_degrees"):  # v0.8.0 PR (O84): a fixed aim, 1/4096 turns
 		t.fixed_aim = int(round(float(sp["aim_degrees"]) * 4096.0 / 360.0)) & 4095
 	t.mark_gap_ticks = SimTick.seconds_to_ticks(float(sp.get("stagger_seconds", 0.0)))
@@ -53,6 +55,7 @@ static func compile_boss_attack(
 	ShadeCompiler.compile_attack(def, t)  # v0.9.0 NB4: Lights Out's dark, the Snuff
 	if t.pillar_ticks > 0:  # v0.8.0 BS1 (S1): the last cross's pillars rise the tick after it strikes
 		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 2)
+	HardCompiler.compile_attack(def, t)  # v0.9.5 BH2: the five harder spells (a second cross lengthens the active time)
 	if sp.has("pattern_id"):
 		var pd: BulletPatternDefinition = repo.get_def(
 			&"bullet_patterns", StringName(sp["pattern_id"])
@@ -235,6 +238,11 @@ static func compile_pattern(def: BulletPatternDefinition) -> BulletPatternTable:
 	t.gap_offset_m = def.gap_offset_m
 	t.gap_shift_m = def.gap_shift_m
 	t.crossing = def.crossing
+	t.cross_delay_ticks = SimTick.seconds_to_ticks(def.cross_delay_seconds)  # v0.9.5 BH3 (B6)
+	t.counter_arms = def.counter_arms  # v0.9.5 BH3 (B9)
+	t.counter_spin_milli = int(
+		round(def.counter_spin_dps * 4096.0 / 360.0 * 1000.0 / SimTick.TICKS_PER_SECOND)
+	)
 	t.petals = def.petals
 	t.petal_min_permille = def.petal_min_permille
 	t.petal_cut_permille = def.petal_cut_permille

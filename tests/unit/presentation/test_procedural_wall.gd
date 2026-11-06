@@ -396,7 +396,10 @@ func test_a_procedural_wall_fades_with_its_wall() -> void:
 	kit.set_faded(PackedInt32Array([wi]))
 	var faded := node.get_surface_override_material(0) as ShaderMaterial
 	assert_ne(faded, solid)
-	assert_string_contains(faded.shader.code, "ALPHA_HASH_SCALE", "dithered see-through")
+	assert_string_contains(faded.shader.code, "ALPHA = ", "blended see-through")
+	assert_false(faded.shader.code.contains("ALPHA_HASH_SCALE"), "no stochastic hash (grain)")
+	assert_string_contains(faded.shader.code, "depth_draw_always", "sorts against itself")
+	assert_false(solid.shader.code.contains("depth_draw_always"), "the solid wall is unchanged")
 	kit.set_faded(PackedInt32Array())
 	assert_eq(node.get_surface_override_material(0), solid, "restored")
 

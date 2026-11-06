@@ -8,9 +8,8 @@ extends RefCounted
 ## - An elite's core: a mod still in the pool (each weighs rules.core_mod_weight) or a rare stat card under its cap
 ##   (its card weight). A boss's core: a card of the legendary tier (LegendaryTable: a legendary stat card or a pool
 ##   mod, by the tier's [stat, mod] weights).
-## - A boss staggers by its own meter (BossAi, read here, never changed). A stagger that the hit also kills opens
-##   nothing: the window needs the target alive. The window lasts rules.core_window_ticks from the stagger (a new
-##   stagger restarts it).
+## - v0.9.5 BH1 (owner Q3): a boss never staggers. Its window opens at each phase change instead (BossGates.begin: the
+##   boss kneels), and lasts rules.core_window_ticks (3 s) from that tick; the window needs the target alive.
 ## - v0.9.0 EL (owner Q25: "you have a 30% chance of dropping the core"; "no stagger window"): an elite (an archetype,
 ##   Elites) no longer staggers and has no window: killed, it drops its core's card with the elite rules' chance
 ##   (Elites.on_death). Marked (C8) and its rare card are gone with the curse.
@@ -40,9 +39,22 @@ static func on_elite(w: World, i: int) -> void:
 static func on_boss(w: World, i: int) -> void:
 	if not enabled(w) or w.legendary_table == null:
 		return
-	var code := draw_legendary(w, w.ev.rng_elite)
+	# v0.10.5 S6 (owner 2026-11-01): legendary with rules.boss_core_legendary_permille, else an Epic card (the elite
+	# cores' pool); one extra draw on `ai:elite`.
+	var code := -1
+	if w.ev.rng_elite.chance_permille(w.ev.rules.boss_core_legendary_permille):
+		code = draw_legendary(w, w.ev.rng_elite)
+	else:
+		code = draw_card(w, w.ev.rng_elite, Stats.Rarity.EPIC)
 	if code >= 0:
 		w.cores.add(w.actors.ids[i], code, true)
+
+
+## A boss core's card is of the legendary tier (a legendary stat card or a legendary-tier mod).
+static func is_legendary_card(w: World, code: int) -> bool:
+	if Offers.type_of(code) == Offers.STAT:
+		return Offers.rarity_of(code) == Offers.LEGENDARY
+	return w.legendary_table != null and w.legendary_table.mods.has(code)
 
 
 ## A card for a core or a drop at `rarity` (a stat card's rarity): a mod in the pool or a stat under its cap, one
@@ -127,18 +139,16 @@ static func window_open(w: World, i: int) -> bool:
 	return k >= 0 and w.cores.window_t[k] > 0
 
 
-## Damage._apply, after the boss's own stagger meter (BossAi.on_damage): a boss's fresh stagger opens the steal window
-## while it lives. v0.9.0 EL: an elite's core has no meter and no window (Q25).
-static func on_damage(w: World, target: int, applied: int, tags: int) -> void:
-	if w.cores.ids.is_empty() or tags & SimEvent.TAG_DOT or applied <= 0:
+## v0.9.5 BH1 (H1, Q3): BossGates.begin, as boss `target` kneels at a phase change: its core's steal window opens for
+## rules.core_window_ticks (3.0 s as shipped) from this tick. A boss without a core opens nothing. (Before BH1 a
+## stagger opened it; bosses no longer stagger.) An elite's core has no window (v0.9.0 EL, Q25).
+static func on_phase_change(w: World, target: int) -> void:
+	if w.cores.ids.is_empty():
 		return
-	var a := w.actors
-	var k := entry_of(w, a.ids[target])
-	if k < 0 or a.dead[target] == 1 or w.cores.boss[k] == 0:
+	var k := entry_of(w, w.actors.ids[target])
+	if k < 0 or w.actors.dead[target] == 1 or w.cores.boss[k] == 0:
 		return
-	var b := w.bosses.index_of(a.ids[target])
-	if b >= 0 and w.bosses.stagger_t[b] == BossAi.table_of(w, target).stagger_ticks:
-		_open(w, k, target)
+	_open(w, k, target)
 
 
 static func _open(w: World, k: int, target: int) -> void:
@@ -158,9 +168,10 @@ static func on_death(w: World, i: int) -> void:
 		var code := w.cores.card[k]
 		var boss := w.cores.boss[k] == 1
 		if not Shop.can_apply(w, code):  # the shop's rule, the one rule (audit G-6)
-			code = (
-				draw_legendary(w, w.ev.rng) if boss else draw_card(w, w.ev.rng, Stats.Rarity.RARE)
-			)
+			if boss and is_legendary_card(w, code):
+				code = draw_legendary(w, w.ev.rng)
+			else:
+				code = draw_card(w, w.ev.rng, Stats.Rarity.EPIC if boss else Stats.Rarity.RARE)
 		if code >= 0:
 			grant(w, code, a.pos(i), CoreState.Drop.BOSS_CORE if boss else CoreState.Drop.CORE)
 			w.cores.steal_tick = w.tick

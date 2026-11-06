@@ -241,7 +241,10 @@ func test_shard_gain_raises_what_a_kill_pays() -> void:
 	w.actors.dead[i] = 1
 	CombatLab.idle(w, 1)
 	# v0.5.5 EC (owner S4): a Warden pays 6 × 0.7 = 4 (4.2, rounded), then the shrine's × 1.2 = 4.8 → 5.
-	assert_eq(w.shards, 5, "a Warden's 4 × 1.2 = 4.8, rounded")
+	# v0.10.5 O7b: fixed at the kill, lying at the body until taken.
+	assert_eq(w.shard_drops.total(), 5, "a Warden's 4 × 1.2 = 4.8, rounded")
+	ShardDrops.collect_all(w)
+	assert_eq(w.shards, 5, "paid when taken")
 
 
 func test_melee_damage_reaches_a_real_swing() -> void:

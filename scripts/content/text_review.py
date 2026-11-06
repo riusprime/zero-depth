@@ -173,7 +173,7 @@ def main() -> None:
         ("4. Send the file back; the lead applies every yellow cell to locale/strings.csv and re-checks the screens.", False),
         ("", False),
         ("Placeholders like {0}, %d or %s are filled in by the game (numbers, names): keep them in your new text.", False),
-        ("{{TITLE}} is the game's name, still to be chosen.", False),
+        ("Zero Depth is the game's name; keep it as written in both languages.", False),
         ("Rows marked 'Dev tools (hidden from players)' are at the bottom; players never see them.", False),
         ("", False),
         ("Example row (how a change looks):", True),

@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c1t480oamv3aa"
-path.s3tc="res://.godot/imported/fx_beam_impact.png-c833d682a6cca8f9706a4493ae0f7edf.s3tc.ctex"
+path="res://.godot/imported/fx_beam_impact.png-c833d682a6cca8f9706a4493ae0f7edf.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/textures/vfx/fx_beam_impact.png"
-dest_files=["res://.godot/imported/fx_beam_impact.png-c833d682a6cca8f9706a4493ae0f7edf.s3tc.ctex"]
+dest_files=["res://.godot/imported/fx_beam_impact.png-c833d682a6cca8f9706a4493ae0f7edf.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

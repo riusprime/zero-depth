@@ -150,6 +150,17 @@ const SLOT_CATEGORIES: Array[StringName] = [&"free", &"form", &"pattern", &"seco
 @export var phase_radius_m := 0.0
 @export var phase_guard_window_seconds := 0.0
 # --- Engines (v0.3.0 G). An engine's numbers live in each item that feeds it; owning several takes the strongest.
+## v0.9.5 CLV (CARD_LEVELS.md): how many levels this wand card has (1..5); 0 = the default, CardLevels.MAX_LEVEL. A
+## card with 1 is offered once and never again while held.
+@export var level_max := 0
+## v0.9.5 SM (Stress Mark): a nonzero radius makes this the Stress Mark card: enemies within it show a weak side
+## (half_angle_deg wide), a hit from it multiplies by mult_permille, then waits cooldown_seconds; a boss carries
+## boss_marks sides.
+@export var mark_radius_m := 0.0
+@export var mark_half_angle_deg := 45.0
+@export var mark_mult_permille := 1000
+@export var mark_cooldown_seconds := 8.0
+@export var mark_boss_marks := 1
 ## Tags from TAGS: at least one, no repeats.
 @export var tags: PackedStringArray = PackedStringArray()
 ## Stacks one qualifying hit of a source that is not a weapon attack adds (Static Chain's jumps, Overcharge's
@@ -201,6 +212,46 @@ const SLOT_CATEGORIES: Array[StringName] = [&"free", &"form", &"pattern", &"seco
 @export var poison_seconds := 0.0
 @export var poison_max_stacks := 0
 @export var poison_spread_m := 0.0
+# --- v0.9.5 EE1 (ELEMENTS.md E1, E2): what Venom and Bleed gain at Lv 2 and 3 (ElementLevels). Venom Lv 2 Contagion: a
+# poisoned enemy passes its poison on every el_jump_seconds, within el_jump_range_m, the room at most
+# el_jumps_per_second; Lv 3 Virulence: stacks cap at el_stack_cap, each adds el_stack_bonus_permille to a tick.
+# Bleed Lv 2 Open wounds: a bleeding enemy that moved over el_wound_move_mm since its last tick takes
+# el_wound_bonus_permille more; Lv 3 Exsanguinate: stacks cap at el_stack_cap and the el_burst_stacks-th bursts.
+@export var el_jump_seconds := 0.0
+@export var el_jump_range_m := 0.0
+@export var el_jumps_per_second := 0
+@export var el_stack_cap := 0
+@export var el_stack_bonus_permille := 0
+@export var el_wound_move_mm := 0
+@export var el_wound_bonus_permille := 0
+@export var el_burst_stacks := 0
+# --- v0.9.5 EE2 (ELEMENTS.md E3-E5): what Fire, Lightning and Frost gain at Lv 2 and 3 (ElementLevelsFsf).
+# Fire Lv 2 Wildfire: the patches are el_patch_wide_permille wider and last el_patch_extra_seconds longer;
+# Lv 3 Heat sync: a burning enemy takes el_heat_permille more from the hero's hits.
+# Lightning Lv 2 Fork: +el_fork_chains jumps and +el_fork_range_m reach; Lv 3 Overcharge: every el_strike_every-th hit
+# that can chain calls a strike (el_strike_radius_m, el_strike_permille of the hit), at most el_strikes_per_second.
+# Frost Lv 2 Frostbite: a frozen enemy takes el_frostbite_permille more; Lv 3 Shatter: a hit on a frozen enemy breaks
+# it and fires el_shard_count shards at the nearest others within el_shard_range_m (el_shard_permille of the hit, a
+# slow of el_shard_slow_seconds), at most el_shatters_per_second a second.
+@export var el_patch_wide_permille := 0
+@export var el_patch_extra_seconds := 0.0
+@export var el_heat_permille := 0
+@export var el_fork_chains := 0
+@export var el_fork_range_m := 0.0
+@export var el_strike_every := 0
+@export var el_strike_radius_m := 0.0
+@export var el_strike_permille := 0
+@export var el_strikes_per_second := 0
+@export var el_frostbite_permille := 0
+@export var el_shard_count := 0
+@export var el_shard_range_m := 0.0
+@export var el_shard_permille := 0
+@export var el_shard_slow_seconds := 0.0
+@export var el_shatters_per_second := 0
+## v0.10.5 W3-P2 (the progression audit's P2, owner 2026-11-04): an element card's own damage at Lv 1, 2, 3, per mille
+## of its numbers (ElementStack.level_permille: its ticks, hook hits, strikes and shards), so part of Lv 1's power
+## moves to Lv 2-3. Empty = 1000 at every level; else one value per level (level_max), each 100..3000.
+@export var el_level_permille := PackedInt32Array()
 # --- v0.6.5 WN5a (docs/design/WAND.md, the shared pool and the triggers).
 ## S5 Bleed: the bleed's period while you move (walking or dashing; 0 = the same as standing). Shorter: it ticks
 ## faster while you move.
@@ -290,6 +341,12 @@ func validate() -> Array[ValidationIssue]:
 			)
 		)
 	_check_tags(issues)
+	if level_max < 0 or level_max > 5:
+		issues.append(ValidationIssue.new(&"range", resource_path, "level_max is 0..5"))
+	if mark_radius_m < 0.0 or mark_radius_m > 20.0 or mark_boss_marks < 1 or mark_boss_marks > 4:
+		issues.append(ValidationIssue.new(&"range", resource_path, "mark_* out of range"))
+	if mark_radius_m > 0.0 and (mark_half_angle_deg <= 0.0 or mark_half_angle_deg > 90.0):
+		issues.append(ValidationIssue.new(&"range", resource_path, "mark_half_angle_deg is 0..90"))
 	if kind == Kind.WAND and not tags.has("wand"):
 		issues.append(ValidationIssue.new(&"tags", resource_path, "a WAND card is tagged wand"))
 	if tags.has("wand") and modifiers.is_empty():
@@ -366,6 +423,7 @@ func _validate_engines(issues: Array[ValidationIssue]) -> void:
 			_check_frost(issues)
 			check_positive(issues, "chill_bonus_permille", chill_bonus_permille)
 			check_positive(issues, "frozen_bonus_permille", frozen_bonus_permille)
+			_check_element_levels(issues)  # v0.9.5 EE2: Frost's Lv 2 and 3
 		Kind.BULWARK:
 			check_positive(issues, "charge_max", charge_max)
 			check_positive(issues, "charge_bonus_permille", charge_bonus_permille)
@@ -398,6 +456,103 @@ func _validate_ability_mods(issues: Array[ValidationIssue]) -> void:
 				_check_poison(issues)
 			if bleed_max_stacks > 0:
 				_check_bleed_engine(issues)
+			_check_element_levels(issues)
+
+
+## v0.9.5 EE1: the element levels' numbers are in range, and each element's set comes whole.
+func _check_element_levels(issues: Array[ValidationIssue]) -> void:
+	var venom := el_jump_seconds > 0.0 or el_jump_range_m > 0.0 or el_jumps_per_second > 0
+	var bleed := el_wound_move_mm > 0 or el_wound_bonus_permille > 0 or el_burst_stacks > 0
+	var neg := el_jump_seconds < 0.0 or el_jump_range_m < 0.0 or el_jumps_per_second < 0
+	neg = neg or el_stack_cap < 0 or el_stack_bonus_permille < 0 or el_wound_bonus_permille < 0
+	neg = neg or el_wound_move_mm < 0 or el_burst_stacks < 0
+	if neg:
+		issues.append(ValidationIssue.new(&"range", resource_path, "el_* fields are >= 0"))
+	if not el_level_permille.is_empty():  # v0.10.5 W3-P2
+		var ok_row := el_level_permille.size() == maxi(1, level_max)
+		for v in el_level_permille:
+			ok_row = ok_row and v >= 100 and v <= 3000
+		if not ok_row:
+			issues.append(
+				ValidationIssue.new(
+					&"range", resource_path, "el_level_permille: one value per level, 100..3000"
+				)
+			)
+	if venom:
+		var ok := el_jump_seconds > 0.0 and el_jump_range_m > 0.0 and el_jumps_per_second > 0
+		ok = ok and el_stack_bonus_permille > 0 and el_stack_cap > 0
+		ok = ok and poison_max_stacks >= el_stack_cap
+		if not ok:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "the Venom level set is whole")
+			)
+	if bleed:
+		var ok := el_wound_move_mm > 0 and el_wound_bonus_permille > 0 and el_burst_stacks > 0
+		ok = ok and el_stack_cap >= el_burst_stacks and bleed_max_stacks >= el_stack_cap
+		if not ok:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "the Bleed level set is whole")
+			)
+	_check_element_levels_fsf(issues)
+
+
+## v0.9.5 EE2: Fire's, Lightning's and Frost's level numbers are in range, and each set comes whole.
+func _check_element_levels_fsf(issues: Array[ValidationIssue]) -> void:
+	var ints := [
+		el_patch_wide_permille,
+		el_heat_permille,
+		el_fork_chains,
+		el_strike_every,
+		el_strike_permille,
+		el_strikes_per_second,
+		el_frostbite_permille,
+		el_shard_count,
+		el_shard_permille,
+		el_shatters_per_second
+	]
+	var floats := [
+		el_patch_extra_seconds,
+		el_fork_range_m,
+		el_strike_radius_m,
+		el_shard_range_m,
+		el_shard_slow_seconds
+	]
+	var neg := false
+	for v: int in ints:
+		neg = neg or v < 0
+	for v: float in floats:
+		neg = neg or v < 0.0
+	if neg:
+		issues.append(ValidationIssue.new(&"range", resource_path, "el_* fields are >= 0"))
+	var fire := el_patch_wide_permille > 0 or el_patch_extra_seconds > 0.0 or el_heat_permille > 0
+	if fire:
+		var ok := el_patch_wide_permille > 0 and el_patch_extra_seconds > 0.0
+		ok = ok and el_heat_permille > 0 and burn_max_stacks > 0
+		if not ok:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "the Fire level set is whole")
+			)
+	var storm := el_fork_chains > 0 or el_fork_range_m > 0.0 or el_strike_every > 0
+	storm = storm or el_strike_radius_m > 0.0 or el_strike_permille > 0 or el_strikes_per_second > 0
+	if storm:
+		var ok := el_fork_chains > 0 and el_fork_range_m > 0.0 and el_strike_every > 1
+		ok = ok and el_strike_radius_m > 0.0 and el_strike_permille > 0
+		ok = ok and el_strikes_per_second > 0
+		if not ok:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "the Lightning level set is whole")
+			)
+	var frost := el_frostbite_permille > 0 or el_shard_count > 0 or el_shard_range_m > 0.0
+	frost = frost or el_shard_permille > 0 or el_shard_slow_seconds > 0.0
+	frost = frost or el_shatters_per_second > 0
+	if frost:
+		var ok := el_frostbite_permille > 0 and el_shard_count > 0 and el_shard_range_m > 0.0
+		ok = ok and el_shard_permille > 0 and el_shard_slow_seconds > 0.0
+		ok = ok and el_shatters_per_second > 0 and frost_threshold > 0
+		if not ok:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "the Frost level set is whole")
+			)
 
 
 ## v0.6.0 MX4: Venom Core's poison engine.

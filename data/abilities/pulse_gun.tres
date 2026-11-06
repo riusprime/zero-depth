@@ -10,6 +10,7 @@ button = 1
 name_key = &"ABILITY_PULSE_GUN"
 desc_key = &"ABILITY_PULSE_GUN_DESC"
 start_weapon = &"gun"
+offered = false
 tags = Array[StringName]([&"bolt", &"weapon"])
 level_damage = PackedFloat32Array(1, 1.12, 1.24, 1.36, 1.48)
 level_count = PackedInt32Array(1, 1, 1, 1, 2)

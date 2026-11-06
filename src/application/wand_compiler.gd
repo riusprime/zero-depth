@@ -114,6 +114,42 @@ static func compile_slots(def: AttackSlotsDefinition, items: Array[ItemTable]) -
 			if index.has(id):
 				cells[int(index[id])] = SlotTable.CELL_RULED
 		t.form_cells.append(cells)
+		var pruned := {}
+		for id in r.pruned:
+			if index.has(id):
+				pruned[int(index[id])] = true
+		t.form_pruned.append(pruned)
+		if not r.params.is_empty():
+			t.params[r.id] = r.params.duplicate()
 		if String(r.card).is_empty() and t.default_form < 0:
 			t.default_form = t.form_ids.size() - 1
+	return t
+
+
+## v0.9.5 EE3: the element pairs' numbers (data/combos/element_pairs.tres), or null without the data (a lab: no pairs).
+static func pairs(repo: ContentRepository) -> ElementPairTable:
+	var def := repo.get_def(&"element_pairs", &"element_pairs") as ElementPairsDefinition
+	if def == null:
+		return null
+	var t := ElementPairTable.new()
+	t.level_permille = def.level_permille.duplicate()
+	t.stack_falloff_permille = def.stack_falloff_permille.duplicate()  # v0.10.5 W3-P1
+	t.prism_falloff_steps = def.prism_falloff_steps  # v0.10.5 W3-P10c
+	t.storm_mark_ticks = SimTick.seconds_to_ticks(def.storm_mark_seconds)  # v0.10.5 W3-P1b
+	t.triggers_per_second = def.triggers_per_second
+	t.burst_permille = def.burst_permille
+	t.burst_radius_m = def.burst_radius_m
+	t.cloud_radius_m = def.cloud_radius_m
+	t.cloud_ticks = SimTick.seconds_to_ticks(def.cloud_seconds)
+	t.cloud_stacks = def.cloud_stacks
+	t.cloud_gap_ticks = SimTick.seconds_to_ticks(def.cloud_gap_seconds)
+	t.arc_burn_stacks = def.arc_burn_stacks
+	t.arc_poison_stacks = def.arc_poison_stacks
+	t.arc_bleed_stacks = def.arc_bleed_stacks
+	t.boil_permille = def.boil_permille
+	t.circuit_permille = def.circuit_permille
+	t.ice_slow_permille = def.ice_slow_permille
+	t.brittle_radius_m = def.brittle_radius_m
+	t.sepsis_stacks = def.sepsis_stacks
+	t.sepsis_permille = def.sepsis_permille
 	return t

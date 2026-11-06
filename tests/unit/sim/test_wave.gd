@@ -10,6 +10,14 @@ const HP := 1000000
 const WAVE_ON: Array[StringName] = [
 	&"gun_twin",
 	&"gun_backfire",
+	&"gun_ricochet",  # v0.9.5 FC8: the eight cards of FORM_COMBOS W1-W8
+	&"gun_homing",
+	&"gun_echo",
+	&"gun_big_shot",
+	&"gun_rapid_fire",
+	&"split_shot",
+	&"gun_mine",
+	&"gun_spiral",
 	&"ember_core",
 	&"storm_core",
 	&"frost_core",
@@ -66,7 +74,10 @@ func test_the_card_makes_the_shot_a_wide_slow_wave() -> void:
 	assert_almost_eq(s.speed * SimTick.TICKS_PER_SECOND, 6.0, 0.01, "6 m/s")
 	assert_eq(s.period_ticks, 54, "every 0.9 s")
 	assert_almost_eq(
-		s.speed * s.life_ticks, orb.speed * orb.life_ticks, 0.11, "as far as an orb flies"
+		s.speed * s.life_ticks * 2.0,
+		orb.speed * orb.life_ticks,
+		0.11,
+		"v0.10.5 W3-P5: half as far as an orb flies (5.4 m)"
 	)
 	assert_eq(s.damage, orb.damage * 6, "× 6 an orb hit (the class doc: one target about the orbs)")
 	assert_false(s.has_tag(&"wave"), "not the Blade's wave: Split Wave never reads it")
@@ -78,7 +89,7 @@ func test_the_card_makes_the_shot_a_wide_slow_wave() -> void:
 
 
 func test_it_rolls_through_every_enemy_once() -> void:
-	var at: Array = [Vector2(2.0, 0.0), Vector2(4.0, 0.3), Vector2(6.0, -0.3), Vector2(9.0, 0.0)]
+	var at: Array = [Vector2(1.5, 0.0), Vector2(2.5, 0.3), Vector2(3.5, -0.3), Vector2(4.5, 0.0)]
 	var w := _world([], at)
 	W.run(w, 1, 0, W.S)
 	assert_eq(_waves(w).size(), 1, "one wave a shot")
@@ -86,9 +97,9 @@ func test_it_rolls_through_every_enemy_once() -> void:
 	for k in [1, 2, 3, 4]:
 		assert_eq(_dealt(w, k), [1, 30], "enemy %d: one hit of 30 as the wave rolls over" % k)
 	assert_eq(_waves(w).size(), 0, "gone at the end of its flight")
-	var far := _world([], [Vector2(12.0, 0.0)])
+	var far := _world([], [Vector2(7.0, 0.0)])
 	_one(far, 250)
-	assert_eq(_dealt(far, 1)[0], 0, "past its 10.8 m: missed")
+	assert_eq(_dealt(far, 1)[0], 0, "past its 5.4 m (v0.10.5 W3-P5): missed")
 
 
 func test_it_flies_along_the_aim() -> void:
@@ -136,11 +147,11 @@ func test_shots_come_every_point_nine_seconds() -> void:
 func test_twin_fires_side_by_side_waves_at_its_share_and_backfire_one_behind() -> void:
 	var w := _world([&"gun_twin"], [Vector2(4.0, 0.0)])
 	_one(w)
-	assert_eq(_dealt(w, 1), [2, 36], "two waves, each 60 % of 30")
+	assert_eq(_dealt(w, 1), [2, 42], "two waves, each 70 % of 30")  # v0.9.5 CLV: Twin level 1 is 70 %
 	var twin := W.item(w, &"gun_twin")
-	CardLevels.set_level(w, twin, 5)
+	CardLevels.set_level(w, twin, 3)  # v0.9.5 CLV: Twin tops out at level 3
 	W.run(w, 1, 0, W.S)
-	assert_eq(_waves(w).size(), 3, "Lv 5: three")
+	assert_eq(_waves(w).size(), 3, "Lv 3: three")
 	var b := _world([&"gun_backfire"], [Vector2(-4.0, 0.0), Vector2(4.0, 0.0)])
 	_one(b)
 	assert_eq(_dealt(b, 2)[0], 1, "the wave ahead")
@@ -244,7 +255,7 @@ func test_the_wave_row_offers_only_its_cards() -> void:
 func test_the_wave_replaces_the_other_forms() -> void:
 	var w := _slot_world()
 	var wv := W.item(w, &"gun_wave")
-	for other: StringName in [&"gun_laser", &"gun_bomb", &"gun_void", &"gun_lance", &"gun_scatter"]:
+	for other: StringName in [&"gun_laser", &"gun_void", &"gun_lance", &"gun_rune_explosion"]:
 		var o := W.item(w, other)
 		assert_true(BuildSlots.take(w, o))
 		assert_eq(int(Offers.info(w, wv)["replaces"]), o, "the Wave replaces %s" % other)

@@ -62,6 +62,14 @@ func _init(p_api: DebugApi) -> void:
 		b.focus_mode = Control.FOCUS_NONE
 		b.pressed.connect(spec[2])
 		col.add_child(b)
+	for id: StringName in DebugApi.view_switches:  # v0.10.5 W3-V1: the views' own switches
+		var sw: Array = DebugApi.view_switches[id]
+		var b := Button.new()
+		b.name = "Switch_" + String(id)
+		b.text = sw[0]
+		b.focus_mode = Control.FOCUS_NONE
+		b.pressed.connect(sw[1])
+		col.add_child(b)
 	_boss.name = "BossChoice"
 	_boss.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	col.add_child(_boss)
@@ -84,13 +92,14 @@ func _init(p_api: DebugApi) -> void:
 
 func _process(_delta: float) -> void:
 	_info.text = (
-		"seed %d  tick %d  %d fps  %d ticks/frame%s"
+		"seed %d  tick %d  %d fps  %d ticks/frame%s%s"
 		% [
 			api.world.seed_value,
 			api.world.tick,
 			Engine.get_frames_per_second(),
 			api.ticks_last_frame,
-			"  [paused]" if api.paused else ""
+			"  [paused]" if api.paused else "",
+			switch_text(),
 		]
 	)
 	var w := api.world
@@ -114,6 +123,15 @@ func _process(_delta: float) -> void:
 	_intensity.text = intensity_text(WorldReader.new(w))
 
 
+## v0.10.5 W3-V1: the view switches' states ("  enemy_vat on"), developers only.
+static func switch_text() -> String:
+	var out := ""
+	for id: StringName in DebugApi.view_switches:
+		var on: bool = (DebugApi.view_switches[id] as Array)[2].call()
+		out += "  %s %s" % [id, "on" if on else "off"]
+	return out
+
+
 ## v0.5.5 DS: "m ×1.41 (P 2000 / E 1000, cap ×1.75) · boss ×1.20 (P … / E …, cap …)", or "" without the table.
 static func catch_up_text(w: World) -> String:
 	if w.catch_up_table == null:
@@ -127,6 +145,8 @@ static func catch_up_text(w: World) -> String:
 			"  boss x%.2f (P %d / E %d, cap x%.2f)"
 			% [s.boss / 1000.0, s.boss_power, s.boss_expected, s.boss_cap / 1000.0]
 		)
+		if not w.catch_up_table.boss_pace_permille.is_empty():  # v0.10.5 O2b: the paced boss HP
+			out += "  boss HP x%.2f (paced)" % (CatchUp.boss_hp_permille(w) / 1000.0)
 	return out
 
 
@@ -138,4 +158,6 @@ static func intensity_text(r: WorldReader) -> String:
 	var out := "intensity %d %s" % [r.intensity(), mode]
 	if r.intensity_timer() > 0:
 		out += " %.1f s" % (r.intensity_timer() / float(SimTick.TICKS_PER_SECOND))
+	if r.intensity_standing() != IntensityState.Standing.BETWEEN:  # v0.10.5 O4: "… struggling" or "… strong"
+		out += " " + String(IntensityState.Standing.keys()[r.intensity_standing()]).to_lower()
 	return out

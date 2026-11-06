@@ -15,7 +15,7 @@ func before_each() -> void:
 	_view.vfx = _vfx
 
 
-## An Explosive blast (an ember BURST, as shared_explosive's hook child).
+## An Explosive blast (an ember BURST, as the Ember Core's burst child).
 static func _blast() -> Dictionary:
 	return {
 		"form": WorldReader.FORM_BURST, "elements": PackedStringArray(["ember"]), "radius_m": 1.4

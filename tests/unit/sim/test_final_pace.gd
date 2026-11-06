@@ -64,7 +64,8 @@ static func arena(b: Array, seed_value: int = 21) -> World:
 	return w
 
 
-## Fights the final boss with build `b`; returns [won, [seconds of each body], [[max HP, measured dps] of each], bot].
+## Fights the final boss with build `b`; returns [won, [seconds of each body], [[max HP, measured dps] of each], bot,
+## [the last body's raw seconds, the seconds it was gone]].
 static func fight(b: Array, seed_value: int = 21) -> Array:
 	var w := arena(b, seed_value)
 	var bot := Hero.new(-1, bigs())
@@ -91,7 +92,12 @@ static func fight(b: Array, seed_value: int = 21) -> Array:
 	var secs := []
 	for k in starts.size() - 1:
 		secs.append(snappedf((starts[k + 1] - starts[k]) / 60.0, 0.1))
-	return [w.final_fight.won, secs, reads, bot]
+	# v0.9.5 BH6: the Fallen's two interphases (it is gone, 15 s and the 1 s ring each) are not fought: the pace's target
+	# time leaves them out. The last body's time is the fight's without them; the raw time is the fourth item.
+	var gone := w.final_fight.ip_total
+	var raw: float = secs[secs.size() - 1]
+	secs[secs.size() - 1] = snappedf(raw - gone / 60.0, 0.1)
+	return [w.final_fight.won, secs, reads, bot, [raw, snappedf(gone / 60.0, 0.1)]]
 
 
 ## Each body from its rise to the next one's (its rise, the fight, its shatter): at least the pace's minute, at most
@@ -101,17 +107,27 @@ func test_each_body_lasts_a_minute_or_more_whatever_the_build() -> void:
 	for b: Array in BUILDS:
 		var r := fight(b)
 		var bot: Hero = r[3]
-		gut.p(
-			(
-				"N2 pace %s: won=%s, bodies (s) %s, [max HP, measured dps] %s, hits taken %d"
-				% [b[0], r[0], r[1], r[2], bot.hits]
+		(
+			gut
+			. p(
+				(
+					(
+						"N2 pace %s: won=%s, bodies (s, the Fallen's less its interphases) %s, [max HP, measured dps] %s, "
+						+ "hits taken %d; the Fallen's raw time and interphase time (s) %s"
+					)
+					% [b[0], r[0], r[1], r[2], bot.hits, r[4]]
+				)
 			)
 		)
 		assert_true(r[0], "%s: the fight is won" % b[0])
 		assert_eq((r[1] as Array).size(), 3, "%s: three bodies" % b[0])
 		for k in (r[1] as Array).size():
 			var s: float = r[1][k]
-			assert_gte(s, 60.0, "%s body %d: never under a minute (%.1f s)" % [b[0], k, s])
+			# v0.9.5 BH1 (Q11): a looped run's minute is 12 % shorter per loop finished (at most 3)
+			var floor_s := 60.0 * (1000 - 120 * mini(int(b[2]) - 1, 3)) / 1000.0
+			assert_gte(
+				s, floor_s, "%s body %d: never under %.1f s (%.1f s)" % [b[0], k, floor_s, s]
+			)
 			assert_lte(s, 185.0, "%s body %d: never past three minutes (%.1f s)" % [b[0], k, s])
 			if base.is_empty():
 				continue
@@ -204,7 +220,7 @@ func test_the_colossus_takes_its_hp_from_the_meter_keeping_its_fill() -> void:
 func test_the_fallen_mimics_you_in_windows_on_and_off() -> void:
 	var w := NemesisLab.world(33, &"blade", [[&"echo_slash", 3]], true, false)
 	var t := BossAi.table_of(w, FinalLab.body(w))
-	assert_eq(t.window_ticks, 420, "7 s windows")
+	assert_eq(t.window_ticks, 336, "5.6 s windows (v0.9.5 BH6, HC6: 20 % shorter than 7 s)")
 	assert_eq(t.window_every_ticks, 1200, "one every 20 s")
 	assert_eq(t.window_warn_ticks, 90, "warned 1.5 s ahead")
 	assert_eq(FinalPace.window(w), FinalPace.Mimic.OFF, "it rises in its own kit")
@@ -225,7 +241,7 @@ func test_the_fallen_mimics_you_in_windows_on_and_off() -> void:
 	assert_eq(cues[1][0], FinalPace.EFFECT_OPEN)
 	assert_eq(cues[2][0], FinalPace.EFFECT_CLOSE)
 	assert_eq(cues[1][1] - cues[0][1], 90, "the window opens 1.5 s after its warning")
-	assert_eq(cues[2][1] - cues[1][1], 420, "and lasts 7 s")
+	assert_eq(cues[2][1] - cues[1][1], 336, "and lasts 5.6 s")
 	assert_eq(cues[4][1] - cues[1][1], 1200, "the next one 20 s later")
 
 
@@ -518,3 +534,37 @@ class Hero:
 		):
 			f.held |= InputFrame.SHOOT
 		return f
+
+
+# --- v0.9.5 BH1 (Q11, HC7): each finished loop (up to 3) eases the final fight -----------------------------------
+
+
+func test_each_finished_loop_cuts_the_target_time_12_percent_and_the_floor_with_it() -> void:
+	var t := _table(&"colossus")
+	var w := FinalLab.arena(FinalLab.run_state(31))
+	for n in 6:
+		w.loop = 1 + n
+		var k := mini(n, 3)
+		assert_eq(FinalPace.loops_eased(w), k, "loop %d: %d loops finished count" % [1 + n, k])
+		var e := FinalPace.ease_permille(w)
+		assert_eq(e, 1000 - 120 * k)
+		assert_eq(
+			FinalPace.seconds_at(30000, t, e), 7200 * e / 1000, "the base hero, loop %d" % [1 + n]
+		)
+		assert_eq(FinalPace.seconds_at(3000000, t, e), 3600 * e / 1000, "the floor falls with it")
+		assert_eq(FinalPace.hp_for(30000, t, e), 3600 * e / 1000, "30 dps x the eased time")
+	assert_eq(FinalPace.seconds_at(30000, t, 1000), 7200, "no ease: as before")
+	w.loop = 4
+	assert_eq(FinalPace.ease_permille(w), 640, "three loops: -36 %")
+	assert_eq(FinalPace.seconds_at(30000, t, 640), 4608, "76.8 s")
+
+
+func test_each_finished_loop_cuts_the_final_bodies_damage_8_percent() -> void:
+	for n in 5:
+		var w := FinalLab.arena(FinalLab.run_state(31, &"blade", 1 + n))
+		var i := FinalLab.body(w)
+		assert_eq(w.loop, 1 + n)
+		var k := mini(n, 3)
+		assert_eq(FinalPace.damage_ease_permille(w), 1000 - 80 * k)
+		var want := CatchUp.damage_permille(w.catch_up.boss) * (1000 - 80 * k) / 1000
+		assert_eq(w.actors.power[i], want, "loop %d: x%d per mille" % [1 + n, 1000 - 80 * k])

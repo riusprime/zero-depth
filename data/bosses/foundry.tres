@@ -51,6 +51,7 @@ script = ExtResource("1_atk")
 id = &"furnace_waves"
 shape = 4
 shape_params = {
+"hard": 1,
 "pattern_id": "foundry_furnace_waves"
 }
 telegraph_seconds = 0.8
@@ -311,4 +312,5 @@ dash_read_seconds = 0.5
 gap_close_attack = &"molten_flood"
 gap_close_distance_m = 10.0
 gap_close_seconds = 2.0
+lines_clear_shots = true
 id = &"foundry"

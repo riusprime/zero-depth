@@ -18,6 +18,10 @@ extends Node3D
 ## - Effects density Low thins the trails (every other shot, narrower), as for the hostile fireballs; the shots stay.
 ## - Reduced motion stills the swirl and the glow's swell (the shots and their trails stay).
 ## AttackFormView still adds the element and card layers (element darts, particles, cues) over these.
+## - v0.10.0 VX2 (VFX_PACK R1, R5): with the pack on (PACK_BOLTS and a PackFx), each shot is one pack projectile that
+##   follows it (held, facing its flight, the element's scene and colours: PackLooks; the Lance's ball is the pack's
+##   big orb) and the three MultiMesh rows above are not written for it; a shot born while the pack's projectile family
+##   is full keeps the pulse for its whole flight (FormPackHold).
 ## Presentation only (EI-07): it reads WorldReader and never writes.
 
 ## The core's radius over the shot's hit radius, and the glow's.
@@ -40,6 +44,13 @@ const BLUE := Color("#2F6BFF")
 const BLUE_LEAN := 0.35
 ## The plain dart's length (AttackView.PLAIN_BOLT_SIZE.x): a look's "size" over it stretches the pulse.
 const PLAIN_LENGTH := 0.38
+## v0.10.0 VX2: the pack draws the hero's shots in flight (false: the pulses of GF1, for before/after shots).
+const PACK_BOLTS := true
+## v0.10.5 S10 (owner, on the VFX pack): a shot with no element is drawn by the pulse (GF1's look, as before VX2); the
+## element shots keep the pack's projectiles. Starting value: true.
+const PLAIN_BOLT_IS_PULSE := true
+## The Lance's ball (the pack's big orb) per metre of its radius.
+const BIG_PER_RADIUS := 1.7
 const TRAIL_SCALE := {"low": 0.45, "medium": 0.75, "high": 1.0}
 const TRAIL_WIDTH := {"low": 0.55, "medium": 0.8, "high": 1.0}
 
@@ -47,7 +58,7 @@ const TRAIL_WIDTH := {"low": 0.55, "medium": 0.8, "high": 1.0}
 ## each shot's own seed (the pulse). `motion` 0 (reduced motion) holds it still.
 const GLOW := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_back, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_back, shadows_disabled, fog_disabled;
 
 uniform vec4 glow_color : source_color = vec4(0.2, 0.8, 0.9, 1.0);
 uniform float strength = 0.85;
@@ -72,6 +83,14 @@ static var _glow_shader: Shader
 
 ## The bolt view the shots' colour and stretch come from (WorldViewRoot sets it).
 var actors: ActorViews
+## v0.10.0 VX2: the attack-form view (the look of a shot's spec gives its elements) and the pack the shots draw with.
+var forms: AttackFormView = null
+var pack_fx: PackFx = null:
+	set(v):
+		pack_fx = v
+		hold.pack = v if PACK_BOLTS else null
+## The shots the pack draws (by projectile id); AttackFormView skips its trail and rim for those.
+var hold := FormPackHold.new()
 ## Draw on every sync too (tests and tools that never run a frame); the game view turns it off, since each frame's
 ## _process draws (blended between ticks) and drawing at the sync as well doubled the cost (the PF probe).
 var draw_on_sync := true
@@ -85,6 +104,8 @@ var _before := {}
 var _vel := {}
 var _radius := {}
 var _key := {}
+## v0.10.0 VX2: by projectile id, [table id, colours, drawn size per metre of radius] the pack draws it with.
+var _pk := {}
 ## The ids drawn per look this tick.
 var _drawn := {}
 ## Shots and trails drawn per look in the last draw (a headless renderer keeps no MultiMesh state).
@@ -101,8 +122,10 @@ var _new_of: Array = []
 
 func sync(reader: WorldReader) -> void:
 	_before = _now
+	var latched := reader as LatchedReader  # v0.10.5 W3-Q7: the places a tick before (a frame of several ticks)
 	_now = {}
 	_drawn = {}
+	var lance := hold.active() and reader.lance_active()
 	for i in reader.projectile_count():
 		if (
 			reader.projectile_team(i) != 0
@@ -121,15 +144,20 @@ func sync(reader: WorldReader) -> void:
 		_now[id] = p
 		_vel[id] = reader.projectile_vel(i)
 		_radius[id] = reader.projectile_radius(i)
-		if not _before.has(id):
+		var was: Variant = latched.projectile_pos_before(id) if latched != null else null
+		if was != null:
+			_before[id] = was  # v0.10.5 W3-Q7: drawn between the last two ticks, not from the last sync
+		elif not _before.has(id):
 			_before[id] = p  # a new shot appears where it was fired
 		if not _key.has(id):
 			_key[id] = _fresh_key()
+			if hold.active():
+				_pk[id] = _pack_of(reader, i, lance)
 		var key: String = _key[id]
 		var list: PackedInt32Array = _drawn.get(key, PackedInt32Array())
 		list.append(id)
 		_drawn[key] = list
-	for d: Dictionary in [_vel, _radius, _key]:
+	for d: Dictionary in [_vel, _radius, _key, _pk]:
 		for id in d.keys():
 			if not _now.has(id):
 				d.erase(id)
@@ -198,6 +226,35 @@ static func colors(c: Color) -> Array[Color]:
 	return [c.lerp(Color.WHITE, CORE_WHITE), body, body.lerp(c, 0.5), body]
 
 
+## v0.10.0 VX2: shot `i`'s pack effect: [table id, colours, drawn size per metre of radius]. The Lance's ball is the big
+## orb; every other shot is the element's projectile (PackLooks).
+func _pack_of(reader: WorldReader, i: int, lance: bool) -> Array:
+	var elements := PackedStringArray()
+	if forms != null:
+		var look := forms.look_of_projectile(reader, i)
+		if not look.is_empty():
+			elements = PackedStringArray(look["elements"])
+	var first := ElementLooks.first(elements)
+	if lance and not reader.projectile_is_wisp(i):
+		return CandidateLooks.lance_pack(first, PackLooks.colors(elements), BIG_PER_RADIUS)  # v0.10.5 W3-O7 (G2)
+	if first == &"" and PLAIN_BOLT_IS_PULSE:
+		return []  # v0.10.5 S10 (owner): the plain Pulse bolt keeps its pulse look (no pack effect)
+	var k: float = PackLooks.BOLT_PER_RADIUS[PackLooks.shaped(first)]
+	return [PackLooks.id_of("bolt", first), PackLooks.colors(elements), k]
+
+
+## v0.10.0 VX2: whether the pack draws shot `id` now (at `p` on the plane, flying along `d`, core radius `r`): its pack
+## projectile is kept on it, facing its flight. False: the pulse draws it (no pack, or the family was full).
+func _pack_draws(id: int, p: Vector2, d: Vector2, r: float) -> bool:
+	if not hold.active() or not _pk.has(id) or (_pk[id] as Array).is_empty():
+		return false
+	var pk: Array = _pk[id]
+	var xf := Transform3D(
+		PackLooks.facing(Vector3(d.x, 0.0, -d.y), r * float(pk[2])), Vector3(p.x, HEIGHT, -p.y)
+	)
+	return hold.put(id, pk[0], &"projectile", xf, pk[1]) != null
+
+
 ## The look a shot fired now takes: the bolt's colour and energy (ActorViews), and its stretch along the flight.
 func _fresh_key() -> String:
 	var c := ThemePalette.color(&"player_core")
@@ -230,6 +287,7 @@ func _draw(f: float) -> void:
 	_trail_width = width
 	_update_motion()
 	var shown := 0
+	hold.begin()
 	for key in _drawn:
 		var ids: PackedInt32Array = _drawn[key]
 		var n := ids.size()
@@ -241,6 +299,7 @@ func _draw(f: float) -> void:
 		var glows := _buffer(parts["glow"], n)
 		var trails := _buffer(parts["trail"], n)
 		var t := 0
+		var rows := 0
 		for k in n:
 			var id := ids[k]
 			var now: Vector2 = _now[id]
@@ -248,9 +307,12 @@ func _draw(f: float) -> void:
 			var r: float = float(_radius.get(id, 0.2)) * CORE_SCALE
 			var v: Vector2 = _vel.get(id, Vector2.RIGHT)
 			var d := v.normalized() if v.length() > 0.00001 else Vector2.RIGHT
-			_put(cores, k, d, r * tip, r, p.x, -p.y)
+			if _pack_draws(id, p, d, r):
+				continue  # v0.10.0 VX2: the pack's projectile draws this shot
+			_put(cores, rows, d, r * tip, r, p.x, -p.y)
 			var g := r * GLOW_SCALE / CORE_SCALE
-			_put(glows, k, d, g * tip, g, p.x, -p.y)
+			_put(glows, rows, d, g * tip, g, p.x, -p.y)
+			rows += 1
 			if thin and k % 2 == 1:
 				continue
 			var back := p - d * (len * 0.5 + r * 0.5)
@@ -258,10 +320,11 @@ func _draw(f: float) -> void:
 			t += 1
 		_balls[key] = n
 		_trails[key] = t
-		_show(parts["core"], cores, n)
-		_show(parts["glow"], glows, n)
+		_show(parts["core"], cores, rows)
+		_show(parts["glow"], glows, rows)
 		_show(parts["trail"], trails, t)
 		shown += n
+	hold.end()
 	_shown = shown
 
 

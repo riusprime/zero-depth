@@ -63,6 +63,7 @@ static func candidates(f: FloorLayout, taken: PackedInt32Array) -> PackedInt32Ar
 	never.append_array(
 		[f.timed_room, f.timed_host, f.rune_room, f.rune_host, f.crack_room, f.crack_host]
 	)
+	never.append_array(f.timed_switch_rooms)  # v0.9.5 TS
 	for room in f.room_count():
 		if room in never or f.arena_rooms.has(room) or taken.has(room):
 			continue

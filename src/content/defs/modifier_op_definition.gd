@@ -100,6 +100,8 @@ const FIELD_STAGE := {
 	&"resonance_permille": [3, &"resonance_permille", ""],
 	&"heat_rate_permille": [5, &"heat_rate_permille", ""],
 	&"range": [5, &"range", ""],
+	# v0.10.5 W3-S18: Halo's reach when the bolt also homes (SpecForms.halo_homing_reach)
+	&"halo_homing_reach_permille": [5, &"halo_homing_permille", ""],
 	# v0.6.5 WN3 (the Gun pool: GunForms)
 	&"twin": [1, &"twin", ""],
 	&"spiral_degrees": [2, &"spiral", "turns"],
@@ -159,6 +161,9 @@ const FIELD_STAGE := {
 	&"wisps": [0, &"wisps", ""],
 	&"wisp_seconds": [3, &"wisp_ticks", "ticks"],
 	&"wisp_permille": [3, &"wisp_permille", ""],
+	# v0.9.5 FC0 (owner): the Rune Explosion form's radius (mm) and growth time (s)
+	&"rune_radius_mm": [3, &"rune_mm", ""],
+	&"rune_seconds": [3, &"rune_ticks", "ticks"],
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).
@@ -206,6 +211,9 @@ const ELEMENTS: Array[StringName] = [&"ember", &"storm", &"frost", &"venom", &"v
 ## v0.8.0 BL (BLADE_AUDIT B2): per_level counts only for the levels above this one (1: from level 2, as before; 2: from
 ## level 3 on, so a drawback stays whole at levels 1 and 2 and shrinks from 3).
 @export var per_level_after := 1
+## v0.9.5 CLV (CARD_LEVELS.md): the value at level 1, 2, 3 ... in `value`'s units, for a step that isn't linear (Twin:
+## copies 1, 1, 2; share 700, 900, 750). Empty = `value` + `per_level` as before. A numeric op only; at most 5 entries.
+@export var level_values := PackedFloat32Array()
 ## v0.6.5 WN5b (TRIGGER; WAND.md's legendary "On Hit ×2": the cast repeats twice): how many times the cut's child spell
 ## is cast each time the trigger fires (1..3), each cast hook_delay_seconds after the one before.
 @export var hook_casts := 1

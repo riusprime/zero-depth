@@ -111,6 +111,9 @@ func test_the_playground_from_the_menu() -> void:
 	assert_true(meter.tally.by_source.has(DpsTally.BASIC))
 	assert_gt(meter.tally.dps_recent(w.tick), 0.0)
 	assert_eq(w.actors.size(), 2, "the endless dummy is still there")
+	# v0.10.5: a bolt still in flight when the button is released lands a tick later; once they have all landed, the
+	# next tick's refill leaves the dummy whole.
+	await _e.frames(60)
 	assert_eq(w.actors.hp[1], w.actors.max_hp[1], "and whole again before each tick")
 
 	# Biome: the room is redrawn in Frozen Shore with its ice; the dummy stays.

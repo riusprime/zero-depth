@@ -90,7 +90,8 @@ func test_the_wave_rolls_through_a_spread_of_enemies() -> void:
 	var main := await _boot_with(e, &"gun_wave")
 	var w := e.world()
 	assert_eq(AttackSlots.form_id(w), &"wave", "the Gun's shot is the Wave now")
-	# TEST HELPER (labelled): three standing dummies 3, 5 and 7 m out on a clear line, the outer two 1 m off it.
+	# TEST HELPER (labelled): three standing dummies 2, 3.5 and 5 m out on a clear line, the outer two 1 m off it
+	# (v0.10.5 W3-P5: inside the wave's 5.4 m run; 3, 5 and 7 m before).
 	var at: Vector2 = E2eVoid.clear_spot(w, 7.0)
 	assert_ne(at, Vector2.INF, "a clear line from the hero")
 	var hero := w.player_pos()
@@ -98,7 +99,7 @@ func test_the_wave_rolls_through_a_spread_of_enemies() -> void:
 	var side := Vector2(-dir.y, dir.x)
 	w.dummy_speed = 0.0
 	var spread: Array[int] = []
-	for p: Array in [[3.0, 1.0], [5.0, 0.0], [7.0, -1.0]]:
+	for p: Array in [[2.0, 1.0], [3.5, 0.0], [5.0, -1.0]]:
 		spread.append(w.add_dummy(hero + dir * float(p[0]) + side * float(p[1]), 0.35, 5000))
 	var cam := main.view.rig.camera
 	var scale: Vector2 = await e._mouse_scale()

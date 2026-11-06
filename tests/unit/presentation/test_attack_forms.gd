@@ -13,6 +13,11 @@ func before_each() -> void:
 	_view = add_child_autofree(AttackFormView.new())
 
 
+## apply_settings turns the enemy VAT on (the game default); the later files expect the static default (off).
+func after_each() -> void:
+	ViewPrefs.enemy_vat = false
+
+
 func _spec(form: int, extra: Dictionary = {}) -> Dictionary:
 	var s := {"form": form, "elements": PackedStringArray(["ember"])}
 	s.merge(extra, true)

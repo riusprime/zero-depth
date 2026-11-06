@@ -18,6 +18,12 @@ extends RefCounted
 ##   from the `loot:timed_door` sub-stream, placed at setup on the room's first item spot (else its spawn spot nearest
 ##   its centre, else its centre). The room holds no enemy spawn spot.
 ## - Puzzle calm (Q22): the host room (the switches' room) is a calm room of the registry until the door first opens.
+## - v0.9.5 TS (owner Q7: "the buttons always by the door really close so it does not become a challenge"; "if the
+##   door closes when you are inside you should be able to open it from the inside"): the switches sit in two other
+##   rooms 1..2 steps from the host (TimedDoorRooms.spread_spots), the timer is 20 s (1200 ticks), and a lever just
+##   inside the secret room (Interactables.Kind.TIMED_LEVER, the switch's reach) opens the door for lever_ticks (5 s)
+##   whenever it is shut, as often as needed; it takes no press while the door is open. A floor saved under rules <= 20
+##   keeps the old spots, 15 s and no lever (lever_ticks 0).
 ## The views read `opened` (0: never opened, the secret room unseen: Q23), the state, open_tick and timer_ticks (the
 ## accelerating beeps and flashing runes), shut_tick (the impact).
 
@@ -25,6 +31,8 @@ enum State { SHUT, OPEN, HELD }
 
 ## How near a switch (m) the press reaches.
 const SWITCH_REACH_M := 1.8
+## v0.9.5 TS: the timer of a floor saved before TS (15 s at 60 Hz).
+const LEGACY_TICKS := 900
 const REWARD_STREAM := "loot:timed_door"
 
 var state := State.SHUT
@@ -38,6 +46,11 @@ var wall_up := 0
 ## The switches' entries in World.interactables, and the host room's calm entry.
 var switches := PackedInt32Array()
 var calm_k := -1
+## v0.9.5 TS: the lever's entry in World.interactables (-1 none), its open time (ticks; 0 none), and how long the door
+## stays open now (timer_ticks after the switches, lever_ticks after the lever).
+var lever := -1
+var lever_ticks := 0
+var open_ticks := 900
 ## The secret room's reward (its id, -1 none) and whether it is an epic altar.
 var reward_id := -1
 var reward_epic := 0
@@ -46,7 +59,9 @@ var reward_epic := 0
 ## Sets up `w`'s timed door (setup, after the floor's rewards, events, shrine and shop are placed): marks the layout
 ## (TimedDoorRooms.mark: `chance_permille` of floors), registers the switches and the calm room, drops the secret
 ## room's spawn spots and places its reward. No-op on a floor that gets none.
-static func setup(w: World, chance_permille: int, ticks: int, speed: float) -> void:
+static func setup(
+	w: World, chance_permille: int, ticks: int, speed: float, steps_max := 0, p_lever_ticks := 0
+) -> void:
 	var f := w.floor_layout
 	if f == null:
 		return
@@ -63,10 +78,11 @@ static func setup(w: World, chance_permille: int, ticks: int, speed: float) -> v
 		taken.append(f.room_of(w.gamble_pos))
 	avoid.append_array(Shrines.avoid_spots(w))  # v0.9.0 HF: the fountain and its room
 	taken.append_array(Shrines.taken_rooms(w))
-	if TimedDoorRooms.mark(f, chance_permille, ticks, speed, taken, avoid) < 0:
+	if TimedDoorRooms.mark(f, chance_permille, ticks, speed, taken, avoid, steps_max) < 0:
 		return
 	var t := TimedDoor.new()
 	t.timer_ticks = ticks
+	t.open_ticks = ticks
 	for k in f.timed_switches.size():
 		t.switches.append(
 			w.interactables.add(
@@ -74,6 +90,11 @@ static func setup(w: World, chance_permille: int, ticks: int, speed: float) -> v
 			)
 		)
 	t.calm_k = w.interactables.add_calm_room(f.timed_host)
+	if p_lever_ticks > 0 and steps_max > 0:  # v0.9.5 TS
+		t.lever_ticks = p_lever_ticks
+		t.lever = w.interactables.add(
+			Interactables.Kind.TIMED_LEVER, f.timed_lever, SWITCH_REACH_M, 0
+		)
 	var spawns := PackedVector2Array()
 	for q in w.spawn_points:
 		if f.room_of(q) != f.timed_room:
@@ -103,7 +124,29 @@ static func press(w: World, i: int) -> void:
 	t.state = State.OPEN
 	t.open_tick = w.tick
 	t.opened += 1
+	t.open_ticks = t.timer_ticks
 	r.solve_calm(t.calm_k)  # Q22: solved, normal spawning there from now on
+	if t.lever >= 0:
+		r.enabled[t.lever] = 0
+	if t.wall_up == 1:
+		var slab: Array[Obb] = [w.floor_layout.timed_door_wall]
+		w.remove_barriers(slab)
+		t.wall_up = 0
+
+
+## v0.9.5 TS: the lever pulled (Interactables.handle): the shut door opens for lever_ticks; the switches wait.
+static func pull(w: World, i: int) -> void:
+	var t := w.timed
+	var r := w.interactables
+	if t == null or t.state != State.SHUT or t.lever_ticks <= 0:
+		return
+	t.state = State.OPEN
+	t.open_tick = w.tick
+	t.open_ticks = t.lever_ticks
+	t.opened += 1
+	r.enabled[i] = 0
+	for s in t.switches:
+		r.enabled[s] = 0
 	if t.wall_up == 1:
 		var slab: Array[Obb] = [w.floor_layout.timed_door_wall]
 		w.remove_barriers(slab)
@@ -121,7 +164,7 @@ static func advance(w: World) -> void:
 				w.add_barrier(w.floor_layout.timed_door_wall)
 				t.wall_up = 1
 		State.OPEN:
-			if w.tick - t.open_tick >= t.timer_ticks:
+			if w.tick - t.open_tick >= t.open_ticks:
 				if hero_inside(w):
 					t.state = State.HELD
 				else:
@@ -140,6 +183,8 @@ static func _shut(w: World, t: TimedDoor) -> void:
 	for s in t.switches:
 		r.state[s] = 0
 		r.enabled[s] = 1
+	if t.lever >= 0:
+		r.enabled[t.lever] = 1
 
 
 ## The hero is in the doorway (touching the slab's footprint) or inside the secret room.
@@ -161,12 +206,23 @@ static func is_epic(w: World, i: int) -> bool:
 func ticks_left(tick: int) -> int:
 	if state != State.OPEN:
 		return 0
-	return maxi(0, timer_ticks - (tick - open_tick))
+	return maxi(0, open_ticks - (tick - open_tick))
 
 
 func hash_into(h: StateHasher) -> void:
 	for v in [
-		state, timer_ticks, open_tick, shut_tick, opened, wall_up, calm_k, reward_id, reward_epic
+		state,
+		timer_ticks,
+		open_tick,
+		shut_tick,
+		opened,
+		wall_up,
+		calm_k,
+		reward_id,
+		reward_epic,
+		lever,
+		lever_ticks,
+		open_ticks
 	]:
 		h.add_int(v)
 	h.add_ints(switches)

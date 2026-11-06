@@ -1,8 +1,8 @@
 class_name BossBar
 extends Control
-## The boss bar (PLAN v0.3.0 C) across the top of the HUD while a boss is alive: its name, its HP, and its stagger
-## meter under it (bright and labelled while it is staggered). Reads the sim through WorldReader only; hidden when no
-## boss is alive.
+## The boss bar (PLAN v0.3.0 C) across the top of the HUD while a boss is alive: its name, its HP, and the label over
+## it ("PHASE SHIFT" through a phase change; v0.9.5 BH1: bosses have no stagger meter). Reads the sim through
+## WorldReader only; hidden when no boss is alive.
 ## v0.3.0 BX (L22): while the boss rises the bar fills from empty to full over exactly its intro ticks
 ## (WorldReader.boss_intro_permille), then shows its real HP.
 ## v0.3.5 F15: calmer; plain type, a thin bar on a faint track, a hairline stagger meter.
@@ -17,16 +17,17 @@ extends Control
 ## rise fills it (the sim's own rise, L22). Replaces FB1's three segments. While
 ## the sim says the boss can't be hurt (WorldReader.boss_invulnerable) the bar turns INVULNERABLE's colour and says
 ## "Invulnerable", with the shields still to pass (WorldReader.boss_shields_left) when there are any.
+## v0.10.5 W3-O17 (UI style Astral): in HudStyle.ASTRAL no slab: the name in letter-spaced Cinzel between two stars
+## and fading hairlines, a small crescent over it, and the bar as one continuous fill in a hairline frame
+## (AstralHudParts.bar) in the colour mode's enemy colour; the lines under it in Atkinson. Same reads.
+## v0.10.5 W3-O20: the lines under the bar (the phase, Invulnerable, The Fallen's window) in Cinzel, Astral's tones.
 
 const BAR := Vector2(560, 8)
-const STAGGER := Vector2(560, 3)
 ## The bar while the boss can't be hurt: a cold steel blue, far from the HP red (and from the stagger's gold).
 const INVULNERABLE := Color("#8FB8E8")
 
 var _name := Label.new()
 var _hp := HudBar.new()
-var _stagger_back := ColorRect.new()
-var _stagger_fill := ColorRect.new()
 var _stagger_label := Label.new()
 ## v0.8.0 N4: the phase (or the final boss's body) line, and the invulnerable line.
 var _sub := Label.new()
@@ -55,14 +56,6 @@ func _init() -> void:
 	_hp.position = Vector2(0, 26)
 	_hp.size = BAR
 	add_child(_hp)
-	_stagger_back.color = Color(0, 0, 0, 0.35)
-	_stagger_back.position = Vector2(0, 26 + BAR.y + 3)
-	_stagger_back.size = STAGGER
-	add_child(_stagger_back)
-	_stagger_fill.name = "Stagger"
-	_stagger_fill.color = Color("#E8C15A")
-	_stagger_fill.size = Vector2(0, STAGGER.y)
-	_stagger_back.add_child(_stagger_fill)
 	_stagger_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_stagger_label.position = Vector2(BAR.x + 10, 26 + BAR.y - 10)
 	HudStyle.style_label(_stagger_label, 14)
@@ -92,6 +85,16 @@ func _init() -> void:
 	visible = false
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if HudStyle.current == HudStyle.Style.ASTRAL:
+		HudStyle.serif_label(_name, 18, 5, HudStyle.A_TEXT)
+		HudStyle.serif_label(_stagger_label, 13, 3, HudStyle.A_ACCENT)
+		# v0.10.5 W3-O20: the lines under the bar in Cinzel too, in Astral's tones (no violet, no steel)
+		HudStyle.serif_label(_sub, 16, 3, HudStyle.A_DIM)
+		HudStyle.serif_label(_shield, 16, 3, HudStyle.A_ACCENT)
+		HudStyle.serif_label(_fallen, 18, 4, HudStyle.A_LINE_HI)
+		for l: Label in [_sub, _shield]:
+			l.size.y = 22
+		_name.resized.connect(queue_redraw)
 
 
 func sync(reader: WorldReader) -> void:
@@ -102,22 +105,18 @@ func sync(reader: WorldReader) -> void:
 		return
 	var final := reader.final_fight()
 	_sync_hp(reader, i, final)
-	var st := reader.boss_stagger_permille(i)
-	var staggered := reader.boss_staggered(i)
-	_stagger_fill.size = Vector2(STAGGER.x * st / 1000.0, STAGGER.y)
-	_stagger_fill.color = Color("#FFE38A") if staggered else Color("#E8C15A")
-	_stagger_label.text = tr("HUD_BOSS_STAGGERED") if staggered else ""
+	_stagger_label.text = ""
 	if reader.boss_in_gate(i):  # v0.5.5 DS (D7): the phase gate's transition
 		_stagger_label.text = tr("HUD_BOSS_PHASE_SHIFT")
 	if not final:
 		_fallen.text = ""
 		# every sync, so a language switch renames the boss at once (v0.6.0 UP)
-		_name.text = tr(reader.boss_name_key(i))
+		_set_name(tr(reader.boss_name_key(i)))
 		var n := reader.boss_phase_thresholds(i).size()
 		_sub.text = tr("HUD_BOSS_PHASE") % [reader.boss_phase(i) + 1, n] if n > 1 else ""
 		return
 	# v0.8.0 FB1 / N4: the final boss: the fight's name over one bar for the body fighting now.
-	_name.text = tr(reader.final_name_key())
+	_set_name(tr(reader.final_name_key()))
 	# owner O59: the body's name only, never a count: the bodies to come are a surprise
 	_sub.text = tr(reader.final_segment_name_key(reader.final_phase()))
 	if reader.final_shattering():
@@ -130,6 +129,13 @@ func sync(reader: WorldReader) -> void:
 			_fallen.text = tr("HUD_FALLEN_WINDOW") % ceili(int(pace["window_left"]) / 60.0)
 		_:
 			_fallen.text = ""
+
+
+## The name (v0.10.5 W3-O17: a new one redraws the name's ornaments; an unchanged one writes nothing).
+func _set_name(t: String) -> void:
+	if _name.text != t:
+		_name.text = t
+		queue_redraw()
 
 
 ## v0.8.0 N4: the bar's fill (this phase's HP, or this body's), its motion and its invulnerable look.
@@ -197,14 +203,9 @@ func phase_text() -> String:
 	return _sub.text
 
 
-## The line beside the stagger meter (STAGGERED, PHASE SHIFT or empty; tests).
+## The line over the bar (PHASE SHIFT or empty; tests).
 func status_text() -> String:
 	return _stagger_label.text
-
-
-## The stagger fraction shown (tests).
-func stagger_fraction() -> float:
-	return _stagger_fill.size.x / STAGGER.x
 
 
 ## v0.8.0 N2: The Fallen's window line ("" none; tests).
@@ -216,7 +217,24 @@ func boss_name() -> String:
 	return _name.text
 
 
+## v0.10.5 W3-O20: the bar's lowest line's bottom (px, in its parent; Hud stacks the phase line under it).
+func bottom() -> float:
+	var low: Label = _fallen if _fallen.text != "" else _sub
+	return position.y + low.position.y + low.get_combined_minimum_size().y
+
+
 func _draw() -> void:
+	if HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O17: the name's stars and rules, a crescent over it
+		var f := _name.get_theme_font(&"font")
+		var tw := f.get_string_size(_name.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+		var cx := roundf(BAR.x * 0.5)
+		var y := 13.5
+		for sx: float in [-1.0, 1.0]:
+			var ox := roundf(cx + sx * (tw * 0.5 + 22.0)) + 0.5
+			AstralChrome.star4(self, Vector2(ox, y), 6.0, HudStyle.A_METAL, 0.2)
+			AstralChrome.rule1(self, ox + sx * 12.0, 13.0, sx * 96.0, Color(HudStyle.A_METAL, 0.6))
+		AstralChrome.crescent(self, Vector2(cx + 0.5, -6.0), 5.0, Color(HudStyle.A_METAL, 0.85))
+		return
 	if HudStyle.current == HudStyle.Style.EMBER:
 		var h := 26.0 + BAR.y + 6.0 + 18.0
 		HudStyle.draw_plate(self, Rect2(-18, -4, BAR.x + 36, h + 10), true)

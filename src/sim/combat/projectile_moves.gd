@@ -20,7 +20,7 @@ const CLEARANCE_M := 0.02
 
 
 ## Projectile `pi` just spawned (World._apply_spawns): its spec's behaviours into the store's columns.
-static func on_spawn(w: World, pi: int) -> void:
+static func on_spawn(w: World, pi: int, extra_pierce: int = 0) -> void:
 	var p := w.projectiles
 	if p.team[pi] != ActorStore.TEAM_PLAYER or p.spec_key[pi] == "":
 		return
@@ -28,7 +28,7 @@ static func on_spawn(w: World, pi: int) -> void:
 	if (
 		s == null
 		or (
-			s.pierce <= 0
+			s.pierce + extra_pierce <= 0
 			and s.returns <= 0
 			and s.homing <= 0
 			and s.orbit_ticks <= 0
@@ -38,7 +38,7 @@ static func on_spawn(w: World, pi: int) -> void:
 		return
 	p.moves = true
 	GunForms.on_spawn(w, pi, s)  # v0.6.5 WN3: before the orbit, so life0 counts the mine's wait
-	p.pierce_left[pi] = s.pierce
+	p.pierce_left[pi] = s.pierce + extra_pierce  # v0.9.5 WB: the Wisps' shots pierce one more
 	p.ret[pi] = 1 if s.returns > 0 else 0
 	p.home[pi] = s.homing
 	p.speed[pi] = Kin.length(Vector2(p.vel_x[pi], p.vel_y[pi]))
@@ -56,9 +56,16 @@ static func steer(w: World, pi: int) -> void:
 	var p := w.projectiles
 	if not p.moves or pi >= p.ret.size():
 		return
+	VoidMods.steer(w, pi)  # v0.9.5 FC3: a void's orbit, mine and homing
+	LanceMods.steer(w, pi)  # v0.9.5 FC4: a lance's Homing
+	if GlaiveMods.steer(w, pi):  # v0.9.5 FC6: a disc's Orbit lap and Mine hold set its velocity
+		return
+	if SeekerMods.steer(w, pi):  # v0.9.5 FC7: a dart's Orbit lap, Mine hold and Halo's straight flight
+		return
 	if GunForms.mine_waits(w, pi):  # v0.6.5 WN3: G12 Mine, still until touched
 		return
 	_steer(w, pi)
+	GlaiveMods.steer_after(w, pi)  # v0.9.5 FC6: a disc's Homing, Ricochet's end
 	GunForms.spiral_turn(w, pi)  # v0.6.5 WN3: G11 Spiral, after homing and the way back
 
 
@@ -94,6 +101,8 @@ static func _steer(w: World, pi: int) -> void:
 		return
 	if p.home[pi] > 0:
 		var best := Seekers.target(w, pi)  # v0.9.0 AF2: a Seekers dart curves to its own enemy
+		if best == Seekers.STRAIGHT:  # v0.9.5 FC7: no enemy left for it to seek
+			return
 		if best < 0:
 			best = _nearest(w, at, HOME_M)
 		if best >= 0:

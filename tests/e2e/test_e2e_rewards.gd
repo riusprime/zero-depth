@@ -1,6 +1,7 @@
 extends GutTest
-## The economy through real input (v0.3.0 E): shooting enemies earns shards (gems fly to you and the HUD counter
-## shows them); a chest you can't afford shows its price in red and stays shut; with enough shards, E opens it.
+## The economy through real input (v0.3.0 E): shooting enemies earns shards (v0.10.5 O7b: they lie at the body as
+## gems until you walk up to them; then the HUD counter shows them); a chest you can't afford shows its price in red
+## and stays shut; with enough shards, E opens it.
 ## v0.8.0 N7 (owner O61): the chest deals one card; Enter takes it (no choice), paid then.
 
 ## v0.9.0 FV: floor 1 holds 1-2 chests (loot scales with its rooms), and the floor's sealed arena is filled first
@@ -36,16 +37,20 @@ func test_kills_earn_shards() -> void:
 				e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 1.0)
 				shooting = true
 		await e.frames(1)
-		gems_seen = gems_seen or main.view.shards.count() > 0
-		if (w.shards > 0 and gems_seen) or w.player_dead():
+		gems_seen = gems_seen or main.view.shards.drop_count() > 0
+		if w.shards > 0 or (w.shard_drops.size() > 0 and gems_seen) or w.player_dead():
 			break
 	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
 	e.joy_axis(JOY_AXIS_RIGHT_X, 0.0)
 	e.joy_axis(JOY_AXIS_RIGHT_Y, 0.0)
 	assert_false(w.player_dead(), "survived")
 	assert_gt(w.kills, 0, "shot something dead")
-	assert_gt(w.shards, 0, "kills paid shards")
-	assert_true(gems_seen, "shard gems flew from the kill")
+	assert_true(gems_seen, "v0.10.5 O7b: shard gems lie where the kill fell")
+	if w.shards == 0 and w.shard_drops.size() > 0:
+		var reached: bool = await e.walk_to(w.shard_drops.pos(0), ShardDrops.REACH_M * 0.5)
+		assert_true(reached, "walked up to the shards")
+		await e.frames(2)
+	assert_gt(w.shards, 0, "kills paid shards, once taken")
 	await e.frames(1)
 	assert_eq(hud.shard_text(), str(w.shards), "the HUD counter shows them")
 	gut.p("kills %d, shards %d after %d ticks" % [w.kills, w.shards, w.tick])
@@ -69,7 +74,7 @@ func test_a_chest_is_shut_until_you_can_pay_then_it_deals_one_card() -> void:
 	assert_true(reached, "walked up to the chest")
 	assert_lt(w.shards, price, "not enough shards yet")
 	await e.frames(2)
-	assert_eq(hud.prompt_text(), tr("REWARD_TOO_POOR") % [w.shards, price])
+	assert_eq(hud.prompt_text(), tr("REWARD_OPEN_CHEST") % price, "v0.9.5 PR: the price, red")
 	assert_true(hud.prompt_poor(), "the prompt is red")
 	var label := main.view.rewards.price_label(chest_id)
 	assert_true(label.visible, "the price floats above the chest")
@@ -96,6 +101,16 @@ func test_a_chest_is_shut_until_you_can_pay_then_it_deals_one_card() -> void:
 	assert_eq(offer.size(), 1, "one card")
 	assert_eq(panel.card_count(), 1, "one card dealt")
 	assert_eq(w.shards, price + 7, "nothing paid while it shows")
+	await e.tap(KEY_ESCAPE)  # v0.9.5 CD: the dealt card can be refused
+	await e.frames(2)
+	assert_false(panel.is_open(), "Esc closed the dealt card")
+	assert_eq(w.choosing, -1)
+	assert_eq(w.shards, price + 7, "nothing paid")
+	assert_ne(w.rewards.index_of(chest_id), -1, "the chest waits")
+	await e.tap(KEY_E)
+	await e.frames(2)
+	assert_true(panel.is_open(), "E opened it again")
+	assert_eq(w.rewards.offer_of(w.rewards.index_of(chest_id)), offer, "the same card")
 	await e.tap(KEY_ENTER)
 	await e.frames(2)
 	assert_eq(w.choosing, -1, "Enter took it")

@@ -10,7 +10,21 @@ extends GutTest
 const W := preload("res://tests/support/mx4_world.gd")
 const HP := 1000000
 const LANCE_ON: Array[StringName] = [
-	&"gun_twin", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"
+	&"gun_twin",
+	&"halo_shot",
+	&"gun_ring",
+	&"gun_backfire",
+	&"gun_ricochet",
+	&"gun_homing",
+	&"gun_echo",
+	&"gun_big_shot",
+	&"gun_rapid_fire",
+	&"split_shot",  # v0.9.5 FC4: the nine cards LanceMods reads
+	&"ember_core",
+	&"storm_core",
+	&"frost_core",
+	&"venom_core",
+	&"shared_bleed",
 ]
 ## Ticks after a release for a ball to fly its whole range.
 const FLY := 60
@@ -186,16 +200,16 @@ func test_releases_wait_the_period_then_charge_again() -> void:
 	assert_eq(W.events(w, SimEvent.Kind.LANCE).size(), 2)
 
 
-func test_twin_fires_two_balls_and_three_at_level_five_at_its_share() -> void:
+func test_twin_fires_two_balls_and_three_at_level_three_at_its_share() -> void:
 	var w := _world([&"gun_twin"], [Vector2(5.0, 0.0)], false, 1.2)
 	_charge_release(w, 72, 2)
 	assert_eq(w.projectiles.size(), 2, "Lv 1: two balls")
 	W.run(w, FLY, 0, 0)
-	assert_eq(_dealt(w, 1), [2, 70], "a wide enemy on both: 60 % of 58 each (rounded)")
+	assert_eq(_dealt(w, 1), [2, 82], "a wide enemy on both: 70 % of 58 each (rounded)")
 	var five := _world([&"gun_twin"], [])
-	CardLevels.set_level(five, W.item(five, &"gun_twin"), 5)
+	CardLevels.set_level(five, W.item(five, &"gun_twin"), 3)
 	_charge_release(five, 72, 2)
-	assert_eq(five.projectiles.size(), 3, "Lv 5: three balls")
+	assert_eq(five.projectiles.size(), 3, "Lv 3: three balls")
 	var vy := []
 	for k in 3:
 		vy.append(signf(snappedf(five.projectiles.vel_y[k], 0.001)))
@@ -323,7 +337,7 @@ func test_the_lance_row_offers_only_its_cards() -> void:
 func test_the_lance_replaces_the_other_forms() -> void:
 	var w := _slot_world()
 	var lance := W.item(w, &"gun_lance")
-	for other: StringName in [&"gun_laser", &"gun_bomb", &"gun_void", &"gun_scatter"]:
+	for other: StringName in [&"gun_laser", &"gun_void", &"gun_rune_explosion"]:
 		var o := W.item(w, other)
 		assert_true(BuildSlots.take(w, o))
 		assert_eq(int(Offers.info(w, lance)["replaces"]), o, "the Lance replaces %s" % other)

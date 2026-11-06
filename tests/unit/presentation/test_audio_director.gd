@@ -265,3 +265,27 @@ func test_heat_edges_ask_for_their_sounds_once() -> void:
 	assert_eq(AudioEvents._heat_edges(cool), [-1, -1, -1, 0])
 	var hot := {"tier_tick": 120, "overheat_tick": -1, "vent_tick": -1, "tier": 1}
 	assert_eq(AudioEvents._heat_edges(hot), [120, -1, -1, 1])
+
+
+## v0.9.5 SS: the Fortune shrine has its own cues: a fail cracks (gamble_fail, no longer Vent's click), a win chimes.
+func test_the_gamble_shrine_fail_and_win_have_their_own_cues() -> void:
+	var w := World.new(5, PlayerTable.starting_values())
+	w.gamble_id = w.take_root()
+	w.gamble_pos = Vector2(0.8, 0)
+	var r := WorldReader.new(w)
+	var ev := AudioEvents.new()
+	ev.prime(r)
+	w.shards = 100
+	w.gamble_table.fail_permille = 1000
+	w.input_buffer[3] = 1
+	assert_false(Gamble.interact(w), "this use fails")
+	var heard := _ids(ev.collect(r))
+	assert_has(heard, &"gamble_fail")
+	assert_does_not_have(heard, &"vent_cold", "no longer Vent's click")
+	w.gamble_table.fail_permille = 0
+	w.input_buffer[3] = 1
+	w.tick += 1
+	assert_true(Gamble.interact(w), "this use wins")
+	heard = _ids(ev.collect(r))
+	assert_has(heard, &"gamble_win")
+	assert_does_not_have(_ids(ev.collect(r)), &"gamble_win", "once")

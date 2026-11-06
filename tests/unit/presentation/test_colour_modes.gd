@@ -41,6 +41,7 @@ const PAIRS := [
 func after_each() -> void:
 	ThemePalette.mode = &"off"
 	ViewPrefs.reduced_motion = false
+	ViewPrefs.enemy_vat = false  # apply_settings turns it on (the game default)
 
 
 static func _lin(c: float) -> float:

@@ -202,3 +202,69 @@ func test_her_views_and_avatar_leave_no_orphan_nodes() -> void:
 	assert_not_null(v)
 	assert_not_null(a)
 	assert_eq(Node.get_orphan_node_ids().size(), before, "no node left outside the tree")
+
+
+# --- v0.10.5 O3: her last phase (owner L6; O3_PRISM.md) ---------------------------------------------------------
+
+
+func test_the_facet_lances_are_drawn_where_the_sim_has_them() -> void:
+	var w := _prism(311)
+	var i := FinalLab.body(w)
+	var reader := WorldReader.new(w)
+	var v := _views()
+	var atk := _start(w, &"facet_lances")
+	v.sync(reader)
+	assert_eq(v.last.facets_drawn(), 6, "six facets gather at the rim")
+	assert_eq(v.last.lance_lines(), 0, "no line in the gather")
+	while w.actors.state[i] != EnemyAi.State.ACTIVE or w.actors.state_t[i] < 58:
+		w.step(InputFrame.new())
+	v.sync(reader)
+	var s := reader.boss_lances(i)
+	var lines := 0
+	var strikes := 0
+	for row: Dictionary in s["lances"]:
+		if int(row["phase"]) == BossPrismLast.STRIKING:
+			strikes += 1
+		else:
+			lines += 1
+	assert_gt(lines, 0)
+	assert_eq(v.last.lance_lines(), lines, "each tracking or locked lance shows its line")
+	assert_eq(v.last.lance_strikes(), strikes, "the striking one shows its beam")
+	assert_eq(strikes, 1, "one lance strikes at a time")
+	while w.actors.state[i] == EnemyAi.State.ACTIVE:
+		w.step(InputFrame.new())
+	v.sync(reader)
+	assert_eq(v.last.lance_lines() + v.last.lance_strikes() + v.last.facets_drawn(), 0, "all spent")
+	assert_gt(atk.active_ticks, 0)
+
+
+func test_the_kneel_shows_her_core_and_its_crack() -> void:
+	var w := _prism(312)
+	var i := FinalLab.body(w)
+	var reader := WorldReader.new(w)
+	var v := _views()
+	var atk := _start(w, &"prism_kneel")
+	while w.actors.state[i] != EnemyAi.State.ACTIVE or w.actors.state_t[i] < 2:
+		w.step(InputFrame.new())
+	v.sync(reader)
+	assert_true(v.last.core_drawn(), "her core shows while she is down")
+	assert_eq(v.last.crack_lit(), 0)
+	FinalLab.hit(w, w.actors.max_hp[i] * atk.crack_permille / 1000 / 2)
+	w.step(InputFrame.new())
+	v.sync(reader)
+	assert_eq(v.last.crack_lit(), PrismLastViews.CRACK_MARKS / 2, "half the crack lit")
+	FinalLab.hit(w, w.actors.max_hp[i] * atk.crack_permille / 1000)
+	w.step(InputFrame.new())
+	w.step(InputFrame.new())
+	v.sync(reader)
+	assert_eq(reader.boss_kneel(i)["stage"], 2, "she rises once her core bursts")
+	assert_true(v.last.core_drawn(), "the burst's flash")
+	assert_eq(v.last.crack_lit(), PrismLastViews.CRACK_MARKS)
+
+
+func test_her_last_phase_clips() -> void:
+	var lib := PrismClips.library()
+	assert_eq(BossAnimator.clip_name_for(WorldReader.MOVE_LANCES, true, lib), &"lances")
+	assert_eq(BossAnimator.clip_name_for(WorldReader.MOVE_KNEEL, false, lib), &"kneel")
+	var c: BossClip = lib[&"kneel"]
+	assert_lt(c.value(c.track_of(BossClip.BODY, BossClip.SHIFT), 0.5), -0.5, "she is down low")

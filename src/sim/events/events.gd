@@ -94,6 +94,9 @@ static func place(
 	curse_rules: int = CURSE_RULES_N19
 ) -> void:
 	var placed := PackedInt32Array()
+	var rare := w.ev.rules.events_max_per_run > 0  # v0.9.5 AQ
+	if rare:
+		placed = w.events_seen.duplicate()  # never the same event twice in a run
 	var shut := taken.duplicate()
 	if Gamble.present(w):  # v0.8.0 N14: the shrine's room (a no-op for the start hall, never a candidate)
 		shut.append(layout.room_of(w.gamble_pos))
@@ -107,11 +110,13 @@ static func place(
 	if curse_room >= 0:
 		shut.append(curse_room)
 	var pool := POOL_ANY if curse_rules == CURSE_RULES_BEFORE_N17 else POOL_COMMON
-	for r in pick_rooms(layout, w.seed_value, w.ev.rules, shut):
+	for r in pick_rooms(layout, w.seed_value, w.ev.rules, shut, w.events_seen.size()):
 		var e := draw_event(w, placed, pool, curse_rules)
 		if e < 0:
 			break
 		placed.append(e)
+		if rare:
+			w.events_seen.append(e)
 		_add(w, spot(layout, r, w.ev.rules)[0], r, e)
 	if curse_room < 0:
 		return
@@ -124,7 +129,7 @@ static func place(
 		return
 	var at := curse_spot(layout, curse_room, w.ev.rules)[0]
 	_furnish(w, layout, curse_room, at)
-	_add(w, at, curse_room, c)
+	_add(w, at, curse_room, c, false)
 
 
 ## v0.8.0 N19: the curse room becomes its own room (CurseRoom.furnish); the world's walls follow the layout's (the
@@ -145,9 +150,11 @@ static func _furnish(w: World, layout: FloorLayout, room: int, at: Vector2) -> v
 	w.spawn_points = spawns
 
 
-static func _add(w: World, at: Vector2, room: int, e: int) -> void:
+static func _add(w: World, at: Vector2, room: int, e: int, solid: bool = true) -> void:
 	var id := w.take_root()
 	w.ev.add(id, at, room, e)
+	if solid:  # v0.9.5 SB: a pedestal is solid (the furnished curse altar already is)
+		w.solids.add_square(Solids.Kind.EVENT, id, at)
 	w.emit_event(SimEvent.Kind.SPAWN, id, id, id, at)
 
 
@@ -272,10 +279,14 @@ static func is_curse_altar(w: World, k: int) -> bool:
 ## Overrun room (AB) or the shop room (SH; both marked on the layout before this runs), not an arena (AR), not in
 ## `taken` (any other side-room kind), and with a clear pedestal spot. The count is drawn in
 ## rules.rooms_min..rooms_max from `map:event`, then that many rooms by a partial shuffle of the candidates from the
-## same stream.
+## same stream. v0.9.5 AQ: under rules.events_max_per_run > 0 the count is instead 0 or rooms_max: none once the run
+## has `done` event rooms, else rooms_max on event_floor_chance_permille of floors (the stream's first draw).
 static func pick_rooms(
-	layout: FloorLayout, seed_value: int, rules: EventRules, taken: PackedInt32Array
+	layout: FloorLayout, seed_value: int, rules: EventRules, taken: PackedInt32Array, done: int = 0
 ) -> PackedInt32Array:
+	var rare := rules.events_max_per_run > 0
+	if rare and done >= rules.events_max_per_run:
+		return PackedInt32Array()
 	var cands := PackedInt32Array()
 	for r in layout.room_count():
 		if r == layout.start_room or r == layout.boss_room or r == layout.boss_host_room:
@@ -293,7 +304,12 @@ static func pick_rooms(
 			continue
 		cands.append(r)
 	var rng := RngStream.derive(seed_value, "map:event")
-	var n := mini(rng.range_int(rules.rooms_min, rules.rooms_max), cands.size())
+	var n := 0
+	if rare:
+		n = rules.rooms_max if rng.chance_permille(rules.event_floor_chance_permille) else 0
+		n = mini(n, mini(rules.events_max_per_run - done, cands.size()))
+	else:
+		n = mini(rng.range_int(rules.rooms_min, rules.rooms_max), cands.size())
 	for k in n:
 		var j := rng.range_int(k, cands.size() - 1)
 		var t := cands[k]
@@ -385,7 +401,7 @@ static func nearest(w: World) -> int:
 	for k in w.ev.size():
 		if w.ev.state[k] != State.READY:
 			continue
-		var d := Kin.length(w.ev.pos(k) - p)
+		var d := Kin.length(w.ev.pos(k) - p) - Solids.reach_bonus(w, Solids.Kind.EVENT, w.ev.ids[k])
 		if d <= best_d and (best < 0 or d < best_d):
 			best = k
 			best_d = d
@@ -428,6 +444,8 @@ static func roll(w: World, k: int) -> void:
 		var curse := t.curse[c]
 		if curse == CURSE_RANDOM:
 			curse = Curses.roll(w, cursed, Curses.Pool.PLAIN)  # v0.6.0 CU: an event's price is a plain curse
+			if curse < 0:  # v0.10.5 O1: the five flat curses are gone, so with no plain curse left any curse is drawn
+				curse = Curses.roll(w, cursed, Curses.Pool.ANY)
 		elif curse >= 0 and Curses.owned(w, curse):
 			curse = CURSE_NONE  # the panel shows the choice blocked (curse_block)
 		if curse >= 0:
@@ -490,7 +508,7 @@ static func shard_cost(w: World, k: int, c: int) -> int:
 	var t := table(w, k)
 	if t.cost[c] != Cost.SHARDS:
 		return 0
-	return Curses.price(w, t.cost_amount[c] * maxi(1, w.floor_index))
+	return t.cost_amount[c] * maxi(1, w.floor_index)
 
 
 ## Why choice c of pedestal k can't be taken now (OK when it can): its cost, then its reward, then its curse.
@@ -597,11 +615,7 @@ static func take(w: World, k: int, c: int) -> void:
 
 ## The max HP stat falls by `permille` for the run (Blood Price); HP stays at most the new max.
 static func cut_max_hp(w: World, permille: int) -> void:
-	if w.stat_values.size() < Stats.COUNT:
-		var old := w.stat_values
-		w.stat_values = PackedInt32Array(Stats.BASE)
-		for k in old.size():
-			w.stat_values[k] = old[k]
+	Stats.grow(w, Stats.Stat.MAX_HP)  # v0.10.5 O9: as a card grows them (the pre-O9 size)
 	var v := w.stat_values[Stats.Stat.MAX_HP]
 	w.stat_values[Stats.Stat.MAX_HP] = maxi(1, (v * (1000 - permille) + 500) / 1000)
 	w.actors.max_hp[0] = maxi(1, Stats.max_hp(w))

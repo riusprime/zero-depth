@@ -37,8 +37,6 @@ const SALE_ACTIONS := [
 	WorldReader.SHOP_BUY,
 	WorldReader.SHOP_HEAL,
 	WorldReader.SHOP_REROLL,
-	WorldReader.SHOP_SELL,
-	WorldReader.SHOP_SALVAGE,
 ]
 
 var root: Node3D

@@ -200,39 +200,35 @@ func test_pull_back_waits_for_few_enemies_near_or_its_timeout() -> void:
 	assert_eq(w.intensity.mode, M.QUIET, "or its timeout")
 
 
-func test_quiet_ends_when_its_time_is_up_and_intensity_is_low() -> void:
+func test_quiet_ends_on_its_time_even_with_intensity_high() -> void:
+	# v0.10.5 O4 (D46's "not working"): it waited for intensity to relax too, so leftovers the hero couldn't reach ran
+	# every quiet to its 20 s top (O4_DIRECTOR.md). Now it ends on time, and intensity drops to relax at most.
 	var w := _world()
 	var t := w.spawner.intensity
 	w.intensity.mode = M.QUIET
 	w.intensity.quiet_len = 600
 	w.intensity.timer = 600
-	w.intensity.level = t.relax_level + 1
 	w.add_enemy(KIND.CHARGER, Vector2(1.5, 0))  # close: no drain
+	w.intensity.level = IntensityTable.TOP
 	_tick(w, 599)
 	assert_eq(w.intensity.mode, M.QUIET)
 	_tick(w)
-	assert_eq(w.intensity.mode, M.QUIET, "time up but intensity still high")
-	w.actors.set_pos(1, Vector2(30, 0))
-	w.intensity.level = t.relax_level
-	w.intensity.calm = t.calm_ticks
-	_tick(w)
-	assert_eq(w.intensity.mode, M.BUILD_UP, "time up and relaxed")
+	assert_eq(w.intensity.mode, M.BUILD_UP, "time up, though intensity is still high")
 	assert_eq(w.intensity.cycle, 1)
+	assert_lte(w.intensity.level, t.relax_level, "from relax")
 
 
-func test_quiet_never_runs_past_its_longest() -> void:
+func test_the_first_pack_after_the_quiet_waits_a_build_up_interval() -> void:
 	var w := _world()
-	var t := w.spawner.intensity
 	w.intensity.mode = M.QUIET
-	w.intensity.quiet_len = t.quiet_ticks_min
-	w.intensity.timer = t.quiet_ticks_min
-	w.add_enemy(KIND.CHARGER, Vector2(1.5, 0))
-	w.intensity.level = IntensityTable.TOP
-	_tick(w, t.quiet_ticks_max - 1)
-	assert_eq(w.intensity.mode, M.QUIET)
+	w.intensity.quiet_len = 1
+	w.intensity.timer = 1
+	w.spawn_cd = 0
 	_tick(w)
-	assert_eq(w.intensity.mode, M.BUILD_UP, "the 20 s end")
-	assert_lte(w.intensity.level, t.relax_level + t.close_gain_per_tick, "from relax")
+	assert_eq(w.intensity.mode, M.BUILD_UP)
+	assert_eq(
+		w.spawn_cd, Intensity.interval(w, w.spawner.interval_now(w.run_ticks)), "no burst refill"
+	)
 
 
 func test_no_new_packs_while_quiet_and_packs_again_after() -> void:
@@ -245,7 +241,7 @@ func test_no_new_packs_while_quiet_and_packs_again_after() -> void:
 	assert_eq(WaveDirector.enemies_alive(w), 0, "quiet: nothing sent")
 	w.intensity.timer = 1
 	w.intensity.level = 0
-	for k in 60:
+	for k in 600:
 		w.step(InputFrame.new())
 	assert_eq(w.intensity.mode, M.BUILD_UP)
 	assert_gt(WaveDirector.enemies_alive(w), 0, "building up: packs again")
@@ -256,6 +252,7 @@ func test_no_new_packs_while_quiet_and_packs_again_after() -> void:
 func test_it_never_changes_what_arrives_or_how_strong() -> void:
 	var on := _world(5, true)
 	on.spawner.intensity.build_interval_permille = 1000
+	on.spawner.intensity.slow_min_alive = 1 << 20  # v0.10.5 O4: a hero that never kills would read as struggling
 	var off := _world(5, false)
 	for k in 2400:
 		on.intensity.level = 0  # held in build-up

@@ -27,6 +27,7 @@ cooldown_seconds = 0.8
 cause_key = &"CAUSE_JUDGE_ECHO"
 opens_weak_point = true
 shielded = true
+shield_seconds = 0.0
 
 [sub_resource type="Resource" id="A_gear_spiral"]
 script = ExtResource("1_atk")
@@ -52,6 +53,7 @@ script = ExtResource("1_atk")
 id = &"gear_spiral_2"
 shape = 4
 shape_params = {
+"hard": 1,
 "pattern_id": "clockwork_gear_spiral_2"
 }
 telegraph_seconds = 0.8
@@ -71,6 +73,7 @@ script = ExtResource("1_atk")
 id = &"gear_spiral_3"
 shape = 4
 shape_params = {
+"hard": 1,
 "pattern_id": "clockwork_gear_spiral_3"
 }
 telegraph_seconds = 0.8

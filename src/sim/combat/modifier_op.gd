@@ -6,6 +6,36 @@ extends RefCounted
 ## v0.8.0 RM: REMNANT, a hook that leaves a remnant (`remnant`; Remnants), its child cast when it activates.
 enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK, TRIGGER, REMNANT }
 
+## Every field at_level and overlevelled copy as they are (all but hook_tags, child_ops and remnant).
+const COPIED: Array[StringName] = [
+	&"op",
+	&"stage",
+	&"field",
+	&"value",
+	&"form",
+	&"status",
+	&"stacks",
+	&"every",
+	&"element",
+	&"trigger",
+	&"radius_m",
+	&"reach_m",
+	&"damage",
+	&"damage_permille",
+	&"hook_every",
+	&"effect_id",
+	&"delay_ticks",
+	&"when",
+	&"trigger_gun",
+	&"per_level",
+	&"per_level_after",
+	&"casts",
+	&"alt",  # v0.8.0 MR
+	&"level_values",  # v0.9.5 CLV
+]
+## v0.10.5 W3-P3: the share fields an overlevel grows on a MUL_PERMILLE op (a share of the hit, in per mille).
+const OVERLEVEL_FIELDS: Array[StringName] = [&"share_permille"]
+
 var op: int = Op.ADD
 ## The stage it runs in (ModifierTable.Stage).
 var stage := 0
@@ -43,6 +73,9 @@ var per_level := 0.0
 ## v0.8.0 BL (BLADE_AUDIT B2: a drawback that shrinks from level 3): per_level counts only for the levels above this
 ## one (1: every level above 1, as before; 2: from level 3 on).
 var per_level_after := 1
+## v0.9.5 CLV: the value at level 1, 2, 3 ... in sim units (a step that isn't linear: Twin's copies and share); empty =
+## `value` + `per_level` as before. A level past the list takes its last entry.
+var level_values := PackedFloat32Array()
 ## v0.6.5 WN5b (TRIGGER): the child spell is cast this many times per trigger, each delay_ticks after the one before.
 var casts := 1
 ## v0.8.0 MR (owner O91: "Make Split Wave useful without Wave"): an op of the card's other reading: it runs only on a
@@ -57,38 +90,17 @@ var remnant: RemnantRule
 ## (Modifiers.build_modifiers).
 func at_level(level: int) -> ModifierOp:
 	var o := ModifierOp.new()
-	# Every field but hook_tags and child_ops (copied below), in one list (audit G-17).
-	for f: StringName in [
-		&"op",
-		&"stage",
-		&"field",
-		&"value",
-		&"form",
-		&"status",
-		&"stacks",
-		&"every",
-		&"element",
-		&"trigger",
-		&"radius_m",
-		&"reach_m",
-		&"damage",
-		&"damage_permille",
-		&"hook_every",
-		&"effect_id",
-		&"delay_ticks",
-		&"when",
-		&"trigger_gun",
-		&"per_level",
-		&"per_level_after",
-		&"casts",
-		&"alt",  # v0.8.0 MR
-	]:
+	# Every field but hook_tags and child_ops (copied below), in one list (audit G-17: COPIED).
+	for f: StringName in COPIED:
 		o.set(f, get(f))
 	o.hook_tags = hook_tags.duplicate()
 	if remnant != null:  # v0.8.0 RM: its life and caps grow too
 		o.remnant = remnant.at_level(level)
 	var n := maxi(0, level - maxi(1, per_level_after))  # v0.8.0 BL: B2's late steps
-	if op == Op.HOOK or op == Op.REMNANT:
+	if not level_values.is_empty():  # v0.9.5 CLV
+		var lv := level_values[mini(level, level_values.size()) - 1]
+		o.value = roundi(lv) if AttackSpec.is_int_field(field) else lv
+	elif op == Op.HOOK or op == Op.REMNANT:
 		o.damage_permille = damage_permille + roundi(per_level * n)
 	elif AttackSpec.is_int_field(field):
 		o.value = value + roundi(per_level * n)
@@ -101,9 +113,37 @@ func at_level(level: int) -> ModifierOp:
 
 ## v0.6.5 WN3: true if this op or a child op grows with the level.
 func levels() -> bool:
-	if per_level != 0.0 or (remnant != null and remnant.levels()):
+	if per_level != 0.0 or level_values.size() > 1 or (remnant != null and remnant.levels()):
 		return true
 	for c in child_ops:
 		if c.levels():
 			return true
 	return false
+
+
+## v0.10.5 W3-P3: this op is a share of the hit an overlevel grows (OVERLEVEL_FIELDS on a MUL_PERMILLE op, a HOOK's or
+## a REMNANT's child share).
+func is_share() -> bool:
+	if op == Op.HOOK or op == Op.REMNANT:
+		return true
+	return op == Op.MUL_PERMILLE and OVERLEVEL_FIELDS.has(field)
+
+
+## v0.10.5 W3-P3 (overlevels; CardLevels.overlevel_permille): a copy whose share is × `permille` / 1000 (a MUL_PERMILLE
+## op its value, a HOOK's or a REMNANT's child its damage share and flat damage); null when this op is no share.
+## Shares are per mille, so the step is exact. Compile-time only (ModifierTable.overlevelled).
+func overlevelled(permille: int) -> ModifierOp:
+	if not is_share():
+		return null
+	var o := ModifierOp.new()
+	for f: StringName in COPIED:
+		o.set(f, get(f))
+	o.hook_tags = hook_tags.duplicate()
+	o.remnant = remnant
+	o.child_ops = child_ops.duplicate()
+	if op == Op.MUL_PERMILLE:
+		o.value = float(roundi(value) * permille / 1000)
+	else:
+		o.damage_permille = damage_permille * permille / 1000
+		o.damage = damage * permille / 1000
+	return o

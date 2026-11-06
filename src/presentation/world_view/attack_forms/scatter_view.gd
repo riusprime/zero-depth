@@ -20,7 +20,7 @@ const SLUG := Vector2(0.55, 0.16)
 
 const SLUG_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 uniform vec4 core : source_color = vec4(1.0);
 uniform vec4 edge : source_color = vec4(0.3, 0.6, 1.0, 1.0);
 void fragment() {
@@ -34,7 +34,7 @@ void fragment() {
 """
 const CONE_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 uniform vec4 core : source_color = vec4(1.0);
 uniform vec4 edge : source_color = vec4(0.3, 0.6, 1.0, 1.0);
 uniform float u = 0.0;

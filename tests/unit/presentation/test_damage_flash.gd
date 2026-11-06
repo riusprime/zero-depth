@@ -109,7 +109,7 @@ func test_enemy_models_are_built_flashable() -> void:
 	var avatars: Array[Node3D] = [ChargerAvatar.new(), NeedleAvatar.new(), WardenAvatar.new()]
 	for avatar in avatars:
 		var name: String = avatar.get_script().get_global_name()
-		avatar.setup(Color.BLACK, &"xray")
+		avatar.setup(Color.BLACK, &"outline")
 		if avatar is ChargerAvatar:  # v0.8.0 HR: shared materials, the flash an instance uniform per piece
 			assert_gt((avatar as ChargerAvatar).hit_pieces().size(), 0, name)
 			assert_eq((avatar as ChargerAvatar).hit_look(), EnemyLooks.HIT_OFF, name)

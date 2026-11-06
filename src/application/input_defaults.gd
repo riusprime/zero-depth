@@ -25,8 +25,9 @@ const ACTIONS := {
 	# v0.3.0 MM: hold to show the full map (owner L30).
 	&"map": [[&"key", KEY_TAB], [&"button", JOY_BUTTON_BACK]],
 	# v0.3.5 K (owner F1, F18): Vent and the build's Skill, each on its own button.
+	# v0.9.5 HU (owner Q9): the Skill moved from pad Y to the left trigger (Y is free); a saved binding stays.
 	&"vent": [[&"key", KEY_F], [&"button", JOY_BUTTON_B]],
-	&"skill": [[&"key", KEY_Q], [&"button", JOY_BUTTON_Y]],
+	&"skill": [[&"key", KEY_Q], [&"axis", JOY_AXIS_TRIGGER_LEFT, 1.0]],
 }
 ## Action -> InputFrame bit, for the latch.
 const BUTTON_BITS := {

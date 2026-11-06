@@ -102,6 +102,11 @@ const LAVA_FADE_TICKS := 8.0
 const LAVA_CRUST_TICKS := 60.0
 ## v0.8.0 TX2: the lava and meltdown shaders' owner textures (BossStrikeMeshes.GROUND_TEX slots).
 const LAVA_SLOTS := ["lava_tex", "crust_tex"]
+## v0.10.0 VX5 (R27): the Gaze's beam is the pack's (a full family keeps the old look); false: the old cylinders.
+## v0.10.0 FX (owner, 2026-10-31: the Foundry "uses both older and newer VFX ... performance drops"): VX5's flames on
+## the molten floor are gone. The floor's own shader already burns and crusts; the pack's fire areas stood on top of
+## it (up to 4 a piece and 10 round the meltdown), so the two looks drew at once and filled the area family.
+const PACK_GAZE := true
 
 ## Where the owner's javelin is looked up (tests point it elsewhere to see the fallback).
 static var model_path := MODEL_PATH
@@ -146,6 +151,8 @@ var _lava_shader := Shader.new()
 var _melt_rows: Array = []
 var _melt_nodes: Array[MeshInstance3D] = []
 var _melt_shader := Shader.new()
+var _hold: BossPackHold = null
+var _gaze_packed := false
 
 
 func _init() -> void:
@@ -185,7 +192,7 @@ func sync(reader: WorldReader) -> void:
 	var boss := reader.boss_index()
 	if boss >= 0:
 		_jav = reader.boss_javelins(boss)
-	for i in reader.actor_count():
+	for i in range(reader.actor_count() if reader.any_egg() else 0):
 		var e := reader.actor_egg_permille(i)
 		if e >= 0:
 			_egg_rows.append(
@@ -685,7 +692,7 @@ func _bs2_busy() -> bool:
 
 ## True while the Gaze is drawn (its aim line in the windup, its beam after; tests and the tour).
 func gaze_drawn() -> bool:
-	return _beam.visible or _aim.visible
+	return _beam.visible or _aim.visible or _gaze_packed
 
 
 ## The drawn beam's (or aim line's) ends in 3D, [from, to] (tests: on the sim's beam), or [].
@@ -714,11 +721,17 @@ func spark_count() -> int:
 
 
 func _draw_bs2(now: float, still: bool) -> void:
+	_hold = BossPackHold.of(self, _hold) if PACK_GAZE else null
+	if _hold != null:
+		_hold.begin()
+	_gaze_packed = false
 	_draw_gaze(now, still)
 	_draw_scorch(now)
 	_draw_sparks(now)
 	_draw_lava(now)
 	_draw_melt()
+	if _hold != null:
+		_hold.end()
 
 
 ## The Gaze: in the windup the eye brightens and a thin aim line runs the way the beam will open; then the beam, a
@@ -753,10 +766,19 @@ func _draw_gaze(now: float, still: bool) -> void:
 		_gaze_ends = [eye, to]
 		return
 	var hw := float(g["half_width"])
-	_beam.visible = true
-	_beam_glow.visible = true
-	_place_cylinder(_beam, eye, to, hw * 0.45)
-	_place_cylinder(_beam_glow, eye, to, hw * (1.05 + (0.0 if still else 0.08 * sin(now * 1.7))))
+	var pack_beam: Node3D = null
+	if PACK_GAZE and _hold != null:  # R27: the pack's beam in the Gaze's colour, in place of the two cylinders
+		pack_beam = _hold.hold(&"gaze", BossPackHold.beam_id(GAZE), eye, 1.0, {}, false)
+	if pack_beam != null:
+		BossPackHold.beam_place(pack_beam, eye, to, hw)
+		_gaze_packed = true
+	else:
+		_beam.visible = true
+		_beam_glow.visible = true
+		_place_cylinder(_beam, eye, to, hw * 0.45)
+		_place_cylinder(
+			_beam_glow, eye, to, hw * (1.05 + (0.0 if still else 0.08 * sin(now * 1.7)))
+		)
 	_gaze_ends = [eye, to]
 	var from2: Vector2 = g["from"]
 	var to2: Vector2 = g["to"]

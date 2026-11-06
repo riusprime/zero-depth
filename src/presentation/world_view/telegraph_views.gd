@@ -35,6 +35,26 @@ extends Node3D
 const MESH_SHAPES: Array[StringName] = [
 	&"ring", &"lanes", &"arc", &"discs", &"sweep", &"ripple", &"marks"
 ]
+## v0.10.5 (a floor's first windup of each shape built its nodes, meshes and materials mid-fight): the [shape, style]
+## pairs prepare() pools POOL_N of at the floor's load: the plain shapes, the Arc Caster's rune, the Mine Layer's mines
+## and the floods' spears and molten lanes. A telegraph that ends goes back to its pool (hidden) instead of freeing.
+const PREPARED: Array = [
+	[&"disc", &""],
+	[&"lane", &""],
+	[&"ring", &""],
+	[&"lanes", &""],
+	[&"arc", &""],
+	[&"discs", &""],
+	[&"sweep", &""],
+	[&"ripple", &""],
+	[&"marks", &""],
+	[&"disc", &"rune"],
+	[&"discs", &"mine"],
+	[&"lanes", &"spears"],
+	[&"lanes", &"molten"],
+]
+## Pooled telegraphs of each prepared pair (a starting value: two attackers winding up at once).
+const POOL_N := 2
 ## v0.7.5 BF1: the lock flash's pulse (per second) and its fill's alpha range.
 const FLASH_HZ := 7.0
 const FLASH_ALPHA := Vector2(0.45, 0.8)
@@ -97,7 +117,11 @@ void fragment() {
 }
 """
 
+## v0.10.5 O12: the enemies winding up or acting this tick (every telegraph, drawn here or told by an avatar): the
+## hostile threats that dim the hero's effects (HeroFxBudget).
+var threats := 0
 var _nodes := {}
+var _pool := {}  # v0.10.5: "shape|style" -> the idle telegraphs (hidden)
 var _fill_mat := StandardMaterial3D.new()
 var _edge_mat := StandardMaterial3D.new()
 var _core_mat := StandardMaterial3D.new()
@@ -114,6 +138,8 @@ var _crack_lock_mat := ShaderMaterial.new()
 var _look_mats := {}
 ## The look of the telegraph being updated (&"" for none: the flat look).
 var _look := &""
+## v0.10.5 PC: the boss looks the last sync drew (their materials pulse in _process; prepare() makes them all).
+var _looks_live := {}
 var _t := 0.0
 
 
@@ -165,7 +191,8 @@ func _process(delta: float) -> void:
 	_flash_fill_mat.albedo_color.a = a
 	_crack_lock_mat.set_shader_parameter("heat", heat)
 	var motion := 0.0 if ViewPrefs.reduced_motion else 1.0
-	for pair: Array in _look_mats.values():
+	for look: StringName in _looks_live:  # v0.10.5 PC: the looks drawn now, not every prepared one
+		var pair := _look_pair(look)
 		(pair[1] as ShaderMaterial).set_shader_parameter("heat", heat)
 		for m: ShaderMaterial in pair:
 			m.set_shader_parameter("motion", motion)
@@ -201,9 +228,14 @@ static func look_of(reader: WorldReader, i: int, tg: Dictionary) -> StringName:
 
 func sync(reader: WorldReader) -> void:
 	var seen := {}
-	for i in reader.actor_count():
+	_looks_live = {}
+	threats = 0
+	for i in range(reader.actor_count() if reader.any_telegraph() else 0):
 		var tg := reader.telegraph(i)
-		if tg.is_empty() or not tg.get("ground", true):
+		if tg.is_empty():
+			continue
+		threats += 1  # v0.10.5 O12: every windup counts, on the ground or told by its avatar
+		if not tg.get("ground", true):
 			continue  # v0.7.5 EF: a body or air cue ("cast", "lob") draws nothing on the ground
 		var id := reader.actor_id(i)
 		seen[id] = true
@@ -211,11 +243,12 @@ func sync(reader: WorldReader) -> void:
 		var style: StringName = tg.get("style", &"")
 		if n == null or n.get_meta(&"shape") != tg["shape"] or n.get_meta(&"style") != style:
 			if n != null:
-				n.queue_free()
-			n = _make(tg["shape"], style)
+				_put_back(n)
+			n = _take(tg["shape"], style)
 			_nodes[id] = n
-			add_child(n)
 		_look = look_of(reader, i, tg)
+		if _look != &"":
+			_looks_live[_look] = true
 		_update(n, tg)
 		if _look != &"" and not tg.get("tracked", false):  # a windup's fill warms as it fills
 			var heat := lerpf(0.15, 0.85, float(tg["progress"]) / 1000.0)
@@ -225,13 +258,81 @@ func sync(reader: WorldReader) -> void:
 	_look = &""
 	for id in _nodes.keys():
 		if not seen.has(id):
-			_nodes[id].queue_free()
+			_put_back(_nodes[id])
 			_nodes.erase(id)
 
 
 ## How many telegraphs are showing (tests and the tour).
 func count() -> int:
 	return _nodes.size()
+
+
+## v0.10.5: the floor's load (WorldViewRoot): POOL_N hidden telegraphs of each PREPARED pair, and every boss look's
+## materials, so a floor's first windups make no node, mesh or material.
+func prepare() -> void:
+	for look: StringName in BossStrikeLooks.LOOKS:
+		_look_pair(look)
+	for pair: Array in PREPARED:
+		var idle: Array = _pool.get_or_add(_key(pair[0], pair[1]), [])
+		while idle.size() < POOL_N:
+			var n := _make(pair[0], pair[1])
+			n.visible = false
+			idle.append(n)  # (v0.10.5 PC: idle outside the tree; ShaderWarmup draws idle_pieces() once)
+
+
+## The idle telegraphs of `shape` and `style` (tests).
+func idle_count(shape: StringName, style: StringName = &"") -> int:
+	return (_pool.get(_key(shape, style), []) as Array).size()
+
+
+static func _key(shape: StringName, style: StringName) -> String:
+	return "%s|%s" % [shape, style]
+
+
+## An idle telegraph of `shape` and `style`, shown, or a new one.
+func _take(shape: StringName, style: StringName) -> Node3D:
+	var idle: Array = _pool.get(_key(shape, style), [])
+	if not idle.is_empty():
+		var n: Node3D = idle.pop_back()
+		if n.get_parent() == null:
+			add_child(n)  # (v0.10.5 PC: back in the tree)
+		n.visible = true
+		return n
+	var made := _make(shape, style)
+	add_child(made)
+	return made
+
+
+## Back to its pool, hidden (it keeps its meshes for the next windup of its shape). v0.10.5 PC (owner PERF_PLAYLOG_2:
+## idle pool nodes in the tree cost every frame): it waits outside the tree, kept here (freed with the view).
+func _put_back(n: Node3D) -> void:
+	n.visible = false
+	var idle: Array = _pool.get_or_add(_key(n.get_meta(&"shape"), n.get_meta(&"style")), [])
+	idle.append(n)
+	if n.get_parent() == self:
+		remove_child(n)
+
+
+## v0.10.5 PC: the idle telegraphs outside the tree (ShaderWarmup draws them once at the load).
+func idle_pieces() -> Array[Node]:
+	var out: Array[Node] = []
+	for key: String in _pool:
+		for n: Variant in _pool[key]:  # (a Variant: freeing the view frees its in-tree pieces first)
+			if is_instance_valid(n) and (n as Node).get_parent() == null:
+				out.append(n)
+	return out
+
+
+## v0.10.5 PC: how many idle telegraphs wait outside the tree (tests, scripts/checks/pool_node_count.gd).
+func idle_outside() -> int:
+	return idle_pieces().size()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:  # the idle telegraphs outside the tree go with the view
+		for n in idle_pieces():
+			n.free()
+		_pool.clear()
 
 
 func _make(shape: StringName, style: StringName = &"") -> Node3D:

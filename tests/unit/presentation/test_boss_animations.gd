@@ -29,7 +29,7 @@ func after_each() -> void:
 	ViewPrefs.reduced_motion = false
 
 
-func _avatar(cls: Variant, technique: StringName = &"xray") -> BossAvatar:
+func _avatar(cls: Variant, technique: StringName = &"outline") -> BossAvatar:
 	var a: BossAvatar = cls.new()
 	a.setup(Color("#1A1A22"), technique)
 	add_child_autofree(a)
@@ -99,6 +99,8 @@ func test_every_boss_has_every_clip_its_moves_need() -> void:
 		var moves := 0
 		for atk: Resource in def.get("attacks"):
 			var move := StringName(atk.get("move"))
+			if move == &"interphase":
+				continue  # v0.9.5 BH6: a carrier of the Fallen's interphase hits, never picked: no clip
 			moves += 1
 			assert_true(lib.has(move), "%s: %s (%s) has its clip" % [id, atk.get("id"), move])
 			if atk.get("shielded"):
@@ -235,7 +237,7 @@ func test_the_strike_pose_lands_on_the_first_active_tick_read_from_the_sim() -> 
 ## the strike pose lands on its first active tick (no view timer of its own).
 func test_the_sped_up_attacks_animate_on_the_sims_faster_ticks() -> void:
 	for pick: Array in [
-		[&"warlord", &"javelin_fan", 27],
+		[&"warlord", &"javelin_fan", 36],  # v0.9.5 BH2: 0.6 s
 		[&"warlord", &"lunge_dash", 60],
 		[&"brood_mother", &"leap", 60],
 		[&"hive_lens", &"dive", 60],
@@ -362,7 +364,7 @@ func test_every_model_collapses_when_it_dies() -> void:
 	assert_false(_avatar(GatekeeperAvatar).die(), "the code bodies still go at once")
 
 
-func test_the_outline_and_xray_twin_are_unchanged_and_no_shader_changes() -> void:
+func test_the_outline_is_unchanged_and_no_shader_changes() -> void:
 	for id: StringName in classes:
 		var a := _avatar(classes[id])
 		var before := DamageFlashKeys.of(a)
@@ -377,13 +379,14 @@ func test_the_outline_and_xray_twin_are_unchanged_and_no_shader_changes() -> voi
 		for t in 30:
 			a.advance(DT)
 		assert_eq(DamageFlashKeys.of(a), before, "%s: no shader changed" % id)
-		assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "%s keeps its stencil" % id)
-		assert_eq(m.stencil_outline_thickness, 0.0, "%s: no drawn outline (owner, v0.7.5)" % id)
-		var twins := a.find_children("XrayTwin", "MeshInstance3D", true, false)
-		assert_eq(twins.size(), 1, "%s keeps its X-ray twin" % id)
-		assert_same((twins[0] as MeshInstance3D).skin, a.imported.skin, "on the animated skeleton")
-		var o := _avatar(classes[id], &"outline")
-		assert_eq(o.find_children("XrayTwin", "MeshInstance3D", true, false).size(), 0)
+		assert_eq(m.stencil_mode, ActorLooks.outline_mode(), "%s keeps its stencil" % id)
+		if ActorLooks.OUTLINES:
+			assert_eq(m.stencil_outline_thickness, 0.0, "%s: no drawn outline (owner, v0.7.5)" % id)
+		assert_eq(
+			a.find_children("XrayTwin", "MeshInstance3D", true, false).size(),
+			0,
+			"%s: no X-ray twin" % id
+		)
 
 
 func test_reduced_motion_keeps_the_poses_without_tremble_or_daze() -> void:

@@ -1,9 +1,10 @@
 # gdlint: disable=max-public-methods
 extends GutTest
 ## v0.8.0 BS2 (owner O5; docs/roadmap/v0.8.0/BOSS_SIGNATURES.md S4-S6, approved 2026-10-14): each boss's signature
-## mechanic, part 2. S4 the Hive Lens's Gaze: a beam that starts aimed away from you (and keeps away through its
-## windup), turns a quarter turn every few seconds and reverses, stops at walls, hurts what it touches, while its orbs
-## fly. S5 the Siege Engine's ricochet shells: its Turret Cross's embers bounce off a wall once (reflected on the
+## mechanic, part 2. S4 the Hive Lens's Gaze: a beam that starts just behind you in its turn (v0.10.5 W3-O2, F20:
+## BossGaze.LEAD; it keeps there through its windup; before W3-O2 it started straight away), turns a quarter turn
+## every few seconds and reverses, stops at walls, hurts what it touches, while its orbs fly. S5 the Siege Engine's
+## ricochet shells: its Turret Cross's embers bounce off a wall once (reflected on the
 ## wall's normal), never back onto you within 0.5 s; phase 3's turrets ricochet too. S6 the Foundry's lava: Molten
 ## Flood lanes stay molten for 5 s (burning, avoided by the flow field, never closing every way to the boss and an
 ## exit), and the phase-3 meltdown melts the outer ring for good, closer step by step down to a minimum radius.
@@ -113,7 +114,7 @@ func _round_trip(w: World, base: World, label: String, ticks: int = 360) -> void
 # --- S4: the Hive Lens's Gaze -------------------------------------------------------------------------------------
 
 
-func test_the_gaze_starts_aimed_away_and_keeps_away_through_its_windup() -> void:
+func test_the_gaze_starts_just_behind_you_and_keeps_there_through_its_windup() -> void:
 	var s := _fight(&"hive_lens", Vector2(6, 0))
 	var w: World = s[0]
 	var aid: int = s[1]
@@ -131,8 +132,11 @@ func test_the_gaze_starts_aimed_away_and_keeps_away_through_its_windup() -> void
 		var i := _i(w, aid)
 		var to_player := Kin.angle_of(w.player_pos() - w.actors.pos(i))
 		if w.actors.state[i] == S.WINDUP:
+			var way := w.bosses.span[BossAi.entry_of(w, i)]
 			assert_eq(
-				Kin.angle_diff(w.actors.lock_a[i], to_player), 2048, "tick %d: straight away" % t
+				w.actors.lock_a[i],
+				(to_player - way * BossGaze.LEAD) & 4095,
+				"tick %d: LEAD behind you in its turn (W3-O2)" % t
 			)
 	var i := _i(w, aid)
 	assert_eq(w.actors.state[i], S.ACTIVE)
@@ -154,9 +158,13 @@ func test_the_beam_turns_a_quarter_every_quarter_and_reverses() -> void:
 	_until_active(w, aid)
 	var i := _i(w, aid)
 	var a0 := w.actors.lock_a[i]
-	assert_eq(a0, 0, "the player at -x: it starts along +x")
 	var way := w.bosses.span[BossAi.entry_of(w, i)]
 	assert_true(way == 1 or way == -1)
+	assert_eq(
+		a0,
+		(2048 - way * BossGaze.LEAD) & 4095,
+		"the player at -x: it starts LEAD short of -x (W3-O2)"
+	)
 	assert_eq(atk.quarter_ticks, 120, "a quarter turn every 2.0 s (a starting value)")
 	assert_eq(atk.reverse_ticks, 480, "reversing every 8.0 s: one whole turn each way")
 	var q := atk.quarter_ticks
@@ -224,6 +232,7 @@ func test_a_wall_stops_the_beam() -> void:
 	BossLab.start(w, _i(w, aid), &"gaze")
 	_until_active(w, aid)
 	var i := _i(w, aid)
+	w.actors.lock_a[i] = 0  # W3-O2: it opens near the player (at -x); turned to +x here, onto the wall
 	var o := BossGaze.beam(w, i, 0)
 	var end := o.center + o.axis_u * o.half.x
 	assert_almost_eq(end.x, 4.6 - _atk(w, aid).half_width_m, 0.05, "it stops on the wall's face")

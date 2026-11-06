@@ -1,11 +1,10 @@
+# gdlint: disable=max-file-lines
 class_name ContentCompiler
 extends RefCounted
 ## Turns definitions into the sim's plain tables, converting seconds to ticks once (CONTENT_SCHEMA §9).
-
 ## A build weapon id (BuildDefinition.WEAPON_IDS) to its PlayerTable weapon bit; any other id (empty) is 0.
 const WEAPON_BITS := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
-## Enemy behaviour ids (BehaviourSchemas.SCHEMAS) to actor kinds (a test checks the two key sets match).
-const ENEMY_KINDS := {
+const ENEMY_KINDS := {  # behaviour ids to actor kinds (a test checks the key sets match)
 	&"charger": ActorStore.Kind.CHARGER,
 	&"warden": ActorStore.Kind.WARDEN,
 	&"needle": ActorStore.Kind.NEEDLE,
@@ -56,9 +55,12 @@ const BOSS_MOVES := {
 	&"chain_sweep": BossAttackTable.Move.CHAIN_SWEEP,
 	&"echo": BossAttackTable.Move.ECHO,  # v0.9.0 NB3 (the Clockwork Judge)
 	&"verdict": BossAttackTable.Move.VERDICT,
+	&"wave": BossAttackTable.Move.WAVE,  # v0.9.5 BH4
+	&"interphase": BossAttackTable.Move.INTERPHASE,  # v0.9.5 BH6
+	&"lances": BossAttackTable.Move.LANCES,  # v0.10.5 O3 (the Prism's last phase)
+	&"kneel": BossAttackTable.Move.KNEEL,
 }
-## v0.8.0 FB3: a Nemesis attack's `weapon`.
-const ATTACK_WEAPONS := {
+const ATTACK_WEAPONS := {  # v0.8.0 FB3: a Nemesis attack's `weapon`
 	"any": BossAttackTable.WEAPON_ANY,
 	"blade": BossAttackTable.WEAPON_BLADE,
 	"gun": BossAttackTable.WEAPON_GUN,
@@ -94,6 +96,10 @@ static func compile_player(def: PlayerDefinition) -> PlayerTable:
 	t.bolt_speed = p.bolt_speed_mps / SimTick.TICKS_PER_SECOND
 	t.bolt_radius_m = p.bolt_radius_m
 	t.bolt_life_ticks = SimTick.seconds_to_ticks(p.bolt_life_seconds)
+	t.hit_push_m = p.hit_push_m
+	t.finisher_push_m = p.finisher_push_m
+	t.bolt_push_m = p.bolt_push_m
+	t.bolt_crit_push_m = p.bolt_crit_push_m
 	return t
 
 
@@ -130,6 +136,10 @@ static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 	var bp := def.behaviour_params
 	t.shards = def.shards
 	t.shards_by_floor = def.shards_by_floor
+	t.weak_to = def.weak_to  # v0.10.5 O10: the matchup (Matchups)
+	t.resists = def.resists
+	t.weak_permille = def.weak_permille
+	t.resist_permille = def.resist_permille
 	if def.attacks.is_empty():  # v0.4.0 EN: the Mender has no attack.
 		_compile_horde(def, t, {})
 		return t
@@ -217,8 +227,7 @@ static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) 
 			t.lane_half_m = sp["half_width_m"]
 
 
-## The Arc Caster (v0.3.5 AI): its three spells, in the schema's order (bolt, spread, rune). v0.7.5 EF: the bolt
-## and the spread are slow fireball fans (compile_enemy_patterns); the rune stays a disc that erupts under you.
+## The Arc Caster (v0.3.5 AI): its spells in schema order (bolt, spread, rune); v0.7.5 EF: bolt and spread are fans.
 static func _compile_arc_caster(def: EnemyDefinition, t: EnemyTable) -> void:
 	var bp := def.behaviour_params
 	t.keep_min_m = bp["keep_min_m"]
@@ -262,6 +271,7 @@ static func compile_spawning(def: SpawnDirectorDefinition, repo: ContentReposito
 	t.pack_max_by_floor = def.pack_max_by_floor.duplicate()
 	t.min_distance_m = def.min_distance_m
 	t.edge_band_m = def.edge_band_m
+	t.calm_antechamber_floor = def.calm_antechamber_floor  # v0.10.5 O14
 	for e in def.mix:
 		var enemy: EnemyDefinition = repo.get_def(&"enemies", e.enemy_id)
 		t.kinds.append(compile_enemy(enemy).kind)
@@ -279,6 +289,7 @@ static func compile_floor_spawning(repo: ContentRepository, floor_index: int) ->
 	if def != null:
 		t.curve = compile_curve(def, t, repo)
 	t.intensity = IntensityCompiler.compile(repo.get_def(&"intensity", &"director"))  # v0.8.0 N5 (owner O58)
+	t.pairings = compile_pairings(repo.get_def(&"pairing", &"pairings"), repo)  # v0.10.5 O15
 	return t
 
 
@@ -321,6 +332,15 @@ static func compile_curve(
 			var e: EnemyDefinition = repo.get_def(&"enemies", id)
 			if e != null:
 				phase_of[compile_enemy(e).kind] = k
+	for sec in def.overtime_seconds:  # v0.9.5 DC
+		c.overtime_starts.append(SimTick.seconds_to_ticks(float(sec)))
+	c.overtime_step = SimTick.seconds_to_ticks(float(def.overtime_step_seconds))
+	c.overtime_max_tier = def.overtime_max_tier
+	c.cap_per_tier_permille = def.cap_per_tier_permille
+	c.cap_bonus_max_permille = def.cap_bonus_max_permille
+	c.interval_per_tier_permille = def.interval_per_tier_permille
+	c.interval_min_ticks = SimTick.seconds_to_ticks(def.interval_min_seconds)
+	c.pack_cap_bumps = def.pack_cap_bumps.duplicate()
 	c.kind_phase = PackedInt32Array()
 	for kind in spawn.kinds:
 		c.kind_phase.append(phase_of.get(kind, -1))
@@ -469,6 +489,7 @@ static func _compile_item_v2(def: ItemDefinition, t: ItemTable) -> void:
 ## Engines (v0.3.0 G).
 static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 	t.tags = def.tags.duplicate()
+	StressMarkCompiler.compile(def, t)  # v0.9.5 CLV level_max, SM the Stress Mark's numbers
 	t.stacks_per_hit = def.stacks_per_hit
 	t.shock_threshold = def.shock_threshold
 	t.shock_ticks = SimTick.seconds_to_ticks(def.shock_seconds)
@@ -510,8 +531,8 @@ static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 ## Give it to the world with World.set_item_tables.
 static func compile_items(repo: ContentRepository) -> Array[ItemTable]:
 	var out: Array[ItemTable] = []
-	for def: ItemDefinition in ModifierCompiler.item_defs(repo):
-		out.append(compile_item(def, repo))
+	for slot in CardOrder.item_slots(repo):  # v0.10.5 O1: the frozen order, a deleted card's stub in its place
+		out.append(CardOrder.item_stub(slot) if slot is StringName else compile_item(slot, repo))
 	return WandCompiler.retire_items(repo, out)  # v0.6.5 WN5b: the old cards leave the offers
 
 
@@ -567,9 +588,6 @@ static func compile_boss(def: BossDefinition, repo: ContentRepository) -> BossTa
 	t.rear_half_arc = degrees_to_units(def.rear_arc_degrees * 0.5)
 	t.rear_mult_permille = def.rear_mult_permille
 	t.stagger_size_milli = def.stagger_size * 1000
-	t.stagger_decay_milli = int(
-		round(def.stagger_decay_per_second * 1000.0 / SimTick.TICKS_PER_SECOND)
-	)
 	t.stagger_ticks = maxi(1, SimTick.seconds_to_ticks(def.stagger_seconds))
 	for a in def.attacks:
 		t.attacks.append(compile_boss_attack(a, repo))
@@ -584,6 +602,7 @@ static func compile_boss(def: BossDefinition, repo: ContentRepository) -> BossTa
 		)
 		t.phase_speed_permille.append(ph.speed_permille)
 		t.phase_cd_permille.append(ph.cooldown_permille)
+		HardCompiler.compile_phase(ph, t)  # v0.9.5 BH4: the ring stream and the waves
 	t.arena_cells = def.arena_cells
 	t.legacy_arena_cells = (
 		def.legacy_arena_cells if def.legacy_arena_cells != Vector2i.ZERO else def.arena_cells
@@ -626,6 +645,7 @@ static func _compile_boss_challenge(def: BossDefinition, t: BossTable) -> void:
 	t.gap_attack = (
 		t.attack_index(def.gap_close_attack) if not String(def.gap_close_attack).is_empty() else -1
 	)
+	t.lines_clear_shots = def.lines_clear_shots  # v0.10.5 W3-O2 (F19)
 	PatternCompiler.compile_cadence(def, t)  # v0.9.0 NB1: the Tidecaller's Pull
 	for k in def.attacks.size():
 		var a := def.attacks[k]
@@ -684,6 +704,7 @@ static func compile_boss_attack(
 	t.burn_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("burn_seconds", 0.0))))
 	t.cell_m = float(sp.get("cell_m", 0.0))  # v0.7.5 BF3: a grid's cells
 	PatternCompiler.compile_boss_attack(def, repo, t)  # v0.7.5 BF1
+	FinalBodyCompiler.compile_attack(sp, t)  # v0.10.5 O3: the Prism's Facet Lances and Shattered Kneel
 	return t
 
 
@@ -707,8 +728,11 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.legendary_permille_altar = int(round(def.legendary_weight_altar * 1000.0))
 	t.own_weapon_card_permille = def.own_weapon_card_permille  # v0.8.0 BL (B5)
 	t.offer_size = def.offer_size
+	t.starbound_permille = def.starbound_permille.duplicate()  # v0.10.5 W3-P10b
 	t.interact_radius_m = def.interact_radius_m
 	t.shard_tier_bonus_permille = int(round(def.shard_tier_bonus * 1000.0))
+	t.shard_tier_caps_at_peak = def.shard_tier_caps_at_peak  # O7a
+	t.shard_cap_min_ticks = SimTick.seconds_to_ticks(def.shard_cap_min_seconds)
 	t.shard_permille = int(round(def.shard_scale * 1000.0))  # v0.5.5 EC (S4)
 	t.boss_shards = def.boss_shards
 	t.altar_card_weights = def.altar_card_weights.duplicate()  # v0.4.0 BS
@@ -767,40 +791,31 @@ static func compile_shop(def: ShopDefinition) -> ShopTable:
 	t.heal_price = def.heal_price
 	t.reroll_price = def.reroll_price
 	t.reroll_step_permille = int(round(def.reroll_step * 1000.0))
-	t.sell_permille = int(round(def.sell_share * 1000.0))
-	t.ability_refund_per_level = def.ability_refund_per_level
 	t.interact_radius_m = def.interact_radius_m
 	t.first_floor = def.first_floor  # v0.7.5 MG (N12)
 	t.every_floors = def.every_floors
 	return t
 
 
-## The named combos (v0.3.0 G), their item ids resolved to item indices (the order compile_items gives: by id);
-## v0.4.0 AB: an ability combo's ability ids to ability indices (compile_abilities). Combos naming an unknown item
-## or ability are left out (the validator reports them).
+## The named combos (v0.3.0 G), their item ids resolved to item indices (the order compile_items gives), in the frozen
+## combo order (CardOrder.COMBOS: a deleted combo is a retired stub). Combos naming an unknown item are left out (the
+## validator reports them).
 static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:
 	var index := {}
-	var items := ModifierCompiler.item_defs(repo)  # v0.6.0 MX4: the item index order
+	var items := CardOrder.item_ids(repo)  # v0.10.5 O1: the item index order (compile_items)
 	for k in items.size():
-		index[(items[k] as ItemDefinition).id] = k
-	var abilities := {}  # v0.4.0 AB: ability combos name abilities (compile_abilities order: by id)
-	var defs := repo.all_of(&"ability")
-	for k in defs.size():
-		abilities[(defs[k] as AbilityDefinition).id] = k
+		index[items[k]] = k
 	var out: Array[ComboTable] = []
-	for def: ComboDefinition in repo.all_of(&"combos"):
-		var t := ComboTable.new()
-		if def.is_ability_combo():
-			if not abilities.has(def.ability_a) or not abilities.has(def.ability_b):
-				continue
-			t.ability_a = abilities[def.ability_a]
-			t.ability_b = abilities[def.ability_b]
-			t.min_level = def.min_level
-		elif not index.has(def.item_a) or not index.has(def.item_b):
+	for slot in CardOrder.combo_slots(repo):  # v0.10.5 O1: a deleted combo's stub keeps its index
+		if slot is StringName:
+			out.append(CardOrder.combo_stub(slot))
 			continue
-		else:
-			t.item_a = index[def.item_a]
-			t.item_b = index[def.item_b]
+		var def: ComboDefinition = slot
+		var t := ComboTable.new()
+		if not index.has(def.item_a) or not index.has(def.item_b):
+			continue
+		t.item_a = index[def.item_a]
+		t.item_b = index[def.item_b]
 		t.id = def.id
 		t.effect = int(def.effect)
 		t.name_key = def.name_key
@@ -821,8 +836,10 @@ static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:
 ## to per mille, the start weapon to its PlayerTable.WEAPON_* bit.
 static func compile_abilities(repo: ContentRepository) -> Array[AbilityTable]:
 	var out: Array[AbilityTable] = []
-	for def: AbilityDefinition in repo.all_of(&"ability"):
-		out.append(compile_ability(def, repo))
+	for slot in CardOrder.ability_slots(repo):  # v0.10.5 O1: the six deleted abilities' stubs keep their indices
+		out.append(
+			CardOrder.ability_stub(slot) if slot is StringName else compile_ability(slot, repo)
+		)
 	return WandCompiler.retire_abilities(repo, out)  # v0.6.5 WN5b: the six old abilities too
 
 
@@ -837,6 +854,7 @@ static func compile_ability(def: AbilityDefinition, repo: ContentRepository = nu
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
 	t.start_weapon = WEAPON_BITS.get(def.start_weapon, 0)
+	t.offered = def.offered  # v0.9.5 CLV
 	t.tags = PackedStringArray()
 	for tag in def.tags:
 		t.tags.append(String(tag))
@@ -902,6 +920,31 @@ static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 	return out
 
 
+## v0.10.5 W3-P10b (owner W7): the Starbound cards, indexed by StarboundDefinition.CARDS (Starbound's order); empty when
+## the content has none, or misses one (a world without them never offers one). Percent to per mille (x 10); Arc Jump's
+## jumps and Echo Cast's most repeats as they are.
+static func compile_starbound(repo: ContentRepository) -> Array[StarboundTable]:
+	var out: Array[StarboundTable] = []
+	for k in StarboundDefinition.CARDS.size():
+		var def: StarboundDefinition = repo.get_def(&"starbound", StarboundDefinition.CARDS[k])
+		if def == null:
+			out.clear()
+			return out
+		var t := StarboundTable.new()
+		t.id = def.id
+		t.card = k
+		t.name_key = def.name_key
+		t.desc_key = def.desc_key
+		t.weight = def.weight
+		var counted := k == Starbound.ARC_JUMP
+		t.amount = int(round(def.amount)) if counted else int(round(def.amount * 10.0))
+		t.cap = int(round(def.cap)) if k == Starbound.ECHO_CAST else int(round(def.cap * 10.0))
+		t.reach_m = def.reach_m
+		t.share_permille = int(round(def.share * 10.0))
+		out.append(t)
+	return out
+
+
 ## A run's floors, biome count and scaling in per mille (v0.3.0 B).
 static func compile_run(def: RunDefinition) -> RunTable:
 	var t := RunTable.new()
@@ -957,6 +1000,10 @@ static func compile_catch_up(def: CatchUpDefinition) -> CatchUpTable:
 	t.cap_permille = def.cap_permille.duplicate()
 	t.boss_expected_permille = def.boss_expected_power_permille.duplicate()
 	t.boss_cap_permille = def.boss_cap_permille.duplicate()
+	t.boss_spread_permille = def.boss_spread_permille
+	t.boss_pace_permille = def.boss_pace_permille.duplicate()  # v0.10.5 O2b (owner D38 (a))
+	t.boss_pace_cap_permille = def.boss_pace_cap_permille
+	t.boss_pace_min_permille = def.boss_pace_min_permille
 	t.threat_cap_permille = def.threat_cap_bonus_permille
 	t.ability_level_permille = def.ability_level_permille
 	t.item_permille = def.item_permille
@@ -968,13 +1015,13 @@ static func compile_heat(def: HeatDefinition) -> HeatTable:
 	if def == null:
 		return null
 	var t := HeatTable.new()
-	var m := HeatTable.MILLI
 	t.max_heat = def.max_heat
-	t.gain_swing = int(round(def.gain_swing * m))
-	t.gain_finisher = int(round(def.gain_finisher * m))
-	t.gain_bolt = int(round(def.gain_bolt * m))
-	t.decay_delay_ticks = SimTick.seconds_to_ticks(def.decay_delay_seconds)
-	t.decay_per_tick = int(round(def.decay_per_second * m / SimTick.TICKS_PER_SECOND))
+	t.gain_swing = int(round(def.gain_swing * HeatTable.MILLI))
+	t.gain_finisher = int(round(def.gain_finisher * HeatTable.MILLI))
+	t.gain_bolt = int(round(def.gain_bolt * HeatTable.MILLI))
+	t.gun_fill_ticks = maxi(1, SimTick.seconds_to_ticks(def.gun_fill_seconds))
+	t.cool_delay_ticks = SimTick.seconds_to_ticks(def.cool_delay_seconds)
+	t.cool_per_tick = int(round(def.cool_per_second * HeatTable.MILLI / SimTick.TICKS_PER_SECOND))
 	t.hot_threshold = def.hot_threshold
 	t.hot_reach_permille = int(round(def.hot_reach_bonus * 1000.0))
 	t.overclock_threshold = def.overclock_threshold
@@ -984,4 +1031,23 @@ static func compile_heat(def: HeatDefinition) -> HeatTable:
 	t.stall_move_permille = int(round(def.overheat_move_multiplier * 1000.0))
 	t.vent_radius_m = def.vent_radius_m
 	t.vent_damage_permille = int(round(def.vent_damage_per_heat * 1000.0))
+	t.vent_min_milli = int(round(def.vent_min_heat * HeatTable.MILLI))
+	t.vent_cooldown_ticks = SimTick.seconds_to_ticks(def.vent_cooldown_seconds)
+	t.perfect_vent_milli = def.perfect_vent_from * HeatTable.MILLI
+	return t
+
+
+## v0.10.5 O15: the enemy pairings with their enemy ids resolved to actor kinds (null def: none).
+static func compile_pairings(def: PairingSetDefinition, repo: ContentRepository) -> PairingTable:
+	if def == null:
+		return null
+	var t := PairingTable.new()
+	for r in def.rows:
+		t.lead.append(compile_enemy(repo.get_def(&"enemies", r.lead_id)).kind)
+		t.partner.append(compile_enemy(repo.get_def(&"enemies", r.partner_id)).kind)
+		t.from_floor.append(r.from_floor)
+		t.chance.append(r.chance_permille)
+		t.count.append(r.partners)
+		t.placement.append(r.placement)
+		t.name_keys.append(r.name_key)
 	return t

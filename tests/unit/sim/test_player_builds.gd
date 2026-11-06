@@ -217,31 +217,20 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 			"blade_storm",  # v0.8.0 BL (BLADE_AUDIT B4)
 			"bulwark",
 			"chain_cut",
-			"conductor",
 			"counter",
 			"double_slash",
 			"echo_slash",  # v0.6.0 MX4: Echo Slash and its legendary need the Blade's arcs
-			"echo_storm",
-			"ember_edge",
 			"finisher_plus",
 			"fissure",
 			"flurry",
-			"glacial_edge",
 			"heavy",
-			"long_edge",
 			"long_shadow",
 			"lunge_step",
 			"momentum",
-			"overcharge",
 			"parry_edge",
-			"rearguard",  # v0.6.5 WN3: on the Gun, G15 Backfire / G14 Echo / G8 Homing do their job
 			"riposte_chain",  # v0.8.0 BL (BLADE_AUDIT B4)
-			"seeker",
-			"serrated_edge",
 			"split_wave",
 			"thrust",
-			"twin_arc",
-			"twin_cast",
 			"whirl",
 			"wide_arc",
 		]
@@ -249,14 +238,8 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 	assert_eq(
 		gun,
 		[
-			"barbed_bolts",
-			"bomb_rounds",  # v0.6.0 MX4: every 5th shot (M3 Frost Core left: it is every attack's now)
-			"boomerang",  # v0.6.5 WN3: the Gun pool G1–G16 (G9, G10, G5, G16 keep their v0.6 ids)
-			"cinder_shot",
 			"gun_backfire",
 			"gun_big_shot",
-			"gun_bomb",  # v0.9.0 BM
-			"gun_charge",
 			"gun_echo",
 			"gun_glaive",  # v0.9.0 AF2
 			"gun_homing",
@@ -267,10 +250,9 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 			"gun_rapid_fire",
 			"gun_ricochet",
 			"gun_ring",  # v0.8.0 AO: the order rule's Ring and Swirl
-			"gun_scatter",  # v0.9.0 AF1
+			"gun_rune_explosion",  # v0.9.5 FC0
 			"gun_seekers",  # v0.9.0 AF2
 			"gun_spiral",
-			"gun_spread",
 			"gun_swirl",
 			"gun_threadline",  # v0.8.0 RM
 			"gun_twin",
@@ -279,11 +261,7 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 			"gun_wisps",  # v0.9.0 AF3
 			"halo_shot",
 			"orbit_rounds",
-			"rapid_coil",
-			"ricochet_core",
-			"splinter_shot",
 			"split_shot",
-			"static_chain",
 		]
 	)
 
@@ -306,7 +284,7 @@ func test_a_build_is_never_offered_the_other_weapons_items() -> void:
 
 func test_every_combo_is_reachable_in_some_build() -> void:
 	# Both items of every combo can be offered in one run of at least one build and utility (heat on, as in the
-	# game). Plasma Arc was Ember Edge (blade) + Static Chain (gun); it now pairs Ember Edge with Conductor.
+	# game).
 	var repo := ContentRepository.load_all()
 	var heat := ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock"))
 	var reach := {}
@@ -322,10 +300,7 @@ func test_every_combo_is_reachable_in_some_build() -> void:
 				if c.item_a in ids and c.item_b in ids:
 					reach[c.id] = reach.get(c.id, []) + ["%s/%d" % [build, util]]
 	for c: ComboDefinition in repo.all_of(&"combos"):
-		if not c.is_ability_combo():  # v0.4.0 AB: ability pairs are test_abilities_ab's
-			assert_true(reach.has(c.id), "%s is reachable in some build" % c.id)
-	var plasma: ComboDefinition = repo.get_def(&"combos", &"plasma_arc")
-	assert_eq([plasma.item_a, plasma.item_b], [&"ember_edge", &"conductor"])
+		assert_true(reach.has(c.id), "%s is reachable in some build" % c.id)
 	gut.p("combo reach: %s" % reach)
 
 

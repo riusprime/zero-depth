@@ -42,7 +42,7 @@ func test_the_prism_numbers_are_f10_rows() -> void:
 		"fast_quarter_seconds": 1.412,
 		"reverse_seconds": 3.529,
 		"spin_seconds": 5.0,
-		"window_seconds": 2.5,
+		"window_seconds": 3.5,
 		"bolt_every_seconds": 1.1,
 	}
 	for p: String in params:

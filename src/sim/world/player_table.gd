@@ -49,6 +49,11 @@ var bolt_damage := 5
 var bolt_speed := 16.2 / 60.0
 var bolt_radius_m := 0.2
 var bolt_life_ticks := 40
+## v0.10.5 O11 (F1): the push a direct hit gives a normal enemy, in metres (the same as data/player/runner.tres).
+var hit_push_m := 0.15
+var finisher_push_m := 0.45
+var bolt_push_m := 0.03
+var bolt_crit_push_m := 0.06
 ## Builds (v0.3.0 L15, L16; ContentCompiler.apply_build): the weapons this run may use (WEAPON_* bits; both outside
 ## a run's build, so the kernel and lab worlds keep both), and each weapon's damage in per mille.
 var weapons := WEAPONS_ALL
@@ -79,7 +84,7 @@ static func starting_values() -> PlayerTable:
 	t.move_speed = 6.0 / SimTick.TICKS_PER_SECOND
 	t.dash_distance_m = 4.0
 	t.dash_ticks = SimTick.seconds_to_ticks(0.15)
-	t.dash_cooldown_ticks = SimTick.seconds_to_ticks(1.4)
+	t.dash_cooldown_ticks = SimTick.seconds_to_ticks(10.0)
 	t.dash_iframe_ticks = SimTick.seconds_to_ticks(0.15)
 	return t
 
@@ -87,13 +92,13 @@ static func starting_values() -> PlayerTable:
 ## The v0.3.0 four-slash combo (PLAN L11, starting values): a horizontal slash right to left, a backhand left to
 ## right, a forward thrust (narrow, longer, a slight step) and a heavy spinning finisher (all around, more damage
 ## and hit-stop, a longer recovery, a small lunge). The same numbers as data/player/runner.tres. v0.8.0 N1 (owner
-## O48): the hit-stop 3,3,4,7 -> 4,4,5,8 ticks (about 20 % more).
+## O48): the hit-stop 3,3,4,7 -> 4,4,5,8 ticks. v0.10.5 S1 (owner "blade is still pause"): -> 3,3,3,5 ticks.
 static func default_combo() -> Array[SwingStep]:
 	var out: Array[SwingStep] = [
-		SwingStep.make(SwingStep.Motion.SLASH_RIGHT_TO_LEFT, 2, 11, 683, 1.6, 10, 4, 0.0, 5),
-		SwingStep.make(SwingStep.Motion.SLASH_LEFT_TO_RIGHT, 3, 11, 683, 1.6, 10, 4, 0.0, 5),
-		SwingStep.make(SwingStep.Motion.THRUST, 4, 12, 228, 2.3, 12, 5, 0.35, 4),
-		SwingStep.make(SwingStep.Motion.SPIN, 7, 24, 2048, 1.9, 24, 8, 0.6, 9),
+		SwingStep.make(SwingStep.Motion.SLASH_RIGHT_TO_LEFT, 2, 11, 683, 1.6, 10, 3, 0.0, 5),
+		SwingStep.make(SwingStep.Motion.SLASH_LEFT_TO_RIGHT, 3, 11, 683, 1.6, 10, 3, 0.0, 5),
+		SwingStep.make(SwingStep.Motion.THRUST, 4, 12, 228, 2.3, 12, 3, 0.35, 4),
+		SwingStep.make(SwingStep.Motion.SPIN, 7, 18, 2048, 1.9, 24, 5, 0.6, 9),
 	]
 	return out
 

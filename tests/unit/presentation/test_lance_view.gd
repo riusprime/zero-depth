@@ -103,3 +103,27 @@ func test_the_charge_orb_of_the_old_card_is_not_drawn_for_the_lance() -> void:
 	forms._live.clear()
 	forms._sync_charge(r)
 	assert_eq(forms._live.size(), 0, "LanceView draws the Lance's charge")
+
+
+## v0.9.5 FC4: Ring's lightning ring grows where a lance ended, and Split's shards are in view while they last.
+func test_fc4_the_ring_is_drawn_growing_and_split_shards_are_in_view() -> void:
+	var w := _world([&"gun_ring"], [])
+	var r := WorldReader.new(w)
+	W.run(w, 72, 0, W.S)
+	var seen := 0
+	for k in 120:
+		W.run(w, 1, 0, 0)
+		_view.sync(r)
+		seen = maxi(seen, _view.arcs)
+	assert_gte(seen, 1, "a lightning ring is drawn while it grows")
+	assert_eq(r.lance_rings().size(), 0, "and it is gone")
+	var s := _world([&"split_shot"], [[Vector2(3.0, 0.0), 100000]])
+	var sr := WorldReader.new(s)
+	W.run(s, 72, 0, W.S)
+	var shown := 0
+	for k in 40:
+		W.run(s, 1, 0, 0)
+		_view.sync(sr)
+		shown = maxi(shown, _view.shards)
+	assert_eq(shown, 2, "the pierced enemy spat two shards")
+	assert_eq(sr.lance_shards().size(), 0, "and they are gone")

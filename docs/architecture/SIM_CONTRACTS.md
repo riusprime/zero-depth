@@ -46,7 +46,7 @@ the order is part of the contract:
 |---|---|---|
 | 1 | **Freeze check** | If `world.freeze_ticks > 0`: decrement it, add the frame's `pressed` bits to the input buffer (§3), increment `world.tick`, publish cues and **stop**. Nothing moves, no status ticks, and **the input buffer doesn't age** during hit-stop. |
 | 1b | **Choosing** (v0.3.0 E) | If an altar's or chest's 3-card choice is open (`world.choosing >= 0`): apply only the frame's `pick` (take a card, or cancel; v0.8.0 N7: on a chest's dealt card any pick value takes it), increment `world.tick` and **stop**. Every gameplay phase waits (no AI, movement, hits, statuses, spawns, run time); presses made during the choice are dropped when it closes. |
-| 1b′ | **Shopping** (v0.5.0 SH) | If the floor's shop is open (`world.shop.open`): apply only the frame's `pick` as a shop action (`Shop.choose`: buy card 1..4, `PICK_SHOP_HEAL`, `PICK_SHOP_REROLL`, `PICK_SHOP_SELL + n`, or `PICK_CANCEL` to close), increment `world.tick` and **stop**. Every gameplay phase waits, as for an altar's choice; presses made while it is open are dropped when it closes. v0.5.0 EV: next, an open event panel (`world.ev.open >= 0`) holds the world the same way; only its `pick` applies (`Events.choose`: 1..n takes that choice, cancel is "Leave"). |
+| 1b′ | **Shopping** (v0.5.0 SH) | If the floor's shop is open (`world.shop.open`): apply only the frame's `pick` as a shop action (`Shop.choose`: buy card 1..4, `PICK_SHOP_HEAL`, `PICK_SHOP_REROLL`, or `PICK_CANCEL` to close; v0.10.5 W3-O9: selling and the curse lift are gone), increment `world.tick` and **stop**. Every gameplay phase waits, as for an altar's choice; presses made while it is open are dropped when it closes. v0.5.0 EV: next, an open event panel (`world.ev.open >= 0`) holds the world the same way; only its `pick` applies (`Events.choose`: 1..n takes that choice, cancel is "Leave"). |
 | 1c | **Run-flow hold** (v0.3.0 B; v0.3.5 PT) | If the floor is over (`BossFlow` `EXITED`), the hero is going into the portal (`ENTERING`, `enter_ticks`: 60, or 24 with reduced motion) or arriving on a floor after the first (`arrive_left > 0`, `arrive_ticks`: 48, or 18): advance only that countdown (`BossFlow.advance_transit`: the way in turns `EXITED` after `enter_ticks`), increment `world.tick` and **stop**. The frame is ignored (no buffering), nothing moves, run time doesn't count. The run flow sets both lengths at setup (`set_transit`); views read the progress (`WorldReader.portal_enter_progress`, `arrival_progress`). `FLOOR_EXIT` is emitted once, as the portal takes the hero. v0.8.0 N11 (O69): every run floor opens with the arrival (the hero landing on the floor's receiver), its length data (`SimTuning.arrival_first_ticks` 96 on floor 1 of a run, `arrival_ticks` 48 later, `arrival_calm_ticks` 18 with reduced motion; `BossFlow.arrival_length`): nothing spawns, nothing acts and the hero can't be hit until it ends. The app holds the first tick until the loading cover has opened (`SimDriver.hold`). v0.8.0 fix (2026-10-17): the arrival's countdown runs ahead of phase 1b, so a Swap or choice opened while the hero arrives (the dev panel's grant lands between ticks) waits for the landing and never stops the arrival; the HUD (hidden until the landing) takes no Swap answer meanwhile. |
 | 2 | **Input** | Apply the `InputFrame` to the player: move intent, aim, held buttons, and new presses into the 6-tick buffer. |
 | 2b | **Interact** (v0.3.0 E) | A buffered `INTERACT` press within reach of an altar or chest opens it (`Rewards.interact`): a chest you can't afford stays shut; otherwise its offer is rolled once (loot stream) and the choice opens. v0.8.0 N7 (owner O61): a chest rolls one card (`Offers.CHEST_CARDS`) and deals it (`Rewards.deal`: the reward is `RewardStore.DEALT` while the world waits); phase 1b takes it on the next pick of any value (its price paid, its `PICKUP`, the card applied), so the panel's forecast reads the state before the take; a cursed chest (its curse card before its one card) is a choice as before. If it opened, increment `world.tick` and stop. Otherwise (v0.5.0 EV) a press within reach of a ready event pedestal (`Events.interact`) opens its panel (its choices' cards and curses rolled once, on `loot:event`); if it opened, increment `world.tick` and stop. Otherwise a press still buffered within reach of the shop terminal (v0.5.0 SH, `Shop.interact`) opens the shop (its stock drawn on the first open, from `loot`, by a chest's rules: `Offers.draw`); if it opened, increment `world.tick` and stop. Otherwise a press still buffered within reach of the gamble shrine (v0.3.0 L19, `Gamble.interact`) pays its price and grants one stat at once (loot stream, weighted over the stats under their cap), or records a refusal; the tick goes on. v0.8.0 N14 (owner O72): a paid use first rolls its failure (`fail_permille`, 300, on `loot:shrine:<use>`, one stream per paid use from the floor seed): a failed use is paid, grants nothing, emits `GAMBLE_FAIL` and sets `gamble_fail_tick`; every paid use steps the price up; a win counts toward `max_wins` (3), after which the shrine is spent and refuses. `gamble_wins` and `gamble_fail_tick` are saved and hashed (in the shrine's block, only once they differ from a shrine that never failed); a floor has a shrine with `floor_chance_permille` (400, on `map:shrine`), in a combat room that is not the start hall, the boss room or its host, the portal, Overrun or shop room or an arena (`Gamble.site`); a floor saved before N14 keeps its start-hall shrine. |
@@ -95,9 +95,8 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
 - **`pick: int`** (v0.3.0 E): the 3-card pick, delivered once like a press. `0` = none, `1..3` = take that card,
   `-1` = cancel (keep the altar or chest for later). The pick UI sends it through `InputLatch.note_pick`.
 - **Shop actions** (v0.5.0 SH) ride on `pick` while the shop is open: `1..4` buy that stock card,
-  `PICK_SHOP_HEAL = 20`, `PICK_SHOP_REROLL = 21`, `PICK_SHOP_SELL = 100` + the index in `Shop.sell_list` (mods in
-  pickup order, stat cards one entry per card code in first-taken order, abilities but the weapon in slot order),
-  `-1` closes. The shop panel sends them through `InputLatch.note_pick`. Prices, refunds and the rules are in
+  `PICK_SHOP_HEAL = 20`, `PICK_SHOP_REROLL = 21`, `-1` closes (v0.10.5 W3-O9: the retired 22, the curse lift, and
+  100 + n, selling, are refused like any unknown pick). The shop panel sends them through `InputLatch.note_pick`. Prices, refunds and the rules are in
   [`CONTENT_SCHEMA.md`](CONTENT_SCHEMA.md) §3 (Shop); a refusal (unaffordable, sold out, can't apply, nothing to
   do) changes only `ShopState.denied_tick`.
 - **The wand's reorder** (v0.6.5 WN1, §8e) rides on `pick` at any tick: `PICK_WAND_MOVE_BASE` (1000) + from × 16 +
@@ -218,6 +217,12 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   (`World.seed_value`) when a build-up reaches its peak, and draws two numbers from it: the peak's length, then the
   quiet's. No stream is stored (the cycle count is state), so the draws replay exactly after a resume and never move
   any other stream. A sub-stream of `ai` like `ai:room:k`; not in EI-05's list either (flagged with `map:ice`, D13).
+- **The Starbound streams (v0.10.5 W3-P10b (owner W7)).** `Starbound` derives, from the floor's seed
+  (`World.seed_value`), `loot:starbound:<loop>:<floor>:<reward id>` (one per regular altar: its chance of a Starbound
+  card, then which of the five by weight; `Starbound.offer_card`, a pure function, so the e2e can read it before the
+  altar opens) and `combat:starbound_echo:<tick>:<launch>` (Echo Cast's chance of its extra repeat, one draw per root
+  weapon launch, only when the chance is not whole). No stream is stored; nothing draws before loop 2, so no loop-1
+  draw moves (T3). Sub-streams of `loot` and `combat`; not in EI-05's list either (flagged with `map:ice`).
 - **Per-room generation seeds.** `FloorGenerator` derives one sub-seed per room from the `map` stream, so changing
   one room's template never shifts any other room.
 - The `cosmetic` stream lives in presentation (particle jitter, camera shake noise, pitch jitter). It is derived
@@ -322,18 +327,27 @@ is garbage-collected when its count reaches 0 and the queue holds none of its ev
    The Warden's armour is by the hit's direction against its facing: its front arc takes `front_mult_permille`
    (tag `ARMOURED`), its rear arc `rear_mult_permille` (tag `WEAK_SPOT`), the sides 1000. It never blocks (owner,
    2026-10-07). There is no flat per-hit reduction. Deathventory's flat Guard cut was regressive: it removed 50% of a 4-damage hit but only 9% of a 22-damage one (L7).
+   v0.10.5 O10 (owner P3; `Matchups`): then the kind's matchup: a player's direct hit whose attack carries the
+   enemy's `weak_to` form or element (the launch's or the landing spec's `modifier_ids` or `elements`) takes
+   `weak_permille` (tag `WEAK_TO`, bit 26), one carrying its `resists` id `resist_permille` (tag `RESISTED`, bit 27;
+   at least 1 when it had damage), both at once 1000. A damage-over-time tick of the player's takes the same by its
+   element (burn: `ember`, poison: `venom`, bleed: `bleed`). Normal enemy kinds only (not bosses or elites).
 4. Barrier absorbs first, then HP. `amount` is the request; `amount_applied` is what HP and barrier actually lost.
 5. Emit `DAMAGE`. If HP reaches 0 and the target is not already dead, mark it dead and emit **exactly one**
    `KILL`. Later lethal events against a dead target apply nothing.
 6. On-hit triggers then see the `HIT` (step 2 of the drain).
 
 **Stats and crit (v0.4.0 BS, owner F9; `Stats`).** A hit the player owns on an enemy first takes the damage stat
-(`amount × damage / 1000`, half up) and then, unless it is a DoT tick, one crit roll on the `crit` stream:
+(`amount × damage`, in thousandths of a point) and then, unless it is a DoT tick, one crit roll on the `crit` stream:
 `range_int(0, 999) < chance`, chance = the player's base (data: 5 %) + crit-chance cards, at most 750. A crit
-multiplies by the crit multiplier (base 1500 + crit-damage cards, at most 4000), half up, and tags `HIT` and `DAMAGE`
+multiplies by the crit multiplier (base 1500 + crit-damage cards, at most 4000), and tags `HIT` and `DAMAGE`
 with `TAG_CRIT` (bit 16, reserved since v0.0.1). This sits before step 2's attacker multipliers, so it applies to
 every player source alike: swings, bolts, skills, abilities, vents and item payoffs (chains, shockwaves, thorns).
-DoT ticks the player owns take the damage stat but never crit. A hit the player takes is cut by armour after the
+DoT ticks the player owns take the damage stat but never crit. **v0.10.5 W3-P9** (owner, 2026-11-04: "lets do only A
+then"): the whole points dealt are the thousandths plus a carried remainder, divided by 1000 (rounded down), the new
+remainder kept for the next one (`Stats.carry_hit`: `World.dmg_carry` for hits, `World.dot_carry` for DoT ticks), so a
+7.3 hit lands 7, 7, 8 … and averages 7.3 exactly; a × 1.00 hit leaves the carry alone. Enemy damage is unchanged
+(it never passes `Stats`). A hit the player takes is cut by armour after the
 target multipliers (`× armour / 1000`, at least 1). Cards stack multiplicatively per card in per mille (two +10 % =
 1210) within their caps, except an `additive` card (**v0.8.0 SG**, owner O91: damage, attack speed and Glass Cannon;
 two +10 % = 1200). The damage multiplier is one additive bucket, `(DAMAGE + ONRUSH while moving + Hoarder's bonus) ×
@@ -342,13 +356,41 @@ Attack speed has one rule (`AttackRate`): the raw bonus = `ATTACK_SPEED − 1000
 `rate_bonus_permille` (a negative one counts); the effective bonus counts it in full up to `attack_speed_knee`
 (500), at `attack_speed_slope` (500 ‰) up to `attack_speed_knee2` (1500), at `attack_speed_slope2` (250 ‰) above
 (`SimTuning`, `data/tuning/sim.tres`); the rate `1000 + effective` (at least 1) then takes Heavy Hands' cut. The Gun's
-period is `base × 1000 / rate` half up (at least 2 ticks once changed), the Blade's whole swing (hit tick, sweep,
+period is `base × 1000 / rate` (at least 2 ticks once changed), kept in thousandths of a tick
+(`ItemEffects.shot_period_milli_of`; W3-P9): each shot sets its cooldown to that plus the carried remainder
+(`World.shot_carry`) in whole ticks (`ItemEffects.next_shot_cd`), so the shots average the exact period; the HUD and
+`shot_period_ticks` show it rounded half up, the wand forecast's damage a second uses the exact one. The carries are
+hashed once any leaves 0 (after `shot_cd`) and saved; an older save has 0. The Blade's whole swing (hit tick, sweep,
 recovery) scales by the same rate (at least `rate_min`), the drone's period reads the stat alone. A save made before
 SG (`World.stat_rules` 0) rebuilds DAMAGE, ATTACK_SPEED and GLASS_CANNON from `stat_cards` and the gamble stacks on
 load (`Stats.migrate_rules`). The other stats are read where the sim computes them (cooldowns: dash, skill, blink,
 bombs; attack speed: shot period, drone period, the Blade's swing; area: swing and cleave reach, vent radius, ability
 radii; move speed; shard gain; pickup range: reward, shrine and pickup reach; regen: per mille of max HP per second,
 in and out of combat). Worlds whose player has no crit and no cards (the kernel goldens) never roll.
+
+**The loops lift the caps (v0.10.5 W3-P10a, owner W7;
+[`W3_W7_LOOP_POWER_G1.md`](../roadmap/v0.10.5/W3_W7_LOOP_POWER_G1.md) A1–A5).** Loop 1 is unchanged; from
+`World.loop` 2 the caps are the loop's (`Stats.cap_of`, read by the step, `at_cap`, the crit reads and the card
+forecast):
+- **Double crit (A1).** The crit-chance cap is 2000 (`CRIT_CHANCE_CAP_LOOPS`). Still one roll on the `crit` stream
+  per hit (`range_int(0, 999)`): a chance up to 1000 works as before; past 1000 every hit crits, and a roll
+  `< chance − 1000` is a **double crit**: the crit multiplier twice (`crit_mult² / 1000`), at most 10000
+  (`DOUBLE_CRIT_MAX`, `Stats.double_crit_mult`), tagged `TAG_CRIT` and `TAG_DOUBLE_CRIT` (bit 29) on `HIT` and
+  `DAMAGE`. Its damage number is the crit's, 25 % bigger, ice-white `#CFE4FF` with a thin ink `#0E131C` edge
+  (`DamageNumbers`); nothing else new in the world.
+- **Crit damage (A3).** The crit multiplier's cap is 6000 at loop 2 and 8000 from loop 3 (4000 in loop 1).
+- **Haste overflow (A4).** The attack-speed stat has no cap. The curve's top is `attack_speed_knee2` (raw 1500:
+  effective +1000, the rate +100 %; `AttackRate.top`), where loop 1's 2.5 cap sits. The stat's raw bonus past it adds
+  no rate (`AttackRate.rated` holds the stat at `1000 + top` for every rate read, the catch-up's too) and goes into the
+  damage bucket instead: + 10 ‰ per full 20 ‰ past the top (`AttackRate.overflow_at`, `Stats.haste_damage_at`, in
+  `Stats.bucket_at`, so hits and DoT ticks take it with the damage stat). An attack-speed card's forecast past the
+  top also gives the bucket before and after (`CardForecast` `dmg_old`, `dmg_new`).
+- **Deeper chains (A5).** The deepest hook level is `Attacks.hook_depth(w)`: 2 in loop 1, 3 at loop 2, 4 from loop
+  3 (`MAX_HOOK_DEPTH_LOOPS`). The compile builds that deep (`WandCompile.max_depth`, `Modifiers.inherit`; the Nemesis
+  copy stays at 2), the run-time guards (`Attacks.run_hook`, `Remnants`) and the wand read (`Wand.read` "depth":
+  `flags`, `describe`) read it, and `RunState.prepare` drops the cached book from loop 2. The proc keeps halving
+  (100 → 50 → 25 → 12 → 6); `MAX_LAUNCHES_PER_TICK` (256) and ShotCap are unchanged.
+- Overlevels (A6) are unchanged.
 
 **Abilities (v0.4.0 BS, owner F8; `Abilities`).** Auto abilities run in phase 6, after the projectile sweeps, so
 `World.enemies_near` can use the uniform grid of this tick's bodies; their hits carry `TAG_ABILITY` (bit 24) and an
@@ -419,7 +461,7 @@ one's ops in order (**v0.6.5 WN1: replaced by the wand's left-to-right slot orde
 spec only if the spec carries every tag of its `target` (empty = all).
 Ops: `SET`, `ADD`, `MAX`, `MIN`, `MUL_PERMILLE` (integer fields stay integers: `c × v / 1000`), `SET_FORM`,
 `STATUS` (the last op in pick order sets a status's stacks and `every`), `ELEMENT` (appended once), `HOOK` (a child
-spec built from the op and compiled through every modifier at `depth + 1`; none at depth 2). **Form layering**
+spec built from the op and compiled through every modifier at `depth + 1`; none at depth 2, the loop's depth from v0.10.5 W3-P10a, §8). **Form layering**
 (design §2, owner B8): the first `SET_FORM` sets the form; each later one never replaces it but adds an `ON_END`
 hook whose child is a copy of the spec in the new form, compiled through the stages after `FORM`. **Riders** keep two
 v0.5 rules exact: a weapon step's hits burn whenever the burn engine runs (Wildfire, Flame Trail's borrowed engine),
@@ -449,7 +491,8 @@ of one launch); `ON_NTH` when an Nth combo step resolves (Overcharge's shockwave
 resolves, from where it ends. A player projectile's hit runs the bolt spec's `ON_HIT` hooks (MX1: a projectile does
 not carry its spec, so every player projectile reads the Gun bolt's, which is v0.5's Static Chain rule); an `every`
 there counts landed bolts on `World.chain_count`, at most once per root (`World.chain_root`). Every hook launch goes
-through `Attacks.run_hook`: its child runs at `depth + 1` (at most `MAX_HOOK_DEPTH` = 2) with half the parent's proc
+through `Attacks.run_hook`: its child runs at `depth + 1` (at most `MAX_HOOK_DEPTH` = 2; v0.10.5 W3-P10a (owner W7):
+the loop's `Attacks.hook_depth`, 3 at loop 2 and 4 from loop 3, §8) with half the parent's proc
 coefficient, so `HIT.proc_pct` is 100 for a root attack, 50 for a hook's attack and 25 below that (`Damage.hit`'s new
 `proc_pct` argument; `DAMAGE` keeps 100, `DOT` 0); a hook never runs while its own id is in `World.hook_chain`
 (ancestry; empty between ticks); at most `MAX_LAUNCHES_PER_TICK` = 256 launches run in one tick, then one `LIMIT`
@@ -586,7 +629,7 @@ Overclock). A hook op's `hook_ops` shape the child before the build compiles it 
 an element). A bolt child of an arc is a crescent as wide as the arc; a bolt child of a hit leaves from past the enemy
 it hit. **Lineage** is the ancestry guard at compile time: a modifier never adds its hook to a spec its own hook made
 (Split Shot's splits never split, Cluster Payload's bomblets never split, Aftershock never blasts its own blast); the
-run-time guard is unchanged (depth ≤ 2, proc 100 → 50 → 25, `World.hook_chain`, 256 launches a tick).
+run-time guard is unchanged (depth ≤ 2, the loop's from v0.10.5 W3-P10a §8, proc 100 → 50 → 25, `World.hook_chain`, 256 launches a tick).
 
 **A form change keeps the attack's reach** (`SpecForms.change_form`, the first `SET_FORM` and every layer): the range
 the spec had (an arc's reach, a bolt's speed × life, a ring's, burst's or zone's radius, a beam's or lob's reach)
@@ -729,7 +772,7 @@ last step's `ON_HIT`; no other spec gets a child but the cut still ends it) and 
 `World.last_hit_crit`, which `Damage.hit` sets as it returns). A trigger reaches every spec built to its left (an
 earlier Split card's splits get the cut too). A second trigger nests once more: the attack at depth 0, its child at
 1, the child's child at 2; a third casts nothing and the cards past it reach nothing. The run-time guard is §8b's:
-depth ≤ 2, proc 100 → 50 → 25 (v0.6.5 WN1: a hook's projectile now carries it on its `HIT` too,
+depth ≤ 2 (the loop's from v0.10.5 W3-P10a, §8), proc 100 → 50 → 25 (v0.6.5 WN1: a hook's projectile now carries it on its `HIT` too,
 `Attacks.projectile_proc`), the ancestry chain, 256 launches a tick. A spec the trigger's target doesn't reach (the
 moments: the dash, walking, a blink, the body) reads past it, so a dash card right of a trigger still rewrites the
 dash. No randomness is drawn (EI-05).
@@ -907,6 +950,7 @@ a burst; its child drawn ember). Each levels 1–5 (§8f's `CardLevels`). Everyt
 while the player moves (`World.move_intent` not zero, or dashing) the bleed ticks every `min(bleed_period,
 bleed_move_period)` ticks, else every `bleed_period`; a bleeding enemy's countdown is clamped to the moving period
 when it applies. Without the card the bleed is v0.5's exactly.
+**Deep Wounds (v0.10.5 W3-P10d).** While the run holds the Constellation (`Constellations.DEEP_WOUNDS`), a stack cap that exists is lifted (`ElementLevels.bleed_cap` 20, `poison_cap` 15, `burn_cap` 10; every stack add reads these, never `item_mods.*_max_stacks` directly; a run without the element still has none) and each bleed, venom and burn DoT tick deals x1.25 (`ElementLevels.deep_dot`, 1250 per mille, rounded half up, before `Stats.dot`). Exsanguinate's burst waits for the lifted bleed cap, and (W3-P10k) deals x1.25 too: each tick it deals at once is `deep_dot` of the stacks' tick damage. Without the Constellation nothing changes.
 
 **Order fixes the shared cards needed** (WN1's known limits):
 - **Riders** (§8b) ride only on an engine something outside the wand runs: an owned item that is not a wand card
@@ -957,9 +1001,9 @@ then held retired cards outside a slot) are read; a retired card becomes its row
 (`WandTable.migrate_blade` / `migrate_gun`, by id) in its place in the wand; a target already held, or met twice,
 levels up instead: the levels add (an ability its level, a `LEGENDARY` item `CardLevels.MAX_LEVEL`, any other card 1),
 at most 5. A card without a match (an empty target, or a target not in the data yet: S5 `shared_bleed` and S7
-`shared_explosive` until WN5a merges) is refunded as shards, the shop's salvage price on this floor (`ShopTable.sell_price` by its rarity for an
-item; `ability_refund_per_level` × its level for an ability; `Shop.sell_list`'s numbers). The old card leaves as a sale
-does (`Shop.remove_item` with its combos; `Abilities.remove_slot`). Deterministic, idempotent, no randomness; a world
+`shared_explosive` until WN5a merges) is refunded as shards, the shop's old salvage price on this floor (`WandMigration.refund_of`: an item 400 ‰ of its
+rarity's price under the floor step alone; an ability 10 × its level; the numbers salvage used until v0.10.5 W3-O9).
+The old card leaves as a sale did (`Shop.remove_item` with its combos; `Abilities.remove_slot`). Deterministic, idempotent, no randomness; a world
 without `World.wand_table` (a lab) changes nothing. A wand that ends up larger than the floor's slots keeps every card
 (§8e). The payload stays version 4: the migration reads the content, not the version. v0.6.1 snapshots (payload 3)
 lacked `World.tuning` (the dev panel's Step 6); it is in `WorldSnapshot.ADDED_SINCE_V05` now (the base's loadout), so
@@ -1164,6 +1208,130 @@ extra draw on `loot`).
   floor, in `WorldSnapshot.ADDED_SINCE_V05` (an older save: 0 and none). Economy unchanged: reward counts, prices and
   shards. The Overrun's ability cards and the Deep epic altar's ability level-ups and epic stat cards hold no wand card,
   so pacing does not reach them.
+- **Element ceilings (v0.10.5 W3-P2; the progression audit's P2).** An element card (category ELEMENT) also stays
+  below `LootPacing.element_ceiling` (`element_ceilings` by loop-1 floor, data 1/2/2/3: Lv 1 on floor 1, Lv 2 on
+  floors 2-3, Lv 3 from floor 4; `element_ceiling_loops`, data 3, from loop 2), on top of the stage's.
+  `CardLevels.can_take(w, idx, ceiling, element_ceiling)`: the boss's upgrade passes the next floor's
+  (`element_ceiling(w, 1)`), the jackpot one past this floor's (and an element at its own ceiling, `ceiling_of`, is a
+  jackpot card); a `ceiling` given alone holds for elements too (the dev panel's `MAX_LEVEL` grant). A held card above
+  its ceiling (an older save) keeps its level; it is only not offered again. Stateless: nothing new saved or hashed.
+- **Elements stack with falloff (v0.10.5 W3-P1, P1; `ElementStack`).** The hero's element damage on an enemy that
+  carries k other elements counts at `ElementPairTable.stack_falloff_permille[k]` (data 1000/700/500/350, k = 0..3+),
+  times the element card's `el_level_permille` at its level (P2). Carried: Fire burning, Venom poisoned, Bleed
+  bleeding, Frost frost stacks or frozen, Lightning shocked or charged (W3-P1b: a hero Lightning hit charges its enemy
+  for `storm_mark_ticks`, data 1 s, `ActorStore.charged_t`; the Storm card leaves no status of its own). An element's
+  damage: its status ticks (`Damage.tick_dot` by its element, Exsanguinate's burst), its hits by effect id
+  (`ember_core` ground, `storm_core` chain, `storm_strike`, `frost_shard`; `Damage.hit` after Sepsis, before the
+  target's multiplier), the bonus part of Heat sync and Frostbite, and (W3-P1b) Thermal Break's hit, counted as Fire's
+  with k read before the break consumes the burn and the frost. Rounded to nearest, a hit that had damage keeps 1. Pair
+  rules (X1-X10) unchanged. Only with `World.pair_table`. State (W3-P1b): the charge clocks, saved (an older save loads
+  uncharged) and hashed only while an enemy is charged.
+
+## 8n. Constellations (v0.10.5 W3-P10c; owner W7, [`W3_W7_LOOP_POWER_G1.md`](../roadmap/v0.10.5/W3_W7_LOOP_POWER_G1.md) §C, Q2, Q3)
+
+v0.10.5 W3-P10c (owner W7): one rule-breaker a loop, `Constellations` (`src/sim/run/constellations.gd`).
+- **The pick.** When the run enters a new loop (`RunState.finish_floor`, the Loop device), `Constellations.offer`
+  draws up to 3 ids the run may still take, without repeats, on the named stream `constellation_<loop>` of the run
+  seed, and writes them into the carry (`RunCarry.OFFER`); the loop's floor 1 opens with them
+  (`World.constellation_offer`). The ids: Prism 1, Twin Star 2, Glass Sky 3, Starfall 4, Deep Wounds 5, Supernova 6,
+  Hunter's Sky 8 (7, Gravity Well, dropped). A run holds each once, Prism twice at most (`PRISM_MAX`); fewer than 3
+  left offers what is left, none left opens no pick. Owner Q2 ("when you get to the new loop you get a free
+  selection"): free. Owner Q3 ("can not be rerolled"): no reroll, no skip.
+- **The tick.** Phase 1a, after the freeze check and before the rewards' choice: while an offer is open and the hero
+  has landed, the world runs only `Constellations.choose`; `InputFrame.pick` 1..n takes that card, anything else
+  (`PICK_CANCEL` included) waits; the tick still counts. A pick appends the id to `World.constellations` (pick order;
+  carried, `RunCarry.FIELDS`) and closes the offer.
+- **State, save, hash.** `World.constellations` and `World.constellation_offer` are in the world snapshot's list
+  (an older save holds none; no migration, owner 2026-11-05). Hashed (`Constellations.hash_into`: both sizes and
+  ids) only once either holds an id, so a loop-1 world hashes as before.
+- **C1 Prism.** A Gun run's Element limit (`AttackSlots.limit`, data 2) + 1 per Prism held (2 → 3 → 4), so a third
+  and fourth element, and the pairs they make (`ElementPairs.mask` follows the held elements). A run without an
+  Element limit (the Blade's): the W3-P1 falloff (§8m, `ElementStack.falloff_permille`) counts k, the other elements
+  on the enemy, as `k − prism_falloff_steps × Prisms` (at least 0); `ElementPairsDefinition.prism_falloff_steps`,
+  data 1 (0..3): one Prism makes 700 / 500 / 350 read 1000 / 700 / 500.
+- **C2 Twin Star.** Each overlevel's step × 2 (`CardLevels.overlevel_permille`: + 150 → + 300 per mille an
+  overlevel), which the compile and the pick card's forecast both read; the pick recompiles the wand.
+- **C3 Glass Sky.** The hero's damage multiplier × 2 (`Stats.damage_at`: every hit and damage-over-time tick the hero
+  owns, and the forecasts that read it) and max HP × 0.5 (`Stats.max_hp_at`, after the curses and the shrine, at
+  least 1). At the pick the max HP falls by the difference and HP is clamped into 1..max.
+- **C8 Hunter's Sky.** The hero's hits (`Damage.hit`, after the target's multiplier and the matchup) and
+  damage-over-time ticks (`Damage.tick_dot`) on an elite (`EliteAi.is_elite_kind`) or a boss (`BossAi.is_boss_kind`)
+  × 1.5, rounded to nearest.
+- Starfall (and Meteor), Deep Wounds and Supernova are offered by this pick; their effects are their own steps'.
+- Presentation: `ConstellationPanel` (the pick's look on the owner's violet Constellation frame and back, icon
+  `icon_const_<name>.png` else `icon_unknown`; mouse, keys, pad; a cancel passes on to the pause menu) and the Build
+  page's held line, both through `WorldReader.constellation_open / constellation_offer / constellations`.
+
+## 8o. Starbound cards (v0.10.5 W3-P10b (owner W7))
+
+The loop-only card kind ([`W3_W7_LOOP_POWER_G1.md`](../roadmap/v0.10.5/W3_W7_LOOP_POWER_G1.md) §B, B0–B5, V1–V3,
+C6, T3). Code: `Starbound` (src/sim/abilities); data: `StarboundDefinition` (CONTENT_SCHEMA §8); every number is a
+starting value.
+
+- **The card.** An `Offers` code of its own, `STARBOUND_BASE (4000) + k`, type `Offers.STARBOUND`, k in
+  `StarboundDefinition.CARDS` order (Arc Jump 0, Rising Edge 1, Echo Cast 2, Fervour 3, Detonation 4). Both weapons;
+  no slot, no swap, no level cap: each pick adds one stack (`World.starbound`, five counts, empty until the first
+  pick; run-long through `RunCarry`). Taken through the normal pick (`Rewards.choose` → `BuildSlots.take`). Never in
+  a chest, the shop, an epic or a boss altar.
+- **The offer (B0).** `Offers.roll` of a regular altar, after the guarantee and the jackpot: from loop 2
+  (`World.loop >= 2`), with `RewardTable.starbound_permille[loop - 2]` (the last entry for later loops; data 200 at
+  loop 2, 300 from loop 3), one card of the offer is a Starbound card (the five by `weight`), drawn on the altar's
+  own stream (§5): in place of the last card that is neither the leading fresh ability, the only compatible card nor a
+  jackpot card, or appended to a short offer.
+- **C6 Supernova.** `Starbound.stacks(w, k)` is the one read every rule uses: the picks, × 2 while
+  `Constellations.has(w, Constellations.SUPERNOVA)`.
+- **B1 Arc Jump.** The first direct hit of a root of the player's (`Damage.hit`, landed, on an enemy: no effect id,
+  proc 100, melee or projectile, not a DoT; W3-P10k: one chain a root, as every proc: `World.starbound_jump_roots`
+  keeps the last `Starbound.JUMP_ROOTS_MAX` (16) roots that jumped, saved and hashed; root 0 always jumps) jumps `amount × stacks` times: each to the nearest living non-player actor whose body is
+  within `reach_m` (4 m) of the actor just hit and that this chain hasn't hit (ties: the lower index), at
+  `share_permille` (700) of the jump before (the first: W3-P10k, of the hit's amount before any of the struck enemy's own multipliers: after the damage stat
+  and the crit, without its Stress Mark side, weak spot or armour, boss challenge, matchup or Hunter's Sky, and not
+  clamped to its HP; integer, down). Each jumped-to enemy applies its own multipliers once (`Damage.hit`).
+  A jump is a hit with effect `starbound_arc_jump` and no tags: already scaled (no damage stat, no crit), in
+  `Engines.PAYOFFS` (no status), and never a direct hit, so it never jumps again. The chain stops at a 0 damage or
+  when no new enemy is in reach.
+- **B2 Rising Edge.** Each landed player crit adds 1 to `World.starbound_crits` (at most `cap / amount`, 50);
+  `Stats.crit_mult` adds `min(crits × amount, cap) × stacks` (+3 % a crit, at most +150 % a stack) after the
+  crit-damage cap. W3-P10k: `CatchUp.power` reads `Stats.crit_mult` without it (`Starbound.crit_bonus`), so the room
+  count never raises a boss's HP (Fervour's haste never reached `CatchUp.rate_permille`).
+- **B3 Echo Cast.** A root weapon launch (`Attacks.launch`: depth 0, not a repeat nor a back copy, a `weapon` spec:
+  the Gun's shot, each Blade step) repeats: `amount × stacks` per mille (+25 % a stack), each whole 1000 a sure repeat
+  and the rest one draw for one more, at most `cap` (3). `ModifierRuntime.queue_again` queues them as Twin Cast's
+  repeats: the whole damage, `REPEAT | SECONDARY`, from where the player is then, the first `Starbound.ECHO_DELAY_TICKS`
+  (10) later and each next `REPEAT_GAP_TICKS` after; a repeat never repeats. W3-P10k: a repeat keeps its launch's
+  Lance charge (`size_permille`, `lance_full`) and Blade combo step (`ctx.step`), packed into its queue flags
+  (`ModifierState.FLAG_LANCE_FULL`, `STEP_SHIFT`, `SIZE_SHIFT`), and is marked `FLAG_ECHO_CAST`. On a Gun run, a
+  repeat whose volley gets no room from `ShotCap.room` (the per-second extras budget full) is not dropped: its damage
+  (per-shot damage × shots, raw) is added to `World.starbound_echo_carry` (saved, hashed, at most 2^30), and the
+  player's own next shot takes it all (`Attacks._bolts`: the first shot of the next root volley; `WandRings.launch`:
+  shared by the rings that fly). Twin Cast's repeats keep the old rule (dropped).
+- **B4 Fervour.** Each player kill adds 1 to `World.starbound_kills` (at most 30); `AttackRate.rate_at` adds
+  `min(kills × amount, cap) × stacks` per mille (+2 % a kill, at most +60 % a stack) to the raw bonus before the curve,
+  so it counts toward the overflow past the curve too.
+- **The room reset.** Tick phase 9, after the arenas, while either counter is above 0: when no arena or Lockdown is
+  sealed, the hero stands in a room (`FloorLayout.room_of`) and no living non-player actor is in that room's rect
+  (grown by `Arenas.ROOM_MARGIN_M`; a world without a layout: none alive anywhere), both counters go to 0. W3-P10k:
+  between rooms (a corridor or a doorway) the counters go to 0 when no living non-player actor's body is within
+  `Starbound.CORRIDOR_CLEAR_M` (10 m, a starting value) of the hero nor inside any room whose grown rect holds the
+  hero, so a corridor no longer freezes them. A new floor starts at 0 (not carried).
+- **B5 Detonation.** A player kill of actor i (`Damage._apply`) bursts at its position for
+  `max_hp[i] × amount × stacks / 1000` (20 % a stack) on every living non-player actor whose body is within `reach_m`
+  (2 m), bosses and elites (`BossAi.is_boss_kind`, an elite kind or an elite of `World.elites`) at `share_permille`
+  (500) of it (at least 1). A burst is a hit with effect `starbound_detonation` and no tags (already scaled, no status,
+  no jump). A burst's kill queues the next burst; the queue drains inside the first kill's call (`World.sb_burst_*`,
+  transient, empty between hits). At most `Starbound.BURSTS_PER_TICK` (24) bursts a tick (`World.starbound_bursts`
+  counts the asked ones per `starbound_burst_tick`); past it the burst is dropped, and the first one dropped leaves
+  one LIMIT event (effect `starbound_burst_cap`, amount 24).
+- **What the view reads (V1–V3).** `World.starbound_fx_*` (kind `FX_BURST` / `FX_JUMP`, its tick, from, to; the last
+  96, never hashed; `WorldReader.starbound_fx`). AttackFormView draws a burst as the hook blast (BlastLook's W3
+  size) tinted moon-blue `#8FB8E8`, no particles, no flash, no shake, at most 8 a frame; a jump as a thin moon-blue
+  line for 0.15 s, at most 16 a frame. Rising Edge, Echo Cast and Fervour draw nothing in the world: the HUD's buff
+  row (`StarboundHud`) shows the crits, the stacks and the kills. The pick shows a Starbound card on the owner's gold
+  frame and back (`AstralCardArt.STARBOUND`; no focused twin, the game's own focus look), its kind line
+  (`STARBOUND_KIND`) and its stacks as the level badge.
+- **State.** `World.starbound`, `starbound_crits`, `starbound_kills`, `starbound_burst_tick`, `starbound_bursts`:
+  saved (an older save holds none, `ADDED_SINCE_V05`) and hashed only once a card was taken (`Starbound.hash_into`),
+  so every loop-1 world hashes as before (T3). `World.starbound_tables` is loadout.
 
 ## 9. What presentation receives
 
@@ -1268,7 +1436,7 @@ Starting values; `EnemyAi` and `BossAi` hold the rules, `data/enemies` and `data
   still stops the tick it touches the player. Walkers face the player on their plan ticks and as they attack; the
   Warden turns every tick (its facing is its armour). Timers, windups, tracking and hits still run every tick. The
   plan fields are hashed with the other AI fields.
-- **The flow field (v0.4.0 SC).** One flood a `NavField.PERIOD` (10 ticks) from the player for every enemy, stopped
+- **The flow field (v0.4.0 SC).** One flood a `NavField.PERIOD` (12 ticks, 0.2 s; v0.10.5 S3, was 10) from the player for every enemy, stopped
   `NavField.WORLD_FLOOD_STEPS` (160 half-metre steps, ~80 m of path) out, and skipped when the player is still in
   the cell of the last flood (the walls don't change between builds, so the result would be the same). An enemy past
   the bound walks straight until it is back in reach. **v0.8.0 NF (owner O90, "A then"):** the periodic flood is
@@ -1480,10 +1648,11 @@ Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; al
   only the wall grid is rebuilt, never the flow field) and sets the field's extra cells again before its last flood
   is copied, so a restored fight steps exactly as the uninterrupted one (`test_boss_signatures.gd`).
 - **S4, the Hive Lens's Gaze (v0.8.0 BS2; `BossGaze`).** A new move, `gaze` (`BossAttackTable.Move.GAZE`, appended).
-  As its windup begins the beam's start angle is the angle to the player + 2048 (straight away; `actors.lock_a`) and
-  the ai stream picks the way it will turn (`BossStore.span`, ±1); every windup tick the start re-aims straight away
-  from the player, so on its first active tick the beam points away from where the player stands (it never starts
-  on you). Active tick `st`: its angle is `lock_a + way × along × 1024 / quarter_ticks` with `along` a triangle wave
+  As its windup begins the ai stream picks the way it will turn (`BossStore.span`, ±1), then the beam's start angle
+  is the angle to the player − way × `BossGaze.LEAD` (455, 40°; `actors.lock_a`): behind the player in its turn
+  (v0.10.5 W3-O2, owner F20; before it, the angle to the player + 2048, straight away). Every windup tick the start
+  re-aims so, so on its first active tick it never starts on you and its first sweep comes through where you stand
+  about `LEAD × quarter_ticks / 1024` ticks later. Active tick `st`: its angle is `lock_a + way × along × 1024 / quarter_ticks` with `along` a triangle wave
   of period `reverse_ticks` (`st % reverse` out, then back: integer maths), so it turns a quarter turn every
   `quarter_ticks` and reverses every `reverse_ticks`. The beam is a lane from the boss's edge along that angle, as
   long as `length_m` unless `EnemyAi.clear_run` (radius `half_width_m`) stops it on a wall (walls, pillars, the
@@ -1820,6 +1989,8 @@ PLAN NB: "Keep the empty hood" (no head lanterns: the room's edge lanterns and t
   `KIND_LANTERN_SHADE`. The darkness drawn is the view's (`ShadeViews`); the dark never hides a marker (the dark
   pass draws before every see-through thing), and a Shade wisp within 4 m of the player always shows its outline.
 
+**Starfall and Meteor (v0.10.5 W3-P10e; owner W7: "Starfall ... evolves into a every 5 attack a meteor falls from the sky into the enemies", Q5 "fire lv3 ok"; `Starfall`, `src/sim/items/starfall.gd`).** With the Starfall Constellation held, every 5th crit of the hero (`World.starfall_crits`, counted in `Damage.hit` after the hit landed) drops a star on the nearest other living enemy (squared distance, ties the lowest index) for 100 % of the amount that crit dealt (W3-P10k: before the crit target's own multipliers, as Arc Jump's first jump, so the star's target applies only its own). The star is a hit with `EFFECT_STAR`, already scaled like a splash: it skips `Stats.outgoing`, so it never rolls a crit and never counts toward the five. Holding Fire (`ember_core`) at Lv 3 or more (`ElementLevelsFsf.level`) replaces the star with Meteor: every 5th root attack (`World.meteor_attacks`; a Blade swing's start or a Gun shot's release in `PlayerKit`, never a repeat, child or hook) picks the enemy within 8 m with the most other enemies within 2.5 m (ties the lowest index), and 24 ticks later (`World.meteors`, 4 ints each: land tick, base hit, x mm, y mm; saved) every enemy within 2.5 m of where it stood takes 300 % of the attack's base hit as a normal player hit (its own crit roll, the damage stat; `EFFECT_METEOR`, ascending index) and gains one burn stack. Events for the view: `STAR`, `METEOR_LAUNCH`, `METEOR_LAND` (appended `SimEvent.Kind`s). The counters and the pending list are hashed only once any is non-zero, so a run without Starfall hashes as before.
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×
@@ -1924,6 +2095,19 @@ PLAN NB: "Keep the empty hood" (no head lanterns: the room's edge lanterns and t
   what or how strong. The player gets no cue (owner: "the enemies are the real indicator"); `WorldReader.
   has_intensity`, `intensity` (0..1000), `intensity_mode`, `intensity_timer` exist for the dev panel (F10's Tools page:
   `DevPanel.intensity_text`).
+  **v0.10.5 O4 (owner D46, "Read your state live").** The quiet ends on its drawn time (it no longer waits for
+  `level ≤ relax_level`; on its end `level` drops to `relax_level` at most), and the first pack of the build-up waits
+  one build-up interval (`spawn_cd`). Every director tick `Intensity.count_kills` adds the kills since `kill_seen` to
+  the current one-second slot of `kill_ring` (`KILL_SLOTS` = 10; `ring_ticks` counts the ticks counted: only live
+  ticks outside `QUIET`; the first read only syncs), then `read_standing` sets `standing`: `STRUGGLING` when HP <
+  `struggle_hp_permille` of max, or with a full window, at least `slow_min_alive` enemies alive and window kills <
+  `slow_kill_permille` of the expected (`cap_now × expected_kill_permille / 1000`); `STRONG` when HP >
+  `strong_hp_permille` and (no full window yet, or kills ≥ the expected); else `BETWEEN`. Struggling: `BUILD_UP` peaks
+  at `struggle_peak_level`, the `PEAK` timer runs `struggle_peak_speed` ticks a tick, a `QUIET` begun while struggling
+  lasts `quiet_len × struggle_quiet_permille`, and `SpawnDirector` caps a pack at the row's largest (fixed pack or
+  `pack_max`) − `struggle_pack_cut`, at least 1 (`Intensity.pack_size`). The new fields are hashed and snapshotted
+  (`ADDED_SINCE_V05`: an older save starts with an empty window); `WorldReader.intensity_standing`; the dev panel adds
+  "struggling" or "strong".
 - **Boss phase gates (v0.5.5 DS, owner D7: mechanics HP can't skip).** Every boss has three phases at 1000 / 660 /
   330 ‰ of max HP (data). Damage on a boss stops at the next phase's threshold (`BossGates.clamp_damage` in
   `Damage._apply`, so a hit, a DoT tick or a burst all stop there; only the world's own hits, owner 0 such as the dev

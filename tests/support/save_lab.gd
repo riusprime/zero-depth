@@ -90,8 +90,10 @@ static func build_floor(
 	w.wand_table = WandCompiler.for_run(repo, run.table)  # v0.6.5 WN1, v0.9.0 FV, as Main
 	w.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4, as Main
 	w.slot_table = WandCompiler.slots(repo, w.item_tables)  # v0.9.0 AS, as Main
+	w.pair_table = WandCompiler.pairs(repo)  # v0.9.5 EE3, as Main (FloorPlan)
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)
+	w.starbound_tables = ContentCompiler.compile_starbound(repo)  # v0.10.5 W3-P10b, as FloorPlan
 	w.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB, as Main
 	w.legendary_table = RunContentCompiler.compile_legendary(
 		repo.get_def(&"legendary", &"boss"), w.stat_tables, w.item_tables  # v0.5.5 AR (X1b), as Main
@@ -105,7 +107,11 @@ static func build_floor(
 	# v0.5.0 EV, as Main: event rooms and curses after the heat (v0.8.0 N17: an older save's floor keeps its rooms;
 	# v0.9.0 EL: and the retired event's weight)
 	EventCompiler.setup(
-		w, repo, FloorScenario.curse_room_rules_of(run), FloorScenario.retired_events_of(run)
+		w,
+		repo,
+		FloorScenario.curse_room_rules_of(run),
+		FloorScenario.retired_events_of(run),
+		FloorScenario.rare_events_of(run)
 	)
 	FloorPlan.add_secrets(w, repo, run, table.move_speed)  # v0.9.0 TD, RA, DX, as Main
 	CollectibleBook.arm(w, run, CollectibleBook.defs(repo), biome.id)  # v0.9.0 CL, as Main

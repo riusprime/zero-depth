@@ -1,7 +1,7 @@
 extends GutTest
 ## v0.9.0 BR (owner Q13 "12 per attack": "At most 12 projectiles per attack (pattern × Twin × Split children) … a
 ## regression test fails above 40 projectiles a second for the worst legal build"; PLAN C75, C76): the caps of
-## ShotCap held by every Gun form (data/wand/attack_slots.tres, its ten rows) with every Pattern (Twin, Halo, Ring,
+## ShotCap held by every Gun form (data/wand/attack_slots.tres, its nine rows) with every Pattern (Twin, Halo, Ring,
 ## Backfire) and the shot Secondaries (Spiral, Swirl) its row allows, all at level 5, at the top attack speed (20 Epic
 ## Attack Speed cards, the stat's cap) on a Gun run, holding fire at a wall of tough dummies (the Lance tapping, its
 ## fastest release). The table is read from the data: a card is in a form's builds when AttackSlots.usable says so.
@@ -10,14 +10,13 @@ extends GutTest
 ## Laser is a beam (it launches no projectile, laser.gd) and is checked to stay at 0.
 
 const W := preload("res://tests/support/mx4_world.gd")
-## The ten forms: [row id, form card (&"" for the Orbs, the Gun's own shot)].
+## The nine forms (v0.9.5 BR: the Bomb is retired): [row id, form card (&"" for the Orbs, the Gun's own shot)].
 const FORMS: Array = [
 	[&"orbs", &""],
 	[&"laser", &"gun_laser"],
-	[&"bomb", &"gun_bomb"],
 	[&"void", &"gun_void"],
 	[&"lance", &"gun_lance"],
-	[&"scatter", &"gun_scatter"],
+	[&"rune_explosion", &"gun_rune_explosion"],  # v0.9.5 FC0: replaces the Scatter
 	[&"glaive", &"gun_glaive"],
 	[&"seekers", &"gun_seekers"],
 	[&"wave", &"gun_wave"],
@@ -44,13 +43,15 @@ func _builds(form: StringName) -> Array:
 	var probe := _world()
 	if form != &"":
 		assert_true(BuildSlots.take(probe, W.item(probe, form)), "took %s" % form)
+	# v0.10.5 W3-P7: a card the form prunes is no longer offered but still compiles when held (an old save, or one
+	# taken under another form), so the worst builds hold every compatible card.
 	var pats: Array = [&""]
 	for id in PATTERNS:
-		if AttackSlots.usable(probe, W.item(probe, id)):
+		if AttackSlots.compatible(probe, W.item(probe, id)):
 			pats.append(id)
 	var secs: Array = []
 	for id in SECONDARIES:
-		if AttackSlots.usable(probe, W.item(probe, id)):
+		if AttackSlots.compatible(probe, W.item(probe, id)):
 			secs.append(id)
 	var out: Array = []
 	for p: StringName in pats:
@@ -156,12 +157,17 @@ func test_every_form_with_its_patterns_and_secondaries_holds_the_caps() -> void:
 			assert_lte(compiled, 12, "%s: at most 12 an attack compiled (%d)" % [name, compiled])
 			assert_lte(tick, 12, "%s: at most 12 launched in one tick (%d)" % [name, tick])
 			assert_lte(second, 40, "%s: at most 40 in any 60 ticks (%d)" % [name, second])
-			if f[0] == &"laser":
-				assert_eq(second, 0, "%s: a beam launches no projectile" % name)
+			if f[0] in [&"laser", &"rune_explosion"]:  # no projectile
+				assert_eq(second, 0, "%s: a beam or a burst launches no projectile" % name)
 			else:
 				assert_gt(second, 0, "%s fires" % name)
 			count += 1
 	assert_eq(
-		count, 23, "the builds the shipped rows allow (orbs 5, scatter 3, wave 3, the rest 2 or 1)"
+		count,
+		38,
+		(
+			"the builds the shipped rows allow"
+			+ " (orbs 5, laser 5, lance 5, void 4, glaive 5, seekers 4, wisps 4, rune 3, wave 3, the rest 2 or 1)"
+		)
 	)
 	gut.p("BR shots (compiled a attack, most in a tick, most in 60 ticks): " + "; ".join(report))

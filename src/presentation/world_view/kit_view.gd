@@ -34,6 +34,9 @@ extends Node3D
 ## the blade and its trail hold still for a moment of frame time; the syncs that fall inside it are caught up when it
 ## ends.
 
+## v0.10.0 VX8 (VFX_PACK N3): the swing ribbon takes the beam pack's scrolling-noise look (BladePack's ribbon material,
+## UV.x along the ribbon) while a ribbon slot is free; false: the old plain ribbon (before/after shots).
+const PACK_BLADE := true
 ## Height of the blade above the ground (the cube's middle).
 const BLADE_HEIGHT := 0.45
 ## The blade's hidden root: inside the cube, as a fraction of own_radius.
@@ -106,6 +109,12 @@ var _hold := 0.0
 var _held_reader: WorldReader
 var _edge_drawn := 0
 var _finisher := false
+## v0.10.0 VX8: the pack ribbon's material (the view's own), whether it draws this swing (a slot was free), the noise's
+## scroll and the colour it was last tinted to.
+var _ribbon_mat: ShaderMaterial
+var _ribbon_on := false
+var _phase := 0.0
+var _ribbon_tint := Color(0, 0, 0, 0)
 
 
 func _init() -> void:
@@ -278,7 +287,7 @@ func sync(reader: WorldReader) -> void:
 	if _hold > 0.0:  # v0.8.0 GF3: held by the hit-stop: caught up when it ends
 		_held_reader = reader
 		return
-	set_heat_tier(HeatLooks.tier_of(reader.heat_state()))
+	set_heat_tier(reader.heat_tier())
 	var shape := reader.swing_shape()
 	if shape != _shape:
 		set_shape(shape)
@@ -292,6 +301,7 @@ func sync(reader: WorldReader) -> void:
 		_trail_mesh.clear_surfaces()
 		_edge_mesh.clear_surfaces()
 		_edge_drawn = 0
+		_release_ribbon()
 		return
 	_read_edge_element(reader)
 	var finisher := reader.is_finisher()
@@ -340,6 +350,7 @@ func sync(reader: WorldReader) -> void:
 	if t < _last_t or not was:
 		_history.clear()
 		_pivot.reset_physics_interpolation()
+		_claim_ribbon()
 	if t != _last_t or _history.is_empty():  # hit-stop holds the tick: the trail holds too
 		_history.append([at, yaw, fade * (1.3 if finisher else 1.0)])
 		var keep := sweep + 2 if _motion == WorldReader.MOTION_SPIN else trail_count + 1
@@ -363,6 +374,9 @@ func _process(delta: float) -> void:
 			var r := _held_reader
 			_held_reader = null
 			sync(r)
+	if _ribbon_on:  # the noise runs along the swing, and (above) holds with the hit-stop
+		_phase += delta * BladePack.SCROLL_PER_S
+		_ribbon_mat.set_shader_parameter(&"phase", _phase)
 	if _pivot.visible and _history.size() >= 2 and _motion != WorldReader.MOTION_THRUST:
 		_build_trail(_head())
 
@@ -376,6 +390,47 @@ func _head() -> Array:
 	var yaw := atan2(-xf.basis.x.z, xf.basis.x.x)
 	yaw = newest[1] + wrapf(yaw - newest[1], -PI, PI)
 	return [xf.origin, yaw, newest[2]]
+
+
+## v0.10.0 VX8: a new swing asks for a ribbon slot (the pack's `trail` family cap); with none, or without the pack, the
+## old ribbon draws this swing.
+func _claim_ribbon() -> void:
+	if _ribbon_on or not PACK_BLADE or not is_inside_tree():
+		return
+	if not BladePack.claim_ribbon(BladePack.pack_of(self)):
+		return
+	if _ribbon_mat == null:
+		_ribbon_mat = BladePack.trail_material()
+	_ribbon_on = true
+	_trail.material_override = _ribbon_mat
+
+
+func _release_ribbon() -> void:
+	if not _ribbon_on:
+		return
+	_ribbon_on = false
+	_trail.material_override = _trail_mat
+	BladePack.free_ribbon()
+
+
+func _exit_tree() -> void:
+	_release_ribbon()
+
+
+## The ribbon's colour: the heat tier's from Hot up, else the step's element, else the blade's own; the material is
+## only touched when it changes.
+func _tint_ribbon() -> void:
+	var c := hue()
+	if heat_tier == HeatLooks.TIER_COOL and _edge_element.a > 0.0:
+		c = _edge_element
+	if c != _ribbon_tint:
+		_ribbon_tint = c
+		BladePack.tint(_ribbon_mat, c)
+
+
+## The ribbon's material while the pack's draws, else null (tests).
+func ribbon_material() -> ShaderMaterial:
+	return _ribbon_mat if _ribbon_on else null
 
 
 func _apply_look() -> void:
@@ -399,6 +454,8 @@ func _size_blade() -> void:
 ## edge clear, older samples fainter. The newest tick sample is replaced by the head, which lies between it and
 ## the one before.
 func _build_trail(head: Array) -> void:
+	if _ribbon_on:
+		_tint_ribbon()
 	_trail_mesh.clear_surfaces()
 	_edge_mesh.clear_surfaces()
 	_edge_drawn = 0
@@ -429,8 +486,10 @@ func _build_trail(head: Array) -> void:
 		var strength: float = lerpf(a[2], b[2], f)
 		var age := float(k) / float(total)  # 0 oldest, 1 newest
 		var out := Vector3(cos(yaw), 0, -sin(yaw))
+		_trail_mesh.surface_set_uv(Vector2(age, 0.0))
 		_trail_mesh.surface_set_color(Color(tip_color, 0.12 * age * strength))
 		_trail_mesh.surface_add_vertex(centre + out * r_in)
+		_trail_mesh.surface_set_uv(Vector2(age, 1.0))
 		_trail_mesh.surface_set_color(Color(tip_color, minf(0.95 * pow(age, 1.3) * strength, 1.0)))
 		_trail_mesh.surface_add_vertex(centre + out * r_out)
 	_trail_mesh.surface_end()
@@ -525,11 +584,13 @@ func _build_streak() -> void:
 	for k in STREAK_SEGMENTS:
 		var f0 := -1.0 + 2.0 * k / STREAK_SEGMENTS
 		var f1 := -1.0 + 2.0 * (k + 1) / STREAK_SEGMENTS
+		_trail_mesh.surface_set_uv(Vector2(0.0, 0.5))
 		_trail_mesh.surface_set_color(Color(tip_color, 0.05 * strength))
 		_trail_mesh.surface_add_vertex(root)
 		for f in [f0, f1]:
 			var y: float = aim + half * f
 			var edge := 1.0 - absf(f)
+			_trail_mesh.surface_set_uv(Vector2(1.0, 0.5 + 0.5 * f))
 			_trail_mesh.surface_set_color(Color(tip_color, minf(strength * edge * 1.1, 1.0)))
 			_trail_mesh.surface_add_vertex(centre + Vector3(cos(y), 0, -sin(y)) * r_out)
 	_trail_mesh.surface_end()

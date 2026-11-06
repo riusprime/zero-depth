@@ -10,6 +10,8 @@ extends Node3D
 ##   asks the camera for the door's thud (the impact sound is AudioEvents').
 ## - The switches: short octagonal stone columns with a rune disc on a slanted top (`rune_switch`, the same way). A
 ##   switch that is on glows amber; off, its rune is dark.
+## - v0.9.5 TS (owner Q7): the lever inside the secret room, a short stone post with a handle (code stand-in), on the
+##   wall beside the doorway. Door shut, the handle stands up and its tip glows; pulled (the door open) it swings down.
 ## - While the timer runs, every beep (beep_ticks: slow at first, faster and faster, very fast at the end; the same
 ##   schedule AudioEvents plays) flashes the seal, the frame's notches and the switches' runes: the beep seen.
 ## - The secret room (StageView.reveal_hidden) comes into sight when the door first opens, with a warm light inside.
@@ -27,6 +29,10 @@ const SWITCH_H := 1.0
 ## The slab's sink when the door opens and its slam when it shuts (s).
 const SINK_S := 1.1
 const SLAM_S := 0.14
+## v0.9.5 TS: the lever handle's swing time (s) and its up and down tilt (rad).
+const PULL_S := 0.25
+const LEVER_UP := 0.7
+const LEVER_DOWN := -0.7
 ## The beeps: the gap between two (ticks) is BEEP_SLOW at the start, shrinking with the time left to BEEP_FAST.
 const BEEP_SLOW := 60
 const BEEP_FAST := 6
@@ -54,10 +60,15 @@ var revealed := false
 ## v0.9.0 BV: the biome whose look is drawn (InteractionLooks.resolve) and its rune colour.
 var biome := &""
 var rune_color := AMBER
+## v0.9.5 TS: the handle's pull (0 up .. 1 down) and whether a lever stands here (tests read them).
+var lever_pull := 0.0
+var has_lever := false
 var _reader: WorldReader
 var _stage: StageView
 var _switch_roots: Array[Node3D] = []
 var _switch_mats: Array[StandardMaterial3D] = []
+var _lever_arm: Node3D
+var _lever_mat: StandardMaterial3D
 var _seal_mat := StandardMaterial3D.new()
 var _stone := StandardMaterial3D.new()
 var _room_light: OmniLight3D
@@ -101,6 +112,10 @@ func setup(reader: WorldReader, stage: StageView, cover: Color) -> void:
 			k, reader.interactable_pos(reader.timed_switch_entry(k)), reader.timed_door_center()
 		)
 		InteractionLooks.add_accent(_switch_roots[k], raw, 0.55, SWITCH_H)
+	if reader.timed_lever_entry() >= 0:  # v0.9.5 TS
+		_build_lever(
+			reader.interactable_pos(reader.timed_lever_entry()), reader.timed_door_center()
+		)
 	_room_light = OmniLight3D.new()
 	_room_light.name = "RoomLight"
 	_room_light.light_color = InteractionLooks.color(biome, "room")  # Ruins: AMBER_CORE
@@ -141,9 +156,17 @@ func sync(reader: WorldReader) -> void:
 	_seal_mat.emission_energy_multiplier = (
 		(0.25 if st == WorldReader.TIMED_SHUT else 0.8) + 4.0 * flash
 	)
+	if has_lever:  # v0.9.5 TS: ready (bright tip) while the door is shut
+		_lever_mat.emission_energy_multiplier = (
+			(2.0 if st == WorldReader.TIMED_SHUT else 0.1) + 3.0 * flash
+		)
 
 
 func _process(delta: float) -> void:
+	if has_lever:  # v0.9.5 TS: the handle swings (PULL_S), down while the door stands open
+		var goal := 0.0 if _state == WorldReader.TIMED_SHUT else 1.0
+		lever_pull = move_toward(lever_pull, goal, delta / PULL_S)
+		_lever_arm.rotation.z = LEVER_UP - (LEVER_UP - LEVER_DOWN) * lever_pull
 	if slab == null:
 		return
 	if _open and _sink < 1.0:
@@ -324,6 +347,38 @@ func _build_switch(k: int, at: Vector2, toward: Vector2) -> void:
 		disc.rotation.x = MODEL_RUNE_TILT
 	disc.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(disc)
+
+
+## v0.9.5 TS: the lever (owner Q7) inside the secret room: a squat stone post with a pivoting handle, turned to face the
+## doorway.
+func _build_lever(at: Vector2, toward: Vector2) -> void:
+	var root := Node3D.new()
+	root.name = "Lever"
+	root.position = SimPlane.to_3d(at)
+	var to := SimPlane.to_3d(toward) - root.position
+	root.rotation.y = atan2(to.x, to.z)
+	add_child(root)
+	_box(root, Vector3(0.5, 0.7, 0.4), Vector3(0, 0.35, 0), _stone)
+	_lever_mat = StandardMaterial3D.new()
+	_lever_mat.albedo_color = rune_color.darkened(0.6)
+	_lever_mat.emission_enabled = true
+	_lever_mat.emission = rune_color
+	_lever_mat.emission_energy_multiplier = 2.0
+	_lever_arm = Node3D.new()
+	_lever_arm.name = "Handle"
+	_lever_arm.position = Vector3(0, 0.7, 0)
+	root.add_child(_lever_arm)
+	_box(
+		_lever_arm,
+		Vector3(0.1, 0.7, 0.1),
+		Vector3(0, 0.35, 0),
+		_iron(InteractionLooks.color(biome, "metal"))
+	)
+	var tip := _box(_lever_arm, Vector3(0.22, 0.16, 0.22), Vector3(0, 0.74, 0), _lever_mat)
+	tip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	has_lever = true
+	lever_pull = 0.0 if _state == WorldReader.TIMED_SHUT or _state < 0 else 1.0
+	_lever_arm.rotation.z = LEVER_UP - (LEVER_UP - LEVER_DOWN) * lever_pull
 
 
 func switch_count() -> int:

@@ -33,14 +33,24 @@ const MOVES := {
 	## A ring of spikes around the boss, from inner_radius_m to radius_m (hugging it is safe).
 	&"slam_ring": {"shape": 3, "params": ["inner_radius_m", "radius_m"]},
 	## `count` straight shockwaves fanned toward the player, travelling along the ground over the active time.
-	&"lanes": {"shape": 2, "params": ["count", "spread_degrees", "length_m", "width_m"]},
+	&"lanes":
+	{
+		"shape": 2,
+		"params": ["count", "spread_degrees", "length_m", "width_m"],
+		"optional": ["turn_dps"],  # v0.9.5 BH2 (B4): the Focus Beam burns, turning toward the player
+	},
 	## A melee arc in front.
 	&"sweep": {"shape": 1, "params": ["arc_degrees", "reach_m"]},
 	## A straight charge along a locked lane; touching the body hurts.
 	&"charge": {"shape": 2, "params": ["length_m", "speed_mps"]},
 	## Jumps onto the player's marked spot; `chain` leaps in a row.
 	## v0.8.0 FB1: an optional pattern_id fires its first wave from where it lands (the Colossus's shockwave ring).
-	&"leap": {"shape": 0, "params": ["radius_m", "range_m", "chain"], "optional": ["pattern_id"]},
+	&"leap":
+	{
+		"shape": 0,
+		"params": ["radius_m", "range_m", "chain"],
+		"optional": ["pattern_id", "last_lead_seconds", "last_radius_bonus_permille"],  # v0.9.5 BH2 (B3)
+	},
 	## Dives under, a ripple tracks the player, stops, and erupts after erupt_seconds (its own telegraph).
 	## v0.7.5 BF2: with lock_seconds its eruption circle follows the player's exact position while it tracks, then
 	## holds for the lock; an optional pattern_id (a RING) bursts from the eruption.
@@ -96,6 +106,8 @@ const MOVES := {
 			"recall_seconds",
 			"bounces",
 			"aim_degrees",
+			"lead_seconds",  # v0.9.5 BH2 (B2): the Javelin Fan's first fan leads, the next aims at you
+			"hard",  # v0.9.5 BH3 (B6, B9): marks the Furnace Waves and the Gear Spiral for the 0.55 s rule (HardRules)
 			"dark_seconds",  # v0.9.0 NB4: the Lantern Shade's Lights Out (ShadeRules.LIGHT_PARAMS)
 			"dark_lasts_seconds",  # v0.9.0 NB4b: how long its dark lasts
 			"light_m",
@@ -137,13 +149,19 @@ const MOVES := {
 	{
 		"shape": 2,
 		"params": ["count", "length_m", "width_m", "stagger_seconds"],
-		"optional": ["pillar_seconds", "pillar_m", "pillar_step_m"],
+		"optional":
+		["pillar_seconds", "pillar_m", "pillar_step_m", "second_seconds", "second_offset_m"],  # BH2 (B1)
 	},
 	## v0.7.5 BF3: a checkerboard of `count` × `count` ground circles (count odd; radius_m each, cell_m apart) centred
 	## on the player's exact position until the attack's lock_seconds, then locked; `volleys` strikes stagger_seconds
 	## apart, alternating the board's two colours (the first holds the player's cell). Each colour shows only for
 	## its own lock before it strikes.
-	&"grid": {"shape": 0, "params": ["count", "cell_m", "radius_m", "volleys", "stagger_seconds"]},
+	&"grid":
+	{
+		"shape": 0,
+		"params": ["count", "cell_m", "radius_m", "volleys", "stagger_seconds"],
+		"optional": ["safe_cells"],  # v0.9.5 BH2 (B5): every volley strikes all but these cells
+	},
 	## v0.7.5 BF3: `count` lanes along the room's rows (x), gap_m apart and centred on the player's row, length_m
 	## long centred on the player (cut short by walls); tracked then locked like `marks`, then standing for the
 	## active time and hurting once every burn_seconds, like `flood` (the Foundry's molten floor).
@@ -157,10 +175,10 @@ const MOVES := {
 		"optional": ["lava_seconds", "lava_damage", "lava_burn_seconds", "ford_m"],
 	},
 	## v0.8.0 BS2 (owner O5, S4): the Hive Lens's Gaze: a beam from its eye, length_m long from its edge (stopped by
-	## walls), width_m wide, starting aimed away from the player (it keeps away through the windup: the eye
-	## brightens, a thin aim line shows), then turning a quarter turn every quarter_seconds, reversing every
-	## reverse_seconds, over the active time; it hurts once every burn_seconds. An optional pattern_id fires again
-	## every orb_every_seconds (its orbs, aimed at the player).
+	## walls), width_m wide, starting just behind the player in its turn (v0.10.5 W3-O2; it keeps so through the
+	## windup: the eye brightens, a thin aim line shows), then turning a quarter turn every quarter_seconds,
+	## reversing every reverse_seconds, over the active time; it hurts once every burn_seconds. An optional pattern_id
+	## fires again every orb_every_seconds (its orbs, aimed at the player).
 	&"gaze":
 	{
 		"shape": 2,
@@ -263,8 +281,10 @@ const MOVES := {
 	&"tide":
 	{
 		"shape": 4,
-		"params":
-		["pattern_id", "pull_mps", "push_mps", "pull_seconds", "push_seconds", "bend_dps"],
+		"params": ["pull_mps", "push_mps", "pull_seconds", "push_seconds", "bend_dps"],
+		# v0.9.5 BH4 (T1, T2): the rings run all fight (BossStream), so the Pull has none of its own; max_mps: the most
+		# it moves the player (<= TIDE_MAX_MPS)
+		"optional": ["pattern_id", "max_mps"],
 	},
 	## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): the Twin Wardens' Crossfire, their shielded signature pattern. Each body
 	## fires its pattern (a fan) at a safe spot distance_m off the middle of their chain on the player's side, leaving
@@ -273,7 +293,11 @@ const MOVES := {
 	&"crossfire":
 	## v0.9.0 NB2: the Chain Sweep: the boss's line from its body through the player and reach_m past them (held to the
 	## chain's lengths, cut short by walls) tracks them until the lock, then the chain lashes a lane width_m wide along
-	{"shape": 4, "params": ["pattern_id", "gap_m", "distance_m"], "optional": ["twin_look"]},
+	{
+		"shape": 4,
+		"params": ["pattern_id", "gap_m", "distance_m"],
+		"optional": ["twin_look", "lines_follow_seconds", "lines_turn_dps"],  # v0.9.5 BH3 (B8): the lines follow you
+	},
 	## it; the twin swings to the line's end. A lock is required; its late_cause_key names the chain's burn.
 	&"chain_sweep": {"shape": 2, "params": ["width_m", "reach_m"]},
 	## v0.9.0 NB3 (BOSSES_4_5.md N3; BossJudge): the Clockwork Judge's echo, its shielded signature on its cadence. The
@@ -285,6 +309,39 @@ const MOVES := {
 	## v0.9.0 NB3: the Verdict: a square half_m each way from its centre (not a circle) follows the player, locks, and a
 	## pendulum strike drops on it. A lock is required.
 	&"verdict": {"shape": 2, "params": ["half_m"]},
+	## v0.9.5 BH4 (BOSSES_HARD.md T3; BossStream): the Tidecaller's crossing wave, in no attack list. A phase's
+	## wave_attack forms one every wave_every_seconds. lengths_m: the lengths one is drawn from; thickness_m; speed_mps
+	## across the room after the telegraph (a foam line at the wall); shove_m along its travel when it hits; clear_m: it
+	## never forms within that of the hero's projection on its wall.
+	&"wave":
+	## v0.9.5 BH6 (BOSSES_HARD.md HC5; BossInterphase): a carrier of the Fallen's interphase hits, in no attack list: its
+	## damage, telegraph and recap cause belong to the hazards (fallen_rays, fallen_rain, fallen_dark, fallen_erupt,
+	{"shape": 2, "params": ["lengths_m", "thickness_m", "speed_mps", "shove_m", "clear_m"]},
+	## fallen_return).
+	&"interphase": {"shape": 2, "params": []},
+	## v0.10.5 O3 (owner L6, 2026-11-01: "Boring pattern"; O3_PRISM.md; BossPrism): the Prism's Facet Lances: `count`
+	## lances stagger_seconds apart, each from a rim spot distance_m from her (spread_degrees apart round her, the first
+	## on the player's side) through the player: it follows them for track_seconds, holds for the attack's lock, then
+	## strikes for strike_seconds as a lane width_m wide, as far as length_m or a wall. A lock is required.
+	&"lances":
+	{
+		"shape": 2,
+		"params":
+		[
+			"count",
+			"stagger_seconds",
+			"track_seconds",
+			"strike_seconds",
+			"distance_m",
+			"spread_degrees",
+			"length_m",
+			"width_m",
+		],
+	},
+	## v0.10.5 O3 (L6: "Needs something cooler while he's down"): the Prism's Shattered Kneel: down (open, nothing
+	## fired) for its active time; hits from within the weak point's range of her edge deal core_mult_permille; once
+	## she has lost crack_permille of her max HP since it began, her core bursts for burst_permille of it and she rises.
+	&"kneel": {"shape": 0, "params": ["crack_permille", "burst_permille", "core_mult_permille"]},
 }
 ## v0.8.0 FB3: the runs an attack's `weapon` may name.
 ## v0.8.0 N2 (owner O52): "own" is The Fallen's own kit, only outside its mimic windows.
@@ -308,6 +365,7 @@ const LOCKED_MOVES: Array[StringName] = [
 	&"card_cast",
 	&"chain_sweep",  # v0.9.0 NB2
 	&"verdict",  # v0.9.0 NB3
+	&"lances",  # v0.10.5 O3: the Facet Lances (each lance's lock)
 ]
 ## v0.8.0 FB1: the most spikes a line or a ray lays (steps).
 const MAX_STEPS := 16
@@ -321,8 +379,8 @@ const HIT_CLASSES := {&"small": [4, 5], &"medium": [3, 4], &"big": [2, 2]}
 ## this window (ticks, after its recovery_permille): starting values 0.6..0.9 s.
 const PUNISH_MIN_TICKS := 36
 const PUNISH_MAX_TICKS := 54
-## v0.9.0 NB1 (BOSSES_4_5.md N1: "the pull never moves you more than 1.5 m/s"): the fastest a tide moves the player.
-const TIDE_MAX_MPS := 1.5
+## v0.9.0 NB1 (BOSSES_4_5.md N1; v0.9.5 BH4: 1.5 -> 2.2 m/s): the most a tide attack may be set to move the player.
+const TIDE_MAX_MPS := 2.2
 ## v0.9.0 NB2 (BOSSES_4_5.md N2: "the chain is never shorter than 3 m or longer than 9 m"): the bounds a twin boss's
 ## chain lengths keep, and the most its anger may speed a body (per mille).
 ## The twins a boss may rise with (BossDefinition.twin_kind_id; PatternCompiler maps each to its actor kind).

@@ -40,3 +40,34 @@ func test_a_legendary_stat_override_is_validated() -> void:
 	var codes := ld.validate().map(func(i: ValidationIssue) -> StringName: return i.code)
 	assert_has(codes, &"unknown_item", "an id not in stat_cards")
 	assert_has(codes, &"range", "below 1")
+
+
+func _start_codes(d: ContentDef) -> Array:
+	return d.validate().map(func(i: ValidationIssue) -> StringName: return i.code)
+
+
+func test_run_floor_one_may_ease_to_850() -> void:
+	# v0.9.5 EP3: the enemy floor tables may start in 500..1000; nothing else may.
+	var d: RunDefinition = _shipped_run()
+	assert_eq(d.enemy_hp_floor_permille[0], 850, "the shipped run eases floor 1")
+	assert_eq(d.enemy_damage_floor_permille[0], 850)
+	assert_does_not_have(_start_codes(d), &"table_start", "850 first is valid")
+
+
+func test_run_floor_one_below_500_is_invalid() -> void:
+	var d: RunDefinition = _shipped_run()
+	d.enemy_hp_floor_permille = PackedInt32Array([400, 1380, 1900, 2620, 3610])
+	assert_has(_start_codes(d), &"table_start", "400 first is too easy")
+	d = _shipped_run()
+	d.enemy_damage_floor_permille = PackedInt32Array([400, 1180, 1400, 1660, 1960])
+	assert_has(_start_codes(d), &"table_start")
+
+
+func test_other_tables_still_start_at_exactly_1000() -> void:
+	var d: SpawnDirectorDefinition = SpawnDirectorDefinition.new()
+	d.damage_tier_permille = PackedInt32Array([900, 1100])
+	assert_has(_start_codes(d), &"table_start", "a tier table at 900 is still invalid")
+
+
+func _shipped_run() -> RunDefinition:
+	return ContentRepository.load_all().get_def(&"run", &"five_floors").duplicate(true)

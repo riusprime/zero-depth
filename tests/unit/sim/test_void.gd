@@ -10,7 +10,22 @@ const W := preload("res://tests/support/mx4_world.gd")
 const HP := 1000000
 const TOP_STEP := 1.0 / 60.0
 const VOID_ON: Array[StringName] = [
-	&"gun_twin", &"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"
+	&"gun_twin",
+	&"gun_ring",
+	&"gun_backfire",
+	&"gun_ricochet",
+	&"gun_homing",
+	&"gun_echo",
+	&"gun_big_shot",
+	&"gun_rapid_fire",
+	&"split_shot",
+	&"gun_mine",
+	&"orbit_rounds",
+	&"ember_core",
+	&"storm_core",
+	&"frost_core",
+	&"venom_core",
+	&"shared_bleed"
 ]
 
 
@@ -215,18 +230,18 @@ func test_bosses_and_elites_feel_no_pull() -> void:
 	assert_eq(VoidShots.pull_permille(b, 1), 1000)
 
 
-func test_twin_throws_two_voids_and_three_at_level_five_at_its_share() -> void:
+func test_twin_throws_two_voids_and_three_at_level_three_at_its_share() -> void:
 	var w := _world([&"gun_twin"], [])
 	var twin := W.item(w, &"gun_twin")
-	for lvl in [1, 4, 5]:
+	for lvl in [1, 2, 3]:
 		CardLevels.set_level(w, twin, lvl)
-		assert_eq(ShotCap.shots(Modifiers.bolt(w)), 3 if lvl == 5 else 2, "Twin Lv %d" % lvl)
+		assert_eq(ShotCap.shots(Modifiers.bolt(w)), 3 if lvl == 3 else 2, "Twin Lv %d" % lvl)
 	CardLevels.set_level(w, twin, 1)
 	W.run(w, 2, 0, W.S)
 	var dmg := []
 	for i in _voids(w):
 		dmg.append(w.projectiles.damage[i])
-	assert_eq(dmg, [6, 6], "two voids at 60 % of 10 each")
+	assert_eq(dmg, [7, 7], "two voids at 70 % of 10 each")
 
 
 func test_the_elements_apply_on_the_aura_at_the_fair_rate() -> void:
@@ -282,8 +297,11 @@ func test_the_void_row_offers_only_its_cards() -> void:
 	var w := _slot_world()
 	assert_true(BuildSlots.take(w, W.item(w, &"gun_void")))
 	assert_eq(AttackSlots.form_id(w), &"void")
+	var ring := W.item(w, &"gun_ring")
+	assert_true(AttackSlots.compatible(w, ring), "Void + Ring: on since FC3 (V1)")
+	assert_false(ItemPool.usable(w, ring), "v0.10.5 W3-P7: no gain measured, no longer offered")
 	for id: StringName in [
-		&"gun_ring", &"halo_shot", &"gun_backfire", &"gun_spiral", &"gun_swirl", &"gun_pierce"
+		&"halo_shot", &"gun_spiral", &"gun_swirl", &"gun_pierce", &"gun_threadline"
 	]:
 		assert_false(ItemPool.usable(w, W.item(w, id)), "%s with the Void: never" % id)
 	for idx in w.item_tables.size():
@@ -295,9 +313,13 @@ func test_the_void_row_offers_only_its_cards() -> void:
 			or cat in [AttackSlots.FREE, AttackSlots.FORM]
 		):
 			continue
-		assert_eq(AttackSlots.usable(w, idx), VOID_ON.has(it.id), "%s with the Void" % it.id)
+		assert_eq(AttackSlots.compatible(w, idx), VOID_ON.has(it.id), "%s with the Void" % it.id)
+		var pruned := w.slot_table.pruned(AttackSlots.form_row(w), idx)  # v0.10.5 W3-P7
+		assert_eq(
+			AttackSlots.usable(w, idx), VOID_ON.has(it.id) and not pruned, "%s offered" % it.id
+		)
 	var off := []
-	for id: StringName in [&"gun_ring", &"halo_shot", &"gun_backfire", &"gun_spiral", &"gun_swirl"]:
+	for id: StringName in [&"halo_shot", &"gun_spiral", &"gun_swirl", &"gun_pierce"]:
 		off.append(W.item(w, id))
 	for k in 200:
 		w.rng_loot = RngStream.derive(k, "loot")
@@ -309,7 +331,7 @@ func test_the_void_replaces_the_orbs_the_laser_and_the_bomb() -> void:
 	var w := _slot_world()
 	var void_card := W.item(w, &"gun_void")
 	assert_eq(AttackSlots.form_id(w), &"orbs")
-	for other: StringName in [&"gun_laser", &"gun_bomb"]:
+	for other: StringName in [&"gun_laser"]:
 		var o := W.item(w, other)
 		assert_true(BuildSlots.take(w, o))
 		assert_eq(
@@ -328,10 +350,10 @@ func test_the_void_replaces_the_orbs_the_laser_and_the_bomb() -> void:
 
 
 # --- The floor black hole is gone -----------------------------------------------------------------------------------
-func test_the_old_void_card_is_retired_and_leaves_no_black_hole() -> void:
-	var w := W.world(&"gun", [&"gravity_well"], [[Vector2(4.0, 0.0), HP]])
+func test_the_floor_black_hole_is_gone() -> void:
+	var w := W.world(&"gun", [], [[Vector2(4.0, 0.0), HP]])
 	var s := Modifiers.bolt(w)
-	assert_false(VoidShots.is_void(s), "the retired card makes no Void shot")
+	assert_false(VoidShots.is_void(s), "no Void card, no Void shot")
 	assert_false(&"hole_permille" in AttackSpec.LATE_INT_FIELDS, "the black hole's fields are gone")
 	assert_false(ModifierOpDefinition.FIELD_STAGE.has(&"hole_chance_permille"))
 	W.run(w, 600, 0, W.S)

@@ -27,6 +27,28 @@ func _hook(s: AttackSpec, id: StringName) -> AttackHook:
 	return null
 
 
+## v0.10.5 O1: the trigger cards are retired, so a synthetic one stands in: the one TRIGGER op the shipped cards held
+## (the cut, on_hit/on_kill/on_end; on_finisher is the Gun's crit and the Blade's last step).
+func _trig(id: StringName) -> ModifierTable:
+	var o := ModifierOp.new()
+	o.op = ModifierOp.Op.TRIGGER
+	o.stage = ModifierTable.Stage.HOOK
+	match id:
+		&"trigger_on_kill":
+			o.trigger = AttackSpec.Trigger.ON_KILL
+		&"trigger_on_end":
+			o.trigger = AttackSpec.Trigger.ON_END
+		&"trigger_on_finisher":
+			o.trigger = AttackSpec.Trigger.ON_FINISHER
+			o.trigger_gun = AttackSpec.Trigger.ON_CRIT
+		_:
+			o.trigger = AttackSpec.Trigger.ON_HIT
+	var m := WandLab.mod(id, [], [o] as Array[ModifierOp])
+	m.family = &"time"
+	m.stage = ModifierTable.Stage.HOOK
+	return m
+
+
 # --- Order matters -------------------------------------------------------------------------------------------------
 func test_big_then_split_is_one_big_shot_whose_splits_are_normal() -> void:
 	var w := WandLab.world(&"gun")
@@ -35,7 +57,7 @@ func test_big_then_split_is_one_big_shot_whose_splits_are_normal() -> void:
 	assert_almost_eq(s.radius_m, plain * 2.0, 1e-5, "the shot is big")
 	var k := _hook(s, &"split_shot")
 	assert_not_null(k, "it splits")
-	assert_eq(k.child.count, 3)
+	assert_eq(k.child.count, 2)  # v0.9.5 CLV: Split Shot level 1 splits in two
 	assert_almost_eq(
 		k.child.radius_m, 0.08, 1e-5, "the splits are the card's normal size (half the bolt)"
 	)
@@ -58,17 +80,6 @@ func test_big_split_and_split_big_compile_to_different_specs() -> void:
 	assert_eq(b.modifier_ids, PackedStringArray(["split_shot", "big"]))
 
 
-func test_shipped_cards_are_order_sensitive_too() -> void:
-	# Short Fuse (×0.6 range, ×1.4 damage on every attack) and Split Shot: the splits fly short only when Short Fuse
-	# sits to their right.
-	var a := _bolt([WandLab.card(&"short_fuse"), WandLab.card(&"split_shot")])
-	var b := _bolt([WandLab.card(&"split_shot"), WandLab.card(&"short_fuse")])
-	var ca := _hook(a, &"split_shot").child
-	var cb := _hook(b, &"split_shot").child
-	assert_eq(a.life_ticks, b.life_ticks, "the shot itself flies short either way")
-	assert_lt(cb.life_ticks, ca.life_ticks, "only Split·Short Fuse shortens the splits")
-
-
 func test_inside_one_card_the_ops_keep_their_stage_order() -> void:
 	# Halo Shot: count × 3, a circle, range × 0.5, listed out of stage order in a synthetic copy.
 	var halo := WandLab.card(&"halo_shot")
@@ -79,12 +90,12 @@ func test_inside_one_card_the_ops_keep_their_stage_order() -> void:
 	var a := _bolt([halo])
 	var b := _bolt([flipped])
 	assert_eq([a.count, a.directions, a.life_ticks], [b.count, b.directions, b.life_ticks])
-	assert_eq(a.count, 3, "×3 of one shot")
+	assert_eq(a.count, 4, "×4 of one shot")  # v0.9.5 CLV: Halo level 1 is 4
 
 
 # --- Triggers -------------------------------------------------------------------------------------------------------
 func test_fire_before_on_hit_burns_the_shot_and_not_the_child() -> void:
-	var s := _bolt([WandLab.fire(), WandLab.card(&"trigger_on_hit"), WandLab.shock()])
+	var s := _bolt([WandLab.fire(), _trig(&"trigger_on_hit"), WandLab.shock()])
 	assert_true(s.has_status(&"burn"), "the shot burns")
 	assert_false(s.has_status(&"shock"), "the cards right of the trigger don't touch the shot")
 	var k := _hook(s, &"trigger_on_hit")
@@ -96,7 +107,7 @@ func test_fire_before_on_hit_burns_the_shot_and_not_the_child() -> void:
 
 
 func test_on_hit_before_fire_burns_only_the_child() -> void:
-	var s := _bolt([WandLab.card(&"trigger_on_hit"), WandLab.fire(), WandLab.shock()])
+	var s := _bolt([_trig(&"trigger_on_hit"), WandLab.fire(), WandLab.shock()])
 	assert_false(s.has_status(&"burn"))
 	assert_false(s.has_status(&"shock"))
 	var c := _hook(s, &"trigger_on_hit").child
@@ -106,15 +117,15 @@ func test_on_hit_before_fire_burns_only_the_child() -> void:
 
 func test_fire_on_hit_x_and_on_hit_fire_x_compile_differently() -> void:
 	var x := WandLab.card(&"split_shot")
-	var a := _book(&"gun", [WandLab.fire(), WandLab.card(&"trigger_on_hit"), x])
-	var b := _book(&"gun", [WandLab.card(&"trigger_on_hit"), WandLab.fire(), x])
+	var a := _book(&"gun", [WandLab.fire(), _trig(&"trigger_on_hit"), x])
+	var b := _book(&"gun", [_trig(&"trigger_on_hit"), WandLab.fire(), x])
 	assert_ne(a.digest, b.digest, "Fire·ON_HIT·X ≠ ON_HIT·Fire·X")
 
 
 func test_the_child_is_a_small_copy_of_the_basic_attack() -> void:
 	var w := WandLab.world(&"gun")
 	var t := w.wand_table
-	var c := _hook(_bolt([WandLab.card(&"trigger_on_hit")]), &"trigger_on_hit")
+	var c := _hook(_bolt([_trig(&"trigger_on_hit")]), &"trigger_on_hit")
 	assert_eq(c.child.form, FORM.BOLT, "the Gun's child is a bolt")
 	assert_almost_eq(
 		c.child.radius_m, w.player.bolt_radius_m * t.child_size_permille / 1000.0, 1e-5, "smaller"
@@ -125,9 +136,7 @@ func test_the_child_is_a_small_copy_of_the_basic_attack() -> void:
 	assert_eq(c.damage_permille, t.child_damage_permille, "a share of the hit's damage")
 	assert_true(c.child.has_tag(&"hook") and c.child.has_tag(&"weapon"))
 	var bw := WandLab.world(&"blade")
-	var arc := (
-		_book(&"blade", [WandLab.card(&"trigger_on_hit")]).spec(&"blade_step_0").hooks[0].child
-	)
+	var arc := _book(&"blade", [_trig(&"trigger_on_hit")]).spec(&"blade_step_0").hooks[0].child
 	assert_eq(arc.form, FORM.ARC, "the Blade's child is a slash")
 	assert_almost_eq(arc.reach_m, bw.player.combo[0].reach_m * t.child_size_permille / 1000.0, 1e-5)
 
@@ -138,14 +147,14 @@ func test_each_trigger_casts_on_its_own_trigger() -> void:
 		[&"trigger_on_kill", TRIGGER.ON_KILL],
 		[&"trigger_on_end", TRIGGER.ON_END],
 	]:
-		var k := _hook(_bolt([WandLab.card(pair[0])]), pair[0])
+		var k := _hook(_bolt([_trig(pair[0])]), pair[0])
 		assert_eq(k.trigger, pair[1], String(pair[0]))
 	# T4: the Gun's crit; the Blade's finisher, the combo's last step only.
 	assert_eq(
-		_hook(_bolt([WandLab.card(&"trigger_on_finisher")]), &"trigger_on_finisher").trigger,
+		_hook(_bolt([_trig(&"trigger_on_finisher")]), &"trigger_on_finisher").trigger,
 		TRIGGER.ON_CRIT
 	)
-	var b := _book(&"blade", [WandLab.card(&"trigger_on_finisher"), WandLab.fire()])
+	var b := _book(&"blade", [_trig(&"trigger_on_finisher"), WandLab.fire()])
 	var n := WandLab.world(&"blade").player.combo.size()
 	for k in n:
 		var s := b.spec(Modifiers.step_id(k))
@@ -162,11 +171,11 @@ func test_each_trigger_casts_on_its_own_trigger() -> void:
 func test_a_second_trigger_nests_once_and_a_third_casts_nothing() -> void:
 	var s := _bolt(
 		[
-			WandLab.card(&"trigger_on_hit"),
+			_trig(&"trigger_on_hit"),
 			WandLab.fire(),
-			WandLab.card(&"trigger_on_kill"),
+			_trig(&"trigger_on_kill"),
 			WandLab.shock(),
-			WandLab.card(&"trigger_on_end"),
+			_trig(&"trigger_on_end"),
 			WandLab.big(),
 		]
 	)
@@ -183,7 +192,7 @@ func test_a_second_trigger_nests_once_and_a_third_casts_nothing() -> void:
 
 
 func test_a_trigger_reaches_the_splits_built_to_its_left() -> void:
-	var s := _bolt([WandLab.card(&"split_shot"), WandLab.card(&"trigger_on_hit"), WandLab.fire()])
+	var s := _bolt([WandLab.card(&"split_shot"), _trig(&"trigger_on_hit"), WandLab.fire()])
 	var split := _hook(s, &"split_shot").child
 	var k := _hook(split, &"trigger_on_hit")
 	assert_not_null(k, "each split casts on its hits too")
@@ -193,17 +202,15 @@ func test_a_trigger_reaches_the_splits_built_to_its_left() -> void:
 
 
 func test_moments_read_past_a_trigger() -> void:
-	var b := _book(&"gun", [WandLab.card(&"trigger_on_hit"), WandLab.card(&"phase_dash")])
-	assert_eq(
-		b.spec(Modifiers.DASH).intangible,
-		1,
+	var b := _book(&"gun", [_trig(&"trigger_on_hit"), WandLab.card(&"long_shadow")])
+	assert_true(
+		b.spec(Modifiers.DASH).has_tag(&"moment"),
 		"a dash card right of a trigger still rewrites the dash"
 	)
-	assert_true(b.spec(Modifiers.DASH).hooks.size() > 0)
 
 
 func test_the_compile_is_deterministic() -> void:
 	var mods := [
-		WandLab.card(&"split_shot"), WandLab.card(&"trigger_on_hit"), WandLab.fire(), WandLab.big()
+		WandLab.card(&"split_shot"), _trig(&"trigger_on_hit"), WandLab.fire(), WandLab.big()
 	]
 	assert_eq(_book(&"gun", mods).digest, _book(&"gun", mods).digest)

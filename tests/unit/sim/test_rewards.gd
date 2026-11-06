@@ -38,7 +38,8 @@ func _pick(w: World, pick: int) -> void:
 	_press(w, 0, pick)
 
 
-## Kills a fresh enemy of `kind` at (6, 0) this tick (it leaves the world in phase 9).
+## Kills a fresh enemy of `kind` at (6, 0) this tick (it leaves the world in phase 9). v0.10.5 O7b: its shards lie at
+## the body, so the hero then steps there to take them (and back to the origin).
 func _kill(w: World, kind: int) -> int:
 	w.add_enemy(kind, Vector2(6, 0))
 	var i := w.actors.size() - 1
@@ -46,6 +47,10 @@ func _kill(w: World, kind: int) -> int:
 	w.actors.dead[i] = 1
 	var before := w.shards
 	CombatLab.idle(w, 1)
+	assert_eq(w.shards, before, "O7b: lying at the body, not paid yet")
+	w.actors.set_pos(0, Vector2(6, 0))
+	CombatLab.idle(w, 1)
+	w.actors.set_pos(0, Vector2.ZERO)
 	return w.shards - before
 
 
@@ -90,6 +95,8 @@ func test_the_shipped_data() -> void:
 	var rare := []
 	var rare_cards := []
 	for it in _items:
+		if it.retired:  # v0.10.5 O1: a tombstone keeps an index, not a card
+			continue
 		if it.rarity == ItemTable.RARE and it.kind == ItemTable.Kind.MODIFIER:
 			rare_cards.append(String(it.id))  # v0.6.0 MX4
 		elif it.rarity == ItemTable.RARE:
@@ -100,18 +107,14 @@ func test_the_shipped_data() -> void:
 	assert_eq(
 		rare,
 		[
-			"afterimage",
 			"bulwark",
-			"cluster_payload",
 			"cold_snap",
-			"conductor",
 			"finisher_plus",  # v0.8.0 RM: Fracture Bank, rare
-			"gun_bomb",  # v0.9.0 BM: the Bomb form, rare
 			"gun_glaive",  # v0.9.0 AF2: the Glaive form, rare
 			"gun_lance",  # v0.9.0 AF1: the Lance form, rare
 			"gun_laser",  # v0.9.0 LZ: the Laser form, rare
 			"gun_ring",  # v0.8.0 AO: the order rule's Ring and Swirl, rare
-			"gun_scatter",  # v0.9.0 AF1: the Scatter form, rare
+			"gun_rune_explosion",  # v0.9.5 FC0: the Rune Explosion form, rare
 			"gun_seekers",  # v0.9.0 AF2: the Seekers form, rare
 			"gun_swirl",
 			"gun_threadline",  # v0.8.0 RM: the remnant cards, rare
@@ -119,10 +122,7 @@ func test_the_shipped_data() -> void:
 			"gun_wave",  # v0.9.0 AF3: the Wave form, rare
 			"gun_wisps",  # v0.9.0 AF3: the Wisps form, rare
 			"meltdown",
-			"overclocked_drone",
-			"razor_orbit",
 			"shared_faultline",
-			"shared_gravity_stitch",
 			"wildfire"
 		],
 		"the rare items (lead, 2026-10-07; Meltdown, v0.3.0 L18; the ability mods, v0.5.0 CP; v0.8.0 RR: Blade Storm is Epic)"
@@ -131,21 +131,9 @@ func test_the_shipped_data() -> void:
 	assert_eq(
 		rare_cards,
 		[
-			"aether_shell",
-			"ascension",
 			"blade_orbit",
-			"bomb_rounds",
-			"boomerang",
 			"halo_shot",
-			"heat_sink_rounds",
-			"meltdown_edge",  # v0.8.0 RM: Long Shadow is Dodge Imprint, common
-			"mirror_drone",
 			"orbit_rounds",
-			"phase_dash",
-			"resonance_core",
-			"seeker",
-			"shock_circles",
-			"short_fuse",
 		],
 		"v0.6.0 MX4: the trinkets, the merges and the rare M-list cards"
 	)
@@ -165,7 +153,7 @@ func test_a_kill_pays_its_kinds_shards() -> void:
 		func(e: SimEvent) -> bool: return e.kind == SimEvent.Kind.SHARDS
 	)
 	assert_eq(paid.map(func(e: SimEvent) -> int: return e.amount), [2, 3, 4], "a SHARDS event each")
-	assert_eq(paid[0].pos, Vector2(6, 0), "at the body (the gems fly from there)")
+	assert_eq(paid[0].pos, Vector2(6, 0), "at the body (O7b: where they lay)")
 
 
 func test_shards_scale_with_the_danger_tier() -> void:
@@ -184,6 +172,50 @@ func test_shards_scale_with_the_danger_tier() -> void:
 			want[tier],
 			"tier %d" % tier
 		)
+
+
+func test_shard_tier_stops_at_the_peak_phase() -> void:
+	# v0.10.5 O7a (P6): a kill before the peak pays as before; 3 minutes past it pays the same as at the peak.
+	var w := _world()
+	w.spawner = SpawnTable.new()
+	w.spawner.tier_ticks = 100
+	w.spawner.cap_by_floor = PackedInt32Array([0])
+	w.spawner.cap_max = 0
+	w.spawner.curve = CurveTable.new()
+	w.reward_table.shard_cap_min_ticks = 0
+	w.spawner.curve.starts = PackedInt32Array([0, 250])  # the peak starts at tier 2
+	w.run_ticks = 100
+	var before := Rewards.shards_for_kill(w, KIND.CHARGER)
+	assert_eq(before, 3, "tier 1 as before")
+	w.run_ticks = 250
+	var at_peak := Rewards.shards_for_kill(w, KIND.CHARGER)
+	assert_gt(at_peak, before)
+	w.run_ticks = 250 + 3 * 3600
+	assert_eq(
+		Rewards.shards_for_kill(w, KIND.CHARGER), at_peak, "3 minutes past the peak pays the same"
+	)
+	w.reward_table.shard_tier_caps_at_peak = false
+	assert_gt(Rewards.shards_for_kill(w, KIND.CHARGER), at_peak, "flag off: grows as before")
+	w.reward_table.shard_tier_caps_at_peak = true  # the table is shared
+	w.reward_table.shard_cap_min_ticks = 10800
+
+
+func test_shard_cap_is_at_least_three_minutes() -> void:
+	# v0.10.5 O7a: floor 1 peaks at 90 s and a later floor at 30 s; both cap at 180 s (shipped data).
+	var w := _world()
+	assert_eq(w.reward_table.shard_cap_min_ticks, 10800)
+	w.spawner = SpawnTable.new()
+	w.spawner.curve = CurveTable.new()
+	for peak in [5400, 1800]:
+		w.spawner.curve.starts = PackedInt32Array([0, peak])
+		w.run_ticks = 10800
+		var at_cap := Rewards.shards_for_kill(w, KIND.WARDEN)
+		w.run_ticks = 10800 + 3600 * 3
+		assert_eq(
+			Rewards.shards_for_kill(w, KIND.WARDEN), at_cap, "holds after 180 s (peak %d)" % peak
+		)
+		w.run_ticks = peak
+		assert_lt(Rewards.shards_for_kill(w, KIND.WARDEN), at_cap, "still growing at the peak")
 
 
 func test_a_boss_kind_pays_by_floor_not_tier() -> void:
@@ -330,7 +362,7 @@ func test_a_chest_you_cant_afford_stays_shut() -> void:
 
 
 ## v0.8.0 N7 (owner O61, D48): a chest deals one card by its odds; the world waits while the panel shows it (its
-## numbers before the take), and any pick input (here a cancel) takes it, paid then, and closes the chest.
+## numbers before the take), and a pick input takes it, paid then, and closes the chest. v0.9.5 CD: a cancel leaves it.
 func test_a_chest_deals_one_card_and_any_answer_takes_it() -> void:
 	var w := _world()
 	w.add_reward(RewardStore.Kind.CHEST, Vector2(1.0, 0), 40)
@@ -347,9 +379,17 @@ func test_a_chest_deals_one_card_and_any_answer_takes_it() -> void:
 	assert_ne(w.choosing, -1, "no answer: still showing")
 	assert_eq(w.tick, t + 1, "the tick still counts")
 	_pick(w, InputFrame.PICK_CANCEL)
-	assert_eq(w.choosing, -1, "any answer closes it")
+	assert_eq(w.choosing, -1, "a cancel closes it")
+	assert_eq(w.shards, 55, "unpaid")
+	assert_true(w.items_owned.is_empty(), "the card refused")
+	assert_eq(w.rewards.offer_of(0), offer, "the chest keeps the same card for later")
+	_press(w, I)
+	assert_ne(w.choosing, -1, "opened again")
+	assert_eq(w.rewards.offer_of(0), offer, "no reroll")
+	_pick(w, 1)
+	assert_eq(w.choosing, -1, "a pick closes it")
 	assert_eq(w.shards, 15, "40 paid")
-	assert_eq(w.items_owned, PackedInt32Array([offer[0]]), "and the card taken: no choice")
+	assert_eq(w.items_owned, PackedInt32Array([offer[0]]), "and the card taken")
 	assert_eq(w.rewards.size(), 0, "the chest is consumed")
 
 
@@ -543,7 +583,7 @@ func test_validation() -> void:
 	it.name_key = &"A"
 	it.desc_key = &"B"
 	it.kind = ItemDefinition.Kind.LONG_EDGE
-	it.modifiers.append(&"long_edge")
+	it.modifiers.append(&"wide_arc")
 	it.tags = PackedStringArray(["blade"])
 	assert_eq(it.validate().size(), 0)
 	it.set("rarity", 7)

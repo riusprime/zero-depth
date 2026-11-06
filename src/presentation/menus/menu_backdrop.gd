@@ -39,6 +39,7 @@ uniform float has_wall = 0.0;
 uniform float wall_gain = 0.62;
 uniform sampler2D spark_tex : filter_linear_mipmap;
 uniform float has_spark_tex = 0.0;
+uniform float astral = 0.0;
 const vec3 EMBER = vec3(0.92, 0.68, 0.45);
 const vec3 HOTCORE = vec3(1.0, 0.86, 0.66);
 
@@ -96,6 +97,25 @@ vec3 stone_scene(vec2 px, vec2 uv, vec2 screen) {
 	col *= 1.0 - smoothstep(0.3, 1.1, v) * 0.85;
 	return col;
 }
+// v0.10.5 W3-O18: Astral's own night (the main menu's screens): the owner's wall sunk to a cool ink-lilac shadow,
+// a faint veil drifting, a few small stars twinkling slowly, a vignette. No ember, no orange.
+vec3 astral_scene(vec2 px, vec2 uv, vec2 screen) {
+	vec3 col = vec3(0.027, 0.035, 0.075);
+	if (has_wall > 0.5) {
+		float l = dot(texture(wall_tex, px / screen.y).rgb, vec3(0.299, 0.587, 0.114));
+		col += vec3(0.43, 0.46, 0.63) * l * 0.13;
+	}
+	float v = fbm(px / 460.0 + vec2(t * 0.012, t * 0.004));
+	col += vec3(0.42, 0.45, 0.62) * smoothstep(0.5, 0.9, v) * 0.07;
+	vec2 cell = floor(px / 56.0);
+	float h = hash(cell);
+	vec2 sp = (cell + 0.2 + 0.6 * vec2(hash(cell + 1.3), hash(cell + 7.1))) * 56.0;
+	float d = length(px - sp);
+	float tw = 0.65 + 0.35 * sin(t * (0.4 + h) + h * 6.28);
+	col += vec3(0.79, 0.8, 0.9) * step(0.9, h) * smoothstep(1.5, 0.2, d) * 0.55 * tw;
+	float vg = length((uv - vec2(0.55, 0.5)) * vec2(1.2, 1.0));
+	return col * (1.0 - smoothstep(0.35, 1.1, vg) * 0.65);
+}
 // Sparks: in columns, each rising, swaying and fading; their speed and phase from the column's hash.
 vec3 spark_layer(vec2 px, vec2 screen, float cellw, float speed, float k) {
 	float col = floor(px.x / cellw);
@@ -132,9 +152,10 @@ void fragment() {
 	vec2 px = SCREEN_UV * screen;
 	vec2 uv = SCREEN_UV;
 	vec3 g = textureLod(screen_tex, SCREEN_UV, lod).rgb;
-	vec3 over = mix(g, vec3(0.02, 0.013, 0.01), mix(dark_left, dark_right, smoothstep(0.0, 0.85, uv.x)));
+	vec3 ink = mix(vec3(0.02, 0.013, 0.01), vec3(0.027, 0.035, 0.075), astral);
+	vec3 over = mix(g, ink, mix(dark_left, dark_right, smoothstep(0.0, 0.85, uv.x)));
 	over *= 0.78 + 0.22 * uv.y;
-	over += EMBER * pow(uv.y, 3.0) * 0.16;
+	over += EMBER * pow(uv.y, 3.0) * 0.16 * (1.0 - astral);
 	// Nothing behind (the main menu): the screen is one flat colour. Five fixed probes, the same for every pixel.
 	vec3 p0 = textureLod(screen_tex, vec2(0.5, 0.5), 4.0).rgb;
 	float spread = length(textureLod(screen_tex, vec2(0.2, 0.25), 4.0).rgb - p0);
@@ -142,7 +163,8 @@ void fragment() {
 	spread = max(spread, length(textureLod(screen_tex, vec2(0.3, 0.8), 4.0).rgb - p0));
 	spread = max(spread, length(textureLod(screen_tex, vec2(0.75, 0.75), 4.0).rgb - p0));
 	float empty = max(scene, 1.0 - smoothstep(0.004, 0.03, spread));
-	vec3 col = mix(over, stone_scene(px, uv, screen), empty);
+	vec3 own = astral > 0.5 ? astral_scene(px, uv, screen) : stone_scene(px, uv, screen);
+	vec3 col = mix(over, own, empty);
 	col += sparks * spark_layer(px, screen, 46.0, 0.05, 0.0);
 	col += sparks * 0.6 * spark_layer(px + vec2(23.0, 0.0), screen, 71.0, 0.035, 5.0);
 	COLOR = vec4(col, 1.0);
@@ -160,6 +182,14 @@ var own_scene := false:
 	set(v):
 		own_scene = v
 		_mat.set_shader_parameter(&"scene", 1.0 if v else 0.0)
+## v0.10.5 W3-O16 (the Swap in the Astral style): the game blurred and sunk into Astral's cool ink, evenly from top
+## to bottom: no ember glow, no sparks, never the ember scene. v0.10.5 W3-O18 (the menus in Astral): with nothing
+## behind, Astral's own night instead (the owner's wall sunk to a cool shadow, a faint veil, a few slow stars).
+var astral := false:
+	set(v):
+		astral = v
+		_mat.set_shader_parameter(&"astral", 1.0 if v else 0.0)
+		_mat.set_shader_parameter(&"sparks", 0.0 if v else SPARKS)
 var _mat := ShaderMaterial.new()
 
 

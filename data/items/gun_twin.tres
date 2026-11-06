@@ -13,4 +13,5 @@ requires_weapon = &"gun"
 modifiers = Array[StringName]([&"gun_twin"])
 loot_category = &"advanced"
 slot_category = &"pattern"
+level_max = 3
 id = &"gun_twin"

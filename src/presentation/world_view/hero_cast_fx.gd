@@ -12,6 +12,9 @@ extends Node3D
 ## - Reduced motion keeps only the spark (no swirl; PlayerAvatar drops the accent).
 ## Presentation only (EI-07): it reads WorldReader; its timing is frame time and decides nothing.
 
+## v0.10.0 VX1 (R10): the spark at the hand is the pack's short flash on every shot (HitPack.muzzle_at: the swirl and
+## the old spark stay for a full family, no pack or false here).
+const PACK_CAST := true
 const POOL := 4
 const MERGE_TICKS := 6
 const MUZZLE_M := 0.32
@@ -73,6 +76,8 @@ static var _spark_shader: Shader
 static var _swirl_shader: Shader
 static var _swirl_mesh: ArrayMesh
 
+## The pack's effects (WorldViewRoot hands it over); none: the old spark.
+var pack_fx: PackFx = null
 ## Flourishes started and shots merged into a live one (tests).
 var started := 0
 var merged := 0
@@ -138,6 +143,7 @@ func _build() -> void:
 					"live": false,
 					"tick": -1000000,
 					"turn": 0.0,
+					"packed": false,
 				}
 			)
 		)
@@ -155,6 +161,7 @@ func sync(reader: WorldReader) -> void:
 	if _live >= 0 and _slots[_live]["live"] and tick - int(_slots[_live]["tick"]) < MERGE_TICKS:
 		var s := _slots[_live]
 		s["spark_age"] = 0.0  # the spark re-lights where this shot leaves; the swirl keeps turning
+		s["packed"] = _pack_spark(at, dir)
 		(s["root"] as Node3D).position = at
 		(s["root"] as Node3D).rotation = Vector3(0, yaw, 0)
 		merged += 1
@@ -167,6 +174,7 @@ func sync(reader: WorldReader) -> void:
 	slot["spark_age"] = 0.0
 	slot["live"] = true
 	slot["tick"] = tick
+	slot["packed"] = _pack_spark(at, dir)
 	slot["turn"] = float(started % 4) * 0.5 * PI
 	var root: Node3D = slot["root"]
 	root.position = at
@@ -174,6 +182,15 @@ func sync(reader: WorldReader) -> void:
 	root.visible = true
 	started += 1
 	_apply(slot)
+
+
+## v0.10.0 VX1 (R10): the pack's flash at the hand for this shot; false: the old spark draws.
+func _pack_spark(at: Vector3, dir: Vector2) -> bool:
+	if not PACK_CAST or pack_fx == null:
+		return false
+	var cols := HeroPulseViews.colors(ElementLooks.player_energy())
+	var node := HitPack.muzzle_at(pack_fx, at, SimPlane.to_3d(dir, 0.0), cols[0], cols[1])
+	return node != null
 
 
 func _process(delta: float) -> void:
@@ -211,7 +228,7 @@ func _apply(s: Dictionary) -> void:
 	var sp := clampf(float(s["spark_age"]) / SPARK_SECONDS, 0.0, 1.0)
 	var sw := clampf(float(s["age"]) / SWIRL_SECONDS, 0.0, 1.0)
 	var spark: MeshInstance3D = s["spark"]
-	spark.visible = sp < 1.0
+	spark.visible = sp < 1.0 and not bool(s.get("packed", false))
 	spark.scale = Vector3.ONE * SPARK_SIZE * lerpf(0.55, 1.0, sqrt(sp))
 	(s["spark_mat"] as ShaderMaterial).set_shader_parameter("fade", 1.0 - sp * sp)
 	var swirl: MeshInstance3D = s["swirl"]

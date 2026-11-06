@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://pdqc5116ecth"
-path.s3tc="res://.godot/imported/fx_orb_cores_final.png-1bfd733183a378db41e6856865e0f80d.s3tc.ctex"
+path="res://.godot/imported/fx_orb_cores_final.png-1bfd733183a378db41e6856865e0f80d.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/textures/vfx/fx_orb_cores_final.png"
-dest_files=["res://.godot/imported/fx_orb_cores_final.png-1bfd733183a378db41e6856865e0f80d.s3tc.ctex"]
+dest_files=["res://.godot/imported/fx_orb_cores_final.png-1bfd733183a378db41e6856865e0f80d.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -26,7 +26,6 @@ var rear_half_arc := 0
 var rear_mult_permille := 1000
 ## Stagger meter: size and decay per tick in milli-points (1000 per damage point), and the stagger's length.
 var stagger_size_milli := 1000
-var stagger_decay_milli := 0
 var stagger_ticks := 150
 var attacks: Array[BossAttackTable] = []
 ## Phases, in order: HP threshold (per mille of max HP), the attack indices it picks from, its entry attack (-1 =
@@ -81,6 +80,10 @@ var dash_read_ticks := 0
 var gap_distance_m := 0.0
 var gap_ticks := 0
 var gap_attack := -1
+## v0.10.5 W3-O2 (owner F19; BossLava.closes_escape): true makes the boss keep its floor lines (its `flood` and
+## `row_flood` lanes and the molten floor they leave) and its shots apart in time: no line attack starts while any of
+## its shots fly, and no `pattern` volley starts while its lines burn or its lava lies (the pick waits). The Foundry.
+var lines_clear_shots := false
 ## v0.9.0 NB1 (BOSSES_4_5.md N1; BossTide): a boss with sig_every_ticks > 0 performs its phase's signature (its first
 ## `tide` attack) on a cadence, every sig_every_ticks from one start to the next, the first sig_first_ticks after it
 ## rises, instead of by the weighted pick (0 = no cadence: every other boss).
@@ -194,6 +197,17 @@ var window_every_ticks := 1200
 var window_first_ticks := 720
 var window_warn_ticks := 90
 var nerf_min_permille := 100
+## v0.9.5 BH4 (BOSSES_HARD.md T2, T3; BossStream): per phase, the attack index of its ring stream (-1 = none) and the
+## ticks between rings; of its crossing wave, the attack index, the ticks between waves and how many form at once.
+## `streams` is true when any phase has one (the streams run the whole fight, beside the attack rotation).
+var streams := false
+var phase_ring_atk := PackedInt32Array()
+var phase_ring_ticks := PackedInt32Array()
+var phase_wave_atk := PackedInt32Array()
+var phase_wave_ticks := PackedInt32Array()
+var phase_wave_n := PackedInt32Array()
+## v0.9.5 BH6 (HC4-HC6): The Fallen's interphases and dashes between moves (null: none).
+var interphase: InterphaseTable = null
 
 
 ## The attack index with this id, or -1.

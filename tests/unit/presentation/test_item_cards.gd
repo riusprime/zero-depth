@@ -3,7 +3,7 @@ extends GutTest
 
 const NEW_IDS := [
 	&"vampiric_core",
-	&"static_chain",
+	&"cold_snap",
 	&"momentum",
 	&"frost_core",
 	&"thorn_mantle",
@@ -13,9 +13,11 @@ const NEW_IDS := [
 ]
 
 
-func test_there_are_31_icons_and_every_one_draws_a_symbol() -> void:
+func test_there_are_14_icons_and_every_one_draws_a_symbol() -> void:
 	assert_eq(
-		ItemIcons.IDS.size(), 31, "16 + the G eight + the three heat items + four ability mods (CP)"
+		ItemIcons.IDS.size(),
+		14,
+		"v0.10.5 O1: the G eight + the three heat items + Wildfire, Cold Snap, Bulwark (the rest retired)"
 	)
 	var gem := str(ItemIcons.gem())
 	var seen := {}
@@ -34,7 +36,7 @@ func test_there_are_31_icons_and_every_one_draws_a_symbol() -> void:
 					assert_gt(s["r"], 0.0, "%s circle" % id)
 				_:
 					fail_test("%s: unknown shape %s" % [id, s["t"]])
-	assert_eq(seen.size(), 31, "every symbol is different")
+	assert_eq(seen.size(), 14, "every symbol is different")
 	for id in NEW_IDS:
 		assert_true(ItemIcons.has_icon(id), "%s: an icon before the item exists" % id)
 
@@ -60,9 +62,11 @@ func test_every_icon_draws_on_a_control() -> void:
 func test_every_item_id_has_a_colour_and_the_kind_lookup_still_works() -> void:
 	for id in ItemIcons.IDS:
 		assert_true(ItemLooks.ID_COLORS.has(id), String(id))
-	assert_eq(ItemLooks.color_of_id(&"ember_edge"), ItemLooks.color(WorldReader.ITEM_EMBER_EDGE))
+	assert_eq(ItemLooks.color_of_id(&"wildfire"), ItemLooks.ID_COLORS[&"wildfire"])
 	var tables := ContentCompiler.compile_items(ContentRepository.load_all())
 	for t in tables:
+		if t.retired:
+			continue  # v0.10.5 O1: a deleted card's tombstone has no look
 		if not ItemLooks.COLORS.has(t.kind):
 			continue  # an item newer than the kind table: only the id table knows it
 		assert_eq(

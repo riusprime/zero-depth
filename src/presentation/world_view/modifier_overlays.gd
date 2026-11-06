@@ -17,6 +17,10 @@ const PHASE := Color(0.72, 0.5, 1.0, 0.3)
 const VENOM := Color(0.45, 0.95, 0.35, 0.95)
 const QUEUED := Color(0.72, 0.5, 1.0, 0.35)
 const POOL := 24
+## v0.10.0 VX5 (R40): the Aether Shell's barrier is the pack's forcefield (the sphere where its family is full); false:
+## the sphere. The pack's scene is 2 m across; the shell's sphere is SHELL_R * 2.
+const PACK_SHELL := true
+const PACK_SHELL_SCALE := 1.1
 
 var shell := MeshInstance3D.new()
 var charge := MeshInstance3D.new()
@@ -24,6 +28,7 @@ var phase := MeshInstance3D.new()
 var drops: Array[MeshInstance3D] = []
 var marks: Array[MeshInstance3D] = []
 var _shell_mat := StandardMaterial3D.new()
+var _hold: BossPackHold = null
 
 
 func _ready() -> void:
@@ -91,6 +96,19 @@ func sync(reader: WorldReader) -> void:
 	shell.visible = bool(m["shell"]) or flash
 	shell.position = hero + Vector3(0, 0.9, 0)
 	_shell_mat.albedo_color = Color(SHELL, 0.6) if flash else SHELL
+	_hold = BossPackHold.of(self, _hold) if PACK_SHELL else null
+	if _hold != null:  # R40: the barrier is the pack's forcefield while it is up (the sphere still flashes on a hit)
+		_hold.begin()
+		var field: Node3D = null
+		if bool(m["shell"]):
+			field = _hold.hold(
+				&"shell", &"bx_shell", hero + Vector3(0, 0.9, 0), SHELL_R * PACK_SHELL_SCALE
+			)
+		if field != null:  # the fire field's colours are on its material: the shell's green
+			var c := Color(SHELL.r, SHELL.g, SHELL.b, 1.0)
+			BossPackHold.tint_field(field, c, c.lightened(0.3), c.lightened(0.7))
+		_hold.end()
+		shell.layers = 1 if (flash or field == null) else 0
 	charge.visible = bool(m["charged"])
 	charge.position = hero + Vector3(0, 0.05, 0)
 	phase.visible = bool(m["phase"])

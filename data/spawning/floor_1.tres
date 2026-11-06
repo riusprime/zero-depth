@@ -91,4 +91,5 @@ pack_min_by_floor = PackedInt32Array(2, 3, 3, 3, 3)
 pack_max_by_floor = PackedInt32Array(3, 4, 4, 5, 5)
 min_distance_m = 8.0
 edge_band_m = 3.0
+calm_antechamber_floor = 3
 mix = Array[ExtResource("1_mix")]([SubResource("M_charger"), SubResource("M_needle"), SubResource("M_warden"), SubResource("M_arc_caster"), SubResource("M_bomb_drone"), SubResource("M_swarmer"), SubResource("M_splitter"), SubResource("M_shield_bearer"), SubResource("M_mine_layer"), SubResource("M_sniper"), SubResource("M_mender")])

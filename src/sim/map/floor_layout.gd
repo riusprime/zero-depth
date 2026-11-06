@@ -191,6 +191,10 @@ var timed_room := -1
 var timed_host := -1
 var timed_door := -1
 var timed_switches := PackedVector2Array()
+## v0.9.5 TS (owner Q7): the rooms holding the two switches (empty before TS: both in the host) and the lever just
+## inside the secret room (ZERO before TS).
+var timed_switch_rooms := PackedInt32Array()
+var timed_lever := Vector2.ZERO
 var timed_door_wall: Obb
 ## v0.9.0 RA (owner W §4 A, Q22; RuneRooms.mark, -1 / empty on a floor without one): the rune puzzle's hidden room, the
 ## room before it (the host: the three pillars and the carving), its sealed doorway (a doorway index) and the slab that

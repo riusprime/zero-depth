@@ -142,6 +142,7 @@ func queue_build(
 	q.add("kit", _build_dressing.bind(reader, arena_half))
 	q.add("ice", _build_ice.bind(reader))
 	q.add("edge", _build_edge.bind(reader))
+	q.add("backdrop", BiomeBackdrop.attach.bind(self))  # v0.9.5 BG
 
 
 func _build_environment_and_light() -> void:
@@ -151,7 +152,7 @@ func _build_environment_and_light() -> void:
 
 ## v0.9.0 HB: only the mood's environment, grade, vignette and sun (the hub draws its own ground and props).
 func build_lighting_only() -> void:
-	_build_environment_and_light()
+	_build_environment_and_light()  # v0.10.5 W3-O5 (owner F2): no biome backdrop; the hub's HubVoid
 
 
 func _build_floor_ground(reader: WorldReader, arena_half: float) -> void:
@@ -416,7 +417,7 @@ func _build_light() -> void:
 	light.shadow_enabled = true
 	light.shadow_blur = SHADOW_BLUR
 	light.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
-	light.directional_shadow_max_distance = 80.0
+	RenderSwitches.apply_sun(light)  # v0.10.5 PB: 80 m, or the cheaper sun (switch 8)
 	sun = light
 	add_child(light)
 
@@ -512,6 +513,7 @@ func _add_ground_tiles(cells: Array, mats: Array, prefix := "Ground") -> Array[N
 ## v0.9.0 TD: `node` (hidden room `room`'s) out of sight until reveal_hidden().
 func _hide(node: Node3D, room: int) -> void:
 	node.visible = false
+	node.set_meta(ShaderWarmup.WARM_META, true)  # v0.10.5: drawn behind the cover, so the reveal compiles nothing
 	hidden_nodes.append(node)
 	if not _hidden_by.has(room):
 		_hidden_by[room] = []
@@ -862,7 +864,7 @@ func _build_shards(
 		special.append(reader.floor_room(reader.timed_room()).get_center())
 		for k in reader.timed_switch_count():
 			clear.append(reader.interactable_pos(reader.timed_switch_entry(k)))
-	if reader.has_rune_puzzle():  # v0.9.0 RA: none in its hidden room or round the pillars
+	if reader.has_rune_puzzle() and reader.rune_room() >= 0:  # v0.9.0 RA: none in its hidden room or round the pillars
 		special.append(reader.floor_room(reader.rune_room()).get_center())
 		for k in reader.rune_pillar_count():
 			clear.append(reader.interactable_pos(reader.rune_pillar_entry(k)))

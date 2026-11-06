@@ -40,6 +40,7 @@ static func mark(
 		return -1
 	var cands := PackedInt32Array()
 	var busy := PackedInt32Array([f.timed_room, f.timed_host])
+	busy.append_array(f.timed_switch_rooms)  # v0.9.5 TS
 	for room in TimedDoorRooms.candidates(f, taken):
 		var host := host_of(f, room)
 		if not room in busy and not host in busy:

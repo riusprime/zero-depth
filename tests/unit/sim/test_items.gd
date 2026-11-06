@@ -57,115 +57,6 @@ func _swing(w: World, aim: int = 0) -> void:
 	_idle(w, w.player.step(w.combo_step).ticks + 2)
 
 
-func test_the_first_eight_kinds_are_shipped() -> void:
-	for k in range(K.LONG_EDGE, K.OVERCHARGE + 1):
-		assert_ne(_index(k), -1, "kind %d is shipped" % k)
-
-
-func test_long_edge_hits_where_a_plain_swing_misses() -> void:
-	var far := [Vector2(2.4, 0)]
-	var plain := _world([], far)
-	_swing(plain)
-	assert_eq(_damage(plain).size(), 0, "plain reach 1.6 m misses an enemy edge 2.05 m out")
-	var w := _world([K.LONG_EDGE], far)
-	_swing(w)
-	assert_eq(_amounts(_damage(w)), [10], "Long Edge reaches 2.16 m")
-	var r := WorldReader.new(w)
-	assert_almost_eq(r.swing_reach_m(), 1.6 * 1.35, 1e-5)
-	assert_eq(r.swing_shape()[1], r.swing_reach_m(), "the drawn blade is the hit reach")
-
-
-func test_twin_arc_echoes_once_at_half_damage_six_ticks_later() -> void:
-	var w := _world([K.TWIN_ARC])
-	_swing(w)
-	var d := _damage(w)
-	assert_eq(_amounts(d), [10, 5])
-	assert_eq(d[1].tick - d[0].tick, 6 + w.player.step(0).hitstop_ticks, "0.1 s plus the hit-stop")
-	assert_eq(d[1].root_id, d[0].root_id, "the echo belongs to the swing's chain")
-	assert_eq(d[1].effect_id, &"twin_arc")
-	assert_true(d[1].tags & SimEvent.TAG_MELEE != 0)
-	assert_eq(WorldReader.new(w).echo_tick(), d[1].tick)
-
-
-func test_twin_arc_echo_rechecks_the_arc() -> void:
-	var w := _world([K.TWIN_ARC])
-	w.step(_f(0, P))
-	_idle(w, 2)
-	w.actors.set_pos(1, Vector2(-3, 0))  # leaves the arc before the echo
-	_idle(w, 20)
-	assert_eq(_amounts(_damage(w)), [10])
-
-
-func test_ember_burns_as_dot_six_ticks_of_two() -> void:
-	var w := _world([K.EMBER_EDGE])
-	_swing(w)
-	assert_eq(w.actors.burn_stacks[1], 1)
-	_idle(w, 200)
-	var dots := _damage(w, SimEvent.TAG_DOT)
-	assert_eq(_amounts(dots), [2, 2, 2, 2, 2, 2], "2 every 0.5 s for 3 s")
-	for k in range(1, dots.size()):
-		assert_eq(dots[k].tick - dots[k - 1].tick, 30)
-	for e in dots:
-		assert_eq(e.proc_pct, 0)
-		assert_eq(e.parent_seq, -1, "no HIT before a DoT tick")
-		assert_eq(e.effect_id, &"ember_edge")
-	for e in w.events_since(0):
-		if e.kind == SimEvent.Kind.HIT:
-			assert_eq(e.tags & SimEvent.TAG_DOT, 0, "DoT never emits a HIT")
-	assert_eq(w.actors.burn_stacks[1], 0, "the burn ran out")
-	assert_eq(_count_kind(w, SimEvent.Kind.STATUS_APPLY), 1, "DoT ticks never re-apply the burn")
-
-
-func test_ember_stacks_cap_at_five_and_scale_the_tick() -> void:
-	var w := _world([K.EMBER_EDGE])
-	for i in 7:
-		_swing(w)
-	assert_eq(w.actors.burn_stacks[1], 5)
-	assert_eq(WorldReader.new(w).burn_stacks(1), 5)
-	var after := w.last_event_seq()
-	# v0.8.0 N1 (O48): one burn period exactly (30 ticks), so one tick falls in it whatever phase the swings' longer
-	# hit-stop left the burn in (31 caught two once the hit-stop grew).
-	_idle(w, 30)
-	var dots := w.events_since(after).filter(
-		func(e: SimEvent) -> bool: return e.kind == SimEvent.Kind.DAMAGE
-	)
-	assert_eq(dots.size(), 1)
-	assert_eq(dots[0].amount, 10, "5 stacks x 2")
-
-
-func test_ember_with_twin_arc_burns_once_per_chain() -> void:
-	var w := _world([K.EMBER_EDGE, K.TWIN_ARC])
-	_swing(w)
-	assert_eq(_amounts(_damage(w, SimEvent.TAG_MELEE)), [10, 5], "swing and echo both land")
-	assert_eq(w.actors.burn_stacks[1], 1, "one stack per root chain per target")
-
-
-func test_splinter_fires_three_bolts_in_a_fan_at_sixty_percent() -> void:
-	var w := _world([K.SPLINTER_SHOT], [])
-	w.step(_f(InputFrame.SHOOT))
-	assert_eq(w.projectiles.size(), 3)
-	var angles := []
-	for k in 3:
-		assert_eq(w.projectiles.damage[k], 3, "5 x 0.6 = 3 (v0.8.0 GF1: the bolt is 5)")
-		var a := Kin.angle_of(Vector2(w.projectiles.vel_x[k], w.projectiles.vel_y[k]))
-		angles.append(a if a < 2048 else a - 4096)
-	angles.sort()
-	assert_almost_eq(angles[0], -68, 1)
-	assert_almost_eq(angles[1], 0, 1)
-	assert_almost_eq(angles[2], 68, 1, "a 12 degree fan is 137 units wide")
-
-
-func test_rapid_coil_shortens_the_shot_period() -> void:
-	var plain := _world([], [])
-	var w := _world([K.RAPID_COIL], [])
-	for i in 25:
-		plain.step(_f(InputFrame.SHOOT))
-		w.step(_f(InputFrame.SHOOT))
-	assert_eq(plain.projectiles.size(), 3, "every 9 ticks (v0.8.0 GF1)")
-	assert_eq(w.projectiles.size(), 5, "every 6 ticks: 9 / 1.4 = 6.4, rounded")
-	assert_eq(WorldReader.new(w).shot_period_ticks(), 6)
-
-
 func _walled(kinds: Array) -> World:
 	var w := _world(kinds, [])
 	var walls: Array[Obb] = [
@@ -174,24 +65,6 @@ func _walled(kinds: Array) -> World:
 	]
 	w.set_walls(walls)
 	return w
-
-
-func test_ricochet_bounces_once_then_dies_on_the_next_wall() -> void:
-	var plain := _walled([])
-	plain.step(_f(InputFrame.SHOOT))
-	_idle(plain, 14)
-	assert_eq(plain.projectiles.size(), 0, "a plain bolt ends at the wall")
-	var w := _walled([K.RICOCHET_CORE])
-	w.step(_f(InputFrame.SHOOT))
-	assert_eq(w.projectiles.bounces[0], 1)
-	_idle(w, 14)
-	assert_eq(w.projectiles.size(), 1, "it bounced")
-	assert_lt(w.projectiles.vel_x[0], 0.0, "heading back")
-	assert_almost_eq(w.projectiles.vel_y[0], 0.0, 1e-6)
-	assert_eq(w.projectiles.bounces[0], 0)
-	assert_gt(WorldReader.new(w).projectile_bounce_tick(0), 0)
-	_idle(w, 18)
-	assert_eq(w.projectiles.size(), 0, "the second wall ends it before its life runs out")
 
 
 func test_ricochet_reflects_off_an_angled_face() -> void:
@@ -215,47 +88,10 @@ func test_kinetic_dash_hits_each_enemy_once_per_dash() -> void:
 	assert_eq(WorldReader.new(w).dash_hit_tick(), d[0].tick)
 	_idle(w, 60)
 	var back := Kin.angle_of(w.actors.pos(1) - w.player_pos())
+	w.dash_cooldown_left = 0  # this test is about hits per dash, not the 10 s recharge
 	w.step(_f(0, InputFrame.DASH, back))
 	_idle(w, 20)
 	assert_eq(_amounts(_damage(w, SimEvent.TAG_DASH)), [12, 12], "the next dash hits it again")
-
-
-func test_overcharge_charges_the_finisher_doubles_and_shockwaves() -> void:
-	# v0.3.0 L11: every 4th swing of the combo is the spinning finisher, so Overcharge charges exactly that one.
-	var w := _world([K.OVERCHARGE], [Vector2(1.2, 0), Vector2(0, 6)])
-	var r := WorldReader.new(w)
-	for i in 3:
-		assert_false(r.overcharge_ready(), "swing %d" % (i + 1))
-		_swing(w)
-	assert_true(r.overcharge_ready(), "the next press is the finisher")
-	_until_swing_ends(w)
-	w.step(_f(0, P))
-	assert_true(r.swing_overcharged())
-	assert_true(r.is_finisher())
-	_idle(w, 40)
-	assert_false(r.overcharge_ready())
-	var d := _damage(w)
-	assert_eq(
-		_amounts(d),
-		[10, 10, 12, 48, 12],
-		"the combo, then the finisher 24 x 2 and a 12-damage shockwave"
-	)
-	assert_eq(d[4].tags & SimEvent.TAG_AREA, SimEvent.TAG_AREA)
-	assert_eq(d[4].root_id, d[3].root_id)
-	assert_eq(r.overcharge_tick(), d[3].tick)
-
-
-func test_overcharge_never_drifts_off_the_finisher() -> void:
-	# A lapsed window restarts the combo; the charged swing is still the finisher, never a slash.
-	var w := _world([K.OVERCHARGE], [Vector2(1.2, 0)])
-	var r := WorldReader.new(w)
-	_swing(w)
-	_swing(w)
-	_idle(w, 30)
-	for i in 4:
-		w.step(_f(0, P))
-		assert_eq(r.swing_overcharged(), i == 3, "swing %d of the new combo" % (i + 1))
-		_until_swing_ends(w)
 
 
 func _until_swing_ends(w: World) -> void:
@@ -264,18 +100,10 @@ func _until_swing_ends(w: World) -> void:
 
 
 func test_items_stack() -> void:
-	var w := _world([K.SPLINTER_SHOT, K.RICOCHET_CORE, K.RAPID_COIL], [])
-	w.step(_f(InputFrame.SHOOT))
-	_idle(w, 1)
-	assert_eq(w.projectiles.size(), 3)
-	for k in 3:
-		assert_eq(w.projectiles.bounces[k], 1)
-	assert_eq(ItemEffects.shot_period_ticks(w), 6, "9 / 1.4 (v0.8.0 GF1)")
+	var w := _world([K.MOMENTUM, K.EXECUTIONER, K.SWIFT_FEET], [])
 	var r := WorldReader.new(w)
 	assert_eq(r.item_count(), 3)
-	assert_true(r.has_item_kind(WorldReader.ITEM_RICOCHET_CORE))
-	assert_false(r.has_item_kind(WorldReader.ITEM_OVERCHARGE))
-	assert_false(w.add_item(_index(K.RAPID_COIL)), "no duplicates")
+	assert_false(w.add_item(_index(K.EXECUTIONER)), "no duplicates")
 
 
 func _count_kind(w: World, kind: SimEvent.Kind) -> int:
@@ -284,7 +112,7 @@ func _count_kind(w: World, kind: SimEvent.Kind) -> int:
 
 func test_walking_over_a_pickup_takes_it() -> void:
 	var w := _world([], [])
-	var idx := _index(K.LONG_EDGE)
+	var idx := _index(K.KINETIC_DASH)
 	var id := w.add_pickup(idx, Vector2(3, 0))
 	var r := WorldReader.new(w)
 	assert_eq(r.pickup_count(), 1)
@@ -305,32 +133,17 @@ func test_walking_over_a_pickup_takes_it() -> void:
 	assert_eq(picks.size(), 1)
 	assert_eq(picks[0].amount, idx)
 	assert_eq(picks[0].source_id, id)
-	assert_almost_eq(r.swing_reach_m(), 1.6 * 1.35, 1e-5, "the item works at once")
 
 
 func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 	var w := _world([], [])
 	w.player.utility = PlayerTable.Utility.GUARD  # v0.3.0 E: Bulwark is drawn only with the guard.
 	var all := ItemPool.draw(w, 100)
-	assert_eq(
-		all.size(),
-		65,
-		(
-			"the v0.3.0 pool of 24 + the M-list's 24 usable here (v0.6.0 MX4: no heat, no ability, no legendary)"
-			+ " + the Gun pool's 12 new (v0.6.5 WN3) + v0.6.5 WN4: the Blade pool's 12 new cards and Blade"
-			+ " Orbit (no longer an ability merge) = 73; v0.6.5 WN5a: + the 4 triggers, offered now, and the"
-			+ " shared pool's 2 new cards; v0.6.5 WN5b: − the 26 retired v0.6 cards usable here; v0.8.0 BL: + 2"
-			+ "; v0.8.0 AO: + Ring and Swirl; v0.8.0 RM: + Threadline, Faultline, Gravity Stitch, Stress Mark"
-			+ "; v0.9.0 TW: − Spread (merged into Twin); v0.9.0 XP: − Explosive; v0.9.0 LZ, BM: + the Laser, the Bomb"
-			+ "; v0.9.0 AF1: + the Lance, the Scatter, − Charge (retired into the Lance)"
-			+ "; v0.9.0 AF2: + the Glaive, the Seekers, − Boomerang (retired into the Glaive)"
-			+ "; v0.9.0 AF3: + the Wave, the Wisps"
-		)
-	)
+	assert_eq(all.size(), 59, "the pool: every usable item here (retired cards are never drawn)")
 	var seen := {}
 	for i in all:
 		seen[i] = true
-	assert_eq(seen.size(), 65, "no repeats")
+	assert_eq(seen.size(), 59, "no repeats")
 	var v := _world([], [])
 	v.player.utility = PlayerTable.Utility.GUARD
 	var first := ItemPool.available(v)  # v0.5.0 CP: index 0 may be an ability mod, never drawn here
@@ -343,7 +156,7 @@ func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 		assert_false(i in held)
 		v.add_pickup(i, Vector2(5, 5))
 	var rest := ItemPool.draw(v, 100)
-	assert_eq(rest.size(), 60, "65 - owned - 4 placed")
+	assert_eq(rest.size(), 54, "59 - owned - 4 placed")
 	for i in rest:
 		assert_false(i in some or i in held)
 
@@ -359,11 +172,11 @@ func test_pool_draws_are_deterministic_by_seed() -> void:
 
 
 func test_item_state_is_hashed_and_deterministic() -> void:
-	var kinds := [K.TWIN_ARC, K.EMBER_EDGE, K.KINETIC_DASH, K.OVERCHARGE, K.SPLINTER_SHOT]
+	var kinds := [K.MOMENTUM, K.EXECUTIONER, K.KINETIC_DASH, K.SWIFT_FEET]
 	var a := _world(kinds)
 	var b := _world(kinds)
-	a.add_pickup(_index(K.LONG_EDGE), Vector2(-4, 0))
-	b.add_pickup(_index(K.LONG_EDGE), Vector2(-4, 0))
+	a.add_pickup(_index(K.THORN_MANTLE), Vector2(-4, 0))
+	b.add_pickup(_index(K.THORN_MANTLE), Vector2(-4, 0))
 	for t in 240:
 		var f := _f(
 			InputFrame.SHOOT if t % 50 > 30 else 0, P if t % 20 == 0 else 0, (t * 37) % 4096
@@ -375,8 +188,8 @@ func test_item_state_is_hashed_and_deterministic() -> void:
 		assert_eq(a.state_hash(), b.state_hash(), "tick %d" % t)
 	var c := _world(kinds)
 	var h := c.state_hash()
-	c.add_item(_index(K.LONG_EDGE))
+	c.add_item(_index(K.THORN_MANTLE))
 	assert_ne(c.state_hash(), h, "owning an item changes the hash")
 	h = c.state_hash()
-	c.add_pickup(_index(K.RAPID_COIL), Vector2(1, 1))
+	c.add_pickup(_index(K.VAMPIRIC_CORE), Vector2(1, 1))
 	assert_ne(c.state_hash(), h, "pickups are hashed")

@@ -6,10 +6,22 @@ extends GutTest
 
 ## The attacks with no hit class of their own: the meltdown's burning ground (a hazard). v0.8.0 N2 (owner O27, D36
 ## superseded): The Fallen's attacks are classed too (its own hits outside its mimic windows).
-const UNCLASSED := [&"meltdown"]
+## v0.9.5 BH4: the Tidecaller's crossing wave is one too (a hazard the owner set at 15 damage, seven hits: chip damage).
+## v0.9.5 BH6: so are the Fallen's five interphase carriers (owner-set 15 damage hits: chip damage, no class).
+## v0.10.5 O3: and the Prism's Shattered Kneel (she is down: it never hits).
+const UNCLASSED := [
+	&"meltdown",
+	&"crossing_wave",
+	&"fallen_rays",
+	&"fallen_rain",
+	&"fallen_dark",
+	&"fallen_erupt",
+	&"fallen_return",
+	&"prism_kneel",
+]
 ## Per boss, the slow readable attacks BP left as they were: [id, telegraph seconds].
 const KEPT_SLOW := {
-	&"gatekeeper": [[&"rock_rings", 0.8], [&"shock_lanes", 1.6]],
+	&"gatekeeper": [[&"rock_rings", 0.8], [&"shock_lanes", 1.35]],  # v0.9.5 BH2 (B1): it locks 0.55 s now
 	&"warlord": [[&"shield_wall", 0.8], [&"spear_lines", 1.6]],
 	&"brood_mother": [[&"egg_storm", 1.6], [&"burrow", 1.0]],
 	&"hive_lens": [[&"prism_spiral", 0.9], [&"gaze", 0.8]],
@@ -17,24 +29,24 @@ const KEPT_SLOW := {
 	&"foundry": [[&"slag_fountain", 1.0], [&"molten_flood", 1.6]],
 	&"colossus": [[&"spike_chase", 0.9], [&"fist_combo", 0.8]],
 	&"prism": [[&"cross_ring", 1.0]],
-	&"tidecaller": [[&"tide_rings", 0.8], [&"undertow", 1.6]],  # v0.9.0 NB1: built at BP's pace
+	&"tidecaller": [[&"ring_stream", 0.8], [&"undertow", 1.6]],  # v0.9.0 NB1: built at BP's pace
 	&"twin_wardens": [[&"crossfire", 1.2], [&"chain_sweep", 1.6]],  # v0.9.0 NB2: built at BP's pace
 	&"clockwork_judge": [[&"gear_spiral", 0.8], [&"verdict", 1.6]],  # v0.9.0 NB3: built at BP's pace
 	&"lantern_shade": [[&"wisp_bloom", 0.8], [&"snuff", 1.6]],  # v0.9.0 NB4: built at BP's pace
 }
 ## Per boss, the attacks BP sped up: [id, telegraph seconds before BP, after].
+## v0.9.5 BH5 (HC1): the Colossus Leap Slam is 0.55 s now (was 0.7).
 const SPED_UP := {
 	&"gatekeeper":
 	[[&"fist_slam", 1.6, 1.1], [&"fist_slam_2", 1.6, 1.1], [&"fist_slam_3", 1.6, 1.1]],
-	&"warlord":
-	[[&"javelin_fan", 0.6, 0.45], [&"javelin_fan_fast", 0.6, 0.45], [&"lunge_dash", 1.4, 1.0]],
+	&"warlord": [[&"lunge_dash", 1.4, 1.0]],  # v0.9.5 BH2 (B2): the javelins wind up 0.6 s again (the hard spells' rule)
 	&"brood_mother": [[&"leap", 1.6, 1.0], [&"leap_chain", 1.4, 1.0], [&"pounce_chain", 1.2, 0.95]],
 	&"hive_lens": [[&"dive", 1.4, 1.0], [&"focus_beam", 1.6, 1.1], [&"focus_beam_3", 1.6, 1.1]],
 	&"siege_engine": [[&"rail", 1.5, 1.1], [&"rail_3", 1.5, 1.1], [&"shockwave", 1.2, 0.9]],
 	&"foundry":
 	[[&"vent_blast", 0.8, 0.6], [&"bomb_launch", 1.0, 0.7], [&"bomb_launch_3", 1.0, 0.7]],
 	&"colossus":
-	[[&"leap_slam", 0.9, 0.7], [&"leap_slam_2", 0.9, 0.7], [&"boulder_throw", 1.0, 0.75]],
+	[[&"leap_slam", 0.9, 0.55], [&"leap_slam_2", 0.9, 0.55], [&"boulder_throw", 1.0, 0.75]],
 }
 
 
@@ -74,7 +86,7 @@ func test_every_boss_hit_kills_the_base_hero_in_its_class_hits() -> void:
 			seen += 1
 	assert_eq(
 		seen,
-		109,  # v0.9.0 NB1: the Tidecaller's 7; NB2: the Twin Wardens' 5; NB3: the Judge's 6; NB4: the Shade's 8
+		111,  # NB1: Tidecaller 7; NB2: Twin Wardens 5; NB3: Judge 6; NB4: Shade 8; BH2: +1; O3: facet_lances
 		(
 			"every classed attack of the six bosses and the final boss's three bodies (N2: 4 new, The Fallen's 9;"
 			+ " PR: the Prism's 3 orb spells in, cross_weave and prism_bolt_fan out)"
@@ -134,7 +146,11 @@ func test_the_javelins_come_and_go_faster() -> void:
 	var t := ContentCompiler.compile_boss(def, repo)
 	for id: StringName in [&"javelin_fan", &"javelin_fan_fast"]:
 		var atk := t.attacks[t.attack_index(id)]
-		assert_eq(atk.windup_ticks, 27, "%s winds up 0.45 s (was 0.6)" % id)
+		assert_eq(
+			atk.windup_ticks,
+			36,
+			"%s winds up 0.6 s (BH2, B2: every hard-spell telegraph >= 0.55 s)" % id
+		)
 		assert_eq(atk.recall_ticks, 30, "%s: stuck 0.5 s before they fly back (was 1.0)" % id)
 	var fan: BulletPatternDefinition = repo.get_def(&"bullet_patterns", &"warlord_javelin_fan")
 	var fast: BulletPatternDefinition = repo.get_def(
@@ -142,8 +158,11 @@ func test_the_javelins_come_and_go_faster() -> void:
 	)
 	assert_almost_eq(fan.speed_mps, 6.5, 0.001, "out and back at 6.5 m/s (was 4.5)")
 	assert_almost_eq(fast.speed_mps, 7.0, 0.001, "phase 3: 7.0 m/s (was 5.0), the slow-shot cap")
-	assert_almost_eq(fan.wave_gap_seconds, 0.25, 0.001)
-	assert_almost_eq(fast.wave_gap_seconds, 0.22, 0.001)
+	assert_almost_eq(
+		fan.wave_gap_seconds, 0.3, 0.001, "BH2 (B2): the second fan 0.3 s after the first"
+	)
+	assert_almost_eq(fast.wave_gap_seconds, 0.3, 0.001)
+	assert_eq([fan.waves, fast.waves], [2, 2], "BH2: a leading fan, then one aimed at you")
 
 
 func test_each_boss_is_faster_in_places_and_keeps_slow_readable_attacks() -> void:

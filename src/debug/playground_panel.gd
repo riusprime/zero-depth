@@ -197,6 +197,7 @@ func _spawn_tab() -> Control:
 			var b := _button(row, "FinalPhase%d" % (k + 1), "", func() -> void: api.final_phase(k))
 			b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 			b.text = tr("UI_PG_FINAL_PHASE") % (k + 1)
+		_button(box, "FinalPrismLast", "UI_PG_FINAL_PRISM_LAST", api.final_prism_last)  # v0.10.5 O3
 	return box
 
 

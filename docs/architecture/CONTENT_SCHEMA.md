@@ -179,6 +179,11 @@ class_name AttackDefinition extends Resource
   damage 8, 3 shards, 2 pulses 10 m/s after a 0.5-0.67 s line, keeps 6 m. v0.7.5 EF: its attack is a pattern (a ring
   of 6 slow orbs, `pattern_id` only; above), its windup still 0.5-0.67 s, with no line drawn.
 - `stress_tags` feed the enemy × archetype stress matrix in [`../balance/SCORECARD.md`](../balance/SCORECARD.md).
+- **Matchups** (v0.10.5 O10, owner P3): `@export var weak_to: StringName` and `resists` (a form card's modifier id, or an
+  element of `ModifierOpDefinition.ELEMENTS`; empty: none; never the same id; `EnemyDefinition.cross_check` checks
+  they exist), `weak_permille` (1001..2000, starting value 1250) and `resist_permille` (1..999, starting value 750).
+  The matrix: [`../roadmap/v0.10.5/O10_STRESS_MATRIX.md`](../roadmap/v0.10.5/O10_STRESS_MATRIX.md); the rule:
+  SIM_CONTRACTS §8 step 3.
 - **Shards** (v0.3.0 E): `@export var shards: int` (>= 0; Charger 3, Needle 4, Warden 6) is what a kill pays,
   × (1 + `shard_tier_bonus` × danger tier) rounded half up (v0.4.0 TU: the floor's plain 30 s tier, so shards keep
   growing after the difficulty curve holds at its peak; owner D7). `@export var shards_by_floor: bool` (bosses) pays
@@ -519,20 +524,21 @@ steps non-negative, every stat known and listed once, the pool not empty.
 
 **Shop** (v0.5.0 SH, PLAN R1, R2; category `shop`, `data/shop/terminal.tres`): `ShopDefinition` holds `offer_size`
 (cards in the stock, 4), `rarity_prices` (floor 1's price for a common, rare and epic card: 30 / 55 / 90; v0.8.0 RR:
-an optional fourth for a legendary one, data 150; salvage refunds at most the epic price), `floor_price_step` (each later floor raises every price but the reroll by this
+an optional fourth for a legendary one, data 150), `floor_price_step` (each later floor raises every price but the reroll by this
 share of floor 1's: × 1, 1.5, 2), `heal_share` (0.3 of max HP, once per shop) and `heal_price` (40 × the floor
 step), `reroll_price` and `reroll_step` (20, then × 1.5 per use at that shop, rounded half up: 20, 30, 45, 68),
-`sell_share` (a mod or stat card sells for 0.4 of its shop price; a stat card one stack, the stat values rebuilt from
-the cards left so the caps hold), `ability_refund_per_level` (10 shards per level, was 25: a free ability plus a bought level-up must not salvage for profit, M-LOOP; for salvaging an ability, never the
-weapon; its slot frees for a later ability card) and `interact_radius_m`. The stock is drawn from `loot` by a chest's
+and `interact_radius_m`. v0.10.5 W3-O9 (owner, 2026-11-04: "it should only show the heal, reroll and the 4 cards,
+lifting the curse and selling is too broken"): `sell_share` and `ability_refund_per_level` are gone with salvage, and
+`EventRulesDefinition.cleanse_price` with the shop's curse lift (an older `.tres` that still sets them loads: the
+loader drops an unknown property). WandMigration keeps the old refund numbers as its own constants. The stock is drawn from `loot` by a chest's
 rules (`Offers.draw`: ability cards only while they can apply, mods only with their ability), and a mod in the stock
 is out of the item pool like one in an altar's offer. Placement is a pass of its own (`ShopPlacement.pick`, stream
 `shop_room`, never `map`): one per floor, never the start hall, the boss room or the room before the boss door, dead
-ends first. Validation: prices, the heal and reroll prices, the refund and the radius positive; three rarity prices;
-the steps non-negative; the shares in (0, 1]; `offer_size` 1–9. v0.5.5 EC: a reroll draws only the unsold slots (a
+ends first. Validation: prices, the heal and reroll prices and the radius positive; three rarity prices;
+the steps non-negative; `heal_share` in (0, 1]; `offer_size` 1–9. v0.5.5 EC: a reroll draws only the unsold slots (a
 bought slot stays sold for the floor, owner S2); `max_buys` (4, owner S3: cards bought at the floor's shop, the heal
 and rerolls don't count; 0 = no limit; ≥ 0); `late_floor_price` (1.5, owner S4: floors 2+ multiply the floor step
-by this: × 1, 2.25, 3; salvage refunds stay on the floor step alone; ≥ 1). v0.7.5 MG (owner N12, "the shop is
+by this: × 1, 2.25, 3; ≥ 1). v0.7.5 MG (owner N12, "the shop is
 also gonna be there every two … floors"): `first_floor` (1) and `every_floors` (2), both > 0: the shop stands on
 floor `first_floor` and every `every_floors` floors after it (`FloorCadence.on`, `ShopTable.on_floor`: floors 1, 3,
 5 …; a 3-floor run has two). The floor number keeps counting past the run's last floor, so an endless loop keeps
@@ -603,6 +609,8 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
 @export var gap_close_attack: StringName           # an attack id (empty = none), done when out of reach...
 @export var gap_close_distance_m: float            # ...beyond this from the boss's edge...
 @export var gap_close_seconds: float               # ...for this long
+# v0.10.5 W3-O2 (owner F19): the Foundry's. No flood/row_flood while its shots fly; no pattern while its lines/lava lie.
+@export var lines_clear_shots: bool                 # its floor lines and its shots never share the floor (false)
 # v0.9.0 NB1 (BOSSES_4_5.md N1): the Tidecaller's Pull on a cadence (0 = none; every phase then holds a `tide`).
 @export var signature_every_seconds: float         # the phase's first `tide` attack every this long, start to start
 @export var signature_first_seconds: float         # the first one this long after the boss starts fighting
@@ -656,7 +664,10 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   take `lock_seconds: float` (0 = as before) and `shielded: bool`. With a lock, the marker follows the player's exact
   position (no lead) for `telegraph_seconds - lock_seconds`, then holds and flashes for `lock_seconds` (at least
   `MIN_TELEGRAPH_TICKS`, and under the telegraph) before it strikes. `shielded` (the signature pattern) keeps the boss
-  shielded through its windup and active time. Three new moves:
+  shielded through its windup and active time; v0.10.5 O2a (owner L3) adds `shield_seconds: float` (-1, the
+  default: as before; >= 0, needs `shielded`: the shield holds through the windup and only the first
+  `shield_seconds` of the active time; the Lantern Shade's Lights Out and the Clockwork Judge's echo 0). Three new
+  moves:
   - `pattern` (PROJECTILE): `pattern_id`, a `BulletPatternDefinition` id (§4b). The attack is active for the
     pattern's whole duration (`active_seconds` is a floor). `damage` is each fireball's.
   - `marks` (CIRCLE): `count` ground circles of `radius_m`, `stagger_seconds` apart, each tracked then locked
@@ -834,7 +845,9 @@ Compiled by `PatternCompiler.compile_pattern` into a `BulletPatternTable` (sim u
   recap line).
 - `BossPoolDefinition` (`data/boss_pools/floor_<n>.tres`): `floor_index` and the `boss_ids` that floor draws from.
   Since v0.4.0 BO each pool holds two: floor 1 Gatekeeper and Warlord, floor 2 Brood Mother and Hive Lens, floor 3
-  Siege Engine and Foundry. A run draws each floor's boss from its own stream (`RunState.pick_boss`).
+  Siege Engine and Foundry. A run draws each floor's boss from its own stream (`RunState.pick_boss`). v0.10.5 W3-O11
+  (owner F21): a boss may sit in two pools (floor 1 adds the Brood Mother, shared with floor 2); a floor never draws
+  a boss the run has met (`FloorShape.boss`), and a run saved before O11 (no `run.boss_draw`) draws as it did then.
 - Changed from the earlier sketch (`enemy: EnemyDefinition`, `stagger_threshold`, `arena_template_id`) when the
   bosses were built (v0.3.0 C): the numbers live on the boss itself and the arena is the cells and template the
   floor generator reads.
@@ -1127,6 +1140,11 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   duration > 0 and at least a tick (`not_positive`, `duration_zero_ticks`); each min not above its max
   (`duration_range`). Compiled by `IntensityCompiler.compile` (ticks; intensity × 1000, per-second rates
   / 60) onto the run floors' `SpawnTable.intensity`.
+  v0.10.5 O4 (owner D46): `struggle_hp_permille` (400), `strong_hp_permille` (700), `expected_kill_permille` (200:
+  the expected kills in 10 s, per mille of the cap now), `slow_kill_permille` (500), `slow_min_alive` (4),
+  `struggle_peak_intensity` (600, at most `peak_intensity`: `intensity_order`), `struggle_peak_speed` (2, 1..10),
+  `struggle_quiet_permille` (1500, 1000..5000), `struggle_pack_cut` (1, 0..10); starting values. The quiet now ends on
+  its drawn time (SIM_CONTRACTS §11).
 
 - **`CatchUpDefinition`** (v0.5.5 DS, owner D4 and D7; `data/scaling/catch_up.tres`, category `scaling`, id
   `catch_up`): the hidden catch-up's numbers, all per mille ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §11):
@@ -1324,6 +1342,18 @@ Deep floors and loops ≥ 2): `floor_1_weights_permille`, `floor_2_weights_permi
 data 2/3/5/5), `guaranteed_altars` (four, 0..8; data 2/0/0/0: the floor's first N regular altars show a card compatible
 with the wand), and `jackpot_permille` (0..1000; data 15). Compiled by `RunContentCompiler.compile_loot_pacing` into
 `LootPacingTable`; without the file, no pacing.
+v0.10.5 W3-P2 (the progression audit's P2, owner 2026-11-04): `element_ceilings` (0..16 values, 1..5, never falling;
+empty = none; data 1/2/2/3) is an element card's own level ceiling in loop 1 by floor (index 0 = floor 1, the last
+value past its end), under the stage's, and `element_ceiling_loops` (at least the row's top, at most 5; data 3) the
+one on every floor of loop 2 and later (`LootPacing.element_ceiling`).
+
+`ElementPairsDefinition` (v0.9.5 EE3; `data/combos/element_pairs.tres`) also holds, from v0.10.5 W3-P1 (P1),
+`stack_falloff_permille` (0..4 values, 1..1000, never rising; empty = none; data 1000/700/500/350): an element's own
+damage on an enemy carrying k other elements counts at entry k (the last for more; `ElementStack`). An element card's
+`ItemDefinition.el_level_permille` (W3-P2; empty = 1000, else one value per level, 100..3000; data Fire and Venom
+750/900/1150, Bleed 850/950/1050, Lightning 800/900/1100, Frost none) scales that damage by the card's level.
+W3-P1b adds `storm_mark_seconds` (0..5 s; 0 = none; data 1.0): how long a hero Lightning hit leaves its enemy
+charged, so Lightning counts as carried in the others' falloff.
 
 `StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
 `max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,
@@ -1341,6 +1371,21 @@ chance to its `amounts` (10 %), every further card adds its `side` (+5 %), read 
 v0.8.0 SG (owner O91) adds `additive` (bool, default false; only for the multiplier stats `max_hp`, `damage`,
 `attack_speed`, `area`, `move_speed`, `shard_gain`, `pickup_range`, `glass_cannon`, else `range`): the cards add
 their amounts instead of compounding. Shipped on `damage`, `attack_speed` and `glass_cannon`.
+
+`StarboundDefinition` (v0.10.5 W3-P10b (owner W7); `data/starbound/`, category `starbound`): a Starbound card, the
+loop-only card kind ([`W3_W7_LOOP_POWER_G1.md`](../roadmap/v0.10.5/W3_W7_LOOP_POWER_G1.md) §B). The `id` names the
+card and its rule, one of `starbound_arc_jump`, `starbound_rising_edge`, `starbound_echo_cast`, `starbound_fervour`,
+`starbound_detonation` (else `unknown`; `ContentCompiler.compile_starbound` indexes them in that order and compiles
+none unless all five are there). `name_key`, `desc_key` (required; the sentence is shown as written, no `%s`),
+`weight` (≥ 0; draw weight among the five), and per stack: `amount` (> 0; Arc Jump's jumps, the others percent),
+`cap` (> 0 for `rising_edge` and `fervour` in percent, for `echo_cast` the most repeats; 0 for the others, else
+`range`), `reach_m` and `share` (> 0 and 0..100 percent for `arc_jump` (the jump reach, the share of the hit before)
+and `detonation` (the burst radius, the share bosses and elites take); 0 for the others, else `range`). Shipped:
+Arc Jump 1 jump, 4 m, 70 %; Rising Edge +3 % crit damage a crit, at most +150 %; Echo Cast +25 %, at most 3
+repeats; Fervour +2 % haste a kill, at most +60 %; Detonation 20 % of max HP, 2 m, bosses and elites 50 %. Rules:
+`Starbound` (src/sim/abilities; SIM_CONTRACTS §8o). `RewardsDefinition.starbound_permille` (v0.10.5 W3-P10b;
+0..1000 each, else `range`; data [200, 300]): a regular altar's chance per mille of a Starbound card, one entry a
+loop from loop 2, the last for every later loop.
 
 `RewardsDefinition` (v0.4.0 BS) gains `altar_card_weights` and `chest_card_weights` ([ability, stat, mod]) and
 `altar_rarity_weights` and `chest_rarity_weights` ([common, rare, epic]): 3 weights ≥ 0, not all 0.

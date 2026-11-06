@@ -56,7 +56,12 @@ const SIGHT_R_M := 0.05
 ## two bodies exactly apart before the hit check (phase 6), so an exact test missed by a rounding error (v0.3.5 AI).
 const CONTACT_SLOP_M := 0.02
 ## v0.4.0 SC: each enemy re-plans its walk every this many ticks, on the phase of its id (it moves every tick).
-const PLAN_PERIOD := 4
+## v0.10.5 PD (owner, perf wave 2 #9, "let's do it"): 4 -> 8, so a crowd's planning costs half its share a tick. The
+## attack checks, windups, hits and telegraphs still run every tick (think's state machine); only the walk's plan
+## slows down. Its wall check now runs on every plan: every 8 ticks, as before.
+const PLAN_PERIOD := 8
+## (owner, 2026-11-04, W3-S10: elites plan every 4 ticks again; PD's 8 kept for the crowd)
+const ELITE_PLAN_PERIOD := 4
 ## v0.4.0 EN (starting values). A Sniper's line stops following the player this many ticks before it fires.
 const SNIPE_COMMIT_TICKS := 24
 ## After a shot a Sniper walks, this much faster, to a spot 45-90 degrees around the player (1/4096 turns), until it
@@ -309,7 +314,7 @@ static func move(w: World, i: int) -> void:
 	var t := w.enemy_table(a.kinds[i])
 	var at := a.pos(i)
 	# Items (v0.2.0 J): a Frost Core slow scales both the walk and the charge (1.0 when not slowed).
-	var slow := ItemProcs.slow_factor(w, i) * Curses.enemy_speed_factor(w)  # v0.5.0 EV curse
+	var slow := ItemProcs.slow_factor(w, i)
 	var hovering := a.kinds[i] == ActorStore.Kind.BOMB_DRONE and a.state[i] == State.WINDUP
 	if a.state[i] == State.MOVE and a.kinds[i] == ActorStore.Kind.SNIPER and a.pick[i] == 1:
 		_relocate(w, i, t, slow)
@@ -369,13 +374,14 @@ static func _walk_dir(w: World, i: int, t: EnemyTable) -> Vector2:
 ## v0.4.0 SC: whether enemy i re-plans this tick. Each enemy re-plans every PLAN_PERIOD ticks, on the phase its
 ## id gives (id % PLAN_PERIOD), so a crowd's planning is spread evenly over the ticks; it still moves every tick.
 static func plans_now(w: World, i: int) -> bool:
-	return posmod(w.tick, PLAN_PERIOD) == posmod(w.actors.ids[i], PLAN_PERIOD)
+	var period := ELITE_PLAN_PERIOD if EliteAi.is_elite_kind(w.actors.kinds[i]) else PLAN_PERIOD
+	return posmod(w.tick, period) == posmod(w.actors.ids[i], period)
 
 
 ## v0.4.0 SC: the walk, planned every PLAN_PERIOD ticks (tick phase 3, before anything moves) and followed every
 ## tick by move(): the way _walk_dir picks, pushed off the enemies near it (through the actor grid World built this
-## tick) and, while a wall blocks the straight walk, along the flow field instead. The wall check itself runs every
-## other plan (it sweeps the line to the player).
+## tick) and, while a wall blocks the straight walk, along the flow field instead. The wall check (it sweeps the line
+## to the player) runs on every plan since v0.10.5 PD (it ran every other plan of 4 ticks: the same 8-tick rate).
 static func plan(w: World, i: int) -> void:
 	var a := w.actors
 	var t := w.enemy_table(a.kinds[i])
@@ -385,8 +391,7 @@ static func plan(w: World, i: int) -> void:
 		var reach := Vector2(w.tuning.ai_spread_radius_m, w.tuning.ai_spread_radius_m)
 		var push := _spread_over(w, i, w.actors_near(Rect2(at - reach, reach * 2.0)))
 		dir = _unit(dir + push * w.tuning.ai_spread_weight) * Kin.length(dir)
-		if posmod(w.tick, PLAN_PERIOD * 2) == posmod(a.ids[i], PLAN_PERIOD * 2):
-			a.plan_block[i] = 1 if _blocked(w, at, dir, t.radius_m) else 0
+		a.plan_block[i] = 1 if _blocked(w, at, dir, t.radius_m) else 0
 		if a.plan_block[i] == 1:
 			var flow := w.nav.direction(at)
 			if flow != Vector2.ZERO:
@@ -578,7 +583,7 @@ static func _blocked(w: World, at: Vector2, dir: Vector2, r: float) -> bool:
 	for k in w.walls_along(at, probe, r):
 		if Collide.sweep_vs_obb(at, probe, r, w.walls[k]) >= 0.0:
 			return true
-	return false
+	return not w.solids.is_empty() and w.solids.blocks(at, probe, r)  # v0.9.5 SB2
 
 
 ## The lane a Charger is about to run: its body's path from where it stands to its body's front at the end of

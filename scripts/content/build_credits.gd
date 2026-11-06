@@ -12,6 +12,8 @@ const ASSETS := "res://assets"
 const FONTS := "res://assets/fonts"
 const ADDONS := "res://addons"
 const PRESETS := "res://export_presets.cfg"
+## v0.10.0 VX0: an addon without a plugin.cfg is named here (Magic Circles 3D Free ships none).
+const ADDON_TITLES := {"magic_circles": "Magic Circles 3D Free"}
 
 
 func _initialize() -> void:
@@ -56,7 +58,7 @@ static func build() -> LicenceListDefinition:
 		var base := ADDONS.path_join(dir)
 		var lic := _licence_file(base)
 		var cfg := ConfigFile.new()
-		var title := dir
+		var title: String = ADDON_TITLES.get(dir, dir)
 		if cfg.load(base.path_join("plugin.cfg")) == OK:
 			title = (
 				"%s %s"
@@ -97,6 +99,8 @@ static func _add(
 
 ## The files a manifest lists: every dictionary with a "path" in any of its lists.
 static func _file_count(m: Dictionary) -> int:
+	if m.has("files_total"):  # v0.10.0 VX0: a pack of loose files states its total
+		return int(m["files_total"])
 	var n := 0
 	for v: Variant in m.values():
 		if typeof(v) == TYPE_ARRAY:

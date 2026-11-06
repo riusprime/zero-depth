@@ -16,6 +16,15 @@ extends RefCounted
 ##   burn_ticks; enemies path round it; the Foundry itself keeps to the cool ground (keep_on_ground).
 ## Both burn on one clock (BossStore.burn_cd); damage over time from the boss (Damage.tick_dot: the player's hurt
 ## iframes apply). A boss gone, its lava and melt go. Pure: no stream is drawn here.
+## - Lines and shots apart (v0.10.5 W3-O2, owner F19, 2026-11-04: "Floor hazard lines sometimes overlap with incoming
+##   projectile attacks ... practically impossible to dodge"). The rule, for a boss with lines_clear_shots (the
+##   Foundry): its floor lines (a `flood` or `row_flood` attack, telegraphed or burning, and the molten floor it
+##   leaves) and its shots (any of its projectiles in flight) never share the floor. A line attack does not start
+##   while any of its shots fly; a `pattern` volley does not start while its lava lies (the boss does one attack at a
+##   time, so its lines' telegraph and burn never overlap a volley's start either). A pick that would break the rule
+##   waits (BossAi._choose holds it as the next entry; the punish and gap-closer wait too) until the floor is clear,
+##   so the lines and the volleys each stay to be dodged, one at a time. The meltdown's ring and the closing band
+##   are the arena's edge, not lines: they are not held.
 
 ## A melt's shape (melt_shape): [centre, radius now, has an exit, the exit point, the bridge's half width, bound].
 const MELT_CENTRE := 0
@@ -34,6 +43,46 @@ const PLAYER_REACH_M := 1.6
 const OPEN_REACH_M := 24.0
 ## A lava piece shorter than this after its fords is left out.
 const MIN_PIECE_M := 0.1
+
+# --- lines and shots apart (W3-O2) -------------------------------------------------------------------------------
+
+
+## True when boss i starting attack k now would put its floor lines and its shots on the floor together (see the
+## header): it must wait. Always false for a boss without lines_clear_shots, and for k < 0.
+static func closes_escape(w: World, i: int, k: int) -> bool:
+	var t := BossAi.table_of(w, i)
+	if k < 0 or not t.lines_clear_shots:
+		return false
+	var move := t.attacks[k].move
+	if move == BossAttackTable.Move.FLOOD or move == BossAttackTable.Move.ROW_FLOOD:
+		return shots_out(w, i)
+	if move == BossAttackTable.Move.PATTERN:
+		return lava_out(w, i)
+	return false
+
+
+## Attack k when starting it now keeps the rule, else -1 (it waits: the punish and the gap-closer stay due).
+static func unless_closing(w: World, i: int, k: int) -> int:
+	return -1 if closes_escape(w, i, k) else k
+
+
+## BossAi._choose's pick k: k when it keeps the rule; else held as boss entry b's next entry (BossStore.entry), -1.
+static func hold(w: World, i: int, b: int, k: int) -> int:
+	if not closes_escape(w, i, k):
+		return k
+	w.bosses.entry[b] = k
+	return -1
+
+
+## True while any shot boss i fired is in flight (or queued this tick).
+static func shots_out(w: World, i: int) -> bool:
+	return BossPrism.shots_alive(w, i) > 0
+
+
+## True while any molten floor boss i laid lies (BossStore.lava_*).
+static func lava_out(w: World, i: int) -> bool:
+	return w.bosses.lava_boss.has(w.actors.ids[i])
+
 
 # --- molten floor -------------------------------------------------------------------------------------------------
 

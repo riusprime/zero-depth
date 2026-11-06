@@ -102,15 +102,38 @@ static func advance(w: World) -> void:
 		ItemProcs.on_swing_start(w)  # Items: Momentum.
 		Engines.on_swing_start(w)  # Engines: Bulwark's guard charges.
 		FireRhythm.on_swing(w)  # v0.8.0 MR (O91): Flurry's burst
+		# v0.10.5 W3-P10e: every 5th root attack calls a meteor. Read only (melee_permille): melee_damage would
+		# use up the swing's carried remainder before the swing hits.
+		Starfall.on_root_attack(
+			w, Modifiers.step(w, w.combo_step).damage * PlayerBuild.melee_permille(w) / 1000
+		)
 	# Shooting: while held (and not swinging), a bolt every shot_period_ticks; the first one comes at once.
+	# v0.9.5 HT: the primary attack is active (every form): heat fills by firing time. v0.10.5 W3-O3: a charging Gun
+	# (the Lance, Charge) counts its firing time in GunForms.hold, so holding a charge that never fires adds nothing.
+	if shooting(w) and can_attack and w.swing_t == 0 and not GunForms.charging(w):
+		Heat.fire_tick(w)
 	if w.shot_cd > 0:
 		w.shot_cd -= 1
 	if GunForms.charging(w):  # v0.6.5 WN3: G13 Charge, hold to grow the shot, release to fire
 		GunForms.hold(w, can_attack, func(pm: int) -> void: _fire_bolt(w, pm))
-	elif shooting(w) and can_attack and w.swing_t == 0 and w.shot_cd == 0:
+	# v0.9.5 FC4 (V9): a Void with Mine holds one void at a time (VoidMods.held)
+	elif shooting(w) and can_attack and w.swing_t == 0 and w.shot_cd == 0 and not VoidMods.held(w):
 		_fire_bolt(w)
-		w.shot_cd = ItemEffects.shot_period_ticks(w)
+		w.shot_cd = ItemEffects.next_shot_cd(w)  # v0.10.5 W3-P9: the period's fraction carried
 	ItemProcs.advance_momentum(w)
+
+
+## v0.10.5 O11 (F2): a dash starting in a swing's RECOVERY (its hit already resolved) ends the swing; the combo step is
+## kept for the usual combo window (none after the finisher: the next press starts hit 1). Start-up and the active tick
+## are not cancellable (a dash starts after the kit has advanced, so the hit tick itself reads as swing_t = active + 1).
+## True if a swing was cancelled.
+static func cancel_recovery(w: World) -> bool:
+	# The dash runs after the kit: the hit tick itself reads as active_tick + 1.
+	if w.swing_t <= 0 or w.swing_t <= current_step(w).active_tick + 1:
+		return false
+	w.swing_t = 0
+	w.combo_window = w.player.combo_window_ticks if w.combo_step < w.player.combo.size() - 1 else 0
+	return true
 
 
 ## The hero may attack now: not guarding or dashing, not in the overheat stall (Heat), not stunned (v0.6.0 CU:
@@ -171,8 +194,6 @@ static func _resolve_swing(w: World) -> void:
 	ItemEffects.after_swing(w, base, dmg)
 	Abilities.after_swing(w, landed)  # v0.4.0 BS: Combo Sword L5's finisher shockwave.
 	Engines.after_swing(w, landed)  # Engines: Slipstream.
-	var tip := w.player.radius_m + Attacks.arc_reach_m(w, spec)
-	ModifierAbilities.on_attack(w, w.player_pos() + Kin.dir(w.swing_angle) * tip)  # v0.6.0 MX2
 
 
 ## Launches combo step `step`'s spec (-1 = the current one) at `angle` for `dmg` from where the player is (melee;
@@ -199,7 +220,6 @@ static func _fire_bolt(w: World, charge: int = 1000) -> void:
 	var dmg := PlayerBuild.bolt_damage(w, Attacks.bolt_base_damage(spec))  # Builds: the Gun's factor (L16).
 	dmg = Gamble.shot_damage(w, dmg)  # Gamble shrine (v0.3.0 L19).
 	dmg = Curses.shot_damage(w, dmg)  # v0.6.0 CU: Heavy Hands' every 4th shot
-	AbilityCombos.on_shot(w)  # v0.4.0 AB: Wingman
 	FireRhythm.on_shot(w)  # v0.8.0 MR (O91): Rapid Fire's ramp
 	var tags := SimEvent.TAG_PROJECTILE | Heat.bolt_tags(w) | Abilities.bolt_tags(w)  # Hot, Pulse Gun L3
 	var ctx := AttackContext.make(w.player_pos(), w.aim_angle, dmg, 0, tags, &"")
@@ -209,8 +229,9 @@ static func _fire_bolt(w: World, charge: int = 1000) -> void:
 		ctx.size_permille = charge
 	var lance := Lance.is_lance(spec)
 	if lance:  # v0.9.0 AF1b: the Lance's ball grows x 1 to x 2 while its damage grows x 1 to x 11.6
-		ctx.size_permille = Lance.size_permille(spec, charge)
+		ctx.size_permille = Lance.size_permille(spec, charge) * LanceMods.wide(w, spec) / 1000  # v0.9.5 FC4: Big Shot
+		ctx.lance_full = LanceMods.is_full(spec, charge)
+	Starfall.on_root_attack(w, dmg)  # v0.10.5 W3-P10e: every 5th root attack calls a meteor
 	Attacks.launch(w, spec, ctx)
 	if lance:
 		Lance.on_release(w, spec, charge, spec.radius_m * ctx.size_permille / 1000.0)
-	ModifierAbilities.on_attack(w, ModifierAbilities.shot_end(w, ModifierAbilities.field_range(w)))

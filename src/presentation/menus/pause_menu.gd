@@ -18,13 +18,20 @@ signal main_menu_pressed
 signal hub_pressed  # v0.9.0 HB: the in-run exit
 
 var run_line: Label
+## v0.10.5 O6 (owner P4): one sentence on the depths' answer (the floor's catch-up), shown only above ×1.
+var depths_line: Label
+## v0.10.5 O5b: the loop rules' line under the run's (hidden on loop 1).
+var rules_line: Label
 ## The run line's numbers, so a language switch (Options opened from here) words it again (v0.6.0 UP).
 var _run := []
 var _loop := 1  # v0.7.5 AP
+var _depths := 1000
+## v0.10.5 O5b: the loop rules' name keys.
+var _rules := PackedStringArray()
 
 
 func _init(to_hub: bool = true) -> void:
-	super()
+	super(true)  # v0.10.5 W3-O18: in Astral
 	name = "PauseMenu"
 	add_backdrop()
 	add_title("UI_PAUSED")
@@ -40,6 +47,15 @@ func _init(to_hub: bool = true) -> void:
 	run_line = add_note("")
 	run_line.name = "RunLine"
 	run_line.visible = false
+	depths_line = add_note("")
+	depths_line.name = "DepthsLine"
+	depths_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	depths_line.custom_minimum_size = Vector2(420, 0)
+	depths_line.add_theme_color_override("font_color", AstralMenu.HEAT)  # W3-O18: Astral's amber
+	depths_line.visible = false
+	rules_line = add_note("")
+	rules_line.name = "RulesLine"
+	rules_line.visible = false
 	add_hint("UI_PAUSE_HINT")
 
 
@@ -53,6 +69,52 @@ func show_run(floor_index: int, seconds: float, kills: int, shards: int, loop: i
 	run_line.visible = true
 
 
+## Main's recap (Main.run_recap: floor, seconds, kills, shards, loop, v0.10.5 O5b rules; empty: no run line) and,
+## on a floor, the depths' answer from `reader` (v0.10.5 O6).
+func show_recap(recap: Dictionary, reader: WorldReader = null) -> void:
+	if not recap.is_empty():
+		show_run(
+			recap["floor"],
+			recap["seconds"],
+			recap["kills"],
+			int(recap.get("shards", 0)),
+			int(recap.get("loop", 1))  # v0.7.5 AP
+		)
+		show_rules(recap.get("rules", PackedStringArray()))
+	if reader != null and reader.has_floor():
+		show_depths(reader.catch_up_permille())
+
+
+## v0.10.5 O6: "The depths answer ×1.41: your build is strong, so …" when the floor's m is above ×1; hidden otherwise.
+func show_depths(m_permille: int) -> void:
+	_depths = m_permille
+	depths_line.visible = DepthsTag.shows(m_permille)
+	depths_line.text = depths_text() if depths_line.visible else ""
+
+
+func depths_text() -> String:
+	return tr("UI_PAUSE_DEPTHS") % DepthsTag.multiplier_text(_depths)
+
+
+## v0.10.5 O5b: "Loop rules: Quickened · Shielded" (name keys; none: the line hides).
+func show_rules(keys: PackedStringArray) -> void:
+	_rules = keys
+	rules_line.visible = not keys.is_empty()
+	_word_rules()
+
+
+func _word_rules() -> void:
+	var names := PackedStringArray()
+	for k in _rules:
+		names.append(tr(k))
+	rules_line.text = tr("UI_PAUSE_RULES") % " · ".join(names) if not names.is_empty() else ""
+
+
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_TRANSLATION_CHANGED and not _run.is_empty():
+	if what != NOTIFICATION_TRANSLATION_CHANGED:
+		return
+	_word_rules()
+	if not _run.is_empty():
 		run_line.text = Hud.loop_prefix(self, _loop) + tr("UI_PAUSE_RUN") % _run
+	if depths_line != null and depths_line.visible:
+		depths_line.text = depths_text()

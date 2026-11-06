@@ -8,8 +8,8 @@ extends RefCounted
 ## Per stage, the draw-weight multiplier per mille of each weighted category [form, element, advanced, trigger,
 ## mutation] (a category's index − 1).
 var weights: Array[PackedInt32Array] = [
-	PackedInt32Array([1400, 1400, 400, 600, 20]),
-	PackedInt32Array([1000, 1000, 1000, 1200, 100]),
+	PackedInt32Array([1500, 1600, 900, 600, 20]),
+	PackedInt32Array([1300, 1400, 1100, 1200, 100]),
 	PackedInt32Array([900, 900, 1200, 1200, 300]),
 	PackedInt32Array([800, 800, 1300, 1200, 600]),
 ]
@@ -19,3 +19,16 @@ var ceilings := PackedInt32Array([2, 3, 5, 5])
 var guaranteed_altars := PackedInt32Array([2, 0, 0, 0])
 ## Per regular offer, the jackpot's chance per mille.
 var jackpot_permille := 15
+## v0.9.5 EP2: per stage (floor 1, 2, 3, deep), the card-type weights [ability, stat, mod] of an altar's / a chest's
+## draw, 3 per stage; empty = the reward table's weights.
+var altar_type_weights := PackedInt32Array()
+var chest_type_weights := PackedInt32Array()
+## v0.10.5 W3-P2: an element card's level ceiling in loop 1 by floor (index 0 = floor 1, the last for floors past it),
+## and on every floor of loop 2 and later; empty = no element ceiling (the stage's alone).
+var element_ceilings := PackedInt32Array()
+var element_ceiling_loops := 5
+## v0.10.5 W3-P3 (overlevels; CardLevels.overlevel_room): every wand card's cap rises this many levels a loop past the
+## first (0: no overlevels), and each overlevel adds its category's per mille to the card's main number [form,
+## element, advanced, trigger, mutation] (a category's index − 1; CardLevels.overlevel_permille).
+var overlevels_per_loop := 0
+var overlevel_permille := PackedInt32Array()

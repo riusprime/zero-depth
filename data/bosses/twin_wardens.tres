@@ -12,6 +12,8 @@ shape_params = {
 "distance_m": 2.0,
 "gap_m": 1.2,
 "pattern_id": "twin_wardens_crossfire",
+"lines_follow_seconds": 1.2,
+"lines_turn_dps": 60.0,
 "twin_look": "warden_violet_ember"
 }
 telegraph_seconds = 1.2
@@ -36,9 +38,11 @@ shape_params = {
 "distance_m": 2.0,
 "gap_m": 1.1,
 "pattern_id": "twin_wardens_crossfire_3",
+"lines_follow_seconds": 1.2,
+"lines_turn_dps": 60.0,
 "twin_look": "warden_violet_ember"
 }
-telegraph_seconds = 1.1
+telegraph_seconds = 1.2
 active_seconds = 0.0167
 recovery_seconds = 1.2
 damage = 22

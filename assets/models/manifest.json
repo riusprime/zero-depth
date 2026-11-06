@@ -882,6 +882,56 @@
       "id": "hub_ground_centre",
       "path": "assets/textures/hub/hub_ground_centre.png",
       "sha256": "d6e44344d46145e65e15747d72b9924bde5373419687e058eb3cc2c490b426e8"
+    },
+    {
+      "id": "bg_ruins_deep",
+      "path": "assets/textures/backgrounds/bg_ruins_deep.png",
+      "sha256": "f47cf922c365d1774279a47f558f519bd333040d49abe79efca4fae3ee027922"
+    },
+    {
+      "id": "bg_ruins_mid",
+      "path": "assets/textures/backgrounds/bg_ruins_mid.png",
+      "sha256": "b97bec50454ce1b9e1e4cd81e4c71294b2b79a253738eceb29b1508226060413"
+    },
+    {
+      "id": "bg_night_rocks_deep",
+      "path": "assets/textures/backgrounds/bg_night_rocks_deep.png",
+      "sha256": "6c1424c66be8ea1b90dff713a63ee9369a6b6b21aa69b909df9974f9463bc0cd"
+    },
+    {
+      "id": "bg_night_rocks_mid",
+      "path": "assets/textures/backgrounds/bg_night_rocks_mid.png",
+      "sha256": "afc54e2f3bee1703b9339554d7c99d37642e8d9158e44c8ecbf6fc83bbafbebf"
+    },
+    {
+      "id": "bg_red_canyon_deep",
+      "path": "assets/textures/backgrounds/bg_red_canyon_deep.png",
+      "sha256": "5c2f6adfae8ea4ded437b9c6c85f71a95ad43dfde77b953efd47516847b94b83"
+    },
+    {
+      "id": "bg_red_canyon_mid",
+      "path": "assets/textures/backgrounds/bg_red_canyon_mid.png",
+      "sha256": "9f2923e59cdb2c60ea9862f1e285137029985a0b1090a1b9529c66abaa4186a6"
+    },
+    {
+      "id": "bg_frozen_shore_deep",
+      "path": "assets/textures/backgrounds/bg_frozen_shore_deep.png",
+      "sha256": "52ef2de91bd33f929a2a7b138a71e8a6025ec38215e3350aa3f95ee8dc5a1d09"
+    },
+    {
+      "id": "bg_frozen_shore_mid",
+      "path": "assets/textures/backgrounds/bg_frozen_shore_mid.png",
+      "sha256": "6b7d382a3cf07aad0500ea4bd4c4def7189e637705bc1f7108ade9956828adf3"
+    },
+    {
+      "id": "bg_starfall_deep",
+      "path": "assets/textures/backgrounds/bg_starfall_deep.png",
+      "sha256": "71813ee179197818b8360b8a1c10e80a3f662080e670a854c32331609313ffab"
+    },
+    {
+      "id": "bg_starfall_mid",
+      "path": "assets/textures/backgrounds/bg_starfall_mid.png",
+      "sha256": "15ed8f5f0f99de9e0638895cee523d959578640a968b7b6924bb25433f6dc928"
     }
   ]
 }

@@ -39,8 +39,20 @@ var secondary := false
 var radius_m := 0.0
 ## v0.6.5 WN3: a charged shot's bolts are this much bigger (per mille of the spec's radius; G13 Charge).
 var size_permille := 1000
+## v0.9.5 WB (owner Q13): this launch's bolts pierce this many more enemies than the spec (the Wisps' shots: 1).
+var extra_pierce := 0
+## v0.9.5 FC9: a wisp's own shot (Wisps._fire): a repeat in every other way, but Echo's repeat is open to it.
+var wisp := false
+## v0.9.5 FC4: a Lance release at full charge (Halo's six lances, Ricochet's bounce; PlayerKit._fire_bolt).
+var lance_full := false
+## v0.10.5 W3-P10k: a Starbound Echo Cast repeat (ModifierRuntime.queue_again): with no ShotCap room its damage merges
+## into the next own shot (World.starbound_echo_carry) instead of being dropped.
+var echo_cast := false
 var on_landed := Callable()
 var on_ray := Callable()
+## v0.10.5 W3-O1: each travelling ring this launch lays (WandRings.launch): on_ring(from, to, start_r, end_r), where it
+## leaves, where its flight ends (against the first wall on its line) and its radius at both (the Skill's cracked wall).
+var on_ring := Callable()
 
 
 static func make(

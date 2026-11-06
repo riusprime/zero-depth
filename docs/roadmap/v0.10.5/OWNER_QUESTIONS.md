@@ -1,0 +1,161 @@
+# v0.10.5 — questions and picks for the owner (overnight, 2026-11-01 → 02)
+
+The owner, going to sleep: "Keep going until you complete all of them, if you have any questions write them down and
+we go over them at the end". Then, asked about the gates: **"Pick and build"** (the lead picks the recommended
+option at each G1/G2 gate and builds it as starting values; every pick is listed here to keep or change) and
+**"Don't push"** (everything stays local on `claude/v0100-cleanup`).
+
+Each entry: the step, what the lead picked and why in one line, and the question to go over. Nothing here is final
+until the owner says so.
+
+## Good morning: what happened
+
+- **Everything in the PLAN is built and merged** (details and evidence per step in [`PROGRESS.md`](PROGRESS.md)), except
+  **O4b**, which missed its targets and waits on Q9. Nothing is pushed.
+- **To see first** (shots in `build/shots/v0.10.5/`): the Prism's last phase (`prism_*.jpg`), the danger bar
+  (`danger_bar_*_en.png`), the Training Room (`training_room*.png`), the wand forecast (`wand_forecast.png`), loops
+  (`loop2_floor_card.png`, `hub_records.png`), shards on the floor (`shards_on_the_floor.jpg`), the cracked wall
+  (`cracked_wall_s15c_*.png`), the curse altar (`curse_altar_s5b.png`), the calmer walls (`walls_*`).
+- **To decide first:** **Q5 performance** (18 fps at 60 enemies; a clear first fix), Q9 (the director follow-up),
+  Q6–Q8 (the economy: shards pile up; floor 5).
+- **To play for feel:** O3 Prism, O11 (knockback, dash-cancel, quicker finisher), O2b boss pacing, O4 director,
+  O5 loop rules, O9 rule cards, O10 weaknesses, O15 duos, S12 perfect-Vent dash refund.
+
+## Answered 2026-11-02
+
+- **Q5:** "yes fix it": being built (sync the views once a frame, a cheaper sync).
+- **Q9:** "keep it out": O4b stays unmerged.
+- **Q6–Q8:** "i'll test it myself": no change until the owner's playtest.
+
+## Picks made overnight
+
+| # | Step | The lead's pick | To go over |
+|---|---|---|---|
+| 1 | O18 Lore | The 9 lines in O18_LORE.md, written by the lead; a Lore page in the Codex; 4 open from the start, 5 unlock when met | Keep, edit or cut any line (en and es) |
+| 2 | O18 Lore | Runes' entry unlocks on the first boss kill or a solved rune puzzle (there is no rune-fragment event) | OK, or add a fragment event? |
+| 3 | S15d | Cracked walls 1000 / 350 / 750 ‰ per floor → 11.5 / 28.5 / 31 % (floor 1 capped by free dead ends) | OK? |
+| 4 | S7 | An extra altar can exceed the 2-altar cap (a floor can show 3 altars) | OK, or keep the cap at 2? |
+| 5 | O7 split | Shards: O7a caps the per-kill shard tier at the floor's peak (Sonnet); O7b makes shards real pickups lying on the floor like heal orbs (Opus, later) | OK? |
+| 6 | O7a | Kill shards hold after max(the floor's peak, 3 min): floors 2+ peak at 30 s, so a pure peak cap would have frozen them at once | OK, or another minimum? |
+| 7 | O14 | Floor shapes: floor 2's first Lockdown is an Elite one near the main path's middle; floor 3's room before the boss door spawns nothing while you stand in it | OK? |
+| 8 | O2b | Boss HP grows in line with your power (cap 3× expected), read at the boss door; floors 4–5 and loops reuse floor 3's pace (not measured); 11 picks in evidence/O2B_BOSS_PACE.md | OK? Especially pick 8: **threat T no longer raises boss HP**, only its damage cap |
+| 9 | O1 | The curse room's random curse price drew only the 5 cut (plain) curses; it now falls back to the 7 trade-off curses | OK, or a different price? |
+| 10 | O3 | The Prism had one phase; a last phase from 50 % HP (no gate): **Facet Lances** (6 lances from the room's edge, aim 0.45 s, lock 0.45 s, 26 dmg) and the **Shattered Kneel** (down 3 s, ×1.5 damage near her, a crack ring that bursts her core for 5 % bonus); 7 picks in evidence/O3_PRISM.md (the core burst is world damage, outside the pace cap) | Play it: cooler? Shots: build/shots/v0.10.5/prism_*.jpg |
+| 11 | O4 | Struggling = HP < 40 % or kills < 50 % of the expected rate (cap × 200 ‰ per 10 s); it gets a 600 peak (was 750), a faster peak clock, a ×1.5 quiet, packs one smaller; quiets end on their drawn time | Feel it on a weak build: still crowded? The next steps would be ramping the refill after a quiet and thinning leftovers (follow-up O4b, not built) |
+| 12 | O15 | Six enemy duos (O15_PAIRINGS.md): Shield wall, Minefield herd, Pin and pick, Slam and shoot, Crowd the storm, Over the wall; 20–30 % of a lead kind's packs, from the floor both are unlocked. Note: a duo's "New:" announcement is remembered by the HUD, so it may repeat on a later floor | Keep, cut or retune any duo |
+| 13 | O6 | Variant C (a 190 px HP-like bar in the plate, the ×N tier kept, the tag under the plate's right end), full at tier 10, a 0.7 Hz blink, wording "The depths answer ×1.41", no tag for bosses (their HP is paced since O2b). A and B are in build/shots/v0.10.5/danger_bar_a/b_en.png | Pick another variant or change the wording? |
+| 14 | O5 | Loop-only robes Ouroboros (loop 3) and Abyssal (loop 5); records; achievements; fragments ×1.5 on loop 2, ×2 on loop 3…; 5 loop rules (Quickened, Lean Mending, Elite Hunt, Shielded, Point Blank), one added a loop; **the loop HP step ×6 → ×3.5** (loop 3: ×12.25 instead of ×36) because the rules carry part of the difficulty. Shots: build/shots/v0.10.5/loop2_floor_card.png, hub_records.png | Enough reason to go further? Any rule to cut? |
+| 15 | O10 | The matrix (O10_STRESS_MATRIX.md): ×1.25 / ×0.75; 7 ids (Lance, Venom, Lightning, Glaive, Wave, Laser, Fire), each strong vs 2 kinds and weak vs 2; the Ring counts as Lightning; weak+resisted cancels; the Shield Bearer's shield still blocks the Laser from the front. **Venom Core is still the best single card on 9 of 14 kinds**: nerf Venom (balance), or leave it? | Venom: nerf or leave? |
+| 16 | O9 | The 7 rule cards and the 8 retired flat cards (O9_RULE_CARDS.md); Heat Shield works while Hot (not only overheated); Reflex replaces Second Wind, Scavenger replaces Magnet; Hunter's Mark and Crowd Control deferred; the gamble shrine and the Codex still use / list the retired cards | Keep the 7? Should the shrine stop raising the retired stats? |
+| 17 | O17 | Layout A of 3: a door at the bottom of the hub ring leads (behind the loading cover) to a separate smaller room; the door posts, terminal and exit pad are code stand-ins (no models yet); the room uses the Ruins floor and walls, not the hub's paving; 10 picks in evidence/O17_TRAINING_ROOM.md. Shots: build/shots/v0.10.5/training_room*.png | Models for the door/terminal/pad? Hub paving? |
+| 18 | O12 | Effect caps by density and the 60 % dim in hordes; enemy statuses (burn flames) stay outside the budget | Keep? Put enemy statuses in too? |
+| 19 | O11 | Feel (O11_FEEL.md, from the timings in evidence/O11A_FEEL_TODAY.md): F1 hits push normal enemies back a little (Blade 0.15 m, finisher 0.45 m, bolt 0.06 m); F2 a dash cancels a Blade swing's recovery; F3 the finisher's recovery 24 → 18 ticks | Play it: better? Too much knockback? |
+| 20 | O13 | Variant A (a FORECAST block in ember under the wand); the noun "Bolt" (the slot pips say "Orbs"); damage per second leaves out crits, statuses, gamble and curses; Ember Core's "on a kill: Zone" repeats inside split shots. Shot: build/shots/v0.10.5/wand_forecast.png | Readable? Change the wording? |
+| 21 | O7b | Shard drops: merge within 0.5 m, at most 24 a floor (oldest merges in), pickup radius 1.2 m × pickup range (heal orbs 0.9 m), shards left on the floor are collected when you take the portal (none lost). Small violet crystals, pulled in over 0.15 s. Shot: build/shots/v0.10.5/shards_on_the_floor.jpg | Bigger crystals? Lose uncollected shards at the portal instead? |
+| 11 | O4 | Struggling = HP < 40 % or kills < 50 % of the expected rate (cap × 200 ‰ per 10 s); it gets a 600 peak (was 750), a faster peak clock, a ×1.5 quiet, packs one smaller; quiets end on their drawn time | Feel it on a weak build: still crowded? Next steps would be ramping the refill after a quiet and thinning leftovers (follow-up O4b, not built) |
+| 12 | O15 | Six enemy duos (O15_PAIRINGS.md): Shield wall, Minefield herd, Pin and pick, Slam and shoot, Crowd the storm, Over the wall; 20–30 % of a lead kind's packs, from the floor both are unlocked. Note: a duo's "New:" announcement is remembered by the HUD, so it may repeat on a later floor | Keep, cut or retune any duo |
+| 13 | O6 | Variant C (a 190 px HP-like bar in the plate, the ×N tier kept, the tag under the plate's right end), full at tier 10, a 0.7 Hz blink, wording "The depths answer ×1.41", no tag for bosses (their HP is paced since O2b). A and B are in build/shots/v0.10.5/danger_bar_a/b_en.png | Pick another variant or change the wording? |
+| 14 | O5 | Loop-only robes Ouroboros (loop 3) and Abyssal (loop 5); records; achievements; fragments ×1.5 on loop 2, ×2 on loop 3…; 5 loop rules (Quickened, Lean Mending, Elite Hunt, Shielded, Point Blank), one added a loop; **the loop HP step ×6 → ×3.5** (loop 3: ×12.25 instead of ×36) because the rules carry part of the difficulty. Shots: build/shots/v0.10.5/loop2_floor_card.png, hub_records.png | Enough reason to go further? Any rule to cut? |
+| 15 | O10 | The matrix (O10_STRESS_MATRIX.md): ×1.25 / ×0.75; 7 ids (Lance, Venom, Lightning, Glaive, Wave, Laser, Fire), each strong vs 2 kinds and weak vs 2; the Ring counts as Lightning; weak+resisted cancels; the Shield Bearer's shield still blocks the Laser from the front. **Venom Core is still the best single card on 9 of 14 kinds**: nerf Venom (balance), or leave it? | Venom: nerf or leave? |
+| 16 | O9 | The 7 rule cards and the 8 retired flat cards (O9_RULE_CARDS.md); Heat Shield works while Hot (not only overheated); Reflex replaces Second Wind, Scavenger replaces Magnet; Hunter's Mark and Crowd Control deferred; the gamble shrine and the Codex still use / list the retired cards | Keep the 7? Should the shrine stop raising the retired stats? |
+| 17 | O17 | Layout A of 3: a door at the bottom of the hub ring leads (behind the loading cover) to a separate smaller room; the door posts, terminal and exit pad are code stand-ins (no models yet); the room uses the Ruins floor and walls, not the hub's paving; 10 picks in evidence/O17_TRAINING_ROOM.md. Shots: build/shots/v0.10.5/training_room*.png | Models for the door/terminal/pad? Hub paving? |
+| 18 | O12 | Effect caps by density and the 60 % dim in hordes; enemy statuses (burn flames) stay outside the budget | Keep? Put enemy statuses in too? |
+| 19 | O11 | Feel (O11_FEEL.md, from the timings in evidence/O11A_FEEL_TODAY.md): F1 hits push normal enemies back a little (Blade 0.15 m, finisher 0.45 m, bolt 0.06 m); F2 a dash cancels a Blade swing's recovery; F3 the finisher's recovery 24 → 18 ticks | Play it: better? Too much knockback? |
+| 20 | O13 | Variant A (a FORECAST block in ember under the wand); the noun "Bolt" (the slot pips say "Orbs"); damage per second leaves out crits, statuses, gamble and curses; Ember Core's "on a kill: Zone" repeats inside split shots. Shot: build/shots/v0.10.5/wand_forecast.png | Readable? Change the wording? |
+| 21 | O7b | Shard drops: merge within 0.5 m, at most 24 a floor (oldest merges in), pickup radius 1.2 m × pickup range (heal orbs 0.9 m), shards left on the floor are collected when you take the portal (none lost). Small violet crystals, pulled in over 0.15 s. Shot: build/shots/v0.10.5/shards_on_the_floor.jpg | Bigger crystals? Lose uncollected shards at the portal instead? |
+
+## Questions
+
+| # | Step | Question |
+| Q9 | O4b | The director follow-up missed its targets (table in evidence/O4_DIRECTOR.md "O4b"): the weak hero's room is less crowded (alive 16.2 → 11.5) but the strong hero lost 22.5 % of its kills, because the test bot counts as "struggling" a third of the time. Not merged; branch `v0105-o4b`. Options: merge with a 900 ‰ cap, cut the cap only on low HP (not kill rate), or drop it | Which? |
+| Q6 | O16 | **Shards pile up**: the bot spends only 27 % of what it earns and still buys every chest; the bank reaches ~2088 by floor 5. More things to spend on (shop stock, rerolls), higher chest prices, or fewer shards? |
+| Q7 | O16 | `data/scaling/catch_up.tres` has 3 floors of entries but the run is 5 floors: floors 4–5 reuse floor 3's expected power, so the catch-up (and boss pace) stretch there (m 1.06, 1.32). Add floors 4–5 entries? **Done (88026905):** floors 4–5 entries added; floor 4 bosses 69–97 s; floor 5 bosses ~58 s, just under the 60 s target. Raise floor 5's pace to ~9000 (≈90 s)? |
+| Q8 | O16 | Floor 5 is a spike: challenge ÷ power 0.31 / 0.45 / 0.43 / 0.49 / **0.69**. Ease floor 5, or is it the intended climax? |
+| Q5 | **perf** | **The O12 probe measured ~16–17 fps with 60 enemies and a heavy wand on your PC** (p50 54–63 ms; render only ~14 ms; the main thread — sim and views — is the cost). v0.10.0's target was 144 fps. The lead recommends a measure-only Opus step next (`--breakdown`: where the 40+ ms go) before any fix. **Measured (evidence/PERF_Q5.md):** 0 / 20 / 60 enemies = 210 / 79 / 18 fps. Root cause: the views sync on every sim tick, not once a frame (main.gd:479); at 60 enemies a frame runs 3.6 ticks × 9.3 ms. Ranked fixes: (1) sync views once a frame, −19 ms, a presentation-contract design step; (2) halve the view sync cost, −17 ms; (3) halve AI/move, −6 ms; (4) physics interpolation off, −9 ms (trade-off). Start with (1)+(2) as the next step? |
+| Q1 | tests | Three sim tests fail on the branch before O2b too: `test_deep_bite` (gets the Spanish name on your PC's locale) and two `test_ascension` loop-scaling tests (expect floor-1 enemy HP from before v0.9.5 EP3's floor-1 ease). Update their expectations? **Done** (5acaebaf: locale set to en in the test; ascension expectations derived from the EP3 data; lance scatter counts the pack burst). No game bug. |
+| Q2 | O1 | `test_e2e_wand_build`: the replay was not exact with dev-granted frost_core, blade_orbit, echo_slash, ember_core, so the fixture was switched to other cards. A possible determinism bug in those cards, maybe older than O1. **Answered (D1):** not a game bug: the test helper didn't set the element-pair table; fixed |
+| Q3 | O1 | Left in the code: the Bomb and Scatter form code (no live card reaches it), 28 shot/probe scripts naming removed ids. Remove them too? |
+| Q4 | O1 | Coverage lost: no live card exercises the v0.5 item engines, trigger cards in a wand, or blast merging. Also: two item-visual tests (bolts change with items; Ember Edge turns the Blade orange) were deleted because O1 removed their items. **Done (1b689626):** rewritten with live cards (gun_rapid_fire, gun_ricochet, ember_core), 3/3. |
+|---|---|---|
+
+## Wave 3 overnight (2026-11-04 → 05)
+
+Owner, 2026-11-04 night: "take into the plan to remake every single UI element into this new style even the main menu,
+all UI style components have to be remade, i'll go to sleep … keep working and if you have any questions write them
+down … 6 agents, 3 sonnet 3 opus at the same time". Picks made while the owner sleeps, to keep or change:
+
+| # | Step | The lead's pick | To go over |
+|---|---|---|---|
+| W1 | W3-P1b | The Blade's element stacking is fixed at its causes (measured), not by a blind retune; a target still missed by > 10 % stops and waits here | — |
+| W2 | W3-S10 | Bolt push halved and elites plan every 4 ticks (your answers); merged only once the golden's gun drop (82 → 59 hits) is explained | — |
+| W3 | W3-P1b | Merged: the Blade's element stacking now falls off like the Gun's (Blade + 5 elements × 2.48, target met). **Two targets still missed**, not retuned: your Blade build at floor 5 is 673 (target ~560; without any element it is already 476 — Chain Blast, Split Wave and the Echo Slash carry it) and the Echo Slash's Bleed step × 1.50 (Exsanguinate's burst, filled fast by Echo's quick hits). Options: (a) accept 673 (the late Blade stays strong; P3 overlevels come on top); (b) trim Exsanguinate (e.g. its burst −25 %); (c) a reacted element stays "carried" for 1 s (F5 638, but adding Frost then lowers Blade DPS) | Which? |
+| W4 | W3-O18 | The Options categories stay a vertical tab list (Astral underline + star), not tabs across the top: the pad and e2e navigation walks them with down/right. Horizontal tabs are possible but change that navigation | Keep vertical? |
+| W5 | W3-O18 | The main menu keeps your logo image and the red-portal picture as you sent them (the rest is Astral). A Cinzel wordmark and a cooler picture would match the style more | Keep your logo and picture, or restyle them? |
+| W6 | W3-O20 | The dev panel (F10, debug builds only) stays as it is; every player-facing screen is restyled | OK? |
+| W7 | W3-P3 | Overlevels are in (from loop 2 a card's cap +1 a loop, +15 % each), but they don't meet "difficult but possible": at loop 2's floor 5 a strong build is at ~53 % of its loop-1 power and ~25 % at loop 3. About +40 % per overlevel would get the Gun Void stack there; your Blade needs more (its power is mostly elements). Also, the gain follows how many "weapon" cards a build holds, so a plain Orbs build gains the most. Options: (a) raise the step (e.g. +35–40 %) and accept the uneven gains; (b) a different scaling for loops (e.g. overlevels that also lift elements and shares more); (c) soften the wall a bit after all (loop HP × 3.5 → × 3) with +15 % kept | Which? |
+| W8 | W3-O20 | The final UI sweep drew a new Astral cursor set (ink dart with a silver line, a ring reticle for aiming, rose when invalid) — it replaces the cursor sheet you supplied earlier (your sheet and its cutter script are still in the repo, so going back is one switch) | Keep the Astral cursors, or yours? |
+
+**Answered 2026-11-05** (owner, in chat):
+- **W3:** "keep it": the late Blade stays at 673 at floor 5.
+- **W4:** "yes": the Options categories stay a vertical list.
+- **W5:** "yes": the main menu keeps the owner's logo and red-portal picture.
+- **W6:** "yes": the dev panel stays unstyled.
+- **W8:** "help me with a prompt for a matching cursor": the owner will generate a cursor sheet in the card-icon style
+  from the prompt in [`docs/art/prompts/CURSORS.md`](../../art/prompts/CURSORS.md). The Astral cursors stay until it arrives.
+- **W7:** open. "loops should be fun visually and broken builds, we have to add or modify the game to get this wow
+  moment at how strong you can get in loops. maybe adding some stackable cards, that make your attack jumps to a
+  closer enemy, growing crit damage, attack speed, more attacks". The lead and the owner brainstorm it before any design.
+  After the brainstorm: "Ookay A + B + C but don't get crazy with visuals for explosions" (A overflow past the caps,
+  B stackable loop-only cards, C a rule-breaker pick each loop): drafted as [`W3_W7_LOOP_POWER_G1.md`](W3_W7_LOOP_POWER_G1.md) (W3-P10).
+
+## W3-P10 loop power: the measured result (2026-11-05)
+
+The loop probe with every W3-P10 step merged (`progression_audit.gd section=b part=tracks p10=both loops=3`, one run on
+the owner's PC, determinism MATCH; raw: build/balance/w3p10h/stdout_withA.txt). Floor-5 power as % of the same
+build's loop-1 floor-5 power (single target / crowd):
+
+| Build | Loop 2 without → with | Loop 3 without → with |
+|---|---|---|
+| Gun Void, Fire + Venom | 53/69 → 107/99 | 29/45 → 99/113 |
+| Gun Wave, Fire + Venom | 62/78 → 107/121 | 26/53 → 100/132 |
+| Gun Orbs | 48/76 → 66/91 | 30/64 → 286/134 |
+| Blade plain | 30/92 → 71/105 | 12/67 → 65/112 |
+| Blade with elements | 54/98 → 66/120 | 24/81 → 39/112 |
+| Weak Gun (stat cards only) | 54/53 → 103/107 | 24/22 → 90/169 |
+| Weak Blade (stat cards only) | 50/43 → 69/100 | 22/17 → 51/111 |
+
+T1 (strong builds 80–120 %): the Gun builds meet it (Wave crowd 121–132 % a little over, Orbs single 286 % at loop 3
+an outlier); the Blade's single-target numbers miss it (39–71 %). T2 (weak builds < 50 % at loop 2): **missed**
+(69–107 %). The probe's choices are coarse (every Starbound card offered is taken, a fixed preference, one seed).
+
+| # | Question | Owner |
+|---|---|---|
+| W9 | The new systems lift every build about equally, so a weak build keeps its loop-1 standing instead of hitting a wall (it stays weak in absolute terms: its loop-1 power is a third of a strong build's). (a) accept: loops keep each build where loop 1 left it; (b) make Starbound / Constellation gains scale with the build's own engines (weak builds gain less); (c) offer Starbound cards less (e.g. 10 % / 20 %) | **(a) "Accept as is"** (2026-11-05) |
+| W10 | The Blade against one target stays at 39–71 % in loops (crowds are fine). Tune it now, or after your playtest? | **After the playtest** (owner, 2026-11-05: "W10 after I play it"). Left as measured until then. **Moved to a future version** (owner, 2026-11-06: "w10, after playtest for future versions"). |
+
+### Enemy VAT (asked 2026-11-06, not planned yet)
+
+The owner asked about animating the regular enemies with Vertex Animation Textures, keeping their current animation.
+Lead's answer: bake the current pose code into textures and draw each kind as one MultiMesh; visually identical within
+a tolerance the owner judges from side-by-side shots, not bit-exact; a pilot enemy first, measured. **Owner, 2026-11-06:
+the elites stay as they are** ("there is only 2 at max while playing a normal run"); bosses are out too. Waits on the
+owner's full `--perf-log` run (the slowdown over a run) before it is planned.
+
+**W3-V1 measured** ([`evidence/VAT_PILOT.md`](evidence/VAT_PILOT.md), merged 57e6fe44, off by default): frame_probe,
+red_canyon, Swarmers only, one run each: 20 → 105.5 / 118.9 fps (off / on), 60 → 43.9 / 57.0, 100 → 32.5 / 42.3; 1 %
+lows 6.7 → 26.2 at 60. Pose error max 0.46 mm (a pixel is ~15.7 mm).
+
+| # | Question | Owner |
+|---|---|---|
+| V1 | The shot sheet (`build/shots/v0.10.5/vat/vat_sheet.png`, 14 states, old left, VAT right): the same look? (G2) | **"animations looks fine"** (2026-11-06) |
+| V2 | Keep VAT, and roll it out to the other horde kinds and the stand-alone enemies, a few per step? | **Yes**: "I think this is a way to go, can we apply it to the rest of the enemies and test it?" (2026-11-06): W3-V4; **on by default**: "Yes, make it default" (2026-11-06, 0b8cad8e) |
+| V3 | Swarmers cast no shadow today (the stand-in is built while the body is still sunk for the rise-in, 9–33 cm under the floor). Give them their shadow back (a small cost), or leave them shadowless? | **"yeah we [want] shadow yes"** (2026-11-06): W3-V5, the one-piece shadow built from the standing body |
+
+**W3-V2 found** ([`evidence/DRAW_GROWTH.md`](evidence/DRAW_GROWTH.md)): the objects that pile up over a floor are the
+corner minimap's. Each discovered room adds ~470 drawn objects and ~7 draw calls, redrawn nearly every frame; at the
+end of a floor the minimap is 85–88 % of the frame's objects (red_canyon ×5, 11 → 20 rooms: 4,966 → 8,891). Not yet
+timed on the owner's hardware.
+
+| # | Question | Owner |
+|---|---|---|
+| V4 | Draw the minimap's rooms and doors once into a picture when the map changes (it looks the same; each frame then draws the picture and the arrow), estimated −77 to −83 % of the frame's objects at a floor's end. Build it? | **"Yes"** (2026-11-06): W3-V3 |

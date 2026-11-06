@@ -20,14 +20,28 @@ extends Node3D
 ##   ground, so it still reads).
 
 const STONE := Color("#5A544C")
-const CRACK := Color("#2A2622")
+const CRACK := Color("#C9D3D6")  # S15b: lighter than the slab (was #2A2622)
 const WOOD := Color("#7A5634")
 const CLAY := Color("#A0603A")
 const RED := Color("#8E2B1E")
 const FIRE := Color("#FF8A2A")
 const WALL_H := 3.0
 ## How dark the cracks are with no hit (very faint) and the share each hit adds.
-const CRACK_BASE := 0.12
+const CRACK_BASE := 0.06  # S15c starting value (S15b 0.85 was too obvious; S15 0.12)
+## S15b starting values: the crack bars (was 2 x 4 cm), their colour (lighter than the slab).
+const CRACK_W := 0.06
+const CRACK_D := 0.08
+const SEAM_COLOR := Color("#7FD8E8")
+## S15c starting values: the runes that shine on both faces of the slab when the hero is near.
+const SHINE_RADIUS_M := 3.5
+const SHINE_IN_S := 0.4
+const SHINE_OUT_S := 0.8
+const SHINE_ENERGY := 2.0
+const SHINE_PULSE := 0.3  # +- share of the glow
+const SHINE_PERIOD_S := 2.0
+const SHINE_FIT := 0.8  # a rune is this share of the smaller side of its face
+const SHINE_TEXTURE := "res://assets/textures/kit/rune_marking.png"
+const SLAB_FADE := 0.7  # the slab's dither when the cutaway picks it (starting value)
 const CRACK_DARK := 0.25
 const DEBRIS_S := 0.6
 const BLAST_S := 0.35
@@ -46,6 +60,12 @@ var crack_shade := 0.0
 var fuse_glow := PackedFloat32Array()
 ## v0.9.0 BV: the biome whose look is drawn, and its container materials (wood, clay, hoop, keg, band), made once.
 var biome := &""
+## S15b: the slab as a wall spec ([center, half, yaw, height]; empty with no cracked wall). WorldViewRoot puts it
+## after StageView.wall_specs for the wall cutaway, and fade_slab gets the indices that picks.
+var slab_spec: Array = []
+var slab_index := -1
+## S15c: how bright the runes are now (0 .. 1; they shine when the hero is near).
+var shine := 0.0
 var _accent_biome := &""
 var _mats := {}
 var _reader: WorldReader
@@ -56,6 +76,10 @@ var _room_light: OmniLight3D
 var _fuse_lights: Array[OmniLight3D] = []
 var _seen := PackedByteArray()
 var _fx: Array = []
+var _slab_faded := false
+var _runes: Array[MeshInstance3D] = []
+var _rune_mat := StandardMaterial3D.new()
+var _slab_center := Vector2.ZERO
 
 
 func setup(reader: WorldReader, stage: StageView, cover: Color) -> void:
@@ -118,7 +142,28 @@ static func fuse_blink(reader: WorldReader, i: int) -> bool:
 	return (t % period) < period / 2 + 1
 
 
+## S15b: fades the whole slab when the cutaway picks its wall_specs entry (the indices StageView.apply_occlusion gets).
+func fade_slab(indices: PackedInt32Array) -> void:
+	if wall == null or slab_index < 0:
+		return
+	var want := slab_index in indices
+	if want == _slab_faded:
+		return
+	_slab_faded = want
+	for n: Node in wall.find_children("*", "MeshInstance3D", true, false):
+		(n as MeshInstance3D).transparency = SLAB_FADE if want else 0.0
+
+
 func _process(delta: float) -> void:
+	if wall != null and wall.visible and _reader != null:
+		# S15c: runes shine when the hero is near (reads the hero's position; presentation time, decides nothing)
+		var near := _reader.player_pos().distance_to(_slab_center) <= SHINE_RADIUS_M
+		if near:
+			shine = minf(1.0, shine + delta / SHINE_IN_S)
+		else:
+			shine = maxf(0.0, shine - delta / SHINE_OUT_S)
+		var pulse := 1.0 + SHINE_PULSE * sin(TAU * Time.get_ticks_msec() / 1000.0 / SHINE_PERIOD_S)
+		_rune_mat.albedo_color = Color(SEAM_COLOR * (SHINE_ENERGY * pulse), shine)
 	for k in range(_fx.size() - 1, -1, -1):
 		var fx: Array = _fx[k]
 		var node: Node3D = fx[0]
@@ -141,9 +186,13 @@ func _build_wall(reader: WorldReader) -> void:
 	root.name = "CrackedWall"
 	root.position = SimPlane.to_3d(reader.crack_door_center())
 	root.rotation.y = SimPlane.yaw_of(reader.crack_door_angle())
+	# v0.10.5 (owner PERF_PLAYLOG_1: a 1.1 s frame as the runes first shone): every piece here, the rubble too, is drawn
+	# once behind the loading cover (ShaderWarmup), so no material of the wall compiles mid-play.
+	root.set_meta(ShaderWarmup.WARM_META, true)
 	add_child(root)
 	var width := reader.crack_door_width()
 	var depth := maxf(reader.crack_door_depth(), 0.6) + 0.1
+	var half_x := maxf(depth, 1.0) * 0.5  # the model slab is 1 m thick
 	wall = Node3D.new()
 	wall.name = "Whole"
 	root.add_child(wall)
@@ -152,14 +201,62 @@ func _build_wall(reader: WorldReader) -> void:
 		_model(wall, model, Vector3(1.0, 1.0, width / 3.0))
 	else:
 		_box(wall, Vector3(depth, WALL_H, width), Vector3(0, WALL_H * 0.5, 0), _stone)
-	for face in [-1.0, 1.0]:  # a faint web of cracks from one point, on both faces
-		var at := Vector3(face * (depth * 0.5 + 0.01), WALL_H * 0.45, width * 0.1)
-		for k in 6:
-			var ang := TAU * k / 6.0 + 0.3
-			var bar := _box(wall, Vector3(0.02, 0.04, 0.55 + 0.1 * (k % 3)), at, _crack_mat)
-			bar.rotation.x = ang
-			bar.position += Vector3(0, sin(ang) * -0.3, cos(ang) * 0.3)
-			bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# S15b: a web of cracks from one point on all four vertical faces (two along the doorway, two at its ends).
+	for face in [-1.0, 1.0]:
+		for axis in 2:
+			var at: Vector3
+			if axis == 0:
+				at = Vector3(face * (half_x + 0.01), WALL_H * 0.45, width * 0.1)
+			else:
+				at = Vector3(depth * 0.1, WALL_H * 0.45, face * (width * 0.5 + 0.01))
+			for k in 6:
+				var ang := TAU * k / 6.0 + 0.3
+				var span := 0.55 + 0.1 * (k % 3)
+				var bar: MeshInstance3D
+				if axis == 0:
+					bar = _box(wall, Vector3(CRACK_D, CRACK_W, span), at, _crack_mat)
+					bar.rotation.x = ang
+					bar.position += Vector3(0, sin(ang) * -0.3, cos(ang) * 0.3)
+				else:
+					bar = _box(wall, Vector3(span, CRACK_W, CRACK_D), at, _crack_mat)
+					bar.rotation.z = ang
+					bar.position += Vector3(cos(ang) * 0.3, sin(ang) * -0.3, 0)
+				bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# S15c: a rune on all four faces (both passage faces and both ends), invisible until the hero comes near.
+	# v0.10.5: drawn from the floor's load at alpha 0 (was hidden until then: its first draw compiled its shader).
+	_slab_center = reader.crack_door_center()
+	_rune_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_rune_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_rune_mat.albedo_color = Color(SEAM_COLOR, 0.0)
+	if ResourceLoader.exists(SHINE_TEXTURE):
+		_rune_mat.albedo_texture = load(SHINE_TEXTURE)
+	# faces: [position, yaw, size]: the two passage faces (+-x) and the two end faces (+-z), each fitted
+	var fit_x := minf(width, WALL_H) * SHINE_FIT
+	var fit_z := minf(half_x * 2.0, WALL_H) * SHINE_FIT
+	var faces := [
+		[Vector3(half_x + 0.03, WALL_H * 0.5, 0), PI * 0.5, fit_x],
+		[Vector3(-half_x - 0.03, WALL_H * 0.5, 0), -PI * 0.5, fit_x],
+		[Vector3(0, WALL_H * 0.5, width * 0.5 + 0.03), 0.0, fit_z],
+		[Vector3(0, WALL_H * 0.5, -width * 0.5 - 0.03), PI, fit_z],
+	]
+	for f: Array in faces:
+		var quad := MeshInstance3D.new()
+		quad.name = "Rune"
+		var qm := QuadMesh.new()
+		qm.size = Vector2(float(f[2]), float(f[2]))
+		quad.mesh = qm
+		quad.material_override = _rune_mat
+		quad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		quad.position = f[0]
+		quad.rotation.y = f[1]
+		wall.add_child(quad)
+		_runes.append(quad)
+	slab_spec = [
+		reader.crack_door_center(),
+		Vector2(depth * 0.5, width * 0.5),
+		SimPlane.yaw_of(reader.crack_door_angle()),
+		WALL_H
+	]
 	for side in [-1.0, 1.0]:  # v0.9.0 BV: the biome's touch at the wall's feet, on both sides
 		var foot := Node3D.new()
 		foot.name = "Foot"

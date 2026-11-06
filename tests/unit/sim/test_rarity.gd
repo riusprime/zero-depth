@@ -6,11 +6,6 @@ extends GutTest
 
 const LEGENDARY_IDS := [
 	"chain_blast",
-	"mut_double_exposure",  # v0.8.0 RM: the mutations, in the legendary tier at a low weight
-	"mut_grand_finale",
-	"trigger_on_end_twice",
-	"trigger_on_hit_twice",
-	"trigger_on_kill_twice",
 ]
 const EPIC_IDS := ["blade_storm", "gun_twin", "riposte_chain", "split_shot"]
 
@@ -181,7 +176,7 @@ func test_loop_one_boss_altar_gives_one_pick() -> void:
 
 
 func test_chain_blast_is_the_pre_nerf_explosive() -> void:
-	var w := WandLab.fight(&"gun", [&"gun_spread", &"split_shot", &"chain_blast"])
+	var w := WandLab.fight(&"gun", [&"gun_twin", &"split_shot", &"chain_blast"])
 	var bolt := Modifiers.bolt(w)
 	var blast: AttackHook = null
 	var split: AttackHook = null

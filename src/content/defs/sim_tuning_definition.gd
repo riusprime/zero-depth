@@ -40,6 +40,11 @@ extends ContentDef
 @export var attack_speed_knee2_permille := 1500
 @export var attack_speed_slope_permille := 500
 @export var attack_speed_slope2_permille := 250
+## v0.9.5 BH2 (moved from FinalPace; owner Q11): the final fight's loop ease: each loop finished (at most
+## loop_ease_max) cuts the fight's time by loop_time_ease_permille and the bodies' damage by loop_damage_ease_permille.
+@export var loop_ease_max := 3
+@export var loop_time_ease_permille := 120
+@export var loop_damage_ease_permille := 80
 
 
 func category() -> StringName:
@@ -68,11 +73,28 @@ func validate() -> Array[ValidationIssue]:
 	check_positive(issues, "fire_cap", fire_cap)
 	check_positive(issues, "player_shots_max", player_shots_max)
 	_validate_attack_speed(issues)
+	_validate_loop_ease(issues)
 	if gate_adds_max < gate_adds_min:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "gate_adds_max >= gate_adds_min")
 		)
 	return issues
+
+
+## v0.9.5 BH2: 0..10 loops ease the fight, each by 0..1000 per mille, all of them together by less than the whole fight.
+func _validate_loop_ease(issues: Array[ValidationIssue]) -> void:
+	if loop_ease_max < 0 or loop_ease_max > 10:
+		issues.append(ValidationIssue.new(&"range", resource_path, "loop_ease_max in 0..10"))
+	for pair: Array in [
+		["loop_time_ease_permille", loop_time_ease_permille],
+		["loop_damage_ease_permille", loop_damage_ease_permille],
+	]:
+		if pair[1] < 0 or pair[1] * maxi(0, loop_ease_max) >= 1000:
+			issues.append(
+				ValidationIssue.new(
+					&"range", resource_path, "%s x loop_ease_max must stay under 1000" % pair[0]
+				)
+			)
 
 
 ## v0.8.0 SG: the knees are 0 or more and in order; the slopes between 0 and 1000 per mille.

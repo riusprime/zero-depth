@@ -146,7 +146,9 @@ func test_b6_thrust_is_a_long_narrow_stab() -> void:
 func test_b7_heavy_is_slow_and_crushing() -> void:
 	var plain := _fight([])
 	var w := _fight([&"heavy"])
-	assert_eq(_step(w).damage, _step(plain).damage * 1700 / 1000, "× 1.7 damage")
+	assert_eq(
+		_step(w).damage, _step(plain).damage * 2000 / 1000, "× 2.0 damage (W3-P5; 1.7 before)"
+	)
 	assert_gt(BladeForms.step(w, 0).ticks, BladeForms.step(plain, 0).ticks, "a slower swing")
 	assert_almost_eq(_step(w).knockback_m, 1.5, 0.001)
 	var r := _run(w)
@@ -159,7 +161,7 @@ func test_b7_heavy_is_slow_and_crushing() -> void:
 	)
 
 
-func test_b8_flurry_swings_faster_for_less() -> void:
+func test_b8_flurry_swings_faster_in_a_burst() -> void:
 	# v0.8.0 MR (O91): a burst, the first 3 swings after a pause (FireRhythm; test_mr_modifiers.gd)
 	var plain := _fight([])
 	var w := _fight([&"flurry"])
@@ -171,7 +173,9 @@ func test_b8_flurry_swings_faster_for_less() -> void:
 		BladeForms.step(w, 0).ticks, BladeForms.step(plain, 0).ticks, "a burst swing is faster"
 	)
 	w.mx.burst_n = 0
-	assert_eq(_step(w).damage, _step(plain).damage * 850 / 1000, "−15 % damage")
+	assert_eq(
+		_step(w).damage, _step(plain).damage * 1350 / 1000, "+35 % damage (W3-P5; −15 % before)"
+	)
 	assert_ne(_run(w)["hash"], _run(plain)["hash"], "it changes the fight")
 
 
@@ -229,12 +233,16 @@ func test_b13_lunge_step_drives_you_forward() -> void:
 		moved.append(Kin.length(w.player_pos() - from))
 	assert_almost_eq(float(moved[1]) - float(moved[0]), 1.0, 0.05, "1 m farther per slash")
 	assert_almost_eq(_step(_fight([&"lunge_step"])).step_m, 1.0, 0.001)
+	var plain := _step(_fight([]))
+	assert_eq(
+		_step(_fight([&"lunge_step"])).damage, plain.damage * 1300 / 1000, "W3-P5: +30 % damage"
+	)
 
 
 ## v0.8.0 RM (owner O91: "Rework Finisher+ into Fracture Bank"): the same id; every combo step carries its fragment
 ## hook, the finisher's extracts (test_remnants.gd, test_remnant_cards.gd).
 func test_b14_fracture_bank_lodges_and_the_finisher_extracts() -> void:
-	var w := _fight([&"finisher_plus", &"ember_edge"])
+	var w := _fight([&"finisher_plus", &"ember_core"])
 	var last := w.player.combo.size() - 1
 	var lodge := _hook(_step(w, 0), &"finisher_plus")
 	assert_not_null(lodge, "a combo step lodges")

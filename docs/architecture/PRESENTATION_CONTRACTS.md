@@ -192,6 +192,14 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   shapes (`BakedMeshPools`: one mesh per shape, the same 14-segment band, colours and height the ImmediateMesh drew; a
   ghost's shape is its age in ticks too), at most 256 instances of a shape and 96 shapes (then all are rebuilt), one
   draw each. The cracks, eruptions, sparks, rings and orbiting blades stay in the one ImmediateMesh.
+- **The hero's effect budget (v0.10.5 O12, owner P9: "yes cap it"):** `HeroFxBudget` (starting values). The hero's
+  own sprites in VfxCore (the forms' canvas and `VfxCore.hero_drawers`: the forms' accents, the hits' impacts) keep to
+  `SPRITES` a frame (160 / 110 / 60 by Effects density); past 75 % of it the oldest draw at 55 % alpha and 80 % size,
+  past it they are skipped. The forms' meshes and particles dim the same way in the last quarter of their caps; the
+  live bolts with a rim keep to `LIVE_BOLTS` (96 / 64 / 32). When more than `DIM_FROM` (4) hostile threats are on
+  screen (each telegraph one, every 4 enemy shots one), all of it drops gently (1.5 a second) toward 60 % opacity,
+  reached at `DIM_FULL` (12). Enemy telegraphs, hostile shots and boss attacks (`VfxCore.drawers`, their own views,
+  PackFx's `enemy_shot`) are never in it. The pack's instances keep their per-family caps (PackFx.CAPS).
 
 - **Starting values**, confirmed by the stress scene in v0.1.0:
   - at most 2,000 live GPU particles in total;

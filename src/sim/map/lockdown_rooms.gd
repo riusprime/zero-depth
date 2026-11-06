@@ -52,6 +52,9 @@ static func mark(
 	if f.overrun_room >= 0:
 		shut.append(f.overrun_room)
 	var before := reached(f, shut)
+	var set_piece := t.set_piece_floor > 0 and floor_index == t.set_piece_floor
+	if set_piece:
+		ordered = _set_piece_first(f, ordered, path, shut, before)
 	for r in ordered:
 		if f.lockdown_rooms.size() >= want:
 			break
@@ -65,7 +68,64 @@ static func mark(
 	var weights := kind_weights(t, floor_index)
 	for r in f.lockdown_rooms:
 		f.lockdown_kinds.append(maxi(0, Offers.pick(rng, weights)))
+	if set_piece and not f.lockdown_kinds.is_empty():
+		f.lockdown_kinds[0] = LockdownTable.Kind.ELITE  # v0.10.5 O14: the midpoint set piece
 	return f.lockdown_rooms
+
+
+## v0.10.5 O14 (Schell's interest curve): `ordered` with, first, the candidate that is valid as the floor's first
+## Lockdown and whose nearest main-path room lies closest to the main path's middle room (ties: fewer doorways to the
+## path, then the shuffled order). `ordered` unchanged when no candidate is valid.
+static func _set_piece_first(
+	f: FloorLayout,
+	ordered: PackedInt32Array,
+	path: PackedInt32Array,
+	shut: PackedInt32Array,
+	before: PackedByteArray
+) -> PackedInt32Array:
+	if path.is_empty():
+		return ordered
+	var mid := path.size() / 2
+	var best := -1
+	var best_key := Vector2i(1 << 30, 1 << 30)
+	for r in ordered:
+		if before[r] == 0:
+			continue
+		var trial := shut.duplicate()
+		trial.append(r)
+		if not _keeps(f, before, reached(f, trial), trial):
+			continue
+		var key := _path_key(f, r, path, mid)
+		if key.x < best_key.x or (key.x == best_key.x and key.y < best_key.y):
+			best = r
+			best_key = key
+	if best < 0:
+		return ordered
+	var out := PackedInt32Array([best])
+	for r in ordered:
+		if r != best:
+			out.append(r)
+	return out
+
+
+## (path-index distance from r's nearest main-path room to the middle, doorways from r to the path).
+static func _path_key(f: FloorLayout, r: int, path: PackedInt32Array, mid: int) -> Vector2i:
+	var dist := PackedInt32Array()
+	dist.resize(f.room_count())
+	dist.fill(-1)
+	dist[r] = 0
+	var queue := PackedInt32Array([r])
+	var head := 0
+	while head < queue.size():
+		var c := queue[head]
+		head += 1
+		if path.has(c):
+			return Vector2i(absi(path.find(c) - mid), dist[c])
+		for nb in f.neighbours(c):
+			if dist[nb] < 0:
+				dist[nb] = dist[c] + 1
+				queue.append(nb)
+	return Vector2i(1 << 29, 1 << 29)
 
 
 ## The kinds' weights on floor `floor_index`: each kind's data weight from its first floor, else 0.
@@ -88,6 +148,7 @@ static func candidates(
 	never.append_array(
 		[f.timed_room, f.timed_host, f.rune_room, f.rune_host, f.crack_room, f.crack_host]
 	)
+	never.append_array(f.timed_switch_rooms)  # v0.9.5 TS
 	for r in f.room_count():
 		if r in never or f.arena_rooms.has(r) or taken.has(r):
 			continue

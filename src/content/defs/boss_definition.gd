@@ -77,6 +77,10 @@ var arena_template := 0
 @export var gap_close_attack: StringName
 @export var gap_close_distance_m := 5.0
 @export var gap_close_seconds := 2.0
+## v0.10.5 W3-O2 (owner F19): true keeps the boss's floor lines (flood / row_flood lanes, their lava) and its shots
+## apart in time (BossLava.closes_escape): no line attack while its shots fly, no pattern volley while its lines or lava
+## are down. The Foundry's.
+@export var lines_clear_shots := false
 ## v0.9.0 NB1 (BOSSES_4_5.md N1, "every 9 s"; BossTide): > 0 makes the boss perform its phase's signature (the phase's
 ## first `tide` attack) every signature_every_seconds from one start to the next, the first signature_first_seconds
 ## after it rises, and never by the weighted pick (0 = none). Every phase then holds a `tide` attack.
@@ -130,6 +134,7 @@ func validate() -> Array[ValidationIssue]:
 	_check_challenge(issues)
 	_check_cadence(issues)
 	_check_twin(issues)
+	HardRules.validate_streams(self, issues)  # v0.9.5 BH4: the ring stream and the waves
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1

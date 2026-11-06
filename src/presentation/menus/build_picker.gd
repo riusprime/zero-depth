@@ -6,6 +6,10 @@ extends Control
 ## v0.8.0 MU (owner O14, Ember stone): the title sits on a carved stone plaque with a glowing groove, the cards are
 ## stone tablets (BuildCard); behind them the menus' ember backdrop (MenuStyle, MenuBackdrop). (v0.6.1 R2b's crystal
 ## title plaque and frames are retired.)
+## v0.10.5 W3-O20 (owner 2026-11-04 night: "remake every single UI element into this new style even the main menu";
+## Astral): the screen is Astral: the menus' Astral theme (AstralMenu), Astral's own night behind (MenuBackdrop.astral),
+## the title in letter-spaced Cinzel over a fading hairline with a star (no plaque), the cards Astral cards (BuildCard),
+## the key hint in Astral's grey and Back a slim lozenge plate (AstralButton PLATE).
 ## - Mouse: hover focuses a card, a click picks it.
 ## - Keyboard: Left/Right move the focus, Enter picks, Esc goes back.
 ## - Pad: d-pad or left stick move the focus, A (Cross) picks, B (Circle) goes back.
@@ -17,9 +21,11 @@ signal back_pressed
 const STAGGER_S := 0.16
 const FIRST_DELAY_S := 0.12
 const TITLE_S := 0.45
-## The title's type size on its plaque (px), and the plaque's size; it fits en and es (test_plaques.gd).
+## The title's type size (px), and the room it has (W3-O20: no plaque drawn); it fits en and es (test_plaques.gd).
 const TITLE_FONT := 40
 const TITLE_PLAQUE := Vector2(760, 96)
+## v0.10.5 W3-O20: the hairline under the title (px each way from its star).
+const TITLE_RULE := 210.0
 
 var cards: Array[BuildCard] = []
 var _ids: Array[StringName] = []
@@ -27,16 +33,19 @@ var _focus_index := 0
 var _title := Label.new()
 var _plaque := PanelContainer.new()
 var _hint := Label.new()
-var _back := Button.new()
+var _back := AstralButton.new(AstralButton.Kind.PLATE, 260.0)
 var _t := 0.0
-var _backdrop := MenuBackdrop.new()  # v0.8.0 MU: from the main menu, so its own ember scene
+var _backdrop := MenuBackdrop.new()  # v0.8.0 MU: from the main menu, so its own scene (W3-O20: Astral's)
 
 
-func _init(builds: Array, last_id: StringName) -> void:
+## `locked`: {build id: condition tr key} for the builds shown padlocked (v0.9.5 SL: the Blade); a pick of one does
+## nothing but flash its padlock. The Playground (a dev tool) passes none.
+func _init(builds: Array, last_id: StringName, locked: Dictionary = {}) -> void:
 	name = "BuildPicker"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	MenuStyle.apply(self)
+	AstralMenu.apply(self)
 	_backdrop.own_scene = true
+	_backdrop.astral = true
 	add_child(_backdrop)
 	var centre := CenterContainer.new()
 	centre.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -48,17 +57,24 @@ func _init(builds: Array, last_id: StringName) -> void:
 	_plaque.custom_minimum_size = TITLE_PLAQUE
 	_plaque.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_plaque.add_theme_stylebox_override("panel", Plaques.box(&"gold", TITLE_PLAQUE.y, 10.0))
+	_plaque.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	col.add_child(_plaque)
 	_title.name = "Title"
 	_title.text = "UI_CHOOSE_BUILD"
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_title.add_theme_font_override("font", HudStyle.font(true))
-	_title.add_theme_font_size_override("font_size", TITLE_FONT)
-	_title.add_theme_constant_override("outline_size", 6)
+	AstralUi.title(_title, TITLE_FONT)
 	_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_plaque.add_child(_title)
+	var head := VBoxContainer.new()
+	head.name = "Head"
+	head.alignment = BoxContainer.ALIGNMENT_CENTER
+	head.add_theme_constant_override("separation", 2)
+	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_plaque.add_child(head)
+	head.add_child(_title)
+	var rule := AstralChrome.Rule.new(TITLE_RULE)
+	rule.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	head.add_child(rule)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 64)
@@ -75,7 +91,16 @@ func _init(builds: Array, last_id: StringName) -> void:
 		c.name = String(def.id).capitalize()
 		c.taken_permille = def.damage_taken_permille  # v0.8.0 N1 (D39)
 		var id := def.id
-		c.pressed.connect(func() -> void: picked.emit(id))
+		c.locked_key = StringName(locked.get(id, &""))
+		if c.is_locked():
+			c.set_meta(GameCursor.META_INVALID, true)  # v0.9.5 MC2: the cursor shows INVALID over it
+		c.pressed.connect(
+			func() -> void:
+				if c.is_locked():
+					c.deny()
+				else:
+					picked.emit(id)
+		)
 		row.add_child(c)
 		cards.append(c)
 		_ids.append(id)
@@ -89,14 +114,11 @@ func _init(builds: Array, last_id: StringName) -> void:
 		c.focus_neighbor_top = c.get_path_to(c)
 	_hint.text = "BUILD_HINT"
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_hint.add_theme_font_size_override("font_size", 16)
-	_hint.modulate = Color(1, 1, 1, 0.65)
+	AstralMenu.body(_hint, AstralMenu.NOTE_SIZE, AstralUi.HINT)
 	col.add_child(_hint)
 	_back.text = "UI_BACK"
 	_back.name = "Back"
-	_back.custom_minimum_size = Vector2(220, 46)
 	_back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_back.add_theme_font_size_override("font_size", 20)
 	_back.pressed.connect(func() -> void: back_pressed.emit())
 	col.add_child(_back)
 
@@ -145,7 +167,7 @@ func _animate() -> void:
 	# The hint and Back fade in once the last card has landed.
 	var last := FIRST_DELAY_S + STAGGER_S * maxi(0, cards.size() - 1) + BuildCard.APPEAR_S
 	var a := clampf((_t - last) / 0.25, 0.0, 1.0)
-	_hint.modulate.a = 0.65 * a
+	_hint.modulate.a = a
 	_back.modulate.a = a
 	# The title plaque fades in.
 	_plaque.modulate.a = clampf(_t / TITLE_S, 0.0, 1.0)
@@ -156,7 +178,7 @@ func title_label() -> Label:
 	return _title
 
 
-## The title's stone plaque (tests).
+## The title's box (tests; v0.10.5 W3-O20: it draws nothing, the title and its rule sit in it).
 func title_plaque() -> PanelContainer:
 	return _plaque
 

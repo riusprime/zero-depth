@@ -78,16 +78,15 @@ func test_the_panel_shows_the_stock_in_card_style_with_prices() -> void:
 		var price := Shop.price(w, w.shop.offer[k])
 		assert_eq(p.card_price_text(k), str(price))
 		assert_eq(bool(p.entry(k)["enabled"]), price <= 40, "dimmed when unaffordable")
-	# v0.6.1 R1 (on purpose): the services are plaques (v0.8.0 MU: carved stone), coloured by the family table
-	assert_eq(p.heal_tile.panel_box().plaque, Plaques.of_use(&"shop_heal"), "the heal: green")
-	assert_eq(p.reroll_tile.panel_box().plaque, Plaques.of_use(&"shop_reroll"), "the reroll: amber")
+	# v0.10.5 W3-O16 (on purpose): the services are Astral plates (ShopTile), the heal's and the reroll's icons
+	assert_eq(p.heal_tile.icon_kind, &"heal", "the heal plate")
+	assert_eq(p.reroll_tile.icon_kind, &"reroll", "the reroll plate")
 	for t: ShopTile in [p.heal_tile, p.reroll_tile]:
 		assert_true(t.text_fits(), "%s fits its plaque" % t.name)
 	assert_false(
 		bool(p.entry(p.index_of_value(InputFrame.PICK_SHOP_HEAL))["enabled"]), "full HP: no heal"
 	)
 	assert_true(bool(p.entry(p.index_of_value(InputFrame.PICK_SHOP_REROLL))["enabled"]), "20 of 40")
-	assert_eq(p.salvage_count(), 0, "nothing to salvage yet")
 	w.shards = 10
 	p.sync(r)
 	assert_false(
@@ -108,12 +107,23 @@ func test_the_panel_navigates_and_sends_actions() -> void:
 	add_child_autofree(p)
 	p.picked.connect(func(v: int) -> void: got.append(v))
 	p.sync(r)
-	assert_eq(p.salvage_count(), 2, "the stat card and Bomb Lobber (never the weapon)")
-	assert_eq(p.salvage_tile(1).price.text, "+10")  # 10 shards per level (M-LOOP fix)
+	# v0.10.5 W3-O9 (owner: "it should only show the heal, reroll and the 4 cards"): a build you could once sell
+	# shows no salvage list; the entries are the 4 cards, then the heal and the reroll.
+	var values := []
+	for k in 6:
+		values.append(int(p.entry(k)["value"]))
+	assert_eq(
+		values,
+		[1, 2, 3, 4, InputFrame.PICK_SHOP_HEAL, InputFrame.PICK_SHOP_REROLL],
+		"and nothing else"
+	)
+	assert_eq(p.index_of_value(22), -1, "no curse lift")
+	assert_eq(p.index_of_value(100), -1, "no selling")
+	assert_null(p.find_child("ShopSalvage", true, false), "no salvage row")
 	assert_eq(p.focus_index(), 0)
 	for k in 6:
 		p._input(_key(KEY_RIGHT))
-	assert_eq(p.focus_index(), 6, "right runs along every entry")
+	assert_eq(p.focus_index(), 5, "right runs along every entry, and stops at the last")
 	p._input(_key(KEY_3))
 	assert_eq(p.focus_index(), 2, "3 jumps to the third card")
 	p._input(_key(KEY_SPACE))
@@ -132,16 +142,17 @@ func test_the_panel_navigates_and_sends_actions() -> void:
 	p._input(_pad(JOY_BUTTON_A))
 	assert_eq(got, [3], "a disabled entry sends nothing (full HP)")
 	p._input(_pad(JOY_BUTTON_DPAD_DOWN))
-	assert_eq(p.focused_value(), InputFrame.PICK_SHOP_SELL, "down again: the salvage list")
+	assert_eq(
+		p.focused_value(), InputFrame.PICK_SHOP_HEAL, "down again: nothing under the services"
+	)
 	p._input(_pad(JOY_BUTTON_DPAD_RIGHT))
 	p._input(_pad(JOY_BUTTON_A))
-	assert_eq(got, [3, InputFrame.PICK_SHOP_SELL + 1], "A salvages the focused entry")
+	assert_eq(got, [3, InputFrame.PICK_SHOP_REROLL], "A rerolls")
 	_stepped(w, p, r)
 	p._input(_pad(JOY_BUTTON_DPAD_UP))
-	p._input(_pad(JOY_BUTTON_DPAD_UP))
-	assert_eq(int(p.entry(p.focus_index())["row"]), 0, "up twice: back to the cards")
-	p.salvage_tile(0).clicked.emit()
-	assert_eq(got[-1], InputFrame.PICK_SHOP_SELL, "a click acts")
+	assert_eq(int(p.entry(p.focus_index())["row"]), 0, "up: back to the cards")
+	p.reroll_tile.clicked.emit()
+	assert_eq(got[-1], InputFrame.PICK_SHOP_REROLL, "a click acts")
 	_stepped(w, p, r)
 	p._input(_pad(JOY_BUTTON_B))
 	assert_eq(got[-1], InputFrame.PICK_CANCEL, "B leaves")
@@ -184,10 +195,6 @@ func test_every_shop_string_has_en_and_es() -> void:
 		"SHOP_HEAL_USED",
 		"SHOP_HEAL_FULL",
 		"SHOP_REROLL",
-		"SHOP_SALVAGE",
-		"SHOP_SALVAGE_NONE",
-		"SHOP_SELL_STAT",
-		"SHOP_SELL_ABILITY",
 		"SHOP_HINT",
 		"MAP_LEGEND_SHOP"
 	]

@@ -25,12 +25,38 @@ const OUTLINE_M := 0.02
 ## (eye) come from EnemyPalettes.
 const KIND := WorldReader.KIND_ARC_CASTER
 const DARK := Color("#24272D")
+## v0.10.5 W3-V4c: the rune shards' ring radius and stretch.
+const SHARD_R := 0.34
+const SHARD_SCALE := Vector3(0.6, 1.4, 0.6)
+## v0.10.5 W3-V4c (SoloVat): the raw drives (_vd) and their specs [lo, hi, loop]: the body's sway and kick, the staff's
+## pitch, the shards' orbit and each shard's height.
+const BX := 0
+const BZ := 1
+const STAFF := 2
+const ORBIT := 3
+const SHARD0 := 4
+const VAT_DRIVES := [
+	[-0.025, 0.025, false],
+	[-0.085, 0.005, false],
+	[-1.45, 0.05, false],
+	[0.0, TAU, true],
+	[-0.06, 0.14, false],
+	[-0.06, 0.14, false],
+	[-0.06, 0.14, false],
+]
 
 ## Parts, read by tests and by ActorViews (flash materials; the visor, crystal and shards glow on their own).
 var body: Node3D
 var staff: Node3D
 var crystal: MeshInstance3D
 var shards: Array[Node3D] = []
+## v0.10.5 W3-V4c (owner, 2026-11-06: VAT for every regular enemy): true (set before setup(), ActorViews from
+## ViewPrefs.enemy_vat): a VatCrowd draws the body from baked poses; setup() builds no piece.
+var vat := false
+var kind := KIND
+
+var _vd := PackedFloat32Array([0, 0, 0, 0, 0, 0, 0])
+var _lift := 0.0
 
 var _eye_mat := StandardMaterial3D.new()
 var _glow_mat := StandardMaterial3D.new()
@@ -43,11 +69,16 @@ var _charge := 0.0
 var _kick := 0.0
 
 
-func setup(outline_color: Color, technique: StringName = &"xray") -> void:
+func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var team := ThemePalette.color(&"enemy_body")
 	var red := EnemyPalettes.color(KIND, &"body")
 	var grey := EnemyPalettes.color(KIND, &"grey")
+	if vat:  # v0.10.5 W3-V4c: the crowd draws the body
+		_orbit.free()
+		_orbit = null
+		_pose(0.0)
+		return
 	body = Node3D.new()
 	add_child(body)
 	_piece(
@@ -152,8 +183,8 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 		var shard := MeshInstance3D.new()
 		shard.mesh = _octahedron(0.06)
 		shard.material_override = _eye_mat
-		shard.position = Vector3(0.34, 0, 0)
-		shard.scale = Vector3(0.6, 1.4, 0.6)
+		shard.position = Vector3(SHARD_R, 0, 0)
+		shard.scale = SHARD_SCALE
 		shard.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		holder.add_child(shard)
 		shards.append(shard)
@@ -183,7 +214,7 @@ func apply_state(s: Dictionary) -> void:
 
 func advance(delta: float) -> void:
 	var dt := clampf(delta, 0.0, 0.05)
-	if dt <= 0.0 or body == null:
+	if dt <= 0.0 or (body == null and not vat):
 		return
 	_t += dt
 	var spawning := _state == WorldReader.STATE_SPAWN
@@ -203,20 +234,82 @@ func crystal_energy() -> float:
 
 ## How far the staff is raised (radians of pitch, 0 at rest).
 func staff_raise() -> float:
-	return -staff.rotation.z
+	return -_vd[STAFF]
 
 
+## v0.10.5 W3-V4c: the pose's numbers first (the VAT drives and the lift), then the nodes from them (the old path).
 func _pose(_dt: float) -> void:
 	var sway := sin(_t * 1.6) * 0.015
-	body.position = Vector3(0, sway - (1.0 - _rise) * 1.1, 0)
-	body.rotation = Vector3(sin(_t * 1.1) * 0.02, 0, -_kick * 0.08)
+	_lift = sway - (1.0 - _rise) * 1.1
+	_vd[BX] = sin(_t * 1.1) * 0.02
+	_vd[BZ] = -_kick * 0.08
 	# The staff tips forward and up as the cast builds, and snaps out on the cast.
-	staff.rotation = Vector3(0, 0, -(_charge * 0.9 + _kick * 0.5))
+	_vd[STAFF] = -(_charge * 0.9 + _kick * 0.5)
+	_vd[ORBIT] = fposmod(_t * (1.4 + _charge * 7.0), TAU)
+	for k in 3:
+		_vd[SHARD0 + k] = sin(_t * 2.0 + k * 2.1) * 0.05 + _charge * 0.08
 	_glow_mat.emission_energy_multiplier = 1.0 + _charge * 5.0 + _kick * 4.0
 	_eye_mat.emission_energy_multiplier = (2.0 + _charge * 3.0) * lerpf(0.2, 1.0, _rise)
-	_orbit.rotation = Vector3(0, _t * (1.4 + _charge * 7.0), 0)
+	if vat:
+		return
+	body.position = Vector3(0, _lift, 0)
+	body.rotation = Vector3(_vd[BX], 0, _vd[BZ])
+	staff.rotation = Vector3(0, 0, _vd[STAFF])
+	_orbit.rotation = Vector3(0, _vd[ORBIT], 0)
 	for k in shards.size():
-		shards[k].position.y = sin(_t * 2.0 + k * 2.1) * 0.05 + _charge * 0.08
+		shards[k].position.y = _vd[SHARD0 + k]
+
+
+# --- v0.10.5 W3-V4c: the VAT rig (SoloVat) -----------------------------------------------------------------------
+
+
+## The body's height (m): the sway and the rise-in, the whole body's lift VatCrowd moves the instance by.
+func vat_lift() -> float:
+	return _lift
+
+
+func vat_drives() -> PackedFloat32Array:
+	return SoloVat.normalized(_vd, VAT_DRIVES)
+
+
+## The visor's and the shards' glow (the crystal is unshaded).
+func glow_energy() -> float:
+	return _eye_mat.emission_energy_multiplier
+
+
+## The body sways (X) and kicks (Z) as its rotation composes them; the staff pitches at its grip; the orbit turns
+## over the hood and each shard rides its own height on its spoke.
+func vat_rig() -> Dictionary:
+	var z := Vector3.BACK
+	var joints: Array = [
+		[BX, -1, null, SoloVat.turn(Vector3.RIGHT)],
+		[BZ, 0, body, SoloVat.turn(z)],
+		[STAFF, 1, staff, SoloVat.turn(z, 1.0, SoloVat.at(STAFF_AT))],
+		[ORBIT, 1, _orbit, SoloVat.turn(Vector3.UP, 1.0, SoloVat.at(_orbit.position))],
+	]
+	for k in shards.size():
+		var spoke := (shards[k].get_parent() as Node3D).transform
+		var make := SoloVat.slide(
+			Vector3.UP, Vector3(SHARD_R, 0, 0), spoke, SoloVat.stretch(SHARD_SCALE)
+		)
+		joints.append([SHARD0 + k, 3, shards[k], make])
+	var grids: Array = [[[BX, 9]], [[BZ, 9]], [[STAFF, 65]], [[ORBIT, 160]]]
+	for k in 3:
+		grids.append([[SHARD0 + k, 2]])
+	return SoloVat.rig("arc_caster", VAT_DRIVES, grids, joints, OUTLINE_M, true)
+
+
+func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
+	return SoloVat.sample(
+		self,
+		rng,
+		{"_t": [0.0, 40.0], "_rise": [0.0, 1.0], "_charge": [0.0, 1.0], "_kick": [0.0, 1.0]},
+		_pose.bind(0.0)
+	)
+
+
+func vat_set(s: Dictionary) -> void:
+	SoloVat.apply(self, s, _pose.bind(0.0))
 
 
 func _piece(

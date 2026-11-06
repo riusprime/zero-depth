@@ -7,11 +7,11 @@ extends RefCounted
 ##
 ## A distinct card is an ability (a new one or its level-ups: one card), a stat-card kind (its three rarities: one
 ## card) or a mod. A run's candidate pool is what its build can ever be offered: every ability but the other
-## build's start weapon, every stat card with a weight, every mod whose weapon the build has. The three abilities
-## step AB adds next (PLAN v0.4.0: Arc Field, Frost Nova, Flame Trail) count as planned until their data exists.
+## build's start weapon, every stat card with a weight, every mod whose weapon the build has. v0.10.5 O1: no planned
+## abilities are left (Arc Field, Frost Nova and Flame Trail shipped, then retired and deleted).
 
 const BUILDS: Array[StringName] = [&"blade", &"gun"]
-const PLANNED_ABILITIES: Array[StringName] = [&"arc_field", &"flame_trail", &"frost_nova"]
+const PLANNED_ABILITIES: Array[StringName] = []
 const POOL_MIN := 40
 ## v0.5.5 EC: 51, the owner's Lifesprout card (D9) on top of the blade's 50 (PLAN v0.5.5 outranks the roadmap's
 ## 40-50; the pruning is v0.6.0's).
@@ -39,13 +39,12 @@ const POOL_MIN := 40
 ## old Void: Gun 67 with Glaive + Seekers, 69 with Wave + Wisps (measured on the AF3 merge). Raised in the open, not
 ## a balance target (OWNER_QUESTIONS 4).
 const POOL_MAX := 69
-## The reachable states the survey rolls from: no card yet, then the four slots filled three ways (so every
-## ability's mod and both utilities' items can come up).
+## The reachable states the survey rolls from: no card yet, then each utility taken (so both utilities' items can
+## come up). v0.10.5 O1: the old abilities' states went with them (CardOrder.RETIRED_ABILITIES).
 const STATES: Array = [
 	[],
-	[AbilityTable.Kind.BOMB_LOBBER, AbilityTable.Kind.DRONE_BUDDY, AbilityTable.Kind.ORBIT_BLADES],
-	[AbilityTable.Kind.BLINK, AbilityTable.Kind.BOMB_LOBBER, AbilityTable.Kind.ORBIT_BLADES],
-	[AbilityTable.Kind.AEGIS, AbilityTable.Kind.DRONE_BUDDY, AbilityTable.Kind.BOMB_LOBBER],
+	[AbilityTable.Kind.BLINK],
+	[AbilityTable.Kind.AEGIS],
 ]
 
 

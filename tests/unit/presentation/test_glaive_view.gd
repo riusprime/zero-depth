@@ -67,3 +67,19 @@ func test_the_throw_is_heard() -> void:
 	assert_true(audio.played_log.has(&"glaive_throw"), "the Glaive's throw")
 	assert_false(audio.played_log.has(&"bolt_fire"), "not the orb's shot")
 	assert_not_null(audio.stream_for(&"glaive_throw"), "the placeholder file")
+
+
+func test_the_ring_card_draws_a_lightning_ring_round_each_disc() -> void:
+	var w := _world([&"gun_ring"])
+	var r := WorldReader.new(w)
+	_view.sync(r)
+	assert_eq(_view.arcs, 0, "no disc, no ring")
+	W.run(w, 1, 0, W.S)
+	_view.sync(r)
+	assert_eq([_view.discs, _view.arcs], [1, 1], "a ring round the disc")
+	var rings := r.glaive_rings()
+	assert_almost_eq(float(rings[0]["r"]), 1.0, 0.001, "1 m")
+	var plain := _world()
+	W.run(plain, 1, 0, W.S)
+	_view.sync(WorldReader.new(plain))
+	assert_eq(_view.arcs, 0, "a plain disc has none")

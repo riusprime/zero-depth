@@ -24,13 +24,31 @@ const OUTLINE_M := 0.02
 const KIND := WorldReader.KIND_BOMB_DRONE
 const DARK := Color("#24272D")
 const BOMB := Color("#1B1C20")
+## v0.10.5 W3-V4c: the rotors' spin (rad/s) and the bomb's mount under the hull.
+const SPIN := 34.0
+const BOMB_AT := Vector3(0, -0.2, 0)
+## v0.10.5 W3-V4c (SoloVat): the raw drives (_vd) and their specs [lo, hi, loop]: the hull's roll and pitch, the
+## rotors' spin, the bomb's scale (0: dropped, folded to a point).
+const RX := 0
+const RZ := 1
+const ROTOR := 2
+const BOMB_S := 3
+const VAT_DRIVES := [
+	[-0.065, 0.065, false], [-0.135, -0.025, false], [0.0, TAU, true], [0.0, 1.0, false]
+]
 
 ## Parts, read by tests and by ActorViews (flash materials; the eye, fuse and shadow are their own).
 var hull: Node3D
 var bomb: Node3D
 var shadow: MeshInstance3D
 var rotors: Array[Node3D] = []
+## v0.10.5 W3-V4c (owner, 2026-11-06: VAT for every regular enemy): true (set before setup(), ActorViews from
+## ViewPrefs.enemy_vat): a VatCrowd draws the body from baked poses; setup() builds only the ground disc.
+var vat := false
+var kind := KIND
 
+var _vd := PackedFloat32Array([0, 0, 0, 0])
+var _lift := 0.0
 var _eye_mat := StandardMaterial3D.new()
 var _fuse_mat := StandardMaterial3D.new()
 var _state := WorldReader.STATE_SPAWN
@@ -41,7 +59,7 @@ var _armed := 1.0
 var _fuse := 0.0
 
 
-func setup(outline_color: Color, technique: StringName = &"xray") -> void:
+func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var team := ThemePalette.color(&"enemy_body")
 	# The ground shadow: a dark, soft disc right under the drone (it stays on the ground).
@@ -59,7 +77,17 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	shadow.material_override = sm
 	shadow.position.y = 0.012
 	shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	shadow.set_meta(SoloVat.LIVE, true)
 	add_child(shadow)
+	var eye := EnemyPalettes.color(KIND, &"eye")
+	_eye_mat.albedo_color = eye
+	_eye_mat.emission_enabled = true
+	_eye_mat.emission = eye
+	_eye_mat.emission_energy_multiplier = 2.2  # (v0.10.5 W3-V4c: a VAT drone's glow_energy too)
+	write_stencil(_eye_mat)
+	if vat:  # v0.10.5 W3-V4c: the crowd draws the body
+		_pose()
+		return
 	hull = Node3D.new()
 	add_child(hull)
 	var body := NeedleAvatar._chamfer_box(Vector3(0.42, 0.18, 0.36), 0.06, 0.02)
@@ -69,12 +97,6 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	var cap := NeedleAvatar._chamfer_box(Vector3(0.24, 0.08, 0.22), 0.03, 0.01)
 	var trim := EnemyPalettes.color(KIND, &"trim")
 	_piece(hull, cap, Vector3(-0.02, 0.12, 0), trim, outline_color, team, &"outline")
-	var eye := EnemyPalettes.color(KIND, &"eye")
-	_eye_mat.albedo_color = eye
-	_eye_mat.emission_enabled = true
-	_eye_mat.emission = eye
-	_eye_mat.emission_energy_multiplier = 2.2
-	write_stencil(_eye_mat)
 	var slit := MeshInstance3D.new()
 	var sb := BoxMesh.new()
 	sb.size = Vector3(0.01, 0.04, 0.2)
@@ -115,7 +137,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 		rotors.append(rotor)
 	# The bomb under the belly, its fuse light on top of it.
 	bomb = Node3D.new()
-	bomb.position = Vector3(0, -0.2, 0)
+	bomb.position = BOMB_AT
 	hull.add_child(bomb)
 	_piece(
 		bomb, ArcCasterAvatar._octahedron(0.1), Vector3.ZERO, BOMB, outline_color, team, &"outline"
@@ -157,7 +179,7 @@ func apply_state(s: Dictionary) -> void:
 
 func advance(delta: float) -> void:
 	var dt := clampf(delta, 0.0, 0.05)
-	if dt <= 0.0 or hull == null:
+	if dt <= 0.0 or (hull == null and not vat):
 		return
 	_t += dt
 	var spawning := _state == WorldReader.STATE_SPAWN
@@ -166,8 +188,6 @@ func advance(delta: float) -> void:
 	var lobbed := _state == WorldReader.STATE_WINDUP or _state == WorldReader.STATE_ACTIVE
 	_armed = move_toward(_armed, 0.0 if lobbed else 1.0, dt * (12.0 if lobbed else 1.5))
 	_fuse = 1.0 if _state == WorldReader.STATE_MOVE else 0.0
-	for k in rotors.size():
-		rotors[k].rotation.y = _t * (34.0 if k % 2 == 0 else -34.0)
 	_pose()
 
 
@@ -178,23 +198,88 @@ func _flinch_pivot() -> float:
 
 ## The hull's current height above the ground (the hover plus the bob).
 func hover_height() -> float:
-	return hull.position.y
+	return _lift
 
 
 ## True while a bomb hangs in the bay (it is drawn).
 func bomb_armed() -> bool:
-	return bomb.visible
+	return _armed > 0.05
 
 
+## v0.10.5 W3-V4c: the pose's numbers first (the hover, the hull's roll and pitch, the spin, the bomb's scale: the
+## VAT drives), then the nodes from them (the old path).
 func _pose() -> void:
 	var bob := sin(_t * TAU * BOB_HZ) * BOB_M
-	hull.position = Vector3(0, lerpf(0.5, HOVER_Y, _rise) + bob, 0)
-	hull.rotation = Vector3(sin(_t * 1.3) * 0.06, 0, sin(_t * 1.7) * 0.05 - 0.08)
-	bomb.visible = _armed > 0.05
-	bomb.scale = Vector3.ONE * maxf(_armed, 0.05)
+	_lift = lerpf(0.5, HOVER_Y, _rise) + bob
+	_vd[RX] = sin(_t * 1.3) * 0.06
+	_vd[RZ] = sin(_t * 1.7) * 0.05 - 0.08
+	_vd[ROTOR] = fposmod(_t * SPIN, TAU)
+	_vd[BOMB_S] = maxf(_armed, 0.05) if bomb_armed() else 0.0
 	_fuse_mat.emission_energy_multiplier = 0.8 + _fuse * (1.5 + sin(_t * 12.0) * 1.2)
 	var s := lerpf(0.6, 1.0, _rise) * (1.0 - bob * 0.8)
 	shadow.scale = Vector3(s, 1, s)
+	if vat:
+		return
+	hull.position = Vector3(0, _lift, 0)
+	hull.rotation = Vector3(_vd[RX], 0, _vd[RZ])
+	bomb.visible = bomb_armed()
+	bomb.scale = Vector3.ONE * maxf(_armed, 0.05)
+	for k in rotors.size():
+		rotors[k].rotation.y = _vd[ROTOR] * (1.0 if k % 2 == 0 else -1.0)
+
+
+# --- v0.10.5 W3-V4c: the VAT rig (SoloVat) -----------------------------------------------------------------------
+
+
+## The hull's height (m): the whole body's lift VatCrowd moves the instance by (the ground disc is its own node).
+func vat_lift() -> float:
+	return _lift
+
+
+func vat_drives() -> PackedFloat32Array:
+	return SoloVat.normalized(_vd, VAT_DRIVES)
+
+
+## The eye's glow (constant; the fuse is unshaded).
+func glow_energy() -> float:
+	return _eye_mat.emission_energy_multiplier
+
+
+## The hull turns (roll, then pitch, as its rotation composes them); each rotor spins on its mount; the bomb scales
+## on its own (folded to a point once dropped).
+func vat_rig() -> Dictionary:
+	var joints: Array = [
+		[RX, -1, null, SoloVat.turn(Vector3.RIGHT)],
+		[RZ, 0, hull, SoloVat.turn(Vector3.BACK)],
+	]
+	for k in rotors.size():
+		var mount := SoloVat.between(hull, rotors[k].get_parent()) * SoloVat.at(rotors[k].position)
+		var sgn := 1.0 if k % 2 == 0 else -1.0
+		joints.append([ROTOR, 1, rotors[k], SoloVat.turn(Vector3.UP, sgn, mount)])
+	joints.append(
+		[BOMB_S, 1, bomb, SoloVat.stretch_by(Vector3.ZERO, Vector3.ONE, SoloVat.at(BOMB_AT))]
+	)
+	return SoloVat.rig(
+		"bomb_drone",
+		VAT_DRIVES,
+		[[[RX, 17]], [[RZ, 17]], [[ROTOR, 128]], [[BOMB_S, 2]]],
+		joints,
+		OUTLINE_M,
+		false
+	)
+
+
+func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
+	return SoloVat.sample(
+		self,
+		rng,
+		{"_t": [0.0, 40.0], "_rise": [0.0, 1.0], "_armed": [0.0, 1.0], "_fuse": [0.0, 1.0]},
+		_pose
+	)
+
+
+func vat_set(s: Dictionary) -> void:
+	SoloVat.apply(self, s, _pose)
 
 
 func _piece(

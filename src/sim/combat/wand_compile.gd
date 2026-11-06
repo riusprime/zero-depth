@@ -57,10 +57,14 @@ extends RefCounted
 ##   Finale's reach) and, for a FINISHER remnant, whether the spec is the combo's finisher (it extracts; the other steps
 ##   lodge). A remnant left on a hit is an ON_HIT hook; a link, a path or a consumer is ON_REMNANT (Remnants finds it).
 
+## Loop 1's deepest level (Attacks.MAX_HOOK_DEPTH); max_depth is the compile's.
 const MAX_DEPTH := 2
 
 ## The cards in slot order.
 var mods: Array[ModifierTable] = []
+## v0.10.5 W3-P10a (owner W7, G1 A5): the deepest hook level this compile builds (for_world: Attacks.hook_depth, the
+## loop's; a lab compile without a world: MAX_DEPTH).
+var max_depth := MAX_DEPTH
 ## A Gun run: T4 cuts on a crit (its trigger_gun); otherwise on the Blade's finisher.
 var gun := false
 ## The Blade's last combo step (ON_FINISHER's spec), &"" without a combo.
@@ -74,7 +78,7 @@ var blade := false
 var hit_casts := 2
 var cast_gap_ticks := 6
 ## v0.8.0 BL (B6): the hook cards a line takes once (WandTable.once_per_line).
-var once_per_line: Array[StringName] = [&"split_shot", &"shared_explosive"]
+var once_per_line: Array[StringName] = [&"split_shot"]
 ## v0.8.0 PF2: the hook cards whose children cast no trigger (WandTable.cast_free_lines).
 var cast_free_lines: Array[StringName] = [&"blade_storm"]
 ## v0.9.0 AS (owner Q13; ShotCap): the most shots one attack launches (0: no cap: a lab, a Blade run), and a merged
@@ -87,6 +91,7 @@ var merge_radius_max_permille := 2000
 static func for_world(w: World, p_mods: Array[ModifierTable]) -> WandCompile:
 	var c := WandCompile.new()
 	c.mods = p_mods
+	c.max_depth = Attacks.hook_depth(w)  # v0.10.5 W3-P10a
 	c.gun = PlayerBuild.has_gun(w) and not PlayerBuild.has_blade(w)
 	var n := w.player.combo.size()
 	if n > 0:
@@ -142,6 +147,36 @@ func run(s: AttackSpec, from: int) -> AttackSpec:
 		if m.is_trigger():
 			_cut(s, m, i)
 			break
+		if s.beam_hold > 0 and LaserMods.is_card(m.id):  # v0.9.5 FC1: the Laser's cards are LaserMods'
+			if not s.modifier_ids.has(String(m.id)):
+				s.modifier_ids.append(String(m.id))
+			continue
+		if s.blast_mm > 0 and BombMods.is_card(m.id):  # v0.9.5 FC2: the Bomb's cards are BombMods'
+			BombMods.note_card(s, m)
+			continue
+		if s.void_mm > 0 and VoidMods.is_card(m.id):  # v0.9.5 FC3: the Void's cards are VoidMods'
+			VoidMods.note_card(s, m)
+			continue
+		if s.lance > 0 and LanceMods.is_card(m.id):  # v0.9.5 FC4: the Lance's cards are LanceMods'
+			LanceMods.note_card(s, m)
+			continue
+		if s.rune_mm > 0 and RuneMods.is_card(m.id):  # v0.9.5 FC5: the Rune Explosion's cards are RuneMods'
+			RuneMods.note_card(s, m)
+			continue
+		if s.glaive > 0 and GlaiveMods.is_card(m.id):  # v0.9.5 FC6: the Glaive's cards are GlaiveMods'
+			GlaiveMods.note_card(s, m)
+			continue
+		if s.wave_mm > 0 and WaveMods.is_card(m.id):  # v0.9.5 FC8: the Wave's cards are WaveMods'
+			WaveMods.note_card(s, m)
+			continue
+		if s.seekers > 0 and SeekerMods.is_card(m.id):  # v0.9.5 FC7: the Seekers' cards are SeekerMods'
+			SeekerMods.note_card(s, m)
+			continue
+		if s.wisps > 0 and WispMods.is_card(m.id):  # v0.9.5 FC9: five of the Wisps' cards are WispMods'
+			WispMods.note_card(s, m)
+			if m.id == WispMods.MINE_ID:
+				s.hooks.append(_wisp_mine(s, m, i))
+			continue
 		var applied := false
 		for stage in ModifierTable.STAGE_COUNT:  # a card's own ops in stage order
 			for op in m.ops:
@@ -151,6 +186,7 @@ func run(s: AttackSpec, from: int) -> AttackSpec:
 				applied = true
 		if applied and not s.modifier_ids.has(String(m.id)):
 			s.modifier_ids.append(String(m.id))
+	SpecForms.halo_homing_reach(s)  # v0.10.5 W3-S18: Halo's back shots, with Homing
 	SpecForms.settle(s)
 	return s
 
@@ -170,13 +206,13 @@ func apply(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> void:
 			if not s.elements.has(String(op.element)):
 				s.elements.append(String(op.element))
 		ModifierOp.Op.HOOK:
-			if s.depth < MAX_DEPTH and not s.lineage.has(String(m.id)):  # v0.6.0 MX4: lineage
+			if s.depth < max_depth and not s.lineage.has(String(m.id)):  # v0.6.0 MX4: lineage
 				if not once_more(s, m.id):  # v0.8.0 BL (B6)
 					s.hooks.append(_hook(s, m, op, i))
 		ModifierOp.Op.TRIGGER:
 			pass  # a trigger is a card of its own (run cuts there)
 		ModifierOp.Op.REMNANT:  # v0.8.0 RM: a hook that leaves a remnant (class doc)
-			if op.remnant == null or s.depth >= MAX_DEPTH or s.lineage.has(String(m.id)):
+			if op.remnant == null or s.depth >= max_depth or s.lineage.has(String(m.id)):
 				return
 			if not once_more(s, m.id):
 				s.hooks.append(_remnant(s, m, op, i))
@@ -245,6 +281,7 @@ func _hook(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> AttackHoo
 	SpecForms.hook_base(c, s)  # v0.6.0 MX2: the lingering forms' times; MX4: a bolt's flight, an arc's width
 	BladeForms.hook_base(c, s)  # v0.6.5 WN4: a spin's wave flies all round
 	var shape := WandCompile.new()  # v0.6.0 MX4: the child's own shape (a count, a status, an element...)
+	shape.max_depth = max_depth  # v0.10.5 W3-P10a
 	for o in op.child_ops:
 		shape.apply(c, m, o, -1)
 	c.lineage = s.lineage.duplicate()  # v0.6.0 MX4: this modifier's hook never rides its own child
@@ -259,6 +296,32 @@ func _hook(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> AttackHoo
 	k.delay_ticks = op.delay_ticks  # v0.6.0 MX4
 	k.when = op.when
 	k.child = WandRings.cap_child(s, run(c, i))  # v0.8.0 AO: a ring's shards, at most so many alive
+	return k
+
+
+## v0.9.5 FC9 (FORM_COMBOS.md P5): the Mine card on the Wisps is a hook (ON_WISP, which no moment fires; WispMods drops
+## it from each wisp): the card's own mine, a still bolt the orbs' Mine card would leave (its ops run on it: the wait
+## and the zone it ends in), at the wisp shot's damage.
+func _wisp_mine(s: AttackSpec, m: ModifierTable, i: int) -> AttackHook:
+	var c := AttackSpec.new()
+	c.id = m.id
+	c.form = AttackSpec.Form.BOLT
+	c.tags = PackedStringArray(["projectile", Modifiers.TAG_HOOK])
+	c.depth = s.depth + 1
+	c.radius_m = s.radius_m
+	c.speed = 0.0
+	c.life_ticks = 1
+	c.elements = s.elements.duplicate()
+	c.recast = s.recast
+	c.lineage = s.lineage.duplicate()
+	for op in m.ops:
+		apply(c, m, op, i)
+	c.lineage.append(String(m.id))
+	var k := AttackHook.new()
+	k.id = m.id
+	k.trigger = AttackSpec.Trigger.ON_WISP
+	k.damage_permille = 1000
+	k.child = c
 	return k
 
 
@@ -288,7 +351,7 @@ func section_of(i: int) -> int:
 
 ## Trigger card `m` at slot `i` ends `s` (class doc): the cards to its right build the child spell it casts.
 func _cut(s: AttackSpec, m: ModifierTable, i: int) -> void:
-	if child_base == null or s.depth >= MAX_DEPTH or s.lineage.has(String(m.id)):
+	if child_base == null or s.depth >= max_depth or s.lineage.has(String(m.id)):
 		return
 	if cast_free(s):  # v0.8.0 PF2: Blade Storm's blades cast nothing
 		return

@@ -9,7 +9,9 @@ extends ContentDef
 ## before a dead end and the Skill hits it takes; containers a room at most, their drop chance, the heals' share of
 ## the drops and the shards' range; explosive barrels: the share of rooms with one, at most per room, the fuse (ticks),
 ## the blast's radius (m) and its damage to enemies and to the hero.
-@export var crack_permille := 250
+## v0.10.5 S15d (owner: about 1 floor in 3): the cracked wall chance (per mille) by floor index, floor 1 first; a later
+## floor or loop uses the last entry.
+@export var crack_floor_permille := PackedInt32Array([1000, 350, 750, 0, 0])
 @export var crack_hits := 3
 @export var containers_max := 2
 @export var container_drop_permille := 150
@@ -35,14 +37,13 @@ func category() -> StringName:
 func validate() -> Array[ValidationIssue]:
 	var issues := super.validate()
 	_check_permille(issues, "rune_permille", rune_permille)
+	for v in crack_floor_permille:
+		_check_permille(issues, "crack_floor_permille", v)
+	if crack_floor_permille.is_empty():
+		issues.append(ValidationIssue.new(&"range", resource_path, "crack_floor_permille is empty"))
 	for v in purple_floor_permille:
 		_check_permille(issues, "purple_floor_permille", v)
-	for f in [
-		"crack_permille",
-		"container_drop_permille",
-		"container_heal_permille",
-		"barrel_room_permille"
-	]:
+	for f in ["container_drop_permille", "container_heal_permille", "barrel_room_permille"]:
 		_check_permille(issues, f, int(get(f)))
 	for f in [
 		"crack_hits", "barrel_fuse_ticks", "barrel_radius_m", "barrel_damage", "barrel_hero_damage"

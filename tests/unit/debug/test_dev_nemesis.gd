@@ -38,7 +38,7 @@ func test_the_nemesis_numbers_are_f10_rows() -> void:
 		"pace_min_seconds": 60.0,
 		"pace_max_seconds": 180.0,
 		"pace_burst_seconds": 10.0,
-		"mimic_window_seconds": 7.0,
+		"mimic_window_seconds": 5.6,
 		"mimic_every_seconds": 20.0,
 		"mimic_first_seconds": 12.0,
 		"mimic_warn_seconds": 1.5,

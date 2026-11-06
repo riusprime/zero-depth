@@ -7,8 +7,24 @@ extends GutTest
 
 const W := preload("res://tests/support/mx4_world.gd")
 const HP := 1000000
+## v0.9.5 FC7: the five elements, and the eleven cards the row takes now (SeekerMods).
 const SEEKERS_ON: Array[StringName] = [
-	&"ember_core", &"storm_core", &"frost_core", &"venom_core", &"shared_bleed"
+	&"ember_core",
+	&"storm_core",
+	&"frost_core",
+	&"venom_core",
+	&"shared_bleed",
+	&"gun_twin",
+	&"halo_shot",
+	&"gun_ring",
+	&"gun_pierce",
+	&"gun_ricochet",
+	&"gun_echo",
+	&"gun_big_shot",
+	&"gun_rapid_fire",
+	&"split_shot",
+	&"gun_mine",
+	&"orbit_rounds",
 ]
 ## Three enemies spread round the aim: ahead, and 40° either side, at 4, 5 and 6 m.
 const SPREAD: Array[Vector2] = [Vector2(4.0, 0.0), Vector2(3.83, 3.21), Vector2(4.6, -3.86)]
@@ -53,9 +69,12 @@ func test_the_card_makes_the_shot_three_homing_darts() -> void:
 	assert_eq(s.count, 3, "3 darts")
 	assert_eq(s.period_ticks, 18, "every 0.3 s")
 	assert_eq(s.homing, roundi(360.0 * 4096.0 / 360.0 / 60.0), "homing 360 °/s")
-	assert_eq(s.share_permille, 450, "45 % an orb hit each")
+	assert_eq(s.share_permille, 900, "v0.10.5 W3-P5: 90 % an orb hit each (was 50 %)")
 	assert_almost_eq(
-		s.speed * s.life_ticks, 10.0, 0.01, "10 m/s for 1 s: slow enough to curve onto a near enemy"
+		s.speed * s.life_ticks,
+		13.0,
+		0.01,
+		"v0.10.0 FX: 10 m/s for 1.3 s (it was 1 s): 13 m of flight"
 	)
 	var def: ItemDefinition = W.repo().get_def(&"items", &"gun_seekers")
 	assert_eq([def.rarity, def.requires_weapon], [ItemDefinition.Rarity.RARE, &"gun"])
@@ -71,7 +90,7 @@ func test_a_volley_is_three_darts_and_the_centre_one_alone_is_primary() -> void:
 	var primary := 0
 	for i in p:
 		primary += 1 if w.projectiles.second_of(i) == 0 else 0
-		assert_eq(w.projectiles.damage[i], 2, "45 % of 5, rounded")
+		assert_between(w.projectiles.damage[i], 4, 5, "90 % of 5 = 4.5: 4 or 5 with the carry")
 	assert_eq(primary, 1, "the rest are secondary: their statuses at the lower proc")
 
 
@@ -82,6 +101,22 @@ func test_they_curve_to_an_enemy_off_the_aim() -> void:
 	var got := _dealt(w, 1)
 	gut.p("AF2 Seekers one volley at an enemy 90° off the aim, 4 m: %d hits" % got[0])
 	assert_eq(got[0], 3, "all three curve onto it")
+
+
+## v0.10.0 FX (owner: "moderately increase their range", "no targeting through walls"): an enemy 11 m away is
+## reached; one the same distance behind a wall is not a target, and the darts take the one in sight.
+func test_they_reach_an_enemy_eleven_metres_out_but_not_behind_a_wall() -> void:
+	var w := _world([], [Vector2(0.0, 11.0)])
+	W.run(w, 1, 0, W.S, 1024)
+	W.run(w, 90, 0, 0, 1024)
+	assert_gt(_dealt(w, 1)[0], 0, "11 m out: hit")
+	var walled := _world([], [Vector2(0.0, -6.0), Vector2(5.0, 0.0)])
+	walled.add_wall_now(Obb.make(Vector2(0.0, -3.0), Vector2(2.0, 0.2), 0))
+	W.run(walled, 1, 0, W.S)
+	for pi in _darts(walled):
+		assert_ne(Seekers.target(walled, pi), 1, "the enemy behind the wall is no target")
+	W.run(walled, 60, 0, 0)
+	assert_eq(_dealt(walled, 2)[0], 3, "the three darts take the one in sight")
 
 
 func test_three_darts_spread_over_three_enemies() -> void:
@@ -206,9 +241,7 @@ func test_the_seekers_row_offers_only_its_cards() -> void:
 func test_the_seekers_replace_the_other_forms() -> void:
 	var w := _slot_world()
 	var sk := W.item(w, &"gun_seekers")
-	for other: StringName in [
-		&"gun_laser", &"gun_bomb", &"gun_void", &"gun_glaive", &"gun_scatter"
-	]:
+	for other: StringName in [&"gun_laser", &"gun_void", &"gun_glaive", &"gun_rune_explosion"]:
 		var o := W.item(w, other)
 		assert_true(BuildSlots.take(w, o))
 		assert_eq(int(Offers.info(w, sk)["replaces"]), o, "the Seekers replace %s" % other)

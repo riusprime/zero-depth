@@ -14,12 +14,16 @@ extends Control
 ## "Show hints: Off" hides it at once. The keys it names are the live bindings of the device used last (keyboard
 ## and mouse, or a pad), so a remap or a device switch shows at once. Its clock is the screen's (a look, never an
 ## outcome: EI-03); it reads WorldReader only (EI-07). Main owns it on the UI layer, so it outlives a floor.
+## v0.10.5 W3-O17 (UI style Astral): in HudStyle.ASTRAL the slab gives way to the store window's veil (AstralChrome:
+## ink fading at its sides between two fading hairlines, a star on the top one); "TIP" in tracked Cinzel, the accent.
 
 signal shown(id: StringName)
 
 const W := 720.0
 const PAD := Vector2(20, 12)
 const TOP := 150.0
+## v0.10.5 W3-O20: the gap under the phase lines when the hint stacks under them (px).
+const STACK_GAP := 10.0
 ## While a centre panel is open (a pick, the Swap, the shop, an event) the slab sits low instead, its bottom this far
 ## above the screen's bottom edge: under the panel's key line, over the heat meter, so it never covers the panel's
 ## title or its cards.
@@ -42,6 +46,9 @@ var header := HudStyle.label(13, true)
 var line := HudStyle.label(20, true)
 ## The device used last (InputRebind.KBM or PAD): the keys named follow it.
 var device := InputRebind.KBM
+## v0.10.5 W3-O20: the HUD's phase lines (Hud.phase_hud; Main sets it, may be null): a top hint sits under the ones
+## shown (the W3-O17 boss shot: the tip and the phase's announcement drew over each other at the same height).
+var stack_under: Control
 var _current := &""
 var _queue: Array[StringName] = []
 var _t := 0.0
@@ -78,6 +85,9 @@ func _init() -> void:
 	add_child(col)
 	header.name = "Header"
 	header.add_theme_color_override("font_color", HudStyle.ACCENT)
+	if HudStyle.current == HudStyle.Style.ASTRAL:
+		HudStyle.serif_label(header, 13, 5, HudStyle.A_ACCENT)
+		line.add_theme_color_override("font_color", HudStyle.A_TEXT)
 	line.name = "Line"
 	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for l: Label in [header, line]:
@@ -239,11 +249,26 @@ func _process(delta: float) -> void:
 ## Top centre, or low while a centre panel is open (LOW_BOTTOM).
 func _place() -> void:
 	var h := size.y  # read first: moving one offset resizes the box
-	var y := TOP
+	var y := top_y()
 	if _panel_open:
 		y = get_viewport_rect().size.y - LOW_BOTTOM - h
 	offset_top = y
 	offset_bottom = y + h
+
+
+## v0.10.5 W3-O20: the top hint's top (px): TOP, or under the phase lines shown (`stack_under`'s visible children).
+func top_y() -> float:
+	var y := TOP
+	if (
+		stack_under == null
+		or not is_instance_valid(stack_under)
+		or not stack_under.is_visible_in_tree()
+	):
+		return y
+	for c in stack_under.get_children():
+		if c is Control and (c as Control).visible:
+			y = maxf(y, (c as Control).get_global_rect().end.y + STACK_GAP)
+	return y
 
 
 ## The slab sits low (a centre panel is open).
@@ -320,6 +345,9 @@ func _fit() -> void:
 
 
 func _draw() -> void:
+	if HudStyle.current == HudStyle.Style.ASTRAL:
+		AstralChrome.veil(self, Rect2(Vector2.ZERO, size), 140.0)
+		return
 	HudStyle.draw_plate(self, Rect2(Vector2.ZERO, size), false)
 	draw_rect(
 		Rect2(Vector2(size.x * 0.3, 1.0), Vector2(size.x * 0.4, 2.0)), Color(HudStyle.ACCENT, 0.85)

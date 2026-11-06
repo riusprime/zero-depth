@@ -41,7 +41,7 @@ func _layout(seed_value: int, run: RunState, floor_index: int) -> FloorLayout:
 	var none := PackedInt32Array()
 	TimedDoorRooms.mark(f, map.timed_door_permille, 900, speed, none, PackedVector2Array())
 	RuneRooms.mark(f, secrets.rune_permille, none, PackedVector2Array())
-	CrackedRooms.mark(f, secrets.crack_permille, none)
+	CrackedRooms.mark(f, CrackedRooms.chance(secrets.crack_floor_permille, 1), none)
 	PurpleRooms.mark(f, 500, none, PackedVector2Array())
 	return f
 
@@ -110,8 +110,12 @@ func test_placement_over_many_seeds() -> void:
 				gut.p("a room cut off on seed %d floor %d" % [s, floor_index])
 			if floor_index == 1 and (f.lockdown_kinds.has(1) or f.lockdown_kinds.has(2)):
 				bad += 1
-			if floor_index < 4 and f.lockdown_kinds.has(LockdownTable.Kind.ELITE):
-				bad += 1  # v0.9.0 EL (Q21): floors 4-5 only
+			if (
+				floor_index < 4
+				and floor_index != 2
+				and f.lockdown_kinds.has(LockdownTable.Kind.ELITE)
+			):
+				bad += 1  # v0.9.0 EL (Q21): floors 4-5 only (floor 2: the O14 set piece)
 		(
 			lines
 			. append(
@@ -250,6 +254,7 @@ func test_a_hazard_lockdown_warns_on_the_ground_then_hurts() -> void:
 	# Only the strikes here: no formation spawns (no spawner) and the room stays sealed while they come.
 	w.spawner = null
 	w.lockdown.table.waves = 20
+	w.lockdown.table.burst_waves = 30  # v0.9.5 DR
 	var r := LockLab.room(w)
 	LockLab.enter(w, r)
 	var s := w.lockdown
@@ -312,7 +317,7 @@ func test_a_floor_saved_before_lk_has_none() -> void:
 		var old := SaveLab.build_floor(r)
 		assert_null(old.lockdown, "seed %d: none under floor rules 12" % s)
 		assert_true(old.floor_layout.lockdown_rooms.is_empty())
-		if SaveLab.floor_world(s, 2).lockdown != null:
+		if not SaveLab.floor_world(s, 2).floor_layout.lockdown_rooms.is_empty():
 			with += 1
 	assert_gt(with, 0, "today's floors have them")
 

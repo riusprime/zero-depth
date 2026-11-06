@@ -33,10 +33,10 @@ const ROLE_GLOW := 0.45
 ## v0.8.0 N1: the role glow's energy the views build with (ROLE_GLOW; the line-up shot script sweeps it, 0 = none).
 static var role_glow_energy := ROLE_GLOW
 
-## Occlusion technique under test: "outline" (rim only) or "xray" (rim + silhouette through walls).
+## Technique kept for callers: "outline" (rim only). The X-ray silhouette pass was removed in v0.9.5 PF1.
 ## v0.5.9: the floor's lighting mood; with one, the hero carries a small warm light (StageKit.hero_light).
 var hero_mood: BiomeMood
-var technique := &"xray"
+var technique := &"outline"
 ## How many frames a hit flashes the actor white (PRESENTATION §6, starting value).
 var flash_frames := 3
 var outline_color := Color("#1A1A22")
@@ -45,6 +45,9 @@ var bolt_look := {}
 ## v0.5.5 LK (owner A2): the heat tier (HeatLooks.TIER_*) read each sync; a new player bolt takes its colour
 ## (HeatLooks.attack_color: the bolt's own below Hot, orange at Hot, red at Overclock) and keeps it while it flies.
 var heat_tier := HeatLooks.TIER_COOL
+## v0.10.5 (owner: "you can clearly see the character half body inside it"): the floor's altars (floor 1's arrival
+## altar, the final approach's); an actor on one is drawn on its stone (AltarStage.height_at), not sunk into it.
+var grounds: Array[AltarStage] = []
 ## v0.7.5 NB1: the biome's cast on enemies (BiomeLook.enemy_tint): their grey and bone parts pulled toward its colour
 ## by its alpha (0: none). Red parts (v0.8.0 EC: the role-coloured parts, EnemyPalettes, all at or over
 ## GREY_SATURATION), rings and bars keep their colours, so identity never changes (PRESENTATION §3).
@@ -56,6 +59,9 @@ var hero_look := {}
 ## v0.8.0 HV (owner O89): the camera's view (WorldViewRoot refreshes it each tick): an enemy model animates unless it
 ## is wholly out of the picture (ScreenCull.keeps, past its largest radius + the margin, with hysteresis).
 var cull: ScreenCull
+## v0.10.5 W3-V1 (the enemy VAT pilot): the crowd drawing the VatCrowd.KINDS enemies while ViewPrefs.enemy_vat is on
+## (null until the first).
+var vat_crowd: VatCrowd
 var _actors := {}
 var _projectiles := {}
 var _proj_last := {}
@@ -80,15 +86,25 @@ var _proj_pooled := 0
 ## an unchanged look doesn't format its key again (a horde fires hundreds a second).
 var _proj_key: Array[String] = ["", ""]
 var _proj_key_of: Array = [[], []]
+## v0.10.5 Q5: each actor node's parts, read once from its metas (get_meta every sync was most of actors.update), by
+## id: [facing, bar, elite bar or null, dazed or null, hero avatar or null, enemy avatar or null, is a boss, the yaw
+## last written (INF: write it), the blob shadow or null (v0.10.5 PA)].
+var _parts := {}
+## v0.10.5 W3-V1: the switch's value the actors were built with (a flip rebuilds them).
+var _vat_on := ViewPrefs.enemy_vat
 
 
 func sync(reader: WorldReader) -> void:
-	heat_tier = HeatLooks.tier_of(reader.heat_state())
+	heat_tier = reader.heat_tier()
+	if _vat_on != ViewPrefs.enemy_vat:  # v0.10.5 W3-V1: the dev switch flipped: those kinds are built again
+		_vat_on = ViewPrefs.enemy_vat
+		_rebuild_vat_kinds()
 	if bar_chunks.get_parent() == null:
 		add_child(bar_chunks)
 	var alive := {}
 	var hero := reader.player_pos()
 	var leans := reader.void_leans()  # v0.9.0 VP: empty unless a Void shot pulls someone
+	var latched := reader as LatchedReader  # v0.10.5 W3-Q8
 	for i in reader.actor_count():
 		var id := reader.actor_id(i)
 		alive[id] = true
@@ -105,21 +121,43 @@ func sync(reader: WorldReader) -> void:
 			if reader.actor_team(i) != 0:
 				tint_greys(node, enemy_tint)
 				role_glow(node, reader.actor_kind(i), role_glow_energy)  # v0.8.0 N1 (O39)
-		node.position = SimPlane.to_3d(reader.actor_pos(i))
-		_update_actor(node, reader, i)
+		var at := reader.actor_pos(i)
+		var pos := SimPlane.to_3d(at)
+		for g in grounds:
+			pos.y = maxf(pos.y, g.height_at(pos))
+		if latched != null and not fresh and node.is_physics_interpolated_and_enabled():
+			var t_tb := PerfMarks.start()
+			_start_from_tick_before(node, latched.actor_pos_before(i))
+			PerfMarks.add(&"actors.tick_before", t_tb)
+		node.position = pos  # v0.10.5 Q5: written once
+		var t_up := PerfMarks.start()
+		var parts := _parts_of(node, id)
+		_update_actor(node, reader, i, parts)
+		PerfMarks.add(&"actors.update", t_up)
 		if not leans.is_empty() and leans.has(id):
 			_lean(node, leans[id])
-		if node.has_meta(&"enemy_avatar"):  # v0.4.0 SC: off-screen crowds don't animate
-			_animate_if_seen(node, id, reader.actor_pos(i), hero)
+			parts[7] = INF  # the lean turned the facing's basis: the yaw is written again next sync
+		if parts[5] != null:  # v0.4.0 SC: off-screen crowds don't animate
+			var t_an := PerfMarks.start()
+			_animate_if_seen(node, id, at, hero)
+			PerfMarks.add(&"actors.animate", t_an)
 		if fresh:
 			node.reset_physics_interpolation()
-	_drop_missing(_actors, alive)
-	bar_chunks.keep_only(alive)
-	# A removed actor's flash and glow go with it (bounded).
-	for d: Dictionary in [_flash, _tint, _flash_hold, _shown, _anim_on]:
-		for id in d.keys():
-			if not alive.has(id):
-				d.erase(id)
+	# v0.10.5 W3-Q6: every live actor has its node by now, so as many nodes as live actors means none is gone: no walk
+	# over the nodes' and the per-id state's keys on a sync where nobody died.
+	if _actors.size() != alive.size():
+		_drop_missing(_actors, alive)
+		bar_chunks.keep_only(alive)
+		# A removed actor's flash and glow go with it (bounded).
+		for d: Dictionary in [_flash, _flash_hold, _shown, _anim_on, _parts]:
+			for id in d.keys():
+				if not alive.has(id):
+					d.erase(id)
+	elif bar_chunks.trail_count() > alive.size():
+		bar_chunks.keep_only(alive)
+	for id in _tint.keys():  # (set_tint may name an id with no node: walked whenever a glow is held)
+		if not alive.has(id):
+			_tint.erase(id)
 	var live := {}
 	for i in reader.projectile_count():
 		if reader.projectile_look(i) != "":
@@ -144,16 +182,41 @@ func sync(reader: WorldReader) -> void:
 		_proj_last[id] = p
 		if fresh:
 			node.reset_physics_interpolation()
-	_pool_missing(live)
-	for id in _proj_last.keys():
-		if not live.has(id):
-			_proj_last.erase(id)
+	if _projectiles.size() != live.size():  # W3-Q6: every live shot has its node: equal sizes, none ended
+		_pool_missing(live)
+	if _proj_last.size() != live.size():
+		for id in _proj_last.keys():
+			if not live.has(id):
+				_proj_last.erase(id)
+
+
+## v0.10.5 W3-Q8 (the hero and the enemies judder under 60 fps): the views sync once a frame (Q5), so on a frame that
+## ran two ticks or more the physics interpolation's previous place was the last sync's, two ticks or more back: the
+## node was drawn a tick or more behind, then caught up on the next frame. Its previous place is set to the tick
+## before the latest (`before`, LatchedReader.actor_pos_before), so it is drawn between the last two ticks as on a
+## one-tick frame. Nothing when `before` is null (a one-tick frame: the last sync's place is that tick's) or is where
+## the node already stands (the ticks already made that its previous place: a still actor costs nothing).
+func _start_from_tick_before(node: Node3D, before: Variant) -> void:
+	if before == null:
+		return
+	var b := SimPlane.to_3d(before as Vector2)
+	for g in grounds:
+		b.y = maxf(b.y, g.height_at(b))
+	if node.position.is_equal_approx(b):
+		return
+	node.position = b
+	node.reset_physics_interpolation()
 
 
 ## v0.8.0 HV (owner O89: never skipped on screen): an enemy model animates while the camera could show it
 ## (ScreenCull.keeps: within its largest radius + the margin of the view, with hysteresis); without a camera, within
 ## ANIMATE_RADIUS_M of the hero as before. Turning back on, it runs a few short steps at once, so its smoothed pose has
 ## caught up before it can reach the screen (its own _process runs again before this frame is drawn).
+## v0.10.5 PA (owner, perf wave 2: "let's try it"): the same test decides its physics interpolation: an enemy the camera
+## could show (the view's rectangle + AVATAR_RADIUS_M + MARGIN_M, + HYSTERESIS_M while on: every enemy on screen and
+## ~10 m past its edges) keeps it; a far one is set to PHYSICS_INTERPOLATION_MODE_OFF, and back on (with
+## reset_physics_interpolation, so it never glides from where it was) when it comes near. The hero and the camera are
+## never touched.
 func _animate_if_seen(node: Node3D, id: int, pos: Vector2, hero: Vector2) -> void:
 	var avatar := node.get_meta(&"enemy_avatar") as Node
 	var was: bool = _anim_on.get(id, false)
@@ -162,8 +225,15 @@ func _animate_if_seen(node: Node3D, id: int, pos: Vector2, hero: Vector2) -> voi
 		on = cull.keeps(SimPlane.to_3d(pos), ScreenCull.AVATAR_RADIUS_M, was)
 	else:
 		on = (pos - hero).length() <= ANIMATE_RADIUS_M
+	var first := not _anim_on.has(id)
 	_anim_on[id] = on
 	avatar.set_process(on)
+	if first or on != was:  # v0.10.5 PA: physics interpolation only where it could show
+		node.physics_interpolation_mode = (
+			Node.PHYSICS_INTERPOLATION_MODE_INHERIT if on else Node.PHYSICS_INTERPOLATION_MODE_OFF
+		)
+		if on:
+			node.reset_physics_interpolation()
 	if on and not was and avatar.has_method(&"advance"):
 		for k in 4:
 			avatar.call(&"advance", 0.05)
@@ -286,34 +356,98 @@ func _set_flash(node: Node3D, on: bool, id: int = -1) -> void:
 		)
 
 
-func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
-	var facing: Node3D = node.get_meta(&"facing")
-	facing.rotation = Vector3(0, SimPlane.yaw_of(reader.actor_facing(i)), 0)
+## v0.10.5 Q5: actor `id`'s parts (_parts), read from its node's metas the first time.
+func _parts_of(node: Node3D, id: int) -> Array:
+	var parts: Array = _parts.get(id, [])
+	if parts.is_empty():
+		parts = [
+			node.get_meta(&"facing"),
+			node.get_meta(&"bar"),
+			_meta_or_null(node, &"elite_bar"),
+			_meta_or_null(node, &"dazed"),
+			_meta_or_null(node, &"avatar"),
+			_meta_or_null(node, &"enemy_avatar"),
+			node.has_meta(&"boss"),
+			INF,
+			_meta_or_null(node, &"blob"),
+		]
+		_parts[id] = parts
+	return parts
+
+
+func _update_actor(node: Node3D, reader: WorldReader, i: int, parts: Array = []) -> void:
+	if parts.is_empty():
+		parts = _parts_of(node, reader.actor_id(i))
+	var facing: Node3D = parts[0]
+	var yaw := SimPlane.yaw_of(reader.actor_facing(i))
+	if yaw != parts[7]:  # v0.10.5 Q5: write only what changed
+		facing.rotation = Vector3(0, yaw, 0)
+		parts[7] = yaw
 	var spawning := reader.actor_spawning(i)
+	var enemy_avatar: Object = parts[5]
 	# Enemy models play their own rise-in while spawning (v0.2.0 L17); the others stay hidden until they arrive.
-	facing.visible = not spawning or node.has_meta(&"enemy_avatar")
+	var show_facing := not spawning or enemy_avatar != null
+	if facing.visible != show_facing:  # v0.9.5 PF3: write only what changed
+		facing.visible = show_facing
 	# v0.4.0 SC: an enemy's bar shows once it is hurt (a crowd at full health draws none); the hero's always.
-	var bar: Node3D = node.get_meta(&"bar")
-	var hurt := reader.actor_hp(i) < reader.actor_max_hp(i) or reader.actor_team(i) == 0
-	bar.visible = not spawning and not node.has_meta(&"boss") and hurt
-	if node.has_meta(&"elite_bar"):  # v0.9.0 EL: the elite's bar shows while it is out (gone while it has vanished)
+	var bar: Node3D = parts[1]
+	var hp := reader.actor_hp(i)
+	var max_hp := reader.actor_max_hp(i)
+	var hero := reader.actor_team(i) == 0
+	var show_bar: bool = not spawning and not parts[6] and (hp < max_hp or hero)
+	if bar.visible != show_bar:
+		bar.visible = show_bar
+	if parts[2] != null:  # v0.9.0 EL: the elite's bar shows while it is out (gone while it has vanished)
 		bar.visible = false
-		var eb := node.get_meta(&"elite_bar") as EliteBar
+		var eb := parts[2] as EliteBar
 		eb.visible = not spawning and not reader.elite_vanished(i)
-		eb.set_fraction(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)))
+		eb.set_fraction(float(hp) / maxf(1.0, max_hp))
 	if bar.visible:  # v0.8.0 N4 (O57): its chunk and refill (BarChunks scales the bar to the trail's fill)
-		var frac := clampf(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)), 0.0, 1.0)
-		bar_chunks.feed(reader.actor_id(i), bar, frac, reader.actor_team(i) == 0)
-	if node.has_meta(&"dazed"):
-		(node.get_meta(&"dazed") as Node3D).visible = reader.actor_recovering(i)
+		var frac := clampf(float(hp) / maxf(1.0, max_hp), 0.0, 1.0)
+		bar_chunks.feed(reader.actor_id(i), bar, frac, hero)
+	if parts[3] != null:
+		var dz := parts[3] as Node3D
+		var recovering := reader.actor_recovering(i)
+		if dz.visible != recovering:
+			dz.visible = recovering
 	if reader.actor_egg_permille(i) >= 0:  # v0.8.0 BS1 (S3): still an egg (BossSignatureViews draws it)
 		facing.visible = false
 		bar.visible = false
-	if node.has_meta(&"avatar"):
-		(node.get_meta(&"avatar") as PlayerAvatar).sync(reader)
+	if parts[4] != null:
+		var t_pa := PerfMarks.start()
+		(parts[4] as PlayerAvatar).sync(reader)
+		PerfMarks.add(&"actors.hero_sync", t_pa)
 	# Enemy models (v0.2.0 L17): each kind's own node, animated in frame time from the sim state.
-	if node.has_meta(&"enemy_avatar"):
-		node.get_meta(&"enemy_avatar").sync(reader, i)
+	if enemy_avatar != null:
+		var t_en := PerfMarks.start()
+		enemy_avatar.call(&"sync", reader, i)
+		PerfMarks.add(&"actors.enemy_sync", t_en)
+	if parts[8] != null:  # v0.10.5 PA: the blob goes with the body (an egg, a vanished elite)
+		var blob := parts[8] as Node3D
+		var shown := facing.visible and (enemy_avatar == null or (enemy_avatar as Node3D).visible)
+		if blob.visible != shown:
+			blob.visible = shown
+
+
+## v0.10.5 W3-V1: drops every actor node of a VatCrowd kind (marked "vat_kind"), so the next sync builds each again
+## with the switch's new value (in the same sync: they are missing from _actors).
+func _rebuild_vat_kinds() -> void:
+	for id: int in _actors.keys():
+		var node: Node3D = _actors[id]
+		if not node.has_meta(&"vat_kind"):
+			continue
+		_actors.erase(id)
+		node.queue_free()
+		for d: Dictionary in [_flash, _flash_hold, _shown, _anim_on, _parts]:
+			d.erase(id)
+
+
+## v0.10.5 W3-V1: the VAT crowd (made with the first VAT enemy).
+func _vat_crowd() -> VatCrowd:
+	if vat_crowd == null:
+		vat_crowd = VatCrowd.new()
+		add_child(vat_crowd)
+	return vat_crowd
 
 
 ## v0.4.0 SC: a projectile gone from the sim goes back to its look's pool (hidden) instead of being freed.
@@ -344,6 +478,8 @@ func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 		if not alive.has(id):
 			var node: Node3D = nodes[id]
 			nodes.erase(id)
+			if node.has_meta(&"blob"):  # v0.10.5 PA: a falling body's blob goes at once
+				(node.get_meta(&"blob") as Node3D).visible = false
 			# v0.7.5 BM: a boss whose body falls when it dies keeps drawing its fall a moment, then goes.
 			# (has_meta first: get_meta with a null default still reports a missing key, e.g. for a dummy)
 			var boss: Variant = (
@@ -433,22 +569,12 @@ func _body_material(c: Color) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = c
 	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = outline_color
-	mat.stencil_outline_thickness = 0.035
+	ActorLooks.outline(mat, outline_color, 0.035)
 	return flashable(mat)
 
 
-func _ghost_material(c: Color, team_c: Color) -> StandardMaterial3D:
-	var gm := StandardMaterial3D.new()
-	gm.albedo_color = c
-	gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-	gm.stencil_color = Color(team_c, 0.85)
-	return gm
-
-
-## A box body piece (and its X-ray twin): size, centre offset from the actor's feet (in the facing frame).
-func _piece(parent: Node3D, size: Vector3, at: Vector3, c: Color, team_c: Color) -> void:
+## A box body piece: size, centre offset from the actor's feet (in the facing frame).
+func _piece(parent: Node3D, size: Vector3, at: Vector3, c: Color, _team_c: Color) -> void:
 	var body := MeshInstance3D.new()
 	var box := BoxMesh.new()
 	box.size = size
@@ -460,15 +586,6 @@ func _piece(parent: Node3D, size: Vector3, at: Vector3, c: Color, team_c: Color)
 	var mats: Array = root.get_meta(&"mats", [])
 	mats.append(body.material_override)
 	root.set_meta(&"mats", mats)
-	if technique == &"xray":
-		var ghost := MeshInstance3D.new()
-		var gbox := BoxMesh.new()
-		gbox.size = size * 0.96
-		ghost.mesh = gbox
-		ghost.material_override = _ghost_material(c, team_c)
-		ghost.position = at
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(ghost)
 
 
 func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
@@ -510,6 +627,9 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			var avatar := ChargerAvatar.new()
 			avatar.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials
 			avatar.role_glow = role_glow_energy
+			if VatCrowd.supports(kind):  # v0.10.5 W3-V4a: drawn by the VAT crowd while the switch is on
+				avatar.vat = ViewPrefs.enemy_vat
+				root.set_meta(&"vat_kind", true)
 			avatar.setup(outline_color, technique)
 			root.set_meta(&"hit_look", avatar)
 			facing.add_child(avatar)
@@ -532,6 +652,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			# The rock golem (owner, v0.2.0 L17): its own node, animated in frame time.
 			height = 1.25
 			var warden := WardenAvatar.new()
+			_solo_vat(root, warden, kind)  # v0.10.5 W3-V4c
 			warden.setup(outline_color, technique)
 			facing.add_child(warden)
 			root.set_meta(&"enemy_avatar", warden)
@@ -539,6 +660,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_NEEDLE:
 			# The walking turret (v0.2.0 L17): its own node under the facing, animated in frame time.
 			var needle := NeedleAvatar.new()
+			_solo_vat(root, needle, kind)  # v0.10.5 W3-V4c
 			needle.setup(outline_color, technique)
 			facing.add_child(needle)
 			height = NeedleAvatar.HEIGHT
@@ -547,6 +669,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_ARC_CASTER:
 			# The Arc Caster (v0.3.5 AI): a robed caster with a staff, its own node under the facing.
 			var caster := ArcCasterAvatar.new()
+			_solo_vat(root, caster, kind)  # v0.10.5 W3-V4c
 			caster.setup(outline_color, technique)
 			facing.add_child(caster)
 			height = ArcCasterAvatar.HEIGHT
@@ -555,6 +678,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_BOMB_DRONE:
 			# The Bomb Drone (v0.3.5 AI): drawn hovering, its shadow on the ground where the sim has it.
 			var drone := BombDroneAvatar.new()
+			_solo_vat(root, drone, kind)  # v0.10.5 W3-V4c
 			drone.setup(outline_color, technique)
 			facing.add_child(drone)
 			height = BombDroneAvatar.HEIGHT
@@ -573,6 +697,9 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			var hatch := ChargerAvatar.new()
 			hatch.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials
 			hatch.role_glow = role_glow_energy
+			if VatCrowd.supports(kind):  # v0.10.5 W3-V4a: drawn by the VAT crowd while the switch is on
+				hatch.vat = ViewPrefs.enemy_vat
+				root.set_meta(&"vat_kind", true)
 			hatch.setup(outline_color, technique, WorldReader.KIND_HATCHLING)  # v0.8.0 EC: its colours
 			root.set_meta(&"hit_look", hatch)
 			hatch.scale = Vector3.ONE * 0.66
@@ -624,6 +751,9 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			var horde := HordeAvatar.new()
 			horde.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials (tint_greys, role_glow)
 			horde.role_glow = role_glow_energy
+			if VatCrowd.supports(kind):  # v0.10.5 W3-V1: drawn by the VAT crowd while the switch is on
+				horde.vat = ViewPrefs.enemy_vat
+				root.set_meta(&"vat_kind", true)
 			horde.setup(kind, outline_color, technique)
 			facing.add_child(horde)
 			height = horde.height
@@ -650,6 +780,28 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			)
 			if is_player:
 				_add_core_panels(facing, size)
+	if not is_player and root.has_meta(&"boss"):  # v0.9.5 PF4: a boss's largest pieces cast its shadow
+		ShadowTrim.trim(facing, ShadowTrim.BOSS_KEEP)
+	elif not is_player and _vat_avatar(root) != null:
+		# v0.10.5 W3-V1: the crowd draws the body and its proxy shadow; a blob stays a node of the actor's.
+		var vat_avatar := _vat_avatar(root)
+		var blob := ViewPrefs.enemy_shadows == "blob"
+		if blob:
+			root.set_meta(
+				&"blob", EnemyShadows.apply(root, facing, vat_avatar, kind, radius, "blob")
+			)
+		_vat_crowd().add(root, facing, vat_avatar, outline_color, not blob)
+	elif not is_player:
+		RigMerge.merge_actor(root, kind)  # v0.9.5 PF5: the enemy's pieces become one skinned mesh
+		# v0.10.5 PA: its parts cast nothing; one stand-in shaped like it (or a blob) casts its shadow.
+		var host: Node3D = facing
+		if root.has_meta(&"enemy_avatar"):
+			host = root.get_meta(&"enemy_avatar")
+		var stand_in := EnemyShadows.apply(
+			root, facing, host, kind, radius, ViewPrefs.enemy_shadows
+		)
+		if stand_in != null and stand_in.name == EnemyShadows.BLOB_NAME:
+			root.set_meta(&"blob", stand_in)
 	# Floating health bar, as in the reference; it shrinks toward its centre as HP drops.
 	var bar_root := Node3D.new()
 	bar_root.position = Vector3(0, height + 0.55, 0)
@@ -762,3 +914,28 @@ func _projectile_material(c: Color, energy: float) -> StandardMaterial3D:
 		m.emission_energy_multiplier = energy
 		_proj_mats[key] = m
 	return _proj_mats[key]
+
+
+## v0.10.5 W3-V4c: a Needle, Warden, Arc Caster or Bomb Drone `avatar` (before its setup) drawn by the VAT crowd while
+## the switch is on: it takes the floor's cast and role glow for its baked look (its own materials take them after it
+## is built, tint_greys / role_glow, on the old path) and the flash and tints per instance (hit_look).
+func _solo_vat(root: Node3D, avatar: AvatarBase, kind: int) -> void:
+	if not VatCrowd.supports(kind):
+		return
+	root.set_meta(&"vat_kind", true)
+	avatar.set(&"vat", ViewPrefs.enemy_vat)
+	if ViewPrefs.enemy_vat:
+		avatar.enemy_tint = enemy_tint
+		avatar.role_glow = role_glow_energy
+		root.set_meta(&"hit_look", avatar)
+
+
+## v0.10.5 W3-V1: the actor's avatar when a VAT crowd draws it, else null (v0.10.5 W3-V4a: any avatar with `vat` on).
+static func _vat_avatar(root: Node3D) -> AvatarBase:
+	var a := _meta_or_null(root, &"enemy_avatar") as AvatarBase
+	return a if a != null and &"vat" in a and bool(a.get(&"vat")) else null
+
+
+## v0.10.5 Q5: a meta's value, or null when the node has none (get_meta with a null default still reports an error).
+static func _meta_or_null(node: Node, key: StringName) -> Variant:
+	return node.get_meta(key) if node.has_meta(key) else null

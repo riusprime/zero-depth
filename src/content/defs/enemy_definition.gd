@@ -22,6 +22,13 @@ const POSITIVE_SHAPE_PARAMS: Array[String] = [
 ## with shards_by_floor (bosses) × the floor number instead. 0 = drops none.
 @export var shards := 0
 @export var shards_by_floor := false
+## v0.10.5 O10 (owner P3 "yes"; docs/roadmap/v0.10.5/O10_STRESS_MATRIX.md): the form or element this kind is weak to
+## and the one it resists: a form card's modifier id (gun_laser) or an element id (ModifierOpDefinition.ELEMENTS);
+## empty: none. A matching hit or damage-over-time tick of the player's takes the multiplier (per mille; Matchups).
+@export var weak_to := &""
+@export var resists := &""
+@export var weak_permille := 1250
+@export var resist_permille := 750
 
 
 func category() -> StringName:
@@ -38,6 +45,7 @@ func validate() -> Array[ValidationIssue]:
 	check_positive(issues, "move_speed_mps", move_speed_mps)
 	if shards < 0:
 		issues.append(ValidationIssue.new(&"negative", resource_path, "shards is negative"))
+	_check_matchup(issues)
 	var schema: Dictionary = BehaviourSchemas.SCHEMAS.get(behaviour_id, {})
 	if schema.is_empty():
 		issues.append(
@@ -160,6 +168,50 @@ func _check_armour(issues: Array[ValidationIssue]) -> void:
 				&"armour", resource_path, "rear_mult_permille must be within 1000..3000"
 			)
 		)
+
+
+## v0.10.5 O10: a weakness raises (1001..2000 per mille), a resistance softens without blocking (1..999), and the
+## two name different ids. Whether each id exists is cross_check's.
+func _check_matchup(issues: Array[ValidationIssue]) -> void:
+	if weak_permille <= 1000 or weak_permille > 2000:
+		issues.append(
+			ValidationIssue.new(
+				&"matchup", resource_path, "weak_permille must be within 1001..2000"
+			)
+		)
+	if resist_permille < 1 or resist_permille >= 1000:
+		issues.append(
+			ValidationIssue.new(
+				&"matchup", resource_path, "resist_permille must be within 1..999 (no block)"
+			)
+		)
+	if weak_to != &"" and weak_to == resists:
+		issues.append(
+			ValidationIssue.new(&"matchup", resource_path, "weak_to and resists are the same id")
+		)
+
+
+## v0.10.5 O10: every enemy's weak_to and resists name an element (ModifierOpDefinition.ELEMENTS) or a modifier.
+static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
+	var issues: Array[ValidationIssue] = []
+	var ids := {}
+	for e: StringName in ModifierOpDefinition.ELEMENTS:
+		ids[e] = true
+	for d in defs:
+		if d is ModifierDefinition:
+			ids[d.id] = true
+	for d in defs:
+		if not d is EnemyDefinition:
+			continue
+		var e := d as EnemyDefinition
+		for id: StringName in [e.weak_to, e.resists]:
+			if id != &"" and not ids.has(id):
+				issues.append(
+					ValidationIssue.new(
+						&"unknown_matchup", e.resource_path, "no form or element %s" % id
+					)
+				)
+	return issues
 
 
 ## The horde kinds (v0.4.0 EN): counts, heals and times that must be positive, and a shield arc within 0..360.

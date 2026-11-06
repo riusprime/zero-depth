@@ -33,6 +33,8 @@ extends RefCounted
 ## has earned none and locks nothing (an old run in progress keeps every form in its pool).
 ## v0.9.0 CL adds `run.collected`, `run.collected_run` (collectible ids) and `run.marked` the same way: a payload
 ## without them has found none (its floors arm every collectible the content has; the profile drops a found one).
+## v0.10.5 W3-O11 adds `run.boss_draw` (RunState.BOSS_DRAW) the same way: a payload without it was saved before
+## floor 1's pool shared the Brood Mother, and draws every floor's boss as it would have then.
 const PAYLOAD_VERSION := 4
 const PAYLOAD_VERSIONS_READ: Array[int] = [2, 3, 4]
 ## v0.9.0 FV: today's run (Main) and the shape a payload without `run_id` resumes in.
@@ -161,6 +163,11 @@ static func lockdown_table(run: RunState, repo: ContentRepository) -> LockdownTa
 	var t := RunContentCompiler.compile_lockdown(repo.get_def(&"lockdown", &"lockdown"))
 	if t != null and run != null and run.floor_rules <= RunState.FLOOR_RULES_V090_SH:
 		t.kind_weights[LockdownTable.Kind.ELITE] = 0  # v0.9.0 EL: a floor saved before EL had none
+	if t != null and run != null and run.floor_rules <= RunState.FLOOR_RULES_V095_AQ:
+		t.burst_gap_ticks = 0  # v0.9.5 DR: a floor saved before DR keeps its three formations and its arenas
+		t.takes_arenas = false
+	if t != null and run != null and run.floor_rules <= RunState.FLOOR_RULES_V095_BK:
+		t.set_piece_floor = 0  # v0.10.5 O14: a floor saved before it keeps its Lockdown order and kinds
 	if t != null and ClosedFights.legacy_rooms(run):  # v0.9.0 CF: a floor saved before CF keeps its rooms
 		t.min_cells = 0
 	return t
@@ -226,6 +233,11 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	for id: Variant in r.get("collected_run", []):
 		run.collected_run.append(StringName(String(id)))
 	run.marked_done = maxi(0, int(r.get("marked", 0)))
+	for id: Variant in r.get("loop_rules", []):  # v0.10.5 O5b: an older payload holds no loop rules
+		run.loop_rules.append(StringName(String(id)))
+	run.loop_rule_loop = int(r.get("loop_rule_loop", 0))
+	# v0.10.5 W3-O11: a payload without it was saved before floor 1 shared the Brood Mother (its bosses as they were)
+	run.boss_draw = int(r.get("boss_draw", RunState.BOSS_DRAW_LEGACY))
 	return run
 
 
@@ -262,6 +274,7 @@ static func payload_of(
 			"final": run.final_fight,  # v0.8.0 FB1: the final arena
 			"purple_floors": run.purple_floors.duplicate(),  # v0.9.0 DP: the floors that held purple runes
 			"run_id": String(run.table.id),  # v0.9.0 FV: the run's shape (saved_run_id)
+			"boss_draw": run.boss_draw,  # v0.10.5 W3-O11: the run's boss draw rules (RunState.BOSS_DRAW)
 		},
 		"rooms": p_rooms.duplicate(),
 		"tick": w.tick,
@@ -282,6 +295,9 @@ static func payload_of(
 		out["run"]["collected_run"] = _ids(run.collected_run)
 	if run.marked_done > 0:  # v0.9.0 CL: the marked secrets the finished floors found
 		out["run"]["marked"] = run.marked_done
+	if not run.loop_rules.is_empty():  # v0.10.5 O5b: the loop rules (none: no key, as before)
+		out["run"]["loop_rules"] = _ids(run.loop_rules)
+		out["run"]["loop_rule_loop"] = run.loop_rule_loop
 	return out
 
 

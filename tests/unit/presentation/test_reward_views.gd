@@ -89,7 +89,9 @@ func test_a_refused_chest_shakes() -> void:
 	assert_ne(body.position.x, 0.0, "it shakes")
 
 
-func test_shard_gems_fly_from_the_kill_to_the_player() -> void:
+## v0.10.5 O7b (owner P6): a kill's shards lie on the floor as a gem cluster, nothing flies; walking up pulls the
+## cluster into the hero (PULL_S) and it vanishes.
+func test_kill_shards_lie_on_the_floor_until_the_hero_takes_them() -> void:
 	var w := _world()
 	var r := WorldReader.new(w)
 	var s := ShardViews.new()
@@ -100,7 +102,32 @@ func test_shard_gems_fly_from_the_kill_to_the_player() -> void:
 	w.actors.dead[i] = 1
 	w.step(InputFrame.new())
 	s.sync(r)
-	assert_eq(s.count(), 6, "a gem per shard (Warden: 6)")
+	assert_eq(s.count(), 0, "no gems fly")
+	assert_eq(s.drop_count(), 1, "a cluster lies at the body")
+	for k in 120:
+		s._process(1.0 / 60.0)
+	assert_eq(s.drop_count(), 1, "and stays")
+	w.actors.set_pos(0, Vector2(4, 0))
+	w.step(InputFrame.new())
+	s.sync(r)
+	assert_eq(s.drop_count(), 0)
+	assert_eq(s.pulled_count(), 1, "taken: pulled into the hero")
+	for k in 12:
+		s._process(1.0 / 60.0)
+	assert_eq(s.pulled_count(), 0, "gone within 0.2 s")
+
+
+func test_instant_shards_still_fly_to_the_player() -> void:
+	var w := _world()
+	var r := WorldReader.new(w)
+	var s := ShardViews.new()
+	add_child_autofree(s)
+	s.sync(r)
+	var me := w.actors.ids[0]
+	var e := w.emit_event(SimEvent.Kind.SHARDS, me, me, me, Vector2(4, 0))
+	e.amount = 6
+	s.sync(r)
+	assert_eq(s.count(), 6, "a gem per shard")
 	for k in 120:
 		s._process(1.0 / 60.0)
 	assert_eq(s.count(), 0, "they reached the player and vanished")
@@ -118,7 +145,7 @@ func test_hud_counter_and_prompt() -> void:
 	w.shards = 12
 	hud.sync(r)
 	assert_eq(hud.shard_text(), "12")
-	assert_eq(hud.prompt_text(), tr("REWARD_TOO_POOR") % [12, 40])
+	assert_eq(hud.prompt_text(), tr("REWARD_OPEN_CHEST") % 40)
 	assert_true(hud.prompt_poor())
 	w.shards = 45
 	hud.sync(r)
@@ -162,7 +189,9 @@ func test_the_pick_panel_shows_the_offer_with_rarity_frames() -> void:
 		)
 		var id := r.item_id(r.choice_items()[k])
 		assert_eq(
-			p.slot(k).colour_id(), CardFrames.frame_of(CardFrames.family(id)), "card %d colour" % k
+			p.slot(k).colour_id(),
+			CardFrames.frame_of(CardFrames.family(id, p.slot(k).face_type())),
+			"card %d colour" % k,
 		)
 	assert_eq(p.slot(1).card.gem.color, PickSlot.RARE, "the rare card's gem")
 	assert_gt(p.slot(1).card.glow_alpha(), p.slot(2).card.glow_alpha(), "the rare card glows more")

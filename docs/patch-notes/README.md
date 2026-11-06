@@ -14,6 +14,9 @@ those copies are built by `godot --headless --path . -s scripts/content/build_pa
 
 | Version | Name | Date |
 |---|---|---|
+| [v0.10.5](v0.10.5.md) ([es](v0.10.5.es.md)) | Astral Loops | 2026-11-06 |
+| [v0.10.0](v0.10.0.md) ([es](v0.10.0.es.md)) | A New Look for Attacks | 2026-10-31 |
+| [v0.9.5](v0.9.5.md) ([es](v0.9.5.es.md)) | Harder Bosses, Deeper Guns | 2026-10-26 |
 | [v0.9.0](v0.9.0.md) ([es](v0.9.0.es.md)) | World and Weapons | 2026-10-24 |
 | [v0.8.0](v0.8.0.md) ([es](v0.8.0.es.md)) | Fights and Feel | 2026-10-22 |
 | [v0.0.1](v0.0.1.md) ([es](v0.0.1.es.md)) | Ground Plane | 2026-10-06 |
@@ -23,7 +26,7 @@ those copies are built by `godot --headless --path . -s scripts/content/build_pa
 The full template is in [`../process/TEMPLATES.md`](../process/TEMPLATES.md) §5:
 
 ```markdown
-# {{TITLE}} vX.Y.Z — <Update name>
+# Zero Depth vX.Y.Z — <Update name>
 _<date>_ · <one-sentence summary>
 
 ## New Features

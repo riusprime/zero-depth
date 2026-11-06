@@ -48,8 +48,8 @@ func test_the_table_compiles_from_the_data_and_the_dev_panel_shows_it() -> void:
 	assert_eq(t.ceilings, PackedInt32Array([2, 3, 5, 5]), "ceilings 2/3/5, 5 deep")
 	assert_eq(t.guaranteed_altars, PackedInt32Array([2, 0, 0, 0]), "two altars on floor 1")
 	assert_eq(t.jackpot_permille, 15)
-	assert_eq(t.weights[0], PackedInt32Array([1400, 1400, 400, 600, 20]), "floor 1")
-	assert_eq(t.weights[1], PackedInt32Array([1000, 1000, 1000, 1200, 100]), "floor 2")
+	assert_eq(t.weights[0], PackedInt32Array([1500, 1600, 900, 600, 20]), "floor 1")
+	assert_eq(t.weights[1], PackedInt32Array([1300, 1400, 1100, 1200, 100]), "floor 2")
 	assert_eq(t.weights[2], PackedInt32Array([900, 900, 1200, 1200, 300]), "floor 3")
 	assert_eq(t.weights[3], PackedInt32Array([800, 800, 1300, 1200, 600]), "deep and loops")
 	var economy: Array = []
@@ -94,20 +94,17 @@ func test_every_wand_and_trigger_card_has_a_category() -> void:
 				else LootPacing.Category.TRIGGER
 			)
 			assert_eq(cat, want, "%s: T1–T4 trigger, the ×2 triggers advanced" % t.id)
-	for c in LootPacing.Category.values():
+	# v0.10.5 O1: no trigger or mutation card ships any more, so those two categories are unused.
+	for c in [LootPacing.Category.FORM, LootPacing.Category.ELEMENT, LootPacing.Category.ADVANCED]:
 		assert_true(seen.has(c), "category %d is used" % c)
 	for pair: Array in [
 		[&"gun_big_shot", LootPacing.Category.FORM],
-		[&"gun_spread", LootPacing.Category.FORM],
 		[&"wide_arc", LootPacing.Category.FORM],
 		[&"ember_core", LootPacing.Category.ELEMENT],
-		[&"gravity_well", LootPacing.Category.ELEMENT],
 		[&"gun_twin", LootPacing.Category.ADVANCED],
 		[&"gun_echo", LootPacing.Category.ADVANCED],
 		[&"finisher_plus", LootPacing.Category.ADVANCED],
 		[&"shared_faultline", LootPacing.Category.ADVANCED],
-		[&"trigger_on_hit", LootPacing.Category.TRIGGER],
-		[&"mut_grand_finale", LootPacing.Category.MUTATION],
 	]:
 		assert_eq(LootPacing.category(w, _it(w, pair[0])), pair[1], "%s" % pair[0])
 
@@ -147,7 +144,7 @@ func test_each_stage_weighs_each_category() -> void:
 	var plain := _world()
 	plain.loot_pacing = null
 	var rt := w.reward_table
-	var ids := [&"gun_big_shot", &"ember_core", &"gun_twin", &"trigger_on_hit"]  # form, element, advanced, trigger
+	var ids := [&"gun_big_shot", &"ember_core", &"gun_twin"]  # form, element, advanced
 	for s in 4:
 		w.floor_index = mini(s + 1, 3)
 		w.loop = 2 if s == 3 else 1
@@ -164,33 +161,28 @@ func test_each_stage_weighs_each_category() -> void:
 	assert_eq(LootPacing.weight_permille(w, stat), 1000, "a stat card keeps its weight")
 
 
-func test_a_mutation_is_out_of_floor_ones_regular_draws() -> void:
-	var w := _world()
-	var rt := w.reward_table
-	for id: StringName in [&"mut_double_exposure", &"mut_grand_finale"]:
-		var k := _it(w, id)
-		var wt := ItemPool.card_weight(
-			w, k, rt.rare_weight_altar, rt.epic_permille_altar, rt.legendary_permille_altar
-		)
-		assert_eq(
-			wt, 0, "%s: floor 1's altar weight rounds to nothing (the jackpot lets one in)" % id
-		)
-
-
 # --- The ceilings across the sources -------------------------------------------------------------------------------
 func test_a_held_card_at_the_floors_ceiling_is_offered_no_more() -> void:
-	for pair: Array in [[1, 2], [2, 3], [3, 5]]:
-		var w := _world(&"gun", 7, pair[0])
-		var k := _hold(w, &"gun_big_shot", pair[1] - 1)
+	# v0.9.5 CLV: Big Shot has one level now; Twin (3 levels) stands in on floor 1, a Blade card (5) on floors 2-3
+	var cases := [
+		[1, 2, &"gun", &"gun_twin"],
+		[2, 3, &"blade", &"blade_storm"],
+		[3, 5, &"blade", &"blade_storm"]
+	]
+	for pair: Array in cases:
+		var w := _world(pair[2], 7, pair[0])
+		var k := _hold(w, pair[3], pair[1] - 1)
 		assert_has(ItemPool.available(w), k, "floor %d: below the ceiling, offered" % pair[0])
 		assert_true(Shop.can_apply(w, k), "the shop's, the events' and the cores' rule agree")
 		CardLevels.set_level(w, k, pair[1])
 		if pair[1] < CardLevels.MAX_LEVEL:
-			assert_does_not_have(ItemPool.available(w), k, "floor %d: at %d, no more" % pair)
+			assert_does_not_have(
+				ItemPool.available(w), k, "floor %d: at %d, no more" % [pair[0], pair[1]]
+			)
 			assert_false(Shop.can_apply(w, k), "nor bought, nor an event's, nor a core's drop")
 			assert_true(CardLevels.can_take(w, k, CardLevels.MAX_LEVEL), "the dev grant's rule")
-		var later := _world(&"gun", 7, mini(pair[0] + 1, 3))
-		var k2 := _hold(later, &"gun_big_shot", pair[1])
+		var later := _world(pair[2], 7, mini(pair[0] + 1, 3))
+		var k2 := _hold(later, pair[3], pair[1])
 		if pair[1] < CardLevels.MAX_LEVEL:
 			assert_has(ItemPool.available(later), k2, "the next floor offers it again")
 
@@ -232,3 +224,60 @@ func test_the_overrun_and_the_epic_altar_offer_no_wand_card() -> void:
 			assert_ne(
 				Offers.type_of(c), Offers.MOD, "the epic altar: ability level-ups and stat cards"
 			)
+
+
+# --- v0.9.5 EP2: the card-type odds per stage ----------------------------------------------------------------------
+func test_card_type_weights_follow_the_stage() -> void:
+	var w := _world()
+	var altar := {1: [10, 30, 60], 2: [10, 40, 50], 3: [14, 43, 43], 4: [14, 43, 43]}
+	var chest := {1: [10, 25, 65], 2: [10, 30, 60], 3: [14, 43, 43], 4: [14, 43, 43]}
+	for f: int in altar:
+		w.floor_index = f
+		assert_eq(Array(LootPacing.card_type_weights(w, false)), altar[f], "altar, floor %d" % f)
+		assert_eq(Array(LootPacing.card_type_weights(w, true)), chest[f], "chest, floor %d" % f)
+	w.floor_index = 1
+	w.loop = 2
+	assert_eq(Array(LootPacing.card_type_weights(w, false)), [14, 43, 43], "altar, a later loop")
+	assert_eq(Array(LootPacing.card_type_weights(w, true)), [14, 43, 43], "chest, a later loop")
+
+
+func test_card_type_weights_fall_back_to_the_reward_table() -> void:
+	var w := _world()
+	var rt := w.reward_table
+	w.loot_pacing.altar_type_weights = PackedInt32Array()
+	w.loot_pacing.chest_type_weights = PackedInt32Array()
+	assert_eq(LootPacing.card_type_weights(w, false), rt.altar_card_weights, "empty: the altar's")
+	assert_eq(LootPacing.card_type_weights(w, true), rt.chest_card_weights, "empty: the chest's")
+	w.loot_pacing = null
+	assert_eq(LootPacing.card_type_weights(w, false), rt.altar_card_weights, "no table: altar's")
+	assert_eq(LootPacing.card_type_weights(w, true), rt.chest_card_weights, "no table: chest's")
+
+
+func test_a_bad_type_weights_row_is_refused() -> void:
+	var def: LootPacingDefinition = _repo.get_def(&"loot_pacing", &"pacing").duplicate()
+	def.altar_type_weights = PackedInt32Array([1, 2, 3])
+	assert_gt(def.validate().size(), 0, "wrong size")
+	def.altar_type_weights = PackedInt32Array([0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+	assert_gt(def.validate().size(), 0, "a stage sums to 0")
+	def.altar_type_weights = PackedInt32Array()
+	assert_eq(def.validate().size(), 0, "empty is legal")
+
+
+## Floor 1's altars lean to wand cards (more mods than stats); from floor 3 the two are about even.
+func test_the_altar_draws_lean_to_wand_cards_early_and_match_stats_later() -> void:
+	var shares := {}
+	for f in [1, 3]:
+		var w := _world(&"gun", 11, f)
+		var mods := 0
+		var stats := 0
+		for n in 300:
+			for code in Offers.draw(w, false, 3):
+				var kind := Offers.type_of(code)
+				if kind == Offers.MOD:
+					mods += 1
+				elif kind == Offers.STAT:
+					stats += 1
+		shares[f] = [mods, stats]
+	assert_gt(shares[1][0], shares[1][1], "floor 1: more mods than stats %s" % [shares[1]])
+	var pct: int = shares[3][0] * 100 / (shares[3][0] + shares[3][1])
+	assert_between(pct, 30, 60, "floor 3: mod share %d%% %s" % [pct, shares[3]])

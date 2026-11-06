@@ -77,7 +77,7 @@ func setup(reader: WorldReader, p_biome: StringName) -> void:
 	_iron.albedo_color = InteractionLooks.color(biome, "metal")
 	_iron.metallic = 0.6
 	_iron.roughness = 0.55
-	var d := reader.lockdown()
+	var d := _read(reader)
 	var kinds: PackedInt32Array = d["kinds"]
 	var rooms: PackedInt32Array = d["rooms"]
 	var any_hazard := false
@@ -101,8 +101,34 @@ func setup(reader: WorldReader, p_biome: StringName) -> void:
 	sync(reader)
 
 
-func sync(reader: WorldReader) -> void:
+## v0.9.5 DR (owner Q6: "falling bars on every seal"): the Lockdowns' read, plus the Overrun room as one more sealed
+## room (its waves stay the Arenas'; the bars, the thud and the sounds are these), the Normal kind. A floor with only
+## an Overrun reads as no Lockdowns beside it.
+static func _read(reader: WorldReader) -> Dictionary:
 	var d := reader.lockdown()
+	if not bool(d.get("active", false)):
+		d = {
+			"rooms": PackedInt32Array(),
+			"kinds": PackedInt32Array(),
+			"sealed": -1,
+			"landed_tick": -1,
+			"landed_pos": Vector2.ZERO,
+		}
+	var o := reader.overrun()
+	if bool(o.get("active", false)):
+		var rooms: PackedInt32Array = d["rooms"]
+		var kinds: PackedInt32Array = d["kinds"]
+		rooms.append(int(o["room"]))
+		kinds.append(WorldReader.LOCKDOWN_NORMAL)
+		d["rooms"] = rooms
+		d["kinds"] = kinds
+		if int(d["sealed"]) < 0 and bool(reader.arenas().get("overrun_sealed", false)):
+			d["sealed"] = int(o["room"])
+	return d
+
+
+func sync(reader: WorldReader) -> void:
+	var d := _read(reader)
 	var sealed := int(d["sealed"])
 	if sealed != _sealed:
 		if _sealed >= 0:

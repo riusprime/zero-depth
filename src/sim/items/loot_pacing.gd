@@ -13,6 +13,8 @@ extends RefCounted
 ## - The jackpot (Offers.roll): per regular offer (an altar's or a chest's) one draw against jackpot_permille; on a hit
 ##   one card is replaced by a jackpot card (a held wand card at the ceiling, which it lifts one level past it, or a
 ##   mutation), recorded in World.loot_jackpots so the pick card says "Jackpot".
+## - The card-type odds (v0.9.5 EP2, card_type_weights): an altar's / chest's [ability, stat, mod] weights per stage, so
+##   floors 1-2 lean to wand cards and floor 3 on matches stats with them; without them, the reward table's.
 ## Dev and debug grants never come through here. Deterministic: draws only from w.rng_loot, only with a table.
 
 ## The stages, the index of every per-stage array of LootPacingTable.
@@ -27,6 +29,19 @@ static func stage(w: World) -> int:
 	if w.loop > 1 or Routes.is_deep(w):
 		return Stage.DEEP
 	return clampi(w.floor_index - 1, Stage.FLOOR_1, Stage.FLOOR_3)
+
+
+## The card-type weights [ability, stat, mod] of a chest's (`chest`) or an altar's draw (v0.9.5 EP2): this stage's row
+## of the pacing table, or the reward table's without a table or with an empty row.
+static func card_type_weights(w: World, chest: bool) -> PackedInt32Array:
+	var t := w.loot_pacing
+	var arr := PackedInt32Array()
+	if t != null:
+		arr = t.chest_type_weights if chest else t.altar_type_weights
+	if arr.is_empty():
+		return w.reward_table.chest_card_weights if chest else w.reward_table.altar_card_weights
+	var s := stage(w) * 3
+	return arr.slice(s, s + 3)
 
 
 ## The stage of the floor after this one (floor 3's next is the next loop: DEEP).
@@ -66,6 +81,25 @@ static func next_ceiling(w: World) -> int:
 	return _ceiling_at(w, next_stage(w))
 
 
+## v0.10.5 W3-P2 (the progression audit's P2: element levels follow the floor): an element card's own ceiling `ahead`
+## floors from this one (0: now; 1: the next floor, the boss's upgrade): the table's loop-1 row by floor (its last
+## value past its end), element_ceiling_loops from loop 2 on; MAX_LEVEL without the table or its row.
+static func element_ceiling(w: World, ahead: int = 0) -> int:
+	var t := w.loot_pacing
+	if t == null or t.element_ceilings.is_empty():
+		return CardLevels.MAX_LEVEL
+	if w.loop > 1:
+		return clampi(t.element_ceiling_loops, 1, CardLevels.MAX_LEVEL)
+	var f := clampi(w.floor_index - 1 + ahead, 0, t.element_ceilings.size() - 1)
+	return clampi(t.element_ceilings[f], 1, CardLevels.MAX_LEVEL)
+
+
+## v0.10.5 W3-P2: the highest level held item `idx` is offered up to now: the stage's ceiling, and an element card's
+## own (element_ceiling) under it; W3-P3: the card's own cap with this loop's overlevels (CardLevels.offer_cap).
+static func ceiling_of(w: World, idx: int) -> int:
+	return CardLevels.offer_cap(w, idx)
+
+
 static func _ceiling_at(w: World, s: int) -> int:
 	var t := w.loot_pacing
 	if t == null:
@@ -92,7 +126,7 @@ static func compatible(w: World, idx: int) -> bool:
 	for k in at:
 		if Wand.trigger_of(w, w.mod_slots[k]) >= 0:
 			cuts += 1
-	if cuts > WandCompile.MAX_DEPTH:
+	if cuts > Attacks.hook_depth(w):  # v0.10.5 W3-P10a: the loop's
 		return false
 	return cuts == 0 or not Wand.dead_after_trigger(w, w.item_tables[idx].id)
 
@@ -146,14 +180,15 @@ static func jackpot(w: World, i: int, out: PackedInt32Array) -> PackedInt32Array
 
 ## The jackpot cards now, ascending: a held wand card exactly at the ceiling (and below CardLevels.MAX_LEVEL; taking
 ## it lifts it one past the ceiling), or a mutation still in the pool; never a card already in `out` or held in
-## another offer (ItemPool.available's rules, the ceiling one level higher).
+## another offer (ItemPool.available's rules, the ceiling one level higher). v0.10.5 W3-P2: an element card at its own
+## ceiling (ceiling_of) is a jackpot card too, lifted one past it.
 static func jackpot_pool(w: World, out: PackedInt32Array) -> PackedInt32Array:
 	var cap := ceiling(w)
 	var pool := PackedInt32Array()
-	for idx in ItemPool.available(w, true, cap + 1):
+	for idx in ItemPool.available(w, true, cap + 1, element_ceiling(w) + 1):
 		if out.has(idx):
 			continue
-		var held := w.items_owned.has(idx) and CardLevels.level(w, idx) == cap
+		var held := w.items_owned.has(idx) and CardLevels.level(w, idx) == ceiling_of(w, idx)
 		if held or category(w, idx) == Category.MUTATION:
 			pool.append(idx)
 	return pool

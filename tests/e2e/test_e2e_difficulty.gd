@@ -1,6 +1,6 @@
 extends GutTest
 ## v0.5.5 Step DS through main.tscn with real input only (owner D4, D7, S5). The dev panel (backtick, mouse clicks)
-## stands in for a run's cards: God mode for the walk, then three abilities granted to level 5 (a strong build). The
+## stands in for a run's cards: God mode for the walk, then four wand cards granted (GrantMod) (a strong build). The
 ## left stick walks through the boss door: the boss spawns with its hidden catch-up (HP × its m, the boss cap) and
 ## its three phases (gates at 66 % and 33 % on the bar); the player's HUD shows no catch-up, the dev panel does. Kill
 ## boss, then the stick walks into the gate: floor 2's m is read from the carried build at entry. v0.9.0 DP (owner
@@ -41,18 +41,6 @@ func _click(e: E2e, main: Main, button: String) -> void:
 	await e.click_at(b.get_global_rect().get_center())
 
 
-## Picks ability `idx` on the panel (NextAbility) and grants it `times` times (GrantAbility).
-func _grant(e: E2e, main: Main, idx: int, times: int) -> void:
-	var api: DebugApi = (main.get_node("UI/DevPanel") as DevPanel).api
-	var guard := 0
-	while api.ability_choice != idx and guard < 32:
-		guard += 1
-		await _click(e, main, "NextAbility")
-	for k in times:
-		await _click(e, main, "GrantAbility")
-		await e.frames(2)
-
-
 ## Every Label text under `node`.
 func _texts(node: Node) -> PackedStringArray:
 	var out := PackedStringArray()
@@ -71,13 +59,16 @@ func test_a_strong_build_meets_the_hidden_catch_up_and_the_boss_gates() -> void:
 	assert_eq(w.catch_up.enemy, 1000, "floor 1 with a fresh build: ×1")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
-	for kind in [
-		AbilityTable.Kind.DRONE_BUDDY, AbilityTable.Kind.BOMB_LOBBER, AbilityTable.Kind.ORBIT_BLADES
-	]:
-		await _grant(e, main, Abilities.index_of_kind(w, kind), 5)
-	assert_eq(w.ability_owned.size(), 4, "the weapon and three abilities")
+	# v0.10.5 O1: the three auto abilities are deleted (a utility has one level): the strong build is four wand cards
+	for k in 4:
+		await _click(e, main, "GrantMod")
+		await e.frames(2)
+	# TEST HELPER (labelled): the cards four slots hold cannot reach the boss's expected power alone (the three auto
+	# abilities that did are deleted), so five Damage stat cards stand in for the rest of a strong build.
+	for k in 5:
+		Stats.add_card(w, Stats.Stat.DAMAGE, 2)
 	var p := CatchUp.power(w)
-	assert_gte(p, 2800, "15 ability levels: P ≥ ×2.8")
+	assert_gt(p, 2800, "a strong build: P over ×2.8")
 	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(
@@ -91,10 +82,21 @@ func test_a_strong_build_meets_the_hidden_catch_up_and_the_boss_gates() -> void:
 	var bi := w.actors.index_of(w.boss_id)
 	assert_gte(bi, 0, "the boss spawned")
 	var bt := BossAi.table_of(w, bi)
-	var m := CatchUp.multiplier(CatchUp.power(w), 2000, 2000)
+	var m := CatchUp.multiplier(CatchUp.power(w), 2000, 2500)  # v0.9.5 BH1: the floor 1 boss cap is x2.5
+	m = (
+		m
+		* (1000 + RngStream.derive(w.seed_value, CatchUp.spread_stream(w)).range_int(-80, 80))
+		/ 1000
+	)
 	assert_gt(m, 1000, "the strong build lifts the boss")
 	assert_eq(w.catch_up.boss, m, "its own m: P against floor 1's end, the boss cap")
-	assert_eq(w.actors.max_hp[bi], bt.hp * m / 1000, "boss HP × m")
+	# v0.10.5 O2b (owner D38 (a)): its HP is paced to the power read at the door (floor 1's pace, P capped at 3× E)
+	var paced := CatchUp.pace_multiplier(w.catch_up.boss_power, 2000, 3090, 3000, 1000)
+	assert_eq(
+		w.actors.max_hp[bi],
+		bt.hp * (paced * CatchUp.spread_permille(w) / 1000) / 1000,
+		"boss HP × the paced multiplier"
+	)
 	assert_eq(bt.phase_threshold, PackedInt32Array([1000, 660, 330]), "gates at 66 % and 33 %")
 	var reader := main.driver.reader
 	var marks := reader.boss_phase_thresholds(bi)

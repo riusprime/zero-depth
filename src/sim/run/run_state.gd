@@ -62,7 +62,17 @@ extends RefCounted
 ## right after the arenas and the Overrun room (FloorScenario.build, RunSaver.floor_tables' lockdown_first), before
 ## the shrine, the fountain, the events, the curse room and the secrets, which then take the rooms left. A floor
 ## saved under rules 1-16 is rebuilt in the old order, its Lockdowns last (FloorPlan.add_secrets).
-const FLOOR_RULES := 17
+## v0.9.5 AQ (owner: event altars "more special like the curse room"): 19 is today's: an event room on about a third
+## of floors, at most two a run, never the same event twice (Events.pick_rooms; World.events_seen). A floor saved under
+## rules 1-18 is rebuilt with its 1-2 event rooms (FloorScenario.rare_events_of).
+## v0.9.5 DR (owner Q6: "we will only have locked rooms ... and overrun"): 20 is today's: a locked room (a Lockdown)
+## fights one burst of two formations 1 s apart and the floor's arena rooms are locked rooms; every sealed door drops
+## bars. A floor saved under rules 1-19 keeps its three-formation Lockdowns and its wave Arenas
+## (RunSaver.lockdown_table).
+## v0.9.5 TS (owner Q7): 21 is today's: the timed door's switches sit in two other rooms 1-2 steps from it, its timer is
+## 20 s, and a lever inside reopens it for 5 s. A floor saved under rules 10-20 keeps both switches by the door and
+## 15 s (FloorPlan.add_secrets).
+const FLOOR_RULES := 23
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
@@ -79,6 +89,24 @@ const FLOOR_RULES_V090_LK := 13
 const FLOOR_RULES_V090_SH := 14
 const FLOOR_RULES_V090_EL := 15
 const FLOOR_RULES_V090_CF := 16
+const FLOOR_RULES_V090_CF2 := 17
+## v0.9.5 SB: the props that look solid are solid (Solids).
+const FLOOR_RULES_V095_SB := 18
+const FLOOR_RULES_V095_AQ := 19
+const FLOOR_RULES_V095_DR := 20
+const FLOOR_RULES_V095_TS := 21
+## v0.9.5 BK: breakables are solid until broken, and never placed within 1.5 m of a doorway.
+const FLOOR_RULES_V095_BK := 22
+## v0.10.5 O14: 23 is today's: floor 2's first Lockdown is the Elite midpoint set piece (RunSaver.lockdown_table).
+const FLOOR_RULES_V0105_O14 := 23
+## v0.10.5 W3-O11 (owner F21, "Share one, scaled"): the run's boss draw rules, for the whole run (a floor's rules reset
+## each floor, but the bosses met on the floors before are redrawn on each floor, so they must draw as they did). 1 is
+## today's: a floor draws from its pool a boss the run has not met yet (floor 1's pool shares the Brood Mother with
+## floor 2's). 0, a payload saved before O11 (no `boss_draw` key): each pool without the bosses a deeper pool also
+## names, and a floor with its own pool ignores the bosses met, so the run meets the bosses it was going to.
+const BOSS_DRAW := 1
+const BOSS_DRAW_V0105_O11 := 1
+const BOSS_DRAW_LEGACY := 0
 
 var run_seed := 0
 var table: RunTable
@@ -132,6 +160,13 @@ var locked_cards: Array[StringName] = []
 var collected: Array[StringName] = []
 var collected_run: Array[StringName] = []
 var marked_done := 0
+## v0.10.5 O5b (owner P13): the loop rules the run holds (LoopRules.POOL ids, in the order drawn: one a loop past the
+## first) and the loop that drew the newest (the floor card announces it on that loop). Saved (RunSaver; an older
+## payload: none, so its floors rebuild as saved; its next loop draws one).
+var loop_rules: Array[StringName] = []
+var loop_rule_loop := 0
+## v0.10.5 W3-O11: see BOSS_DRAW (FloorShape.boss reads it). Saved (RunSaver; an older payload: BOSS_DRAW_LEGACY).
+var boss_draw := BOSS_DRAW
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:
@@ -248,6 +283,22 @@ func scale_enemies(tables: Array[EnemyTable], f: int = floor_index) -> void:
 		t.damage = SpawnTable.scale(t.damage, dmg_pm)
 		if t.elite != null:  # v0.9.0 EL: an elite's ability, plain attack and contact, by the same factor
 			t.elite.scale_damage(dmg_pm)
+		_remix_enemy(t)  # v0.10.5 O5b
+
+
+## v0.10.5 O5b (LoopRules SWIFT, POINT_BLANK): enemy table `t` under the run's loop rules.
+func _remix_enemy(t: EnemyTable) -> void:
+	if LoopRules.run_holds(self, LoopRules.SWIFT):
+		t.speed = t.speed * table.loop_swift_permille / 1000.0
+		t.charge_speed = t.charge_speed * table.loop_swift_permille / 1000.0
+	if (
+		LoopRules.run_holds(self, LoopRules.POINT_BLANK)
+		and (t.bolt_speed > 0.0 or t.spread_speed > 0.0)
+	):
+		t.bolt_speed = t.bolt_speed * table.loop_bolt_permille / 1000.0
+		t.spread_speed = t.spread_speed * table.loop_bolt_permille / 1000.0
+		t.keep_distance_m = t.keep_distance_m * table.loop_keep_permille / 1000.0
+		t.keep_min_m = t.keep_min_m * table.loop_keep_permille / 1000.0
 
 
 ## Scales freshly compiled boss tables for floor f by the bosses' own factors (not the enemies' tables, so nothing
@@ -293,9 +344,12 @@ func prepare(w: World) -> void:
 		table.boss_room_heal_floor_permille, run_floor()
 	)  # TU (D9); v0.7.5 AP: the run's first floor only
 	w.loop = loop  # v0.7.5 AP: the loop, the run's floor, the loop's threat and catch-up cap
+	if loop > 1:  # v0.10.5 W3-P10a: the compile reads the loop (Attacks.hook_depth); never a stale loop-1 book
+		Modifiers.invalidate(w)
 	w.run_floor = run_floor()
 	w.loop_threat = table.loop_threat * (loop - 1)
 	w.loop_cap_permille = table.loop_catch_up_cap_permille * (loop - 1)
+	_prepare_rules(w)  # v0.10.5 O5b
 	if w.boss_flow != null:  # v0.5.0 RT
 		w.boss_flow.deep = is_deep()
 		w.boss_flow.ascension = is_last_floor()  # v0.7.5 AP: the loop's last floor has the Ascension portal
@@ -309,6 +363,21 @@ func prepare(w: World) -> void:
 	elif w.floor_hp_bonus > 0:
 		Gamble.after_carry(w)
 		w.actors.hp[0] = w.actors.max_hp[0]
+
+
+## v0.10.5 O5b: the floor's loop rules (World.loop_rules), SHIELDED's numbers and LEAN_MENDING's heal orbs (the
+## floor's freshly compiled reward table).
+func _prepare_rules(w: World) -> void:
+	w.loop_rules = LoopRules.indices(loop_rules)
+	if LoopRules.held(w, LoopRules.SHIELDED):
+		w.loop_shield_permille = table.loop_shield_permille
+		w.loop_shield_half_arc = table.loop_shield_half_arc
+	if LoopRules.held(w, LoopRules.LEAN_MENDING) and w.reward_table != null:
+		var r := w.reward_table
+		r.heal_orb_chance_permille = (
+			r.heal_orb_chance_permille * table.loop_heal_chance_permille / 1000
+		)
+		r.heal_orb_heal_permille = r.heal_orb_heal_permille * table.loop_heal_amount_permille / 1000
 
 
 ## v0.9.0 SV: the floors' max HP growth on the current floor (RunCarry.floor_hp_bonus).
@@ -349,6 +418,7 @@ func finish_floor(w: World) -> void:
 	marked_done += Collectibles.marked(w)  # v0.9.0 CL: the Rune Rubbing counts the run's marked secrets
 	if w.purple != null and not purple_floors.has(run_floor()):  # v0.9.0 DP: one purple room a loop
 		purple_floors.append(run_floor())
+	ShardDrops.collect_all(w)  # v0.10.5 O7b: the shards left lying on the floor are taken with you
 	carry = RunCarry.take(w, table.heal_permille, table.shard_carry_permille)
 	var grown_from := _hp_bonus()
 	if Ascension.took_portal(w) and _has_final():  # FB1; v0.8.0 P2: the Ascension portal: the final arena
@@ -358,6 +428,9 @@ func finish_floor(w: World) -> void:
 		loop += 1
 		floor_index = 1
 		_draw_loop_biomes()
+		LoopRules.draw(self)  # v0.10.5 O5b (owner P13): each loop adds a rule
+		# v0.10.5 W3-P10c (owner W7): the new loop's floor 1 opens with a free Constellation pick (none left: none)
+		carry[RunCarry.OFFER] = Constellations.offer(run_seed, loop, w.constellations)
 	else:
 		floor_index += 1
 	floor_rules = FLOOR_RULES  # v0.7.5 MG: a new floor, always on today's rules

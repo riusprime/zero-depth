@@ -41,6 +41,22 @@ static func scale_range(s: AttackSpec, permille: float) -> void:
 			s.reach_m = s.reach_m * permille / 1000.0
 
 
+## v0.10.5 W3-S18 (owner, 2026-11-05, playtesting: "homing + halo is weird because the back attacks are too short in
+## reach and do the curve but do not reach the enemy, we should increase the reach of halo a bit so attacks can get to
+## hit front enemies if homing is active"): a Halo bolt has half the Gun's flight (20 of 40 ticks, 5.4 m). Homing turns
+## it 102/4096 of a turn a tick (540 deg/s), a circle of radius 1.72 m, so the U-turn alone is half a circle: 20 ticks,
+## the whole flight, and the bolt dies facing the enemy. A pursuit from straight behind needs 42 ticks to reach an
+## enemy 6 m ahead (the back bolt keeps sight, HOME_M 8 m, of enemies up to about 5.5 m ahead: it starts 0.6 m behind
+## the hero and swings 1.7 m out). So with Homing, Halo's halved range is scaled by `halo_homing_permille` (2600: 20 ->
+## 52 ticks, 14 m, a margin over the 42-45 the pursuit needs). Without Homing Halo keeps its half range. Run after
+## every card, so the order of the two cards does not matter; spent once.
+static func halo_homing_reach(s: AttackSpec) -> void:
+	var p := s.halo_homing_permille
+	s.halo_homing_permille = 0
+	if p > 0 and s.homing > 0 and s.form == FORM.BOLT:
+		scale_range(s, p)
+
+
 ## `s` becomes form `to`, keeping its range (see the class doc). Its other fields (payload, pattern, hooks) stay.
 static func change_form(s: AttackSpec, to: int) -> void:
 	var from := s.form
@@ -113,53 +129,3 @@ static func hook_base(c: AttackSpec, parent: AttackSpec) -> void:
 static func settle(s: AttackSpec) -> void:
 	if s.form == FORM.ARC and s.directions == AttackSpec.DIR_CIRCLE:
 		s.half_arc = FULL_HALF_ARC
-
-
-## The ability merges (after Modifiers.inherit): mirror 1 (Mirror Drone) copies the weapon's form (a Gun's shot
-## pattern and behaviour; a Blade's arc as a crescent bolt as wide as the arc) and every one of its hooks; mirror 2
-## (Blade Orbit) takes every hook of the weapon, the ones that fire as an attack launches or ends firing on each
-## touch instead.
-static func mirror(s: AttackSpec, root: AttackSpec) -> void:
-	if root == null or s.mirror <= 0:
-		return
-	if s.mirror == 1:
-		if root.form == FORM.BOLT:
-			for f: StringName in [
-				&"count",
-				&"spread",
-				&"damage_permille",
-				&"directions",
-				&"back_permille",
-				&"aim_offset",
-				&"bounces",
-				&"pierce",
-				&"homing",
-				&"returns",
-				&"orbit_ticks",
-			]:
-				s.set(f, root.get(f))
-			s.radius_m = maxf(s.radius_m, root.radius_m)
-		else:
-			s.half_arc = root.half_arc
-			s.radius_m = maxf(s.radius_m, CRESCENT_RADIUS_M)
-		s.repeat_delay_ticks = root.repeat_delay_ticks
-		s.repeat_damage_permille = root.repeat_damage_permille
-	if s.depth >= Modifiers.MAX_DEPTH:
-		return
-	for h in root.hooks:
-		if s.hooks.has(h):
-			continue
-		var t := h.trigger
-		if s.mirror == 2 and (t == AttackSpec.Trigger.ON_END or t == AttackSpec.Trigger.ON_LAUNCH):
-			var k := AttackHook.new()
-			k.id = h.id
-			k.trigger = AttackSpec.Trigger.ON_HIT
-			k.every = h.every
-			k.damage = h.damage
-			k.damage_permille = h.damage_permille
-			k.delay_ticks = h.delay_ticks
-			k.when = h.when
-			k.child = h.child
-			s.hooks.append(k)
-		elif s.mirror == 1 or t == AttackSpec.Trigger.ON_HIT or t == AttackSpec.Trigger.ON_KILL:
-			s.hooks.append(h)

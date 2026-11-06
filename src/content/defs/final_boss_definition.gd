@@ -13,6 +13,46 @@ extends BossDefinition
 ## dps_min_measured_seconds were measured (a fight jumped straight to it). Its `hp` and the loop's scaling don't apply
 ## otherwise. Its shards (shard_count, shard_orbit_m from its centre, turning shard_turn_dps) orbit it and fire.
 
+## v0.9.5 BH6: the interphase dictionary's keys and bounds.
+## key: [default, min, max]
+const INTERPHASE_SPEC := {
+	"first_permille": [660, 100, 900],
+	"second_permille": [330, 50, 800],
+	"seconds": [15.0, 5.0, 30.0],
+	"finish_seconds": [1.0, 0.1, 1.0],
+	"grace_seconds": [0.5, 0.3, 2.0],
+	"slam_m": [2.5, 1.0, 5.0],
+	"beam_count": [3, 2, 5],
+	"beam_width_m": [0.6, 0.2, 1.5],
+	"beam_turn_dps": [25.0, 5.0, 60.0],
+	"erupt_seconds": [2.0, 1.5, 6.0],
+	"erupt_m": [1.4, 0.5, 3.0],
+	"rain_seconds": [1.2, 0.6, 4.0],
+	"rain_balls": [16, 8, 24],
+	"rain_gap_slots": [3, 2, 5],
+	"rain_speed_mps": [2.8, 1.0, 5.0],
+	"rain_radius_m": [0.3, 0.1, 0.6],
+	"rain_inset_m": [1.0, 0.5, 3.0],
+	"spike_seconds": [3.0, 1.5, 8.0],
+	"spike_width_m": [1.0, 0.4, 2.0],
+	"spike_speed_mps": [4.0, 1.0, 8.0],
+	"spike_length_m": [10.0, 4.0, 20.0],
+	"dark_balls": [6, 1, 12],
+	"dark_ball_speed_mps": [1.6, 0.5, 3.0],
+	"dark_ball_radius_m": [0.35, 0.1, 0.8],
+	"dark_erupt_seconds": [2.5, 1.5, 6.0],
+	"light_m": [3.5, 1.0, 8.0],
+	"lamp_m": [3.0, 1.0, 8.0],
+	"lamp_seconds": [8.0, 2.0, 30.0],
+	"relight_m": [1.5, 0.5, 4.0],
+	"lamp_inset_m": [1.5, 0.5, 4.0],
+	"dash_telegraph_seconds": [0.4, 0.3, 1.0],
+	"dash_seconds": [0.2, 0.1, 0.6],
+	"dash_min_m": [6.0, 2.0, 12.0],
+	"dash_max_m": [9.0, 2.0, 14.0],
+	"dash_wall_m": [3.0, 1.0, 6.0],
+}
+
 @export var hp_from_dps := false
 @export var dps_measure_seconds := 20
 @export var dps_min_measured_seconds := 5
@@ -83,10 +123,22 @@ extends BossDefinition
 @export var mimic_first_seconds := 12.0
 @export var mimic_warn_seconds := 1.5
 @export var mimic_nerf_min_permille := 100
+## v0.9.5 BH6 (owner, 2026-10-25; BOSSES_HARD.md HC4-HC6): The Fallen's two interphases and its dashes between moves.
+## An empty dictionary: none. Otherwise the keys of INTERPHASE_SPEC (a key left out takes its default); times in
+## seconds, lengths in metres, speeds in m/s, turns in degrees a second, *_permille in per mille of max HP. See
+## BossInterphase and InterphaseTable. The hits and telegraphs are the damage and telegraph of the five `interphase`
+## attacks of the table (fallen_rays, fallen_rain, fallen_dark, fallen_erupt, fallen_return): 15 damage each, every
+## telegraph at least 0.8 s (HardRules; the dash's 0.4 s apart); the pattern sets always leave a gap of at least 1.6 m.
+@export var interphase := {}
 
 
 func category() -> StringName:
 	return &"final_bosses"
+
+
+## The interphase dictionary's value for `key` (its default when the dictionary leaves it out).
+func interphase_value(key: String) -> float:
+	return float(interphase.get(key, (INTERPHASE_SPEC[key] as Array)[0]))
 
 
 func validate() -> Array[ValidationIssue]:
@@ -124,6 +176,7 @@ func validate() -> Array[ValidationIssue]:
 		)
 	_check_crosses(issues)
 	_check_mimic(issues)
+	_check_interphase(issues)
 	if spell_rotation:  # v0.8.0 PR (O84)
 		for ph in phases:
 			if ph == null:
@@ -136,6 +189,36 @@ func validate() -> Array[ValidationIssue]:
 					)
 				seen[id] = true
 	return issues
+
+
+## v0.9.5 BH6: the interphase's keys are known and within their bounds, its two thresholds fall in order, the dash's
+## range holds (min <= max) and the rain's two gaps leave balls in its ring.
+func _check_interphase(issues: Array[ValidationIssue]) -> void:
+	if interphase.is_empty():
+		return
+	var p := resource_path
+	if not mimic:
+		issues.append(ValidationIssue.new(&"missing", p, "interphase needs mimic"))
+	for k: Variant in interphase:
+		if not INTERPHASE_SPEC.has(k):
+			issues.append(
+				ValidationIssue.new(&"unknown_field", p, "interphase: unknown key %s" % k)
+			)
+			continue
+		var spec: Array = INTERPHASE_SPEC[k]
+		var v := float(interphase[k])
+		if v < float(spec[1]) or v > float(spec[2]):
+			issues.append(
+				ValidationIssue.new(&"range", p, "interphase.%s: %s..%s" % [k, spec[1], spec[2]])
+			)
+	if interphase_value("second_permille") >= interphase_value("first_permille"):
+		issues.append(
+			ValidationIssue.new(&"range", p, "interphase: second_permille < first_permille")
+		)
+	if interphase_value("dash_min_m") > interphase_value("dash_max_m"):
+		issues.append(ValidationIssue.new(&"range", p, "interphase: dash_min_m <= dash_max_m"))
+	if interphase_value("rain_gap_slots") * 2.0 >= interphase_value("rain_balls") * 0.5:
+		issues.append(ValidationIssue.new(&"range", p, "interphase: the rain's gaps leave balls"))
 
 
 ## v0.8.0 FB3: a mimic body's numbers: an echo the fight's ring holds (2 s), a dash answered after a reaction (at least

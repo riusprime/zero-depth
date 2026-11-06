@@ -6,9 +6,9 @@ extends ContentDef
 ## raise it a little every tick, and it drains only after calm_seconds with no hit taken and no enemy close. The
 ## ordinary floor spawning (SpawnDirector) runs BUILD_UP (today's packs) until intensity reaches peak_intensity, holds
 ## the PEAK for peak_seconds_min..max, then PULL_BACK (no new packs, the ones out stay) until few enemies are near or
-## pull_back_max_seconds pass, then QUIET (no new packs) for quiet_seconds_min..max and until intensity is below
-## relax_intensity, then builds up again. The lengths are drawn from the `ai:intensity:<cycle>` stream. Every number
-## is a starting value the owner tunes by play.
+## pull_back_max_seconds pass, then QUIET (no new packs) for its drawn quiet_seconds_min..max (v0.10.5 O4: it ends on
+## time; intensity then drops to at most relax_intensity), then builds up again. The lengths are drawn from the
+## `ai:intensity:<cycle>` stream. Every number is a starting value the owner tunes by play.
 
 ## "Close" to the hero: kills and enemies within this distance raise intensity.
 @export var close_radius_m := 3.0
@@ -31,13 +31,32 @@ extends ContentDef
 @export var pull_back_radius_m := 8.0
 @export var pull_back_enemies := 2
 @export var pull_back_max_seconds := 8.0
-## QUIET (no new packs) lasts a draw between these, and until intensity is at most relax_intensity.
+## QUIET (no new packs) lasts a draw between these (v0.10.5 O4: on time; intensity then drops to relax_intensity).
 @export var quiet_seconds_min := 10.0
 @export var quiet_seconds_max := 20.0
 @export var relax_intensity := 300
 ## While building up, the curve's interval between packs × this per mille (the ramp: 500 = packs twice as often;
 ## never more at once than the curve's cap, never stronger).
 @export var build_interval_permille := 1000
+
+## v0.10.5 O4 (owner D46, "it feels overcrowded if you are weak, could we also adjust it to not make it unfair based
+## on the strength?" → "Read your state live"): every tick the director reads the hero. STRUGGLING: HP under
+## struggle_hp_permille of max, or (once a full ~10 s window of fighting is counted, with at least slow_min_alive
+## enemies out) kills in that window under slow_kill_permille of the expected (the cap now × expected_kill_permille).
+## STRONG: HP above strong_hp_permille and kills at least the expected: the full build-up, as before; between: as
+## before. A struggling hero peaks at struggle_peak_intensity, its peak's clock runs struggle_peak_speed times as
+## fast, a quiet that begins while it struggles lasts struggle_quiet_permille of its draw, and the largest pack is
+## capped struggle_pack_cut smaller. Every one is a starting value (owner D46, 2026-11-01).
+@export var struggle_hp_permille := 400  # starting value (owner D46, 2026-11-01)
+@export var strong_hp_permille := 700  # starting value (owner D46, 2026-11-01)
+## The expected kills in the window, per mille of the cap now (an 18 cap expects 3.6 kills in 10 s).
+@export var expected_kill_permille := 200  # starting value (owner D46, 2026-11-01)
+@export var slow_kill_permille := 500  # starting value (owner D46, 2026-11-01)
+@export var slow_min_alive := 4  # starting value (owner D46, 2026-11-01)
+@export var struggle_peak_intensity := 600  # starting value (owner D46, 2026-11-01)
+@export var struggle_peak_speed := 2  # starting value (owner D46, 2026-11-01)
+@export var struggle_quiet_permille := 1500  # starting value (owner D46, 2026-11-01)
+@export var struggle_pack_cut := 1  # starting value (owner D46, 2026-11-01)
 
 
 func category() -> StringName:
@@ -57,6 +76,15 @@ func validate() -> Array[ValidationIssue]:
 		["relax_intensity", relax_intensity, 0, 1000],
 		["pull_back_enemies", pull_back_enemies, 0, 1000],
 		["build_interval_permille", build_interval_permille, 100, 1000],
+		["struggle_hp_permille", struggle_hp_permille, 0, 1000],
+		["strong_hp_permille", strong_hp_permille, 0, 1000],
+		["expected_kill_permille", expected_kill_permille, 0, 10000],
+		["slow_kill_permille", slow_kill_permille, 0, 1000],
+		["slow_min_alive", slow_min_alive, 0, 1000],
+		["struggle_peak_intensity", struggle_peak_intensity, 1, 1000],
+		["struggle_peak_speed", struggle_peak_speed, 1, 10],
+		["struggle_quiet_permille", struggle_quiet_permille, 1000, 5000],
+		["struggle_pack_cut", struggle_pack_cut, 0, 10],
 	]:
 		if int(pair[1]) < int(pair[2]) or int(pair[1]) > int(pair[3]):
 			issues.append(
@@ -64,10 +92,18 @@ func validate() -> Array[ValidationIssue]:
 					&"range", resource_path, "%s is outside %d..%d" % [pair[0], pair[2], pair[3]]
 				)
 			)
-	if relax_intensity >= peak_intensity:
-		issues.append(
-			ValidationIssue.new(
-				&"intensity_order", resource_path, "relax_intensity is not below peak_intensity"
+	if relax_intensity >= peak_intensity or struggle_peak_intensity > peak_intensity:
+		(
+			issues
+			. append(
+				(
+					ValidationIssue
+					. new(
+						&"intensity_order",
+						resource_path,
+						"relax_intensity is not below peak_intensity (or struggle_peak_intensity is above it)"
+					)
+				)
 			)
 		)
 	for f: String in [

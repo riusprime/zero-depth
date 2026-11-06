@@ -92,14 +92,25 @@ func test_every_slot_key_name_fits_its_slot_in_both_languages() -> void:
 		for spec: Array in _specs():
 			var t := InputLabels.short_text(spec)
 			assert_false(t.is_empty(), "%s %s has a short name" % [lang, spec])
-			assert_true(AbilitySlot.key_fits(t), "%s: '%s' fits the slot" % [lang, t])
+			assert_lte(
+				(
+					(
+						HudStyle
+						. font(true)
+						. get_string_size(
+							t, HORIZONTAL_ALIGNMENT_LEFT, -1, AbilitySquares.GLYPH_FONT
+						)
+						. x
+					)
+					+ 14.0
+				),
+				AbilitySquares.SIDE - 5.0,
+				"%s: %s fits the square" % [lang, t]
+			)
 	TranslationServer.set_locale("en")
 	assert_eq(InputLabels.short_text([&"mouse", MOUSE_BUTTON_LEFT]), "LMB")
-	assert_eq(AbilitySlot.fit_key("LMB"), AbilityHud.KEY_FONT, "a short name keeps the full size")
 	TranslationServer.set_locale("es")
 	assert_eq(InputLabels.short_text([&"mouse", MOUSE_BUTTON_LEFT]), "Clic izq.")
-	assert_eq(AbilitySlot.fit_key("Clic izq."), AbilityHud.KEY_FONT)
-	assert_lt(AbilitySlot.fit_key("Escape Escape"), AbilityHud.KEY_FONT, "a long name shrinks")
 	assert_eq(InputLabels.short_text([&"key", KEY_KP_MULTIPLY]), "Kp *", "the keypad's symbols")
 	# The Options list keeps the full names.
 	assert_eq(InputLabels.text([&"mouse", MOUSE_BUTTON_LEFT]), "Clic izquierdo")
@@ -119,37 +130,6 @@ func test_every_short_name_is_in_both_languages() -> void:
 			assert_true(InputLabels.SHORT.has(key), "%s has a short name" % key)
 
 
-func test_the_weapon_slot_names_its_key_in_full_in_both_languages() -> void:
-	InputDefaults.apply()
-	var repo := ContentRepository.load_all()
-	var t := ContentCompiler.compile_player(repo.get_def(&"player", &"runner"))
-	ContentCompiler.apply_build(t, repo.get_def(&"build", &"blade"))
-	var w := World.new(3, t)
-	w.ability_tables = ContentCompiler.compile_abilities(repo)
-	w.stat_tables = ContentCompiler.compile_stat_cards(repo)
-	Abilities.grant_start(w)
-	Abilities.start_floor(w)
-	Abilities.grant(w, Abilities.index_of_kind(w, AbilityTable.Kind.BLINK))
-	var hud := AbilityHud.new()
-	add_child_autofree(hud)
-	var reader := WorldReader.new(w)
-	for lang: String in LANGS:
-		TranslationServer.set_locale(lang)
-		hud.sync(reader)
-		for k in hud.filled_count():
-			var s := hud.slot(k)
-			if s.key_text.is_empty():
-				continue
-			var f := HudStyle.font(true)
-			var width := (
-				f.get_string_size(s.key_text, HORIZONTAL_ALIGNMENT_LEFT, -1, s.key_font_size()).x
-			)
-			assert_lte(width, AbilitySlot.KEY_W, "%s slot %d: '%s' fits" % [lang, k, s.key_text])
-			assert_lte(width, s.size.x, "inside the slot")
-		var expect := "Clic izq." if lang == "es" else "LMB"
-		assert_eq(hud.slot(0).key_text, expect, "%s: the weapon's key (left click)" % lang)
-
-
 func test_the_shrine_stats_panel_wears_the_menu_style_in_the_pause_menu() -> void:
 	var hud_panel := GambleStatsPanel.new()
 	add_child_autofree(hud_panel)
@@ -163,26 +143,18 @@ func test_the_shrine_stats_panel_wears_the_menu_style_in_the_pause_menu() -> voi
 	pause.add_child(stats)
 	stats.place_top_right(84)
 	assert_true(stats.in_menu, "in the pause menu")
-	_assert_stone(stats.get_theme_stylebox("panel"), "shrine stats")
+	# v0.10.5 W3-O20: Astral: the HUD's Astral side panel in the pause too (it draws itself on an empty box)
+	assert_true(
+		stats.get_theme_stylebox("panel") is StyleBoxEmpty, "shrine stats: the Astral panel"
+	)
 	var threat := ThreatPanel.new()
 	pause.add_child(threat)
 	assert_true(threat.in_menu)
-	_assert_stone(threat.get_theme_stylebox("panel"), "threat")
+	assert_true(threat.get_theme_stylebox("panel") is StyleBoxEmpty, "threat: the Astral panel")
 	var hud_threat := ThreatPanel.new()
 	add_child_autofree(hud_threat)
 	assert_false(hud_threat.in_menu)
 	assert_true(hud_threat.get_theme_stylebox("panel") is StyleBoxEmpty)
-
-
-## v0.8.0 MU: in a menu a side panel is the menus' carved stone slab (Ember stone).
-func _assert_stone(box: StyleBox, what: String) -> void:
-	assert_true(box is StoneBox, "%s: a stone slab" % what)
-	if box is StoneBox:
-		var stone := box as StoneBox
-		var panel := MenuStyle.theme().get_stylebox("panel", "PanelContainer") as StoneBox
-		assert_eq(stone.fill, panel.fill, "%s: the menus' stone" % what)
-		assert_eq(stone.under, panel.under, "%s: the menus' ember glow" % what)
-		assert_gt(stone.content_margin_left, 0.0, "%s: padded" % what)
 
 
 func test_the_floor_card_follows_a_language_switch() -> void:
@@ -214,7 +186,7 @@ func test_the_options_back_row_is_left_aligned_like_the_categories() -> void:
 
 
 func test_the_threat_and_shrine_rows_follow_a_language_switch() -> void:
-	var w := EventLab.world(5, 1, &"blade", [&"swift_foes"])
+	var w := EventLab.world(5, 1, &"blade", [&"rooted"])
 	w.gamble_id = w.take_root()
 	w.gamble_pos = Vector2(0.8, 0)
 	Gamble.grant(w, GambleTable.Stat.MELEE)
@@ -255,7 +227,9 @@ func test_the_build_row_sits_on_an_ember_slab_and_fits_in_both_languages() -> vo
 	add_child_autofree(hud)
 	var plate := hud.find_child("BuildPlate", true, false) as HudFrame
 	assert_not_null(plate, "the build row sits on a slab")
-	assert_eq(plate.style, HudStyle.Style.EMBER, "Ember stone")
+	assert_eq(
+		plate.style, HudStyle.Style.ASTRAL, "v0.10.5 W3-O17: the HUD's Astral style (unboxed)"
+	)
 	# The longest weapon name next to the longest utility name stays a small row on the left of the HUD.
 	var f := HudStyle.font(true)
 	var r := HudStyle.font(false)
@@ -272,20 +246,20 @@ func test_the_build_row_sits_on_an_ember_slab_and_fits_in_both_languages() -> vo
 		assert_lt(row, 700.0, "%s: the build row stays on the left (%d px)" % [lang, int(row)])
 
 
-func test_the_swap_panel_wears_ember_stone_and_its_names_fit_the_tiles() -> void:
+func test_the_swap_panel_wears_astral_and_its_names_fit_the_tiles() -> void:
 	var swap := SwapPanel.new()
 	add_child_autofree(swap)
 	assert_true(swap.get_child(0) is MenuBackdrop, "the game blurred and dimmed behind")
+	assert_true((swap.get_child(0) as MenuBackdrop).astral, "v0.10.5 W3-O16: under Astral's ink")
 	assert_eq((swap.get_child(0) as Control).mouse_filter, Control.MOUSE_FILTER_STOP)
+	assert_false(swap.skip_lit(), "Skip unlit before it has the focus")
 	swap.call("_set_focus", SwapPanel.SKIP)
-	var off := swap.tile(0).get_theme_stylebox("panel") as StoneBox
-	var on := swap.tile(SwapPanel.SKIP).get_theme_stylebox("panel") as StoneBox
-	assert_not_null(off, "a stone tile")
-	assert_not_null(on)
-	if off != null and on != null:
+	# v0.10.5 W3-O16 (on purpose): Astral tiles (AstralChrome.FrameBox) and an Astral Skip plate, not Ember stone
+	var off := swap.row.astral_box(0)
+	assert_not_null(off, "an Astral tile")
+	if off != null:
 		assert_eq(off.focus, 0.0, "an unfocused tile is unlit")
-		assert_eq(on.focus, 1.0, "the focused tile is ember-lit")
-		assert_gt(on.dim, off.dim, "and brighter")
+	assert_true(swap.skip_lit(), "the focused Skip plate is lit")
 	# Tile names wrap by word; every word of every slot name fits a tile, in both languages. v0.8.0 N18 (owner O76:
 	# "Shrink long words to fit"): at the size the tile draws it (WandRow.NAME_SIZE, or smaller for a word too long,
 	# never under TextFit.WORD_FLOOR of it).
@@ -318,7 +292,7 @@ func test_the_options_binding_cells_follow_a_language_switch() -> void:
 
 
 func test_the_pause_screen_follows_a_language_switch_from_its_options() -> void:
-	var w := EventLab.world(5, 1, &"blade", [&"swift_foes"])
+	var w := EventLab.world(5, 1, &"blade", [&"rooted"])
 	w.gamble_id = w.take_root()
 	w.gamble_pos = Vector2(0.8, 0)
 	Gamble.grant(w, GambleTable.Stat.MAX_HP)
@@ -343,7 +317,7 @@ func test_the_pause_screen_follows_a_language_switch_from_its_options() -> void:
 
 
 func test_the_threat_panel_wraps_long_lines_clear_of_the_top_plate() -> void:
-	var w := EventLab.world(5, 1, &"blade", [&"swift_foes"])
+	var w := EventLab.world(5, 1, &"blade", [&"rooted"])
 	var reader := WorldReader.new(w)
 	for id: StringName in [&"blood_price", &"brittle", &"glass_heart", &"tunnel_vision"]:
 		Curses.add(w, EventLab.curse_index(w, id))

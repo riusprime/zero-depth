@@ -10,7 +10,6 @@ extends RefCounted
 const USE_FAMILY := {
 	&"shop_heal": &"healing",
 	&"shop_reroll": &"economy",
-	&"shop_cleanse": &"curse",
 	&"event_leave": &"time",
 	&"event_shards": &"economy",
 	&"event_chest": &"economy",

@@ -13,4 +13,5 @@ requires_weapon = &"gun"
 modifiers = Array[StringName]([&"gun_lance"])
 loot_category = &"form"
 slot_category = &"form"
+level_max = 1
 id = &"gun_lance"

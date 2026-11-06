@@ -218,6 +218,86 @@ cooldown_seconds = 0.35
 cause_key = &"CAUSE_NEMESIS_SLASH"
 lock_seconds = 0.4
 
+[sub_resource type="Resource" id="A_fallen_rays"]
+script = ExtResource("1_atk")
+id = &"fallen_rays"
+shape = 2
+shape_params = {}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 0.0
+damage = 15
+move = &"interphase"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.0
+cause_key = &"CAUSE_FALLEN_RAYS"
+
+[sub_resource type="Resource" id="A_fallen_rain"]
+script = ExtResource("1_atk")
+id = &"fallen_rain"
+shape = 2
+shape_params = {}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 0.0
+damage = 15
+move = &"interphase"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.0
+cause_key = &"CAUSE_FALLEN_RAIN"
+
+[sub_resource type="Resource" id="A_fallen_dark"]
+script = ExtResource("1_atk")
+id = &"fallen_dark"
+shape = 2
+shape_params = {}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 0.0
+damage = 15
+move = &"interphase"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.0
+cause_key = &"CAUSE_FALLEN_DARK"
+
+[sub_resource type="Resource" id="A_fallen_erupt"]
+script = ExtResource("1_atk")
+id = &"fallen_erupt"
+shape = 2
+shape_params = {}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 0.0
+damage = 15
+move = &"interphase"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.0
+cause_key = &"CAUSE_FALLEN_ERUPTION"
+
+[sub_resource type="Resource" id="A_fallen_return"]
+script = ExtResource("1_atk")
+id = &"fallen_return"
+shape = 2
+shape_params = {}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 0.0
+damage = 15
+move = &"interphase"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.0
+cause_key = &"CAUSE_FALLEN_RETURN"
+
 [sub_resource type="Resource" id="P_0"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 1000
@@ -239,12 +319,49 @@ pace_ref_seconds = 120.0
 pace_min_seconds = 60.0
 pace_max_seconds = 180.0
 pace_burst_seconds = 10.0
-mimic_window_seconds = 7.0
+mimic_window_seconds = 5.6
 mimic_every_seconds = 20.0
 mimic_first_seconds = 12.0
 mimic_warn_seconds = 1.5
 mimic_nerf_min_permille = 100
 mimic = true
+interphase = {
+"first_permille": 660,
+"second_permille": 330,
+"seconds": 15.0,
+"finish_seconds": 1.0,
+"grace_seconds": 0.5,
+"slam_m": 2.5,
+"beam_count": 3,
+"beam_width_m": 0.6,
+"beam_turn_dps": 25.0,
+"erupt_seconds": 2.0,
+"erupt_m": 1.4,
+"rain_seconds": 1.2,
+"rain_balls": 16,
+"rain_gap_slots": 3,
+"rain_speed_mps": 2.8,
+"rain_radius_m": 0.3,
+"rain_inset_m": 1.0,
+"spike_seconds": 3.0,
+"spike_width_m": 1.0,
+"spike_speed_mps": 4.0,
+"spike_length_m": 10.0,
+"dark_balls": 6,
+"dark_ball_speed_mps": 1.6,
+"dark_ball_radius_m": 0.35,
+"dark_erupt_seconds": 2.5,
+"light_m": 3.5,
+"lamp_m": 3.0,
+"lamp_seconds": 8.0,
+"relight_m": 1.5,
+"lamp_inset_m": 1.5,
+"dash_telegraph_seconds": 0.4,
+"dash_seconds": 0.2,
+"dash_min_m": 6.0,
+"dash_max_m": 9.0,
+"dash_wall_m": 3.0
+}
 echo_seconds = 0.5
 dash_reaction_seconds = 0.25
 stance_seconds = 1.5
@@ -306,6 +423,6 @@ dash_read_seconds = 0.0
 gap_close_attack = &""
 gap_close_distance_m = 5.0
 gap_close_seconds = 2.0
-attacks = Array[ExtResource("1_atk")]([SubResource("A_nemesis_combo"), SubResource("A_nemesis_crescents"), SubResource("A_nemesis_volley"), SubResource("A_nemesis_point_blank"), SubResource("A_nemesis_card_1"), SubResource("A_nemesis_card_2"), SubResource("A_nemesis_card_3"), SubResource("A_fallen_storm"), SubResource("A_fallen_rush")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_nemesis_combo"), SubResource("A_nemesis_crescents"), SubResource("A_nemesis_volley"), SubResource("A_nemesis_point_blank"), SubResource("A_nemesis_card_1"), SubResource("A_nemesis_card_2"), SubResource("A_nemesis_card_3"), SubResource("A_fallen_storm"), SubResource("A_fallen_rush"), SubResource("A_fallen_rays"), SubResource("A_fallen_rain"), SubResource("A_fallen_dark"), SubResource("A_fallen_erupt"), SubResource("A_fallen_return")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0")])
 id = &"nemesis"

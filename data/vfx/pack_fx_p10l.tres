@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PackFxDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/pack_fx_definition.gd" id="1_packfx"]
+
+[resource]
+script = ExtResource("1_packfx")
+id = &"pack_fx_p10l"
+ids = Array[StringName]([&"p10l_meteor_head", &"p10l_meteor_land", &"p10l_star_head", &"p10l_star_hit"])
+scenes = PackedStringArray("res://assets/BinbunVFX/fire_effects/effects/Fire/fire_ball_03.tscn", "res://assets/BinbunVFX/impact_explosions/effects/impact/vfx_impact_01.tscn", "res://assets/BinbunVFX/magic_projectiles/effects/mprojectile_basic/mprojectile_basic_vfx_03.tscn", "res://assets/BinbunVFX/impact_explosions/effects/hit/vfx_hit_01.tscn")
+families = Array[StringName]([&"projectile", &"impact", &"projectile", &"hit"])
+scales = PackedFloat32Array(1, 1, 1, 1)
+primary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0.88, 0.94, 1, 1), Color(0.88, 0.94, 1, 1)])
+secondary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0.5608, 0.7216, 0.9098, 1), Color(0.5608, 0.7216, 0.9098, 1)])
+tertiary = Array[Color]([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0.36, 0.5, 0.75, 1), Color(0.36, 0.5, 0.75, 1)])

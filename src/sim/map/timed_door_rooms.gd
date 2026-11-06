@@ -37,7 +37,8 @@ static func mark(
 	timer_ticks: int,
 	speed: float,
 	taken: PackedInt32Array,
-	avoid: PackedVector2Array
+	avoid: PackedVector2Array,
+	steps_max := 0
 ) -> int:
 	clear(f)
 	var rng := RngStream.derive(f.seed_value, STREAM)
@@ -53,13 +54,23 @@ static func mark(
 	for room in cands:
 		var door := only_door(f, room)
 		var host := f.door_rooms[door].x if f.door_rooms[door].y == room else f.door_rooms[door].y
-		var spots := switch_spots(f, host, door, avoid, budget, rng)
+		var spots := PackedVector2Array()
+		var rooms := PackedInt32Array()
+		if steps_max > 0:  # v0.9.5 TS (owner Q7): two other rooms 1..steps_max steps away
+			var got := spread_spots(f, host, room, door, avoid, budget, steps_max, rng)
+			spots = got.get("spots", PackedVector2Array())
+			rooms = got.get("rooms", PackedInt32Array())
+		else:
+			spots = switch_spots(f, host, door, avoid, budget, rng)
 		if spots.size() == 2:
 			f.timed_room = room
 			f.timed_host = host
 			f.timed_door = door
 			f.timed_switches = spots
 			f.timed_door_wall = door_wall(f, door)
+			f.timed_switch_rooms = rooms
+			if steps_max > 0:
+				f.timed_lever = lever_spot(f, room, door)
 			return room
 	return -1
 
@@ -71,6 +82,8 @@ static func clear(f: FloorLayout) -> void:
 	f.timed_door = -1
 	f.timed_switches = PackedVector2Array()
 	f.timed_door_wall = null
+	f.timed_switch_rooms = PackedInt32Array()
+	f.timed_lever = Vector2.ZERO
 
 
 ## Dead ends that may become the secret room, ascending (their host allowed too).
@@ -151,11 +164,180 @@ static func switch_spots(
 	return PackedVector2Array()
 
 
+## v0.9.5 TS (owner Q7: "spread them a bit over the map"): the two switches in two DIFFERENT rooms, each 1..steps_max
+## doorway steps from `host` (never the secret room `dead`, nor a sealed, boss, start or shop room, nor one walked
+## through a sealed room), on spots passing the rules. Rooms behind different first doorways out of the host are
+## preferred. Each switch's walk to the door (through the rooms between) is at most `budget` m, so either order is
+## completable. Returns {"spots": 2 points, "rooms": their 2 rooms}, or {} when none fit.
+static func spread_spots(
+	f: FloorLayout,
+	host: int,
+	dead: int,
+	door: int,
+	avoid: PackedVector2Array,
+	budget: float,
+	steps_max: int,
+	rng: RngStream
+) -> Dictionary:
+	var found := _rooms_within(f, host, dead, steps_max)
+	var order: Array = found.keys()
+	for k in range(order.size() - 1, 0, -1):
+		var j := rng.range_int(0, k)
+		var swap: Variant = order[k]
+		order[k] = order[j]
+		order[j] = swap
+	var reaches := {}
+	var goal := door_goal(f, host, door)
+	var options := {}  # room -> its spots within the budget (shuffled)
+	for room: int in order:
+		var ok := PackedVector2Array()
+		for q in room_spots(f, room, avoid):
+			var m := path_m(f, found[room], q, goal, reaches)
+			if m >= 0.0 and m <= budget:
+				ok.append(q)
+		for k in range(ok.size() - 1, 0, -1):
+			var j := rng.range_int(0, k)
+			var swap := ok[k]
+			ok[k] = ok[j]
+			ok[j] = swap
+		if not ok.is_empty():
+			options[room] = ok
+	var rooms: Array = options.keys()
+	for different in [true, false]:
+		for a in rooms.size():
+			for b in range(a + 1, rooms.size()):
+				var ra: int = rooms[a]
+				var rb: int = rooms[b]
+				if different and found[ra]["first"] == found[rb]["first"]:
+					continue
+				return {
+					"spots": PackedVector2Array([options[ra][0], options[rb][0]]),
+					"rooms": PackedInt32Array([ra, rb])
+				}
+	return {}
+
+
+## The rooms 1..steps_max doorway steps from `host` that may hold a switch, each as {"first": the host's doorway the
+## way out starts with, "rooms": the rooms from it to host, "doors": the doorways between them}.
+static func _rooms_within(f: FloorLayout, host: int, dead: int, steps_max: int) -> Dictionary:
+	var info := {host: {"first": -1, "rooms": [host], "doors": []}}
+	var frontier := [host]
+	var out := {}
+	for step in range(1, steps_max + 1):
+		var next := []
+		for room: int in frontier:
+			for d in f.door_rooms.size():
+				var pair := f.door_rooms[d]
+				if pair.x != room and pair.y != room:
+					continue
+				var to := pair.y if pair.x == room else pair.x
+				if info.has(to) or to == dead or _sealed(f, to):
+					continue
+				var first: int = d if room == host else info[room]["first"]
+				var rooms: Array = [to]
+				rooms.append_array(info[room]["rooms"])
+				var doors: Array = [d]
+				doors.append_array(info[room]["doors"])
+				info[to] = {"first": first, "rooms": rooms, "doors": doors}
+				next.append(to)
+				if (
+					to != f.start_room
+					and to != f.shop_room
+					and to < f.spawn_points.size()
+					and not f.spawn_points[to].is_empty()
+				):
+					out[to] = info[to]
+		frontier = next
+	return out
+
+
+## A room the walk may not use and no switch may stand in: the boss room, a sealed fight (an arena, the Overrun room,
+## a locked room, the curse room).
+static func _sealed(f: FloorLayout, room: int) -> bool:
+	return (
+		room == f.boss_room
+		or room == f.overrun_room
+		or room == f.curse_room
+		or f.arena_rooms.has(room)
+		or f.lockdown_rooms.has(room)
+	)
+
+
+## The spawn spots of `room` that pass the rules (away from its doorways, the rewards and the item spots).
+static func room_spots(f: FloorLayout, room: int, avoid: PackedVector2Array) -> PackedVector2Array:
+	var ok := PackedVector2Array()
+	if room >= f.spawn_points.size():
+		return ok
+	var approaches := f.door_approaches(room, 1.0)
+	for q in f.spawn_points[room]:
+		if (
+			_far(q, approaches, DOOR_GAP_M)
+			and _far(q, avoid, AVOID_M)
+			and _far(q, f.item_spots, AVOID_M)
+		):
+			ok.append(q)
+	return ok
+
+
+## The walk (m) from `at` (a spot in way["rooms"][0]) through the rooms of `way` to `goal` in its last room; -1 when
+## a leg has no path. `goal` is the door's (door_goal). `reaches` caches each room's grid.
+static func path_m(
+	f: FloorLayout, way: Dictionary, at: Vector2, goal: Vector2, reaches: Dictionary
+) -> float:
+	var rooms: Array = way["rooms"]
+	var doors: Array = way["doors"]
+	var total := 0.0
+	var pos := at
+	for i in rooms.size() - 1:
+		var d: int = doors[i]
+		var leg := walk_m(_reach_of(f, rooms[i], reaches), pos, side_point(f, d, rooms[i]))
+		if leg < 0.0:
+			return -1.0
+		total += leg + f.door_depths[d] + 1.0
+		pos = side_point(f, d, rooms[i + 1])
+	var last := walk_m(_reach_of(f, rooms[rooms.size() - 1], reaches), pos, goal)
+	return -1.0 if last < 0.0 else total + last
+
+
+## `room`'s walkable grid over its rectangle and its doorways (cached in `reaches`).
+static func _reach_of(f: FloorLayout, room: int, reaches: Dictionary) -> FloorReach:
+	if reaches.has(room):
+		return reaches[room]
+	var area := f.rooms[room]
+	for d in f.door_rooms.size():
+		if f.door_rooms[d].x == room or f.door_rooms[d].y == room:
+			area = area.merge(f.door_rect(d))
+	var reach := FloorReach.new()
+	reach.build(area, f.room_walls(room), PATH_CLEARANCE_M)
+	reaches[room] = reach
+	return reach
+
+
+## The point 0.5 m inside `room` from doorway `door`'s wall face.
+static func side_point(f: FloorLayout, door: int, room: int) -> Vector2:
+	var into := -1.0 if f.door_rooms[door].x == room else 1.0  # the doorway points from x to y
+	return (
+		f.door_centers[door]
+		+ Kin.dir(f.door_angles[door]) * into * (f.door_depths[door] * 0.5 + 0.5)
+	)
+
+
+## v0.9.5 TS: the lever inside the secret room, on the wall the door is in, a metre or so beside the doorway.
+static func lever_spot(f: FloorLayout, room: int, door: int) -> Vector2:
+	var along := Kin.dir(f.door_angles[door])
+	var perp := Vector2(-along.y, along.x)
+	var base := side_point(f, door, room)
+	var rect := f.rooms[room].grow(-0.5)
+	for side in [1.0, -1.0]:
+		var q: Vector2 = base + perp * side * (f.door_widths[door] * 0.5 + 1.0)
+		if rect.has_point(q):
+			return q
+	return base
+
+
 ## The point on the host's side of the door the walk counts to (0.5 m in from the host's wall face).
 static func door_goal(f: FloorLayout, host: int, door: int) -> Vector2:
-	var into := 1.0 if f.door_rooms[door].x == host else -1.0  # the doorway points from x to y
-	var back := Kin.dir(f.door_angles[door]) * -into
-	return f.door_centers[door] + back * (f.door_depths[door] * 0.5 + 0.5)
+	return side_point(f, door, host)
 
 
 ## The walk (m) from `a` to `b` over reach's open cells (4-connected, so never shorter than the real path), plus one

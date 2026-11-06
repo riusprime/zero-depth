@@ -4,13 +4,19 @@ extends ContentDef
 ## biome never changes difficulty), how enemies and bosses scale with the floor number, and how much you heal
 ## between floors. Starting values the owner tunes.
 
+## v0.10.5 O5b: the loop rules content may name (the sim's LoopRules.POOL; a test keeps them equal).
+const LOOP_RULE_IDS: Array[StringName] = [
+	&"swift", &"lean_mending", &"elite_hunt", &"shielded", &"point_blank"
+]
+
 ## Floors in a run; the last floor's portal wins it.
 @export var floors := 3
 ## Biome ids, shuffled per run; floor f uses the f-th (cycling when there are fewer biomes than floors).
 @export var biomes: Array[StringName] = []
 ## v0.4.0 SC (F10): normal enemies' HP and damage per mille on floor f, entry f − 1 (past the end, the last entry):
 ## 1.9^(f − 1) and 1.4^(f − 1) rounded. Integer tables, not runtime powers (EI-02). The danger tier's scaling comes
-## on top (SpawnDirectorDefinition).
+## on top (SpawnDirectorDefinition). v0.9.5 EP3: floor 1 is 850 in the shipped five-floor run (it may start at
+## 500..1000); later floors are unchanged.
 @export var enemy_hp_floor_permille := PackedInt32Array([1000, 1900, 3610])
 @export var enemy_damage_floor_permille := PackedInt32Array([1000, 1400, 1960])
 ## Bosses keep their own per-floor scaling (v0.3.0 B): HP × (1 + boss_hp_per_floor × (f − 1)) and every attack's
@@ -52,6 +58,19 @@ extends ContentDef
 ## damage × this per mille, on top of the floor's, the Deep and the loop factors; a Deep floor on loop 1 and a normal
 ## floor on loop 2 keep theirs. 1000 = no ease. Starting value 900.
 @export var loop_deep_ease_permille := 1000
+## v0.10.5 O5b (owner P13; docs/roadmap/v0.10.5/O5_LOOPS.md M1-M5): the rules a loop may add (LoopRules.POOL ids;
+## one drawn per loop past the first, without repeats; empty: loops add none) and their numbers (starting values):
+## SWIFT's enemy speed, LEAN_MENDING's heal-orb chance and heal, SHIELDED's front multiplier and half-arc, and
+## POINT_BLANK's bolt speed and keep distance, all per mille but the arc. v0.10.5 O5b also lowered the HP steps above
+## to ×3.5 (was ×6): the rules carry part of a loop's difficulty.
+@export var loop_rules: Array[StringName] = []
+@export var loop_swift_permille := 1200
+@export var loop_heal_chance_permille := 500
+@export var loop_heal_amount_permille := 2000
+@export var loop_shield_permille := 600
+@export var loop_shield_half_arc_degrees := 45.0
+@export var loop_bolt_permille := 1300
+@export var loop_keep_permille := 600
 ## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F1-F3): the final boss. End the run at the Ascension portal (any loop)
 ## leads to it: one fight in its own arena (final_arena, a FinalArenaDefinition id), its bodies in order
 ## (final_bosses: FinalBossDefinition ids, the Colossus, the Prism, the Nemesis), shown as one boss named
@@ -101,8 +120,11 @@ func validate() -> Array[ValidationIssue]:
 	for b in biomes:
 		if String(b).is_empty():
 			issues.append(ValidationIssue.new(&"missing", resource_path, "a biome id is empty"))
-	check_permille_table(issues, "enemy_hp_floor_permille", enemy_hp_floor_permille, true)
-	check_permille_table(issues, "enemy_damage_floor_permille", enemy_damage_floor_permille, true)
+	# v0.9.5 EP3: floor 1 may ease below ×1.0
+	check_permille_table(issues, "enemy_hp_floor_permille", enemy_hp_floor_permille, true, 500)
+	check_permille_table(
+		issues, "enemy_damage_floor_permille", enemy_damage_floor_permille, true, 500
+	)
 	if boss_hp_per_floor < 0.0:
 		issues.append(
 			ValidationIssue.new(&"negative", resource_path, "boss_hp_per_floor is negative")
@@ -154,6 +176,11 @@ func validate() -> Array[ValidationIssue]:
 			ValidationIssue.new(&"range", resource_path, "loop_deep_ease_permille: 1..1000")
 		)
 	_check_shape(issues)
+	for id in loop_rules:  # v0.10.5 O5b
+		if not LOOP_RULE_IDS.has(id):
+			issues.append(ValidationIssue.new(&"unknown", resource_path, "loop rule %s" % id))
+	if loop_shield_half_arc_degrees < 0.0 or loop_shield_half_arc_degrees > 180.0:
+		issues.append(ValidationIssue.new(&"range", resource_path, "loop shield arc 0..180"))
 	if loop_threat < 0:
 		issues.append(ValidationIssue.new(&"negative", resource_path, "loop_threat is negative"))
 	if loop_catch_up_cap_permille < 0:

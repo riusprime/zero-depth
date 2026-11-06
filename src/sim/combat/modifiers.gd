@@ -23,7 +23,7 @@ extends RefCounted
 ## Rules (design §2): numeric ops change one field (SET, ADD, MAX, MIN, MUL_PERMILLE); SET_FORM changes the form (a
 ## later form op layers); STATUS sets a status the spec's hits feed; ELEMENT adds an element the view draws
 ## (stacking, no repeats); HOOK adds a child attack at depth + 1, compiled by its own card and the cards to its right
-## (v0.6.5 WN1; none below MAX_DEPTH, so compiling always ends).
+## (v0.6.5 WN1; none below MAX_DEPTH, so compiling always ends; v0.10.5 W3-P10a: the loop's WandCompile.max_depth).
 ##
 ## Riders (the v0.5 rules kept exact): a Blade step's hits burn whenever the burn engine runs (Wildfire or Flame
 ## Trail with no Ember Edge did that before MX1), and the bolt's hits slow whenever the slow runs (Glacial Edge or
@@ -92,18 +92,28 @@ static func skill(w: World) -> AttackSpec:
 ## v0.9.0 LZ: a Form card's (the Laser) come first, wherever it sits, so it makes the Gun's shot itself, never a
 ## trigger's cast, and every Pattern, Secondary and Element card shapes the form.
 static func build_modifiers(w: World) -> Array[ModifierTable]:
+	return build_modifiers_of(w, w.mod_slots)
+
+
+## v0.10.5 O13: build_modifiers for the card codes `codes` in this order (a wand the player hasn't made yet: the Build
+## page's reorder, the Swap's answer; WandForecast). build_modifiers is this on the held wand, so the two can't differ.
+static func build_modifiers_of(w: World, codes: PackedInt32Array) -> Array[ModifierTable]:
 	var out: Array[ModifierTable] = []
 	var form: Array[ModifierTable] = []  # v0.9.0 LZ: the Form card shapes the root shot wherever it sits
-	for code in w.mod_slots:
+	for code in codes:
 		if Offers.type_of(code) == Offers.ABILITY:
 			var idx := Offers.ability_of(code)
 			if idx < w.ability_tables.size():
 				out.append_array(w.ability_tables[idx].modifiers)
 		elif code < w.item_tables.size() and AttackSlots.compiles(w, code):  # v0.9.0 AS: the form's table
-			var lvl := CardLevels.level(w, code)  # v0.6.5 WN3: a wand card at its level
+			var lvl := CardLevels.base_level(w, code)  # v0.6.5 WN3: a wand card at its level (W3-P3: at most its max)
+			# v0.10.5 W3-P3: its overlevels grow its main number; an element's grows in ElementStack.level_permille
+			var over := 1000
+			if LootPacing.category(w, code) != LootPacing.Category.ELEMENT:
+				over = CardLevels.overlevel_now(w, code)
 			var to := form if AttackSlots.category(w, code) == AttackSlots.FORM else out
 			for m in w.item_tables[code].modifiers:
-				to.append(m.at(lvl))
+				to.append(m.at(lvl).overlevelled(over))
 	form.append_array(out)
 	return form
 
@@ -144,7 +154,7 @@ static func weapon_damage(w: World) -> int:
 	var s := weapon_attack(w)
 	if s == null:
 		return 1
-	var pm := Abilities.weapon_permille(w)
+	var pm := Abilities.weapon_permille(w) * CardLevels.weapon_overlevel_permille(w) / 1000  # W3-P3: overlevels
 	if s.form == AttackSpec.Form.ARC and s.has_tag(&"melee"):
 		pm = w.player.melee_damage_permille * pm / 1000
 		return maxi(1, s.damage * pm / 1000)
@@ -158,7 +168,9 @@ static func ability(w: World, t: AbilityTable) -> AttackSpec:
 
 
 static func compile(w: World) -> AttackBook:
-	return compile_for(w, build_modifiers(w))
+	var b := compile_for(w, build_modifiers(w))
+	ElementPairs.refresh(w)  # v0.9.5 EE3: the element pairs follow the cards' levels
+	return b
 
 
 ## The book of `w`'s player table with `mods` (in this order) and w's riders. Tests compile any list with it.
@@ -168,7 +180,7 @@ static func compile_for(w: World, mods: Array[ModifierTable]) -> AttackBook:
 		b.modifier_ids.append(String(m.id))
 	var wand := WandCompile.for_world(w, mods)  # v0.6.5 WN1: slot order, triggers cut the wand
 	for k in w.player.combo.size():
-		b.add(BladeForms.settle(wand.spec(base_step(w, k))))  # v0.6.5 WN4: Finisher+'s carry
+		b.add(BladeForms.settle(wand.spec(base_step(w, k)), wand.max_depth))  # v0.6.5 WN4: Finisher+'s carry
 	b.add(wand.spec(base_bolt(w)))
 	var sk := _base_skill(w)
 	if sk != null:
@@ -178,31 +190,15 @@ static func compile_for(w: World, mods: Array[ModifierTable]) -> AttackBook:
 	if w.heat != null:  # v0.6.0 MX4: Vent's blast
 		b.add(wand.spec(_base_vent(w)))
 	_riders(w, b)
-	var root := _weapon_root(w, b)
-	for idx in w.ability_owned:  # v0.6.0 MX2: the ability modifiers' attacks, carrying the weapon's
-		var t := w.ability_tables[idx]
-		var base := _base_ability(w, t, Abilities.level_of(w, idx))
-		if base == null:
-			continue
-		var s := wand.spec(base)
-		inherit(s, root, t.kind == AbilityTable.Kind.DRONE_BUDDY)
-		SpecForms.mirror(s, root)  # v0.6.0 MX4: Mirror Drone, Blade Orbit
-		b.add(s)
 	b.register()
 	b.seal()
 	return b
 
 
-## The weapon's own attack the abilities copy: the Gun's bolt on a Gun build, else the Blade's first step.
-static func _weapon_root(w: World, b: AttackBook) -> AttackSpec:
-	if PlayerBuild.has_gun(w) and not PlayerBuild.has_blade(w):
-		return b.spec(GUN_BOLT)
-	return b.spec(step_id(0)) if w.player.combo.size() > 0 else b.spec(GUN_BOLT)
-
-
 ## v0.6.0 MX2: `s` takes `root`'s statuses (not its riders; a status `s` already has stays), elements and ON_HIT /
 ## ON_KILL hooks (shared, as compiled for the weapon); with `copy`, a bolt root's pattern and behaviour too.
-static func inherit(s: AttackSpec, root: AttackSpec, copy: bool) -> void:
+## v0.10.5 W3-P10a: the hooks only while `s` is shallower than `max_depth` (the compile's: WandCompile.max_depth).
+static func inherit(s: AttackSpec, root: AttackSpec, copy: bool, max_depth := MAX_DEPTH) -> void:
 	if root == null:
 		return
 	for k in root.status_ids.size():
@@ -216,7 +212,7 @@ static func inherit(s: AttackSpec, root: AttackSpec, copy: bool) -> void:
 	for m in root.modifier_ids:
 		if not s.modifier_ids.has(m):
 			s.modifier_ids.append(m)
-	if s.depth < MAX_DEPTH:
+	if s.depth < max_depth:
 		for h in root.hooks:
 			if h.trigger == AttackSpec.Trigger.ON_HIT or h.trigger == AttackSpec.Trigger.ON_KILL:
 				s.hooks.append(h)
@@ -226,70 +222,6 @@ static func inherit(s: AttackSpec, root: AttackSpec, copy: bool) -> void:
 		s.damage_permille = root.damage_permille
 		s.bounces = maxi(s.bounces, root.bounces)
 		s.pierce = maxi(s.pierce, root.pierce)
-
-
-## v0.6.0 MX2: ability `t` at `level` as an attack spec (null for the weapon and the utility). Its numbers are the
-## ability's v0.5 numbers at that level; the runtime factors (the area stat, Blade Dance, the cooldowns) stay with
-## the ability's driver (Abilities, ModifierAbilities).
-static func _base_ability(_w: World, t: AbilityTable, level: int) -> AttackSpec:
-	if not t.is_modifier():
-		return null
-	var s := AttackSpec.new()
-	s.id = t.id
-	s.effect_id = t.id
-	s.damage = Abilities.damage_at(t, level)
-	s.tags = PackedStringArray([TAG_ABILITY, "auto"])
-	var lvl_r := t.radius_m * t.radius_permille(level) / 1000.0
-	match t.kind:
-		AbilityTable.Kind.BOMB_LOBBER:
-			s.form = AttackSpec.Form.LOB
-			s.tags.append_array(["bomb", "area"])
-			s.radius_m = lvl_r
-			s.reach_m = t.range_m
-			s.life_ticks = t.duration_ticks
-			s.count = t.count(level)
-			s.period_ticks = t.cooldown_ticks
-		AbilityTable.Kind.DRONE_BUDDY:
-			s.form = AttackSpec.Form.BOLT
-			s.tags.append_array(["drone", "projectile"])
-			s.radius_m = Abilities.BOLT_RADIUS_M
-			s.speed = t.speed
-			s.reach_m = t.range_m
-			s.life_ticks = int(ceil(t.range_m / t.speed)) + 2
-			s.period_ticks = maxi(1, t.period_ticks * 1000 / t.rate_permille(level))
-		AbilityTable.Kind.ORBIT_BLADES:
-			s.form = AttackSpec.Form.ORBITER
-			s.tags.append_array(["orbit", "melee"])
-			s.count = t.count(level)
-			s.reach_m = lvl_r
-			s.radius_m = Abilities.BLADE_R
-			s.period_ticks = t.period_ticks
-		AbilityTable.Kind.ARC_FIELD:
-			s.form = AttackSpec.Form.ZONE
-			s.tags.append_array(["field", "area"])
-			s.radius_m = t.radius_m
-			s.reach_m = t.range_m
-			s.life_ticks = t.duration_ticks
-			s.period_ticks = t.hit_ticks
-			s.count = t.count(level)
-			s.set_status(&"shock", t.extra(level), 0)
-			s.elements.append("storm")
-		AbilityTable.Kind.FROST_NOVA:
-			s.form = AttackSpec.Form.RING
-			s.tags.append_array(["nova", "area"])
-			s.radius_m = lvl_r
-			s.life_ticks = RING_TICKS
-			s.set_status(&"frost", t.extra(level), 0)
-			s.elements.append("frost")
-		AbilityTable.Kind.FLAME_TRAIL:
-			s.form = AttackSpec.Form.ZONE
-			s.tags.append_array(["trail", "area"])
-			s.radius_m = lvl_r
-			s.life_ticks = maxi(1, t.duration_ticks * t.rate_permille(level) / 1000)
-			s.period_ticks = t.hit_ticks
-			s.set_status(&"burn", t.extra(level), 0)
-			s.elements.append("ember")
-	return s
 
 
 ## Hashes the build's specs once it has a modifier (worlds without one, the kernel goldens among them, keep their
@@ -323,6 +255,9 @@ static func _base_vent(w: World) -> AttackSpec:
 
 ## One numeric op on `s` (SET, ADD, MAX, MIN, MUL_PERMILLE on an AttackSpec field, or the virtual `range`).
 static func numeric(s: AttackSpec, op: ModifierOp) -> void:
+	if op.field == &"halo_homing_permille":  # v0.10.5 W3-S18: spent at the end of the compile (SpecForms)
+		s.halo_homing_permille = int(op.value)
+		return
 	if op.field == &"range":  # v0.6.0 MX4: the form's own range field (SpecForms.range_of)
 		if op.op == ModifierOp.Op.MUL_PERMILLE:
 			SpecForms.scale_range(s, op.value)

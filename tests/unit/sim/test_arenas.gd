@@ -13,8 +13,12 @@ const STEPS_AFTER := 600
 const CHALLENGE_BEFORE_PERMILLE := 3231
 
 
+## v0.9.5 DR (owner Q6): the wave Arenas are what floors saved under rules 1-19 keep (rules 20 seal their arena rooms
+## as locked rooms: test_locked_rooms), so these floors are built under rules 19.
 func _arena_floor(run_seed: int, floor_index: int = 1) -> World:
-	return SaveLab.floor_world(run_seed, floor_index)
+	var run := SaveLab.run_state(run_seed, floor_index)
+	run.floor_rules = RunState.FLOOR_RULES_V095_AQ
+	return SaveLab.build_floor(run)
 
 
 ## A floor (SaveLab, as Main builds it) with at least one regular arena, from `from` on.
@@ -158,7 +162,11 @@ func test_rewards_fill_the_arenas_first_and_keep_two_altars() -> void:
 			if f.arena_rooms.has(f.room_of(w.rewards.pos(i))):
 				in_arena += 1
 				assert_true(Arenas.locked(w, i), "seed %d: an arena's reward is locked" % s)
-		assert_lte(altars, 2, "seed %d: S1's cap holds" % s)
+		# v0.10.5 S7: an extra altar is not held by the cap; at most the extras the capped altars can roll
+		# (cap x permille / 1000, rounded up: one with the shipped 120)
+		var t := w.reward_table
+		var extras := (t.altars_cap * t.extra_altar_permille + 999) / 1000
+		assert_lte(altars, t.altars_cap + extras, "seed %d: S1's cap, plus S7's extra altar" % s)
 		assert_eq(
 			in_arena, mini(arena_spots, w.rewards.size()), "seed %d: arena spots fill first" % s
 		)
@@ -179,12 +187,12 @@ func test_entering_seals_the_doors_and_the_horde_pauses() -> void:
 	for n in 30:
 		w.step(InputFrame.new())
 	assert_false(w.arenas.touched(), "not hashed before an arena seals")
-	var walls := w.walls.size()
+	var walls := _walls(w)
 	_enter(w, room)
 	assert_eq(w.arenas.room, room, "sealed on the first tick inside")
 	var doors := ArenaRooms.doors_of(f, room)
 	assert_eq(w.arenas.barriers.size(), doors.size(), "a barrier in each doorway")
-	assert_eq(w.walls.size(), walls + doors.size(), "they stand in the walls")
+	assert_eq(_walls(w), walls + doors.size(), "they stand in the walls")
 	assert_between(w.arenas.waves, 2, 3, "2-3 waves, drawn per room")
 	var cd := w.spawn_cd
 	var ticks := w.run_ticks
@@ -217,7 +225,7 @@ func test_waves_spawn_inside_one_after_another_then_the_doors_open() -> void:
 	var f := w.floor_layout
 	var room := f.arena_rooms[0]
 	# v0.8.0 BD: the shut boss door's collider joins the walls on the first tick and stays (no press here).
-	var walls := w.walls.size() + (1 if w.boss_flow.door == BossFlow.Door.SET else 0)
+	var walls := _walls(w) + (1 if w.boss_flow.door == BossFlow.Door.SET else 0)
 	var locked := PackedInt32Array()
 	for i in w.rewards.size():
 		if f.room_of(w.rewards.pos(i)) == room:
@@ -247,7 +255,7 @@ func test_waves_spawn_inside_one_after_another_then_the_doors_open() -> void:
 	for n in sizes:
 		assert_eq(n, 3, "floor 1: waves of 3")
 	assert_true(w.arenas.cleared.has(room))
-	assert_eq(w.walls.size(), walls, "the doors open")
+	assert_eq(_walls(w), walls, "the doors open")
 	for id in locked:
 		assert_false(Arenas.locked(w, w.rewards.index_of(id)), "its reward unlocks")
 	_enter(w, room)
@@ -328,7 +336,7 @@ func _round_trip(w: World, base: World, label: String) -> void:
 	if restored == null:
 		return
 	assert_eq(restored.state_hash(), w.state_hash(), "%s: restored hash equals" % label)
-	assert_eq(restored.walls.size(), w.walls.size(), "%s: the barriers came back" % label)
+	assert_eq(_walls(restored), _walls(w), "%s: the barriers came back" % label)
 	var b1 := FightBot.new(17)
 	var b2 := FightBot.new(17)
 	for i in STEPS_AFTER:
@@ -523,3 +531,8 @@ func test_killing_the_boss_leaves_a_legendary_altar_of_three() -> void:
 	for n in 5:
 		w.step(InputFrame.new())
 	assert_eq(w.rewards.index_of(w.legendary_id), -1, "one per boss")
+
+
+## v0.9.5 SB: the walls that are not a solid prop's footprint (a prop joins the walls once the hero is clear of it).
+func _walls(w: World) -> int:
+	return w.walls.size()

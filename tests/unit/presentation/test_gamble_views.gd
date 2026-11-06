@@ -192,3 +192,111 @@ func test_no_odds_line_and_a_spent_shrine_dims() -> void:
 	view.sync(reader)
 	assert_eq(view.price_label.text, "Agotado")
 	TranslationServer.set_locale("en")
+
+
+## v0.9.5 SS (owner: "clearer and more visual when it fails ... the reward shown over it"): a fail cracks the core
+## for under 1.2 s and ends at rest; a win floats the stat's icon above the shrine and frees it after 2 s.
+func test_a_fail_cracks_the_core_briefly_and_returns_to_rest() -> void:
+	var w := _failing_world()
+	var reader := WorldReader.new(w)
+	var view := GambleShrineView.new()
+	add_child_autofree(view)
+	view.set_process(false)
+	view.setup(reader.gamble_pos())
+	view.sync(reader)
+	w.shards = 100
+	w.input_buffer[3] = 1
+	assert_false(Gamble.interact(w))
+	view.sync(reader)
+	assert_lte(GambleShrineView.FIZZLE_S, 1.2, "the fail reads in 1.2 s")
+	var cracked_seen := false
+	var peak_drop := 0.0
+	var dimmest := 99.0
+	var flashed := false
+	var t := 0.0
+	while view.fizzling() and t < 3.0:
+		view._process(1.0 / 60.0)
+		t += 1.0 / 60.0
+		peak_drop = maxf(peak_drop, -view._body.position.y)
+		dimmest = minf(dimmest, view._core_mat.emission_energy_multiplier)
+		flashed = flashed or view._core_mat.emission.is_equal_approx(Color.WHITE)
+		cracked_seen = cracked_seen or view.cracked()
+	assert_lte(t, 1.2, "the fizzle ends within 1.2 s")
+	assert_true(flashed, "the core flashes white first")
+	assert_almost_eq(peak_drop, GambleShrineView.JOLT_M, 0.01, "the body drops 6 cm")
+	assert_lte(dimmest, GambleShrineView.CORE_ENERGY * 0.3, "the core dims toward 20 %")
+	assert_true(cracked_seen, "the cracks showed")
+	for k in 20:
+		view._process(1.0 / 60.0)
+	assert_false(view.cracked(), "the cracks are gone within 1 s")
+	assert_eq(view._body.position, Vector3.ZERO, "the body is back at rest")
+	assert_almost_eq(
+		view._core_mat.emission_energy_multiplier,
+		GambleShrineView.CORE_ENERGY * (1.35 if reader.gamble_in_reach() else 1.0),
+		0.01
+	)
+
+
+func test_a_fail_under_reduced_motion_does_not_jolt_but_still_cracks() -> void:
+	var old := ViewPrefs.reduced_motion
+	ViewPrefs.reduced_motion = true
+	var w := _failing_world()
+	var reader := WorldReader.new(w)
+	var view := GambleShrineView.new()
+	add_child_autofree(view)
+	view.set_process(false)
+	view.setup(reader.gamble_pos())
+	view.sync(reader)
+	w.shards = 100
+	w.input_buffer[3] = 1
+	Gamble.interact(w)
+	view.sync(reader)
+	var drop := 0.0
+	for k in 30:
+		view._process(1.0 / 60.0)
+		drop = maxf(drop, -view._body.position.y)
+	assert_eq(drop, 0.0, "no jolt")
+	assert_true(view.cracked(), "the cracks still show")
+	ViewPrefs.reduced_motion = old
+
+
+func test_a_win_floats_the_prize_icon_over_the_shrine_for_two_seconds() -> void:
+	var w := _world()
+	var reader := WorldReader.new(w)
+	var view := GambleShrineView.new()
+	add_child_autofree(view)
+	view.set_process(false)
+	view.setup(reader.gamble_pos())
+	view.sync(reader)
+	w.shards = 100
+	w.gamble_table.fail_permille = 0
+	w.input_buffer[3] = 1
+	assert_true(Gamble.interact(w))
+	view.sync(reader)
+	assert_null(view.prize(), "the prize waits for the landing")
+	var t := 0.0
+	while view.prize() == null and t < 2.0:
+		view._process(1.0 / 60.0)
+		t += 1.0 / 60.0
+	var prize := view.prize()
+	assert_not_null(prize, "the prize appears when the spin lands")
+	assert_true(view.pulsing(), "the gold ring pulses at the same moment")
+	assert_eq(prize.billboard, BaseMaterial3D.BILLBOARD_ENABLED)
+	assert_true(prize.no_depth_test)
+	assert_false(prize.fixed_size)
+	assert_almost_eq(prize.pixel_size * GambleShrineView.PRIZE_PX, 0.45, 0.001, "0.45 m wide")
+	assert_almost_eq(prize.position.y, GambleShrineView.PRIZE_FROM_M, 0.05, "starts at 1.4 m")
+	assert_almost_eq(prize.scale.x, 0.6, 0.15, "starts small")
+	for k in 12:
+		view._process(1.0 / 60.0)
+	assert_almost_eq(prize.scale.x, 1.0, 0.02, "full size after 0.2 s")
+	for k in 60:
+		view._process(1.0 / 60.0)
+	assert_gt(prize.position.y, GambleShrineView.PRIZE_FROM_M + 0.2, "rising")
+	for k in 60:
+		view._process(1.0 / 60.0)
+	assert_lt(prize.modulate.a, 1.0, "fading in the last half second")
+	for k in 40:
+		view._process(1.0 / 60.0)
+	assert_null(view.prize(), "gone after 2 s")
+	assert_false(view.pulsing())

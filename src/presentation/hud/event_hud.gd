@@ -6,7 +6,7 @@ extends Control
 
 var panel := EventPanel.new()
 var threat := ThreatPanel.new()
-var _prompt := Label.new()
+var _prompt := InteractPrompt.new()
 var _status := HudStyle.label(20, true)
 
 
@@ -14,14 +14,6 @@ func _init() -> void:
 	name = "Events"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_prompt.name = "EventPrompt"
-	_prompt.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_prompt.custom_minimum_size = Vector2(900, 0)
-	_prompt.position = Vector2(-450, -112)
-	HudStyle.style_label(_prompt, 22, true)
-	_prompt.add_theme_constant_override("outline_size", 6)
-	_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	_status.name = "EventStatus"
 	_status.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -29,11 +21,11 @@ func _init() -> void:
 	_status.position = Vector2(-350, 112)
 	_status.add_theme_constant_override("outline_size", 6)
 	_status.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-	for l: Label in [_prompt, _status]:
-		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		l.visible = false
-		add_child(l)
+	_status.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_status.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_status.visible = false
+	add_child(_prompt)
+	add_child(_status)
 	threat.place_top_left(20)
 	threat.visible = false
 	add_child(threat)
@@ -42,12 +34,13 @@ func _init() -> void:
 
 func sync(reader: WorldReader) -> void:
 	var k := reader.event_in_reach() if not reader.event_open() else -1
-	_prompt.visible = k >= 0
 	if k >= 0:
-		_prompt.text = tr("UI_EVENT_OPEN") % tr(reader.event_name_key(k))
+		var line := tr("UI_EVENT_OPEN") % tr(reader.event_name_key(k))
 		if k == reader.event_curse_altar():  # v0.8.0 N17 (O75): its name shows only once you open it
-			_prompt.text = tr("UI_CURSE_ALTAR_OPEN")
-		HudStyle.font_color(_prompt, EventPedestalViews.GLOW.lerp(Color.WHITE, 0.6))
+			line = tr("UI_CURSE_ALTAR_OPEN")
+		_prompt.show_prompt(reader, line, false, EventPedestalViews.GLOW.lerp(Color.WHITE, 0.6))
+	else:
+		_prompt.hide_prompt()
 	_sync_status(reader)
 	threat.visible = reader.threat() > 0 or not reader.curses_owned().is_empty()
 	threat.sync(reader)
@@ -55,7 +48,7 @@ func sync(reader: WorldReader) -> void:
 
 
 func prompt_text() -> String:
-	return _prompt.text if _prompt.visible else ""
+	return _prompt.text()
 
 
 func status_text() -> String:

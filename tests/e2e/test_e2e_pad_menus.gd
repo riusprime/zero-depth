@@ -114,13 +114,15 @@ func test_stick_moves_focus_and_pad_a_opens_options_and_credits() -> void:
 	assert_not_null(main.get_node_or_null("UI/MainMenu"), "pad B goes back to the main menu")
 	await _press(e, JOY_BUTTON_DPAD_UP)
 	assert_eq(_focused(main).name, &"Play")
-	await _pad_to_station(e, main, &"credits")
-	assert_not_null(
-		main.get_node_or_null("UI/CreditsView"), "pad X at the Credits stone opens them"
-	)
+	# v0.9.5 RS1: the Credits are a main-menu item (Play, Options, Credits, Quit).
+	await _press(e, JOY_BUTTON_DPAD_DOWN)
+	await _press(e, JOY_BUTTON_DPAD_DOWN)
+	assert_eq(_focused(main).name, &"Credits", "the d-pad reaches Credits")
+	await _press(e, JOY_BUTTON_A)
+	assert_not_null(main.get_node_or_null("UI/CreditsView"), "pad A on Credits opens them")
 	await _press(e, JOY_BUTTON_A)
 	assert_null(main.get_node_or_null("UI/CreditsView"), "pad A on Back leaves the credits")
-	assert_not_null(main.hub, "back in the hub")
+	assert_not_null(main.get_node_or_null("UI/MainMenu"), "back at the main menu")
 
 
 ## v0.4.0 BS (F11): the utility picker is gone; the build screen is the last menu before the run.

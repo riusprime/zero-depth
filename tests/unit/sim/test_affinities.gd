@@ -92,8 +92,8 @@ func _dash_past(w: World) -> void:
 
 func test_storm_dash_shocks_enemies_near_its_path_once() -> void:
 	var enemies := [[Vector2(2.0, 0.8), HP], [Vector2(2.0, 3.0), HP]]
-	var plain := W.world(&"gun", [&"static_chain"], enemies)
-	var storm := _with(&"storm", W.world(&"gun", [&"static_chain"], enemies))
+	var plain := W.world(&"gun", [&"gun_ring"], enemies)
+	var storm := _with(&"storm", W.world(&"gun", [&"gun_ring"], enemies))
 	_dash_past(plain)
 	_dash_past(storm)
 	assert_eq(plain.actors.shock_stacks[1], 0, "no crackle without Storm")

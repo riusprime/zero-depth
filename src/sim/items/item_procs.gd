@@ -101,8 +101,6 @@ static func chain_ready(w: World) -> bool:
 
 ## The effect id a projectile's hit carries: Thorn Mantle bolts name it, plain bolts don't.
 static func bolt_effect(tags: int) -> StringName:
-	if tags & SimEvent.TAG_ABILITY:  # v0.4.0 BS: a drone's bolt is the ability's, not a shot
-		return Abilities.EFFECT_DRONE
 	return EFFECT_THORN_MANTLE if tags & SimEvent.TAG_THORN else &""
 
 
@@ -110,9 +108,12 @@ static func bolt_effect(tags: int) -> StringName:
 static func slow_factor(w: World, i: int) -> float:
 	if w.actors.frozen_t[i] > 0:  # Engines: a frozen enemy doesn't move.
 		return 0.0
+	var ice := 1000  # v0.9.5 EE3: Black Ice slows a poisoned enemy further
+	if w.pair_mask != 0:
+		ice = ElementPairs.slow_permille(w, i)
 	if w.actors.slow_t[i] <= 0:
-		return 1.0
-	return w.item_mods.slow_permille / 1000.0
+		return ice / 1000.0
+	return w.item_mods.slow_permille * ice / 1000000.0
 
 
 ## Phase 8: slows run down.

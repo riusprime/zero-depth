@@ -91,7 +91,7 @@ const NO_POOL := {}
 
 const SHADER := """
 shader_type spatial;
-render_mode unshaded, %s, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, %s, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 
 uniform sampler2D atlas : source_color, filter_linear_mipmap;
 uniform sampler2D noise : filter_linear_mipmap, repeat_enable;
@@ -134,6 +134,13 @@ var decals: Array[Decal] = []
 var density := 1.0
 ## Drawn into each frame before it ends (StatusVisuals' enemy statuses): func(layer: VfxCore).
 var drawers: Array[Callable] = []
+## v0.10.5 O12 (owner P9): the hero's own drawers (the forms' accents, the hits' impacts), drawn before `drawers`
+## under the hero's budget (`hero_budget`); `drawers` (the enemies' and bosses' attacks, statuses, props) never are.
+var hero_drawers: Array[Callable] = []
+## v0.10.5 O12: the hero effects' budget (AttackFormCanvas hands its own in); null: no hero budget (the tests' layers).
+## Between hero_begin() and hero_end() every sprite asks it: skipped past the cap, dimmed past its soft limit, and
+## always at its opacity.
+var hero_budget: HeroFxBudget = null
 ## This frame's counts (the perf probe and the tests): sprites asked for; bursts asked for, drawn, merged into one
 ## drawn nearby and skipped past the budget (VfxLayer.burst, v0.8.0 PF).
 var sprites_asked := 0
@@ -170,6 +177,8 @@ var _spots := {}
 var _sprite_left := MAX_SPRITES
 ## While true, light requests are dropped (a thinned burst asks for none: VfxLayer.burst).
 var _lights_off := false
+## v0.10.5 O12: true while the hero's effects draw (hero_begin / hero_end).
+var _hero_on := false
 
 
 func _init() -> void:
@@ -393,25 +402,54 @@ func begin(now: float) -> void:
 ## Ends the frame: lets the drawers add theirs, shows the used pieces, gives the lights to the brightest requests,
 ## lays out the floor marks.
 func finish() -> void:
+	hero_begin()
+	for d in hero_drawers:
+		if d.is_valid():
+			var t_d := PerfMarks.start()
+			d.call(self)
+			if PerfMarks.on:  # v0.10.5 W3-Q6: each drawer's share, in the frame probe's --breakdown
+				PerfMarks.add(_drawer_key("vfx.hero.", d), t_d)
+	hero_end()
 	for d in drawers:
 		if d.is_valid():
+			var t_d := PerfMarks.start()
 			d.call(self)
+			if PerfMarks.on:
+				PerfMarks.add(_drawer_key("vfx.", d), t_d)
+	var t_end := PerfMarks.start()
 	_flush_status_lights()
+	# v0.10.5 W3-Q6: a pool's count and a light's settings are written only when they change (each write is a
+	# RenderingServer call, and a moved light a transform update)
 	for p: Dictionary in _pool_list:
-		(p["mm"] as MultiMesh).visible_instance_count = int(p["used"])
+		var mm := p["mm"] as MultiMesh
+		if mm.visible_instance_count != int(p["used"]):
+			mm.visible_instance_count = int(p["used"])
 	_light_wants.sort_custom(_brighter)
 	for k in lights.size():
 		var l := lights[k]
 		if k < _light_wants.size():
 			var w: Array = _light_wants[k]
-			l.position = w[0]
-			l.light_color = w[1]
-			l.light_energy = w[2]
-			l.omni_range = w[3]
+			if l.position != w[0]:
+				l.position = w[0]
+			if l.light_color != w[1]:
+				l.light_color = w[1]
+			if l.light_energy != w[2]:
+				l.light_energy = w[2]
+			if l.omni_range != w[3]:
+				l.omni_range = w[3]
 			l.visible = true
 		else:
 			l.visible = false
 	_lay_marks()
+	PerfMarks.add(&"vfx.finish_rest", t_end)
+
+
+## v0.10.5 W3-Q6: a drawer's bucket in the frame probe's --breakdown (its script's file and method).
+static func _drawer_key(prefix: String, d: Callable) -> StringName:
+	var o := d.get_object()
+	var sc: Script = o.get_script() if o != null else null
+	var file := sc.resource_path.get_file().get_basename() if sc != null else "?"
+	return StringName(prefix + file + "." + String(d.get_method()))
 
 
 ## The light sort: the brighter request first.
@@ -421,6 +459,22 @@ static func _brighter(a: Array, b: Array) -> bool:
 
 func now() -> float:
 	return _now
+
+
+## v0.10.5 O12: the sprites from here to hero_end() are the hero's (they ask hero_budget, when there is one; `b`
+## replaces it).
+func hero_begin(b: HeroFxBudget = null) -> void:
+	if b != null:
+		hero_budget = b
+	_hero_on = hero_budget != null
+
+
+func hero_end() -> void:
+	_hero_on = false
+
+
+func is_hero_drawing() -> bool:
+	return _hero_on
 
 
 func _put(
@@ -433,6 +487,13 @@ func _put(
 	var i: int = p["used"]
 	if i >= int(p["cap"]) or _sprite_left <= 0:
 		return false
+	if _hero_on:  # v0.10.5 O12: the hero's budget (the newest draw first, so the oldest dim, then go)
+		var k := hero_budget.admit()
+		if k <= 0.0:
+			return false
+		c.a *= k
+		if hero_budget.over():
+			xf.basis = xf.basis.scaled(Vector3.ONE * HeroFxBudget.OVER_SCALE)
 	_sprite_left -= 1
 	var mm: MultiMesh = p["mm"]
 	mm.set_instance_transform(i, xf)

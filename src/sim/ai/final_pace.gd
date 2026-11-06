@@ -24,6 +24,11 @@ extends RefCounted
 ##   pulls you to its level: your damage on it × nerf_permille (pace_ref_dps / the dps its HP was set from, at least
 ##   nerf_min_permille: the base hero's damage), your move speed at most the base (Stats.move_permille). Outside, it
 ##   fights with its own kit and you with yours.
+## - v0.9.5 BH1 (owner Q11, HC7): each loop finished (n = min(loop - 1, loop_ease_max)) shortens the fight:
+##   pace_ref_ticks and the floor pace_min_ticks (and the rate cap, which is that floor) are cut by
+##   loop_time_ease_permille (120) per loop before the square root and the clamp (ease_permille); the final bodies'
+##   attacks hit loop_damage_ease_permille (80) per loop softer (damage_ease_permille; FinalBoss._spawn). v0.9.5 BH2:
+##   the three numbers (3, 120, 80) are data (data/tuning/sim.tres, SimTuning), no longer constants here.
 ## Pure: integer maths (64-bit), the integer square root (CatchUp.isqrt); no stream is drawn.
 
 enum Mimic { OFF, WARN, ON }
@@ -45,19 +50,38 @@ static func table(w: World) -> BossTable:
 # --- the HP ---------------------------------------------------------------------------------------------------------
 
 
+## v0.9.5 BH1 (Q11): the loops finished that ease the final fight: min(loop - 1, loop_ease_max) (3 as shipped).
+static func loops_eased(w: World) -> int:
+	return clampi(w.loop - 1, 0, w.tuning.loop_ease_max)
+
+
+## v0.9.5 BH1: what the fight's target time (and its floor) is scaled by, per mille: 1000 - 120 per loop finished
+## (loop_time_ease_permille).
+static func ease_permille(w: World) -> int:
+	return 1000 - w.tuning.loop_time_ease_permille * loops_eased(w)
+
+
+## v0.9.5 BH1: what the final bodies' attack damage is scaled by, per mille: 1000 - 80 per loop finished
+## (loop_damage_ease_permille).
+static func damage_ease_permille(w: World) -> int:
+	return 1000 - w.tuning.loop_damage_ease_permille * loops_eased(w)
+
+
 ## The HP a paced body of table t gets at `dps_milli` (the measured damage per second × 1000): see the class doc.
-static func hp_for(dps_milli: int, t: BossTable) -> int:
+static func hp_for(dps_milli: int, t: BossTable, ease: int = 1000) -> int:
 	if dps_milli <= 0:
 		return clampi(t.hp, t.dps_hp_min, maxi(t.dps_hp_min, t.dps_hp_max))
-	var time := seconds_at(dps_milli, t)
+	var time := seconds_at(dps_milli, t, ease)
 	var hp := dps_milli * time * t.window_permille / (SimTick.TICKS_PER_SECOND * 1000 * 1000)
 	return clampi(hp, t.dps_hp_min, maxi(t.dps_hp_min, t.dps_hp_max))
 
 
-## The ticks a paced body of table t lasts at `dps_milli`: pace_ref_ticks × sqrt(ref / dps), clamped.
-static func seconds_at(dps_milli: int, t: BossTable) -> int:
+## The ticks a paced body of table t lasts at `dps_milli`: pace_ref_ticks × sqrt(ref / dps), clamped. `ease` (per
+## mille; v0.9.5 BH1: ease_permille) scales pace_ref_ticks and the clamp's floor.
+static func seconds_at(dps_milli: int, t: BossTable, ease: int = 1000) -> int:
 	var root := CatchUp.isqrt(t.pace_ref_dps * 1000000000 / maxi(1, dps_milli))  # sqrt(ref / dps) per mille
-	return clampi(t.pace_ref_ticks * root / 1000, t.pace_min_ticks, t.pace_max_ticks)
+	var lo := maxi(1, t.pace_min_ticks * ease / 1000)
+	return clampi(t.pace_ref_ticks * ease / 1000 * root / 1000, lo, maxi(lo, t.pace_max_ticks))
 
 
 ## The meter's damage per second × 1000 for table t ([dps_milli, seconds]; 0 when fewer than dps_min_seconds held).
@@ -86,7 +110,7 @@ static func _try_set(w: World, i: int, t: BossTable) -> void:
 	if dps <= 0:
 		return
 	var a := w.actors
-	var hp := hp_for(dps, t)
+	var hp := hp_for(dps, t, ease_permille(w))
 	var fill := a.hp[i] * 1000 / maxi(1, a.max_hp[i])
 	a.max_hp[i] = hp
 	a.hp[i] = clampi(hp * fill / 1000, 1, hp)
@@ -101,18 +125,20 @@ static func advance(w: World, i: int, t: BossTable) -> void:
 	var a := w.actors
 	if a.state[i] == EnemyAi.State.SPAWN or a.dead[i] == 1:
 		return
+	if f.ip_stage >= BossInterphase.STAGE_VANISHED:
+		return  # v0.9.5 BH6: vanished, the bucket does not fill and no window cue comes
 	if t.pace:
 		if not f.paced:
 			_try_set(w, i, t)
-		var rate := rate_milli(a.max_hp[i], t)
+		var rate := rate_milli(a.max_hp[i], t, ease_permille(w))
 		f.pace_budget = mini(f.pace_budget + rate, rate * maxi(1, t.pace_burst_ticks))
 	if t.mimic and t.window_ticks > 0:
 		_cue(w, i, t)
 
 
 ## The bucket's gain a tick (× 1000) for a body of `max_hp`.
-static func rate_milli(max_hp: int, t: BossTable) -> int:
-	return maxi(1, max_hp * 1000 / maxi(1, t.pace_min_ticks))
+static func rate_milli(max_hp: int, t: BossTable, ease: int = 1000) -> int:
+	return maxi(1, max_hp * 1000 / maxi(1, t.pace_min_ticks * ease / 1000))
 
 
 ## BossGates.clamp_damage (through FinalBoss.clamp_damage): the player's hit of `amount` on the body: The Fallen's
@@ -147,8 +173,15 @@ static func window_at(w: World, tick: int) -> int:
 	var i := FinalBoss.body_index(w)
 	if i < 0 or w.actors.dead[i] == 1 or w.actors.state[i] == EnemyAi.State.SPAWN:
 		return Mimic.OFF
+	if f.ip_stage >= BossInterphase.STAGE_VANISHED:
+		return Mimic.OFF  # v0.9.5 BH6: no window while it is vanished
 	var u := (
-		tick - f.phase_tick - w.tuning.boss_intro_ticks - t.window_first_ticks + t.window_warn_ticks
+		tick
+		- f.phase_tick
+		- f.ip_total
+		- w.tuning.boss_intro_ticks
+		- t.window_first_ticks
+		+ t.window_warn_ticks
 	)
 	if u < 0:
 		return Mimic.OFF
@@ -195,6 +228,7 @@ static func window_clock(w: World) -> Array[int]:
 	var u := (
 		w.tick
 		- f.phase_tick
+		- f.ip_total
 		- w.tuning.boss_intro_ticks
 		- t.window_first_ticks
 		+ t.window_warn_ticks

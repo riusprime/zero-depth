@@ -77,6 +77,8 @@ func test_every_body_has_the_clips_its_moves_need() -> void:
 			assert_true(lib.has(clip), "%s has its %s clip" % [id, clip])
 		for atk: Resource in def.get("attacks"):
 			var move := StringName(atk.get("move"))
+			if move == &"interphase":
+				continue  # v0.9.5 BH6: a carrier of the Fallen's interphase hits, never picked: no clip
 			assert_true(lib.has(move), "%s: %s (%s) has its clip" % [id, atk.get("id"), move])
 			assert_true(BossAnimator.MOVE_CLIPS.values().has(move), "%s is a sim move" % move)
 		for c: BossClip in lib.values():

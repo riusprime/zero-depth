@@ -36,8 +36,8 @@ script = ExtResource("2_op")
 op = 0
 stage = 3
 field = &"share_permille"
-value = 450.0
-per_level = 22.0
+value = 900.0
+per_level = 43.0
 
 [sub_resource type="Resource" id="Op_6"]
 script = ExtResource("2_op")
@@ -65,7 +65,7 @@ script = ExtResource("2_op")
 op = 0
 stage = 5
 field = &"life_seconds"
-value = 1.0
+value = 1.3
 
 [sub_resource type="Resource" id="Op_8"]
 script = ExtResource("2_op")

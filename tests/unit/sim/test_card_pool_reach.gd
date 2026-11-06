@@ -39,6 +39,9 @@ func test_every_card_in_the_pool_is_offered_from_some_reachable_state() -> void:
 			gut.p(line)
 		for k in keys:
 			var c: Array = counts.get(k, [0, 0])
+			if k == "ability:pulse_gun":  # v0.9.5 CLV: the Pulse Gun is never offered
+				assert_eq(c[0] + c[1], 0, "%s: the Pulse Gun is never offered" % build)
+				continue
 			assert_gt(c[0] + c[1], 0, "%s: %s is offered somewhere" % [build, k])
 		var legend := {}  # v0.8.0 RR: a Legendary card is the boss's tier, offered here only rarely
 		for t in CardPoolSurvey.world(_repo, 1, build, []).item_tables:

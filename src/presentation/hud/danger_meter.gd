@@ -1,52 +1,106 @@
 class_name DangerMeter
 extends Control
-## The danger meter (PLAN v0.3.0 L23: "something visual instead of numbers"; v0.3.5 F15: calmer). No digits: a row
-## of short MARKS shows the tier (one lit per tier reached, from tier 1), and a thin line under them fills toward
-## the next tier (one 30 s tier per line, the spawn director's tier_ticks; SEGMENTS is how finely it is read).
-## Colours run cool to hot as the tier rises; when the tier goes up the lit marks brighten for a moment. Past the
-## last mark it reads "overdrive": every mark lit red. It shows what WorldReader says (tier, tier_progress) and
-## decides nothing.
-## v0.5.5 A5 (Ember stone): in HudStyle.EMBER the marks are small ember teeth (triangles), as in the B mockup.
+## The danger meter (PLAN v0.3.0 L23: "something visual instead of numbers"). v0.10.5 O6 (owner P4, 2026-11-01: "modify
+## the triangles at the top to be a line filling up as a danger hazard texture, small kinda shaped like hp but green to
+## red blinking when full"; G2 overnight pick, docs/roadmap/v0.10.5/evidence/O6_DANGER_BAR.md): the ember teeth are
+## gone. A thin bar shaped like the HP bar (dark track, lit top edge, stone rim) fills along the floor's danger curve,
+## full at FULL_TIER (the overtime reaches it at the 10-minute mark), drawn with a diagonal hazard-stripe texture made
+## here (no asset) in green → yellow → red as it fills. Full, it blinks slowly (reduced motion: steady red). A tier rise
+## still brightens it for a moment, and from NUMBER_TIER the tier number stays beside it (v0.9.5 DC). It shows what
+## WorldReader says (tier, tier_progress) and decides nothing.
+## v0.10.5 W3-O17 (UI style Astral; owner: "and what about the rest of the UI? it should match the new style"): in
+## HudStyle.ASTRAL the stripes give way to the round-2 mock's danger line: a slim ink bed in a hairline frame, a fill
+## 3 px line in the same ramp (Astral's muted tones: sage, pale gold, rose-red), a tick under the bed for each tier, a
+## diamond marker at the fill's end (filled and blinking once full) and the tier number in Cinzel. Same information.
 
-## The tier marks (named chevrons in v0.3.0; the API keeps the name).
-const CHEVRONS := 6
-const SEGMENTS := 10
+## v0.9.5 DC (owner: "aim to a 10 minutes max per floor"): from this tier on the meter also shows the tier number
+## ("×7"). v0.10.5 O6: the bar is full at FULL_TIER (data/curves/floor_N.tres: the overtime's last start, 600 s).
+const NUMBER_TIER := 4
+const FULL_TIER := 10
+const NUMBER_W := 34.0
+const NUMBER_SIZE := 13
 ## The rise pulse lasts this long (s).
 const PULSE_S := 0.8
-const SIZE := Vector2(132, 14)
-const MARK := Vector2(16, 4)
+## The bar (the HP bar's look, thinner) and the blink when full: slow, one cycle every 1 / BLINK_HZ s.
+const SIZE := Vector2(190, 9)
+const BLINK_HZ := 0.7
+const BLINK_LOW := 0.3
+## The hazard stripes: a period of STRIPE px at 45°, the dark band at STRIPE_DARK of the colour.
+const STRIPE := 10
+const STRIPE_DARK := 0.45
+## v0.10.5 W3-O17: the ramp in Astral's muted tones (no saturated green, no orange): sage, pale gold, rose-red.
+const GREEN := Color("#8CC9A6")
+const YELLOW := Color("#E2CB8E")
+const RED := HudStyle.A_WARN
+## ASTRAL: the tier number's size (Cinzel).
+const A_NUMBER_SIZE := 16
+
+static var _stripes: ImageTexture
 
 var style: HudStyle.Style
+var bar_size := SIZE
+## Whether the tier number is drawn from NUMBER_TIER (the mockups turn it off for a variant).
+var show_number := true
 var _tier := 0
 var _progress := 0.0
 var _pulse := 0.0
 var _seen := false
+var _clock := 0.0
 
 
 func _init(s: HudStyle.Style = HudStyle.current) -> void:
 	style = s
 	name = "DangerMeter"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	custom_minimum_size = SIZE
+	resize_to(SIZE)
 
 
-## Marks lit at this tier (0-based, as WorldReader.tier).
-static func lit_chevrons(tier: int) -> int:
-	return clampi(tier + 1, 1, CHEVRONS)
+## Sets the bar's size (and the room for the number to its right).
+func resize_to(bar: Vector2) -> void:
+	bar_size = bar
+	custom_minimum_size = Vector2(bar.x + (NUMBER_W if show_number else 0.0), maxf(bar.y, 14.0))
+	queue_redraw()
 
 
-## Progress steps lit at this progress (0..1) toward the next tier.
-static func lit_segments(progress: float) -> int:
-	return clampi(floori(progress * SEGMENTS), 0, SEGMENTS)
+## 0..1: how full the bar is at this tier and progress (tier + progress over FULL_TIER).
+static func fill_of(tier: int, progress: float) -> float:
+	return clampf((maxi(0, tier) + clampf(progress, 0.0, 1.0)) / FULL_TIER, 0.0, 1.0)
 
 
-## 0 (tier 1, cool) .. 1 (the last mark, hot).
-static func heat(tier: int) -> float:
-	return clampf(float(tier) / (CHEVRONS - 1), 0.0, 1.0)
+static func is_full(tier: int) -> bool:
+	return tier >= FULL_TIER
 
 
-static func overdrive(tier: int) -> bool:
-	return tier >= CHEVRONS
+## Green at empty, yellow halfway, red at full.
+static func color_at(f: float) -> Color:
+	var x := clampf(f, 0.0, 1.0)
+	if x <= 0.5:
+		return GREEN.lerp(YELLOW, x * 2.0)
+	return YELLOW.lerp(RED, (x - 0.5) * 2.0)
+
+
+## v0.9.5 DC: whether the tier number is drawn.
+static func shows_number(tier: int) -> bool:
+	return tier >= NUMBER_TIER
+
+
+## The fill's brightness at `t` s while full: 1 .. BLINK_LOW, slowly; 1 always under reduced motion.
+static func blink_level(t: float, reduced: bool) -> float:
+	if reduced:
+		return 1.0
+	return lerpf(BLINK_LOW, 1.0, 0.5 + 0.5 * cos(t * TAU * BLINK_HZ))
+
+
+## The hazard-stripe tile (white and STRIPE_DARK grey diagonal bands, tinted by the fill colour), made once.
+static func stripes() -> ImageTexture:
+	if _stripes == null:
+		var img := Image.create(STRIPE, STRIPE, false, Image.FORMAT_RGBA8)
+		for y in STRIPE:
+			for x in STRIPE:
+				var v := 1.0 if (x + y) % STRIPE < STRIPE / 2 else STRIPE_DARK
+				img.set_pixel(x, y, Color(v, v, v, 1.0))
+		_stripes = ImageTexture.create_from_image(img)
+	return _stripes
 
 
 func set_danger(tier: int, progress: float) -> void:
@@ -62,12 +116,27 @@ func tier_shown() -> int:
 	return _tier
 
 
-func chevrons_lit() -> int:
-	return lit_chevrons(_tier)
+func fill() -> float:
+	return fill_of(_tier, _progress)
 
 
-func segments_lit() -> int:
-	return lit_segments(_progress)
+func full() -> bool:
+	return is_full(_tier)
+
+
+## The fill's colour now (red when full).
+func bar_color() -> Color:
+	return color_at(fill())
+
+
+## True while the full bar blinks (never under reduced motion).
+func blinking() -> bool:
+	return full() and not HudStyle.reduced_motion
+
+
+## The fill's brightness this frame (1 unless blinking).
+func level() -> float:
+	return blink_level(_clock, HudStyle.reduced_motion) if full() else 1.0
 
 
 func pulsing() -> bool:
@@ -78,29 +147,93 @@ func _process(delta: float) -> void:
 	if _pulse > 0.0:
 		_pulse = maxf(0.0, _pulse - delta / PULSE_S)
 		queue_redraw()
+	if full():
+		_clock += delta
+		queue_redraw()
+	else:
+		_clock = 0.0
 
 
 func _draw() -> void:
 	var p := 0.0 if HudStyle.reduced_motion else _pulse
-	var hot := HudStyle.danger_color(heat(_tier))
-	var lit := lit_chevrons(_tier)
-	var over := overdrive(_tier)
-	var gap := (SIZE.x - CHEVRONS * MARK.x) / (CHEVRONS - 1)
-	for k in CHEVRONS:
-		var on := k < lit
-		var c := HudStyle.danger_color(heat(k)) if on else HudStyle.dim(style)
-		if over:
-			c = HudStyle.WARN
-		if on and p > 0.0:
-			c = c.lerp(Color.WHITE, 0.5 * p)
-		var x := k * (MARK.x + gap)
-		if style == HudStyle.Style.EMBER:
-			var tooth := PackedVector2Array(
-				[Vector2(x + 1, 10), Vector2(x + MARK.x * 0.5, 0), Vector2(x + MARK.x - 1, 10)]
+	var h := bar_size.y
+	var top := floorf((size.y - h) * 0.5) if size.y > h else 0.0
+	var astral := style == HudStyle.Style.ASTRAL
+	if astral:
+		top = floorf((size.y - 14.0) * 0.5) if size.y > 14.0 else 0.0
+		draw_astral(self, Rect2(0, top, bar_size.x, 14.0), fill(), level(), p, FULL_TIER)
+	else:
+		draw_bar(self, Rect2(0, top, bar_size.x, h), fill(), level(), p)
+	if show_number and shows_number(_tier):
+		var num_col := bar_color()
+		if p > 0.0:
+			num_col = num_col.lerp(Color.WHITE, 0.5 * p)
+		var text := tr("HUD_DANGER_TIER") % _tier
+		if astral:
+			var base := Vector2(bar_size.x + 8.0, top + 13.0)
+			AstralHudParts.serif_text(
+				self,
+				text,
+				base,
+				A_NUMBER_SIZE,
+				num_col,
+				HORIZONTAL_ALIGNMENT_LEFT,
+				NUMBER_W,
+				0,
+				700
 			)
-			draw_colored_polygon(tooth, c)
-		else:
-			draw_rect(Rect2(x, 0, MARK.x, MARK.y), c)
-	var y := SIZE.y - 2.0
-	draw_rect(Rect2(0, y, SIZE.x, 2), Color(0, 0, 0, 0.4))
-	draw_rect(Rect2(0, y, SIZE.x * _progress, 2), Color(hot, 0.85))
+			return
+		var font := HudStyle.font(true)
+		var at := Vector2(bar_size.x + 6.0, top + h * 0.5 + 5.0)
+		draw_string_outline(
+			font, at, text, HORIZONTAL_ALIGNMENT_LEFT, NUMBER_W, NUMBER_SIZE, 3, Color(0, 0, 0, 0.6)
+		)
+		draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, NUMBER_W, NUMBER_SIZE, num_col)
+
+
+## v0.10.5 W3-O17: ASTRAL's danger line on `c` in `r` (14 px tall): the slim bed in its hairline frame with end ticks,
+## a tick under it per tier (`tiers`; the passed ones lit), the fill a 3 px line in the ramp's colour at brightness
+## `lit` to `f`, and the diamond marker at its end, filled once full (it blinks with `lit`). `p` is the rise pulse.
+static func draw_astral(
+	c: CanvasItem, r: Rect2, f: float, lit: float, p: float = 0.0, tiers := FULL_TIER
+) -> void:
+	var x0 := roundf(r.position.x) + 4.0
+	var x1 := roundf(r.end.x) - 4.0
+	var y := roundf(r.position.y) + 4.0
+	var bed := Rect2(x0, y, x1 - x0, 5)
+	AstralHudParts.slim_bed(c, bed, 0.4)
+	var metal := HudStyle.A_METAL
+	AstralChrome.vline(c, x0 - 2, y - 3, y + 8, Color(metal, 0.6))
+	AstralChrome.vline(c, x1 + 1, y - 3, y + 8, Color(metal, 0.6))
+	var fx := roundf(x0 + (x1 - x0) * clampf(f, 0.0, 1.0))
+	for k in range(1, tiers):
+		var tx := roundf(x0 + (x1 - x0) * float(k) / tiers)
+		AstralChrome.vline(c, tx, y + 6, y + 9, Color(metal, 0.7 if tx <= fx else 0.28))
+	var col := color_at(f)
+	if p > 0.0:
+		col = col.lerp(Color.WHITE, 0.5 * p)
+	col = Color(col.r * lit, col.g * lit, col.b * lit, 1.0)
+	if fx > x0 + 1.0:
+		c.draw_rect(Rect2(x0 + 1, y + 1, fx - x0 - 1, 3), col)
+	var full := f >= 1.0
+	var mk := Vector2(fx + 0.5, y + 2.5)
+	AstralChrome.dia(
+		c, mk, 4.5, HudStyle.A_LINE_HI if not full else col, col if full else HudStyle.A_INK
+	)
+
+
+## The bar on `c` in `r`: the HP bar's dark track and stone rim, the striped fill to `f` (0..1) in its colour at
+## brightness `lit`, its lit top edge, and the rise pulse `p` (0..1) toward white. The G2 mockups draw it too.
+static func draw_bar(c: CanvasItem, r: Rect2, f: float, lit: float, p: float = 0.0) -> void:
+	if c.texture_repeat != CanvasItem.TEXTURE_REPEAT_ENABLED:  # the stripes tile
+		c.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	c.draw_rect(r, Color(0, 0, 0, 0.6))
+	var fw := roundf(r.size.x * clampf(f, 0.0, 1.0))
+	if fw > 0.0:
+		var col := color_at(f)
+		if p > 0.0:
+			col = col.lerp(Color.WHITE, 0.5 * p)
+		col = Color(col.r * lit, col.g * lit, col.b * lit, 1.0)
+		c.draw_texture_rect(stripes(), Rect2(r.position, Vector2(fw, r.size.y)), true, col)
+		c.draw_rect(Rect2(r.position, Vector2(fw, 1)), Color(1, 1, 1, 0.22 * lit))
+	c.draw_rect(r.grow(1.0), HudStyle.STONE_EDGE, false, 1.0)

@@ -141,65 +141,15 @@ func test_m5_echo_slash_throws_a_crescent_as_wide_as_the_arc() -> void:
 	)
 
 
-func test_m6_edge_rounds_pierce_once_and_slash_where_they_hit() -> void:
-	var w := W.world(&"gun", [&"edge_rounds"], [[Vector2(2.0, 0.0), 500], [Vector2(3.5, 0.0), 500]])
-	var bolt := Modifiers.bolt(w)
-	assert_eq(bolt.pierce, 1)
-	assert_eq(W.hook_of(bolt, &"edge_rounds").child.form, FORM.ARC)
-	W.run(w, 2, 0, W.S)
-	W.run(w, 20)
-	var hits := W.events(w, SimEvent.Kind.HIT, &"")
-	var on := []
-	for e in hits:
-		if e.owner_id == w.actors.ids[0] and not on.has(e.target_id):
-			on.append(e.target_id)
-	assert_eq(on.size(), 2, "the first bolt goes through the first dummy into the second")
-	assert_gt(W.damage(w, &"edge_rounds").size(), 0, "a short slash where it hit")
-
-
-func test_m7_shock_circles_turn_shots_into_rings_at_half_range() -> void:
-	var plain := W.world(&"gun")
-	var range_m := SpecForms.range_of(Modifiers.bolt(plain))
-	var w := W.world(&"gun", [&"shock_circles"], [[Vector2(2.0, 0.5), 500]])
-	var bolt := Modifiers.bolt(w)
-	assert_eq(bolt.form, FORM.RING)
-	assert_almost_eq(bolt.radius_m, clampf(range_m * 0.5, 1.5, 6.0), 1e-4, "half the shot's range")
-	assert_true(bolt.has_status(&"shock") and bolt.elements.has("storm"))
-	W.run(w, 3, 0, W.S)
-	assert_gt(w.ab.ring_pos.size(), 0, "a ring grows from the player")
-	W.run(w, 30, 0, W.S)
-	var shocked := W.events(w, SimEvent.Kind.STATUS_APPLY, Engines.EFFECT_SHOCK)
-	assert_gt(shocked.size(), 0, "the ring shocks what it passes")
-
-
-func test_m8_halo_shot_fires_all_round_three_times_the_count_at_half_range() -> void:
+func test_m8_halo_shot_fires_all_round_four_times_the_count_at_half_range() -> void:  # v0.9.5 CLV: Lv 1 = 4
 	var plain := Modifiers.bolt(W.world(&"gun"))
 	var w := W.world(&"gun", [&"halo_shot"])
 	var bolt := Modifiers.bolt(w)
-	assert_eq([bolt.count, bolt.directions], [plain.count * 3, AttackSpec.DIR_CIRCLE])
+	assert_eq([bolt.count, bolt.directions], [plain.count * 4, AttackSpec.DIR_CIRCLE])
 	assert_eq(bolt.life_ticks, plain.life_ticks / 2)
-	assert_eq(Attacks.shot_offsets(bolt), PackedInt32Array([0, 1365, 2730]))
+	assert_eq(Attacks.shot_offsets(bolt), PackedInt32Array([0, 1024, 2048, 3072]))
 	W.run(w, 2, 0, W.S)
-	assert_eq(W.projectiles_of(w, Modifiers.GUN_BOLT), 3, "three bolts round the player")
-
-
-func test_m9_boomerang_projectiles_come_back() -> void:
-	var w := W.world(&"gun", [&"boomerang"])
-	assert_eq(Modifiers.bolt(w).returns, 1)
-	W.run(w, 1, 0, W.S)
-	W.run(w, 1)
-	var p := w.projectiles
-	assert_eq(p.ret[0], 1, "flying out")
-	var far := 0.0
-	var back := false
-	for t in Modifiers.bolt(w).life_ticks:
-		w.step(W.frame())
-		if p.size() == 0:
-			break
-		var d := Kin.length(Vector2(p.pos_x[0], p.pos_y[0]) - w.player_pos())
-		far = maxf(far, d)
-		back = back or (p.ret[0] == 2 and d < far - 1.0)
-	assert_true(back, "it turns back at half its life and heads for the player")
+	assert_eq(W.projectiles_of(w, Modifiers.GUN_BOLT), 4, "four bolts round the player")
 
 
 func test_m10_orbit_rounds_circle_the_player_before_they_fly() -> void:
@@ -220,10 +170,10 @@ func test_m10_orbit_rounds_circle_the_player_before_they_fly() -> void:
 	assert_gt(d, ProjectileMoves.ORBIT_R_M + 1.0, "then it leaves")
 
 
-func test_m11_split_shot_splits_in_three_and_the_splits_never_split() -> void:
+func test_m11_split_shot_splits_in_two_and_the_splits_never_split() -> void:  # v0.9.5 CLV: Lv 1 = 2
 	var w := W.world(&"gun", [&"split_shot"], [[Vector2(2.0, 0.0), 2000]])
 	var k := W.hook_of(Modifiers.bolt(w), &"split_shot")
-	assert_eq([k.trigger, k.child.form, k.child.count], [TRIG.ON_HIT, FORM.BOLT, 3])
+	assert_eq([k.trigger, k.child.form, k.child.count], [TRIG.ON_HIT, FORM.BOLT, 2])
 	assert_null(W.hook_of(k.child, &"split_shot"), "lineage: its own child carries no split")
 	assert_true(k.child.lineage.has("split_shot"))
 	W.run(w, 1, 0, W.S)
@@ -231,42 +181,7 @@ func test_m11_split_shot_splits_in_three_and_the_splits_never_split() -> void:
 	for t in 20:
 		w.step(W.frame())
 		seen = maxi(seen, W.projectiles_of(w, &"split_shot"))
-	assert_eq(seen, 3, "three splits leave the hit")
-
-
-func test_m12_twin_cast_repeats_a_shot_and_rides_the_blade_echo() -> void:
-	var w := W.world(&"gun", [&"twin_cast"])
-	var bolt := Modifiers.bolt(w)
-	assert_eq([bolt.repeat_delay_ticks, bolt.repeat_damage_permille], [12, 500])
-	W.run(w, 1, 0, W.S)
-	assert_eq(w.mx.q_key.size(), 1, "the repeat waits")
-	W.run(w, 13)
-	var spawned := 0
-	for e in W.events(w, SimEvent.Kind.SPAWN):
-		if w.projectiles.ids.has(e.target_id) or e.owner_id == w.actors.ids[0]:
-			spawned += 1
-	assert_gte(spawned, 2, "the shot, then its repeat")
-	assert_eq(w.mx.q_key.size(), 0)
-	var b := W.world(&"blade", [&"twin_cast"], [[Vector2(1.0, 0.0), 2000]])
-	assert_eq(Modifiers.step(b, 0).repeat_delay_ticks, 12)
-	W.run(b, 30, W.P)
-	assert_eq(b.mx.q_key.size(), 0, "a combo step repeats through its Twin Arc echo, not the queue")
-	assert_gt(b.echo_tick, -1, "the echo swung")
-
-
-func test_m13_rearguard_fires_back_at_sixty_percent() -> void:
-	var w := W.world(&"gun", [&"rearguard"], [[Vector2(-2.0, 0.0), 2000]])
-	assert_eq(Modifiers.bolt(w).back_permille, 600)
-	W.run(w, 1, 0, W.S)
-	W.run(w, 1)
-	assert_eq(W.projectiles_of(w, Modifiers.GUN_BOLT), 2)
-	var back := false
-	for i in w.projectiles.size():
-		back = back or w.projectiles.vel_x[i] < 0.0
-	assert_true(back, "one bolt flies back")
-	W.run(w, 20)
-	var hit := W.damage(w, &"")
-	assert_gt(hit.size(), 0, "the enemy behind is hit")
+	assert_eq(seen, 2, "two splits leave the hit")
 
 
 ## v0.6.5 WN4: Wide Arc is the Blade pool's B1 (WAND.md): +60° and +30 % reach on the slash, the Gun untouched
@@ -279,12 +194,3 @@ func test_m14_wide_arc_widens_arcs_and_grows_projectiles() -> void:
 	assert_eq(b.half_arc - a.half_arc, ContentCompiler.degrees_to_units(30.0), "+60° wide")
 	assert_eq(b.reach_bonus_permille, 300, "+30 % reach")
 	assert_almost_eq(Modifiers.bolt(w).radius_m, Modifiers.bolt(plain).radius_m, 1e-5, "Blade-only")
-
-
-## v0.8.0 P2 (owner O24): Void no longer pulls on every hit. v0.9.0 VP (owner C §6.4): its floor black holes are gone
-## too and the card is retired; the Void form (test_void.gd) replaces it.
-func test_m15_the_old_void_pulls_nothing_and_leaves_no_black_hole() -> void:
-	var w := W.world(&"gun", [&"gravity_well"])
-	assert_null(W.hook_of(Modifiers.bolt(w), &"gravity_well"), "no pull burst")
-	assert_eq(Modifiers.bolt(w).pull_m, 0.0)
-	assert_false(VoidShots.is_void(Modifiers.bolt(w)), "not the Void form")

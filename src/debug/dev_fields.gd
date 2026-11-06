@@ -71,7 +71,9 @@ const GROUPS := [
 			"res://data/abilities",
 			"res://data/combos",
 			"res://data/stat_cards",
+			"res://data/starbound",  # v0.10.5 W3-P10b: the Starbound cards
 			"res://data/wand",
+			"res://data/vfx",  # v0.10.0: the VFX pack's effect table (scales, colours)
 		],
 		"",
 	],

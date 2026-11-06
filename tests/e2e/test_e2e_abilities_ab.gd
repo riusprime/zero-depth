@@ -1,7 +1,6 @@
 extends GutTest
 ## v0.4.0 AB through the real game (main.tscn, input only: keys, the stick and mouse clicks on the dev panel):
-## - the dev panel grants Bomb Lobber and Arc Field to level 3: the pair evolves into Storm Bombs, its combo card
-##   shows with both abilities, its badge joins the HUD row, and in play its blasts chain lightning;
+## v0.10.5 O1: the Storm Bombs pair test is gone with the retired abilities.
 ## - the dev route puts the hero by the Overrun door, the stick walks through the red frame: the banner shows, the
 ##   room's enemies arrive as Overrun enemies.
 
@@ -16,59 +15,7 @@ func _click(e: E2e, main: Main, button: String) -> void:
 	await e.click_at(b.get_global_rect().get_center())
 
 
-## Clicks NextAbility until the panel's choice is `id`, then GrantAbility `times` times.
-func _grant(e: E2e, main: Main, id: StringName, times: int) -> void:
-	var w := e.world()
-	for k in w.ability_tables.size():
-		if w.ability_tables[main.driver.debug.ability_choice].id == id:
-			break
-		await _click(e, main, "NextAbility")
-	assert_eq(w.ability_tables[main.driver.debug.ability_choice].id, id)
-	for k in times:
-		await _click(e, main, "GrantAbility")
-		await e.frames(1)
-
-
-func test_dev_panel_grants_a_pair_and_storm_bombs_evolve() -> void:
-	var e := E2e.new(self)
-	var main: Main = await e.boot()
-	await e.start_from_menu()
-	var w := e.world()
-	var hud: Hud = main.get_node("UI/Hud")
-	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
-	await _grant(e, main, &"bomb_lobber", 3)
-	await _grant(e, main, &"arc_field", 2)
-	assert_false(Engines.has_combo(w, ComboTable.Effect.STORM_BOMBS), "L3 + L2: not yet")
-	await _grant(e, main, &"arc_field", 1)
-	await e.frames(3)
-	assert_true(Engines.has_combo(w, ComboTable.Effect.STORM_BOMBS), "both at L3: evolved")
-	assert_true(hud.combo_card().is_showing(), "the combo card shows")
-	assert_eq(hud.combo_card().pair_ids(), [&"bomb_lobber", &"arc_field"], "with both abilities")
-	assert_gte(hud.combo_badge_count(), 1, "and its badge")
-	for k in 2:
-		await _click(e, main, "SpawnEnemy")
-		await e.frames(2)
-	await e.tap(KEY_QUOTELEFT)
-	var seq := w.last_event_seq()
-	var storm := false
-	var drawn := false
-	for k in 1800:
-		await e.frames(1)
-		if k % 15 == 0:  # v0.6.0 MX2: Bomb Lobber lobs on every 4th attack (left mouse swings)
-			await e.mouse_button(MOUSE_BUTTON_LEFT, true)
-			await e.mouse_button(MOUSE_BUTTON_LEFT, false)
-		for ev in w.events_since(seq):
-			storm = storm or (ev.kind == SimEvent.Kind.DAMAGE and ev.effect_id == &"storm_bombs")
-		seq = w.last_event_seq()
-		drawn = drawn or main.view.element_fx.fx_count_of(&"storm") > 0
-		if storm and drawn:
-			break
-	assert_true(storm, "a blast chained lightning (Storm Bombs)")
-	assert_true(drawn, "and the chain was drawn")
-
-
-func test_walk_through_the_red_door_into_an_overrun() -> void:
+func test_walk_over_the_red_rune_into_an_overrun() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
@@ -76,8 +23,8 @@ func test_walk_through_the_red_door_into_an_overrun() -> void:
 	var hud: Hud = main.get_node("UI/Hud")
 	var o := main.driver.reader.overrun()
 	assert_true(o["active"], "this floor has an Overrun room")
-	assert_gte(main.view.overrun_doors.frame_count(), 1, "its doorway is framed")
-	assert_true(main.view.overrun_doors.is_lit(), "in red")
+	assert_gte(main.view.overrun_doors.rune_count(), 1, "a red rune lies outside its doorway")
+	assert_true(main.view.overrun_doors.is_lit(), "glowing")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
 	await _click(e, main, "GoOverrun")  # the dev route: by the door, outside the room
@@ -89,6 +36,11 @@ func test_walk_through_the_red_door_into_an_overrun() -> void:
 	assert_true(main.driver.reader.overrun()["inside"], "inside the Overrun")
 	assert_true(hud.overrun_hud.visible, "the banner shows")
 	assert_eq(hud.overrun_hud.title.text, tr("HUD_OVERRUN"))
+	await e.frames(30)
+	assert_eq(
+		main.view.lockdowns.bars_down(w.floor_layout.overrun_room), 1.0, "v0.9.5 DR: bars fell"
+	)
+	assert_eq(main.view.arenas.barrier_count(), 0, "and no glowing barrier box")
 	var boosted := false
 	for k in 1200:
 		await e.frames(1)

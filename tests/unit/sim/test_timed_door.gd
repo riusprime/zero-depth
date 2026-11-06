@@ -3,7 +3,8 @@ extends GutTest
 ## must reach the entrance before the timer expires. If the player fails, the door closes and the mechanisms reset";
 ## "No permanent penalty for failure. Reset safely without trapping the player"; Q20: 15 s from the second switch, an
 ## epic altar or a chest inside; Q22: puzzle calm, a quarter of the rate; Q23: the room unseen until it opens): the
-## timed door in the sim (TimedDoor on the shared interactables). Either switch order opens it; the timer is 900 ticks
+## timed door in the sim (TimedDoor on the shared interactables). Either switch order opens it; the timer is 1200 ticks
+## (v0.9.5 TS: 20 s)
 ## from the second; on expiry it shuts and both switches reset; it never shuts with the hero in the doorway or inside,
 ## and shuts once the hero has left through it; the room's reward is there; calm holds in the switches' room until it
 ## opens; a save mid-timer resumes exactly.
@@ -37,9 +38,9 @@ func _switch(w: World, k: int) -> void:
 	w.step(_press())
 
 
-## A spot in the host room away from the door (its centre, or a switch).
+## A spot in the host room (the door's neighbour; the switches are in other rooms since v0.9.5 TS).
 func _host_spot(w: World) -> Vector2:
-	return w.floor_layout.timed_switches[0] + Vector2(0.3, 0.0)
+	return w.floor_layout.rooms[w.floor_layout.timed_host].get_center()
 
 
 func test_either_switch_order_opens_it_and_the_timer_runs_out_and_resets() -> void:
@@ -68,11 +69,11 @@ func test_either_switch_order_opens_it_and_the_timer_runs_out_and_resets() -> vo
 		assert_eq(reader.hidden_room(), -1, "the room is seen once it opens")
 		var t0 := reader.timed_open_tick()
 		assert_eq(t0, w.tick - 1, "the timer starts at the second switch")
-		assert_eq(reader.timed_timer_ticks(), 900, "15 s at 60 Hz")
+		assert_eq(reader.timed_timer_ticks(), 1200, "20 s at 60 Hz")
 		_put(w, _host_spot(w))
-		while reader.timed_door_state() == WorldReader.TIMED_OPEN and w.tick - t0 < 1000:
+		while reader.timed_door_state() == WorldReader.TIMED_OPEN and w.tick - t0 < 1300:
 			w.step(InputFrame.new())
-		assert_eq(reader.timed_shut_tick() - t0, 900, "it shuts when the timer runs out")
+		assert_eq(reader.timed_shut_tick() - t0, 1200, "it shuts when the timer runs out")
 		assert_eq(reader.timed_door_state(), WorldReader.TIMED_SHUT)
 		assert_true(_slab_up(w), "the slab is back")
 		for k in reader.timed_switch_count():
@@ -96,7 +97,7 @@ func test_it_never_shuts_on_the_hero() -> void:
 	_switch(w, 1)
 	var t0 := reader.timed_open_tick()
 	_put(w, f.rooms[f.timed_room].get_center())
-	while w.tick - t0 < 960:
+	while w.tick - t0 < 1260:
 		w.step(InputFrame.new())
 	assert_eq(
 		reader.timed_door_state(), WorldReader.TIMED_HELD, "inside the secret room: held open"
@@ -143,7 +144,7 @@ func test_puzzle_calm_until_it_opens_or_you_leave() -> void:
 	for k in 8:
 		w.run_ticks += 1
 		steps += Interactables.spawn_clock_step(w)
-	assert_true(reader.puzzle_calm(), "calm in the switches' room")
+	assert_true(reader.puzzle_calm(), "calm in the door's host room")
 	assert_eq(steps, 2, "the spawn clock at a quarter of the rate")
 	_put(w, f.start_pos)
 	assert_false(reader.puzzle_calm(), "left the room: normal spawning")
@@ -168,7 +169,7 @@ func test_a_save_mid_timer_resumes_exactly() -> void:
 	var base := _world()
 	assert_eq(WorldSnapshot.apply(base, snap), "", "fits")
 	assert_eq(base.state_hash(), w.state_hash(), "same state")
-	for k in 900:
+	for k in 1200:
 		w.step(InputFrame.new())
 		base.step(InputFrame.new())
 	assert_eq(base.state_hash(), w.state_hash(), "and runs on the same (the shut included)")
@@ -177,3 +178,109 @@ func test_a_save_mid_timer_resumes_exactly() -> void:
 	var base2 := _world()
 	assert_eq(WorldSnapshot.apply(base2, shut), "", "a save with the slab back fits")
 	assert_eq(base2.state_hash(), w.state_hash())
+
+
+## Shuts the door on a hero standing inside (a knock-back, a teleport: the only way, as the door holds for the hero).
+func _shut_inside(w: World) -> void:
+	var f := w.floor_layout
+	_switch(w, 0)
+	_switch(w, 1)
+	_put(w, f.rooms[f.timed_room].get_center())
+	w.step(InputFrame.new())
+	w.timed.state = TimedDoor.State.SHUT
+	for s in w.timed.switches:
+		w.interactables.state[s] = 0
+		w.interactables.enabled[s] = 1
+	w.interactables.enabled[w.timed.lever] = 1
+	w.step(InputFrame.new())
+
+
+func test_the_switches_are_elsewhere_and_the_lever_waits_inside() -> void:
+	var w := _world()
+	if w == null:
+		return
+	var f := w.floor_layout
+	var reader := WorldReader.new(w)
+	assert_eq(f.timed_switch_rooms.size(), 2, "two rooms")
+	assert_ne(f.timed_switch_rooms[0], f.timed_switch_rooms[1])
+	for r in f.timed_switch_rooms:
+		assert_ne(r, f.timed_room, "never the secret room")
+		assert_ne(r, f.timed_host, "1-2 steps away, not the host")
+	assert_true(
+		f.rooms[f.timed_room].has_point(f.timed_lever), "the lever is inside the secret room"
+	)
+	assert_eq(w.timed.lever_ticks, 300)
+	assert_eq(w.interactables.kind[w.timed.lever], Interactables.Kind.TIMED_LEVER)
+	assert_eq(reader.timed_lever_entry(), w.timed.lever)
+
+
+func test_the_lever_inside_reopens_a_shut_door_for_five_seconds_as_often_as_needed() -> void:
+	var w := _world()
+	if w == null:
+		return
+	var reader := WorldReader.new(w)
+	var f := w.floor_layout
+	w.step(InputFrame.new())
+	_shut_inside(w)
+	assert_true(_slab_up(w), "shut with the hero inside")
+	_put(w, f.timed_lever + Vector2(0.3, 0.0))
+	w.step(InputFrame.new())
+	assert_eq(reader.interact_prompt_key(), &"TIMED_LEVER_PROMPT", "the prompt by the lever")
+	for pull in 2:
+		w.step(_press())
+		assert_eq(reader.timed_door_state(), WorldReader.TIMED_OPEN, "pulled: open")
+		assert_false(_slab_up(w), "the slab is gone")
+		assert_eq(reader.timed_timer_ticks(), 300, "for 5 s")
+		assert_false(
+			w.interactables.enabled[w.timed.lever] == 1, "the lever takes no press while open"
+		)
+		var t0 := reader.timed_open_tick()
+		_put(w, f.rooms[f.timed_host].get_center())  # walked out
+		while reader.timed_door_state() == WorldReader.TIMED_OPEN and w.tick - t0 < 400:
+			w.step(InputFrame.new())
+		assert_eq(reader.timed_shut_tick() - t0, 300, "it shuts after 300 ticks")
+		assert_true(_slab_up(w))
+		assert_true(w.interactables.enabled[w.timed.lever] == 1, "and the lever is ready again")
+		_put(w, f.timed_lever + Vector2(0.3, 0.0))
+		for k in 20:  # the untaken press ages out of the input buffer
+			w.step(InputFrame.new())
+
+
+func test_the_door_still_holds_while_the_hero_stands_inside_after_a_lever_pull() -> void:
+	var w := _world()
+	if w == null:
+		return
+	var f := w.floor_layout
+	w.step(InputFrame.new())
+	_shut_inside(w)
+	_put(w, f.timed_lever + Vector2(0.3, 0.0))
+	w.step(InputFrame.new())
+	w.step(_press())
+	var t0 := w.timed.open_tick
+	while w.tick - t0 < 360:
+		w.step(InputFrame.new())
+	assert_eq(w.timed.state, TimedDoor.State.HELD, "inside when the 5 s end: held open")
+	_put(w, f.rooms[f.timed_host].get_center())
+	w.step(InputFrame.new())
+	assert_eq(w.timed.state, TimedDoor.State.SHUT, "out: it shuts")
+
+
+func test_a_save_with_the_lever_open_resumes_exactly() -> void:
+	var w := _world()
+	if w == null:
+		return
+	var f := w.floor_layout
+	w.step(InputFrame.new())
+	_shut_inside(w)
+	_put(w, f.timed_lever + Vector2(0.3, 0.0))
+	w.step(InputFrame.new())
+	w.step(_press())
+	for k in 100:
+		w.step(InputFrame.new())
+	var base := _world()
+	assert_eq(WorldSnapshot.apply(base, WorldSnapshot.take(w)), "", "fits")
+	assert_eq(base.state_hash(), w.state_hash())
+	for k in 300:
+		w.step(InputFrame.new())
+		base.step(InputFrame.new())
+	assert_eq(base.state_hash(), w.state_hash())

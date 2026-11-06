@@ -2,7 +2,8 @@ extends GutTest
 ## A named combo through real input (v0.3.0 G, L8; v0.3.0 E moved items onto altars and chests): on the first
 ## floor, walk (left stick only) to every altar and chest, open it with pad X and leave it with B, which keeps an
 ## altar's three cards for later. v0.8.0 N7 (owner O61): a chest deals its one card and any answer, B too, takes it.
-## Then go back to the altars whose cards complete a combo pair and take those cards (d-pad, A).
+## Then go back to the altars whose cards complete a combo pair and take those cards (d-pad, A). v0.10.5 O1: each
+## live combo's first item is held from the start (a labelled helper), so the card taken completes the pair.
 ## Taking the second item unlocks the combo: the combo card names it and the HUD gains its badge.
 
 
@@ -17,7 +18,11 @@ func test_pick_a_combo_pair_from_altars_and_chests() -> void:
 	await e.start_from_menu()
 	var w := e.world()
 	var hud: Hud = main.get_node("UI/Hud")
-	assert_eq(w.combo_tables.size(), 16, "the game loads the combos (8 item, 8 ability: v0.4.0 AB)")
+	assert_eq(
+		w.combo_tables.size(),
+		16,
+		"the combo tables keep their 16 places (v0.10.5 O1: 12 retired stubs)"
+	)
 	# TEST HELPER (labelled): grant shards so the chests can be opened too. Earning shards by input is
 	# test_e2e_rewards.gd; this test is about the combo.
 	w.shards = 10000
@@ -27,27 +32,43 @@ func test_pick_a_combo_pair_from_altars_and_chests() -> void:
 	# tests/unit/sim/test_offers.gd.
 	w.reward_table.altar_card_weights = PackedInt32Array([0, 1, 1000])
 	w.reward_table.chest_card_weights = PackedInt32Array([0, 1, 1000])
+	# v0.9.5 EP2: the pacing table now sets the card-type odds per stage; mods-only holds on every stage.
+	w.loot_pacing.altar_type_weights = PackedInt32Array(
+		[0, 1, 1000, 0, 1, 1000, 0, 1, 1000, 0, 1, 1000]
+	)
+	w.loot_pacing.chest_type_weights = w.loot_pacing.altar_type_weights.duplicate()
 	var offers := {}
 	# TEST HELPER (labelled): v0.5.5 AR locks the rewards in sealed arenas until their waves are cleared (that is
 	# tests/e2e/test_e2e_arenas.gd); this test is about the cards, so the floor's arenas start cleared.
 	w.arenas.cleared = w.floor_layout.arena_rooms.duplicate()
 	if Overrun.enabled(w):
 		w.arenas.cleared.append(w.floor_layout.overrun_room)
+	# TEST HELPER (labelled): v0.9.5 DR makes an arena room a locked room (Lockdowns) once the rules take the arenas;
+	# its reward waits for the lockdown to open (tests/e2e/test_e2e_lockdown.gd), so those rooms start open too.
+	if Lockdowns.takes_arenas(w):
+		for room in w.floor_layout.arena_rooms:
+			if not w.lockdown.cleared.has(room):
+				w.lockdown.cleared.append(room)
 	# TEST HELPER (labelled): with the arenas' rewards placed first (v0.5.5 AR) this floor's few mod cards no longer
 	# happen to hold a pair; the items that belong to no combo are held already, so the cards draw from combo items.
+	# v0.10.5 O1: four combos are left (owner: "Keep those 4"), and a floor's few cards seldom hold both halves of one
+	# in two rewards, so each live combo's first item is held too: the floor's cards complete a pair with its second.
 	var paired := PackedInt32Array()
+	var firsts := PackedInt32Array()
 	for t in w.combo_tables:
-		paired.append_array([t.item_a, t.item_b])
+		if t.item_a >= 0:
+			paired.append(t.item_b)
+			firsts.append(t.item_a)
 	var held := PackedInt32Array()
 	for k in w.item_tables.size():
-		if not paired.has(k):
+		if not paired.has(k) and not w.item_tables[k].retired:
 			held.append(k)
 	w.set_items_owned(held)
 	# v0.6.5 WN3–WN5a: a held wand card below level 5 is still offered (its level-up); held at level 5 it leaves too.
 	for k in held:
 		CardLevels.set_level(w, k, CardLevels.MAX_LEVEL)
 	var left := Array(w.rewards.ids)
-	var taken := PackedInt32Array()  # v0.8.0 N7: the cards the chests dealt (B took them)
+	var taken := firsts.duplicate()  # v0.8.0 N7: the cards the chests dealt (B took them), and the held first halves
 	while not left.is_empty() and not w.player_dead():
 		var id: int = _nearest(w, left)
 		left.erase(id)

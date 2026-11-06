@@ -24,10 +24,24 @@ const GHOST_FADE: Array[float] = [0.45, 0.2]
 const CATCH_M := 1.6
 const CATCH_TICKS := 4.0
 const CATCHES_MAX := 4
+## v0.9.5 FC6: Ring's lightning rings round the discs (the Bomb's ring look, as the Lance's and the Void's): drawn at
+## once, and the ring shader's phase that puts its band at ARC_FRONT of the quad's half-width (0.25 + 0.72 u), so a
+## ring of radius r is drawn at r / ARC_FRONT.
+const ARCS_MAX := 12
+const ARC_U := 0.7
+const ARC_FRONT := 0.754
+
+## v0.10.0 VX7 (VFX_PACK N4): the pack's ring (data/vfx/pack_fx_vx7.tres, pulse_area_03 in the disc's colours), held on
+## each disc, turning with it, over the disc and its afterimages (they stay). false: the disc as before.
+const PACK_RING := true
+const RING_ID := &"vx7_glaive_ring"
+## The ring's scale per metre of the disc's diameter (a pulse ring grows to about 2.2 m round), and its lift over it.
+const RING_PER_M := 0.4
+const RING_LIFT := 0.03
 
 const DISC_SHADER := """
 shader_type spatial;
-render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled, fog_disabled;
 uniform vec4 core : source_color = vec4(1.0);
 uniform vec4 edge : source_color = vec4(0.3, 0.6, 1.0, 1.0);
 uniform float spin = 0.0;
@@ -57,7 +71,16 @@ var look := &"default"
 var ghosts := 0
 var catches := 0
 var caught := 0
+## v0.9.5 FC6: the lightning rings drawn now (the tests read it).
+var arcs := 0
 
+## v0.10.0 VX7: the pack effects (found through the parent, or set directly: tests, the shot tool) and the rings held
+## on the discs, by projectile id.
+var pack_fx: PackFx = null:
+	set(v):
+		pack_fx = v
+		ring_hold.pack = v if PACK_RING else null
+var ring_hold := FormPackHold.new()
 var _nodes: Array[MeshInstance3D] = []
 var _mats: Array[ShaderMaterial] = []
 var _ghosts: Array[MeshInstance3D] = []
@@ -79,12 +102,14 @@ var _spin := 0.0
 var _tick := 0.0
 var _hero := Vector2.ZERO
 var _form := FormLook.new()
+var _arcs: Array[MeshInstance3D] = []
 
 
 func _init() -> void:
 	name = "GlaiveView"
 	var plane := PlaneMesh.new()
 	plane.size = Vector2.ONE
+	_make_arcs()
 	_ghost_pos.resize(DISCS_MAX * GHOSTS)
 	for k in DISCS_MAX:
 		var n := _node(plane)
@@ -94,6 +119,45 @@ func _init() -> void:
 			var h := _node(plane)
 			_ghosts.append(h)
 			_ghost_mats.append(h.material_override as ShaderMaterial)
+
+
+## v0.9.5 FC6: the pool of lightning rings (one shared material, the Lance's ring look).
+func _make_arcs() -> void:
+	var flat := PlaneMesh.new()
+	flat.size = Vector2(2.0, 2.0)
+	var shader := Shader.new()
+	shader.code = BombView.RING_SHADER
+	var m := ShaderMaterial.new()
+	m.shader = shader
+	m.set_shader_parameter(&"has_tex", 0.0)
+	m.set_shader_parameter(&"u", ARC_U)
+	m.set_shader_parameter(&"core", AttackFormLooks.ground_safe(BeamLooks.core(&"lightning")))
+	m.set_shader_parameter(&"edge", AttackFormLooks.ground_safe(BeamLooks.edge(&"lightning")))
+	for k in ARCS_MAX:
+		var n := MeshInstance3D.new()
+		n.mesh = flat
+		n.material_override = m
+		n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		n.visible = false
+		add_child(n)
+		_arcs.append(n)
+
+
+## v0.9.5 FC6: the Ring card's lightning ring round each disc that carries one.
+func _place_arcs(reader: WorldReader) -> void:
+	arcs = 0
+	for row in reader.glaive_rings():
+		if arcs >= ARCS_MAX:
+			break
+		var g := float(row["r"]) / ARC_FRONT
+		var arc := _arcs[arcs]
+		arc.visible = true
+		arc.transform = Transform3D(
+			Basis.from_scale(Vector3(g, 1.0, g)), SimPlane.to_3d(row["pos"], 0.1)
+		)
+		arcs += 1
+	for k in range(arcs, ARCS_MAX):
+		_arcs[k].visible = false
 
 
 func _node(mesh: Mesh) -> MeshInstance3D:
@@ -118,6 +182,8 @@ func sync(reader: WorldReader) -> void:
 	_hero = reader.player_pos()
 	var changed := _form.refresh(reader)
 	look = _form.look
+	if pack_fx == null and PACK_RING:
+		pack_fx = GapPack.pack_of(self)
 	var low := ViewPrefs.effects_density == "low"  # V47: Low drops the afterimages
 	_pos.clear()
 	_back.clear()
@@ -152,6 +218,7 @@ func sync(reader: WorldReader) -> void:
 		if past.size() > GHOSTS:
 			past.pop_back()
 	_drop_gone()
+	_place_arcs(reader)
 	discs = _pos.size()
 	for k in DISCS_MAX:
 		var on := k < discs
@@ -163,6 +230,7 @@ func sync(reader: WorldReader) -> void:
 		if on:
 			_mats[k].set_shader_parameter(&"hot", 1.0 if _back[k] else 0.0)
 	_place()
+	_pack_rings()
 
 
 func _colour(k: int) -> void:
@@ -198,6 +266,33 @@ func _process(delta: float) -> void:
 	if discs > 0:
 		_spin += delta * 60.0 * SPIN
 		_place()
+		_turn_rings()
+
+
+## v0.10.0 VX7: the pack's ring on each disc (held; its colours are the disc's, read when it spawns).
+func _pack_rings() -> void:
+	ring_hold.begin()
+	if ring_hold.active():
+		for k in discs:
+			var cols := {&"primary": _form.core, &"secondary": _form.edge, &"tertiary": _form.deep}
+			ring_hold.put(_ids[k], RING_ID, &"area", _ring_xf(k), cols)
+	ring_hold.end()
+
+
+## Between syncs the rings turn with the discs (_spin runs on the frame's time).
+func _turn_rings() -> void:
+	if not ring_hold.active():
+		return
+	for k in discs:
+		var n := ring_hold.node(_ids[k])
+		if n != null and n.is_inside_tree():
+			n.global_transform = _ring_xf(k)
+
+
+func _ring_xf(k: int) -> Transform3D:
+	var s := -_spin if _back[k] else _spin
+	var basis := Basis(Vector3.UP, s).scaled(Vector3.ONE * SIZE * RING_PER_M)
+	return Transform3D(basis, SimPlane.to_3d(_pos[k], HEIGHT + RING_LIFT))
 
 
 func _place() -> void:

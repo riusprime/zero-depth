@@ -40,11 +40,13 @@ static var parts: Array[GDScript] = [
 	AttackFormView,
 	LaserView,  # v0.9.0 LZ
 	BombView,  # v0.9.0 BM
+	StarfallView,  # v0.10.5 W3-P10e
 	VoidView,  # v0.9.0 VP
 	WaveView,  # v0.9.0 AF3
 	WispsView,  # v0.9.0 AF3
 	LanceView,  # v0.9.0 AF1
 	ScatterView,  # v0.9.0 AF1
+	RuneExplosionView,  # v0.9.5 FC0
 	GlaiveView,  # v0.9.0 AF2
 	SeekersView,  # v0.9.0 AF2
 	ModifierOverlays,
@@ -56,6 +58,8 @@ static var parts: Array[GDScript] = [
 	StoneSpikeViews,
 	BossSignatureViews,
 	TideViews,  # v0.9.0 NB1
+	TideWaveViews,  # v0.9.5 BH4
+	InterphaseViews,  # v0.9.5 BH6
 	TwinViews,  # v0.9.0 NB2
 	JudgeViews,  # v0.9.0 NB3
 	ShadeViews,  # v0.9.0 NB4
@@ -97,6 +101,8 @@ var loop_device: LoopDevice
 ## v0.8.0 RM (owner O91): the remnants (threads, cracks, anchors, marks, fragments, replay paths), their flashes and
 ## Thermal Break's shatter.
 var remnants: RemnantViews = _part(RemnantViews)
+## v0.9.5 SM: the Stress Mark's weak-side arcs on the enemies near the hero, and their break flashes.
+var stress_marks: StressMarkViews = _part(StressMarkViews)
 ## v0.3.5 PT: the hero's way into the portal and the arrival on a new floor.
 var transit: PortalTransitView = _part(PortalTransitView)
 ## v0.8.0 N11 (owner O69): the receiver the hero arrives on, in the middle of the first room (null without one).
@@ -151,10 +157,14 @@ var cores: CoreViews = _part(CoreViews)  # v0.6.0 CU: cores on elites and bosses
 var elite_fx: EliteViews = _part(EliteViews)
 ## v0.6.0 MX3: the attack forms drawn from their final specs (element core, heat edge, motion cues), pooled.
 var attack_forms: AttackFormView = _part(AttackFormView)
+## v0.10.0 VX0: the pack effects (PackFx), made with the effects layer; none without the layer.
+var pack_fx: PackFx = null
 ## v0.9.0 LZ (owner C §6.2): the Laser's beams, per element.
 var laser: LaserView = _part(LaserView)
 ## v0.9.0 BM (owner C §6.3): the bombs in flight and their blasts, per element.
 var bombs: BombView = _part(BombView)
+## v0.10.5 W3-P10e: Starfall's stars and Meteor (plain lines and the small blast ring).
+var starfall: StarfallView = _part(StarfallView)
 ## v0.9.0 VP (owner C §6.4): the Void shots in flight, travelling lensing spheres, and the enemies leaning into them.
 var voids: VoidView = _part(VoidView)
 ## v0.9.0 AF3 (owner Q7): the Wave's rolling bands; the wisps circling the hero.
@@ -163,6 +173,8 @@ var wisps: WispsView = _part(WispsView)
 ## v0.9.0 AF1 (owner Q7): the Lance's charge glow and aim line, its release flash; the Scatter's pellets and cone.
 var lances: LanceView = _part(LanceView)
 var scatter: ScatterView = _part(ScatterView)
+## v0.9.5 FC0 (owner): the Rune Explosion's violet dome and rune ring bursting from the hero.
+var runes: RuneExplosionView = _part(RuneExplosionView)
 ## v0.9.0 AF2 (owner Q7): the Glaive's spinning discs out and back; the Seekers' curving darts and their trails.
 var glaives: GlaiveView = _part(GlaiveView)
 var seekers: SeekersView = _part(SeekersView)
@@ -184,6 +196,10 @@ var spikes: StoneSpikeViews = _part(StoneSpikeViews)
 var signatures: BossSignatureViews = _part(BossSignatureViews)
 ## v0.9.0 NB1: the Tidecaller's Pull (the moving water, the bell's toll, the push's swell).
 var tides: TideViews = _part(TideViews)
+## v0.9.5 BH4: the Tidecaller's crossing waves (a foam line at the wall, then the curling water band).
+var tide_waves: TideWaveViews = _part(TideWaveViews)
+## v0.9.5 BH6: the Fallen's interphase (the vanish, rays, eruptions, rain and spike lines, the return ring and slam).
+var interphase: InterphaseViews = _part(InterphaseViews)
 ## v0.9.0 NB2: the Twin Wardens' burning chain, Crossfire's gap lanes and safe spot, the Chain Sweep's lash.
 var twins: TwinViews = _part(TwinViews)
 ## v0.9.0 NB3: the Clockwork Judge's echo (its recording, path and ghost trail) and its Verdict's pendulum.
@@ -206,8 +222,18 @@ var occlusion_enabled := true
 ## `profile_sync` is on.
 var profile_sync := false
 var sync_profile := {}
+## v0.9.5 PF4: the decorative views at 30 Hz (ViewSchedule); false: every view every tick.
+var half_rate_enabled := true
+## v0.10.5 Q5 (tests): how many times sync ran.
+var syncs := 0
+## v0.10.5 (DRAW_CALLS.md): the effect pools with nothing in them leave the renderer (EmptyDrawCull).
+var empty_cull := EmptyDrawCull.new()
+## v0.10.5 PB: the particles under the view cast no shadow (ParticleShadowOff).
+var particle_shadows := ParticleShadowOff.new()
+var _half_synced := {}
 ## v0.8.0 P3 (O32): the floor's walls for the occlusion test, indexed once (Occlusion.build_index).
 var _occlusion_index := {}
+var _occ_specs: Array = []
 
 
 ## v0.8.0 LD: makes the parts not made yet for about `budget_ms` (one at least); true when every part is made.
@@ -231,6 +257,29 @@ static func drop_prebuilt() -> void:
 
 
 ## v0.8.0 LD: a part made ahead by prebuild() when there is one, else a new one.
+## v0.10.5 (seams at 026261bb): the nodes the pools keep outside the tree on a live floor, each piece with everything
+## under it (v0.10.5 PC: the idle entries wait outside it). The orphans a live floor holds on purpose: they go with the
+## view (each pool's NOTIFICATION_PREDELETE), and an orphan check counts the others (tests/e2e/test_e2e_damage_soak.gd).
+func idle_pool_nodes() -> int:
+	var pieces: Array[Node] = []
+	if pack_fx != null:
+		pieces.append_array(pack_fx.idle_detached())
+	for pool: Node in [telegraphs, status_fx, elite_fx, fireballs]:
+		if pool != null:
+			pieces.append_array(pool.call(&"idle_pieces"))
+	var n := 0
+	for p in pieces:
+		n += _subtree(p)
+	return n
+
+
+static func _subtree(n: Node) -> int:
+	var count := 1
+	for c in n.get_children(true):
+		count += _subtree(c)
+	return count
+
+
 static func _part(script: GDScript) -> Object:
 	if _made.has(script):
 		var o: Object = _made[script]
@@ -251,7 +300,9 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 func queue_setup(
 	q: ViewBuildQueue, p_reader: WorldReader, palette: Dictionary, arena_half: float
 ) -> void:
-	reader = p_reader
+	# v0.10.5 Q5: the views read through a LatchedReader: they sync once a frame, and it shows them what lasted one
+	# tick in a tick they did not sync on (a Gun shot, an enemy's one-tick strike).
+	reader = LatchedReader.new(p_reader)
 	# v0.3.0 L13: the owner's boss models load with the stage, never on a spawn (v0.8.0 FB1: the final boss's three
 	# only where its fight is: the final arena, the Playground). v0.8.0 N12: with the kit's and the shop's models, on
 	# a worker (ViewWarmup).
@@ -270,6 +321,7 @@ func queue_setup(
 	stage.queue_build(q, reader, palette, arena_half)
 	q.add("first_sync", _first_sync)
 	q.add("shader_warmup", _warm_shaders)  # v0.8.0 HR (O89; RenderSwitches.SHADER_WARMUP)
+	q.add("pack_fx_warmup", _queue_pack_warmup.bind(q))  # v0.10.0 VX0 (I2)
 
 
 ## v0.8.0 HR: the window's MSAA under RenderSwitches.MSAA_OFF (the game's root window only).
@@ -282,10 +334,33 @@ func _warm_shaders() -> void:
 	ShaderWarmup.build(self, rig.camera, actors)
 
 
+## v0.10.0 VX0 (VFX_PACK I2): every pack effect spawned once in front of the camera behind the cover, so the shaders
+## compile before the first fight (PackFx returns them to their pools two frames later). One job an effect, so no one
+## frame carries every pipeline compile.
+func _queue_pack_warmup(q: ViewBuildQueue) -> void:
+	if pack_fx == null:
+		return
+	# v0.10.5: every other id the floor can use gets a few idle instances first (PackPrefill), so its first spawns
+	# of the floor (and a warm-up below) take them.
+	for id in PackPrefill.ids(pack_fx, PackPrefill.boss_floor(reader)):
+		q.add_next("pack_prefill_%s" % id, PackPrefill.fill.bind(pack_fx, id))
+	for id in pack_fx.pending_warm_ids():
+		q.add_next("pack_fx_warmup_%s" % id, pack_fx.warm.bind(id))
+	# v0.10.5 (owner PERF_PLAYLOG_1: the first fireballs and the first elite hitched): the shots' and the elite beam's
+	# pools filled now, one job an id, so their first spawns of the floor instance nothing.
+	for id in FireballPack.ids():
+		q.add_next("pack_prefill_%s" % id, FireballPack.prefill.bind(pack_fx, id))
+	for id in EliteViews.pack_ids():
+		q.add_next("pack_prefill_%s" % id, pack_fx.prefill.bind(id, EliteViews.PACK_PREFILL))
+
+
 func _setup_views(palette: Dictionary) -> void:
 	actors.outline_color = palette["outline"]
+	add_child(empty_cull)  # v0.10.5: first, so it hears every pool the views add (EmptyDrawCull)
+	add_child(particle_shadows)  # v0.10.5 PB: first too, so it hears every particle system the views add
 	add_child(stage)
 	add_child(telegraphs)
+	telegraphs.prepare()  # v0.10.5: its shapes and look materials made now, not at the first windup
 	add_child(challenge)
 	add_child(actors)
 	add_child(kit)
@@ -301,6 +376,7 @@ func _setup_views(palette: Dictionary) -> void:
 	add_child(item_fx)
 	status_fx = StatusVisuals.new(actors)
 	add_child(status_fx)
+	status_fx.prepare()  # v0.10.5: its ring meshes and pooled rings made now, not at the first payoff
 	heat_fx = HeatVisuals.new(kit, actors)
 	add_child(heat_fx)
 	add_child(skill_fx)  # v0.3.5 K
@@ -316,16 +392,28 @@ func _setup_views(palette: Dictionary) -> void:
 	events.setup(reader)
 	add_child(cores)  # v0.6.0 CU
 	add_child(elite_fx)  # v0.9.0 EL
+	elite_fx.prepare()  # v0.10.5: its rings and sigil made now, not at the first elite
 	add_child(attack_forms)  # v0.6.0 MX3
 	add_child(laser)  # v0.9.0 LZ
 	add_child(bombs)  # v0.9.0 BM
+	add_child(starfall)  # v0.10.5 W3-P10e
 	add_child(voids)  # v0.9.0 VP
 	add_child(waves)  # v0.9.0 AF3
 	add_child(wisps)  # v0.9.0 AF3
 	add_child(lances)  # v0.9.0 AF1
 	add_child(scatter)  # v0.9.0 AF1
+	add_child(runes)  # v0.9.5 FC0
 	add_child(glaives)  # v0.9.0 AF2
 	add_child(seekers)  # v0.9.0 AF2
+
+
+## v0.10.0 VX2: the hero's shot and form views draw their projectiles, beams, zones and rings as pack effects; the
+## canvas also asks the pulses which bolts the pack already draws.
+func _hand_pack_to_hero_views() -> void:
+	for v: Object in [pulses, attack_forms, laser, lances, voids, runes, seekers]:  # (W3-S19: not the wisps)
+		v.set("pack_fx", pack_fx)
+	attack_forms.pulse_hold = pulses.hold
+	pulses.forms = attack_forms
 
 
 ## The effects layer (real fire, explosions, lightning) and the views drawn into it or after it.
@@ -333,6 +421,15 @@ func _setup_effects() -> void:
 	if stage.mood != null and VfxLayer.available():  # v0.5.9 art: real fire, explosions and lightning
 		var layer := VfxLayer.new()
 		add_child(layer)
+		if PackFx.available():  # v0.10.0 VX0: the pack's effects, handed to the layer
+			pack_fx = PackFx.new()
+			pack_fx.camera = rig.camera
+			add_child(pack_fx)
+			layer.pack_fx = pack_fx
+			cast_fx.pack_fx = pack_fx  # VX1: the cast spark at the hand
+			element_fx.pack_fx = pack_fx  # v0.10.0 VX3: Toxic Fumes, Frost Nova and Ember Ward
+			starfall.pack_fx = pack_fx  # v0.10.5 W3-P10l: the meteor's fire and the star's spark
+			_hand_pack_to_hero_views()
 		attack_forms.vfx = layer
 		status_fx.use_vfx(layer)
 		layer.drawers.append(_draw_prop_fires)  # the fire props' flames (lighting pass, 2026-10-12)
@@ -343,20 +440,24 @@ func _setup_effects() -> void:
 		strikes.vfx = layer  # v0.8.0 AV part 2: the strikes' sprites, lights, marks and explosions
 		layer.drawers.append(strikes.draw_fx)
 		layer.drawers.append(final_views.draw_fx)  # v0.8.0 TX2: the shatter's crystal burst
+		# v0.10.5 O12 (owner P9): the hero's own forms draw as hero_drawers, under the hero's effect budget
+		# (HeroFxBudget); the drawers above (enemy fireballs, spikes, boss strikes, props) never are.
 		laser.vfx = layer  # v0.9.0 LZ: the beam's element accent, the impact's sparks and light
-		layer.drawers.append(laser.draw_fx)
+		layer.hero_drawers.append(laser.draw_fx)
 		bombs.vfx = layer  # v0.9.0 BM: the blasts' element bursts
-		layer.drawers.append(bombs.draw_fx)
-		layer.drawers.append(lances.draw_fx)  # v0.9.0 AF1: the release's element accent and sparks
+		layer.hero_drawers.append(bombs.draw_fx)
+		layer.hero_drawers.append(lances.draw_fx)  # v0.9.0 AF1: the release's element accent and sparks
 		# v0.9.0 VX: the forms' element accents, launches, catches and collapses (HeroFx, VFX_AUDIT.md)
-		for v: Node in [voids, scatter, glaives, seekers, waves, wisps]:
-			layer.drawers.append(Callable(v, &"draw_fx"))
+		for v: Node in [voids, scatter, runes, glaives, seekers, waves, wisps]:
+			layer.hero_drawers.append(Callable(v, &"draw_fx"))
 		seekers.vfx_on = true  # V29: the trail motes become the element's own sprites
 	element_fx.forms_drawn = true  # MX3 draws the spec forms (rings, spec patches, bombs)
 	ability_fx.forms_drawn = true
 	add_child(modifier_marks)  # v0.6.0 MX4
 	add_child(blade_forms)  # v0.6.5 WN4
+	fireballs.draw_on_sync = false  # v0.10.5 W3-Q7: drawn once a frame (draw_lights or _process), not in sync too
 	add_child(fireballs)  # v0.7.5 BF1
+	fireballs.prepare()  # v0.10.5: every look's MultiMeshes made now, not at its first shot
 	pulses.actors = actors
 	pulses.draw_on_sync = false  # each frame's _process draws the pulses
 	add_child(pulses)  # v0.8.0 GF1
@@ -366,6 +467,8 @@ func _setup_effects() -> void:
 	add_child(spikes)  # v0.8.0 AV
 	add_child(signatures)  # v0.8.0 BS1
 	add_child(tides)  # v0.9.0 NB1
+	add_child(tide_waves)  # v0.9.5 BH4
+	add_child(interphase)  # v0.9.5 BH6
 	add_child(twins)  # v0.9.0 NB2
 	add_child(judges)  # v0.9.0 NB3
 	add_child(shades)  # v0.9.0 NB4 (it dims the stage's sun with the dark)
@@ -376,6 +479,7 @@ func _setup_effects() -> void:
 	add_child(prism_views)  # v0.8.0 FB2
 	add_child(nemesis_views)  # v0.8.0 FB3
 	add_child(remnants)  # v0.8.0 RM
+	add_child(stress_marks)  # v0.9.5 SM
 
 
 ## The floor's portals and devices, the boss door, the shrine and the shop, the portal transit, the ink and hit feel.
@@ -424,7 +528,7 @@ func _setup_devices(palette: Dictionary) -> void:
 		purple.biome = stage.prop_style  # v0.9.0 BV: the biome's look
 		add_child(purple)
 		purple.setup(reader, palette["cover"])
-	if reader.has_lockdowns():  # v0.9.0 LK
+	if reader.has_lockdowns() or reader.overrun()["active"]:  # v0.9.0 LK; v0.9.5 DR: the Overrun's bars too
 		lockdowns = LockdownView.new()
 		add_child(lockdowns)
 		lockdowns.setup(reader, stage.prop_style)
@@ -456,6 +560,8 @@ func _setup_devices(palette: Dictionary) -> void:
 		gamble_shrine.biome = stage.prop_style  # v0.9.0 BV
 		add_child(gamble_shrine)
 		gamble_shrine.setup(reader.gamble_pos())
+		if attack_forms.vfx != null:  # v0.9.5 SS: its smoke and gold ring ride the effects layer
+			attack_forms.vfx.drawers.append(Callable(gamble_shrine, &"draw_fx"))
 	if reader.shop_stall():  # v0.8.0 SR: the biome's tent stall and vendor
 		shop_stall = ShopStallView.new()
 		add_child(shop_stall)
@@ -472,6 +578,7 @@ func _setup_devices(palette: Dictionary) -> void:
 		altar = AltarStage.new(AltarStage.arrival())
 		add_child(altar)
 		altar.setup(reader.floor_start_pos())
+		actors.grounds.append(altar)  # v0.10.5: the hero stands on it, not half inside it
 	elif reader.floor_receiver():
 		arrival_gate = PortalGate.new()
 		arrival_gate.name = "ArrivalGate"
@@ -492,13 +599,15 @@ func _setup_devices(palette: Dictionary) -> void:
 		approach_view = FinalApproachView.new()
 		add_child(approach_view)
 		approach_view.setup(reader, rig)
+		actors.grounds.append(approach_view.altar)  # v0.10.5: as floor 1's altar
 	rig.camera.add_child(ink)
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
 	hit_feel.hit_stop.kit = kit  # v0.8.0 GF3: the hit-stop holds the blade and its trail too
+	hit_feel.pack_fx = pack_fx  # VX1: the guard, weak-spot and death sparks
 	add_child(hit_feel)
 	if attack_forms.vfx != null:  # v0.8.0 GF2: the hits' impacts, in the effects layer's pools and budget
-		attack_forms.vfx.drawers.append(hit_feel.impacts.draw)
+		attack_forms.vfx.hero_drawers.append(hit_feel.impacts.draw)  # v0.10.5 O12: the hero's budget
 	actors.cull = cull  # v0.8.0 HV
 	status_fx.cull = cull
 	attack_forms.cull = cull
@@ -512,7 +621,27 @@ func _first_sync() -> void:
 
 ## v0.8.0 FV (owner O87, the horde lag): one view's sync, timed into `sync_profile` while `profile_sync` is on (the
 ## perf probe's --horde; off in the game: a plain call).
+## v0.9.5 SM: a broken weak side's orange sparks, through the hit impacts' pools and budget (Effects density scales
+## the strength: low a third, medium two thirds).
+func _stress_sparks() -> void:
+	if hit_feel == null or stress_marks.bursts.is_empty():
+		return
+	var k := 1.0
+	if ViewPrefs.effects_density == "low":
+		k = 0.35
+	elif ViewPrefs.effects_density == "medium":
+		k = 0.7
+	for b: Array in stress_marks.bursts:
+		var dir: Vector2 = b[1]
+		var at := SimPlane.to_3d(b[0] + dir * 0.4, 0.5)
+		hit_feel.impacts.add(
+			at, SimPlane.to_3d(dir), at, StressMarkViews.ORANGE, int(b[2]), 1.2 * k, ImpactFx.OTHER
+		)
+
+
 func _sync_view(id: StringName, view: Object) -> void:
+	if half_rate_enabled and not ViewSchedule.due(id, reader.tick(), _half_synced):
+		return
 	if not profile_sync:
 		view.call(&"sync", reader)
 		return
@@ -521,7 +650,19 @@ func _sync_view(id: StringName, view: Object) -> void:
 	sync_profile[id] = float(sync_profile.get(id, 0.0)) + (Time.get_ticks_usec() - t0) / 1000.0
 
 
+## v0.10.5 Q5: called on every sim tick (SimDriver.ticked); keeps what lasts one tick for the next sync (LatchedReader).
+func note_tick() -> void:
+	if reader is LatchedReader:
+		(reader as LatchedReader).note()
+
+
+## Once a rendered frame that ran a tick (SimDriver.frame_ticked, v0.10.5 Q5), on the latest state; also on a
+## Playground edit (SimDriver.edited) and the first sync.
 func sync() -> void:
+	var t_all := PerfMarks.start()
+	syncs += 1
+	if reader is LatchedReader:
+		(reader as LatchedReader).settle()
 	cull.refresh(rig.camera)  # v0.8.0 HV
 	_sync_view(&"telegraphs", telegraphs)
 	_sync_view(&"challenge", challenge)
@@ -554,14 +695,18 @@ func sync() -> void:
 	_sync_view(&"elite_fx", elite_fx)  # v0.9.0 EL
 	if elite_fx.take_thud():  # v0.9.0 EL: the Breaker's slam near the hero (none with reduced motion)
 		rig.thud(EliteViews.THUD)
+	# v0.10.5 O12 (owner P9): the hostile threats on screen dim the hero's effects (HeroFxBudget), once a tick
+	attack_forms.budget.settle(HeroFxBudget.threats_of(telegraphs.threats, reader, cull))
 	_sync_view(&"attack_forms", attack_forms)  # v0.6.0 MX3
 	_sync_view(&"laser", laser)  # v0.9.0 LZ
 	_sync_view(&"bombs", bombs)  # v0.9.0 BM
+	_sync_view(&"starfall", starfall)  # v0.10.5 W3-P10e
 	_sync_view(&"voids", voids)  # v0.9.0 VP
 	_sync_view(&"waves", waves)  # v0.9.0 AF3
 	_sync_view(&"wisps", wisps)  # v0.9.0 AF3
 	_sync_view(&"lances", lances)  # v0.9.0 AF1
 	_sync_view(&"scatter", scatter)  # v0.9.0 AF1
+	_sync_view(&"runes", runes)  # v0.9.5 FC0
 	_sync_view(&"glaives", glaives)  # v0.9.0 AF2
 	_sync_view(&"seekers", seekers)  # v0.9.0 AF2
 	_sync_view(&"modifier_marks", modifier_marks)  # v0.6.0 MX4
@@ -571,6 +716,8 @@ func sync() -> void:
 	_sync_view(&"spikes", spikes)  # v0.8.0 AV
 	_sync_view(&"signatures", signatures)  # v0.8.0 BS1
 	_sync_view(&"tides", tides)  # v0.9.0 NB1
+	_sync_view(&"tide_waves", tide_waves)  # v0.9.5 BH4
+	_sync_view(&"interphase", interphase)  # v0.9.5 BH6
 	_sync_view(&"twins", twins)  # v0.9.0 NB2
 	_sync_view(&"judges", judges)  # v0.9.0 NB3
 	_sync_view(&"shades", shades)  # v0.9.0 NB4
@@ -580,6 +727,8 @@ func sync() -> void:
 	_sync_view(&"prism_views", prism_views)  # v0.8.0 FB2
 	_sync_view(&"nemesis_views", nemesis_views)  # v0.8.0 FB3
 	_sync_view(&"remnants", remnants)  # v0.8.0 RM
+	_sync_view(&"stress_marks", stress_marks)  # v0.9.5 SM
+	_stress_sparks()
 	if rune_view != null:  # v0.9.0 RA
 		rune_view.sync(reader)
 	if purple != null:  # v0.9.0 DP (owner Q17, Q26b): the runes' vibration builds, then lands in a thud
@@ -632,6 +781,7 @@ func sync() -> void:
 		deep_gate.set_sealed(not deep_open)
 	if deep_gate != null and deep_open:
 		deep_gate.set_growth(reader.portal_form_progress(WorldReader.ROUTE_DEEP))
+	var t_occ := PerfMarks.start()
 	rig.target = SimPlane.to_3d(reader.player_pos())
 	if occlusion_enabled:
 		var focus: Array[Vector2] = []
@@ -645,17 +795,26 @@ func sync() -> void:
 		# v0.8.0 P3 (owner O32): the floor's walls indexed once (Occlusion.build_index), not all tested every tick.
 		if (
 			_occlusion_index.is_empty()
-			or _occlusion_index["count"] != stage.wall_specs.size()
+			or _occlusion_index["count"] != _occ_specs.size()
 			or _occlusion_index["pitch"] != rig.pitch_deg
 		):
-			_occlusion_index = Occlusion.build_index(rig.pitch_deg, stage.wall_specs)
-		stage.apply_occlusion(
-			Occlusion.select_in(
-				rig.toward_camera_on_plane(), _occlusion_index, focus, stage.wall_specs
-			)
+			_occ_specs = stage.wall_specs.duplicate()
+			if breakables != null and not breakables.slab_spec.is_empty():  # S15b: the cracked slab joins the walls
+				breakables.slab_index = _occ_specs.size()
+				_occ_specs.append(breakables.slab_spec)
+			_occlusion_index = Occlusion.build_index(rig.pitch_deg, _occ_specs)
+		var faded := Occlusion.select_in(
+			rig.toward_camera_on_plane(), _occlusion_index, focus, _occ_specs
 		)
+		stage.apply_occlusion(faded)
+		if breakables != null:  # S15b: the cracked slab fades with the walls
+			breakables.fade_slab(faded)
 	else:
 		stage.apply_occlusion(PackedInt32Array())
+		if breakables != null:
+			breakables.fade_slab(PackedInt32Array())
+	PerfMarks.add(&"sync.occlusion", t_occ)
+	PerfMarks.add(&"sync_all", t_all)
 
 
 ## Draws a real flame on each fire prop into the effects layer (inside its frame): the props' own lights stay in

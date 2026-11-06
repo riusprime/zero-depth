@@ -23,6 +23,24 @@ const SIZE := 37
 const CRIT_SIZE := 69
 const COLOR := Color(1, 1, 1, 0.92)
 const CRIT_COLOR := Color("#FFD23A")
+## v0.9.5 SM: a hit that struck a Stress Mark's weak side.
+const WEAK_COLOR := Color("#FF8A2A")
+## v0.9.5 EE1: Exsanguinate's burst (a DoT, so shown on purpose).
+const EXSANGUINATE_COLOR := Color("#9E0F26")
+## v0.10.5 O10 (Matchups): a hit on the enemy's weakness (TAG_WEAK_TO): a bigger red-pink number; a resisted one
+## (TAG_RESISTED): a smaller dim grey one. Starting values.
+const WEAK_TO_COLOR := Color("#FF4F7A")
+const WEAK_TO_SIZE := 48
+const RESISTED_COLOR := Color(0.55, 0.57, 0.6)
+const RESISTED_SIZE := 29
+## v0.10.5 W3-P10a (owner W7, G1 A2): a double crit (TAG_DOUBLE_CRIT): the crit number 25 % bigger, ice-white,
+## with a thin ink edge instead of the thick dark one. Nothing else new in the world.
+const DOUBLE_CRIT_SIZE := 86
+const DOUBLE_CRIT_COLOR := Color("#CFE4FF")
+const DOUBLE_CRIT_EDGE := Color("#0E131C")
+const DOUBLE_CRIT_EDGE_SIZE := 4
+const EDGE_SIZE := 10
+const EDGE_COLOR := Color(0, 0, 0, 0.85)
 ## The throw: how far out to the side (m, along the screen), how high its peak (m) and where in its life it peaks;
 ## the cosmetic spread on both (0.2: 80-120 %).
 const THROW_OUT_M := 0.9
@@ -43,6 +61,8 @@ var _crit: Array[bool] = []
 var _throw: Array[Vector2] = []
 var _next := 0
 var _last_seq := 0
+## v0.9.5 SM: the enemies whose weak side broke this tick (id -> tick), so their hit's number shows orange.
+var _weak := {}
 var _side := 1.0
 ## The cosmetic stream (presentation only, EI-05): the throw's spread and the crit's shake.
 var _rng := RandomNumberGenerator.new()
@@ -59,15 +79,44 @@ func sync(reader: WorldReader) -> void:
 	var player_id := reader.actor_id(0)
 	for e in reader.events_since(_last_seq):
 		_last_seq = e.seq
+		if e.kind == SimEvent.Kind.STRESS_BREAK:
+			_weak[e.target_id] = e.tick
+			continue
 		if e.kind != SimEvent.Kind.DAMAGE or e.owner_id != player_id or e.target_id == player_id:
+			continue
+		if e.effect_id == SimEvent.EFFECT_EXSANGUINATE and e.amount > 0:  # v0.9.5 EE1: the burst, in deep red
+			show_number(e.pos, e.amount, false, EXSANGUINATE_COLOR)
 			continue
 		if e.tags & SimEvent.TAG_DOT or e.amount <= 0:
 			continue
-		show_number(e.pos, e.amount, (e.tags & SimEvent.TAG_CRIT) != 0)
+		var weak := int(_weak.get(e.target_id, -1)) == e.tick
+		var crit := (e.tags & SimEvent.TAG_CRIT) != 0
+		if e.tags & SimEvent.TAG_DOUBLE_CRIT:  # v0.10.5 W3-P10a: ice-white, bigger, a thin ink edge
+			show_number(e.pos, e.amount, true, DOUBLE_CRIT_COLOR, DOUBLE_CRIT_SIZE, true)
+			_weak.erase(e.target_id)
+			continue
+		var look := matchup_look(e.tags, crit)
+		show_number(e.pos, e.amount, crit, WEAK_COLOR if weak else look[0], look[1])
+		_weak.erase(e.target_id)
 
 
-## Throws `amount` from `at` (crit: bigger, yellow, a shake and a vanish).
-func show_number(at: Vector2, amount: int, crit: bool) -> void:
+## v0.10.5 O10: [tint, font size] for a hit's matchup tags (WEAK_TO bigger red-pink, RESISTED smaller dim grey; a
+## crit keeps its size and colour; none: no tint, the plain size). Presentation only, read from the event's flag.
+static func matchup_look(tags: int, crit: bool) -> Array:
+	if crit:
+		return [Color(0, 0, 0, 0), 0]
+	if tags & SimEvent.TAG_WEAK_TO:
+		return [WEAK_TO_COLOR, WEAK_TO_SIZE]
+	if tags & SimEvent.TAG_RESISTED:
+		return [RESISTED_COLOR, RESISTED_SIZE]
+	return [Color(0, 0, 0, 0), 0]
+
+
+## Throws `amount` from `at` (crit: bigger, yellow, a shake and a vanish). `size` > 0: that font size instead.
+## v0.10.5 W3-P10a: `double`, a double crit's thin ink edge (DOUBLE_CRIT_EDGE).
+func show_number(
+	at: Vector2, amount: int, crit: bool, tint := Color(0, 0, 0, 0), size := 0, double := false
+) -> void:
 	var l: Label3D
 	if _labels.size() < POOL:
 		l = Label3D.new()
@@ -75,8 +124,6 @@ func show_number(at: Vector2, amount: int, crit: bool) -> void:
 		l.no_depth_test = true
 		l.fixed_size = false
 		l.pixel_size = 0.005
-		l.outline_size = 10
-		l.outline_modulate = Color(0, 0, 0, 0.85)
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 		add_child(l)
@@ -91,8 +138,10 @@ func show_number(at: Vector2, amount: int, crit: bool) -> void:
 	var k := _next
 	l = _labels[k]
 	l.text = str(amount)
-	l.font_size = CRIT_SIZE if crit else SIZE
-	l.modulate = CRIT_COLOR if crit else COLOR
+	l.outline_size = DOUBLE_CRIT_EDGE_SIZE if double else EDGE_SIZE  # v0.10.5 W3-P10a: per number (pooled)
+	l.outline_modulate = DOUBLE_CRIT_EDGE if double else EDGE_COLOR
+	l.font_size = size if size > 0 else (CRIT_SIZE if crit else SIZE)
+	l.modulate = tint if tint.a > 0.0 else (CRIT_COLOR if crit else COLOR)
 	_from[k] = SimPlane.to_3d(at, 1.3 if crit else 1.1)
 	_crit[k] = crit
 	_left[k] = CRIT_LIFE_S if crit else LIFE_S

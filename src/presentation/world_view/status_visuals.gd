@@ -2,8 +2,9 @@ class_name StatusVisuals
 extends Node3D
 ## Engine statuses and combo payoffs on screen (v0.3.0 G). Reads the sim through WorldReader only:
 ## - burn: embers rising around the enemy (more stacks, more embers); its orange glow is ItemVisuals' tint;
-## - shock: a row of pips over the health bar, one lit per stack up to the discharge threshold, and flickering
-##   sparks; a discharge draws a lightning line to each enemy it jumped to;
+## - shock: flickering sparks; a discharge draws a lightning line to each enemy it jumped to;
+## - v0.10.0 FX: every stacking status (burn, bleed, poison, shock, frost) shows its icon and count ("x3") over the
+##   health bar (StatusBadges), in place of the shock pips and the poison and bleed dots;
 ## - bleed: red drips falling from the enemy (more stacks, more drips); a burst draws a red ring;
 ## - frost: ice crystals around the enemy's feet, one per stack; frozen: an ice shell (and ItemVisuals' icy tint);
 ## - Bulwark's guard charges: gold orbs circling the player;
@@ -12,23 +13,44 @@ extends Node3D
 ## With the new look (v0.5.9 art, VFX phase 2: `vfx` set) the enemy statuses draw into the VfxLayer instead of the
 ## boxes: flames on a burning body, arcs over a shocked one, red drips, bubbles and green drips for poison, ice
 ## crystals and a crystal cage for frost and frozen; the bleed, shatter, wildfire and harvest payoffs burst in
-## their element and a discharge strikes as lightning. The shock pips and guard orbs stay (they are counts).
+## their element and a discharge strikes as lightning. The badges and guard orbs stay (they are counts).
 ## Materials are made once and kept (never emission toggles at runtime: the v0.2.0 DAMAGE_LAG rule); each actor's
 ## pieces are children of its ActorViews node, so they move and go with it.
 
-const PIPS := 5
+## A Contagion arc lasts 0.25 s (15 ticks); the Exsanguinate splash 20 ticks.
+const JUMP_TICKS := 15.0
+const SPLASH_TICKS := 20.0
+const SPLASH_RADIUS_M := 1.2
+## v0.9.5 EE2: the "+" over a burning (Heat sync) or frozen (Shatter) enemy's bar at Lv 3; an Overcharge strike's bolt
+## and a shard's streak last 0.33 s and 0.25 s.
+const PLUS_FIRE := Color("#FFB347")
+const PLUS_FROST := Color("#BDEBFF")
+const STRIKE_TICKS := 20.0
+const SHARD_TICKS := 15.0
+const STRIKE_TOP_M := 3.5
 const EMBERS := 3
 const DRIPS := 3
 const CRYSTALS := 4
 const ORBS := 3
 const FX_FRAMES := 16
+## v0.10.5: the ring radii the payoffs draw (m), their meshes made by prepare(); and the fading pieces it pools (a
+## starting value: a discharge's bolt and its ring).
+const RING_RADII: Array[float] = [0.8, 0.9, 1.0, SPLASH_RADIUS_M, 1.6]
+const FX_PREFILL := 6
 ## v0.8.0 HV: a status's reach past the actor's radius for the cull: its flames and arcs (about 1.5 m over the body)
 ## and its light (VfxLayer._light_status: 3 m range).
 const STATUS_REACH_M := 3.5
+## v0.10.5 W3-Q7: a payoff's reach past its point for the cull: a burst's widest light (VfxLayer._explosion_rest:
+## r * 3 + 2 m) and its rising smoke; a line's length and the light at its far end (StormPack.lightning: 4 m).
+const SHOT_REACH_PER_M := 3.0
+const SHOT_REACH_M := 2.5
+const SHOT_LINE_REACH_M := 4.0
 
 ## P-9: the pieces the effects layer draws instead (hidden under the new look).
 const VFX_DRAWN: Array[String] = ["embers", "drips", "crystals", "sparks"]
 
+## v0.9.5 PF: false hides the burn embers (frame_probe --ab=no_burn_fx measures their cost).
+static var burn_embers := true
 var actors: ActorViews
 ## The new look's effects layer (null: the boxes and rings as before).
 var vfx: VfxLayer
@@ -38,18 +60,34 @@ var cull: ScreenCull
 ## v0.8.0 HV: statuses drawn into the effects layer last frame, and skipped as off screen (tests, the perf probe).
 var statuses_drawn := 0
 var statuses_culled := 0
+## v0.10.5 W3-Q7: payoffs drawn into the effects layer last frame, and skipped as off screen (tests, the perf probe).
+var shots_drawn := 0
+var shots_culled := 0
 ## Kept for the view's life, one per look (see the class note).
 var _mats := {}
 var _box := BoxMesh.new()
 var _prism := PrismMesh.new()
-var _pip := QuadMesh.new()
+var _dot := QuadMesh.new()
 var _shell := SphereMesh.new()
-## Actor id -> its pieces: {"root": Node3D, "embers": [...], "pips": [...], ...}.
+## Actor id -> its pieces: {"root": Node3D, "embers": [...], "badges": StatusBadges, ...}.
 var _views := {}
 var _frame := 0
+var _last_tick := -1
+## v0.10.0 FX: the camera's right (world), the badges' row direction.
+var _right := Vector3.RIGHT
+## v0.9.5 EE1: the last event read (Contagion jumps, the Exsanguinate burst).
+var _last_seq := 0
+## v0.9.5 EE2: where the last Shatter broke (its shards fly from there), and whether the "+" shows this sync.
+var _shatter_at := Vector2.ZERO
+var _plus_fire := false
+var _plus_frost := false
 var _seen := {}
 var _fx: Array = []
 var _fx_template := SkillVisuals._make_template()
+## v0.10.5 (each payoff ring made a TorusMesh and a material): the ring meshes by radius (shared), and the idle fading
+## pieces (rings and bolt segments), each with its own material, reused instead of freed.
+var _tori := {}
+var _idle_fx: Array[MeshInstance3D] = []
 ## Actor id -> {on, r, node} for the vfx drawer.
 var _on := {}
 ## Payoffs drawn by the vfx layer: [kind, at (Vector3), radius, start tick, life, seed, to (Array of Vector3)].
@@ -66,15 +104,15 @@ func _init(p_actors: ActorViews) -> void:
 	actors = p_actors
 	_box.size = Vector3.ONE
 	_prism.size = Vector3(0.12, 0.3, 0.12)
-	_pip.size = Vector2(0.13, 0.13)
 	_shell.radius = 0.5
 	_shell.height = 1.0
 	_shell.radial_segments = 8
 	_shell.rings = 4
 	for k: StringName in [&"burn", &"shock", &"bleed", &"frost", &"guard"]:
 		_mats[k] = _material(ItemLooks.status_color(k), 1.0, false)
-	_mats[&"pip_off"] = _material(Color(0.05, 0.06, 0.09, 0.85), 0.85, true)
-	_mats[&"pip_on"] = _material(ItemLooks.status_color(&"shock"), 1.0, true)
+	_mats[&"dot_plus_fire"] = _material(PLUS_FIRE, 1.0, true)
+	_mats[&"dot_plus_frost"] = _material(PLUS_FROST, 1.0, true)
+	_dot.size = Vector2(0.08, 0.08)
 	_mats[&"shell"] = _material(ItemLooks.status_color(&"frozen"), 0.38, false)
 
 
@@ -85,7 +123,15 @@ func use_vfx(layer: VfxLayer) -> void:
 
 
 func sync(reader: WorldReader) -> void:
-	_frame += 1
+	# v0.9.5 PF4: it may sync every other tick, so the animation clock counts ticks, not syncs.
+	var tick := reader.tick()
+	_frame += clampi(tick - _last_tick, 1, 2)
+	_last_tick = tick
+	_plus_fire = reader.element_plus(true)  # v0.9.5 EE2
+	_plus_frost = reader.element_plus(false)
+	var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
+	if cam != null:
+		_right = cam.global_transform.basis.x
 	_on.clear()
 	_alive.clear()
 	for i in reader.actor_count():
@@ -133,17 +179,22 @@ func _statuses(reader: WorldReader, i: int, out: Dictionary) -> Dictionary:
 		if reader.guard_charges() > 0:
 			out[&"guard"] = reader.guard_charges()
 		return out
+	if not reader.any_status(i):
+		return out
 	if reader.burn_stacks(i) > 0:
 		out[&"burn"] = reader.burn_stacks(i)
+		if _plus_fire:
+			out[&"plus_fire"] = 1  # v0.9.5 EE2: Heat sync
 	if reader.shock_stacks(i) > 0:
 		out[&"shock"] = reader.shock_stacks(i)
-		out[&"shock_max"] = maxi(1, reader.shock_threshold())
 	if reader.bleed_stacks(i) > 0:
 		out[&"bleed"] = reader.bleed_stacks(i)
 	if reader.frost_stacks(i) > 0:
 		out[&"frost"] = reader.frost_stacks(i)
 	if reader.actor_frozen(i):
 		out[&"frozen"] = 1
+		if _plus_frost:
+			out[&"plus_frost"] = 1  # v0.9.5 EE2: Shatter
 	if reader.poison_stacks(i) > 0:
 		out[&"poison"] = reader.poison_stacks(i)
 	return out
@@ -157,11 +208,18 @@ func _build(node: Node3D, r: float) -> Dictionary:
 	var bar_y := 1.3
 	if node.has_meta(&"bar"):
 		bar_y = (node.get_meta(&"bar") as Node3D).get_parent().position.y
-	var v := {"root": root, "bar_y": bar_y, "pips": [], "orbs": []}
+	var v := {
+		"root": root,
+		"bar_y": bar_y,
+		"badges": StatusBadges.new(root, bar_y),
+		"orbs": [],
+		"dots_plus_fire": [],
+		"dots_plus_frost": []
+	}
 	if vfx != null:
 		# v0.8.0 FV (owner O87, the horde lag): the effects layer draws the embers, drips, crystals, sparks and shell,
 		# so none of their ~15 hidden meshes is built per affected enemy (a burning horde built and freed them as
-		# statuses came and went); the shock pips and guard orbs are built the first time they show (_update).
+		# statuses came and went); the badges and guard orbs are built the first time they show (_update).
 		for kind: String in VFX_DRAWN:
 			v[kind] = []
 		v["shell"] = null
@@ -171,7 +229,6 @@ func _build(node: Node3D, r: float) -> Dictionary:
 	v["crystals"] = _pieces(root, CRYSTALS, _prism, Vector3.ONE, &"frost")
 	v["sparks"] = _pieces(root, 2, _box, Vector3(0.05, 0.05, 0.5), &"shock")
 	_build_orbs(v)
-	_build_pips(v)
 	var shell := _piece(root, _shell, Vector3(r * 2.6, 1.3, r * 2.6), &"shell")
 	shell.position = Vector3(0, 0.55, 0)
 	v["shell"] = shell
@@ -183,15 +240,17 @@ func _build(node: Node3D, r: float) -> Dictionary:
 	return v
 
 
-## The shock pips over the bar (once per view).
-func _build_pips(v: Dictionary) -> void:
-	var root: Node3D = v["root"]
-	var pips: Array = []
-	for k in PIPS:
-		var p := _piece(root, _pip, Vector3.ONE, &"pip_off")
-		p.position = Vector3((k - (PIPS - 1) * 0.5) * 0.16, float(v["bar_y"]) + 0.2, 0)
-		pips.append(p)
-	v["pips"] = pips
+## v0.9.5 EE2: the "+" (one bigger dot, beside the bar's right end) of `status` (plus_fire or plus_frost).
+func _update_plus(v: Dictionary, status: StringName, on: bool) -> void:
+	var dots: Array = v[&"dots_plus_fire" if status == &"plus_fire" else &"dots_plus_frost"]
+	if on and dots.is_empty():
+		var p := _piece(
+			v["root"], _dot, Vector3(1.7, 1.7, 1.7), StringName("dot_" + String(status))
+		)
+		p.position = Vector3(0.42, float(v["bar_y"]) + 0.2, 0)
+		dots.append(p)
+	for p: Node3D in dots:
+		p.visible = on
 
 
 ## The guard orbs (once per view).
@@ -209,29 +268,23 @@ func _update(v: Dictionary, on: Dictionary, r: float) -> void:
 				p.visible = false
 		if v["shell"] != null:
 			(v["shell"] as Node3D).visible = false
-	var shock: int = on.get(&"shock", 0)
-	if shock > 0 and (v["pips"] as Array).is_empty():  # v0.8.0 FV: built when first shown
-		_build_pips(v)
-	var shock_max: int = mini(on.get(&"shock_max", PIPS), PIPS)
-	for k in (v["pips"] as Array).size():
-		var p: MeshInstance3D = v["pips"][k]
-		p.visible = shock > 0 and k < shock_max
-		var m: Material = _mats[&"pip_on" if k < shock else &"pip_off"]
-		if p.material_override != m:  # v0.8.0 HV: set on a change only
-			p.material_override = m
+	(v["badges"] as StatusBadges).update(on, _right)  # v0.10.0 FX: icon and "xN" a status
+	_update_plus(v, &"plus_fire", on.has(&"plus_fire"))
+	_update_plus(v, &"plus_frost", on.has(&"plus_frost"))
 	var charges: int = on.get(&"guard", 0)
 	if charges > 0 and (v["orbs"] as Array).is_empty():
 		_build_orbs(v)
 	for k in (v["orbs"] as Array).size():
 		var o: Node3D = v["orbs"][k]
-		o.visible = k < charges
+		# v0.10.0 VX3 (R41): the pack's orbs draw the first guard_orbs_packed of them (one frame behind)
+		o.visible = k < charges and (vfx == null or k >= vfx.guard_orbs_packed)
 		var a := t * 3.0 + TAU * k / ORBS
 		o.position = Vector3(cos(a) * (r + 0.35), 0.7, sin(a) * (r + 0.35))
 
 
 ## The old look's embers, drips, ice crystals, shell and shock sparks (without the effects layer).
 func _update_pieces(v: Dictionary, on: Dictionary, r: float, t: float) -> void:
-	var burn: int = on.get(&"burn", 0)
+	var burn: int = on.get(&"burn", 0) if burn_embers else 0
 	for k in EMBERS:
 		var e: Node3D = v["embers"][k]
 		e.visible = k < mini(EMBERS, 1 + burn / 2) and burn > 0
@@ -259,24 +312,24 @@ func _update_pieces(v: Dictionary, on: Dictionary, r: float, t: float) -> void:
 		s.rotation = Vector3(0.4 * k, a, 0.6)
 
 
+## v0.10.0 FX: the count the badge of `status` shows on actor `id` (0: none).
+func badge(id: int, status: StringName) -> int:
+	var v: Dictionary = _views.get(id, {})
+	return 0 if v.is_empty() else (v["badges"] as StatusBadges).shown(status)
+
+
 ## The number of actors showing at least one status piece (tests read it).
 func view_count() -> int:
 	return _views.size()
 
 
-## The visible pieces of `kind` (&"embers", &"pips_lit", &"drips", &"crystals", &"shell", &"orbs") on actor `id`.
+## The visible pieces of `kind` (&"embers", &"drips", &"crystals", &"shell", &"orbs") on actor `id`.
 func shown(id: int, kind: StringName) -> int:
 	var v: Dictionary = _views.get(id, {})
 	if v.is_empty():
 		return 0
 	if kind == &"shell":
 		return 1 if v["shell"] != null and (v["shell"] as Node3D).visible else 0
-	if kind == &"pips_lit":
-		var lit := 0
-		for p: MeshInstance3D in v["pips"]:
-			if p.visible and p.material_override == _mats[&"pip_on"]:
-				lit += 1
-		return lit
 	var n := 0
 	for p: Node3D in v[kind]:
 		if p.visible:
@@ -290,6 +343,7 @@ func fx_count() -> int:
 
 # --- Combo and engine payoffs --------------------------------------------------------------------------------
 func _sync_payoffs(reader: WorldReader) -> void:
+	_sync_element_events(reader)
 	if vfx != null:
 		_sync_payoff_shots(reader)
 		return
@@ -297,18 +351,84 @@ func _sync_payoffs(reader: WorldReader) -> void:
 		for to in reader.discharge_to():
 			_bolt_line(reader.discharge_from(), to, ItemLooks.status_color(&"shock"))
 		_ring(reader.discharge_from(), 0.8, ItemLooks.status_color(&"shock"))
-	if _changed(&"plasma", reader.plasma_tick()):
-		_bolt_line(reader.plasma_from(), reader.plasma_to(), ItemLooks.combo_color(&"plasma_arc"))
 	for kind: StringName in [&"shatter", &"burst", &"wildfire", &"harvest"]:
 		var p: Array = reader.payoff(kind)
 		if _changed(kind, p[0]):
 			_ring(p[1], 1.6, _payoff_color(kind))
-	if _changed(&"resonance", reader.resonance_tick()):
-		_ring(reader.player_pos(), reader.shockwave_radius_m(), ItemLooks.combo_color(&"resonance"))
-	if _changed(&"bastion", reader.bastion_tick()):
-		_ring(reader.player_pos(), 1.2, ItemLooks.combo_color(&"frozen_bastion"))
 	if _changed(&"slipstream", reader.slipstream_tick()):
 		_ring(reader.player_pos(), 0.9, ItemLooks.combo_color(&"slipstream"))
+
+
+## v0.9.5 EE1: a Contagion jump draws a thin green arc from the giver to the receiver for 0.25 s; the Exsanguinate
+## burst splashes red (ElementLevels). Read from the event log; both go through the effects layer's pooled lines and
+## bursts (their caps and Effects density), or the old look's bolt line and ring.
+func _sync_element_events(reader: WorldReader) -> void:
+	var now := float(reader.tick())
+	for e in reader.events_since(_last_seq):
+		_last_seq = e.seq
+		if e.kind == SimEvent.Kind.STATUS_APPLY and e.effect_id == SimEvent.EFFECT_VENOM_JUMP:
+			var gi := reader.actor_index(e.source_id)
+			if gi < 0:
+				continue
+			var from := reader.actor_pos(gi)
+			if vfx != null:
+				var to: Array = [SimPlane.to_3d(e.pos, 0.6)]
+				_shots.append([&"jump", SimPlane.to_3d(from, 0.6), 0.0, now, JUMP_TICKS, e.seq, to])
+			else:
+				_bolt_line(from, e.pos, StatusBadges.POISON)
+		elif (
+			e.kind == SimEvent.Kind.DAMAGE
+			and e.effect_id == SimEvent.EFFECT_EXSANGUINATE
+			and e.amount > 0
+		):
+			if vfx != null:
+				var at := SimPlane.to_3d(e.pos, 0.07)
+				_shots.append([&"exsang", at, SPLASH_RADIUS_M, now, SPLASH_TICKS, e.seq, []])
+			else:
+				_ring(e.pos, SPLASH_RADIUS_M, ItemLooks.status_color(&"bleed"))
+		elif e.kind == SimEvent.Kind.STATUS_APPLY:
+			_sync_fsf_event(e, now)
+
+
+## v0.9.5 EE2: an Overcharge strike (a bolt from above and a ring), a Shatter (a crackle where the ice broke) and its
+## shards (streaks to the enemies they hit), through the effects layer's pooled lines and bursts (their caps and
+## Effects density), or the old look's bolt line and ring.
+func _sync_fsf_event(e: SimEvent, now: float) -> void:
+	match e.effect_id:
+		SimEvent.EFFECT_STORM_STRIKE:
+			var radius := float(e.amount) / 1000.0
+			if vfx != null:
+				var top: Array = [SimPlane.to_3d(e.pos, STRIKE_TOP_M)]
+				_shots.append(
+					[&"strike", SimPlane.to_3d(e.pos, 0.07), radius, now, STRIKE_TICKS, e.seq, top]
+				)
+			else:
+				_bolt_line(e.pos + Vector2(0.5, 0.5), e.pos, ItemLooks.status_color(&"shock"))
+				_ring(e.pos, radius, ItemLooks.status_color(&"shock"))
+		SimEvent.EFFECT_FROST_SHATTER:
+			_shatter_at = e.pos
+			if vfx != null:
+				_shots.append(
+					[&"shatter", SimPlane.to_3d(e.pos, 0.07), 1.2, now, SHARD_TICKS, e.seq, []]
+				)
+			else:
+				_ring(e.pos, 1.0, ItemLooks.status_color(&"frozen"))
+		SimEvent.EFFECT_PAIR_BURST:  # v0.9.5 EE3: Thermal Shock, Brittle: the frost burst at the pair's radius
+			var reach := float(e.amount) / 1000.0
+			if vfx != null:
+				_shots.append(
+					[&"shatter", SimPlane.to_3d(e.pos, 0.07), reach, now, SHARD_TICKS, e.seq, []]
+				)
+			else:
+				_ring(e.pos, reach, ItemLooks.status_color(&"frozen"))
+		SimEvent.EFFECT_FROST_SHARD:
+			if vfx != null:
+				var to: Array = [SimPlane.to_3d(e.pos, 0.6)]
+				_shots.append(
+					[&"shard", SimPlane.to_3d(_shatter_at, 0.6), 0.0, now, SHARD_TICKS, e.seq, to]
+				)
+			else:
+				_bolt_line(_shatter_at, e.pos, ItemLooks.status_color(&"frozen"))
 
 
 ## The new look's payoffs: element bursts and lightning in the effects layer, the radius rings kept for the rest.
@@ -323,19 +443,10 @@ func _sync_payoff_shots(reader: WorldReader) -> void:
 		_shots.append(
 			[&"discharge", SimPlane.to_3d(reader.discharge_from(), 0.6), 0.8, now, 18.0, _frame, to]
 		)
-	if _changed(&"plasma", reader.plasma_tick()):
-		var to: Array = [SimPlane.to_3d(reader.plasma_to(), 0.6)]
-		_shots.append(
-			[&"discharge", SimPlane.to_3d(reader.plasma_from(), 0.6), 0.8, now, 18.0, _frame, to]
-		)
 	for kind: StringName in [&"shatter", &"burst", &"wildfire", &"harvest"]:
 		var p: Array = reader.payoff(kind)
 		if _changed(kind, p[0]):
 			_shots.append([kind, SimPlane.to_3d(p[1], 0.07), 1.6, now, 60.0, _frame + p[0], []])
-	if _changed(&"resonance", reader.resonance_tick()):
-		_ring(reader.player_pos(), reader.shockwave_radius_m(), ItemLooks.combo_color(&"resonance"))
-	if _changed(&"bastion", reader.bastion_tick()):
-		_ring(reader.player_pos(), 1.2, ItemLooks.combo_color(&"frozen_bastion"))
 	if _changed(&"slipstream", reader.slipstream_tick()):
 		_ring(reader.player_pos(), 0.9, ItemLooks.combo_color(&"slipstream"))
 
@@ -347,10 +458,10 @@ func _draw_vfx(layer: VfxCore) -> void:
 	statuses_culled = 0
 	for id: int in _on:
 		var s: Dictionary = _on[id]
-		var node: Node3D = s["node"]
-		if not is_instance_valid(node) or not node.is_inside_tree():
+		var node_v: Variant = s["node"]  # PF4: a sync every other tick may see it freed
+		if not is_instance_valid(node_v) or not (node_v as Node3D).is_inside_tree():
 			continue
-		var p := node.global_position
+		var p := (node_v as Node3D).global_position
 		var ground := Vector3(p.x, 0.0, p.z)
 		var r := float(s["r"])
 		if cull != null and not cull.shows(ground, r + STATUS_REACH_M):  # v0.8.0 HV: wholly off screen
@@ -358,24 +469,74 @@ func _draw_vfx(layer: VfxCore) -> void:
 			continue
 		statuses_drawn += 1
 		fx.status(ground, r, s["on"], id, float(s["top"]))
-	var keep: Array = []
+	# v0.10.5 W3-Q7: the payoffs in flight, kept in place (no new Array a frame); one wholly off screen (past its reach
+	# + ScreenCull.MARGIN_M) draws nothing but the floor mark it leaves, so the mark is there when the camera arrives
+	shots_drawn = 0
+	shots_culled = 0
+	var n := 0
 	for shot: Array in _shots:
 		var u := (fx.now() - float(shot[3])) / float(shot[4])
 		if u > 1.0:
 			continue
-		keep.append(shot)
+		_shots[n] = shot
+		n += 1
 		u = maxf(u, 0.0)
-		match shot[0]:
-			&"discharge":
-				for to: Vector3 in shot[6]:
-					fx.line(&"storm", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
-			&"shatter":
-				fx.burst(&"frost", shot[1], shot[2], u, int(shot[5]))
-			&"wildfire":
-				fx.burst(&"fire", shot[1], shot[2], u, int(shot[5]))
-			_:
-				fx.burst(&"bleed", shot[1], shot[2], u, int(shot[5]))
-	_shots = keep
+		if cull != null and not cull.shows(shot[1], _shot_reach(shot)):
+			shots_culled += 1
+			_shot_mark(fx, shot)
+			continue
+		shots_drawn += 1
+		_draw_shot(fx, shot, u)
+	_shots.resize(n)
+
+
+## v0.10.5 W3-Q7: how far past its point a payoff can show: a line's length and the light at its far end, a burst's
+## widest light and smoke.
+static func _shot_reach(shot: Array) -> float:
+	var reach := 0.0
+	for to: Vector3 in shot[6]:
+		reach = maxf(reach, (shot[1] as Vector3).distance_to(to) + SHOT_LINE_REACH_M)
+	match shot[0]:
+		&"discharge", &"jump", &"shard":
+			return reach
+	return maxf(reach, float(shot[2]) * SHOT_REACH_PER_M + SHOT_REACH_M)
+
+
+## The floor mark an off-screen payoff leaves (the one _draw_shot's burst or line would lay).
+static func _shot_mark(fx: VfxLayer, shot: Array) -> void:
+	var sd := int(shot[5])
+	match shot[0]:
+		&"jump":
+			fx.line_mark(&"venom", (shot[6] as Array)[0], sd)
+		&"shatter", &"wildfire":
+			fx.burst_mark(shot[0], shot[1], float(shot[2]), sd)
+		&"discharge", &"strike", &"shard":
+			pass  # (storm and frost lines and the storm burst leave none)
+		_:
+			fx.burst_mark(&"bleed", shot[1], float(shot[2]), sd)
+
+
+func _draw_shot(fx: VfxLayer, shot: Array, u: float) -> void:
+	match shot[0]:
+		&"discharge":
+			for to: Vector3 in shot[6]:
+				fx.line(&"storm", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
+		&"jump":
+			var to: Vector3 = (shot[6] as Array)[0]
+			fx.line(&"venom", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
+		&"strike":
+			var top: Vector3 = (shot[6] as Array)[0]
+			fx.line(&"storm", top, shot[1], 1.0 - u, u * float(shot[4]), int(shot[5]))
+			fx.burst(&"storm", shot[1], shot[2], u, int(shot[5]))
+		&"shard":
+			var to: Vector3 = (shot[6] as Array)[0]
+			fx.line(&"frost", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
+		&"shatter":  # v0.10.0 VX3: the frost burst and a small ice patch
+			fx.burst(&"shatter", shot[1], shot[2], u, int(shot[5]))
+		&"wildfire":  # v0.10.0 VX3: fire_area_03 (the fire sprites' explosion without room)
+			fx.burst(&"wildfire", shot[1], shot[2], u, int(shot[5]))
+		_:
+			fx.burst(&"bleed", shot[1], shot[2], u, int(shot[5]))
 
 
 ## The payoffs the effects layer is drawing (tests).
@@ -413,36 +574,97 @@ func _bolt_line(a: Vector2, b: Vector2, c: Color) -> void:
 	for k in pts.size() - 1:
 		var from := pts[k]
 		var to := pts[k + 1]
-		var n := MeshInstance3D.new()
+		var n := _take_fx()
 		n.mesh = _box
 		var length := from.distance_to(to)
 		n.position = (from + to) * 0.5
 		n.scale = Vector3(0.05, 0.05, maxf(length, 0.01))
-		add_child(n)
 		if length > 0.001:
 			n.look_at_from_position(n.position, to, Vector3.UP)
 		_add_fx(n, c, 0.95, 0.0)
 
 
 func _ring(at: Vector2, radius: float, c: Color) -> void:
-	var n := MeshInstance3D.new()
-	var torus := TorusMesh.new()
-	torus.inner_radius = maxf(radius - 0.12, 0.05)
-	torus.outer_radius = radius
-	n.mesh = torus
+	var n := _take_fx()
+	n.mesh = _torus(radius)
 	n.position = SimPlane.to_3d(at, 0.2)
 	n.scale = Vector3(0.4, 0.08, 0.4)
-	add_child(n)
 	_add_fx(n, c, 0.85, 0.6)
 
 
 func _add_fx(n: MeshInstance3D, c: Color, a: float, grow: float) -> void:
-	var m := _fx_template.duplicate() as StandardMaterial3D
+	var m := n.material_override as StandardMaterial3D
 	m.albedo_color = Color(c, a)
-	n.material_override = m
+	_fx.append([n, m, FX_FRAMES, a, grow])
+
+
+## v0.10.5: the floor's load (WorldViewRoot): the payoff rings' meshes and FX_PREFILL idle pieces, so a floor's first
+## payoff makes no mesh, node or material.
+func prepare() -> void:
+	for r in RING_RADII:
+		_torus(r)
+	while _idle_fx.size() < FX_PREFILL:
+		_idle_fx.append(_new_fx())
+
+
+## The idle fading pieces waiting (tests).
+func idle_fx() -> int:
+	return _idle_fx.size()
+
+
+## The ring mesh of `radius` (shared by every ring that size; made once).
+func _torus(radius: float) -> TorusMesh:
+	var key := snappedf(radius, 0.01)
+	var torus: TorusMesh = _tori.get(key)
+	if torus == null:
+		torus = TorusMesh.new()
+		torus.inner_radius = maxf(key - 0.12, 0.05)
+		torus.outer_radius = key
+		_tori[key] = torus
+	return torus
+
+
+## An idle fading piece, shown at the origin, or a new one.
+func _take_fx() -> MeshInstance3D:
+	var n: MeshInstance3D = _idle_fx.pop_back() if not _idle_fx.is_empty() else _new_fx()
+	if n.get_parent() == null:
+		add_child(n)  # (v0.10.5 PC: idle outside the tree)
+	n.transform = Transform3D.IDENTITY
+	n.visible = true
+	return n
+
+
+## A hidden fading piece with its own material (each fades on its own); v0.10.5 PC: made outside the tree, _take_fx
+## puts it in.
+func _new_fx() -> MeshInstance3D:
+	var n := MeshInstance3D.new()
+	n.material_override = _fx_template.duplicate() as StandardMaterial3D
 	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	n.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	_fx.append([n, m, FX_FRAMES, a, grow])
+	n.visible = false
+	return n
+
+
+## v0.10.5 PC (owner PERF_PLAYLOG_2: idle pool nodes in the tree cost every frame): the idle pieces outside the tree
+## (ShaderWarmup draws them once at the load).
+func idle_pieces() -> Array[Node]:
+	var out: Array[Node] = []
+	for n: Variant in _idle_fx:  # (a Variant: freeing the view frees its in-tree pieces first)
+		if is_instance_valid(n) and (n as Node).get_parent() == null:
+			out.append(n)
+	return out
+
+
+## v0.10.5 PC: how many idle pieces wait outside the tree (tests, scripts/checks/pool_node_count.gd).
+func idle_outside() -> int:
+	return idle_pieces().size()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:  # the idle pieces outside the tree go with the view
+		for n in idle_pieces():
+			n.free()
+		_idle_fx.clear()
 
 
 func _process(_delta: float) -> void:
@@ -455,7 +677,10 @@ func _process(_delta: float) -> void:
 			var s: float = 1.0 - (1.0 - fx[4]) * f
 			(fx[0] as Node3D).scale = Vector3(s, 0.08, s)
 		if fx[2] <= 0:
-			(fx[0] as Node).queue_free()
+			var done := fx[0] as MeshInstance3D
+			done.visible = false
+			_idle_fx.append(done)
+			remove_child(done)  # (v0.10.5 PC: idle outside the tree)
 			_fx.remove_at(k)
 
 
@@ -478,7 +703,7 @@ func _piece(root: Node3D, mesh: Mesh, scale: Vector3, mat: StringName) -> MeshIn
 	return p
 
 
-## An unshaded material (alpha when a < 1); `billboard` for the pips, drawn over everything like the health bar.
+## An unshaded material (alpha when a < 1); `billboard` for the "+" marks, drawn over everything like the health bar.
 static func _material(c: Color, a: float, billboard: bool) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
