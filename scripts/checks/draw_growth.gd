@@ -352,6 +352,12 @@ func _node_census() -> Dictionary:
 	out["minimap: floor rooms"] = _main.driver.reader.floor_room_count()
 	out["minimap: floor doors"] = _main.driver.reader.floor_door_count()
 	out["minimap: corner redraws so far"] = mm.corner.draw_count()
+	# W3-V3: what MinimapState holds (a floor's rooms only, or anything kept from the floors before?)
+	out["minimap: state rooms held"] = mm.state.discovered.size()
+	out["minimap: state hidden rooms"] = mm.state.hidden.size()
+	out["minimap: state revision"] = mm.state.revision
+	if mm.corner.has_method(&"layer_draw_count"):  # W3-V3: the cached map layer's re-renders
+		out["minimap: corner layer renders so far"] = mm.corner.call(&"layer_draw_count")
 	return out
 
 
