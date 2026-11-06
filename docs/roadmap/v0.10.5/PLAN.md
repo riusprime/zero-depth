@@ -426,6 +426,24 @@ Steps (S = Sonnet, O = Opus; at most 2 + 2 at once):
   the attack when you move on the spot that is pretty bad … usually there are 4-5")**: find and fix the left-behind
   copies, and give the Wisps a small bright orb look (from the owner's packs).
 
+### Perf wave 3: enemy VAT (owner, 2026-11-06)
+The owner: "Can you start working on that while I play the run and then we check the logs and the increase from VAT?"
+(OWNER_QUESTIONS "Enemy VAT"; the elites and bosses stay as they are). The lead's estimate before any build: +25–40 %
+fps in big hordes (PERF_Q5 §3: the enemy bodies' draw calls and pose code go; the sim, telegraphs, effects and
+lights stay). A starting estimate, not a measurement.
+
+- **W3-V1 (Opus): the VAT pilot on one horde kind.** Bake that kind's current pose code (the avatar's own functions,
+  run offline over a grid of its inputs: walk phase and amount, windup progress, the strike's timeline, idle) into
+  textures, and draw every enemy of that kind as one MultiMesh with a shader that reads them; per-instance data carries
+  what the avatar shows now (facing, flinch and knock, hit flash, biome tint, role glow, status looks, death). The
+  attach points effects read (status FX, sockets) come from the bake too. A switch (dev / ViewPrefs) turns VAT on and
+  off, so the old path stays until the owner signs off. Proved by: side-by-side shots of each state VAT off / on (the
+  owner judges the tolerance, G2), the pose difference measured in the bake (max vertex error in metres), and
+  `frame_probe` at 20 / 60 / 100 of that kind VAT off / on **on the owner's PC while it is otherwise idle**. Goldens
+  don't change (presentation only, EI-07). **While the owner plays the logged run, the agent reads, designs, writes
+  code and lints only: no Godot runs** (they would disturb the owner's timing).
+- Then, only if the owner keeps it: the other horde kinds and the stand-alone enemies, a few per step.
+
 ### R. Release
 - Version bump, patch notes en + es, What's New, ROADMAP row + History, PROGRESS final; one PR into `main` with
   v0.10.0 (the full suite runs there).
