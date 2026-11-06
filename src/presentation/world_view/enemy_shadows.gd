@@ -45,14 +45,7 @@ static func apply(
 	if mode == "blob":
 		_all_off(facing)
 		return _add_blob(root, radius)
-	var mesh: ArrayMesh = null
-	if _cache.has(kind):
-		mesh = _cache[kind]
-	else:
-		var casters: Array = []
-		_collect(host, Transform3D.IDENTITY, casters)
-		mesh = _merge(casters)
-		_cache[kind] = mesh
+	var mesh := proxy_mesh(kind, host)
 	_all_off(facing)
 	if mesh == null:
 		return null
@@ -62,6 +55,18 @@ static func apply(
 	proxy.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
 	host.add_child(proxy)
 	return proxy
+
+
+## The proxy mesh of `kind` (null: no casting part): the cached one, else merged now from `host`'s casting parts
+## (v0.10.5 W3-V1: a VatCrowd gives a reference avatar, its own enemies having no parts).
+static func proxy_mesh(kind: int, host: Node3D) -> ArrayMesh:
+	if _cache.has(kind):
+		return _cache[kind]
+	var casters: Array = []
+	_collect(host, Transform3D.IDENTITY, casters)
+	var mesh := _merge(casters)
+	_cache[kind] = mesh
+	return mesh
 
 
 ## Every GeometryInstance3D under `n` stops casting.

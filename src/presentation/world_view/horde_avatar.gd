@@ -72,6 +72,14 @@ const DEATH_SECONDS := 0.4
 ## The Sniper's muzzle glow at full charge (emission energy; 0 when cold), and where it sits on the barrel.
 const MUZZLE_ENERGY := 4.0
 const MUZZLE_AT := Vector3(0.92, 0, 0)
+## v0.10.5 W3-V1: the idle bob (radians a second of frame time, metres) and the Swarmer's legs' scuttle (radians a
+## second, each leg SWARMER_LEG_PHASE further on, swinging SWARMER_LEG_SWING): named so the VAT bake (VatBake) reads the
+## same numbers the pose uses. Unchanged values.
+const BOB_RATE := 7.0
+const BOB_M := 0.015
+const SWARMER_LEG_RATE := 22.0
+const SWARMER_LEG_PHASE := 1.7
+const SWARMER_LEG_SWING := 0.25
 
 ## v0.8.0 HR: the code bodies' meshes, one per shape for every enemy (keyed by their vertices), and the boxes by size.
 static var _meshes := {}
@@ -85,6 +93,11 @@ var body: Node3D
 var parts := {}
 ## v0.8.0 MI: the owner's model (null: the code-made body), scaled to the kind's height.
 var model: Node3D
+## v0.10.5 W3-V1 (owner, 2026-11-06, the enemy VAT pilot): true (set before setup(), ActorViews from
+## ViewPrefs.enemy_vat): the body is drawn by a VatCrowd from baked poses, not by nodes. setup() builds no piece and
+## _pose() writes no node; the drives the crowd reads (windup_pose, strike_pose, crouch_amount, anim_time, vat_lift,
+## glow_energy) are the very numbers the nodes' pose is made of. Only VatCrowd.supports() kinds.
+var vat := false
 
 ## The glowing accent (eye, seam, crystal, scope): shared (EnemyLooks.accent), its energy this enemy's GLOW.
 var _glow_mat: ShaderMaterial
@@ -118,6 +131,9 @@ var _walk_t := 0.0
 var _last_at := Vector3.INF
 var _die_t := -1.0
 var _model_scale := 1.0
+var _vat_lift := 0.0
+## v0.10.5 W3-V1: the crouch pose_at() poses at (< 0: none, the windup's own).
+var _bake_crouch := -1.0
 
 
 static func height_of(p_kind: int) -> float:
@@ -166,6 +182,9 @@ func setup(p_kind: int, outline_color: Color, technique: StringName = &"outline"
 	_outline = outline_color
 	_technique = technique
 	height = height_of(kind)
+	if vat:  # v0.10.5 W3-V1: no nodes; the crowd draws the body
+		_pose()
+		return
 	body = Node3D.new()
 	add_child(body)
 	var glow := _col(&"eye")
@@ -233,7 +252,7 @@ func _apply(tick: int, state: int, healing: bool, windup: float) -> void:
 
 func advance(delta: float) -> void:
 	var dt := clampf(delta, 0.0, 0.05)
-	if dt <= 0.0 or body == null:
+	if dt <= 0.0 or (body == null and not vat):
 		return
 	_t += dt
 	if _die_t >= 0.0:
@@ -282,6 +301,8 @@ func glow_energy() -> float:
 
 ## v0.8.0 TG: 0..1 how deep the windup crouch is (0 for a kind without a tell or outside the windup).
 func crouch_amount() -> float:
+	if _bake_crouch >= 0.0:
+		return _bake_crouch
 	if not TELL_KINDS.has(kind) or _state != WorldReader.STATE_WINDUP:
 		return 0.0
 	return tell_crouch(_tell_p)
@@ -292,12 +313,41 @@ func muzzle_energy() -> float:
 	return _muzzle_e if parts.has("muzzle") else 0.0
 
 
+## v0.10.5 W3-V1: the frame-time clock the pose runs on (seconds; the VAT crowd reads the legs' phase from it).
+func anim_time() -> float:
+	return _t
+
+
+## v0.10.5 W3-V1: how far the whole body is lifted now (m, the idle bob and the rise-in's sink): the part of the
+## body's pose the VAT crowd moves the instance by (VatBake bakes the rest at no bob, fully risen).
+func vat_lift() -> float:
+	return _vat_lift
+
+
+## v0.10.5 W3-V1 (VatBake): poses the body straight from its drives (the windup raise `wind`, the strike `strike`,
+## the crouch, the clock `t`, the rise-in `rise`), as advance() would have left them, so the bake runs this very pose
+## code over a grid of them. Tools and tests only; the game never calls it.
+func pose_at(wind: float, strike: float, crouch: float, t: float, rise: float) -> void:
+	_wind = wind
+	_strike = strike
+	_bake_crouch = crouch
+	_t = t
+	_rise = rise
+	_pose()
+	_bake_crouch = -1.0
+
+
 func _pose() -> void:
 	var calm := ViewPrefs.reduced_motion
-	var bob := 0.0 if calm else sin(_t * 7.0) * 0.015
+	var bob := 0.0 if calm else sin(_t * BOB_RATE) * BOB_M
 	var crouch := crouch_amount()
 	var telling := TELL_KINDS.has(kind) and _state == WorldReader.STATE_WINDUP
 	var tell := tell_glow(_tell_p, _t, calm) if telling else 1.0
+	var energy := (1.5 + _wind * 3.0) * tell + _strike * 2.0
+	if vat:  # v0.10.5 W3-V1: the crowd draws the body (VatCrowd); only the numbers it reads
+		_vat_lift = bob - (1.0 - _rise) * height
+		_set_glow(energy * lerpf(0.2, 1.0, _rise))
+		return
 	# The crouch sinks the body by a share of its height and draws it back from the way it will strike.
 	body.position = Vector3(
 		-_wind * 0.06 - crouch * 0.08 * height + _strike * 0.12,
@@ -305,7 +355,6 @@ func _pose() -> void:
 		0
 	)
 	body.rotation.z = crouch * 0.12
-	var energy := (1.5 + _wind * 3.0) * tell + _strike * 2.0
 	if model != null:  # v0.8.0 MI: the owner's model's parts
 		_pose_model(energy, calm)
 		return
@@ -319,7 +368,9 @@ func _pose() -> void:
 				m.rotation.y = (0.15 + _wind * 0.85 - _strike * 0.75) * (1.0 if k == 0 else -1.0)
 			for k in 6:
 				var leg: Node3D = parts["leg%d" % k]
-				leg.rotation.z = sin(_t * 22.0 + k * 1.7) * 0.25
+				leg.rotation.z = (
+					sin(_t * SWARMER_LEG_RATE + k * SWARMER_LEG_PHASE) * SWARMER_LEG_SWING
+				)
 		WorldReader.KIND_SPLITTER, WorldReader.KIND_SPLITLING:
 			var gap := 0.03 + _wind * 0.08 + sin(_t * 3.0) * 0.01
 			(parts["left"] as Node3D).position.z = -gap

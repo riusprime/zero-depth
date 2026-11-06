@@ -31,6 +31,9 @@ extends SceneTree
 ## the aim sweeping a circle, the hero strafing left/right/up/down in 2 s legs.
 ## v0.10.5 O12 (owner P9, the effect budget): --enemies=N keeps N live enemies (default ENEMIES); --heavy also grants
 ## HEAVY_KEYS at level 5 (Twin, Halo, Rapid Fire, Wildfire, Chain Blast, the rune explosion: the most effects a frame);
+## v0.10.5 W3-V1 (the enemy VAT pilot): --only=<kind> (an ActorStore.Kind name, e.g. swarmer) makes every live enemy
+## that kind; --enemy-vat=on|off sets ViewPrefs.enemy_vat (VatCrowd draws the VatCrowd.KINDS enemies):
+##   ... -s scripts/checks/frame_probe.gd -- --biome=red_canyon --enemies=60 --only=swarmer --enemy-vat=on
 ## --fx counts, per measured frame, the hero's effect instances (the forms' meshes and particles, the effects layer's
 ## sprites, the hero's share of them when the layer keeps a hero budget, the pack's live instances by family) and the
 ## hostile threats on screen (telegraphs, enemy shots) and the hero effects' opacity, and reports avg / p95 / max.
@@ -94,6 +97,8 @@ var _secs := 30.0
 var _warm := 3.0
 var _ab: PackedStringArray = []
 var _shadows := ""  # --enemy-shadows=proxy|blob (v0.10.5 PA)
+var _vat := ""  # --enemy-vat=on|off (v0.10.5 W3-V1)
+var _only := -1  # --only=<kind name> (v0.10.5 W3-V1): ActorStore.Kind, -1 the Playground's whole list
 var _main: Main
 var _bi := -1
 var _phase := &"boot"
@@ -165,6 +170,10 @@ func _initialize() -> void:
 			_proc = true
 		elif s.begins_with("enemy-shadows="):  # v0.10.5 PA: "proxy" or "blob"
 			_shadows = s.trim_prefix("enemy-shadows=")
+		elif s.begins_with("enemy-vat="):  # v0.10.5 W3-V1
+			_vat = s.trim_prefix("enemy-vat=")
+		elif s.begins_with("only="):  # v0.10.5 W3-V1
+			_only = ActorStore.Kind.keys().find(s.trim_prefix("only=").to_upper())
 		elif s.begins_with("ab="):
 			_ab = s.trim_prefix("ab=").split(",", false)
 	_biomes = Array(biome_arg.split(",", false))
@@ -180,6 +189,8 @@ func _initialize() -> void:
 	profile.section("settings")["language"] = "en"
 	if not _shadows.is_empty():
 		profile.section("settings")["enemy_shadows"] = _shadows
+	if not _vat.is_empty():
+		profile.section("settings")["enemy_vat"] = _vat
 	ProfileStore.use_shared(profile)
 	RunSaveStore.use_shared(RunSaveStore.new(""))
 	_main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
@@ -392,7 +403,7 @@ func _top_up() -> void:
 		tries += 1
 		var ang := float(tries * 137) * 0.0174533 + float(w.tick) * 0.01
 		var dist := 7.0 + float((tries * 53) % 6)
-		var kind: int = kinds[(tries + alive) % kinds.size()]["kind"]
+		var kind: int = kinds[(tries + alive) % kinds.size()]["kind"] if _only < 0 else _only
 		if _api.place_enemy_now(kind, p + Vector2(cos(ang), sin(ang)) * dist):
 			alive += 1
 
@@ -421,6 +432,19 @@ func _sample() -> Array:
 		particles,
 		emitting,
 	]
+
+
+## v0.10.5 W3-V1: the VAT switch, the one kind (if any) and how many bodies the VAT crowd drew on the last frame.
+func _vat_line() -> String:
+	var crowd := _main.view.actors.vat_crowd
+	return (
+		"enemy_vat: %s  only: %s  vat_bodies_last_frame: %d"
+		% [
+			"on" if ViewPrefs.enemy_vat else "off",
+			"all" if _only < 0 else String(ActorStore.Kind.keys()[_only]).to_lower(),
+			crowd.drawn if crowd != null else 0,
+		]
+	)
 
 
 func _apply_ab() -> void:
@@ -525,6 +549,7 @@ func _finish_biome() -> void:
 	)
 	lines.append("flags: " + _ab_status())
 	lines.append("enemy_shadows: " + ViewPrefs.enemy_shadows)  # v0.10.5 PA
+	lines.append(_vat_line())  # v0.10.5 W3-V1
 	lines.append(
 		(
 			"frames=%d  avg_ms=%.3f  p50_ms=%.3f  p95_ms=%.3f  p99_ms=%.3f"
@@ -593,6 +618,10 @@ func _finish_biome() -> void:
 	var tag := "" if _ab.is_empty() else "_ab-" + "-".join(_ab)
 	if _heavy or _enemies != ENEMIES:
 		tag += "_heavy%d" % _enemies
+	if _only >= 0:  # v0.10.5 W3-V1
+		tag += "_only-" + String(ActorStore.Kind.keys()[_only]).to_lower()
+	if not _vat.is_empty():
+		tag += "_vat-" + _vat
 	var f := FileAccess.open(
 		ProjectSettings.globalize_path(OUT_DIR + "%s_%s%s.txt" % [_sha, biome, tag]),
 		FileAccess.WRITE

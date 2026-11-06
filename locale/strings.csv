@@ -610,6 +610,7 @@ PHASE_SWARM,The swarm,El enjambre
 PHASE_PEAK,Full horde,Horda completa
 HUD_NEW_ENEMY,New: %s,Nuevo: %s
 UI_DEV_NEXT_PHASE,Next difficulty phase,Siguiente fase de dificultad
+UI_DEV_ENEMY_VAT,Enemy VAT (Swarmers),VAT de enemigos (Enjambres)
 HUD_ARENA,ARENA,ARENA
 HUD_ARENA_WAVE,Wave %d / %d · %d left,Oleada %d / %d · quedan %d
 HUD_ARENA_CLEARED,Arena cleared,Arena superada

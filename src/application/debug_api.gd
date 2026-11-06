@@ -6,6 +6,10 @@ extends RefCounted
 
 signal reseed_requested(seed_value: int)
 
+## v0.10.5 W3-V1: the view switches the dev panel shows (it cannot see the views; a view registers its own, e.g.
+## ViewPrefs' enemy VAT): id -> [the button's text key, a Callable that flips it, a Callable returning it (bool)].
+static var view_switches := {}
+
 var world: World
 var paused := false
 var ticks_last_frame := 0
@@ -37,6 +41,13 @@ var _curse_chest := false
 ## v0.6.0 CU (TEST HELPER, dev runs only); v0.9.0 EL: the next elite archetype to spawn (-1 none), and the one after.
 var _elite_pending := -1
 var _elite_next := 0
+
+
+## v0.10.5 W3-V1: adds (or replaces) a dev panel view switch (see view_switches).
+static func register_view_switch(
+	id: StringName, label_key: String, flip: Callable, state: Callable
+) -> void:
+	view_switches[id] = [label_key, flip, state]
 
 
 func _init(p_world: World) -> void:
