@@ -172,6 +172,7 @@ static func library() -> Dictionary:
 			_lib[c.name] = c
 		for c: BossClip in _last_phase():
 			_lib[c.name] = c
+		BossClip.loosen(_lib, 0.0, 1.25)  # v0.11.0 O16: the wind-up, the recoil, the idle sway
 	return _lib
 
 

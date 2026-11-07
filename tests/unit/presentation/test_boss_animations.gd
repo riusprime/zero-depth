@@ -466,3 +466,116 @@ func test_sync_reads_the_attack_timing_and_writes_nothing_back() -> void:
 	a.advance(DT)
 	assert_eq(w.state_hash(), hash_before, "the avatar wrote nothing back")
 	assert_eq(a.animator.action_clip().name, &"flood")
+
+
+# --- v0.11.0 O16 (owner Q11: "right now the animation feels too stiff"; Q30: "all bosses") ------------------------
+
+
+## Every boss library O16 loosened (the Twin Wardens were loosened by hand in O16a).
+func _loose_libraries() -> Dictionary:
+	return {
+		&"gatekeeper": GatekeeperClips.library(),
+		&"warlord": WarlordClips.library(),
+		&"brood_mother": BroodMotherClips.library(),
+		&"hive_lens": HiveLensClips.library(),
+		&"siege_engine": SiegeEngineClips.library(),
+		&"foundry": FoundryClips.library(),
+		&"lantern_shade": LanternShadeClips.library(),
+		&"tidecaller": TidecallerClips.library(),
+		&"clockwork_judge": ClockworkJudgeClips.library(),
+		&"colossus": ColossusClips.library(),
+		&"prism": PrismClips.library(),
+		&"nemesis": NemesisClips.library(),
+	}
+
+
+func _is_attack(c: BossClip) -> bool:
+	return (
+		BossAnimator.MOVE_CLIPS.values().has(c.name)
+		or (String(c.name).ends_with(BossAnimator.SHIELDED_SUFFIX) and c.name != &"shielded")
+	)
+
+
+func test_each_boss_gathers_before_its_wind_up_and_recoils_after_its_strike() -> void:
+	for id: StringName in _loose_libraries():
+		var lib: Dictionary = _loose_libraries()[id]
+		var gathers := 0
+		var recoils := 0
+		for c: BossClip in lib.values():
+			if not _is_attack(c):
+				continue
+			for k in c.track_count():
+				if c.channels[k] == BossClip.PARAM:
+					continue
+				var s := c.first[k]
+				var n := c.counts[k]
+				for j in n:
+					var q := s + j
+					if (c.flags[q] & BossClip.SETTLE) == 0 or j == 0 or j == n - 1:
+						continue
+					var t := c.times[q]
+					var v := c.values[q]
+					if t < c.strike and j + 1 < n:
+						# The gather: the other way from the pose it draws into, and gone with reduced motion.
+						var pose := c.values[q + 1]
+						if signf(v) == -signf(pose) and absf(v) <= absf(pose) * 0.5:
+							gathers += 1
+							var calm := c.value(k, t, true)
+							assert_true(
+								signf(calm) != signf(v) or absf(calm) < 1e-4,
+								"%s %s: reduced motion skips the gather" % [id, c.name]
+							)
+					elif t > c.hold:
+						var held := c.value(k, c.hold)
+						if signf(v) == -signf(held):
+							recoils += 1
+							assert_true(
+								signf(c.value(k, t, true)) != signf(v),
+								"%s %s: reduced motion skips the recoil" % [id, c.name]
+							)
+				assert_almost_eq(
+					c.value(k, 1.0), 0.0, 0.001, "%s %s: still ends at rest" % [id, c.name]
+				)
+		assert_gt(gathers, 0, "%s gathers before its wind-ups" % id)
+		# The Prism floats: its beams hold to the end of the clip and its flick has no recovery room, so no recoil.
+		if id != &"prism":
+			assert_gt(recoils, 0, "%s recoils after its strikes" % id)
+
+
+func test_each_boss_sways_when_idle_and_keeps_its_held_pose() -> void:
+	for id: StringName in _loose_libraries():
+		var idle: BossClip = _loose_libraries()[id][&"idle"]
+		var most := 0.0
+		for k in idle.track_count():
+			if idle.channels[k] == BossClip.PARAM:
+				continue
+			for t: float in [0.25, 0.5, 0.75]:
+				most = maxf(most, absf(idle.value(k, t) - idle.value(k, 0.0)))
+		assert_gt(most, 0.04, "%s: a visible idle sway (%.3f)" % [id, most])
+	# The Warlord's carried weapon stays carried: a held (constant) idle track keeps its value.
+	var w: BossClip = WarlordClips.library()[&"idle"]
+	for k in w.track_count():
+		var s := w.first[k]
+		var flat := true
+		for j in w.counts[k]:
+			flat = flat and is_equal_approx(w.values[s + j], w.values[s])
+		if flat:
+			assert_almost_eq(w.value(k, 0.3), w.values[s], 1e-5, "a held pose stays held")
+
+
+func test_a_hit_makes_each_boss_flinch_and_reduced_motion_shrinks_it() -> void:
+	for id: StringName in classes:
+		var sizes := {}
+		for calm: bool in [false, true]:
+			ViewPrefs.reduced_motion = calm
+			var a := _avatar(classes[id])
+			_drive(a, {"state": WorldReader.STATE_MOVE, "hp": 100}, 1, 0)
+			_drive(a, {"state": WorldReader.STATE_MOVE, "hp": 90}, 3, 1)
+			var c: BossClip = a.animator.clips[&"flinch"]
+			var biggest := 0.0
+			for k in c.track_count():
+				biggest = maxf(biggest, absf(c.value(k, 0.15)))
+			sizes[calm] = a.animator.slot_w[BossAnimator.FLINCH] * biggest
+			assert_gt(sizes[calm], 0.03, "%s flinches (calm: %s)" % [id, calm])
+		assert_lt(sizes[true], sizes[false], "%s: reduced motion, a smaller flinch" % id)
+	ViewPrefs.reduced_motion = false

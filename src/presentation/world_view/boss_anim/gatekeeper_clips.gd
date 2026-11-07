@@ -46,6 +46,7 @@ static func library() -> Dictionary:
 			_death(),
 		]:
 			_lib[c.name] = c
+		BossClip.loosen(_lib, 0.025)  # v0.11.0 O16: the wind-up, the recoil, the idle sway
 	return _lib
 
 
