@@ -21,8 +21,8 @@ func _world(items: Array = [], at: Array = [[Vector2(4.0, 0.0), 100000]]) -> Wor
 
 
 ## v0.11.0 O1 (owner Q7: "instant, drawn fast (~0.15 s), glow fading ~0.5 s"): the shot's lance, as the sim hit it,
-## through the enemy to 9 m, shown until LANCE_GLOW_TICKS (held or not).
-func test_a_shot_shows_one_lance_through_the_enemy_for_half_a_second() -> void:
+## through the enemy to 9 m, drawn out over DRAW_TICKS, its glow fading, gone by LANCE_GLOW_TICKS (held or not).
+func test_a_shot_shows_one_lance_through_the_enemy_drawn_fast_and_fading() -> void:
 	var w := _world()
 	var r := WorldReader.new(w)
 	W.run(w, 1, 0, W.S)
@@ -32,9 +32,20 @@ func test_a_shot_shows_one_lance_through_the_enemy_for_half_a_second() -> void:
 	assert_almost_eq(
 		(b["to"] as Vector2).x, 9.0 + w.player.radius_m, 0.05, "through the enemy to 9 m"
 	)
-	W.run(w, WorldReader.LANCE_GLOW_TICKS - 1, 0, W.S)
+	assert_lt(_view.drawn_now, 0.5, "it starts drawing at the hero")
+	W.run(w, int(LaserWeight.DRAW_TICKS) - 1, 0, W.S)  # the first sync came a tick after the shot
+	_view.sync(r)
+	assert_almost_eq(_view.drawn_now, 1.0, 0.001, "drawn out in 0.15 s")
+	assert_almost_eq(_view.fade_now, 1.0, 0.001, "at full glow")
+	W.run(w, 12, 0, W.S)
+	_view.sync(r)
+	assert_between(_view.fade_now, 0.01, 0.99, "the glow fades")
+	W.run(w, WorldReader.LANCE_GLOW_TICKS - 21, 0, W.S)
 	_view.sync(r)
 	assert_eq(_view.shown, 0, "gone after 0.5 s, though still held")
+	assert_eq(
+		LaserView.cut(PackedVector2Array([Vector2.ZERO, Vector2(4, 0)]), 0.5)[1], Vector2(2, 0)
+	)
 
 
 func test_twin_shows_two_beams() -> void:
