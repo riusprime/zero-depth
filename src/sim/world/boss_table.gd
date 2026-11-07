@@ -208,6 +208,8 @@ var phase_wave_ticks := PackedInt32Array()
 var phase_wave_n := PackedInt32Array()
 ## v0.9.5 BH6 (HC4-HC6): The Fallen's interphases and dashes between moves (null: none).
 var interphase: InterphaseTable = null
+## v0.11.0 O3 (owner L5, Q9 a; BossQuake): the Gatekeeper's quake pillars (null: none).
+var quake: QuakeTable = null
 
 
 ## The attack index with this id, or -1.

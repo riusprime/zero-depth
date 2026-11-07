@@ -289,4 +289,20 @@ dash_read_seconds = 0.5
 gap_close_attack = &""
 gap_close_distance_m = 5.0
 gap_close_seconds = 2.0
+quake = {
+"boss_m": 2.0,
+"count": 3,
+"damage_permille": 30,
+"from_phase": 1,
+"gap_m": 5.0,
+"pillar_m": 1.2,
+"pulse_seconds": 3.0,
+"ring_m": 2.6,
+"stun_permille": 1500,
+"stun_seconds": 2.0,
+"stuns_per_phase": 2,
+"wall_m": 1.5,
+"warn_seconds": 0.8
+}
+quake_cause_key = &"CAUSE_GATEKEEPER_PILLAR"
 id = &"gatekeeper"

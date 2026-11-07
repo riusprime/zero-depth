@@ -88,12 +88,14 @@ BOSS_SIEGE_ENGINE,The Siege Engine,The Siege Engine
 HUD_BOSS_STAGGER,Stagger,Aturdimiento
 HUD_BOSS_STAGGERED,STAGGERED,ATURDIDO
 HUD_BOSS_PHASE_SHIFT,PHASE SHIFT,CAMBIO DE FASE
+HUD_BOSS_STUNNED,STUNNED · VULNERABLE,ATURDIDO · VULNERABLE
 CAUSE_HATCHLING,A Hatchling ran you down.,Una Cría te arrolló.
 CAUSE_GATEKEEPER_SLAM,The Gatekeeper's fist slam crushed you.,El puñetazo de The Gatekeeper te aplastó.
 CAUSE_GATEKEEPER_RINGS,The Gatekeeper's rock rings buried you.,Los anillos de roca de The Gatekeeper te sepultaron.
 CAUSE_GATEKEEPER_QUAKE,The Gatekeeper's cross quake caught you.,El temblor en cruz de The Gatekeeper te alcanzó.
 CAUSE_GATEKEEPER_LANES,The Gatekeeper's shockwave knocked you down.,La onda de choque de The Gatekeeper te derribó.
 CAUSE_GATEKEEPER_SWEEP,The Gatekeeper's sweep smashed you.,El barrido de The Gatekeeper te destrozó.
+CAUSE_GATEKEEPER_PILLAR,The Gatekeeper's quake pillar shook you down.,El pilar sísmico de The Gatekeeper te derribó.
 CAUSE_GATEKEEPER_CHARGE,The Gatekeeper's charge flattened you.,La embestida de The Gatekeeper te aplastó.
 CAUSE_BROOD_LEAP,The Brood Mother landed on you.,The Brood Mother cayó sobre ti.
 CAUSE_BROOD_BURROW,The Brood Mother burst up beneath you.,The Brood Mother surgió bajo tus pies.

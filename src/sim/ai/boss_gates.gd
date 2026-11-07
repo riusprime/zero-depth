@@ -72,6 +72,7 @@ static func begin(w: World, i: int, b: int, gate: int) -> void:
 	a.state[i] = BossAi.GATE
 	a.state_t[i] = 0
 	CoreTheft.on_phase_change(w, i)  # v0.9.5 BH1 (H1, Q3): the core's steal window opens (3 s)
+	BossQuake.on_phase(w, i, w.boss_tables[bs.table[b]], gate)  # v0.11.0 O3 (L5): the quake pillars rise
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[i], a.ids[i], a.ids[i], a.pos(i))
 	e.effect_id = EFFECT
 	e.amount = gate

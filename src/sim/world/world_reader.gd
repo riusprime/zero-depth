@@ -1908,6 +1908,11 @@ func boss_gate_permille(i: int) -> int:
 	return BossGates.progress(_w, i)
 
 
+## v0.11.0 O3 (owner Q9 a): true while boss i is stunned by a broken quake pillar (it takes more damage meanwhile).
+func boss_stunned(i: int) -> bool:
+	return BossQuake.stunned(_w, i)
+
+
 func boss_in_gate(i: int) -> bool:
 	return _w.actors.state[i] == BossAi.GATE
 
@@ -2021,11 +2026,13 @@ func boss_rain(i: int) -> Array:
 
 
 ## v0.8.0 BS1 (owner O5, S1): the Gatekeeper's standing pillars (walls while they stand): [center, half side (m),
-## the tick it rose, the tick it sinks] each, for StoneSpikeViews.
+## the tick it rose, the tick it sinks] each, for StoneSpikeViews (v0.11.0 O3: not the quake pillars).
 func boss_pillars() -> Array:
 	var out := []
 	var bs := _w.bosses
 	for k in bs.pillar_x.size():
+		if BossQuake.is_quake(bs, k):
+			continue  # v0.11.0 O3: those are boss_quake_pillars
 		out.append(
 			[
 				Vector2(bs.pillar_x[k], bs.pillar_y[k]),
@@ -2035,6 +2042,12 @@ func boss_pillars() -> Array:
 			]
 		)
 	return out
+
+
+## v0.11.0 O3 (owner L5, Q9 a): the Gatekeeper's standing quake pillars (walls too), each BossQuake.ring_state: its
+## centre, half side, its ring's radius and growth before each pulse, its pulse clock (QuakePillarViews).
+func boss_quake_pillars() -> Array:
+	return BossQuake.view(_w)
 
 
 ## v0.8.0 BS1 (S2): the javelins boss i has stuck in the floor: [at, angle out (1/4096 turns), the tick it stuck,

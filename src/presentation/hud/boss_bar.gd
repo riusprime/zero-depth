@@ -1,7 +1,8 @@
 class_name BossBar
 extends Control
 ## The boss bar (PLAN v0.3.0 C) across the top of the HUD while a boss is alive: its name, its HP, and the label over
-## it ("PHASE SHIFT" through a phase change; v0.9.5 BH1: bosses have no stagger meter). Reads the sim through
+## it ("PHASE SHIFT" through a phase change; v0.11.0 O3: "STUNNED · VULNERABLE" while a broken quake pillar stuns
+## the Gatekeeper; v0.9.5 BH1: bosses have no stagger meter). Reads the sim through
 ## WorldReader only; hidden when no boss is alive.
 ## v0.3.0 BX (L22): while the boss rises the bar fills from empty to full over exactly its intro ticks
 ## (WorldReader.boss_intro_permille), then shows its real HP.
@@ -108,6 +109,8 @@ func sync(reader: WorldReader) -> void:
 	_stagger_label.text = ""
 	if reader.boss_in_gate(i):  # v0.5.5 DS (D7): the phase gate's transition
 		_stagger_label.text = tr("HUD_BOSS_PHASE_SHIFT")
+	elif reader.boss_stunned(i):  # v0.11.0 O3 (Q9 a): a broken quake pillar stunned it (it takes more damage)
+		_stagger_label.text = tr("HUD_BOSS_STUNNED")
 	if not final:
 		_fallen.text = ""
 		# every sync, so a language switch renames the boss at once (v0.6.0 UP)

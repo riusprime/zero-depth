@@ -32,7 +32,16 @@ static func edge_distance(w: World, i: int) -> float:
 
 ## [per mille, tags] for a hit the player lands on boss i: the open weak point up close, else the ranged armour.
 ## v0.10.5 O3: the Prism's open core while she kneels, up close (BossPrismLast).
+## v0.11.0 O3 (owner Q9 a): times the Gatekeeper's stun after a broken quake pillar (BossQuake.taken_permille, +50 %),
+## tagged exposed.
 static func hit_mult(w: World, i: int) -> Array[int]:
+	var m := _base_mult(w, i)
+	if BossQuake.stunned(w, i):
+		m = [m[0] * BossQuake.taken_permille(w, i) / 1000, m[1] | SimEvent.TAG_EXPOSED]
+	return m
+
+
+static func _base_mult(w: World, i: int) -> Array[int]:
 	var b := BossAi.entry_of(w, i)
 	if b < 0:
 		return [1000, 0]
