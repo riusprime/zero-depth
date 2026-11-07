@@ -42,9 +42,9 @@ func _fits(rect: Rect2) -> bool:
 	)
 
 
-func _world(ids: Array) -> World:
+func _world(ids: Array, build: StringName = &"blade") -> World:
 	var t := ContentCompiler.compile_player(_repo.get_def(&"player", &"runner"))
-	ContentCompiler.apply_build(t, _repo.get_def(&"build", &"blade"))
+	ContentCompiler.apply_build(t, _repo.get_def(&"build", build))
 	var w := World.new(5, t)
 	w.floor_index = 5  # v0.9.0 FV: eight slots on floor 5 (was 3)
 	w.dummy_speed = 0.0
@@ -152,3 +152,17 @@ func test_every_wand_card_name_fits_its_tile_in_both_languages() -> void:
 	TranslationServer.set_locale("en")
 	assert_gt(checked, 60, "every slot card, both languages")
 	assert_true(WandRow.NAME_SIZE >= 13 and WandRow.SMALL_SIZE >= 12, "legible at 1280 x 720")
+
+
+func test_the_row_marks_a_card_the_current_form_does_not_use() -> void:
+	var w := _world([&"gun_pierce"], &"gun")
+	w.slot_table = WandCompiler.slots(_repo, w.item_tables)
+	var row := WandRow.new()
+	add_child_autofree(row)
+	TranslationServer.set_locale("en")
+	row.show_wand(WorldReader.new(w).wand(), 8)
+	assert_eq(row.dead_reason(0), &"", "the plain bolt uses Pierce")
+	assert_true(BuildSlots.take(w, WandLab.code(w, &"gun_lance")), "takes the Lance form")
+	row.show_wand(WorldReader.new(w).wand(), 8)
+	assert_eq(row.dead_reason(0), Wand.DEAD_FORM, "the Lance form does not use Pierce")
+	assert_eq(row.level_text(0), "Does nothing with this form", "the tile says why")

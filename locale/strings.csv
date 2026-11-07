@@ -791,6 +791,7 @@ UI_WAND_CUT_ON_CRIT,cast on a crit →,se lanza en un crítico →
 UI_WAND_CUT_UNUSED,too deep to cast,demasiado profundo para lanzarse
 UI_WAND_DEAD_TRIGGER,Does nothing after a trigger,No hace nada tras un disparador
 UI_WAND_DEAD_DEEP,Too deep to cast,Demasiado profundo para lanzarse
+UI_WAND_DEAD_FORM,Does nothing with this form,No hace nada con esta forma
 UI_SWAP_PLACE,Insert the new card: where does it go?,Insertar la carta nueva: ¿dónde va?
 UI_SWAP_LEAVE,Which card leaves the wand?,¿Qué carta sale de la varita?
 UI_SWAP_CARRY,Move the card: ←→ then R or Enter,Mueve la carta: ←→ y luego R o Intro
