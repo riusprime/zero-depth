@@ -1,7 +1,8 @@
 class_name ShadeRules
 extends RefCounted
 ## v0.9.0 NB4 (BOSSES_4_5.md N4; BossShade): the Lantern Shade's content rules (its own file: the boss definitions
-## stay small). A Lights Out is a `pattern` with dark_seconds (O4: unshielded): its room's light (light_m round the
+## stay small). A Lights Out is a shielded `pattern` with dark_seconds (v0.11.0 O4b, owner "Bring it back": shielded
+## through its telegraph only): its room's light (light_m round the
 ## player, lamps lanterns lamp_m wide burning lamp_seconds, relit within relight_m, inset_m in from each wall's middle).
 ## A `marks` attack may carry snuff (1: each struck circle puts out the lit lantern nearest it). NB4b (owner, PLAN
 ## "Owner decisions" NB4: "Dark comes and goes"): dark_lasts_seconds is how long each dark lasts, shorter than the
@@ -32,7 +33,7 @@ static func is_lights_out(a: BossAttackDefinition) -> bool:
 	return a != null and a.move == &"pattern" and a.shape_params.has("dark_seconds")
 
 
-## BossAttackDefinition.validate_into: a Lights Out is unshielded (O4), darkens after a real time, names a real light
+## BossAttackDefinition.validate_into: a Lights Out is shielded (O4b), darkens after a real time, names a real light
 ## and a real cut (never immune); a
 ## Snuff's flag is 0 or 1 on a `marks` attack.
 static func validate(
@@ -50,8 +51,8 @@ static func validate(
 	for k in LIGHT_PARAMS:
 		if not sp.has(k):
 			issues.append(ValidationIssue.new(&"missing", path, where + "Lights Out needs " + k))
-	if a.shielded:  # v0.11.0 O4 (owner Q10 a: "No more immunity"): no shield, even through its telegraph
-		issues.append(ValidationIssue.new(&"range", path, where + "Lights Out is never shielded"))
+	if not a.shielded:  # v0.11.0 O4b (owner: "Bring it back"): the telegraph shield stays
+		issues.append(ValidationIssue.new(&"missing", path, where + "Lights Out is shielded"))
 	if int(round(float(sp.get("dark_seconds", 0.0)) * 60.0)) < 1:
 		issues.append(
 			ValidationIssue.new(&"not_positive", path, where + "dark_seconds must be > 0")

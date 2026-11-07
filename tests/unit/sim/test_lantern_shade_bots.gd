@@ -7,7 +7,8 @@ extends GutTest
 ##   follows it into the pool (150 %);
 ## - ignore: keeps KITE_M from the Shade (outside its own 3.5 m light, inside the ranged armour's full range) on the
 ##   side farthest from every lantern, never lighting one (40 % in the dark, 100 % in the light).
-## Both win; the lantern bot wins sooner. Every hit outside a phase gate lands (no window of 0 damage). Prints both
+## Both win; the lantern bot wins sooner. Every hit outside a phase gate lands, but for the Lights Out telegraph shield
+## (v0.11.0 O4b, 1 s: the only window of 0 damage; counted as "shield"). Prints both
 ## fight lengths (raw) for the evidence.
 
 const HIT_EVERY := 6
@@ -18,7 +19,8 @@ const LONG := 1 << 20
 
 
 ## Plays the fight with `bot` ("lanterns" or "ignore"). Returns {"ticks", "dead", "zero" (hits outside a gate or the
-## rise that removed no HP while the Shade lived), "dim", "lit", "full" (hits by multiplier), "hash"}.
+## rise that removed no HP while the Shade lived outside the Lights Out telegraph shield), "shield" (hits that
+## did nothing inside that shield, v0.11.0 O4b), "dim", "lit", "full" (hits by multiplier), "hash"}.
 func _fight(bot: String, seed_value: int = 3) -> Dictionary:
 	var w := BossLab.world(seed_value)
 	var i0 := BossLab.ready_boss(w, &"lantern_shade", Vector2.ZERO)
@@ -27,7 +29,9 @@ func _fight(bot: String, seed_value: int = 3) -> Dictionary:
 	w.actors.set_pos(0, Vector2(KITE_M, 0.0))
 	w.actors.hp[0] = LONG
 	w.actors.max_hp[0] = LONG
-	var out := {"ticks": 0, "dead": false, "zero": 0, "dim": 0, "lit": 0, "full": 0}
+	var out := {
+		"ticks": 0, "dead": false, "zero": 0, "shield": 0, "leak": 0, "dim": 0, "lit": 0, "full": 0
+	}
 	var side := Vector2(1, 0)
 	for k in CAP:
 		var i := w.actors.index_of(aid)
@@ -44,9 +48,16 @@ func _fight(bot: String, seed_value: int = 3) -> Dictionary:
 		w.actors.invuln[0] = 0
 		if k % HIT_EVERY == 0 and w.actors.invuln[i] == 0 and w.actors.state[i] != BossAi.GATE:
 			var pm := BossShade.light_permille(w, i)
+			var shielded := BossDodge.shielded(w, i)
 			var hp := w.actors.hp[i]
 			var at := w.actors.pos(i)
 			var got := Damage.hit(w, i, HIT_AMOUNT, me, me, w.take_root(), 0, w.actors.pos(0), at)
+			if shielded:
+				out["shield"] += 1
+				out["leak"] += 1 if got > 0 else 0
+				w.step(InputFrame.new())
+				out["ticks"] = k + 1
+				continue
 			if got <= 0 and hp > 0 and w.actors.state[i] != BossAi.GATE:
 				out["zero"] += 1
 			if pm < 1000:
@@ -115,8 +126,20 @@ func test_two_bots_beat_it_the_lantern_one_sooner() -> void:
 	assert_gt(int(lanterns["lit"]), 0, "the lantern bot lured it into a lit pool")
 	assert_gt(int(ignore["dim"]), 0, "the other one hit it in the dark")
 	assert_eq(int(ignore["lit"]), 0, "and never lit a lantern")
-	assert_eq(int(lanterns["zero"]), 0, "no window where a hit does nothing")
-	assert_eq(int(ignore["zero"]), 0, "not even in the dark")
+	assert_eq(
+		int(lanterns["zero"]),
+		0,
+		"no window where a hit does nothing but the Lights Out telegraph shield"
+	)
+	assert_eq(
+		int(ignore["zero"]), 0, "not even in the dark (only the telegraph shield stops a hit)"
+	)
+	assert_gt(
+		int(lanterns["shield"]) + int(ignore["shield"]),
+		0,
+		"O4b: the Lights Out telegraph shield did fire"
+	)
+	assert_eq(int(lanterns["leak"]) + int(ignore["leak"]), 0, "O4b: and nothing landed through it")
 
 
 func test_the_fight_is_deterministic() -> void:
