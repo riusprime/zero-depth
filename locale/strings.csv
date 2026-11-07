@@ -694,7 +694,7 @@ ITEM_GUN_TWIN_DESC,"Fire twice, side by side.","Disparas dos veces, lado a lado.
 ITEM_GUN_RING,Ring,Anillo
 ITEM_GUN_RING_DESC,Your shot becomes a lightning ring.,Tu disparo se vuelve un anillo de rayos.
 ITEM_GUN_LASER,Laser,Láser
-ITEM_GUN_LASER_DESC,Hold to burn a beam.,Mantén para quemar con un rayo.
+ITEM_GUN_LASER_DESC,Hold: fires a lance every 3 s through every enemy.,Mantén: una lanza cada 3 s que atraviesa a todos.
 ITEM_GUN_VOID,Void,Vacío
 ITEM_GUN_VOID_DESC,Throw black holes that tug at foes.,Lanza agujeros negros que atraen.
 ITEM_GUN_LANCE,Lance,Lanza
@@ -1273,19 +1273,19 @@ ACH_SWORD_UNBOUND_NAME,Sword Unbound,Espada liberada
 ACH_SWORD_UNBOUND_DESC,Beat the Hollow Crown with the Gun.,Vence a la Corona Hueca con la Pistola.
 BUILD_BLADE_LOCKED,Beat the Hollow Crown with the Gun to unlock,Vence a la Corona Hueca con la Pistola para desbloquear
 FORMCARD_OFF,Does nothing on this form,No hace nada con esta forma
-FORMCARD_LASER_TWIN,Two beams burn side by side,Dos rayos arden lado a lado
-FORMCARD_LASER_PIERCE,The beam burns through every enemy,El rayo atraviesa a todos los enemigos
-FORMCARD_LASER_HALO,"The beam's end fans 3 short beams (3 m, 40 %)","El final del rayo abre 3 rayos cortos (3 m, 40 %)"
-FORMCARD_LASER_RING,A 1.4 m lightning ring rides the beam's tip (50 %),"Un anillo de rayos de 1,4 m viaja en la punta (50 %)"
-FORMCARD_LASER_BACKFIRE,A 4.5 m beam also burns behind you,"Un rayo de 4,5 m también arde a tu espalda"
-FORMCARD_LASER_RICOCHET,The beam reflects off the first wall and keeps its reach,El rayo se refleja en la primera pared y sigue
-FORMCARD_LASER_HOMING,"The beam bends to the nearest enemy; with Pierce, up to 5","El rayo se curva al enemigo más cercano; con Perforación, hasta 5"
-FORMCARD_LASER_ECHO,Where the beam swept strikes again 0.4 s later (50 %),"Donde pasó el rayo golpea otra vez 0,4 s después (50 %)"
-FORMCARD_LASER_BIG_SHOT,"A beam twice as wide, +60 % damage, slower to turn","Un rayo el doble de ancho, +60 % de daño, gira más lento"
-FORMCARD_LASER_RAPID_FIRE,"Ticks faster over 2 s held; thinner beam, -35 % damage","Golpea más rápido en 2 s; rayo fino, -35 % de daño"
-FORMCARD_LASER_SPLIT,"The first enemy hit forks the beam in 2 (4 m, 50 %)","El primer enemigo golpeado bifurca el rayo en 2 (4 m, 50 %)"
+FORMCARD_LASER_TWIN,Two lances fire side by side,Dos lanzas se disparan lado a lado
+FORMCARD_LASER_PIERCE,The lance already pierces every enemy,La lanza ya atraviesa a todos los enemigos
+FORMCARD_LASER_HALO,"The lance's end fans 3 short lances (3 m, 40 %)","El final de la lanza abre 3 lanzas cortas (3 m, 40 %)"
+FORMCARD_LASER_RING,A 1.4 m lightning ring bursts at the lance's tip (50 %),"Un anillo de rayos de 1,4 m estalla en la punta de la lanza (50 %)"
+FORMCARD_LASER_BACKFIRE,A 4.5 m lance also fires behind you,"Una lanza de 4,5 m también se dispara a tu espalda"
+FORMCARD_LASER_RICOCHET,The lance reflects off the first wall and keeps its reach,La lanza se refleja en la primera pared y sigue su alcance
+FORMCARD_LASER_HOMING,"The lance curves through the nearest enemies, up to 5","La lanza se curva a través de los enemigos más cercanos, hasta 5"
+FORMCARD_LASER_ECHO,The lance strikes its path again 0.4 s later (50 %),"La lanza golpea su recorrido otra vez 0,4 s después (50 %)"
+FORMCARD_LASER_BIG_SHOT,"A lance twice as wide, +60 % damage","Una lanza el doble de ancha, +60 % de daño"
+FORMCARD_LASER_RAPID_FIRE,"Fires 30 % more often, -20 % damage a shot","Dispara un 30 % más a menudo, -20 % de daño por disparo"
+FORMCARD_LASER_SPLIT,"The first enemy hit forks the lance in 2 (4 m, 50 %)","El primer enemigo golpeado bifurca la lanza en 2 (4 m, 50 %)"
 FORMCARD_LASER_MINE,"The tip drops a mine every 1.0 s (1.5 m burst, up to 4)","La punta suelta una mina cada 1,0 s (1,5 m, hasta 4)"
-FORMCARD_LASER_SPIRAL,"The beam wiggles side to side (12 degrees, twice a second)","El rayo ondula de lado a lado (12 grados, 2 veces por segundo)"
+FORMCARD_LASER_SPIRAL,"Each lance swings a little side to side (12 degrees)","Cada lanza oscila un poco de lado a lado (12 grados)"
 FORMCARD_VOID_TWIN,Two voids per cast,Dos vacíos por lanzamiento
 FORMCARD_VOID_RING,"When it ends, it collapses in a 3 m lightning ring (60 %)","Al terminar, colapsa en un anillo de rayos de 3 m (60 %)"
 FORMCARD_VOID_BACKFIRE,A second void opens straight behind you,Un segundo vacío se abre justo a tu espalda

@@ -95,7 +95,7 @@ func test_the_laser_taken_at_an_altar_burns_an_enemy_while_held() -> void:
 	# the move comes last and isn't repeated.
 	e.mouse_button(MOUSE_BUTTON_RIGHT, true)
 	await e.mouse_to(cam.unproject_position(SimPlane.to_3d(at, SimPlane.CORE_HEIGHT)))
-	for k in 90:
+	for k in 220:  # v0.11.0 O1: past the 3 s cooldown, so a shot fires with the aim on the enemy
 		await e.frames(1)
 		drawn = drawn or main.view.laser.shown > 0
 		hummed = hummed or main.audio.holding(&"laser_loop")
@@ -103,12 +103,12 @@ func test_the_laser_taken_at_an_altar_burns_an_enemy_while_held() -> void:
 	assert_gte(j, 0)
 	if j >= 0:
 		gut.p(
-			"LZ e2e: dummy hp %d / %d after 90 frames held" % [w.actors.hp[j], w.actors.max_hp[j]]
+			"O1 e2e: dummy hp %d / %d after 220 frames held" % [w.actors.hp[j], w.actors.max_hp[j]]
 		)
-		assert_lt(w.actors.hp[j], w.actors.max_hp[j], "the held beam burns the enemy")
+		assert_lt(w.actors.hp[j], w.actors.max_hp[j], "the held lance hits the enemy")
 	assert_true(drawn, "the beam is drawn")
 	assert_true(hummed, "and hums")
 	e.mouse_button(MOUSE_BUTTON_RIGHT, false)
-	await e.frames(4)
-	assert_eq(main.view.laser.shown, 0, "let go: the beam is gone")
+	await e.frames(WorldReader.LANCE_GLOW_TICKS + 4)  # v0.11.0 O1 (Q7): the last shot's glow fades in 0.5 s
+	assert_eq(main.view.laser.shown, 0, "let go: the lance is gone")
 	assert_false(main.audio.holding(&"laser_loop"), "and silent")

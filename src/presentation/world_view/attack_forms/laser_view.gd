@@ -12,6 +12,10 @@ extends Node3D
 ## are ribbons of the same shader, the pool grows to as many as the sim traces (thinner or wider by the beam's `wmul`);
 ## Echo's strike to come is a paler ghost ribbon, Ring's circle and the mines are flat rings at the tip and on the
 ## floor.
+## v0.11.0 O1 (owner Q7, Q8; PLAN L1, L2): the Laser is a lance, one instant shot every 3 s. WorldReader.beams gives the
+## last shot's paths (as the sim hit them) for half a second: each lane's legs join into one strip (_join; with Homing
+## the sim's one smooth curve), drawn out from the hero over LaserWeight.DRAW_TICKS (0.15 s, cut()) and its glow fading
+## by the end (lance_fade). A minimal look: the final one waits for the owner's sketch (PLAN X2).
 const POOL_START := 3
 const GHOSTS_MAX := 16
 const RING_COLOUR_MUL := 1.6
@@ -104,6 +108,9 @@ var points_shown := 0
 ## drawn in the last effects frame (the tests read them).
 var flash_now := 0.0
 var width_now := 1.0
+## v0.11.0 O1 (Q7): the share of the lance drawn out now and its glow (LaserWeight.lance_drawn, lance_fade).
+var drawn_now := 1.0
+var fade_now := 1.0
 var sparks_drawn := 0
 ## What the last sync showed of the cards' extras (tests read them): ghost ribbons, rings, mines.
 var ghosts_shown := 0
@@ -134,6 +141,10 @@ var _look_set := &""
 var _form := FormLook.new()
 var _tick := 0.0
 var _fire_start := 0.0
+## v0.11.0 O1: the lance's age at the last sync (ticks since its shot), its glow ticks, and the seconds since.
+var _age := 0.0
+var _glow_ticks := 30.0
+var _since := 0.0
 
 
 func _init() -> void:
@@ -212,6 +223,10 @@ func sync(reader: WorldReader) -> void:
 			_beams.append(b)
 	_beams = _join(_beams)
 	_tick = float(reader.tick())
+	_since = 0.0
+	if not _beams.is_empty():
+		_age = float(_beams[0].get("age", 0))
+		_glow_ticks = float(_beams[0].get("glow", 30))
 	if _beams.size() > 0 and shown == 0:
 		_fire_start = _tick  # W3-O8: a firing starts (the flash)
 	_ghosts = reader.laser_ghosts()
@@ -267,7 +282,8 @@ func sync(reader: WorldReader) -> void:
 	_place_ribbons()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_since += delta
 	if shown > 0 or ghosts_shown > 0:
 		_place_ribbons()
 
@@ -278,6 +294,9 @@ func _place_ribbons() -> void:
 	var view := Vector3(0, 1, 1).normalized() if cam == null else cam.global_transform.basis.z
 	var w := BeamLooks.width(look)
 	var wide := w * LaserWeight.GLOW_WIDTH * width_now  # W3-O8: the core in the middle, the halo around it
+	var age := _age + _since * 60.0  # v0.11.0 O1 (Q7): drawn out fast, then the glow fades
+	drawn_now = LaserWeight.lance_drawn(age)
+	fade_now = LaserWeight.lance_fade(age, _glow_ticks)
 	hold.begin()
 	for k in shown:
 		var b: Dictionary = _beams[k]
@@ -286,8 +305,13 @@ func _place_ribbons() -> void:
 			_ribbons[k].visible = false
 			continue
 		_ribbons[k].visible = true
+		_beam_mat[k].set_shader_parameter(&"energy", LaserWeight.LANCE_ENERGY * fade_now)
 		_lay_path(
-			_ribbons[k], _beam_mat[k], b["pts"], wide * int(b.get("wmul", 1000)) / 1000.0, view
+			_ribbons[k],
+			_beam_mat[k],
+			cut(b["pts"], drawn_now),
+			wide * int(b.get("wmul", 1000)) / 1000.0,
+			view
 		)
 	hold.end()
 	for k in ghosts_shown:
@@ -353,6 +377,26 @@ static func _join(beams: Array[Dictionary]) -> Array[Dictionary]:
 		out.append(d)
 	for d in out:
 		d["pts"] = _round(d["pts"])
+	return out
+
+
+## v0.11.0 O1 (Q7): the first share `f` (0..1) of the centre line `pts` by length (the lance drawing out from the hero).
+static func cut(pts: PackedVector2Array, f: float) -> PackedVector2Array:
+	if f >= 1.0 or pts.size() < 2:
+		return pts
+	var total := 0.0
+	for i in range(1, pts.size()):
+		total += pts[i].distance_to(pts[i - 1])
+	var want := total * maxf(0.0, f)
+	var out := PackedVector2Array([pts[0]])
+	var run := 0.0
+	for i in range(1, pts.size()):
+		var d := pts[i].distance_to(pts[i - 1])
+		if run + d >= want:
+			out.append(pts[i - 1].lerp(pts[i], (want - run) / maxf(d, 0.000001)))
+			return out
+		run += d
+		out.append(pts[i])
 	return out
 
 
