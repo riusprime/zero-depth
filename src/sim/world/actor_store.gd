@@ -56,6 +56,13 @@ enum Kind {
 	EMBER_CHARGER,
 	FROST_CHARGER,
 	SPLIT_SNIPER,
+	# v0.11.0 O13b (ENEMIES.md R1-R4; owner Q22): the Ruins' and the Night Rocks' signature enemies (RuinsRocks). The
+	# Wire Weaver's posts are actors of their own (10 HP, its cable strung between two of them).
+	WIRE_WEAVER,
+	WIRE_POST,
+	SCRAP_HOUND,
+	ROCK_LURKER,
+	STONE_THROWER,
 }
 
 const TEAM_PLAYER := 0

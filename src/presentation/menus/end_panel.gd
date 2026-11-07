@@ -35,6 +35,10 @@ const CAUSES := {
 	WorldReader.KIND_EMBER_CHARGER: "CAUSE_EMBER_CHARGER",
 	WorldReader.KIND_FROST_CHARGER: "CAUSE_FROST_CHARGER",
 	WorldReader.KIND_SPLIT_SNIPER: "CAUSE_SPLIT_SNIPER",
+	WorldReader.KIND_WIRE_WEAVER: "CAUSE_WIRE_WEAVER",  # v0.11.0 O13b: the Ruins and Night Rocks signatures
+	WorldReader.KIND_SCRAP_HOUND: "CAUSE_SCRAP_HOUND",
+	WorldReader.KIND_ROCK_LURKER: "CAUSE_ROCK_LURKER",
+	WorldReader.KIND_STONE_THROWER: "CAUSE_STONE_THROWER",
 }
 
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted

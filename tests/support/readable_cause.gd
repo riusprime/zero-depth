@@ -349,6 +349,32 @@ func _no_actor_hit(w: World, e: SimEvent) -> bool:
 			_hazard_hit(w, e)
 		Variants.FIRE_EFFECT:  # v0.11.0 O13a: an Ember Charger's fire trail
 			_trail_hit(w, e)
+		RuinsRocks.CABLE_EFFECT:  # v0.11.0 O13b: a Wire Weaver's live cable
+			_cable_hit(w, e)
 		_:
 			return false
 	return true
+
+
+## v0.11.0 O13b: a Wire Weaver's live cable is no attack of its own: its warning is the Weaver's marked line and the
+## posts sparking as they go in (its windup, at least the telegraph minimum), then the cable itself in plain sight; its
+## recap line RuinsRocks.CAUSE_KEY.
+func _cable_hit(w: World, e: SimEvent) -> void:
+	var key := String(RuinsRocks.CAUSE_KEY)
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	var problems := PackedStringArray()
+	var t := w.enemy_table(ActorStore.Kind.WIRE_WEAVER)
+	if t == null or t.windup_ticks < SimTick.MIN_TELEGRAPH_TICKS:
+		problems.append("a cable planted before the telegraph minimum")
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		problems.append("cause %s missing en or es" % key)
+	if problems.is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
+	violations.append(v)

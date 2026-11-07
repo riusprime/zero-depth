@@ -29,6 +29,10 @@ const ENEMY_KINDS := {  # behaviour ids to actor kinds (a test checks the key se
 	&"ember_charger": ActorStore.Kind.EMBER_CHARGER,
 	&"frost_charger": ActorStore.Kind.FROST_CHARGER,
 	&"split_sniper": ActorStore.Kind.SPLIT_SNIPER,
+	&"wire_weaver": ActorStore.Kind.WIRE_WEAVER,  # v0.11.0 O13b: the Ruins and Night Rocks signatures (RuinsRocks)
+	&"scrap_hound": ActorStore.Kind.SCRAP_HOUND,
+	&"rock_lurker": ActorStore.Kind.ROCK_LURKER,
+	&"stone_thrower": ActorStore.Kind.STONE_THROWER,
 }
 ## Bosses (v0.3.0 C): ids to actor kinds, move names to BossAttackTable moves (a test matches BossSchemas' sets).
 const BOSS_KINDS := BossKinds.ALL  # v0.9.0 NB4: the table lives in BossKinds (this file's line limit)
@@ -200,6 +204,7 @@ static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 		_:
 			_compile_horde(def, t, sp)
 	VariantCompiler.compile(def, t)  # v0.11.0 O13a: a biome variant's own numbers
+	RuinsRocksCompiler.compile(def, t)  # v0.11.0 O13b: the Ruins and Night Rocks signatures' own numbers
 	return t
 
 
@@ -399,6 +404,7 @@ static func compile_enemies(repo: ContentRepository) -> Array[EnemyTable]:
 	for def: EnemyDefinition in repo.all_of(&"enemies"):
 		out.append(compile_enemy(def, repo))
 	out.append_array(EliteCompiler.compile_elites(repo))
+	out.append_array(RuinsRocksCompiler.extra_tables(out))  # v0.11.0 O13b: the Wire Weaver's post
 	return out
 
 

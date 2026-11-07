@@ -139,6 +139,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"PickupStore",
 	&"MineStore",
 	&"VariantState",  # v0.11.0 O13a: the variants' trails and rubble
+	&"RuinsRocksState",  # v0.11.0 O13b: the signatures' cables, rocks and boulders
 	&"HealOrbStore",  # v0.4.0 TU
 	&"ShardDropStore",  # v0.10.5 O7b
 	&"ObjectiveMarkers",  # v0.11.0 O2: the hint arrow's markers
@@ -218,6 +219,7 @@ const ADDED_SINCE_V05 := {
 		&"pair_log",
 		&"pairs_seen",  # v0.10.5 O15: an older save starts with none seen
 		&"variants",  # v0.11.0 O13a: an older save's floor has no trails or rubble (the base's: none)
+		&"ruins_rocks",  # v0.11.0 O13b: an older save's floor has no cables, rocks or boulders (the base's: none)
 		&"surge_at",  # v0.11.0 O9: an older save's floor plans its surges afresh (the base's: none planned)
 		&"surge_sizes",
 		&"surge_next",
@@ -774,6 +776,7 @@ static func apply(base: World, snap: Dictionary) -> String:
 	var barriers := base.arenas.barriers.size() + base.bosses.pillar_x.size()  # v0.8.0 BS1: pillars too
 	barriers += Secrets.slabs_up(base)  # v0.9.0 TD, RA: the secret rooms' slabs while they stand
 	barriers += base.variants.rubble_count()  # v0.11.0 O13a: the Rubble Wardens' rocks
+	barriers += base.ruins_rocks.rock_count() + base.ruins_rocks.hide_count()  # v0.11.0 O13b: rocks, boulders
 	if base.lockdown != null:  # v0.9.0 LK: a sealed Lockdown's bars, as an arena's
 		barriers += base.lockdown.barriers.size()
 	if base.walls.size() == walls_before + barriers and barriers > 0:
@@ -1087,6 +1090,8 @@ static func _make(cls: StringName) -> Object:
 			return MineStore.new()
 		&"VariantState":
 			return VariantState.new()
+		&"RuinsRocksState":
+			return RuinsRocksState.new()
 		&"HealOrbStore":
 			return HealOrbStore.new()
 		&"ShardDropStore":

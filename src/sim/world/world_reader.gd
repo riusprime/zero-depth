@@ -104,6 +104,12 @@ const KIND_SPLIT_SNIPER := ActorStore.Kind.SPLIT_SNIPER
 const TRAIL_FIRE := Variants.TRAIL_FIRE
 const TRAIL_SLICK := Variants.TRAIL_SLICK
 const DIM_LOOK := Variants.DIM_LOOK
+## v0.11.0 O13b: the Ruins and Night Rocks signatures (RuinsRocks) and the Wire Weaver's post.
+const KIND_WIRE_WEAVER := ActorStore.Kind.WIRE_WEAVER
+const KIND_WIRE_POST := ActorStore.Kind.WIRE_POST
+const KIND_SCRAP_HOUND := ActorStore.Kind.SCRAP_HOUND
+const KIND_ROCK_LURKER := ActorStore.Kind.ROCK_LURKER
+const KIND_STONE_THROWER := ActorStore.Kind.STONE_THROWER
 const ECHO_NONE := BossJudge.NONE
 const ECHO_SHOW := BossJudge.SHOW
 const ECHO_REPLAY := BossJudge.REPLAY
@@ -2725,6 +2731,50 @@ func rubble_pieces() -> Array:
 	for k in v.rubble_count():
 		out.append([Vector2(v.rubble_x[k], v.rubble_y[k]), v.rubble_half[k]])
 	return out
+
+
+# --- The Ruins and Night Rocks signatures (v0.11.0 O13b; RuinsRocks) --------------------------------------------
+## The Wire Weavers' live cables: [end a (Vector2), end b (Vector2), ticks live (int), the Weaver's id (int)] each.
+func cables() -> Array:
+	var s := _w.ruins_rocks
+	var out := []
+	for k in s.cable_count():
+		var ends := RuinsRocks.cable_ends(_w, k)
+		if not ends.is_empty():
+			out.append([ends[0], ends[1], _w.tick - s.cable_born[k], s.cable_owner[k]])
+	return out
+
+
+## The Stone Throwers' rocks standing: [centre (Vector2), half side (float), ticks left (int)] each.
+func thrown_rocks() -> Array:
+	var s := _w.ruins_rocks
+	var out := []
+	for k in s.rock_count():
+		out.append([Vector2(s.rock_x[k], s.rock_y[k]), s.rock_half[k], s.rock_until[k] - _w.tick])
+	return out
+
+
+## Whether actor i is a Rock Lurker still waiting as a boulder, and whether it hears the hero (its rumble).
+func lurker_hidden(i: int) -> bool:
+	return RuinsRocks.hidden(_w, i)
+
+
+func lurker_rumbling(i: int) -> bool:
+	return RuinsRocks.rumbling(_w, i)
+
+
+## Whether actor i is a Scrap Hound stopped by a hit (its yelp).
+func hound_yelped(i: int) -> bool:
+	return RuinsRocks.yelped(_w, i)
+
+
+## Stone Thrower i's rock in flight: 0..1000 of the way (-1: none in the air), from its hands to where it lands.
+func thrower_flight(i: int) -> int:
+	return RuinsRocks.flight_permille(_w, i)
+
+
+func thrower_target(i: int) -> Vector2:
+	return Vector2(_w.actors.lock_x[i], _w.actors.lock_y[i])
 
 
 # --- Engines and combos (v0.3.0 G) --------------------------------------------------------------------------

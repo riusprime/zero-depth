@@ -568,6 +568,9 @@ var critter_kind := -1
 ## the variants left on the floor (VariantState: the trails, the rubble; hashed once touched).
 var roster_kinds := PackedInt32Array()
 var variants := VariantState.new()
+## v0.11.0 O13b (ENEMIES.md R1-R4): what the Ruins and Night Rocks signatures leave (RuinsRocksState: the Weavers'
+## cables, the Throwers' rocks, the waiting Lurkers' boulders; hashed once touched).
+var ruins_rocks := RuinsRocksState.new()
 var surge_at := PackedInt32Array()
 var surge_sizes := PackedInt32Array()
 var surge_next := 0
@@ -896,6 +899,7 @@ func step(frame: InputFrame) -> void:
 		CritterAi.touch_all(self, critter_rows)
 	Mines.advance(self)  # v0.4.0 EN: mines arm and blow.
 	Variants.advance(self)  # v0.11.0 O13a: the variants' trails burn and melt (after the mines)
+	RuinsRocks.advance(self)  # v0.11.0 O13b: the cables drop or hurt, the rocks go, the Lurkers hold still
 	if not boss_tables.is_empty():
 		BossSignatures.advance(self)  # v0.8.0 BS1: pillars sink, javelins fly back
 	if pp != null:
@@ -1517,6 +1521,8 @@ func state_hash() -> String:
 		actors.hash_ai(h)
 	if variants.touched:  # v0.11.0 O13a: only once a variant left a trail or its crust
 		variants.hash_into(h)
+	if ruins_rocks.touched:  # v0.11.0 O13b: only once a signature left a cable, a rock or a boulder
+		ruins_rocks.hash_into(h)
 	if mines.touched:  # v0.4.0 EN: only once a Mine Layer dropped a mine.
 		mines.hash_into(h)
 	if orbs.touched:  # v0.4.0 TU: only once a kill dropped a heal orb.
@@ -1827,6 +1833,7 @@ func _advance_actions() -> void:
 func _move_and_collide() -> void:
 	# Player.
 	var p := player_pos()
+	var hero_from := p  # v0.11.0 O13b: where the hero began the tick (RuinsRocks.block_hero)
 	var kick := Lance.recoil(self)  # v0.9.0 AF1b: the Lance's push back, spent each tick (walls resolve it below)
 	if player_dead():
 		vel = Vector2.ZERO
@@ -1904,9 +1911,10 @@ func _move_and_collide() -> void:
 	# through both; a boss on the ground isn't shoved: the other body takes the whole push (v0.3.0 C).
 	var through := PackedInt32Array()
 	var heavy := PackedInt32Array()
-	if not bosses.ids.is_empty():
+	# v0.11.0 O13b: a waiting Rock Lurker passes through its own boulder (a wall: RuinsRocks.hidden), and so is not shoved
+	if not bosses.ids.is_empty() or ruins_rocks.hide_count() > 0:
 		for i in actors.size():
-			through.append(1 if BossAi.passes_through(self, i) else 0)
+			through.append(1 if BossAi.passes_through(self, i) or RuinsRocks.hidden(self, i) else 0)
 			heavy.append(1 if BossAi.is_boss_kind(actors.kinds[i]) else 0)
 	# v0.4.0 SC: a body with no wall within WALL_SKIP_M of it skips the wall checks while it stays within that of
 	# where it was looked at (walls that far off give no push, so the result is the same).
@@ -2005,6 +2013,8 @@ func _move_and_collide() -> void:
 		if pp != null:
 			pp.end(&"move.pairs")
 			pp.begin(&"move.walls")
+	if ruins_rocks.cable_count() > 0:  # v0.11.0 O13b: a live cable is a wall to the hero alone
+		RuinsRocks.block_hero(self, hero_from)
 	if pp != null:
 		pp.end(&"move.walls")
 
@@ -2173,6 +2183,8 @@ func _remove_dead() -> void:
 				continue  # v0.8.0 BS1 (S3): an egg that burst or crumbled leaves without a kill
 			if BossTwin.leaves(self, i):
 				continue  # v0.9.0 NB2: a Warden's twin goes with its boss: one defeat, one kill, one reward
+			if RuinsRocks.leaves(self, i):
+				continue  # v0.11.0 O13b: a Wire Weaver's post breaks or drops: no kill, no shards
 			if EnemyAi.is_enemy_kind(actors.kinds[i]):
 				kills += 1
 				EnemyAi.on_death(self, i)  # v0.4.0 EN: a Splitter splits.

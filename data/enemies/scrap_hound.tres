@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/enemy_definition.gd" id="2_enm"]
+
+[sub_resource type="Resource" id="Resource_atk"]
+script = ExtResource("1_atk")
+id = &"dart"
+shape = 2
+shape_params = {
+"length_m": 7.0,
+"speed_mps": 14.0
+}
+telegraph_seconds = 0.4
+active_seconds = 0.5
+recovery_seconds = 0.6
+damage = 10
+
+[resource]
+script = ExtResource("2_enm")
+name_key = &"ENEMY_SCRAP_HOUND"
+desc_key = &"ENEMY_SCRAP_HOUND_DESC"
+behaviour_id = &"scrap_hound"
+behaviour_params = {
+"attack_range_m": 7.0,
+"cooldown_seconds": 1.5,
+"circle_m": 5.0,
+"rear_arc_degrees": 120.0,
+"stagger_seconds": 0.8
+}
+hp = 30
+radius_m = 0.35
+move_speed_mps = 6.5
+attacks = Array[ExtResource("1_atk")]([SubResource("Resource_atk")])
+stress_tags = PackedStringArray("bleed")
+weak_to = &"gun_wave"
+resists = &"gun_laser"
+weak_permille = 1250
+resist_permille = 750
+shards = 3
+id = &"scrap_hound"

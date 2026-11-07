@@ -108,3 +108,23 @@ var burn_period_ticks := 1
 var slick_permille := 1000
 var split_at_permille := 0
 var split_turn := 0
+## v0.11.0 O13b (ENEMIES.md R1-R4; RuinsRocks; the defaults on every other kind). The Wire Weaver: up to max_cables
+## cables at once, each strung between two posts (post_hp, post_radius_m) at most reach_m apart, lane_half_m thick,
+## hurting a touch at most every cable_period_ticks. The Scrap Hound: circles circle_m away, darts (charge_speed, up to
+## charge_distance_m) only from within rear_half_arc (1/4096 turns) of the hero's back, stopped by a hit for
+## stagger_ticks. The Rock Lurker: hides as a boulder (a wall of half side hide_half_m inside its body) until the hero
+## is within wake_m (heard from rumble_m). The Stone Thrower: its rock flies flight_ticks, then stands rock_ticks as a
+## wall of half side rock_half_m, at most max_rocks on a floor (slam_radius_m: the slam's or the landing's disc).
+var max_cables := 0
+var post_hp := 0
+var post_radius_m := 0.3
+var cable_period_ticks := 1
+var circle_m := 0.0
+var stagger_ticks := 0
+var wake_m := 0.0
+var rumble_m := 0.0
+var hide_half_m := 0.0
+var flight_ticks := 1
+var rock_ticks := 0
+var rock_half_m := 0.0
+var max_rocks := 0

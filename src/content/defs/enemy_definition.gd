@@ -238,6 +238,19 @@ func _check_horde(issues: Array[ValidationIssue]) -> void:
 		"burn_period_seconds",
 		"slick_ease_seconds",
 		"split_degrees",
+		"max_cables",  # v0.11.0 O13b: the Ruins and Night Rocks signatures
+		"post_hp",
+		"post_radius_m",
+		"cable_period_seconds",
+		"circle_m",
+		"rear_arc_degrees",
+		"stagger_seconds",
+		"wake_m",
+		"rumble_m",
+		"flight_seconds",
+		"rock_seconds",
+		"rock_half_m",
+		"max_rocks",
 	]:
 		if bp.has(k) and float(bp[k]) <= 0.0:
 			issues.append(

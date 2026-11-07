@@ -14,6 +14,8 @@ static func key(w: World) -> StringName:  # gdlint: ignore=max-returns
 		return Lockdowns.CAUSE_KEY
 	if w.killer_attack == Variants.KILL_CAUSE:  # v0.11.0 O13a: an Ember Charger's fire trail (no attack of its own)
 		return Variants.CAUSE_KEY
+	if w.killer_attack == RuinsRocks.KILL_CAUSE:  # v0.11.0 O13b: a Wire Weaver's live cable (no attack of its own)
+		return RuinsRocks.CAUSE_KEY
 	if EliteAi.is_elite_kind(w.killer_kind):  # v0.9.0 EL: "The Breaker's slam …" (EliteAi.cause_key)
 		return EliteAi.cause_key(w)
 	var t := w.boss_table_of_kind(w.killer_kind)
