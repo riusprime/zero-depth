@@ -18,7 +18,7 @@
 - **Merged since:** O11 (all 15 spells), O9b (surge cap 50 at 144 fps), VX (pack effects for the new spells, lance, quake pillars).
 - **Waiting on the owner:** the boss brief (O6–O8), the Laser sketch. O16 for the other bosses, O12 balance, O13
   enemies/rosters, O14 Runic Stone, O15 rooms still to come.
-- **Agents (owner, 2026-11-07):** at most 3 Sonnet (light, exact briefs) + 2 Opus at once.
+- **Agents (owner, 2026-11-07):** at most 3 Sonnet (light, exact briefs) + 2 Opus at once; up to 4 Opus when no Sonnet runs.
 - **Local note:** `project.godot` has an uncommitted editor rewrite (it drops the `[rendering]` settings and
   `locale/fallback`). It is not the lead's change; don't stage it. `wt-seams` is the lead's clean seams worktree.
 

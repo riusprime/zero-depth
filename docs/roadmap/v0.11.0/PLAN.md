@@ -15,6 +15,8 @@ build step).
   agents should only handle light tasks, very well specified and with clear instructions so they don't think much".
   Each step names its agent: **S** = Sonnet (a precise brief, no design), **O** = Opus (design, or several systems).
   At most 3 S and 2 O at once. Each works in its own worktree cut from the lead's SHA, removed after the merge.
+- **Agents, raised (owner, 2026-11-07):** "If there is no sonnet agents because the tasks are big you can elevate opus
+  agents to 4": up to 4 Opus at once while no Sonnet runs (3 Sonnet + 2 Opus otherwise).
 - **Scope (owner, Q1, 2026-11-07): "Everything in v0.11.0".** One long version, playtested at the end.
 - **Gates:** the brief says it "is not an implementation plan", and most of it is marked open for discussion. So every
   step except the direct fixes (Wave 1) waits for the owner's answers in [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) or
