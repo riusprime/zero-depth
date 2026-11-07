@@ -563,6 +563,11 @@ var pairs_seen := PackedInt32Array()
 ## planned), the next one to begin, the ticks into the one running (-1: none) and how many of it have arrived. Hashed
 ## once planned.
 var critter_kind := -1
+## v0.11.0 O13a (owner Q23): the kinds only this floor's biome spawns (its signatures and variant, sorted; FloorPlan
+## sets it from the biome, VariantCompiler.roster_kinds; empty: none, so no biome-only kind spawns; loadout), and what
+## the variants left on the floor (VariantState: the trails, the rubble; hashed once touched).
+var roster_kinds := PackedInt32Array()
+var variants := VariantState.new()
 var surge_at := PackedInt32Array()
 var surge_sizes := PackedInt32Array()
 var surge_next := 0
@@ -890,6 +895,7 @@ func step(frame: InputFrame) -> void:
 	if not critter_rows.is_empty():
 		CritterAi.touch_all(self, critter_rows)
 	Mines.advance(self)  # v0.4.0 EN: mines arm and blow.
+	Variants.advance(self)  # v0.11.0 O13a: the variants' trails burn and melt (after the mines)
 	if not boss_tables.is_empty():
 		BossSignatures.advance(self)  # v0.8.0 BS1: pillars sink, javelins fly back
 	if pp != null:
@@ -1509,6 +1515,8 @@ func state_hash() -> String:
 	if not enemy_tables.is_empty():  # Enemy AI (v0.3.5 AI): only worlds with enemies, so the kernel golden holds.
 		h.add_int(rng_enemy.state)
 		actors.hash_ai(h)
+	if variants.touched:  # v0.11.0 O13a: only once a variant left a trail or its crust
+		variants.hash_into(h)
 	if mines.touched:  # v0.4.0 EN: only once a Mine Layer dropped a mine.
 		mines.hash_into(h)
 	if orbs.touched:  # v0.4.0 TU: only once a kill dropped a heal orb.
@@ -1848,6 +1856,10 @@ func _move_and_collide() -> void:
 		)
 		if on_patch:  # v0.7.5 NB1: on ice the hero speeds up and stops slowly (NB2: starglow drifts a little)
 			k = ice.accel_permille if Kin.length(target) > Kin.length(vel) else ice.decel_permille
+		if variants.trail_count() > 0:  # v0.11.0 O13a: a Frost Charger's slick: the hero slides (keeps its speed)
+			var slick := Variants.slick_at(self, p)
+			if slick > 0:
+				k = mini(k, slick)
 		vel += (target - vel) * (k / 1000.0)
 		if Kin.length(vel - target) < 0.0001:
 			vel = target

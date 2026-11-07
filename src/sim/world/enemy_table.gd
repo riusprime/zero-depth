@@ -88,3 +88,23 @@ var elite: EliteTable
 ## `flies`: it flies low (the Cave Bat), so the floor's hazards (EnemyAi.flies) never reach it.
 var contact_cd_ticks := 30
 var flies := false
+## v0.11.0 O13a (ENEMIES.md V1-V5; owner Q23): a biome variant's own numbers (Variants; the defaults on every other
+## kind). The Rubble Warden: its crust (already in `hp`) falls at half HP into crust_pieces rocks of cover (half side
+## piece_half_m). The Dim Needle: its shots stay dark farther than dark_beyond_m from the hero. The Ember and Frost
+## Chargers: their charge drops a `trail` patch (Variants.TRAIL_FIRE or TRAIL_SLICK) of trail_radius_m every
+## trail_step_ticks, lasting trail_ticks; fire burns the hero for burn_damage every burn_period_ticks once
+## trail_arm_ticks old; on a slick the hero eases at slick_permille a tick (a slide). The Split Sniper: its shot splits
+## into 3 at split_at_permille of its reach, the outer two split_turn (1/4096 turns) out.
+var crust_pieces := 0
+var piece_half_m := 0.3
+var dark_beyond_m := 0.0
+var trail := 0
+var trail_radius_m := 0.0
+var trail_ticks := 0
+var trail_step_ticks := 1
+var trail_arm_ticks := 0
+var burn_damage := 0
+var burn_period_ticks := 1
+var slick_permille := 1000
+var split_at_permille := 0
+var split_turn := 0

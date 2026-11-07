@@ -55,7 +55,7 @@ func validate() -> Array[ValidationIssue]:
 		)
 		return issues
 	_check_keys(issues, "behaviour_params", behaviour_params, schema["params"])
-	if behaviour_id == &"warden":
+	if BehaviourSchemas.base_of(behaviour_id) == &"warden":  # v0.11.0 O13a: the Rubble Warden too
 		_check_armour(issues)
 	_check_horde(issues)
 	var specs: Array = schema.get("attacks", [{"shape": schema.get("shape"), "shape_params": []}])
@@ -227,6 +227,17 @@ func _check_horde(issues: Array[ValidationIssue]) -> void:
 		"drop_seconds",
 		"contact_damage",  # v0.11.0 O9: the horde critters
 		"contact_cd_seconds",
+		"crust_hp",  # v0.11.0 O13a: the biome variants
+		"crust_pieces",
+		"piece_half_m",
+		"dark_beyond_m",
+		"trail_radius_m",
+		"trail_seconds",
+		"trail_step_seconds",
+		"burn_damage",
+		"burn_period_seconds",
+		"slick_ease_seconds",
+		"split_degrees",
 	]:
 		if bp.has(k) and float(bp[k]) <= 0.0:
 			issues.append(
@@ -248,6 +259,31 @@ func _check_horde(issues: Array[ValidationIssue]) -> void:
 					&"armour", resource_path, "shield_arc_degrees must be within 0..360"
 				)
 			)
+	_check_variant(issues)
+
+
+## v0.11.0 O13a: an Ember Charger's fire burns only once it has shown for the telegraph minimum, and a Split Sniper's
+## shot splits inside its range.
+func _check_variant(issues: Array[ValidationIssue]) -> void:
+	var bp := behaviour_params
+	if (
+		bp.has("trail_arm_seconds")
+		and int(round(float(bp["trail_arm_seconds"]) * 60.0)) < BehaviourSchemas.MIN_TELEGRAPH_TICKS
+	):
+		issues.append(
+			ValidationIssue.new(
+				&"telegraph_short",
+				resource_path,
+				"trail_arm_seconds is under the telegraph minimum"
+			)
+		)
+	if (
+		bp.has("split_at_permille")
+		and (int(bp["split_at_permille"]) < 1 or int(bp["split_at_permille"]) > 999)
+	):
+		issues.append(
+			ValidationIssue.new(&"split", resource_path, "split_at_permille must be within 1..999")
+		)
 
 
 func _check_keys(

@@ -117,13 +117,21 @@ static func anchor_points(w: World) -> PackedVector2Array:
 
 
 ## Indices into the mix that may spawn at `ticks` of floor time (open by tier or by curve phase, with a compiled
-## enemy table).
+## enemy table). v0.11.0 O13a (owner Q23): a biome's own kind (SpawnTable.biome_only: a signature or a variant) only
+## on a floor of that biome (World.roster_kinds); so every biome spawns its roster: the shared core, its own kinds and
+## the floor-unlocked kinds.
 static func unlocked(w: World, t: SpawnTable, ticks: int) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for k in t.kinds.size():
-		if t.row_open(k, ticks) and w.enemy_table(t.kinds[k]) != null:
+		if t.row_open(k, ticks) and w.enemy_table(t.kinds[k]) != null and in_roster(w, t, k):
 			out.append(k)
 	return out
+
+
+## v0.11.0 O13a: whether mix row k may spawn on this floor's biome (always, unless it is a biome's own kind that this
+## floor's roster lacks).
+static func in_roster(w: World, t: SpawnTable, k: int) -> bool:
+	return k >= t.biome_only.size() or t.biome_only[k] == 0 or w.roster_kinds.has(t.kinds[k])
 
 
 ## Up to `count` spots for a pack around `anchor`, in ring order (the anchor first): each in the anchor's room (on a

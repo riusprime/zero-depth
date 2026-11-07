@@ -21,7 +21,7 @@ static func color(page: StringName) -> Color:
 
 ## The shapes of an enemy (by behaviour id) or a boss (by id).
 static func shapes(page: StringName, key: StringName) -> Array:
-	return _boss(key) if page == &"bosses" else _enemy(key)
+	return _boss(key) if page == &"bosses" else _enemy(BehaviourSchemas.base_of(key))  # O13a: a variant: its base
 
 
 static func _enemy(behaviour: StringName) -> Array:

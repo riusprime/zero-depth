@@ -42,7 +42,11 @@ func _shoot(w: World, id: int, key: StringName, at: Vector2, vel: Vector2) -> vo
 func test_every_look_but_the_crescent_has_a_pack_row() -> void:
 	var pack := PackFx.new()
 	add_child_autofree(pack)
-	assert_eq(_looks().size(), 16, "18 hostile looks, the crescent and the Shade wisp apart")
+	assert_eq(
+		_looks().size(),
+		17,
+		"19 hostile looks (v0.11.0 O13a: the Dim Needle), the crescent and the wisp apart"
+	)
 	for key in _looks():
 		assert_true(pack.has_id(StringName("shot_%s" % key)), "%s has its shot_ row" % key)
 	assert_false(pack.has_id(&"shot_nemesis_crescent"), "the crescent stays as it was (gap N4)")

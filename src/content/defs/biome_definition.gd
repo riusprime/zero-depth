@@ -6,6 +6,23 @@ const PALETTE_KEYS: Array[String] = [
 	"ground", "ground_alt", "cover", "accent", "edge", "ambient", "outline"
 ]
 const MIN_OUTLINE_CONTRAST := 3.0
+## v0.11.0 O13a (Q23): every biome's shared core of four.
+const SHARED_CORE: Array[StringName] = [&"charger", &"needle", &"swarmer", &"warden"]
+## v0.11.0 O13a: the ten signature enemies of ENEMIES.md R1-R10 that O13b-d build; a signature id may name one before
+## its definition exists (any other unknown id fails, so a typo can't hide).
+const PENDING_SIGNATURES: Array[StringName] = [
+	&"wire_weaver",
+	&"scrap_hound",
+	&"rock_lurker",
+	&"stone_thrower",
+	&"kiln_beetle",
+	&"cinder_priest",
+	&"frost_spitter",
+	&"glacier_turtle",
+	&"star_warper",
+	&"gravity_node",
+]
+const SIGNATURES_PER_BIOME := 2
 
 @export var name_key: StringName
 ## v0.7.5 CX: the Codex's line about this biome (a locale key; empty shows no line).
@@ -23,6 +40,15 @@ const MIN_OUTLINE_CONTRAST := 3.0
 ## v0.11.0 O9 (PLAN H1; owner Q14: "one horde critter per biome, same rules, its own body"): the enemy id of the
 ## biome's horde critter (a BehaviourSchemas.CRITTER behaviour), the one its floors' surges send (Surges); &"": none.
 @export var critter_id: StringName
+## v0.11.0 O13a (PLAN M3; owner Q23): the biome's roster. `core_ids`: the shared core, exactly SHARED_CORE on every
+## biome. `signature_ids`: its two signature enemies (ENEMIES.md R1-R10); an id whose kind is not shipped yet is
+## listed now (PENDING_SIGNATURES only) and skipped until its definition exists (VariantCompiler.roster_kinds), so
+## O13b-d add a kind by adding its file. `variant_id`: its variant of an existing enemy (V1-V5, a
+## BehaviourSchemas.VARIANT_OF behaviour). Floor depth still opens the later kinds on every biome (data/curves); a
+## signature or a variant spawns only on its own biome's floors (SpawnTable.biome_only, SpawnDirector.unlocked).
+@export var core_ids: Array[StringName] = []
+@export var signature_ids: Array[StringName] = []
+@export var variant_id: StringName
 
 
 func category() -> StringName:
@@ -33,6 +59,8 @@ func validate() -> Array[ValidationIssue]:
 	var issues := super.validate()
 	if String(name_key).is_empty():
 		issues.append(ValidationIssue.new(&"missing", resource_path, "name_key is empty"))
+	if category() == &"biomes":  # (the final arena is a biome of its own category, with no roster)
+		_check_roster(issues)
 	for key in PALETTE_KEYS:
 		if not palette.has(key):
 			issues.append(
@@ -109,4 +137,61 @@ static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 					"critter_id %s is no horde critter" % d.critter_id
 				)
 			)
+	issues.append_array(_cross_check_rosters(defs))
+	return issues
+
+
+## v0.11.0 O13a (Q23): the roster's own shape: the shared core, two distinct signatures, a variant named.
+func _check_roster(issues: Array[ValidationIssue]) -> void:
+	var core_ok := core_ids.size() == SHARED_CORE.size()
+	for id in SHARED_CORE:
+		core_ok = core_ok and core_ids.has(id)
+	if not core_ok:
+		issues.append(
+			ValidationIssue.new(&"roster", resource_path, "core_ids must be %s" % [SHARED_CORE])
+		)
+	if signature_ids.size() != SIGNATURES_PER_BIOME or signature_ids[0] == signature_ids[-1]:
+		issues.append(
+			ValidationIssue.new(&"roster", resource_path, "signature_ids must be two distinct ids")
+		)
+	if variant_id == &"":
+		issues.append(ValidationIssue.new(&"roster", resource_path, "variant_id is empty"))
+
+
+## v0.11.0 O13a: every roster id names a shipped enemy (a signature may be a PENDING_SIGNATURES id not built yet), the
+## variant is a variant behaviour's, and no signature or variant belongs to two biomes.
+static func _cross_check_rosters(defs: Array[ContentDef]) -> Array[ValidationIssue]:
+	var issues: Array[ValidationIssue] = []
+	var enemies := {}
+	for d in defs:
+		if d is EnemyDefinition:
+			enemies[d.id] = d
+	var owner := {}
+	for d in defs:
+		if not d is BiomeDefinition or d.category() != &"biomes":
+			continue
+		var b := d as BiomeDefinition
+		var bad := PackedStringArray()
+		for id: StringName in b.core_ids:
+			if not enemies.has(id):
+				bad.append("core %s is no enemy" % id)
+		for id: StringName in b.signature_ids:
+			if not enemies.has(id) and not PENDING_SIGNATURES.has(id):
+				bad.append("signature %s is no enemy" % id)
+		var v: EnemyDefinition = enemies.get(b.variant_id)
+		if (
+			b.variant_id != &""
+			and (v == null or not BehaviourSchemas.VARIANT_OF.has(v.behaviour_id))
+		):
+			bad.append("variant %s is no variant enemy" % b.variant_id)
+		var own: Array[StringName] = b.signature_ids.duplicate()
+		own.append(b.variant_id)
+		for id: StringName in own:
+			if id == &"":
+				continue
+			if owner.has(id) and owner[id] != b.id:
+				bad.append("%s is also %s's" % [id, owner[id]])
+			owner[id] = b.id
+		for m in bad:
+			issues.append(ValidationIssue.new(&"roster", b.resource_path, m))
 	return issues

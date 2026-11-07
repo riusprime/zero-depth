@@ -14,11 +14,12 @@ func test_the_shipped_enemies_are_valid_and_compile() -> void:
 	var repo := ContentRepository.load_all()
 	assert_eq(
 		repo.count(&"enemies"),
-		19,
+		24,
 		(
 			"charger, warden, needle, the hatchling (v0.3.0 C), the Arc Caster and the Bomb Drone (v0.3.5),"
 			+ " six horde kinds and the Splitling (v0.4.0 EN), the Lens Drone (v0.4.0 BO),"
 			+ " the five horde critters (v0.11.0 O9)"
+			+ " and the five biome variants (v0.11.0 O13a)"
 		)
 	)
 	for def: EnemyDefinition in repo.all_of(&"enemies"):
@@ -245,3 +246,69 @@ func test_the_horde_critters_compile_to_one_rule_set() -> void:
 		func(v: ValidationIssue) -> StringName: return v.code
 	)
 	assert_eq(codes, [&"critter_unknown"], "a Charger is no critter")
+
+
+## v0.11.0 O13a (PLAN M3; owner Q23; ENEMIES.md V1-V5): each biome's roster is the shared core of four, its two
+## signature enemies (R1-R10, listed before their kinds exist) and its variant; the five variants are valid, compile as
+## their base plus their own numbers, and each belongs to one biome.
+func test_each_biome_has_its_roster_and_variant() -> void:
+	var repo := ContentRepository.load_all()
+	var want := {
+		&"ruins": [&"rubble_warden", [&"wire_weaver", &"scrap_hound"]],
+		&"night_rocks": [&"dim_needle", [&"rock_lurker", &"stone_thrower"]],
+		&"red_canyon": [&"ember_charger", [&"kiln_beetle", &"cinder_priest"]],
+		&"frozen_shore": [&"frost_charger", [&"frost_spitter", &"glacier_turtle"]],
+		&"starfall": [&"split_sniper", [&"star_warper", &"gravity_node"]],
+	}
+	for id: StringName in want:
+		var b: BiomeDefinition = repo.get_def(&"biomes", id)
+		assert_eq(b.validate(), [], String(id))
+		for c: StringName in [&"charger", &"needle", &"swarmer", &"warden"]:
+			assert_has(b.core_ids, c, "%s: the shared core" % id)
+		assert_eq(b.core_ids.size(), 4, "%s: the core of four" % id)
+		assert_eq(b.variant_id, want[id][0], "%s: its variant" % id)
+		assert_eq(Array(b.signature_ids), want[id][1], "%s: its two signatures" % id)
+		var kinds := VariantCompiler.roster_kinds(repo, b)
+		var v := ContentCompiler.compile_enemy(repo.get_def(&"enemies", b.variant_id))
+		assert_eq(kinds, PackedInt32Array([v.kind]), "%s: only its variant until O13b-d ship" % id)
+	var defs: Array[ContentDef] = []
+	defs.append_array(repo.all_of(&"enemies"))
+	defs.append_array(repo.all_of(&"biomes"))
+	assert_eq(BiomeDefinition.cross_check(defs), [], "the shipped rosters cross-check")
+	var bases := {
+		&"rubble_warden": ActorStore.Kind.WARDEN,
+		&"dim_needle": ActorStore.Kind.NEEDLE,
+		&"ember_charger": ActorStore.Kind.CHARGER,
+		&"frost_charger": ActorStore.Kind.CHARGER,
+		&"split_sniper": ActorStore.Kind.SNIPER,
+	}
+	for id: StringName in bases:
+		var t := ContentCompiler.compile_enemy(repo.get_def(&"enemies", id))
+		assert_eq(EnemyAi.behaviour_of(t.kind), bases[id], "%s runs its base" % id)
+		assert_true(Variants.is_variant(t.kind), String(id))
+	assert_eq(ContentCompiler.compile_enemy(repo.get_def(&"enemies", &"rubble_warden")).hp, 130)
+
+
+func test_bad_rosters_are_rejected() -> void:
+	var repo := ContentRepository.load_all()
+	var ruins := (repo.get_def(&"biomes", &"ruins") as BiomeDefinition).duplicate(true)
+	ruins.core_ids.assign([&"charger", &"needle", &"swarmer"])
+	assert_has(
+		ruins.validate().map(func(v: ValidationIssue) -> StringName: return v.code), &"roster"
+	)
+	var typo := (repo.get_def(&"biomes", &"ruins") as BiomeDefinition).duplicate(true)
+	typo.signature_ids.assign([&"wire_weavr", &"scrap_hound"])
+	var twice := (repo.get_def(&"biomes", &"starfall") as BiomeDefinition).duplicate(true)
+	twice.variant_id = &"rubble_warden"
+	var plain := (repo.get_def(&"biomes", &"red_canyon") as BiomeDefinition).duplicate(true)
+	plain.variant_id = &"charger"
+	for b: BiomeDefinition in [typo, twice, plain]:
+		var defs: Array[ContentDef] = [repo.get_def(&"biomes", &"ruins"), b]
+		defs.append_array(repo.all_of(&"enemies"))
+		var codes := BiomeDefinition.cross_check(defs).map(
+			func(v: ValidationIssue) -> StringName: return v.code
+		)
+		assert_has(codes, &"roster", String(b.id))
+	var crust := (repo.get_def(&"enemies", &"ember_charger") as EnemyDefinition).duplicate(true)
+	crust.behaviour_params["trail_arm_seconds"] = 0.1
+	assert_has(_codes(crust), &"telegraph_short", "fire never burns before the telegraph minimum")

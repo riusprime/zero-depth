@@ -360,6 +360,22 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.5,
 	},
+	## v0.11.0 O13a (ENEMIES.md V2): the Dim Needle's shot once lit (within its dark distance of the hero): a foxfire
+	## green (clear of the hero's colours and the other shots), the pack's mprojectile_basic_vfx_01 recoloured
+	## (shot_dim_needle). Dark (farther), it draws DIM_DARK.
+	&"dim_needle":
+	{
+		"core": Color("#00FF66"),
+		"edge": Color("#04140A"),
+		"trail": Color("#0A8A3A"),
+		"size": 0.9,
+		"tip": 1.0,
+		"trail_m": 0.45,
+		"mesh": &"orb",
+		"energy": 2.8,
+		"trail_style": &"glow",
+		"tail": 0.3,
+	},
 }
 const DEFAULT_LOOK := {
 	"core": Color("#F0A890"),
@@ -429,9 +445,24 @@ const PACK_HIDE := {
 	&"prism_orb": ["Flare"],
 	&"crown_orb": ["Flare"],
 }
+## v0.11.0 O13a: the look a Dim Needle's shot draws with while it is dark (sync; look_of): a near-black core, a faint
+## green edge, no trail, the MultiMesh only (PACK_SKIP). Not one of LOOKS (whose cores are all bright).
+const DIM_DARK_LOOK := &"dim_needle_dark"
+const DIM_DARK := {
+	"core": Color("#0C140E"),
+	"edge": Color("#0E3A1C"),
+	"trail": Color("#0C140E"),
+	"size": 0.8,
+	"tip": 1.0,
+	"trail_m": 0.01,
+	"mesh": &"orb",
+	"energy": 0.15,
+	"trail_style": &"smoke",
+	"tail": 0.05,
+}
 ## Looks without a pack effect (they stay the MultiMesh). v0.11.0 S2: the Shade's wisp stays the MultiMesh so the
-## Shade's dark covers it (only its 4 m outline shows over the dark).
-const PACK_SKIP: Array[StringName] = [&"nemesis_crescent", &"shade_wisp"]
+## Shade's dark covers it (only its 4 m outline shows over the dark). v0.11.0 O13a: a dark Dim Needle shot too.
+const PACK_SKIP: Array[StringName] = [&"nemesis_crescent", &"shade_wisp", DIM_DARK_LOOK]
 ## v0.10.0 VX7 (VFX_PACK N4): the nemesis_crescent keeps its shape and takes a copy of the pack's rim_area_04 glow
 ## material in its own colours (a sheet of UVs cut from where each point lies); false: the shader core as before.
 const PACK_CRESCENT := true
@@ -532,6 +563,8 @@ func sync(reader: WorldReader) -> void:
 		var key := StringName(reader.projectile_look(i))
 		if key == &"":
 			continue
+		if key == WorldReader.DIM_LOOK and reader.projectile_dark(i):  # v0.11.0 O13a: dark until near
+			key = DIM_DARK_LOOK
 		var id := reader.projectile_id(i)
 		var p := reader.projectile_pos(i)
 		_now[id] = p
@@ -621,9 +654,9 @@ func _sync_lobs(reader: WorldReader) -> void:
 			_drawn[key] = PackedInt32Array()
 
 
-## The look a key draws with (tests): LOOKS[key] or DEFAULT_LOOK.
+## The look a key draws with: LOOKS[key], a dark Dim Needle shot's DIM_DARK (v0.11.0 O13a), or DEFAULT_LOOK.
 static func look_of(key: StringName) -> Dictionary:
-	return LOOKS.get(key, DEFAULT_LOOK)
+	return DIM_DARK if key == DIM_DARK_LOOK else LOOKS.get(key, DEFAULT_LOOK)
 
 
 ## The instances the trails of a look draw now (tests: Effects density Low thins them).

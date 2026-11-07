@@ -334,3 +334,110 @@ func _beat_boss_and_take_portal(w: World) -> void:
 		240
 	)
 	CombatLab.idle(w, BossFlow.ENTER_TICKS + 2)
+
+
+## v0.11.0 O13a (PLAN M3; owner Q23): the kinds floor f of `biome` can ever open: SpawnDirector.unlocked over the
+## floor's curve (every phase and the overtime), on a world holding the biome's roster as FloorPlan gives it.
+func _open_kinds(biome: BiomeDefinition, f: int, tables: Array[EnemyTable]) -> Dictionary:
+	var w := World.new(1, PlayerTable.starting_values())
+	w.set_enemy_tables(tables)
+	w.floor_index = f
+	w.spawner = ContentCompiler.compile_floor_spawning(_repo, f)
+	w.roster_kinds = VariantCompiler.roster_kinds(_repo, biome)
+	var out := {}
+	for ticks in range(0, 60 * 600, 120):
+		for k in SpawnDirector.unlocked(w, w.spawner, ticks):
+			out[w.spawner.kinds[k]] = true
+	return out
+
+
+## Over 1,000 runs (the biome order shuffled per run): every floor spawns only its biome's roster (the shared core,
+## its variant, the floor-unlocked kinds; its critter comes in the surges), no variant outside its biome, each variant
+## on its own biome's floors once its base is open there, and the same seed gives the same rosters.
+func test_every_floor_spawns_only_its_biomes_roster_over_a_thousand_seeds() -> void:
+	var tables := ContentCompiler.compile_enemies(_repo)
+	var run_def: RunDefinition = _repo.get_def(&"run", RunSaver.RUN_ID)
+	var variant_of := {}  # biome id -> its variant's kind
+	var variants := {}
+	for id in run_def.biomes:
+		var b: BiomeDefinition = _repo.get_def(&"biomes", id)
+		var k := ContentCompiler.compile_enemy(_repo.get_def(&"enemies", b.variant_id)).kind
+		variant_of[id] = k
+		variants[k] = id
+	var shared := {}  # the kinds any biome may spawn: every mix row that is no biome's own
+	var spawn := ContentCompiler.compile_floor_spawning(_repo, 1)
+	for k in spawn.kinds.size():
+		if spawn.biome_only[k] == 0:
+			shared[spawn.kinds[k]] = true
+	var open := {}  # "biome/floor" -> the kinds it can open (the same for every run)
+	for id in run_def.biomes:
+		for f in range(1, 6):
+			open["%s/%d" % [id, f]] = _open_kinds(_repo.get_def(&"biomes", id), f, tables)
+	var variant_floors := {}
+	for s in SEEDS:
+		var r := RunState.start(1000 + s * 7919, _table())
+		var again := RunState.start(1000 + s * 7919, _table())
+		assert_eq(r.biome_order, again.biome_order, "seed %d: the same order" % s)
+		for f in range(1, 6):
+			var id: StringName = run_def.biomes[r.biome_of(f)]
+			var kinds: Dictionary = open["%s/%d" % [id, f]]
+			for kind: int in kinds:
+				var own: bool = kind == variant_of[id]
+				if not own and not shared.has(kind):
+					fail_test(
+						"seed %d floor %d (%s): kind %d is not its roster's" % [s, f, id, kind]
+					)
+					return
+			for k: int in variants:
+				if variants[k] != id and kinds.has(k):
+					fail_test("seed %d floor %d (%s): %s's variant" % [s, f, id, variants[k]])
+					return
+			if kinds.has(variant_of[id]):
+				variant_floors[id] = int(variant_floors.get(id, 0)) + 1
+	for id in run_def.biomes:
+		assert_gt(int(variant_floors.get(id, 0)), 0, "%s's variant spawns on its floors" % id)
+	gut.p("variant floors over %d runs: %s" % [SEEDS, variant_floors])
+
+
+## The roster reaches the real floor: FloorPlan gives each floor its biome's own kinds, and on a floor where a biome's
+## variant is open, actually stepped spawns (packs every interval, each killed at once) are only its roster's.
+func test_a_built_floor_spawns_its_biomes_roster() -> void:
+	var run_def: RunDefinition = _repo.get_def(&"run", RunSaver.RUN_ID)
+	for s in 5:
+		var plan := FloorPlan.new_run(RunSaver.RUN_ID, 300 + s, &"blade", true)
+		plan.repo = _repo
+		plan.build()
+		var b: BiomeDefinition = plan.biome
+		assert_eq(
+			plan.world.roster_kinds,
+			VariantCompiler.roster_kinds(_repo, b),
+			"seed %d: %s" % [s, b.id]
+		)
+	var tables := ContentCompiler.compile_enemies(_repo)
+	for id in run_def.biomes:
+		var b: BiomeDefinition = _repo.get_def(&"biomes", id)
+		var w := World.new(77, PlayerTable.starting_values())
+		w.set_enemy_tables(tables)
+		w.floor_index = 4
+		w.spawner = ContentCompiler.compile_floor_spawning(_repo, 4)
+		w.spawner.intensity = null  # (packs every interval: the mix, not the rhythm, is under test)
+		w.roster_kinds = VariantCompiler.roster_kinds(_repo, b)
+		for r in [9.0, 12.0]:
+			for k in 8:
+				w.spawn_points.append(Kin.dir(k * 512) * r)
+		w.actors.invuln[0] = LONG
+		var allowed := _open_kinds(b, 4, tables)
+		if allowed.has(ActorStore.Kind.SPLITTER):  # a Splitter splits into Splitlings (they come of it, not of the mix)
+			allowed[ActorStore.Kind.SPLITLING] = true
+		var seen := {}
+		for t in 60 * 240:
+			w.step(InputFrame.new())
+			for i in range(1, w.actors.size()):
+				seen[w.actors.kinds[i]] = true
+				w.actors.invuln[i] = 0
+				Damage.hit(w, i, 99999, 1, 1, 1, 0, w.actors.pos(i), w.actors.pos(i))
+		for kind: int in seen:
+			assert_true(allowed.has(kind), "%s floor 4: kind %d is its roster's" % [id, kind])
+		var v := ContentCompiler.compile_enemy(_repo.get_def(&"enemies", b.variant_id)).kind
+		assert_true(seen.has(v), "%s floor 4: its variant spawns" % id)
+		gut.p("%s floor 4: %d kinds spawned" % [id, seen.size()])

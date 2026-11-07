@@ -41,6 +41,13 @@ func test_every_mix_kind_appears_by_floor_3() -> void:
 		for id in d.enemy_ids():
 			named[id] = true
 	for id in sc.enemy_ids():
+		# v0.11.0 O13a: a biome variant opens with its base (VariantCompiler.inherit_phases), never named by a curve
+		var def: EnemyDefinition = repo.get_def(&"enemies", id)
+		var base: StringName = BehaviourSchemas.VARIANT_OF.get(def.behaviour_id, &"")
+		if base != &"":
+			assert_false(named.has(id), "%s opens with its base, not by name" % id)
+			assert_true(named.has(base), "%s's base %s is introduced on some floor" % [id, base])
+			continue
 		assert_true(named.has(id), "%s is introduced on some floor" % id)
 
 
