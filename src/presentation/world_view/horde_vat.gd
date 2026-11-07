@@ -11,6 +11,7 @@ extends RefCounted
 ## - Mender: x the crystal raised while it heals (0 / 1); w the cross's turn (the gait, one turn a loop).
 ## - Mine Layer: x the windup (the hopper lowers), y the mine shown (0 / 1: hidden, its joint folds to a point).
 ## - Sniper: x the barrel's angle, y the muzzle's size; w the muzzle's own glow (no gait).
+## - v0.11.0 O9, the horde critters (CritterBodies): w the gait loop (the legs, wings, claws or tail); x, y, z unused.
 ## The Swarmer keeps the pilot's path (VatBake's own joint list and grids). Presentation only (EI-07).
 
 ## Per kind: the stance grid's samples over the drives' x, y, z and the gait loop's samples over w (0: no gait).
@@ -22,6 +23,12 @@ const GRIDS := {
 	WorldReader.KIND_MENDER: [Vector3i(2, 2, 2), 48],
 	WorldReader.KIND_MINE_LAYER: [Vector3i(2, 2, 2), 0],
 	WorldReader.KIND_SNIPER: [Vector3i(17, 2, 2), 0],
+	# v0.11.0 O9: the horde critters: no stance (2 samples each way: unused), the gait loop poses their parts
+	WorldReader.KIND_DUST_MITE: [Vector3i(2, 2, 2), CritterBodies.GAIT_SAMPLES],
+	WorldReader.KIND_CAVE_BAT: [Vector3i(2, 2, 2), CritterBodies.GAIT_SAMPLES],
+	WorldReader.KIND_EMBER_FLEA: [Vector3i(2, 2, 2), CritterBodies.GAIT_SAMPLES],
+	WorldReader.KIND_ICE_CRAB: [Vector3i(2, 2, 2), CritterBodies.GAIT_SAMPLES],
+	WorldReader.KIND_STAR_MOTE: [Vector3i(2, 2, 2), CritterBodies.GAIT_SAMPLES],
 }
 
 
@@ -107,6 +114,8 @@ static func joint_spec(a: HordeAvatar) -> Array:
 			out.append_array([[p["hopper"], g0], [p["mine"], g0]])
 		WorldReader.KIND_SNIPER:
 			out.append_array([[p["barrel"], g0], [p["muzzle"], g0]])
+		_ when CritterBodies.is_critter(a.kind):  # v0.11.0 O9: legs, wings, claws or tail on the gait
+			out.append_array(CritterBodies.joints(a))
 		_:
 			return []
 	return out
@@ -115,6 +124,8 @@ static func joint_spec(a: HordeAvatar) -> Array:
 ## The drives `d` (HordeAvatar._pose_parts' natural units) of `a` in its grid's units: x, y, z 0..1 over the stance
 ## grid; w the gait loop's phase (any real: the shader wraps it) or, on the Sniper, the muzzle's glow.
 static func grid_of(a: HordeAvatar, d: Vector4) -> Vector4:
+	if CritterBodies.is_critter(a.kind):  # v0.11.0 O9: w is the gait's phase (0..1)
+		return Vector4(0.0, 0.0, 0.0, fposmod(d.w, 1.0))
 	match a.kind:
 		WorldReader.KIND_MENDER:
 			return Vector4(d.x, 0.0, 0.0, fposmod(d.w / TAU, 1.0))
@@ -134,6 +145,8 @@ static func grid_of(a: HordeAvatar, d: Vector4) -> Vector4:
 
 ## The inverse of grid_of: `kind`'s natural drives at stance grid point `u` and gait phase `phase` (0..1).
 static func natural(kind: int, u: Vector3, phase: float) -> Vector4:
+	if CritterBodies.is_critter(kind):  # v0.11.0 O9
+		return Vector4(0.0, 0.0, 0.0, phase)
 	match kind:
 		WorldReader.KIND_MENDER:
 			return Vector4(u.x, 0.0, 0.0, phase * TAU)

@@ -42,6 +42,13 @@ enum Kind {
 	TWIN_WARDEN_VIOLET,  # v0.9.0 NB2: the violet body, its twin (BossTwin: one shared HP, linked by the chain)
 	CLOCKWORK_JUDGE,  # v0.9.0 NB3 (BOSSES_4_5.md N3): floor 5's first new boss (BossJudge: your echo)
 	LANTERN_SHADE,  # v0.9.0 NB4 (BOSSES_4_5.md N4): floor 5's second new boss (BossShade: lights out)
+	# v0.11.0 O9 (PLAN H1, M4; owner Q14: "one horde critter per biome, same rules, its own body"): one kind per body,
+	# one rule set (EnemyAi.is_critter: contact damage, chase); the Cave Bat flies (EnemyTable.flies).
+	DUST_MITE,
+	CAVE_BAT,
+	EMBER_FLEA,
+	ICE_CRAB,
+	STAR_MOTE,
 }
 
 const TEAM_PLAYER := 0

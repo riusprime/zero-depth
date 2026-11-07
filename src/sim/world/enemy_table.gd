@@ -83,3 +83,8 @@ var fuse_ticks := 24
 var patterns: Array[BulletPatternTable] = []
 ## v0.9.0 EL: an elite archetype's ability and plain attack (EliteAi); null for every other kind.
 var elite: EliteTable
+## v0.11.0 O9 (PLAN H1; owner Q14): a horde critter's touch (EnemyAi.is_critter): `damage` (its contact_damage) on
+## touching the hero, at most every contact_cd_ticks (the critter's own clock, ActorStore.cd); no windup, no attack.
+## `flies`: it flies low (the Cave Bat), so the floor's hazards (EnemyAi.flies) never reach it.
+var contact_cd_ticks := 30
+var flies := false

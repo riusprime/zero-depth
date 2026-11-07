@@ -20,6 +20,9 @@ const MIN_OUTLINE_CONTRAST := 3.0
 @export var surface: BiomeSurface
 ## v0.7.5 NB1: the biome's own dressing, edge and enemy cast; null keeps the hand-written look (the first three).
 @export var look: BiomeLook
+## v0.11.0 O9 (PLAN H1; owner Q14: "one horde critter per biome, same rules, its own body"): the enemy id of the
+## biome's horde critter (a BehaviourSchemas.CRITTER behaviour), the one its floors' surges send (Surges); &"": none.
+@export var critter_id: StringName
 
 
 func category() -> StringName:
@@ -85,3 +88,25 @@ static func _luminance(c: Color) -> float:
 
 static func _lin(v: float) -> float:
 	return v / 12.92 if v <= 0.03928 else pow((v + 0.055) / 1.055, 2.4)
+
+
+## v0.11.0 O9: every biome's critter_id names a shipped enemy whose behaviour is a horde critter's.
+static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
+	var issues: Array[ValidationIssue] = []
+	var critters := {}
+	for d in defs:
+		if (
+			d is EnemyDefinition
+			and BehaviourSchemas.SCHEMAS.get(d.behaviour_id) == BehaviourSchemas.CRITTER
+		):
+			critters[d.id] = true
+	for d in defs:
+		if d is BiomeDefinition and d.critter_id != &"" and not critters.has(d.critter_id):
+			issues.append(
+				ValidationIssue.new(
+					&"critter_unknown",
+					d.resource_path,
+					"critter_id %s is no horde critter" % d.critter_id
+				)
+			)
+	return issues

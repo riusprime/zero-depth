@@ -786,7 +786,7 @@ static func _mine_triggers(w: World, spec: AttackSpec) -> void:
 		if w.tick - s.lz_mine_born[k] >= life:
 			_mine_remove(s, k)
 			continue
-		if w.enemies_near(at, trig).is_empty():
+		if not _grounded_near(w, at, trig):  # v0.11.0 O9: a flier (the Cave Bat) never sets one off
 			k += 1
 			continue
 		var dmg: int = s.lz_mine_dmg[k]
@@ -795,6 +795,14 @@ static func _mine_triggers(w: World, spec: AttackSpec) -> void:
 		c.secondary = true
 		for i in w.enemies_near(at, burst):
 			Laser.hit(w, spec, c, i, at, w.actors.pos(i), false)
+
+
+## v0.11.0 O9 (ENEMIES.md H2): an enemy on the ground (not a flier: EnemyAi.flies) within r of `at`.
+static func _grounded_near(w: World, at: Vector2, r: float) -> bool:
+	for i in w.enemies_near(at, r):
+		if not EnemyAi.flies(w, i):
+			return true
+	return false
 
 
 static func _mine_remove(s: ModifierState, k: int) -> void:

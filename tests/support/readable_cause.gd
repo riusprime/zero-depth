@@ -10,6 +10,8 @@ extends RefCounted
 ## v0.9.0 EL: an elite's hit is booked to the attack it was making at the last observe (its ability, its plain attack,
 ## or, while it walked, a touch of its body: ELITE_CONTACT, readable by the body itself, no telegraph needed); its line
 ## is EliteAi's.
+## v0.11.0 O9: a horde critter's hit is its touch (EnemyAi._critter_touch), readable by its body too; its line is
+## EndPanel's.
 
 ## A projectile on screen this long is readable by itself (starting value: the telegraph minimum, 0.4 s).
 const PROJECTILE_MIN_TICKS := SimTick.MIN_TELEGRAPH_TICKS
@@ -141,6 +143,8 @@ func _check(w: World, e: SimEvent) -> void:
 			problems.append(
 				"projectile on screen %d ticks, fired after a %d-tick telegraph" % [age, shown]
 			)
+	elif EnemyAi.is_critter(kind):  # v0.11.0 O9: a critter's touch, readable by its body (as an elite's)
+		pass
 	elif attack != ELITE_CONTACT or not EliteAi.is_elite_kind(kind):
 		shown = _telegraphed(e.owner_id)
 		if shown < SimTick.MIN_TELEGRAPH_TICKS:

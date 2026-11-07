@@ -109,6 +109,7 @@ palette = {
 "outline": Color(0.101960786, 0.101960786, 0.13333334, 1)
 }
 template_tags = PackedStringArray("ruins")
+critter_id = &"dust_mite"
 id = &"ruins"
 mood = SubResource("Resource_mood")
 look = SubResource("Resource_look")

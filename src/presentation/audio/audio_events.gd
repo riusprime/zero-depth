@@ -20,6 +20,8 @@ const CRIT_PITCH := 1.6
 ## v0.9.0 DS (owner C35, Q19): `boss_door_impact.wav` peaks about 0.3 s in, so its cue starts this many ticks before
 ## the slab touches down (WorldReader.boss_door_open_ticks), and the boom lands with the slab.
 const DOOR_IMPACT_LEAD_TICKS := 18
+## v0.11.0 O9: a horde surge's cue is the ambush sound at this pitch (lower, so it reads as a different call).
+const SURGE_PITCH := 0.75
 
 const BOSS_FLAVOUR := {
 	WorldReader.KIND_GATEKEEPER: &"boss_telegraph_gatekeeper",
@@ -54,6 +56,12 @@ const DEATHS := {
 	WorldReader.KIND_MINE_LAYER: &"enemy_death_mine_layer",
 	WorldReader.KIND_SNIPER: &"enemy_death_sniper",
 	WorldReader.KIND_LENS_DRONE: &"enemy_death_lens_drone",
+	# v0.11.0 O9: the horde critters pop like the Swarmer, higher (1.3)
+	WorldReader.KIND_DUST_MITE: &"enemy_death_swarmer",
+	WorldReader.KIND_CAVE_BAT: &"enemy_death_swarmer",
+	WorldReader.KIND_EMBER_FLEA: &"enemy_death_swarmer",
+	WorldReader.KIND_ICE_CRAB: &"enemy_death_swarmer",
+	WorldReader.KIND_STAR_MOTE: &"enemy_death_swarmer",
 }
 
 ## v0.4.0 AB: the element abilities' hits (and their combos') by effect: their own sound.
@@ -475,7 +483,8 @@ func _events(reader: WorldReader, out: Array) -> void:
 				if e.target_id == player_id:
 					out.append([&"player_death", null, 1.0])
 				elif DEATHS.has(_kinds.get(e.target_id, -1)):
-					out.append([DEATHS[_kinds[e.target_id]], e.pos, 1.0])
+					var dk: int = _kinds[e.target_id]
+					out.append([DEATHS[dk], e.pos, 1.3 if WorldReader.is_critter_kind(dk) else 1.0])
 			SimEvent.Kind.PICKUP:
 				out.append([&"item_pickup", null, 1.0])
 			SimEvent.Kind.COMBO_UNLOCKED, SimEvent.Kind.PAIR_ON:  # v0.9.5 EE3: a pair shares the combo's chime
@@ -486,6 +495,8 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"shard_collect", e.pos, 1.0])
 			SimEvent.Kind.BOSS_ROOM_SEALED:
 				out.append([&"boss_door_seal", null, 1.0])
+			SimEvent.Kind.SURGE:  # v0.11.0 O9 (owner Q15: "with a sound"): the ambush horn, lower (no new file yet)
+				out.append([&"ambush_start", null, SURGE_PITCH])
 			SimEvent.Kind.BOSS_DOOR_OPENING:  # v0.8.0 BD (O83): the owner's sounds, at the door
 				out.append([&"boss_door_opening", e.pos, 1.0])
 			SimEvent.Kind.PORTAL_OPENED:

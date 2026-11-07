@@ -67,6 +67,7 @@ enum Kind {
 	STAR,  # v0.10.5 W3-P10e: Starfall's star fell (Starfall.on_crit: pos = the target, amount = the crit's amount)
 	METEOR_LAUNCH,  # v0.10.5 W3-P10e: a meteor called (pos = where it lands, amount = ticks to land)
 	METEOR_LAND,  # v0.10.5 W3-P10e: a meteor landed (pos, amount = radius in mm)
+	SURGE,  # v0.11.0 O9: a horde surge began (Surges: pos = the hero, amount = its size; its sound and HUD line)
 }
 
 ## v0.9.5 EE1 (ElementLevels): a Contagion jump's STATUS_APPLY (source: the giver, target: the receiver), and the

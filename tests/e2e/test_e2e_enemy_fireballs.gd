@@ -28,7 +28,7 @@ func test_an_arc_caster_casts_a_fan_of_three_plasma_balls_with_no_ground_line() 
 	await _click(e, main, "God")
 	assert_true(main.driver.debug.god, "God mode")
 	var choice := main.get_node("UI/DevPanel").find_child("EnemyChoice", true, false) as Label
-	for k in 16:
+	for k in 32:  # v0.11.0 O9: the list grew by the five critters (a full lap)
 		if choice.text == tr("ENEMY_ARC_CASTER"):
 			break
 		await _click(e, main, "NextEnemy")

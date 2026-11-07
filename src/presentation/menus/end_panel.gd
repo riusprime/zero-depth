@@ -25,6 +25,11 @@ const CAUSES := {
 	WorldReader.KIND_MINE_LAYER: "CAUSE_MINE_LAYER",
 	WorldReader.KIND_SNIPER: "CAUSE_SNIPER",
 	WorldReader.KIND_LENS_DRONE: "CAUSE_LENS_DRONE",
+	WorldReader.KIND_DUST_MITE: "CAUSE_DUST_MITE",  # v0.11.0 O9: the horde critters' touch
+	WorldReader.KIND_CAVE_BAT: "CAUSE_CAVE_BAT",
+	WorldReader.KIND_EMBER_FLEA: "CAUSE_EMBER_FLEA",
+	WorldReader.KIND_ICE_CRAB: "CAUSE_ICE_CRAB",
+	WorldReader.KIND_STAR_MOTE: "CAUSE_STAR_MOTE",
 }
 
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted

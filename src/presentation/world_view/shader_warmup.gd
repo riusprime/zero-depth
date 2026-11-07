@@ -40,6 +40,11 @@ const HORDE_KINDS: Array[int] = [
 	WorldReader.KIND_MENDER,
 	WorldReader.KIND_MINE_LAYER,
 	WorldReader.KIND_SNIPER,
+	WorldReader.KIND_DUST_MITE,  # v0.11.0 O9: the horde critters (a surge brings dozens at once)
+	WorldReader.KIND_CAVE_BAT,
+	WorldReader.KIND_EMBER_FLEA,
+	WorldReader.KIND_ICE_CRAB,
+	WorldReader.KIND_STAR_MOTE,
 ]
 
 ## The proxies made (tests): from the view's hidden pieces, from the first-use materials, and horde enemies.

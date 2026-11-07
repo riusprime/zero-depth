@@ -510,6 +510,16 @@ var intensity := IntensityState.new()
 var deep_elite_rooms := PackedInt32Array()
 ## v0.10.5 O15: the pairing rows (indices into SpawnTable.pairings) that fired on this floor, in first-seen order.
 var pairs_seen := PackedInt32Array()
+## v0.11.0 O9 (owner Q14, Q15): the floor's horde critter (an ActorStore kind; FloorPlan sets it from the biome,
+## -1: none, so no surges; loadout) and its surges (Surges): the floor ticks each begins at and its size (empty until
+## planned), the next one to begin, the ticks into the one running (-1: none) and how many of it have arrived. Hashed
+## once planned.
+var critter_kind := -1
+var surge_at := PackedInt32Array()
+var surge_sizes := PackedInt32Array()
+var surge_next := 0
+var surge_t := -1
+var surge_spawned := 0
 ## v0.8.0 HS: the perf probe's phase timer (scripts/checks/perf_probe.gd --phases); null in play. Told where each tick
 ## phase begins and ends (begin/end with the phase's name), it never reads or writes state: not hashed, not copied.
 var phase_probe: Object = null
@@ -1503,6 +1513,12 @@ func state_hash() -> String:
 		Starbound.hash_into(self, h)
 	if not pairs_seen.is_empty():  # v0.10.5 O15: only once a duo fired
 		h.add_ints(pairs_seen)
+	if not surge_at.is_empty():  # v0.11.0 O9: only once a floor's surges were planned
+		h.add_ints(surge_at)
+		h.add_ints(surge_sizes)
+		h.add_int(surge_next)
+		h.add_int(surge_t)
+		h.add_int(surge_spawned)
 	if not deep_elite_rooms.is_empty():  # v0.5.5 DS (S5): only once a Deep room brought its elite.
 		h.add_ints(deep_elite_rooms)
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.

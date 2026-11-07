@@ -34,6 +34,8 @@ const SCALE_WEAK := 0.4
 const SCALE_EXPOSED := 0.5
 const SCALE_ARMOUR := 0.22
 const SCALE_FINISHER := 0.4
+## v0.11.0 O9 (ENEMIES.md H3): the spark a dead Ember Flea leaves (no damage, just a look).
+const FLEA_SPARK := Color(1.0, 0.62, 0.2)
 
 var actors: ActorViews
 var rig: IsoRig
@@ -51,6 +53,8 @@ var _last_swing_t := 0
 var _last_step := -1
 var _last_seq := 0
 var _rng := RandomNumberGenerator.new()
+## v0.11.0 O9: the Ember Fleas alive at the last sync (by actor id), so their KILL can spark after they are gone.
+var _fleas := {}
 var _shards: Array = []
 var _burst_mats := {}
 
@@ -111,6 +115,10 @@ func sync(reader: WorldReader) -> void:
 			SimEvent.Kind.KILL:
 				if e.target_id != player_id:
 					_burst(e.pos, ThemePalette.color(&"enemy_body"), SHARDS, 0.16, true)
+					if _fleas.has(e.target_id):  # v0.11.0 O9 (ENEMIES.md H3): a dead flea leaves a spark (a look)
+						_fleas.erase(e.target_id)
+						_spark(HitPack.WEAK, e.pos, FLEA_SPARK, SCALE_WEAK, 6, 0.09)
+	_track_fleas(reader)
 	impacts.track(reader)
 
 
@@ -212,3 +220,14 @@ func _process(delta: float) -> void:
 		if sh[2] <= 0 or node.position.y < 0.0:
 			node.queue_free()
 			_shards.remove_at(k)
+
+
+## v0.11.0 O9: the Ember Fleas alive now (only on a floor whose critter is the flea: a scan of the actors).
+func _track_fleas(reader: WorldReader) -> void:
+	if reader.critter_kind() != WorldReader.KIND_EMBER_FLEA:
+		if not _fleas.is_empty():
+			_fleas.clear()
+		return
+	for i in range(1, reader.actor_count()):
+		if reader.actor_kind(i) == WorldReader.KIND_EMBER_FLEA and not reader.actor_dead(i):
+			_fleas[reader.actor_id(i)] = true

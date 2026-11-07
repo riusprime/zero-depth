@@ -78,6 +78,11 @@ func test_the_shipped_data() -> void:
 			KIND.BREAKER: 12,
 			KIND.RIFT_HUNTER: 12,
 			KIND.CONDUIT: 12,
+			KIND.DUST_MITE: 1,  # v0.11.0 O9: the horde critters, 1 each (as the Swarmer)
+			KIND.CAVE_BAT: 1,
+			KIND.EMBER_FLEA: 1,
+			KIND.ICE_CRAB: 1,
+			KIND.STAR_MOTE: 1,
 		},
 		(
 			"shards per kind (PLAN E; hatchlings 1; v0.3.5 Arc Caster and Bomb Drone 4; v0.4.0 EN horde;"

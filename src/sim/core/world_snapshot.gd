@@ -51,6 +51,7 @@ const WORLD_KEPT := {
 	&"pair_table": "loadout",  # v0.9.5 EE3
 	&"elite_rules": "loadout",  # v0.9.0 EL
 	&"ice": "loadout (v0.7.5 NB1: IcePatches lays it from the floor seed)",
+	&"critter_kind": "loadout (v0.11.0 O9: FloorPlan sets it from the floor's biome)",
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
@@ -116,6 +117,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"SimTuning",  # the dev panel's Step 6: the sim's designer numbers
 	&"IceField",  # v0.7.5 NB1: a floor's ice, laid from the floor seed at setup and never written in play
 	&"PairingTable",  # v0.10.5 O15: the enemy duos (SpawnTable.pairings)
+	&"SurgeTable",  # v0.11.0 O9: the horde surges' numbers (SpawnTable.surge)
 	&"IntensityTable",  # v0.8.0 N5: the intensity director's numbers (SpawnTable.intensity)
 	&"BulletPatternTable",  # v0.7.5 BF1: a boss attack's bullet pattern (BossAttackTable.pattern)
 	&"SlotTable",  # v0.9.0 AS: the wand's slot limits, caps and form × card table (content, read in play)
@@ -209,6 +211,11 @@ const ADDED_SINCE_V05 := {
 		&"pair_levels",  # v0.9.5 EP1 (an older save has none: its pairs read as Lv 3)
 		&"pair_log",
 		&"pairs_seen",  # v0.10.5 O15: an older save starts with none seen
+		&"surge_at",  # v0.11.0 O9: an older save's floor plans its surges afresh (the base's: none planned)
+		&"surge_sizes",
+		&"surge_next",
+		&"surge_t",
+		&"surge_spawned",
 		&"shard_drops",  # v0.10.5 O7b: an older save's floor has no shards lying on it (the base's: empty)
 		&"objectives",  # v0.11.0 O2: an older save points at nothing (the base's: empty)
 		&"player_hp_floor",  # v0.10.5 O17: an older save has no floor (0)

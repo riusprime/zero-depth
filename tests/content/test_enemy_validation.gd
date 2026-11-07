@@ -14,10 +14,11 @@ func test_the_shipped_enemies_are_valid_and_compile() -> void:
 	var repo := ContentRepository.load_all()
 	assert_eq(
 		repo.count(&"enemies"),
-		14,
+		19,
 		(
 			"charger, warden, needle, the hatchling (v0.3.0 C), the Arc Caster and the Bomb Drone (v0.3.5),"
-			+ " six horde kinds and the Splitling (v0.4.0 EN), the Lens Drone (v0.4.0 BO)"
+			+ " six horde kinds and the Splitling (v0.4.0 EN), the Lens Drone (v0.4.0 BO),"
+			+ " the five horde critters (v0.11.0 O9)"
 		)
 	)
 	for def: EnemyDefinition in repo.all_of(&"enemies"):
@@ -203,3 +204,44 @@ func test_the_fireball_enemies_name_slow_patterns_in_their_own_looks() -> void:
 	for id: StringName in [&"needle", &"sniper", &"charger", &"warden"]:
 		var t := ContentCompiler.compile_enemy(repo.get_def(&"enemies", id), repo)
 		assert_true(t.patterns.is_empty(), "%s keeps its own attack" % id)
+
+
+## v0.11.0 O9 (PLAN H1; owner Q14): the five critters, one per biome, share one rule set: no attack, a touch, 8 HP;
+## only the Cave Bat flies. A non-bool `flies` and a biome naming no critter are refused.
+func test_the_horde_critters_compile_to_one_rule_set() -> void:
+	var repo := ContentRepository.load_all()
+	var by_biome := {}
+	for b: BiomeDefinition in repo.all_of(&"biomes"):
+		by_biome[b.id] = b.critter_id
+	assert_eq(
+		by_biome,
+		{
+			&"ruins": &"dust_mite",
+			&"night_rocks": &"cave_bat",
+			&"red_canyon": &"ember_flea",
+			&"frozen_shore": &"ice_crab",
+			&"starfall": &"star_mote",
+		}
+	)
+	for id: StringName in by_biome.values():
+		var t := ContentCompiler.compile_enemy(repo.get_def(&"enemies", id))
+		assert_true(EnemyAi.is_critter(t.kind), String(id))
+		assert_eq(t.hp, 8, "%s: ~8 HP" % id)
+		assert_gt(t.damage, 0, "%s: its touch hurts" % id)
+		assert_eq(t.contact_cd_ticks, 30, "%s: 0.5 s between touches" % id)
+		assert_eq(t.attack_range_m, 0.0, "%s: no attack" % id)
+		assert_eq(t.flies, id == &"cave_bat", "%s: only the bat flies" % id)
+	var bad := (repo.get_def(&"enemies", &"dust_mite") as EnemyDefinition).duplicate(true)
+	bad.behaviour_params["flies"] = 1
+	assert_has(_codes(bad), &"flies")
+	bad.behaviour_params["flies"] = false
+	bad.behaviour_params["contact_damage"] = 0
+	assert_has(_codes(bad), &"not_positive")
+	var biome := (repo.get_def(&"biomes", &"ruins") as BiomeDefinition).duplicate(true)
+	biome.critter_id = &"charger"
+	var defs: Array[ContentDef] = [biome]
+	defs.append_array(repo.all_of(&"enemies"))
+	var codes := BiomeDefinition.cross_check(defs).map(
+		func(v: ValidationIssue) -> StringName: return v.code
+	)
+	assert_eq(codes, [&"critter_unknown"], "a Charger is no critter")
