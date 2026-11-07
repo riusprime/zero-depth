@@ -11,9 +11,9 @@
   [`PIERCE.md`](PIERCE.md) (P2: the flag), [`WISP_GAPS.md`](WISP_GAPS.md) (wider: hero + 0.7 m).
 - **Next:** Wave 2 O2–O5 (hint arrow, Gatekeeper, Lantern Shade, Twins) can start from Q9–Q12; O1 (Laser) sim can
   start, its look waits for the sketch; S2b and S6 are unblocked; O9–O13 (hordes, spells, enemies) are unblocked; O6–O8 after the owner's boss brief.
-- **Wave 2 so far:** S6 (Pierce flag), S2b (wisp lanes; Bloom 1 → 25 too), O2 (hint arrow), S7b (critter and new-enemy
-  prompts) merged; seams green at 74912d36 (641/641). **Building:** O1 Laser (Opus, wt-s1), O3 Gatekeeper pillars
-  (Opus, wt-o3). Next: O4 Lantern Shade, O5 Twins (each uses O2's markers).
+- **Wave 2 so far:** S6, S2b, O2, S7b, O1 (Laser lance), O3 (Gatekeeper pillars) merged. **Building:** O1c (lance
+  falloff / full speed / Homing to the wall; Sonnet, wt-o1c), O4 Lantern Shade (Opus, wt-o4), O5 Twins + their
+  animation (Opus, wt-o5). O6–O8 wait for the owner's boss brief; the Laser's look waits for the sketch.
 - **Agents (owner, 2026-11-07):** at most 3 Sonnet (light, exact briefs) + 2 Opus at once.
 - **Local note:** `project.godot` has an uncommitted editor rewrite (it drops the `[rendering]` settings and
   `locale/fallback`). It is not the lead's change; don't stage it. `wt-seams` is the lead's clean seams worktree.
@@ -29,6 +29,8 @@
 | S2b | Wisp Bloom 2 and 3 at 24 shots (lane 1.59 m at 4 m, was 0.91), Bloom 1 at 25 (2.47 m, was 1.18); test pins ≥ 1.40 m | 20113849, d86bf471 |
 | O2 | Hint arrow + ping (sim ObjectiveMarkers, HUD ObjectiveHints), first 2 meeting runs per mechanic (Codex `mechanics` page), Options → Accessibility → Boss hints | 32d98682 |
 | S7b | OWNER_TODO §3.2: prompts for the 5 horde critters and 10 new enemies | a62d881b |
+| O1 | The Laser fires an instant lance every 3 s while held, through every enemy; 3 hits' worth of status; Rapid Fire / Echo / Big Shot per Q6; Pierce and Mine off its row; Homing plans one smooth path through up to 5 targets (no leg turns > 12°). forms_dps one target 1400 → 1350 (−3.6 %), a line 500 → 2250, Homing pack 500 → 2250; owner then chose falloff (O1c). Minimal view until the sketch | b941fd61, c08e5196, bec1c43e |
+| O3 | Gatekeeper: 3 quake pillars from phase 2 (back in phase 3), a 3 % ring pulse every 3 s; Shock Lanes through a pillar shatters it, stun 2 s at ×1.5, at most 2 a phase; hint arrow; "STUNNED · VULNERABLE" on the bar. Two ways (seed 5): `lure ticks=5690 seconds=94.8 stuns=4`, `ignore ticks=2299 seconds=38.3` | 2233f520 |
 | S7 | OWNER_TODO §3.2: prompts for the 8 code-made enemies in the Charger's style, palette-A role colours | cc0d326f |
 
 ## Goldens changed on purpose
@@ -57,3 +59,7 @@
   from the merged `strings.csv`, both new lines checked in en and es). `bash scripts/ci/seams.sh` in `wt-seams` at
   74912d36: `Scripts 111, Tests 641, Passing Tests 641, Asserts 76219, Time 1491.386s`, `---- All tests passed! ----`,
   `check_gut_log: ok (641 passing, minimum 1)`. The hint arrow's look not yet seen (no shot).
+- 2026-11-07: O1 and O3 merged (the `.translation` files rebuilt by an import after each merge: O1 hadn't committed
+  them, O3 conflicted). Owner on the Laser: falloff per enemy, full speed, Homing's tail to the wall (O1c). O3 notes for
+  the owner: phase 3's replacement pillars rise in new spots; pillars reuse the spike model; the luring bot is slower
+  than ignoring them (the bot waits for the cross), not a balance verdict.
