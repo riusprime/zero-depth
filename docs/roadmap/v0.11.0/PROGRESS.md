@@ -14,7 +14,7 @@
 - **Built and merged:** Wave 1; S6, S2b, O2, S7b; O1 + O1c (Laser lance); O3, O4 + O4b, O5 + O16a (Gatekeeper,
   Lantern Shade, Twins); O9 (horde critters + surges, **probe missed 144 fps**); O10 (spell slots + Frost Nova,
   Fireball, Sky Strike). Merged at 5ffee376.
-- **Building:** O9c (batched critters; Opus).
+- **Building:** nothing (O9c merged).
 - **Merged since:** O11 (all 15 spells), O9b (surge cap 50 at 144 fps), VX (pack effects for the new spells, lance, quake pillars).
 - **Waiting on the owner:** the boss brief (O6–O8), the Laser sketch. O16 for the other bosses, O12 balance, O13
   enemies/rosters, O14 Runic Stone, O15 rooms still to come.
@@ -45,6 +45,7 @@
 | O11 | The other 12 spells (SpellRoster, SpellZones) and the Lv 5 extras for O10's three; strings en+es; pack effects per spell (PD-13; Spitter Vine's body is a poison bubble, no plant in the packs). Lv 1 ≈ 60 a 12 s cast; Lv 5 2.25–2.95 × Lv 1 (starting values for O12) | d23ab05d |
 | O9b | No ring on critters; `Solids.blocks()` distance pre-check (ai.plan 1.85 → 0.58 ms), Codex scan stops once a kind is unlocked; `alive_cap` 120 → 50. Idle probe (owner's PC, tasklist showed only the probe): 50 alive `avg=6.37 ms (157.1 fps) … 1%-low=105.6 fps`, `avg=6.43 ms (155.4 fps)`; 120 alive `avg=14.03 ms (71.3 fps)`. 60 held 144 in 2 of 4 clean runs. A clean run on the final SHA (85d033e5) was not possible (other Godot runs started) | 85d033e5 |
 | VX | PD-13: Frost Nova, Fireball, Sky Strike, the Laser lance (the element's pack laser on one tube through the sim's points) and the quake pillars' rings, pulse and shatter now use pack effects; the Shade and the critter spark needed nothing | 467c45b0 |
+| O9c | Critters batched: one MultiMesh per kind (`CritterCrowd`), no node per critter; a critter fast path in the sim (`CritterAi`, same rules, critters last in each phase). `alive_cap` 50 → 120. Idle probe (owner's PC, tasklist: no other Godot): 120 alive `avg=6.21 ms (161.1 fps) … 1%-low=121.2 fps`, confirm `avg=6.20 ms (161.4 fps) … 1%-low=120.8 fps`; 90 `176.4 fps`, 1 % low 136.3; 60 `190.2 fps`. Lost for critters: flinch, hit-stop pose, status rings | f21aa5e4 |
 | S7 | OWNER_TODO §3.2: prompts for the 8 code-made enemies in the Charger's style, palette-A role colours | cc0d326f |
 
 ## Goldens changed on purpose
