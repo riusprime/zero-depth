@@ -198,6 +198,23 @@ Glaive, Lance, Laser, Rune Explosion, Seekers, Void, Wave, Wisps.
 and Hive Lens fixes, loops, Astral UI, performance, enemy shadows). (a) **rec:** treat the ones you didn't mention as
 OK; (b) you'll go through them.
 
+## J. Overnight (2026-11-08, while you slept)
+
+The owner: "keep working on the plan don't stop if you have questions write them down and I will answer them tomorrow".
+Each row says what the lead does meanwhile (**default**). Answer by number ("N3 no", "N5 smaller") or "defaults OK".
+
+| # | Question | Default (what is built until you answer) |
+|---|---|---|
+| N1 | **The hidden room's reward** (Runic Stone, "Both"): the room under the Hollow Crown's throne holds "one unique card or relic found only there". What is it? The lead's idea: **The City's Heart**, a relic: once a run, the first killing blow on you instead leaves you at 1 HP and pulses a 4 m shock ring (the city catching you; r2's "TEN TIMES YOU FELL"). | The room, its rune scene and a pedestal are built; the pedestal holds the lead's relic as a **placeholder** until you approve or replace it |
+| N2 | **The "remembered" Hollow Crown fight** behind the room: its moves are yours (Q13, your boss brief). | The door is built and **sealed** ("THE CROWN IS NOT YET REMEMBERED" in runes) until your brief |
+| N3 | **Biome pieces outside their biome** (rule O78): the Ruins hall uses the Night Rocks `stone_arch`; both quarries use the Ruins `ladder_frame` for scaffolds (as in the mockups you approved). OK, or swap? | As built |
+| N4 | **Two purposes the lead added**: Red Canyon also gets the camp, Night Rocks also gets the stone-ring hall (so every biome has at least one purpose and most have two). Keep? | Kept |
+| N5 | **Boss idle sway under reduced motion** stays full (shrinking it pulls held poses, like the Warlord's weapon, toward rest). Smaller? | Full |
+| N6 | **Surge cap 120** holds 161 fps on average but its slowest 1 % of frames run ≈ 121 fps; at 90 they run ≈ 136 fps. Keep 120, or 90? | 120 |
+| N7 | **The Glacier Turtle** is hard to see behind its pale shell. | The lead makes its body darker and a little bigger (a Sonnet step) |
+| N8 | **The v0.10.5 checklist (S5, your Q27 "treat as unmentioned")**: the lead closes every v0.10.5 PLAYTEST row you didn't mention in the brief (hub gaps, see-through fade, pools, Lance charge, Foundry and Hive Lens fixes, loops, Astral UI, performance, enemy shadows) as OK. Confirm? | Closed as OK in OWNER_TODO, noted "per Q27" |
+| N9 | Small looks to judge when you play: Meteor's mark (a pale swirl and a falling rock) vs a boss telegraph; the Spitter Vine drawn as a poison bubble (no plant in the packs); the Swarmer's crimson role colour; the Gatekeeper's phase-3 pillars rising in new spots; right after the tenth rune line the stone shows the eleventh first; critters no longer flinch when hit. | As built |
+
 ## Answers (owner)
 
 | # | Answer | Date | Recorded in |

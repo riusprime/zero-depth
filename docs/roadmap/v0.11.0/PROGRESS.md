@@ -11,13 +11,12 @@
   [`PIERCE.md`](PIERCE.md) (P2: the flag), [`WISP_GAPS.md`](WISP_GAPS.md) (wider: hero + 0.7 m).
 - **Next:** Wave 2 O2–O5 (hint arrow, Gatekeeper, Lantern Shade, Twins) can start from Q9–Q12; O1 (Laser) sim can
   start, its look waits for the sketch; S2b and S6 are unblocked; O9–O13 (hordes, spells, enemies) are unblocked; O6–O8 after the owner's boss brief.
-- **Built and merged:** Wave 1; S6, S2b, O2, S7b; O1 + O1c (Laser lance); O3, O4 + O4b, O5 + O16a (Gatekeeper,
-  Lantern Shade, Twins); O9 (horde critters + surges, **probe missed 144 fps**); O10 (spell slots + Frost Nova,
-  Fireball, Sky Strike). Merged at 5ffee376.
-- **Building:** nothing (O9c merged).
-- **Merged since:** O11 (all 15 spells), O9b (surge cap 50 at 144 fps), VX (pack effects for the new spells, lance, quake pillars).
-- **Waiting on the owner:** the boss brief (O6–O8), the Laser sketch. O16 for the other bosses, O12 balance, O13
-  enemies/rosters, O14 Runic Stone, O15 rooms still to come.
+- **Built and merged (2026-11-08):** everything the owner has answered except the items below; latest merge fc62b419.
+- **Owner asleep (2026-11-08):** "keep working on the plan … write [questions] down". Questions: OWNER_QUESTIONS §J
+  (N1–N9), each with the default being built.
+- **Building overnight:** O14b (the hidden room + sealed door), e2e for the new enemies and purpose rooms, the Glacier
+  Turtle's look; then S5 and the release prep (patch notes, PLAYTEST.md, tour).
+- **Waiting on the owner:** the boss brief (O6–O8 and the remembered Crown), the Laser sketch, OWNER_QUESTIONS §J.
 - **Agents (owner, 2026-11-07):** at most 3 Sonnet (light, exact briefs) + 2 Opus at once; up to 4 Opus when no Sonnet runs.
 - **Local note:** `project.godot` has an uncommitted editor rewrite (it drops the `[rendering]` settings and
   `locale/fallback`). It is not the lead's change; don't stage it. `wt-seams` is the lead's clean seams worktree.
@@ -52,6 +51,9 @@
 | O16 | All 12 other boss clip libraries loosened by one pass (`BossClip.loosen`): a counter-dip before each wind-up (0.3), a recoil overshoot after strikes (0.4; not the Prism), wider idle sway (×1.6, ×1.25 for floaters) and a slow weight shift; the existing HP-driven flinch kept; reduced motion skips the new keys (idle sway not reduced). Timings and telegraphs unchanged | 2c7f0130 |
 | O15 (G2) | Mockups: Camp, Collapsed hall, Quarry as authored templates with seeded variation in a real 3x3 room, 2 seeds × 2 biomes each + today's room per biome; owner picked all three and the method | 6b8d69cd |
 | O13a | Biome rosters (`core_ids`, `signature_ids`, `variant_id`; pending signatures skipped until built); 5 variants: Rubble Warden (130 HP, crust → 3 rocks of cover), Dim Needle (shots dark beyond 4 m), Ember Charger (2 s fire trail), Frost Charger (6 s slick, the hero slides), Split Sniper (3-way split at half range). 1,000-seed roster test; merge tests with O9c `Tests 73, Passing Tests 73` | 4ebfee35 |
+| O13b–d | The ten signature enemies (Wire Weaver, Scrap Hound, Rock Lurker, Stone Thrower; Kiln Beetle, Cinder Priest, Frost Spitter, Glacier Turtle; Star Warper, Gravity Node), merged on v0110-m13; one unlock rule (`CanyonShoreCompiler.inherit_phases`: signatures open with the Warden); 34 enemy definitions, 26 mix rows; seams gains test_e2e_horde_enemies and test_five_floors | 3930471c, 95629a79, b0d86567, 3ff6cb61 |
+| MX-1 | The 20 new kinds' weak/resist re-picked (owner "Spread them out"): every id the weakness of 3–5 kinds, resisted by 1–5; `gun_void` now a weakness | 6612d61c |
+| O15 | Large rooms get a purpose (75 % drawn, 689 ‰ measured over 1,000 floors): camp, stone-ring hall (owner: "like Stonehenge … the vibe"), quarry; templates as data, seeded variation, doorways and item spots kept clear | 37951fa0 |
 | S7 | OWNER_TODO §3.2: prompts for the 8 code-made enemies in the Charger's style, palette-A role colours | cc0d326f |
 
 ## Goldens changed on purpose
