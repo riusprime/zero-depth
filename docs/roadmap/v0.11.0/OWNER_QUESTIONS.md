@@ -213,4 +213,8 @@ OK; (b) you'll go through them.
 | Q4 | (a) Attack speed shortens the 3 s cooldown at half value; damage per shot fixed | 2026-11-07 | PLAN L1, O1 |
 | Q9 | "boss takes more damage during the stun, this should happen at most 2 times per phase" → (a): a pillar broken by Shock Lanes stuns the Gatekeeper 2 s at +50 % damage taken; at most 2 stuns per phase (a later break still removes the pillar) | 2026-11-07 | PLAN L5, O3 |
 | Q10 | (a) 40 % damage in the dark, 150 % inside a lit pool; a lantern stays lit 6 s; dark 9 s / light 4 s | 2026-11-07 | PLAN L6, O4 |
+| Q11 | "The boss has 3 phases of full hp P1 should be yellow p2 purple p3 both at the same time, we need to animate these bosses a bit better, right now the animation feels too stiff" → P1 yellow, P2 purple, P3 both. "3 phases of full hp" read as: each phase is a full health bar (to confirm, Q29). Plus: the Twins' animation gets a pass (less stiff) | 2026-11-07 | PLAN L7, L7b, O5 |
+| Q12 | (a) The hint shows the first 2 meetings of each mechanic (Codex-tracked); an option turns it off | 2026-11-07 | PLAN L4, O2 |
+| Q6 | "mine is disabled for laser, the rest as you mentioned, more attacks 20% less dmg, and echo re-strikes at 50%. big shot bigger beam more damage": Mine not offered with the Laser; Rapid Fire −30 % cooldown at −20 % damage a shot; Echo re-strikes the path after 0.4 s at 50 %; Big Shot a wider lance at ×1.6, no aim lag | 2026-11-07 | PLAN L1, O1, S6 |
+| Q14 | (a) One horde critter per biome, same rules, its own body | 2026-11-07 | PLAN H1, O9 |
 | Q24 | "I think I meant the rune that is at the hub": the **Runic Stone** (v0.9.5 RS1/RS2). Clarified in chat; see Q25 | 2026-11-07 | PLAN R1 |
