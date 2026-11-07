@@ -19,7 +19,8 @@ extends RefCounted
 ##   (in the full light, or touched by the player's own light_m circle). Tagged TAG_SHADE_LIT / TAG_SHADE_DARK.
 ## - v0.11.0 O4 (L4, Q12): while dark the hint marker (ObjectiveMarkers.SHADE_LANTERN) points at every unlit lantern;
 ##   cleared in the light and when the Shade is gone.
-## - v0.10.5 O2a (owner L3) shielded Lights Out only through its telegraph; v0.11.0 O4 ("No more immunity"): never.
+## - v0.10.5 O2a (owner L3): Lights Out is shielded only through its telegraph (shield_seconds 0); the wisps fly open.
+##   v0.11.0 O4b (owner: "Bring it back"): kept; every other moment the Shade is never immune.
 ## - The Snuff (a `marks` attack with snuff): each struck circle puts out the lit lantern nearest its centre.
 ## - The dark is sim state (BossStore.shade_* and lamp_*, snapshotted and hashed while a Shade lives); the darkness
 ##   drawn is the view reading it (WorldReader.boss_light). The Shade gone, the room relights.

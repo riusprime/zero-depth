@@ -2,8 +2,9 @@ extends GutTest
 ## v0.9.0 NB4 (BOSSES_4_5.md N4): The Lantern Shade reaches the real game. Through main.tscn with real input only: a
 ## floor-5 save (seed 1: floor 5's pool draws the Shade; built with SaveLab as Main builds floors) continued from the
 ## menu (Enter); God from the dev panel (clicked); the stick walks to the boss door, E opens it, the stick walks in and
-## the door seals; the Shade rises (its model, its name on the boss bar) and its Lights Out comes (v0.11.0 O4: never
-## shielded): the room goes dark (ShadeViews' dark at full, four lanterns on the room's edge, out, the hint pointing at
+## the door seals; the Shade rises (its model, its name on the boss bar) and its Lights Out comes (v0.11.0 O4b: shielded
+## through its telegraph only): the room goes dark (ShadeViews' dark at full, four lanterns on the room's edge, out,
+## the hint pointing at
 ## them); the stick steps onto the nearest and lights it. v0.11.0 O4 (owner Q10 a: "dark 9 s / light 4 s"): the dark
 ## lifts 9 s after it fell (drawn lit again, the Shade taking full damage anywhere) and falls again 4 s later on its
 ## own, and in that dark the hero closes in, inside its own light, and the mouse's attack lands hits on the Shade.
@@ -152,9 +153,10 @@ func test_continue_floor_5_and_fight_the_shade_in_the_dark() -> void:
 	assert_not_null((avatar as LanternShadeAvatar).imported, "the owner's model")
 	assert_eq(tr(reader.boss_name_key(bi)), "The Lantern Shade", "its name")
 	var shades := main.view.shades
-	# The stick circles; Lights Out comes on its cadence (v0.11.0 O4: never shielded) and the room goes dark.
+	# The stick circles; Lights Out comes on its cadence (O4b: shielded through its telegraph only); the room goes dark.
 	var lights_out := false
 	var shielded := false
+	var shield_outside := false
 	var dark := false
 	for k in 60 * 16:
 		var a := TAU * float(k) / 150.0
@@ -168,11 +170,14 @@ func test_continue_floor_5_and_fight_the_shade_in_the_dark() -> void:
 			lights_out = true
 		if reader.boss_shielded(i):
 			shielded = true
+			if atk == null or atk.dark_ticks <= 0:
+				shield_outside = true
 		if bool(reader.boss_light().get("dark", false)):
 			dark = true
 			break
 	assert_true(lights_out, "Lights Out came")
-	assert_false(shielded, "O4: never shielded")
+	assert_true(shielded, "O4b: shielded through the Lights Out telegraph")
+	assert_false(shield_outside, "O4b: and only then")
 	assert_true(dark, "the room went dark")
 	if not dark:
 		return

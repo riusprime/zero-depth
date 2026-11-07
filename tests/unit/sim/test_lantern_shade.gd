@@ -1,7 +1,8 @@
 # gdlint: disable=max-public-methods
 extends GutTest
 ## v0.9.0 NB4 (owner Q24 "ok go for those"; docs/roadmap/v0.9.0/BOSSES_4_5.md row N4; PLAN NB "Keep the empty hood"):
-## The Lantern Shade, floor 5's second boss. Lights out (every 12 s; v0.11.0 O4: never shielded): 4 s after the first
+## The Lantern Shade, floor 5's second boss. Lights out (every 12 s; v0.11.0 O4b: shielded only through its 1 s
+## telegraph): 4 s after the first
 ## starts the room goes dark; only 3.5 m round you and the lit lanterns on the room's edge (3 m wide) stay lit.
 ## v0.11.0 O4 (owner Q10 a: "40 % damage in the dark, 150 % inside a lit pool; a lantern stays lit 6 s; dark 9 s /
 ## light 4 s"): the lanterns start out and stepping on one lights it 6 s; dark 9 s and light 4 s alternate; the Shade
@@ -87,7 +88,9 @@ func test_the_data_is_the_approved_row() -> void:
 	assert_eq(t.dark_mult_permille, 400, "O4: 40 % damage in the dark")
 	assert_eq(t.lit_mult_permille, 1500, "O4: 150 % inside a lit pool")
 	var lo := t.attacks[t.attack_index(&"lights_out")]
-	assert_false(lo.shielded, "O4 (owner Q10 a, no more immunity): not even through its telegraph")
+	assert_true(lo.shielded, "v0.11.0 O4b (owner: Bring it back): shielded through its telegraph")
+	assert_eq(lo.shield_active_ticks, 0, "O4b: and only the telegraph (1 s)")
+	assert_eq(lo.windup_ticks, 60, "the telegraph is 1 s")
 	assert_eq(lo.dark_ticks, 240, "dark 4 s after the first signature starts")
 	assert_eq(lo.windup_ticks + lo.active_ticks, 240, "the wisps play out until the dark falls")
 	for p in 3:
@@ -125,8 +128,8 @@ func _param_codes(key: String, value: Variant) -> Array:
 
 
 func test_bad_light_numbers_are_errors() -> void:
-	var shielded := func(d: BossDefinition) -> void: d.attack(&"lights_out").shielded = true
-	assert_has(_codes_with(shielded), &"range", "O4: Lights Out is never shielded")
+	var unshielded := func(d: BossDefinition) -> void: d.attack(&"lights_out").shielded = false
+	assert_has(_codes_with(unshielded), &"missing", "O4b: Lights Out is shielded (its telegraph)")
 	assert_has(_param_codes("dark_seconds", 0.0), &"not_positive", "a real time to the dark")
 	assert_has(_param_codes("lamps", 9), &"range", "at most 8 lanterns")
 	assert_has(_param_codes("light_m", 0.0), &"not_positive", "a real light round you")
@@ -169,7 +172,8 @@ func test_four_lanterns_stand_on_the_edge_out_and_the_room_starts_lit() -> void:
 	assert_eq(w.objectives.size(), 0, "no hint in the light")
 
 
-func test_lights_out_is_open_and_the_dark_falls_4_s_after_it_starts() -> void:
+func test_lights_out_is_shielded_through_its_telegraph_and_the_dark_falls_4_s_after_it_starts(
+) -> void:
 	var s := _fight(Vector2(-3, 0))
 	var w: World = s[0]
 	var aid: int = s[1]
@@ -177,9 +181,16 @@ func test_lights_out_is_open_and_the_dark_falls_4_s_after_it_starts() -> void:
 	_hold(w, Vector2(-3, 0), 2)
 	BossLab.start(w, _i(w, aid), &"lights_out")
 	var started := w.tick
+	var shield_ticks := 0
 	for k in 239:
-		assert_false(BossDodge.shielded(w, _i(w, aid)), "O4: never shielded (tick %d)" % k)
+		var sh := BossDodge.shielded(w, _i(w, aid))
+		if sh:
+			shield_ticks += 1
+			assert_eq(w.actors.state[_i(w, aid)], EnemyAi.State.WINDUP, "O4b: only the telegraph")
 		_hold(w, Vector2(-3, 0), 1)
+	assert_gte(shield_ticks, 59, "O4b: shielded through the 1 s telegraph")
+	assert_lte(shield_ticks, 60, "O4b: and no longer (the wisps fly open)")
+	gut.p("O4b shield ticks: %d (%.2f s)" % [shield_ticks, shield_ticks / 60.0])
 	assert_false(BossShade.dark(w), "not yet dark")
 	_hold(w, Vector2(-3, 0), 2)
 	assert_true(BossShade.dark(w), "dark 4 s (240 ticks) after it started")
