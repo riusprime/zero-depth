@@ -8,6 +8,13 @@ extends Node3D
 ##   flame spikes out to the burst radius;
 ## - Sky Strike: a pale-blue bolt drops from the sky onto each struck enemy, and a thin pale line marks its jump.
 ## The casts come from WorldReader.spell_fx() (each new entry once); lives are sim ticks. Presentation only (EI-07).
+## v0.11.0 VX (owner PD-13): with the effects layer these are pack effects too (_pack_o10), the strips hidden:
+## - Frost Nova: the frost ring (ring_frost: pulse_area_vfx_02 in frost) grows out to the radius over the frost burst
+##   (burst_frost: vfx_explosion_07 in frost, its white Core hidden) at the hero;
+## - Fireball: the fire orb (vx2_bolt_ember: fire_ball_01) in flight, the fire explosion (explosion_fire_a/b/c:
+##   vfx_explosion_01/03/04, their Core hidden) where it bursts;
+## - Sky Strike: the layer's storm lightning (the vfx_zd bolt, from the sky onto each struck enemy), StormPack's storm
+##   hit spark (vx1_hit_storm: vfx_hit_01, storm colours) where it lands; a jump: the same lightning between the two.
 ## v0.11.0 O11 (every spell its element's colour; nothing is a filled round ground mark, Meteor's mark is four chevrons
 ## closing in and a falling rock, never a boss's red disc), drawn with SpellShapes:
 ## - Blizzard: a hexagon outline and snow streaks falling slant inside it; Frost Nova's shatter: six ice shards out;
@@ -40,6 +47,13 @@ const BALL_M := 1.2
 const STAR := 8
 ## v0.11.0 O11: Blood Thorns' eruptions (vfx_impact_02) without the white puff and the floor disc.
 const THORN_HIDE := ["Core", "Ground_Impact"]
+## v0.11.0 VX: the O10 casts' pack seeds start here; the Fireball's orb scale, the Frost Nova's burst radius (of the
+## nova's).
+const O10_SEED := 700000
+const FIREBALL_SCALE := 0.6
+const NOVA_BURST_R := 0.3
+## The pack bursts' white-hot Core sphere, hidden for the Frost Nova and the Fireball (PackFx.HIDE_PER_SPAWN).
+const CORE_HIDE := ["Core"]
 
 ## Counted for tests: casts drawn by kind; v0.11.0 O11: the spells seen drawn (a cast or a lasting look).
 var seen := {}
@@ -138,7 +152,7 @@ func sync(reader: WorldReader) -> void:
 			_balls[k].position = p
 			_cores[k].position = p
 			var venom := k < ball_spell.size() and ball_spell[k] == WorldReader.SPELL_VENOM_ORB
-			if venom and vfx_on:  # O11: the Venom Orb flies as the pack's orb (draw_fx)
+			if vfx_on:  # O11 / VX: the Venom Orb and the Fireball fly as the pack's orbs (draw_fx)
 				_balls[k].visible = false
 				_cores[k].visible = false
 			var el := WorldReader.SPELL_ELEMENT_VENOM if venom else WorldReader.SPELL_ELEMENT_FIRE
@@ -218,7 +232,8 @@ func _draw(tick: int) -> void:
 	var burst := 0
 	var bolt := 0
 	var jump := 0
-	for e: Array in _live:
+	# VX: with the effects layer the O10 kinds are pack effects (_pack_o10); the strips stay hidden
+	for e: Array in [] if vfx_on else _live:
 		var u := clampf(float(tick - int(e[3])) / _life(int(e[0])), 0.0, 1.0)
 		match int(e[0]):
 			WorldReader.SPELL_FX_NOVA:
@@ -465,20 +480,50 @@ func draw_fx(layer: VfxLayer) -> void:
 		return
 	_hold.fx = layer.pack_fx
 	_hold.begin()
+	_pack_o10(layer)
 	_pack_casts(layer)
 	_pack_zones(layer)
 	for k in _ball_at.size():
+		var at := SimPlane.to_3d(_ball_at[k], BALL_M)
 		if k < _ball_spell.size() and _ball_spell[k] == WorldReader.SPELL_VENOM_ORB:
-			_hold.touch(
-				900000 + k,
-				&"vx2_big_venom",
-				&"projectile",
-				SimPlane.to_3d(_ball_at[k], BALL_M),
-				0.8
-			)
+			_hold.touch(900000 + k, &"vx2_big_venom", &"projectile", at, 0.8)
+		else:  # VX: the Fireball's fire orb
+			_hold.touch(910000 + k, &"vx2_bolt_ember", &"projectile", at, FIREBALL_SCALE)
 	_hold.end()
 	if _once.size() > 512:
 		_once.clear()
+
+
+## v0.11.0 VX (PD-13): O10's Frost Nova, Fireball burst, Sky Strike bolt and jump as pack effects (the header). Each
+## cast's seed is its serial past O10_SEED, so its pack effects never share a key with another drawer's.
+func _pack_o10(layer: VfxLayer) -> void:
+	var fx := layer.pack_fx
+	for e: Array in _live:
+		var kind := int(e[0])
+		if kind > WorldReader.SPELL_FX_JUMP:
+			continue
+		var u := clampf(float(_tick - int(e[3])) / _life(kind), 0.0, 1.0)
+		var fade := 1.0 - u * u
+		var sd := O10_SEED + int(e[6])
+		var c := SimPlane.to_3d(e[1], 0.0)
+		var r := float(e[4])
+		match kind:
+			WorldReader.SPELL_FX_NOVA:
+				layer.ring(&"frost", c, r * minf(1.0, 0.25 + u * 2.5), fade, float(_tick), sd)
+				if not _once.has(sd):  # the frost burst without its white Core sphere (the hero stays seen)
+					_once[sd] = true
+					var cols := VfxPackViews.kind_colors(&"frost", false)
+					fx.spawn(&"burst_frost", c, r * NOVA_BURST_R, cols, -1.0, 1.0, CORE_HIDE)
+			WorldReader.SPELL_FX_BURST:
+				layer.burst_hide = CORE_HIDE  # the explosion without its white-hot Core sphere
+				layer.burst(&"fire", c, r, u, sd)
+				layer.burst_hide = []
+			WorldReader.SPELL_FX_BOLT:
+				var sky := SimPlane.to_3d(e[1], SKY_M)  # (StormPack sparks its storm hit where it lands)
+				layer.line(&"storm", sky, SimPlane.to_3d(e[1], 0.1), fade, float(_tick), sd)
+			WorldReader.SPELL_FX_JUMP:
+				var a := SimPlane.to_3d(e[1], CHEST_M)
+				layer.line(&"storm", a, SimPlane.to_3d(e[2], CHEST_M), fade, float(_tick), sd)
 
 
 func _pack_casts(layer: VfxLayer) -> void:

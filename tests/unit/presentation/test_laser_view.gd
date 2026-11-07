@@ -208,3 +208,38 @@ func test_w3o8_laser_weight_numbers() -> void:
 		var s: Array = LaserWeight.spark_offset(j, 5, 7.0)
 		assert_lte((s[0] as Vector3).length(), LaserWeight.SPARK_REACH_M + 0.6, "near the impact")
 		assert_between(float(s[1]), 0.0, 1.0)
+
+
+## v0.11.0 VX (owner PD-13: new effects use the premade packs): with the pack, the lance is the pack's laser of its
+## element (the scene's own core, outer and ball materials) laid on one tube through the sim's points, drawn out and
+## fading as the ribbon did; the ribbon and the plain impact quad hide, the impact's sparks stay.
+func test_vx_the_lance_is_the_packs_laser_on_one_tube() -> void:
+	var was := ViewPrefs.effects_density
+	ViewPrefs.effects_density = "high"
+	_view.pack_fx = add_child_autofree(PackFx.new())
+	var layer: VfxLayer = add_child_autofree(VfxLayer.new())
+	var w := _world()
+	w.add_wall_now(Obb.make(Vector2(6.0, 0.0), Vector2(0.2, 2.0), 0))
+	var r := WorldReader.new(w)
+	W.run(w, int(LaserWeight.DRAW_TICKS), 0, W.S)
+	_view.sync(r)
+	assert_eq(_view.shown, 1)
+	assert_eq(_view.tubes_shown, 1, "one tube for the lance")
+	var t: LaserPackTube = _view.tubes[0]
+	assert_true(t.ok, "the pack scene's parts were found")
+	assert_eq(
+		t.scene_path, PackFx.scene_path_of(PackLooks.laser_id(&"")), "the plain laser's scene"
+	)
+	assert_true(t.visible)
+	var ribbons: Array = _view.get("_ribbons")
+	assert_false((ribbons[0] as MeshInstance3D).visible, "the ribbon hides")
+	assert_false(
+		(_view.get("_impacts")[0] as MeshInstance3D).visible, "the plain impact quad hides"
+	)
+	_view.draw_fx(layer)
+	assert_eq(_view.sparks_drawn, LaserWeight.sparks("high"), "the impact still throws its sparks")
+	W.run(w, WorldReader.LANCE_GLOW_TICKS, 0, W.S)
+	_view.sync(r)
+	assert_eq(_view.shown, 0)
+	assert_false(t.visible, "the tube goes with the lance")
+	ViewPrefs.effects_density = was
