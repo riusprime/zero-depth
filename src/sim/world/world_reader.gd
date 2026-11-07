@@ -279,6 +279,18 @@ const CARD_SPELL := Offers.SPELL  # v0.11.0 O10: a spell card (its element card 
 const SPELL_FROST_NOVA := Spells.FROST_NOVA
 const SPELL_FIREBALL := Spells.FIREBALL
 const SPELL_SKY_STRIKE := Spells.SKY_STRIKE
+const SPELL_BLIZZARD := Spells.BLIZZARD  # v0.11.0 O11: the rest of the roster
+const SPELL_ICE_LANCES := Spells.ICE_LANCES
+const SPELL_BURNING_GROUND := Spells.BURNING_GROUND
+const SPELL_METEOR := Spells.METEOR
+const SPELL_BALL_LIGHTNING := Spells.BALL_LIGHTNING
+const SPELL_STATIC_FIELD := Spells.STATIC_FIELD
+const SPELL_VENOM_ORB := Spells.VENOM_ORB
+const SPELL_TOXIC_CLOUD := Spells.TOXIC_CLOUD
+const SPELL_SPITTER_VINE := Spells.SPITTER_VINE
+const SPELL_BLOOD_THORNS := Spells.BLOOD_THORNS
+const SPELL_HEMORRHAGE := Spells.HEMORRHAGE
+const SPELL_LEECH := Spells.LEECH
 const SPELL_ELEMENT_FROST := Spells.ELEMENT_FROST
 const SPELL_ELEMENT_FIRE := Spells.ELEMENT_FIRE
 const SPELL_ELEMENT_LIGHTNING := Spells.ELEMENT_LIGHTNING
@@ -288,6 +300,29 @@ const SPELL_FX_NOVA := Spells.FX_NOVA
 const SPELL_FX_BURST := Spells.FX_BURST
 const SPELL_FX_BOLT := Spells.FX_BOLT
 const SPELL_FX_JUMP := Spells.FX_JUMP
+## v0.11.0 O11: the new casts in the log and the lasting kinds (spell_zones).
+const SPELL_FX_LANCE := Spells.FX_LANCE
+const SPELL_FX_SHATTER := Spells.FX_SHATTER
+const SPELL_FX_THORNS := Spells.FX_THORNS
+const SPELL_FX_SPIT := Spells.FX_SPIT
+const SPELL_FX_ZAP := Spells.FX_ZAP
+const SPELL_FX_STRIKE := Spells.FX_STRIKE
+const SPELL_FX_DISCHARGE := Spells.FX_DISCHARGE
+const SPELL_FX_HEMO := Spells.FX_HEMO
+const SPELL_FX_DRAIN := Spells.FX_DRAIN
+const SPELL_ZONE_BLIZZARD := SpellZones.BLIZZARD
+const SPELL_ZONE_FIRE := SpellZones.FIRE
+const SPELL_ZONE_METEOR_MARK := SpellZones.METEOR_MARK
+const SPELL_ZONE_ORB := SpellZones.ORB
+const SPELL_ZONE_STATIC := SpellZones.STATIC
+const SPELL_ZONE_POOL := SpellZones.POOL
+const SPELL_ZONE_CLOUD := SpellZones.CLOUD
+const SPELL_ZONE_PUFF := SpellZones.PUFF
+const SPELL_ZONE_VINE := SpellZones.VINE
+const SPELL_ZONE_RING_LATER := SpellZones.RING_LATER
+const SPELL_ZONE_THORN_WALL := SpellZones.THORN_WALL
+const SPELL_ZONE_HEMO := SpellZones.HEMO
+const SPELL_ZONE_LEECH := SpellZones.LEECH
 ## v0.10.5 W3-P10b: the Starbound cards (starbound()'s order) and the view's log kinds (starbound_fx).
 const STARBOUND_ARC_JUMP := Starbound.ARC_JUMP
 const STARBOUND_RISING_EDGE := Starbound.RISING_EDGE
@@ -3205,7 +3240,13 @@ func spell_fx() -> Dictionary:
 		"size": _w.spell_fx_size.duplicate(),
 		"balls": _w.spell_ball_pos.duplicate(),
 		"ball_spell": _w.spell_ball_spell.duplicate(),
+		"spell": _w.spell_fx_spell.duplicate(),  # v0.11.0 O11: the spell each cast is (-1: none)
 	}
+
+
+## v0.11.0 O11: the lasting spells now (SpellZones.read: kind, spell, level, centre, radius, life left 0..1000).
+func spell_zones() -> Dictionary:
+	return SpellZones.read(_w)
 
 
 ## v0.11.0 O10: where spell `k` would aim now (Spells.densest_pack, the cast's own function, EI-07; -1 for none).

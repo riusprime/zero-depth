@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SpellDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/spell_definition.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+name_key = &"SPELL_BURNING_GROUND"
+desc_key = &"SPELL_BURNING_GROUND_DESC"
+level_keys = Array[StringName]([&"SPELL_BURNING_GROUND_LV1", &"SPELL_BURNING_GROUND_LV2", &"SPELL_BURNING_GROUND_LV3", &"SPELL_BURNING_GROUND_LV4", &"SPELL_BURNING_GROUND_LV5"])
+element = &"fire"
+element_card = &"ember_core"
+affinity = &"ember"
+weight = 10
+cooldown_s = 10.0
+reach_m = 5.0
+damage = PackedInt32Array(2, 2, 2, 2, 2)
+radius_m = PackedFloat32Array(3, 3.5, 3.5, 4, 4)
+seconds = PackedFloat32Array(5, 5, 6.5, 8, 8)
+period_s = 0.5
+speed_mps = 3.0
+stacks = 1
+id = &"spell_burning_ground"

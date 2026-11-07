@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SpellDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/spell_definition.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+name_key = &"SPELL_BLOOD_THORNS"
+desc_key = &"SPELL_BLOOD_THORNS_DESC"
+level_keys = Array[StringName]([&"SPELL_BLOOD_THORNS_LV1", &"SPELL_BLOOD_THORNS_LV2", &"SPELL_BLOOD_THORNS_LV3", &"SPELL_BLOOD_THORNS_LV4", &"SPELL_BLOOD_THORNS_LV5"])
+element = &"bleed"
+element_card = &"shared_bleed"
+affinity = &""
+weight = 10
+cooldown_s = 12.0
+reach_m = 4.0
+damage = PackedInt32Array(20, 24, 15, 18, 18)
+radius_m = PackedFloat32Array(4, 4, 4, 4, 4)
+inner_m = 2.0
+delay_s = 0.4
+period_s = 0.5
+bonus_damage = 4
+bonus_seconds = 2.0
+stacks = 1
+id = &"spell_blood_thorns"

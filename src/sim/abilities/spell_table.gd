@@ -26,6 +26,19 @@ var push_m := 0.0
 var jump_m := 0.0
 var speed_m_tick := 0.0
 var stacks := 1
+## O11: a lasting spell's pulse, a delay (ticks); Blood Thorns' inner edge (m); the extra enemies passed through.
+var period_ticks := 30
+var delay_ticks := 0
+var inner_m := 0.0
+var pierce := 0
+## O11: the Lv 5 extra's damage, length (ticks) and radius (m).
+var bonus_damage := 0
+var bonus_ticks := 0
+var bonus_radius_m := 0.0
+## O11 Leech: per level, the most HP a cast heals; the damage for each 1 HP. Toxic Cloud's Lv 5 slow (per mille).
+var heal_cap := PackedInt32Array()
+var heal_per_damage := 25
+var slow_permille := 1000
 
 
 ## Level `lv`'s entry of a per-level list (clamped to its ends; `fallback` when empty).

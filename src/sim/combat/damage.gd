@@ -187,6 +187,8 @@ static func hit(
 		Heat.on_hit(w, target, root_id, h.tags, effect_id)  # Heat: gain, Overclock embers.
 		if was_frozen:
 			ElementLevelsFsf.shatter(w, target, scaled, h.tags, effect_id)  # v0.9.5 EE2: Frost Lv 3
+			if not w.spell_slots.is_empty():
+				Spells.on_frozen_hit(w, target, root_id, effect_id)  # v0.11.0 O11: Frost Nova Lv 5 shatters it
 		if a.dead[target] == 1 and not splash:
 			Stats.overkill(w, target, scaled - got, root_id)  # v0.5.0 CP: the Overkill card
 		if not w.starbound.is_empty():  # v0.10.5 W3-P10b: Rising Edge counts a crit, Arc Jump jumps
@@ -293,6 +295,8 @@ static func _apply(
 			ItemProcs.on_kill(w, k)  # Items: Vampiric Core.
 			Engines.on_kill(w, k, target, tags)  # Engines: Wildfire, Blood Harvest.
 			Venom.on_kill(w, target, root_id)  # v0.6.0 MX4: Venom Core's spread
+			if not w.spell_zone_kind.is_empty():
+				SpellZones.on_kill(w, target)  # v0.11.0 O11: a Lv 5 Venom Orb pool leaves a small one
 			RuleCards.on_kill(w, target, tags, root_id)  # v0.10.5 O9: Adrenaline, Reflex, Scavenger
 			if w.pair_mask != 0 and a.frozen_t[target] > 0:
 				ElementPairs.on_frozen_end(w, target)  # v0.9.5 EE3: Brittle

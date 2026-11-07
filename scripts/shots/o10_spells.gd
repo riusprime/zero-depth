@@ -5,12 +5,15 @@ extends SceneTree
 ## bolts, the Fireball in flight, the HUD squares flashing); burst.png: the Fireball's burst on the pack, a sweep
 ## running. A tool, not a test; it quits on every path. Needs a renderer (not --headless):
 ##   godot --path . --position -10000,-10000 --resolution 1920x1080 -s scripts/shots/o10_spells.gd
-## Writes build/shots/v0.11.0/o10/{cast,burst}.png.
+## Writes build/shots/v0.11.0/o10/{cast,burst}.png; v0.11.0 O11 adds roster.png: four more spells at Lv 5 casting at
+## once (Meteor's mark on the pack, Static Field's ring round the hero, Spitter Vine spitting, Blood Thorns' ring).
 
 const OUT := "res://build/shots/v0.11.0/o10/"
 const MAX_FRAMES := 4000
 const CAST_STEPS := 6
 const BURST_STEPS := 44
+## v0.11.0 O11: the roster shot, this many ticks after the four cast.
+const ROSTER_STEPS := 40
 
 var _frame := 0
 var _stage := 0
@@ -40,7 +43,7 @@ func _process(_delta: float) -> bool:
 		return false
 	if not _advance():
 		return false
-	if _stage == 7:
+	if _stage == 10:
 		print("o10: done")
 		quit(0)
 		return true
@@ -64,7 +67,7 @@ func _advance() -> bool:
 			_main.driver.paused = true  # from here the shot steps the sim by hand
 			_pose(_main.driver.world)
 			_steps = CAST_STEPS
-		3, 5:
+		3, 5, 8:
 			if _steps > 0:
 				_steps -= 1
 				_main.driver.step_once()
@@ -76,6 +79,11 @@ func _advance() -> bool:
 			_steps = BURST_STEPS - CAST_STEPS
 		6:
 			_shot("burst")
+		7:
+			_pose_roster(_main.driver.world)
+			_steps = ROSTER_STEPS
+		9:
+			_shot("roster")
 	_stage += 1
 	return true
 
@@ -105,3 +113,17 @@ func _shot(shot_name: String) -> void:
 	var path := ProjectSettings.globalize_path(OUT + shot_name + ".png")
 	img.save_png(path)
 	print("o10: shot ", path)
+
+
+## v0.11.0 O11 shot setup: the Venom and Bleed cards too, the slots emptied and four spells held at Lv 5 (loop 2).
+func _pose_roster(w: World) -> void:
+	for id: StringName in [&"venom_core", &"shared_bleed"]:
+		w.add_item(AttackScenario.item_index(w.item_tables, id))  # a pose: past the Element slots
+	w.spell_slots = PackedInt32Array()
+	w.spell_levels = PackedInt32Array()
+	w.spell_cd = PackedInt32Array()
+	w.spell_cast_tick = PackedInt32Array()
+	w.loop = 2
+	for k in [Spells.METEOR, Spells.STATIC_FIELD, Spells.SPITTER_VINE, Spells.BLOOD_THORNS]:
+		for n in 5:
+			Offers.apply(w, Offers.spell_code(k))

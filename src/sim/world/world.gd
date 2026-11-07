@@ -105,6 +105,26 @@ var spell_push_id := PackedInt32Array()
 var spell_push_dir := PackedVector2Array()
 var spell_push_step := PackedFloat32Array()
 var spell_push_left := PackedInt32Array()
+## v0.11.0 O11 (SpellZones): the lasting spells (a storm, a patch, a mark, an orb, a field, a pool, a cloud and its
+## puffs, a vine, a ring to come, a wall, a Hemorrhage mark, a Leech): kind, spell, level, root, the tick it ends, its
+## next pulse, damage a pulse, two counters of its own, centre, velocity (m a tick) and radius (m). Oldest first.
+var spell_zone_kind := PackedInt32Array()
+var spell_zone_spell := PackedInt32Array()
+var spell_zone_level := PackedInt32Array()
+var spell_zone_root := PackedInt32Array()
+var spell_zone_end := PackedInt32Array()
+var spell_zone_next := PackedInt32Array()
+var spell_zone_dmg := PackedInt32Array()
+var spell_zone_aux := PackedInt32Array()
+var spell_zone_aux2 := PackedInt32Array()
+var spell_zone_pos := PackedVector2Array()
+var spell_zone_vel := PackedVector2Array()
+var spell_zone_r := PackedFloat32Array()
+## v0.11.0 O11: the spells' holds on enemies (Sky Strike's stun, Meteor's knock-down: per mille 0; Toxic Cloud's slow):
+## actor id, ticks left, the speed left (per mille).
+var spell_hold_id := PackedInt32Array()
+var spell_hold_t := PackedInt32Array()
+var spell_hold_permille := PackedInt32Array()
 ## The view's recent casts (Spells.FX_*: kind, tick, from, to, radius m), at most Spells.FX_MAX: view only, never
 ## hashed.
 var spell_fx_kind := PackedInt32Array()
@@ -112,6 +132,8 @@ var spell_fx_tick := PackedInt32Array()
 var spell_fx_from := PackedVector2Array()
 var spell_fx_to := PackedVector2Array()
 var spell_fx_size := PackedFloat32Array()
+## v0.11.0 O11: the spell each cast belongs to (view only).
+var spell_fx_spell := PackedInt32Array()
 ## Detonation's bursts waiting within one kill's chain (transient within a hit: empty between hits).
 var sb_burst_pos := PackedVector2Array()
 var sb_burst_dmg := PackedInt32Array()

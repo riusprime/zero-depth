@@ -111,6 +111,10 @@ static func slow_factor(w: World, i: int) -> float:
 	var ice := 1000  # v0.9.5 EE3: Black Ice slows a poisoned enemy further
 	if w.pair_mask != 0:
 		ice = ElementPairs.slow_permille(w, i)
+	if not w.spell_hold_id.is_empty():  # v0.11.0 O11: a spell's stun (0) or slow (Spells.hold)
+		ice = ice * Spells.hold_permille(w, i) / 1000
+		if ice <= 0:
+			return 0.0
 	if w.actors.slow_t[i] <= 0:
 		return ice / 1000.0
 	return w.item_mods.slow_permille * ice / 1000000.0

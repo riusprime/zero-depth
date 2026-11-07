@@ -74,7 +74,7 @@ static func think(w: World, i: int) -> void:
 		return
 	if EnemyAi.plans_now(w, i):  # the staggered walk, as every enemy's (EnemyAi.plan; its walk is EnemyAi.move)
 		EnemyAi.plan(w, i)
-	if a.frozen_t[i] > 0:
+	if a.frozen_t[i] > 0 or Spells.held_still(w, i):  # v0.11.0 O11: a spell stun holds it too
 		return
 	a.state_t[i] += 1
 	if a.cd[i] > 0:

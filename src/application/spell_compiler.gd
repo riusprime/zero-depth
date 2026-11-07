@@ -35,6 +35,18 @@ static func compile(repo: ContentRepository, items: Array[ItemTable]) -> Array[S
 		t.jump_m = def.jump_m
 		t.speed_m_tick = def.speed_mps / SimTick.TICKS_PER_SECOND
 		t.stacks = def.stacks
+		t.period_ticks = (
+			maxi(1, SimTick.seconds_to_ticks(def.period_s)) if def.period_s > 0.0 else 30
+		)
+		t.delay_ticks = SimTick.seconds_to_ticks(def.delay_s)
+		t.inner_m = def.inner_m
+		t.pierce = def.pierce
+		t.bonus_damage = def.bonus_damage
+		t.bonus_ticks = SimTick.seconds_to_ticks(def.bonus_seconds)
+		t.bonus_radius_m = def.bonus_radius_m
+		t.heal_cap = def.heal_cap.duplicate()
+		t.heal_per_damage = maxi(1, def.heal_per_damage)
+		t.slow_permille = def.slow_permille if def.slow_permille > 0 else 1000
 		out.append(t)
 	return out
 

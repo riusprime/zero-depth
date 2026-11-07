@@ -81,7 +81,8 @@ func test_an_element_card_held_offers_its_spell_from_its_own_stream() -> void:
 		var w := _world([&"ember_core"], [], 2000 + s)
 		var plain := _world([&"ember_core"], [], 2000 + s)
 		plain.spell_rules = null
-		assert_eq(Spells.pool(w), PackedInt32Array([Spells.FIREBALL]), "Fire: Fireball only")
+		var fire := PackedInt32Array([Spells.FIREBALL, Spells.BURNING_GROUND, Spells.METEOR])
+		assert_eq(Spells.pool(w), fire, "Fire: its three spells (O11)")
 		var id := w.add_reward(RewardStore.Kind.ALTAR, Vector2(100, 100), 0)
 		var i := w.rewards.index_of(id)
 		var predicted := Spells.offer_card(w, i)
@@ -90,7 +91,8 @@ func test_an_element_card_held_offers_its_spell_from_its_own_stream() -> void:
 		assert_eq(_spell_in(offer) == 1, predicted >= 0, "as offer_card said")
 		if predicted >= 0:
 			got += 1
-			assert_true(offer.has(Offers.spell_code(Spells.FIREBALL)))
+			assert_true(offer.has(Offers.spell_code(predicted)))
+			assert_true(fire.has(predicted), "a Fire spell")
 			assert_eq(offer.size(), w.reward_table.offer_size, "in place of a card")
 		plain.add_reward(RewardStore.Kind.ALTAR, Vector2(100, 100), 0)
 		Offers.roll(plain, 0)
@@ -103,11 +105,11 @@ func test_an_element_card_held_offers_its_spell_from_its_own_stream() -> void:
 	assert_between(got, rolls * 28 / 100, rolls * 42 / 100, "about 35 %")
 
 
+## O11: Fire's three spells against Frost's and Lightning's six (each weight 10).
 func test_the_rune_affinity_raises_its_spells_weight() -> void:
-	var counts := {false: {}, true: {}}
+	var fire := [Spells.FIREBALL, Spells.BURNING_GROUND, Spells.METEOR]
+	var counts := {false: [0, 0], true: [0, 0]}  # [fire, the others]
 	for aff: bool in [false, true]:
-		for k in [Spells.FROST_NOVA, Spells.FIREBALL, Spells.SKY_STRIKE]:
-			counts[aff][k] = 0
 		for s in 1500:
 			var w := _world([&"ember_core", &"frost_core", &"storm_core"], [], 7000 + s)
 			if aff:
@@ -115,18 +117,12 @@ func test_the_rune_affinity_raises_its_spells_weight() -> void:
 			var id := w.add_reward(RewardStore.Kind.ALTAR, Vector2(100, 100), 0)
 			var k := Spells.offer_card(w, w.rewards.index_of(id))
 			if k >= 0:
-				counts[aff][k] += 1
-	gut.p("spell offers, no affinity %s; Ember %s" % [counts[false], counts[true]])
-	var none: Dictionary = counts[false]
-	var ember: Dictionary = counts[true]
-	var fb := (
-		float(none[Spells.FIREBALL]) / float(none[Spells.FROST_NOVA] + none[Spells.SKY_STRIKE])
-	)
-	assert_between(fb, 0.38, 0.62, "no affinity: Fireball about as often as each other (1 : 2)")
-	var fe := (
-		float(ember[Spells.FIREBALL]) / float(ember[Spells.FROST_NOVA] + ember[Spells.SKY_STRIKE])
-	)
-	assert_between(fe, 0.8, 1.25, "Ember: Fireball weighs ×2 (2 : 2)")
+				counts[aff][0 if fire.has(k) else 1] += 1
+	gut.p("spell offers [Fire, others], no affinity %s; Ember %s" % [counts[false], counts[true]])
+	var fb := float(counts[false][0]) / float(counts[false][1])
+	assert_between(fb, 0.38, 0.62, "no affinity: the Fire three about half the other six (3 : 6)")
+	var fe := float(counts[true][0]) / float(counts[true][1])
+	assert_between(fe, 0.8, 1.25, "Ember: the Fire three weigh ×2 (6 : 6)")
 	var w := _world([&"ember_core"])
 	_affinity(w, &"ember")
 	assert_eq(Spells.weight_of(w, Spells.table(w, Spells.FIREBALL)), 20, "10 × 2000 ‰")
@@ -134,16 +130,6 @@ func test_the_rune_affinity_raises_its_spells_weight() -> void:
 
 func test_four_slots_then_the_lowest_level_spell_is_replaced() -> void:
 	var w := _world([&"ember_core", &"frost_core", &"storm_core"])
-	var extra := Spells.table(w, Spells.FROST_NOVA)
-	var fake := SpellTable.new()  # TEST HELPER: a fourth spell (O11 ships the rest of the roster)
-	fake.id = &"spell_blizzard"
-	fake.spell = 0
-	fake.name_key = extra.name_key
-	fake.level_keys = extra.level_keys
-	fake.element_item = extra.element_item
-	fake.weight = 10
-	fake.damage = extra.damage
-	w.spell_tables.append(fake)
 	_take(w, Spells.FIREBALL, 2)
 	_take(w, Spells.FROST_NOVA)
 	_take(w, Spells.SKY_STRIKE, 2)
@@ -157,12 +143,6 @@ func test_four_slots_then_the_lowest_level_spell_is_replaced() -> void:
 	assert_eq(w.spell_levels, PackedInt32Array([2, 1, 2, 2]))
 	assert_eq(w.mod_slots.has(Offers.spell_code(Spells.FIREBALL)), false, "not in the wand")
 	# a fifth spell: the lowest level (Frost Nova's Lv 1) goes; the card says so first
-	var fifth := SpellTable.new()  # TEST HELPER
-	fifth.id = &"spell_ice_lances"
-	fifth.spell = 2
-	fifth.element_item = extra.element_item
-	fifth.weight = 10
-	w.spell_tables.append(fifth)
 	var info := Offers.info(w, Offers.spell_code(2))
 	assert_eq(info["replaces"], Offers.spell_code(Spells.FROST_NOVA), "replaces Frost Nova")
 	_take(w, 2)
