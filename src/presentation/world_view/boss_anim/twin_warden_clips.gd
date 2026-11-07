@@ -7,6 +7,8 @@ extends RefCounted
 ## accents on top (the helm turning, the shield set, the sword raised) that the amber's skeleton ignores (it has no
 ## such bones). Parameters the avatar maps: glow (the cracks' and visor's light) and chain (how hard the shackle hand
 ## pulls on the chain, for the chain's view).
+## v0.11.0 O16a (owner Q11, Q30: "the animation feels too stiff"): looser: an idle weight shift and sway, a rolling
+## stride, a counter-move before each wind-up, a recoil after each strike, and a real hit reaction.
 ## Stone sentinels: they stand planted and breathe slowly; they march in step, heavy and stiff; for Crossfire they set
 ## their shields and lean in as the embers pour out (shielded); for the Chain Sweep they rear back on the chain and
 ## heave it across; for the Shield Bash they lift and slam their weight down; a jolt, a dazed sway, a roar arms wide,
@@ -52,35 +54,51 @@ static func library() -> Dictionary:
 	return _lib
 
 
-## Planted, breathing slowly; the helm looking about.
+## Planted, breathing slowly, its weight rolling from foot to foot (v0.11.0 O16a, owner Q11/Q30: "too stiff": a real
+## sway, the helm looking about, the shield arm settling).
 static func _idle() -> BossClip:
 	var c := BossClip.new(&"idle", true)
-	c.stretch(B, [[0, 0], [0.5, 0.015], [1, 0]])
-	c.turn(B, Z, [[0, 0], [0.5, -0.02], [1, 0]])
-	c.turn(&"helm", Y, [[0, 0.08], [0.5, -0.08], [1, 0.08]])
+	c.stretch(B, [[0, 0], [0.5, 0.03], [1, 0]])
+	c.turn(B, Z, [[0, 0], [0.5, -0.04], [1, 0]])
+	c.turn(B, X, [[0, 0.035], [0.5, -0.035], [1, 0.035]])
+	c.shift(B, UP, [[0, 0], [0.25, 0.015], [0.5, 0], [0.75, 0.015], [1, 0]])
+	c.turn(&"helm", Y, [[0, 0.14], [0.5, -0.14], [1, 0.14]])
+	c.turn(&"shield", Z, [[0, 0.03], [0.5, -0.04], [1, 0.03]])
+	c.turn(&"sword", Z, [[0, -0.05], [0.5, 0.06], [1, -0.05]])
 	c.param(&"glow", [[0, 0], [0.5, 0.3], [1, 0]])
 	return c
 
 
-## The march: a heavy, stiff stride, the body rolling side to side and dipping on each step.
+## The march: a heavy stride, the body rolling side to side, dipping on each step and leaning into it, the shield
+## and sword swinging against it.
 static func _walk() -> BossClip:
 	var c := BossClip.new(&"walk", true)
-	c.shift(B, UP, [[0, 0], [0.25, 0.06, OUT], [0.5, 0, IO], [0.75, 0.06, OUT], [1, 0, IO]])
-	c.turn(B, X, [[0, 0.07], [0.5, -0.07], [1, 0.07]])
-	c.turn(B, Z, [[0, -0.05], [1, -0.05]])
-	c.turn(&"shield", Z, [[0, 0.06], [0.5, -0.06], [1, 0.06]])
-	c.turn(&"sword", Z, [[0, -0.1], [0.5, 0.1], [1, -0.1]])
+	c.shift(B, UP, [[0, 0], [0.25, 0.09, OUT], [0.5, 0, IO], [0.75, 0.09, OUT], [1, 0, IO]])
+	c.turn(B, X, [[0, 0.11], [0.5, -0.11], [1, 0.11]])
+	c.turn(B, Z, [[0, -0.09], [0.25, -0.05], [0.5, -0.09], [0.75, -0.05], [1, -0.09]])
+	c.turn(B, Y, [[0, 0.05], [0.5, -0.05], [1, 0.05]])
+	c.turn(&"shield", Z, [[0, 0.1], [0.5, -0.1], [1, 0.1]])
+	c.turn(&"sword", Z, [[0, -0.18], [0.5, 0.18], [1, -0.18]])
+	c.turn(&"helm", Y, [[0, -0.05], [0.5, 0.05], [1, -0.05]])
 	return c
 
 
-## Crossfire: they plant their feet and set their shields, leaning in as the embers pour out through the active part.
+## Crossfire: a small counter-dip first (the anticipation), then they plant their feet and set their shields, lean in
+## as the embers pour out, and rock back as the volley ends (the recoil).
 static func _crossfire() -> BossClip:
 	var c := BossClip.new(&"crossfire")
-	c.turn(B, Z, [[0, 0], [0.42, 0.1, BACK], [0.5, -0.12, IN3], [0.62, -0.1], [1, 0]])
-	c.shift(B, UP, [[0, 0], [0.42, -0.08], [0.5, -0.12, IN3], [0.62, -0.1], [1, 0]])
-	c.stretch(B, [[0, 0], [0.42, 0.03], [0.5, -0.05, IN3], [0.62, -0.03], [1, 0]])
-	c.turn(&"shield", Y, [[0, 0], [0.42, 0.3], [0.5, 0.35], [0.62, 0.3], [1, 0]])
-	c.turn(&"sword", Z, [[0, 0], [0.42, 0.5, BACK], [0.5, -0.3, IN3], [0.62, -0.2], [1, 0]])
+	var lean := [[0, 0], [0.12, -0.04], [0.42, 0.14, BACK], [0.5, -0.14, IN3], [0.62, -0.1]]
+	c.turn(B, Z, lean + [[0.74, 0.05, OUT, S], [1, 0]])
+	c.shift(B, UP, [[0, 0], [0.12, 0.03], [0.42, -0.1], [0.5, -0.14, IN3], [0.62, -0.1], [1, 0]])
+	c.stretch(
+		B, [[0, 0], [0.42, 0.04], [0.5, -0.06, IN3], [0.62, -0.03], [0.74, 0.02, OUT, S], [1, 0]]
+	)
+	c.turn(&"shield", Y, [[0, 0], [0.42, 0.35], [0.5, 0.4], [0.62, 0.3], [1, 0]])
+	c.turn(
+		&"sword",
+		Z,
+		[[0, 0], [0.12, -0.12], [0.42, 0.6, BACK], [0.5, -0.35, IN3], [0.62, -0.2], [1, 0]]
+	)
 	c.param(&"glow", [[0, 0], [0.42, 1.0], [0.5, 1.6, IN3], [0.62, 1.3], [1, 0]])
 	c.param(&"tremble", [[0, 0], [0.48, 0], [0.5, 0.4, LIN], [0.56, 0], [1, 0]])
 	return c
@@ -101,7 +119,19 @@ static func _chain_sweep() -> BossClip:
 			[1, 0]
 		]
 	)
-	c.turn(B, Y, [[0, 0], [0.42, 0.35], [0.5, -0.4, IN3], [0.62, -0.3], [1, 0]])
+	c.turn(
+		B,
+		Y,
+		[
+			[0, 0],
+			[0.12, -0.08],
+			[0.42, 0.4, BACK],
+			[0.5, -0.45, IN3],
+			[0.62, -0.3],
+			[0.76, 0.06, OUT, S],
+			[1, 0]
+		]
+	)
 	c.shift(B, FWD, [[0, 0], [0.42, -0.15], [0.5, 0.25, IN3], [0.62, 0.15], [1, 0]])
 	c.turn(&"shield", Z, [[0, 0], [0.42, -0.4], [0.5, 0.5, IN3], [0.62, 0.3], [1, 0]])
 	c.param(&"chain", [[0, 0], [0.42, 1.0], [0.5, 1.4, IN3], [0.62, 0.6], [1, 0]])
@@ -124,7 +154,19 @@ static func _slam_ring() -> BossClip:
 			[1, 0]
 		]
 	)
-	c.turn(B, Z, [[0, 0], [0.42, 0.16], [0.5, -0.3, IN3], [0.62, -0.25], [1, 0]])
+	c.turn(
+		B,
+		Z,
+		[
+			[0, 0],
+			[0.12, -0.05],
+			[0.42, 0.2, BACK],
+			[0.5, -0.32, IN3],
+			[0.62, -0.25],
+			[0.76, 0.06, OUT, S],
+			[1, 0]
+		]
+	)
 	c.stretch(B, [[0, 0], [0.42, 0.06], [0.5, -0.1, IN3], [0.62, -0.05], [1, 0]])
 	c.shift(&"shield", FWD, [[0, 0], [0.42, -0.05], [0.5, 0.15, IN3], [0.62, 0.1], [1, 0]])
 	c.param(&"tremble", [[0, 0], [0.49, 0], [0.5, 1.0, LIN], [0.6, 0], [1, 0]])
