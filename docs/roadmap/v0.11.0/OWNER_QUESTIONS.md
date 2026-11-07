@@ -217,4 +217,8 @@ OK; (b) you'll go through them.
 | Q12 | (a) The hint shows the first 2 meetings of each mechanic (Codex-tracked); an option turns it off | 2026-11-07 | PLAN L4, O2 |
 | Q6 | "mine is disabled for laser, the rest as you mentioned, more attacks 20% less dmg, and echo re-strikes at 50%. big shot bigger beam more damage": Mine not offered with the Laser; Rapid Fire −30 % cooldown at −20 % damage a shot; Echo re-strikes the path after 0.4 s at 50 %; Big Shot a wider lance at ×1.6, no aim lag | 2026-11-07 | PLAN L1, O1, S6 |
 | Q14 | (a) One horde critter per biome, same rules, its own body | 2026-11-07 | PLAN H1, O9 |
+| Q29 | A full bar per phase: P1 yellow (full bar), P2 purple (new full bar), P3 both (new full shared bar); total paced to 1–2 min | 2026-11-07 | PLAN L7, O5 |
+| Q30 | (a) The animation pass covers all bosses, the Twins first | 2026-11-07 | PLAN L7b, O16 |
+| Q15 | "Surges but not during an overrun or lockdown": once or twice a floor, 30–60 over 10 s with a sound; never inside an Overrun room or a Lockdown | 2026-11-07 | PLAN H1, O9 |
+| Q18 | (a) Taking a held spell again levels it (Lv 1–3, 4–5 from loop 2), each level a visible change | 2026-11-07 | PLAN E3, O11 |
 | Q24 | "I think I meant the rune that is at the hub": the **Runic Stone** (v0.9.5 RS1/RS2). Clarified in chat; see Q25 | 2026-11-07 | PLAN R1 |
