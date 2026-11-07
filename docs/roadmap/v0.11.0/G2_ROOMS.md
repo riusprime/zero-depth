@@ -107,3 +107,9 @@ hall, (3) Quarry; or others (a shrine, a supply yard).
 parts and counts, small shifts, per-biome pieces, doorway drops) as the method?
 
 Answers: OWNER ONLY.
+
+## Owner change (2026-11-07)
+Collapsed hall: "The hall ruins have the pillars way too organized, can we shape them kinda in a way as Stonehenge, not
+exactly like that but the vibe." The straight colonnades go; the hall becomes a loose ring or horseshoe of standing
+stones around the focal ruin: irregular gaps (the lanes in and out), each stone with its own lean and turn, a few
+lintels across neighbours, some broken or fallen outward, a couple of outliers. All drawn from the seed.
