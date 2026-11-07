@@ -14,7 +14,8 @@
 - **Built and merged:** Wave 1; S6, S2b, O2, S7b; O1 + O1c (Laser lance); O3, O4 + O4b, O5 + O16a (Gatekeeper,
   Lantern Shade, Twins); O9 (horde critters + surges, **probe missed 144 fps**); O10 (spell slots + Frost Nova,
   Fireball, Sky Strike). Merged at 5ffee376.
-- **Building:** O9b (surge performance; Opus), O11 (the other 12 spells + Lv 5 extras; Opus).
+- **Building:** O9b (surge performance; Opus), VX (this version's plain effects onto pack effects, PD-13; Opus).
+- **O11 merged** (all 15 spells + Lv 5 extras) at 4712bf7e.
 - **Waiting on the owner:** the boss brief (O6–O8), the Laser sketch. O16 for the other bosses, O12 balance, O13
   enemies/rosters, O14 Runic Stone, O15 rooms still to come.
 - **Agents (owner, 2026-11-07):** at most 3 Sonnet (light, exact briefs) + 2 Opus at once.
@@ -41,6 +42,7 @@
 | O16a | The Twins' clips less stiff (anticipation, recoil, idle sway, hit reactions) | 728d80e3 |
 | O9 | Five critter kinds on one rule set (contact 3 dmg / 0.5 s, 8 HP, ~5 m/s; the bat flies), one per biome; surges 1–2 a floor, 30–60 over 10 s, never in Overrun/arena/Lockdown/boss rooms, `alive_cap` 120; HUD line + sound. Probe (owner's PC, two other Godot test runs going): `after (crowd full): avg=20.18 ms (49.6 fps) … 1%-low=31.7 fps` — **missed 144** | e6657bac, 08cbb00a |
 | O10 | 4 spell slots (Replace the lowest when full); holding an element card adds its spells (altar 350 ‰ chance), rune affinity ×2 weight; runner on 12 s cooldowns, densest-pack aim; Frost Nova, Fireball, Sky Strike Lv 1–5 numbers (Lv 5 extras in O11); HUD squares with sweep and flash. Damage ≈ 60 a cast from the 15 % rule (orbs ≈ 33.2 DPS) | 7647a519, 50dc7916 |
+| O11 | The other 12 spells (SpellRoster, SpellZones) and the Lv 5 extras for O10's three; strings en+es; pack effects per spell (PD-13; Spitter Vine's body is a poison bubble, no plant in the packs). Lv 1 ≈ 60 a 12 s cast; Lv 5 2.25–2.95 × Lv 1 (starting values for O12) | d23ab05d |
 | S7 | OWNER_TODO §3.2: prompts for the 8 code-made enemies in the Charger's style, palette-A role colours | cc0d326f |
 
 ## Goldens changed on purpose
