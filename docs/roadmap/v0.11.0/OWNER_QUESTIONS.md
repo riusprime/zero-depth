@@ -182,6 +182,16 @@ like the shop: a camp, a collapsed hall, a shrine, a quarry, a supply yard (per 
 (a) **rec:** purpose rooms from authored templates (like shops) with seeded variation; (b) rules that grow dressing
 around one focal piece; (c) a mix. OK to make those shots?
 
+## C2. Pierce (from your Q5 answer)
+
+**Q28. The Laser's built-in pierce, and where the Pierce card is offered.** Gun forms today: the plain Pulse bolt,
+Glaive, Lance, Laser, Rune Explosion, Seekers, Void, Wave, Wisps.
+- (a) **rec:** the Laser pierces 2 enemies from the start (3 hit in a line); the Pierce card on the Laser adds +1 per
+  level and lets Homing chain through more. The Pierce card is offered only with the plain bolt, Seekers, Glaive and
+  the Laser; never with Lance, Void, Wave, Wisps or Rune Explosion.
+- (b) The Laser pierces everything in its line from the start; the Pierce card isn't offered with the Laser at all.
+- (c) Your own form list.
+
 ## I. The v0.10.5 checklist
 
 **Q27.** The brief doesn't answer the v0.10.5 PLAYTEST rows (hub gaps, see-through fade, pools, Lance charge, Foundry
@@ -195,4 +205,8 @@ OK; (b) you'll go through them.
 | Q1 | "Everything in v0.11.0" | 2026-11-07 | PLAN Context (scope) |
 | Q3 | "Longer hidden telegraph but remove the smoke, leave just the 'explosion' effect that we currently have" → (b): volley 2 stays hidden until volley 1 lands, then shows for 1.2 s; the pack Smoke goes, the explosion stays | 2026-11-07 | PLAN S3 |
 | Q17 | "Hold the element card, if you chose that element as a rune in the wardrobe these cards also have a higher chance of appearing" → (a) plus: the element worn as the Wardrobe's rune affinity raises its spell cards' offer weight | 2026-11-07 | PLAN E1, O10 |
+| Q2 | "wisps are now visible in darkness due to new VFX so you can see all of them that's what I meant, we need to hide them again, some of the attack patterns have the wisps too close to each other and leave almost no space to dodge" → (a), plus: the Shade's denser wisp patterns get wider gaps | 2026-11-07 | PLAN B2, S2, S2b |
+| Q5 | "3 hits worth, the laser should have piercing from the beginning I think, and then piercing would not appear for all the attacks that don't need it like lance, void, wave, etc, it would only appear as an option if you have a compatible attack form" → one shot applies 3 hits' worth of status; the Laser pierces by default; the Pierce card is offered only with a form it changes | 2026-11-07 | PLAN L1, L3b, O1, S6 |
+| Q7 | (a) Instant, drawn fast (~0.15 s), glow fading ~0.5 s | 2026-11-07 | PLAN L1, O1 |
+| Q25 | (a) The lines become clues; together one short story; the full stone opens something real | 2026-11-07 | PLAN R1, O14 |
 | Q24 | "I think I meant the rune that is at the hub": the **Runic Stone** (v0.9.5 RS1/RS2). Clarified in chat; see Q25 | 2026-11-07 | PLAN R1 |
