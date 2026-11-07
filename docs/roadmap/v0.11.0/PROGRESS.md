@@ -113,3 +113,7 @@
   1345.892s`, `---- All tests passed! ----`, `check_gut_log: ok (647 passing, minimum 1)`. O16 merged after it.
 - 2026-11-07: seams at a5d9d9d3 (+ O16): `Tests 647, Passing Tests 647, Asserts 80914, Time 1336.314s`, all passed.
   O15 (G2) and O13a merged after it. Building: O13b, O13c, O13d (the ten new enemies), O15 (purpose rooms in floors).
+- 2026-11-07: seams at 59236184 (+ O13a, O15 G2): `Tests 649, Passing Tests 648, Failing Tests 1`:
+  `test_save_lab_loadout` `ARRAY(["roster_kinds"]) != ARRAY([])`. SaveLab now sets `roster_kinds` (not `critter_kind`,
+  which would start surges in every lab test; not a loadout field). That file + test_five_floors + e2e old_save + saves:
+  `Tests 15, Passing Tests 15`. Pushed. O13b, O13c, O13d done; one agent merges the three (v0110-m13); O15 building.
