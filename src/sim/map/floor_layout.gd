@@ -123,7 +123,8 @@ var room_turn := PackedInt32Array()
 var room_mirror := PackedInt32Array()
 ## v0.8.0 RT: a designed room's drawn-only pieces, presentation only (the sim never reads them): [piece, centre:
 ## Vector2, angle (1/4096), size: Vector2 (m), height (m; 0 = the kit's own), the piece_key of the blocker it stands on
-## or "" for decoration on open floor].
+## or "" for decoration on open floor]; v0.11.0 O15: a 7th field, when present, is the piece's base height (m; a
+## purpose room's lintel resting on its stones).
 var layout_props: Array = []
 ## v0.8.0 RT: a designed room's blockers, keyed by piece_key: their drawn height (m; 0 = the kit's own). Presentation
 ## only; a wall listed here is a designed room's piece (the biome's swap rules apply to it, StageDresser).
@@ -221,6 +222,10 @@ var purple_pos := Vector2.ZERO
 ## and each one's kind (LockdownTable.Kind).
 var lockdown_rooms := PackedInt32Array()
 var lockdown_kinds := PackedInt32Array()
+## v0.11.0 O15 (PLAN P1; RoomPurposes.lay, after the room kinds are marked): each room's purpose (a
+## RoomPurposeTable id: a large combat room furnished as a camp, a collapsed hall or a quarry), &"" for none; empty on
+## a floor without purposes.
+var room_purpose: Array[StringName] = []
 
 
 func room_count() -> int:
@@ -233,6 +238,20 @@ func room_of(p: Vector2) -> int:
 		if rooms[i].has_point(p):
 			return i
 	return -1
+
+
+## v0.11.0 O15: the purpose of `room` (&"" for none).
+func purpose_of(room: int) -> StringName:
+	return room_purpose[room] if room >= 0 and room < room_purpose.size() else &""
+
+
+## v0.11.0 O15: the rooms with a purpose, ascending.
+func purpose_rooms() -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for room in room_purpose.size():
+		if room_purpose[room] != &"":
+			out.append(room)
+	return out
 
 
 ## Rooms joined to room by a doorway, ascending.

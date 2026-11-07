@@ -1509,7 +1509,7 @@ func layout_prop_count() -> int:
 
 ## Prop i: {"piece": StringName, "pos": Vector2, "angle": int (1/4096), "size": Vector2 (m), "height": float (m; 0 =
 ## the kit's own), "wall": the wall index it stands on (-1: decoration on open floor; -2: its blocker is gone, so it
-## isn't drawn)}.
+## isn't drawn), "lift": its base height (m; v0.11.0 O15, a lintel; 0 on the ground)}.
 func layout_prop(i: int) -> Dictionary:
 	var f := _w.floor_layout
 	var p: Array = f.layout_props[i]
@@ -1520,7 +1520,32 @@ func layout_prop(i: int) -> Dictionary:
 			for k in range(f.slab_first, _w.walls.size()):
 				_layout_wall_index[FloorLayout.piece_key(_w.walls[k])] = k
 		wall = int(_layout_wall_index.get(key, -2))
-	return {"piece": p[0], "pos": p[1], "angle": p[2], "size": p[3], "height": p[4], "wall": wall}
+	var lift: float = p[6] if p.size() > 6 else 0.0  # v0.11.0 O15: a lintel's base height
+	return {
+		"piece": p[0],
+		"pos": p[1],
+		"angle": p[2],
+		"size": p[3],
+		"height": p[4],
+		"wall": wall,
+		"lift": lift
+	}
+
+
+## v0.11.0 O15: the room's purpose (RoomPurposeTable id; &"" for none). Presentation only.
+func floor_room_purpose(room: int) -> StringName:
+	return _w.floor_layout.purpose_of(room) if _w.floor_layout != null else &""
+
+
+## v0.11.0 O15: the purpose rooms' interiors (their palettes already name each biome's pieces, so the dresser draws
+## them as named). Presentation only.
+func floor_purpose_rects() -> Array:
+	var out: Array = []
+	var f := _w.floor_layout
+	if f != null:
+		for room in f.purpose_rooms():
+			out.append(f.rooms[room])
+	return out
 
 
 ## The room's designed layout id (&"" for a rule-built room). For tools and shots.

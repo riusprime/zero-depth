@@ -15,4 +15,5 @@ timed_door_permille = 350
 timed_door_ticks = 1200
 timed_switch_steps_max = 2
 timed_lever_ticks = 300
+purpose_permille = 750
 id = &"floor"

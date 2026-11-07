@@ -460,7 +460,9 @@ static func _layout_named(
 	out: Array, i: int, w: Array, f: Dictionary, rng: RandomNumberGenerator
 ) -> void:
 	var fr := _frame(w)
-	var piece := _resolve(StringName(w[4]), fr, f, rng)
+	var piece := StringName(w[4])
+	if not _in_named_room(f, w[0]):  # v0.11.0 O15: a purpose room's piece is drawn as named
+		piece = _resolve(piece, fr, f, rng)
 	var spec := _spec_of(piece)
 	var kind: StringName = &"light" if spec["role"] == &"light" else &"cover"
 	var own: bool = spec.get("role", &"") == &"biome"
@@ -484,7 +486,15 @@ static func _layout_props(out: Array, f: Dictionary, rng: RandomNumberGenerator)
 		var h := float(p["height"])
 		var kind: StringName
 		var role := role_of(piece)
-		if piece in LAYOUT_DECOR or role in [&"decor_grass", &"decor_rubble", &"decor_debris"]:
+		var named := _in_named_room(f, at)  # v0.11.0 O15: a purpose room's piece is drawn as named
+		if named and _spec_of(piece).get("role", &"") == &"decor":
+			if _near_any_point(at, keep, KEEP_CLEAR) or _near_any_rect(at, doors, KEEP_CLEAR):
+				continue
+			if h <= 0.0:
+				h = float(_spec_of(piece)["height"])
+			h = minf(h, DECOR_MAX_HEIGHT)
+			kind = &"decor"
+		elif piece in LAYOUT_DECOR or role in [&"decor_grass", &"decor_rubble", &"decor_debris"]:
 			if _near_any_point(at, keep, KEEP_CLEAR) or _near_any_rect(at, doors, KEEP_CLEAR):
 				continue
 			piece = _decor_piece(f, piece, rng)
@@ -493,7 +503,8 @@ static func _layout_props(out: Array, f: Dictionary, rng: RandomNumberGenerator)
 			h = minf(h, DECOR_MAX_HEIGHT)
 			kind = &"decor"
 		else:
-			piece = _resolve(piece, {"depth": minf(size.x, size.y)}, f, rng)
+			if not named:
+				piece = _resolve(piece, {"depth": minf(size.x, size.y)}, f, rng)
 			var spec := _spec_of(piece)
 			if h <= 0.0 or spec.get("role", &"") == &"biome":
 				h = _jitter(rng, float(spec["height"]))
@@ -502,7 +513,16 @@ static func _layout_props(out: Array, f: Dictionary, rng: RandomNumberGenerator)
 			Basis(Vector3.UP, SimPlane.yaw_of(int(p["angle"])))
 			* Basis.from_scale(Vector3(size.x, h, size.y))
 		)
-		_add(out, piece, Transform3D(basis, SimPlane.to_3d(at)), wall, kind)
+		var lift := float(p.get("lift", 0.0))  # v0.11.0 O15: a lintel rests on its stones
+		_add(out, piece, Transform3D(basis, SimPlane.to_3d(at, lift)), wall, kind)
+
+
+## v0.11.0 O15: whether `at` lies in a purpose room (the input's "named_rooms").
+static func _in_named_room(f: Dictionary, at: Vector2) -> bool:
+	for r: Rect2 in f.get("named_rooms", []):
+		if r.has_point(at):
+			return true
+	return false
 
 
 ## A box that names its piece (a vignette's, PLAN L8): that piece fills the footprint at its natural height; a

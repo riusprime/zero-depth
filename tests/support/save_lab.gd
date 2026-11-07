@@ -84,6 +84,7 @@ static func build_floor(
 	)
 	var shop_biome := biome.id if biome_id == &"" else biome_id
 	FloorScenario.add_shop(w, rules[&"shop"], shop_biome, rules[&"map"])  # v0.5.0 SH, v0.8.0 SR, as Main
+	FloorScenario.add_purposes(w, rules[&"purposes"], shop_biome, rules[&"map"])  # v0.11.0 O15, as Main
 	IcePatches.place(w, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2, as Main: ice or starglow
 	w.set_boss_tables(bosses)
 	w.locked_items = MetaProgress.locked_items(run.locked_cards, w.item_tables)  # v0.9.0 MP, as Main

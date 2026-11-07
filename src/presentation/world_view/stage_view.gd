@@ -705,6 +705,7 @@ func _build_kit(reader: WorldReader) -> void:
 		"biome": prop_style,
 		"seed": reader.seed_value(),
 		"props": _layout_props(reader),
+		"named_rooms": reader.floor_purpose_rects(),  # v0.11.0 O15: their pieces are drawn as named
 	}
 	if look != null:  # v0.7.5 NB1: the biome's own cover and decoration (v0.8.0 MI: its piece pools)
 		dressing.merge(StageDresser.look_input(look), true)

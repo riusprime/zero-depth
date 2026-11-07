@@ -933,6 +933,23 @@ the dressing. `RunContentCompiler.compile_shop_rooms` → `ShopRoomTable` per bi
 `RunSaver.floor_tables` adds them unless the floor was saved before SR (`RunState.shop_rooms`, floor rules < 5), whose
 shop is the terminal. The F10 dev panel does not list the folder (geometry, not balance).
 
+### Purpose rooms (`data/rooms/purposes/<id>.tres`, v0.11.0 O15)
+
+`RoomPurposeDefinition` (category `room_purpose`; PLAN P1, owner Q-O15a/b: authored templates with seeded variation;
+`docs/roadmap/v0.11.0/G2_ROOMS.md`): a large room's purpose (`camp`, `hall`, `quarry`), written by
+`scripts/content/room_purposes.gd`. Authored in a frame of the room's half-size (x the long side, the centre 0):
+`groups: Array[RoomPurposeGroup]` (`anchor` a fraction -1..1 of the half-size plus `offset` metres, `yaw` turning its
+parts, `focal`, a `choice` and the `options` that keep it, `chance_permille`, `parts: Array[RoomPurposePart]`:
+`token`, `at` m, `yaw`, `height_scale`/`height_spread`, `side` 0/1/2, `chance_permille`), `choices:
+Array[RoomPurposeChoice]` (`id`, one weight per option), `min_cells` (3 x 3 and up), `weight`, `biomes`, `far_wall`
+(the focal wall prefers a far side from the camera), `shift_m` (< 1 m) and `turn_deg` (< 15), and one
+`RoomPurposePalette` per biome mapping each token to a `RoomPurposePiece` (`piece` from `PIECES`, `size`, `height`,
+`solid`; a drawn piece is low decoration (`DECOR`) or rests on its group's solids at `lift` m: a lintel). The pieces
+are kit stand-ins until the purpose-room models arrive (OWNER_TODO §3.6): a new model swaps in by its palette row.
+`RunContentCompiler.compile_room_purposes` → `RoomPurposeTable`; `RunSaver.floor_tables` passes them to
+`FloorScenario.add_purposes` (after the shop), which lays `MapDefinition.purpose_permille` (750) of the large rooms of
+no other kind (`RoomPurposes`). The dev panel does not list the folder (geometry).
+
 ### Special rooms (`data/special_rooms/<kind>.tres`, v0.9.0 RG)
 
 `SpecialRoomDefinition` (category `special_rooms`, PLAN W73/W74): one file per special room kind the floor places,

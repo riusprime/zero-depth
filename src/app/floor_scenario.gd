@@ -154,6 +154,37 @@ static func add_shop(
 	Shop.place(w, layout)
 
 
+## v0.11.0 O15 (PLAN P1): the large rooms' purposes (after add_shop; RoomPurposes.lay, `map` the generator rules:
+## null, FloorParams' defaults): a share of the large combat rooms that hold no other kind (and not the shrine's
+## room) are refurnished as a camp, a collapsed hall or a quarry in `biome`'s pieces; the walls are rebuilt with them
+## (the gate, the Deep gate, the shrine and the stall kept) and the spawn points inside them keep only the room's own.
+## No-op without purposes or a biome. The events placed after keep out of these rooms (Events.place).
+static func add_purposes(
+	w: World, purposes: Array, biome: StringName, map: FloorParams = null
+) -> void:
+	var layout := w.floor_layout
+	if layout == null or purposes.is_empty() or biome == &"":
+		return
+	var p := map if map != null else FloorParams.defaults()
+	var taken := PackedInt32Array()
+	if Gamble.present(w):
+		taken.append(layout.room_of(w.gamble_pos))
+	var before := layout.walls.size()
+	var rooms := RoomPurposes.lay(layout, p, purposes, biome, taken)
+	if rooms.is_empty():
+		return
+	var walls: Array[Obb] = layout.walls.duplicate()
+	walls.append_array(w.walls.slice(before))  # the gate, the Deep gate, the shrine, the stall
+	w.set_walls(walls)
+	w.prepare_wall(layout.boss_door_wall)
+	var spawns := PackedVector2Array()
+	for q in w.spawn_points:
+		var room := layout.room_of(q)
+		if not rooms.has(room) or layout.spawn_points[room].has(q):
+			spawns.append(q)
+	w.spawn_points = spawns
+
+
 ## v0.8.0 N14 (O72): whether run `run`'s current floor keeps its shrine in the start hall (a floor resumed from a save
 ## made before N14, floor rules 1-5); false for today's floors and for a floor built without a run.
 static func legacy_shrine_of(run: RunState) -> bool:

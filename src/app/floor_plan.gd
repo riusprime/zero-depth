@@ -342,6 +342,7 @@ func _floor_world(
 	)
 	# v0.5.0 SH; v0.7.5 MG: every two floors (N12); v0.8.0 SR: in the biome's shop room (O13)
 	FloorScenario.add_shop(w, rules[&"shop"], biome_id, rules[&"map"])
+	FloorScenario.add_purposes(w, rules[&"purposes"], biome_id, rules[&"map"])  # v0.11.0 O15 (P1)
 	return w
 
 

@@ -29,6 +29,9 @@ const MAX_ROOMS := 19
 ## opens the shut door for timed_lever_ticks.
 @export var timed_switch_steps_max := 2
 @export var timed_lever_ticks := 300
+## v0.11.0 O15 (PLAN P1, owner Q-O15a/b): the share of large combat rooms (3 x 3 and up, no other kind) that take a
+## purpose (camp, collapsed hall, quarry; data/rooms/purposes), per mille; the rest keep their designed layouts.
+@export var purpose_permille := 750
 
 
 func category() -> StringName:
@@ -76,4 +79,6 @@ func validate() -> Array[ValidationIssue]:
 		)
 	if timed_lever_ticks < 60 or timed_lever_ticks > 600:
 		issues.append(ValidationIssue.new(&"range", resource_path, "timed_lever_ticks is 1..10 s"))
+	if purpose_permille < 0 or purpose_permille > 1000:
+		issues.append(ValidationIssue.new(&"range", resource_path, "purpose_permille is 0..1000"))
 	return issues

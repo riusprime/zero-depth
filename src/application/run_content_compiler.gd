@@ -251,6 +251,70 @@ static func compile_shop_rooms(repo: ContentRepository) -> Dictionary:
 	return out
 
 
+## v0.11.0 O15 (PLAN P1): the large rooms' purposes (data/rooms/purposes), in id order: centimetres, per mille and
+## 1/4096 turns, each group's yaw turned into its parts' centres and angles (RoomPurposeTable).
+static func compile_room_purposes(repo: ContentRepository) -> Array[RoomPurposeTable]:
+	var out: Array[RoomPurposeTable] = []
+	if repo == null:
+		return out
+	var defs: Array = repo.all_of(&"room_purpose")
+	defs.sort_custom(
+		func(a: RoomPurposeDefinition, b: RoomPurposeDefinition) -> bool:
+			return String(a.id) < String(b.id)
+	)
+	for def: RoomPurposeDefinition in defs:
+		out.append(compile_room_purpose(def))
+	return out
+
+
+static func compile_room_purpose(def: RoomPurposeDefinition) -> RoomPurposeTable:
+	var t := RoomPurposeTable.new()
+	t.id = def.id
+	t.min_cells = def.min_cells
+	t.weight = def.weight
+	t.biomes = def.biomes.duplicate()
+	t.far_wall = def.far_wall
+	t.shift_cm = roundi(def.shift_m * 100.0)
+	t.turn = ContentCompiler.degrees_to_units(def.turn_deg)
+	var index := {}
+	for c in def.choices:
+		index[c.id] = t.choices.size()
+		t.choices.append(c.weights.duplicate())
+	for g in def.groups:
+		var cg := RoomPurposeTable.Group.new()
+		cg.anchor = Vector2i(roundi(g.anchor.x * 1000.0), roundi(g.anchor.y * 1000.0))
+		cg.offset = Vector2i(roundi(g.offset.x * 100.0), roundi(g.offset.y * 100.0))
+		cg.focal = g.focal
+		cg.choice = int(index.get(g.choice, -1)) if g.choice != &"" else -1
+		cg.options = g.options.duplicate()
+		cg.chance_permille = g.chance_permille
+		var turn := deg_to_rad(g.yaw)
+		for p in g.parts:
+			var cp := RoomPurposeTable.Part.new()
+			cp.token = p.token
+			var at := p.at.rotated(turn)
+			cp.at = Vector2i(roundi(at.x * 100.0), roundi(at.y * 100.0))
+			cp.angle = posmod(ContentCompiler.degrees_to_units(p.yaw + g.yaw), SimTick.ANGLE_UNITS)
+			cp.height_permille = roundi(p.height_scale * 1000.0)
+			cp.spread_permille = roundi(p.height_spread * 1000.0)
+			cp.side = p.side
+			cp.chance_permille = p.chance_permille
+			cg.parts.append(cp)
+		t.groups.append(cg)
+	for pal in def.palettes:
+		var pieces := {}
+		for q in pal.pieces:
+			var cq := RoomPurposeTable.Piece.new()
+			cq.piece = q.piece
+			cq.size = Vector2i(roundi(q.size.x * 100.0), roundi(q.size.y * 100.0))
+			cq.height = roundi(q.height * 100.0)
+			cq.solid = q.solid
+			cq.lift = roundi(q.lift * 100.0)
+			pieces[q.token] = cq
+		t.palettes[pal.biome] = pieces
+	return t
+
+
 static func _layout_group(g: RoomLayoutGroup) -> RoomLayoutGroupTable:
 	var cg := RoomLayoutGroupTable.new()
 	if g == null:
@@ -287,6 +351,7 @@ static func compile_map(def: MapDefinition) -> FloorParams:
 	p.timed_door_ticks = def.timed_door_ticks
 	p.timed_switch_steps_max = def.timed_switch_steps_max  # v0.9.5 TS
 	p.timed_lever_ticks = def.timed_lever_ticks
+	p.purpose_permille = def.purpose_permille  # v0.11.0 O15
 	return p
 
 

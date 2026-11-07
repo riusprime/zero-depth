@@ -110,6 +110,9 @@ var timed_door_ticks := 900
 ## and the lever's open time in ticks (0: no lever).
 var timed_switch_steps_max := 0
 var timed_lever_ticks := 0
+## v0.11.0 O15 (PLAN P1): the share of large combat rooms that take a purpose (per mille; RoomPurposes.lay). 0 on a
+## floor without the data. MapDefinition's number.
+var purpose_permille := 0
 
 
 static func defaults() -> FloorParams:
