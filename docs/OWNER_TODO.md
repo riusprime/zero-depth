@@ -203,6 +203,24 @@ Still to come (the rest of the list arrived 2026-10-18, §3.0). All after the ki
 | Ruins | `sign_frame` | 1.2 × 0.2 × 1.6 | a blank fallen billboard frame on two posts, no text |
 | Frozen Shore | `ice_floe` | 2 × 1.6 × 0.12 | a flat cracked slab of floating sea ice, seen from above (the file you sent under this name is a frozen boat; it went in as `boat_wreck`) |
 
+**v0.11.0 purpose rooms (owner, 2026-11-07: "Add to my list"; G2_ROOMS.md).** The camp, collapsed hall and quarry
+rooms use stand-ins until these arrive. All after the kit prefix; sizes are targets, not measurements.
+
+| ✓ | Room | id | Size (W×D×H m) | Prompt |
+|---|---|---|---|---|
+| ☐ | Camp | `camp_tent` | 2.4 × 2.0 × 1.8 | a patched canvas lean-to tent on bent metal poles, one side open, a rolled blanket inside |
+| ☐ | Camp | `log_seat` | 1.4 × 0.4 × 0.4 | a short log split lengthwise as a bench, worn smooth on top |
+| ☐ | Camp | `cook_pot` | 0.7 × 0.7 × 0.9 | a dented iron cooking pot hanging from a tripod of three metal rods over cold ashes |
+| ☐ | Hall | `statue_whole` | 1.2 × 1.2 × 3.2 | a weathered stone statue of a hooded figure holding a staff, on a square plinth |
+| ☐ | Hall | `statue_broken` | 1.4 × 1.2 × 1.8 | the same hooded statue broken at the waist, its upper half lying beside the plinth |
+| ☐ | Hall | `column_round` | 0.8 × 0.8 × 3.6 | a tall round fluted stone column with a simple capital, chipped |
+| ☐ | Hall | `column_drum` | 0.8 × 1.6 × 0.8 | a fallen round column drum lying on its side, cracked |
+| ☐ | Quarry | `quarry_crane` | 2.0 × 1.6 × 4.0 | a wooden quarry hoist: a timber frame with a jib arm, a pulley, a rope and a hanging stone block |
+| ☐ | Quarry | `mine_cart` | 1.4 × 0.9 × 1.0 | a small rusty mine cart full of rubble on a short length of rail |
+| ☐ | Quarry | `stone_block` | 1.2 × 1.2 × 0.8 | a roughly cut rectangular stone block with chisel marks (tinted per biome by the game) |
+| ☐ | Quarry | `tool_rack` | 1.4 × 0.4 × 1.6 | a wooden rack with pickaxes, a sledgehammer and shovels leaning in it |
+| ☐ | All | bigger focal pieces | — | larger versions of the biome focal pieces (the Ruins arch, the Starfall observatory and monoliths) so they read across a 3x3 room; or say if the game may scale the existing ones |
+
 ### 3.7 Boss animation clips (P3: you're not sure yet)
 Any boss: clips named like the code ones (`idle`, `walk`, `marks`, `pattern`, `lanes`, `leap`, `death`…, listed per
 boss in [`roadmap/v0.8.0/evidence/BOSS_ANIMATIONS.md`](roadmap/v0.8.0/evidence/BOSS_ANIMATIONS.md)) in an

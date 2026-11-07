@@ -50,6 +50,8 @@
 | O14a | The Runic Stone's ten approved lines (full stops dropped: the cipher draws only A–Z and spaces); r11 "UNDER THE THRONE A DOOR WAITS" learned with the tenth (and on load for a full old profile); the robe still needs r1–r10. Side effect: right after the tenth, the bubble shows r11 first | d1010b4d |
 | O12b | Measure only: the wand column leaves out `storm_core` and `ember_core`; damage counted as HP taken; new moving and dying scenes. All four 4-spell builds in band (+60.2 / +56.3 / +54.7 / +66.7 %); 4 near spells ≈ 22 % and 3 Lv 5 ratios out; owner: accept as is | e4c62c78 |
 | O16 | All 12 other boss clip libraries loosened by one pass (`BossClip.loosen`): a counter-dip before each wind-up (0.3), a recoil overshoot after strikes (0.4; not the Prism), wider idle sway (×1.6, ×1.25 for floaters) and a slow weight shift; the existing HP-driven flinch kept; reduced motion skips the new keys (idle sway not reduced). Timings and telegraphs unchanged | 2c7f0130 |
+| O15 (G2) | Mockups: Camp, Collapsed hall, Quarry as authored templates with seeded variation in a real 3x3 room, 2 seeds × 2 biomes each + today's room per biome; owner picked all three and the method | 6b8d69cd |
+| O13a | Biome rosters (`core_ids`, `signature_ids`, `variant_id`; pending signatures skipped until built); 5 variants: Rubble Warden (130 HP, crust → 3 rocks of cover), Dim Needle (shots dark beyond 4 m), Ember Charger (2 s fire trail), Frost Charger (6 s slick, the hero slides), Split Sniper (3-way split at half range). 1,000-seed roster test; merge tests with O9c `Tests 73, Passing Tests 73` | 4ebfee35 |
 | S7 | OWNER_TODO §3.2: prompts for the 8 code-made enemies in the Charger's style, palette-A role colours | cc0d326f |
 
 ## Goldens changed on purpose
