@@ -166,9 +166,16 @@ ice); floor depth still unlocks the later kinds. (b) Fully separate rosters per 
 The TIP hints (move / attack / dash); (b) the collectible lore lines in the Archive; (c) event descriptions; (d)
 text on the floor or walls of a room (a shot would help); (e) something else.
 
-**Q25. The Easter egg (after Q24).** Starting ideas: (a) **rec:** the messages are fragments of one story (the city the
-Depths once were, from the Codex Lore); finding all of them in one run opens a hidden room on the last floor;
-(b) each message is a clue to a secret (a cracked wall, a purple room); (c) they fill a Codex page, no reward.
+**Q25. The Runic Stone's Easter egg (after Q24).** Today the stone learns 10 lines, each from a hidden feat (r1 a
+purple-rune room, r2 10 deaths, r3 7 presses in a row, r4 a boss with no hit, r5 60 s still in the hub, r6 8
+collectibles, r7 the Hollow Crown beaten, r8 three loops, r9 cracked walls on 5 runs, r10 switching language). The
+reward is the Runic robe. The lines read as riddles but point nowhere. Starting ideas:
+- (a) **rec:** each line becomes a **clue** to its own feat or to a place in a run ("THE WALLS HIDE WHAT THEY FEAR" →
+  a cracked wall), and the ten together tell one short story (the city the Depths were; the Codex Lore's world). The
+  last line opens something real: a hidden room on the final floor, or a secret final-boss variant.
+- (b) The runes also **appear in runs**: a rune carved in a room matches a stone line, and reading it there teaches
+  the line (a world-to-hub link).
+- (c) A mix: some lines learned in the hub as today, others found carved in rooms, and a full stone opens a reward.
 
 **Q26. Rooms with a purpose.** Large rooms (3x3 and up) get one purpose each, a focal piece plus dressing that fits it,
 like the shop: a camp, a collapsed hall, a shrine, a quarry, a supply yard (per biome). The lead makes G2 shots of
@@ -185,3 +192,7 @@ OK; (b) you'll go through them.
 
 | # | Answer | Date | Recorded in |
 |---|---|---|---|
+| Q1 | "Everything in v0.11.0" | 2026-11-07 | PLAN Context (scope) |
+| Q3 | "Longer hidden telegraph but remove the smoke, leave just the 'explosion' effect that we currently have" → (b): volley 2 stays hidden until volley 1 lands, then shows for 1.2 s; the pack Smoke goes, the explosion stays | 2026-11-07 | PLAN S3 |
+| Q17 | "Hold the element card, if you chose that element as a rune in the wardrobe these cards also have a higher chance of appearing" → (a) plus: the element worn as the Wardrobe's rune affinity raises its spell cards' offer weight | 2026-11-07 | PLAN E1, O10 |
+| Q24 | "I think I meant the rune that is at the hub": the **Runic Stone** (v0.9.5 RS1/RS2). Clarified in chat; see Q25 | 2026-11-07 | PLAN R1 |

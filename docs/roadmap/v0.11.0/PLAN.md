@@ -15,6 +15,7 @@ build step).
   agents should only handle light tasks, very well specified and with clear instructions so they don't think much".
   Each step names its agent: **S** = Sonnet (a precise brief, no design), **O** = Opus (design, or several systems).
   At most 3 S and 2 O at once. Each works in its own worktree cut from the lead's SHA, removed after the merge.
+- **Scope (owner, Q1, 2026-11-07): "Everything in v0.11.0".** One long version, playtested at the end.
 - **Gates:** the brief says it "is not an implementation plan", and most of it is marked open for discussion. So every
   step except the direct fixes (Wave 1) waits for the owner's answers in [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) or
   a G1/G2 gate. **Nothing in Waves 2–4 is built before those answers.**
@@ -37,7 +38,7 @@ build step).
 | L9 | §3 Warlord "reasonably good … room for adjustments and upgrades" | No immunity; a front shield arc you circle; javelins that fly back (`warlord.tres:218-223`) | No change unless the owner picks an upgrade from the G1 row: **Q13** | BOSS_AUDIT |
 | L10 | §3 "The rest of the boss roster has not yet been individually discussed … each encounter should be reviewed" | Brood Mother, Hive Lens, Foundry, Tidecaller, Clockwork Judge, and the final three (Colossus, Prism, Fallen) | Each gets a G1 row with the lead's proposal for the owner to approve, change or defer | BOSS_AUDIT, O6–O8 |
 | H1 | §4 "groups of small, simple enemies that primarily follow the player and deal damage on contact … large numbers … giving area attacks and crowd-control abilities a meaningful role" | The Swarmer is the nearest thing (8 HP, packs of 8, a lunge-bite, `enemy_ai.gd:13,89`). No enemy deals pure contact damage. Crowd cap 14–50 by floor, hard max 120 (`spawn_table.gd:103`, `floor_1.tres:82-84`). v0.10.5 measured 18 fps at 60 enemies before its fix (v0.10.5 Q5) | A horde kind: contact damage, low HP, big packs, cheap to draw. What it is, how it looks, when it appears: **Q14–Q16**. A crowd performance probe gates it | O9 |
-| E1 | §5 "Unlocking an element would open access to different automatic spells … approximately three spells per element … chosen and improved through the card system" | Five elements, each an item card in 2 Element slots, Lv 1–3 (`attack_slots.gd:27-31`, `card_levels.gd`). There is no "unlock an element" step. Frost Nova, Arc Field and Flame Trail were auto abilities removed in v0.10.5 O1; their enum entries and fire-patch code remain (`element_abilities.gd:6-9`, `ability_table.gd:8-19`) | A new card family: elemental spells, offered once you hold that element. How "unlocking" works: **Q17** | O10, O11 |
+| E1 | §5 "Unlocking an element would open access to different automatic spells … approximately three spells per element … chosen and improved through the card system" | Five elements, each an item card in 2 Element slots, Lv 1–3 (`attack_slots.gd:27-31`, `card_levels.gd`). There is no "unlock an element" step. Frost Nova, Arc Field and Flame Trail were auto abilities removed in v0.10.5 O1; their enum entries and fire-patch code remain (`element_abilities.gd:6-9`, `ability_table.gd:8-19`) | A new card family: elemental spells. Owner, Q17: "Hold the element card, if you chose that element as a rune in the wardrobe these cards also have a higher chance of appearing": holding an element card adds its spells to the run's pool; the Wardrobe's rune affinity raises their offer weight | O10, O11 |
 | E2 | §5 "up to four automatic spells … mix elements freely … always automatic and have a cooldown, 12s for example" | Nothing today is a timed auto-cast spell | 4 spell slots, separate from the wand; each spell fires on its own cooldown (12 s a starting value). HUD: **Q19** | O10 |
 | E3 | §5 "Later cards could upgrade a spell's radius, duration, damage" | Card levels exist (Lv 1–5, `card_levels.gd:11`) | Taking a held spell again levels it; what each level adds: **Q18** | O11 |
 | E4 | §5 the spell examples (Blizzard, Frost Nova, fireball, burning ground, sky lightning, venom orb) "examples only … the complete list is still open" | — | G1 [`SPELLS.md`](SPELLS.md): 3 spells for each element (the owner's 6 plus the lead's proposals; whether Bleed gets spells: **Q20**) | O10 |
@@ -46,7 +47,7 @@ build step).
 | M2 | §6 "The current regular enemy pool feels too small … More regular enemy types are needed" | 11 kinds spawn on their own; Hatchling, Splitling and Lens Drone come only from bosses or splits | G1 [`ENEMIES.md`](ENEMIES.md): new regular enemies (behaviour, role, biome). How many in v0.11: **Q22** | O13 |
 | M3 | §6 "the same enemies appear across essentially all biomes … biome-specific enemy types and biome-appropriate variations … the overall enemy spawning/selection structure" | Confirmed: biomes have no enemy list; the roster unlocks by floor depth and time phase only (`spawn_director.gd:8,122`, `data/curves/floor_N.tres`). Biome order is shuffled per run (`run_state.gd:3`) | Each biome gets its own roster (a shared core plus its signature enemies and a variant or two). The structure: **Q23** | O13 |
 | M4 | §6 "the new small horde enemies from §4 still need their own identity" | — | With H1 | O9 |
-| R1 | §7 "The game now has room messages, but they do not currently seem connected to anything … an Easter egg or discoverable in-game connection … a little lore" | **No room message exists in the code or data.** Nearest: the collectible lore lines (`COLLECTIBLE_*_LORE`, `archive_page.gd:128`), event descriptions, the TIP hints, the Codex Lore page (v0.10.5 O18, `codex_store.gd:26-43`) | Find out what the owner saw first: **Q24**. Then brainstorm the Easter egg: **Q25** | O14 |
+| R1 | §7 "The game now has room messages, but they do not currently seem connected to anything … an Easter egg or discoverable in-game connection … a little lore" | **No room message exists in the code or data.** Nearest: the collectible lore lines (`COLLECTIBLE_*_LORE`, `archive_page.gd:128`), event descriptions, the TIP hints, the Codex Lore page (v0.10.5 O18, `codex_store.gd:26-43`) | Owner, Q24: "I think I meant the rune that is at the hub": the **Runic Stone** (`src/application/runic_stone.gd`, `data/hub/runic_lines.tres`). Ten lines ("WHAT SLEEPS BELOW REMEMBERS" …), each learned by a hidden feat (a purple room, 10 deaths, 7 presses, a no-hit boss, 60 s still, …); all ten unlock the Runic robe. The lines don't connect to the world or each other. The Easter egg: **Q25** | O14 |
 | P1 | §8 "Some procedurally generated rooms currently feel like random collections of placed assets … the store rooms are a positive example … especially the larger ones" | Shops: one authored composition per biome around a stall facing the door (`shop_room.gd`). Regular rooms: 3 layouts per size of generic cover clusters at fixed anchors (`room_layouts.gd:35`, `floor_generator.gd:623-640`), or themed vignettes (`room_themes.gd:95-120`). No room has a purpose or focal point | Large rooms (3x3 and up) get a **purpose**: a focal piece plus dressing that belongs to it, like the shop. G2 shots of 2–3 approaches: **Q26** | O15 |
 | X1 | §9 "Which of the additional enemy-art and enemy-variety items belong in v0.11 versus later updates" | — | **Q1** (scope) | — |
 | X2 | §10 "Laser sketch … to be provided" | Not attached yet | O1's look waits on it | O1 |
@@ -72,9 +73,11 @@ build step).
 - Agent: **S**.
 
 #### S3. The Siege Engine's second pattern stays readable (B3, L8) — presentation (+ timing after Q3)
-- Mortar Grid bursts spawn no pack Smoke over the board (or the smoke draws under the telegraph discs); the crater and
-  flash stay.
-- Volley 2's timing per **Q3** (sim data in `siege_engine.tres` / `boss_hard.gd`).
+- Mortar Grid bursts spawn no pack Smoke (owner, Q3: "remove the smoke, leave just the 'explosion' effect that we
+  currently have").
+- Volley 2 stays hidden until volley 1 lands, then shows for 1.2 s (was 0.6 s); phase 3's later volleys the same
+  (owner, Q3: "Longer hidden telegraph"). Sim data in `siege_engine.tres` / `boss_hard.gd`; the boss tests' timings
+  change on purpose.
 - Agent: **S**.
 
 #### S4. The Lens Drone draws through VAT (M1) — presentation only
