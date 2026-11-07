@@ -14,12 +14,14 @@ func test_the_shipped_enemies_are_valid_and_compile() -> void:
 	var repo := ContentRepository.load_all()
 	assert_eq(
 		repo.count(&"enemies"),
-		24,
+		34,
 		(
 			"charger, warden, needle, the hatchling (v0.3.0 C), the Arc Caster and the Bomb Drone (v0.3.5),"
 			+ " six horde kinds and the Splitling (v0.4.0 EN), the Lens Drone (v0.4.0 BO),"
 			+ " the five horde critters (v0.11.0 O9)"
-			+ " and the five biome variants (v0.11.0 O13a)"
+			+ " and the five biome variants (v0.11.0 O13a), the Ruins and Night Rocks signatures (O13b)"
+			+ ", the Red Canyon's and the Frozen Shore's signature enemies (v0.11.0 O13c)"
+			+ " and the two Starfall signatures (v0.11.0 O13d)"
 		)
 	)
 	for def: EnemyDefinition in repo.all_of(&"enemies"):
@@ -269,8 +271,17 @@ func test_each_biome_has_its_roster_and_variant() -> void:
 		assert_eq(b.variant_id, want[id][0], "%s: its variant" % id)
 		assert_eq(Array(b.signature_ids), want[id][1], "%s: its two signatures" % id)
 		var kinds := VariantCompiler.roster_kinds(repo, b)
-		var v := ContentCompiler.compile_enemy(repo.get_def(&"enemies", b.variant_id))
-		assert_eq(kinds, PackedInt32Array([v.kind]), "%s: only its variant until O13b-d ship" % id)
+		var want_kinds := PackedInt32Array(
+			[ContentCompiler.compile_enemy(repo.get_def(&"enemies", b.variant_id)).kind]
+		)
+		for s: StringName in b.signature_ids:  # v0.11.0 O13b: a built signature joins (a pending one waits)
+			var sd: EnemyDefinition = repo.get_def(&"enemies", s)
+			if sd != null:
+				want_kinds.append(ContentCompiler.compile_enemy(sd).kind)
+			else:
+				assert_has(BiomeDefinition.PENDING_SIGNATURES, s, "%s: %s not built yet" % [id, s])
+		want_kinds.sort()
+		assert_eq(kinds, want_kinds, "%s: its variant and its built signatures" % id)
 	var defs: Array[ContentDef] = []
 	defs.append_array(repo.all_of(&"enemies"))
 	defs.append_array(repo.all_of(&"biomes"))
@@ -312,3 +323,82 @@ func test_bad_rosters_are_rejected() -> void:
 	var crust := (repo.get_def(&"enemies", &"ember_charger") as EnemyDefinition).duplicate(true)
 	crust.behaviour_params["trail_arm_seconds"] = 0.1
 	assert_has(_codes(crust), &"telegraph_short", "fire never burns before the telegraph minimum")
+
+
+## v0.11.0 O13b (ENEMIES.md R1-R4): the Ruins' and the Night Rocks' signatures are valid, compile to their numbers
+## (starting values: HP 40 with posts of 10, 30, 70, 90), every windup at least the telegraph minimum, and a bad one
+## is refused.
+func test_the_ruins_and_night_rocks_signatures_compile() -> void:
+	var repo := ContentRepository.load_all()
+	var want := {
+		&"wire_weaver": [ActorStore.Kind.WIRE_WEAVER, 40],
+		&"scrap_hound": [ActorStore.Kind.SCRAP_HOUND, 30],
+		&"rock_lurker": [ActorStore.Kind.ROCK_LURKER, 70],
+		&"stone_thrower": [ActorStore.Kind.STONE_THROWER, 90],
+	}
+	for id: StringName in want:
+		var def: EnemyDefinition = repo.get_def(&"enemies", id)
+		assert_eq(_codes(def), [], String(id))
+		var t := ContentCompiler.compile_enemy(def, repo)
+		assert_eq([t.kind, t.hp], want[id], String(id))
+		assert_true(RuinsRocks.takes(t.kind), String(id))
+		assert_gte(t.windup_ticks, BehaviourSchemas.MIN_TELEGRAPH_TICKS, "%s: its tell" % id)
+		assert_false(BiomeDefinition.PENDING_SIGNATURES.has(id), "%s is built" % id)
+	var weaver := ContentCompiler.compile_enemy(repo.get_def(&"enemies", &"wire_weaver"))
+	assert_eq([weaver.post_hp, weaver.max_cables, weaver.reach_m], [10, 2, 6.0], "posts, cap, 6 m")
+	var hound := ContentCompiler.compile_enemy(repo.get_def(&"enemies", &"scrap_hound"))
+	assert_eq(hound.circle_m, 5.0, "circles at 5 m")
+	var lurker := ContentCompiler.compile_enemy(repo.get_def(&"enemies", &"rock_lurker"))
+	assert_eq(lurker.wake_m, 2.0, "bursts within 2 m")
+	assert_lte(lurker.hide_half_m * 1.4143, lurker.radius_m, "its boulder sits inside its body")
+	var thrower := ContentCompiler.compile_enemy(repo.get_def(&"enemies", &"stone_thrower"))
+	assert_eq([thrower.windup_ticks, thrower.rock_ticks], [48, 900], "0.8 s lift, 15 s rock")
+	var posts := ContentCompiler.compile_enemies(repo).filter(
+		func(t: EnemyTable) -> bool: return t.kind == ActorStore.Kind.WIRE_POST
+	)
+	assert_eq(posts.size(), 1, "the post's table comes with the Weaver's")
+	assert_eq(posts[0].hp, 10)
+	var bad := (repo.get_def(&"enemies", &"wire_weaver") as EnemyDefinition).duplicate(true)
+	bad.behaviour_params["post_hp"] = 0
+	assert_has(_codes(bad), &"not_positive")
+	var short := (repo.get_def(&"enemies", &"stone_thrower") as EnemyDefinition).duplicate(true)
+	short.attacks[0].telegraph_seconds = 0.2
+	assert_has(_codes(short), &"telegraph_short", "the lift is never under the telegraph minimum")
+
+
+## v0.11.0 O13c (ENEMIES.md R5-R8): the four signatures are valid and compile to their rows' numbers (starting values),
+## and a warning shorter than the telegraph minimum is rejected.
+func test_the_red_canyon_and_frozen_shore_signatures_compile() -> void:
+	var repo := ContentRepository.load_all()
+	var want := {
+		&"kiln_beetle": [ActorStore.Kind.KILN_BEETLE, 60],
+		&"cinder_priest": [ActorStore.Kind.CINDER_PRIEST, 35],
+		&"frost_spitter": [ActorStore.Kind.FROST_SPITTER, 40],
+		&"glacier_turtle": [ActorStore.Kind.GLACIER_TURTLE, 80],
+	}
+	for id: StringName in want:
+		var def: EnemyDefinition = repo.get_def(&"enemies", id)
+		assert_eq(def.validate(), [], String(id))
+		var t := ContentCompiler.compile_enemy(def)
+		assert_eq(t.kind, want[id][0], String(id))
+		assert_eq(t.hp, want[id][1], "%s: its HP" % id)
+	var beetle := ContentCompiler.compile_enemy(repo.get_def(&"enemies", &"kiln_beetle"))
+	assert_eq(
+		[beetle.burst_delay_ticks, beetle.burst_radius_m], [60, 2.5], "bursts 2.5 m after 1 s"
+	)
+	assert_eq(EnemyAi.behaviour_of(beetle.kind), ActorStore.Kind.WARDEN, "a slow armoured Warden")
+	var priest := ContentCompiler.compile_enemy(repo.get_def(&"enemies", &"cinder_priest"))
+	assert_eq(
+		[priest.vent_period_ticks, priest.vent_radius_m], [180, 1.0], "a 2 m column every 3 s"
+	)
+	assert_eq(priest.attack_range_m, 0.0, "it never attacks")
+	var spitter := ContentCompiler.compile_enemy(repo.get_def(&"enemies", &"frost_spitter"))
+	assert_eq([spitter.slick_radius_m, spitter.slick_ticks], [1.0, 360], "a 2 m slick for 6 s")
+	var turtle := ContentCompiler.compile_enemy(repo.get_def(&"enemies", &"glacier_turtle"))
+	assert_eq([turtle.shell_hp, turtle.chunk_count], [60, 3], "a 60 HP shell, 3 chunks")
+	var fast := (repo.get_def(&"enemies", &"kiln_beetle") as EnemyDefinition).duplicate(true)
+	fast.behaviour_params["burst_delay_seconds"] = 0.2
+	assert_has(_codes(fast), &"telegraph_short", "no burst before the telegraph minimum")
+	var pulse := (repo.get_def(&"enemies", &"cinder_priest") as EnemyDefinition).duplicate(true)
+	pulse.behaviour_params["vent_warn_seconds"] = 3.5
+	assert_has(_codes(pulse), &"vent", "the pulse fits inside the rhythm")

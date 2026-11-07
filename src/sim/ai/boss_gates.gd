@@ -114,7 +114,12 @@ static func add_kinds(w: World) -> PackedInt32Array:
 		return out
 	for k in SpawnDirector.unlocked(w, w.spawner, w.run_ticks):
 		var kind := w.spawner.kinds[k]
-		if not out.has(kind) and not BossAi.is_boss_kind(kind):
+		# v0.11.0 O13d: no Gravity Node among a boss's adds (it spawns in regular rooms only: it would bend the patterns)
+		if (
+			not out.has(kind)
+			and not BossAi.is_boss_kind(kind)
+			and kind != ActorStore.Kind.GRAVITY_NODE
+		):
 			out.append(kind)
 	if out.is_empty():  # nothing open yet (the floor's first seconds): the mix's first kind
 		for kind in w.spawner.kinds:

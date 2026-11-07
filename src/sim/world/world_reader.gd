@@ -101,9 +101,24 @@ const KIND_DIM_NEEDLE := ActorStore.Kind.DIM_NEEDLE
 const KIND_EMBER_CHARGER := ActorStore.Kind.EMBER_CHARGER
 const KIND_FROST_CHARGER := ActorStore.Kind.FROST_CHARGER
 const KIND_SPLIT_SNIPER := ActorStore.Kind.SPLIT_SNIPER
+## v0.11.0 O13d: the Starfall signatures (StarfallKinds; their stand-in bodies: StarfallAvatar).
+const KIND_STAR_WARPER := ActorStore.Kind.STAR_WARPER
+const KIND_GRAVITY_NODE := ActorStore.Kind.GRAVITY_NODE
 const TRAIL_FIRE := Variants.TRAIL_FIRE
 const TRAIL_SLICK := Variants.TRAIL_SLICK
 const DIM_LOOK := Variants.DIM_LOOK
+## v0.11.0 O13b: the Ruins and Night Rocks signatures (RuinsRocks) and the Wire Weaver's post.
+const KIND_WIRE_WEAVER := ActorStore.Kind.WIRE_WEAVER
+const KIND_WIRE_POST := ActorStore.Kind.WIRE_POST
+const KIND_SCRAP_HOUND := ActorStore.Kind.SCRAP_HOUND
+const KIND_ROCK_LURKER := ActorStore.Kind.ROCK_LURKER
+const KIND_STONE_THROWER := ActorStore.Kind.STONE_THROWER
+## v0.11.0 O13c: the Red Canyon's and the Frozen Shore's signature enemies (CanyonShore; CanyonShoreBodies).
+const KIND_KILN_BEETLE := ActorStore.Kind.KILN_BEETLE
+const KIND_CINDER_PRIEST := ActorStore.Kind.CINDER_PRIEST
+const KIND_FROST_SPITTER := ActorStore.Kind.FROST_SPITTER
+const KIND_GLACIER_TURTLE := ActorStore.Kind.GLACIER_TURTLE
+const ICE_CHUNK_RADIUS_M := CanyonShore.CHUNK_RADIUS_M
 const ECHO_NONE := BossJudge.NONE
 const ECHO_SHOW := BossJudge.SHOW
 const ECHO_REPLAY := BossJudge.REPLAY
@@ -2727,6 +2742,127 @@ func rubble_pieces() -> Array:
 	return out
 
 
+# --- The Ruins and Night Rocks signatures (v0.11.0 O13b; RuinsRocks) --------------------------------------------
+## The Wire Weavers' live cables: [end a (Vector2), end b (Vector2), ticks live (int), the Weaver's id (int)] each.
+func cables() -> Array:
+	var s := _w.ruins_rocks
+	var out := []
+	for k in s.cable_count():
+		var ends := RuinsRocks.cable_ends(_w, k)
+		if not ends.is_empty():
+			out.append([ends[0], ends[1], _w.tick - s.cable_born[k], s.cable_owner[k]])
+	return out
+
+
+## The Stone Throwers' rocks standing: [centre (Vector2), half side (float), ticks left (int)] each.
+func thrown_rocks() -> Array:
+	var s := _w.ruins_rocks
+	var out := []
+	for k in s.rock_count():
+		out.append([Vector2(s.rock_x[k], s.rock_y[k]), s.rock_half[k], s.rock_until[k] - _w.tick])
+	return out
+
+
+## Whether actor i is a Rock Lurker still waiting as a boulder, and whether it hears the hero (its rumble).
+func lurker_hidden(i: int) -> bool:
+	return RuinsRocks.hidden(_w, i)
+
+
+func lurker_rumbling(i: int) -> bool:
+	return RuinsRocks.rumbling(_w, i)
+
+
+## Whether actor i is a Scrap Hound stopped by a hit (its yelp).
+func hound_yelped(i: int) -> bool:
+	return RuinsRocks.yelped(_w, i)
+
+
+## Stone Thrower i's rock in flight: 0..1000 of the way (-1: none in the air), from its hands to where it lands.
+func thrower_flight(i: int) -> int:
+	return RuinsRocks.flight_permille(_w, i)
+
+
+func thrower_target(i: int) -> Vector2:
+	return Vector2(_w.actors.lock_x[i], _w.actors.lock_y[i])
+
+
+# --- The Red Canyon's and the Frozen Shore's signature enemies (v0.11.0 O13c; CanyonShore) --------------------
+## Cinder Priest i's vent's pulse now (0..1000, CanyonShore.vent_pulse; 0: no vent, or outside its warning): its
+## staff keeps time with it.
+func priest_pulse(i: int) -> int:
+	var k := _w.canyon_shore.vent_of(_w.actors.ids[i])
+	return CanyonShore.vent_pulse(_w, k) if k >= 0 else 0
+
+
+## Whether actor i is a Glacier Turtle whose shell still stands.
+func shell_on(i: int) -> bool:
+	return CanyonShore.shell_on(_w, i)
+
+
+## The Kiln Beetles' bursts waiting: [centre (Vector2), radius (float), progress 0..1000 toward the blow, seed] each.
+func kiln_bursts() -> Array:
+	var s := _w.canyon_shore
+	var out := []
+	for k in s.burst_count():
+		var span := maxi(1, s.burst_due[k] - s.burst_born[k])
+		out.append(
+			[
+				s.burst_pos(k),
+				s.burst_r[k],
+				clampi((_w.tick - s.burst_born[k]) * 1000 / span, 0, 1000),
+				s.burst_born[k] * 64 + k
+			]
+		)
+	return out
+
+
+## The lava vents: [centre (Vector2), radius (float), pulse 0..1000 (CanyonShore.vent_pulse; 0: none), ticks since its
+## last eruption (-1: none yet), whether a living priest keeps it, its priest's id] each.
+func lava_vents() -> Array:
+	var s := _w.canyon_shore
+	var out := []
+	for k in s.vent_count():
+		out.append(
+			[
+				s.vent_pos(k),
+				s.vent_r[k],
+				CanyonShore.vent_pulse(_w, k),
+				_w.tick - s.vent_last[k] if s.vent_last[k] >= 0 else -1,
+				s.vent_until[k] < 0,
+				s.vent_owner[k]
+			]
+		)
+	return out
+
+
+## The Frost Spitters' blobs in the air: [from, to (Vector2), slick radius (float), progress 0..1000 of the flight,
+## seed] each.
+func ice_blobs() -> Array:
+	var s := _w.canyon_shore
+	var out := []
+	for k in s.blob_count():
+		var span := maxi(1, s.blob_land[k] - s.blob_born[k])
+		out.append(
+			[
+				Vector2(s.blob_fx[k], s.blob_fy[k]),
+				Vector2(s.blob_tx[k], s.blob_ty[k]),
+				s.blob_r[k],
+				clampi((_w.tick - s.blob_born[k]) * 1000 / span, 0, 1000),
+				s.blob_born[k] * 64 + s.blob_owner[k] % 64
+			]
+		)
+	return out
+
+
+## The broken shells' ice chunks sliding: [centre (Vector2), serial] each.
+func ice_chunks() -> Array:
+	var s := _w.canyon_shore
+	var out := []
+	for k in s.chunk_count():
+		out.append([s.chunk_pos(k), s.chunk_serial[k]])
+	return out
+
+
 # --- Engines and combos (v0.3.0 G) --------------------------------------------------------------------------
 ## Shock, bleed and frost stacks on actor i, and whether it is frozen.
 func shock_stacks(actor_i: int) -> int:
@@ -4335,3 +4471,31 @@ func actor_hp_column() -> PackedInt32Array:
 
 func actor_max_hp_column() -> PackedInt32Array:
 	return _w.actors.max_hp
+
+
+# --- The Starfall signatures (v0.11.0 O13d; StarfallKinds) ----------------------------------------------------------
+## Star Warper i's star while it winds up: [centre (Vector2), the strike's radius, the star's own radius, progress
+## 0..1000]; [] when it has none (not winding up, or no Warper).
+func warper_star(i: int) -> Array:
+	if (
+		not StarfallKinds.is_warper(_w.actors.kinds[i])
+		or _w.actors.state[i] != EnemyAi.State.WINDUP
+	):
+		return []
+	var sd := StarfallKinds.star_disc(_w, i)
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	var progress := clampi(_w.actors.state_t[i] * 1000 / maxi(1, _w.actors.windup[i]), 0, 1000)
+	return [sd[0], sd[1], t.mark_radius_m, progress]
+
+
+## Whether Star Warper i is stunned (the hero stood on its star).
+func warper_stunned(i: int) -> bool:
+	return StarfallKinds.stunned(_w, i)
+
+
+## Gravity Node i's pull reach (m); 0 for any other actor.
+func gravity_reach(i: int) -> float:
+	if not StarfallKinds.is_node(_w.actors.kinds[i]):
+		return 0.0
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	return t.pull_radius_m if t != null else 0.0

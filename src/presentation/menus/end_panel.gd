@@ -35,6 +35,16 @@ const CAUSES := {
 	WorldReader.KIND_EMBER_CHARGER: "CAUSE_EMBER_CHARGER",
 	WorldReader.KIND_FROST_CHARGER: "CAUSE_FROST_CHARGER",
 	WorldReader.KIND_SPLIT_SNIPER: "CAUSE_SPLIT_SNIPER",
+	WorldReader.KIND_WIRE_WEAVER: "CAUSE_WIRE_WEAVER",  # v0.11.0 O13b: the Ruins and Night Rocks signatures
+	WorldReader.KIND_SCRAP_HOUND: "CAUSE_SCRAP_HOUND",
+	WorldReader.KIND_ROCK_LURKER: "CAUSE_ROCK_LURKER",
+	WorldReader.KIND_STONE_THROWER: "CAUSE_STONE_THROWER",
+	WorldReader.KIND_KILN_BEETLE: "CAUSE_KILN_BEETLE",  # v0.11.0 O13c: R5-R8
+	WorldReader.KIND_CINDER_PRIEST: "CAUSE_CINDER_PRIEST",
+	WorldReader.KIND_FROST_SPITTER: "CAUSE_FROST_SPITTER",
+	WorldReader.KIND_GLACIER_TURTLE: "CAUSE_GLACIER_TURTLE",
+	WorldReader.KIND_STAR_WARPER: "CAUSE_STAR_WARPER",  # v0.11.0 O13d: the Starfall signatures
+	WorldReader.KIND_GRAVITY_NODE: "CAUSE_GRAVITY_NODE",
 }
 
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted

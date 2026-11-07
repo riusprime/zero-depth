@@ -9,19 +9,8 @@ const MIN_OUTLINE_CONTRAST := 3.0
 ## v0.11.0 O13a (Q23): every biome's shared core of four.
 const SHARED_CORE: Array[StringName] = [&"charger", &"needle", &"swarmer", &"warden"]
 ## v0.11.0 O13a: the ten signature enemies of ENEMIES.md R1-R10 that O13b-d build; a signature id may name one before
-## its definition exists (any other unknown id fails, so a typo can't hide).
-const PENDING_SIGNATURES: Array[StringName] = [
-	&"wire_weaver",
-	&"scrap_hound",
-	&"rock_lurker",
-	&"stone_thrower",
-	&"kiln_beetle",
-	&"cinder_priest",
-	&"frost_spitter",
-	&"glacier_turtle",
-	&"star_warper",
-	&"gravity_node",
-]
+## its definition exists (any other unknown id fails, so a typo can't hide). Empty now: O13b-d built all ten.
+const PENDING_SIGNATURES: Array[StringName] = []
 const SIGNATURES_PER_BIOME := 2
 
 @export var name_key: StringName

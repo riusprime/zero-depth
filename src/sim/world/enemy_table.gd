@@ -108,3 +108,58 @@ var burn_period_ticks := 1
 var slick_permille := 1000
 var split_at_permille := 0
 var split_turn := 0
+## v0.11.0 O13b (ENEMIES.md R1-R4; RuinsRocks; the defaults on every other kind). The Wire Weaver: up to max_cables
+## cables at once, each strung between two posts (post_hp, post_radius_m) at most reach_m apart, lane_half_m thick,
+## hurting a touch at most every cable_period_ticks. The Scrap Hound: circles circle_m away, darts (charge_speed, up to
+## charge_distance_m) only from within rear_half_arc (1/4096 turns) of the hero's back, stopped by a hit for
+## stagger_ticks. The Rock Lurker: hides as a boulder (a wall of half side hide_half_m inside its body) until the hero
+## is within wake_m (heard from rumble_m). The Stone Thrower: its rock flies flight_ticks, then stands rock_ticks as a
+## wall of half side rock_half_m, at most max_rocks on a floor (slam_radius_m: the slam's or the landing's disc).
+var max_cables := 0
+var post_hp := 0
+var post_radius_m := 0.3
+var cable_period_ticks := 1
+var circle_m := 0.0
+var stagger_ticks := 0
+var wake_m := 0.0
+var rumble_m := 0.0
+var hide_half_m := 0.0
+var flight_ticks := 1
+var rock_ticks := 0
+var rock_half_m := 0.0
+var max_rocks := 0
+## v0.11.0 O13c (ENEMIES.md R5-R8): the signature enemies' own numbers (CanyonShore; the defaults on every other kind).
+## The Kiln Beetle: its death bursts burst_radius_m round it burst_delay_ticks later, burst_damage to the hero and
+## burst_enemy_damage to each enemy. The Cinder Priest: it plants (or takes) a vent within vent_reach_m and makes it
+## erupt every vent_period_ticks (its pulse shown vent_warn_ticks first): a vent_radius_m column, vent_damage to the
+## hero; once it dies the vent goes vent_linger_ticks later. The Frost Spitter: its blob flies flight_ticks and
+## leaves a slick of slick_radius_m for slick_ticks (slick_permille: the hero's easing on it). The Glacier Turtle: its
+## shell's shell_hp, then chunk_count chunks sliding at chunk_speed (m a tick) for chunk_ticks, chunk_damage each touch.
+var burst_delay_ticks := 0
+var burst_radius_m := 0.0
+var burst_damage := 0
+var burst_enemy_damage := 0
+var vent_reach_m := 0.0
+var vent_period_ticks := 1
+var vent_warn_ticks := 0
+var vent_radius_m := 0.0
+var vent_damage := 0
+var vent_linger_ticks := 0
+var slick_radius_m := 0.0
+var slick_ticks := 0
+var shell_hp := 0
+var chunk_count := 0
+var chunk_speed := 0.0
+var chunk_ticks := 0
+var chunk_damage := 0
+## v0.11.0 O13d (ENEMIES.md R9, R10; StarfallKinds; the defaults on every other kind). The Star Warper: its star lands
+## mark_offset_m beside the hero (square to its line to the hero); the hero standing within mark_radius_m of the star
+## when the windup ends cancels the blink and stuns it stun_ticks; else it blinks onto the star and strikes a disc of
+## strike_radius_m round it. The Gravity Node: every projectile within pull_radius_m of it turns toward it by up to
+## pull_accel (m per tick per tick at its centre, none at the reach), keeping its speed.
+var mark_offset_m := 0.0
+var mark_radius_m := 0.0
+var strike_radius_m := 0.0
+var stun_ticks := 0
+var pull_radius_m := 0.0
+var pull_accel := 0.0

@@ -29,6 +29,16 @@ const ENEMY_KINDS := {  # behaviour ids to actor kinds (a test checks the key se
 	&"ember_charger": ActorStore.Kind.EMBER_CHARGER,
 	&"frost_charger": ActorStore.Kind.FROST_CHARGER,
 	&"split_sniper": ActorStore.Kind.SPLIT_SNIPER,
+	&"wire_weaver": ActorStore.Kind.WIRE_WEAVER,  # v0.11.0 O13b: the Ruins and Night Rocks signatures (RuinsRocks)
+	&"scrap_hound": ActorStore.Kind.SCRAP_HOUND,
+	&"rock_lurker": ActorStore.Kind.ROCK_LURKER,
+	&"stone_thrower": ActorStore.Kind.STONE_THROWER,
+	&"kiln_beetle": ActorStore.Kind.KILN_BEETLE,  # v0.11.0 O13c: R5-R8 (CanyonShoreCompiler)
+	&"cinder_priest": ActorStore.Kind.CINDER_PRIEST,
+	&"frost_spitter": ActorStore.Kind.FROST_SPITTER,
+	&"glacier_turtle": ActorStore.Kind.GLACIER_TURTLE,
+	&"star_warper": ActorStore.Kind.STAR_WARPER,  # v0.11.0 O13d: the Starfall signatures (StarfallKinds)
+	&"gravity_node": ActorStore.Kind.GRAVITY_NODE,
 }
 ## Bosses (v0.3.0 C): ids to actor kinds, move names to BossAttackTable moves (a test matches BossSchemas' sets).
 const BOSS_KINDS := BossKinds.ALL  # v0.9.0 NB4: the table lives in BossKinds (this file's line limit)
@@ -152,6 +162,7 @@ static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 	t.resist_permille = def.resist_permille
 	if def.attacks.is_empty():  # v0.4.0 EN: the Mender has no attack.
 		_compile_horde(def, t, {})
+		CanyonShoreCompiler.compile(def, t)  # v0.11.0 O13c: the Cinder Priest has no attack
 		return t
 	t.attack_range_m = bp["attack_range_m"]
 	t.cooldown_ticks = SimTick.seconds_to_ticks(bp["cooldown_seconds"])
@@ -200,6 +211,8 @@ static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 		_:
 			_compile_horde(def, t, sp)
 	VariantCompiler.compile(def, t)  # v0.11.0 O13a: a biome variant's own numbers
+	RuinsRocksCompiler.compile(def, t)  # v0.11.0 O13b: the Ruins and Night Rocks signatures' own numbers
+	CanyonShoreCompiler.compile(def, t)  # v0.11.0 O13c: R5-R8's own numbers
 	return t
 
 
@@ -240,6 +253,17 @@ static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) 
 			t.damage = int(bp["contact_damage"])  # its touch (RunState.scale_enemies scales it by floor, as every hit)
 			t.contact_cd_ticks = maxi(1, SimTick.seconds_to_ticks(bp["contact_cd_seconds"]))
 			t.flies = bool(bp["flies"])
+		&"star_warper":  # v0.11.0 O13d (ENEMIES.md R9): its star, the strike round it and the stun
+			t.mark_offset_m = float(bp["mark_offset_m"])
+			t.mark_radius_m = float(bp["mark_radius_m"])
+			t.stun_ticks = maxi(1, SimTick.seconds_to_ticks(float(bp["stun_seconds"])))
+			t.strike_radius_m = float(sp["radius_m"])
+		&"gravity_node":  # v0.11.0 O13d (ENEMIES.md R10): floating (no floor hazard reaches it), its pull
+			t.flies = true
+			t.pull_radius_m = float(bp["pull_radius_m"])
+			t.pull_accel = (
+				float(bp["pull_mps2"]) / float(SimTick.TICKS_PER_SECOND * SimTick.TICKS_PER_SECOND)
+			)
 
 
 ## The Arc Caster (v0.3.5 AI): its spells in schema order (bolt, spread, rune); v0.7.5 EF: bolt and spread are fans.
@@ -378,6 +402,7 @@ static func compile_curve(
 	c.interval_min_ticks = SimTick.seconds_to_ticks(def.interval_min_seconds)
 	c.pack_cap_bumps = def.pack_cap_bumps.duplicate()
 	VariantCompiler.inherit_phases(repo, phase_of)  # v0.11.0 O13a: a variant opens with its base
+	CanyonShoreCompiler.inherit_phases(repo, phase_of)  # v0.11.0 O13c: a signature opens with the Warden
 	c.kind_phase = PackedInt32Array()
 	for kind in spawn.kinds:
 		c.kind_phase.append(phase_of.get(kind, -1))
@@ -399,6 +424,7 @@ static func compile_enemies(repo: ContentRepository) -> Array[EnemyTable]:
 	for def: EnemyDefinition in repo.all_of(&"enemies"):
 		out.append(compile_enemy(def, repo))
 	out.append_array(EliteCompiler.compile_elites(repo))
+	out.append_array(RuinsRocksCompiler.extra_tables(out))  # v0.11.0 O13b: the Wire Weaver's post
 	return out
 
 

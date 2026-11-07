@@ -798,6 +798,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"mats", elite.body_materials.duplicate())
 			root.set_meta(&"hit_look", elite)
 			root.set_meta(&"elite", true)
+		_ when StarfallAvatar.takes(kind):  # v0.11.0 O13d: the Starfall signatures' stand-ins
+			height = StarfallAvatar.make(root, facing, kind, outline_color, technique)
 		_ when HordeAvatar.is_horde_kind(kind):
 			# The horde kinds (v0.4.0 EN): one code-built model per kind.
 			var horde := HordeAvatar.new()
@@ -812,6 +814,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"enemy_avatar", horde)
 			root.set_meta(&"mats", horde.body_materials.duplicate())
 			root.set_meta(&"hit_look", horde)  # v0.8.0 HR: the flash and tints (_set_flash)
+		_ when RuinsRocksAvatar.draws(kind):  # v0.11.0 O13b: the Ruins and Night Rocks signatures, the posts
+			height = RuinsRocksAvatar.attach(root, facing, kind, outline_color)
 		_ when kind == WorldReader.KIND_PLAYER and is_player:
 			# The hooded wanderer (owner, 2026-10-07): its own node, animated in frame time.
 			height = 1.0

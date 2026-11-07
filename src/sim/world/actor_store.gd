@@ -56,6 +56,22 @@ enum Kind {
 	EMBER_CHARGER,
 	FROST_CHARGER,
 	SPLIT_SNIPER,
+	# v0.11.0 O13b (ENEMIES.md R1-R4; owner Q22): the Ruins' and the Night Rocks' signature enemies (RuinsRocks). The
+	# Wire Weaver's posts are actors of their own (10 HP, its cable strung between two of them).
+	WIRE_WEAVER,
+	WIRE_POST,
+	SCRAP_HOUND,
+	ROCK_LURKER,
+	STONE_THROWER,
+	# v0.11.0 O13c (ENEMIES.md R5-R8): the Red Canyon's and the Frozen Shore's signature enemies (CanyonShore).
+	KILN_BEETLE,
+	CINDER_PRIEST,
+	FROST_SPITTER,
+	GLACIER_TURTLE,
+	# v0.11.0 O13d (ENEMIES.md R9, R10): the Starfall signatures (StarfallKinds): the Star Warper marks a star beside
+	# the hero and blinks onto it; the Gravity Node, stationary and floating, bends every projectile near it.
+	STAR_WARPER,
+	GRAVITY_NODE,
 }
 
 const TEAM_PLAYER := 0

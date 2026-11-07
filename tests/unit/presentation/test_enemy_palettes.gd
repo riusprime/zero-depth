@@ -92,6 +92,10 @@ static func _identity_slot(palette: StringName) -> StringName:
 
 func test_the_table_covers_every_normal_kind_and_slot_in_every_palette() -> void:
 	var ids := {}
+	var signatures := {}  # v0.11.0 O13b: the biomes' signature enemies wear their own colours (RuinsRocksAvatar)
+	for b: BiomeDefinition in ContentRepository.load_all().all_of(&"biomes"):
+		for s: StringName in b.signature_ids:
+			signatures[s] = true
 	for f in DirAccess.get_files_at("res://data/enemies"):
 		# v0.11.0 O9: the five horde critters wear their biome's colours (CritterBodies), not a role's
 		var critter: bool = (
@@ -99,12 +103,17 @@ func test_the_table_covers_every_normal_kind_and_slot_in_every_palette() -> void
 		)
 		# v0.11.0 O13a: the five biome variants wear their base's colours under their biome's cast (VariantLooks)
 		var variant := BehaviourSchemas.VARIANT_OF.has(StringName(f.get_basename()))
-		if f.ends_with(".tres") and not critter and not variant:
+		if (
+			f.ends_with(".tres")
+			and not critter
+			and not variant
+			and not signatures.has(StringName(f.get_basename()))
+		):
 			ids[StringName(f.get_basename())] = true
 	assert_eq(
 		ids.size(),
 		14,
-		"14 normal kinds in data/enemies (and the five critters and the five variants)"
+		"14 normal kinds in data/enemies (and the critters, the variants and the signatures)"
 	)
 	assert_eq(EnemyPalettes.ROLES.size(), 14)
 	assert_eq(EnemyPalettes.KIND_IDS.size(), 14)

@@ -85,6 +85,8 @@ var _projectiles := {}
 var _rune_seen := {}
 ## v0.3.5 AI: where each enemy's area spell (a rune, a bomb) is aimed, from its telegraph at the windup.
 var _targets := {}
+## v0.11.0 O13b: per Rock Lurker id, whether it rumbled at the last scan.
+var _rumbles := {}
 ## v0.4.0 EN: each mine's last fuse (-1 idle), so arming and blowing play once.
 var _mines := {}
 var _dashing := false
@@ -602,6 +604,8 @@ func _scan_actors(reader: WorldReader, out: Array) -> void:
 			_echo_strikes(reader, i, id, out)
 		if kind == WorldReader.KIND_LANTERN_SHADE:  # v0.9.0 NB4: the dark falling, a lantern out or relit
 			_shade_light(reader, out)
+		if kind == WorldReader.KIND_ROCK_LURKER:  # v0.11.0 O13b: a waiting Lurker rumbles as you come near
+			_lurker_rumble(reader, i, id, out)
 		if st == was:
 			if boss and phase > was_phase:
 				out.append([&"boss_phase", null, 1.0])
@@ -702,6 +706,8 @@ func _enemy_cue(reader: WorldReader, i: int, kind: int, st: int, at: Vector2, ou
 		if cue != &"":
 			out.append([cue, at, 1.0])
 		return
+	if RuinsRocksAvatar.draws(kind):  # v0.11.0 O13b
+		_ruins_rocks_cue(reader, i, kind, st, at, out)
 	if st == WorldReader.STATE_WINDUP:
 		out.append(
 			[&"bomb_lob" if kind == WorldReader.KIND_BOMB_DRONE else &"enemy_windup", at, 1.0]
@@ -952,3 +958,31 @@ func _waves(reader: WorldReader, out: Array) -> void:
 	for key: int in _waves_heard.keys():
 		if not live.has(key):
 			_waves_heard.erase(key)
+
+
+## v0.11.0 O13b (ENEMIES.md R1-R4), on a state edge: the Weaver's posts going in, the Hound's yelp, the Lurker
+## bursting out, the Thrower's rock landing on its ring (the windups keep the shared windup cue).
+func _ruins_rocks_cue(
+	reader: WorldReader, i: int, kind: int, st: int, at: Vector2, out: Array
+) -> void:
+	match kind:
+		WorldReader.KIND_WIRE_WEAVER:
+			if st == WorldReader.STATE_ACTIVE:
+				out.append([&"pylon_lock", at, 1.0])
+		WorldReader.KIND_SCRAP_HOUND:
+			if st == WorldReader.STATE_RECOVER and reader.hound_yelped(i):
+				out.append([&"enemy_hit", at, 1.4])
+		WorldReader.KIND_ROCK_LURKER:
+			if st == WorldReader.STATE_WINDUP:
+				out.append([&"wall_break", at, 1.0])
+		WorldReader.KIND_STONE_THROWER:
+			if st == WorldReader.STATE_RECOVER:
+				out.append([&"boss_slam", reader.thrower_target(i), 0.7])
+
+
+## v0.11.0 O13b: a waiting Rock Lurker's rumble starts as the hero comes within its rumble distance.
+func _lurker_rumble(reader: WorldReader, i: int, id: int, out: Array) -> void:
+	var now := reader.lurker_rumbling(i)
+	if now and not _rumbles.get(id, false):
+		out.append([&"boss_floor_burst", reader.actor_pos(i), 0.6])
+	_rumbles[id] = now

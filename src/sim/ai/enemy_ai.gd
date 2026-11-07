@@ -41,6 +41,10 @@ const KEEP_AWAY: Array[int] = [
 	ActorStore.Kind.SNIPER,
 	ActorStore.Kind.RIFT_HUNTER,  # v0.9.0 EL: circling 4-6 m away between Rift Steps
 	ActorStore.Kind.CONDUIT,  # drifting 7-10 m away
+	ActorStore.Kind.WIRE_WEAVER,  # v0.11.0 O13b: the Weaver and the Thrower keep their band (RuinsRocks)
+	ActorStore.Kind.STONE_THROWER,
+	ActorStore.Kind.CINDER_PRIEST,  # v0.11.0 O13c: its band until it stands by its vent (CanyonShore)
+	ActorStore.Kind.FROST_SPITTER,
 ]
 ## Aimed windups stop tracking the player this many ticks before they fire (starting value, as the bosses').
 const COMMIT_TICKS := 12
@@ -119,7 +123,7 @@ static func flies(w: World, i: int) -> bool:
 static func behaviour_of(kind: int) -> int:
 	if kind == ActorStore.Kind.LENS_DRONE:
 		return ActorStore.Kind.NEEDLE
-	return VARIANT_BASE.get(kind, kind)
+	return VARIANT_BASE.get(kind, CanyonShore.BASE.get(kind, kind))  # v0.11.0 O13c: the Beetle and Turtle: a Warden
 
 
 ## Chargers, the Brood Mother's hatchlings (v0.3.0 C, a small Charger) and Swarmers (v0.4.0 EN) run the charge.
@@ -182,12 +186,17 @@ static func think(w: World, i: int) -> void:
 			w.phase_probe.end(&"ai.plan")
 	if Variants.is_variant(a.kinds[i]):  # v0.11.0 O13a: the Rubble Warden's crust falls at half HP
 		Variants.on_think(w, i)
+	if CanyonShore.owns(a.kinds[i]):  # v0.11.0 O13c: a Cinder Priest takes or plants its vent
+		CanyonShore.on_think(w, i)
 	if a.frozen_t[i] > 0 or Spells.held_still(w, i):  # Engines: frozen holds still; v0.11.0 O11: a spell stun
 		return
 	var t := w.enemy_table(a.kinds[i])
 	a.state_t[i] += 1
 	if a.cd[i] > 0:
 		a.cd[i] -= 1
+	if RuinsRocks.takes(a.kinds[i]):  # v0.11.0 O13b: the Ruins and Night Rocks signatures
+		RuinsRocks.think(w, i, t, planning)
+		return
 	if a.state[i] >= BossSignatures.EGG:  # v0.8.0 BS1 (S3): an egg waits, hatches or bursts
 		BossSignatures.egg_think(w, i)
 		return
@@ -196,6 +205,10 @@ static func think(w: World, i: int) -> void:
 			enter_state(a, i, State.MOVE)
 		elif a.state[i] == State.MOVE and planning:
 			a.facing[i] = Kin.angle_of(w.player_pos() - a.pos(i))
+		return
+	if StarfallKinds.is_node(a.kinds[i]):  # v0.11.0 O13d: it floats in place and never attacks
+		if a.state[i] == State.SPAWN and a.state_t[i] >= w.tuning.spawn_in_ticks:
+			enter_state(a, i, State.MOVE)
 		return
 	var alive := not w.player_dead()
 	match a.state[i]:
@@ -230,6 +243,8 @@ static func think(w: World, i: int) -> void:
 			if tracking(w, i) and alive:
 				_aim(w, i)
 			if a.state_t[i] >= a.windup[i]:
+				if StarfallKinds.is_warper(a.kinds[i]) and StarfallKinds.cancel(w, i):
+					return  # v0.11.0 O13d: the hero on the star: no blink, the Warper stunned
 				enter_state(a, i, State.ACTIVE)
 				a.fire_cd[i] = 0
 		State.ACTIVE:
@@ -345,6 +360,8 @@ static func _patient(w: World, i: int, r: float) -> int:
 ## A dying Splitter (v0.4.0 EN) splits into split_count Splitlings beside where it fell (they arrive in phase 9).
 static func on_death(w: World, i: int) -> void:
 	var a := w.actors
+	if CanyonShore.owns(a.kinds[i]):  # v0.11.0 O13c: a Kiln Beetle's burst, a Cinder Priest's vent cools
+		CanyonShore.on_death(w, i)
 	var t := w.enemy_table(a.kinds[i])
 	if t == null or t.split_count <= 0 or w.enemy_table(ActorStore.Kind.SPLITLING) == null:
 		return
@@ -360,7 +377,12 @@ static func move(w: World, i: int) -> void:
 	var at := a.pos(i)
 	# Items (v0.2.0 J): a Frost Core slow scales both the walk and the charge (1.0 when not slowed).
 	var slow := ItemProcs.slow_factor(w, i)
+	if RuinsRocks.takes(a.kinds[i]) and RuinsRocks.moves(w, i, t, slow):  # v0.11.0 O13b
+		return
 	var hovering := a.kinds[i] == ActorStore.Kind.BOMB_DRONE and a.state[i] == State.WINDUP
+	if a.kinds[i] == ActorStore.Kind.GRAVITY_NODE:  # v0.11.0 O13d: it holds its spot
+		StarfallKinds.hold(w, i)
+		return
 	if (
 		a.state[i] == State.MOVE
 		and behaviour_of(a.kinds[i]) == ActorStore.Kind.SNIPER
@@ -404,6 +426,10 @@ static func _walk_dir(w: World, i: int, t: EnemyTable) -> Vector2:
 	if dist <= 0.0001 or w.player_dead():
 		return Vector2.ZERO
 	var dir := to / dist
+	if a.kinds[i] == ActorStore.Kind.CINDER_PRIEST and w.canyon_shore.touched:  # v0.11.0 O13c: by its vent
+		var by := CanyonShore.priest_walk(w, i, Vector2.INF)
+		if by != Vector2.INF:
+			return by
 	var side := 1.0 if a.ids[i] % 2 == 0 else -1.0
 	if behaviour_of(a.kinds[i]) == ActorStore.Kind.NEEDLE:
 		if dist < t.flee_distance_m:
@@ -525,6 +551,9 @@ static func resolve(w: World, i: int) -> void:
 	if is_critter(a.kinds[i]):  # v0.11.0 O9
 		_critter_touch(w, i)
 		return
+	if RuinsRocks.takes(a.kinds[i]):  # v0.11.0 O13b
+		RuinsRocks.resolve(w, i)
+		return
 	if a.state[i] != State.ACTIVE or w.player_dead() or Engines.frozen(w, i):
 		return
 	var t := w.enemy_table(a.kinds[i])
@@ -612,6 +641,13 @@ static func _resolve_horde(w: World, i: int, t: EnemyTable, p: Vector2, pr: floa
 					break
 		ActorStore.Kind.MINE_LAYER:
 			Mines.drop(w, i)
+		ActorStore.Kind.FROST_SPITTER:  # v0.11.0 O13c: its ice blob leaves (CanyonShore)
+			CanyonShore.throw_blob(w, i)
+		ActorStore.Kind.STAR_WARPER:  # v0.11.0 O13d: it blinks onto its star and strikes round it
+			if w.actors.state_t[i] == 0:
+				var star := StarfallKinds.blink(w, i)
+				if AttackShapes.disc_touches(star, t.strike_radius_m, p, pr):
+					_hit_player(w, i, t.damage, SimEvent.TAG_MELEE, star)
 
 
 static func _fire(
@@ -698,11 +734,23 @@ static func burst_lines(w: World, i: int) -> Array[Obb]:
 	var t := w.enemy_table(a.kinds[i])
 	var out: Array[Obb] = []
 	var seen := PackedInt32Array()
+	var bent := not StarfallKinds.nodes(w).is_empty()
 	for k in t.burst_count:
 		var ang := burst_angle(t, a.lock_a[i], k)
 		if seen.has(ang):
 			continue
 		seen.append(ang)
+		if bent:  # v0.11.0 O13d: a Gravity Node near: the path the bolt will fly (StarfallKinds.bend, as the sweep)
+			var dir := Kin.dir(ang)
+			var muzzle := (
+				Vector2(a.lock_x[i], a.lock_y[i]) + dir * (a.radius[i] + t.bolt_radius_m + 0.05)
+			)
+			out.append_array(
+				StarfallKinds.bent_lanes(
+					w, muzzle, dir * t.bolt_speed, t.bolt_life_ticks, t.bolt_radius_m
+				)
+			)
+			continue
 		out.append(_shot_lane(w, i, ang, t.bolt_speed * t.bolt_life_ticks, t.bolt_radius_m))
 	return out
 
@@ -777,6 +825,8 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return {}
 	if EliteAi.is_elite_kind(a.kinds[i]):
 		return EliteAi.telegraph(w, i)  # v0.9.0 EL: the slam's circle, the rift mark, the beam's line
+	if RuinsRocks.takes(a.kinds[i]):
+		return RuinsRocks.telegraph(w, i)  # v0.11.0 O13b: the cable, the dart, the slam, the landing
 	if a.state[i] == State.ACTIVE and _charges(a.kinds[i]) and a.lock_len[i] > 0.0:
 		return {"shape": &"lane", "ground": false, "obb": running_lane(w, i), "progress": 1000}
 	if a.kinds[i] == ActorStore.Kind.MINE_LAYER:
@@ -836,6 +886,17 @@ static func telegraph(w: World, i: int) -> Dictionary:
 				"radius": d[1],
 				"progress": progress
 			}
+		ActorStore.Kind.STAR_WARPER:  # v0.11.0 O13d: the star and the disc its strike covers
+			var sd := StarfallKinds.star_disc(w, i)
+			return {
+				"shape": &"disc",
+				"ground": true,
+				"center": sd[0],
+				"radius": sd[1],
+				"progress": progress,
+				"style": &"star",
+				"star_r": w.enemy_table(a.kinds[i]).mark_radius_m
+			}
 		ActorStore.Kind.NEEDLE:
 			return {
 				"shape": &"lanes", "ground": false, "obbs": burst_lines(w, i), "progress": progress
@@ -850,6 +911,8 @@ static func telegraph(w: World, i: int) -> Dictionary:
 					"progress": progress,
 					"style": &"rune"
 				}
+		ActorStore.Kind.FROST_SPITTER:  # v0.11.0 O13c: the blue arc and the landing ring
+			return CanyonShore.spitter_telegraph(w, i, progress)
 	return {}
 
 
@@ -887,6 +950,10 @@ static func _start_windup(w: World, i: int, aim: int) -> void:
 			a.lock_len[i] = clear_run(w, a.pos(i), aim, t.charge_distance_m, t.radius_m)
 		ActorStore.Kind.NEEDLE, ActorStore.Kind.SNIPER:
 			_aim(w, i)
+		ActorStore.Kind.STAR_WARPER:  # v0.11.0 O13d: its star beside the hero (StarfallKinds)
+			var star := StarfallKinds.mark_spot(w, i)
+			a.lock_x[i] = star.x
+			a.lock_y[i] = star.y
 		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
 			var c := a.pos(i) + Kin.dir(aim) * t.reach_m
 			a.lock_x[i] = c.x
@@ -903,6 +970,8 @@ static func _start_windup(w: World, i: int, aim: int) -> void:
 				_aim(w, i)
 		ActorStore.Kind.BOMB_DRONE:
 			_aim(w, i)  # v0.7.5 EF: the landing follows the player until it commits
+		ActorStore.Kind.FROST_SPITTER:  # v0.11.0 O13c: its blob lands where you stand (tracked to the commit)
+			_aim(w, i)
 
 
 ## Points actor i's shot at where the player will be when it arrives (v0.3.5 AI): the player's position plus its
@@ -912,6 +981,9 @@ static func _start_windup(w: World, i: int, aim: int) -> void:
 static func _aim(w: World, i: int) -> void:
 	var a := w.actors
 	var t := w.enemy_table(a.kinds[i])
+	if a.kinds[i] == ActorStore.Kind.FROST_SPITTER:  # v0.11.0 O13c
+		CanyonShore.aim_blob(w, i)
+		return
 	if a.kinds[i] == ActorStore.Kind.BOMB_DRONE:
 		var p := w.player_pos()
 		a.lock_x[i] = p.x
