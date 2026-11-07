@@ -5,6 +5,8 @@ extends RefCounted
 
 ## Every enemy attack's windup is at least this many ticks (0.4 s; owner, 2026-10-06). SimTick mirrors it.
 const MIN_TELEGRAPH_TICKS := 24
+## v0.11.0 O9: the horde critters' schema (one rule set, five bodies).
+const CRITTER := {"params": ["contact_damage", "contact_cd_seconds", "flies"], "attacks": []}
 ## Shapes are AttackDefinition.Shape values: 0 CIRCLE, 2 LINE, 4 PROJECTILE.
 ## A behaviour with one attack names its "shape" and "shape_params"; one with several (v0.3.5 AI: the Arc Caster)
 ## lists "attacks", each with its "id", "shape" and "shape_params", in the order the definition must give them.
@@ -140,4 +142,12 @@ const SCHEMAS := {
 		"shape": 2,
 		"shape_params": ["range_m", "half_width_m"],
 	},
+	## v0.11.0 O9 (PLAN H1; owner Q14): the horde critters, one per biome, one rule set (EnemyAi.is_critter): no attack;
+	## a touch hurts for contact_damage at most every contact_cd_seconds; `flies` (true or false) lets it fly over the
+	## floor's hazards (the Cave Bat).
+	&"dust_mite": CRITTER,
+	&"cave_bat": CRITTER,
+	&"ember_flea": CRITTER,
+	&"ice_crab": CRITTER,
+	&"star_mote": CRITTER,
 }

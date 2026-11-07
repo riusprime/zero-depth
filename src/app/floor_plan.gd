@@ -168,6 +168,7 @@ func _build_world() -> void:
 	else:
 		w = _floor_world(table, enemies, bosses, biome.id)
 		IcePatches.place(w, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2: ice or starglow
+		w.critter_kind = critter_kind_of(repo, biome)  # v0.11.0 O9 (owner Q14): its surges' critter
 		w.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
 	w.locked_items = MetaProgress.locked_items(run.locked_cards, w.item_tables)  # v0.9.0 MP: before any draw
 	w.wand_table = WandCompiler.for_run(repo, run.table)  # v0.6.5 WN1; v0.9.0 FV: 4 → 8 over five floors
@@ -339,3 +340,11 @@ func _floor_world(
 	# v0.5.0 SH; v0.7.5 MG: every two floors (N12); v0.8.0 SR: in the biome's shop room (O13)
 	FloorScenario.add_shop(w, rules[&"shop"], biome_id, rules[&"map"])
 	return w
+
+
+## v0.11.0 O9 (owner Q14): the actor kind of `biome`'s horde critter (BiomeDefinition.critter_id), or -1 (none).
+static func critter_kind_of(repo: ContentRepository, biome: BiomeDefinition) -> int:
+	if biome == null or biome.critter_id == &"":
+		return -1
+	var def: EnemyDefinition = repo.get_def(&"enemies", biome.critter_id)
+	return ContentCompiler.ENEMY_KINDS.get(def.behaviour_id, -1) if def != null else -1

@@ -40,6 +40,11 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_ARC_CASTER,
 	WorldReader.KIND_BOMB_DRONE,
 	WorldReader.KIND_LENS_DRONE,
+	WorldReader.KIND_DUST_MITE,  # v0.11.0 O9: the horde critters (CritterBodies, on HordeVat's path)
+	WorldReader.KIND_CAVE_BAT,
+	WorldReader.KIND_EMBER_FLEA,
+	WorldReader.KIND_ICE_CRAB,
+	WorldReader.KIND_STAR_MOTE,
 ]
 ## After every node's _process (the avatars' frame-time animation runs at 0).
 const PROCESS_PRIORITY := 1000

@@ -27,6 +27,8 @@ var announce := HudStyle.label(18, true)
 var banner := PanelContainer.new()
 var _phase := -1
 var _announced := {}
+## v0.11.0 O9: the surges already announced on this floor.
+var _surges := 0
 ## Waiting announcements, each [format key, argument key] ("" when the key is the whole line).
 var _queue: Array[PackedStringArray] = []
 ## The announcement on screen (empty when none).
@@ -91,6 +93,13 @@ func sync(reader: WorldReader) -> void:
 		if not _announced.has(kind) and reader.kind_alive(kind):
 			_announced[kind] = true
 			_queue.append(PackedStringArray(["HUD_NEW_ENEMY", String(reader.enemy_name_key(kind))]))
+	# v0.11.0 O9 (owner Q15): a horde surge's line goes first (it is happening now)
+	var surges := reader.surges_started()
+	if surges < _surges:  # a new floor
+		_surges = surges
+	if surges > _surges:
+		_surges = surges
+		_queue.insert(0, PackedStringArray(["HUD_SURGE", ""]))
 	for key in reader.pairing_names():  # v0.10.5 O15: an enemy duo's first appearance in the run
 		if not _announced.has(key):
 			_announced[key] = true

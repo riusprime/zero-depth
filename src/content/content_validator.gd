@@ -25,6 +25,7 @@ static func validate(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 	issues.append_array(AttackSlotsDefinition.cross_check(defs))  # v0.9.0 AS: slot categories, the table.
 	issues.append_array(SpecialRoomDefinition.cross_check(defs))  # v0.9.0 RG: the numbers it repeats
 	issues.append_array(EnemyDefinition.cross_check(defs))  # v0.10.5 O10: the matchup ids
+	issues.append_array(BiomeDefinition.cross_check(defs))  # v0.11.0 O9: each biome's horde critter
 	issues.sort_custom(
 		func(a: ValidationIssue, b: ValidationIssue) -> bool:
 			return [a.path, a.code, a.message] < [b.path, b.code, b.message]

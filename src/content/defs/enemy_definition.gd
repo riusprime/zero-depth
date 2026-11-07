@@ -224,7 +224,9 @@ func _check_horde(issues: Array[ValidationIssue]) -> void:
 		"heal_period_seconds",
 		"heal_range_m",
 		"mine_life_seconds",
-		"drop_seconds"
+		"drop_seconds",
+		"contact_damage",  # v0.11.0 O9: the horde critters
+		"contact_cd_seconds",
 	]:
 		if bp.has(k) and float(bp[k]) <= 0.0:
 			issues.append(
@@ -232,6 +234,12 @@ func _check_horde(issues: Array[ValidationIssue]) -> void:
 					&"not_positive", resource_path, "behaviour_params.%s must be > 0" % k
 				)
 			)
+	if bp.has("flies") and typeof(bp["flies"]) != TYPE_BOOL:  # v0.11.0 O9
+		issues.append(
+			ValidationIssue.new(
+				&"flies", resource_path, "behaviour_params.flies must be true or false"
+			)
+		)
 	if bp.has("shield_arc_degrees"):
 		var arc := float(bp["shield_arc_degrees"])
 		if arc <= 0.0 or arc >= 360.0:

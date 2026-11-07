@@ -75,10 +75,34 @@ const RELOCATE_MAX_TICKS := 150
 const MEND_SCAN_TICKS := 15
 ## A Splitter's halves appear this far to either side of where it died.
 const SPLIT_OFFSET_M := 0.45
+## v0.11.0 O9 (PLAN H1; owner Q14): the five horde critters, one per biome, one rule set: no attack and no windup; they
+## chase the hero straight (no flanking: "fast but dumb") and hurt by touch (_critter_touch), contact_damage at most
+## every contact_cd_ticks (their own clock, ActorStore.cd). A touch counts within CRITTER_TOUCH_M of contact (the walk
+## stops 0.1 m short of it, and the collision pass pushes the bodies apart).
+const CRITTERS: Array[int] = [
+	ActorStore.Kind.DUST_MITE,
+	ActorStore.Kind.CAVE_BAT,
+	ActorStore.Kind.EMBER_FLEA,
+	ActorStore.Kind.ICE_CRAB,
+	ActorStore.Kind.STAR_MOTE,
+]
+const CRITTER_TOUCH_M := 0.15
 
 
 static func is_enemy_kind(kind: int) -> bool:
 	return kind >= ActorStore.Kind.CHARGER
+
+
+## v0.11.0 O9: a horde critter (contact damage only).
+static func is_critter(kind: int) -> bool:
+	return kind in CRITTERS
+
+
+## v0.11.0 O9 (ENEMIES.md H2): enemy i flies low (the Cave Bat), so the floor's hazards never reach it: today the hero's
+## ground mines (LaserMods: a flier never sets one off).
+static func flies(w: World, i: int) -> bool:
+	var t := w.enemy_table(w.actors.kinds[i])
+	return t != null and t.flies
 
 
 ## The behaviour an actor kind runs: its own, except the Hive Lens's drones (v0.4.0 BO), which run the Needle's.
@@ -151,6 +175,12 @@ static func think(w: World, i: int) -> void:
 		a.cd[i] -= 1
 	if a.state[i] >= BossSignatures.EGG:  # v0.8.0 BS1 (S3): an egg waits, hatches or bursts
 		BossSignatures.egg_think(w, i)
+		return
+	if is_critter(a.kinds[i]):  # v0.11.0 O9: rises in, then only walks (its touch is resolve's)
+		if a.state[i] == State.SPAWN and a.state_t[i] >= w.tuning.spawn_in_ticks:
+			enter_state(a, i, State.MOVE)
+		elif a.state[i] == State.MOVE and planning:
+			a.facing[i] = Kin.angle_of(w.player_pos() - a.pos(i))
 		return
 	var alive := not w.player_dead()
 	match a.state[i]:
@@ -366,7 +396,11 @@ static func _walk_dir(w: World, i: int, t: EnemyTable) -> Vector2:
 			dir = Vector2(-dir.y, dir.x) * side * (w.tuning.ai_strafe_permille / 1000.0)
 	elif dist <= t.radius_m + w.player.radius_m + 0.1:
 		return Vector2.ZERO
-	elif dist > w.tuning.ai_flank_min_m and dist < w.tuning.ai_flank_range_m:
+	elif (
+		not is_critter(a.kinds[i])  # v0.11.0 O9: a critter runs straight at you
+		and dist > w.tuning.ai_flank_min_m
+		and dist < w.tuning.ai_flank_range_m
+	):
 		dir = _unit(dir + Vector2(-dir.y, dir.x) * side * (w.tuning.ai_flank_permille / 1000.0))
 	return dir
 
@@ -460,6 +494,9 @@ static func resolve(w: World, i: int) -> void:
 		return
 	if EliteAi.is_elite_kind(a.kinds[i]):  # v0.9.0 EL: an elite's contact, plain attack and ability
 		EliteAi.resolve(w, i)
+		return
+	if is_critter(a.kinds[i]):  # v0.11.0 O9
+		_critter_touch(w, i)
 		return
 	if a.state[i] != State.ACTIVE or w.player_dead() or Engines.frozen(w, i):
 		return
@@ -912,3 +949,21 @@ static func powered(w: World, i: int, amount: int) -> int:
 static func enter_state(a: ActorStore, i: int, s: int) -> void:
 	a.state[i] = s
 	a.state_t[i] = 0
+
+
+## v0.11.0 O9 (PLAN H1; owner Q14: "contact damage, ~6-10 HP, fast but dumb"): a walking critter touching the hero hurts
+## it for its damage (the authored contact_damage, floor-scaled; powered by its tier, as every enemy hit), then waits
+## contact_cd_ticks before its next touch.
+## Readable by its body (no telegraph, as an elite's touch: ReadableCause); its recap line is EndPanel's.
+static func _critter_touch(w: World, i: int) -> void:
+	var a := w.actors
+	if a.state[i] != State.MOVE or a.cd[i] > 0 or w.player_dead() or Engines.frozen(w, i):
+		return
+	var t := w.enemy_table(a.kinds[i])
+	if t == null or t.damage <= 0:
+		return
+	var reach := t.radius_m + w.player.radius_m + CRITTER_TOUCH_M
+	if Kin.length(w.player_pos() - a.pos(i)) > reach:
+		return
+	a.cd[i] = t.contact_cd_ticks
+	_hit_player(w, i, t.damage, SimEvent.TAG_MELEE)

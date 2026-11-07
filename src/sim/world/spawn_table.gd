@@ -36,6 +36,8 @@ var curve: CurveTable
 var intensity: IntensityTable
 ## v0.10.5 O15: the authored enemy duos (null = off: packs come as before; Pairings).
 var pairings: PairingTable
+## v0.11.0 O9 (owner Q15): the horde surges' numbers (null = off: no surges; Surges).
+var surge: SurgeTable
 
 
 func tier_at(run_ticks: int) -> int:

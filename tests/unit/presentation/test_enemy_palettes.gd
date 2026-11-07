@@ -93,9 +93,13 @@ static func _identity_slot(palette: StringName) -> StringName:
 func test_the_table_covers_every_normal_kind_and_slot_in_every_palette() -> void:
 	var ids := {}
 	for f in DirAccess.get_files_at("res://data/enemies"):
-		if f.ends_with(".tres"):
+		# v0.11.0 O9: the five horde critters wear their biome's colours (CritterBodies), not a role's
+		var critter: bool = (
+			BehaviourSchemas.SCHEMAS.get(StringName(f.get_basename())) == BehaviourSchemas.CRITTER
+		)
+		if f.ends_with(".tres") and not critter:
 			ids[StringName(f.get_basename())] = true
-	assert_eq(ids.size(), 14, "14 normal kinds in data/enemies")
+	assert_eq(ids.size(), 14, "14 normal kinds in data/enemies (and the five critters)")
 	assert_eq(EnemyPalettes.ROLES.size(), 14)
 	assert_eq(EnemyPalettes.KIND_IDS.size(), 14)
 	for id: StringName in ids:

@@ -19,6 +19,11 @@ const ENEMY_KINDS := {  # behaviour ids to actor kinds (a test checks the key se
 	&"mine_layer": ActorStore.Kind.MINE_LAYER,
 	&"sniper": ActorStore.Kind.SNIPER,
 	&"lens_drone": ActorStore.Kind.LENS_DRONE,
+	&"dust_mite": ActorStore.Kind.DUST_MITE,  # v0.11.0 O9: the horde critters (EnemyAi.is_critter)
+	&"cave_bat": ActorStore.Kind.CAVE_BAT,
+	&"ember_flea": ActorStore.Kind.EMBER_FLEA,
+	&"ice_crab": ActorStore.Kind.ICE_CRAB,
+	&"star_mote": ActorStore.Kind.STAR_MOTE,
 }
 ## Bosses (v0.3.0 C): ids to actor kinds, move names to BossAttackTable moves (a test matches BossSchemas' sets).
 const BOSS_KINDS := BossKinds.ALL  # v0.9.0 NB4: the table lives in BossKinds (this file's line limit)
@@ -225,6 +230,10 @@ static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) 
 		&"sniper":
 			t.reach_m = sp["range_m"]
 			t.lane_half_m = sp["half_width_m"]
+		&"dust_mite", &"cave_bat", &"ember_flea", &"ice_crab", &"star_mote":  # v0.11.0 O9
+			t.damage = int(bp["contact_damage"])  # its touch (RunState.scale_enemies scales it by floor, as every hit)
+			t.contact_cd_ticks = maxi(1, SimTick.seconds_to_ticks(bp["contact_cd_seconds"]))
+			t.flies = bool(bp["flies"])
 
 
 ## The Arc Caster (v0.3.5 AI): its spells in schema order (bolt, spread, rune); v0.7.5 EF: bolt and spread are fans.
@@ -290,6 +299,26 @@ static func compile_floor_spawning(repo: ContentRepository, floor_index: int) ->
 		t.curve = compile_curve(def, t, repo)
 	t.intensity = IntensityCompiler.compile(repo.get_def(&"intensity", &"director"))  # v0.8.0 N5 (owner O58)
 	t.pairings = compile_pairings(repo.get_def(&"pairing", &"pairings"), repo)  # v0.10.5 O15
+	t.surge = compile_surge(repo.get_def(&"surge", &"surge"), t)  # v0.11.0 O9 (owner Q15)
+	return t
+
+
+## v0.11.0 O9 (owner Q15, Q16): the horde surges in ticks (null without the definition); the alive cap never above the
+## spawner's hard cap (`spawning.cap_max`).
+static func compile_surge(def: SurgeDefinition, spawning: SpawnTable) -> SurgeTable:
+	if def == null:
+		return null
+	var t := SurgeTable.new()
+	t.surges_min = def.surges_min
+	t.surges_max = def.surges_max
+	t.first_min_ticks = SimTick.seconds_to_ticks(def.first_seconds_min)
+	t.first_max_ticks = SimTick.seconds_to_ticks(def.first_seconds_max)
+	t.gap_min_ticks = SimTick.seconds_to_ticks(def.gap_seconds_min)
+	t.gap_max_ticks = SimTick.seconds_to_ticks(def.gap_seconds_max)
+	t.size_min = def.size_min
+	t.size_max = def.size_max
+	t.duration_ticks = maxi(1, SimTick.seconds_to_ticks(def.duration_seconds))
+	t.alive_cap = mini(def.alive_cap, spawning.cap_max)
 	return t
 
 

@@ -23,6 +23,7 @@ extends RefCounted
 ## v0.9.0 TD (owner Q22: "A quarter of the rate"): while the hero stands in an unsolved puzzle's room (a calm room of
 ## World.interactables) the interval clock runs one tick in four, so new packs come at a quarter of the rate; the
 ## enemies already out keep fighting, and normal spawning resumes once it's solved or the hero leaves the room.
+## v0.11.0 O9 (owner Q15): once or twice a floor a horde surge of the biome's critter (Surges), on its own clock.
 
 ## Distance between the rings of a pack's spots, and their count per ring.
 const PACK_STEP_M := 1.1
@@ -44,9 +45,10 @@ static func advance(w: World) -> void:
 		if step > 0:
 			w.spawn_cd = maxi(0, w.spawn_cd - step - Events.spawn_haste(w))  # v0.5.0 EV: Wandering Drone
 	Intensity.advance(w)  # v0.8.0 N5 (owner O58): intensity and the build-up / peak / pull back / quiet rhythm
+	Surges.advance(w)  # v0.11.0 O9 (owner Q15): the floor's horde surges (their own clock, never gated by intensity)
 	if w.spawn_cd > 0:
 		return
-	if _calm_antechamber(w, t):
+	if calm_antechamber(w, t):
 		return
 	if not Intensity.sending(w):  # v0.8.0 N5: pulling back or quiet: no new packs (the enemies out stay)
 		return
@@ -61,7 +63,7 @@ static func advance(w: World) -> void:
 
 
 ## v0.10.5 O14: whether the hero stands in the boss room's host room on the calm-antechamber floor.
-static func _calm_antechamber(w: World, t: SpawnTable) -> bool:
+static func calm_antechamber(w: World, t: SpawnTable) -> bool:
 	var f := w.floor_layout
 	if t.calm_antechamber_floor <= 0 or w.floor_index != t.calm_antechamber_floor or f == null:
 		return false

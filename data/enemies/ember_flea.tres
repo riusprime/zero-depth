@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/enemy_definition.gd" id="2_enm"]
+
+[resource]
+script = ExtResource("2_enm")
+name_key = &"ENEMY_EMBER_FLEA"
+desc_key = &"ENEMY_EMBER_FLEA_DESC"
+behaviour_id = &"ember_flea"
+behaviour_params = {
+"contact_cd_seconds": 0.5,
+"contact_damage": 3,
+"flies": false
+}
+hp = 8
+radius_m = 0.18
+move_speed_mps = 5.2
+attacks = Array[ExtResource("1_atk")]([])
+stress_tags = PackedStringArray("bleed")
+weak_to = &"gun_wave"
+resists = &"ember"
+weak_permille = 1250
+resist_permille = 750
+shards = 1
+id = &"ember_flea"

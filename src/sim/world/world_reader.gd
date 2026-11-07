@@ -89,6 +89,12 @@ const KIND_TWIN_WARDEN_VIOLET := ActorStore.Kind.TWIN_WARDEN_VIOLET
 const KIND_CLOCKWORK_JUDGE := ActorStore.Kind.CLOCKWORK_JUDGE
 ## v0.9.0 NB4: floor 5's Lantern Shade (its light: boss_light).
 const KIND_LANTERN_SHADE := ActorStore.Kind.LANTERN_SHADE
+## v0.11.0 O9: the five horde critters, one per biome (EnemyAi.is_critter).
+const KIND_DUST_MITE := ActorStore.Kind.DUST_MITE
+const KIND_CAVE_BAT := ActorStore.Kind.CAVE_BAT
+const KIND_EMBER_FLEA := ActorStore.Kind.EMBER_FLEA
+const KIND_ICE_CRAB := ActorStore.Kind.ICE_CRAB
+const KIND_STAR_MOTE := ActorStore.Kind.STAR_MOTE
 const ECHO_NONE := BossJudge.NONE
 const ECHO_SHOW := BossJudge.SHOW
 const ECHO_REPLAY := BossJudge.REPLAY
@@ -4122,3 +4128,24 @@ static func stress_side_dir(side: int) -> Vector2:
 ## v0.9.5 SM: the side's angle on the sim plane (1/4096 turn).
 static func stress_side_angle(side: int) -> int:
 	return StressMarks.SIDE_ANGLES[side]
+
+
+# --- v0.11.0 O9: the horde critters and their surges (Surges) ------------------------------------------------------
+## Surges begun on this floor (the HUD's line: one more each time a surge begins).
+func surges_started() -> int:
+	return Surges.started(_w)
+
+
+## True while a surge's window is open.
+func surge_running() -> bool:
+	return Surges.running(_w)
+
+
+## The floor's horde critter kind (-1: none).
+func critter_kind() -> int:
+	return _w.critter_kind
+
+
+## v0.11.0 O9: a horde critter kind (contact damage only).
+static func is_critter_kind(kind: int) -> bool:
+	return EnemyAi.is_critter(kind)

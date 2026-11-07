@@ -1588,3 +1588,19 @@ UI_BOSS_HINTS,Boss hints,Pistas de jefe
 HINT_GATEKEEPER_PILLAR,Lure its cross into the pillar,Atrae su cruz hasta el pilar
 HINT_SHADE_LANTERN,Step on a lantern to light it,Pisa un farol para encenderlo
 HINT_TWINS_ACTIVE,Hit the glowing twin,Golpea al gemelo que brilla
+ENEMY_DUST_MITE,Dust Mite,Ácaro de Polvo
+ENEMY_DUST_MITE_DESC,"A fist-sized stone tick. Harmless alone; a surge of them swarms you.","Una garrapata de piedra del tamaño de un puño. Inofensiva sola; en oleada, te rodean."
+ENEMY_CAVE_BAT,Cave Bat,Murciélago de Cueva
+ENEMY_CAVE_BAT_DESC,"A small bat with stone wings. It flies low, over the floor's traps.","Un murciélago pequeño de alas de piedra. Vuela bajo, por encima de las trampas del suelo."
+ENEMY_EMBER_FLEA,Ember Flea,Pulga de Brasa
+ENEMY_EMBER_FLEA_DESC,"A glowing flea that hops in short arcs. It leaves a spark when it dies.","Una pulga ardiente que salta en arcos cortos. Deja una chispa al morir."
+ENEMY_ICE_CRAB,Ice Crab,Cangrejo de Hielo
+ENEMY_ICE_CRAB_DESC,"A flat crab with an ice shell. It slides a little when it stops.","Un cangrejo plano de caparazón de hielo. Resbala un poco al pararse."
+ENEMY_STAR_MOTE,Star Mote,Mota Estelar
+ENEMY_STAR_MOTE_DESC,"A tiny floating star with a tail. They come in drifts.","Una estrella diminuta que flota con su cola. Llegan a bandadas."
+CAUSE_DUST_MITE,Dust Mites swarmed you.,Los Ácaros de Polvo te rodearon.
+CAUSE_CAVE_BAT,Cave Bats swarmed you.,Los Murciélagos de Cueva te rodearon.
+CAUSE_EMBER_FLEA,Ember Fleas swarmed you.,Las Pulgas de Brasa te rodearon.
+CAUSE_ICE_CRAB,Ice Crabs swarmed you.,Los Cangrejos de Hielo te rodearon.
+CAUSE_STAR_MOTE,Star Motes swarmed you.,Las Motas Estelares te rodearon.
+HUD_SURGE,A horde is coming!,¡Se acerca una horda!

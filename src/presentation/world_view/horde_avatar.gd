@@ -1,4 +1,4 @@
-# gdlint: disable=max-public-methods
+# gdlint: disable=max-public-methods, max-file-lines
 class_name HordeAvatar
 extends AvatarBase
 ## The six horde kinds (v0.4.0 EN), code-built low-poly in the enemy sheet's red and grey (no concept sheet yet; the
@@ -150,16 +150,25 @@ var _is_model := false
 ## crowd's shader poses the parts at (vat_drives), both from the last _pose().
 var _vat_body := Transform3D.IDENTITY
 var _vat_d := Vector4.ZERO
+## v0.11.0 O9: the Ice Crab's slide (0..1 through it; -1: none) and whether it was walking (a stop starts one).
+var _slide := -1.0
+var _slide_armed := false
 
 
 static func height_of(p_kind: int) -> float:
+	if CritterBodies.is_critter(p_kind):  # v0.11.0 O9
+		return float(CritterBodies.HEIGHTS[p_kind])
 	if p_kind == WorldReader.KIND_SPLITLING:
 		return float(HEIGHTS[WorldReader.KIND_SPLITTER]) * SPLITLING_SCALE
 	return float(HEIGHTS.get(p_kind, 1.0))
 
 
 static func is_horde_kind(p_kind: int) -> bool:
-	return p_kind == WorldReader.KIND_SPLITLING or HEIGHTS.has(p_kind)
+	return (
+		p_kind == WorldReader.KIND_SPLITLING
+		or HEIGHTS.has(p_kind)
+		or CritterBodies.is_critter(p_kind)
+	)  # v0.11.0 O9: the horde critters (CritterBodies)
 
 
 ## v0.8.0 MI: the owner's model a kind draws with (EnemyModels; the Splitling the Splitter's, smaller), or &"".
@@ -238,6 +247,8 @@ func setup(p_kind: int, outline_color: Color, technique: StringName = &"outline"
 				_build_mine_layer()
 			WorldReader.KIND_SNIPER:
 				_build_sniper()
+			_ when CritterBodies.is_critter(kind):  # v0.11.0 O9
+				CritterBodies.build(self)
 	_pose()
 
 
@@ -280,7 +291,8 @@ func advance(delta: float) -> void:
 	_t += dt
 	if _die_t >= 0.0:
 		_die_t += dt
-	if _is_model and is_inside_tree():  # v0.8.0 MI: the walk's pace from how fast the body moves
+	# v0.8.0 MI: the walk's pace from how fast the body moves (v0.11.0 O9: the critters' too: the crab's slide)
+	if (_is_model or CritterBodies.is_critter(kind)) and is_inside_tree():
 		var at := global_position
 		var speed := (
 			0.0
@@ -290,6 +302,7 @@ func advance(delta: float) -> void:
 		_last_at = at
 		_walk = move_toward(_walk, clampf(speed / WALK_FULL_MPS, 0.0, 1.0), dt * 4.0)
 		_walk_t += dt * lerpf(0.0, WALK_HZ * TAU, _walk)
+		_slide_step(dt)
 	var spawning := _state == WorldReader.STATE_SPAWN
 	_rise = move_toward(_rise, 0.0 if spawning else 1.0, dt * (6.0 if spawning else 2.5))
 	var winding := _state == WorldReader.STATE_WINDUP
@@ -380,6 +393,12 @@ func _pose() -> void:
 		0
 	)
 	var brz := crouch * 0.12
+	if CritterBodies.is_critter(kind):  # v0.11.0 O9: the body's own move, then the gait's parts
+		var mv := CritterBodies.body_move(kind, _t, _slide, calm)
+		_place_body(bp + (mv[0] as Vector3), brz + float(mv[1]))
+		_pose_parts(Vector4(0, 0, 0, CritterBodies.phase_at(kind, _t)))
+		_set_glow(energy * lerpf(0.2, 1.0, _rise))
+		return
 	if _is_model:  # v0.8.0 MI: the owner's model's parts
 		_pose_model(energy, calm, bp, brz)
 		return
@@ -470,6 +489,9 @@ func _place_body(bp: Vector3, brz: float, mrx := 0.0, ms := 1.0) -> void:
 func _pose_parts(d: Vector4) -> void:
 	if vat:
 		_vat_d = HordeVat.grid_of(self, d)
+		return
+	if CritterBodies.is_critter(kind):  # v0.11.0 O9
+		CritterBodies.pose_parts(self, d.w)
 		return
 	if model != null:
 		for pname: String in parts:
@@ -926,6 +948,8 @@ func _eye(parent: Node3D, size: Vector3, at: Vector3) -> void:
 
 ## v0.8.0 EC: this kind's colour in `slot` under the active palette.
 func _col(slot: StringName) -> Color:
+	if CritterBodies.is_critter(kind):  # v0.11.0 O9: a critter wears its biome's colours, not a role's
+		return CritterBodies.color(kind, slot)
 	return EnemyPalettes.color(kind, slot)
 
 
@@ -959,3 +983,19 @@ static func _box(size: Vector3) -> BoxMesh:
 		bm.size = size
 		_boxes[key] = bm
 	return _boxes[key]
+
+
+## v0.11.0 O9 (ENEMIES.md H4): the Ice Crab slides a little when it stops (a full walk, then nearly none, starts the
+## slide; CritterBodies.body_move draws it). The other kinds never slide.
+func _slide_step(dt: float) -> void:
+	if kind != WorldReader.KIND_ICE_CRAB:
+		return
+	if _walk > 0.6:
+		_slide_armed = true
+	elif _slide_armed and _walk < 0.25:
+		_slide_armed = false
+		_slide = 0.0
+	if _slide >= 0.0:
+		_slide += dt / CritterBodies.SLIDE_SECONDS
+		if _slide > 1.0:
+			_slide = -1.0
