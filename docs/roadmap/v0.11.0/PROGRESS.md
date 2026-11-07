@@ -11,9 +11,9 @@
   [`PIERCE.md`](PIERCE.md) (P2: the flag), [`WISP_GAPS.md`](WISP_GAPS.md) (wider: hero + 0.7 m).
 - **Next:** Wave 2 O2–O5 (hint arrow, Gatekeeper, Lantern Shade, Twins) can start from Q9–Q12; O1 (Laser) sim can
   start, its look waits for the sketch; S2b and S6 are unblocked; O9–O13 (hordes, spells, enemies) are unblocked; O6–O8 after the owner's boss brief.
-- **Wave 2 so far:** S6, S2b, O2, S7b, O1 + O1c (Laser lance), O3 (Gatekeeper pillars), O4 (Lantern Shade) merged.
-  **Building:** O4b (the Lights Out shield back; Sonnet, wt-o4b), O5 Twins + their animation (Opus, wt-o5). O6–O8 wait
-  for the owner's boss brief; the Laser's look waits for the sketch.
+- **Wave 2 built:** S6, S2b, O2, S7b, O1 + O1c (Laser lance), O3 (Gatekeeper), O4 + O4b (Lantern Shade), O5 + O16a
+  (Twins) merged at fea75741. Waiting: O6–O8 (the owner's boss brief), the Laser's look (the sketch), O16 for the other
+  bosses. **Next: Wave 3** O9 (horde surges) and O10 (spell slots + first spells).
 - **Agents (owner, 2026-11-07):** at most 3 Sonnet (light, exact briefs) + 2 Opus at once.
 - **Local note:** `project.godot` has an uncommitted editor rewrite (it drops the `[rendering]` settings and
   `locale/fallback`). It is not the lead's change; don't stage it. `wt-seams` is the lead's clean seams worktree.
@@ -33,6 +33,9 @@
 | O3 | Gatekeeper: 3 quake pillars from phase 2 (back in phase 3), a 3 % ring pulse every 3 s; Shock Lanes through a pillar shatters it, stun 2 s at ×1.5, at most 2 a phase; hint arrow; "STUNNED · VULNERABLE" on the bar. Two ways (seed 5): `lure ticks=5690 seconds=94.8 stuns=4`, `ignore ticks=2299 seconds=38.3` | 2233f520 |
 | O1c | The lance's damage falls 15 % per enemy after the first (floor 40 %); full speed while held; Homing's tail runs to the first wall (40 m cap). forms_dps: one target 1350, line 1662, Homing pack 1662 (old beam 1400 / 500 / 500); owner: keep 15 % | df497de4 |
 | O4 | Lantern Shade never immune: 40 % in the dark, 150 % in a lit pool (100 % in your own light and in full light); lanterns lit 6 s; dark 9 s / light 4 s; bar tag + coloured numbers; hint at unlit lanterns. Bots: `lanterns ticks=1081` (18.0 s), `ignore ticks=2341` (39.0 s), both `zero 0` | 99d92b20 |
+| O4b | The Lights Out telegraph shield back (1.00 s, the whole windup); bots `lanterns ticks=1201`, `ignore ticks=2611`, `leak 0` | 30a266dc |
+| O5 | Twin Wardens: yellow (Shield Bash, Chain Sweep, Charge, Ground Slam) leads P1, purple (Crossfire, Orb Volley, Rune Ring, Blink) P2, both P3 on three full bars (667/333); the resting twin takes 0 with a "not now" spark and casts a bolt every 4 s; P3 turns never overlap, the exposed twin swaps every 10 s (×1.5 / ×0.5); Crossfire unshielded; HP 2500 → 3000. Bots: `melee ticks=4759 seconds=79.3`, `ranged ticks=5369 seconds=89.5` | d3c87976 |
+| O16a | The Twins' clips less stiff (anticipation, recoil, idle sway, hit reactions) | 728d80e3 |
 | S7 | OWNER_TODO §3.2: prompts for the 8 code-made enemies in the Charger's style, palette-A role colours | cc0d326f |
 
 ## Goldens changed on purpose
@@ -70,3 +73,7 @@
   both scale boss damage in `damage.gd` (`tick_dot`): the conflict kept both; the Gatekeeper, Shade, bots,
   boss-challenge and readable-cause tests on the merge: `Tests 62, Passing Tests 62`. Owner: keep the 15 % falloff;
   bring back the Lights Out shield (O4b).
+- 2026-11-07: O5 and O4b merged. O5 vs O4 conflicted in `damage.gd` (both scale boss hits; `_blocked`: O4 dropped the
+  Shade's dark, O5 added the resting twin; kept both) and `boss_bar.gd` (both constants kept). On the merge: the
+  Gatekeeper, Shade, Twins, boss-challenge, readable-cause, health-bar and boss content tests `Tests 130, Passing Tests
+  130`; after O4b `Tests 48, Passing Tests 48`. Owner: Crossfire stays unshielded; resting twin and 3000 HP approved.

@@ -241,3 +241,4 @@ OK; (b) you'll go through them.
 | L-c | Homing's straight tail after the last target: **"Longer"**: it runs on to the first wall, not 9 m | 2026-11-07 | PLAN L2, O1c |
 | L-d | After O1c the line is 3.3× the old beam (1662 vs 500), not the 2.5× the lead estimated: **"Keep 15 %"** | 2026-11-07 | PLAN O1c |
 | Q10-b | O4 also removed the Lights Out telegraph shield (v0.10.5 O2a): **"Bring it back"** (O4b); all else in O4 stays | 2026-11-07 | PLAN L6, O4 |
+| Q11-b | O5 removed Crossfire's shield: **"Keep removed"**. The resting twin (P1/P2) takes 0 with a "not now" spark: **approved**. Twins HP 2500 → 3000 (bots 79 s melee, 90 s ranged): **approved** | 2026-11-07 | PLAN L7, O5 |
