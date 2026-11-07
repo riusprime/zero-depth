@@ -429,8 +429,9 @@ const PACK_HIDE := {
 	&"prism_orb": ["Flare"],
 	&"crown_orb": ["Flare"],
 }
-## Looks without a pack effect (they stay the MultiMesh).
-const PACK_SKIP: Array[StringName] = [&"nemesis_crescent"]
+## Looks without a pack effect (they stay the MultiMesh). v0.11.0 S2: the Shade's wisp stays the MultiMesh so the
+## Shade's dark covers it (only its 4 m outline shows over the dark).
+const PACK_SKIP: Array[StringName] = [&"nemesis_crescent", &"shade_wisp"]
 ## v0.10.0 VX7 (VFX_PACK N4): the nemesis_crescent keeps its shape and takes a copy of the pack's rim_area_04 glow
 ## material in its own colours (a sheet of UVs cut from where each point lies); false: the shader core as before.
 const PACK_CRESCENT := true
