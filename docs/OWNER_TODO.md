@@ -132,7 +132,39 @@ with bone-coloured tips. Only the body plan changes, to fit what the enemy does.
 | ☐ | `mine_layer` | bomber dark yellow `#C29A14` | radius 0.42 m (about 0.9 m long) | a low armoured crawler: a faceted ridged hull in [COLOUR] with chevron plates, a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, carried on grey segmented legs with bone tips (two short tank treads in grey are also fine), an open hopper at the back holding a dark round spiked mine with a small blinking light (the mine as a separate object is a bonus); about 5k triangles |
 | ☐ | `sniper` | ranged blue `#3A55C0` | radius 0.35 m (about 1.1 m tall) | a lean walking gun platform: a narrow faceted ridged shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor shaped like a big round scope lens, a charcoal body, a very long grey rifle barrel pointing forward with cooling fins, three long thin grey segmented legs in a tripod with bone-coloured feet; about 5k triangles |
 
-Still to come here: the 5 horde critters (one per biome, Q14) and the 10 new enemies (Q22), after ENEMIES.md is approved.
+**Horde critters (one per biome, Q14).** Many are on screen at once, so each is small, one simple silhouette, about
+1.5k triangles. They keep the family features (faceted shell, one glowing gem eye) scaled down. All are melee, so they
+take the Swarmer's crimson.
+
+| ✓ | id | Role colour | In-game size | Prompt (after the character prefix, then the 3D step) |
+|---|---|---|---|---|
+| ☐ | `dust_mite` | melee crimson `#B82A48` | about 0.3 m | a fist-sized stone tick: a low round faceted ridged shell in [COLOUR], a tiny dark shield-shaped face with one glowing [COLOUR] gem eye, a charcoal underside, six thin grey segmented legs with bone tips splayed low; about 1.5k triangles |
+| ☐ | `cave_bat` | melee crimson `#B82A48` | about 0.4 m across the wings | a small flying bat: a compact faceted ridged shell in [COLOUR] on the back, a tiny dark shield-shaped face with one glowing [COLOUR] gem eye, a charcoal body, two broad grey stone wings spread wide with bone-coloured tips (wings as separate parts), two tiny grey feet tucked under; about 1.5k triangles |
+| ☐ | `ember_flea` | melee crimson `#B82A48` | about 0.3 m | a small hopping flea: a tall curved faceted ridged shell in [COLOUR], a tiny dark shield-shaped face with one glowing [COLOUR] gem eye, a charcoal body, two big grey segmented back legs folded like springs with bone tips, four short front legs, a few small glowing [COLOUR] cracks on the shell; about 1.5k triangles |
+| ☐ | `ice_crab` | melee crimson `#B82A48` | about 0.4 m wide | a flat sliding crab: a wide flat faceted ridged shell in [COLOUR] with pale ice-blue facets at the edges, a tiny dark shield-shaped face on the front with one glowing [COLOUR] gem eye, a charcoal underside, two small grey segmented claws with bone tips, six short flat grey legs held out sideways; about 1.5k triangles |
+| ☐ | `star_mote` | melee crimson `#B82A48` | about 0.3 m | a tiny floating star with a tail: a five-pointed faceted ridged body in [COLOUR], a small dark shield-shaped face in the middle with one glowing [COLOUR] gem eye, a charcoal core, a short tapering grey tail of three segments with a bone tip, no legs; about 1.5k triangles |
+
+**New enemies (Q22).** Same family, about 5k triangles each, plus the one thing that makes each readable in play.
+
+| ✓ | id | Role colour | In-game size | Prompt (after the character prefix, then the 3D step) |
+|---|---|---|---|---|
+| ☐ | `wire_weaver` | bomber yellow `#E8C22E` | — | a spindly cable-laying walker: a faceted ridged shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, four long grey segmented arms with bone tips holding two short grey cable posts with sparking tops (the two posts as separate objects), a coil of cable on its back, four thin grey segmented legs; about 5k triangles |
+| ☐ | `scrap_hound` | melee red-orange `#C93A1E` | — | a lean fast four-legged hound: a low faceted ridged shell in [COLOUR] along the back, a dark shield-shaped face on a long snout with one glowing [COLOUR] gem visor, a charcoal body, four long thin grey segmented legs with bone-coloured claws, a short grey segmented tail, a few scrap plates bolted on its flanks; about 5k triangles |
+| ☐ | `rock_lurker` | melee red-orange `#C93A1E` | — | a crouched creature disguised as a boulder: a round rough faceted ridged grey rock shell covering its whole back, thin glowing [COLOUR] cracks across the rock, a dark shield-shaped face half hidden under the rock edge with one glowing [COLOUR] gem visor, a charcoal body, four thick short grey segmented legs with bone-coloured claws tucked in; about 5k triangles |
+| ☐ | `stone_thrower` | tank bronze `#9A6232` | — | a hunched brute with huge arms: a faceted ridged shell in [COLOUR] on its back, a small dark shield-shaped face with one glowing [COLOUR] gem visor, a heavy charcoal chest, two huge grey segmented arms with big bone-tipped hands raised overhead holding a rough grey rock (the rock as a separate object), two short stumpy grey legs; about 5k triangles |
+| ☐ | `kiln_beetle` | bomber yellow `#E8C22E` | — | a slow, heavy armoured beetle: a round faceted ridged shell in [COLOUR] with vent slits, a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, a big glowing [COLOUR] kiln belly showing through a gap under the shell, six thick grey segmented legs with bone tips; about 5k triangles |
+| ☐ | `cinder_priest` | ranged violet `#8A50D8` | — | a robed priest: a faceted ridged hood and long robe-like shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body under it, grey segmented arms holding a tall grey staff topped with a glowing [COLOUR] ember crystal, a hem of grey segmented spikes with bone tips, no legs showing; about 5k triangles |
+| ☐ | `frost_spitter` | ranged blue `#3A6BD4` | — | a lean four-legged spitter: a faceted ridged shell in [COLOUR], a dark shield-shaped face on a short wide mouth with one glowing [COLOUR] gem visor, a charcoal body, a big pale ice-blue sac swelling on its throat, four grey segmented legs with bone tips; about 5k triangles |
+| ☐ | `glacier_turtle` | tank bronze `#9A6232` | — | a squat turtle: a charcoal body, a dark shield-shaped face with one glowing [COLOUR] gem visor on a short grey neck, four thick grey segmented legs with bone tips, a big domed ice shell of pale blue faceted slabs held in front (the shell as a separate object), a small faceted ridged cap in [COLOUR] on its back; about 5k triangles |
+| ☐ | `star_warper` | ranged violet `#8A50D8` | — | a slim floating caster: a five-pointed star-shaped faceted ridged head in [COLOUR], a dark shield-shaped face in the middle of the star with one glowing [COLOUR] gem visor, a narrow charcoal body, two thin grey segmented arms with bone tips, a tapering grey tail instead of legs, a few small [COLOUR] star shards around it; about 5k triangles |
+| ☐ | `gravity_node` | bomber yellow `#E8C22E` | — | a floating orb, no legs: a round faceted ridged shell in [COLOUR] split in two halves around a charcoal core, a dark shield-shaped face plate on the front with one glowing [COLOUR] gem visor, two or three thin grey rings circling it at different tilts (the rings as separate parts), small bone-coloured studs on the rings; about 5k triangles |
+
+Role colours for kinds that don't match the eight above one to one: the Weaver, Kiln Beetle and Gravity Node
+(area control, bomber) take the bomber yellow; the Scrap Hound and Rock Lurker (flanker, ambush) take the melee
+red-orange; the Stone Thrower (brute) and Glacier Turtle (tank) take the tank bronze; the Cinder Priest (support) and
+Star Warper (teleporter) take the Arc Caster's violet; the Frost Spitter (ranged) takes the Needle's blue.
+
+The biome variants (Rubble Warden, Dim Needle, Ember Charger, Frost Charger, Split Sniper) reuse their base models with biome effects drawn by the game.
 
 ### 3.3 The final boss (P1–P2)
 
