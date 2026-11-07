@@ -1,8 +1,9 @@
 class_name SoloVat
 extends RefCounted
 ## v0.10.5 W3-V4c (owner, 2026-11-06: "can we apply it to the rest of the enemies and test it?"): VAT for the
-## stand-alone enemies (the Needle, the Warden, the Arc Caster, the Bomb Drone): their reference and VAT avatars, the
-## looks of their own StandardMaterial3D pieces, and the rig they declare (VatBake's, see its class notes).
+## stand-alone enemies (the Needle, the Warden, the Arc Caster, the Bomb Drone; v0.11.0 S4: the Lens Drone): their
+## reference and VAT avatars, the looks of their own StandardMaterial3D pieces, and the rig they declare (VatBake's,
+## see its class notes).
 ##
 ## Their rigs are one-number joints. Each avatar's pose code works out a few plain numbers (an angle, a height, a
 ## scale: its RAW drives, the avatar's _vd) and writes its nodes from them; each joint of its rig is one of those
@@ -27,6 +28,7 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_WARDEN,
 	WorldReader.KIND_ARC_CASTER,
 	WorldReader.KIND_BOMB_DRONE,
+	WorldReader.KIND_LENS_DRONE,
 ]
 ## Metas: a piece material's look (its role: &"plate", &"accent", &"unshaded"), an accent's glow drive (+ 1), a node
 ## kept live.
@@ -49,6 +51,8 @@ static func _new(kind: int) -> AvatarBase:
 			return ArcCasterAvatar.new()
 		WorldReader.KIND_BOMB_DRONE:
 			return BombDroneAvatar.new()
+		WorldReader.KIND_LENS_DRONE:
+			return LensDroneAvatar.new()
 	return null
 
 
@@ -72,10 +76,15 @@ static func _mark(n: Node) -> void:
 	for c in n.get_children():
 		var mi := c as MeshInstance3D
 		if mi != null:
-			var m := mi.material_override as StandardMaterial3D
-			if m != null and not m.has_meta(LOOK):
-				var unshaded := m.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED
-				m.set_meta(LOOK, &"unshaded" if unshaded else &"accent")
+			var ms: Array = [mi.material_override]
+			if mi.mesh != null:  # v0.11.0 S4: the Lens Drone model's pieces carry theirs per surface
+				for k in mi.mesh.get_surface_count():
+					ms.append(mi.get_surface_override_material(k))
+			for mat: Variant in ms:
+				var m := mat as StandardMaterial3D
+				if m != null and not m.has_meta(LOOK):
+					var unshaded := m.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED
+					m.set_meta(LOOK, &"unshaded" if unshaded else &"accent")
 		_mark(c)
 
 

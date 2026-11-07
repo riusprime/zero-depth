@@ -11,6 +11,7 @@ const SOLO: Array[int] = [
 	WorldReader.KIND_WARDEN,
 	WorldReader.KIND_ARC_CASTER,
 	WorldReader.KIND_BOMB_DRONE,
+	WorldReader.KIND_LENS_DRONE,
 ]
 
 var _vat := false
@@ -31,9 +32,6 @@ func after_each() -> void:
 func test_every_stand_alone_kind_is_a_vat_kind() -> void:
 	for kind in SOLO:
 		assert_true(VatCrowd.supports(kind), "kind %d" % kind)
-	assert_false(
-		VatCrowd.supports(WorldReader.KIND_LENS_DRONE), "the Lens Drone stays on the old path"
-	)
 
 
 func test_the_bake_matches_the_live_pose() -> void:
@@ -188,3 +186,21 @@ func test_actor_views_draw_them_through_the_crowd_and_flash_them() -> void:
 	views.vat_crowd._process(DT)
 	assert_lt((views.vat_crowd.instance_of(needle)["color"] as Color).a, 0.0, "the hit shows")
 	ViewPrefs.enemy_vat = false
+
+
+func test_the_lens_drone_keeps_its_hover_and_its_model_s_colour_map() -> void:
+	var live := VatBake.reference_of(
+		WorldReader.KIND_LENS_DRONE, Color(0, 0, 0, 0), 0.0, Color.BLACK
+	)
+	var vat := VatBake.vat_avatar_of(WorldReader.KIND_LENS_DRONE, Color.BLACK)
+	add_child_autofree(live)
+	add_child_autofree(vat)
+	for a: AvatarBase in [live, vat]:
+		a.set_process(false)
+		a.apply_state({"tick": 1, "state": EnemyAi.State.MOVE})
+		for k in 240:
+			a.advance(DT)
+	assert_almost_eq(vat.vat_lift(), live.hover_height(), 0.0001, "the same hover")
+	assert_between(vat.vat_lift(), LensDroneAvatar.HOVER_Y - 0.1, LensDroneAvatar.HOVER_Y + 0.1)
+	var pose := VatBake.pose_for(WorldReader.KIND_LENS_DRONE)
+	assert_eq(pose.has("albedo_tex"), (live as LensDroneAvatar).has_model, "the model's colour map")
