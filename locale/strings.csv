@@ -1588,3 +1588,26 @@ UI_BOSS_HINTS,Boss hints,Pistas de jefe
 HINT_GATEKEEPER_PILLAR,Lure its cross into the pillar,Atrae su cruz hasta el pilar
 HINT_SHADE_LANTERN,Step on a lantern to light it,Pisa un farol para encenderlo
 HINT_TWINS_ACTIVE,Hit the glowing twin,Golpea al gemelo que brilla
+UI_CARD_SPELL,Spell,Hechizo
+UI_CARD_SPELL_LEVEL,Spell · Lv %d,Hechizo · Nv %d
+SPELL_FROST_NOVA,Frost Nova,Nova de escarcha
+SPELL_FROST_NOVA_DESC,"Every 12 s, by itself: every enemy within 3.5 m freezes for 1 s and is pushed 1 m away.","Cada 12 s, por sí sola: todo enemigo a 3,5 m se congela 1 s y sale empujado 1 m."
+SPELL_FROST_NOVA_LV1,"Freezes within 3.5 m for 1 s, pushes 1 m.","Congela a 3,5 m durante 1 s, empuja 1 m."
+SPELL_FROST_NOVA_LV2,"Radius 4 m, freeze 1.25 s.","Radio 4 m, congela 1,25 s."
+SPELL_FROST_NOVA_LV3,Radius 4.5 m.,"Radio 4,5 m."
+SPELL_FROST_NOVA_LV4,"Radius 5 m, freeze 1.5 s.","Radio 5 m, congela 1,5 s."
+SPELL_FROST_NOVA_LV5,More damage.,Más daño.
+SPELL_FIREBALL,Fireball,Bola de fuego
+SPELL_FIREBALL_DESC,"Every 12 s, by itself: a slow fireball flies at the densest pack and bursts 3 m, setting everything on fire.","Cada 12 s, por sí sola: una bola de fuego lenta vuela al grupo más denso y estalla en 3 m, prendiendo fuego a todo."
+SPELL_FIREBALL_LV1,"One ball, a 3 m burst that burns.","Una bola, un estallido de 3 m que quema."
+SPELL_FIREBALL_LV2,Burst 3.5 m.,"Estallido de 3,5 m."
+SPELL_FIREBALL_LV3,Two balls at two packs.,Dos bolas a dos grupos.
+SPELL_FIREBALL_LV4,Burst 4 m.,Estallido de 4 m.
+SPELL_FIREBALL_LV5,More damage.,Más daño.
+SPELL_SKY_STRIKE,Sky Strike,Rayo celeste
+SPELL_SKY_STRIKE_DESC,"Every 12 s, by itself: 3 bolts strike random enemies within 10 m, each jumping to 1 more.","Cada 12 s, por sí solo: 3 rayos caen sobre enemigos al azar a 10 m y cada uno salta a 1 más."
+SPELL_SKY_STRIKE_LV1,"3 bolts, each jumps once.","3 rayos, cada uno salta una vez."
+SPELL_SKY_STRIKE_LV2,4 bolts.,4 rayos.
+SPELL_SKY_STRIKE_LV3,More damage.,Más daño.
+SPELL_SKY_STRIKE_LV4,5 bolts.,5 rayos.
+SPELL_SKY_STRIKE_LV5,"6 bolts, more damage.","6 rayos, más daño."

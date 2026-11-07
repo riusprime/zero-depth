@@ -268,6 +268,20 @@ const CARD_ABILITY := Offers.ABILITY
 const CARD_STAT := Offers.STAT
 const CARD_CURSE := Offers.CURSE  # v0.6.0 CU: a trade-off curse card
 const CARD_STARBOUND := Offers.STARBOUND  # v0.10.5 W3-P10b: a Starbound card (loop 2+)
+const CARD_SPELL := Offers.SPELL  # v0.11.0 O10: a spell card (its element card held)
+## v0.11.0 O10: the spells, their elements and the view's log kinds (spell_fx).
+const SPELL_FROST_NOVA := Spells.FROST_NOVA
+const SPELL_FIREBALL := Spells.FIREBALL
+const SPELL_SKY_STRIKE := Spells.SKY_STRIKE
+const SPELL_ELEMENT_FROST := Spells.ELEMENT_FROST
+const SPELL_ELEMENT_FIRE := Spells.ELEMENT_FIRE
+const SPELL_ELEMENT_LIGHTNING := Spells.ELEMENT_LIGHTNING
+const SPELL_ELEMENT_VENOM := Spells.ELEMENT_VENOM
+const SPELL_ELEMENT_BLEED := Spells.ELEMENT_BLEED
+const SPELL_FX_NOVA := Spells.FX_NOVA
+const SPELL_FX_BURST := Spells.FX_BURST
+const SPELL_FX_BOLT := Spells.FX_BOLT
+const SPELL_FX_JUMP := Spells.FX_JUMP
 ## v0.10.5 W3-P10b: the Starbound cards (starbound()'s order) and the view's log kinds (starbound_fx).
 const STARBOUND_ARC_JUMP := Starbound.ARC_JUMP
 const STARBOUND_RISING_EDGE := Starbound.RISING_EDGE
@@ -3161,6 +3175,39 @@ func starbound_fx() -> Dictionary:
 		"from": _w.starbound_fx_from.duplicate(),
 		"to": _w.starbound_fx_to.duplicate(),
 	}
+
+
+## v0.11.0 O10: the spells held (0: none).
+func spell_count() -> int:
+	return _w.spell_slots.size()
+
+
+## v0.11.0 O10: the spell slots (Spells.read: the slot count, and each held slot's spell, id, name key, element,
+## level, cooldown left and total in ticks, the tick it last cast) and the tick now.
+func spells() -> Dictionary:
+	return Spells.read(_w)
+
+
+## v0.11.0 O10: the recent casts (kind Spells.FX_*, tick, from, to, radius m) and the Fireballs in flight (position,
+## spell, level).
+func spell_fx() -> Dictionary:
+	return {
+		"kind": _w.spell_fx_kind.duplicate(),
+		"tick": _w.spell_fx_tick.duplicate(),
+		"from": _w.spell_fx_from.duplicate(),
+		"to": _w.spell_fx_to.duplicate(),
+		"size": _w.spell_fx_size.duplicate(),
+		"balls": _w.spell_ball_pos.duplicate(),
+		"ball_spell": _w.spell_ball_spell.duplicate(),
+	}
+
+
+## v0.11.0 O10: where spell `k` would aim now (Spells.densest_pack, the cast's own function, EI-07; -1 for none).
+func spell_aim(k: int) -> int:
+	var t := Spells.table(_w, k)
+	if t == null:
+		return -1
+	return Spells.densest_pack(_w, _w.player_pos(), t.reach_m)
 
 
 ## v0.9.5 TX: the Gun form fired now (the held Form card's row id: &"orbs", &"laser" ...; &"" on a Blade run), for the

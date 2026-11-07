@@ -1333,6 +1333,38 @@ starting value.
   saved (an older save holds none, `ADDED_SINCE_V05`) and hashed only once a card was taken (`Starbound.hash_into`),
   so every loop-1 world hashes as before (T3). `World.starbound_tables` is loadout.
 
+## 8p. Spells (v0.11.0 O10; owner Q17-Q20, [`SPELLS.md`](../roadmap/v0.11.0/SPELLS.md))
+
+Code: `Spells` (src/sim/abilities); data: `SpellDefinition`, `SpellRulesDefinition` (CONTENT_SCHEMA §8); every number
+is a starting value (O12 measures them).
+
+- **The card.** An `Offers` code of its own, `SPELL_BASE (5000) + k`, type `Offers.SPELL`, k in
+  `SpellDefinition.SPELLS` order. It never enters the wand (`World.mod_slots`): `World.spell_slots` (spell indices,
+  pick order, at most `SpellRules.slots` = 4), `spell_levels`, `spell_cd` (ticks left) and `spell_cast_tick` side by
+  side. Slots and levels are run-long (`RunCarry`); a new floor's cooldowns start ready. Taken through the normal pick
+  (`BuildSlots.take`): a held spell levels up (Lv 3 at most in loop 1, Lv 5 from loop 2); a new one takes the next free
+  slot; with every slot full it replaces the held spell of the lowest level (the leftmost of those), which its card
+  says first (`Offers.info` "replaces"); skipping the card keeps the slots.
+- **The offer.** The run's pool is every spell whose element card (`SpellTable.element_item`) is in
+  `World.items_owned`, held spells below their cap included. A regular altar's fresh offer gets one spell card with
+  `SpellRules.offer_permille`'s chance, drawn by weight (× `affinity_permille` when the spell's affinity is the run's
+  rune affinity), all on the named stream `loot:spell:<loop>:<floor>:<reward id>` (the loot stream untouched); it
+  replaces the last card that is neither the leading fresh ability, a Starbound card, the only compatible card nor a
+  jackpot (appended to a short offer). Never in a chest, the shop, an epic or a boss altar.
+- **The runner** (tick phase 6, after `Abilities.advance`): each slot's cooldown counts down; at 0 the spell casts the
+  first tick it has a target, then waits its cooldown again. Hits are the player's (`Damage.hit`, `TAG_ABILITY`, the
+  spell id as the effect: damage stat and crit apply; no ElementStack falloff or level share); each enemy hit gets the
+  element's status as the element card gives it (`add_burn`, `add_frost`, `add_bleed`, `Venom.add`; Lightning's charge,
+  `ElementStack.on_hit`). "The densest pack" (`Spells.densest_pack`, also `WorldReader.spell_aim`): the living enemy
+  within reach whose `pack_radius_m` circle holds the most living enemies within reach (ties: the nearest, then the
+  lower index). Frost Nova: every enemy within its radius is hit and frozen (a freeze-immune one gets a frost stack),
+  then pushed `push_m` away over 6 ticks (an elite half, a boss never). Fireball: `count` balls locked on the densest
+  pack (the next on the densest outside the earlier bursts) fly at `speed_mps` and burst `radius_m` (hit + burn).
+  Sky Strike: `count` bolts at distinct random enemies within reach (one draw each on `combat:spell_sky:<tick>:<slot>`),
+  each hit + charge, then a jump to the nearest other enemy within `jump_m`.
+- **Hash and snapshot.** Hashed once a spell is held or a ball or push runs (`Spells.touched`); `World.spell_fx_*` is
+  the view's log, never hashed. An older save holds no spells (`WorldSnapshot.ADDED_SINCE_V05`).
+
 ## 9. What presentation receives
 
 Presentation sees the sim only through `WorldReader`, a read-only facade over `World`

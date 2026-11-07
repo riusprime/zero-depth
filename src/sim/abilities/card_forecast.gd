@@ -65,6 +65,11 @@ static func of(w: World, code: int, _reward: int = -1) -> Dictionary:
 			out["kind"] = KIND_LEVEL
 			out["old"] = Abilities.level_of(w, idx)
 			out["new"] = Abilities.level_after(w, idx)
+		Offers.SPELL:  # v0.11.0 O10: a spell's level now (0: new) and after (Spells.level_after, the take's own)
+			var k := Offers.spell_of(code)
+			out["kind"] = KIND_LEVEL
+			out["old"] = Spells.level(w, k)
+			out["new"] = Spells.level_after(w, k)
 		Offers.MOD:
 			if CardLevels.is_card(w, code):
 				var held := CardLevels.level(w, code) if w.items_owned.has(code) else 0

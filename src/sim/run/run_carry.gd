@@ -24,6 +24,8 @@ const FIELDS: Array[StringName] = [
 	&"events_seen",  # v0.9.5 AQ: the events placed this run (a carry without it: none)
 	&"constellations",  # v0.10.5 W3-P10c: the held Constellations (a carry without it: none)
 	&"starbound",  # v0.10.5 W3-P10b: the Starbound picks (a carry without it: none)
+	&"spell_slots",  # v0.11.0 O10: the spells held and their levels (a carry without them: none)
+	&"spell_levels",
 ]
 const HP := &"hp"
 ## v0.10.5 W3-P10c: a new loop's Constellation offer (RunState.finish_floor writes it: World.constellation_offer).
