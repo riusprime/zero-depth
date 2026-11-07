@@ -49,3 +49,8 @@ or **cut**. Nothing here is built before the rows are answered (O10, O11).
 - **Bosses:** spells hit bosses like the wand does. Freeze and knock-down on bosses follow the rules the element cards
   already have.
 - Each spell needs its strings (name, description, levels) in `en` and `es`, an icon, and its own sound and effect.
+
+## Owner answers (2026-11-07, asked one row at a time)
+- **Rules:** the power budget (≈15 % of wand DPS per spell at Lv 1, 12 s, Lv 5 ≈ 2.5 × Lv 1) approved; auto-aim at the
+  densest pack and the no-red/purple-ground-mark rule approved.
+- **All 15 rows approved as written:** F1–F3, B1–B3, L1–L3, V1–V3, X1–X3 (Leech keeps its healing).

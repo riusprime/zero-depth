@@ -33,3 +33,7 @@ compiled; it stays in the wand, inactive).
 The lead recommends **P2**: early runs keep the bolt's Pierce, and the wand tells you plainly when it stops working.
 
 Built with the Laser (O1) and S6.
+
+## Owner answers (2026-11-07, asked one row at a time)
+- The list approved as written (the Laser stops offering Pierce). **P2** chosen: the early offer stays, and a held Pierce
+  card shows a "does nothing with this form" flag on the wand screen when the form doesn't use it.

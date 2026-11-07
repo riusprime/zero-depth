@@ -35,3 +35,8 @@ APPDATA=build/wisp_gap/appdata godot --headless --path . -s res://build/wisp_gap
   pastes it. A test pins the target (every bloom wave's lane ≥ hero + 0.45 m at 4 m).
 - Data only: `data/bullet_patterns/shade_wisp_bloom_2.tres:15` and `shade_wisp_bloom_3.tres:15` (`count`). The Lantern
   Shade's boss tests may change timings or hit counts on purpose.
+
+## Owner answers (2026-11-07, asked one row at a time)
+- **"Wider still":** aim for about **hero + 0.7 m** at 4 m, not + 0.45 m. Bloom 2 and Bloom 3 go to about **24 shots a
+  wave** (the step measures the lane and picks the count that clears + 0.7 m; Bloom 1 is re-checked against the same
+  target and changed only if it misses it, which is reported with its numbers first).

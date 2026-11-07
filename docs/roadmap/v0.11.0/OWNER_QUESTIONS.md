@@ -232,3 +232,7 @@ OK; (b) you'll go through them.
 | Q24 | "I think I meant the rune that is at the hub": the **Runic Stone** (v0.9.5 RS1/RS2). Clarified in chat; see Q25 | 2026-11-07 | PLAN R1 |
 | Q8 | Straight without Homing (rec): only Homing bends the lance (through up to 5 targets, then straight to full range); a plain Laser is a straight lance through everything in its line | 2026-11-07 | PLAN L2, O1 |
 | Q13 | Asked row by row first (Tidecaller approve; Brood Mother "Not every boss has to have a stun feature", then no hatchling wave after a broken egg; Hive Lens, Clockwork Judge, Prism, Fallen defer; Foundry approve; Warlord, Colossus no change). Then: **"These boss design mechanics are way too average I will design them myself and give you the brief for the new fights"** → the lead's Q13 ideas are dropped; the owner writes the brief for the other bosses' fights. Asked whether that replaces Q9–Q11: **"Q9–Q11 stand"** (Gatekeeper pillars, Lantern light/dark, Twin phases go ahead as answered) | 2026-11-07 | PLAN L9, L10, O6–O8; BOSS_AUDIT |
+| G1 SPELLS | Spell budget, auto-aim, all 15 rows approved | 2026-11-07 | SPELLS.md answers |
+| G1 ENEMIES | All 5 critters, 10 new enemies and 5 variants approved | 2026-11-07 | ENEMIES.md answers |
+| G1 PIERCE | List approved; P2 (flag a held Pierce the form doesn't use) | 2026-11-07 | PIERCE.md answers |
+| G1 WISP_GAPS | "Wider still": lane ≥ hero + 0.7 m at 4 m; Bloom 2 and 3 to about 24 shots a wave | 2026-11-07 | WISP_GAPS.md answers |

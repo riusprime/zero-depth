@@ -7,10 +7,10 @@
   prompts). Seams green at d4c0d878 (637/637). Pushed.
 - **Q1–Q30 answered.** Q8: the Laser is straight without Homing. Q13: the owner designs the other boss fights
   themselves and sends a brief; Q9–Q11 (Gatekeeper, Lantern Shade, Twins) stand. No BOSS_AUDIT.
-- **G1s waiting on the owner (row by row):** [`SPELLS.md`](SPELLS.md), [`ENEMIES.md`](ENEMIES.md),
-  [`PIERCE.md`](PIERCE.md), [`WISP_GAPS.md`](WISP_GAPS.md) (S2b).
+- **G1s approved 2026-11-07** (every row): [`SPELLS.md`](SPELLS.md), [`ENEMIES.md`](ENEMIES.md),
+  [`PIERCE.md`](PIERCE.md) (P2: the flag), [`WISP_GAPS.md`](WISP_GAPS.md) (wider: hero + 0.7 m).
 - **Next:** Wave 2 O2–O5 (hint arrow, Gatekeeper, Lantern Shade, Twins) can start from Q9–Q12; O1 (Laser) sim can
-  start, its look waits for the sketch; S2b, S6 after their G1 answers; O6–O8 after the owner's boss brief.
+  start, its look waits for the sketch; S2b and S6 are unblocked; O9–O13 (hordes, spells, enemies) are unblocked; O6–O8 after the owner's boss brief.
 - **Agents (owner, 2026-11-07):** at most 3 Sonnet (light, exact briefs) + 2 Opus at once.
 - **Local note:** `project.godot` has an uncommitted editor rewrite (it drops the `[rendering]` settings and
   `locale/fallback`). It is not the lead's change; don't stage it. `wt-seams` is the lead's clean seams worktree.
@@ -32,7 +32,7 @@
 |---|---|
 | Questions Q1–Q30 | all answered 2026-11-07 |
 | Owner's boss brief (bosses besides Gatekeeper, Shade, Twins) | waiting on the owner |
-| G1 SPELLS, PIERCE, ENEMIES, WISP_GAPS | written 2026-11-07, waiting on the owner |
+| G1 SPELLS, PIERCE, ENEMIES, WISP_GAPS | approved 2026-11-07 (row by row) |
 | G2 purpose rooms | not made |
 
 ## History
@@ -44,3 +44,5 @@
   1264.497s`, `---- All tests passed! ----`, `check_gut_log: ok (637 passing, minimum 1)`. G1s SPELLS, ENEMIES,
   PIERCE and WISP_GAPS written for the owner. The S2 shot (`build/shots/v0.9.0/nb4/1_lantern_shade_dark.jpg` in the
   agent's worktree) was not looked at; S3 and S4 have no shot (NOT YET RUN).
+- 2026-11-07: the owner went through the four G1s row by row (questions): all approved; Pierce P2; wisp lanes wider
+  (hero + 0.7 m).

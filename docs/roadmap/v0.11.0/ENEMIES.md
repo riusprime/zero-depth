@@ -61,3 +61,8 @@ All five: ~8 HP, contact damage only, packs of 15–30 inside a surge. The bodie
   before its floor.
 - Each new kind: a codex entry, strings in `en` and `es`, a code-made stand-in body until your model arrives, then VAT.
 - R6 and R10 change other enemies' attacks (eruptions, bent shots), so their forecasts call the same sim code (EI-07).
+
+## Owner answers (2026-11-07, asked one row at a time)
+- **Horde critters H1–H5:** approved, with their small movement extras (bats fly, fleas hop, crabs slide, motes float).
+- **New enemies R1–R10:** all approved as written.
+- **Variants V1–V5:** all approved as written.
