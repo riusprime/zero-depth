@@ -73,6 +73,7 @@ var _form := FormLook.new()
 var _sb_tick := -1
 var _sb_n := 0
 var _sb_pool: StarboundFx
+var _spell_pool: SpellFx  # v0.11.0 O10: the spells' looks (SpellFx), made once a spell is held
 
 
 # --- Live wiring ----------------------------------------------------------------------------------------------
@@ -100,6 +101,8 @@ func sync(reader: WorldReader) -> void:
 	_sync_starbound(reader)  # v0.10.5 W3-P10b: Detonation's bursts and Arc Jump's lines (V1-V3)
 	if _sb_pool != null:
 		_sb_pool.sync(_tick)
+	if _spell_pool != null or reader.spell_count() > 0:
+		_spell_fx().sync(reader)  # v0.11.0 O10: Frost Nova, Fireball, Sky Strike
 
 
 ## A look adds something over the v0.5 blade or dart only with an element, a cue or a damage weight.
@@ -694,3 +697,16 @@ func _sb_fx() -> StarboundFx:
 		_sb_pool = StarboundFx.new()
 		add_child(_sb_pool)
 	return _sb_pool
+
+
+## v0.11.0 O10: the spells' looks (SpellFx), made on first use.
+func _spell_fx() -> SpellFx:
+	if _spell_pool == null:
+		_spell_pool = SpellFx.new()
+		add_child(_spell_pool)
+	return _spell_pool
+
+
+## v0.11.0 O10: the spell casts drawn so far by kind (tests; {} before any).
+func spell_drawn() -> Dictionary:
+	return _spell_pool.drawn if _spell_pool != null else {}

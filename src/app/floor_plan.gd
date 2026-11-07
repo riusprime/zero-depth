@@ -178,6 +178,8 @@ func _build_world() -> void:
 	w.ability_tables = ContentCompiler.compile_abilities(repo)  # v0.4.0 BS: the four slots,
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)  # the stat cards,
 	w.starbound_tables = ContentCompiler.compile_starbound(repo)  # v0.10.5 W3-P10b: the Starbound cards (loop 2+),
+	w.spell_tables = SpellCompiler.compile(repo, w.item_tables)  # v0.11.0 O10: the spells (an element card held)
+	w.spell_rules = SpellCompiler.compile_rules(repo)
 	w.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB
 	w.legendary_table = RunContentCompiler.compile_legendary(
 		repo.get_def(&"legendary", &"boss"), w.stat_tables, w.item_tables

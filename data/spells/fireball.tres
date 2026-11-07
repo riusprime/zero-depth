@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SpellDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/spell_definition.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+name_key = &"SPELL_FIREBALL"
+desc_key = &"SPELL_FIREBALL_DESC"
+level_keys = Array[StringName]([&"SPELL_FIREBALL_LV1", &"SPELL_FIREBALL_LV2", &"SPELL_FIREBALL_LV3", &"SPELL_FIREBALL_LV4", &"SPELL_FIREBALL_LV5"])
+element = &"fire"
+element_card = &"ember_core"
+affinity = &"ember"
+weight = 10
+cooldown_s = 12.0
+reach_m = 10.0
+damage = PackedInt32Array(20, 20, 14, 14, 15)
+radius_m = PackedFloat32Array(3, 3.5, 3.5, 4, 4)
+count = PackedInt32Array(1, 1, 2, 2, 2)
+speed_mps = 9.0
+stacks = 1
+id = &"spell_fireball"

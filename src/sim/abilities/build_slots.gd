@@ -194,6 +194,8 @@ static func _apply(w: World, code: int) -> void:
 			Curses.add(w, Offers.curse_of(code))  # v0.6.0 CU: the trade-off curse, drawback and upside
 		Offers.STARBOUND:
 			Starbound.take(w, Offers.starbound_of(code))  # v0.10.5 W3-P10b: one more stack, no slot
+		Offers.SPELL:
+			Spells.take(w, Offers.spell_of(code))  # v0.11.0 O10: a spell slot, not the wand
 	sync(w)
 
 

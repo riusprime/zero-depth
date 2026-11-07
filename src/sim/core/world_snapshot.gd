@@ -67,6 +67,8 @@ const WORLD_KEPT := {
 	&"_every_index": "derived (v0.8.0 HS): 1 .. n - 1, rebuilt from the actor count",
 	&"floor_hp_bonus": "rebuilt (v0.9.0 SV): RunState.prepare derives it from the run's floor",
 	&"starbound_tables": "loadout",  # v0.10.5 W3-P10b
+	&"spell_tables": "loadout",  # v0.11.0 O10
+	&"spell_rules": "loadout",
 	&"sb_burst_pos":
 	"transient within a hit (v0.10.5 W3-P10b): Detonation's chain, empty between hits",
 	&"sb_burst_dmg": "transient within a hit (v0.10.5 W3-P10b)",
@@ -76,6 +78,8 @@ const WORLD_KEPT := {
 ## Content tables: compiled from content at setup, read-only in play (the guard test checks they don't change).
 const LOADOUT_CLASSES: Array[StringName] = [
 	&"StarboundTable",  # v0.10.5 W3-P10b: the Starbound cards (content, compiled at setup)
+	&"SpellTable",  # v0.11.0 O10: the spells and their rules (content, compiled at setup)
+	&"SpellRules",
 	&"PlayerTable",
 	&"EnemyTable",
 	&"EncounterTable",
@@ -280,6 +284,24 @@ const ADDED_SINCE_V05 := {
 		&"starbound_fx_tick",
 		&"starbound_fx_from",
 		&"starbound_fx_to",
+		&"spell_slots",  # v0.11.0 O10: the spells (an older save holds none)
+		&"spell_levels",
+		&"spell_cd",
+		&"spell_cast_tick",
+		&"spell_ball_pos",
+		&"spell_ball_to",
+		&"spell_ball_spell",
+		&"spell_ball_level",
+		&"spell_ball_root",
+		&"spell_push_id",
+		&"spell_push_dir",
+		&"spell_push_step",
+		&"spell_push_left",
+		&"spell_fx_kind",
+		&"spell_fx_tick",
+		&"spell_fx_from",
+		&"spell_fx_to",
+		&"spell_fx_size",
 	],
 	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
 	&"BossFlow":

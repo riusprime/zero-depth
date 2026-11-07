@@ -1387,6 +1387,20 @@ repeats; Fervour +2 % haste a kill, at most +60 %; Detonation 20 % of max HP, 2 
 0..1000 each, else `range`; data [200, 300]): a regular altar's chance per mille of a Starbound card, one entry a
 loop from loop 2, the last for every later loop.
 
+`SpellDefinition` (v0.11.0 O10, owner Q17-Q20; `data/spells/`, category `spells`): an elemental spell
+([`SPELLS.md`](../roadmap/v0.11.0/SPELLS.md)), a card that sits in a spell slot beside the wand and casts by itself.
+The `id` names the spell and its rule (`SpellDefinition.SPELLS`, the 15 rows in order; O10 builds `spell_frost_nova`,
+`spell_fireball`, `spell_sky_strike`, any other id is `unknown` until its rule ships). `name_key`, `desc_key`,
+`level_keys` (5, the pick card's level line), `element` (`frost`, `fire`, `lightning`, `venom`, `bleed`),
+`element_card` (the item id whose holding puts it in the offers), `affinity` (the wardrobe affinity id that raises its
+weight, or empty), `weight` (> 0), `cooldown_s` (> 0), `reach_m` (> 0), and per level (5 entries, Lv 1 first):
+`damage` (> 0), `radius_m` (> 0), `seconds` (Frost Nova's freeze), `count` (Fireball's balls, Sky Strike's bolts);
+`push_m` (Frost Nova), `jump_m` (Sky Strike), `speed_mps` (Fireball), `stacks` (the element status a hit applies).
+`SpellRulesDefinition` (id `spell_rules`, category `spell_rules`): `slots` (1..8; 4), `offer_permille` (0..1000; a
+regular altar's chance of a spell card while the run's pool has one; 350), `affinity_permille` (1000..10000; the
+weight of a spell whose affinity is the run's rune affinity; 2000), `loop1_max_level` (1..5; 3), `pack_radius_m`
+(> 0; "the densest pack"'s circle; 3). Compiled by `SpellCompiler`; rules: `Spells` (SIM_CONTRACTS §8p).
+
 `RewardsDefinition` (v0.4.0 BS) gains `altar_card_weights` and `chest_card_weights` ([ability, stat, mod]) and
 `altar_rarity_weights` and `chest_rarity_weights` ([common, rare, epic]): 3 weights ≥ 0, not all 0.
 

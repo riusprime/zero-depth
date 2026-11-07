@@ -86,6 +86,32 @@ var starbound_fx_kind := PackedInt32Array()
 var starbound_fx_tick := PackedInt32Array()
 var starbound_fx_from := PackedVector2Array()
 var starbound_fx_to := PackedVector2Array()
+## v0.11.0 O10 (Spells; owner Q17-Q20): the compiled spells and their rules (loadout); the spell slots (spell indices,
+## pick order), their levels and cooldowns (ticks left) and the tick each last cast (run-long but the cooldowns,
+## RunCarry); the Fireballs in flight (position, locked point, spell, level, root) and Frost Nova's pushes (actor id,
+## direction, metres a tick, ticks left). Hashed once a spell was taken.
+var spell_tables: Array[SpellTable] = []
+var spell_rules: SpellRules
+var spell_slots := PackedInt32Array()
+var spell_levels := PackedInt32Array()
+var spell_cd := PackedInt32Array()
+var spell_cast_tick := PackedInt32Array()
+var spell_ball_pos := PackedVector2Array()
+var spell_ball_to := PackedVector2Array()
+var spell_ball_spell := PackedInt32Array()
+var spell_ball_level := PackedInt32Array()
+var spell_ball_root := PackedInt32Array()
+var spell_push_id := PackedInt32Array()
+var spell_push_dir := PackedVector2Array()
+var spell_push_step := PackedFloat32Array()
+var spell_push_left := PackedInt32Array()
+## The view's recent casts (Spells.FX_*: kind, tick, from, to, radius m), at most Spells.FX_MAX: view only, never
+## hashed.
+var spell_fx_kind := PackedInt32Array()
+var spell_fx_tick := PackedInt32Array()
+var spell_fx_from := PackedVector2Array()
+var spell_fx_to := PackedVector2Array()
+var spell_fx_size := PackedFloat32Array()
 ## Detonation's bursts waiting within one kill's chain (transient within a hit: empty between hits).
 var sb_burst_pos := PackedVector2Array()
 var sb_burst_dmg := PackedInt32Array()
@@ -851,6 +877,8 @@ func step(frame: InputFrame) -> void:
 		Affinities.dash_shock(self, before_move)  # v0.9.0 RB: A2 Storm's crackle
 	Abilities.advance(self)  # v0.4.0 BS: auto abilities, the blink shock, stat regen.
 	Starfall.advance(self)  # v0.10.5 W3-P10e: the meteors due land
+	if Spells.touched(self):
+		Spells.advance(self)  # v0.11.0 O10: the spells cast by themselves, the Fireballs fly
 	if pp != null:
 		pp.end(&"dash_abilities")
 		pp.begin(&"statuses")
@@ -1511,6 +1539,8 @@ func state_hash() -> String:
 		intensity.hash_into(h)
 	if not starbound.is_empty():  # v0.10.5 W3-P10b: only once a Starbound card was taken (loop 2+)
 		Starbound.hash_into(self, h)
+	if Spells.touched(self):  # v0.11.0 O10: only once a spell was taken
+		Spells.hash_into(self, h)
 	if not pairs_seen.is_empty():  # v0.10.5 O15: only once a duo fired
 		h.add_ints(pairs_seen)
 	if not surge_at.is_empty():  # v0.11.0 O9: only once a floor's surges were planned

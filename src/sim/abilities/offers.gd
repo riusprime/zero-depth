@@ -22,11 +22,14 @@ const STAT_BASE := 2000
 const CURSE_BASE := 3000
 ## v0.10.5 W3-P10b (owner W7): STARBOUND_BASE + k, Starbound card k (Starbound: offered from loop 2 only).
 const STARBOUND_BASE := 4000
+## v0.11.0 O10 (owner Q17): SPELL_BASE + k, spell k (Spells: offered while its element card is held).
+const SPELL_BASE := 5000
 const MOD := 0
 const ABILITY := 1
 const STAT := 2
 const CURSE := 3
 const STARBOUND := 4
+const SPELL := 5
 ## A stat card's rarity: epic (v0.5.0 RT's epic altar offers only these).
 const EPIC := 2
 ## v0.5.5 AR (X1b): the boss-only legendary rarity (BossReward's altar offers only legendary cards).
@@ -41,6 +44,8 @@ static func enabled(w: World) -> bool:
 
 
 static func type_of(code: int) -> int:
+	if code >= SPELL_BASE:
+		return SPELL
 	if code >= STARBOUND_BASE:
 		return STARBOUND
 	if code >= CURSE_BASE:
@@ -78,6 +83,15 @@ static func starbound_of(code: int) -> int:
 	return code - STARBOUND_BASE
 
 
+## v0.11.0 O10: the card for spell k, and back.
+static func spell_code(k: int) -> int:
+	return SPELL_BASE + k
+
+
+static func spell_of(code: int) -> int:
+	return code - SPELL_BASE
+
+
 static func ability_of(code: int) -> int:
 	return code - ABILITY_BASE
 
@@ -103,7 +117,8 @@ static func roll(w: World, i: int) -> PackedInt32Array:
 	else:
 		out = LootPacing.guarantee(w, draw(w, false, w.reward_table.offer_size))
 		out = LootPacing.jackpot(w, i, out)
-		return Starbound.into_offer(w, i, out)  # v0.10.5 W3-P10b: loop 2+ only, its own stream
+		out = Starbound.into_offer(w, i, out)  # v0.10.5 W3-P10b: loop 2+ only, its own stream
+		return Spells.into_offer(w, i, out)  # v0.11.0 O10: its element card held, its own stream
 	return LootPacing.jackpot(w, i, out)
 
 
@@ -386,6 +401,28 @@ static func info(w: World, code: int) -> Dictionary:
 				"amount": sb.amount if sb != null else 0,
 				"stacks": Starbound.picks(w, k),
 			}
+		SPELL:  # v0.11.0 O10: a spell card: its level after the pick, the spell it replaces when the slots are full
+			var k := spell_of(code)
+			var sp := Spells.table(w, k)
+			var lv := Spells.level_after(w, k)
+			var r := Spells.replaces(w, k)
+			return {
+				"type": SPELL,
+				"id": sp.id if sp != null else &"",
+				"kind": k,
+				"name_key": sp.name_key if sp != null else &"",
+				"desc_key": sp.desc_key if sp != null else &"",
+				"level_key":
+				sp.level_keys[lv - 1] if sp != null and lv - 1 < sp.level_keys.size() else &"",
+				"rarity": 1,
+				"level": lv,
+				"held_level": Spells.level(w, k),
+				"max_level": Spells.cap(w),
+				"element": sp.element if sp != null else 0,
+				"amount": 0,
+				"replaces": spell_code(w.spell_slots[r]) if r >= 0 else -1,
+				"replaces_name": _spell_name(w, w.spell_slots[r]) if r >= 0 else &"",
+			}
 		CURSE:  # v0.6.0 CU: a trade-off curse card, rare-level: its face is the upside (the panel adds the drawback)
 			var ct := w.ev.curses[curse_of(code)]
 			return {
@@ -431,3 +468,9 @@ static func item_keys(w: World, it: ItemTable) -> Array[StringName]:
 	if it.name_key_gun != &"" and PlayerBuild.has_gun(w) and not PlayerBuild.has_blade(w):
 		return [it.name_key_gun, it.desc_key_gun]
 	return [it.name_key, it.desc_key]
+
+
+## v0.11.0 O10: spell k's name key (&"" for none).
+static func _spell_name(w: World, k: int) -> StringName:
+	var t := Spells.table(w, k)
+	return t.name_key if t != null else &""
