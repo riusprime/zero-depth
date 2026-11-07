@@ -332,3 +332,208 @@ identical in run 1 and run 2 (`diff` of the untouched rows: no difference).
   share of them (raw output above); they were reported, not judged.
 - Frost Nova's Lv 5 shatter depends on how often the build freezes (with `frost_core` the orbs freeze one target about
   104 times a minute): run 2 reads 2.62 on the orbs, 1.36 on the Laser and 2.21 on the Glaive.
+
+---
+
+# O12b: the spells against the wand alone, with moving and dying enemies (owner E5-b, measure only)
+
+- **Status:** RUN (one run; no tuning in this step; no data file changed)
+- **Build:** base `f3267563` on `v0110-o12b`, working tree with this step's `scripts/balance/spells_dps.gd` (committed in
+  the Step O12b commit). Godot `4.7.2.stable.official.ed1daf0bf`; Windows 11 Pro 10.0.26200 (owner's PC, i7-10700K)
+- **Date:** 2026-11-07
+- **Who ran it:** agent
+- **What else ran:** 8 processes of this script side by side (4 wands x 2 parts, one `APPDATA` each), 21:25:32 to
+  21:28:32; before them an import and the 4 `--part=effects` runs. Other agents may have been working on the same PC;
+  no timing is used here.
+
+## Command
+```
+godot --headless --path . -s scripts/balance/spells_dps.gd -- --wand=<orbs|laser|glaive|blade> --part=effects --out=balance/o12b
+godot --headless --path . -s scripts/balance/spells_dps.gd -- --wand=<orbs|laser|glaive|blade> --part=spells_b --out=balance/o12b
+godot --headless --path . -s scripts/balance/spells_dps.gd -- --wand=<orbs|laser|glaive|blade> --part=builds_b --out=balance/o12b
+```
+Raw output: `build/balance/o12b/spells_dps_<wand>_<part>.txt`; the band method `build/balance/o12b/bands.txt` (written
+before the `spells_b` / `builds_b` runs started).
+
+## What changed in the measure
+- **Wand only.** The `effects` part lists the player's non-spell damage on the dummies by effect id, for the plain wand
+  with no element card and with each card alone. The wand's own hits carry an empty effect id. Two element cards add
+  direct damage under their own id: **`storm_core`** (Storm Core's jumps: orbs FAR line 1600, dying 1544) and
+  **`ember_core`** (Ember Core's burst on a kill: orbs dying 42, Laser dying 2228). Those two ids are left out of
+  "wand only". The others (`ember_edge`, `venom`, `bleed`) are DoT, already outside O12's column. Frost Core adds no
+  direct damage.
+- **Damage = HP taken** (`amount_applied`): equal to the amount on the 1 000 000 HP dummies, and no overkill on the
+  dying ones. Check: on the orbs, every spell's summed old-scene damage at Lv 1 and Lv 5 and every old-scene "wand all"
+  cell match O12 run 2.
+- **New scenes.** The world's dummy steering, seeded: each dummy walks 2.4 m/s toward the hero plus the world's ±3 m
+  jitter re-rolled from `rng_ai`, held 2.0 m off the hero (Blade 1.0 m). The hero aims at the nearest dummy each tick
+  and can't die (`player_hp_floor`); the dummies don't shoot. Steered dummies stand in for enemy AI, so that nothing
+  attacks and nothing else differs between runs.
+  - **moving**: six 1 000 000 HP dummies (they live the whole window) start on a 4 m ring. The hero walks a circle at
+    half stick, one lap per 6 s, so the pack chases and circles it and Toxic Cloud trails.
+  - **dying**: 144 HP dummies (base 40, an arc caster's or mine layer's, x floor 5's `enemy_hp_floor_permille` 3610 of
+    `five_floors`, tier 0) in waves of 5 every 3 s on a 7 m ring (turned 0.7 rad a wave), at most 10 alive. The hero
+    stands. Kills are reported.
+- O12's scenes are kept. Every spell now has five scenes (its home three + moving + dying), every build eight.
+
+## Band method (as fixed in `bands.txt` before the run)
+| Metric | Band | Judged reading | Also reported |
+|---|---|---|---|
+| Lv 1 share (spell / wand only), plain orbs | 10–20 % | mean of the 5 per-scene shares | old 3, new 2 |
+| Lv 5 / Lv 1, plain orbs | 2.0–3.0 | summed spell dmg over the 5 scenes, Lv 5 / Lv 1 | old 3, new 2 |
+| 4-spell builds at Lv 1, plain orbs | +40 … +80 % | mean of the 8 per-scene added shares | old 6, new 2 |
+| Laser, Glaive, Blade | — | reported, not judged | — |
+
+## Raw output excerpts (plain orbs)
+`build/balance/o12b/spells_dps_orbs_spells_b.txt`, the summary lines:
+```
+sum | spell | Lv | mean share old3 | mean share new2 | mean share all5 | spell dmg old3/new2/all5 | Lv5/Lv1 old3 | Lv5/Lv1 new2 | Lv5/Lv1 all5
+sum | spell_blizzard | 1 | 0.147 | 0.235 | 0.182 | 880/936/1816 | - | - | -
+sum | spell_blizzard | 5 | 0.330 | 0.587 | 0.433 | 1980/2328/4308 | 2.25 | 2.49 | 2.37
+sum | spell_frost_nova | 1 | 0.183 | 0.277 | 0.221 | 1100/1103/2203 | - | - | -
+sum | spell_frost_nova | 5 | 0.480 | 0.619 | 0.536 | 2880/2457/5337 | 2.62 | 2.23 | 2.42
+sum | spell_ice_lances | 1 | 0.141 | 0.180 | 0.156 | 845/715/1560 | - | - | -
+sum | spell_ice_lances | 5 | 0.245 | 0.413 | 0.312 | 1470/1649/3119 | 1.74 | 2.31 | 2.00
+sum | spell_fireball | 1 | 0.184 | 0.211 | 0.195 | 1100/840/1940 | - | - | -
+sum | spell_fireball | 5 | 0.459 | 0.551 | 0.496 | 2750/2189/4939 | 2.50 | 2.61 | 2.55
+sum | spell_burning_ground | 1 | 0.200 | 0.269 | 0.227 | 1200/1054/2254 | - | - | -
+sum | spell_burning_ground | 5 | 0.528 | 0.879 | 0.669 | 3168/3463/6631 | 2.64 | 3.29 | 2.94
+sum | spell_meteor | 1 | 0.117 | 0.190 | 0.147 | 704/758/1462 | - | - | -
+sum | spell_meteor | 5 | 0.264 | 0.416 | 0.325 | 1584/1647/3231 | 2.25 | 2.17 | 2.21
+sum | spell_sky_strike | 1 | 0.125 | 0.138 | 0.130 | 750/550/1300 | - | - | -
+sum | spell_sky_strike | 5 | 0.300 | 0.324 | 0.310 | 1800/1286/3086 | 2.40 | 2.34 | 2.37
+sum | spell_ball_lightning | 1 | 0.121 | 0.106 | 0.115 | 725/420/1145 | - | - | -
+sum | spell_ball_lightning | 5 | 0.284 | 0.236 | 0.265 | 1700/939/2639 | 2.34 | 2.24 | 2.30
+sum | spell_static_field | 1 | 0.188 | 0.262 | 0.218 | 1128/1033/2161 | - | - | -
+sum | spell_static_field | 5 | 0.440 | 0.715 | 0.550 | 2640/2819/5459 | 2.34 | 2.73 | 2.53
+sum | spell_venom_orb | 1 | 0.184 | 0.182 | 0.183 | 1100/722/1822 | - | - | -
+sum | spell_venom_orb | 5 | 0.514 | 0.709 | 0.592 | 3080/2787/5867 | 2.80 | 3.86 | 3.22
+sum | spell_toxic_cloud | 1 | 0.113 | 0.174 | 0.137 | 675/689/1364 | - | - | -
+sum | spell_toxic_cloud | 5 | 0.500 | 0.515 | 0.506 | 3000/2041/5041 | 4.44 | 2.96 | 3.70
+sum | spell_spitter_vine | 1 | 0.175 | 0.177 | 0.176 | 1050/695/1745 | - | - | -
+sum | spell_spitter_vine | 5 | 0.450 | 0.571 | 0.499 | 2700/2255/4955 | 2.57 | 3.24 | 2.84
+sum | spell_blood_thorns | 1 | 0.150 | 0.342 | 0.227 | 900/1360/2260 | - | - | -
+sum | spell_blood_thorns | 5 | 0.360 | 0.748 | 0.515 | 2160/2968/5128 | 2.40 | 2.18 | 2.27
+sum | spell_hemorrhage | 1 | 0.176 | 0.181 | 0.178 | 1056/719/1775 | - | - | -
+sum | spell_hemorrhage | 5 | 0.319 | 0.501 | 0.392 | 1914/1986/3900 | 1.81 | 2.76 | 2.20
+sum | spell_leech | 1 | 0.060 | 0.222 | 0.125 | 360/882/1242 | - | - | -
+sum | spell_leech | 5 | 0.179 | 0.486 | 0.302 | 1071/1940/3011 | 2.98 | 2.20 | 2.42
+```
+Some per-scene rows (spell dmg | wand all | wand only | share | kills):
+```
+row | spell_sky_strike | 1 | far single | 150 | 1995 | 1995 | 0.075 | 0
+row | spell_sky_strike | 1 | far line | 300 | 3600 | 2000 | 0.150 | 0
+row | spell_sky_strike | 1 | far pack | 300 | 3591 | 1995 | 0.150 | 0
+row | spell_sky_strike | 1 | moving | 300 | 3592 | 2000 | 0.150 | 0
+row | spell_sky_strike | 1 | dying | 250 | 3512 | 1973 | 0.127 | 23
+row | spell_ball_lightning | 1 | moving | 245 | 3592 | 2000 | 0.123 | 0
+row | spell_ball_lightning | 1 | dying | 175 | 3518 | 1975 | 0.089 | 20
+row | spell_leech | 1 | moving | 426 | 2000 | 2000 | 0.213 | 0
+row | spell_leech | 1 | dying | 456 | 1972 | 1972 | 0.231 | 29
+row | spell_venom_orb | 1 | dying | 232 | 1957 | 1957 | 0.119 | 67
+row | spell_venom_orb | 5 | dying | 1359 | 1928 | 1928 | 0.705 | 72
+row | spell_ice_lances | 5 | dying | 669 | 1988 | 1988 | 0.337 | 14
+```
+`build/balance/o12b/spells_dps_orbs_builds_b.txt`:
+```
+build | n | added share per scene (far single, far line, far pack, near single, near line, near pack, moving, dying) | mean old6 | mean new2 | mean all8 | spells dmg | wand all | wand only | kills dying
+(none) | 0 | 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 | 0.000 | 0.000 | 0.000 | 0 | 15981 | 15981 | 9
+fireball | 1 | 0.050 0.250 0.251 0.050 0.250 0.250 0.250 0.173 | 0.183 | 0.211 | 0.190 | 3040 | 16022 | 15958 | 36
+fireball+sky_strike | 2 | 0.125 0.400 0.401 0.125 0.400 0.400 0.400 0.303 | 0.309 | 0.351 | 0.319 | 5098 | 25679 | 15966 | 47
+fireball+sky_strike+frost_nova | 3 | 0.125 0.500 0.401 0.175 0.650 0.650 0.600 0.498 | 0.417 | 0.549 | 0.450 | 7185 | 25716 | 15966 | 63
+fireball+sky_strike+frost_nova+venom_orb | 4 | 0.175 0.750 0.652 0.225 0.900 0.900 0.843 0.371 | 0.600 | 0.607 | 0.602 | 9602 | 25369 | 15919 | 92
+blizzard+meteor+ball_lightning+hemorrhage | 4 | 0.433 0.670 0.581 0.432 0.621 0.580 0.701 0.488 | 0.553 | 0.594 | 0.563 | 8985 | 25774 | 15943 | 71
+ice_lances+burning_ground+static_field+spitter_vine | 4 | 0.208 0.608 0.273 0.270 0.948 0.894 0.705 0.475 | 0.533 | 0.590 | 0.547 | 8714 | 25368 | 15901 | 93
+toxic_cloud+blood_thorns+leech+fireball | 4 | 0.160 0.509 0.802 0.160 0.976 0.800 1.152 0.780 | 0.568 | 0.966 | 0.667 | 10602 | 15933 | 15898 | 82
+```
+
+## Result (plain orbs, judged)
+
+| Spell | Lv 1 O12 run 2 (old 3, wand all) | old 3, wand only | new 2 | **all 5 (judged)** | In 10–20 %? | Lv5/Lv1 O12 run 2 | new 2 | **all 5 (judged)** | In 2.0–3.0? |
+|---|---|---|---|---|---|---|---|---|---|
+| Blizzard | 14.7 % | 14.7 % | 23.5 % | **18.2 %** | yes | 2.25 | 2.49 | **2.37** | yes |
+| Frost Nova | 18.3 % | 18.3 % | 27.7 % | **22.1 %** | **no (over)** | 2.62 | 2.23 | **2.42** | yes |
+| Ice Lances | 14.1 % | 14.1 % | 18.0 % | **15.6 %** | yes | 1.74 | 2.31 | **2.00** (3119 / 1560 = 1.9994) | **no (under by 0.0006)** |
+| Fireball | 18.4 % | 18.4 % | 21.1 % | **19.5 %** | yes | 2.50 | 2.61 | **2.55** | yes |
+| Burning Ground | 20.0 % | 20.0 % | 26.9 % | **22.7 %** | **no (over)** | 2.64 | 3.29 | **2.94** | yes |
+| Meteor | 11.7 % | 11.7 % | 19.0 % | **14.7 %** | yes | 2.25 | 2.17 | **2.21** | yes |
+| Sky Strike | 8.1 % | 12.5 % | 13.8 % | **13.0 %** | yes | 2.40 | 2.34 | **2.37** | yes |
+| Ball Lightning | 8.2 % | 12.1 % | 10.6 % | **11.5 %** | yes | 2.34 | 2.24 | **2.30** | yes |
+| Static Field | 10.5 % | 18.8 % | 26.2 % | **21.8 %** | **no (over)** | 2.34 | 2.73 | **2.53** | yes |
+| Venom Orb | 18.4 % | 18.4 % | 18.2 % | **18.3 %** | yes | 2.80 | 3.86 | **3.22** | **no (over)** |
+| Toxic Cloud | 11.3 % | 11.3 % | 17.4 % | **13.7 %** | yes | 4.44 | 2.96 | **3.70** | **no (over)** |
+| Spitter Vine | 17.5 % | 17.5 % | 17.7 % | **17.6 %** | yes | 2.57 | 3.24 | **2.84** | yes |
+| Blood Thorns | 15.0 % | 15.0 % | 34.2 % | **22.7 %** | **no (over)** | 2.40 | 2.18 | **2.27** | yes |
+| Hemorrhage | 17.6 % | 17.6 % | 18.1 % | **17.8 %** | yes | 1.81 | 2.76 | **2.20** | yes |
+| Leech | 6.0 % | 6.0 % | 22.2 % | **12.5 %** | yes | 2.98 | 2.20 | **2.42** | yes |
+
+On the old scenes only Sky Strike, Ball Lightning and Static Field change between "wand all" and "wand only": they hold
+Storm Core, whose jumps were in O12's column. Ember Core's on-kill burst only happens where dummies die.
+
+Builds at Lv 1, plain orbs (added share = spells / wand only):
+
+| Build | n | O12 run 2 (old 6, wand all) | old 6, wand only | new 2 | **all 8 (judged)** | In +40…+80 %? |
+|---|---|---|---|---|---|---|
+| (none) | 0 | 0.0 % | 0.0 % | 0.0 % | 0.0 % | — |
+| Fireball | 1 | 18.3 % | 18.3 % | 21.1 % | 19.0 % | — |
+| + Sky Strike | 2 | 19.0 % | 30.9 % | 35.1 % | 31.9 % | — |
+| + Frost Nova | 3 | 25.4 % | 41.7 % | 54.9 % | 45.0 % | — |
+| + Venom Orb | 4 | 36.3 % | 60.0 % | 60.7 % | **60.2 %** | yes |
+| Blizzard + Meteor + Ball Lightning + Hemorrhage | 4 | 37.1 % | 55.3 % | 59.4 % | **56.3 %** | yes |
+| Ice Lances + Burning Ground + Static Field + Spitter Vine | 4 | 33.2 % | 53.3 % | 59.0 % | **54.7 %** | yes |
+| Toxic Cloud + Blood Thorns + Leech + Fireball | 4 | 56.8 % | 56.8 % | 96.6 % | **66.7 %** | yes |
+
+### What is inside, what misses (judged readings)
+- **Inside:** all four 4-spell builds (60.2 / 56.3 / 54.7 / 66.7 %). Lv 1 share: 11 of 15 (Blizzard, Ice Lances,
+  Fireball, Meteor, Sky Strike, Ball Lightning, Venom Orb, Toxic Cloud, Spitter Vine, Hemorrhage, Leech). Lv 5 / Lv 1:
+  12 of 15.
+- **Misses, Lv 1 share over 20 %:** Frost Nova 22.1 %, Burning Ground 22.7 %, Static Field 21.8 %, Blood Thorns
+  22.7 %. All four are NEAR spells; their new-scene means are 27.7 / 26.9 / 26.2 / 34.2 % (the pack, held 2 m off the
+  hero, sits inside their reach).
+- **Misses, Lv 5 / Lv 1:** Venom Orb 3.22 (its dying share goes 0.119 at Lv 1 → 0.705 at Lv 5: the Lv 5 pools a kill
+  leaves), Toxic Cloud 3.70 (the old scenes still read 4.44; the new two 2.96), Ice Lances 1.9994 (prints as 2.00 but
+  is under 2.0).
+- No tuning was done (the owner's rule for this step). The misses are reported for the lead and the owner.
+
+## Laser, Glaive, Blade (reported, not judged)
+From `build/balance/o12b/spells_dps_<wand>_spells_b.txt` (sum lines, all 5) and `_builds_b.txt`:
+
+| Spell | Laser Lv 1 | Laser Lv5/Lv1 | Glaive Lv 1 | Glaive Lv5/Lv1 | Blade Lv 1 | Blade Lv5/Lv1 |
+|---|---|---|---|---|---|---|
+| Blizzard | 7.9 % | 2.47 | 8.4 % | 2.33 | 18.3 % | 2.22 |
+| Frost Nova | 10.3 % | 1.40 | 10.9 % | 2.05 | 11.7 % | 2.59 |
+| Ice Lances | 6.3 % | 1.86 | 5.8 % | 1.99 | 21.0 % | 1.90 |
+| Fireball | 9.3 % | 2.44 | 9.6 % | 2.51 | 21.7 % | 2.39 |
+| Burning Ground | 11.9 % | 2.99 | 11.5 % | 2.96 | 11.3 % | 3.30 |
+| Meteor | 7.1 % | 2.10 | 6.8 % | 2.15 | 15.3 % | 2.01 |
+| Sky Strike | 6.4 % | 2.40 | 6.7 % | 2.41 | 14.0 % | 2.35 |
+| Ball Lightning | 4.9 % | 2.39 | 5.9 % | 2.26 | 9.5 % | 2.17 |
+| Static Field | 14.2 % | 2.11 | 13.4 % | 2.28 | 8.1 % | 2.09 |
+| Venom Orb | 9.6 % | 3.11 | 9.1 % | 3.34 | 17.9 % | 3.31 |
+| Toxic Cloud | 5.3 % | 3.61 | 3.5 % | 3.75 | 26.0 % | 1.76 |
+| Spitter Vine | 10.1 % | 2.87 | 10.3 % | 2.80 | 17.0 % | 3.47 |
+| Blood Thorns | 10.4 % | 2.48 | 11.1 % | 2.33 | 23.2 % | 2.62 |
+| Hemorrhage | 8.4 % | 1.97 | 10.5 % | 2.05 | 14.4 % | 2.09 |
+| Leech | 3.5 % | 2.97 | 6.6 % | 2.00 | 10.6 % | 1.89 |
+
+| 4-spell build (Lv 1; mean all 8, the Blade all 5) | Laser | Glaive | Blade |
+|---|---|---|---|
+| Fireball + Sky Strike + Frost Nova + Venom Orb | 29.5 % | 35.1 % | 51.7 % |
+| Blizzard + Meteor + Ball Lightning + Hemorrhage | 27.5 % | 33.7 % | 57.3 % |
+| Ice Lances + Burning Ground + Static Field + Spitter Vine | 29.1 % | 32.7 % | 59.1 % |
+| Toxic Cloud + Blood Thorns + Leech + Fireball | 33.5 % | 35.5 % | 101.2 % |
+
+The Blade's new-scene readings are not like-for-like. In the moving scene the Blade hits little while the hero walks
+its loop (the Fireball Lv 1 rows: wand only 551 in moving, 6600 in dying), so its moving shares are large (Fireball
+0.907).
+
+## Interpretation
+- Counting the wand alone moves the two Storm spells into the band (Sky Strike 8.1 → 13.0 %, Ball Lightning
+  8.2 → 11.5 %). It also moves the orbs' 4-spell builds from 33–37 % to 53–60 % on the old scenes alone.
+- The new scenes raise most shares. The moving pack crowds the area and NEAR spells, while the orbs hit one target at a
+  time (wand only 2000 in every moving row and 1921–1991 in every dying row). Leech reads 22.2 % in the new scenes
+  against 6.0 % on the old ones. The kills raise Venom Orb's and Ice Lances' Lv 5 / Lv 1 (new 3.86 and 2.31).
+- The dying stream is bounded by the enemies the window spawns and by kills: a spell that kills early takes HP the
+  wand would have taken. On the orbs the effect on the wand column is small (the 1921–1991 range above).
+- What this doesn't measure: real enemy AI (attacks, dodges, ranged kinds), crit and the damage stat, the dash
+  (Static Field Lv 5), rooms with walls.
