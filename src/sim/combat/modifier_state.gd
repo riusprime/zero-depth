@@ -86,14 +86,11 @@ var rune_hit_foe := PackedInt32Array()
 var rune_push_id := PackedInt32Array()
 var rune_push_dir := PackedVector2Array()
 var rune_push_left := PackedInt32Array()
-## v0.9.5 FC1 (LaserMods): the Laser cards' state. lz_aim: the beam's own aim while Homing or Big Shot lag it (-1: the
-## player's); lz_hold: ticks the beam has been held (Rapid Fire's ramp); lz_targets: Homing's actor ids, nearest first;
+## v0.9.5 FC1 (LaserMods): the Laser cards' state (v0.11.0 O1: the lance plans Homing at each shot and nothing lags or
+## ramps, so the aim, hold and target fields are gone);
 ## lz_mine_*: the mines alive (place, tick dropped, damage) and the tick the next drops (0: not yet set);
 ## lz_echo_*: Echo's waiting strikes, one row a main leg (tick due, from, to, width, damage). Hashed only while any is
 ## set (older digests unchanged).
-var lz_aim := -1
-var lz_hold := 0
-var lz_targets := PackedInt32Array()
 var lz_mine_next := 0
 var lz_mine_at := PackedVector2Array()
 var lz_mine_born := PackedInt32Array()
@@ -103,6 +100,13 @@ var lz_echo_from := PackedVector2Array()
 var lz_echo_to := PackedVector2Array()
 var lz_echo_r := PackedFloat32Array()
 var lz_echo_dmg := PackedInt32Array()
+## v0.11.0 O1 (LaserMods.record; view-only, not hashed, like cast_*: they decide nothing): the last lance's paths for
+## its glow (WorldReader.beams): the tick it fired (-1: none), each path's from and to, and 4 ints a path (kind, lane,
+## width per mille, flags).
+var lz_shot_tick := -1
+var lz_shot_from := PackedVector2Array()
+var lz_shot_to := PackedVector2Array()
+var lz_shot_row := PackedInt32Array()
 ## v0.9.5 FC2 (BombMods): the Bomb cards' rows, one a bomb waiting or a ring growing (kind, place, tick due, tick born,
 ## blast in mm, damage, aim, root, id) and Ring's hits (id * 65536 + actor). Hashed only while any row is set (older
 ## digests unchanged).
@@ -324,21 +328,11 @@ func touched() -> bool:
 
 ## v0.9.5 FC1: a Laser card's state is set.
 func lz_touched() -> bool:
-	return (
-		lz_aim != -1
-		or lz_hold != 0
-		or lz_mine_next != 0
-		or not lz_targets.is_empty()
-		or not lz_mine_at.is_empty()
-		or not lz_echo_due.is_empty()
-	)
+	return lz_mine_next != 0 or not lz_mine_at.is_empty() or not lz_echo_due.is_empty()
 
 
 func lz_clear() -> void:
-	lz_aim = -1
-	lz_hold = 0
 	lz_mine_next = 0
-	lz_targets = PackedInt32Array()
 	lz_mine_at = PackedVector2Array()
 	lz_mine_born = PackedInt32Array()
 	lz_mine_dmg = PackedInt32Array()
@@ -347,6 +341,14 @@ func lz_clear() -> void:
 	lz_echo_to = PackedVector2Array()
 	lz_echo_r = PackedFloat32Array()
 	lz_echo_dmg = PackedInt32Array()
+
+
+## v0.11.0 O1: drops the view's record of the last lance.
+func lz_shot_clear() -> void:
+	lz_shot_tick = -1
+	lz_shot_from = PackedVector2Array()
+	lz_shot_to = PackedVector2Array()
+	lz_shot_row = PackedInt32Array()
 
 
 ## v0.9.5 FC2: a Bomb card's row is set.
@@ -596,11 +598,8 @@ func hash_into(h: StateHasher) -> void:
 			h.add_f32(d.y)
 	if lz_touched():  # v0.9.5 FC1: only while a Laser card's state is set
 		h.add_string("lz")
-		for v in [lz_aim, lz_hold, lz_mine_next]:
-			h.add_int(v)
-		for arr: PackedInt32Array in [
-			lz_targets, lz_mine_born, lz_mine_dmg, lz_echo_due, lz_echo_dmg
-		]:
+		h.add_int(lz_mine_next)
+		for arr: PackedInt32Array in [lz_mine_born, lz_mine_dmg, lz_echo_due, lz_echo_dmg]:
 			h.add_ints(arr)
 		h.add_f32s(lz_echo_r)
 		for arr: PackedVector2Array in [lz_mine_at, lz_echo_from, lz_echo_to]:

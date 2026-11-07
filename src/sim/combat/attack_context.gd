@@ -48,6 +48,9 @@ var lance_full := false
 ## v0.10.5 W3-P10k: a Starbound Echo Cast repeat (ModifierRuntime.queue_again): with no ShotCap room its damage merges
 ## into the next own shot (World.starbound_echo_carry) instead of being dropped.
 var echo_cast := false
+## v0.11.0 O1 (owner Q5): each hit of this launch feeds this many hits' worth of its statuses (the Lance-Laser's
+## lance_feed, 3; SecondaryProc.of_ctx). Its hooks' children (child()) feed one.
+var feed_x := 1
 var on_landed := Callable()
 var on_ray := Callable()
 ## v0.10.5 W3-O1: each travelling ring this launch lays (WandRings.launch): on_ring(from, to, start_r, end_r), where it

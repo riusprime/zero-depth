@@ -223,10 +223,11 @@ func test_a_live_orb_carries_its_elements_accent_and_none_at_low() -> void:
 func test_the_lasers_impact_plays_its_extra_twice_a_second() -> void:
 	var v: LaserView = add_child_autofree(LaserView.new())
 	var w := W.world(&"gun", [&"gun_laser", &"ember_core"], [[Vector2(4.0, 0.0), 100000]])
+	w.add_wall_now(Obb.make(Vector2(6.0, 0.0), Vector2(0.2, 2.0), 0))  # v0.11.0 O1: a wall stops the lance
 	var r := WorldReader.new(w)
 	W.run(w, 2, 0, W.S)
 	v.sync(r)
-	assert_gt(v.impacts, 0, "the beam hits")
+	assert_gt(v.impacts, 0, "the lance ends on the wall")
 	_layer.begin(3.0)
 	v.draw_fx(_layer)
 	assert_gt(_layer.used(&"ember"), 0, "Fire's embers at the beam's end")

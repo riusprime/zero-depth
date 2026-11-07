@@ -17,6 +17,9 @@ const INTERACT_RUNE_PILLAR := Interactables.Kind.RUNE_PILLAR  # v0.9.0 RA
 const BREAKABLE_CRATE := Breakables.Kind.CRATE
 const BREAKABLE_URN := Breakables.Kind.URN
 const BREAKABLE_BARREL := Breakables.Kind.BARREL
+## v0.11.0 O1 (owner Q7: "drawn fast (~0.15 s), glow fading ~0.5 s"): how long beams() keeps the last lance for the
+## view (presentation timing: the lance hit on its firing tick).
+const LANCE_GLOW_TICKS := 30
 const BREAKABLE_EXPLOSIVE := Breakables.Kind.EXPLOSIVE
 ## v0.9.0 TD: the timed door's states (timed_door_state).
 const TIMED_SHUT := TimedDoor.State.SHUT
@@ -472,12 +475,42 @@ func shooting() -> bool:
 	return PlayerKit.shooting(_w)
 
 
-## v0.9.0 LZ (owner Q8): the Laser's beams now, empty while it isn't firing: Laser.trace from the hero along the aim,
-## the geometry the tick's hits use (EI-07). Each {from, to, hits (actor indices), at (their points), wall}.
+## v0.9.0 LZ (owner Q8): the Laser's paths. v0.11.0 O1 (Q7: instant, drawn fast, a glow fading): the paths of the last
+## lance, as the sim planned and hit them on its firing tick (LaserMods.record, EI-07), for LANCE_GLOW_TICKS after it;
+## empty after that or when the Gun's shot is no Laser. Each {from, to, kind, lane, wmul, impact, end, wall, hits
+## (empty: the shot's hits are its DAMAGE events), age (ticks since the shot), glow (LANCE_GLOW_TICKS)}; a Ring also
+## {circle}.
 func beams() -> Array[Dictionary]:
-	if not Laser.firing(_w):
-		return []
-	return Laser.trace(_w, Modifiers.bolt(_w), _w.player_pos(), _w.aim_angle)
+	var s := _w.mx
+	var out: Array[Dictionary] = []
+	if s.lz_shot_tick < 0 or not Laser.active(_w):
+		return out
+	var age := _w.tick - s.lz_shot_tick
+	if age >= LANCE_GLOW_TICKS:
+		return out
+	var ring := LaserMods.mm(LaserMods.param(_w, "ring_mm"))
+	for k in s.lz_shot_from.size():
+		var kind: StringName = LaserMods.KINDS[clampi(
+			s.lz_shot_row[k * 4], 0, LaserMods.KINDS.size() - 1
+		)]
+		var f := s.lz_shot_row[k * 4 + 3]
+		var b := {
+			"from": s.lz_shot_from[k],
+			"to": s.lz_shot_to[k],
+			"kind": kind,
+			"lane": s.lz_shot_row[k * 4 + 1],
+			"wmul": s.lz_shot_row[k * 4 + 2],
+			"impact": f & LaserMods.F_IMPACT != 0,
+			"end": f & LaserMods.F_END != 0,
+			"wall": f & LaserMods.F_WALL != 0,
+			"hits": PackedInt32Array(),
+			"age": age,
+			"glow": LANCE_GLOW_TICKS,
+		}
+		if kind == LaserMods.K_RING:
+			b["circle"] = ring
+		out.append(b)
+	return out
 
 
 ## v0.9.5 FC1: Echo's strikes still to come, for the view's pale ghost beams: {from, to, left (ticks), total}.

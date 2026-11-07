@@ -469,10 +469,7 @@ const ADDED_SINCE_V05 := {
 		&"rune_push_id",
 		&"rune_push_dir",
 		&"rune_push_left",
-		&"lz_aim",  # v0.9.5 FC1 (LaserMods: the Laser cards' state; an older save has none)
-		&"lz_hold",
-		&"lz_targets",
-		&"lz_mine_next",
+		&"lz_mine_next",  # v0.9.5 FC1 (LaserMods: the Laser cards' state; an older save has none)
 		&"lz_mine_at",
 		&"lz_mine_born",
 		&"lz_mine_dmg",
@@ -481,6 +478,10 @@ const ADDED_SINCE_V05 := {
 		&"lz_echo_to",
 		&"lz_echo_r",
 		&"lz_echo_dmg",
+		&"lz_shot_tick",  # v0.11.0 O1 (the last lance's paths for the view; an older save has none)
+		&"lz_shot_from",
+		&"lz_shot_to",
+		&"lz_shot_row",
 		&"bm_next",  # v0.9.5 FC2 (BombMods: the Bomb cards' rows; an older save has none)
 		&"bm_id",
 		&"bm_kind",
