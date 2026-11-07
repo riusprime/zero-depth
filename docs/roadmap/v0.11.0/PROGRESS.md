@@ -77,3 +77,8 @@
   Shade's dark, O5 added the resting twin; kept both) and `boss_bar.gd` (both constants kept). On the merge: the
   Gatekeeper, Shade, Twins, boss-challenge, readable-cause, health-bar and boss content tests `Tests 130, Passing Tests
   130`; after O4b `Tests 48, Passing Tests 48`. Owner: Crossfire stays unshielded; resting twin and 3000 HP approved.
+- 2026-11-07: seams at b9824eef (O1c + O4): `Tests 642, Passing Tests 642, Asserts 76449, Time 1325.41s`, all passed.
+  Seams at 73b9765c (+ O5, O4b): `Tests 642, Passing Tests 641, Failing Tests 1`: `tests/unit/sim/test_boss_pace.gd`
+  `test_a_big_attack_is_followed_by_a_still_punish_window` `[17] expected to equal [15]` (O5's Charge and Ground Slam
+  are big attacks; O5 updated the content copy, not this one). Count raised on purpose to 17; that file alone: `Tests 5,
+  Passing Tests 5`, `---- All tests passed! ----`. O9 (critters, surges) and O10 (spells) building.
