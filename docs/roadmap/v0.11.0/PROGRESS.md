@@ -11,9 +11,12 @@
   [`PIERCE.md`](PIERCE.md) (P2: the flag), [`WISP_GAPS.md`](WISP_GAPS.md) (wider: hero + 0.7 m).
 - **Next:** Wave 2 O2–O5 (hint arrow, Gatekeeper, Lantern Shade, Twins) can start from Q9–Q12; O1 (Laser) sim can
   start, its look waits for the sketch; S2b and S6 are unblocked; O9–O13 (hordes, spells, enemies) are unblocked; O6–O8 after the owner's boss brief.
-- **Wave 2 built:** S6, S2b, O2, S7b, O1 + O1c (Laser lance), O3 (Gatekeeper), O4 + O4b (Lantern Shade), O5 + O16a
-  (Twins) merged at fea75741. Waiting: O6–O8 (the owner's boss brief), the Laser's look (the sketch), O16 for the other
-  bosses. **Next: Wave 3** O9 (horde surges) and O10 (spell slots + first spells).
+- **Built and merged:** Wave 1; S6, S2b, O2, S7b; O1 + O1c (Laser lance); O3, O4 + O4b, O5 + O16a (Gatekeeper,
+  Lantern Shade, Twins); O9 (horde critters + surges, **probe missed 144 fps**); O10 (spell slots + Frost Nova,
+  Fireball, Sky Strike). Merged at 5ffee376.
+- **Building:** O9b (surge performance; Opus), O11 (the other 12 spells + Lv 5 extras; Opus).
+- **Waiting on the owner:** the boss brief (O6–O8), the Laser sketch. O16 for the other bosses, O12 balance, O13
+  enemies/rosters, O14 Runic Stone, O15 rooms still to come.
 - **Agents (owner, 2026-11-07):** at most 3 Sonnet (light, exact briefs) + 2 Opus at once.
 - **Local note:** `project.godot` has an uncommitted editor rewrite (it drops the `[rendering]` settings and
   `locale/fallback`). It is not the lead's change; don't stage it. `wt-seams` is the lead's clean seams worktree.
@@ -36,6 +39,8 @@
 | O4b | The Lights Out telegraph shield back (1.00 s, the whole windup); bots `lanterns ticks=1201`, `ignore ticks=2611`, `leak 0` | 30a266dc |
 | O5 | Twin Wardens: yellow (Shield Bash, Chain Sweep, Charge, Ground Slam) leads P1, purple (Crossfire, Orb Volley, Rune Ring, Blink) P2, both P3 on three full bars (667/333); the resting twin takes 0 with a "not now" spark and casts a bolt every 4 s; P3 turns never overlap, the exposed twin swaps every 10 s (×1.5 / ×0.5); Crossfire unshielded; HP 2500 → 3000. Bots: `melee ticks=4759 seconds=79.3`, `ranged ticks=5369 seconds=89.5` | d3c87976 |
 | O16a | The Twins' clips less stiff (anticipation, recoil, idle sway, hit reactions) | 728d80e3 |
+| O9 | Five critter kinds on one rule set (contact 3 dmg / 0.5 s, 8 HP, ~5 m/s; the bat flies), one per biome; surges 1–2 a floor, 30–60 over 10 s, never in Overrun/arena/Lockdown/boss rooms, `alive_cap` 120; HUD line + sound. Probe (owner's PC, two other Godot test runs going): `after (crowd full): avg=20.18 ms (49.6 fps) … 1%-low=31.7 fps` — **missed 144** | e6657bac, 08cbb00a |
+| O10 | 4 spell slots (Replace the lowest when full); holding an element card adds its spells (altar 350 ‰ chance), rune affinity ×2 weight; runner on 12 s cooldowns, densest-pack aim; Frost Nova, Fireball, Sky Strike Lv 1–5 numbers (Lv 5 extras in O11); HUD squares with sweep and flash. Damage ≈ 60 a cast from the 15 % rule (orbs ≈ 33.2 DPS) | 7647a519, 50dc7916 |
 | S7 | OWNER_TODO §3.2: prompts for the 8 code-made enemies in the Charger's style, palette-A role colours | cc0d326f |
 
 ## Goldens changed on purpose
@@ -82,3 +87,6 @@
   `test_a_big_attack_is_followed_by_a_still_punish_window` `[17] expected to equal [15]` (O5's Charge and Ground Slam
   are big attacks; O5 updated the content copy, not this one). Count raised on purpose to 17; that file alone: `Tests 5,
   Passing Tests 5`, `---- All tests passed! ----`. O9 (critters, surges) and O10 (spells) building.
+- 2026-11-07: O9 merged clean; O10 merged (`strings.csv` both-sides additions kept; translations rebuilt; on the merge:
+  locale coverage, spells, surges, world snapshot, rewards `Tests 71, Passing Tests 71`). Owner on the surge miss:
+  optimise first, then cap; no team ring on critters (O9b).

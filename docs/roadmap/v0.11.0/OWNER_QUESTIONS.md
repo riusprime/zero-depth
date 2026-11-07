@@ -242,3 +242,4 @@ OK; (b) you'll go through them.
 | L-d | After O1c the line is 3.3× the old beam (1662 vs 500), not the 2.5× the lead estimated: **"Keep 15 %"** | 2026-11-07 | PLAN O1c |
 | Q10-b | O4 also removed the Lights Out telegraph shield (v0.10.5 O2a): **"Bring it back"** (O4b); all else in O4 stays | 2026-11-07 | PLAN L6, O4 |
 | Q11-b | O5 removed Crossfire's shield: **"Keep removed"**. The resting twin (P1/P2) takes 0 with a "not now" spark: **approved**. Twins HP 2500 → 3000 (bots 79 s melee, 90 s ranged): **approved** | 2026-11-07 | PLAN L7, O5 |
+| Q16-b | The surge probe missed 144 fps (120 critters ≈ 50 fps, 1 % low ≈ 32; under 144 from 60–80 alive; two other Godot test runs were going): **"Optimise, then cap"**: a performance step, re-measure on an idle PC, then cap at what holds 144. The critters' team ring: **"No ring on critters"** | 2026-11-07 | PLAN H1, O9b |

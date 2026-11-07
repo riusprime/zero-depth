@@ -125,6 +125,8 @@ build step).
   full move speed while held, Homing's tail runs to the first wall.
 - **O9. The horde kind (H1, M4):** sim kind with contact damage, VAT body, spawn rule; a crowd probe at the cap on the
   owner's PC before it ships.
+- **O9b. Surge performance (owner Q16-b):** no team ring on critters; profile and cut the crowd's per-critter cost; the
+  probe re-run on an idle PC; then `alive_cap` set to what holds 144 fps.
 - **O10. Spell slots and the first spells (E1, E2, E4):** 4 slots, the timed runner in `abilities.gd`, the offer rule
   (Q17), HUD squares (Q19).
 - **O11. The full spell roster and levels (E3, E4).**
