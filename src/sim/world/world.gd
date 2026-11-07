@@ -140,6 +140,9 @@ var mines := MineStore.new()
 var orbs := HealOrbStore.new()
 ## v0.10.5 O7b (owner P6; ShardDrops): kill shards lying on the floor, hashed once one was dropped.
 var shard_drops := ShardDropStore.new()
+## v0.11.0 O2 (owner L4, Q12): the objective markers boss code points at (the view's hint arrow), hashed once touched.
+## No gameplay outcome reads them.
+var objectives := ObjectiveMarkers.new()
 ## v0.4.0 TU (owner D9): the share of max HP restored when the boss room seals (per mille; RunState.prepare sets it
 ## from the run's per-floor table: floor 1 full, later floors none). Setup, not hashed.
 var boss_room_heal_permille := 0
@@ -1447,6 +1450,8 @@ func state_hash() -> String:
 		orbs.hash_into(h)
 	if shard_drops.touched:  # v0.10.5 O7b: only once a kill laid shards on the floor.
 		shard_drops.hash_into(h)
+	if objectives.touched:  # v0.11.0 O2: only once a boss pointed at something.
+		objectives.hash_into(h)
 	# Items, the second eight (v0.2.0 J).
 	for v in [heal_window_start, heal_window_used, heal_tick, chain_count, chain_root, chain_tick]:
 		h.add_int(v)

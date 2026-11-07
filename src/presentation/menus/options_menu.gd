@@ -262,6 +262,7 @@ func _build_section(id: StringName) -> VBoxContainer:
 			_cycler(box, "UI_CAPTIONS", "captions", ["off", "on"])
 			_cycler(box, "UI_UI_SCALE", "ui_scale", GameSettings.UI_SCALES)  # v0.7.5 SM
 			_cycler(box, "UI_SHOW_HINTS", HintStore.SETTING, ["on", "off"])  # v0.7.5 SM: the first-run hints
+			_cycler(box, "UI_BOSS_HINTS", MechanicHints.SETTING, ["on", "off"])  # v0.11.0 O2 (Q12)
 			_hints_reset(box)
 			_note(box, "UI_COLOUR_MODE_NOTE")
 		&"language":

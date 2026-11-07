@@ -88,6 +88,8 @@ var shop := ShopHud.new()
 var boss_door := BossDoorHud.new()
 ## v0.9.0 IX: the shared interactables' one prompt (the FA pylons, the timed doors' switches).
 var interact := InteractPromptHud.new()
+## v0.11.0 O2 (owner L4, Q12): the boss hint arrow and ping (MetaHooks sets its gate: MechanicHints).
+var objective_hints := ObjectiveHints.new()
 ## v0.6.0 MX2: the weapon, the utility and the six modifier slot pips; the Swap choice (over the pick and the shop).
 var build_hud := BuildHud.new()
 ## v0.8.0 N8 (owner O62): the picked cards' icons fly over everything to their HUD slots.
@@ -167,6 +169,7 @@ func _init() -> void:
 	if _astral:
 		add_child(_wash)
 	add_child(_vignette)
+	add_child(objective_hints)  # v0.11.0 O2: under every panel and plate
 	_build_corner()
 	_build_top()
 	_items.name = "ItemIcons"
@@ -324,6 +327,7 @@ func sync(reader: WorldReader) -> void:
 	t = PerfMarks.start()
 	boss_door.sync(reader)  # v0.8.0 BD
 	interact.sync(reader)  # v0.9.0 IX
+	objective_hints.sync(reader)  # v0.11.0 O2
 	PerfMarks.add(&"hud.prompts", t)
 	t = PerfMarks.start()
 	build_hud.sync(reader)  # v0.6.0 MX2

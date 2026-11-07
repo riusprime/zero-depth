@@ -5,6 +5,10 @@ extends RefCounted
 ## It is a wide facade on purpose: one read method per thing a view needs.
 
 const KIND_PLAYER := ActorStore.Kind.PLAYER
+## v0.11.0 O2: the objective markers' reasons (objectives(); ObjectiveMarkers), for the view's lines.
+const OBJECTIVE_GATEKEEPER_PILLAR := ObjectiveMarkers.GATEKEEPER_PILLAR
+const OBJECTIVE_SHADE_LANTERN := ObjectiveMarkers.SHADE_LANTERN
+const OBJECTIVE_TWINS_ACTIVE := ObjectiveMarkers.TWINS_ACTIVE
 ## v0.9.0 FA: the final approach's states (approach_state).
 const APPROACH_WALK := FinalApproach.State.WALK
 const APPROACH_BUILDUP := FinalApproach.State.BUILDUP
@@ -1014,6 +1018,23 @@ func shard_drops() -> PackedVector2Array:
 	var out := PackedVector2Array()
 	for k in _w.shard_drops.size():
 		out.append(_w.shard_drops.pos(k))
+	return out
+
+
+## v0.11.0 O2 (owner L4, Q12): the objective markers (World.objectives), each {"reason": StringName, "pos": Vector2
+## on the sim plane, "entity": the followed actor's id or -1}. A followed actor that is gone or dead is left out.
+func objectives() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var o := _w.objectives
+	for k in o.size():
+		var id := o.entity[k]
+		var at := o.pos(k)
+		if id != ObjectiveMarkers.NO_ENTITY:
+			var i := _w.actors.index_of(id)
+			if i < 0 or _w.actors.hp[i] <= 0:
+				continue
+			at = _w.actors.pos(i)
+		out.append({"reason": o.reason_at(k), "pos": at, "entity": id})
 	return out
 
 

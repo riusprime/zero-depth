@@ -10,7 +10,8 @@ extends RefCounted
 ## An entry exists once it is unlocked (met in play); its counters start at 0 and only grow.
 ## The counter API (docs/roadmap/v0.7.5/evidence/CODEX.md "Counter API"; AC's achievements read it):
 ## - unlock(page, id), is_unlocked(page, id), unlocked_ids(page), unlocked_count(page);
-## - add(page, id, counter, by) (counts up and unlocks), raise_to(page, id, counter, value) (keeps the highest);
+## - add(page, id, counter, by) (counts up and unlocks), raise_to(page, id, counter, value) (keeps the highest),
+##   put(page, id, counter, value) (sets it; v0.11.0 O2);
 ## - count(page, id, counter), total(page, counter) (summed over a page's entries);
 ## - the `unlocked` signal on an entry's first meeting, and `changed` after every counter write.
 
@@ -136,6 +137,18 @@ func raise_to(page: StringName, id: StringName, counter: StringName, value: int)
 	dirty = true
 	changed.emit(page, id, counter, value)
 	return value
+
+
+## v0.11.0 O2: sets a value outright (unlocking the entry), for a note that isn't a count (MechanicHints' last run).
+func put(page: StringName, id: StringName, counter: StringName, value: int) -> void:
+	if id == &"":
+		return
+	var e := _entry(page, id, true)
+	if int(e.get(String(counter), 0)) == value and e.has(String(counter)):
+		return
+	e[String(counter)] = value
+	dirty = true
+	changed.emit(page, id, counter, value)
 
 
 func count(page: StringName, id: StringName, counter: StringName) -> int:

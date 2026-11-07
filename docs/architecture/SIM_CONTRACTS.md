@@ -1376,6 +1376,8 @@ Presentation sees the sim only through `WorldReader`, a read-only facade over `W
   - the shop (v0.5.0 SH; `ShopState`: id, room, open, rolled, heal used, rerolls, last action, tick and value, the
     refusal tick, the stock, the position), after the gamble shrine, only on floors with a shop; the stat cards taken
     (`World.stat_cards`, the `Offers` codes in order) with the build block, once it is touched.
+  - the objective markers (v0.11.0 O2; `ObjectiveMarkers`: reasons, followed entity ids, fixed points), after the
+    shard drops, only once a marker was ever set (`touched`). A hint for the view only: no outcome reads them.
 - It runs on demand, not every tick:
   - every 60 ticks in replays and goldens (a checkpoint);
   - at encounter end;

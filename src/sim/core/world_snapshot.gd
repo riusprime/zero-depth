@@ -132,6 +132,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"MineStore",
 	&"HealOrbStore",  # v0.4.0 TU
 	&"ShardDropStore",  # v0.10.5 O7b
+	&"ObjectiveMarkers",  # v0.11.0 O2: the hint arrow's markers
 	&"BossStore",
 	&"RewardStore",
 	&"AbilityState",
@@ -208,6 +209,7 @@ const ADDED_SINCE_V05 := {
 		&"pair_log",
 		&"pairs_seen",  # v0.10.5 O15: an older save starts with none seen
 		&"shard_drops",  # v0.10.5 O7b: an older save's floor has no shards lying on it (the base's: empty)
+		&"objectives",  # v0.11.0 O2: an older save points at nothing (the base's: empty)
 		&"player_hp_floor",  # v0.10.5 O17: an older save has no floor (0)
 		&"pair_clouds",
 		&"mod_slots",

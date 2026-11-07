@@ -100,10 +100,27 @@ static func _records(main: Main, recap: Dictionary) -> void:
 		recap["record_time"] = RunRecords.note_win(main.profile, run.build_id, ticks, run.run_seed)
 
 
-## Main's _on_tick: the achievements read the tick (AchievementTracker.observe), then the collectibles (bank_finds).
+## Main's _on_tick: the achievements read the tick (AchievementTracker.observe), then the collectibles (bank_finds),
+## then the boss hints (boss_hints, v0.11.0 O2).
 static func observe(main: Main) -> void:
 	main.achievement_tracker.observe(main.driver.reader)
 	bank_finds(main)
+	boss_hints(main)
+
+
+## v0.11.0 O2 (owner L4, Q12 a): the boss hints. Each tick counts the run for every reason the world points at
+## (MechanicHints, in the Codex's profile section), and the floor's HUD gets its gate once: a reason's hint shows in
+## its first MechanicHints.MEETINGS runs, while Options "Boss hints" is on. Counted in a tweaked run too (a hint is
+## about learning the fight, not a record).
+static func boss_hints(main: Main) -> void:
+	if main.run == null or main._hud == null:
+		return
+	var hints := MechanicHints.new(main.codex)
+	var run_seed := main.run.run_seed
+	var view := main._hud.objective_hints
+	if not view.gate.is_valid():  # the lambda keeps its MechanicHints (a bound method wouldn't)
+		view.gate = func(reason: StringName) -> bool: return hints.shows(reason, run_seed)
+	hints.observe(main.driver.reader, run_seed)
 
 
 ## v0.9.0 CL (COLLECTIBLES.md; P3 "Added to the Rune Archive" the first time): each collectible the hero took on
