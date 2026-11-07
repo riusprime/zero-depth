@@ -11,8 +11,9 @@
   [`PIERCE.md`](PIERCE.md) (P2: the flag), [`WISP_GAPS.md`](WISP_GAPS.md) (wider: hero + 0.7 m).
 - **Next:** Wave 2 O2–O5 (hint arrow, Gatekeeper, Lantern Shade, Twins) can start from Q9–Q12; O1 (Laser) sim can
   start, its look waits for the sketch; S2b and S6 are unblocked; O9–O13 (hordes, spells, enemies) are unblocked; O6–O8 after the owner's boss brief.
-- **Building now (from 850f98d9):** O1 Laser sim + basic lance view (Opus, wt-s1), O2 hint arrow (Opus, wt-s2), S2b
-  wisp lanes (Sonnet, wt-s3), S6 the "does nothing with this form" flag (Sonnet, wt-s4). Then O3–O5 (they use O2).
+- **Wave 2 so far:** S6 (Pierce flag), S2b (wisp lanes; Bloom 1 → 25 too), O2 (hint arrow), S7b (critter and new-enemy
+  prompts) merged; seams green at 74912d36 (641/641). **Building:** O1 Laser (Opus, wt-s1), O3 Gatekeeper pillars
+  (Opus, wt-o3). Next: O4 Lantern Shade, O5 Twins (each uses O2's markers).
 - **Agents (owner, 2026-11-07):** at most 3 Sonnet (light, exact briefs) + 2 Opus at once.
 - **Local note:** `project.godot` has an uncommitted editor rewrite (it drops the `[rendering]` settings and
   `locale/fallback`). It is not the lead's change; don't stage it. `wt-seams` is the lead's clean seams worktree.
@@ -24,6 +25,10 @@
 | S2 | The Lantern Shade's wisps draw as the MultiMesh again, so the dark hides them outside light (4 m outline stays) | 9a7e625d |
 | S3 | Siege Engine: volley 2 (and phase 3's 3rd) hidden until the one before lands, then shown 1.2 s; Mortar Grid bursts drop the pack Smoke | e3caade9 |
 | S4 | The Lens Drone draws through VAT (SoloVat), hover height matching the live avatar | ff54e50a |
+| S6 | A held card the current form doesn't compile shows "Does nothing with this form" on the wand screen (owner: PIERCE.md P2) | 3d790012 |
+| S2b | Wisp Bloom 2 and 3 at 24 shots (lane 1.59 m at 4 m, was 0.91), Bloom 1 at 25 (2.47 m, was 1.18); test pins ≥ 1.40 m | 20113849, d86bf471 |
+| O2 | Hint arrow + ping (sim ObjectiveMarkers, HUD ObjectiveHints), first 2 meeting runs per mechanic (Codex `mechanics` page), Options → Accessibility → Boss hints | 32d98682 |
+| S7b | OWNER_TODO §3.2: prompts for the 5 horde critters and 10 new enemies | a62d881b |
 | S7 | OWNER_TODO §3.2: prompts for the 8 code-made enemies in the Charger's style, palette-A role colours | cc0d326f |
 
 ## Goldens changed on purpose
@@ -48,3 +53,7 @@
   agent's worktree) was not looked at; S3 and S4 have no shot (NOT YET RUN).
 - 2026-11-07: the owner went through the four G1s row by row (questions): all approved; Pierce P2; wisp lanes wider
   (hero + 0.7 m).
+- 2026-11-07: S6, S2b, O2, S7b merged (the two `.translation` files conflicted between S6 and O2; rebuilt by an import
+  from the merged `strings.csv`, both new lines checked in en and es). `bash scripts/ci/seams.sh` in `wt-seams` at
+  74912d36: `Scripts 111, Tests 641, Passing Tests 641, Asserts 76219, Time 1491.386s`, `---- All tests passed! ----`,
+  `check_gut_log: ok (641 passing, minimum 1)`. The hint arrow's look not yet seen (no shot).
