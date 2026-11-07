@@ -465,7 +465,7 @@ CAUSE_JUDGE_GAVEL,The Clockwork Judge's gavel came down on you.,El mazo de The C
 CAPTION_TELEGRAPH_CLOCKWORK_JUDGE,[Warning: the Judge's clock ticks],[Aviso: el reloj de The Clockwork Judge marca el tiempo]
 CAPTION_JUDGE_ECHO,[Your echo strikes],[Tu eco golpea]
 BOSS_LANTERN_SHADE,The Lantern Shade,The Lantern Shade
-BOSS_LANTERN_SHADE_DESC,"A hooded wraith that snuffs the light. Keep the lanterns burning: it can only be hurt in the light.","Un espectro encapuchado que apaga la luz. Mantén los faroles encendidos: solo se le puede herir en la luz."
+BOSS_LANTERN_SHADE_DESC,"A hooded wraith that snuffs the light. Step on the lanterns to light them: it takes far less damage in the dark and more in a lantern's light.","Un espectro encapuchado que apaga la luz. Pisa los faroles para encenderlos: recibe mucho menos daño en la oscuridad y más bajo la luz de un farol."
 CAUSE_SHADE_DARK,The Lantern Shade found you in the dark.,The Lantern Shade te encontró en la oscuridad.
 CAUSE_SHADE_BLOOM,The Lantern Shade's wisps bloomed around you.,Los fuegos fatuos de The Lantern Shade florecieron a tu alrededor.
 CAUSE_SHADE_SNUFF,The Lantern Shade snuffed you out.,The Lantern Shade te apagó como a una vela.
@@ -1070,6 +1070,8 @@ HUD_BOSS_INVULNERABLE,Invulnerable,Invulnerable
 HUD_BOSS_SHIELD_ONE,1 shield left,1 escudo restante
 HUD_BOSS_SHIELDS,%d shields left,%d escudos restantes
 HUD_BOSS_PHASE,Phase %d / %d,Fase %d / %d
+HUD_SHADE_DARK,In the dark · %d %% damage,En la oscuridad · %d %% de daño
+HUD_SHADE_LIT,In the light · %d %% damage,En la luz · %d %% de daño
 UI_PG_FINAL,Final boss,Jefe final
 UI_PG_FINAL_PHASE,Phase %d,Fase %d
 UI_PG_FINAL_HINT,Summons the Hollow Crown at the room's centre; a phase button jumps to that body.,Invoca a Hollow Crown en el centro de la sala; un botón de fase salta a ese cuerpo.

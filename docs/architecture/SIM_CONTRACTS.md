@@ -1978,6 +1978,20 @@ PLAN NB: "Keep the empty hood" (no head lanterns: the room's edge lanterns and t
 - **Hittable only when lit.** `BossShade.unlit(w, i)`: the Shade in the dark whose body (its radius) touches no
   light. `Damage.hit` and `Damage.tick_dot` treat it like a shield (`Damage._blocked`: `BossDodge.shielded` or
   `unlit`): the HIT shows with `TAG_BLOCKED`, no HP lost; `WorldReader.boss_invulnerable` says so for the bar.
+- **v0.11.0 O4 (owner Q10 a: "40 % damage in the dark, 150 % inside a lit pool; a lantern stays lit 6 s; dark 9 s /
+  light 4 s"; supersedes the bullet above and the lanterns' and Lights Out's lines where they differ).** No
+  immunity: `unlit` and the block are gone and Lights Out is never shielded (`ShadeRules` rejects `shielded`). A
+  player's hit (`Damage.hit`, after `BossChallenge`) and tick (`Damage.tick_dot`) on the Shade are scaled by
+  `BossShade.light_permille`: `lit_mult_permille` (1500, `TAG_SHADE_LIT`) while its body touches a lit lantern's
+  pool (`in_pool`, dark or light), else `dark_mult_permille` (400, `TAG_SHADE_DARK`) while it stands in the dark
+  outside the player's own `light_m` circle, else 1000. The lanterns start out; every tick (dark or light) a lantern
+  within reach of the living player is set to `lamp_ticks` (6 s), else it burns down; the dark falls on them as they
+  are; a Snuff puts lit ones out dark or light. Only the first Lights Out schedules the dark (`shade_at`); from that
+  dark the room alternates on its own clock: `shade_until` is the next flip, the dark lasting `dark_hold_ticks` (540)
+  and the light `light_hold_ticks` (240, from `light_lasts_seconds`; 0 keeps the NB4b rule), so a later Lights Out
+  only plays its wisps. While dark the hint marker `ObjectiveMarkers.SHADE_LANTERN` points at every unlit lantern,
+  cleared in the light and when the Shade goes. Reads: `boss_light()` adds `light_left` and `boss_mult`;
+  `WorldReader.boss_light_permille(i)` for the boss bar's dim/bright tag (`HUD_SHADE_DARK` / `HUD_SHADE_LIT`).
 - **The Snuff (`marks` with `snuff`).** A tracked circle (it follows the player's exact position, locks 0.8 s); on
   its strike (`BossDodge.resolve_marks` → `BossShade.snuff`) the lit lantern nearest its centre goes out (`lamp_t` 0),
   in the dark only. Phase 3's Snuff lays two.

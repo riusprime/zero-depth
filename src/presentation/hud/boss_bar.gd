@@ -25,6 +25,9 @@ extends Control
 const BAR := Vector2(560, 8)
 ## The bar while the boss can't be hurt: a cold steel blue, far from the HP red (and from the stagger's gold).
 const INVULNERABLE := Color("#8FB8E8")
+## v0.11.0 O4: the Lantern Shade's bar in the dark (the HP colour darkened by DIM) and in a lit pool (lantern gold).
+const DIM := 0.55
+const LIT := Color("#FFC15A")
 
 var _name := Label.new()
 var _hp := HudBar.new()
@@ -35,6 +38,8 @@ var _shield := Label.new()
 var _boss_id := -1
 var _phase_key := -1
 var _invulnerable := false
+## v0.11.0 O4: the light's per-mille shown (WorldReader.boss_light_permille; 1000 none).
+var _light := 1000
 ## v0.8.0 N2: The Fallen's window line.
 var _fallen := Label.new()
 
@@ -156,8 +161,18 @@ func _sync_hp(reader: WorldReader, i: int, final: bool) -> void:
 	_phase_key = key
 	_invulnerable = reader.boss_invulnerable(i)
 	_hp.color = INVULNERABLE if _invulnerable else ThemePalette.color(&"enemy_bar")
+	_light = 1000 if _invulnerable else reader.boss_light_permille(i)
 	if not _invulnerable:
-		_shield.text = ""
+		# v0.11.0 O4 (owner Q10 a): the Lantern Shade's light: a dim bar and "In the dark · 40 %" in the dark, a bright
+		# one and "In the light · 150 %" in a lit lantern's pool; nothing at 100 %.
+		if _light < 1000:
+			_hp.color = ThemePalette.color(&"enemy_bar").darkened(DIM)
+			_shield.text = tr("HUD_SHADE_DARK") % (_light / 10)
+		elif _light > 1000:
+			_hp.color = LIT
+			_shield.text = tr("HUD_SHADE_LIT") % (_light / 10)
+		else:
+			_shield.text = ""
 		return
 	var left := reader.boss_shields_left(i)
 	var line := tr("HUD_BOSS_INVULNERABLE")
@@ -191,6 +206,11 @@ func hp_bar() -> HudBar:
 ## v0.8.0 N4: the bar shows the invulnerable look.
 func invulnerable() -> bool:
 	return _invulnerable
+
+
+## v0.11.0 O4: the Lantern Shade's light per-mille the bar shows (1000: none; tests).
+func light_permille() -> int:
+	return _light
 
 
 ## v0.8.0 N4: the invulnerable line ("" when the boss can be hurt; tests).

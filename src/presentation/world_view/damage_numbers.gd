@@ -33,6 +33,9 @@ const WEAK_TO_COLOR := Color("#FF4F7A")
 const WEAK_TO_SIZE := 48
 const RESISTED_COLOR := Color(0.55, 0.57, 0.6)
 const RESISTED_SIZE := 29
+## v0.11.0 O4: a hit on the Lantern Shade in a lit lantern's pool (TAG_SHADE_LIT): lantern gold at WEAK_TO_SIZE; one
+## in the dark (TAG_SHADE_DARK) takes RESISTED's dim grey.
+const SHADE_LIT_COLOR := Color("#FFC15A")
 ## v0.10.5 W3-P10a (owner W7, G1 A2): a double crit (TAG_DOUBLE_CRIT): the crit number 25 % bigger, ice-white,
 ## with a thin ink edge instead of the thick dark one. Nothing else new in the world.
 const DOUBLE_CRIT_SIZE := 86
@@ -108,6 +111,10 @@ static func matchup_look(tags: int, crit: bool) -> Array:
 	if tags & SimEvent.TAG_WEAK_TO:
 		return [WEAK_TO_COLOR, WEAK_TO_SIZE]
 	if tags & SimEvent.TAG_RESISTED:
+		return [RESISTED_COLOR, RESISTED_SIZE]
+	if tags & SimEvent.TAG_SHADE_LIT:  # v0.11.0 O4: the Lantern Shade struck in a lit pool (150 %)
+		return [SHADE_LIT_COLOR, WEAK_TO_SIZE]
+	if tags & SimEvent.TAG_SHADE_DARK:  # v0.11.0 O4: struck in the dark (40 %)
 		return [RESISTED_COLOR, RESISTED_SIZE]
 	return [Color(0, 0, 0, 0), 0]
 

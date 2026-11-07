@@ -2,7 +2,8 @@ class_name ShadeCompiler
 extends RefCounted
 ## v0.9.0 NB4 (BOSSES_4_5.md N4; BossShade): compiles the Lantern Shade's numbers (its own file: ContentCompiler is
 ## at its line limit). A Lights Out's dark and the room's light (from its first Lights Out) onto the boss's table; a
-## Snuff's flag onto its attack.
+## Snuff's flag onto its attack. v0.11.0 O4 (owner Q10 a): the light's own stretch and the Shade's damage taken in
+## the dark and in a lit pool.
 
 
 ## PatternCompiler.compile_boss_attack: a Lights Out's dark_ticks, a Snuff's flag.
@@ -28,4 +29,7 @@ static func compile_boss(def: BossDefinition, t: BossTable) -> void:
 		t.lamp_ticks = SimTick.seconds_to_ticks(float(sp.get("lamp_seconds", 0.0)))
 		t.relight_m = float(sp.get("relight_m", 0.0))
 		t.dark_hold_ticks = SimTick.seconds_to_ticks(float(sp.get("dark_lasts_seconds", 0.0)))
+		t.light_hold_ticks = SimTick.seconds_to_ticks(float(sp.get("light_lasts_seconds", 0.0)))
+		t.dark_mult_permille = int(sp.get("dark_mult_permille", 1000))
+		t.lit_mult_permille = int(sp.get("lit_mult_permille", 1000))
 		return
