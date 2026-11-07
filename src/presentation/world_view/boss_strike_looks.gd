@@ -90,6 +90,10 @@ const LOOKS := {
 	# TwinViews'), the Shield Bash cracks a shock ring out of the stone.
 	&"tw_sweep": {"pattern": Pattern.MOLTEN, "strike": &"skid"},
 	&"tw_bash": {"pattern": Pattern.STONE, "strike": &"shock_ring"},
+	&"tw_charge": {"pattern": Pattern.STONE, "strike": &"skid"},  # v0.11.0 O5: the amber's Charge, Ground Slam
+	&"tw_slam": {"pattern": Pattern.STONE, "strike": &"crater"},
+	&"tw_runes": {"pattern": Pattern.VOID, "strike": &"light_ring"},  # v0.11.0 O5: the violet's Rune Ring, Blink
+	&"tw_blink": {"pattern": Pattern.VOID, "strike": &"light_burst"},
 	# v0.9.0 NB3: the Clockwork Judge. The Verdict's square takes a column of gold light where the pendulum drops (the
 	# pendulum itself is JudgeViews'); the Gavel Slam rings a light shockwave out over the floor.
 	&"cj_verdict": {"pattern": Pattern.LIGHT, "strike": &"beam"},
@@ -166,11 +170,17 @@ const BY_KIND := {
 	{
 		WorldReader.MOVE_CHAIN_SWEEP: &"tw_sweep",
 		WorldReader.MOVE_SLAM_RING: &"tw_bash",
+		WorldReader.MOVE_CHARGE: &"tw_charge",  # v0.11.0 O5: each Warden's own moveset
+		WorldReader.MOVE_MARKS: &"tw_slam",
+		WorldReader.MOVE_LEAP: &"tw_blink",
 	},
 	WorldReader.KIND_TWIN_WARDEN_VIOLET:
 	{
 		WorldReader.MOVE_CHAIN_SWEEP: &"tw_sweep",
-		WorldReader.MOVE_SLAM_RING: &"tw_bash",
+		WorldReader.MOVE_SLAM_RING: &"tw_runes",  # v0.11.0 O5: the violet's ring is its Rune Ring
+		WorldReader.MOVE_CHARGE: &"tw_charge",
+		WorldReader.MOVE_MARKS: &"tw_slam",
+		WorldReader.MOVE_LEAP: &"tw_blink",
 	},
 	WorldReader.KIND_CLOCKWORK_JUDGE:  # v0.9.0 NB3
 	{

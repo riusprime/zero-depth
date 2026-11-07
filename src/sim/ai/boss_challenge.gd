@@ -124,14 +124,14 @@ static func dash_landing(w: World) -> Vector2:
 static func gap_close_due(w: World, b: int, t: BossTable) -> int:
 	if t.gap_attack < 0 or t.gap_ticks <= 0 or w.player_dead():
 		return -1
-	return t.gap_attack if w.bosses.gap_t[b] >= t.gap_ticks else -1
+	return BossTwin.own(w, b, t.gap_attack) if w.bosses.gap_t[b] >= t.gap_ticks else -1
 
 
 ## The punish attack's index when it is due now (the player stayed far long enough), else -1.
 static func punish_due(w: World, b: int, t: BossTable) -> int:
 	if t.punish_attack < 0 or t.punish_ticks <= 0 or w.player_dead():
 		return -1
-	return t.punish_attack if w.bosses.far_t[b] >= t.punish_ticks else -1
+	return BossTwin.own(w, b, t.punish_attack) if w.bosses.far_t[b] >= t.punish_ticks else -1
 
 
 ## Where an attack aims: the player, led by the boss's lead time at the player's velocity for aimed moves; for

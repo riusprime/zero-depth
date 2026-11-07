@@ -31,7 +31,15 @@ const INT_FIELDS: Array[StringName] = [
 ]
 ## v0.9.0 NB2: the twin pairs' fields (BossTwin), one entry per pair.
 const TWIN_FIELDS: Array[StringName] = [
-	&"twin_lead", &"twin_body", &"twin_angry", &"twin_anger_t", &"twin_burn_cd"
+	&"twin_lead",
+	&"twin_body",
+	&"twin_angry",
+	&"twin_anger_t",
+	&"twin_burn_cd",
+	&"twin_phase",  # v0.11.0 O5: the roles' phase, its clock, whose turn, the body that can be hit (the hint)
+	&"twin_clock",
+	&"twin_turn",
+	&"twin_focus",
 ]
 
 ## The boss's actor id, and its index in World.boss_tables.
@@ -133,6 +141,13 @@ var twin_body := PackedInt32Array()
 var twin_angry := PackedInt32Array()
 var twin_anger_t := PackedInt32Array()
 var twin_burn_cd := PackedInt32Array()
+## v0.11.0 O5 (owner L7, Q11, Q29; BossTwin): the phase the pair's roles are in (its boss's), the ticks since it began
+## (the standing-back bolt's and the last phase's swap clock), the body whose turn it is to attack next in the last
+## phase (an actor id) and the body to hit now (the leader; in the last phase the exposed one; the hint follows it).
+var twin_phase := PackedInt32Array()
+var twin_clock := PackedInt32Array()
+var twin_turn := PackedInt32Array()
+var twin_focus := PackedInt32Array()
 ## v0.9.0 NB3 (BossJudge): the Clockwork Judge's echo. echo_boss is the actor id of the Judge recording (-1 = none);
 ## echo_x/echo_y the player's last positions, oldest first (one every echo_gap_ticks, at most echo_points); path_x,
 ## path_y the echo locked as it started (the points left after the safe spot) and path_k each one's step (it strikes

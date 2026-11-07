@@ -86,7 +86,7 @@ func test_every_boss_hit_kills_the_base_hero_in_its_class_hits() -> void:
 			seen += 1
 	assert_eq(
 		seen,
-		111,  # NB1: Tidecaller 7; NB2: Twin Wardens 5; NB3: Judge 6; NB4: Shade 8; BH2: +1; O3: facet_lances
+		117,  # NB1: Tidecaller 7; NB2: Twin Wardens 5; NB3: Judge 6; NB4: Shade 8; BH2: +1; O3: facet_lances; v0.11.0 O5: +6
 		(
 			"every classed attack of the six bosses and the final boss's three bodies (N2: 4 new, The Fallen's 9;"
 			+ " PR: the Prism's 3 orb spells in, cross_weave and prism_bolt_fan out)"
@@ -132,10 +132,11 @@ func test_a_big_attack_is_followed_by_its_punish_window() -> void:
 			assert_between(rec, BossSchemas.PUNISH_MIN_TICKS, BossSchemas.PUNISH_MAX_TICKS, where)
 	assert_eq(
 		bigs,
-		21,
+		23,
 		(
 			"N2: the Colossus's leap_slam_3, The Fallen's three card casts; NB1: the Shell Slam;"
-			+ " NB2: the Shield Bash; NB3: the Gavel Slam; NB4: the Lantern Sweep"
+			+ " NB2: the Shield Bash; NB3: the Gavel Slam; NB4: the Lantern Sweep;"
+			+ " v0.11.0 O5: the Wardens' Charge and Ground Slam"
 		)
 	)
 

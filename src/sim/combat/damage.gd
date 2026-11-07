@@ -144,6 +144,12 @@ static func hit(
 	if owner_id == a.ids[0] and BossAi.is_boss_kind(a.kinds[target]):
 		var c := BossChallenge.hit_mult(w, target)  # BX (L17): ranged armour, the weak point.
 		m = [m[0] * c[0] / 1000, m[1] | c[1]]
+		var tw := BossTwin.taken_permille(w, target)  # v0.11.0 O5: phase 3's exposed Warden, its guarded twin
+		if tw != 1000:
+			m = [
+				m[0] * tw / 1000,
+				m[1] | (SimEvent.TAG_WEAK_SPOT if tw > 1000 else SimEvent.TAG_ARMOURED)
+			]
 	h.tags |= m[1]
 	var scaled := amount * m[0] / 1000
 	if mu[1] != 0 and owner_id == a.ids[0] and target != 0:
@@ -221,6 +227,7 @@ static func tick_dot(
 		amount = Constellations.scale(amount, Constellations.hunt_permille(w, target))  # v0.10.5 W3-P10c: C8
 		if BossQuake.stunned(w, target):  # v0.11.0 O3 (Q9 a): the stunned Gatekeeper takes +50 % ticks too
 			amount = amount * BossQuake.taken_permille(w, target) / 1000
+		amount = amount * BossTwin.taken_permille(w, target) / 1000  # v0.11.0 O5: the Wardens' swap
 	var root := w.take_root()
 	return _apply(
 		w, target, amount, source_id, owner_id, root, tags, a.pos(target), -1, 0, effect_id
@@ -296,6 +303,9 @@ static func _apply(
 
 
 ## v0.7.5 BF1: a boss's signature shield holds; v0.9.0 NB4: so does the dark round a Lantern Shade standing unlit
-## (BossShade.unlit: it is only hittable when lit).
+## (BossShade.unlit: it is only hittable when lit); v0.11.0 O5: so does a Twin Warden standing back (BossTwin.resting:
+## "not now", the other leads).
 static func _blocked(w: World, target: int) -> bool:
-	return BossDodge.shielded(w, target) or BossShade.unlit(w, target)
+	return (
+		BossDodge.shielded(w, target) or BossShade.unlit(w, target) or BossTwin.resting(w, target)
+	)

@@ -37,6 +37,10 @@ static func library() -> Dictionary:
 			_crossfire(),
 			_chain_sweep(),
 			_slam_ring(),
+			_charge(),
+			_marks(),
+			_pattern(),
+			_leap(),
 			_shielded(),
 			_flinch(),
 			_stagger(),
@@ -125,6 +129,62 @@ static func _slam_ring() -> BossClip:
 	c.shift(&"shield", FWD, [[0, 0], [0.42, -0.05], [0.5, 0.15, IN3], [0.62, 0.1], [1, 0]])
 	c.param(&"tremble", [[0, 0], [0.49, 0], [0.5, 1.0, LIN], [0.6, 0], [1, 0]])
 	c.param(&"glow", [[0, 0], [0.42, 0.6], [0.5, 1.2, IN3], [0.62, 0.5], [1, 0]])
+	return c
+
+
+## v0.11.0 O5: the amber Warden's Charge: it sinks back on its heels behind the shield, then drives forward low.
+static func _charge() -> BossClip:
+	var c := BossClip.new(&"charge")
+	c.shift(B, FWD, [[0, 0], [0.42, -0.22, BACK], [0.5, 0.3, IN3], [0.62, 0.25], [1, 0]])
+	c.turn(B, Z, [[0, 0], [0.42, 0.2, BACK], [0.5, -0.38, IN3], [0.62, -0.32], [1, 0]])
+	c.shift(B, UP, [[0, 0], [0.42, -0.1], [0.5, -0.14, IN3], [0.62, -0.1], [1, 0]])
+	c.turn(&"shield", Y, [[0, 0], [0.42, 0.3], [0.5, 0.4, IN3], [0.62, 0.35], [1, 0]])
+	c.param(&"glow", [[0, 0], [0.42, 0.9], [0.5, 1.4, IN3], [0.62, 1.0], [1, 0]])
+	return c
+
+
+## v0.11.0 O5: the amber Warden's Ground Slam (a mark on the player): it rises tall, then drops its whole weight.
+static func _marks() -> BossClip:
+	var c := BossClip.new(&"marks")
+	c.shift(
+		B,
+		UP,
+		[
+			[0, 0],
+			[0.42, 0.3, BACK],
+			[0.5, -0.24, IN3],
+			[0.56, -0.28, OUT3, S],
+			[0.62, -0.24],
+			[1, 0]
+		]
+	)
+	c.turn(B, Z, [[0, 0], [0.42, 0.24], [0.5, -0.36, IN3], [0.62, -0.3], [1, 0]])
+	c.stretch(B, [[0, 0], [0.42, 0.08], [0.5, -0.12, IN3], [0.62, -0.1], [1, 0]])
+	c.turn(&"sword", Z, [[0, 0], [0.42, 0.7, BACK], [0.5, -0.5, IN3], [0.62, -0.45], [1, 0]])
+	c.param(&"tremble", [[0, 0], [0.49, 0], [0.5, 1.0, LIN], [0.6, 0], [1, 0]])
+	c.param(&"glow", [[0, 0], [0.42, 0.7], [0.5, 1.3, IN3], [0.62, 0.9], [1, 0]])
+	return c
+
+
+## v0.11.0 O5: the violet Warden's Orb Volley (a pattern): the sword drawn high, then thrust out as the orbs fly.
+static func _pattern() -> BossClip:
+	var c := BossClip.new(&"pattern")
+	c.turn(&"sword", Z, [[0, 0], [0.42, 0.85, BACK], [0.5, -0.55, IN3], [0.62, -0.45], [1, 0]])
+	c.turn(B, Z, [[0, 0], [0.42, 0.16, BACK], [0.5, -0.22, IN3], [0.62, -0.18], [1, 0]])
+	c.turn(B, Y, [[0, 0], [0.42, 0.25], [0.5, -0.2, IN3], [0.62, -0.15], [1, 0]])
+	c.shift(B, FWD, [[0, 0], [0.42, -0.08], [0.5, 0.14, IN3], [0.62, 0.1], [1, 0]])
+	c.param(&"glow", [[0, 0], [0.42, 1.2], [0.5, 1.7, IN3], [0.62, 1.3], [1, 0]])
+	return c
+
+
+## v0.11.0 O5: the violet Warden's Blink (a short leap): it crouches, springs up thin as it flickers across, and lands
+## braced.
+static func _leap() -> BossClip:
+	var c := BossClip.new(&"leap")
+	c.shift(B, UP, [[0, 0], [0.42, -0.26, BACK], [0.5, 0.45, OUT3], [0.62, -0.16, IN3, S], [1, 0]])
+	c.stretch(B, [[0, 0], [0.42, -0.14], [0.5, 0.28, OUT3], [0.62, -0.12, IN3], [1, 0]])
+	c.turn(B, Z, [[0, 0], [0.42, 0.18], [0.5, -0.2], [0.62, -0.26, IN3], [1, 0]])
+	c.param(&"glow", [[0, 0], [0.42, 1.0], [0.5, 1.8, OUT3], [0.62, 1.2], [1, 0]])
 	return c
 
 

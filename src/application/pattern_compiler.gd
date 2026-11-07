@@ -187,6 +187,14 @@ static func _compile_twin(def: BossDefinition, t: BossTable) -> void:
 	t.flank_m = def.flank_m
 	t.anger_permille = def.anger_speed_permille
 	t.anger_ticks = SimTick.seconds_to_ticks(def.anger_seconds)
+	# v0.11.0 O5 (owner L7, Q11, Q29): the two movesets, the standing-back bolt, the last phase's swap
+	for a in t.attacks:
+		a.twin_body = def.twin_attack_ids.has(String(a.id))
+	t.twin_bolt = t.attack_index(def.twin_bolt_attack) if def.twin_bolt_attack != &"" else -1
+	t.twin_bolt_ticks = maxi(1, SimTick.seconds_to_ticks(def.twin_bolt_seconds))
+	t.twin_expose_ticks = maxi(1, SimTick.seconds_to_ticks(def.twin_expose_seconds))
+	t.twin_expose_permille = def.twin_expose_permille
+	t.twin_guard_permille = def.twin_guard_permille
 
 
 ## v0.7.5 EF (owner N16): an enemy's patterns, one per attack in order (null where an attack names none): the Arc

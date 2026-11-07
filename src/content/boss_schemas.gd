@@ -116,6 +116,7 @@ const MOVES := {
 			"lamp_seconds",
 			"relight_m",
 			"inset_m",
+			"twin_look",  # v0.11.0 O5: the Twin Wardens' standing-back bolt from the violet twin (its own colour)
 		]
 	},
 	## v0.7.5 BF1: `count` ground circles, stagger_seconds apart, each following the player's exact position until

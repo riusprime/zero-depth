@@ -104,6 +104,14 @@ var chain_half_m := 0.0
 var flank_m := 0.0
 var anger_permille := 1000
 var anger_ticks := 0
+## v0.11.0 O5 (owner L7, Q11, Q29; BossTwin): the phases' roles. The body standing back casts attack twin_bolt (an
+## index, -1 = none) every twin_bolt_ticks; in the last phase every twin_expose_ticks the exposed body swaps, taking
+## twin_expose_permille while the other takes twin_guard_permille. The twin's attacks: BossAttackTable.twin_body.
+var twin_bolt := -1
+var twin_bolt_ticks := 240
+var twin_expose_ticks := 600
+var twin_expose_permille := 1000
+var twin_guard_permille := 1000
 ## v0.9.0 NB3 (BOSSES_4_5.md N3; BossJudge): a boss with echo_points > 0 (the Clockwork Judge) keeps the player's last
 ## echo_points positions, one every echo_gap_ticks (its echo attacks'), for its echo to replay (0 = none).
 var echo_points := 0
