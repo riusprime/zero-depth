@@ -127,6 +127,8 @@ build step).
   owner's PC before it ships.
 - **O9b. Surge performance (owner Q16-b):** no team ring on critters; profile and cut the crowd's per-critter cost; the
   probe re-run on an idle PC; then `alive_cap` set to what holds 144 fps.
+- **O9c. Batched critters (owner Q16-c, "Batch now"):** critters drawn without a node each (one batched view), the
+  sim's critter loops reorganised; re-measure on an idle PC; raise `alive_cap` to what holds 144 fps (target 120).
 - **O10. Spell slots and the first spells (E1, E2, E4):** 4 slots, the timed runner in `abilities.gd`, the offer rule
   (Q17), HUD squares (Q19).
 - **O11. The full spell roster and levels (E3, E4).**
