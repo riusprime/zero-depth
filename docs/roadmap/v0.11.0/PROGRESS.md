@@ -90,3 +90,6 @@
 - 2026-11-07: O9 merged clean; O10 merged (`strings.csv` both-sides additions kept; translations rebuilt; on the merge:
   locale coverage, spells, surges, world snapshot, rewards `Tests 71, Passing Tests 71`). Owner on the surge miss:
   optimise first, then cap; no team ring on critters (O9b).
+- 2026-11-07: seams at 00d3f4e6 (+ O9, O10): `Tests 644, Passing Tests 643, Failing Tests 1`:
+  `test_save_lab_loadout.gd` `ARRAY(["spell_tables", "spell_rules"]) != ARRAY([])` (O10 set them in FloorPlan, not in
+  SaveLab). SaveLab now sets both; that file + test_spells + e2e old_save: `Tests 16, Passing Tests 16`. Pushed.
