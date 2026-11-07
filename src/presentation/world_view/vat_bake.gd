@@ -408,7 +408,7 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 	var ps := pieces(avatar, js)
 	var looks: Array = []
 	var any_two := false
-	var textured := avatar is HordeAvatar and HordeVat.texture(avatar) != null  # v0.10.5 W3-V4b: UVs too
+	var textured := HordeVat.texture(avatar) != null  # v0.10.5 W3-V4b: UVs too
 	var uvs := PackedVector2Array()
 	for p: Dictionary in ps:
 		var look := surface_look(p["node"], p["surface"])
@@ -516,7 +516,11 @@ static func surface_look(mi: MeshInstance3D, s: int) -> Array:
 	var std := mi.material_override as StandardMaterial3D
 	if std == null:
 		std = mi.get_surface_override_material(s) as StandardMaterial3D
-	if std != null and std.albedo_texture == null and std.has_meta(SoloVat.LOOK):
+	if (
+		std != null
+		and std.has_meta(SoloVat.LOOK)
+		and (std.albedo_texture == null or std.has_meta(&"enemy_tex"))
+	):
 		return SoloVat.surface_look(std)
 	if std != null and std.albedo_texture == null and not std.emission_enabled:
 		var c := std.albedo_color.srgb_to_linear()

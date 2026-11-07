@@ -15,13 +15,25 @@ const OUTLINE_M := 0.02
 
 ## v0.8.0 EC: the pod (body), the cap (trim), the ring (grey) and the eye slit (eye) come from EnemyPalettes.
 const KIND := WorldReader.KIND_LENS_DRONE
+## v0.11.0 S4 (SoloVat): the raw drives (_vd) and their specs [lo, hi, loop]: the pod's roll about X and Z, the ring's
+## turn (its charge-quickened spin).
+const RX := 0
+const RZ := 1
+const SPIN := 2
+const VAT_DRIVES := [[-0.08, 0.08, false], [-0.12, 0.07, false], [0.0, TAU, true]]
 
 var pod: Node3D
 var ring: Node3D
 ## v0.8.0 MI: true when the pod is the owner's model.
 var has_model := false
 var shadow: MeshInstance3D
+## v0.11.0 S4 (the Enemy VAT, like the Bomb Drone): true (set before setup(), ActorViews from ViewPrefs.enemy_vat): a
+## VatCrowd draws the body from baked poses; setup() builds only the ground disc.
+var vat := false
+var kind := KIND
 
+var _vd := PackedFloat32Array([0, 0, 0])
+var _lift := 0.0
 var _eye_mat := StandardMaterial3D.new()
 var _parts: BossParts
 var _state := WorldReader.STATE_SPAWN
@@ -46,7 +58,12 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	shadow.material_override = sm
 	shadow.position.y = 0.012
 	shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	shadow.set_meta(SoloVat.LIVE, true)
 	add_child(shadow)
+	if vat:  # v0.11.0 S4: the crowd draws the body
+		has_model = EnemyModels.has_model(&"lens_drone")  # (its ring spins as the model's does)
+		_pose()
+		return
 	pod = Node3D.new()
 	add_child(pod)
 	if _build_model():  # v0.8.0 MI: the owner's model
@@ -155,7 +172,7 @@ func apply_state(s: Dictionary) -> void:
 
 func advance(delta: float) -> void:
 	var dt := clampf(delta, 0.0, 0.05)
-	if dt <= 0.0 or pod == null:
+	if dt <= 0.0 or (pod == null and not vat):
 		return
 	_t += dt
 	var spawning := _state == WorldReader.STATE_SPAWN
@@ -172,18 +189,68 @@ func _flinch_pivot() -> float:
 
 ## The pod's current height above the ground (the hover plus the bob).
 func hover_height() -> float:
-	return pod.position.y
+	return _lift
 
 
+## v0.11.0 S4: the pose's numbers first (the hover, the pod's roll, the ring's turn: the VAT drives), then the nodes
+## from them (the old path).
 func _pose() -> void:
 	var bob := sin(_t * TAU * 0.8) * BOB_M
-	pod.position = Vector3(0, lerpf(0.4, HOVER_Y, _rise) + bob, 0)
-	pod.rotation = Vector3(sin(_t * 1.5) * 0.08, 0, sin(_t * 1.9) * 0.06 - 0.05 * _charge)
+	_lift = lerpf(0.4, HOVER_Y, _rise) + bob
+	_vd[RX] = sin(_t * 1.5) * 0.08
+	_vd[RZ] = sin(_t * 1.9) * 0.06 - 0.05 * _charge
 	# The code-made ring turns about its tube; the owner's ring of feet spins under the pod (v0.8.0 MI), faster as
 	# the eye charges.
-	ring.rotation = (
-		Vector3(0, _t * (2.5 + 6.0 * _charge), 0) if has_model else Vector3(_t * 2.5, 0, 0)
-	)
+	_vd[SPIN] = fposmod(_t * (2.5 + 6.0 * _charge if has_model else 2.5), TAU)
 	_eye_mat.emission_energy_multiplier = 1.8 + 3.5 * _charge
 	var s := lerpf(0.6, 1.0, _rise) * (1.0 - bob)
 	shadow.scale = Vector3(s, 1, s)
+	if vat:
+		return
+	pod.position = Vector3(0, _lift, 0)
+	pod.rotation = Vector3(_vd[RX], 0, _vd[RZ])
+	ring.rotation = Vector3(0, _vd[SPIN], 0) if has_model else Vector3(_vd[SPIN], 0, 0)
+
+
+# --- v0.11.0 S4: the VAT rig (SoloVat) ----------------------------------------------------------------------------
+
+
+## The pod's height (m): the whole body's lift VatCrowd moves the instance by (the ground disc is its own node).
+func vat_lift() -> float:
+	return _lift
+
+
+func vat_drives() -> PackedFloat32Array:
+	return SoloVat.normalized(_vd, VAT_DRIVES)
+
+
+## The eye slit's glow (flaring through the windup).
+func glow_energy() -> float:
+	return _eye_mat.emission_energy_multiplier
+
+
+## The pod rolls (about X, then Z, as its rotation composes them); the ring turns on its mount (about Y for the
+## owner's ring of feet, about X for the code-made tube).
+func vat_rig() -> Dictionary:
+	var mount := SoloVat.between(pod, ring.get_parent()) * SoloVat.at(ring.position)
+	var joints: Array = [
+		[RX, -1, null, SoloVat.turn(Vector3.RIGHT)],
+		[RZ, 0, pod, SoloVat.turn(Vector3.BACK)],
+		[SPIN, 1, ring, SoloVat.turn(Vector3.UP if has_model else Vector3.RIGHT, 1.0, mount)],
+	]
+	var out := SoloVat.rig(
+		"lens_drone", VAT_DRIVES, [[[RX, 17]], [[RZ, 17]], [[SPIN, 128]]], joints, OUTLINE_M, false
+	)
+	if has_model:  # the owner's model's colour map (VatLooks' textured variant)
+		out["albedo_tex"] = EnemyModels.get_model(&"lens_drone")["texture"]
+	return out
+
+
+func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
+	return SoloVat.sample(
+		self, rng, {"_t": [0.0, 40.0], "_rise": [0.0, 1.0], "_charge": [0.0, 1.0]}, _pose
+	)
+
+
+func vat_set(s: Dictionary) -> void:
+	SoloVat.apply(self, s, _pose)

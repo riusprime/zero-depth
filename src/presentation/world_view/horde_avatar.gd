@@ -171,6 +171,8 @@ static func model_id(p_kind: int) -> StringName:
 			return &"shield_bearer"
 		WorldReader.KIND_MENDER:
 			return &"mender"
+		WorldReader.KIND_LENS_DRONE:  # v0.11.0 S4 (VatCrowd.supports reads it; the Lens Drone is no HordeAvatar)
+			return &"lens_drone"
 	return &""
 
 

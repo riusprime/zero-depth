@@ -24,6 +24,7 @@ extends Node3D
 ## the Charger and the Brood Mother's Hatchling).
 ## v0.10.5 W3-V4b: the other horde kinds (HordeVat).
 ## v0.10.5 W3-V4c: the Needle, Warden, Arc Caster and Bomb Drone (SoloVat.KINDS).
+## v0.11.0 S4: the Hive Lens's Lens Drone.
 const KINDS: Array[int] = [
 	WorldReader.KIND_SWARMER,
 	WorldReader.KIND_CHARGER,
@@ -38,6 +39,7 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_WARDEN,
 	WorldReader.KIND_ARC_CASTER,
 	WorldReader.KIND_BOMB_DRONE,
+	WorldReader.KIND_LENS_DRONE,
 ]
 ## After every node's _process (the avatars' frame-time animation runs at 0).
 const PROCESS_PRIORITY := 1000

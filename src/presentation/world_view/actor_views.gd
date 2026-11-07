@@ -687,6 +687,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_LENS_DRONE:
 			# The Hive Lens's drones (v0.4.0 BO): drawn hovering, their shadow where the sim has them.
 			var lens := LensDroneAvatar.new()
+			_solo_vat(root, lens, kind)  # v0.11.0 S4
 			lens.setup(outline_color, technique)
 			facing.add_child(lens)
 			height = LensDroneAvatar.HEIGHT
@@ -916,9 +917,9 @@ func _projectile_material(c: Color, energy: float) -> StandardMaterial3D:
 	return _proj_mats[key]
 
 
-## v0.10.5 W3-V4c: a Needle, Warden, Arc Caster or Bomb Drone `avatar` (before its setup) drawn by the VAT crowd while
-## the switch is on: it takes the floor's cast and role glow for its baked look (its own materials take them after it
-## is built, tint_greys / role_glow, on the old path) and the flash and tints per instance (hit_look).
+## v0.10.5 W3-V4c: a Needle, Warden, Arc Caster, Bomb Drone or Lens Drone `avatar` (before its setup) drawn by the VAT
+## crowd while the switch is on: it takes the floor's cast and role glow for its baked look (its own materials take
+## them after it is built, tint_greys / role_glow, on the old path) and the flash and tints per instance (hit_look).
 func _solo_vat(root: Node3D, avatar: AvatarBase, kind: int) -> void:
 	if not VatCrowd.supports(kind):
 		return
