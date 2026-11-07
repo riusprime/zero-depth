@@ -492,3 +492,55 @@ func test_the_death_lines_name_the_dark() -> void:
 	assert_eq(BossAi.cause_key(w), &"CAUSE_SHADE_SNUFF")
 	w.killer_attack = t.attack_index(&"lantern_sweep")
 	assert_eq(BossAi.cause_key(w), &"CAUSE_SHADE_SWEEP")
+
+
+## v0.11.0 S2b (owner Q2, "Wider still"): the escape lane in a Wisp Bloom wave (the edge-to-edge gap between the two
+## wisps either side of a petal valley, where the wave crosses 4 m from the Shade) is at least the hero's diameter
+## (0.70 m) + 0.7 m = 1.40 m. Bloom 1 is not in this test (the owner is asked about it separately).
+func test_s2b_bloom_lanes_leave_hero_plus_0_7_m_at_4_m() -> void:
+	var ring := 4.0
+	var away := Vector2(0, -400)
+	var need := 2.0 * PlayerTable.starting_values().radius_m + 0.7
+	for atk in [&"wisp_bloom_2", &"wisp_bloom_3"]:
+		var s := _fight(Vector2(ring, 0))
+		var w: World = s[0]
+		_hush(w, s[1])
+		_hold(w, Vector2(ring, 0), 2)
+		BossLab.start(w, _i(w, s[1]), atk)
+		var prev := {}
+		var first_wave := {}  # proj id -> true, the ids seen on the first tick any wisp exists
+		var angles: Array[float] = []
+		var radius := 0.0
+		var fired := false
+		for tick in 400:
+			_hold(w, away if fired else Vector2(ring, 0), 1)
+			var ps := w.projectiles
+			var any := false
+			for j in ps.ids.size():
+				if ps.team[j] != ActorStore.TEAM_ENEMY:
+					continue
+				any = true
+				var id: int = ps.ids[j]
+				if not fired:
+					first_wave[id] = true
+				var p := Vector2(ps.pos_x[j], ps.pos_y[j])
+				radius = ps.radius[j]
+				if first_wave.has(id) and prev.has(id):
+					var a: Vector2 = prev[id]
+					if a.length() < ring and p.length() >= ring:
+						angles.append(
+							a.lerp(p, (ring - a.length()) / (p.length() - a.length())).angle()
+						)
+				prev[id] = p
+			if any:
+				fired = true
+			if fired and not any:
+				break
+		assert_gt(angles.size(), 6, "%s: the first wave crossed 4 m" % atk)
+		angles.sort()
+		var widest := 0.0
+		for q in angles.size():
+			var nxt: float = angles[(q + 1) % angles.size()]
+			var d: float = nxt - angles[q] + (TAU if q == angles.size() - 1 else 0.0)
+			widest = maxf(widest, 2.0 * ring * sin(d / 2.0) - 2.0 * radius)
+		assert_gte(widest, need, "%s: lane %.3f m at 4 m (need %.2f)" % [atk, widest, need])
