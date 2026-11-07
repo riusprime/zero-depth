@@ -42,7 +42,7 @@ func _shoot(w: World, id: int, key: StringName, at: Vector2, vel: Vector2) -> vo
 func test_every_look_but_the_crescent_has_a_pack_row() -> void:
 	var pack := PackFx.new()
 	add_child_autofree(pack)
-	assert_eq(_looks().size(), 17, "18 hostile looks, the crescent apart")
+	assert_eq(_looks().size(), 16, "18 hostile looks, the crescent and the Shade wisp apart")
 	for key in _looks():
 		assert_true(pack.has_id(StringName("shot_%s" % key)), "%s has its shot_ row" % key)
 	assert_false(pack.has_id(&"shot_nemesis_crescent"), "the crescent stays as it was (gap N4)")
@@ -142,6 +142,15 @@ func test_the_crescent_draws_as_before_with_a_pack() -> void:
 	r[1].sync(r[3])
 	assert_eq((r[2] as PackFx).live_count(&"enemy_shot"), 0)
 	assert_eq((r[1] as FireballViews).core_count(&"nemesis_crescent"), 1)
+
+
+func test_the_shade_wisp_stays_the_multimesh_so_the_dark_hides_it() -> void:
+	assert_true(FireballViews.PACK_SKIP.has(&"shade_wisp"))
+	var r := _rig()
+	_shoot(r[0], 732, &"shade_wisp", Vector2(1, 1), Vector2(1, 0))
+	r[1].sync(r[3])
+	assert_eq((r[2] as PackFx).live_count(&"enemy_shot"), 0, "no pack node")
+	assert_eq((r[1] as FireballViews).core_count(&"shade_wisp"), 1, "drawn by the MultiMesh core")
 
 
 func test_the_looks_own_colours_reach_a_pack_scene_that_has_colours() -> void:
