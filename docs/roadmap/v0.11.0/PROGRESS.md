@@ -101,3 +101,5 @@
 - 2026-11-07: O11, O9b, VX merged. Seams at 75b3eb41: `Scripts 111, Tests 644, Passing Tests 644, Asserts 79072, Time
   1294.66s`, `---- All tests passed! ----`, `check_gut_log: ok (644 passing, minimum 1)`. Pushed. O9c (batched
   critters) building.
+- 2026-11-07: seams at 5b1d08ca (+ O9c): `Scripts 111, Tests 644, Passing Tests 644, Asserts 79098, Time 1272.864s`,
+  `---- All tests passed! ----`, `check_gut_log: ok (644 passing, minimum 1)`. Pushed.
