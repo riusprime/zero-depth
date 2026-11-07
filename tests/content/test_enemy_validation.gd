@@ -14,12 +14,13 @@ func test_the_shipped_enemies_are_valid_and_compile() -> void:
 	var repo := ContentRepository.load_all()
 	assert_eq(
 		repo.count(&"enemies"),
-		24,
+		26,
 		(
 			"charger, warden, needle, the hatchling (v0.3.0 C), the Arc Caster and the Bomb Drone (v0.3.5),"
 			+ " six horde kinds and the Splitling (v0.4.0 EN), the Lens Drone (v0.4.0 BO),"
 			+ " the five horde critters (v0.11.0 O9)"
-			+ " and the five biome variants (v0.11.0 O13a)"
+			+ ", the five biome variants (v0.11.0 O13a)"
+			+ " and the two Starfall signatures (v0.11.0 O13d)"
 		)
 	)
 	for def: EnemyDefinition in repo.all_of(&"enemies"):
@@ -270,7 +271,17 @@ func test_each_biome_has_its_roster_and_variant() -> void:
 		assert_eq(Array(b.signature_ids), want[id][1], "%s: its two signatures" % id)
 		var kinds := VariantCompiler.roster_kinds(repo, b)
 		var v := ContentCompiler.compile_enemy(repo.get_def(&"enemies", b.variant_id))
-		assert_eq(kinds, PackedInt32Array([v.kind]), "%s: only its variant until O13b-d ship" % id)
+		# its variant and its signatures already built (O13b-d add theirs; v0.11.0 O13d: Starfall's two)
+		var own := PackedInt32Array([v.kind])
+		for sig: StringName in b.signature_ids:
+			if repo.get_def(&"enemies", sig) != null:
+				own.append(ContentCompiler.compile_enemy(repo.get_def(&"enemies", sig)).kind)
+		own.sort()
+		assert_eq(kinds, own, "%s: its variant and its built signatures" % id)
+		if id == &"starfall":
+			assert_eq(
+				kinds.size(), 3, "starfall: the Split Sniper, the Star Warper, the Gravity Node"
+			)
 	var defs: Array[ContentDef] = []
 	defs.append_array(repo.all_of(&"enemies"))
 	defs.append_array(repo.all_of(&"biomes"))

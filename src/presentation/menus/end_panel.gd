@@ -35,6 +35,8 @@ const CAUSES := {
 	WorldReader.KIND_EMBER_CHARGER: "CAUSE_EMBER_CHARGER",
 	WorldReader.KIND_FROST_CHARGER: "CAUSE_FROST_CHARGER",
 	WorldReader.KIND_SPLIT_SNIPER: "CAUSE_SPLIT_SNIPER",
+	WorldReader.KIND_STAR_WARPER: "CAUSE_STAR_WARPER",  # v0.11.0 O13d: the Starfall signatures
+	WorldReader.KIND_GRAVITY_NODE: "CAUSE_GRAVITY_NODE",
 }
 
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted

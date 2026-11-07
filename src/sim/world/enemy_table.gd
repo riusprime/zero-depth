@@ -108,3 +108,14 @@ var burn_period_ticks := 1
 var slick_permille := 1000
 var split_at_permille := 0
 var split_turn := 0
+## v0.11.0 O13d (ENEMIES.md R9, R10; StarfallKinds; the defaults on every other kind). The Star Warper: its star lands
+## mark_offset_m beside the hero (square to its line to the hero); the hero standing within mark_radius_m of the star
+## when the windup ends cancels the blink and stuns it stun_ticks; else it blinks onto the star and strikes a disc of
+## strike_radius_m round it. The Gravity Node: every projectile within pull_radius_m of it turns toward it by up to
+## pull_accel (m per tick per tick at its centre, none at the reach), keeping its speed.
+var mark_offset_m := 0.0
+var mark_radius_m := 0.0
+var strike_radius_m := 0.0
+var stun_ticks := 0
+var pull_radius_m := 0.0
+var pull_accel := 0.0

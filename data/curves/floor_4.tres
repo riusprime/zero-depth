@@ -14,7 +14,7 @@ hp_permille = 700
 damage_permille = 450
 pack_cap = 2
 hold = false
-kinds = Array[StringName]([&"charger", &"needle", &"swarmer", &"warden", &"arc_caster", &"splitter", &"shield_bearer", &"bomb_drone", &"mine_layer", &"mender", &"sniper"])
+kinds = Array[StringName]([&"charger", &"needle", &"swarmer", &"warden", &"arc_caster", &"splitter", &"shield_bearer", &"bomb_drone", &"mine_layer", &"mender", &"sniper", &"star_warper", &"gravity_node"])
 
 [sub_resource type="Resource" id="P_2"]
 script = ExtResource("1_phase")

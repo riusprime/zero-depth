@@ -29,6 +29,8 @@ const ENEMY_KINDS := {  # behaviour ids to actor kinds (a test checks the key se
 	&"ember_charger": ActorStore.Kind.EMBER_CHARGER,
 	&"frost_charger": ActorStore.Kind.FROST_CHARGER,
 	&"split_sniper": ActorStore.Kind.SPLIT_SNIPER,
+	&"star_warper": ActorStore.Kind.STAR_WARPER,  # v0.11.0 O13d: the Starfall signatures (StarfallKinds)
+	&"gravity_node": ActorStore.Kind.GRAVITY_NODE,
 }
 ## Bosses (v0.3.0 C): ids to actor kinds, move names to BossAttackTable moves (a test matches BossSchemas' sets).
 const BOSS_KINDS := BossKinds.ALL  # v0.9.0 NB4: the table lives in BossKinds (this file's line limit)
@@ -240,6 +242,17 @@ static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) 
 			t.damage = int(bp["contact_damage"])  # its touch (RunState.scale_enemies scales it by floor, as every hit)
 			t.contact_cd_ticks = maxi(1, SimTick.seconds_to_ticks(bp["contact_cd_seconds"]))
 			t.flies = bool(bp["flies"])
+		&"star_warper":  # v0.11.0 O13d (ENEMIES.md R9): its star, the strike round it and the stun
+			t.mark_offset_m = float(bp["mark_offset_m"])
+			t.mark_radius_m = float(bp["mark_radius_m"])
+			t.stun_ticks = maxi(1, SimTick.seconds_to_ticks(float(bp["stun_seconds"])))
+			t.strike_radius_m = float(sp["radius_m"])
+		&"gravity_node":  # v0.11.0 O13d (ENEMIES.md R10): floating (no floor hazard reaches it), its pull
+			t.flies = true
+			t.pull_radius_m = float(bp["pull_radius_m"])
+			t.pull_accel = (
+				float(bp["pull_mps2"]) / float(SimTick.TICKS_PER_SECOND * SimTick.TICKS_PER_SECOND)
+			)
 
 
 ## The Arc Caster (v0.3.5 AI): its spells in schema order (bolt, spread, rune); v0.7.5 EF: bolt and spread are fans.

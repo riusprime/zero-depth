@@ -99,7 +99,9 @@ func test_the_table_covers_every_normal_kind_and_slot_in_every_palette() -> void
 		)
 		# v0.11.0 O13a: the five biome variants wear their base's colours under their biome's cast (VariantLooks)
 		var variant := BehaviourSchemas.VARIANT_OF.has(StringName(f.get_basename()))
-		if f.ends_with(".tres") and not critter and not variant:
+		# v0.11.0 O13d: the Starfall signatures wear their own colours (StarfallAvatar.COLORS)
+		var starfall := StringName(f.get_basename()) in [&"star_warper", &"gravity_node"]
+		if f.ends_with(".tres") and not critter and not variant and not starfall:
 			ids[StringName(f.get_basename())] = true
 	assert_eq(
 		ids.size(),

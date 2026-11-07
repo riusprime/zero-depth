@@ -56,6 +56,10 @@ enum Kind {
 	EMBER_CHARGER,
 	FROST_CHARGER,
 	SPLIT_SNIPER,
+	# v0.11.0 O13d (ENEMIES.md R9, R10): the Starfall signatures (StarfallKinds): the Star Warper marks a star beside
+	# the hero and blinks onto it; the Gravity Node, stationary and floating, bends every projectile near it.
+	STAR_WARPER,
+	GRAVITY_NODE,
 }
 
 const TEAM_PLAYER := 0

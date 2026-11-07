@@ -19,8 +19,6 @@ const PENDING_SIGNATURES: Array[StringName] = [
 	&"cinder_priest",
 	&"frost_spitter",
 	&"glacier_turtle",
-	&"star_warper",
-	&"gravity_node",
 ]
 const SIGNATURES_PER_BIOME := 2
 
