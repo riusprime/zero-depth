@@ -17,5 +17,6 @@ damage = PackedInt32Array(10, 10, 11, 11, 12)
 radius_m = PackedFloat32Array(0.5, 0.5, 0.5, 0.5, 0.5)
 count = PackedInt32Array(3, 4, 4, 5, 6)
 jump_m = 4.0
+bonus_seconds = 0.3
 stacks = 1
 id = &"spell_sky_strike"

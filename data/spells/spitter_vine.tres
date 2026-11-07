@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SpellDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/spell_definition.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+name_key = &"SPELL_SPITTER_VINE"
+desc_key = &"SPELL_SPITTER_VINE_DESC"
+level_keys = Array[StringName]([&"SPELL_SPITTER_VINE_LV1", &"SPELL_SPITTER_VINE_LV2", &"SPELL_SPITTER_VINE_LV3", &"SPELL_SPITTER_VINE_LV4", &"SPELL_SPITTER_VINE_LV5"])
+element = &"venom"
+element_card = &"venom_core"
+affinity = &"venom"
+weight = 10
+cooldown_s = 12.0
+reach_m = 7.0
+damage = PackedInt32Array(5, 5, 3, 3, 3)
+radius_m = PackedFloat32Array(0.5, 0.5, 0.5, 0.5, 0.5)
+seconds = PackedFloat32Array(8, 10, 10, 12, 12)
+count = PackedInt32Array(1, 1, 2, 2, 2)
+period_s = 0.6
+pierce = 2
+stacks = 1
+id = &"spell_spitter_vine"

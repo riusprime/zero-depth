@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SpellDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/spell_definition.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+name_key = &"SPELL_STATIC_FIELD"
+desc_key = &"SPELL_STATIC_FIELD_DESC"
+level_keys = Array[StringName]([&"SPELL_STATIC_FIELD_LV1", &"SPELL_STATIC_FIELD_LV2", &"SPELL_STATIC_FIELD_LV3", &"SPELL_STATIC_FIELD_LV4", &"SPELL_STATIC_FIELD_LV5"])
+element = &"lightning"
+element_card = &"storm_core"
+affinity = &"storm"
+weight = 10
+cooldown_s = 12.0
+reach_m = 5.0
+damage = PackedInt32Array(4, 4, 3, 3, 3)
+radius_m = PackedFloat32Array(2.5, 3, 3, 3.5, 3.5)
+seconds = PackedFloat32Array(4, 4, 5, 6, 6)
+period_s = 0.5
+bonus_damage = 12
+bonus_radius_m = 4.0
+stacks = 1
+id = &"spell_static_field"

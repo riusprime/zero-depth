@@ -74,6 +74,37 @@ func test_each_cast_is_drawn_once_in_its_element_colour() -> void:
 			assert_false(red, "element %d: never red" % e)
 
 
+## v0.11.0 O11: every spell of the fifteen has its look in the world (a cast or a lasting shape, drawn) and its icon,
+## four at a time at Lv 5 (the slots) with a pack in reach and a dash now and then.
+func test_every_spell_has_a_look_and_an_icon() -> void:
+	var cards := [&"frost_core", &"ember_core", &"storm_core", &"venom_core", &"shared_bleed"]
+	var seen := {}
+	for g: Array in [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14]]:
+		var enemies := []
+		for k in 8:
+			enemies.append([Vector2(1.5 + (k % 4) * 0.9, -1.5 + (k / 4) * 2.5), 100000])
+		var w := _world(cards, enemies)
+		w.pair_table = WandCompiler.pairs(W.repo())
+		w.loop = 2
+		for k: int in g:
+			for n in 5:
+				Offers.apply(w, Offers.spell_code(k))
+		for i in range(1, 9):
+			Engines.add_bleed(w, i, 2, 1)  # TEST HELPER: bleeding, so Leech has a target
+		var view: AttackFormView = add_child_autofree(AttackFormView.new())
+		var reader := WorldReader.new(w)
+		for t in 240:
+			var d := InputFrame.DASH if t == 60 else 0
+			w.step(W.frame(d, d, 0, Vector2i(0, 127) if t == 60 else Vector2i.ZERO))
+			view.sync(reader)
+		for k: Variant in view.spell_seen():
+			seen[int(k)] = true
+	for k in 15:
+		var id: StringName = SpellDefinition.SPELLS[k]
+		assert_true(seen.has(k), "%s: drawn in the world" % id)
+		assert_true(SpellLooks.has_icon(id), "%s: an icon" % id)
+
+
 func test_the_pick_card_names_the_spell_its_level_and_what_it_replaces() -> void:
 	var w := _world([&"ember_core"], [])
 	var reader := WorldReader.new(w)

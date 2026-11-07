@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SpellDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/spell_definition.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+name_key = &"SPELL_METEOR"
+desc_key = &"SPELL_METEOR_DESC"
+level_keys = Array[StringName]([&"SPELL_METEOR_LV1", &"SPELL_METEOR_LV2", &"SPELL_METEOR_LV3", &"SPELL_METEOR_LV4", &"SPELL_METEOR_LV5"])
+element = &"fire"
+element_card = &"ember_core"
+affinity = &"ember"
+weight = 10
+cooldown_s = 16.0
+reach_m = 10.0
+damage = PackedInt32Array(16, 17, 18, 20, 20)
+radius_m = PackedFloat32Array(5, 5.5, 6, 6.5, 6.5)
+seconds = PackedFloat32Array(0.5, 0.5, 0.5, 0.5, 0.5)
+delay_s = 1.2
+period_s = 0.5
+bonus_damage = 2
+bonus_seconds = 4.0
+bonus_radius_m = 3.5
+stacks = 1
+id = &"spell_meteor"

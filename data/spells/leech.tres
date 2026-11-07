@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SpellDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/spell_definition.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+name_key = &"SPELL_LEECH"
+desc_key = &"SPELL_LEECH_DESC"
+level_keys = Array[StringName]([&"SPELL_LEECH_LV1", &"SPELL_LEECH_LV2", &"SPELL_LEECH_LV3", &"SPELL_LEECH_LV4", &"SPELL_LEECH_LV5"])
+element = &"bleed"
+element_card = &"shared_bleed"
+affinity = &""
+weight = 10
+cooldown_s = 12.0
+reach_m = 6.0
+damage = PackedInt32Array(3, 3, 4, 4, 5)
+radius_m = PackedFloat32Array(6, 6, 6, 6, 6)
+seconds = PackedFloat32Array(4, 4, 4, 4, 4)
+period_s = 0.5
+heal_cap = PackedInt32Array(10, 13, 16, 20, 20)
+heal_per_damage = 25
+stacks = 1
+id = &"spell_leech"

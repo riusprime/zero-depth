@@ -84,7 +84,8 @@ const SHORT := {
 const HIDE := {&"p10l_meteor_land": ["Core", "Smoke", "Impact_Streaks2"]}
 
 ## v0.11.0 S3: the children spawn()'s `hide` may switch off (and back on for the next user of a pooled instance).
-const HIDE_PER_SPAWN: Array[String] = ["Smoke"]
+## v0.11.0 O11: also an impact's white Core puff and its Ground_Impact disc (Blood Thorns' eruptions keep the sparks).
+const HIDE_PER_SPAWN: Array[String] = ["Smoke", "Core", "Ground_Impact"]  # v0.11.0 O11: Blood Thorns keeps the sparks
 
 static var _shared: PackFxDefinition
 ## How floor loads warm the pack (VX-W): &"menu" (PackFxSessionWarm warms at the main menu; a load warms what is

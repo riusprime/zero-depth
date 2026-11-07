@@ -102,7 +102,7 @@ func sync(reader: WorldReader) -> void:
 	if _sb_pool != null:
 		_sb_pool.sync(_tick)
 	if _spell_pool != null or reader.spell_count() > 0:
-		_spell_fx().sync(reader)  # v0.11.0 O10: Frost Nova, Fireball, Sky Strike
+		_spell_fx().sync(reader)  # v0.11.0 O10, O11: every spell
 
 
 ## A look adds something over the v0.5 blade or dart only with an element, a cue or a damage weight.
@@ -704,9 +704,17 @@ func _spell_fx() -> SpellFx:
 	if _spell_pool == null:
 		_spell_pool = SpellFx.new()
 		add_child(_spell_pool)
+		if vfx != null and vfx.pack_fx != null:  # v0.11.0 O11 (PD-13): the new spells draw as pack effects
+			vfx.hero_drawers.append(_spell_pool.draw_fx)
+			_spell_pool.vfx_on = true
 	return _spell_pool
 
 
 ## v0.11.0 O10: the spell casts drawn so far by kind (tests; {} before any).
 func spell_drawn() -> Dictionary:
 	return _spell_pool.drawn if _spell_pool != null else {}
+
+
+## v0.11.0 O11: the spells seen drawn so far (a cast or a lasting look; tests; {} before any).
+func spell_seen() -> Dictionary:
+	return _spell_pool.seen if _spell_pool != null else {}

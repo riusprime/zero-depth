@@ -1389,13 +1389,20 @@ loop from loop 2, the last for every later loop.
 
 `SpellDefinition` (v0.11.0 O10, owner Q17-Q20; `data/spells/`, category `spells`): an elemental spell
 ([`SPELLS.md`](../roadmap/v0.11.0/SPELLS.md)), a card that sits in a spell slot beside the wand and casts by itself.
-The `id` names the spell and its rule (`SpellDefinition.SPELLS`, the 15 rows in order; O10 builds `spell_frost_nova`,
-`spell_fireball`, `spell_sky_strike`, any other id is `unknown` until its rule ships). `name_key`, `desc_key`,
+The `id` names the spell and its rule (`SpellDefinition.SPELLS`, the 15 rows in order, all built since O11; any other
+id is `unknown`). `name_key`, `desc_key`,
 `level_keys` (5, the pick card's level line), `element` (`frost`, `fire`, `lightning`, `venom`, `bleed`),
 `element_card` (the item id whose holding puts it in the offers), `affinity` (the wardrobe affinity id that raises its
 weight, or empty), `weight` (> 0), `cooldown_s` (> 0), `reach_m` (> 0), and per level (5 entries, Lv 1 first):
 `damage` (> 0), `radius_m` (> 0), `seconds` (Frost Nova's freeze), `count` (Fireball's balls, Sky Strike's bolts);
 `push_m` (Frost Nova), `jump_m` (Sky Strike), `speed_mps` (Fireball), `stacks` (the element status a hit applies).
+v0.11.0 O11: `seconds` is how long a lasting spell lasts (Meteor's knock-down), `count` also Ice Lances' shards, Ball
+Lightning's zap targets, Spitter Vine's heads and Hemorrhage's marks; `jump_m` Ice Lances' split reach; `speed_mps`
+also Venom Orb's flight, Ball Lightning's roll and Burning Ground's Lv 5 follow; and `period_s` (a pulse), `delay_s`
+(Meteor's mark, Hemorrhage's wait, Blood Thorns' second ring), `inner_m` (Blood Thorns), `pierce` (Ice Lances, Spitter
+Vine Lv 5), `bonus_damage`, `bonus_seconds`, `bonus_radius_m` (the Lv 5 extra), `heal_cap` (per level) and
+`heal_per_damage` (Leech), `slow_permille` (Toxic Cloud Lv 5). Which spell needs which is `SpellDefinition.NEEDS`
+(each > 0; per-level lists 5 entries); SIM_CONTRACTS §8p says what each does.
 `SpellRulesDefinition` (id `spell_rules`, category `spell_rules`): `slots` (1..8; 4), `offer_permille` (0..1000; a
 regular altar's chance of a spell card while the run's pool has one; 350), `affinity_permille` (1000..10000; the
 weight of a spell whose affinity is the run's rune affinity; 2000), `loop1_max_level` (1..5; 3), `pack_radius_m`

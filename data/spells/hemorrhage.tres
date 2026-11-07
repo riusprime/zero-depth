@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SpellDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/spell_definition.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+name_key = &"SPELL_HEMORRHAGE"
+desc_key = &"SPELL_HEMORRHAGE_DESC"
+level_keys = Array[StringName]([&"SPELL_HEMORRHAGE_LV1", &"SPELL_HEMORRHAGE_LV2", &"SPELL_HEMORRHAGE_LV3", &"SPELL_HEMORRHAGE_LV4", &"SPELL_HEMORRHAGE_LV5"])
+element = &"bleed"
+element_card = &"shared_bleed"
+affinity = &""
+weight = 10
+cooldown_s = 12.0
+reach_m = 10.0
+damage = PackedInt32Array(40, 44, 48, 52, 50)
+radius_m = PackedFloat32Array(3, 3.5, 4, 4.5, 4.5)
+count = PackedInt32Array(1, 1, 1, 1, 2)
+delay_s = 3.0
+stacks = 1
+id = &"spell_hemorrhage"

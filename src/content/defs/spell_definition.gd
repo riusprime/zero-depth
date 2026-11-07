@@ -5,14 +5,9 @@ extends ContentDef
 ## cooldown (Spells). Holding its element's card (`element_card`, an item id) puts it in the run's offers; the run's
 ## rune affinity `affinity` (a wardrobe affinity id, or empty) raises its offer weight (SpellRulesDefinition). Taking it
 ## again levels it (Lv 1-3, Lv 4-5 from loop 2). The id names the spell and its rule (Spells, one per id in SPELLS
-## order). Per-level lists hold 5 entries, Lv 1 first:
-## - spell_frost_nova (F2): `damage` and a freeze of `seconds` to every enemy within `radius_m` of you, each pushed
-##   `push_m` away;
-## - spell_fireball (B1): `count` balls fly at `speed_mps` at the densest pack within `reach_m` and burst `radius_m`,
-##   `damage` and the element's status to each enemy caught;
-## - spell_sky_strike (L1): `count` bolts strike random enemies within `reach_m`, `damage` and the status each, and each
-##   jumps to the nearest other enemy within `jump_m` of the one it struck.
-## The other ids (SPELLS.md's other twelve rows) are reserved for O11: their definitions may not ship yet.
+## order). Per-level lists hold 5 entries, Lv 1 first. v0.11.0 O11: all fifteen rows; what each field means for each
+## spell is SIM_CONTRACTS §8p's (`seconds` is how long it lasts, Frost Nova's freeze; `count` its balls, bolts,
+## shards, zap targets, heads or marks; `period_s` its pulse; the `bonus_*` fields its Lv 5 extra).
 
 ## The spells in the sim's order (Spells' indices; SPELLS.md's rows F1-F3, B1-B3, L1-L3, V1-V3, X1-X3). Appended,
 ## never renumbered.
@@ -33,11 +28,30 @@ const SPELLS: Array[StringName] = [
 	&"spell_hemorrhage",
 	&"spell_leech",
 ]
-## The spells with a runner (O10); the rest are rejected until their rule ships.
-const RUNNING: Array[StringName] = [&"spell_frost_nova", &"spell_fireball", &"spell_sky_strike"]
 ## The five elements a spell can belong to (Spells.ELEMENT_* order).
 const ELEMENTS: Array[StringName] = [&"frost", &"fire", &"lightning", &"venom", &"bleed"]
 const LEVELS := 5
+## Per spell, the fields it needs beyond damage and radius_m ("seconds", "count" and "heal_cap" per level, the rest
+## single numbers > 0).
+const NEEDS := {
+	&"spell_blizzard": ["seconds", "period_s", "bonus_seconds"],
+	&"spell_frost_nova": ["seconds", "push_m", "bonus_damage"],
+	&"spell_ice_lances": ["count", "pierce", "jump_m"],
+	&"spell_fireball": ["count", "speed_mps", "bonus_damage", "bonus_seconds", "bonus_radius_m"],
+	&"spell_burning_ground": ["seconds", "period_s", "speed_mps"],
+	&"spell_meteor":
+	["seconds", "delay_s", "bonus_damage", "bonus_seconds", "bonus_radius_m", "period_s"],
+	&"spell_sky_strike": ["count", "jump_m", "bonus_seconds"],
+	&"spell_ball_lightning":
+	["seconds", "count", "period_s", "speed_mps", "bonus_damage", "bonus_radius_m"],
+	&"spell_static_field": ["seconds", "period_s", "bonus_damage", "bonus_radius_m"],
+	&"spell_venom_orb": ["seconds", "period_s", "bonus_seconds", "bonus_radius_m", "speed_mps"],
+	&"spell_toxic_cloud": ["seconds", "period_s", "bonus_seconds", "slow_permille"],
+	&"spell_spitter_vine": ["seconds", "count", "period_s", "pierce"],
+	&"spell_blood_thorns": ["inner_m", "delay_s", "bonus_damage", "bonus_seconds", "period_s"],
+	&"spell_hemorrhage": ["count", "delay_s"],
+	&"spell_leech": ["seconds", "period_s", "heal_cap", "heal_per_damage"],
+}
 
 @export var name_key: StringName
 @export var desc_key: StringName
@@ -55,20 +69,40 @@ const LEVELS := 5
 @export var reach_m := 10.0
 ## Per level: each hit's damage (before the damage stat and crit).
 @export var damage := PackedInt32Array()
-## Per level: the burst's or the nova's radius (m).
+## Per level: its area's radius (m): the burst, the nova, the storm, the patch, the zap reach, the spread.
 @export var radius_m := PackedFloat32Array()
-## Per level: Frost Nova's freeze (s); empty for the others.
+## Per level: how long it lasts (s); Frost Nova's freeze. Empty when it is instant.
 @export var seconds := PackedFloat32Array()
-## Per level: Fireball's balls, Sky Strike's bolts; empty for the others.
+## Per level: its balls, bolts, shards, zap targets, heads or marks; empty for the others.
 @export var count := PackedInt32Array()
 ## Frost Nova's push (m); 0 for the others.
 @export var push_m := 0.0
-## Sky Strike's jump reach (m); 0 for the others.
+## Sky Strike's jump reach, Ice Lances' split reach (m); 0 for the others.
 @export var jump_m := 0.0
-## Fireball's flight speed (m/s); 0 for the others.
+## Fireball's and Venom Orb's flight, Ball Lightning's roll, Burning Ground's Lv 5 follow (m/s); 0 for the others.
 @export var speed_mps := 0.0
 ## The element's status stacks each hit applies (the element card's own per hit: 1).
 @export var stacks := 1
+## O11: a lasting spell's pulse (s): it hits what stands in it this often.
+@export var period_s := 0.0
+## O11: Meteor's mark, Hemorrhage's wait, Blood Thorns' second ring's beat (s).
+@export var delay_s := 0.0
+## O11: Blood Thorns' ring starts this far from you (m).
+@export var inner_m := 0.0
+## O11: the extra enemies a shard (Ice Lances) or a Lv 5 spit (Spitter Vine) passes through.
+@export var pierce := 0
+## O11: the Lv 5 extra's damage a hit or a pulse (shatter, burning ground, burst, discharge, wall).
+@export var bonus_damage := 0
+## O11: the Lv 5 extra's length (s): a freeze, a stun, a burning ground, a small pool, a wall.
+@export var bonus_seconds := 0.0
+## O11: the Lv 5 extra's radius (m).
+@export var bonus_radius_m := 0.0
+## O11 Leech: per level, the most HP one cast heals.
+@export var heal_cap := PackedInt32Array()
+## O11 Leech: the damage drained for each 1 HP healed.
+@export var heal_per_damage := 0
+## O11 Toxic Cloud's Lv 5 slow: the speed left (per mille).
+@export var slow_permille := 0
 
 
 func category() -> StringName:
@@ -77,10 +111,8 @@ func category() -> StringName:
 
 func validate() -> Array[ValidationIssue]:
 	var issues := super.validate()
-	if not RUNNING.has(id):
-		issues.append(
-			ValidationIssue.new(&"unknown", resource_path, "unknown or unbuilt spell %s" % id)
-		)
+	if not SPELLS.has(id):
+		issues.append(ValidationIssue.new(&"unknown", resource_path, "unknown spell %s" % id))
 	if String(name_key).is_empty() or String(desc_key).is_empty():
 		issues.append(
 			ValidationIssue.new(&"missing", resource_path, "name_key and desc_key are required")
@@ -100,38 +132,45 @@ func validate() -> Array[ValidationIssue]:
 	check_positive(issues, "reach_m", reach_m)
 	if stacks < 0:
 		issues.append(ValidationIssue.new(&"negative", resource_path, "stacks is negative"))
-	_levels(issues, "damage", damage.size(), damage.size() == LEVELS)
+	_levels(issues, "damage", damage.size())
 	for v in damage:
 		if v <= 0:
 			issues.append(ValidationIssue.new(&"not_positive", resource_path, "damage must be > 0"))
-	_levels(issues, "radius_m", radius_m.size(), radius_m.size() == LEVELS)
+	_levels(issues, "radius_m", radius_m.size())
 	for v in radius_m:
 		check_positive(issues, "radius_m", v)
-	match id:
-		&"spell_frost_nova":
-			_levels(issues, "seconds", seconds.size(), seconds.size() == LEVELS)
-			for v in seconds:
-				check_positive(issues, "seconds", v)
-				check_duration(issues, "seconds", v)
-			check_positive(issues, "push_m", push_m)
-		&"spell_fireball":
-			_counts(issues)
-			check_positive(issues, "speed_mps", speed_mps)
-		&"spell_sky_strike":
-			_counts(issues)
-			check_positive(issues, "jump_m", jump_m)
+	for f: String in NEEDS.get(id, []):
+		_need(issues, f)
 	return issues
 
 
-func _counts(issues: Array[ValidationIssue]) -> void:
-	_levels(issues, "count", count.size(), count.size() == LEVELS)
-	for v in count:
-		if v <= 0:
-			issues.append(ValidationIssue.new(&"not_positive", resource_path, "count must be > 0"))
+func _need(issues: Array[ValidationIssue], field: String) -> void:
+	match field:
+		"seconds":
+			_levels(issues, field, seconds.size())
+			for v in seconds:
+				check_positive(issues, field, v)
+				check_duration(issues, field, v)
+		"count", "heal_cap":
+			var list: PackedInt32Array = get(field)
+			_levels(issues, field, list.size())
+			for v in list:
+				if v <= 0:
+					issues.append(
+						ValidationIssue.new(
+							&"not_positive", resource_path, "%s must be > 0" % field
+						)
+					)
+		"period_s", "delay_s", "bonus_seconds":
+			var v: float = get(field)
+			check_positive(issues, field, v)
+			check_duration(issues, field, v)
+		_:
+			check_positive(issues, field, float(get(field)))
 
 
-func _levels(issues: Array[ValidationIssue], field: String, n: int, ok: bool) -> void:
-	if not ok:
+func _levels(issues: Array[ValidationIssue], field: String, n: int) -> void:
+	if n != LEVELS:
 		issues.append(
 			ValidationIssue.new(&"size", resource_path, "%s needs 5 entries (has %d)" % [field, n])
 		)

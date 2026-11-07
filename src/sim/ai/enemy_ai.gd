@@ -167,7 +167,7 @@ static func think(w: World, i: int) -> void:
 		plan(w, i)
 		if w.phase_probe != null:
 			w.phase_probe.end(&"ai.plan")
-	if a.frozen_t[i] > 0:  # Engines (Engines.frozen): a frozen enemy holds still, its state paused.
+	if a.frozen_t[i] > 0 or Spells.held_still(w, i):  # Engines: frozen holds still; v0.11.0 O11: a spell stun
 		return
 	var t := w.enemy_table(a.kinds[i])
 	a.state_t[i] += 1

@@ -1362,8 +1362,45 @@ is a starting value (O12 measures them).
   pack (the next on the densest outside the earlier bursts) fly at `speed_mps` and burst `radius_m` (hit + burn).
   Sky Strike: `count` bolts at distinct random enemies within reach (one draw each on `combat:spell_sky:<tick>:<slot>`),
   each hit + charge, then a jump to the nearest other enemy within `jump_m`.
-- **Hash and snapshot.** Hashed once a spell is held or a ball or push runs (`Spells.touched`); `World.spell_fx_*` is
-  the view's log, never hashed. An older save holds no spells (`WorldSnapshot.ADDED_SINCE_V05`).
+- **The roster (v0.11.0 O11; `SpellRoster` casts, `SpellZones` runs what lasts).** One store for every lasting spell,
+  `World.spell_zone_*` (kind, spell, level, root, end tick, next pulse, damage a pulse, two counters, centre, velocity,
+  radius; at most `SpellZones.MAX` = 64, a new one past it is not made). The wand's fire patches (`ElementAbilities`)
+  run AttackSpecs from the wand's book and a spell has none there, so the spells keep their own store; the statuses
+  and the burn are the element cards' own. A zone pulses every `period_ticks` (each pulse its own root): every living
+  enemy whose centre is within its radius takes the hit and the element's status. New casts pulse the tick they are
+  cast (the runner casts before the zones advance). Per row (Lv 5 extra after the semicolon):
+  - F1 Blizzard: a storm on the densest pack, `seconds` long; those still inside at its end freeze `bonus_seconds`.
+  - F2 Frost Nova; a frozen enemy any hit of yours lands on shatters (`Spells.on_frozen_hit`, from `Damage.hit`): its
+    freeze ends and it takes `bonus_damage` (`spell_frost_nova_shatter`).
+  - F3 Ice Lances: `count` shards at the nearest enemies, each hitting its line's first 1 + `pierce` (out to reach);
+    a shard's hit that kills splits it into 2 more at the 2 nearest others within `jump_m`.
+  - B1 Fireball; each burst leaves a burning ground of `bonus_radius_m` for `bonus_seconds` (`bonus_damage` a pulse).
+  - B2 Burning Ground (10 s): a patch under you; it follows you at `speed_mps` (half the hero's walk).
+  - B3 Meteor (16 s): a mark on the densest pack, locked when it appears; `delay_s` later the strike hits what is
+    inside then (enemies can walk out), burns and knocks down `seconds` (a hold); the crater burns `bonus_seconds`.
+  - L1 Sky Strike; each enemy a bolt or its jump strikes is stunned `bonus_seconds`.
+  - L2 Ball Lightning: an orb rolls from you along your facing at `speed_mps`, each pulse zapping the nearest `count`
+    within its radius; a burst of `bonus_radius_m` at its end.
+  - L3 Static Field: a ring around you; your dash's first tick discharges it (a `bonus_radius_m` burst, it ends).
+  - V1 Venom Orb: lobbed like a Fireball (the balls in flight), it lands as a pool; an enemy the player kills inside a
+    Lv 5 pool leaves a small pool (`bonus_radius_m`, `bonus_seconds`; at most 8 at once, a small one leaves none).
+  - V2 Toxic Cloud: follows you, dropping a puff (its radius, `bonus_seconds` long) each pulse; the puffs pulse on the
+    cloud's beat and hit an enemy once a tick however many it stands in; the puffs slow (`slow_permille`, a hold).
+  - V3 Spitter Vine: stands where it grew, each pulse its `count` heads spit at the nearest enemies within reach;
+    a spit passes through `pierce` more on its line.
+  - X1 Blood Thorns: a ring from `inner_m` to the radius (an enemy's body touching it), Lv 3+ again `delay_s` later;
+    the ring stays `bonus_seconds` as a wall (`bonus_damage` a pulse).
+  - X2 Hemorrhage: `count` marks on the enemies with the most HP within reach; `delay_s` later the hit, then all its
+    bleed at once (one DoT tick, `spell_hemorrhage_burst`: bleed damage × stacks × the periods it had left), and its
+    stacks spread to the enemies within the radius.
+  - X3 Leech: around you, drains each bleeding enemy within its radius (Lv 5: the others at half); you heal 1 HP per
+    `heal_per_damage` HP drained, at most the level's `heal_cap` a cast (a HEAL event, no LIMIT).
+- **Holds (O11).** `World.spell_hold_*` (actor id, ticks, speed per mille; one per enemy, the longer and the stronger
+  win, at most 128): 0 ‰ (a stun, a knock-down) holds an enemy as frozen does in `EnemyAi` and `EliteAi` without
+  freezing it; a slow scales `ItemProcs.slow_factor`. Never on a freeze-immune actor (a boss).
+- **Hash and snapshot.** Hashed once a spell is held or a ball, push, zone or hold runs (`Spells.touched`; the zones and
+  the holds after the pushes); `World.spell_fx_*` is the view's log, never hashed. An older save holds no spells
+  (`WorldSnapshot.ADDED_SINCE_V05`).
 
 ## 9. What presentation receives
 

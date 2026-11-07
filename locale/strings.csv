@@ -1612,18 +1612,102 @@ SPELL_FROST_NOVA_LV1,"Freezes within 3.5 m for 1 s, pushes 1 m.","Congela a 3,5 
 SPELL_FROST_NOVA_LV2,"Radius 4 m, freeze 1.25 s.","Radio 4 m, congela 1,25 s."
 SPELL_FROST_NOVA_LV3,Radius 4.5 m.,"Radio 4,5 m."
 SPELL_FROST_NOVA_LV4,"Radius 5 m, freeze 1.5 s.","Radio 5 m, congela 1,5 s."
-SPELL_FROST_NOVA_LV5,More damage.,Más daño.
+SPELL_FROST_NOVA_LV5,A frozen enemy you hit shatters for bonus damage.,Un enemigo congelado que golpeas se rompe con daño extra.
 SPELL_FIREBALL,Fireball,Bola de fuego
 SPELL_FIREBALL_DESC,"Every 12 s, by itself: a slow fireball flies at the densest pack and bursts 3 m, setting everything on fire.","Cada 12 s, por sí sola: una bola de fuego lenta vuela al grupo más denso y estalla en 3 m, prendiendo fuego a todo."
 SPELL_FIREBALL_LV1,"One ball, a 3 m burst that burns.","Una bola, un estallido de 3 m que quema."
 SPELL_FIREBALL_LV2,Burst 3.5 m.,"Estallido de 3,5 m."
 SPELL_FIREBALL_LV3,Two balls at two packs.,Dos bolas a dos grupos.
 SPELL_FIREBALL_LV4,Burst 4 m.,Estallido de 4 m.
-SPELL_FIREBALL_LV5,More damage.,Más daño.
+SPELL_FIREBALL_LV5,The burst leaves Burning Ground for 3 s.,El estallido deja Suelo ardiente durante 3 s.
 SPELL_SKY_STRIKE,Sky Strike,Rayo celeste
 SPELL_SKY_STRIKE_DESC,"Every 12 s, by itself: 3 bolts strike random enemies within 10 m, each jumping to 1 more.","Cada 12 s, por sí solo: 3 rayos caen sobre enemigos al azar a 10 m y cada uno salta a 1 más."
 SPELL_SKY_STRIKE_LV1,"3 bolts, each jumps once.","3 rayos, cada uno salta una vez."
 SPELL_SKY_STRIKE_LV2,4 bolts.,4 rayos.
 SPELL_SKY_STRIKE_LV3,More damage.,Más daño.
 SPELL_SKY_STRIKE_LV4,5 bolts.,5 rayos.
-SPELL_SKY_STRIKE_LV5,"6 bolts, more damage.","6 rayos, más daño."
+SPELL_SKY_STRIKE_LV5,"6 bolts, more damage; each stuns for 0.3 s.","6 rayos, más daño; cada uno aturde 0,3 s."
+SPELL_BLIZZARD,Blizzard,Ventisca
+SPELL_BLIZZARD_DESC,"Every 12 s, by itself: a 4 m storm settles on the densest pack for 4 s, hitting every 0.5 s and chilling everything inside.","Cada 12 s, por sí sola: una tormenta de 4 m cae sobre el grupo más denso durante 4 s, golpea cada 0,5 s y enfría todo lo que hay dentro."
+SPELL_BLIZZARD_LV1,A 4 m storm for 4 s that chills.,Una tormenta de 4 m durante 4 s que enfría.
+SPELL_BLIZZARD_LV2,"Radius 4.5 m, 4.5 s.","Radio 4,5 m, 4,5 s."
+SPELL_BLIZZARD_LV3,"Radius 5 m, 5 s.","Radio 5 m, 5 s."
+SPELL_BLIZZARD_LV4,"Radius 5.5 m, 6 s.","Radio 5,5 m, 6 s."
+SPELL_BLIZZARD_LV5,Enemies still inside at the end freeze for 1 s.,Los enemigos que siguen dentro al final se congelan 1 s.
+SPELL_ICE_LANCES,Ice Lances,Lanzas de hielo
+SPELL_ICE_LANCES_DESC,"Every 12 s, by itself: 3 ice shards fly at the 3 nearest enemies, each passing through up to 2 more.","Cada 12 s, por sí solas: 3 esquirlas de hielo vuelan a los 3 enemigos más cercanos y cada una atraviesa hasta 2 más."
+SPELL_ICE_LANCES_LV1,"3 shards, each passes through 2.","3 esquirlas, cada una atraviesa 2."
+SPELL_ICE_LANCES_LV2,4 shards.,4 esquirlas.
+SPELL_ICE_LANCES_LV3,5 shards.,5 esquirlas.
+SPELL_ICE_LANCES_LV4,"6 shards, more damage.","6 esquirlas, más daño."
+SPELL_ICE_LANCES_LV5,A shard that kills splits into 2 more.,Una esquirla que mata se parte en 2 más.
+SPELL_BURNING_GROUND,Burning Ground,Suelo ardiente
+SPELL_BURNING_GROUND_DESC,"Every 10 s, by itself: a 3 m fire patch burns under you for 5 s; enemies standing in it burn.","Cada 10 s, por sí solo: una mancha de fuego de 3 m arde bajo ti durante 5 s; los enemigos que la pisan arden."
+SPELL_BURNING_GROUND_LV1,A 3 m patch for 5 s.,Una mancha de 3 m durante 5 s.
+SPELL_BURNING_GROUND_LV2,Radius 3.5 m.,"Radio 3,5 m."
+SPELL_BURNING_GROUND_LV3,Lasts 6.5 s.,"Dura 6,5 s."
+SPELL_BURNING_GROUND_LV4,"Radius 4 m, 8 s.","Radio 4 m, 8 s."
+SPELL_BURNING_GROUND_LV5,The patch follows you at half speed.,La mancha te sigue a media velocidad.
+SPELL_METEOR,Meteor,Meteoro
+SPELL_METEOR_DESC,"Every 16 s, by itself: a mark appears on the densest pack; 1.2 s later a huge strike hits 5 m and knocks enemies down for 0.5 s. Enemies can walk out of the mark.","Cada 16 s, por sí solo: aparece una marca sobre el grupo más denso; 1,2 s después un golpe enorme impacta en 5 m y derriba a los enemigos 0,5 s. Los enemigos pueden salir de la marca."
+SPELL_METEOR_LV1,A 5 m strike after 1.2 s.,"Un impacto de 5 m tras 1,2 s."
+SPELL_METEOR_LV2,"Radius 5.5 m, more damage.","Radio 5,5 m, más daño."
+SPELL_METEOR_LV3,"Radius 6 m, more damage.","Radio 6 m, más daño."
+SPELL_METEOR_LV4,"Radius 6.5 m, more damage.","Radio 6,5 m, más daño."
+SPELL_METEOR_LV5,The crater burns for 4 s.,El cráter arde durante 4 s.
+SPELL_BALL_LIGHTNING,Ball Lightning,Bola de rayos
+SPELL_BALL_LIGHTNING_DESC,"Every 12 s, by itself: a slow orb rolls out ahead of you for 4 s, zapping the nearest enemy within 2.5 m every 0.3 s.","Cada 12 s, por sí sola: un orbe lento rueda delante de ti durante 4 s y electrocuta al enemigo más cercano a 2,5 m cada 0,3 s."
+SPELL_BALL_LIGHTNING_LV1,Zaps 1 enemy within 2.5 m.,"Electrocuta a 1 enemigo a 2,5 m."
+SPELL_BALL_LIGHTNING_LV2,Zap range 3 m.,Alcance 3 m.
+SPELL_BALL_LIGHTNING_LV3,Zaps 2 enemies.,Electrocuta a 2 enemigos.
+SPELL_BALL_LIGHTNING_LV4,Zap range 3.5 m.,"Alcance 3,5 m."
+SPELL_BALL_LIGHTNING_LV5,It bursts at the end.,Estalla al final.
+SPELL_STATIC_FIELD,Static Field,Campo estático
+SPELL_STATIC_FIELD_DESC,"Every 12 s, by itself: a 2.5 m ring around you for 4 s; every enemy touching it is shocked every 0.5 s.","Cada 12 s, por sí solo: un anillo de 2,5 m a tu alrededor durante 4 s; todo enemigo que lo toque recibe una descarga cada 0,5 s."
+SPELL_STATIC_FIELD_LV1,A 2.5 m ring for 4 s.,"Un anillo de 2,5 m durante 4 s."
+SPELL_STATIC_FIELD_LV2,Radius 3 m.,Radio 3 m.
+SPELL_STATIC_FIELD_LV3,Lasts 5 s.,Dura 5 s.
+SPELL_STATIC_FIELD_LV4,"Radius 3.5 m, 6 s.","Radio 3,5 m, 6 s."
+SPELL_STATIC_FIELD_LV5,Your dash discharges it in a 4 m burst.,Tu esquiva lo descarga en un estallido de 4 m.
+SPELL_VENOM_ORB,Venom Orb,Orbe venenoso
+SPELL_VENOM_ORB_DESC,"Every 12 s, by itself: an orb lobbed at the densest pack lands as a 3 m pool for 5 s; each enemy in it gains a venom stack every 0.5 s.","Cada 12 s, por sí solo: un orbe lanzado al grupo más denso cae como un charco de 3 m durante 5 s; cada enemigo dentro gana una carga de veneno cada 0,5 s."
+SPELL_VENOM_ORB_LV1,A 3 m pool for 5 s.,Un charco de 3 m durante 5 s.
+SPELL_VENOM_ORB_LV2,Radius 3.5 m.,"Radio 3,5 m."
+SPELL_VENOM_ORB_LV3,Lasts 6 s.,Dura 6 s.
+SPELL_VENOM_ORB_LV4,"Radius 4 m, 7 s.","Radio 4 m, 7 s."
+SPELL_VENOM_ORB_LV5,Enemies that die in it leave a small pool.,Los enemigos que mueren dentro dejan un charco pequeño.
+SPELL_TOXIC_CLOUD,Toxic Cloud,Nube tóxica
+SPELL_TOXIC_CLOUD_DESC,"Every 12 s, by itself: a cloud trails behind you for 6 s, a 2 m puff every 0.5 s that lasts 2 s; enemies chasing you walk through it.","Cada 12 s, por sí sola: una nube te sigue durante 6 s, una bocanada de 2 m cada 0,5 s que dura 2 s; los enemigos que te persiguen la atraviesan."
+SPELL_TOXIC_CLOUD_LV1,2 m puffs for 6 s.,Bocanadas de 2 m durante 6 s.
+SPELL_TOXIC_CLOUD_LV2,Puffs 2.2 m.,"Bocanadas de 2,2 m."
+SPELL_TOXIC_CLOUD_LV3,"Puffs 2.4 m, more damage.","Bocanadas de 2,4 m, más daño."
+SPELL_TOXIC_CLOUD_LV4,Puffs 2.6 m.,"Bocanadas de 2,6 m."
+SPELL_TOXIC_CLOUD_LV5,The cloud also slows.,La nube también ralentiza.
+SPELL_SPITTER_VINE,Spitter Vine,Enredadera escupidora
+SPELL_SPITTER_VINE_DESC,"Every 12 s, by itself: a vine grows where you stand for 8 s and spits venom at enemies within 7 m, one shot every 0.6 s.","Cada 12 s, por sí sola: una enredadera crece donde estás durante 8 s y escupe veneno a los enemigos a 7 m, un disparo cada 0,6 s."
+SPELL_SPITTER_VINE_LV1,"One head, 8 s.","Una cabeza, 8 s."
+SPELL_SPITTER_VINE_LV2,Lasts 10 s.,Dura 10 s.
+SPELL_SPITTER_VINE_LV3,Two heads.,Dos cabezas.
+SPELL_SPITTER_VINE_LV4,Lasts 12 s.,Dura 12 s.
+SPELL_SPITTER_VINE_LV5,Its shots pass through.,Sus disparos atraviesan.
+SPELL_BLOOD_THORNS,Blood Thorns,Espinas de sangre
+SPELL_BLOOD_THORNS_DESC,"Every 12 s, by itself: thorns burst out of the ground in a ring from 2 m to 4 m around you; every enemy hit bleeds.","Cada 12 s, por sí solas: brotan espinas del suelo en un anillo de 2 m a 4 m a tu alrededor; todo enemigo alcanzado sangra."
+SPELL_BLOOD_THORNS_LV1,A ring from 2 m to 4 m.,Un anillo de 2 m a 4 m.
+SPELL_BLOOD_THORNS_LV2,More damage.,Más daño.
+SPELL_BLOOD_THORNS_LV3,A second ring a beat later.,Un segundo anillo un instante después.
+SPELL_BLOOD_THORNS_LV4,More damage.,Más daño.
+SPELL_BLOOD_THORNS_LV5,The thorns stay 2 s as a wall.,Las espinas se quedan 2 s como un muro.
+SPELL_HEMORRHAGE,Hemorrhage,Hemorragia
+SPELL_HEMORRHAGE_DESC,"Every 12 s, by itself: marks the enemy with the most HP within 10 m. After 3 s, all its bleed deals its damage at once and spreads to enemies within 3 m.","Cada 12 s, por sí sola: marca al enemigo con más vida a 10 m. A los 3 s, todo su sangrado hace su daño de golpe y se extiende a los enemigos a 3 m."
+SPELL_HEMORRHAGE_LV1,"One mark, spreads 3 m.","Una marca, se extiende 3 m."
+SPELL_HEMORRHAGE_LV2,Spreads 3.5 m.,"Se extiende 3,5 m."
+SPELL_HEMORRHAGE_LV3,Spreads 4 m.,Se extiende 4 m.
+SPELL_HEMORRHAGE_LV4,Spreads 4.5 m.,"Se extiende 4,5 m."
+SPELL_HEMORRHAGE_LV5,Marks 2 enemies.,Marca a 2 enemigos.
+SPELL_LEECH,Leech,Sanguijuela
+SPELL_LEECH_DESC,"Every 12 s, by itself: for 4 s, every bleeding enemy within 6 m is drained; you heal 1 HP for each 25 damage it deals, at most 10 HP a cast.","Cada 12 s, por sí sola: durante 4 s, todo enemigo que sangra a 6 m es drenado; te curas 1 PV por cada 25 de daño, como mucho 10 PV por lanzamiento."
+SPELL_LEECH_LV1,"Drains for 4 s, heals up to 10 HP.","Drena 4 s, cura hasta 10 PV."
+SPELL_LEECH_LV2,Heals up to 13 HP.,Cura hasta 13 PV.
+SPELL_LEECH_LV3,"Heals up to 16 HP, more damage.","Cura hasta 16 PV, más daño."
+SPELL_LEECH_LV4,Heals up to 20 HP.,Cura hasta 20 PV.
+SPELL_LEECH_LV5,Also drains enemies that are not bleeding (at half).,También drena a los enemigos que no sangran (a la mitad).
