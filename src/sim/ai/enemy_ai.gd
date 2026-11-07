@@ -463,13 +463,19 @@ static func _spread_over(w: World, i: int, js: PackedInt32Array) -> Vector2:
 	var push := Vector2.ZERO
 	var spread := w.tuning.ai_spread_radius_m
 	var far := spread + 0.001
+	# v0.11.0 O9b: the columns read through locals (a store lookup per read was most of the loop's cost in a surge's
+	# packed crowd), with the same values and arithmetic in the same order.
+	var px := a.pos_x
+	var py := a.pos_y
+	var dead := a.dead
+	var kinds := a.kinds
 	for j in js:
 		# v0.4.0 SC: the cheap distance test first (with a margin over rounding; the tests below repeat it exactly).
-		if absf(a.pos_x[j] - at.x) >= far or absf(a.pos_y[j] - at.y) >= far:
+		if absf(px[j] - at.x) >= far or absf(py[j] - at.y) >= far:
 			continue
-		if j == 0 or j == i or a.dead[j] == 1 or a.kinds[j] < ActorStore.Kind.CHARGER:
+		if j == 0 or j == i or dead[j] == 1 or kinds[j] < ActorStore.Kind.CHARGER:
 			continue
-		var d := at - a.pos(j)
+		var d := at - Vector2(px[j], py[j])
 		if absf(d.x) >= spread or absf(d.y) >= spread:
 			continue
 		var l := Kin.length(d)

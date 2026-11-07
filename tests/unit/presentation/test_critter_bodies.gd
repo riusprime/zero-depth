@@ -84,6 +84,33 @@ func test_actor_views_draw_every_critter_through_the_crowd() -> void:
 	assert_eq(views.vat_crowd.drawn, KINDS.size())
 
 
+## v0.11.0 O9b (owner Q16-b: "No ring on critters"): a critter's actor node has no contact disc and no team ring (no
+## mesh of its own straight under it: the crowd draws its body and shadow); a Swarmer keeps both.
+func test_no_ring_on_critters() -> void:
+	ViewPrefs.enemy_vat = true
+	var w := CombatLab.world()
+	var ids: Array[int] = []
+	for k in KINDS.size():
+		ids.append(w.add_enemy(KINDS[k], Vector2(2.0 + k * 1.5, 3.0)))
+	var swarmer := w.add_enemy(WorldReader.KIND_SWARMER, Vector2(2.0, 6.0))
+	var views: ActorViews = add_child_autofree(ActorViews.new())
+	views.set_process(false)
+	views.sync(WorldReader.new(w))
+	for k in KINDS.size():
+		assert_eq(_rings(views.actor_node(ids[k])), 0, "kind %d: no disc, no ring" % KINDS[k])
+	assert_eq(_rings(views.actor_node(swarmer)), 2, "a Swarmer keeps its disc and its ring")
+
+
+## The disc (CylinderMesh) and ring (TorusMesh) meshes straight under actor node `node`.
+static func _rings(node: Node3D) -> int:
+	var n := 0
+	for c in node.get_children():
+		var mi := c as MeshInstance3D
+		if mi != null and (mi.mesh is TorusMesh or mi.mesh is CylinderMesh):
+			n += 1
+	return n
+
+
 func test_the_bat_flies_the_mote_floats_the_flea_hops_and_the_crab_slides() -> void:
 	ViewPrefs.reduced_motion = false
 	var lifts := {}

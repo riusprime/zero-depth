@@ -31,6 +31,8 @@ const PYLON_HALF_M := 0.5
 const CLEAR_M := 0.5
 ## The free circle (m) kept at a room's doorways and their approaches (clear_of_doors).
 const DOOR_CLEAR_M := 0.6
+## v0.11.0 O9b: the broadphase margin of blocks() (m, over rounding).
+const BROAD_MARGIN_M := 0.01
 
 var on := false
 var kind := PackedInt32Array()
@@ -175,15 +177,36 @@ func push(at: Vector2, r: float) -> Vector2:
 
 ## Whether a standing footprint may touch the box `rect`.
 func any_near(rect: Rect2) -> bool:
+	# v0.11.0 O9b: a footprint clearly outside the grown box (BROAD_MARGIN_M over rounding) skips the exact test.
+	var lo := rect.position
+	var hi := rect.end
 	for i in kind.size():
-		if placed[i] == 1 and rect.grow(half[i].length()).has_point(center[i]):
+		if placed[i] != 1:
+			continue
+		var c := center[i]
+		var h := half[i].length() + BROAD_MARGIN_M
+		if c.x < lo.x - h or c.x > hi.x + h or c.y < lo.y - h or c.y > hi.y + h:
+			continue
+		if rect.grow(half[i].length()).has_point(c):
 			return true
 	return false
 
 
 ## Whether a body of radius r sweeping from a to b meets a standing footprint (the enemies' steering).
+## v0.11.0 O9b (a surge's 120 critters each plan the line to the hero through every footprint: most of their plan's
+## cost): a footprint whose centre lies farther than its reach from the segment's box is skipped before its Obb is
+## made. The sweep only hits within the box grown by r on each axis (its corners at |half + (r, r)| from the centre),
+## so with BROAD_MARGIN_M over rounding the answer is the same.
 func blocks(a: Vector2, b: Vector2, r: float) -> bool:
+	var lo := Vector2(minf(a.x, b.x), minf(a.y, b.y))
+	var hi := Vector2(maxf(a.x, b.x), maxf(a.y, b.y))
 	for i in kind.size():
-		if placed[i] == 1 and Collide.sweep_vs_obb(a, b, r, obb(i)) >= 0.0:
+		if placed[i] != 1:
+			continue
+		var reach := (half[i] + Vector2(r, r)).length() + BROAD_MARGIN_M
+		var c := center[i]
+		if c.x < lo.x - reach or c.x > hi.x + reach or c.y < lo.y - reach or c.y > hi.y + reach:
+			continue
+		if Collide.sweep_vs_obb(a, b, r, obb(i)) >= 0.0:
 			return true
 	return false
