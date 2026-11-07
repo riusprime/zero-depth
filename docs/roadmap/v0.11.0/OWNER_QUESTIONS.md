@@ -209,4 +209,8 @@ OK; (b) you'll go through them.
 | Q5 | "3 hits worth, the laser should have piercing from the beginning I think, and then piercing would not appear for all the attacks that don't need it like lance, void, wave, etc, it would only appear as an option if you have a compatible attack form" → one shot applies 3 hits' worth of status; the Laser pierces by default; the Pierce card is offered only with a form it changes | 2026-11-07 | PLAN L1, L3b, O1, S6 |
 | Q7 | (a) Instant, drawn fast (~0.15 s), glow fading ~0.5 s | 2026-11-07 | PLAN L1, O1 |
 | Q25 | (a) The lines become clues; together one short story; the full stone opens something real | 2026-11-07 | PLAN R1, O14 |
+| Q28 | (b) "Pierce everything, no card": the Laser goes through every enemy on its path; the Pierce card is never offered with the Laser (with Homing it still bends through up to 5 chosen targets, then runs straight to full range) | 2026-11-07 | PLAN L3b, O1, S6 |
+| Q4 | (a) Attack speed shortens the 3 s cooldown at half value; damage per shot fixed | 2026-11-07 | PLAN L1, O1 |
+| Q9 | "boss takes more damage during the stun, this should happen at most 2 times per phase" → (a): a pillar broken by Shock Lanes stuns the Gatekeeper 2 s at +50 % damage taken; at most 2 stuns per phase (a later break still removes the pillar) | 2026-11-07 | PLAN L5, O3 |
+| Q10 | (a) 40 % damage in the dark, 150 % inside a lit pool; a lantern stays lit 6 s; dark 9 s / light 4 s | 2026-11-07 | PLAN L6, O4 |
 | Q24 | "I think I meant the rune that is at the hub": the **Runic Stone** (v0.9.5 RS1/RS2). Clarified in chat; see Q25 | 2026-11-07 | PLAN R1 |
