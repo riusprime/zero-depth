@@ -26,6 +26,10 @@ var _last_seq := 0
 var _kinds := {}
 ## Boss actor ids already counted as a fight on this floor.
 var _fought := {}
+## v0.11.0 O9b (a surge: 120 critters of one kind scanned every tick): the normal enemy kinds whose entry is already
+## unlocked in `_known_store` (an unlock is never taken back), so their scan stops after the id-to-kind note.
+var _known := {}
+var _known_store: CodexStore
 var _offer := PackedInt32Array()
 var _shop := PackedInt32Array()
 var _event := PackedInt32Array()
@@ -77,10 +81,15 @@ func observe(reader: WorldReader) -> void:
 
 
 func _scan_actors(reader: WorldReader) -> void:
+	if _known_store != store:
+		_known.clear()
+		_known_store = store
 	var me := reader.player_pos()
 	for i in range(1, reader.actor_count()):
 		var kind := reader.actor_kind(i)
 		_kinds[reader.actor_id(i)] = kind
+		if _known.has(kind):
+			continue
 		if not enabled or reader.actor_dead(i) or reader.actor_spawning(i):
 			continue
 		if reader.actor_team(i) == reader.actor_team(0):
@@ -97,6 +106,8 @@ func _scan_actors(reader: WorldReader) -> void:
 			var enemy := catalog.enemy_of_kind(kind)
 			if enemy != &"" and not store.is_unlocked(&"enemies", enemy):
 				store.unlock(&"enemies", enemy)
+			if enemy != &"":
+				_known[kind] = true
 
 
 ## v0.10.5 O18: the Lore entries that unlock when their system is first met: a curse held, the Deep gate within sight,

@@ -7,7 +7,9 @@ extends ContentDef
 ## first begins first_seconds_min..max into the floor, each next one gap_seconds_min..max after the last one's end
 ## (all drawn from the `ai:surge` stream). While a surge runs, enemies alive may reach alive_cap (above the floor's
 ## normal cap, never above the spawner's cap_max: the hard 120). Starting values; alive_cap is the owner's Q16 gate (a
-## 120-enemy surge measured on the owner's PC; lowered here if it drops under 144 fps).
+## 120-enemy surge measured on the owner's PC; lowered here if it drops under 144 fps). v0.11.0 O9b (Q16-b: "Optimise,
+## then cap"): surge.tres sets 50, the most that held 144 fps with the crowd full on every idle run on the owner's PC
+## (60 held in two of four).
 
 ## The most enemies alive any surge may bring the floor to (the spawner's hard cap, SpawnDirectorDefinition.cap_max).
 const HARD_CAP := 120

@@ -150,9 +150,30 @@ func test_at_most_twice_a_floor() -> void:
 	assert_eq(Surges.started(w), 2)
 
 
+## v0.11.0 O9b (owner Q16-b: "Optimise, then cap"): the shipped surge stops at 50 enemies alive (the most that held
+## 144 fps with the crowd full on every idle run on the owner's PC), however big the surge.
+func test_the_shipped_surge_stops_at_50_alive() -> void:
+	var w := _world(7)
+	var t := w.spawner.surge
+	assert_eq(t.alive_cap, 50, "surge.tres's cap")
+	t.first_min_ticks = 30
+	t.first_max_ticks = 30
+	t.size_min = 60
+	t.size_max = 60
+	for k in 20:  # 20 standing enemies first: the surge brings the floor to 50, not 80
+		var id := w.add_enemy(KIND.WARDEN, Vector2(20.0 + (k % 10), 20.0 + (k / 10)))
+		w.actors.invuln[w.actors.index_of(id)] = LONG
+	var most := 0
+	for k in 800:
+		w.step(InputFrame.new())
+		most = maxi(most, WaveDirector.enemies_alive(w))
+	assert_eq(most, 50, "it filled to the cap and no further")
+
+
 func test_a_surge_may_pass_the_floor_cap_but_never_the_hard_cap() -> void:
 	var w := _world(7)
 	var t := w.spawner.surge
+	t.alive_cap = SurgeDefinition.HARD_CAP  # v0.11.0 O9b: the shipped cap is 50 (below); this one is the hard cap's
 	t.first_min_ticks = 30
 	t.first_max_ticks = 30
 	t.size_min = 60

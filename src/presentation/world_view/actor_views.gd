@@ -588,11 +588,8 @@ func _piece(parent: Node3D, size: Vector3, at: Vector3, c: Color, _team_c: Color
 	root.set_meta(&"mats", mats)
 
 
-func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
-	var root := Node3D.new()
-	var body_color := ThemePalette.color(&"player_body" if is_player else &"enemy_body")
-	var team_color := ThemePalette.color(&"player_core" if is_player else &"enemy_body")
-	# Contact ring: a dark disc under the actor.
+## The contact disc (a dark disc under the actor) and the team ring decal (identity never depends on body hue alone).
+func _add_rings(root: Node3D, radius: float, team_color: Color) -> void:
 	var contact := MeshInstance3D.new()
 	var disc := CylinderMesh.new()
 	disc.top_radius = radius + 0.1
@@ -616,6 +613,16 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 	ring.position.y = 0.02
 	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(ring)
+
+
+func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
+	var root := Node3D.new()
+	var body_color := ThemePalette.color(&"player_body" if is_player else &"enemy_body")
+	var team_color := ThemePalette.color(&"player_core" if is_player else &"enemy_body")
+	# v0.11.0 O9b (owner Q16-b: "No ring on critters"): a horde critter has neither the contact disc nor the team
+	# ring (its body and its shadow only: two draws fewer each, in a crowd of up to the surge's cap).
+	if not CritterBodies.is_critter(kind):
+		_add_rings(root, radius, team_color)
 	# The body turns with the actor's facing (+X is the front).
 	var facing := Node3D.new()
 	root.add_child(facing)
