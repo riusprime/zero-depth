@@ -16,6 +16,16 @@ extends Node3D
 ## last shot's paths (as the sim hit them) for half a second: each lane's legs join into one strip (_join; with Homing
 ## the sim's one smooth curve), drawn out from the hero over LaserWeight.DRAW_TICKS (0.15 s, cut()) and its glow fading
 ## by the end (lance_fade). A minimal look: the final one waits for the owner's sketch (PLAN X2).
+## v0.11.0 VX (owner PD-13): with the pack (the game), each lance is the pack's laser of its element laid on one tube
+## through the sim's points (LaserPackTube: laser_vfx_0N's BeamCore, BeamOuter and its start and end balls), drawn out
+## and faded the same way; the outer glow's width follows Effects density. The ribbons stay for a bare view (tests).
+const PACK_TUBE := true
+## The tube's core radius per metre of the look's width, and its outer glow's radius over the core's at a glow of 1.
+const TUBE_CORE_PER_W := 0.22
+const TUBE_OUTER_PER_GLOW := 2.5
+## The start and end balls' scale per unit of the muzzle's and the impact's.
+const TUBE_START_PER_MUZZLE := 1.4
+const TUBE_END_PER_IMPACT := 1.2
 const POOL_START := 3
 const GHOSTS_MAX := 16
 const RING_COLOUR_MUL := 1.6
@@ -112,6 +122,9 @@ var width_now := 1.0
 var drawn_now := 1.0
 var fade_now := 1.0
 var sparks_drawn := 0
+## v0.11.0 VX: the pack tubes (one a lance path) and how many the last draw laid.
+var tubes: Array[LaserPackTube] = []
+var tubes_shown := 0
 ## What the last sync showed of the cards' extras (tests read them): ghost ribbons, rings, mines.
 var ghosts_shown := 0
 var rings_shown := 0
@@ -145,6 +158,8 @@ var _fire_start := 0.0
 var _age := 0.0
 var _glow_ticks := 30.0
 var _since := 0.0
+## v0.11.0 VX: the look the pack tubes were set up for.
+var _tube_key := ""
 
 
 func _init() -> void:
@@ -258,6 +273,9 @@ func sync(reader: WorldReader) -> void:
 	width_now = LaserWeight.width_mul(_tick, flash_now)
 	if shown == 0:
 		hold.clear()  # v0.10.0 VX2: the pack's beams end with the fire
+		for t in tubes:  # v0.11.0 VX: and the pack tubes
+			t.off()
+		tubes_shown = 0
 		return
 	var glow := LaserWeight.glow(ViewPrefs.effects_density)
 	for k in shown:
@@ -267,8 +285,7 @@ func sync(reader: WorldReader) -> void:
 	_muzzle.scale = Vector3.ONE * MUZZLE_SIZE * (1.0 + 0.4 * (shown - 1)) * grow
 	for k in shown:
 		var b: Dictionary = _beams[k]
-		var hits: PackedInt32Array = b["hits"]
-		if bool(b.get("impact", hits.size() > 0 or bool(b["wall"]))):
+		if _hit(b):
 			_impacts[k].visible = true
 			_impacts[k].position = SimPlane.to_3d(b["to"], HEIGHT)
 			_impacts[k].scale = (
@@ -298,10 +315,11 @@ func _place_ribbons() -> void:
 	drawn_now = LaserWeight.lance_drawn(age)
 	fade_now = LaserWeight.lance_fade(age, _glow_ticks)
 	hold.begin()
+	tubes_shown = 0
 	for k in shown:
 		var b: Dictionary = _beams[k]
 		var bw := w * int(b.get("wmul", 1000)) / 1000.0
-		if _pack_beam(k, b, bw):
+		if _pack_beam(k, b, bw) or _tube_beam(k, b, bw):
 			_ribbons[k].visible = false
 			continue
 		_ribbons[k].visible = true
@@ -314,6 +332,8 @@ func _place_ribbons() -> void:
 			view
 		)
 	hold.end()
+	for k in range(shown, tubes.size()):
+		tubes[k].off()
 	for k in ghosts_shown:
 		var g: Dictionary = _ghosts[k]
 		_lay(_ghost_ribbons[k], _ghost_mat[k], g["from"], g["to"], w * 0.8, view)
@@ -343,6 +363,58 @@ func _pack_beam(k: int, b: Dictionary, w: float) -> bool:
 	if not is_equal_approx(float(n.get_meta(&"vx2_radius", -1.0)), radius):
 		n.set_meta(&"vx2_radius", radius)  # (the setter rebuilds the scene's shared meshes: only when it changes)
 		n.set(&"beam_radius", radius)
+	return true
+
+
+## Whether beam `b` ends on something (an enemy or a wall): it has an impact.
+static func _hit(b: Dictionary) -> bool:
+	var hits: PackedInt32Array = b["hits"]
+	return bool(b.get("impact", hits.size() > 0 or bool(b["wall"])))
+
+
+## v0.11.0 VX (PD-13): beam `k` as the pack's laser on one tube through its (cut) centre line: the lance draws out and
+## its glow fades as the ribbon's did (drawn_now, fade_now), its width and the glow's by width_now and Effects density;
+## the start ball stands in for the muzzle (beam 0), the end ball for the impact. False: the ribbon draws (no pack, or
+## the scene's parts were not found).
+func _tube_beam(k: int, b: Dictionary, w: float) -> bool:
+	if not PACK_TUBE or pack_fx == null:
+		if k < tubes.size():
+			tubes[k].off()
+		return false
+	var key := String(PackLooks.laser_id(_form.element)) + _form.digest
+	if key != _tube_key:
+		_tube_key = key
+		for t in tubes:
+			t.set_meta(&"key", "")
+	while tubes.size() <= k:
+		var nt := LaserPackTube.new()
+		add_child(nt)
+		tubes.append(nt)
+	var t := tubes[k]
+	if String(t.get_meta(&"key", "")) != _tube_key:
+		t.set_meta(&"key", _tube_key)
+		var path := PackFx.scene_path_of(PackLooks.laser_id(_form.element))
+		t.setup(path, PackFx.scene_at(path), PackLooks.colors(_form.elements))
+	if not t.ok:
+		t.off()
+		return false
+	var p3: Array[Vector3] = []
+	for p in cut(b["pts"], drawn_now):
+		var q := SimPlane.to_3d(p, HEIGHT)
+		p3.append(to_local(q) if is_inside_tree() else q)
+	var thin := lerpf(0.35, 1.0, fade_now)  # the lance thins as its glow fades
+	var core := maxf(BEAM_RADIUS_MIN, w * TUBE_CORE_PER_W) * width_now * thin
+	var outer := core * (1.0 + TUBE_OUTER_PER_GLOW * LaserWeight.glow(ViewPrefs.effects_density))
+	var start := 0.0
+	if k == 0:
+		start = _muzzle.scale.x / MUZZLE_SIZE * TUBE_START_PER_MUZZLE * thin
+		_muzzle.visible = false
+	var end := 0.0
+	if _hit(b):
+		end = _impacts[k].scale.x / IMPACT_SIZE * TUBE_END_PER_IMPACT * thin
+		_impacts[k].visible = false
+	t.lay(p3, core, outer, fade_now, start, end)
+	tubes_shown += 1
 	return true
 
 
@@ -556,7 +628,7 @@ func draw_fx(layer: VfxCore) -> void:
 					sd + i
 				)
 				i = j
-		if not _impacts[k].visible:
+		if not _hit(b):  # (v0.11.0 VX: the pack tube's end ball hides the impact quad)
 			continue
 		var n := LaserWeight.sparks(ViewPrefs.effects_density)  # W3-O8: hit sparks thrown from the impact
 		for j in n:

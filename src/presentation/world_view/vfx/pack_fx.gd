@@ -645,6 +645,19 @@ static func scenes_ready(effect_id: StringName) -> bool:
 	return ResourceLoader.load_threaded_get_status(path) != ResourceLoader.THREAD_LOAD_IN_PROGRESS
 
 
+## v0.11.0 VX: the scene path of `effect_id` ("" for an unknown id), for a view that lays the scene's own materials
+## on its own mesh (LaserPackTube).
+static func scene_path_of(effect_id: StringName) -> String:
+	var def := shared_def()
+	var k := def.row(effect_id) if def != null else -1
+	return def.scenes[k] if k >= 0 else ""
+
+
+## v0.11.0 VX: the session's kept scene at `scene_path` (null for "").
+static func scene_at(scene_path: String) -> PackedScene:
+	return _scene(scene_path) if scene_path != "" else null
+
+
 ## The effect's scene, read once per session and kept: while it is held, its shaders and their compiled pipelines stay
 ## in the renderer, so a PackFx made by a later floor does not compile them again (VX-W).
 static func _scene(scene_path: String) -> PackedScene:

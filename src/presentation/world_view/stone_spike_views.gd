@@ -66,6 +66,19 @@ const QUAKE_FLARE_TICKS := 14.0
 const RING_BAND_M := 0.14
 const RING_COLOR := Color(1.0, 0.42, 0.15)
 const RUBBLE := 6
+## v0.11.0 VX (owner PD-13): with the pack (the game) the quake ring is pack effects, in the telegraph's own orange
+## (an enemy telegraph keeps its colour): the growing ring the fire rim (ring_fire: rim_area_vfx_04), the radius the
+## pulse hits a darker rim (ring_bleed's rim_area_vfx_01, recoloured), the strike a shock pulse (bx_pulse_shock:
+## pulse_area_vfx_02) out to that radius; a shattered pillar a rock impact (bx_impact_a: vfx_impact_03, hot, its Core
+## and Ground_Impact hidden). The flat bands stay for a view without the pack. Each rim's scale per metre of its
+## radius; the pulse scene's own reach (m).
+const QUAKE_RIM_PER_M := 0.72
+const QUAKE_EDGE_PER_M := 0.76
+const QUAKE_PULSE_REACH_M := 2.25
+const QUAKE_SHATTER_SCALE := 1.3
+## The rock impact without its white-hot Core puff and its Ground_Impact disc (PackFx.HIDE_PER_SPAWN).
+const QUAKE_SHATTER_HIDE := ["Core", "Ground_Impact"]
+const QUAKE_EDGE := Color(0.9, 0.3, 0.08)
 
 const SHADER := """
 shader_type spatial;
@@ -122,6 +135,10 @@ static var _model_tex: Texture2D
 
 ## The effects layer for the debris, dust, light and floor marks (WorldViewRoot sets it with the new look).
 var vfx: VfxCore
+## v0.11.0 VX: the quake rings' held pack rims, and whether the last effects frame drew the rings with the pack (then
+## the flat bands are not built).
+var quake_holds := PackHold.new()
+var quake_pack_on := false
 ## Live strikes: {"tick", "seed", "center" (Vector3), "spikes": [[base, basis, height, delay, seed]], "marks":
 ## [Vector3], "dust": [Vector3]}.
 var _strikes: Array[Dictionary] = []
@@ -135,6 +152,7 @@ var _quake_seen := {}
 var _ring := MeshInstance3D.new()
 var _ring_mesh := ImmediateMesh.new()
 var _ring_bands := 0
+var _quake_once := {}  # v0.11.0 VX: the quake one-shots started (key -> tick)
 ## Strikes already raised, by key (the boss's id and the marker's lanes), with their tick.
 var _seen := {}
 var _tick := 0
@@ -601,6 +619,11 @@ func pillar_count() -> int:
 ## flash of light where the lanes cross and crack marks along the lanes. Thinned with the layer's density.
 func draw_fx(layer: VfxCore) -> void:
 	var now := float(_tick) + Engine.get_physics_interpolation_fraction()
+	var vl := layer as VfxLayer
+	if vl != null and vl.pack_fx != null:  # v0.11.0 VX: the quake rings and shatters from the pack
+		_pack_quakes(vl.pack_fx, now)
+	else:
+		quake_pack_on = false
 	for s in _strikes:
 		var age := now - float(s["tick"])
 		if age < 0.0 or age > LIFE_TICKS + SPREAD_TICKS:
@@ -766,7 +789,7 @@ func _draw_rings(now: float, still: bool) -> void:
 			var spread := 0.0 if still else 0.08 * u
 			bands.append([c, r * (1.0 + spread), RING_BAND_M * (0.6 + 1.6 * flare), flare])
 	_ring_bands = bands.size()
-	if bands.is_empty():
+	if bands.is_empty() or quake_pack_on:  # VX: the pack's rims draw them (_pack_quakes)
 		return
 	_ring_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
 	for bd: Array in bands:
@@ -816,5 +839,68 @@ func _shatter(c: Vector2, tick: int) -> void:
 		_strikes.pop_front()
 	var mark := SimPlane.to_3d(c, 0.0)
 	_strikes.append(
-		{"tick": tick, "seed": sd, "center": mark, "spikes": spikes, "marks": [mark], "dust": dust}
+		{
+			"tick": tick,
+			"seed": sd,
+			"center": mark,
+			"spikes": spikes,
+			"marks": [mark],
+			"dust": dust,
+			"quake": true
+		}
 	)
+
+
+## v0.11.0 VX (PD-13): the quake rings and shatters as pack effects (QUAKE_RIM_PER_M's note), each effects frame. While
+## a warning runs: the fire rim at the growing radius and the dark rim at the radius the pulse hits; on the pulse: the
+## shock pulse once (not with reduced motion: the rim at the radius flares instead); a shatter: the rock impact once.
+## Effects density thins them through PackFx's caps.
+func _pack_quakes(fx: PackFx, now: float) -> void:
+	quake_holds.fx = fx
+	quake_holds.begin()
+	var still := ViewPrefs.reduced_motion
+	var hot := {&"primary": RING_COLOR.lightened(0.35), &"secondary": RING_COLOR, &"tertiary": HOT}
+	var dark := {
+		&"primary": QUAKE_EDGE, &"secondary": QUAKE_EDGE, &"tertiary": QUAKE_EDGE.darkened(0.4)
+	}
+	var drawn := true
+	for q: Dictionary in _quakes:
+		var c2: Vector2 = q["center"]
+		var c := SimPlane.to_3d(c2, 0.05)
+		var r := float(q["ring"])
+		var clock := quake_clock(q, now)
+		var grow := float(clock[1])
+		var flare := float(clock[2])
+		var key := int(absf(c2.x) * 131.0) * 977 + int(absf(c2.y) * 17.0) * 7 + int(q["rose"])
+		if grow >= 0.0 or (still and flare > 0.0):
+			var at := lerpf(float(q["half"]) * 1.45, r, grow) if grow >= 0.0 else r
+			var n := quake_holds.touch(key * 4, &"ring_fire", &"area", c, at * QUAKE_RIM_PER_M, hot)
+			drawn = drawn and n != null
+		if grow >= 0.0:
+			var e := quake_holds.touch(
+				key * 4 + 1, &"ring_bleed", &"area", c, r * QUAKE_EDGE_PER_M, dark
+			)
+			drawn = drawn and e != null
+		if flare > 0.0 and not still:
+			var pulse := int(float(now - float(q["rose"])) / maxf(1.0, float(q["pulse_ticks"])))
+			_quake_shot(
+				fx, "p%d:%d" % [key, pulse], &"bx_pulse_shock", c, r / QUAKE_PULSE_REACH_M, hot
+			)
+	quake_holds.end()
+	quake_pack_on = drawn
+	for s in _strikes:
+		if s.get("quake", false):
+			var at: Vector3 = s["center"]
+			_quake_shot(fx, "s%d" % int(s["seed"]), &"bx_impact_a", at, QUAKE_SHATTER_SCALE, hot)
+	for k: String in _quake_once.keys():
+		if absf(now - float(_quake_once[k])) > 600.0:
+			_quake_once.erase(k)
+
+
+func _quake_shot(
+	fx: PackFx, key: String, id: StringName, at: Vector3, scale: float, cols: Dictionary
+) -> void:
+	if _quake_once.has(key):
+		return
+	_quake_once[key] = float(_tick)
+	fx.spawn(id, at, scale, cols, -1.0, 1.0, QUAKE_SHATTER_HIDE if id == &"bx_impact_a" else [])

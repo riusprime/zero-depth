@@ -125,3 +125,46 @@ func test_the_pick_card_names_the_spell_its_level_and_what_it_replaces() -> void
 	assert_eq(
 		face["replaces_text"], tr("UI_SLOT_REPLACES") % tr("SPELL_FIREBALL"), "Replaces Fireball"
 	)
+
+
+## v0.11.0 VX (owner PD-13: new effects use the premade packs): with the effects layer and its pack, O10's three spells
+## are pack effects (the frost ring and burst, the fire orb and explosion, the storm lightning) and their strips hide.
+func test_vx_the_first_spells_draw_as_pack_effects_not_strips() -> void:
+	var w := _world(
+		[&"frost_core", &"ember_core", &"storm_core"],
+		[[Vector2(2, 0), 100000], [Vector2(0, 6), 100000], [Vector2(0.5, 6.5), 100000]]
+	)
+	for k in [Spells.FROST_NOVA, Spells.FIREBALL, Spells.SKY_STRIKE]:
+		Offers.apply(w, Offers.spell_code(k))
+	var fx: SpellFx = add_child_autofree(SpellFx.new())
+	fx.vfx_on = true
+	var layer: VfxLayer = add_child_autofree(VfxLayer.new())
+	layer.pack_fx = add_child_autofree(PackFx.new())
+	var reader := WorldReader.new(w)
+	var families := {}
+	var strips := 0
+	for k in 80:
+		w.step(W.frame())
+		fx.sync(reader)
+		layer.begin(float(w.tick))
+		fx.draw_fx(layer)
+		layer.finish()
+		for f: StringName in [&"area", &"explosion", &"bolt", &"projectile"]:
+			if layer.pack_fx.live_count(f) > 0:
+				families[f] = true
+		for n: Node in fx.get_children():
+			if (
+				n is MeshInstance3D
+				and (n as MeshInstance3D).visible
+				and n.get_class() == "MeshInstance3D"
+			):
+				if (
+					(n as MeshInstance3D).mesh is BoxMesh
+					or (n as MeshInstance3D).mesh is SphereMesh
+				):
+					strips += 1
+	assert_eq(int(fx.drawn.get(WorldReader.SPELL_FX_NOVA, 0)), 1, "one nova")
+	assert_eq(int(fx.drawn.get(WorldReader.SPELL_FX_BURST, 0)), 1, "one burst")
+	assert_eq(strips, 0, "no strip, ball or bolt box drawn")
+	for f: StringName in [&"area", &"explosion", &"bolt", &"projectile"]:
+		assert_true(families.has(f), "a pack %s effect was drawn" % f)

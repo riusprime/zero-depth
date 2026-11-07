@@ -233,3 +233,46 @@ func test_the_quake_pillars_stand_ring_before_each_pulse_and_burst_when_gone() -
 	spikes.sync(reader)
 	assert_eq(spikes.quake_count(), 2)
 	assert_eq(spikes.strike_count(), strikes + 1, "the gone pillar bursts")
+
+
+## v0.11.0 VX (owner PD-13: new effects use the premade packs): with the pack, the quake rings are pack rims in the
+## telegraph's orange (the growing ring and the radius it hits, held while the warning runs) and the flat bands are not
+## built; the pulse plays a shock pulse and a gone pillar a rock impact, once each.
+func test_vx_the_quake_rings_and_shatter_are_pack_effects() -> void:
+	var s := _fight(&"gatekeeper", Vector2(7, 2))
+	var w: World = s[0]
+	var aid: int = s[1]
+	var i := w.actors.index_of(aid)
+	var reader := WorldReader.new(w)
+	var spikes := StoneSpikeViews.new()
+	add_child_autofree(spikes)
+	var layer: VfxLayer = add_child_autofree(VfxLayer.new())
+	layer.pack_fx = add_child_autofree(PackFx.new())
+	w.actors.hp[i] = w.actors.max_hp[i] * 650 / 1000
+	w.step(InputFrame.new())
+	w.actors.state[i] = BossAi.STAGGERED
+	w.bosses.stagger_t[BossAi.entry_of(w, i)] = LONG
+	w.bosses.attack[BossAi.entry_of(w, i)] = -1
+	var q := BossAi.table_of(w, i).quake
+	var k := BossQuake.pillars_of(w, aid)[0]
+	CombatLab.idle(w, w.bosses.pillar_from[k] + q.pulse_ticks - q.warn_ticks / 2 - w.tick)
+	spikes.sync(reader)
+	layer.begin(float(w.tick))
+	spikes.draw_fx(layer)
+	layer.finish()
+	assert_true(spikes.quake_pack_on, "the pack draws the rings")
+	assert_eq(spikes.quake_holds.held, 6, "a rim growing and the rim it hits, three pillars")
+	assert_eq(spikes.ring_bands(), 6, "the telegraph's pieces (counted)")
+	var impacts := layer.pack_fx.live_count(&"impact")
+	var o := BossSignatures.pillar_obb(w.bosses, k)
+	var gone: Array[Obb] = [o]
+	w.bosses.remove_pillar(k)
+	w.remove_barriers(gone)
+	spikes.sync(reader)
+	layer.begin(float(w.tick))
+	spikes.draw_fx(layer)
+	spikes.draw_fx(layer)  # (once: a second frame starts nothing more)
+	layer.finish()
+	assert_eq(
+		layer.pack_fx.live_count(&"impact"), impacts + 1, "the gone pillar's rock impact, once"
+	)
