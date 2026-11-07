@@ -3,7 +3,8 @@ extends GutTest
 ## input only (Input.parse_input_event); the floor's first surge is planned by the sim on its first tick. Test speed-up
 ## (as test_e2e_hud_style poses the floor time): the floor clock (World.run_ticks, the sim's own field) is moved to a
 ## second before that surge, and the hero is made unhurtable; the rest is the real loop. The surge's sound cue and HUD
-## line come, the floor's biome critter arrives in numbers, every one drawn through the VAT crowd.
+## line come, the floor's biome critter arrives in numbers, every one drawn by the batched critter crowd (v0.11.0
+## O9c: no node each).
 
 const MAX_FRAMES := 1200
 
@@ -29,7 +30,7 @@ func test_a_surge_arrives_with_its_cue_in_a_real_run() -> void:
 	var began := false
 	var seen := {}
 	var most_drawn := 0
-	var all_vat := true
+	var all_batched := true
 	var seq := w.last_event_seq()
 	for f in MAX_FRAMES:
 		await e.frames(1)
@@ -42,18 +43,16 @@ func test_a_surge_arrives_with_its_cue_in_a_real_run() -> void:
 			if w.actors.kinds[i] != w.critter_kind or w.actors.dead[i] == 1:
 				continue
 			seen[w.actors.ids[i]] = true
-			var node := main.view.actors.actor_node(w.actors.ids[i])
-			if node == null:
-				continue  # not synced yet (it arrived this frame)
-			if (node.get_meta(&"enemy_avatar") as HordeAvatar).vat:
+			# v0.11.0 O9c: a critter has no node of its own; the batched crowd draws it
+			if main.view.actors.actor_node(w.actors.ids[i]) != null:
+				all_batched = false
+			elif main.view.actors.draws(w.actors.ids[i]):
 				drawn += 1
-			else:
-				all_vat = false
 		most_drawn = maxi(most_drawn, drawn)
 		if began and saw_line and not reader.surge_running():
 			break
 	assert_true(began, "the surge began (its SURGE cue)")
 	assert_true(saw_line, "its HUD line showed: %s" % tr("HUD_SURGE"))
 	assert_gte(seen.size(), 30, "the critters came in numbers (%d)" % seen.size())
-	assert_true(all_vat, "each one drawn through the VAT crowd")
+	assert_true(all_batched, "each one drawn by the critter crowd, no node of its own")
 	assert_gte(most_drawn, 10, "many at once in the crowd (%d)" % most_drawn)

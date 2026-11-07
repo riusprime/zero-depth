@@ -4237,3 +4237,37 @@ func critter_kind() -> int:
 ## v0.11.0 O9: a horde critter kind (contact damage only).
 static func is_critter_kind(kind: int) -> bool:
 	return EnemyAi.is_critter(kind)
+
+
+# --- v0.11.0 O9c: the actor store's columns, whole (CritterCrowd reads a surge's rows straight from them: no call per
+# actor per field). Packed arrays are copy-on-write: a view reading one never changes the world's (EI-07).
+func actor_ids_column() -> PackedInt32Array:
+	return _w.actors.ids
+
+
+func actor_kinds_column() -> PackedInt32Array:
+	return _w.actors.kinds
+
+
+func actor_pos_x_column() -> PackedFloat32Array:
+	return _w.actors.pos_x
+
+
+func actor_pos_y_column() -> PackedFloat32Array:
+	return _w.actors.pos_y
+
+
+func actor_facing_column() -> PackedInt32Array:
+	return _w.actors.facing
+
+
+func actor_state_column() -> PackedInt32Array:
+	return _w.actors.state
+
+
+func actor_hp_column() -> PackedInt32Array:
+	return _w.actors.hp
+
+
+func actor_max_hp_column() -> PackedInt32Array:
+	return _w.actors.max_hp

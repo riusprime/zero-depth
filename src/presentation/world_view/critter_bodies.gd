@@ -91,24 +91,30 @@ static func build(a: HordeAvatar) -> void:
 ## flight, the flea's hop, the crab's slide (`slide`, 0..1 through it; < 0: none), the mote's float. `calm`: reduced
 ## motion (no bob, no hop, no sway).
 static func body_move(kind: int, t: float, slide: float, calm: bool) -> Array:
-	var bp := Vector3.ZERO
-	var brz := 0.0
+	var m := body_move_v(kind, t, slide, calm)
+	return [Vector3(m.x, m.y, 0.0), m.z]
+
+
+## v0.11.0 O9c: body_move without an Array (CritterCrowd poses a whole surge with it every frame): x, y the body's
+## place (forward, up), z its lean.
+static func body_move_v(kind: int, t: float, slide: float, calm: bool) -> Vector3:
 	match kind:
 		WorldReader.KIND_CAVE_BAT:
-			bp.y = BAT_FLY_M + (0.0 if calm else sin(t * 3.0) * 0.05)
+			return Vector3(0.0, BAT_FLY_M + (0.0 if calm else sin(t * 3.0) * 0.05), 0.0)
 		WorldReader.KIND_EMBER_FLEA:
 			if not calm:
 				var hop := absf(sin(t * PI * HOP_HZ))
-				bp.y = hop * HOP_M
-				brz = (hop - 0.5) * 0.3
+				return Vector3(0.0, hop * HOP_M, (hop - 0.5) * 0.3)
 		WorldReader.KIND_ICE_CRAB:
 			if slide >= 0.0:
-				bp.x = sin(clampf(slide, 0.0, 1.0) * PI) * SLIDE_M
+				return Vector3(sin(clampf(slide, 0.0, 1.0) * PI) * SLIDE_M, 0.0, 0.0)
 		WorldReader.KIND_STAR_MOTE:
-			bp.y = MOTE_FLOAT_M + (0.0 if calm else sin(t * 2.4) * 0.05)
-			if not calm:
-				brz = sin(t * 1.7) * 0.2
-	return [bp, brz]
+			return Vector3(
+				0.0,
+				MOTE_FLOAT_M + (0.0 if calm else sin(t * 2.4) * 0.05),
+				0.0 if calm else sin(t * 1.7) * 0.2
+			)
+	return Vector3.ZERO
 
 
 ## Poses `a`'s moving parts at gait phase `phase` (0..1): the live pose and the VAT bake both pose through here.

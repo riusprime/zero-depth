@@ -13,5 +13,5 @@ gap_seconds_max = 120.0
 size_min = 30
 size_max = 60
 duration_seconds = 10.0
-alive_cap = 50
+alive_cap = 120
 id = &"surge"
