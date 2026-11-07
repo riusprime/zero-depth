@@ -571,6 +571,9 @@ var variants := VariantState.new()
 ## v0.11.0 O13b (ENEMIES.md R1-R4): what the Ruins and Night Rocks signatures leave (RuinsRocksState: the Weavers'
 ## cables, the Throwers' rocks, the waiting Lurkers' boulders; hashed once touched).
 var ruins_rocks := RuinsRocksState.new()
+## v0.11.0 O13c (ENEMIES.md R5-R8): what the Red Canyon's and the Frozen Shore's signature enemies left on the floor
+## (CanyonShoreState: bursts, vents, blobs, chunks, shells; hashed once touched).
+var canyon_shore := CanyonShoreState.new()
 var surge_at := PackedInt32Array()
 var surge_sizes := PackedInt32Array()
 var surge_next := 0
@@ -900,6 +903,8 @@ func step(frame: InputFrame) -> void:
 	Mines.advance(self)  # v0.4.0 EN: mines arm and blow.
 	Variants.advance(self)  # v0.11.0 O13a: the variants' trails burn and melt (after the mines)
 	RuinsRocks.advance(self)  # v0.11.0 O13b: the cables drop or hurt, the rocks go, the Lurkers hold still
+	if canyon_shore.touched:
+		CanyonShore.advance(self)  # v0.11.0 O13c: the bursts, the vents, the blobs land, the chunks slide
 	if not boss_tables.is_empty():
 		BossSignatures.advance(self)  # v0.8.0 BS1: pillars sink, javelins fly back
 	if pp != null:
@@ -1523,6 +1528,8 @@ func state_hash() -> String:
 		variants.hash_into(h)
 	if ruins_rocks.touched:  # v0.11.0 O13b: only once a signature left a cable, a rock or a boulder
 		ruins_rocks.hash_into(h)
+	if canyon_shore.touched:  # v0.11.0 O13c: only once a signature left something
+		canyon_shore.hash_into(h)
 	if mines.touched:  # v0.4.0 EN: only once a Mine Layer dropped a mine.
 		mines.hash_into(h)
 	if orbs.touched:  # v0.4.0 TU: only once a kill dropped a heal orb.

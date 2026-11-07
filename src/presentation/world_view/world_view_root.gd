@@ -155,6 +155,8 @@ var horde_fx: HordeVisuals = _part(HordeVisuals)
 var variant_fx: VariantViews = _part(VariantViews)
 ## v0.11.0 O13b: the Wire Weavers' cables, the Stone Throwers' rocks, the Lurkers' dust, the Hounds' yelps.
 var ruins_rocks_fx: RuinsRocksViews = _part(RuinsRocksViews)
+## v0.11.0 O13c: the Kiln Beetles' bursts, the lava vents, the Frost Spitters' arcs, the Glacier Turtles' chunks.
+var canyon_shore_fx: CanyonShoreViews = _part(CanyonShoreViews)
 var events: EventPedestalViews = _part(EventPedestalViews)  # v0.5.0 EV: event pedestals, the drone's ring, elite crowns
 var cores: CoreViews = _part(CoreViews)  # v0.6.0 CU: cores on elites and bosses, the steal window, dodge and stun cues
 ## v0.9.0 EL: the elites' arrival sigil, the Rift Hunter's rift, the Conduit's beam, the Breaker's dust ring.
@@ -394,6 +396,7 @@ func _setup_views(palette: Dictionary) -> void:
 	add_child(horde_fx)  # v0.4.0 EN
 	add_child(variant_fx)  # v0.11.0 O13a
 	add_child(ruins_rocks_fx)  # v0.11.0 O13b
+	add_child(canyon_shore_fx)  # v0.11.0 O13c
 	add_child(events)  # v0.5.0 EV
 	events.setup(reader)
 	add_child(cores)  # v0.6.0 CU
@@ -450,6 +453,9 @@ func _setup_effects() -> void:
 		variant_fx.pack_fx = pack_fx
 		ruins_rocks_fx.pack_fx = pack_fx  # v0.11.0 O13b: the sparks, the dust
 		layer.drawers.append(variant_fx.draw_fx)
+		canyon_shore_fx.vfx = layer  # v0.11.0 O13c: R5-R8's bursts, vents, arcs, chunks (pack zones)
+		canyon_shore_fx.pack_fx = pack_fx
+		layer.drawers.append(canyon_shore_fx.draw_fx)
 		# v0.10.5 O12 (owner P9): the hero's own forms draw as hero_drawers, under the hero's effect budget
 		# (HeroFxBudget); the drawers above (enemy fireballs, spikes, boss strikes, props) never are.
 		laser.vfx = layer  # v0.9.0 LZ: the beam's element accent, the impact's sparks and light
@@ -702,6 +708,7 @@ func sync() -> void:
 	_sync_view(&"horde_fx", horde_fx)  # v0.4.0 EN
 	_sync_view(&"variant_fx", variant_fx)  # v0.11.0 O13a
 	_sync_view(&"ruins_rocks_fx", ruins_rocks_fx)  # v0.11.0 O13b
+	_sync_view(&"canyon_shore_fx", canyon_shore_fx)  # v0.11.0 O13c
 	_sync_view(&"events", events)  # v0.5.0 EV
 	_sync_view(&"cores", cores)  # v0.6.0 CU
 	_sync_view(&"elite_fx", elite_fx)  # v0.9.0 EL

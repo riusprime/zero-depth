@@ -110,6 +110,12 @@ const KIND_WIRE_POST := ActorStore.Kind.WIRE_POST
 const KIND_SCRAP_HOUND := ActorStore.Kind.SCRAP_HOUND
 const KIND_ROCK_LURKER := ActorStore.Kind.ROCK_LURKER
 const KIND_STONE_THROWER := ActorStore.Kind.STONE_THROWER
+## v0.11.0 O13c: the Red Canyon's and the Frozen Shore's signature enemies (CanyonShore; CanyonShoreBodies).
+const KIND_KILN_BEETLE := ActorStore.Kind.KILN_BEETLE
+const KIND_CINDER_PRIEST := ActorStore.Kind.CINDER_PRIEST
+const KIND_FROST_SPITTER := ActorStore.Kind.FROST_SPITTER
+const KIND_GLACIER_TURTLE := ActorStore.Kind.GLACIER_TURTLE
+const ICE_CHUNK_RADIUS_M := CanyonShore.CHUNK_RADIUS_M
 const ECHO_NONE := BossJudge.NONE
 const ECHO_SHOW := BossJudge.SHOW
 const ECHO_REPLAY := BossJudge.REPLAY
@@ -2775,6 +2781,83 @@ func thrower_flight(i: int) -> int:
 
 func thrower_target(i: int) -> Vector2:
 	return Vector2(_w.actors.lock_x[i], _w.actors.lock_y[i])
+
+
+# --- The Red Canyon's and the Frozen Shore's signature enemies (v0.11.0 O13c; CanyonShore) --------------------
+## Cinder Priest i's vent's pulse now (0..1000, CanyonShore.vent_pulse; 0: no vent, or outside its warning): its
+## staff keeps time with it.
+func priest_pulse(i: int) -> int:
+	var k := _w.canyon_shore.vent_of(_w.actors.ids[i])
+	return CanyonShore.vent_pulse(_w, k) if k >= 0 else 0
+
+
+## Whether actor i is a Glacier Turtle whose shell still stands.
+func shell_on(i: int) -> bool:
+	return CanyonShore.shell_on(_w, i)
+
+
+## The Kiln Beetles' bursts waiting: [centre (Vector2), radius (float), progress 0..1000 toward the blow, seed] each.
+func kiln_bursts() -> Array:
+	var s := _w.canyon_shore
+	var out := []
+	for k in s.burst_count():
+		var span := maxi(1, s.burst_due[k] - s.burst_born[k])
+		out.append(
+			[
+				s.burst_pos(k),
+				s.burst_r[k],
+				clampi((_w.tick - s.burst_born[k]) * 1000 / span, 0, 1000),
+				s.burst_born[k] * 64 + k
+			]
+		)
+	return out
+
+
+## The lava vents: [centre (Vector2), radius (float), pulse 0..1000 (CanyonShore.vent_pulse; 0: none), ticks since its
+## last eruption (-1: none yet), whether a living priest keeps it, its priest's id] each.
+func lava_vents() -> Array:
+	var s := _w.canyon_shore
+	var out := []
+	for k in s.vent_count():
+		out.append(
+			[
+				s.vent_pos(k),
+				s.vent_r[k],
+				CanyonShore.vent_pulse(_w, k),
+				_w.tick - s.vent_last[k] if s.vent_last[k] >= 0 else -1,
+				s.vent_until[k] < 0,
+				s.vent_owner[k]
+			]
+		)
+	return out
+
+
+## The Frost Spitters' blobs in the air: [from, to (Vector2), slick radius (float), progress 0..1000 of the flight,
+## seed] each.
+func ice_blobs() -> Array:
+	var s := _w.canyon_shore
+	var out := []
+	for k in s.blob_count():
+		var span := maxi(1, s.blob_land[k] - s.blob_born[k])
+		out.append(
+			[
+				Vector2(s.blob_fx[k], s.blob_fy[k]),
+				Vector2(s.blob_tx[k], s.blob_ty[k]),
+				s.blob_r[k],
+				clampi((_w.tick - s.blob_born[k]) * 1000 / span, 0, 1000),
+				s.blob_born[k] * 64 + s.blob_owner[k] % 64
+			]
+		)
+	return out
+
+
+## The broken shells' ice chunks sliding: [centre (Vector2), serial] each.
+func ice_chunks() -> Array:
+	var s := _w.canyon_shore
+	var out := []
+	for k in s.chunk_count():
+		out.append([s.chunk_pos(k), s.chunk_serial[k]])
+	return out
 
 
 # --- Engines and combos (v0.3.0 G) --------------------------------------------------------------------------

@@ -27,7 +27,7 @@ hp_permille = 700
 damage_permille = 450
 pack_cap = 2
 hold = false
-kinds = Array[StringName]([&"warden", &"wire_weaver", &"scrap_hound", &"rock_lurker", &"stone_thrower"])
+kinds = Array[StringName]([&"warden"])
 
 [sub_resource type="Resource" id="P_2"]
 script = ExtResource("1_phase")

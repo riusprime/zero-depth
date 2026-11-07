@@ -43,6 +43,8 @@ const KEEP_AWAY: Array[int] = [
 	ActorStore.Kind.CONDUIT,  # drifting 7-10 m away
 	ActorStore.Kind.WIRE_WEAVER,  # v0.11.0 O13b: the Weaver and the Thrower keep their band (RuinsRocks)
 	ActorStore.Kind.STONE_THROWER,
+	ActorStore.Kind.CINDER_PRIEST,  # v0.11.0 O13c: its band until it stands by its vent (CanyonShore)
+	ActorStore.Kind.FROST_SPITTER,
 ]
 ## Aimed windups stop tracking the player this many ticks before they fire (starting value, as the bosses').
 const COMMIT_TICKS := 12
@@ -121,7 +123,7 @@ static func flies(w: World, i: int) -> bool:
 static func behaviour_of(kind: int) -> int:
 	if kind == ActorStore.Kind.LENS_DRONE:
 		return ActorStore.Kind.NEEDLE
-	return VARIANT_BASE.get(kind, kind)
+	return VARIANT_BASE.get(kind, CanyonShore.BASE.get(kind, kind))  # v0.11.0 O13c: the Beetle and Turtle: a Warden
 
 
 ## Chargers, the Brood Mother's hatchlings (v0.3.0 C, a small Charger) and Swarmers (v0.4.0 EN) run the charge.
@@ -184,6 +186,8 @@ static func think(w: World, i: int) -> void:
 			w.phase_probe.end(&"ai.plan")
 	if Variants.is_variant(a.kinds[i]):  # v0.11.0 O13a: the Rubble Warden's crust falls at half HP
 		Variants.on_think(w, i)
+	if CanyonShore.owns(a.kinds[i]):  # v0.11.0 O13c: a Cinder Priest takes or plants its vent
+		CanyonShore.on_think(w, i)
 	if a.frozen_t[i] > 0 or Spells.held_still(w, i):  # Engines: frozen holds still; v0.11.0 O11: a spell stun
 		return
 	var t := w.enemy_table(a.kinds[i])
@@ -350,6 +354,8 @@ static func _patient(w: World, i: int, r: float) -> int:
 ## A dying Splitter (v0.4.0 EN) splits into split_count Splitlings beside where it fell (they arrive in phase 9).
 static func on_death(w: World, i: int) -> void:
 	var a := w.actors
+	if CanyonShore.owns(a.kinds[i]):  # v0.11.0 O13c: a Kiln Beetle's burst, a Cinder Priest's vent cools
+		CanyonShore.on_death(w, i)
 	var t := w.enemy_table(a.kinds[i])
 	if t == null or t.split_count <= 0 or w.enemy_table(ActorStore.Kind.SPLITLING) == null:
 		return
@@ -411,6 +417,10 @@ static func _walk_dir(w: World, i: int, t: EnemyTable) -> Vector2:
 	if dist <= 0.0001 or w.player_dead():
 		return Vector2.ZERO
 	var dir := to / dist
+	if a.kinds[i] == ActorStore.Kind.CINDER_PRIEST and w.canyon_shore.touched:  # v0.11.0 O13c: by its vent
+		var by := CanyonShore.priest_walk(w, i, Vector2.INF)
+		if by != Vector2.INF:
+			return by
 	var side := 1.0 if a.ids[i] % 2 == 0 else -1.0
 	if behaviour_of(a.kinds[i]) == ActorStore.Kind.NEEDLE:
 		if dist < t.flee_distance_m:
@@ -622,6 +632,8 @@ static func _resolve_horde(w: World, i: int, t: EnemyTable, p: Vector2, pr: floa
 					break
 		ActorStore.Kind.MINE_LAYER:
 			Mines.drop(w, i)
+		ActorStore.Kind.FROST_SPITTER:  # v0.11.0 O13c: its ice blob leaves (CanyonShore)
+			CanyonShore.throw_blob(w, i)
 
 
 static func _fire(
@@ -862,6 +874,8 @@ static func telegraph(w: World, i: int) -> Dictionary:
 					"progress": progress,
 					"style": &"rune"
 				}
+		ActorStore.Kind.FROST_SPITTER:  # v0.11.0 O13c: the blue arc and the landing ring
+			return CanyonShore.spitter_telegraph(w, i, progress)
 	return {}
 
 
@@ -915,6 +929,8 @@ static func _start_windup(w: World, i: int, aim: int) -> void:
 				_aim(w, i)
 		ActorStore.Kind.BOMB_DRONE:
 			_aim(w, i)  # v0.7.5 EF: the landing follows the player until it commits
+		ActorStore.Kind.FROST_SPITTER:  # v0.11.0 O13c: its blob lands where you stand (tracked to the commit)
+			_aim(w, i)
 
 
 ## Points actor i's shot at where the player will be when it arrives (v0.3.5 AI): the player's position plus its
@@ -924,6 +940,9 @@ static func _start_windup(w: World, i: int, aim: int) -> void:
 static func _aim(w: World, i: int) -> void:
 	var a := w.actors
 	var t := w.enemy_table(a.kinds[i])
+	if a.kinds[i] == ActorStore.Kind.FROST_SPITTER:  # v0.11.0 O13c
+		CanyonShore.aim_blob(w, i)
+		return
 	if a.kinds[i] == ActorStore.Kind.BOMB_DRONE:
 		var p := w.player_pos()
 		a.lock_x[i] = p.x

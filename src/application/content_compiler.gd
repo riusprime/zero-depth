@@ -33,6 +33,10 @@ const ENEMY_KINDS := {  # behaviour ids to actor kinds (a test checks the key se
 	&"scrap_hound": ActorStore.Kind.SCRAP_HOUND,
 	&"rock_lurker": ActorStore.Kind.ROCK_LURKER,
 	&"stone_thrower": ActorStore.Kind.STONE_THROWER,
+	&"kiln_beetle": ActorStore.Kind.KILN_BEETLE,  # v0.11.0 O13c: R5-R8 (CanyonShoreCompiler)
+	&"cinder_priest": ActorStore.Kind.CINDER_PRIEST,
+	&"frost_spitter": ActorStore.Kind.FROST_SPITTER,
+	&"glacier_turtle": ActorStore.Kind.GLACIER_TURTLE,
 }
 ## Bosses (v0.3.0 C): ids to actor kinds, move names to BossAttackTable moves (a test matches BossSchemas' sets).
 const BOSS_KINDS := BossKinds.ALL  # v0.9.0 NB4: the table lives in BossKinds (this file's line limit)
@@ -156,6 +160,7 @@ static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 	t.resist_permille = def.resist_permille
 	if def.attacks.is_empty():  # v0.4.0 EN: the Mender has no attack.
 		_compile_horde(def, t, {})
+		CanyonShoreCompiler.compile(def, t)  # v0.11.0 O13c: the Cinder Priest has no attack
 		return t
 	t.attack_range_m = bp["attack_range_m"]
 	t.cooldown_ticks = SimTick.seconds_to_ticks(bp["cooldown_seconds"])
@@ -205,6 +210,7 @@ static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 			_compile_horde(def, t, sp)
 	VariantCompiler.compile(def, t)  # v0.11.0 O13a: a biome variant's own numbers
 	RuinsRocksCompiler.compile(def, t)  # v0.11.0 O13b: the Ruins and Night Rocks signatures' own numbers
+	CanyonShoreCompiler.compile(def, t)  # v0.11.0 O13c: R5-R8's own numbers
 	return t
 
 
@@ -383,6 +389,7 @@ static func compile_curve(
 	c.interval_min_ticks = SimTick.seconds_to_ticks(def.interval_min_seconds)
 	c.pack_cap_bumps = def.pack_cap_bumps.duplicate()
 	VariantCompiler.inherit_phases(repo, phase_of)  # v0.11.0 O13a: a variant opens with its base
+	CanyonShoreCompiler.inherit_phases(repo, phase_of)  # v0.11.0 O13c: a signature opens with the Warden
 	c.kind_phase = PackedInt32Array()
 	for kind in spawn.kinds:
 		c.kind_phase.append(phase_of.get(kind, -1))

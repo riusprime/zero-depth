@@ -128,3 +128,27 @@ var flight_ticks := 1
 var rock_ticks := 0
 var rock_half_m := 0.0
 var max_rocks := 0
+## v0.11.0 O13c (ENEMIES.md R5-R8): the signature enemies' own numbers (CanyonShore; the defaults on every other kind).
+## The Kiln Beetle: its death bursts burst_radius_m round it burst_delay_ticks later, burst_damage to the hero and
+## burst_enemy_damage to each enemy. The Cinder Priest: it plants (or takes) a vent within vent_reach_m and makes it
+## erupt every vent_period_ticks (its pulse shown vent_warn_ticks first): a vent_radius_m column, vent_damage to the
+## hero; once it dies the vent goes vent_linger_ticks later. The Frost Spitter: its blob flies flight_ticks and
+## leaves a slick of slick_radius_m for slick_ticks (slick_permille: the hero's easing on it). The Glacier Turtle: its
+## shell's shell_hp, then chunk_count chunks sliding at chunk_speed (m a tick) for chunk_ticks, chunk_damage each touch.
+var burst_delay_ticks := 0
+var burst_radius_m := 0.0
+var burst_damage := 0
+var burst_enemy_damage := 0
+var vent_reach_m := 0.0
+var vent_period_ticks := 1
+var vent_warn_ticks := 0
+var vent_radius_m := 0.0
+var vent_damage := 0
+var vent_linger_ticks := 0
+var slick_radius_m := 0.0
+var slick_ticks := 0
+var shell_hp := 0
+var chunk_count := 0
+var chunk_speed := 0.0
+var chunk_ticks := 0
+var chunk_damage := 0

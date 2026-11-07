@@ -11,10 +11,6 @@ const SHARED_CORE: Array[StringName] = [&"charger", &"needle", &"swarmer", &"war
 ## v0.11.0 O13a: the ten signature enemies of ENEMIES.md R1-R10 that O13b-d build; a signature id may name one before
 ## its definition exists (any other unknown id fails, so a typo can't hide).
 const PENDING_SIGNATURES: Array[StringName] = [
-	&"kiln_beetle",
-	&"cinder_priest",
-	&"frost_spitter",
-	&"glacier_turtle",
 	&"star_warper",
 	&"gravity_node",
 ]
