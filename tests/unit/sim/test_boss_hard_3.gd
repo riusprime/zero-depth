@@ -384,9 +384,9 @@ func _dark(p: Vector2) -> Array:
 	return s
 
 
-func test_lanterns_burn_4_s_the_dark_lasts_9_s_and_each_snuff_puts_out_two() -> void:
+func test_lanterns_burn_6_s_the_dark_lasts_9_s_and_each_snuff_puts_out_two() -> void:
 	var t := _table(&"lantern_shade")
-	assert_eq(t.lamp_ticks, 240, "a lantern burns 4 s (was 6)")
+	assert_eq(t.lamp_ticks, 360, "v0.11.0 O4 (owner Q10 a): a lantern stays lit 6 s (B10 had 4)")
 	assert_eq(t.dark_hold_ticks, 540, "the dark lasts 9 s (was 8)")
 	assert_gt(t.sig_every_ticks, t.dark_hold_ticks, "and still lifts before the next Lights Out")
 	for id: StringName in [&"snuff", &"snuff_3"]:
@@ -404,6 +404,9 @@ func test_a_snuff_leaves_the_two_farthest_lanterns_lit_and_you_can_relight_the_r
 	var s := _dark(Vector2(-1.5, -1.5))
 	var w: World = s[0]
 	var t := BossAi.table_of(w, _i(w, s[1]))
+	var lit0 := w.bosses.lamp_t
+	lit0.fill(360)  # v0.11.0 O4: the lanterns start out; all four lit for this
+	w.bosses.lamp_t = lit0
 	BossShade.snuff(w, _atk(t, &"snuff"), p)
 	var lit: Array = []
 	for k in 4:
@@ -420,19 +423,19 @@ func test_a_snuff_leaves_the_two_farthest_lanterns_lit_and_you_can_relight_the_r
 	w.bosses.lamp_t = lt
 	BossShade.snuff(w, _atk(t, &"snuff"), p)
 	assert_eq(w.bosses.lamp_t[3], 0, "the last one goes too")
-	# The answer: walk to a dead lantern and it burns again for 4 s.
+	# The answer: walk to a dead lantern and it burns again for 6 s (v0.11.0 O4).
 	_hold(w, LAMPS[1] + Vector2(-1.0, 0), 1)
-	assert_eq(w.bosses.lamp_t[1], 240, "passing within reach relights it for 4 s")
+	assert_eq(w.bosses.lamp_t[1], 360, "passing within reach lights it for 6 s")
 
 
-func test_in_the_dark_four_seconds_after_it_falls_every_lantern_has_burnt_out() -> void:
+## v0.11.0 O4 (owner Q10 a): the lanterns start out (stepping on one lights it), so the dark falls on out lanterns;
+## it still lifts after 9 s.
+func test_the_dark_falls_on_out_lanterns_and_lifts_after_9_s() -> void:
 	var s := _dark(Vector2(-1.5, -1.5))
 	var w: World = s[0]
-	_hold(w, Vector2(-1.5, -1.5), 239)
-	assert_eq(w.bosses.lamp_t[0], 1, "alight a tick before 4 s")
-	_hold(w, Vector2(-1.5, -1.5), 1)
+	_hold(w, Vector2(-1.5, -1.5), 240)
 	for k in 4:
-		assert_eq(w.bosses.lamp_t[k], 0, "lantern %d out at 4 s" % k)
+		assert_eq(w.bosses.lamp_t[k], 0, "lantern %d out" % k)
 	_hold(w, Vector2(-1.5, -1.5), 299)
 	assert_true(BossShade.dark(w), "still dark at 9 s")
 	_hold(w, Vector2(-1.5, -1.5), 2)

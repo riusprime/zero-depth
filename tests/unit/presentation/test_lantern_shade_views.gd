@@ -129,7 +129,7 @@ func _step(w: World, view: ShadeViews, r: WorldReader, p: Vector2, n: int) -> vo
 		view.advance(DT)
 
 
-func test_the_dark_falls_over_lights_out_and_the_lanterns_burn() -> void:
+func test_the_dark_falls_over_lights_out_lifts_and_falls_again() -> void:
 	var s := _fight()
 	var w: World = s[0]
 	var aid: int = s[1]
@@ -139,7 +139,7 @@ func test_the_dark_falls_over_lights_out_and_the_lanterns_burn() -> void:
 	var r := WorldReader.new(w)
 	_step(w, view, r, Vector2(-1, -1), 2)
 	assert_eq(view.lamps_shown(), 4, "four lanterns on the room's edge")
-	assert_eq(view.lamps_lit(), 4, "lit")
+	assert_eq(view.lamps_lit(), 0, "v0.11.0 O4: out until stepped on")
 	assert_almost_eq(view.dark_strength(), 0.0, 0.001, "the room lit before Lights Out")
 	assert_false(view.dark_quad.visible)
 	BossLab.start(w, w.actors.index_of(aid), &"lights_out")
@@ -148,14 +148,13 @@ func test_the_dark_falls_over_lights_out_and_the_lanterns_burn() -> void:
 	_step(w, view, r, Vector2(-1, -1), 180)
 	assert_almost_eq(view.dark_strength(), 1.0, 0.001, "dark")
 	assert_true(view.dark_quad.visible)
-	assert_eq(view.lights_used(), 5, "your light and four lit lanterns cut the dark")
+	assert_eq(view.lights_used(), 1, "only your light cuts the dark (O4: the lanterns are out)")
 	assert_lt(view.dark_priority(), 0, "the dark draws before every marker (markers always draw)")
-	_step(w, view, r, Vector2(-1, -1), 360)
-	assert_eq(view.lamps_lit(), 0, "burnt out after 4 s")
-	assert_eq(view.lights_used(), 1, "only your light")
 	_step(w, view, r, Vector2(4.5, 0), 2)
-	assert_eq(view.lamps_lit(), 1, "the east lantern relit as you pass")
+	assert_eq(view.lamps_lit(), 1, "the east lantern lit as you step on it")
 	assert_eq(view.lights_used(), 2)
+	_step(w, view, r, Vector2(4.5, 0), 358)
+	assert_eq(view.lamps_lit(), 1, "it stays lit while you stand on it")
 	# NB4b (owner: "Dark comes and goes"): 9 s after it fell (step 781 here) the dark lifts with a short fade.
 	_step(w, view, r, Vector2(4.5, 0), 118)
 	assert_almost_eq(view.dark_strength(), 1.0, 0.001, "still dark just before 9 s")
@@ -166,6 +165,11 @@ func test_the_dark_falls_over_lights_out_and_the_lanterns_burn() -> void:
 	_step(w, view, r, Vector2(4.5, 0), 24)
 	assert_almost_eq(view.dark_strength(), 0.0, 0.001, "the room lit again within 0.4 s")
 	assert_false(view.dark_quad.visible)
+	# v0.11.0 O4 (owner Q10 a: "dark 9 s / light 4 s"): 4 s after it lifted the dark falls again, on its own.
+	_step(w, view, r, Vector2(4.5, 0), 210)
+	assert_true(bool(r.boss_light()["dark"]), "dark again 4 s after the lift")
+	_step(w, view, r, Vector2(4.5, 0), 60)
+	assert_almost_eq(view.dark_strength(), 1.0, 0.001, "drawn at full again")
 
 
 func test_wisps_near_you_always_show_their_outline() -> void:

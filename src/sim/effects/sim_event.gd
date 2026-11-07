@@ -123,6 +123,10 @@ const TAG_EXPOSED := 262144
 ## Kit (v0.3.5 K): a hit from the build's skill (the Lunge Cleave, a Scatter Blast pellet). Bit 21, leaving 19 and 20
 ## for the step that ran in parallel.
 const TAG_SKILL := 2097152
+## v0.11.0 O4 (owner Q10 a): a hit on the Lantern Shade standing in the dark (its dark multiplier, 40 %) or in a lit
+## lantern's pool (its lit multiplier, 150 %). Bits 22 and 23.
+const TAG_SHADE_DARK := 4194304
+const TAG_SHADE_LIT := 8388608
 ## v0.4.0 BS: a hit from an ability (a bomb, a drone bolt or its chain, an orbit blade, the blink's landing shock,
 ## Combo Sword's finisher shockwave). Bit 24, clear of the bits a parallel step may take.
 const TAG_ABILITY := 16777216

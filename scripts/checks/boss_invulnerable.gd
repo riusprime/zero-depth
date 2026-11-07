@@ -14,7 +14,8 @@ extends SceneTree
 ## - ranged: 6.5 m; while a Shade's room is dark it closes to 4.0 m (it brings its own light, as the fight asks).
 ## - ranged_naive (informative, no target): 6.5 m always, even in the dark.
 ## A tick is "blocked" when Damage would refuse a player hit: the actor's invuln ticks (the rise), the signature's
-## shield (BossDodge.shielded) or the dark round a Shade (BossShade.unlit). A phase gate (BossAi.GATE) is counted
+## shield (BossDodge.shielded). v0.11.0 O4: "dim" counts the ticks a Shade stands in the dark (its hits cut to 40 %,
+## not blocked: BossShade.light_permille). A phase gate (BossAi.GATE) is counted
 ## apart: Damage lets the hit land but the HP floor holds (v0.9.5 BH1), so it is not in the blocked share.
 ## Per fight: ticks, blocked share, then the ticks and number of windows of each cause, and whether the boss died.
 
@@ -40,7 +41,7 @@ func _initialize() -> void:
 		)
 	)
 	_line(
-		"columns: boss hero seed | ticks | blocked % | rise t/n | shield t/n | unlit t/n | gate t/n | dead"
+		"columns: boss hero seed | ticks | blocked % | rise t/n | shield t/n | dim t/n | gate t/n | dead"
 	)
 	for id in bosses:
 		for hero in HEROES:
@@ -64,8 +65,8 @@ func _fight(id: StringName, hero: String, seed_value: int, cap: int) -> Dictiona
 	w.actors.set_pos(0, Vector2(6.0, 0.0))
 	var aid := w.spawn_boss(BossLab.table_index(w, id), Vector2.ZERO)
 	var me := w.actors.ids[0]
-	var counts := {"rise": [0, 0], "shield": [0, 0], "unlit": [0, 0], "gate": [0, 0]}
-	var was := {"rise": false, "shield": false, "unlit": false, "gate": false}
+	var counts := {"rise": [0, 0], "shield": [0, 0], "dim": [0, 0], "gate": [0, 0]}
+	var was := {"rise": false, "shield": false, "dim": false, "gate": false}
 	var ang := 0.0
 	var blocked := 0
 	var ticks := 0
@@ -88,7 +89,7 @@ func _fight(id: StringName, hero: String, seed_value: int, cap: int) -> Dictiona
 		var now := {
 			"rise": w.actors.invuln[i] > 0,
 			"shield": BossDodge.shielded(w, i),
-			"unlit": BossShade.unlit(w, i),
+			"dim": BossShade.light_permille(w, i) < 1000,  # v0.11.0 O4: cut, never blocked
 			"gate": w.actors.state[i] == BossAi.GATE,
 		}
 		for key: String in now:
@@ -97,7 +98,7 @@ func _fight(id: StringName, hero: String, seed_value: int, cap: int) -> Dictiona
 				if not was[key]:
 					counts[key][1] += 1
 			was[key] = now[key]
-		if now["rise"] or now["shield"] or now["unlit"]:
+		if now["rise"] or now["shield"]:
 			blocked += 1
 		if k % HIT_EVERY == 0:
 			Damage.hit(w, i, HIT_AMOUNT, me, me, w.take_root(), 0, w.player_pos(), c)
@@ -126,8 +127,8 @@ func _row(id: String, hero: String, s: int, r: Dictionary) -> String:
 			c["rise"][1],
 			c["shield"][0],
 			c["shield"][1],
-			c["unlit"][0],
-			c["unlit"][1],
+			c["dim"][0],
+			c["dim"][1],
 			c["gate"][0],
 			c["gate"][1],
 			"yes" if r["dead"] else "no",

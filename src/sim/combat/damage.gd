@@ -144,6 +144,8 @@ static func hit(
 	if owner_id == a.ids[0] and BossAi.is_boss_kind(a.kinds[target]):
 		var c := BossChallenge.hit_mult(w, target)  # BX (L17): ranged armour, the weak point.
 		m = [m[0] * c[0] / 1000, m[1] | c[1]]
+		c = BossShade.hit_mult(w, target)  # v0.11.0 O4: the Lantern Shade's 40 % in the dark, 150 % in a lit pool
+		m = [m[0] * c[0] / 1000, m[1] | c[1]]
 	h.tags |= m[1]
 	var scaled := amount * m[0] / 1000
 	if mu[1] != 0 and owner_id == a.ids[0] and target != 0:
@@ -221,6 +223,10 @@ static func tick_dot(
 		amount = Constellations.scale(amount, Constellations.hunt_permille(w, target))  # v0.10.5 W3-P10c: C8
 		if BossQuake.stunned(w, target):  # v0.11.0 O3 (Q9 a): the stunned Gatekeeper takes +50 % ticks too
 			amount = amount * BossQuake.taken_permille(w, target) / 1000
+		var sh := BossShade.hit_mult(w, target)  # v0.11.0 O4: the Lantern Shade's light scales its ticks too
+		if sh[1] != 0:
+			amount = maxi(1, amount * sh[0] / 1000)
+			tags |= sh[1]
 	var root := w.take_root()
 	return _apply(
 		w, target, amount, source_id, owner_id, root, tags, a.pos(target), -1, 0, effect_id
@@ -295,7 +301,7 @@ static func _apply(
 	return applied
 
 
-## v0.7.5 BF1: a boss's signature shield holds; v0.9.0 NB4: so does the dark round a Lantern Shade standing unlit
-## (BossShade.unlit: it is only hittable when lit).
+## v0.7.5 BF1: a boss's signature shield holds. (v0.11.0 O4: the dark round a Lantern Shade no longer blocks; it
+## scales the hit instead, BossShade.hit_mult.)
 static func _blocked(w: World, target: int) -> bool:
-	return BossDodge.shielded(w, target) or BossShade.unlit(w, target)
+	return BossDodge.shielded(w, target)

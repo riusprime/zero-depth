@@ -229,6 +229,55 @@ func test_a_shielded_pattern_shows_invulnerable() -> void:
 	assert_false(bar.invulnerable(), "open between patterns")
 
 
+## v0.11.0 O4 (owner Q10 a): the Lantern Shade is never Invulnerable; its bar dims and says "In the dark · 40 %"
+## while it stands in the dark, turns lantern gold and says "In the light · 150 %" in a lit pool, plain at 100 %.
+func test_the_shade_bar_says_the_light_s_multiplier() -> void:
+	var w := BossLab.world()
+	var i := BossLab.ready_boss(w, &"lantern_shade", Vector2.ZERO)
+	var aid := w.actors.ids[i]
+	var t := BossAi.table_of(w, i)
+	for k in t.phase_attacks.size():
+		t.phase_attacks[k] = PackedInt32Array()
+	t.sig_every_ticks = 0
+	t.punish_ticks = 0
+	t.gap_ticks = 0
+	t.speed = 0.0
+	w.actors.hp[0] = 1 << 20
+	var reader := WorldReader.new(w)
+	var bar := BossBar.new()
+	add_child_autofree(bar)
+	var away := Vector2(-4.4, -4.4)  # 6.2 m off, clear of every lantern's reach
+	w.actors.set_pos(0, away)
+	w.step(InputFrame.new())
+	BossLab.start(w, w.actors.index_of(aid), &"lights_out")
+	for k in 242:
+		w.actors.set_pos(0, away)
+		w.step(InputFrame.new())
+	assert_true(BossShade.dark(w))
+	bar.sync(reader)
+	assert_false(bar.invulnerable(), "never Invulnerable")
+	assert_eq(bar.light_permille(), 400)
+	assert_eq(bar.shield_text(), tr("HUD_SHADE_DARK") % 40, "In the dark · 40 %")
+	var dim := ThemePalette.color(&"enemy_bar").darkened(BossBar.DIM)
+	assert_eq(bar.hp_bar().color, dim, "dim")
+	var lt := w.bosses.lamp_t
+	lt.fill(300)
+	w.bosses.lamp_t = lt
+	w.actors.set_pos(w.actors.index_of(aid), Vector2(3.5, 0))  # in the east lantern's pool
+	bar.sync(reader)
+	assert_eq(bar.shield_text(), tr("HUD_SHADE_LIT") % 150, "In the light · 150 %")
+	assert_eq(bar.hp_bar().color, BossBar.LIT, "bright")
+	lt.fill(0)
+	w.bosses.lamp_t = lt
+	w.actors.set_pos(0, Vector2(1.0, 0))
+	bar.sync(reader)
+	assert_eq(bar.shield_text(), "", "in your own light: 100 %, no tag")
+	assert_eq(bar.hp_bar().color, ThemePalette.color(&"enemy_bar"))
+	var es := TranslationServer.get_translation_object("es")
+	assert_ne(String(es.get_message(&"HUD_SHADE_DARK")), "", "in Spanish too")
+	assert_ne(String(es.get_message(&"HUD_SHADE_LIT")), "")
+
+
 ## Owner O59: nothing on the final boss's bar hints how many bodies remain: its shields left are its own gates only.
 func test_the_final_bodies_shields_left_never_count_the_bodies_to_come() -> void:
 	var run := FinalLab.run_state(207)

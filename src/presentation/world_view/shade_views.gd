@@ -606,7 +606,7 @@ func _draw_lamps(delta: float, lights: PackedVector4Array) -> PackedVector4Array
 		gm.emission_energy_multiplier = 2.4 * burn if lit else 0.15
 		gm.emission = WARM if lit else Color(0.9, 0.3, 0.1)
 		(lamp["light"] as OmniLight3D).light_energy = LAMP_ENERGY * burn
-		var pool_on := lit and dark
+		var pool_on := lit  # v0.11.0 O4: a lit pool (150 %) shows in the full light too
 		(lamp["pool"] as MeshInstance3D).visible = pool_on
 		(lamp["pool_mat"] as ShaderMaterial).set_shader_parameter("power", 0.75 * burn)
 		(lamp["pool_mat"] as ShaderMaterial).set_shader_parameter("clock", _clock + k * 3.0)

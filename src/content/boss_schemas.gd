@@ -110,6 +110,9 @@ const MOVES := {
 			"hard",  # v0.9.5 BH3 (B6, B9): marks the Furnace Waves and the Gear Spiral for the 0.55 s rule (HardRules)
 			"dark_seconds",  # v0.9.0 NB4: the Lantern Shade's Lights Out (ShadeRules.LIGHT_PARAMS)
 			"dark_lasts_seconds",  # v0.9.0 NB4b: how long its dark lasts
+			"light_lasts_seconds",  # v0.11.0 O4: how long the light lasts before the dark falls again
+			"dark_mult_permille",  # v0.11.0 O4: the Shade's damage taken in the dark
+			"lit_mult_permille",  # v0.11.0 O4: and in a lit lantern's pool
 			"light_m",
 			"lamps",
 			"lamp_m",

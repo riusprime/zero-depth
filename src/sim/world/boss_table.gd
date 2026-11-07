@@ -113,6 +113,12 @@ var echo_gap_ticks := 1
 ## the player and lamp_m round each lit lantern stay lit; a lantern burns lamp_ticks after it was lit, and the player
 ## passing within relight_m relights it (from its Lights Out attacks). NB4b: the dark lasts dark_hold_ticks, then the
 ## room is lit again until the next Lights Out (0 = until the Shade dies).
+## v0.11.0 O4 (owner Q10 a): the light lasts light_hold_ticks, then the dark falls again on its own (0 = lit until the
+## next Lights Out); the Shade takes dark_mult_permille of a hit standing in the dark and lit_mult_permille standing in
+## a lit lantern's pool (never 0: no immunity).
+var light_hold_ticks := 0
+var dark_mult_permille := 1000
+var lit_mult_permille := 1000
 var lamp_count := 0
 var lamp_inset_m := 0.0
 var light_m := 0.0

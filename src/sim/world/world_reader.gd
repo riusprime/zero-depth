@@ -2009,14 +2009,14 @@ func boss_shielded(i: int) -> bool:
 
 ## v0.8.0 N4 (owner O56: "if your boss has a shield you have to break before you can hurt it again, make the bar say
 ## so"): no hit can hurt boss i now: its invulnerable ticks run (the rise, a phase gate, a leap or burrow, a mimic's
-## dash), its signature pattern's shield is up (boss_shielded), or it stands in a gate or a final shatter. The boss
+## dash), its signature pattern's shield is up (boss_shielded), or it stands in a gate or a final shatter (v0.11.0
+## O4: never the Lantern Shade's dark, which only cuts the damage: boss_light_permille). The boss
 ## bar's invulnerable look. A read only (Damage decides; this mirrors its checks).
 func boss_invulnerable(i: int) -> bool:
 	var s := _w.actors.state[i]
 	return (
 		_w.actors.invuln[i] > 0
 		or BossDodge.shielded(_w, i)
-		or BossShade.unlit(_w, i)  # v0.9.0 NB4: a Lantern Shade in the dark
 		or s == BossAi.GATE
 		or s == FinalBoss.SHATTER
 		or s == BossInterphase.STATE
@@ -2150,9 +2150,19 @@ func boss_echo(i: int) -> Dictionary:
 ## v0.9.0 NB4 (BOSSES_4_5.md N4): the Lantern Shade's light: {} with no Shade; else "dark", "falling" (0..1000 to
 ## the next Lights Out's dark, -1 none), "dark_left" (NB4b: ticks until the dark lifts, -1 none), "light_m" (the
 ## player's circle), "lamp_m", "lamp_ticks", "lamps" ([{pos, lit, left, frac}]), "boss" (its actor index) and
-## "boss_lit" (hittable) (BossShade.state).
+## "boss_lit" (its damage taken not cut by the dark), v0.11.0 O4: "light_left" (ticks until the dark falls again, -1
+## none) and "boss_mult" (BossShade.state).
 func boss_light() -> Dictionary:
 	return BossShade.state(_w)
+
+
+## v0.11.0 O4 (owner Q10 a): the per-mille of a hit boss i takes from the room's light now (the Lantern Shade: 400 in
+## the dark, 1500 in a lit lantern's pool; 1000 otherwise and for every other boss). The boss bar's dim/bright tag; the
+## same function Damage applies (BossShade.light_permille).
+func boss_light_permille(i: int) -> int:
+	if i < 0 or i >= _w.actors.size():
+		return 1000
+	return BossShade.light_permille(_w, i)
 
 
 ## v0.8.0 FB2 (FINAL_BOSS.md F5): boss i's Cross: {} or {"winding", "window", "progress", "arms" ([from, to, hit] per
