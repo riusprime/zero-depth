@@ -121,6 +121,8 @@ build step).
 - **O1. The Lance-Laser (L1, L2, X2):** the per-shot sim, the smooth homing path, the card conversions, strings
   (`FORMCARD_LASER_*`, en/es), `forms_dps.gd`, the ~30 laser tests updated on purpose, the view through one curved
   strip. The look after the sketch.
+- **O1c. Lance follow-ups (owner, 2026-11-07, L-a..L-c):** damage falls 15 % per enemy after the first (floor 40 %),
+  full move speed while held, Homing's tail runs to the first wall.
 - **O9. The horde kind (H1, M4):** sim kind with contact damage, VAT body, spawn rule; a crowd probe at the cap on the
   owner's PC before it ships.
 - **O10. Spell slots and the first spells (E1, E2, E4):** 4 slots, the timed runner in `abilities.gd`, the offer rule

@@ -236,3 +236,8 @@ OK; (b) you'll go through them.
 | G1 ENEMIES | All 5 critters, 10 new enemies and 5 variants approved | 2026-11-07 | ENEMIES.md answers |
 | G1 PIERCE | List approved; P2 (flag a held Pierce the form doesn't use) | 2026-11-07 | PIERCE.md answers |
 | G1 WISP_GAPS | "Wider still": lane ≥ hero + 0.7 m at 4 m; Bloom 2 and 3 to about 24 shots a wave | 2026-11-07 | WISP_GAPS.md answers |
+| L-a | After O1 (one target −3.6 % vs the beam; a line 4.5×, Homing on a pack 5×): **"Falloff per enemy"**: each enemy after the first on a lance's path takes 15 % less than the one before, floor 40 % (starting values; lines ≈ 2.5×) | 2026-11-07 | PLAN L1, O1c |
+| L-b | Hero speed while the Laser is held: **"Full speed"** (the beam's 75 % slow goes) | 2026-11-07 | PLAN L1, O1c |
+| L-c | Homing's straight tail after the last target: **"Longer"**: it runs on to the first wall, not 9 m | 2026-11-07 | PLAN L2, O1c |
+| L-d | After O1c the line is 3.3× the old beam (1662 vs 500), not the 2.5× the lead estimated: **"Keep 15 %"** | 2026-11-07 | PLAN O1c |
+| Q10-b | O4 also removed the Lights Out telegraph shield (v0.10.5 O2a): **"Bring it back"** (O4b); all else in O4 stays | 2026-11-07 | PLAN L6, O4 |
