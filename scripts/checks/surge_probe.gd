@@ -87,7 +87,7 @@ func _process(_delta: float) -> bool:
 					[
 						snappedf((now - _t0) / 1e6, 0.1),
 						WaveDirector.enemies_alive(w),
-						_main.view.actors.vat_crowd.drawn,
+						_drawn(),
 						dt_ms
 					]
 				)
@@ -219,3 +219,9 @@ func _finish() -> void:
 		f.store_string(text + "\n")
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
 	quit(0)
+
+
+## The VAT crowd's instances drawn last frame (0 before the first VAT enemy made the crowd).
+func _drawn() -> int:
+	var crowd := _main.view.actors.vat_crowd
+	return crowd.drawn if crowd != null else 0
