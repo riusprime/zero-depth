@@ -85,6 +85,7 @@ static func build_floor(
 	var shop_biome := biome.id if biome_id == &"" else biome_id
 	FloorScenario.add_shop(w, rules[&"shop"], shop_biome, rules[&"map"])  # v0.5.0 SH, v0.8.0 SR, as Main
 	IcePatches.place(w, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2, as Main: ice or starglow
+	w.roster_kinds = VariantCompiler.roster_kinds(repo, biome)  # v0.11.0 O13a, as FloorPlan
 	w.set_boss_tables(bosses)
 	w.locked_items = MetaProgress.locked_items(run.locked_cards, w.item_tables)  # v0.9.0 MP, as Main
 	w.wand_table = WandCompiler.for_run(repo, run.table)  # v0.6.5 WN1, v0.9.0 FV, as Main
