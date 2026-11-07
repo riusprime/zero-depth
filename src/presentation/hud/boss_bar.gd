@@ -29,6 +29,10 @@ const INVULNERABLE := Color("#8FB8E8")
 ## v0.11.0 O4: the Lantern Shade's bar in the dark (the HP colour darkened by DIM) and in a lit pool (lantern gold).
 const DIM := 0.55
 const LIT := Color("#FFC15A")
+## v0.11.0 O5: the Twin Wardens' bar owner per phase (the line under the bar).
+const TWIN_LEADS: Array[String] = [
+	"HUD_TWIN_LEADS_AMBER", "HUD_TWIN_LEADS_VIOLET", "HUD_TWIN_LEADS_BOTH"
+]
 
 var _name := Label.new()
 var _hp := HudBar.new()
@@ -122,6 +126,7 @@ func sync(reader: WorldReader) -> void:
 		_set_name(tr(reader.boss_name_key(i)))
 		var n := reader.boss_phase_thresholds(i).size()
 		_sub.text = tr("HUD_BOSS_PHASE") % [reader.boss_phase(i) + 1, n] if n > 1 else ""
+		_twin_lines(reader, i)
 		return
 	# v0.8.0 FB1 / N4: the final boss: the fight's name over one bar for the body fighting now.
 	_set_name(tr(reader.final_name_key()))
@@ -137,6 +142,20 @@ func sync(reader: WorldReader) -> void:
 			_fallen.text = tr("HUD_FALLEN_WINDOW") % ceili(int(pace["window_left"]) / 60.0)
 		_:
 			_fallen.text = ""
+
+
+## v0.11.0 O5 (owner L7, Q29): the Twin Wardens' bar names whose bar it is (the amber Warden's, the violet's, both),
+## and in their last phase which one is exposed now.
+func _twin_lines(reader: WorldReader, i: int) -> void:
+	var twin := reader.boss_twin(i)
+	if twin.is_empty():
+		return
+	var ph := int(twin.get("phase", 0))
+	_sub.text += "  ·  " + tr(TWIN_LEADS[clampi(ph, 0, TWIN_LEADS.size() - 1)])
+	if ph >= 2 and _stagger_label.text == "":
+		_stagger_label.text = tr(
+			"HUD_TWIN_EXPOSED_AMBER" if twin.get("exposed", false) else "HUD_TWIN_EXPOSED_VIOLET"
+		)
 
 
 ## The name (v0.10.5 W3-O17: a new one redraws the name's ornaments; an unchanged one writes nothing).
@@ -184,6 +203,11 @@ func _sync_hp(reader: WorldReader, i: int, final: bool) -> void:
 	elif left > 1:
 		line += "  ·  " + tr("HUD_BOSS_SHIELDS") % left
 	_shield.text = line
+
+
+## The label over the bar ("PHASE SHIFT", v0.11.0 O5: the Wardens' exposed one; tests).
+func status_line() -> String:
+	return _stagger_label.text
 
 
 ## The HP fraction the bar goes to (this phase's, 0..1; tests).

@@ -103,6 +103,15 @@ var arena_template := 0
 @export var flank_m := 4.5
 @export var anger_speed_permille := 1400
 @export var anger_seconds := 3.0
+## v0.11.0 O5 (owner L7, Q11, Q29): the twin's own moveset (the boss's is every other attack), the bolt the body
+## standing back casts every twin_bolt_seconds (an attack in no phase), and phase 3's swap: every twin_expose_seconds
+## one body is exposed (takes twin_expose_permille) and the other guarded (twin_guard_permille).
+@export var twin_attack_ids := PackedStringArray()
+@export var twin_bolt_attack: StringName
+@export var twin_bolt_seconds := 4.0
+@export var twin_expose_seconds := 10.0
+@export var twin_expose_permille := 1500
+@export var twin_guard_permille := 500
 ## v0.11.0 O3 (owner L5, Q9 a; QuakeRules.SPEC, BossQuake): the quake pillars this boss raises from a phase on (empty
 ## = none), and the recap line of a pulse that kills.
 @export var quake := {}
@@ -240,6 +249,22 @@ func _check_twin(issues: Array[ValidationIssue]) -> void:
 		issues.append(
 			ValidationIssue.new(&"missing", p, "a twin needs a Chain Sweep with a late_cause_key")
 		)
+	_check_twin_roles(issues)
+
+
+## v0.11.0 O5 (owner L7, Q11, Q29): the twin's moveset and its bolt name real attacks, and the clocks and
+## multipliers are real (exposed takes more, guarded less).
+func _check_twin_roles(issues: Array[ValidationIssue]) -> void:
+	var p := resource_path
+	for id in twin_attack_ids:
+		if attack(StringName(id)) == null:
+			issues.append(ValidationIssue.new(&"unknown_attack", p, "no twin attack %s" % id))
+	if twin_bolt_attack == &"" or attack(twin_bolt_attack) == null:
+		issues.append(ValidationIssue.new(&"missing", p, "a twin needs its standing-back bolt"))
+	if twin_bolt_seconds <= 0.0 or twin_expose_seconds <= 0.0:
+		issues.append(ValidationIssue.new(&"not_positive", p, "the twins' clocks are > 0 s"))
+	if twin_expose_permille <= 1000 or twin_guard_permille >= 1000 or twin_guard_permille <= 0:
+		issues.append(ValidationIssue.new(&"range", p, "exposed > 1000 > guarded > 0 per mille"))
 
 
 ## The attack with this id, or null.

@@ -47,6 +47,9 @@ func _fight(boss: StringName, attack_id: StringName) -> Array:
 	var w := BossLab.world()
 	var i := BossLab.ready_boss(w, boss, Vector2.ZERO)
 	var aid := w.actors.ids[i]
+	BossAi.table_of(w, i).twin_bolt = -1  # v0.11.0 O5: the Wardens' standing-back bolt is a projectile, not a strike
+	if not w.bosses.twin_lead.is_empty():
+		w.bosses.twin_burn_cd[0] = 1 << 20  # nor their chain's burn (TwinViews draws the chain)
 	w.actors.set_pos(0, Vector2(5, 2))
 	w.actors.hp[0] = 1 << 20
 	w.actors.max_hp[0] = 1 << 20

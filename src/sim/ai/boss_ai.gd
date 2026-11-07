@@ -283,7 +283,7 @@ static func _update_phase(w: World, i: int, b: int, t: BossTable) -> void:
 ## whose range band holds the player, not repeating the last one when there is a choice. -1 = none in range.
 static func _choose(w: World, i: int, b: int, t: BossTable, dist: float) -> int:
 	var bs := w.bosses
-	if bs.entry[b] >= 0:
+	if bs.entry[b] >= 0 and BossTwin.may_use(w, i, t.attacks[bs.entry[b]]):  # v0.11.0 O5: not the other's
 		if BossLava.closes_escape(w, i, bs.entry[b]):  # v0.10.5 W3-O2 (F19): it waits (BossLava.hold)
 			return -1
 		var e := bs.entry[b]
@@ -296,7 +296,7 @@ static func _choose(w: World, i: int, b: int, t: BossTable, dist: float) -> int:
 			continue
 		if atk.move == M.BROOD and _alive_of(w, atk.enemy_kind) >= atk.max_alive:
 			continue
-		if BossTide.on_cadence(t, atk):  # v0.9.0 NB1: the Pull comes on its cadence only
+		if BossTide.on_cadence(t, atk) or not BossTwin.may_use(w, i, atk):  # NB1: cadence; O5: its moveset
 			continue
 		if t.mimic and not BossNemesis.allowed(w, atk):  # v0.8.0 FB3: the run's weapon, the cards held
 			continue

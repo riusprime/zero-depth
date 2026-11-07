@@ -470,8 +470,9 @@ func _validate_tide(issues: Array[ValidationIssue], path: String, where: String)
 			)
 
 
-## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): Crossfire is the shielded signature, its safe spot a real distance off the
-## chain and its gap a real width; a Chain Sweep's lane has a width and reaches on past the player (>= 0).
+## v0.9.0 NB2 (BOSSES_4_5.md N2; BossTwin): Crossfire's safe spot is a real distance off the chain and its gap a real
+## width (v0.11.0 O5, owner L3: no longer shielded: the violet twin casting it is the one to hit); a Chain Sweep's
+## lane has a width and reaches on past the player (>= 0).
 func _validate_twin(issues: Array[ValidationIssue], path: String, where: String) -> void:
 	var sp := shape_params
 	if move == &"crossfire":
@@ -479,8 +480,6 @@ func _validate_twin(issues: Array[ValidationIssue], path: String, where: String)
 			issues.append(
 				ValidationIssue.new(&"not_positive", path, where + "distance_m must be > 0")
 			)
-		if not shielded:
-			issues.append(ValidationIssue.new(&"missing", path, where + "a Crossfire is shielded"))
 	if move == &"chain_sweep":
 		if float(sp.get("width_m", 0.0)) <= 0.0:
 			issues.append(ValidationIssue.new(&"not_positive", path, where + "width_m must be > 0"))

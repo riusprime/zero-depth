@@ -3,8 +3,9 @@ extends GutTest
 ## floor-4 save whose floor draws the Wardens from floor 4's pool (built with SaveLab as Main builds floors; the seed
 ## is the first that draws them) continued from the menu (Enter); God from the dev panel (clicked); the stick walks to
 ## the boss door, E opens it, the stick walks in and the door seals; the two Wardens rise (both owner models, one bar
-## with their name) with their chain drawn between them; the stick walks up to the violet twin and the mouse's attack
-## lands: the one shared HP drops (the bar's, both bodies') and the other Warden turns angry.
+## with their name) with their chain drawn between them; v0.11.0 O5: phase 1 is the amber Warden's (the hint points
+## at it, the bar's line names it); the stick walks up to it and the mouse's attack lands: the one shared HP drops (the
+## bar's, both bodies') and the other Warden turns angry.
 
 const FLOOR := 4
 const LEG_FRAMES := 900
@@ -119,9 +120,13 @@ func test_continue_floor_4_and_fight_the_twin_wardens() -> void:
 	assert_gt(main.view.twins.links_drawn(), 8, "their chain drawn between them")
 	var hud: Hud = main.get_node("UI/Hud")
 	assert_true(hud.boss_bar.visible, "one bar")
-	# Up to the violet twin, then the mouse's attack.
+	# v0.11.0 O5: phase 1, the amber leads: the hint points at it and the bar names it.
+	var pointed := reader.objectives().map(func(o: Dictionary) -> int: return int(o["entity"]))
+	assert_eq(pointed, [bid], "the hint points at the amber Warden")
+	assert_string_contains(hud.boss_bar.get_node("PhaseLine").text, tr("HUD_TWIN_LEADS_AMBER"))
+	# Up to the amber Warden, then the mouse's attack.
 	var near := func() -> bool:
-		var j := w.actors.index_of(tid)
+		var j := w.actors.index_of(bid)
 		return j < 0 or w.player_pos().distance_to(w.actors.pos(j)) < w.actors.radius[j] + 1.2
 	var hp0 := w.actors.hp[w.actors.index_of(bid)]
 	var landed := false
@@ -130,7 +135,7 @@ func test_continue_floor_4_and_fight_the_twin_wardens() -> void:
 		await _walk(
 			e,
 			func() -> Vector2:
-				var j := w.actors.index_of(tid)
+				var j := w.actors.index_of(bid)
 				return w.actors.pos(j) if j >= 0 else w.player_pos(),
 			near
 		)

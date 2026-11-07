@@ -456,6 +456,17 @@ CAUSE_TWIN_CROSSFIRE,The Twin Wardens' crossfire caught you between them.,El fue
 CAUSE_TWIN_SWEEP,The Twin Wardens' chain lashed you down.,La cadena de The Twin Wardens te derribó de un latigazo.
 CAUSE_TWIN_CHAIN,The Twin Wardens' burning chain seared you.,La cadena ardiente de The Twin Wardens te abrasó.
 CAUSE_TWIN_BASH,A Twin Warden's shield crushed you.,El escudo de un Twin Warden te aplastó.
+CAUSE_TWIN_CHARGE,The amber Warden's charge ran you down.,La carga del Twin Warden ámbar te arrolló.
+CAUSE_TWIN_SLAM,The amber Warden's ground slam crushed you.,El golpe al suelo del Twin Warden ámbar te aplastó.
+CAUSE_TWIN_ORBS,The violet Warden's orb volley struck you.,La salva de orbes del Twin Warden violeta te alcanzó.
+CAUSE_TWIN_RUNES,The violet Warden's rune ring burned you.,El anillo de runas del Twin Warden violeta te quemó.
+CAUSE_TWIN_BLINK,The violet Warden blinked onto you.,El Twin Warden violeta apareció sobre ti.
+CAUSE_TWIN_BOLT,A Twin Warden's bolt hit you from afar.,Un rayo de un Twin Warden te alcanzó de lejos.
+HUD_TWIN_LEADS_AMBER,The amber Warden fights,Lucha el Twin Warden ámbar
+HUD_TWIN_LEADS_VIOLET,The violet Warden fights,Lucha el Twin Warden violeta
+HUD_TWIN_LEADS_BOTH,Both Wardens fight,Luchan los dos Twin Wardens
+HUD_TWIN_EXPOSED_AMBER,AMBER EXPOSED,ÁMBAR EXPUESTO
+HUD_TWIN_EXPOSED_VIOLET,VIOLET EXPOSED,VIOLETA EXPUESTO
 CAPTION_TELEGRAPH_TWIN_WARDENS,[Warning: the Wardens' chain rattles],[Aviso: la cadena de The Twin Wardens resuena]
 CAPTION_TWIN_CHAIN_BURN,[Chain sizzles],[La cadena chisporrotea]
 BOSS_CLOCKWORK_JUDGE,The Clockwork Judge,The Clockwork Judge

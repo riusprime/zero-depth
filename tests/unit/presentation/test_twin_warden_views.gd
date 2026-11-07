@@ -129,13 +129,18 @@ func test_the_chain_view_follows_the_reader() -> void:
 	ViewPrefs.effects_density = "high"
 	assert_almost_eq(view.chain_point(0.0).x, -3.0, 0.01, "from the amber Warden")
 	assert_lt(view.chain_point(0.5).y, view.chain_point(0.0).y, "it sags")
-	# Crossfire: the two lanes and the spot through the windup.
-	BossLab.start(w, i, &"crossfire")
+	# Crossfire (v0.11.0 O5: the violet's alone): its lane and the spot through the windup.
+	var vid := w.actors.ids[BossTwin.partner_of(w, i)]
+	BossLab.start(w, BossTwin.partner_of(w, i), &"crossfire")
 	step.call(10)
-	assert_eq(view.lanes_shown(), 2, "both gap lanes")
+	assert_eq(view.lanes_shown(), 1, "its gap lane")
 	assert_true(view.spot_shown(), "the safe spot")
-	BossLab.until_open(w, w.actors.ids[i])
-	step.call(100)
+	for k in 400:
+		var s := w.actors.state[w.actors.index_of(vid)]
+		if s != EnemyAi.State.WINDUP and s != EnemyAi.State.ACTIVE:
+			break
+		step.call(1)
+	step.call(10)
 	assert_eq(view.lanes_shown(), 0, "gone after it")
 	# The Chain Sweep: cooled while it holds the chain, the lash on its strike.
 	BossLab.start(w, w.actors.index_of(w.actors.ids[i]), &"chain_sweep")
@@ -156,3 +161,40 @@ func test_the_chain_view_follows_the_reader() -> void:
 		step.call(1)
 		flashed = flashed or view.burn_flashing()
 	assert_true(flashed, "the burn's flash")
+
+
+## v0.11.0 O5 (owner L7, Q11 a, Q29): the roles read out. The bar names whose bar it is (amber, violet, both) and in
+## phase 3 which Warden is exposed; the Warden to hit glows brighter than the one standing back, and the exposed
+## one brightest.
+func test_the_bar_names_the_phase_s_warden_and_the_one_to_hit_glows() -> void:
+	var w := BossLab.world()
+	var i := BossLab.ready_boss(w, &"twin_wardens")
+	var bid := w.actors.ids[i]
+	var r := WorldReader.new(w)
+	var bar := BossBar.new()
+	add_child_autofree(bar)
+	w.step(InputFrame.new())
+	bar.sync(r)
+	var line := bar.get_node("PhaseLine") as Label
+	assert_string_contains(line.text, tr("HUD_TWIN_LEADS_AMBER"), "phase 1: the amber's bar")
+	for p in [1, 2]:
+		i = w.actors.index_of(bid)
+		var hp := BossAi.table_of(w, i).phase_threshold[p] * w.actors.max_hp[i] / 1000
+		w.actors.hp[i] = hp
+		w.actors.hp[BossTwin.partner_of(w, i)] = hp
+		w.step(InputFrame.new())
+		BossLab.through_gate(w, bid)
+		bar.sync(r)
+		var key := "HUD_TWIN_LEADS_VIOLET" if p == 1 else "HUD_TWIN_LEADS_BOTH"
+		assert_string_contains(line.text, tr(key), "phase %d" % (p + 1))
+	assert_eq(bar.hp_fraction(), 1.0, "a new full bar")
+	assert_eq(bar.status_line(), tr("HUD_TWIN_EXPOSED_AMBER"), "the amber exposed first")
+	var focus := _avatar(false)
+	var rest := _avatar(true)
+	var exposed := _avatar(false)
+	var idle := {"state": WorldReader.STATE_MOVE, "move": -1}
+	_drive(focus, idle.merged({"focus": true}), 60)
+	_drive(rest, idle.merged({"resting": true}), 60)
+	_drive(exposed, idle.merged({"exposed": true}), 60)
+	assert_gt(focus.role_glow(), rest.role_glow(), "the one to hit outshines the one standing back")
+	assert_gt(exposed.role_glow(), focus.role_glow(), "the exposed one brightest")
