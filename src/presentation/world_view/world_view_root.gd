@@ -157,6 +157,8 @@ var variant_fx: VariantViews = _part(VariantViews)
 var ruins_rocks_fx: RuinsRocksViews = _part(RuinsRocksViews)
 ## v0.11.0 O13c: the Kiln Beetles' bursts, the lava vents, the Frost Spitters' arcs, the Glacier Turtles' chunks.
 var canyon_shore_fx: CanyonShoreViews = _part(CanyonShoreViews)
+## v0.11.0 O13d: the Starfall signatures' tells: the Star Warper's star, blink and stun, the Gravity Node's swirl.
+var starfall_fx: StarfallViews = _part(StarfallViews)
 var events: EventPedestalViews = _part(EventPedestalViews)  # v0.5.0 EV: event pedestals, the drone's ring, elite crowns
 var cores: CoreViews = _part(CoreViews)  # v0.6.0 CU: cores on elites and bosses, the steal window, dodge and stun cues
 ## v0.9.0 EL: the elites' arrival sigil, the Rift Hunter's rift, the Conduit's beam, the Breaker's dust ring.
@@ -397,6 +399,7 @@ func _setup_views(palette: Dictionary) -> void:
 	add_child(variant_fx)  # v0.11.0 O13a
 	add_child(ruins_rocks_fx)  # v0.11.0 O13b
 	add_child(canyon_shore_fx)  # v0.11.0 O13c
+	add_child(starfall_fx)  # v0.11.0 O13d
 	add_child(events)  # v0.5.0 EV
 	events.setup(reader)
 	add_child(cores)  # v0.6.0 CU
@@ -452,6 +455,7 @@ func _setup_effects() -> void:
 		variant_fx.vfx = layer  # v0.11.0 O13a: the variants' fire and slick patches (pack zones)
 		variant_fx.pack_fx = pack_fx
 		ruins_rocks_fx.pack_fx = pack_fx  # v0.11.0 O13b: the sparks, the dust
+		starfall_fx.pack_fx = pack_fx  # v0.11.0 O13d: the star, the blink, the swirl (pack areas and orbs)
 		layer.drawers.append(variant_fx.draw_fx)
 		canyon_shore_fx.vfx = layer  # v0.11.0 O13c: R5-R8's bursts, vents, arcs, chunks (pack zones)
 		canyon_shore_fx.pack_fx = pack_fx
@@ -709,6 +713,7 @@ func sync() -> void:
 	_sync_view(&"variant_fx", variant_fx)  # v0.11.0 O13a
 	_sync_view(&"ruins_rocks_fx", ruins_rocks_fx)  # v0.11.0 O13b
 	_sync_view(&"canyon_shore_fx", canyon_shore_fx)  # v0.11.0 O13c
+	_sync_view(&"starfall_fx", starfall_fx)  # v0.11.0 O13d
 	_sync_view(&"events", events)  # v0.5.0 EV
 	_sync_view(&"cores", cores)  # v0.6.0 CU
 	_sync_view(&"elite_fx", elite_fx)  # v0.9.0 EL

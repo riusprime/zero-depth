@@ -1756,3 +1756,9 @@ CAUSE_GLACIER_TURTLE,A Glacier Turtle crushed you.,Una Tortuga Glaciar te aplast
 CAUSE_KILN_BURST,A Kiln Beetle burst on you.,Un Escarabajo Horno estalló sobre ti.
 CAUSE_CINDER_VENT,A lava vent erupted under you.,Una grieta de lava estalló bajo tus pies.
 CAUSE_ICE_CHUNK,A chunk of a Glacier Turtle's shell hit you.,Un trozo del caparazón de una Tortuga Glaciar te golpeó.
+ENEMY_STAR_WARPER,Star Warper,Saltaestrellas
+ENEMY_STAR_WARPER_DESC,"Marks a star beside you, then blinks onto it and strikes a second later. Step off the star's ring to dodge, or stand on the star to stop the blink and stun it.","Marca una estrella a tu lado y un segundo después salta sobre ella y golpea. Sal de su anillo para esquivarlo, o pisa la estrella para frenar el salto y aturdirlo."
+ENEMY_GRAVITY_NODE,Gravity Node,Nodo Gravitatorio
+ENEMY_GRAVITY_NODE_DESC,"A floating orb that bends every shot near it toward itself, yours and theirs. Kill it to straighten your aim, or let it pull their shots away from you.","Un orbe flotante que curva hacia sí cada disparo cercano, los tuyos y los suyos. Destrúyelo para enderezar tu puntería, o deja que desvíe los suyos lejos de ti."
+CAUSE_STAR_WARPER,A Star Warper's blink took you down.,El salto de un Saltaestrellas te abatió.
+CAUSE_GRAVITY_NODE,A Gravity Node took you down.,Un Nodo Gravitatorio te abatió.

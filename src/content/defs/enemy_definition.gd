@@ -267,6 +267,11 @@ func _check_horde(issues: Array[ValidationIssue]) -> void:
 		"chunk_speed_mps",
 		"chunk_seconds",
 		"chunk_damage",
+		"mark_offset_m",  # v0.11.0 O13d: the Starfall signatures
+		"mark_radius_m",
+		"stun_seconds",
+		"pull_radius_m",
+		"pull_mps2",
 	]:
 		if bp.has(k) and float(bp[k]) <= 0.0:
 			issues.append(
@@ -290,6 +295,7 @@ func _check_horde(issues: Array[ValidationIssue]) -> void:
 			)
 	_check_variant(issues)
 	_check_canyon_shore(issues)
+	_check_starfall(issues)  # v0.11.0 O13d
 
 
 ## v0.11.0 O13a: an Ember Charger's fire burns only once it has shown for the telegraph minimum, and a Split Sniper's
@@ -313,6 +319,25 @@ func _check_variant(issues: Array[ValidationIssue]) -> void:
 	):
 		issues.append(
 			ValidationIssue.new(&"split", resource_path, "split_at_permille must be within 1..999")
+		)
+
+
+## v0.11.0 O13d (ENEMIES.md R9): a Star Warper's star lies off the hero (standing still is no cancel: mark_radius_m
+## under mark_offset_m) and its strike reaches where the hero stood (radius_m over mark_offset_m): move to answer.
+func _check_starfall(issues: Array[ValidationIssue]) -> void:
+	var bp := behaviour_params
+	if behaviour_id != &"star_warper" or attacks.is_empty() or attacks[0] == null:
+		return
+	var off := float(bp.get("mark_offset_m", 0.0))
+	if float(bp.get("mark_radius_m", 0.0)) >= off:
+		issues.append(
+			ValidationIssue.new(&"star", resource_path, "mark_radius_m must be under mark_offset_m")
+		)
+	if float(attacks[0].shape_params.get("radius_m", 0.0)) <= off:
+		issues.append(
+			ValidationIssue.new(
+				&"star", resource_path, "the strike radius_m must be over mark_offset_m"
+			)
 		)
 
 

@@ -382,6 +382,19 @@ const SCHEMAS := {
 		"shape": 0,
 		"shape_params": ["radius_m"],
 	},
+	## v0.11.0 O13d (ENEMIES.md R9): the Star Warper marks a star mark_offset_m beside the hero, then after its windup
+	## (1 s) blinks onto it and strikes a disc of radius_m; the hero standing within mark_radius_m of the star cancels
+	## the blink and stuns it stun_seconds.
+	&"star_warper":
+	{
+		"params":
+		["attack_range_m", "cooldown_seconds", "mark_offset_m", "mark_radius_m", "stun_seconds"],
+		"shape": 0,
+		"shape_params": ["radius_m"],
+	},
+	## v0.11.0 O13d (ENEMIES.md R10): the Gravity Node, stationary and floating, no attack: every projectile within
+	## pull_radius_m turns toward it (pull_mps2 at its centre, none at the reach), its speed kept.
+	&"gravity_node": {"params": ["pull_radius_m", "pull_mps2"], "attacks": []},
 }
 ## v0.11.0 O13a: a variant's base behaviour (it walks, aims and hits as its base: EnemyAi.behaviour_of).
 const VARIANT_OF := {

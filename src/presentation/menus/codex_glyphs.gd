@@ -126,6 +126,30 @@ static func _enemy(behaviour: StringName) -> Array:
 			]
 		&"splitling":
 			return [_poly([[0.2, 0.56], [0.3, 0.32], [0.5, 0.22], [0.7, 0.32], [0.8, 0.56]])]
+		&"star_warper":  # v0.11.0 O13d: a hooded body and the star it marks beside it
+			return [
+				_poly([[0.22, 0.86], [0.3, 0.42], [0.42, 0.14], [0.54, 0.42], [0.6, 0.86]]),
+				_poly(
+					[
+						[0.78, 0.5],
+						[0.82, 0.62],
+						[0.94, 0.64],
+						[0.84, 0.72],
+						[0.88, 0.86],
+						[0.78, 0.78],
+						[0.68, 0.86],
+						[0.72, 0.72],
+						[0.62, 0.64],
+						[0.74, 0.62]
+					]
+				),
+			]
+		&"gravity_node":  # v0.11.0 O13d: an orb in its ring of pull
+			return [
+				_circle(Vector2(0.5, 0.5), 0.2, 0.0),
+				_circle(Vector2(0.5, 0.5), 0.38, 0.05),
+				_circle(Vector2(0.5, 0.5), 0.07, 0.0, true),
+			]
 		&"shield_bearer":
 			return [
 				_poly([[0.22, 0.12], [0.78, 0.12], [0.78, 0.5], [0.5, 0.9], [0.22, 0.5]]),

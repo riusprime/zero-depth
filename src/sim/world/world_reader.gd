@@ -101,6 +101,9 @@ const KIND_DIM_NEEDLE := ActorStore.Kind.DIM_NEEDLE
 const KIND_EMBER_CHARGER := ActorStore.Kind.EMBER_CHARGER
 const KIND_FROST_CHARGER := ActorStore.Kind.FROST_CHARGER
 const KIND_SPLIT_SNIPER := ActorStore.Kind.SPLIT_SNIPER
+## v0.11.0 O13d: the Starfall signatures (StarfallKinds; their stand-in bodies: StarfallAvatar).
+const KIND_STAR_WARPER := ActorStore.Kind.STAR_WARPER
+const KIND_GRAVITY_NODE := ActorStore.Kind.GRAVITY_NODE
 const TRAIL_FIRE := Variants.TRAIL_FIRE
 const TRAIL_SLICK := Variants.TRAIL_SLICK
 const DIM_LOOK := Variants.DIM_LOOK
@@ -4468,3 +4471,31 @@ func actor_hp_column() -> PackedInt32Array:
 
 func actor_max_hp_column() -> PackedInt32Array:
 	return _w.actors.max_hp
+
+
+# --- The Starfall signatures (v0.11.0 O13d; StarfallKinds) ----------------------------------------------------------
+## Star Warper i's star while it winds up: [centre (Vector2), the strike's radius, the star's own radius, progress
+## 0..1000]; [] when it has none (not winding up, or no Warper).
+func warper_star(i: int) -> Array:
+	if (
+		not StarfallKinds.is_warper(_w.actors.kinds[i])
+		or _w.actors.state[i] != EnemyAi.State.WINDUP
+	):
+		return []
+	var sd := StarfallKinds.star_disc(_w, i)
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	var progress := clampi(_w.actors.state_t[i] * 1000 / maxi(1, _w.actors.windup[i]), 0, 1000)
+	return [sd[0], sd[1], t.mark_radius_m, progress]
+
+
+## Whether Star Warper i is stunned (the hero stood on its star).
+func warper_stunned(i: int) -> bool:
+	return StarfallKinds.stunned(_w, i)
+
+
+## Gravity Node i's pull reach (m); 0 for any other actor.
+func gravity_reach(i: int) -> float:
+	if not StarfallKinds.is_node(_w.actors.kinds[i]):
+		return 0.0
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	return t.pull_radius_m if t != null else 0.0

@@ -43,6 +43,8 @@ const CAUSES := {
 	WorldReader.KIND_CINDER_PRIEST: "CAUSE_CINDER_PRIEST",
 	WorldReader.KIND_FROST_SPITTER: "CAUSE_FROST_SPITTER",
 	WorldReader.KIND_GLACIER_TURTLE: "CAUSE_GLACIER_TURTLE",
+	WorldReader.KIND_STAR_WARPER: "CAUSE_STAR_WARPER",  # v0.11.0 O13d: the Starfall signatures
+	WorldReader.KIND_GRAVITY_NODE: "CAUSE_GRAVITY_NODE",
 }
 
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted

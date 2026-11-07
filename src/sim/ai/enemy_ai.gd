@@ -206,6 +206,10 @@ static func think(w: World, i: int) -> void:
 		elif a.state[i] == State.MOVE and planning:
 			a.facing[i] = Kin.angle_of(w.player_pos() - a.pos(i))
 		return
+	if StarfallKinds.is_node(a.kinds[i]):  # v0.11.0 O13d: it floats in place and never attacks
+		if a.state[i] == State.SPAWN and a.state_t[i] >= w.tuning.spawn_in_ticks:
+			enter_state(a, i, State.MOVE)
+		return
 	var alive := not w.player_dead()
 	match a.state[i]:
 		State.SPAWN:
@@ -239,6 +243,8 @@ static func think(w: World, i: int) -> void:
 			if tracking(w, i) and alive:
 				_aim(w, i)
 			if a.state_t[i] >= a.windup[i]:
+				if StarfallKinds.is_warper(a.kinds[i]) and StarfallKinds.cancel(w, i):
+					return  # v0.11.0 O13d: the hero on the star: no blink, the Warper stunned
 				enter_state(a, i, State.ACTIVE)
 				a.fire_cd[i] = 0
 		State.ACTIVE:
@@ -374,6 +380,9 @@ static func move(w: World, i: int) -> void:
 	if RuinsRocks.takes(a.kinds[i]) and RuinsRocks.moves(w, i, t, slow):  # v0.11.0 O13b
 		return
 	var hovering := a.kinds[i] == ActorStore.Kind.BOMB_DRONE and a.state[i] == State.WINDUP
+	if a.kinds[i] == ActorStore.Kind.GRAVITY_NODE:  # v0.11.0 O13d: it holds its spot
+		StarfallKinds.hold(w, i)
+		return
 	if (
 		a.state[i] == State.MOVE
 		and behaviour_of(a.kinds[i]) == ActorStore.Kind.SNIPER
@@ -634,6 +643,11 @@ static func _resolve_horde(w: World, i: int, t: EnemyTable, p: Vector2, pr: floa
 			Mines.drop(w, i)
 		ActorStore.Kind.FROST_SPITTER:  # v0.11.0 O13c: its ice blob leaves (CanyonShore)
 			CanyonShore.throw_blob(w, i)
+		ActorStore.Kind.STAR_WARPER:  # v0.11.0 O13d: it blinks onto its star and strikes round it
+			if w.actors.state_t[i] == 0:
+				var star := StarfallKinds.blink(w, i)
+				if AttackShapes.disc_touches(star, t.strike_radius_m, p, pr):
+					_hit_player(w, i, t.damage, SimEvent.TAG_MELEE, star)
 
 
 static func _fire(
@@ -720,11 +734,23 @@ static func burst_lines(w: World, i: int) -> Array[Obb]:
 	var t := w.enemy_table(a.kinds[i])
 	var out: Array[Obb] = []
 	var seen := PackedInt32Array()
+	var bent := not StarfallKinds.nodes(w).is_empty()
 	for k in t.burst_count:
 		var ang := burst_angle(t, a.lock_a[i], k)
 		if seen.has(ang):
 			continue
 		seen.append(ang)
+		if bent:  # v0.11.0 O13d: a Gravity Node near: the path the bolt will fly (StarfallKinds.bend, as the sweep)
+			var dir := Kin.dir(ang)
+			var muzzle := (
+				Vector2(a.lock_x[i], a.lock_y[i]) + dir * (a.radius[i] + t.bolt_radius_m + 0.05)
+			)
+			out.append_array(
+				StarfallKinds.bent_lanes(
+					w, muzzle, dir * t.bolt_speed, t.bolt_life_ticks, t.bolt_radius_m
+				)
+			)
+			continue
 		out.append(_shot_lane(w, i, ang, t.bolt_speed * t.bolt_life_ticks, t.bolt_radius_m))
 	return out
 
@@ -860,6 +886,17 @@ static func telegraph(w: World, i: int) -> Dictionary:
 				"radius": d[1],
 				"progress": progress
 			}
+		ActorStore.Kind.STAR_WARPER:  # v0.11.0 O13d: the star and the disc its strike covers
+			var sd := StarfallKinds.star_disc(w, i)
+			return {
+				"shape": &"disc",
+				"ground": true,
+				"center": sd[0],
+				"radius": sd[1],
+				"progress": progress,
+				"style": &"star",
+				"star_r": w.enemy_table(a.kinds[i]).mark_radius_m
+			}
 		ActorStore.Kind.NEEDLE:
 			return {
 				"shape": &"lanes", "ground": false, "obbs": burst_lines(w, i), "progress": progress
@@ -913,6 +950,10 @@ static func _start_windup(w: World, i: int, aim: int) -> void:
 			a.lock_len[i] = clear_run(w, a.pos(i), aim, t.charge_distance_m, t.radius_m)
 		ActorStore.Kind.NEEDLE, ActorStore.Kind.SNIPER:
 			_aim(w, i)
+		ActorStore.Kind.STAR_WARPER:  # v0.11.0 O13d: its star beside the hero (StarfallKinds)
+			var star := StarfallKinds.mark_spot(w, i)
+			a.lock_x[i] = star.x
+			a.lock_y[i] = star.y
 		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
 			var c := a.pos(i) + Kin.dir(aim) * t.reach_m
 			a.lock_x[i] = c.x

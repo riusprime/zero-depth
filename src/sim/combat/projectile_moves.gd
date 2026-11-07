@@ -51,22 +51,26 @@ static func on_spawn(w: World, pi: int, extra_pierce: int = 0) -> void:
 
 
 ## Before projectile `pi`'s sweep: an orbiting one steps round the player (its velocity is this tick's chord), a
-## homing one turns, a returning one heads for the player (and ends there).
-static func steer(w: World, pi: int) -> void:
+## homing one turns, a returning one heads for the player (and ends there). v0.11.0 O13d: true when a form held its
+## velocity itself this tick (an orbit lap round the hero, a Mine hold or wait, a Halo dart's straight run), so a
+## Gravity Node does not bend it (StarfallKinds.bend_projectile).
+static func steer(w: World, pi: int) -> bool:
 	var p := w.projectiles
 	if not p.moves or pi >= p.ret.size():
-		return
+		return false
 	VoidMods.steer(w, pi)  # v0.9.5 FC3: a void's orbit, mine and homing
 	LanceMods.steer(w, pi)  # v0.9.5 FC4: a lance's Homing
 	if GlaiveMods.steer(w, pi):  # v0.9.5 FC6: a disc's Orbit lap and Mine hold set its velocity
-		return
+		return true
 	if SeekerMods.steer(w, pi):  # v0.9.5 FC7: a dart's Orbit lap, Mine hold and Halo's straight flight
-		return
+		return true
 	if GunForms.mine_waits(w, pi):  # v0.6.5 WN3: G12 Mine, still until touched
-		return
+		return true
+	var lap := p.orbit_n[pi] > 0 and p.orbit_t[pi] > 0
 	_steer(w, pi)
 	GlaiveMods.steer_after(w, pi)  # v0.9.5 FC6: a disc's Homing, Ricochet's end
 	GunForms.spiral_turn(w, pi)  # v0.6.5 WN3: G11 Spiral, after homing and the way back
+	return lap
 
 
 static func _steer(w: World, pi: int) -> void:

@@ -2045,10 +2045,13 @@ func _projectile_hits() -> void:
 	var dead := PackedInt32Array()
 	_hit_grid_state = 0 if debug_aoe_full else 1  # v0.8.0 HS: aoe_candidates may build its grid from here on
 	var pp := phase_probe  # v0.8.0 HS
+	var pull := StarfallKinds.nodes(self) if not enemy_tables.is_empty() else PackedFloat32Array()
 	for i in projectiles.size():
 		if pp != null:
 			pp.begin(&"proj.sweep")
-		ProjectileMoves.steer(self, i)  # v0.6.0 MX4: orbit first, homing, the way back
+		var held := ProjectileMoves.steer(self, i)  # v0.6.0 MX4: orbit first, homing, the way back
+		if not pull.is_empty() and not held:  # v0.11.0 O13d: a Gravity Node bends it (after its form's steering)
+			StarfallKinds.bend_projectile(self, i, pull)
 		if GlaiveMods.hold(self, i):  # v0.9.5 FC6: a Mine disc spins in place (no sweep), hitting
 			if pp != null:
 				pp.end(&"proj.sweep")

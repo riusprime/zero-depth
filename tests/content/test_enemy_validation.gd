@@ -14,13 +14,14 @@ func test_the_shipped_enemies_are_valid_and_compile() -> void:
 	var repo := ContentRepository.load_all()
 	assert_eq(
 		repo.count(&"enemies"),
-		28,
+		34,
 		(
 			"charger, warden, needle, the hatchling (v0.3.0 C), the Arc Caster and the Bomb Drone (v0.3.5),"
 			+ " six horde kinds and the Splitling (v0.4.0 EN), the Lens Drone (v0.4.0 BO),"
 			+ " the five horde critters (v0.11.0 O9)"
 			+ " and the five biome variants (v0.11.0 O13a), the Ruins and Night Rocks signatures (O13b)"
 			+ ", the Red Canyon's and the Frozen Shore's signature enemies (v0.11.0 O13c)"
+			+ " and the two Starfall signatures (v0.11.0 O13d)"
 		)
 	)
 	for def: EnemyDefinition in repo.all_of(&"enemies"):
