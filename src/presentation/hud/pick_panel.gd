@@ -231,6 +231,8 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			face["level_text"] = ""
 			if face["held_level"] > 0:
 				face["tier_text"] = "%s ×%d" % [face["tier_text"], face["held_level"]]
+		WorldReader.CARD_SPELL:  # v0.11.0 O10: a spell card, its element's colour, "Spell · Lv N", the Replace line
+			spell_face(ci, info, face)
 		WorldReader.CARD_CURSE:  # v0.6.0 CU: a trade-off curse card: its name, its upside, rare
 			face["sentence"] = CurseLook.up_sentence(ci, reader, int(info["curse"]))
 			face["color"] = CurseLook.COLOR
@@ -257,6 +259,26 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			form_face(reader, info, face)  # v0.9.5 TX
 			pair_face(ci, reader, code, face)  # v0.9.5 EP4
 	return face
+
+
+## v0.11.0 O10 (owner Q18): a spell card's face: its element's colour (SpellLooks), the kind line "Spell · Lv N" (the
+## level taking it gives), the level badge (Lv N, or Lv N → M when held), the level's line under the sentence when it
+## levels a held spell, and "Replaces <spell>" when every spell slot is full (Offers.info "replaces", Spells.replaces).
+static func spell_face(ci: Object, info: Dictionary, face: Dictionary) -> void:
+	var lv := int(info["level"])
+	var held := int(info.get("held_level", 0))
+	face["color"] = SpellLooks.color(int(info.get("element", 0)))
+	face["tier"] = 1
+	face["tier_text"] = ci.tr("UI_CARD_SPELL_LEVEL") % lv
+	face["held_level"] = held
+	face["level_text"] = level_text(ci, held, lv, int(info.get("max_level", 5)))
+	var key: StringName = info.get("level_key", &"")
+	if held > 0 and key != &"":
+		face["form_line"] = ci.tr(key)
+		face["form_color"] = face["color"]
+	var old := int(info.get("replaces", -1))
+	if old >= 0:
+		face["replaces_text"] = ci.tr("UI_SLOT_REPLACES") % ci.tr(info.get("replaces_name", &""))
 
 
 ## v0.9.5 TX: a Pattern or Secondary Gun card says what it does on the form held now (FormCardText): face["form_line"]

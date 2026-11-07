@@ -18,8 +18,9 @@ extends Control
 ## v0.9.5 HU (owner: "make it just a 15% bigger"): the HP plate's bar and type, 1.15 x the old 300 x 10 and 14 pt.
 const BAR := Vector2(345, 12)
 const HP_FONT := 16
-## The carried-item row sits this far above the bottom edge: clear of the ability squares (px).
-const ITEMS_LIFT := AbilitySquares.MARGIN_BOTTOM + AbilitySquares.SIDE + 12.0
+## The carried-item row sits this far above the bottom edge: clear of the ability squares and (v0.11.0 O10) the
+## spell squares over them (px).
+const ITEMS_LIFT := AbilitySquares.MARGIN_BOTTOM + AbilitySquares.SIDE + 12.0 + SpellSquares.BAND
 ## The plate bottom and the ability squares share one line this far above the screen bottom (owner, 2026-10-26).
 const BOTTOM_LINE := AbilitySquares.MARGIN_BOTTOM
 ## The top plate's width (px).
@@ -68,6 +69,8 @@ var minimap := Minimap.new()
 var kit_hud := KitHud.new()
 ## v0.9.5 HU: the four ability squares (Attack, Skill, Dash, Blink), bottom right.
 var ability_squares := AbilitySquares.new()
+## v0.11.0 O10 (owner Q19): the four spell squares, just above the ability squares.
+var spell_squares := SpellSquares.new()
 ## v0.10.5 O6 (owner P4): the depths' answer (the floor's catch-up m), under the top plate's right end; hidden at ×1.
 var depths_tag := DepthsTag.new()
 ## v0.5.0 EV: the event prompt, status and panel, and threat T with the curses held.
@@ -219,6 +222,7 @@ func _init() -> void:
 	add_child(kit_hud)  # v0.3.5 K
 	kit_hud.heat_anchor = heat_meter
 	add_child(ability_squares)  # v0.9.5 HU
+	add_child(spell_squares)  # v0.11.0 O10
 	add_child(overrun_hud)  # v0.4.0 AB
 	add_child(lockdown_hud)  # v0.9.0 LK
 	add_child(shrine_hud)  # v0.9.0 SH, HF
@@ -310,6 +314,7 @@ func sync(reader: WorldReader) -> void:
 	t = PerfMarks.start()
 	kit_hud.sync(reader)  # v0.3.5 K
 	ability_squares.sync(reader)  # v0.9.5 HU
+	spell_squares.sync(reader)  # v0.11.0 O10
 	PerfMarks.add(&"hud.kit", t)
 	t = PerfMarks.start()
 	events.sync(reader)  # v0.5.0 EV
