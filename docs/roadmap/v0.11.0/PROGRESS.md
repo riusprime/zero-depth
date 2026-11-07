@@ -97,3 +97,6 @@
 - 2026-11-07: seams at 00d3f4e6 (+ O9, O10): `Tests 644, Passing Tests 643, Failing Tests 1`:
   `test_save_lab_loadout.gd` `ARRAY(["spell_tables", "spell_rules"]) != ARRAY([])` (O10 set them in FloorPlan, not in
   SaveLab). SaveLab now sets both; that file + test_spells + e2e old_save: `Tests 16, Passing Tests 16`. Pushed.
+- 2026-11-07: O11, O9b, VX merged. Seams at 75b3eb41: `Scripts 111, Tests 644, Passing Tests 644, Asserts 79072, Time
+  1294.66s`, `---- All tests passed! ----`, `check_gut_log: ok (644 passing, minimum 1)`. Pushed. O9c (batched
+  critters) building.
