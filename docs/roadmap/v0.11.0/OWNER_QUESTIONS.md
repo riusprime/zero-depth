@@ -221,4 +221,8 @@ OK; (b) you'll go through them.
 | Q30 | (a) The animation pass covers all bosses, the Twins first | 2026-11-07 | PLAN L7b, O16 |
 | Q15 | "Surges but not during an overrun or lockdown": once or twice a floor, 30–60 over 10 s with a sound; never inside an Overrun room or a Lockdown | 2026-11-07 | PLAN H1, O9 |
 | Q18 | (a) Taking a held spell again levels it (Lv 1–3, 4–5 from loop 2), each level a visible change | 2026-11-07 | PLAN E3, O11 |
+| Q20 | (a) All 15 spells, Bleed included, as a G1 (SPELLS.md) approved row by row | 2026-11-07 | PLAN E4, O10 |
+| Q19 | (a) 4 new HUD squares above the ability bar, cooldown sweep, flash on cast | 2026-11-07 | PLAN E2, O10 |
+| Q21 | (a) New `.glb` models in the Charger's style for the 8 code-made kinds besides the Charger (Hatchling, Needle, Warden, Arc Caster, Bomb Drone, Swarmer, Mine Layer, Sniper), role colours, VAT | 2026-11-07 | PLAN M1, art list |
+| Q22 | (a) 2 new regular enemies per biome (10), G1 ENEMIES.md first, plus the 5 horde critters | 2026-11-07 | PLAN M2, O13 |
 | Q24 | "I think I meant the rune that is at the hub": the **Runic Stone** (v0.9.5 RS1/RS2). Clarified in chat; see Q25 | 2026-11-07 | PLAN R1 |
