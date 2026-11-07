@@ -132,6 +132,10 @@ build step).
 - **O11. The full spell roster and levels (E3, E4).**
 - **O12. The spell balance pass (E5):** seeded sims, evidence file, no blind retune.
 
+- **VX. New effects from the packs (PD-13, owner 2026-11-07):** rework the plain effects v0.11.0 added so far onto pack
+  effects: the spells (O10, O11), the Laser lance (O1b, until the sketch), the quake pillars' ring and shatter (O3), the
+  Shade's light-state tags (O4), the critters' death spark (O9). Shots per effect for the owner.
+
 ### Wave 4: enemies, rooms, lore (after their gates)
 
 - **O13. New regular enemies and biome rosters (M2, M3):** `data/biomes` gains a roster, `SpawnDirector` reads floor ×

@@ -313,6 +313,12 @@ the first one's core, the second one's rim; heat colours the edge only. All of i
 except the lob's bomb shell, which is lit matter. Player ground marks keep out of the telegraphs' hostile hues
 (PRESENTATION §4, `AttackFormLooks.ground_safe`).
 
+### 4.x New effects use the premade packs (PD-13, owner 2026-11-07)
+Every new effect starts from a premade pack effect (`assets/BinbunVFX/`: beam, fire, ice, impact explosions, magic
+areas/orbs/projectiles, muzzle flash, poison; `assets/vfx_zd/`), used as is or modified (recoloured to the element or
+role, scaled, retimed, parts hidden through the pack's own hide lists). No bare strips, discs, lines or stars as a
+finished effect. The step names the pack effect it used.
+
 ## 5. Pipeline
 
 1. **Primitives first.** Godot primitive meshes (`BoxMesh`, `CylinderMesh`) plus a seeded procedural generator
