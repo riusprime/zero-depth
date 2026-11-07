@@ -29,6 +29,9 @@ var kinds := PackedInt32Array()
 var weights := PackedInt32Array()
 var unlock_tiers := PackedInt32Array()
 var packs := PackedInt32Array()
+## v0.11.0 O13a (owner Q23): per mix row, 1 when its kind is a biome's own (a signature or a variant: it opens only on a
+## floor whose World.roster_kinds holds it, SpawnDirector.unlocked), 0 for the shared core and the floor-unlocked kinds.
+var biome_only := PackedByteArray()
 ## v0.4.0 TU (owner D1–D3): the floor's difficulty curve (null = SC's plain 30 s tiers, as before). With a curve,
 ## floor time picks a phase: the danger tier, the cap and the interval follow it, and the mix opens by phase.
 var curve: CurveTable

@@ -1,3 +1,4 @@
+# gdlint: disable=max-file-lines
 class_name EnemyAi
 extends RefCounted
 ## The v0.1.0 behaviours (owner Q3, 2026-10-06): Charger, Warden, Needle. A Warden turns only while it
@@ -87,6 +88,14 @@ const CRITTERS: Array[int] = [
 	ActorStore.Kind.STAR_MOTE,
 ]
 const CRITTER_TOUCH_M := 0.15
+## v0.11.0 O13a (ENEMIES.md V1-V5): each biome variant's base kind (behaviour_of).
+const VARIANT_BASE := {
+	ActorStore.Kind.RUBBLE_WARDEN: ActorStore.Kind.WARDEN,
+	ActorStore.Kind.DIM_NEEDLE: ActorStore.Kind.NEEDLE,
+	ActorStore.Kind.EMBER_CHARGER: ActorStore.Kind.CHARGER,
+	ActorStore.Kind.FROST_CHARGER: ActorStore.Kind.CHARGER,
+	ActorStore.Kind.SPLIT_SNIPER: ActorStore.Kind.SNIPER,
+}
 
 
 static func is_enemy_kind(kind: int) -> bool:
@@ -105,13 +114,17 @@ static func flies(w: World, i: int) -> bool:
 	return t != null and t.flies
 
 
-## The behaviour an actor kind runs: its own, except the Hive Lens's drones (v0.4.0 BO), which run the Needle's.
+## The behaviour an actor kind runs: its own, except the Hive Lens's drones (v0.4.0 BO), which run the Needle's, and
+## v0.11.0 O13a the biome variants, which run their base's (VARIANT_BASE; their twists: Variants).
 static func behaviour_of(kind: int) -> int:
-	return ActorStore.Kind.NEEDLE if kind == ActorStore.Kind.LENS_DRONE else kind
+	if kind == ActorStore.Kind.LENS_DRONE:
+		return ActorStore.Kind.NEEDLE
+	return VARIANT_BASE.get(kind, kind)
 
 
 ## Chargers, the Brood Mother's hatchlings (v0.3.0 C, a small Charger) and Swarmers (v0.4.0 EN) run the charge.
-static func _charges(kind: int) -> bool:
+static func _charges(p_kind: int) -> bool:
+	var kind := behaviour_of(p_kind)  # v0.11.0 O13a: the Ember and Frost Chargers charge
 	return (
 		kind == ActorStore.Kind.CHARGER
 		or kind == ActorStore.Kind.HATCHLING
@@ -121,17 +134,17 @@ static func _charges(kind: int) -> bool:
 
 ## Kinds that keep a distance band and shoot, lob, heal or lay mines from it (v0.3.5 AI, v0.4.0 EN).
 static func _keeps_away(kind: int) -> bool:
-	return kind in KEEP_AWAY
+	return behaviour_of(kind) in KEEP_AWAY
 
 
 ## Kinds that turn at a limited rate while they walk and hold their facing once they attack (v0.4.0 EN).
 static func _turns_slowly(kind: int) -> bool:
-	return kind == ActorStore.Kind.WARDEN or kind == ActorStore.Kind.SHIELD_BEARER
+	return behaviour_of(kind) == ActorStore.Kind.WARDEN or kind == ActorStore.Kind.SHIELD_BEARER
 
 
 ## Kinds whose hits are softened or blocked by the direction they come from (Damage.target_mult).
 static func armoured(kind: int) -> bool:
-	return kind == ActorStore.Kind.WARDEN or kind == ActorStore.Kind.SHIELD_BEARER
+	return behaviour_of(kind) == ActorStore.Kind.WARDEN or kind == ActorStore.Kind.SHIELD_BEARER
 
 
 ## The Mender (v0.4.0 EN): the target to kill first. The view marks it.
@@ -143,7 +156,7 @@ static func is_priority(kind: int) -> bool:
 ## A Sniper's line (v0.4.0 EN) follows until SNIPE_COMMIT_TICKS before the shot.
 static func tracking(w: World, i: int) -> bool:
 	var a := w.actors
-	var sniper := a.kinds[i] == ActorStore.Kind.SNIPER
+	var sniper := behaviour_of(a.kinds[i]) == ActorStore.Kind.SNIPER
 	var commit := w.tuning.ai_snipe_commit_ticks if sniper else w.tuning.ai_commit_ticks
 	if a.state[i] != State.WINDUP or a.state_t[i] >= a.windup[i] - commit:
 		return false
@@ -167,6 +180,8 @@ static func think(w: World, i: int) -> void:
 		plan(w, i)
 		if w.phase_probe != null:
 			w.phase_probe.end(&"ai.plan")
+	if Variants.is_variant(a.kinds[i]):  # v0.11.0 O13a: the Rubble Warden's crust falls at half HP
+		Variants.on_think(w, i)
 	if a.frozen_t[i] > 0 or Spells.held_still(w, i):  # Engines: frozen holds still; v0.11.0 O11: a spell stun
 		return
 	var t := w.enemy_table(a.kinds[i])
@@ -207,7 +222,7 @@ static func think(w: World, i: int) -> void:
 			if a.kinds[i] == ActorStore.Kind.MENDER:
 				_mend(w, i)  # v0.4.0 EN: heals instead of attacking.
 				return
-			if a.kinds[i] == ActorStore.Kind.SNIPER and a.pick[i] == 1:
+			if behaviour_of(a.kinds[i]) == ActorStore.Kind.SNIPER and a.pick[i] == 1:
 				_end_relocation(w, a, i)
 			if attack and _may_attack(w, i):
 				_start_windup(w, i, Kin.angle_of(to_player))
@@ -237,7 +252,7 @@ static func think(w: World, i: int) -> void:
 			if a.state_t[i] >= t.recover_ticks:
 				enter_state(a, i, State.MOVE)
 				a.cd[i] = t.cooldown_ticks
-				if a.kinds[i] == ActorStore.Kind.SNIPER:
+				if behaviour_of(a.kinds[i]) == ActorStore.Kind.SNIPER:
 					_plan_relocation(w, i)
 
 
@@ -245,7 +260,7 @@ static func think(w: World, i: int) -> void:
 ## player in front of it, a Mine Layer below its mine count, a Sniper once it has relocated.
 static func _may_attack(w: World, i: int) -> bool:
 	var a := w.actors
-	match a.kinds[i]:
+	match behaviour_of(a.kinds[i]):
 		ActorStore.Kind.SHIELD_BEARER:
 			var aim := Kin.angle_of(w.player_pos() - a.pos(i))
 			return Kin.angle_diff(aim, a.facing[i]) <= w.enemy_table(a.kinds[i]).front_half_arc
@@ -346,7 +361,11 @@ static func move(w: World, i: int) -> void:
 	# Items (v0.2.0 J): a Frost Core slow scales both the walk and the charge (1.0 when not slowed).
 	var slow := ItemProcs.slow_factor(w, i)
 	var hovering := a.kinds[i] == ActorStore.Kind.BOMB_DRONE and a.state[i] == State.WINDUP
-	if a.state[i] == State.MOVE and a.kinds[i] == ActorStore.Kind.SNIPER and a.pick[i] == 1:
+	if (
+		a.state[i] == State.MOVE
+		and behaviour_of(a.kinds[i]) == ActorStore.Kind.SNIPER
+		and a.pick[i] == 1
+	):
 		_relocate(w, i, t, slow)
 		return
 	if a.state[i] == State.MOVE or hovering:
@@ -372,6 +391,8 @@ static func move(w: World, i: int) -> void:
 			var step := minf(t.charge_speed * slow, a.lock_len[i])
 			a.lock_len[i] -= step
 			a.set_pos(i, at + Kin.dir(a.lock_a[i]) * step)
+			if t.trail != Variants.TRAIL_NONE:  # v0.11.0 O13a: the Ember and Frost Chargers' trails
+				Variants.on_charge_step(w, i, t)
 
 
 ## Where enemy i would walk this tick before the spread push and walls (ZERO = stand still): toward the player,
@@ -530,6 +551,8 @@ static func resolve(w: World, i: int) -> void:
 				a.fire_cd[i] += 1
 				var ang := burst_angle(t, a.lock_a[i], k)
 				_fire(w, i, ang, t.bolt_speed, t.bolt_radius_m, t.bolt_life_ticks, t.damage)
+				if a.kinds[i] == ActorStore.Kind.DIM_NEEDLE:  # v0.11.0 O13a: dark until near (Variants)
+					w.set_pending_look(Variants.DIM_LOOK)
 				BossRicochet.arm_turret(w, i)  # v0.8.0 BS2 (S5): phase 3's turrets ricochet too
 		ActorStore.Kind.ARC_CASTER:  # the rune (its bolt and spread are patterns, above)
 			if a.state_t[i] == 0 and a.pick[i] == Spell.RUNE:
@@ -574,7 +597,7 @@ static func _resolve_pattern(w: World, i: int, t: EnemyTable, pat: BulletPattern
 
 ## The horde kinds' hits (v0.4.0 EN), on their active tick.
 static func _resolve_horde(w: World, i: int, t: EnemyTable, p: Vector2, pr: float) -> void:
-	match w.actors.kinds[i]:
+	match behaviour_of(w.actors.kinds[i]):
 		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
 			var d := locked_disc(w, i)
 			if AttackShapes.disc_touches(d[0], d[1], p, pr):
@@ -582,9 +605,11 @@ static func _resolve_horde(w: World, i: int, t: EnemyTable, p: Vector2, pr: floa
 		ActorStore.Kind.SHIELD_BEARER:
 			if Collide.circle_vs_obb(p, pr, bash_lane(w, i)) != Vector2.ZERO:
 				_hit_player(w, i, t.damage, SimEvent.TAG_MELEE)
-		ActorStore.Kind.SNIPER:
-			if Collide.circle_vs_obb(p, pr, snipe_lane(w, i)) != Vector2.ZERO:
-				_hit_player(w, i, t.damage, SimEvent.TAG_PROJECTILE)
+		ActorStore.Kind.SNIPER:  # v0.11.0 O13a: a Split Sniper's three branches too (one hit at most)
+			for lane in snipe_lanes(w, i):
+				if Collide.circle_vs_obb(p, pr, lane) != Vector2.ZERO:
+					_hit_player(w, i, t.damage, SimEvent.TAG_PROJECTILE)
+					break
 		ActorStore.Kind.MINE_LAYER:
 			Mines.drop(w, i)
 
@@ -726,6 +751,13 @@ static func snipe_lane(w: World, i: int) -> Obb:
 	return _shot_lane(w, i, w.actors.lock_a[i], t.reach_m, t.lane_half_m)
 
 
+## v0.11.0 O13a: the lanes a Sniper's shot hits (its line; a Split Sniper's line and branches: Variants.split_lanes).
+static func snipe_lanes(w: World, i: int) -> Array[Obb]:
+	if w.actors.kinds[i] == ActorStore.Kind.SPLIT_SNIPER:
+		return Variants.split_lanes(w, i)
+	return [snipe_lane(w, i)]
+
+
 ## What the view draws for actor i: {} or {"shape": &"lane"|&"lanes"|&"disc", ..., "progress": 0..1000}. The new
 ## kinds (v0.3.5 AI) add "style": &"bolt" or &"rune".
 ## v0.7.5 EF (owner N16): a pattern enemy's windup is {"shape": &"cast", "ground": false, "progress", "look"} (its body
@@ -780,6 +812,14 @@ static func telegraph(w: World, i: int) -> Dictionary:
 				"style": &"bash"
 			}
 		ActorStore.Kind.SNIPER:
+			if a.kinds[i] == ActorStore.Kind.SPLIT_SNIPER:  # v0.11.0 O13a: the line and its three branches
+				return {
+					"shape": &"lanes",
+					"ground": false,
+					"obbs": snipe_lanes(w, i),
+					"progress": progress,
+					"style": &"snipe"
+				}
 			return {
 				"shape": &"lane",
 				"ground": false,

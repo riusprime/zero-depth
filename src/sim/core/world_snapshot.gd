@@ -52,6 +52,7 @@ const WORLD_KEPT := {
 	&"elite_rules": "loadout",  # v0.9.0 EL
 	&"ice": "loadout (v0.7.5 NB1: IcePatches lays it from the floor seed)",
 	&"critter_kind": "loadout (v0.11.0 O9: FloorPlan sets it from the floor's biome)",
+	&"roster_kinds": "loadout (v0.11.0 O13a: FloorPlan sets it from the floor's biome)",
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
@@ -137,6 +138,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"ProjectileStore",
 	&"PickupStore",
 	&"MineStore",
+	&"VariantState",  # v0.11.0 O13a: the variants' trails and rubble
 	&"HealOrbStore",  # v0.4.0 TU
 	&"ShardDropStore",  # v0.10.5 O7b
 	&"ObjectiveMarkers",  # v0.11.0 O2: the hint arrow's markers
@@ -215,6 +217,7 @@ const ADDED_SINCE_V05 := {
 		&"pair_levels",  # v0.9.5 EP1 (an older save has none: its pairs read as Lv 3)
 		&"pair_log",
 		&"pairs_seen",  # v0.10.5 O15: an older save starts with none seen
+		&"variants",  # v0.11.0 O13a: an older save's floor has no trails or rubble (the base's: none)
 		&"surge_at",  # v0.11.0 O9: an older save's floor plans its surges afresh (the base's: none planned)
 		&"surge_sizes",
 		&"surge_next",
@@ -770,6 +773,7 @@ static func apply(base: World, snap: Dictionary) -> String:
 	# so only the wall grid is rebuilt for them.
 	var barriers := base.arenas.barriers.size() + base.bosses.pillar_x.size()  # v0.8.0 BS1: pillars too
 	barriers += Secrets.slabs_up(base)  # v0.9.0 TD, RA: the secret rooms' slabs while they stand
+	barriers += base.variants.rubble_count()  # v0.11.0 O13a: the Rubble Wardens' rocks
 	if base.lockdown != null:  # v0.9.0 LK: a sealed Lockdown's bars, as an arena's
 		barriers += base.lockdown.barriers.size()
 	if base.walls.size() == walls_before + barriers and barriers > 0:
@@ -1081,6 +1085,8 @@ static func _make(cls: StringName) -> Object:
 			return PickupStore.new()
 		&"MineStore":
 			return MineStore.new()
+		&"VariantState":
+			return VariantState.new()
 		&"HealOrbStore":
 			return HealOrbStore.new()
 		&"ShardDropStore":

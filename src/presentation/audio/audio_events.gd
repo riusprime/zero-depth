@@ -585,7 +585,7 @@ func _is_boss(actor_id: int) -> bool:
 func _scan_actors(reader: WorldReader, out: Array) -> void:
 	for i in range(1, reader.actor_count()):
 		var id := reader.actor_id(i)
-		var kind := reader.actor_kind(i)
+		var kind := WorldReader.body_kind(reader.actor_kind(i))  # v0.11.0 O13a: a variant sounds as its base
 		_kinds[id] = kind
 		if kind >= WorldReader.KIND_DUST_MITE and kind <= WorldReader.KIND_STAR_MOTE:
 			continue  # v0.11.0 O9c: a critter has no windup and no attack: no state cue (a surge skips the rest)

@@ -50,6 +50,7 @@ func sync(reader: WorldReader) -> void:
 	var beams := {}
 	# v0.9.5 PF3: only a Mender (its beam) or a Sniper (its tracer) is read here.
 	var any := reader.any_kind(WorldReader.KIND_MENDER) or reader.any_kind(WorldReader.KIND_SNIPER)
+	any = any or reader.any_kind(WorldReader.KIND_SPLIT_SNIPER)  # v0.11.0 O13a
 	for i in range(1, reader.actor_count() if any else 1):
 		var id := reader.actor_id(i)
 		var kind := reader.actor_kind(i)
@@ -58,10 +59,11 @@ func sync(reader: WorldReader) -> void:
 			if j >= 0:
 				beams[id] = true
 				_beam(id, reader.actor_pos(i), reader.actor_pos(j))
-		elif kind == WorldReader.KIND_SNIPER:
+		elif WorldReader.body_kind(kind) == WorldReader.KIND_SNIPER:
 			var st := reader.actor_state(i)
 			if st == WorldReader.STATE_ACTIVE and _states.get(id, st) != st:
-				_tracer(reader.sniper_line(i))
+				for lane in reader.sniper_lines(i):  # v0.11.0 O13a: a Split Sniper's line and branches
+					_tracer(lane)
 			_states[id] = st
 	for id in _beams.keys():
 		if not beams.has(id):

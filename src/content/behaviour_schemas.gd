@@ -150,4 +150,103 @@ const SCHEMAS := {
 	&"ember_flea": CRITTER,
 	&"ice_crab": CRITTER,
 	&"star_mote": CRITTER,
+	## v0.11.0 O13a (ENEMIES.md V1-V5; owner Q23): the biome variants, each its base's params and attack (VARIANT_OF)
+	## plus its own (Variants). The Rubble Warden: a crust of crust_hp on top of its HP that falls off at half HP as
+	## crust_pieces small rocks of cover (half side piece_half_m).
+	&"rubble_warden":
+	{
+		"params":
+		[
+			"attack_range_m",
+			"cooldown_seconds",
+			"front_arc_degrees",
+			"front_mult_permille",
+			"rear_arc_degrees",
+			"rear_mult_permille",
+			"turn_rate_dps",
+			"crust_hp",
+			"crust_pieces",
+			"piece_half_m",
+		],
+		"shape": 0,
+		"shape_params": ["radius_m"],
+	},
+	## The Dim Needle: its shots stay dark while farther than dark_beyond_m from the hero.
+	&"dim_needle":
+	{
+		"params":
+		[
+			"attack_range_m",
+			"cooldown_seconds",
+			"keep_distance_m",
+			"flee_distance_m",
+			"dark_beyond_m",
+		],
+		"shape": 4,
+		"shape_params":
+		["count", "gap_seconds", "speed_mps", "radius_m", "range_m", "spread_degrees"],
+	},
+	## The Ember Charger: its charge leaves fire patches (radius trail_radius_m, every trail_step_seconds, lasting
+	## trail_seconds) that burn the hero for burn_damage every burn_period_seconds once trail_arm_seconds old.
+	&"ember_charger":
+	{
+		"params":
+		[
+			"attack_range_m",
+			"cooldown_seconds",
+			"charge_turn_dps",
+			"trail_radius_m",
+			"trail_seconds",
+			"trail_step_seconds",
+			"trail_arm_seconds",
+			"burn_damage",
+			"burn_period_seconds",
+		],
+		"shape": 2,
+		"shape_params": ["length_m", "speed_mps"],
+	},
+	## The Frost Charger: its charge leaves ice slick patches; on one the hero eases over slick_ease_seconds (slides).
+	&"frost_charger":
+	{
+		"params":
+		[
+			"attack_range_m",
+			"cooldown_seconds",
+			"charge_turn_dps",
+			"trail_radius_m",
+			"trail_seconds",
+			"trail_step_seconds",
+			"slick_ease_seconds",
+		],
+		"shape": 2,
+		"shape_params": ["length_m", "speed_mps"],
+	},
+	## The Split Sniper: its shot splits into 3 at split_at_permille of its range, the outer two split_degrees out.
+	&"split_sniper":
+	{
+		"params":
+		[
+			"attack_range_m",
+			"cooldown_seconds",
+			"keep_min_m",
+			"keep_max_m",
+			"split_at_permille",
+			"split_degrees",
+		],
+		"shape": 2,
+		"shape_params": ["range_m", "half_width_m"],
+	},
 }
+## v0.11.0 O13a: a variant's base behaviour (it walks, aims and hits as its base: EnemyAi.behaviour_of).
+const VARIANT_OF := {
+	&"rubble_warden": &"warden",
+	&"dim_needle": &"needle",
+	&"ember_charger": &"charger",
+	&"frost_charger": &"charger",
+	&"split_sniper": &"sniper",
+}
+
+
+## v0.11.0 O13a: the behaviour `behaviour` runs (its base for a variant, else itself).
+static func base_of(behaviour: StringName) -> StringName:
+	return VARIANT_OF.get(behaviour, behaviour)

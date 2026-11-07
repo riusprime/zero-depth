@@ -49,6 +49,13 @@ enum Kind {
 	EMBER_FLEA,
 	ICE_CRAB,
 	STAR_MOTE,
+	# v0.11.0 O13a (ENEMIES.md V1-V5; owner Q23): the biome variants, each running its base's behaviour
+	# (EnemyAi.behaviour_of) with its own twist (Variants); each spawns only on its own biome's floors.
+	RUBBLE_WARDEN,
+	DIM_NEEDLE,
+	EMBER_CHARGER,
+	FROST_CHARGER,
+	SPLIT_SNIPER,
 }
 
 const TEAM_PLAYER := 0

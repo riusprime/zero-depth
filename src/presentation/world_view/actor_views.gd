@@ -125,8 +125,8 @@ func sync(reader: WorldReader) -> void:
 			if node.has_meta(&"elite"):  # v0.9.0 EL: its own framed bar with its name (EliteBar)
 				_add_elite_bar(node, tr(reader.elite_name_key(i)))
 			if reader.actor_team(i) != 0:
-				tint_greys(node, enemy_tint)
-				role_glow(node, reader.actor_kind(i), role_glow_energy)  # v0.8.0 N1 (O39)
+				tint_greys(node, VariantLooks.cast(reader.actor_kind(i), enemy_tint))  # O13a: a variant's own
+				role_glow(node, WorldReader.body_kind(reader.actor_kind(i)), role_glow_energy)  # v0.8.0 N1 (O39)
 		var at := reader.actor_pos(i)
 		var pos := SimPlane.to_3d(at)
 		for g in grounds:
@@ -139,6 +139,7 @@ func sync(reader: WorldReader) -> void:
 		var t_up := PerfMarks.start()
 		var parts := _parts_of(node, id)
 		_update_actor(node, reader, i, parts)
+		VariantLooks.show_crust(node, reader, i)  # v0.11.0 O13a
 		PerfMarks.add(&"actors.update", t_up)
 		if not leans.is_empty() and leans.has(id):
 			_lean(node, leans[id])
@@ -656,7 +657,9 @@ func _add_rings(root: Node3D, radius: float, team_color: Color) -> void:
 	root.add_child(ring)
 
 
-func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
+func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
+	# v0.11.0 O13a: a biome variant is drawn as its base's body (VariantLooks), never by the VAT crowd (p_kind).
+	var kind := WorldReader.body_kind(p_kind)
 	var root := Node3D.new()
 	var body_color := ThemePalette.color(&"player_body" if is_player else &"enemy_body")
 	var team_color := ThemePalette.color(&"player_core" if is_player else &"enemy_body")
@@ -673,9 +676,9 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_CHARGER:
 			# The clawed hooded crawler (v0.2.0 L17): its own node under the facing, animated in frame time.
 			var avatar := ChargerAvatar.new()
-			avatar.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials
+			avatar.enemy_tint = VariantLooks.cast(p_kind, enemy_tint)  # v0.8.0 HR; O13a: a variant's cast
 			avatar.role_glow = role_glow_energy
-			if VatCrowd.supports(kind):  # v0.10.5 W3-V4a: drawn by the VAT crowd while the switch is on
+			if VatCrowd.supports(p_kind):  # v0.10.5 W3-V4a: drawn by the VAT crowd while the switch is on
 				avatar.vat = ViewPrefs.enemy_vat
 				root.set_meta(&"vat_kind", true)
 			avatar.setup(outline_color, technique)
@@ -700,7 +703,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			# The rock golem (owner, v0.2.0 L17): its own node, animated in frame time.
 			height = 1.25
 			var warden := WardenAvatar.new()
-			_solo_vat(root, warden, kind)  # v0.10.5 W3-V4c
+			_solo_vat(root, warden, p_kind)  # v0.10.5 W3-V4c
 			warden.setup(outline_color, technique)
 			facing.add_child(warden)
 			root.set_meta(&"enemy_avatar", warden)
@@ -708,7 +711,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_NEEDLE:
 			# The walking turret (v0.2.0 L17): its own node under the facing, animated in frame time.
 			var needle := NeedleAvatar.new()
-			_solo_vat(root, needle, kind)  # v0.10.5 W3-V4c
+			_solo_vat(root, needle, p_kind)  # v0.10.5 W3-V4c
 			needle.setup(outline_color, technique)
 			facing.add_child(needle)
 			height = NeedleAvatar.HEIGHT
@@ -717,7 +720,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_ARC_CASTER:
 			# The Arc Caster (v0.3.5 AI): a robed caster with a staff, its own node under the facing.
 			var caster := ArcCasterAvatar.new()
-			_solo_vat(root, caster, kind)  # v0.10.5 W3-V4c
+			_solo_vat(root, caster, p_kind)  # v0.10.5 W3-V4c
 			caster.setup(outline_color, technique)
 			facing.add_child(caster)
 			height = ArcCasterAvatar.HEIGHT
@@ -726,7 +729,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_BOMB_DRONE:
 			# The Bomb Drone (v0.3.5 AI): drawn hovering, its shadow on the ground where the sim has it.
 			var drone := BombDroneAvatar.new()
-			_solo_vat(root, drone, kind)  # v0.10.5 W3-V4c
+			_solo_vat(root, drone, p_kind)  # v0.10.5 W3-V4c
 			drone.setup(outline_color, technique)
 			facing.add_child(drone)
 			height = BombDroneAvatar.HEIGHT
@@ -735,7 +738,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_LENS_DRONE:
 			# The Hive Lens's drones (v0.4.0 BO): drawn hovering, their shadow where the sim has them.
 			var lens := LensDroneAvatar.new()
-			_solo_vat(root, lens, kind)  # v0.11.0 S4
+			_solo_vat(root, lens, p_kind)  # v0.11.0 S4
 			lens.setup(outline_color, technique)
 			facing.add_child(lens)
 			height = LensDroneAvatar.HEIGHT
@@ -746,7 +749,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			var hatch := ChargerAvatar.new()
 			hatch.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials
 			hatch.role_glow = role_glow_energy
-			if VatCrowd.supports(kind):  # v0.10.5 W3-V4a: drawn by the VAT crowd while the switch is on
+			if VatCrowd.supports(p_kind):  # v0.10.5 W3-V4a: drawn by the VAT crowd while the switch is on
 				hatch.vat = ViewPrefs.enemy_vat
 				root.set_meta(&"vat_kind", true)
 			hatch.setup(outline_color, technique, WorldReader.KIND_HATCHLING)  # v0.8.0 EC: its colours
@@ -798,9 +801,9 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		_ when HordeAvatar.is_horde_kind(kind):
 			# The horde kinds (v0.4.0 EN): one code-built model per kind.
 			var horde := HordeAvatar.new()
-			horde.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials (tint_greys, role_glow)
+			horde.enemy_tint = VariantLooks.cast(p_kind, enemy_tint)  # v0.8.0 HR (tint_greys, role_glow); O13a
 			horde.role_glow = role_glow_energy
-			if VatCrowd.supports(kind):  # v0.10.5 W3-V1: drawn by the VAT crowd while the switch is on
+			if VatCrowd.supports(p_kind):  # v0.10.5 W3-V1: drawn by the VAT crowd while the switch is on
 				horde.vat = ViewPrefs.enemy_vat
 				root.set_meta(&"vat_kind", true)
 			horde.setup(kind, outline_color, technique)
@@ -851,6 +854,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		)
 		if stand_in != null and stand_in.name == EnemyShadows.BLOB_NAME:
 			root.set_meta(&"blob", stand_in)
+	VariantLooks.dress(root, facing, p_kind)  # v0.11.0 O13a: the Rubble Warden's crust (after the merge: it falls)
 	# Floating health bar, as in the reference; it shrinks toward its centre as HP drops.
 	var bar_root := Node3D.new()
 	bar_root.position = Vector3(0, height + 0.55, 0)

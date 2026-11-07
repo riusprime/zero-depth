@@ -24,6 +24,11 @@ const ENEMY_KINDS := {  # behaviour ids to actor kinds (a test checks the key se
 	&"ember_flea": ActorStore.Kind.EMBER_FLEA,
 	&"ice_crab": ActorStore.Kind.ICE_CRAB,
 	&"star_mote": ActorStore.Kind.STAR_MOTE,
+	&"rubble_warden": ActorStore.Kind.RUBBLE_WARDEN,  # v0.11.0 O13a: the biome variants (VariantCompiler)
+	&"dim_needle": ActorStore.Kind.DIM_NEEDLE,
+	&"ember_charger": ActorStore.Kind.EMBER_CHARGER,
+	&"frost_charger": ActorStore.Kind.FROST_CHARGER,
+	&"split_sniper": ActorStore.Kind.SPLIT_SNIPER,
 }
 ## Bosses (v0.3.0 C): ids to actor kinds, move names to BossAttackTable moves (a test matches BossSchemas' sets).
 const BOSS_KINDS := BossKinds.ALL  # v0.9.0 NB4: the table lives in BossKinds (this file's line limit)
@@ -157,7 +162,7 @@ static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 	t.active_ticks = maxi(1, SimTick.seconds_to_ticks(atk.active_seconds))
 	t.recover_ticks = SimTick.seconds_to_ticks(atk.recovery_seconds)
 	t.damage = atk.damage
-	match def.behaviour_id:
+	match BehaviourSchemas.base_of(def.behaviour_id):  # v0.11.0 O13a: a variant compiles as its base
 		&"charger", &"hatchling", &"swarmer":
 			t.charge_speed = float(sp["speed_mps"]) / SimTick.TICKS_PER_SECOND
 			t.charge_distance_m = sp["length_m"]
@@ -194,6 +199,7 @@ static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 			t.keep_distance_m = bp["keep_max_m"]
 		_:
 			_compile_horde(def, t, sp)
+	VariantCompiler.compile(def, t)  # v0.11.0 O13a: a biome variant's own numbers
 	return t
 
 
@@ -203,7 +209,7 @@ static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) 
 	if bp.has("keep_min_m"):
 		t.keep_min_m = bp["keep_min_m"]
 		t.keep_distance_m = bp["keep_max_m"]
-	match def.behaviour_id:
+	match BehaviourSchemas.base_of(def.behaviour_id):  # v0.11.0 O13a: a variant compiles as its base
 		&"splitter", &"splitling":
 			t.slam_radius_m = sp["radius_m"]
 			t.reach_m = sp["reach_m"]
@@ -287,6 +293,7 @@ static func compile_spawning(def: SpawnDirectorDefinition, repo: ContentReposito
 		t.weights.append(e.weight)
 		t.unlock_tiers.append(e.unlock_tier)
 		t.packs.append(e.pack)
+	t.biome_only = VariantCompiler.biome_only_rows(def, repo)  # v0.11.0 O13a (Q23)
 	return t
 
 
@@ -370,6 +377,7 @@ static func compile_curve(
 	c.interval_per_tier_permille = def.interval_per_tier_permille
 	c.interval_min_ticks = SimTick.seconds_to_ticks(def.interval_min_seconds)
 	c.pack_cap_bumps = def.pack_cap_bumps.duplicate()
+	VariantCompiler.inherit_phases(repo, phase_of)  # v0.11.0 O13a: a variant opens with its base
 	c.kind_phase = PackedInt32Array()
 	for kind in spawn.kinds:
 		c.kind_phase.append(phase_of.get(kind, -1))

@@ -169,6 +169,7 @@ func _build_world() -> void:
 		w = _floor_world(table, enemies, bosses, biome.id)
 		IcePatches.place(w, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2: ice or starglow
 		w.critter_kind = critter_kind_of(repo, biome)  # v0.11.0 O9 (owner Q14): its surges' critter
+		w.roster_kinds = VariantCompiler.roster_kinds(repo, biome)  # v0.11.0 O13a (Q23): its own kinds
 		w.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
 	w.locked_items = MetaProgress.locked_items(run.locked_cards, w.item_tables)  # v0.9.0 MP: before any draw
 	w.wand_table = WandCompiler.for_run(repo, run.table)  # v0.6.5 WN1; v0.9.0 FV: 4 → 8 over five floors

@@ -95,6 +95,15 @@ const KIND_CAVE_BAT := ActorStore.Kind.CAVE_BAT
 const KIND_EMBER_FLEA := ActorStore.Kind.EMBER_FLEA
 const KIND_ICE_CRAB := ActorStore.Kind.ICE_CRAB
 const KIND_STAR_MOTE := ActorStore.Kind.STAR_MOTE
+## v0.11.0 O13a: the biome variants (each drawn as its base's body in its biome's accent: body_kind, VariantLooks).
+const KIND_RUBBLE_WARDEN := ActorStore.Kind.RUBBLE_WARDEN
+const KIND_DIM_NEEDLE := ActorStore.Kind.DIM_NEEDLE
+const KIND_EMBER_CHARGER := ActorStore.Kind.EMBER_CHARGER
+const KIND_FROST_CHARGER := ActorStore.Kind.FROST_CHARGER
+const KIND_SPLIT_SNIPER := ActorStore.Kind.SPLIT_SNIPER
+const TRAIL_FIRE := Variants.TRAIL_FIRE
+const TRAIL_SLICK := Variants.TRAIL_SLICK
+const DIM_LOOK := Variants.DIM_LOOK
 const ECHO_NONE := BossJudge.NONE
 const ECHO_SHOW := BossJudge.SHOW
 const ECHO_REPLAY := BossJudge.REPLAY
@@ -885,6 +894,11 @@ func actor_priority(i: int) -> bool:
 ## The line a Sniper shoots down (its telegraph's lane), for the shot's tracer.
 func sniper_line(i: int) -> Obb:
 	return EnemyAi.snipe_lane(_w, i)
+
+
+## v0.11.0 O13a: the lanes Sniper i's shot hits (one line; a Split Sniper's line and its three branches).
+func sniper_lines(i: int) -> Array[Obb]:
+	return EnemyAi.snipe_lanes(_w, i)
 
 
 func mine_count() -> int:
@@ -2661,6 +2675,56 @@ func player_on_ice() -> bool:
 ## each its own way. The patches themselves are ice_patch_count / ice_patch either way.
 func surface_kind() -> StringName:
 	return _w.ice.kind if _w.ice != null else &""
+
+
+# --- The biome variants (v0.11.0 O13a; Variants) ----------------------------------------------------------------
+## The body an actor kind is drawn with: a biome variant's base (the Rubble Warden a Warden's), else its own.
+static func body_kind(kind: int) -> int:
+	return EnemyAi.VARIANT_BASE.get(kind, kind)
+
+
+## Whether projectile i is a Dim Needle's shot still dark (farther than its dark distance from the hero).
+func projectile_dark(i: int) -> bool:
+	return Variants.shot_dark(_w, i)
+
+
+## Whether actor i is a Rubble Warden still in its crust.
+func crust_on(i: int) -> bool:
+	return Variants.crust_on(_w, i)
+
+
+## The variants' trails now: {"kind": PackedInt32Array (TRAIL_FIRE / TRAIL_SLICK), "pos": PackedVector2Array, "r":
+## PackedFloat32Array, "age" and "left": PackedInt32Array (ticks since dropped, ticks until it goes), "lit":
+## PackedByteArray (1: fire that burns now), "seed": PackedInt32Array (the dropping charger's id x 4096 + its tick)}.
+func variant_trails() -> Dictionary:
+	var v := _w.variants
+	var out := {
+		"kind": PackedInt32Array(),
+		"pos": PackedVector2Array(),
+		"r": PackedFloat32Array(),
+		"age": PackedInt32Array(),
+		"left": PackedInt32Array(),
+		"lit": PackedByteArray(),
+		"seed": PackedInt32Array(),
+	}
+	for k in v.trail_count():
+		out["kind"].append(v.trail_kind[k])
+		out["pos"].append(v.trail_pos(k))
+		out["r"].append(v.trail_r[k])
+		out["age"].append(_w.tick - v.trail_born[k])
+		out["left"].append(v.trail_until[k] - _w.tick)
+		out["lit"].append(1 if Variants.burning(_w, k) else 0)
+		out["seed"].append(v.trail_owner[k] * 4096 + v.trail_born[k] % 4096)
+	return out
+
+
+## The Rubble Wardens' rocks standing: [centre (Vector2), half side (float)] each.
+func rubble_pieces() -> Array:
+	var v := _w.variants
+	var out := []
+	for k in v.rubble_count():
+		out.append([Vector2(v.rubble_x[k], v.rubble_y[k]), v.rubble_half[k]])
+	return out
 
 
 # --- Engines and combos (v0.3.0 G) --------------------------------------------------------------------------

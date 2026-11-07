@@ -117,20 +117,7 @@ func _check(w: World, e: SimEvent) -> void:
 	var attack: int = _attack.get(e.owner_id, -1)
 	var shown := 0
 	var age := -1
-	if e.effect_id == &"arena_band":
-		_arena_hit(e)
-		return
-	if e.effect_id == &"molten_floor":  # v0.8.0 BS2: lava or the meltdown
-		_molten_hit(w, e)
-		return
-	if e.effect_id == BossQuake.EFFECT:  # v0.11.0 O3: a quake pillar's pulse
-		_quake_hit(w, e)
-		return
-	if e.effect_id == Breakables.EFFECT:  # v0.9.0 DX: an explosive barrel's blast
-		_barrel_hit(w, e)
-		return
-	if e.effect_id == Lockdowns.HAZARD_EFFECT:  # v0.9.0 LK: a Hazard Lockdown's strike
-		_hazard_hit(w, e)
+	if _no_actor_hit(w, e):  # the floor's and the bosses' hazards (v0.11.0 O13a: moved out, max-returns)
 		return
 	if _birth.has(e.source_id):
 		var b: Array = _birth[e.source_id]
@@ -322,3 +309,46 @@ func _quake_hit(w: World, e: SimEvent) -> void:
 	var v := context.duplicate()
 	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
 	violations.append(v)
+
+
+## v0.11.0 O13a: an Ember Charger's fire trail is no attack of its own: its warning is the fire itself, on the ground
+## for its arm time (at least the telegraph minimum) before it burns; its recap line Variants.CAUSE_KEY.
+func _trail_hit(w: World, e: SimEvent) -> void:
+	var key := String(Variants.CAUSE_KEY)
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	var problems := PackedStringArray()
+	var t := w.enemy_table(ActorStore.Kind.EMBER_CHARGER)
+	if t == null or t.trail_arm_ticks < SimTick.MIN_TELEGRAPH_TICKS:
+		problems.append("a fire trail that burns before the telegraph minimum")
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		problems.append("cause %s missing en or es" % key)
+	if problems.is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
+	violations.append(v)
+
+
+## A hit no actor's attack landed (each booked by its own rule), dispatched by its effect; false for any other hit.
+func _no_actor_hit(w: World, e: SimEvent) -> bool:
+	match e.effect_id:
+		&"arena_band":
+			_arena_hit(e)
+		&"molten_floor":  # v0.8.0 BS2: lava or the meltdown
+			_molten_hit(w, e)
+		BossQuake.EFFECT:  # v0.11.0 O3: a quake pillar's pulse
+			_quake_hit(w, e)
+		Breakables.EFFECT:  # v0.9.0 DX: an explosive barrel's blast
+			_barrel_hit(w, e)
+		Lockdowns.HAZARD_EFFECT:  # v0.9.0 LK: a Hazard Lockdown's strike
+			_hazard_hit(w, e)
+		Variants.FIRE_EFFECT:  # v0.11.0 O13a: an Ember Charger's fire trail
+			_trail_hit(w, e)
+		_:
+			return false
+	return true

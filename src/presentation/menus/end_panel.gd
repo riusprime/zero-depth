@@ -30,6 +30,11 @@ const CAUSES := {
 	WorldReader.KIND_EMBER_FLEA: "CAUSE_EMBER_FLEA",
 	WorldReader.KIND_ICE_CRAB: "CAUSE_ICE_CRAB",
 	WorldReader.KIND_STAR_MOTE: "CAUSE_STAR_MOTE",
+	WorldReader.KIND_RUBBLE_WARDEN: "CAUSE_RUBBLE_WARDEN",  # v0.11.0 O13a: the biome variants
+	WorldReader.KIND_DIM_NEEDLE: "CAUSE_DIM_NEEDLE",
+	WorldReader.KIND_EMBER_CHARGER: "CAUSE_EMBER_CHARGER",
+	WorldReader.KIND_FROST_CHARGER: "CAUSE_FROST_CHARGER",
+	WorldReader.KIND_SPLIT_SNIPER: "CAUSE_SPLIT_SNIPER",
 }
 
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted
