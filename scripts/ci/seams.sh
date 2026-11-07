@@ -36,6 +36,8 @@ FILES=(
 	tests/e2e/test_e2e_pad_menus.gd
 	tests/e2e/test_e2e_dev_master_panel.gd
 	tests/e2e/test_e2e_bosses_2.gd
+	tests/e2e/test_e2e_horde_enemies.gd # v0.11.0 O13: the dev panel's enemy lap outgrew 32 once three steps met
+	tests/unit/sim/test_five_floors.gd # v0.11.0 O13: every biome spawns only its roster (1,000 seeds)
 	tests/e2e/test_e2e_boss_signatures.gd
 	tests/e2e/test_e2e_boss_strikes.gd
 	tests/e2e/test_e2e_final_boss.gd
