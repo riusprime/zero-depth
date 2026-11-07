@@ -23,6 +23,8 @@ const TRIGGER_KEYS := {
 ## of a trigger a repeat or a hold (WandTable.after_trigger_dead), or past the third trigger (too deep to cast).
 const DEAD_AFTER_TRIGGER := &"UI_WAND_DEAD_TRIGGER"
 const DEAD_TOO_DEEP := &"UI_WAND_DEAD_DEEP"
+## v0.11.0 S6 (owner, PIERCE P2): a held item card the run's form does not compile (AttackSlots.compiles).
+const DEAD_FORM := &"UI_WAND_DEAD_FORM"
 ## v0.8.0 RM: what a card's remnant does (remnant_of; the read-back's lines).
 const REMNANT_NONE := 0
 const REMNANT_CASTS := 1
@@ -227,6 +229,7 @@ static func _card(w: World, code: int, level: int) -> Dictionary:
 		"order": order_of(w, code),  # v0.8.0 AO: what it does to the cards to its left
 		"after_trigger_dead": dead_after_trigger(w, info["id"]),  # v0.8.0 MR: it does nothing right of a trigger
 		"remnant": remnant_of(w, code),  # v0.8.0 RM: what its remnant does (REMNANT_*)
+		"form_dead": not AttackSlots.compiles(w, code),  # v0.11.0 S6: the form fired now does not use it
 		"slot": AttackSlots.tag(w, code),  # v0.9.0 AS: its slot tag on this run (AttackSlots; 0 none)
 	}
 
@@ -273,6 +276,8 @@ static func flags(wand: Dictionary) -> Array[StringName]:
 			out.append(DEAD_TOO_DEEP)
 		elif cuts > 0 and bool(c.get("after_trigger_dead", false)):
 			out.append(DEAD_AFTER_TRIGGER)
+		elif bool(c.get("form_dead", false)):
+			out.append(DEAD_FORM)
 		else:
 			out.append(&"")
 	return out

@@ -514,3 +514,17 @@ func test_a_run_saved_before_as_loads_trimmed_and_plays_on() -> void:
 		w.step(AttackScenario.frame(t))
 	assert_false(w.player_dead(), "the run plays on")
 	assert_eq(w.mod_slots.size(), 4, "with a legal wand")
+
+
+# --- v0.11.0 S6: the wand read flags a held card the form doesn't use -------------------------------------------------
+func test_the_wand_read_flags_a_held_card_the_current_form_does_not_use() -> void:
+	var w := _world()
+	_take(w, [&"gun_pierce"])
+	assert_true(AttackSlots.compiles(w, W.item(w, &"gun_pierce")), "the plain bolt compiles Pierce")
+	assert_eq(Wand.flags(Wand.read(w))[0], &"", "the plain bolt: no flag")
+	_take(w, [&"gun_lance"])
+	var pierce := W.item(w, &"gun_pierce")
+	assert_false(AttackSlots.compiles(w, pierce), "the Lance form does not use Pierce")
+	var flags := Wand.flags(Wand.read(w))
+	assert_eq(flags[w.mod_slots.find(pierce)], Wand.DEAD_FORM, "the held Pierce is flagged")
+	assert_eq(flags[w.mod_slots.find(W.item(w, &"gun_lance"))], &"", "the form card itself is not")
