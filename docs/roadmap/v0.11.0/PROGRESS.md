@@ -1,25 +1,28 @@
 # v0.11.0 — progress
 
 ## Where we are
-(The lead keeps this block current at every push. Updated 2026-11-07, after the planning session.)
+(The lead keeps this block current at every push. Updated 2026-11-07, lead session 1.)
 
-- **Planned, nothing built yet.** [`PLAN.md`](PLAN.md) (DRAFT) maps every line of the owner's brief
-  ([`feedback/`](feedback/ZeroDepth_v0.11_Feedback_and_Design_Brief.md)) to a step. The owner answered 28 of 30
-  questions the same day ([`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md), "Answers"). Scope: everything in v0.11.0 (Q1).
-- **Still open:** Q8 (Laser curve without Homing) and Q13 (starting ideas for the other bosses). The Laser sketch is
-  still to come.
-- **Next:**
-  1. Wave 1 direct fixes: S1 (Voids stop jumping, Opus), S2 (hide the Shade's wisps), S3 (Siege smoke + 1.2 s
-     volley 2), S4 (Lens Drone on VAT), S7 (enemy model prompts).
-  2. Write the G1s with the answers folded in: BOSS_AUDIT.md (ask Q13 there), SPELLS.md, PIERCE.md, ENEMIES.md; then
-     the S2b wisp-gap list and the G2 room shots.
+- **Wave 1 merged** (S1 Voids, S2 Shade wisps hidden, S3 Siege volley 2 + no smoke, S4 Lens Drone on VAT, S7 model
+  prompts). Seams green at d4c0d878 (637/637). Pushed.
+- **Q1–Q30 answered.** Q8: the Laser is straight without Homing. Q13: the owner designs the other boss fights
+  themselves and sends a brief; Q9–Q11 (Gatekeeper, Lantern Shade, Twins) stand. No BOSS_AUDIT.
+- **G1s waiting on the owner (row by row):** [`SPELLS.md`](SPELLS.md), [`ENEMIES.md`](ENEMIES.md),
+  [`PIERCE.md`](PIERCE.md), [`WISP_GAPS.md`](WISP_GAPS.md) (S2b).
+- **Next:** Wave 2 O2–O5 (hint arrow, Gatekeeper, Lantern Shade, Twins) can start from Q9–Q12; O1 (Laser) sim can
+  start, its look waits for the sketch; S2b, S6 after their G1 answers; O6–O8 after the owner's boss brief.
 - **Agents (owner, 2026-11-07):** at most 3 Sonnet (light, exact briefs) + 2 Opus at once.
 - **Local note:** `project.godot` has an uncommitted editor rewrite (it drops the `[rendering]` settings and
-  `locale/fallback`). It is not the lead's change; don't stage it.
+  `locale/fallback`). It is not the lead's change; don't stage it. `wt-seams` is the lead's clean seams worktree.
 
 ## Done
 | Step | Outcome | SHA |
 |---|---|---|
+| S1 | Voids stop jumping: a cap end is quiet (no Split/Echo/Ring), minis are culled first, queued spawns count toward the cap, Mine stops on each Twin lane. Note: Twin Lv 5 + Split Lv 4 at the cap opens 35 of 108 queued minis (the rest dropped, by design) | 0830fa41 |
+| S2 | The Lantern Shade's wisps draw as the MultiMesh again, so the dark hides them outside light (4 m outline stays) | 9a7e625d |
+| S3 | Siege Engine: volley 2 (and phase 3's 3rd) hidden until the one before lands, then shown 1.2 s; Mortar Grid bursts drop the pack Smoke | e3caade9 |
+| S4 | The Lens Drone draws through VAT (SoloVat), hover height matching the live avatar | ff54e50a |
+| S7 | OWNER_TODO §3.2: prompts for the 8 code-made enemies in the Charger's style, palette-A role colours | cc0d326f |
 
 ## Goldens changed on purpose
 —
@@ -27,10 +30,17 @@
 ## Gates
 | Gate | State |
 |---|---|
-| Questions Q1–Q30 | 28 answered 2026-11-07; Q8, Q13 open |
-| G1 BOSS_AUDIT, SPELLS, PIERCE, ENEMIES | not written |
+| Questions Q1–Q30 | all answered 2026-11-07 |
+| Owner's boss brief (bosses besides Gatekeeper, Shade, Twins) | waiting on the owner |
+| G1 SPELLS, PIERCE, ENEMIES, WISP_GAPS | written 2026-11-07, waiting on the owner |
 | G2 purpose rooms | not made |
 
 ## History
 - 2026-11-07: Phase 0 (five read-only audits), PLAN draft, owner questions answered in six batches. The owner asked
   for a fresh session to continue from this PLAN.
+- 2026-11-07 (lead session 1): Q8 and Q13 asked and recorded (Q13: the owner will brief the other boss fights). Wave 1
+  (S1, S2, S3, S4, S7) built by agents from 8dc654a0 and merged. `bash scripts/ci/seams.sh` in the clean `wt-seams`
+  worktree at d4c0d878 (owner's PC, i7-10700K): `Scripts 110, Tests 637, Passing Tests 637, Asserts 76190, Time
+  1264.497s`, `---- All tests passed! ----`, `check_gut_log: ok (637 passing, minimum 1)`. G1s SPELLS, ENEMIES,
+  PIERCE and WISP_GAPS written for the owner. The S2 shot (`build/shots/v0.9.0/nb4/1_lantern_shade_dark.jpg` in the
+  agent's worktree) was not looked at; S3 and S4 have no shot (NOT YET RUN).
