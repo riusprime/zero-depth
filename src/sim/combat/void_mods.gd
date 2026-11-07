@@ -13,7 +13,8 @@ extends RefCounted
 ##   held void makes up for the stream it stops).
 ## - At its end (Attacks.on_projectile_end -> on_end): Ring queues a growing lightning ring (K_RING), Echo and Split
 ##   queue stationary voids (K_SPAWN rows, opened by advance() on the next tick). Those voids start no follow-ups.
-## - Bounded: at most live_max voids per hero (the oldest ends first); no void pulls a boss (VoidShots.pull_permille).
+## - Bounded: at most live_max voids per hero (v0.11.0 S1: minis and echoes end first, quietly; a mini with no room
+##   is dropped); no void pulls a boss (VoidShots.pull_permille).
 ## - Rows (World.mx vm_*), at most ROWS_MAX; hashed only while any is set (older digests unchanged).
 ## - Numbers: data/wand/attack_slots.tres, the void row's `params` (SlotTable.params); DEFAULTS are the same values,
 ##   read by a world without the table (a lab) and checked against the data by the content test.
@@ -357,7 +358,11 @@ static func on_spawn(w: World, pi: int) -> void:
 			sp * float(maxi(1, p.life[pi] - (ticks(param(w, "orbit_ms")) if m & ORBIT else 0)))
 		)
 		var d := clampf(w.aim_dist_cm / 100.0, 0.5, maxf(0.5, flight - 0.5))
-		s.vm_stop[k] = w.player_pos() + Kin.dir(ang) * d
+		# v0.11.0 S1 (B1): each lane stops on its own line (Twin's side offset kept), not snapped to the centre one
+		var dir := Kin.dir(ang)
+		var across := Vector2(-dir.y, dir.x)
+		var side := (Vector2(p.pos_x[pi], p.pos_y[pi]) - w.player_pos()).dot(across)
+		s.vm_stop[k] = w.player_pos() + dir * d + across * side
 
 
 # --- Flight ---------------------------------------------------------------------------------------------------------
@@ -503,9 +508,13 @@ static func advance(w: World) -> void:
 		cull(w)
 		return
 	var ids := w.projectiles.ids
+	var room := _room(w)
 	var k := 0
 	while k < s.vm_kind.size():
 		var kind: int = s.vm_kind[k] & KIND_MASK
+		if kind == K_SPAWN and w.tick >= s.vm_due[k] and room <= 0:
+			_remove(s, k)  # v0.11.0 S1 (B1): no room under live_max: this mini is dropped, no flying void ends
+			continue
 		if kind == K_SHOT:
 			var at := ids.bsearch(s.vm_pid[k])
 			if at >= ids.size() or ids[at] != s.vm_pid[k]:
@@ -514,6 +523,7 @@ static func advance(w: World) -> void:
 		elif kind == K_SPAWN:
 			if w.tick >= s.vm_due[k]:
 				_open(w, spec, k)
+				room -= 1
 				continue
 		elif kind == K_RING:
 			if _ring(w, spec, k):
@@ -592,7 +602,15 @@ static func _live(w: World) -> PackedInt32Array:
 	return out
 
 
-## At most live_max voids a hero: the oldest end first (as they end: their follow-ups queue).
+## v0.11.0 S1 (B1): how many more voids may open now under live_max: the live ones and the player's queued shots
+## (they spawn later this tick) count.
+static func _room(w: World) -> int:
+	return param(w, "live_max") - _live(w).size() - w.pending_projectiles_of(w.actors.ids[0])
+
+
+## At most live_max voids a hero. v0.11.0 S1 (B1): the minis and echoes (F_NOFOLLOW) end first, oldest first, then
+## the oldest thrown voids; a cap end is quiet (its row goes first: no Ring, Echo or Split follow-ups), so a culled
+## void no longer queues minis that push the count over again and cull the next void in flight.
 static func cull(w: World) -> void:
 	if w.projectiles.size() <= param(w, "live_max") or not PlayerBuild.has_gun(w):
 		return
@@ -601,10 +619,21 @@ static func cull(w: World) -> void:
 	if over <= 0:
 		return
 	var p := w.projectiles
+	var s := w.mx
 	var gone := PackedInt32Array()
-	for q in over:
-		var pi := live[q]
-		gone.append(pi)
+	for quiet_first in [true, false]:
+		for pi in live:
+			if gone.size() >= over:
+				break
+			var k := row_of(s, p.ids[pi]) if not s.vm_kind.is_empty() else -1
+			var nofollow := k >= 0 and s.vm_kind[k] & F_NOFOLLOW != 0
+			if nofollow == quiet_first:
+				gone.append(pi)
+	gone.sort()
+	for pi in gone:
+		var k := row_of(s, p.ids[pi]) if not s.vm_kind.is_empty() else -1
+		if k >= 0:
+			_remove(s, k)  # quiet: VoidMods.on_end finds no row, so nothing follows
 		Attacks.on_projectile_end(w, pi, Vector2(p.pos_x[pi], p.pos_y[pi]))
 	p.remove_sorted(gone)
 
