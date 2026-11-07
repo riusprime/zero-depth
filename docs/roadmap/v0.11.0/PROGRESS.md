@@ -107,3 +107,5 @@
   critters) building.
 - 2026-11-07: seams at 5b1d08ca (+ O9c): `Scripts 111, Tests 644, Passing Tests 644, Asserts 79098, Time 1272.864s`,
   `---- All tests passed! ----`, `check_gut_log: ok (644 passing, minimum 1)`. Pushed.
+- 2026-11-07: seams at f9b08a21 (+ O12, O12b, O14a): `Scripts 111, Tests 647, Passing Tests 647, Asserts 80845, Time
+  1345.892s`, `---- All tests passed! ----`, `check_gut_log: ok (647 passing, minimum 1)`. O16 merged after it.
