@@ -496,12 +496,12 @@ func test_the_death_lines_name_the_dark() -> void:
 
 ## v0.11.0 S2b (owner Q2, "Wider still"): the escape lane in a Wisp Bloom wave (the edge-to-edge gap between the two
 ## wisps either side of a petal valley, where the wave crosses 4 m from the Shade) is at least the hero's diameter
-## (0.70 m) + 0.7 m = 1.40 m. Bloom 1 is not in this test (the owner is asked about it separately).
+## (0.70 m) + 0.7 m = 1.40 m. Bloom 1 too (owner, 2026-11-07: 30 -> 25 wisps a wave).
 func test_s2b_bloom_lanes_leave_hero_plus_0_7_m_at_4_m() -> void:
 	var ring := 4.0
 	var away := Vector2(0, -400)
 	var need := 2.0 * PlayerTable.starting_values().radius_m + 0.7
-	for atk in [&"wisp_bloom_2", &"wisp_bloom_3"]:
+	for atk in [&"wisp_bloom", &"wisp_bloom_2", &"wisp_bloom_3"]:
 		var s := _fight(Vector2(ring, 0))
 		var w: World = s[0]
 		_hush(w, s[1])

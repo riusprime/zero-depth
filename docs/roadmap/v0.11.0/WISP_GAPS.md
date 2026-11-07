@@ -40,3 +40,6 @@ APPDATA=build/wisp_gap/appdata godot --headless --path . -s res://build/wisp_gap
 - **"Wider still":** aim for about **hero + 0.7 m** at 4 m, not + 0.45 m. Bloom 2 and Bloom 3 go to about **24 shots a
   wave** (the step measures the lane and picks the count that clears + 0.7 m; Bloom 1 is re-checked against the same
   target and changed only if it misses it, which is reported with its numbers first).
+- **Built (S2b, 2026-11-07):** Bloom 2 and 3 at 24 shots: widest lane at 4 m 1.595 / 1.594 m (was 0.912), measured by
+  the script. Bloom 1 measured 1.183 m at 30 and 2.468 m at 25; owner: "30 → 25". All three pinned by
+  `test_s2b_bloom_lanes_leave_hero_plus_0_7_m_at_4_m`.
