@@ -6,54 +6,59 @@
 [sub_resource type="Resource" id="L_r1"]
 script = ExtResource("1_ent")
 id = &"r1"
-english = "WHAT SLEEPS BELOW REMEMBERS"
+english = "I WAKE FALL TEN TIMES AND I WILL KNOW YOU"
 
 [sub_resource type="Resource" id="L_r2"]
 script = ExtResource("1_ent")
 id = &"r2"
-english = "YOU RETURN AND RETURN"
+english = "YOU RETURN KNOCK AND KNOCK AND I ANSWER"
 
 [sub_resource type="Resource" id="L_r3"]
 script = ExtResource("1_ent")
 id = &"r3"
-english = "PATIENCE IS A KEY"
+english = "I ANSWER NOW FACE A GUARDIAN UNTOUCHED"
 
 [sub_resource type="Resource" id="L_r4"]
 script = ExtResource("1_ent")
 id = &"r4"
-english = "UNTOUCHED BY THE DEEP"
+english = "UNTOUCHED STAND STILL HERE AND LISTEN"
 
 [sub_resource type="Resource" id="L_r5"]
 script = ExtResource("1_ent")
 id = &"r5"
-english = "THE STILL ONE SEES"
+english = "I SPEAK GATHER THE PIECES I DROPPED"
 
 [sub_resource type="Resource" id="L_r6"]
 script = ExtResource("1_ent")
 id = &"r6"
-english = "THE PIECES CALL TO ONE ANOTHER"
+english = "MY PIECES THE CROWN WENT DOWN FIRST END IT"
 
 [sub_resource type="Resource" id="L_r7"]
 script = ExtResource("1_ent")
 id = &"r7"
-english = "THE CROWN WAS ALWAYS HOLLOW"
+english = "IT IS ENDED NOW TURN THE TOP TO THE BOTTOM THRICE"
 
 [sub_resource type="Resource" id="L_r8"]
 script = ExtResource("1_ent")
 id = &"r8"
-english = "THE WHEEL TURNS FOR THE PATIENT"
+english = "I TURN MY CRACKED WALLS HIDE ROOMS OPEN THEM RUN AFTER RUN"
 
 [sub_resource type="Resource" id="L_r9"]
 script = ExtResource("1_ent")
 id = &"r9"
-english = "THE WALLS HIDE WHAT THEY FEAR"
+english = "I HIDE NO MORE SPEAK TO ME IN THE OTHER TONGUE"
 
 [sub_resource type="Resource" id="L_r10"]
 script = ExtResource("1_ent")
 id = &"r10"
-english = "EVERY TONGUE ONE RUNE"
+english = "EVERY TONGUE MY HEART LIES UNDER THE THRONE"
+
+[sub_resource type="Resource" id="L_r11"]
+script = ExtResource("1_ent")
+id = &"r11"
+english = "UNDER THE THRONE A DOOR WAITS"
 
 [resource]
 script = ExtResource("2_def")
 id = &"main"
-lines = Array[ExtResource("1_ent")]([SubResource("L_r1"), SubResource("L_r2"), SubResource("L_r3"), SubResource("L_r4"), SubResource("L_r5"), SubResource("L_r6"), SubResource("L_r7"), SubResource("L_r8"), SubResource("L_r9"), SubResource("L_r10")])
+lines = Array[ExtResource("1_ent")]([SubResource("L_r1"), SubResource("L_r2"), SubResource("L_r3"), SubResource("L_r4"), SubResource("L_r5"), SubResource("L_r6"), SubResource("L_r7"), SubResource("L_r8"), SubResource("L_r9"), SubResource("L_r10"), SubResource("L_r11")])

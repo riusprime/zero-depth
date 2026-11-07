@@ -18,17 +18,18 @@ func after_all() -> void:
 	DirAccess.remove_absolute(OLD_PROFILE)
 
 
-func _stone() -> RunicStone:
-	return RunicStone.new(ProfileStore.new(""), _lines)
+func _stone(p: ProfileStore = null) -> RunicStone:
+	return RunicStone.new(p if p != null else ProfileStore.new(""), _lines)
 
 
 func test_the_lines_are_valid_content() -> void:
 	assert_not_null(_lines, "data/hub/runic_lines.tres")
 	assert_eq(_lines.validate().size(), 0)
-	assert_eq(_lines.lines.size(), 10, "r1 to r10 (RS2 added r4 to r10 as data)")
-	assert_eq(_lines.line(&"r1").english, "WHAT SLEEPS BELOW REMEMBERS")
-	assert_eq(_lines.line(&"r2").english, "YOU RETURN AND RETURN")
-	assert_eq(_lines.line(&"r3").english, "PATIENCE IS A KEY")
+	assert_eq(_lines.lines.size(), 11, "r1 to r10 plus the eleventh (v0.11.0 O14a)")
+	assert_eq(_lines.line(&"r1").english, "I WAKE FALL TEN TIMES AND I WILL KNOW YOU")
+	assert_eq(_lines.line(&"r2").english, "YOU RETURN KNOCK AND KNOCK AND I ANSWER")
+	assert_eq(_lines.line(&"r3").english, "I ANSWER NOW FACE A GUARDIAN UNTOUCHED")
+	assert_eq(_lines.line(&"r11").english, "UNDER THE THRONE A DOOR WAITS")
 
 
 func test_a_broken_line_is_caught() -> void:
@@ -71,11 +72,10 @@ func test_lines_wrap_at_14_glyphs_at_word_breaks() -> void:
 	for l in _lines.lines:
 		for row: Array in RuneCipher.wrap(RuneCipher.encode(l.english), 14):
 			assert_lte(row.size(), 14)
-	var rows := RuneCipher.wrap(RuneCipher.encode("WHAT SLEEPS BELOW REMEMBERS"), 14)
-	assert_eq(rows.size(), 3)
-	assert_eq(RuneCipher.decode(rows[0] as Array[int]), "WHAT SLEEPS")
-	assert_eq(RuneCipher.decode(rows[1] as Array[int]), "BELOW")
-	assert_eq(RuneCipher.decode(rows[2] as Array[int]), "REMEMBERS")
+	var rows := RuneCipher.wrap(RuneCipher.encode("I WAKE FALL TEN TIMES"), 14)
+	assert_eq(rows.size(), 2)
+	assert_eq(RuneCipher.decode(rows[0] as Array[int]), "I WAKE FALL")
+	assert_eq(RuneCipher.decode(rows[1] as Array[int]), "TEN TIMES")
 	assert_eq(RuneCipher.wrap(RuneCipher.encode("A"), 14).size(), 1)
 
 
@@ -177,3 +177,43 @@ func test_walking_away_resets_the_r3_count() -> void:
 	s.walked_away()
 	assert_false(s.press(7), "the seventh after walking away is the first")
 	assert_false(s.knows(&"r3"))
+
+
+func test_every_line_is_spellable_by_the_glyph_table() -> void:
+	for l in _lines.lines:
+		for i in l.english.length():
+			var c := l.english.unicode_at(i)
+			assert_true(
+				c == 32 or (c >= 65 and c <= 90),
+				"%s: character %d is a letter or a space" % [l.id, i]
+			)
+			assert_ne(c, 81, "%s: no Q (it would read as K)" % l.id)
+			assert_ne(c, 88, "%s: no X (it would read as Z)" % l.id)
+		var glyphs := RuneCipher.encode(l.english)
+		assert_eq(glyphs.size(), l.english.length(), "%s: nothing was skipped" % l.id)
+
+
+func test_r11_is_learned_the_moment_the_tenth_line_is() -> void:
+	var s := _stone()
+	for i in range(1, 10):
+		assert_true(s.learn(StringName("r%d" % i)))
+		assert_false(s.knows(RunicStone.FINAL), "r%d: not yet" % i)
+	assert_false(s.is_full())
+	assert_true(s.learn(&"r10"))
+	assert_true(s.is_full())
+	assert_true(s.knows(RunicStone.FINAL), "r11 came with the tenth")
+	assert_eq(s.newest_first()[0], RunicStone.FINAL)
+	assert_eq(s.learned().size(), 11)
+
+
+func test_an_old_profile_with_ten_learns_r11_on_load() -> void:
+	var p := ProfileStore.new("")
+	var ids := []
+	for i in range(1, 11):
+		ids.append("r%d" % i)
+	p.section("runes")["learned"] = ids
+	var s := _stone(p)
+	assert_false(s.knows(RunicStone.FINAL))
+	assert_has(s.sync_from(AchievementStore.new(p), CodexStore.new(p)), RunicStone.FINAL)
+	assert_true(s.knows(RunicStone.FINAL))
+	assert_eq(s.sync_from(AchievementStore.new(p), CodexStore.new(p)), [], "once")
