@@ -15,10 +15,6 @@ const PENDING_SIGNATURES: Array[StringName] = [
 	&"scrap_hound",
 	&"rock_lurker",
 	&"stone_thrower",
-	&"kiln_beetle",
-	&"cinder_priest",
-	&"frost_spitter",
-	&"glacier_turtle",
 	&"star_warper",
 	&"gravity_node",
 ]

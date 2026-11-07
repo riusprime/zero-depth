@@ -134,6 +134,9 @@ static func hit(
 	if owner_id != 0 and target != 0 and _blocked(w, target):  # v0.7.5 BF1: it sparks off the shield
 		h.tags |= SimEvent.TAG_BLOCKED
 		return 0
+	if target != 0 and CanyonShore.shell_takes(w, target, from, amount):  # v0.11.0 O13c: the turtle's shell
+		h.tags |= SimEvent.TAG_BLOCKED
+		return 0
 	if target == 0 and owner_id != a.ids[0] and Curses.dodges(w, owner_id, at):  # v0.6.0 CU: Rooted
 		return 0
 	if target == 0 and owner_id != a.ids[0] and ModifierRuntime.absorb(w):  # v0.6.0 MX4: Aether Shell

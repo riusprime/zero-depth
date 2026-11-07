@@ -236,6 +236,90 @@ const SCHEMAS := {
 		"shape": 2,
 		"shape_params": ["range_m", "half_width_m"],
 	},
+	## v0.11.0 O13c (ENEMIES.md R5-R8, approved 2026-11-07): the Red Canyon's and the Frozen Shore's signature enemies
+	## (CanyonShore). The Kiln Beetle: a slow armoured Warden whose death bursts burst_radius_m round where it fell
+	## burst_delay_seconds later (burst_damage to the hero, burst_enemy_damage to every enemy in it), erupting a lava vent
+	## under it too.
+	&"kiln_beetle":
+	{
+		"params":
+		[
+			"attack_range_m",
+			"cooldown_seconds",
+			"front_arc_degrees",
+			"front_mult_permille",
+			"rear_arc_degrees",
+			"rear_mult_permille",
+			"turn_rate_dps",
+			"burst_delay_seconds",
+			"burst_radius_m",
+			"burst_damage",
+			"burst_enemy_damage",
+		],
+		"shape": 0,
+		"shape_params": ["radius_m"],
+	},
+	## The Cinder Priest: no attack. Walks within vent_reach_m of the hero, then stands by a lava vent (one cooling within
+	## vent_reach_m of it, or a temporary one it plants vent_reach_m toward the hero) and makes it erupt every
+	## vent_period_seconds: a vent_radius_m fire column for vent_damage, its pulse shown vent_warn_seconds first. Once
+	## the priest dies its vent cools and goes vent_linger_seconds later (a Kiln Beetle may still blow it).
+	&"cinder_priest":
+	{
+		"params":
+		[
+			"keep_min_m",
+			"keep_max_m",
+			"vent_reach_m",
+			"vent_period_seconds",
+			"vent_warn_seconds",
+			"vent_radius_m",
+			"vent_damage",
+			"vent_linger_seconds",
+		],
+		"attacks": [],
+	},
+	## The Frost Spitter: keeps keep_min_m..keep_max_m away and lobs an ice blob at the hero (the landing marked from the
+	## windup; it flies flight_seconds) that leaves a slick of the attack's radius_m for slick_seconds; on it the hero
+	## eases over slick_ease_seconds (it slides: the Frost Charger's rule); enemies walk it as ground.
+	&"frost_spitter":
+	{
+		"params":
+		[
+			"attack_range_m",
+			"cooldown_seconds",
+			"keep_min_m",
+			"keep_max_m",
+			"flight_seconds",
+			"slick_seconds",
+			"slick_ease_seconds",
+		],
+		"shape": 0,
+		"shape_params": ["radius_m"],
+	},
+	## The Glacier Turtle: a Warden that turns slowly; its ice shell (shell_hp of its own) takes every hit from its front
+	## arc (front_arc_degrees) instead of it. Broken, it bursts into chunk_count ice chunks that slide away from the hit
+	## at chunk_speed_mps for chunk_seconds, hurting each enemy they touch for chunk_damage (and the hero, once a chunk
+	## has slid for the telegraph minimum).
+	&"glacier_turtle":
+	{
+		"params":
+		[
+			"attack_range_m",
+			"cooldown_seconds",
+			"front_arc_degrees",
+			"front_mult_permille",
+			"rear_arc_degrees",
+			"rear_mult_permille",
+			"turn_rate_dps",
+			"shell_hp",
+			"chunk_count",
+			"chunk_speed_mps",
+			"chunk_seconds",
+			"chunk_damage",
+		],
+		"shape": 0,
+		"shape_params": ["radius_m"],
+	},
 }
 ## v0.11.0 O13a: a variant's base behaviour (it walks, aims and hits as its base: EnemyAi.behaviour_of).
 const VARIANT_OF := {
@@ -245,8 +329,11 @@ const VARIANT_OF := {
 	&"frost_charger": &"charger",
 	&"split_sniper": &"sniper",
 }
+## v0.11.0 O13c: the signature enemies that walk, turn and hit as a base (the Kiln Beetle and the Glacier Turtle a
+## Warden's slam and slow turn; EnemyAi.behaviour_of: CanyonShore.BASE). They are no variants (VARIANT_OF).
+const CANYON_SHORE_BASE := {&"kiln_beetle": &"warden", &"glacier_turtle": &"warden"}
 
 
 ## v0.11.0 O13a: the behaviour `behaviour` runs (its base for a variant, else itself).
 static func base_of(behaviour: StringName) -> StringName:
-	return VARIANT_OF.get(behaviour, behaviour)
+	return VARIANT_OF.get(behaviour, CANYON_SHORE_BASE.get(behaviour, behaviour))

@@ -99,12 +99,19 @@ func test_the_table_covers_every_normal_kind_and_slot_in_every_palette() -> void
 		)
 		# v0.11.0 O13a: the five biome variants wear their base's colours under their biome's cast (VariantLooks)
 		var variant := BehaviourSchemas.VARIANT_OF.has(StringName(f.get_basename()))
+		# v0.11.0 O13c: the signatures wear their own role colours (CanyonShoreBodies)
+		variant = (
+			variant
+			or CanyonShoreBodies.is_kind(
+				ContentCompiler.ENEMY_KINDS.get(StringName(f.get_basename()), -1)
+			)
+		)
 		if f.ends_with(".tres") and not critter and not variant:
 			ids[StringName(f.get_basename())] = true
 	assert_eq(
 		ids.size(),
 		14,
-		"14 normal kinds in data/enemies (and the five critters and the five variants)"
+		"14 normal kinds in data/enemies (and the critters, the variants and the O13c signatures)"
 	)
 	assert_eq(EnemyPalettes.ROLES.size(), 14)
 	assert_eq(EnemyPalettes.KIND_IDS.size(), 14)

@@ -48,6 +48,9 @@ func test_every_mix_kind_appears_by_floor_3() -> void:
 			assert_false(named.has(id), "%s opens with its base, not by name" % id)
 			assert_true(named.has(base), "%s's base %s is introduced on some floor" % [id, base])
 			continue
+		if _is_signature(repo, id):  # v0.11.0 O13c: a signature opens with the Warden (CanyonShoreCompiler)
+			assert_false(named.has(id), "%s opens with the Warden, not by name" % id)
+			continue
 		assert_true(named.has(id), "%s is introduced on some floor" % id)
 
 
@@ -112,3 +115,11 @@ func test_the_overtime_data_is_validated() -> void:
 	d = _def()
 	d.pack_cap_bumps = PackedInt32Array([10, 6])
 	assert_has(_codes(d), &"overtime")
+
+
+## v0.11.0 O13c: whether `id` is some biome's signature enemy.
+func _is_signature(repo: ContentRepository, id: StringName) -> bool:
+	for b: BiomeDefinition in repo.all_of(&"biomes"):
+		if b.signature_ids.has(id):
+			return true
+	return false

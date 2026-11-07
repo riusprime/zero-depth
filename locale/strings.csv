@@ -1727,3 +1727,18 @@ CAUSE_EMBER_CHARGER,An Ember Charger ran you down.,Un Embestidor de Ascuas te ar
 CAUSE_FROST_CHARGER,A Frost Charger ran you down.,Un Embestidor de Escarcha te arrolló.
 CAUSE_SPLIT_SNIPER,A Split Sniper's shot took you down.,El disparo de un Francotirador Bífido te abatió.
 CAUSE_EMBER_TRAIL,An Ember Charger's fire burned you.,El fuego de un Embestidor de Ascuas te quemó.
+ENEMY_KILN_BEETLE,Kiln Beetle,Escarabajo Horno
+ENEMY_KILN_BEETLE_DESC,"A slow armoured beetle full of fire. It glows brighter as it weakens, and bursts a second after it dies. Kill it away from you, or among its friends.","Un escarabajo acorazado y lento, lleno de fuego. Brilla más cuanto más débil está y estalla un segundo después de morir. Mátalo lejos de ti, o entre los suyos."
+ENEMY_CINDER_PRIEST,Cinder Priest,Sacerdote de Ceniza
+ENEMY_CINDER_PRIEST_DESC,"It never fights. It stands by a lava vent and makes it erupt every few seconds, the vent pulsing with its staff. Kill it first, or pass between eruptions.","Nunca lucha. Se queda junto a una grieta de lava y la hace estallar cada pocos segundos; la grieta late con su báculo. Mátalo primero, o pasa entre erupciones."
+ENEMY_FROST_SPITTER,Frost Spitter,Escupidor de Escarcha
+ENEMY_FROST_SPITTER_DESC,"It lobs ice blobs; a blue arc marks where each lands. They leave slick ice where you slide. Keep off the patches, or dash across them.","Lanza bolas de hielo; un arco azul marca dónde cae cada una. Dejan hielo resbaladizo donde patinas. No pises las placas, o crúzalas con un esquive."
+ENEMY_GLACIER_TURTLE,Glacier Turtle,Tortuga Glaciar
+ENEMY_GLACIER_TURTLE_DESC,"Its ice shell blocks every hit from the front, and it turns slowly to face you. Go round it, or break the shell: its chunks slide away and hurt the enemies they hit.","Su caparazón de hielo para todo golpe de frente, y se gira despacio hacia ti. Rodéala, o rompe el caparazón: sus trozos salen despedidos y hieren a los enemigos que tocan."
+CAUSE_KILN_BEETLE,A Kiln Beetle crushed you.,Un Escarabajo Horno te aplastó.
+CAUSE_CINDER_PRIEST,A Cinder Priest's vent burned you.,La grieta de un Sacerdote de Ceniza te quemó.
+CAUSE_FROST_SPITTER,A Frost Spitter froze you.,Un Escupidor de Escarcha te congeló.
+CAUSE_GLACIER_TURTLE,A Glacier Turtle crushed you.,Una Tortuga Glaciar te aplastó.
+CAUSE_KILN_BURST,A Kiln Beetle burst on you.,Un Escarabajo Horno estalló sobre ti.
+CAUSE_CINDER_VENT,A lava vent erupted under you.,Una grieta de lava estalló bajo tus pies.
+CAUSE_ICE_CHUNK,A chunk of a Glacier Turtle's shell hit you.,Un trozo del caparazón de una Tortuga Glaciar te golpeó.

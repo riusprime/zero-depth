@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/enemy_definition.gd" id="2_enm"]
+
+[sub_resource type="Resource" id="Resource_atk"]
+script = ExtResource("1_atk")
+id = &"blob"
+shape = 0
+shape_params = {
+"radius_m": 1.0
+}
+telegraph_seconds = 0.6
+telegraph_max_seconds = 0.8
+active_seconds = 0.1
+recovery_seconds = 0.6
+damage = 0
+
+[resource]
+script = ExtResource("2_enm")
+name_key = &"ENEMY_FROST_SPITTER"
+desc_key = &"ENEMY_FROST_SPITTER_DESC"
+behaviour_id = &"frost_spitter"
+behaviour_params = {
+"attack_range_m": 9.0,
+"cooldown_seconds": 2.2,
+"flight_seconds": 0.75,
+"keep_max_m": 8.0,
+"keep_min_m": 5.0,
+"slick_ease_seconds": 0.9,
+"slick_seconds": 6.0
+}
+hp = 40
+radius_m = 0.38
+move_speed_mps = 2.6
+attacks = Array[ExtResource("1_atk")]([SubResource("Resource_atk")])
+stress_tags = PackedStringArray("bleed")
+weak_to = &"ember"
+resists = &"frost"
+weak_permille = 1250
+resist_permille = 750
+shards = 4
+id = &"frost_spitter"

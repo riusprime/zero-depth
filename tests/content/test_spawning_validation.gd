@@ -29,9 +29,15 @@ func test_the_shipped_floor_is_valid_and_compiles() -> void:
 	assert_eq(t.hp_tier_permille[1], 1100)
 	assert_eq(t.damage_tier_permille[1], 1050)
 	assert_eq(t.interval_tier_permille[1], 900)
-	assert_eq(t.kinds.size(), 16, "the eleven, then the five biome variants (v0.11.0 O13a)")
+	assert_eq(
+		t.kinds.size(),
+		20,
+		"the eleven, the five biome variants (O13a), then four signatures (v0.11.0 O13c)"
+	)
 	# v0.11.0 O13a (Q23): the variants' rows are biome-only (their biome's floors), the eleven shared
-	assert_eq(t.biome_only, PackedByteArray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1]))
+	assert_eq(
+		t.biome_only, PackedByteArray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+	)
 	assert_eq(t.packs.size(), t.kinds.size(), "a pack per mix row (0 = the floor's draw)")
 	var warden := t.kinds.find(ActorStore.Kind.WARDEN)
 	assert_gte(warden, 0)

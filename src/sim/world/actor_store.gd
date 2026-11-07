@@ -56,6 +56,11 @@ enum Kind {
 	EMBER_CHARGER,
 	FROST_CHARGER,
 	SPLIT_SNIPER,
+	# v0.11.0 O13c (ENEMIES.md R5-R8): the Red Canyon's and the Frozen Shore's signature enemies (CanyonShore).
+	KILN_BEETLE,
+	CINDER_PRIEST,
+	FROST_SPITTER,
+	GLACIER_TURTLE,
 }
 
 const TEAM_PLAYER := 0

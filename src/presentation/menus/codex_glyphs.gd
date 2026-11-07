@@ -21,7 +21,8 @@ static func color(page: StringName) -> Color:
 
 ## The shapes of an enemy (by behaviour id) or a boss (by id).
 static func shapes(page: StringName, key: StringName) -> Array:
-	return _boss(key) if page == &"bosses" else _enemy(BehaviourSchemas.base_of(key))  # O13a: a variant: its base
+	# O13a: a variant: its base's; v0.11.0 O13c: a signature its own (not its base's)
+	return _boss(key) if page == &"bosses" else _enemy(BehaviourSchemas.VARIANT_OF.get(key, key))
 
 
 static func _enemy(behaviour: StringName) -> Array:
@@ -149,6 +150,30 @@ static func _enemy(behaviour: StringName) -> Array:
 				_line([[0.5, 0.66], [0.5, 0.94]], 0.06),
 				_line([[0.06, 0.5], [0.34, 0.5]], 0.06),
 				_line([[0.66, 0.5], [0.94, 0.5]], 0.06),
+			]
+		&"kiln_beetle":  # v0.11.0 O13c: a round shell over a glowing belly
+			return [
+				_poly([[0.14, 0.56], [0.24, 0.26], [0.5, 0.14], [0.76, 0.26], [0.86, 0.56]]),
+				_circle(Vector2(0.5, 0.66), 0.18, 0.0),
+				_circle(Vector2(0.5, 0.66), 0.08, 0.0, true),
+			]
+		&"cinder_priest":  # a hood and a tall staff over a vent
+			return [
+				_poly([[0.5, 0.1], [0.72, 0.4], [0.66, 0.9], [0.34, 0.9], [0.28, 0.4]]),
+				_line([[0.82, 0.12], [0.82, 0.92]], 0.06),
+				_circle(Vector2(0.82, 0.12), 0.08, 0.0),
+			]
+		&"frost_spitter":  # a lobbed blob on its arc
+			return [
+				_circle(Vector2(0.26, 0.7), 0.18, 0.0),
+				_line([[0.36, 0.56], [0.52, 0.3], [0.7, 0.3], [0.82, 0.5]], 0.06),
+				_circle(Vector2(0.82, 0.62), 0.1, 0.0),
+			]
+		&"glacier_turtle":  # a domed shell held in front
+			return [
+				_poly([[0.12, 0.7], [0.2, 0.34], [0.5, 0.18], [0.8, 0.34], [0.88, 0.7]]),
+				_line([[0.3, 0.42], [0.7, 0.42]], 0.06, true),
+				_line([[0.5, 0.22], [0.5, 0.66]], 0.06, true),
 			]
 	return [  # any other enemy: a hostile diamond with an eye
 		_poly([[0.5, 0.08], [0.9, 0.5], [0.5, 0.92], [0.1, 0.5]]),

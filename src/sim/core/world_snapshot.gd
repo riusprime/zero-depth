@@ -139,6 +139,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"PickupStore",
 	&"MineStore",
 	&"VariantState",  # v0.11.0 O13a: the variants' trails and rubble
+	&"CanyonShoreState",  # v0.11.0 O13c: R5-R8's bursts, vents, blobs, chunks and shells
 	&"HealOrbStore",  # v0.4.0 TU
 	&"ShardDropStore",  # v0.10.5 O7b
 	&"ObjectiveMarkers",  # v0.11.0 O2: the hint arrow's markers
@@ -218,6 +219,7 @@ const ADDED_SINCE_V05 := {
 		&"pair_log",
 		&"pairs_seen",  # v0.10.5 O15: an older save starts with none seen
 		&"variants",  # v0.11.0 O13a: an older save's floor has no trails or rubble (the base's: none)
+		&"canyon_shore",  # v0.11.0 O13c: an older save's floor has none of R5-R8's leavings
 		&"surge_at",  # v0.11.0 O9: an older save's floor plans its surges afresh (the base's: none planned)
 		&"surge_sizes",
 		&"surge_next",
@@ -1087,6 +1089,8 @@ static func _make(cls: StringName) -> Object:
 			return MineStore.new()
 		&"VariantState":
 			return VariantState.new()
+		&"CanyonShoreState":
+			return CanyonShoreState.new()
 		&"HealOrbStore":
 			return HealOrbStore.new()
 		&"ShardDropStore":

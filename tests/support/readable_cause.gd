@@ -349,6 +349,31 @@ func _no_actor_hit(w: World, e: SimEvent) -> bool:
 			_hazard_hit(w, e)
 		Variants.FIRE_EFFECT:  # v0.11.0 O13a: an Ember Charger's fire trail
 			_trail_hit(w, e)
+		CanyonShore.BURST_EFFECT, CanyonShore.VENT_EFFECT, CanyonShore.CHUNK_EFFECT:  # v0.11.0 O13c
+			_canyon_shore_hit(w, e)
 		_:
 			return false
 	return true
+
+
+## v0.11.0 O13c: a Kiln Beetle's burst, a lava vent's eruption or an ice chunk is no actor's attack: each one's warning
+## is on the floor first (the burst's circle for its delay, the vent's pulse, the chunk sliding), at least the telegraph
+## minimum (CanyonShore.warning_ticks); its recap line CanyonShore.cause_of_effect.
+func _canyon_shore_hit(w: World, e: SimEvent) -> void:
+	var key := String(CanyonShore.cause_of_effect(e.effect_id))
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	var problems := PackedStringArray()
+	if CanyonShore.warning_ticks(w, e.effect_id) < SimTick.MIN_TELEGRAPH_TICKS:
+		problems.append("%s warned for less than the telegraph minimum" % e.effect_id)
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		problems.append("cause %s missing en or es" % key)
+	if problems.is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
+	violations.append(v)

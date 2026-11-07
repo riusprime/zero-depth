@@ -568,6 +568,9 @@ var critter_kind := -1
 ## the variants left on the floor (VariantState: the trails, the rubble; hashed once touched).
 var roster_kinds := PackedInt32Array()
 var variants := VariantState.new()
+## v0.11.0 O13c (ENEMIES.md R5-R8): what the Red Canyon's and the Frozen Shore's signature enemies left on the floor
+## (CanyonShoreState: bursts, vents, blobs, chunks, shells; hashed once touched).
+var canyon_shore := CanyonShoreState.new()
 var surge_at := PackedInt32Array()
 var surge_sizes := PackedInt32Array()
 var surge_next := 0
@@ -896,6 +899,8 @@ func step(frame: InputFrame) -> void:
 		CritterAi.touch_all(self, critter_rows)
 	Mines.advance(self)  # v0.4.0 EN: mines arm and blow.
 	Variants.advance(self)  # v0.11.0 O13a: the variants' trails burn and melt (after the mines)
+	if canyon_shore.touched:
+		CanyonShore.advance(self)  # v0.11.0 O13c: the bursts, the vents, the blobs land, the chunks slide
 	if not boss_tables.is_empty():
 		BossSignatures.advance(self)  # v0.8.0 BS1: pillars sink, javelins fly back
 	if pp != null:
@@ -1517,6 +1522,8 @@ func state_hash() -> String:
 		actors.hash_ai(h)
 	if variants.touched:  # v0.11.0 O13a: only once a variant left a trail or its crust
 		variants.hash_into(h)
+	if canyon_shore.touched:  # v0.11.0 O13c: only once a signature left something
+		canyon_shore.hash_into(h)
 	if mines.touched:  # v0.4.0 EN: only once a Mine Layer dropped a mine.
 		mines.hash_into(h)
 	if orbs.touched:  # v0.4.0 TU: only once a kill dropped a heal orb.
