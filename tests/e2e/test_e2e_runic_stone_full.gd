@@ -47,7 +47,7 @@ func test_the_tenth_line_comes_from_switching_the_language_in_the_hub() -> void:
 	assert_eq(TranslationServer.get_locale(), "es", "the language changed")
 	assert_true(hub.runic.stone.knows(&"r10"), "the stone heard it: the tenth line")
 	assert_true(hub.runic.stone.is_full())
-	assert_eq(hub.runic.stone.newest_first()[0], &"r10")
+	assert_eq(hub.runic.stone.newest_first()[0], &"r11", "r11 follows the tenth")
 	assert_false(hub.runic.stone.pending_pulse, "it pulsed at once")
 	var ring := hub.view.stations[&"runic"]["root"].get_node_or_null("RuneRing") as Node3D
 	assert_not_null(ring, "the runes ring the stone")

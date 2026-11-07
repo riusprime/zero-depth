@@ -12,7 +12,9 @@ extends RefCounted
 ##   profile's `collectibles` section); r7 the Hollow Crown beaten (stat `final:won`); r8 three Ascension loops in one
 ##   run (the Codex's best loop reaches LOOP_BEST); r9 a cracked wall broken on CRACK_RUNS different runs (stat
 ##   CRACK_STAT); r10 the language switched in the hub with the stone awake (HubRunic).
-## - S6: with every line learned the runes ring the stone and the Runic robe unlocks (Wardrobe.unlock_robe).
+## - v0.11.0 O14a: the lines are a chain of clues (each decoded line points at the next feat; RUNIC_CLUES.md).
+##   r11 (FINAL) is learned once r1-r10 are all known (also on load) and points at the hidden room.
+## - S6: with r1-r10 learned the runes ring the stone and the Runic robe unlocks (Wardrobe.unlock_robe).
 
 const SECTION := "runes"
 const PURPLE_STAT := &"runes:purple"
@@ -21,6 +23,8 @@ const NO_HIT_STAT := &"bosses:no_hit"
 const CRACK_STAT := &"secrets:crack_runs"
 const WON_STAT := &"final:won"
 const ROBE := &"runic"
+## v0.11.0 O14a: the last line, learned by itself once the other ten are known.
+const FINAL := &"r11"
 const COLLECTIBLES := 8
 const LOOP_BEST := 4
 const CRACK_RUNS := 5
@@ -81,17 +85,25 @@ func learn(id: StringName) -> bool:
 	pending_pulse = true
 	_cursor = -1
 	ensure_robe()
+	ensure_final()
 	return true
 
 
-## S6: every line the content lists is learned.
+## S6: the ten feat lines (every line but FINAL) are learned.
 func is_full() -> bool:
 	if lines == null or lines.lines.is_empty():
 		return false
 	for l: RunicLineEntry in lines.lines:
-		if not knows(l.id):
+		if l.id != FINAL and not knows(l.id):
 			return false
 	return true
+
+
+## v0.11.0 O14a: r11 is learned once the ten are; true when it was learned now.
+func ensure_final() -> bool:
+	if not is_full() or lines == null or lines.line(FINAL) == null:
+		return false
+	return learn(FINAL)
 
 
 ## S6: the Runic robe is in the profile's unlocks once the stone is full; true when it unlocked now.
@@ -127,8 +139,11 @@ func sync(purple: int, deaths: int, more: Dictionary = {}) -> Array[StringName]:
 	for r: Array in rules:
 		if r[1] and learn(r[0]):
 			got.append(r[0])
-	if got.is_empty() and ensure_robe():  # an older profile already full: the caller saves the robe
-		got.append(ROBE)
+	if got.is_empty():  # an older profile already full: the caller saves r11 or the robe
+		if ensure_final():
+			got.append(FINAL)
+		elif ensure_robe():
+			got.append(ROBE)
 	return got
 
 
