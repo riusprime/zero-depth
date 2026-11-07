@@ -869,6 +869,8 @@ MATCHUP_GUN_GLAIVE,Glaive,Disco
 MATCHUP_EMBER,Fire,Fuego
 MATCHUP_STORM,Lightning,Rayo
 MATCHUP_VENOM,Venom,Veneno
+MATCHUP_FROST,Frost,Hielo
+MATCHUP_GUN_VOID,Void,Vacío
 UI_CODEX_HINT,Arrows / stick move · Q E / LB RB page · Esc / B back,Flechas / stick mover · Q E / LB RB página · Esc / B volver
 ENEMY_CHARGER_DESC,Runs at you and charges.,Corre hacia ti y embiste.
 ENEMY_WARDEN_DESC,A slow rock golem.,Un gólem de roca lento.
