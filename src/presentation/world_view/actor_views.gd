@@ -62,6 +62,9 @@ var cull: ScreenCull
 ## v0.10.5 W3-V1 (the enemy VAT pilot): the crowd drawing the VatCrowd.KINDS enemies while ViewPrefs.enemy_vat is on
 ## (null until the first).
 var vat_crowd: VatCrowd
+## v0.11.0 O9c (owner Q16-c: "Batch now"): the horde critters, drawn with no node each (CritterCrowd; made with the
+## first sync). actor_node() is null for a critter; flash, hold_flash and set_tint reach it by id.
+var critters: CritterCrowd
 var _actors := {}
 var _projectiles := {}
 var _proj_last := {}
@@ -105,9 +108,12 @@ func sync(reader: WorldReader) -> void:
 	var hero := reader.player_pos()
 	var leans := reader.void_leans()  # v0.9.0 VP: empty unless a Void shot pulls someone
 	var latched := reader as LatchedReader  # v0.10.5 W3-Q8
+	var crowd := _critters()
 	for i in reader.actor_count():
 		var id := reader.actor_id(i)
 		alive[id] = true
+		if CritterCrowd.takes(reader.actor_kind(i)):  # v0.11.0 O9c: the crowd draws it (below)
+			continue
 		var node: Node3D = _actors.get(id)
 		var fresh := node == null
 		if fresh:
@@ -145,7 +151,11 @@ func sync(reader: WorldReader) -> void:
 			node.reset_physics_interpolation()
 	# v0.10.5 W3-Q6: every live actor has its node by now, so as many nodes as live actors means none is gone: no walk
 	# over the nodes' and the per-id state's keys on a sync where nobody died.
-	if _actors.size() != alive.size():
+	var t_cc := PerfMarks.start()
+	crowd.grounds = grounds
+	var critters_gone := crowd.sync(reader, latched)
+	PerfMarks.add(&"actors.critters", t_cc)
+	if critters_gone > 0 or _actors.size() + crowd.count() != alive.size():
 		_drop_missing(_actors, alive)
 		bar_chunks.keep_only(alive)
 		# A removed actor's flash and glow go with it (bounded).
@@ -270,17 +280,37 @@ func actor_node(id: int) -> Node3D:
 	return _actors.get(id)
 
 
+## v0.11.0 O9c: whether actor `id` is drawn (its own node, or a critter in the crowd).
+func draws(id: int) -> bool:
+	return _actors.has(id) or _is_critter_id(id)
+
+
+func _is_critter_id(id: int) -> bool:
+	return critters != null and critters.has(id)
+
+
+## v0.11.0 O9c: the critter crowd (made with the first sync), on the floor's look.
+func _critters() -> CritterCrowd:
+	if critters == null:
+		critters = CritterCrowd.new()
+		add_child(critters)
+	critters.enemy_tint = enemy_tint  # (a kind's look is set by its first critter)
+	critters.role_glow = role_glow_energy
+	critters.outline = outline_color
+	return critters
+
+
 func projectile_node(id: int) -> Node3D:
 	return _projectiles.get(id)
 
 
 ## Flashes an actor white for a few frames (`frames` > 0: that many instead, e.g. a longer flash on a finisher).
 func flash(id: int, frames: int = 0) -> void:
-	if _actors.has(id):
+	if _actors.has(id) or _is_critter_id(id):
 		var lit := _flash.has(id)
 		_flash[id] = maxi(frames if frames > 0 else flash_frames, _flash.get(id, 0))
 		if not lit:  # v0.8.0 HV: already flashing, only its frames grow (the materials are lit already)
-			_set_flash(_actors[id], true, id)
+			_set_flash(_actors.get(id), true, id)
 
 
 func is_flashing(id: int) -> bool:
@@ -307,8 +337,8 @@ func _process(delta: float) -> void:
 		_flash[id] -= 1
 		if _flash[id] <= 0:
 			_flash.erase(id)
-			if _actors.has(id):
-				_set_flash(_actors[id], false, id)
+			if _actors.has(id) or _is_critter_id(id):
+				_set_flash(_actors.get(id), false, id)
 
 
 ## A steady glow on an actor (energy 0 clears it); a hit flash still wins while it lasts.
@@ -319,8 +349,8 @@ func set_tint(id: int, c: Color, energy: float) -> void:
 		var was: Array = _tint.get(id, [])
 		if was.is_empty() or was[0] != c or was[1] != energy:  # v0.8.0 HV: kept when unchanged
 			_tint[id] = [c, energy]
-	if _actors.has(id) and not _flash.has(id):
-		_set_flash(_actors[id], false, id)
+	if (_actors.has(id) or _is_critter_id(id)) and not _flash.has(id):
+		_set_flash(_actors.get(id), false, id)
 
 
 ## Only the emission colour and energy change here, never emission_enabled or another feature flag: those pick the
@@ -344,6 +374,17 @@ func _set_flash(node: Node3D, on: bool, id: int = -1) -> void:
 			if was.size() == 3 and was[1] == tint[0] and was[2] == tint[1]:
 				return
 			_shown[id] = [false, tint[0], tint[1]]
+	if node == null:  # v0.11.0 O9c: a critter (no node): its crowd instance takes the same hit look
+		if critters != null:
+			critters.set_hit(
+				id,
+				EnemyLooks.hit_value(
+					on or not tint.is_empty(),
+					Color.WHITE if on else (tint[0] if not tint.is_empty() else Color.WHITE),
+					1.6 if on else (float(tint[1]) if not tint.is_empty() else 0.0)
+				)
+			)
+		return
 	for m: StandardMaterial3D in node.get_meta(&"mats", []):
 		var rest: Array = tint if not tint.is_empty() else m.get_meta(&"rest", NO_GLOW)  # N1: the role glow
 		m.emission = Color.WHITE if on else rest[0]

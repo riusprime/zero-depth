@@ -65,27 +65,120 @@ func test_each_body_is_its_own() -> void:
 	assert_eq(bodies.size(), 6, "six different meshes (the Swarmer and the five critters)")
 
 
+## v0.11.0 O9c (owner Q16-c: "Batch now"): ActorViews gives every critter to the CritterCrowd: one MultiMesh per kind
+## (the same baked look VatCrowd drew), no node of its own, whatever the VAT switch says.
 func test_actor_views_draw_every_critter_through_the_crowd() -> void:
+	for vat_on in [true, false]:
+		ViewPrefs.enemy_vat = vat_on
+		var w := CombatLab.world()
+		var ids: Array[int] = []
+		for k in KINDS.size():
+			ids.append(w.add_enemy(KINDS[k], Vector2(2.0 + k * 1.5, 3.0)))
+		var views: ActorViews = add_child_autofree(ActorViews.new())
+		views.set_process(false)
+		views.sync(WorldReader.new(w))
+		assert_eq(views.critters.count(), KINDS.size(), "every critter (vat %s)" % vat_on)
+		for k in KINDS.size():
+			assert_null(views.actor_node(ids[k]), "kind %d: no node of its own" % KINDS[k])
+			assert_true(views.draws(ids[k]), "kind %d is drawn" % KINDS[k])
+		assert_true(views.vat_crowd == null or views.vat_crowd.count() == 0, "not on the VAT crowd")
+		views.critters.advance(DT)
+		assert_eq(views.critters.drawn, KINDS.size())
+		assert_eq(views.critters.shadows_drawn, KINDS.size(), "their proxy shadows")
+		var bodies := 0
+		for m in views.critters.instances():
+			if String(m.name).begins_with("CritterBodies"):
+				bodies += 1
+		assert_eq(bodies, KINDS.size(), "one body MultiMesh per kind")
+
+
+## v0.11.0 O9c: a 120-critter surge makes no node per critter: the crowd's few MultiMesh nodes, the same with 1 or 120.
+func test_a_120_critter_surge_makes_no_node_per_critter() -> void:
+	ViewPrefs.enemy_vat = true
+	var counts: Array[int] = []
+	for n in [1, 120]:
+		var w := CombatLab.world()
+		for k in n:
+			w.add_enemy(
+				WorldReader.KIND_DUST_MITE, Vector2(2.0 + (k % 12) * 0.6, 3.0 + (k / 12) * 0.6)
+			)
+		var views: ActorViews = add_child_autofree(ActorViews.new())
+		views.set_process(false)
+		views.sync(WorldReader.new(w))
+		views.critters.advance(DT)
+		assert_eq(views.critters.drawn, n, "%d drawn" % n)
+		counts.append(views.get_child_count(true) + views.critters.get_child_count(true))
+		assert_lte(views.critters.get_child_count(true), 3, "bodies, shadows, bars")
+	assert_eq(counts[0], counts[1], "as many nodes for 120 critters as for 1")
+
+
+## v0.11.0 O9c: a critter's hit flash and status tint reach its instance by id; one gone from the sim is let go.
+func test_a_critter_flashes_and_goes() -> void:
 	ViewPrefs.enemy_vat = true
 	var w := CombatLab.world()
-	var ids: Array[int] = []
-	for k in KINDS.size():
-		ids.append(w.add_enemy(KINDS[k], Vector2(2.0 + k * 1.5, 3.0)))
+	var a := w.add_enemy(WorldReader.KIND_EMBER_FLEA, Vector2(2.0, 3.0))
+	var b := w.add_enemy(WorldReader.KIND_EMBER_FLEA, Vector2(4.0, 3.0))
 	var views: ActorViews = add_child_autofree(ActorViews.new())
 	views.set_process(false)
 	views.sync(WorldReader.new(w))
-	assert_eq(views.vat_crowd.count(), KINDS.size(), "every critter")
-	assert_eq(views.vat_crowd.looks(), KINDS.size(), "one look (one MultiMesh) per kind")
-	for k in KINDS.size():
-		var avatar := views.actor_node(ids[k]).get_meta(&"enemy_avatar") as HordeAvatar
-		assert_true(avatar.vat, "kind %d" % KINDS[k])
-		assert_eq(avatar.find_children("*", "MeshInstance3D", true, false).size(), 0)
-	views.vat_crowd._process(DT)
-	assert_eq(views.vat_crowd.drawn, KINDS.size())
+	views.critters.advance(DT)
+	assert_gt((views.critters.instance_of(a)["color"] as Color).a, 0.0, "at rest: its glow")
+	views.flash(a)
+	assert_true(views.is_flashing(a))
+	views.critters.advance(DT)
+	assert_lt((views.critters.instance_of(a)["color"] as Color).a, 0.0, "the hit shows")
+	assert_gt((views.critters.instance_of(b)["color"] as Color).a, 0.0, "not on the other")
+	for f in views.flash_frames:
+		views._process(DT)
+	views.critters.advance(DT)
+	assert_gt((views.critters.instance_of(a)["color"] as Color).a, 0.0, "and ends")
+	views.set_tint(b, Color.CYAN, 1.1)
+	views.critters.advance(DT)
+	assert_lt((views.critters.instance_of(b)["color"] as Color).a, 0.0, "a status tint shows")
+	w.actors.hp[w.actors.index_of(b)] = 3
+	w.actors.state[w.actors.index_of(b)] = WorldReader.STATE_MOVE
+	views.sync(WorldReader.new(w))
+	views.critters.advance(DT)
+	assert_eq(views.critters.bars_drawn, 1, "a hurt critter shows its bar")
+	w.actors.remove_sorted(PackedInt32Array([w.actors.index_of(a)]))
+	views.sync(WorldReader.new(w))
+	views.critters.advance(DT)
+	assert_eq(views.critters.count(), 1, "the dead one is let go")
+	assert_false(views.draws(a))
+	assert_eq(views.critters.drawn, 1)
+	assert_false(views.is_flashing(a))
 
 
-## v0.11.0 O9b (owner Q16-b: "No ring on critters"): a critter's actor node has no contact disc and no team ring (no
-## mesh of its own straight under it: the crowd draws its body and shadow); a Swarmer keeps both.
+## v0.11.0 O9c: the instance follows the sim's place and facing, and the bat flies over it.
+func test_a_critter_instance_sits_on_its_place() -> void:
+	ViewPrefs.enemy_vat = true
+	ViewPrefs.reduced_motion = true
+	var w := CombatLab.world()
+	var id := w.add_enemy(WorldReader.KIND_CAVE_BAT, Vector2(5.0, -2.0))
+	var i := w.actors.index_of(id)
+	w.actors.state[i] = WorldReader.STATE_MOVE
+	var views: ActorViews = add_child_autofree(ActorViews.new())
+	views.set_process(false)
+	views.sync(WorldReader.new(w))
+	views.critters.advance(DT)
+	var xf: Transform3D = views.critters.instance_of(id)["xf"]
+	assert_almost_eq(xf.origin.x, 5.0, 0.001)
+	assert_almost_eq(xf.origin.z, 2.0, 0.001)
+	assert_almost_eq(xf.origin.y, CritterBodies.BAT_FLY_M, 0.001, "the bat flies")
+
+
+## The disc (CylinderMesh) and ring (TorusMesh) meshes straight under actor node `node`.
+static func _rings(node: Node3D) -> int:
+	var n := 0
+	for c in node.get_children():
+		var mi := c as MeshInstance3D
+		if mi != null and (mi.mesh is TorusMesh or mi.mesh is CylinderMesh):
+			n += 1
+	return n
+
+
+## v0.11.0 O9b (owner Q16-b: "No ring on critters"); v0.11.0 O9c: a critter has no node at all, so no disc and no
+## ring; a Swarmer keeps both.
 func test_no_ring_on_critters() -> void:
 	ViewPrefs.enemy_vat = true
 	var w := CombatLab.world()
@@ -97,18 +190,8 @@ func test_no_ring_on_critters() -> void:
 	views.set_process(false)
 	views.sync(WorldReader.new(w))
 	for k in KINDS.size():
-		assert_eq(_rings(views.actor_node(ids[k])), 0, "kind %d: no disc, no ring" % KINDS[k])
+		assert_null(views.actor_node(ids[k]), "kind %d: no node, no disc, no ring" % KINDS[k])
 	assert_eq(_rings(views.actor_node(swarmer)), 2, "a Swarmer keeps its disc and its ring")
-
-
-## The disc (CylinderMesh) and ring (TorusMesh) meshes straight under actor node `node`.
-static func _rings(node: Node3D) -> int:
-	var n := 0
-	for c in node.get_children():
-		var mi := c as MeshInstance3D
-		if mi != null and (mi.mesh is TorusMesh or mi.mesh is CylinderMesh):
-			n += 1
-	return n
 
 
 func test_the_bat_flies_the_mote_floats_the_flea_hops_and_the_crab_slides() -> void:

@@ -170,6 +170,20 @@ static func _merge(casters: Array) -> ArrayMesh:
 
 ## The blob: a flat soft disc under the actor (on its root, so it never tilts with the body).
 static func _add_blob(root: Node3D, radius: float) -> MeshInstance3D:
+	blob_parts()
+	var blob := MeshInstance3D.new()
+	blob.name = BLOB_NAME
+	blob.mesh = _blob_mesh
+	blob.material_override = _blob_mat
+	blob.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	blob.scale = Vector3.ONE * maxf(radius, 0.2) * BLOB_SCALE
+	blob.position.y = BLOB_Y
+	root.add_child(blob)
+	return blob
+
+
+## v0.11.0 O9c: the blob's shared [mesh, material] (CritterCrowd draws the critters' blobs as one MultiMesh of it).
+static func blob_parts() -> Array:
 	if _blob_mesh == null:
 		_blob_mesh = QuadMesh.new()
 		_blob_mesh.size = Vector2.ONE
@@ -189,12 +203,4 @@ static func _add_blob(root: Node3D, radius: float) -> MeshInstance3D:
 		_blob_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		_blob_mat.albedo_color = Color(1, 1, 1, BLOB_ALPHA)
 		_blob_mat.albedo_texture = tex
-	var blob := MeshInstance3D.new()
-	blob.name = BLOB_NAME
-	blob.mesh = _blob_mesh
-	blob.material_override = _blob_mat
-	blob.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	blob.scale = Vector3.ONE * maxf(radius, 0.2) * BLOB_SCALE
-	blob.position.y = BLOB_Y
-	root.add_child(blob)
-	return blob
+	return [_blob_mesh, _blob_mat]

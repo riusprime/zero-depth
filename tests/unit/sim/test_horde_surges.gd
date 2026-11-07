@@ -150,24 +150,24 @@ func test_at_most_twice_a_floor() -> void:
 	assert_eq(Surges.started(w), 2)
 
 
-## v0.11.0 O9b (owner Q16-b: "Optimise, then cap"): the shipped surge stops at 50 enemies alive (the most that held
-## 144 fps with the crowd full on every idle run on the owner's PC), however big the surge.
-func test_the_shipped_surge_stops_at_50_alive() -> void:
+## v0.11.0 O9b (owner Q16-b: "Optimise, then cap"); v0.11.0 O9c (Q16-c: "Batch now"): the shipped surge stops at 120
+## enemies alive (the batched critters held 144 fps with 120 alive on the idle owner's PC), however big the surge.
+func test_the_shipped_surge_stops_at_120_alive() -> void:
 	var w := _world(7)
 	var t := w.spawner.surge
-	assert_eq(t.alive_cap, 50, "surge.tres's cap")
+	assert_eq(t.alive_cap, 120, "surge.tres's cap")
 	t.first_min_ticks = 30
 	t.first_max_ticks = 30
 	t.size_min = 60
 	t.size_max = 60
-	for k in 20:  # 20 standing enemies first: the surge brings the floor to 50, not 80
+	for k in 70:  # 70 standing enemies first: the surge brings the floor to 120, not 130
 		var id := w.add_enemy(KIND.WARDEN, Vector2(20.0 + (k % 10), 20.0 + (k / 10)))
 		w.actors.invuln[w.actors.index_of(id)] = LONG
 	var most := 0
 	for k in 800:
 		w.step(InputFrame.new())
 		most = maxi(most, WaveDirector.enemies_alive(w))
-	assert_eq(most, 50, "it filled to the cap and no further")
+	assert_eq(most, 120, "it filled to the cap and no further")
 
 
 func test_a_surge_may_pass_the_floor_cap_but_never_the_hard_cap() -> void:
@@ -321,3 +321,31 @@ func test_the_same_seed_gives_the_same_surge_and_a_save_resumes_it() -> void:
 		base.step(InputFrame.new())
 	assert_eq(base.state_hash(), a.state_hash(), "the restored surge runs on exactly")
 	assert_eq(base.surge_next, 1)
+
+
+## v0.11.0 O9c (owner Q16-c): the critters' fast path (CritterAi) is deterministic: two worlds with the same seed and a
+## crowd of 120 critters packed round the hero hash the same tick for tick, and the crowd chases and touches the hero.
+func test_a_120_critter_crowd_is_deterministic_on_the_fast_path() -> void:
+	var worlds: Array[World] = [_world(17), _world(17)]
+	for w in worlds:
+		w.spawner.surge.surges_min = 0
+		w.spawner.surge.surges_max = 0
+		for k in 120:
+			var id := w.add_enemy(KIND.DUST_MITE, Kin.dir(k * 4096 / 120) * (2.0 + (k % 6) * 0.8))
+			w.actors.invuln[w.actors.index_of(id)] = LONG
+	var touches := 0
+	for t in 600:
+		var seq := worlds[0].last_event_seq()
+		for w in worlds:
+			w.step(InputFrame.new())
+		for e: SimEvent in worlds[0].events_since(seq):
+			touches += (
+				1 if e.kind == SimEvent.Kind.HIT and e.target_id == worlds[0].actors.ids[0] else 0
+			)
+		if t % 60 == 59:
+			assert_eq(worlds[0].state_hash(), worlds[1].state_hash(), "tick %d" % worlds[0].tick)
+	assert_gt(touches, 10, "the crowd reached the hero and touched it (%d)" % touches)
+	var near := 0
+	for i in range(1, worlds[0].actors.size()):
+		near += 1 if Kin.length(worlds[0].actors.pos(i)) < 2.0 else 0
+	assert_gt(near, 10, "a crowd round the hero (%d within 2 m)" % near)

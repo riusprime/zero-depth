@@ -879,11 +879,16 @@ func step(frame: InputFrame) -> void:
 		pp.end(&"move")
 		pp.begin(&"resolve")
 	# 6. Hits: enemy attacks, then projectile sweeps.
+	var critter_rows := PackedInt32Array()  # v0.11.0 O9c: the critters touch after the others (CritterAi)
 	for i in range(1, actors.size()):
-		if BossAi.is_boss_kind(actors.kinds[i]) and actors.dead[i] == 0:
+		if CritterAi.takes(actors.kinds[i]):
+			critter_rows.append(i)
+		elif BossAi.is_boss_kind(actors.kinds[i]) and actors.dead[i] == 0:
 			BossAi.resolve(self, i)  # Bosses (v0.3.0 C).
 		elif EnemyAi.is_enemy_kind(actors.kinds[i]) and actors.dead[i] == 0:
 			EnemyAi.resolve(self, i)
+	if not critter_rows.is_empty():
+		CritterAi.touch_all(self, critter_rows)
 	Mines.advance(self)  # v0.4.0 EN: mines arm and blow.
 	if not boss_tables.is_empty():
 		BossSignatures.advance(self)  # v0.8.0 BS1: pillars sink, javelins fly back
@@ -1736,7 +1741,11 @@ func _run_ai() -> void:
 		_actor_grid.build_circles(actors.pos_x, actors.pos_y, actors.radius)
 		if pp != null:
 			pp.end(&"ai.grid")
+	var critter_rows := PackedInt32Array()  # v0.11.0 O9c: the critters think in one loop after the others (CritterAi)
 	for i in range(1, actors.size()):
+		if CritterAi.takes(actors.kinds[i]):
+			critter_rows.append(i)
+			continue
 		if BossAi.is_boss_kind(actors.kinds[i]):
 			BossAi.think(self, i)  # Bosses (v0.3.0 C).
 			continue
@@ -1769,6 +1778,8 @@ func _run_ai() -> void:
 					projectile_life,
 					SimEvent.TAG_PROJECTILE
 				)
+	if not critter_rows.is_empty():
+		CritterAi.think_all(self, critter_rows)
 
 
 func _advance_actions() -> void:
@@ -1848,7 +1859,11 @@ func _move_and_collide() -> void:
 		pp.begin(&"move.steer")
 	# Dummies steer toward the player plus their jitter.
 	var target := p
+	var critter_rows := PackedInt32Array()  # v0.11.0 O9c: the critters step in one loop after the others (CritterAi)
 	for i in range(1, actors.size()):
+		if CritterAi.takes(actors.kinds[i]):
+			critter_rows.append(i)
+			continue
 		if BossAi.is_boss_kind(actors.kinds[i]):
 			BossAi.move(self, i)  # Bosses (v0.3.0 C).
 			continue
@@ -1867,6 +1882,8 @@ func _move_and_collide() -> void:
 		if dist > dummy_speed:
 			at += to * (dummy_speed / dist)
 		actors.set_pos(i, at)
+	if not critter_rows.is_empty():
+		CritterAi.move_all(self, critter_rows)
 	PlayerSkill.push(self)  # Kit (v0.3.5 K): Scatter Blast knockback, before walls resolve it.
 	if pp != null:
 		pp.end(&"move.steer")

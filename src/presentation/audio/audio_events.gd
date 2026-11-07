@@ -587,6 +587,8 @@ func _scan_actors(reader: WorldReader, out: Array) -> void:
 		var id := reader.actor_id(i)
 		var kind := reader.actor_kind(i)
 		_kinds[id] = kind
+		if kind >= WorldReader.KIND_DUST_MITE and kind <= WorldReader.KIND_STAR_MOTE:
+			continue  # v0.11.0 O9c: a critter has no windup and no attack: no state cue (a surge skips the rest)
 		if reader.actor_dead(i):
 			continue
 		var st := reader.actor_state(i)

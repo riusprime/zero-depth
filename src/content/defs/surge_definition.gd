@@ -9,7 +9,8 @@ extends ContentDef
 ## normal cap, never above the spawner's cap_max: the hard 120). Starting values; alive_cap is the owner's Q16 gate (a
 ## 120-enemy surge measured on the owner's PC; lowered here if it drops under 144 fps). v0.11.0 O9b (Q16-b: "Optimise,
 ## then cap"): surge.tres sets 50, the most that held 144 fps with the crowd full on every idle run on the owner's PC
-## (60 held in two of four).
+## (60 held in two of four). v0.11.0 O9c (Q16-c: "Batch now"): with the critters batched, surge.tres sets 120 (idle
+## owner's PC, crowd full: 161.1 and 161.4 fps average).
 
 ## The most enemies alive any surge may bring the floor to (the spawner's hard cap, SpawnDirectorDefinition.cap_max).
 const HARD_CAP := 120

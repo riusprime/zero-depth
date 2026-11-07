@@ -104,6 +104,11 @@ func _process(delta: float) -> bool:
 			if _hide != "" and _main.view.actors.vat_crowd != null:
 				for m in _main.view.actors.vat_crowd.instances():
 					m.visible = not ((m.name == "VatBodies") == (_hide == "bodies"))
+			if _hide != "" and _main.view.actors.critters != null:  # v0.11.0 O9c: the batched critters
+				for m in _main.view.actors.critters.instances():
+					m.visible = not (
+						String(m.name).begins_with("CritterBodies") == (_hide == "bodies")
+					)
 			var dt_ms := (now - _last_us) / 1000.0
 			if Surges.running(w):
 				_window_ms.append(dt_ms)
@@ -264,10 +269,12 @@ func _finish() -> void:
 	quit(0)
 
 
-## The VAT crowd's instances drawn last frame (0 before the first VAT enemy made the crowd).
+## The VAT crowd's and (v0.11.0 O9c) the critter crowd's body instances drawn last frame.
 func _drawn() -> int:
 	var crowd := _main.view.actors.vat_crowd
-	return crowd.drawn if crowd != null else 0
+	var n := crowd.drawn if crowd != null else 0
+	var critters := _main.view.actors.critters
+	return n + (critters.drawn if critters != null else 0)
 
 
 ## v0.11.0 O9b (--breakdown): this crowd-full frame's buckets (microseconds), then the render thread's CPU and GPU
