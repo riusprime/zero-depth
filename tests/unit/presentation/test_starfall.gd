@@ -37,6 +37,7 @@ func test_the_biome_is_valid_readable_and_in_the_run_draw() -> void:
 	var run: RunDefinition = _repo.get_def(&"run", RunSaver.RUN_ID)
 	assert_eq(run.biomes[run.biomes.size() - 1], &"starfall", "appended last (saves keep indices)")
 	assert_eq(run.biomes.find(&"frozen_shore"), 3, "Frozen Shore keeps its index")
+	TranslationServer.set_locale("en")  # the PC's own locale may be Spanish (owner's PC, 2026-11-08)
 	assert_eq(tr(_biome.name_key), "Starfall")
 	assert_ne(tr(_biome.desc_key), String(_biome.desc_key), "its Codex line is in the locale")
 

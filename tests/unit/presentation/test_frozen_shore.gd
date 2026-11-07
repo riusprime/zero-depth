@@ -29,6 +29,7 @@ func test_the_biome_is_valid_and_in_the_run_draw() -> void:
 	assert_gt(_biome.mood.fog_density, 0.0, "icy fog")
 	var run: RunDefinition = _repo.get_def(&"run", RunSaver.RUN_ID)
 	assert_has(run.biomes, &"frozen_shore", "it enters the run's biome draw")
+	TranslationServer.set_locale("en")  # the PC's own locale may be Spanish (owner's PC, 2026-11-08)
 	assert_eq(tr(_biome.name_key), "Frozen Shore")
 
 
