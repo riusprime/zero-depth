@@ -359,11 +359,17 @@ func test_every_floor_spawns_only_its_biomes_roster_over_a_thousand_seeds() -> v
 	var run_def: RunDefinition = _repo.get_def(&"run", RunSaver.RUN_ID)
 	var variant_of := {}  # biome id -> its variant's kind
 	var variants := {}
+	var roster := {}  # v0.11.0 O13b: biome id -> its own kinds (its variant and its built signatures)
+	var signature_of := {}  # a signature's kind -> its biome id
 	for id in run_def.biomes:
 		var b: BiomeDefinition = _repo.get_def(&"biomes", id)
 		var k := ContentCompiler.compile_enemy(_repo.get_def(&"enemies", b.variant_id)).kind
 		variant_of[id] = k
 		variants[k] = id
+		roster[id] = VariantCompiler.roster_kinds(_repo, b)
+		for kind: int in roster[id]:
+			if kind != k:
+				signature_of[kind] = id
 	var shared := {}  # the kinds any biome may spawn: every mix row that is no biome's own
 	var spawn := ContentCompiler.compile_floor_spawning(_repo, 1)
 	for k in spawn.kinds.size():
@@ -374,6 +380,7 @@ func test_every_floor_spawns_only_its_biomes_roster_over_a_thousand_seeds() -> v
 		for f in range(1, 6):
 			open["%s/%d" % [id, f]] = _open_kinds(_repo.get_def(&"biomes", id), f, tables)
 	var variant_floors := {}
+	var signature_floors := {}
 	for s in SEEDS:
 		var r := RunState.start(1000 + s * 7919, _table())
 		var again := RunState.start(1000 + s * 7919, _table())
@@ -382,7 +389,7 @@ func test_every_floor_spawns_only_its_biomes_roster_over_a_thousand_seeds() -> v
 			var id: StringName = run_def.biomes[r.biome_of(f)]
 			var kinds: Dictionary = open["%s/%d" % [id, f]]
 			for kind: int in kinds:
-				var own: bool = kind == variant_of[id]
+				var own: bool = (roster[id] as PackedInt32Array).has(kind)
 				if not own and not shared.has(kind):
 					fail_test(
 						"seed %d floor %d (%s): kind %d is not its roster's" % [s, f, id, kind]
@@ -392,11 +399,20 @@ func test_every_floor_spawns_only_its_biomes_roster_over_a_thousand_seeds() -> v
 				if variants[k] != id and kinds.has(k):
 					fail_test("seed %d floor %d (%s): %s's variant" % [s, f, id, variants[k]])
 					return
+			for k: int in signature_of:
+				if signature_of[k] != id and kinds.has(k):
+					fail_test("seed %d floor %d (%s): %s's signature" % [s, f, id, signature_of[k]])
+					return
+				if signature_of[k] == id and kinds.has(k):
+					signature_floors[k] = int(signature_floors.get(k, 0)) + 1
 			if kinds.has(variant_of[id]):
 				variant_floors[id] = int(variant_floors.get(id, 0)) + 1
 	for id in run_def.biomes:
 		assert_gt(int(variant_floors.get(id, 0)), 0, "%s's variant spawns on its floors" % id)
+	for k: int in signature_of:  # v0.11.0 O13b: every built signature appears on its own biome's floors
+		assert_gt(int(signature_floors.get(k, 0)), 0, "signature kind %d spawns on its floors" % k)
 	gut.p("variant floors over %d runs: %s" % [SEEDS, variant_floors])
+	gut.p("signature floors over %d runs: %s" % [SEEDS, signature_floors])
 
 
 ## The roster reaches the real floor: FloorPlan gives each floor its biome's own kinds, and on a floor where a biome's
@@ -429,6 +445,8 @@ func test_a_built_floor_spawns_its_biomes_roster() -> void:
 		var allowed := _open_kinds(b, 4, tables)
 		if allowed.has(ActorStore.Kind.SPLITTER):  # a Splitter splits into Splitlings (they come of it, not of the mix)
 			allowed[ActorStore.Kind.SPLITLING] = true
+		if allowed.has(ActorStore.Kind.WIRE_WEAVER):  # v0.11.0 O13b: a Weaver plants its posts
+			allowed[ActorStore.Kind.WIRE_POST] = true
 		var seen := {}
 		for t in 60 * 240:
 			w.step(InputFrame.new())

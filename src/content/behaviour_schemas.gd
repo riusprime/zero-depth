@@ -236,6 +236,68 @@ const SCHEMAS := {
 		"shape": 2,
 		"shape_params": ["range_m", "half_width_m"],
 	},
+	## v0.11.0 O13b (ENEMIES.md R1-R4, approved 2026-11-07; RuinsRocks). The Wire Weaver keeps keep_min_m..keep_max_m
+	## away and plants two posts (post_hp, post_radius_m) across your way, its cable (the attack: length_m long at most,
+	## half_width_m thick) live between them; it keeps up to max_cables; a touch hurts at most every
+	## cable_period_seconds.
+	&"wire_weaver":
+	{
+		"params":
+		[
+			"attack_range_m",
+			"cooldown_seconds",
+			"keep_min_m",
+			"keep_max_m",
+			"max_cables",
+			"post_hp",
+			"post_radius_m",
+			"cable_period_seconds",
+		],
+		"shape": 2,
+		"shape_params": ["length_m", "half_width_m"],
+	},
+	## The Scrap Hound circles you circle_m away and darts in (the attack: a lunge up to length_m at speed_mps) only from
+	## the rear rear_arc_degrees of your aim while you attack; a hit stops it for stagger_seconds.
+	&"scrap_hound":
+	{
+		"params":
+		[
+			"attack_range_m",
+			"cooldown_seconds",
+			"circle_m",
+			"rear_arc_degrees",
+			"stagger_seconds",
+		],
+		"shape": 2,
+		"shape_params": ["length_m", "speed_mps"],
+	},
+	## The Rock Lurker waits as a boulder (cover) until you come within wake_m (it bursts out with its slam, a disc of
+	## radius_m round it) or hit it; rumble_m is how near you hear it.
+	&"rock_lurker":
+	{
+		"params": ["attack_range_m", "cooldown_seconds", "wake_m", "rumble_m"],
+		"shape": 0,
+		"shape_params": ["radius_m"],
+	},
+	## The Stone Thrower keeps keep_min_m..keep_max_m away, lifts a rock (the attack's telegraph) and throws it at where
+	## you stand: it flies flight_seconds and lands as a disc of radius_m, then stands rock_seconds as cover (half side
+	## rock_half_m), at most max_rocks on a floor.
+	&"stone_thrower":
+	{
+		"params":
+		[
+			"attack_range_m",
+			"cooldown_seconds",
+			"keep_min_m",
+			"keep_max_m",
+			"flight_seconds",
+			"rock_seconds",
+			"rock_half_m",
+			"max_rocks",
+		],
+		"shape": 0,
+		"shape_params": ["radius_m"],
+	},
 }
 ## v0.11.0 O13a: a variant's base behaviour (it walks, aims and hits as its base: EnemyAi.behaviour_of).
 const VARIANT_OF := {

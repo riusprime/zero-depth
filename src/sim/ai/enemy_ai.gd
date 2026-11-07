@@ -41,6 +41,8 @@ const KEEP_AWAY: Array[int] = [
 	ActorStore.Kind.SNIPER,
 	ActorStore.Kind.RIFT_HUNTER,  # v0.9.0 EL: circling 4-6 m away between Rift Steps
 	ActorStore.Kind.CONDUIT,  # drifting 7-10 m away
+	ActorStore.Kind.WIRE_WEAVER,  # v0.11.0 O13b: the Weaver and the Thrower keep their band (RuinsRocks)
+	ActorStore.Kind.STONE_THROWER,
 ]
 ## Aimed windups stop tracking the player this many ticks before they fire (starting value, as the bosses').
 const COMMIT_TICKS := 12
@@ -188,6 +190,9 @@ static func think(w: World, i: int) -> void:
 	a.state_t[i] += 1
 	if a.cd[i] > 0:
 		a.cd[i] -= 1
+	if RuinsRocks.takes(a.kinds[i]):  # v0.11.0 O13b: the Ruins and Night Rocks signatures
+		RuinsRocks.think(w, i, t, planning)
+		return
 	if a.state[i] >= BossSignatures.EGG:  # v0.8.0 BS1 (S3): an egg waits, hatches or bursts
 		BossSignatures.egg_think(w, i)
 		return
@@ -360,6 +365,8 @@ static func move(w: World, i: int) -> void:
 	var at := a.pos(i)
 	# Items (v0.2.0 J): a Frost Core slow scales both the walk and the charge (1.0 when not slowed).
 	var slow := ItemProcs.slow_factor(w, i)
+	if RuinsRocks.takes(a.kinds[i]) and RuinsRocks.moves(w, i, t, slow):  # v0.11.0 O13b
+		return
 	var hovering := a.kinds[i] == ActorStore.Kind.BOMB_DRONE and a.state[i] == State.WINDUP
 	if (
 		a.state[i] == State.MOVE
@@ -524,6 +531,9 @@ static func resolve(w: World, i: int) -> void:
 		return
 	if is_critter(a.kinds[i]):  # v0.11.0 O9
 		_critter_touch(w, i)
+		return
+	if RuinsRocks.takes(a.kinds[i]):  # v0.11.0 O13b
+		RuinsRocks.resolve(w, i)
 		return
 	if a.state[i] != State.ACTIVE or w.player_dead() or Engines.frozen(w, i):
 		return
@@ -777,6 +787,8 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return {}
 	if EliteAi.is_elite_kind(a.kinds[i]):
 		return EliteAi.telegraph(w, i)  # v0.9.0 EL: the slam's circle, the rift mark, the beam's line
+	if RuinsRocks.takes(a.kinds[i]):
+		return RuinsRocks.telegraph(w, i)  # v0.11.0 O13b: the cable, the dart, the slam, the landing
 	if a.state[i] == State.ACTIVE and _charges(a.kinds[i]) and a.lock_len[i] > 0.0:
 		return {"shape": &"lane", "ground": false, "obb": running_lane(w, i), "progress": 1000}
 	if a.kinds[i] == ActorStore.Kind.MINE_LAYER:

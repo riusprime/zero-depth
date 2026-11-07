@@ -153,6 +153,8 @@ var arenas: ArenaViews = _part(ArenaViews)
 var horde_fx: HordeVisuals = _part(HordeVisuals)
 ## v0.11.0 O13a: the biome variants' trails (fire, slick), the Rubble Warden's rocks, the Split Sniper's split.
 var variant_fx: VariantViews = _part(VariantViews)
+## v0.11.0 O13b: the Wire Weavers' cables, the Stone Throwers' rocks, the Lurkers' dust, the Hounds' yelps.
+var ruins_rocks_fx: RuinsRocksViews = _part(RuinsRocksViews)
 var events: EventPedestalViews = _part(EventPedestalViews)  # v0.5.0 EV: event pedestals, the drone's ring, elite crowns
 var cores: CoreViews = _part(CoreViews)  # v0.6.0 CU: cores on elites and bosses, the steal window, dodge and stun cues
 ## v0.9.0 EL: the elites' arrival sigil, the Rift Hunter's rift, the Conduit's beam, the Breaker's dust ring.
@@ -391,6 +393,7 @@ func _setup_views(palette: Dictionary) -> void:
 	add_child(damage_numbers)
 	add_child(horde_fx)  # v0.4.0 EN
 	add_child(variant_fx)  # v0.11.0 O13a
+	add_child(ruins_rocks_fx)  # v0.11.0 O13b
 	add_child(events)  # v0.5.0 EV
 	events.setup(reader)
 	add_child(cores)  # v0.6.0 CU
@@ -445,6 +448,7 @@ func _setup_effects() -> void:
 		layer.drawers.append(final_views.draw_fx)  # v0.8.0 TX2: the shatter's crystal burst
 		variant_fx.vfx = layer  # v0.11.0 O13a: the variants' fire and slick patches (pack zones)
 		variant_fx.pack_fx = pack_fx
+		ruins_rocks_fx.pack_fx = pack_fx  # v0.11.0 O13b: the sparks, the dust
 		layer.drawers.append(variant_fx.draw_fx)
 		# v0.10.5 O12 (owner P9): the hero's own forms draw as hero_drawers, under the hero's effect budget
 		# (HeroFxBudget); the drawers above (enemy fireballs, spikes, boss strikes, props) never are.
@@ -697,6 +701,7 @@ func sync() -> void:
 	_sync_view(&"damage_numbers", damage_numbers)
 	_sync_view(&"horde_fx", horde_fx)  # v0.4.0 EN
 	_sync_view(&"variant_fx", variant_fx)  # v0.11.0 O13a
+	_sync_view(&"ruins_rocks_fx", ruins_rocks_fx)  # v0.11.0 O13b
 	_sync_view(&"events", events)  # v0.5.0 EV
 	_sync_view(&"cores", cores)  # v0.6.0 CU
 	_sync_view(&"elite_fx", elite_fx)  # v0.9.0 EL

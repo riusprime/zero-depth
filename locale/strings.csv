@@ -1727,3 +1727,17 @@ CAUSE_EMBER_CHARGER,An Ember Charger ran you down.,Un Embestidor de Ascuas te ar
 CAUSE_FROST_CHARGER,A Frost Charger ran you down.,Un Embestidor de Escarcha te arrolló.
 CAUSE_SPLIT_SNIPER,A Split Sniper's shot took you down.,El disparo de un Francotirador Bífido te abatió.
 CAUSE_EMBER_TRAIL,An Ember Charger's fire burned you.,El fuego de un Embestidor de Ascuas te quemó.
+ENEMY_WIRE_WEAVER,Wire Weaver,Tejedor de Cables
+ENEMY_WIRE_WEAVER_DESC,"Plants two posts and strings a live cable between them that hurts and blocks your way. Break a post to drop its cable, or kill the Weaver.","Clava dos postes y tiende entre ellos un cable vivo que hiere y te corta el paso. Rompe un poste para tirar su cable, o mata al Tejedor."
+ENEMY_WIRE_POST,Cable Post,Poste de Cable
+ENEMY_SCRAP_HOUND,Scrap Hound,Sabueso de Chatarra
+ENEMY_SCRAP_HOUND_DESC,"Circles you and darts in from behind while you attack something else. Its eyes flash as it turns in: turn and hit it, and it stops.","Te rodea y se lanza por la espalda mientras atacas a otro. Sus ojos destellan al girarse: date la vuelta y golpéalo, y se detiene."
+ENEMY_ROCK_LURKER,Rock Lurker,Acechador de Roca
+ENEMY_ROCK_LURKER_DESC,"Waits disguised as a boulder, cover for both sides. A faint glow in its cracks and a rumble give it away: shoot glowing boulders before you walk past.","Espera disfrazado de roca, cobertura para ambos bandos. Un leve brillo en sus grietas y un retumbo lo delatan: dispara a las rocas que brillan antes de pasar."
+ENEMY_STONE_THROWER,Stone Thrower,Lanzapiedras
+ENEMY_STONE_THROWER_DESC,"Lifts a rock and throws it where you stand; a ring marks the landing. The rock stays as cover for a while.","Levanta una roca y la lanza donde estás; un anillo marca dónde cae. La roca queda un rato como cobertura."
+CAUSE_WIRE_WEAVER,A Wire Weaver's cable shocked you.,El cable de un Tejedor de Cables te electrocutó.
+CAUSE_WIRE_CABLE,A Wire Weaver's live cable shocked you.,El cable vivo de un Tejedor de Cables te electrocutó.
+CAUSE_SCRAP_HOUND,A Scrap Hound bit you from behind.,Un Sabueso de Chatarra te mordió por la espalda.
+CAUSE_ROCK_LURKER,A Rock Lurker burst out and crushed you.,Un Acechador de Roca salió de golpe y te aplastó.
+CAUSE_STONE_THROWER,A Stone Thrower's rock crushed you.,La roca de un Lanzapiedras te aplastó.

@@ -150,6 +150,43 @@ static func _enemy(behaviour: StringName) -> Array:
 				_line([[0.06, 0.5], [0.34, 0.5]], 0.06),
 				_line([[0.66, 0.5], [0.94, 0.5]], 0.06),
 			]
+		&"wire_weaver":  # v0.11.0 O13b: two posts and the live cable between them
+			return [
+				_line([[0.2, 0.2], [0.2, 0.86]], 0.08),
+				_line([[0.8, 0.2], [0.8, 0.86]], 0.08),
+				_line([[0.2, 0.32], [0.38, 0.4], [0.5, 0.3], [0.62, 0.42], [0.8, 0.32]], 0.05),
+				_circle(Vector2(0.2, 0.16), 0.06, 0.0),
+				_circle(Vector2(0.8, 0.16), 0.06, 0.0),
+			]
+		&"scrap_hound":  # a low hound mid-dart
+			return [
+				_poly([[0.1, 0.5], [0.62, 0.4], [0.9, 0.46], [0.62, 0.6], [0.1, 0.62]]),
+				_line([[0.24, 0.6], [0.16, 0.86]], 0.06),
+				_line([[0.58, 0.58], [0.68, 0.86]], 0.06),
+				_circle(Vector2(0.8, 0.47), 0.04, 0.0, true),
+			]
+		&"rock_lurker":  # a boulder with glowing cracks
+			return [
+				_poly(
+					[
+						[0.14, 0.78],
+						[0.2, 0.36],
+						[0.46, 0.18],
+						[0.78, 0.26],
+						[0.88, 0.6],
+						[0.8, 0.82]
+					]
+				),
+				_line([[0.36, 0.34], [0.48, 0.52], [0.42, 0.72]], 0.05, true),
+				_line([[0.66, 0.36], [0.6, 0.58]], 0.05, true),
+			]
+		&"stone_thrower":  # a rock held overhead in two arms
+			return [
+				_circle(Vector2(0.5, 0.2), 0.14, 0.0),
+				_poly([[0.28, 0.52], [0.72, 0.52], [0.78, 0.9], [0.22, 0.9]]),
+				_line([[0.3, 0.54], [0.36, 0.26]], 0.08),
+				_line([[0.7, 0.54], [0.64, 0.26]], 0.08),
+			]
 	return [  # any other enemy: a hostile diamond with an eye
 		_poly([[0.5, 0.08], [0.9, 0.5], [0.5, 0.92], [0.1, 0.5]]),
 		_circle(Vector2(0.5, 0.5), 0.12, 0.0, true),
