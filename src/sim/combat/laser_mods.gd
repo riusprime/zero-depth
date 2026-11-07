@@ -13,8 +13,11 @@ extends RefCounted
 ## - Homing (Q8: "only Homing bends it"; L2: "a single smooth, curved trajectory … not a rigid or visibly segmented
 ##   chain"; Q28: "it still bends through up to 5 chosen targets, then runs straight to full range"): at the shot the
 ##   nearest enemies in front of the aim within reach, in sight (pick(), at most home_chain, 5), and the path runs
-##   through each in turn as one smooth curve (curve(): a Hermite spline through their centres), then straight on until
-##   it is the reach (9 m) from the hero (to_range()). The curve is cut into short legs (at most home_step_mm long,
+##   through each in turn as one smooth curve (curve(): a Hermite spline through their centres), then straight on to
+##   the first wall
+##   (v0.11.0 O1c; at most TAIL_MAX_M, 40 m, so it always ends); a lance without Homing keeps its 9 m reach. The
+##   curve is
+##   cut into short legs (at most home_step_mm long,
 ##   each turning at most home_bend_deg from the one before, so the path never kinks); a target the path would have to
 ##   turn more than home_arc_deg to go on to, or one past home_len_permille of the reach along the curve, ends the
 ##   chain there.
@@ -75,6 +78,8 @@ const F_WALL := 4
 const MAX_LEGS := 256
 ## The most legs one Homing piece (target to target) is cut into (curve()).
 const PIECE_LEGS := 48
+## v0.11.0 O1c (owner): Homing's straight tail runs on to the first wall, at most this long (m) so it always ends.
+const TAIL_MAX_M := 40.0
 const ECHO_TICKS_MAX := 8
 const HZ := 60
 ## 2π, for an arc's length from its angle (a constant, no trig).
@@ -83,6 +88,8 @@ const TAU_F := 6.283185307179586
 const DEFAULTS := {
 	"lance_ticks": 30,
 	"lance_feed": 3,
+	"pierce_falloff_permille": 850,
+	"pierce_floor_permille": 400,
 	"halo_len_mm": 3000,
 	"halo_turn_deg": 30,
 	"halo_share": 400,
@@ -258,7 +265,7 @@ static func plan(w: World, spec: AttackSpec, origin: Vector2, angle: int) -> Arr
 		var ang := (base + turns[li]) & 4095
 		var dir := Kin.dir(ang)
 		var from := origin + dir * w.player.radius_m + Vector2(-dir.y, dir.x) * lanes[li]
-		var path := _path(w, spec, m, from, ang, r, targets, origin)
+		var path := _path(w, spec, m, from, ang, r, targets)
 		var legs: Array[Dictionary] = path["legs"]
 		for k in legs.size():
 			var leg := legs[k]
@@ -278,14 +285,7 @@ static func plan(w: World, spec: AttackSpec, origin: Vector2, angle: int) -> Arr
 ## first_at, first_heading, seen}. Straight unless Homing bends it through `targets` (curve()) or Ricochet reflects it
 ## off its first wall (the rest of the curve is then dropped: it runs straight on).
 static func _path(
-	w: World,
-	spec: AttackSpec,
-	m: int,
-	from: Vector2,
-	ang: int,
-	r: float,
-	targets: PackedInt32Array,
-	hero: Vector2
+	w: World, spec: AttackSpec, m: int, from: Vector2, ang: int, r: float, targets: PackedInt32Array
 ) -> Dictionary:
 	var seen := {}
 	var legs: Array[Dictionary] = []
@@ -346,25 +346,13 @@ static func _path(
 			k = 0
 			continue
 		if on_curve and k == way.size():
-			remain = to_range(pos, Kin.dir(hd), hero, spec.reach_m)
+			remain = TAIL_MAX_M
 			continue
 		if not on_curve:
 			break
 	out["tip"] = legs.back()["to"] if not legs.is_empty() else from
 	out["seen"] = seen
 	return out
-
-
-## How far from `p` along the unit `dir` the path runs to reach `reach` from `hero` (the range circle; Q28: "then runs
-## straight to full range"); 0 if it is already outside it.
-static func to_range(p: Vector2, dir: Vector2, hero: Vector2, reach: float) -> float:
-	var q := p - hero
-	var b := q.dot(dir)
-	var c := q.dot(q) - reach * reach
-	var disc := b * b - c
-	if disc <= 0.0:
-		return 0.0
-	return maxf(0.0, -b + sqrt(disc))
 
 
 ## Homing's one smooth path through `targets` (in order) from `from` heading `ang` (v0.11.0 O1, L2): a cubic Hermite
@@ -763,6 +751,8 @@ static func _echo_strikes(w: World, spec: AttackSpec) -> void:
 		)
 		c.secondary = true
 		var a := w.actors
+		var ts: Array[float] = []
+		var ids: Array[int] = []
 		for i in range(1, a.size()):
 			if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1 or seen.has(due * 100000 + i):
 				continue
@@ -770,6 +760,16 @@ static func _echo_strikes(w: World, spec: AttackSpec) -> void:
 			if t < 0.0:
 				continue
 			seen[due * 100000 + i] = true
+			var at := ts.size()  # nearest first along the strike (v0.11.0 O1c: the falloff runs down it)
+			while at > 0 and ts[at - 1] > t:
+				at -= 1
+			ts.insert(at, t)
+			ids.insert(at, i)
+		var f := 1000
+		var base: int = s.lz_echo_dmg[k]
+		for i in ids:
+			c.damage = maxi(1, base * f / 1000)
+			f = Laser.falloff_next(w, f)
 			Laser.hit(w, spec, c, i, from, a.pos(i), false)
 		_echo_remove(s, k)
 

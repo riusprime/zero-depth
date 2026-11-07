@@ -1,9 +1,11 @@
+# gdlint: disable=max-public-methods
 extends GutTest
 ## v0.9.0 LZ (owner C §6.2, Q8; PLAN C48–C50, C72; ATTACK_FORMS.md F2): the Laser form. v0.11.0 O1 (owner, PLAN L1,
 ## L3b; Q4–Q7, Q28): the Laser is a lance. Held, it fires one shot every 3 s (the first at once, no release needed),
 ## each dealing 3 s of the old beam's damage (30 old ticks); it is instant and passes every enemy on its path (a wall
 ## stops it), reaches 9 m; Twin gives 2 lances (3 at Lv 5); attack speed shortens the 3 s at half its value; the hero
-## moves at 75 % while it is held; each enemy hit is fed 3 hits' worth of its statuses, its hit hooks fire once.
+## moves at full speed while it is held (O1c); each enemy after the first takes 15 % less (O1c); each enemy hit is fed 3
+## hits' worth of its statuses, its hit hooks fire once.
 
 const W := preload("res://tests/support/mx4_world.gd")
 const HP := 1000000
@@ -74,7 +76,7 @@ func test_the_card_makes_the_guns_shot_a_lance_every_3_s() -> void:
 	assert_eq(s.form, AttackSpec.Form.BEAM)
 	assert_eq(s.period_ticks, PERIOD, "one shot every 3 s (owner L1)")
 	assert_almost_eq(s.reach_m, 9.0, 0.001, "9 m")
-	assert_eq([s.beam_permille, s.rate_scale_permille, s.move_permille], [1000, 500, 750])  # W3-P5
+	assert_eq([s.beam_permille, s.rate_scale_permille, s.move_permille], [1000, 500, 0])  # W3-P5; O1c: no slow
 	var it := w.item_tables[W.item(w, &"gun_laser")]
 	assert_eq(it.slot_category, AttackSlots.FORM, "a Form card")
 	var def: ItemDefinition = W.repo().get_def(&"items", &"gun_laser")
@@ -116,7 +118,9 @@ func test_the_lance_pierces_every_enemy_in_a_line_of_six() -> void:
 	var w := _world([], [1.5, 2.5, 3.5, 4.5, 5.5, 6.5])
 	W.run(w, 2, 0, W.S)
 	for k in range(1, 7):
-		assert_eq(_dealt(w, k), [1, SHOT], "enemy %d takes the whole shot once" % k)
+		assert_eq(
+			_dealt(w, k), [1, _fall(SHOT, k - 1)], "enemy %d takes its share of the shot once" % k
+		)  # O1c: falloff
 
 
 func test_crit_rolls_once_per_enemy_hit() -> void:
@@ -192,7 +196,7 @@ func test_attack_speed_shortens_the_3_s_at_half_its_value() -> void:
 	assert_eq(_dealt(w, 1)[1], SHOT, "the damage a shot is fixed (Q4)")
 
 
-func test_the_hero_moves_at_three_quarters_while_the_lance_is_held() -> void:
+func test_the_hero_moves_at_full_speed_while_the_lance_is_held() -> void:
 	var a := _world([], [])
 	var b := _world([], [])
 	var c := _world([], [], true)
@@ -202,7 +206,8 @@ func test_the_hero_moves_at_three_quarters_while_the_lance_is_held() -> void:
 	W.run(c, 60, 0, W.S, 1024, right)
 	var fired := a.player_pos().x
 	var walked := b.player_pos().x
-	assert_almost_eq(fired / walked, 0.75, 0.02, "75 % while held (Q8)")
+	assert_almost_eq(fired / walked, 1.0, 0.001, "full speed while held (v0.11.0 O1c, owner)")
+	assert_eq(Laser.move_factor(a), 1.0, "the move factor is 1000 per mille while held")
 	assert_almost_eq(c.player_pos().x, walked, 0.001, "the orbs don't slow")
 	assert_eq(Laser.move_factor(b), 1.0, "not held: no slow")
 
@@ -336,3 +341,69 @@ func test_a_later_form_card_replaces_the_laser() -> void:
 	assert_false(w.items_owned.has(laser), "the Laser leaves")
 	assert_eq(AttackSlots.form_id(w), &"lab")
 	assert_false(Laser.held(Modifiers.bolt(w)), "the lance is gone")
+
+
+## The damage the lance should deal to the enemy at rank `k` (0 first) of a line, from the rule in integers: each enemy
+## 850 per mille of the one before, never under 400 per mille of the first (v0.11.0 O1c).
+func _fall(first: int, k: int) -> int:
+	var f := 1000
+	for _j in k:
+		f = maxi(400, f * 850 / 1000)
+	return maxi(1, first * f / 1000)
+
+
+func test_each_enemy_down_the_lance_takes_15_percent_less_than_the_one_before() -> void:
+	var at := []
+	for k in 6:
+		at.append(2.0 + 1.0 * k)
+	var w := _world([], at)
+	W.run(w, 2, 0, W.S)
+	var got := []
+	for i in range(1, 7):
+		got.append(_dealt(w, i)[1])
+	assert_eq(got, [150, 127, 108, 91, 78, 66], "150 x 1000, 850, 722, 613, 521, 442 per mille")
+	for k in 6:
+		assert_eq(got[k], _fall(SHOT, k))
+
+
+func test_the_falloff_stops_at_40_percent_of_the_first_hit() -> void:
+	var at := []
+	for k in 12:
+		at.append(1.5 + 0.6 * k)
+	var w := _world([], at)
+	W.run(w, 2, 0, W.S)
+	for k in 12:
+		assert_eq(_dealt(w, k + 1)[1], _fall(SHOT, k), "enemy %d" % k)
+	assert_eq(_dealt(w, 12)[1], 60, "the floor: 400 per mille of 150")
+	assert_eq(_dealt(w, 8)[1], 60, "held from the seventh on")
+
+
+func test_twins_second_lane_starts_again_at_full_damage() -> void:
+	var w := _world([&"gun_twin"], [3.0, 4.5, 6.0])
+	W.run(w, 2, 0, W.S)
+	var amounts := {}
+	for e in W.events(w, SimEvent.Kind.DAMAGE):
+		if e.tags & SimEvent.TAG_DOT:
+			continue
+		for i in range(1, 4):
+			if e.target_id == w.actors.ids[i]:
+				amounts[i] = amounts.get(i, []) + [e.amount]
+	var first: Array = amounts[1]
+	assert_eq(first.size(), 2, "both lanes hit the first enemy")
+	assert_eq(first[0], first[1], "each lane's first hit is full")
+	var second: Array = amounts[2]
+	assert_eq(second.size(), 2)
+	for a in second:
+		assert_eq(a, maxi(1, first[0] * 850 / 1000), "each lane's second hit is 15 % less")
+	var third: Array = amounts[3]
+	for a in third:
+		assert_lt(a, second[0], "and the third less again")
+
+
+func test_every_enemy_in_a_line_is_fed_three_hits_of_status_whatever_the_falloff() -> void:
+	var w := _world([&"venom_core"], [2.0, 3.0, 4.0, 5.0, 6.0, 7.0])
+	var per_hit := Modifiers.bolt(w).stacks_of(&"poison")
+	W.run(w, 2, 0, W.S)
+	var want := mini(3 * per_hit, ElementLevels.poison_cap(w))
+	for i in range(1, 7):
+		assert_eq(w.actors.poison_stacks[i], want, "enemy %d: 3 hits' worth" % i)
