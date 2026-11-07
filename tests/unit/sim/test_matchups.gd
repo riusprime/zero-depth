@@ -62,6 +62,7 @@ func test_every_kind_has_a_weakness_and_a_resistance_in_data() -> void:
 	)
 
 
+## v0.11.0 (owner, 2026-11-08: "Spread them out"): 34 kinds; bounds scaled from the 14-kind 2-3 / 1-2.
 func test_the_matrix_is_intransitive() -> void:
 	var weak := {}
 	var resists := {}
@@ -69,8 +70,8 @@ func test_the_matrix_is_intransitive() -> void:
 		weak[def.weak_to] = int(weak.get(def.weak_to, 0)) + 1
 		resists[def.resists] = int(resists.get(def.resists, 0)) + 1
 	for id: StringName in weak:
-		assert_between(int(weak[id]), 2, 3, "%s is good against 2-3 kinds" % id)
-		assert_between(int(resists.get(id, 0)), 1, 2, "%s is bad against 1-2 kinds" % id)
+		assert_between(int(weak[id]), 2, 5, "%s is good against 2-5 kinds" % id)
+		assert_between(int(resists.get(id, 0)), 1, 5, "%s is bad against 1-5 kinds" % id)
 	for id: StringName in resists:
 		assert_true(weak.has(id), "%s, resisted somewhere, is someone's weakness too" % id)
 
