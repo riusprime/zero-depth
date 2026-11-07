@@ -227,6 +227,8 @@ const BOMB_KEYS: Array[String] = [
 const LASER_KEYS: Array[String] = [
 	"lance_ticks",
 	"lance_feed",
+	"pierce_falloff_permille",
+	"pierce_floor_permille",
 	"halo_len_mm",
 	"halo_turn_deg",
 	"halo_share",

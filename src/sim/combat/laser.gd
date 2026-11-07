@@ -19,7 +19,12 @@ extends RefCounted
 ##   enemy hit. A kill runs its On Kill hooks.
 ## - Caps: a lance is no projectile. It never counts in the projectile caps (ShotCap) and launches none; what its hits
 ##   cast (a trigger's bolt) counts there as any other cast.
-## - The hero moves at move_permille (750) while the attack is held (move_factor(), World's move step).
+## - Falloff (v0.11.0 O1c, owner 2026-11-07): each enemy after the first on a path takes pierce_falloff_permille
+##   (850: 15 % less) of the one before, never below pierce_floor_permille (400) of the first (falloff_next()).
+##   Order is the path's (a path's `hits` run nearest first, legs in order; Ring, an area, is flat); each kind and lane
+##   (Twin, Split, Backfire, Halo, Echo's strike) starts again at 1000.
+##   Statuses are not scaled: every enemy is still fed lance_feed hits' worth.
+## - The lance does not slow the hero (v0.11.0 O1c: move_permille is no longer set; move_factor() is 1).
 ## Pure: integer maths and Collide's sweeps, no randomness, one clock.
 
 ## Twin's lances sit GunForms.TWIN_GAP_RADII of this apart (about 0.5 m).
@@ -53,7 +58,8 @@ static func firing(w: World) -> bool:
 	return active(w) and PlayerKit.shooting(w) and PlayerKit.armed(w) and w.swing_t == 0
 
 
-## The hero's move speed factor now: the Laser's move_permille while it is held to fire, else 1.
+## The hero's move speed factor now: the Laser's move_permille while it is held to fire, else 1. The lance sets none
+## (v0.11.0 O1c, owner: full speed while held), so this is 1; the hook stays for a spec that does.
 static func move_factor(w: World) -> float:
 	if not firing(w):
 		return 1.0
@@ -78,6 +84,15 @@ static func shot_damage(w: World, milli: int) -> int:
 	if milli <= 0:
 		return 0
 	return maxi(1, milli * LaserMods.param(w, "lance_ticks") / 1000)
+
+
+## The share (per mille of the first hit) of the enemy after one that took `f`: pierce_falloff_permille of it, never
+## below pierce_floor_permille (v0.11.0 O1c).
+static func falloff_next(w: World, f: int) -> int:
+	return maxi(
+		LaserMods.param(w, "pierce_floor_permille"),
+		f * LaserMods.param(w, "pierce_falloff_permille") / 1000
+	)
 
 
 ## The lances of `spec` from `origin` along `angle` now (pure read): one per lane, {from, to, hits (actor indices,
@@ -134,6 +149,7 @@ static func fire(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var root := w.take_root()
 	var landed := false
 	var seen := {}
+	var rank := {}  # mark -> the next enemy's share, per mille
 	for b in beams:
 		var li := int(b["lane"])
 		var kind: StringName = b["kind"]
@@ -155,6 +171,10 @@ static func fire(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 			if seen.has(mark + str(i)):  # a kind hits an enemy once a shot
 				continue
 			seen[mark + str(i)] = true
+			if kind != LaserMods.K_RING:  # v0.11.0 O1c: each enemy down the path takes less (ring: an area, flat)
+				var f: int = rank.get(mark, 1000)
+				c.damage = maxi(1, part * f / 1000)
+				rank[mark] = falloff_next(w, f)
 			landed = hit(w, spec, c, i, b["from"], pts[k], true) or landed
 		if kind == LaserMods.K_MAIN and bool(b["end"]):
 			Attacks.run_on_end(w, spec, c, b["to"])

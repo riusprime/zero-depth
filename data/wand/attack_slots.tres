@@ -20,6 +20,8 @@ ruled = Array[StringName]([])
 params = {
 "lance_ticks": 30,
 "lance_feed": 3,
+"pierce_falloff_permille": 850,
+"pierce_floor_permille": 400,
 "halo_len_mm": 3000,
 "halo_turn_deg": 30,
 "halo_share": 400,

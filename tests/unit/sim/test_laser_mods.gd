@@ -54,6 +54,15 @@ func _hits_id(w: World, id: int) -> Array:
 	return out
 
 
+## The damage the enemy at rank `k` (0 first) of a path takes of a `first` hit: 850 per mille of the one before, never
+## under 400 (v0.11.0 O1c).
+func _fall(first: int, k: int) -> int:
+	var f := 1000
+	for _j in k:
+		f = maxi(400, f * 850 / 1000)
+	return maxi(1, first * f / 1000)
+
+
 func _total(w: World, idx: int) -> int:
 	var t := 0
 	for h: Dictionary in _hits(w, idx):
@@ -213,7 +222,11 @@ func test_l4_homing_respects_walls() -> void:
 			assert_false(bool(b["wall"]), "no leg runs into the wall")
 	W.run(w, 2, 0, W.S, 421)
 	assert_eq(_total(w, 2), SHOT, "the one in sight is hit")
-	assert_eq(_total(w, 1), SHOT, "and the one behind the wall, round it")
+	assert_eq(
+		_total(w, 1),
+		_fall(SHOT, 1),
+		"and the one behind the wall, round it (O1c: second, 15 % less)"
+	)
 	var alone := _world([&"gun_homing"], [Vector2(3.0, 0.0)])
 	alone.add_wall_now(Obb.make(Vector2(2.0, 0.0), Vector2(0.2, 1.0), 0))
 	assert_eq(
@@ -231,9 +244,11 @@ func test_l4_homing_bends_one_smooth_path_through_the_nearest_enemy() -> void:
 	assert_lte(_most_turn(main), BEND_MAX, "no leg turns more than 12 degrees from the one before")
 	for k in main.size() - 1:
 		assert_lte(_len(main[k]), 0.751, "short legs on the arc (home_step_mm)")
-	var tip: Vector2 = main[main.size() - 1]["to"]
 	assert_almost_eq(
-		tip.distance_to(w.player_pos()), 9.0, 0.02, "then straight on to the full 9 m range (Q28)"
+		_len(main[main.size() - 1]),
+		LaserMods.TAIL_MAX_M,
+		0.05,
+		"then straight on, TAIL_MAX_M with no wall (v0.11.0 O1c; was the 9 m range)"
 	)
 	var last := main[main.size() - 1]
 	var start: Vector2 = main[0]["from"]
@@ -268,7 +283,7 @@ func test_l4_homing_threads_five_enemies_nearest_first_in_one_shot() -> void:
 	gut.p("O1 homing chain: %d legs, the most turn %d units" % [main.size(), _most_turn(main)])
 	W.run(w, 2, 0, W.S)
 	for k in [1, 2, 3, 4, 5]:
-		assert_eq(_total(w, k), SHOT, "enemy %d is hit once by the shot" % k)
+		assert_eq(_total(w, k), _fall(SHOT, k - 1), "enemy %d is hit once by the shot" % k)
 	assert_eq(_total(w, 6), 0, "the far one behind isn't")
 	var plain := _world([], at)
 	W.run(plain, 2, 0, W.S)
@@ -314,8 +329,9 @@ func test_l6_echo_strikes_the_same_path_again_0_4_s_later_at_half() -> void:
 	for idx in [1, 2]:
 		var hits := _hits(w, idx)
 		assert_eq(hits.size(), 2, "enemy %d: the shot, then its echo" % idx)
-		assert_eq(hits[0]["amount"], SHOT, "the shot")
-		assert_eq(hits[1]["amount"], SHOT / 2, "the echo at 50 % (Q6)")
+		var rank: int = idx - 1  # O1c: the second enemy takes 15 % less, in the shot and the echo
+		assert_eq(hits[0]["amount"], _fall(SHOT, rank), "the shot")
+		assert_eq(hits[1]["amount"], _fall(SHOT / 2, rank), "the echo at 50 % (Q6)")
 		assert_eq(int(hits[1]["tick"]) - int(hits[0]["tick"]), 24, "0.4 s later")
 	assert_eq(w.mx.lz_echo_due.size(), 0, "the strike is spent")
 	var v := _world([&"gun_echo"], [])
@@ -479,4 +495,33 @@ func test_l4_homing_runs_along_a_pack_in_one_smooth_path() -> void:
 	gut.p("O1 homing pack: %d legs, the most turn %d units" % [main.size(), _most_turn(main)])
 	W.run(w, 2, 0, W.S)
 	for k in range(1, 6):
-		assert_eq(_total(w, k), SHOT, "enemy %d is hit once" % k)
+		assert_eq(_total(w, k), _fall(SHOT, k - 1), "enemy %d is hit once" % k)
+
+
+## v0.11.0 O1c (owner): after Homing's last target the lance runs straight on to the first wall, not to the 9 m reach.
+func test_o1c_homing_tail_runs_on_to_a_wall_20_m_away() -> void:
+	var w := _world([&"gun_homing"], [Vector2(3.0, 0.0)])
+	w.add_wall_now(Obb.make(Vector2(20.0, 0.0), Vector2(0.2, 6.0), 0))
+	var main := _kind(_trace(w, 0), &"main")
+	var last := main[main.size() - 1]
+	assert_true(bool(last["wall"]), "the tail ends on the wall")
+	assert_almost_eq((last["to"] as Vector2).x, 19.8, 0.5, "within 0.5 m of the wall's face")
+	assert_gt((last["to"] as Vector2).distance_to(w.player_pos()), 15.0, "far past the 9 m reach")
+
+
+func test_o1c_homing_tail_without_a_wall_stops_at_the_cap() -> void:
+	var w := _world([&"gun_homing"], [Vector2(3.0, 0.0)])
+	var main := _kind(_trace(w, 0), &"main")
+	var last := main[main.size() - 1]
+	assert_false(bool(last["wall"]))
+	assert_almost_eq(_len(last), LaserMods.TAIL_MAX_M, 0.05, "TAIL_MAX_M (40 m) of straight run")
+
+
+func test_o1c_without_homing_the_lance_still_ends_at_9_m() -> void:
+	var w := _world([&"gun_ricochet"], [Vector2(3.0, 0.0)])
+	var main := _kind(_trace(w, 0), &"main")
+	var tip: Vector2 = main[main.size() - 1]["to"]
+	assert_lt(tip.distance_to(w.player_pos()), 9.5, "the reach (from the hero's edge), no farther")
+	var plain := W.world(&"gun", [&"gun_laser"], [[Vector2(3.0, 0.0), HP]])
+	var b := Laser.trace(plain, Modifiers.bolt(plain), plain.player_pos(), 0)[0]
+	assert_almost_eq(_len(b), 9.0, 0.001, "a plain lance: 9 m")
