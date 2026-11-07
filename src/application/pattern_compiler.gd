@@ -142,6 +142,7 @@ static func compile_cadence(def: BossDefinition, t: BossTable) -> void:
 	t.sig_first_ticks = SimTick.seconds_to_ticks(def.signature_first_seconds)
 	_compile_twin(def, t)
 	ShadeCompiler.compile_boss(def, t)  # v0.9.0 NB4: the Lantern Shade's room light
+	QuakeCompiler.compile_boss(def, t)  # v0.11.0 O3: the Gatekeeper's quake pillars
 	for a in def.attacks:  # v0.9.0 NB3: the Clockwork Judge records for its echo (its first echo's numbers)
 		if a != null and a.move == &"echo":
 			t.echo_gap_ticks = echo_gap(a)

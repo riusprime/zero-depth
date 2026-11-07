@@ -21,6 +21,13 @@ extends Node3D
 ## (an item locked at progress 1000 is its strike tick): each disc throws up a cluster of DISC_SPIKES spikes, the tall
 ## one in its middle DISC_TALL times a lane spike's height, the rest leaning out round it to the disc's edge.
 
+## v0.11.0 O3 (owner L5, Q9 a): the Gatekeeper's quake pillars (WorldReader.boss_quake_pillars, BossQuake.ring_state)
+## stand as taller, wider clusters of the same stone spikes, their hot cracks glowing with the 3 s pulse: dim, warming
+## as the ring grows over its warning, flaring on the pulse. The ring (_ring, flat unshaded bands rebuilt each draw)
+## grows from the pillar out to the very radius the pulse hits, with a faint outline of that radius while it grows,
+## and flashes as it strikes. A pillar the sim removes (its Shock Lanes shattered it) bursts into rubble, debris, dust
+## and a hot flash (_shatter, a strike without lanes). Read only; the pillar, the ring and its clock are the sim's.
+
 const LIFE_TICKS := 36.0
 const RISE_TICKS := 5.0
 const HOLD_TICKS := 20.0
@@ -48,6 +55,17 @@ const PILLAR_TALL := 1.9
 const PILLAR_SATELLITES := 3
 const PILLAR_WARN_TICKS := 60.0
 const PILLAR_SINK_TICKS := 18.0
+## v0.11.0 O3: a quake pillar's cluster: its tall spike's height (m), its width over the pillar's side, how many
+## shorter spikes stand round it; the crack's heat at rest, the ticks it flares after a pulse; the ring's band width
+## (m), its colour, and the rubble a shattered pillar throws up.
+const QUAKE_TALL := 2.7
+const QUAKE_WIDE := 1.2
+const QUAKE_SATELLITES := 4
+const QUAKE_REST_HEAT := 0.18
+const QUAKE_FLARE_TICKS := 14.0
+const RING_BAND_M := 0.14
+const RING_COLOR := Color(1.0, 0.42, 0.15)
+const RUBBLE := 6
 
 const SHADER := """
 shader_type spatial;
@@ -110,6 +128,13 @@ var _strikes: Array[Dictionary] = []
 ## v0.8.0 BS1 (owner O5, S1): the pillars standing now (WorldReader.boss_pillars: [center, half, from, until]).
 var _pillars: Array = []
 var _pillars_drawn := 0
+## v0.11.0 O3: the quake pillars standing now (WorldReader.boss_quake_pillars), the ones seen last sync (centre by
+## key, to shatter the ones gone), and the ring's flat mesh.
+var _quakes: Array = []
+var _quake_seen := {}
+var _ring := MeshInstance3D.new()
+var _ring_mesh := ImmediateMesh.new()
+var _ring_bands := 0
 ## Strikes already raised, by key (the boss's id and the marker's lanes), with their tick.
 var _seen := {}
 var _tick := 0
@@ -145,12 +170,24 @@ func _init() -> void:
 	_node.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_node.extra_cull_margin = 16384.0  # the instances spread over the whole room
 	add_child(_node)
+	_ring.name = "QuakeRings"  # v0.11.0 O3: the quake pillars' rings
+	_ring.mesh = _ring_mesh
+	var rm := StandardMaterial3D.new()
+	rm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	rm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	rm.vertex_color_use_as_albedo = true
+	rm.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_ring.material_override = rm
+	_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_ring.extra_cull_margin = 16384.0
+	add_child(_ring)
 
 
 func sync(reader: WorldReader) -> void:
 	if reader.tick() < _tick:  # a new floor's world: its ticks start again
 		_strikes.clear()
 		_seen.clear()
+		_quake_seen.clear()
 	_tick = reader.tick()
 	for i in range(reader.actor_count() if reader.any_boss() else 0):
 		var tg := reader.telegraph(i)
@@ -182,11 +219,12 @@ func sync(reader: WorldReader) -> void:
 			keep.append(s)
 	_strikes = keep
 	_pillars = reader.boss_pillars()  # v0.8.0 BS1
+	_sync_quakes(reader.boss_quake_pillars())  # v0.11.0 O3
 	_draw(float(_tick))
 
 
 func _process(_delta: float) -> void:
-	if not _strikes.is_empty() or not _pillars.is_empty():
+	if not _strikes.is_empty() or not _pillars.is_empty() or not _quakes.is_empty():
 		_draw(float(_tick) + Engine.get_physics_interpolation_fraction())
 
 
@@ -475,6 +513,8 @@ func _draw(now: float) -> void:
 			n += 1
 			_bases.append(sp[0])
 	n = _draw_pillars(buf, n, now, still)
+	n = _draw_quakes(buf, n, now, still)  # v0.11.0 O3
+	_draw_rings(now, still)
 	var mm := _node.multimesh
 	if n > 0:
 		buf.resize(mm.instance_count * 16)
@@ -599,3 +639,182 @@ func draw_fx(layer: VfxCore) -> void:
 		var marks: Array = s["marks"]
 		for k in marks.size():
 			layer.mark(sd * 16 + k, BossStrikeFx.crack_mark(), marks[k], 1.1, CRACK_MARK)
+
+
+# --- v0.11.0 O3: the quake pillars -------------------------------------------------------------------------------
+
+
+## The quake pillars standing now; one standing at the last sync and gone now (its lanes shattered it, or its boss
+## fell) bursts.
+func _sync_quakes(list: Array) -> void:
+	var now := {}
+	for q: Dictionary in list:
+		now["%s:%d" % [str(q["center"]), int(q["rose"])]] = q["center"]
+	for key: String in _quake_seen.keys():
+		if not now.has(key):
+			_shatter(_quake_seen[key], _tick)
+	_quake_seen = now
+	_quakes = list
+
+
+## Quake pillars drawn in the last draw (tests and the shots).
+func quake_count() -> int:
+	return _quakes.size()
+
+
+## Ring bands drawn in the last draw (tests: a growing ring, its outline, a flash).
+func ring_bands() -> int:
+	return _ring_bands
+
+
+## [ticks since pillar q's last pulse (or its rise), the ring's growth 0..1 over its warning (-1 outside it), the
+## crack's flare 0..1 after a pulse] at view time `now`. The reader's tick is the next one to run: a pulse struck on
+## the tick before it.
+static func quake_clock(q: Dictionary, now: float) -> Array:
+	var pulse := float(q["pulse_ticks"])
+	var warn := float(q["warn_ticks"])
+	var age := now - float(q["rose"]) - 1.0
+	var into := fposmod(age, pulse)
+	var grow := -1.0
+	if into >= pulse - warn:
+		grow = clampf((into - (pulse - warn)) / maxf(1.0, warn), 0.0, 1.0)
+	var flare := 0.0
+	if age >= pulse and into < QUAKE_FLARE_TICKS:
+		flare = 1.0 - into / QUAKE_FLARE_TICKS
+	return [into, grow, flare]
+
+
+## Each quake pillar: a tall spike filling its square and QUAKE_SATELLITES shorter ones round it, risen with the phase,
+## its cracks at rest heat, warming as its ring grows and flaring on the pulse. Appends to `buf` from instance n.
+func _draw_quakes(buf: PackedFloat32Array, n: int, now: float, still: bool) -> int:
+	for q: Dictionary in _quakes:
+		var c: Vector2 = q["center"]
+		var h := float(q["half"])
+		var age := now - float(q["rose"]) + 1.0
+		var e := 1.0 if age >= RISE_TICKS else extent(age, still)
+		if e <= 0.001:
+			continue
+		var clock := quake_clock(q, now)
+		var heat := QUAKE_REST_HEAT
+		if float(clock[1]) >= 0.0:
+			heat += (1.0 - QUAKE_REST_HEAT) * float(clock[1]) * float(clock[1])
+		heat = maxf(heat, float(clock[2]))
+		var sd := int(absf(c.x) * 131.0) + int(absf(c.y) * 17.0) * 7 + 3
+		for j in QUAKE_SATELLITES + 1:
+			if n >= MAX_SPIKES:
+				return n
+			var tall := QUAKE_TALL * (0.95 + 0.1 * VfxCore.h(sd, j))
+			var width := h * 2.0 * QUAKE_WIDE
+			var at := c
+			var turn := Basis(Vector3.UP, TAU * VfxCore.h(sd + 1, j))
+			if j > 0:
+				var ang := TAU * (j - 1) / QUAKE_SATELLITES + 0.5 * VfxCore.h(sd + 2, j)
+				at = c + Vector2(cos(ang), sin(ang)) * h * 0.85
+				tall *= 0.5
+				width *= 0.45
+				var out := (SimPlane.to_3d(at) - SimPlane.to_3d(c)).normalized()
+				turn = Basis(out.cross(Vector3.UP).normalized(), -0.22) * turn
+			var b := Basis(turn.x * width, turn.y * tall, turn.z * width)
+			var base := SimPlane.to_3d(at, 0.0)
+			buf.append_array(_instance(b, base - Vector3.UP * (tall * (1.0 - e)), heat, sd + j))
+			n += 1
+			_bases.append(base)
+	return n
+
+
+## One spike's 16 floats (its basis and origin, its heat and seed).
+static func _instance(b: Basis, o: Vector3, heat: float, sd: int) -> PackedFloat32Array:
+	return PackedFloat32Array(
+		[
+			b.x.x,
+			b.y.x,
+			b.z.x,
+			o.x,
+			b.x.y,
+			b.y.y,
+			b.z.y,
+			o.y,
+			b.x.z,
+			b.y.z,
+			b.z.z,
+			o.z,
+			heat,
+			VfxCore.h(sd, 3),
+			0.0,
+			0.0
+		]
+	)
+
+
+## The rings: while a pillar's warning runs, a hot band grows from the pillar out to the radius its pulse hits, over a
+## faint outline of that radius; as it strikes, the band flashes at that radius and fades. Rebuilt every draw.
+func _draw_rings(now: float, still: bool) -> void:
+	_ring_mesh.clear_surfaces()
+	var bands := []
+	for q: Dictionary in _quakes:
+		var c: Vector2 = q["center"]
+		var r := float(q["ring"])
+		var clock := quake_clock(q, now)
+		var grow := float(clock[1])
+		if grow >= 0.0:
+			var inner := float(q["half"]) * 1.45
+			bands.append([c, lerpf(inner, r, grow), RING_BAND_M, 0.45 + 0.45 * grow])
+			bands.append([c, r, RING_BAND_M * 0.4, 0.3])
+		var flare := float(clock[2])
+		if flare > 0.0:
+			var u := 1.0 - flare
+			var spread := 0.0 if still else 0.08 * u
+			bands.append([c, r * (1.0 + spread), RING_BAND_M * (0.6 + 1.6 * flare), flare])
+	_ring_bands = bands.size()
+	if bands.is_empty():
+		return
+	_ring_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
+	for bd: Array in bands:
+		_band(bd[0], float(bd[1]), float(bd[2]), float(bd[3]))
+	_ring_mesh.surface_end()
+
+
+## A flat annulus round c at radius r, `width` wide, of RING_COLOR at alpha a.
+func _band(c: Vector2, r: float, width: float, a: float) -> void:
+	var steps := 40
+	var col := Color(RING_COLOR, clampf(a, 0.0, 1.0))
+	var r0 := maxf(0.0, r - width * 0.5)
+	var r1 := r + width * 0.5
+	for s in steps:
+		var a0 := TAU * s / steps
+		var a1 := TAU * (s + 1) / steps
+		var p := [
+			SimPlane.to_3d(c + Vector2(cos(a0), sin(a0)) * r0, 0.045),
+			SimPlane.to_3d(c + Vector2(cos(a0), sin(a0)) * r1, 0.045),
+			SimPlane.to_3d(c + Vector2(cos(a1), sin(a1)) * r1, 0.045),
+			SimPlane.to_3d(c + Vector2(cos(a1), sin(a1)) * r0, 0.045)
+		]
+		for k: int in [0, 1, 2, 0, 2, 3]:
+			_ring_mesh.surface_set_color(col)
+			_ring_mesh.surface_add_vertex(p[k])
+
+
+## A shattered quake pillar at c on `tick`: short broken spikes thrown up round it and sinking, rock debris, dust, a hot
+## flash and a crack mark (draw_fx), as a strike without lanes.
+func _shatter(c: Vector2, tick: int) -> void:
+	var sd := tick * 37 + int(absf(c.x) * 89.0) + int(absf(c.y) * 11.0)
+	var spikes := []
+	var dust := []
+	for j in RUBBLE:
+		var ang := TAU * j / RUBBLE + 0.6 * VfxCore.h(sd, j)
+		var at := c + Vector2(cos(ang), sin(ang)) * (0.3 + 0.5 * VfxCore.h(sd + 1, j))
+		var height := lerpf(0.35, 0.7, VfxCore.h(sd + 2, j))
+		var width := lerpf(0.25, 0.4, VfxCore.h(sd + 3, j))
+		var out := (SimPlane.to_3d(at) - SimPlane.to_3d(c)).normalized()
+		var turn := Basis(out.cross(Vector3.UP).normalized(), -0.7) * Basis(Vector3.UP, TAU * ang)
+		var b := Basis(turn.x * width, turn.y * height, turn.z * width)
+		spikes.append(
+			[SimPlane.to_3d(at, 0.0), b, height, VfxCore.h(sd + 4, j), VfxCore.h(sd + 5, j)]
+		)
+		dust.append(SimPlane.to_3d(at, 0.0))
+	while _strikes.size() >= MAX_STRIKES:
+		_strikes.pop_front()
+	var mark := SimPlane.to_3d(c, 0.0)
+	_strikes.append(
+		{"tick": tick, "seed": sd, "center": mark, "spikes": spikes, "marks": [mark], "dust": dust}
+	)

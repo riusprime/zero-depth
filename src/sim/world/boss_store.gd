@@ -177,6 +177,13 @@ var wv_x := PackedFloat32Array()
 var wv_y := PackedFloat32Array()
 var wv_len := PackedFloat32Array()
 var wv_run := PackedFloat32Array()
+## v0.11.0 O3 (owner L5, Q9 a; BossQuake): one entry per live boss that has raised quake pillars (the Gatekeeper,
+## from its phase 2): its actor id, the phase it counts breaks in, and the stuns its broken pillars gave in that phase.
+## The pillars themselves are S1 pillars that never sink by time (pillar_until BossQuake.UNTIL). Hashed only while an
+## entry exists (WorldSnapshot.ADDED_SINCE_V05: an older save has none).
+var quake_boss := PackedInt32Array()
+var quake_phase := PackedInt32Array()
+var quake_stuns := PackedInt32Array()
 
 
 func size() -> int:
@@ -272,6 +279,11 @@ func hash_into(h: StateHasher) -> void:
 			h.add_ints(get(f))
 		for f: StringName in [&"wv_x", &"wv_y", &"wv_len", &"wv_run"]:
 			h.add_f32s(get(f))
+	if not quake_boss.is_empty():  # v0.11.0 O3: only while a boss with quake pillars lives
+		h.add_int(-7)
+		h.add_ints(quake_boss)
+		h.add_ints(quake_phase)
+		h.add_ints(quake_stuns)
 
 
 ## v0.9.5 BH4: the stream entry of boss `boss_id`, or -1.
@@ -437,3 +449,15 @@ func remove_javelin(k: int) -> void:
 		var ai: PackedInt32Array = get(f)
 		ai.remove_at(k)
 		set(f, ai)
+
+
+## v0.11.0 O3: the quake entry of boss `boss_id`, or -1.
+func quake_of(boss_id: int) -> int:
+	return quake_boss.find(boss_id)
+
+
+## v0.11.0 O3: removes quake entry k.
+func remove_quake(k: int) -> void:
+	quake_boss.remove_at(k)
+	quake_phase.remove_at(k)
+	quake_stuns.remove_at(k)

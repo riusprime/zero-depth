@@ -93,6 +93,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"StatTable",
 	&"HeatTable",
 	&"BossAttackTable",
+	&"QuakeTable",  # v0.11.0 O3: the Gatekeeper's quake pillars (BossTable.quake, content)
 	&"SwingStep",
 	&"SkillTable",
 	&"OverrunTable",  # v0.4.0 AB
@@ -353,6 +354,9 @@ const ADDED_SINCE_V05 := {
 		&"wv_y",
 		&"wv_len",
 		&"wv_run",
+		&"quake_boss",  # v0.11.0 O3: the quake pillars' break count (an older save has none)
+		&"quake_phase",
+		&"quake_stuns",
 	],
 	&"ProjectileStore":
 	[

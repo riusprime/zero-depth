@@ -103,6 +103,10 @@ var arena_template := 0
 @export var flank_m := 4.5
 @export var anger_speed_permille := 1400
 @export var anger_seconds := 3.0
+## v0.11.0 O3 (owner L5, Q9 a; QuakeRules.SPEC, BossQuake): the quake pillars this boss raises from a phase on (empty
+## = none), and the recap line of a pulse that kills.
+@export var quake := {}
+@export var quake_cause_key: StringName
 
 
 func category() -> StringName:
@@ -135,6 +139,7 @@ func validate() -> Array[ValidationIssue]:
 	_check_cadence(issues)
 	_check_twin(issues)
 	HardRules.validate_streams(self, issues)  # v0.9.5 BH4: the ring stream and the waves
+	QuakeRules.validate(self, issues)  # v0.11.0 O3: the quake pillars
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1

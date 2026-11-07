@@ -110,6 +110,12 @@ static func pillar_obbs(w: World) -> Array[Obb]:
 	return out
 
 
+## v0.11.0 O3: a pillar of boss `boss_id` at p (half side h) standing `ticks` (BossQuake's quake pillars), a wall.
+## The caller sets the flow field (set_nav_extra) once it has added its pillars.
+static func add_pillar(w: World, boss_id: int, p: Vector2, h: float, ticks: int) -> void:
+	_add_pillar(w, boss_id, p, h, ticks)
+
+
 static func _add_pillar(w: World, boss_id: int, p: Vector2, h: float, ticks: int) -> void:
 	var bs := w.bosses
 	bs.pillar_x.append(p.x)
@@ -375,6 +381,7 @@ static func advance(w: World) -> void:
 	BossShade.advance(w)  # v0.9.0 NB4: the Lantern Shade's dark and its lanterns
 	BossStream.advance(w)  # v0.9.5 BH4: the Tidecaller's ring stream and crossing waves
 	BossInterphase.advance(w)  # v0.9.5 BH6: the Fallen's interphase hazards and its return
+	BossQuake.advance(w)  # v0.11.0 O3: the Gatekeeper's quake pillars pulse
 
 
 ## World._remove_dead: boss `boss_id` is gone: its pillars sink and its javelins go (its eggs crumble on their own).
@@ -392,6 +399,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 	BossJudge.on_boss_gone(w, boss_id)  # v0.9.0 NB3: the Clockwork Judge's echo
 	BossShade.on_boss_gone(w, boss_id)  # v0.9.0 NB4: the Lantern Shade's room relights
 	BossStream.on_boss_gone(w, boss_id)  # v0.9.5 BH4: its streams and waves
+	BossQuake.on_boss_gone(w, boss_id)  # v0.11.0 O3: its break count and the hint
 
 
 ## The recap's death line for a cause past LATE_CAUSE (a late part): its attack's late_cause_key (its own cause_key

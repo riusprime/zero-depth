@@ -219,6 +219,8 @@ static func tick_dot(
 			amount = Matchups.scale(amount, mu[0])
 			tags |= mu[1]
 		amount = Constellations.scale(amount, Constellations.hunt_permille(w, target))  # v0.10.5 W3-P10c: C8
+		if BossQuake.stunned(w, target):  # v0.11.0 O3 (Q9 a): the stunned Gatekeeper takes +50 % ticks too
+			amount = amount * BossQuake.taken_permille(w, target) / 1000
 	var root := w.take_root()
 	return _apply(
 		w, target, amount, source_id, owner_id, root, tags, a.pos(target), -1, 0, effect_id

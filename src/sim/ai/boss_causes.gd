@@ -23,6 +23,8 @@ static func key(w: World) -> StringName:  # gdlint: ignore=max-returns
 		return &""
 	if w.killer_attack == BossChallenge.ARENA_ATTACK:
 		return &"CAUSE_BOSS_ARENA"  # BX: the closing band
+	if w.killer_attack == BossQuake.ATTACK and t.quake != null:
+		return t.quake.cause_key  # v0.11.0 O3: a quake pillar's pulse
 	if w.killer_attack >= BossSignatures.LATE_CAUSE:  # v0.8.0 BS1: a javelin coming back, an egg's burst
 		return BossSignatures.late_cause_key(t, w.killer_attack)
 	if w.killer_attack >= 0 and w.killer_attack < t.attacks.size():

@@ -260,6 +260,7 @@ static func resolve_marks(w: World, i: int, b: int, atk: BossAttackTable, st: in
 				if Collide.circle_vs_obb(p, pr, o) != Vector2.ZERO:
 					BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, o.center)
 					break
+			BossQuake.lanes_strike(w, i, k, atk)  # v0.11.0 O3 (L5): a lane through a quake pillar shatters it
 
 
 ## v0.7.5 BF2 (the Brood Mother's Egg Storm): marker k of a `marks` attack with a pattern is an egg's landing; `local`
