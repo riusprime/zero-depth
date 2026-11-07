@@ -4,6 +4,9 @@ Only what is **still open**: tests, decisions and art. Anything you answered or 
 answers live in [`roadmap/v0.8.0/PLAN.md`](roadmap/v0.8.0/PLAN.md) (owner lines O39–O50 and "Owner decisions"). Last
 rewritten 2026-10-16 from your annotated copy, v0.8.0 (branch `claude/lucid-fermat-9wv2tf`).
 
+- [ ] **v0.11.0 questions (2026-11-07):** Q1–Q27 in
+  [`roadmap/v0.11.0/OWNER_QUESTIONS.md`](roadmap/v0.11.0/OWNER_QUESTIONS.md) (scope, Laser, bosses, hordes, spells,
+  enemies, rooms), and the Laser sketch.
 - [ ] **The v0.10.5 playtest (2026-11-06):** the build, what to try and the questions are in
   [`roadmap/v0.10.5/PLAYTEST.md`](roadmap/v0.10.5/PLAYTEST.md) (branch `claude/v0100-cleanup`, then its PR into `main`).
 
