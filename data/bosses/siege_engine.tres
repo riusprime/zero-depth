@@ -59,7 +59,7 @@ shape_params = {
 "count": 5,
 "radius_m": 1.45,
 "safe_cells": 2,
-"stagger_seconds": 1.0,
+"stagger_seconds": 1.2,
 "volleys": 2
 }
 telegraph_seconds = 1.6
@@ -84,7 +84,7 @@ shape_params = {
 "count": 5,
 "radius_m": 1.45,
 "safe_cells": 2,
-"stagger_seconds": 0.9,
+"stagger_seconds": 1.2,
 "volleys": 3
 }
 telegraph_seconds = 1.6

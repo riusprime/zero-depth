@@ -83,6 +83,9 @@ const SHORT := {
 ## pack's files stay as they are).
 const HIDE := {&"p10l_meteor_land": ["Core", "Smoke", "Impact_Streaks2"]}
 
+## v0.11.0 S3: the children spawn()'s `hide` may switch off (and back on for the next user of a pooled instance).
+const HIDE_PER_SPAWN: Array[String] = ["Smoke"]
+
 static var _shared: PackFxDefinition
 ## How floor loads warm the pack (VX-W): &"menu" (PackFxSessionWarm warms at the main menu; a load warms what is
 ## left), &"session" (the first load warms everything, later loads nothing), &"load" (every load warms every id: VX0),
@@ -174,7 +177,13 @@ func pooled(effect_id: StringName) -> int:
 ## length; 0 keeps it until the caller's release() (a bolt, a zone, a status that follows something); above 0, seconds.
 ## v0.10.0 FX: `speed` plays the scene that many times faster (a Blink's flash pops in a fraction of its length).
 func spawn(
-	effect_id: StringName, pos: Vector3, scale := 1.0, colors := {}, life := -1.0, speed := 1.0
+	effect_id: StringName,
+	pos: Vector3,
+	scale := 1.0,
+	colors := {},
+	life := -1.0,
+	speed := 1.0,
+	hide: Array = []
 ) -> Node3D:
 	var k := _def.row(effect_id) if _def != null else -1
 	if k < 0:
@@ -191,6 +200,14 @@ func spawn(
 		var child := node.get_node_or_null(hidden) as Node3D
 		if child != null:
 			child.visible = false
+	# v0.11.0 S3: a spawn's own `hide` (the Mortar Grid's shell drops the explosion's Smoke); a pooled instance shows
+	# the children it is not hiding again, so one strike's choice never leaks into the next.
+	for part: String in HIDE_PER_SPAWN:
+		if HIDE.get(effect_id, []).has(part):
+			continue
+		var part_node := node.get_node_or_null(part) as Node3D
+		if part_node != null:
+			part_node.visible = not hide.has(part)
 	node.scale = Vector3.ONE * scale * _def.scales[k]
 	if node.is_inside_tree():
 		node.global_position = pos

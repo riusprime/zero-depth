@@ -336,11 +336,11 @@ static func grid_discs(w: World, i: int, k: int) -> PackedVector2Array:
 
 
 ## v0.7.5 BF3: volley k's state `t` ticks into a grid attack (mark_state's codes): the first volley's board tracks the
-## player until the lock; each later volley (the board stays where it locked) shows only for its own lock_ticks
-## before it strikes, so one colour flashes at a time.
+## player until the lock; each later volley (the board stays where it locked) stays hidden until the volley before it
+## lands, then shows (locked) for one mark_gap_ticks before it strikes (v0.11.0 S3, owner Q3): one colour at a time.
 static func grid_state(atk: BossAttackTable, k: int, t: int) -> int:
 	var strike := k * atk.mark_gap_ticks + atk.windup_ticks
-	if k > 0 and t < strike - atk.lock_ticks:
+	if k > 0 and t < strike - atk.mark_gap_ticks:
 		return -1
 	if t < atk.windup_ticks - atk.lock_ticks:
 		return 0
@@ -350,7 +350,7 @@ static func grid_state(atk: BossAttackTable, k: int, t: int) -> int:
 
 
 ## v0.7.5 BF3: a grid's telegraph: &"marks" with one disc item per circle of each volley showing now (its progress
-## over its own showing time: the whole windup for the first, the lock for the later ones).
+## over its own showing time: the whole windup for the first, one mark_gap for the later ones).
 static func grid_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionary:
 	var t := attack_ticks(w, i, atk)
 	var items: Array[Dictionary] = []
@@ -360,7 +360,7 @@ static func grid_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionary
 		var st := grid_state(atk, k, t)
 		if st < 0 or st > 2:
 			continue
-		var span := atk.windup_ticks if k == 0 else atk.lock_ticks
+		var span := atk.windup_ticks if k == 0 else atk.mark_gap_ticks
 		var t0 := k * atk.mark_gap_ticks + atk.windup_ticks - span
 		var pr := clampi((t - t0) * 1000 / maxi(1, span), 0, 1000)
 		if first < 0:

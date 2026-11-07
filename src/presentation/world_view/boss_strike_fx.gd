@@ -66,7 +66,10 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					var d: Array = s["discs"][k]
 					if fx != null and d.size() > 2 and bool(d[2]):
 						var kind := &"fire" if s["kind"] == &"shell" else &"venom"
+						# v0.11.0 S3 (owner Q3): the Mortar Grid's shells explode without the pack's Smoke
+						fx.burst_hide = ["Smoke"] if s["look"] == &"se_mortar" else []
 						fx.burst(kind, SimPlane.to_3d(d[0]), float(d[1]), u, sd + k)
+						fx.burst_hide = []
 			&"javelins":
 				for k in (s["discs"] as Array).size():
 					var d: Array = s["discs"][k]
