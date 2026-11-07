@@ -510,7 +510,7 @@ func test_frost_nova_lv5_a_frozen_enemy_you_hit_shatters() -> void:
 	assert_eq(w.actors.frozen_t[i], 0, "it shatters: the freeze ends")
 	var sh := _hits(w, Spells.EFFECT_SHATTER, id)
 	assert_eq(sh.size(), 1, "one shatter")
-	assert_eq(sh[0].amount, 12, "bonus 12")
+	assert_eq(sh[0].amount, 5, "bonus 5 (O12: was 12)")
 	var w4 := _world([&"frost_core"], [[Vector2(2, 0), 100000]])
 	_hold(w4, Spells.FROST_NOVA, 4)
 	W.run(w4, 1)
