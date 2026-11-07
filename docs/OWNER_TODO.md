@@ -97,7 +97,7 @@ their prompts there after their G1 lists.
 `approach_pylon`; the containers `container_crate`, `container_urn`, `container_barrel`; `explosive_barrel`;
 `timed_door` (a stone door; your bar gate became `lockdown_seal`); the hazards `hazard_cable`, `hazard_rock`, `hazard_vent`, `hazard_ice`, `hazard_star`; the four
 floor 4-5 bosses and the 16 collectibles (after their G1 lists); all the sounds and the optional effect textures; and
-from v0.8.0 the `swarmer`, `mine_layer` and `sniper` enemies.
+the eight enemy models in §3.2.
 
 - [ ] **Your key:** you wrote "F on keyboard", but F is already Vent, so the door uses the existing interact key, E
   (pad X is the same as you asked). Say if you want something else.
@@ -112,14 +112,27 @@ from v0.8.0 the `swarmer`, `mine_layer` and `sniper` enemies.
 | ☐ | (rig) the hero | For the same scene: if your hero model can be rigged with an `open_chest` clip (kneel, lift the lid, look in), the lead builds the menu around it. Otherwise the lead animates the existing hero in code | — | — |
 
 ### 3.2 Enemy models (P1)
-Three kinds still have the lead's code-made body. Each takes its **role colour** where the prompts say
-[COLOUR] (the game fine-tunes the shade). Greys stay neutral, because each biome tints them.
+Your answer Q21 (2026-11-07): the eight kinds the lead still draws in code get your `.glb` models, in the Charger's
+style but not red, each in its role colour. The game animates them through VAT, so a rig is a bonus and never needed;
+legs and limbs as separate parts help. Each takes its **role colour** where the prompts say [COLOUR] (the game
+fine-tunes the shade). Greys stay neutral, because each biome tints them.
+
+**The style every prompt starts from:** the Charger's family. A faceted, ridged shell or hood on top, a dark
+shield-shaped face under it with one glowing gem visor in the role colour, a charcoal body, and grey segmented limbs
+with bone-coloured tips. Only the body plan changes, to fit what the enemy does.
 
 | ✓ | id | Role colour | In-game size | Prompt (after the character prefix, then the 3D step) |
 |---|---|---|---|---|
-| ☐ | `swarmer` | melee red-orange `#D8562A` | 0.5 m long | a small fast armoured beetle, a low wedge-shaped faceted shell with a ridge down its back, a charcoal head with one glowing slit eye, two pale bone mandibles that open wide, six thin segmented charcoal legs splayed low; about 3k triangles |
-| ☐ | `mine_layer` | bomber yellow `#D8A824` | 0.9 m long | a low armoured crawler on two short charcoal tank treads, a faceted hull with chevron plates, a charcoal dome with one glowing eye, an open hopper at the back holding a dark round spiked mine with a small blinking light (the mine as a separate object is a bonus); about 5k triangles |
-| ☐ | `sniper` | ranged blue-violet `#5A62D8` | 1.1 m tall | a lean walking gun platform on a tripod of three long thin charcoal legs, a narrow faceted body, a very long charcoal rifle barrel pointing forward, a big round glowing scope lens on top, cooling fins along the barrel; about 5k triangles |
+| ☐ | `hatchling` | melee red-orange `#C93A1E` | radius 0.28 m | a small young crawler, the Charger's family at two thirds of its size: a short faceted ridged hood in [COLOUR] over a dark shield-shaped face with one glowing [COLOUR] gem visor, a small back flap, a charcoal body, four stubby grey segmented legs with small bone talons, the front pair a little bigger; about 3k triangles |
+| ☐ | `needle` | ranged blue `#3A6BD4` | radius 0.35 m | a walking turret: a faceted ridged cube-shaped shell in [COLOUR], a dark shield-shaped face on its front with one glowing [COLOUR] gem visor, a charcoal body, two grey octagonal pods on its flanks, a square grey cannon barrel pointing forward, four grey segmented legs with bone-coloured feet splayed to the corners; about 5k triangles |
+| ☐ | `warden` | tank bronze `#9A6232` | radius 0.55 m | a hulking armoured tank: a long faceted ridged shell in [COLOUR] over its head and back (cracks across the back of the shell), a dark shield-shaped face with one glowing [COLOUR] gem visor, a heavy charcoal chest, big grey boulder shoulders with heavy segmented forearms and fists hanging to the ground, two short stumpy grey legs with bone-coloured toes; about 5k triangles |
+| ☐ | `arc_caster` | ranged violet `#8A50D8` | radius 0.38 m | a tall caster: a faceted ridged hood and long robe-like shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body under it, grey segmented arms holding a grey staff with a bright arc crystal at its tip, three small floating [COLOUR] rune shards around the hood, no legs showing, a hem of grey segmented spikes with bone tips; about 5k triangles |
+| ☐ | `bomb_drone` | bomber yellow `#E8C22E` | radius 0.40 m; hovers about 1.8 m up | a hovering quad-copter: a faceted ridged shell in [COLOUR], a dark shield-shaped face at the front with one glowing [COLOUR] gem visor, a charcoal body, four grey segmented arms with bone-coloured tips that carry flat rotor blades (blades as separate parts), a dark round bomb slung under its belly with a glowing fuse (the bomb as a separate object is a bonus); about 5k triangles |
+| ☐ | `swarmer` | melee crimson `#B82A48` | radius 0.24 m (about 0.5 m long) | a small fast armoured beetle: a low wedge-shaped faceted ridged shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, two pale bone mandibles that open wide, six thin grey segmented legs with bone tips splayed low; about 3k triangles |
+| ☐ | `mine_layer` | bomber dark yellow `#C29A14` | radius 0.42 m (about 0.9 m long) | a low armoured crawler: a faceted ridged hull in [COLOUR] with chevron plates, a dark shield-shaped face with one glowing [COLOUR] gem visor, a charcoal body, carried on grey segmented legs with bone tips (two short tank treads in grey are also fine), an open hopper at the back holding a dark round spiked mine with a small blinking light (the mine as a separate object is a bonus); about 5k triangles |
+| ☐ | `sniper` | ranged blue `#3A55C0` | radius 0.35 m (about 1.1 m tall) | a lean walking gun platform: a narrow faceted ridged shell in [COLOUR], a dark shield-shaped face with one glowing [COLOUR] gem visor shaped like a big round scope lens, a charcoal body, a very long grey rifle barrel pointing forward with cooling fins, three long thin grey segmented legs in a tripod with bone-coloured feet; about 5k triangles |
+
+Still to come here: the 5 horde critters (one per biome, Q14) and the 10 new enemies (Q22), after ENEMIES.md is approved.
 
 ### 3.3 The final boss (P1–P2)
 
