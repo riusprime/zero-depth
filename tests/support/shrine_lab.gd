@@ -60,6 +60,7 @@ static func build(run: RunState) -> World:
 		&"biomes", (r.get_def(&"run", run.table.id) as RunDefinition).biomes[run.biome_of()]
 	)
 	FloorScenario.add_shop(w, rules[&"shop"], biome.id, rules[&"map"])
+	FloorScenario.add_purposes(w, rules[&"purposes"], biome.id, rules[&"map"])  # v0.11.0 O15, as Main
 	w.set_boss_tables(bosses)
 	w.ability_tables = ContentCompiler.compile_abilities(r)
 	w.stat_tables = ContentCompiler.compile_stat_cards(r)

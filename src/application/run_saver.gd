@@ -152,8 +152,17 @@ static func floor_tables(run: RunState, repo: ContentRepository) -> Dictionary:
 	var first: LockdownTable = null  # v0.9.0 CF2: a floor built under rules 17 marks its Lockdowns first
 	if run != null and run.floor_rules > RunState.FLOOR_RULES_V090_CF:
 		first = lockdown_table(run, repo)
+	# v0.11.0 O15 (PLAN P1): the large rooms' purposes (none on a v0.7.0 floor)
+	var purposes: Array[RoomPurposeTable] = []
+	if run == null or not run.v070_floor():
+		purposes = RunContentCompiler.compile_room_purposes(repo)
 	return {
-		&"map": map, &"arena": arena, &"shop": shop, &"overrun": overrun, &"lockdown_first": first
+		&"map": map,
+		&"arena": arena,
+		&"shop": shop,
+		&"overrun": overrun,
+		&"lockdown_first": first,
+		&"purposes": purposes
 	}
 
 

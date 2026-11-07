@@ -100,6 +100,7 @@ static func place(
 	var shut := taken.duplicate()
 	if Gamble.present(w):  # v0.8.0 N14: the shrine's room (a no-op for the start hall, never a candidate)
 		shut.append(layout.room_of(w.gamble_pos))
+	shut.append_array(layout.purpose_rooms())  # v0.11.0 O15: a purpose room is no event's room
 	var curse_room := -1
 	if curse_rules == CURSE_RULES_N17:
 		curse_room = curse_site_n17(layout, w.seed_value, w.ev.rules, shut)
