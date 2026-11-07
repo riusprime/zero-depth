@@ -132,12 +132,38 @@ func test_the_mortar_grid_leaves_two_safe_cells_and_warns_the_swap_0_6_s() -> vo
 	for id: StringName in [&"mortar_grid", &"mortar_grid_3"]:
 		var atk := _atk(t, id)
 		assert_eq(atk.safe_cells, 2, "%s: two safe cells" % id)
-		assert_eq(atk.lock_ticks, 36, "%s: the later volley (the swap) shows 0.6 s ahead" % id)
+		assert_eq(atk.lock_ticks, 36, "%s: the lock (first volley) is 0.6 s" % id)
 		assert_gte(atk.lock_ticks, MIN_TICKS)
 		assert_eq(atk.damage, 30, "%s: damage unchanged" % id)
 		assert_lt(atk.lock_ticks, atk.mark_gap_ticks, "%s: shown after the last volley struck" % id)
 	assert_eq(_atk(t, &"mortar_grid").volleys, 2)
 	assert_eq(_atk(t, &"mortar_grid_3").volleys, 3)
+
+
+func test_the_second_volley_stays_hidden_until_the_first_lands_then_shows_1_2_s() -> void:
+	# v0.11.0 S3 (owner Q3): a later volley is hidden until the volley before it strikes, then locked for one gap.
+	var t := _table(&"siege_engine")
+	for id: StringName in [&"mortar_grid", &"mortar_grid_3"]:
+		var atk := _atk(t, id)
+		assert_eq(atk.mark_gap_ticks, 72, "%s: 1.2 s between volleys" % id)
+		var first := atk.windup_ticks
+		for k in range(1, atk.volleys):
+			var strike := k * atk.mark_gap_ticks + atk.windup_ticks
+			for tick in range(0, strike - atk.mark_gap_ticks):
+				assert_eq(
+					BossDodge.grid_state(atk, k, tick), -1, "%s v%d hidden at %d" % [id, k, tick]
+				)
+			for tick in range(strike - atk.mark_gap_ticks, strike):
+				assert_gte(
+					BossDodge.grid_state(atk, k, tick), 1, "%s v%d shown at %d" % [id, k, tick]
+				)
+			assert_eq(BossDodge.grid_state(atk, k, strike), 2, "%s v%d strikes" % [id, k])
+		assert_eq(
+			BossDodge.grid_state(atk, 1, first - 1),
+			-1,
+			"%s: v1 hidden the tick before v0 lands" % id
+		)
+		assert_eq(BossDodge.grid_state(atk, 1, first), 1, "%s: v1 shows the tick v0 lands" % id)
 
 
 func _grid(seed_value := 11, player_at := Vector2(7, 0), id := &"mortar_grid") -> Array:

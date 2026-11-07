@@ -16,8 +16,8 @@ extends RefCounted
 ##   time and turns toward the player while it does.
 ## - B5, the Siege Engine's Mortar Grid: with safe_cells every volley strikes the whole board but that many cells,
 ##   inside its outer ring; the cells come from one draw of the ai stream at the attack's start (a permutation of the
-##   inner cells), and from the second half of the volleys on they are other cells (the later volley shows for its
-##   lock, the swap's warning).
+##   inner cells), and from the second half of the volleys on they are other cells (the later volley shows for
+##   one gap after the one before lands, the swap's warning).
 ## Pure: integer maths and the ai stream (one draw per Mortar Grid); no sin, cos or atan2.
 
 ## The BossStore point slots these use: the grid's permutation code (x of slot 1), the beam's turn remainder (y of 7).

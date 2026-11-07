@@ -68,6 +68,8 @@ const PACK_STATUS := true  # burn, poison and frost on an enemy; Bulwark's guard
 var pack_fx: PackFx = null
 ## VX3: how many of the guard orbs the pack draws this frame (StatusVisuals hides that many of its own).
 var guard_orbs_packed := 0
+## v0.11.0 S3: the pack explosion's child nodes the next burst() leaves out (the Mortar Grid's strikes: no Smoke).
+var burst_hide: Array = []
 var _pack_seen := {}  # seed -> the tick the burst was last drawn
 var _burst_weight := 1.0  # W3-S4: the burst being drawn's weight (burst())
 ## VX3: the pack's zones, bursts and statuses (VfxPackViews).
@@ -457,9 +459,9 @@ func _pack_explosion(c: Vector3, r: float, sd: int) -> void:
 	var size := r * PACK_SCALE_PER_M
 	var id := PACK_EXPLOSIONS[absi(sd) % PACK_EXPLOSIONS.size()]
 	if _lights_off:  # the thinned burst (burst() turns the light off for it)
-		pack_fx.spawn(id, c, size * PACK_THIN_SCALE)
+		pack_fx.spawn(id, c, size * PACK_THIN_SCALE, {}, -1.0, 1.0, burst_hide)
 		return
-	pack_fx.spawn(id, c, size)
+	pack_fx.spawn(id, c, size, {}, -1.0, 1.0, burst_hide)
 
 
 ## The frame as VfxCore starts it, and the pack's (its pause clock).
