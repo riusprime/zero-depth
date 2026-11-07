@@ -17,7 +17,7 @@ func _click(e: E2e, main: Main, button_name: String) -> void:
 
 func _spawn(e: E2e, main: Main, kind: int, key: String) -> int:
 	var choice := main.get_node("UI/DevPanel").find_child("EnemyChoice", true, false) as Label
-	for k in 32:  # v0.11.0 O9: the list grew by the five critters (a full lap)
+	for k in 64:  # a full lap (v0.11.0 O9: the critters; O13b-d: the signatures took it past 32)
 		if choice.text == tr(key):
 			break
 		await _click(e, main, "NextEnemy")

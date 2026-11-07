@@ -46,7 +46,9 @@ func _last_damage_tags(w: World) -> int:
 
 func test_every_kind_has_a_weakness_and_a_resistance_in_data() -> void:
 	var defs := _repo.all_of(&"enemies")
-	assert_eq(defs.size(), 14, "the 14 enemy kinds")
+	assert_eq(
+		defs.size(), 34, "every enemy kind in data/enemies (test_enemy_validation counts them)"
+	)
 	for def: EnemyDefinition in defs:
 		assert_ne(def.weak_to, &"", "%s weak_to" % def.id)
 		assert_ne(def.resists, &"", "%s resists" % def.id)
