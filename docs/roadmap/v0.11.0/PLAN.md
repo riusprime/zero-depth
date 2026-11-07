@@ -141,7 +141,10 @@ build step).
 ROADMAP §0.4: version 0.11.0, patch notes en/es, What's New, tour en/es, PLAYTEST.md, seams, then the PR's full suite.
 
 ## Open items (what they block)
-- **Q1–Q27** in [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md) block Waves 2–4.
+- **Answered 2026-11-07:** Q1–Q7, Q9–Q12, Q14–Q30 (see OWNER_QUESTIONS "Answers"). Q23: core 4 + 2 signatures + a
+  variant per biome. Q26: G2 purpose rooms from authored templates. Q16: measure a 120-enemy surge, cap under 144 fps.
+- **Still open:** **Q8** (does the Laser curve without Homing?) and **Q13** (the other bosses' starting ideas: Tidecaller,
+  Brood Mother, Hive Lens, Foundry, Clockwork Judge, Warlord, Prism, Fallen, Colossus), which feed BOSS_AUDIT.
 - **The Laser sketch** blocks O1's look (the sim can start after Q4–Q7).
 - **G1 BOSS_AUDIT, SPELLS, ENEMIES** and **G2 rooms** are written after the first answers.
 

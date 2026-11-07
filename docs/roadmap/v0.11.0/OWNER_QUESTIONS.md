@@ -225,4 +225,8 @@ OK; (b) you'll go through them.
 | Q19 | (a) 4 new HUD squares above the ability bar, cooldown sweep, flash on cast | 2026-11-07 | PLAN E2, O10 |
 | Q21 | (a) New `.glb` models in the Charger's style for the 8 code-made kinds besides the Charger (Hatchling, Needle, Warden, Arc Caster, Bomb Drone, Swarmer, Mine Layer, Sniper), role colours, VAT | 2026-11-07 | PLAN M1, art list |
 | Q22 | (a) 2 new regular enemies per biome (10), G1 ENEMIES.md first, plus the 5 horde critters | 2026-11-07 | PLAN M2, O13 |
+| Q23 | (a) Each biome: a shared core of 4 (Charger, Needle, Swarmer, Warden) + its 2 signature enemies + a biome variant of one existing enemy; floor depth still unlocks the later kinds | 2026-11-07 | PLAN M3, O13 |
+| Q26 | (a) G2 shots of purpose rooms from authored templates (like shops) with seeded variation | 2026-11-07 | PLAN P1, O15 |
+| Q16 | (a) Measure a 120-enemy surge on the owner's PC; cap the surge if it drops under 144 fps | 2026-11-07 | PLAN H1, O9 |
+| Q27 | "treat as unmentioned": read as (a), the v0.10.5 rows not mentioned in the brief are OK and close in OWNER_TODO (the lead confirms with the owner when closing) | 2026-11-07 | PLAN S5 |
 | Q24 | "I think I meant the rune that is at the hub": the **Runic Stone** (v0.9.5 RS1/RS2). Clarified in chat; see Q25 | 2026-11-07 | PLAN R1 |
