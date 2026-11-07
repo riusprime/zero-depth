@@ -111,3 +111,5 @@
   `---- All tests passed! ----`, `check_gut_log: ok (644 passing, minimum 1)`. Pushed.
 - 2026-11-07: seams at f9b08a21 (+ O12, O12b, O14a): `Scripts 111, Tests 647, Passing Tests 647, Asserts 80845, Time
   1345.892s`, `---- All tests passed! ----`, `check_gut_log: ok (647 passing, minimum 1)`. O16 merged after it.
+- 2026-11-07: seams at a5d9d9d3 (+ O16): `Tests 647, Passing Tests 647, Asserts 80914, Time 1336.314s`, all passed.
+  O15 (G2) and O13a merged after it. Building: O13b, O13c, O13d (the ten new enemies), O15 (purpose rooms in floors).
