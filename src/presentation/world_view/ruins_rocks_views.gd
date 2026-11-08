@@ -10,7 +10,7 @@ extends Node3D
 ##   on its arc from the Thrower's hands to its ring; landed, the same boulder standing for its time, with the pack's
 ##   dust (bx_smoke_dust: smoke_vfx_05) where it lands and where it crumbles;
 ## - a Rock Lurker: the pack's dust puffing at its foot while it rumbles, and the dust with the shatter
-##   (bx_shatter) as it bursts out;
+##   (bx_shatter) as it bursts out; v0.11.0 O17b: the same dust, wide, where its claws smash down (its hit tick);
 ## - a Scrap Hound's yelp: the pack's plain hit spark (vx1_hit_plain) at its head when a hit stops it.
 ## Nothing here decides.
 
@@ -47,6 +47,7 @@ var _rocks: Array[MeshInstance3D] = []
 var _rock_spots: Array = []
 var _flying := {}  # thrower id -> MeshInstance3D
 var _hidden := {}  # lurker id -> was hidden
+var _slamming := {}  # lurker id -> was in its hit tick (v0.11.0 O17b)
 var _yelped := {}
 var _cable_mat: StandardMaterial3D
 
@@ -221,6 +222,10 @@ func _sync_lurker(reader: WorldReader, i: int, id: int, tick: int) -> void:
 	if pack_fx == null:
 		return
 	var at := SimPlane.to_3d(reader.actor_pos(i), 0.0)
+	var slam := reader.actor_state(i) == WorldReader.STATE_ACTIVE
+	if slam and not _slamming.get(id, false):  # v0.11.0 O17b: the smash lands (its disc is round where it stands)
+		pack_fx.spawn(DUST_ID, at, DUST_SCALE * 2.2)
+	_slamming[id] = slam
 	if was and not hidden:
 		pack_fx.spawn(DUST_ID, at, DUST_SCALE * 1.6)
 		pack_fx.spawn(SHATTER_ID, at + Vector3(0, 0.5, 0), 0.8)

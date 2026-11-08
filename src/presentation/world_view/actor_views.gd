@@ -1,3 +1,4 @@
+# gdlint: disable=max-file-lines
 class_name ActorViews
 extends Node3D
 ## One node per live actor and projectile, keyed by entity id. Transforms are written right after each sim
@@ -543,6 +544,8 @@ func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 				if node.has_meta(&"bar"):
 					(node.get_meta(&"bar") as Node3D).visible = false
 				get_tree().create_timer(HordeAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
+			elif boss is RockLurkerAvatar and is_inside_tree() and (boss as RockLurkerAvatar).die():
+				(boss as RockLurkerAvatar).fall(node)  # v0.11.0 O17b: it collapses back into a rock
 			else:
 				node.queue_free()
 
@@ -744,6 +747,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			height = LensDroneAvatar.HEIGHT
 			root.set_meta(&"enemy_avatar", lens)
 			root.set_meta(&"mats", lens.body_materials.duplicate())
+		WorldReader.KIND_ROCK_LURKER:  # v0.11.0 O17b: the owner's model, animated (RockLurkerAvatar)
+			height = RockLurkerAvatar.attach(root, facing, outline_color, technique, _solo_vat)
 		WorldReader.KIND_HATCHLING:
 			# The Brood Mother's hatchling (v0.3.0 C): a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()

@@ -23,6 +23,8 @@ const SPECS := {
 	&"elite_breaker": {"height": 2.6},
 	&"elite_rift_hunter": {"height": 2.1},
 	&"elite_conduit": {"height": 2.3},
+	# v0.11.0 O17b: the Rock Lurker (scripts/assets/o17_prep_rock_lurker.py; RockLurkerAvatar poses it)
+	&"rock_lurker": {"height": RockLurkerAvatar.HEIGHT},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 
