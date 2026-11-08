@@ -11,7 +11,8 @@ extends RefCounted
 ##   (9 m), radius_m wide. It passes every enemy on its path (Q28: "Pierce everything, no card": spec.pierce is not
 ##   read); a wall stops it. trace() is the one geometry: the shot's hits and the record the view draws (EI-07;
 ##   LaserMods.record, WorldReader.beams).
-## - Damage (Q4): one shot deals lance_ticks (30: 3 s of the old beam's 10 ticks a second) of the old beam's ticks, each
+## - Damage (Q4; v0.11.0 O1d, owner 2026-11-08 "it oneshots strong enemies": -35 %): one shot deals lance_ticks
+##   (19) of the old beam's ticks, each
 ##   beam_permille of the shot's damage, times the Pattern's share per lance (Twin: 2 side by side at Lv 1–4, 3 fanned
 ##   at Lv 5, GunForms' lanes). An enemy takes a shot once per lance kind; crit rolls once per enemy hit.
 ## - Statuses (Q5: "3 hits worth"): each enemy hit is fed lance_feed (3) hits' worth of the lance's statuses
