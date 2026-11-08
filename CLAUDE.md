@@ -91,7 +91,7 @@ Deathventory once shipped an agent-written "human playtest" and a smoke test wit
 |---|---|
 | Only docs, or scripts that write only under `docs/` | Nothing local; CI covers it |
 | Installed assets or manifests (`assets/`) | The asset tests |
-| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead, after merging agents' branches: `bash scripts/ci/seams.sh` (the seams, about 10 min: 260 tests in 619 s on 2026-10-13), then push. **No local full suite** |
+| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead, after merging agents' branches: `bash scripts/ci/seams.sh` (the seams, about 20–50 min: 667 tests in 3131 s on 2026-11-08, owner's PC), then push. **No local full suite** |
 
 **The full suite runs once per version, on GitHub** (owner, 2026-10-13: "does the full run suite make sense for every
 change? … just testing what the changes need to be tested right?"; then "make those changes statement so every
@@ -144,7 +144,7 @@ godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://
 godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit/sim -ginclude_subdirs -gexit   # one folder
 godot --headless --path . -s scripts/checks/hitch_probe.gd             # real-time hitch rule
 godot --headless --path . -s scripts/bench/sim_bench.gd                # bench → paste into evidence
-godot --path . -s scripts/shots/tour.gd                                # screenshot tour (needs a renderer, not --headless) → build/shots/<version>/<lang>/
+godot --path . --position -10000,-10000 -s scripts/shots/tour.gd -- lang=en   # screenshot tour (renderer, off screen; lang=es too) → build/shots/<config/version>/<lang>/
 gdformat --check src scripts tests && gdlint src scripts tests         # lint (pip install -r requirements-dev.txt)
 godot --path . -- --perf-log[=light]; python scripts/perf/summarize_perf.py <csv>   # log normal play, F9 marks (docs/process/PERF_LOG.md)
 ```

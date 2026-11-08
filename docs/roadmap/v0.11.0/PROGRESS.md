@@ -14,8 +14,8 @@
 - **Built and merged (2026-11-08):** everything the owner has answered except the items below; latest merge fc62b419.
 - **Owner asleep (2026-11-08):** "keep working on the plan … write [questions] down". Questions: OWNER_QUESTIONS §J
   (N1–N9), each with the default being built.
-- **Built overnight:** O14b (hidden room), E2E, the Glacier Turtle, S5; two e2e "regressions" were hit-stop (tests
-  fixed). **Building:** the release prep (patch notes, What's New, tour, PLAYTEST.md; no version bump until N11).
+- **The plan is built** except what waits on the owner (2026-11-08): O6–O8 (the boss brief), the Laser's final look
+  (the sketch), and the release itself (N11). Patch notes, What's New, PLAYTEST.md and the tour are ready.
 - **Waiting on the owner:** the boss brief (O6–O8 and the remembered Crown), the Laser sketch, OWNER_QUESTIONS §J.
 - **Agents (owner, 2026-11-07):** at most 3 Sonnet (light, exact briefs) + 2 Opus at once; up to 4 Opus when no Sonnet runs.
 - **Local note:** `project.godot` has an uncommitted editor rewrite (it drops the `[rendering]` settings and
@@ -57,6 +57,7 @@
 | S5 | The v0.10.5 PLAYTEST rows not in the brief closed as OK in OWNER_TODO per Q27 (owner to confirm, §J N8) | docs |
 | O14b | The city's heart: with all ten rune lines (r11), the final approach gets a cracked wall under the throne → a room with a rune slab, the placeholder relic "The City's Heart" (N1: once a run, 1 HP + a 4 m ring for 60) and the sealed door (N2; `HeartRoom.door_opens` is the hook for the remembered Crown). 1,000 seeds: floors without the flag unchanged | 04e754e8 |
 | E2E | Every v0.11.0 feature reached by an e2e (new: signatures ×2, quake pillars, purpose rooms, Pierce flag, Laser every 3 s) | 68111759 |
+| R (prep) | Patch notes en/es ("Fights Worth Learning"), README row, What's New rebuilt, PLAYTEST.md, tour en/es + the v0.11.0 shot scripts (evidence/TOUR.md); not done until N11: version bump, MIN_TEST_COUNT, the PR's full suite, export smoke, hitch probe, the tour re-run after the bump | c5412990 |
 | S7 | OWNER_TODO §3.2: prompts for the 8 code-made enemies in the Charger's style, palette-A role colours | cc0d326f |
 
 ## Goldens changed on purpose
