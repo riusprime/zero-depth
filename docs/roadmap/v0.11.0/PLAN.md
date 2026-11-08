@@ -148,6 +148,15 @@ build step).
 - **O14. Room messages and the Easter egg (R1)** after Q24–Q25.
 - **O15. Rooms with a purpose (P1):** G2 shots first, then the picked approach in `floor_generator.gd` /
   `room_layouts.gd`. Generation property tests over 1,000 seeds.
+- **O17. The owner's models for five new enemies, animated and on VAT (owner, 2026-11-08):** "let's start with these,
+  make sure they are animated as good as you can, if they can have multiple animations … the better, and put some
+  effort on animating these". Scrap Hound, Cinder Priest, Kiln Beetle, Rock Lurker, Stone Thrower (raw Tripo files in
+  `unprocessed_images/models_v0110/`: one mesh each, ~9.5k triangles, no rig). One Opus agent per model (O17a–e; at
+  most 4 at once): prepare (cut into parts, `base`/`role`/`glow` surfaces, the `mi2_prep.py` way), its own avatar
+  posing the parts from the sim's state with a full set of clips (idle, gait, its tell, its attack, hit flinch, death,
+  its special states, reduced motion), on VAT (`SoloVat`/`HordeVat`), checked by `vat_bake_report` and one
+  `vat_sheet` per kind, plus a short clip sheet of each animation for the owner. Steps in
+  [`v0.11.0_enemy_models.md`](../../art/requests/v0.11.0_enemy_models.md) "When a model arrives".
 
 ### R. Release
 ROADMAP §0.4: version 0.11.0, patch notes en/es, What's New, tour en/es, PLAYTEST.md, seams, then the PR's full suite.
