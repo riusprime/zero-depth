@@ -36,6 +36,7 @@ const COLORS := {
 	WorldReader.KIND_FROST_SPITTER: ["#3A6BD4", "#262A32", "#56606A", "#8FE6FF"],
 	WorldReader.KIND_GLACIER_TURTLE: ["#9A6232", "#2A2828", "#5C5A58", "#FFB04A"],
 }
+const TURTLE_BODY_SCALE := 1.25
 const BONE := Color("#D9CDB8")
 const ICE := Color("#A6DAEE")
 const SAC := Color("#CFEFFF")
@@ -124,8 +125,15 @@ static func _face(a: HordeAvatar, at: Vector3, s: float) -> void:
 
 
 ## A grey segmented leg with a bone tip, from `at` out to `side` (+1 / -1 on Z), `long` m long.
-static func _leg(a: HordeAvatar, at: Vector3, side: float, long: float, thick: float) -> void:
-	var grey := color(a.kind, &"grey")
+static func _leg(
+	a: HordeAvatar,
+	at: Vector3,
+	side: float,
+	long: float,
+	thick: float,
+	leg_color: Color = Color(0, 0, 0, 0)
+) -> void:
+	var grey := color(a.kind, &"grey") if leg_color.a == 0.0 else leg_color
 	a._piece(
 		a.body,
 		_box(Vector3(thick, thick, long * 0.6), thick * 0.3),
@@ -214,13 +222,19 @@ static func _build_turtle(a: HordeAvatar) -> void:
 		color(k, &"body")
 	)
 	a._piece(
-		a.body, _box(Vector3(0.22, 0.16, 0.2), 0.04), Vector3(0.38, 0.46, 0), color(k, &"grey")
+		a.body, _box(Vector3(0.22, 0.16, 0.2), 0.04), Vector3(0.38, 0.46, 0), color(k, &"body")
 	)
 	_face(a, Vector3(0.46, 0.46, 0), 1.2)
+	a._glow(a.body, Vector3(0.05, 0.08, 0.2), Vector3(0.52, 0.5, 0))  # a stronger visor glow
+	a._glow(a.body, Vector3(0.12, 0.05, 0.14), Vector3(0.44, 0.58, 0))
 	for n in 2:
 		for side in [-1.0, 1.0]:
-			_leg(a, Vector3(0.2 - n * 0.44, 0.24, 0.32 * side), side, 0.3, 0.12)
+			_leg(a, Vector3(0.2 - n * 0.44, 0.24, 0.32 * side), side, 0.3, 0.12, color(k, &"body"))
 	var shell := _joint(a, "shell", Vector3(0.6, 0.0, 0))
+	# Presentation only: the body reads 1.25x bigger; the shell is counter-scaled so it stays as it was.
+	a.body.scale = Vector3.ONE * TURTLE_BODY_SCALE
+	shell.scale = Vector3.ONE / TURTLE_BODY_SCALE
+	shell.position = Vector3(0.6, 0.0, 0) / TURTLE_BODY_SCALE
 	for n in 3:  # the domed shell of ice slabs held in front
 		var z := (n - 1) * 0.36
 		a._piece(
