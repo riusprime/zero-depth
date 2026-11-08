@@ -164,6 +164,17 @@ build step).
   this, but in a different session … from a very detailed spec". Spec: [`VFX_LAB.md`](VFX_LAB.md) (VL1 recipe doc,
   VL2 the lab, VL3 sprites, VL4 pilot: a blind recipe fire pool and the Kiln Beetle's heat haze, owner picks). Built in
   its own session and branch; the lead merges.
+- **O1d. The Laser after the owner's playtest (owner, 2026-11-08):** "laser is fine but we have to check performance and
+  particles that are drawn when a element is active … every time it shoots the game lags a bit, I imagined an even
+  smoother curve that tracks up to maybe 8 enemies … we have to tune the dmg a bit down … it oneshots strong enemies on
+  defailt … when multiple rays are shooted with twin for example they curve out and into the enemy, not overlapping each
+  other" (reference: two Archero 2 shots, form and trajectory only, not visual). Picks, 2026-11-08: **element = colour
+  only** (no particles along the ray, no element burst at the hit); **damage −35 %** (`lance_ticks` 30 → 19: a default
+  shot about 150 → 95, so no longer one-shots a base-HP Warden); **Twin's rays bow out and meet only with Homing** (Q8
+  stands: without Homing the Laser is straight); **Homing up to 8 targets, each ray takes its own enemies** (several
+  rays spread over the pack; on a single enemy they bow out and meet on it); a smoother curve. The lag is measured and
+  fixed: `LaserMods._order` tries every order of the targets (5! = 120, each with line-of-sight checks; 8! would be
+  40,320), so it is replaced.
 
 ### R. Release
 ROADMAP §0.4: version 0.11.0, patch notes en/es, What's New, tour en/es, PLAYTEST.md, seams, then the PR's full suite.
