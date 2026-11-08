@@ -156,7 +156,10 @@ build step).
   posing the parts from the sim's state with a full set of clips (idle, gait, its tell, its attack, hit flinch, death,
   its special states, reduced motion), on VAT (`SoloVat`/`HordeVat`), checked by `vat_bake_report` and one
   `vat_sheet` per kind, plus a short clip sheet of each animation for the owner. Steps in
-  [`v0.11.0_enemy_models.md`](../../art/requests/v0.11.0_enemy_models.md) "When a model arrives".
+  [`v0.11.0_enemy_models.md`](../../art/requests/v0.11.0_enemy_models.md) "When a model arrives". Stone Thrower (owner,
+  2026-11-08): "The rock thrower has the rock separated so you can animate how he throws the rock animate also the
+  rock impact with assets we already have in the game": the model's rock is the held, flying and landed rock; the
+  impact uses the packs and existing effects only (PD-13).
 
 ### R. Release
 ROADMAP §0.4: version 0.11.0, patch notes en/es, What's New, tour en/es, PLAYTEST.md, seams, then the PR's full suite.
