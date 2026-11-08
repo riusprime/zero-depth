@@ -125,3 +125,7 @@
   the biome-name locale fix, the Glacier Turtle's look (N7), the e2e step (every new feature reached; found
   `test_e2e_frozen_shore` failing: "eight ticks after letting go it still slides", and the Laser's first gap 184 not
   180 — being fixed). Questions N10, N11 added.
+- 2026-11-08: the two e2e failures were not sim bugs: in both runs a floor Swarmer touched the hero and the hurt
+  hit-stop (4 ticks, holds the whole world per SIM_CONTRACTS) paused the ice easing and the shot cooldown. Bisect put
+  the ice failure at feb0a076 (O13a's mix rows changed the spawn draws). Both e2e now count only ticks the world ran;
+  the Laser's gaps are exactly 180 (`hit-stop ticks between [0, 4, 0, 0, 0]`). 06de322b, f81440c4.
