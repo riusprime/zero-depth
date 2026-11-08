@@ -112,3 +112,49 @@ func test_the_laser_taken_at_an_altar_burns_an_enemy_while_held() -> void:
 	await e.frames(WorldReader.LANCE_GLOW_TICKS + 4)  # v0.11.0 O1 (Q7): the last shot's glow fades in 0.5 s
 	assert_eq(main.view.laser.shown, 0, "let go: the lance is gone")
 	assert_false(main.audio.holding(&"laser_loop"), "and silent")
+
+
+## v0.11.0 O1 (owner Q4, Q28: "a 3 second cooldown"; PLAN L1): held, the Laser fires an instant lance every 3 s, each
+## one drawn. The same run as above (the Laser taken at an altar with the keyboard; the standing dummy a TEST HELPER);
+## right click held with the mouse on the dummy for four periods. The sim's firing ticks (read) are 3 s apart, and the
+## view draws each lance as it fires.
+func test_the_held_laser_fires_a_lance_every_3_seconds() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu(&"gun")
+	var w := e.world()
+	await e.tap(KEY_QUOTELEFT)
+	await _click(e, main, "God")
+	await e.tap(KEY_QUOTELEFT)
+	await e.frames(2)
+	assert_true(
+		await take_at_altar(e, main, &"gun_laser", [&"gun_pierce", &"ember_core"]), "took the Laser"
+	)
+	var at := clear_spot(w, 4.0)
+	assert_ne(at, Vector2.INF, "a clear line from the hero")
+	w.dummy_speed = 0.0  # TEST HELPER (labelled): a standing dummy, as above
+	w.add_dummy(at, 0.35, 50000)
+	var cam := main.view.rig.camera
+	var period := SimTick.seconds_to_ticks(3.0)
+	var fired := PackedInt32Array()
+	var drawn := 0
+	var last := w.mx.lz_shot_tick
+	e.mouse_button(MOUSE_BUTTON_RIGHT, true)
+	await e.mouse_to(cam.unproject_position(SimPlane.to_3d(at, SimPlane.CORE_HEIGHT)))
+	for k in period * 4 + 30:
+		await e.frames(1)
+		if w.mx.lz_shot_tick != last:
+			last = w.mx.lz_shot_tick
+			fired.append(last)
+		if not fired.is_empty() and main.view.laser.shown > 0 and drawn < fired.size():
+			drawn = fired.size()
+	e.mouse_button(MOUSE_BUTTON_RIGHT, false)
+	gut.p("O1 e2e: lance firing ticks %s (period %d ticks)" % [str(fired), period])
+	assert_gte(fired.size(), 4, "four lances in four periods held")
+	# The first lance fires on the press (the mouse not yet on the dummy), the second about 3 s on (184 ticks on the
+	# owner's PC, 2026-11-08); from then on, exactly every 3 s.
+	if fired.size() >= 2:
+		assert_between(fired[1] - fired[0], period, period + 10, "the second lance about 3 s on")
+	for k in range(2, fired.size()):
+		assert_eq(fired[k] - fired[k - 1], period, "lance %d came 3 s after the one before" % k)
+	assert_eq(drawn, fired.size(), "every lance was drawn")
