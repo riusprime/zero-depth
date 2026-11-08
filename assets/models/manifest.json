@@ -407,6 +407,11 @@
       "sha256": "4e06f74fa7adfb68868ed0c67241cdf4c1261f8d8346ad94b5d158e9b3a1bc43"
     },
     {
+      "id": "scrap_hound",
+      "path": "assets/models/enemies/scrap_hound.glb",
+      "sha256": "f7956079d1a6aaf6ae018802be3a8e92c2f7075fd35d88bc86a0b3de4538c60f"
+    },
+    {
       "id": "lockdown_seal",
       "path": "assets/models/devices/lockdown_seal.glb",
       "sha256": "6aed74cf168c923a44e75a47e08f5530366a2f5e24222e91d381f7ee453541d2"

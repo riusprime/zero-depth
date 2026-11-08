@@ -23,6 +23,9 @@ const SPECS := {
 	&"elite_breaker": {"height": 2.6},
 	&"elite_rift_hunter": {"height": 2.1},
 	&"elite_conduit": {"height": 2.3},
+	# v0.11.0 O17a: the Scrap Hound (scripts/assets/o17_prep_scrap_hound.py: chest, hips, head, tail, two-part legs;
+	# ScrapHoundAvatar poses them), at the request row's 0.7 m.
+	&"scrap_hound": {"height": 0.7},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 

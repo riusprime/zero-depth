@@ -1,3 +1,4 @@
+# gdlint: disable=max-file-lines
 class_name ActorViews
 extends Node3D
 ## One node per live actor and projectile, keyed by entity id. Transforms are written right after each sim
@@ -543,6 +544,14 @@ func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 				if node.has_meta(&"bar"):
 					(node.get_meta(&"bar") as Node3D).visible = false
 				get_tree().create_timer(HordeAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
+			elif boss is ScrapHoundAvatar and is_inside_tree() and (boss as ScrapHoundAvatar).die():
+				# v0.11.0 O17a: the Scrap Hound stumbles and rolls onto its side a moment, its bar gone.
+				(boss as Node).set_process(true)
+				if node.has_meta(&"bar"):
+					(node.get_meta(&"bar") as Node3D).visible = false
+				get_tree().create_timer(ScrapHoundAvatar.DEATH_SECONDS).timeout.connect(
+					node.queue_free
+				)
 			else:
 				node.queue_free()
 
@@ -744,6 +753,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			height = LensDroneAvatar.HEIGHT
 			root.set_meta(&"enemy_avatar", lens)
 			root.set_meta(&"mats", lens.body_materials.duplicate())
+		WorldReader.KIND_SCRAP_HOUND:  # v0.11.0 O17a: the owner's model, animated in code, on VAT
+			height = ScrapHoundAvatar.attach(self, root, facing, outline_color, technique)
 		WorldReader.KIND_HATCHLING:
 			# The Brood Mother's hatchling (v0.3.0 C): a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()
