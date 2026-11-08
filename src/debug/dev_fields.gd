@@ -73,6 +73,7 @@ const GROUPS := [
 			"res://data/stat_cards",
 			"res://data/starbound",  # v0.10.5 W3-P10b: the Starbound cards
 			"res://data/spells",  # v0.11.0 O10: the spells and their rules
+			"res://data/relics",  # v0.11.0 O14b: the relics (the City's Heart)
 			"res://data/wand",
 			"res://data/vfx",  # v0.10.0: the VFX pack's effect table (scales, colours)
 		],

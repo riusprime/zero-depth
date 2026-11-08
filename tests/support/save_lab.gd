@@ -98,6 +98,7 @@ static func build_floor(
 	w.starbound_tables = ContentCompiler.compile_starbound(repo)  # v0.10.5 W3-P10b, as FloorPlan
 	w.spell_tables = SpellCompiler.compile(repo, w.item_tables)  # v0.11.0 O10, as FloorPlan
 	w.spell_rules = SpellCompiler.compile_rules(repo)
+	w.relic_tables = ContentCompiler.compile_relics(repo)  # v0.11.0 O14b, as FloorPlan
 	w.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB, as Main
 	w.legendary_table = RunContentCompiler.compile_legendary(
 		repo.get_def(&"legendary", &"boss"), w.stat_tables, w.item_tables  # v0.5.5 AR (X1b), as Main

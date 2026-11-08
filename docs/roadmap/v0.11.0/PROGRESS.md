@@ -132,3 +132,8 @@
   hit-stop (4 ticks, holds the whole world per SIM_CONTRACTS) paused the ice easing and the shot cooldown. Bisect put
   the ice failure at feb0a076 (O13a's mix rows changed the spawn draws). Both e2e now count only ticks the world ran;
   the Laser's gaps are exactly 180 (`hit-stop ticks between [0, 4, 0, 0, 0]`). 06de322b, f81440c4.
+- 2026-11-08: seams at 4bf1c479 (+ O14b, E2E, turtle, fix1): `Tests 667, Passing Tests 665, Failing Tests 2`:
+  `test_save_lab_loadout` `ARRAY(["relic_tables"]) != ARRAY([])` and `test_every_balance_folder_is_in_the_panel`
+  `data/relics is in the panel` (O14b's new content kind). SaveLab now compiles the relics; the dev panel lists
+  `res://data/relics`. Those two files + `tests/unit/debug`: `Tests 17, Passing Tests 17`. Release prep merged after.
+  Pushed.
