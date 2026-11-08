@@ -7,8 +7,7 @@ extends RefCounted
 ## tips. Each one shape at a glance, and its tell drawn on the body:
 ## - Kiln Beetle (bomber yellow): a low round shell with vent slits over a glowing kiln belly, six thick legs; the belly
 ##   and its slits glow brighter as its HP drops (WorldReader.actor_hp over actor_max_hp).
-## - Cinder Priest (ranged violet): a hooded robe holding a tall staff with an ember crystal; the staff rises and the
-##   crystal flares in time with its vent's pulse (WorldReader.priest_pulse).
+## (v0.11.0 O17d: the Cinder Priest is the owner's model now, CinderPriestAvatar.)
 ## - Frost Spitter (ranged blue): a lean four-legged body with a pale ice sac on its throat that swells through the
 ##   windup.
 ## - Glacier Turtle (tank bronze): a squat charcoal body on four thick legs under a small bronze cap, a big domed shell
@@ -18,21 +17,18 @@ extends RefCounted
 
 const KINDS: Array[int] = [
 	WorldReader.KIND_KILN_BEETLE,
-	WorldReader.KIND_CINDER_PRIEST,
 	WorldReader.KIND_FROST_SPITTER,
 	WorldReader.KIND_GLACIER_TURTLE,
 ]
 ## The body's top (m, for the health bar).
 const HEIGHTS := {
 	WorldReader.KIND_KILN_BEETLE: 0.72,
-	WorldReader.KIND_CINDER_PRIEST: 1.75,
 	WorldReader.KIND_FROST_SPITTER: 0.85,
 	WorldReader.KIND_GLACIER_TURTLE: 1.0,
 }
 ## [body, trim, grey, eye] per kind (starting values: the prompts' role colours, the family's charcoal and greys).
 const COLORS := {
 	WorldReader.KIND_KILN_BEETLE: ["#E8C22E", "#2A2626", "#5E5852", "#FF9A2E"],
-	WorldReader.KIND_CINDER_PRIEST: ["#8A50D8", "#2A2630", "#5A5560", "#FF7A2E"],
 	WorldReader.KIND_FROST_SPITTER: ["#3A6BD4", "#262A32", "#56606A", "#8FE6FF"],
 	WorldReader.KIND_GLACIER_TURTLE: ["#9A6232", "#2A2828", "#5C5A58", "#FFB04A"],
 }
@@ -43,9 +39,8 @@ const SHELL_ICE := Color("#A9D6EE") * 1.9
 const SHELL_TOP := Color("#DDF2FF") * 2.0
 const SHELL_RIM := Color("#5C8FB0") * 1.2
 const SAC := Color("#CFEFFF")
-## The beetle's glow at full HP and how much it adds as its HP runs out; the priest's crystal on its pulse.
+## The beetle's glow at full HP and how much it adds as its HP runs out.
 const HEAT_FULL := 6.0
-const PULSE_FLARE := 5.0
 
 
 static func is_kind(kind: int) -> bool:
@@ -63,23 +58,19 @@ static func build(a: HordeAvatar) -> void:
 	match a.kind:
 		WorldReader.KIND_KILN_BEETLE:
 			_build_beetle(a)
-		WorldReader.KIND_CINDER_PRIEST:
-			_build_priest(a)
 		WorldReader.KIND_FROST_SPITTER:
 			_build_spitter(a)
 		WorldReader.KIND_GLACIER_TURTLE:
 			_build_turtle(a)
 
 
-## Reads actor i's tell drive for `a` (HordeAvatar.sync): the beetle's heat (1 - its HP share), the priest's pulse
-## (0..1), the turtle's shell standing.
+## Reads actor i's tell drive for `a` (HordeAvatar.sync): the beetle's heat (1 - its HP share), the turtle's shell
+## standing.
 static func read(a: HordeAvatar, reader: WorldReader, i: int) -> void:
 	match a.kind:
 		WorldReader.KIND_KILN_BEETLE:
 			var full := maxf(1.0, float(reader.actor_max_hp(i)))
 			a.sig_drive = clampf(1.0 - float(reader.actor_hp(i)) / full, 0.0, 1.0)
-		WorldReader.KIND_CINDER_PRIEST:
-			a.sig_drive = reader.priest_pulse(i) / 1000.0
 		WorldReader.KIND_GLACIER_TURTLE:
 			a.sig_on = reader.shell_on(i)
 
@@ -92,10 +83,6 @@ static func pose(a: HordeAvatar, energy: float, calm: bool) -> float:
 		WorldReader.KIND_KILN_BEETLE:
 			var flicker := 0.0 if calm else sin(a.anim_time() * (4.0 + a.sig_drive * 10.0)) * 0.4
 			return energy + a.sig_drive * (HEAT_FULL + flicker)
-		WorldReader.KIND_CINDER_PRIEST:
-			(p["staff"] as Node3D).rotation.z = -0.15 - a.sig_drive * 0.55
-			(p["staff"] as Node3D).position.y = 0.55 + a.sig_drive * 0.18
-			return energy + a.sig_drive * PULSE_FLARE
 		WorldReader.KIND_FROST_SPITTER:
 			(p["sac"] as Node3D).scale = Vector3.ONE * (1.0 + a.windup_pose() * 0.6)
 		WorldReader.KIND_GLACIER_TURTLE:
@@ -173,27 +160,6 @@ static func _build_beetle(a: HordeAvatar) -> void:
 	for n in 3:
 		for side in [-1.0, 1.0]:
 			_leg(a, Vector3(0.2 - n * 0.2, 0.26, 0.26 * side), side, 0.36, 0.07)
-
-
-static func _build_priest(a: HordeAvatar) -> void:
-	var k := a.kind
-	a._piece(
-		a.body, ArcCasterAvatar._frustum(0.36, 0.17, 1.1, 7), Vector3(0, 0.0, 0), color(k, &"body")
-	)
-	a._piece(a.body, _box(Vector3(0.3, 0.3, 0.32), 0.05), Vector3(0, 1.08, 0), color(k, &"trim"))
-	a._piece(a.body, ArcCasterAvatar._octahedron(0.24), Vector3(-0.03, 1.38, 0), color(k, &"body"))
-	_face(a, Vector3(0.15, 1.2, 0), 1.0)
-	for n in 6:  # the hem's grey spikes with bone tips
-		var ang := n * TAU / 6.0
-		a._piece(
-			a.body,
-			_box(Vector3(0.06, 0.12, 0.06), 0.015),
-			Vector3(cos(ang) * 0.34, 0.06, sin(ang) * 0.34),
-			BONE if n % 2 == 0 else color(k, &"grey")
-		)
-	var staff := _joint(a, "staff", Vector3(0.18, 0.55, 0.34))
-	a._piece(staff, _box(Vector3(0.05, 1.3, 0.05), 0.012), Vector3(0, 0.5, 0), color(k, &"grey"))
-	a._glow(staff, Vector3(0.12, 0.16, 0.12), Vector3(0, 1.22, 0))  # the ember crystal
 
 
 static func _build_spitter(a: HordeAvatar) -> void:

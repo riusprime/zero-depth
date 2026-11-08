@@ -31,6 +31,9 @@ const SPECS := {
 	# v0.11.0 O17c: the owner's Stone Thrower (scripts/assets/o17_prep_stone_thrower.py: its parts and its rock),
 	# posed by StoneThrowerAvatar.
 	&"stone_thrower": {"height": 1.6},
+	# v0.11.0 O17d: the owner's Cinder Priest (scripts/assets/o17_prep_cinder_priest.py: parts, `base`, `role`, `glow`),
+	# its height with the staff (CinderPriestAvatar poses it).
+	&"cinder_priest": {"height": 1.75},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 

@@ -1,12 +1,11 @@
 extends GutTest
 ## v0.11.0 O13c (ENEMIES.md R5-R8): the signature enemies' stand-in bodies (CanyonShoreBodies on HordeAvatar) and what
 ## they leave on the floor (CanyonShoreViews), read from a real World: the Kiln Beetle glows brighter as its HP drops,
-## the Cinder Priest's staff rises with its vent's pulse, the Glacier Turtle's shell goes when it breaks; the bursts,
-## vents, arcs and chunks are drawn while the sim has them.
+## the Glacier Turtle's shell goes when it breaks; the bursts, vents, arcs and chunks are drawn while the sim has them.
+## (v0.11.0 O17d: the Cinder Priest has its own avatar: test_cinder_priest_avatar.gd.)
 
 const KINDS: Array[int] = [
 	WorldReader.KIND_KILN_BEETLE,
-	WorldReader.KIND_CINDER_PRIEST,
 	WorldReader.KIND_FROST_SPITTER,
 	WorldReader.KIND_GLACIER_TURTLE,
 ]

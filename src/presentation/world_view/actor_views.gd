@@ -753,6 +753,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			height = RockLurkerAvatar.attach(root, facing, outline_color, technique, _solo_vat)
 		WorldReader.KIND_STONE_THROWER:  # v0.11.0 O17c: the owner's model, posed in code, on the VAT crowd
 			height = StoneThrowerAvatar.attach(self, root, facing, p_kind, outline_color, technique)
+		WorldReader.KIND_CINDER_PRIEST:  # v0.11.0 O17d: the owner's model, animated in code
+			height = CinderPriestAvatar.attach(self, root, facing, p_kind)
 		WorldReader.KIND_HATCHLING:
 			# The Brood Mother's hatchling (v0.3.0 C): a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()

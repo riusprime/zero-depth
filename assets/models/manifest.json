@@ -337,6 +337,11 @@
       "sha256": "d2fabc9505be1dc15971f0d2f395acd42338b42c847d5662734096f000f4052d"
     },
     {
+      "id": "cinder_priest",
+      "path": "assets/models/enemies/cinder_priest.glb",
+      "sha256": "f5a4cf463cbd0dae982ac18e1481eb54cc9f108bafe1c2f83e42000f2a1b6b9e"
+    },
+    {
       "id": "loop_device",
       "path": "assets/models/devices/loop_device.glb",
       "sha256": "c52a01bbbef3c6f037baeb6eb2491960df98998372ada530d829d6708734c67f"

@@ -17,6 +17,9 @@ extends SceneTree
 ## v0.10.5 W3-V4c: `-- --kind=<name>` (needle, warden, arc_caster, bomb_drone; v0.11.0 O17c: stone_thrower) draws
 ## that stand-alone kind in SOLO_PLAN's states (its walk, wind-up, attack, recovery) into vat_sheet_<name>.png and
 ## vat_diff_<name>.txt, with the vertex error.
+## v0.11.0 O17d: `-- --kind=cinder_priest` draws the Cinder Priest in PRIEST_PLAN's states (its chant, glide, the vent's
+## cycle: the raise, the slam on the eruption tick, the recoil; the flinch, the death, the rise-in) into
+## vat_sheet_cinder_priest.png and vat_diff_cinder_priest.txt.
 
 const CELL := Vector2i(220, 220)
 const COLS := 4
@@ -153,6 +156,7 @@ const SOLO := {
 	"scrap_hound": WorldReader.KIND_SCRAP_HOUND,  # v0.11.0 O17a
 	"rock_lurker": WorldReader.KIND_ROCK_LURKER,  # v0.11.0 O17b
 	"stone_thrower": WorldReader.KIND_STONE_THROWER,  # v0.11.0 O17c
+	"cinder_priest": WorldReader.KIND_CINDER_PRIEST,  # v0.11.0 O17d
 }
 const SOLO_FRAME := {
 	WorldReader.KIND_NEEDLE: [1.5, 0.4],
@@ -162,6 +166,7 @@ const SOLO_FRAME := {
 	WorldReader.KIND_SCRAP_HOUND: [1.6, 0.3],
 	WorldReader.KIND_ROCK_LURKER: [2.0, 0.45],
 	WorldReader.KIND_STONE_THROWER: [3.0, 1.0],
+	WorldReader.KIND_CINDER_PRIEST: [2.6, 0.85],
 }
 const SOLO_PLAN := [
 	["idle (t 1.5 s)", {}, "idle"],
@@ -178,6 +183,24 @@ const SOLO_PLAN := [
 	["rise-in, half way", {}, "spawn"],
 	["biome cast + role glow", CAST, "walk"],
 	["reduced motion + windup", {}, "calm"],
+]
+
+## v0.11.0 O17d: the Cinder Priest's states (its own calls: the vent's pulse and eruption, no windup).
+const PRIEST_PLAN := [
+	["chant (t 1.5 s)", {}, "idle"],
+	["glide 2.4 m/s", {}, "walk"],
+	["vent warning 45 %", {}, "gather_mid"],
+	["vent warning 88 % (raised)", {}, "gather_top"],
+	["eruption tick (slam)", {}, "slam"],
+	["recoil (0.3 s after)", {}, "recoil"],
+	["flinch at its peak", {}, "flinch"],
+	["Blade knock", {}, "knock"],
+	["hit flash", {}, "flash"],
+	["status tint (burn)", {}, "tint"],
+	["rise-in, half way", {}, "spawn"],
+	["death, 60 %", {}, "death"],
+	["biome cast + role glow", CAST, "walk"],
+	["reduced motion + raised", {}, "calm"],
 ]
 
 var _dir := ""
@@ -210,6 +233,8 @@ func _initialize() -> void:
 			plan = SOLO_PLAN
 			if _kind == WorldReader.KIND_ROCK_LURKER:  # v0.11.0 O17b: its disguise and rumble too
 				plan = SOLO_PLAN + [["disguised", {}, "hidden"], ["rumbling", {}, "rumble"]]
+			elif _kind == WorldReader.KIND_CINDER_PRIEST:  # v0.11.0 O17d
+				plan = PRIEST_PLAN
 		elif arg.begins_with("--version-dir="):
 			_dir = "res://build/shots/%s/vat/" % arg.trim_prefix("--version-dir=")
 		elif arg.begins_with("--out="):
@@ -506,6 +531,9 @@ func _drive_charger(a: ChargerAvatar, steps: String) -> void:
 ## one a tick, as ActorViews.sync gives them; the flash and the tint as ActorViews._set_flash makes them (the old path
 ## on its own materials, VAT through show_hit).
 func _drive_solo(a: AvatarBase, steps: String) -> void:
+	if a is CinderPriestAvatar:  # v0.11.0 O17d
+		_drive_priest(a as CinderPriestAvatar, steps)
+		return
 	var tick := 0
 	var x := 0.0
 	var speed: float = (
@@ -577,6 +605,54 @@ func _drive_solo(a: AvatarBase, steps: String) -> void:
 			_solo_flash(a, Color.WHITE, 1.6)
 		"tint":
 			_solo_flash(a, Color(1.0, 0.45, 0.1), 1.2)
+	ViewPrefs.reduced_motion = false
+
+
+## v0.11.0 O17d: the Cinder Priest's calls (both avatars of a pair get the same ones): a second and a half of its
+## chant (or glide), then the vent's warning ramp (45 ticks to 1000), its eruption (its last eruption's age counting
+## from 0), the flinch, the death.
+func _drive_priest(a: CinderPriestAvatar, steps: String) -> void:
+	var tick := 0
+	var x := 0.0
+	var st := WorldReader.STATE_SPAWN if steps == "spawn" else WorldReader.STATE_MOVE
+	if steps == "calm":
+		ViewPrefs.reduced_motion = true
+	for k in 90 if steps != "spawn" else 18:
+		tick += 1
+		if steps == "walk":
+			x += 2.4 / 60.0
+		if steps == "spawn" and k == 1:
+			st = WorldReader.STATE_MOVE
+		a.apply_state({"tick": tick, "state": st, "pos": Vector2(x, 0), "vent_yaw": 0.5})
+		_run(a, 1)
+	var ramp := {"gather_mid": 20, "gather_top": 40, "calm": 40, "slam": 45, "recoil": 45}
+	for k in int(ramp.get(steps, 0)):
+		tick += 1
+		var pulse := clampi(roundi(float(k + 1) * 1000.0 / 45.0), 1, 1000)
+		a.apply_state(
+			{"tick": tick, "state": st, "pos": Vector2(x, 0), "pulse": pulse, "vent_yaw": 0.5}
+		)
+		_run(a, 1)
+	for k in {"slam": 1, "recoil": 19}.get(steps, 0):
+		tick += 1
+		a.apply_state(
+			{"tick": tick, "state": st, "pos": Vector2(x, 0), "erupt_age": k, "vent_yaw": 0.5}
+		)
+		_run(a, 1)
+	match steps:
+		"flinch":
+			a.flinch(Vector2(1.0, 0.4), 1.0)
+			_run(a, 3)
+		"knock":
+			a.flinch(Vector2(1.0, 0.4), 1.0, 1.0)
+			_run(a, 3)
+		"flash":
+			_solo_flash(a, Color.WHITE, 1.6)
+		"tint":
+			_solo_flash(a, Color(1.0, 0.45, 0.1), 1.2)
+		"death":
+			a.die()
+			_run(a, roundi(0.6 * CinderPriestAvatar.DEATH_SECONDS / DT))
 	ViewPrefs.reduced_motion = false
 
 
