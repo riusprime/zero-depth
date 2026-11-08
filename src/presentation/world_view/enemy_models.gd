@@ -26,6 +26,8 @@ const SPECS := {
 	# v0.11.0 O17a: the Scrap Hound (scripts/assets/o17_prep_scrap_hound.py: chest, hips, head, tail, two-part legs;
 	# ScrapHoundAvatar poses them), at the request row's 0.7 m.
 	&"scrap_hound": {"height": 0.7},
+	# v0.11.0 O17b: the Rock Lurker (scripts/assets/o17_prep_rock_lurker.py; RockLurkerAvatar poses it)
+	&"rock_lurker": {"height": RockLurkerAvatar.HEIGHT},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 

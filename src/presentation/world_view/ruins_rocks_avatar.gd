@@ -7,24 +7,21 @@ extends AvatarBase
 ## - Wire Weaver (bomber yellow): a spindly walker on four thin legs, four long arms, a coil of cable on its back; its
 ##   arms rise and its visor flashes while it marks a cable (the tell).
 ## - Cable post (WIRE_POST): a short grey post with a sparking yellow top.
-## (v0.11.0 O17a: the Scrap Hound is on the owner's model now, ScrapHoundAvatar.)
-## - Rock Lurker (melee red-orange cracks): while it waits, a grey boulder with thin glowing cracks (faint; brighter and
-##   shaking while it rumbles); out, the rock is its back, its face and four thick legs showing.
 ## - Stone Thrower (tank bronze): a hunched brute with two huge arms; through its windup it lifts a rock overhead (the
 ##   rock leaves its hands at the throw: RuinsRocksViews flies it).
+## (v0.11.0 O17a/b: the Scrap Hound and the Rock Lurker are on the owner's models now: ScrapHoundAvatar and
+## RockLurkerAvatar.)
 ## Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance() animates in frame time.
 ## +X is the front.
 
 const COLORS := {
 	WorldReader.KIND_WIRE_WEAVER: Color("#E8C22E"),
 	WorldReader.KIND_WIRE_POST: Color("#E8C22E"),
-	WorldReader.KIND_ROCK_LURKER: Color("#C93A1E"),
 	WorldReader.KIND_STONE_THROWER: Color("#9A6232"),
 }
 const HEIGHTS := {
 	WorldReader.KIND_WIRE_WEAVER: 1.15,
 	WorldReader.KIND_WIRE_POST: 0.95,
-	WorldReader.KIND_ROCK_LURKER: 1.1,
 	WorldReader.KIND_STONE_THROWER: 1.6,
 }
 const CHARCOAL := Color("#24272D")
@@ -34,15 +31,9 @@ const GREY_DARK := Color("#5F5551")
 const ROCK := Color("#A39A92")
 const BONE := Color("#D9CDB8")
 const OUTLINE_M := 0.02
-## The visor's rest glow, its tell's peak, and the lurker's cracks at rest, rumbling and bursting (emission energy).
+## The visor's rest glow and its tell's peak (emission energy).
 const VISOR_REST := 1.6
 const VISOR_TELL := 7.0
-const CRACK_REST := 1.1
-const CRACK_RUMBLE := 2.2
-const CRACK_OUT := 3.0
-## The rumble's shake (m) and rate; the walk's rate and swing.
-const SHAKE_M := 0.025
-const SHAKE_HZ := 23.0
 const WALK_HZ := 2.6
 const WALK_SWING := 0.35
 
@@ -51,15 +42,11 @@ var height := 1.0
 var _model := Node3D.new()
 var _body := Node3D.new()
 var _visor_mat: StandardMaterial3D
-var _crack_mat: StandardMaterial3D
 var _legs: Array[Node3D] = []
 var _arms: Array[Node3D] = []
 var _rock: Node3D
-var _legs_root: Node3D
 var _state := -1
 var _tell := 0.0
-var _hidden := false
-var _rumble := false
 var _flight := -1
 var _walk_phase := 0.0
 
@@ -93,8 +80,6 @@ func setup(p_kind: int, outline: Color) -> void:
 			_build_weaver(c, outline)
 		WorldReader.KIND_WIRE_POST:
 			_build_post(c, outline)
-		WorldReader.KIND_ROCK_LURKER:
-			_build_lurker(c, outline)
 		WorldReader.KIND_STONE_THROWER:
 			_build_thrower(c, outline)
 
@@ -212,35 +197,6 @@ func _build_post(_c: Color, outline: Color) -> void:
 	_visor_mat.emission_energy_multiplier = VISOR_TELL * 0.6
 
 
-func _build_lurker(c: Color, outline: Color) -> void:
-	_rock = Node3D.new()
-	_body.add_child(_rock)
-	var shell := _stone(_rock, 0.62, Vector3(0, 0.5, 0), ROCK, outline)
-	shell.rotation = Vector3(0.2, 0.7, 0.1)
-	_crack_mat = _glow(c, CRACK_REST)
-	for k in 5:
-		var crack := MeshInstance3D.new()
-		var m := BoxMesh.new()
-		m.size = Vector3(0.42, 0.04, 0.05)
-		crack.mesh = m
-		crack.material_override = _crack_mat
-		var ang := k * TAU / 5.0
-		crack.position = Vector3(cos(ang) * 0.5, 0.55 + 0.18 * sin(ang * 2.0), sin(ang) * 0.5)
-		crack.rotation = Vector3(0.4 * k, -ang, 0.6)
-		crack.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		_rock.add_child(crack)
-	_legs_root = Node3D.new()
-	_body.add_child(_legs_root)
-	_face(_legs_root, Vector3(0.6, 0.36, 0), 0.9, outline)
-	for k in 4:
-		var x := 0.3 if k < 2 else -0.3
-		var z := 0.34 if k % 2 == 0 else -0.34
-		var leg := _limb(Vector3(x, 0.36, z), 0.34, 0.06, outline)
-		_body.remove_child(leg)
-		_legs_root.add_child(leg)
-		_legs.append(leg)
-
-
 func _build_thrower(c: Color, outline: Color) -> void:
 	_box(_body, Vector3(0.6, 0.55, 0.6), Vector3(0, 0.85, 0), CHARCOAL, outline)
 	_prism(_body, Vector3(0.6, 0.32, 0.66), Vector3(-0.12, 1.24, 0), c, outline)
@@ -261,10 +217,6 @@ func sync(reader: WorldReader, i: int) -> void:
 	_state = st
 	_tell = windup_progress(reader, i)
 	_track_motion(reader.tick(), reader.actor_pos(i), 30.0)
-	if kind == WorldReader.KIND_ROCK_LURKER:
-		_hidden = reader.lurker_hidden(i) or st == WorldReader.STATE_SPAWN
-		_rumble = reader.lurker_rumbling(i)
-		_show_rings(not _hidden)  # its disguise: no team ring while it waits
 	if kind == WorldReader.KIND_STONE_THROWER:
 		_flight = reader.thrower_flight(i)
 	_fresh = false
@@ -273,10 +225,6 @@ func sync(reader: WorldReader, i: int) -> void:
 ## The tell's glow on the visor now (tests): rest, climbing with the windup, flashing near its end.
 func visor_energy() -> float:
 	return _visor_mat.emission_energy_multiplier
-
-
-func crack_energy() -> float:
-	return _crack_mat.emission_energy_multiplier if _crack_mat != null else 0.0
 
 
 func rock_lifted() -> bool:
@@ -305,8 +253,6 @@ func advance(delta: float) -> void:
 		WorldReader.KIND_WIRE_WEAVER:
 			for arm in _arms:
 				arm.rotation.z = lerpf(1.1, 2.4, _tell if winding else 0.0)
-		WorldReader.KIND_ROCK_LURKER:
-			_pose_lurker()
 		WorldReader.KIND_STONE_THROWER:
 			# its telegraph runs over the lift and the flight: the lift is its first part
 			var lift := clampf(_tell * 1.8, 0.0, 1.0) if winding else 0.0
@@ -314,27 +260,3 @@ func advance(delta: float) -> void:
 				arm.rotation.z = lerpf(0.2, 3.0, lift)
 			_rock.visible = winding
 			_rock.position = Vector3(0.05, lerpf(1.3, 2.35, lift), 0)
-
-
-func _pose_lurker() -> void:
-	_legs_root.visible = not _hidden
-	var e := CRACK_REST
-	if _rumble:
-		e = CRACK_RUMBLE
-	if not _hidden:
-		e = CRACK_OUT
-	_crack_mat.emission_energy_multiplier = e
-	var shake := Vector3.ZERO
-	if _hidden and _rumble:
-		shake = Vector3(sin(_t * SHAKE_HZ), 0, cos(_t * SHAKE_HZ * 1.3)) * SHAKE_M
-	_rock.position = shake + (Vector3(0, 0.12, 0) if not _hidden else Vector3.ZERO)
-
-
-## The Lurker's contact disc and team ring (ActorViews' rings on its root) show only once it is out.
-func _show_rings(on: bool) -> void:
-	var root := get_parent().get_parent() if get_parent() != null else null
-	if root == null:
-		return
-	for n in root.get_children():
-		if n is MeshInstance3D and (n as MeshInstance3D).visible != on:
-			(n as MeshInstance3D).visible = on

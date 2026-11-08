@@ -107,9 +107,9 @@ func test_the_night_rocks_signatures_and_variant_on_a_night_rocks_floor() -> voi
 		var i := w.actors.index_of(lurker)
 		if i < 0:
 			break
-		var av := _avatar(s, lurker) as RuinsRocksAvatar
+		var av := _avatar(s, lurker) as RockLurkerAvatar
 		if av != null and reader.lurker_hidden(i):
-			rumbled = rumbled or av.crack_energy() >= RuinsRocksAvatar.CRACK_RUMBLE
+			rumbled = rumbled or av.crack_energy() >= RockLurkerAvatar.CRACK_RUMBLE
 		if not reader.lurker_hidden(i):
 			out = true
 		var tg := reader.telegraph(i)

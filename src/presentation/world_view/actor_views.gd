@@ -552,6 +552,8 @@ func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 				get_tree().create_timer(ScrapHoundAvatar.DEATH_SECONDS).timeout.connect(
 					node.queue_free
 				)
+			elif boss is RockLurkerAvatar and is_inside_tree() and (boss as RockLurkerAvatar).die():
+				(boss as RockLurkerAvatar).fall(node)  # v0.11.0 O17b: it collapses back into a rock
 			else:
 				node.queue_free()
 
@@ -755,6 +757,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"mats", lens.body_materials.duplicate())
 		WorldReader.KIND_SCRAP_HOUND:  # v0.11.0 O17a: the owner's model, animated in code, on VAT
 			height = ScrapHoundAvatar.attach(self, root, facing, outline_color, technique)
+		WorldReader.KIND_ROCK_LURKER:  # v0.11.0 O17b: the owner's model, animated (RockLurkerAvatar)
+			height = RockLurkerAvatar.attach(root, facing, outline_color, technique, _solo_vat)
 		WorldReader.KIND_HATCHLING:
 			# The Brood Mother's hatchling (v0.3.0 C): a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()

@@ -327,6 +327,11 @@
       "sha256": "41d1e005ec7df5fa6576cef80fdf3258fe56635b3d18e2a8d02cebe6f18262c9"
     },
     {
+      "id": "rock_lurker",
+      "path": "assets/models/enemies/rock_lurker.glb",
+      "sha256": "0f6428702750f5687253358df4cfe1dbfb876af22811cd58e145af606cc87a6f"
+    },
+    {
       "id": "loop_device",
       "path": "assets/models/devices/loop_device.glb",
       "sha256": "c52a01bbbef3c6f037baeb6eb2491960df98998372ada530d829d6708734c67f"

@@ -151,6 +151,7 @@ const SOLO := {
 	"arc_caster": WorldReader.KIND_ARC_CASTER,
 	"bomb_drone": WorldReader.KIND_BOMB_DRONE,
 	"scrap_hound": WorldReader.KIND_SCRAP_HOUND,  # v0.11.0 O17a
+	"rock_lurker": WorldReader.KIND_ROCK_LURKER,  # v0.11.0 O17b
 }
 const SOLO_FRAME := {
 	WorldReader.KIND_NEEDLE: [1.5, 0.4],
@@ -158,6 +159,7 @@ const SOLO_FRAME := {
 	WorldReader.KIND_ARC_CASTER: [1.9, 0.65],
 	WorldReader.KIND_BOMB_DRONE: [2.8, 1.1],
 	WorldReader.KIND_SCRAP_HOUND: [1.6, 0.3],
+	WorldReader.KIND_ROCK_LURKER: [2.0, 0.45],
 }
 const SOLO_PLAN := [
 	["idle (t 1.5 s)", {}, "idle"],
@@ -204,6 +206,8 @@ func _initialize() -> void:
 			_kind = SOLO[arg.trim_prefix("--kind=")]
 			_suffix = "_" + arg.trim_prefix("--kind=")
 			plan = SOLO_PLAN
+			if _kind == WorldReader.KIND_ROCK_LURKER:  # v0.11.0 O17b: its disguise and rumble too
+				plan = SOLO_PLAN + [["disguised", {}, "hidden"], ["rumbling", {}, "rumble"]]
 		elif arg.begins_with("--version-dir="):
 			_dir = "res://build/shots/%s/vat/" % arg.trim_prefix("--version-dir=")
 		elif arg.begins_with("--out="):
@@ -509,6 +513,7 @@ func _drive_solo(a: AvatarBase, steps: String) -> void:
 			WorldReader.KIND_ARC_CASTER: 2.0,
 			WorldReader.KIND_BOMB_DRONE: 2.5,
 			WorldReader.KIND_SCRAP_HOUND: 6.5,
+			WorldReader.KIND_ROCK_LURKER: 2.2,
 		}[_kind]
 		/ 60.0
 	)
@@ -518,6 +523,15 @@ func _drive_solo(a: AvatarBase, steps: String) -> void:
 		for k in 12:
 			tick += 1
 			a.call(&"apply_state", _solo_state(tick, x, WorldReader.STATE_MOVE, 0.0))
+			_run(a, 1)
+		return
+	if steps == "hidden" or steps == "rumble":  # v0.11.0 O17b: the Rock Lurker waiting as a boulder
+		for k in 40:
+			tick += 1
+			var hs := _solo_state(tick, x, WorldReader.STATE_MOVE, 0.0)
+			hs["hidden"] = true
+			hs["rumbling"] = steps == "rumble"
+			a.call(&"apply_state", hs)
 			_run(a, 1)
 		return
 	if steps == "calm":
