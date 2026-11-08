@@ -14,8 +14,8 @@
 - **Built and merged (2026-11-08):** everything the owner has answered except the items below; latest merge fc62b419.
 - **Owner asleep (2026-11-08):** "keep working on the plan … write [questions] down". Questions: OWNER_QUESTIONS §J
   (N1–N9), each with the default being built.
-- **Building overnight:** O14b (the hidden room + sealed door), e2e for the new enemies and purpose rooms, the Glacier
-  Turtle's look; then S5 and the release prep (patch notes, PLAYTEST.md, tour).
+- **Built overnight:** O14b (hidden room), E2E, the Glacier Turtle, S5; two e2e "regressions" were hit-stop (tests
+  fixed). **Building:** the release prep (patch notes, What's New, tour, PLAYTEST.md; no version bump until N11).
 - **Waiting on the owner:** the boss brief (O6–O8 and the remembered Crown), the Laser sketch, OWNER_QUESTIONS §J.
 - **Agents (owner, 2026-11-07):** at most 3 Sonnet (light, exact briefs) + 2 Opus at once; up to 4 Opus when no Sonnet runs.
 - **Local note:** `project.godot` has an uncommitted editor rewrite (it drops the `[rendering]` settings and
@@ -55,6 +55,8 @@
 | MX-1 | The 20 new kinds' weak/resist re-picked (owner "Spread them out"): every id the weakness of 3–5 kinds, resisted by 1–5; `gun_void` now a weakness | 6612d61c |
 | O15 | Large rooms get a purpose (75 % drawn, 689 ‰ measured over 1,000 floors): camp, stone-ring hall (owner: "like Stonehenge … the vibe"), quarry; templates as data, seeded variation, doorways and item spots kept clear | 37951fa0 |
 | S5 | The v0.10.5 PLAYTEST rows not in the brief closed as OK in OWNER_TODO per Q27 (owner to confirm, §J N8) | docs |
+| O14b | The city's heart: with all ten rune lines (r11), the final approach gets a cracked wall under the throne → a room with a rune slab, the placeholder relic "The City's Heart" (N1: once a run, 1 HP + a 4 m ring for 60) and the sealed door (N2; `HeartRoom.door_opens` is the hook for the remembered Crown). 1,000 seeds: floors without the flag unchanged | 04e754e8 |
+| E2E | Every v0.11.0 feature reached by an e2e (new: signatures ×2, quake pillars, purpose rooms, Pierce flag, Laser every 3 s) | 68111759 |
 | S7 | OWNER_TODO §3.2: prompts for the 8 code-made enemies in the Charger's style, palette-A role colours | cc0d326f |
 
 ## Goldens changed on purpose
