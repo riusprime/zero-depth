@@ -120,3 +120,8 @@
   `test_save_lab_loadout` `ARRAY(["roster_kinds"]) != ARRAY([])`. SaveLab now sets `roster_kinds` (not `critter_kind`,
   which would start surges in every lab test; not a loadout field). That file + test_five_floors + e2e old_save + saves:
   `Tests 15, Passing Tests 15`. Pushed. O13b, O13c, O13d done; one agent merges the three (v0110-m13); O15 building.
+- 2026-11-08: seams at fc62b419 (+ the ten enemies, MX-1, O15): `Scripts 114, Tests 667, Passing Tests 667, Asserts
+  89715, Time 3131.035s`, `---- All tests passed! ----`, `check_gut_log: ok (667 passing, minimum 1)`. Since then:
+  the biome-name locale fix, the Glacier Turtle's look (N7), the e2e step (every new feature reached; found
+  `test_e2e_frozen_shore` failing: "eight ticks after letting go it still slides", and the Laser's first gap 184 not
+  180 — being fixed). Questions N10, N11 added.
