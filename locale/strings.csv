@@ -1296,7 +1296,7 @@ FORMCARD_LASER_HALO,"The lance's end fans 3 short lances (3 m, 40 %)","El final 
 FORMCARD_LASER_RING,A 1.4 m lightning ring bursts at the lance's tip (50 %),"Un anillo de rayos de 1,4 m estalla en la punta de la lanza (50 %)"
 FORMCARD_LASER_BACKFIRE,A 4.5 m lance also fires behind you,"Una lanza de 4,5 m también se dispara a tu espalda"
 FORMCARD_LASER_RICOCHET,The lance reflects off the first wall and keeps its reach,La lanza se refleja en la primera pared y sigue su alcance
-FORMCARD_LASER_HOMING,"The lance curves through the nearest enemies, up to 5","La lanza se curva a través de los enemigos más cercanos, hasta 5"
+FORMCARD_LASER_HOMING,"The lance curves through the nearest enemies, up to 8","La lanza se curva a través de los enemigos más cercanos, hasta 8"
 FORMCARD_LASER_ECHO,The lance strikes its path again 0.4 s later (50 %),"La lanza golpea su recorrido otra vez 0,4 s después (50 %)"
 FORMCARD_LASER_BIG_SHOT,"A lance twice as wide, +60 % damage","Una lanza el doble de ancha, +60 % de daño"
 FORMCARD_LASER_RAPID_FIRE,"Fires 30 % more often, -20 % damage a shot","Dispara un 30 % más a menudo, -20 % de daño por disparo"

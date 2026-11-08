@@ -11,7 +11,8 @@ extends RefCounted
 ##   (9 m), radius_m wide. It passes every enemy on its path (Q28: "Pierce everything, no card": spec.pierce is not
 ##   read); a wall stops it. trace() is the one geometry: the shot's hits and the record the view draws (EI-07;
 ##   LaserMods.record, WorldReader.beams).
-## - Damage (Q4): one shot deals lance_ticks (30: 3 s of the old beam's 10 ticks a second) of the old beam's ticks, each
+## - Damage (Q4; v0.11.0 O1d, owner 2026-11-08 "it oneshots strong enemies": -35 %): one shot deals lance_ticks
+##   (19) of the old beam's ticks, each
 ##   beam_permille of the shot's damage, times the Pattern's share per lance (Twin: 2 side by side at Lv 1–4, 3 fanned
 ##   at Lv 5, GunForms' lanes). An enemy takes a shot once per lance kind; crit rolls once per enemy hit.
 ## - Statuses (Q5: "3 hits worth"): each enemy hit is fed lance_feed (3) hits' worth of the lance's statuses
@@ -79,6 +80,12 @@ static func milli_of(spec: AttackSpec, damage: int) -> int:
 	return damage * maxi(0, spec.beam_permille) * share / 1000
 
 
+## The thousandths of one old beam tick of a ray that has its own enemies (v0.11.0 O1f): the lance's whole damage, no
+## Twin share (Laser.fire; LaserMods.plan marks those rays "own").
+static func full_milli_of(spec: AttackSpec, damage: int) -> int:
+	return damage * maxi(0, spec.beam_permille)
+
+
 ## The whole damage of one lance whose old beam tick dealt `milli` thousandths: lance_ticks of them (at least 1).
 static func shot_damage(w: World, milli: int) -> int:
 	if milli <= 0:
@@ -143,6 +150,10 @@ static func fire(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var milli := milli_of(spec, ctx.damage) * LaserMods.damage_permille(w, m) / 1000
 	var dmg := shot_damage(w, milli)
 	var base := maxi(1, shot_damage(w, milli_of(spec, ctx.base_damage)))
+	# v0.11.0 O1f (owner, 2026-11-08: "split rays at full damage"): a ray the plan gave its own enemies takes no Twin share
+	var full_milli := full_milli_of(spec, ctx.damage) * LaserMods.damage_permille(w, m) / 1000
+	var full := shot_damage(w, full_milli)
+	var full_base := maxi(1, shot_damage(w, full_milli_of(spec, ctx.base_damage)))
 	var feed_x := maxi(1, LaserMods.param(w, "lance_feed"))
 	var beams := trace(w, spec, ctx.origin, ctx.angle)
 	var centre := (GunForms.lanes(spec, LANE_RADIUS_M).size() - 1) / 2  # the primary lance
@@ -154,10 +165,13 @@ static func fire(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		var li := int(b["lane"])
 		var kind: StringName = b["kind"]
 		var share := int(b["share"])
-		var part := dmg if share == 1000 else (maxi(1, dmg * share / 1000) if dmg > 0 else 0)
+		var own := bool(b.get("own", false))
+		var whole := full if own else dmg
+		var part := whole if share == 1000 else (maxi(1, whole * share / 1000) if whole > 0 else 0)
 		var tags := ctx.tags | (SimEvent.TAG_AREA if kind == LaserMods.K_RING else 0)
 		var c := AttackContext.make(ctx.origin, ctx.angle, part, root, tags, ctx.effect_id)
-		c.base_damage = base if share == 1000 else maxi(1, base * share / 1000)
+		var base_of := full_base if own else base
+		c.base_damage = base_of if share == 1000 else maxi(1, base_of * share / 1000)
 		c.secondary = ctx.secondary or li != centre or kind != LaserMods.K_MAIN
 		c.repeat = ctx.repeat
 		c.feed_x = feed_x
@@ -179,6 +193,6 @@ static func fire(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		if kind == LaserMods.K_MAIN and bool(b["end"]):
 			Attacks.run_on_end(w, spec, c, b["to"])
 	if m != 0:
-		LaserMods.after_shot(w, m, beams, dmg, milli)
+		LaserMods.after_shot(w, m, beams, dmg, milli, full)
 	LaserMods.record(w, beams)
 	return landed

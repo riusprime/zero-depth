@@ -259,6 +259,30 @@ func _initialize() -> void:
 					)
 				)
 			)
+	# v0.11.0 O1d: the Laser with Homing and Twin (Lv 1: two rays; Lv 5: three), each ray on its own enemies.
+	for row: Array in [
+		["Lv 1", false, [&"gun_homing", &"gun_twin"]], ["Lv 5", true, [&"gun_homing"]]
+	]:
+		var d := {}
+		for sc: String in scenes:
+			d[sc] = _damage(&"gun_laser", 1, row[1], scenes[sc][0], scenes[sc][1], row[2])
+		(
+			lines
+			. append(
+				(
+					"laser + gun_homing + twin %s | 1 | yes | %.3f | %.3f | %.3f | %d | %d | %d"
+					% [
+						row[0],
+						float(d["single"]) / float(base["single"]),
+						float(d["line"]) / float(base["line"]),
+						float(d["pack"]) / float(base["pack"]),
+						d["single"],
+						d["line"],
+						d["pack"],
+					]
+				)
+			)
+		)
 	# v0.9.5 FC5: the Rune Explosion with its cards (a card alone each), in the NEAR scenes against the NEAR orbs.
 	for combo: Array in RUNE_COMBOS:
 		var d := {}

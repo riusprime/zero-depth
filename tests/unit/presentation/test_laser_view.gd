@@ -152,11 +152,10 @@ func test_v095_fc1_the_cards_extra_paths_ghosts_rings_and_mines_are_drawn() -> v
 
 ## v0.10.5 W3-O8 (owner F14: the Laser "doesn't feel as powerful or impactful as other attack forms"): a beam with
 ## weight. The ribbon is a core with a halo round it (by Effects density), its width pulses slightly, a firing starts
-## with a flash (the muzzle and the impact bigger, fading in FLASH_TICKS) and the impact throws sparks (by density).
-func test_w3o8_the_beam_has_a_core_a_glow_a_pulse_a_start_flash_and_hit_sparks() -> void:
+## with a flash (the muzzle and the impact bigger, fading in FLASH_TICKS). v0.11.0 O1d: no hit sparks any more.
+func test_w3o8_the_beam_has_a_core_a_glow_a_pulse_and_a_start_flash() -> void:
 	var was := ViewPrefs.effects_density
 	ViewPrefs.effects_density = "high"
-	var layer: VfxLayer = add_child_autofree(VfxLayer.new())
 	var w := _world()
 	w.add_wall_now(Obb.make(Vector2(6.0, 0.0), Vector2(0.2, 2.0), 0))  # v0.11.0 O1: the lance's impact is a wall's
 	var r := WorldReader.new(w)
@@ -174,8 +173,6 @@ func test_w3o8_the_beam_has_a_core_a_glow_a_pulse_a_start_flash_and_hit_sparks()
 	assert_eq(float(mat.get_shader_parameter(&"glow")), LaserWeight.glow("high"), "the halo")
 	var muzzle: MeshInstance3D = _view.get("_muzzle")
 	var big := muzzle.scale.x
-	_view.draw_fx(layer)
-	assert_eq(_view.sparks_drawn, LaserWeight.sparks("high"), "the impact throws its sparks")
 	var widths: Array[float] = []
 	for k in 22:  # v0.11.0 O1: within the lance's half second of glow
 		W.run(w, 1, 0, W.S)
@@ -188,8 +185,6 @@ func test_w3o8_the_beam_has_a_core_a_glow_a_pulse_a_start_flash_and_hit_sparks()
 	assert_lt(widths.max(), 1.0 + LaserWeight.PULSE + 0.001, "slightly")
 	ViewPrefs.effects_density = "low"
 	_view.sync(r)
-	_view.draw_fx(layer)
-	assert_eq(_view.sparks_drawn, LaserWeight.sparks("low"), "fewer at Low")
 	assert_eq(float(mat.get_shader_parameter(&"glow")), LaserWeight.glow("low"))
 	W.run(w, 170, 0, 0)  # v0.11.0 O1: past the 3 s cooldown
 	_view.sync(r)
@@ -203,21 +198,15 @@ func test_w3o8_laser_weight_numbers() -> void:
 	assert_eq(LaserWeight.flash(0.0), 1.0)
 	assert_eq(LaserWeight.flash(LaserWeight.FLASH_TICKS), 0.0)
 	assert_lt(LaserWeight.flash(4.0), LaserWeight.flash(2.0), "fading")
-	assert_lt(LaserWeight.sparks("low"), LaserWeight.sparks("high"))
-	for j in 5:
-		var s: Array = LaserWeight.spark_offset(j, 5, 7.0)
-		assert_lte((s[0] as Vector3).length(), LaserWeight.SPARK_REACH_M + 0.6, "near the impact")
-		assert_between(float(s[1]), 0.0, 1.0)
 
 
 ## v0.11.0 VX (owner PD-13: new effects use the premade packs): with the pack, the lance is the pack's laser of its
 ## element (the scene's own core, outer and ball materials) laid on one tube through the sim's points, drawn out and
-## fading as the ribbon did; the ribbon and the plain impact quad hide, the impact's sparks stay.
+## fading as the ribbon did; the ribbon and the plain impact quad hide. v0.11.0 O1d: the element is the colour only.
 func test_vx_the_lance_is_the_packs_laser_on_one_tube() -> void:
 	var was := ViewPrefs.effects_density
 	ViewPrefs.effects_density = "high"
 	_view.pack_fx = add_child_autofree(PackFx.new())
-	var layer: VfxLayer = add_child_autofree(VfxLayer.new())
 	var w := _world()
 	w.add_wall_now(Obb.make(Vector2(6.0, 0.0), Vector2(0.2, 2.0), 0))
 	var r := WorldReader.new(w)
@@ -236,10 +225,49 @@ func test_vx_the_lance_is_the_packs_laser_on_one_tube() -> void:
 	assert_false(
 		(_view.get("_impacts")[0] as MeshInstance3D).visible, "the plain impact quad hides"
 	)
-	_view.draw_fx(layer)
-	assert_eq(_view.sparks_drawn, LaserWeight.sparks("high"), "the impact still throws its sparks")
 	W.run(w, WorldReader.LANCE_GLOW_TICKS, 0, W.S)
 	_view.sync(r)
 	assert_eq(_view.shown, 0)
 	assert_false(t.visible, "the tube goes with the lance")
 	ViewPrefs.effects_density = was
+
+
+## v0.11.0 O1d (owner: "element just changes the color but does not spawn the fire/frost etc particles"): with an
+## element
+## the lance's look changes (its colour), and the effects layer draws nothing along the ray or at its hit.
+func test_o1d_an_element_is_the_colour_only() -> void:
+	var layer: VfxLayer = add_child_autofree(VfxLayer.new())
+	var w := W.world(&"gun", [&"gun_laser", &"ember_core"], [[Vector2(4.0, 0.0), 100000]])
+	w.add_wall_now(Obb.make(Vector2(6.0, 0.0), Vector2(0.2, 2.0), 0))
+	var r := WorldReader.new(w)
+	W.run(w, 1, 0, W.S)
+	_view.sync(r)
+	assert_eq(_view.shown, 1, "the lance is drawn")
+	assert_eq(_view.look, &"fire", "its look is the element's")
+	layer.begin(12.0)
+	_view.draw_fx(layer)
+	for pool: StringName in [&"spark", &"glow", &"ember", &"flame", &"flake", &"bolt", &"bubble"]:
+		assert_eq(layer.used(pool), 0, "%s: nothing along the ray or at the hit" % pool)
+
+
+## v0.11.0 O1d: the lance's tube only rebuilds when its points change or its radius has moved enough.
+func test_o1d_the_tube_rebuilds_only_when_it_changes() -> void:
+	var t: LaserPackTube = add_child_autofree(LaserPackTube.new())
+	t.ok = true
+	for m in [t.get("_core"), t.get("_outer"), t.get("_start"), t.get("_end")]:
+		(m as MeshInstance3D).material_override = ShaderMaterial.new()
+	var pts: Array[Vector3] = [Vector3.ZERO, Vector3(1, 0, 0), Vector3(2, 0, 0.2)]
+	t.lay(pts, 0.1, 0.25, 1.0, 1.0, 1.0)
+	assert_eq(t.rebuilds, 1, "built")
+	assert_gt((t.get("_core").mesh as ArrayMesh).get_surface_count(), 0, "a surface")
+	t.lay(pts, 0.1, 0.25, 0.9, 1.0, 1.0)
+	assert_eq(t.rebuilds, 1, "the glow alone doesn't rebuild it")
+	t.lay(pts, 0.102, 0.255, 0.8, 1.0, 1.0)
+	assert_eq(t.rebuilds, 1, "nor a small change of radius")
+	t.lay(pts, 0.05, 0.12, 0.5, 1.0, 1.0)
+	assert_eq(t.rebuilds, 2, "a real thinning does")
+	var more: Array[Vector3] = [
+		Vector3.ZERO, Vector3(1, 0, 0), Vector3(2, 0, 0.2), Vector3(3, 0, 0.4)
+	]
+	t.lay(more, 0.05, 0.12, 0.5, 1.0, 1.0)
+	assert_eq(t.rebuilds, 3, "as the lance draws out")

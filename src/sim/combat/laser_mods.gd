@@ -11,16 +11,25 @@ extends RefCounted
 ##   fork) and Ring's circle, each a {from, to, hits, at, wall, kind, lane, share, ...} dictionary. Every path passes
 ##   every enemy on it (Q28); a wall stops it.
 ## - Homing (Q8: "only Homing bends it"; L2: "a single smooth, curved trajectory … not a rigid or visibly segmented
-##   chain"; Q28: "it still bends through up to 5 chosen targets, then runs straight to full range"): at the shot the
-##   nearest enemies in front of the aim within reach, in sight (pick(), at most home_chain, 5), and the path runs
-##   through each in turn as one smooth curve (curve(): a Hermite spline through their centres), then straight on to
-##   the first wall
-##   (v0.11.0 O1c; at most TAIL_MAX_M, 40 m, so it always ends); a lance without Homing keeps its 9 m reach. The
-##   curve is
-##   cut into short legs (at most home_step_mm long,
-##   each turning at most home_bend_deg from the one before, so the path never kinks); a target the path would have to
-##   turn more than home_arc_deg to go on to, or one past home_len_permille of the reach along the curve, ends the
-##   chain there.
+##   chain"; Q28; v0.11.0 O1d, owner 2026-11-08: "an even smoother curve that tracks up to maybe 8 enemies"): at the
+##   shot the nearest enemies in front of the aim within reach (at most home_chain, 8), in sight of the one before
+##   (LaserHoming.routes()), and the path runs through each in turn as one smooth curve (LaserHoming.curve(): a C2
+##   spline through their
+##   centres), then straight on along its arrival heading to the first wall (v0.11.0 O1c; at most TAIL_MAX_M, 40 m, so
+##   it always ends); a lance without Homing keeps its 9 m reach. The curve is cut into short legs (at most home_step_mm
+##   long, each turning at most home_bend_deg from the one before, so the path never kinks); a target the path would
+##   have to turn more than home_arc_deg to go on to, or one past home_len_permille of the reach along the curve, ends
+##   the chain there.
+## - Twin with Homing (v0.11.0 O1d, owner: "they curve out and into the enemy, not overlapping each other"; without
+##   Homing Twin stays straight, Q8): each ray takes its own enemies, the pack split by side of the aim;
+##   fewer enemies than rays and they share them. Each ray leaves on its own outward heading (home_bow_deg
+##   off the aim on its own side, the outer rays; a third ray runs down the middle) and bows into its first target
+##   (a shared one is met from both sides, a lens: LaserHoming.bow()), and each runs on along its own arrival heading,
+##   so tails
+##   fan apart. v0.11.0 O1f (owner, 2026-11-08: "split rays at full damage"): a ray with its own enemies deals the
+##   lance's full damage (its path's legs are marked "own"; Laser.fire), a ray that shares a target keeps Twin's share,
+##   so one enemy takes what it did. A bow that would hit a wall before its target is flattened, then straightened
+##   (LaserHoming.BOW_TRIES).
 ## - Rapid Fire (Q6): the cooldown × rapid_cd per mille (700: -30 %), each shot × rapid_damage_permille (800: -20 %).
 ## - Echo (Q6): the main paths strike again echo_delay_ms (0.4 s) later at echo_share (50 %).
 ## - Big Shot (Q6): the lance big_width per mille wide (2x), big_damage per mille (x1.6), no aim lag.
@@ -74,10 +83,11 @@ const KINDS: Array[StringName] = [K_MAIN, K_HALO, K_RING, K_BACK, K_SPLIT]
 const F_IMPACT := 1
 const F_END := 2
 const F_WALL := 4
-## The most legs of one path (a curve of short legs through five targets, a bounce).
+## The most legs of one path (a curve of short legs through eight targets, a bounce).
 const MAX_LEGS := 256
-## The most legs one Homing piece (target to target) is cut into (curve()).
-const PIECE_LEGS := 48
+## v0.11.0 O1d: a path's enemies are searched this many legs at a time (_near_span(): the long curve never scans the
+## room per leg).
+const SPAN_LEGS := 8
 ## v0.11.0 O1c (owner): Homing's straight tail runs on to the first wall, at most this long (m) so it always ends.
 const TAIL_MAX_M := 40.0
 const ECHO_TICKS_MAX := 8
@@ -86,7 +96,7 @@ const HZ := 60
 const TAU_F := 6.283185307179586
 ## The laser row's numbers (units in the names; data/wand/attack_slots.tres carries the same).
 const DEFAULTS := {
-	"lance_ticks": 30,
+	"lance_ticks": 19,
 	"lance_feed": 3,
 	"pierce_falloff_permille": 850,
 	"pierce_floor_permille": 400,
@@ -97,11 +107,14 @@ const DEFAULTS := {
 	"ring_share": 500,
 	"back_mm": 4500,
 	"back_share": 1000,
-	"home_step_mm": 750,
-	"home_bend_deg": 12,
+	"home_step_mm": 450,
+	"home_bend_deg": 6,
 	"home_arc_deg": 160,
 	"home_len_permille": 3000,
-	"home_chain": 5,
+	"home_chain": 8,
+	"home_bow_deg": 30,
+	"home_lens_permille": 1100,
+	"home_turn_mm": 1500,
 	"echo_delay_ms": 400,
 	"echo_share": 500,
 	"big_width": 2000,
@@ -206,6 +219,21 @@ static func heading(w: World, m: int, angle: int) -> int:
 static func ray(
 	w: World, from: Vector2, dir: Vector2, length: float, r: float, most: int, seen: Dictionary
 ) -> Dictionary:
+	return _sweep(w, from, dir, length, r, most, seen, PackedInt32Array(), true)
+
+
+## ray(), over the actors in `scan` (unless `all`, every actor).
+static func _sweep(
+	w: World,
+	from: Vector2,
+	dir: Vector2,
+	length: float,
+	r: float,
+	most: int,
+	seen: Dictionary,
+	scan: PackedInt32Array,
+	all: bool
+) -> Dictionary:
 	var to := from + dir * length
 	var wall := 1.0
 	var wall_k := -1
@@ -217,7 +245,9 @@ static func ray(
 	var ts := PackedFloat32Array()
 	var ids := PackedInt32Array()
 	var a := w.actors
-	for i in range(1, a.size()):  # every actor (phase 4 runs before the tick's grid)
+	var last := a.size() if all else scan.size()
+	for j in range(1 if all else 0, last):  # every actor (phase 4 runs before the tick's grid)
+		var i := j if all else scan[j]
 		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1 or seen.has(i):
 			continue
 		var s := Collide.sweep_vs_circle(from, to, r, a.pos(i), a.radius[i])
@@ -260,12 +290,18 @@ static func plan(w: World, spec: AttackSpec, origin: Vector2, angle: int) -> Arr
 	var lanes := GunForms.lanes(spec, Laser.LANE_RADIUS_M)
 	var turns := GunForms.lane_turns(spec)
 	var centre := (lanes.size() - 1) / 2
-	var targets := pick(w, spec, origin, base) if m & HOMING else PackedInt32Array()
+	var routes: Array[Dictionary] = []
+	if m & HOMING:
+		routes = LaserHoming.routes(w, spec, origin, base, lanes.size())
 	for li in lanes.size():
-		var ang := (base + turns[li]) & 4095
-		var dir := Kin.dir(ang)
-		var from := origin + dir * w.player.radius_m + Vector2(-dir.y, dir.x) * lanes[li]
-		var path := _path(w, spec, m, from, ang, r, targets)
+		var way := {}
+		var own := false  # v0.11.0 O1f: this ray has enemies of its own (full damage)
+		if not routes.is_empty() and not (routes[li]["ids"] as PackedInt32Array).is_empty():
+			way = LaserHoming.bow(w, spec, origin, base, li, lanes, turns, routes[li], r)
+			own = not bool(routes[li]["shared"])
+		else:
+			way = lane_start(w, origin, (base + turns[li]) & 4095, lanes[li])
+		var path := _path(w, spec, m, way, r)
 		var legs: Array[Dictionary] = path["legs"]
 		for k in legs.size():
 			var leg := legs[k]
@@ -274,6 +310,7 @@ static func plan(w: World, spec: AttackSpec, origin: Vector2, angle: int) -> Arr
 			leg["share"] = 1000
 			leg["wmul"] = wmul
 			leg["end"] = k == legs.size() - 1
+			leg["own"] = own
 			leg["impact"] = k == legs.size() - 1 and bool(leg["wall"])
 			out.append(leg)
 		if li == centre:
@@ -281,34 +318,41 @@ static func plan(w: World, spec: AttackSpec, origin: Vector2, angle: int) -> Arr
 	return out
 
 
-## The main path of one lane: {legs, tip (where it ends), heading (its last leg's), first (the first enemy hit, or -1),
-## first_at, first_heading, seen}. Straight unless Homing bends it through `targets` (curve()) or Ricochet reflects it
-## off its first wall (the rest of the curve is then dropped: it runs straight on).
-static func _path(
-	w: World, spec: AttackSpec, m: int, from: Vector2, ang: int, r: float, targets: PackedInt32Array
-) -> Dictionary:
+## A lane's start at heading `ang`, `offset` across it: {from (on the hero's edge), ang, pts (no curve yet), heading}.
+static func lane_start(w: World, origin: Vector2, ang: int, offset: float) -> Dictionary:
+	var dir := Kin.dir(ang)
+	var from := origin + dir * w.player.radius_m + Vector2(-dir.y, dir.x) * offset
+	return {"from": from, "ang": ang, "pts": PackedVector2Array(), "heading": ang}
+
+
+## The main path of one lane along `way` (lane_start, or LaserHoming.bow's curve): {legs, tip (where it ends), heading
+## (its last
+## leg's), first (the first enemy hit, or -1), first_at, first_heading, seen}. Straight unless Homing bent it through
+## its targets or Ricochet reflects it off its first wall (the rest of the curve is then dropped: it runs straight on).
+static func _path(w: World, spec: AttackSpec, m: int, way: Dictionary, r: float) -> Dictionary:
 	var seen := {}
 	var legs: Array[Dictionary] = []
+	var from: Vector2 = way["from"]
+	var ang: int = way["ang"]
+	var pts: PackedVector2Array = way["pts"]
+	var way_end: int = way["heading"]
 	var out := {"legs": legs, "first": -1, "first_at": from, "first_heading": ang, "heading": ang}
 	var bounce := m & RICOCHET != 0
-	var way := PackedVector2Array()
-	var way_end := ang
-	if not targets.is_empty():
-		var c := curve(w, spec, from, ang, targets)
-		way = c["pts"]
-		way_end = int(c["heading"])
 	var pos := from
 	var hd := ang
 	var remain := spec.reach_m  # the straight run's length left (Homing: set where the curve ends)
 	var traveled := 0.0
 	var bounced := false
 	var k := 0
-	while (k < way.size() or remain > 0.01) and legs.size() < MAX_LEGS:
-		var on_curve := k < way.size()
+	var scan := PackedInt32Array()
+	while (k < pts.size() or remain > 0.01) and legs.size() < MAX_LEGS:
+		var on_curve := k < pts.size()
 		var dir := Kin.dir(hd)
 		var len := remain
 		if on_curve:
-			var d := way[k] - pos
+			if k % SPAN_LEGS == 0:
+				scan = _near_span(w, pos, pts, k, r)
+			var d := pts[k] - pos
 			var dl := Kin.length(d)
 			k += 1
 			if dl < 0.001:
@@ -316,9 +360,9 @@ static func _path(
 			dir = d / dl
 			len = dl
 			hd = Kin.angle_of(d)
-			if k == way.size():
+			if k == pts.size():
 				hd = way_end  # the curve's end tangent: straight on from here
-		var leg := ray(w, pos, dir, len, r, Laser.ALL, seen)
+		var leg := _sweep(w, pos, dir, len, r, Laser.ALL, seen, scan, not on_curve)
 		for id in leg["hits"]:
 			seen[id] = true
 		if int(out["first"]) < 0 and leg["hits"].size() > 0:
@@ -342,10 +386,10 @@ static func _path(
 			bounced = true
 			if on_curve:  # the rest of the curve is dropped: straight on for what the reach has left
 				remain = maxf(0.0, spec.reach_m - traveled)
-			way = PackedVector2Array()
+			pts = PackedVector2Array()
 			k = 0
 			continue
-		if on_curve and k == way.size():
+		if on_curve and k == pts.size():
 			remain = TAIL_MAX_M
 			continue
 		if not on_curve:
@@ -355,113 +399,27 @@ static func _path(
 	return out
 
 
-## Homing's one smooth path through `targets` (in order) from `from` heading `ang` (v0.11.0 O1, L2): a cubic Hermite
-## curve through each target's centre, leaving along the aim, its tangent at each target the bisector of the lines in
-## and out (so it never kinks), each piece as long as its chord. Each piece is cut into legs at most home_step_mm long,
-## more of them where it bends, until no leg turns more than home_bend_deg from the one before (at most PIECE_LEGS a
-## piece). A target the path would turn more than home_arc_deg to go on to, or one that would make the curve longer
-## than home_len_permille of the reach (3x), ends the chain.
-## {pts (the points after `from`, each target's centre among them), heading (the way on from the last), length}.
-static func curve(
-	w: World, spec: AttackSpec, from: Vector2, ang: int, targets: PackedInt32Array
-) -> Dictionary:
-	var most := deg(param(w, "home_arc_deg"))
-	var knots := PackedVector2Array([from])
-	var prev := ang
-	for t in targets:
-		var p := w.actors.pos(t)
-		var v := p - knots[knots.size() - 1]
-		if Kin.length(v) < 0.05:
+## v0.11.0 O1d: the actors within reach of the next SPAN_LEGS legs of the curve `pts` from `k` (a box round them; `at`
+## is
+## where the first starts): _path sweeps only these, not the room, along a long curve.
+static func _near_span(
+	w: World, at: Vector2, pts: PackedVector2Array, k: int, r: float
+) -> PackedInt32Array:
+	var lo := at
+	var hi := at
+	for j in range(k, mini(k + SPAN_LEGS, pts.size())):
+		lo = Vector2(minf(lo.x, pts[j].x), minf(lo.y, pts[j].y))
+		hi = Vector2(maxf(hi.x, pts[j].x), maxf(hi.y, pts[j].y))
+	var out := PackedInt32Array()
+	var a := w.actors
+	for i in range(1, a.size()):
+		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
 			continue
-		if Kin.angle_diff(Kin.angle_of(v), prev) > most:
-			break
-		knots.append(p)
-		prev = Kin.angle_of(v)
-	var tangents: Array[Vector2] = [Kin.dir(ang)]
-	for k in range(1, knots.size()):
-		var a := _unit(knots[k] - knots[k - 1])
-		var b := _unit(knots[k + 1] - knots[k]) if k + 1 < knots.size() else a
-		var m := a + b
-		tangents.append(_unit(m) if Kin.length(m) > 0.001 else a)
-	var bend := maxi(1, deg(param(w, "home_bend_deg")))
-	var step := maxf(0.05, mm(param(w, "home_step_mm")))
-	var pts := PackedVector2Array()
-	var used := 0.0
-	var last_dir := Kin.dir(ang)
-	for k in range(1, knots.size()):
-		var piece := _piece(
-			knots[k - 1], tangents[k - 1], knots[k], tangents[k], step, bend, last_dir
-		)
-		var len := 0.0
-		var at := knots[k - 1]
-		for p in piece:
-			len += Kin.length(p - at)
-			at = p
-		if used + len > mm(param(w, "home_len_permille")) * spec.reach_m:
-			break
-		pts.append_array(piece)
-		used += len
-		last_dir = _unit(
-			(
-				piece[piece.size() - 1]
-				- (piece[piece.size() - 2] if piece.size() > 1 else knots[k - 1])
-			)
-		)
-	var hd := ang
-	if not pts.is_empty():
-		var k := pts.size()
-		hd = Kin.angle_of(tangents[_knot_of(knots, pts[k - 1])])
-	return {"pts": pts, "heading": hd, "length": used}
-
-
-## One piece of curve() from `a` (tangent `ta`) to `b` (tangent `tb`), both tangents unit, scaled by the chord: its
-## points after `a`, `b` last, in legs at most `step` long, doubled until no leg turns more than `bend` from the one
-## before (the first from `in_dir`, the way the path came in), at most PIECE_LEGS.
-static func _piece(
-	a: Vector2, ta: Vector2, b: Vector2, tb: Vector2, step: float, bend: int, in_dir: Vector2
-) -> PackedVector2Array:
-	var chord := Kin.length(b - a)
-	var n := maxi(2, ceili(chord * 1.5 / step))  # a bent piece runs longer than its chord
-	var out := PackedVector2Array()
-	while true:
-		out = PackedVector2Array()
-		var worst := 0
-		var at := a
-		var dir_in := Kin.angle_of(in_dir)
-		for k in range(1, n + 1):
-			var s := float(k) / n
-			var s2 := s * s
-			var s3 := s2 * s
-			var p := (
-				a * (2.0 * s3 - 3.0 * s2 + 1.0)
-				+ ta * (chord * (s3 - 2.0 * s2 + s))
-				+ b * (-2.0 * s3 + 3.0 * s2)
-				+ tb * (chord * (s3 - s2))
-			)
-			if k == n:
-				p = b
-			var d := Kin.angle_of(p - at)
-			worst = maxi(worst, Kin.angle_diff(d, dir_in))
-			dir_in = d
-			out.append(p)
-			at = p
-		if worst <= bend or n >= PIECE_LEGS:
-			break
-		n = mini(PIECE_LEGS, n * 2)
+		var p := a.pos(i)
+		var pad := r + a.radius[i]
+		if p.x >= lo.x - pad and p.x <= hi.x + pad and p.y >= lo.y - pad and p.y <= hi.y + pad:
+			out.append(i)
 	return out
-
-
-static func _unit(v: Vector2) -> Vector2:
-	var l := Kin.length(v)
-	return v / l if l > 0.000001 else Vector2(1.0, 0.0)
-
-
-## The index in `knots` of the point `p` (a target's centre), else the last.
-static func _knot_of(knots: PackedVector2Array, p: Vector2) -> int:
-	for k in knots.size():
-		if knots[k] == p:
-			return k
-	return knots.size() - 1
 
 
 ## The live enemies within `r` of `center` (their edge), by index: a full scan, as ray() does (the shot fires in
@@ -481,81 +439,13 @@ static func _gone(w: World, i: int) -> bool:
 	return i <= 0 or i >= w.actors.size() or w.actors.dead[i] == 1
 
 
-## Homing's targets at the shot: the home_chain (5) nearest enemies within the reach of `origin` (the hero)
-## (v0.11.0 O1, Q28: the lance pierces, so always the chain), in the order the curve can take best (_order()).
+## Homing's targets at the shot for one ray: the home_chain nearest enemies within the reach of `origin` (the hero), in
+## the order the curve can take best (LaserHoming.order()).
 ## v0.10.0 FX (owner: "homing must respect walls"): an enemy behind the aim `ang` (more than 90 degrees off it) is no
 ## target, and each target must be in sight (no wall on the line) of the one before it in the chain, the first of the
 ## hero (so the curve can reach one behind a wall round it, through one in sight).
 static func pick(w: World, spec: AttackSpec, origin: Vector2, ang: int) -> PackedInt32Array:
-	var aim := Kin.dir(ang)
-	var found := near(w, origin, spec.reach_m)
-	var ds: Array[float] = []
-	var ids: Array[int] = []
-	for i in found:
-		var to := w.actors.pos(i) - origin
-		if to.dot(aim) < 0.0:
-			continue
-		var d := Kin.length(to)
-		var at := ids.size()  # nearest first; a tie keeps the lower index
-		while at > 0 and (ds[at - 1] > d or (ds[at - 1] == d and ids[at - 1] > i)):
-			at -= 1
-		ds.insert(at, d)
-		ids.insert(at, i)
-	var n := param(w, "home_chain")
-	var pool: Array[int] = []
-	for i in ids:  # the nearest n
-		if pool.size() >= n:
-			break
-		pool.append(i)
-	return _order(w, origin, ang, pool)
-
-
-## The order curve() visits `pool` in (v0.11.0 O1, L2): of every order (at most 5! = 120), the one whose chain from
-## `origin` goes furthest before a step the curve can't take (a target out of sight of the one before, or a turn of
-## more than home_arc_deg from the line in), then the shortest such chain (by its straight steps; on a tie the first
-## found, the nearest-first order tried first): a chain that runs along a pack rather than back and forth across it.
-static func _order(w: World, origin: Vector2, ang: int, pool: Array[int]) -> PackedInt32Array:
-	var most := deg(param(w, "home_arc_deg"))
-	var best := PackedInt32Array()
-	var best_cost := 0.0
-	var perm := pool.duplicate()
-	var c := []
-	c.resize(perm.size())
-	c.fill(0)
-	var at := 0
-	var first := true
-	while true:  # Heap's algorithm, every order once
-		if first:
-			first = false
-		else:
-			while at < perm.size() and c[at] >= at:
-				c[at] = 0
-				at += 1
-			if at >= perm.size():
-				break
-			var j: int = 0 if at % 2 == 0 else c[at]
-			var t: int = perm[j]
-			perm[j] = perm[at]
-			perm[at] = t
-			c[at] += 1
-			at = 0
-		var got := PackedInt32Array()
-		var cost := 0.0
-		var from := origin
-		var prev := ang
-		for i in perm:
-			var p := w.actors.pos(i)
-			var v := p - from
-			if Kin.angle_diff(Kin.angle_of(v), prev) > most or not w.sees(from, p):
-				break
-			got.append(i)
-			cost += Kin.length(v)
-			prev = Kin.angle_of(v)
-			from = p
-		if got.size() > best.size() or (got.size() == best.size() and cost < best_cost - 0.000001):
-			best = got
-			best_cost = cost
-	return best
+	return LaserHoming.order(w, origin, ang, LaserHoming.pool(w, spec, origin, ang), {})
 
 
 ## The outward normal of the wall box at the point `p` on its (grown) face.
@@ -646,13 +536,16 @@ static func advance(w: World) -> void:
 	_mine_triggers(w, spec)
 
 
-## One shot (Laser.fire, `beams` its plan, `dmg` its damage, `milli` the thousandths of one old beam tick): Echo stores
-## the main legs to strike again; a held Mine drops a mine at the tip every mine_every_ms.
-static func after_shot(w: World, m: int, beams: Array[Dictionary], dmg: int, milli: int) -> void:
+## One shot (Laser.fire, `beams` its plan, `dmg` its damage, `milli` the thousandths of one old beam tick, `full` the
+## damage of a ray with its own enemies): Echo stores the main legs to strike again; a held Mine drops a mine at the tip
+## every mine_every_ms.
+static func after_shot(
+	w: World, m: int, beams: Array[Dictionary], dmg: int, milli: int, full: int
+) -> void:
 	var s := w.mx
 	if m & ECHO and dmg > 0:
 		var e := maxi(1, dmg * param(w, "echo_share") / 1000)
-		_echo_store(w, beams, e)
+		_echo_store(w, beams, e, maxi(1, full * param(w, "echo_share") / 1000))
 	if m & MINE:
 		if s.lz_mine_next == 0 or w.tick >= s.lz_mine_next:
 			s.lz_mine_next = w.tick + ticks(param(w, "mine_every_ms"))
@@ -696,7 +589,7 @@ static func _tip(beams: Array[Dictionary]) -> Vector2:
 	return tip
 
 
-static func _echo_store(w: World, beams: Array[Dictionary], dmg: int) -> void:
+static func _echo_store(w: World, beams: Array[Dictionary], dmg: int, full: int) -> void:
 	var s := w.mx
 	var due := w.tick + ticks(param(w, "echo_delay_ms"))
 	var groups := 0
@@ -716,7 +609,7 @@ static func _echo_store(w: World, beams: Array[Dictionary], dmg: int) -> void:
 		s.lz_echo_from.append(b["from"])
 		s.lz_echo_to.append(b["to"])
 		s.lz_echo_r.append(float(b["wmul"]) * spec_radius(w) / 1000.0)
-		s.lz_echo_dmg.append(dmg)
+		s.lz_echo_dmg.append(full if bool(b.get("own", false)) else dmg)
 
 
 static func spec_radius(w: World) -> float:

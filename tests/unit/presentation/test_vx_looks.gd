@@ -220,7 +220,8 @@ func test_a_live_orb_carries_its_elements_accent_and_none_at_low() -> void:
 			assert_eq(_layer.used(&"ember"), 0, "Low: the pulse and trail only")
 
 
-func test_the_lasers_impact_plays_its_extra_twice_a_second() -> void:
+func test_the_lasers_impact_has_no_element_extra_any_more() -> void:
+	# v0.11.0 O1d (owner, 2026-11-08: "element just changes the color"): it played Fire's embers twice a second.
 	var v: LaserView = add_child_autofree(LaserView.new())
 	var w := W.world(&"gun", [&"gun_laser", &"ember_core"], [[Vector2(4.0, 0.0), 100000]])
 	w.add_wall_now(Obb.make(Vector2(6.0, 0.0), Vector2(0.2, 2.0), 0))  # v0.11.0 O1: a wall stops the lance
@@ -230,10 +231,7 @@ func test_the_lasers_impact_plays_its_extra_twice_a_second() -> void:
 	assert_gt(v.impacts, 0, "the lance ends on the wall")
 	_layer.begin(3.0)
 	v.draw_fx(_layer)
-	assert_gt(_layer.used(&"ember"), 0, "Fire's embers at the beam's end")
-	_layer.begin(25.0)
-	v.draw_fx(_layer)
-	assert_eq(_layer.used(&"ember"), 0, "between two (never on every damage tick)")
+	assert_eq(_layer.used(&"ember"), 0, "no embers at the beam's end")
 
 
 # --- V12, V14, V15, V47: the Void ----------------------------------------------------------------------------------

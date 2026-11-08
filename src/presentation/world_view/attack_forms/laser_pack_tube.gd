@@ -10,17 +10,32 @@ extends Node3D
 
 ## Sides round the tube.
 const SIDES := 10
+## v0.11.0 O1d: a lance that has stopped changing but for its radius rebuilds its mesh when the radius has moved this
+## much
+## (per mille of the radius it was built at): the glow's thinning is many small steps, the steps don't show.
+const REBUILD_PERMILLE := 60
 ## The pack's core and outer shaders mask their cylinder's UV.y past ~0.5 (their "open" sweep): the tube spans this.
 const UV_SPAN := 0.45
+
+## The ring's unit circle, once.
+static var _ring_x := PackedFloat32Array()
+static var _ring_y := PackedFloat32Array()
 
 ## The scene the materials came from (tests), and whether they were found.
 var scene_path := ""
 var ok := false
+## How many times lay() rebuilt the meshes (the tests read it).
+var rebuilds := 0
 var _core := MeshInstance3D.new()
 var _outer := MeshInstance3D.new()
 var _start := MeshInstance3D.new()
 var _end := MeshInstance3D.new()
 var _emission := {}  # material -> its scene emission
+## v0.11.0 O1d: what the meshes were last built from (lay()): their points' count and ends, and the radii.
+var _built_n := 0
+var _built_ends := [Vector3.ZERO, Vector3.ZERO]
+var _built_core := 0.0
+var _built_outer := 0.0
 
 
 func _init() -> void:
@@ -29,8 +44,8 @@ func _init() -> void:
 		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		m.visible = false
 		add_child(m)
-	_core.mesh = ImmediateMesh.new()
-	_outer.mesh = ImmediateMesh.new()
+	_core.mesh = ArrayMesh.new()
+	_outer.mesh = ArrayMesh.new()
 
 
 ## Takes the pack scene's materials and ball meshes (an instance made and freed at once), in `colors`.
@@ -89,10 +104,17 @@ func lay(
 		m.visible = show
 	if not show:
 		return
-	_tube(_core.mesh as ImmediateMesh, pts, total, core_r)
 	_outer.visible = outer_r > core_r
+	if _stale(pts, core_r, outer_r):
+		rebuilds += 1
+		_built_n = pts.size()
+		_built_ends = [pts[0], pts[pts.size() - 1]]
+		_built_core = core_r
+		_built_outer = outer_r
+		_tube(_core.mesh as ArrayMesh, pts, total, core_r)
+		if _outer.visible:
+			_tube(_outer.mesh as ArrayMesh, pts, total, outer_r)
 	if _outer.visible:
-		_tube(_outer.mesh as ImmediateMesh, pts, total, outer_r)
 		(_outer.material_override as ShaderMaterial).set_shader_parameter(&"beam_length", total)
 	for m: MeshInstance3D in [_core, _outer, _start, _end]:
 		var mat := m.material_override as ShaderMaterial
@@ -110,47 +132,74 @@ func off() -> void:
 	visible = false
 
 
-## A closed tube of radius `r` through `pts` (outward faces, clockwise seen from outside: Godot's front).
-static func _tube(im: ImmediateMesh, pts: Array[Vector3], total: float, r: float) -> void:
-	im.clear_surfaces()
-	var rings: Array = []
+## v0.11.0 O1d: the meshes no longer match: other points (while the lance draws out, or a new shot) or a radius that has
+## moved REBUILD_PERMILLE (the lance only thins after it is drawn).
+func _stale(pts: Array[Vector3], core_r: float, outer_r: float) -> bool:
+	if pts.size() != _built_n or pts[0] != _built_ends[0] or pts[pts.size() - 1] != _built_ends[1]:
+		return true
+	var step := REBUILD_PERMILLE / 1000.0
+	return (
+		absf(core_r - _built_core) > step * _built_core
+		or absf(outer_r - _built_outer) > step * _built_outer
+	)
+
+
+## A closed tube of radius `r` through `pts` (outward faces, clockwise seen from outside: Godot's front), as one indexed
+## surface. v0.11.0 O1d (the owner's "every time it shoots the game lags a bit"): it was an ImmediateMesh of three
+## calls a
+## vertex and six vertices a quad; the rings now share their vertices, and the arrays are filled in one pass.
+static func _tube(mesh: ArrayMesh, pts: Array[Vector3], total: float, r: float) -> void:
+	if _ring_x.is_empty():
+		for j in SIDES + 1:
+			var a := TAU * float(j) / SIDES
+			_ring_x.append(cos(a))
+			_ring_y.append(sin(a))
+	var n := pts.size()
+	var stride := SIDES + 1
+	var verts := PackedVector3Array()
+	var norms := PackedVector3Array()
+	var uvs := PackedVector2Array()
+	verts.resize(n * stride)
+	norms.resize(n * stride)
+	uvs.resize(n * stride)
 	var run := 0.0
-	for i in pts.size():
+	var v := 0
+	for i in n:
 		if i > 0:
 			run += pts[i].distance_to(pts[i - 1])
-		var t := (pts[mini(i + 1, pts.size() - 1)] - pts[maxi(i - 1, 0)]).normalized()
+		var t := (pts[mini(i + 1, n - 1)] - pts[maxi(i - 1, 0)]).normalized()
 		var n1 := t.cross(Vector3.UP)
 		if n1.length_squared() < 0.01:
 			n1 = t.cross(Vector3.RIGHT)
 		n1 = n1.normalized()
 		var n2 := n1.cross(t).normalized()
-		var ring: Array[Vector3] = []
-		for j in SIDES + 1:
-			var a := TAU * float(j) / SIDES
-			ring.append(n1 * cos(a) + n2 * sin(a))
-		rings.append([pts[i], ring, run / total * UV_SPAN])
-	im.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
-	for i in pts.size() - 1:
-		var p0: Vector3 = rings[i][0]
-		var p1: Vector3 = rings[i + 1][0]
-		var r0: Array[Vector3] = rings[i][1]
-		var r1: Array[Vector3] = rings[i + 1][1]
-		var v0: float = rings[i][2]
-		var v1: float = rings[i + 1][2]
+		var along := run / total * UV_SPAN
+		for j in stride:
+			var d := n1 * _ring_x[j] + n2 * _ring_y[j]
+			verts[v] = pts[i] + d * r
+			norms[v] = d
+			uvs[v] = Vector2(float(j) / SIDES, along)
+			v += 1
+	var idx := PackedInt32Array()
+	idx.resize((n - 1) * SIDES * 6)
+	var at := 0
+	for i in n - 1:
 		for j in SIDES:
-			var u0 := float(j) / SIDES
-			var u1 := float(j + 1) / SIDES
 			# A (i, j), B (i+1, j), C (i, j+1), D (i+1, j+1): triangles A C B and B C D
-			_v(im, p0, r0[j], r, u0, v0)
-			_v(im, p0, r0[j + 1], r, u1, v0)
-			_v(im, p1, r1[j], r, u0, v1)
-			_v(im, p1, r1[j], r, u0, v1)
-			_v(im, p0, r0[j + 1], r, u1, v0)
-			_v(im, p1, r1[j + 1], r, u1, v1)
-	im.surface_end()
-
-
-static func _v(im: ImmediateMesh, p: Vector3, d: Vector3, r: float, u: float, v: float) -> void:
-	im.surface_set_normal(d)
-	im.surface_set_uv(Vector2(u, v))
-	im.surface_add_vertex(p + d * r)
+			var a := i * stride + j
+			var b := a + stride
+			idx[at] = a
+			idx[at + 1] = a + 1
+			idx[at + 2] = b
+			idx[at + 3] = b
+			idx[at + 4] = a + 1
+			idx[at + 5] = b + 1
+			at += 6
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = norms
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_INDEX] = idx
+	mesh.clear_surfaces()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)

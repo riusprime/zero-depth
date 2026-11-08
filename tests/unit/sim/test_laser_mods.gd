@@ -3,17 +3,28 @@ extends GutTest
 ## v0.9.5 FC1 (owner: "homing + laser would make the laser follow the neares enemy making a smooth curve, and with
 ## pierce it would make a smooth curve trying to hit the closest 5 enemies"; FORM_COMBOS.md L1-L11): what the cards do
 ## to the Laser (LaserMods), one test a row, with the numbers of the table. v0.11.0 O1 (owner, PLAN L1, L2; Q6, Q8,
-## Q28): the Laser is a lance, one instant shot every 3 s that passes every enemy on its path; a plain shot deals 150 on
-## the dummies (30 old ticks of 5). Homing plans one smooth path through up to 5 targets at each shot.
+## Q28): the Laser is a lance, one instant shot every 3 s that passes every enemy on its path; a plain shot deals 95 on
+## the dummies (O1d: 19 old ticks of 5). Homing plans one smooth path through up to 5 targets at each shot.
 
 const W := preload("res://tests/support/mx4_world.gd")
 const HP := 100000
 const AIM_NORTH := 1024
 const AIM_WEST := 2048
-const SHOT := 150
-## The smoothness bound the Homing tests hold: no leg turns more than home_bend_deg (12 degrees, 136 units) from the
+const SHOT := 95
+## The smoothness bound the Homing tests hold: no leg turns more than home_bend_deg (6 degrees, 68 units) from the
 ## one before, plus 2 units for Kin.angle_of's rounding of a leg's direction.
-const BEND_MAX := 136 + 2
+const BEND_MAX := 68 + 2
+## Up to 8 targets in a loose ring ahead (the search's cap).
+const CAP_AT: Array[Vector2] = [
+	Vector2(2.5, 1.5),
+	Vector2(3.5, -1.5),
+	Vector2(4.5, 2.5),
+	Vector2(5.0, -0.5),
+	Vector2(5.5, 3.5),
+	Vector2(6.0, -2.5),
+	Vector2(7.0, 1.0),
+	Vector2(7.5, -1.0),
+]
 
 
 func _world(cards: Array, at: Array) -> World:
@@ -241,9 +252,9 @@ func test_l4_homing_bends_one_smooth_path_through_the_nearest_enemy() -> void:
 	var main := _kind(_trace(w, 0), &"main")
 	assert_gt(main.size(), 3, "a curve of short legs")
 	assert_lt(_dist_to_path(main, Vector2(3.0, 3.0)), 0.35, "it passes within the target's radius")
-	assert_lte(_most_turn(main), BEND_MAX, "no leg turns more than 12 degrees from the one before")
+	assert_lte(_most_turn(main), BEND_MAX, "no leg turns more than 6 degrees from the one before")
 	for k in main.size() - 1:
-		assert_lte(_len(main[k]), 0.751, "short legs on the arc (home_step_mm)")
+		assert_lte(_len(main[k]), 0.451, "short legs on the arc (home_step_mm)")
 	assert_almost_eq(
 		_len(main[main.size() - 1]),
 		LaserMods.TAIL_MAX_M,
@@ -251,13 +262,11 @@ func test_l4_homing_bends_one_smooth_path_through_the_nearest_enemy() -> void:
 		"then straight on, TAIL_MAX_M with no wall (v0.11.0 O1c; was the 9 m range)"
 	)
 	var last := main[main.size() - 1]
-	var start: Vector2 = main[0]["from"]
-	var end_tangent := Kin.angle_of(Vector2(3.0, 3.0) - start)
 	assert_almost_eq(
-		float(Kin.angle_diff(_angle(last), end_tangent)),
+		float(Kin.angle_diff(_angle(last), _angle(main[main.size() - 2]))),
 		0.0,
-		4.0,
-		"then straight on, the way it came in (the last chord)"
+		float(BEND_MAX),
+		"then straight on from the curve's end tangent (v0.11.0 O1d: its arrival heading, no kink)"
 	)
 
 
@@ -273,13 +282,15 @@ func test_l4_homing_threads_five_enemies_nearest_first_in_one_shot() -> void:
 	var w := _world([&"gun_homing"], at)
 	var s := Modifiers.bolt(w)
 	assert_eq(
-		Array(LaserMods.pick(w, s, w.player_pos(), 0)), [1, 2, 3, 4, 5], "up to 5, nearest first"
+		Array(LaserMods.pick(w, s, w.player_pos(), 0)),
+		[1, 2, 3, 4, 5],
+		"all five in range, nearest first"
 	)
 	var main := _kind(_trace(w, 0), &"main")
 	for k in 5:
 		var d := _dist_to_path(main, at[k])
 		assert_lt(d, 0.35, "the path passes within target %d's radius (%.3f m)" % [k + 1, d])
-	assert_lte(_most_turn(main), BEND_MAX, "one smooth path: no leg turns more than 12 degrees")
+	assert_lte(_most_turn(main), BEND_MAX, "one smooth path: no leg turns more than 6 degrees")
 	gut.p("O1 homing chain: %d legs, the most turn %d units" % [main.size(), _most_turn(main)])
 	W.run(w, 2, 0, W.S)
 	for k in [1, 2, 3, 4, 5]:
@@ -491,7 +502,7 @@ func test_l4_homing_runs_along_a_pack_in_one_smooth_path() -> void:
 	var main := _kind(_trace(w, 0), &"main")
 	for k in 5:
 		assert_lt(_dist_to_path(main, at[k]), 0.35, "the path passes target %d" % (k + 1))
-	assert_lte(_most_turn(main), BEND_MAX, "no leg turns more than 12 degrees from the one before")
+	assert_lte(_most_turn(main), BEND_MAX, "no leg turns more than 6 degrees from the one before")
 	gut.p("O1 homing pack: %d legs, the most turn %d units" % [main.size(), _most_turn(main)])
 	W.run(w, 2, 0, W.S)
 	for k in range(1, 6):
@@ -525,3 +536,260 @@ func test_o1c_without_homing_the_lance_still_ends_at_9_m() -> void:
 	var plain := W.world(&"gun", [&"gun_laser"], [[Vector2(3.0, 0.0), HP]])
 	var b := Laser.trace(plain, Modifiers.bolt(plain), plain.player_pos(), 0)[0]
 	assert_almost_eq(_len(b), 9.0, 0.001, "a plain lance: 9 m")
+
+
+# --- v0.11.0 O1d (owner, 2026-11-08): the order search, the smoother curve and Twin's own enemies ---------------------
+func _pool_of(w: World) -> Array[int]:
+	var out: Array[int] = []
+	for i in range(1, w.actors.size()):
+		out.append(i)
+	return out
+
+
+func test_o1d_homing_takes_up_to_eight_and_the_search_is_bounded() -> void:
+	var w := _world([&"gun_homing"], CAP_AT)
+	var s := Modifiers.bolt(w)
+	var p := LaserMods.pick(w, s, w.player_pos(), 0)
+	assert_eq(p.size(), 8, "up to 8 (home_chain 8): %s" % str(Array(p)))
+	var sight := {}
+	var order := LaserHoming.order(w, w.player_pos(), 0, _pool_of(w), sight)
+	assert_eq(order.size(), 8)
+	assert_lte(sight.size(), 8 * (8 + 1), "one look per pair: at most n x (n + 1) sight checks")
+	var nine: Array = CAP_AT.duplicate()
+	nine.append(Vector2(8.0, 0.5))
+	var w9 := _world([&"gun_homing"], nine)
+	assert_eq(LaserMods.pick(w9, Modifiers.bolt(w9), w9.player_pos(), 0).size(), 8, "never more")
+
+
+func test_o1d_the_order_runs_round_a_pack_not_across_it() -> void:
+	var at := [
+		Vector2(2.0, 0.0),
+		Vector2(5.0, 0.3),
+		Vector2(3.0, 0.1),
+		Vector2(6.5, 0.0),
+		Vector2(4.0, -0.2),
+	]
+	var w := _world([&"gun_homing"], at)
+	assert_eq(
+		Array(LaserMods.pick(w, Modifiers.bolt(w), w.player_pos(), 0)),
+		[1, 3, 5, 2, 4],
+		"down the line, nearest first (found by the shortest chain, not the input's order)"
+	)
+
+
+func test_o1d_the_curve_never_kinks_through_eight_targets_under_the_leg_cap() -> void:
+	var w := _world([&"gun_homing"], CAP_AT)
+	var main := _kind(_trace(w, 0), &"main")
+	assert_lte(main.size(), LaserMods.MAX_LEGS, "the leg cap holds")
+	for k in 8:
+		assert_lt(_dist_to_path(main, CAP_AT[k]), 0.35, "target %d is on the path" % (k + 1))
+	assert_lte(_most_turn(main), BEND_MAX, "no leg-to-leg kink: at most 6 degrees")
+	var tail := main[main.size() - 1]
+	assert_almost_eq(_len(tail), LaserMods.TAIL_MAX_M, 0.05, "the tail is still there at the end")
+
+
+func _twin_lens(aim: int = 0) -> Dictionary:
+	var w := _world([&"gun_twin", &"gun_homing"], [Vector2(6.0, 0.0)])
+	var by: Array = [[], []]
+	for b in _kind(_trace(w, aim), &"main"):
+		by[int(b["lane"])].append(b)
+	return {"w": w, "a": by[0], "b": by[1]}
+
+
+func test_o1d_twin_homing_on_one_enemy_bows_out_and_meets_on_it() -> void:
+	var l := _twin_lens()
+	var a: Array = l["a"]
+	var b: Array = l["b"]
+	assert_gt(a.size(), 3, "lane 0 is a curve")
+	assert_gt(b.size(), 3, "lane 1 is a curve")
+	var target := Vector2(6.0, 0.0)
+	assert_lt(_dist_to_path_any(a, target), 0.35, "lane 0 reaches the enemy")
+	assert_lt(_dist_to_path_any(b, target), 0.35, "lane 1 reaches the enemy")
+	var widest := 0.0
+	for leg: Dictionary in a:
+		var p: Vector2 = leg["to"]
+		if p.x > 0.8 and p.x < 5.2:
+			var q := _nearest_on(b, p)
+			widest = maxf(widest, p.distance_to(q))
+			assert_gt(
+				p.distance_to(q), 0.4, "the two rays never lie on top of each other, x %.2f" % p.x
+			)
+	assert_gt(widest, 1.5, "a wide lens")
+	assert_lt(float(a[0]["to"].y), 0.0, "lane 0 leaves on its own side (clockwise)")
+	assert_gt(float(b[0]["to"].y), 0.0, "lane 1 leaves on the other")
+	var ta: Dictionary = a[a.size() - 1]
+	var tb: Dictionary = b[b.size() - 1]
+	assert_gt(Kin.angle_diff(_angle(ta), _angle(tb)), 200, "the tails fan apart past the enemy")
+
+
+func test_o1d_without_homing_twin_stays_straight_and_side_by_side() -> void:
+	var w := _world([&"gun_twin"], [Vector2(6.0, 0.0)])
+	var main := _kind(_trace(w, 0), &"main")
+	assert_eq(main.size(), 2, "two straight lances (Q8)")
+	assert_almost_eq(float(_angle(main[0])), 0.0, 2.0, "along the aim")
+	assert_almost_eq(float(_angle(main[1])), 0.0, 2.0, "along the aim")
+	assert_gt(absf((main[0]["from"] as Vector2).y - (main[1]["from"] as Vector2).y), 0.3)
+
+
+func _lane_hits(beams: Array[Dictionary], lane: int) -> Dictionary:
+	var ids := {}
+	for b in beams:
+		if b["kind"] == LaserMods.K_MAIN and int(b["lane"]) == lane:
+			for i in b["hits"]:
+				ids[i] = true
+	return ids
+
+
+func test_o1d_twin_homing_on_a_pack_gives_each_ray_its_own_enemies() -> void:
+	var at := [Vector2(4.0, 2.5), Vector2(5.0, 3.5), Vector2(4.0, -2.5), Vector2(5.0, -3.5)]
+	var w := _world([&"gun_twin", &"gun_homing"], at)
+	var beams := _trace(w, 0)
+	var a := _lane_hits(beams, 0)
+	var b := _lane_hits(beams, 1)
+	assert_true(
+		a.has(3) and a.has(4),
+		"lane 0 (clockwise) takes the enemies on its side: %s" % str(a.keys())
+	)
+	assert_true(b.has(1) and b.has(2), "lane 1 takes the other side: %s" % str(b.keys()))
+	assert_false(a.has(1) or a.has(2), "not the other lane's")
+	assert_false(b.has(3) or b.has(4), "not the other lane's")
+
+
+func test_o1d_three_rays_share_two_enemies_without_overlapping() -> void:
+	var w := _world([&"gun_twin", &"gun_homing"], [Vector2(5.0, 1.5), Vector2(5.0, -1.5)])
+	CardLevels.set_level(w, W.item(w, &"gun_twin"), 3)
+	var beams := _trace(w, 0)
+	var lanes := {}
+	for b in beams:
+		if b["kind"] == LaserMods.K_MAIN:
+			lanes[int(b["lane"])] = true
+	assert_eq(lanes.size(), 3, "three rays (Lv 3 and up)")
+	for li: int in lanes:
+		assert_gt(_lane_hits(beams, li).size(), 0, "ray %d meets a target" % li)
+
+
+func test_o1d_a_bow_flattens_for_a_wall_and_still_reaches_its_target() -> void:
+	var target := Vector2(6.0, 0.0)
+	var clear := _world([&"gun_twin", &"gun_homing"], [target])
+	var free_a: Array = []
+	for b in _kind(_trace(clear, 0), &"main"):
+		if int(b["lane"]) == 1:
+			free_a.append(b)
+	var widest_free := 0.0
+	for leg: Dictionary in free_a:
+		if (leg["to"] as Vector2).x < 5.5:
+			widest_free = maxf(widest_free, absf((leg["to"] as Vector2).y))
+	var w := _world([&"gun_twin", &"gun_homing"], [target])
+	w.add_wall_now(Obb.make(Vector2(3.0, 1.2), Vector2(2.0, 0.2), 0))  # just inside the left bow
+	var left: Array = []
+	for b in _kind(_trace(w, 0), &"main"):
+		if int(b["lane"]) == 1:
+			left.append(b)
+	var widest := 0.0
+	for leg: Dictionary in left:
+		if (leg["to"] as Vector2).x < 5.5:
+			widest = maxf(widest, absf((leg["to"] as Vector2).y))
+		assert_false(
+			bool(leg["wall"]) and (leg["to"] as Vector2).x < 5.5,
+			"no leg ends on the wall before the target"
+		)
+	assert_lt(widest, widest_free - 0.2, "a flatter bow (%.2f, free %.2f)" % [widest, widest_free])
+	assert_lt(_dist_to_path_any(left, target), 0.35, "it still reaches the enemy")
+
+
+func test_o1d_twin_on_one_enemy_deals_two_shares_with_homing() -> void:
+	var w := _world([&"gun_twin", &"gun_homing"], [Vector2(5.0, 0.0)])
+	W.run(w, 2, 0, W.S)
+	var hits := _hits(w, 1)
+	assert_eq(hits.size(), 2, "both rays hit it once")
+	assert_eq(
+		int(hits[0]["amount"]) + int(hits[1]["amount"]),
+		2 * (19 * 3500 / 1000),
+		"2 x 19 x (5.0 x 70 %)"
+	)
+
+
+## v0.11.0 O1f (owner, 2026-11-08: "split rays at full damage").
+func test_o1f_a_ray_with_its_own_enemies_deals_its_full_share() -> void:
+	var at := [Vector2(4.0, 2.5), Vector2(5.0, 3.5), Vector2(4.0, -2.5), Vector2(5.0, -3.5)]
+	var w := _world([&"gun_twin", &"gun_homing"], at)
+	W.run(w, 2, 0, W.S)
+	for k in [1, 3]:
+		assert_eq(_total(w, k), SHOT, "enemy %d: the first of its ray, the lance's full 95" % k)
+	for k in [2, 4]:
+		assert_eq(_total(w, k), _fall(SHOT, 1), "enemy %d: the falloff stays per ray" % k)
+
+
+func test_o1f_rays_that_share_a_target_keep_twins_share() -> void:
+	var share := 19 * 3500 / 1000
+	var w := _world([&"gun_twin", &"gun_homing"], [Vector2(5.0, 0.0)])
+	W.run(w, 2, 0, W.S)
+	var hits := _hits(w, 1)
+	assert_eq(hits.size(), 2, "both rays meet on it")
+	for h: Dictionary in hits:
+		assert_eq(h["amount"], share, "each deals 70 % (Twin Lv 1)")
+	var three := _world([&"gun_twin", &"gun_homing"], [Vector2(5.0, 1.5), Vector2(5.0, -1.5)])
+	CardLevels.set_level(three, W.item(three, &"gun_twin"), 3)
+	var own := {}
+	for b in _kind(_trace(three, 0), &"main"):
+		own[int(b["lane"])] = bool(b["own"])
+	assert_eq(own[0], true, "three rays, two enemies: the ray alone on its enemy has it to itself")
+	assert_eq(own[1], false, "the two that share the other keep Twin's share")
+	assert_eq(own[2], false, "the two that share the other keep Twin's share")
+
+
+func test_o1f_twin_homing_on_a_pack_is_at_least_homing_alone() -> void:
+	for at: Array in [
+		[
+			Vector2(3.0, 2.0),
+			Vector2(3.5, 1.0),
+			Vector2(4.0, 0.0),
+			Vector2(3.5, -1.0),
+			Vector2(3.0, -2.0)
+		],
+		CAP_AT,
+	]:
+		var alone := _world([&"gun_homing"], at)
+		W.run(alone, 2, 0, W.S)
+		var twin := _world([&"gun_twin", &"gun_homing"], at)
+		W.run(twin, 2, 0, W.S)
+		var three := _world([&"gun_twin", &"gun_homing"], at)
+		CardLevels.set_level(three, W.item(three, &"gun_twin"), 3)
+		W.run(three, 2, 0, W.S)
+		var d := [0, 0, 0]
+		for k in range(1, at.size() + 1):
+			d[0] += _total(alone, k)
+			d[1] += _total(twin, k)
+			d[2] += _total(three, k)
+		assert_gte(d[1], d[0], "Twin Lv 1 %d vs Homing alone %d" % [d[1], d[0]])
+		assert_gte(d[2], d[0], "Twin Lv 3 %d vs Homing alone %d" % [d[2], d[0]])
+
+
+func test_o1f_echo_strikes_an_own_ray_at_half_of_its_full_damage() -> void:
+	var at := [Vector2(4.0, 2.5), Vector2(4.0, -2.5)]
+	var w := _world([&"gun_twin", &"gun_homing", &"gun_echo"], at)
+	W.run(w, 40, 0, W.S)
+	var hits := _hits(w, 1)
+	assert_eq(hits.size(), 2, "the shot, then its echo")
+	assert_eq(hits[0]["amount"], SHOT, "full")
+	assert_eq(hits[1]["amount"], SHOT / 2, "the echo at 50 % of it")
+
+
+func _dist_to_path_any(legs: Array, p: Vector2) -> float:
+	var t: Array[Dictionary] = []
+	t.assign(legs)
+	return _dist_to_path(t, p)
+
+
+func _nearest_on(legs: Array, p: Vector2) -> Vector2:
+	var best := Vector2.ZERO
+	var d := 1.0e9
+	for leg: Dictionary in legs:
+		var a: Vector2 = leg["from"]
+		var ab: Vector2 = (leg["to"] as Vector2) - a
+		var t := clampf((p - a).dot(ab) / maxf(ab.length_squared(), 1.0e-9), 0.0, 1.0)
+		var q := a + ab * t
+		if p.distance_to(q) < d:
+			d = p.distance_to(q)
+			best = q
+	return best

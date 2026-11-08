@@ -11,9 +11,10 @@ const W := preload("res://tests/support/mx4_world.gd")
 const HP := 1000000
 ## The shot period: 3 s.
 const PERIOD := 180
-## The old beam's tick on a dummy (v0.10.5 W3-P5: 1000 per mille of the orb's 5) and the lance's 30 of them.
+## The old beam's tick on a dummy (v0.10.5 W3-P5: 1000 per mille of the orb's 5) and the lance's 19 of them (O1d: -35
+## %).
 const TICK := 5
-const SHOT := 150
+const SHOT := 95
 ## ATTACK_FORMS.md F2: Twin on; Halo, Ring, Backfire, Spiral, Swirl off; every Secondary off (v0.11.0 O1: Pierce and
 ## Mine too, Q6, Q28); the five elements on (Void, gravity_well, leaves in VP: off).
 const LASER_ON: Array[StringName] = [
@@ -97,12 +98,14 @@ func test_held_it_fires_once_every_3_s_without_a_release() -> void:
 func test_a_shot_deals_3_s_of_the_old_beam_and_matches_its_dps() -> void:
 	var w := _world()
 	var s := Modifiers.bolt(w)
-	assert_eq(LaserMods.param(w, "lance_ticks"), 30, "3 s at the old 10 ticks a second")
-	assert_eq(Laser.shot_damage(w, Laser.milli_of(s, TICK)), 30 * TICK, "30 x the old tick")
+	assert_eq(
+		LaserMods.param(w, "lance_ticks"), 19, "O1d: was 30, 3 s at the old 10 ticks a second"
+	)
+	assert_eq(Laser.shot_damage(w, Laser.milli_of(s, TICK)), 19 * TICK, "19 x the old tick")
 	W.run(w, 10 * PERIOD, 0, W.S)
 	var lance := _dealt(w, 1)
-	assert_eq(lance, [10, 10 * SHOT], "10 shots of 150 in 30 s")
-	assert_eq(lance[1], 300 * TICK, "the old beam's 30 s: 300 ticks of 5")
+	assert_eq(lance, [10, 10 * SHOT], "10 shots of 95 in 30 s")
+	assert_eq(lance[1], 190 * TICK, "O1d: 190 of the old beam's ticks of 5 in 30 s (was 300)")
 	var o := _world([], [4.0], true)
 	W.run(o, 10 * PERIOD, 0, W.S)
 	var orbs := _dealt(o, 1)
@@ -177,7 +180,7 @@ func test_a_twin_lance_on_one_target_deals_its_share() -> void:
 	W.run(w, 4 * PERIOD, 0, W.S)
 	var two := _dealt(w, 1)
 	assert_eq(two[0], 8, "both lances hit a wide-enough target, 4 shots")
-	assert_eq(two[1], 4 * 2 * (30 * 3500 / 1000), "2 x 30 x (5.0 x 70 %) a shot")
+	assert_eq(two[1], 4 * 2 * (19 * 3500 / 1000), "2 x 19 x (5.0 x 70 %) a shot")
 
 
 func test_attack_speed_shortens_the_3_s_at_half_its_value() -> void:
@@ -361,7 +364,7 @@ func test_each_enemy_down_the_lance_takes_15_percent_less_than_the_one_before() 
 	var got := []
 	for i in range(1, 7):
 		got.append(_dealt(w, i)[1])
-	assert_eq(got, [150, 127, 108, 91, 78, 66], "150 x 1000, 850, 722, 613, 521, 442 per mille")
+	assert_eq(got, [95, 80, 68, 58, 49, 41], "95 x 1000, 850, 722, 613, 521, 442 per mille")
 	for k in 6:
 		assert_eq(got[k], _fall(SHOT, k))
 
@@ -374,8 +377,8 @@ func test_the_falloff_stops_at_40_percent_of_the_first_hit() -> void:
 	W.run(w, 2, 0, W.S)
 	for k in 12:
 		assert_eq(_dealt(w, k + 1)[1], _fall(SHOT, k), "enemy %d" % k)
-	assert_eq(_dealt(w, 12)[1], 60, "the floor: 400 per mille of 150")
-	assert_eq(_dealt(w, 8)[1], 60, "held from the seventh on")
+	assert_eq(_dealt(w, 12)[1], 38, "the floor: 400 per mille of 95")
+	assert_eq(_dealt(w, 8)[1], 38, "held from the seventh on")
 
 
 func test_twins_second_lane_starts_again_at_full_damage() -> void:
