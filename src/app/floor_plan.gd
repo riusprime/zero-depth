@@ -45,6 +45,8 @@ var affinity := &""
 var lock_portal_forms := false
 ## v0.9.0 CL: a NEW_RUN's collectibles the profile has found (no floor of the run arms them again).
 var collected: Array[StringName] = []
+## v0.11.0 O14b: a NEW_RUN from a profile that learned all ten Runic Stone lines (RunState.heart_room).
+var heart_room := false
 ## A save's payload (CONTINUE, or a FLOOR resumed from a save): its world snapshot is written into the fresh floor.
 var resume := {}
 ## ViewPrefs.reduced_motion, read on the main thread (the portal's way in and the arrival).
@@ -86,6 +88,7 @@ static func of_profile(
 	)
 	plan.lock_portal_forms = not MetaProgress.portal_travelled(profile)  # v0.9.0 MP
 	plan.collected = CollectibleBook.found_ids(profile)  # v0.9.0 CL: found once per profile
+	plan.heart_room = RunicStone.knows_final(profile)  # v0.11.0 O14b: the hidden room under the throne
 	return plan
 
 
@@ -125,6 +128,7 @@ func build() -> void:
 			if lock_portal_forms:  # v0.9.0 MP: the Void stays out of the offers until a Purple Portal
 				run.locked_cards = MetaProgress.portal_cards(repo)
 			run.collected = collected.duplicate()  # v0.9.0 CL
+			run.heart_room = heart_room  # v0.11.0 O14b
 		else:
 			stage_seed = int(resume["run"]["stage_seed"])
 			run = RunSaver.run_from(resume, ContentCompiler.compile_run(run_def))
@@ -163,7 +167,8 @@ func _build_world() -> void:
 			ContentCompiler.compile_combos(repo),
 			bosses,
 			finals,
-			approach_of(resume)  # v0.9.0 FA: the final approach first
+			approach_of(resume),  # v0.9.0 FA: the final approach first
+			run.heart_room  # v0.11.0 O14b: with the hidden room under the throne
 		)
 	else:
 		w = _floor_world(table, enemies, bosses, biome.id)
@@ -181,6 +186,9 @@ func _build_world() -> void:
 	w.starbound_tables = ContentCompiler.compile_starbound(repo)  # v0.10.5 W3-P10b: the Starbound cards (loop 2+),
 	w.spell_tables = SpellCompiler.compile(repo, w.item_tables)  # v0.11.0 O10: the spells (an element card held)
 	w.spell_rules = SpellCompiler.compile_rules(repo)
+	w.relic_tables = ContentCompiler.compile_relics(repo)  # v0.11.0 O14b: the relics (a carried one works anywhere)
+	if w.floor_layout != null and w.floor_layout.heart_room >= 0:  # v0.11.0 O14b: its cracked wall, pedestal, door
+		HeartRoom.setup(w, secret_rules(repo.get_def(&"secrets", &"secrets")).crack_hits)
 	w.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB
 	w.legendary_table = RunContentCompiler.compile_legendary(
 		repo.get_def(&"legendary", &"boss"), w.stat_tables, w.item_tables

@@ -1764,3 +1764,8 @@ ENEMY_GRAVITY_NODE,Gravity Node,Nodo Gravitatorio
 ENEMY_GRAVITY_NODE_DESC,"A floating orb that bends every shot near it toward itself, yours and theirs. Kill it to straighten your aim, or let it pull their shots away from you.","Un orbe flotante que curva hacia sí cada disparo cercano, los tuyos y los suyos. Destrúyelo para enderezar tu puntería, o deja que desvíe los suyos lejos de ti."
 CAUSE_STAR_WARPER,A Star Warper's blink took you down.,El salto de un Saltaestrellas te abatió.
 CAUSE_GRAVITY_NODE,A Gravity Node took you down.,Un Nodo Gravitatorio te abatió.
+RELIC_CITY_HEART,The City's Heart,El Corazón de la Ciudad
+RELIC_CITY_HEART_DESC,"Once a run, a blow that would kill you leaves you at 1 HP instead, and a shock ring bursts from you (4 m).","Una vez por partida, un golpe que te mataría te deja a 1 PV y un anillo de choque estalla a tu alrededor (4 m)."
+HEART_PEDESTAL_PROMPT,Take,Tomar
+HEART_DOOR_PROMPT,Enter,Entrar
+UI_CODEX_SECTION_RELICS,Relics,Reliquias

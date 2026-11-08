@@ -247,6 +247,7 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	run.loop_rule_loop = int(r.get("loop_rule_loop", 0))
 	# v0.10.5 W3-O11: a payload without it was saved before floor 1 shared the Brood Mother (its bosses as they were)
 	run.boss_draw = int(r.get("boss_draw", RunState.BOSS_DRAW_LEGACY))
+	run.heart_room = bool(r.get("heart_room", false))  # v0.11.0 O14b: an older payload has no heart room
 	return run
 
 
@@ -307,6 +308,8 @@ static func payload_of(
 	if not run.loop_rules.is_empty():  # v0.10.5 O5b: the loop rules (none: no key, as before)
 		out["run"]["loop_rules"] = _ids(run.loop_rules)
 		out["run"]["loop_rule_loop"] = run.loop_rule_loop
+	if run.heart_room:  # v0.11.0 O14b: the final approach holds the heart room (false: no key, as before)
+		out["run"]["heart_room"] = true
 	return out
 
 

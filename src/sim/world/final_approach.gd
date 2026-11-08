@@ -114,6 +114,7 @@ func advance(w: World) -> void:
 	fight_tick = w.tick
 	var f := w.floor_layout
 	var r := FinalArena.radius_of(f)
+	HeartRoom.on_fight(w, EDGE_IN)  # v0.11.0 O14b: a hero in the heart room is set back by its doorway
 	if Kin.length(w.player_pos() - f.altar_pos) > r - EDGE_IN:  # still out on the causeway: back on the plateau
 		var axis := Kin.dir(FinalArena.START_ANGLE)
 		w.actors.set_pos(0, f.altar_pos + axis * (r - EDGE_IN))

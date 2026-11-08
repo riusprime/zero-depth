@@ -8,6 +8,11 @@ static var _line_id_re := RegEx.create_from_string("^r[0-9]+$")
 static var _text_re := RegEx.create_from_string("^[A-Z]+( [A-Z]+)*$")
 
 @export var lines: Array[RunicLineEntry] = []
+## v0.11.0 O14b (owner Q-O14b "Both"): the hidden room under the Hollow Crown's throne speaks in the same cipher: the
+## lines carved on its rune slab, and the line its sealed door speaks when the hero comes near (N2). A-Z and spaces.
+## The lead's wording, until the owner changes it.
+@export var heart_lines: PackedStringArray = PackedStringArray()
+@export var sealed_line := ""
 
 
 func category() -> StringName:
@@ -41,6 +46,15 @@ func validate() -> Array[ValidationIssue]:
 			issues.append(
 				ValidationIssue.new(
 					&"runic_text", resource_path, "%s: only A-Z and single spaces" % l.id
+				)
+			)
+	for text in Array(heart_lines) + ([sealed_line] if sealed_line != "" else []):
+		if not _text_re.search(text):
+			issues.append(
+				ValidationIssue.new(
+					&"runic_text",
+					resource_path,
+					"heart room line %s: only A-Z and single spaces" % text
 				)
 			)
 	return issues

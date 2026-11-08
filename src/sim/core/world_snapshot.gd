@@ -70,6 +70,7 @@ const WORLD_KEPT := {
 	&"starbound_tables": "loadout",  # v0.10.5 W3-P10b
 	&"spell_tables": "loadout",  # v0.11.0 O10
 	&"spell_rules": "loadout",
+	&"relic_tables": "loadout",  # v0.11.0 O14b
 	&"sb_burst_pos":
 	"transient within a hit (v0.10.5 W3-P10b): Detonation's chain, empty between hits",
 	&"sb_burst_dmg": "transient within a hit (v0.10.5 W3-P10b)",
@@ -81,6 +82,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"StarboundTable",  # v0.10.5 W3-P10b: the Starbound cards (content, compiled at setup)
 	&"SpellTable",  # v0.11.0 O10: the spells and their rules (content, compiled at setup)
 	&"SpellRules",
+	&"RelicTable",  # v0.11.0 O14b: the relics (content, compiled at setup)
 	&"PlayerTable",
 	&"EnemyTable",
 	&"EncounterTable",
@@ -185,6 +187,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"AffinityState",  # v0.9.0 RB: the rune affinity's ward and dash crackle on this floor
 	&"CollectState",  # v0.9.0 CL: the floor's collectibles (armed, shown, taken)
 	&"StressState",  # v0.9.5 SM: the Stress Mark's weak sides
+	&"HeartRoom",  # v0.11.0 O14b: the hidden room under the throne (its pedestal, its sealed door)
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -254,6 +257,10 @@ const ADDED_SINCE_V05 := {
 		&"timed",  # v0.9.0 TD: a floor saved before TD has none (built under floor rules 1-9: none in the base either)
 		&"runes",  # v0.9.0 RA: a floor saved before RA has none (built under floor rules 1-10: none in the base either)
 		&"breakables",  # v0.9.0 DX: the same (floor rules 1-10 build none)
+		&"heart",  # v0.11.0 O14b: a save from before O14b has no heart room (its base builds none either)
+		&"relics",  # v0.11.0 O14b: an older save holds no relic (the base's, from the carry)
+		&"relic_pulse_tick",
+		&"relic_pulse_pos",
 		&"purple",  # v0.9.0 DP: a floor saved before DP has none (built under floor rules 1-11: none in the base either)
 		&"lockdown",  # v0.9.0 LK: a floor saved before LK has none (built under floor rules 1-12: none in the base either)
 		&"shrine",  # v0.9.0 SH, HF: a floor saved before SH has none (floor rules 1-13 build none in the base either)

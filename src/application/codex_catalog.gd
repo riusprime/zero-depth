@@ -29,6 +29,7 @@ const SECTIONS := {
 		&"passives",
 		&"starbound",  # v0.10.5 W3-P10f
 		&"constellations",
+		&"relics",  # v0.11.0 O14b: the relics (the City's Heart)
 	],
 	&"enemies": [&"enemies"],
 	&"bosses": [&"bosses", &"final"],
@@ -94,6 +95,8 @@ static func build(repo: ContentRepository) -> CodexCatalog:
 			sorted[&"starbound"].append(_run_rule_entry(&"starbound", id, 2))
 	for id: StringName in CONSTELLATION_IDS:
 		sorted[&"constellations"].append(_run_rule_entry(&"constellations", id, 3))
+	for def: RelicDefinition in repo.all_of(&"relic"):  # v0.11.0 O14b
+		sorted[&"relics"].append(_relic_entry(def))
 	for s: StringName in SECTIONS[&"cards"]:
 		for e: Dictionary in sorted[s]:
 			c._add(e)
@@ -232,6 +235,21 @@ static func _run_rule_entry(section: StringName, id: StringName, rarity: int) ->
 		"desc_key": StringName(key + "_DESC"),
 		"type": Offers.MOD,
 		"rarity": rarity,
+		"leveled": false,
+	}
+
+
+## v0.11.0 O14b: a relic (RelicDefinition), legendary: one in the whole game, held once a run.
+static func _relic_entry(def: RelicDefinition) -> Dictionary:
+	return {
+		"page": &"cards",
+		"section": &"relics",
+		"id": def.id,
+		"name_key": def.name_key,
+		"alt_name_key": &"",
+		"desc_key": def.desc_key,
+		"type": Offers.MOD,
+		"rarity": 3,
 		"leveled": false,
 	}
 

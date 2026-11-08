@@ -1,7 +1,6 @@
 class_name Main
 extends Node
-## Composition root (ARCHITECTURE §2): boots the input map, profile and settings, then runs the menus and the
-## stage. Only app/ may wire layers together.
+## Composition root (ARCHITECTURE §2): input map, profile, settings, then menus and stage; only app/ wires layers.
 
 const STAGE_SEED := 20261006
 const END_PANEL_DELAY_TICKS := 45
@@ -451,6 +450,7 @@ func _floor_nodes(plan: FloorPlan) -> Dictionary:
 	if biome.look != null:
 		v.actors.enemy_tint = biome.look.enemy_tint
 	v.actors.hero_look = Wardrobe.hero_look(repo, profile, run.affinity)  # v0.9.0 RB: robe and locked rune
+	v.heart_lines = repo.get_def(&"runic_lines", &"main") as RunicLinesDefinition  # v0.11.0 O14b: the heart room's runes
 	_biome_path = biome.resource_path
 	v.stage.lighting = GameSettings.get_value(profile, "lighting")
 	v.process_mode = Node.PROCESS_MODE_DISABLED  # v0.8.0 N12: nothing in it runs until it is built (_floor_live),

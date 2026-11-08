@@ -214,6 +214,16 @@ var crack_room := -1
 var crack_host := -1
 var crack_door := -1
 var crack_wall: Obb
+## v0.11.0 O14b (owner Q-O14b "Both"; FinalArena.add_heart_room, -1 on every other floor): the hidden room under the
+## Hollow Crown's throne on the final approach: its room index, the first of its walls (pieces, from slab_first on:
+## the arena's stage leaves them to the heart's view), its pedestal, its rune slab (the lore lines, on its far wall),
+## and its sealed door (on the far wall, facing heart_door_angle into the room). Its cracked wall is crack_*.
+var heart_room := -1
+var heart_wall_first := -1
+var heart_pedestal := Vector2.ZERO
+var heart_slab := Vector2.ZERO
+var heart_door := Vector2.ZERO
+var heart_door_angle := 0
 ## v0.9.0 DP (owner Q26b; PurpleRooms.mark, -1 on a floor without one): the purple-rune room (a big room off the
 ## way) and its dais's spot.
 var purple_room := -1

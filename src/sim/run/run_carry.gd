@@ -26,6 +26,7 @@ const FIELDS: Array[StringName] = [
 	&"starbound",  # v0.10.5 W3-P10b: the Starbound picks (a carry without it: none)
 	&"spell_slots",  # v0.11.0 O10: the spells held and their levels (a carry without them: none)
 	&"spell_levels",
+	&"relics",  # v0.11.0 O14b: the relics held and their uses this run (a carry without it, or none held: none)
 ]
 const HP := &"hp"
 ## v0.10.5 W3-P10c: a new loop's Constellation offer (RunState.finish_floor writes it: World.constellation_offer).
@@ -40,6 +41,8 @@ const LEFT := &"shards_left_behind"
 static func take(w: World, heal_permille: int, shard_carry_permille: int = 1000) -> Dictionary:
 	var out := {}
 	for field in FIELDS:
+		if field == &"relics" and w.relics.is_empty():
+			continue  # v0.11.0 O14b: no relic held, no key (a carry as before)
 		if field in w:
 			out[field] = _copy(w.get(field))
 	if out.has(&"shards"):

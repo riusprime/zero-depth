@@ -1404,6 +1404,16 @@ repeats; Fervour +2 % haste a kill, at most +60 %; Detonation 20 % of max HP, 2 
 0..1000 each, else `range`; data [200, 300]): a regular altar's chance per mille of a Starbound card, one entry a
 loop from loop 2, the last for every later loop.
 
+`RelicDefinition` (v0.11.0 O14b, owner Q-O14b "Both"; OWNER_QUESTIONS §J N1; `data/relics/`, category `relic`): a
+relic, a run-long passive held outside the wand that no altar, chest or shop offers (it lies on one pedestal). The `id`
+names the relic and its rule, one of `city_heart` (else `unknown`; `ContentCompiler.compile_relics` indexes them in
+that order and compiles none unless all are there). `name_key`, `desc_key` (required), `uses` (≥ 1, times a run),
+`saved_hp` (≥ 1, the HP a saved killing blow leaves), `ring_radius_m` (> 0), `ring_damage` (≥ 0, each enemy in the
+ring) and `placeholder` (true while the owner has not approved it). Shipped: The City's Heart, 1 use, 1 HP, 4 m,
+60, placeholder (the lead's idea, N1). Rules: `Relics` (src/sim/items), `HeartRoom` (src/sim/world).
+`RunicLinesDefinition.heart_lines` and `sealed_line` (v0.11.0 O14b; A-Z and single spaces, else `runic_text`): the
+heart room's rune slab and its sealed door's line.
+
 `SpellDefinition` (v0.11.0 O10, owner Q17-Q20; `data/spells/`, category `spells`): an elemental spell
 ([`SPELLS.md`](../roadmap/v0.11.0/SPELLS.md)), a card that sits in a spell slot beside the wand and casts by itself.
 The `id` names the spell and its rule (`SpellDefinition.SPELLS`, the 15 rows in order, all built since O11; any other

@@ -65,6 +65,12 @@ func knows(id: StringName) -> bool:
 	return learned().has(id)
 
 
+## v0.11.0 O14b: whether `profile` learned the last line (r11: all ten known), so a new run's final approach holds the
+## hidden room under the throne (FloorPlan.of_profile; RunState.heart_room).
+static func knows_final(profile: ProfileStore) -> bool:
+	return profile != null and RunicStone.new(profile, null).knows(FINAL)
+
+
 ## The learned ids, the newest first (the stone speaks its newest line first).
 func newest_first() -> Array[StringName]:
 	var out := learned()

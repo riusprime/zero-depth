@@ -126,6 +126,11 @@ var shrines: ShrinesView
 ## v0.9.0 DX: the cracked wall, the containers and the explosive barrels (null on a floor with none), and the faint rune
 ## markings by every secret's doorway (null without a secret).
 var breakables: BreakablesView
+## v0.11.0 O14b: the hidden room under the throne (null without it), the Runic Stone's lines it carves and speaks (Main
+## sets them from the content before the build), and the City's Heart's shock ring (every world).
+var heart_room: HeartRoomView
+var heart_lines: RunicLinesDefinition
+var relic_pulse: RelicPulseView
 var markings: RuneMarkingsView
 ## v0.9.0 CL: the floor's collectibles (null on a floor that holds none).
 var collectibles: CollectibleView
@@ -561,6 +566,15 @@ func _setup_devices(palette: Dictionary) -> void:
 		breakables = BreakablesView.new()
 		add_child(breakables)
 		breakables.setup(reader, stage, palette["cover"])
+	if reader.heart_room():  # v0.11.0 O14b: after the cracked wall (its view draws the wall)
+		heart_room = HeartRoomView.new()
+		heart_room.pack_fx = pack_fx
+		add_child(heart_room)
+		heart_room.setup(reader, heart_lines)
+	relic_pulse = RelicPulseView.new()  # v0.11.0 O14b: a held relic saves the hero on any floor
+	relic_pulse.pack_fx = pack_fx
+	add_child(relic_pulse)
+	relic_pulse.setup(reader)
 	if not reader.secret_doors().is_empty():  # v0.9.0 DX (Q29b): hidden rune markings
 		markings = RuneMarkingsView.new()
 		markings.biome = stage.prop_style  # v0.9.0 BV
@@ -775,6 +789,10 @@ func sync() -> void:
 		breakables.sync(reader)
 		if breakables.blasted:
 			rig.thud(DOOR_LAND_THUD)
+	if heart_room != null:  # v0.11.0 O14b
+		heart_room.sync(reader)
+	if relic_pulse != null:
+		relic_pulse.sync(reader)
 	if timed_door != null:  # v0.9.0 TD
 		timed_door.sync(reader)
 		if timed_door.slammed:
