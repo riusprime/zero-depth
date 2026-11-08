@@ -26,7 +26,10 @@ extends RefCounted
 ##   off the aim on its own side, the outer rays; a third ray runs down the middle) and bows into its first target
 ##   (a shared one is met from both sides, a lens: LaserHoming.bow()), and each runs on along its own arrival heading,
 ##   so tails
-##   fan apart. A bow that would hit a wall before its target is flattened, then straightened (LaserHoming.BOW_TRIES).
+##   fan apart. v0.11.0 O1f (owner, 2026-11-08: "split rays at full damage"): a ray with its own enemies deals the
+##   lance's full damage (its path's legs are marked "own"; Laser.fire), a ray that shares a target keeps Twin's share,
+##   so one enemy takes what it did. A bow that would hit a wall before its target is flattened, then straightened
+##   (LaserHoming.BOW_TRIES).
 ## - Rapid Fire (Q6): the cooldown × rapid_cd per mille (700: -30 %), each shot × rapid_damage_permille (800: -20 %).
 ## - Echo (Q6): the main paths strike again echo_delay_ms (0.4 s) later at echo_share (50 %).
 ## - Big Shot (Q6): the lance big_width per mille wide (2x), big_damage per mille (x1.6), no aim lag.
@@ -109,8 +112,8 @@ const DEFAULTS := {
 	"home_arc_deg": 160,
 	"home_len_permille": 3000,
 	"home_chain": 8,
-	"home_bow_deg": 50,
-	"home_lens_permille": 1300,
+	"home_bow_deg": 30,
+	"home_lens_permille": 1100,
 	"home_turn_mm": 1500,
 	"echo_delay_ms": 400,
 	"echo_share": 500,
@@ -292,8 +295,10 @@ static func plan(w: World, spec: AttackSpec, origin: Vector2, angle: int) -> Arr
 		routes = LaserHoming.routes(w, spec, origin, base, lanes.size())
 	for li in lanes.size():
 		var way := {}
+		var own := false  # v0.11.0 O1f: this ray has enemies of its own (full damage)
 		if not routes.is_empty() and not (routes[li]["ids"] as PackedInt32Array).is_empty():
 			way = LaserHoming.bow(w, spec, origin, base, li, lanes, turns, routes[li], r)
+			own = not bool(routes[li]["shared"])
 		else:
 			way = lane_start(w, origin, (base + turns[li]) & 4095, lanes[li])
 		var path := _path(w, spec, m, way, r)
@@ -305,6 +310,7 @@ static func plan(w: World, spec: AttackSpec, origin: Vector2, angle: int) -> Arr
 			leg["share"] = 1000
 			leg["wmul"] = wmul
 			leg["end"] = k == legs.size() - 1
+			leg["own"] = own
 			leg["impact"] = k == legs.size() - 1 and bool(leg["wall"])
 			out.append(leg)
 		if li == centre:
@@ -530,13 +536,16 @@ static func advance(w: World) -> void:
 	_mine_triggers(w, spec)
 
 
-## One shot (Laser.fire, `beams` its plan, `dmg` its damage, `milli` the thousandths of one old beam tick): Echo stores
-## the main legs to strike again; a held Mine drops a mine at the tip every mine_every_ms.
-static func after_shot(w: World, m: int, beams: Array[Dictionary], dmg: int, milli: int) -> void:
+## One shot (Laser.fire, `beams` its plan, `dmg` its damage, `milli` the thousandths of one old beam tick, `full` the
+## damage of a ray with its own enemies): Echo stores the main legs to strike again; a held Mine drops a mine at the tip
+## every mine_every_ms.
+static func after_shot(
+	w: World, m: int, beams: Array[Dictionary], dmg: int, milli: int, full: int
+) -> void:
 	var s := w.mx
 	if m & ECHO and dmg > 0:
 		var e := maxi(1, dmg * param(w, "echo_share") / 1000)
-		_echo_store(w, beams, e)
+		_echo_store(w, beams, e, maxi(1, full * param(w, "echo_share") / 1000))
 	if m & MINE:
 		if s.lz_mine_next == 0 or w.tick >= s.lz_mine_next:
 			s.lz_mine_next = w.tick + ticks(param(w, "mine_every_ms"))
@@ -580,7 +589,7 @@ static func _tip(beams: Array[Dictionary]) -> Vector2:
 	return tip
 
 
-static func _echo_store(w: World, beams: Array[Dictionary], dmg: int) -> void:
+static func _echo_store(w: World, beams: Array[Dictionary], dmg: int, full: int) -> void:
 	var s := w.mx
 	var due := w.tick + ticks(param(w, "echo_delay_ms"))
 	var groups := 0
@@ -600,7 +609,7 @@ static func _echo_store(w: World, beams: Array[Dictionary], dmg: int) -> void:
 		s.lz_echo_from.append(b["from"])
 		s.lz_echo_to.append(b["to"])
 		s.lz_echo_r.append(float(b["wmul"]) * spec_radius(w) / 1000.0)
-		s.lz_echo_dmg.append(dmg)
+		s.lz_echo_dmg.append(full if bool(b.get("own", false)) else dmg)
 
 
 static func spec_radius(w: World) -> float:

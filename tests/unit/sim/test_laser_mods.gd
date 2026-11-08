@@ -709,6 +709,72 @@ func test_o1d_twin_on_one_enemy_deals_two_shares_with_homing() -> void:
 	)
 
 
+## v0.11.0 O1f (owner, 2026-11-08: "split rays at full damage").
+func test_o1f_a_ray_with_its_own_enemies_deals_its_full_share() -> void:
+	var at := [Vector2(4.0, 2.5), Vector2(5.0, 3.5), Vector2(4.0, -2.5), Vector2(5.0, -3.5)]
+	var w := _world([&"gun_twin", &"gun_homing"], at)
+	W.run(w, 2, 0, W.S)
+	for k in [1, 3]:
+		assert_eq(_total(w, k), SHOT, "enemy %d: the first of its ray, the lance's full 95" % k)
+	for k in [2, 4]:
+		assert_eq(_total(w, k), _fall(SHOT, 1), "enemy %d: the falloff stays per ray" % k)
+
+
+func test_o1f_rays_that_share_a_target_keep_twins_share() -> void:
+	var share := 19 * 3500 / 1000
+	var w := _world([&"gun_twin", &"gun_homing"], [Vector2(5.0, 0.0)])
+	W.run(w, 2, 0, W.S)
+	var hits := _hits(w, 1)
+	assert_eq(hits.size(), 2, "both rays meet on it")
+	for h: Dictionary in hits:
+		assert_eq(h["amount"], share, "each deals 70 % (Twin Lv 1)")
+	var three := _world([&"gun_twin", &"gun_homing"], [Vector2(5.0, 1.5), Vector2(5.0, -1.5)])
+	CardLevels.set_level(three, W.item(three, &"gun_twin"), 3)
+	var own := {}
+	for b in _kind(_trace(three, 0), &"main"):
+		own[int(b["lane"])] = bool(b["own"])
+	assert_eq(own[0], true, "three rays, two enemies: the ray alone on its enemy has it to itself")
+	assert_eq(own[1], false, "the two that share the other keep Twin's share")
+	assert_eq(own[2], false, "the two that share the other keep Twin's share")
+
+
+func test_o1f_twin_homing_on_a_pack_is_at_least_homing_alone() -> void:
+	for at: Array in [
+		[
+			Vector2(3.0, 2.0),
+			Vector2(3.5, 1.0),
+			Vector2(4.0, 0.0),
+			Vector2(3.5, -1.0),
+			Vector2(3.0, -2.0)
+		],
+		CAP_AT,
+	]:
+		var alone := _world([&"gun_homing"], at)
+		W.run(alone, 2, 0, W.S)
+		var twin := _world([&"gun_twin", &"gun_homing"], at)
+		W.run(twin, 2, 0, W.S)
+		var three := _world([&"gun_twin", &"gun_homing"], at)
+		CardLevels.set_level(three, W.item(three, &"gun_twin"), 3)
+		W.run(three, 2, 0, W.S)
+		var d := [0, 0, 0]
+		for k in range(1, at.size() + 1):
+			d[0] += _total(alone, k)
+			d[1] += _total(twin, k)
+			d[2] += _total(three, k)
+		assert_gte(d[1], d[0], "Twin Lv 1 %d vs Homing alone %d" % [d[1], d[0]])
+		assert_gte(d[2], d[0], "Twin Lv 3 %d vs Homing alone %d" % [d[2], d[0]])
+
+
+func test_o1f_echo_strikes_an_own_ray_at_half_of_its_full_damage() -> void:
+	var at := [Vector2(4.0, 2.5), Vector2(4.0, -2.5)]
+	var w := _world([&"gun_twin", &"gun_homing", &"gun_echo"], at)
+	W.run(w, 40, 0, W.S)
+	var hits := _hits(w, 1)
+	assert_eq(hits.size(), 2, "the shot, then its echo")
+	assert_eq(hits[0]["amount"], SHOT, "full")
+	assert_eq(hits[1]["amount"], SHOT / 2, "the echo at 50 % of it")
+
+
 func _dist_to_path_any(legs: Array, p: Vector2) -> float:
 	var t: Array[Dictionary] = []
 	t.assign(legs)
