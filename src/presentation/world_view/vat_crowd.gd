@@ -43,6 +43,7 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_SCRAP_HOUND,  # v0.11.0 O17a: the owner's model (SoloVat)
 	WorldReader.KIND_ROCK_LURKER,  # v0.11.0 O17b: the owner's model (SoloVat)
 	WorldReader.KIND_STONE_THROWER,  # v0.11.0 O17c: the owner's model (SoloVat)
+	WorldReader.KIND_KILN_BEETLE,  # v0.11.0 O17e: the owner's model (SoloVat)
 	WorldReader.KIND_DUST_MITE,  # v0.11.0 O9: the horde critters (CritterBodies, on HordeVat's path)
 	WorldReader.KIND_CAVE_BAT,
 	WorldReader.KIND_EMBER_FLEA,

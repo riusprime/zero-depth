@@ -28,6 +28,13 @@ func _trail(reader: WorldReader, kind: int) -> bool:
 	return kinds.has(kind)
 
 
+func _avatar(s: SignatureE2e, id: int) -> Node:
+	var node := s.main.view.actors.actor_node(id)
+	return (
+		node.get_meta(&"enemy_avatar") if node != null and node.has_meta(&"enemy_avatar") else null
+	)
+
+
 func test_the_red_canyon_signatures_and_variant_on_a_red_canyon_floor() -> void:
 	var s := SignatureE2e.new(self)
 	if not await s.start_on(&"red_canyon"):
@@ -61,9 +68,21 @@ func test_the_red_canyon_signatures_and_variant_on_a_red_canyon_floor() -> void:
 	assert_true(await s.shoot_dead(priest, KILL_FRAMES), "the Cinder Priest is shot dead")
 	# R5 Kiln Beetle: dies into a burst that blows a second later (its circle, drawn).
 	var beetle: int = await s.spawn(ActorStore.Kind.KILN_BEETLE, "ENEMY_KILN_BEETLE")
+	# v0.11.0 O17e: drawn on the owner's model, it glows hotter as it is shot, and its body plays its death over the
+	# burst's fuse.
+	var av := _avatar(s, beetle) as KilnBeetleAvatar
+	assert_not_null(av, "the Kiln Beetle is drawn by its own avatar")
+	var cool := av.heat_energy() if av != null else 0.0
+	var hottest := [cool]
+	var watch := func(_i: int) -> void:
+		if is_instance_valid(av):
+			hottest[0] = maxf(hottest[0], av.heat_energy())
 	assert_true(
-		await s.shoot_dead(beetle, KILL_FRAMES * 2, Callable(), 3.0), "the Kiln Beetle is shot dead"
+		await s.shoot_dead(beetle, KILL_FRAMES * 2, watch, 3.0), "the Kiln Beetle is shot dead"
 	)
+	assert_gt(float(hottest[0]), cool + 2.0, "it glowed hotter as its HP dropped")
+	var falls: bool = await s.until(func() -> bool: return is_instance_valid(av) and av.dying(), 20)
+	assert_true(falls, "its body plays its death over the fuse")
 	var burst: bool = await s.until(func() -> bool: return int(cs.counts()["bursts"]) > 0, 30)
 	assert_true(burst, "its burst is drawn where it fell")
 	# V3 Ember Charger: a fire trail behind its charge.

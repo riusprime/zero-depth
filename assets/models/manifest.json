@@ -327,6 +327,11 @@
       "sha256": "41d1e005ec7df5fa6576cef80fdf3258fe56635b3d18e2a8d02cebe6f18262c9"
     },
     {
+      "id": "kiln_beetle",
+      "path": "assets/models/enemies/kiln_beetle.glb",
+      "sha256": "64652aacedada7b0cbb689554118bf456b8c657da2511244168d8464a9ab5edd"
+    },
+    {
       "id": "rock_lurker",
       "path": "assets/models/enemies/rock_lurker.glb",
       "sha256": "0f6428702750f5687253358df4cfe1dbfb876af22811cd58e145af606cc87a6f"
