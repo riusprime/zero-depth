@@ -160,6 +160,10 @@ build step).
   2026-11-08): "The rock thrower has the rock separated so you can animate how he throws the rock animate also the
   rock impact with assets we already have in the game": the model's rock is the held, flying and landed rock; the
   impact uses the packs and existing effects only (PD-13).
+- **VL. The VFX lab and the pack recipe (owner, 2026-11-08):** "I want you to start the VFX lab and do everything of
+  this, but in a different session … from a very detailed spec". Spec: [`VFX_LAB.md`](VFX_LAB.md) (VL1 recipe doc,
+  VL2 the lab, VL3 sprites, VL4 pilot: a blind recipe fire pool and the Kiln Beetle's heat haze, owner picks). Built in
+  its own session and branch; the lead merges.
 
 ### R. Release
 ROADMAP §0.4: version 0.11.0, patch notes en/es, What's New, tour en/es, PLAYTEST.md, seams, then the PR's full suite.
