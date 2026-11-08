@@ -83,6 +83,22 @@ func test_the_shipped_data() -> void:
 			KIND.EMBER_FLEA: 1,
 			KIND.ICE_CRAB: 1,
 			KIND.STAR_MOTE: 1,
+			KIND.RUBBLE_WARDEN: 7,  # v0.11.0 O13a: the biome variants
+			KIND.DIM_NEEDLE: 4,
+			KIND.EMBER_CHARGER: 4,
+			KIND.FROST_CHARGER: 4,
+			KIND.SPLIT_SNIPER: 6,
+			KIND.WIRE_WEAVER: 4,  # v0.11.0 O13: the biomes' signature enemies
+			KIND.WIRE_POST: 0,  # (a Weaver's post pays nothing)
+			KIND.SCRAP_HOUND: 3,
+			KIND.ROCK_LURKER: 5,
+			KIND.STONE_THROWER: 6,
+			KIND.KILN_BEETLE: 5,
+			KIND.CINDER_PRIEST: 5,
+			KIND.FROST_SPITTER: 4,
+			KIND.GLACIER_TURTLE: 6,
+			KIND.STAR_WARPER: 4,
+			KIND.GRAVITY_NODE: 4,
 		},
 		(
 			"shards per kind (PLAN E; hatchlings 1; v0.3.5 Arc Caster and Bomb Drone 4; v0.4.0 EN horde;"
