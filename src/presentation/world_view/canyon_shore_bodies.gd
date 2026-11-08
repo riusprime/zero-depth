@@ -39,6 +39,9 @@ const COLORS := {
 const TURTLE_BODY_SCALE := 1.25
 const BONE := Color("#D9CDB8")
 const ICE := Color("#A6DAEE")
+const SHELL_ICE := Color("#A9D6EE") * 1.9
+const SHELL_TOP := Color("#DDF2FF") * 2.0
+const SHELL_RIM := Color("#5C8FB0") * 1.2
 const SAC := Color("#CFEFFF")
 ## The beetle's glow at full HP and how much it adds as its HP runs out; the priest's crystal on its pulse.
 const HEAT_FULL := 6.0
@@ -222,11 +225,14 @@ static func _build_turtle(a: HordeAvatar) -> void:
 		color(k, &"body")
 	)
 	a._piece(
-		a.body, _box(Vector3(0.22, 0.16, 0.2), 0.04), Vector3(0.38, 0.46, 0), color(k, &"body")
+		a.body, _box(Vector3(0.22, 0.16, 0.2), 0.04), Vector3(0.63, 0.48, 0), color(k, &"body")
 	)
-	_face(a, Vector3(0.46, 0.46, 0), 1.2)
-	a._glow(a.body, Vector3(0.05, 0.08, 0.2), Vector3(0.52, 0.5, 0))  # a stronger visor glow
-	a._glow(a.body, Vector3(0.12, 0.05, 0.14), Vector3(0.44, 0.58, 0))
+	a._piece(
+		a.body, _box(Vector3(0.34, 0.14, 0.16), 0.04), Vector3(0.45, 0.47, 0), color(k, &"body")
+	)  # the neck
+	_face(a, Vector3(0.71, 0.48, 0), 1.2)
+	a._glow(a.body, Vector3(0.06, 0.1, 0.24), Vector3(0.77, 0.52, 0))  # a stronger visor glow
+	a._glow(a.body, Vector3(0.14, 0.05, 0.16), Vector3(0.69, 0.6, 0))
 	for n in 2:
 		for side in [-1.0, 1.0]:
 			_leg(a, Vector3(0.2 - n * 0.44, 0.24, 0.32 * side), side, 0.3, 0.12, color(k, &"body"))
@@ -241,6 +247,7 @@ static func _build_turtle(a: HordeAvatar) -> void:
 			shell,
 			_box(Vector3(0.14, 0.86 - absf(z) * 0.5, 0.36), 0.05),
 			Vector3(0.04 - absf(z) * 0.18, 0.45, z),
-			ICE
+			SHELL_ICE
 		)
-	a._piece(shell, _box(Vector3(0.1, 0.2, 0.9), 0.04), Vector3(0.08, 0.88, 0), ICE)
+	a._piece(shell, _box(Vector3(0.1, 0.2, 0.9), 0.04), Vector3(0.08, 0.88, 0), SHELL_TOP)
+	a._piece(shell, _box(Vector3(0.16, 0.08, 1.0), 0.03), Vector3(0.05, 0.04, 0), SHELL_RIM)  # the dark rim along the foot
