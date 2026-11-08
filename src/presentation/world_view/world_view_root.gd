@@ -460,6 +460,8 @@ func _setup_effects() -> void:
 		variant_fx.vfx = layer  # v0.11.0 O13a: the variants' fire and slick patches (pack zones)
 		variant_fx.pack_fx = pack_fx
 		ruins_rocks_fx.pack_fx = pack_fx  # v0.11.0 O13b: the sparks, the dust
+		ruins_rocks_fx.vfx = layer  # v0.11.0 O17c: the thrown rock's crack mark
+		ruins_rocks_fx.rig = rig  # v0.11.0 O17c: its landing's small shake
 		starfall_fx.pack_fx = pack_fx  # v0.11.0 O13d: the star, the blink, the swirl (pack areas and orbs)
 		layer.drawers.append(variant_fx.draw_fx)
 		canyon_shore_fx.vfx = layer  # v0.11.0 O13c: R5-R8's bursts, vents, arcs, chunks (pack zones)

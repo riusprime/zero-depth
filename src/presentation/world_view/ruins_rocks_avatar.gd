@@ -11,8 +11,7 @@ extends AvatarBase
 ##   in (the tell) and it lunges low; stopped by a hit, it jolts back (the yelp).
 ## - Rock Lurker (melee red-orange cracks): while it waits, a grey boulder with thin glowing cracks (faint; brighter and
 ##   shaking while it rumbles); out, the rock is its back, its face and four thick legs showing.
-## - Stone Thrower (tank bronze): a hunched brute with two huge arms; through its windup it lifts a rock overhead (the
-##   rock leaves its hands at the throw: RuinsRocksViews flies it).
+## (v0.11.0 O17c: the Stone Thrower is on the owner's model now: StoneThrowerAvatar.)
 ## Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance() animates in frame time.
 ## +X is the front.
 
@@ -21,14 +20,12 @@ const COLORS := {
 	WorldReader.KIND_WIRE_POST: Color("#E8C22E"),
 	WorldReader.KIND_SCRAP_HOUND: Color("#C93A1E"),
 	WorldReader.KIND_ROCK_LURKER: Color("#C93A1E"),
-	WorldReader.KIND_STONE_THROWER: Color("#9A6232"),
 }
 const HEIGHTS := {
 	WorldReader.KIND_WIRE_WEAVER: 1.15,
 	WorldReader.KIND_WIRE_POST: 0.95,
 	WorldReader.KIND_SCRAP_HOUND: 0.75,
 	WorldReader.KIND_ROCK_LURKER: 1.1,
-	WorldReader.KIND_STONE_THROWER: 1.6,
 }
 const CHARCOAL := Color("#24272D")
 const FACE := Color("#16181D")
@@ -66,7 +63,6 @@ var _tell := 0.0
 var _hidden := false
 var _rumble := false
 var _yelp := 0.0
-var _flight := -1
 var _walk_phase := 0.0
 
 
@@ -103,8 +99,6 @@ func setup(p_kind: int, outline: Color) -> void:
 			_build_hound(c, outline)
 		WorldReader.KIND_ROCK_LURKER:
 			_build_lurker(c, outline)
-		WorldReader.KIND_STONE_THROWER:
-			_build_thrower(c, outline)
 
 
 # --- Pieces -----------------------------------------------------------------------------------------------------
@@ -264,20 +258,6 @@ func _build_lurker(c: Color, outline: Color) -> void:
 		_legs.append(leg)
 
 
-func _build_thrower(c: Color, outline: Color) -> void:
-	_box(_body, Vector3(0.6, 0.55, 0.6), Vector3(0, 0.85, 0), CHARCOAL, outline)
-	_prism(_body, Vector3(0.6, 0.32, 0.66), Vector3(-0.12, 1.24, 0), c, outline)
-	_face(_body, Vector3(0.32, 0.98, 0), 0.8, outline)
-	for side in [0.4, -0.4]:
-		_arms.append(_limb(Vector3(0.05, 1.1, side), 0.8, 0.09, outline, 0.2))
-		_legs.append(_limb(Vector3(0, 0.55, side * 0.5), 0.5, 0.08, outline))
-	_rock = Node3D.new()
-	_body.add_child(_rock)
-	_stone(_rock, 0.32, Vector3.ZERO, ROCK, outline)
-	_rock.position = Vector3(0.1, 1.95, 0)
-	_rock.visible = false
-
-
 # --- Sync and pose ----------------------------------------------------------------------------------------------
 func sync(reader: WorldReader, i: int) -> void:
 	var st := reader.actor_state(i)
@@ -290,8 +270,6 @@ func sync(reader: WorldReader, i: int) -> void:
 		_hidden = reader.lurker_hidden(i) or st == WorldReader.STATE_SPAWN
 		_rumble = reader.lurker_rumbling(i)
 		_show_rings(not _hidden)  # its disguise: no team ring while it waits
-	if kind == WorldReader.KIND_STONE_THROWER:
-		_flight = reader.thrower_flight(i)
 	_fresh = false
 
 
@@ -302,10 +280,6 @@ func visor_energy() -> float:
 
 func crack_energy() -> float:
 	return _crack_mat.emission_energy_multiplier if _crack_mat != null else 0.0
-
-
-func rock_lifted() -> bool:
-	return _rock != null and _rock.visible and kind == WorldReader.KIND_STONE_THROWER
 
 
 func advance(delta: float) -> void:
@@ -336,13 +310,6 @@ func advance(delta: float) -> void:
 			_body.rotation.z = YELP_TILT * (_yelp / YELP_SECONDS)
 		WorldReader.KIND_ROCK_LURKER:
 			_pose_lurker()
-		WorldReader.KIND_STONE_THROWER:
-			# its telegraph runs over the lift and the flight: the lift is its first part
-			var lift := clampf(_tell * 1.8, 0.0, 1.0) if winding else 0.0
-			for arm in _arms:
-				arm.rotation.z = lerpf(0.2, 3.0, lift)
-			_rock.visible = winding
-			_rock.position = Vector3(0.05, lerpf(1.3, 2.35, lift), 0)
 
 
 func _pose_lurker() -> void:

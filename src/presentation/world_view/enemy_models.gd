@@ -23,6 +23,9 @@ const SPECS := {
 	&"elite_breaker": {"height": 2.6},
 	&"elite_rift_hunter": {"height": 2.1},
 	&"elite_conduit": {"height": 2.3},
+	# v0.11.0 O17c: the owner's Stone Thrower (scripts/assets/o17_prep_stone_thrower.py: its parts and its rock),
+	# posed by StoneThrowerAvatar.
+	&"stone_thrower": {"height": 1.6},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 

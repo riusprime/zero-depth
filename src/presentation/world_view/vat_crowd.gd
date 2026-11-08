@@ -40,6 +40,7 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_ARC_CASTER,
 	WorldReader.KIND_BOMB_DRONE,
 	WorldReader.KIND_LENS_DRONE,
+	WorldReader.KIND_STONE_THROWER,  # v0.11.0 O17c: the owner's model (SoloVat)
 	WorldReader.KIND_DUST_MITE,  # v0.11.0 O9: the horde critters (CritterBodies, on HordeVat's path)
 	WorldReader.KIND_CAVE_BAT,
 	WorldReader.KIND_EMBER_FLEA,
