@@ -54,6 +54,7 @@
 | O13b–d | The ten signature enemies (Wire Weaver, Scrap Hound, Rock Lurker, Stone Thrower; Kiln Beetle, Cinder Priest, Frost Spitter, Glacier Turtle; Star Warper, Gravity Node), merged on v0110-m13; one unlock rule (`CanyonShoreCompiler.inherit_phases`: signatures open with the Warden); 34 enemy definitions, 26 mix rows; seams gains test_e2e_horde_enemies and test_five_floors | 3930471c, 95629a79, b0d86567, 3ff6cb61 |
 | MX-1 | The 20 new kinds' weak/resist re-picked (owner "Spread them out"): every id the weakness of 3–5 kinds, resisted by 1–5; `gun_void` now a weakness | 6612d61c |
 | O15 | Large rooms get a purpose (75 % drawn, 689 ‰ measured over 1,000 floors): camp, stone-ring hall (owner: "like Stonehenge … the vibe"), quarry; templates as data, seeded variation, doorways and item spots kept clear | 37951fa0 |
+| S5 | The v0.10.5 PLAYTEST rows not in the brief closed as OK in OWNER_TODO per Q27 (owner to confirm, §J N8) | docs |
 | S7 | OWNER_TODO §3.2: prompts for the 8 code-made enemies in the Charger's style, palette-A role colours | cc0d326f |
 
 ## Goldens changed on purpose
