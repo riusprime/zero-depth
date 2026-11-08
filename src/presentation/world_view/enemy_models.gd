@@ -34,6 +34,9 @@ const SPECS := {
 	# v0.11.0 O17d: the owner's Cinder Priest (scripts/assets/o17_prep_cinder_priest.py: parts, `base`, `role`, `glow`),
 	# its height with the staff (CinderPriestAvatar poses it).
 	&"cinder_priest": {"height": 1.75},
+	# v0.11.0 O17e: the Kiln Beetle (scripts/assets/o17_prep_kiln_beetle.py: shell, body, head, eight two-part legs;
+	# KilnBeetleAvatar poses them), at the request row's 0.7 m.
+	&"kiln_beetle": {"height": 0.7},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 

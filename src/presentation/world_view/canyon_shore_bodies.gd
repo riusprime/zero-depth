@@ -5,9 +5,8 @@ extends RefCounted
 ## kinds' way: its pieces, outline, flash, flinch, eye and glow) in the Charger family's style: a faceted shell in the
 ## role colour, a dark shield-shaped face with one glowing gem visor, a charcoal body, grey segmented limbs with bone
 ## tips. Each one shape at a glance, and its tell drawn on the body:
-## - Kiln Beetle (bomber yellow): a low round shell with vent slits over a glowing kiln belly, six thick legs; the belly
-##   and its slits glow brighter as its HP drops (WorldReader.actor_hp over actor_max_hp).
-## (v0.11.0 O17d: the Cinder Priest is the owner's model now, CinderPriestAvatar.)
+## (v0.11.0 O17d: the Cinder Priest is the owner's model now, CinderPriestAvatar; O17e: the Kiln Beetle,
+## KilnBeetleAvatar.)
 ## - Frost Spitter (ranged blue): a lean four-legged body with a pale ice sac on its throat that swells through the
 ##   windup.
 ## - Glacier Turtle (tank bronze): a squat charcoal body on four thick legs under a small bronze cap, a big domed shell
@@ -16,19 +15,16 @@ extends RefCounted
 ## Presentation only (EI-07): frame-time animation, nothing reaches the sim.
 
 const KINDS: Array[int] = [
-	WorldReader.KIND_KILN_BEETLE,
 	WorldReader.KIND_FROST_SPITTER,
 	WorldReader.KIND_GLACIER_TURTLE,
 ]
 ## The body's top (m, for the health bar).
 const HEIGHTS := {
-	WorldReader.KIND_KILN_BEETLE: 0.72,
 	WorldReader.KIND_FROST_SPITTER: 0.85,
 	WorldReader.KIND_GLACIER_TURTLE: 1.0,
 }
 ## [body, trim, grey, eye] per kind (starting values: the prompts' role colours, the family's charcoal and greys).
 const COLORS := {
-	WorldReader.KIND_KILN_BEETLE: ["#E8C22E", "#2A2626", "#5E5852", "#FF9A2E"],
 	WorldReader.KIND_FROST_SPITTER: ["#3A6BD4", "#262A32", "#56606A", "#8FE6FF"],
 	WorldReader.KIND_GLACIER_TURTLE: ["#9A6232", "#2A2828", "#5C5A58", "#FFB04A"],
 }
@@ -39,8 +35,6 @@ const SHELL_ICE := Color("#A9D6EE") * 1.9
 const SHELL_TOP := Color("#DDF2FF") * 2.0
 const SHELL_RIM := Color("#5C8FB0") * 1.2
 const SAC := Color("#CFEFFF")
-## The beetle's glow at full HP and how much it adds as its HP runs out.
-const HEAT_FULL := 6.0
 
 
 static func is_kind(kind: int) -> bool:
@@ -56,33 +50,24 @@ static func color(kind: int, slot: StringName) -> Color:
 ## Builds `a`'s pieces under its body (HordeAvatar.setup).
 static func build(a: HordeAvatar) -> void:
 	match a.kind:
-		WorldReader.KIND_KILN_BEETLE:
-			_build_beetle(a)
 		WorldReader.KIND_FROST_SPITTER:
 			_build_spitter(a)
 		WorldReader.KIND_GLACIER_TURTLE:
 			_build_turtle(a)
 
 
-## Reads actor i's tell drive for `a` (HordeAvatar.sync): the beetle's heat (1 - its HP share), the turtle's shell
-## standing.
+## Reads actor i's tell drive for `a` (HordeAvatar.sync): the turtle's shell standing.
 static func read(a: HordeAvatar, reader: WorldReader, i: int) -> void:
 	match a.kind:
-		WorldReader.KIND_KILN_BEETLE:
-			var full := maxf(1.0, float(reader.actor_max_hp(i)))
-			a.sig_drive = clampf(1.0 - float(reader.actor_hp(i)) / full, 0.0, 1.0)
 		WorldReader.KIND_GLACIER_TURTLE:
 			a.sig_on = reader.shell_on(i)
 
 
 ## Poses `a`'s moving parts from its drives (HordeAvatar._pose); returns the glow energy to set (`energy`: the
 ## windup's).
-static func pose(a: HordeAvatar, energy: float, calm: bool) -> float:
+static func pose(a: HordeAvatar, energy: float, _calm: bool) -> float:
 	var p := a.parts
 	match a.kind:
-		WorldReader.KIND_KILN_BEETLE:
-			var flicker := 0.0 if calm else sin(a.anim_time() * (4.0 + a.sig_drive * 10.0)) * 0.4
-			return energy + a.sig_drive * (HEAT_FULL + flicker)
 		WorldReader.KIND_FROST_SPITTER:
 			(p["sac"] as Node3D).scale = Vector3.ONE * (1.0 + a.windup_pose() * 0.6)
 		WorldReader.KIND_GLACIER_TURTLE:
@@ -142,24 +127,6 @@ static func _leg(
 		at + Vector3(0, -long * 0.48, long * 0.66 * side),
 		BONE
 	)
-
-
-static func _build_beetle(a: HordeAvatar) -> void:
-	var k := a.kind
-	a._piece(a.body, _box(Vector3(0.78, 0.26, 0.6), 0.06), Vector3(0, 0.3, 0), color(k, &"trim"))
-	a._glow(a.body, Vector3(0.56, 0.06, 0.44), Vector3(0, 0.19, 0))  # the kiln belly under the shell
-	a._piece(
-		a.body,
-		ArcCasterAvatar._frustum(0.46, 0.2, 0.3, 7),
-		Vector3(-0.04, 0.36, 0),
-		color(k, &"body")
-	)
-	for n in 3:  # the shell's vent slits, glowing with the belly
-		a._glow(a.body, Vector3(0.04, 0.025, 0.3), Vector3(-0.2 + n * 0.14, 0.62, 0))
-	_face(a, Vector3(0.38, 0.28, 0), 1.3)
-	for n in 3:
-		for side in [-1.0, 1.0]:
-			_leg(a, Vector3(0.2 - n * 0.2, 0.26, 0.26 * side), side, 0.36, 0.07)
 
 
 static func _build_spitter(a: HordeAvatar) -> void:

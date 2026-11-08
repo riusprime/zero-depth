@@ -33,6 +33,7 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_ROCK_LURKER,  # v0.11.0 O17b
 	WorldReader.KIND_STONE_THROWER,  # v0.11.0 O17c: on the owner's model
 	WorldReader.KIND_CINDER_PRIEST,  # v0.11.0 O17d: the owner's model, animated in code
+	WorldReader.KIND_KILN_BEETLE,  # v0.11.0 O17e
 ]
 ## Metas: a piece material's look (its role: &"plate", &"accent", &"unshaded"), an accent's glow drive (+ 1), a node
 ## kept live.
@@ -65,6 +66,8 @@ static func _new(kind: int) -> AvatarBase:
 			return StoneThrowerAvatar.new()
 		WorldReader.KIND_CINDER_PRIEST:
 			return CinderPriestAvatar.new()
+		WorldReader.KIND_KILN_BEETLE:  # v0.11.0 O17e
+			return KilnBeetleAvatar.new()
 	return null
 
 
