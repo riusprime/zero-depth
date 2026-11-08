@@ -7,8 +7,7 @@ extends AvatarBase
 ## - Wire Weaver (bomber yellow): a spindly walker on four thin legs, four long arms, a coil of cable on its back; its
 ##   arms rise and its visor flashes while it marks a cable (the tell).
 ## - Cable post (WIRE_POST): a short grey post with a sparking yellow top.
-## - Scrap Hound (melee red-orange): a lean, low four-legged hound with a long snout; its eyes flash bright as it turns
-##   in (the tell) and it lunges low; stopped by a hit, it jolts back (the yelp).
+## (v0.11.0 O17a: the Scrap Hound is on the owner's model now, ScrapHoundAvatar.)
 ## - Rock Lurker (melee red-orange cracks): while it waits, a grey boulder with thin glowing cracks (faint; brighter and
 ##   shaking while it rumbles); out, the rock is its back, its face and four thick legs showing.
 ## - Stone Thrower (tank bronze): a hunched brute with two huge arms; through its windup it lifts a rock overhead (the
@@ -19,14 +18,12 @@ extends AvatarBase
 const COLORS := {
 	WorldReader.KIND_WIRE_WEAVER: Color("#E8C22E"),
 	WorldReader.KIND_WIRE_POST: Color("#E8C22E"),
-	WorldReader.KIND_SCRAP_HOUND: Color("#C93A1E"),
 	WorldReader.KIND_ROCK_LURKER: Color("#C93A1E"),
 	WorldReader.KIND_STONE_THROWER: Color("#9A6232"),
 }
 const HEIGHTS := {
 	WorldReader.KIND_WIRE_WEAVER: 1.15,
 	WorldReader.KIND_WIRE_POST: 0.95,
-	WorldReader.KIND_SCRAP_HOUND: 0.75,
 	WorldReader.KIND_ROCK_LURKER: 1.1,
 	WorldReader.KIND_STONE_THROWER: 1.6,
 }
@@ -43,11 +40,9 @@ const VISOR_TELL := 7.0
 const CRACK_REST := 1.1
 const CRACK_RUMBLE := 2.2
 const CRACK_OUT := 3.0
-## The rumble's shake (m) and rate, the yelp's jolt (radians) and how long it lasts (s); the walk's rate and swing.
+## The rumble's shake (m) and rate; the walk's rate and swing.
 const SHAKE_M := 0.025
 const SHAKE_HZ := 23.0
-const YELP_TILT := 0.45
-const YELP_SECONDS := 0.3
 const WALK_HZ := 2.6
 const WALK_SWING := 0.35
 
@@ -65,7 +60,6 @@ var _state := -1
 var _tell := 0.0
 var _hidden := false
 var _rumble := false
-var _yelp := 0.0
 var _flight := -1
 var _walk_phase := 0.0
 
@@ -99,8 +93,6 @@ func setup(p_kind: int, outline: Color) -> void:
 			_build_weaver(c, outline)
 		WorldReader.KIND_WIRE_POST:
 			_build_post(c, outline)
-		WorldReader.KIND_SCRAP_HOUND:
-			_build_hound(c, outline)
 		WorldReader.KIND_ROCK_LURKER:
 			_build_lurker(c, outline)
 		WorldReader.KIND_STONE_THROWER:
@@ -220,21 +212,6 @@ func _build_post(_c: Color, outline: Color) -> void:
 	_visor_mat.emission_energy_multiplier = VISOR_TELL * 0.6
 
 
-func _build_hound(c: Color, outline: Color) -> void:
-	_box(_body, Vector3(0.7, 0.2, 0.26), Vector3(0, 0.5, 0), CHARCOAL, outline)
-	_prism(_body, Vector3(0.66, 0.14, 0.3), Vector3(-0.02, 0.67, 0), c, outline)
-	_box(_body, Vector3(0.24, 0.14, 0.16), Vector3(0.44, 0.56, 0), CHARCOAL, outline)
-	_face(_body, Vector3(0.6, 0.6, 0), 1.9, outline)  # (big eyes: they flash as it turns in)
-	for side in [0.15, -0.15]:
-		_box(_body, Vector3(0.22, 0.12, 0.02), Vector3(-0.08, 0.5, side), GREY_DARK, outline)  # scrap plates
-	var tail := _rod(_body, 0.3, 0.025, Vector3(-0.44, 0.62, 0), GREY, outline)
-	tail.rotation.z = 1.0
-	for k in 4:
-		var x := 0.26 if k < 2 else -0.26
-		var z := 0.11 if k % 2 == 0 else -0.11
-		_legs.append(_limb(Vector3(x, 0.45, z), 0.42, 0.028, outline))
-
-
 func _build_lurker(c: Color, outline: Color) -> void:
 	_rock = Node3D.new()
 	_body.add_child(_rock)
@@ -281,8 +258,6 @@ func _build_thrower(c: Color, outline: Color) -> void:
 # --- Sync and pose ----------------------------------------------------------------------------------------------
 func sync(reader: WorldReader, i: int) -> void:
 	var st := reader.actor_state(i)
-	if kind == WorldReader.KIND_SCRAP_HOUND and reader.hound_yelped(i) and _state != st:
-		_yelp = YELP_SECONDS
 	_state = st
 	_tell = windup_progress(reader, i)
 	_track_motion(reader.tick(), reader.actor_pos(i), 30.0)
@@ -330,10 +305,6 @@ func advance(delta: float) -> void:
 		WorldReader.KIND_WIRE_WEAVER:
 			for arm in _arms:
 				arm.rotation.z = lerpf(1.1, 2.4, _tell if winding else 0.0)
-		WorldReader.KIND_SCRAP_HOUND:
-			_body.position.y = -0.08 * tell_crouch(_tell) if winding else 0.0
-			_yelp = maxf(0.0, _yelp - dt)
-			_body.rotation.z = YELP_TILT * (_yelp / YELP_SECONDS)
 		WorldReader.KIND_ROCK_LURKER:
 			_pose_lurker()
 		WorldReader.KIND_STONE_THROWER:

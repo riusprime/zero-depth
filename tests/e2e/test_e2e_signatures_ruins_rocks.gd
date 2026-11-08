@@ -57,8 +57,8 @@ func test_the_ruins_signatures_and_variant_on_a_ruins_floor() -> void:
 		var i := w.actors.index_of(hound)
 		if i < 0:
 			break
-		var av := _avatar(s, hound) as RuinsRocksAvatar
-		if av != null and av.visor_energy() > RuinsRocksAvatar.VISOR_REST + 0.5:
+		var av := _avatar(s, hound) as ScrapHoundAvatar  # v0.11.0 O17a: the owner's model
+		if av != null and av.visor_energy() > ScrapHoundAvatar.VISOR_REST + 0.5:
 			flashed = true
 			break
 		var away := w.player_pos() - (w.actors.pos(i) - w.player_pos()).normalized() * 4.0

@@ -150,12 +150,14 @@ const SOLO := {
 	"warden": WorldReader.KIND_WARDEN,
 	"arc_caster": WorldReader.KIND_ARC_CASTER,
 	"bomb_drone": WorldReader.KIND_BOMB_DRONE,
+	"scrap_hound": WorldReader.KIND_SCRAP_HOUND,  # v0.11.0 O17a
 }
 const SOLO_FRAME := {
 	WorldReader.KIND_NEEDLE: [1.5, 0.4],
 	WorldReader.KIND_WARDEN: [2.6, 0.75],
 	WorldReader.KIND_ARC_CASTER: [1.9, 0.65],
 	WorldReader.KIND_BOMB_DRONE: [2.8, 1.1],
+	WorldReader.KIND_SCRAP_HOUND: [1.6, 0.3],
 }
 const SOLO_PLAN := [
 	["idle (t 1.5 s)", {}, "idle"],
@@ -506,6 +508,7 @@ func _drive_solo(a: AvatarBase, steps: String) -> void:
 			WorldReader.KIND_WARDEN: 1.6,
 			WorldReader.KIND_ARC_CASTER: 2.0,
 			WorldReader.KIND_BOMB_DRONE: 2.5,
+			WorldReader.KIND_SCRAP_HOUND: 6.5,
 		}[_kind]
 		/ 60.0
 	)
