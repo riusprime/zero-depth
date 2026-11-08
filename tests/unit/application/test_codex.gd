@@ -131,6 +131,11 @@ func test_the_catalog_lists_the_content_by_pool_without_retired_cards() -> void:
 	assert_true(c.entry(&"cards", &"gun_twin")["leveled"], "a wand card levels")
 	assert_false(c.entry(&"cards", &"damage")["leveled"], "a stat card doesn't")
 	assert_eq(
+		c.entry(&"cards", &"city_heart")["section"],
+		&"relics",
+		"v0.11.0 O14b: the City's Heart is a relic"
+	)
+	assert_eq(
 		c.sections(&"cards"),
 		(
 			[
@@ -142,7 +147,8 @@ func test_the_catalog_lists_the_content_by_pool_without_retired_cards() -> void:
 				&"utilities",
 				&"passives",
 				&"starbound",
-				&"constellations"
+				&"constellations",
+				&"relics",  # v0.11.0 O14b: the City's Heart
 			]
 			as Array[StringName]
 		),

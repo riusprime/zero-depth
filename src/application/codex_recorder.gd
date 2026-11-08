@@ -136,6 +136,10 @@ func _lore(reader: WorldReader) -> void:
 	for id in reader.loop_rules():  # v0.10.5 O5b: a loop rule met
 		store.unlock(&"lore", LoopRules.lore_id(id))
 	_constellations(reader)
+	for k in reader.relic_count():  # v0.11.0 O14b: a relic held unlocks its Codex entry
+		var relic := reader.relic_id(k)
+		if reader.relic_held(k) and catalog.has(&"cards", relic):
+			store.unlock(&"cards", relic)
 
 
 ## v0.10.5 W3-P10g: a Constellation picked unlocks its Codex entry; Meteor when Starfall's star turns into it.

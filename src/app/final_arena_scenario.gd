@@ -25,7 +25,8 @@ static func build(
 	combos: Array[ComboTable],
 	bosses: Array[BossTable],
 	finals: Array[BossTable],
-	approach: bool = false
+	approach: bool = false,
+	heart: bool = false
 ) -> World:
 	var seed_value := final_seed(run)
 	var layout := (
@@ -33,6 +34,8 @@ static func build(
 		if approach
 		else FinalArena.layout(seed_value, arena.radius_m, arena.segments)
 	)
+	if approach and heart:  # v0.11.0 O14b: the hidden room under the throne (FloorPlan sets up its pieces, HeartRoom)
+		FinalArena.add_heart_room(layout)
 	var w := World.new(seed_value, player, layout.start_pos)
 	w.set_walls(layout.walls)
 	w.floor_layout = layout

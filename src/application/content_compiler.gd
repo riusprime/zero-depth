@@ -983,6 +983,28 @@ static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 	return out
 
 
+## v0.11.0 O14b (OWNER_QUESTIONS N1): the relics, indexed by RelicDefinition.RELICS (Relics' order); empty when the
+## content misses one (a world without them has no relic to give).
+static func compile_relics(repo: ContentRepository) -> Array[RelicTable]:
+	var out: Array[RelicTable] = []
+	for k in RelicDefinition.RELICS.size():
+		var def: RelicDefinition = repo.get_def(&"relic", RelicDefinition.RELICS[k])
+		if def == null:
+			out.clear()
+			return out
+		var t := RelicTable.new()
+		t.id = def.id
+		t.relic = k
+		t.name_key = def.name_key
+		t.desc_key = def.desc_key
+		t.uses = def.uses
+		t.saved_hp = def.saved_hp
+		t.ring_radius_m = def.ring_radius_m
+		t.ring_damage = def.ring_damage
+		out.append(t)
+	return out
+
+
 ## v0.10.5 W3-P10b (owner W7): the Starbound cards, indexed by StarboundDefinition.CARDS (Starbound's order); empty when
 ## the content has none, or misses one (a world without them never offers one). Percent to per mille (x 10); Arc Jump's
 ## jumps and Echo Cast's most repeats as they are.

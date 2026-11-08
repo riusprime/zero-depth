@@ -86,6 +86,13 @@ var starbound_fx_kind := PackedInt32Array()
 var starbound_fx_tick := PackedInt32Array()
 var starbound_fx_from := PackedVector2Array()
 var starbound_fx_to := PackedVector2Array()
+## v0.11.0 O14b (Relics; OWNER_QUESTIONS N1): the compiled relics (loadout), the held ones (one entry per relic once
+## the first is taken: 0 not held, else 1 + its uses this run; RunCarry), and the City's Heart's last saved blow (the
+## tick, -1 none, and where its shock ring pulsed). Hashed once a relic was taken.
+var relic_tables: Array[RelicTable] = []
+var relics := PackedInt32Array()
+var relic_pulse_tick := -1
+var relic_pulse_pos := Vector2.ZERO
 ## v0.11.0 O10 (Spells; owner Q17-Q20): the compiled spells and their rules (loadout); the spell slots (spell indices,
 ## pick order), their levels and cooldowns (ticks left) and the tick each last cast (run-long but the cooldowns,
 ## RunCarry); the Fireballs in flight (position, locked point, spell, level, root) and Frost Nova's pushes (actor id,
@@ -311,6 +318,9 @@ var runes: RuneAlignment
 ## v0.9.0 DX (owner W §4 C, §5, Q23; Breakables): the cracked wall, the containers and the explosive barrels; null
 ## on a floor with none.
 var breakables: Breakables
+## v0.11.0 O14b (owner Q-O14b "Both"; HeartRoom): the hidden room under the Hollow Crown's throne (its pedestal and its
+## sealed door), on the final approach of a profile that learned all ten Runic Stone lines; null everywhere else.
+var heart: HeartRoom
 ## v0.9.0 DP (owner Q26b; PurpleRunes): the floor's purple-rune room (its dais awakens the Purple Portal); null without.
 var purple: PurpleRunes
 ## v0.9.0 LK (owner Q21; Lockdowns): the floor's Lockdowns in play; null on a floor without any.
@@ -1624,6 +1634,10 @@ func state_hash() -> String:
 		runes.hash_into(h)
 	if breakables != null:  # v0.9.0 DX: only floors with destructibles
 		breakables.hash_into(h)
+	if heart != null:  # v0.11.0 O14b: only the final approach of a profile with all ten lines
+		heart.hash_into(h)
+	if not relics.is_empty():  # v0.11.0 O14b: only once a relic was taken
+		Relics.hash_into(self, h)
 	if purple != null:  # v0.9.0 DP: only floors with a purple-rune room
 		purple.hash_into(h)
 	if lockdown != null:  # v0.9.0 LK: only floors with a Lockdown

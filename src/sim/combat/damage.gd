@@ -83,7 +83,9 @@ static func hit(
 		or effect_id == SimEvent.EFFECT_STAR
 		or effect_id == Starbound.EFFECT_ARC_JUMP
 		or effect_id == Starbound.EFFECT_DETONATION
+		or effect_id == Relics.EFFECT_RING
 	)  # v0.9.5 EE3: a pair burst is already scaled; v0.10.5 W3-P10b/e: so are a Starbound jump and burst, a star
+	# (v0.11.0 O14b: so is the City's Heart's shock ring: it deals its own number)
 	var was_frozen := a.frozen_t[target] > 0 and owner_id == a.ids[0]  # v0.9.5 EE2: Shatter breaks what was frozen
 	var was_hot := a.burn_stacks[target] > 0  # v0.9.5 EE3: Thermal Shock reads it before this hit's own statuses
 	var raw := amount
@@ -265,6 +267,12 @@ static func _apply(
 	var applied := mini(BossGates.clamp_damage(w, target, scaled, owner_id), a.hp[target])
 	if target == 0 and w.player_hp_floor > 0:  # v0.10.5 O17: the Training Room's hero can't die
 		applied = mini(applied, maxi(0, a.hp[0] - w.player_hp_floor))
+	var saved := false  # v0.11.0 O14b (N1): the City's Heart catches the first killing blow of the run
+	if target == 0 and applied >= a.hp[0] and not w.relics.is_empty():
+		var left := Relics.save(w)
+		if left >= 0:
+			applied = maxi(0, a.hp[0] - left)
+			saved = true
 
 	a.hp[target] -= applied
 	BossTwin.share_hp(w, target)  # v0.9.0 NB2: the Twin Wardens' one HP: the twin holds what this body holds
@@ -312,6 +320,8 @@ static func _apply(
 		ItemProcs.on_player_hurt(w)  # Items: Thorn Mantle.
 		if applied > 0 and not (tags & SimEvent.TAG_DOT) and owner_id != a.ids[0]:
 			Curses.on_player_hit(w)  # v0.6.0 CU: Brittle
+		if saved:
+			Relics.pulse(w)  # v0.11.0 O14b: its shock ring, once the saved blow has landed
 	return applied
 
 

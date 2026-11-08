@@ -4114,6 +4114,106 @@ func deep_portal_site() -> bool:
 	return _w.purple != null and _w.floor_layout != null and _w.floor_layout.has_deep_portal
 
 
+# --- The heart room and the relics (v0.11.0 O14b; HeartRoom, Relics) ------------------------------------------------
+## The final approach holds the hidden room under the throne.
+func heart_room() -> bool:
+	return _w.heart != null and _w.floor_layout != null and _w.floor_layout.heart_room >= 0
+
+
+## Its interior, its walls (the pedestal and the slab are among them), the pedestal, the rune slab and the sealed door
+## (its centre on the far wall and the way it faces into the room).
+func heart_room_rect() -> Rect2:
+	return _w.floor_layout.rooms[_w.floor_layout.heart_room] if heart_room() else Rect2()
+
+
+func heart_walls() -> Array[Obb]:
+	var out: Array[Obb] = []
+	if heart_room():
+		var f := _w.floor_layout
+		for i in range(f.heart_wall_first, f.walls.size()):
+			out.append(f.walls[i])
+	return out
+
+
+func heart_pedestal_pos() -> Vector2:
+	return _w.floor_layout.heart_pedestal if heart_room() else Vector2.ZERO
+
+
+func heart_slab_pos() -> Vector2:
+	return _w.floor_layout.heart_slab if heart_room() else Vector2.ZERO
+
+
+func heart_door_pos() -> Vector2:
+	return _w.floor_layout.heart_door if heart_room() else Vector2.ZERO
+
+
+func heart_door_angle() -> int:
+	return _w.floor_layout.heart_door_angle if heart_room() else 0
+
+
+## The room's wall thickness, the slab's half size (along the far wall, off it) and the pedestal's half side (m).
+func heart_wall_thickness() -> float:
+	return FinalArena.WALL_HALF * 2.0
+
+
+func heart_slab_half() -> Vector2:
+	return FinalArena.HEART_SLAB_HALF
+
+
+func heart_pedestal_half() -> float:
+	return FinalArena.HEART_PEDESTAL_HALF_M
+
+
+## The relic still lies on the pedestal; the tick it was taken (-1 not here).
+func heart_relic_here() -> bool:
+	return heart_room() and _w.heart.relic_here(_w)
+
+
+func heart_take_tick() -> int:
+	return _w.heart.take_tick if heart_room() else -1
+
+
+## The door is sealed (N2: the remembered Crown not yet built), and the hero stands within its reach.
+func heart_door_sealed() -> bool:
+	return heart_room() and _w.heart.door == HeartRoom.Door.SEALED
+
+
+func heart_door_near() -> bool:
+	return heart_room() and Kin.length(player_pos() - heart_door_pos()) <= HeartRoom.DOOR_REACH_M
+
+
+## Relic `k` (Relics index) is held; its uses this run; the last saved blow's tick (-1 none), where it pulsed and the
+## ring's radius.
+func relic_held(k: int = Relics.CITY_HEART) -> bool:
+	return Relics.held(_w, k)
+
+
+func relic_spent(k: int = Relics.CITY_HEART) -> int:
+	return Relics.spent(_w, k)
+
+
+func relic_pulse_tick() -> int:
+	return _w.relic_pulse_tick
+
+
+func relic_pulse_pos() -> Vector2:
+	return _w.relic_pulse_pos
+
+
+func relic_ring_radius(k: int = Relics.CITY_HEART) -> float:
+	var t := Relics.table(_w, k)
+	return t.ring_radius_m if t != null else 0.0
+
+
+func relic_id(k: int) -> StringName:
+	var t := Relics.table(_w, k)
+	return t.id if t != null else &""
+
+
+func relic_count() -> int:
+	return _w.relics.size()
+
+
 # --- The destructibles (v0.9.0 DX; Breakables) -----------------------------------------------------------------
 ## The floor has a cracked wall before a dead end.
 func has_cracked_wall() -> bool:

@@ -167,6 +167,10 @@ var loop_rules: Array[StringName] = []
 var loop_rule_loop := 0
 ## v0.10.5 W3-O11: see BOSS_DRAW (FloorShape.boss reads it). Saved (RunSaver; an older payload: BOSS_DRAW_LEGACY).
 var boss_draw := BOSS_DRAW
+## v0.11.0 O14b (owner Q-O14b "Both"): the profile had learned all ten Runic Stone lines (r11 known) when the run began,
+## so its final approach holds the hidden room under the throne (FinalArena.add_heart_room). Saved (RunSaver; an older
+## payload, or a run without it: false, so its final approach is built as before).
+var heart_room := false
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:

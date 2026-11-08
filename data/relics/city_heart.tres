@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RelicDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/relic_definition.gd" id="1_relic"]
+
+[resource]
+script = ExtResource("1_relic")
+name_key = &"RELIC_CITY_HEART"
+desc_key = &"RELIC_CITY_HEART_DESC"
+uses = 1
+saved_hp = 1
+ring_radius_m = 4.0
+ring_damage = 60
+placeholder = true
+id = &"city_heart"

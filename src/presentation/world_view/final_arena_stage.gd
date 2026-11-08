@@ -63,6 +63,8 @@ const SEAL := Color("#FF3050")
 ## v0.9.0 FA: the causeway's treads, and how wide (radians) the gap is kept clear of pillars and braziers.
 const CAUSEWAY_STEPS := 14
 const GAP_CLEAR := 0.42
+## v0.11.0 O14b: how wide (radians) the heart room's doorway is kept clear (its pillars would stand on its walls).
+const HEART_CLEAR := 0.4
 
 const GROUND_SHADER := """
 shader_type spatial;
@@ -123,6 +125,8 @@ var treads: Array[MeshInstance3D] = []
 var flights: Array[Node3D] = []
 var models_used: Array[StringName] = []
 var _gap_a := NAN
+## v0.11.0 O14b: the heart room's doorway's angle (NAN without the room), kept clear as the gap is.
+var _heart_a := NAN
 var _flames: Array[MeshInstance3D] = []
 var _shards: Array[Node3D] = []
 ## Each shard's resting height (its node's frame), for the bob.
@@ -141,6 +145,9 @@ func build(reader: WorldReader, palette: Dictionary, radius: float, seed_value: 
 		var top := SimPlane.to_3d(reader.approach_causeway_top())
 		_gap_a = atan2(top.z, top.x)
 		_build_causeway(reader, rng)
+	if reader.heart_room():  # v0.11.0 O14b: no pillar or brazier stands before the heart room's cracked wall
+		var door := SimPlane.to_3d(reader.crack_door_center())
+		_heart_a = atan2(door.z, door.x)
 	var gate_at := reader.portal_pos()
 	var gate_dir := SimPlane.to_3d(gate_at).normalized()
 	_build_seating(radius, gate_dir, rng)
@@ -443,7 +450,10 @@ func _build_braziers(radius: float) -> void:
 
 ## v0.9.0 FA: angle `a` (radians on the 3D floor) falls in the approach's gap.
 func _in_gap(a: float) -> bool:
-	return not is_nan(_gap_a) and absf(wrapf(a - _gap_a, -PI, PI)) <= GAP_CLEAR
+	return (
+		not is_nan(_gap_a) and absf(wrapf(a - _gap_a, -PI, PI)) <= GAP_CLEAR
+		or (not is_nan(_heart_a) and absf(wrapf(a - _heart_a, -PI, PI)) <= HEART_CLEAR)
+	)
 
 
 ## v0.9.0 FA: the stair causeway from the ring's gap down to the foot: worn treads with lit edges over a rock spine.
