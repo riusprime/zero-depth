@@ -537,12 +537,8 @@ func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 					if node.has_meta(m):
 						(node.get_meta(m) as Node3D).visible = false
 				get_tree().create_timer(EliteAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
-			elif boss is HordeAvatar and is_inside_tree() and (boss as HordeAvatar).die():
-				# v0.8.0 MI: an owner's enemy model falls (the Splitter's halves part) a moment, its bar gone.
-				(boss as Node).set_process(true)
-				if node.has_meta(&"bar"):
-					(node.get_meta(&"bar") as Node3D).visible = false
-				get_tree().create_timer(HordeAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
+			elif EnemyFall.start(boss, node, self):
+				pass  # v0.8.0 MI: an owner's enemy model falls a moment, its bar gone (v0.11.0 O17d: EnemyFall)
 			else:
 				node.queue_free()
 
@@ -744,6 +740,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			height = LensDroneAvatar.HEIGHT
 			root.set_meta(&"enemy_avatar", lens)
 			root.set_meta(&"mats", lens.body_materials.duplicate())
+		WorldReader.KIND_CINDER_PRIEST:  # v0.11.0 O17d: the owner's model, animated in code
+			height = CinderPriestAvatar.attach(self, root, facing, p_kind)
 		WorldReader.KIND_HATCHLING:
 			# The Brood Mother's hatchling (v0.3.0 C): a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()

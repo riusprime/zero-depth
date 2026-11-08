@@ -164,6 +164,8 @@ static func natural(kind: int, u: Vector3, phase: float) -> Vector4:
 
 ## The owner's model's colour map for `a` (its plates are textured; VatLooks samples it), or null.
 static func texture(avatar: Node3D) -> Texture2D:
+	if avatar.has_method(&"vat_texture"):  # v0.11.0 O17d: an avatar on the owner's model names its colour map
+		return avatar.call(&"vat_texture")
 	var lens := avatar as LensDroneAvatar  # v0.11.0 S4: the Lens Drone's model
 	if lens != null:
 		return EnemyModels.get_model(&"lens_drone").get("texture") if lens.has_model else null

@@ -45,6 +45,7 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_EMBER_FLEA,
 	WorldReader.KIND_ICE_CRAB,
 	WorldReader.KIND_STAR_MOTE,
+	WorldReader.KIND_CINDER_PRIEST,  # v0.11.0 O17d (SoloVat)
 ]
 ## After every node's _process (the avatars' frame-time animation runs at 0).
 const PROCESS_PRIORITY := 1000

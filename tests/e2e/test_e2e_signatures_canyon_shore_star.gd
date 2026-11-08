@@ -5,7 +5,8 @@ extends GutTest
 ## Each floor's roster holds its biome's two signatures and its variant. The dev panel (backtick, mouse clicks; God,
 ## then each kind spawned at once, the horde e2e's speed-up) brings each one in: its model is drawn, its tell shows,
 ## and the Gun's shot, held with the mouse on it, kills it.
-## - Red Canyon: the Cinder Priest's lava vent is drawn; the Kiln Beetle's death leaves its burst (drawn); the Ember
+## - Red Canyon: the Cinder Priest's lava vent is drawn (v0.11.0 O17d: on its own avatar, its crystal flaring with the
+##   vent's pulse); the Kiln Beetle's death leaves its burst (drawn); the Ember
 ##   Charger leaves a fire trail.
 ## - Frozen Shore: the Frost Spitter's arc is drawn and its blob leaves a slick; the Glacier Turtle's shell stands and
 ##   breaks under the shots before it dies; the Frost Charger leaves a slick trail.
@@ -49,6 +50,14 @@ func test_the_red_canyon_signatures_and_variant_on_a_red_canyon_floor() -> void:
 	var vent: bool = await s.until(func() -> bool: return int(cs.counts()["vents"]) > 0, 1200)
 	assert_true(vent, "the Priest's vent is drawn")
 	assert_gt(reader.lava_vents().size(), 0, "and stands in the sim")
+	# v0.11.0 O17d: drawn on the owner's model, its crystal flaring in time with its vent.
+	var body := (
+		s.main.view.actors.actor_node(priest).get_meta(&"enemy_avatar") as CinderPriestAvatar
+	)
+	assert_not_null(body, "the Priest is drawn by its own avatar")
+	var flare := CinderPriestAvatar.CRYSTAL_REST + 2.0
+	var lit: bool = await s.until(func() -> bool: return body.glow_energy() > flare, 600)
+	assert_true(lit, "its crystal flares with its vent's pulse")
 	assert_true(await s.shoot_dead(priest, KILL_FRAMES), "the Cinder Priest is shot dead")
 	# R5 Kiln Beetle: dies into a burst that blows a second later (its circle, drawn).
 	var beetle: int = await s.spawn(ActorStore.Kind.KILN_BEETLE, "ENEMY_KILN_BEETLE")

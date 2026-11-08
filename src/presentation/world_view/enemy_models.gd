@@ -23,6 +23,9 @@ const SPECS := {
 	&"elite_breaker": {"height": 2.6},
 	&"elite_rift_hunter": {"height": 2.1},
 	&"elite_conduit": {"height": 2.3},
+	# v0.11.0 O17d: the owner's Cinder Priest (scripts/assets/o17_prep_cinder_priest.py: parts, `base`, `role`, `glow`),
+	# its height with the staff (CinderPriestAvatar poses it).
+	&"cinder_priest": {"height": 1.75},
 }
 const SURFACES: Array[StringName] = [&"base", &"role", &"glow"]
 
