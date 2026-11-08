@@ -137,24 +137,39 @@ func test_the_held_laser_fires_a_lance_every_3_seconds() -> void:
 	var cam := main.view.rig.camera
 	var period := SimTick.seconds_to_ticks(3.0)
 	var fired := PackedInt32Array()
+	var held := PackedInt32Array()  # the hit-stop ticks since the lance before (none for the first)
+	var frozen := 0
 	var drawn := 0
 	var last := w.mx.lz_shot_tick
 	e.mouse_button(MOUSE_BUTTON_RIGHT, true)
 	await e.mouse_to(cam.unproject_position(SimPlane.to_3d(at, SimPlane.CORE_HEIGHT)))
 	for k in period * 4 + 30:
+		var stopped := w.freeze_ticks > 0  # this tick is hit-stop: the world, the cooldown too, holds
 		await e.frames(1)
+		if stopped and not fired.is_empty():
+			frozen += 1
 		if w.mx.lz_shot_tick != last:
 			last = w.mx.lz_shot_tick
 			fired.append(last)
+			held.append(frozen)
+			frozen = 0
 		if not fired.is_empty() and main.view.laser.shown > 0 and drawn < fired.size():
 			drawn = fired.size()
 	e.mouse_button(MOUSE_BUTTON_RIGHT, false)
-	gut.p("O1 e2e: lance firing ticks %s (period %d ticks)" % [str(fired), period])
+	gut.p(
+		(
+			"O1 e2e: lance firing ticks %s, hit-stop ticks between %s (period %d ticks)"
+			% [str(fired), str(held), period]
+		)
+	)
 	assert_gte(fired.size(), 4, "four lances in four periods held")
-	# The first lance fires on the press (the mouse not yet on the dummy), the second about 3 s on (184 ticks on the
-	# owner's PC, 2026-11-08); from then on, exactly every 3 s.
-	if fired.size() >= 2:
-		assert_between(fired[1] - fired[0], period, period + 10, "the second lance about 3 s on")
-	for k in range(2, fired.size()):
-		assert_eq(fired[k] - fired[k - 1], period, "lance %d came 3 s after the one before" % k)
+	# Exactly every 3 s of the sim's clock. A hit-stop holds everything, the cooldown too (SIM_CONTRACTS), so its
+	# ticks don't count: the floor's own enemies may touch the hero meanwhile (God ends when the dev panel closes). A
+	# Swarmer's touch did (4 ticks of hurt hit-stop), which made the first gap 184 (fix1, 2026-11-08).
+	for k in range(1, fired.size()):
+		assert_eq(
+			fired[k] - fired[k - 1] - held[k],
+			period,
+			"lance %d came 3 s (hit-stop aside) after the one before" % k
+		)
 	assert_eq(drawn, fired.size(), "every lance was drawn")
