@@ -51,7 +51,7 @@ Tick each when you have looked.
 
 ### The Laser (§2)
 - [ ] **Q4–Q8, Q28, L-a–L-d** A lance every 3 s while held, through every enemy, 15 % less per enemy after the first;
-  full speed while held. With Homing: one smooth curve through up to 5 targets, then on to the wall. Rapid Fire, Echo,
+  full speed while held. With Homing: one smooth curve through up to 8 targets (with Twin each ray takes its own; on one enemy the rays bow out and meet), then on to the wall. Rapid Fire, Echo,
   Big Shot. No Pierce or Mine cards offered with it.
 - [ ] Its look is a minimal stand-in until your sketch (open item below).
 
