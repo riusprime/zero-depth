@@ -148,6 +148,9 @@ take the Swarmer's crimson.
 | ☐ | `star_mote` | melee crimson `#B82A48` | about 0.3 m | a tiny floating star with a tail: a five-pointed faceted ridged body in [COLOUR], a small dark shield-shaped face in the middle with one glowing [COLOUR] gem eye, a charcoal core, a short tapering grey tail of three segments with a bone tip, no legs; about 1.5k triangles |
 
 **New enemies (Q22).** Same family, about 5k triangles each, plus the one thing that makes each readable in play.
+**Use the detailed, ready-to-paste prompts in [`art/requests/v0.11.0_enemy_models.md`](art/requests/v0.11.0_enemy_models.md)**
+(owner 2026-11-08: "these need to be detailed prompts"; sizes, separate parts and a check for each). The rows below are
+the short summary.
 
 | ✓ | id | Role colour | In-game size | Prompt (after the character prefix, then the 3D step) |
 |---|---|---|---|---|
