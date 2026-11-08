@@ -16,6 +16,8 @@
   (N1–N9), each with the default being built.
 - **The plan is built** except what waits on the owner (2026-11-08): O6–O8 (the boss brief), the Laser's final look
   (the sketch), and the release itself (N11). Patch notes, What's New, PLAYTEST.md and the tour are ready.
+- **O17 merged and seams green (2026-11-08, 366188db, 667/667):** the owner's first five new-enemy models animated and on VAT (Scrap Hound, Rock Lurker, Stone Thrower, Kiln Beetle, Cinder Priest). The other five (Wire Weaver, Frost Spitter, Glacier Turtle, Star Warper, Gravity Node) wait on the owner's models.
+- **In progress (2026-11-08):** O1d (the Laser after the owner's playtest; agent on `v0110-o1d`); VL (the VFX lab, its own session, spec `VFX_LAB.md`).
 - **Waiting on the owner:** the boss brief (O6–O8 and the remembered Crown), the Laser sketch, OWNER_QUESTIONS §J.
 - **Agents (owner, 2026-11-07):** at most 3 Sonnet (light, exact briefs) + 2 Opus at once; up to 4 Opus when no Sonnet runs.
 - **Local note:** `project.godot` has an uncommitted editor rewrite (it drops the `[rendering]` settings and
@@ -54,6 +56,11 @@
 | O13b–d | The ten signature enemies (Wire Weaver, Scrap Hound, Rock Lurker, Stone Thrower; Kiln Beetle, Cinder Priest, Frost Spitter, Glacier Turtle; Star Warper, Gravity Node), merged on v0110-m13; one unlock rule (`CanyonShoreCompiler.inherit_phases`: signatures open with the Warden); 34 enemy definitions, 26 mix rows; seams gains test_e2e_horde_enemies and test_five_floors | 3930471c, 95629a79, b0d86567, 3ff6cb61 |
 | MX-1 | The 20 new kinds' weak/resist re-picked (owner "Spread them out"): every id the weakness of 3–5 kinds, resisted by 1–5; `gun_void` now a weakness | 6612d61c |
 | O15 | Large rooms get a purpose (75 % drawn, 689 ‰ measured over 1,000 floors): camp, stone-ring hall (owner: "like Stonehenge … the vibe"), quarry; templates as data, seeded variation, doorways and item spots kept clear | 37951fa0 |
+| O17a | Scrap Hound on the owner's model (12 parts; owner UVs kept, xatlas has no Py 3.14 wheel): idle, trot→gallop, circling bank, tell, dart, bite, yelp, hit, death, rise-in, reduced motion; SoloVat, 18 drives, bake max 0.36 mm | 4a4c5073 |
+| O17b | Rock Lurker on the owner's model (8 parts, cracks rebuilt as emissive ribbons, cut caps): arrival, disguise, rumble, burst, slam, knuckle walk, idle, flinch, death back into a rock, reduced motion; SoloVat, bake max 0.81 mm | 94e9fd30 |
+| O17c | Stone Thrower on the owner's model with its own rock (11 parts): idle, walk, rip, 0.8 s lift, throw released on the ACTIVE tick, recovery, flinch, death; the rock flies tumbling and lands with pack sparks, dust, the crack mark and a small shake (owner: "animate also the rock impact with assets we already have"); crumbles at 15 s; bake max 0.30 mm | 1f5caea2 |
+| O17d | Cinder Priest on the owner's model (6 parts): chant, glide, vent cycle (raise, slam on the eruption tick, recoil), flinch, death into its robe, rise-in, reduced motion; bake max 1.1 mm | 746fccdd |
+| O17e | Kiln Beetle on the owner's model (8 legs, not 6: all cut and animated): idle breath, tetrapod walk, stepping turn, heat by HP, slam windup and slam, hit, death swelling over the 1 s fuse into the existing burst, reduced motion; bake max 0.37 mm | 80b4b5c5 |
 | S5 | The v0.10.5 PLAYTEST rows not in the brief closed as OK in OWNER_TODO per Q27 (owner to confirm, §J N8) | docs |
 | O14b | The city's heart: with all ten rune lines (r11), the final approach gets a cracked wall under the throne → a room with a rune slab, the placeholder relic "The City's Heart" (N1: once a run, 1 HP + a 4 m ring for 60) and the sealed door (N2; `HeartRoom.door_opens` is the hook for the remembered Crown). 1,000 seeds: floors without the flag unchanged | 04e754e8 |
 | E2E | Every v0.11.0 feature reached by an e2e (new: signatures ×2, quake pillars, purpose rooms, Pierce flag, Laser every 3 s) | 68111759 |
@@ -137,3 +144,4 @@
   `data/relics is in the panel` (O14b's new content kind). SaveLab now compiles the relics; the dev panel lists
   `res://data/relics`. Those two files + `tests/unit/debug`: `Tests 17, Passing Tests 17`. Release prep merged after.
   Pushed.
+- 2026-11-08 (lead): O17a–e merged (the owner's five models, cut, animated, on VAT; O17c's rock throw and impact from existing effects). Merge notes: three agents wrote incompatible Godot-xatlas helpers, kept as `gd_unwrap.gd`, `gd_unwrap_parts.gd` + `gd_atlas.py`, `gd_unwrap_xatlas.gd`; one generic death branch in `actor_views.gd` (any AvatarBase with `die()`), the Lurker's collapse before it; `# gdlint: disable=max-file-lines` on `actor_views.gd`. Seams at 366188db, `bash scripts/ci/seams.sh`, owner's PC, while another session ran: `Tests 667 / Passing Tests 667 / Asserts 90188 / Time 3064.714s`, `check_gut_log: ok (667 passing, minimum 1)`.
