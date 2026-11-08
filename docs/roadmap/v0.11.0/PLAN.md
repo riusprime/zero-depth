@@ -174,7 +174,10 @@ build step).
   stands: without Homing the Laser is straight); **Homing up to 8 targets, each ray takes its own enemies** (several
   rays spread over the pack; on a single enemy they bow out and meet on it); a smoother curve. The lag is measured and
   fixed: `LaserMods._order` tries every order of the targets (5! = 120, each with line-of-sight checks; 8! would be
-  40,320), so it is replaced.
+  40,320), so it is replaced. **Owner, after the shots (2026-11-08):** split rays deal full damage (a ray with its own
+  enemies has no Twin share, so Twin + Homing is never worse than Homing alone on a pack; rays sharing a target keep
+  Twin's share); the lens is narrower (`home_bow_deg` 50 → 30). The lag's measured cause was the tube rebuild, not the
+  search (agent's probe, busy machine: frame peak 159.7 → 19.0 ms).
 
 ### R. Release
 ROADMAP §0.4: version 0.11.0, patch notes en/es, What's New, tour en/es, PLAYTEST.md, seams, then the PR's full suite.
