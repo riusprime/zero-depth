@@ -7,28 +7,23 @@ extends AvatarBase
 ## - Wire Weaver (bomber yellow): a spindly walker on four thin legs, four long arms, a coil of cable on its back; its
 ##   arms rise and its visor flashes while it marks a cable (the tell).
 ## - Cable post (WIRE_POST): a short grey post with a sparking yellow top.
-## - Stone Thrower (tank bronze): a hunched brute with two huge arms; through its windup it lifts a rock overhead (the
-##   rock leaves its hands at the throw: RuinsRocksViews flies it).
-## (v0.11.0 O17a/b: the Scrap Hound and the Rock Lurker are on the owner's models now: ScrapHoundAvatar and
-## RockLurkerAvatar.)
+## (v0.11.0 O17a-c: the Scrap Hound, the Rock Lurker and the Stone Thrower are on the owner's models now:
+## ScrapHoundAvatar, RockLurkerAvatar, StoneThrowerAvatar.)
 ## Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance() animates in frame time.
 ## +X is the front.
 
 const COLORS := {
 	WorldReader.KIND_WIRE_WEAVER: Color("#E8C22E"),
 	WorldReader.KIND_WIRE_POST: Color("#E8C22E"),
-	WorldReader.KIND_STONE_THROWER: Color("#9A6232"),
 }
 const HEIGHTS := {
 	WorldReader.KIND_WIRE_WEAVER: 1.15,
 	WorldReader.KIND_WIRE_POST: 0.95,
-	WorldReader.KIND_STONE_THROWER: 1.6,
 }
 const CHARCOAL := Color("#24272D")
 const FACE := Color("#16181D")
 const GREY := Color("#8A817C")
 const GREY_DARK := Color("#5F5551")
-const ROCK := Color("#A39A92")
 const BONE := Color("#D9CDB8")
 const OUTLINE_M := 0.02
 ## The visor's rest glow and its tell's peak (emission energy).
@@ -44,10 +39,8 @@ var _body := Node3D.new()
 var _visor_mat: StandardMaterial3D
 var _legs: Array[Node3D] = []
 var _arms: Array[Node3D] = []
-var _rock: Node3D
 var _state := -1
 var _tell := 0.0
-var _flight := -1
 var _walk_phase := 0.0
 
 
@@ -80,8 +73,6 @@ func setup(p_kind: int, outline: Color) -> void:
 			_build_weaver(c, outline)
 		WorldReader.KIND_WIRE_POST:
 			_build_post(c, outline)
-		WorldReader.KIND_STONE_THROWER:
-			_build_thrower(c, outline)
 
 
 # --- Pieces -----------------------------------------------------------------------------------------------------
@@ -197,38 +188,18 @@ func _build_post(_c: Color, outline: Color) -> void:
 	_visor_mat.emission_energy_multiplier = VISOR_TELL * 0.6
 
 
-func _build_thrower(c: Color, outline: Color) -> void:
-	_box(_body, Vector3(0.6, 0.55, 0.6), Vector3(0, 0.85, 0), CHARCOAL, outline)
-	_prism(_body, Vector3(0.6, 0.32, 0.66), Vector3(-0.12, 1.24, 0), c, outline)
-	_face(_body, Vector3(0.32, 0.98, 0), 0.8, outline)
-	for side in [0.4, -0.4]:
-		_arms.append(_limb(Vector3(0.05, 1.1, side), 0.8, 0.09, outline, 0.2))
-		_legs.append(_limb(Vector3(0, 0.55, side * 0.5), 0.5, 0.08, outline))
-	_rock = Node3D.new()
-	_body.add_child(_rock)
-	_stone(_rock, 0.32, Vector3.ZERO, ROCK, outline)
-	_rock.position = Vector3(0.1, 1.95, 0)
-	_rock.visible = false
-
-
 # --- Sync and pose ----------------------------------------------------------------------------------------------
 func sync(reader: WorldReader, i: int) -> void:
 	var st := reader.actor_state(i)
 	_state = st
 	_tell = windup_progress(reader, i)
 	_track_motion(reader.tick(), reader.actor_pos(i), 30.0)
-	if kind == WorldReader.KIND_STONE_THROWER:
-		_flight = reader.thrower_flight(i)
 	_fresh = false
 
 
 ## The tell's glow on the visor now (tests): rest, climbing with the windup, flashing near its end.
 func visor_energy() -> float:
 	return _visor_mat.emission_energy_multiplier
-
-
-func rock_lifted() -> bool:
-	return _rock != null and _rock.visible and kind == WorldReader.KIND_STONE_THROWER
 
 
 func advance(delta: float) -> void:
@@ -253,10 +224,3 @@ func advance(delta: float) -> void:
 		WorldReader.KIND_WIRE_WEAVER:
 			for arm in _arms:
 				arm.rotation.z = lerpf(1.1, 2.4, _tell if winding else 0.0)
-		WorldReader.KIND_STONE_THROWER:
-			# its telegraph runs over the lift and the flight: the lift is its first part
-			var lift := clampf(_tell * 1.8, 0.0, 1.0) if winding else 0.0
-			for arm in _arms:
-				arm.rotation.z = lerpf(0.2, 3.0, lift)
-			_rock.visible = winding
-			_rock.position = Vector3(0.05, lerpf(1.3, 2.35, lift), 0)

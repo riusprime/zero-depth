@@ -2811,6 +2811,13 @@ func thrower_target(i: int) -> Vector2:
 	return Vector2(_w.actors.lock_x[i], _w.actors.lock_y[i])
 
 
+## v0.11.0 O17c: Stone Thrower i's timing (ticks) for its animation: the lift (WINDUP), the throw (ACTIVE: the flight
+## and its landing tick), the recovery.
+func thrower_ticks(i: int) -> Vector3i:
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	return Vector3i(t.windup_ticks, t.flight_ticks + 1, t.recover_ticks)
+
+
 # --- The Red Canyon's and the Frozen Shore's signature enemies (v0.11.0 O13c; CanyonShore) --------------------
 ## Cinder Priest i's vent's pulse now (0..1000, CanyonShore.vent_pulse; 0: no vent, or outside its warning): its
 ## staff keeps time with it.

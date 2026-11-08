@@ -538,22 +538,14 @@ func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 					if node.has_meta(m):
 						(node.get_meta(m) as Node3D).visible = false
 				get_tree().create_timer(EliteAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
-			elif boss is HordeAvatar and is_inside_tree() and (boss as HordeAvatar).die():
-				# v0.8.0 MI: an owner's enemy model falls (the Splitter's halves part) a moment, its bar gone.
-				(boss as Node).set_process(true)
-				if node.has_meta(&"bar"):
-					(node.get_meta(&"bar") as Node3D).visible = false
-				get_tree().create_timer(HordeAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
-			elif boss is ScrapHoundAvatar and is_inside_tree() and (boss as ScrapHoundAvatar).die():
-				# v0.11.0 O17a: the Scrap Hound stumbles and rolls onto its side a moment, its bar gone.
-				(boss as Node).set_process(true)
-				if node.has_meta(&"bar"):
-					(node.get_meta(&"bar") as Node3D).visible = false
-				get_tree().create_timer(ScrapHoundAvatar.DEATH_SECONDS).timeout.connect(
-					node.queue_free
-				)
 			elif boss is RockLurkerAvatar and is_inside_tree() and (boss as RockLurkerAvatar).die():
 				(boss as RockLurkerAvatar).fall(node)  # v0.11.0 O17b: it collapses back into a rock
+			elif boss is AvatarBase and boss.has_method(&"die") and is_inside_tree() and boss.die():
+				# v0.8.0 MI: an owner's model falls a moment (v0.11.0 O17c: any with a die()), its bar gone.
+				(boss as Node).set_process(true)
+				if node.has_meta(&"bar"):
+					(node.get_meta(&"bar") as Node3D).visible = false
+				get_tree().create_timer(boss.DEATH_SECONDS).timeout.connect(node.queue_free)
 			else:
 				node.queue_free()
 
@@ -759,6 +751,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			height = ScrapHoundAvatar.attach(self, root, facing, outline_color, technique)
 		WorldReader.KIND_ROCK_LURKER:  # v0.11.0 O17b: the owner's model, animated (RockLurkerAvatar)
 			height = RockLurkerAvatar.attach(root, facing, outline_color, technique, _solo_vat)
+		WorldReader.KIND_STONE_THROWER:  # v0.11.0 O17c: the owner's model, posed in code, on the VAT crowd
+			height = StoneThrowerAvatar.attach(self, root, facing, p_kind, outline_color, technique)
 		WorldReader.KIND_HATCHLING:
 			# The Brood Mother's hatchling (v0.3.0 C): a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()

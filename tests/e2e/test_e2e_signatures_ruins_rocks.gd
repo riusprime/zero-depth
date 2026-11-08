@@ -133,7 +133,7 @@ func test_the_night_rocks_signatures_and_variant_on_a_night_rocks_floor() -> voi
 		var i := w.actors.index_of(thrower)
 		if i < 0:
 			break
-		var av := _avatar(s, thrower) as RuinsRocksAvatar
+		var av := _avatar(s, thrower) as StoneThrowerAvatar  # v0.11.0 O17c: on the owner's model
 		lifted = lifted or (av != null and av.rock_lifted())
 		ring = ring or (not reader.telegraph(i).is_empty() and s.main.view.telegraphs.count() > 0)
 		standing = standing or rr.rock_count() > 0

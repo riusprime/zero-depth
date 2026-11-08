@@ -14,9 +14,9 @@ extends SceneTree
 ## in its own states (KIND_PLANS: the walk, the death, the heal, the mine dropped, the muzzle) into
 ## vat_sheet_<name>.png and vat_diff_<name>.txt; `--version-dir=<v>` writes under build/shots/<v>/vat/. Every horde
 ## sheet also gives each state's largest vertex error (the shader's arithmetic on the CPU).
-## v0.10.5 W3-V4c: `-- --kind=<name>` (needle, warden, arc_caster, bomb_drone) draws that stand-alone kind in
-## SOLO_PLAN's states (its walk, wind-up, attack, recovery) into vat_sheet_<name>.png and vat_diff_<name>.txt, with
-## the vertex error.
+## v0.10.5 W3-V4c: `-- --kind=<name>` (needle, warden, arc_caster, bomb_drone; v0.11.0 O17c: stone_thrower) draws
+## that stand-alone kind in SOLO_PLAN's states (its walk, wind-up, attack, recovery) into vat_sheet_<name>.png and
+## vat_diff_<name>.txt, with the vertex error.
 
 const CELL := Vector2i(220, 220)
 const COLS := 4
@@ -152,6 +152,7 @@ const SOLO := {
 	"bomb_drone": WorldReader.KIND_BOMB_DRONE,
 	"scrap_hound": WorldReader.KIND_SCRAP_HOUND,  # v0.11.0 O17a
 	"rock_lurker": WorldReader.KIND_ROCK_LURKER,  # v0.11.0 O17b
+	"stone_thrower": WorldReader.KIND_STONE_THROWER,  # v0.11.0 O17c
 }
 const SOLO_FRAME := {
 	WorldReader.KIND_NEEDLE: [1.5, 0.4],
@@ -160,6 +161,7 @@ const SOLO_FRAME := {
 	WorldReader.KIND_BOMB_DRONE: [2.8, 1.1],
 	WorldReader.KIND_SCRAP_HOUND: [1.6, 0.3],
 	WorldReader.KIND_ROCK_LURKER: [2.0, 0.45],
+	WorldReader.KIND_STONE_THROWER: [3.0, 1.0],
 }
 const SOLO_PLAN := [
 	["idle (t 1.5 s)", {}, "idle"],
@@ -514,6 +516,7 @@ func _drive_solo(a: AvatarBase, steps: String) -> void:
 			WorldReader.KIND_BOMB_DRONE: 2.5,
 			WorldReader.KIND_SCRAP_HOUND: 6.5,
 			WorldReader.KIND_ROCK_LURKER: 2.2,
+			WorldReader.KIND_STONE_THROWER: 1.8,
 		}[_kind]
 		/ 60.0
 	)
