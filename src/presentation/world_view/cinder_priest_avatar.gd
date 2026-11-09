@@ -44,10 +44,10 @@ const LOOKS := {
 	WorldReader.KIND_CINDER_PRIEST: {"role": ROLE, "base": Color.WHITE, "gem": GEM, "ember": EMBER},
 	WorldReader.KIND_ARC_CASTER:
 	{
-		"role": Color("#8F8CF2"),
+		"role": Color("#B0309A"),
 		"base": Color.WHITE,
-		"gem": Color("#BFF6FF"),
-		"ember": Color("#5FD8FF"),
+		"gem": Color("#FFFFFF"),
+		"ember": Color("#FF5AD0"),
 	},
 }
 ## The code-made body's joints (m; the model's own come from its file: the same places).
