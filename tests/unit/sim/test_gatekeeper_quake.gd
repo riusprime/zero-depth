@@ -9,7 +9,7 @@ extends GutTest
 const S := EnemyAi.State
 const LONG := 1 << 20
 const LIMIT_TICKS := 60 * 600
-## How far from a pillar, along its row or column, the luring player stands (outside its 4.5 m ring).
+## How far from a pillar, along its row or column, the luring player stands (outside its ring).
 const LURE_M := 3.4
 
 

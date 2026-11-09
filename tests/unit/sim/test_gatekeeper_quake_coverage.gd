@@ -1,5 +1,5 @@
 extends GutTest
-## v0.11.0 F5 (owner: the pillars must be a real threat): with the 4.5 m rings, three pillars still place in the
+## v0.11.0 F5 (owner: the pillars must be a real threat): with the 7 m rings, three pillars still place in the
 ## Gatekeeper's real boss room (a floor built as Main builds it) and at least 20 % of the walkable arena floor stays
 ## outside every ring, over several floor seeds.
 
