@@ -15,7 +15,7 @@ extends RefCounted
 ## - Containers (crates, urns, barrels): any of the hero's attacks breaks one in one hit (on_attack, from
 ##   Attacks.launch: an arc, a burst, a ray; and the hero's projectiles, swept each tick in advance). Each was rolled
 ##   at setup from the `loot:containers` sub-stream: a drop (container_drop_permille) of a few shards or a heal orb
-##   (HealOrbs, Lifesprout's orb), or nothing.
+##   (HealOrbs), or nothing.
 ## - Explosive barrels: any hit lights the fuse (fuse_ticks, 1.0 s); then the blast (radius_m, 2.0 m) hurts every enemy
 ##   and the hero in it (Damage.hit from no actor, effect EFFECT: the readable cause, CAUSE_KEY; a blast that kills the
 ##   hero sets World.killer_attack to KILL_CAUSE for the recap), breaks the containers in it and lights the barrels.
@@ -250,11 +250,8 @@ static func hit(w: World, i: int) -> void:
 			var e := w.emit_event(SimEvent.Kind.SHARDS, 0, me, me, b.pos[i])
 			e.amount = got
 		Drop.HEAL:
-			if w.orbs.size() >= w.tuning.heal_orbs_max:
-				w.orbs.remove_at(0)
-			var id := w.take_id()
-			w.orbs.add(id, b.pos[i])
-			w.emit_event(SimEvent.Kind.SPAWN, id, id, id, b.pos[i])
+			if HealOrbs.may_appear(w):  # v0.11.0 F3: else it holds nothing; the meter is not touched
+				HealOrbs.drop(w, b.pos[i])
 
 
 ## PlayerSkill, when a Skill use lands (`cleave`: Lunge Cleave's fan from `center` facing `angle`; else Scatter

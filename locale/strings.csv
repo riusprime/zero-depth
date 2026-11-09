@@ -366,7 +366,7 @@ STAT_HOARDER_DESC,"+%s%% damage per 100 shards, +%s%% shards","+%s %% de daño p
 STAT_FAST_HANDS,Fast Hands,Manos rápidas
 STAT_FAST_HANDS_DESC,-%s%% ability cooldowns,-%s %% de recarga de habilidades
 STAT_LIFESPROUT,Lifesprout,Brote vital
-STAT_LIFESPROUT_DESC,Kills may drop a heal orb: %s%% (+%s%% per extra card),Las bajas pueden soltar un orbe de curación: %s %% (+%s %% por carta extra)
+STAT_LIFESPROUT_DESC,Disabled for now. It gave kills a %s%% chance of a heal orb (+%s%% per extra card),Desactivada por ahora. Daba a las bajas un %s %% de orbes de curación (+%s %% por carta extra)
 STAT_VENT_MEND,Vent Mend,Purga sanadora
 STAT_VENT_MEND_DESC,A Vent that hits an enemy heals %s%% max HP,Una purga que alcanza a un enemigo cura un %s %% de vida máxima
 STAT_HEAT_SHIELD,Heat Shield,Escudo térmico
@@ -1430,7 +1430,7 @@ HUD_LOOP_NEW_RULE,New rule: %s,Nueva regla: %s
 LOOP_RULE_SWIFT_NAME,Quickened,Acelerados
 LOOP_RULE_SWIFT_DESC,Enemies move and charge faster.,Los enemigos se mueven y cargan más rápido.
 LOOP_RULE_LEAN_MENDING_NAME,Lean Mending,Curación escasa
-LOOP_RULE_LEAN_MENDING_DESC,"Heal orbs drop half as often, but heal twice as much.","Los orbes de curación caen la mitad de veces, pero curan el doble."
+LOOP_RULE_LEAN_MENDING_DESC,"Heal orbs take twice the kills to earn, but heal twice as much.","Los orbes de curación cuestan el doble de bajas, pero curan el doble."
 LOOP_RULE_ELITE_HUNT_NAME,Elite Hunt,Caza de élites
 LOOP_RULE_ELITE_HUNT_DESC,Elite rooms appear on every floor.,Las salas de élite aparecen en todos los pisos.
 LOOP_RULE_SHIELDED_NAME,Shielded,Escudados

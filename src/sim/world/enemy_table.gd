@@ -7,6 +7,9 @@ var kind := ActorStore.Kind.CHARGER
 ## The name's locale key (the dev panel shows it; v0.3.5 AI).
 var name_key := &""
 var hp := 1
+## v0.11.0 F3: the kind's max HP as authored: the floor, Deep and loop scaling (RunState.scale_enemies) leave it, so a
+## kill earns the same heal-orb points all run (HealOrbs).
+var base_hp := 0
 var radius_m := 0.4
 var speed := 0.0
 ## The attack: start range, cooldown after recovery, windup (the telegraph), active and recovery ticks, damage.
