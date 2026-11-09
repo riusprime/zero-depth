@@ -30,6 +30,15 @@ const NO_GLOW := [Color.WHITE, 0.0]
 ## hero are untouched. The hit flash and the status tints still win while they last, then the glow comes back.
 ## Starting value (the measured line-up: docs/roadmap/v0.8.0/evidence/N1_FIXES.md).
 const ROLE_GLOW := 0.45
+## v0.11.0 F2 (owner: "some of these models appear slightly too dark"): the new kinds' textured plates' albedo
+## multiplier (on the map, so the model's own light and dark stay), the darker models most. Not listed: not lifted.
+const MODEL_LIFT := {
+	WorldReader.KIND_SCRAP_HOUND: 1.45,
+	WorldReader.KIND_ROCK_LURKER: 1.3,
+	WorldReader.KIND_STONE_THROWER: 1.2,
+	WorldReader.KIND_KILN_BEETLE: 1.15,
+	WorldReader.KIND_CINDER_PRIEST: 1.6,
+}
 
 ## v0.8.0 N1: the role glow's energy the views build with (ROLE_GLOW; the line-up shot script sweeps it, 0 = none).
 static var role_glow_energy := ROLE_GLOW
@@ -127,6 +136,7 @@ func sync(reader: WorldReader) -> void:
 				_add_elite_bar(node, tr(reader.elite_name_key(i)))
 			if reader.actor_team(i) != 0:
 				tint_greys(node, VariantLooks.cast(reader.actor_kind(i), enemy_tint))  # O13a: a variant's own
+				lift_model(node, WorldReader.body_kind(reader.actor_kind(i)))  # v0.11.0 F2
 				role_glow(node, WorldReader.body_kind(reader.actor_kind(i)), role_glow_energy)  # v0.8.0 N1 (O39)
 		var at := reader.actor_pos(i)
 		var pos := SimPlane.to_3d(at)
@@ -581,6 +591,16 @@ static func grey_tinted(c: Color, tint: Color) -> Color:
 ## v0.8.0 HR: whether a body colour takes the role glow (role_glow's rule: saturation at or over GREY_SATURATION).
 static func role_glows(c: Color) -> bool:
 	return c.s >= GREY_SATURATION
+
+
+## v0.11.0 F2: the textured plates of a kind in MODEL_LIFT take its albedo multiplier.
+static func lift_model(node: Node3D, kind: int) -> void:
+	var k: float = MODEL_LIFT.get(kind, 1.0)
+	if k == 1.0:
+		return
+	for m: StandardMaterial3D in node.get_meta(&"mats", []):
+		if m.has_meta(&"enemy_tex"):
+			m.albedo_color = Color(m.albedo_color * k, m.albedo_color.a)
 
 
 ## v0.8.0 N1 (O39): a normal kind's role-coloured materials glow `energy` of their own colour (ROLE_GLOW) at rest;
