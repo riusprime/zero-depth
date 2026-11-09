@@ -236,5 +236,7 @@ follow. All numbers below are starting values. Agent limit as before: 3 Sonnet +
 | F8 | Boss hazards | O | Next |
 | F9 | Warlord's embedded javelin | O | Next |
 | F10 | G2 mockups: build page, depth, notifications | O | Next |
-| F11, F12 | The picked screens | O | After F10 |
+| F11 | Build page, owner's pick (2026-11-09): "option A but simpler, I like that, use the icons from the cards tho" | O | Building |
+| F12 | Depth, owner's pick: "option C but do not put the card with the info just the color skull and multiplier". Notifications, owner's pick: "Option B do not make it permanent it is just a notification" | S | Building |
+| F6b | Arc Caster palette, owner's pick: "option B" (magenta-violet, white gem) | lead | At merge |
 | F13 | Shrine roll | O | Next |
