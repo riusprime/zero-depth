@@ -333,6 +333,46 @@ func _quake_hit(w: World, e: SimEvent) -> void:
 	violations.append(v)
 
 
+## v0.11.0 F9: the great javelin's flights and pulses are its own warnings: the throw's line (its windup), the recall's
+## line, the ring's growth, each at least the telegraph minimum (GreatJavelinRules); the recap: the attack's two lines.
+func _great_javelin_hit(w: World, e: SimEvent) -> void:
+	var bi := w.actors.index_of(e.owner_id)
+	var atk: BossAttackTable = null
+	if bi >= 0:
+		for a in BossAi.table_of(w, bi).attacks:
+			if a.move == BossAttackTable.Move.GREAT_JAVELIN:
+				atk = a
+	var key := ""
+	var warned := 0
+	if atk != null:
+		key = String(
+			atk.late_cause_key if e.effect_id == BossGreatJavelin.RETURN_EFFECT else atk.cause_key
+		)
+		match e.effect_id:
+			BossGreatJavelin.THROW_EFFECT:
+				warned = atk.windup_ticks
+			BossGreatJavelin.RETURN_EFFECT:
+				warned = atk.great_recall_warn_ticks
+			BossGreatJavelin.QUAKE_EFFECT:
+				warned = atk.great_warn_ticks
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	var problems := PackedStringArray()
+	if warned < SimTick.MIN_TELEGRAPH_TICKS:
+		problems.append("a great javelin's %s warned for %d ticks" % [e.effect_id, warned])
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		problems.append("cause %s missing en or es" % key)
+	if problems.is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
+	violations.append(v)
+
+
 ## v0.11.0 O13a: an Ember Charger's fire trail is no attack of its own: its warning is the fire itself, on the ground
 ## for its arm time (at least the telegraph minimum) before it burns; its recap line Variants.CAUSE_KEY.
 func _trail_hit(w: World, e: SimEvent) -> void:
@@ -367,6 +407,8 @@ func _no_actor_hit(w: World, e: SimEvent) -> bool:
 			_quake_hit(w, e)
 		BossHazard.EFFECT, BossHazard.IMPACT_EFFECT:  # v0.11.0 F8: an arena hazard
 			_boss_hazard_hit(w, e)
+		BossGreatJavelin.THROW_EFFECT, BossGreatJavelin.RETURN_EFFECT, BossGreatJavelin.QUAKE_EFFECT:  # v0.11.0 F9
+			_great_javelin_hit(w, e)
 		Breakables.EFFECT:  # v0.9.0 DX: an explosive barrel's blast
 			_barrel_hit(w, e)
 		Lockdowns.HAZARD_EFFECT:  # v0.9.0 LK: a Hazard Lockdown's strike

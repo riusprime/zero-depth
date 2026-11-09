@@ -113,6 +113,20 @@ static func _compile_signature(def: BossAttackDefinition, t: BossAttackTable) ->
 	t.melt_step_m = float(sp.get("step_m", 0.0))
 	t.melt_step_ticks = SimTick.seconds_to_ticks(float(sp.get("step_seconds", 0.0)))
 	t.melt_warn_ticks = SimTick.seconds_to_ticks(float(sp.get("warn_seconds", 0.0)))
+	_compile_great_javelin(sp, t)
+
+
+## v0.11.0 F9 (BossGreatJavelin): the great javelin's embedded time, quake ring and recall, in sim units.
+static func _compile_great_javelin(sp: Dictionary, t: BossAttackTable) -> void:
+	if t.move != BossAttackTable.Move.GREAT_JAVELIN:
+		return
+	t.great_embed_ticks = SimTick.seconds_to_ticks(float(sp.get("embed_seconds", 0.0)))
+	t.great_ring_m = float(sp.get("ring_m", 0.0))
+	t.great_pulse_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("pulse_seconds", 0.0))))
+	t.great_warn_ticks = SimTick.seconds_to_ticks(float(sp.get("warn_seconds", 0.0)))
+	t.great_pulse_permille = int(sp.get("pulse_permille", 0))
+	t.great_recall_warn_ticks = SimTick.seconds_to_ticks(float(sp.get("recall_warn_seconds", 0.0)))
+	t.great_recall_speed = float(sp.get("recall_speed_mps", 0.0)) / SimTick.TICKS_PER_SECOND
 
 
 ## v0.9.0 NB1 (BOSSES_4_5.md N1; BossTide): a `tide` attack's pull and push (speeds in metres per tick, times in

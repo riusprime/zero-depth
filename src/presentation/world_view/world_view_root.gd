@@ -58,6 +58,7 @@ static var parts: Array[GDScript] = [
 	StoneSpikeViews,
 	BossSignatureViews,
 	HazardViews,  # v0.11.0 F8
+	GreatJavelinViews,  # v0.11.0 F9
 	TideViews,  # v0.9.0 NB1
 	TideWaveViews,  # v0.9.5 BH4
 	InterphaseViews,  # v0.9.5 BH6
@@ -210,6 +211,8 @@ var spikes: StoneSpikeViews = _part(StoneSpikeViews)
 var signatures: BossSignatureViews = _part(BossSignatureViews)
 ## v0.11.0 F8 (owner 4.2): the bosses' arena hazards (lava and venom pools, fallen rock).
 var hazards: HazardViews = _part(HazardViews)
+## v0.11.0 F9 (owner): the Warlord's great javelin (flying, planted and vibrating; its impact and pulse dust).
+var great_javelin: GreatJavelinViews = _part(GreatJavelinViews)
 ## v0.9.0 NB1: the Tidecaller's Pull (the moving water, the bell's toll, the push's swell).
 var tides: TideViews = _part(TideViews)
 ## v0.9.5 BH4: the Tidecaller's crossing waves (a foam line at the wall, then the curling water band).
@@ -458,6 +461,7 @@ func _setup_effects() -> void:
 		layer.drawers.append(fireballs.draw_lights)
 		spikes.vfx = layer  # v0.8.0 AV: the spikes' debris, dust, flash and cracks
 		layer.drawers.append(spikes.draw_fx)
+		layer.drawers.append(great_javelin.draw_fx)  # v0.11.0 F9: its impact, crack and pulse dust
 		strikes.vfx = layer  # v0.8.0 AV part 2: the strikes' sprites, lights, marks and explosions
 		layer.drawers.append(strikes.draw_fx)
 		layer.drawers.append(final_views.draw_fx)  # v0.8.0 TX2: the shatter's crystal burst
@@ -500,6 +504,7 @@ func _setup_effects() -> void:
 	add_child(boss_shields)
 	add_child(spikes)  # v0.8.0 AV
 	add_child(signatures)  # v0.8.0 BS1
+	add_child(great_javelin)  # v0.11.0 F9
 	add_child(tides)  # v0.9.0 NB1
 	add_child(tide_waves)  # v0.9.5 BH4
 	add_child(interphase)  # v0.9.5 BH6
@@ -763,6 +768,7 @@ func sync() -> void:
 	_sync_view(&"boss_shields", boss_shields)
 	_sync_view(&"spikes", spikes)  # v0.8.0 AV
 	_sync_view(&"signatures", signatures)  # v0.8.0 BS1
+	_sync_view(&"great_javelin", great_javelin)  # v0.11.0 F9
 	_sync_view(&"tides", tides)  # v0.9.0 NB1
 	_sync_view(&"tide_waves", tide_waves)  # v0.9.5 BH4
 	_sync_view(&"interphase", interphase)  # v0.9.5 BH6

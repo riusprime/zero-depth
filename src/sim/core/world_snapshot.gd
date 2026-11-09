@@ -362,6 +362,18 @@ const ADDED_SINCE_V05 := {
 		&"jav_attack",
 		&"jav_from",
 		&"jav_back",
+		# v0.11.0 F9: the Warlord's great javelin (an older save has none)
+		&"gj_boss",
+		&"gj_attack",
+		&"gj_phase",
+		&"gj_from",
+		&"gj_life",
+		&"gj_hit",
+		&"gj_a",
+		&"gj_x",
+		&"gj_y",
+		&"gj_tox",
+		&"gj_toy",
 		# v0.8.0 BS2: the Foundry's lava and meltdown and their burn clock (an older save has none)
 		&"lava_x",
 		&"lava_y",

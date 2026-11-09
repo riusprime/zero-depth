@@ -38,6 +38,7 @@ static func library() -> Dictionary:
 			_flood(),
 			_charge(),
 			_barrage(),
+			_hurl(&"great_javelin"),  # v0.11.0 F9: the Great Javelin's throw (the Rain's whip)
 			_recall(),  # v0.8.0 BS1 (S2)
 			_shielded(),
 			_flinch(),
@@ -250,7 +251,12 @@ static func _charge() -> BossClip:
 ## The Javelin Rain: it draws the spear back over its shoulder, leaning and twisting away, and hurls it with a whip
 ## of the whole body, the arm following through low.
 static func _barrage() -> BossClip:
-	var c := BossClip.new(&"barrage")
+	return _hurl(&"barrage")
+
+
+## The whip-throw clip, named for the move that plays it.
+static func _hurl(clip_name: StringName) -> BossClip:
+	var c := BossClip.new(clip_name)
 	c.turn(
 		&"R_Upperarm",
 		Z,

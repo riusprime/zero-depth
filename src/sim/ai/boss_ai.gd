@@ -5,9 +5,8 @@ extends RefCounted
 ## start at HP thresholds, maybe with an entry attack. think() in tick phase 3, move() in 5, resolve() in 6. Every
 ## attack's area comes from one function (ring_of, lane_of, arc_of, …) that telegraph() and resolve() share (EI-07).
 ## Randomness only from the ai stream. Since: BX's challenge (BossChallenge), DS's gates (BossGates, CatchUp), BF's
-## dodge-first markers and patterns (BossDodge; SIM_CONTRACTS §10d), BS's signatures (BossSignatures, BossGaze,
-## BossLava, BossRicochet), FB's final bodies (BossColossus, BossPrism, BossNemesis, FinalBoss.SHATTER), v0.9.0 NB's
-## floor 4-5 bosses (BOSSES_4_5.md: BossTide, BossTwin, BossJudge: the Clockwork Judge's echo and Verdict).
+## markers and patterns (BossDodge; SIM_CONTRACTS §10d), BS's signatures (BossSignatures, BossGaze, BossLava,
+## BossRicochet), FB's final bodies (BossColossus, BossPrism, BossNemesis), NB's floor 4-5 bosses (BossTide, BossTwin).
 
 ## Appended after EnemyAi.State (SPAWN, MOVE, WINDUP, ACTIVE, RECOVER).
 const STAGGERED := 5
@@ -35,6 +34,7 @@ const TRACKING_MOVES: Array[int] = [
 	BossAttackTable.Move.PATTERN,  # v0.7.5 BF1: a pattern's aim (and a burst's landing) follows until it commits
 	BossAttackTable.Move.GRID,  # v0.7.5 BF3: the board's centre, then the flood's row, follow until they lock
 	BossAttackTable.Move.ROW_FLOOD,
+	BossAttackTable.Move.GREAT_JAVELIN,  # v0.11.0 F9: the line and its landing follow until they lock
 ]
 
 
@@ -296,7 +296,7 @@ static func _choose(w: World, i: int, b: int, t: BossTable, dist: float) -> int:
 			continue
 		if atk.move == M.BROOD and _alive_of(w, atk.enemy_kind) >= atk.max_alive:
 			continue
-		if BossTide.on_cadence(t, atk) or not BossTwin.may_use(w, i, atk):  # NB1: cadence; O5: its moveset
+		if BossTide.on_cadence(t, atk) or not BossGreatJavelin.may_use(w, i, atk):  # NB1; O5: moveset, F9: one out
 			continue
 		if t.mimic and not BossNemesis.allowed(w, atk):  # v0.8.0 FB3: the run's weapon, the cards held
 			continue
@@ -388,7 +388,7 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 			a.lock_a[i] = (aim - dir * atk.half_arc) & 4095
 			a.facing[i] = a.lock_a[i]
 			bs.span[b] = dir * atk.half_arc * 2
-		M.PATTERN, M.GRID, M.ROW_FLOOD:  # v0.7.5 BF1/BF3: a burst's landing, a board's or a row's centre
+		M.PATTERN, M.GRID, M.ROW_FLOOD, M.GREAT_JAVELIN:  # BF1/BF3: a burst's landing, a board's or row's centre
 			bs.set_pt(b, 0, target)
 			if atk.fixed_aim >= 0:  # v0.8.0 PR (O84): the same spell opens the same way, wherever you stand
 				a.lock_a[i] = atk.fixed_aim
@@ -639,7 +639,7 @@ static func resolve(w: World, i: int) -> void:
 			if w.bosses.step[b] < atk.volleys and st % atk.gap_ticks == 0:
 				w.bosses.step[b] += 1
 				_fire_fan(w, i, b, atk)
-		M.PATTERN:  # v0.7.5 BF1
+		M.PATTERN, M.GREAT_JAVELIN:  # v0.7.5 BF1; v0.11.0 F9: it leaves the boss's hand
 			BossDodge.resolve_pattern(w, i, b, atk, st)
 		M.TIDE:  # v0.9.0 NB1: the Tide Rings, only in the pull
 			BossTide.resolve(w, i, b, atk, st)
@@ -862,7 +862,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 	var out := {}
 	if BossDodge.is_marker_move(atk.move):
 		return BossDodge.marks_telegraph(w, i, atk)
-	if atk.move == M.PATTERN:
+	if atk.move == M.PATTERN or atk.move == M.GREAT_JAVELIN:  # F9: the throw's line and landing
 		return BossDodge.pattern_telegraph(w, i, b, atk, windup, progress)
 	if atk.move == M.GRID:
 		return BossDodge.grid_telegraph(w, i, atk)

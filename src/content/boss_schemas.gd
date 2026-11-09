@@ -342,6 +342,28 @@ const MOVES := {
 			"width_m",
 		],
 	},
+	## v0.11.0 F9 (owner; BossGreatJavelin): the Warlord's great javelin: thrown at the hero (speed_mps, radius_m, its
+	## line and landing tracked, then held for the attack's lock), it hurts on the way, embeds at the point (or the first
+	## wall) for embed_seconds and quakes: a ring of ring_m round it every pulse_seconds (warned warn_seconds, the hero's
+	## max HP per mille pulse_permille). Then a recall_warn_seconds line to the boss, and it flies back at
+	## recall_speed_mps.
+	&"great_javelin":
+	{
+		"shape": 4,
+		"params":
+		[
+			"speed_mps",
+			"radius_m",
+			"range_m",
+			"embed_seconds",
+			"ring_m",
+			"pulse_seconds",
+			"warn_seconds",
+			"pulse_permille",
+			"recall_warn_seconds",
+			"recall_speed_mps",
+		],
+	},
 	## v0.10.5 O3 (L6: "Needs something cooler while he's down"): the Prism's Shattered Kneel: down (open, nothing
 	## fired) for its active time; hits from within the weak point's range of her edge deal core_mult_permille; once
 	## she has lost crack_permille of her max HP since it began, her core bursts for burst_permille of it and she rises.
@@ -370,6 +392,7 @@ const LOCKED_MOVES: Array[StringName] = [
 	&"chain_sweep",  # v0.9.0 NB2
 	&"verdict",  # v0.9.0 NB3
 	&"lances",  # v0.10.5 O3: the Facet Lances (each lance's lock)
+	&"great_javelin",  # v0.11.0 F9: the throw's line
 ]
 ## v0.8.0 FB1: the most spikes a line or a ray lays (steps).
 const MAX_STEPS := 16

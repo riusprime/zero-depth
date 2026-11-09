@@ -70,6 +70,9 @@ static func shielded(w: World, i: int) -> bool:
 ## v0.7.5 BF1: a pattern attack's active tick st: a burst's shell lands (a disc that hurts, where the windup locked),
 ## and each wave tick fires its wave from the body (or the landing point) toward the locked aim.
 static func resolve_pattern(w: World, i: int, b: int, atk: BossAttackTable, st: int) -> void:
+	if atk.move == BossAttackTable.Move.GREAT_JAVELIN:  # v0.11.0 F9: its own flight, not a bullet pattern
+		BossGreatJavelin.throw(w, i, b, atk, st)
+		return
 	var pat := atk.pattern
 	if pat == null:
 		return
@@ -182,6 +185,8 @@ static func cast_telegraph(atk: BossAttackTable, windup: bool, progress: int) ->
 static func pattern_telegraph(
 	w: World, i: int, b: int, atk: BossAttackTable, windup: bool, progress: int
 ) -> Dictionary:
+	if atk.move == BossAttackTable.Move.GREAT_JAVELIN:  # v0.11.0 F9: its line and its landing mark
+		return BossGreatJavelin.telegraph(w, i, atk, windup, progress)
 	var pat := atk.pattern
 	if pat == null:
 		return {}

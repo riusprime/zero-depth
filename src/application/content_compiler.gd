@@ -53,6 +53,7 @@ const BOSS_MOVES := {
 	&"barrage": BossAttackTable.Move.BARRAGE,
 	&"rail": BossAttackTable.Move.RAIL,
 	&"bolt_fan": BossAttackTable.Move.BOLT_FAN,
+	&"great_javelin": BossAttackTable.Move.GREAT_JAVELIN,  # v0.11.0 F9
 	&"deploy": BossAttackTable.Move.DEPLOY,
 	&"pull": BossAttackTable.Move.PULL,
 	&"flood": BossAttackTable.Move.FLOOD,
