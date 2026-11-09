@@ -1587,7 +1587,6 @@ CONST_SUPERNOVA_DESC,Starbound cards count twice.,Las cartas Estelares cuentan d
 CONST_HUNTERS_SKY,Hunter's Sky,Cielo del cazador
 CONST_HUNTERS_SKY_DESC,+50 % damage to elites and bosses.,+50 % de daño a élites y jefes.
 UI_BOSS_HINTS,Boss hints,Pistas de jefe
-HINT_GATEKEEPER_PILLAR,Lure its cross into the pillar,Atrae su cruz hasta el pilar
 HINT_SHADE_LANTERN,Step on a lantern to light it,Pisa un farol para encenderlo
 HINT_TWINS_ACTIVE,Hit the glowing twin,Golpea al gemelo que brilla
 ENEMY_DUST_MITE,Dust Mite,Ácaro de Polvo

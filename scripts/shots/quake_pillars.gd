@@ -4,7 +4,7 @@ extends SceneTree
 ## scripts/shots/boss_signatures.gd does. Needs a renderer (off screen on the owner's PC):
 ##   godot --path . --position -10000,-10000 --audio-driver Dummy --resolution 1600x900 \
 ##     -s scripts/shots/quake_pillars.gd
-## Writes build/shots/v0.11.0/o3/quake_pillars_phase2.jpg and prints its path. Frames are grabbed in _process.
+## Writes build/shots/v0.11.0/f5/quake_pillars_phase2.jpg and prints its path. Frames are grabbed in _process.
 
 const SIZE := Vector2i(1280, 720)
 const PLAYER_AT := Vector2(6.0, -1.0)
@@ -16,9 +16,10 @@ var _world: World
 var _view: WorldViewRoot
 var _vp: SubViewport
 var _boss := -1
+var _hints: ObjectiveHints
 var _t := 0
 var _settle := 0
-var _dir := "res://build/shots/v0.11.0/o3/"
+var _dir := "res://build/shots/v0.11.0/f5/"
 
 
 func _initialize() -> void:
@@ -56,6 +57,9 @@ func _initialize() -> void:
 	_view.rig.snap_to(SimPlane.to_3d(BOSS_AT))
 	_view.rig.set_process(false)
 	_view.rig.camera.current = true
+	_hints = ObjectiveHints.new()  # v0.11.0 F5: the pillars' arrows
+	_hints.gate = func(_reason: StringName) -> bool: return true
+	_vp.add_child(_hints)
 
 
 func _process(_delta: float) -> bool:
@@ -64,6 +68,7 @@ func _process(_delta: float) -> bool:
 		var aim := Kin.angle_of(_world.actors.pos(_world.actors.index_of(_boss)) - PLAYER_AT)
 		_world.step(InputFrame.make(Vector2i.ZERO, aim, 300, 0, 0))
 		_view.sync()
+		_hints.sync(WorldReader.new(_world))
 		_t += 1
 		return false
 	_settle += 1

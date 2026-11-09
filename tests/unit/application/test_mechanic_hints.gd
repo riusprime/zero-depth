@@ -4,26 +4,27 @@ extends GutTest
 ## profile without the page starts at 0.
 
 const PILLAR := ObjectiveMarkers.GATEKEEPER_PILLAR
+const LANTERN := ObjectiveMarkers.SHADE_LANTERN
 
 
 func test_the_first_two_runs_show_then_never() -> void:
 	var profile := ProfileStore.new("")
 	var h := MechanicHints.new(CodexStore.new(profile))
-	assert_eq(h.runs(PILLAR), 0, "an old profile without the page starts at 0")
-	assert_true(h.shows(PILLAR, 11), "run 1, before meeting it")
-	h.meet(PILLAR, 11)
-	h.meet(PILLAR, 11)
-	assert_eq(h.runs(PILLAR), 1, "a run counts once")
-	assert_true(h.shows(PILLAR, 11), "run 1 still shows")
-	assert_true(h.shows(PILLAR, 22), "run 2 would show")
-	h.meet(PILLAR, 22)
-	assert_eq(h.runs(PILLAR), 2)
-	assert_true(h.shows(PILLAR, 22), "run 2 shows to its end")
-	assert_false(h.shows(PILLAR, 33), "run 3 doesn't")
-	h.meet(PILLAR, 33)
-	assert_eq(h.runs(PILLAR), 3, "the Codex keeps counting")
-	assert_false(h.shows(PILLAR, 33))
-	assert_true(h.shows(ObjectiveMarkers.SHADE_LANTERN, 33), "each reason counts on its own")
+	assert_eq(h.runs(LANTERN), 0, "an old profile without the page starts at 0")
+	assert_true(h.shows(LANTERN, 11), "run 1, before meeting it")
+	h.meet(LANTERN, 11)
+	h.meet(LANTERN, 11)
+	assert_eq(h.runs(LANTERN), 1, "a run counts once")
+	assert_true(h.shows(LANTERN, 11), "run 1 still shows")
+	assert_true(h.shows(LANTERN, 22), "run 2 would show")
+	h.meet(LANTERN, 22)
+	assert_eq(h.runs(LANTERN), 2)
+	assert_true(h.shows(LANTERN, 22), "run 2 shows to its end")
+	assert_false(h.shows(LANTERN, 33), "run 3 doesn't")
+	h.meet(LANTERN, 33)
+	assert_eq(h.runs(LANTERN), 3, "the Codex keeps counting")
+	assert_false(h.shows(LANTERN, 33))
+	assert_true(h.shows(PILLAR, 33), "the pillars' arrow shows at every meeting (F5)")
 	assert_true(
 		profile.section(CodexStore.SECTION).has(String(MechanicHints.PAGE)),
 		"kept in the Codex's section"
