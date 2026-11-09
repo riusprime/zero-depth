@@ -252,12 +252,15 @@ static func javelins_of(w: World, i: int) -> Array:
 
 ## Tick phase 6: marker k of boss i's `marks` attack with eggs has just struck at c: an egg lands there (it arrives
 ## in phase 9), unless the attack's kind already has max_alive alive or coming (eggs count).
-static func lay_egg(w: World, b: int, atk: BossAttackTable, c: Vector2) -> void:
+static func lay_egg(w: World, b: int, atk: BossAttackTable, c: Vector2, k: int = -1) -> void:
+	if k == 0 and atk.egg_ticks > 0:
+		BossHazard.storm_begins(w, b)  # v0.11.0 F8: this storm's first egg to land will leave a pool
 	if atk.egg_ticks <= 0 or w.enemy_table(atk.enemy_kind) == null:
 		return
 	if BossAi.alive_of(w, atk.enemy_kind) >= atk.max_alive:
 		return
-	w.queue_egg(atk.enemy_kind, c, [atk.egg_ticks, atk.egg_hp, w.bosses.attack[b]])
+	var egg := [atk.egg_ticks, atk.egg_hp, w.bosses.attack[b], BossHazard.takes_pool(w)]
+	w.queue_egg(atk.enemy_kind, c, egg)
 
 
 ## World._apply_spawns: actor i (just added and scaled as any arrival) becomes an egg: still and at once hittable,
@@ -275,6 +278,8 @@ static func make_egg(w: World, i: int, egg: Array) -> void:
 	a.lock_a[i] = int(egg[2])
 	a.invuln[i] = 0
 	EnemyAi.enter_state(a, i, EGG)
+	if egg.size() > 3 and egg[3]:  # v0.11.0 F8: its storm's chosen egg
+		w.bosses.hz_egg.append(a.ids[i])
 
 
 ## True while actor i is an egg (waiting or bursting).
@@ -298,6 +303,7 @@ static func egg_think(w: World, i: int) -> void:
 		return
 	if a.state_t[i] < a.windup[i]:
 		return
+	BossHazard.on_egg_done(w, i, boss)  # v0.11.0 F8: its storm's chosen egg leaves a venom pool
 	var atk := _egg_attack(w, i, boss)
 	if (
 		atk != null
@@ -382,6 +388,7 @@ static func advance(w: World) -> void:
 	BossStream.advance(w)  # v0.9.5 BH4: the Tidecaller's ring stream and crossing waves
 	BossInterphase.advance(w)  # v0.9.5 BH6: the Fallen's interphase hazards and its return
 	BossQuake.advance(w)  # v0.11.0 O3: the Gatekeeper's quake pillars pulse
+	BossHazard.advance(w)  # v0.11.0 F8: the arena hazards arm, burn and go
 
 
 ## World._remove_dead: boss `boss_id` is gone: its pillars sink and its javelins go (its eggs crumble on their own).
@@ -400,6 +407,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 	BossShade.on_boss_gone(w, boss_id)  # v0.9.0 NB4: the Lantern Shade's room relights
 	BossStream.on_boss_gone(w, boss_id)  # v0.9.5 BH4: its streams and waves
 	BossQuake.on_boss_gone(w, boss_id)  # v0.11.0 O3: its break count and the hint
+	BossHazard.on_boss_gone(w, boss_id)  # v0.11.0 F8: its hazards go
 
 
 ## The recap's death line for a cause past LATE_CAUSE (a late part): its attack's late_cause_key (its own cause_key

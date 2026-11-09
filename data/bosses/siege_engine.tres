@@ -309,4 +309,17 @@ dash_read_seconds = 0.5
 gap_close_attack = &"barrage"
 gap_close_distance_m = 12.0
 gap_close_seconds = 2.0
+hazard = {
+"attack_ids": ["mortar_grid", "mortar_grid_3", "barrage", "barrage_fast"],
+"impact_damage": 30,
+"kind": "slow",
+"life_seconds": 10.0,
+"look": "rock",
+"max_count": 8,
+"max_cover_permille": 250,
+"radius_m": 2.0,
+"slow_permille": 600,
+"warn_seconds": 1.2
+}
+hazard_cause_key = &"CAUSE_SIEGE_ROCK"
 id = &"siege_engine"

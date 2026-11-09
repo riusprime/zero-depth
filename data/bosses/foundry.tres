@@ -313,4 +313,18 @@ gap_close_attack = &"molten_flood"
 gap_close_distance_m = 10.0
 gap_close_seconds = 2.0
 lines_clear_shots = true
+hazard = {
+"attack_ids": ["molten_flood", "molten_flood_5"],
+"burn_seconds": 0.5,
+"damage": 6,
+"kind": "damage",
+"life_seconds": 20.0,
+"look": "lava",
+"max_count": 6,
+"max_cover_permille": 250,
+"per_attack": 2,
+"radius_m": 2.0,
+"warn_seconds": 0.8
+}
+hazard_cause_key = &"CAUSE_FOUNDRY_POOL"
 id = &"foundry"

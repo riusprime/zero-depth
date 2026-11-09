@@ -436,6 +436,9 @@ CAUSE_HIVE_GAZE_ORBS,The Hive Lens's orbs caught you.,Los orbes de The Hive Lens
 CAUSE_SIEGE_RICOCHET,A Siege Engine shell bounced into you.,Un proyectil rebotado de The Siege Engine te alcanzó.
 CAUSE_SIEGE_TURRET_RICOCHET,A turret's bouncing shot hit you.,El disparo rebotado de una torreta te alcanzó.
 CAUSE_FOUNDRY_LAVA,You stood in the Foundry's lava.,Pisaste la lava de The Foundry.
+CAUSE_FOUNDRY_POOL,The Foundry's molten pool burned you down.,La poza de lava de The Foundry te consumió.
+CAUSE_BROOD_VENOM,You stood in the Brood Mother's venom.,Pisaste el veneno de The Brood Mother.
+CAUSE_SIEGE_ROCK,A rock dropped by the Siege Engine crushed you.,Una roca lanzada por The Siege Engine te aplastó.
 CAUSE_FOUNDRY_MELT,The Foundry melted the floor out from under you.,The Foundry fundió el suelo bajo tus pies.
 CAPTION_TELEGRAPH_WARLORD,[Warning: the Warlord's armour clanks],[Aviso: la armadura de The Warlord resuena]
 CAPTION_TELEGRAPH_HIVE_LENS,[Warning: the Hive Lens hums as it focuses],[Aviso: The Hive Lens zumba al enfocar]
