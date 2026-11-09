@@ -296,7 +296,8 @@ func _merged_kinds(actors: ActorViews) -> void:
 	var warden := WardenAvatar.new()
 	warden.setup(oc, tq)
 	_warm_rig(warden, WorldReader.KIND_WARDEN)
-	var caster := ArcCasterAvatar.new()
+	var caster := CinderPriestAvatar.new()
+	caster.kind = WorldReader.KIND_ARC_CASTER
 	caster.setup(oc, tq)
 	_warm_rig(caster, WorldReader.KIND_ARC_CASTER)
 	var drone := BombDroneAvatar.new()
