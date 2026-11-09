@@ -42,7 +42,6 @@ ENEMY_WARDEN,Warden,Guardián
 ENEMY_NEEDLE,Needle,Aguja
 HUD_HP,HP %d / %d,PV %d / %d
 HUD_DANGER_TIER,×%d,×%d
-HUD_DEPTHS_ANSWER,The depths answer ×%s,Las profundidades responden ×%s
 HUD_DASH,Dash,Esprint
 HUD_UTILITY,Utility,Habilidad
 HUD_WAVE,Wave %d / %d,Oleada %d / %d
@@ -643,7 +642,6 @@ UI_SWAP_SKIP_KEY,Esc,Esc
 UI_SWAP_LEVEL,Level %d,Nivel %d
 UI_DEV_GRANT_MOD,Grant attack mod,Dar mod de ataque
 UI_PAUSE_RUN,Floor %d · %02d:%02d · %d kills · %d shards,Piso %d · %02d:%02d · %d bajas · %d fragmentos
-UI_PAUSE_DEPTHS,"The depths answer ×%s: your build is strong, so this floor's enemies have more HP and hit harder.","Las profundidades responden ×%s: tu construcción es fuerte, así que los enemigos de este piso tienen más vida y pegan más fuerte."
 UI_PAUSE_HINT,Enter / A to choose · Esc / B to resume,Intro / A para elegir · Esc / B para continuar
 UI_MENU_HINT,Enter / A to choose,Intro / A para elegir
 HUD_KEY_MOUSE_LEFT,LMB,Clic izq.

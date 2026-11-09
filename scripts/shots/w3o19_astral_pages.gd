@@ -275,9 +275,7 @@ func _show_parts() -> void:
 	tag.position = Vector2(200, 260)
 	c.add_child(tag)
 	tag.visible = true
-	tag.label.text = (
-		tr("HUD_DEPTHS_ANSWER") % "1.4" if tr("HUD_DEPTHS_ANSWER").contains("%") else "×1.4"
-	)
+	tag.set_multiplier(1400)
 	var y := 340.0
 	for spec: Array in [[&"gold", false], [&"blue", true], [&"blue", false]]:
 		var p := PanelContainer.new()

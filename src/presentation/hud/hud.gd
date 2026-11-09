@@ -25,9 +25,8 @@ const ITEMS_LIFT := AbilitySquares.MARGIN_BOTTOM + AbilitySquares.SIDE + 12.0 + 
 const BOTTOM_LINE := AbilitySquares.MARGIN_BOTTOM
 ## The top plate's width (px).
 const TOP_W := 540.0
-## Floor (PLAN v0.2.0 F, K): a row of icons for the items you carry, a compact item card (on pickup, and as a
-## preview while you stand by a pedestal), the sealed-gate note.
-const CARD_SECONDS := 3.0
+## Floor (PLAN v0.2.0 F, K): a row of icons for the items you carry, a compact item card (as a
+## preview while you stand by a pedestal; v0.11.0 F12: a pickup is a NoticeTicker line), the sealed-gate note.
 ## Standing this close to a pedestal (m) previews its item.
 const PREVIEW_M := 2.0
 const ROW_ICON := 40.0
@@ -37,13 +36,7 @@ const POOR := Color("#FF5A4D")
 ## v0.10.5 W3-O20: the gap between the top centre's stacked lines (px).
 const STACK_GAP := 6.0
 
-## v0.3.0 G: a combo's card stays this long, above the item card; its badges sit in a row above the item icons.
-const COMBO_CARD_SECONDS := 4.0
-## v0.9.5 EP4: an element pair's card stays this long; its big title fades in, holds and fades out (presentation only).
-const PAIR_CARD_SECONDS := 6.0
-const PAIR_TITLE_IN := 0.25
-const PAIR_TITLE_HOLD := 1.6
-const PAIR_TITLE_OUT := 0.4
+## v0.3.0 G: a combo's badges sit in a row above the item icons (v0.11.0 F12: its unlock is a NoticeTicker line).
 const COMBO_BADGE := 44.0
 ## v0.6.1 R1: each badge sits in a small stone plaque this tall (v0.8.0 MU) (the combo's nearest colour).
 const COMBO_PLAQUE_H := 96.0
@@ -73,6 +66,8 @@ var ability_squares := AbilitySquares.new()
 var spell_squares := SpellSquares.new()
 ## v0.10.5 O6 (owner P4): the depths' answer (the floor's catch-up m), under the top plate's right end; hidden at ×1.
 var depths_tag := DepthsTag.new()
+## v0.11.0 F12: pickups, combos and element pairs as short lines under the top plate.
+var notices := NoticeTicker.new()
 ## v0.5.0 EV: the event prompt, status and panel, and threat T with the curses held.
 var events := EventHud.new()
 var constellation := ConstellationPanel.new()  # v0.10.5 W3-P10c: a new loop's Constellation pick
@@ -106,8 +101,7 @@ var _left := HudStyle.label(14)
 var _items := HBoxContainer.new()
 var _card := ItemCard.new()
 var _gate := Label.new()
-var _card_left := 0.0
-## What the card shows: &"pickup", &"preview" or &"".
+## What the card shows: &"preview" (a nearby pedestal's item) or &"".
 var _card_mode := &""
 var _preview_item := -1
 var _last_seq := 0
@@ -120,16 +114,11 @@ var _shards_shown := -1
 var _prompt := InteractPrompt.new()
 var _pick := PickPanel.new()
 var _combos := HBoxContainer.new()
-var _combo_card := ComboCard.new()
-var _combo_left := 0.0
 var _combo_pending := -1
 ## v0.9.5 EE3: an element pair that just turned on (its X index; -1 none): its name shows on the combo card.
 var _pair_pending := -1
-## v0.9.5 EP4: that pair's new level (1-3), the big centred title (PairTitle) and its clock (-1: not showing), and the
-## pair badges' signature (mask and levels) they were built from.
+## v0.9.5 EP4: that pair's new level (1-3), and the pair badges' signature (mask and levels) they were built from.
 var _pair_level_pending := 3
-var _pair_title := HudStyle.label(56, true)
-var _pair_title_t := -1.0
 var _pair_sig := -1
 var _combos_shown := -1
 # Run flow (v0.3.0 B).
@@ -201,9 +190,7 @@ func _init() -> void:
 	_combos.offset_top = -ITEMS_LIFT - ROW_ICON - 12
 	_combos.offset_bottom = -ITEMS_LIFT - ROW_ICON - 12
 	add_child(starbound_hud)  # v0.10.5 W3-P10b: it places itself (StarboundHud.LIFT)
-	_build_pair_title()
-	add_child(_combo_card)
-	_combo_card.place_bottom_centre(-196 - ItemCard.HEIGHT - 10)  # v0.6.1 R1: above the taller item plaque
+	add_child(notices)  # v0.11.0 F12: the ticker under the top plate
 	_gate.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_gate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_gate.custom_minimum_size = Vector2(900, 0)
@@ -392,11 +379,7 @@ func _process(delta: float) -> void:
 	)
 	if _astral:
 		_hp_medal.warn = HudStyle.pulse(_t) if _hp_bar.warn else 0.0
-	if _card_left > 0.0:
-		_card_left -= delta
-	if _combo_left > 0.0:
-		_combo_left -= delta
-	_advance_pair_title(delta)
+	notices.advance(delta)  # v0.11.0 F12
 	if _floor_card_left > 0.0 and not _landing:  # v0.8.0 N11: the card shows once the hero landed
 		_floor_card_left -= delta
 		_floor_card.modulate.a = clampf(_floor_card_left / FLOOR_CARD_FADE, 0.0, 1.0)
@@ -794,25 +777,21 @@ func _sync_items(reader: WorldReader) -> void:
 	for e in reader.events_since(_last_seq):
 		_last_seq = e.seq
 		if e.kind == SimEvent.Kind.PICKUP:
-			_show_card(reader, e.amount, tr("HUD_PICKED_UP"))
-			_card_mode = &"pickup"
-			_card_left = CARD_SECONDS
+			var face := PickPanel.card_face(self, reader, e.amount)  # v0.11.0 F12: a ticker line, no card
+			notices.add_item(face["id"], face["color"], face["title"])
 		elif e.kind == SimEvent.Kind.COMBO_UNLOCKED:
 			_combo_pending = e.amount
 		elif e.kind == SimEvent.Kind.PAIR_ON:  # v0.9.5 EE3: an element pair turned on
 			_pair_pending = e.amount
 			_pair_level_pending = 3 if e.amount_applied <= 0 else e.amount_applied
-	if _card_mode == &"pickup" and _card_left <= 0.0:
+	var near := preview_pickup(reader)
+	var item := reader.pickup_item(near) if near >= 0 else -1
+	if item >= 0 and (_card_mode != &"preview" or item != _preview_item):
+		_show_card(reader, item, "")
+		_card_mode = &"preview"
+	elif item < 0 and _card_mode == &"preview":
 		_card_mode = &""
-	if _card_mode != &"pickup":
-		var near := preview_pickup(reader)
-		var item := reader.pickup_item(near) if near >= 0 else -1
-		if item >= 0 and (_card_mode != &"preview" or item != _preview_item):
-			_show_card(reader, item, "")
-			_card_mode = &"preview"
-		elif item < 0 and _card_mode == &"preview":
-			_card_mode = &""
-		_preview_item = item
+	_preview_item = item
 	if _card_mode == &"":
 		_card.hide_card()
 	var owned := reader.items_owned()
@@ -842,11 +821,6 @@ func _show_card(reader: WorldReader, idx: int, caption: String) -> void:
 	_card.show_item(face["id"], face["title"], sentence, face["color"], caption, plaque)
 
 
-## The combo card (tests and shot scripts read it).
-func combo_card() -> ComboCard:
-	return _combo_card
-
-
 ## The number of combo badges in the row.
 func combo_badge_count() -> int:
 	var n := 0
@@ -856,43 +830,20 @@ func combo_badge_count() -> int:
 	return n
 
 
-## v0.3.0 G: a combo that just unlocked shows its card; the badge row follows the combos owned.
+## v0.3.0 G: a combo that just unlocked adds a ticker line; the badge row follows the combos owned.
 func _sync_combos(reader: WorldReader) -> void:
 	if _combo_pending >= 0:
 		var c := _combo_pending
 		_combo_pending = -1
 		var pair := reader.combo_item_ids(c)
-		_combo_card.show_combo(
-			reader.combo_id(c),
-			pair[0],
-			pair[1],
-			tr(reader.combo_name_key(c)),
-			tr(reader.combo_desc_key(c)),
-			tr("UI_COMBO_UNLOCKED")
-		)
-		_combo_left = COMBO_CARD_SECONDS
-		_combo_card.place_bottom_centre(-196 - _card.plaque_height() - 10)  # above the item plaque
-	if _pair_pending >= 0:  # v0.9.5 EE3: the pair's banner is the combo card, with its two element cards
+		notices.add_combo(reader.combo_id(c), pair[0], pair[1], tr(reader.combo_name_key(c)))
+	if _pair_pending >= 0:  # v0.9.5 EE3: an element pair: a ticker line, the two element icons, its name and level
 		var x := _pair_pending
 		_pair_pending = -1
 		var cards := reader.pair_card_ids(x)
-		var lvl := _pair_level_pending
-		var pname := tr(reader.pair_name_key(x))
-		_combo_card.show_combo(
-			reader.pair_id(x),
-			cards[0],
-			cards[1],
-			pname if lvl <= 1 else "%s · %s" % [pname, tr("UI_WAND_LEVEL") % lvl],
-			tr(reader.pair_desc_key(x)),
-			tr("UI_PAIR_ON") if lvl <= 1 else tr("UI_PAIR_LEVEL") % lvl
+		notices.add_pair(
+			reader.pair_id(x), cards[0], cards[1], tr(reader.pair_name_key(x)), _pair_level_pending
 		)
-		_combo_left = PAIR_CARD_SECONDS
-		_combo_card.place_bottom_centre(-196 - _card.plaque_height() - 10)
-		_pair_title.text = tr("UI_PAIR_BIG") % pname
-		_pair_title.add_theme_color_override("font_color", ItemLooks.combo_color(reader.pair_id(x)))
-		_pair_title_t = 0.0
-	if _combo_left <= 0.0 and _combo_card.is_showing():
-		_combo_card.hide_card()
 	_sync_pair_badges(reader)
 	var owned := reader.combos_owned()
 	if owned.size() == _combos_shown:
@@ -919,41 +870,6 @@ func _sync_combos(reader: WorldReader) -> void:
 		plate.add_child(badge)
 		_combos.add_child(plate)
 	_sync_pair_badges(reader)
-
-
-## v0.9.5 EP4: the big centred "Element pair! <name>" title (PairTitle), hidden until a pair turns on.
-func _build_pair_title() -> void:
-	_pair_title.name = "PairTitle"
-	_pair_title.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_pair_title.anchor_top = 0.28
-	_pair_title.anchor_bottom = 0.28
-	_pair_title.offset_top = 0.0
-	_pair_title.offset_bottom = 80.0
-	_pair_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_pair_title.add_theme_constant_override("outline_size", 8)
-	_pair_title.add_theme_color_override("font_outline_color", Color.BLACK)
-	_pair_title.modulate.a = 0.0
-	_pair_title.visible = false
-	add_child(_pair_title)
-
-
-## v0.9.5 EP4: the title fades in, holds and fades out by `delta` (the view's clock; nothing in the sim waits on it).
-func _advance_pair_title(delta: float) -> void:
-	if _pair_title_t < 0.0:
-		return
-	_pair_title_t += delta
-	var total := PAIR_TITLE_IN + PAIR_TITLE_HOLD + PAIR_TITLE_OUT
-	if _pair_title_t >= total:
-		_pair_title_t = -1.0
-		_pair_title.visible = false
-		return
-	var a := 1.0
-	if _pair_title_t < PAIR_TITLE_IN:
-		a = _pair_title_t / PAIR_TITLE_IN
-	elif _pair_title_t > PAIR_TITLE_IN + PAIR_TITLE_HOLD:
-		a = (total - _pair_title_t) / PAIR_TITLE_OUT
-	_pair_title.modulate.a = clampf(a, 0.0, 1.0)
-	_pair_title.visible = true
 
 
 ## v0.9.5 EP4: one badge per pair that is on (PairBadge<X>: its two element icons and "Lv N"), after the combo badges;
@@ -1004,10 +920,21 @@ func _sync_pair_badges(reader: WorldReader) -> void:
 ## first-run tips (OnboardingHints.stack_under) sit under the phase's lines in turn. A look only (EI-07).
 func _stack_top_centre() -> void:
 	var y := PhaseHud.TOP
+	var under := -1.0  # the lowest bottom of the boss bar and the room banners (-1: none shown)
 	if boss_bar.visible:
-		y = maxf(y, boss_bar.bottom() + STACK_GAP)
+		under = boss_bar.bottom() + STACK_GAP
 	for b: Control in [overrun_hud, lockdown_hud, shrine_hud]:
 		if b.visible:
-			y = maxf(y, b.offset_top + b.get_combined_minimum_size().y + STACK_GAP)
+			under = maxf(under, b.offset_top + b.get_combined_minimum_size().y + STACK_GAP)
+	y = maxf(y, under)
+	# v0.11.0 F12: the notice ticker hangs under the top plate, or under those banners; the phase line goes under it.
+	var top := _top_frame.position.y + _top_frame.size.y + 3.0
+	if under > 0.0:
+		top = maxf(top, under)
+	if notices.position.x != _top_frame.position.x or notices.position.y != top:
+		notices.position = Vector2(_top_frame.position.x, top)
+	notices.size = Vector2(TOP_W, notices.get_combined_minimum_size().y)
+	if not notices.is_empty():
+		y = maxf(y, top + notices.stack_height() + STACK_GAP)
 	if phase_hud.offset_top != y:
 		phase_hud.offset_top = y

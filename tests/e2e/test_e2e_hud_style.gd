@@ -36,7 +36,7 @@ func test_the_danger_bar_and_the_depths_tag_in_a_real_run() -> void:
 	await e.frames(3)
 	assert_eq(reader.catch_up_permille(), 1414)
 	assert_true(tag.is_visible_in_tree(), "×1.41: the tag shows")
-	assert_eq(tag.label.text, tr("HUD_DEPTHS_ANSWER") % "1.41")
+	assert_eq(tag.label.text, "×1.41", "the skull and the multiplier, no sentence")
 	var plate := main.get_node("UI/Hud/TopPlate") as Control
 	assert_gte(
 		tag.get_global_rect().position.y,
@@ -52,8 +52,8 @@ func test_the_danger_bar_and_the_depths_tag_in_a_real_run() -> void:
 	await e.frames(3)
 	var pause := main.get_node("UI/PauseMenu") as PauseMenu
 	assert_not_null(pause, "Esc opens the pause menu")
-	assert_true(pause.depths_line.visible, "the pause menu explains the depths' answer")
-	assert_eq(pause.depths_line.text, tr("UI_PAUSE_DEPTHS") % "1.41")
+	assert_true(pause.depths_line.visible, "the pause menu shows the depths' skull")
+	assert_eq(pause.depths_line.label.text, "×1.41")
 	await e.tap(KEY_ESCAPE)
 
 
