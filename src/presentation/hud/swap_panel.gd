@@ -22,7 +22,9 @@ extends ModalPanel
 ## can't be chosen, Insert is off, the title says which slot; the sim takes only those answers (BuildSlots.swap_answer).
 ## v0.10.5 W3-O16 (owner 2026-11-04: the shop and the pick in Astral; the Swap's chrome with them): the game blurred
 ## under Astral's cool ink (MenuBackdrop.astral), the title as an Astral heading over a rule, the wand row's tiles,
-## pips and forecast in Astral (WandRow.astral, SlotPips.astral, WandForecastView.set_astral), Skip an Astral plate.
+## pips and forecast in Astral (WandRow.astral, SlotPips.astral), Skip an Astral plate.
+## v0.11.0 F11: the forecast is the cards' icons in firing order (WandForecastView); the row's cards glide when they
+## trade places.
 
 signal moved(value: int)
 
@@ -40,7 +42,7 @@ const SKIP := WorldReader.MOD_SLOTS
 var row := WandRow.new()
 ## v0.9.0 AS2: the slot pips over the wand, and the category a limited Swap chooses in (0: any card).
 var pips := SlotPips.new()
-## v0.10.5 O13 (owner P10): the forecast of the wand the focused answer leaves ("after the swap"; WandForecastView).
+## v0.10.5 O13 (owner P10): the forecast of the wand the focused answer leaves (WandForecastView).
 var forecast := WandForecastView.new()
 var _only := 0
 var _dim := MenuBackdrop.new()
@@ -94,7 +96,6 @@ func _init() -> void:
 	col.add_child(AstralChrome.Rule.new(420.0))
 	row.astral = true  # v0.10.5 W3-O16: the wand row, its pips and its forecast in Astral
 	pips.astral = true
-	forecast.set_astral()
 	var card_box := CenterContainer.new()
 	card_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_card = PickSlot.new(0, 0.8)
@@ -188,6 +189,7 @@ func sync(reader: WorldReader) -> void:
 	_from = -1
 	_place = -1
 	_set_focus(_step_from(-1, 1))
+	row.settle()
 
 
 func _notification(what: int) -> void:
@@ -241,9 +243,9 @@ func read_back_text() -> String:
 	return _read_back.text
 
 
-## v0.10.5 O13: the forecast's spell line now.
-func forecast_text() -> String:
-	return forecast.spell_text()
+## v0.11.0 F11: the card ids the forecast shows, in firing order.
+func forecast_ids() -> Array[StringName]:
+	return forecast.icon_ids()
 
 
 ## The panel's content rect on screen (tests: it fits the 1920 x 1080 base at 8 slots).
@@ -300,10 +302,7 @@ func _refresh() -> void:
 				outcome = WorldReader.wand_swapped(_wand, a.x, a.y)
 	var lines := WorldReader.wand_describe(outcome)
 	_read_back.text = WorldReader.wand_render(lines, func(k: StringName) -> String: return tr(k))
-	# v0.10.5 O13: the same outcome's forecast, from the sim's own compile of it (EI-07)
-	forecast.show_forecast(
-		_reader.wand_forecast(outcome) if _reader != null else {}, outcome != _wand
-	)
+	forecast.show_forecast(outcome)  # v0.10.5 O13: the same outcome's forecast (F11: its cards' icons)
 	var title_key := "UI_SWAP_TITLE"
 	match _mode:
 		Mode.PLACE:

@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 class_name WandRow
 extends Control
 ## The wand as a row of slots (v0.6.5 WN2; docs/design/WAND.md rule 4), shared by the pause menu's Build page and the
@@ -11,10 +12,18 @@ extends Control
 ## card leaving, a new card); it decides nothing (EI-07). Mouse: a press on a tile and a release on another is a drag
 ## (`tile_dropped`); a press and release on the same tile is a click (`tile_clicked`); hovering a tile reports it
 ## (`tile_hovered`). The pages turn those into moves.
+## v0.11.0 F11 (owner, G2 F10 "option A but simpler"): a card being carried (`carry_from`, on the Build page) is shown
+## lifted and tilted over the slot it would land in, a dashed ghost stays where it came from, and a bar and an arrow
+## show exactly where it lands; the cards beside the bar slide apart. Tiles glide to where they belong (ANIM_S, instant
+## under reduced motion). Nothing here decides anything: the moves are the page's. The mouse is read by one layer over
+## the row against each slot's resting place, so a click lands on the slot it was aimed at while the tiles are moving.
 
 signal tile_clicked(k: int)
 signal tile_dropped(from: int, to: int)
 signal tile_hovered(k: int)
+## v0.11.0 F11: a press on a tile became a drag; the drag was released away from every slot.
+signal tile_drag_started(k: int)
+signal tile_drag_cancelled
 
 ## A tile's size, the gap between tiles, the extra room a cut takes (its divider), and the bracket band under the row
 ## (px at the 1920 x 1080 base; 8 slots and 3 cuts: about 1,300 px).
@@ -30,6 +39,15 @@ const SMALL_SIZE := 13
 const BRACKET_SIZE := 14
 ## A press that moves this far (px) before its release is a drag.
 const DRAG_PX := 8.0
+## v0.11.0 F11: how long a tile takes to reach its place (s), how far a carried card rises and tilts and grows, and how
+## far the cards beside the landing bar move apart (px at the 1920 x 1080 base).
+const ANIM_S := 0.15
+const CARRY_RISE := 44.0
+const CARRY_TILT := -0.055
+const CARRY_GROW := 1.06
+const OPEN := 14.0
+## How far the mouse layer reaches above the row while a card is carried (the lifted card is clickable).
+const CARRY_REACH := 64.0
 ## The bracket label of a part cast by each trigger (WorldReader.WAND_ON_*), and of the shot you fire.
 const CUT_KEYS := {
 	WorldReader.WAND_ON_HIT: "UI_WAND_CUT_ON_HIT",
@@ -53,6 +71,9 @@ var focus := -1
 var held := -1
 var leaving := -1
 var fresh := -1
+## v0.11.0 F11: the slot a carried card came from (-1: none). The row then shows the wand as it was picked up (the
+## page's preview is the forecast), `held` is the slot the card would land in, and that is where it is drawn.
+var carry_from := -1
 ## v0.9.0 AS2 (owner "Let me choose"): the slot category a limited Swap chooses in (WorldReader.SLOT_*; 0: any): the
 ## other cards' tiles are dimmed and can't be chosen (selectable).
 var only_slot := 0
@@ -91,6 +112,52 @@ var _spans: Array = []
 var _press := -1
 var _press_at := Vector2.ZERO
 var _dragging := false
+## v0.11.0 F11: each tile's pose (position, tilt, size) and where it is heading.
+var _poses: Array[Pose] = []
+var _hover := -1
+## The layer that reads the mouse, the marks over the tiles (ghost frame, bar, arrow), and the ghost's icon.
+var _hit := Control.new()
+var _marks := Control.new()
+var _ghost := AstralMedallion.new()
+
+
+## v0.11.0 F11: a tile's place on screen, and the glide to its goal (the view's own clock; it decides nothing).
+class Pose:
+	extends RefCounted
+	var at := Vector2.ZERO
+	var turn := 0.0
+	var grow := 1.0
+	var from_at := Vector2.ZERO
+	var from_turn := 0.0
+	var from_grow := 1.0
+	var to_at := Vector2.ZERO
+	var to_turn := 0.0
+	var to_grow := 1.0
+	var left := 0.0
+
+	func aim(goal_at: Vector2, goal_turn: float, goal_grow: float, instant: bool) -> void:
+		if instant:
+			at = goal_at
+			turn = goal_turn
+			grow = goal_grow
+			left = 0.0
+		elif at != goal_at or turn != goal_turn or grow != goal_grow:
+			if left <= 0.0 or to_at != goal_at or to_turn != goal_turn or to_grow != goal_grow:
+				from_at = at
+				from_turn = turn
+				from_grow = grow
+				left = ANIM_S
+		to_at = goal_at
+		to_turn = goal_turn
+		to_grow = goal_grow
+
+	func advance(delta: float) -> void:
+		left = maxf(left - delta, 0.0)
+		var u := 1.0 - left / ANIM_S
+		var eased := 1.0 - (1.0 - u) * (1.0 - u) * (1.0 - u)
+		at = from_at.lerp(to_at, eased)
+		turn = lerpf(from_turn, to_turn, eased)
+		grow = lerpf(from_grow, to_grow, eased)
 
 
 func _init() -> void:
@@ -106,6 +173,23 @@ func _init() -> void:
 		add_child(b)
 		_brackets.append(b)
 	astral = astral  # v0.10.5 W3-O19: every tile wears its look (Astral by default) and type from the start
+	_ghost.name = "Ghost"
+	_ghost.custom_minimum_size = Vector2(SOCKET, SOCKET)
+	_ghost.size = Vector2(SOCKET, SOCKET)
+	_ghost.modulate = Color(1, 1, 1, 0.3)
+	_ghost.visible = false
+	add_child(_ghost)
+	_marks.name = "CarryMarks"
+	_marks.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_marks.z_index = 2
+	_marks.draw.connect(_draw_carry)
+	add_child(_marks)
+	_hit.name = "MouseLayer"
+	_hit.mouse_filter = Control.MOUSE_FILTER_STOP
+	_hit.gui_input.connect(_on_mouse)
+	_hit.mouse_exited.connect(func() -> void: _hover = -1)
+	add_child(_hit)
+	set_process(false)
 
 
 func _make_tile(k: int) -> void:
@@ -113,7 +197,8 @@ func _make_tile(k: int) -> void:
 	t.name = "WandSlot%d" % (k + 1)
 	t.custom_minimum_size = TILE
 	t.size = TILE
-	t.mouse_filter = Control.MOUSE_FILTER_STOP
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE  # v0.11.0 F11: the mouse layer reads the slots
+	t.pivot_offset = TILE * 0.5
 	t.clip_contents = true
 	var box := VBoxContainer.new()
 	box.alignment = BoxContainer.ALIGNMENT_BEGIN
@@ -144,10 +229,9 @@ func _make_tile(k: int) -> void:
 	lv.max_lines_visible = 2
 	lv.custom_minimum_size = Vector2(TILE.x - 16, 0)
 	box.add_child(lv)
-	t.gui_input.connect(_on_tile_input.bind(k))
-	t.mouse_entered.connect(func() -> void: tile_hovered.emit(k))
 	add_child(t)
 	_tiles.append(t)
+	_poses.append(Pose.new())
 	_sockets.append(icon)
 	_keys.append(key)
 	_names.append(nm)
@@ -169,9 +253,17 @@ static func make_label(px: int, bold: bool, c: Color) -> Label:
 
 ## Shows `wand` (a wand read: its cards in slot order with their triggers) over `slots` slots (at least the cards).
 func show_wand(wand: Dictionary, slots: int) -> void:
+	var before := _card_poses()
 	_wand = wand
 	_slots = clampi(maxi(slots, card_count()), 0, _tiles.size())
-	_refresh()
+	_refresh(before)
+
+
+## v0.11.0 F11: every tile on its place now, no glide (a page opening).
+func settle() -> void:
+	for k in _slots:
+		_aim(k, true)
+	set_process(false)
 
 
 func card_count() -> int:
@@ -253,13 +345,216 @@ func key_text(k: int, order: int) -> String:
 
 
 func refresh_marks() -> void:
-	for k in _slots:
-		_style(k)
-		_tiles[k].position.y = 0.0 if k == held else LIFT  # the held card is lifted
+	var instant := ViewPrefs.reduced_motion or not is_visible_in_tree()
+	for k in _tiles.size():
+		_tiles[k].z_index = 1 if k == lifted_tile() else 0
+		if k < _slots:
+			_style(k)
+			_aim(k, instant)
+	_ghost.visible = carry_from >= 0 and carry_from < _slots
+	if _ghost.visible:
+		_ghost.show_card(_card_id(carry_from))
+		_ghost.position = _rest(carry_from) + Vector2((TILE.x - SOCKET) * 0.5, 30.0)
+	_fit_mouse_layer()
+	_marks.queue_redraw()
 	queue_redraw()  # v0.10.5 W3-O16: an Astral row draws the focus contour itself
 
 
-func _refresh() -> void:
+## v0.11.0 F11: the tile drawn lifted (the carried card's tile; on the Swap, the held card's).
+func lifted_tile() -> int:
+	return carry_from if carry_from >= 0 else held
+
+
+## v0.11.0 F11: the slot the ghost marks and the slot the carried card lands in (-1: nothing is carried).
+func ghost_slot() -> int:
+	return carry_from
+
+
+func marker_slot() -> int:
+	return held if carry_from >= 0 else -1
+
+
+## v0.11.0 F11: the landing bar on screen (empty when nothing moves: not carrying, or over its own place).
+func marker_rect() -> Rect2:
+	if carry_from < 0 or held == carry_from:
+		return Rect2()
+	return Rect2(global_position + Vector2(_bar_x() - 2.0, LIFT - 8.0), Vector2(4.0, TILE.y + 16.0))
+
+
+## v0.11.0 F11: the id of the card the ghost shows (&"": no ghost; tests).
+func ghost_card() -> StringName:
+	return _card_id(carry_from) if _ghost.visible else &""
+
+
+## v0.11.0 F11: whether any tile is still gliding (tests).
+func animating() -> bool:
+	for p in _poses:
+		if p.left > 0.0:
+			return true
+	return false
+
+
+## v0.11.0 F11: where slot `k` rests on screen, whatever its tile is doing (the mouse's slot; tests click its centre).
+func slot_rect(k: int) -> Rect2:
+	return Rect2(global_position + Vector2(_xs[k], LIFT), TILE)
+
+
+func _card_id(k: int) -> StringName:
+	var cards: Array = _wand.get("cards", [])
+	return (cards[k] as Dictionary)["id"] if k >= 0 and k < cards.size() else &""
+
+
+## Each shown card's code and pose now (copies): where its tile glides from when the row is drawn again.
+func _card_poses() -> Array:
+	var out := []
+	var cards: Array = _wand.get("cards", [])
+	for k in mini(cards.size(), _poses.size()):
+		var p := _poses[k]
+		out.append([int((cards[k] as Dictionary).get("code", -1)), p.at, p.turn, p.grow])
+	return out
+
+
+## After the row is drawn again: each card's tile starts where that card was (two cards of one code look the same); a
+## card that wasn't there, or an empty slot, starts on its place.
+func _start_from(before: Array) -> void:
+	var cards: Array = _wand.get("cards", [])
+	var used := {}
+	for k in mini(_slots, cards.size()):
+		var code := int((cards[k] as Dictionary).get("code", -1))
+		if k < before.size() and int(before[k][0]) == code:
+			used[k] = true  # the same card on the same tile: its glide goes on
+	for k in _slots:
+		if used.has(k):
+			continue
+		var from := -1
+		if k < cards.size():
+			var code := int((cards[k] as Dictionary).get("code", -1))
+			for j in before.size():
+				if not used.has(j) and int(before[j][0]) == code:
+					from = j
+					break
+		if from >= 0:
+			used[from] = true
+			var p := _poses[k]
+			p.at = before[from][1]
+			p.turn = before[from][2]
+			p.grow = before[from][3]
+			p.left = 0.0
+		else:
+			_aim(k, true)
+
+
+## The place tile `k` should be: its slot, with the cards beside the landing bar apart.
+func _rest(k: int) -> Vector2:
+	return Vector2(_xs[k] + _opened(k), LIFT)
+
+
+func _opened(k: int) -> float:
+	if carry_from < 0 or held == carry_from:
+		return 0.0
+	var right_of := k >= held if held < carry_from else k > held
+	return OPEN if right_of else -OPEN
+
+
+func _aim(k: int, instant: bool) -> void:
+	var at := Vector2(_xs[k], 0.0 if k == held else LIFT)
+	var turn := 0.0
+	var grow := 1.0
+	if carry_from >= 0:
+		at = _rest(k)
+		if k == carry_from:  # the card in the air, over the slot it would land in
+			at = _rest(clampi(held, 0, _slots - 1)) - Vector2(0.0, CARRY_RISE)
+			turn = CARRY_TILT
+			grow = CARRY_GROW
+	_poses[k].aim(at, turn, grow, instant)
+	_apply(k)
+	if not instant and _poses[k].left > 0.0:
+		set_process(true)
+
+
+func _apply(k: int) -> void:
+	var t := _tiles[k]
+	var p := _poses[k]
+	t.position = p.at
+	t.rotation = p.turn
+	t.scale = Vector2(p.grow, p.grow)
+
+
+func _process(delta: float) -> void:
+	var busy := false
+	for k in _slots:
+		if _poses[k].left > 0.0:
+			_poses[k].advance(delta)
+			_apply(k)
+			busy = busy or _poses[k].left > 0.0
+	if not busy:
+		set_process(false)
+	queue_redraw()
+
+
+## The mouse layer covers the row, and the air over it while a card is carried.
+func _fit_mouse_layer() -> void:
+	var reach := CARRY_REACH if carry_from >= 0 else 0.0
+	_hit.position = Vector2(-OPEN, LIFT - reach)
+	_hit.size = Vector2(custom_minimum_size.x + OPEN * 2.0, TILE.y + reach)
+
+
+## The landing bar's x (row px): in the gap on the side of the target the card comes in from.
+func _bar_x() -> float:
+	var t := clampi(held, 0, _slots - 1)
+	if held < carry_from:
+		var left_of := _rest(t).x
+		return left_of - 10.0 if t == 0 else (_rest(t - 1).x + TILE.x + left_of) * 0.5
+	var right_end := _rest(t).x + TILE.x
+	return right_end + 10.0 if t == _slots - 1 else (right_end + _rest(t + 1).x) * 0.5
+
+
+## v0.11.0 F11: the carry's marks, over the tiles: the ghost's dashed frame, then the landing bar and the arrow to it.
+func _draw_carry() -> void:
+	if carry_from < 0 or carry_from >= _slots:
+		return
+	var accent := AstralCardArt.ACCENT
+	var r := Rect2(_rest(carry_from), TILE).grow(-1.0)
+	var corners := [
+		r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)
+	]
+	for i in corners.size():
+		_marks.draw_dashed_line(corners[i], corners[(i + 1) % corners.size()], accent, 1.5, 7.0)
+	if held == carry_from:
+		return
+	var x := _bar_x()
+	var top := LIFT - 8.0
+	var bottom := LIFT + TILE.y + 8.0
+	_marks.draw_line(Vector2(x, top), Vector2(x, bottom), accent, 3.0)
+	for y: float in [top, bottom]:
+		var s := 1.0 if y == top else -1.0
+		_marks.draw_colored_polygon(
+			PackedVector2Array(
+				[
+					Vector2(x, y + 7.0 * s),
+					Vector2(x - 7.0, y - 3.0 * s),
+					Vector2(x + 7.0, y - 3.0 * s)
+				]
+			),
+			accent
+		)
+	var a := _rest(carry_from) + Vector2(TILE.x * 0.5, 0.0)
+	var b := Vector2(x, top - 8.0)
+	var c := (a + b) * 0.5 - Vector2(0.0, 74.0)
+	var pts := PackedVector2Array()
+	for i in 25:
+		var u := i / 24.0
+		pts.append(a.lerp(c, u).lerp(c.lerp(b, u), u))
+	_marks.draw_polyline(pts, accent, 2.0, true)
+	var dir := (b - pts[22]).normalized()
+	var side := Vector2(-dir.y, dir.x)
+	_marks.draw_colored_polygon(
+		PackedVector2Array([b + dir * 6.0, b - dir * 9.0 + side * 7.0, b - dir * 9.0 - side * 7.0]),
+		accent
+	)
+
+
+func _refresh(before: Array = []) -> void:
 	var cards: Array = _wand.get("cards", [])
 	_dead = WorldReader.wand_flags(_wand)  # v0.8.0 MR
 	var x := 0.0
@@ -275,7 +570,6 @@ func _refresh() -> void:
 		if k >= _slots:
 			continue
 		_xs.append(x)
-		t.position = Vector2(x, LIFT)
 		if k < cards.size():
 			var c: Dictionary = cards[k]
 			var id: StringName = c["id"]
@@ -350,6 +644,7 @@ func _refresh() -> void:
 		)
 	custom_minimum_size = Vector2(maxf(x, 0.0), LIFT + TILE.y + BRACKET_H)
 	size = custom_minimum_size
+	_start_from(before)
 	refresh_marks()
 	queue_redraw()
 
@@ -358,17 +653,19 @@ func _style(k: int) -> void:
 	var t := _tiles[k]
 	var tint: Color = t.get_meta(&"tint", MenuStyle.EMBER)
 	var empty: bool = t.get_meta(&"empty", false)
-	var lit := k == focus or k == held
+	var lifted := k == lifted_tile()
+	var lit := lifted or (k == focus and carry_from < 0)
 	if astral:  # v0.10.5 W3-O16: an Astral tile; a held card's frame in the accent, the new card's in moonlight
 		var fb := AstralChrome.FrameBox.new(1.0 if lit else 0.0, 0.55 if empty else 1.0)
-		if k == held:
+		if lifted:
 			fb.rim = AstralCardArt.ACCENT
+			fb.backing = true
 		if k == fresh:
 			fb.rim = AstralCardArt.RARITY[3]
 		t.add_theme_stylebox_override("panel", fb)
 	else:
 		var box := MenuStyle.tile_slab(tint, lit, empty, 5 + k * 7, Vector2(8, 6))
-		if k == held:  # the card held: lifted, with an ember rim
+		if lifted:  # the card held: lifted, with an ember rim
 			box.rim = MenuStyle.EMBER
 		if k == fresh:  # the incoming card: a gold rim, so it reads as the new one
 			box.rim = EmberStone.GOLD
@@ -425,39 +722,60 @@ func _draw() -> void:
 		draw_line(Vector2(b, y - 5.0), Vector2(b, y), c, 1.0)
 
 
-## The slot under `global` (a point on screen), or -1.
+## The slot under `global` (a point on screen), or -1. v0.11.0 F11: by where each slot rests (a tile on its way
+## somewhere does not move its slot), up to the middle of the gaps, and through the air over the row while carrying.
 func slot_at(global: Vector2) -> int:
+	var p := global - global_position
+	var reach := CARRY_REACH if carry_from >= 0 else 0.0
+	if p.y < LIFT - reach or p.y >= LIFT + TILE.y:
+		return -1
 	for k in _slots:
-		if _tiles[k].get_global_rect().has_point(global):
+		var left := (_xs[k - 1] + TILE.x + _xs[k]) * 0.5 if k > 0 else _xs[k] - OPEN
+		var right := (
+			(_xs[k] + TILE.x + _xs[k + 1]) * 0.5 if k < _slots - 1 else _xs[k] + TILE.x + OPEN
+		)
+		if p.x >= left and p.x < right:
 			return k
 	return -1
 
 
-func _on_tile_input(event: InputEvent, k: int) -> void:
-	var t := _tiles[k]
+## v0.11.0 F11: the mouse, against the slots' resting places: a press and release is a click, a press that travels is
+## a drag (`tile_drag_started` once, `tile_dropped` on a slot, `tile_drag_cancelled` away from them).
+func _on_mouse(event: InputEvent) -> void:
+	if not (event is InputEventMouse):
+		return
+	var at: Vector2 = _hit.global_position + event.position
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		var at: Vector2 = t.get_global_rect().position + event.position
 		if event.pressed:
-			_press = k
+			_press = slot_at(at)
 			_press_at = at
 			_dragging = false
 		elif _press >= 0:
 			var from := _press
-			_press = -1
+			var dragged := _dragging
+			end_press()
 			var to := slot_at(at)
-			if _dragging and to >= 0 and to != from:
+			if dragged and to >= 0 and to != from:
 				tile_dropped.emit(from, to)
-			elif to == from or not _dragging:
+			elif to == from or not dragged:
 				tile_clicked.emit(from)
-			_dragging = false
-		t.accept_event()
-	elif event is InputEventMouseMotion and _press >= 0:
-		var at: Vector2 = t.get_global_rect().position + event.position
-		if at.distance_to(_press_at) > DRAG_PX:
+			else:
+				tile_drag_cancelled.emit()
+		_hit.accept_event()
+	elif event is InputEventMouseMotion:
+		if _press >= 0 and not _dragging and at.distance_to(_press_at) > DRAG_PX:
 			_dragging = true
+			tile_drag_started.emit(_press)
 		var over := slot_at(at)
-		if over >= 0:
+		if over >= 0 and over != _hover:
+			_hover = over
 			tile_hovered.emit(over)
+
+
+## v0.11.0 F11: forgets a press under way (the page put the card back while the button was down).
+func end_press() -> void:
+	_press = -1
+	_dragging = false
 
 
 func _notification(what: int) -> void:
@@ -471,7 +789,7 @@ func _draw_astral() -> void:
 	var top := LIFT
 	var bottom := LIFT + TILE.y
 	var accent := AstralCardArt.ACCENT
-	if focus >= 0 and focus < _tiles.size() and _tiles[focus].visible:
+	if carry_from < 0 and focus >= 0 and focus < _tiles.size() and _tiles[focus].visible:
 		var t := _tiles[focus]
 		var r := Rect2(t.position.floor(), t.size.floor()).grow(6)
 		draw_rect(r.grow(-0.5), Color(AstralCardArt.LINE_HI, 0.25), false, 1.0)

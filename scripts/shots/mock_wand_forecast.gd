@@ -205,5 +205,5 @@ func _swap() -> Control:
 	var panel := SwapPanel.new()
 	top.add_child(panel)
 	panel.sync(r)
-	print("o13: swap forecast | %s" % panel.forecast_text())
+	print("o13: swap forecast | %s" % ", ".join(panel.forecast_ids()))
 	return top
