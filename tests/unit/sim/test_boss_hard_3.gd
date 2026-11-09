@@ -190,10 +190,17 @@ func test_furnace_waves_live_the_walls_leave_apart_and_the_quadrant_is_safe() ->
 ## B8 ---------------------------------------------------------------------------------------------------------------
 
 
+## Twin Wardens whose Crossfire tracks, as v0.9.5 BH3 (B8) shipped it. O5 took the tracking off the shipped attacks; the
+## rule stays in the sim and the content validator, so these tests switch it on in the compiled table.
 func _twins(player_at: Vector2) -> Array:
 	var w := BossLab.world()
 	w.actors.set_pos(0, player_at)
 	var i := BossLab.ready_boss(w, &"twin_wardens", Vector2.ZERO)
+	var table := BossAi.table_of(w, i)
+	table.twin_bolt = -1  # the resting twin's bolt (O5) is another attack: only the fans are measured here
+	for id: StringName in [&"crossfire", &"crossfire_3"]:
+		_atk(table, id).lines_ticks = 72
+		_atk(table, id).lines_turn_milli = 11378
 	w.actors.hp[0] = LONG
 	w.actors.max_hp[0] = LONG
 	var aid := w.actors.ids[i]
@@ -205,21 +212,28 @@ func _twins(player_at: Vector2) -> Array:
 	return [w, aid, pid]
 
 
-func test_crossfire_lines_follow_you_for_1_2_s_at_up_to_60_degrees_a_second() -> void:
+## Both bodies on one Crossfire, the case the tracking rule needs (BossTwin.track_crossfire); since O5 the twins take
+## turns in the real fight. The partner starts first, so the lead's start aims both.
+func _both_cross(w: World, s: Array) -> void:
+	BossLab.start(w, _i(w, s[2]), &"crossfire")
+	BossLab.start(w, _i(w, s[1]), &"crossfire")
+
+
+func test_the_shipped_crossfire_shows_its_lines_for_1_2_s_and_does_not_track() -> void:
 	var t := _table(&"twin_wardens")
 	for id: StringName in [&"crossfire", &"crossfire_3"]:
 		var atk := _atk(t, id)
-		assert_eq(atk.lines_ticks, 72, "%s: the lines follow for 1.2 s" % id)
-		assert_eq(atk.windup_ticks, 72, "%s: and are drawn that whole time" % id)
+		assert_eq(atk.lines_ticks, 0, "%s: the lines do not follow (since O5)" % id)
+		assert_eq(atk.lines_turn_milli, 0, "%s: no turn" % id)
+		assert_eq(atk.windup_ticks, 72, "%s: drawn for 1.2 s" % id)
 		assert_gte(atk.windup_ticks, MIN_TICKS)
-		assert_eq(atk.lines_turn_milli, 11378, "%s: 60 degrees a second" % id)
 		assert_eq(atk.damage, 22, "%s: damage unchanged" % id)
 
 
 func test_the_lines_start_on_you_then_the_crossing_follows_at_a_limited_turn() -> void:
 	var s := _twins(Vector2(0, -5))
 	var w: World = s[0]
-	BossLab.start(w, _i(w, s[1]), &"crossfire")
+	_both_cross(w, s)
 	var i := _i(w, s[1])
 	var j := _i(w, s[2])
 	var e := BossAi.entry_of(w, i)
@@ -257,7 +271,7 @@ func test_the_lines_start_on_you_then_the_crossing_follows_at_a_limited_turn() -
 func test_a_hero_who_outruns_the_turn_is_not_at_the_crossing() -> void:
 	var s := _twins(Vector2(0, -5))
 	var w: World = s[0]
-	BossLab.start(w, _i(w, s[1]), &"crossfire")
+	_both_cross(w, s)
 	var e := BossAi.entry_of(w, _i(w, s[1]))
 	var p := Vector2(0, -5)
 	for k in 71:
@@ -275,7 +289,7 @@ func test_a_hero_who_outruns_the_turn_is_not_at_the_crossing() -> void:
 func test_the_crossing_is_drawn_the_whole_1_2_s_and_standing_on_it_is_safe() -> void:
 	var s := _twins(Vector2(0, -5))
 	var w: World = s[0]
-	BossLab.start(w, _i(w, s[1]), &"crossfire")
+	_both_cross(w, s)
 	for k in 72:
 		var tw := BossTwin.state(w, _i(w, s[1]))
 		assert_true(
