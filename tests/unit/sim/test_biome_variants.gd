@@ -1,6 +1,7 @@
 extends GutTest
 ## v0.11.0 O13a (ENEMIES.md V1-V5; owner Q23): the five biome variants. Each runs its base's behaviour with its own
-## twist (Variants): the Rubble Warden's crust falls at half HP and leaves cover; the Dim Needle's shots are dark
+## twist (Variants): the Rubble Warden's crust falls at half HP and leaves a slowing patch; the Dim Needle's
+## shots are dark
 ## beyond 4 m and lit within; the Ember Charger's fire trail burns (only once shown for the telegraph minimum) and goes
 ## after 2 s; on the Frost Charger's slick the hero slides and enemies don't; the Split Sniper's shot splits into 3 at
 ## half range, and the telegraph is the very lanes the hit uses.
@@ -37,7 +38,7 @@ func _steps(w: World, n: int, f: InputFrame = InputFrame.new()) -> void:
 
 
 # --- V1 Rubble Warden -------------------------------------------------------------------------------------------
-func test_the_rubble_wardens_crust_falls_at_half_hp_and_leaves_cover() -> void:
+func test_the_rubble_wardens_crust_falls_at_half_hp_as_one_patch() -> void:
 	var w := _world()
 	var i := _enemy(w, KIND.RUBBLE_WARDEN, Vector2(6, 0))
 	var t := w.enemy_table(KIND.RUBBLE_WARDEN)
@@ -47,24 +48,70 @@ func test_the_rubble_wardens_crust_falls_at_half_hp_and_leaves_cover() -> void:
 	w.actors.hp[i] = 66  # just over half
 	_steps(w, 2)
 	assert_true(Variants.crust_on(w, i), "over half HP: the crust holds")
-	assert_eq(w.variants.rubble_count(), 0)
+	assert_eq(w.variants.trail_count(), 0)
 	w.actors.hp[i] = 65
 	_steps(w, 1)
 	assert_false(Variants.crust_on(w, i), "at half: the crust is off")
-	assert_eq(w.variants.rubble_count(), t.crust_pieces, "it falls as its pieces")
-	assert_eq(w.walls.size(), walls + t.crust_pieces, "each piece is a wall: cover for both sides")
-	var hero := w.player_pos()
-	for k in w.variants.rubble_count():
-		var c := Vector2(w.variants.rubble_x[k], w.variants.rubble_y[k])
-		assert_gt(c.distance_to(w.actors.pos(i)), w.actors.radius[i], "round the Warden, not in it")
-		assert_gt(c.distance_to(hero), 1.0, "never on the hero")
-		# a shot along the line through a piece is cut short by it
-		var ang := Kin.angle_of(c - hero)
-		var run := EnemyAi.clear_run(w, hero, ang, 12.0, 0.1)
-		assert_lt(run, hero.distance_to(c), "piece %d blocks a shot" % k)
+	assert_eq(w.variants.trail_count(), 1, "it falls as one patch")
+	assert_eq(w.variants.trail_kind[0], Variants.TRAIL_RUBBLE)
+	assert_eq(w.walls.size(), walls, "never solid: no barrier added")
+	assert_almost_eq(w.variants.trail_r[0], 1.6, 0.001, "1.6 m")
+	assert_eq(w.variants.trail_until[0] - w.variants.trail_born[0], 300, "5 s")
+	assert_eq(w.variants.trail_value[0], 600, "the hero at 0.6 of its speed")
+	assert_lt(w.variants.trail_pos(0).distance_to(w.actors.pos(i)), 0.5, "where the Warden stands")
 	w.actors.hp[i] = 10
 	_steps(w, 2)
-	assert_eq(w.variants.rubble_count(), t.crust_pieces, "it falls once")
+	assert_eq(w.variants.trail_count(), 1, "it falls once")
+
+
+func test_the_rubble_patch_expires_at_5_s() -> void:
+	var w := _world()
+	var i := _enemy(w, KIND.RUBBLE_WARDEN, Vector2(6, 0))
+	w.actors.hp[i] = 40
+	_steps(w, 1)
+	assert_eq(w.variants.trail_count(), 1)
+	var until := w.variants.trail_until[0]
+	while w.tick < until - 1:
+		w.step(InputFrame.new())
+	assert_eq(w.variants.trail_count(), 1, "still there a tick before")
+	_steps(w, 2)
+	assert_eq(w.variants.trail_count(), 0, "gone at 5 s")
+
+
+func test_the_rubble_patch_blocks_nothing_for_enemies() -> void:
+	var runs := []
+	for patch in [false, true]:
+		var w := _world()
+		var walls := w.walls.size()
+		if patch:
+			w.variants.add_trail(Variants.TRAIL_RUBBLE, Vector2(4, 0), 3.0, 0, 100000, 0, 600, 0, 0)
+		var i := _enemy(w, KIND.WARDEN, Vector2(8, 0))
+		_steps(w, 90)
+		runs.append(w.actors.pos(i))
+		assert_eq(w.walls.size(), walls, "no barrier")
+	assert_eq(runs[0], runs[1], "an enemy walks through the patch as if it weren't there")
+
+
+func test_the_rubble_patch_slows_the_hero_only_inside_it() -> void:
+	var run := InputFrame.make(Vector2i(SimTick.MOVE_MAX, 0), 0, 0, 0, 0)
+	var speeds := []
+	for r in [30.0, 1.6]:  # a wide patch round the whole run / a small one the hero never stands in
+		var w := _world()
+		w.variants.add_trail(
+			Variants.TRAIL_RUBBLE,
+			Vector2(0, 20) if r < 2.0 else Vector2.ZERO,
+			r,
+			0,
+			99999,
+			0,
+			600,
+			0,
+			0
+		)
+		_steps(w, 60, run)
+		speeds.append(w.vel.x)
+	assert_gt(speeds[1], 0.0)
+	assert_almost_eq(speeds[0] / speeds[1], 0.6, 0.01, "x0.6 inside, full speed outside")
 
 
 func test_the_crust_round_trips_a_snapshot() -> void:
@@ -75,7 +122,7 @@ func test_the_crust_round_trips_a_snapshot() -> void:
 	var snap := WorldSnapshot.take(w)
 	var copy := _world()
 	assert_eq(WorldSnapshot.apply(copy, snap), "")
-	assert_eq(copy.variants.rubble_count(), w.variants.rubble_count())
+	assert_eq(copy.variants.trail_count(), w.variants.trail_count())
 	assert_eq(copy.walls.size(), w.walls.size())
 	assert_eq(copy.state_hash(), w.state_hash(), "the same world")
 	_steps(w, 30)

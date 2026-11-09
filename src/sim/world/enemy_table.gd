@@ -89,14 +89,16 @@ var elite: EliteTable
 var contact_cd_ticks := 30
 var flies := false
 ## v0.11.0 O13a (ENEMIES.md V1-V5; owner Q23): a biome variant's own numbers (Variants; the defaults on every other
-## kind). The Rubble Warden: its crust (already in `hp`) falls at half HP into crust_pieces rocks of cover (half side
-## piece_half_m). The Dim Needle: its shots stay dark farther than dark_beyond_m from the hero. The Ember and Frost
+## kind). The Rubble Warden: its crust (already in `hp`) falls at half HP as a patch of patch_radius_m lasting
+## patch_ticks that slows the hero on it to patch_slow_permille of its speed. The Dim Needle: its shots stay dark
+## farther than dark_beyond_m from the hero. The Ember and Frost
 ## Chargers: their charge drops a `trail` patch (Variants.TRAIL_FIRE or TRAIL_SLICK) of trail_radius_m every
 ## trail_step_ticks, lasting trail_ticks; fire burns the hero for burn_damage every burn_period_ticks once
 ## trail_arm_ticks old; on a slick the hero eases at slick_permille a tick (a slide). The Split Sniper: its shot splits
 ## into 3 at split_at_permille of its reach, the outer two split_turn (1/4096 turns) out.
-var crust_pieces := 0
-var piece_half_m := 0.3
+var patch_radius_m := 0.0
+var patch_ticks := 0
+var patch_slow_permille := 1000
 var dark_beyond_m := 0.0
 var trail := 0
 var trail_radius_m := 0.0

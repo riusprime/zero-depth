@@ -53,8 +53,12 @@ func test_the_crust_shows_until_it_falls_and_its_rocks_stand() -> void:
 	actors.sync(reader)
 	fx.sync(reader)
 	assert_false(crust.visible, "the crust fell")
-	assert_eq(fx.rock_count(), w.variants.rubble_count(), "a rock where each piece stands")
+	assert_eq(fx.rock_count(), 1, "a patch of rubble where it fell")
 	assert_gt(fx.rock_count(), 0)
+	for _t in 400:
+		w.step(InputFrame.new())
+	fx.sync(reader)
+	assert_eq(fx.rock_count(), 0, "gone with the patch")
 
 
 func test_the_trails_are_drawn_while_they_last() -> void:

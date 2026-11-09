@@ -152,7 +152,7 @@ const SCHEMAS := {
 	&"star_mote": CRITTER,
 	## v0.11.0 O13a (ENEMIES.md V1-V5; owner Q23): the biome variants, each its base's params and attack (VARIANT_OF)
 	## plus its own (Variants). The Rubble Warden: a crust of crust_hp on top of its HP that falls off at half HP as
-	## crust_pieces small rocks of cover (half side piece_half_m).
+	## a patch of patch_radius_m lasting patch_seconds that slows the hero on it to patch_slow_permille (never solid).
 	&"rubble_warden":
 	{
 		"params":
@@ -165,8 +165,9 @@ const SCHEMAS := {
 			"rear_mult_permille",
 			"turn_rate_dps",
 			"crust_hp",
-			"crust_pieces",
-			"piece_half_m",
+			"patch_radius_m",
+			"patch_seconds",
+			"patch_slow_permille",
 		],
 		"shape": 0,
 		"shape_params": ["radius_m"],

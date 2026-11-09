@@ -1714,7 +1714,7 @@ SPELL_LEECH_LV3,"Heals up to 16 HP, more damage.","Cura hasta 16 PV, más daño.
 SPELL_LEECH_LV4,Heals up to 20 HP.,Cura hasta 20 PV.
 SPELL_LEECH_LV5,Also drains enemies that are not bleeding (at half).,También drena a los enemigos que no sangran (a la mitad).
 ENEMY_RUBBLE_WARDEN,Rubble Warden,Guardián de Escombros
-ENEMY_RUBBLE_WARDEN_DESC,"A Warden in a crust of rubble. At half health the crust falls off and its rocks stay as cover.","Un Guardián con una costra de escombros. A media vida la costra cae y sus rocas quedan como cobertura."
+ENEMY_RUBBLE_WARDEN_DESC,"A Warden in a crust of rubble. At half health the crust falls off and leaves a patch of rubble that slows you for a few seconds.","Un Guardián con una costra de escombros. A media vida la costra cae y deja un montón de escombros que te ralentiza unos segundos."
 ENEMY_DIM_NEEDLE,Dim Needle,Aguja Tenue
 ENEMY_DIM_NEEDLE_DESC,"A Needle of the dark. Its shots stay dark until they are close, then light up.","Una Aguja de la oscuridad. Sus disparos siguen oscuros hasta que están cerca y entonces se encienden."
 ENEMY_EMBER_CHARGER,Ember Charger,Embestidor de Ascuas

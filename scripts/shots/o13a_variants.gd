@@ -5,7 +5,8 @@ extends SceneTree
 ##   godot --path . --audio-driver Dummy --resolution 1600x900 --position -10000,-10000
 ##     -s scripts/shots/o13a_variants.gd
 ## Writes build/shots/<version>/o13a/<id>.png (one per variant) and prints each path. Cells:
-## - rubble_warden: one in its crust (full HP) and one whose crust fell at half HP (its rocks round it, the dust);
+## - rubble_warden: one in its crust (full HP) and one whose crust fell at half HP (a rubble patch, the dust);
+## `-- only=<id>` shoots just that cell.
 ## - dim_needle: its burst in flight, the far shots dark, the near ones lit;
 ## - ember_charger / frost_charger: just after a charge, its fire trail / ice slick behind it;
 ## - split_sniper: the frame its shot fires (the line and its three branches, the spark at the split).
@@ -38,6 +39,7 @@ var _acc := 0.0
 var _k := 0
 var _t := 0
 var _seen := -1
+var _only := false
 
 
 func _initialize() -> void:
@@ -50,7 +52,13 @@ func _initialize() -> void:
 	_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	_vp.own_world_3d = true
 	root.add_child(_vp)
-	_build(0)
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("only="):
+			for j in PLAN.size():
+				if PLAN[j][0] == arg.substr(5):
+					_k = j
+					_only = true
+	_build(_k)
 
 
 func _build(k: int) -> void:
@@ -135,7 +143,7 @@ func _process(delta: float) -> bool:
 	img.save_png(path)
 	print("o13a: ", ProjectSettings.globalize_path(path))
 	_k += 1
-	if _k == PLAN.size():
+	if _only or _k == PLAN.size():
 		return true
 	_build(_k)
 	return false

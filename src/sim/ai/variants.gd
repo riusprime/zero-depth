@@ -5,9 +5,10 @@ extends RefCounted
 ## its numbers are its EnemyTable's (VariantCompiler, from data/enemies/<id>.tres; starting values). What they leave
 ## on the floor is World.variants (VariantState). Pure: no stream is drawn.
 ## - V1 Rubble Warden (Ruins): a crust of extra HP on top of the Warden's; the first tick its HP is at half or under,
-##   the crust falls off (crust_fall) as crust_pieces small rocks round it, each a wall while it stands (cover for both
-##   sides: collision, shots, sight; World.add_barrier, never the flow field). A spot on the hero, in a wall or out of
-##   every room (a doorway) is skipped; at most MAX_RUBBLE pieces on a floor.
+##   the crust falls off (crust_fall) as one rubble patch (TRAIL_RUBBLE, patch_radius_m, patch_ticks) where it stands.
+##   The patch is never solid (no wall, nothing for shots, sight or paths; owner 2026-11-09: rocks as persistent
+##   obstacles read wrong): it only slows the hero standing in it to patch_slow_permille of its speed (World's walk:
+##   rubble_at). Enemies ignore it. It shares the trail store, so the MAX_TRAILS cap (oldest first) covers it.
 ## - V2 Dim Needle (Night Rocks): fires the Needle's burst, each shot marked DIM_LOOK; shot_dark says a shot is dark
 ##   while it is farther than dark_beyond_m from the hero (it lights up within, and is never dark inside it). Its hit
 ##   is the Needle's.
@@ -25,12 +26,8 @@ extends RefCounted
 const TRAIL_NONE := 0
 const TRAIL_FIRE := 1
 const TRAIL_SLICK := 2
+const TRAIL_RUBBLE := 3
 const MAX_TRAILS := 96
-const MAX_RUBBLE := 30
-## A piece's spot stands this far past the Warden's body and the piece's own half side (m), and keeps this much room
-## from the hero's body.
-const PIECE_GAP_M := 0.35
-const PIECE_HERO_GAP_M := 0.3
 ## The look key of a Dim Needle's shot (ProjectileStore.look; FireballViews draws it lit or dark by shot_dark).
 const DIM_LOOK := &"dim_needle"
 ## The dark distance when no Dim Needle table is loaded (m; the data's starting value).
@@ -55,32 +52,28 @@ static func on_think(w: World, i: int) -> void:
 	crust_fall(w, i)
 
 
-## The Rubble Warden i's crust falls: its id is marked, and up to crust_pieces rocks stand round it as walls.
+## The Rubble Warden i's crust falls: its id is marked, and one rubble patch lies where it stands (never solid).
 static func crust_fall(w: World, i: int) -> void:
 	var a := w.actors
 	var v := w.variants
 	v.touched = true
 	v.crusted.append(a.ids[i])
 	var t := w.enemy_table(a.kinds[i])
-	if t == null or t.crust_pieces <= 0:
+	if t == null or t.patch_ticks <= 0:
 		return
-	var h := t.piece_half_m
-	var reach := a.radius[i] + h + PIECE_GAP_M
-	for k in t.crust_pieces:
-		if v.rubble_count() >= MAX_RUBBLE:
-			return
-		var q := a.pos(i) + Kin.dir((a.facing[i] + 512 + k * 4096 / t.crust_pieces) & 4095) * reach
-		if _piece_fits(w, q, h):
-			v.add_rubble(q, h)
-			w.add_barrier(v.rubble_obb(v.rubble_count() - 1))
-
-
-static func _piece_fits(w: World, q: Vector2, h: float) -> bool:
-	if Kin.length(q - w.player_pos()) < w.player.radius_m + h * 1.42 + PIECE_HERO_GAP_M:
-		return false
-	if w.floor_layout != null and w.floor_layout.room_of(q) < 0:
-		return false  # never in a doorway (it would shut it)
-	return EnemyAi.clear_of_walls(w, q, h * 1.42)
+	if v.trail_count() >= MAX_TRAILS:
+		v.remove_trails(PackedInt32Array([0]))
+	v.add_trail(
+		TRAIL_RUBBLE,
+		a.pos(i),
+		t.patch_radius_m,
+		w.tick,
+		w.tick + t.patch_ticks,
+		0,
+		t.patch_slow_permille,
+		0,
+		a.ids[i]
+	)
 
 
 ## Whether Rubble Warden i still wears its crust (the view: its rocks on its back).
@@ -156,6 +149,16 @@ static func slick_at(w: World, p: Vector2) -> int:
 	var out := 0
 	for k in v.trail_count():
 		if v.trail_kind[k] == TRAIL_SLICK and w.tick < v.trail_until[k] and _covers(v, k, p, 0.0):
+			out = v.trail_value[k] if out == 0 else mini(out, v.trail_value[k])
+	return out
+
+
+## The hero's speed per mille on a rubble patch at `p` (the slowest one under it), or 0 when none is.
+static func rubble_at(w: World, p: Vector2) -> int:
+	var v := w.variants
+	var out := 0
+	for k in v.trail_count():
+		if v.trail_kind[k] == TRAIL_RUBBLE and w.tick < v.trail_until[k] and _covers(v, k, p, 0.0):
 			out = v.trail_value[k] if out == 0 else mini(out, v.trail_value[k])
 	return out
 
