@@ -289,6 +289,28 @@ func _update_streaks(w: World) -> void:
 ## v0.11.0 O3 (owner L5): a quake pillar's pulse is damage over time from the boss, not from its attack in progress:
 ## its warning is its own ring, growing for QuakeTable.warn_ticks (at least the telegraph minimum) before it hits,
 ## its recap line the table's cause_key.
+func _boss_hazard_hit(w: World, e: SimEvent) -> void:
+	var bi := w.actors.index_of(e.owner_id)
+	var h: HazardTable = BossAi.table_of(w, bi).hazard if bi >= 0 else null
+	var key := String(h.cause_key) if h != null else ""
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	var problems := PackedStringArray()
+	if h == null or h.warn_ticks < SimTick.MIN_TELEGRAPH_TICKS:
+		problems.append("an arena hazard warns shorter than the telegraph minimum")
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		problems.append("cause %s missing en or es" % key)
+	if problems.is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": ", ".join(problems)})
+	violations.append(v)
+
+
 func _quake_hit(w: World, e: SimEvent) -> void:
 	var bi := w.actors.index_of(e.owner_id)
 	var q: QuakeTable = BossAi.table_of(w, bi).quake if bi >= 0 else null
@@ -343,6 +365,8 @@ func _no_actor_hit(w: World, e: SimEvent) -> bool:
 			_molten_hit(w, e)
 		BossQuake.EFFECT:  # v0.11.0 O3: a quake pillar's pulse
 			_quake_hit(w, e)
+		BossHazard.EFFECT, BossHazard.IMPACT_EFFECT:  # v0.11.0 F8: an arena hazard
+			_boss_hazard_hit(w, e)
 		Breakables.EFFECT:  # v0.9.0 DX: an explosive barrel's blast
 			_barrel_hit(w, e)
 		Lockdowns.HAZARD_EFFECT:  # v0.9.0 LK: a Hazard Lockdown's strike

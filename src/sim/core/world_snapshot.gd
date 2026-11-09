@@ -102,6 +102,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"HeatTable",
 	&"BossAttackTable",
 	&"QuakeTable",  # v0.11.0 O3: the Gatekeeper's quake pillars (BossTable.quake, content)
+	&"HazardTable",  # v0.11.0 F8: a boss's arena hazards (BossTable.hazard, content)
 	&"SwingStep",
 	&"SkillTable",
 	&"OverrunTable",  # v0.4.0 AB
@@ -420,6 +421,20 @@ const ADDED_SINCE_V05 := {
 		&"quake_boss",  # v0.11.0 O3: the quake pillars' break count (an older save has none)
 		&"quake_phase",
 		&"quake_stuns",
+		&"hz_id",  # v0.11.0 F8: the bosses' arena hazards (an older save has none)
+		&"hz_boss",
+		&"hz_kind",
+		&"hz_x",
+		&"hz_y",
+		&"hz_r",
+		&"hz_from",
+		&"hz_arm",
+		&"hz_until",
+		&"hz_slow",
+		&"hz_next",
+		&"hz_burn_cd",
+		&"hz_storm",
+		&"hz_egg",
 	],
 	&"ProjectileStore":
 	[

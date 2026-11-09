@@ -224,6 +224,8 @@ var phase_wave_n := PackedInt32Array()
 var interphase: InterphaseTable = null
 ## v0.11.0 O3 (owner L5, Q9 a; BossQuake): the Gatekeeper's quake pillars (null: none).
 var quake: QuakeTable = null
+## v0.11.0 F8 (owner 4.2; BossHazard): the boss's arena hazards, in sim units (null: none).
+var hazard: HazardTable = null
 
 
 ## The attack index with this id, or -1.

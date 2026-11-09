@@ -7,6 +7,11 @@ extends RefCounted
 
 ## Points a move may lock per boss (lanes' lengths, egg and shell spots).
 const MAX_PTS := 8
+## v0.11.0 F8: the arena hazards' parallel arrays (BossHazard), by type.
+const HZ_INT_FIELDS: Array[StringName] = [
+	&"hz_id", &"hz_boss", &"hz_kind", &"hz_from", &"hz_arm", &"hz_until", &"hz_slow"
+]
+const HZ_FLOAT_FIELDS: Array[StringName] = [&"hz_x", &"hz_y", &"hz_r"]
 const INT_FIELDS: Array[StringName] = [
 	&"ids",
 	&"table",
@@ -201,6 +206,25 @@ var wv_run := PackedFloat32Array()
 var quake_boss := PackedInt32Array()
 var quake_phase := PackedInt32Array()
 var quake_stuns := PackedInt32Array()
+## v0.11.0 F8 (owner 4.2; BossHazard): the bosses' arena hazards, oldest first: [hz_id, its boss, its kind
+## (HazardTable.Kind), centre, radius (m), the tick it was placed, the tick it arms, the tick it ends, its slow (per
+## mille of the hero's speed, 1000 = none)]. hz_next is the next hz_id, hz_burn_cd the clock of its damage over time,
+## hz_storm 1 between an Egg Storm's first strike and the storm's chosen egg, hz_egg the eggs that leave a pool when
+## they burst. Hashed only once a fight has used one (WorldSnapshot.ADDED_SINCE_V05: an older save has none).
+var hz_id := PackedInt32Array()
+var hz_boss := PackedInt32Array()
+var hz_kind := PackedInt32Array()
+var hz_x := PackedFloat32Array()
+var hz_y := PackedFloat32Array()
+var hz_r := PackedFloat32Array()
+var hz_from := PackedInt32Array()
+var hz_arm := PackedInt32Array()
+var hz_until := PackedInt32Array()
+var hz_slow := PackedInt32Array()
+var hz_next := 0
+var hz_burn_cd := 0
+var hz_storm := 0
+var hz_egg := PackedInt32Array()
 
 
 func size() -> int:
@@ -301,6 +325,26 @@ func hash_into(h: StateHasher) -> void:
 		h.add_ints(quake_boss)
 		h.add_ints(quake_phase)
 		h.add_ints(quake_stuns)
+	if hz_next > 0 or hz_storm != 0 or not hz_egg.is_empty():  # v0.11.0 F8: only once a boss has used its hazards
+		h.add_int(-8)
+		for f: StringName in HZ_INT_FIELDS:
+			h.add_ints(get(f))
+		for f: StringName in HZ_FLOAT_FIELDS:
+			h.add_f32s(get(f))
+		h.add_ints(PackedInt32Array([hz_next, hz_burn_cd, hz_storm]))
+		h.add_ints(hz_egg)
+
+
+## v0.11.0 F8: removes arena hazard k (the arrays stay oldest first).
+func remove_hazard(k: int) -> void:
+	for f: StringName in HZ_INT_FIELDS:
+		var ai: PackedInt32Array = get(f)
+		ai.remove_at(k)
+		set(f, ai)
+	for f: StringName in HZ_FLOAT_FIELDS:
+		var af: PackedFloat32Array = get(f)
+		af.remove_at(k)
+		set(f, af)
 
 
 ## v0.9.5 BH4: the stream entry of boss `boss_id`, or -1.

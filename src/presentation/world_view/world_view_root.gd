@@ -57,6 +57,7 @@ static var parts: Array[GDScript] = [
 	BossShieldView,
 	StoneSpikeViews,
 	BossSignatureViews,
+	HazardViews,  # v0.11.0 F8
 	TideViews,  # v0.9.0 NB1
 	TideWaveViews,  # v0.9.5 BH4
 	InterphaseViews,  # v0.9.5 BH6
@@ -207,6 +208,8 @@ var boss_shields: BossShieldView = _part(BossShieldView)
 var spikes: StoneSpikeViews = _part(StoneSpikeViews)
 ## v0.8.0 BS1 (owner O5): the Warlord's javelins stuck in the floor and the Brood Mother's eggs.
 var signatures: BossSignatureViews = _part(BossSignatureViews)
+## v0.11.0 F8 (owner 4.2): the bosses' arena hazards (lava and venom pools, fallen rock).
+var hazards: HazardViews = _part(HazardViews)
 ## v0.9.0 NB1: the Tidecaller's Pull (the moving water, the bell's toll, the push's swell).
 var tides: TideViews = _part(TideViews)
 ## v0.9.5 BH4: the Tidecaller's crossing waves (a foam line at the wall, then the curling water band).
@@ -402,6 +405,7 @@ func _setup_views(palette: Dictionary) -> void:
 	add_child(damage_numbers)
 	add_child(horde_fx)  # v0.4.0 EN
 	add_child(variant_fx)  # v0.11.0 O13a
+	add_child(hazards)  # v0.11.0 F8
 	add_child(ruins_rocks_fx)  # v0.11.0 O13b
 	add_child(canyon_shore_fx)  # v0.11.0 O13c
 	add_child(starfall_fx)  # v0.11.0 O13d
@@ -464,6 +468,9 @@ func _setup_effects() -> void:
 		ruins_rocks_fx.rig = rig  # v0.11.0 O17c: its landing's small shake
 		starfall_fx.pack_fx = pack_fx  # v0.11.0 O13d: the star, the blink, the swirl (pack areas and orbs)
 		layer.drawers.append(variant_fx.draw_fx)
+		hazards.vfx = layer  # v0.11.0 F8: the arena hazards (pack zones, rings)
+		hazards.pack_fx = pack_fx
+		layer.drawers.append(hazards.draw_fx)
 		canyon_shore_fx.vfx = layer  # v0.11.0 O13c: R5-R8's bursts, vents, arcs, chunks (pack zones)
 		canyon_shore_fx.pack_fx = pack_fx
 		layer.drawers.append(canyon_shore_fx.draw_fx)
@@ -727,6 +734,7 @@ func sync() -> void:
 	_sync_view(&"damage_numbers", damage_numbers)
 	_sync_view(&"horde_fx", horde_fx)  # v0.4.0 EN
 	_sync_view(&"variant_fx", variant_fx)  # v0.11.0 O13a
+	_sync_view(&"hazards", hazards)  # v0.11.0 F8
 	_sync_view(&"ruins_rocks_fx", ruins_rocks_fx)  # v0.11.0 O13b
 	_sync_view(&"canyon_shore_fx", canyon_shore_fx)  # v0.11.0 O13c
 	_sync_view(&"starfall_fx", starfall_fx)  # v0.11.0 O13d

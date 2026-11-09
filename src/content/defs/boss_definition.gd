@@ -116,6 +116,9 @@ var arena_template := 0
 ## = none), and the recap line of a pulse that kills.
 @export var quake := {}
 @export var quake_cause_key: StringName
+## v0.11.0 F8 (owner 4.2; HazardRules.SPEC, BossHazard): the hazards this boss leaves on its floor (empty: none).
+@export var hazard := {}
+@export var hazard_cause_key: StringName
 
 
 func category() -> StringName:
@@ -149,6 +152,7 @@ func validate() -> Array[ValidationIssue]:
 	_check_twin(issues)
 	HardRules.validate_streams(self, issues)  # v0.9.5 BH4: the ring stream and the waves
 	QuakeRules.validate(self, issues)  # v0.11.0 O3: the quake pillars
+	HazardRules.validate(self, issues)  # v0.11.0 F8: the arena hazards
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1

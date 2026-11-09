@@ -110,6 +110,7 @@ static func lay(w: World, i: int, atk: BossAttackTable) -> int:
 		bs.lava_boss.append(w.actors.ids[i])
 		bs.lava_attack.append(bs.attack[t])
 	BossSignatures.set_nav_extra(w)
+	BossHazard.on_lanes(w, i, pieces)  # v0.11.0 F8: pools stay on the lanes after they cool
 	return pieces.size()
 
 

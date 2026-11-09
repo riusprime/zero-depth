@@ -2347,6 +2347,13 @@ func boss_lava() -> Array:
 	return out
 
 
+## v0.11.0 F8 (owner 4.2; BossHazard): the bosses' arena hazards, each {"id", "look" (lava, venom, rock), "centre",
+## "radius", "armed", "warn" (0..1000 of its warning; 1000 armed), "armed_ticks" (how long armed), "left" (ticks to
+## its end)}. The view reads only this (EI-07).
+func boss_hazards() -> Array:
+	return BossHazard.rows(_w)
+
+
 ## v0.8.0 BS2 (S6): the meltdowns, each {"centre", "radius" (molten beyond it; INF while it only glows: the melt
 ## attack's windup), "next" (the radius it melts to next), "warn" (0..1000 while the next step glows, else -1),
 ## "bound" (the room, Rect2), "bridge" (bool), "exit" (the bridge's far end), "half" (its half width)}.

@@ -326,4 +326,18 @@ dash_read_seconds = 0.5
 gap_close_attack = &"leap"
 gap_close_distance_m = 4.5
 gap_close_seconds = 2.0
+hazard = {
+"attack_ids": ["egg_storm", "egg_storm_5"],
+"burn_seconds": 0.5,
+"damage": 4,
+"kind": "damage",
+"life_seconds": 15.0,
+"look": "venom",
+"max_count": 6,
+"max_cover_permille": 250,
+"radius_m": 1.8,
+"slow_permille": 800,
+"warn_seconds": 0.8
+}
+hazard_cause_key = &"CAUSE_BROOD_VENOM"
 id = &"brood_mother"

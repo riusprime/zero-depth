@@ -252,7 +252,9 @@ static func resolve_marks(w: World, i: int, b: int, atk: BossAttackTable, st: in
 			var c := mark_of(w, i, k)
 			if AttackShapes.disc_touches(c, atk.radius_m, p, pr):
 				BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, c)
-			BossSignatures.lay_egg(w, b, atk, c)  # v0.8.0 BS1 (S3): the egg stays, to pop or to hatch
+			BossSignatures.lay_egg(w, b, atk, c, k)  # v0.8.0 BS1 (S3): the egg stays, to pop or to hatch
+			if k == BossHard.marker_count(atk) - 1:
+				BossHazard.rock_stage(w, i, b)  # v0.11.0 F8: the Barrage's last shell brings a rock down
 			BossTide.undertow(w, atk, c)  # v0.9.0 NB1: the Undertow drags the player toward it
 			BossShade.snuff(w, atk, c)  # v0.9.0 NB4: the Snuff puts out the lantern nearest it
 		else:
@@ -396,6 +398,8 @@ static func resolve_grid(w: World, i: int, b: int, atk: BossAttackTable, st: int
 	if st % gap != 0 or st / gap >= atk.volleys:
 		return
 	w.bosses.hit[b] = 0
+	if st / gap == atk.volleys - 1:
+		BossHazard.rock_stage(w, i, b)  # v0.11.0 F8: the Mortar's last volley brings a rock down
 	var p := w.player_pos()
 	for c: Vector2 in grid_discs(w, i, st / gap):
 		if AttackShapes.disc_touches(c, atk.radius_m, p, w.player.radius_m):
