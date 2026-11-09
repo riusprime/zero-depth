@@ -25,6 +25,7 @@ static func compile_elite(def: EliteDefinition, repo: ContentRepository = null) 
 	t.kind = KINDS[def.archetype]
 	t.name_key = def.name_key
 	t.hp = def.hp
+	t.base_hp = def.hp  # v0.11.0 F3: never scaled (HealOrbs)
 	t.radius_m = def.radius_m
 	t.speed = def.move_speed_mps / SimTick.TICKS_PER_SECOND
 	t.shards = def.shards

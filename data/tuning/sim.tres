@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1_tun")
 id = &"sim"
+heal_orbs_max = 1
 player_shots_max = 256
 arrival_first_seconds = 4.0
 arrival_seconds = 0.8

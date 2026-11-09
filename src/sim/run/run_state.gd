@@ -378,9 +378,7 @@ func _prepare_rules(w: World) -> void:
 		w.loop_shield_half_arc = table.loop_shield_half_arc
 	if LoopRules.held(w, LoopRules.LEAN_MENDING) and w.reward_table != null:
 		var r := w.reward_table
-		r.heal_orb_chance_permille = (
-			r.heal_orb_chance_permille * table.loop_heal_chance_permille / 1000
-		)
+		r.heal_orb_meter = r.heal_orb_meter * 1000 / maxi(1, table.loop_heal_chance_permille)  # v0.11.0 F3
 		r.heal_orb_heal_permille = r.heal_orb_heal_permille * table.loop_heal_amount_permille / 1000
 
 

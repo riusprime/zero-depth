@@ -21,7 +21,7 @@ extends ContentDef
 @export var ai_relocate_speed_permille := 1500
 @export var ai_relocate_max_seconds := 2.5
 @export var ai_mend_scan_seconds := 0.25
-@export var heal_orbs_max := 16
+@export var heal_orbs_max := 1
 @export var pickup_radius_m := 0.8
 @export var fire_cap := 48
 @export var fire_hit_seconds := 0.5
