@@ -5,6 +5,7 @@ extends GutTest
 ## toggle. The projection is a test stand-in (sim metres x 100 px from the screen's centre), so no camera is needed.
 
 const PILLAR := ObjectiveMarkers.GATEKEEPER_PILLAR
+const LANTERN := ObjectiveMarkers.SHADE_LANTERN
 
 var _locale := ""
 
@@ -57,7 +58,7 @@ func test_every_reason_has_its_line_in_both_languages() -> void:
 			var key: String = ObjectiveHints.LABELS[reason]
 			assert_ne(v.line(reason), key, "%s: %s has a line" % [lang, key])
 	TranslationServer.set_locale("en")
-	assert_eq(v.line(PILLAR), "Lure its cross into the pillar")
+	assert_eq(v.line(PILLAR), "", "the pillar has an arrow and no line")
 	assert_eq(v.line(&"no_such_reason"), "")
 
 
@@ -66,16 +67,16 @@ func test_it_hides_after_two_meetings_and_with_boss_hints_off() -> void:
 	var hints := MechanicHints.new(CodexStore.new(profile))
 	var w := SaveLab.floor_world(77, 1)
 	var r := WorldReader.new(w)
-	w.objectives.point(PILLAR, Vector2(1, 1))
+	w.objectives.point(LANTERN, Vector2(1, 1))
 	for run_seed in [11, 22]:
 		var v := _view(hints.shows.bind(run_seed))
 		hints.observe(r, run_seed)
 		v.sync(r)
-		assert_true(v.showing(PILLAR), "meeting run %d shows" % run_seed)
+		assert_true(v.showing(LANTERN), "meeting run %d shows" % run_seed)
 	var third := _view(hints.shows.bind(33))
 	hints.observe(r, 33)
 	third.sync(r)
-	assert_false(third.showing(PILLAR), "the third run doesn't")
+	assert_false(third.showing(LANTERN), "the third run doesn't")
 	assert_false(third.visible)
 	var fresh := MechanicHints.new(CodexStore.new(ProfileStore.new("")))
 	GameSettings.set_value(fresh.codex.profile, MechanicHints.SETTING, "off")

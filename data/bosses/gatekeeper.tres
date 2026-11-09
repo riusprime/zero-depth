@@ -128,7 +128,7 @@ shape_params = {
 "stagger_seconds": 0.7,
 "width_m": 1.2
 }
-telegraph_seconds = 1.35
+telegraph_seconds = 2.0
 active_seconds = 0.0167
 recovery_seconds = 1.0
 damage = 30
@@ -156,7 +156,7 @@ shape_params = {
 "stagger_seconds": 0.7,
 "width_m": 1.2
 }
-telegraph_seconds = 1.35
+telegraph_seconds = 2.0
 active_seconds = 0.0167
 recovery_seconds = 1.0
 damage = 30
@@ -184,7 +184,7 @@ shape_params = {
 "stagger_seconds": 0.7,
 "width_m": 1.2
 }
-telegraph_seconds = 1.35
+telegraph_seconds = 2.0
 active_seconds = 0.0167
 recovery_seconds = 1.0
 damage = 30
@@ -292,14 +292,14 @@ gap_close_seconds = 2.0
 quake = {
 "boss_m": 2.0,
 "count": 3,
-"damage_permille": 30,
+"damage_permille": 60,
 "from_phase": 1,
 "gap_m": 5.0,
 "pillar_m": 1.2,
 "pulse_seconds": 3.0,
-"ring_m": 2.6,
+"ring_m": 4.5,
 "stun_permille": 1500,
-"stun_seconds": 2.0,
+"stun_seconds": 4.0,
 "stuns_per_phase": 2,
 "wall_m": 1.5,
 "warn_seconds": 0.8
