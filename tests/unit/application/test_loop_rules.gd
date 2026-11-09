@@ -144,7 +144,7 @@ func test_lean_mending_makes_orbs_rarer_and_stronger() -> void:
 	var run := _loop_two_run(321)
 	run.loop_rules = [&"lean_mending"] as Array[StringName]
 	var w := SaveLab.build_floor(run)
-	assert_eq(w.reward_table.heal_orb_chance_permille, base.heal_orb_chance_permille * 500 / 1000)
+	assert_eq(w.reward_table.heal_orb_meter, base.heal_orb_meter * 2, "v0.11.0 F3: twice the kills")
 	assert_eq(w.reward_table.heal_orb_heal_permille, base.heal_orb_heal_permille * 2000 / 1000)
 
 

@@ -15,6 +15,8 @@ const RUNS := &"runs"
 const LAST_RUN := &"last_run"
 ## A reason's hint shows in the first this-many runs that meet it.
 const MEETINGS := 2
+## Reasons whose hint shows at every meeting (v0.11.0 F5: the Gatekeeper's pillars, an arrow and no text).
+const ALWAYS: Array[StringName] = [WorldReader.OBJECTIVE_GATEKEEPER_PILLAR]
 
 var codex: CodexStore
 
@@ -43,6 +45,8 @@ func meeting(reason: StringName, run_seed: int) -> int:
 
 ## The hint for `reason` shows in run `run_seed`: hints are on and this is one of its first MEETINGS runs.
 func shows(reason: StringName, run_seed: int) -> bool:
+	if reason in ALWAYS:
+		return enabled()
 	return enabled() and meeting(reason, run_seed) <= MEETINGS
 
 

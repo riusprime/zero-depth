@@ -97,6 +97,7 @@ func _band_hit(p: Vector2, steps: int) -> Array:
 	var i := BossLab.ready_boss(w, &"gatekeeper", Vector2(0, 0))
 	var b := BossAi.entry_of(w, i)
 	var t := BossAi.table_of(w, i)
+	t.close_step_m = 1.0  # v0.11.0 F4: no shipped boss closes, so the rule is switched on here (as it shipped)
 	w.bosses.arena = Rect2(-15, -15, 30, 30)
 	w.actors.state[i] = BossAi.STAGGERED
 	w.bosses.stagger_t[b] = 99999
@@ -135,6 +136,7 @@ func test_each_step_is_marked_for_the_telegraph_minimum_before_it_hurts() -> voi
 	var i := BossLab.ready_boss(w, &"gatekeeper", Vector2(0, 0))
 	var b := BossAi.entry_of(w, i)
 	w.bosses.arena = Rect2(-15, -15, 30, 30)
+	BossAi.table_of(w, i).close_step_m = 1.0  # v0.11.0 F4: the rule switched on (no shipped boss closes)
 	w.actors.state[i] = BossAi.STAGGERED
 	w.bosses.stagger_t[b] = 99999
 	w.bosses.close_t[b] = 1

@@ -12,8 +12,9 @@ static func compile(def: EnemyDefinition, t: EnemyTable) -> void:
 	match def.behaviour_id:
 		&"rubble_warden":
 			t.hp = def.hp + int(bp["crust_hp"])  # the crust sits on top of the Warden's HP
-			t.crust_pieces = int(bp["crust_pieces"])
-			t.piece_half_m = float(bp["piece_half_m"])
+			t.patch_radius_m = float(bp["patch_radius_m"])
+			t.patch_ticks = maxi(1, SimTick.seconds_to_ticks(float(bp["patch_seconds"])))
+			t.patch_slow_permille = int(bp["patch_slow_permille"])
 		&"dim_needle":
 			t.dark_beyond_m = float(bp["dark_beyond_m"])
 		&"ember_charger", &"frost_charger":

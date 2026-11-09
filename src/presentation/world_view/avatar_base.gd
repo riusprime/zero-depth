@@ -384,6 +384,8 @@ func shared_body(
 	var rest: Array = ActorViews.NO_GLOW
 	if role_glow > 0.0 and EnemyPalettes.KIND_IDS.has(p_kind) and ActorViews.role_glows(albedo):
 		rest = [Color(albedo, 1.0), role_glow]
+	elif CritterBodies.is_critter(p_kind) and float(CritterBodies.GLOW[p_kind]) > 0.0:  # v0.11.0 F2
+		rest = [Color(albedo, 1.0), float(CritterBodies.GLOW[p_kind])]
 	return EnemyLooks.body(albedo, tex, rest[0], rest[1], outline, outline_m, two_sided)
 
 

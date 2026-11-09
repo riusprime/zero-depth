@@ -257,6 +257,8 @@ var lead_ticks := 0
 var last_lead_ticks := 0
 var last_radius_bonus_permille := 0
 var beam_turn_milli := 0
+## v0.11.0 F4: the beam burns its whole active time (turn_dps given, 0 = it never turns).
+var beam_burns := false
 var safe_cells := 0
 ## v0.9.5 BH3 (BOSSES_HARD.md B8; BossTwin): a `crossfire` with lines_turn_milli > 0 aims both bodies' lines at the
 ## player and, for lines_ticks of its windup, turns each toward them by at most that many 1/4096 turns x 1000 a tick;

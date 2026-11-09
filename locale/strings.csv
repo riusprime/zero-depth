@@ -197,8 +197,6 @@ UI_GAMBLE_USE,Gamble · %d ◆,Apostar · %d ◆
 UI_GAMBLE_SPENT,Spent,Agotado
 UI_GAMBLE_BLOCKED,Spent,Agotado
 UI_GAMBLE_SPENT_TAG,Spent,Agotado
-UI_GAMBLE_FAILED,It failed,Falló
-UI_GAMBLE_CARD,Fortune Shrine,Santuario de la Fortuna
 UI_GAMBLE_STATS,Fortune Shrine stats,Estadísticas del Santuario de la Fortuna
 UI_GAMBLE_STATS_NONE,No Fortune Shrine stats yet,Aún no tienes estadísticas del Santuario de la Fortuna
 UI_GAMBLE_MAX_HP,+%d max HP,+%d PV máximos
@@ -366,7 +364,7 @@ STAT_HOARDER_DESC,"+%s%% damage per 100 shards, +%s%% shards","+%s %% de daño p
 STAT_FAST_HANDS,Fast Hands,Manos rápidas
 STAT_FAST_HANDS_DESC,-%s%% ability cooldowns,-%s %% de recarga de habilidades
 STAT_LIFESPROUT,Lifesprout,Brote vital
-STAT_LIFESPROUT_DESC,Kills may drop a heal orb: %s%% (+%s%% per extra card),Las bajas pueden soltar un orbe de curación: %s %% (+%s %% por carta extra)
+STAT_LIFESPROUT_DESC,Disabled for now. It gave kills a %s%% chance of a heal orb (+%s%% per extra card),Desactivada por ahora. Daba a las bajas un %s %% de orbes de curación (+%s %% por carta extra)
 STAT_VENT_MEND,Vent Mend,Purga sanadora
 STAT_VENT_MEND_DESC,A Vent that hits an enemy heals %s%% max HP,Una purga que alcanza a un enemigo cura un %s %% de vida máxima
 STAT_HEAT_SHIELD,Heat Shield,Escudo térmico
@@ -1431,7 +1429,7 @@ HUD_LOOP_NEW_RULE,New rule: %s,Nueva regla: %s
 LOOP_RULE_SWIFT_NAME,Quickened,Acelerados
 LOOP_RULE_SWIFT_DESC,Enemies move and charge faster.,Los enemigos se mueven y cargan más rápido.
 LOOP_RULE_LEAN_MENDING_NAME,Lean Mending,Curación escasa
-LOOP_RULE_LEAN_MENDING_DESC,"Heal orbs drop half as often, but heal twice as much.","Los orbes de curación caen la mitad de veces, pero curan el doble."
+LOOP_RULE_LEAN_MENDING_DESC,"Heal orbs take twice the kills to earn, but heal twice as much.","Los orbes de curación cuestan el doble de bajas, pero curan el doble."
 LOOP_RULE_ELITE_HUNT_NAME,Elite Hunt,Caza de élites
 LOOP_RULE_ELITE_HUNT_DESC,Elite rooms appear on every floor.,Las salas de élite aparecen en todos los pisos.
 LOOP_RULE_SHIELDED_NAME,Shielded,Escudados
@@ -1588,7 +1586,6 @@ CONST_SUPERNOVA_DESC,Starbound cards count twice.,Las cartas Estelares cuentan d
 CONST_HUNTERS_SKY,Hunter's Sky,Cielo del cazador
 CONST_HUNTERS_SKY_DESC,+50 % damage to elites and bosses.,+50 % de daño a élites y jefes.
 UI_BOSS_HINTS,Boss hints,Pistas de jefe
-HINT_GATEKEEPER_PILLAR,Lure its cross into the pillar,Atrae su cruz hasta el pilar
 HINT_SHADE_LANTERN,Step on a lantern to light it,Pisa un farol para encenderlo
 HINT_TWINS_ACTIVE,Hit the glowing twin,Golpea al gemelo que brilla
 ENEMY_DUST_MITE,Dust Mite,Ácaro de Polvo
@@ -1715,7 +1712,7 @@ SPELL_LEECH_LV3,"Heals up to 16 HP, more damage.","Cura hasta 16 PV, más daño.
 SPELL_LEECH_LV4,Heals up to 20 HP.,Cura hasta 20 PV.
 SPELL_LEECH_LV5,Also drains enemies that are not bleeding (at half).,También drena a los enemigos que no sangran (a la mitad).
 ENEMY_RUBBLE_WARDEN,Rubble Warden,Guardián de Escombros
-ENEMY_RUBBLE_WARDEN_DESC,"A Warden in a crust of rubble. At half health the crust falls off and its rocks stay as cover.","Un Guardián con una costra de escombros. A media vida la costra cae y sus rocas quedan como cobertura."
+ENEMY_RUBBLE_WARDEN_DESC,"A Warden in a crust of rubble. At half health the crust falls off and leaves a patch of rubble that slows you for a few seconds.","Un Guardián con una costra de escombros. A media vida la costra cae y deja un montón de escombros que te ralentiza unos segundos."
 ENEMY_DIM_NEEDLE,Dim Needle,Aguja Tenue
 ENEMY_DIM_NEEDLE_DESC,"A Needle of the dark. Its shots stay dark until they are close, then light up.","Una Aguja de la oscuridad. Sus disparos siguen oscuros hasta que están cerca y entonces se encienden."
 ENEMY_EMBER_CHARGER,Ember Charger,Embestidor de Ascuas

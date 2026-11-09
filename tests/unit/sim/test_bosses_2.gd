@@ -320,7 +320,7 @@ func test_each_keeps_the_anti_kite_rules() -> void:
 		assert_lt(t.ranged_far_permille, 1000, "%s: ranged armour" % id)
 		assert_gte(t.punish_attack, 0, "%s: a punish move" % id)
 		assert_gte(t.gap_attack, 0, "%s: a gap-closer" % id)
-		assert_gt(t.close_step_m, 0.0, "%s: a closing band" % id)
+		assert_eq(t.close_step_m, 0.0, "%s: no closing band (v0.11.0 F4)" % id)
 		assert_gt(t.weak_mult_permille, 1000, "%s: a weak point up close" % id)
 		assert_gt(t.commit_ticks, 0, "%s: tracks until it commits" % id)
 		assert_gt(t.dash_read_ticks, 0, "%s: reads dashes" % id)

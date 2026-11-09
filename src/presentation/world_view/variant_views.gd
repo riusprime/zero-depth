@@ -6,19 +6,25 @@ extends Node3D
 ##   fire_area_06/07), dimmer until it burns (its arm time) and fading out over its last half second;
 ## - a Frost Charger's slick: the pack's ice patch (VfxLayer.field &"frost": zone_frost_a-d, ice_area_vfx_01-04),
 ##   fading out over its last second;
-## - a Rubble Warden's fallen crust: each rock the kit's small boulder (KitModels boulder_small, as the crust it wore:
-##   VariantLooks), with a puff of the pack's dust where it lands (bx_smoke_dust, smoke_vfx_05) the first frame it
-##   shows;
+## - a Rubble Warden's fallen crust: a scatter of the kit's small boulders and rubble (KitModels boulder_small as the
+##   crust it wore: VariantLooks; rubble_small) lying over the patch, sinking away over its last second, with a puff
+##   of the pack's dust (bx_smoke_dust, smoke_vfx_05) the first frame it shows. Flat on the floor: nothing solid;
 ## - a Split Sniper's split: the pack's hit spark (vx1_hit_storm, vfx_hit_01, in violet) at the split point the tick
 ##   its shot fires (its four tracer lines are HordeVisuals').
 ## The patches are drawn by draw_fx (a VfxCore drawer); the rocks and the sparks by sync. Nothing here decides.
 
 const ROCK_MODEL := &"boulder_small"
-## A rock's drawn size over its sim footprint (its side), and its height (m).
-const ROCK_SPREAD := 1.25
-const ROCK_HEIGHT := 0.55
+const CHIP_MODEL := &"rubble_small"
+## Pieces over a rubble patch, a piece's side (m, min + noise x spread), its height (m) and the fraction of the radius
+## they spread over.
+const PATCH_PIECES := 16
+const PIECE_SIDE_MIN := 0.4
+const PIECE_SIDE_SPREAD := 0.5
+const PIECE_HEIGHT := 0.3
+const PATCH_FILL := 1.0
+const RUBBLE_FADE_TICKS := 60.0
 const DUST_ID := &"bx_smoke_dust"
-const DUST_SCALE := 0.45
+const DUST_SCALE := 1.1
 const SPARK_ID := &"vx1_hit_storm"
 const SPARK_SCALE := 0.9
 const SPARK_COLORS := {
@@ -35,7 +41,7 @@ const UNLIT_FADE := 0.55
 var vfx: VfxCore = null
 var pack_fx: PackFx = null
 var _trails := {}
-var _rocks: Array[MeshInstance3D] = []
+var _patches := {}  # seed -> Node3D (a rubble patch's pieces)
 var _states := {}
 var _tick := 0.0
 
@@ -43,7 +49,7 @@ var _tick := 0.0
 func sync(reader: WorldReader) -> void:
 	_tick = float(reader.tick())
 	_trails = reader.variant_trails()
-	_sync_rocks(reader.rubble_pieces())
+	_sync_rubble()
 	if reader.any_kind(WorldReader.KIND_SPLIT_SNIPER):
 		_sync_splits(reader)
 	elif not _states.is_empty():
@@ -56,8 +62,9 @@ func trail_count() -> int:
 	return kinds.size()
 
 
+## Rubble patches drawn this frame (tests).
 func rock_count() -> int:
-	return _rocks.size()
+	return _patches.size()
 
 
 ## A VfxCore drawer: each trail as the pack's patch.
@@ -72,6 +79,8 @@ func draw_fx(layer: VfxCore) -> void:
 		var left := float(_trails["left"][k])
 		var age := float(_trails["age"][k])
 		var sd: int = _trails["seed"][k]
+		if kinds[k] == WorldReader.TRAIL_RUBBLE:
+			continue  # its pieces are nodes (sync)
 		if kinds[k] == WorldReader.TRAIL_FIRE:
 			var fade := clampf(left / FIRE_FADE_TICKS, 0.0, 1.0)
 			if _trails["lit"][k] == 0:
@@ -81,14 +90,40 @@ func draw_fx(layer: VfxCore) -> void:
 			vl.field(&"frost", c, r, clampf(left / SLICK_FADE_TICKS, 0.0, 1.0), age, sd)
 
 
-func _sync_rocks(pieces: Array) -> void:
-	while _rocks.size() > pieces.size():
-		_rocks.pop_back().queue_free()
-	for k in range(_rocks.size(), pieces.size()):
-		var at := SimPlane.to_3d(pieces[k][0], 0.0)
-		var side: float = float(pieces[k][1]) * 2.0 * ROCK_SPREAD
+func _sync_rubble() -> void:
+	var live := {}
+	var kinds: PackedInt32Array = _trails.get("kind", PackedInt32Array())
+	for k in kinds.size():
+		if kinds[k] != WorldReader.TRAIL_RUBBLE:
+			continue
+		var sd: int = _trails["seed"][k]
+		live[sd] = true
+		var left := float(_trails["left"][k])
+		if not _patches.has(sd):
+			var at := SimPlane.to_3d(_trails["pos"][k], 0.0)
+			_patches[sd] = _make_patch(at, _trails["r"][k], sd)
+			if pack_fx != null:
+				pack_fx.spawn(DUST_ID, at, DUST_SCALE)
+		var node: Node3D = _patches[sd]
+		# the pieces sink into the floor over the last second
+		node.position.y = -0.3 * (1.0 - clampf(left / RUBBLE_FADE_TICKS, 0.0, 1.0))
+	for sd in _patches.keys():
+		if not live.has(sd):
+			(_patches[sd] as Node3D).queue_free()
+			_patches.erase(sd)
+
+
+## The pieces of a patch at `at` (radius `r`): the kit's small boulders and rubble, scattered by the seed.
+func _make_patch(at: Vector3, r: float, sd: int) -> Node3D:
+	var root := Node3D.new()
+	root.position = at
+	add_child(root)
+	for j in PATCH_PIECES:
+		var ang := TAU * VfxCore.h(sd, j * 3)
+		var dist := r * PATCH_FILL * (0.3 + 0.7 * sqrt(VfxCore.h(sd, j * 3 + 1)))
+		var side := PIECE_SIDE_MIN + PIECE_SIDE_SPREAD * VfxCore.h(sd, j * 3 + 2)
+		var piece := KitModels.get_piece(ROCK_MODEL if j % 3 == 0 else CHIP_MODEL)
 		var mi := MeshInstance3D.new()
-		var piece := KitModels.get_piece(ROCK_MODEL)
 		if piece.is_empty():
 			var box := BoxMesh.new()
 			box.size = Vector3.ONE
@@ -96,13 +131,11 @@ func _sync_rocks(pieces: Array) -> void:
 		else:
 			mi.mesh = piece["mesh"]
 			mi.material_override = piece["material"]
-		mi.position = at
-		mi.scale = Vector3(side, ROCK_HEIGHT, side)
-		mi.rotation.y = 0.9 * k
-		add_child(mi)
-		_rocks.append(mi)
-		if pack_fx != null:
-			pack_fx.spawn(DUST_ID, at, DUST_SCALE)
+		mi.position = Vector3(cos(ang) * dist, 0.0, sin(ang) * dist)
+		mi.scale = Vector3(side, PIECE_HEIGHT, side)
+		mi.rotation.y = TAU * VfxCore.h(sd, j * 3 + 7)
+		root.add_child(mi)
+	return root
 
 
 func _sync_splits(reader: WorldReader) -> void:

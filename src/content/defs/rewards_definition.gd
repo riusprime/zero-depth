@@ -66,13 +66,18 @@ extends ContentDef
 @export var chest_card_weights := PackedInt32Array([15, 55, 30])
 @export var altar_rarity_weights := PackedInt32Array([70, 25, 5])
 @export var chest_rarity_weights := PackedInt32Array([40, 40, 20])
-## v0.4.0 TU (owner D8): a normal enemy's kill drops a heal orb with this chance; walking over it (within
-## heal_orb_reach_m, × pickup range) heals heal_orb_heal of max HP. v0.5.5 EC (owner D9): heal_orb_chance is only a
-## base under the Lifesprout stat card's chance; v0.9.5 EP3 (owner 2026-10-31, "a bit of healing from
-## the beginning"): the shipped base is 3 % a kill; Lifesprout adds to it.
-@export var heal_orb_chance := 0.0
-@export var heal_orb_heal := 0.25
+## v0.4.0 TU (owner D8): walking over a heal orb (within heal_orb_reach_m, × pickup range) heals heal_orb_heal of max
+## HP.
+## v0.11.0 F3 (owner's playtest §6; HealOrbs): kills earn orbs, for every run. A pickup starts heal_orb_cooldown_seconds
+## with no orb and no progress; then each kill adds its kind's base max HP × heal_orb_points_per_hp points, clamped to
+## heal_orb_points_min..heal_orb_points_max, and heal_orb_meter points drop an orb where the filling kill fell.
+@export var heal_orb_heal := 0.2
 @export var heal_orb_reach_m := 0.9
+@export var heal_orb_cooldown_seconds := 30.0
+@export var heal_orb_meter := 500
+@export var heal_orb_points_per_hp := 1.0
+@export var heal_orb_points_min := 8
+@export var heal_orb_points_max := 100
 
 
 func category() -> StringName:
@@ -151,11 +156,19 @@ func validate() -> Array[ValidationIssue]:
 					&"range", resource_path, "%s: 3 weights >= 0, not all 0" % pair[0]
 				)
 			)
-	if heal_orb_chance < 0.0 or heal_orb_chance > 1.0 or heal_orb_heal < 0.0 or heal_orb_heal > 1.0:
-		issues.append(
-			ValidationIssue.new(&"range", resource_path, "heal_orb_chance and heal_orb_heal: 0..1")
-		)
+	if heal_orb_heal < 0.0 or heal_orb_heal > 1.0:
+		issues.append(ValidationIssue.new(&"range", resource_path, "heal_orb_heal: 0..1"))
 	check_positive(issues, "heal_orb_reach_m", heal_orb_reach_m)
+	check_positive(issues, "heal_orb_cooldown_seconds", heal_orb_cooldown_seconds)  # v0.11.0 F3
+	check_positive(issues, "heal_orb_meter", heal_orb_meter)
+	check_positive(issues, "heal_orb_points_per_hp", heal_orb_points_per_hp)
+	check_positive(issues, "heal_orb_points_min", heal_orb_points_min)
+	if heal_orb_points_max < heal_orb_points_min:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "heal_orb_points_max must be >= heal_orb_points_min"
+			)
+		)
 	return issues
 
 

@@ -191,7 +191,7 @@ var spawn_cd := 0
 var kills := 0
 ## Mine Layers' mines (v0.4.0 EN; Mines), hashed once one was dropped.
 var mines := MineStore.new()
-## Heal orbs on the floor (v0.4.0 TU, owner D8; HealOrbs), hashed once one was dropped.
+## Heal orbs on the floor, the meter and the cooldown (v0.4.0 TU, owner D8; v0.11.0 F3; HealOrbs), hashed once used.
 var orbs := HealOrbStore.new()
 ## v0.10.5 O7b (owner P6; ShardDrops): kill shards lying on the floor, hashed once one was dropped.
 var shard_drops := ShardDropStore.new()
@@ -1542,7 +1542,7 @@ func state_hash() -> String:
 		canyon_shore.hash_into(h)
 	if mines.touched:  # v0.4.0 EN: only once a Mine Layer dropped a mine.
 		mines.hash_into(h)
-	if orbs.touched:  # v0.4.0 TU: only once a kill dropped a heal orb.
+	if orbs.touched:  # v0.4.0 TU, v0.11.0 F3: only once a kill earned points or an orb lay.
 		orbs.hash_into(h)
 	if shard_drops.touched:  # v0.10.5 O7b: only once a kill laid shards on the floor.
 		shard_drops.hash_into(h)
@@ -1888,6 +1888,9 @@ func _move_and_collide() -> void:
 			var slick := Variants.slick_at(self, p)
 			if slick > 0:
 				k = mini(k, slick)
+			var rubble := Variants.rubble_at(self, p)  # the Rubble Warden's fallen crust: ×patch_slow_permille
+			if rubble > 0:
+				target = target * (rubble / 1000.0)
 		vel += (target - vel) * (k / 1000.0)
 		if Kin.length(vel - target) < 0.0001:
 			vel = target

@@ -11,7 +11,6 @@ extends Control
 
 ## Each reason's line (a locale key). A reason without one shows its arrow or ping alone.
 const LABELS := {
-	WorldReader.OBJECTIVE_GATEKEEPER_PILLAR: "HINT_GATEKEEPER_PILLAR",
 	WorldReader.OBJECTIVE_SHADE_LANTERN: "HINT_SHADE_LANTERN",
 	WorldReader.OBJECTIVE_TWINS_ACTIVE: "HINT_TWINS_ACTIVE",
 }
@@ -25,6 +24,9 @@ const BOB_PX := 6.0
 const FONT_PX := 18
 const ARROW := &"arrow"
 const PING := &"ping"
+## v0.11.0 F5: reasons marked on screen by a small bobbing arrow above the target, pointing down (no ring, no text).
+const DOWN_ARROW: Array[StringName] = [WorldReader.OBJECTIVE_GATEKEEPER_PILLAR]
+const DOWN_GAP_PX := 54.0
 
 ## reason -> bool: whether that reason's hint shows (unset: none shows).
 var gate: Callable
@@ -127,6 +129,25 @@ func _draw() -> void:
 	for m in _marks:
 		var at: Vector2 = m["at"]
 		var label_at := at
+		if m["mode"] == PING and m["reason"] in DOWN_ARROW:
+			var bob_y := (
+				0.0 if HudStyle.reduced_motion else BOB_PX * k * (0.5 + 0.5 * sin(_t * TAU))
+			)
+			var tip_d := at + Vector2(0, -DOWN_GAP_PX * k + bob_y)
+			var back_d := tip_d + Vector2.UP * ARROW_PX * k
+			var side_d := Vector2.RIGHT * ARROW_PX * k * 0.6
+			draw_colored_polygon(
+				PackedVector2Array(
+					[
+						tip_d,
+						back_d + side_d,
+						back_d + Vector2.UP * ARROW_PX * k * 0.3,
+						back_d - side_d
+					]
+				),
+				Color(c, 0.92)
+			)
+			continue
 		if m["mode"] == PING:
 			var phase := 0.0 if HudStyle.reduced_motion else fmod(_t, PING_S) / PING_S
 			var r := RING_PX * k * (0.6 + 0.6 * phase)

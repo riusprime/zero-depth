@@ -152,6 +152,7 @@ static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 	t.kind = ENEMY_KINDS[def.behaviour_id]
 	t.name_key = def.name_key
 	t.hp = def.hp
+	t.base_hp = def.hp  # v0.11.0 F3: never scaled (HealOrbs)
 	t.radius_m = def.radius_m
 	t.speed = def.move_speed_mps / SimTick.TICKS_PER_SECOND
 	var bp := def.behaviour_params
@@ -803,9 +804,13 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.chest_card_weights = def.chest_card_weights.duplicate()
 	t.altar_rarity_weights = def.altar_rarity_weights.duplicate()
 	t.chest_rarity_weights = def.chest_rarity_weights.duplicate()
-	t.heal_orb_chance_permille = int(round(def.heal_orb_chance * 1000.0))  # v0.4.0 TU (D8)
-	t.heal_orb_heal_permille = int(round(def.heal_orb_heal * 1000.0))
+	t.heal_orb_heal_permille = int(round(def.heal_orb_heal * 1000.0))  # v0.4.0 TU (D8)
 	t.heal_orb_reach_m = def.heal_orb_reach_m
+	t.heal_orb_cooldown_ticks = SimTick.seconds_to_ticks(def.heal_orb_cooldown_seconds)  # v0.11.0 F3
+	t.heal_orb_meter = def.heal_orb_meter
+	t.heal_orb_points_per_hp_permille = int(round(def.heal_orb_points_per_hp * 1000.0))
+	t.heal_orb_points_min = def.heal_orb_points_min
+	t.heal_orb_points_max = def.heal_orb_points_max
 	return RunContentCompiler.add_reward_bands(t, def)  # v0.9.0 FV: counts by the floor's rooms
 
 

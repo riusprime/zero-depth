@@ -30,11 +30,20 @@ const HEIGHTS := {
 }
 ## [body, trim, grey, eye] per kind (starting values).
 const COLORS := {
-	WorldReader.KIND_DUST_MITE: ["#8C7A66", "#5E5046", "#4A423C", "#FF5A3A"],
-	WorldReader.KIND_CAVE_BAT: ["#4B4552", "#6E6478", "#38343E", "#FF3A4A"],
-	WorldReader.KIND_EMBER_FLEA: ["#E0662A", "#7A2E14", "#4A2A20", "#FFC24A"],
-	WorldReader.KIND_ICE_CRAB: ["#A6DAEE", "#5C8CA8", "#4E5E6A", "#FF4A5A"],
-	WorldReader.KIND_STAR_MOTE: ["#FFE6A0", "#A898FF", "#5A5470", "#FFF4C8"],
+	WorldReader.KIND_DUST_MITE: ["#75431F", "#3A2318", "#2C2019", "#FF5A3A"],
+	WorldReader.KIND_CAVE_BAT: ["#7E6BA8", "#A390C8", "#5A4E72", "#FF3A4A"],
+	WorldReader.KIND_EMBER_FLEA: ["#FF8A30", "#7A2E14", "#4A2A20", "#FFC24A"],
+	WorldReader.KIND_ICE_CRAB: ["#2C6DA6", "#123F66", "#24384A", "#FF4A5A"],
+	WorldReader.KIND_STAR_MOTE: ["#FFDD78", "#A898FF", "#5A5470", "#FFF4C8"],
+}
+## v0.11.0 F2: the plates' rest glow (emission energy of their own colour, as ActorViews.ROLE_GLOW): what a critter on a
+## dark floor is lit by; none where the body is darker than its bright floor.
+const GLOW := {
+	WorldReader.KIND_DUST_MITE: 0.0,
+	WorldReader.KIND_CAVE_BAT: 0.35,
+	WorldReader.KIND_EMBER_FLEA: 0.5,
+	WorldReader.KIND_ICE_CRAB: 0.0,
+	WorldReader.KIND_STAR_MOTE: 0.55,
 }
 ## The gait loop's rate per kind (loops a second of frame time): the scuttle, the flap, the flea's kick, the claws'
 ## snap, the tail's sway.

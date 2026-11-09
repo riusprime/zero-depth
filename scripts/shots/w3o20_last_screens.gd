@@ -262,9 +262,6 @@ func _panels() -> void:
 	hud.add_child(stats)
 	stats.place_top_right(420)
 	stats.sync(r)
-	var reel: Array[StringName] = [r.gamble_stat_id(0), r.gamble_stat_id(2)]
-	hud.gamble.card.play(reel, r.gamble_stat_id(2), GambleIcons.line(hud, r.gamble_stat_id(2), 80))
-	hud.gamble.card.finish_spin()
 	var item := ItemCard.new()
 	hud.add_child(item)
 	item.place_bottom_centre(-300)
@@ -297,7 +294,7 @@ func _clear_panels() -> void:
 	for c in _posed:
 		c.queue_free()
 	_posed.clear()
-	_main._hud.gamble.card.visible = false
+	_main._hud.gamble.roll.clear()
 
 
 func _next() -> void:

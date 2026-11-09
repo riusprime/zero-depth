@@ -313,6 +313,11 @@ func test_phase_two_is_more_aggressive() -> void:
 func _arena_world(id: StringName) -> Array:
 	var s := _boss(id, Vector2(0, 4))
 	var w: World = s[0]
+	# v0.11.0 F4: no shipped boss closes any more, so the rule is switched on here (the values it shipped with).
+	var t := BossAi.table_of(w, s[1])
+	t.close_phase = 1
+	t.close_after_ticks = 45 * 60
+	t.close_step_m = 1.0
 	w.bosses.arena = Rect2(-15, -15, 30, 30)
 	w.actors.state[s[1]] = BossAi.STAGGERED
 	w.bosses.stagger_t[BossAi.entry_of(w, s[1])] = 99999
@@ -461,3 +466,13 @@ func test_the_intro_progress_runs_over_the_rise() -> void:
 	assert_eq(reader.boss_intro_permille(w.actors.index_of(id)), 500, "half way")
 	CombatLab.idle(w, BossAi.INTRO_TICKS / 2)
 	assert_eq(reader.boss_intro_permille(w.actors.index_of(id)), 1000, "full as it acts")
+
+
+## v0.11.0 F4 (owner: boss arenas keep their original boundaries): no shipped boss closes its arena in.
+func test_no_shipped_boss_closes_its_arena() -> void:
+	var repo := ContentRepository.load_all()
+	for def: BossDefinition in repo.all_of(&"bosses"):
+		var t := ContentCompiler.compile_boss(def, repo)
+		assert_eq(t.close_phase, -1, "%s: not by phase" % def.id)
+		assert_eq(t.close_after_ticks, 0, "%s: not by time" % def.id)
+		assert_eq(t.close_step_m, 0.0, "%s: never steps" % def.id)

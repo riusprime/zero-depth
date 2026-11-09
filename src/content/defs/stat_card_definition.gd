@@ -11,7 +11,7 @@ extends ContentDef
 ## `side` raises shard gain) and fast_hands (auto abilities' cooldowns only).
 ## v0.5.5 D9 (owner: heal orbs "as a card, so it is not perma enables only if you get it"): lifesprout, the only
 ## source of heal orbs: the first card gives kills its amount as a drop chance, every further card adds its `side`,
-## up to `cap` (percent points).
+## up to `cap` (percent points). v0.11.0 F3 (owner's playtest §6): disabled, weight 0 (see Stats): every run earns orbs.
 ## v0.10.5 O9 (theory audit P2, owner "let's use the pending cards as this"): seven rule cards, Trigger -> Condition ->
 ## Payoff (RuleCards), replace eight flat stats; the flat cards stay in the data with weight 0 (retired: never offered,
 ## an old save's cards keep their effect).

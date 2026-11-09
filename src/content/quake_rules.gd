@@ -12,7 +12,7 @@ const SPEC := {
 	"pillar_m": [1.2, 0.6, 2.0],
 	"pulse_seconds": [3.0, 1.0, 8.0],
 	"warn_seconds": [0.8, 0.4, 2.0],
-	"ring_m": [2.6, 1.0, 5.0],
+	"ring_m": [2.6, 1.0, 10.0],
 	"damage_permille": [30, 5, 100],
 	"stun_seconds": [2.0, 0.5, 5.0],
 	"stun_permille": [1500, 1000, 3000],

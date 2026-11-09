@@ -6,9 +6,8 @@ extends RefCounted
 ##   number (fire: the burn's damage, already powered by its charger's tier; slick: the hero's easing per mille a tick),
 ##   the burn's period (fire) and the id of the charger that dropped it. `burn_next`: the first tick the hero may burn
 ##   again (one burn per period, however many patches overlap).
-## - Rubble (the Rubble Warden's crust): each piece's centre and half side; each is also a wall while it stands
-##   (World.add_barrier: collision, shots, sight, never the flow field), for the floor. `crusted`: the ids of the
-##   Rubble Wardens whose crust already fell.
+## - The Rubble Warden's fallen crust is a trail too (Variants.TRAIL_RUBBLE; value: the hero's speed per mille on
+##   it; never solid). `crusted`: the ids of the Rubble Wardens whose crust already fell.
 ## World hashes it only once anything was ever dropped (touched), so worlds without the variants hash as before.
 
 const INT_FIELDS: Array[StringName] = [
@@ -33,9 +32,6 @@ var trail_x := PackedFloat32Array()
 var trail_y := PackedFloat32Array()
 var trail_r := PackedFloat32Array()
 var burn_next := 0
-var rubble_x := PackedFloat32Array()
-var rubble_y := PackedFloat32Array()
-var rubble_half := PackedFloat32Array()
 var crusted := PackedInt32Array()
 var touched := false
 
@@ -46,15 +42,6 @@ func trail_count() -> int:
 
 func trail_pos(k: int) -> Vector2:
 	return Vector2(trail_x[k], trail_y[k])
-
-
-func rubble_count() -> int:
-	return rubble_x.size()
-
-
-## Rubble piece k as the wall it is (centre, half side, unturned).
-func rubble_obb(k: int) -> Obb:
-	return Obb.make(Vector2(rubble_x[k], rubble_y[k]), Vector2(rubble_half[k], rubble_half[k]), 0)
 
 
 func add_trail(
@@ -97,20 +84,10 @@ func remove_trails(indices: PackedInt32Array) -> void:
 		set(f, af)
 
 
-func add_rubble(at: Vector2, half: float) -> void:
-	touched = true
-	rubble_x.append(at.x)
-	rubble_y.append(at.y)
-	rubble_half.append(half)
-
-
 func hash_into(h: StateHasher) -> void:
 	for f in INT_FIELDS:
 		h.add_ints(get(f))
 	for f in FLOAT_FIELDS:
 		h.add_f32s(get(f))
 	h.add_int(burn_next)
-	h.add_f32s(rubble_x)
-	h.add_f32s(rubble_y)
-	h.add_f32s(rubble_half)
 	h.add_ints(crusted)

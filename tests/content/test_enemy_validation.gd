@@ -298,6 +298,8 @@ func test_each_biome_has_its_roster_and_variant() -> void:
 		assert_eq(EnemyAi.behaviour_of(t.kind), bases[id], "%s runs its base" % id)
 		assert_true(Variants.is_variant(t.kind), String(id))
 	assert_eq(ContentCompiler.compile_enemy(repo.get_def(&"enemies", &"rubble_warden")).hp, 130)
+	var rw := ContentCompiler.compile_enemy(repo.get_def(&"enemies", &"rubble_warden"))
+	assert_eq([rw.patch_radius_m, rw.patch_ticks, rw.patch_slow_permille], [1.6, 300, 600])
 
 
 func test_bad_rosters_are_rejected() -> void:
@@ -320,6 +322,12 @@ func test_bad_rosters_are_rejected() -> void:
 			func(v: ValidationIssue) -> StringName: return v.code
 		)
 		assert_has(codes, &"roster", String(b.id))
+	var slow := (repo.get_def(&"enemies", &"rubble_warden") as EnemyDefinition).duplicate(true)
+	slow.behaviour_params["patch_slow_permille"] = 0
+	assert_has(_codes(slow), &"slow", "a patch must leave some speed")
+	slow.behaviour_params["patch_slow_permille"] = 600
+	slow.behaviour_params["patch_seconds"] = 0.0
+	assert_has(_codes(slow), &"not_positive", "a patch must last")
 	var crust := (repo.get_def(&"enemies", &"ember_charger") as EnemyDefinition).duplicate(true)
 	crust.behaviour_params["trail_arm_seconds"] = 0.1
 	assert_has(_codes(crust), &"telegraph_short", "fire never burns before the telegraph minimum")

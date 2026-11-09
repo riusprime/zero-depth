@@ -21,7 +21,7 @@ const UNCLASSED := [
 ]
 ## Per boss, the slow readable attacks BP left as they were: [id, telegraph seconds].
 const KEPT_SLOW := {
-	&"gatekeeper": [[&"rock_rings", 0.8], [&"shock_lanes", 1.35]],  # v0.9.5 BH2 (B1): it locks 0.55 s now
+	&"gatekeeper": [[&"rock_rings", 0.8], [&"shock_lanes", 2.0]],  # v0.11.0 F5: 2.0 s (was 1.35), it still locks 0.55 s
 	&"warlord": [[&"shield_wall", 0.8], [&"spear_lines", 1.6]],
 	&"brood_mother": [[&"egg_storm", 1.6], [&"burrow", 1.0]],
 	&"hive_lens": [[&"prism_spiral", 0.9], [&"gaze", 0.8]],
@@ -41,7 +41,7 @@ const SPED_UP := {
 	[[&"fist_slam", 1.6, 1.1], [&"fist_slam_2", 1.6, 1.1], [&"fist_slam_3", 1.6, 1.1]],
 	&"warlord": [[&"lunge_dash", 1.4, 1.0]],  # v0.9.5 BH2 (B2): the javelins wind up 0.6 s again (the hard spells' rule)
 	&"brood_mother": [[&"leap", 1.6, 1.0], [&"leap_chain", 1.4, 1.0], [&"pounce_chain", 1.2, 0.95]],
-	&"hive_lens": [[&"dive", 1.4, 1.0], [&"focus_beam", 1.6, 1.1], [&"focus_beam_3", 1.6, 1.1]],
+	&"hive_lens": [[&"dive", 1.4, 1.0], [&"focus_beam", 1.6, 1.5], [&"focus_beam_3", 1.6, 1.5]],
 	&"siege_engine": [[&"rail", 1.5, 1.1], [&"rail_3", 1.5, 1.1], [&"shockwave", 1.2, 0.9]],
 	&"foundry":
 	[[&"vent_blast", 0.8, 0.6], [&"bomb_launch", 1.0, 0.7], [&"bomb_launch_3", 1.0, 0.7]],

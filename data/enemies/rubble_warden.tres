@@ -25,10 +25,11 @@ behaviour_params = {
 "attack_range_m": 2.2,
 "cooldown_seconds": 1.5,
 "crust_hp": 30,
-"crust_pieces": 3,
 "front_arc_degrees": 120.0,
 "front_mult_permille": 800,
-"piece_half_m": 0.3,
+"patch_radius_m": 1.6,
+"patch_seconds": 5.0,
+"patch_slow_permille": 600,
 "rear_arc_degrees": 120.0,
 "rear_mult_permille": 1100,
 "turn_rate_dps": 130.0

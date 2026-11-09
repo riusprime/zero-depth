@@ -1,15 +1,15 @@
 extends GutTest
 ## v0.11.0 O3 (owner L5; Q9 a: "boss takes more damage during the stun, this should happen at most 2 times per
 ## phase"; BossQuake): the Gatekeeper's quake pillars. Three rise as its phase 2 begins and come back to three in
-## phase 3; each pulses every 3 s for 3 % of the player's max HP inside its ring; a Shock Lanes strike through one
-## shatters it and stuns the Gatekeeper 2 s at +50 % damage taken, at most twice a phase (a third break only removes
+## phase 3; each pulses every 3 s for 6 % of the player's max HP inside its ring; a Shock Lanes strike through one
+## shatters it and stuns the Gatekeeper 4 s at +50 % damage taken, at most twice a phase (a third break only removes
 ## it); the placement comes from the ai stream (same seed, same spots) and survives a save. TEST_MATRIX (a boss step):
 ## a scripted player beats it two ways, by luring the cross into the pillars and by ignoring them.
 
 const S := EnemyAi.State
 const LONG := 1 << 20
 const LIMIT_TICKS := 60 * 600
-## How far from a pillar, along its row or column, the luring player stands (outside its 2.6 m ring).
+## How far from a pillar, along its row or column, the luring player stands (outside its ring).
 const LURE_M := 3.4
 
 
@@ -154,7 +154,7 @@ func test_a_pillar_pulses_every_three_seconds_for_three_percent_inside_its_ring(
 	if hits.size() == 2:
 		assert_eq(int(hits[0][0]), rose + 180, "the first 3 s after it rose")
 		assert_eq(int(hits[1][0]), rose + 360, "then every 3 s")
-		assert_eq(int(hits[0][1]), 3000, "3 % of the max HP")
+		assert_eq(int(hits[0][1]), 6000, "6 % of the max HP (F5: 60 per mille)")
 	# outside the ring: no pulse
 	seq = w.last_event_seq()
 	var outside := c + Vector2(q.ring_m + w.player.radius_m + 0.3, 0)
@@ -189,7 +189,8 @@ func test_the_ring_telegraph_grows_over_its_warning_before_the_pulse() -> void:
 	assert_between(mid, 400, 600, "half grown halfway")
 
 
-func test_a_lane_through_a_pillar_shatters_it_and_stuns_two_seconds_at_plus_fifty_percent() -> void:
+func test_a_lane_through_a_pillar_shatters_it_and_stuns_four_seconds_at_plus_fifty_percent(
+) -> void:
 	var s := _fight(Vector2(7, 2))
 	var w: World = s[0]
 	var aid: int = s[1]
@@ -209,7 +210,7 @@ func test_a_lane_through_a_pillar_shatters_it_and_stuns_two_seconds_at_plus_fift
 	assert_true(WorldReader.new(w).boss_stunned(i), "the bar reads it")
 	assert_eq(BossQuake.stuns_of(w, aid), 1)
 	var left := w.bosses.stagger_t[b]
-	assert_between(left, 100, 120, "2 s (120 ticks) of stun, a few already gone")
+	assert_between(left, 220, 240, "4 s (240 ticks) of stun, a few already gone")
 	# +50 % damage: the same hit during the stun and after it
 	w.bosses.exposed_t[b] = 0
 	w.actors.set_pos(0, w.actors.pos(i) + Vector2(w.actors.radius[i] + 1.0, 0))

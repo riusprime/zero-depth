@@ -23,7 +23,8 @@ extends RefCounted
 ## - FAST_HANDS (CUT): the auto abilities' cooldowns and periods only (auto_cooldown, auto_period).
 ## v0.5.5 EC (owner D9): LIFESPROUT (ADD), the heal-orb card: the first card sets the kill's heal-orb drop chance to
 ## its amount, each further card adds its side amount; the chance is read capped (heal_orb_chance). Without the card
-## no orb drops (HealOrbs.on_kill).
+## no orb drops (HealOrbs.on_kill). v0.11.0 F3 (owner's playtest §6): disabled, weight 0: kills earn orbs for every run
+## (HealOrbs), this stat changes nothing now; the code stays so the card can come back.
 ## Damage stats fold into one multiplier (damage_permille). v0.8.0 SG (owner O91): one additive bucket, (damage +
 ## onrush while moving + hoarder) x glass cannon; the curses stay explicit multipliers. Attack speed reads one curve
 ## with the attack's wand bonus (AttackRate).

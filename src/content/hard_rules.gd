@@ -57,7 +57,7 @@ static func validate(
 	_validate_leads(sp, issues, path, where)
 	if sp.has("turn_dps"):
 		var dps := float(sp["turn_dps"])
-		if dps <= 0.0 or dps > 90.0:
+		if dps < 0.0 or dps > 90.0:
 			issues.append(ValidationIssue.new(&"range", path, where + "turn_dps: 0..90"))
 		if int(round(a.active_seconds * 60.0)) < HARD_MIN_TELEGRAPH_TICKS:
 			issues.append(

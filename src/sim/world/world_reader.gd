@@ -106,6 +106,7 @@ const KIND_STAR_WARPER := ActorStore.Kind.STAR_WARPER
 const KIND_GRAVITY_NODE := ActorStore.Kind.GRAVITY_NODE
 const TRAIL_FIRE := Variants.TRAIL_FIRE
 const TRAIL_SLICK := Variants.TRAIL_SLICK
+const TRAIL_RUBBLE := Variants.TRAIL_RUBBLE
 const DIM_LOOK := Variants.DIM_LOOK
 ## v0.11.0 O13b: the Ruins and Night Rocks signatures (RuinsRocks) and the Wire Weaver's post.
 const KIND_WIRE_WEAVER := ActorStore.Kind.WIRE_WEAVER
@@ -2752,7 +2753,8 @@ func crust_on(i: int) -> bool:
 	return Variants.crust_on(_w, i)
 
 
-## The variants' trails now: {"kind": PackedInt32Array (TRAIL_FIRE / TRAIL_SLICK), "pos": PackedVector2Array, "r":
+## The variants' trails now: {"kind": PackedInt32Array (TRAIL_FIRE / TRAIL_SLICK / TRAIL_RUBBLE), "pos":
+## PackedVector2Array, "r":
 ## PackedFloat32Array, "age" and "left": PackedInt32Array (ticks since dropped, ticks until it goes), "lit":
 ## PackedByteArray (1: fire that burns now), "seed": PackedInt32Array (the dropping charger's id x 4096 + its tick)}.
 func variant_trails() -> Dictionary:
@@ -2774,15 +2776,6 @@ func variant_trails() -> Dictionary:
 		out["left"].append(v.trail_until[k] - _w.tick)
 		out["lit"].append(1 if Variants.burning(_w, k) else 0)
 		out["seed"].append(v.trail_owner[k] * 4096 + v.trail_born[k] % 4096)
-	return out
-
-
-## The Rubble Wardens' rocks standing: [centre (Vector2), half side (float)] each.
-func rubble_pieces() -> Array:
-	var v := _w.variants
-	var out := []
-	for k in v.rubble_count():
-		out.append([Vector2(v.rubble_x[k], v.rubble_y[k]), v.rubble_half[k]])
 	return out
 
 
@@ -2851,17 +2844,21 @@ func shell_on(i: int) -> bool:
 
 
 ## The Kiln Beetles' bursts waiting: [centre (Vector2), radius (float), progress 0..1000 toward the blow, seed] each.
+## The seed is stable for a burst's whole life: its birth tick * 64 + its ordinal among the bursts born that tick
+## (one delay for the kind, so they blow together and removing earlier ones never shifts it; the array index would).
 func kiln_bursts() -> Array:
 	var s := _w.canyon_shore
 	var out := []
+	var ordinal := 0
 	for k in s.burst_count():
+		ordinal = ordinal + 1 if k > 0 and s.burst_born[k] == s.burst_born[k - 1] else 0
 		var span := maxi(1, s.burst_due[k] - s.burst_born[k])
 		out.append(
 			[
 				s.burst_pos(k),
 				s.burst_r[k],
 				clampi((_w.tick - s.burst_born[k]) * 1000 / span, 0, 1000),
-				s.burst_born[k] * 64 + k
+				s.burst_born[k] * 64 + ordinal
 			]
 		)
 	return out
