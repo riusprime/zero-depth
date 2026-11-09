@@ -1,6 +1,6 @@
 extends SceneTree
 ## v0.11.0 F6: the Arc Caster (on the Cinder Priest's model) beside a Cinder Priest, one image per palette candidate for
-## the owner. The shipped default is CinderPriestAvatar.LOOKS[KIND_ARC_CASTER] (the owner picked B); the others are only tried
+## the owner. The shipped default is CinderPriestAvatar.LOOKS[KIND_ARC_CASTER] (owner: B); the others are tried
 ## here, through the avatar's `palette`. Needs a renderer (not --headless); off screen:
 ##   APPDATA=<temp> godot --path . --position -10000,-10000 --resolution 900x500 -s scripts/shots/f6_caster_palettes.gd
 ## Writes build/shots/f6/arc_caster_palette_<a|b|c>.png.
