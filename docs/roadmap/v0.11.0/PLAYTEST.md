@@ -83,6 +83,13 @@ Tick each when you have looked.
   show more. Do they read as places?
 - [ ] **Q25** The Runic Stone in the hub: try following its lines.
 
+### Playtest rounds 1 & 2 changes (2026-11-09, OWNER ONLY for feel)
+- Healing: orb from kills, one at a time, 20 %, 30 s cooldown; is recovery about 2-3 min in hordes and sparse rooms?
+- Gatekeeper: rings 7 m, cross 2 s, stun 4 s; can you still ignore the pillars?
+- Foundry, Brood Mother, Siege Engine hazards: is the cap felt? Warlord's great javelin; Hive Lens beams.
+- New enemies and critters readable; Kiln Beetle explodes once; Rubble Warden patch; Arc Caster on the Priest model.
+- Build page, depth skull, notification ticker, Fortune shrine roll.
+
 ## Open owner items
 - **The boss brief (Q13):** the other bosses' fights (PLAN O6–O8) and the remembered Hollow Crown fight wait for it.
 - **The Laser sketch (§10):** the lance's final look waits for it.

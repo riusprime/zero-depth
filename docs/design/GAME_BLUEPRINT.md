@@ -354,9 +354,11 @@ scorecard's rules are in [`../balance/SCORECARD.md`](../balance/SCORECARD.md) §
   D8: damage steady but survivable); staying longer still pays more shards, which follow the floor's plain 30 s tier.
   Each floor's new kinds arrive by The swarm (§E). Floors 2 and 3 start calm too, from their own higher base.
   Each phase start is announced on the HUD under the top plate.
-- **Heal orbs (D8: "healing orb heals more, but is more rare maybe 10% rate appearence but heals 25%").** A normal
-  enemy's kill drops a green orb 10 % of the time; walking over it (pickup range counts) heals 25 % of max HP. It
-  stays until taken; at most 16 lie on a floor.
+- **Heal orbs (owner, v0.11.0 playtest §6, 2026-11-09: "controlled, consistent healing").** Kills earn a meter,
+  weighted by the enemy's base HP; a full meter drops one green orb where the last kill fell. One orb at most lies on
+  the floor. Walking over it (pickup range counts, only when hurt) heals 20 % of max HP and starts a 30 s cooldown,
+  during which no orb appears and kills earn nothing: at most 40 % of max HP a minute. Starting values. Lifesprout is
+  disabled for now. The limit covers the orbs only (owner, RQ4): healing cards keep their own limits.
 - **Floor 1's boss (D9: "Ease floor 1 only").** Floor-1 bosses have −20 % HP and damage, and entering the floor-1
   boss room restores your HP to full; floors 2–3 are unchanged.
 - **Early growth (D4).** One free altar always stands in a room next to the start hall (its first card is a new

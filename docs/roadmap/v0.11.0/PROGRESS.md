@@ -21,6 +21,7 @@
 - **VL (the VFX lab):** built in its own session on `claude/v0110-vfxlab-317952`, not merged; the Kiln Beetle's heat haze waits on the owner's pick.
 - **Waiting on the owner:** the boss brief (O6–O8 and the remembered Crown), the Laser sketch, OWNER_QUESTIONS §J.
 - **Agents (owner, 2026-11-07):** at most 3 Sonnet (light, exact briefs) + 2 Opus at once; up to 4 Opus when no Sonnet runs.
+- **Playtest rounds 1 & 2 built and merged (2026-11-09, 7ee659c1):** F1-F13 (PLAN "Playtest rounds 1 & 2"). Waiting on the owner: their feel check (more rounds coming). Before the PR: the stale `test_boss_hard_3` crossfire tests.
 - **Local note:** `project.godot` has an uncommitted editor rewrite (it drops the `[rendering]` settings and
   `locale/fallback`). It is not the lead's change; don't stage it. `wt-seams` is the lead's clean seams worktree.
 
@@ -70,6 +71,20 @@
 | E2E | Every v0.11.0 feature reached by an e2e (new: signatures ×2, quake pillars, purpose rooms, Pierce flag, Laser every 3 s) | 68111759 |
 | R (prep) | Patch notes en/es ("Fights Worth Learning"), README row, What's New rebuilt, PLAYTEST.md, tour en/es + the v0.11.0 shot scripts (evidence/TOUR.md); not done until N11: version bump, MIN_TEST_COUNT, the PR's full suite, export smoke, hitch probe, the tour re-run after the bump | c5412990 |
 | S7 | OWNER_TODO §3.2: prompts for the 8 code-made enemies in the Charger's style, palette-A role colours | cc0d326f |
+
+| F1 | Kiln Beetle explodes once, stable burst key, explosion scale 0.6 | 7ee659c1 |
+| F2 | New enemies brighter (per-kind albedo lift), critters recoloured for contrast on every floor | 7ee659c1 |
+| F3 | Healing: Lifesprout off; kills earn a meter (by base HP); one orb; 20 % heal; 30 s cooldown | 7ee659c1 |
+| F4 | Arenas keep their size on all six bosses; Hive Lens Gaze 30 deg/s, starts 90 deg away; Focus Beam 1.5 s telegraph, never turns while firing | 7ee659c1 |
+| F5 | Gatekeeper pillars: 7 m rings, 6 % max HP, cross 2.0 s, stun 4 s, arrows and no text every fight | 7ee659c1 |
+| F6 | Arc Caster wears the Priest model, palette B | 7ee659c1 |
+| F7 | Rubble Warden: one short slowing patch, not walls | 7ee659c1 |
+| F8 | Capped boss hazards: Foundry lava, Brood Mother venom, Siege Engine falling rocks | 7ee659c1 |
+| F9 | Warlord: great javelin embeds, quakes, flies back | 7ee659c1 |
+| F10 | G2 mockups (picked: build A simpler, depth C, notifications B) | 79f3eabb |
+| F11 | Build page: card icons in firing order, no text; carry ghost, landing marker, animation | 7ee659c1 |
+| F12 | Depth skull + multiplier; notification ticker under the top plate | 7ee659c1 |
+| F13 | Fortune shrine rolls above itself, flies to the corner panel | 7ee659c1 |
 
 ## Goldens changed on purpose
 —
@@ -150,3 +165,4 @@
   Pushed.
 - 2026-11-08 (lead): O17a–e merged (the owner's five models, cut, animated, on VAT; O17c's rock throw and impact from existing effects). Merge notes: three agents wrote incompatible Godot-xatlas helpers, kept as `gd_unwrap.gd`, `gd_unwrap_parts.gd` + `gd_atlas.py`, `gd_unwrap_xatlas.gd`; one generic death branch in `actor_views.gd` (any AvatarBase with `die()`), the Lurker's collapse before it; `# gdlint: disable=max-file-lines` on `actor_views.gd`. Seams at 366188db, `bash scripts/ci/seams.sh`, owner's PC, while another session ran: `Tests 667 / Passing Tests 667 / Asserts 90188 / Time 3064.714s`, `check_gut_log: ok (667 passing, minimum 1)`.
 - 2026-11-08 (lead): O1d-f merged. Seams at 94eebec2, `bash scripts/ci/seams.sh`, owner's PC: `Tests 667 / Passing Tests 667 / Asserts 90335 / Time 2910.858s`, `check_gut_log: ok (667 passing, minimum 1)`. Pushed.
+- 2026-11-09 (lead): Playtest rounds 1 & 2 recorded (PLAN "Playtest rounds 1 & 2", steps F1-F13; owner answers RQ2-RQ5, G2 picks). F1, F2, F3, F4, F5, F7, F13 merged; seams at 33e4c585, `bash scripts/ci/seams.sh`, owner's PC (other Godot jobs running): `Scripts 114, Tests 667, Passing Tests 667, Time 3261.825s`. Then F6 (palette B), F8, F9, F11, F12 merged; seams at bf4d6797: `Scripts 114, Tests 669, Passing Tests 666, Failing Tests 3, Time 3075.697s`, all three in `tests/unit/presentation/test_attack_visuals_2.gd`: the great javelin wasn't on the list of attacks with their own views. Fixed at 7ee659c1 and only that file re-run: `Tests 11, Passing Tests 11`. Lead tuning after F5's measurement: rings 7 m (not 4.5), pillars 7 m apart: the lowest floor share outside the rings is 83.0 % over 8 real Gatekeeper rooms (it was 92.4 % at 4.5 m). Test harness: `test_boss_fights.gd` now tops up its driver's HP each tick, because percent-of-max quakes kill at any HP (as the file's header promises, "lives to the end"); near-shooting bot then kills the Warlord at 240.7 s, seed 5. **Known red for the PR's full suite:** `tests/unit/sim/test_boss_hard_3.gd` crossfire tests fail on the base too (stale since the Twins rework, O5); fix before the PR. Also NOT YET RUN: owner feel of every F step.

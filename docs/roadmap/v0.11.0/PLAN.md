@@ -210,7 +210,7 @@ follow. All numbers below are starting values. Agent limit as before: 3 Sonnet +
 | FB3 | §1.3 purple caster, reuse the Priest model | The **Arc Caster** (`arc_caster.tres`: rune disc + 3-shot fans, violet `#8A50D8`). Code-made body. Note: the disc and the fan are separate casts today. The Priest has the same violet | The Arc Caster draws the Cinder Priest model; palette shots for the owner to pick | F6 |
 | FB4 | §2.1 the rock enemy | **Rubble Warden** (owner, RQ2: "the one that appears with three rock over the head that reuses an old model, and yeah leaves a rubble path, but not stone thrower"). Its crust falls at half HP as 3 rocks (`crust_pieces`), walls that never expire, up to 30 a floor (`variants.gd:60-76`); no HP, so no flash | Owner, RQ2: the crust leaves a short slowing rubble patch, not solid, no accumulation. The Stone Thrower is unchanged | F7 |
 | FB5 | §2.2 small exploders: too big, plays 2–3 times | **Kiln Beetle.** The repeat is a bug: the view's burst key includes the array index (`world_reader.gd:2835-2848`), so when an earlier burst ends, later keys change and read as "blew". Scale 1.5 (`canyon_shore_views.gd`) | Direct fix: a stable key; a much smaller explosion. The 2.5 m damage area and its ground ring stay | F1 |
-| FB6 | §3.1 "Twin Wardens" pillars | The pillars and the cross belong to **the Gatekeeper** (`gatekeeper.tres` `quake`, `boss_quake.gd`). The Twins have no pillars. Ring 2.6 m, 3 % max HP every 3 s; cross 1.35 s (0.8 tracking, 0.55 locked); stun 2 s | Applied to the Gatekeeper. Ring 4.5 m, 6 % max HP; cross 2.0 s (1.45 tracking, 0.55 locked) on all Shock Lanes; stun 4 s | F5 |
+| FB6 | §3.1 "Twin Wardens" pillars | The pillars and the cross belong to **the Gatekeeper** (`gatekeeper.tres` `quake`, `boss_quake.gd`). The Twins have no pillars. Ring 2.6 m, 3 % max HP every 3 s; cross 1.35 s (0.8 tracking, 0.55 locked); stun 2 s | Applied to the Gatekeeper. Ring 7 m (the lead raised it from 4.5 after measuring the arena), pillars 7 m apart, 6 % max HP; cross 2.0 s (1.45 tracking, 0.55 locked) on all Shock Lanes; stun 4 s | F5 |
 | FB7 | §3.1 "simpler directional arrows" instead of the text | `HINT_GATEKEEPER_PILLAR` "Lure its cross into the pillar", shown on the first 2 meetings (`objective_hints.gd`, `mechanic_hints.gd`) | No text; arrows to each standing pillar every fight (Options "Boss hints" still turns them off) | F5 |
 | FB8 | §4.1 arenas keep their boundaries | Closing band on Gatekeeper, Brood Mother, Siege Engine, Warlord, Hive Lens, Foundry (identical data, `arena_close_*`) | Off on all six | F4 |
 | FB9 | §4.2, §4.4 accumulating hazards for selected bosses, with a cap; not Lantern, Twins, Crown | No boss-owned pool, venom or falling-rock zone exists; Foundry's molten lanes last 5 s; player spell zones hit enemies only | Owner, RQ3: Foundry lava pools stay, Brood Mother venom pools, Siege Engine falling rocks that leave slowing zones. Warlord only the javelin. None on the Gatekeeper, Hive Lens, Tidecaller, Judge, Lantern Shade, Twins or Hollow Crown. A shared capped hazard store, then per boss | F8 |
@@ -226,17 +226,17 @@ follow. All numbers below are starting values. Agent limit as before: 3 Sonnet +
 
 | Step | Outcome | Agent | Status |
 |---|---|---|---|
-| F1 | Kiln Beetle explodes once, small | S | Building |
-| F2 | New enemies brighter, critters read on every floor | O | Building |
-| F3 | Healing rework | O | Building |
-| F4 | Arenas keep their size; Hive Lens beams dodgeable | S | Building |
-| F5 | Gatekeeper pillars matter | S | Building |
-| F6 | Arc Caster on the Priest model | O/S | Next |
-| F7 | Rubble Warden's rubble patch | S | Next |
-| F8 | Boss hazards | O | Next |
-| F9 | Warlord's embedded javelin | O | Next |
-| F10 | G2 mockups: build page, depth, notifications | O | Next |
-| F11 | Build page, owner's pick (2026-11-09): "option A but simpler, I like that, use the icons from the cards tho" | O | Building |
-| F12 | Depth, owner's pick: "option C but do not put the card with the info just the color skull and multiplier". Notifications, owner's pick: "Option B do not make it permanent it is just a notification" | S | Building |
-| F6b | Arc Caster palette, owner's pick: "option B" (magenta-violet, white gem) | lead | At merge |
-| F13 | Shrine roll | O | Next |
+| F1 | Kiln Beetle explodes once, small | S | Done |
+| F2 | New enemies brighter, critters read on every floor | O | Done |
+| F3 | Healing rework | O | Done |
+| F4 | Arenas keep their size; Hive Lens beams dodgeable | S | Done |
+| F5 | Gatekeeper pillars matter | S | Done |
+| F6 | Arc Caster on the Priest model | S | Done |
+| F7 | Rubble Warden's rubble patch | S | Done |
+| F8 | Boss hazards | O | Done |
+| F9 | Warlord's embedded javelin | O | Done |
+| F10 | G2 mockups: build page, depth, notifications | O | Done |
+| F11 | Build page, owner's pick (2026-11-09): "option A but simpler, I like that, use the icons from the cards tho" | O | Done |
+| F12 | Depth, owner's pick: "option C but do not put the card with the info just the color skull and multiplier". Notifications, owner's pick: "Option B do not make it permanent it is just a notification" | S | Done |
+| F6b | Arc Caster palette, owner's pick: "option B" (magenta-violet, white gem) | lead | Done |
+| F13 | Shrine roll | S | Done |
