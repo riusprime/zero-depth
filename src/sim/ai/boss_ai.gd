@@ -753,7 +753,7 @@ static func lane_slice(w: World, i: int, k: int, st: int) -> Obb:
 	var a := w.actors
 	var atk := attack_of(w, i)
 	var b := entry_of(w, i)
-	if atk.beam_turn_milli > 0:  # v0.9.5 BH2 (B4): a burning beam is whole all the time it burns
+	if atk.beam_burns:  # v0.9.5 BH2 (B4): a burning beam is whole all the time it burns
 		return lane_of(w, i, k)
 	var ang := lane_angle(atk, a.lock_a[i], k)
 	var len := maxf(w.bosses.pts_x[b * BossStore.MAX_PTS + k], 0.01)
@@ -890,7 +890,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 			for k in atk.count:
 				obbs.append(lane_of(w, i, k) if atk.move == M.LANES else fan_lane_of(w, i, k))
 			out = {"shape": &"lanes", "obbs": obbs}
-			if not windup and atk.beam_turn_milli > 0:  # v0.9.5 BH2 (B4): the burning beam stays drawn, turning
+			if not windup and atk.beam_burns:  # v0.9.5 BH2 (B4): the burning beam stays drawn, turning
 				progress = 1000
 				windup = true
 		M.SWEEP:
