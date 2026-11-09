@@ -3,29 +3,29 @@ extends Control
 ## The pause menu's Build page (v0.6.5 WN2; docs/design/WAND.md rule 4: "Moving cards between slots is free and
 ## immediate"). Ember stone (MenuStyle, v0.8.0 MU) over the blurred game: the title, the wand as a row of slots
 ## (WandRow: each card's frame colour, icon, name and level, the trigger cards cutting the row with "cast on hit →"),
-## and under it the plain-words read-back (Wand.describe / render through WorldReader, en + es). Moving a card:
+## and under it the forecast, the cards' icons in firing order. Moving a card:
 ## - keyboard: ←/→ (↑/↓) or 1–8 choose a card, Enter picks it up, ←/→ carry it, Enter puts it down (Esc puts it back);
 ## - mouse: drag a card onto a slot, or click a card then click its new slot;
 ## - pad: d-pad (or the left stick) chooses, A picks up, the d-pad carries, A drops (B puts it back).
 ## Esc, pad B or Start with nothing held goes back to the pause menu.
 ## The pause menu stops the sim, so this page moves a preview only: every move runs the sim's own rule
-## (WorldReader.wand_moved → Wand.moved_read, EI-07) and the read-back follows live. On Back, Main turns the change
+## (WorldReader.wand_moved → Wand.moved_read, EI-07) and the forecast follows live. On Back, Main turns the change
 ## into the fewest wand moves (planned_moves → Wand.plan_moves) and queues them as input (InputLatch); they reach the
 ## sim one per tick once the game runs again (EI-03, EI-04; WAND_2.md "How a move reaches the sim").
-## v0.10.5 O13 (owner P10): the wand forecast (WandForecastView) between the row and the read-back: the spell left to
-## right and its key numbers, from the sim's own compile of the page's order (WorldReader.wand_forecast, EI-07),
-## following every move live. It needs the reader `open` is given (none: no forecast).
+## v0.10.5 O13 (owner P10): the wand forecast (WandForecastView) under the row, following every move live.
 ## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): the page in the Astral style (AstralUi): the
 ## game blurred under Astral's cool ink, a sigil and the title in Cinzel over a rule, the wand row, its pips and its
-## forecast in Astral (their default now), the read-back in Atkinson, Back an Astral plate.
+## forecast in Astral (their default now), Back an Astral plate.
+## v0.11.0 F11 (owner, G2 F10 "option A but simpler"): no instructions and no read-back on the page; the forecast is
+## the cards' icons. While a card is carried the row holds the wand as it was picked up and shows where the card will
+## land (WandRow.carry_from); the order and the forecast are the preview, as before.
 
 signal back_pressed
 
-## The read-back's width at most (px at the 1920 x 1080 base) and its type size.
 ## Key repeats (PanelInput.Echo): Enter and Esc don't repeat; the arrows carry on.
 const ECHO := PanelInput.Echo.CONFIRM_ONCE
-const READ_W := 1180.0
-const READ_SIZE := 22
+## The forecast's width at least (px at the 1920 x 1080 base); it follows the row when that is wider.
+const FORECAST_W := 620.0
 
 var row := WandRow.new()
 ## v0.10.5 O13: the forecast of the order on the page.
@@ -36,14 +36,13 @@ var _title := Label.new()
 var _note := Label.new()
 ## v0.10.5 W3-P10c: the held Constellations ("Constellation: Prism ×2 · Glass Sky"; hidden while none).
 var _stars := Label.new()
-var _read_back := Label.new()
-var _hint: Label
 var _back := Button.new()
 var _read := {}
 var _start := PackedInt32Array()
 var _slots := 0
 var _held_from := -1
-var _reader: WorldReader
+## v0.11.0 F11: the wand as it was when the card in the air was picked up (what the row shows meanwhile).
+var _carried := {}
 
 
 func _init() -> void:
@@ -86,14 +85,6 @@ func _init() -> void:
 	col.add_child(pips)
 	col.add_child(row)
 	col.add_child(forecast)
-	_read_back.name = "ReadBack"
-	_read_back.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	_read_back.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_read_back.custom_minimum_size = Vector2(READ_W, 0)
-	AstralUi.body(_read_back, READ_SIZE)
-	col.add_child(_read_back)
-	_hint = AstralUi.hint("UI_BUILD_HINT")
-	col.add_child(_hint)
 	_back.name = "Back"
 	_back.text = "UI_BACK"
 	_back.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -105,20 +96,23 @@ func _init() -> void:
 	row.tile_clicked.connect(_on_click)
 	row.tile_dropped.connect(_on_drop)
 	row.tile_hovered.connect(_on_hover)
+	row.tile_drag_started.connect(_on_drag_start)
+	row.tile_drag_cancelled.connect(_put_back)
 
 
 ## Shows `wand` (WorldReader.wand(), with any moves still waiting for a tick applied) over its `slots`; `reader`
-## (v0.10.5 O13) forecasts each order the page shows.
+## gives the held Constellations.
 func open(wand: Dictionary, slots: int, reader: WorldReader = null) -> void:
-	_reader = reader
 	_read = wand
 	_slots = slots
 	_start = order()
 	row.held = -1
+	row.carry_from = -1
 	row.focus = 0 if card_count() > 0 else -1
 	_held_from = -1
 	_show_constellations(reader.constellations() if reader != null else PackedInt32Array())
 	_refresh()
+	row.settle()
 
 
 ## v0.10.5 W3-P10c: the held Constellations line (`held`: ids in pick order; Prism held twice reads "Prism ×2").
@@ -157,17 +151,9 @@ func planned_moves() -> PackedInt32Array:
 	return WorldReader.wand_plan_moves(_start, order())
 
 
-func read_back_text() -> String:
-	return _read_back.text
-
-
-## v0.10.5 O13: the forecast's spell line and numbers line now.
-func forecast_text() -> String:
-	return forecast.spell_text()
-
-
-func forecast_numbers_text() -> String:
-	return forecast.numbers_text()
+## v0.11.0 F11: the card ids the forecast shows, in firing order.
+func forecast_ids() -> Array[StringName]:
+	return forecast.icon_ids()
 
 
 func focus_index() -> int:
@@ -189,14 +175,11 @@ func content_rect() -> Rect2:
 
 
 func _refresh() -> void:
-	row.show_wand(_read, _slots)
+	row.show_wand(_carried if row.held >= 0 else _read, _slots)
 	_note.text = tr("UI_BUILD_SLOTS") % [card_count(), _slots]
 	pips.show_wand(_read)  # v0.9.0 AS2 (G2 AS = B; was A's counts in the note)
-	var lines := WorldReader.wand_describe(_read)
-	_read_back.text = WorldReader.wand_render(lines, func(k: StringName) -> String: return tr(k))
-	_read_back.custom_minimum_size.x = maxf(READ_W, row.row_width())
-	forecast.custom_minimum_size.x = _read_back.custom_minimum_size.x
-	forecast.show_forecast(_reader.wand_forecast(_read) if _reader != null else {})
+	forecast.custom_minimum_size.x = maxf(FORECAST_W, row.row_width())
+	forecast.show_forecast(_read)
 
 
 func note_text() -> String:
@@ -214,15 +197,19 @@ func _move(from: int, to: int) -> bool:
 func _pick_up(k: int) -> void:
 	if k < 0 or k >= card_count():
 		return
+	_carried = _read
+	row.carry_from = k
 	row.held = k
 	row.focus = k
 	_held_from = k
-	row.refresh_marks()
+	_refresh()
 
 
 func _drop() -> void:
 	row.held = -1
+	row.carry_from = -1
 	_held_from = -1
+	row.end_press()
 	_refresh()
 
 
@@ -242,11 +229,18 @@ func _carry(step: int) -> void:
 
 func _cancel_or_back() -> void:
 	if row.held >= 0:
-		_move(row.held, _held_from)
-		row.focus = _held_from
-		_drop()
+		_put_back()
 		return
 	back_pressed.emit()
+
+
+## The card in the air goes back where it was picked up (Esc, pad B, a drag released away from the slots).
+func _put_back() -> void:
+	if row.held < 0:
+		return
+	_move(row.held, _held_from)
+	row.focus = _held_from
+	_drop()
 
 
 func _toggle_hold() -> void:
@@ -267,16 +261,29 @@ func _on_click(k: int) -> void:
 
 
 func _on_drop(from: int, to: int) -> void:
-	if from >= card_count():
+	if row.held < 0 and from >= card_count():
 		return
 	var at := clampi(to, 0, card_count() - 1)
-	_move(from, at)
+	_move(row.held if row.held >= 0 else from, at)  # the card in the air sits at `held` in the preview
 	row.focus = at
 	_drop()
 
 
+func _on_drag_start(k: int) -> void:
+	if row.held < 0:
+		_pick_up(k)
+
+
+## With a card in the air, the slot under the mouse is where it would land (an empty slot: after the last card).
 func _on_hover(k: int) -> void:
-	if row.held >= 0 or k >= card_count():
+	if row.held >= 0:
+		var to := clampi(k, 0, card_count() - 1)
+		if _move(row.held, to):
+			row.held = to
+			row.focus = to
+			_refresh()
+		return
+	if k >= card_count():
 		return
 	row.focus = k
 	row.refresh_marks()

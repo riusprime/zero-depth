@@ -789,7 +789,6 @@ WAND_READ_BURST,a burst,un estallido
 UI_BUILD,Build,Construcción
 UI_BUILD_TITLE,BUILD,CONSTRUCCIÓN
 UI_BUILD_SLOTS,%d of %d slots,%d de %d huecos
-UI_BUILD_HINT,←→ choose · Enter pick up / put down · mouse: drag or click twice · pad: A pick up · d-pad move · A drop · Esc / B back,←→ elegir · Intro coger / soltar · ratón: arrastra o haz dos clics · mando: A coger · cruceta mover · A soltar · Esc / B volver
 UI_WAND_LEVEL,Lv %d,Nv %d
 UI_WAND_LEVEL_OF,Lv %d/%d,Nv %d/%d
 UI_WAND_NEW,New,Nueva
@@ -1473,8 +1472,6 @@ UI_TRAINING_CARD_ADDED,Added: %s,Añadida: %s
 UI_TRAINING_WAND_FULL,The wand is full: remove a card first.,La varita está llena: quita una carta primero.
 UI_TRAINING_CARD_REMOVED,Card removed.,Carta quitada.
 UI_TRAINING_NO_CARD,No wand card to remove.,No hay carta de varita que quitar.
-UI_FORECAST_TITLE,FORECAST,PREVISIÓN
-UI_FORECAST_AFTER,AFTER THE SWAP,TRAS EL CAMBIO
 UI_FORECAST_LINE,%s,%s
 UI_FORECAST_THEN,%s → %s,%s → %s
 UI_FORECAST_AND,"%s, %s","%s, %s"

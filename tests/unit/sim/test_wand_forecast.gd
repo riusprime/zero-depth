@@ -130,8 +130,6 @@ func test_every_forecast_phrase_has_en_and_es() -> void:
 		for k: Variant in d:
 			keys.append(String(d[k]))
 	for k: String in [
-		"UI_FORECAST_TITLE",
-		"UI_FORECAST_AFTER",
 		"UI_FORECAST_LINE",
 		"UI_FORECAST_THEN",
 		"UI_FORECAST_AND",
