@@ -20,6 +20,9 @@ extends Node3D
 const VENT_MAT := Color("#3A2420")
 const ICE_MAT := Color("#7FB8E0")
 const BLAST_ID := &"explosion_fire_a"
+## v0.11.0 F1 (owner: the small beetle's explosion was far too big): the pack blast's spawn scale (it was radius * 0.6,
+## 1.5 for the 2.5 m burst). The true danger area is still the ground ring across the fuse, not this visual.
+const BLAST_SCALE := 0.6
 const ERUPT_FOOT_ID := &"explosion_fire_b"
 const PILLAR_ID := &"bx_pillar_light"
 const PILLAR_COLORS := {
@@ -137,6 +140,17 @@ static func arc_point(from: Vector2, to: Vector2, u: float) -> Vector3:
 	return SimPlane.to_3d(flat, SimPlane.CORE_HEIGHT * (1.0 - u) + lift)
 
 
+## PackFx.spawn leaves an animated scene's particles looping for the scene's whole length (the 0.5 s sparks run
+## twice in its 1.2 s): the blast plays its particles once.
+static func blast_once(node: Node3D) -> void:
+	if node == null:
+		return
+	for c in node.get_children():
+		if c is GPUParticles3D:
+			(c as GPUParticles3D).one_shot = true
+			(c as GPUParticles3D).restart()
+
+
 func _sync_bursts(now: Array) -> void:
 	var live := {}
 	for b: Array in now:
@@ -145,7 +159,7 @@ func _sync_bursts(now: Array) -> void:
 		if not live.has(sd):
 			var was: Array = _seen_bursts[sd]
 			if pack_fx != null:
-				pack_fx.spawn(BLAST_ID, SimPlane.to_3d(was[0], 0.0), float(was[1]) * 0.6)
+				blast_once(pack_fx.spawn(BLAST_ID, SimPlane.to_3d(was[0], 0.0), BLAST_SCALE))
 			_seen_bursts.erase(sd)
 	for sd: int in live:
 		_seen_bursts[sd] = live[sd]

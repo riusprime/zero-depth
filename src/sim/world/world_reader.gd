@@ -2832,17 +2832,21 @@ func shell_on(i: int) -> bool:
 
 
 ## The Kiln Beetles' bursts waiting: [centre (Vector2), radius (float), progress 0..1000 toward the blow, seed] each.
+## The seed is stable for a burst's whole life: its birth tick * 64 + its ordinal among the bursts born that tick
+## (one delay for the kind, so they blow together and removing earlier ones never shifts it; the array index would).
 func kiln_bursts() -> Array:
 	var s := _w.canyon_shore
 	var out := []
+	var ordinal := 0
 	for k in s.burst_count():
+		ordinal = ordinal + 1 if k > 0 and s.burst_born[k] == s.burst_born[k - 1] else 0
 		var span := maxi(1, s.burst_due[k] - s.burst_born[k])
 		out.append(
 			[
 				s.burst_pos(k),
 				s.burst_r[k],
 				clampi((_w.tick - s.burst_born[k]) * 1000 / span, 0, 1000),
-				s.burst_born[k] * 64 + k
+				s.burst_born[k] * 64 + ordinal
 			]
 		)
 	return out

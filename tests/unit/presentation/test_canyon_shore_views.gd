@@ -91,3 +91,74 @@ func test_the_views_draw_what_the_sim_has() -> void:
 	v.sync(WorldReader.new(w))
 	assert_eq(v.counts()["bursts"], 0, "the burst blew")
 	assert_eq(v.counts()["arcs"], 0, "the blob landed")
+
+
+## Counts the pack spawns instead of playing them.
+class SpawnLog:
+	extends PackFx
+	var log: Array = []
+
+	func spawn(
+		effect_id: StringName,
+		pos: Vector3,
+		scale := 1.0,
+		_colors := {},
+		_life := -1.0,
+		_speed := 1.0,
+		_hide: Array = []
+	) -> Node3D:
+		log.append([effect_id, pos, scale])
+		return null
+
+
+## v0.11.0 F1 (owner: the explosion "sometimes plays two or three times"): the bursts go FIFO, which used to shift the
+## later ones' array index (their seed), so the view thought they had blown. Three born on different ticks: three
+## blasts in all, each once, where its burst stood, at BLAST_SCALE.
+func test_each_burst_blows_once_when_earlier_ones_go_first() -> void:
+	var w := _world()
+	var v := CanyonShoreViews.new()
+	var fx := SpawnLog.new()
+	v.pack_fx = fx
+	add_child_autofree(v)
+	add_child_autofree(fx)
+	var born := [0, 10, 20]
+	var at := [Vector2(2, 0), Vector2(-3, 1), Vector2(0, 4)]
+	for t in 120:
+		for k in 3:
+			if born[k] == t:
+				w.canyon_shore.add_burst(at[k], 2.5, w.tick, w.tick + 60, 10, 10)
+		w.step(InputFrame.new())
+		v.sync(WorldReader.new(w))
+	assert_eq(fx.log.size(), 3, "one blast per burst, no repeats")
+	for k in 3:
+		assert_eq(fx.log[k][1], SimPlane.to_3d(at[k], 0.0), "burst %d blew where it stood" % k)
+		assert_eq(fx.log[k][2], CanyonShoreViews.BLAST_SCALE, "and small")
+	assert_eq(WorldReader.new(w).kiln_bursts().size(), 0)
+
+
+## Two born on one tick keep distinct seeds, and a seed does not move when an earlier burst is removed.
+func test_a_burst_seed_is_stable_for_its_whole_life() -> void:
+	var w := _world()
+	w.canyon_shore.add_burst(Vector2(1, 0), 2.5, 5, 65, 1, 1)
+	w.canyon_shore.add_burst(Vector2(2, 0), 2.5, 5, 65, 1, 1)
+	w.canyon_shore.add_burst(Vector2(3, 0), 2.5, 9, 69, 1, 1)
+	var before := WorldReader.new(w).kiln_bursts()
+	w.canyon_shore.remove(&"burst", PackedInt32Array([0, 1]))
+	var after := WorldReader.new(w).kiln_bursts()
+	assert_ne(before[0][3], before[1][3])
+	assert_eq(after[0][3], before[2][3], "the survivor keeps its seed")
+
+
+## The pack's explosion scene has an animation, so PackFx leaves its particles looping; the blast plays them once.
+func test_the_blast_particles_play_once() -> void:
+	var fx := PackFx.new()
+	add_child_autofree(fx)
+	var node := fx.spawn(CanyonShoreViews.BLAST_ID, Vector3.ZERO, CanyonShoreViews.BLAST_SCALE)
+	assert_not_null(node, "the pack has the blast")
+	CanyonShoreViews.blast_once(node)
+	var n := 0
+	for c in node.get_children():
+		if c is GPUParticles3D:
+			n += 1
+			assert_true((c as GPUParticles3D).one_shot, "%s plays once" % c.name)
+	assert_gt(n, 0)
