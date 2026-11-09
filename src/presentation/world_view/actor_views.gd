@@ -721,14 +721,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"enemy_avatar", needle)
 			root.set_meta(&"mats", needle.body_materials.duplicate())
 		WorldReader.KIND_ARC_CASTER:
-			# The Arc Caster (v0.3.5 AI): a robed caster with a staff, its own node under the facing.
-			var caster := ArcCasterAvatar.new()
-			_solo_vat(root, caster, p_kind)  # v0.10.5 W3-V4c
-			caster.setup(outline_color, technique)
-			facing.add_child(caster)
-			height = ArcCasterAvatar.HEIGHT
-			root.set_meta(&"enemy_avatar", caster)
-			root.set_meta(&"mats", caster.body_materials.duplicate())
+			# v0.11.0 F6: the Arc Caster wears the Cinder Priest's model in its own colours (CinderPriestAvatar.LOOKS).
+			height = CinderPriestAvatar.attach(self, root, facing, p_kind)
 		WorldReader.KIND_BOMB_DRONE:
 			# The Bomb Drone (v0.3.5 AI): drawn hovering, its shadow on the ground where the sim has it.
 			var drone := BombDroneAvatar.new()

@@ -46,6 +46,13 @@ static func is_solo(kind: int) -> bool:
 	return KINDS.has(kind)
 
 
+## v0.11.0 F6: the Cinder Priest model, in the palette of `kind` (the Priest or the Arc Caster).
+static func _priest_of(kind: int) -> AvatarBase:
+	var a := CinderPriestAvatar.new()
+	a.kind = kind
+	return a
+
+
 static func _new(kind: int) -> AvatarBase:
 	match kind:
 		WorldReader.KIND_NEEDLE:
@@ -53,7 +60,7 @@ static func _new(kind: int) -> AvatarBase:
 		WorldReader.KIND_WARDEN:
 			return WardenAvatar.new()
 		WorldReader.KIND_ARC_CASTER:
-			return ArcCasterAvatar.new()
+			return _priest_of(kind)
 		WorldReader.KIND_BOMB_DRONE:
 			return BombDroneAvatar.new()
 		WorldReader.KIND_LENS_DRONE:
@@ -65,7 +72,7 @@ static func _new(kind: int) -> AvatarBase:
 		WorldReader.KIND_STONE_THROWER:
 			return StoneThrowerAvatar.new()
 		WorldReader.KIND_CINDER_PRIEST:
-			return CinderPriestAvatar.new()
+			return _priest_of(kind)
 		WorldReader.KIND_KILN_BEETLE:  # v0.11.0 O17e
 			return KilnBeetleAvatar.new()
 	return null

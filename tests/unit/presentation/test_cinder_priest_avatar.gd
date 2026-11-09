@@ -327,3 +327,55 @@ func test_actor_views_draw_it_and_its_pulse_is_the_sim_s() -> void:
 				seen_strike = true
 		assert_true(seen_pulse, "the vent's warning was read")
 		assert_true(seen_strike, "and its eruption")
+
+
+func _caster() -> CinderPriestAvatar:
+	var a := CinderPriestAvatar.new()
+	a.kind = WorldReader.KIND_ARC_CASTER
+	a.setup(Color.BLACK)
+	add_child_autofree(a)
+	a.set_process(false)
+	return a
+
+
+## v0.11.0 F6: the Arc Caster is this model in its own palette; the Priest keeps its look.
+func test_the_arc_caster_wears_the_model_in_its_own_colours() -> void:
+	var priest := _priest()
+	var caster := _caster()
+	assert_eq(priest.has_model, caster.has_model)
+	var pc: Color = priest.palette["role"]
+	var cc: Color = caster.palette["role"]
+	assert_eq(pc, CinderPriestAvatar.ROLE, "the Priest keeps its violet")
+	assert_ne(cc, pc, "the caster's plates differ")
+	assert_ne(caster.palette["gem"], priest.palette["gem"], "and its gem")
+	assert_true(SoloVat.is_solo(WorldReader.KIND_ARC_CASTER))
+	assert_true(
+		SoloVat.vat_avatar_of(WorldReader.KIND_ARC_CASTER, Color.BLACK) is CinderPriestAvatar
+	)
+	var rig_c: Dictionary = caster.vat_rig()
+	var rig_p: Dictionary = priest.vat_rig()
+	assert_ne(rig_c["key"], rig_p["key"], "a rig per kind")
+
+
+func test_the_caster_gathers_in_its_windup_and_strikes_on_the_shot() -> void:
+	var a := _caster()
+	for k in 40:
+		a.apply_state({"tick": k, "state": WorldReader.STATE_MOVE})
+		a.advance(DT)
+	var rest := a.glow_energy()
+	var raised := 0.0
+	for k in 30:
+		a.apply_state(
+			{"tick": 40 + k, "state": WorldReader.STATE_WINDUP, "pulse": (k + 1) * 1000 / 30}
+		)
+		a.advance(DT)
+		raised = maxf(raised, a._vd[CinderPriestAvatar.STAFF_F])
+	assert_gt(a.glow_energy(), rest + 2.0, "the crystal brightens through the windup")
+	assert_gt(raised, 0.5, "the staff comes up")
+	a.apply_state({"tick": 70, "state": WorldReader.STATE_ACTIVE})
+	a.advance(DT)
+	assert_gt(a.glow_energy(), rest + 5.0, "the shot flares the crystal")
+	for k in 120:
+		a.apply_state({"tick": 71 + k, "state": WorldReader.STATE_RECOVER})
+		a.advance(DT)
+	assert_lt(a.glow_energy(), rest + 1.0, "and settles back")
