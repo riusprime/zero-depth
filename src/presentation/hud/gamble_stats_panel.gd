@@ -10,6 +10,7 @@ extends PanelContainer
 
 const ICON := 28.0
 const MARGIN := Vector2(14, 9)
+const LIT_S := 0.6
 
 ## Whether it wears the menus' Ember stone (set when it is added to a MenuPanel).
 var in_menu := false
@@ -22,6 +23,13 @@ var _none := Label.new()
 var _shown := PackedInt32Array()
 ## The language the rows were worded in.
 var _locale := ""
+## v0.11.0 F13: wins the view has not shown yet, per stat (the sim applied them at once; their symbol is still on its
+## way to the panel), so the rows say the value before them until release().
+var _held := {}
+## The row last lit and how long it still glows (s).
+var _lit_stat := -1
+var _lit_left := 0.0
+var _row_of := {}
 
 
 func _init() -> void:
@@ -88,7 +96,7 @@ func sync(reader: WorldReader) -> void:
 	_reader = reader
 	var now := PackedInt32Array()
 	for s in reader.gamble_stat_count():
-		now.append(reader.gamble_stacks(s))
+		now.append(_shown_stacks(s))
 	if now == _shown and TranslationServer.get_locale() == _locale:  # v0.6.0 UP: worded again on a switch
 		return
 	_title.text = tr("UI_GAMBLE_STATS")  # P-7: after the early return (unchanged words then)
@@ -98,21 +106,22 @@ func sync(reader: WorldReader) -> void:
 	for c in _rows.get_children():
 		_rows.remove_child(c)
 		c.queue_free()
+	_row_of.clear()
 	for s in reader.gamble_stat_count():
-		if reader.gamble_stacks(s) <= 0:
+		if _shown_stacks(s) <= 0:
 			continue
 		var id := reader.gamble_stat_id(s)
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
 		row.add_child(GambleIconView.new(id, ICON))
 		var text := Label.new()
-		text.text = GambleIcons.line(self, id, reader.gamble_bonus(s))
+		text.text = GambleIcons.line(self, id, _shown_bonus(s))
 		text.add_theme_font_size_override("font_size", 17)
 		var tone := GambleIcons.color(id).lerp(Color.WHITE, 0.45)
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(text)
 		var count := Label.new()
-		count.text = "%d / %d" % [reader.gamble_stacks(s), reader.gamble_cap(s)]
+		count.text = "%d / %d" % [_shown_stacks(s), reader.gamble_cap(s)]
 		count.add_theme_font_size_override("font_size", 14)
 		if HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O20: the HUD's type in the pause too
 			HudStyle.style_label(text, 17)
@@ -126,7 +135,79 @@ func sync(reader: WorldReader) -> void:
 			l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 			l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_rows.add_child(row)
+		_row_of[s] = row
 	_none.visible = _rows.get_child_count() == 0
+
+
+func _shown_stacks(stat: int) -> int:
+	return maxi(0, _reader.gamble_stacks(stat) - int(_held.get(stat, 0)))
+
+
+func _shown_bonus(stat: int) -> int:
+	return maxi(
+		0, _reader.gamble_bonus(stat) - int(_held.get(stat, 0)) * _reader.gamble_amount(stat)
+	)
+
+
+## v0.11.0 F13: a win of `stat` is on its way here; its row keeps the value before it until release(stat).
+func hold(stat: int) -> void:
+	_held[stat] = int(_held.get(stat, 0)) + 1
+	_shown = PackedInt32Array()  # reworded on the next sync
+
+
+## One held win's symbol arrived (or was dropped): the row shows it, and glows briefly when `glow`.
+func release(stat: int, glow := true) -> void:
+	var n := int(_held.get(stat, 0)) - 1
+	if n <= 0:
+		_held.erase(stat)
+	else:
+		_held[stat] = n
+	_shown = PackedInt32Array()
+	if _reader != null:
+		sync(_reader)
+	if glow:
+		_lit_stat = stat
+		_lit_left = LIT_S
+
+
+## Drops every held win (no shrine any more: a new floor).
+func release_all() -> void:
+	if not _held.is_empty():
+		_held.clear()
+		_shown = PackedInt32Array()
+
+
+## Held wins of `stat` (tests).
+func held(stat: int) -> int:
+	return int(_held.get(stat, 0))
+
+
+## Where a symbol of `stat` lands (global px): its row's icon, or where its row will appear.
+func landing_point(stat: int) -> Vector2:
+	var row := _row_of.get(stat) as Control
+	if row != null and is_instance_valid(row):
+		return row.get_global_rect().position + Vector2(ICON, ICON) * 0.5
+	var before := 0
+	for s in stat:
+		if _row_of.has(s):
+			before += 1
+	var step := ICON + 4.0
+	if _rows.get_child_count() > 0:
+		step = maxf(step, (_rows.get_child(0) as Control).size.y + 4.0)
+	return _rows.get_global_rect().position + Vector2(ICON * 0.5, step * before + ICON * 0.5)
+
+
+func _process(delta: float) -> void:
+	if _lit_left > 0.0:
+		_lit_left = maxf(0.0, _lit_left - delta)
+		var row := _row_of.get(_lit_stat) as Control
+		if row != null and is_instance_valid(row):
+			row.modulate = Color.WHITE.lerp(Color(2.0, 2.0, 1.6), _lit_left / LIT_S)
+
+
+## A row is glowing from an arrival (tests).
+func lit() -> bool:
+	return _lit_left > 0.0
 
 
 ## Rows shown (one per stat won), for tests.

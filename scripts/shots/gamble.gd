@@ -1,6 +1,7 @@
 extends SceneTree
-## The v0.3.0 L19 shots: the gamble shrine in the start hall with its price in red (no shards yet), the card's spin,
-## the landed result with the stats panel, and a second win. Needs a renderer:
+## The v0.3.0 L19 shots (v0.11.0 F13: the roll above the shrine): the gamble shrine in the start hall with its price in
+## red (no shards yet), the symbol cycling above it, the stats panel after the symbol landed, and a second win.
+## Needs a renderer:
 ##   VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" \
 ##     godot --path . --audio-driver Dummy --resolution 1600x900 -s scripts/shots/gamble.gd
 ## Boots main.tscn and walks with the stick, uses the shrine with the pad's X; frames are grabbed in _process.
@@ -8,7 +9,7 @@ extends SceneTree
 ## subject). Writes each shot and gamble_sheet.png (2 × 2: "+" tiles are 2× close-ups of the frame's middle) to
 ## build/shots/v0.3.0/gamble/. Evidence copies are made by hand.
 
-const OUT := "res://build/shots/v0.3.0/gamble/"
+const OUT := "res://build/shots/v0.11.0/f13/"
 const SHEET_SCALE := 0.5
 const GIVE_UP_FRAMES := 4000
 
@@ -67,10 +68,10 @@ func _process(_delta: float) -> bool:
 				_go(&"use1")
 		&"use1":
 			_press_x()
-			if _step_frame == 14:
+			if not _shots.has("spin") and _spinning():
 				_grab("spin")
 			if _landed():
-				print("gamble: won '%s'" % _hud().gamble.card.line_text())
+				print("gamble: won, panel rows %d" % _hud().gamble.stats.row_count())
 				_grab("result")
 				_go(&"use2")
 		&"use2":
@@ -80,7 +81,7 @@ func _process(_delta: float) -> bool:
 				print(
 					(
 						"gamble: won '%s', shards %d, next price %d"
-						% [_hud().gamble.card.line_text(), w.shards, Gamble.price(w)]
+						% [_hud().gamble.stats.row_count(), w.shards, Gamble.price(w)]
 					)
 				)
 				_grab("second")
@@ -89,10 +90,16 @@ func _process(_delta: float) -> bool:
 	return false
 
 
-## The card has landed on the stat won (a few frames on, so the pop settles; the renderer is slow, frame time).
+## A symbol is cycling above the shrine, a few frames in.
+func _spinning() -> bool:
+	var roll := _hud().gamble.roll
+	return roll.count() > 0 and roll.phase_of(0) == GambleRoll.Phase.SPIN and _step_frame > 12
+
+
+## The symbol flew into the panel (a few frames on, so the glow shows; the renderer is slow, frame time).
 func _landed() -> bool:
-	var card := _hud().gamble.card
-	if _step_frame > 6 and card.showing() and not card.spinning():
+	var roll := _hud().gamble.roll
+	if _step_frame > 6 and roll.arrived >= (1 if _step == &"use1" else 2) and roll.count() == 0:
 		_settle += 1
 	else:
 		_settle = 0

@@ -95,9 +95,6 @@ func test_every_card_surface_is_carved_stone() -> void:
 	item.show_item(&"wildfire", "Wildfire", "Kills spread burn.", Color.ORANGE)
 	assert_true(item.plaque_box() is StoneBox, "the item plaque")
 	# v0.10.5 W3-O16 (on purpose): the shop's heal and reroll are Astral plates now (test_astral_store.gd)
-	var gamble := GambleCard.new()
-	add_child_autofree(gamble)
-	assert_true(gamble.plaque_box() is StoneBox, "the shrine card")
 	# v0.10.5 W3-O19 (on purpose, owner 2026-11-04 night: every UI element in Astral): the Codex's tiles and the
 	# wand's tiles are Astral frames now, the codex tile's picture in a medallion ring
 	var tile := CodexTile.new()

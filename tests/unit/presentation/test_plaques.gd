@@ -126,18 +126,6 @@ func test_item_and_combo_plaques_fit_in_english_and_spanish() -> void:
 	assert_eq(too_long, [] as Array[String], "every card's name and sentence fit the item plaque")
 
 
-func test_gamble_lines_fit_in_english_and_spanish() -> void:
-	var ci := Control.new()
-	add_child_autofree(ci)
-	for lang in ["en", "es"]:
-		TranslationServer.set_locale(lang)
-		for stat: StringName in GambleIcons.KEYS:
-			var line := GambleIcons.line(ci, stat, 160)
-			assert_true(GambleCard.line_fits(line), "%s %s: '%s' fits" % [lang, stat, line])
-			assert_gte(GambleCard.fit_line(line), 16, "%s %s: readable" % [lang, stat])
-	TranslationServer.set_locale(_locale)
-
-
 func test_shop_plaques_fit_in_english_and_spanish() -> void:
 	# v0.10.5 W3-O16 (on purpose): the plates are the shop's Astral plates, at the width the shop draws them
 	for lang in ["en", "es"]:

@@ -1,8 +1,9 @@
 extends GutTest
 ## The gamble shrine's views (v0.3.0 L19): the shrine's glow and flash change no shader, its price turns red when
-## you can't pay, the card's spin lands on the stat won, every stat has an icon and a line in both languages, and
-## the stats panel lists what was won. v0.8.0 N14 (owner O72): a failed use fizzles (no shader changes) and shows
-## "It failed"; a spent shrine is dimmed with "Spent" above it; the prompt's odds line reads the sim's numbers.
+## you can't pay, the reward rolls above the shrine and flies to the corner panel (v0.11.0 F13), every stat has an
+## icon and a line in both languages, and the stats panel lists what was won. v0.8.0 N14 (owner O72): a failed use
+## fizzles (no shader changes); a spent shrine is dimmed with "Spent" above it; the prompt's odds line reads the
+## sim's numbers.
 
 
 func _world() -> World:
@@ -56,26 +57,137 @@ func test_the_price_is_red_when_you_cant_pay() -> void:
 	assert_false(view.price_label.visible, "far: hidden")
 
 
-func test_the_card_spins_then_lands_on_the_result() -> void:
-	var card := GambleCard.new()
-	add_child_autofree(card)
-	card.set_process(false)
-	var reel: Array[StringName] = [&"max_hp", &"shot_damage", &"melee_damage"]
-	card.play(reel, &"melee_damage", "+6 % melee damage")
-	assert_true(card.spinning())
-	assert_eq(card.line_text(), "", "no line while spinning")
+## v0.11.0 F13: the Fortune shrine's reward rolls above the shrine, then flies to the corner panel.
+func _hud_with_shrine(win: bool) -> Array:
+	var w := _world() if win else _failing_world()
+	var reader := WorldReader.new(w)
+	var hud := GambleHud.new()
+	add_child_autofree(hud)
+	hud.set_process(false)
+	hud.roll.set_process(false)
+	hud.sync(reader)
+	w.shards = 100
+	if win:
+		w.gamble_table.fail_permille = 0
+	w.input_buffer[3] = 1
+	assert_eq(Gamble.interact(w), win)
+	hud.sync(reader)
+	return [w, reader, hud]
+
+
+func _run(roll: GambleRoll, seconds: float) -> void:
+	for k in int(seconds * 60.0):
+		roll._process(1.0 / 60.0)
+
+
+func test_a_win_cycles_stops_then_flies_into_the_panel_row_that_updates_on_arrival() -> void:
+	var old := ViewPrefs.reduced_motion
+	ViewPrefs.reduced_motion = false
+	var made := _hud_with_shrine(true)
+	var reader: WorldReader = made[1]
+	var hud: GambleHud = made[2]
+	var roll := hud.roll
+	var stat := reader.gamble_last_stat()
+	var id := reader.gamble_stat_id(stat)
+	assert_eq(roll.count(), 1, "a symbol above the shrine")
+	assert_eq(roll.phase_of(0), GambleRoll.Phase.SPIN)
+	assert_null(hud.find_child("GambleCard", true, false), "no centre card")
+	assert_null(hud.find_child("GambleFailed", true, false), "no centre line")
+	assert_eq(Gamble.stacks(made[0], stat), 1, "the sim applied it at once")
+	assert_eq(hud.stats.row_count(), 0, "the panel's row waits for the symbol")
+	assert_true(hud.stats.visible, "and the panel is up for it to land in")
 	var seen := {}
-	for k in int(GambleCard.SPIN_S * 60.0) + 3:
-		card._process(1.0 / 60.0)
-		if card.spinning():
-			seen[card.shown_stat()] = true
-	assert_gt(seen.size(), 1, "the reel shows several stats")
-	assert_false(card.spinning())
-	assert_eq(card.shown_stat(), &"melee_damage")
-	assert_eq(card.line_text(), "+6 % melee damage")
-	for k in int((GambleCard.HOLD_S + GambleCard.FADE_S) * 60.0) + 4:
-		card._process(1.0 / 60.0)
-	assert_false(card.visible, "it fades away")
+	for k in int(GambleRoll.SPIN_S * 60.0) - 2:
+		roll._process(1.0 / 60.0)
+		seen[roll.shown_id(0)] = true
+	assert_gte(seen.size(), 4, "it cycles through several stat symbols")
+	_run(roll, 0.05)
+	assert_eq(roll.phase_of(0), GambleRoll.Phase.HOLD, "then stops")
+	assert_eq(roll.shown_id(0), id, "on the real result")
+	_run(roll, GambleRoll.HOLD_S + 0.02)
+	assert_eq(roll.phase_of(0), GambleRoll.Phase.FLY, "then flies")
+	var start := roll.center_of(0)
+	var size0 := roll.view_of(0).scale.x
+	_run(roll, GambleRoll.FLY_S * 0.5)
+	assert_lt(roll.view_of(0).scale.x, size0, "shrinking on the way")
+	assert_eq(hud.stats.row_count(), 0, "still not updated mid-flight")
+	_run(roll, GambleRoll.FLY_S * 0.5 + 0.05)
+	assert_eq(roll.count(), 0, "it arrived and is gone")
+	assert_eq(roll.arrived, 1)
+	assert_ne(roll.center_of_last(), start, "from above the shrine to the corner")
+	assert_eq(hud.stats.row_count(), 1, "the row shows on arrival")
+	assert_eq(hud.stats.held(stat), 0)
+	assert_true(hud.stats.lit(), "with a brief highlight")
+	hud._process(1.0 / 60.0)
+	assert_true(hud.stats.visible, "the panel stays up after landing")
+	ViewPrefs.reduced_motion = old
+
+
+func test_a_fail_stops_on_a_broken_symbol_shakes_fades_and_flies_nowhere() -> void:
+	var old := ViewPrefs.reduced_motion
+	ViewPrefs.reduced_motion = false
+	var made := _hud_with_shrine(false)
+	var hud: GambleHud = made[2]
+	var roll := hud.roll
+	assert_eq(roll.count(), 1)
+	_run(roll, GambleRoll.SPIN_S + 0.05)
+	assert_true(roll.is_broken(0), "the cracked symbol")
+	_run(roll, GambleRoll.HOLD_S + 0.02)
+	assert_eq(roll.phase_of(0), GambleRoll.Phase.FAIL)
+	var x0 := roll.view_of(0).position.x
+	var moved := false
+	for k in 12:
+		roll._process(1.0 / 60.0)
+		moved = moved or not is_equal_approx(roll.view_of(0).position.x, x0)
+	assert_true(moved, "it shakes")
+	assert_lt(roll.view_of(0).modulate.a, 1.0, "and fades")
+	_run(roll, GambleRoll.FAIL_S)
+	assert_eq(roll.count(), 0, "gone")
+	assert_eq(roll.arrived, 0, "nothing flew")
+	assert_eq(hud.stats.row_count(), 0)
+	assert_null(hud.find_child("GambleFailed", true, false), "no line, no text")
+	ViewPrefs.reduced_motion = old
+
+
+func test_reduced_motion_shows_the_result_holds_fades_and_updates_the_panel_at_once() -> void:
+	var old := ViewPrefs.reduced_motion
+	ViewPrefs.reduced_motion = true
+	var made := _hud_with_shrine(true)
+	var reader: WorldReader = made[1]
+	var hud: GambleHud = made[2]
+	var roll := hud.roll
+	assert_eq(roll.shown_id(0), reader.gamble_stat_id(reader.gamble_last_stat()), "no cycling")
+	assert_eq(hud.stats.row_count(), 1, "the panel updated at once")
+	assert_true(hud.stats.visible)
+	_run(roll, GambleRoll.REDUCED_HOLD_S - 0.1)
+	assert_eq(roll.count(), 1, "it holds")
+	assert_eq(roll.phase_of(0), GambleRoll.Phase.HOLD)
+	_run(roll, 0.2 + GambleRoll.REDUCED_FADE_S + 0.05)
+	assert_eq(roll.count(), 0, "then fades away")
+	assert_eq(roll.arrived, 0, "with no flight")
+	ViewPrefs.reduced_motion = old
+
+
+func test_a_second_use_has_its_own_symbol_and_clearing_leaves_nothing_held() -> void:
+	var old := ViewPrefs.reduced_motion
+	ViewPrefs.reduced_motion = false
+	var made := _hud_with_shrine(true)
+	var reader: WorldReader = made[1]
+	var hud: GambleHud = made[2]
+	var roll := hud.roll
+	var stat := reader.gamble_last_stat()
+	_run(roll, 0.3)
+	roll.start(reader, stat)  # a second use while the first is still rolling
+	assert_eq(roll.count(), 2, "its own symbol")
+	assert_eq(hud.stats.held(stat), 2)
+	_run(roll, 3.0)
+	assert_eq(roll.count(), 0, "both finished")
+	assert_eq(hud.stats.held(stat), 0, "nothing stuck")
+	roll.start(reader, stat)
+	roll.clear()
+	assert_eq(roll.count(), 0)
+	assert_eq(hud.stats.held(stat), 0, "cleared symbols release their rows")
+	ViewPrefs.reduced_motion = old
 
 
 func test_every_stat_has_an_icon_and_a_line() -> void:
@@ -143,22 +255,12 @@ func test_a_failed_use_fizzles_without_changing_a_shader_and_says_so() -> void:
 	hud.sync(reader)
 	assert_true(view.fizzling(), "the shrine fizzles")
 	assert_false(view.spinning(), "no spin: nothing won")
-	assert_false(hud.card.showing(), "no result card")
-	TranslationServer.set_locale("en")
-	hud.sync(reader)
-	assert_eq(hud.fail_text(), "It failed")
+	assert_eq(hud.roll.count(), 1, "the broken symbol rolls above the shrine")
+	assert_null(hud.find_child("GambleCard", true, false), "no centre card")
 	for k in int(GambleShrineView.FIZZLE_S * 60.0) + 2:
 		view._process(1.0 / 60.0)
 	assert_false(view.fizzling(), "the fizzle ends")
 	assert_eq(DamageFlashKeys.of(view), before, "the fizzle changed no shader")
-	for k in int(GambleHud.FAIL_S * 60.0) + 2:
-		hud._process(1.0 / 60.0)
-	assert_eq(hud.fail_text(), "", "the line goes")
-	TranslationServer.set_locale("es")
-	w.gamble_fail_tick = 99
-	hud.sync(reader)
-	assert_eq(hud.fail_text(), "Falló")
-	TranslationServer.set_locale("en")
 
 
 ## v0.8.0 N18 (owner O76): N14's odds line is gone (no wins count, no chance to fail on screen); a spent shrine says
@@ -258,45 +360,3 @@ func test_a_fail_under_reduced_motion_does_not_jolt_but_still_cracks() -> void:
 	assert_eq(drop, 0.0, "no jolt")
 	assert_true(view.cracked(), "the cracks still show")
 	ViewPrefs.reduced_motion = old
-
-
-func test_a_win_floats_the_prize_icon_over_the_shrine_for_two_seconds() -> void:
-	var w := _world()
-	var reader := WorldReader.new(w)
-	var view := GambleShrineView.new()
-	add_child_autofree(view)
-	view.set_process(false)
-	view.setup(reader.gamble_pos())
-	view.sync(reader)
-	w.shards = 100
-	w.gamble_table.fail_permille = 0
-	w.input_buffer[3] = 1
-	assert_true(Gamble.interact(w))
-	view.sync(reader)
-	assert_null(view.prize(), "the prize waits for the landing")
-	var t := 0.0
-	while view.prize() == null and t < 2.0:
-		view._process(1.0 / 60.0)
-		t += 1.0 / 60.0
-	var prize := view.prize()
-	assert_not_null(prize, "the prize appears when the spin lands")
-	assert_true(view.pulsing(), "the gold ring pulses at the same moment")
-	assert_eq(prize.billboard, BaseMaterial3D.BILLBOARD_ENABLED)
-	assert_true(prize.no_depth_test)
-	assert_false(prize.fixed_size)
-	assert_almost_eq(prize.pixel_size * GambleShrineView.PRIZE_PX, 0.45, 0.001, "0.45 m wide")
-	assert_almost_eq(prize.position.y, GambleShrineView.PRIZE_FROM_M, 0.05, "starts at 1.4 m")
-	assert_almost_eq(prize.scale.x, 0.6, 0.15, "starts small")
-	for k in 12:
-		view._process(1.0 / 60.0)
-	assert_almost_eq(prize.scale.x, 1.0, 0.02, "full size after 0.2 s")
-	for k in 60:
-		view._process(1.0 / 60.0)
-	assert_gt(prize.position.y, GambleShrineView.PRIZE_FROM_M + 0.2, "rising")
-	for k in 60:
-		view._process(1.0 / 60.0)
-	assert_lt(prize.modulate.a, 1.0, "fading in the last half second")
-	for k in 40:
-		view._process(1.0 / 60.0)
-	assert_null(view.prize(), "gone after 2 s")
-	assert_false(view.pulsing())
