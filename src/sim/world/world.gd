@@ -1888,6 +1888,9 @@ func _move_and_collide() -> void:
 			var slick := Variants.slick_at(self, p)
 			if slick > 0:
 				k = mini(k, slick)
+			var rubble := Variants.rubble_at(self, p)  # the Rubble Warden's fallen crust: ×patch_slow_permille
+			if rubble > 0:
+				target = target * (rubble / 1000.0)
 		vel += (target - vel) * (k / 1000.0)
 		if Kin.length(vel - target) < 0.0001:
 			vel = target

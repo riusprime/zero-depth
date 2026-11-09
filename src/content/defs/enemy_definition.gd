@@ -228,8 +228,8 @@ func _check_horde(issues: Array[ValidationIssue]) -> void:
 		"contact_damage",  # v0.11.0 O9: the horde critters
 		"contact_cd_seconds",
 		"crust_hp",  # v0.11.0 O13a: the biome variants
-		"crust_pieces",
-		"piece_half_m",
+		"patch_radius_m",
+		"patch_seconds",
 		"dark_beyond_m",
 		"trail_radius_m",
 		"trail_seconds",
@@ -311,6 +311,15 @@ func _check_variant(issues: Array[ValidationIssue]) -> void:
 				&"telegraph_short",
 				resource_path,
 				"trail_arm_seconds is under the telegraph minimum"
+			)
+		)
+	if (
+		bp.has("patch_slow_permille")
+		and (int(bp["patch_slow_permille"]) < 1 or int(bp["patch_slow_permille"]) > 1000)
+	):
+		issues.append(
+			ValidationIssue.new(
+				&"slow", resource_path, "patch_slow_permille must be within 1..1000"
 			)
 		)
 	if (

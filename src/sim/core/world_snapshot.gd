@@ -785,7 +785,6 @@ static func apply(base: World, snap: Dictionary) -> String:
 	# so only the wall grid is rebuilt for them.
 	var barriers := base.arenas.barriers.size() + base.bosses.pillar_x.size()  # v0.8.0 BS1: pillars too
 	barriers += Secrets.slabs_up(base)  # v0.9.0 TD, RA: the secret rooms' slabs while they stand
-	barriers += base.variants.rubble_count()  # v0.11.0 O13a: the Rubble Wardens' rocks
 	barriers += base.ruins_rocks.rock_count() + base.ruins_rocks.hide_count()  # v0.11.0 O13b: rocks, boulders
 	if base.lockdown != null:  # v0.9.0 LK: a sealed Lockdown's bars, as an arena's
 		barriers += base.lockdown.barriers.size()
