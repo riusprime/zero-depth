@@ -80,6 +80,7 @@ static func reference_of(kind: int, tint: Color, role_glow: float, outline: Colo
 	a.set_process(false)
 	a.set_meta(&"mats", a.body_materials)
 	ActorViews.tint_greys(a, tint)
+	ActorViews.lift_model(a, kind)  # v0.11.0 F2
 	ActorViews.role_glow(a, kind, role_glow)
 	for m in a.body_materials:
 		m.set_meta(LOOK, &"plate")
