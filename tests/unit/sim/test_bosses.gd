@@ -48,7 +48,7 @@ func test_arena_accessors() -> void:
 
 
 ## v0.6.5 BR (owner W2, "3×3"), v0.7.5 N18 ("always put them in the big rooms"): the Siege Engine's room is 4 x 4
-## cells on every seed; the closing band closes on both axes, and its punish move still reaches the room's far
+## cells on every seed; the arena no longer closes (v0.11.0 F4), and its punish move still reaches the room's far
 ## corners from where it appears.
 func test_the_siege_engine_fights_in_a_4x4_room() -> void:
 	var w := BossLab.world()
@@ -62,8 +62,7 @@ func test_the_siege_engine_fights_in_a_4x4_room() -> void:
 		assert_eq(f.room_cells[f.boss_room].size, Vector2i(4, 4), tag + ": a 4 x 4 room")
 		var arena := f.rooms[f.boss_room]
 		var deep := BossChallenge.band_depth(arena, t, 1000)
-		assert_gt(deep.x, 0.0, tag + ": the band closes across x")
-		assert_gt(deep.y, 0.0, tag + ": the band closes across y")
+		assert_eq(deep, Vector2.ZERO, tag + ": the band never closes (v0.11.0 F4)")
 		var a := arena.position
 		var e := arena.end
 		for c in [a, e, Vector2(e.x, a.y), Vector2(a.x, e.y)]:

@@ -179,7 +179,7 @@ func test_every_gaze_opens_just_behind_you_in_its_turn() -> void:
 			var label := "seed %d tick %d" % [seed_value, k]
 			assert_gt(off * way, 0, "%s: it starts behind you in its turn (off %d)" % [label, off])
 			assert_almost_eq(
-				absi(off), BossGaze.LEAD, 80, "%s: about 40 degrees short of you" % label
+				absi(off), BossGaze.LEAD, 80, "%s: about 90 degrees short of you" % label
 			)
 	assert_gt(gazes, 4, "the gaze came (%d)" % gazes)
 	assert_eq(ways.size(), 2, "both ways")

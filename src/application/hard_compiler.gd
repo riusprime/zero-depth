@@ -17,6 +17,7 @@ static func compile_attack(def: BossAttackDefinition, t: BossAttackTable) -> voi
 	t.beam_turn_milli = int(
 		round(float(sp.get("turn_dps", 0.0)) * 4096.0 / 360.0 * 1000.0 / SimTick.TICKS_PER_SECOND)
 	)
+	t.beam_burns = sp.has("turn_dps")  # v0.11.0 F4: turn_dps 0 = a burning beam that holds still
 	t.safe_cells = int(sp.get("safe_cells", 0))
 	if t.second_ticks > 0:
 		var last := (t.count - 1) * t.mark_gap_ticks + t.second_ticks
