@@ -47,12 +47,8 @@ func test_fire_and_frost_at_level_3_wake_thermal_shock() -> void:
 	assert_eq(CardLevels.level(w, W.item(w, &"frost_core")), 3, "Frost Lv 3")
 	assert_true(ElementPairs.on(w, ElementPairs.X1), "Thermal Shock is on")
 	var hud: Hud = main.get_node("UI/Hud")
-	assert_true(hud.combo_card().is_showing(), "its banner shows")
-	assert_true(hud.combo_card().title_text().begins_with(tr("PAIR_THERMAL_SHOCK")))
-	# v0.9.5 EP4: the big title and the HUD badge show too
-	var big := hud.find_child("PairTitle", true, false) as Label
-	assert_not_null(big, "the big title exists")
-	assert_true(big.text.contains(tr("PAIR_THERMAL_SHOCK")), "it names the pair")
+	assert_true(hud.notices.texts().has(tr("PAIR_THERMAL_SHOCK")), "its name is a ticker line")
+	assert_null(hud.find_child("PairTitle", true, false), "no big centred title any more")
 	assert_not_null(hud.find_child("PairBadge0", true, false), "the pair's HUD badge shows")
 	# TEST HELPER (labelled): two standing dummies 4 m away on a clear line, 1 m apart across it; the first is burning
 	# and frozen (the statuses are set; the hit is the real bolt).

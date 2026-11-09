@@ -110,7 +110,7 @@ func test_combo_card_shows_both_icons_in_a_special_frame() -> void:
 	)
 
 
-func test_hud_shows_the_combo_card_and_a_badge_when_a_combo_unlocks() -> void:
+func test_hud_shows_the_combo_ticker_line_and_a_badge_when_a_combo_unlocks() -> void:
 	var repo := ContentRepository.load_all()
 	var player := PlayerTable.starting_values()
 	var w := FloorScenario.build(
@@ -126,22 +126,20 @@ func test_hud_shows_the_combo_card_and_a_badge_when_a_combo_unlocks() -> void:
 	add_child_autofree(hud)
 	hud.sync(reader)
 	assert_eq(hud.combo_badge_count(), 0)
-	assert_false(hud.combo_card().is_showing())
+	assert_true(hud.notices.is_empty())
 	for id: StringName in [&"thorn_mantle", &"phase_strike"]:
 		for k in w.item_tables.size():
 			if w.item_tables[k].id == id:
 				w.add_item(k)
 	hud.sync(reader)
 	await wait_process_frames(1)
-	assert_true(hud.combo_card().is_showing())
-	assert_eq(hud.combo_card().title_text(), tr("ITEM_COMBO_SPIKED_PHASE"))
-	assert_eq(hud.combo_card().desc_text(), tr("ITEM_COMBO_SPIKED_PHASE_DESC"))
-	assert_eq(hud.combo_card().pair_ids(), [&"thorn_mantle", &"phase_strike"])
+	assert_eq(
+		hud.notices.texts(), PackedStringArray([tr("ITEM_COMBO_SPIKED_PHASE")]), "a ticker line"
+	)
 	assert_eq(hud.combo_badge_count(), 1)
 	assert_eq(hud.item_icon_count(), 2)
-	hud._combo_left = 0.0
-	hud.sync(reader)
-	assert_false(hud.combo_card().is_showing(), "it goes after its time")
+	hud.notices.advance(NoticeTicker.HOLD + NoticeTicker.FADE_OUT + 0.1)
+	assert_true(hud.notices.is_empty(), "it goes after its time")
 	assert_eq(hud.combo_badge_count(), 1, "the badge stays")
 
 
