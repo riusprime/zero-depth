@@ -382,6 +382,7 @@ static func advance(w: World) -> void:
 	BossStream.advance(w)  # v0.9.5 BH4: the Tidecaller's ring stream and crossing waves
 	BossInterphase.advance(w)  # v0.9.5 BH6: the Fallen's interphase hazards and its return
 	BossQuake.advance(w)  # v0.11.0 O3: the Gatekeeper's quake pillars pulse
+	BossGreatJavelin.advance(w)  # v0.11.0 F9: the Warlord's great javelin flies, quakes and flies back
 
 
 ## World._remove_dead: boss `boss_id` is gone: its pillars sink and its javelins go (its eggs crumble on their own).
@@ -400,6 +401,7 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 	BossShade.on_boss_gone(w, boss_id)  # v0.9.0 NB4: the Lantern Shade's room relights
 	BossStream.on_boss_gone(w, boss_id)  # v0.9.5 BH4: its streams and waves
 	BossQuake.on_boss_gone(w, boss_id)  # v0.11.0 O3: its break count and the hint
+	BossGreatJavelin.on_boss_gone(w, boss_id)  # v0.11.0 F9: its great javelin goes with it
 
 
 ## The recap's death line for a cause past LATE_CAUSE (a late part): its attack's late_cause_key (its own cause_key

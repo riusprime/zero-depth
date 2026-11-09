@@ -53,6 +53,8 @@ const PREPARED: Array = [
 	[&"lanes", &"spears"],
 	[&"lanes", &"molten"],
 ]
+## v0.11.0 F9: the great javelin's recall line's key in _nodes (no actor's id: those start at 0).
+const RECALL_KEY := -11
 ## Pooled telegraphs of each prepared pair (a starting value: two attackers winding up at once).
 const POOL_N := 2
 ## v0.7.5 BF1: the lock flash's pulse (per second) and its fill's alpha range.
@@ -239,27 +241,39 @@ func sync(reader: WorldReader) -> void:
 			continue  # v0.7.5 EF: a body or air cue ("cast", "lob") draws nothing on the ground
 		var id := reader.actor_id(i)
 		seen[id] = true
-		var n: Node3D = _nodes.get(id)
-		var style: StringName = tg.get("style", &"")
-		if n == null or n.get_meta(&"shape") != tg["shape"] or n.get_meta(&"style") != style:
-			if n != null:
-				_put_back(n)
-			n = _take(tg["shape"], style)
-			_nodes[id] = n
-		_look = look_of(reader, i, tg)
-		if _look != &"":
-			_looks_live[_look] = true
-		_update(n, tg)
-		if _look != &"" and not tg.get("tracked", false):  # a windup's fill warms as it fills
-			var heat := lerpf(0.15, 0.85, float(tg["progress"]) / 1000.0)
-			(_look_pair(_look)[0] as ShaderMaterial).set_shader_parameter("heat", heat)
-		if style != &"":
-			_update_style(n, tg)
+		_show(reader, id, i, tg)
 	_look = &""
+	var boss := reader.boss_index()
+	var recall := reader.boss_javelin_recall_line(boss) if boss >= 0 else {}
+	if not recall.is_empty():  # v0.11.0 F9: the great javelin's way back (its own telegraph, under a key of its own)
+		threats += 1
+		seen[RECALL_KEY] = true
+		_show(reader, RECALL_KEY, boss, recall)
+		_look = &""
 	for id in _nodes.keys():
 		if not seen.has(id):
 			_put_back(_nodes[id])
 			_nodes.erase(id)
+
+
+## Telegraph `tg` of actor index i under key `id` (its node reused, or taken from the pool when its shape changes).
+func _show(reader: WorldReader, id: int, i: int, tg: Dictionary) -> void:
+	var n: Node3D = _nodes.get(id)
+	var style: StringName = tg.get("style", &"")
+	if n == null or n.get_meta(&"shape") != tg["shape"] or n.get_meta(&"style") != style:
+		if n != null:
+			_put_back(n)
+		n = _take(tg["shape"], style)
+		_nodes[id] = n
+	_look = look_of(reader, i, tg)
+	if _look != &"":
+		_looks_live[_look] = true
+	_update(n, tg)
+	if _look != &"" and not tg.get("tracked", false):  # a windup's fill warms as it fills
+		var heat := lerpf(0.15, 0.85, float(tg["progress"]) / 1000.0)
+		(_look_pair(_look)[0] as ShaderMaterial).set_shader_parameter("heat", heat)
+	if style != &"":
+		_update_style(n, tg)
 
 
 ## How many telegraphs are showing (tests and the tour).

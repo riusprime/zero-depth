@@ -237,7 +237,7 @@ func sync(reader: WorldReader) -> void:
 			keep.append(s)
 	_strikes = keep
 	_pillars = reader.boss_pillars()  # v0.8.0 BS1
-	_sync_quakes(reader.boss_quake_pillars())  # v0.11.0 O3
+	_sync_quakes(reader.boss_quake_pillars() + reader.boss_javelin_quakes())  # O3; F9: the great javelin's ring
 	_draw(float(_tick))
 
 
@@ -672,7 +672,8 @@ func draw_fx(layer: VfxCore) -> void:
 func _sync_quakes(list: Array) -> void:
 	var now := {}
 	for q: Dictionary in list:
-		now["%s:%d" % [str(q["center"]), int(q["rose"])]] = q["center"]
+		if not q.has("javelin"):  # v0.11.0 F9: a great javelin's ring leaves no pillar to shatter
+			now["%s:%d" % [str(q["center"]), int(q["rose"])]] = q["center"]
 	for key: String in _quake_seen.keys():
 		if not now.has(key):
 			_shatter(_quake_seen[key], _tick)
@@ -711,6 +712,8 @@ static func quake_clock(q: Dictionary, now: float) -> Array:
 ## its cracks at rest heat, warming as its ring grows and flaring on the pulse. Appends to `buf` from instance n.
 func _draw_quakes(buf: PackedFloat32Array, n: int, now: float, still: bool) -> int:
 	for q: Dictionary in _quakes:
+		if q.has("javelin"):  # v0.11.0 F9: only its ring (GreatJavelinViews draws the javelin)
+			continue
 		var c: Vector2 = q["center"]
 		var h := float(q["half"])
 		var age := now - float(q["rose"]) + 1.0

@@ -90,6 +90,36 @@ cooldown_seconds = 0.9
 cause_key = &"CAUSE_WARLORD_FAN"
 late_cause_key = &"CAUSE_WARLORD_RECALL"
 
+[sub_resource type="Resource" id="A_great_javelin"]
+script = ExtResource("1_atk")
+id = &"great_javelin"
+shape = 4
+shape_params = {
+"embed_seconds": 5.0,
+"pulse_permille": 40,
+"pulse_seconds": 1.25,
+"radius_m": 0.4,
+"range_m": 24.0,
+"recall_speed_mps": 18.0,
+"recall_warn_seconds": 0.6,
+"ring_m": 3.5,
+"speed_mps": 30.0,
+"warn_seconds": 0.5
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.0
+damage = 29
+hit_class = &"medium"
+move = &"great_javelin"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_WARLORD_GREAT"
+late_cause_key = &"CAUSE_WARLORD_RECALL"
+lock_seconds = 0.45
+
 [sub_resource type="Resource" id="A_shield_bash"]
 script = ExtResource("1_atk")
 id = &"shield_bash"
@@ -187,7 +217,7 @@ lock_seconds = 0.8
 [sub_resource type="Resource" id="P_0"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 1000
-attack_ids = PackedStringArray("shield_wall", "javelin_fan", "spear_lines", "lunge_dash", "shield_bash")
+attack_ids = PackedStringArray("shield_wall", "javelin_fan", "spear_lines", "lunge_dash", "shield_bash", "great_javelin")
 entry_attack = &""
 speed_permille = 1000
 cooldown_permille = 1000
@@ -195,7 +225,7 @@ cooldown_permille = 1000
 [sub_resource type="Resource" id="P_1"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 660
-attack_ids = PackedStringArray("shield_wall", "javelin_fan", "spear_wall", "lunge_dash", "shield_bash")
+attack_ids = PackedStringArray("shield_wall", "javelin_fan", "spear_wall", "lunge_dash", "shield_bash", "great_javelin")
 entry_attack = &"shield_wall"
 speed_permille = 1300
 cooldown_permille = 650
@@ -203,7 +233,7 @@ cooldown_permille = 650
 [sub_resource type="Resource" id="P_2"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 330
-attack_ids = PackedStringArray("shield_wall_cross", "javelin_fan_fast", "spear_wall", "lunge_dash", "shield_bash")
+attack_ids = PackedStringArray("shield_wall_cross", "javelin_fan_fast", "spear_wall", "lunge_dash", "shield_bash", "great_javelin")
 entry_attack = &"shield_wall_cross"
 speed_permille = 1430
 cooldown_permille = 487
@@ -224,7 +254,7 @@ rear_mult_permille = 1250
 stagger_size = 220
 stagger_decay_per_second = 12.0
 stagger_seconds = 2.5
-attacks = Array[ExtResource("1_atk")]([SubResource("A_shield_wall"), SubResource("A_shield_wall_cross"), SubResource("A_javelin_fan"), SubResource("A_javelin_fan_fast"), SubResource("A_shield_bash"), SubResource("A_spear_lines"), SubResource("A_spear_wall"), SubResource("A_lunge_dash")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_shield_wall"), SubResource("A_shield_wall_cross"), SubResource("A_javelin_fan"), SubResource("A_javelin_fan_fast"), SubResource("A_shield_bash"), SubResource("A_spear_lines"), SubResource("A_spear_wall"), SubResource("A_lunge_dash"), SubResource("A_great_javelin")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
 legacy_arena_cells = Vector2i(3, 2)

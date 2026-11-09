@@ -227,6 +227,10 @@ const MOVE_SPIKE_BURST := BossAttackTable.Move.SPIKE_BURST
 const MOVE_CROSS := BossAttackTable.Move.CROSS  # v0.8.0 FB2 (the Prism)
 const MOVE_LANCES := BossAttackTable.Move.LANCES  # v0.10.5 O3 (the Prism's last phase)
 const MOVE_KNEEL := BossAttackTable.Move.KNEEL
+const MOVE_GREAT_JAVELIN := BossAttackTable.Move.GREAT_JAVELIN  # v0.11.0 F9 (the Warlord)
+const GREAT_JAVELIN_THROW := BossGreatJavelin.THROW  # v0.11.0 F9: boss_great_javelin()["phase"]
+const GREAT_JAVELIN_EMBEDDED := BossGreatJavelin.EMBEDDED
+const GREAT_JAVELIN_RETURN := BossGreatJavelin.RETURN
 const EFFECT_PRISM_BURST := BossPrismLast.EFFECT_BURST
 const LANCE_TRACKING := BossPrismLast.TRACKING  # boss_lances: a lance's phase
 const LANCE_LOCKED := BossPrismLast.LOCKED
@@ -2196,6 +2200,21 @@ func boss_quake_pillars() -> Array:
 ## the tick it flies back] each (BossSignatures.javelins_of).
 func boss_javelins(i: int) -> Array:
 	return BossSignatures.javelins_of(_w, i)
+
+
+## v0.11.0 F9: boss i's great javelin for its view, or {} (BossGreatJavelin.view).
+func boss_great_javelin(i: int) -> Dictionary:
+	return BossGreatJavelin.view(_w, i)
+
+
+## v0.11.0 F9: the embedded great javelins' quake rings, for StoneSpikeViews (BossGreatJavelin.quake_rings).
+func boss_javelin_quakes() -> Array:
+	return BossGreatJavelin.quake_rings(_w)
+
+
+## v0.11.0 F9: the recall line of boss i's great javelin, a telegraph for TelegraphViews, or {} (BossGreatJavelin).
+func boss_javelin_recall_line(i: int) -> Dictionary:
+	return BossGreatJavelin.recall_line(_w, i)
 
 
 ## v0.8.0 BS1 (S2): boss i's recall, for its pull: 0..1000 from its first javelin sticking to their flight back

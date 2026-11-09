@@ -144,6 +144,7 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	ShadeRules.validate(self, issues, path, where)  # v0.9.0 NB4: Lights Out, the Snuff
 	HardRules.validate(self, issues, path, where)  # v0.9.5 BH2: the five harder spells
 	PrismRules.validate(self, issues, path, where)  # v0.10.5 O3: the Prism's last phase
+	GreatJavelinRules.validate(self, issues, path, where)  # v0.11.0 F9: the Warlord's great javelin
 
 
 ## v0.8.0 BP (owner O27): a known hit class; a big attack never chains (its punish window follows it); orb_damage only

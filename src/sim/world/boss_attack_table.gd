@@ -39,6 +39,7 @@ enum Move {
 	INTERPHASE,  # v0.9.5 BH6 (HC5): a carrier of the Fallen's interphase hits (BossInterphase; never picked)
 	LANCES,  # v0.10.5 O3 (L6): the Prism's Facet Lances, her last phase (BossPrism)
 	KNEEL,  # v0.10.5 O3 (L6): the Prism's Shattered Kneel, her core open (BossPrism)
+	GREAT_JAVELIN,  # v0.11.0 F9: the Warlord's great javelin: thrown, it quakes in the floor, then flies back
 }
 
 ## v0.8.0 FB3: the runs a Nemesis attack answers to (`weapon` below).
@@ -144,6 +145,16 @@ var recall_at := 0
 ## each circle as it strikes, up to max_alive of the kind; an egg hatches after egg_ticks, or from phase index
 ## burst_phase on bursts into the attack's pattern instead.
 var egg_ticks := 0
+## v0.11.0 F9 (owner, BossGreatJavelin): a `great_javelin` attack's embedded time; its quake ring's radius (m), period,
+## warning (ticks) and damage (per mille of the hero's max HP); the recall line's warning (ticks) and the way back's
+## speed (metres per tick). The throw's speed, radius and range are the attack's speed, radius_m and length_m.
+var great_embed_ticks := 0
+var great_ring_m := 0.0
+var great_pulse_ticks := 1
+var great_warn_ticks := 0
+var great_pulse_permille := 0
+var great_recall_warn_ticks := 0
+var great_recall_speed := 0.0
 var egg_hp := 0
 var burst_phase := 99
 ## v0.8.0 BS1: the death line for the attack's late part (the javelins coming back, an egg's burst).

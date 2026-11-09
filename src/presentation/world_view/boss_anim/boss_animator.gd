@@ -64,6 +64,7 @@ const MOVE_CLIPS := {
 	WorldReader.MOVE_VERDICT: &"verdict",
 	WorldReader.MOVE_LANCES: &"lances",  # v0.10.5 O3: the Prism's last phase
 	WorldReader.MOVE_KNEEL: &"kneel",
+	WorldReader.MOVE_GREAT_JAVELIN: &"great_javelin",  # v0.11.0 F9: the Warlord's great throw
 }
 ## The clips every boss has besides its moves'.
 const COMMON: Array[StringName] = [

@@ -103,6 +103,20 @@ var jav_boss := PackedInt32Array()
 var jav_attack := PackedInt32Array()
 var jav_from := PackedInt32Array()
 var jav_back := PackedInt32Array()
+## v0.11.0 F9 (owner; BossGreatJavelin): the Warlord's great javelin, one per boss at most: its boss's actor id and
+## attack, its phase (THROW, EMBEDDED, RECALL_WARN, RETURN), the tick that phase began and its flight's ticks, whether
+## this flight has hit, the angle it was thrown along, where it is or flew from, and where its flight ends.
+var gj_boss := PackedInt32Array()
+var gj_attack := PackedInt32Array()
+var gj_phase := PackedInt32Array()
+var gj_from := PackedInt32Array()
+var gj_life := PackedInt32Array()
+var gj_hit := PackedInt32Array()
+var gj_a := PackedInt32Array()
+var gj_x := PackedFloat32Array()
+var gj_y := PackedFloat32Array()
+var gj_tox := PackedFloat32Array()
+var gj_toy := PackedFloat32Array()
 ## v0.8.0 BS2 (owner O5; S6), the Foundry's molten floor: each piece an axis-aligned box (centre, half sizes in
 ## metres), the tick it was laid and the tick it cools, its boss's actor id and the attack that laid it.
 var lava_x := PackedFloat32Array()
@@ -266,6 +280,12 @@ func hash_into(h: StateHasher) -> void:
 		_hash_signatures(h)
 	if lava_x.size() + melt_boss.size() > 0:  # v0.8.0 BS2: only while molten floor is down
 		_hash_molten(h)
+	if not gj_boss.is_empty():  # v0.11.0 F9: only while a great javelin is out
+		h.add_int(-9)
+		for f in [gj_boss, gj_attack, gj_phase, gj_from, gj_life, gj_hit, gj_a]:
+			h.add_ints(f)
+		for f in [gj_x, gj_y, gj_tox, gj_toy]:
+			h.add_f32s(f)
 	if not sig_boss.is_empty():  # v0.9.0 NB1: only while a boss with a cadence lives
 		h.add_int(-2)
 		h.add_ints(sig_boss)
@@ -451,6 +471,20 @@ func add_twin(lead: int, body: int) -> void:
 ## v0.9.0 NB2: removes twin pair k.
 func remove_twin(k: int) -> void:
 	for f: StringName in TWIN_FIELDS:
+		var ai: PackedInt32Array = get(f)
+		ai.remove_at(k)
+		set(f, ai)
+
+
+## v0.11.0 F9: removes great javelin k.
+func remove_great_javelin(k: int) -> void:
+	for f: StringName in [&"gj_x", &"gj_y", &"gj_tox", &"gj_toy"]:
+		var af: PackedFloat32Array = get(f)
+		af.remove_at(k)
+		set(f, af)
+	for f: StringName in [
+		&"gj_boss", &"gj_attack", &"gj_phase", &"gj_from", &"gj_life", &"gj_hit", &"gj_a"
+	]:
 		var ai: PackedInt32Array = get(f)
 		ai.remove_at(k)
 		set(f, ai)
