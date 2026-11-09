@@ -115,16 +115,6 @@ func _build_hud(_lang: String) -> void:
 		c.id, c.item_a, c.item_b, tr(c.name_key), tr(c.desc_key), tr("UI_COMBO_UNLOCKED")
 	)
 	combo.place_bottom_centre(-196 - item.plaque_height() - 10)
-	var gamble := GambleCard.new()
-	_add(gamble)
-	gamble.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	gamble.position = Vector2(root.get_visible_rect().size.x * 0.5 + 300, 260)
-	gamble.play(
-		[&"heat_capacity"] as Array[StringName],
-		&"heat_capacity",
-		GambleIcons.line(gamble, &"heat_capacity", 60)
-	)
-	gamble.finish_spin()
 	var phase := PhaseHud.new()
 	_add(phase)
 	phase.visible = true

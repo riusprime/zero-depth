@@ -47,14 +47,7 @@ const GUTTER_GLOW := 0.2
 const PUFFS := 12
 const SMOKE_RISE_M := 0.8
 const SMOKE_S := 1.0
-## v0.9.5 SS: a win floats the stat's icon over the shrine (metres above its foot, seconds), and a gold ring pulses.
-const PRIZE_FROM_M := 1.4
-const PRIZE_TO_M := 2.0
-const PRIZE_S := 2.0
-const PRIZE_POP_S := 0.2
-const PRIZE_FADE_S := 0.5
-const PRIZE_WIDTH_M := 0.45
-const PRIZE_PX := 64
+## v0.9.5 SS: a gold ring pulses on the base when a spin lands.
 const PULSE_S := 0.3
 const PULSE_GOLD := Color("#FFC94A")
 const CRACK_TINT := Color("#FF3A2A")
@@ -112,9 +105,6 @@ var _crack: Sprite3D
 var _crack_left := 0.0
 var _puff_age := -1.0
 var _pulse_left := 0.0
-var _prize: Sprite3D
-var _prize_age := 0.0
-var _won_id := &""
 var _core_col := CORE
 
 
@@ -177,8 +167,7 @@ func sync(reader: WorldReader) -> void:
 	if reader.gamble_tick() != _seen_tick:
 		_seen_tick = reader.gamble_tick()
 		if _seen_tick >= 0:
-			_spin_left = GambleCard.SPIN_S
-			_won_id = reader.gamble_stat_id(reader.gamble_last_stat())
+			_spin_left = GambleRoll.SPIN_S
 	if reader.gamble_denied_tick() != _denied_tick:
 		_denied_tick = reader.gamble_denied_tick()
 		if _denied_tick >= 0:
@@ -202,11 +191,6 @@ func fizzling() -> bool:
 ## v0.9.5 SS: the cracks are showing.
 func cracked() -> bool:
 	return _crack != null and _crack.visible
-
-
-## v0.9.5 SS: the prize icon floating over the shrine (null when none).
-func prize() -> Sprite3D:
-	return _prize
 
 
 ## v0.9.5 SS: the gold ring pulse is playing.
@@ -260,7 +244,7 @@ func _process(delta: float) -> void:
 	if _spin_left > 0.0:
 		var before := _spin_left
 		_spin_left = maxf(0.0, _spin_left - delta)
-		var k := _spin_left / GambleCard.SPIN_S
+		var k := _spin_left / GambleRoll.SPIN_S
 		turn = 3.0 + 22.0 * k
 		energy = CORE_ENERGY * (1.6 + 0.8 * absf(sin(_t * 30.0)))
 		if before > 0.0 and _spin_left == 0.0:
@@ -343,48 +327,12 @@ func _tick_fx(delta: float) -> void:
 		if _puff_age > SMOKE_S:
 			_puff_age = -1.0
 	_pulse_left = maxf(0.0, _pulse_left - delta)
-	if _prize != null:
-		_prize_age += delta
-		if _prize_age >= PRIZE_S:
-			_prize.queue_free()
-			_prize = null
-		else:
-			var u := _prize_age / PRIZE_S
-			_prize.position.y = lerpf(PRIZE_FROM_M, PRIZE_TO_M, u)
-			var pop := minf(1.0, _prize_age / PRIZE_POP_S)
-			_prize.scale = Vector3.ONE * lerpf(0.6, 1.0, pop)
-			_prize.modulate.a = minf(1.0, (PRIZE_S - _prize_age) / PRIZE_FADE_S)
 
 
-## v0.9.5 SS: the won stat's icon (GambleIcons, the card's symbol drawn once into a small viewport) floats up from the
-## shrine; a gold ring pulses on its base.
+## v0.9.5 SS: a gold ring pulses on the base when a spin lands. (v0.11.0 F13: the won stat's symbol rolls on the HUD,
+## above the shrine, instead of a billboard here: GambleRoll.)
 func _start_prize() -> void:
 	_pulse_left = PULSE_S
-	if _won_id == &"" or root == null:
-		return
-	if _prize != null:
-		_prize.queue_free()
-	var vp := SubViewport.new()
-	vp.size = Vector2i(PRIZE_PX, PRIZE_PX)
-	vp.transparent_bg = true
-	vp.disable_3d = true
-	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
-	var icon := GambleIconView.new(_won_id, float(PRIZE_PX))
-	icon.size = Vector2(PRIZE_PX, PRIZE_PX)
-	vp.add_child(icon)
-	_prize = Sprite3D.new()
-	_prize.name = "Prize"
-	_prize.add_child(vp)
-	_prize.texture = vp.get_texture()
-	_prize.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_prize.no_depth_test = true
-	_prize.fixed_size = false
-	_prize.shaded = false
-	_prize.pixel_size = PRIZE_WIDTH_M / float(PRIZE_PX)
-	_prize.position.y = PRIZE_FROM_M
-	_prize.scale = Vector3.ONE * 0.6
-	_prize_age = 0.0
-	root.add_child(_prize)
 
 
 ## v0.9.5 SS: five cracks across the core, a billboard drawn in code (dark red with a bright edge so it reads on any

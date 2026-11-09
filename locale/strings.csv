@@ -197,8 +197,6 @@ UI_GAMBLE_USE,Gamble · %d ◆,Apostar · %d ◆
 UI_GAMBLE_SPENT,Spent,Agotado
 UI_GAMBLE_BLOCKED,Spent,Agotado
 UI_GAMBLE_SPENT_TAG,Spent,Agotado
-UI_GAMBLE_FAILED,It failed,Falló
-UI_GAMBLE_CARD,Fortune Shrine,Santuario de la Fortuna
 UI_GAMBLE_STATS,Fortune Shrine stats,Estadísticas del Santuario de la Fortuna
 UI_GAMBLE_STATS_NONE,No Fortune Shrine stats yet,Aún no tienes estadísticas del Santuario de la Fortuna
 UI_GAMBLE_MAX_HP,+%d max HP,+%d PV máximos
