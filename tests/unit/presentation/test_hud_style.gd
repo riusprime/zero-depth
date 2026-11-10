@@ -1,13 +1,11 @@
 extends GutTest
-## v0.3.0 UI (PLAN L21, L23, L24): the HUD style helper builds every piece in every style; the danger meter maps
-## tiers and progress to lit marks and progress with no text; the low-HP warning turns on below 30 % of max HP
-## and off again above it. v0.3.5 F15: the calm HUD; plain labels (no ghost copies, no glitch), thin bars.
-## v0.5.5 A5 (owner pick): the HUD ships in B "Ember stone" (stone slabs, ember line, red HP bar), the corner minimap
-## has no black background, and the menus wear C "Cold glass" (MenuStyle) with no build cards beside them.
+## v0.3.0 UI (PLAN L21, L23, L24): the HUD style helper builds every piece; the danger meter maps tiers and progress
+## to lit marks and progress with no text; the low-HP warning turns on below 30 % of max HP and off again above it.
+## v0.3.5 F15: the calm HUD; plain labels (no ghost copies, no glitch), thin bars. v0.5.5 A5: the corner minimap has no
+## black background. v0.10.5 W3-O17: the HUD is Astral; v0.11.1 Step 12: Astral is its only style.
 
 
 func after_each() -> void:
-	HudStyle.current = HudStyle.DEFAULT
 	HudStyle.reduced_motion = false
 
 
@@ -66,16 +64,6 @@ func test_the_full_bar_blinks_slowly_and_holds_steady_red_under_reduced_motion()
 		m._process(1.0 / 60.0)
 		assert_eq(m.level(), 1.0, "steady")
 	assert_true(m.bar_color().is_equal_approx(DangerMeter.RED), "steady red")
-
-
-func test_the_hazard_stripes_are_a_generated_diagonal_tile() -> void:
-	var t := DangerMeter.stripes()
-	assert_not_null(t)
-	var img := t.get_image()
-	assert_eq(img.get_size(), Vector2i(DangerMeter.STRIPE, DangerMeter.STRIPE))
-	assert_eq(img.get_pixel(0, 0).r, 1.0, "a light band")
-	assert_almost_eq(img.get_pixel(DangerMeter.STRIPE - 1, 0).r, DangerMeter.STRIPE_DARK, 0.01)
-	assert_eq(img.get_pixel(1, 2), img.get_pixel(2, 1), "the bands run diagonally")
 
 
 func test_the_reader_gives_progress_toward_the_next_tier() -> void:
@@ -145,28 +133,23 @@ func test_the_pulse_holds_steady_in_calm_mode() -> void:
 	assert_ne(HudStyle.pulse(0.0), HudStyle.pulse(0.25), "it moves otherwise")
 
 
-func test_every_style_builds_every_piece() -> void:
+func test_the_hud_builds_every_piece() -> void:
 	var w := _world()
 	var r := WorldReader.new(w)
-	for s: int in HudStyle.Style.values():
-		HudStyle.current = s as HudStyle.Style
-		var f := HudStyle.font(true)
-		assert_true(f is FontVariation, "style %d has a font" % s)
-		assert_not_null(f.base_font, "built on the bundled TTF")
-		var hud := Hud.new()
-		add_child_autofree(hud)
-		hud.sync(r)
-		hud.show_floor(1, "BIOME_RUINS")
-		for k in 3:
-			hud._process(1.0 / 60.0)
-		assert_eq(hud.danger_meter().style, s, "the HUD's pieces take the current style")
-		assert_eq(hud.hp_bar().style, s)
-		assert_true(hud.floor_card_showing())
+	var f := HudStyle.font(true)
+	assert_true(f is FontVariation, "the HUD has a font")
+	assert_not_null(f.base_font, "built on the bundled TTF")
+	var hud := Hud.new()
+	add_child_autofree(hud)
+	hud.sync(r)
+	hud.show_floor(1, "BIOME_RUINS")
+	for k in 3:
+		hud._process(1.0 / 60.0)
+	assert_true(hud.floor_card_showing())
 
 
 func test_the_calm_hud_has_plain_labels_and_thin_bars() -> void:
-	# v0.10.5 W3-O17: the shipped style is Astral (the owner's W3-O13b pick, 2026-11-04); EMBER was A5's pick B.
-	assert_eq(HudStyle.DEFAULT, HudStyle.Style.ASTRAL, "the owner's W3-O13b pick")
+	# v0.10.5 W3-O17: the HUD is Astral (the owner's W3-O13b pick, 2026-11-04; v0.11.1 Step 12: its only style).
 	var hud := Hud.new()
 	add_child_autofree(hud)
 	hud.sync(WorldReader.new(_world()))
@@ -196,23 +179,8 @@ func test_the_calm_hud_has_plain_labels_and_thin_bars() -> void:
 	assert_eq(f.variation_transform, Transform2D.IDENTITY, "no slant or stretch")
 
 
-## v0.5.5 A5: "ingame UI, heat, health and minimap from B": the HP and top plates are ember-lit stone slabs, HP is a
-## red bar, and the warning still visibly changes the fill. v0.10.5 W3-O17: EMBER is no longer the default; it is
-## still a style, built here on purpose.
-func test_the_ember_stone_hud() -> void:
-	HudStyle.current = HudStyle.Style.EMBER
-	var hud := Hud.new()
-	add_child_autofree(hud)
-	hud.sync(WorldReader.new(_world()))
-	var hp := hud.find_child("HpPlate", true, false) as HudFrame
-	var top := hud.find_child("TopPlate", true, false) as HudFrame
-	assert_eq(hp.style, HudStyle.Style.EMBER)
-	assert_true(hp.ember, "the HP slab carries the ember line")
-	assert_true(top.ember, "so does the top slab")
-	assert_eq(hud.hp_bar().color, HudStyle.HP_RED, "HP is a red bar (B)")
-	assert_eq(HudStyle.text_color(), HudStyle.EMBER_TEXT, "warm type")
-	hud.hp_bar().warn = true
-	assert_ne(hud.hp_bar().fill_color(), HudStyle.HP_RED, "the low-HP pulse shows on a red bar")
+## HudStyle.plate_points (AchievementIcon's badge) is a chamfered outline, not a rectangle.
+func test_plate_points_is_a_chamfered_outline() -> void:
 	var pts := HudStyle.plate_points(Rect2(0, 0, 200, 60))
 	assert_eq(pts.size(), 8, "a chamfered (chipped) slab, not a rectangle")
 
@@ -229,8 +197,6 @@ func test_the_astral_hud() -> void:
 	hud.sync(r)
 	await wait_process_frames(2)
 	var hp := hud.find_child("HpPlate", true, false) as HudFrame
-	assert_eq(hp.style, HudStyle.Style.ASTRAL)
-	assert_eq(hud.hp_bar().style, HudStyle.Style.ASTRAL, "the continuous Astral bar")
 	assert_eq(hud.hp_bar().color, HudStyle.A_HP, "HP is Astral's moon-blue")
 	assert_eq(HudStyle.text_color(), HudStyle.A_TEXT)
 	var medal := hud.find_child("HpMedal", true, false) as Control

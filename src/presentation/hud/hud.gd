@@ -1,4 +1,3 @@
-# gdlint: disable=max-file-lines
 class_name Hud
 extends Control
 ## The fight's HUD (PLAN v0.1.0 Step 5): health (bottom left; the ability squares bottom right), wave and enemies left
@@ -6,8 +5,6 @@ extends Control
 ## takes mouse input, so clicks reach the game. v0.3.0 UI (L21, L23, L24), calmer in v0.3.5 (F15): drawn in the
 ## HudStyle look (plain type, thin bars, a hairline per group); the top group shows floor, biome, time and a visual
 ## danger meter (no numbers); below 30 % HP the HP bar and the screen edge pulse red.
-## v0.5.5 A5 (owner pick B "Ember stone"): the groups sit on chipped stone slabs (HudStyle.EMBER); the HP and top
-## plates carry the warm ember line; HP is a red bar; the vent hint gets a small slab of its own.
 ## v0.10.5 W3-O17 (owner, 2026-11-04: "and what about the rest of the UI? it should match the new style"; ASTRAL,
 ## W3_O13_UI_STYLE_G2.md round 2): unboxed, over a faint ink wash at the top and the bottom. Bottom left: the HP
 ## medallion (a ring, a four-point star, the HP rune) joined to one continuous HP bar in a hairline frame, the weapon's
@@ -135,11 +132,10 @@ var _biome_key := ""
 var _floor_card_args := []
 ## v0.8.0 N11 (owner O69): the hero is still arriving (the last sync): the HUD stays hidden and the floor card waits.
 var _landing := false
-# v0.3.0 UI: the danger meter (L23), the low-HP edge glow (L24) and the style's plates.
+# v0.3.0 UI: the danger meter (L23), the low-HP edge glow (L24) and the groups' frames.
 var _danger := DangerMeter.new()
 var _vignette := LowHpVignette.new()
 ## v0.10.5 W3-O17: ASTRAL's ink wash, the HP medallion, the weapon's name on the HP row and the floor line's stars.
-var _astral := HudStyle.current == HudStyle.Style.ASTRAL
 var _wash := AstralHudParts.Wash.new()
 var _hp_medal := AstralHudParts.HpMedal.new()
 var _weapon_name := Label.new()
@@ -158,8 +154,7 @@ func _init() -> void:
 	name = "Hud"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if _astral:
-		add_child(_wash)
+	add_child(_wash)
 	add_child(_vignette)
 	add_child(objective_hints)  # v0.11.0 O2: under every panel and plate
 	_build_corner()
@@ -196,8 +191,7 @@ func _init() -> void:
 	_gate.custom_minimum_size = Vector2(900, 0)
 	_gate.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	HudStyle.style_label(_gate, 22, true)
-	if _astral:
-		HudStyle.serif_label(_gate, 22, 3)
+	HudStyle.serif_label(_gate, 22, 3)
 	add_child(_gate)
 	_gate.position = Vector2(-450, -150)
 	_build_floor_card()
@@ -344,13 +338,12 @@ func _sync_hp(reader: WorldReader) -> void:
 		_hp_text.text = tr("HUD_HP") % [hp, mx]
 		_hp_text.add_theme_color_override("font_color", hp_color)
 	_regen.sync(reader, Vector2(_hp_bar.size.x * _hp_bar.shown_fraction(), _hp_bar.size.y))
-	if _astral:
-		var weapon := reader.weapon_id()
-		if _changed(&"weapon", weapon):
-			_weapon_name.text = ""
-			for a: Dictionary in reader.abilities():
-				if a["id"] == weapon:
-					_weapon_name.text = tr(a["name_key"])
+	var weapon := reader.weapon_id()
+	if _changed(&"weapon", weapon):
+		_weapon_name.text = ""
+		for a: Dictionary in reader.abilities():
+			if a["id"] == weapon:
+				_weapon_name.text = tr(a["name_key"])
 
 
 ## The gate note at the bottom and the floor line at the top.
@@ -374,11 +367,7 @@ func _sync_floor_lines(reader: WorldReader) -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
-	_hp_frame.tint = (
-		Color.WHITE.lerp(HudStyle.warn(), HudStyle.pulse(_t)) if _hp_bar.warn else Color.WHITE
-	)
-	if _astral:
-		_hp_medal.warn = HudStyle.pulse(_t) if _hp_bar.warn else 0.0
+	_hp_medal.warn = HudStyle.pulse(_t) if _hp_bar.warn else 0.0
 	notices.advance(delta)  # v0.11.0 F12
 	if _floor_card_left > 0.0 and not _landing:  # v0.8.0 N11: the card shows once the hero landed
 		_floor_card_left -= delta
@@ -510,37 +499,33 @@ func _build_corner() -> void:
 	corner.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	add_child(corner)
 	_hp_frame.name = "HpPlate"
-	_hp_frame.ember = true
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 7)
 	_hp_frame.add_child(col)
-	if _astral:  # v0.10.5 W3-O17: the medallion at the bar's left end; the weapon's name and the HP over the bar
-		corner.position.x = 20.0
-		var row := HBoxContainer.new()
-		row.name = "HpRow"
-		row.add_theme_constant_override("separation", 0)
-		corner.add_child(row)
-		row.add_child(_hp_medal)
-		row.add_child(_hp_frame)
-		_hp_frame.size_flags_vertical = Control.SIZE_SHRINK_END
-		AstralHudParts.set_margins(_hp_frame, 0, 26, 0, ASTRAL_BAR_FOOT - BAR.y * 0.5)
-		_hp_medal.bar_y = ASTRAL_BAR_FOOT
-		col.add_theme_constant_override("separation", 6)
-		var top := HBoxContainer.new()
-		top.name = "HpLine"
-		col.add_child(top)
-		_weapon_name.name = "WeaponName"
-		_weapon_name.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		_weapon_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_weapon_name.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-		_weapon_name.clip_text = true
-		HudStyle.serif_label(_weapon_name, 15, 4, HudStyle.A_TEXT)
-		top.add_child(_weapon_name)
-		_hp_text.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-		top.add_child(_hp_text)
-	else:
-		corner.add_child(_hp_frame)
-		col.add_child(_hp_text)
+	# v0.10.5 W3-O17: the medallion at the bar's left end; the weapon's name and the HP over the bar
+	corner.position.x = 20.0
+	var row := HBoxContainer.new()
+	row.name = "HpRow"
+	row.add_theme_constant_override("separation", 0)
+	corner.add_child(row)
+	row.add_child(_hp_medal)
+	row.add_child(_hp_frame)
+	_hp_frame.size_flags_vertical = Control.SIZE_SHRINK_END
+	AstralHudParts.set_margins(_hp_frame, 0, 26, 0, ASTRAL_BAR_FOOT - BAR.y * 0.5)
+	_hp_medal.bar_y = ASTRAL_BAR_FOOT
+	col.add_theme_constant_override("separation", 6)
+	var top := HBoxContainer.new()
+	top.name = "HpLine"
+	col.add_child(top)
+	_weapon_name.name = "WeaponName"
+	_weapon_name.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_weapon_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_weapon_name.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	_weapon_name.clip_text = true
+	HudStyle.serif_label(_weapon_name, 15, 4, HudStyle.A_TEXT)
+	top.add_child(_weapon_name)
+	_hp_text.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	top.add_child(_hp_text)
 	_hp_bar.name = "HpBar"
 	_hp_bar.color = HudStyle.hp_color()
 	_hp_bar.custom_minimum_size = BAR
@@ -551,7 +536,6 @@ func _build_corner() -> void:
 ## The top plate: "FLOOR 01 // RUINS" over the run time, the danger meter and the kills.
 func _build_top() -> void:
 	_top_frame.name = "TopPlate"
-	_top_frame.ember = true
 	_top_frame.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_top_frame.position = Vector2(-TOP_W * 0.5, 10)
 	_top_frame.custom_minimum_size = Vector2(TOP_W, 0)
@@ -576,16 +560,16 @@ func _build_top() -> void:
 	_left.add_theme_color_override("font_color", Color(HudStyle.text_color(), 0.85))
 	row.add_child(_left)
 	add_child(depths_tag)
-	if _astral:  # v0.10.5 W3-O17: Cinzel, letter-spaced; the floor line between two stars
-		AstralHudParts.set_margins(_top_frame, 20, 20, 2, 6)
-		col.add_theme_constant_override("separation", 6)
-		row.add_theme_constant_override("separation", 18)
-		HudStyle.serif_label(_floor, 15, 5, HudStyle.A_TEXT)
-		_floor_marks.label = _floor
-		_floor.add_child(_floor_marks)
-		_floor.resized.connect(_floor_marks.queue_redraw)
-		HudStyle.serif_label(_wave, 22, 2, HudStyle.A_TEXT)
-		HudStyle.serif_label(_left, 13, 3, HudStyle.A_DIM)
+	# v0.10.5 W3-O17: Cinzel, letter-spaced; the floor line between two stars
+	AstralHudParts.set_margins(_top_frame, 20, 20, 2, 6)
+	col.add_theme_constant_override("separation", 6)
+	row.add_theme_constant_override("separation", 18)
+	HudStyle.serif_label(_floor, 15, 5, HudStyle.A_TEXT)
+	_floor_marks.label = _floor
+	_floor.add_child(_floor_marks)
+	_floor.resized.connect(_floor_marks.queue_redraw)
+	HudStyle.serif_label(_wave, 22, 2, HudStyle.A_TEXT)
+	HudStyle.serif_label(_left, 13, 3, HudStyle.A_DIM)
 
 
 ## v0.10.5 O6 (G2 pick C): the tag hangs just under the top plate, right-aligned to its inner edge.
@@ -635,23 +619,20 @@ func _build_floor_card() -> void:
 	_floor_card_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_floor_card_title.add_theme_constant_override("outline_size", 6)
 	_floor_card.add_child(_floor_card_title)
-	if _astral:  # v0.10.5 W3-O17: Cinzel over a star rule, on an ink veil
-		HudStyle.serif_label(_floor_card_title, 48, 8, HudStyle.A_TEXT)
-		_floor_card.add_child(AstralChrome.Rule.new(220.0))
-		_floor_card.draw.connect(_draw_floor_card_veil)
+	# v0.10.5 W3-O17: Cinzel over a star rule, on an ink veil
+	HudStyle.serif_label(_floor_card_title, 48, 8, HudStyle.A_TEXT)
+	_floor_card.add_child(AstralChrome.Rule.new(220.0))
+	_floor_card.draw.connect(_draw_floor_card_veil)
 	var plate := HudFrame.new(Vector2(28, 4))
 	plate.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_floor_card.add_child(plate)
 	_floor_card_biome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_floor_card_biome.add_theme_color_override("font_color", HudStyle.accent())
-	if _astral:
-		HudStyle.serif_label(_floor_card_biome, 22, 6, HudStyle.A_ACCENT)
+	HudStyle.serif_label(_floor_card_biome, 22, 6, HudStyle.A_ACCENT)
 	plate.add_child(_floor_card_biome)
 	_floor_card_shards.name = "FloorCardShards"
 	_floor_card_shards.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_floor_card_shards.add_theme_color_override(
-		"font_color", HudStyle.A_ACCENT if _astral else ShardIcon.MID
-	)
+	_floor_card_shards.add_theme_color_override("font_color", HudStyle.A_ACCENT)
 	_floor_card_shards.add_theme_constant_override("outline_size", 4)
 	_floor_card_shards.visible = false
 	_floor_card.add_child(_floor_card_shards)
@@ -704,13 +685,13 @@ func _build_rewards() -> void:
 	plate.offset_right = -28
 	plate.offset_top = 20
 	_shard_box.add_theme_constant_override("separation", 10)
-	_shard_box.add_child(ShardIcon.new(26.0 if _astral else 22.0, _astral))
+	_shard_box.add_child(ShardIcon.new(26.0, true))
 	_shards.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	HudStyle.style_label(_shards, 22, true)
 	_shards.add_theme_color_override("font_color", ShardIcon.LIGHT)
-	if _astral:  # v0.10.5 W3-O17: the wallet in Cinzel by the Astral shard
-		HudStyle.serif_label(_shards, 26, 1, HudStyle.A_TEXT)
-		(_shard_box.get_child(0) as Control).size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# v0.10.5 W3-O17: the wallet in Cinzel by the Astral shard
+	HudStyle.serif_label(_shards, 26, 1, HudStyle.A_TEXT)
+	(_shard_box.get_child(0) as Control).size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_shard_box.add_child(_shards)
 	plate.add_child(_shard_box)
 	add_child(plate)

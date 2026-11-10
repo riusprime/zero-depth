@@ -11,22 +11,19 @@ extends Control
 ## - a small word over the bar's left end names the zone, and "VENT: DASH" shows over its middle while a dash (or
 ##   blink) would vent.
 ## Reads WorldReader.heat_state() only (EI-07); hidden when the world has no heat.
-## v0.5.5 A5 (owner pick B "Ember stone"): the same straight bar, ticks and colours (HeatLooks, unchanged), set in
-## a chipped stone slab with the ember line under it (HudStyle.draw_plate); the bar is inset by PAD.
-## v0.10.5 W3-O17 (UI style Astral): in HudStyle.ASTRAL no slab: a slim bar (an ink bed in a hairline frame), the fill
+## v0.10.5 W3-O17 (UI style Astral): no slab: a slim bar (an ink bed in a hairline frame), the fill
 ## a 3 px line in Astral's warm tones (silver cool, the muted amber Hot, amber leaning rose in Overclock, rose-red
 ## overheated), the thresholds as 1 px ticks, a small diamond at the overheat end, the zone's word in letter-spaced
 ## Cinzel over the bar's left end and "VENT READY" over its right end while venting would blast. Same marks and reads.
 
 const SIZE := Vector2(420, 46)
-## The bar's inset from the slab's sides (px).
+## The bar's inset from the meter's sides (px).
 const PAD := 16.0
 ## The bar's thickness and the ticks' / cap's height (px).
 const BAR_H := 5.0
 const TICK_H := 11.0
 const FLASH_S := 0.45
 const WARN_SHARE := 0.88
-const FONT_SIZE := 14
 
 var _s := {}
 var _blink := false
@@ -139,15 +136,6 @@ func x_of(h: float) -> float:
 	return r.position.x + r.size.x * clampf(h / float(_s["max"]), 0.0, 1.0)
 
 
-## The colour the fill is drawn in now: the heat colour, red while overheated.
-func fill_color() -> Color:
-	if _s.is_empty():
-		return HeatLooks.COOL
-	if stalled():
-		return HeatLooks.OVERHEAT_MARK
-	return HeatLooks.color(heat(), float(_s["max"]), float(_s["hot"]), float(_s["overclock"]))
-
-
 # --- Drawing ------------------------------------------------------------------------------------------------
 func _draw() -> void:
 	if _s.is_empty():
@@ -156,39 +144,10 @@ func _draw() -> void:
 	var mx := float(_s["max"])
 	var h := heat()
 	var pulse := HudStyle.pulse(_t * 1.5)
-	if HudStyle.current == HudStyle.Style.ASTRAL:
-		_draw_astral(r, mx, h, pulse)
-		return
-	if HudStyle.current == HudStyle.Style.EMBER:
-		HudStyle.draw_plate(self, Rect2(Vector2.ZERO, SIZE), true)
-	var track := Color(0, 0, 0, 0.6)
-	if stalled():
-		track = Color(HeatLooks.OVERHEAT_MARK, 0.25 + 0.25 * pulse)
-	draw_rect(r, track)
-	var fc := fill_color()
-	if stalled():
-		fc = Color(fc, 0.6 + 0.4 * pulse)
-	draw_rect(Rect2(r.position, Vector2(x_of(h) - r.position.x, r.size.y)), fc)
-	if _flash > 0.0:
-		var k := _flash / FLASH_S
-		var lit := Rect2(r.position, Vector2(x_of(h) - r.position.x, r.size.y))
-		draw_rect(lit, Color(HeatLooks.WHITE_HOT, 0.6 * k))
-	_tick(float(_s["hot"]), HeatLooks.HOT, h)
-	_tick(float(_s["overclock"]), HeatLooks.OVERCLOCK, h)
-	var near := h >= mx * WARN_SHARE or stalled()
-	var cap := Color(HeatLooks.OVERHEAT_MARK, (0.45 + 0.55 * pulse) if near else 0.9)
-	var mid := r.get_center().y
-	draw_rect(Rect2(r.end.x - 1.0, mid - TICK_H * 0.5 - 1.0, 3.0, TICK_H + 2.0), cap)
-	var top := r.position.y - TICK_H * 0.5 - 4.0
-	_text(Vector2(PAD, top), tier_text(), _tier_color(), HORIZONTAL_ALIGNMENT_LEFT)
-	var vent := vent_text()
-	if not vent.is_empty():
-		_text(
-			Vector2(PAD, top), vent, Color(HeatLooks.WHITE_HOT, 0.95), HORIZONTAL_ALIGNMENT_CENTER
-		)
+	_draw_astral(r, mx, h, pulse)
 
 
-## v0.10.5 W3-O17: the colour ASTRAL draws the fill in now (the same zones as fill_color, in Astral's tones).
+## v0.10.5 W3-O17: the colour the fill is drawn in now: the heat's zone in Astral's tones, the warning while overheated.
 func astral_color() -> Color:
 	if _s.is_empty():
 		return HudStyle.A_METAL
@@ -269,31 +228,3 @@ func _draw_astral(r: Rect2, mx: float, h: float, pulse: float) -> void:
 			o.size.x,
 			3
 		)
-
-
-## A threshold tick across the bar: dim until heat reaches it, then its zone's colour.
-func _tick(at: float, col: Color, h: float) -> void:
-	var r := bar_rect()
-	var x := x_of(at)
-	var c := col if h >= at else Color(col, 0.45)
-	draw_rect(Rect2(x - 1.0, r.get_center().y - TICK_H * 0.5, 2.0, TICK_H), c)
-
-
-func _tier_color() -> Color:
-	match int(_s["tier"]):
-		HeatLooks.TIER_HOT:
-			return HeatLooks.HOT
-		HeatLooks.TIER_OVERCLOCK:
-			return HeatLooks.OVERCLOCK.lerp(HeatLooks.WHITE_HOT, 0.25)
-		HeatLooks.TIER_OVERHEAT:
-			return HeatLooks.OVERHEAT_MARK
-	return Color(0.8, 0.84, 0.88, 0.75)
-
-
-func _text(baseline: Vector2, text: String, col: Color, align: HorizontalAlignment) -> void:
-	if text.is_empty():
-		return
-	var font := HudStyle.font(true)
-	var w := SIZE.x - PAD * 2.0
-	draw_string_outline(font, baseline, text, align, w, FONT_SIZE, 3, Color(0, 0, 0, 0.6))
-	draw_string(font, baseline, text, align, w, FONT_SIZE, col)

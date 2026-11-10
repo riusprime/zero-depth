@@ -4,8 +4,8 @@ extends RefCounted
 ## docs/roadmap/v0.8.0/evidence/MENU_G2.md): the menus' and the cards' look, "Ember stone". Dark carved stone slabs
 ## with chipped edges, lit warm from below by embers (StoneBox draws one), a glowing inlay in an element's colour
 ## (InlaySocket, StoneBox's inlay line and ring), a carved rarity gem (CardMark) and a gold rim inlay on epic and
-## legendary things. It matches the HUD's own Ember stone plates (HudStyle.EMBER, v0.5.5 A5) and the world's fire
-## light. One table of tokens here; StoneBox, InlaySocket, MenuStyle and the cards read it.
+## legendary things. It matched the HUD's former Ember stone plates (v0.5.5 A5; the HUD is Astral now) and the
+## world's fire light. One table of tokens here; StoneBox, InlaySocket, MenuStyle and the cards read it.
 ## Presentation only (EI-07): nothing here decides an outcome.
 
 ## The warm type, the dim type and the key hints.

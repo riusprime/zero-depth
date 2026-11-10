@@ -11,7 +11,7 @@ extends Control
 ## its family's colour round its level (InlaySocket's ring), an empty one is an unlit chip.
 ## v0.6.5 WN2: the pips are the wand's slots in order (left to right, as the wand reads); a trigger card's pip wears a
 ## small "›" and a thin ember cut stands after it (the cards to its right are what it casts).
-## v0.10.5 W3-O17 (UI style Astral): in HudStyle.ASTRAL a pip is a small diamond (AstralHudParts.Pip, still a StoneBox:
+## v0.10.5 W3-O17 (UI style Astral): a pip is a small diamond (AstralHudParts.Pip, still a StoneBox:
 ## its family's colour in `ring_color`), the plate draws nothing, and the weapon's name moves onto the HP row (Hud) so
 ## the row shows the utility and the pips.
 
@@ -58,18 +58,13 @@ func _init() -> void:
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_row.add_child(l)
-	if HudStyle.current == HudStyle.Style.ASTRAL:
-		HudStyle.serif_label(_utility, 13, 3, HudStyle.A_DIM)
+	HudStyle.serif_label(_utility, 13, 3, HudStyle.A_DIM)
 	for k in WorldReader.MOD_SLOTS:
 		var p := Panel.new()
 		p.name = "ModPip%d" % (k + 1)
 		p.custom_minimum_size = Vector2(PIP, PIP)
 		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var box: StoneBox = (
-			AstralHudParts.Pip.new()
-			if HudStyle.current == HudStyle.Style.ASTRAL
-			else StoneBox.new()
-		)
+		var box: StoneBox = AstralHudParts.Pip.new()
 		box.pattern = 3 + k * 5
 		box.cut = 4.0
 		box.chip = 1.0
@@ -118,11 +113,9 @@ func sync(reader: WorldReader) -> void:
 	for a: Dictionary in abilities:
 		names[a["id"]] = a["name_key"]
 	_weapon.text = tr(names.get(weapon, &"")) if weapon != &"" else ""
-	_weapon.visible = HudStyle.current != HudStyle.Style.ASTRAL  # W3-O17: on the HP row instead
+	_weapon.visible = false  # W3-O17: on the HP row instead
 	var util := reader.utility_id()
-	_utility.text = "· %s" % tr(names[util]) if util != &"" and names.has(util) else ""
-	if HudStyle.current == HudStyle.Style.ASTRAL and _utility.text != "":
-		_utility.text = tr(names[util])
+	_utility.text = tr(names[util]) if util != &"" and names.has(util) else ""
 	_utility.visible = _utility.text != ""
 	var slots: Array = b["slots"]
 	_filled = mini(slots.size(), _pips.size())

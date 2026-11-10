@@ -7,7 +7,7 @@ extends Control
 ## seconds left; a ready square has a lit border and flashes white for 0.15 s the tick it becomes ready. The binding
 ## glyph (the live binding of the last device used) sits in a pill at the bottom-left corner; Blink's charges at the
 ## top right. Reads WorldReader only (EI-07).
-## v0.10.5 W3-O17 (UI style Astral): in HudStyle.ASTRAL each square holds a round medallion instead of a box (the
+## v0.10.5 W3-O17 (UI style Astral): each square holds a round medallion instead of a box (the
 ## round-2 mock's): an ink disc in a silver ring with a dotted inner ring, four small stars round it while ready;
 ## cooling, a dark wedge over the part still cooling, a moon-blue arc outside with a diamond at its head, the seconds
 ## in Cinzel; the binding in a 1 px key cap under it. Same squares, same places, same reads.
@@ -17,21 +17,13 @@ const GAP := 6.0
 ## Distance from the right and the bottom edge (px). The HP plate shares the bottom line (owner, 2026-10-26).
 const MARGIN_RIGHT := 24.0
 const MARGIN_BOTTOM := 20.0
-const PLATE := Color("#1A1D24", 0.88)
-const BORDER := Color("#C8CCD4", 0.30)
-const BORDER_READY := Color("#E8EAEE")
-const ICON := Color("#E8EAEE")
-const COVER := Color(0, 0, 0, 0.65)
-const SECONDS_FONT := 30
-const SECONDS_OUTLINE := 3
-const GLYPH_FONT := 13
 const FLASH_SECONDS := 0.15
 const FLASH_ALPHA := 0.45
 ## Under this many seconds the digits show one decimal.
 const DECIMAL_BELOW := 10.0
 ## The PlayStation names of the pad glyphs.
 const PS_NAMES := {"RT": "R2", "LT": "L2", "RB": "R1", "LB": "L1"}
-## v0.10.5 W3-O17: ASTRAL's medallion radius inside a square (its cooldown arc runs 6 px outside it).
+## v0.10.5 W3-O17: the medallion's radius inside a square (its cooldown arc runs 6 px outside it).
 const A_RADIUS := 29.0
 
 ## True while the last device used was a gamepad (tests set it).
@@ -174,50 +166,7 @@ func _rect_of(k: int) -> Rect2:
 
 func _draw() -> void:
 	for k in _slots.size():
-		_square(_rect_of(k), _slots[k])
-
-
-func _square(r: Rect2, s: Dictionary) -> void:
-	if HudStyle.current == HudStyle.Style.ASTRAL:
-		_medallion(r, s)
-		return
-	var cooling: bool = s["cooling"]
-	var box := StyleBoxFlat.new()
-	box.bg_color = PLATE
-	box.border_color = BORDER if cooling else BORDER_READY
-	box.set_border_width_all(2)
-	box.set_corner_radius_all(4)
-	draw_style_box(box, r)
-	AbilitySquareIcons.draw(self, s["icon"], r.grow(-r.size.x * 0.24), ICON)
-	if cooling:
-		var inner := r.grow(-2.0)
-		draw_rect(
-			Rect2(inner.position, Vector2(inner.size.x, inner.size.y * float(s["share"]))), COVER
-		)
-		_text(
-			seconds_text(float(s["seconds"])),
-			r.position + Vector2(0, r.size.y * 0.5 - 18.0),
-			r.size.x
-		)
-	var f := float(_flash.get(s["id"], 0.0))
-	if f > 0.0:
-		var a := f / FLASH_SECONDS
-		draw_rect(r, Color(1, 1, 1, FLASH_ALPHA * a))
-		draw_rect(r, Color(1, 1, 1, a), false, 2.0)
-	_pill(s["glyph"], r.position + Vector2(-5.0, r.size.y - 17.0))
-	if int(s["charges"]) > 1:
-		var c := r.position + Vector2(r.size.x - 13.0, 13.0)
-		draw_circle(c, 11.0, Color(0, 0, 0, 0.85))
-		draw_arc(c, 11.0, 0.0, TAU, 24, Color(ICON, 0.9), 1.5)
-		draw_string(
-			HudStyle.font(true),
-			c + Vector2(-11, 6),
-			str(s["charges"]),
-			HORIZONTAL_ALIGNMENT_CENTER,
-			22,
-			16,
-			Color.WHITE
-		)
+		_medallion(_rect_of(k), _slots[k])
 
 
 ## v0.10.5 W3-O17: the square `r` as an Astral medallion (AstralHudParts.medallion), its icon, seconds, flash, charges
@@ -265,37 +214,6 @@ func _medallion(r: Rect2, s: Dictionary) -> void:
 			0,
 			700
 		)
-
-
-func _text(t: String, at: Vector2, w: float) -> void:
-	var f := HudStyle.font(true)
-	var p := at + Vector2(0, SECONDS_FONT)
-	draw_string_outline(
-		f, p, t, HORIZONTAL_ALIGNMENT_CENTER, w, SECONDS_FONT, SECONDS_OUTLINE, Color(0, 0, 0, 0.85)
-	)
-	draw_string(f, p, t, HORIZONTAL_ALIGNMENT_CENTER, w, SECONDS_FONT, Color.WHITE)
-
-
-func _pill(t: String, at: Vector2) -> void:
-	if t == "":
-		return
-	var f := HudStyle.font(true)
-	var w := f.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, GLYPH_FONT).x + 14.0
-	var box := StyleBoxFlat.new()
-	box.bg_color = Color(0.03, 0.03, 0.05, 0.92)
-	box.border_color = Color(1, 1, 1, 0.35)
-	box.set_border_width_all(1)
-	box.set_corner_radius_all(10)
-	draw_style_box(box, Rect2(at, Vector2(w, 20)))
-	draw_string(
-		f,
-		at + Vector2(0, 1 + GLYPH_FONT),
-		t,
-		HORIZONTAL_ALIGNMENT_CENTER,
-		w,
-		GLYPH_FONT,
-		Color.WHITE
-	)
 
 
 ## The clockwise wedge (the Vent plate's cooldown) on any canvas item.

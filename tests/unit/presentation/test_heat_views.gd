@@ -84,14 +84,14 @@ func test_overheating_turns_the_bar_red() -> void:
 	var w := _world()
 	var r := WorldReader.new(w)
 	m.sync(r)
-	assert_ne(m.fill_color(), HeatLooks.OVERHEAT_MARK, "cool: the heat colour")
+	assert_ne(m.astral_color(), HudStyle.A_WARN, "cool: the heat colour")
 	Heat.add(w, 100 * HeatTable.MILLI)
 	m.sync(r)
 	assert_true(m.stalled())
 	assert_true(m.flashing(), "the overheat flashes")
 	assert_eq(m.tier_text(), tr("HUD_HEAT_OVERHEAT"))
 	assert_eq(m.vent_text(), "", "no vent while overheated")
-	assert_eq(m.fill_color(), HeatLooks.OVERHEAT_MARK, "overheated: the bar is red")
+	assert_eq(m.astral_color(), HudStyle.A_WARN, "overheated: the bar is the warning")
 
 
 ## v0.3.5 F2: a straight bar; its ticks and its end sit where the sim's heat table puts Hot, Overclock and max.

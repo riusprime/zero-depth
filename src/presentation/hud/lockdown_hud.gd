@@ -5,12 +5,10 @@ extends VBoxContainer
 ## Hazard one) with the formation you're on and how many enemies are left; when it opens, a line saying the exits are
 ## open (or that the bars gave way, when the 90 s cap opened them), for a few seconds. Reads WorldReader.lockdown()
 ## only; it decides nothing.
-## v0.10.5 W3-O20 (UI style Astral): in HudStyle.ASTRAL the title is letter-spaced Cinzel over a fading hairline
+## v0.10.5 W3-O20 (UI style Astral): the title is letter-spaced Cinzel over a fading hairline
 ## (HudStyle.astral_banner), silver-white, a Hazard one in the rose warning.
 
 const CLEARED_SECONDS := 4.0
-const STEEL := Color("#C9D3DD")
-const WARN := Color("#FF7A3A")
 
 var title := HudStyle.label(30, true)
 var progress := HudStyle.label(18)
@@ -49,20 +47,13 @@ func sync(reader: WorldReader) -> void:
 	if int(d["sealed"]) >= 0:
 		var hazard := int(d["kind"]) == WorldReader.LOCKDOWN_HAZARD
 		title.text = tr("HUD_LOCKDOWN_HAZARD" if hazard else "HUD_LOCKDOWN")
-		HudStyle.font_color(
-			title,
-			(
-				HudStyle.pick(HudStyle.A_WARN, WARN)
-				if hazard
-				else HudStyle.pick(HudStyle.A_TEXT, STEEL)
-			)
-		)
+		HudStyle.font_color(title, HudStyle.A_WARN if hazard else HudStyle.A_TEXT)
 		var wave := maxi(1, int(d["wave"]))
 		progress.text = tr("HUD_LOCKDOWN_LEFT") % [wave, int(d["waves"]), int(d["alive"])]
 		visible = true
 	elif _left > 0.0:
 		title.text = tr("HUD_LOCKDOWN")
-		HudStyle.font_color(title, HudStyle.pick(HudStyle.A_TEXT, STEEL))
+		HudStyle.font_color(title, HudStyle.A_TEXT)
 		progress.text = tr("HUD_LOCKDOWN_FORCED" if _forced else "HUD_LOCKDOWN_CLEARED")
 		visible = true
 	else:

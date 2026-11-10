@@ -7,7 +7,6 @@ extends Control
 ## v0.3.0 BX (L22): while the boss rises the bar fills from empty to full over exactly its intro ticks
 ## (WorldReader.boss_intro_permille), then shows its real HP.
 ## v0.3.5 F15: calmer; plain type, a thin bar on a faint track, a hairline stagger meter.
-## v0.5.5 A5 (Ember stone): in HudStyle.EMBER the bar sits on a stone slab with the ember line (HudStyle.draw_plate).
 ## v0.8.0 N2 (owner O52): under the bar, The Fallen's mimic window line (its warning, then the window and the seconds
 ## left; WorldReader.final_pace), empty otherwise.
 ## v0.8.0 N4 (owner O56, O57): the HP is a HudBar (HealthBarTrail: the damage chunk that holds from the burst's first
@@ -18,7 +17,7 @@ extends Control
 ## rise fills it (the sim's own rise, L22). Replaces FB1's three segments. While
 ## the sim says the boss can't be hurt (WorldReader.boss_invulnerable) the bar turns INVULNERABLE's colour and says
 ## "Invulnerable", with the shields still to pass (WorldReader.boss_shields_left) when there are any.
-## v0.10.5 W3-O17 (UI style Astral): in HudStyle.ASTRAL no slab: the name in letter-spaced Cinzel between two stars
+## v0.10.5 W3-O17 (UI style Astral): no slab: the name in letter-spaced Cinzel between two stars
 ## and fading hairlines, a small crescent over it, and the bar as one continuous fill in a hairline frame
 ## (AstralHudParts.bar) in the colour mode's enemy colour; the lines under it in Atkinson. Same reads.
 ## v0.10.5 W3-O20: the lines under the bar (the phase, Invulnerable, The Fallen's window) in Cinzel, Astral's tones.
@@ -95,16 +94,15 @@ func _init() -> void:
 	visible = false
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if HudStyle.current == HudStyle.Style.ASTRAL:
-		HudStyle.serif_label(_name, 18, 5, HudStyle.A_TEXT)
-		HudStyle.serif_label(_stagger_label, 13, 3, HudStyle.A_ACCENT)
-		# v0.10.5 W3-O20: the lines under the bar in Cinzel too, in Astral's tones (no violet, no steel)
-		HudStyle.serif_label(_sub, 16, 3, HudStyle.A_DIM)
-		HudStyle.serif_label(_shield, 16, 3, HudStyle.A_ACCENT)
-		HudStyle.serif_label(_fallen, 18, 4, HudStyle.A_LINE_HI)
-		for l: Label in [_sub, _shield]:
-			l.size.y = 22
-		_name.resized.connect(queue_redraw)
+	HudStyle.serif_label(_name, 18, 5, HudStyle.A_TEXT)
+	HudStyle.serif_label(_stagger_label, 13, 3, HudStyle.A_ACCENT)
+	# v0.10.5 W3-O20: the lines under the bar in Cinzel too, in Astral's tones (no violet, no steel)
+	HudStyle.serif_label(_sub, 16, 3, HudStyle.A_DIM)
+	HudStyle.serif_label(_shield, 16, 3, HudStyle.A_ACCENT)
+	HudStyle.serif_label(_fallen, 18, 4, HudStyle.A_LINE_HI)
+	for l: Label in [_sub, _shield]:
+		l.size.y = 22
+	_name.resized.connect(queue_redraw)
 
 
 func sync(reader: WorldReader) -> void:
@@ -271,17 +269,13 @@ func bottom() -> float:
 
 
 func _draw() -> void:
-	if HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O17: the name's stars and rules, a crescent over it
-		var f := _name.get_theme_font(&"font")
-		var tw := f.get_string_size(_name.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
-		var cx := roundf(BAR.x * 0.5)
-		var y := 13.5
-		for sx: float in [-1.0, 1.0]:
-			var ox := roundf(cx + sx * (tw * 0.5 + 22.0)) + 0.5
-			AstralChrome.star4(self, Vector2(ox, y), 6.0, HudStyle.A_METAL, 0.2)
-			AstralChrome.rule1(self, ox + sx * 12.0, 13.0, sx * 96.0, Color(HudStyle.A_METAL, 0.6))
-		AstralChrome.crescent(self, Vector2(cx + 0.5, -6.0), 5.0, Color(HudStyle.A_METAL, 0.85))
-		return
-	if HudStyle.current == HudStyle.Style.EMBER:
-		var h := 26.0 + BAR.y + 6.0 + 18.0
-		HudStyle.draw_plate(self, Rect2(-18, -4, BAR.x + 36, h + 10), true)
+	# v0.10.5 W3-O17: the name's stars and rules, a crescent over it
+	var f := _name.get_theme_font(&"font")
+	var tw := f.get_string_size(_name.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+	var cx := roundf(BAR.x * 0.5)
+	var y := 13.5
+	for sx: float in [-1.0, 1.0]:
+		var ox := roundf(cx + sx * (tw * 0.5 + 22.0)) + 0.5
+		AstralChrome.star4(self, Vector2(ox, y), 6.0, HudStyle.A_METAL, 0.2)
+		AstralChrome.rule1(self, ox + sx * 12.0, 13.0, sx * 96.0, Color(HudStyle.A_METAL, 0.6))
+	AstralChrome.crescent(self, Vector2(cx + 0.5, -6.0), 5.0, Color(HudStyle.A_METAL, 0.85))

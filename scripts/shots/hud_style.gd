@@ -1,33 +1,33 @@
 extends SceneTree
-## HUD style shots (v0.3.0 UI, L21, L23, L24; the calm HUD of v0.3.5 F15 and the straight heat bar of F2): the real
-## main.tscn on a run, posed by a script (a tool, not a test: it sets the run clock, HP, shards, items and Overclock
-## heat directly). For each HudStyle (the G2 mockups) a real Hud in that style is built over the same game frame,
-## synced from the run's WorldReader, with floor 1's title card on screen and HP under 30 % (the warning on); then
-## the shipped HUD (the game's own) in play: full HP mid-tier, and low HP.
-## Needs a renderer:
-##   VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" \
-##     godot --path . --audio-driver Dummy --resolution 1600x900 -s scripts/shots/hud_style.gd
-## Writes each shot, hud_mockups.png (3 columns: the frame, the top group and the HP corner with the heat bar at
-## 1:1) and hud_style.png (the shipped HUD, 2 frames) to build/shots/v0.3.5/hud_style/. Evidence copies are made by
-## hand.
+## HUD shots (v0.3.0 UI, L21, L23, L24; the calm HUD of v0.3.5 F15 and the straight heat bar of F2; v0.11.1 Step 12:
+## the HUD has one style, Astral): the real main.tscn on a run, posed by a script (a tool, not a test: it sets the run
+## clock, HP, shards, items and Overclock heat directly). The game's own HUD in play: full HP mid-tier, then low HP
+## (the warning on) with floor 1's title card on screen.
+## Needs a renderer (off screen):
+##   godot --path . --position -10000,-10000 -s scripts/shots/hud_style.gd -- lang=en
+## Writes each shot and hud_style.png (the 2 frames side by side) to build/shots/<config/version>/hud_style/<lang>/.
+## Evidence copies are made by hand.
 
-const OUT := "res://build/shots/v0.3.5/hud_style/"
 ## Overclock heat in the shots: Hot, past its tick (the bar's colour and the VENT prompt show).
 const HEAT := 58
 const SETTLE := 50
-const COL_W := 640
-const STYLE_NAMES := ["line", "bare", "slate"]
+## The shots wait for the hero to land (the HUD is hidden until then, Hud._landing), up to this many frames.
+const LAND_MAX := 1200
 
 var main: Main
+var _lang := "en"
+var _out := ""
 var _step := 0
 var _frames := 0
-var _mock: Hud
-var _mock_shots: Array[Image] = []
+## The frame the HUD showed (the hero landed) in step 1; -1 before.
+var _shown_at := -1
 var _play_shots: Array[Image] = []
 
 
 func _initialize() -> void:
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
+	_lang = ScriptArgs.parse().get("lang", _lang)
+	_out = "res://build/shots/%s/hud_style/%s/" % [GameVersion.label(), _lang]
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_out))
 	print(
 		(
 			"hud_style: renderer=%s device=%s"
@@ -37,7 +37,9 @@ func _initialize() -> void:
 			]
 		)
 	)
-	ProfileStore.use_shared(ProfileStore.new(""))
+	var profile := ProfileStore.new("")
+	profile.section("settings")["language"] = _lang
+	ProfileStore.use_shared(profile)
 	main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
 	root.add_child(main)
 
@@ -50,7 +52,7 @@ func _game_hud() -> Hud:
 	return main.get_node("UI/Hud") as Hud
 
 
-## A posed run: 2 min 15 s in (tier 5 of 6, half-way to the next), some shards and three items.
+## A posed run: some shards, three items and Hot heat, at `hp` and `run_ticks`.
 func _pose(hp: int, run_ticks: int) -> void:
 	var w := _world()
 	w.actors.invuln[0] = 1 << 24
@@ -74,39 +76,26 @@ func _process(_delta: float) -> bool:
 		0:
 			if _frames == 3:
 				main.start_stage()
-				_pose(24, 4 * 1800 + 900)
-				_next()
-		1, 2, 3:
-			var s: int = _step - 1
-			if _frames == 2:
-				_game_hud().visible = false
-				HudStyle.current = s as HudStyle.Style
-				_mock = Hud.new()
-				main.get_node("UI").add_child(_mock)
-			if _frames == SETTLE - 4:  # frames are slow on a software renderer: show the card just before
-				_mock.show_floor(main.run.floor_index, String(_biome_key()))
-			if _mock != null:
-				_pose(24, 4 * 1800 + 900 + _frames)
-				_mock.sync(main.driver.reader)
-			if _frames == SETTLE:
-				_mock_shots.append(_shot("mock_%s" % STYLE_NAMES[s]))
-				_mock.queue_free()
-				_mock = null
-				_next()
-		4:
-			if _frames == 2:
-				HudStyle.current = HudStyle.DEFAULT
-				_game_hud().visible = true
 				_pose(100, 1 * 1800 + 1100)
-			if _frames == SETTLE:
+				_next()
+		1:
+			var landed := _frames > 10 and _game_hud().visible and not main.driver.reader.arriving()
+			if _shown_at < 0 and (landed or _frames >= LAND_MAX):
+				_shown_at = _frames
+				if not landed:
+					push_error("hud_style: the HUD never showed (the hero did not land)")
+			if _shown_at >= 0:
+				_pose(100, 1 * 1800 + 1100)
+			if _shown_at >= 0 and _frames == _shown_at + SETTLE:
 				_play_shots.append(_shot("play_full_hp"))
 				_pose(22, 1 * 1800 + 1300)
 				_game_hud().show_floor(main.run.floor_index, String(_biome_key()))
 				_next()
-		5:
+		2:
+			_pose(22, 1 * 1800 + 1300)
 			if _frames == 30:
 				_play_shots.append(_shot("play_low_hp"))
-				_save_sheets()
+				_save_sheet()
 				quit(0)
 	if _frames > 4000:
 		push_error("hud_style: stuck at step %d" % _step)
@@ -127,29 +116,14 @@ func _next() -> void:
 func _shot(shot_name: String) -> Image:
 	var img := root.get_texture().get_image()
 	img.convert(Image.FORMAT_RGB8)
-	img.save_png(OUT + shot_name + ".png")
-	print("hud_style: ", OUT + shot_name + ".png")
+	img.save_png(_out + shot_name + ".png")
+	print("hud_style: ", _out + shot_name + ".png")
 	return img
 
 
-func _save_sheets() -> void:
-	var w := _mock_shots[0].get_width()
-	var h := _mock_shots[0].get_height()
-	var fh := int(h * float(COL_W) / w)
-	var top := Rect2i(w / 2 - COL_W / 2, 0, COL_W, 120)
-	var corner := Rect2i(0, h - 200, COL_W, 200)
-	var heat := Rect2i(w / 2 - COL_W / 2, h - 110, COL_W, 110)
-	var rows := fh + top.size.y + corner.size.y + heat.size.y
-	var sheet := Image.create(COL_W * 3, rows, false, Image.FORMAT_RGB8)
-	for i in _mock_shots.size():
-		var full := _mock_shots[i].duplicate() as Image
-		full.resize(COL_W, fh, Image.INTERPOLATE_LANCZOS)
-		sheet.blit_rect(full, Rect2i(0, 0, COL_W, fh), Vector2i(i * COL_W, 0))
-		sheet.blit_rect(_mock_shots[i], top, Vector2i(i * COL_W, fh))
-		sheet.blit_rect(_mock_shots[i], corner, Vector2i(i * COL_W, fh + top.size.y))
-		var y := fh + top.size.y + corner.size.y
-		sheet.blit_rect(_mock_shots[i], heat, Vector2i(i * COL_W, y))
-	sheet.save_png(OUT + "hud_mockups.png")
+func _save_sheet() -> void:
+	var w := _play_shots[0].get_width()
+	var h := _play_shots[0].get_height()
 	var pw := 960
 	var ph := int(h * float(pw) / w)
 	var play := Image.create(pw * 2, ph, false, Image.FORMAT_RGB8)
@@ -157,5 +131,5 @@ func _save_sheets() -> void:
 		var img := _play_shots[i].duplicate() as Image
 		img.resize(pw, ph, Image.INTERPOLATE_LANCZOS)
 		play.blit_rect(img, Rect2i(0, 0, pw, ph), Vector2i(i * pw, 0))
-	play.save_png(OUT + "hud_style.png")
-	print("hud_style: sheets ", sheet.get_size(), " ", play.get_size())
+	play.save_png(_out + "hud_style.png")
+	print("hud_style: sheet ", play.get_size())

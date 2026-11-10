@@ -24,15 +24,7 @@ func set_item(id: StringName, c: Color) -> void:
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
 	var col := HudStyle.tone(color)  # v0.10.5 W3-O20: toward Astral's silver
-	if tile and HudStyle.current == HudStyle.Style.ASTRAL:  # v0.10.5 W3-O20: Astral's tile
+	if tile:  # v0.10.5 W3-O20: Astral's tile
 		HudStyle.draw_astral_tile(self, r, color)
-		r = r.grow(-size.x * 0.16)
-	elif tile:
-		var box := StyleBoxFlat.new()
-		box.bg_color = Color(0.03, 0.04, 0.07, 0.72)
-		box.set_corner_radius_all(0)  # v0.3.5 F16: square, like the cards
-		box.border_color = Color(color, 0.85)
-		box.border_width_bottom = 2
-		draw_style_box(box, r)
 		r = r.grow(-size.x * 0.16)
 	drawn = ItemIcons.draw(self, item_id, r, col)
