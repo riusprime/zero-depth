@@ -63,6 +63,7 @@ func _click(e: E2e, main: Main, button: String) -> void:
 
 func test_a_run_starts_behind_the_black_cover_and_a_portal_covers_in_its_colours() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	var cover := main.loads.cover
 	assert_false(cover.showing(), "no cover on the menu")

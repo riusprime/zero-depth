@@ -15,6 +15,9 @@ const ASCENSION_PAGE := &"runs"
 ## v0.8.0 N1 (owner O53): how a new run's seed is picked (RunSeeds: random in the game; RunSeeds.AUTO resolves at boot;
 ## a seed >= 0 fixes the order on purpose: E2e.boot sets it before main.tscn boots).
 static var fixed_seed := RunSeeds.AUTO
+## v0.11.1 T1 (owner L7: "yes skip them"): a test-only switch, false in the game (E2e.boot sets it; nothing in src/
+## does): Play opens the build pick (no hub), the pick starts the run at once, and floor 1's arrival runs in one frame.
+static var quick_start := false
 
 var profile: ProfileStore
 var driver: SimDriver
@@ -176,7 +179,7 @@ func show_main_menu() -> void:
 	m.continue_pressed.connect(
 		func() -> void: loads.behind(get_tree(), ui, _covered_continue, FADE_SECONDS)  # v0.8.0 N3 (O45)
 	)
-	m.play_pressed.connect(_show_hub)
+	m.play_pressed.connect(show_build_picker if quick_start else _show_hub)  # v0.11.1 T1: tests only
 	m.options_pressed.connect(show_options)
 	m.credits_pressed.connect(show_credits)  # v0.9.5 RS1: the Credits moved from the hub to the menu
 	m.quit_pressed.connect(
@@ -185,32 +188,9 @@ func show_main_menu() -> void:
 	_set_menu(m)
 
 
-## v0.9.0 HB (owner Q27; HUB_MOCKUPS option A): the hub, from Play or the end panel. A station's interact opens its
-## panel (_open_station; Back returns to the hub). It reads the profile, never the run's save.
+## v0.9.0 HB (owner Q27): the hub, from Play, the end panel or the pause menu (HubFlow.open).
 func _show_hub() -> void:
-	saves.close()
-	_end_stage()
-	_end_hub()
-	_set_menu(null)
-	var repo := _content()
-	hub = HubSession.new()
-	add_child(hub)
-	hub.setup(repo, profile, [codex, achievements, codex_catalog(repo)], ui)
-	hub.station_used.connect(_open_station)
-	hub.options_requested.connect(show_options.bind(hub.open_pause))
-	hub.main_menu_requested.connect(show_main_menu)
-	hub.cue_requested.connect(audio.play)  # v0.9.5 RS1: the Runic Stone's hum
-	hub.training_requested.connect(TrainingFlow.enter.bind(self))  # v0.10.5 O17: the south door
-	loads.cover.unveil(FADE_SECONDS)
-	audio.set_ambience(HubSession.BIOME)
-
-
-func _open_station(_id: StringName, panel: StringName) -> void:
-	match panel:
-		&"portal":
-			show_build_picker()
-		&"codex", &"achievements":
-			show_codex(CodexView.page_of(panel))  # v0.9.0 CL: the Rune Archive opens on its collectibles
+	HubFlow.open(self)
 
 
 func _close_station() -> void:
@@ -442,6 +422,7 @@ func _floor_nodes(plan: FloorPlan) -> Dictionary:
 	d.name = "SimDriver"
 	d.setup(world)
 	d.hold = loads.cover.showing  # v0.8.0 N11 (O69): the arrival starts once the loading cover opened
+	d.rush_arrival = quick_start and plan.mode == FloorPlan.Mode.NEW_RUN  # v0.11.1 T1: tests only
 	var v := WorldViewRoot.new()
 	v.name = "WorldView"
 	v.stage.prop_style = biome.id

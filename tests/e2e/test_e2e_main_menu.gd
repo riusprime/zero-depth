@@ -43,6 +43,7 @@ func test_the_five_plates_and_the_focus() -> void:
 
 func test_enter_on_play_goes_to_the_hub() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot()
 	await e.tap(KEY_ENTER)
 	await e.frames(3)

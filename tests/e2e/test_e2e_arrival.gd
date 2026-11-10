@@ -93,6 +93,7 @@ func _watch_arrival(e: E2e, main: Main) -> Array:
 
 func test_the_hero_lands_on_the_altar_then_the_floor_starts() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	await e.start_from_menu(&"blade", false)
 	var w := e.world()
@@ -166,6 +167,7 @@ func test_the_hero_lands_on_the_altar_then_the_floor_starts() -> void:
 ## v0.9.0 PT (owner Q16): floor 2 has no receiver: the hero steps out of the portal it took, which then collapses.
 func test_through_the_gate_floor_two_steps_out_of_the_portal() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
 	var w := e.world()

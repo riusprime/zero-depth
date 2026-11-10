@@ -36,6 +36,7 @@ func _wait_for_end(e: E2e, main: Main) -> EndPanel:
 
 func test_the_small_menu() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	var menu := main.get_node_or_null("UI/MainMenu") as MainMenu
 	assert_not_null(menu)
@@ -58,6 +59,7 @@ func test_the_small_menu() -> void:
 
 func test_play_walks_to_the_portal_machine_and_starts_a_run() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	var walk := HubWalk.new(e)
 	assert_true(await walk.enter(), "Play goes to the hub")
@@ -96,6 +98,7 @@ func test_play_walks_to_the_portal_machine_and_starts_a_run() -> void:
 ## waits a walk out).
 func test_the_pick_walks_the_hero_up_into_the_portal() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	await HubWalk.new(e).to_build_screen()
 	e.key(KEY_ENTER, true)  # the pick (Blade)
@@ -133,6 +136,7 @@ func test_the_pick_walks_the_hero_up_into_the_portal() -> void:
 ## v0.9.0 HB2: a press during the walk skips it (the run's load starts at once).
 func test_a_press_skips_the_walk() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	await HubWalk.new(e).to_build_screen()
 	e.key(KEY_ENTER, true)
@@ -151,6 +155,7 @@ func test_a_press_skips_the_walk() -> void:
 
 func test_each_station_opens_its_panel() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	var walk := HubWalk.new(e)
 	await walk.enter()
@@ -195,6 +200,7 @@ func test_each_station_opens_its_panel() -> void:
 
 func test_the_hub_pause_goes_to_the_main_menu() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	await HubWalk.new(e).enter()
 	await e.tap(KEY_ESCAPE)
@@ -224,6 +230,7 @@ func test_the_hub_pause_goes_to_the_main_menu() -> void:
 
 func test_after_a_run_restart_in_one_press_or_the_hub() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
 	var seed_before := e.world().seed_value
@@ -257,6 +264,7 @@ func test_the_hub_in_spanish() -> void:
 	var profile := ProfileStore.new("")
 	profile.section("settings")["language"] = "es"
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot(profile)
 	var walk := HubWalk.new(e)
 	await walk.enter()
@@ -273,6 +281,7 @@ func test_the_hub_never_touches_the_run_save() -> void:
 	assert_true(store.write((r[0] as Dictionary)["payload"]))
 	var before := store.read()
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot(null, store)
 	assert_eq(_focused(main).name, &"Continue", "Continue, focused first with a save")
 	await e.tap(KEY_DOWN)

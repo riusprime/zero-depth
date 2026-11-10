@@ -45,6 +45,7 @@ func _click(e: E2e, main: Main, button: String) -> void:
 
 func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
 	var w := e.world()
@@ -186,6 +187,7 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 
 func test_esc_pauses_and_enter_resumes() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
 	await e.frames(5)
@@ -202,6 +204,7 @@ func test_esc_pauses_and_enter_resumes() -> void:
 
 func test_restart_run_from_the_pause_menu() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
 	await e.frames(5)

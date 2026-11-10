@@ -132,6 +132,7 @@ func test_twelve_open_the_gate_and_the_keystone_waits() -> void:
 		CollectibleBook.record(profile, defs[k].id, 1)
 	var before := MetaProgress.fragments(profile)
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var main: Main = await e.boot(profile)
 	var walk := HubWalk.new(e)
 	assert_true(await walk.enter(), "Play: the hub")

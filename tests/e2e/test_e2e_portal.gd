@@ -44,6 +44,7 @@ func _click(e: E2e, main: Main, button: String) -> void:
 
 func test_into_the_portal_and_out_on_floor_two() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
 	var w := e.world()

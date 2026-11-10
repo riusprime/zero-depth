@@ -11,6 +11,7 @@ func after_each() -> void:
 
 func test_the_tenth_line_comes_from_switching_the_language_in_the_hub() -> void:
 	var e := E2e.new(self)
+	e.real_start = true  # v0.11.1 T1: Play goes to the hub (the full path)
 	var profile := ProfileStore.new("")
 	var repo := ContentRepository.load_all()
 	var stone := RunicStone.new(profile, repo.get_def(&"runic_lines", &"main"))
