@@ -1846,6 +1846,8 @@ func _run_ai() -> void:
 		_actor_grid.build_circles(actors.pos_x, actors.pos_y, actors.radius)
 		if pp != null:
 			pp.end(&"ai.grid")
+	if (native_on & NativeWorld.AI) != 0 and NativeAi.think(self):  # The table kinds think native
+		return
 	var critter_rows := PackedInt32Array()  # The critters think in one loop after the others (CritterAi)
 	var roles := EnemyAi.roles  # One table read per actor (EnemyAi.role_of; a local: a static read costs more)
 	for i in range(1, actors.size()):
@@ -1860,34 +1862,40 @@ func _run_ai() -> void:
 		if role == EnemyAi.Role.ENEMY:
 			EnemyAi.think(self, i)  # (its plan is timed as ai.plan inside)
 			continue
-		if kind != ActorStore.Kind.DUMMY:
-			continue
-		var id := actors.ids[i]
-		if (tick + id) % SimTick.AI_HEAVY_PERIOD == 0:
-			actors.jitter_x[i] = rng_ai.range_int(-300, 300) / 100.0
-			actors.jitter_y[i] = rng_ai.range_int(-300, 300) / 100.0
-		if dummy_fire_period > 0:
-			actors.fire_cd[i] -= 1
-			if actors.fire_cd[i] <= 0:
-				actors.fire_cd[i] = dummy_fire_period
-				var from := actors.pos(i)
-				var shot_angle := Kin.angle_of(target - from)
-				if dummy_aim_spread > 0:
-					shot_angle += rng_ai.range_int(-dummy_aim_spread, dummy_aim_spread)
-				var dir := Kin.dir(shot_angle)
-				var muzzle := from + dir * (actors.radius[i] + projectile_radius + 0.05)
-				queue_projectile(
-					id,
-					ActorStore.TEAM_ENEMY,
-					muzzle,
-					dir * projectile_speed,
-					dummy_shot_damage,
-					projectile_radius,
-					projectile_life,
-					SimEvent.TAG_PROJECTILE
-				)
+		if kind == ActorStore.Kind.DUMMY:
+			dummy_think(i, target)
 	if not critter_rows.is_empty():
 		CritterAi.think_all(self, critter_rows)
+
+
+## Phase 3 for dummy i (the kernel's movers): its jitter, and its shot at `target` on its fire period.
+func dummy_think(i: int, target: Vector2) -> void:
+	var id := actors.ids[i]
+	if (tick + id) % SimTick.AI_HEAVY_PERIOD == 0:
+		actors.jitter_x[i] = rng_ai.range_int(-300, 300) / 100.0
+		actors.jitter_y[i] = rng_ai.range_int(-300, 300) / 100.0
+	if dummy_fire_period <= 0:
+		return
+	actors.fire_cd[i] -= 1
+	if actors.fire_cd[i] > 0:
+		return
+	actors.fire_cd[i] = dummy_fire_period
+	var from := actors.pos(i)
+	var shot_angle := Kin.angle_of(target - from)
+	if dummy_aim_spread > 0:
+		shot_angle += rng_ai.range_int(-dummy_aim_spread, dummy_aim_spread)
+	var dir := Kin.dir(shot_angle)
+	var muzzle := from + dir * (actors.radius[i] + projectile_radius + 0.05)
+	queue_projectile(
+		id,
+		ActorStore.TEAM_ENEMY,
+		muzzle,
+		dir * projectile_speed,
+		dummy_shot_damage,
+		projectile_radius,
+		projectile_life,
+		SimEvent.TAG_PROJECTILE
+	)
 
 
 func _advance_actions() -> void:
@@ -1974,36 +1982,8 @@ func _move_and_collide() -> void:
 	var pp := phase_probe  # v0.8.0 HS
 	if pp != null:
 		pp.begin(&"move.steer")
-	# Dummies steer toward the player plus their jitter.
-	var target := p
-	var critter_rows := PackedInt32Array()  # The critters step in one loop after the others (CritterAi)
-	var roles := EnemyAi.roles  # One table read per actor (EnemyAi.role_of; a local: a static read costs more)
-	for i in range(1, actors.size()):
-		var kind := actors.kinds[i]
-		var role := roles[kind] if (kind & -EnemyAi.KIND_SLOTS) == 0 else EnemyAi.role_of(kind)
-		if role == EnemyAi.Role.CRITTER:
-			critter_rows.append(i)
-			continue
-		if role == EnemyAi.Role.BOSS:
-			BossAi.move(self, i)  # Bosses.
-			continue
-		if role == EnemyAi.Role.ENEMY:
-			EnemyAi.move(self, i)
-			continue
-		var at := actors.pos(i)
-		var goal := target + Vector2(actors.jitter_x[i], actors.jitter_y[i])
-		if dummy_keep_distance > 0.0:
-			var away := at - target
-			var away_len := Kin.length(away)
-			if away_len > 0.0:
-				goal += away * (dummy_keep_distance / away_len)
-		var to := goal - at
-		var dist := Kin.length(to)
-		if dist > dummy_speed:
-			at += to * (dummy_speed / dist)
-		actors.set_pos(i, at)
-	if not critter_rows.is_empty():
-		CritterAi.move_all(self, critter_rows)
+	if (native_on & NativeWorld.AI) == 0 or not NativeAi.move(self):  # The table kinds steer native
+		_steer_actors(p)
 	PlayerSkill.push(self)  # Kit: Scatter Blast knockback, before walls resolve it.
 	if pp != null:
 		pp.end(&"move.steer")
@@ -2025,6 +2005,43 @@ func _move_and_collide() -> void:
 		RuinsRocks.block_hero(self, hero_from)
 	if pp != null:
 		pp.end(&"move.walls")
+
+
+## Phase 5's steering in GDScript: every actor but the hero, toward the hero at `target`.
+func _steer_actors(target: Vector2) -> void:
+	var critter_rows := PackedInt32Array()  # The critters step in one loop after the others (CritterAi)
+	var roles := EnemyAi.roles  # One table read per actor (EnemyAi.role_of; a local: a static read costs more)
+	for i in range(1, actors.size()):
+		var kind := actors.kinds[i]
+		var role := roles[kind] if (kind & -EnemyAi.KIND_SLOTS) == 0 else EnemyAi.role_of(kind)
+		if role == EnemyAi.Role.CRITTER:
+			critter_rows.append(i)
+			continue
+		if role == EnemyAi.Role.BOSS:
+			BossAi.move(self, i)  # Bosses.
+			continue
+		if role == EnemyAi.Role.ENEMY:
+			EnemyAi.move(self, i)
+			continue
+		dummy_steer(i, target)
+	if not critter_rows.is_empty():
+		CritterAi.move_all(self, critter_rows)
+
+
+## Phase 5 for dummy i: toward `target` plus its jitter (kept dummy_keep_distance off it), at most dummy_speed.
+func dummy_steer(i: int, target: Vector2) -> void:
+	var at := actors.pos(i)
+	var goal := target + Vector2(actors.jitter_x[i], actors.jitter_y[i])
+	if dummy_keep_distance > 0.0:
+		var away := at - target
+		var away_len := Kin.length(away)
+		if away_len > 0.0:
+			goal += away * (dummy_keep_distance / away_len)
+	var to := goal - at
+	var dist := Kin.length(to)
+	if dist > dummy_speed:
+		at += to * (dummy_speed / dist)
+	actors.set_pos(i, at)
 
 
 ## The collision passes in GDScript (walls, grid and pairs; NativeMove runs the native ones instead).

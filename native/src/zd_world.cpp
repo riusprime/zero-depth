@@ -209,7 +209,14 @@ void ZdWorld::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("touch", "px", "py", "rad"), &ZdWorld::touch);
 	ClassDB::bind_method(D_METHOD("determinism_probe"), &ZdWorld::determinism_probe);
 
-	// slot: ai
+	// Enemy AI (zd_ai.cpp)
+	ClassDB::bind_method(D_METHOD("think", "actors", "hero", "tick", "held", "mine_owners", "flow_native"),
+			&ZdWorld::think);
+	ClassDB::bind_method(D_METHOD("move", "actors", "hero", "slow", "slow_permille", "flow_native"), &ZdWorld::move);
+	ClassDB::bind_method(D_METHOD("ai_intents_i"), &ZdWorld::ai_intents_i);
+	ClassDB::bind_method(D_METHOD("ai_intents_f"), &ZdWorld::ai_intents_f);
+	ClassDB::bind_method(D_METHOD("kind_layout"), &ZdWorld::kind_layout);
+	ClassDB::bind_method(D_METHOD("ai_hero_layout"), &ZdWorld::ai_hero_layout);
 
 	// slot: nav
 
