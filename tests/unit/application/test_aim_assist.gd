@@ -25,6 +25,18 @@ func test_an_enemy_six_degrees_off_turns_the_aim_by_a_tenth() -> void:
 	assert_almost_eq(_deg(below), -0.6, 1e-4, "toward it either side")
 
 
+func test_the_pull_fades_to_nothing_over_the_outer_third_of_the_cone() -> void:
+	var aim := Vector2(3, 0)
+	var whole := AimAssist.pull(aim, PackedVector2Array([_at(8.0)]), 0.1, CONE)
+	assert_almost_eq(_deg(whole), 0.8, 1e-4, "whole up to two thirds of the cone")
+	var half := AimAssist.pull(aim, PackedVector2Array([_at(10.0)]), 0.1, CONE)
+	assert_almost_eq(_deg(half), 0.5, 1e-4, "half the pull halfway through the fade")
+	var edge := AimAssist.pull(aim, PackedVector2Array([_at(11.99)]), 1.0, CONE)
+	assert_almost_eq(
+		_deg(edge), 0.0, 0.05, "no jump as an enemy crosses the edge, even at full strength"
+	)
+
+
 func test_the_aim_distance_is_kept() -> void:
 	var got := AimAssist.pull(Vector2(7, 0), PackedVector2Array([_at(6.0)]), 0.1, CONE)
 	assert_almost_eq(got.length(), 7.0, 1e-4)

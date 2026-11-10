@@ -10,6 +10,9 @@ extends RefCounted
 ## The profile setting ("on" / "off") that turns it off for a player who doesn't want it.
 const SETTING := "aim_assist"
 const DEF_ID := &"aim_assist"
+## The share of the cone inside which the pull is whole; from there it fades to nothing at the cone's edge, so an
+## enemy crossing the edge never jerks the aim, whatever the strength.
+const WHOLE_SHARE := 2.0 / 3.0
 
 var _def: AimAssistDefinition
 var _profile: ProfileStore
@@ -69,7 +72,7 @@ static func targets(reader: WorldReader, range_m: float) -> PackedVector2Array:
 
 ## The pull itself: `aim` turned by `strength` (0..1) of its angle to the offset nearest it by angle (a tie: the
 ## nearer one) among `offsets` (from the hero) inside `cone_deg` either side of it and within `range_m`. None:
-## `aim` as it is. The length is kept.
+## `aim` as it is. The pull fades over the outer third of the cone (WHOLE_SHARE). The length is kept.
 static func pull(
 	aim: Vector2,
 	offsets: PackedVector2Array,
@@ -97,4 +100,5 @@ static func pull(
 			best_d = d
 	if best_abs == INF:
 		return aim
-	return aim.rotated(best_turn * minf(strength, 1.0))
+	var fade := clampf((cone - best_abs) / (cone * (1.0 - WHOLE_SHARE)), 0.0, 1.0)
+	return aim.rotated(best_turn * minf(strength, 1.0) * fade)
