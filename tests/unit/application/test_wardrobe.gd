@@ -101,7 +101,7 @@ func test_none_keeps_the_hash_of_a_run_without_rb() -> void:
 	assert_eq(none.world.state_hash(), before.world.state_hash(), "None is the game before RB")
 
 
-func test_the_save_keeps_the_affinity_and_an_old_save_is_none() -> void:
+func test_the_save_keeps_the_affinity_and_none_is_empty() -> void:
 	var plan := _first_floor(&"venom")
 	var payload := RunSaver.payload_of(plan.world, plan.run, plan.stage_seed, PackedByteArray())
 	assert_eq(payload["run"]["affinity"], "venom", "saved")
@@ -109,10 +109,8 @@ func test_the_save_keeps_the_affinity_and_an_old_save_is_none() -> void:
 	assert_eq(back.affinity, &"venom", "loaded back")
 	var none := _first_floor(&"none")
 	var p2 := RunSaver.payload_of(none.world, none.run, none.stage_seed, PackedByteArray())
-	assert_false(
-		(p2["run"] as Dictionary).has("affinity"), "None writes no key (the payload before RB)"
-	)
-	assert_eq(RunSaver.run_from(p2, none.run.table).affinity, &"", "an old payload: None")
+	assert_eq(p2["run"]["affinity"], "", "None writes an empty affinity")
+	assert_eq(RunSaver.run_from(p2, none.run.table).affinity, &"", "and loads as None")
 
 
 func test_continue_rebuilds_the_saved_affinity() -> void:

@@ -347,8 +347,7 @@ func test_the_run_save_keeps_what_the_run_collected() -> void:
 	var p := RunSaver.payload_of(
 		SaveLab.build_floor(plain, &"", _repo), plain, 5, PackedByteArray()
 	)
-	assert_false((p["run"] as Dictionary).has("collected"), "none collected: no key, as before")
-	assert_eq(SaveLab.run_from(p).collected.size(), 0, "an older payload found none")
+	assert_eq(SaveLab.run_from(p).collected.size(), 0, "none collected: none back")
 
 
 func test_the_profile_records_each_once_and_an_old_one_has_none() -> void:

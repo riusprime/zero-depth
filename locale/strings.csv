@@ -2,6 +2,8 @@ keys,en,es
 UI_TITLE,Zero Depth,Zero Depth
 UI_PLAY,Play,Jugar
 UI_CONTINUE,Continue,Continuar
+UI_SAVE_REFUSED_OLDER,Your saved run came from an older version and can't be resumed.,Tu partida guardada es de una versión anterior y no se puede reanudar.
+UI_SAVE_REFUSED_UNREADABLE,Your saved run couldn't be read and can't be resumed.,Tu partida guardada no se pudo leer y no se puede reanudar.
 UI_OPTIONS,Options,Opciones
 UI_CREDITS,Credits,Créditos
 UI_GALLERIES,Galleries,Galerías

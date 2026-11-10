@@ -118,7 +118,7 @@ func build() -> void:
 	if repo == null:
 		repo = ContentRepository.load_all()
 	if mode == Mode.CONTINUE and repo.get_def(&"run", RunSaver.saved_run_id(resume)) != null:
-		run_id = RunSaver.saved_run_id(resume)  # The save's own run shape (a v0.8.0 run: 3 floors)
+		run_id = RunSaver.saved_run_id(resume)  # The shape the saved run was started with
 	if mode != Mode.FLOOR:
 		var run_def: RunDefinition = repo.get_def(&"run", run_id)
 		run_biomes = run_def.biomes.duplicate()
@@ -228,8 +228,6 @@ func _build_world() -> void:
 		err = WorldSnapshot.apply(w, resume["world"])
 		if err != "":
 			return
-		WandMigration.run(w)  # A save that still holds retired v0.6 cards
-		AttackSlots.trim(w)  # A save from before the slot categories (AttackSlots.trim)
 	world = w
 
 
@@ -331,8 +329,8 @@ func _floor_world(
 	var boss := FloorShape.boss(
 		run, RunContentCompiler.compile_boss_pools(repo, run.table.floors), run.floor_index
 	)
-	var arena := RunSaver.boss_arena(run, bosses, boss)  # An older save's room
-	var rules := RunSaver.floor_tables(run, repo)  # Map, arenas, shop (v0.7.0's on an old save's)
+	var arena := RunSaver.boss_arena(run, bosses, boss)
+	var rules := RunSaver.floor_tables(run, repo)  # Map, arenas, shop
 	var w := FloorScenario.build(
 		run.floor_seed(),
 		table,

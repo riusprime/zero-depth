@@ -254,11 +254,6 @@ func test_the_run_records_the_floor_that_held_it() -> void:
 	var payload := RunSaver.payload_of(w, r, 1, PackedByteArray())
 	var back := SaveLab.run_from(payload)
 	assert_eq(back.purple_floors, r.purple_floors, "saved with the run")
-	var old := payload.duplicate(true)
-	(old["run"] as Dictionary).erase("purple_floors")
-	assert_eq(
-		SaveLab.run_from(old).purple_floors, PackedInt32Array(), "an older payload has had none"
-	)
 
 
 ## v0.9.5 SB: the walls that are not a solid prop's footprint (a prop joins the walls once the hero is clear of it).

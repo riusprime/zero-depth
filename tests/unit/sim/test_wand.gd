@@ -198,8 +198,7 @@ func test_a_snapshot_keeps_the_order_with_equal_hashes() -> void:
 
 func test_an_older_save_keeps_its_pick_order_and_every_card() -> void:
 	# A v0.6.0 save (payload 3): six cards in pick order on floor 1, where the wand now has four. v0.6.5 WN5b: they
-	# are v0.6 cards, so each maps onto its wand card in that order or is refunded (WandMigration; test_old_saves
-	# loads saves recorded with v0.6.1's code).
+	# are v0.6 cards, so each maps onto its wand card in that order or is refunded (WandMigration).
 	var old := _world(1)
 	old.wand_table = null  # v0.6.0: six slots
 	var six := [&"ember_edge", &"long_edge", &"twin_arc", &"overcharge", &"conductor", &"shatter"]
@@ -215,7 +214,6 @@ func test_an_older_save_keeps_its_pick_order_and_every_card() -> void:
 		"each in its pick order: S1, B1, B5, B14, S2; Shatter has no wand row (refunded)"
 	)
 	assert_gt(w.shards, shards, "the one without a wand row is refunded")
-	assert_true(RunSaver.PAYLOAD_VERSIONS_READ.has(3), "a version-3 payload still loads")
 
 
 func test_a_v0_5_carry_migrates_into_the_floor_reached_slot_count() -> void:

@@ -5,7 +5,7 @@ extends Node
 const STAGE_SEED := 20261006
 const END_PANEL_DELAY_TICKS := 45
 ## Run flow: the run's data; the fade-in when a floor starts is the loading cover's.
-const RUN_ID := RunSaver.RUN_ID  # Five floors (a v0.8.0 save resumes in its own three)
+const RUN_ID := RunSaver.RUN_ID  # Five floors
 const FADE_SECONDS := 0.45
 ## A portal's cover opens on the new floor over this long (CoverLoads).
 const PORTAL_UNVEIL_SECONDS := 0.55
@@ -180,7 +180,7 @@ func show_main_menu() -> void:
 	_end_hub()
 	loads.cover.unveil(FADE_SECONDS)  # A cover left up by a run that was left (none: nothing)
 	audio.set_ambience(&"")
-	var m := MainMenu.new(GameVersion.label(), saves.store.has_save())
+	var m := MainMenu.new(GameVersion.label(), not saves.usable().is_empty(), saves.take_refused())
 	m.continue_pressed.connect(
 		func() -> void: loads.behind(get_tree(), ui, _covered_continue, FADE_SECONDS)  # v0.8.0 N3
 	)
@@ -342,7 +342,7 @@ func continue_run() -> void:
 	plan.build()
 	_adopt_run(plan)
 	if plan.err != "":
-		saves.store.reject(plan.err)
+		saves.refuse(plan.err)
 		show_main_menu()
 		return
 	_open_floor_now(plan)
@@ -382,12 +382,9 @@ func _load_plan(plan: FloorPlan) -> String:
 
 
 func _usable_save() -> Dictionary:
-	var save := saves.store.read()
-	if not RunSaver.is_usable(save):
-		if not save.is_empty():
-			saves.store.reject("payload version %s" % str(save.get("version")))
+	var save := saves.usable()
+	if save.is_empty():  # None, or refused: the menu says so
 		show_main_menu()
-		return {}
 	return save
 
 
@@ -619,7 +616,7 @@ func _covered_continue() -> void:
 	_set_menu(null)
 	var err := await _load_plan(FloorPlan.continued(RUN_ID, save, ViewPrefs.reduced_motion))
 	if err != "":
-		saves.store.reject(err)
+		saves.refuse(err)
 		show_main_menu()
 
 
