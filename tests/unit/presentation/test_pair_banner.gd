@@ -15,7 +15,7 @@ func after_each() -> void:
 
 
 func _world() -> World:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var w := FloorScenario.build(
 		4,
 		PlayerTable.starting_values(),

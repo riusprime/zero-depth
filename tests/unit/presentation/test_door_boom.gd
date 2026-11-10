@@ -5,7 +5,7 @@ extends GutTest
 
 
 func _world() -> World:
-	var lab := RunLab.new(ContentRepository.load_all(), 8311, &"blade")
+	var lab := RunLab.new(SharedContent.repo(), 8311, &"blade")
 	lab.run.floor_rules = RunState.FLOOR_RULES
 	return lab.floor_world()
 

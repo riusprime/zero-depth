@@ -4,7 +4,7 @@ extends RefCounted
 
 
 static func tables() -> Array[EnemyTable]:
-	return ContentCompiler.compile_enemies(ContentRepository.load_all())
+	return ContentCompiler.compile_enemies(SharedContent.repo())
 
 
 static func world(utility: int = PlayerTable.Utility.NONE) -> World:

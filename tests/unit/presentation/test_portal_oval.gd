@@ -33,7 +33,7 @@ func _world() -> World:
 func _view(w: World) -> WorldViewRoot:
 	var v := WorldViewRoot.new()
 	add_child_autofree(v)
-	var biome: BiomeDefinition = ContentRepository.load_all().get_def(&"biomes", &"ruins")
+	var biome: BiomeDefinition = SharedContent.repo().get_def(&"biomes", &"ruins")
 	v.setup(WorldReader.new(w), biome.palette, 60.0)
 	return v
 

@@ -9,7 +9,7 @@ const KIND := ActorStore.Kind
 
 
 func _table() -> SpawnTable:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	return ContentCompiler.compile_spawning(repo.get_def(&"spawning", &"floor_1"), repo)
 
 

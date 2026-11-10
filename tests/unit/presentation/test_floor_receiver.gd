@@ -29,7 +29,7 @@ func after_each() -> void:
 func _floor(floor_index: int, route: int = 0, calm: bool = false) -> World:
 	var w := SaveLab.build_floor(SaveLab.run_state(SEED, floor_index, &"blade", route))
 	w.tuning = RunContentCompiler.compile_sim_tuning(
-		ContentRepository.load_all().get_def(&"tuning", &"sim")
+		SharedContent.repo().get_def(&"tuning", &"sim")
 	)
 	w.boss_flow.set_transit(
 		calm, true, BossFlow.arrival_length(w.tuning, calm, w.run_floor_index() == 1)
@@ -66,7 +66,7 @@ func test_every_run_floor_has_a_receiver_at_the_start_on_open_floor() -> void:
 func test_never_in_the_final_arena_or_the_playground() -> void:
 	var arena := FinalLab.arena(FinalLab.run_state(SEED))
 	assert_false(WorldReader.new(arena).floor_receiver(), "the final arena has none")
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var pg := PlaygroundScenario.build(repo, &"gun", repo.get_def(&"biomes", &"ruins"))
 	assert_false(WorldReader.new(pg).floor_receiver(), "the Playground has none")
 

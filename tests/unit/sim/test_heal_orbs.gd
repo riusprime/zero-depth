@@ -12,7 +12,7 @@ const COOLDOWN := 1800
 func _world(meter: int = 1) -> World:
 	var w := CombatLab.world()
 	w.reward_table = ContentCompiler.compile_rewards(
-		ContentRepository.load_all().get_def(&"rewards", &"floor")
+		SharedContent.repo().get_def(&"rewards", &"floor")
 	)
 	w.reward_table.heal_orb_meter = meter
 	return w
@@ -34,7 +34,7 @@ func _take(w: World) -> void:
 
 
 func test_the_shipped_numbers() -> void:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var t := ContentCompiler.compile_rewards(repo.get_def(&"rewards", &"floor"))
 	assert_eq(t.heal_orb_heal_permille, 200, "F3: 20 % of max HP")
 	assert_eq(t.heal_orb_cooldown_ticks, COOLDOWN, "F3: 30 s")
@@ -47,7 +47,7 @@ func test_the_shipped_numbers() -> void:
 
 
 func test_lifesprout_is_disabled_but_kept() -> void:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var ls := ContentCompiler.compile_stat_cards(repo)[Stats.Stat.LIFESPROUT]
 	assert_not_null(ls, "F3: the card's file stays, so it can return")
 	assert_eq(ls.weight, 0, "F3: never offered (Offers leaves out a weight under 1)")
@@ -55,7 +55,7 @@ func test_lifesprout_is_disabled_but_kept() -> void:
 
 func test_lifesprout_has_no_effect_on_earning() -> void:
 	var w := _world(10000)
-	w.stat_tables = ContentCompiler.compile_stat_cards(ContentRepository.load_all())
+	w.stat_tables = ContentCompiler.compile_stat_cards(SharedContent.repo())
 	_kill(w, Vector2(6, 0))
 	var plain := w.orbs.meter
 	Stats.add_card(w, Stats.Stat.LIFESPROUT, Stats.Rarity.EPIC)
@@ -109,7 +109,7 @@ func test_points_follow_base_hp_within_the_clamp_and_ignore_scaling() -> void:
 
 func test_many_critters_earn_about_what_a_few_big_ones_earn() -> void:
 	var w := _world()
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var critter: EnemyDefinition = repo.get_def(&"enemies", &"swarmer")
 	var big: EnemyDefinition = repo.get_def(&"enemies", &"shield_bearer")
 	var critters := big.hp / critter.hp
@@ -238,7 +238,7 @@ func test_the_state_is_hashed_once_used_and_survives_a_snapshot() -> void:
 
 
 func test_floor_1_bosses_are_eased_and_their_room_heals_you() -> void:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var run := RunState.start(5, ContentCompiler.compile_run(repo.get_def(&"run", RunSaver.RUN_ID)))
 	var base := ContentCompiler.compile_bosses(repo)
 	var t := ContentCompiler.compile_bosses(repo)
@@ -263,7 +263,7 @@ func test_floor_1_bosses_are_eased_and_their_room_heals_you() -> void:
 
 
 func test_shards_stop_growing_after_the_peak() -> void:
-	var w := RunLab.new(ContentRepository.load_all(), 78, &"gun").floor_world()
+	var w := RunLab.new(SharedContent.repo(), 78, &"gun").floor_world()
 	var peak := w.reward_table.shard_cap_min_ticks  # v0.10.5 O7a: the cap (floor 1 peaks at 90 s, the minimum is 180 s)
 	w.run_ticks = peak
 	var at_peak := Rewards.shards_for_kill(w, KIND.CHARGER)

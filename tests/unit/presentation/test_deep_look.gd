@@ -19,7 +19,7 @@ func after_each() -> void:
 
 
 func _view(w: World, mood: bool) -> WorldViewRoot:
-	var biome: BiomeDefinition = ContentRepository.load_all().get_def(&"biomes", &"ruins")
+	var biome: BiomeDefinition = SharedContent.repo().get_def(&"biomes", &"ruins")
 	var v := WorldViewRoot.new()
 	v.stage.mood = biome.mood if mood else null
 	add_child_autofree(v)
@@ -32,7 +32,7 @@ func _floor(route: int) -> World:
 
 
 func test_a_deep_floor_layers_a_violet_haze_on_the_biomes_mood() -> void:
-	var biome: BiomeDefinition = ContentRepository.load_all().get_def(&"biomes", &"ruins")
+	var biome: BiomeDefinition = SharedContent.repo().get_def(&"biomes", &"ruins")
 	var normal := _view(_floor(Routes.Route.NORMAL), true)
 	var deep := _view(_floor(Routes.Route.DEEP), true)
 	assert_false(normal.stage.deep)

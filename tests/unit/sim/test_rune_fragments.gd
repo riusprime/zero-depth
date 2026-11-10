@@ -8,12 +8,12 @@ const SEED := 4242
 
 
 func _table() -> FragmentTable:
-	return MetaProgress.compile_table(ContentRepository.load_all())
+	return MetaProgress.compile_table(SharedContent.repo())
 
 
 func test_the_table_is_the_content() -> void:
 	var t := _table()
-	var d := MetaProgress.definition(ContentRepository.load_all())
+	var d := MetaProgress.definition(SharedContent.repo())
 	assert_eq(
 		[t.floor_cleared, t.boss, t.secret, t.purple_portal, t.final_boss, t.collectible],
 		[d.floor_cleared, d.boss, d.secret, d.purple_portal, d.final_boss, d.collectible]

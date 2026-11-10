@@ -15,7 +15,7 @@ static func floor_world(
 	items: Array = [],
 	boss_id: StringName = &""
 ) -> World:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var run := RunState.start(
 		run_seed, ContentCompiler.compile_run(repo.get_def(&"run", RunSaver.RUN_ID))
 	)

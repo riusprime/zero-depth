@@ -12,7 +12,7 @@ const FLOOR_1: Array[StringName] = [&"gatekeeper", &"warlord", &"brood_mother"]
 
 ## {floor 1 boss id: runs}; asserts every run's floors 1-5 meet five different bosses.
 func _counts(label: String, seeds: Array) -> Dictionary:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var ids := BossLab.tables().map(func(x: BossTable) -> StringName: return x.id)
 	var counts := {}
 	var twice := 0

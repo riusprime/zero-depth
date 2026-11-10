@@ -214,7 +214,7 @@ func test_the_threat_and_shrine_rows_follow_a_language_switch() -> void:
 ## Every name a modifier slot can hold (abilities and items), as name keys.
 func _slot_name_keys() -> Array[String]:
 	var out: Array[String] = []
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	for cat in [&"ability", &"items"]:
 		for d: ContentDef in repo.all_of(cat):
 			if "name_key" in d:

@@ -5,7 +5,7 @@ extends GutTest
 
 
 func _run_table() -> RunTable:
-	return ContentCompiler.compile_run(ContentRepository.load_all().get_def(&"run", SaveLab.RUN_ID))
+	return ContentCompiler.compile_run(SharedContent.repo().get_def(&"run", SaveLab.RUN_ID))
 
 
 func _loop_two_run(run_seed: int) -> RunState:
@@ -19,7 +19,7 @@ func _loop_two_run(run_seed: int) -> RunState:
 func test_the_content_has_five_rules_and_the_lower_hp_step() -> void:
 	assert_eq(RunDefinition.LOOP_RULE_IDS, LoopRules.POOL, "content's list matches the sim's pool")
 	for id: StringName in [&"five_floors", &"three_floors"]:
-		var def: RunDefinition = ContentRepository.load_all().get_def(&"run", id)
+		var def: RunDefinition = SharedContent.repo().get_def(&"run", id)
 		assert_eq(def.loop_rules, LoopRules.POOL, "%s: the five rules" % id)
 		assert_eq(def.loop_enemy_hp_permille, 3500, "%s: enemies ×3.5 a loop (was ×6)" % id)
 		assert_eq(def.loop_boss_hp_permille, 3500, "%s: bosses ×3.5 a loop" % id)
@@ -138,9 +138,7 @@ func test_swift_and_point_blank_change_the_enemy_tables() -> void:
 
 
 func test_lean_mending_makes_orbs_rarer_and_stronger() -> void:
-	var base := ContentCompiler.compile_rewards(
-		ContentRepository.load_all().get_def(&"rewards", &"floor")
-	)
+	var base := ContentCompiler.compile_rewards(SharedContent.repo().get_def(&"rewards", &"floor"))
 	var run := _loop_two_run(321)
 	run.loop_rules = [&"lean_mending"] as Array[StringName]
 	var w := SaveLab.build_floor(run)

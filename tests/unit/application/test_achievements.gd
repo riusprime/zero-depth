@@ -60,7 +60,7 @@ func _parts() -> Dictionary:
 	var profile := ProfileStore.new("")
 	var codex := CodexStore.new(profile)
 	var store := AchievementStore.new(profile)
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var catalog := CodexCatalog.build(repo)
 	var book := AchievementBook.build(repo, store, codex, catalog)
 	var tracker := AchievementTracker.new(book)

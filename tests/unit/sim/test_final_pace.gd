@@ -45,7 +45,7 @@ const LIMIT := 43200
 
 static func bigs() -> Dictionary:
 	var out := {}
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	for id: StringName in [&"colossus", &"prism", &"nemesis"]:
 		for a in (repo.get_def(&"final_bosses", id) as BossDefinition).attacks:
 			if a.hit_class == &"big":
@@ -140,7 +140,7 @@ func test_each_body_lasts_a_minute_or_more_whatever_the_build() -> void:
 
 
 func _table(id: StringName) -> BossTable:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	return ContentCompiler.compile_boss(repo.get_def(&"final_bosses", id), repo)
 
 
@@ -371,9 +371,7 @@ func test_a_save_from_before_n2_mid_fight_still_loads() -> void:
 	for f: StringName in [&"paced", &"pace_dps", &"pace_budget", &"copying"]:
 		assert_true(ff.has(f), "saved: %s" % f)
 		ff.erase(f)  # as a payload written before N2
-	var table := ContentCompiler.compile_run(
-		ContentRepository.load_all().get_def(&"run", SaveLab.RUN_ID)
-	)
+	var table := ContentCompiler.compile_run(SharedContent.repo().get_def(&"run", SaveLab.RUN_ID))
 	var w2 := FinalLab.arena(RunSaver.run_from(p, table), false)
 	assert_eq(WorldSnapshot.apply(w2, p["world"]), "", "an FB3 snapshot restores")
 	assert_false(w2.final_fight.paced, "with a fresh pace")

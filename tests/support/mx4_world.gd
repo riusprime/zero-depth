@@ -14,7 +14,7 @@ static var _repo: ContentRepository
 
 static func repo() -> ContentRepository:
 	if _repo == null:
-		_repo = ContentRepository.load_all()
+		_repo = SharedContent.repo()
 	return _repo
 
 

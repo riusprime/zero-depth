@@ -7,7 +7,7 @@ const S := InputFrame.SHOOT
 
 
 func _build(id: StringName) -> BuildDefinition:
-	return ContentRepository.load_all().get_def(&"build", id)
+	return SharedContent.repo().get_def(&"build", id)
 
 
 func _table(build: StringName) -> PlayerTable:
@@ -52,7 +52,7 @@ func _player_bolts(w: World) -> int:
 
 # --- Data ----------------------------------------------------------------------------------------------------
 func test_the_two_builds_in_data() -> void:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	assert_eq(repo.count(&"build"), 2, "Blade and Gun")
 	var blade := _build(&"blade")
 	var gun := _build(&"gun")
@@ -189,7 +189,7 @@ func test_shots_go_along_the_aim_while_moving_elsewhere() -> void:
 
 # --- Offers filtered by weapon -------------------------------------------------------------------------------
 func _offer_world(build: StringName) -> World:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var t := ContentCompiler.apply_build(PlayerTable.starting_values(), _build(build))
 	t.utility = PlayerTable.Utility.GUARD
 	var w := World.new(5, t)
@@ -203,7 +203,7 @@ func _offer_world(build: StringName) -> World:
 func test_items_are_tagged_by_weapon_honestly() -> void:
 	var blade := []
 	var gun := []
-	for def: ItemDefinition in ContentRepository.load_all().all_of(&"items"):
+	for def: ItemDefinition in SharedContent.repo().all_of(&"items"):
 		if def.requires_weapon == &"blade":
 			blade.append(String(def.id))
 		elif def.requires_weapon == &"gun":
@@ -285,7 +285,7 @@ func test_a_build_is_never_offered_the_other_weapons_items() -> void:
 func test_every_combo_is_reachable_in_some_build() -> void:
 	# Both items of every combo can be offered in one run of at least one build and utility (heat on, as in the
 	# game).
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var heat := ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock"))
 	var reach := {}
 	for build: StringName in [&"blade", &"gun"]:

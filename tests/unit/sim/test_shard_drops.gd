@@ -9,7 +9,7 @@ const KIND := ActorStore.Kind
 func _world() -> World:
 	var w := CombatLab.world()
 	w.reward_table = ContentCompiler.compile_rewards(
-		ContentRepository.load_all().get_def(&"rewards", &"floor")
+		SharedContent.repo().get_def(&"rewards", &"floor")
 	)
 	return w
 
@@ -62,7 +62,7 @@ func test_walking_into_pickup_range_takes_it() -> void:
 
 func test_the_pickup_range_stat_widens_the_reach() -> void:
 	var w := _world()
-	w.stat_tables = ContentCompiler.compile_stat_cards(ContentRepository.load_all())
+	w.stat_tables = ContentCompiler.compile_stat_cards(SharedContent.repo())
 	var at := w.player_pos() + Vector2(6, 0)
 	_kill(w, at)
 	w.actors.set_pos(0, at + Vector2(ShardDrops.REACH_M + 0.05, 0))

@@ -85,7 +85,7 @@ func test_the_portal_has_its_own_look_and_its_column_rises() -> void:
 
 
 func _palette() -> Dictionary:
-	var biome: BiomeDefinition = ContentRepository.load_all().get_def(&"biomes", &"ruins")
+	var biome: BiomeDefinition = SharedContent.repo().get_def(&"biomes", &"ruins")
 	return biome.palette
 
 

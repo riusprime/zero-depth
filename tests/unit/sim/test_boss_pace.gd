@@ -33,7 +33,7 @@ const FINAL_LIMIT := 36000
 
 
 static func _repo() -> ContentRepository:
-	return ContentRepository.load_all()
+	return SharedContent.repo()
 
 
 ## An open-plane world with the base Blade build (data/player/runner.tres + data/builds/blade.tres, the heat on), the

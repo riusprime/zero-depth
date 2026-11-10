@@ -12,7 +12,7 @@ const S := IntensityState.Standing
 
 
 func _repo() -> ContentRepository:
-	return ContentRepository.load_all()
+	return SharedContent.repo()
 
 
 ## A wall-less world with the real enemies, a ring of spawn points at 9 m and the shipped spawner and director.

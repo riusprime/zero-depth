@@ -10,7 +10,7 @@ func _parts() -> Dictionary:
 	var profile := ProfileStore.new("")
 	var codex := CodexStore.new(profile)
 	var store := AchievementStore.new(profile)
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var book := AchievementBook.build(repo, store, codex, CodexCatalog.build(repo))
 	var tracker := AchievementTracker.new(book)
 	var got: Array[StringName] = []
@@ -43,7 +43,7 @@ func _beat_body(t: AchievementTracker, w: World, r: WorldReader) -> void:
 
 
 func test_the_three_are_defined() -> void:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	for id: StringName in [&"final_boss", &"final_no_hit", &"final_looped"]:
 		var d := repo.get_def(&"achievements", id) as AchievementDefinition
 		assert_not_null(d, "%s is in the data" % id)

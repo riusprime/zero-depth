@@ -9,7 +9,7 @@ const LONG := 1 << 24
 
 
 func _world(run_seed: int, rules: int = RunState.FLOOR_RULES) -> World:
-	var lab := RunLab.new(ContentRepository.load_all(), run_seed, &"blade")
+	var lab := RunLab.new(SharedContent.repo(), run_seed, &"blade")
 	lab.run.floor_rules = rules
 	var w := lab.floor_world()
 	w.actors.invuln[0] = LONG

@@ -10,13 +10,13 @@ const RUN_ID := RunSaver.RUN_ID
 
 ## v0.9.0 FV: the run's floors (5).
 static func floors() -> int:
-	return ContentCompiler.compile_run(ContentRepository.load_all().get_def(&"run", RUN_ID)).floors
+	return ContentCompiler.compile_run(SharedContent.repo().get_def(&"run", RUN_ID)).floors
 
 
 ## v0.9.0 FV: the run of a saved payload, compiled from the definition it names (RunSaver.saved_run_id; a v0.8.0 or
 ## older payload: the 3-floor shape), as FloorPlan's Continue.
 static func run_from(payload: Dictionary) -> RunState:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var def := repo.get_def(&"run", RunSaver.saved_run_id(payload))
 	return RunSaver.run_from(payload, ContentCompiler.compile_run(def))
 
@@ -30,7 +30,7 @@ static func run_state(
 	route: int = 0,
 	content: ContentRepository = null
 ) -> RunState:
-	var repo := content if content != null else ContentRepository.load_all()
+	var repo := content if content != null else SharedContent.repo()
 	var run := RunState.start(
 		run_seed, ContentCompiler.compile_run(repo.get_def(&"run", RUN_ID)), build
 	)
@@ -50,16 +50,14 @@ static func floor_world(run_seed: int, floor_index: int, build: StringName = &"b
 static func build_floor(
 	run: RunState, biome_id: StringName = &"", content: ContentRepository = null
 ) -> World:
-	var repo := content if content != null else ContentRepository.load_all()
+	var repo := content if content != null else SharedContent.repo()
 	var table := ContentCompiler.compile_player(repo.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(table, repo.get_def(&"build", run.build_id))
 	var enemies := ContentCompiler.compile_enemies(repo)
 	run.scale_enemies(enemies)
 	var bosses := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(bosses)
-	var boss := FloorShape.boss(
-		run, RunContentCompiler.compile_boss_pools(repo, run.table.floors), run.floor_index
-	)
+	var boss := FloorShape.boss(run, _boss_pools(repo, run.table.floors), run.floor_index)
 	var arena := RunSaver.boss_arena(run, bosses, boss)  # v0.7.5 BF1 (N18): an older save's room
 	var rules := RunSaver.floor_tables(run, repo)  # v0.7.5 MG, as Main
 	var w := FloorScenario.build(
@@ -123,6 +121,13 @@ static func build_floor(
 	w.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))  # v0.5.5 DS
 	CatchUp.start_floor(w)
 	return w
+
+
+## The run's boss pools: the shared ones (SharedContent) for the shared repository, else compiled from `repo`.
+static func _boss_pools(repo: ContentRepository, floors: int) -> Array[PackedInt32Array]:
+	if repo == SharedContent.repo():
+		return SharedContent.boss_pools(floors)
+	return RunContentCompiler.compile_boss_pools(repo, floors)
 
 
 ## Grants the ability of each kind in `kinds` (AbilityTable.Kind), levelled to `level`.

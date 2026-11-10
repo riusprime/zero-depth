@@ -149,7 +149,7 @@ func test_decoration_keeps_clear_and_lights_avoid_doorways() -> void:
 ## v0.8.0 RT: the dresser's input for a run floor with the designed rooms, as StageView builds it from WorldReader
 ## (each interior wall's piece and designed-room height; the designed rooms' drawn-only pieces).
 func _designed_floor(seed_value: int, biome: StringName) -> Dictionary:
-	var repo := ContentRepository.load_all()
+	var repo := SharedContent.repo()
 	var layout := FloorGenerator.generate(seed_value, RunSaver.floor_tables(null, repo)[&"map"])
 	var f := _floor(seed_value, biome)
 	var walls: Array = []
@@ -277,13 +277,7 @@ func test_wall_props_stand_inside_their_wall() -> void:
 		var f := _floor(300 + s, &"red_canyon")
 		f.merge(
 			StageDresser.look_input(
-				(
-					(
-						ContentRepository.load_all().get_def(&"biomes", &"red_canyon")
-						as BiomeDefinition
-					)
-					. look
-				)
+				(SharedContent.repo().get_def(&"biomes", &"red_canyon") as BiomeDefinition).look
 			),
 			true
 		)

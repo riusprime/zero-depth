@@ -16,7 +16,7 @@ func after_each() -> void:
 
 
 func _atmosphere(lights: Array[OmniLight3D], on := true) -> StageAtmosphere:
-	var mood: BiomeMood = ContentRepository.load_all().get_def(&"biomes", &"ruins").mood
+	var mood: BiomeMood = SharedContent.repo().get_def(&"biomes", &"ruins").mood
 	var root := Node3D.new()
 	add_child_autofree(root)
 	for l in lights:
@@ -48,7 +48,7 @@ func test_each_light_prop_gets_a_bounded_ember_emitter_and_the_view_one_dust() -
 	assert_eq(a.dust.amount, StageAtmosphere.DUST_COUNT)
 	assert_true(a.dust.emitting)
 	assert_not_null(a.fog_layer.material, "the fog layer has its material")
-	var mood: BiomeMood = ContentRepository.load_all().get_def(&"biomes", &"ruins").mood
+	var mood: BiomeMood = SharedContent.repo().get_def(&"biomes", &"ruins").mood
 	assert_almost_eq(lights[0].light_volumetric_fog_energy, mood.volumetric_light_energy, 0.0001)
 
 

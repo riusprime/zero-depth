@@ -81,7 +81,7 @@ func _run_with_rules(rules: int) -> RunState:
 
 
 func _repo() -> ContentRepository:
-	return ContentRepository.load_all()
+	return SharedContent.repo()
 
 
 func _run_table() -> RunTable:

@@ -21,7 +21,7 @@ func _floor() -> World:
 
 
 func _view(w: World) -> WorldViewRoot:
-	var biome: BiomeDefinition = ContentRepository.load_all().get_def(&"biomes", &"ruins")
+	var biome: BiomeDefinition = SharedContent.repo().get_def(&"biomes", &"ruins")
 	var v := WorldViewRoot.new()
 	v.stage.mood = biome.mood
 	add_child_autofree(v)

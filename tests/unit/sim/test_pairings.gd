@@ -7,7 +7,7 @@ const LONG := 1 << 24
 
 
 func _repo() -> ContentRepository:
-	return ContentRepository.load_all()
+	return SharedContent.repo()
 
 
 ## A wall-less world, the real spawner with every kind open and only `lead` in the mix's draw, the duo chance forced.

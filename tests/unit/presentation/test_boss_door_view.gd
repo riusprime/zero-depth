@@ -93,7 +93,7 @@ func _x_span(frame: Node3D) -> Vector2:
 
 
 func _world(rules: int) -> World:
-	var lab := RunLab.new(ContentRepository.load_all(), 8311, &"blade")
+	var lab := RunLab.new(SharedContent.repo(), 8311, &"blade")
 	lab.run.floor_rules = rules
 	return lab.floor_world()
 
