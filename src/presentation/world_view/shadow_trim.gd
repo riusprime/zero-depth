@@ -6,7 +6,6 @@ extends RefCounted
 
 ## false: every piece casts, as before PF4.
 const ENABLED := true
-const ENEMY_KEEP := 2
 const BOSS_KEEP := 4
 
 

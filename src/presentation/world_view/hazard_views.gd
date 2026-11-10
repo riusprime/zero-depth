@@ -64,23 +64,6 @@ func hazard_count() -> int:
 	return _rows.size()
 
 
-func warning_count() -> int:
-	var n := 0
-	for r: Dictionary in _rows:
-		if not r["armed"]:
-			n += 1
-	return n
-
-
-func rubble_count() -> int:
-	var n := 0
-	for k: int in _meshes:
-		var list: Array = _meshes[k]
-		if list.size() == RUBBLE:
-			n += list.size()
-	return n
-
-
 func sync(reader: WorldReader) -> void:
 	_rows = reader.boss_hazards()
 	var alive := {}

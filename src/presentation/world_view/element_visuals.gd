@@ -107,10 +107,6 @@ func sync(reader: WorldReader) -> void:
 
 
 # --- Reads (tests) ------------------------------------------------------------------------------------------------
-func fire_count() -> int:
-	return _fires.filter(func(f: MeshInstance3D) -> bool: return f.visible).size()
-
-
 func fx_count_of(kind: StringName) -> int:
 	return _fx.count_of(kind)
 
@@ -205,10 +201,6 @@ func _sync_rings(rings: Array) -> void:
 		var r := maxf(0.05, float(rings[k][1]))
 		m.position = SimPlane.to_3d(rings[k][0], FIRE_Y + 0.04)
 		m.scale = Vector3(r, 0.08, r)
-
-
-func ring_count() -> int:
-	return _rings.filter(func(m: MeshInstance3D) -> bool: return m.visible).size()
 
 
 # --- Flashes ------------------------------------------------------------------------------------------------------

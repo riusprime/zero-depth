@@ -475,10 +475,6 @@ func dying() -> bool:
 	return _die_t >= 0.0
 
 
-func death_seconds() -> float:
-	return DEATH_SECONDS
-
-
 ## The body's yaw against its facing now (radians; tests).
 func body_yaw() -> float:
 	return _yaw

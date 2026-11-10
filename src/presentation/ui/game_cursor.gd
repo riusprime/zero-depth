@@ -160,14 +160,6 @@ func texture(s: int) -> Texture2D:
 	return _textures[s] if s < _textures.size() else null
 
 
-func set_context(run: bool) -> void:
-	if int(run) == _context:
-		return
-	_context = int(run)
-	_set_state(wanted(run))
-	_apply_visibility()
-
-
 func _set_state(s: int) -> void:
 	if s == _state:
 		return

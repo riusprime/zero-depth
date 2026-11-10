@@ -121,13 +121,6 @@ func shake(amount: float) -> void:
 		_shake = minf(1.0, _shake + amount)
 
 
-## v0.8.0 N11: holds the shake at `level` (0..1) at least (a steady tremble while the receiver charges). Off like
-## shake().
-func shake_to(level: float) -> void:
-	if shake_enabled and not ViewPrefs.reduced_motion:
-		_shake = maxf(_shake, minf(1.0, level))
-
-
 ## v0.8.0 N11: the arrival's roll (radians) and zoom (1 = none); back to none with shake off or reduced motion.
 func set_flourish(roll: float, zoom: float) -> void:
 	if not shake_enabled or ViewPrefs.reduced_motion:

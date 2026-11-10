@@ -54,10 +54,10 @@ const PATCH_DIM := 0.4
 const PATCH_DENSITY := {"low": 0.5, "medium": 0.75, "high": 1.0}
 
 ## v0.10.5 W3-P10b (owner W7, "don't get crazy with visuals for explosions"): at most this many Detonation bursts (V2)
-## and Arc Jump lines (V3) are drawn a frame; a line lasts SB_JUMP_TICKS (0.15 s). The rest deal their damage undrawn.
+## and Arc Jump lines (V3) are drawn a frame; a line lasts StarboundFx.JUMP_TICKS (0.15 s). The rest deal their damage
+## undrawn.
 const SB_BURSTS_MAX := 8
 const SB_JUMPS_MAX := 16
-const SB_JUMP_TICKS := 9.0
 
 ## v0.8.0 AO: the shock arcs and storm strikes laid since the view began, one per arc per sync (for the tests).
 var ring_arcs_drawn := 0
@@ -637,7 +637,7 @@ func _blast_look(look: Dictionary, pos: Vector2, tick: int) -> Dictionary:
 
 ## v0.10.5 W3-P10b (V1-V3): the sim's new Detonation bursts, as the hook blast Chain Blast draws (its W3 size by the
 ## blast budget, BlastLook) tinted moon-blue, no particles, no flash, no shake: at most SB_BURSTS_MAX a frame; and its
-## new Arc Jump jumps, each a thin moon-blue line for SB_JUMP_TICKS, at most SB_JUMPS_MAX a frame. Reads only.
+## new Arc Jump jumps, each a thin moon-blue line for StarboundFx.JUMP_TICKS, at most SB_JUMPS_MAX a frame. Reads only.
 func _sync_starbound(reader: WorldReader) -> void:
 	var fx := reader.starbound_fx()
 	var kinds: PackedInt32Array = fx["kind"]

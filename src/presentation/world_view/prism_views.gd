@@ -185,18 +185,6 @@ func _process(_delta: float) -> void:
 		_draw(float(_tick))
 
 
-## True while any arm is drawn (an aim line or a beam; tests and the tour).
-func cross_drawn() -> bool:
-	for arm in _arms:
-		if (
-			(arm["core"] as Node3D).visible
-			or (arm["aim"] as Node3D).visible
-			or arm.get("packed", false)
-		):
-			return true
-	return false
-
-
 ## Arms drawn as beams now (tests).
 func beam_count() -> int:
 	var n := 0
@@ -226,11 +214,6 @@ func bolt_line_drawn() -> bool:
 ## The window's ring shows (tests).
 func window_drawn() -> bool:
 	return _ring.visible
-
-
-## A shard's firing flash shows (tests).
-func shard_flash_drawn() -> bool:
-	return _shard_flash.visible
 
 
 func _draw(now: float) -> void:

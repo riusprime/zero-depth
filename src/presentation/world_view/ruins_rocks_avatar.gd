@@ -97,15 +97,6 @@ func _rod(parent: Node3D, length: float, r: float, at: Vector3, c: Color) -> Mes
 	return _body_piece(parent, m, at, c)
 
 
-func _stone(parent: Node3D, r: float, at: Vector3, c: Color) -> MeshInstance3D:
-	var m := SphereMesh.new()
-	m.radius = r
-	m.height = r * 1.6
-	m.radial_segments = 7
-	m.rings = 4
-	return _body_piece(parent, m, at, c)
-
-
 static func _glow(c: Color, energy: float) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = c

@@ -17,7 +17,6 @@ const COOL := Color("#4E6A80")
 const HOT := Color("#FFA63A")
 const OVERCLOCK := Color("#FF4A1A")
 const WHITE_HOT := Color("#FFF4DE")
-const OVERHEAT_MARK := Color("#FF2A2A")
 const STEAM := Color("#E6EEF2")
 
 

@@ -141,15 +141,6 @@ func track_of(target: StringName, channel: int) -> int:
 	return -1
 
 
-## Every target this clip moves (tests: the bones it needs).
-func target_names() -> Array[StringName]:
-	var out: Array[StringName] = []
-	for t in targets:
-		if not out.has(t):
-			out.append(t)
-	return out
-
-
 ## Track k's value at time t (0..1; a loop wraps). Allocates nothing.
 func value(k: int, t: float, reduced: bool = false) -> float:
 	var s := first[k]

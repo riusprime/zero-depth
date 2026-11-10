@@ -611,11 +611,6 @@ func _code_nodes() -> Array[Node]:
 	return []
 
 
-## True for a body that kicks back when it fires (the turret) rather than lunging.
-func _recoils() -> bool:
-	return false
-
-
 func _pose_any(dt: float) -> void:
 	if imported != null:
 		_pose_imported(dt)
@@ -797,18 +792,6 @@ func bone(
 		return
 	skeleton.set_bone_pose_rotation(k, Quaternion(axis.normalized(), angle))
 	skeleton.set_bone_pose_position(k, skeleton.get_bone_rest(k).origin + offset)
-
-
-## Sets a bone's rotation from a full quaternion, its offset and its scale.
-func bone_q(
-	bone_name: StringName, q: Quaternion, offset: Vector3 = Vector3.ZERO, scl: float = 1.0
-) -> void:
-	var k := skeleton.find_bone(String(bone_name))
-	if k < 0:
-		return
-	skeleton.set_bone_pose_rotation(k, q)
-	skeleton.set_bone_pose_position(k, skeleton.get_bone_rest(k).origin + offset)
-	skeleton.set_bone_pose_scale(k, Vector3.ONE * scl)
 
 
 ## The glow overlay's strength now (0..1), for tests.

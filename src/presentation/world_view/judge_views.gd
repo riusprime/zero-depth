@@ -21,7 +21,6 @@ extends Node3D
 const MAX_POINTS := BossSchemas.ECHO_MAX_POINTS
 const GOLD := Color(1.0, 0.78, 0.3)
 const HOT := Color(1.0, 0.95, 0.72)
-const BRONZE := Color(0.32, 0.2, 0.06)
 const GHOST_S := 0.75
 const RING_S := 0.55
 const FILINGS_PER := 10

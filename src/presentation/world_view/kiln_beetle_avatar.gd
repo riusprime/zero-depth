@@ -518,10 +518,6 @@ func dying() -> bool:
 	return _die_t >= 0.0
 
 
-func death_seconds() -> float:
-	return DEATH_SECONDS
-
-
 ## The heat's and the visor's glow now (tests, the e2e).
 func heat_energy() -> float:
 	return _heat_glow
