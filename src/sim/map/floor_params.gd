@@ -90,16 +90,13 @@ var start_clear_radius := 3.5
 ## No interior piece within this radius of a doorway centre (on the wall line).
 var door_clear_radius := 3.0
 ## The designed room layouts, RoomLayouts.key(cells) -> Array of RoomLayoutTable
-## (RunContentCompiler.compile_room_layouts, data/room_layouts). Empty (the default, and a floor saved before RT:
-## RunSaver.floor_tables): every room keeps its rule-built interior (RoomInterior + RoomThemes) and the generator makes
-## no layout draw, so that floor comes out as it was. A room whose size has no layout keeps it too, as do the start
-## hall and the portal room.
+## (RunContentCompiler.compile_room_layouts, data/room_layouts). Empty (the default, a lab): every room keeps its
+## rule-built interior (RoomInterior + RoomThemes) and the generator makes no layout draw. A room whose size has no
+## layout keeps it too, as do the start hall and the portal room.
 var room_layouts := {}
 ## A designed room keeps its pieces out of a box in front of each doorway: the doorway's width plus this
 ## either side, this deep into the room from the wall face.
 var layout_door_side := 1.0
-## Build the gates as before PT, against the wall (a floor saved under floor rules 1-9; RunSaver).
-var legacy_gate := false
 var layout_door_depth := 3.0
 
 ## The share of floors with a timed door and its secret room (per mille; starting value
@@ -117,26 +114,3 @@ var purpose_permille := 0
 
 static func defaults() -> FloorParams:
 	return FloorParams.new()
-
-
-## v0.7.0's room numbers (10-12 rooms, footprints up to 3 x 3, span 8, 400 attempts), for a v0.7.0 floor
-## resumed from a save made before v0.7.5 (RunState.v070_floor): its walls must come out as they were saved.
-static func v070() -> FloorParams:
-	var p := FloorParams.new()
-	p.rooms_min = 10
-	p.rooms_max = 12
-	p.footprints = [
-		Vector2i(1, 1),
-		Vector2i(2, 1),
-		Vector2i(1, 2),
-		Vector2i(3, 1),
-		Vector2i(1, 3),
-		Vector2i(2, 2),
-		Vector2i(3, 2),
-		Vector2i(2, 3),
-		Vector2i(3, 3),
-	]
-	p.footprint_weights = PackedInt32Array([30, 14, 14, 8, 8, 10, 5, 5, 3])
-	p.max_span = 8
-	p.place_attempts = 400
-	return p

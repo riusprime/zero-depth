@@ -28,7 +28,7 @@ var interact_radius_m := 1.8
 var first_floor := 1
 var every_floors := 2
 ## The biomes' shop rooms, biome id -> ShopRoomTable (RunContentCompiler.compile_shop_rooms).
-## Empty on a floor saved before SR (RunState.shop_rooms; RunSaver.floor_tables), whose shop is the terminal.
+## Empty (a lab without the data): the shop is the terminal.
 var rooms := {}
 
 
@@ -49,7 +49,7 @@ func floor_step_permille(floor_index: int) -> int:
 	return step if floor_index < 2 else scaled(step, late_floor_permille)
 
 
-## The floor step alone (1000, 1500, 2000), without the late-floor multiplier (WandMigration's refunds go by it).
+## The floor step alone (1000, 1500, 2000), without the late-floor multiplier (floor_step_permille adds it).
 func base_step_permille(floor_index: int) -> int:
 	return 1000 + floor_price_step_permille * maxi(0, floor_index - 1)
 

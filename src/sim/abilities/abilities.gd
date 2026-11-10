@@ -147,14 +147,7 @@ static func remove_slot(w: World, s: int) -> void:
 ## A fresh floor (after the carry restored the slots and levels): cooldowns, drones and the blink's charges start
 ## over.
 static func start_floor(w: World) -> void:
-	if w.migrate_slots:  # A carry from before the slots (RunCarry.apply)
-		w.migrate_slots = false
-		BuildSlots.migrate(w)
-	else:
-		BuildSlots.sync(w)
-	WandMigration.run(w)  # An old save's retired cards become their wand cards (or shards)
-	AttackSlots.trim(w)  # An old save's over-full slot categories (the leftmost stay, the rest shards)
-	Stats.migrate_rules(w)  # A carry from before SG (RunCarry.apply) rebuilds damage and attack speed
+	BuildSlots.sync(w)
 	w.ab = AbilityState.new()
 	for s in w.ability_owned.size():
 		w.ab.cd.append(0)
@@ -436,9 +429,9 @@ static func _land_bombs(w: World) -> void:
 		var r := s.bomb_r[k]
 		var dmg := s.bomb_dmg[k]
 		var root := s.bomb_root[k]
-		var key := s.bomb_spec[k] if k < s.bomb_spec.size() else ""
-		var depth := s.bomb_depth[k] if k < s.bomb_depth.size() else 0
-		var proc := s.bomb_proc[k] if k < s.bomb_proc.size() else 100
+		var key := s.bomb_spec[k]
+		var depth := s.bomb_depth[k]
+		var proc := s.bomb_proc[k]
 		var spec := Modifiers.book(w).find(key) if key != "" else null
 		var effect := EFFECT_BOMB if split else AbilityMods.EFFECT_CLUSTER
 		# A hook's bomb names its own (Bomb Rounds, the bomblets): any non-bomb spec's (even none), or a
@@ -469,10 +462,9 @@ static func _remove_bomb(s: AbilityState, k: int) -> void:
 	s.bomb_r.remove_at(k)
 	s.bomb_dmg.remove_at(k)
 	s.bomb_split.remove_at(k)
-	if k < s.bomb_spec.size():
-		s.bomb_spec.remove_at(k)
-		s.bomb_depth.remove_at(k)
-		s.bomb_proc.remove_at(k)
+	s.bomb_spec.remove_at(k)
+	s.bomb_depth.remove_at(k)
+	s.bomb_proc.remove_at(k)
 
 
 # --- State hash and reads --------------------------------------------------------------------------------------

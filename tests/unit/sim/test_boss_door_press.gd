@@ -2,16 +2,14 @@ extends GutTest
 ## v0.8.0 BD (owner O83: "opening the door now is a press button (X on controller F on keyboard) and when opened the
 ## sound play"): on today's floors the boss door is shut and solid from the floor's first tick; the interact press
 ## within reach of its outer face starts its opening (BOSS_DOOR_OPENING), BossFlow.DOOR_OPEN_TICKS later its collider
-## leaves the walls (BOSS_DOOR_OPENED) and walking in seals it as before. A floor saved before BD (floor rules 1-8)
-## keeps its open doorway. Same seed, same hash; a snapshot taken mid-opening restores and finishes the same.
+## leaves the walls (BOSS_DOOR_OPENED) and walking in seals it as before. Same seed, same hash; a snapshot taken
+## mid-opening restores and finishes the same.
 
 const LONG := 1 << 24
 
 
-func _world(run_seed: int, rules: int = RunState.FLOOR_RULES) -> World:
-	var lab := RunLab.new(SharedContent.repo(), run_seed, &"blade")
-	lab.run.floor_rules = rules
-	var w := lab.floor_world()
+func _world(run_seed: int) -> World:
+	var w := RunLab.new(SharedContent.repo(), run_seed, &"blade").floor_world()
 	w.actors.invuln[0] = LONG
 	return w
 
@@ -91,23 +89,6 @@ func test_the_press_opens_it_over_the_opening_ticks() -> void:
 	assert_eq(_walls(w), walls_open + 1, "sealed: the door is a wall again")
 	assert_same(w.nav, nav_closed, "the kept field swapped in (no rebuild)")
 	assert_eq(WorldReader.new(w).boss_door_progress(), -1.0, "the fight drives the door now")
-
-
-func test_a_floor_saved_before_bd_keeps_its_open_doorway() -> void:
-	var w := _world(8303, RunState.FLOOR_RULES_V080_N19)
-	var walls_open := _walls(w)
-	assert_eq(w.boss_flow.door, BossFlow.Door.PASSAGE)
-	w.step(_frame())
-	assert_eq(_walls(w), walls_open, "no door collider before the fight")
-	assert_eq(
-		WorldReader.new(w).boss_door_progress(), -1.0, "the view opens it by nearness, as before"
-	)
-	_stand_out(w, 1.0)
-	for k in 300:
-		w.step(_frame(_into(w)))
-		if w.boss_flow.state == BossFlow.State.FIGHT:
-			break
-	assert_eq(w.boss_flow.state, BossFlow.State.FIGHT, "walked straight in")
 
 
 func test_a_hero_put_inside_past_the_shut_door_still_seals_once() -> void:

@@ -18,12 +18,10 @@ var kind_floor_min := PackedInt32Array([1, 2, 4])
 var waves := 3
 var wave_sizes := PackedInt32Array([5, 5, 5, 6, 6])
 ## A locked room fights one burst: `burst_waves` formations (each wave_sizes[floor] enemies),
-## the next `burst_gap_ticks` after the one before whether or not anyone is left (0: the longer fight above, a floor
-## saved under rules 1-19), and `takes_arenas` makes the floor's arena rooms locked rooms (a floor saved under rules
-## 1-19 keeps its arenas).
+## the next `burst_gap_ticks` after the one before whether or not anyone is left (0: the longer fight above, a
+## table set up so by hand). The floor's arena rooms are locked rooms too (Lockdowns.takes_arenas).
 var burst_waves := 2
 var burst_gap_ticks := 60
-var takes_arenas := true
 ## Ticks from the seal to the first formation, and from a formation's last kill to the next.
 var first_wave_ticks := 60
 var wave_gap_ticks := 45
@@ -37,7 +35,7 @@ var hazard_every_ticks := 120
 var hazard_warn_ticks := 60
 var hazard_radius_m := 1.3
 var hazard_damage := 12
-## The least grid cells a Lockdown's room has (LockdownRooms.mark; 0: any room, a floor saved before CF),
+## The least grid cells a Lockdown's room has (LockdownRooms.mark; 0: any room),
 ## and the room's floor area (m2) an enemy needs at once (ClosedFights.cap; 0: no cap).
 var min_cells := 2
 var area_per_enemy_m2 := 30.0

@@ -242,20 +242,6 @@ func test_a_rings_shards_are_capped_split_left_of_the_ring_makes_ring_shards() -
 
 
 # --- Old saves ----------------------------------------------------------------------------------------------------
-func test_a_ring_from_before_n3_is_a_plain_ring_that_grows_where_it_was() -> void:
-	var w := _shot([RING], 2)
-	var ab := w.ab
-	for f: StringName in [&"ring_vel", &"ring_orb", &"ring_orb_a", &"ring_pulse", &"ring_k"]:
-		var empty: Variant = ab.get(f)
-		empty.resize(0)
-		ab.set(f, empty)  # an older save's rings: no travel columns
-	var at := ab.ring_pos[0]
-	W.run(w, 1)
-	assert_eq(ab.ring_pulse.size(), ab.ring_pos.size(), "padded")
-	if not ab.ring_pos.is_empty():
-		assert_eq(ModifierAbilities.ring_centre(w, 0, w.tick), at, "it stays where it was")
-
-
 # --- The old cards stay as they were ----------------------------------------------------------------------------
 func test_the_old_cards_results_dont_move() -> void:
 	# Halo is a COUNT card now, but without a Ring nothing reads that: its bolt is as before.

@@ -249,26 +249,6 @@ func test_the_slots_round_trip_a_snapshot_with_equal_hashes() -> void:
 	assert_eq(base.state_hash(), w.state_hash())
 
 
-func test_a_snapshot_without_the_slots_migrates() -> void:
-	var w := _world()
-	for id: StringName in MODS + [SEVENTH]:
-		w.add_item(_it(w, id))
-	assert_eq(w.mod_slots.size(), 7, "add_item never caps (tests and labs)")
-	var snap := w.to_snapshot()
-	var data: Dictionary = snap["world"]
-	for f: StringName in WorldSnapshot.ADDED_SINCE_V05[&"World"]:
-		data.erase(f)
-	(data[&"projectiles"] as Dictionary).erase(&"spec_key")
-	var base := _world()
-	assert_eq(WorldSnapshot.apply(base, snap), "", "an older snapshot restores")
-	assert_eq(base.mod_slots.size(), 6, "into six slots")
-	assert_eq(base.mod_slots[0], _it(w, &"ember_core"), "the first pick first")
-	assert_eq(
-		base.mod_slots[5], _it(w, &"echo_slash"), "then in pickup order, the last past six dropped"
-	)
-	assert_false(base.items_owned.has(_it(w, SEVENTH)))
-
-
 func test_catch_up_reads_the_modifier_levels() -> void:
 	var w := _world()
 	w.catch_up_table = CatchUpTable.new()

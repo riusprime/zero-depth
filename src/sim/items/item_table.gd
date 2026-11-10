@@ -69,7 +69,7 @@ var requires_ability := -1
 ## and the Skills (Modifiers.compile). Empty for items whose effects are not attack rewrites yet.
 var modifiers: Array[ModifierTable] = []
 ## WAND.md "What happens to the v0.6 cards": a retired v0.6 card. Never offered (ItemPool); kept so
-## old saves and item indices still resolve; a held one maps onto its new card on load (WandMigration).
+## item indices still resolve.
 var retired := false
 ## The card's draw weight × this per mille (ItemPool.card_weight; under 1000 it never
 ## fills the boss's chance slot, Offers.legendary_cards). 1000 = as its tier.

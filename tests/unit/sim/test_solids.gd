@@ -69,15 +69,9 @@ func test_a_world_without_the_rules_adds_nothing() -> void:
 	assert_true(w.solids.is_empty())
 
 
-func test_a_floor_saved_before_sb_builds_no_solids() -> void:
-	assert_false(Solids.rules_on(_run_with_rules(RunState.FLOOR_RULES_V090_CF2)))
-	assert_true(Solids.rules_on(_run_with_rules(RunState.FLOOR_RULES_V095_SB)))
-
-
-func _run_with_rules(rules: int) -> RunState:
-	var r := RunState.start(1, _run_table())
-	r.floor_rules = rules
-	return r
+func test_a_run_floor_uses_the_solids_and_a_world_without_a_run_does_not() -> void:
+	assert_true(Solids.rules_on(RunState.start(1, _run_table())))
+	assert_false(Solids.rules_on(null))
 
 
 func _repo() -> ContentRepository:

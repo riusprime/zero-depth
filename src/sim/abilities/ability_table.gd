@@ -27,7 +27,7 @@ var auto := true
 var button := Binding.NONE
 var rare := false
 ## A retired ability modifier (WAND.md: the six old abilities map onto wand cards or retire): never
-## offered (Abilities.can_take); a held one maps on load (WandMigration). The dev panel can still grant it.
+## offered (Abilities.can_take). The dev panel can still grant it.
 var retired := false
 ## False = never offered, not even as a level-up (Abilities.can_take; the Pulse Gun).
 var offered := true

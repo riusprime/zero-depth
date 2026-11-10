@@ -138,20 +138,6 @@ func test_a_save_mid_arrival_resumes_the_rest_of_it() -> void:
 	assert_false(base.boss_flow.holds_world())
 
 
-func test_an_older_save_without_an_arrival_resumes_with_none() -> void:
-	var old := SaveLab.floor_world(SEED, 1)  # floor 1 before N11: no arrival
-	assert_false(old.boss_flow.holds_world())
-	CombatLab.idle(old, 5)
-	var base := _arriving(1)
-	assert_true(base.boss_flow.holds_world())
-	assert_eq(WorldSnapshot.apply(base, WorldSnapshot.take(old)), "")
-	assert_false(base.boss_flow.holds_world(), "no arrival in it: play goes on at once")
-	var at := base.player_pos()
-	for k in 10:
-		base.step(_move(Vector2(1, 0)))
-	assert_ne(base.player_pos(), at)
-
-
 func test_the_arrival_is_hashed_and_deterministic() -> void:
 	var a := SaveLab.floor_world(SEED, 1)
 	var b := _arriving(1)

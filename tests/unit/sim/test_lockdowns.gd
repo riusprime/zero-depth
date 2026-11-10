@@ -320,19 +320,6 @@ func test_a_save_while_sealed_resumes_exactly() -> void:
 	assert_ne(w.state_hash(), h0, "the Lockdown's state is hashed")
 
 
-func test_a_floor_saved_before_lk_has_none() -> void:
-	var with := 0
-	for s in range(1, 9):
-		var r := SaveLab.run_state(s, 2)
-		r.floor_rules = RunState.FLOOR_RULES_V090_DP
-		var old := SaveLab.build_floor(r)
-		assert_null(old.lockdown, "seed %d: none under floor rules 12" % s)
-		assert_true(old.floor_layout.lockdown_rooms.is_empty())
-		if not SaveLab.floor_world(s, 2).floor_layout.lockdown_rooms.is_empty():
-			with += 1
-	assert_gt(with, 0, "today's floors have them")
-
-
 func test_the_encounter_lasts_about_20_to_40_s() -> void:
 	var lines := PackedStringArray()
 	for floor_index in range(1, 6):

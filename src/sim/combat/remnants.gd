@@ -618,7 +618,7 @@ static func _pull(w: World, n: int, r: RemnantRule) -> void:
 	for pi in p.size():
 		if p.team[pi] != ActorStore.TEAM_PLAYER:
 			continue
-		if p.moves and pi < p.orbit_t.size() and p.orbit_t[pi] > 0:
+		if p.moves and p.orbit_t[pi] > 0:
 			continue  # an orbiting shot keeps its orbit
 		var pos := Vector2(p.pos_x[pi], p.pos_y[pi])
 		var to := at - pos

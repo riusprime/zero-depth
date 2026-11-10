@@ -114,9 +114,8 @@ func test_the_growth_is_derived_again_on_a_resumed_floor() -> void:
 	assert_eq(Stats.max_hp(base), 130, "a recompute keeps it")
 
 
-## An old save's run (the v0.8.0 three_floors shape) never grows; a v0.9.0 five-floor save from before SV (its carry
-## holds no growth) resumes with the growth of its floor.
-func test_old_saves_load_and_three_floors_never_grows() -> void:
+## The three-floor shape (data/run/three_floors.tres) never grows.
+func test_three_floors_never_grows() -> void:
 	var t := _table(&"three_floors")
 	var run := RunState.start(81, t, &"blade")
 	run.floor_index = 3
@@ -124,11 +123,6 @@ func test_old_saves_load_and_three_floors_never_grows() -> void:
 	var w := SaveLab.build_floor(run)
 	assert_eq(w.floor_hp_bonus, 0)
 	assert_eq(w.actors.max_hp[0], 100)
-	var five := SaveLab.run_state(82, 4)
-	five.carry = {RunCarry.HP: 70}  # a carry from before SV: its HP only
-	var w5 := SaveLab.build_floor(five)
-	assert_eq(w5.actors.max_hp[0], 145, "floor 4's growth, derived")
-	assert_eq(w5.actors.hp[0], 70, "the saved HP as it was")
 
 
 func test_the_final_arena_card_shows_no_growth() -> void:

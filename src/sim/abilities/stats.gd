@@ -128,10 +128,6 @@ const BASE: Array[int] = [
 	0,
 	0
 ]
-## The stat rules a world's values follow (World.stat_rules): 0 before SG (damage, attack
-## speed and Glass Cannon compounded), 1 since (their cards add). An older save rebuilds them (migrate_rules).
-const RULES := 1
-const ADDITIVE_STATS: Array[int] = [Stat.DAMAGE, Stat.ATTACK_SPEED, Stat.GLASS_CANNON]
 ## Hoarder counts shards in steps of this many.
 const HOARD_STEP := 100
 ## The loops' caps (cap_of). From loop 2 crit chance is capped at 200 % (past
@@ -558,39 +554,6 @@ static func advance_regen(w: World) -> void:
 		a.hp[0] += 1
 		w.ab.regen_acc -= REGEN_UNIT
 		w.ab.regen_tick = w.tick
-
-
-## A world restored from before SG (World.stat_rules 0: WorldSnapshot.apply, or a carry through
-## Abilities.start_floor) rebuilds damage, attack speed and Glass Cannon from its stat cards and the gamble shrine's
-## stacks under today's rules (Shop.rebuild_stats' replay, limited to those stats). The other stats keep their stored
-## values (an event's max HP cut isn't recorded anywhere to replay). Then stat_rules = RULES.
-static func migrate_rules(w: World) -> void:
-	if w.stat_rules >= RULES:
-		return
-	w.stat_rules = RULES
-	if w.stat_values.size() < LEGACY_COUNT:
-		return  # no card and no win yet: every stat at its base
-	var redo := []
-	for s in ADDITIVE_STATS:
-		var t := table(w, s)
-		if t != null and t.additive:
-			redo.append(s)
-			w.stat_values[s] = BASE[s]
-	for c in w.stat_cards:
-		var s := Offers.stat_of(c)
-		if redo.has(s):
-			var t := table(w, s)
-			var r := clampi(Offers.rarity_of(c), 0, t.amounts.size() - 1)
-			w.stat_values[s] = stepped(t, s, w.stat_values[s], t.amounts[r])
-	var wins := w.gamble_stacks.size() if w.gamble_table != null else 0
-	for g in wins:
-		var s := from_gamble(w, g)
-		if not redo.has(s):
-			continue
-		for k in w.gamble_stacks[g]:
-			w.stat_values[s] = stepped(
-				table(w, s), s, w.stat_values[s], Gamble.gamble_permille(w, g)
-			)
 
 
 ## The gamble shrine pays its overlapping stats into the same stat values, by its own amounts: the stat

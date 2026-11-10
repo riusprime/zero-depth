@@ -28,7 +28,7 @@ static func is_bomb(s: AttackSpec) -> bool:
 static func touches(w: World, pi: int) -> bool:
 	if w.projectiles.team[pi] != ActorStore.TEAM_PLAYER:
 		return false
-	var key := w.projectiles.spec_key[pi] if pi < w.projectiles.spec_key.size() else ""
+	var key := w.projectiles.spec_key[pi]
 	return key != "" and is_bomb(Attacks.projectile_spec(w, pi))
 
 

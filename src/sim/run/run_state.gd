@@ -12,102 +12,6 @@ extends RefCounted
 ## never meet at a seam). Each loop past the first scales enemies and bosses (loop_permille) and adds threat and
 ## catch-up cap (prepare).
 
-## The floor rules the current floor was built with. FLOOR_RULES (2): v0.7.5's bigger floors, fewer arenas,
-## the shop every two floors (data/map, data/arenas, data/shop). 1: v0.7.0's (FloorParams.v070(), a third of the
-## combat rooms as arenas, a shop on every floor), only for a floor resumed from a save made before v0.7.5 (its
-## payload has no floor_rules), so the floor rebuilt under its snapshot is the floor it was saved on. The next floor
-## is always built with FLOOR_RULES.
-## 3 is today's, every boss room 4 x 4; a floor saved under
-## rules 1 or 2 rebuilds its boss room at the boss's legacy_arena_cells (legacy_boss_room), so it is the floor it was
-## saved on.
-## 4 added the designed room layouts (data/room_layouts); a floor saved under rules 1-3 is
-## rebuilt with the rule-built interiors it had (designed_rooms; RunSaver.floor_tables).
-## v0.8.0 RT2 (G2 RT) and SR, merged into one step of the rules: 5 is today's, with layouts for every room
-## size (24) and the shop room a biome's tent stall (data/shop_rooms; ShopRoom). A floor saved under rules 4 is rebuilt
-## with RT1's three layouts only (rt1_rooms; RunSaver.RT1_LAYOUTS) and the shop terminal it had (RunSaver.shop_rooms).
-## 6 is today's: the gamble shrine stands on some floors only (GambleTable's
-## floor_chance_permille), in a combat room away from the start hall (Gamble.site). A floor saved under rules 1-5 is
-## rebuilt with the shrine in its start hall, as it was saved (FloorScenario.legacy_shrine_of).
-## 7 is today's: the curse room (Events.curse_site: on some floors, one combat room with the
-## curse altar, the curse events drawn only there). A floor saved under rules 1-6 is rebuilt with its event rooms as
-## they were (no curse room, every event in the common draw; FloorScenario.legacy_curse_room_of).
-## 8 is today's: the curse room is a room of its own (CurseRoom.furnish: interior cleared, the
-## altar centred and solid, crystals, no spawns), small rooms first, on every Deep floor (Whispering Deep at its altar),
-## Echo Mirror only once a stat is raised. A floor saved under rules 7 is rebuilt with N17's curse room (a combat room
-## keeping its interior; FloorScenario.curse_room_rules_of).
-## 9 is today's: the boss door is shut and solid until the interact press opens it
-## (BossFlow.Door, set in prepare). A floor saved under rules 1-8 keeps its open doorway, as it was saved.
-## 10 is today's: on some floors a dead end is a secret room behind a timed door
-## (TimedDoor.setup). A floor saved under rules 1-9 is rebuilt without one, as it was saved (FloorPlan).
-## 11 is today's: on some floors a rune puzzle seals a dead end (RuneAlignment.setup).
-## A floor saved under rules 1-10 is rebuilt without one, as it was saved (FloorPlan). v0.9.0 DX (owner W §4 C, Q23)
-## rides the same rule (both land together): cracked walls, containers and explosive barrels (Breakables.setup).
-## 12 is today's: the Purple Portal is earned (a purple-rune room on some floors,
-## PurpleRunes.setup; the Deep gate opens only on a floor whose runes were awakened). A floor saved under rules 1-11
-## keeps the Deep gate on every floor before the last, as it was saved (PurpleRunes.legacy_deep_gate).
-## 13 is today's: 1-2 Lockdown rooms a floor (Lockdowns.setup). A floor saved under rules 1-12
-## is rebuilt without any, as it was saved (FloorPlan).
-## v0.9.0 SH, HF: 14 is today's: the floor's shrine is drawn as Fortune (the gamble shrine), Blood or
-## Chaos, and some floors from floor 2 have a healing fountain (Shrines.setup). A floor saved under rules 1-13 is
-## rebuilt as it was saved: its shrine is the gamble shrine (Fortune), and it has no Blood or Chaos shrine and no
-## fountain (FloorPlan).
-## 15 is today's: floors 4-5 mark their elite rooms (Elites.setup), an Elite Lockdown
-## may be drawn there, and the retired Ambush Cache is never drawn. A floor saved under rules 1-14 is rebuilt as it was
-## saved: no elite rooms, no Elite Lockdown, the Ambush Cache's old weight in the event draw (its pedestal then closes
-## on load: Events.drop_retired).
-## 16 is today's: no closed fight (an arena, the Overrun room, a
-## Lockdown, the Chaos shrine) in a room of fewer than its kind's min_cells grid cells. A floor saved under rules 1-15
-## is rebuilt with the rooms it had (the min_cells read as 0: RunSaver.floor_tables, FloorPlan.add_secrets).
-## 17 is today's: the Lockdowns (Elite ones too) pick their rooms
-## right after the arenas and the Overrun room (FloorScenario.build, RunSaver.floor_tables' lockdown_first), before
-## the shrine, the fountain, the events, the curse room and the secrets, which then take the rooms left. A floor
-## saved under rules 1-16 is rebuilt in the old order, its Lockdowns last (FloorPlan.add_secrets).
-## 19 is today's: an event room on about a third
-## of floors, at most two a run, never the same event twice (Events.pick_rooms; World.events_seen). A floor saved under
-## rules 1-18 is rebuilt with its 1-2 event rooms (FloorScenario.rare_events_of).
-## 20 is today's: a locked room (a Lockdown)
-## fights one burst of two formations 1 s apart and the floor's arena rooms are locked rooms; every sealed door drops
-## bars. A floor saved under rules 1-19 keeps its three-formation Lockdowns and its wave Arenas
-## (RunSaver.lockdown_table).
-## 21 is today's: the timed door's switches sit in two other rooms 1-2 steps from it, its timer is
-## 20 s, and a lever inside reopens it for 5 s. A floor saved under rules 10-20 keeps both switches by the door and
-## 15 s (FloorPlan.add_secrets).
-const FLOOR_RULES := 23
-const FLOOR_RULES_V070 := 1
-const FLOOR_RULES_V075_MG := 2
-const FLOOR_RULES_V075_BF1 := 3
-const FLOOR_RULES_V080_RT1 := 4
-const FLOOR_RULES_V080_SR := 5
-const FLOOR_RULES_V080_N14 := 6
-const FLOOR_RULES_V080_N17 := 7
-const FLOOR_RULES_V080_N19 := 8
-const FLOOR_RULES_V080_BD := 9
-const FLOOR_RULES_V090_TD := 10
-const FLOOR_RULES_V090_RA := 11
-const FLOOR_RULES_V090_DP := 12
-const FLOOR_RULES_V090_LK := 13
-const FLOOR_RULES_V090_SH := 14
-const FLOOR_RULES_V090_EL := 15
-const FLOOR_RULES_V090_CF := 16
-const FLOOR_RULES_V090_CF2 := 17
-## The props that look solid are solid (Solids).
-const FLOOR_RULES_V095_SB := 18
-const FLOOR_RULES_V095_AQ := 19
-const FLOOR_RULES_V095_DR := 20
-const FLOOR_RULES_V095_TS := 21
-## Breakables are solid until broken, and never placed within 1.5 m of a doorway.
-const FLOOR_RULES_V095_BK := 22
-## 23 is today's: floor 2's first Lockdown is the Elite midpoint set piece (RunSaver.lockdown_table).
-const FLOOR_RULES_V0105_O14 := 23
-## The run's boss draw rules, for the whole run (a floor's rules reset
-## each floor, but the bosses met on the floors before are redrawn on each floor, so they must draw as they did). 1 is
-## today's: a floor draws from its pool a boss the run has not met yet (floor 1's pool shares the Brood Mother with
-## floor 2's). 0, a payload saved before O11 (no `boss_draw` key): each pool without the bosses a deeper pool also
-## names, and a floor with its own pool ignores the bosses met, so the run meets the bosses it was going to.
-const BOSS_DRAW := 1
-const BOSS_DRAW_V0105_O11 := 1
-const BOSS_DRAW_LEGACY := 0
-
 var run_seed := 0
 var table: RunTable
 ## 1-based floor number.
@@ -127,49 +31,43 @@ var build_id := &""
 var routes := PackedInt32Array([Routes.Route.NORMAL])
 ## M-THREAT: threat T at the end of each finished floor.
 var threat_by_floor := PackedInt32Array()
-## See FLOOR_RULES.
-var floor_rules := FLOOR_RULES
 ## The loop (1 until the first Ascend) and the floors of the loops before it (run_floor()). A saved run
-## keeps both (RunSaver; a payload without them is loop 1).
+## keeps both (RunSaver).
 var loop := 1
 var loop_floors := 0
 ## End the run took the hero to the final boss: the run's next (and last)
-## world is the final arena (FinalArenaScenario), on the loop's last floor (floor_index stays). Saved (RunSaver; an
-## older payload has none).
+## world is the final arena (FinalArenaScenario), on the loop's last floor (floor_index stays). Saved (RunSaver).
 var final_fight := false
 ## The run's floors (run_floor(), across loops) that held a purple-rune room, so a loop holds
-## one at most (PurpleRunes.chance). Saved (RunSaver; an older payload has none).
+## one at most (PurpleRunes.chance). Saved (RunSaver).
 var purple_floors := PackedInt32Array()
 ## The rune affinity picked at the Wardrobe before the run (an
-## AffinityDefinition id; &"" or &"none" = None), the same on every floor. Saved (RunSaver; an older payload: None).
+## AffinityDefinition id; &"" or &"none" = None), the same on every floor. Saved (RunSaver).
 var affinity := &""
 ## PLAN W49-W50: the Rune Fragments the finished floors earned (RuneFragments.of_floor; collectibles
 ## through RuneFragments.add_collectibles), banked into the profile when the run ends (MetaProgress). Saved
-## (RunSaver; an older payload: 0).
+## (RunSaver).
 var fragments_done := 0
 ## How fragments are earned (FragmentTable; FloorPlan sets it from content). Null: the run earns none.
 var fragment_table: FragmentTable
 ## The card ids no offer draws in this
 ## run (the profile's locked forms when the run started; FloorPlan resolves them into World.locked_items). Emptied
-## when the run travels through a Purple Portal (app side). Saved (RunSaver; an older payload: none locked).
+## when the run travels through a Purple Portal (app side). Saved (RunSaver).
 var locked_cards: Array[StringName] = []
 ## COLLECTIBLES.md: the collectibles no floor of this run arms again (the profile's found ones when the run
 ## started, and each one taken in it: the app adds it), the ones taken in this run (one Stone a run), and the secrets
 ## behind hidden rune markings the finished floors found (Collectibles.marked; the Rune Rubbing counts the run's).
-## Saved (RunSaver; an older payload: none).
+## Saved (RunSaver).
 var collected: Array[StringName] = []
 var collected_run: Array[StringName] = []
 var marked_done := 0
 ## The loop rules the run holds (LoopRules.POOL ids, in the order drawn: one a loop past the
-## first) and the loop that drew the newest (the floor card announces it on that loop). Saved (RunSaver; an older
-## payload: none, so its floors rebuild as saved; its next loop draws one).
+## first) and the loop that drew the newest (the floor card announces it on that loop). Saved (RunSaver).
 var loop_rules: Array[StringName] = []
 var loop_rule_loop := 0
-## See BOSS_DRAW (FloorShape.boss reads it). Saved (RunSaver; an older payload: BOSS_DRAW_LEGACY).
-var boss_draw := BOSS_DRAW
 ## The profile had learned all ten Runic Stone lines (r11 known) when the run began,
-## so its final approach holds the hidden room under the throne (FinalArena.add_heart_room). Saved (RunSaver; an older
-## payload, or a run without it: false, so its final approach is built as before).
+## so its final approach holds the hidden room under the throne (FinalArena.add_heart_room). Saved (RunSaver; a run
+## without it: false).
 var heart_room := false
 
 
@@ -357,8 +255,7 @@ func prepare(w: World) -> void:
 	if w.boss_flow != null:  # v0.5.0 RT
 		w.boss_flow.deep = is_deep()
 		w.boss_flow.ascension = is_last_floor()  # The loop's last floor has the Ascension portal
-		if floor_rules > FLOOR_RULES_V080_N19:  # Shut until pressed (before BD: an open doorway)
-			w.boss_flow.door = BossFlow.Door.SET
+		w.boss_flow.door = BossFlow.Door.SET  # Shut until pressed
 		w.boss_flow.final_next = is_last_floor() and _has_final()  # End leads to the final boss
 	w.deep_threat = routes.count(Routes.Route.DEEP)  # v0.5.0 RT + EV: +1 threat T per Deep floor taken
 	w.floor_hp_bonus = _hp_bonus()  # Before the carry, so its max HP includes it
@@ -387,29 +284,6 @@ func _hp_bonus() -> int:
 	return RunCarry.floor_hp_bonus(table, run_floor())
 
 
-## Whether the current floor is a v0.7.0 floor resumed from an older save.
-func v070_floor() -> bool:
-	return floor_rules == FLOOR_RULES_V070
-
-
-## Whether the current floor's boss room is the one before the 4 x 4 rooms (a floor resumed from a
-## save made before BF1).
-func legacy_boss_room() -> bool:
-	return floor_rules < 3
-
-
-## Whether the current floor has the designed room layouts (false: a floor resumed from a save made before
-## RT, rebuilt with its rule-built rooms).
-func designed_rooms() -> bool:
-	return floor_rules >= FLOOR_RULES_V080_RT1
-
-
-## Whether the current floor was built with RT1's three layouts only (a floor resumed from a save made
-## between RT1 and RT2).
-func rt1_rooms() -> bool:
-	return floor_rules == FLOOR_RULES_V080_RT1
-
-
 ## Closes the floor `w` (its portal taken): adds its totals, takes the carry and moves to the next floor.
 ## when the Loop device took it (v0.7.5's Ascend), the next floor is floor 1 of the next loop (new biomes drawn).
 func finish_floor(w: World) -> void:
@@ -435,7 +309,6 @@ func finish_floor(w: World) -> void:
 		carry[RunCarry.OFFER] = Constellations.offer(run_seed, loop, w.constellations)
 	else:
 		floor_index += 1
-	floor_rules = FLOOR_RULES  # A new floor, always on today's rules
 	RunCarry.grow(w, carry, grown_from, _hp_bonus())  # The new max HP arrives filled
 	var taken := w.boss_flow.route_taken if w.boss_flow != null else -1
 	routes.resize(run_floor() - 1)  # The next floor's route, the one walked into

@@ -107,17 +107,3 @@ func test_the_cap_is_deterministic() -> void:
 			_step(w)
 	assert_eq(a.state_hash(), b.state_hash())
 	assert_eq(a.player_projectiles(), 7)
-
-
-func test_a_snapshot_without_the_cap_fields_restores() -> void:
-	var w := _world()
-	_fire(w, _fan(2))
-	_step(w)
-	var snap := WorldSnapshot.take(w)
-	var data: Dictionary = snap["world"]
-	assert_true(data.has(&"shot_count"), "the snapshot keeps the count")
-	data.erase(&"shot_tick")
-	data.erase(&"shot_count")
-	var restored := World.new(3, PlayerTable.starting_values())
-	assert_eq(WorldSnapshot.apply(restored, snap), "", "an older save lacks the fields")
-	assert_eq(restored.state_hash(), w.state_hash())

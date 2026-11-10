@@ -396,30 +396,6 @@ func test_a_card_burst_is_deterministic_and_its_rows_round_trip_a_snapshot() -> 
 	assert_eq(c.state_hash(), a.state_hash(), "and it goes on the same")
 
 
-func test_an_older_save_without_the_rows_loads_and_keeps_its_digest() -> void:
-	var a := _world([&"gun_twin"], [Vector2(2.0, 0.0)])
-	W.run(a, 10, 0, W.S)
-	var hash_before := a.state_hash()
-	var snap := WorldSnapshot.take(a)
-	_strip(snap)
-	var c := _world([&"gun_twin"], [Vector2(2.0, 0.0)])
-	assert_eq(WorldSnapshot.apply(c, snap), "", "an older save loads")
-	assert_false(c.mx.rm_touched())
-	assert_eq(c.state_hash(), hash_before, "the same digest: the rows are unset, so unhashed")
-
-
-func _strip(v: Variant) -> void:
-	if v is Dictionary:
-		for k in (v as Dictionary).keys():
-			if String(k).begins_with("rm_"):
-				(v as Dictionary).erase(k)
-			else:
-				_strip((v as Dictionary)[k])
-	elif v is Array:
-		for e in v:
-			_strip(e)
-
-
 func _rows_are_dropped_when_the_shot_is_no_rune_burst_any_more() -> void:
 	var w := _world([&"gun_mine"], [])
 	W.run(w, 10, 0, W.S)

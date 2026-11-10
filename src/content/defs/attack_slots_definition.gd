@@ -4,7 +4,7 @@ extends ContentDef
 ## categories' limits, the per-attack projectile caps and the one form × card compatibility table. One `.tres` in
 ## data/wand/ (attack_slots.tres; its own file so data/wand/wand.tres stays the wand's), compiled by WandCompiler into
 ## SlotTable (World.slot_table); every check reads it: the offers (ItemPool.usable), the equip (BuildSlots.take through
-## AttackSlots), the compile (Modifiers.build_modifiers) and an old save's trim (AttackSlots.trim).
+## AttackSlots), and the compile (Modifiers.build_modifiers).
 ## - gun_limits / blade_limits: per category in AttackSlots' order (Form, Pattern, Secondary, Element) the most cards
 ##   of it the wand holds on a Gun / Blade run (-1: no limit; Free cards never have one). Q4: Form 1, Pattern 1,
 ##   Secondary 2, Elements 2 on the Gun; Q6: the Blade gets only the one-pattern rule.

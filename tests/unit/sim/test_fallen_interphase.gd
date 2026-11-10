@@ -738,33 +738,6 @@ func test_a_snapshot_mid_interphase_round_trips_and_runs_on_the_same() -> void:
 		assert_eq(w2.final_fight.ip_stage, w.final_fight.ip_stage)
 
 
-func test_an_older_save_without_interphase_state_loads_and_keeps_fighting() -> void:
-	var run := FinalLab.run_state(842, &"blade")
-	var w := FinalLab.arena(run)
-	w.actors.invuln[0] = NemesisLab.LONG
-	FinalLab.past_rise(w)
-	FinalBoss.jump(w, 2)
-	FinalLab.past_rise(w)
-	for k in 100:
-		w.step(InputFrame.new())
-	var snap := w.to_snapshot()
-	var ff: Dictionary = snap["world"][&"final_fight"]
-	for key: StringName in WorldSnapshot.ADDED_SINCE_V05[&"FinalFight"]:
-		if (key as String).begins_with("ip_") or (key as String).begins_with("rd_"):
-			ff.erase(key)
-		elif key in [&"er_x", &"er_y", &"er_t", &"sl_x", &"sl_y", &"sl_a", &"sl_t", &"sl_len"]:
-			ff.erase(key)
-		elif key in [&"sl_off", &"sl_hit", &"lamp_t"]:
-			ff.erase(key)
-	var w2 := FinalLab.arena(run, false)
-	assert_eq(WorldSnapshot.apply(w2, snap), "", "an older save loads")
-	assert_eq(w2.final_fight.ip_done, 0)
-	assert_eq(w2.final_fight.ip_stage, 0)
-	for k in 200:
-		w2.step(InputFrame.new())
-	assert_eq(w2.final_fight.ip_done, 0, "and fights on")
-
-
 func test_an_unused_fight_hashes_as_it_did() -> void:
 	var f := FinalFight.new()
 	var h1 := StateHasher.new()

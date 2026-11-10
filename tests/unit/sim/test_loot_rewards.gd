@@ -191,9 +191,7 @@ func test_the_boss_data_retires_the_level_five_grant() -> void:
 
 
 # --- Saves and the hash --------------------------------------------------------------------------------------------
-func test_the_guarantee_and_jackpots_are_saved_hashed_and_an_older_save_lacks_them() -> void:
-	for f: StringName in [&"loot_guaranteed", &"loot_jackpots"]:
-		assert_has(WorldSnapshot.ADDED_SINCE_V05[&"World"], f)
+func test_the_guarantee_and_jackpots_are_saved_and_hashed() -> void:
 	var w := _world()
 	var h := w.state_hash()
 	w.loot_guaranteed = 1
@@ -205,13 +203,3 @@ func test_the_guarantee_and_jackpots_are_saved_hashed_and_an_older_save_lacks_th
 	assert_eq(back.loot_guaranteed, 1)
 	assert_eq(back.loot_jackpots, PackedInt32Array([4, 9]))
 	assert_eq(back.state_hash(), w.state_hash())
-	var old := WorldSnapshot.take(_world())
-	(old["world"] as Dictionary).erase(&"loot_guaranteed")
-	(old["world"] as Dictionary).erase(&"loot_jackpots")
-	var restored := _world()
-	assert_eq(WorldSnapshot.apply(restored, old), "", "an older save loads")
-	assert_eq(restored.loot_guaranteed, 0)
-	assert_true(restored.loot_jackpots.is_empty())
-	assert_eq(
-		restored.state_hash(), _world().state_hash(), "an untouched world hashes as before FL"
-	)

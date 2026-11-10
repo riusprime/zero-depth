@@ -243,7 +243,6 @@ stagger_seconds = 2.5
 attacks = Array[ExtResource("1_atk")]([SubResource("A_the_pull"), SubResource("A_the_pull_3"), SubResource("A_ring_stream"), SubResource("A_ring_stream_3"), SubResource("A_crossing_wave"), SubResource("A_undertow"), SubResource("A_undertow_2"), SubResource("A_shell_slam")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
-legacy_arena_cells = Vector2i(4, 4)
 arena_template = 0
 ranged_full_m = 5.0
 ranged_far_m = 12.0

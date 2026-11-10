@@ -266,21 +266,6 @@ func test_an_elite_lockdown_fights_an_elite_and_its_escort() -> void:
 	assert_eq(s.reward_ids.size(), 1, "with its reward")
 
 
-func test_a_floor_saved_before_el_has_no_elite_rooms_nor_elite_lockdown() -> void:
-	var with := 0
-	for s in range(1, 13):
-		var r := SaveLab.run_state(s, 5)
-		r.floor_rules = RunState.FLOOR_RULES_V090_SH
-		var old := SaveLab.build_floor(r)
-		assert_null(old.elites, "seed %d: no elite rooms under floor rules 14" % s)
-		assert_false(
-			old.floor_layout.lockdown_kinds.has(LockdownTable.Kind.ELITE), "no Elite Lockdown"
-		)
-		if SaveLab.floor_world(s, 5).elites != null:
-			with += 1
-	assert_gt(with, 0, "today's floor 5s have them")
-
-
 func test_the_elite_state_is_hashed_and_saved() -> void:
 	var seed_value := -1
 	var w: World = null

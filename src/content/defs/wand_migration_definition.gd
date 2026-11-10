@@ -4,9 +4,9 @@ extends ContentDef
 ## wand"): the one table that retires the v0.6 cards and says what each becomes. One `.tres` in data/wand/.
 ## - Row k: the old card `old_ids[k]` (an item id or an ability id) is retired: no altar, chest, shop, event, core or
 ##   legendary tier offers it again. the retired cards' files are deleted; a stub table keeps
-##   each one's saved index (CardOrder, application layer), so old saves still resolve and map through this table.
-## - What it becomes in a held build (an old save's wand, a carry): `blade_into[k]` on a Blade run, `gun_into[k]` on a
-##   Gun run; an empty id means no match: the card is refunded as shards (the shop's salvage price, WandMigration).
+##   each one's index (CardOrder, application layer). WandCompiler.retire_items and the Codex read `old_ids`.
+## - What it became (`blade_into[k]` on a Blade run, `gun_into[k]` on a Gun run; an empty id: no match): the
+##   validated record of the retirement. No run converts a held card any more: no build holds a retired card.
 ## - `pending`: target ids another step brings (the shared pool S1–S7, built by WN5a in parallel). A target in this
 ##   list may be missing from the data; until it exists a held card mapped to it is refunded.
 

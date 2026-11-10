@@ -73,23 +73,6 @@ const DEFAULTS := {
 	"spiral_ms": 1000,
 	"live_max": 8,
 }
-## The ModifierState fields an older save lacks (WorldSnapshot._apply_object reads this list; that file is at its cap).
-const SNAPSHOT_FIELDS: Array[StringName] = [
-	&"wm_next",
-	&"wm_id",
-	&"wm_kind",
-	&"wm_pid",
-	&"wm_at",
-	&"wm_due",
-	&"wm_born",
-	&"wm_ang",
-	&"wm_dmg",
-	&"wm_r",
-	&"wm_w",
-	&"wm_aux",
-	&"wm_aux2",
-	&"wm_root",
-]
 
 
 # --- Cards and numbers --------------------------------------------------------------------------------------------

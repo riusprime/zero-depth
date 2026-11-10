@@ -531,33 +531,6 @@ func test_deterministic_and_a_mid_dark_save_restores() -> void:
 	assert_eq(restored.state_hash(), a.state_hash(), "same hash 300 ticks on")
 
 
-func test_an_older_snapshot_without_the_light_loads() -> void:
-	var s := _fight(Vector2(-6, 2))
-	var w: World = s[0]
-	CombatLab.idle(w, 60)
-	var snap := WorldSnapshot.take(w)
-	var bosses: Dictionary = snap["world"][&"bosses"]
-	assert_true(bosses.has(&"lamp_t"), "the light is saved")
-	for f: StringName in [
-		&"shade_boss",
-		&"shade_dark",
-		&"shade_at",
-		&"shade_from",
-		&"shade_until",
-		&"lamp_x",
-		&"lamp_y",
-		&"lamp_t"
-	]:
-		bosses.erase(f)
-	var base := BossLab.world()
-	BossLab.ready_boss(base, &"lantern_shade")
-	assert_eq(WorldSnapshot.apply(base, snap), "", "a save from before NB4 loads")
-	assert_eq(base.bosses.shade_boss, -1, "with no light yet")
-	CombatLab.idle(base, 2)
-	assert_gte(base.bosses.shade_boss, 0, "the Shade takes the room's light again")
-	assert_eq(base.bosses.lamp_x.size(), 4)
-
-
 func test_a_world_without_a_shade_has_no_light_state() -> void:
 	var w := BossLab.world()
 	BossLab.ready_boss(w, &"clockwork_judge")

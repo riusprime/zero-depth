@@ -37,12 +37,6 @@ var remnant_activations_max := 64
 var thermal_base := 6
 var thermal_per_burn := 4
 var thermal_shatter_ticks := 18
-## WandMigrationDefinition, data/wand/migration.tres: the retired v0.6 cards (item or ability ids) and
-## what each becomes in a held build on a Blade run and on a Gun run (&"": refunded as shards). WandMigration reads
-## them when a build that still holds an old card is loaded (an old save's carry or snapshot). Empty: no migration.
-var migrate_ids: Array[StringName] = []
-var migrate_blade: Array[StringName] = []
-var migrate_gun: Array[StringName] = []
 
 
 ## The slot count on floor `f` (the last entry past the end; at least 1).

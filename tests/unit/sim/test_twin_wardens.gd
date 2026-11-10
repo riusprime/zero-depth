@@ -465,20 +465,6 @@ func test_deterministic_and_a_mid_fight_save_restores() -> void:
 	assert_eq(restored.state_hash(), a.state_hash(), "same hash 360 ticks on")
 
 
-func test_an_older_snapshot_without_the_pair_loads() -> void:
-	var w := BossLab.world()
-	BossLab.ready_boss(w, &"tidecaller")
-	var snap := WorldSnapshot.take(w)
-	var bosses: Dictionary = snap["world"][&"bosses"]
-	assert_true(bosses.has(&"twin_lead"), "the pair is saved")
-	for f in BossStore.TWIN_FIELDS:
-		bosses.erase(f)
-	var base := BossLab.world()
-	BossLab.ready_boss(base, &"tidecaller")
-	assert_eq(WorldSnapshot.apply(base, snap), "", "a save from before NB2 loads")
-	assert_true(base.bosses.twin_lead.is_empty(), "with no pair")
-
-
 func test_the_death_lines_name_the_wardens() -> void:
 	var s := _fight(Vector2(-7, 0))
 	var w: World = s[0]

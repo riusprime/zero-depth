@@ -308,7 +308,7 @@ func test_the_reader_shows_it() -> void:
 	assert_eq(DevPanel.intensity_text(WorldReader.new(_world(11, false))), "")
 
 
-func test_the_snapshot_keeps_it_and_an_older_save_starts_building_up() -> void:
+func test_the_snapshot_keeps_it() -> void:
 	var w := SaveLab.floor_world(3, 1)
 	assert_not_null(w.spawner.intensity, "the run's floors have the director")
 	SaveLab.run(w, FightBot.new(3), 900)
@@ -320,11 +320,6 @@ func test_the_snapshot_keeps_it_and_an_older_save_starts_building_up() -> void:
 	assert_eq(base.intensity.mode, M.QUIET)
 	assert_eq(base.intensity.timer, 77)
 	assert_eq(base.state_hash(), w.state_hash())
-	var old := w.to_snapshot()
-	(old["world"] as Dictionary).erase(&"intensity")
-	var base2 := SaveLab.floor_world(3, 1)
-	assert_eq(WorldSnapshot.apply(base2, old), "", "a save from before N5 loads")
-	assert_eq(base2.intensity.mode, M.BUILD_UP, "and builds up")
 
 
 func test_the_build_up_ramp_shortens_the_interval_only_while_building() -> void:

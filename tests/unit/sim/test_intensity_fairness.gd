@@ -175,7 +175,7 @@ func test_a_struggling_hero_gets_packs_one_smaller() -> void:
 	assert_eq(Intensity.pack_size(w, sp, drawn, top), top, "off without the director")
 
 
-func test_the_snapshot_keeps_the_window_and_an_older_save_reads_afresh() -> void:
+func test_the_snapshot_keeps_the_window() -> void:
 	var w := SaveLab.floor_world(3, 1)
 	SaveLab.run(w, FightBot.new(3), 900)
 	_full_window(w, 4)
@@ -187,18 +187,3 @@ func test_the_snapshot_keeps_the_window_and_an_older_save_reads_afresh() -> void
 	assert_eq(base.intensity.ring_ticks, w.intensity.ring_ticks)
 	assert_eq(base.intensity.standing, S.STRUGGLING)
 	assert_eq(base.state_hash(), w.state_hash())
-	var old := w.to_snapshot()
-	var it: Dictionary = (old["world"] as Dictionary)[&"intensity"]
-	for f in [&"kill_ring", &"kill_seen", &"ring_ticks", &"standing"]:
-		it.erase(f)
-		it.erase(String(f))
-	var base2 := SaveLab.floor_world(3, 1)
-	assert_eq(WorldSnapshot.apply(base2, old), "", "a save from before O4 loads")
-	assert_eq(base2.intensity.kill_ring.size(), 0, "with no window")
-	Intensity.count_kills(base2, base2.intensity, true)
-	assert_eq(
-		base2.intensity.window_kills(),
-		0,
-		"the first read syncs: the run's earlier kills don't count"
-	)
-	assert_eq(base2.intensity.kill_seen, base2.kills)

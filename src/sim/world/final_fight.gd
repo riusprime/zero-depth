@@ -5,13 +5,11 @@ extends RefCounted
 ## bodies: `tables` are the bodies' boss tables in order (the Colossus, the Prism, the Nemesis), `phase` the body
 ## fighting now (its actor id `body_id`), `shatter_t` the ticks left of the shatter between two bodies (0 = none) out of
 ## `shatter_ticks`, `phase_tick` the tick the current body began (its rise), and `won` once the last body fell (on
-## `won_tick`). FinalBoss runs it. Hashed and saved (WorldSnapshot: a state class; ADDED_SINCE_V05 lists the World
-## field, so a save made before FB1, which has no final fight, loads as before).
+## `won_tick`). FinalBoss runs it. Hashed and saved (WorldSnapshot: a state class).
 ## The fight's centre `home` (where the first body rose; the Prism floats
 ## back to it) and the damage meter (FinalBoss.note_damage / measure): the damage the player dealt in each of the
 ## last DPS_SECONDS closed seconds of the fight's measured time (a ring, `dps_head` its next slot, `dps_closed`
-## seconds closed so far), the damage of the second running (`dps_acc`) and its ticks counted (`dps_t`). An FB1 save
-## lacks them (WorldSnapshot.ADDED_SINCE_V05): the base's fresh values (the arena's centre, an empty meter).
+## seconds closed so far), the damage of the second running (`dps_acc`) and its ticks counted (`dps_t`).
 
 ## The mimic body's state. As it rises (NemesisBuild.prepare)
 ## the fight reads the player's build once: the run's weapon (`weapon`, a BossAttackTable.WEAPON_*), the Nemesis's hit
@@ -20,15 +18,13 @@ extends RefCounted
 ## While it fights, the fight records the player's path (a ring of the last ECHO_MAX ticks' positions, `echo_x` and
 ## `echo_y`, `echo_head` its next slot, `echo_n` how many are held) and their dashes (`dash_due`: the tick the Nemesis
 ## answers the last one, -1 none; `dash_dir` its way); the Nemesis's own dash (`dash_t` ticks left, `dash_vel` m per
-## tick) and its stance (`stance`, BossTable.STANCE_*, for `stance_t` more ticks). An FB2 save lacks them
-## (WorldSnapshot.ADDED_SINCE_V05): a fresh mimic state, read again at the Nemesis's next tick (its HP stays as saved).
+## tick) and its stance (`stance`, BossTable.STANCE_*, for `stance_t` more ticks).
 
 ## v0.8.0 N2 (owner O41: "each phase takes 1-2 minutes 1 minute being the most op and longer if you are not op";
 ## O42, O52: The Fallen "should mimic and nerf you … only at certain times … on and off"; FinalPace): the pace of the
 ## body fighting now: `paced` once its HP was set from the meter (at `pace_dps`, the measured damage per second × 1000
 ## it was set from), `pace_budget` the damage it may still take now (× 1000: its rate cap's bucket), and `copying`
-## while The Fallen's attack in progress began in a mimic window (it swings and casts the player's build). An older
-## save lacks them (WorldSnapshot.ADDED_SINCE_V05): a fresh pace (unpaced, an empty bucket), set again from the meter.
+## while The Fallen's attack in progress began in a mimic window (it swings and casts the player's build).
 
 ## The Fallen's interphases and dashes.
 ## `ip_done` has bit k once interphase k began; `ip_stage` is 0 (none), 1 (a threshold reached: it finishes its move),
@@ -39,8 +35,7 @@ extends RefCounted
 ## which no interphase hit lands. Eruptions (`er_*`: place, strike tick), spike lines (`sl_*`: first place, way, tick it
 ## starts to move, length, its middle's offset across, hit) and lanterns (`lamp_t`: burn ticks left) are the set's.
 ## `rd_*` the dash between moves: `rd_pending` (one is due when the next move would begin), `rd_t` ticks of its
-## telegraph left, `rd_to` where it goes. An older save lacks them (WorldSnapshot.ADDED_SINCE_V05): none begun, none
-## pending.
+## telegraph left, `rd_to` where it goes.
 
 ## The meter's ring holds this many seconds (a body reads its last dps_seconds of them).
 const DPS_SECONDS := BossSchemas.DPS_MAX_SECONDS

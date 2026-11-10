@@ -22,8 +22,8 @@ extends RefCounted
 ##   door closes when you are inside you should be able to open it from the inside"): the switches sit in two other
 ##   rooms 1..2 steps from the host (TimedDoorRooms.spread_spots), the timer is 20 s (1200 ticks), and a lever just
 ##   inside the secret room (Interactables.Kind.TIMED_LEVER, the switch's reach) opens the door for lever_ticks (5 s)
-##   whenever it is shut, as often as needed; it takes no press while the door is open. A floor saved under rules <= 20
-##   keeps the old spots, 15 s and no lever (lever_ticks 0).
+##   whenever it is shut, as often as needed; it takes no press while the door is open. A setup without steps_max (a
+##   lab) keeps both switches by the door and no lever (lever_ticks 0).
 ## The views read `opened` (0: never opened, the secret room unseen: Q23), the state, open_tick and timer_ticks (the
 ## accelerating beeps and flashing runes), shut_tick (the impact).
 
@@ -31,8 +31,6 @@ enum State { SHUT, OPEN, HELD }
 
 ## How near a switch (m) the press reaches.
 const SWITCH_REACH_M := 1.8
-## The timer of a floor saved before TS (15 s at 60 Hz).
-const LEGACY_TICKS := 900
 const REWARD_STREAM := "loot:timed_door"
 
 var state := State.SHUT

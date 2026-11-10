@@ -48,22 +48,6 @@ const KIND_MASK := 15
 const F_FIXED := 16
 const F_NOFOLLOW := 32
 const ROWS_MAX := 64
-## The ModifierState fields an older save lacks (WorldSnapshot._apply_object reads this list beside ADDED_SINCE_V05).
-const SNAPSHOT_FIELDS: Array[StringName] = [
-	&"rm_next",
-	&"rm_id",
-	&"rm_kind",
-	&"rm_at",
-	&"rm_born",
-	&"rm_life",
-	&"rm_dmg",
-	&"rm_root",
-	&"rm_r",
-	&"rm_ref",
-	&"rm_ang",
-	&"rm_hit_row",
-	&"rm_hit_foe",
-]
 ## All bursts alive (waiting included) never pass this; a follow-up burst past it is dropped.
 const BURSTS_MAX := 12
 const HZ := 60

@@ -1,8 +1,7 @@
 extends GutTest
 ## v0.9.5 DR (owner Q6: "we will only have locked rooms, where enemies spawn, no rounds ... and overrun"): the two
 ## sealed kinds. A locked room (a Lockdown) fights one burst: two formations 1 s apart, nothing after, a free altar on
-## the clear; the floor's arena rooms are locked rooms on floor rules 20 and the wave Arenas on rules 19; every seal
-## drops bars; the Overrun keeps its waves.
+## the clear; the floor's arena rooms are locked rooms; every seal drops bars; the Overrun keeps its waves.
 
 
 func _arena_seed(floor_index: int) -> int:
@@ -54,28 +53,15 @@ func test_a_locked_room_spawns_two_formations_one_second_apart_and_nothing_after
 	assert_eq(w.rewards.size(), altars + 1)
 
 
-func test_an_arena_room_is_a_locked_room_on_rules_20_and_a_wave_arena_on_rules_19() -> void:
+func test_an_arena_room_is_a_locked_room() -> void:
 	var seed_value := _arena_seed(2)
 	assert_gt(seed_value, 0, "a floor-2 seed with a locked room and an arena room")
 	if seed_value < 0:
 		return
 	var now := SaveLab.floor_world(seed_value, 2)
-	var run19 := SaveLab.run_state(seed_value, 2)
-	run19.floor_rules = RunState.FLOOR_RULES_V095_AQ
-	var old := SaveLab.build_floor(run19)
-	assert_eq(
-		now.floor_layout.arena_rooms, old.floor_layout.arena_rooms, "the same rooms: same count"
-	)
-	# v0.10.5 Step O14 (c50c07ab, PLAN P12; FLOOR_RULES 23) moves floor 2's first Lockdown to the Elite set piece
-	# near the main path's middle, so the Lockdown rooms are compared on rules 22, the last before it.
-	var run22 := SaveLab.run_state(seed_value, 2)
-	run22.floor_rules = RunState.FLOOR_RULES_V095_BK
-	var pre_o14 := SaveLab.build_floor(run22)
-	assert_eq(pre_o14.floor_layout.lockdown_rooms, old.floor_layout.lockdown_rooms)
 	var room := now.floor_layout.arena_rooms[0]
 	LockLab.calm(now)
-	LockLab.calm(old)
-	# Rules 20: a locked room (Normal kind), bars in every doorway, no wave Arena.
+	# A locked room (Normal kind), bars in every doorway, no wave Arena.
 	assert_true(Lockdowns.takes_arenas(now))
 	assert_true(Lockdowns.is_locked_room(now, room))
 	assert_false(Arenas.is_arena(now, room), "not a wave Arena any more")
@@ -90,31 +76,3 @@ func test_an_arena_room_is_a_locked_room_on_rules_20_and_a_wave_arena_on_rules_1
 	assert_eq(now.lockdown.waves, 2, "one burst")
 	LockLab.clear(now)
 	assert_true(Lockdowns.is_open(now, room), "opened by the clear")
-	# Rules 19: the old Arena, its waves and its own seal.
-	assert_false(Lockdowns.takes_arenas(old))
-	assert_true(Arenas.is_arena(old, room))
-	assert_eq(old.lockdown.table.burst_gap_ticks, 0, "the old three-formation Lockdowns")
-	old.actors.set_pos(0, old.floor_layout.rooms[room].get_center())
-	old.step(InputFrame.new())
-	assert_true(old.arenas.sealed(), "the Arena seals on rules 19")
-	assert_eq(old.arenas.room, room)
-	assert_false(old.lockdown.sealed())
-
-
-func test_an_old_lockdown_keeps_its_three_formations() -> void:
-	var w := LockLab.world()
-	if w == null:
-		return
-	var seed_value := 1
-	for s in range(1, 60):
-		if SaveLab.floor_world(s, 2).lockdown != null:
-			seed_value = s
-			break
-	var run := SaveLab.run_state(seed_value, 2)
-	run.floor_rules = RunState.FLOOR_RULES_V095_AQ
-	var old := SaveLab.build_floor(run)
-	LockLab.calm(old)
-	old.floor_layout.lockdown_kinds[0] = LockdownTable.Kind.NORMAL
-	LockLab.enter(old, LockLab.room(old))
-	assert_eq(old.lockdown.waves, old.lockdown.table.waves, "3 formations, as before")
-	assert_eq(old.lockdown.table.waves, 3)

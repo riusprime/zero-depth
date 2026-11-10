@@ -200,14 +200,7 @@ func _build_world() -> void:
 	Abilities.grant_start(w)  # slot 1 = the build's weapon (floor 1; later floors carry it)
 	Abilities.start_floor(w)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
-	# Event rooms and curses, after the carry and the heat; v0.8.0 N17, N19: an old save keeps its rooms
-	EventCompiler.setup(
-		w,
-		repo,
-		FloorScenario.curse_room_rules_of(run),
-		FloorScenario.retired_events_of(run),
-		FloorScenario.rare_events_of(run)
-	)
+	EventCompiler.setup(w, repo)  # Event rooms and curses, after the carry and the heat
 	if arena_def == null:
 		add_secrets(w, repo, run, table.move_speed)  # v0.9.0 TD, RA, DX
 	# The hidden catch-up, read from the whole build once everything above is set up.
@@ -238,63 +231,35 @@ static func affinity_def(repo: ContentRepository, run: RunState) -> AffinityDefi
 	return repo.get_def(&"affinity", run.affinity) as AffinityDefinition
 
 
-## v0.9.0 TD, RA, DX: a floor's secrets, after every room kind (the save lab builds floors with it too). TD: a floor
-## saved before TD (floor rules 1-9) has no timed door; RA, DX: one saved before them (1-10) has no rune puzzle and no
-## destructibles. The rune puzzle comes after the timed door, the destructibles after both (never their rooms).
-## The purple-rune room comes last (never a secret's room; one saved before DP, rules 1-11, has none).
-## The Lockdown rooms after it (never a secret's or the purple room; one saved before LK, 1-12, has none).
-## The elite rooms come after the Lockdowns (one saved before EL, rules 1-14, has none, and no Elite
-## Lockdown either).
-## v0.9.0 SH, HF: first, the floor's shrine kind (on the gamble shrine's site) and its healing fountain, which the
-## secrets and Lockdowns then keep out of (one saved before SH, rules 1-13, has a Fortune shrine and no fountain).
-## From rules 17 the Lockdowns' rooms are marked in
-## FloorScenario.build, right after the arenas and the Overrun room, and every kind here keeps out of them; here they
-## only begin (Lockdowns.begin). A floor saved under rules 13-16 marks them here, last, as it was built.
+## A floor's secrets, after every room kind (the save lab builds floors with it too). First the floor's shrine kind
+## (on the gamble shrine's site) and its healing fountain, which the secrets and Lockdowns then keep out of; then the
+## timed door, the rune puzzle after it and the destructibles after both (never their rooms); the purple-rune room
+## last (never a secret's, a shrine's or the fountain's room). The Lockdowns' rooms were marked in FloorScenario.build,
+## right after the arenas and the Overrun room (every kind here keeps out of them): here they only begin
+## (Lockdowns.begin). The elite rooms come after the Lockdowns (never one, never next to an Elite Lockdown).
 static func add_secrets(
 	w: World, repo: ContentRepository, run: RunState, move_speed: float
 ) -> void:
-	if run.floor_rules > RunState.FLOOR_RULES_V090_LK:  # v0.9.0 SH, HF
-		var shrines := RunContentCompiler.compile_shrines(repo.get_def(&"shrines", &"shrines"))
-		if shrines != null and ClosedFights.legacy_rooms(run):  # A floor saved before CF
-			shrines.chaos_min_cells = 0
-		var rules := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
-		Shrines.setup(w, shrines, run.floor_index, rules)
-	if run.floor_rules > RunState.FLOOR_RULES_V080_BD:
-		var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
-		if run.floor_rules > RunState.FLOOR_RULES_V095_DR:  # Spread switches, 20 s, a lever
-			TimedDoor.setup(
-				w,
-				map.timed_door_permille,
-				map.timed_door_ticks,
-				move_speed,
-				map.timed_switch_steps_max,
-				map.timed_lever_ticks
-			)
-		else:  # a floor saved under rules 10-20: both switches by the door, 15 s, no lever
-			TimedDoor.setup(w, map.timed_door_permille, TimedDoor.LEGACY_TICKS, move_speed)
-	if run.floor_rules > RunState.FLOOR_RULES_V090_TD:
-		var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
-		RuneAlignment.setup(w, secrets.rune_permille if secrets != null else 0)
-		var rules := secret_rules(secrets, run.floor_index)
-		Breakables.setup(w, rules, run.floor_rules > RunState.FLOOR_RULES_V095_TS)  # v0.9.5 BK
-	if run.floor_rules > RunState.FLOOR_RULES_V090_RA:  # Last, never a secret's room
-		var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
-		var chances := secrets.purple_floor_permille if secrets != null else PackedInt32Array()
-		var taken := PackedInt32Array()
-		if run.floor_rules > RunState.FLOOR_RULES_V090_LK:  # v0.9.0 SH, HF: never a shrine's or fountain's room
-			taken = Shrines.site_rooms(w)
-		PurpleRunes.setup(w, PurpleRunes.chance(run, chances), taken)
-	if run.floor_rules > RunState.FLOOR_RULES_V090_CF:  # Rooms marked first (FloorScenario.build)
-		Lockdowns.begin(w, RunSaver.lockdown_table(run, repo))
-	elif run.floor_rules > RunState.FLOOR_RULES_V090_DP:  # Last, never another kind's room
-		Lockdowns.setup(w, RunSaver.lockdown_table(run, repo), run.floor_index)
-	# The elite rooms, after the Lockdowns (never one, never next to an Elite Lockdown); a
-	# floor saved before EL (rules 1-14) has none. The rules are set on every floor (an elite's 30 % core drop).
+	var shrines := RunContentCompiler.compile_shrines(repo.get_def(&"shrines", &"shrines"))
+	var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
+	Shrines.setup(w, shrines, run.floor_index, map)
+	TimedDoor.setup(
+		w,
+		map.timed_door_permille,
+		map.timed_door_ticks,
+		move_speed,
+		map.timed_switch_steps_max,
+		map.timed_lever_ticks
+	)
+	var secrets: SecretsDefinition = repo.get_def(&"secrets", &"secrets")
+	RuneAlignment.setup(w, secrets.rune_permille if secrets != null else 0)
+	Breakables.setup(w, secret_rules(secrets, run.floor_index))
+	var chances := secrets.purple_floor_permille if secrets != null else PackedInt32Array()
+	PurpleRunes.setup(w, PurpleRunes.chance(run, chances), Shrines.site_rooms(w))
+	Lockdowns.begin(w, RunSaver.lockdown_table(repo))
+	# The rules are set on every floor (an elite's 30 % core drop)
 	var elite_rules := EliteCompiler.compile_rules(repo.get_def(&"elite_rules", &"rules"))
-	if run.floor_rules > RunState.FLOOR_RULES_V090_SH:
-		Elites.setup(w, elite_rules, LoopRules.elite_floor(run))  # ELITE_HUNT
-	else:
-		w.elite_rules = elite_rules
+	Elites.setup(w, elite_rules, LoopRules.elite_floor(run))  # ELITE_HUNT
 
 
 ## The destructibles' numbers from the data (SecretRules' defaults without it).
@@ -329,7 +294,7 @@ func _floor_world(
 	var boss := FloorShape.boss(
 		run, RunContentCompiler.compile_boss_pools(repo, run.table.floors), run.floor_index
 	)
-	var arena := RunSaver.boss_arena(run, bosses, boss)
+	var arena := RunSaver.boss_arena(bosses, boss)
 	var rules := RunSaver.floor_tables(run, repo)  # Map, arenas, shop
 	var w := FloorScenario.build(
 		run.floor_seed(),
@@ -346,7 +311,7 @@ func _floor_world(
 		rules[&"arena"],  # The sealed arenas
 		rules[&"map"],  # Rooms, footprints
 		rules[&"overrun"],  # The Overrun room's least cells
-		rules[&"lockdown_first"],  # The Lockdowns' rooms first (null for rules 1-16)
+		rules[&"lockdown_first"],  # The Lockdowns' rooms first
 		true  # The flow fields once, when the floor is laid out (_build_world: World.build_nav)
 	)
 	# Every two floors; in the biome's shop room

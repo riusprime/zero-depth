@@ -20,7 +20,6 @@ const FIELDS: Array[StringName] = [
 	&"stat_cards",  # The stat cards taken, so the shop can sell one back
 	&"mod_slots",  # The six modifier slots in pick order (the layer order)
 	&"card_levels",  # The wand cards' levels
-	&"stat_rules",  # The rules stat_values follow (a carry without it is from before SG)
 	&"events_seen",  # The events placed this run (a carry without it: none)
 	&"constellations",  # The held Constellations (a carry without it: none)
 	&"starbound",  # The Starbound picks (a carry without it: none)
@@ -65,15 +64,6 @@ static func apply(w: World, carry: Dictionary) -> void:
 			continue
 		if field in w:
 			w.set(field, _copy(carry[field]))
-	# The slots follow what the carry holds; a carry from before MX2 (no slots) migrates into the slot
-	# model (BuildSlots.migrate: the first six modifiers in a fixed order stay).
-	# The abilities' tables come after the carry (Main, the labs), so the migration runs in Abilities.start_floor.
-	if not carry.has(&"mod_slots"):
-		w.migrate_slots = true
-	# A carry from before SG compounded damage and attack speed; the stat tables come after the carry too,
-	# so Abilities.start_floor rebuilds them (Stats.migrate_rules).
-	if carry.has(&"stat_values") and not carry.has(&"stat_rules"):
-		w.stat_rules = 0
 	Modifiers.invalidate(w)  # The cards' levels came after the items
 	Gamble.after_carry(w)  # the shrine's max HP wins, before the HP is clamped to max
 	if carry.has(HP):

@@ -94,7 +94,7 @@ static func candidates(f: FloorLayout, taken: PackedInt32Array) -> PackedInt32Ar
 	for room in f.room_count():
 		if room in never or f.arena_rooms.has(room) or taken.has(room):
 			continue
-		if f.lockdown_rooms.has(room):  # Marked first from floor rules 17
+		if f.lockdown_rooms.has(room):  # Marked first (FloorScenario.build)
 			continue
 		var door := only_door(f, room)
 		if door < 0:

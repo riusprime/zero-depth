@@ -83,7 +83,7 @@ func setup(reader: WorldReader, stage: StageView, cover: Color) -> void:
 	_room_light.omni_range = 9.0
 	_room_light.light_energy = 1.6
 	_room_light.shadow_enabled = false
-	if reader.rune_room() >= 0:  # An old save's dropped room has none
+	if reader.rune_room() >= 0:  # A floor without the puzzle has none
 		_room_light.position = SimPlane.to_3d(
 			reader.floor_room(reader.rune_room()).get_center(), 2.6
 		)

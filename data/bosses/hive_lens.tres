@@ -299,7 +299,6 @@ stagger_seconds = 2.5
 attacks = Array[ExtResource("1_atk")]([SubResource("A_prism_spiral"), SubResource("A_prism_spiral_fast"), SubResource("A_petal_bloom"), SubResource("A_petal_bloom_fast"), SubResource("A_gaze"), SubResource("A_gaze_fast"), SubResource("A_focus_beam"), SubResource("A_focus_beam_3"), SubResource("A_lens_flare"), SubResource("A_dive"), SubResource("A_split")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
-legacy_arena_cells = Vector2i(2, 2)
 arena_template = 3
 ranged_full_m = 5.0
 ranged_far_m = 12.0

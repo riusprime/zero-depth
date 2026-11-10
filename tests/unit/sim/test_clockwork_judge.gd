@@ -393,23 +393,6 @@ func test_deterministic_and_a_mid_echo_save_restores() -> void:
 	assert_eq(restored.state_hash(), a.state_hash(), "same hash 300 ticks on")
 
 
-func test_an_older_snapshot_without_the_echo_loads() -> void:
-	var s := _fight(Vector2(-7, 2))
-	var w: World = s[0]
-	CombatLab.idle(w, 60)
-	var snap := WorldSnapshot.take(w)
-	var bosses: Dictionary = snap["world"][&"bosses"]
-	assert_true(bosses.has(&"echo_x"), "the echo is saved")
-	for f: StringName in [&"echo_boss", &"echo_x", &"echo_y", &"path_x", &"path_y", &"path_k"]:
-		bosses.erase(f)
-	var base := BossLab.world()
-	BossLab.ready_boss(base, &"clockwork_judge")
-	assert_eq(WorldSnapshot.apply(base, snap), "", "a save from before NB3 loads")
-	assert_true(base.bosses.echo_x.is_empty(), "with no recording yet")
-	CombatLab.idle(base, 31)
-	assert_gt(base.bosses.echo_x.size(), 0, "it records again from its next think")
-
-
 func test_a_world_without_a_judge_hashes_as_before() -> void:
 	var w := BossLab.world()
 	BossLab.ready_boss(w, &"tidecaller")

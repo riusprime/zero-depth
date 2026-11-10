@@ -3,9 +3,6 @@ extends RefCounted
 ## The sealed arenas' numbers in sim units (v0.5.5 AR; RunContentCompiler.compile_arena from ArenaDefinition). The
 ## defaults equal the data's starting values; a world without the table still times the Overrun's waves by them.
 
-## v0.7.0's share, for a v0.7.0 floor resumed from an older save (RunSaver.floor_tables).
-const V070_SHARE_PERMILLE := 330
-
 ## The share of a floor's combat rooms that are arenas, per mille (ArenaRooms.mark; v0.7.5 MG, N11: 110, was 330).
 var share_permille := 110
 ## Waves per arena, drawn per room in waves_min..waves_max, and each wave's size by floor (1-based; the last
@@ -18,7 +15,7 @@ var first_wave_ticks := 45
 var wave_gap_ticks := 60
 ## A wave's members spawn at least this far from the player (m) when the room has such spots.
 var min_spawn_distance_m := 3.0
-## The least grid cells an arena's room has (ArenaRooms.mark; 0: any room, a floor saved before CF), and
+## The least grid cells an arena's room has (ArenaRooms.mark; 0: any room), and
 ## the room's floor area (m2) an enemy needs at once (ClosedFights.cap; 0: no cap).
 var min_cells := 2
 var area_per_enemy_m2 := 30.0

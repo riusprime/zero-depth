@@ -24,16 +24,6 @@ const STRIKE_EVERY := 3
 const STRIKE_WINDOW_TICKS := 60
 const EFFECT_VENT_MEND := &"vent_mend"
 const EFFECT_SCAVENGER := &"scavenger"
-## AbilityState's O9 fields: a save from before O9 has none of them, and keeps their defaults (WorldSnapshot).
-const SNAPSHOT_FIELDS: Array[StringName] = [
-	&"rc_rush_until",
-	&"rc_strike_n",
-	&"rc_strike_last",
-	&"rc_strike_root",
-	&"rc_bonus_root",
-	&"rc_reflex_root",
-	&"rc_mend_tick",
-]
 
 
 static func _on(w: World, s: int) -> bool:

@@ -35,7 +35,7 @@ static func build(run: RunState) -> World:
 	var bosses := ContentCompiler.compile_bosses(r)
 	run.scale_bosses(bosses)
 	var boss := FloorShape.boss(run, SharedContent.boss_pools(run.table.floors), run.floor_index)
-	var arena := RunSaver.boss_arena(run, bosses, boss)
+	var arena := RunSaver.boss_arena(bosses, boss)
 	var rules := RunSaver.floor_tables(run, r)
 	var w := FloorScenario.build(
 		run.floor_seed(),
@@ -62,13 +62,7 @@ static func build(run: RunState) -> World:
 	w.set_boss_tables(bosses)
 	w.ability_tables = ContentCompiler.compile_abilities(r)
 	w.stat_tables = ContentCompiler.compile_stat_cards(r)
-	EventCompiler.setup(
-		w,
-		r,
-		FloorScenario.curse_room_rules_of(run),
-		FloorScenario.retired_events_of(run),
-		FloorScenario.rare_events_of(run)
-	)
+	EventCompiler.setup(w, r)
 	FloorPlan.add_secrets(w, r, run, table.move_speed)
 	return w
 

@@ -12,8 +12,7 @@ extends RefCounted
 ##   by WandCompile._wisp_mine as an ON_WISP hook), at most live_max live mines (cull(): the oldest end first);
 ##   P6 Orbit, the wisps circle at orbit_mm and hurt what they touch at orbit_share of a shot, each enemy once per
 ##   orbit_gap_ticks per wisp (touch()).
-## - Rows (World.mx pm_*): the rings the view draws and Orbit's hit gaps; hashed only while set (older digests
-##   unchanged), listed in SNAPSHOT_FIELDS (an older save loads with none).
+## - Rows (World.mx pm_*): the rings the view draws and Orbit's hit gaps; hashed only while set.
 ## - Numbers: data/wand/attack_slots.tres, the wisps row's `params` (SlotTable.params); DEFAULTS are the same values,
 ##   read by a world without the table (a lab) and checked against the data by the content test.
 ## Pure: integer maths and the clock (the wisps' places are World.tick's), no randomness, one clock.
@@ -46,10 +45,6 @@ const DEFAULTS := {
 	"orbit_share": 500,
 	"orbit_gap_ticks": 30,
 }
-## The ModifierState fields an older save lacks (WorldSnapshot._apply_object reads this list).
-const SNAPSHOT_FIELDS: Array[StringName] = [
-	&"pm_ring_at", &"pm_ring_born", &"pm_hit_wisp", &"pm_hit_actor", &"pm_hit_until", &"pm_carry"
-]
 
 
 # --- Cards and numbers --------------------------------------------------------------------------------------------
@@ -258,11 +253,7 @@ static func cull(w: World) -> void:
 	var p := w.projectiles
 	var live := PackedInt32Array()
 	for pi in p.size():
-		if (
-			p.team[pi] == ActorStore.TEAM_PLAYER
-			and pi < p.spec_key.size()
-			and p.spec_key[pi] == k.child.key
-		):
+		if p.team[pi] == ActorStore.TEAM_PLAYER and p.spec_key[pi] == k.child.key:
 			live.append(pi)
 	var over := live.size() - param(w, "live_max")
 	if over <= 0:

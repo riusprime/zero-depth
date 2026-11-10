@@ -55,7 +55,7 @@ func test_the_shipped_stat_cards() -> void:
 	for s in Stats.COUNT:
 		assert_eq(
 			tables[s].additive,
-			Stats.ADDITIVE_STATS.has(s),
+			[Stats.Stat.DAMAGE, Stats.Stat.ATTACK_SPEED, Stats.Stat.GLASS_CANNON].has(s),
 			"v0.8.0 SG: only damage, attack speed and Glass Cannon add (stat %d)" % s
 		)
 	assert_eq(tables[Stats.Stat.CRIT_CHANCE].cap, 750, "75 %")

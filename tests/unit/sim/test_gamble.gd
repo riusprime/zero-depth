@@ -312,40 +312,6 @@ func test_an_altar_in_reach_takes_the_press_first() -> void:
 	assert_eq(w.gamble_uses, 0)
 
 
-## The start-hall spot a floor saved before N14 keeps (Gamble.spot, through Gamble.site's `legacy`).
-func test_an_old_floors_shrine_stands_in_the_start_hall_clear_of_walls() -> void:
-	for s in 40:
-		var layout := FloorGenerator.generate(1000 + s * 7)
-		var p := Gamble.spot(layout, _gamble)
-		assert_eq(Gamble.site(layout, _gamble, true), PackedVector2Array([p]), "legacy: always")
-		assert_eq(layout.room_of(p), layout.start_room, "seed %d: in the start hall" % s)
-		assert_almost_eq(
-			p.distance_to(layout.start_pos), _gamble.spot_distance_m, 0.001, "at its distance"
-		)
-		for o in layout.walls:
-			assert_eq(Collide.circle_vs_obb(p, _gamble.clear_radius_m, o), Vector2.ZERO, "clear")
-		var exit := -1
-		for d in layout.door_rooms.size():
-			if (
-				layout.door_rooms[d].x == layout.start_room
-				or layout.door_rooms[d].y == layout.start_room
-			):
-				exit = d
-		assert_gt(
-			p.distance_to(layout.door_centers[exit]),
-			layout.start_pos.distance_to(layout.door_centers[exit]),
-			"seed %d: farther from the exit than the start" % s
-		)
-
-
-func test_without_a_clear_ring_it_falls_back_to_a_clear_spot() -> void:
-	var layout := FloorGenerator.generate(1234)
-	var t := GambleTable.new()
-	t.spot_distance_m = 400.0  # every ring spot is outside the hall
-	var p := Gamble.spot(layout, t)
-	assert_true(layout.spawn_points[layout.start_room].has(p), "the hall's spawn point")
-
-
 func _floor(seed_value: int) -> World:
 	var repo := SharedContent.repo()
 	return FloorScenario.build(
@@ -423,7 +389,7 @@ func test_the_shrine_stands_in_a_combat_room_clear_and_reachable() -> void:
 	for k in n:
 		var seed_value := 5000 + k * 31
 		var layout := _layout(seed_value, map, share)
-		var at := Gamble.site(layout, _gamble, false, map)
+		var at := Gamble.site(layout, _gamble, map)
 		var rolled := Gamble.stream(seed_value, Gamble.STREAM).chance_permille(400)
 		drawn += 1 if rolled else 0
 		if not rolled:
@@ -567,36 +533,3 @@ func test_wins_tries_and_failures_survive_a_save_mid_shrine() -> void:
 	assert_eq(Gamble.price(back), Gamble.price(w), "the price after two tries")
 	back.gamble_wins = 3
 	assert_true(Gamble.spent(back), "spent at three wins after a load too")
-
-
-func test_an_older_saves_shrine_stays_in_the_start_hall_and_counts_its_uses() -> void:
-	var run := SaveLab.run_state(2, 1)
-	run.floor_rules = RunState.FLOOR_RULES_V080_SR  # saved before N14
-	assert_true(FloorScenario.legacy_shrine_of(run))
-	var w := SaveLab.build_floor(run)
-	assert_ne(w.gamble_id, -1, "an older floor always has its shrine")
-	assert_eq(w.floor_layout.room_of(w.gamble_pos), w.floor_layout.start_room, "in the start hall")
-	w.gamble_uses = 2
-	w.gamble_wins = 2
-	Gamble.grant(w, GambleTable.Stat.MAX_HP)
-	Gamble.grant(w, GambleTable.Stat.MOVE)
-	var snap := w.to_snapshot()
-	var data: Dictionary = snap["world"]
-	for f: StringName in [&"gamble_wins", &"gamble_fail_tick"]:
-		assert_true(WorldSnapshot.ADDED_SINCE_V05[&"World"].has(f), "%s is listed as new" % f)
-		data.erase(f)  # as a snapshot written before N14
-	var again := SaveLab.run_state(2, 1)
-	again.floor_rules = RunState.FLOOR_RULES_V080_SR
-	var back := World.from_snapshot(snap, SaveLab.build_floor(again))
-	assert_not_null(back, "an older save's floor fits")
-	if back == null:
-		return
-	assert_eq(back.gamble_pos, w.gamble_pos, "its shrine stays where it was")
-	assert_eq(back.gamble_wins, 2, "its wins start from its recorded uses")
-	assert_eq(back.gamble_fail_tick, -1)
-	back.shards = 10000
-	back.actors.set_pos(0, back.gamble_pos + Vector2(1.2, 0))
-	back.step(InputFrame.make(Vector2i.ZERO, 0, 0, 0, I))
-	assert_eq(back.gamble_uses, 3, "and it keeps working")
-	assert_false(FloorScenario.legacy_shrine_of(SaveLab.run_state(2, 1)), "today's floors")
-	assert_false(FloorScenario.legacy_shrine_of(null), "a floor without a run")

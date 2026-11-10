@@ -23,12 +23,6 @@ const NO_CAP := 1 << 20
 const MIN_HERO_M := 2.5
 
 
-## Whether run `run`'s current floor was built before CF (floor rules 1-15): it is rebuilt with the rooms it had
-## (its kinds' min_cells read as 0). False for today's floors and a floor without a run.
-static func legacy_rooms(run: RunState) -> bool:
-	return run != null and run.floor_rules <= RunState.FLOOR_RULES_V090_EL
-
-
 ## Room `room`'s floor area (m2): its interior rect, wall face to wall face.
 static func area_m2(f: FloorLayout, room: int) -> float:
 	if f == null or room < 0 or room >= f.rooms.size():

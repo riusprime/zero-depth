@@ -164,20 +164,17 @@ func remove_sorted(indices: PackedInt32Array) -> void:
 		tags.remove_at(i)
 		bounces.remove_at(i)
 		bounce_tick.remove_at(i)
-		if i < spec_key.size():
-			spec_key.remove_at(i)
-		if i < speed.size():  # v0.6.0 MX4
-			pierce_left.remove_at(i)
-			ret.remove_at(i)
-			home.remove_at(i)
-			orbit_t.remove_at(i)
-			orbit_n.remove_at(i)
-			orbit_a.remove_at(i)
-			life0.remove_at(i)
-			speed.remove_at(i)
-		if i < mine_t.size():  # v0.6.5 WN3
-			spiral.remove_at(i)
-			mine_t.remove_at(i)
+		spec_key.remove_at(i)
+		pierce_left.remove_at(i)
+		ret.remove_at(i)
+		home.remove_at(i)
+		orbit_t.remove_at(i)
+		orbit_n.remove_at(i)
+		orbit_a.remove_at(i)
+		life0.remove_at(i)
+		speed.remove_at(i)
+		spiral.remove_at(i)
+		mine_t.remove_at(i)
 		if i < look.size():  # v0.7.5 BF1
 			look.remove_at(i)
 		if i < cause.size():  # v0.7.5 BF2

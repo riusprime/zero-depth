@@ -362,23 +362,6 @@ func test_a_snapshot_mid_shatter_round_trips() -> void:
 	assert_eq(w2.state_hash(), w.state_hash(), "the shatter and the rise go on the same")
 
 
-func test_an_ascension_floor_saved_before_fb1_still_loads_and_leads_on() -> void:
-	var run := SaveLab.run_state(83, SaveLab.floors())
-	var w := SaveLab.build_floor(run)
-	CombatLab.idle(w, 20)
-	var p := RunSaver.payload_of(w, run, 83, PackedByteArray())
-	var snap: Dictionary = p["world"]["world"]
-	snap.erase(&"final_fight")
-	(snap[&"boss_flow"] as Dictionary).erase(&"final_next")
-	var back := RunSaver.run_from(p, _run_table())
-	assert_false(back.final_fight)
-	var w2 := SaveLab.build_floor(back)
-	assert_eq(WorldSnapshot.apply(w2, p["world"]), "", "a snapshot without the FB1 fields restores")
-	assert_eq(w2.state_hash(), w.state_hash(), "the same state")
-	assert_true(w2.boss_flow.final_next, "and End the run now leads to the final boss")
-	assert_null(w2.final_fight)
-
-
 # --- the Playground's summon and the dev jump -----------------------------------------------------------------------
 
 

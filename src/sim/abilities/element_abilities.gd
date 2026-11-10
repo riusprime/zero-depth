@@ -102,11 +102,10 @@ static func _remove_fire(s: AbilityState, k: int) -> void:
 	s.fire_dmg.remove_at(k)
 	s.fire_stacks.remove_at(k)
 	s.fire_kind.remove_at(k)
-	if k < s.fire_spec.size():
-		s.fire_spec.remove_at(k)
-		s.fire_depth.remove_at(k)
-		s.fire_proc.remove_at(k)
-		s.fire_cap.remove_at(k)
+	s.fire_spec.remove_at(k)
+	s.fire_depth.remove_at(k)
+	s.fire_proc.remove_at(k)
+	s.fire_cap.remove_at(k)
 
 
 ## Tick phase 6: patches go out, then each hits the enemies standing in it (oldest patch first; an enemy is hit once
@@ -127,13 +126,13 @@ static func advance_fire(w: World) -> void:
 	var fire_gap := fire_hit_ticks(w)  # one value for every patch this tick (audit G-16)
 	for k in s.fire_pos.size():
 		var at := s.fire_pos[k]
-		var key := s.fire_spec[k] if k < s.fire_spec.size() else ""
+		var key := s.fire_spec[k]
 		var spec := book.find(key) if key != "" else null
 		var kind := s.fire_kind[k]
 		var gap := fire_gap
 		if spec != null and spec.period_ticks > 0:
 			gap = spec.period_ticks
-		var cap := s.fire_cap[k] if k < s.fire_cap.size() else 0
+		var cap := s.fire_cap[k]
 		var hit := 0
 		for i in w.enemies_near(at, s.fire_r[k]):
 			var mark := a.ids[i] * 4 + kind
@@ -186,7 +185,7 @@ static func fx(w: World) -> Dictionary:
 
 ## A patch's full life (for the fade): its spec's.
 static func _fire_life(w: World, k: int) -> int:
-	var key := w.ab.fire_spec[k] if k < w.ab.fire_spec.size() else ""
+	var key := w.ab.fire_spec[k]
 	var spec := Modifiers.book(w).find(key) if key != "" else null
 	if spec != null and spec.life_ticks > 0:
 		return spec.life_ticks + ElementLevelsFsf.patch_extra_ticks(w, spec)  # Wildfire's longer life

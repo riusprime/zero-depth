@@ -135,19 +135,3 @@ func test_the_charge_is_hashed_only_while_an_enemy_is_charged_and_saved() -> voi
 	var hc := clean.state_hash()
 	clean.actors.charged_t[1] = 0
 	assert_eq(clean.state_hash(), hc, "an uncharged world hashes as before")
-
-
-func test_an_old_save_without_the_charge_loads_uncharged() -> void:
-	var w := _world([])
-	var snap: Dictionary = bytes_to_var(var_to_bytes(w.to_snapshot()))
-	var actors: Dictionary = snap["world"]["actors"]
-	actors.erase(&"charged_t")
-	actors.erase("charged_t")
-	assert_false(actors.has(&"charged_t") or actors.has("charged_t"), "gone, as in an older save")
-	var r := World.from_snapshot(snap, _world([]))
-	assert_not_null(r, "an older save restores (%s)" % WorldSnapshot.apply(_world([]), snap))
-	if r == null:
-		return
-	assert_eq(r.actors.charged_t.size(), r.actors.ids.size(), "padded")
-	assert_eq(r.actors.charged_t[1], 0, "not charged")
-	assert_eq(r.state_hash(), w.state_hash(), "it hashes as before")
