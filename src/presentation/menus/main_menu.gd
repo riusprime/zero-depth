@@ -32,7 +32,8 @@ var _t := 0.0
 var _rows := 0
 
 
-func _init(version: String, show_continue: bool = false) -> void:
+## `notice`: a string key said under the rows (a run save that was refused: RunSaver.REFUSED_*), "" for none.
+func _init(version: String, show_continue: bool = false, notice: String = "") -> void:
 	super()  # In Astral (MenuPanel)
 	name = "MainMenu"
 	slab.offset_left = LEFT
@@ -52,6 +53,8 @@ func _init(version: String, show_continue: bool = false) -> void:
 	add_button("UI_OPTIONS", func() -> void: options_pressed.emit()).name = "Options"
 	add_button("MENU_CREDITS", func() -> void: credits_pressed.emit()).name = "Credits"  # v0.9.5 RS1
 	add_button("UI_QUIT", func() -> void: quit_pressed.emit()).name = "Quit"
+	if notice != "":
+		box.add_child(_notice(notice))
 	backdrop = _make_backdrop()
 	add_child(backdrop)
 	move_child(backdrop, 0)
@@ -85,6 +88,17 @@ func _logo() -> TextureRect:
 	l.custom_minimum_size = Vector2(LOGO_W, LOGO_W * 910.0 / 1728.0)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l.accessibility_name = tr("UI_TITLE")
+	return l
+
+
+## A line under the rows that says why Continue is greyed out (a run save this version refused).
+func _notice(key: String) -> Label:
+	var l := Label.new()
+	l.name = "SaveNotice"
+	l.text = key
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size = Vector2(LOGO_W, 0)
+	AstralMenu.body(l, AstralMenu.NOTE_SIZE, Color(AstralCardArt.DIM, 0.9))
 	return l
 
 

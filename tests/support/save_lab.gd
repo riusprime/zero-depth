@@ -13,8 +13,7 @@ static func floors() -> int:
 	return ContentCompiler.compile_run(SharedContent.repo().get_def(&"run", RUN_ID)).floors
 
 
-## v0.9.0 FV: the run of a saved payload, compiled from the definition it names (RunSaver.saved_run_id; a v0.8.0 or
-## older payload: the 3-floor shape), as FloorPlan's Continue.
+## The run of a saved payload, compiled from the definition it names (RunSaver.saved_run_id), as FloorPlan's Continue.
 static func run_from(payload: Dictionary) -> RunState:
 	var repo := SharedContent.repo()
 	var def := repo.get_def(&"run", RunSaver.saved_run_id(payload))

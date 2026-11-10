@@ -170,11 +170,11 @@ func test_the_run_save_keeps_the_tally_and_the_locks() -> void:
 	plan.run.fragments_done = 0
 	plan.run.locked_cards.clear()
 	var bare := RunSaver.payload_of(plan.world, plan.run, 4242, PackedByteArray())
-	assert_false((bare["run"] as Dictionary).has("fragments"), "none: no key, as before MP")
-	assert_false((bare["run"] as Dictionary).has("locked"), "none: no key")
-	var old := SaveLab.run_from(bare)
-	assert_eq(old.fragments_done, 0, "an older payload earned none")
-	assert_eq(old.locked_cards.size(), 0, "and locks nothing")
+	assert_eq(int(bare["run"]["fragments"]), 0, "none: 0")
+	assert_eq((bare["run"]["locked"] as PackedStringArray).size(), 0, "none: empty")
+	var none := SaveLab.run_from(bare)
+	assert_eq(none.fragments_done, 0, "earned none")
+	assert_eq(none.locked_cards.size(), 0, "and locks nothing")
 
 
 ## MP2 (owner: "ascending cost starting from 75 and 25 more each one, then 250 the epic robe"): the four robes cost

@@ -36,7 +36,7 @@ func test_the_run_is_five_floors_with_the_stretched_curve() -> void:
 	assert_eq(t.heal_permille, 600, "v0.9.0 SV: 60 % between floors (was 40 %)")
 	assert_eq(t.shard_carry_permille, 500)
 	assert_eq(t.final_arena, &"hollow_arena", "the final arena stays")
-	var old := _table(RunSaver.LEGACY_RUN_ID)
+	var old := _table(&"three_floors")
 	assert_eq(old.floors, 3, "the v0.8.0 shape stays loadable for old saves")
 	assert_eq(old.enemy_hp_floor_permille, PackedInt32Array([1000, 1900, 3610]))
 	assert_true(old.rooms_min_by_floor.is_empty(), "its floors keep data/map's 15-19 rooms")
@@ -72,7 +72,7 @@ func test_enemies_and_bosses_scale_per_floor() -> void:
 				assert_eq(bosses[k].attacks[0].damage, want, "floor %d boss damage" % f)
 	var last := RunState.start(3, _table())
 	last.floor_index = 5
-	var old := RunState.start(3, _table(RunSaver.LEGACY_RUN_ID))
+	var old := RunState.start(3, _table(&"three_floors"))
 	old.floor_index = 3
 	var a := EnemyTable.new()
 	a.hp = 1000
@@ -90,7 +90,7 @@ func test_the_wand_grows_one_slot_a_floor() -> void:
 	for f in range(1, 6):
 		assert_eq(w.slots_at(f), 3 + f, "floor %d: %d slots" % [f, 3 + f])
 	assert_eq(w.slots_at(6), 8, "a loop's floors keep the last count")
-	var old := WandCompiler.for_run(_repo, _table(RunSaver.LEGACY_RUN_ID))
+	var old := WandCompiler.for_run(_repo, _table(&"three_floors"))
 	assert_eq([old.slots_at(1), old.slots_at(2), old.slots_at(3)], [4, 6, 8], "the 3-floor shape")
 
 

@@ -367,7 +367,6 @@ func test_an_ascension_floor_saved_before_fb1_still_loads_and_leads_on() -> void
 	var w := SaveLab.build_floor(run)
 	CombatLab.idle(w, 20)
 	var p := RunSaver.payload_of(w, run, 83, PackedByteArray())
-	(p["run"] as Dictionary).erase("final")  # as a payload written before FB1
 	var snap: Dictionary = p["world"]["world"]
 	snap.erase(&"final_fight")
 	(snap[&"boss_flow"] as Dictionary).erase(&"final_next")

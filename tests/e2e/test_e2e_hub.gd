@@ -4,8 +4,6 @@ extends GutTest
 ## panel, the Portal Machine's build screen starts a run, the run's end offers Restart (one press) or the hub, Esc
 ## in the hub pauses it, and the hub never touches a run's save.
 
-const SAVE := "res://tests/fixtures/saves/v061_blade_floor1.save"
-
 
 func after_each() -> void:
 	E2e.center_sticks()
@@ -276,9 +274,11 @@ func test_the_hub_in_spanish() -> void:
 
 
 func test_the_hub_never_touches_the_run_save() -> void:
-	var r := RunSaveStore.decode(FileAccess.get_file_as_bytes(SAVE))
+	var run := SaveLab.run_state(41, 1)
 	var store := RunSaveStore.new("")
-	assert_true(store.write((r[0] as Dictionary)["payload"]))
+	assert_true(
+		store.write(RunSaver.payload_of(SaveLab.build_floor(run), run, 1, PackedByteArray()))
+	)
 	var before := store.read()
 	var e := E2e.new(self)
 	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)

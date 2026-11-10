@@ -1,61 +1,107 @@
 extends GutTest
-## v0.6.5 WN5b (docs/design/WAND.md "Old saves load: each held card maps to its new card, in pick order. A card
-## without a match is refunded as shards") through main.tscn with real input only: a run save recorded with v0.6.1's
-## code (tests/fixtures/saves/v061_blade_floor1.save: Long Edge, Orbit Blades level 2, Ember Core, Twin Cast, Drone
-## Buddy, Echo Storm) is in the save store; the menu offers Continue, Enter resumes it, and the wand holds the new
-## cards in pick order (Ember Core stays: WN5a kept it as S1 Fire) with the Drone refunded as shards.
+## A run save written by an older version, through main.tscn with real input only. The save on disk is one recorded
+## with v0.6.1's own code (tests/fixtures/saves/v061_blade_floor1.save, payload 3). The menu refuses it: Continue is
+## greyed out, a line under the rows says why (in the player's language), and the file is kept on disk under
+## run.bad.<time>.save with its bytes unchanged. Play then starts a new run, and the profile on disk still loads. The
+## next boot says nothing more.
 
 const SAVE := "res://tests/fixtures/saves/v061_blade_floor1.save"
+
+var _dir := ""
+
+
+func before_each() -> void:
+	_dir = "user://e2e_old_save_%d" % Time.get_ticks_usec()
+	DirAccess.make_dir_recursive_absolute(_dir)
 
 
 func after_each() -> void:
 	Input.action_release(&"ui_accept")
+	TranslationServer.set_locale("en")
+	if DirAccess.dir_exists_absolute(_dir):
+		for f in DirAccess.get_files_at(_dir):
+			DirAccess.remove_absolute(_dir.path_join(f))
+		DirAccess.remove_absolute(_dir)
 
 
-func test_continue_a_v0_6_1_save_and_its_old_cards_are_wand_cards() -> void:
-	var r := RunSaveStore.decode(FileAccess.get_file_as_bytes(SAVE))
-	assert_eq(r[1], "", "the recorded save decodes")
-	var payload: Dictionary = (r[0] as Dictionary)["payload"]
-	assert_eq(int(payload["version"]), 3, "a v0.6.1 payload")
-	var saved_shards := int(payload["world"]["world"]["shards"])
-	var store := RunSaveStore.new("")
-	assert_true(store.write(payload))
+func _menu(main: Main) -> Node:
+	return main.get_node_or_null("UI/MainMenu")
+
+
+func _notice(main: Main) -> Label:
+	var menu := _menu(main)
+	return menu.find_child("SaveNotice", true, false) as Label if menu != null else null
+
+
+func _kept() -> Array:
+	return Array(DirAccess.get_files_at(_dir)).filter(
+		func(n: String) -> bool: return n.begins_with("run.bad.")
+	)
+
+
+## The recorded older save, written where the game reads its run save.
+func _old_save_on_disk() -> String:
+	var path := _dir.path_join("run.save")
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	f.store_buffer(FileAccess.get_file_as_bytes(SAVE))
+	f.close()
+	return path
+
+
+func test_an_older_run_save_is_refused_kept_and_reported() -> void:
+	var path := _old_save_on_disk()
+	var profile := ProfileStore.new(_dir.path_join("profile.json"))
+	profile.section("unlocks")["e2e_old_save"] = true
+	assert_true(profile.save_file(), "a profile on disk")
 	var e := E2e.new(self)
-	var main: Main = await e.boot(null, store)
-	var menu := main.get_node_or_null("UI/MainMenu")
-	assert_not_null(menu)
-	var focus := main.get_viewport().gui_get_focus_owner()
-	assert_eq(focus.name if focus != null else &"", &"Continue", "Continue, focused first")
-	e.key(KEY_ENTER, true)
-	e.key(KEY_ENTER, false)
-	# v0.8.0 N12 (O70): the load runs over frames behind the cover (the World on a worker); CoverLoads.finished
-	# comes in the frame the floor goes live, before its first tick.
-	await main.loads.finished
-	assert_true(main.is_playing(), "the old save is not set aside: it continues")
-	var w := e.world()
-	var ids := []
-	var levels := []
-	for c: Dictionary in main.driver.reader.wand()["cards"]:
-		ids.append(c["id"])
-		levels.append(int(c["level"]))
-	# v0.9.0 AS (owner Q3, Q6): Wide Arc and Double Slash are both Blade Patterns, one at a time, so AttackSlots.trim
-	# keeps the leftmost (Wide Arc) and refunds Double Slash at the salvage price.
-	assert_eq(ids, [&"wide_arc", &"blade_orbit", &"ember_core", &"echo_slash"], "in pick order")
-	assert_eq(levels, [1, 2, 1, 5], "Orbit Blades' level 2 carries; Echo Storm is Wave at level 5")
-	# The Drone (no row) at the ability salvage price; the trimmed Double Slash at its card's sell price (WandMigration
-	# .refund_of, as AttackSlots.trim pays it); Ember Core is S1.
-	var double_slash := -1
-	for i in w.item_tables.size():
-		if w.item_tables[i].id == &"double_slash":
-			double_slash = i
-	assert_gt(double_slash, -1)
-	var refund := (
-		WandMigration.ABILITY_REFUND_PER_LEVEL * 1 + WandMigration.refund_of(w, double_slash)
+	var main: Main = await e.boot(ProfileStore.open(profile.path), RunSaveStore.new(path))
+	assert_not_null(_menu(main), "the main menu")
+	var cont := _menu(main).find_child("Continue", true, false) as Button
+	assert_true(cont.disabled, "no Continue for a save this version refuses")
+	var notice := _notice(main)
+	assert_not_null(notice, "the menu says why")
+	if notice != null:
+		assert_eq(
+			notice.tr(notice.text),
+			"Your saved run came from an older version and can't be resumed.",
+			"in English"
+		)
+	assert_false(FileAccess.file_exists(path), "not left where Continue reads")
+	var kept := _kept()
+	assert_eq(kept.size(), 1, "kept on disk as run.bad.*.save")
+	if kept.size() == 1:
+		var got := FileAccess.get_file_as_bytes(_dir.path_join(String(kept[0])))
+		assert_eq(got, FileAccess.get_file_as_bytes(SAVE), "its bytes unchanged")
+	assert_true(
+		bool(main.profile.section("unlocks").get("e2e_old_save", false)), "the profile loads"
 	)
-	assert_eq(
-		w.shards, saved_shards + refund, "the Drone and Double Slash refunded at the salvage price"
-	)
-	var t0 := w.tick
+	await e.start_from_menu()
+	assert_true(main.is_playing(), "Play starts a new run")
+	var t0 := e.world().tick
 	await e.frames(10)
-	assert_gt(w.tick, t0, "and the run goes on")
-	assert_false(main.saves.store.read().is_empty(), "a save to continue from")
+	assert_gt(e.world().tick, t0, "and it plays")
+	main.saves.store.flush()
+	assert_true(FileAccess.file_exists(path), "the new run saves where Continue reads")
+	assert_eq(_kept().size(), 1, "beside the kept file")
+
+
+func test_the_notice_is_in_spanish_and_said_once() -> void:
+	var path := _old_save_on_disk()
+	var profile := ProfileStore.new("")
+	profile.section("settings")["language"] = "es"
+	var e := E2e.new(self)
+	var main: Main = await e.boot(profile, RunSaveStore.new(path))
+	var notice := _notice(main)
+	assert_not_null(notice)
+	if notice != null:
+		assert_eq(
+			notice.tr(notice.text),
+			"Tu partida guardada es de una versión anterior y no se puede reanudar.",
+			"in Spanish"
+		)
+	main.queue_free()
+	await e.frames(2)
+	var again: Main = await e.boot(profile, RunSaveStore.new(path))
+	assert_not_null(_menu(again), "the main menu again")
+	assert_null(_notice(again), "the next boot says nothing: the save was set aside")
+	assert_eq(_kept().size(), 1, "still kept")

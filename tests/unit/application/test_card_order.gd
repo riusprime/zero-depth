@@ -3,8 +3,6 @@ extends GutTest
 ## their saved indices (CardOrder's frozen orders, EventCompiler.RETIRED_CURSES), so a save written before O1 still
 ## names the same live cards, and the deleted ones are retired stubs that no run offers.
 
-const OLD_SAVE := "res://tests/fixtures/saves/v061_blade_floor1.save"
-
 var _repo: ContentRepository
 
 
@@ -92,27 +90,26 @@ func test_every_migration_row_names_a_stub_or_a_live_card() -> void:
 		)
 
 
-## An old save that names deleted cards (the v0.6.1 fixture), a deleted combo (Plasma Arc) and a deleted curse
-## (Swift Foes) loads: the cards map onto their wand cards (test_old_saves), the combo and the curse are dropped, and
-## the run plays on.
-func test_an_old_save_with_a_deleted_combo_and_curse_loads_and_plays_on() -> void:
-	var r := RunSaveStore.decode(FileAccess.get_file_as_bytes(OLD_SAVE))
-	assert_eq(r[1], "", "decodes")
-	var p: Dictionary = (r[0] as Dictionary).get("payload", {})
+## A save whose world names a deleted combo (Plasma Arc) and a deleted curse (Swift Foes) loads: the combo and the
+## curse are dropped, and the run plays on.
+func test_a_save_with_a_deleted_combo_and_curse_loads_and_plays_on() -> void:
+	var saved_run := SaveLab.run_state(41, 1, &"blade", 0, _repo)
+	var p := RunSaver.payload_of(
+		SaveLab.build_floor(saved_run, &"", _repo), saved_run, 1, PackedByteArray()
+	)
 	assert_true(RunSaver.is_usable(p))
 	var plasma := CardOrder.COMBOS.find(&"plasma_arc")
 	var harvest := CardOrder.COMBOS.find(&"blood_harvest")
 	var swift := EventCompiler.curse_ids(_repo).find(&"swift_foes")
 	var snap: Dictionary = p["world"]
-	snap[&"combos_owned"] = PackedInt32Array([plasma])
-	snap[&"curses_owned"] = PackedInt32Array([swift])
+	snap["world"][&"combos_owned"] = PackedInt32Array([plasma])
+	snap["world"][&"curses_owned"] = PackedInt32Array([swift])
 	var run := SaveLab.run_from(p)
 	var w := SaveLab.build_floor(run)
 	assert_eq(WorldSnapshot.apply(w, snap), "", "the snapshot fits the floor")
 	assert_false(w.combos_owned.has(plasma), "the deleted combo is dropped on load")
 	assert_false(w.curses_owned.has(swift), "the deleted curse is dropped on load")
 	assert_eq(w.combo_mask, 0, "no combo effect stays on")
-	WandMigration.run(w)
 	for idx in w.items_owned:
 		assert_false(w.item_tables[idx].retired, "%s still held" % w.item_tables[idx].id)
 	for idx in w.ability_owned:
