@@ -12,21 +12,20 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 - **Left over from Wave 2, small:** the HUD and menu half of the dead-code scan; the menu backdrop's ember mode and
   the option picker's plain look (dead since step 13); the hub station stand-in panel (only a test builds it: the
   owner was asked whether to delete it); the duplicate final-boss texture (needs model prep).
-- **Wave 3** (re-planned from [`evidence/PERF_BASELINE.md`](evidence/PERF_BASELINE.md): the frame is bound by
-  script, not the GPU): steps 21, 22, 24, 26, 28 and 30 are merged. Every timing taken since the baseline was taken
-  with other Godot processes running; **step 32 (the quiet-machine re-measure) is what counts.**
-- **Built on branches, NOT merged, waiting on the owner or on clean numbers:**
-  - step 47 (`v0111-s47`, `b61433f9`): pack effect primitives at lower detail (beams 558,848 → about 70,000 triangles
-    with every particle alive; the catalogue's sum 9.7 M → 1.8 M). **Look approved by the owner** (2026-11-10, from eight separate
-    before/after pairs: "Great job on the VFX go for those I can't see any difference, so the gain is real"); merge it. Open: pack effects are still about 40 % of the heavy scene's triangles, and
-    200–300 k of them are not explained by the per-effect rows.
-  - step 48 (`v0111-s48`, `14c6c93f`): the sim on its own thread, a switch off by default. Deterministic (hash per
-    tick identical, goldens pass with it on). Its numbers were taken with 12 other Godot processes running and are
-    mixed: **re-run on a quiet machine before the owner judges it.** It shows the picture one rendered frame later.
-- **The baseline had one wrong figure:** "20,000 objects drawn a frame" was live objects in memory. The renderer
-  draws 1,700–3,100 (corrected in the evidence file and the PLAN).
-- **Next:** step 32 on a quiet machine, with the thread trial off against on; then steps 35 to 38 (Wave 5).
-- **Pushed:** `claude/v0110` up to the docs commit after the aim-assist fade, and the tag `archive/scripts-2026-11`.
+- **Wave 3 is measured** ([`evidence/PERF_AFTER.md`](evidence/PERF_AFTER.md), quiet machine, `930485be`): the
+  average frame is 20–31 % shorter (20 enemies 14.8 → 10.2 ms; 60 heavy 36.7 → 27.7 ms; 120 swarmers 29.6 → 23.8 ms),
+  the 1 % lows in the horde scenes about doubled (10 → 20 fps), the tick at 120 enemies 4.26 → 3.09 ms. **Every
+  target is still missed** (horde tick 4.14 ms against 4; stress 3.31 against 2; no horde frame under 6.94 ms).
+- **Merged since the last push, under the seams run started on `930485be`:** step 47 (lighter pack effect meshes,
+  look approved by the owner) and the shard-drop fix (step 31's bake cost 3.9 ms of script a frame in a horde; the
+  re-measure caught it).
+- **Not merged:** step 48 (`v0111-s48`, `14c6c93f`), the sim on its own thread, a switch off by default. Clean
+  numbers: 4 %, 9 % and 15 % off the average frame in the three scenes, the 1 % lows unchanged, one rendered frame
+  of delay, one e2e fails with it on. **The owner decides** (OWNER_TODO).
+- **Next:** Wave 5 (steps 35 to 38, the golden reset), then Wave 6. The CPU levers after the thread are in
+  OWNER_TODO.
+- **Pushed:** `claude/v0110` up to `e3dba7c2`, and the tag `archive/scripts-2026-11`. Seams on `83478dd3`: 694 of
+  694.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
 - **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
   approved.
@@ -61,6 +60,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 | 16 | The fight bot, the lab-room scenario and the combo card live in `tests/support`. Left in `src/`: `KernelScenario` and `ScriptedInput` (the export smoke runs them inside the pack); left in `data/`: the combat-lab encounter and the patch notes (moving either changes the content manifest hash) | `35176162`, merge `d8362cd8` |
 | 15 (a) | Unreferenced sim, application and content code is gone: 34 functions, 34 constants, 25 translation keys (249 lines). Left: names that stand for stored values, and `HeartRoom.take_tick` (hashed, read nowhere: for step 36) | `62d24bee`, merge `0ef222b0` |
 | 19 | The line cap can't be switched off quietly: `tests/arch/test_line_cap.gd` lists the ten exempt files with reasons; the rule is in CLAUDE.md | `63ce6be5` |
+| 32 | The gain is measured on a quiet machine: frames 20–31 % shorter, 1 % lows in hordes 10 → 20 fps, tick at 120 enemies −27 %; every target still missed. It caught step 31's shard bake as a script regression (fixed, `930485be`) and gave the thread trial its clean numbers | evidence `PERF_AFTER.md` |
+| 47 | The heaviest pack effects draw far fewer triangles (owner L14): 129 default-detail primitives in 66 pack scenes lowered (particle spheres 64x32 → 16–40 segments, flat particle quads unsubdivided); amounts, colours, sizes, timings and shaders untouched; meshes under vertex-moving shaders left alone; one steam pulse and every cylinder cut reverted because they showed. Beams 558,848 → about 70,000 triangles with every particle alive; the catalogue's sum 9.7 M → 1.8 M. A budget test (200,000 an effect). **Look approved by the owner** from eight before/after pairs. Measured: about 1 ms off the GPU in the heavy scene, nothing off the average frame. Open: 200–300 k triangles in the PackFx row are not explained by the per-effect rows. 262 tests on the merge | `b61433f9`, merge `df3b9039` |
 | 34 | A run saved by an older version is refused, kept on disk and reported once (owner: old saves do not matter until release). The run payload has one version (5); any other, or an unreadable one, is moved aside as `run.bad.<datetime>.save` with its bytes unchanged (EI-09), Continue is greyed and one line under the main menu says why (en, es), once; the profile still loads. Deleted: the three older payload versions and their defaults in `RunSaver`, the resume-time wand migration in `FloorPlan`, six tests of older payloads and a fixture. Left for step 35: everything keyed on the versioned floor rules, the sim's own migration, `three_floors.tres`. `UserDirMigration` (the one-time folder copy) and `data/wand/migration.tres` stay. **The owner's own saved run, if any, is refused once after this.** 8 new tests + the rewritten e2e | `17b0df84`, merge `83478dd3` |
 | 33 | Aim bends slightly toward the nearest enemy (owner: "a bit of aim assist 10% or so"): the aim turns 10 % of its angle toward the enemy nearest the aim inside a 12° cone and 12 m; direction only, the aim distance is untouched. Applied in `PlayerInput.sample()` before the frame is quantized, so replays hold the final aim and the sim knows nothing of it; mouse and gamepad; Options → Controls switch (en, es), on by default; the three values are data (`data/tuning/aim_assist.tres`) and editable in the dev panel. The old `AimAssist` (a gamepad-only snap, never called) is rewritten. No wall check. 16 new tests; the record-and-replay e2e passes with it on; goldens identical. **Feel: OWNER ONLY** | `1405dc75`, merge `abdebe79` |
 | 46 | Options → Display has a "Show FPS" switch (off by default, saved); while it is on a small counter sits top-right above the shard count, in the menus and in a run, refreshed four times a second (owner L13). An e2e test turns it on through the Options menu, reads the counter and restarts; 20 tests on its branch, 42 on the merge | `a776bc17`, merge `fa7f0223` |
@@ -158,3 +159,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 - 2026-11-10 (owner): step 47's look approved from eight before/after pairs (beam, rail, dust, frost status, fumes,
   fire explosion, impact, poison bubbles): "Great job on the VFX go for those I can't see any difference, so the gain is
   real". Merged once the quiet-machine measurement frees the lead's worktree.
+- 2026-11-10 (lead): step 32 run on a quiet machine. It caught a regression of step 31 (the shard bake, fixed in
+  `930485be`), measured step 47 (merged: about 1 ms of GPU, no frame time) and the thread trial (4–15 % of the average
+  frame; the lead had expected more: under 60 fps the catch-up ticks stay on the main thread and the draw is no longer
+  than the tick). Not explained: the GPU time in the 120-swarmer scene rose from 4.7 to 6.2–7.1 ms.

@@ -4,21 +4,22 @@ Only what is **still open**: tests, decisions and art. Anything you answered or 
 answers live in [`roadmap/v0.8.0/PLAN.md`](roadmap/v0.8.0/PLAN.md) (owner lines O39–O50 and "Owner decisions"). Last
 rewritten 2026-10-16 from your annotated copy, v0.8.0 (branch `claude/lucid-fermat-9wv2tf`).
 
-- [ ] **v0.11.1, the 144 fps target (2026-11-10):** measured on your PC, the stress scenes run at 67 fps (20 enemies)
-  and 27–34 fps (60–120 enemies), with 1 % lows of 10–28 fps
-  ([`roadmap/v0.11.1/evidence/PERF_BASELINE.md`](roadmap/v0.11.1/evidence/PERF_BASELINE.md)). The GPU alone takes
-  4.8 ms of the 6.9 ms a 144 fps frame allows. Wave 3 goes after the script cost; say whether 144 fps stays the
-  target, or what you want held instead (for example: never under 60 in a horde).
-- [ ] **v0.11.1, where the CPU time can still come from (2026-11-10).** The frame is limited by script on one core.
-  Wave 3's cuts took a few ms off a 30–37 ms horde frame. The levers left, each measured before it is built; say
-  which you want tried:
-  1. **Enemies think less often, staggered** (the genre's usual first trick). It changes outcomes slightly (an enemy
-     reacts a few ticks later), so it needs your OK; it would ride with the approved golden reset.
-  2. **The sim on its own thread,** stepping while the main thread draws. Results stay identical. Proposed as a
-     measured trial on a branch after step 32.
-  3. **Every enemy on the crowd renderer** (step 39): also cuts the 8–9 draws each enemy costs today.
-  4. **Native code (C# or C++) for enemy AI and movement:** only if the three above fall short; it changes the
-     toolchain.
+- [ ] **v0.11.1, the sim on its own thread: keep it? (step 48, measured 2026-11-10).** On a quiet machine, with the
+  switch on the average frame is 4 % shorter at 20 enemies, 9 % at 60 with a heavy build and 15 % at 120 swarmers
+  (25.2 → 21.5 ms); the 1 % lows do not change
+  ([`roadmap/v0.11.1/evidence/PERF_AFTER.md`](roadmap/v0.11.1/evidence/PERF_AFTER.md)). The cost: the picture shows
+  each tick one rendered frame later (+6.9 ms at 144 fps, +16.7 ms at 60 fps). It is on the branch `v0111-s48`, off by
+  default, not merged. Yours to judge: whether the delay is felt when aiming (`OWNER ONLY`). The lead's view: a real
+  but modest gain; not worth a default until the views' cost is down too.
+- [ ] **v0.11.1, the CPU levers after the thread (2026-11-10).** Where a 120-enemy frame goes now: the views' sync
+  6.0 ms, the sim 4.9 ms, the draw 4.2 ms, the effects layer's drawers 2.0 ms. Each lever is measured before it is
+  built; say which you want:
+  1. **Every enemy on the crowd renderer** (step 39): the per-enemy view update is 2.4 ms of the sync, and each
+     enemy is 8–9 draws.
+  2. **Native code (C# or C++) for enemy AI and movement:** cuts the tick with no delay; it changes the toolchain.
+  3. **Enemies think less often, staggered:** changes outcomes slightly; small.
+- [ ] **v0.11.1, the 144 fps target is still far (2026-11-10):** after Wave 3 the three scenes run at 98, 36 and 42 fps
+  (they were 67, 27 and 34). Say what you want held instead, if anything (for example: never under 60 in a horde).
 - [ ] **v0.11.1, the HUD's draw calls (2026-11-10):** the HUD is a flat 389 draw calls a frame (43 % of all draws
   with 20 enemies) because its icons are drawn in code. Turning them into textures would cut that and slightly
   change their edges. Not planned unless you ask.
