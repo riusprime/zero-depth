@@ -7,23 +7,26 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 
 - **Waves 1 and 2 are done, and step 45.** Seams on `060e883b`: **674 of 674, 1,396 s of tests, 1,606 s wall** (it
   was 669, 3,185 s, 3,442 s at `ee42eafa`): [`evidence/SEAMS_TIMING.md`](evidence/SEAMS_TIMING.md).
-- **Seams on `b29c79b4` (steps 22, 24, 26, 28, 30 merged): 676 of 676,** 1,223 s of tests, 1,461 s wall. Agents ran
-  Godot at the same time, so the seconds are not a measurement; the pass is.
+- **Seams on `83478dd3` (steps 31, 46, 33, 34 merged on top of Wave 3): 694 of 694,** 1,147 s of tests, 1,374 s wall
+  (agents ran Godot for part of it, so the seconds are not a measurement).
 - **Left over from Wave 2, small:** the HUD and menu half of the dead-code scan; the menu backdrop's ember mode and
   the option picker's plain look (dead since step 13); the hub station stand-in panel (only a test builds it: the
   owner was asked whether to delete it); the duplicate final-boss texture (needs model prep).
 - **Wave 3** (re-planned from [`evidence/PERF_BASELINE.md`](evidence/PERF_BASELINE.md): the frame is bound by
   script, not the GPU): steps 21, 22, 24, 26, 28 and 30 are merged. Every timing taken since the baseline was taken
   with other Godot processes running; **step 32 (the quiet-machine re-measure) is what counts.**
-- **Merged after that seams run, not yet under one, so not pushed:** step 31 (the draw counted, shard drops baked),
-  step 46 (the Options "Show FPS" switch, owner L13) and step 33 (aim assist; its feel is the owner's to judge).
-- **With agents:** step 47 (lighter pack effect meshes, owner L14; the owner approves the look from a before/after
-  sheet), step 48 (the sim on its own thread: a trial behind a switch, off by default, owner L15) and step 34 (older
-  run saves refused).
+- **Built on branches, NOT merged, waiting on the owner or on clean numbers:**
+  - step 47 (`v0111-s47`, `b61433f9`): pack effect primitives at lower detail (beams 558,848 → about 70,000 triangles
+    with every particle alive; the catalogue's sum 9.7 M → 1.8 M). **The owner approves the look** from the contact
+    sheet sent on 2026-11-10. Open: pack effects are still about 40 % of the heavy scene's triangles, and
+    200–300 k of them are not explained by the per-effect rows.
+  - step 48 (`v0111-s48`, `14c6c93f`): the sim on its own thread, a switch off by default. Deterministic (hash per
+    tick identical, goldens pass with it on). Its numbers were taken with 12 other Godot processes running and are
+    mixed: **re-run on a quiet machine before the owner judges it.** It shows the picture one rendered frame later.
 - **The baseline had one wrong figure:** "20,000 objects drawn a frame" was live objects in memory. The renderer
   draws 1,700–3,100 (corrected in the evidence file and the PLAN).
-- **Next:** merge steps 47 and 48 as they report, seams, push; then step 32 on a quiet machine.
-- **Pushed:** `claude/v0110` up to the docs commit after `b29c79b4`, and the tag `archive/scripts-2026-11`.
+- **Next:** step 32 on a quiet machine, with the thread trial off against on; then steps 35 to 38 (Wave 5).
+- **Pushed:** `claude/v0110` up to the docs commit after the aim-assist fade, and the tag `archive/scripts-2026-11`.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
 - **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
   approved.
@@ -58,6 +61,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 | 16 | The fight bot, the lab-room scenario and the combo card live in `tests/support`. Left in `src/`: `KernelScenario` and `ScriptedInput` (the export smoke runs them inside the pack); left in `data/`: the combat-lab encounter and the patch notes (moving either changes the content manifest hash) | `35176162`, merge `d8362cd8` |
 | 15 (a) | Unreferenced sim, application and content code is gone: 34 functions, 34 constants, 25 translation keys (249 lines). Left: names that stand for stored values, and `HeartRoom.take_tick` (hashed, read nowhere: for step 36) | `62d24bee`, merge `0ef222b0` |
 | 19 | The line cap can't be switched off quietly: `tests/arch/test_line_cap.gd` lists the ten exempt files with reasons; the rule is in CLAUDE.md | `63ce6be5` |
+| 34 | A run saved by an older version is refused, kept on disk and reported once (owner: old saves do not matter until release). The run payload has one version (5); any other, or an unreadable one, is moved aside as `run.bad.<datetime>.save` with its bytes unchanged (EI-09), Continue is greyed and one line under the main menu says why (en, es), once; the profile still loads. Deleted: the three older payload versions and their defaults in `RunSaver`, the resume-time wand migration in `FloorPlan`, six tests of older payloads and a fixture. Left for step 35: everything keyed on the versioned floor rules, the sim's own migration, `three_floors.tres`. `UserDirMigration` (the one-time folder copy) and `data/wand/migration.tres` stay. **The owner's own saved run, if any, is refused once after this.** 8 new tests + the rewritten e2e | `17b0df84`, merge `83478dd3` |
 | 33 | Aim bends slightly toward the nearest enemy (owner: "a bit of aim assist 10% or so"): the aim turns 10 % of its angle toward the enemy nearest the aim inside a 12° cone and 12 m; direction only, the aim distance is untouched. Applied in `PlayerInput.sample()` before the frame is quantized, so replays hold the final aim and the sim knows nothing of it; mouse and gamepad; Options → Controls switch (en, es), on by default; the three values are data (`data/tuning/aim_assist.tres`) and editable in the dev panel. The old `AimAssist` (a gamepad-only snap, never called) is rewritten. No wall check. 16 new tests; the record-and-replay e2e passes with it on; goldens identical. **Feel: OWNER ONLY** | `1405dc75`, merge `abdebe79` |
 | 46 | Options → Display has a "Show FPS" switch (off by default, saved); while it is on a small counter sits top-right above the shard count, in the menus and in a run, refreshed four times a second (owner L13). An e2e test turns it on through the Options menu, reads the counter and restarts; 20 tests on its branch, 42 on the merge | `a776bc17`, merge `fa7f0223` |
 | 31 | The draw is counted, and one cut taken. The count: the renderer draws 1,700–3,100 objects a frame, not 20,000 (the probe column was live objects in memory; it is now two columns, `live_objects` and `drawn_objects`). In the 60-enemy heavy fight: 1,842 draws and 2.13 M triangles, of which pack effects 589 draws and 1.39 M triangles, enemies 542 draws (8–9 each) and 0.45 M, the sun shadow pass 127 draws, the HUD a flat 389 2D draws. The cut: a shard drop cluster is one mesh per material (ShardViews 213 → 96 draws at 60 enemies); a shot diff is inside the frame-to-frame noise. Left for the owner: the pack effects' triangles (step 47), the HUD's draws, the per-enemy draws. `draw_census.gd` lists each pack effect. 1,527 + 6 tests | `e86c7be8`, merge `2b6c1141` |
@@ -147,3 +151,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   trial (step 48). Open side finding from step 31: live objects grow by about 120 a second during the frame probe
   (18,530 → 20,919 in 20 s) while orphan nodes hold at about 3,000; not a draw cost, not yet explained.
 - 2026-11-10 (lead): step 33 (aim assist) merged; Wave 4 is built, its feel is with the owner (OWNER_TODO).
+- 2026-11-10 (lead): step 34 merged (two translation files conflicted with step 33's and were regenerated from the
+  merged strings). Seams on `83478dd3`: 694/694. The owner asked how aim assist behaves on charged attacks ("I dont
+  want the character snapping into the enemy"): the pull now fades in over the outer third of the cone (it came on
+  whole at the edge). Steps 47 and 48 are built on their branches and wait on the owner and on clean numbers.
