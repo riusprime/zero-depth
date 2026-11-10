@@ -47,8 +47,13 @@ static func floor_world(run_seed: int, floor_index: int, build: StringName = &"b
 
 ## `biome` (v0.8.0 SR, shots only): the shop room's biome when not the run's own (&"": the run's, as Main).
 ## `content` (v0.9.0 RG): as run_state's.
+## The flow fields are built once, at the end, as FloorPlan builds them (World.defer_nav, build_nav); `eager_nav`
+## builds them at every wall change instead, the reference the deferred build is checked against.
 static func build_floor(
-	run: RunState, biome_id: StringName = &"", content: ContentRepository = null
+	run: RunState,
+	biome_id: StringName = &"",
+	content: ContentRepository = null,
+	eager_nav: bool = false
 ) -> World:
 	var repo := content if content != null else SharedContent.repo()
 	var table := ContentCompiler.compile_player(repo.get_def(&"player", &"runner"))
@@ -75,7 +80,8 @@ static func build_floor(
 		rules[&"arena"],  # v0.5.5 AR, as Main
 		rules[&"map"],  # v0.7.5 MG, as Main
 		rules[&"overrun"],  # v0.9.0 CF, as Main
-		rules[&"lockdown_first"]  # v0.9.0 CF2, as Main
+		rules[&"lockdown_first"],  # v0.9.0 CF2, as Main
+		not eager_nav
 	)
 	var biome: BiomeDefinition = repo.get_def(
 		&"biomes", (repo.get_def(&"run", run.table.id) as RunDefinition).biomes[run.biome_of()]
@@ -120,6 +126,7 @@ static func build_floor(
 	CollectibleBook.arm(w, run, CollectibleBook.defs(repo), biome.id)  # v0.9.0 CL, as Main
 	w.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))  # v0.5.5 DS
 	CatchUp.start_floor(w)
+	w.build_nav()
 	return w
 
 

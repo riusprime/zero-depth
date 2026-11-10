@@ -96,7 +96,8 @@ func test_a_floor_plan_floor_has_the_eager_floors_fields() -> void:
 	assert_false(w.get(&"_nav_deferred"), "nothing left deferred")
 	assert_null(w.get(&"_nav_due"), "no field left due")
 	assert_null(w.get(&"_nav_next_due"), "no door field left due")
-	var lab := SaveLab.floor_world(4242, 1, &"blade")  # the eager build of the same floor (as Main)
+	# the eager build of the same floor
+	var lab := SaveLab.build_floor(SaveLab.run_state(4242, 1, &"blade"), &"", null, true)
 	assert_eq(_walls_key(w.walls), _walls_key(lab.walls), "the same walls")
 	_same_field(w.nav, lab.nav, "nav")
 	_same_field(w.get(&"_nav_next"), lab.get(&"_nav_next"), "_nav_next")
