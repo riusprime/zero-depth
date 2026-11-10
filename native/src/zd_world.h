@@ -41,7 +41,7 @@
 
 // slot: shots (#include "zd_shots.h")
 
-// slot: strike (#include "zd_strike.h")
+#include "zd_strike.h"
 // ---- end KERNEL INCLUDES ----
 
 namespace zd {
@@ -163,7 +163,14 @@ public:
 
 	// slot: shots (sweep_shots, sweep_one; zd_shots.cpp)
 
-	// slot: strike (strike; zd_strike.cpp)
+	// Enemy strike (zd_strike.cpp, NATIVE_CORE.md §3.4), for the rows of NATIVE and HOOKED kinds: phase 6's hit
+	// shapes, sight tests and fire timers against the hero (NativeAi.hero_of). Reads the store, writes nothing; returns
+	// the number of entries (strike_out_i / _f, stride 4), or -1 when a cache is missing.
+	int strike(godot::Object *actors, const godot::PackedFloat32Array &hero);
+	godot::PackedInt32Array strike_out_i() const;
+	godot::PackedFloat32Array strike_out_f() const;
+	// zd_strike.h's list codes, then its shapes: what the tests compare with NativeStrike and NativeKindTable.
+	godot::PackedInt32Array strike_layout() const;
 	// ---- end KERNEL METHODS ----
 
 protected:
@@ -188,7 +195,7 @@ private:
 
 	// slot: shots (ShotsScratch shots_;)
 
-	// slot: strike (StrikeScratch strike_;)
+	StrikeScratch strike_;
 	// ---- end KERNEL SCRATCH ----
 };
 

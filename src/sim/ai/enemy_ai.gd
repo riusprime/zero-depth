@@ -711,8 +711,15 @@ static func _resolve_pattern(w: World, i: int, t: EnemyTable, pat: BulletPattern
 		if AttackShapes.disc_touches(target, pat.land_radius_m, w.player_pos(), w.player.radius_m):
 			_hit_player(w, i, t.damage, SimEvent.TAG_AREA, target)
 	var k := BulletPatterns.wave_at(pat, st)
-	if k < 0:
-		return
+	if k >= 0:
+		fire_wave(w, i, t, pat, k)
+
+
+## Wave k of enemy i's pattern pat toward its locked aim: from its body, or from a lobbed BURST's landing.
+static func fire_wave(w: World, i: int, t: EnemyTable, pat: BulletPatternTable, k: int) -> void:
+	var a := w.actors
+	var burst := pat.kind == BulletPatternTable.Kind.BURST
+	var target := Vector2(a.lock_x[i], a.lock_y[i])
 	var origin := target if burst else a.pos(i)
 	var r := 0.0 if burst else a.radius[i] + pat.radius_m + BulletPatterns.MUZZLE_M
 	BulletPatterns.fire(w, i, pat, k, origin, a.lock_a[i], r, powered(w, i, t.damage))

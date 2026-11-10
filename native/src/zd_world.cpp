@@ -222,7 +222,11 @@ void ZdWorld::_bind_methods() {
 
 	// slot: shots
 
-	// slot: strike
+	// Enemy strike (zd_strike.cpp)
+	ClassDB::bind_method(D_METHOD("strike", "actors", "hero"), &ZdWorld::strike);
+	ClassDB::bind_method(D_METHOD("strike_out_i"), &ZdWorld::strike_out_i);
+	ClassDB::bind_method(D_METHOD("strike_out_f"), &ZdWorld::strike_out_f);
+	ClassDB::bind_method(D_METHOD("strike_layout"), &ZdWorld::strike_layout);
 	// ---- end KERNEL BINDINGS ----
 }
 
