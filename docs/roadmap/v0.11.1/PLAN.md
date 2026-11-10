@@ -15,7 +15,11 @@ are cited in the "Audit" column below). Progress: [`PROGRESS.md`](PROGRESS.md).
 - **The owner's rule for this version (2026-11-10):** "plan around [my comments] and take into account what you
   consider best for the game codebase and performance".
 - **What a player can notice:** only steps 13 (the last menus in the Astral look), 33 (aim assist) and 34 (a run
-  saved by an older build is not offered). Every other step must leave the game exactly as it plays today.
+  saved by an older build is not offered), plus shorter floor loads from step 45. Every other step must leave the
+  game exactly as it plays today.
+- **Measure before building (learned in Wave 1, 2026-11-10):** three audit findings (T1, T5, U3) were wrong about
+  cost because they were read from the code. A step whose value is a time saving starts with the measurement that
+  shows the time is there.
 - **Agents:** as in v0.11.0 (3 Sonnet + 2 Opus, or 4 Opus with no Sonnet). **S** = Sonnet, an exact brief;
   **O** = Opus; **lead** = the lead.
 
@@ -62,12 +66,18 @@ are cited in the "Audit" column below). Progress: [`PROGRESS.md`](PROGRESS.md).
 | 3 | Content compiles once per test file | T4 | `tests/support` (a memoized repository and compiled tables, duplicated before a test changes them); `SaveLab`, `EventLab`; `compile_map` out of the seed loops | The touched tests pass with the same asserts | O |
 | 4 | 200 seeds here, 1,000 on GitHub; floors generated once | T3, T7 | `tests/support/seeds.gd` (reads `ZD_FULL_SEEDS`), a shared floor corpus, the 13 `SEEDS := 1000` files; `.github/workflows/verify.yml` sets the variable; the ice and starglow twins become one parameterized test | Locally 200, on GitHub 1,000, same asserts | O |
 | 5 | e2e tests start a run directly | T1 | `src/app/main.gd` (a static test switch beside `fixed_seed`), `tests/support/e2e.gd`, `hub_walk.gd` | Every e2e passes; the hub, arrival and run-flow tests still walk the real path | O |
-| 6 | One boot per e2e file | T1, T7 | The e2e files in seams first, then the rest; the per-step siblings (`boss_dodge` ×3, `boss_fights` ×3, …) merged into parameterized files | Same tests, fewer boots; a test that needs a fresh process says why | O |
-| 7 | Boss patterns checked in the sim | T5 | The boss signature, strike and dodge e2e tests: the pattern moves to sim tests through `BossLab.start`; a short e2e keeps "the summon reaches the game" | No e2e waits thousands of frames for a boss to roll a move | O |
+| 6 | ~~One boot per e2e file~~ **Dropped, measured:** a boot is 0.2 s ([`evidence/E2E_FIXED_COST.md`](evidence/E2E_FIXED_COST.md)). The per-step sibling files are merged only when next touched | T1, T7 | — | — | — |
+| 7 | Walking out of a locked Leap or Barrage circle is checked in the sim. **The rest was measured and not merged:** the boss e2e files were already at about 10 s a test; the 9,000–18,000-frame numbers in them are limits the fixed seeds never reach | T5 | A new sim test | Done | O |
 | 8 | No duplicate smoke test; e2e helpers shared | T6, T9 | `test_modifier_smoke.gd`; `_click`, `_walk`, `_focused`, `_take_at_altar` into `tests/support/e2e.gd` | The 135 copies are gone | S |
 | 9 | CI doesn't repeat itself | T14, T11 | `verify.yml`: cache `.godot/imported`, shards wait for lint; `tests/MIN_TEST_COUNT` from the green total | A green `verify` | S |
 | 10 | Only live tools in `scripts/` | T12, T13, H4 | Tag `archive/scripts-2026-11`, then delete the 131 shot scripts and 3 checks no code references; a `scripts/shots/README.md` of the live ones; the stray `.uid` files and `PLAN.md.tmp` | Lint and the shot workflow pass | S |
 | 11 | The gain is measured | — | One seams run | `SEAMS_TIMING.md` has before and after; CLAUDE.md's numbers updated | lead |
+
+**Found by measuring Wave 1** (not in the audit):
+
+| Step | Outcome | Audit | Where | Done when | Agent |
+|---|---|---|---|---|---|
+| 45 | A floor builds its walls and paths once | — | A floor build takes 1.0–4.2 s, and 55–65 % of it is `set_walls` + `prepare_wall` run two or three times (`floor_scenario.gd` `build`, `add_shop`, `add_purposes`; E2E_FIXED_COST run 5). This is the fixed cost of every e2e run start, of every unit test that builds a floor, and of every floor the player loads | The built world is bit-identical for 30 seeds × 5 floors (state hash, walls, paths) and after 600 ticks; goldens identical; the stage timings before and after | O |
 
 ### Wave 2: one look, no dead code (goldens unchanged)
 
@@ -96,7 +106,7 @@ are cited in the "Audit" column below). Progress: [`PROGRESS.md`](PROGRESS.md).
 | 27 | The VAT loop makes no dynamic calls | V3 | `vat_crowd.gd`, `vat_bake.gd`, typed virtuals on `AvatarBase` | VAT tests; perf log | O |
 | 28 | Effect pools look after themselves | V5, V6 | `empty_draw_cull.gd`, `particle_shadow_off.gd`, the 16 km cull margins, `pack_fx.gd` | View tests; perf log | O |
 | 29 | The HUD redraws on change | U1, U2 | `hud_bar.gd`, `danger_meter.gd`, `ability_squares.gd`, `spell_squares.gd`, `heat_meter.gd`, `boss_bar.gd`, `kit_hud.gd`, `build_card.gd` | A draw-count test per widget | S |
-| 30 | Content loads once per session | U3–U5 | `content_repository.gd` (one repository, dropped on a dev-panel edit), `floor_plan.gd`, the six `compile_enemy(x).kind` sites; validation in debug builds only | The load-phase timings before and after; run and save e2e | O |
+| 30 | Content is checked only in debug builds, and one enemy's kind is read without compiling it. **Cut down, measured:** the per-floor content load is 30 ms and all compilers under 50 ms (E2E_FIXED_COST), so caching them buys nothing | U4, U5 | `content_repository.gd` (validation in debug builds only), the six `compile_enemy(x).kind` sites | Content tests; run and save e2e | S |
 | 31 | Sounds reuse their players | U6 | `audio_director.gd` | Audio tests; perf log | S |
 | 32 | The gain is measured | — | The step 21 commands again | `evidence/PERF_AFTER.md`; the 144 fps target on the owner's PC reported met or missed | lead |
 

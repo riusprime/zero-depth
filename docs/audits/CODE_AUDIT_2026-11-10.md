@@ -32,6 +32,11 @@ Exact copy-paste is rare (under 1% of `src/`), there are no dead signals, and ty
   and repo), following the real per-tick and per-frame paths. I ran repo-wide mechanical scans (unreferenced
   functions, constants, signals, scripts; identical function bodies; comment and typing statistics) and then checked
   the main claims of each auditor against the code myself. Rows marked **✔** in the tables are ones I re-checked.
+- **Correction, 2026-11-10 (same day, after the first measurements):** three findings below overestimated their
+  cost. T1: a boot plus the hub walk and arrival is under 2 s a test, not about 20 s. T5: the 9,000–18,000-frame
+  numbers are limits the tests never reach. U3: the per-floor content load and compile is under 100 ms. The
+  measurements, and the cost they found instead (a floor's walls and paths built two or three times per floor
+  build), are in [`../roadmap/v0.11.1/evidence/E2E_FIXED_COST.md`](../roadmap/v0.11.1/evidence/E2E_FIXED_COST.md).
 - **Nothing was profiled.** Every performance finding is a reading of the code. Costs in milliseconds are not
   known, except where the code's own comments quote an earlier measurement (those are cited as such). Before any
   performance item is built, measure it on the owner's PC with the existing `--perf-log` and `PerfMarks` buckets.

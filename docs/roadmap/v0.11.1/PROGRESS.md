@@ -6,10 +6,13 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 (The lead keeps this block current at every push. Updated 2026-11-10.)
 
 - **Wave 1 under way (owner, 2026-11-10: "go for the full plan until finished").** Steps 1, 9 and 10 are done.
-  Steps 3, 5 and 7 are merged; steps 2 and 4 are with an agent (worktree `wt-s4`).
+  Steps 3, 5 and 7 are merged; steps 2 and 4 are with an agent (worktree `wt-s4`); step 45 (new) with another
+  (`wt-s45`). Step 6 is dropped and step 30 cut down, both from measurements.
 - **The baseline:** seams took 3,442 s at `ee42eafa` (669/669); one test that is not a seam,
   `test_generation_holds_for_every_floor_over_a_thousand_seeds`, is 1,549.9 s of it.
-- **Next:** merge 2 and 4; then step 8 and the re-measure (11). Step 6 (one boot
+- **Next:** merge 2, 4 and 45; then step 8 and the re-measure (11).
+- **What the measurements say:** the e2e fixed cost is the floor build (about 2.5 s world + 2.2 s view per run
+  start), not the boot, the hub or the content compile ([`evidence/E2E_FIXED_COST.md`](evidence/E2E_FIXED_COST.md)). Step 6 (one boot
   per e2e file) is decided from a quiet re-time of the e2e files after step 5.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
 - **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
@@ -80,3 +83,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 - 2026-11-10 (lead): step 3 merged (`130c0b15`). Its own finding: the hoist is not where `test_five_floors` spends its
   time (1,987 s after it, on a busy machine, against 1,619 s before on a quiet one); the time is the 5,000 floor
   generations, which steps 2 and 4 take on.
+- 2026-11-10 (lead): **measured, and the plan changed.** A quiet re-time of the seams e2e files after step 5 showed no
+  measurable gain (697.4 s → 793.2 s; the quick start saves about 1.3 s a test, under the run-to-run noise). Probes
+  then showed a boot is 0.2 s, the hub walk 0.4 s, the arrival 1.2 s, and a run start's load about 6 s: the world
+  build 2.5 s and the view build 2.2 s. The content load and compile are under 100 ms. More than half the world
+  build is the walls and paths rebuilt two or three times. So: step 6 dropped, step 30 cut down, step 45 added.
+  Audit findings T1, T5 and U3 overestimated their costs.
