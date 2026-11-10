@@ -614,6 +614,11 @@ var _nav_next: NavField
 ## v0.5.0 PB: the flow field from before the prepared wall was added (add_wall_now), swapped back in when that wall
 ## is removed again (remove_wall_now: the boss door reopening after the boss), so reopening never rebuilds it.
 var _nav_open: NavField
+## v0.11.1 S45: a floor's build (FloorPlan, through defer_nav) builds its flow fields once, at its end (build_nav):
+## meanwhile set_walls and prepare_wall keep a copy of the walls each field would be built from (null: none due).
+var _nav_deferred := false
+var _nav_due: Variant = null
+var _nav_next_due: Variant = null
 ## Projectile spawns wait until phase 9 of the tick: [owner, team, pos, vel, damage, radius, life, tags, bounces].
 var _pending_projectiles: Array[Array] = []
 ## Enemies a boss brings in (eggs, turrets) wait until phase 9 of the tick: [kind, pos].
@@ -645,8 +650,33 @@ func _init(p_seed: int, p_player: PlayerTable, player_pos: Vector2 = Vector2.ZER
 ## Static walls; call before the first step.
 func set_walls(p_walls: Array[Obb]) -> void:
 	walls = p_walls
-	nav.build(walls)
+	if _nav_deferred:
+		_nav_due = walls.duplicate()  # v0.11.1 S45: the field build_nav builds (as nav.build's own copy)
+	else:
+		nav.build(walls)
 	rebuild_wall_grid()
+
+
+## v0.11.1 S45: from now until build_nav, set_walls and prepare_wall leave their flow fields for build_nav, which
+## builds each once from the walls of the last call (a floor rebuilds its walls up to five times while it is laid
+## out: the shop, the room purposes, the curse room, the fountain). Only for a floor's build: none of its steps reads
+## a flow field (the wall grid stays current); the first tick builds them if build_nav was not called.
+func defer_nav() -> void:
+	_nav_deferred = true
+
+
+## v0.11.1 S45: builds the flow fields defer_nav left: the same fields set_walls and prepare_wall would have built.
+func build_nav() -> void:
+	if not _nav_deferred:
+		return
+	_nav_deferred = false
+	if _nav_due != null:
+		nav.build(_nav_due)
+		_nav_due = null
+	if _nav_next_due != null:
+		_nav_next = NavField.new()
+		_nav_next.build(_nav_next_due)
+		_nav_next_due = null
 
 
 ## Indices of the walls that may touch `rect` (ascending; a superset), for sweeps that would test every wall (SC).
@@ -808,6 +838,8 @@ func player_projectiles_of(id: StringName) -> int:
 
 ## Advances exactly one tick. The phase order is part of the contract (SIM_CONTRACTS §2).
 func step(frame: InputFrame) -> void:
+	if _nav_deferred:  # v0.11.1 S45: a floor whose build left its flow fields (FloorPlan builds them first)
+		build_nav()
 	# 0. v0.6.5 WN1: a wand reorder (InputFrame.pick = PICK_WAND_MOVE_BASE + from × 16 + to) is input, applied first
 	# in any state (a choice open, the shop, hit-stop); the rest of the tick sees no pick.
 	frame = Wand.take_move(self, frame)
@@ -1211,6 +1243,9 @@ func prepare_wall(o: Obb) -> void:
 	var next: Array[Obb] = walls.duplicate()
 	next.append(o)
 	_wall_next = o
+	if _nav_deferred:  # v0.11.1 S45: built once, by build_nav
+		_nav_next_due = next
+		return
 	_nav_next = NavField.new()
 	_nav_next.build(next)
 

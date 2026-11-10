@@ -28,6 +28,8 @@ extends RefCounted
 ## marked right after the arenas (LockdownRooms.mark, nothing else taken yet), so the shrine, the fountain, the events,
 ## the curse room and the secrets take the rooms left (each keeps out of FloorLayout.lockdown_rooms); null (a floor
 ## saved under rules 1-16), FloorPlan.add_secrets marks them last, as before.
+## v0.11.1 S45: with `defer_nav` (FloorPlan), the world's flow fields wait for World.build_nav, which the caller runs
+## once the floor is laid out (the shop, the purposes, the curse room and the fountain each set the walls again).
 
 
 static func build(
@@ -45,7 +47,8 @@ static func build(
 	arenas: ArenaTable = null,
 	map: FloorParams = null,
 	overrun: OverrunTable = null,
-	lockdown_first: LockdownTable = null
+	lockdown_first: LockdownTable = null,
+	defer_nav: bool = false
 ) -> World:
 	var params := map
 	var sized := FloorShape.sized(run)  # v0.9.0 FV (Q24): the run's floor size (none in the 3-floor shape)
@@ -69,6 +72,8 @@ static func build(
 	if run != null and run.is_last_floor():  # v0.8.0 P2 (O28): the Loop device beside the Ascension portal
 		Ascension.place_loop_device(layout)
 	var w := World.new(seed_value, player, layout.start_pos)
+	if defer_nav:  # v0.11.1 S45: built once the floor is laid out (World.build_nav)
+		w.defer_nav()
 	w.solids.on = Solids.rules_on(run)  # v0.9.5 SB: the props that look solid are solid
 	if layout.has_loop_device:  # the Loop device is one of them (Ascension.touching_loop_device enters it)
 		var loop := Ascension.loop_footprint(layout)
