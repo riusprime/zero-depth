@@ -2,12 +2,15 @@
 
 C++ for the sim's hottest numeric loops, loaded by `native/zd_native.gdextension`, which the build writes from the
 tracked `zd_native.gdextension.in` (a tracked `.gdextension` without its library makes Godot print an import
-`ERROR` on every machine, and CI fails on those). Today it holds one class,
-`ZdMover`: the move phase's collision passes (walls, solids, body pairs). It is optional at runtime: without the
-built library the class is missing and every world runs the GDScript passes (`World._resolve_bodies`). With the
-library, the passes run native only when switched on (`NativeSwitch`): `-- --native-move` on the game's command
-line, `ZD_NATIVE_MOVE=1` in the environment, `--native=1` for `scripts/checks/horde_phases.gd`, or the GUT pre-run
-hook `tests/support/native_move_hook.gd`.
+`ERROR` on every machine, and CI fails on those). It holds one class, `ZdWorld`: the native side of one `World`
+(`World.native`, bridged by `src/sim/world/native_world.gd`), holding only caches derived from the world (walls,
+solids, the direction tables, the per-kind table, the nav grid) and one batched kernel a phase
+(`docs/roadmap/v0.11.1/NATIVE_CORE.md`). Today's kernel: the move phase's collision passes (`move`). It is optional
+at runtime: without the built library the class is missing and every world runs GDScript. With the library, each
+kernel runs native only when switched on by name (`NativeSwitch`): `-- --native=move,ai,strike,shots,nav` (or `all`)
+on the game's command line, `ZD_NATIVE_MOVE=1` (`_AI`, `_STRIKE`, `_SHOTS`, `_NAV`, `_ALL`) in the environment, the
+same `--native=` for `scripts/checks/horde_phases.gd`, or the GUT pre-run hook `tests/support/native_move_hook.gd`
+(the kernels the environment names, else `move`).
 
 ## Build
 
@@ -35,7 +38,7 @@ machine, one set per bindings commit, target and compiler), so a fresh checkout 
 
 | What | Where |
 |---|---|
-| The library's code | `native/src/` (a `.gdignore` keeps Godot out) |
+| The library's code | `native/src/` (a `.gdignore` keeps Godot out): `zd_world.*` (the class, its caches and setup, the kernel slots), `zd_geom.*` (boxes, sweeps, the wall and body grids, the direction tables), `zd_columns.*` (store columns by name), one `zd_<kernel>.*` pair per kernel (`zd_collide.*`). How to add a kernel: the top of `zd_world.h` |
 | The build | `native/SConstruct` (flags, the library), `scripts/native/build.sh` (bindings, compiler, cache) |
 | The bindings (godot-cpp) | fetched by `scripts/native/fetch_bindings.sh` into `native/godot-cpp/` (git-ignored) at the commit in `native/GODOT_CPP_COMMIT`. Not a submodule: every git worktree would need it initialised by hand |
 | The engine's API description | `native/api/extension_api.json`, from Godot `4.7.2.stable.official.ed1daf0bf` (Windows x86-64): `godot --headless --dump-extension-api` in an empty folder (6,965,057 bytes; dump and commit it again when the engine pin changes). The interface itself comes with the pinned bindings (`gdextension/gdextension_interface.json`) |
@@ -54,6 +57,9 @@ bits on both:
   own way. The GDScript sim bans them too and uses the lookup tables in `src/sim/core/kin.gd`; native code that needs
   them uses the same tables. `sqrt`, `fabs`, `floor`, `min`, `max` are allowed (exact or correctly rounded by IEEE).
 - **No threads, no clock in results, a fixed iteration order** (the clock only in the benchmark entries).
-- **The self-test:** `ZdMover.determinism_probe()` runs a fixed scene through the mover and hashes the float bits;
-  `tests/unit/app/test_native_move.gd` pins the value MSVC gives. A compiler or a flag that rounds one operation
-  differently fails that test. Change the pinned value only on purpose, when the mover's code changes.
+- **The self-test:** `ZdWorld.determinism_probe()` runs a fixed scene through the collision kernel and hashes the
+  float bits; `tests/unit/app/test_native_move.gd` pins the value MSVC gives. A compiler or a flag that rounds one
+  operation differently fails that test. Change the pinned value only on purpose, when the kernel's code changes.
+- **Columns:** a kernel reads a store's columns by name (`Object::get`, sharing the buffer) and sends a changed
+  column back as a new array (`Object::set`), never writing into the array it was given (`zd_columns.h`). GDScript
+  must not hold a column in a local across a native call: the local keeps the old array.

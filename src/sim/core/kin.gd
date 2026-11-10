@@ -94,5 +94,15 @@ static func _octant_index(ax: float, ay: float) -> int:
 	return lo - 1 if err_lo < err_hi else lo
 
 
+## The tables dir and angle_of read: cos and sin of i/4096 turns for i in 0..512. The native side takes these same
+## 513 floats (NativeWorld.setup), so both read one table.
+static func cos_table() -> PackedFloat32Array:
+	return _cos
+
+
+static func sin_table() -> PackedFloat32Array:
+	return _sin
+
+
 static func _decode(hex_chunks: Array[String]) -> PackedFloat32Array:
 	return "".join(hex_chunks).hex_decode().to_float32_array()

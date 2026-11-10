@@ -1,10 +1,10 @@
 extends SceneTree
-## The pair-separation pass alone, GDScript against the native mover (ZdMover), on the same crowd: N bodies of radius
+## The pair-separation pass alone, GDScript against the native side (ZdWorld), on the same crowd: N bodies of radius
 ## 0.35-0.6 m packed into a disc (60 % of its area covered, so most bodies touch a few others), the body grid built and
 ## one pass of pushes, each repetition from the same start. Prints ns per body per pass for:
 ## - gdscript: DenseGrid.build_circles and World's pair loop (the same arithmetic, no boss flags);
-## - native_inside: ZdMover.bench_pairs's own clock (the C++ work alone);
-## - native_call: ZdMover.resolve with no walls, one pass, timed from GDScript (the work plus the columns crossing);
+## - native_inside: ZdWorld.bench_pairs's own clock (the C++ work alone);
+## - native_call: ZdWorld.resolve with no walls, one pass, timed from GDScript (the work plus the columns crossing);
 ## - touch / get_xy: a call that hands three columns over and does nothing, and reading the two result columns back.
 ## Needs the native library (native/README.md). Writes nothing tracked.
 ##   godot --headless --path . -s scripts/bench/native_pairs_bench.gd [-- --counts=120,500] [-- --reps=2000]

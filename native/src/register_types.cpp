@@ -4,7 +4,7 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
-#include "zd_mover.h"
+#include "zd_world.h"
 
 using namespace godot;
 
@@ -12,7 +12,7 @@ static void initialize_zd_native(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-	GDREGISTER_CLASS(zd::ZdMover);
+	GDREGISTER_CLASS(zd::ZdWorld);
 }
 
 static void uninitialize_zd_native(ModuleInitializationLevel p_level) {
