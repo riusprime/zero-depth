@@ -7,10 +7,10 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 
 - **Wave 1 done except its re-measure** (owner, 2026-11-10: "go for the full plan until finished"): steps 1, 2, 3, 4,
   5, 7, 8, 9, 10 merged; 6 dropped (measured). Step 11 (the seams re-measure) runs at the next quiet point.
-- **Wave 2 under way:** steps 12, 14, 15 (sim, application, content half), 16 and 19 merged. With agents: step 13
-  (menus in Astral, `wt-s13`) and step 45 (a floor builds its walls and paths once, `wt-s45`).
-- **Left in Wave 2:** 15b (the presentation half of the dead code), 16b (the VAT bake verifier out of the game), 17,
-  18, 20.
+- **Wave 2 under way:** steps 12, 14, 15 (sim, application, content half), 16 (first half), 17, 19 and 20 are done.
+  With agents: step 13 (menus in Astral, `wt-s13`), steps 15b and 16b (3D-view dead code; the VAT bake verifier out of
+  the game, `wt-s15b`) and step 45 (a floor builds its walls and paths once, `wt-s45`).
+- **Left in Wave 2:** 18 (the comment tags), and the HUD and menu half of the dead code after step 13.
 - **The baseline:** seams took 3,442 s at `ee42eafa` (669/669). No seams run since: every merge was checked by its
   own tests, an import and lint. **Run seams before pushing.**
 - **What the measurements say:** the e2e fixed cost is the floor build (about 2.5 s world + 2.2 s view per run
@@ -50,6 +50,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 | 16 | The fight bot, the lab-room scenario and the combo card live in `tests/support`. Left in `src/`: `KernelScenario` and `ScriptedInput` (the export smoke runs them inside the pack); left in `data/`: the combat-lab encounter and the patch notes (moving either changes the content manifest hash) | `35176162`, merge `d8362cd8` |
 | 15 (a) | Unreferenced sim, application and content code is gone: 34 functions, 34 constants, 25 translation keys (249 lines). Left: names that stand for stored values, and `HeartRoom.take_tick` (hashed, read nowhere: for step 36) | `62d24bee`, merge `0ef222b0` |
 | 19 | The line cap can't be switched off quietly: `tests/arch/test_line_cap.gd` lists the ten exempt files with reasons; the rule is in CLAUDE.md | `63ce6be5` |
+| 20 | Walls fade again when the floor's wall list changes: the wall-fade index counted itself, so only a camera tilt rebuilt it (a latent bug; no symptom was confirmed). A regression test | `da22a46e` |
+| 17 | A local export no longer packs the raw-art folders (export smoke: 0 misses). The duplicate final-boss texture needs model prep and is left (PLAN row 17) | `8d91809b` |
 | 14 | The avatars carry no outline or X-ray plumbing (894 lines out, 456 in, 87 files; `technique` 139 → 0). 1,516 of 1,516 presentation tests. Proof of an unchanged look: a dump of every avatar's pieces, meshes and material values is byte-identical before and after (935 lines). The shot scripts could not prove it: they differ as much between two runs of the same code. **For the owner's eye in the next playtest** | `e8828f65`, merge `4437fd20` |
 | 3 | Tests take the game's content from one shared repository per run (`SharedContent`); the per-seed map compiles are hoisted. 608 of 608 in its runs. The gain was not measurable on a busy machine: step 11 measures it | `94060a2f`, merge `130c0b15` |
 
