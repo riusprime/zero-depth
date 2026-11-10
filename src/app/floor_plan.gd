@@ -222,6 +222,8 @@ func _build_world() -> void:
 		FinalArenaScenario.begin(w, run, finals.size())  # catch-up counts); v0.9.0 FA: the approach begins it later
 	# v0.9.0 CL: the collectibles this floor can hold (the run's not yet collected), after every source is set up
 	CollectibleBook.arm(w, run, CollectibleBook.defs(repo), biome.id if arena_def == null else &"")
+	# v0.11.1 S45: the flow fields, once, from the walls the floor ended with (before a save is written into it)
+	w.build_nav()
 	if not resume.is_empty():  # v0.4.0 SV: back to the saved room entry
 		err = WorldSnapshot.apply(w, resume["world"])
 		if err != "":
@@ -346,7 +348,8 @@ func _floor_world(
 		rules[&"arena"],  # v0.5.5 AR: the sealed arenas
 		rules[&"map"],  # v0.7.5 MG: rooms, footprints (N9)
 		rules[&"overrun"],  # v0.9.0 CF: the Overrun room's least cells
-		rules[&"lockdown_first"]  # v0.9.0 CF2: the Lockdowns' rooms first (null for rules 1-16)
+		rules[&"lockdown_first"],  # v0.9.0 CF2: the Lockdowns' rooms first (null for rules 1-16)
+		true  # v0.11.1 S45: the flow fields once, when the floor is laid out (_build_world: World.build_nav)
 	)
 	# v0.5.0 SH; v0.7.5 MG: every two floors (N12); v0.8.0 SR: in the biome's shop room (O13)
 	FloorScenario.add_shop(w, rules[&"shop"], biome_id, rules[&"map"])
