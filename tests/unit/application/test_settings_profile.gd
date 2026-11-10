@@ -64,3 +64,10 @@ func test_corrupt_profile_is_kept_and_a_fresh_one_starts() -> void:
 	assert_gt(kept.size(), 0, "the bad file is kept, never deleted")
 	for n in kept:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path("user://" + n))
+
+
+func test_show_fps_is_off_by_default_and_round_trips() -> void:
+	var profile := ProfileStore.new("")
+	assert_eq(GameSettings.get_value(profile, "show_fps"), "off")
+	GameSettings.set_value(profile, "show_fps", "on")
+	assert_eq(GameSettings.get_value(profile, "show_fps"), "on")

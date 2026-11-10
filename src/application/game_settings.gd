@@ -38,6 +38,7 @@ const DEFAULTS := {
 	"captions": "off",
 	"vsync": "on",
 	"shake": "on",
+	"show_fps": "off",  # FpsCounter
 	"outline": "ink",
 	"lighting": "high",
 	"effects_density": "high",
