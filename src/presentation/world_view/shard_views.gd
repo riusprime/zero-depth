@@ -22,6 +22,10 @@ const PULL_S := 0.15
 const DROP_GEMS_MAX := 4
 const DROP_HEIGHT := 0.34
 const DROP_SPREAD := 0.26
+## How many shapes a drop of one size is drawn from. Building and baking a cluster is script work on every vertex,
+## and a horde's kills drop dozens a second, so each size and shape is built once and every drop of it shares its
+## meshes and materials. A drop still turns by its own number.
+const DROP_SHAPES := 16
 
 static var _material: StandardMaterial3D
 static var _mesh: ArrayMesh
@@ -34,6 +38,9 @@ var _gems: Array[Array] = []
 ## The drops on the floor by sequence number: [node, gem count]; the pulled ones: [node, from, age].
 var _drops := {}
 var _pulled: Array[Array] = []
+## The built drops by [gem count, shape], kept out of the tree: a drop on the floor is a copy of one (the copy
+## shares its meshes and materials).
+var _drop_shapes := {}
 
 
 ## The gem material, shared with the price tag on chests (emission on from creation).
@@ -94,10 +101,7 @@ func _sync_drops(reader: WorldReader, taken: PackedVector2Array) -> void:
 			(d[0] as Node3D).queue_free()
 			d = []
 		if d.is_empty():
-			var node := ShardMesh.baked(
-				ShardMesh.cluster(gem_material(), n, DROP_HEIGHT, DROP_SPREAD, seqs[k])
-			)
-			node.add_child(ShardMesh.glow(COLOR, 0.9, 0.4))
+			var node := drop_node(n, seqs[k])
 			node.rotation.y = float(seqs[k] % 7)
 			add_child(node)
 			d = [node, n]
@@ -112,6 +116,29 @@ func _sync_drops(reader: WorldReader, taken: PackedVector2Array) -> void:
 			_pulled.append([node, node.position, 0.0])
 		else:
 			node.queue_free()
+
+
+## The drop shapes built so far (tests read it).
+func shapes_built() -> int:
+	return _drop_shapes.size()
+
+
+## A drop of `n` gems for drop number `seq`: a copy of its size's shape, built on first use.
+func drop_node(n: int, seq: int) -> Node3D:
+	var key := [n, seq % DROP_SHAPES]
+	if not _drop_shapes.has(key):
+		var made := ShardMesh.baked(
+			ShardMesh.cluster(gem_material(), n, DROP_HEIGHT, DROP_SPREAD, 1 + seq % DROP_SHAPES)
+		)
+		made.add_child(ShardMesh.glow(COLOR, 0.9, 0.4))
+		_drop_shapes[key] = made
+	return (_drop_shapes[key] as Node3D).duplicate()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		for made: Node3D in _drop_shapes.values():
+			made.free()
 
 
 static func _was_taken(at: Vector3, taken: PackedVector2Array) -> bool:

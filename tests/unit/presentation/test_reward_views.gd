@@ -258,6 +258,25 @@ func _pad(b: JoyButton) -> InputEventJoypadButton:
 	return ev
 
 
+func test_drops_of_one_size_and_shape_share_their_meshes_and_build_once() -> void:
+	var s := ShardViews.new()
+	autofree(s)
+	var a: Node3D = autofree(s.drop_node(3, 5))
+	var b: Node3D = autofree(s.drop_node(3, 5 + ShardViews.DROP_SHAPES))
+	var c: Node3D = autofree(s.drop_node(3, 6))
+	assert_eq(s.shapes_built(), 2, "the second drop of a shape builds nothing")
+	var mesh_of := func(n: Node3D) -> Mesh:
+		return (n.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D).mesh
+	assert_same(mesh_of.call(a), mesh_of.call(b), "one size and shape: the same mesh")
+	assert_ne(mesh_of.call(a), mesh_of.call(c), "another shape: its own mesh")
+	assert_eq(a.get_meta(&"shards"), 3, "a copy keeps the gem count")
+	for seq in 200:
+		autofree(s.drop_node(2 + seq % 3, seq))
+	assert_lte(
+		s.shapes_built(), 3 * ShardViews.DROP_SHAPES, "a horde's drops stay inside the shape set"
+	)
+
+
 func test_a_baked_cluster_keeps_its_triangles_in_one_draw_per_material() -> void:
 	var mat := ShardViews.gem_material()
 	var built := ShardMesh.cluster(mat, 4, ShardViews.DROP_HEIGHT, ShardViews.DROP_SPREAD, 21)
