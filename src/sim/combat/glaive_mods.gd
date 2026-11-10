@@ -462,16 +462,23 @@ static func _target(w: World, pi: int, cur: int, skip: int) -> int:
 	return best
 
 
-## Disc `pi` is holding at its far point (Mine): enemies it touches take a hit, each at most once per mine_gap_ticks
-## (the world skips its sweep). True: it holds.
-static func hold(w: World, pi: int) -> bool:
+## Disc `pi` is holding at its far point this tick (Mine: its steer started the hold), so it is not swept.
+static func held(w: World, pi: int) -> bool:
 	var s := w.mx
 	if s.gm_kind.is_empty():
 		return false
+	var k := row_of(s, w.projectiles.ids[pi])
+	return k >= 0 and s.gm_kind[k] & F_HELD != 0
+
+
+## Disc `pi` is holding at its far point (Mine): enemies it touches take a hit, each at most once per mine_gap_ticks
+## (the world skips its sweep). True: it holds.
+static func hold(w: World, pi: int) -> bool:
+	if not held(w, pi):
+		return false
+	var s := w.mx
 	var p := w.projectiles
 	var k := row_of(s, p.ids[pi])
-	if k < 0 or s.gm_kind[k] & F_HELD == 0:
-		return false
 	var spec := Attacks.projectile_spec(w, pi)
 	var sec := SecondaryProc.of_projectile(w, pi) != 1000
 	_pulse(

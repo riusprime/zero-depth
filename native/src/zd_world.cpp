@@ -213,7 +213,12 @@ void ZdWorld::_bind_methods() {
 
 	// slot: nav
 
-	// slot: shots
+	// The projectile sweep (zd_shots.cpp)
+	ClassDB::bind_method(D_METHOD("sweep_shots", "projectiles", "actors", "skip", "walls_only"),
+			&ZdWorld::sweep_shots);
+	ClassDB::bind_method(D_METHOD("shot_events"), &ZdWorld::shot_events);
+	ClassDB::bind_method(D_METHOD("shot_t"), &ZdWorld::shot_t);
+	ClassDB::bind_method(D_METHOD("sweep_one", "projectiles", "actors", "row", "walls_only"), &ZdWorld::sweep_one);
 
 	// slot: strike
 	// ---- end KERNEL BINDINGS ----

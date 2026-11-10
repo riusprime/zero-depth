@@ -39,7 +39,7 @@
 
 // slot: nav (#include "zd_nav.h")
 
-// slot: shots (#include "zd_shots.h")
+#include "zd_shots.h"
 
 // slot: strike (#include "zd_strike.h")
 // ---- end KERNEL INCLUDES ----
@@ -145,7 +145,19 @@ public:
 
 	// slot: nav (nav_flood, direction; zd_nav.cpp)
 
-	// slot: shots (sweep_shots, sweep_one; zd_shots.cpp)
+	// The projectile sweep (zd_shots.cpp, §3.5). Every projectile's segment this tick against the walls and the
+	// bodies; skip (a Mine disc holding) and walls_only (Void and Wave shots) are empty or one byte a projectile.
+	// Projectiles that meet nothing are advanced (pos_x, pos_y and life written back as new arrays). Returns the
+	// events, in ascending projectile order, at most one each: HOLD (skip), CONTACT (body or wall, t), END (advanced
+	// and out of life); -1 when a column is missing or of another length.
+	int sweep_shots(godot::Object *projectiles, godot::Object *actors, const godot::PackedByteArray &skip,
+			const godot::PackedByteArray &walls_only);
+	// The last sweep_shots' events: four ints each (code, projectile, body or -1, wall or -1), and each one's t.
+	godot::PackedInt32Array shot_events() const;
+	godot::PackedFloat32Array shot_t() const;
+	// One projectile's contact again, against the bodies as they stand now (one killed since the sweep is passed):
+	// [t (2 when none), body or -1, wall or -1].
+	godot::PackedFloat32Array sweep_one(godot::Object *projectiles, godot::Object *actors, int row, bool walls_only);
 
 	// slot: strike (strike; zd_strike.cpp)
 	// ---- end KERNEL METHODS ----
@@ -170,7 +182,7 @@ private:
 
 	// slot: nav (NavScratch nav_scratch_;)
 
-	// slot: shots (ShotsScratch shots_;)
+	ShotsScratch shots_;
 
 	// slot: strike (StrikeScratch strike_;)
 	// ---- end KERNEL SCRATCH ----

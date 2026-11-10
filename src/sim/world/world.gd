@@ -2146,8 +2146,12 @@ func _shove(i: int, delta: Vector2) -> void:
 
 
 func _projectile_hits() -> void:
-	var dead := PackedInt32Array()
 	_hit_grid_state = 0 if debug_aoe_full else 1  # aoe_candidates may build its grid from here on
+	if (native_on & NativeWorld.SHOTS) != 0:
+		NativeShots.sweep(self)
+		_hit_grid_state = 0
+		return
+	var dead := PackedInt32Array()
 	var pp := phase_probe  # v0.8.0 HS
 	var pull := StarfallKinds.nodes(self) if not enemy_tables.is_empty() else PackedFloat32Array()
 	for i in projectiles.size():
@@ -2200,83 +2204,8 @@ func _projectile_hits() -> void:
 				best_actor = k
 		if pp != null:
 			pp.end(&"proj.sweep")
-		if best_t <= 1.0:
-			if best_actor >= 0 and not Bomb.touches(self, i):  # A bomb's touch bursts it, no hit
-				if pp != null:
-					pp.begin(&"proj.damage")
-				hit_spec = Attacks.projectile_spec(self, i)  # The bolt's own spec feeds
-				hit_proc_permille = SecondaryProc.of_projectile(self, i)  # A secondary's
-				if projectiles.owner[i] == actors.ids[0]:
-					Matchups.arm(self, best_actor, hit_spec)  # The bolt's form and elements
-				var got := Damage.hit(
-					self,
-					best_actor,
-					projectiles.damage[i],
-					projectiles.ids[i],
-					projectiles.owner[i],
-					projectiles.root_id[i],
-					projectiles.tags[i],
-					a,
-					a + v * best_t,
-					Attacks.projectile_effect(hit_spec, projectiles.tags[i]),  # A hook's names it
-					Attacks.projectile_proc(hit_spec)  # A hook's (a trigger's child) 50, then 25
-				)
-				var crit_now := last_hit_crit  # This bolt's own hit (read before any proc hits again)
-				hit_spec = null
-				hit_proc_permille = 1000
-				if pp != null:
-					pp.end(&"proj.damage")
-					pp.begin(&"proj.procs")
-				if best_actor == 0 and player_dead() and killer_attack < 0:
-					killer_attack = projectiles.cause_of(i)  # The recap names the shot's attack
-				# Items: Frost Core and Static Chain react to the player's landed bolts.
-				ItemProcs.on_bolt_hit(self, best_actor, i, got, a + v * best_t)
-				BladeForms.hit_push_bolt(self, best_actor, i, got, a, crit_now)  # v0.10.5 O11
-				if pp != null:
-					pp.end(&"proj.procs")
-				LanceMods.on_hit(self, i, best_actor)  # Split spits its shards
-				GlaiveMods.on_hit(self, i, best_actor)  # Split sheds its small discs
-				SeekerMods.on_hit(self, i, best_actor)  # Pierce notes it, Ring, Split
-				WispMods.on_hit(self, i, best_actor, a + v * best_t)  # A wisp's shot rings
-				if Heat.pierce(self, i, best_actor, a):  # Heat: a Hot bolt goes on through one enemy.
-					continue
-				if ProjectileMoves.pierce(self, i, best_actor, a):  # Edge Rounds, Boomerang
-					continue
-			elif (
-				best_wall >= 0
-				and projectiles.bounces[i] > 0
-				and BossRicochet.may_bounce(self, i, a + v * best_t, walls[best_wall])
-			):
-				# Items: Ricochet Core reflects the bolt off the wall instead of ending it. so do the
-				# Siege Engine's shells, unless the way back would reach the player within 0.5 s.
-				ItemEffects.bounce(self, i, a + v * best_t, walls[best_wall])
-				BossRicochet.on_bounce(self, i)
-				projectiles.life[i] -= 1
-				if projectiles.life[i] <= 0:
-					dead.append(i)
-					Attacks.on_projectile_end(self, i, a + v * best_t)  # v0.6.0 MX2
-				continue
+		if ProjectileContacts.apply(self, i, a, v, best_t, best_actor, best_wall):
 			dead.append(i)
-			if pp != null:
-				pp.begin(&"proj.end")
-			Attacks.on_projectile_end(self, i, a + v * best_t)  # ON_END, Flame Trail
-			if not projectiles.cause.is_empty():  # A javelin sticks where it stopped
-				BossSignatures.on_shot_end(self, i, a + v * best_t, best_actor >= 0)
-			if pp != null:
-				pp.end(&"proj.end")
-			continue
-		projectiles.pos_x[i] = b.x
-		projectiles.pos_y[i] = b.y
-		projectiles.life[i] -= 1
-		if projectiles.life[i] <= 0:
-			dead.append(i)
-			if pp != null:
-				pp.begin(&"proj.end")
-			Attacks.on_projectile_end(self, i, b)  # v0.6.0 MX2
-			if not projectiles.cause.is_empty():  # At the end of its range
-				BossSignatures.on_shot_end(self, i, b, false)
-			if pp != null:
-				pp.end(&"proj.end")
 	_hit_grid_state = 0
 	if pp != null:
 		pp.begin(&"proj.remove")
