@@ -7,8 +7,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 
 - **Waves 1 and 2 are done, and step 45.** Seams on `060e883b`: **674 of 674, 1,396 s of tests, 1,606 s wall** (it
   was 669, 3,185 s, 3,442 s at `ee42eafa`): [`evidence/SEAMS_TIMING.md`](evidence/SEAMS_TIMING.md).
-- **Seams on `83478dd3` (steps 31, 46, 33, 34 merged on top of Wave 3): 694 of 694,** 1,147 s of tests, 1,374 s wall
-  (agents ran Godot for part of it, so the seconds are not a measurement).
+- **Seams on `930485be` (everything merged so far): 697 of 697,** 1,117 s of tests, 1,326 s wall (22 min). The lead
+  ran nothing else on the PC during it; whether the owner used the PC is not known, so the seconds are a good
+  indication, not evidence.
 - **Left over from Wave 2, small:** the HUD and menu half of the dead-code scan; the menu backdrop's ember mode and
   the option picker's plain look (dead since step 13); the hub station stand-in panel (only a test builds it: the
   owner was asked whether to delete it); the duplicate final-boss texture (needs model prep).
@@ -16,17 +17,14 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   average frame is 20–31 % shorter (20 enemies 14.8 → 10.2 ms; 60 heavy 36.7 → 27.7 ms; 120 swarmers 29.6 → 23.8 ms),
   the 1 % lows in the horde scenes about doubled (10 → 20 fps), the tick at 120 enemies 4.26 → 3.09 ms. **Every
   target is still missed** (horde tick 4.14 ms against 4; stress 3.31 against 2; no horde frame under 6.94 ms).
-- **Merged since the last push, under the seams run started on `930485be`:** step 47 (lighter pack effect meshes,
-  look approved by the owner) and the shard-drop fix (step 31's bake cost 3.9 ms of script a frame in a horde; the
-  re-measure caught it).
 - **Not merged:** step 48 (`v0111-s48`, `14c6c93f`), the sim on its own thread, a switch off by default. Clean
   numbers: 4 %, 9 % and 15 % off the average frame in the three scenes, the 1 % lows unchanged, one rendered frame
   of delay, one e2e fails with it on. **The owner decides** (OWNER_TODO).
 - **Next:** step 35 (the sim's old-save code; it does not depend on the native question). **Steps 36 to 38 wait**
   for the native spike (step 49, owner L16): a native core changes where the world's state lives, and the goldens are
   re-recorded from it anyway. The spike waits on the owner installing the C++ build tools (OWNER_TODO).
-- **Pushed:** `claude/v0110` up to `e3dba7c2`, and the tag `archive/scripts-2026-11`. Seams on `83478dd3`: 694 of
-  694.
+- **Pushed:** `claude/v0110` up to the docs commit after `930485be` (steps 47, 32 and the shard fix included), and the
+  tag `archive/scripts-2026-11`.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
 - **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
   approved.
@@ -168,3 +166,4 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   for bit ("can we change both? … we do not have to meet all the seems and rules, if the best choice is to modify them
   we can"); the owner will install the toolchain. The lead recommended C++ through GDExtension and starts with a
   spike (step 49). Kept on purpose: the sim stays deterministic against itself, and tests run before a push.
+- 2026-11-10 (lead): seams on `930485be`: 697/697 (1,117 s of tests, 1,326 s wall). Pushed.
