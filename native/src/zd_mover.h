@@ -6,6 +6,7 @@
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/variant/packed_float32_array.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
+#include <godot_cpp/variant/string.hpp>
 
 namespace zd {
 
@@ -50,6 +51,10 @@ public:
 	// Takes three columns and does nothing with them: the cost of the call and the arguments crossing.
 	int touch(const godot::PackedFloat32Array &px, const godot::PackedFloat32Array &py,
 			const godot::PackedFloat32Array &rad) const;
+	// A fixed scene (walls, solids, 240 bodies with through and heavy ones) run for 60 ticks through resolve; the
+	// FNV-1a hash of every result's float bits, as 16 hex digits. A compiler that rounds any float differently
+	// gives another hash (the expected one is pinned in tests/unit/app/test_native_move.gd). Replaces the walls.
+	godot::String determinism_probe();
 
 protected:
 	static void _bind_methods();

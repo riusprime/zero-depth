@@ -42,6 +42,23 @@ jobs:
           Write-Host "Godot: $v"
           if (-not $v.StartsWith("$env:GODOT_VERSION.stable")) { Write-Error "Godot version is not the pin"; exit 1 }
 
+      # The native library (native/README.md): the release build goes into the export, the debug build is what the
+      # editor binary loads for the import and the golden replays. Both from MSVC, found through vswhere. Unlike the
+      # Verify workflow this one fails when the build fails: an export without its library would ship broken.
+      - name: Cache the compiled bindings (SCONS_CACHE)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/zero-depth/scons
+          key: native-scons-windows-${{ hashFiles('native/GODOT_CPP_COMMIT', 'native/api/extension_api.json') }}-${{ hashFiles('native/src/**', 'native/SConstruct') }}
+          restore-keys: native-scons-windows-${{ hashFiles('native/GODOT_CPP_COMMIT', 'native/api/extension_api.json') }}-
+
+      - name: Build the native library (Windows, debug and release)
+        shell: bash
+        run: |
+          pip install -r native/requirements.txt
+          bash scripts/native/build.sh all
+          test -f native/bin/zd_native.windows.template_release.x86_64.dll
+
       - name: Import (fails on import errors)
         shell: pwsh
         run: |

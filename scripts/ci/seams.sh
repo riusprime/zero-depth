@@ -10,6 +10,13 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 mkdir -p build
 
+# The native library is kept current with the checkout when it is already built here, or ZD_NATIVE_BUILD=1 asks
+# for it (a clean worktree: about 35 s with a warm SCONS_CACHE, 10 s when nothing changed); otherwise the tests run
+# without it, as before
+if [[ -f native/zd_native.gdextension || "${ZD_NATIVE_BUILD:-}" == 1 ]]; then
+	bash scripts/native/build.sh debug > build/native_build.log 2>&1 || { tail -20 build/native_build.log >&2; exit 1; }
+fi
+
 godot --headless --path . --editor --import --quit > build/import.log 2>&1 || true
 if sed -E 's/\x1B\[[0-9;]*[mK]//g' build/import.log | grep -E -q "^(ERROR|SCRIPT ERROR)"; then
 	sed -E 's/\x1B\[[0-9;]*[mK]//g' build/import.log | grep -E "^(ERROR|SCRIPT ERROR)" | head -10 >&2

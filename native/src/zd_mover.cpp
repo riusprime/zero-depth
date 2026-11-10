@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstring>
 
 #include <godot_cpp/core/class_db.hpp>
 
@@ -435,6 +436,77 @@ int ZdMover::touch(const PackedFloat32Array &px, const PackedFloat32Array &py, c
 	return int(px.size() + py.size() + rad.size());
 }
 
+String ZdMover::determinism_probe() {
+	// A fixed scene from an integer generator: every input float is an exact integer divided by a power of ten or
+	// a correctly rounded sqrt, so it is the same bits on every compiler before the first pass runs.
+	uint32_t seed = 12345u;
+	auto next = [&seed](uint32_t mod) {
+		seed = seed * 1664525u + 1013904223u;
+		return int((seed >> 8) % mod);
+	};
+	auto boxes = [&next](int count) {
+		PackedFloat32Array out;
+		out.resize(int64_t(count) * 8);
+		float *w = out.ptrw();
+		for (int k = 0; k < count; k++) {
+			const float a = float(1 + next(7));
+			const float b = float(next(7) - 3);
+			const float len = std::sqrt(a * a + b * b);
+			const float ux = a / len, uy = b / len;
+			const float vals[8] = { float(next(3601) - 1800) / 100.0f, float(next(3601) - 1800) / 100.0f, ux, uy, -uy,
+				ux, 0.5f + float(next(30)) / 10.0f, 0.25f + float(next(10)) / 10.0f };
+			std::copy(vals, vals + 8, w + k * 8);
+		}
+		return out;
+	};
+	set_walls(boxes(16));
+	set_solids(boxes(3));
+
+	constexpr int N = 240;
+	PackedFloat32Array px, py, rad;
+	PackedInt32Array through, heavy;
+	px.resize(N);
+	py.resize(N);
+	rad.resize(N);
+	through.resize(N);
+	heavy.resize(N);
+	for (int i = 0; i < N; i++) {
+		px.set(i, float(next(4001) - 2000) / 100.0f);
+		py.set(i, float(next(4001) - 2000) / 100.0f);
+		rad.set(i, i % 40 == 39 ? 1.25f : 0.25f + float(next(50)) / 100.0f);
+		through.set(i, i % 17 == 16 ? 1 : 0);
+		heavy.set(i, i % 23 == 22 ? 1 : 0);
+	}
+
+	// 60 ticks of three passes each; between ticks every body steps 1/32 of the way to the centre.
+	uint64_t h = 14695981039346656037ull; // FNV-1a, 64 bits, over the float bits
+	auto mix = [&h](uint32_t v) {
+		for (int s = 0; s < 32; s += 8) {
+			h = (h ^ ((v >> s) & 0xffu)) * 1099511628211ull;
+		}
+	};
+	for (int t = 0; t < 60; t++) {
+		mix(uint32_t(resolve(px, py, rad, through, heavy, t % 2 == 0, 3)));
+		const float *ox = out_x_.ptr();
+		const float *oy = out_y_.ptr();
+		for (int i = 0; i < N; i++) {
+			uint32_t bx, by;
+			std::memcpy(&bx, ox + i, 4);
+			std::memcpy(&by, oy + i, 4);
+			mix(bx);
+			mix(by);
+			px.set(i, ox[i] - ox[i] * 0.03125f);
+			py.set(i, oy[i] - oy[i] * 0.03125f);
+		}
+	}
+	char hex[17];
+	for (int k = 0; k < 16; k++) {
+		hex[k] = "0123456789abcdef"[(h >> (60 - 4 * k)) & 0xfu];
+	}
+	hex[16] = '\0';
+	return String(hex);
+}
+
 void ZdMover::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_walls", "obbs"), &ZdMover::set_walls);
 	ClassDB::bind_method(D_METHOD("set_solids", "obbs"), &ZdMover::set_solids);
@@ -445,6 +517,7 @@ void ZdMover::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_y"), &ZdMover::get_y);
 	ClassDB::bind_method(D_METHOD("bench_pairs", "px", "py", "rad", "reps"), &ZdMover::bench_pairs);
 	ClassDB::bind_method(D_METHOD("touch", "px", "py", "rad"), &ZdMover::touch);
+	ClassDB::bind_method(D_METHOD("determinism_probe"), &ZdMover::determinism_probe);
 }
 
 } // namespace zd

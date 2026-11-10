@@ -1,7 +1,11 @@
 extends GutTest
 ## The native collision passes (NativeMove, the ZdMover class of native/zd_native.gdextension): off by default, and
 ## when the library is built, the same rules as the GDScript passes and the same result from the same start. Without
-## the library (CI today) only the off-by-default test runs; the others are pending.
+## the library (a checkout that hasn't run scripts/native/build.sh) only the off-by-default test runs; the others are
+## pending.
+
+## ZdMover.determinism_probe() as built by MSVC (Visual Studio 2026, /fp:precise) on the owner's PC.
+const DETERMINISM_PROBE := "fc67776bc3d14796"
 
 var _kept := Callable()
 
@@ -73,9 +77,24 @@ func test_the_same_start_gives_the_same_result() -> void:
 	assert_eq(a, b, "native: the same hashes tick for tick")
 
 
+## The extension's fixed scene through the mover gives the hash recorded on Windows (MSVC). Another compiler (gcc in
+## CI), or changed float flags, that rounds one operation differently fails here, before any golden does.
+func test_the_floats_match_the_recorded_compiler() -> void:
+	if not _built():
+		return
+	var mover: Object = NativeSwitch.make()
+	assert_eq(
+		mover.call(&"determinism_probe"), DETERMINISM_PROBE, "native/README.md: the float rules"
+	)
+
+
 func _built() -> bool:
 	if NativeSwitch.available():
 		return true
+	# CI sets this when it built the library for the job: a library that then fails to load is a failure there
+	if OS.get_environment("ZD_NATIVE_REQUIRED") == "1":
+		fail_test("ZD_NATIVE_REQUIRED=1, but the native library did not load")
+		return false
 	pending("the native library is not built (native/README.md)")
 	return false
 

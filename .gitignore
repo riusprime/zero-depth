@@ -29,9 +29,11 @@ art_raw/
 # The owner's purchased effect packs as downloaded (zips); what the game uses is installed under assets/
 newVFX/
 
-# The native library (native/README.md): built locally, not tracked yet. The build also writes the .gdextension (from
-# its .in): a tracked one would make every machine without the library print an import ERROR (CI fails on those)
+# The native library (native/README.md): built by scripts/native/build.sh, not tracked. The build also writes the
+# .gdextension (from its .in): a tracked one would make every machine without the library print an import ERROR (CI
+# fails on those). The bindings are fetched at the commit native/GODOT_CPP_COMMIT names.
 native/bin/
+native/godot-cpp/
 native/src/*.obj
 native/src/*.o
 .sconsign*.dblite

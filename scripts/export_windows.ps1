@@ -59,6 +59,7 @@ if (-not (Test-Path $PresetsFile)) {
 if (Test-Path $ExePath) { Remove-Item $ExePath -Force }
 if (Test-Path $PckPath) { Remove-Item $PckPath -Force }
 if (Test-Path $ArchivePath) { Remove-Item $ArchivePath -Force }
+Get-ChildItem -Path $ResolvedOutputDir -Filter "*.dll" -ErrorAction SilentlyContinue | Remove-Item -Force
 if (Test-Path $ChecksumsPath) { Remove-Item $ChecksumsPath -Force }
 
 # 4. Locate Godot binary (CI sets GODOT_CONSOLE to the console wrapper, called by its own name)
@@ -151,6 +152,12 @@ try {
         Write-Host "Including data pack: game.pck"
         $ArchiveFiles += "game.pck"
     }
+    # The native library (native/README.md): Godot's export copies it beside the executable
+    $Libraries = @(Get-ChildItem -Path . -Filter "*.dll" | Select-Object -ExpandProperty Name)
+    foreach ($Lib in $Libraries) {
+        Write-Host "Including native library: $Lib"
+        $ArchiveFiles += $Lib
+    }
     Compress-Archive -Path $ArchiveFiles -DestinationPath $ArchiveName -Force
 } finally {
     Pop-Location
@@ -168,6 +175,12 @@ if (Test-Path $PckPath) {
     $PckHash = (Get-FileHash -Path $PckPath -Algorithm SHA256).Hash.ToLower()
     $ChecksumLines += "$PckHash  game.pck"
     Write-Host "  game.pck: $PckHash"
+}
+
+foreach ($Lib in $Libraries) {
+    $LibHash = (Get-FileHash -Path (Join-Path $ResolvedOutputDir $Lib) -Algorithm SHA256).Hash.ToLower()
+    $ChecksumLines += "$LibHash  $Lib"
+    Write-Host "  ${Lib}: $LibHash"
 }
 
 $ArchiveHash = (Get-FileHash -Path $ArchivePath -Algorithm SHA256).Hash.ToLower()

@@ -22,7 +22,8 @@ static func requested() -> bool:
 ## Turns the native passes on for every world made from now on (false: off, or the library is missing).
 static func install(on: bool) -> bool:
 	if on and available():
-		World.mover_factory = func() -> Object: return ClassDB.instantiate(CLASS)
+		# A static function, not a lambda: a lambda left in the static var at exit crashed the engine on quit
+		World.mover_factory = NativeSwitch.make
 		return true
 	World.mover_factory = Callable()
 	return false
