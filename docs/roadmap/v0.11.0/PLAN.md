@@ -240,3 +240,5 @@ follow. All numbers below are starting values. Agent limit as before: 3 Sonnet +
 | F12 | Depth, owner's pick: "option C but do not put the card with the info just the color skull and multiplier". Notifications, owner's pick: "Option B do not make it permanent it is just a notification" | S | Done |
 | F6b | Arc Caster palette, owner's pick: "option B" (magenta-violet, white gem) | lead | Done |
 | F13 | Shrine roll | S | Done |
+| F14 | The Twin Wardens crossfire tests match the game since the Twins rework | lead | Done |
+| F15 | Five e2e tests outside the seams match the game again (found by v0.11.1's full e2e run: enemies, lance, rune combos, shrines, collectibles; each test was stale, no game change) | O | Done |
