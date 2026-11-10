@@ -7,9 +7,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 
 - **Waves 1 and 2 are done, and step 45.** Seams on `060e883b`: **674 of 674, 1,396 s of tests, 1,606 s wall** (it
   was 669, 3,185 s, 3,442 s at `ee42eafa`): [`evidence/SEAMS_TIMING.md`](evidence/SEAMS_TIMING.md).
-- **Seams on `930485be` (everything merged so far): 697 of 697,** 1,117 s of tests, 1,326 s wall (22 min). The lead
-  ran nothing else on the PC during it; whether the owner used the PC is not known, so the seconds are a good
-  indication, not evidence.
+- **Seams on `5736f08e` (everything merged so far, the native switch off): 697 of 697,** 1,857 s of tests, 2,239 s wall,
+  with four agents running Godot alongside (the seconds are not a measurement).
 - **Left over from Wave 2, small:** the HUD and menu half of the dead-code scan; the menu backdrop's ember mode and
   the option picker's plain look (dead since step 13); the hub station stand-in panel (only a test builds it: the
   owner was asked whether to delete it); the duplicate final-boss texture (needs model prep).
@@ -17,21 +16,18 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   average frame is 20–31 % shorter (20 enemies 14.8 → 10.2 ms; 60 heavy 36.7 → 27.7 ms; 120 swarmers 29.6 → 23.8 ms),
   the 1 % lows in the horde scenes about doubled (10 → 20 fps), the tick at 120 enemies 4.26 → 3.09 ms. **Every
   target is still missed** (horde tick 4.14 ms against 4; stress 3.31 against 2; no horde frame under 6.94 ms).
-- **The native spike works (step 49, `v0111-s49`, `3b3587b7`, not merged, off by default):** enemy separation and
-  walls in C++ through GDExtension. At 120 enemies the ported work goes from about 0.77 ms to 0.04 ms a tick (about
-  20×; 35–70× in the isolated benchmark), `move` 1.3–1.5 → 0.5–0.6 ms, the tick 3.9–4.3 → 3.0–3.5 ms (the agent's three
-  alternating rounds and the lead's two; other Godot processes ran during both). It replays itself exactly; with the
-  switch off the baseline hash holds; 124 of 124 movement and collision tests pass with it on; the game runs without
-  the library. **The owner said "Yes, port the rest" (L17): Wave 7 in the PLAN, steps 50 to 55.**
-- **Not merged:** step 48 (`v0111-s48`, `14c6c93f`), the sim on its own thread, a switch off by default. Clean
-  numbers: 4 %, 9 % and 15 % off the average frame in the three scenes, the 1 % lows unchanged, one rendered frame
-  of delay, one e2e fails with it on. **The owner decides** (OWNER_TODO).
-- **Next:** step 35 (the sim's old-save code; it does not depend on the native question). **Steps 36 to 38 wait**
-  for the native spike (step 49, owner L16): a native core changes where the world's state lives, and the goldens are
-  re-recorded from it anyway. **With agents:** the spike (the owner installed Visual Studio Community 2026, MSVC
-  14.52; SCons and `godot-cpp` are set up beside the repo) and step 35.
-- **Pushed:** `claude/v0110` up to the docs commit after `930485be` (steps 47, 32 and the shard fix included), and the
-  tag `archive/scripts-2026-11`.
+- **The native core (Wave 7) is being built behind a switch, off by default:** merged and pushed: the spike (49), the
+  permanent build (50), the design (51, [`NATIVE_CORE.md`](NATIVE_CORE.md)), the shared core (52a). Built, on its
+  branch: enemy think and steering (52b, `v0111-s52b` `5dffcf1b`: the tick at 120 enemies about 4.9 → 2.0 ms on a busy
+  machine). With agents: the projectile sweep (53a), the path flood (53b), enemy strikes (52c). Then the flip (54).
+- **Also merged and pushed:** step 35 (the sim carries no old-save code: 3,900 lines and 57 tests gone, hash and
+  goldens unchanged), step 56 (a dead enemy's cubes are one draw and last 0.5 s at any frame rate), the
+  frame-attribution tooling (`scripts/checks/frame_attribution.sh`, `frame_spans.gd`).
+- **Not merged:** step 48 (`v0111-s48`), the sim on its own thread: parked (OWNER_QUESTIONS Q2).
+- **Next:** merge 52b, 53a, 53b, 52c; the flip; the quiet attribution run; then Wave 8 (the display layer: steps 55,
+  57, 58), which the owner approved before going to sleep (L19). **The owner playtests at the end.**
+- **Questions for the owner:** [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md).
+- **Pushed:** `claude/v0110` up to the docs commit after `5736f08e`, and the tag `archive/scripts-2026-11`.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
 - **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
   approved.
@@ -66,6 +62,12 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 | 16 | The fight bot, the lab-room scenario and the combo card live in `tests/support`. Left in `src/`: `KernelScenario` and `ScriptedInput` (the export smoke runs them inside the pack); left in `data/`: the combat-lab encounter and the patch notes (moving either changes the content manifest hash) | `35176162`, merge `d8362cd8` |
 | 15 (a) | Unreferenced sim, application and content code is gone: 34 functions, 34 constants, 25 translation keys (249 lines). Left: names that stand for stored values, and `HeartRoom.take_tick` (hashed, read nowhere: for step 36) | `62d24bee`, merge `0ef222b0` |
 | 19 | The line cap can't be switched off quietly: `tests/arch/test_line_cap.gd` lists the ten exempt files with reasons; the rule is in CLAUDE.md | `63ce6be5` |
+| 56 | A dead enemy's cubes are one draw a look and last 0.5 s at any frame rate (owner L18): a pooled multimesh (cap 1,024 a look) in place of 7 nodes and 7 draws a kill; the same random flight; the life was 30 rendered frames. 1,543 presentation tests + 5 new | `dc7c5fa2` |
+| 52a | The native side is one world object (`ZdWorld`) that kernels plug into: shared geometry, columns read and written by name (a read about 0.1 µs, a write about 0.3 µs), the trig tables sent from `Kin` (exact), the per-kind table built and tested against `EnemyAi` for every kind (20 native, 9 hooked, the rest script), the switch a set of kernel bits. Hashes unchanged off and with `move` on | `e7f8e26f` |
+| 51 | The design of the full port | [`NATIVE_CORE.md`](NATIVE_CORE.md) |
+| 50 | The native library builds from a clean checkout with one command (`bash scripts/native/build.sh`: 3.5 min cold, 35 s cached, 10 s no-op): bindings pinned by commit, the engine's API description committed, float flags fixed and guarded, a pinned determinism self-test, CI written (not run: its first run is on the PR). Fixed: the engine crashed on exit with the switch on (a lambda held in a static) | `f2f80491` |
+| 49 | The native spike: enemy separation and walls in C++ through GDExtension, a switch off by default; about 20× on the ported work in the game | `3b3587b7` |
+| 35 | The sim carries no compatibility code for older saves: `ADDED_SINCE_V05` and the padding (a missing field is now refused by name), the column-size guards, the wand migration, the versioned floor rules and every branch keyed on them, 57 old-save tests; `world_snapshot.gd` 1,200 → 571 lines (its line-cap exemption removed); the "old saves" seam left `seams.sh`. Hash and goldens unchanged; the 17 slow test files its agent did not reach were run by the lead on the merge (188 of 188). Open: wave arenas now run only in worlds without Lockdowns (labs and tests): maybe dead | `ad31693c`, merge `00fdf002` |
 | 32 | The gain is measured on a quiet machine: frames 20–31 % shorter, 1 % lows in hordes 10 → 20 fps, tick at 120 enemies −27 %; every target still missed. It caught step 31's shard bake as a script regression (fixed, `930485be`) and gave the thread trial its clean numbers | evidence `PERF_AFTER.md` |
 | 47 | The heaviest pack effects draw far fewer triangles (owner L14): 129 default-detail primitives in 66 pack scenes lowered (particle spheres 64x32 → 16–40 segments, flat particle quads unsubdivided); amounts, colours, sizes, timings and shaders untouched; meshes under vertex-moving shaders left alone; one steam pulse and every cylinder cut reverted because they showed. Beams 558,848 → about 70,000 triangles with every particle alive; the catalogue's sum 9.7 M → 1.8 M. A budget test (200,000 an effect). **Look approved by the owner** from eight before/after pairs. Measured: about 1 ms off the GPU in the heavy scene, nothing off the average frame. Open: 200–300 k triangles in the PackFx row are not explained by the per-effect rows. 262 tests on the merge | `b61433f9`, merge `df3b9039` |
 | 34 | A run saved by an older version is refused, kept on disk and reported once (owner: old saves do not matter until release). The run payload has one version (5); any other, or an unreadable one, is moved aside as `run.bad.<datetime>.save` with its bytes unchanged (EI-09), Continue is greyed and one line under the main menu says why (en, es), once; the profile still loads. Deleted: the three older payload versions and their defaults in `RunSaver`, the resume-time wand migration in `FloorPlan`, six tests of older payloads and a fixture. Left for step 35: everything keyed on the versioned floor rules, the sim's own migration, `three_floors.tres`. `UserDirMigration` (the one-time folder copy) and `data/wand/migration.tres` stay. **The owner's own saved run, if any, is refused once after this.** 8 new tests + the rewritten e2e | `17b0df84`, merge `83478dd3` |
@@ -203,3 +205,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   shared core, `e7f8e26f`) and 56 (the death cubes, `dc7c5fa2`) reported; merging after the seams run, which found one
   failure: the locale key scan read the native switch's environment variable name as a text key (52a already rewrote
   that line).
+- 2026-11-11 (lead): seams on `5736f08e`: 697/697. Pushed. The run before it (`00fdf002`) had one failure: the locale
+  key scan read `"ZD_NATIVE_MOVE"` in `native_switch.gd` as a text key; step 52a had already rewritten that line.
+  Step 52b reported (`5dffcf1b`): think and steering native; 308 rule tests pass with the switch on; each of the 29
+  table kinds gives the same state sequence as GDScript over 600 ticks; a 20-seed fight comparison is close on means
+  (hero damage 777 against 769) with more stragglers on the native side (4 seeds against 2), which its agent traced
+  to the test bot not finishing kiting kinds in either version. Step 52c started on top of it.
