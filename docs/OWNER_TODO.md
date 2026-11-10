@@ -4,11 +4,8 @@ Only what is **still open**: tests, decisions and art. Anything you answered or 
 answers live in [`roadmap/v0.8.0/PLAN.md`](roadmap/v0.8.0/PLAN.md) (owner lines O39–O50 and "Owner decisions"). Last
 rewritten 2026-10-16 from your annotated copy, v0.8.0 (branch `claude/lucid-fermat-9wv2tf`).
 
-- [ ] **v0.11.1, port the rest of the hot loops to C++? (step 49's spike, 2026-11-10).** The spike moved enemy
-  separation and walls to C++: that work is about 20× faster in the game (0.77 → 0.04 ms a tick at 120 enemies) and
-  the tick fell by about 0.9 ms. Porting enemy AI, steering, projectiles, hits and the path flood the same way is
-  estimated (not measured) to bring the tick from about 3 ms to 0.6–1.0 ms. It needs: the goldens re-recorded once
-  (you agreed, L16), CI building the library on Linux and Windows, and your playtest of how fights feel.
+- [ ] **v0.11.1, playtest the native core when it flips (step 54; `OWNER ONLY`):** do fights feel the same? You said
+  "Yes, port the rest" on 2026-11-10; nothing changes in your game until the flip, and I will tell you when.
 - [ ] **v0.11.1, the sim on its own thread: keep it? (step 48, measured 2026-11-10).** On a quiet machine, with the
   switch on the average frame is 4 % shorter at 20 enemies, 9 % at 60 with a heavy build and 15 % at 120 swarmers
   (25.2 → 21.5 ms); the 1 % lows do not change

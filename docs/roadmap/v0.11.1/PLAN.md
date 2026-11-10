@@ -43,6 +43,7 @@ are cited in the "Audit" column below). Progress: [`PROGRESS.md`](PROGRESS.md).
 | L14 | Effect triangles (2026-11-10, after step 31 showed pack effects are 1.39 M of the 2.13 M triangles a frame in the heavy scene): "Could you in anyway, reduce those VFX triangles without modifying the visuals too much?" | The heaviest pack effects get lighter meshes or fewer mesh particles; the owner sees before/after shots and approves the look | 47 |
 | L15 | The CPU lever (2026-11-10), after the lead listed four (enemies think less often, the sim on a thread, enemies off the node layer, native code): "I want you to pick the one that would actually move the lever, multithreading and the C# or C++ sound interesting, enemies thinking less often and Skipping the engine's node layer for crowds too" | The lead picked **the sim on its own thread** (it takes the whole tick, 3.4 ms at 120 enemies and paid twice a frame under 60 fps, off the frame without changing a result, and stays in GDScript). Built as a trial behind a switch, off by default; the owner sees the numbers and judges the feel (the picture is one rendered frame later) before it becomes the default. Second, if the trial holds: enemies off the node layer (step 39). Thinking less often saves at most about 0.7 ms a tick and nothing once the sim is on a thread; native code stays in reserve | 48 |
 | L16 | A native core (2026-11-10), after the clean numbers showed the thread is a modest gain and the lead named compiled code as the largest lever: "What toolchain is the best I will install it, if we are gonna change the AI to other language does the actual code in C++ need to match those sims or can we change both? This is my game and solo proyect not released yet so we do not have to meet all the seems and rules, if the best choice is to modify them we can" | **The native code does not have to reproduce the GDScript sim bit for bit.** It must be deterministic against itself (replays, save and resume, tests); the goldens are re-recorded from it on purpose; behaviour is held by the existing rule tests and a side-by-side balance comparison. Toolchain: C++ through GDExtension (the lead's recommendation: the standard Godot build stays, direct access to the renderer for the crowd bridge, every export platform). Starts with a spike; Wave 5's steps 36 to 38 wait for its result, because a native core changes where the world's state lives | 49 |
+| L17 | Port the rest (2026-11-10), after the spike measured about 20× on the ported work: "Yes, port the rest" | Wave 7 below: the hot loops move to C++ in stages, each behind the switch and measured; then one flip that makes the native core the only one, re-records the goldens and deletes the GDScript versions. The owner playtests the flip | 50–55 |
 
 ## Rules for every step
 
@@ -138,6 +139,26 @@ and 27 are inside steps 24 and 26.
 | 36 | Golden change A: dead state removed | D4, D1 | The six never-written `World` fields; `CardOrder`'s retired-card stubs | Every changed golden named in PROGRESS; the event logs of the golden replays identical before and after | O |
 | 37 | Golden change B: `World`'s loose fields grouped | A3 | The 36 `spell_*`, 11 `starbound_*`, 10 `gamble_*` fields and similar into state objects (owner's OK, L12) | As step 36 | O |
 | 38 | Golden change C: one hasher for every state class | R7 | A reflective hasher over the snapshot's field walk, with an explicit skip list for view-only fields; the 66 hand-written `hash_into` bodies go (owner's OK, L12) | As step 36; the replay tests' time before and after | O |
+
+### Wave 7: the native core (owner L16, L17)
+
+The spike (step 49) showed the shape: the sim keeps its rules in GDScript and calls one batched native entry a phase;
+data crosses as packed arrays (about 5 µs a tick). Rules for every step here: the native code is deterministic against
+itself and across compilers (no fast-math, no fused multiply-add, no library trigonometry: the sim's lookup tables);
+it need not match the GDScript results; the switch stays off by default until the flip, so each step merges without
+changing the game; each step reports `horde_phases` off against on.
+
+| Step | Outcome | What | Done when | Agent |
+|---|---|---|---|---|
+| 50 | The native build is permanent | The spike merged; the bindings pinned; the engine's API description committed; one build script for Windows and Linux; the compile flags that keep results identical across compilers; CI builds and caches the library (Linux for the tests, Windows for the export) | The library builds from a clean checkout with one command; the tests run with and without it; the CI change is written (its first run is on the PR) | O |
+| 51 | The design of the full port | Which data lives on the native side, the entry points, what returns to GDScript, what stays; enemies decide less often, staggered (the owner asked about lower rates; the main tick stays 60 Hz); the order of work | `docs/roadmap/v0.11.1/NATIVE_CORE.md`, from a reading of the code and a measured split of `ai` | O |
+| 52 | Enemy AI and steering run native | `ai` 1.1 ms and `move.steer` 0.36 ms of the 3 ms tick | Behind the switch; the enemy AI rule tests pass with it on; `horde_phases` off against on | O |
+| 53 | Projectiles, hits and the path flood run native | `proj` 0.5 ms, `resolve` 0.17 ms, `nav_flood` 0.28 ms | As 52 | O |
+| 54 | **The flip:** the native core is the only one | The switch goes; the GDScript versions of the ported loops are deleted; **the goldens are re-recorded on purpose** (each named in PROGRESS); step 36's dead state goes with it; a side-by-side balance comparison of the last GDScript build and the native one over many seeds | Seams green; the comparison in evidence; `evidence/PERF_NATIVE.md` on a quiet machine. **Owner playtest: do fights feel the same? (OWNER ONLY)** | lead |
+| 55 | Enemies reach the renderer in one batch | The renderer bridge (old step 39 by another road): positions and animation state written to instance buffers from the native side | Decided from step 54's numbers | O |
+
+**Paused by this wave:** steps 37 and 38 (grouping the world's fields, the reflective hasher) are re-decided after
+the flip, because the native core changes where the state lives. Step 36 rides with the flip.
 
 ### Wave 6: structural (each one decided from Wave 3's numbers)
 

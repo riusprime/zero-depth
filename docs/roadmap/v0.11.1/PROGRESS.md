@@ -22,7 +22,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   20×; 35–70× in the isolated benchmark), `move` 1.3–1.5 → 0.5–0.6 ms, the tick 3.9–4.3 → 3.0–3.5 ms (the agent's three
   alternating rounds and the lead's two; other Godot processes ran during both). It replays itself exactly; with the
   switch off the baseline hash holds; 124 of 124 movement and collision tests pass with it on; the game runs without
-  the library. **The owner decides whether to port the rest** (OWNER_TODO).
+  the library. **The owner said "Yes, port the rest" (L17): Wave 7 in the PLAN, steps 50 to 55.**
 - **Not merged:** step 48 (`v0111-s48`, `14c6c93f`), the sim on its own thread, a switch off by default. Clean
   numbers: 4 %, 9 % and 15 % off the average frame in the three scenes, the 1 % lows unchanged, one rendered frame
   of delay, one e2e fails with it on. **The owner decides** (OWNER_TODO).
@@ -186,3 +186,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   Studio, so `native/SConstruct` takes the compiler's environment from `vcvars64.bat`; the bindings are built against
   the API dumped from the engine binary; a clean build takes 3.5 min. A tracked `.gdextension` without its library
   prints an ERROR on every start (CI fails the import on that), so it is written by the build from a tracked `.in`.
+- 2026-11-10 (owner): "Yes, port the rest" (L17). Wave 7 written into the PLAN; steps 50 (the permanent build) and 51
+  (the design) started. Steps 37 and 38 are paused until the flip; step 36 rides with it.
