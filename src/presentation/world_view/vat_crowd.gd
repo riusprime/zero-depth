@@ -104,8 +104,11 @@ func add(root: Node3D, facing: Node3D, avatar: AvatarBase, outline: Color, shado
 		(_shadows[kind]["entries"] as Array).append([root, facing, avatar])
 
 
-## The rest-pose shadow stand-in of `kind` (EnemyShadows': the same mesh a node enemy casts with).
+## The rest-pose shadow stand-in of `kind` (EnemyShadows': the same mesh a node enemy casts with). Once made it is
+## shared, and no reference avatar is built again: that build (a whole model, posed) stalled a kind's first spawn.
 static func shadow_mesh(kind: int) -> ArrayMesh:
+	if EnemyShadows.has_proxy(kind):
+		return EnemyShadows.proxy_mesh(kind, null)
 	var ref := VatBake.reference_of(kind, Color(0, 0, 0, 0), 0.0)
 	var mesh := EnemyShadows.proxy_mesh(kind, ref)
 	ref.free()
@@ -333,10 +336,12 @@ static func _zero_drives(texels: int) -> ImageTexture:
 
 
 ## ShaderWarmup: one still instance of `kind` in this look, so its shader variant compiles behind the
-## loading cover (and its bake is made there).
+## loading cover (and its bake and its proxy shadow's mesh are made there).
 static func warm_proxy(
 	kind: int, tint: Color, role_glow: float, outline: Color
 ) -> MultiMeshInstance3D:
+	if ViewPrefs.enemy_shadows == "proxy":
+		shadow_mesh(kind)
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true

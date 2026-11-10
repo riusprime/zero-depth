@@ -86,6 +86,10 @@ const VAT_DRIVES := [
 	[0.0, 0.0, false],
 ]
 
+## The chamfered boxes and prisms made so far, by their sizes: every avatar asking for the same one gets the same mesh,
+## so a spawn builds and uploads none (building them was most of a code-built enemy's spawn).
+static var _chamfered := {}
+
 ## Parts, read by tests and by ActorViews (flash materials).
 var body: Node3D
 var barrel: Node3D
@@ -511,8 +515,16 @@ func _piece(parent: Node3D, mesh: Mesh, at: Vector3, c: Color) -> MeshInstance3D
 
 
 ## A box with bevelled edges and cut corners, centred on the origin, flat-shaded. With `bulge` each of the six faces
-## is a shallow pyramid whose centre stands that far out, so its four triangles catch the light differently.
+## is a shallow pyramid whose centre stands that far out, so its four triangles catch the light differently. Shared:
+## nobody changes the mesh it returns.
 static func _chamfer_box(size: Vector3, bevel: float, bulge: float = 0.0) -> ArrayMesh:
+	var key := [size, bevel, bulge]
+	if not _chamfered.has(key):
+		_chamfered[key] = _build_chamfer_box(size, bevel, bulge)
+	return _chamfered[key]
+
+
+static func _build_chamfer_box(size: Vector3, bevel: float, bulge: float) -> ArrayMesh:
 	var h := size * 0.5
 	var b := minf(bevel, minf(h.x, minf(h.y, h.z)) * 0.95)
 	var tris := []
@@ -563,8 +575,16 @@ static func _chamfer_box(size: Vector3, bevel: float, bulge: float = 0.0) -> Arr
 	return _mesh_from(tris)
 
 
-## A flat-shaded prism along Z (a joint pin): `sides` sides of circumradius r, `length` long, centred.
+## A flat-shaded prism along Z (a joint pin): `sides` sides of circumradius r, `length` long, centred. Shared like
+## _chamfer_box's.
 static func _prism(r: float, length: float, sides: int) -> ArrayMesh:
+	var key := [&"prism", r, length, sides]
+	if not _chamfered.has(key):
+		_chamfered[key] = _build_prism(r, length, sides)
+	return _chamfered[key]
+
+
+static func _build_prism(r: float, length: float, sides: int) -> ArrayMesh:
 	var tris := []
 	var z := length * 0.5
 	for k in sides:
