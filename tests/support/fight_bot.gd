@@ -3,6 +3,8 @@ extends RefCounted
 ## A seeded scripted player that fights (v0.3.0 O), for the readable-cause check and the bench, like ScriptedInput
 ## but aimed: it walks at the nearest enemy, swings when close, shoots otherwise, strafes, dashes and uses its
 ## utility now and then. It reads the world only to choose its input; the choices come from its own stream.
+## Test and tool code (v0.11.1 Step 16, audit D7): it moved here from src/sim/world/, so it no longer ships in the
+## game; the tests and the scripts/ benches and checks that drive a fight use it.
 
 ## How close (m) it swings instead of shooting.
 const SWING_RANGE := 2.4

@@ -108,7 +108,7 @@ src/
     camera/      iso rig, follow, shake, occlusion
     input/       device tracker, mouse ground-plane aim, prompt glyphs
     hud/  menus/  theme/  audio/  vfx/
-  app/           main.tscn, main.gd (the composition root), sim_driver.gd, stage_scenario.gd, galleries/
+  app/           main.tscn, main.gd (the composition root), sim_driver.gd, galleries/
   debug/         dev_panel, event_chain_inspector, debug_event_log, debug_time_controller, galleries/
 scripts/
   sim/           gen_trig_lut.gd, kernel_smoke.gd, encounter_sim.gd, run_sim.gd, policies/
@@ -123,6 +123,8 @@ data/
 locale/strings.csv
 tests/
   unit/ arch/ golden/ gen/ content/ e2e/ export/ support/
+  support/       test and tool helpers that never ship (FightBot, StageScenario, ComboCard, the labs); scripts/ use
+                 them too. KernelScenario and ScriptedInput stay in src/sim/world/: the export smoke runs them in the pack
 docs/ (this kit)
 ```
 

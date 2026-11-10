@@ -1,7 +1,8 @@
 class_name StageScenario
 extends RefCounted
 ## The Combat Lab room (v0.1.0): the v0.0.1 showcase walls and an encounter of waves. Spawn slots ring the room
-## (any slot inside a wall is dropped).
+## (any slot inside a wall is dropped). Test and tool code (v0.11.1 Step 16, audit D7): it moved here from
+## src/app/, so it no longer ships in the game; sim tests and the boss shot scripts build their lab room with it.
 
 const ARENA_HALF := 10.0
 const SLOT_RING := 7.8
