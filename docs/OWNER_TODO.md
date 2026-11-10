@@ -4,12 +4,8 @@ Only what is **still open**: tests, decisions and art. Anything you answered or 
 answers live in [`roadmap/v0.8.0/PLAN.md`](roadmap/v0.8.0/PLAN.md) (owner lines O39–O50 and "Owner decisions"). Last
 rewritten 2026-10-16 from your annotated copy, v0.8.0 (branch `claude/lucid-fermat-9wv2tf`).
 
-- [ ] **v0.11.1, install the C++ build tools for the native spike (step 49, 2026-11-10; you offered):**
-  1. **Visual Studio Build Tools 2022** (free, from Microsoft's Visual Studio downloads page, "Tools for Visual
-     Studio" → "Build Tools for Visual Studio 2022"). In its installer tick the workload **"Desktop development with
-     C++"** and keep its defaults (MSVC v143 and the Windows 11 SDK). About 6–8 GB.
-  2. Nothing else by hand: the lead installs SCons with pip and fetches `godot-cpp` (Godot's official C++ bindings)
-     for the engine version, once you say the build tools are in.
+- [ ] **v0.11.1, playtest the native core when it flips (step 54; `OWNER ONLY`):** do fights feel the same? You said
+  "Yes, port the rest" on 2026-11-10; nothing changes in your game until the flip, and I will tell you when.
 - [ ] **v0.11.1, the sim on its own thread: keep it? (step 48, measured 2026-11-10).** On a quiet machine, with the
   switch on the average frame is 4 % shorter at 20 enemies, 9 % at 60 with a heavy build and 15 % at 120 swarmers
   (25.2 → 21.5 ms); the 1 % lows do not change

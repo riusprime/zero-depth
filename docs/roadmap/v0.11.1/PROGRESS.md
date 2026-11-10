@@ -17,12 +17,19 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   average frame is 20–31 % shorter (20 enemies 14.8 → 10.2 ms; 60 heavy 36.7 → 27.7 ms; 120 swarmers 29.6 → 23.8 ms),
   the 1 % lows in the horde scenes about doubled (10 → 20 fps), the tick at 120 enemies 4.26 → 3.09 ms. **Every
   target is still missed** (horde tick 4.14 ms against 4; stress 3.31 against 2; no horde frame under 6.94 ms).
+- **The native spike works (step 49, `v0111-s49`, `3b3587b7`, not merged, off by default):** enemy separation and
+  walls in C++ through GDExtension. At 120 enemies the ported work goes from about 0.77 ms to 0.04 ms a tick (about
+  20×; 35–70× in the isolated benchmark), `move` 1.3–1.5 → 0.5–0.6 ms, the tick 3.9–4.3 → 3.0–3.5 ms (the agent's three
+  alternating rounds and the lead's two; other Godot processes ran during both). It replays itself exactly; with the
+  switch off the baseline hash holds; 124 of 124 movement and collision tests pass with it on; the game runs without
+  the library. **The owner said "Yes, port the rest" (L17): Wave 7 in the PLAN, steps 50 to 55.**
 - **Not merged:** step 48 (`v0111-s48`, `14c6c93f`), the sim on its own thread, a switch off by default. Clean
   numbers: 4 %, 9 % and 15 % off the average frame in the three scenes, the 1 % lows unchanged, one rendered frame
   of delay, one e2e fails with it on. **The owner decides** (OWNER_TODO).
 - **Next:** step 35 (the sim's old-save code; it does not depend on the native question). **Steps 36 to 38 wait**
   for the native spike (step 49, owner L16): a native core changes where the world's state lives, and the goldens are
-  re-recorded from it anyway. The spike waits on the owner installing the C++ build tools (OWNER_TODO).
+  re-recorded from it anyway. **With agents:** the spike (the owner installed Visual Studio Community 2026, MSVC
+  14.52; SCons and `godot-cpp` are set up beside the repo) and step 35.
 - **Pushed:** `claude/v0110` up to the docs commit after `930485be` (steps 47, 32 and the shard fix included), and the
   tag `archive/scripts-2026-11`.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
@@ -167,3 +174,17 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   we can"); the owner will install the toolchain. The lead recommended C++ through GDExtension and starts with a
   spike (step 49). Kept on purpose: the sim stays deterministic against itself, and tests run before a push.
 - 2026-11-10 (lead): seams on `930485be`: 697/697 (1,117 s of tests, 1,326 s wall). Pushed.
+- 2026-11-10 (lead): tried Godot's separate render thread (`--render-thread separate`, no project change) on
+  `930485be`: not usable as the game is. 20 enemies: avg 17.96 ms and 1 % low 8.8 fps against 9.92 ms and 42.0 fps on
+  the default; the 60-enemy heavy scene hung (the owner saw the frozen window; the lead killed it). The log shows why
+  it is slower: per-frame questions to the renderer each force a wait (`particles_is_inactive` 1,085 times in 20 s,
+  `mesh_get_surface` 175, shader parameter lists 249; the probe's own GPU timer 1,108). The owner's Visual Studio
+  install ran at the same time. Parked.
+- 2026-11-10 (owner): installed the C++ build tools (Visual Studio Community 2026) and restarted the PC; nothing of
+  the lead's was running. Steps 49 (the native spike) and 35 started.
+- 2026-11-10 (lead): step 49 reported and re-run by the lead. Build: SCons 4.11.1 does not find a prerelease Visual
+  Studio, so `native/SConstruct` takes the compiler's environment from `vcvars64.bat`; the bindings are built against
+  the API dumped from the engine binary; a clean build takes 3.5 min. A tracked `.gdextension` without its library
+  prints an ERROR on every start (CI fails the import on that), so it is written by the build from a tracked `.in`.
+- 2026-11-10 (owner): "Yes, port the rest" (L17). Wave 7 written into the PLAN; steps 50 (the permanent build) and 51
+  (the design) started. Steps 37 and 38 are paused until the flip; step 36 rides with it.
