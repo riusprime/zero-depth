@@ -211,7 +211,11 @@ void ZdWorld::_bind_methods() {
 
 	// slot: ai
 
-	// slot: nav
+	// The flow field's flood (zd_nav.cpp)
+	ClassDB::bind_method(D_METHOD("set_nav_extra", "extra"), &ZdWorld::set_nav_extra);
+	ClassDB::bind_method(D_METHOD("nav_flood", "seeds", "max_steps", "targets"), &ZdWorld::nav_flood);
+	ClassDB::bind_method(D_METHOD("nav_dist"), &ZdWorld::nav_dist);
+	ClassDB::bind_method(D_METHOD("nav_directions", "xy"), &ZdWorld::nav_directions);
 
 	// slot: shots
 

@@ -1283,21 +1283,29 @@ func flood_nav() -> void:
 	var targets := _nav_targets()
 	if targets.is_empty():
 		return  # nobody reads the field; the first flood with enemies about runs (the key is the old one)
-	nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS, targets)
+	nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS, targets, _nav_kernel())
 
 
 ## The periodic flood, from the player's cell and the enemies' cells of this tick,
 ## built over NavField.SLICES ticks (NavField.begin_build; World.step advances it) and swapped in when done, so the
 ## field enemies follow is up to that many ticks older. Skipped by flood's rules; a field not yet flooded since its
-## build floods at once (the floor's first flood: enemies never walk an empty field).
+## build floods at once (the floor's first flood: enemies never walk an empty field). With the native flood on
+## (NativeNav) the flood runs whole on its tick instead: the field is never older than its flood tick.
 func _begin_nav_flood() -> void:
 	var targets := _nav_targets()
 	if targets.is_empty():
 		return
-	if nav.never_flooded():
+	if (native_on & NativeWorld.NAV) != 0:
+		nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS, targets, native)
+	elif nav.never_flooded():
 		nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS, targets)
 	else:
 		nav.begin_build(player_pos(), NavField.WORLD_FLOOD_STEPS, targets)
+
+
+## The native side when its flood is on (NativeNav), else null: NavField.flood's `kernel`.
+func _nav_kernel() -> Object:
+	return native if (native_on & NativeWorld.NAV) != 0 else null
 
 
 ## The live enemies' cells (NavField.target_cell), the flood's targets.

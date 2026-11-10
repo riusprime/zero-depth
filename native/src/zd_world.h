@@ -37,7 +37,7 @@
 
 // slot: ai (#include "zd_ai.h")
 
-// slot: nav (#include "zd_nav.h")
+#include "zd_nav.h"
 
 // slot: shots (#include "zd_shots.h")
 
@@ -75,6 +75,7 @@ struct NavGrid {
 	std::vector<int32_t> adj_start, adj;
 	std::vector<uint8_t> adj_w;
 	std::vector<int32_t> dist;
+	std::vector<uint8_t> extra; // NavField.extra: empty, or a byte a cell (1: blocked for a while)
 	bool ready = false;
 };
 
@@ -143,7 +144,16 @@ public:
 
 	// slot: ai (think, move; zd_ai.cpp)
 
-	// slot: nav (nav_flood, direction; zd_nav.cpp)
+	// The flow field's flood (zd_nav.cpp, NavField.flood whole in one call). The grid comes by set_nav_grid, its extra
+	// cells (NavField.extra, empty for none) by set_nav_extra. nav_flood floods from `seeds` (NavField._seeds' flat
+	// cell, distance pairs) with NavField's bound and targets into the cache's distances, and returns the work, or
+	// -1 - the work when it stopped at its targets with cells still queued. nav_dist hands the distances back. A
+	// kernel that steers by the field calls nav::direction (zd_nav.h) on nav_.
+	void set_nav_extra(const godot::PackedByteArray &extra);
+	int64_t nav_flood(const godot::PackedInt32Array &seeds, int64_t max_steps, const godot::PackedInt32Array &targets);
+	godot::PackedInt32Array nav_dist() const;
+	// Probe: NavField.direction at each (x, y) pair, on the cache's grid and distances.
+	godot::PackedFloat32Array nav_directions(const godot::PackedFloat32Array &xy) const;
 
 	// slot: shots (sweep_shots, sweep_one; zd_shots.cpp)
 
@@ -168,7 +178,7 @@ private:
 
 	// slot: ai (AiScratch ai_;)
 
-	// slot: nav (NavScratch nav_scratch_;)
+	nav::Scratch nav_scratch_;
 
 	// slot: shots (ShotsScratch shots_;)
 
