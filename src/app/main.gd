@@ -468,7 +468,7 @@ func _floor_live(nodes: Dictionary) -> void:
 	view.visible = true
 	view.rig.shake_enabled = GameSettings.get_value(profile, "shake") == "on"
 	view.ink.set_style(InkPass.style_from_setting(GameSettings.get_value(profile, "outline")))
-	var player_input := PlayerInput.new(view.rig, driver.reader)
+	var player_input := PlayerInput.new(view.rig, driver.reader, AimAssist.make(plan.repo, profile))
 	player_input.name = "PlayerInput"
 	view.add_child(player_input)
 	driver.input_source = player_input.sample

@@ -254,7 +254,11 @@ func _build_section(id: StringName) -> VBoxContainer:
 			_cycler(box, "UI_LIGHTING", "lighting", StageView.LIGHTING_QUALITIES)
 			_cycler(box, "UI_EFFECTS_DENSITY", "effects_density", GameSettings.EFFECTS_DENSITIES)
 		&"controls":
+			var assist := _cycler(box, "UI_AIM_ASSIST", AimAssist.SETTING, ["on", "off"])
 			_controls(box)
+			# Down from the full-width switch lands on the keyboard column, where the list starts.
+			var first: Control = bind_buttons["%s/%s" % [InputRebind.ACTIONS[0], InputRebind.KBM]]
+			assist.focus_neighbor_bottom = assist.get_path_to(first)
 		&"accessibility":
 			_cycler(box, "UI_SHAKE", "shake", ["on", "off"])
 			_cycler(box, "UI_REDUCED_MOTION", "reduced_motion", ["off", "on"])
