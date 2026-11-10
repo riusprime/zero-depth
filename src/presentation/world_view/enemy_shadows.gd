@@ -37,6 +37,11 @@ static func cached_kinds() -> int:
 	return _cache.size()
 
 
+## Whether `kind`'s proxy mesh is made (proxy_mesh then needs no host).
+static func has_proxy(kind: int) -> bool:
+	return _cache.has(kind)
+
+
 ## Gives the actor `root` (its parts under `facing`; `host` the avatar, or the facing for a model without one) its
 ## shadow in `mode`, after turning off every visible part's own. Returns the stand-in node (null if none).
 static func apply(

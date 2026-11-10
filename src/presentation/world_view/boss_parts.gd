@@ -8,6 +8,11 @@ extends RefCounted
 
 const FACET_TINT := 0.14
 
+## The rocks, blocks, crystals, orbs and tubes made so far, by their arguments. They are fixed (no RNG) and nobody
+## changes one, so every model asking for the same piece shares its mesh: a spawn of a code-built enemy builds and
+## uploads none (building them was most of its spawn).
+static var _made := {}
+
 var body_materials: Array[StandardMaterial3D] = []
 var glow_materials: Array[StandardMaterial3D] = []
 
@@ -133,6 +138,13 @@ static func ngon(sides: int, half: bool = false) -> PackedVector2Array:
 
 ## A chunky faceted boulder: a rounded 7-sided block, its rings turned and nudged so the facets break unevenly.
 static func rock(size: Vector3, salt: int) -> ArrayMesh:
+	var key := [&"rock", size, salt]
+	if not _made.has(key):
+		_made[key] = _rock(size, salt)
+	return _made[key]
+
+
+static func _rock(size: Vector3, salt: int) -> ArrayMesh:
 	var levels := [
 		[-0.5, 0.22, 0.22],
 		[-0.4, 0.42, 0.42],
@@ -150,6 +162,13 @@ static func rock(size: Vector3, salt: int) -> ArrayMesh:
 
 ## A chamfered box (an octagon section with bevelled top and bottom): armour plates, hulls, feet.
 static func block(size: Vector3, salt: int, bevel: float = 0.18) -> ArrayMesh:
+	var key := [&"block", size, salt, bevel]
+	if not _made.has(key):
+		_made[key] = _block(size, salt, bevel)
+	return _made[key]
+
+
+static func _block(size: Vector3, salt: int, bevel: float) -> ArrayMesh:
 	var s := PackedVector2Array()
 	var e := 0.5 - bevel * 0.5
 	for p in [
@@ -172,6 +191,13 @@ static func block(size: Vector3, salt: int, bevel: float = 0.18) -> ArrayMesh:
 
 ## A pointed crystal spike, `h` tall and `r` wide at its base (5 sides, its tip a little off-centre).
 static func crystal(h: float, r: float, salt: int) -> ArrayMesh:
+	var key := [&"crystal", h, r, salt]
+	if not _made.has(key):
+		_made[key] = _crystal(h, r, salt)
+	return _made[key]
+
+
+static func _crystal(h: float, r: float, salt: int) -> ArrayMesh:
 	var lean := (noise(salt) - 0.5) * 0.3
 	var levels := [[0.0, 0.8, 0.8], [0.25, 1.0, 1.0], [1.0, 0.02, 0.02, lean]]
 	return loft(ngon(5, salt % 2 == 1), levels, Vector3(r, h, r), salt, 0.18)
@@ -179,6 +205,13 @@ static func crystal(h: float, r: float, salt: int) -> ArrayMesh:
 
 ## A low-poly ball (`rings` bands of `sides`), an egg or a joint.
 static func orb(radius: float, salt: int, sides: int = 7, bands: int = 5) -> ArrayMesh:
+	var key := [&"orb", radius, salt, sides, bands]
+	if not _made.has(key):
+		_made[key] = _orb(radius, salt, sides, bands)
+	return _made[key]
+
+
+static func _orb(radius: float, salt: int, sides: int, bands: int) -> ArrayMesh:
 	var levels := []
 	for k in bands + 1:
 		var a := PI * float(k) / bands - PI * 0.5
@@ -189,6 +222,13 @@ static func orb(radius: float, salt: int, sides: int = 7, bands: int = 5) -> Arr
 
 ## A faceted tube along +X (an octagon section): a cannon barrel or a mortar tube, length `l`, radius `r`.
 static func tube(l: float, r: float, salt: int, sides: int = 8) -> ArrayMesh:
+	var key := [&"tube", l, r, salt, sides]
+	if not _made.has(key):
+		_made[key] = _tube(l, r, salt, sides)
+	return _made[key]
+
+
+static func _tube(l: float, r: float, salt: int, sides: int) -> ArrayMesh:
 	var m := loft(ngon(sides, true), [[0.0, 1.0, 1.0], [1.0, 1.0, 1.0]], Vector3(r, l, r), salt)
 	return _turned(m, Basis(Vector3(0, 0, 1), -PI * 0.5))
 

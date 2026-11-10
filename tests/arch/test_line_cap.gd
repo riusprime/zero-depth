@@ -19,7 +19,6 @@ const EXEMPT := {
 	"the enemy behaviours; its view telegraphs move out when next touched",
 	"res://src/presentation/world_view/fireball_views.gd":
 	"shrinks with v0.11.1 step 42 (the shared pool helper)",
-	"res://src/presentation/world_view/actor_views.gd": "shrinks with v0.11.1 steps 26 and 39",
 	"res://src/presentation/world_view/horde_avatar.gd":
 	"shrinks with v0.11.1 step 42 (the avatar base)",
 	"res://scripts/balance/progression_audit.gd": "a one-file balance tool, not game code",

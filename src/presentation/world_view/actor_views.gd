@@ -1,4 +1,3 @@
-# gdlint: disable=max-file-lines
 class_name ActorViews
 extends Node3D
 ## One node per live actor and projectile, keyed by entity id. Transforms are written right after each sim
@@ -73,6 +72,8 @@ var vat_crowd: VatCrowd
 ## The horde critters, drawn with no node each (CritterCrowd; made with the
 ## first sync). actor_node() is null for a critter; flash, hold_flash and set_tint reach it by id.
 var critters: CritterCrowd
+## The disc, rings and bar every actor wears, shared per size and colour (a spawn builds none of them).
+var shared_parts := ActorParts.new()
 var _actors := {}
 var _projectiles := {}
 var _proj_last := {}
@@ -125,6 +126,7 @@ func sync(reader: WorldReader) -> void:
 		var node: Node3D = _actors.get(id)
 		var fresh := node == null
 		if fresh:
+			var t_sp := PerfMarks.start()
 			node = _make_actor(
 				reader.actor_kind(i), reader.actor_team(i) == 0, reader.actor_radius(i)
 			)
@@ -136,6 +138,7 @@ func sync(reader: WorldReader) -> void:
 				tint_greys(node, VariantLooks.cast(reader.actor_kind(i), enemy_tint))  # A variant's own
 				lift_model(node, WorldReader.body_kind(reader.actor_kind(i)))  # v0.11.0 F2
 				role_glow(node, WorldReader.body_kind(reader.actor_kind(i)), role_glow_energy)  # v0.8.0 N1
+			PerfMarks.add(&"actors.spawn", t_sp)  # Building new actors' nodes (a horde's top-up)
 		var at := reader.actor_pos(i)
 		var pos := SimPlane.to_3d(at)
 		for g in grounds:
@@ -166,7 +169,9 @@ func sync(reader: WorldReader) -> void:
 	var critters_gone := crowd.sync(reader, latched)
 	PerfMarks.add(&"actors.critters", t_cc)
 	if critters_gone > 0 or _actors.size() + crowd.count() != alive.size():
+		var t_dr := PerfMarks.start()
 		_drop_missing(_actors, alive)
+		PerfMarks.add(&"actors.drop", t_dr)
 		bar_chunks.keep_only(alive)
 		# A removed actor's flash and glow go with it (bounded).
 		for d: Dictionary in [_flash, _flash_hold, _shown, _anim_on, _parts]:
@@ -558,13 +563,6 @@ func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 				node.queue_free()
 
 
-func _unshaded(c: Color) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = c
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	return m
-
-
 ## Pulls an actor's grey and bone body materials (saturation under GREY_SATURATION, untextured) toward
 ## `tint` by its alpha. Each avatar builds its own materials, so no other actor or biome is touched.
 static func tint_greys(node: Node3D, tint: Color) -> void:
@@ -650,33 +648,6 @@ func _piece(parent: Node3D, size: Vector3, at: Vector3, c: Color, _team_c: Color
 	root.set_meta(&"mats", mats)
 
 
-## The contact disc (a dark disc under the actor) and the team ring decal (identity never depends on body hue alone).
-func _add_rings(root: Node3D, radius: float, team_color: Color) -> void:
-	var contact := MeshInstance3D.new()
-	var disc := CylinderMesh.new()
-	disc.top_radius = radius + 0.1
-	disc.bottom_radius = radius + 0.1
-	disc.height = 0.01
-	contact.mesh = disc
-	var shadow := _unshaded(Color(outline_color, 0.55))
-	shadow.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	contact.material_override = shadow
-	contact.position.y = 0.006
-	contact.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	root.add_child(contact)
-	# Team ring decal: identity never depends on body hue alone.
-	var ring := MeshInstance3D.new()
-	var torus := TorusMesh.new()
-	torus.inner_radius = radius + 0.16
-	torus.outer_radius = radius + 0.24
-	ring.mesh = torus
-	ring.scale = Vector3(1, 0.08, 1)
-	ring.material_override = _unshaded(team_color)
-	ring.position.y = 0.02
-	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	root.add_child(ring)
-
-
 func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 	# A biome variant is drawn as its base's body (VariantLooks), never by the VAT crowd (p_kind).
 	var kind := WorldReader.body_kind(p_kind)
@@ -686,7 +657,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 	# A horde critter has neither the contact disc nor the team
 	# ring (its body and its shadow only: two draws fewer each, in a crowd of up to the surge's cap).
 	if not CritterBodies.is_critter(kind):
-		_add_rings(root, radius, team_color)
+		shared_parts.add_rings(root, radius, team_color, outline_color)
 	# The body turns with the actor's facing (+X is the front).
 	var facing := Node3D.new()
 	root.add_child(facing)
@@ -707,18 +678,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"enemy_avatar", avatar)
 			root.set_meta(&"mats", avatar.body_materials.duplicate())
 			height = ChargerAvatar.HEIGHT
-			var dazed := MeshInstance3D.new()
-			var dt := TorusMesh.new()
-			dt.inner_radius = 0.22
-			dt.outer_radius = 0.3
-			dazed.mesh = dt
-			dazed.material_override = _unshaded(ThemePalette.color(&"proj_hostile").lightened(0.3))
-			dazed.position.y = height + 0.35
-			dazed.scale = Vector3(1, 0.15, 1)
-			dazed.visible = false
-			dazed.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			root.add_child(dazed)
-			root.set_meta(&"dazed", dazed)
+			root.set_meta(&"dazed", shared_parts.add_dazed(root, height + 0.35))
 		WorldReader.KIND_WARDEN:
 			# The rock golem: its own node, animated in frame time.
 			height = 1.25
@@ -884,22 +844,8 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"blob", stand_in)
 	VariantLooks.dress(root, facing, p_kind)  # The Rubble Warden's crust (after the merge: it falls)
 	# Floating health bar, as in the reference; it shrinks toward its centre as HP drops.
-	var bar_root := Node3D.new()
-	bar_root.position = Vector3(0, height + 0.55, 0)
-	root.add_child(bar_root)
-	var bar := MeshInstance3D.new()
-	var quad := QuadMesh.new()
-	quad.size = Vector2(BAR_W, 0.07)
-	bar.mesh = quad
-	var bm := _unshaded(ThemePalette.color(&"player_bar" if is_player else &"enemy_bar"))
-	bm.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	bm.billboard_keep_scale = true
-	bm.no_depth_test = true
-	bar.material_override = bm
-	bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var pivot := Node3D.new()
-	pivot.add_child(bar)
-	bar_root.add_child(pivot)
+	var bar_c := ThemePalette.color(&"player_bar" if is_player else &"enemy_bar")
+	var pivot := shared_parts.add_bar(root, height + 0.55, bar_c)
 	root.set_meta(&"bar", pivot)
 	return root
 
