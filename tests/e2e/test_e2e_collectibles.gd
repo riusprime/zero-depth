@@ -21,11 +21,6 @@ func after_each() -> void:
 	TranslationServer.set_locale("en")
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func _front(w: World, at: Vector2) -> Vector2:
 	var f := w.floor_layout
 	return Gamble.front(at, f.door_approaches(f.room_of(at), 1.0)[0])
@@ -45,7 +40,7 @@ func test_a_find_in_a_run_is_kept_and_the_hub_shows_it() -> void:
 	await e.landed()
 	assert_eq(main.run.floor_index, FLOOR, "floor 2 continues")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	var w := e.world()
 	assert_true(w.shrine != null and w.shrine.kind == ShrineTable.Kind.BLOOD, "a Blood Shrine")

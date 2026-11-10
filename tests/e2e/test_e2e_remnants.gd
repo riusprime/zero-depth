@@ -10,11 +10,6 @@ func after_each() -> void:
 	Input.action_release(&"shoot")
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## TEST HELPER (labelled): the dev panel's NextMod until card `id` is chosen, then GrantMod.
 func _grant(e: E2e, main: Main, id: StringName) -> void:
 	var w := e.world()
@@ -23,9 +18,9 @@ func _grant(e: E2e, main: Main, id: StringName) -> void:
 		(main.driver.debug.mod_choice < 0 or w.item_tables[main.driver.debug.mod_choice].id != id)
 		and guard < 200
 	):
-		await _click(e, main, "NextMod")
+		await e.click_dev("NextMod")
 		guard += 1
-	await _click(e, main, "GrantMod")
+	await e.click_dev("GrantMod")
 	await e.frames(3)
 
 
@@ -36,7 +31,7 @@ func test_threadline_links_shots_with_threads_the_view_draws() -> void:
 	var w := e.world()
 	var reader: WorldReader = main.driver.reader
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await _grant(e, main, &"gun_threadline")
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)

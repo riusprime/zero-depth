@@ -6,11 +6,6 @@ extends GutTest
 const K := ActorStore.Kind
 
 
-func _click(e: E2e, main: Main, button_name: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button_name, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func _alive_enemies(w: World) -> int:
 	var n := 0
 	for i in range(1, w.actors.size()):
@@ -25,16 +20,16 @@ func test_an_arc_caster_casts_a_fan_of_three_plasma_balls_with_no_ground_line() 
 	await e.start_from_menu()
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(main.is_dev_panel_open())
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	assert_true(main.driver.debug.god, "God mode")
 	var choice := main.get_node("UI/DevPanel").find_child("EnemyChoice", true, false) as Label
 	for k in 64:  # a full lap (v0.11.0 O9: the critters; O13b-d: the signatures took it past 32)
 		if choice.text == tr("ENEMY_ARC_CASTER"):
 			break
-		await _click(e, main, "NextEnemy")
+		await e.click_dev("NextEnemy")
 		await e.frames(1)
 	assert_eq(choice.text, tr("ENEMY_ARC_CASTER"))
-	await _click(e, main, "SpawnEnemy")
+	await e.click_dev("SpawnEnemy")
 	await e.frames(3)
 	await e.tap(KEY_QUOTELEFT)  # close the panel: the run goes on
 	var w := e.world()

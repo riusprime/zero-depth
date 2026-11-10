@@ -15,11 +15,6 @@ func after_each() -> void:
 	TranslationServer.set_locale("en")
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## TEST HELPER (labelled): the dev panel's NextMod (or NextAbility) until card `code` is chosen, then its Grant.
 func _grant(e: E2e, main: Main, code: int) -> void:
 	var ability := code >= ABILITY_BASE
@@ -32,9 +27,9 @@ func _grant(e: E2e, main: Main, code: int) -> void:
 		)
 		if chosen == code:
 			break
-		await _click(e, main, "NextAbility" if ability else "NextMod")
+		await e.click_dev("NextAbility" if ability else "NextMod")
 		guard += 1
-	await _click(e, main, "GrantAbility" if ability else "GrantMod")
+	await e.click_dev("GrantAbility" if ability else "GrantMod")
 	await e.frames(3)
 
 
@@ -191,7 +186,7 @@ func test_a_held_wand_card_shows_lv_n_to_n_plus_1_and_its_pip() -> void:
 	var hud: Hud = main.get_node("UI/Hud")
 	var panel := hud.pick_panel()
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")  # TEST HELPER: the walk between rewards must not end the run
+	await e.click_dev("God")  # TEST HELPER: the walk between rewards must not end the run
 	await e.tap(KEY_QUOTELEFT)
 	# TEST HELPER (labelled, v0.9.5 CLV): every wand card has its default five levels here, so any altar offers a
 	# levelled one; the badge format of 1-level and 3-level cards is test_card_level_views.gd's job.
@@ -248,7 +243,7 @@ func test_a_later_loop_offers_a_held_card_past_its_max() -> void:
 	var hud: Hud = main.get_node("UI/Hud")
 	var panel := hud.pick_panel()
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")  # TEST HELPER: the walk between rewards must not end the run
+	await e.click_dev("God")  # TEST HELPER: the walk between rewards must not end the run
 	await e.tap(KEY_QUOTELEFT)
 	w.loop = 2  # TEST HELPER (labelled, as test_e2e_nemesis.gd): the run's second loop, so the caps are one higher
 	var found := await _find_wand_offer(e, w, reader, panel)

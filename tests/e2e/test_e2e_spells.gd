@@ -13,12 +13,6 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## The altar nearest the hero (its index), or -1.
 func _altar(w: World) -> int:
 	var best := -1
@@ -40,12 +34,12 @@ func test_a_spell_is_taken_at_an_altar_and_casts_by_itself_with_its_hud_square()
 	assert_true(Spells.pool(w).is_empty(), "no element card: no spell in the pool")
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)
-	await _click(e, main, "God")  # the walk is about the spell, not survival
+	await e.click_dev("God")  # the walk is about the spell, not survival
 	var guard := 0
 	while main.driver.debug.mod_choice != fire and guard < 300:
-		await _click(e, main, "NextMod")
+		await e.click_dev("NextMod")
 		guard += 1
-	await _click(e, main, "GrantMod")
+	await e.click_dev("GrantMod")
 	await e.frames(3)
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)

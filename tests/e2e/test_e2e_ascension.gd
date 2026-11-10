@@ -39,12 +39,6 @@ func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO
 	return done.call()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## Boots, starts a run and puts it on its last floor: TEST HELPER (labelled) sets the run's floor number to the
 ## last (walking three floors is test_e2e_run_flow's and test_e2e_portal's job), then F10 -> Restart floor (Enter on
 ## the focused button, as test_e2e_dev_master_panel) rebuilds the run's current floor from it.
@@ -79,7 +73,7 @@ func _to_the_devices(e: E2e, main: Main) -> bool:
 	assert_true(main.view.loop_device.is_sealed(), "both")
 	assert_null(main.get_node_or_null("UI/Hud/AscensionPanel"), "no choice panel any more")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(
@@ -89,7 +83,7 @@ func _to_the_devices(e: E2e, main: Main) -> bool:
 	if not sealed:
 		return false
 	await e.frames(30)
-	await _click(e, main, "KillBoss")
+	await e.click_dev("KillBoss")
 	await e.frames(3)
 	assert_true(main.driver.reader.portal_active(), "the portal is open")
 	await e.frames(10)

@@ -7,28 +7,23 @@ extends GutTest
 const TICKS := 5400
 
 
-func _click(e: E2e, main: Main, button_name: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button_name, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## Runs boss `id` until its hazard shows and arms.
 func _fight(id: StringName, look: StringName) -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu(&"gun")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	var choice := main.get_node("UI/DevPanel").find_child("BossChoice", true, false) as Label
 	var w := e.world()
 	var name := tr(w.boss_tables[BossLab.table_index(w, id)].name_key)
 	for k in 16:
 		if choice.text == name:
 			break
-		await _click(e, main, "NextBoss")
+		await e.click_dev("NextBoss")
 		await e.frames(1)
 	assert_eq(choice.text, name, "the panel names it")
-	await _click(e, main, "SpawnBoss")
+	await e.click_dev("SpawnBoss")
 	await e.frames(30)
 	var reader := main.driver.reader
 	var view := main.view.hazards

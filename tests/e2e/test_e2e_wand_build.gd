@@ -35,11 +35,6 @@ func after_each() -> void:
 	Input.action_release(&"ui_accept")
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func _pad(e: E2e, button: JoyButton) -> void:
 	await e.joy_button(button, true)
 	await e.joy_button(button, false)
@@ -100,7 +95,7 @@ func _four(e: E2e) -> Main:
 	await e.start_from_menu()
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	# v0.10.5 D1: Fire + Frost (Thermal Shock) in the replay
 	for id: StringName in [&"frost_core", &"blade_orbit", &"echo_slash", &"ember_core"]:
 		var guard := 0
@@ -111,11 +106,11 @@ func _four(e: E2e) -> Main:
 			)
 			and guard < 80
 		):
-			await _click(e, main, "NextMod")
+			await e.click_dev("NextMod")
 			guard += 1
-		await _click(e, main, "GrantMod")
+		await e.click_dev("GrantMod")
 		await e.frames(2)
-	await _click(e, main, "God")  # off again: God outlasts the panel now, and the replay below has no debug hooks
+	await e.click_dev("God")  # off again: God outlasts the panel now, and the replay below has no debug hooks
 	await e.tap(KEY_QUOTELEFT)  # the dev panel closes (and with it the debug hooks: the frames alone drive the sim)
 	await e.frames(2)
 	assert_eq(w.mod_slots.size(), 4, "four wand cards fill floor 1's wand")
@@ -367,8 +362,8 @@ func test_the_swap_at_eight_slots_fits_the_screen_and_inserts_with_the_pad() -> 
 	# v0.8.0 N11 (O69): the floor opens under the cover and the hero's arrival; the card is given before it landed.
 	assert_true(main.driver.reader.arriving(), "the grant comes while the hero is still arriving")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
-	await _click(e, main, "GrantMod")
+	await e.click_dev("God")
+	await e.click_dev("GrantMod")
 	await e.frames(3)
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(await e.landed(), "the Swap waiting never stops the arrival: the hero lands")

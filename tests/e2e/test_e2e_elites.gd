@@ -28,11 +28,6 @@ func _stick(e: E2e, x_axis: JoyAxis, y_axis: JoyAxis, dir: Vector2) -> void:
 	e.joy_axis(y_axis, -(dir.y - dir.x) * c)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## [run seed, elite room] for the first floor-4 world whose elite room the hero walks to without sealing anything.
 func _find() -> Array:
 	for s in range(FIRST_SEED, FIRST_SEED + TRIES):
@@ -79,7 +74,7 @@ func test_meet_an_elite_on_floor_4_and_kill_it() -> void:
 		return
 	await e.landed()
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	assert_eq(Elites.alive(w), 0, "no elite before you walk in")
 	var f := w.floor_layout

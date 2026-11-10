@@ -10,18 +10,13 @@ const BOSSES: Array[StringName] = [
 ]
 
 
-func _click(e: E2e, main: Main, button_name: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button_name, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_each_bosss_ground_attacks_are_styled_and_strike_in_3d() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(main.is_dev_panel_open())
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	for id in BOSSES:
 		if not main.is_dev_panel_open():
 			await e.tap(KEY_QUOTELEFT)
@@ -34,10 +29,10 @@ func test_each_bosss_ground_attacks_are_styled_and_strike_in_3d() -> void:
 		for k in 8:
 			if choice.text == name:
 				break
-			await _click(e, main, "NextBoss")
+			await e.click_dev("NextBoss")
 			await e.frames(1)
 		assert_eq(choice.text, name)
-		await _click(e, main, "SpawnBoss")
+		await e.click_dev("SpawnBoss")
 		await e.frames(2)
 		# v0.8.0 BP: the panel stays open through the fight: closing it drops its DebugApi and God with it
 		# (Main.toggle_dev_panel), and the bosses now kill in 2-5 hits, so the hero died by the third boss.
@@ -66,7 +61,7 @@ func test_each_bosss_ground_attacks_are_styled_and_strike_in_3d() -> void:
 		assert_true(styled, "%s: a ground attack drawn in its look" % id)
 		assert_true(struck, "%s: it struck in 3D" % id)
 		assert_gt(drawn, 0, "%s: the strike is drawn" % id)
-		await _click(e, main, "KillBoss")
+		await e.click_dev("KillBoss")
 		await e.frames(3)
 	await e.tap(KEY_QUOTELEFT)
 	for k in 240:  # every strike ends and gives its pieces back

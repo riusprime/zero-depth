@@ -36,12 +36,6 @@ func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO
 	return done.call()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_into_the_portal_and_out_on_floor_two() -> void:
 	var e := E2e.new(self)
 	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
@@ -54,7 +48,7 @@ func test_into_the_portal_and_out_on_floor_two() -> void:
 	)
 	assert_false(main.driver.reader.transit_holds())
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(
@@ -65,7 +59,7 @@ func test_into_the_portal_and_out_on_floor_two() -> void:
 	if not sealed:
 		return
 	await e.frames(30)
-	await _click(e, main, "KillBoss")
+	await e.click_dev("KillBoss")
 	await e.frames(3)
 	assert_true(main.driver.reader.portal_active(), "the portal is open")
 	# TEST HELPER (labelled): a known shard count to carry. Earning shards by input is test_e2e_rewards'.

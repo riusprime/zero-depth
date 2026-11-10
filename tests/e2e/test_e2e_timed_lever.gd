@@ -15,11 +15,6 @@ func after_each() -> void:
 	E2e.center_sticks()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_get_shut_inside_pull_the_lever_and_walk_out() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot(null, null, SEED)
@@ -32,7 +27,7 @@ func test_get_shut_inside_pull_the_lever_and_walk_out() -> void:
 	var f := w.floor_layout
 	assert_gte(w.timed.lever, 0, "and a lever inside")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	for k in 2:
 		assert_true(await e.walk_to(f.timed_switches[k], 0.6), "walked up to switch %d" % k)

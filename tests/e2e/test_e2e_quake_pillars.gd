@@ -9,28 +9,23 @@ extends GutTest
 const PILLAR := ObjectiveMarkers.GATEKEEPER_PILLAR
 
 
-func _click(e: E2e, main: Main, button_name: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button_name, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_the_gatekeepers_quake_pillars_rise_in_phase_2_and_the_hint_points_at_them() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu(&"gun")
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(main.is_dev_panel_open())
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	var choice := main.get_node("UI/DevPanel").find_child("BossChoice", true, false) as Label
 	var w := e.world()
 	var name := tr(w.boss_tables[BossLab.table_index(w, &"gatekeeper")].name_key)
 	for k in 16:
 		if choice.text == name:
 			break
-		await _click(e, main, "NextBoss")
+		await e.click_dev("NextBoss")
 		await e.frames(1)
 	assert_eq(choice.text, name, "the panel names the Gatekeeper")
-	await _click(e, main, "SpawnBoss")
+	await e.click_dev("SpawnBoss")
 	await e.frames(30)
 	var reader := main.driver.reader
 	var bid := reader.actor_id(reader.boss_index())

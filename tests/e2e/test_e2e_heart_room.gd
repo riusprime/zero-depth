@@ -36,12 +36,6 @@ func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO
 	return done.call()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## TEST HELPER (labelled): a profile whose Runic Stone learned r1-r10 and so r11.
 func _ten_lines() -> ProfileStore:
 	var p := ProfileStore.new("")
@@ -70,7 +64,7 @@ func _to_the_approach(e: E2e) -> Main:
 	var w := e.world()
 	var f := w.floor_layout
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	assert_true(await e.open_boss_door(), "E opened the boss door")
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(
@@ -78,7 +72,7 @@ func _to_the_approach(e: E2e) -> Main:
 	)
 	assert_true(sealed, "walked through the boss door")
 	await e.frames(30)
-	await _click(e, main, "KillBoss")
+	await e.click_dev("KillBoss")
 	await e.frames(12)
 	await e.tap(KEY_QUOTELEFT)  # the panel closes
 	var took: bool = await _walk(

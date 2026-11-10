@@ -35,12 +35,6 @@ func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO
 	return done.call()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## Normal enemies that arrived after event `after` (SPAWN of a live non-boss enemy).
 func _arrivals(w: World, after: int) -> int:
 	var n := 0
@@ -61,7 +55,7 @@ func test_out_through_the_boss_door_and_back_to_the_portal() -> void:
 	var f := w.floor_layout
 	var hud: Hud = main.get_node("UI/Hud")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	assert_true(main.driver.debug.god, "God mode for the walk")
 	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var walls_open := w.walls.size()
@@ -74,7 +68,7 @@ func test_out_through_the_boss_door_and_back_to_the_portal() -> void:
 		return
 	assert_eq(w.walls.size(), walls_open + 1, "the door is a wall during the fight")
 	await e.frames(30)
-	await _click(e, main, "KillBoss")
+	await e.click_dev("KillBoss")
 	await e.frames(3)
 	var reader := main.driver.reader
 	assert_false(w.boss_alive(), "Kill boss killed it")

@@ -22,11 +22,6 @@ func after_each() -> void:
 	E2e.center_sticks()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_turn_the_pillars_to_the_carving_and_walk_in() -> void:
 	var e := E2e.new(self)
 	var run := SaveLab.run_state(SEED, FLOOR, &"blade")
@@ -50,7 +45,7 @@ func test_turn_the_pillars_to_the_carving_and_walk_in() -> void:
 	assert_not_null(view, "the pillars and the carving are drawn")
 	assert_false(view.revealed, "the hidden room unseen")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	var t0 := -1
 	var presses := 0

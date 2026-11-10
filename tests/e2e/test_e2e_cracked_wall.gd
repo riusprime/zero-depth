@@ -15,11 +15,6 @@ func after_each() -> void:
 	E2e.center_sticks()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_break_the_cracked_wall_with_the_skill_and_walk_in() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot(null, null, SEED)
@@ -34,7 +29,7 @@ func test_break_the_cracked_wall_with_the_skill_and_walk_in() -> void:
 	assert_not_null(view, "the wall is drawn")
 	assert_false(view.revealed, "the hidden room unseen")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	var goal := CrackLab.before_wall(w, 1.4)
 	var to_wall := (f.door_centers[f.crack_door] - goal).normalized()

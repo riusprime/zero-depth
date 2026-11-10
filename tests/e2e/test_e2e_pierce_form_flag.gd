@@ -10,11 +10,6 @@ func after_each() -> void:
 	Input.action_release(&"pause")
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## TEST HELPER (labelled): the dev panel's NextMod until card `id` is chosen, then GrantMod.
 func _grant(e: E2e, main: Main, id: StringName) -> void:
 	var w := e.world()
@@ -23,9 +18,9 @@ func _grant(e: E2e, main: Main, id: StringName) -> void:
 		(main.driver.debug.mod_choice < 0 or w.item_tables[main.driver.debug.mod_choice].id != id)
 		and guard < 200
 	):
-		await _click(e, main, "NextMod")
+		await e.click_dev("NextMod")
 		guard += 1
-	await _click(e, main, "GrantMod")
+	await e.click_dev("GrantMod")
 	await e.frames(3)
 
 
@@ -60,7 +55,7 @@ func test_the_build_page_flags_pierce_once_the_lance_form_is_taken() -> void:
 	await e.start_from_menu(&"gun")
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await _grant(e, main, &"gun_pierce")
 	assert_true(
 		w.items_owned.has(AttackScenario.item_index(w.item_tables, &"gun_pierce")), "Pierce taken"

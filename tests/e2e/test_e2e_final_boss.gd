@@ -41,12 +41,6 @@ func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO
 	return done.call()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## As test_e2e_ascension: boots, starts a run, TEST HELPER (labelled) sets the run's floor to its last, F10 -> Restart
 ## floor rebuilds it.
 func _boot_on_last_floor(e: E2e) -> Main:
@@ -72,7 +66,7 @@ func _to_the_arena(e: E2e, main: Main) -> bool:
 	var w := e.world()
 	var f := w.floor_layout
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(
@@ -82,7 +76,7 @@ func _to_the_arena(e: E2e, main: Main) -> bool:
 	if not sealed:
 		return false
 	await e.frames(30)
-	await _click(e, main, "KillBoss")
+	await e.click_dev("KillBoss")
 	await e.frames(12)
 	var took: bool = await _walk(
 		e,
@@ -138,7 +132,7 @@ func test_the_ascension_portal_walks_into_the_final_boss_and_beats_it() -> void:
 	var avatar: Node = main.view.actors.actor_node(reader.actor_id(body)).get_meta(&"enemy_avatar")
 	assert_true(avatar is ColossusAvatar, "drawn as the Colossus")
 	await e.tap(KEY_QUOTELEFT)  # the dev panel again (a new world): God mode for the fight
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.frames(150)  # the arrival, then its rise
 	var bar := _hud(main).boss_bar
 	assert_true(bar.visible, "the boss bar shows")
@@ -150,7 +144,7 @@ func test_the_ascension_portal_walks_into_the_final_boss_and_beats_it() -> void:
 	)
 	assert_almost_eq(bar.hp_fraction(), 1.0, 0.01, "the Colossus's is full")
 	# The Colossus's segment ends: it shatters.
-	await _click(e, main, "KillBoss")
+	await e.click_dev("KillBoss")
 	await e.frames(3)
 	assert_true(reader.final_shattering(), "it shatters")
 	assert_eq(bar.status_text(), tr("HUD_FINAL_SHATTER"), "the bar says so")
@@ -188,10 +182,10 @@ func test_the_ascension_portal_walks_into_the_final_boss_and_beats_it() -> void:
 	)
 	# The Prism's and the Nemesis's segments end: the run is won.
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.frames(130)
 	for phase in [1, 2]:
-		await _click(e, main, "KillBoss")
+		await e.click_dev("KillBoss")
 		frames = 0
 		while main.driver != null and main.driver.reader.final_phase() == phase and frames < 260:
 			await e.frames(1)

@@ -10,11 +10,6 @@ func after_each() -> void:
 	E2e.center_sticks()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_walk_into_a_crate_stop_break_it_and_walk_through() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot(null, null, SEED)
@@ -25,7 +20,7 @@ func test_walk_into_a_crate_stop_break_it_and_walk_through() -> void:
 	if b == null:
 		return
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	var tried := 0
 	var done := false

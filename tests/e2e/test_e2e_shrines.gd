@@ -20,11 +20,6 @@ func after_each() -> void:
 	E2e.center_sticks()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## Boots main.tscn on a save of run `seed_value`'s floor 2 (the hero at `hp`, -1: as built), continues it from the
 ## menu and turns God on from the dev panel.
 func _continue(e: E2e, seed_value: int, hp: int = -1) -> Main:
@@ -42,7 +37,7 @@ func _continue(e: E2e, seed_value: int, hp: int = -1) -> Main:
 	await main.loads.finished
 	assert_eq(main.run.floor_index, FLOOR, "floor 2 continues")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	return main
 

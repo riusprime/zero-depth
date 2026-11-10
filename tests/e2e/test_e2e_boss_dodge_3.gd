@@ -17,11 +17,6 @@ const DIRS := [
 ]
 
 
-func _click(e: E2e, main: Main, button_name: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button_name, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## The direction with the most room to walk out, away from the boss (a read of the walls, not an action).
 func _way_out(w: World, from: Vector2, boss: Vector2) -> Vector2:
 	var best := DIRS[0]
@@ -52,17 +47,17 @@ func test_the_siege_engine_fight_and_walking_out_of_a_locked_barrage_circle() ->
 	await e.start_from_menu()
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(main.is_dev_panel_open())
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	var choice := main.get_node("UI/DevPanel").find_child("BossChoice", true, false) as Label
 	var w := e.world()
 	var name := tr(w.boss_tables[BossLab.table_index(w, &"siege_engine")].name_key)
 	for k in 8:
 		if choice.text == name:
 			break
-		await _click(e, main, "NextBoss")
+		await e.click_dev("NextBoss")
 		await e.frames(1)
 	assert_eq(choice.text, name)
-	await _click(e, main, "SpawnBoss")
+	await e.click_dev("SpawnBoss")
 	await e.frames(2)
 	await e.tap(KEY_QUOTELEFT)
 	assert_false(main.is_dev_panel_open())

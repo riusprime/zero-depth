@@ -1,16 +1,4 @@
 extends GutTest
-## The Arc Caster and the Bomb Drone reach the real game (v0.3.5 AI; owner lines F5, F6). On a run they join the
-## spawner's mix at danger tiers 1 and 2 (30 s and 60 s in; tests/unit/sim/test_spawn_director.gd); here the dev
-## panel, opened with backtick and clicked with the mouse, brings each one in at once: its model appears, it winds
-## up a spell, and the spell lands on the player. v0.7.5 EF (owner N16): the bolts and the bomb draw nothing on the
-## ground now (a body cue, "cast", and the drone's fireball in the air, "lob"); the Arc Caster's rune keeps its circle.
-## God mode (also clicked) keeps the player standing; the hits still show as DAMAGE events (0 applied is fine: the
-## point is that the attack reached the player through the real loop).
-
-
-func _click(e: E2e, main: Main, button_name: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button_name, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
 
 
 func _spawned_kind(w: World, kind: int) -> int:
@@ -26,7 +14,7 @@ func test_the_dev_panel_brings_in_both_new_enemies_and_they_attack() -> void:
 	await e.start_from_menu()
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(main.is_dev_panel_open())
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	assert_true(main.driver.debug.god, "God mode")
 	var choice := main.get_node("UI/DevPanel").find_child("EnemyChoice", true, false) as Label
 	for spec in [
@@ -36,10 +24,10 @@ func test_the_dev_panel_brings_in_both_new_enemies_and_they_attack() -> void:
 		for k in 8:
 			if choice.text == tr(spec[1]):
 				break
-			await _click(e, main, "NextEnemy")
+			await e.click_dev("NextEnemy")
 			await e.frames(1)
 		assert_eq(choice.text, tr(spec[1]), "the panel names the %s" % spec[1])
-		await _click(e, main, "SpawnEnemy")
+		await e.click_dev("SpawnEnemy")
 		await e.frames(3)
 		var w := e.world()
 		var id := _spawned_kind(w, spec[0])

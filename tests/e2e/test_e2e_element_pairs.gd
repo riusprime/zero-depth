@@ -12,22 +12,17 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 ## Grants card `id` through the dev panel until it is Lv `lv` (NextMod to pick it, GrantMod to give it).
 func _grant(e: E2e, main: Main, id: StringName, lv: int) -> void:
 	var w := e.world()
 	var k := W.item(w, id)
 	var guard := 0
 	while main.driver.debug.mod_choice != k and guard < 300:
-		await _click(e, main, "NextMod")
+		await e.click_dev("NextMod")
 		guard += 1
 	var n := 0
 	while (not w.items_owned.has(k) or CardLevels.level(w, k) < lv) and n < 6:
-		await _click(e, main, "GrantMod")
+		await e.click_dev("GrantMod")
 		await e.frames(3)
 		n += 1
 
@@ -38,7 +33,7 @@ func test_fire_and_frost_at_level_3_wake_thermal_shock() -> void:
 	await e.start_from_menu(&"gun")
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await _grant(e, main, &"ember_core", 3)
 	await _grant(e, main, &"frost_core", 3)
 	await e.tap(KEY_QUOTELEFT)

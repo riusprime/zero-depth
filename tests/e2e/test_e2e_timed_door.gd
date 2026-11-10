@@ -18,11 +18,6 @@ func after_each() -> void:
 	E2e.center_sticks()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_press_both_switches_and_walk_in_before_the_timer() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot(null, null, SEED)
@@ -37,7 +32,7 @@ func test_press_both_switches_and_walk_in_before_the_timer() -> void:
 	assert_not_null(view, "the door and its switches are drawn")
 	assert_false(view.revealed, "the secret room unseen")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	for k in 2:
 		var at := f.timed_switches[k]

@@ -15,11 +15,6 @@ func after_each() -> void:
 		Input.action_release(a)
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func _pad(e: E2e, button: JoyButton) -> void:
 	e.joy_button(button, true)
 	await e.frames(1)
@@ -46,10 +41,10 @@ func test_walk_to_the_shop_buy_a_card_and_reroll() -> void:
 	assert_null(main.view.shop_terminal, "no terminal")
 	assert_eq(stall.vendor.biome, main.run_biome_id(), "the biome's vendor")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	while w.ability_tables[main.driver.debug.ability_choice].id != &"blink":
-		await _click(e, main, "NextAbility")
-	await _click(e, main, "GrantAbility")
+		await e.click_dev("NextAbility")
+	await e.click_dev("GrantAbility")
 	await e.frames(2)
 	await e.tap(KEY_QUOTELEFT)
 	var blink := Abilities.index_of_kind(w, AbilityTable.Kind.BLINK)
@@ -161,7 +156,7 @@ func test_rerolls_keep_sold_slots_and_four_buys_per_floor() -> void:
 	var w := e.world()
 	var hud: Hud = main.get_node("UI/Hud")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(
 		await e.walk_to(ShopPlacement.front(w.floor_layout), 0.4), "walked up to the counter"
@@ -231,7 +226,7 @@ func test_held_enter_on_reroll_rerolls_once() -> void:
 	var w := e.world()
 	var hud: Hud = main.get_node("UI/Hud")
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(
 		await e.walk_to(ShopPlacement.front(w.floor_layout), 0.4), "walked up to the counter"

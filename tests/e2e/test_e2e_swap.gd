@@ -1,14 +1,4 @@
 extends GutTest
-## v0.6.0 MX2 (owner B7: "if you don't like one you have a swap button for the next you get and you can decide which
-## one to swap"): through main.tscn and real input only. The dev panel (real clicks) fills the wand's slots (v0.6.5
-## WN1: four on floor 1, owner W6) with four wand cards (GrantMod), then grants an attack item: the Swap panel
-## opens over the play. The player picks the held modifier it replaces with the keyboard (1–8, Enter), the mouse (a
-## click) or the pad (d-pad, A), or skips (Esc, B). The HUD's four pips follow.
-
-
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
 
 
 ## Boots a Blade run, fills floor 1's four slots and grants an attack item: returns with the Swap panel open.
@@ -17,15 +7,15 @@ func _to_swap(e: E2e) -> Main:
 	await e.start_from_menu()
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	for k in 4:
-		await _click(e, main, "GrantMod")
+		await e.click_dev("GrantMod")
 		await e.frames(2)
 	assert_eq(w.mod_slots.size(), 4, "four wand cards fill floor 1's wand")
 	var hud: Hud = main.get_node("UI/Hud")
 	await e.frames(2)
 	assert_eq(hud.build_hud.filled_pips(), 4, "four pips on the HUD")
-	await _click(e, main, "GrantMod")
+	await e.click_dev("GrantMod")
 	await e.frames(3)
 	await e.tap(KEY_QUOTELEFT)  # the dev panel closes; the swap waits
 	await e.frames(2)
@@ -84,7 +74,7 @@ func test_swap_with_the_pad_and_skip() -> void:
 	assert_eq(w.mod_slots[2], code, "A swapped slot 3")
 	# A second one, skipped with B: the build stays as it is.
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "GrantMod")
+	await e.click_dev("GrantMod")
 	await e.frames(3)
 	await e.tap(KEY_QUOTELEFT)
 	await e.frames(2)

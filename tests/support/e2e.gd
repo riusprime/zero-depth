@@ -213,6 +213,13 @@ func world() -> World:
 	return main.driver.world if main.driver != null else null
 
 
+## Clicks a button of the dev panel (backtick) by its node name, with the mouse. The panel must be open.
+func click_dev(button: String) -> void:
+	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
+	test.assert_not_null(b, "the dev panel has %s" % button)
+	await click_at(b.get_global_rect().get_center())
+
+
 ## A left click at `pos` in viewport coordinates (move there, press, release), scaled like mouse_to.
 func click_at(pos: Vector2) -> void:
 	var scale := await _mouse_scale()

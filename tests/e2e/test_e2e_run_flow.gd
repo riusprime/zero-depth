@@ -37,12 +37,6 @@ func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO
 	return done.call()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	var e := E2e.new(self)
 	e.real_start = true  # v0.11.1 T1: the full path (the hub, the portal, the arrival)
@@ -62,7 +56,7 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_true(main.view.gate.is_sealed(), "the gate starts dark")
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(main.is_dev_panel_open())
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	assert_true(main.driver.debug.god, "a click on God mode turns it on")
 	# Leg 1: the nearest free altar (v0.3.0 E): walk up, E opens its 3-card pick, Enter takes the focused card.
 	var altar := E2e.nearest_reward(w, RewardStore.Kind.ALTAR)
@@ -125,7 +119,7 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_lt(main.view.boss_door.open_amount, 0.5, "and its slab is up")
 	assert_true(main.view.gate.is_sealed(), "the gate stays dark while the boss lives")
 	# The fight is C's: the dev panel's Kill boss stands in.
-	await _click(e, main, "KillBoss")
+	await e.click_dev("KillBoss")
 	await e.frames(3)
 	assert_false(w.boss_alive(), "Kill boss killed it")
 	assert_true(main.driver.reader.portal_active(), "the boss's death opens the portal")

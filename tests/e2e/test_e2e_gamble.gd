@@ -21,11 +21,6 @@ func after_each() -> void:
 	TranslationServer.set_locale("en")
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func _pad_x(e: E2e) -> void:
 	e.joy_button(JOY_BUTTON_X, true)
 	await e.frames(1)
@@ -62,8 +57,8 @@ func test_find_the_shrine_win_fail_and_spend_it_with_keyboard_and_pad() -> void:
 	# No God here: it outlasts the panel now, and a hero who can't be hurt is shoved off the shrine by the room's
 	# enemies for the whole test. The panel still opens and closes, so the walk starts on the tick it always did.
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
-	await _click(e, main, "God")
+	await e.click_dev("God")
+	await e.click_dev("God")
 	await e.tap(KEY_QUOTELEFT)
 	var front := Gamble.front(w.gamble_pos, layout.door_approaches(room, 1.0)[0])
 	assert_true(await e.walk_to(front, 0.35), "walked up to the shrine")

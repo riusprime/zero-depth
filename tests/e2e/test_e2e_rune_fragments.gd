@@ -143,12 +143,6 @@ func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO
 	return done.call()
 
 
-func _click(e: E2e, main: Main, button: String) -> void:
-	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
-	assert_not_null(b, "the dev panel has %s" % button)
-	await e.click_at(b.get_global_rect().get_center())
-
-
 func test_the_purple_portal_unlocks_the_void() -> void:
 	var profile := ProfileStore.new("")
 	assert_false(MetaProgress.portal_travelled(profile), "never travelled")
@@ -166,7 +160,7 @@ func test_the_purple_portal_unlocks_the_void() -> void:
 	if w.purple == null:
 		return
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "God")
+	await e.click_dev("God")
 	assert_true(await e.walk_to(f.purple_pos, 1.0), "walked to the dais")
 	await e.frames(2)
 	await e.tap(KEY_E)
@@ -182,7 +176,7 @@ func test_the_purple_portal_unlocks_the_void() -> void:
 	if not sealed:
 		return
 	await e.frames(30)
-	await _click(e, main, "KillBoss")
+	await e.click_dev("KillBoss")
 	await e.frames(BossFlow.PORTAL_FORM_TICKS + 8)
 	assert_true(main.driver.reader.gate_open(WorldReader.ROUTE_DEEP), "the Purple Portal is open")
 	var facing := Kin.dir(f.deep_portal_angle)
