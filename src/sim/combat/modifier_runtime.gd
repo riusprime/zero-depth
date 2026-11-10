@@ -183,12 +183,21 @@ static func advance(w: World) -> void:
 		Attacks.launch(w, spec, c)
 		if hook != "":
 			w.hook_chain.remove_at(w.hook_chain.size() - 1)
+	var pp := w.phase_probe  # The perf probe's sub-phases (null in play)
+	if pp != null:
+		pp.begin(&"rt.shots")
 	Remnants.advance(w)  # The remnants end, follow and activate
 	VoidShots.advance(w)  # The Void shots' aura and pull
 	WaveShots.advance(w)  # The Wave shots' bands (after the Void clears the waits that are over)
 	Wisps.advance(w)  # The wisps' own shots
+	if pp != null:
+		pp.end(&"rt.shots")
+		pp.begin(&"rt.runes")
 	RuneExplosion.advance(w)  # The rune bursts grow, hit and shove
 	RuneMods.advance(w)  # The rune cards' traps, rings, shrinking shields and shards
+	if pp != null:
+		pp.end(&"rt.runes")
+		pp.begin(&"rt.cards")
 	LaserMods.advance(w)  # The Laser's aim, targets, ramp, Echo's strikes and mines
 	BombMods.advance(w)  # The Bomb's waiting bombs, mines, echoes, bomblets and rings
 	VoidMods.advance(w)  # The Void's cap, the voids to open, the rings
@@ -196,6 +205,8 @@ static func advance(w: World) -> void:
 	GlaiveMods.advance(w)  # The Glaive's ghosts, small discs, rings and bound
 	WaveMods.advance(w)  # The Wave cards' ghosts, children, bends, stops, sways and bound
 	SeekerMods.advance(w)  # The Seekers' ghost darts, children, rings and bound
+	if pp != null:
+		pp.end(&"rt.cards")
 	_walk(w)
 	BladeForms.advance(w)  # Heavy's push, Orbit Blades, Parry Edge through the swing
 

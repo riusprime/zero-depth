@@ -80,7 +80,11 @@ static func overlevel_permille(w: World, idx: int, n: int) -> int:
 
 
 ## W3-P3: item `idx`'s overlevel multiplier now, per mille (the compile's and the forecast's one function).
+## With no overlevel room (loop 1, or no pacing table) every cap is max_level, so no card has an overlevel: 1000
+## without reading the item (every element hit of the hero asks).
 static func overlevel_now(w: World, idx: int) -> int:
+	if overlevel_room(w) <= 0:
+		return 1000
 	return overlevel_permille(w, idx, overlevels(w, idx))
 
 

@@ -352,9 +352,17 @@ static func advance(w: World) -> void:
 			continue
 		if s < w.ab.cd.size() and w.ab.cd[s] > 0:
 			w.ab.cd[s] -= 1
+	var pp := w.phase_probe  # The perf probe's sub-phases (null in play)
+	if pp != null:
+		pp.begin(&"ab.rings_fire")
 	ModifierAbilities.advance(w)  # Flame Trail's dash fire, the rings
 	ElementAbilities.advance_fire(w)
+	if pp != null:
+		pp.end(&"ab.rings_fire")
+		pp.begin(&"ab.runtime")
 	ModifierRuntime.advance(w)  # The queued launches (Twin Cast, delayed hooks), the walk's trail
+	if pp != null:
+		pp.end(&"ab.runtime")
 
 
 ## An ability's damage at `level`, rounded half up.
