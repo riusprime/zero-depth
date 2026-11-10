@@ -6,10 +6,10 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 (The lead keeps this block current at every push. Updated 2026-11-10.)
 
 - **Wave 1 under way (owner, 2026-11-10: "go for the full plan until finished").** Steps 1, 9 and 10 are done.
-  Steps 5 and 7 are merged; step 3 is with an agent (worktree `wt-s3`).
+  Steps 3, 5 and 7 are merged; steps 2 and 4 are with an agent (worktree `wt-s4`).
 - **The baseline:** seams took 3,442 s at `ee42eafa` (669/669); one test that is not a seam,
   `test_generation_holds_for_every_floor_over_a_thousand_seeds`, is 1,549.9 s of it.
-- **Next:** merge 3; then step 2 (seams runs seam tests only), 4, 8 and the re-measure (11). Step 6 (one boot
+- **Next:** merge 2 and 4; then step 8 and the re-measure (11). Step 6 (one boot
   per e2e file) is decided from a quiet re-time of the e2e files after step 5.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
 - **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
@@ -37,6 +37,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 | 7 | Walking out of a locked Leap or Barrage circle is checked in the sim. **The rest of step 7 was measured and not merged** (see History) | `8b0320ba` |
 | 5 | e2e tests start a run directly through `Main.quick_start` (false in the game); the tests about the hub, the portal, the arrival and the run flow (18 files) keep the full path; a test proves both starts land on the same world hash | `95178c70`, merge `65b7f76d` |
 | (v0.11.0 F15) | Five e2e tests that were already red on the branch match the game again | `e5ca5a26`, merge `3c89a227` |
+| (v0.11.0 F16) | God mode stays on until it is unticked (owner, 2026-11-10) | `e8e12cb7`, `6dcd9965` |
+| 3 | Tests take the game's content from one shared repository per run (`SharedContent`); the per-seed map compiles are hoisted. 608 of 608 in its runs. The gain was not measurable on a busy machine: step 11 measures it | `94060a2f`, merge `130c0b15` |
 
 ## Goldens changed on purpose
 - None.
@@ -71,3 +73,10 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   replaces it).
 - 2026-11-10 (lead): found by F15, for the owner: the e2e walks rely on God mode from the dev panel, but closing the
   panel turns God off (`main.gd`, since `3454ed0f`), so those walks were never protected (OWNER_TODO D71).
+- 2026-11-10 (lead): the owner answered D71 ("until you untick it"): built as v0.11.0 F16. All 88 test files that
+  click God were run (136 tests): 3 failed, all fixed (one was a bug in the change itself: reopening the panel
+  replaced the kept debug state; two tests relied on God ending when the panel closed). Re-run of the three files:
+  7 of 7.
+- 2026-11-10 (lead): step 3 merged (`130c0b15`). Its own finding: the hoist is not where `test_five_floors` spends its
+  time (1,987 s after it, on a busy machine, against 1,619 s before on a quiet one); the time is the 5,000 floor
+  generations, which steps 2 and 4 take on.

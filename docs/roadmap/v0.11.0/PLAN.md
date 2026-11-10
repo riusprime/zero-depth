@@ -242,3 +242,4 @@ follow. All numbers below are starting values. Agent limit as before: 3 Sonnet +
 | F13 | Shrine roll | S | Done |
 | F14 | The Twin Wardens crossfire tests match the game since the Twins rework | lead | Done |
 | F15 | Five e2e tests outside the seams match the game again (found by v0.11.1's full e2e run: enemies, lance, rune combos, shrines, collectibles; each test was stale, no game change) | O | Done |
+| F16 | God mode from the dev panel stays on after the panel closes and through the run's next floors; the God button shows whether it is on. Owner, 2026-11-10, asked whether God should stay on after the panel closes: "until you untick it". It ends with the run (the lead's reading: a new run never starts invulnerable by accident) | lead | Done |
