@@ -5,15 +5,14 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 ## Where we are
 (The lead keeps this block current at every push. Updated 2026-11-10.)
 
-- **Wave 1 under way (owner, 2026-11-10: "go for the full plan until finished").** Steps 1, 9 and 10 are done.
-  Steps 3, 5 and 7 are merged; steps 2 and 4 are with an agent (worktree `wt-s4`); step 45 (new) with another
-  (`wt-s45`). Step 6 is dropped and step 30 cut down, both from measurements.
-- **The baseline:** seams took 3,442 s at `ee42eafa` (669/669); one test that is not a seam,
-  `test_generation_holds_for_every_floor_over_a_thousand_seeds`, is 1,549.9 s of it.
-- **Next:** merge 2, 4 and 45; then step 8 and the re-measure (11).
+- **Wave 1 nearly done (owner, 2026-11-10: "go for the full plan until finished").** Steps 1, 2, 3, 4, 5, 7, 8, 9
+  and 10 are merged; step 6 is dropped (measured). Step 45 (a floor builds its walls and paths once) is with an agent
+  (worktree `wt-s45`). Then step 11: the seams re-measure.
+- **The baseline:** seams took 3,442 s at `ee42eafa` (669/669); one test that is not a seam was 1,549.9 s of it and
+  is out of the seams run since step 2.
 - **What the measurements say:** the e2e fixed cost is the floor build (about 2.5 s world + 2.2 s view per run
-  start), not the boot, the hub or the content compile ([`evidence/E2E_FIXED_COST.md`](evidence/E2E_FIXED_COST.md)). Step 6 (one boot
-  per e2e file) is decided from a quiet re-time of the e2e files after step 5.
+  start), not the boot, the hub or the content compile ([`evidence/E2E_FIXED_COST.md`](evidence/E2E_FIXED_COST.md)).
+- **Not pushed yet:** everything since `c339458a` is local on `claude/v0110`.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
 - **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
   approved.
@@ -41,6 +40,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 | 5 | e2e tests start a run directly through `Main.quick_start` (false in the game); the tests about the hub, the portal, the arrival and the run flow (18 files) keep the full path; a test proves both starts land on the same world hash | `95178c70`, merge `65b7f76d` |
 | (v0.11.0 F15) | Five e2e tests that were already red on the branch match the game again | `e5ca5a26`, merge `3c89a227` |
 | (v0.11.0 F16) | God mode stays on until it is unticked (owner, 2026-11-10) | `e8e12cb7`, `6dcd9965` |
+| 2 | The seams run no longer generates five thousand floors: the generation and loot tests moved to `test_five_floors_soak.gd` (GitHub's `sim_c` shard). `test_five_floors.gd`: 1,619.0 s → 28.8 s (the after time with three Godot processes running) | `4200f6bf`, merge `9645f5a4` |
+| 4 | Seed loops run 200 seeds here and 1,000 in the GitHub full suite (`Seeds.count`, `ZD_FULL_SEEDS`). 14 loop files; every count threshold was already a share of the seed count, so it scales exactly; no test had to stay at 1,000; three files also passed at 1,000 | `47caac3f`, merge `9645f5a4` |
+| 8 | The modifier smoke no longer repeats itself (21.3 s of seams); the e2e tests share one dev-panel click helper (`E2e.click_dev`, 81 files, 199 call sites; 120 of 120). The other copied helpers (`_walk`, `_focused`, `_take_at_altar`) differ between files and stay until next touched | `bca5cb87`, `9abea87b` |
 | 3 | Tests take the game's content from one shared repository per run (`SharedContent`); the per-seed map compiles are hoisted. 608 of 608 in its runs. The gain was not measurable on a busy machine: step 11 measures it | `94060a2f`, merge `130c0b15` |
 
 ## Goldens changed on purpose
@@ -89,3 +91,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   build 2.5 s and the view build 2.2 s. The content load and compile are under 100 ms. More than half the world
   build is the walls and paths rebuilt two or three times. So: step 6 dropped, step 30 cut down, step 45 added.
   Audit findings T1, T5 and U3 overestimated their costs.
+- 2026-11-10 (lead): steps 2 and 4 merged (`9645f5a4`), step 8 done (`bca5cb87`, `9abea87b`). Seams not re-run yet:
+  it waits for step 45, so one quiet run measures the whole wave (step 11).
