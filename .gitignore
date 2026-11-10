@@ -25,3 +25,6 @@ __pycache__/
 
 # Raw image-workflow sheets (docs/art/prompts; split into assets/ by scripts/art/split_sheets.py)
 art_raw/
+
+# The owner's purchased effect packs as downloaded (zips); what the game uses is installed under assets/
+newVFX/
