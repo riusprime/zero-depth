@@ -26,6 +26,12 @@ rewritten 2026-10-16 from your annotated copy, v0.8.0 (branch `claude/lucid-ferm
   change their edges. Not planned unless you ask.
 - [ ] **v0.11.1, small:** the hub station stand-in panel can no longer be opened in the game (only a test builds it):
   delete it?
+- [ ] **v0.11.1, feel the aim assist (step 33, built 2026-11-10; `OWNER ONLY`):** the aim turns 10 % of the way toward
+  the enemy nearest your aim, if one is within 12° of it and within 12 m. Mouse and gamepad, on by default; Options →
+  Controls → "Aim assist" turns it off. To tune it while playing: F10 → Sim → `aim_assist` (`strength_percent`,
+  `cone_degrees`, `range_m`). Known choices to judge: it does not check walls (it can bend toward an enemy behind
+  one); the mouse cursor stays where you point (the hero and the shot show the bent aim); a just-spawned enemy does
+  not pull until its 0.6 s rise-in ends.
 - [ ] **v0.11.1 "Clean and fast" (2026-11-10), one answer:** aim assist on mouse and gamepad, or gamepad only
   (default being planned: both, on, with an Options switch; [`roadmap/v0.11.1/PLAN.md`](roadmap/v0.11.1/PLAN.md)
   "Open items"). The golden reset is answered (yes, once). Later, yours to feel: aim assist once built, and each batch of enemies moved to the crowd.
