@@ -3,7 +3,7 @@
 # where separate changes meet. Every cross-step failure the full runs found in v0.7.0-v0.7.5 is in this set (the dev
 # panel's folder list, old saves, orphan nodes across restarts, the every-card soak). It is not the full suite: the PR
 # into main runs that once on GitHub.
-# Usage: bash scripts/ci/seams.sh            (writes build/seams.log)
+# Usage: bash scripts/ci/seams.sh            (writes build/seams.log, and each file's time to build/seams.xml)
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -67,7 +67,7 @@ FILES=(
 LIST="$(printf 'res://%s\n' "${FILES[@]}" | paste -sd, -)"
 set +e
 godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir="$DIRS" -ginclude_subdirs -gtest="$LIST" \
-	-gexit 2>&1 | tee build/seams.log
+	-gjunit_xml_file=build/seams.xml -gexit 2>&1 | tee build/seams.log
 GUT_EXIT=${PIPESTATUS[0]}
 set -e
 [[ $GUT_EXIT -eq 0 ]] || { echo "seams: GUT exited $GUT_EXIT" >&2; exit "$GUT_EXIT"; }
