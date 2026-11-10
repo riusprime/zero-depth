@@ -3,6 +3,8 @@ extends ItemCard
 ## The card a named combo shows when it unlocks (v0.3.0 G): the item card's plaque and motion (v0.6.1 R1: the
 ## stone plaque nearest the combo's own colour, Plaques.nearest) and both items' icons (ComboIconView) in place of
 ## one. It shows text it is given (already translated); it decides nothing about the game.
+## Test code (v0.11.1 Step 16, audit D7): the game never builds it, so it moved here from src/presentation/hud/;
+## the presentation tests of the item card, plaques and combo icons use it.
 
 var pair := ComboIconView.new()
 
