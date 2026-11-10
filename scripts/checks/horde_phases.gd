@@ -33,7 +33,13 @@ const PHASES: Array[StringName] = [
 	&"move.native",
 	&"actions",
 	&"resolve",
-	&"proj"
+	&"proj",
+	&"proj.steer",
+	&"proj.sweep",
+	&"proj.damage",
+	&"proj.procs",
+	&"proj.end",
+	&"proj.remove"
 ]
 
 
