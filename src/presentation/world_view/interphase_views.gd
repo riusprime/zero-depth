@@ -74,6 +74,8 @@ void fragment() {
 }
 """
 
+## True once a draw with nothing to show hid it all: later frames and syncs draw nothing until there is.
+var quiet := false
 var _data := {}
 var _light := {}
 var _tick := 0
@@ -249,10 +251,12 @@ func sync(reader: WorldReader) -> void:
 	elif prev >= 2 and _stage == 0:  # it slams back down
 		_bursts.append([1, SimPlane.to_3d(reader.final_home(), 0.05), 0.0])
 	_note_strikes()
-	_draw(0.0)
+	_redraw(0.0)
 
 
 func _process(delta: float) -> void:
+	if quiet:  # (a sync with something to show clears it)
+		return
 	_clock += delta * (0.0 if ViewPrefs.reduced_motion else 1.0)
 	for g in _ghosts:
 		g[1] += delta
@@ -260,6 +264,17 @@ func _process(delta: float) -> void:
 		b[2] += delta
 	_ghosts = _ghosts.filter(func(g: Array) -> bool: return g[1] < SPIKE_S)
 	_bursts = _bursts.filter(func(b: Array) -> bool: return b[2] < BURST_S)
+	_redraw(delta)
+
+
+## Draws, unless there is nothing to show and the last draw hid it all already.
+func _redraw(delta: float) -> void:
+	if _data.is_empty() and _ghosts.is_empty() and _bursts.is_empty():
+		if quiet:
+			return
+		quiet = true
+	else:
+		quiet = false
 	_draw(delta)
 
 

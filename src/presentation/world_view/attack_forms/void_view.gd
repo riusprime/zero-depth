@@ -138,6 +138,8 @@ var voids := 0
 ## The pack's sparks spawned since the view began (the tests read it).
 var sparks := 0
 var arcs := 0
+## True once a sync with nothing to show hid it all: later empty syncs return at once.
+var quiet := false
 var puffs := 0
 var collapses := 0
 var growth := 1.0
@@ -268,11 +270,26 @@ static func _shader(code: String) -> Shader:
 ## Each tick: every Void shot in flight, drawn where the sim has it; a shot that left collapses.
 func sync(reader: WorldReader) -> void:
 	_tick = float(reader.tick())
-	if _form.refresh(reader):
+	var changed := _form.refresh(reader)
+	if changed:
 		_tint()
 	_update_motion()
 	dust_on = ViewPrefs.effects_density != "low"  # Low keeps the core, lens and ring
 	var shots := reader.void_shots()
+	var rings := reader.void_rings()
+	# No shot, none collapsing, no ring, the same look: the last sync hid it all already
+	if (
+		shots.is_empty()
+		and rings.is_empty()
+		and _born.is_empty()
+		and _gone.is_empty()
+		and not changed
+	):
+		if quiet:
+			return
+		quiet = true
+	else:
+		quiet = false
 	voids = 0
 	puffs = 0
 	growth = 1.0
@@ -312,13 +329,13 @@ func sync(reader: WorldReader) -> void:
 	hold.end()
 	_collapse_gone()
 	_place_collapses()
-	_place_arcs(reader)  # Ring
+	_place_arcs(rings)  # Ring
 
 
 ## The Ring card's lightning rings growing from where a void ended.
-func _place_arcs(reader: WorldReader) -> void:
+func _place_arcs(rows: Array) -> void:
 	arcs = 0
-	for row in reader.void_rings():
+	for row in rows:
 		if arcs >= ARCS_MAX:
 			break
 		var g := (

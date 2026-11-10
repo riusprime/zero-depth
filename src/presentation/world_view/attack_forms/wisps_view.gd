@@ -64,6 +64,8 @@ static var _shader: Shader = null
 ## What the last sync showed (tests read them): the wisps drawn, their places (sim plane), the look.
 var wisps := 0
 var arcs := 0
+## True once a sync with nothing to show hid it all: later empty syncs return at once.
+var quiet := false
 var places: Array[Vector2] = []
 var look := &"default"
 ## W3-S19: the trail ghosts shown by the last placing (tests).
@@ -149,23 +151,20 @@ func _make_arcs() -> void:
 
 
 ## The Ring card's lightning rings where a wisp's shot struck (grown as the Void's are).
-func _place_arcs(reader: WorldReader) -> void:
+func _place_arcs(rows: Array) -> void:
 	arcs = 0
-	if not reader.player_dead():
-		for row in reader.wisp_rings():
-			if arcs >= ARCS_MAX:
-				break
-			var g := (
-				clampf(float(row["age"]) / float(row["span"]), 0.0, 1.0)
-				* float(row["r"])
-				/ ARC_FRONT
-			)
-			var arc := _arcs[arcs]
-			arc.visible = g > 0.01
-			arc.transform = Transform3D(
-				Basis.from_scale(Vector3(g, 1.0, g)), SimPlane.to_3d(row["pos"], 0.1)
-			)
-			arcs += 1
+	for row in rows:
+		if arcs >= ARCS_MAX:
+			break
+		var g := (
+			clampf(float(row["age"]) / float(row["span"]), 0.0, 1.0) * float(row["r"]) / ARC_FRONT
+		)
+		var arc := _arcs[arcs]
+		arc.visible = g > 0.01
+		arc.transform = Transform3D(
+			Basis.from_scale(Vector3(g, 1.0, g)), SimPlane.to_3d(row["pos"], 0.1)
+		)
+		arcs += 1
 	for k in range(arcs, ARCS_MAX):
 		_arcs[k].visible = false
 
@@ -179,8 +178,17 @@ func sync(reader: WorldReader) -> void:
 		_mat.set_shader_parameter(&"core", _form.core)
 		_mat.set_shader_parameter(&"edge", _form.edge)
 	var ws: Array[Dictionary] = []  # dead: none (an untyped [] in a ternary fails the typed assignment)
+	var rings: Array = []
 	if not reader.player_dead():
 		ws = reader.wisps()
+		rings = reader.wisp_rings()
+	# No wisp, no ring, the same look: the last sync hid it all already
+	if ws.is_empty() and rings.is_empty() and not changed:
+		if quiet:
+			return
+		quiet = true
+	else:
+		quiet = false
 	var was := wisps
 	wisps = mini(ws.size(), WISPS_MAX)
 	_hero = reader.player_pos()
@@ -202,7 +210,7 @@ func sync(reader: WorldReader) -> void:
 		_radius[k] = off.length()
 		places.append(wd["pos"])
 	_place()
-	_place_arcs(reader)
+	_place_arcs(rings)
 
 
 func _process(delta: float) -> void:

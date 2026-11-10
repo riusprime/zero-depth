@@ -203,6 +203,8 @@ var dark_quad := MeshInstance3D.new()
 ## The room's sun and ambient light (WorldViewRoot hands its StageView in), dimmed with the dark so the bodies, the
 ## walls and their see-through cutaways go dark too and the lanterns' and your lights carry the room.
 var stage: StageView
+## True once a frame with nothing to show drew it all hidden: later frames only keep the stage's lit levels.
+var quiet := false
 var _dark_mat := ShaderMaterial.new()
 var _mist_mat := ShaderMaterial.new()
 var _ground_sh := Shader.new()
@@ -523,6 +525,15 @@ func _process(delta: float) -> void:
 
 ## Frame-time animation (the tests and the shot scripts call it too).
 func advance(delta: float) -> void:
+	# No dark, no lantern standing, no wisp: the last frame drew all of it hidden, so another would change nothing
+	# but the stage's lit levels, which are still read while the room is lit
+	if _settled():
+		if quiet:
+			_dim_stage()
+			return
+		quiet = true
+	else:
+		quiet = false
 	var calm := 0.35 if ViewPrefs.reduced_motion else 1.0
 	_clock += delta * calm
 	var target := 0.0
@@ -558,6 +569,15 @@ func advance(delta: float) -> void:
 		_hero_mat.set_shader_parameter("clock", _clock)
 		_hero_light.position = _hero_at + Vector3(0, 2.6, 0)
 	_draw_wisps()
+
+
+func _settled() -> bool:
+	if not _light.is_empty() or _strength > 0.0 or not _wisp_pos.is_empty():
+		return false
+	for lamp: Dictionary in _lamps:
+		if (lamp["root"] as Node3D).visible:
+			return false
+	return true
 
 
 ## The stage's sun down to 12 % and its ambient to 20 % at full dark (their levels kept while the room is lit).

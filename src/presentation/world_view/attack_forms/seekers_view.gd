@@ -62,6 +62,8 @@ var motes := 0
 var look := &"default"
 ## The lightning rings drawn now.
 var arcs := 0
+## True once a sync with nothing to show hid it all: later empty syncs return at once.
+var quiet := false
 ## v0.9.0 VX V29: the effects layer is on (WorldViewRoot sets it): an element's trail motes become its own sprites
 ## (draw_fx), the round motes hide. Same count, so the cost stays the same.
 var vfx_on := false
@@ -112,9 +114,9 @@ func _make_arcs() -> void:
 
 
 ## Ring's lightning ring where each dart hit.
-func _place_arcs(reader: WorldReader) -> void:
+func _place_arcs(rows: Array) -> void:
 	arcs = 0
-	for row in reader.seeker_rings():
+	for row in rows:
 		if arcs >= ARCS_MAX:
 			break
 		var g := float(row["r"]) / ARC_FRONT
@@ -194,7 +196,15 @@ func sync(reader: WorldReader) -> void:
 	for id: int in _trail.keys():
 		if not _seen.has(id):
 			_trail.erase(id)
-	_place_arcs(reader)
+	var rings := reader.seeker_rings()
+	# Nothing in flight, no ring, the same look: the last sync hid it all already
+	if _pos.is_empty() and rings.is_empty() and not changed:
+		if quiet:
+			return
+		quiet = true
+	else:
+		quiet = false
+	_place_arcs(rings)
 	darts = _pos.size()
 	motes = _mote_pos.size()
 	var round := not vfx_on or _form.kind == &""

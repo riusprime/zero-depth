@@ -74,6 +74,8 @@ var pack_fx: PackFx = null:
 		water_hold.pack = v if PACK_WATER else null
 var water_hold := FormPackHold.new()
 var swell_packed := false
+## True once a frame with no tide and every fade done drew it all hidden: later frames return at once.
+var quiet := false
 var pops := 0
 var _swell_due := false
 var _pop_owed := 0.0
@@ -186,6 +188,13 @@ func _process(delta: float) -> void:
 
 ## Frame-time animation (the tests and the shot scripts call it too).
 func advance(delta: float) -> void:
+	# No tide and every fade done: the last frame drew all of it hidden, so another would change nothing
+	if _tide.is_empty() and _strength == 0.0 and _toll == 0.0 and _swell_t >= 1.0:
+		if quiet:
+			return
+		quiet = true
+	else:
+		quiet = false
 	var phase := int(_tide.get("phase", WorldReader.TIDE_NONE))
 	var tolling := bool(_tide.get("windup", false))
 	var running := phase != WorldReader.TIDE_NONE

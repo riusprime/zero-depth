@@ -60,6 +60,8 @@ void fragment() {
 }
 """
 
+## True once a frame with nothing to show drew it all hidden: later frames return at once.
+var quiet := false
 var _echo := {}
 var _markers: Array[MeshInstance3D] = []
 var _marker_mats: Array[ShaderMaterial] = []
@@ -311,6 +313,13 @@ func _process(delta: float) -> void:
 
 ## Frame-time animation (the tests and the shot scripts call it too).
 func advance(delta: float) -> void:
+	# No echo, no verdict and every fade done: the last frame drew all of it hidden, so another would change nothing
+	if _settled():
+		if quiet:
+			return
+		quiet = true
+	else:
+		quiet = false
 	var calm := 0.35 if ViewPrefs.reduced_motion else 1.0
 	_clock += delta * calm
 	var phase := int(_echo.get("phase", WorldReader.ECHO_NONE))
@@ -322,6 +331,17 @@ func advance(delta: float) -> void:
 	_light_t = minf(1.0, _light_t + delta / 0.35)
 	_light.light_energy = 1.6 * (1.0 - _light_t)
 	_draw_pendulum(delta, calm)
+
+
+func _settled() -> bool:
+	if not _echo.is_empty() or not _verdict.is_empty() or not _filing_state.is_empty():
+		return false
+	if _show > 0.0 or _drop_t < 1.0 or _light_t < 1.0:
+		return false
+	for t in _ghost_t:
+		if t < 1.0:
+			return false
+	return true
 
 
 ## The recording's glints: one over each point kept, brighter as the echo nears; gone while it runs.

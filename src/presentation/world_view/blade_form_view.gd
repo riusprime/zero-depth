@@ -49,6 +49,8 @@ const SHAPE_GHOST_MIRROR := 2
 
 ## What the last sync drew, by kind (the tests read it): crescent, ghost, crack, line, spark, ring, blade.
 var drawn := {}
+## True once a sync with nothing to draw drew the empty mesh: later empty syncs return at once.
+var quiet := false
 var _mesh := ImmediateMesh.new()
 var _node := MeshInstance3D.new()
 var _mat := StandardMaterial3D.new()
@@ -82,14 +84,24 @@ func _init() -> void:
 
 
 func sync(reader: WorldReader) -> void:
-	_mesh.clear_surfaces()
-	drawn = {}
 	var tick := reader.tick()
 	_digest = reader.attack_digest()
+	var b := reader.blade_forms()
+	# Nothing to draw, and the last sync drew the empty mesh and pools already: rebuilding them changes nothing
+	var empty: bool = (
+		(b["fx"] as Array).is_empty()
+		and (b["cracks"] as Array).is_empty()
+		and (b["blades"] as PackedVector2Array).is_empty()
+		and not _any_crescent(reader)
+	)
+	if empty and quiet:
+		return
+	quiet = empty
+	_mesh.clear_surfaces()
+	drawn = {}
 	_pack = BladePack.pack_of(self) if PACK_BLADE else null
 	if _pack != null and _rim == null:
 		_rim = BladePack.rim_material(_core)
-	var b := reader.blade_forms()
 	_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
 	_baked.begin()
 	var any := false
@@ -110,6 +122,17 @@ func sync(reader: WorldReader) -> void:
 
 func _count(kind: StringName) -> void:
 	drawn[kind] = int(drawn.get(kind, 0)) + 1
+
+
+## Some player projectile flies as a crescent.
+func _any_crescent(reader: WorldReader) -> bool:
+	for i in reader.projectile_count():
+		if (
+			reader.projectile_team(i) == 0
+			and _crescent_of(reader, reader.projectile_spec_key(i)).x > 0.0
+		):
+			return true
+	return false
 
 
 ## The arc width (1/4096 turns) a player projectile's spec gives its crescent (x; 0: not a flying slash) and its
