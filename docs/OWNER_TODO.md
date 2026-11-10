@@ -9,6 +9,21 @@ rewritten 2026-10-16 from your annotated copy, v0.8.0 (branch `claude/lucid-ferm
   ([`roadmap/v0.11.1/evidence/PERF_BASELINE.md`](roadmap/v0.11.1/evidence/PERF_BASELINE.md)). The GPU alone takes
   4.8 ms of the 6.9 ms a 144 fps frame allows. Wave 3 goes after the script cost; say whether 144 fps stays the
   target, or what you want held instead (for example: never under 60 in a horde).
+- [ ] **v0.11.1, where the CPU time can still come from (2026-11-10).** The frame is limited by script on one core.
+  Wave 3's cuts took a few ms off a 30–37 ms horde frame. The levers left, each measured before it is built; say
+  which you want tried:
+  1. **Enemies think less often, staggered** (the genre's usual first trick). It changes outcomes slightly (an enemy
+     reacts a few ticks later), so it needs your OK; it would ride with the approved golden reset.
+  2. **The sim on its own thread,** stepping while the main thread draws. Results stay identical. Proposed as a
+     measured trial on a branch after step 32.
+  3. **Every enemy on the crowd renderer** (step 39): also cuts the 8–9 draws each enemy costs today.
+  4. **Native code (C# or C++) for enemy AI and movement:** only if the three above fall short; it changes the
+     toolchain.
+- [ ] **v0.11.1, look at the lighter effects (step 47, 2026-11-10):** a before/after sheet of every pack effect whose
+  mesh was simplified will be sent; you approve the look (`OWNER ONLY`).
+- [ ] **v0.11.1, the HUD's draw calls (2026-11-10):** the HUD is a flat 389 draw calls a frame (43 % of all draws
+  with 20 enemies) because its icons are drawn in code. Turning them into textures would cut that and slightly
+  change their edges. Not planned unless you ask.
 - [ ] **v0.11.1, small:** the hub station stand-in panel can no longer be opened in the game (only a test builds it):
   delete it?
 - [ ] **v0.11.1 "Clean and fast" (2026-11-10), one answer:** aim assist on mouse and gamepad, or gamepad only

@@ -7,19 +7,21 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 
 - **Waves 1 and 2 are done, and step 45.** Seams on `060e883b`: **674 of 674, 1,396 s of tests, 1,606 s wall** (it
   was 669, 3,185 s, 3,442 s at `ee42eafa`): [`evidence/SEAMS_TIMING.md`](evidence/SEAMS_TIMING.md).
-- **Seams on `386a502d` (the pushed head): 674 of 674,** 1,303 s of tests, 1,537 s wall. Two agents ran Godot at
-  the same time, so the seconds are not a measurement; the pass is. It covers step 18 and the test floor builder's
-  opt-in (`26bdbb20`).
+- **Seams on `b29c79b4` (steps 22, 24, 26, 28, 30 merged): 676 of 676,** 1,223 s of tests, 1,461 s wall. Agents ran
+  Godot at the same time, so the seconds are not a measurement; the pass is.
 - **Left over from Wave 2, small:** the HUD and menu half of the dead-code scan; the menu backdrop's ember mode and
   the option picker's plain look (dead since step 13); the hub station stand-in panel (only a test builds it: the
   owner was asked whether to delete it); the duplicate final-boss texture (needs model prep).
-- **Wave 3 re-planned from its baseline** ([`evidence/PERF_BASELINE.md`](evidence/PERF_BASELINE.md)): the frame is
-  bound by script, not the GPU. Tick 5.3 ms in the horde bench; frame 14.8 ms at 20 enemies, 29.6–36.7 ms in the two
-  horde scenes, 1 % lows 10–28 fps. Steps 22, 24, 26, 28, 31 replace the audit's list; 23, 29 and the audio step are
-  dropped; step 39 (every enemy on the crowd) is not supported by the numbers.
-- **Next:** steps 22 (an enemy costs less a tick) and 26 (a spawn no longer hitches the frame).
-- **Pushed** (owner, 2026-11-10: "Yes, push"): `claude/v0110` up to the docs commit after `386a502d`, and the tag
-  `archive/scripts-2026-11` (the deleted shot scripts). Steps 22 and 26 are with agents, on local branches.
+- **Wave 3** (re-planned from [`evidence/PERF_BASELINE.md`](evidence/PERF_BASELINE.md): the frame is bound by
+  script, not the GPU): steps 21, 22, 24, 26, 28 and 30 are merged. Every timing taken since the baseline was taken
+  with other Godot processes running; **step 32 (the quiet-machine re-measure) is what counts.**
+- **Built on branches, merged next:** step 31 (`v0111-s31`: the draw counted, shard drops baked) and step 46
+  (`v0111-s46`: the Options "Show FPS" switch, owner's request). **With an agent:** step 47 (lighter pack effect
+  meshes, owner's request; the owner approves the look from a before/after sheet).
+- **The baseline had one wrong figure:** "20,000 objects drawn a frame" was live objects in memory. The renderer
+  draws 1,700–3,100 (corrected in the evidence file and the PLAN).
+- **Next:** merge steps 31 and 46, then step 32; then the owner decides on the CPU levers (OWNER_TODO).
+- **Pushed:** `claude/v0110` up to the docs commit after `b29c79b4`, and the tag `archive/scripts-2026-11`.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
 - **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
   approved.
@@ -54,6 +56,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 | 16 | The fight bot, the lab-room scenario and the combo card live in `tests/support`. Left in `src/`: `KernelScenario` and `ScriptedInput` (the export smoke runs them inside the pack); left in `data/`: the combat-lab encounter and the patch notes (moving either changes the content manifest hash) | `35176162`, merge `d8362cd8` |
 | 15 (a) | Unreferenced sim, application and content code is gone: 34 functions, 34 constants, 25 translation keys (249 lines). Left: names that stand for stored values, and `HeartRoom.take_tick` (hashed, read nowhere: for step 36) | `62d24bee`, merge `0ef222b0` |
 | 19 | The line cap can't be switched off quietly: `tests/arch/test_line_cap.gd` lists the ten exempt files with reasons; the rule is in CLAUDE.md | `63ce6be5` |
+| 30 | Content is checked only in debug builds (the check measured 90–110 ms of a warm load; a release build skips it), and seven sites read an enemy's kind from the compiler's table instead of compiling the enemy. 418 + 6 tests | `b8e65c49`, merge `5368d2bc` |
+| 28 | A view with nothing to show does no work: twelve views (the Prism's, Seekers, Wisps, Void, blade forms, five boss views, tide waves, interphase) go quiet once everything is hidden and wake on content; their buckets fell from 15–85 µs to 2–24 µs each, about 0.5 ms a frame (busy machine). 30 state-dump hashes identical with and without the change; 1,531 + 12 tests. The split also showed `attack_form_view.gd`'s bucket is three quarters the shared effects layer's drawers, with real content, and that status visuals already skip when idle | `01cd71dc`, merge `771f603a` |
+| 24 | The hero's attacks cost less a tick: `dash_abilities` 0.52–0.54 → 0.43–0.45 ms in the heavy scene (busy machine). The cost was landed hits, not projectiles: the element card lookups are remembered on the build's book, `enemies_near` reads columns, no-overlevel returns at once. New tool `scripts/checks/attack_phases.gd`; its outcome hash and `horde_phases`' are identical before and after (the lead re-ran both on the merge). Audit S1, S8, S9 had nothing to act on in this scene (a Rune Explosion build fires no projectiles); 179 tests | `227c9592`, merge `b29c79b4` |
+| 26 | An enemy spawn builds almost nothing: the contact disc, team ring, dazed ring and health bar share one mesh per size and one material per colour (`ActorParts`), a VAT kind's proxy shadow is built once behind the loading cover, code-built enemy shapes are cached. In the 60-enemy heavy scene `view.actors` p99 32.9 → 5.3 ms and the 1 % lows 9–12 → 14–17 fps (busy machine). A dump of every kind's nodes, meshes and materials is identical before and after; `actor_views.gd` is under the line cap again (969 lines; its exemption removed). 1,531 + 7 tests on the merge | `8f4d19dd`, merge `c4657bad` |
+| 22 | An enemy costs less a tick: at 120 enemies the tick 4.2–4.3 → 3.3–3.4 ms, `ai` 1.46 → 1.03, `move` 1.47 → 1.14, `resolve` 0.30 → 0.15 (busy machine). Kind tests are table lookups; the wall passes read local columns. `sim_bench`: horde 5.37 → 4.56 ms (target 4: still missed), stress 3.86 → 3.58 (target 2: missed). The outcome hashes at 20, 60 and 120 enemies are identical (the lead re-ran 120 on the merge) | `dfd691bf`, merge `a0618f6a` |
 | 21 | The performance baseline on the owner's PC (quiet machine): the sim bench, the tick by phase at 20, 60 and 120 enemies, and three frame-probe scenes with their breakdown | evidence `PERF_BASELINE.md` |
 | 18 | Code comments say what and why, not which step: the version, step and owner-line tags stripped from 7,659 comment lines in 749 files of `src/` by script; each file's code without comments is byte-identical; 1,926 version mentions remain inside sentences. The rule is in CLAUDE.md | `4c665dae` |
 | 11 | The gain is measured: seams 3,442 s → 1,606 s wall, 3,185 s → 1,396 s of tests, 669 → 674 tests, all passing | evidence `SEAMS_TIMING.md` |
@@ -125,3 +132,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   object count are where the frame goes. Wave 3 rewritten in the PLAN.
 - 2026-11-10 (lead): seams on `386a502d`: 674/674 (1,303 s of tests, 1,537 s wall, with two agents running Godot
   alongside). Pushed `claude/v0110` and the tag `archive/scripts-2026-11` on the owner's "Yes, push".
+- 2026-11-10 (lead): steps 22, 26, 30, 28 and 24 merged; seams on `b29c79b4`: 676/676 (1,223 s of tests, 1,461 s
+  wall, agents running alongside). v0.11.0 F17: two sim tests outside the seams were stale since v0.11.0 (the
+  Gatekeeper's longer cross, the biome kinds in every floor's table); fixed, no game change. Step 31 corrected the
+  baseline's object count. The owner asked for a Show FPS switch (L13, step 46: built on its branch) and for lighter
+  effect meshes (L14, step 47: with an agent).

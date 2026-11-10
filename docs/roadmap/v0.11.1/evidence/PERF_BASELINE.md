@@ -1,6 +1,6 @@
 # PERF_BASELINE: where does a frame go, before Wave 3?
 
-- **Status:** RUN
+- **Status:** RUN (one figure corrected on 2026-11-10: see "Correction" at the end)
 - **Build:** `757a82cc` on `claude/v0110` (clean worktree `wt-seams`); Godot `4.7.2.stable.official.ed1daf0bf`;
   Windows 11 Pro 10.0.26200
 - **Machine:** the owner's PC (i7-10700K, RTX 3060). No other Godot process ran.
@@ -56,10 +56,10 @@ enemies=120 ticks=1800 mean_alive=120.0
 ```
 20 enemies, standard build:  frames=1348  avg_ms=14.841  p50_ms=15.015  p95_ms=20.973  p99_ms=24.678
   1pct_low_fps=27.8  max_ms=135.067  over_6.94ms=1348 (100.00 %)  avg_fps=67.4
-  render_cpu_ms_avg=1.566  render_gpu_ms_avg=4.830   draw_calls 700–1080, objects 18,379–20,783 a frame
+  render_cpu_ms_avg=1.566  render_gpu_ms_avg=4.830   draw_calls 700–1080, objects 18,379–20,783 (live objects in memory, NOT drawn: see "Correction")
 60 enemies, heavy build:     frames=545   avg_ms=36.740  p50_ms=34.555  p95_ms=50.883  p99_ms=75.763
   1pct_low_fps=10.6  max_ms=151.948  over_6.94ms=545 (100.00 %)  avg_fps=27.2
-  render_cpu_ms_avg=2.685  render_gpu_ms_avg=10.777  draw_calls 1,401–1,853, objects 20,743–25,721 a frame
+  render_cpu_ms_avg=2.685  render_gpu_ms_avg=10.777  draw_calls 1,401–1,853, objects 20,743–25,721 (live objects in memory, NOT drawn)
 120 swarmers (VAT on, 114 VAT bodies): frames=676  avg_ms=29.611  p50_ms=28.012  p95_ms=48.180  p99_ms=77.754
   1pct_low_fps=10.1  max_ms=109.931  over_6.94ms=676 (100.00 %)  avg_fps=33.8
   render_cpu_ms_avg=1.870  render_gpu_ms_avg=4.654
@@ -143,8 +143,8 @@ These match the project's earlier evidence on the same PC (60 enemies with VAT o
   with a p99 of 4–9 ms; `resolve` (hits) is 0.3–0.6 ms.
 - **One view script runs 1.2–2.5 ms every frame** in every scene: `attack_form_view.gd`'s `_process`.
 - **About forty views sync every frame with nothing to show,** 60–130 µs each.
-- **20,000 objects are drawn a frame** even with 20 enemies (the count is over every pass, shadows included), and
-  the draw takes 3.9–7.1 ms of the main thread.
+- ~~**20,000 objects are drawn a frame** even with 20 enemies~~ **Wrong: see "Correction".** The draw takes
+  3.9–7.1 ms of the main thread; that part stands.
 - **What the audit got wrong here:** it ranked moving every enemy onto the crowd renderer first (V1). The enemies'
   own `_process` is 0.37 ms for 120 of them (3 µs each, not 40 µs); the cost in `view.actors` is the per-frame
   update (1.2 ms) and the spawn. The HUD is under 0.3 ms a frame. Audio does not show up at all.
@@ -153,3 +153,15 @@ These match the project's earlier evidence on the same PC (60 enemies with VAT o
 - **The 144 fps target is far away in these scenes.** With the GPU at 4.8 ms and the draw at 3.9 ms, the scripts
   would have to fit in about 2 ms. A realistic aim for this version is to state after each step what the three
   scenes measure; whether 144 fps stays the target is the owner's call (OWNER_TODO).
+
+## Correction, 2026-11-10 (found by step 31)
+The probe's "objects" column was `Performance.OBJECT_COUNT`: every Object alive in memory, not what the renderer
+draws. The renderer's own count over all passes (`RENDER_TOTAL_OBJECTS_IN_FRAME`, now the probe's `drawn_objects`
+column; the old one is `live_objects`) in the same scenes, measured by the step 31 agent on this PC with other
+Godot processes running (counts are not affected by that):
+```
+20 enemies, standard build:  drawn_objects 1,704–2,158 a frame, 734–1,126 draw calls
+60 enemies, heavy build:     drawn_objects 2,358–3,139 a frame, 1,248–1,840 draw calls
+```
+So about 2,000–3,000 objects are drawn a frame, not 20,000. The lead wrote the wrong figure from a mislabelled
+column without checking what it counted. What the draw is made of is in PROGRESS (step 31).

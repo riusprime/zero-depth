@@ -39,6 +39,8 @@ are cited in the "Audit" column below). Progress: [`PROGRESS.md`](PROGRESS.md).
 | L10 | Menus: "Astral current one live should be the only HUD style for all elements throughout the game" | The five panels still in the old look move to Astral; the old menu style is deleted | 13 |
 | L11 | Repo size: "What are the implications of moving the raw art?" | **No change now** (lead's recommendation; see "Repo size" below). No history rewrite | — |
 | L12 | Golden reset: "what's the best, and what are the implications to do this" | **Yes, once, last** (the lead's recommendation, "The golden reset" below; owner, same day: "Yes, reset once") | 36–38 |
+| L13 | FPS counter (2026-11-10): "now that you are working on performance, can we add an options in settings with a toggle on/off that shows fps?" | An Options switch, off by default; a small counter in a corner of the screen while it is on, in the game and in the menus | 46 |
+| L14 | Effect triangles (2026-11-10, after step 31 showed pack effects are 1.39 M of the 2.13 M triangles a frame in the heavy scene): "Could you in anyway, reduce those VFX triangles without modifying the visuals too much?" | The heaviest pack effects get lighter meshes or fewer mesh particles; the owner sees before/after shots and approves the look | 47 |
 
 ## Rules for every step
 
@@ -106,9 +108,11 @@ bucket, and reports the same probe before and after.
 | 24 | The hero's attacks cost less a tick | S1, S7, S8, S9 | `phase.dash_abilities` is 1.0–1.7 ms a frame with a p99 of 4–9 ms; `proj` 0.3–0.4 ms | Goldens identical; the heavy scene's phases before and after | O |
 | 26 | An enemy spawn no longer hitches the frame | V2, V3, V4 | `view.actors` averages 2.8 ms but its p99 is 25–40 ms: the frames in which an enemy's view is built. These are the 10 fps 1 % lows | The frame probe's p99 and 1 % low before and after; view tests | O |
 | 28 | A view with nothing to show does no work | V5, V7 | `attack_form_view.gd` runs 1.2–2.5 ms every frame; about forty idle views sync at 60–130 µs each; `status_visuals` 0.3–0.7 ms | The breakdown before and after; view tests | O |
-| 31 | The draw is understood, then cut | V5, V9 | 20,000 objects are drawn a frame with 20 enemies (over every pass, shadows included); the draw takes 3.9–7.1 ms of the main thread | First a count of what the objects are (per pass); then the cut that count supports | O |
+| 31 | The draw is understood, then cut | V5, V9 | ~~20,000 objects are drawn a frame~~ (wrong: that column counted live objects in memory; the renderer draws 1,700–3,100, see the baseline's "Correction"); the draw takes 3.9–7.1 ms of the main thread | First a count of what the objects are (per pass); then the cut that count supports | O |
 | 30 | Content is checked only in debug builds; an enemy's kind is read without compiling it | U4, U5 | Not on the frame; a load-time and tidiness item | Content tests; run and save e2e | S |
+| 47 | The heaviest pack effects draw far fewer triangles and look the same at the game camera | L14 | Step 31: one `bx_beam_04` is 577,024 triangles (more than 60 enemies), `bx_smoke_dust` about 34,600 each; the GPU takes 10.7 ms in that scene against 4.7 ms elsewhere | A per-effect triangle table before and after; before/after shots of each changed effect at the game camera; **owner approves the look** (OWNER ONLY) | O |
 | 32 | The gain is measured | — | The step 21 commands again | `evidence/PERF_AFTER.md`; the 144 fps target reported met or missed | lead |
+| 48 | (Proposed, not approved) The sim steps on its own thread while the main thread draws | — | The frame is bound by script on one core; the sim is pure (EI-02), so `World.step` can run on a worker between the views' read and the next one. A trial on a branch, after step 32 | Same outcome hashes and goldens; frame probe before and after on a quiet machine; **nothing merged until the owner has seen the numbers** | O |
 
 **Dropped from this wave by the baseline:** the HUD's redraw-on-change (step 29: the HUD is under 0.3 ms a frame),
 the sound players' pool (old step 31: audio does not show in any bucket), and hits without allocations as a step
@@ -120,6 +124,7 @@ and 27 are inside steps 24 and 26.
 | Step | Outcome | Audit | Where | Done when | Agent |
 |---|---|---|---|---|---|
 | 33 | Aim bends slightly toward the nearest enemy | D8 | `aim_assist.gd` (a pull instead of a snap; starting values 10 % inside 12°), applied where the `InputFrame` aim is built, before quantization, so replays store the final aim (EI-04); an Options switch with en and es strings; the strength in the dev panel | Unit tests for the pull; an e2e through real input that shows the aim moved; goldens identical (they replay stored frames). **Feel: OWNER ONLY** | O |
+| 46 | Options has a "Show FPS" switch; while it is on a small counter sits in a corner of the screen | L13 | Asked for by the owner during Wave 3. A `GameSettings` key (off by default), a cycler in the Options menu (en + es), a label on its own layer above the HUD and the menus, updated a few times a second | An e2e test turns it on through the Options menu and reads the counter; the setting survives a restart | S |
 
 ### Wave 5: old saves and the golden reset
 
