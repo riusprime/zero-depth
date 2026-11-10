@@ -676,8 +676,10 @@ func _solo_error(live_vp: SubViewport, vat_vp: SubViewport) -> float:
 	var vat := vat_vp.find_child("Avatar", true, false) as AvatarBase
 	var pose := VatBake.pose_for(_kind)
 	var mesh := VatBake.mesh_for(_kind, vat.enemy_tint, vat.role_glow, Color("#1A1A22"))
-	var a := VatBake.live_vertices(live)
-	var b := VatBake.eval_vertices(pose, mesh, VatBake.drives_of(vat, pose), vat.call(&"vat_lift"))
+	var a := VatVerify.live_vertices(live)
+	var b := VatVerify.eval_vertices(
+		pose, mesh, VatBake.drives_of(vat, pose), vat.call(&"vat_lift")
+	)
 	var worst := 0.0
 	for k in mini(a.size(), b.size()):
 		worst = maxf(worst, a[k].distance_to(b[k]))
@@ -691,7 +693,7 @@ func _run(a: AvatarBase, frames: int) -> void:
 
 
 ## v0.10.5 W3-V4b: the largest distance (m) between the old avatar's posed vertices and the VAT one's, the shader's
-## arithmetic run on the CPU (VatBake.eval_vertices_at) at the drives it was drawn with; a hidden piece is skipped.
+## arithmetic run on the CPU (VatVerify.eval_vertices_at) at the drives it was drawn with; a hidden piece is skipped.
 func _vertex_error(live_vp: SubViewport, vat_vp: SubViewport) -> float:
 	if SoloVat.is_solo(_kind):  # v0.10.5 W3-V4c
 		return _solo_error(live_vp, vat_vp)
@@ -702,8 +704,8 @@ func _vertex_error(live_vp: SubViewport, vat_vp: SubViewport) -> float:
 	var vat := vat_vp.find_children("*", "HordeAvatar", true, false)[0] as HordeAvatar
 	var pose := VatBake.pose_for(_kind)
 	var mesh := VatBake.mesh_for(_kind, vat.enemy_tint, vat.role_glow, Color("#1A1A22"))
-	var a := VatBake.live_vertices(live)
-	var b := VatBake.eval_vertices_at(pose, mesh, VatBake.drives_of(vat, pose), vat.vat_offset())
+	var a := VatVerify.live_vertices(live)
+	var b := VatVerify.eval_vertices_at(pose, mesh, VatBake.drives_of(vat, pose), vat.vat_offset())
 	var worst := 0.0
 	var k0 := 0
 	for p: Dictionary in VatBake.pieces(live, VatBake.joints(live)):

@@ -438,34 +438,6 @@ static func _lean_joint(v: Array, at: Vector3, inverse: bool) -> Transform3D:
 	return Transform3D(b.inverse() if inverse else b, at)
 
 
-func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
-	var dir := rng.randf() * TAU
-	var ranges := {
-		"_vel_s": Vector3(cos(dir), 0, sin(dir)) * rng.randf() * 4.0,
-		"_t": [0.0, 40.0],
-		"_walk": [0.0, 1.0],
-		"_phase": [0.0, 1.0],
-		"_rise": [0.0, 1.0],
-		"_brace": [0.0, 1.0],
-		"_charge": [0.0, 1.0],
-		"_kick": [0.0, 1.0],
-		"_heat": [0.0, 1.0],
-		"_tell_p": [0.0, 1.0],
-		"_state":
-		[
-			WorldReader.STATE_MOVE,
-			WorldReader.STATE_WINDUP,
-			WorldReader.STATE_ACTIVE,
-			WorldReader.STATE_RECOVER
-		],
-	}
-	return SoloVat.sample(self, rng, ranges, _pose.bind(0.0))
-
-
-func vat_set(s: Dictionary) -> void:
-	SoloVat.apply(self, s, _pose.bind(0.0))
-
-
 func _build_barrel() -> void:
 	barrel = Node3D.new()
 	barrel.position = Vector3(BODY * 0.5 + 0.06, BARREL_Y, 0)

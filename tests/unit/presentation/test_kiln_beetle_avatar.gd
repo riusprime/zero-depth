@@ -297,7 +297,7 @@ func test_the_vat_bake_matches_the_live_pose() -> void:
 		var mesh := VatBake.mesh_for(KIND, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 		var live := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0)
 		var vat := VatBake.vat_avatar_of(KIND)
-		var e := VatBake.pose_error(live, vat, pose, mesh, 40, 17)
+		var e := VatVerify.pose_error(live, vat, pose, mesh, 40, 17)
 		assert_eq(e["vertices"], mesh.surface_get_array_len(0), "every vertex compared")
 		assert_lt(float(e["max_m"]), 0.002, "within 2 mm (calm %s): %s" % [calm, e])
 		assert_true(pose.has("albedo_tex"), "the owner's colour map")

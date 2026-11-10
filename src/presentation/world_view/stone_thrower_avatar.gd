@@ -759,26 +759,3 @@ static func _samples(d: int) -> int:
 	if not turn:
 		return 2
 	return ceili(span / TURN_STEP) + (0 if bool(spec[2]) else 1)
-
-
-func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
-	var ranges := {
-		"_t": [0.0, 40.0],
-		"_phase": [0.0, 40.0],
-		"_walk": [0.0, 1.0],
-		"_speed": [-1.8, 1.8],
-		"_puff": [0.0, 1.0],
-		"_rise": [0.0, 1.0],
-		"_atk": [-1.0, 2.3],
-		"_atk_sim": [-1.0, 2.3],
-		"_die_t": [-1.0, 1.8],
-		"_drop": [false, true, false],
-		"_flinch_t": [0.0, 0.25],
-		"_flinch_s": [0.0, 1.0],
-		"_state": [WorldReader.STATE_MOVE, WorldReader.STATE_WINDUP, WorldReader.STATE_ACTIVE],
-	}
-	return SoloVat.sample(self, rng, ranges, _pose)
-
-
-func vat_set(s: Dictionary) -> void:
-	SoloVat.apply(self, s, _pose)

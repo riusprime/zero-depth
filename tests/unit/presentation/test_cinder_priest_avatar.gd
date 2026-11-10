@@ -246,7 +246,7 @@ func test_the_bake_matches_the_live_pose() -> void:
 		ViewPrefs.reduced_motion = calm
 		var live := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0)
 		var vat := VatBake.vat_avatar_of(KIND)
-		var e := VatBake.pose_error(live, vat, pose, mesh, 40, 7)
+		var e := VatVerify.pose_error(live, vat, pose, mesh, 40, 7)
 		assert_eq(e["vertices"], mesh.surface_get_array_len(0), "every vertex compared")
 		assert_lt(float(e["max_m"]), 0.002, "calm %s: well under a pixel: %s" % [calm, e])
 		live.free()

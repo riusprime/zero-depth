@@ -678,7 +678,7 @@ func vat_offset() -> Transform3D:
 	return _vat_body
 
 
-## Tools and tests (VatBake.pose_error_full, HordeVat.sample): poses from every input at once, as advance() would
+## Tools and tests (VatVerify.pose_error_full, HordeVat.sample): poses from every input at once, as advance() would
 ## have left them: {wind, strike, crouch, t, rise, die (s into the death, < 0 alive), walk, walk_t, healing, tell,
 ## winding}.
 func pose_with(s: Dictionary) -> void:

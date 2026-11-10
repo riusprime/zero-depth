@@ -740,30 +740,3 @@ func vat_rig() -> Dictionary:
 	if has_model:
 		out["albedo_tex"] = vat_texture()
 	return out
-
-
-## VatBake.pose_error: a random state (every input the pose reads, mixed freely), posed.
-func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
-	return (
-		SoloVat
-		. sample(
-			self,
-			rng,
-			{
-				"_t": [0.0, 40.0],
-				"_rise": [0.0, 1.0],
-				"_pulse": [0.0, 1.0],
-				"_erupt_s": [-0.5, STRIKE_END_S],
-				"_glide": [0.0, 1.0],
-				"_dir": [Vector2.RIGHT, Vector2(-0.6, 0.8), Vector2(0.0, -1.0), Vector2(-1.0, 0.0)],
-				"_turn": [0.0, 1.0],
-				"_yaw": [-TURN_MAX, TURN_MAX],
-				"_die_t": [-1.0, -1.0, DEATH_SECONDS * 0.3, DEATH_SECONDS * 0.7, DEATH_SECONDS],
-			},
-			_pose
-		)
-	)
-
-
-func vat_set(s: Dictionary) -> void:
-	SoloVat.apply(self, s, _pose)

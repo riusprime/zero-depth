@@ -207,7 +207,7 @@ var _pivots := PIVOTS.duplicate()
 ## frame node or null, make (SoloVat's)], a parent before its children.
 var _foot_z := PackedFloat32Array()
 var _joints: Array = []
-# The state the pose is made from (sync and advance keep it; vat_sample sets it).
+# The state the pose is made from (sync and advance keep it; VatVerify.sample sets it).
 var _state := WorldReader.STATE_SPAWN
 var _tell := 0.0
 var _hp := -1
@@ -907,33 +907,3 @@ func vat_rig() -> Dictionary:
 	if has_model:
 		out["albedo_tex"] = vat_texture()
 	return out
-
-
-func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
-	var ranges := {
-		"_t": [0.0, 40.0],
-		"_phase": [0.0, 1.0],
-		"_speed": [0.0, 2.0],
-		"_omega": [-2.0, 2.0],
-		"_stride": [0.0, 1.0],
-		"_heat": [0.0, 1.0],
-		"_coil": [0.0, 1.0],
-		"_tell": [0.0, 1.0],
-		"_rise": [0.0, 1.0],
-		"_slam_t": [-0.3, SLAM_SECONDS],
-		"_hurt_t": [-0.2, HURT_SECONDS],
-		"_hurt_leg": [0, 1, 2, 3, 4, 5, 6, 7],
-		"_die_t": [-0.6, DEATH_SECONDS],
-		"_state":
-		[
-			WorldReader.STATE_MOVE,
-			WorldReader.STATE_WINDUP,
-			WorldReader.STATE_ACTIVE,
-			WorldReader.STATE_RECOVER
-		],
-	}
-	return SoloVat.sample(self, rng, ranges, _pose)
-
-
-func vat_set(s: Dictionary) -> void:
-	SoloVat.apply(self, s, _pose)

@@ -42,7 +42,7 @@ func test_each_biome_critter_bakes_within_2_mm() -> void:
 		var vat := HordeAvatar.new()
 		vat.vat = true
 		vat.setup(kind)
-		var e := VatBake.pose_error_full(live, vat, pose, mesh, 40, 11)
+		var e := VatVerify.pose_error_full(live, vat, pose, mesh, 40, 11)
 		assert_eq(e["vertices"], mesh.surface_get_array_len(0), "kind %d: every vertex" % kind)
 		assert_lt(float(e["max_m"]), 0.002, "kind %d within 2 mm: %s" % [kind, e])
 		live.free()

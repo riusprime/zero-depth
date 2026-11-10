@@ -753,30 +753,3 @@ func vat_rig() -> Dictionary:
 	if has_model:
 		out["albedo_tex"] = vat_texture()
 	return out
-
-
-func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
-	var ranges := {
-		"_t": [0.0, 40.0],
-		"_phase": [0.0, 40.0],
-		"_walk": [0.0, 1.2],
-		"_tuck": [0.0, 1.0],
-		"_rumble": [0.0, 1.0],
-		"_rear": [0.0, 1.0],
-		"_slam": [0.0, 1.0],
-		"_impact": [-1.0, 1.5],
-		"_burst": [-0.6, 0.6],
-		"_burst_slam": [true, false, true],
-		"_die": [-1.0, 1.2],
-		"_windup": [0.0, 1.0],
-		"_state": [WorldReader.STATE_MOVE, WorldReader.STATE_WINDUP],
-		"_rise": [0.0, 1.0],
-		"_flinch_t": [0.0, 0.25],
-		"_flinch_s": [0.0, 1.5],
-	}
-	var s := SoloVat.sample(self, rng, ranges, _pose)
-	return s
-
-
-func vat_set(s: Dictionary) -> void:
-	SoloVat.apply(self, s, _pose)

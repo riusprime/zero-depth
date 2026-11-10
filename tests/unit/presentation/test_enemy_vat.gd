@@ -55,15 +55,15 @@ func test_the_bake_matches_the_live_pose() -> void:
 	var vat := HordeAvatar.new()
 	vat.vat = true
 	vat.setup(SW)
-	var e := VatBake.pose_error(live, vat, pose, mesh, 120, 7)
+	var e := VatVerify.pose_error(live, vat, pose, mesh, 120, 7)
 	assert_eq(e["vertices"], mesh.surface_get_array_len(0), "every vertex compared")
 	# 2 mm: about an eighth of a pixel at the game's camera (17 m over 1080 px); the report gives the real number.
 	assert_lt(float(e["max_m"]), 0.002, "within 2 mm: %s" % [e])
 	# On a grid point the bake is the pose itself.
 	live.pose_at(0.5, 0.25, 0.5, 0.0, 1.0)
 	vat.pose_at(0.5, 0.25, 0.5, 0.0, 1.0)
-	var a := VatBake.live_vertices(live)
-	var b := VatBake.eval_vertices(pose, mesh, Vector4(0.5, 0.25, 0.5, 0.0), vat.vat_lift())
+	var a := VatVerify.live_vertices(live)
+	var b := VatVerify.eval_vertices(pose, mesh, Vector4(0.5, 0.25, 0.5, 0.0), vat.vat_lift())
 	var worst := 0.0
 	for k in a.size():
 		worst = maxf(worst, a[k].distance_to(b[k]))
@@ -201,7 +201,7 @@ func test_the_charger_bake_matches_the_live_pose() -> void:
 		assert_eq(pose["key"], "charger", "the Charger and the Hatchling share one bake")
 		assert_eq(int(pose["drive_texels"]), 2, "eight drives past the fourth")
 		assert_true(mesh.get_meta(&"two_sided"), "its shell is drawn from both sides")
-		var e := VatBake.pose_error(live, vat, pose, mesh, 60, 11)
+		var e := VatVerify.pose_error(live, vat, pose, mesh, 60, 11)
 		assert_eq(e["vertices"], mesh.surface_get_array_len(0), "every vertex compared")
 		# 15.7 mm is a pixel at the game's camera; the report gives the real number.
 		assert_lt(float(e["max_m"]), 0.008, "under half a pixel: %s" % [e])
@@ -289,7 +289,7 @@ func test_every_other_horde_kind_bakes_within_2_mm() -> void:
 		vat.vat = true
 		vat.setup(kind)
 		assert_eq(vat.has_model(), live.has_model(), "kind %d: the same body" % kind)
-		var e := VatBake.pose_error_full(live, vat, pose, mesh, 40, 11)
+		var e := VatVerify.pose_error_full(live, vat, pose, mesh, 40, 11)
 		assert_eq(e["vertices"], mesh.surface_get_array_len(0), "kind %d: every vertex" % kind)
 		# 2 mm: about an eighth of a pixel at the game's camera; the report gives the real numbers.
 		assert_lt(float(e["max_m"]), 0.002, "kind %d within 2 mm: %s" % [kind, e])
@@ -311,10 +311,10 @@ func test_the_mine_layer_s_dropped_mine_draws_nothing() -> void:
 	var s := HordeVat.sample(RandomNumberGenerator.new())
 	s["strike"] = 0.0
 	vat.pose_with(s)
-	var shown := VatBake.eval_vertices_at(pose, mesh, vat.vat_grid_drives(), vat.vat_offset())
+	var shown := VatVerify.eval_vertices_at(pose, mesh, vat.vat_grid_drives(), vat.vat_offset())
 	s["strike"] = 1.0
 	vat.pose_with(s)
-	var dropped := VatBake.eval_vertices_at(pose, mesh, vat.vat_grid_drives(), vat.vat_offset())
+	var dropped := VatVerify.eval_vertices_at(pose, mesh, vat.vat_grid_drives(), vat.vat_offset())
 	var folded := 0
 	for k in shown.size():
 		if not shown[k].is_equal_approx(dropped[k]):
@@ -360,8 +360,10 @@ func test_vat_kinds_keep_the_old_drives_through_a_fight_and_a_death() -> void:
 				vat.glow_energy(), live.glow_energy(), "kind %d tick %d: the glow" % [kind, k]
 			)
 			assert_eq(vat.muzzle_energy(), live.muzzle_energy(), "kind %d: the muzzle" % kind)
-			var a_v := VatBake.live_vertices(live)
-			var b_v := VatBake.eval_vertices_at(pose, mesh, vat.vat_grid_drives(), vat.vat_offset())
+			var a_v := VatVerify.live_vertices(live)
+			var b_v := VatVerify.eval_vertices_at(
+				pose, mesh, vat.vat_grid_drives(), vat.vat_offset()
+			)
 			var k0 := 0
 			for piece: Dictionary in VatBake.pieces(live, VatBake.joints(live)):
 				var mi: MeshInstance3D = piece["node"]
