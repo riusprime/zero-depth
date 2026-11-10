@@ -45,6 +45,7 @@ are cited in the "Audit" column below). Progress: [`PROGRESS.md`](PROGRESS.md).
 | L16 | A native core (2026-11-10), after the clean numbers showed the thread is a modest gain and the lead named compiled code as the largest lever: "What toolchain is the best I will install it, if we are gonna change the AI to other language does the actual code in C++ need to match those sims or can we change both? This is my game and solo proyect not released yet so we do not have to meet all the seems and rules, if the best choice is to modify them we can" | **The native code does not have to reproduce the GDScript sim bit for bit.** It must be deterministic against itself (replays, save and resume, tests); the goldens are re-recorded from it on purpose; behaviour is held by the existing rule tests and a side-by-side balance comparison. Toolchain: C++ through GDExtension (the lead's recommendation: the standard Godot build stays, direct access to the renderer for the crowd bridge, every export platform). Starts with a spike; Wave 5's steps 36 to 38 wait for its result, because a native core changes where the world's state lives | 49 |
 | L17 | Port the rest (2026-11-10), after the spike measured about 20× on the ported work: "Yes, port the rest" | Wave 7 below: the hot loops move to C++ in stages, each behind the switch and measured; then one flip that makes the native core the only one, re-records the goldens and deletes the GDScript versions. The owner playtests the flip | 50–55 |
 | L18 | Death cubes (2026-11-10): "what about the cube particles that pop out of an enemy when it dies? do those take a lot of effort?"; told they are cheap (the hit-feedback view is about 0.5 ms a frame) but built one node a cube and timed in rendered frames, and offered the fix: "yeah let's do it" | One draw a look instead of a node a cube; the pieces last 0.5 s at any frame rate (they lasted 30 rendered frames: 0.5 s at 60 fps, 0.2 s at 144). A visible change above 60 fps, which the owner was told | 56 |
+| L19 | The display layer (2026-11-10), after the lead said the largest part of a horde frame is the views (GDScript visiting every object every frame) and named three changes: enemies as instances fed in one batch, effects computed on the GPU, views that react to events instead of polling: "Okay this plan sounds good, let's go for it, go ahead until you completed those three, then I'll play test it and see the feeling, i'll go to sleep now so if there is any open questions just wrtie them and ask them in the morning" | Wave 8 below, built after the native core, each change measured on a quiet machine before and after. Questions go to [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md). **The owner playtests at the end** | 55, 57, 58 |
 
 ## Rules for every step
 
@@ -161,6 +162,17 @@ changing the game; each step reports `horde_phases` off against on.
 
 **Paused by this wave:** steps 37 and 38 (grouping the world's fields, the reflective hasher) are re-decided after
 the flip, because the native core changes where the state lives. Step 36 rides with the flip.
+
+### Wave 8: the display layer (owner L19)
+
+Sized from the frame attribution run (`scripts/checks/frame_attribution.sh`, quiet machine), which each step repeats.
+The look must not change: each step proves it with a dump or a shot, and the owner judges the feel at the end.
+
+| Step | Outcome | What | Done when | Agent |
+|---|---|---|---|---|
+| 55 | Every enemy is an instance fed in one batch | The renderer bridge (step 39 by another road, NATIVE_CORE §8): one instanced batch an enemy kind with baked animation, its rows written from the native side once a frame; the per-enemy nodes go | The enemy dump or shots match; the attribution run before and after | O |
+| 57 | Effects are drawn by the GPU, not rebuilt in script | The effects layer's drawers and the attack forms (`attack_form_view.gd` is the largest script in a horde frame): instanced batches and shaders fed a few numbers an effect, in place of geometry rebuilt every frame | Shots of each changed effect match; the attribution run before and after | O |
+| 58 | Views react to events instead of polling | The views' sync: a view is visited when the sim says something of its kind changed, not every frame | The idle and wake tests; the attribution run before and after | O |
 
 ### Wave 6: structural (each one decided from Wave 3's numbers)
 

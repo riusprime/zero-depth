@@ -193,3 +193,13 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   the lead had told the owner: enemies are NOT made to decide less often. Planning already runs 7.5 times a second,
   staggered by id; in C++ the per-tick part costs about 0.02 ms, so a lower rate would save nothing measurable and
   would delay attack starts. The one rate change is the path flood, run whole in one tick.
+- 2026-11-10 (owner, before going to sleep): approved the display-layer changes (L19: "go ahead until you completed
+  those three, then I'll play test it"); questions go to [`OWNER_QUESTIONS.md`](OWNER_QUESTIONS.md). Wave 8 written.
+- 2026-11-10 (lead): step 51's table of a horde frame had an "unnamed 9 ms" that does not exist. The frame-attribution
+  tooling (`v0111-prof`, `7149108f`) showed the probe's three frame spans cover the whole frame; the `--process` run
+  adds 5–7 ms of its own, and `engine.process` / `engine.physics_process` are per-second maxima, not per-frame means
+  (PERF_AFTER's breakdown rows carry that error: read them for proportions among script buckets only). Orphan nodes
+  are the pack effects' idle pools; the live-object growth is the event log filling to its cap. Steps 52a (the native
+  shared core, `e7f8e26f`) and 56 (the death cubes, `dc7c5fa2`) reported; merging after the seams run, which found one
+  failure: the locale key scan read the native switch's environment variable name as a text key (52a already rewrote
+  that line).
