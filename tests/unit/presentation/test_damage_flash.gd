@@ -95,13 +95,13 @@ func test_kill_shards_reuse_their_material() -> void:
 	feel.sync(reader)
 	var mats := {}
 	for c in feel.get_children():
-		mats[(c as MeshInstance3D).material_override] = true
+		mats[(c as GeometryInstance3D).material_override] = true
 	assert_eq(mats.size(), 1, "one burst, one material")
 	Damage.hit(w, 2, 9999, 2, 2, 2, 0, Vector2.ZERO, Vector2(-1.2, 0))
 	feel.sync(reader)
-	assert_gt(feel.get_child_count(), HitFeel.SHARDS, "a second burst")
+	assert_eq(feel.spark_count(), HitFeel.SHARDS * 2, "a second burst")
 	for c in feel.get_children():
-		mats[(c as MeshInstance3D).material_override] = true
+		mats[(c as GeometryInstance3D).material_override] = true
 	assert_eq(mats.size(), 1, "a second burst of the same colour shares it")
 
 
