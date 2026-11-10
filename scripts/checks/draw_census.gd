@@ -378,6 +378,7 @@ func _make_groups() -> Array:
 	g.append(["fx: the other views (%d)" % fx.size(), _vis_setter(fx)])
 	for c: Node3D in fx:  # and each of them alone
 		g.append(["  view: %s" % _label(c), _vis_setter([c])])
+	g.append_array(_pack_groups(v))
 	# The 2D on top: each of the HUD's parts, the UI layer's other children, the view's own canvas layers.
 	var hud: Node = _main._hud
 	for c in _main.ui.get_children():
@@ -391,6 +392,24 @@ func _make_groups() -> Array:
 		var layer := c as CanvasLayer
 		g.append(["view canvas layer: %s" % layer.name, _layer_setter(layer)])
 	return g
+
+
+## The pack's live effects, one source per effect id (the pack is the largest effect view in a fight).
+static func _pack_groups(v: WorldViewRoot) -> Array:
+	var pack: PackFx = v.pack_fx
+	if pack == null:
+		return []
+	var by_id := {}
+	for e: Dictionary in pack._live:
+		if is_instance_valid(e["node"]):
+			if not by_id.has(e["id"]):
+				by_id[e["id"]] = []
+			by_id[e["id"]].append(e["node"])
+	var out: Array = []
+	for id: StringName in by_id:
+		var nodes: Array = by_id[id]
+		out.append(["    pack: %s x%d" % [id, nodes.size()], _vis_setter(nodes)])
+	return out
 
 
 static func _label(n: Node) -> String:
@@ -422,7 +441,7 @@ func _kit_lights(kit: StageKit, whole: bool) -> Callable:
 				l.shadow_enabled = shd[l] if on else false
 
 
-func _vis_setter(nodes: Array) -> Callable:
+static func _vis_setter(nodes: Array) -> Callable:
 	var was := {}
 	for n in nodes:
 		was[n] = n.visible

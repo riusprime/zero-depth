@@ -94,7 +94,9 @@ func _sync_drops(reader: WorldReader, taken: PackedVector2Array) -> void:
 			(d[0] as Node3D).queue_free()
 			d = []
 		if d.is_empty():
-			var node := ShardMesh.cluster(gem_material(), n, DROP_HEIGHT, DROP_SPREAD, seqs[k])
+			var node := ShardMesh.baked(
+				ShardMesh.cluster(gem_material(), n, DROP_HEIGHT, DROP_SPREAD, seqs[k])
+			)
 			node.add_child(ShardMesh.glow(COLOR, 0.9, 0.4))
 			node.rotation.y = float(seqs[k] % 7)
 			add_child(node)
