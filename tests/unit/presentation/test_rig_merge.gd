@@ -16,7 +16,7 @@ func after_each() -> void:
 
 func _needle() -> NeedleAvatar:
 	var n := NeedleAvatar.new()
-	n.setup(Color.BLACK)
+	n.setup()
 	add_child_autofree(n)
 	return n
 
@@ -110,7 +110,7 @@ func test_equal_body_materials_are_one_and_the_flash_list_has_each_once() -> voi
 
 func test_the_hit_flash_reaches_the_merged_meshes_of_a_shared_material_avatar() -> void:
 	var h := HordeAvatar.new()
-	h.setup(WorldReader.KIND_SWARMER, Color.BLACK)
+	h.setup(WorldReader.KIND_SWARMER)
 	add_child_autofree(h)
 	RigMerge.merge(h, WorldReader.KIND_SWARMER)
 	assert_gt(h.hit_pieces().size(), 0, "the body plates are still listed")
@@ -126,7 +126,7 @@ func test_the_hit_flash_reaches_the_merged_meshes_of_a_shared_material_avatar() 
 
 func test_a_charger_keeps_its_stretched_body_apart_and_merges_its_legs() -> void:
 	var c := ChargerAvatar.new()
-	c.setup(Color.BLACK)
+	c.setup()
 	add_child_autofree(c)
 	RigMerge.merge(c, WorldReader.KIND_CHARGER)
 	for p in RigMerge.pieces_under(c.body):

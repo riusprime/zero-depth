@@ -12,17 +12,17 @@ const WINDUP_TICKS := 48
 func _melee() -> Array:
 	var out := []
 	var charger := ChargerAvatar.new()
-	charger.setup(Color.BLACK)
+	charger.setup()
 	out.append(["charger", charger, charger.windup_amount, charger.strike_swing])
 	var hatch := ChargerAvatar.new()
-	hatch.setup(Color.BLACK, &"outline", WorldReader.KIND_HATCHLING)
+	hatch.setup(WorldReader.KIND_HATCHLING)
 	out.append(["hatchling", hatch, hatch.windup_amount, hatch.strike_swing])
 	for kind: int in HordeAvatar.STRIKE_KINDS:
 		var h := HordeAvatar.new()
-		h.setup(kind, Color.BLACK)
+		h.setup(kind)
 		out.append(["horde %d" % kind, h, h.windup_pose, h.strike_pose])
 	var warden := WardenAvatar.new()
-	warden.setup(Color.BLACK)
+	warden.setup()
 	out.append(["warden", warden, warden.raise_amount, warden.slam_amount])
 	for spec: Array in out:
 		add_child_autofree(spec[1])
@@ -103,7 +103,7 @@ func test_a_windup_held_at_full_progress_never_strikes_by_itself() -> void:
 
 func test_the_warden_slams_overhead_and_kicks_up_a_dust_ring_the_size_of_its_circle() -> void:
 	var a := WardenAvatar.new()
-	a.setup(Color.BLACK)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	var t := 0

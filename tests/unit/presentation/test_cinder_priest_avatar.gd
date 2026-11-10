@@ -29,7 +29,7 @@ func after_each() -> void:
 
 func _priest() -> CinderPriestAvatar:
 	var a := CinderPriestAvatar.new()
-	a.setup(Color.BLACK)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	return a
@@ -228,7 +228,7 @@ func test_without_the_model_a_code_body_of_the_same_joints_stands_in() -> void:
 	assert_gt(a.find_children("*", "MeshInstance3D", true, false).size(), 10, "its own pieces")
 	_run(a, 10, func(_k: int) -> int: return 800, _none)
 	assert_gt(_d(a, CinderPriestAvatar.ARM_R_F), 0.7, "posed by the same code")
-	var live := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+	var live := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0)
 	assert_eq(
 		String(VatBake.rig_of(live)["key"]), "cinder_priest_code", "baked apart from the model's"
 	)
@@ -244,8 +244,8 @@ func test_the_bake_matches_the_live_pose() -> void:
 	var mesh := VatBake.mesh_for(KIND, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 	for calm: bool in [false, true]:
 		ViewPrefs.reduced_motion = calm
-		var live := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0, Color.BLACK)
-		var vat := VatBake.vat_avatar_of(KIND, Color.BLACK)
+		var live := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0)
+		var vat := VatBake.vat_avatar_of(KIND)
 		var e := VatBake.pose_error(live, vat, pose, mesh, 40, 7)
 		assert_eq(e["vertices"], mesh.surface_get_array_len(0), "every vertex compared")
 		assert_lt(float(e["max_m"]), 0.002, "calm %s: well under a pixel: %s" % [calm, e])
@@ -259,8 +259,8 @@ func test_the_bake_matches_the_live_pose() -> void:
 
 
 func test_a_vat_avatar_keeps_the_live_drives_lift_and_glow() -> void:
-	var live := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0, Color.BLACK)
-	var vat := VatBake.vat_avatar_of(KIND, Color.BLACK)
+	var live := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0)
+	var vat := VatBake.vat_avatar_of(KIND)
 	add_child_autofree(live)
 	add_child_autofree(vat)
 	for a: Node in [live, vat]:
@@ -332,7 +332,7 @@ func test_actor_views_draw_it_and_its_pulse_is_the_sim_s() -> void:
 func _caster() -> CinderPriestAvatar:
 	var a := CinderPriestAvatar.new()
 	a.kind = WorldReader.KIND_ARC_CASTER
-	a.setup(Color.BLACK)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	return a
@@ -349,9 +349,7 @@ func test_the_arc_caster_wears_the_model_in_its_own_colours() -> void:
 	assert_ne(cc, pc, "the caster's plates differ")
 	assert_ne(caster.palette["gem"], priest.palette["gem"], "and its gem")
 	assert_true(SoloVat.is_solo(WorldReader.KIND_ARC_CASTER))
-	assert_true(
-		SoloVat.vat_avatar_of(WorldReader.KIND_ARC_CASTER, Color.BLACK) is CinderPriestAvatar
-	)
+	assert_true(SoloVat.vat_avatar_of(WorldReader.KIND_ARC_CASTER) is CinderPriestAvatar)
 	var rig_c: Dictionary = caster.vat_rig()
 	var rig_p: Dictionary = priest.vat_rig()
 	assert_ne(rig_c["key"], rig_p["key"], "a rig per kind")

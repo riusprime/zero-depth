@@ -92,9 +92,7 @@ func add(root: Node3D, facing: Node3D, avatar: AvatarBase, outline: Color, shado
 	if not _looks.has(key):
 		var mesh := VatBake.mesh_for(kind, avatar.enemy_tint, avatar.role_glow, outline)
 		var pose := VatBake.pose_for(kind)
-		var mat := VatLooks.material(
-			pose, outline, pose["outline_m"], bool(mesh.get_meta(&"two_sided", false))
-		)
+		var mat := VatLooks.material(pose, bool(mesh.get_meta(&"two_sided", false)))
 		_looks[key] = _new_set(mesh, mat, true, pose)
 	(_looks[key]["entries"] as Array).append([root, facing, avatar])
 	if shadow:
@@ -108,7 +106,7 @@ func add(root: Node3D, facing: Node3D, avatar: AvatarBase, outline: Color, shado
 
 ## The rest-pose shadow stand-in of `kind` (EnemyShadows': the same mesh a node enemy casts with).
 static func shadow_mesh(kind: int) -> ArrayMesh:
-	var ref := VatBake.reference_of(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+	var ref := VatBake.reference_of(kind, Color(0, 0, 0, 0), 0.0)
 	var mesh := EnemyShadows.proxy_mesh(kind, ref)
 	ref.free()
 	return mesh
@@ -354,9 +352,7 @@ static func warm_proxy(
 	mmi.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF  # set outside the physics step, like the crowd's
 	mmi.multimesh = mm
 	var pose := VatBake.pose_for(kind)
-	var mat := VatLooks.material(
-		pose, outline, pose["outline_m"], bool(mesh.get_meta(&"two_sided", false))
-	)
+	var mat := VatLooks.material(pose, bool(mesh.get_meta(&"two_sided", false)))
 	if int(pose["drive_texels"]) > 0:
 		VatLooks.set_drives(mat, _zero_drives(int(pose["drive_texels"])))
 	mmi.material_override = mat

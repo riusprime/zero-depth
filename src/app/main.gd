@@ -311,7 +311,7 @@ func show_gallery() -> void:
 	var g := Gallery.new()
 	g.name = "Gallery"
 	add_child(g)
-	g.setup(&"ruins", 35.26, &"outline", true)
+	g.setup(&"ruins", 35.26, true)
 
 
 ## Starts a run (v0.3.0 B) with the run seed _stage_seed, on its first floor, all in this frame (the tools and the

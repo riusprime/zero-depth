@@ -9,7 +9,7 @@ const BONES := {&"stone_sentinel": 9, &"crawler_queen": 11, &"fortress_turret": 
 
 func _avatar(cls: Variant) -> BossAvatar:
 	var a: BossAvatar = cls.new()
-	a.setup(Color("#1A1A22"))
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	return a

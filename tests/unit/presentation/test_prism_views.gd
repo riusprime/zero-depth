@@ -25,7 +25,7 @@ func _prism(seed_value: int = 301) -> World:
 
 func _avatar() -> PrismAvatar:
 	var a := PrismAvatar.new()
-	a.setup(Color("#1A1A22"))
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	return a

@@ -42,7 +42,7 @@ func test_the_weak_point_glows_on_the_model_by_energy_only() -> void:
 		GatekeeperAvatar.new(), BroodMotherAvatar.new(), SiegeEngineAvatar.new()
 	]:
 		add_child_autofree(avatar)
-		avatar.setup(Color.BLACK)
+		avatar.setup()
 		var mat := avatar.weak_material
 		assert_true(mat.emission_enabled, "emission on from the start")
 		avatar.apply_state(

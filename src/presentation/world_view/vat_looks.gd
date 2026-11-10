@@ -21,8 +21,6 @@ extends RefCounted
 ## makes an accent glow at drive CUSTOM2.z - 1 instead of the instance's glow (the Needle's muzzle: a second glow), and
 ## CUSTOM2.w = 1 draws a piece unshaded, as an unshaded StandardMaterial3D shows it: its albedo as is, no light, no
 ## flash (the Warden's cracks, the Arc Caster's crystal, the Bomb Drone's fuse). Flags, not new mode numbers.
-## The stencil outline pass (EnemyLooks._OUTLINE: grown along the normal, drawn where the stencil is not 1) follows
-## when ActorLooks.OUTLINES is on, posed the same way; an accent draws none (its triangles fold to a point there).
 ## Presentation only (EI-07).
 
 ## The joint chain is followed up to VatBake.MAX_CHAIN (32) joints.
@@ -130,7 +128,6 @@ const _DRIVES := """
 """
 const _BODY_HEAD := """shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx;
-stencil_mode write, compare_always, 1;
 """
 const _BODY_VARYINGS := """
 varying vec3 zd_albedo;
@@ -178,24 +175,6 @@ const _BODY_FRAGMENT := """
 	}
 }
 """
-const _OUTLINE_HEAD := """shader_type spatial;
-render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx, unshaded;
-stencil_mode read, compare_not_equal, 1;
-
-uniform vec4 albedo : source_color;
-uniform float grow;
-"""
-const _OUTLINE_BODY := """
-	vec3 n = zd_normal(m, NORMAL);
-	VERTEX = CUSTOM1.a > 0.5 ? (m * vec4(VERTEX, 1.0)).xyz + n * grow : vec3(0.0);
-}
-
-void fragment() {
-	ALBEDO = albedo.rgb;
-	ALPHA = albedo.a;
-}
-"""
-
 ## v0.10.5 W3-V4b: the textured variant (the owner's models: their plates are textured, their accents are not), the
 ## map sampled for every fragment, outside the branch, so its mip level is never read from a neighbour that skipped it.
 const _TEX := "uniform sampler2D zd_tex : source_color, filter_linear_mipmap, repeat_enable;\n"
@@ -215,21 +194,17 @@ static func _shader(id: String, code: String) -> Shader:
 	return _shaders[id]
 
 
-## The body material for the baked `pose` (VatBake.pose_for), outlined in `outline` `outline_m` thick when
-## ActorLooks.OUTLINES is on (0: none); `two_sided` (the mesh's "two_sided" meta): the cull_disabled variant. A new
-## material per crowd look (its uniforms are the pose's and the look's drive texture, set_drives).
-static func material(
-	pose: Dictionary, outline: Color, outline_m: float, two_sided := false
-) -> ShaderMaterial:
+## The body material for the baked `pose` (VatBake.pose_for); `two_sided` (the mesh's "two_sided" meta): the
+## cull_disabled variant. A new material per crowd look (its uniforms are the pose's and the look's drive texture,
+## set_drives).
+static func material(pose: Dictionary, two_sided := false) -> ShaderMaterial:
 	var head := _BODY_HEAD
-	if not ActorLooks.OUTLINES:
-		head = head.replace("stencil_mode write, compare_always, 1;\n", "")
 	if two_sided:
 		head = head.replace("cull_back", "cull_disabled")
 	var m := ShaderMaterial.new()
 	var tex: Texture2D = pose.get("albedo_tex")
 	m.shader = _shader(
-		"body%d%d%d" % [int(ActorLooks.OUTLINES), int(two_sided), int(tex != null)],
+		"body%d%d" % [int(two_sided), int(tex != null)],
 		(
 			head
 			+ (_TEX if tex != null else "")
@@ -248,16 +223,6 @@ static func material(
 	if tex != null:
 		m.set_shader_parameter("zd_tex", tex)
 	_set_pose(m, pose)
-	if ActorLooks.OUTLINES and outline_m > 0.0:
-		var o := ShaderMaterial.new()
-		o.shader = _shader(
-			"outline", _OUTLINE_HEAD + _POSE + "\nvoid vertex() {" + _DRIVES + _OUTLINE_BODY
-		)
-		o.render_priority = EnemyLooks.PASS_PRIORITY
-		o.set_shader_parameter("albedo", outline)
-		o.set_shader_parameter("grow", outline_m)
-		_set_pose(o, pose)
-		m.next_pass = o
 	return m
 
 
@@ -267,12 +232,9 @@ static func _set_pose(m: ShaderMaterial, pose: Dictionary) -> void:
 	m.set_shader_parameter("zd_scaled", bool(pose.get("scaled", false)))
 
 
-## v0.10.5 W3-V4a: the drive texture (one row per instance) `m` (and its outline pass) reads the drives past the
-## fourth from.
+## v0.10.5 W3-V4a: the drive texture (one row per instance) `m` reads the drives past the fourth from.
 static func set_drives(m: ShaderMaterial, tex: Texture2D) -> void:
 	m.set_shader_parameter("zd_drives", tex)
-	if m.next_pass is ShaderMaterial:
-		(m.next_pass as ShaderMaterial).set_shader_parameter("zd_drives", tex)
 
 
 ## The value an instance's COLOR carries (see the class notes): the hit value's rgb, the glow and whether it shows.

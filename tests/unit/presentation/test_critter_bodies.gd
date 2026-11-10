@@ -38,10 +38,10 @@ func test_each_biome_critter_bakes_within_2_mm() -> void:
 		assert_true(HordeAvatar.is_horde_kind(kind), "kind %d is a horde body" % kind)
 		var pose := VatBake.pose_for(kind)
 		var mesh := VatBake.mesh_for(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
-		var live := VatBake.reference_avatar(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+		var live := VatBake.reference_avatar(kind, Color(0, 0, 0, 0), 0.0)
 		var vat := HordeAvatar.new()
 		vat.vat = true
-		vat.setup(kind, Color.BLACK)
+		vat.setup(kind)
 		var e := VatBake.pose_error_full(live, vat, pose, mesh, 40, 11)
 		assert_eq(e["vertices"], mesh.surface_get_array_len(0), "kind %d: every vertex" % kind)
 		assert_lt(float(e["max_m"]), 0.002, "kind %d within 2 mm: %s" % [kind, e])
@@ -200,7 +200,7 @@ func test_the_bat_flies_the_mote_floats_the_flea_hops_and_the_crab_slides() -> v
 	for kind in KINDS:
 		var a := HordeAvatar.new()
 		a.vat = true
-		a.setup(kind, Color.BLACK)
+		a.setup(kind)
 		a.apply_state({"tick": 0, "state": WorldReader.STATE_MOVE})
 		var lo := 99.0
 		var hi := -99.0

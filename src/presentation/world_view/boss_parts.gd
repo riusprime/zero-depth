@@ -2,35 +2,17 @@ class_name BossParts
 extends RefCounted
 ## Shared builders for the boss models (v0.3.0 C; docs/art/first-three-bosses-concept.png): low-poly faceted
 ## pieces with flat-shaded facets tinted a little lighter or darker each (vertex colours), so the planes read apart
-## as on the sheet. Every body piece gets an outlined, flashable material (ActorViews.flashable: emission on at
-## energy 0, so a hit flash never swaps a shader) and, with the X-ray technique, a silhouette twin. Glowing parts
-## (visors, cracks, eggs, muzzles) are emissive and mark the stencil like the body, so their twins stay hidden.
+## as on the sheet. Every body piece gets a flashable material (ActorViews.flashable: emission on at energy 0, so a
+## hit flash never swaps a shader). Glowing parts (visors, cracks, eggs, muzzles) are emissive.
 ## Presentation only; the meshes are fixed (an integer hash, no RNG).
 
 const FACET_TINT := 0.14
 
 var body_materials: Array[StandardMaterial3D] = []
 var glow_materials: Array[StandardMaterial3D] = []
-var _outline := Color.BLACK
-var _technique := &"outline"
-var _outline_m := 0.03
 
 
-func _init(outline_color: Color, technique: StringName, outline_m: float = 0.03) -> void:
-	_outline = outline_color
-	_technique = technique
-	_outline_m = outline_m
-
-
-func outline_color() -> Color:
-	return _outline
-
-
-func technique() -> StringName:
-	return _technique
-
-
-## One body piece under `parent`: the mesh at `at` (rotation `rot` in radians, `scl`), outlined and flashable.
+## One body piece under `parent`: the mesh at `at` (rotation `rot` in radians, `scl`), flashable.
 func piece(
 	parent: Node3D,
 	mesh: Mesh,
@@ -50,7 +32,6 @@ func piece(
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = c
 	mat.roughness = 1.0
-	ActorLooks.outline(mat, _outline, _outline_m)
 	mat.vertex_color_use_as_albedo = mesh is ArrayMesh
 	body.material_override = mat
 	parent.add_child(body)
@@ -78,7 +59,6 @@ func glow(
 	m.emission_enabled = true
 	m.emission = c
 	m.emission_energy_multiplier = energy
-	AvatarBase.write_stencil(m)
 	n.material_override = m
 	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(n)

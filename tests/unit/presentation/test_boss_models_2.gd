@@ -16,9 +16,9 @@ func after_each() -> void:
 	ViewPrefs.reduced_motion = false
 
 
-func _avatar(cls: Variant, technique: StringName = &"outline") -> BossAvatar:
+func _avatar(cls: Variant) -> BossAvatar:
 	var a: BossAvatar = cls.new()
-	a.setup(Color("#1A1A22"), technique)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	return a
@@ -134,9 +134,7 @@ func test_the_models_are_flashable_outlined_textured_without_an_xray_twin() -> v
 		assert_same(a.imported.material_override, m)
 		assert_true(m.emission_enabled, "flashable: emission on")
 		assert_eq(m.emission_energy_multiplier, 0.0, "dark until hit")
-		assert_eq(m.stencil_mode, ActorLooks.outline_mode(), "%s outlined" % id)
-		if ActorLooks.OUTLINES:
-			assert_eq(m.stencil_outline_thickness, 0.0, "%s: no drawn outline (owner, v0.7.5)" % id)
+		assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_DISABLED, "%s: no stencil" % id)
 		assert_not_null(m.albedo_texture, "%s keeps its texture" % id)
 		assert_eq(
 			a.find_children("XrayTwin", "MeshInstance3D", true, false).size(),

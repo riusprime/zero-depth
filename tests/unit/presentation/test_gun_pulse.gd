@@ -329,7 +329,7 @@ func test_reduced_motion_keeps_only_the_spark() -> void:
 
 func _avatar(shot: bool) -> PlayerAvatar:
 	var a := PlayerAvatar.new()
-	a.setup(Color.BLACK)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	(

@@ -48,7 +48,6 @@ const FACE_X := HOOD_HALF_LEN - 0.02
 ## The face's point, below the hood's bottom (hood-local y).
 const CHIN_Y := -0.3
 ## The avatar's rim is thinner than the other actors' (the sheet has a light line, not a heavy one).
-const OUTLINE_M := 0.014
 ## Walking speed the gait is tuned for (the sim's 6 m/s) and the stride (metres per full two-step cycle).
 const WALK_SPEED := 6.0
 const STRIDE := 1.25
@@ -123,8 +122,6 @@ var runes: AffinityRunes
 ## v0.9.0 MP2: an epic robe's pieces (EpicRobeView: The Fallen's or the divine; null for a colour robe).
 var epic: EpicRobeView
 var _style := &""
-var _outline := Color.BLACK
-var _technique := &"outline"
 var _hood_mat: StandardMaterial3D
 
 var _pelvis := Node3D.new()
@@ -198,11 +195,9 @@ func _notification(what: int) -> void:
 		AvatarBase.free_if_loose(n)
 
 
-## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
-func setup(outline_color: Color, technique: StringName = &"outline") -> void:
+## Builds the model.
+func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	_outline = outline_color
-	_technique = technique
 	var team := ThemePalette.color(&"player_core")
 	_pelvis.position.y = HIP_Y
 	add_child(_pelvis)
@@ -210,7 +205,7 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	hood = Node3D.new()
 	hood.position = Vector3(0.05, NECK_Y - HIP_Y, 0)
 	_head_yaw.add_child(hood)
-	var shell := _mesh_piece(hood, _hood_mesh(), cloak_color, outline_color, team, technique)
+	var shell := _mesh_piece(hood, _hood_mesh(), cloak_color)
 	_hood_mat = shell.material_override as StandardMaterial3D
 	_hood_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	face = MeshInstance3D.new()
@@ -218,7 +213,6 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	var fm := StandardMaterial3D.new()
 	fm.albedo_color = FACE_COLOR
 	fm.roughness = 1.0
-	write_stencil(fm)
 	face.material_override = fm
 	face.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	hood.add_child(face)
@@ -230,14 +224,13 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	_visor_mat.emission_enabled = true
 	_visor_mat.emission = team
 	_visor_mat.emission_energy_multiplier = VISOR_ENERGY
-	write_stencil(_visor_mat)
 	visor.material_override = _visor_mat
 	visor.position = Vector3(FACE_X + 0.006, 0.0, 0)
 	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	hood.add_child(visor)
 	_build_cloak_rest()
 	# The poncho's colour comes from its vertices: cream outside, the shaded cream underneath.
-	cloak = _mesh_piece(self, _cloak_mesh, Color.WHITE, outline_color, team, technique)
+	cloak = _mesh_piece(self, _cloak_mesh, Color.WHITE)
 	var cm := cloak.material_override as StandardMaterial3D
 	cm.vertex_color_use_as_albedo = true
 	cm.vertex_color_is_srgb = true
@@ -252,20 +245,20 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 		var shin := Node3D.new()
 		shin.position.y = -(LEG_LEN - 0.1) * 0.5
 		pivot.add_child(shin)
-		_mesh_piece(shin, leg, LEG_COLOR, outline_color, team, &"outline")
+		_mesh_piece(shin, leg, LEG_COLOR)
 		# The boot: a slightly larger, lighter block with a low toe stepping out in front.
 		var boot := BoxMesh.new()
 		boot.size = Vector3(LEG_W + 0.025, 0.15, LEG_W + 0.02)
 		var foot := Node3D.new()
 		foot.position = Vector3(0.0, -LEG_LEN + 0.075, 0)
 		pivot.add_child(foot)
-		_mesh_piece(foot, boot, BOOT_COLOR, outline_color, team, &"outline")
+		_mesh_piece(foot, boot, BOOT_COLOR)
 		var toe := BoxMesh.new()
 		toe.size = Vector3(0.06, 0.055, LEG_W + 0.02)
 		var toe_at := Node3D.new()
 		toe_at.position = Vector3((LEG_W + 0.025) * 0.5 + 0.025, -LEG_LEN + 0.0275, 0)
 		pivot.add_child(toe_at)
-		_mesh_piece(toe_at, toe, BOOT_COLOR, outline_color, team, &"outline")
+		_mesh_piece(toe_at, toe, BOOT_COLOR)
 		legs.append(pivot)
 	runes = AffinityRunes.new()
 	add_child(runes)
@@ -307,7 +300,7 @@ func _set_epic(style: StringName) -> void:
 	if EpicRobeView.STYLES.has(style):
 		epic = EpicRobeView.new()
 		add_child(epic)
-		epic.build(self, style, _outline, _technique)
+		epic.build(self, style)
 
 
 ## v0.9.0 MP2: what the epic robe's cloth follows: [the cloak frame, the poncho's hem springs (not a copy), the body's
@@ -993,7 +986,5 @@ static func _face_mesh() -> ArrayMesh:
 	return mesh
 
 
-func _mesh_piece(
-	parent: Node3D, mesh: Mesh, c: Color, outline: Color, team: Color, technique: StringName
-) -> MeshInstance3D:
-	return _outlined(parent, mesh, Vector3.ZERO, c, outline, team, technique, OUTLINE_M)
+func _mesh_piece(parent: Node3D, mesh: Mesh, c: Color) -> MeshInstance3D:
+	return _body_piece(parent, mesh, Vector3.ZERO, c)

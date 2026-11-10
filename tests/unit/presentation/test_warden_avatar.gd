@@ -6,9 +6,9 @@ extends GutTest
 const DT := 1.0 / 60.0
 
 
-func _avatar(technique: StringName = &"outline") -> WardenAvatar:
+func _avatar() -> WardenAvatar:
 	var a := WardenAvatar.new()
-	a.setup(Color("#1A1A22"), technique)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)  # the test steps advance() itself
 	return a
@@ -49,11 +49,11 @@ func test_exposes_body_materials_for_the_hit_flash() -> void:
 	var a := _avatar()
 	assert_gt(a.body_materials.size(), 8, "every body piece has a material")
 	for m in a.body_materials:
-		assert_eq(m.stencil_mode, ActorLooks.outline_mode(), "body pieces are outlined")
+		assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_DISABLED, "no stencil")
 
 
 func test_no_xray_twins() -> void:
-	var o := _avatar(&"outline")
+	var o := _avatar()
 	for c in _all_nodes(o):
 		if c is MeshInstance3D:
 			var m := (c as MeshInstance3D).material_override as StandardMaterial3D

@@ -36,7 +36,6 @@ const CHARCOAL := Color("#2E3036")
 const GREY := Color("#77706B")
 const BONE := Color("#D9CDB8")
 const ROCK_COLOR := Color("#8E8780")
-const OUTLINE_M := 0.02
 ## The joints' pivots (model metres, the right side; the left mirrors z): the prep script's (its PELVIS, NECK ...),
 ## used as they are by the code-made body; the model's own pivots win when it is there.
 const PELVIS := Vector3(0.0, 0.62, 0.0)
@@ -177,24 +176,17 @@ var _rock_shown := 0.0
 
 ## ActorViews' way in: the avatar under `facing` (on the VAT crowd while its switch is on: _solo_vat), `root` marked
 ## (the avatar, its body materials for the hit flash); returns its height.
-static func attach(
-	views: ActorViews,
-	root: Node3D,
-	facing: Node3D,
-	p_kind: int,
-	outline: Color,
-	technique: StringName
-) -> float:
+static func attach(views: ActorViews, root: Node3D, facing: Node3D, p_kind: int) -> float:
 	var a := StoneThrowerAvatar.new()
 	views._solo_vat(root, a, p_kind)
-	a.setup(outline, technique)
+	a.setup()
 	facing.add_child(a)
 	root.set_meta(&"enemy_avatar", a)
 	root.set_meta(&"mats", a.body_materials.duplicate())
 	return a.height
 
 
-func setup(outline_color: Color, technique: StringName = &"outline") -> void:
+func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_vd.resize(VAT_DRIVES.size())
 	var m := EnemyModels.get_model(MODEL_ID)
@@ -208,7 +200,7 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	if has_model:
 		_build_model(m)
 	else:
-		_build_code(outline_color, technique)
+		_build_code()
 	_pose()
 
 
@@ -290,7 +282,6 @@ func _build_model(m: Dictionary) -> void:
 		mat.albedo_texture = tex
 		mat.albedo_color = ROLE if slot == &"role" else Color.WHITE
 		mat.roughness = 1.0
-		ActorLooks.outline(mat, Color.BLACK, 0.0)
 		mat.set_meta(&"enemy_tex", true)
 		mats[slot] = ActorViews.flashable(mat)
 		body_materials.append(mat)
@@ -333,11 +324,11 @@ func _build_model(m: Dictionary) -> void:
 
 
 ## The code-made body when the model file is missing: blocks on the same joints, in the stand-in's colours.
-func _build_code(outline: Color, _technique: StringName) -> void:
+func _build_code() -> void:
 	var sh: Vector3 = _off["shoulder"]
-	_block(chest, Vector3(0.62, 0.5, 0.62), Vector3(0.02, 0.2, 0), CHARCOAL, outline)
-	_block(chest, Vector3(0.9, 0.34, 1.0), Vector3(-0.1, 0.62, 0), ROLE, outline)
-	_block(head, Vector3(0.26, 0.24, 0.26), Vector3(0.08, 0.08, 0), CHARCOAL, outline)
+	_block(chest, Vector3(0.62, 0.5, 0.62), Vector3(0.02, 0.2, 0), CHARCOAL)
+	_block(chest, Vector3(0.9, 0.34, 1.0), Vector3(-0.1, 0.62, 0), ROLE)
+	_block(head, Vector3(0.26, 0.24, 0.26), Vector3(0.08, 0.08, 0), CHARCOAL)
 	var gem := MeshInstance3D.new()
 	var gm := BoxMesh.new()
 	gm.size = Vector3(0.05, 0.09, 0.07)
@@ -353,10 +344,10 @@ func _build_code(outline: Color, _technique: StringName) -> void:
 		var side := 1.0 if k == 0 else -1.0
 		var el := _mirror(_off["elbow"], side)
 		var wr := _mirror(_off["wrist"], side)
-		_block(arms[k], Vector3(0.26, 0.36, 0.26), el * 0.5, GREY, outline)
-		_block(forearms[k], Vector3(0.32, 0.42, 0.32), wr * 0.5, GREY, outline)
-		_block(hands[k], Vector3(0.26, 0.3, 0.24), Vector3(0.06, -0.18, 0), BONE, outline)
-		_block(legs[k], Vector3(0.22, 0.6, 0.22), Vector3(0, -0.3, 0), GREY, outline)
+		_block(arms[k], Vector3(0.26, 0.36, 0.26), el * 0.5, GREY)
+		_block(forearms[k], Vector3(0.32, 0.42, 0.32), wr * 0.5, GREY)
+		_block(hands[k], Vector3(0.26, 0.3, 0.24), Vector3(0.06, -0.18, 0), BONE)
+		_block(legs[k], Vector3(0.22, 0.6, 0.22), Vector3(0, -0.3, 0), GREY)
 	var stone := MeshInstance3D.new()
 	var sm := SphereMesh.new()
 	sm.radius = 0.38
@@ -364,7 +355,7 @@ func _build_code(outline: Color, _technique: StringName) -> void:
 	sm.radial_segments = 7
 	sm.rings = 4
 	stone.mesh = sm
-	var rm := ActorViews.flashable(AvatarBase.outline_material(ROCK_COLOR, outline, OUTLINE_M))
+	var rm := ActorViews.flashable(AvatarBase.plain_material(ROCK_COLOR))
 	stone.material_override = rm
 	body_materials.append(rm)
 	rock.add_child(stone)
@@ -372,10 +363,10 @@ func _build_code(outline: Color, _technique: StringName) -> void:
 		push_warning("StoneThrowerAvatar: no shoulder offset")
 
 
-func _block(parent: Node3D, size: Vector3, at: Vector3, c: Color, outline: Color) -> void:
+func _block(parent: Node3D, size: Vector3, at: Vector3, c: Color) -> void:
 	var m := BoxMesh.new()
 	m.size = size
-	_outlined(parent, m, at, c, outline, c, &"outline", OUTLINE_M)
+	_body_piece(parent, m, at, c)
 
 
 # --- The sim's state ---------------------------------------------------------------------------------------------
@@ -748,7 +739,7 @@ func vat_rig() -> Dictionary:
 	var grids: Array = []
 	for d in VAT_DRIVES.size():
 		grids.append([[d, _samples(d)]])
-	var out := SoloVat.rig("stone_thrower", VAT_DRIVES, grids, j, OUTLINE_M, true)
+	var out := SoloVat.rig("stone_thrower", VAT_DRIVES, grids, j, true)
 	if has_model:  # the owner's model's colour map (VatLooks' textured variant)
 		out["albedo_tex"] = vat_texture()
 	return out

@@ -44,7 +44,7 @@ const STRIKE_BACK_S := 0.35
 
 ## v0.9.5 PF5: the skeleton of this avatar's merged body (RigMerge), or null while its pieces draw as they were built.
 var merged_rig: MergedRig
-## The outlined body materials (ActorViews flashes them on a hit).
+## The body materials (ActorViews flashes them on a hit).
 var body_materials: Array[StandardMaterial3D] = []
 ## v0.8.0 HR (O89): for an avatar on EnemyLooks' shared materials (the horde kinds, the Charger and Hatchling): the
 ## biome's cast on the grey parts (ActorViews.enemy_tint) and the role glow's energy (ActorViews.role_glow_energy;
@@ -300,26 +300,17 @@ func _track_motion(tick: int, pos: Vector2, teleport_speed: float) -> void:
 	_last_pos = pos
 
 
-## One outlined, flashable body piece under `parent` (its material in body_materials). Unlike BossParts.piece, the
-## vertex colours are not the albedo unless asked. v0.9.5 PF1: no X-ray silhouette is drawn.
-func _outlined(
-	parent: Node3D,
-	mesh: Mesh,
-	at: Vector3,
-	c: Color,
-	outline: Color,
-	_team: Color,
-	_technique: StringName,
-	outline_m: float,
-	vertex_colors := false,
-	piece_name := ""
+## One flashable body piece under `parent` (its material in body_materials). Unlike BossParts.piece, the vertex
+## colours are not the albedo unless asked.
+func _body_piece(
+	parent: Node3D, mesh: Mesh, at: Vector3, c: Color, vertex_colors := false, piece_name := ""
 ) -> MeshInstance3D:
 	var piece := MeshInstance3D.new()
 	if not piece_name.is_empty():
 		piece.name = piece_name
 	piece.mesh = mesh
 	piece.position = at
-	var mat := outline_material(c, outline, outline_m)
+	var mat := plain_material(c)
 	if vertex_colors:
 		mat.vertex_color_use_as_albedo = true
 	piece.material_override = mat
@@ -374,38 +365,25 @@ func body_looks() -> Array[ShaderMaterial]:
 
 
 ## v0.8.0 HR: the shared body material (EnemyLooks.body) for a plate of `p_kind` in colour `c` (times `tex` when
-## given), outlined in `outline` `outline_m` thick; `two_sided`: drawn from both sides. The biome's
+## given); `two_sided`: drawn from both sides. The biome's
 ## cast pulls a grey plate toward enemy_tint and a role-coloured one rests at role_glow of its own colour, as
 ## ActorViews.tint_greys and role_glow did to the avatar's own materials.
-func shared_body(
-	p_kind: int, c: Color, tex: Texture2D, outline: Color, outline_m: float, two_sided := false
-) -> ShaderMaterial:
+func shared_body(p_kind: int, c: Color, tex: Texture2D, two_sided := false) -> ShaderMaterial:
 	var albedo := ActorViews.grey_tinted(c, enemy_tint)
 	var rest: Array = ActorViews.NO_GLOW
 	if role_glow > 0.0 and EnemyPalettes.KIND_IDS.has(p_kind) and ActorViews.role_glows(albedo):
 		rest = [Color(albedo, 1.0), role_glow]
 	elif CritterBodies.is_critter(p_kind) and float(CritterBodies.GLOW[p_kind]) > 0.0:  # v0.11.0 F2
 		rest = [Color(albedo, 1.0), float(CritterBodies.GLOW[p_kind])]
-	return EnemyLooks.body(albedo, tex, rest[0], rest[1], outline, outline_m, two_sided)
+	return EnemyLooks.body(albedo, tex, rest[0], rest[1], two_sided)
 
 
-## An opaque body material with the stencil outline.
-static func outline_material(c: Color, outline: Color, outline_m: float) -> StandardMaterial3D:
+## An opaque body material.
+static func plain_material(c: Color) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = c
 	mat.roughness = 1.0
-	ActorLooks.outline(mat, outline, outline_m)
 	return mat
-
-
-## A face, visor or glow marks the stencil like the body pieces do.
-static func write_stencil(m: StandardMaterial3D) -> void:
-	if not ActorLooks.OUTLINES:
-		return
-	m.stencil_mode = BaseMaterial3D.STENCIL_MODE_CUSTOM
-	m.stencil_flags = BaseMaterial3D.STENCIL_FLAG_WRITE
-	m.stencil_compare = BaseMaterial3D.STENCIL_COMPARE_ALWAYS
-	m.stencil_reference = 1
 
 
 ## Appends one flat-shaded triangle facing away from `centre` (Godot's front faces wind clockwise).

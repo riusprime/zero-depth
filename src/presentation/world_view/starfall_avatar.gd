@@ -1,7 +1,7 @@
 class_name StarfallAvatar
 extends AvatarBase
 ## v0.11.0 O13d (ENEMIES.md R9, R10; OWNER_TODO §3.2 holds the prompts for the owner's models): the Starfall signature
-## enemies' code-made stand-in bodies, in the Charger family's style (faceted, outlined, flat-lit blocks with one
+## enemies' code-made stand-in bodies, in the Charger family's style (faceted, flat-lit blocks with one
 ## glowing accent), each one shape at a glance:
 ## - Star Warper: a lean hooded crawler in violet with two blade arms and a pale-gold star on its chest; through
 ##   its windup the star flares and it crouches; at the blink it snaps upright; stunned, it reels (a slow wobble) with
@@ -12,7 +12,6 @@ extends AvatarBase
 ## (EI-07): sync() reads the sim through WorldReader once per tick, advance() animates in frame time.
 
 const KINDS: Array[int] = [WorldReader.KIND_STAR_WARPER, WorldReader.KIND_GRAVITY_NODE]
-const OUTLINE_M := 0.02
 const HOVER_Y := 1.0
 const SHADOW_R := 0.42
 ## The body's top (m, for the health bar).
@@ -57,22 +56,20 @@ static func color(p_kind: int, k: int) -> Color:
 
 ## ActorViews._make_actor: a body of `p_kind` under the actor's `facing` (the root's enemy_avatar and mats metas set);
 ## returns its height (the health bar's).
-static func make(
-	root: Node3D, facing: Node3D, p_kind: int, outline_color: Color, technique: StringName
-) -> float:
+static func make(root: Node3D, facing: Node3D, p_kind: int) -> float:
 	var a := StarfallAvatar.new()
-	a.setup(p_kind, outline_color, technique)
+	a.setup(p_kind)
 	facing.add_child(a)
 	root.set_meta(&"enemy_avatar", a)
 	root.set_meta(&"mats", a.body_materials.duplicate())
 	return a.height
 
 
-func setup(p_kind: int, outline_color: Color, technique: StringName = &"outline") -> void:
+func setup(p_kind: int) -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	kind = p_kind
 	height = height_of(kind)
-	_parts = BossParts.new(outline_color, technique, OUTLINE_M)
+	_parts = BossParts.new()
 	body = Node3D.new()
 	add_child(body)
 	if kind == WorldReader.KIND_GRAVITY_NODE:

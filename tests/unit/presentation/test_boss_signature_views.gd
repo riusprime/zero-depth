@@ -99,7 +99,7 @@ func test_the_warlord_pulls_while_its_javelins_stand() -> void:
 	var reader := WorldReader.new(w)
 	var avatar := WarlordAvatar.new()
 	add_child_autofree(avatar)
-	avatar.setup(Color.BLACK)
+	avatar.setup()
 	BossLab.start(w, w.actors.index_of(aid), &"javelin_fan")
 	var seen := -1
 	var pulled := false

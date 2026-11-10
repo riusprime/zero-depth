@@ -160,7 +160,7 @@ func setup(
 	(spawn_ring.material_override as ShaderMaterial).set_shader_parameter(&"strength", 0.6)
 	hero.name = "Hero"
 	add_child(hero)
-	avatar.setup(palette.get("outline", Color("#1A1A22")))
+	avatar.setup()
 	hero.add_child(avatar)
 	var hl := StageKit.hero_light(mood)
 	if hl != null:

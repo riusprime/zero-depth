@@ -118,7 +118,7 @@ func _row(spec: Array) -> SubViewport:
 		facing.rotation.y = FACING
 		actor.add_child(facing)
 		var a := CinderPriestAvatar.new()
-		a.setup(Color("#1A1A22"))
+		a.setup()
 		facing.add_child(a)
 		a.set_process(false)  # (after it enters the tree: ready turns its _process back on)
 		if String(spec[1]) in ["gather", "strike", "calm"]:

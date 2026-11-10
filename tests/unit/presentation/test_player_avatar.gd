@@ -8,7 +8,7 @@ const DT := 1.0 / 60.0
 
 func _avatar() -> PlayerAvatar:
 	var a := PlayerAvatar.new()
-	a.setup(Color("#1A1A22"))
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)  # the test steps advance() itself
 	return a

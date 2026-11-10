@@ -19,7 +19,7 @@ func after_each() -> void:
 
 func _avatar() -> LanternShadeAvatar:
 	var a := LanternShadeAvatar.new()
-	a.setup(Color("#1A1A22"), &"outline")
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	return a

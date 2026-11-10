@@ -44,7 +44,6 @@ const BURST_GAP_TICKS := 6
 const BURST_COUNT := 3
 ## Faster than this between two ticks is a teleport, not motion.
 const TELEPORT_SPEED := 20.0
-const OUTLINE_M := 0.022
 
 ## Colours sampled from the reference sheet (the lit faces), as albedo under the game's light. v0.8.0 EC: the cube
 ## (body), the flank pods (trim), the barrel and legs (grey) and the eye slits (eye) come from EnemyPalettes.
@@ -123,8 +122,8 @@ var _tell_p := -1.0
 var _vd := PackedFloat32Array()
 
 
-## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
-func setup(outline_color: Color, technique: StringName = &"outline") -> void:
+## Builds the model.
+func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_vd.resize(VAT_DRIVES.size())
 	if vat:  # v0.10.5 W3-V4c: the crowd draws the body; the legs' hips and rest spots only
@@ -132,32 +131,28 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 			_leg_spots(k)
 		_pose(0.0)
 		return
-	var team := ThemePalette.color(&"enemy_body")
 	body = Node3D.new()
 	add_child(body)
 	var cube := _chamfer_box(Vector3.ONE * BODY, BODY_BEVEL, BODY_BULGE)
 	var red := EnemyPalettes.color(KIND, &"body")
-	_piece(body, cube, Vector3(0, BODY_Y, 0), red, outline_color, team, technique)
+	_piece(body, cube, Vector3(0, BODY_Y, 0), red)
 	# The chassis under the cube, which the hips hang from.
 	var chassis := _chamfer_box(Vector3(0.3, 0.07, 0.3), 0.015)
-	_piece(body, chassis, Vector3(0, HIP.y + 0.02, 0), DARK, outline_color, team, &"outline")
+	_piece(body, chassis, Vector3(0, HIP.y + 0.02, 0), DARK)
 	# The flank pods: big bevels make them octagons from the side; their faces carry the same shallow facets.
 	var pod := _chamfer_box(Vector3(0.24, 0.26, 0.1), 0.06, 0.012)
 	for side in [-1.0, 1.0]:
 		var at := Vector3(-0.03, 0.46, side * (BODY * 0.5 + 0.045))
-		_piece(body, pod, at, EnemyPalettes.color(KIND, &"trim"), outline_color, team, technique)
+		_piece(body, pod, at, EnemyPalettes.color(KIND, &"trim"))
 	# The collar on the front face that the barrel comes out of, with a red slit eye on each flank.
 	var collar := _chamfer_box(Vector3(0.12, 0.25, 0.2), 0.02)
 	var collar_x := BODY * 0.5 + 0.03
-	_piece(
-		body, collar, Vector3(collar_x, BARREL_Y - 0.01, 0), DARK, outline_color, team, &"outline"
-	)
+	_piece(body, collar, Vector3(collar_x, BARREL_Y - 0.01, 0), DARK)
 	var glow := EnemyPalettes.color(KIND, &"eye")
 	_eye_mat.albedo_color = glow
 	_eye_mat.emission_enabled = true
 	_eye_mat.emission = glow
 	_eye_mat.emission_energy_multiplier = 2.0
-	write_stencil(_eye_mat)
 	var slit := BoxMesh.new()
 	slit.size = Vector3(0.035, 0.11, 0.01)
 	for side in [-1.0, 1.0]:
@@ -167,9 +162,9 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 		eye.position = Vector3(collar_x + 0.015, BARREL_Y, side * 0.1)
 		eye.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		body.add_child(eye)
-	_build_barrel(outline_color, team, technique)
+	_build_barrel()
 	for k in 4:
-		_build_leg(k, outline_color, team)
+		_build_leg(k)
 	_pose(0.0)
 
 
@@ -434,7 +429,7 @@ func vat_rig() -> Dictionary:
 	var grids: Array = [[[AX, 2]], [[AY, 2]], [[LX, 9], [LZ, 9]], [[PITCH, 33]], [[BARREL, 2]]]
 	for d in range(LEG0, MUZZLE):
 		grids.append([[d, LEG_SAMPLES]])
-	return SoloVat.rig("needle", VAT_DRIVES, grids, j, OUTLINE_M, false)
+	return SoloVat.rig("needle", VAT_DRIVES, grids, j, false)
 
 
 ## The lean's joint at its grid's values (lx, lz): the turn at the pivot, or (`inverse`) the turn undone.
@@ -471,31 +466,15 @@ func vat_set(s: Dictionary) -> void:
 	SoloVat.apply(self, s, _pose.bind(0.0))
 
 
-func _build_barrel(outline_color: Color, team: Color, technique: StringName) -> void:
+func _build_barrel() -> void:
 	barrel = Node3D.new()
 	barrel.position = Vector3(BODY * 0.5 + 0.06, BARREL_Y, 0)
 	body.add_child(barrel)
 	var tube := _chamfer_box(Vector3(BARREL_LEN, BARREL_W, BARREL_W), 0.012)
-	_piece(
-		barrel,
-		tube,
-		Vector3(BARREL_LEN * 0.5, 0, 0),
-		EnemyPalettes.color(KIND, &"grey"),
-		outline_color,
-		team,
-		technique
-	)
+	_piece(barrel, tube, Vector3(BARREL_LEN * 0.5, 0, 0), EnemyPalettes.color(KIND, &"grey"))
 	# A slightly wider sleeve at the muzzle, as on the sheet's side view.
 	var sleeve := _chamfer_box(Vector3(0.07, BARREL_W + 0.012, BARREL_W + 0.012), 0.012)
-	_piece(
-		barrel,
-		sleeve,
-		Vector3(BARREL_LEN - 0.035, 0, 0),
-		EnemyPalettes.color(KIND, &"grey"),
-		outline_color,
-		team,
-		&"outline"
-	)
+	_piece(barrel, sleeve, Vector3(BARREL_LEN - 0.035, 0, 0), EnemyPalettes.color(KIND, &"grey"))
 	# The square bore: dark when cold; it glows the hostile-shot colour while charging and firing.
 	var shot := ThemePalette.color(&"proj_hostile")
 	_hole_mat.albedo_color = HOLE
@@ -503,7 +482,6 @@ func _build_barrel(outline_color: Color, team: Color, technique: StringName) -> 
 	_hole_mat.emission = shot
 	_hole_mat.emission_energy_multiplier = 0.0
 	_hole_mat.set_meta(SoloVat.GLOW, MUZZLE + 1)  # v0.10.5 W3-V4c: a VAT Needle's bore glows at its MUZZLE drive
-	write_stencil(_hole_mat)
 	var hole := MeshInstance3D.new()
 	var hb := BoxMesh.new()
 	hb.size = Vector3(0.01, BARREL_W * 0.72, BARREL_W * 0.72)
@@ -516,51 +494,35 @@ func _build_barrel(outline_color: Color, team: Color, technique: StringName) -> 
 
 ## One leg: a root at the hip (turned toward the foot), the hip hub, the thigh, the knee joint, the shin, and the
 ## flat foot under an ankle that keeps it level.
-func _build_leg(k: int, outline_color: Color, team: Color) -> void:
+func _build_leg(k: int) -> void:
 	_leg_spots(k)
 	var root := Node3D.new()
 	add_child(root)
 	legs.append(root)
 	var hub := _prism(0.05, 0.08, 8)
-	_piece(root, hub, Vector3.ZERO, DARK, outline_color, team, &"outline")
+	_piece(root, hub, Vector3.ZERO, DARK)
 	var thigh := Node3D.new()
 	root.add_child(thigh)
 	_thighs.append(thigh)
 	var tm := _chamfer_box(Vector3(THIGH_LEN, 0.075, 0.07), 0.014)
-	_piece(
-		thigh,
-		tm,
-		Vector3(THIGH_LEN * 0.5, 0, 0),
-		EnemyPalettes.color(KIND, &"grey"),
-		outline_color,
-		team,
-		&"outline"
-	)
+	_piece(thigh, tm, Vector3(THIGH_LEN * 0.5, 0, 0), EnemyPalettes.color(KIND, &"grey"))
 	var knee := Node3D.new()
 	knee.position.x = THIGH_LEN
 	thigh.add_child(knee)
 	_knees.append(knee)
-	_piece(knee, _prism(0.042, 0.1, 8), Vector3.ZERO, GREY_LIGHT, outline_color, team, &"outline")
+	_piece(knee, _prism(0.042, 0.1, 8), Vector3.ZERO, GREY_LIGHT)
 	var sm := _chamfer_box(Vector3(SHIN_LEN, 0.085, 0.08), 0.016)
-	_piece(
-		knee,
-		sm,
-		Vector3(SHIN_LEN * 0.5, 0, 0),
-		EnemyPalettes.color(KIND, &"grey"),
-		outline_color,
-		team,
-		&"outline"
-	)
+	_piece(knee, sm, Vector3(SHIN_LEN * 0.5, 0, 0), EnemyPalettes.color(KIND, &"grey"))
 	var ankle := Node3D.new()
 	ankle.position.x = SHIN_LEN
 	knee.add_child(ankle)
 	_ankles.append(ankle)
-	_piece(ankle, _prism(0.03, 0.09, 6), Vector3.ZERO, DARK, outline_color, team, &"outline")
+	_piece(ankle, _prism(0.03, 0.09, 6), Vector3.ZERO, DARK)
 	var fm := _chamfer_box(Vector3(0.13, 0.045, 0.1), 0.012)
 	var foot := Node3D.new()
 	foot.position = Vector3(0.015, -ANKLE_H + 0.0225, 0)
 	ankle.add_child(foot)
-	_piece(foot, fm, Vector3.ZERO, GREY_LIGHT, outline_color, team, &"outline")
+	_piece(foot, fm, Vector3.ZERO, GREY_LIGHT)
 	feet.append(foot)
 
 
@@ -572,16 +534,8 @@ func _leg_spots(k: int) -> void:
 	_rests.append(Vector3(FOOT.x * sx, 0.0, FOOT.z * sz))
 
 
-func _piece(
-	parent: Node3D,
-	mesh: Mesh,
-	at: Vector3,
-	c: Color,
-	outline: Color,
-	team: Color,
-	technique: StringName
-) -> MeshInstance3D:
-	return _outlined(parent, mesh, at, c, outline, team, technique, OUTLINE_M)
+func _piece(parent: Node3D, mesh: Mesh, at: Vector3, c: Color) -> MeshInstance3D:
+	return _body_piece(parent, mesh, at, c)
 
 
 ## A box with bevelled edges and cut corners, centred on the origin, flat-shaded. With `bulge` each of the six faces

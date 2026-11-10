@@ -18,18 +18,18 @@ func test_the_drone_is_built_flashable_and_outlined() -> void:
 	var avatars: Array[Node3D] = [BombDroneAvatar.new()]
 	for avatar in avatars:
 		var name: String = avatar.get_script().get_global_name()
-		avatar.setup(Color.BLACK, &"outline")
+		avatar.setup()
 		assert_gt(avatar.body_materials.size(), 5, name)
 		for m: StandardMaterial3D in avatar.body_materials:
 			assert_true(m.emission_enabled, "%s: a hit flash changes energy only" % name)
 			assert_eq(m.emission_energy_multiplier, 0.0, "%s: dark until flashed" % name)
-			assert_eq(m.stencil_mode, ActorLooks.outline_mode(), "%s: outlined" % name)
+			assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_DISABLED, "%s: no stencil" % name)
 		avatar.free()
 
 
 func test_the_drone_hovers_with_a_shadow_on_the_ground() -> void:
 	var a := BombDroneAvatar.new()
-	a.setup(Color.BLACK)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	_run(a, 0, STATE.MOVE, 120)
@@ -44,7 +44,7 @@ func test_the_drone_hovers_with_a_shadow_on_the_ground() -> void:
 
 func test_the_drone_lobs_its_bomb_and_slings_a_new_one() -> void:
 	var a := BombDroneAvatar.new()
-	a.setup(Color.BLACK)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	_run(a, 0, STATE.MOVE, 30)
@@ -59,7 +59,7 @@ func test_the_drone_lobs_its_bomb_and_slings_a_new_one() -> void:
 func test_the_caster_charges_its_crystal_through_the_windup() -> void:
 	var a := CinderPriestAvatar.new()
 	a.kind = WorldReader.KIND_ARC_CASTER
-	a.setup(Color.BLACK)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	_run(a, 0, STATE.MOVE, 30)

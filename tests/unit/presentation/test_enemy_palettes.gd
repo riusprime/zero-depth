@@ -318,7 +318,7 @@ func test_the_splitter_and_mender_get_an_eye_only_in_the_candidates() -> void:
 				assert_true(EnemyModels.has_model(HordeAvatar.model_id(kind)), "kind %d" % kind)
 				continue
 			var a := HordeAvatar.new()
-			a.setup(kind, Color.BLACK)
+			a.setup(kind)
 			var eyes := a.find_children("Eye", "MeshInstance3D", true, false)
 			if p == EnemyPalettes.CURRENT:
 				assert_eq(eyes.size(), 0, "kind %d: today's model" % kind)
