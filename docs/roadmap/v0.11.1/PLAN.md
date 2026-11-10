@@ -34,7 +34,7 @@ are cited in the "Audit" column below). Progress: [`PROGRESS.md`](PROGRESS.md).
 | L9 | AimAssist: "wire it in, i feel like aiming is just a bit hard so a bit of aim assist 10% or so would make the feeling a bit better" | Wired in. Starting values: the aim bends 10 % of the way toward the nearest enemy inside the existing 12° cone. Open: which devices (Open items) | 33 |
 | L10 | Menus: "Astral current one live should be the only HUD style for all elements throughout the game" | The five panels still in the old look move to Astral; the old menu style is deleted | 13 |
 | L11 | Repo size: "What are the implications of moving the raw art?" | **No change now** (lead's recommendation; see "Repo size" below). No history rewrite | — |
-| L12 | Golden reset: "what's the best, and what are the implications to do this" | **Yes, once, last** (lead's recommendation; see "The golden reset" below). Steps 37–38 wait for the owner's OK | 36–38 |
+| L12 | Golden reset: "what's the best, and what are the implications to do this" | **Yes, once, last** (the lead's recommendation, "The golden reset" below; owner, same day: "Yes, reset once") | 36–38 |
 
 ## Rules for every step
 
@@ -113,8 +113,8 @@ are cited in the "Audit" column below). Progress: [`PROGRESS.md`](PROGRESS.md).
 | 34 | Older run saves are refused **(visible once)** | D1 | `run_saver.gd` (one payload version), `floor_scenario.gd`, `floor_plan.gd`, `event_compiler.gd`, `user_dir_migration.gd`, `data/wand/migration.tres`. The file stays on disk and is reported (EI-09); the profile still loads | Save and resume e2e; a test that an older payload is refused and kept | O |
 | 35 | The sim carries no compatibility code | D1 | `world_snapshot.gd` (`ADDED_SINCE_V05`, the pads), `wand_migration.gd`, the 12 column-size guards, the versioned floor-rule constants; the 84 old-save tests; the "old saves" seam leaves `seams.sh` and CLAUDE.md | Goldens identical; snapshot round-trip tests | O |
 | 36 | Golden change A: dead state removed | D4, D1 | The six never-written `World` fields; `CardOrder`'s retired-card stubs | Every changed golden named in PROGRESS; the event logs of the golden replays identical before and after | O |
-| 37 | Golden change B: `World`'s loose fields grouped | A3 | The 36 `spell_*`, 11 `starbound_*`, 10 `gamble_*` fields and similar into state objects. **Waits for the owner's OK (L12)** | As step 36 | O |
-| 38 | Golden change C: one hasher for every state class | R7 | A reflective hasher over the snapshot's field walk, with an explicit skip list for view-only fields; the 66 hand-written `hash_into` bodies go. **Waits for the owner's OK (L12)** | As step 36; the replay tests' time before and after | O |
+| 37 | Golden change B: `World`'s loose fields grouped | A3 | The 36 `spell_*`, 11 `starbound_*`, 10 `gamble_*` fields and similar into state objects (owner's OK, L12) | As step 36 | O |
+| 38 | Golden change C: one hasher for every state class | R7 | A reflective hasher over the snapshot's field walk, with an explicit skip list for view-only fields; the 66 hand-written `hash_into` bodies go (owner's OK, L12) | As step 36; the replay tests' time before and after | O |
 
 ### Wave 6: structural (each one decided from Wave 3's numbers)
 
@@ -166,14 +166,13 @@ version; the long run moves to the machine nobody is waiting on.
   (today that is a silent determinism hole); `World` stops being a 334-field list.
 - **What it costs:** three large steps, a new save format (already changing in step 34), and the cross-OS golden
   regenerated on GitHub. The replay tests may get slower, which step 38 measures.
-- **Recommendation:** yes, once, as the last thing in Wave 5, when the goldens and the save format are changing
-  anyway. Never piecemeal.
+- **Decided (owner, 2026-11-10: "Yes, reset once"):** once, as the last thing in Wave 5, when the goldens and the
+  save format are changing anyway. Never piecemeal.
 
 ## Open items (what they block)
 
 - **Aim assist, which devices (step 33):** the old decision was gamepad only. Default being built: mouse and
   gamepad, one Options switch, on by default. The owner's answer changes only the default.
-- **The golden reset (steps 37–38):** the owner's OK on the recommendation above. Steps 34–36 don't wait.
 - **The VFX-lab branch** (`claude/v0110-vfxlab-317952`, unmerged): steps 14 and 18 touch every avatar and every
   comment, so they run after it merges or is dropped.
 - **Not planned here, done when the file is next touched:** asserts that pin tuning numbers (T8), e2e tests that

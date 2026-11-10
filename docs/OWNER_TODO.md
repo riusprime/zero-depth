@@ -4,10 +4,9 @@ Only what is **still open**: tests, decisions and art. Anything you answered or 
 answers live in [`roadmap/v0.8.0/PLAN.md`](roadmap/v0.8.0/PLAN.md) (owner lines O39–O50 and "Owner decisions"). Last
 rewritten 2026-10-16 from your annotated copy, v0.8.0 (branch `claude/lucid-fermat-9wv2tf`).
 
-- [ ] **v0.11.1 "Clean and fast" (2026-11-10), two answers:** **(1)** the one-time golden reset, yes or no (the
-  lead recommends yes; what it means is in [`roadmap/v0.11.1/PLAN.md`](roadmap/v0.11.1/PLAN.md) "The golden
-  reset"); **(2)** aim assist on mouse and gamepad, or gamepad only (default being planned: both, on, with an Options
-  switch). Later, yours to feel: aim assist once built, and each batch of enemies moved to the crowd.
+- [ ] **v0.11.1 "Clean and fast" (2026-11-10), one answer:** aim assist on mouse and gamepad, or gamepad only
+  (default being planned: both, on, with an Options switch; [`roadmap/v0.11.1/PLAN.md`](roadmap/v0.11.1/PLAN.md)
+  "Open items"). The golden reset is answered (yes, once). Later, yours to feel: aim assist once built, and each batch of enemies moved to the crowd.
 - [ ] **v0.11.0, still yours (2026-11-08):** the **boss brief** (the bosses besides the Gatekeeper, Lantern Shade and
   Twins, and the "remembered" Hollow Crown behind the hidden room), the **Laser sketch**, and the overnight questions
   **N1–N9** in [`roadmap/v0.11.0/OWNER_QUESTIONS.md`](roadmap/v0.11.0/OWNER_QUESTIONS.md) §J (each has a default
