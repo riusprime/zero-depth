@@ -22,8 +22,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 - **Not merged:** step 48 (`v0111-s48`, `14c6c93f`), the sim on its own thread, a switch off by default. Clean
   numbers: 4 %, 9 % and 15 % off the average frame in the three scenes, the 1 % lows unchanged, one rendered frame
   of delay, one e2e fails with it on. **The owner decides** (OWNER_TODO).
-- **Next:** Wave 5 (steps 35 to 38, the golden reset), then Wave 6. The CPU levers after the thread are in
-  OWNER_TODO.
+- **Next:** step 35 (the sim's old-save code; it does not depend on the native question). **Steps 36 to 38 wait**
+  for the native spike (step 49, owner L16): a native core changes where the world's state lives, and the goldens are
+  re-recorded from it anyway. The spike waits on the owner installing the C++ build tools (OWNER_TODO).
 - **Pushed:** `claude/v0110` up to `e3dba7c2`, and the tag `archive/scripts-2026-11`. Seams on `83478dd3`: 694 of
   694.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
@@ -163,3 +164,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   `930485be`), measured step 47 (merged: about 1 ms of GPU, no frame time) and the thread trial (4–15 % of the average
   frame; the lead had expected more: under 60 fps the catch-up ticks stay on the main thread and the draw is no longer
   than the tick). Not explained: the GPU time in the 120-swarmer scene rose from 4.7 to 6.2–7.1 ms.
+- 2026-11-10 (owner): a native core is on the table (L16). The compiled code need not match the GDScript sim bit
+  for bit ("can we change both? … we do not have to meet all the seems and rules, if the best choice is to modify them
+  we can"); the owner will install the toolchain. The lead recommended C++ through GDExtension and starts with a
+  spike (step 49). Kept on purpose: the sim stays deterministic against itself, and tests run before a push.
