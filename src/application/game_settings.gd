@@ -39,6 +39,7 @@ const DEFAULTS := {
 	"vsync": "on",
 	"shake": "on",
 	"show_fps": "off",  # FpsCounter
+	"aim_assist": "on",  # AimAssist: the aim bends a little toward an enemy
 	"outline": "ink",
 	"lighting": "high",
 	"effects_density": "high",

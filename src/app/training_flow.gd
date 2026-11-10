@@ -111,7 +111,8 @@ static func room_view(main: Main, biome: BiomeDefinition) -> PlayerInput:
 	main.view.ink.set_style(
 		InkPass.style_from_setting(GameSettings.get_value(main.profile, "outline"))
 	)
-	var player_input := PlayerInput.new(main.view.rig, main.driver.reader)
+	var assist := AimAssist.make(ContentRepository.load_all(), main.profile)  # The dummies pull the aim too
+	var player_input := PlayerInput.new(main.view.rig, main.driver.reader, assist)
 	player_input.name = "PlayerInput"
 	main.view.add_child(player_input)
 	main.driver.input_source = player_input.sample

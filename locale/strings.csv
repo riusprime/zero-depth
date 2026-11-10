@@ -50,6 +50,7 @@ CAUSE_NEEDLE,A Needle's bolts got you.,Los proyectiles de una Aguja te alcanzaro
 CAUSE_UNKNOWN,Something got you.,Algo te alcanzó.
 UI_SHAKE,Screen shake,Vibración de pantalla
 UI_SHOW_FPS,Show FPS,Mostrar FPS
+UI_AIM_ASSIST,Aim assist,Ayuda de puntería
 UI_FPS_VALUE,%d FPS,%d FPS
 UI_OUTLINE,Outline style,Estilo de contorno
 UI_OPT_INK,Ink,Tinta

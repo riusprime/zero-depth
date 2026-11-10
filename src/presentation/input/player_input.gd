@@ -6,13 +6,19 @@ extends Node
 ##   until the stick has aimed since the pad took over; otherwise, the mouse ray on the
 ##   ground plane.
 ## The device tracker switches between them on the last device used.
+## The aim it hands on is bent by the aim assist (AimAssist) on the devices in ASSISTED, before the latch quantizes
+## it, so the recorded frame holds the aim the shot takes; its own raw aim is never bent, so the pull never builds up.
 
 enum Device { MOUSE_KEYBOARD, GAMEPAD }
 
 const STICK_AIM_MIN := 0.3
 const STICK_AIM_DIST_M := 4.0
+## The devices whose aim the assist bends.
+const ASSISTED: Array[Device] = [Device.MOUSE_KEYBOARD, Device.GAMEPAD]
 
 var device := Device.MOUSE_KEYBOARD
+## null: no assist (the hub).
+var assist: AimAssist
 var _rig: IsoRig
 var _reader: WorldReader
 var _mouse := Vector2.ZERO
@@ -22,9 +28,15 @@ var _last_dist := 4.0
 var _stick_aimed := false
 
 
-func _init(rig: IsoRig, reader: WorldReader) -> void:
+func _init(rig: IsoRig, reader: WorldReader, p_assist: AimAssist = null) -> void:
 	_rig = rig
 	_reader = reader
+	assist = p_assist
+
+
+## The aim the devices gave last, before any assist (sim plane; its length is the aim distance).
+func raw_aim() -> Vector2:
+	return _last_aim
 
 
 func _input(event: InputEvent) -> void:
@@ -63,7 +75,10 @@ func sample() -> Array:
 			if d.length() > 0.01:
 				_last_aim = d
 				_last_dist = d.length()
-	return [move, _last_aim, _last_dist]
+	var aim := _last_aim
+	if assist != null and device in ASSISTED:
+		aim = assist.assisted(aim, _reader)
+	return [move, aim, _last_dist]
 
 
 ## Where a screen position's camera ray meets the plane at core height (sim coordinates), or null.

@@ -151,7 +151,12 @@ docs/ (this kit)
   ray vs. right stick).
 - **Mouse aim.** The cached mouse position becomes a camera ray (`project_ray_origin`/`project_ray_normal`),
   intersected with the plane at core height.
-- **Aim assist.** Gamepad only, a cone of about 12° (GA: input), applied in `application` before quantization.
+- **Aim assist.** `AimAssist` (application), called from `PlayerInput.sample` before the latch quantizes the aim, so
+  the recorded `InputFrame` holds the bent aim and replays need no assist code. A pull, not a snap: the aim turns
+  `strength_percent` (10) of the way toward the target nearest it by angle (a tie: the nearer) inside `cone_degrees`
+  (12) either side and within `range_m` (12 m); the aim distance is untouched. Targets: living, hittable enemy-team
+  actors (bosses and elites too), not horde critters or Wire Weaver posts. Mouse and gamepad (`PlayerInput.ASSISTED`);
+  the Options switch `aim_assist` turns it off. Numbers in `data/tuning/aim_assist.tres` (the dev panel's Sim group).
 - **e2e tests** drive the real `main.tscn` the way a player does ([`TEST_MATRIX.md`](TEST_MATRIX.md) T-E2E):
   1. `Input.parse_input_event(ev)`, then `Input.flush_buffered_events()`;
   2. `await get_tree().physics_frame`, under `--fixed-fps 60`.

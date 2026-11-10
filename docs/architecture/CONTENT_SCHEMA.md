@@ -1480,6 +1480,12 @@ turns it into `SimTuning` on `World.tuning`. The shipped file equals the old con
 as `SimTuning`'s defaults. A value that must be positive and isn't, or `gate_adds_max < gate_adds_min`, is a
 `range` `ERROR`. Map generation (`FloorParams`) is not in it yet.
 
+### Aim assist (`data/tuning/aim_assist.tres`)
+
+`AimAssistDefinition` (category `tuning`, id `aim_assist`), read by `AimAssist` on the app side only (the sim gets the
+bent aim in its frame): `strength_percent` (10, 0..100), `cone_degrees` (12, 0..90) and `range_m` (12, > 0). Starting
+values. Out of range is a `range` `ERROR`.
+
 ### Achievements (`data/achievements/*.tres`, v0.7.5 AC)
 
 `AchievementDefinition` (category `achievements`) is one local achievement, read by the app layer only (the sim
