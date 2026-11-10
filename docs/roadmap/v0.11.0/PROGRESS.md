@@ -22,6 +22,9 @@
 - **Waiting on the owner:** the boss brief (O6–O8 and the remembered Crown), the Laser sketch, OWNER_QUESTIONS §J.
 - **Agents (owner, 2026-11-07):** at most 3 Sonnet (light, exact briefs) + 2 Opus at once; up to 4 Opus when no Sonnet runs.
 - **Playtest rounds 1 & 2 built and merged (2026-11-09, 7ee659c1):** F1-F13 (PLAN "Playtest rounds 1 & 2"). Waiting on the owner: their feel check (more rounds coming)..
+- **v0.11.1 "Clean and fast" planned (2026-11-10):** a code audit and its plan
+  ([`../v0.11.1/PLAN.md`](../v0.11.1/PLAN.md), [`../v0.11.1/PROGRESS.md`](../v0.11.1/PROGRESS.md)), on this branch,
+  built between playtest rounds. Nothing built yet; next is its step 1 (time the seams run per file).
 - **Local note:** `project.godot` has an uncommitted editor rewrite (it drops the `[rendering]` settings and
   `locale/fallback`). It is not the lead's change; don't stage it. `wt-seams` is the lead's clean seams worktree.
 
