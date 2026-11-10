@@ -15,12 +15,14 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 - **Wave 3** (re-planned from [`evidence/PERF_BASELINE.md`](evidence/PERF_BASELINE.md): the frame is bound by
   script, not the GPU): steps 21, 22, 24, 26, 28 and 30 are merged. Every timing taken since the baseline was taken
   with other Godot processes running; **step 32 (the quiet-machine re-measure) is what counts.**
-- **Built on branches, merged next:** step 31 (`v0111-s31`: the draw counted, shard drops baked) and step 46
-  (`v0111-s46`: the Options "Show FPS" switch, owner's request). **With an agent:** step 47 (lighter pack effect
-  meshes, owner's request; the owner approves the look from a before/after sheet).
+- **Merged after that seams run** (42 of 42 on the merge: their own tests, the options, pad-menu and rewards e2e,
+  arch; lint clean; **not yet under a seams run, so not pushed**): step 31 (the draw counted, shard drops baked) and
+  step 46 (the Options "Show FPS" switch, owner L13).
+- **With agents:** step 47 (lighter pack effect meshes, owner L14; the owner approves the look from a before/after
+  sheet) and step 48 (the sim on its own thread: a trial behind a switch, off by default, owner L15).
 - **The baseline had one wrong figure:** "20,000 objects drawn a frame" was live objects in memory. The renderer
   draws 1,700–3,100 (corrected in the evidence file and the PLAN).
-- **Next:** merge steps 31 and 46, then step 32; then the owner decides on the CPU levers (OWNER_TODO).
+- **Next:** merge steps 47 and 48 as they report, seams, push; then step 32 on a quiet machine.
 - **Pushed:** `claude/v0110` up to the docs commit after `b29c79b4`, and the tag `archive/scripts-2026-11`.
 - **v0.11.0 playtest feedback goes first** whenever a round arrives.
 - **Waiting on the owner:** which devices get aim assist (step 33; a default is planned). The golden reset is
@@ -56,6 +58,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
 | 16 | The fight bot, the lab-room scenario and the combo card live in `tests/support`. Left in `src/`: `KernelScenario` and `ScriptedInput` (the export smoke runs them inside the pack); left in `data/`: the combat-lab encounter and the patch notes (moving either changes the content manifest hash) | `35176162`, merge `d8362cd8` |
 | 15 (a) | Unreferenced sim, application and content code is gone: 34 functions, 34 constants, 25 translation keys (249 lines). Left: names that stand for stored values, and `HeartRoom.take_tick` (hashed, read nowhere: for step 36) | `62d24bee`, merge `0ef222b0` |
 | 19 | The line cap can't be switched off quietly: `tests/arch/test_line_cap.gd` lists the ten exempt files with reasons; the rule is in CLAUDE.md | `63ce6be5` |
+| 46 | Options → Display has a "Show FPS" switch (off by default, saved); while it is on a small counter sits top-right above the shard count, in the menus and in a run, refreshed four times a second (owner L13). An e2e test turns it on through the Options menu, reads the counter and restarts; 20 tests on its branch, 42 on the merge | `a776bc17`, merge `fa7f0223` |
+| 31 | The draw is counted, and one cut taken. The count: the renderer draws 1,700–3,100 objects a frame, not 20,000 (the probe column was live objects in memory; it is now two columns, `live_objects` and `drawn_objects`). In the 60-enemy heavy fight: 1,842 draws and 2.13 M triangles, of which pack effects 589 draws and 1.39 M triangles, enemies 542 draws (8–9 each) and 0.45 M, the sun shadow pass 127 draws, the HUD a flat 389 2D draws. The cut: a shard drop cluster is one mesh per material (ShardViews 213 → 96 draws at 60 enemies); a shot diff is inside the frame-to-frame noise. Left for the owner: the pack effects' triangles (step 47), the HUD's draws, the per-enemy draws. `draw_census.gd` lists each pack effect. 1,527 + 6 tests | `e86c7be8`, merge `2b6c1141` |
 | 30 | Content is checked only in debug builds (the check measured 90–110 ms of a warm load; a release build skips it), and seven sites read an enemy's kind from the compiler's table instead of compiling the enemy. 418 + 6 tests | `b8e65c49`, merge `5368d2bc` |
 | 28 | A view with nothing to show does no work: twelve views (the Prism's, Seekers, Wisps, Void, blade forms, five boss views, tide waves, interphase) go quiet once everything is hidden and wake on content; their buckets fell from 15–85 µs to 2–24 µs each, about 0.5 ms a frame (busy machine). 30 state-dump hashes identical with and without the change; 1,531 + 12 tests. The split also showed `attack_form_view.gd`'s bucket is three quarters the shared effects layer's drawers, with real content, and that status visuals already skip when idle | `01cd71dc`, merge `771f603a` |
 | 24 | The hero's attacks cost less a tick: `dash_abilities` 0.52–0.54 → 0.43–0.45 ms in the heavy scene (busy machine). The cost was landed hits, not projectiles: the element card lookups are remembered on the build's book, `enemies_near` reads columns, no-overlevel returns at once. New tool `scripts/checks/attack_phases.gd`; its outcome hash and `horde_phases`' are identical before and after (the lead re-ran both on the merge). Audit S1, S8, S9 had nothing to act on in this scene (a Rune Explosion build fires no projectiles); 179 tests | `227c9592`, merge `b29c79b4` |
@@ -137,3 +141,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/v0110` (shared with v0.11.0), from `c
   Gatekeeper's longer cross, the biome kinds in every floor's table); fixed, no game change. Step 31 corrected the
   baseline's object count. The owner asked for a Show FPS switch (L13, step 46: built on its branch) and for lighter
   effect meshes (L14, step 47: with an agent).
+- 2026-11-10 (lead): steps 31 and 46 merged (42/42 on the merge; under the next seams run before a push). The owner
+  asked which CPU lever actually moves the frame; the lead picked the sim on its own thread (L15) and started it as a
+  trial (step 48). Open side finding from step 31: live objects grow by about 120 a second during the frame probe
+  (18,530 → 20,919 in 20 s) while orphan nodes hold at about 3,000; not a draw cost, not yet explained.
