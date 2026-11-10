@@ -246,7 +246,7 @@ func _enemies(actors: ActorViews) -> void:
 		var h := HordeAvatar.new()
 		h.enemy_tint = actors.enemy_tint
 		h.role_glow = ActorViews.role_glow_energy
-		h.setup(kind, actors.outline_color, actors.technique)
+		h.setup(kind)
 		h.set_process(false)
 		add_child(h)
 		RigMerge.merge(h, kind)  # v0.9.5 PF5: the merged body draws on a skinned variant of its shaders
@@ -261,7 +261,7 @@ func _enemies(actors: ActorViews) -> void:
 		var c := ChargerAvatar.new()
 		c.enemy_tint = actors.enemy_tint
 		c.role_glow = ActorViews.role_glow_energy
-		c.setup(actors.outline_color, actors.technique, kind)
+		c.setup(kind)
 		c.set_process(false)
 		add_child(c)
 		RigMerge.merge(c, kind)
@@ -279,32 +279,30 @@ func _enemies(actors: ActorViews) -> void:
 					kind, actors.enemy_tint, ActorViews.role_glow_energy, actors.outline_color
 				)
 			)
-	_merged_kinds(actors)
+	_merged_kinds()
 
 
 ## v0.9.5 PF5: the other enemies' merged bodies (RigMerge) draw on the skinned variant of the standard material; one of
 ## each, built and merged as ActorViews does, so that variant is compiled behind the cover too.
-func _merged_kinds(actors: ActorViews) -> void:
-	var oc := actors.outline_color
-	var tq := actors.technique
+func _merged_kinds() -> void:
 	var needle := NeedleAvatar.new()
-	needle.setup(oc, tq)
+	needle.setup()
 	_warm_rig(needle, WorldReader.KIND_NEEDLE)
 	var elite := EliteAvatar.new()
-	elite.setup(WorldReader.KIND_BREAKER, oc, tq)
+	elite.setup(WorldReader.KIND_BREAKER)
 	_warm_rig(elite, WorldReader.KIND_BREAKER)
 	var warden := WardenAvatar.new()
-	warden.setup(oc, tq)
+	warden.setup()
 	_warm_rig(warden, WorldReader.KIND_WARDEN)
 	var caster := CinderPriestAvatar.new()
 	caster.kind = WorldReader.KIND_ARC_CASTER
-	caster.setup(oc, tq)
+	caster.setup()
 	_warm_rig(caster, WorldReader.KIND_ARC_CASTER)
 	var drone := BombDroneAvatar.new()
-	drone.setup(oc, tq)
+	drone.setup()
 	_warm_rig(drone, WorldReader.KIND_BOMB_DRONE)
 	var lens := LensDroneAvatar.new()
-	lens.setup(oc, tq)
+	lens.setup()
 	_warm_rig(lens, WorldReader.KIND_LENS_DRONE)
 
 

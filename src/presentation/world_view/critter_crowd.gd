@@ -244,9 +244,7 @@ func _set_of(kind: int, radius: float) -> Dictionary:
 	_shadow_mode = ViewPrefs.enemy_shadows
 	var mesh := VatBake.mesh_for(kind, enemy_tint, role_glow, outline)
 	var pose := VatBake.pose_for(kind)
-	var mat := VatLooks.material(
-		pose, outline, pose["outline_m"], bool(mesh.get_meta(&"two_sided", false))
-	)
+	var mat := VatLooks.material(pose, bool(mesh.get_meta(&"two_sided", false)))
 	var off := GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	s["body"] = _new_mm(mesh, mat, true, "CritterBodies%d" % kind, off)
 	s["buf"] = PackedFloat32Array()

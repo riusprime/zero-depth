@@ -21,17 +21,17 @@ func after_each() -> void:
 func _avatars() -> Array:
 	var out := []
 	var charger := ChargerAvatar.new()
-	charger.setup(Color.BLACK)
+	charger.setup()
 	out.append(["charger", charger])
 	for kind: int in HordeAvatar.TELL_KINDS:
 		var h := HordeAvatar.new()
-		h.setup(kind, Color.BLACK)
+		h.setup(kind)
 		out.append(["horde %d" % kind, h])
 	var warden := WardenAvatar.new()
-	warden.setup(Color.BLACK)
+	warden.setup()
 	out.append(["warden", warden])
 	var needle := NeedleAvatar.new()
-	needle.setup(Color.BLACK)
+	needle.setup()
 	out.append(["needle", needle])
 	for e: Array in out:
 		add_child_autofree(e[1])
@@ -97,7 +97,7 @@ func test_the_flash_flickers_only_without_reduced_motion() -> void:
 	for calm in [true, false]:
 		ViewPrefs.reduced_motion = calm
 		var a := ChargerAvatar.new()
-		a.setup(Color.BLACK)
+		a.setup()
 		add_child_autofree(a)
 		a.set_process(false)
 		_hold(a, 0, WorldReader.STATE_WINDUP, 0.9, 60)
@@ -114,7 +114,7 @@ func test_the_flash_flickers_only_without_reduced_motion() -> void:
 func test_the_snipers_muzzle_charges_in_the_air() -> void:
 	ViewPrefs.reduced_motion = true
 	var a := HordeAvatar.new()
-	a.setup(WorldReader.KIND_SNIPER, Color.BLACK)
+	a.setup(WorldReader.KIND_SNIPER)
 	add_child_autofree(a)
 	a.set_process(false)
 	_hold(a, 0, WorldReader.STATE_MOVE, 0.0)
@@ -128,7 +128,7 @@ func test_the_snipers_muzzle_charges_in_the_air() -> void:
 	assert_gt(muzzle.global_position.y, 0.5, "at the barrel's tip, in the air")
 	for other: int in [WorldReader.KIND_SWARMER, WorldReader.KIND_SHIELD_BEARER]:
 		var h := HordeAvatar.new()
-		h.setup(other, Color.BLACK)
+		h.setup(other)
 		add_child_autofree(h)
 		_hold(h, 0, WorldReader.STATE_WINDUP, 0.95, 6)
 		assert_eq(h.muzzle_energy(), 0.0, "kind %d has no muzzle" % other)

@@ -104,7 +104,6 @@ static func rig(c: ChargerAvatar) -> Dictionary:
 		"joints": joints,
 		"row": func(g: int, d: PackedFloat64Array) -> Array: return row(c, g, d),
 		"scaled": true,
-		"outline_m": ChargerAvatar.OUTLINE_M,
 	}
 
 

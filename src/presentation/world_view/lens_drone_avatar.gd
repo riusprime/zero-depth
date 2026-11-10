@@ -11,7 +11,6 @@ const HOVER_Y := 1.3
 const BOB_M := 0.07
 const HEIGHT := HOVER_Y + 0.35
 const SHADOW_R := 0.4
-const OUTLINE_M := 0.02
 
 ## v0.8.0 EC: the pod (body), the cap (trim), the ring (grey) and the eye slit (eye) come from EnemyPalettes.
 const KIND := WorldReader.KIND_LENS_DRONE
@@ -41,9 +40,9 @@ var _rise := 0.0
 var _charge := 0.0
 
 
-func setup(outline_color: Color, technique: StringName = &"outline") -> void:
+func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	_parts = BossParts.new(outline_color, technique, OUTLINE_M)
+	_parts = BossParts.new()
 	shadow = MeshInstance3D.new()
 	var disc := CylinderMesh.new()
 	disc.top_radius = SHADOW_R
@@ -116,7 +115,6 @@ func _build_model() -> bool:
 		mat.albedo_texture = tex
 		mat.albedo_color = _color(&"body") if slot == &"role" else Color.WHITE
 		mat.roughness = 1.0
-		ActorLooks.outline(mat, Color.BLACK, 0.0)
 		mat.set_meta(&"enemy_tex", true)
 		mats[slot] = ActorViews.flashable(mat)
 		_parts.body_materials.append(mat)
@@ -239,7 +237,7 @@ func vat_rig() -> Dictionary:
 		[SPIN, 1, ring, SoloVat.turn(Vector3.UP if has_model else Vector3.RIGHT, 1.0, mount)],
 	]
 	var out := SoloVat.rig(
-		"lens_drone", VAT_DRIVES, [[[RX, 17]], [[RZ, 17]], [[SPIN, 128]]], joints, OUTLINE_M, false
+		"lens_drone", VAT_DRIVES, [[[RX, 17]], [[RZ, 17]], [[SPIN, 128]]], joints, false
 	)
 	if has_model:  # the owner's model's colour map (VatLooks' textured variant)
 		out["albedo_tex"] = EnemyModels.get_model(&"lens_drone")["texture"]

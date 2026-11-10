@@ -49,8 +49,6 @@ var _rest := {}
 var _glow_mat: ShaderMaterial
 var _glow_pieces: Array[GeometryInstance3D] = []
 var _glow_e := -1.0
-var _outline := Color.BLACK
-var _technique := &"outline"
 var _state := WorldReader.STATE_SPAWN
 var _pick := WorldReader.ELITE_BASIC
 var _progress := 0.0
@@ -77,11 +75,9 @@ func has_model() -> bool:
 	return model != null
 
 
-func setup(p_kind: int, outline_color: Color, technique: StringName = &"outline") -> void:
+func setup(p_kind: int) -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	kind = p_kind
-	_outline = outline_color
-	_technique = technique
 	height = float(HEIGHTS.get(kind, 2.4))
 	body = Node3D.new()
 	add_child(body)
@@ -283,7 +279,7 @@ func _set_glow(e: float) -> void:
 ## The owner's model (EnemyModels.get_model): each part a node at its pivot, `base` on the shared body material (the
 ## hit flash and the biome's cast), `glow` on the accent.
 func _build_model(m: Dictionary) -> void:
-	var base := shared_body(kind, Color.WHITE, m["texture"], _outline, 0.0)
+	var base := shared_body(kind, Color.WHITE, m["texture"])
 	model = Node3D.new()
 	model.name = "Model"
 	_model_scale = float(m["scale"])
@@ -319,7 +315,7 @@ func _build_stand_in(accent: Color) -> void:
 	var piece := MeshInstance3D.new()
 	piece.mesh = box
 	piece.position = Vector3(0, height * 0.5, 0)
-	piece.material_override = shared_body(kind, accent.darkened(0.6), null, _outline, 0.02)
+	piece.material_override = shared_body(kind, accent.darkened(0.6), null)
 	body.add_child(piece)
 	_hit_pieces.append(piece)
 	var band := BoxMesh.new()

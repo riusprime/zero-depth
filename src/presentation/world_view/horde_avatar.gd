@@ -16,7 +16,7 @@ extends AvatarBase
 ## +X is the front. v0.8.0 HR (owner O89, the horde lag): every material is EnemyLooks' (shared by every enemy of the
 ## same look, so a crowd's identical pieces draw instanced) and the meshes are shared too (_shared_mesh); the hit
 ## flash and the status tints (show_hit, from ActorViews) and the accent's glow (GLOW) are instance uniforms on this
-## enemy's own pieces, set only when they change; the X-ray is a pass of each piece's material (no twin nodes).
+## enemy's own pieces, set only when they change.
 ## v0.8.0 TG (owner O4, Q3): the Swarmer's lane, the Splitter's and Splitling's disc, the Shield Bearer's bash lane and
 ## the Sniper's line are no longer drawn on the ground; these kinds (TELL_KINDS) read their windup from the body
 ## (AvatarBase "tell"): a crouch and draw-back that deepens with the windup's progress, the accent (eye, seam, visor,
@@ -35,7 +35,6 @@ const DARK := Color("#24272D")
 const BONE := Color("#D9CDB8")
 ## The Mender's heal colour (beam, crystal, cross): pale green, not a reserved role (ART_DIRECTION).
 const MEND := Color("#7CF29A")
-const OUTLINE_M := 0.02
 const SPLITLING_SCALE := 0.62
 const HEIGHTS := {
 	WorldReader.KIND_SWARMER: 0.36,
@@ -64,8 +63,8 @@ const STRIKE_KINDS: Array[int] = [
 ## v0.8.0 P1: the Splitter's claw pivot (x, height) and how far out to each side the claws hang (z).
 const CLAW_PIVOT := Vector3(0.1, 0.6, 0.36)
 ## v0.8.0 MI (the owner's models, posed in code): the walk is full at WALK_FULL_MPS (m/s on the ground), a stride
-## WALK_HZ a second, the legs swing WALK_SWING (radians); a death lasts DEATH_SECONDS; the X-ray twin shrinks by
-## (m). Starting values.
+## WALK_HZ a second, the legs swing WALK_SWING (radians); a death lasts DEATH_SECONDS.
+## Starting values.
 const WALK_FULL_MPS := 2.0
 const WALK_HZ := 2.2
 const WALK_SWING := 0.3
@@ -119,7 +118,6 @@ var _muzzle_mat: ShaderMaterial
 ## v0.8.0 EC: the eye slit the Splitter / Splitling and the Mender get when the palette asks for one on every kind
 ## (their glow is the seam and the heal crystal), steady.
 var _eye_mat: ShaderMaterial
-## v0.8.0 HR: the X-ray pass the body's pieces carry (null without the xray technique).
 ## v0.8.0 HR: this enemy's accent pieces (the glow) and muzzle, and the energies last set on them (the body plates
 ## and their flash: AvatarBase's _hit_pieces).
 var _glow_pieces: Array[GeometryInstance3D] = []
@@ -134,8 +132,6 @@ var _healing := false
 var _rise := 0.0
 var _wind := 0.0
 var _strike := 0.0
-var _outline := Color.BLACK
-var _technique := &"outline"
 ## v0.8.0 MI: each part's rest pivot, the walk's phase and pace (0..1, from how fast the node moves on screen), and
 ## the death (seconds in; -1: alive).
 var _rest := {}
@@ -210,11 +206,9 @@ func dying() -> bool:
 	return _die_t >= 0.0
 
 
-func setup(p_kind: int, outline_color: Color, technique: StringName = &"outline") -> void:
+func setup(p_kind: int) -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	kind = p_kind
-	_outline = outline_color
-	_technique = technique
 	height = height_of(kind)
 	if vat:  # v0.10.5 W3-V1: no nodes; the crowd draws the body
 		var m := EnemyModels.get_model(model_id(kind))
@@ -579,12 +573,11 @@ func _set_muzzle(e: float) -> void:
 ## frame as delivered (`base`), the plates in the kind's role colour (`role`: greyscale in the texture, times
 ## _col(&"body")), the accents on the glowing accent material (`glow`). Both body materials take the hit flash and
 ## the biome's tint and role glow like the code bodies' plates (they were the "enemy_tex" materials); no drawn
-## outline (owner v0.7.5 on his models: the stroke is ugly; v0.8.0 HR: the stencil is written straight, no empty
-## outline pass).
+## outline (owner v0.7.5 on his models: the stroke is ugly).
 func _build_model(m: Dictionary) -> void:
 	var tex: Texture2D = m["texture"]
-	var base := _body_material(Color.WHITE, tex, 0.0)
-	var role := _body_material(_col(&"body"), tex, 0.0)
+	var base := _body_material(Color.WHITE, tex)
+	var role := _body_material(_col(&"body"), tex)
 	model = Node3D.new()
 	model.name = "Model"
 	_model_scale = float(m["scale"])
@@ -621,9 +614,9 @@ func _build_model(m: Dictionary) -> void:
 
 
 ## v0.8.0 HR: the shared body material for a plate of colour `c` (times `tex`, the owner's colour map, when given),
-## outlined `outline_m` thick (AvatarBase.shared_body: the biome's cast and the role glow picked in).
-func _body_material(c: Color, tex: Texture2D, outline_m: float) -> ShaderMaterial:
-	return shared_body(kind, c, tex, _outline, outline_m)
+## AvatarBase.shared_body: the biome's cast and the role glow picked in.
+func _body_material(c: Color, tex: Texture2D) -> ShaderMaterial:
+	return shared_body(kind, c, tex)
 
 
 ## v0.8.0 MI: the model's parts in this frame's pose (model units, about a metre each; +X the front, each part turning
@@ -968,13 +961,12 @@ func _col(slot: StringName) -> Color:
 	return EnemyPalettes.color(kind, slot)
 
 
-## An outlined, flashable body piece (its material carries the X-ray pass while the technique is xray). v0.8.0 HR:
-## the shared mesh and material (it was AvatarBase._outlined: its own material and an X-ray twin node per piece).
+## A flashable body piece. v0.8.0 HR: the shared mesh and material (it was its own material per piece).
 func _piece(parent: Node3D, mesh: Mesh, at: Vector3, c: Color) -> void:
 	var piece := MeshInstance3D.new()
 	piece.mesh = _shared_mesh(mesh)
 	piece.position = at
-	piece.material_override = _body_material(c, null, OUTLINE_M)
+	piece.material_override = _body_material(c, null)
 	parent.add_child(piece)
 	_hit_pieces.append(piece)
 

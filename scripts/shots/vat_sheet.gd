@@ -370,9 +370,9 @@ func _avatar(vat: bool, build: Dictionary) -> AvatarBase:
 	var tint: Color = build.get("tint", Color(0, 0, 0, 0))
 	var role := float(build.get("role", 0.0))
 	if SoloVat.is_solo(_kind):  # v0.10.5 W3-V4c: as ActorViews builds one (its cast on its own materials after)
-		var s: AvatarBase = VatBake.vat_avatar_of(_kind, Color("#1A1A22")) if vat else null
+		var s: AvatarBase = VatBake.vat_avatar_of(_kind) if vat else null
 		if s == null:
-			s = VatBake.reference_of(_kind, tint, role, Color("#1A1A22"))
+			s = VatBake.reference_of(_kind, tint, role)
 			s.set_process(true)
 		s.enemy_tint = tint
 		s.role_glow = role
@@ -383,11 +383,7 @@ func _avatar(vat: bool, build: Dictionary) -> AvatarBase:
 		c.role_glow = role
 		c.vat = vat
 		var hatch := bool(build.get("hatchling", false))
-		c.setup(
-			Color("#1A1A22"),
-			&"outline",
-			WorldReader.KIND_HATCHLING if hatch else WorldReader.KIND_CHARGER
-		)
+		c.setup(WorldReader.KIND_HATCHLING if hatch else WorldReader.KIND_CHARGER)
 		if hatch:
 			c.scale = Vector3.ONE * 0.66
 		return c
@@ -395,7 +391,7 @@ func _avatar(vat: bool, build: Dictionary) -> AvatarBase:
 	a.enemy_tint = tint
 	a.role_glow = role
 	a.vat = vat
-	a.setup(_kind, Color("#1A1A22"))
+	a.setup(_kind)
 	return a
 
 

@@ -31,7 +31,7 @@ func after_each() -> void:
 
 func _lurker(hidden := false) -> RockLurkerAvatar:
 	var a := RockLurkerAvatar.new()
-	a.setup(Color.BLACK)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	_step(a, {"state": WorldReader.STATE_MOVE, "hidden": hidden})
@@ -257,8 +257,8 @@ func test_it_bakes_within_a_fraction_of_a_pixel_and_keeps_its_drives() -> void:
 	var pose := VatBake.pose_for(KIND)
 	assert_true(pose.has("albedo_tex"), "the model's colour map")
 	var mesh := VatBake.mesh_for(KIND, Color(0, 0, 0, 0), 0.0, Color.BLACK)
-	var live := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0, Color.BLACK)
-	var vat := VatBake.vat_avatar_of(KIND, Color.BLACK)
+	var live := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0)
+	var vat := VatBake.vat_avatar_of(KIND)
 	for calm: bool in [false, true]:
 		ViewPrefs.reduced_motion = calm
 		var e := VatBake.pose_error(live, vat, pose, mesh, 40, 7)
@@ -267,8 +267,8 @@ func test_it_bakes_within_a_fraction_of_a_pixel_and_keeps_its_drives() -> void:
 	live.free()
 	vat.free()
 	ViewPrefs.reduced_motion = false
-	var a := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0, Color.BLACK)
-	var b := VatBake.vat_avatar_of(KIND, Color.BLACK)
+	var a := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0)
+	var b := VatBake.vat_avatar_of(KIND)
 	add_child_autofree(a)
 	add_child_autofree(b)
 	a.set_process(false)

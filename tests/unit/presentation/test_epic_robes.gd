@@ -39,7 +39,7 @@ func _look(robe: StringName) -> Dictionary:
 
 func _avatar(robe: StringName) -> PlayerAvatar:
 	var a := PlayerAvatar.new()
-	a.setup(Color("#1A1A22"))
+	a.setup()
 	add_child_autofree(a)
 	a.set_look(_look(robe))
 	return a

@@ -65,7 +65,6 @@ static func rig(a: HordeAvatar) -> Dictionary:
 		"joints": js,
 		"row": func(gi: int, d: PackedFloat64Array) -> Array: return _row(a, js, gi, d),
 		"scaled": false,
-		"outline_m": HordeAvatar.OUTLINE_M,
 	}
 	var tex := texture(a)
 	if tex != null:

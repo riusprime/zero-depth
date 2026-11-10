@@ -17,7 +17,7 @@ const CASES := [
 
 func _avatar() -> ChargerAvatar:
 	var a := ChargerAvatar.new()
-	a.setup(Color.BLACK)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	return a

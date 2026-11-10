@@ -37,7 +37,6 @@ const KIND := WorldReader.KIND_ROCK_LURKER
 const MODEL := &"rock_lurker"
 ## Its height (m): EnemyModels' SPECS height (the art list's 0.9 m boulder; its 1.29 m length fits the 1.3 m body).
 const HEIGHT := 0.9
-const OUTLINE_M := 0.02
 const ROLE := Color("#C93A1E")
 const CRACK_COLOR := Color("#E2481F")
 const VISOR_COLOR := Color("#FF5A24")
@@ -167,19 +166,17 @@ var _rise := 1.0
 
 ## Builds a Rock Lurker under `facing` for ActorViews (`vat_hook`: its _solo_vat, called before the setup) and marks
 ## `root` (its avatar, its body materials for the hit flash); returns its height.
-static func attach(
-	root: Node3D, facing: Node3D, outline: Color, technique: StringName, vat_hook: Callable
-) -> float:
+static func attach(root: Node3D, facing: Node3D, vat_hook: Callable) -> float:
 	var a := RockLurkerAvatar.new()
 	vat_hook.call(root, a, KIND)
-	a.setup(outline, technique)
+	a.setup()
 	facing.add_child(a)
 	root.set_meta(&"enemy_avatar", a)
 	root.set_meta(&"mats", a.body_materials.duplicate())
 	return HEIGHT
 
 
-func setup(outline_color: Color, technique: StringName = &"outline") -> void:
+func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_vd.resize(VAT_DRIVES.size())
 	_setup_glows()
@@ -196,9 +193,9 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	_build_joints()
 	if not vat:
 		if has_model:
-			_dress_model(m, outline_color)
+			_dress_model(m)
 		else:
-			_build_stand_in(outline_color, technique)
+			_build_stand_in()
 		# Only the rock and the face cast its shadow stand-in (EnemyShadows: built from the standing pose, it would
 		# draw legs beside the boulder while it hides).
 		for j: Node3D in Array(arms) + Array(hands) + Array(legs):
@@ -217,7 +214,6 @@ func _setup_glows() -> void:
 		mat.emission = pair[1]
 		mat.emission_energy_multiplier = pair[2]
 		mat.roughness = 1.0
-		write_stencil(mat)
 	_crack_mat.set_meta(SoloVat.GLOW, CRACK + 1)  # VAT: the cracks glow at their own drive
 
 
@@ -265,7 +261,7 @@ func _part(n: StringName) -> Node3D:
 ## The owner's model on the joints: `base` (the stone and charcoal, coloured as delivered) and `role` (the brow,
 ## greyscale in the map, in the role colour) are the body plates (the hit flash); `glow` is the cracks' ribbons on the
 ## body and the visor on the head.
-func _dress_model(m: Dictionary, outline: Color) -> void:
+func _dress_model(m: Dictionary) -> void:
 	var tex: Texture2D = m["texture"]
 	var mats := {}
 	for slot: StringName in [&"base", &"role"]:
@@ -273,7 +269,6 @@ func _dress_model(m: Dictionary, outline: Color) -> void:
 		mat.albedo_texture = tex
 		mat.albedo_color = ROLE if slot == &"role" else Color.WHITE
 		mat.roughness = 1.0
-		ActorLooks.outline(mat, outline, OUTLINE_M)
 		mat.set_meta(&"enemy_tex", true)
 		mats[slot] = ActorViews.flashable(mat)
 		body_materials.append(mat)
@@ -297,14 +292,14 @@ func _dress_model(m: Dictionary, outline: Color) -> void:
 
 ## Without the model: a code-made stand-in on the same joints (a faceted boulder with crack slivers, a dark face and
 ## its gem, block arms with bone claws, stub legs).
-func _build_stand_in(outline: Color, technique: StringName) -> void:
+func _build_stand_in() -> void:
 	var b: Vector3 = _rest[&"body"]
 	var stone := SphereMesh.new()
 	stone.radius = 0.55
 	stone.height = 0.72
 	stone.radial_segments = 8
 	stone.rings = 4
-	_outlined(body, stone, Vector3(-0.08, 0.36, 0) - b, STONE, outline, STONE, technique, OUTLINE_M)
+	_body_piece(body, stone, Vector3(-0.08, 0.36, 0) - b, STONE)
 	for k in 4:
 		var crack := MeshInstance3D.new()
 		var cm := BoxMesh.new()
@@ -317,10 +312,10 @@ func _build_stand_in(outline: Color, technique: StringName) -> void:
 		body.add_child(crack)
 	var face := BoxMesh.new()
 	face.size = Vector3(0.12, 0.2, 0.3)
-	_outlined(head, face, Vector3(0.1, 0.0, 0), DARK, outline, DARK, technique, OUTLINE_M)
+	_body_piece(head, face, Vector3(0.1, 0.0, 0), DARK)
 	var brow := BoxMesh.new()
 	brow.size = Vector3(0.16, 0.08, 0.32)
-	_outlined(head, brow, Vector3(0.14, 0.13, 0), ROLE, outline, ROLE, technique, OUTLINE_M)
+	_body_piece(head, brow, Vector3(0.14, 0.13, 0), ROLE)
 	var gem := MeshInstance3D.new()
 	var gm := PrismMesh.new()
 	gm.size = Vector3(0.08, 0.08, 0.05)
@@ -332,23 +327,17 @@ func _build_stand_in(outline: Color, technique: StringName) -> void:
 	for k in 2:
 		var upper := BoxMesh.new()
 		upper.size = Vector3(0.2, 0.22, 0.2)
-		_outlined(
-			arms[k], upper, Vector3(0.06, -0.05, 0), STONE, outline, STONE, technique, OUTLINE_M
-		)
+		_body_piece(arms[k], upper, Vector3(0.06, -0.05, 0), STONE)
 		var fore := BoxMesh.new()
 		fore.size = Vector3(0.26, 0.2, 0.22)
-		_outlined(
-			hands[k], fore, Vector3(0.12, -0.09, 0), STONE, outline, STONE, technique, OUTLINE_M
-		)
+		_body_piece(hands[k], fore, Vector3(0.12, -0.09, 0), STONE)
 		var claw := PrismMesh.new()
 		claw.size = Vector3(0.1, 0.12, 0.18)
-		var c := _outlined(
-			hands[k], claw, Vector3(0.3, -0.15, 0), BONE, outline, BONE, technique, OUTLINE_M
-		)
+		var c := _body_piece(hands[k], claw, Vector3(0.3, -0.15, 0), BONE)
 		c.rotation.z = -PI * 0.5
 		var leg := BoxMesh.new()
 		leg.size = Vector3(0.16, 0.22, 0.16)
-		_outlined(legs[k], leg, Vector3(0, -0.11, 0), STONE, outline, STONE, technique, OUTLINE_M)
+		_body_piece(legs[k], leg, Vector3(0, -0.11, 0), STONE)
 
 
 # --- the sim's state -----------------------------------------------------------------------------------------------
@@ -760,7 +749,7 @@ func vat_rig() -> Dictionary:
 	var grids: Array = []
 	for d in VAT_DRIVES.size() - 1:
 		grids.append([[d, VAT_SAMPLES[d]]])
-	var out := SoloVat.rig("rock_lurker", VAT_DRIVES, grids, j, OUTLINE_M, false)
+	var out := SoloVat.rig("rock_lurker", VAT_DRIVES, grids, j, false)
 	if has_model:
 		out["albedo_tex"] = vat_texture()
 	return out

@@ -48,10 +48,9 @@ static func palette_of(biome: StringName) -> Dictionary:
 	return out
 
 
-func setup(biome: StringName, pitch_deg: float, technique: StringName, occlusion: bool) -> void:
+func setup(biome: StringName, pitch_deg: float, occlusion: bool) -> void:
 	world = showcase_world(4)
 	view = WorldViewRoot.new()
-	view.actors.technique = technique
 	view.occlusion_enabled = occlusion
 	view.rig.set_pitch(pitch_deg)
 	view.rig.view_size = 15.0

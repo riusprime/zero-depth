@@ -8,7 +8,7 @@ const DT := 1.0 / 60.0
 
 func _avatar() -> ChargerAvatar:
 	var a := ChargerAvatar.new()
-	a.setup(Color("#1A1A22"))
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)  # the test steps advance() itself
 	return a
@@ -56,11 +56,7 @@ func test_builds_hood_visor_and_four_clawed_legs() -> void:
 	assert_gt(looks.size(), 4, "hood, mantle, core and leg colours")
 	for m: ShaderMaterial in looks:
 		assert_eq(m.get_shader_parameter("emission_energy"), 0.0, "no glow outside ActorViews")
-		assert_eq(
-			m.next_pass != null,
-			ActorLooks.OUTLINES,
-			"outlined like the other actors (PF4: the switch)"
-		)
+		assert_null(m.next_pass, "no outline pass (v0.9.5 PF4)")
 	assert_eq(a.find_children("*", "MeshInstance3D", true, false).size(), 15, "no twin node")
 	var tips := a.leg_tips()
 	for k in tips.size():

@@ -151,10 +151,10 @@ var _shield_t := 0.0
 var _recall := -1.0
 
 
-## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
-func setup(outline_color: Color, technique: StringName = &"outline") -> void:
+## Builds the model.
+func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	parts = BossParts.new(outline_color, technique)
+	parts = BossParts.new()
 	model.name = "Model"
 	model.scale = Vector3.ONE * BossModels.SIZE_SCALE  # v0.7.5 BM (owner N18): every boss 1.3x
 	add_child(model)
@@ -538,7 +538,7 @@ func _build_body() -> void:
 
 
 ## v0.7.5 BM: the owner's rigged model as delivered, its own skeleton and skin, under a node that turns, scales and
-## lifts it into our frame; dressed like the others (flashable, outlined, the glow overlay).
+## lifts it into our frame; dressed like the others (flashable, the glow overlay).
 func _build_skinned(m: Dictionary) -> void:
 	pivot = Node3D.new()
 	pivot.name = "Body"
@@ -557,12 +557,11 @@ func _build_skinned(m: Dictionary) -> void:
 	imported.name = "Imported"
 	# Poses move parts past the rest pose's bounds (a raised shield, a thrown spear, a folded head): never cull early.
 	imported.extra_cull_margin = 2.0
-	_dress(imported, m["material"], m["scale"])
+	_dress(imported, m["material"])
 	poser = BonePoser.new(skeleton, m["frame"], m["scale"])
 
 
-## The owner's model: its mesh with the model's albedo kept, made flashable and outlined, a glow overlay, and an
-## X-ray twin with the X-ray technique.
+## The owner's model: its mesh with the model's albedo kept, made flashable, and a glow overlay.
 func _build_imported(m: Dictionary) -> void:
 	pivot = Node3D.new()
 	pivot.name = "Body"
@@ -592,14 +591,10 @@ func _build_imported(m: Dictionary) -> void:
 
 ## Dresses the owner's skinned mesh: its own material kept (texture and all), duplicated, made flashable (no drawn
 ## outline since v0.7.5), the glow overlay, shadows on.
-## `units` is kept for callers (it sized the X-ray twin's shrink).
-func _dress(mi: MeshInstance3D, material: StandardMaterial3D, _units: float = 1.0) -> void:
+func _dress(mi: MeshInstance3D, material: StandardMaterial3D) -> void:
 	var mat: StandardMaterial3D = (
 		material.duplicate() as StandardMaterial3D if material != null else StandardMaterial3D.new()
 	)
-	# v0.7.5 (owner: "remove the stroke outline around the bosses model, it is ugly"): no drawn outline on the
-	# owner's models. The outline stencil mode stays, at zero thickness, so the X-ray twin's stencil is unchanged.
-	ActorLooks.outline(mat, parts.outline_color(), 0.0)
 	mi.material_override = ActorViews.flashable(mat)
 	glow_overlay = StandardMaterial3D.new()
 	glow_overlay.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED

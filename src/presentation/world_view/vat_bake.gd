@@ -17,7 +17,7 @@ extends RefCounted
 ##   by its joint's chain (joint after parent, any depth), as the scene tree composed the nodes;
 ## - "row": Callable(grid, drives: PackedFloat64Array) -> Array of Transform3D: that grid's joints (in joint order)
 ##   posed by the avatar's own code at those drives (the other drives 0);
-## - "scaled": whether a joint scales (the normals then take the inverse transpose); "outline_m": the outline's width;
+## - "scaled": whether a joint scales (the normals then take the inverse transpose);
 ## - plus what the kind's crowd reads (a HordeAvatar's "period").
 ## The part of the pose that is a plain lift of the whole body (an idle bob, a rise-in's sink) is not baked: it is the
 ## avatar's vat_lift(), sent with the instance's transform (exact).
@@ -29,7 +29,7 @@ extends RefCounted
 ## sample, the first axis fastest), three texels per joint slot (the 3x4 matrix's rows: basis row and origin). The
 ## mesh: every piece's surfaces merged into one surface in its joint's space, with per-vertex CUSTOM0 = albedo (linear)
 ## + mode (0 a body plate: the hit flash and rest glow; 1 an accent: the glow; 2 a plain plate: neither), CUSTOM1 =
-## emission (linear; a plate's times its rest energy) + outline flag, CUSTOM2 = joint, one-sided (1: its back faces are
+## emission (linear; a plate's times its rest energy) + 0 (unused), CUSTOM2 = joint, one-sided (1: its back faces are
 ## not drawn, in a mesh that also has two-sided pieces), v0.10.5 W3-V4c: glow source (0: the instance's glow; k: drive
 ## k - 1), unshaded (1: VatLooks draws its albedo as is). v0.10.5 W3-V4c: the stand-alone kinds' StandardMaterial3D
 ## pieces take their looks from SoloVat.surface_look (with vertex colours where their material takes them). eval_* run
@@ -69,45 +69,43 @@ static func gait_period(kind: int) -> float:
 
 ## A reference avatar of horde `kind`, built with its pieces as ActorViews builds one (not in the tree; the caller
 ## frees it).
-static func reference_avatar(
-	kind: int, tint: Color, role_glow: float, outline: Color
-) -> HordeAvatar:
+static func reference_avatar(kind: int, tint: Color, role_glow: float) -> HordeAvatar:
 	var a := HordeAvatar.new()
 	a.enemy_tint = tint
 	a.role_glow = role_glow
-	a.setup(kind, outline, &"outline")
+	a.setup(kind)
 	a.set_process(false)
 	return a
 
 
 ## v0.10.5 W3-V4a: a reference avatar of any VAT `kind` (reference_avatar's, or a ChargerAvatar for the Charger and
 ## the Hatchling).
-static func reference_of(kind: int, tint: Color, role_glow: float, outline: Color) -> AvatarBase:
+static func reference_of(kind: int, tint: Color, role_glow: float) -> AvatarBase:
 	if SoloVat.is_solo(kind):  # v0.10.5 W3-V4c: the Needle, Warden, Arc Caster, Bomb Drone
-		return SoloVat.reference_of(kind, tint, role_glow, outline)
+		return SoloVat.reference_of(kind, tint, role_glow)
 	if is_charger(kind):
 		var c := ChargerAvatar.new()
 		c.enemy_tint = tint
 		c.role_glow = role_glow
-		c.setup(outline, &"outline", kind)
+		c.setup(kind)
 		c.set_process(false)
 		return c
-	return reference_avatar(kind, tint, role_glow, outline)
+	return reference_avatar(kind, tint, role_glow)
 
 
 ## v0.10.5 W3-V4a: a VAT avatar of `kind` (no pieces), as ActorViews builds one with the switch on (tools, tests; not
 ## in the tree; the caller frees it).
-static func vat_avatar_of(kind: int, outline: Color) -> AvatarBase:
+static func vat_avatar_of(kind: int) -> AvatarBase:
 	if SoloVat.is_solo(kind):  # v0.10.5 W3-V4c
-		return SoloVat.vat_avatar_of(kind, outline)
+		return SoloVat.vat_avatar_of(kind)
 	if is_charger(kind):
 		var c := ChargerAvatar.new()
 		c.vat = true
-		c.setup(outline, &"outline", kind)
+		c.setup(kind)
 		return c
 	var h := HordeAvatar.new()
 	h.vat = true
-	h.setup(kind, outline)
+	h.setup(kind)
 	return h
 
 
@@ -169,7 +167,6 @@ static func horde_rig(avatar: HordeAvatar) -> Dictionary:
 		"joints": js,
 		"row": func(g: int, d: PackedFloat64Array) -> Array: return _horde_row(avatar, js, g, d),
 		"scaled": false,
-		"outline_m": HordeAvatar.OUTLINE_M,
 		"period": gait_period(avatar.kind),
 	}
 
@@ -202,11 +199,11 @@ static func _slotted(rig: Dictionary) -> Array:
 
 
 ## The baked poses of `kind`: {texture (ImageTexture), image, data (its floats), width, joints, grids, drives,
-## drive_texels, scaled, outline_m, key}, and for a horde kind the pilot's stance / gait / gait_row / period.
+## drive_texels, scaled, key}, and for a horde kind the pilot's stance / gait / gait_row / period.
 static func pose_for(kind: int) -> Dictionary:
 	if _kind_keys.has(kind) and _poses.has(_kind_keys[kind]):
 		return _poses[_kind_keys[kind]]
-	var a := reference_of(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
+	var a := reference_of(kind, Color(0, 0, 0, 0), 0.0)
 	var key: String = rig_of(a).get("key", "kind%d" % kind)
 	if not _poses.has(key):
 		_poses[key] = bake(a)
@@ -295,7 +292,6 @@ static func bake(avatar: Node3D) -> Dictionary:
 		"drives": n_drives,
 		"drive_texels": maxi(0, ceili((n_drives - 4) / 4.0)),
 		"scaled": bool(rig.get("scaled", false)),
-		"outline_m": float(rig.get("outline_m", HordeAvatar.OUTLINE_M)),
 		"key": rig.get("key", ""),
 	}
 	if rig.has("albedo_tex"):  # v0.10.5 W3-V4b: the owner's model's colour map (VatLooks' textured variant)
@@ -336,13 +332,14 @@ static func _write(
 		_put(data, width, slot * 3 + r, row, Vector4(b.x[r], b.y[r], b.z[r], xf.origin[r]))
 
 
-## The merged body of `kind` in this look (the biome's cast `tint`, the role glow, the outline colour): an ArrayMesh
-## (one surface, see the class notes; meta "two_sided": some piece is drawn from both sides), cached by look.
+## The merged body of `kind` in this look (the biome's cast `tint`, the role glow; `outline`, the biome's outline
+## colour, only keeps each biome's cache entry its own): an ArrayMesh (one surface, see the class notes; meta
+## "two_sided": some piece is drawn from both sides), cached by look.
 static func mesh_for(kind: int, tint: Color, role_glow: float, outline: Color) -> ArrayMesh:
 	var key := look_key(kind, tint, role_glow, outline)
 	if _meshes.has(key):
 		return _meshes[key]
-	var a := reference_of(kind, tint, role_glow, outline)
+	var a := reference_of(kind, tint, role_glow)
 	var mesh := build_mesh(a)
 	a.free()
 	_meshes[key] = mesh
@@ -355,14 +352,13 @@ static func look_key(kind: int, tint: Color, role_glow: float, outline: Color) -
 	for slot: StringName in [&"body", &"trim", &"grey", &"eye"]:
 		cols.append(EnemyPalettes.color(kind, slot).to_html())
 	return (
-		"%d|%s|%.4f|%s|%s|%d"
+		"%d|%s|%.4f|%s|%s"
 		% [
 			kind,
 			tint.to_html(),
 			role_glow,
 			outline.to_html(),
 			",".join(cols),
-			int(ActorLooks.OUTLINES)
 		]
 	)
 
@@ -508,7 +504,7 @@ static func build_mesh(avatar: Node3D) -> ArrayMesh:
 	return mesh
 
 
-## A piece surface's look: [albedo (linear) rgb + mode, emission (linear) rgb + outline, two-sided], read from its
+## A piece surface's look: [albedo (linear) rgb + mode, emission (linear) rgb + 0, two-sided], read from its
 ## EnemyLooks material (a body plate: zd_hit; an accent: zd_glow), or (v0.10.5 W3-V4a: the Charger's face) a plain
 ## untextured StandardMaterial3D: its albedo, no emission, no flash. A material of any other kind is drawn as a dark
 ## plate and reported (the kind is then not VAT-ready).
@@ -543,10 +539,9 @@ static func surface_look(mi: MeshInstance3D, s: int) -> Array:
 	var a := albedo.srgb_to_linear()
 	var e := emission.srgb_to_linear()
 	var k := 1.0 if accent else energy
-	var outline := 1.0 if m.next_pass != null else 0.0
 	return [
 		[a.r, a.g, a.b, 1.0 if accent else 0.0],
-		[e.r * k, e.g * k, e.b * k, outline],
+		[e.r * k, e.g * k, e.b * k, 0.0],
 		code.contains("cull_disabled"),
 	]
 

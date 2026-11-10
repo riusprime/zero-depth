@@ -27,7 +27,6 @@ const KIND := WorldReader.KIND_CINDER_PRIEST
 const MODEL_ID := &"cinder_priest"
 ## The body's top (m, for the health bar; EnemyModels scales the model to it).
 const HEIGHT := 1.75
-const OUTLINE_M := 0.02
 const DEATH_SECONDS := 0.9
 const SPAWN_SECONDS := 0.6
 ## Its colours (the art list's ranged violet, the family's charcoal and greys; the ember crystal, the gem visor).
@@ -227,14 +226,14 @@ static func attach(views: ActorViews, root: Node3D, facing: Node3D, p_kind: int)
 	var a := CinderPriestAvatar.new()
 	a.kind = p_kind
 	views._solo_vat(root, a, p_kind)
-	a.setup(views.outline_color, views.technique)
+	a.setup()
 	facing.add_child(a)
 	root.set_meta(&"enemy_avatar", a)
 	root.set_meta(&"mats", a.body_materials.duplicate())
 	return HEIGHT
 
 
-func setup(outline_color: Color, technique: StringName = &"outline") -> void:
+func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_vd.resize(VAT_DRIVES.size())
 	if palette.is_empty():
@@ -262,9 +261,9 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 		return
 	_build_joints()
 	if has_model:
-		_build_model(m, outline_color)
+		_build_model(m)
 	else:
-		_build_code_body(outline_color, technique)
+		_build_code_body()
 	_pose()
 
 
@@ -297,7 +296,7 @@ func _build_joints() -> void:
 
 ## The owner's model: each part's mesh under its joint (the model's `body` part is the torso), its violet plates in
 ## the role colour (greyscale in the texture), its frame as delivered, the crystal and the visor on their glows.
-func _build_model(m: Dictionary, _outline: Color) -> void:
+func _build_model(m: Dictionary) -> void:
 	var tex: Texture2D = m["texture"]
 	var mats := {}
 	for slot: StringName in [&"base", &"role"]:
@@ -305,7 +304,6 @@ func _build_model(m: Dictionary, _outline: Color) -> void:
 		mat.albedo_texture = tex
 		mat.albedo_color = palette["role"] if slot == &"role" else palette["base"]
 		mat.roughness = 1.0
-		ActorLooks.outline(mat, Color.BLACK, 0.0)
 		mat.set_meta(&"enemy_tex", true)
 		mats[slot] = ActorViews.flashable(mat)
 		body_materials.append(mat)
@@ -331,85 +329,43 @@ func _build_model(m: Dictionary, _outline: Color) -> void:
 ## L15: without the model file, a code-made priest of the same parts (the O13c stand-in's shapes): a violet robe hem,
 ## a charcoal chest, a pointed violet hood with a dark face plate and a gem visor, grey arms, a tall grey staff with
 ## the ember crystal.
-func _build_code_body(outline: Color, technique: StringName) -> void:
-	var team := Color.BLACK
+func _build_code_body() -> void:
 	var w := _waist.y
-	_outlined(
-		parts["hem"],
-		ArcCasterAvatar._frustum(0.36, 0.19, w, 7),
-		Vector3(0, -w, 0),
-		palette["role"],
-		outline,
-		team,
-		technique,
-		OUTLINE_M
+	_body_piece(
+		parts["hem"], ArcCasterAvatar._frustum(0.36, 0.19, w, 7), Vector3(0, -w, 0), palette["role"]
 	)
 	for n in 6:  # the hem's spikes, bone and grey
 		var a := n * TAU / 6.0
-		_outlined(
+		_body_piece(
 			parts["hem"],
 			NeedleAvatar._chamfer_box(Vector3(0.06, 0.12, 0.06), 0.015),
 			Vector3(cos(a) * 0.34, 0.06 - w, sin(a) * 0.34),
-			BONE if n % 2 == 0 else GREY,
-			outline,
-			team,
-			technique,
-			OUTLINE_M
+			BONE if n % 2 == 0 else GREY
 		)
 	var chest := _neck.y - w
-	_outlined(
-		parts["torso"],
-		ArcCasterAvatar._frustum(0.2, 0.24, chest, 6),
-		Vector3.ZERO,
-		TRIM,
-		outline,
-		team,
-		technique,
-		OUTLINE_M
-	)
+	_body_piece(parts["torso"], ArcCasterAvatar._frustum(0.2, 0.24, chest, 6), Vector3.ZERO, TRIM)
 	var hood: Node3D = parts["hood"]
-	_outlined(
-		hood,
-		ArcCasterAvatar._octahedron(0.2),
-		Vector3(-0.02, 0.2, 0),
-		palette["role"],
-		outline,
-		team,
-		technique,
-		OUTLINE_M
-	)
-	_outlined(
+	_body_piece(hood, ArcCasterAvatar._octahedron(0.2), Vector3(-0.02, 0.2, 0), palette["role"])
+	_body_piece(
 		hood,
 		NeedleAvatar._chamfer_box(Vector3(0.08, 0.16, 0.14), 0.02),
 		Vector3(0.13, 0.08, 0),
-		TRIM,
-		outline,
-		team,
-		technique,
-		OUTLINE_M
+		TRIM
 	)
 	_glow_piece(hood, Vector3(0.03, 0.04, 0.08), Vector3(0.18, 0.1, 0), _visor_mat)
 	for side: String in ["arm_l", "arm_r"]:
-		_outlined(
+		_body_piece(
 			parts[side],
 			NeedleAvatar._chamfer_box(Vector3(0.08, 0.4, 0.08), 0.02),
 			Vector3(0.04, -0.18, 0),
-			GREY,
-			outline,
-			team,
-			technique,
-			OUTLINE_M
+			GREY
 		)
 	var staff: Node3D = parts["staff"]
-	_outlined(
+	_body_piece(
 		staff,
 		NeedleAvatar._chamfer_box(Vector3(0.05, 1.72, 0.05), 0.012),
 		Vector3(0, 1.72 * 0.5 - _grip.y, 0),
-		GREY,
-		outline,
-		team,
-		technique,
-		OUTLINE_M
+		GREY
 	)
 	_glow_piece(staff, Vector3(0.12, 0.18, 0.12), Vector3(0, 1.62 - _grip.y, 0), _crystal_mat)
 
@@ -780,7 +736,7 @@ func vat_rig() -> Dictionary:
 		("cinder_priest_" if kind == KIND else "cinder_priest_%d_" % kind)
 		+ ("model" if has_model else "code")
 	)
-	var out := SoloVat.rig(key, VAT_DRIVES, grids, joints, OUTLINE_M, true)
+	var out := SoloVat.rig(key, VAT_DRIVES, grids, joints, true)
 	if has_model:
 		out["albedo_tex"] = vat_texture()
 	return out

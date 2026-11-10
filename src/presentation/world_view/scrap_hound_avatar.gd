@@ -38,7 +38,6 @@ const COLOR := Color("#C93A1E")
 const VISOR_COLOR := Color("#FF5030")
 const VISOR_REST := 1.6
 const VISOR_TELL := 7.0
-const OUTLINE_M := 0.02
 const TELEPORT_SPEED := 30.0
 ## The clips' lengths (s): the yelp (the sim's stagger, data/enemies/scrap_hound.tres stagger_seconds), the bite and
 ## the recovery after it (the attack's recovery_seconds), a plain hit's flinch, the death.
@@ -175,26 +174,23 @@ var _die_t := -1.0
 
 ## Builds a hound under `facing` for ActorViews (`views`: on VAT while its switch is on) and marks `root` (the avatar,
 ## its body materials for the hit flash); returns its height.
-static func attach(
-	views: ActorViews, root: Node3D, facing: Node3D, outline: Color, technique: StringName
-) -> float:
+static func attach(views: ActorViews, root: Node3D, facing: Node3D) -> float:
 	var hound := ScrapHoundAvatar.new()
 	views._solo_vat(root, hound, KIND)
-	hound.setup(outline, technique)
+	hound.setup()
 	facing.add_child(hound)
 	root.set_meta(&"enemy_avatar", hound)
 	root.set_meta(&"mats", hound.body_materials.duplicate())
 	return HEIGHT
 
 
-func setup(outline_color: Color, technique: StringName = &"outline") -> void:
+func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_vd.resize(VAT_DRIVES.size())
 	_visor_mat.albedo_color = VISOR_COLOR
 	_visor_mat.emission_enabled = true
 	_visor_mat.emission = VISOR_COLOR
 	_visor_mat.emission_energy_multiplier = VISOR_REST
-	write_stencil(_visor_mat)
 	var m := EnemyModels.get_model(MODEL)
 	has_model = not m.is_empty()
 	if vat:  # the crowd draws the body
@@ -213,7 +209,7 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	if has_model:
 		_build_model(m)
 	else:
-		_build_code(outline_color, technique)
+		_build_code()
 	_build_joints()
 	_pose()
 
@@ -256,7 +252,6 @@ func _build_model(m: Dictionary) -> void:
 		mat.albedo_texture = tex
 		mat.albedo_color = COLOR if slot == &"role" else Color.WHITE
 		mat.roughness = 1.0
-		ActorLooks.outline(mat, Color.BLACK, 0.0)  # (no stroke on the owner's models)
 		mat.set_meta(&"enemy_tex", true)
 		mats[slot] = ActorViews.flashable(mat)
 		body_materials.append(mat)
@@ -277,27 +272,16 @@ func _build_model(m: Dictionary) -> void:
 
 
 ## The code-made stand-in (the model file missing): boxes and rods on the same joints, so every clip still plays.
-func _build_code(outline: Color, technique: StringName) -> void:
+func _build_code() -> void:
 	var charcoal := Color("#24272D")
 	var grey := Color("#8A817C")
 	var spine: Vector3 = _pivots[&"body_f"]
-	_piece(rig, Vector3(0.36, 0.2, 0.24), Vector3(0.15, 0.4, 0), charcoal, outline, technique)
-	_piece(rig, Vector3(0.36, 0.12, 0.28), Vector3(0.15, 0.55, 0), COLOR, outline, technique)
-	_piece(
-		hips,
-		Vector3(0.36, 0.18, 0.22),
-		Vector3(-0.18, 0.42, 0) - spine,
-		charcoal,
-		outline,
-		technique
-	)
-	_piece(
-		hips, Vector3(0.36, 0.1, 0.26), Vector3(-0.18, 0.54, 0) - spine, COLOR, outline, technique
-	)
+	_piece(rig, Vector3(0.36, 0.2, 0.24), Vector3(0.15, 0.4, 0), charcoal)
+	_piece(rig, Vector3(0.36, 0.12, 0.28), Vector3(0.15, 0.55, 0), COLOR)
+	_piece(hips, Vector3(0.36, 0.18, 0.22), Vector3(-0.18, 0.42, 0) - spine, charcoal)
+	_piece(hips, Vector3(0.36, 0.1, 0.26), Vector3(-0.18, 0.54, 0) - spine, COLOR)
 	var neck: Vector3 = _pivots[&"head"]
-	_piece(
-		head, Vector3(0.22, 0.16, 0.16), Vector3(0.42, 0.36, 0) - neck, charcoal, outline, technique
-	)
+	_piece(head, Vector3(0.22, 0.16, 0.16), Vector3(0.42, 0.36, 0) - neck, charcoal)
 	var visor := MeshInstance3D.new()
 	var vm := BoxMesh.new()
 	vm.size = Vector3(0.03, 0.06, 0.1)
@@ -305,7 +289,7 @@ func _build_code(outline: Color, technique: StringName) -> void:
 	visor.material_override = _visor_mat
 	visor.position = Vector3(0.535, 0.38, 0) - neck
 	head.add_child(visor)
-	_piece(tail, Vector3(0.24, 0.05, 0.05), Vector3(-0.12, 0, 0), grey, outline, technique)
+	_piece(tail, Vector3(0.24, 0.05, 0.05), Vector3(-0.12, 0, 0), grey)
 	var toes := [
 		Vector3(0.5, 0.02, 0.18),
 		Vector3(0.52, 0.02, -0.18),
@@ -315,24 +299,18 @@ func _build_code(outline: Color, technique: StringName) -> void:
 	for k in LEGS.size():
 		var hip: Vector3 = _pivots[StringName("leg_%s_u" % LEGS[k])]
 		var knee: Vector3 = _pivots[StringName("leg_%s_l" % LEGS[k])]
-		_rod(uppers[k], Vector3.ZERO, knee - hip, grey, outline, technique)
-		_rod(lowers[k], Vector3.ZERO, (toes[k] as Vector3) - knee, grey, outline, technique)
+		_rod(uppers[k], Vector3.ZERO, knee - hip, grey)
+		_rod(lowers[k], Vector3.ZERO, (toes[k] as Vector3) - knee, grey)
 
 
-func _piece(
-	parent: Node3D, size: Vector3, at: Vector3, c: Color, outline: Color, technique: StringName
-) -> MeshInstance3D:
+func _piece(parent: Node3D, size: Vector3, at: Vector3, c: Color) -> MeshInstance3D:
 	var m := BoxMesh.new()
 	m.size = size
-	return _outlined(parent, m, at, c, outline, c, technique, OUTLINE_M)
+	return _body_piece(parent, m, at, c)
 
 
-func _rod(
-	parent: Node3D, from: Vector3, to: Vector3, c: Color, outline: Color, technique: StringName
-) -> void:
-	var piece := _piece(
-		parent, Vector3(0.05, (to - from).length(), 0.05), (from + to) * 0.5, c, outline, technique
-	)
+func _rod(parent: Node3D, from: Vector3, to: Vector3, c: Color) -> void:
+	var piece := _piece(parent, Vector3(0.05, (to - from).length(), 0.05), (from + to) * 0.5, c)
 	piece.basis = Basis(Quaternion(Vector3.UP, (to - from).normalized()))
 
 
@@ -858,7 +836,7 @@ func vat_rig() -> Dictionary:
 	var grids: Array = []
 	for d in VAT_DRIVES.size():
 		grids.append([[d, VAT_SAMPLES[d]]])
-	var out := SoloVat.rig("scrap_hound", VAT_DRIVES, grids, _joints, OUTLINE_M, false)
+	var out := SoloVat.rig("scrap_hound", VAT_DRIVES, grids, _joints, false)
 	if has_model:
 		out["albedo_tex"] = vat_texture()
 	return out

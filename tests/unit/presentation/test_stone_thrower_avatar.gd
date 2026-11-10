@@ -34,7 +34,7 @@ func after_each() -> void:
 
 func _avatar() -> StoneThrowerAvatar:
 	var a := StoneThrowerAvatar.new()
-	a.setup(Color.BLACK)
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)
 	return a
@@ -268,8 +268,8 @@ func test_the_vat_bake_matches_the_live_pose() -> void:
 		ViewPrefs.reduced_motion = calm
 		var pose := VatBake.pose_for(KIND)
 		var mesh := VatBake.mesh_for(KIND, Color(0, 0, 0, 0), 0.0, Color.BLACK)
-		var live := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0, Color.BLACK)
-		var vat := VatBake.vat_avatar_of(KIND, Color.BLACK)
+		var live := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0)
+		var vat := VatBake.vat_avatar_of(KIND)
 		var e := VatBake.pose_error(live, vat, pose, mesh, 60, 7)
 		assert_eq(e["vertices"], mesh.surface_get_array_len(0), "every vertex compared")
 		assert_lt(float(e["max_m"]), 0.002, "well under a pixel (calm %s): %s" % [calm, e])
@@ -279,8 +279,8 @@ func test_the_vat_bake_matches_the_live_pose() -> void:
 
 
 func test_a_vat_avatar_keeps_the_old_drives_lift_and_glow() -> void:
-	var live := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0, Color.BLACK)
-	var vat := VatBake.vat_avatar_of(KIND, Color.BLACK)
+	var live := VatBake.reference_of(KIND, Color(0, 0, 0, 0), 0.0)
+	var vat := VatBake.vat_avatar_of(KIND)
 	add_child_autofree(live)
 	add_child_autofree(vat)
 	live.set_process(false)

@@ -43,10 +43,8 @@ const MODEL_LIFT := {
 ## v0.8.0 N1: the role glow's energy the views build with (ROLE_GLOW; the line-up shot script sweeps it, 0 = none).
 static var role_glow_energy := ROLE_GLOW
 
-## Technique kept for callers: "outline" (rim only). The X-ray silhouette pass was removed in v0.9.5 PF1.
 ## v0.5.9: the floor's lighting mood; with one, the hero carries a small warm light (StageKit.hero_light).
 var hero_mood: BiomeMood
-var technique := &"outline"
 ## How many frames a hit flashes the actor white (PRESENTATION §6, starting value).
 var flash_frames := 3
 var outline_color := Color("#1A1A22")
@@ -634,7 +632,6 @@ func _body_material(c: Color) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = c
 	mat.roughness = 1.0
-	ActorLooks.outline(mat, outline_color, 0.035)
 	return flashable(mat)
 
 
@@ -704,7 +701,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			if VatCrowd.supports(p_kind):  # v0.10.5 W3-V4a: drawn by the VAT crowd while the switch is on
 				avatar.vat = ViewPrefs.enemy_vat
 				root.set_meta(&"vat_kind", true)
-			avatar.setup(outline_color, technique)
+			avatar.setup()
 			root.set_meta(&"hit_look", avatar)
 			facing.add_child(avatar)
 			root.set_meta(&"enemy_avatar", avatar)
@@ -727,7 +724,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			height = 1.25
 			var warden := WardenAvatar.new()
 			_solo_vat(root, warden, p_kind)  # v0.10.5 W3-V4c
-			warden.setup(outline_color, technique)
+			warden.setup()
 			facing.add_child(warden)
 			root.set_meta(&"enemy_avatar", warden)
 			root.set_meta(&"mats", warden.body_materials.duplicate())
@@ -735,7 +732,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			# The walking turret (v0.2.0 L17): its own node under the facing, animated in frame time.
 			var needle := NeedleAvatar.new()
 			_solo_vat(root, needle, p_kind)  # v0.10.5 W3-V4c
-			needle.setup(outline_color, technique)
+			needle.setup()
 			facing.add_child(needle)
 			height = NeedleAvatar.HEIGHT
 			root.set_meta(&"enemy_avatar", needle)
@@ -747,7 +744,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			# The Bomb Drone (v0.3.5 AI): drawn hovering, its shadow on the ground where the sim has it.
 			var drone := BombDroneAvatar.new()
 			_solo_vat(root, drone, p_kind)  # v0.10.5 W3-V4c
-			drone.setup(outline_color, technique)
+			drone.setup()
 			facing.add_child(drone)
 			height = BombDroneAvatar.HEIGHT
 			root.set_meta(&"enemy_avatar", drone)
@@ -756,21 +753,21 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			# The Hive Lens's drones (v0.4.0 BO): drawn hovering, their shadow where the sim has them.
 			var lens := LensDroneAvatar.new()
 			_solo_vat(root, lens, p_kind)  # v0.11.0 S4
-			lens.setup(outline_color, technique)
+			lens.setup()
 			facing.add_child(lens)
 			height = LensDroneAvatar.HEIGHT
 			root.set_meta(&"enemy_avatar", lens)
 			root.set_meta(&"mats", lens.body_materials.duplicate())
 		WorldReader.KIND_SCRAP_HOUND:  # v0.11.0 O17a: the owner's model, animated in code, on VAT
-			height = ScrapHoundAvatar.attach(self, root, facing, outline_color, technique)
+			height = ScrapHoundAvatar.attach(self, root, facing)
 		WorldReader.KIND_ROCK_LURKER:  # v0.11.0 O17b: the owner's model, animated (RockLurkerAvatar)
-			height = RockLurkerAvatar.attach(root, facing, outline_color, technique, _solo_vat)
+			height = RockLurkerAvatar.attach(root, facing, _solo_vat)
 		WorldReader.KIND_STONE_THROWER:  # v0.11.0 O17c: the owner's model, posed in code, on the VAT crowd
-			height = StoneThrowerAvatar.attach(self, root, facing, p_kind, outline_color, technique)
+			height = StoneThrowerAvatar.attach(self, root, facing, p_kind)
 		WorldReader.KIND_CINDER_PRIEST:  # v0.11.0 O17d: the owner's model, animated in code
 			height = CinderPriestAvatar.attach(self, root, facing, p_kind)
 		WorldReader.KIND_KILN_BEETLE:  # v0.11.0 O17e: the owner's model, animated in code, on VAT
-			height = KilnBeetleAvatar.attach(self, root, facing, outline_color, technique)
+			height = KilnBeetleAvatar.attach(self, root, facing)
 		WorldReader.KIND_HATCHLING:
 			# The Brood Mother's hatchling (v0.3.0 C): a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()
@@ -779,7 +776,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			if VatCrowd.supports(p_kind):  # v0.10.5 W3-V4a: drawn by the VAT crowd while the switch is on
 				hatch.vat = ViewPrefs.enemy_vat
 				root.set_meta(&"vat_kind", true)
-			hatch.setup(outline_color, technique, WorldReader.KIND_HATCHLING)  # v0.8.0 EC: its colours
+			hatch.setup(WorldReader.KIND_HATCHLING)  # v0.8.0 EC: its colours
 			root.set_meta(&"hit_look", hatch)
 			hatch.scale = Vector3.ONE * 0.66
 			facing.add_child(hatch)
@@ -807,7 +804,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 				}[kind]
 				. new()
 			)
-			boss.setup(outline_color, technique)
+			boss.setup()
 			facing.add_child(boss)
 			height = 2.6 * BossModels.SIZE_SCALE
 			root.set_meta(&"enemy_avatar", boss)
@@ -818,7 +815,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			var elite := EliteAvatar.new()
 			elite.enemy_tint = enemy_tint  # they pick its shared materials
 			elite.role_glow = role_glow_energy
-			elite.setup(kind, outline_color, technique)
+			elite.setup(kind)
 			facing.add_child(elite)
 			height = elite.height
 			root.set_meta(&"enemy_avatar", elite)
@@ -826,7 +823,7 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"hit_look", elite)
 			root.set_meta(&"elite", true)
 		_ when StarfallAvatar.takes(kind):  # v0.11.0 O13d: the Starfall signatures' stand-ins
-			height = StarfallAvatar.make(root, facing, kind, outline_color, technique)
+			height = StarfallAvatar.make(root, facing, kind)
 		_ when HordeAvatar.is_horde_kind(kind):
 			# The horde kinds (v0.4.0 EN): one code-built model per kind.
 			var horde := HordeAvatar.new()
@@ -835,19 +832,19 @@ func _make_actor(p_kind: int, is_player: bool, radius: float) -> Node3D:
 			if VatCrowd.supports(p_kind):  # v0.10.5 W3-V1: drawn by the VAT crowd while the switch is on
 				horde.vat = ViewPrefs.enemy_vat
 				root.set_meta(&"vat_kind", true)
-			horde.setup(kind, outline_color, technique)
+			horde.setup(kind)
 			facing.add_child(horde)
 			height = horde.height
 			root.set_meta(&"enemy_avatar", horde)
 			root.set_meta(&"mats", horde.body_materials.duplicate())
 			root.set_meta(&"hit_look", horde)  # v0.8.0 HR: the flash and tints (_set_flash)
 		_ when RuinsRocksAvatar.draws(kind):  # v0.11.0 O13b: the Ruins and Night Rocks signatures, the posts
-			height = RuinsRocksAvatar.attach(root, facing, kind, outline_color)
+			height = RuinsRocksAvatar.attach(root, facing, kind)
 		_ when kind == WorldReader.KIND_PLAYER and is_player:
 			# The hooded wanderer (owner, 2026-10-07): its own node, animated in frame time.
 			height = 1.0
 			var avatar := PlayerAvatar.new()
-			avatar.setup(outline_color, technique)
+			avatar.setup()
 			avatar.set_look(hero_look)  # v0.9.0 RB: the Wardrobe's robe and the run's rune
 			root.add_child(avatar)
 			root.set_meta(&"avatar", avatar)

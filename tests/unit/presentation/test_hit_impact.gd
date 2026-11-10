@@ -112,7 +112,7 @@ func test_every_enemy_kind_flinches_away_from_a_hit_and_settles_without_moving()
 
 func test_a_flinch_restarts_only_once_the_last_has_run_a_moment() -> void:
 	var a := HordeAvatar.new()
-	a.setup(WorldReader.KIND_SWARMER, Color.BLACK)
+	a.setup(WorldReader.KIND_SWARMER)
 	add_child_autofree(a)
 	a.set_process(false)
 	assert_true(a.flinch(Vector2.RIGHT))
@@ -142,7 +142,7 @@ func test_reduced_motion_flinches_smaller() -> void:
 	for calm: bool in [false, true]:
 		ViewPrefs.reduced_motion = calm
 		var a := ChargerAvatar.new()
-		a.setup(Color.BLACK, &"outline")
+		a.setup()
 		add_child_autofree(a)
 		a.set_process(false)
 		a.flinch(Vector2.UP)

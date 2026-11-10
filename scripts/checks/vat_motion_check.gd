@@ -85,7 +85,7 @@ func _initialize() -> void:
 		scene.add_child(actor)
 		var facing := Node3D.new()
 		actor.add_child(facing)
-		var a := VatBake.vat_avatar_of(kind, Color.BLACK)
+		var a := VatBake.vat_avatar_of(kind)
 		facing.add_child(a)
 		a.call(&"apply_state", {"tick": 0, "pos": Vector2.ZERO, "state": WorldReader.STATE_MOVE})
 		crowd.add(actor, facing, a, Color.BLACK, false)

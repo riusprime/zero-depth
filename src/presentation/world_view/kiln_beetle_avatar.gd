@@ -48,7 +48,6 @@ const HEAT_BURST := 16.0
 ## The visor's glow at rest and at the tell's peak.
 const VISOR_REST := 1.6
 const VISOR_TELL := 7.0
-const OUTLINE_M := 0.02
 const TELEPORT_SPEED := 30.0
 ## The clips' lengths (s): the slam and its recovery (the attack's recovery_seconds), a hit's flinch, the death (the
 ## burst's fuse: burst_delay_seconds; the burst blows as the body goes).
@@ -229,19 +228,17 @@ var _have_fy := false
 
 ## Builds a beetle under `facing` for ActorViews (`views`: on VAT while its switch is on) and marks `root` (the avatar,
 ## its body materials for the hit flash); returns its height.
-static func attach(
-	views: ActorViews, root: Node3D, facing: Node3D, outline: Color, technique: StringName
-) -> float:
+static func attach(views: ActorViews, root: Node3D, facing: Node3D) -> float:
 	var beetle := KilnBeetleAvatar.new()
 	views._solo_vat(root, beetle, KIND)
-	beetle.setup(outline, technique)
+	beetle.setup()
 	facing.add_child(beetle)
 	root.set_meta(&"enemy_avatar", beetle)
 	root.set_meta(&"mats", beetle.body_materials.duplicate())
 	return HEIGHT
 
 
-func setup(outline_color: Color, technique: StringName = &"outline") -> void:
+func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_vd.resize(VAT_DRIVES.size())
 	for m: StandardMaterial3D in [_heat_mat, _visor_mat]:
@@ -249,7 +246,6 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 		m.albedo_color = c
 		m.emission_enabled = true
 		m.emission = c
-		write_stencil(m)
 	_heat_mat.emission_energy_multiplier = HEAT_REST
 	_visor_mat.emission_energy_multiplier = VISOR_REST
 	_visor_mat.set_meta(SoloVat.GLOW, VISOR + 1)  # a VAT beetle's visor glows at its VISOR drive
@@ -278,7 +274,7 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	if has_model:
 		_build_model(m)
 	else:
-		_build_code(outline_color, technique)
+		_build_code()
 	_build_joints()
 	_pose()
 
@@ -315,7 +311,6 @@ func _build_model(m: Dictionary) -> void:
 		mat.albedo_texture = tex
 		mat.albedo_color = COLOR if slot == &"role" else Color.WHITE
 		mat.roughness = 1.0
-		ActorLooks.outline(mat, Color.BLACK, 0.0)  # (no stroke on the owner's models)
 		mat.set_meta(&"enemy_tex", true)
 		mats[slot] = ActorViews.flashable(mat)
 		body_materials.append(mat)
@@ -337,37 +332,28 @@ func _build_model(m: Dictionary) -> void:
 
 
 ## The code-made stand-in (the model file missing): boxes on the same joints, so every clip still plays.
-func _build_code(outline: Color, technique: StringName) -> void:
+func _build_code() -> void:
 	var charcoal := Color("#2A2626")
 	var grey := Color("#5E5852")
-	_piece(rig, Vector3(0.7, 0.2, 0.56), Vector3(0, 0.16, 0), charcoal, outline, technique)
+	_piece(rig, Vector3(0.7, 0.2, 0.56), Vector3(0, 0.16, 0), charcoal)
 	_glow_box(rig, Vector3(0.6, 0.04, 0.5), Vector3(0, 0.27, 0), _heat_mat)  # the molten belly
-	_piece(shell, Vector3(0.9, 0.3, 0.82), Vector3(0, 0.17, 0), COLOR, outline, technique)
+	_piece(shell, Vector3(0.9, 0.3, 0.82), Vector3(0, 0.17, 0), COLOR)
 	for n in 3:  # the vents
 		_glow_box(shell, Vector3(0.05, 0.03, 0.5), Vector3(-0.2 + n * 0.16, 0.33, 0), _heat_mat)
-	_piece(head, Vector3(0.14, 0.2, 0.22), Vector3(0.09, -0.02, 0), charcoal, outline, technique)
+	_piece(head, Vector3(0.14, 0.2, 0.22), Vector3(0.09, -0.02, 0), charcoal)
 	_glow_box(head, Vector3(0.03, 0.06, 0.07), Vector3(0.165, 0.0, 0), _visor_mat)
 	for k in LEGS.size():
 		var hip: Vector3 = _pivots[StringName("leg_%s_u" % LEGS[k])]
 		var knee: Vector3 = _pivots[StringName("leg_%s_l" % LEGS[k])]
 		var out := Vector3(knee.x - hip.x, 0, knee.z - hip.z).normalized()
-		_rod(uppers[k], Vector3.ZERO, knee - hip, grey, outline, technique)
-		_rod(
-			lowers[k],
-			Vector3.ZERO,
-			out * CLAW * 0.6 + Vector3(0, -knee.y, 0),
-			grey,
-			outline,
-			technique
-		)
+		_rod(uppers[k], Vector3.ZERO, knee - hip, grey)
+		_rod(lowers[k], Vector3.ZERO, out * CLAW * 0.6 + Vector3(0, -knee.y, 0), grey)
 
 
-func _piece(
-	parent: Node3D, size: Vector3, at: Vector3, c: Color, outline: Color, technique: StringName
-) -> MeshInstance3D:
+func _piece(parent: Node3D, size: Vector3, at: Vector3, c: Color) -> MeshInstance3D:
 	var m := BoxMesh.new()
 	m.size = size
-	return _outlined(parent, m, at, c, outline, c, technique, OUTLINE_M)
+	return _body_piece(parent, m, at, c)
 
 
 func _glow_box(parent: Node3D, size: Vector3, at: Vector3, mat: StandardMaterial3D) -> void:
@@ -380,12 +366,8 @@ func _glow_box(parent: Node3D, size: Vector3, at: Vector3, mat: StandardMaterial
 	parent.add_child(mi)
 
 
-func _rod(
-	parent: Node3D, from: Vector3, to: Vector3, c: Color, outline: Color, technique: StringName
-) -> void:
-	var piece := _piece(
-		parent, Vector3(0.06, (to - from).length(), 0.06), (from + to) * 0.5, c, outline, technique
-	)
+func _rod(parent: Node3D, from: Vector3, to: Vector3, c: Color) -> void:
+	var piece := _piece(parent, Vector3(0.06, (to - from).length(), 0.06), (from + to) * 0.5, c)
 	piece.basis = Basis(Quaternion(Vector3.UP, (to - from).normalized()))
 
 
@@ -925,7 +907,7 @@ func vat_rig() -> Dictionary:
 	var grids: Array = []
 	for d in VAT_SAMPLES.size():
 		grids.append([[d, VAT_SAMPLES[d]]])
-	var out := SoloVat.rig("kiln_beetle", VAT_DRIVES, grids, _joints, OUTLINE_M, true)
+	var out := SoloVat.rig("kiln_beetle", VAT_DRIVES, grids, _joints, true)
 	if has_model:
 		out["albedo_tex"] = vat_texture()
 	return out

@@ -18,7 +18,6 @@ const HEIGHT := HOVER_Y + 0.3
 const ARM_LEN := 0.36
 const ROTOR_R := 0.17
 const SHADOW_R := 0.42
-const OUTLINE_M := 0.02
 
 ## v0.8.0 EC: the hull (body), the cap (trim), the arms (grey) and the eye slit (eye) come from EnemyPalettes.
 const KIND := WorldReader.KIND_BOMB_DRONE
@@ -59,9 +58,8 @@ var _armed := 1.0
 var _fuse := 0.0
 
 
-func setup(outline_color: Color, technique: StringName = &"outline") -> void:
+func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	var team := ThemePalette.color(&"enemy_body")
 	# The ground shadow: a dark, soft disc right under the drone (it stays on the ground).
 	shadow = MeshInstance3D.new()
 	var disc := CylinderMesh.new()
@@ -84,19 +82,16 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 	_eye_mat.emission_enabled = true
 	_eye_mat.emission = eye
 	_eye_mat.emission_energy_multiplier = 2.2  # (v0.10.5 W3-V4c: a VAT drone's glow_energy too)
-	write_stencil(_eye_mat)
 	if vat:  # v0.10.5 W3-V4c: the crowd draws the body
 		_pose()
 		return
 	hull = Node3D.new()
 	add_child(hull)
 	var body := NeedleAvatar._chamfer_box(Vector3(0.42, 0.18, 0.36), 0.06, 0.02)
-	_piece(
-		hull, body, Vector3.ZERO, EnemyPalettes.color(KIND, &"body"), outline_color, team, technique
-	)
+	_piece(hull, body, Vector3.ZERO, EnemyPalettes.color(KIND, &"body"))
 	var cap := NeedleAvatar._chamfer_box(Vector3(0.24, 0.08, 0.22), 0.03, 0.01)
 	var trim := EnemyPalettes.color(KIND, &"trim")
-	_piece(hull, cap, Vector3(-0.02, 0.12, 0), trim, outline_color, team, &"outline")
+	_piece(hull, cap, Vector3(-0.02, 0.12, 0), trim)
 	var slit := MeshInstance3D.new()
 	var sb := BoxMesh.new()
 	sb.size = Vector3(0.01, 0.04, 0.2)
@@ -115,13 +110,7 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 		holder.rotation = Vector3(0, yaw, 0)
 		hull.add_child(holder)
 		_piece(
-			holder,
-			arm,
-			Vector3(ARM_LEN * 0.5 + 0.1, 0.02, 0),
-			EnemyPalettes.color(KIND, &"grey"),
-			outline_color,
-			team,
-			&"outline"
+			holder, arm, Vector3(ARM_LEN * 0.5 + 0.1, 0.02, 0), EnemyPalettes.color(KIND, &"grey")
 		)
 		var top := Node3D.new()
 		top.position = Vector3(ARM_LEN + 0.1, 0.07, 0)
@@ -129,19 +118,17 @@ func setup(outline_color: Color, technique: StringName = &"outline") -> void:
 		var hub_node := Node3D.new()
 		hub_node.rotation = Vector3(PI * 0.5, 0, 0)
 		top.add_child(hub_node)
-		_piece(hub_node, hub, Vector3.ZERO, DARK, outline_color, team, &"outline")
+		_piece(hub_node, hub, Vector3.ZERO, DARK)
 		var rotor := Node3D.new()
 		rotor.position.y = 0.045
 		top.add_child(rotor)
-		_piece(rotor, blade, Vector3.ZERO, DARK, outline_color, team, &"outline")
+		_piece(rotor, blade, Vector3.ZERO, DARK)
 		rotors.append(rotor)
 	# The bomb under the belly, its fuse light on top of it.
 	bomb = Node3D.new()
 	bomb.position = BOMB_AT
 	hull.add_child(bomb)
-	_piece(
-		bomb, ArcCasterAvatar._octahedron(0.1), Vector3.ZERO, BOMB, outline_color, team, &"outline"
-	)
+	_piece(bomb, ArcCasterAvatar._octahedron(0.1), Vector3.ZERO, BOMB)
 	var hot := ThemePalette.color(&"telegraph_hostile")
 	_fuse_mat.albedo_color = hot
 	_fuse_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -264,7 +251,6 @@ func vat_rig() -> Dictionary:
 		VAT_DRIVES,
 		[[[RX, 17]], [[RZ, 17]], [[ROTOR, 128]], [[BOMB_S, 2]]],
 		joints,
-		OUTLINE_M,
 		false
 	)
 
@@ -282,13 +268,5 @@ func vat_set(s: Dictionary) -> void:
 	SoloVat.apply(self, s, _pose)
 
 
-func _piece(
-	parent: Node3D,
-	mesh: Mesh,
-	at: Vector3,
-	c: Color,
-	outline: Color,
-	team: Color,
-	technique: StringName
-) -> void:
-	_outlined(parent, mesh, at, c, outline, team, technique, OUTLINE_M)
+func _piece(parent: Node3D, mesh: Mesh, at: Vector3, c: Color) -> void:
+	_body_piece(parent, mesh, at, c)

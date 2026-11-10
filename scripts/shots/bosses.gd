@@ -257,7 +257,7 @@ func _boss_avatar(id: StringName) -> BossAvatar:
 		}[id]
 		. new()
 	)
-	a.setup(Color("#1A1A22"))
+	a.setup()
 	a.apply_state({"tick": 0, "pos": Vector2.ZERO, "state": WorldReader.STATE_MOVE})
 	return a
 
@@ -295,7 +295,7 @@ func _build_compare(k: int) -> void:
 	b.rotation = Vector3(0, -0.62, 0)  # facing the player
 	inset.add_child(b)
 	var p := PlayerAvatar.new()
-	p.setup(Color("#1A1A22"))
+	p.setup()
 	p.position = Vector3(4.2, 0, 3.0)
 	inset.add_child(p)
 	var rig := IsoRig.new()
@@ -365,7 +365,7 @@ func _build_rigs(k: int) -> void:
 		scene.add_child(a)
 		_rig_avatars.append(a)
 	var hero := PlayerAvatar.new()
-	hero.setup(Color("#1A1A22"))
+	hero.setup()
 	hero.position = right * -9.0 + Vector3(1.2, 0, 1.2)
 	scene.add_child(hero)
 	rig.snap_to(Vector3(0, 1.0, 0) + right * -0.6)

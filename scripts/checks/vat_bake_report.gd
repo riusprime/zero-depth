@@ -62,8 +62,8 @@ func _report(kind: int) -> PackedStringArray:
 	var mesh := VatBake.mesh_for(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
 	var t_mesh := (Time.get_ticks_usec() - t0) / 1000.0
 	var img: Image = pose["image"]
-	var live := VatBake.reference_of(kind, Color(0, 0, 0, 0), 0.0, Color.BLACK)
-	var vat := VatBake.vat_avatar_of(kind, Color.BLACK)
+	var live := VatBake.reference_of(kind, Color(0, 0, 0, 0), 0.0)
+	var vat := VatBake.vat_avatar_of(kind)
 	var js := VatBake.joints(live)
 	(
 		out

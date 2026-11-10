@@ -81,9 +81,9 @@ static func _new(kind: int) -> AvatarBase:
 ## A reference avatar of `kind` with its pieces (not in the tree; the caller frees it), its body plates in the look
 ## ActorViews gives a fresh enemy (tint_greys under the biome's cast `tint`, role_glow at `role_glow`), each piece
 ## material marked with its role (LOOK).
-static func reference_of(kind: int, tint: Color, role_glow: float, outline: Color) -> AvatarBase:
+static func reference_of(kind: int, tint: Color, role_glow: float) -> AvatarBase:
 	var a := _new(kind)
-	a.setup(outline, &"outline")
+	a.setup()
 	a.set_process(false)
 	a.set_meta(&"mats", a.body_materials)
 	ActorViews.tint_greys(a, tint)
@@ -112,24 +112,23 @@ static func _mark(n: Node) -> void:
 
 
 ## A VAT avatar of `kind` (no pieces; tools, tests; not in the tree; the caller frees it).
-static func vat_avatar_of(kind: int, outline: Color) -> AvatarBase:
+static func vat_avatar_of(kind: int) -> AvatarBase:
 	var a := _new(kind)
 	a.set(&"vat", true)
-	a.setup(outline, &"outline")
+	a.setup()
 	return a
 
 
 ## VatBake.surface_look for a marked StandardMaterial3D piece: [albedo (linear) + mode, emission (linear; a plate's
-## times its rest energy) + outline, two-sided, glow source, unshaded, vertex colours].
+## times its rest energy) + 0, two-sided, glow source, unshaded, vertex colours].
 static func surface_look(m: StandardMaterial3D) -> Array:
 	var role: StringName = m.get_meta(LOOK)
 	var a := m.albedo_color.srgb_to_linear()
 	var e := m.emission.srgb_to_linear() if m.emission_enabled else Color.BLACK
 	var k := m.emission_energy_multiplier if role == &"plate" else 1.0
-	var outline := 1.0 if m.stencil_mode == BaseMaterial3D.STENCIL_MODE_OUTLINE else 0.0
 	return [
 		[a.r, a.g, a.b, 0.0 if role == &"plate" else 1.0],
-		[e.r * k, e.g * k, e.b * k, outline],
+		[e.r * k, e.g * k, e.b * k, 0.0],
 		m.cull_mode == BaseMaterial3D.CULL_DISABLED,
 		float(m.get_meta(GLOW, 0)),
 		1.0 if role == &"unshaded" else 0.0,
@@ -139,7 +138,7 @@ static func surface_look(m: StandardMaterial3D) -> Array:
 
 ## The rig (VatBake's) of `avatar` from its drive specs, grids and joints (see the class notes).
 static func rig(
-	key: String, drives: Array, grids: Array, joints: Array, outline_m: float, scaled: bool
+	key: String, drives: Array, grids: Array, joints: Array, scaled: bool
 ) -> Dictionary:
 	var gs: Array = []
 	for g: Array in grids:
@@ -158,7 +157,6 @@ static func rig(
 		"row":
 		func(g: int, d: PackedFloat64Array) -> Array: return _row(drives, grids, joints, g, d),
 		"scaled": scaled,
-		"outline_m": outline_m,
 	}
 
 

@@ -51,7 +51,6 @@ const SLAM_RADIUS := 2.4
 const RECOVER_TICKS := 40
 ## Seconds to rise out of the ground once the spawn-in ends.
 const RISE_SECONDS := 0.45
-const OUTLINE_M := 0.02
 
 ## Colours sampled from the reference sheet (lit facets read lighter in game light). Each facet of the shell and the
 ## rocks is tinted a little lighter or darker (vertex colours), so the planes stay distinct under any light.
@@ -143,8 +142,6 @@ var _chest := Node3D.new()
 var _elbows: Array[Node3D] = []
 var _visor_mat := StandardMaterial3D.new()
 var _crack_mat := StandardMaterial3D.new()
-var _technique := &"outline"
-var _outline := Color.BLACK
 # Sim state from the last sync.
 var _state := WorldReader.STATE_MOVE
 var _state_ticks := 0
@@ -165,11 +162,9 @@ var _vd := PackedFloat32Array()
 var _lift := 0.0
 
 
-## Builds the model (rim outline only; no X-ray silhouette since v0.9.5 PF1).
-func setup(outline_color: Color, technique: StringName = &"outline") -> void:
+## Builds the model.
+func setup() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	_outline = outline_color
-	_technique = technique
 	_vd.resize(VAT_DRIVES.size())
 	if vat:  # v0.10.5 W3-V4c: the crowd draws the body; the dust ring stays a node
 		_body.free()
@@ -409,7 +404,7 @@ func vat_rig() -> Dictionary:
 	var grids: Array = []
 	for d in VAT_DRIVES.size():
 		grids.append([[d, VAT_SAMPLES[d]]])
-	return SoloVat.rig("warden", VAT_DRIVES, grids, j, OUTLINE_M, true)
+	return SoloVat.rig("warden", VAT_DRIVES, grids, j, true)
 
 
 func vat_sample(rng: RandomNumberGenerator) -> Dictionary:
@@ -516,7 +511,6 @@ func _build_visor() -> void:
 	_visor_mat.emission_enabled = true
 	_visor_mat.emission = _color(&"eye")
 	_visor_mat.emission_energy_multiplier = 2.4
-	write_stencil(_visor_mat)
 	visor.material_override = _visor_mat
 	visor.position = Vector3(0.445, 0.37, 0)
 	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -535,7 +529,6 @@ func _build_weak_spot() -> void:
 	_crack_mat.emission_enabled = true
 	_crack_mat.emission = CRACK_COLOR
 	_crack_mat.emission_energy_multiplier = 1.8
-	write_stencil(_crack_mat)
 	var cracks := MeshInstance3D.new()
 	cracks.mesh = _crack_mesh()
 	cracks.material_override = _crack_mat
@@ -586,7 +579,7 @@ static func _color(slot: StringName) -> Color:
 	return EnemyPalettes.color(WorldReader.KIND_WARDEN, slot)
 
 
-## One body piece: a faceted rock (or the shell) with an outline, its X-ray twin, and its material in
+## One body piece: a faceted rock (or the shell), its material in
 ## body_materials. Meshes are built once and shared by every Warden (the facets never change).
 func _piece(
 	parent: Node3D, key: StringName, at: Vector3, size: Vector3, c: Color, salt: int
@@ -600,17 +593,8 @@ func _piece(
 		else:
 			mesh = _rock(size, salt)
 		_meshes[key] = mesh
-	return _outlined(
-		parent,
-		mesh,
-		at,
-		c,
-		_outline,
-		ThemePalette.color(&"enemy_body"),
-		_technique,
-		OUTLINE_M,
-		key != &"visor_frame",
-		String(key).capitalize().replace(" ", "")
+	return _body_piece(
+		parent, mesh, at, c, key != &"visor_frame", String(key).capitalize().replace(" ", "")
 	)
 
 

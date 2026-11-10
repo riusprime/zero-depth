@@ -8,7 +8,7 @@ const DT := 1.0 / 60.0
 
 func _avatar() -> NeedleAvatar:
 	var a := NeedleAvatar.new()
-	a.setup(Color("#1A1A22"))
+	a.setup()
 	add_child_autofree(a)
 	a.set_process(false)  # the test steps advance() itself
 	return a
@@ -47,7 +47,7 @@ func test_exposes_outlined_body_materials_for_the_hit_flash() -> void:
 	var a := _avatar()
 	assert_gt(a.body_materials.size(), 10, "every body piece has a material")
 	for m in a.body_materials:
-		assert_eq(m.stencil_mode, ActorLooks.outline_mode(), "outlined")
+		assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_DISABLED, "no stencil")
 	var red := EnemyPalettes.color(WorldReader.KIND_NEEDLE, &"body")
 	var reds := a.body_materials.filter(func(m): return m.albedo_color == red)
 	assert_eq(reds.size(), 1, "one red cube")
@@ -55,7 +55,7 @@ func test_exposes_outlined_body_materials_for_the_hit_flash() -> void:
 
 func test_no_xray_twins() -> void:
 	var a := NeedleAvatar.new()
-	a.setup(Color.BLACK, &"outline")
+	a.setup()
 	for m in a.find_children("*", "MeshInstance3D", true, false):
 		var mat := (m as MeshInstance3D).material_override as StandardMaterial3D
 		if mat != null:

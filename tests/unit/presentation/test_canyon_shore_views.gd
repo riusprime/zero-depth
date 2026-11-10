@@ -38,7 +38,7 @@ func _show(a: HordeAvatar, reader: WorldReader) -> void:
 
 func _avatar(kind: int) -> HordeAvatar:
 	var a := HordeAvatar.new()
-	a.setup(kind, Color.BLACK)
+	a.setup(kind)
 	add_child_autofree(a)
 	return a
 

@@ -25,7 +25,6 @@ const FACE := Color("#16181D")
 const GREY := Color("#8A817C")
 const GREY_DARK := Color("#5F5551")
 const BONE := Color("#D9CDB8")
-const OUTLINE_M := 0.02
 ## The visor's rest glow and its tell's peak (emission energy).
 const VISOR_REST := 1.6
 const VISOR_TELL := 7.0
@@ -50,9 +49,9 @@ static func draws(p_kind: int) -> bool:
 
 ## Builds the body of `p_kind` under `facing` and marks `root` (ActorViews: the avatar, its body materials for the
 ## hit flash); returns its height.
-static func attach(root: Node3D, facing: Node3D, p_kind: int, outline: Color) -> float:
+static func attach(root: Node3D, facing: Node3D, p_kind: int) -> float:
 	var sig := RuinsRocksAvatar.new()
-	sig.setup(p_kind, outline)
+	sig.setup(p_kind)
 	facing.add_child(sig)
 	root.set_meta(&"enemy_avatar", sig)
 	root.set_meta(&"mats", sig.body_materials.duplicate())
@@ -60,7 +59,7 @@ static func attach(root: Node3D, facing: Node3D, p_kind: int, outline: Color) ->
 
 
 ## Builds the model for `p_kind` (one of COLORS).
-func setup(p_kind: int, outline: Color) -> void:
+func setup(p_kind: int) -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	kind = p_kind
 	height = HEIGHTS.get(kind, 1.0)
@@ -70,43 +69,41 @@ func setup(p_kind: int, outline: Color) -> void:
 	_visor_mat = _glow(c, VISOR_REST)
 	match kind:
 		WorldReader.KIND_WIRE_WEAVER:
-			_build_weaver(c, outline)
+			_build_weaver(c)
 		WorldReader.KIND_WIRE_POST:
-			_build_post(c, outline)
+			_build_post(c)
 
 
 # --- Pieces -----------------------------------------------------------------------------------------------------
-func _box(parent: Node3D, size: Vector3, at: Vector3, c: Color, outline: Color) -> MeshInstance3D:
+func _box(parent: Node3D, size: Vector3, at: Vector3, c: Color) -> MeshInstance3D:
 	var m := BoxMesh.new()
 	m.size = size
-	return _outlined(parent, m, at, c, outline, c, &"outline", OUTLINE_M)
+	return _body_piece(parent, m, at, c)
 
 
-func _prism(parent: Node3D, size: Vector3, at: Vector3, c: Color, outline: Color) -> MeshInstance3D:
+func _prism(parent: Node3D, size: Vector3, at: Vector3, c: Color) -> MeshInstance3D:
 	var m := PrismMesh.new()
 	m.size = size
-	return _outlined(parent, m, at, c, outline, c, &"outline", OUTLINE_M)
+	return _body_piece(parent, m, at, c)
 
 
-func _rod(
-	parent: Node3D, length: float, r: float, at: Vector3, c: Color, outline: Color
-) -> MeshInstance3D:
+func _rod(parent: Node3D, length: float, r: float, at: Vector3, c: Color) -> MeshInstance3D:
 	var m := CylinderMesh.new()
 	m.top_radius = r
 	m.bottom_radius = r * 0.8
 	m.height = length
 	m.radial_segments = 6
 	m.rings = 1
-	return _outlined(parent, m, at, c, outline, c, &"outline", OUTLINE_M)
+	return _body_piece(parent, m, at, c)
 
 
-func _stone(parent: Node3D, r: float, at: Vector3, c: Color, outline: Color) -> MeshInstance3D:
+func _stone(parent: Node3D, r: float, at: Vector3, c: Color) -> MeshInstance3D:
 	var m := SphereMesh.new()
 	m.radius = r
 	m.height = r * 1.6
 	m.radial_segments = 7
 	m.rings = 4
-	return _outlined(parent, m, at, c, outline, c, &"outline", OUTLINE_M)
+	return _body_piece(parent, m, at, c)
 
 
 static func _glow(c: Color, energy: float) -> StandardMaterial3D:
@@ -116,7 +113,6 @@ static func _glow(c: Color, energy: float) -> StandardMaterial3D:
 	m.emission = c
 	m.emission_energy_multiplier = energy
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	write_stencil(m)
 	return m
 
 
@@ -134,47 +130,47 @@ func _gem(parent: Node3D, at: Vector3, size: Vector3, mat: StandardMaterial3D) -
 
 
 ## The shield face (dark) and its gem visor at `at` (the front of the head), `s` its scale.
-func _face(parent: Node3D, at: Vector3, s: float, outline: Color) -> void:
-	_box(parent, Vector3(0.06, 0.2, 0.22) * s, at, FACE, outline)
+func _face(parent: Node3D, at: Vector3, s: float) -> void:
+	_box(parent, Vector3(0.06, 0.2, 0.22) * s, at, FACE)
 	_gem(parent, at + Vector3(0.04 * s, 0.02 * s, 0), Vector3(0.12, 0.08, 0.06) * s, _visor_mat)
 
 
 ## A segmented limb hanging from `hip` (a pivot node), two rods and a bone tip.
-func _limb(hip: Vector3, length: float, r: float, outline: Color, lean := 0.0) -> Node3D:
+func _limb(hip: Vector3, length: float, r: float, lean := 0.0) -> Node3D:
 	var pivot := Node3D.new()
 	pivot.position = hip
 	pivot.rotation.z = lean
 	_body.add_child(pivot)
-	_rod(pivot, length * 0.5, r, Vector3(0, -length * 0.25, 0), GREY, outline)
-	_rod(pivot, length * 0.5, r * 0.8, Vector3(0, -length * 0.75, 0), GREY_DARK, outline)
-	_box(pivot, Vector3(r * 2.2, r * 2.2, r * 2.2), Vector3(0, -length, 0), BONE, outline)
+	_rod(pivot, length * 0.5, r, Vector3(0, -length * 0.25, 0), GREY)
+	_rod(pivot, length * 0.5, r * 0.8, Vector3(0, -length * 0.75, 0), GREY_DARK)
+	_box(pivot, Vector3(r * 2.2, r * 2.2, r * 2.2), Vector3(0, -length, 0), BONE)
 	return pivot
 
 
-func _build_weaver(c: Color, outline: Color) -> void:
-	_box(_body, Vector3(0.42, 0.26, 0.36), Vector3(0, 0.78, 0), CHARCOAL, outline)
-	_prism(_body, Vector3(0.5, 0.2, 0.44), Vector3(-0.02, 0.99, 0), c, outline)
-	_face(_body, Vector3(0.24, 0.8, 0), 1.0, outline)
+func _build_weaver(c: Color) -> void:
+	_box(_body, Vector3(0.42, 0.26, 0.36), Vector3(0, 0.78, 0), CHARCOAL)
+	_prism(_body, Vector3(0.5, 0.2, 0.44), Vector3(-0.02, 0.99, 0), c)
+	_face(_body, Vector3(0.24, 0.8, 0), 1.0)
 	var coil := TorusMesh.new()
 	coil.inner_radius = 0.08
 	coil.outer_radius = 0.16
 	coil.rings = 8
 	coil.ring_segments = 5
-	_outlined(_body, coil, Vector3(-0.2, 1.08, 0), GREY_DARK, outline, c, &"outline", OUTLINE_M)
+	_body_piece(_body, coil, Vector3(-0.2, 1.08, 0), GREY_DARK)
 	for k in 4:
 		var x := 0.12 if k < 2 else -0.12
 		var z := 0.16 if k % 2 == 0 else -0.16
-		_legs.append(_limb(Vector3(x, 0.7, z), 0.72, 0.03, outline, 0.25 if x > 0 else -0.25))
+		_legs.append(_limb(Vector3(x, 0.7, z), 0.72, 0.03, 0.25 if x > 0 else -0.25))
 	for k in 4:
 		var z := 0.2 if k % 2 == 0 else -0.2
 		var y := 0.9 if k < 2 else 0.78
-		var arm := _limb(Vector3(0.14, y, z), 0.6, 0.025, outline, 1.1)
+		var arm := _limb(Vector3(0.14, y, z), 0.6, 0.025, 1.1)
 		_arms.append(arm)
 
 
-func _build_post(_c: Color, outline: Color) -> void:
-	_rod(_body, 0.8, 0.07, Vector3(0, 0.4, 0), GREY, outline)
-	_box(_body, Vector3(0.22, 0.08, 0.22), Vector3(0, 0.04, 0), GREY_DARK, outline)
+func _build_post(_c: Color) -> void:
+	_rod(_body, 0.8, 0.07, Vector3(0, 0.4, 0), GREY)
+	_box(_body, Vector3(0.22, 0.08, 0.22), Vector3(0, 0.04, 0), GREY_DARK)
 	var top := MeshInstance3D.new()
 	var s := SphereMesh.new()
 	s.radius = 0.09
