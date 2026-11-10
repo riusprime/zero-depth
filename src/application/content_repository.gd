@@ -4,7 +4,7 @@ extends RefCounted
 ## the manifest hash over canonical property values (CONTENT_SCHEMA §1) are computed on first ask and cached:
 ## errors() and manifest_hash(). It lives in application because the hash uses the sim's CanonicalValue, and
 ## content may not import upward.
-## The game reads the errors once per root per process, at the first load (each one is pushed to the log as an
+## A debug build reads the errors once per root per process, at the first load (each one is pushed to the log as an
 ## error); a dev panel edit (DevTuning.apply) asks for a fresh check, since it writes into the loaded definitions, and
 ## what that check finds is logged as a warning (a deliberate balance tweak, such as one Arc Caster spell's damage,
 ## may break a content rule on purpose).
@@ -25,7 +25,11 @@ var _issues: Variant = null
 var _manifest_hash := ""
 
 
-static func load_all(root: String = "res://data") -> ContentRepository:
+## Only a debug build (the editor, the tests, a debug export) checks the content at the first load: CI's content tests
+## prove the shipped content has no errors, so a release build skips the check.
+static func load_all(
+	root: String = "res://data", debug_build: bool = OS.is_debug_build()
+) -> ContentRepository:
 	var repo := ContentRepository.new()
 	repo.paths = ContentScanner.scan(root)
 	for path in repo.paths:
@@ -41,7 +45,7 @@ static func load_all(root: String = "res://data") -> ContentRepository:
 		if not repo.by_category.has(cat):
 			repo.by_category[cat] = {}
 		repo.by_category[cat][String(d.id)] = d
-	if not _checked_roots.has(root):
+	if debug_build and not _checked_roots.has(root):
 		_checked_roots[root] = true
 		repo.log_errors()
 	return repo

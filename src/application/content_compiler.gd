@@ -147,9 +147,14 @@ static func compile_enemy(def: EnemyDefinition, repo: ContentRepository = null) 
 	return t
 
 
+## An enemy's actor kind, which its behaviour id picks (all a caller needs that doesn't want the whole compile).
+static func enemy_kind(def: EnemyDefinition) -> int:
+	return ENEMY_KINDS[def.behaviour_id]
+
+
 static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 	var t := EnemyTable.new()
-	t.kind = ENEMY_KINDS[def.behaviour_id]
+	t.kind = enemy_kind(def)
 	t.name_key = def.name_key
 	t.hp = def.hp
 	t.base_hp = def.hp  # Never scaled (HealOrbs)
@@ -287,8 +292,7 @@ static func compile_encounter(def: EncounterDefinition, repo: ContentRepository)
 	for wv in def.waves:
 		var kinds: Array[int] = []
 		for s in wv.spawns:
-			var e: EnemyDefinition = repo.get_def(&"enemies", s.enemy_id)
-			var kind := compile_enemy(e).kind
+			var kind := enemy_kind(repo.get_def(&"enemies", s.enemy_id))
 			for n in s.count:
 				kinds.append(kind)
 		t.waves.append(kinds)
@@ -314,8 +318,7 @@ static func compile_spawning(def: SpawnDirectorDefinition, repo: ContentReposito
 	t.edge_band_m = def.edge_band_m
 	t.calm_antechamber_floor = def.calm_antechamber_floor  # v0.10.5 O14
 	for e in def.mix:
-		var enemy: EnemyDefinition = repo.get_def(&"enemies", e.enemy_id)
-		t.kinds.append(compile_enemy(enemy).kind)
+		t.kinds.append(enemy_kind(repo.get_def(&"enemies", e.enemy_id)))
 		t.weights.append(e.weight)
 		t.unlock_tiers.append(e.unlock_tier)
 		t.packs.append(e.pack)
@@ -393,7 +396,7 @@ static func compile_curve(
 		for id in p.kinds:
 			var e: EnemyDefinition = repo.get_def(&"enemies", id)
 			if e != null:
-				phase_of[compile_enemy(e).kind] = k
+				phase_of[enemy_kind(e)] = k
 	for sec in def.overtime_seconds:  # v0.9.5 DC
 		c.overtime_starts.append(SimTick.seconds_to_ticks(float(sec)))
 	c.overtime_step = SimTick.seconds_to_ticks(float(def.overtime_step_seconds))
@@ -416,7 +419,7 @@ static func compile_curve(
 	for id in def.enemy_ids():
 		var e: EnemyDefinition = repo.get_def(&"enemies", id)
 		if e != null and not earlier.has(id):
-			c.new_kinds.append(compile_enemy(e).kind)
+			c.new_kinds.append(enemy_kind(e))
 	return c
 
 
@@ -761,7 +764,7 @@ static func compile_boss_attack(
 	if sp.has("enemy_id"):
 		var e: EnemyDefinition = repo.get_def(&"enemies", StringName(sp["enemy_id"]))
 		if e != null:
-			t.enemy_kind = compile_enemy(e).kind
+			t.enemy_kind = enemy_kind(e)
 	t.max_alive = int(sp.get("max_alive", 99))
 	t.pull = float(sp.get("pull_mps", 0.0)) / SimTick.TICKS_PER_SECOND
 	t.pull_range_m = float(sp.get("pull_range_m", 0.0))
@@ -1134,8 +1137,8 @@ static func compile_pairings(def: PairingSetDefinition, repo: ContentRepository)
 		return null
 	var t := PairingTable.new()
 	for r in def.rows:
-		t.lead.append(compile_enemy(repo.get_def(&"enemies", r.lead_id)).kind)
-		t.partner.append(compile_enemy(repo.get_def(&"enemies", r.partner_id)).kind)
+		t.lead.append(enemy_kind(repo.get_def(&"enemies", r.lead_id)))
+		t.partner.append(enemy_kind(repo.get_def(&"enemies", r.partner_id)))
 		t.from_floor.append(r.from_floor)
 		t.chance.append(r.chance_permille)
 		t.count.append(r.partners)
