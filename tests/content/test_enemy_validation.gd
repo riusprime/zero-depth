@@ -32,6 +32,16 @@ func test_the_shipped_enemies_are_valid_and_compile() -> void:
 		assert_gte(t.rune_windup_ticks, SimTick.MIN_TELEGRAPH_TICKS, String(def.id))
 
 
+## The kind lookup that callers use instead of the whole compile gives the compile's kind for every enemy.
+func test_the_kind_lookup_matches_the_compiled_kind() -> void:
+	var defs := ContentRepository.load_all().all_of(&"enemies")
+	assert_gt(defs.size(), 0)
+	for def: EnemyDefinition in defs:
+		assert_eq(
+			ContentCompiler.enemy_kind(def), ContentCompiler.compile_enemy(def).kind, String(def.id)
+		)
+
+
 ## v0.3.5 AI (F4): the four old kinds draw their windup from 24..40 ticks.
 func test_the_old_kinds_wind_up_for_24_to_40_ticks() -> void:
 	var repo := ContentRepository.load_all()
