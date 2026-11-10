@@ -9,7 +9,7 @@ signal main_menu_pressed
 
 
 func _init() -> void:
-	super(true)  # v0.10.5 W3-O18: in Astral
+	super()  # v0.10.5 W3-O18: in Astral (MenuPanel)
 	name = "HubPauseMenu"
 	add_backdrop()
 	add_title("HUB_TITLE")

@@ -8,7 +8,7 @@ extends MenuPanel
 ## black, the owner's logo over a column of cracked dark-stone plates on the left (StoneButton, the focused one lit
 ## blue), and on the right the owner's picture (assets/ui/menu/backdrop.png: the ruined portal, its red beam and the
 ## hero), drifting very slowly. Both pictures are cut by scripts/art/cut_menu_backdrop.py.
-## v0.10.5 W3-O18 (owner: "the rest of the UI ... should match the new style"): the list in Astral (MenuPanel.astral):
+## v0.10.5 W3-O18 (owner: "the rest of the UI ... should match the new style"): the list in Astral (MenuPanel):
 ## the rows are AstralButtons (letter-spaced Cinzel capitals, the focused one lit with a star and a tapered streak; a
 ## hover takes the focus), a fading hairline under the logo, the hint and the version in Atkinson. The owner's logo
 ## and picture stay as sent.
@@ -34,7 +34,7 @@ var _rows := 0
 
 
 func _init(version: String, show_continue: bool = false) -> void:
-	super(true)  # v0.10.5 W3-O18: in Astral
+	super()  # v0.10.5 W3-O18: in Astral (MenuPanel)
 	name = "MainMenu"
 	slab.offset_left = LEFT
 	box.custom_minimum_size = Vector2(LOGO_W, 0)

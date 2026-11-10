@@ -1,11 +1,13 @@
 class_name TrainingPanel
 extends MenuPanel
-## v0.10.5 O17 (owner P17): the Training Room's terminal. One column on the ember stone, over the room (no blur: the
-## dummy and what was spawned stay in sight): pick an enemy kind the Codex has met and a count (1, 3 or 8), Spawn;
+## v0.10.5 O17 (owner P17): the Training Room's terminal. One column over the room (no blur: the dummy and what was
+## spawned stay in sight): pick an enemy kind the Codex has met and a count (1, 3 or 8), Spawn;
 ## Clear enemies; the weapon (Blade or Gun: the room is rebuilt with it); a wand card the Codex has seen and its level
 ## (1-5), Add card, Remove last card, and the wand's order (the Build page, as from the pause menu); Reset room; Back.
 ## Each choice is an OptionCycler (left / right, or press to step), so keyboard, mouse and pad work through the focus.
 ## It only asks: the Training Room (TrainingSession) runs every request on its World and answers with a status line.
+## v0.11.1 Step 13 (owner: Astral the only style): in Astral (MenuPanel): the column on an Astral veil (the room stays
+## in sight behind it), each choice an Options-style field row, the actions Astral rows.
 
 signal spawn_requested(kind: int, count: int)
 signal clear_requested
@@ -38,8 +40,9 @@ func _init(
 	name = "TrainingPanel"
 	_enemies = enemies
 	_cards = cards
+	slab.add_theme_stylebox_override("panel", AstralMenu.VeilBox.new(Vector2(40, 32), 0.72))
+	slab.offset_left = AstralMenu.LEFT - 40.0
 	add_title("UI_TRAINING_TERMINAL").name = "Title"
-	box.add_theme_constant_override("separation", 6)
 	if enemies.is_empty():
 		_note("UI_TRAINING_NO_ENEMIES").name = "NoEnemies"
 	else:
@@ -83,10 +86,9 @@ func _init(
 	status = add_note("")
 	status.name = "Status"
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status.custom_minimum_size = Vector2(MenuStyle.LIST_W, 0)
-	status.add_theme_color_override("font_color", MenuStyle.TEXT)
+	status.custom_minimum_size = Vector2(AstralMenu.LIST_W, 0)
+	status.add_theme_color_override("font_color", AstralCardArt.TEXT)
 	add_hint("UI_MENU_HINT")
-	AstralUi.dress(self)  # v0.10.5 W3-O19 (owner: every UI element in Astral): the station in the Astral style
 
 
 ## The line under the list (a translation key, its argument put in when the line has a %s).
@@ -132,14 +134,9 @@ func _add_card() -> void:
 func _cycler(
 	n: String, label_key: String, ids: Array, keys: Array, current: String
 ) -> OptionCycler:
-	var row := HBoxContainer.new()
+	var row := AstralMenu.field_row(box, label_key, 150.0)
 	row.name = n + "Row"
-	row.add_theme_constant_override("separation", 12)
-	var l := Label.new()
-	l.text = label_key
-	l.custom_minimum_size = Vector2(150, 0)
-	l.add_theme_font_size_override("font_size", ROW_FONT - 2)
-	row.add_child(l)
+	row.custom_minimum_size = Vector2(0, ROW_H)
 	var c := OptionCycler.new(ids, keys, current)
 	c.name = n
 	c.astral = true  # v0.10.5 W3-O20: Astral's chevrons and hairline (OptionCycler), as in Options
@@ -147,15 +144,13 @@ func _cycler(
 	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	c.add_theme_font_size_override("font_size", ROW_FONT)
 	row.add_child(c)
-	box.add_child(row)
+	AstralMenu.light(row, c)
 	return c
 
 
 func _button(n: String, key: String, on_press: Callable) -> Button:
 	var b := add_button(key, on_press)
-	b.name = n
-	b.custom_minimum_size = Vector2(0, ROW_H)
-	b.add_theme_font_size_override("font_size", ROW_FONT)
+	b.name = n  # an Astral row: it sizes itself (AstralButton)
 	return b
 
 
@@ -163,9 +158,8 @@ func _note(key: String) -> Label:
 	var l := Label.new()
 	l.text = key
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.custom_minimum_size = Vector2(MenuStyle.LIST_W, 0)
-	l.add_theme_font_size_override("font_size", MenuStyle.NOTE_SIZE)
-	l.add_theme_color_override("font_color", MenuStyle.DIM)
+	l.custom_minimum_size = Vector2(AstralMenu.LIST_W, 0)
+	AstralMenu.body(l, AstralMenu.NOTE_SIZE, AstralCardArt.DIM)
 	box.add_child(l)
 	return l
 

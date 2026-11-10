@@ -8,7 +8,7 @@ extends Control
 ## profile on the way out (GameSettings, InputRebind).
 ## Three layouts share the same sections: SIDEBAR (the default: categories on the left, one section at a time),
 ## TABS (categories across the top) and LIST (every section in one scrolling column).
-## v0.8.0 MU (Ember stone, MenuStyle): the blurred, ember-lit game (or the menu's own ember scene) behind, a carved
+## v0.8.0 MU (Ember stone): the blurred, ember-lit game (or the menu's own ember scene) behind, a carved
 ## stone slab set to the left, warm type, the focused row and the open category ember-lit slabs.
 ## v0.10.5 W3-O18 (owner: "the rest of the UI ... should match the new style"): in Astral (AstralMenu; the round-2
 ## mock's options): the game (or Astral's own night) under cool ink, the screen an ink veil between two fading

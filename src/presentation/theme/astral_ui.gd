@@ -16,8 +16,7 @@ extends RefCounted
 ## - TileBox: AstralChrome.FrameBox with a medallion ring (a 1 px ring and a dotted inner ring) round a picture.
 ## - LeftRule: a hairline under a left-aligned title, from a small star fading out rightwards.
 ## - Sigil: AstralChrome's heading sigil as a Control (before a page's title).
-## `dress(panel)` puts a MenuPanel (the hub's station panels) in this look: the theme, the veil slab, the title in
-## Cinzel over a LeftRule; the ember marker is hidden (the focused row's star does its work).
+## (v0.11.1 Step 13: the hub's station panels are MenuPanels in AstralMenu's look now; `dress` is gone.)
 ## It only draws: nothing here changes an outcome (EI-07).
 
 ## The type scale (W3_O13_UI_STYLE_G2.md: Cinzel 44 / 34 / 21 / 15 / 13 / 11; Atkinson 16 / 15 / 14 / 13 / 12).
@@ -169,45 +168,6 @@ static func plate_button(b: Button, width: float = 220.0, px: int = 17) -> void:
 	b.add_theme_stylebox_override("hover", half)
 	for s: String in ["focus", "pressed", "hover_pressed"]:
 		b.add_theme_stylebox_override(s, lit)
-
-
-## Puts a MenuPanel (a hub station's) in the Astral look: the theme, the veil slab, the title in Cinzel over a
-## LeftRule, its notes and hints in Astral's greys; the ember marker hidden (the focused row's star marks it).
-static func dress(panel: MenuPanel) -> void:
-	apply(panel)
-	var pad: Vector2 = MenuStyle.SLAB_PAD
-	panel.slab.add_theme_stylebox_override("panel", PanelBox.new(Vector2(pad.x + 16.0, pad.y), 0.8))
-	panel.marker.self_modulate = Color(1, 1, 1, 0)
-	var under_title := false
-	for c in panel.box.get_children():
-		if c is Label and not under_title and c.get_index() == 0:
-			title(c as Label, PANEL_TITLE_SIZE)
-			under_title = true
-		elif c is MenuPanel.TitleGroove:
-			var rule := LeftRule.new()
-			rule.name = "TitleRule"
-			panel.box.add_child(rule)
-			panel.box.move_child(rule, c.get_index())
-			panel.box.remove_child(c)
-			c.queue_free()
-	for c in panel.get_children():
-		if c is MenuBackdrop:
-			(c as MenuBackdrop).astral = true
-	for l: Label in panel.slab.find_children("*", "Label", true, false):
-		var px := l.get_theme_font_size("font_size")
-		var row := l.get_parent() as HBoxContainer
-		if row != null and l.get_index() == 0 and not l.has_theme_color_override("font_color"):
-			caps(l, 15)  # a field's name before its cycler
-			continue
-		if not l.has_theme_color_override("font_color"):
-			continue
-		var col := l.get_theme_color("font_color")
-		if col == MenuStyle.HINT:
-			body(l, HINT_SIZE, HINT)
-		elif col == MenuStyle.DIM:
-			body(l, px, AstralCardArt.DIM)
-		elif col == MenuStyle.TEXT:
-			body(l, px, AstralCardArt.TEXT)
 
 
 static func _pad(b: StyleBox) -> void:

@@ -4,7 +4,7 @@ extends Control
 ## shows both"): one BuildCard per BuildDefinition (Blade, then Gun), staggered in (each rises and fades in), under
 ## the title. The last pick has focus.
 ## v0.8.0 MU (owner O14, Ember stone): the title sits on a carved stone plaque with a glowing groove, the cards are
-## stone tablets (BuildCard); behind them the menus' ember backdrop (MenuStyle, MenuBackdrop). (v0.6.1 R2b's crystal
+## stone tablets (BuildCard); behind them the menus' ember backdrop (MenuBackdrop). (v0.6.1 R2b's crystal
 ## title plaque and frames are retired.)
 ## v0.10.5 W3-O20 (owner 2026-11-04 night: "remake every single UI element into this new style even the main menu";
 ## Astral): the screen is Astral: the menus' Astral theme (AstralMenu), Astral's own night behind (MenuBackdrop.astral),

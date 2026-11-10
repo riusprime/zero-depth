@@ -28,8 +28,6 @@ const FONT_REGULAR := "res://assets/fonts/AtkinsonHyperlegible-Regular.ttf"
 const FONT_BOLD := "res://assets/fonts/AtkinsonHyperlegible-Bold.ttf"
 ## A bright warning red (the event pedestal's "away" line).
 const WARN := Color("#F0444A")
-## Cool to hot, for the danger meter: a muted steel blue, sand, orange, red.
-const HEAT := [Color("#8FC3D6"), Color("#E8CB72"), Color("#EC8E4C"), Color("#F0444A")]
 ## The default corner cut of plate_points (px).
 const CHAMFER := 6.0
 ## ASTRAL's tokens (W3_O13_UI_STYLE_G2.md round 2, Astral; AstralCardArt holds the same): text / dim, contour /
@@ -98,13 +96,6 @@ static func hp_color() -> Color:
 ## The colour a warned bar pulses toward (the low-HP warning).
 static func warn_pulse() -> Color:
 	return A_WARN
-
-
-## 0 (cool) .. 1 (hot), through HEAT.
-static func danger_color(heat: float) -> Color:
-	var h := clampf(heat, 0.0, 1.0) * (HEAT.size() - 1)
-	var i := mini(int(h), HEAT.size() - 2)
-	return (HEAT[i] as Color).lerp(HEAT[i + 1], h - i)
 
 
 ## True below LOW_HP_PERCENT of max HP (integer maths; a dead player is not "low", the recap takes over).

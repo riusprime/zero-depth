@@ -2,10 +2,8 @@
 class_name WandRow
 extends Control
 ## The wand as a row of slots (v0.6.5 WN2; docs/design/WAND.md rule 4), shared by the pause menu's Build page and the
-## Swap panel. v0.8.0 MU (Ember stone, MenuStyle): each held card is a small carved stone tablet with its card
-## family's colour (CardFrames) as the glowing groove at its foot, its icon in a socket with an inlay ring in its
-## element's colour (InlaySocket), its name and its level; an empty slot is a dim, unlit tablet. A trigger card cuts
-## the row: a glowing ember groove stands after it, and under the row a bracket per part of the wand says what it is
+## Swap panel. Each held card is a tile with its icon, its name and its level; an empty slot is a dim tile. A trigger
+## card cuts the row: a line stands after it, and under the row a bracket per part of the wand says what it is
 ## ("the shot you fire", then "cast on hit →" under the cards the trigger casts). v0.9.0 AS (owner Q14): a Form,
 ## Pattern, Secondary or Element card's tile adds its slot tag to its level line ("Lv 2 · Pattern"). It draws a wand
 ## read (WorldReader.wand(), or a preview from WorldReader.wand_moved) and the page's marks (focus, the card held, a
@@ -78,25 +76,14 @@ var carry_from := -1
 ## other cards' tiles are dimmed and can't be chosen (selectable).
 var only_slot := 0
 ## v0.10.5 W3-O16 (owner 2026-11-04: the Swap in the Astral style): Astral tiles (AstralChrome.FrameBox: a 1 px frame,
-## an inner frame, Astral's focus) and type, the cuts and brackets as thin accent lines. The Build page keeps Ember.
+## an inner frame, Astral's focus) and type, the cuts and brackets as thin accent lines.
 ## v0.10.5 W3-O19 (owner 2026-11-04 night: every UI element in Astral): Astral is the default (the Build page's too).
-var astral := true:
-	set(v):
-		astral = v
-		for k in _tiles.size():
-			_names[k].add_theme_color_override(
-				"font_color", AstralCardArt.TEXT if v else MenuStyle.TEXT
-			)
-			for l: Label in [_keys[k], _levels[k]]:
-				l.add_theme_color_override("font_color", AstralCardArt.DIM if v else MenuStyle.DIM)
-			_style(k)
-		queue_redraw()
+## v0.11.1 Step 13 (owner: Astral the only style): the Ember stone tiles are gone; every row is Astral.
 
 var _wand := {}
 var _slots := 0
 var _tiles: Array[PanelContainer] = []
-var _sockets: Array[InlaySocket] = []
-## v0.10.5 W3-O19: an Astral row's icons: the card's painted icon in an Astral medallion, in the socket's place.
+## v0.10.5 W3-O19: the tiles' icons: the card's painted icon in an Astral medallion.
 var _medals: Array[AstralMedallion] = []
 var _keys: Array[Label] = []
 var _names: Array[Label] = []
@@ -166,13 +153,14 @@ func _init() -> void:
 	for k in WorldReader.MOD_SLOTS + 1:  # one more than the wand holds: the Swap's new card placed in a full row
 		_make_tile(k)
 	for k in WorldReader.MOD_SLOTS + 2:
-		var b := make_label(BRACKET_SIZE, false, MenuStyle.DIM)
+		var b := make_label(BRACKET_SIZE, false, AstralCardArt.DIM)
 		b.name = "Bracket%d" % k
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		b.max_lines_visible = 2
 		add_child(b)
 		_brackets.append(b)
-	astral = astral  # v0.10.5 W3-O19: every tile wears its look (Astral by default) and type from the start
+	for k in _tiles.size():  # every tile wears its look from the start
+		_style(k)
 	_ghost.name = "Ghost"
 	_ghost.custom_minimum_size = Vector2(SOCKET, SOCKET)
 	_ghost.size = Vector2(SOCKET, SOCKET)
@@ -205,26 +193,22 @@ func _make_tile(k: int) -> void:
 	box.add_theme_constant_override("separation", 2)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	t.add_child(box)
-	var key := make_label(SMALL_SIZE, false, MenuStyle.DIM)
+	var key := make_label(SMALL_SIZE, false, AstralCardArt.DIM)
 	key.text = str(k + 1)
 	key.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	box.add_child(key)
-	var icon := InlaySocket.new()
-	icon.custom_minimum_size = Vector2(SOCKET, SOCKET)
-	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	box.add_child(icon)
 	var medal := AstralMedallion.new()  # v0.10.5 W3-O19
 	medal.custom_minimum_size = Vector2(SOCKET, SOCKET)
 	medal.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	medal.visible = false
 	box.add_child(medal)
 	_medals.append(medal)
-	var nm := make_label(NAME_SIZE, true, MenuStyle.TEXT)
+	var nm := make_label(NAME_SIZE, true, AstralCardArt.TEXT)
 	nm.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	nm.max_lines_visible = 2
 	nm.custom_minimum_size = Vector2(TILE.x - 16, 0)
 	box.add_child(nm)
-	var lv := make_label(SMALL_SIZE, false, MenuStyle.DIM)
+	var lv := make_label(SMALL_SIZE, false, AstralCardArt.DIM)
 	lv.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # v0.8.0 MR: a flagged card's reason takes two lines
 	lv.max_lines_visible = 2
 	lv.custom_minimum_size = Vector2(TILE.x - 16, 0)
@@ -232,7 +216,6 @@ func _make_tile(k: int) -> void:
 	add_child(t)
 	_tiles.append(t)
 	_poses.append(Pose.new())
-	_sockets.append(icon)
 	_keys.append(key)
 	_names.append(nm)
 	_levels.append(lv)
@@ -594,21 +577,14 @@ func _refresh(before: Array = []) -> void:
 				_levels[k].text = tr("UI_WAND_NEW")
 			elif dead_reason(k) != &"":  # v0.8.0 MR: it does nothing here; the tile says why
 				_levels[k].text = tr(dead_reason(k))
-			var col := AbilityIcons.color(id) if ability else ItemLooks.color_of_id(id)
-			_sockets[k].show_item(id, col, col)
-			_sockets[k].visible = not astral
 			_medals[k].show_card(id)  # v0.10.5 W3-O19: the painted icon on an Astral row
-			_medals[k].visible = astral
-			var tint := CardFrames.tint(CardFrames.frame_of(CardFrames.family(id, int(c["type"]))))
-			t.set_meta(&"tint", tint)
+			_medals[k].visible = true
 			t.set_meta(&"empty", false)
 		else:
 			_names[k].text = tr("UI_WAND_EMPTY")
 			_keys[k].text = str(k + 1)
 			_levels[k].text = ""
-			_sockets[k].visible = false
 			_medals[k].visible = false
-			t.set_meta(&"tint", Color(MenuStyle.DIM, 0.3))
 			t.set_meta(&"empty", true)
 		TextFit.fit_label_words(_names[k], TILE.x - 16.0, NAME_SIZE)  # v0.8.0 N18: a long word shrinks
 		x += TILE.x
@@ -637,10 +613,8 @@ func _refresh(before: Array = []) -> void:
 		)
 		l.position = Vector2(float(span[0]), LIFT + TILE.y + 14.0)
 		l.size = Vector2(w, BRACKET_H - 14.0)
-		var accent := AstralCardArt.ACCENT if astral else MenuStyle.EMBER
 		l.add_theme_color_override(
-			"font_color",
-			(AstralCardArt.DIM if astral else MenuStyle.DIM) if b == 0 else Color(accent, 0.95)
+			"font_color", AstralCardArt.DIM if b == 0 else Color(AstralCardArt.ACCENT, 0.95)
 		)
 	custom_minimum_size = Vector2(maxf(x, 0.0), LIFT + TILE.y + BRACKET_H)
 	size = custom_minimum_size
@@ -651,26 +625,17 @@ func _refresh(before: Array = []) -> void:
 
 func _style(k: int) -> void:
 	var t := _tiles[k]
-	var tint: Color = t.get_meta(&"tint", MenuStyle.EMBER)
 	var empty: bool = t.get_meta(&"empty", false)
 	var lifted := k == lifted_tile()
 	var lit := lifted or (k == focus and carry_from < 0)
-	if astral:  # v0.10.5 W3-O16: an Astral tile; a held card's frame in the accent, the new card's in moonlight
-		var fb := AstralChrome.FrameBox.new(1.0 if lit else 0.0, 0.55 if empty else 1.0)
-		if lifted:
-			fb.rim = AstralCardArt.ACCENT
-			fb.backing = true
-		if k == fresh:
-			fb.rim = AstralCardArt.RARITY[3]
-		t.add_theme_stylebox_override("panel", fb)
-	else:
-		var box := MenuStyle.tile_slab(tint, lit, empty, 5 + k * 7, Vector2(8, 6))
-		if lifted:  # the card held: lifted, with an ember rim
-			box.rim = MenuStyle.EMBER
-		if k == fresh:  # the incoming card: a gold rim, so it reads as the new one
-			box.rim = EmberStone.GOLD
-		t.add_theme_stylebox_override("panel", box)
-	_sockets[k].glow = 1.0 if lit else 0.0
+	# v0.10.5 W3-O16: an Astral tile; a held card's frame in the accent, the new card's in moonlight
+	var fb := AstralChrome.FrameBox.new(1.0 if lit else 0.0, 0.55 if empty else 1.0)
+	if lifted:
+		fb.rim = AstralCardArt.ACCENT
+		fb.backing = true
+	if k == fresh:
+		fb.rim = AstralCardArt.RARITY[3]
+	t.add_theme_stylebox_override("panel", fb)
 	_medals[k].focused = lit
 	t.modulate = Color(1, 1, 1, 0.42) if k == leaving else Color.WHITE
 	if k != leaving and dead_reason(k) != &"":  # v0.8.0 MR (O91): a card that can't act here is dimmed
@@ -679,47 +644,13 @@ func _style(k: int) -> void:
 		t.modulate = Color(0.5, 0.47, 0.45, 0.5)
 
 
-## The tile's stone tablet (tests: the look, the focus); null on an Astral row (astral_box).
-func tile_box(k: int) -> StoneBox:
-	return _tiles[k].get_theme_stylebox("panel") as StoneBox
-
-
-## v0.10.5 W3-O16: an Astral row's tile box (tests: the look, the focus); null on a stone row.
+## v0.10.5 W3-O16: a tile's box (tests: the look, the focus).
 func astral_box(k: int) -> AstralChrome.FrameBox:
 	return _tiles[k].get_theme_stylebox("panel") as AstralChrome.FrameBox
 
 
 func _draw() -> void:
-	if astral:
-		_draw_astral()
-		return
-	var top := LIFT
-	var bottom := LIFT + TILE.y
-	var ember := MenuStyle.EMBER
-	for cx in _cut_xs:  # a trigger cuts the row: a glowing ember groove with an arrow head
-		var a := Vector2(cx, top - 4.0)
-		var b := Vector2(cx, bottom + 4.0)
-		draw_line(a, b, Color(ember, 0.12), 9.0)
-		draw_line(a, b, Color(ember, 0.22), 5.0)
-		draw_line(a, b, Color(ember, 0.92), 2.0)
-		var mid := (top + bottom) * 0.5
-		var head := PackedVector2Array(
-			[Vector2(cx + 11, mid), Vector2(cx - 4, mid - 10), Vector2(cx - 4, mid + 10)]
-		)
-		draw_colored_polygon(head, ember)
-		draw_colored_polygon(
-			PackedVector2Array([head[0], head[1], Vector2(cx, mid)]), Color(1, 0.95, 0.85, 0.35)
-		)
-	for span: Array in _spans:  # the brackets under each part of the wand
-		var a := float(span[0]) + 4.0
-		var b := float(span[1]) - 4.0
-		if b <= a:
-			continue
-		var y := bottom + 8.0
-		var c := MenuStyle.DIM if int(span[2]) == 0 else Color(ember, 0.75)
-		draw_line(Vector2(a, y - 5.0), Vector2(a, y), c, 1.0)
-		draw_line(Vector2(a, y), Vector2(b, y), c, 1.0)
-		draw_line(Vector2(b, y - 5.0), Vector2(b, y), c, 1.0)
+	_draw_astral()
 
 
 ## The slot under `global` (a point on screen), or -1. v0.11.0 F11: by where each slot rests (a tile on its way

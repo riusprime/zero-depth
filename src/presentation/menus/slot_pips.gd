@@ -10,13 +10,11 @@ extends HBoxContainer
 const TYPE_SIZE := 20
 const GLYPH := 18.0
 const PIP := 14.0
-## The pips' colours: a held card's (the ember) and an empty slot's ring.
-const LIT := Color("#EBAE72")
-const EMPTY := Color(0.8, 0.72, 0.63, 0.7)
+## The pips' colours (v0.10.5 W3-O16, W3-O19: Astral's; v0.11.1 Step 13: the ember ones are gone): a held card's
+## and an empty slot's ring.
+const LIT := AstralCardArt.ACCENT
+const EMPTY := Color(AstralCardArt.METAL, 0.6)
 
-## v0.10.5 W3-O16: on the Swap (Astral): Astral's accent and text in place of the ember.
-## v0.10.5 W3-O19: Astral is the default (the Build page's too).
-var astral := true
 var _counts: Array = []
 var _form := ""
 
@@ -99,7 +97,7 @@ func _rebuild() -> void:
 		var held := _held(e)
 		var g := SlotGlyph.new(GLYPH)
 		g.slot = cat
-		g.color = AstralCardArt.ACCENT if astral else LIT
+		g.color = LIT
 		g.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		add_child(g)
 		var l := Label.new()
@@ -107,13 +105,9 @@ func _rebuild() -> void:
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		l.text = _label_of(cat)
 		l.add_theme_font_size_override("font_size", TYPE_SIZE)
-		l.add_theme_color_override("font_color", AstralCardArt.TEXT if astral else MenuStyle.TEXT)
+		l.add_theme_color_override("font_color", AstralCardArt.TEXT)
 		add_child(l)
-		var d := Dots.new(held, int(e[2]))
-		if astral:
-			d.lit = AstralCardArt.ACCENT
-			d.empty = Color(AstralCardArt.METAL, 0.6)
-		add_child(d)
+		add_child(Dots.new(held, int(e[2])))
 		if e != _counts.back():
 			var gap := Control.new()
 			gap.custom_minimum_size = Vector2(22, 0)

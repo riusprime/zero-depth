@@ -1,17 +1,14 @@
 class_name EmberStone
 extends RefCounted
 ## v0.8.0 MU (owner O14: "we're just throwing away the shard cards"; G2 pick "menu style B", evidence
-## docs/roadmap/v0.8.0/evidence/MENU_G2.md): the menus' and the cards' look, "Ember stone". Dark carved stone slabs
+## docs/roadmap/v0.8.0/evidence/MENU_G2.md): the cards' look, "Ember stone" (the menus' too until v0.11.1 Step 13:
+## they are Astral now, and the menus' warm type went with their old style). Dark carved stone slabs
 ## with chipped edges, lit warm from below by embers (StoneBox draws one), a glowing inlay in an element's colour
 ## (InlaySocket, StoneBox's inlay line and ring), a carved rarity gem (CardMark) and a gold rim inlay on epic and
 ## legendary things. It matched the HUD's former Ember stone plates (v0.5.5 A5; the HUD is Astral now) and the
-## world's fire light. One table of tokens here; StoneBox, InlaySocket, MenuStyle and the cards read it.
+## world's fire light. One table of tokens here; StoneBox, InlaySocket and the cards read it.
 ## Presentation only (EI-07): nothing here decides an outcome.
 
-## The warm type, the dim type and the key hints.
-const TEXT := Color("#F3E9DD")
-const DIM := Color(0.8, 0.72, 0.63, 0.86)
-const HINT := Color(0.8, 0.72, 0.63, 0.62)
 ## The ember glow: the focus, the under-glow, the menus' accent and lines. Kept apart from the heat meter's Hot colour
 ## (HeatLooks.HOT #FFA63A, saturation 0.77) by its saturation (0.51) and value (MENU_G2 "Known limits": the mockup's
 ## #F28A3A was too close to it); tests/unit/presentation/test_ember_stone.gd checks the distance.
