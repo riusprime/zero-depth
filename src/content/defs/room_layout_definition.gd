@@ -212,13 +212,6 @@ static func footprint(p: RoomLayoutPiece) -> Rect2:
 	return Rect2(p.at - p.size * 0.5, p.size)
 
 
-## The gap between two rects (m): 0 when they touch or overlap.
-static func gap_between(a: Rect2, b: Rect2) -> float:
-	var dx := maxf(maxf(a.position.x - b.end.x, b.position.x - a.end.x), 0.0)
-	var dy := maxf(maxf(a.position.y - b.end.y, b.position.y - a.end.y), 0.0)
-	return sqrt(dx * dx + dy * dy)
-
-
 ## True when the piece's turned footprint lies inside one of the solids (within OVERHANG).
 static func _stands_on(p: RoomLayoutPiece, solids: Array[Rect2]) -> bool:
 	var a := deg_to_rad(p.yaw)

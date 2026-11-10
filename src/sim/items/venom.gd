@@ -8,7 +8,6 @@ extends RefCounted
 ## card). No randomness. The actor columns are hashed with the modifier engine's state (ModifierRuntime.hash_into).
 
 const EFFECT_POISON := &"venom"
-const EFFECT_SPREAD := &"venom_spread"
 ## ProcLedger code of a spread (after the hook feeds' codes; appended, never renumbered).
 const CODE_SPREAD := 70
 

@@ -194,12 +194,6 @@ static func angry(w: World, i: int) -> bool:
 # --- v0.11.0 O5: the roles ----------------------------------------------------------------------------------------
 
 
-## The pair's phase for body i (P_YELLOW, P_VIOLET, P_BOTH), or -1 for a body of no pair.
-static func roles_phase(w: World, i: int) -> int:
-	var k := pair_of(w, i)
-	return w.bosses.twin_phase[k] if k >= 0 else -1
-
-
 ## True while body i leads (fights): the boss in phase 1, its twin in phase 2, both in phase 3 (and any other boss).
 static func leads(w: World, i: int) -> bool:
 	var k := pair_of(w, i)

@@ -23,8 +23,6 @@ enum Route { NORMAL, DEEP }
 const GATE_GAP := 4.8
 ## Further candidates step this far (m) along a wall.
 const STEP := 0.5
-## The depth margin (m) of a gate's kept-clear zone past the front square (its side margin: GateClearance.zone_side).
-const ZONE_DEPTH := 1.0
 ## The Deep gate keeps this clear of where the boss appears (m), and of the boss door's passage.
 const SPAWN_CLEAR := 2.6
 const DOOR_CLEAR := 1.5

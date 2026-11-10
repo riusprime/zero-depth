@@ -13,7 +13,6 @@ extends RefCounted
 ## Offers: each card's weight times its card_permille (ItemPool.card_weight).
 
 const EFFECT_WARD := &"guardian_ward"
-const EFFECT_DASH_SHOCK := &"storm_dash"
 const EFFECT_JUMP := &"venom_jump"
 ## ProcLedger code of a poison jump (after Venom's spread, 70).
 const CODE_JUMP := 71

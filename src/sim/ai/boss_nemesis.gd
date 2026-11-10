@@ -415,15 +415,6 @@ static func card_of(w: World, atk: BossAttackTable) -> NemesisCast:
 	return f.casts[atk.card]
 
 
-## The cast attack `atk` makes now (a card's, or the run's shot), or null.
-static func cast_of(w: World, i: int, atk: BossAttackTable) -> NemesisCast:
-	if atk.move == M.CARD_CAST:
-		return card_of(w, atk)
-	if atk.move == M.MIMIC_SHOTS:
-		return shot_cast(w, i, atk)
-	return null
-
-
 ## The lines a volley of `c` aimed where body i locked would fly down: one per shot, from its muzzle, as long as its
 ## flight unless a wall stops it.
 static func shot_lines(w: World, i: int, c: NemesisCast) -> Array[Obb]:

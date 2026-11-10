@@ -13,10 +13,6 @@ const OBJECTIVE_TWINS_ACTIVE := ObjectiveMarkers.TWINS_ACTIVE
 const APPROACH_WALK := FinalApproach.State.WALK
 const APPROACH_BUILDUP := FinalApproach.State.BUILDUP
 const APPROACH_FIGHT := FinalApproach.State.FIGHT
-## v0.9.0 IX: the shared interactables' kinds (interactable_kind).
-const INTERACT_PYLON := Interactables.Kind.PYLON
-const INTERACT_TIMED_SWITCH := Interactables.Kind.TIMED_SWITCH
-const INTERACT_RUNE_PILLAR := Interactables.Kind.RUNE_PILLAR  # v0.9.0 RA
 ## v0.9.0 DX: the destructible props' kinds (breakable_kind).
 const BREAKABLE_CRATE := Breakables.Kind.CRATE
 const BREAKABLE_URN := Breakables.Kind.URN
@@ -32,13 +28,8 @@ const TIMED_HELD := TimedDoor.State.HELD
 ## v0.9.0 LK: the Lockdown kinds (lockdown()["kinds"], ["kind"]).
 const LOCKDOWN_NORMAL := LockdownTable.Kind.NORMAL
 const LOCKDOWN_HAZARD := LockdownTable.Kind.HAZARD
-## v0.9.0 SH, HF: the shrine kinds (shrine_kind) and the interactables the shrines and the fountain use.
-const SHRINE_FORTUNE := ShrineTable.Kind.FORTUNE
+## v0.9.0 SH, HF: the shrine kinds (shrine_kind).
 const SHRINE_BLOOD := ShrineTable.Kind.BLOOD
-const SHRINE_CHAOS := ShrineTable.Kind.CHAOS
-const INTERACT_SHRINE := Interactables.Kind.SHRINE
-const INTERACT_FOUNTAIN := Interactables.Kind.FOUNTAIN
-const LOCKDOWN_ELITE := LockdownTable.Kind.ELITE
 ## v0.8.0 RM: the remnant kinds, activations and Thermal Break's effect id, for the views (the layer rule).
 const REMNANT_SEGMENT := RemnantRule.Kind.SEGMENT
 const REMNANT_ANCHOR := RemnantRule.Kind.ANCHOR
@@ -162,7 +153,6 @@ const ITEM_RICOCHET_CORE := ItemTable.Kind.RICOCHET_CORE
 const ITEM_KINETIC_DASH := ItemTable.Kind.KINETIC_DASH
 const ITEM_OVERCHARGE := ItemTable.Kind.OVERCHARGE
 const ITEM_VAMPIRIC_CORE := ItemTable.Kind.VAMPIRIC_CORE
-const ITEM_STATIC_CHAIN := ItemTable.Kind.STATIC_CHAIN
 const ITEM_MOMENTUM := ItemTable.Kind.MOMENTUM
 const ITEM_FROST_CORE := ItemTable.Kind.FROST_CORE
 const ITEM_THORN_MANTLE := ItemTable.Kind.THORN_MANTLE
@@ -184,18 +174,13 @@ const STATE_WINDUP := EnemyAi.State.WINDUP
 const STATE_ACTIVE := EnemyAi.State.ACTIVE
 const STATE_RECOVER := EnemyAi.State.RECOVER
 ## The Arc Caster's spells (v0.3.5 AI; EnemyAi.Spell), for actor_spell().
-const SPELL_BOLT := EnemyAi.Spell.BOLT
-const SPELL_SPREAD := EnemyAi.Spell.SPREAD
 const SPELL_RUNE := EnemyAi.Spell.RUNE
 ## A boss knocked off balance by a full stagger meter (BossAi).
 const STATE_STAGGERED := BossAi.STAGGERED
 ## v0.8.0 BA: a boss in its phase gate (BossGates; boss_gate_permille), for its roar.
 const STATE_GATE := BossAi.GATE
-## v0.8.0 BS1 (S3): an egg waiting, and bursting (BossSignatures).
-const STATE_EGG := BossSignatures.EGG
 ## v0.8.0 BS2 (S5): the hostile team (a ricochet's sparks are drawn for its shots).
 const TEAM_ENEMY := ActorStore.TEAM_ENEMY
-const STATE_EGG_BURST := BossSignatures.EGG_BURST
 ## How far from a gated boss its adds rise (m).
 const GATE_ADD_RING_M := BossGates.ADD_RING_M
 ## Boss moves, for telegraph()["move"] and boss_move() (views pick an animation from them).
@@ -232,7 +217,6 @@ const MOVE_GREAT_JAVELIN := BossAttackTable.Move.GREAT_JAVELIN  # v0.11.0 F9 (th
 const GREAT_JAVELIN_THROW := BossGreatJavelin.THROW  # v0.11.0 F9: boss_great_javelin()["phase"]
 const GREAT_JAVELIN_EMBEDDED := BossGreatJavelin.EMBEDDED
 const GREAT_JAVELIN_RETURN := BossGreatJavelin.RETURN
-const EFFECT_PRISM_BURST := BossPrismLast.EFFECT_BURST
 const LANCE_TRACKING := BossPrismLast.TRACKING  # boss_lances: a lance's phase
 const LANCE_LOCKED := BossPrismLast.LOCKED
 const LANCE_STRIKING := BossPrismLast.STRIKING
@@ -249,19 +233,11 @@ const TIDE_NONE := BossTide.NONE
 const TIDE_PULL := BossTide.PULL
 const TIDE_PUSH := BossTide.PUSH
 const TIDE_MAX_MPS := BossTide.MAX_MPS
-## v0.8.0 FB3: the Nemesis's stances (BossTable.STANCE_*) and the effect ids of its dash and its card casts.
-const STANCE_ECHO := BossTable.STANCE_ECHO
-const STANCE_MIRROR := BossTable.STANCE_MIRROR
-const STANCE_CLOSE := BossTable.STANCE_CLOSE
-const STANCE_BACK := BossTable.STANCE_BACK
+## v0.8.0 FB3: the effect id of the Nemesis's dash.
 const EFFECT_NEMESIS_DASH := BossNemesis.EFFECT_DASH
-const EFFECT_NEMESIS_CAST := BossNemesis.EFFECT_CAST
-## v0.8.0 FB1: a final boss's body shattering (FinalBoss.SHATTER), and its views' events (STATUS_APPLY effect ids).
+## v0.8.0 FB1: a final boss's body shattering (FinalBoss.SHATTER).
 const STATE_SHATTER := FinalBoss.SHATTER
-const EFFECT_FINAL_SHATTER := FinalBoss.EFFECT_SHATTER
-const EFFECT_FINAL_RISE := FinalBoss.EFFECT_RISE
-## v0.9.5 BH6: the Fallen's interphase (BossInterphase): the vanished body's state and its views' events.
-const STATE_INTERPHASE := BossInterphase.STATE
+## v0.9.5 BH6: the Fallen's interphase (BossInterphase): its views' events.
 const EFFECT_FALLEN_VANISH := BossInterphase.EFFECT_VANISH
 const EFFECT_FALLEN_BEAMS := BossInterphase.EFFECT_BEAMS
 const EFFECT_FALLEN_ERUPT := BossInterphase.EFFECT_ERUPT
@@ -293,7 +269,6 @@ const ROUTE_DEEP := Routes.Route.DEEP
 const ASCEND_NONE := Ascension.Choice.NONE
 const ASCEND_PORTAL := Ascension.Choice.ASCENSION
 const ASCEND_LOOP := Ascension.Choice.LOOP
-const RARITY_RARE := ItemTable.RARE
 ## Kit (v0.3.5 K): the build skills.
 const SKILL_LUNGE_CLEAVE := SkillTable.Kind.LUNGE_CLEAVE
 const SKILL_SCATTER_BLAST := SkillTable.Kind.SCATTER_BLAST
@@ -345,10 +320,8 @@ const SPELL_ZONE_METEOR_MARK := SpellZones.METEOR_MARK
 const SPELL_ZONE_ORB := SpellZones.ORB
 const SPELL_ZONE_STATIC := SpellZones.STATIC
 const SPELL_ZONE_POOL := SpellZones.POOL
-const SPELL_ZONE_CLOUD := SpellZones.CLOUD
 const SPELL_ZONE_PUFF := SpellZones.PUFF
 const SPELL_ZONE_VINE := SpellZones.VINE
-const SPELL_ZONE_RING_LATER := SpellZones.RING_LATER
 const SPELL_ZONE_THORN_WALL := SpellZones.THORN_WALL
 const SPELL_ZONE_HEMO := SpellZones.HEMO
 const SPELL_ZONE_LEECH := SpellZones.LEECH
@@ -370,8 +343,6 @@ const ABILITY_COMBO_SWORD := AbilityTable.Kind.COMBO_SWORD
 const ABILITY_PULSE_GUN := AbilityTable.Kind.PULSE_GUN
 const ABILITY_BLINK := AbilityTable.Kind.BLINK
 const ABILITY_AEGIS := AbilityTable.Kind.AEGIS
-## v0.6.0 MX2: the weapon, the utility and the six modifier slots' abilities at most.
-const ABILITY_SLOTS := 2 + BuildSlots.SLOTS
 ## v0.6.0 MX2 (BuildSlots): the modifier slots, and the swap answers' pick values. v0.6.5 WN1: the most slots the
 ## wand ever has (it grows 4 → 6 → 8; build()["max"] is the count now), and the reorder's pick values
 ## (PICK_WAND_MOVE_BASE + from × WAND_MOVE_STRIDE + to).
@@ -397,7 +368,6 @@ const WAND_ORDER_SHAPE := ModifierTable.OrderKind.SHAPE
 const WAND_ORDER_COUNT := ModifierTable.OrderKind.COUNT
 const WAND_ORDER_MOTION := ModifierTable.OrderKind.MOTION
 const PICK_SWAP_SKIP := InputFrame.PICK_SWAP_SKIP
-const ABILITY_MAX_LEVEL := AbilityTable.MAX_LEVEL
 ## v0.5.0 EV: event pedestals, costs, rewards and refusals (Events).
 const EVENT_READY := Events.State.READY
 const EVENT_ACTIVE := Events.State.ACTIVE
@@ -416,8 +386,6 @@ const EVENT_BLOCK_OK := Events.OK
 const EVENT_BLOCK_SHARDS := Events.NEED_SHARDS
 const EVENT_BLOCK_NOTHING := Events.NEED_NOTHING_TO_GAIN
 const EVENT_BLOCK_BUSY := Events.NEED_BUSY
-## v0.4.0 AB: a Napalm Drone fire patch (element_fx()["fire_kind"]).
-const FIRE_NAPALM := ElementAbilities.FIRE_NAPALM
 ## v0.6.0 MX2: Arc Field's shock field, and any other spec's patch (a hook's zone).
 const FIRE_FIELD := ElementAbilities.FIRE_FIELD
 const FIRE_ZONE := ElementAbilities.FIRE_ZONE
@@ -875,7 +843,7 @@ func actor_recovering(i: int) -> bool:
 	return EnemyAi.is_enemy_kind(_w.actors.kinds[i]) and _w.actors.state[i] == EnemyAi.State.RECOVER
 
 
-## The spell an Arc Caster is casting (v0.3.5 AI): SPELL_BOLT, SPELL_SPREAD or SPELL_RUNE (0 for other kinds).
+## The spell an Arc Caster is casting (v0.3.5 AI): EnemyAi.Spell (BOLT, SPREAD, or SPELL_RUNE; 0 for other kinds).
 func actor_spell(i: int) -> int:
 	return _w.actors.pick[i]
 
@@ -909,11 +877,6 @@ func actor_index(id: int) -> int:
 ## True for a priority target (the Mender): the view marks it.
 func actor_priority(i: int) -> bool:
 	return EnemyAi.is_priority(_w.actors.kinds[i])
-
-
-## The line a Sniper shoots down (its telegraph's lane), for the shot's tracer.
-func sniper_line(i: int) -> Obb:
-	return EnemyAi.snipe_lane(_w, i)
 
 
 ## v0.11.0 O13a: the lanes Sniper i's shot hits (one line; a Split Sniper's line and its three branches).
@@ -1168,10 +1131,6 @@ func shard_drop_amounts() -> PackedInt32Array:
 	return _w.shard_drops.amounts
 
 
-func shard_drop_reach() -> float:
-	return Stats.reach(_w, ShardDrops.REACH_M)
-
-
 ## True while a living enemy of `kind` is on the floor.
 func kind_alive(kind: int) -> bool:
 	var a := _w.actors
@@ -1216,11 +1175,6 @@ func has_item_kind(kind: int) -> bool:
 	return _w.item_mods.has(kind)
 
 
-## Number of compiled items (valid item indices are 0..item_table_count() - 1).
-func item_table_count() -> int:
-	return _w.item_tables.size()
-
-
 func item_kind(item_index: int) -> int:
 	return _w.item_tables[item_index].kind
 
@@ -1232,10 +1186,6 @@ func item_id(item_index: int) -> StringName:
 ## Locale keys (tr() them in the view).
 func item_name_key(item_index: int) -> StringName:
 	return Offers.item_keys(_w, _w.item_tables[item_index])[0]  # v0.6.5 WN5a: T4's face per weapon
-
-
-func item_desc_key(item_index: int) -> StringName:
-	return Offers.item_keys(_w, _w.item_tables[item_index])[1]
 
 
 func pickup_count() -> int:
@@ -1290,12 +1240,8 @@ func shockwave_radius_m() -> float:
 	return Modifiers.nth_burst_radius_m(_w)
 
 
-## Twin Arc: an echo swing is pending, its angle and step, and the tick the last echo swung (-1 = never). The echo
+## Twin Arc: an echo swing's angle and step, and the tick the last echo swung (-1 = never). The echo
 ## uses swing_shape(echo_step()) with this angle.
-func echo_pending() -> bool:
-	return _w.echo_t > 0
-
-
 func echo_angle() -> int:
 	return _w.echo_angle
 
@@ -2348,15 +2294,6 @@ func nemesis(i: int) -> Dictionary:
 	return BossNemesis.state(_w, i)
 
 
-## v0.8.0 FB2 (F7): the final fight's measured damage per second (the meter's last `seconds`, at most what it holds)
-## in thousandths, and how many seconds that is: [dps × 1000, seconds] ([0, 0] outside the fight).
-func final_dps(seconds: int = FinalFight.DPS_SECONDS) -> PackedInt32Array:
-	if _w.final_fight == null:
-		return PackedInt32Array([0, 0])
-	var m := _w.final_fight.measured(seconds)
-	return PackedInt32Array([m[0] * 1000 / maxi(1, m[1]) if m[1] > 0 else 0, m[1]])
-
-
 ## v0.8.0 BS2 (S6): the Foundry's molten floor down now: [rect (sim plane), the tick it was laid, the tick it cools]
 ## each.
 func boss_lava() -> Array:
@@ -2465,11 +2402,6 @@ func final_home() -> Vector2:
 	return _w.final_fight.home if _w.final_fight != null else Vector2.ZERO
 
 
-## The Fallen's interphases that have begun (a bitmask: bit 0 the first) and the one running now (0 none).
-func final_interphases_done() -> int:
-	return _w.final_fight.ip_done if _w.final_fight != null else 0
-
-
 ## The last body fell (the fight is won).
 func final_won() -> bool:
 	return _w.final_fight != null and _w.final_fight.won
@@ -2507,11 +2439,6 @@ func approach_pylon_lit(k: int) -> bool:
 ## How many pylons are on.
 func approach_pylons_lit() -> int:
 	return _w.approach.lit_count() if _w.approach != null else 0
-
-
-## The tick pylon k was switched on (-1 not yet).
-func approach_pylon_tick(k: int) -> int:
-	return _w.approach.lit_tick[k] if _w.approach != null else -1
 
 
 ## The unlit pylon the interact press would switch on now, or -1 (the HUD's prompt).
@@ -2565,11 +2492,6 @@ func approach_causeway_top() -> Vector2:
 ## Half the causeway's width (m, wall face to wall face).
 func approach_causeway_half_width() -> float:
 	return _w.floor_layout.causeway_half_w if _w.approach != null else 0.0
-
-
-## The tick the current body began (its rise).
-func final_phase_tick() -> int:
-	return _w.final_fight.phase_tick if _w.final_fight != null else -1
 
 
 ## v0.8.0 N2 (owner O41, O42, O52; FinalPace.state): the current body's pace and The Fallen's mimic window: {} outside a
@@ -2633,10 +2555,6 @@ func shards() -> int:
 ## v0.5.5 EC (owner Q-S4): shards the portal left behind on the way to this floor (half of the unspent ones).
 func shards_left_behind() -> int:
 	return _w.shards_left_behind
-
-
-func item_rarity(item_index: int) -> int:
-	return _w.item_tables[item_index].rarity
 
 
 func reward_count() -> int:
@@ -2981,10 +2899,6 @@ func combos_owned() -> PackedInt32Array:
 	return _w.combos_owned
 
 
-func combo_table_count() -> int:
-	return _w.combo_tables.size()
-
-
 func combo_id(combo_index: int) -> StringName:
 	return _w.combo_tables[combo_index].id
 
@@ -2992,10 +2906,6 @@ func combo_id(combo_index: int) -> StringName:
 ## Locale keys (tr() them in the view).
 func combo_name_key(combo_index: int) -> StringName:
 	return _w.combo_tables[combo_index].name_key
-
-
-func combo_desc_key(combo_index: int) -> StringName:
-	return _w.combo_tables[combo_index].desc_key
 
 
 ## The two item ids a combo needs.
@@ -3014,10 +2924,6 @@ func pair_id(x: int) -> StringName:
 
 func pair_name_key(x: int) -> StringName:
 	return ElementPairs.name_key(x)
-
-
-func pair_desc_key(x: int) -> StringName:
-	return ElementPairs.desc_key(x)
 
 
 func pair_card_ids(x: int) -> Array[StringName]:
@@ -3173,10 +3079,6 @@ func gamble_spent() -> bool:
 	return Gamble.spent(_w)
 
 
-func gamble_fail_permille() -> int:
-	return Gamble.fail_permille(_w)
-
-
 func gamble_fail_tick() -> int:
 	return _w.gamble_fail_tick
 
@@ -3313,7 +3215,8 @@ func ability_fx() -> Dictionary:
 
 
 ## v0.4.0 AB: Arc Field, Frost Nova, the fire patches and the ability combos' moments (ElementAbilities.fx).
-## A fire patch's kind in element_fx()["fire_kind"]: FIRE_NAPALM is Napalm Drone's (else Flame Trail's).
+## A fire patch's kind in element_fx()["fire_kind"]: ElementAbilities.FIRE_NAPALM is Napalm Drone's (else Flame
+## Trail's).
 func element_fx() -> Dictionary:
 	return ElementAbilities.fx(_w)
 
@@ -3502,14 +3405,6 @@ func spell_fx() -> Dictionary:
 ## v0.11.0 O11: the lasting spells now (SpellZones.read: kind, spell, level, centre, radius, life left 0..1000).
 func spell_zones() -> Dictionary:
 	return SpellZones.read(_w)
-
-
-## v0.11.0 O10: where spell `k` would aim now (Spells.densest_pack, the cast's own function, EI-07; -1 for none).
-func spell_aim(k: int) -> int:
-	var t := Spells.table(_w, k)
-	if t == null:
-		return -1
-	return Spells.densest_pack(_w, _w.player_pos(), t.reach_m)
 
 
 ## v0.9.5 TX: the Gun form fired now (the held Form card's row id: &"orbs", &"laser" ...; &"" on a Blade run), for the
@@ -3912,14 +3807,6 @@ func interact_prompt_args() -> Array:
 	return Interactables.prompt_args(_w, i)
 
 
-func interactable_count() -> int:
-	return _w.interactables.size()
-
-
-func interactable_kind(i: int) -> int:
-	return _w.interactables.kind[i]
-
-
 func interactable_pos(i: int) -> Vector2:
 	return _w.interactables.pos[i]
 
@@ -3960,10 +3847,6 @@ func timed_door_angle() -> int:
 	return a if f.door_rooms[f.timed_door].x == f.timed_host else (a + 2048) % 4096
 
 
-func timed_door_slab() -> Obb:
-	return _w.floor_layout.timed_door_wall
-
-
 func timed_door_width() -> float:
 	return _w.floor_layout.door_widths[_w.floor_layout.timed_door]
 
@@ -3983,10 +3866,6 @@ func timed_shut_tick() -> int:
 
 func timed_timer_ticks() -> int:
 	return _w.timed.open_ticks if _w.timed != null else 0
-
-
-func timed_ticks_left() -> int:
-	return _w.timed.ticks_left(_w.tick) if _w.timed != null else 0
 
 
 ## How many times the door has opened (0: never, the secret room still unseen).
@@ -4023,11 +3902,6 @@ func hidden_room() -> int:
 	if _w.timed == null or _w.timed.opened > 0:
 		return -1
 	return _w.floor_layout.timed_room
-
-
-## The hidden room's cells in metres, grid line to grid line (Rect2() for none).
-func hidden_room_cells() -> Rect2:
-	return room_cells_rect(hidden_room())
 
 
 ## v0.9.0 RA (Q23; Secrets.hidden_rooms): every secret room not drawn, lit or shown on the minimap yet (the timed door's
@@ -4106,10 +3980,6 @@ func rune_door_width() -> float:
 	return _w.floor_layout.door_widths[_w.floor_layout.rune_door]
 
 
-func rune_door_depth() -> float:
-	return _w.floor_layout.door_depths[_w.floor_layout.rune_door]
-
-
 # --- The purple runes (v0.9.0 DP; PurpleRunes) ----------------------------------------------------------------
 ## The floor has a purple-rune room: its room, its dais's spot and registry entry, whether awakened and when.
 func has_purple_runes() -> bool:
@@ -4122,10 +3992,6 @@ func purple_room() -> int:
 
 func purple_dais_pos() -> Vector2:
 	return _w.floor_layout.purple_pos if _w.purple != null else Vector2.ZERO
-
-
-func purple_dais_entry() -> int:
-	return _w.purple.entry if _w.purple != null else -1
 
 
 func purple_lit() -> bool:
@@ -4199,10 +4065,6 @@ func heart_relic_here() -> bool:
 	return heart_room() and _w.heart.relic_here(_w)
 
 
-func heart_take_tick() -> int:
-	return _w.heart.take_tick if heart_room() else -1
-
-
 ## The door is sealed (N2: the remembered Crown not yet built), and the hero stands within its reach.
 func heart_door_sealed() -> bool:
 	return heart_room() and _w.heart.door == HeartRoom.Door.SEALED
@@ -4216,10 +4078,6 @@ func heart_door_near() -> bool:
 ## ring's radius.
 func relic_held(k: int = Relics.CITY_HEART) -> bool:
 	return Relics.held(_w, k)
-
-
-func relic_spent(k: int = Relics.CITY_HEART) -> int:
-	return Relics.spent(_w, k)
 
 
 func relic_pulse_tick() -> int:
@@ -4317,10 +4175,6 @@ func breakable_broken(i: int) -> bool:
 	return _w.breakables.broken[i] == 1
 
 
-func breakable_break_tick(i: int) -> int:
-	return _w.breakables.break_tick[i]
-
-
 func breakable_fuse_tick(i: int) -> int:
 	return _w.breakables.fuse_tick[i]
 
@@ -4381,15 +4235,6 @@ func affinity_ward_tick() -> int:
 	return _w.affinity.ward_tick if _w.affinity != null else -1
 
 
-## A2 Storm and A3 Venom: the dash shocks given and the poison jumps made on this floor.
-func affinity_shocks() -> int:
-	return _w.affinity.shocks if _w.affinity != null else 0
-
-
-func affinity_jumps() -> int:
-	return _w.affinity.jumps if _w.affinity != null else 0
-
-
 ## A4 Astral: how near (m) a secret pulses (0: off), and whether the minimap marks a secret's room once entered.
 func affinity_sense_m() -> float:
 	return _w.affinity.table.secret_sense_m if _w.affinity != null else 0.0
@@ -4436,7 +4281,7 @@ func has_shrines() -> bool:
 	return _w.shrine != null
 
 
-## The floor's shrine kind (SHRINE_FORTUNE, SHRINE_BLOOD, SHRINE_CHAOS; Fortune also when there is none).
+## The floor's shrine kind (ShrineTable.Kind: FORTUNE, BLOOD, CHAOS; Fortune also when there is none).
 func shrine_kind() -> int:
 	return Shrines.kind_of(_w)
 
