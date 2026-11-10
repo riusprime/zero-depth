@@ -38,7 +38,9 @@ extends SceneTree
 ## sprites, the hero's share of them when the layer keeps a hero budget, the pack's live instances by family) and the
 ## hostile threats on screen (telegraphs, enemy shots) and the hero effects' opacity, and reports avg / p95 / max.
 ##   ... -s scripts/checks/frame_probe.gd -- --biome=red_canyon --enemies=60 --heavy --fx --secs=20
+## --spans, --redraws, --orphans, --size=WxH, --vsync=<mode> and the extra --ab switches: scripts/checks/frame_spans.gd.
 
+const FrameSpans := preload("res://scripts/checks/frame_spans.gd")
 const OUT_DIR := "res://build/perf/"
 const DEFAULT_BIOMES := ["frozen_shore", "red_canyon"]
 const BUDGET_MS := 1000.0 / 144.0
@@ -139,6 +141,7 @@ var _enemies := ENEMIES  # --enemies=N (O12)
 var _heavy := false  # --heavy (O12)
 var _fx := false  # --fx (O12)
 var _fx_rows := {}  # counter name -> PackedFloat64Array, one value per measured frame
+var _spans := FrameSpans.new()
 
 
 func _initialize() -> void:
@@ -176,6 +179,8 @@ func _initialize() -> void:
 			_only = ActorStore.Kind.keys().find(s.trim_prefix("only=").to_upper())
 		elif s.begins_with("ab="):
 			_ab = s.trim_prefix("ab=").split(",", false)
+		else:
+			_spans.parse(s)
 	_biomes = Array(biome_arg.split(",", false))
 	var git: Array = []
 	if OS.execute("git", ["rev-parse", "--short", "HEAD"], git) == 0 and git.size() > 0:
@@ -183,8 +188,8 @@ func _initialize() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT_DIR))
 	_saved_density = ViewPrefs.effects_density
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-	DisplayServer.window_set_size(Vector2i(1920, 1080))
-	root.size = Vector2i(1920, 1080)
+	DisplayServer.window_set_size(_spans.size)
+	root.size = _spans.size
 	var profile := ProfileStore.new("")
 	profile.section("settings")["language"] = "en"
 	if not _shadows.is_empty():
@@ -218,7 +223,7 @@ func _process(delta: float) -> bool:
 			if _proc:
 				_steal_and_time(delta)
 			var dt_ms := (now - _last_us) / 1000.0
-			if _bd:
+			if _bd or _spans.on or _spans.redraws:
 				_collect(now)
 			_frames.append(dt_ms)
 			if _fx:
@@ -302,6 +307,7 @@ func _setup_scenario() -> void:
 	_apply_ab()
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
+	_spans.setup(self, _main, _ab)
 	_floor_triplanar = _triplanar_state()
 	_top_up()
 	_t0 = Time.get_ticks_usec()
@@ -330,11 +336,13 @@ func _begin_measure(now: int) -> void:
 	PerfMarks.clear()
 	_phase_timer.reset()
 	_main.view.sync_profile.clear()
+	_spans.begin_measure()
 
 
 ## Strafe, aim and refill the enemies, once per frame (cheap: the refill runs once a second).
 func _drive(now: int) -> void:
 	var t := (now - _t0) / 1e6
+	_spans.per_frame()
 	if _ab.has("low_hp"):  # W3-O6: the probe (not the sim) holds the hero's HP at 20 %
 		var a := _main.driver.world.actors
 		a.hp[0] = maxi(1, a.max_hp[0] / 5)
@@ -613,7 +621,9 @@ func _finish_biome() -> void:
 		lines.append_array(_census_lines())
 	if _bd:
 		lines.append_array(_class_histogram())
+	if _bd or _spans.on or _spans.redraws:
 		lines.append_array(_breakdown_lines())
+	lines.append_array(_spans.report_lines(_bk))
 	var text := "\n".join(lines) + "\n"
 	print(text)
 	var tag := "" if _ab.is_empty() else "_ab-" + "-".join(_ab)
@@ -640,7 +650,7 @@ func _ab_status() -> String:
 		return "none"
 	var out: PackedStringArray = []
 	for f in _ab:
-		if f == "planar_floor" or not KNOWN_AB.has(f):
+		if f == "planar_floor" or not (KNOWN_AB.has(f) or FrameSpans.AB.has(f)):
 			out.append("%s=NOT AVAILABLE" % f)
 		else:
 			out.append("%s=on" % f)
@@ -714,6 +724,7 @@ static func _pct(sorted: PackedFloat64Array, q: float) -> float:
 
 
 func _restore() -> void:
+	_spans.restore()
 	RenderingServer.directional_shadow_atlas_set_size(_saved_atlas, true)
 	RenderingServer.directional_soft_shadow_filter_set_quality(_saved_filter)
 	ViewPrefs.effects_density = _saved_density
@@ -733,6 +744,7 @@ func _collect(now: int) -> void:
 		this["frame.rest_after_draw"] = float(now - _t_post - phys)
 	_t_proc = now
 	PerfBreakdown.gather(_main.view, _phase_timer, this)
+	_spans.gather(_last_us, now, this)
 	this["count.projectiles"] = float(_main.driver.reader.projectile_count())
 	this["count.actors"] = float(_main.driver.reader.actor_count())
 	this["ticks"] = float(PerfMarks.calls.get(&"sim_step", 0))
@@ -805,6 +817,7 @@ static func _mean(s: PackedFloat64Array) -> float:
 ## and its _process is called from here, timed, in tree order (the probe's _process runs before the nodes'). Nodes the
 ## game switches off by set_process(false) (off-screen enemy models) are still called, so those are overstated.
 func _steal_and_time(delta: float) -> void:
+	var t_all := Time.get_ticks_usec()
 	var stack: Array[Node] = [root]
 	var order: Array[Node] = []
 	while not stack.is_empty():
@@ -838,6 +851,7 @@ func _steal_and_time(delta: float) -> void:
 			PerfMarks.us[StringName("script." + k)] = per[k]
 			PerfMarks.calls[StringName("script." + k)] = per["calls " + k]
 	_proc_total_nodes = order.size()
+	PerfMarks.us[&"probe.steal_total"] = Time.get_ticks_usec() - t_all
 
 
 ## The tree's node classes, most numerous first (--breakdown), and how many of them move per frame by the engine.
