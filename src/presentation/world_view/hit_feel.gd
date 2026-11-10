@@ -17,7 +17,6 @@ extends Node3D
 ## only: the sim's own hit-stop above is unchanged and the sim never reads this one.
 
 const SHARDS := 7
-const SHARD_FRAMES := 30
 const FINISHER_SHAKE := 0.3
 const FINISHER_FLASH_MULT := 2
 ## A hit a boss's ranged armour deflected: a dull, small, grey-blue spark.
@@ -55,8 +54,8 @@ var _last_seq := 0
 var _rng := RandomNumberGenerator.new()
 ## The Ember Fleas alive at the last sync (by actor id), so their KILL can spark after they are gone.
 var _fleas := {}
-var _shards: Array = []
-var _burst_mats := {}
+## One pool of flying cubes per look, made on its first use and kept for the view's life.
+var _pools := {}
 
 
 func _init(p_actors: ActorViews, p_rig: IsoRig) -> void:
@@ -159,7 +158,10 @@ static func finisher_hit(reader: WorldReader, e: SimEvent) -> bool:
 
 ## How many spark pieces are flying (tests).
 func spark_count() -> int:
-	return _shards.size()
+	var n := 0
+	for pool: ShardPool in _pools.values():
+		n += pool.count()
+	return n
 
 
 ## A spark of pack scene `id` tinted `c` and scaled `k`; the family full (or no pack): `n` boxes.
@@ -179,47 +181,30 @@ func _spark(id: StringName, at: Vector2, c: Color, k: float, n: int, size: float
 ## chunks glowed at full brightness next to the lit bodies, and stood out of a darker scene as flat stickers.
 func _burst(at: Vector2, c: Color, n: int, size: float, lit: bool = false) -> void:
 	var key := [c, lit]
-	var m: StandardMaterial3D = _burst_mats.get(key)
-	if m == null:
-		# One material per look, kept for the view's life, not one per kill (DAMAGE_LAG.md): nothing is
-		# allocated per kill, and its shader never depends on another node staying alive.
-		m = StandardMaterial3D.new()
+	var pool: ShardPool = _pools.get(key)
+	if pool == null:
+		# One material and one multimesh per look, kept for the view's life, not one per kill (DAMAGE_LAG.md):
+		# nothing is allocated per kill, and a look is one draw however many cubes fly.
+		var m := StandardMaterial3D.new()
 		m.albedo_color = c
 		if lit:
 			m.roughness = 1.0
 		else:
 			m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		_burst_mats[key] = m
-	var box := BoxMesh.new()
-	box.size = Vector3.ONE * size
+		pool = ShardPool.new(m)
+		add_child(pool)
+		_pools[key] = pool
 	for k in ViewPrefs.sparks(n):  # reduced motion throws fewer
-		var s := MeshInstance3D.new()
-		s.mesh = box
-		s.material_override = m
-		s.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		s.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-		s.position = SimPlane.to_3d(at, 0.4)
 		var dir := Vector3(
 			_rng.randf_range(-1, 1), _rng.randf_range(0.6, 1.4), _rng.randf_range(-1, 1)
 		)
-		add_child(s)
-		_shards.append([s, dir * _rng.randf_range(2.5, 4.5), SHARD_FRAMES])
+		pool.throw(SimPlane.to_3d(at, 0.4), dir * _rng.randf_range(2.5, 4.5), size)
 
 
 func _process(delta: float) -> void:
-	hit_stop.advance(delta)  # v0.8.0 GF3
-	for k in range(_shards.size() - 1, -1, -1):
-		var sh: Array = _shards[k]
-		var node: MeshInstance3D = sh[0]
-		var vel: Vector3 = sh[1]
-		vel.y -= 9.8 * delta
-		sh[1] = vel
-		node.position += vel * delta
-		node.rotation += Vector3(4, 3, 2) * delta
-		sh[2] -= 1
-		if sh[2] <= 0 or node.position.y < 0.0:
-			node.queue_free()
-			_shards.remove_at(k)
+	hit_stop.advance(delta)
+	for pool: ShardPool in _pools.values():
+		pool.step(delta)
 
 
 ## The Ember Fleas alive now (only on a floor whose critter is the flea: a scan of the actors).
