@@ -15,10 +15,11 @@ const WALL_SKIP_M := 0.5
 ## aoe_candidates' query grows by this past the reach (and the largest radius), over float rounding.
 const AOE_MARGIN_M := 0.01
 
-## Where a new world gets its optional native mover (NativeMove): the app layer sets it when the native library is
-## loaded and switched on (the sim itself never looks a class up). An empty Callable: every world runs the GDScript
-## collision passes.
-static var mover_factory := Callable()
+## Where a new world gets its optional native side (NativeWorld): the app layer sets it when the native library is
+## loaded and switched on (the sim itself never looks a class up). An empty Callable: every world runs GDScript.
+static var native_factory := Callable()
+## The native kernels a new world runs (NativeWorld.MOVE, AI, ...); 0: none, and no native side is made.
+static var native_kernels := 0
 
 var tick := 0
 var freeze_ticks := 0
@@ -591,8 +592,10 @@ var surge_spawned := 0
 ## The perf probe's phase timer (scripts/checks/perf_probe.gd --phases); null in play. Told where each tick
 ## phase begins and ends (begin/end with the phase's name), it never reads or writes state: not hashed, not copied.
 var phase_probe: Object = null
-## The native collision passes (NativeMove), or null. Not hashed, not copied: a copy makes its own from the factory.
-var native_mover: Object = null
+## The native side (NativeWorld), or null, and the kernels it runs (NativeWorld bits). Not hashed, not copied: a
+## copy makes its own from the factory.
+var native: Object = null
+var native_on := 0
 ## Tests only: -1 off; 0 or more counts the aoe_candidates calls that left out an actor the full scan's
 ## distance test would take (it must stay 0: the candidates are a superset).
 var debug_aoe_misses := -1
@@ -638,8 +641,11 @@ func _init(p_seed: int, p_player: PlayerTable, player_pos: Vector2 = Vector2.ZER
 	rng_crit = RngStream.derive(p_seed, "crit")  # v0.4.0 BS
 	rng_ability = RngStream.derive(p_seed, "ability")
 	player = p_player
-	if mover_factory.is_valid():
-		native_mover = mover_factory.call()
+	if native_kernels != 0 and native_factory.is_valid():
+		native = native_factory.call()
+		if native != null:
+			native_on = native_kernels
+			NativeWorld.setup(self)
 	var id := take_id()
 	actors.add(
 		id,
@@ -1075,6 +1081,8 @@ func enemy_table(kind: int) -> EnemyTable:
 func set_enemy_tables(tables: Array[EnemyTable]) -> void:
 	for t in tables:
 		enemy_tables[t.kind] = t
+	if native != null:
+		NativeWorld.tables_changed(self)
 
 
 ## Adds an enemy now (setup, or the wave director in phase 9). It spawns in: no acting, no damage, for
@@ -2009,7 +2017,7 @@ func _move_and_collide() -> void:
 		for i in actors.size():
 			through.append(1 if BossAi.passes_through(self, i) or RuinsRocks.hidden(self, i) else 0)
 			heavy.append(1 if BossAi.is_boss_kind(actors.kinds[i]) else 0)
-	if native_mover != null:
+	if (native_on & NativeWorld.MOVE) != 0:
 		NativeMove.resolve(self, through, heavy)
 	else:
 		_resolve_bodies(through, heavy)

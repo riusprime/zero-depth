@@ -63,9 +63,10 @@ const WORLD_KEPT := {
 	&"_nav_next_due": "setup (v0.11.1 S45): null once the floor's build ends (World.build_nav)",
 	&"curse_totals": "rebuilt: Curses.total's cache, summed from curses_owned (v0.7.0 audit C-12)",
 	&"phase_probe": "debug (v0.8.0 HS): the perf probe's phase timer, null in play, not state",
-	&"native_mover": "setup: the optional native collision passes (World.mover_factory), not state",
+	&"native": "setup: the optional native side (World.native_factory), caches only, not state",
+	&"native_on": "setup: the native kernels switched on (World.native_kernels), not state",
 	&"_wall_rev":
-	"derived: counts the wall grid's changes (the native mover's cue to take the walls again)",
+	"derived: counts the wall grid's changes (the native side's cue to take the walls again)",
 	&"debug_aoe_misses": "debug (v0.8.0 HS): a test's superset check, off in play",
 	&"debug_aoe_full": "debug (v0.8.0 HS): a test's reference run, off in play",
 	&"_hit_grid": "transient within a tick (v0.8.0 HS): built inside _projectile_hits only",
