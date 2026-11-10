@@ -261,6 +261,8 @@ func test_round_trip_in_a_crowd() -> void:
 ## restores the build where it stood (its slices run again), and the restored world steps as the uninterrupted one;
 ## after each slice count.
 func test_round_trip_while_the_flood_is_built() -> void:
+	var kept := World.native_kernels
+	World.native_kernels &= ~NativeWorld.NAV  # the sliced build is the script flood's; the native one is whole at once
 	for slices in [1, 2]:
 		var w := _rich_floor(9, 3)
 		w.actors.hp[0] = 1000000
@@ -281,6 +283,7 @@ func test_round_trip_while_the_flood_is_built() -> void:
 				break
 		assert_true(found, "a build after %d slice(s)" % slices)
 		_round_trip(w, _rich_floor(9, 3), "mid-build after %d slice(s)" % slices)
+	World.native_kernels = kept
 
 
 ## The snapshot is a copy: stepping the world after take() doesn't change it.

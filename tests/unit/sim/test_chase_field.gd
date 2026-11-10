@@ -195,6 +195,8 @@ func test_a_build_over_slices_equals_the_flood_at_once() -> void:
 ## v0.8.0 NF: the world starts the build on its flood ticks and swaps it in within NavField.SLICES ticks; a wall added
 ## in play (and every other immediate flood) floods at once and drops the build in progress.
 func test_the_world_builds_its_flood_over_ticks_and_a_new_wall_floods_at_once() -> void:
+	var kept := World.native_kernels
+	World.native_kernels &= ~NativeWorld.NAV  # the sliced build is the script flood's; the native one is whole at once
 	var w := _rooms([[-11.0, 2.4], [1.0, 2.4]], Vector2(-6, 8))
 	w.add_enemy(K.WARDEN, Vector2(10, -8))
 	w.add_enemy(K.WARDEN, Vector2(15, -3))
@@ -225,3 +227,4 @@ func test_the_world_builds_its_flood_over_ticks_and_a_new_wall_floods_at_once() 
 	assert_false(w.nav.building(), "the new wall drops the build")
 	key = w.nav.get(&"_flooded")
 	assert_eq(Vector2i(key.x, key.y), w.nav.cell_of(w.player_pos()), "and floods at once")
+	World.native_kernels = kept

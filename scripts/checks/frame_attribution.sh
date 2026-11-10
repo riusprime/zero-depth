@@ -5,6 +5,7 @@
 # mean nothing, and the table says which ones are.
 #   bash scripts/checks/frame_attribution.sh swarm120|heavy60|enemies20 [secs]
 # Environment: GODOT (default godot), SWITCHES (a space-separated list overriding the default set below).
+# NATIVE (e.g. all): the sim's native kernels to turn on in every run.
 set -u
 scene=${1:-swarm120}
 secs=${2:-20}
@@ -38,7 +39,7 @@ run() { # run <label> <switch|base>
 	esac
 	APPDATA="$PWD/build/attribution/appdata" "$godot" --path . --resolution "$res" --windowed \
 		--position -10000,-10000 -s scripts/checks/frame_probe.gd -- --biome=red_canyon $args \
-		--secs="$secs" --spans $extra >"$out/$label.txt" 2>&1
+		--secs="$secs" --spans ${NATIVE:+--native=$NATIVE} $extra >"$out/$label.txt" 2>&1
 	echo "$label $sw $(grep -m1 '^frames=' "$out/$label.txt")"
 }
 
