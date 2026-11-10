@@ -30,6 +30,8 @@ shader_parameter/flash_emission = 5.999999865888
 [sub_resource type="SphereMesh" id="SphereMesh_i4tgx"]
 radius = 0.25
 height = 0.5
+radial_segments = 26
+rings = 13
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_u0put"]
 render_priority = 0
@@ -180,6 +182,8 @@ scale_curve = SubResource("CurveTexture_2wte0")
 [sub_resource type="SphereMesh" id="SphereMesh_i8xc7"]
 radius = 0.1
 height = 0.2
+radial_segments = 16
+rings = 8
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_g07k8"]
 render_priority = 0
@@ -193,6 +197,8 @@ shader_parameter/flash_emission = 3.999999910592
 [sub_resource type="SphereMesh" id="SphereMesh_b3vxv"]
 radius = 0.35
 height = 0.7
+radial_segments = 30
+rings = 15
 
 [sub_resource type="Curve" id="Curve_br1tj"]
 _data = [Vector2(0, 1), 0.0, -1.0023087, 0, 0, Vector2(1, 0), -1.212547, 0.0, 0, 0]
@@ -223,6 +229,8 @@ alpha_curve = SubResource("CurveTexture_lfeq5")
 [sub_resource type="SphereMesh" id="SphereMesh_thn8e"]
 radius = 0.2
 height = 0.4
+radial_segments = 24
+rings = 12
 
 [node name="BeamVFX_04" type="Node3D" unique_id=831404249]
 script = ExtResource("1_nqitb")

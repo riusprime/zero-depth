@@ -8,8 +8,8 @@
 
 [sub_resource type="QuadMesh" id="QuadMesh_l1022"]
 size = Vector2(3, 3)
-subdivide_width = 16
-subdivide_depth = 16
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="SphereMesh" id="SphereMesh_df0q8"]
 radius = 1.0

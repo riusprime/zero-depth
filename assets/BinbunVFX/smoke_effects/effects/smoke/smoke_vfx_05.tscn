@@ -46,8 +46,8 @@ alpha_curve = SubResource("CurveTexture_k820q")
 
 [sub_resource type="QuadMesh" id="QuadMesh_c3ucn"]
 size = Vector2(6, 6)
-subdivide_width = 16
-subdivide_depth = 16
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="Curve" id="Curve_r6m7o"]
 _data = [Vector2(0, 0.4), 0.0, 4.829702, 0, 0, Vector2(0.3, 1), 0.0, 0.0, 0, 0, Vector2(0.9932432, 0.011235952), -2.5748465, 0.0, 0, 0]

@@ -19,6 +19,8 @@ cap_bottom = false
 
 [sub_resource type="SphereMesh" id="SphereMesh_bnfeu"]
 radius = 0.25
+radial_segments = 36
+rings = 18
 
 [sub_resource type="Animation" id="Animation_8xrmt"]
 length = 0.001

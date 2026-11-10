@@ -19,6 +19,8 @@ cap_bottom = false
 
 [sub_resource type="SphereMesh" id="SphereMesh_rofeb"]
 radius = 0.15
+radial_segments = 32
+rings = 16
 
 [sub_resource type="Animation" id="Animation_8xrmt"]
 length = 0.001

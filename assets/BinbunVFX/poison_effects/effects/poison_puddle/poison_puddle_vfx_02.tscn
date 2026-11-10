@@ -47,8 +47,8 @@ alpha_curve = SubResource("CurveTexture_gowex")
 [sub_resource type="SphereMesh" id="SphereMesh_daggh"]
 radius = 0.2
 height = 0.25
-radial_segments = 32
-rings = 16
+radial_segments = 24
+rings = 12
 
 [sub_resource type="Animation" id="Animation_2o0g0"]
 length = 0.001

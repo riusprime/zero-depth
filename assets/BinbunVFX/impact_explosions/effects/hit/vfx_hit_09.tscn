@@ -45,8 +45,8 @@ alpha_curve = SubResource("CurveTexture_y1jqx")
 
 [sub_resource type="QuadMesh" id="QuadMesh_beirg"]
 size = Vector2(1.5, 1.5)
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_paapx"]
 render_priority = 0
@@ -86,8 +86,8 @@ alpha_curve = SubResource("CurveTexture_3o1ib")
 
 [sub_resource type="QuadMesh" id="QuadMesh_orsgb"]
 size = Vector2(2.5, 2.5)
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_nku6e"]
 render_priority = 0
@@ -140,8 +140,8 @@ alpha_curve = SubResource("CurveTexture_fnjpx")
 
 [sub_resource type="QuadMesh" id="QuadMesh_6ebj7"]
 size = Vector2(4, 4)
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 orientation = 1
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_8oupv"]

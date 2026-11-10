@@ -98,8 +98,8 @@ scale_curve = SubResource("CurveTexture_iajpn")
 
 [sub_resource type="QuadMesh" id="QuadMesh_a5l77"]
 size = Vector2(0.05, 0.4)
-subdivide_width = 32
-subdivide_depth = 32
+subdivide_width = 0
+subdivide_depth = 0
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_3skf4"]
 seed = 2
