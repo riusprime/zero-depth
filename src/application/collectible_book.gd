@@ -42,14 +42,6 @@ static func colors() -> Dictionary:
 	return _colors
 
 
-## The collectible whose source is `source` (the first in shelf order), or null.
-static func of_source(repo: ContentRepository, source: StringName) -> CollectibleDefinition:
-	for d in defs(repo):
-		if d.source == source:
-			return d
-	return null
-
-
 # --- The profile ---------------------------------------------------------------------------------------------------
 
 

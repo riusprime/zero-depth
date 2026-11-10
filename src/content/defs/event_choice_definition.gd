@@ -25,8 +25,6 @@ const REWARDS: Array[StringName] = [
 	&"shards",
 	&"cleanse",
 ]
-## The rewards that wait for their cost to finish (a fight, a defence).
-const DEFERRED: Array[StringName] = [&"chest", &"shards"]
 
 @export var label_key: StringName
 @export var cost: StringName = &"none"

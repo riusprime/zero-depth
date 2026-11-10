@@ -324,14 +324,6 @@ static func ability_stub(id: StringName) -> AbilityTable:
 	return t
 
 
-## The ability ids in index order (ability_slots).
-static func ability_ids(repo: ContentRepository) -> Array[StringName]:
-	var out: Array[StringName] = []
-	for s in ability_slots(repo):
-		out.append(s if s is StringName else (s as AbilityDefinition).id)
-	return out
-
-
 ## The combo slots in index order: a ComboDefinition, or a retired id (as item_slots).
 static func combo_slots(repo: ContentRepository) -> Array:
 	var stubs := shipped(repo)

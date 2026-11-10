@@ -11,9 +11,7 @@ UI_RESUME,Resume,Continuar
 UI_MAIN_MENU,Main menu,Menú principal
 UI_BACK,Back,Volver
 UI_LANGUAGE,Language,Idioma
-UI_VOLUME_MASTER,Master volume,Volumen general
 UI_VOLUME_MUSIC,Music,Música
-UI_VOLUME_EFFECTS,Effects,Efectos
 UI_VSYNC,VSync,Sincronización vertical
 UI_FRAME_CAP,Frame cap,Límite de fotogramas
 UI_OPT_EN,English,English
@@ -32,7 +30,6 @@ UI_DEV_PAUSE,Pause / resume,Pausar / seguir
 UI_DEV_STEP,Step one tick,Avanzar un tick
 UI_DEV_HASH,Hash now,Hash ahora
 UI_DEV_RESEED,Reseed and restart,Nueva semilla y reiniciar
-UI_CHOOSE_UTILITY,Choose your utility,Elige tu habilidad
 UTIL_GUARD,Guard,Guardia
 UTIL_GUARD_DESC,Hold to block hits from the front.,Mantén para bloquear los golpes de frente.
 UTIL_BLINK,Blink,Destello
@@ -42,8 +39,6 @@ ENEMY_WARDEN,Warden,Guardián
 ENEMY_NEEDLE,Needle,Aguja
 HUD_HP,HP %d / %d,PV %d / %d
 HUD_DANGER_TIER,×%d,×%d
-HUD_DASH,Dash,Esprint
-HUD_UTILITY,Utility,Habilidad
 HUD_WAVE,Wave %d / %d,Oleada %d / %d
 HUD_ENEMIES,Enemies left: %d,Enemigos restantes: %d
 UI_YOU_DIED,You died,Has muerto
@@ -78,24 +73,19 @@ ITEM_PHASE_STRIKE,Phase Strike,Golpe de Fase
 ITEM_PHASE_STRIKE_DESC,Blinking or blocking hurts enemies around you.,Teletransportarte o bloquear daña a tu alrededor.
 HUD_TIME,%02d:%02d,%02d:%02d
 HUD_KILLS,Kills: %d,Bajas: %d
-HUD_PICKED,Picked up %s: %s,Has cogido %s: %s
 HUD_PICKED_UP,Picked up,Recogido
 ENEMY_HATCHLING,Hatchling,Cría
 BOSS_GATEKEEPER,The Gatekeeper,The Gatekeeper
 BOSS_BROOD_MOTHER,The Brood Mother,The Brood Mother
 BOSS_SIEGE_ENGINE,The Siege Engine,The Siege Engine
-HUD_BOSS_STAGGER,Stagger,Aturdimiento
-HUD_BOSS_STAGGERED,STAGGERED,ATURDIDO
 HUD_BOSS_PHASE_SHIFT,PHASE SHIFT,CAMBIO DE FASE
 HUD_BOSS_STUNNED,STUNNED · VULNERABLE,ATURDIDO · VULNERABLE
 CAUSE_HATCHLING,A Hatchling ran you down.,Una Cría te arrolló.
 CAUSE_GATEKEEPER_SLAM,The Gatekeeper's fist slam crushed you.,El puñetazo de The Gatekeeper te aplastó.
 CAUSE_GATEKEEPER_RINGS,The Gatekeeper's rock rings buried you.,Los anillos de roca de The Gatekeeper te sepultaron.
-CAUSE_GATEKEEPER_QUAKE,The Gatekeeper's cross quake caught you.,El temblor en cruz de The Gatekeeper te alcanzó.
 CAUSE_GATEKEEPER_LANES,The Gatekeeper's shockwave knocked you down.,La onda de choque de The Gatekeeper te derribó.
 CAUSE_GATEKEEPER_SWEEP,The Gatekeeper's sweep smashed you.,El barrido de The Gatekeeper te destrozó.
 CAUSE_GATEKEEPER_PILLAR,The Gatekeeper's quake pillar shook you down.,El pilar sísmico de The Gatekeeper te derribó.
-CAUSE_GATEKEEPER_CHARGE,The Gatekeeper's charge flattened you.,La embestida de The Gatekeeper te aplastó.
 CAUSE_BROOD_LEAP,The Brood Mother landed on you.,The Brood Mother cayó sobre ti.
 CAUSE_BROOD_BURROW,The Brood Mother burst up beneath you.,The Brood Mother surgió bajo tus pies.
 CAUSE_BROOD_BROOD,The Brood Mother's eggs crushed you.,Los huevos de The Brood Mother te aplastaron.
@@ -112,7 +102,6 @@ UI_DEV_SPAWN_BOSS,Spawn boss,Invocar jefe
 UI_DEV_NEXT_BOSS,Next boss,Siguiente jefe
 REWARD_OPEN_ALTAR,Open,Abrir
 REWARD_OPEN_CHEST,Open · %d ◆,Abrir · %d ◆
-REWARD_TOO_POOR,Not enough shards · %d / %d,No tienes fragmentos suficientes · %d / %d
 PICK_TITLE_ALTAR,Altar · choose one,Altar · elige uno
 PICK_TITLE_CHEST,Chest · choose one for %d,Cofre · elige uno por %d
 PICK_HINT,"←/→ or 1-3 to choose · Enter or A to take · Esc or B to leave it for later","←/→ o 1-3 para elegir · Intro o A para cogerlo · Esc o B para dejarlo para luego"
@@ -159,7 +148,6 @@ BUILD_GUN_DESC,Shoot enemies from afar.,Dispara a los enemigos desde lejos.
 BUILD_DAMAGE,Damage %s,Daño %s
 BUILD_TAKEN,Damage taken %s,Daño recibido %s
 BUILD_HINT,Left / Right to choose · Enter or A to start · Esc or B to go back,Izquierda / Derecha para elegir · Intro o A para empezar · Esc o B para volver
-UI_VOLUME_AMBIENCE,Ambience,Ambiente
 CAPTION_PLAYER_DEATH,[Your core shuts down],[Tu núcleo se apaga]
 CAPTION_COMBO_UNLOCK,[Combo chime],[Campanilla de combo]
 CAPTION_OVERHEAT,[Overheat alarm],[Alarma de sobrecalentamiento]
@@ -382,7 +370,6 @@ RARITY_EPIC,Epic,Épico
 UI_CARD_ABILITY_NEW,New ability,Habilidad nueva
 UI_CARD_ABILITY_LEVEL,Level %d,Nivel %d
 UI_CARD_MOD,Mod,Modificador
-UI_ABILITY_AUTO,AUTO,AUTO
 UI_DEV_NEXT_ABILITY,Next ability,Siguiente habilidad
 UI_DEV_GRANT_ABILITY,Grant / level ability,Dar / subir habilidad
 ENEMY_SWARMER,Swarmer,Enjambre
@@ -411,13 +398,10 @@ CAUSE_LENS_DRONE,A Lens Drone's ring of orbs got you.,El anillo de orbes de un D
 CAUSE_WARLORD_BASH,The Warlord's shield bash knocked you flat.,El golpe de escudo de The Warlord te derribó.
 CAUSE_WARLORD_SPEARS,The Warlord's spear lines ran you through.,Las líneas de lanzas de The Warlord te atravesaron.
 CAUSE_WARLORD_DASH,The Warlord's lunge ran you down.,La embestida de The Warlord te arrolló.
-CAUSE_WARLORD_JAVELINS,The Warlord's javelins rained down on you.,Las jabalinas de The Warlord llovieron sobre ti.
 CAUSE_WARLORD_WALL,The Warlord's shield wall swept over you.,El muro de escudos de The Warlord te arrolló.
 CAUSE_WARLORD_FAN,The Warlord's javelin fan struck you down.,El abanico de jabalinas de The Warlord te abatió.
 CAUSE_WARLORD_RECALL,The Warlord's javelins flew back through you.,Las jabalinas de The Warlord volvieron atravesándote.
 CAUSE_WARLORD_GREAT,The Warlord's great javelin struck you down.,La gran jabalina de The Warlord te abatió.
-CAUSE_HIVE_SWEEP,The Hive Lens's beam swept through you.,El rayo de The Hive Lens te barrió.
-CAUSE_HIVE_PRISM,The Hive Lens's prism bolts cut you down.,Los proyectiles de prisma de The Hive Lens te abatieron.
 CAUSE_HIVE_GLARE,The Hive Lens's glare burned you.,El destello de The Hive Lens te quemó.
 CAUSE_HIVE_DIVE,The Hive Lens dived onto you.,The Hive Lens se lanzó sobre ti.
 CAUSE_HIVE_SPLIT,A drone splitting off the Hive Lens crushed you.,Un dron al separarse de The Hive Lens te aplastó.
@@ -425,7 +409,6 @@ CAUSE_HIVE_FOCUS,The Hive Lens's focused beam found you far away.,El rayo concen
 CAUSE_HIVE_SPIRAL,The Hive Lens's prism spiral cut you down.,La espiral de prismas de The Hive Lens te abatió.
 CAUSE_HIVE_BLOOM,The Hive Lens's petal bloom closed around you.,La flor de pétalos de The Hive Lens se cerró sobre ti.
 CAUSE_FOUNDRY_FLOOD,The Foundry's molten floor burned you.,El suelo fundido de The Foundry te quemó.
-CAUSE_FOUNDRY_SLAG,The Foundry's slag shells blew you apart.,Los proyectiles de escoria de The Foundry te destrozaron.
 CAUSE_FOUNDRY_VENT,The Foundry's vent blast scorched you.,La explosión del respiradero de The Foundry te abrasó.
 CAUSE_FOUNDRY_LAUNCH,A Foundry Bomb Drone crushed you.,Un Dron Bombardero de The Foundry te aplastó.
 CAUSE_FOUNDRY_FIRESTORM,The Foundry flooded the room with fire.,The Foundry inundó la sala de fuego.
@@ -537,7 +520,6 @@ CURSE_TUNNEL_VISION_UP,More shards,Más fragmentos
 CURSE_BRITTLE,Brittle,Quebradizo
 CURSE_BRITTLE_DESC,Getting hit stuns you,Los golpes te aturden
 CURSE_BRITTLE_UP,Move faster,Te mueves más rápido
-UI_CURSE_UPSIDE,Trade-off,Compensación
 UI_CARD_CURSE,Curse,Maldición
 HUD_DODGE,DODGE,ESQUIVA
 STATUS_STACK_COUNT,x%d,x%d
@@ -631,7 +613,6 @@ HUD_ARENA_CLEARED,Arena cleared,Arena superada
 MAP_LEGEND_ARENA,Arena,Arena
 UI_DEV_GO_ARENA,Go to an arena door,Ir a la puerta de una arena
 UI_DEV_CLEAR_WAVE,Clear the arena wave,Despejar la oleada de la arena
-PICK_TITLE_LEGENDARY,Pick a legendary card,Elige una carta legendaria
 RARITY_LEGENDARY,Legendary,Legendaria
 UI_CARD_MODIFIER,Modifier,Modificador
 UI_CARD_MODIFIER_NEW,New modifier,Modificador nuevo
@@ -639,7 +620,6 @@ UI_SWAP_TITLE,Your %d modifier slots are full: swap one?,Tus %d huecos de modifi
 UI_SWAP_HINT,1–8 / ←→ choose · Enter swap · Esc skip,1–8 / ←→ elegir · Intro cambiar · Esc saltar
 UI_SWAP_SKIP,Skip,Saltar
 UI_SWAP_SKIP_KEY,Esc,Esc
-UI_SWAP_LEVEL,Level %d,Nivel %d
 UI_DEV_GRANT_MOD,Grant attack mod,Dar mod de ataque
 UI_PAUSE_RUN,Floor %d · %02d:%02d · %d kills · %d shards,Piso %d · %02d:%02d · %d bajas · %d fragmentos
 UI_PAUSE_HINT,Enter / A to choose · Esc / B to resume,Intro / A para elegir · Esc / B para continuar
@@ -831,8 +811,6 @@ UI_DEVM_HINT_SPAWN,"Applies when you close the panel; HP and shards change for t
 UI_DEVM_HINT_RESTART,Applies on Restart floor or the next floor.,Se aplica al reiniciar el piso o en el siguiente piso.
 UI_DEVM_MARK,DEV (tweaked balance: this run is not saved),DEV (balance modificado: esta partida no se guarda)
 UI_DEVM_G_SIM,"Timings, AI and caps","Tiempos, IA y límites"
-ITEM_TRIGGER_ON_CRIT,On Crit,Al Crítico
-ITEM_TRIGGER_ON_CRIT_DESC,Cards to its right cast on a critical hit.,Las cartas a su derecha se lanzan con un crítico.
 ITEM_SHARED_BLEED,Bleed,Sangrado
 ITEM_SHARED_BLEED_DESC,Bleed. Lv2: hurts more on the move. Lv3: bursts.,Sangrado. Nv2: más daño si se mueve. Nv3: estalla.
 UI_CODEX,Codex,Códice
@@ -1261,10 +1239,8 @@ PROGRESSION_REVEALED,Revealed: %s. Wear it at the Wardrobe.,Revelada: %s. Pónte
 CAPTION_STRESS_BREAK,[weak point],[punto débil]
 RUN_SUMMARY_LOOPED,Looped ×%d,Bucles ×%d
 UI_PAIR_ON,Element pair!,¡Par elemental!
-UI_PAIR_LEVEL,Element pair · Lv %d,Par elemental · Nv %d
 UI_PAIR_PREVIEW_ON,Pair: %s,Par: %s
 UI_PAIR_PREVIEW_UP,%s → Lv %d,%s → Nv %d
-UI_PAIR_BIG,Element pair! %s,¡Par elemental! %s
 PAIR_THERMAL_SHOCK,Thermal Shock,Choque Térmico
 PAIR_THERMAL_SHOCK_DESC,A foe burning and frozen bursts when hit (up to x3).,Un enemigo ardiendo y helado estalla al golpe (hasta x3).
 PAIR_TOXIC_FUMES,Toxic Fumes,Humos Tóxicos
@@ -1602,7 +1578,6 @@ CAUSE_EMBER_FLEA,Ember Fleas swarmed you.,Las Pulgas de Brasa te rodearon.
 CAUSE_ICE_CRAB,Ice Crabs swarmed you.,Los Cangrejos de Hielo te rodearon.
 CAUSE_STAR_MOTE,Star Motes swarmed you.,Las Motas Estelares te rodearon.
 HUD_SURGE,A horde is coming!,¡Se acerca una horda!
-UI_CARD_SPELL,Spell,Hechizo
 UI_CARD_SPELL_LEVEL,Spell · Lv %d,Hechizo · Nv %d
 SPELL_FROST_NOVA,Frost Nova,Nova de escarcha
 SPELL_FROST_NOVA_DESC,"Every 12 s, by itself: every enemy within 3.5 m freezes for 1 s and is pushed 1 m away.","Cada 12 s, por sí sola: todo enemigo a 3,5 m se congela 1 s y sale empujado 1 m."

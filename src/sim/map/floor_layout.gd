@@ -41,8 +41,7 @@ const GATE_ZONE_HALF_W := OVAL_HALF_W + GATE_WALL_CLEAR
 ## v0.9.0 PT: before PT a gate's zone reached this far past its frame's sides (GATE_WIDTH / 2 + 1.0 = 2.2 m).
 const LEGACY_ZONE_SIDE := 1.0
 
-## How many templates there are, and their names (for tools and evidence).
-const TEMPLATE_COUNT := 13
+## The templates' names (for tools and evidence).
 const TEMPLATE_NAMES: Array[String] = [
 	"open",
 	"scatter",

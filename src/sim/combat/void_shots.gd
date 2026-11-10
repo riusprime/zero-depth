@@ -62,11 +62,6 @@ static func active(w: World) -> bool:
 	return PlayerBuild.has_gun(w) and not PlayerBuild.has_blade(w) and is_void(Modifiers.bolt(w))
 
 
-## The aura's radius of `s` now (m): void_mm, the area stat on it.
-static func aura_m(w: World, s: AttackSpec) -> float:
-	return Stats.area(w, s.void_mm / 1000.0)
-
-
 ## The aura's radius of void projectile `sid` now (m): its own (v0.9.5 FC3: Big Shot's, Rapid Fire's, a mini's), the
 ## area stat on it.
 static func aura_of(w: World, s: AttackSpec, sid: int) -> float:

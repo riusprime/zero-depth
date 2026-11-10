@@ -202,13 +202,6 @@ static func is_epic(w: World, i: int) -> bool:
 	return Secrets.is_epic(w, i)
 
 
-## Ticks left on the timer while open (0 when shut or held).
-func ticks_left(tick: int) -> int:
-	if state != State.OPEN:
-		return 0
-	return maxi(0, open_ticks - (tick - open_tick))
-
-
 func hash_into(h: StateHasher) -> void:
 	for v in [
 		state,

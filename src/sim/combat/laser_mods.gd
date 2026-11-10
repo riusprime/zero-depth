@@ -92,8 +92,6 @@ const SPAN_LEGS := 8
 const TAIL_MAX_M := 40.0
 const ECHO_TICKS_MAX := 8
 const HZ := 60
-## 2π, for an arc's length from its angle (a constant, no trig).
-const TAU_F := 6.283185307179586
 ## The laser row's numbers (units in the names; data/wand/attack_slots.tres carries the same).
 const DEFAULTS := {
 	"lance_ticks": 19,
