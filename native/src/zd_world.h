@@ -35,7 +35,7 @@
 // ---- KERNEL INCLUDES ----
 #include "zd_collide.h"
 
-// slot: ai (#include "zd_ai.h")
+#include "zd_ai.h"
 
 // slot: nav (#include "zd_nav.h")
 
@@ -141,7 +141,23 @@ public:
 	// gives another hash (the expected one is pinned in tests/unit/app/test_native_move.gd). Replaces the walls.
 	godot::String determinism_probe();
 
-	// slot: ai (think, move; zd_ai.cpp)
+	// Enemy AI (zd_ai.cpp, NATIVE_CORE.md §3.2-3.3), for the rows of NATIVE and HOOKED kinds. think: phase 3, the
+	// walk plan on its staggered ticks and the state machine; held (a byte a row, or empty) is a spell's stun,
+	// mine_owners the Mine Layers' mines (MineStore.owner). move: phase 5, the steering before the collision passes;
+	// slow (a float a row, or empty: then frozen 0, slowed slow_permille / 1000, else 1) is ItemProcs.slow_factor.
+	// flow_native: the flow field is the native nav grid's (else a blocked plan is a FLOW intent, and a relocating
+	// Sniper's walk a RELOCATE_STEP). Both return the number of intents (ai_intents_i / _f, stride 4), or -1 when a
+	// cache is missing (nothing changes).
+	int think(godot::Object *actors, const godot::PackedFloat32Array &hero, int tick,
+			const godot::PackedByteArray &held, const godot::PackedInt32Array &mine_owners, bool flow_native);
+	int move(godot::Object *actors, const godot::PackedFloat32Array &hero, const godot::PackedFloat32Array &slow,
+			float slow_permille, bool flow_native);
+	godot::PackedInt32Array ai_intents_i() const;
+	godot::PackedFloat32Array ai_intents_f() const;
+	// zd_kinds.h's constants in LAYOUT order, and [HERO_SIZE, the intent codes]: what the tests compare with
+	// NativeKindTable and NativeAi.
+	godot::PackedInt32Array kind_layout() const;
+	godot::PackedInt32Array ai_hero_layout() const;
 
 	// slot: nav (nav_flood, direction; zd_nav.cpp)
 
@@ -166,7 +182,7 @@ private:
 	CollideScratch collide_;
 	godot::PackedFloat32Array out_x_, out_y_;
 
-	// slot: ai (AiScratch ai_;)
+	AiScratch ai_;
 
 	// slot: nav (NavScratch nav_scratch_;)
 
