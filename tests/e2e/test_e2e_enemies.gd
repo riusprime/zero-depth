@@ -1,7 +1,7 @@
 extends GutTest
 ## Enemies reach you in the real game and their telegraphs show (PLAN v0.1.0 Step 4, v0.2.0 F): on the floor the
-## spawner starts with Chargers and Needles (Wardens unlock at danger 2). v0.8.0 TG: their telegraphs are told by the
-## body (a crouch, a glow and a flash), not drawn on the ground.
+## spawner starts with Chargers, Needles and Swarmers (the floor curve's first phase; Wardens open in the next).
+## v0.8.0 TG: their telegraphs are told by the body (a crouch, a glow and a flash), not drawn on the ground.
 
 
 func test_the_first_enemies_arrive_and_telegraph() -> void:
@@ -13,12 +13,17 @@ func test_the_first_enemies_arrive_and_telegraph() -> void:
 		if e.world().actors.size() > 1:
 			break
 	assert_gt(e.world().actors.size(), 1, "an enemy spawned within 10 s")
+	# The floor's first phase (data/curves/floor_1.tres P_0, since v0.4.0 TU) opens Chargers, Needles and Swarmers;
+	# v0.11.0 O13a: a biome's variant of a Charger or a Needle opens with its base, on its own biome's floors only.
+	var core := [ActorStore.Kind.CHARGER, ActorStore.Kind.NEEDLE, ActorStore.Kind.SWARMER]
+	var variants := [
+		ActorStore.Kind.DIM_NEEDLE, ActorStore.Kind.EMBER_CHARGER, ActorStore.Kind.FROST_CHARGER
+	]
 	for i in range(1, e.world().actors.size()):
-		assert_has(
-			[ActorStore.Kind.CHARGER, ActorStore.Kind.NEEDLE],
-			e.world().actors.kinds[i],
-			"tier 0 mix"
-		)
+		var kind: int = e.world().actors.kinds[i]
+		assert_has(core + variants, kind, "the first phase's mix")
+		if variants.has(kind):
+			assert_has(e.world().roster_kinds, kind, "a variant only on its own biome")
 	# v0.8.0 TG (owner O4, Q3): a Charger's or Needle's windup draws nothing on the ground; its body tells it.
 	var seen := false
 	for k in 900:

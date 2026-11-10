@@ -116,12 +116,16 @@ func test_the_lance_charges_while_held_and_its_release_pierces_the_row() -> void
 	var bursts := 0
 	var burst_charge := 0
 	var balls := 0
+	var back := 0.0
 	for k in 60:  # the ball flies the row (7 m)
 		await e.frames(1)
 		bursts = maxi(bursts, main.view.lances.bursts)
 		burst_charge = maxi(burst_charge, main.view.lances.last_burst_charge)
 		balls = maxi(balls, w.projectiles.size())
-	var back := (before - w.player_pos()).dot(dir)
+		# The push back is read once it is spent (Lance.RECOIL_TICKS), before the floor's own spawns (a Swarmer
+		# reaching the hero later in the second) can shove the hero.
+		if k == Lance.RECOIL_TICKS:
+			back = (before - w.player_pos()).dot(dir)
 	var hurt := []
 	for id in row:
 		var j := a.index_of(id)

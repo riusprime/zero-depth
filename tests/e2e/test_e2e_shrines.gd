@@ -8,7 +8,10 @@ extends GutTest
 
 ## Run seeds whose floor 2 holds a Blood shrine (BLOOD_SEED) and a fountain (FOUNTAIN_SEED), found with ShrineLab (as
 ## Main builds floors; asserted below).
-const BLOOD_SEED := 5
+## v0.11.0 O13b: seed 5's floor 2 (Ruins) now has a Wire Weaver string its cable across the walk; the stick pushed
+## into it until the hero died (the dev panel's God lasts only while the panel is open). Seed 27's floor 2 (Frozen
+## Shore) holds a Blood shrine and the Blood Coin with a clear walk.
+const BLOOD_SEED := 27
 const FOUNTAIN_SEED := 1
 const FLOOR := 2
 
